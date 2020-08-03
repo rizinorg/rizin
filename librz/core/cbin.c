@@ -1275,12 +1275,15 @@ RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, int mode) {
 		break;
 	}
 	PJ *pj = rz_core_pj_new (core);
+	pj_a (pj);
 
 	pdb.print_types (&pdb, pj, mode);
 	pdb.print_gvars (&pdb, baddr, pj, mode);
 	// Save compound types into SDB
 	rz_parse_pdb_types (core->analysis, &pdb);
 	pdb.finish_pdb_parse (&pdb);
+
+	pj_end (pj);
 
 	if (mode == 'j') {
 		rz_cons_printf ("%s\n", pj_string (pj));
