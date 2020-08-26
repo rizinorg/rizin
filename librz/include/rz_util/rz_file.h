@@ -41,7 +41,7 @@ RZ_API bool rz_file_touch(const char *file);
 RZ_API bool rz_file_hexdump(const char *file, const ut8 *buf, int len, int append);
 RZ_API bool rz_file_rm(const char *file);
 RZ_API bool rz_file_exists(const char *str);
-RZ_API bool rz_file_fexists(const char *fmt, ...);
+RZ_API bool rz_file_fexists(const char *fmt, ...) RZ_PRINTF_CHECK(1, 2);
 RZ_API char *rz_file_slurp_line(const char *file, int line, int context);
 RZ_API char *rz_file_slurp_lines(const char *file, int line, int count);
 RZ_API char *rz_file_slurp_lines_from_bottom(const char *file, int line);
