@@ -33,7 +33,7 @@ typedef enum rz_log_level {
 #endif
 
 typedef void (*RLogCallback) (const char *output, const char *funcname, const char *filename,
-	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...);
+	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) RZ_PRINTF_CHECK(7, 8);
 
 #define RZ_VLOG(lvl, tag, fmtstr, args) rz_vlog (MACRO_LOG_FUNC, __FILE__, \
 	__LINE__, lvl, tag, fmtstr, args);
