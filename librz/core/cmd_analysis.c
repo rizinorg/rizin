@@ -94,7 +94,7 @@ static const char *help_msg_ab[] = {
 	"ab.", "", "same as: ab $$",
 	"aba", " [addr]", "analyze esil accesses in basic block (see aea?)",
 	"abb", " [length]", "analyze N bytes and extract basic blocks",
-	"abj", " [addr]", "display basic block information in JSON (alias to afbj)",
+	"abj", " [addr]", "display basic block information in JSON",
 	"abl", "[,qj]", "list all basic blocks",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
 	"abt[?]", " [addr] [num]", "find num paths from current offset to addr",
@@ -2381,10 +2381,73 @@ static void analysis_bb_list(RzCore *core, const char *input) {
 	}
 }
 
+static void bb_to_pj(PJ *pj, RzAnalysisBlock *b, const RzAnalysisFunction *fcn, const ut64 addr) {
+	RzListIter *iter2;
+	RzAnalysisBlock *b2;
+	int inputs = 0;
+	int outputs = 0;
+	rz_list_foreach (fcn->bbs, iter2, b2) {
+		if (b2->jump == b->addr) {
+			inputs++;
+		}
+		if (b2->fail == b->addr) {
+			inputs++;
+		}
+	}
+	if (b->jump != UT64_MAX) {
+		outputs ++;
+	}
+	if (b->fail != UT64_MAX) {
+		outputs ++;
+	}
+	pj_o (pj);
+	if (b->jump != UT64_MAX) {
+		pj_kn (pj, "jump", b->jump);
+	}
+	if (b->fail != UT64_MAX) {
+		pj_kn (pj, "fail", b->fail);
+	}
+	if (b->switch_op) {
+		pj_k (pj, "switch_op");
+		pj_o (pj);
+		pj_kn (pj, "addr", b->switch_op->addr);
+		pj_kn (pj, "min_val", b->switch_op->min_val);
+		pj_kn (pj, "def_val", b->switch_op->def_val);
+		pj_kn (pj, "max_val", b->switch_op->max_val);
+		pj_k (pj, "cases");
+		pj_a (pj);
+		{
+		RzListIter *case_op_iter;
+		RzAnalysisCaseOp *case_op;
+		rz_list_foreach (b->switch_op->cases, case_op_iter, case_op) {
+			pj_o (pj);
+			pj_kn (pj, "addr", case_op->addr);
+			pj_kn (pj, "jump", case_op->jump);
+			pj_kn (pj, "value", case_op->value);
+			pj_end (pj);
+		}
+		}
+		pj_end (pj);
+		pj_end (pj);
+	}
+	{
+	ut64 opaddr = __opaddr (b, addr);
+	pj_kn (pj, "opaddr", opaddr);
+	}
+	pj_kn (pj, "addr", b->addr);
+	pj_ki (pj, "size", b->size);
+	pj_ki (pj, "inputs", inputs);
+	pj_ki (pj, "outputs", outputs);
+	pj_ki (pj, "ninstr", b->ninstr);
+	pj_kb (pj, "traced", b->traced);
+	pj_end (pj);
+}
+
 static bool analysis_fcn_list_bb(RzCore *core, const char *input, bool one) {
 	RzDebugTracepoint *tp = NULL;
 	RzListIter *iter;
 	RzAnalysisBlock *b;
+
 	int mode = 0;
 	ut64 addr, bbaddr = UT64_MAX;
 	PJ *pj = NULL;
@@ -2496,70 +2559,8 @@ static bool analysis_fcn_list_bb(RzCore *core, const char *input, bool one) {
 			case 'q': // afbq
 				rz_cons_printf ("0x%08" PFMT64x "\n", b->addr);
 				break;
-			case 'j': // afbj
-				//rz_cons_printf ("%" PFMT64u "%s", b->addr, iter->n? ",": "");
-				{
-				RzListIter *iter2;
-				RzAnalysisBlock *b2;
-				int inputs = 0;
-				int outputs = 0;
-				rz_list_foreach (fcn->bbs, iter2, b2) {
-					if (b2->jump == b->addr) {
-						inputs++;
-					}
-					if (b2->fail == b->addr) {
-						inputs++;
-					}
-				}
-				if (b->jump != UT64_MAX) {
-					outputs ++;
-				}
-				if (b->fail != UT64_MAX) {
-					outputs ++;
-				}
-				pj_o (pj);
-
-				if (b->jump != UT64_MAX) {
-					pj_kn (pj, "jump", b->jump);
-				}
-				if (b->fail != UT64_MAX) {
-					pj_kn (pj, "fail", b->fail);
-				}
-				if (b->switch_op) {
-					pj_k (pj, "switch_op");
-					pj_o (pj);
-					pj_kn (pj, "addr", b->switch_op->addr);
-					pj_kn (pj, "min_val", b->switch_op->min_val);
-					pj_kn (pj, "def_val", b->switch_op->def_val);
-					pj_kn (pj, "max_val", b->switch_op->max_val);
-					pj_k (pj, "cases");
-					pj_a (pj);
-					{
-						RzListIter *case_op_iter;
-						RzAnalysisCaseOp *case_op;
-						rz_list_foreach (b->switch_op->cases, case_op_iter, case_op) {
-							pj_o (pj);
-							pj_kn (pj, "addr", case_op->addr);
-							pj_kn (pj, "jump", case_op->jump);
-							pj_kn (pj, "value", case_op->value);
-							pj_end (pj);
-						}
-					}
-					pj_end (pj);
-					pj_end (pj);
-				}
-				{
-					ut64 opaddr = __opaddr (b, addr);
-					pj_kn (pj, "opaddr", opaddr);
-				}
-				pj_kn (pj, "addr", b->addr);
-				pj_ki (pj, "size", b->size);
-				pj_ki (pj, "inputs", inputs);
-				pj_ki (pj, "outputs", outputs);
-				pj_ki (pj, "ninstr", b->ninstr);
-				pj_kb (pj, "traced", b->traced);
-				pj_end (pj);
-				}
+			case 'j':
+				bb_to_pj (pj, b, fcn, addr);
 				break;
 			case 'i': // afbi
 				{
@@ -10437,9 +10438,24 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 				analysis_bb_list (core, input + 2);
 			}
 			break;
-		case 'j': // "abj"
-			analysis_fcn_list_bb (core, input + 1, false);
+		case 'j': { // "abj"
+			ut64 addr = core->offset;
+			if (input[2] && input[2] != '.') {
+				addr = rz_num_math (core->num, input + 2);
+			}
+			RzAnalysisBlock *b = rz_analysis_get_block_at (core->analysis, addr);
+			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, addr, 0);
+			if (b && fcn) {
+				PJ *pj = rz_core_pj_new (core);
+				if (!pj) {
+					return 1;
+				}
+				bb_to_pj (pj, b, fcn, addr);
+				rz_cons_println (pj_string (pj));
+				pj_free (pj);
+			}
 			break;
+		}
 		case 0:
 		case ' ': // "ab "
 			// find block
