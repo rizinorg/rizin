@@ -61,7 +61,7 @@ static int rz_main_version_verify(int show) {
 	};
 
 	if (show) {
-		printf ("%s  r2\n", base);
+		printf ("%s  rizin\n", base);
 	}
 	for (i = ret = 0; vcs[i].name; i++) {
 		struct vcs_t *v = &vcs[i];
@@ -75,9 +75,9 @@ static int rz_main_version_verify(int show) {
 	}
 	if (ret) {
 		if (show) {
-			eprintf ("WARNING: r2 library versions mismatch!\n");
+			eprintf ("WARNING: rizin library versions mismatch!\n");
 		} else {
-			eprintf ("WARNING: r2 library versions mismatch! See r2 -V\n");
+			eprintf ("WARNING: rizin library versions mismatch! See rizin -V\n");
 		}
 	}
 	return ret;
@@ -85,13 +85,13 @@ static int rz_main_version_verify(int show) {
 
 static int main_help(int line) {
 	if (line < 2) {
-		printf ("Usage: r2 [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
-			"          [-s addr] [-B baddr] [-m maddr] [-c cmd] [-e k=v] file|pid|-|--|=\n");
+		printf ("Usage: rizin [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
+			"             [-s addr] [-B baddr] [-m maddr] [-c cmd] [-e k=v] file|pid|-|--|=\n");
 	}
 	if (line != 1) {
 		printf (
 		" --           run rizin without opening any file\n"
-		" -            same as 'r2 malloc://512'\n"
+		" -            same as 'rizin malloc://512'\n"
 		" =            read file from stdin (use -i and -c to run cmds)\n"
 		" -=           perform !=! command to run all commands remotely\n"
 		" -0           print \\x00 after init and every command\n"
@@ -127,7 +127,7 @@ static int main_help(int line) {
 		" -r [rz_run]  specify rz_run profile to load (same as -e dbg.profile=X)\n"
 		" -R [rrz_testule] specify custom rz_run directive\n"
 		" -s [addr]    initial seek\n"
-		" -S           start r2 in sandbox mode\n"
+		" -S           start rizin in sandbox mode\n"
 #if USE_THREADS && ALLOW_THREADED
 		" -t           load rz_bin info in thread\n"
 #endif
@@ -146,7 +146,7 @@ static int main_help(int line) {
 		"Scripts:\n"
 		" system       ${R2_PREFIX}/share/rizin/rizinrc\n"
 		" user         ~/.rizinrc " R_JOIN_2_PATHS ("~", R2_HOME_RC) " (and " R_JOIN_3_PATHS ("~", R2_HOME_RC_DIR,"") ")\n"
-		" file         ${filename}.r2\n"
+		" file         ${filename}.rz\n"
 		"Plugins:\n"
 		" binrc        " R_JOIN_4_PATHS ("~", R2_HOME_BINRC, "bin-<format>",  "") " (elf, elf64, mach0, ..)\n"
 		" R2_USER_PLUGINS " R_JOIN_2_PATHS ("~", R2_HOME_PLUGINS) "\n"
@@ -1302,7 +1302,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_flag_space_set (r->flags, NULL);
 		/* load <file>.r2 */
 		{
-			char* f = rz_str_newf ("%s.r2", pfile);
+			char* f = rz_str_newf ("%s.rz", pfile);
 			const char *uri_splitter = strstr (f, "://");
 			const char *path = uri_splitter? uri_splitter + 3: f;
 			if (rz_file_exists (path)) {

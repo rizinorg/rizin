@@ -544,7 +544,7 @@ RZ_API bool rz_run_parseline(RRunProfile *p, const char *b) {
 	} else if (!strcmp (b, "r2preload")) {
 		p->_rzpreload = parseBool (e);
 	} else if (!strcmp (b, "r2preweb")) {
-		rz_sys_setenv ("RARUN2_WEB", "yes");
+		rz_sys_setenv ("RZ_RUN_WEB", "yes");
 	} else if (!strcmp (b, "setuid")) {
 		p->_setuid = strdup (e);
 	} else if (!strcmp (b, "seteuid")) {

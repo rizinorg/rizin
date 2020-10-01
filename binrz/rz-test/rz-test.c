@@ -4,8 +4,8 @@
 #include <assert.h>
 
 #define WORKERS_DEFAULT        8
-#define RADARE2_CMD_DEFAULT    "rizin"
-#define RASM2_CMD_DEFAULT      "rz-asm"
+#define RIZIN_CMD_DEFAULT    "rizin"
+#define RZ_ASM_CMD_DEFAULT      "rz-asm"
 #define JSON_TEST_FILE_DEFAULT "bins/elf/crackme0x00b"
 #define TIMEOUT_DEFAULT        960
 
@@ -53,8 +53,8 @@ static int help(bool verbose) {
 		" -L           log mode (better printing for CI, logfiles, etc.)\n"
 		" -F [dir]     run fuzz tests (open and default analysis) on all files in the given dir\n"
 		" -j [threads] how many threads to use for running tests concurrently (default is "WORKERS_DEFAULT_STR")\n"
-		" -r [rizin] path to rizin executable (default is "RADARE2_CMD_DEFAULT")\n"
-		" -m [rz-asm]   path to rz-asm executable (default is "RASM2_CMD_DEFAULT")\n"
+		" -r [rizin] path to rizin executable (default is "RIZIN_CMD_DEFAULT")\n"
+		" -m [rz-asm]   path to rz-asm executable (default is "RZ_ASM_CMD_DEFAULT")\n"
 		" -f [file]    file to use for json tests (default is "JSON_TEST_FILE_DEFAULT")\n"
 		" -C [dir]     chdir before running rz_test (default follows executable symlink + test/new\n"
 		" -t [seconds] timeout per test (default is "TIMEOUT_DEFAULT_STR")\n"
@@ -284,8 +284,8 @@ int main(int argc, char **argv) {
 
 	ut64 time_start = rz_time_now_mono ();
 	R2RState state = {{0}};
-	state.run_config.r2_cmd = rizin_cmd ? rizin_cmd : RADARE2_CMD_DEFAULT;
-	state.run_config.rz_asm_cmd = rz_asm_cmd ? rz_asm_cmd : RASM2_CMD_DEFAULT;
+	state.run_config.r2_cmd = rizin_cmd ? rizin_cmd : RIZIN_CMD_DEFAULT;
+	state.run_config.rz_asm_cmd = rz_asm_cmd ? rz_asm_cmd : RZ_ASM_CMD_DEFAULT;
 	state.run_config.json_test_file = json_test_file ? json_test_file : JSON_TEST_FILE_DEFAULT;
 	state.run_config.timeout_ms = timeout_sec > UT64_MAX / 1000 ? UT64_MAX : timeout_sec * 1000;
 	state.verbose = verbose;

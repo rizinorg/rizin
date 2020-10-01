@@ -675,18 +675,18 @@ install_data(
 
 if cli_enabled
   install_man(
-    'man/rz_agent.1',
+    'man/rz-agent.1',
     'man/rz-docker.1',
-    'man/rz_pm.1',
-    'man/rz_bin.1',
+    'man/rz-pm.1',
+    'man/rz-bin.1',
     'man/rizin.1',
-    'man/rz_diff.1',
-    'man/rz_find.1',
-    'man/rz_gg.1',
-    'man/rz_hash.1',
-    'man/rz_run.1',
-    'man/rz_asm.1',
-    'man/rz_ax.1',
+    'man/rz-diff.1',
+    'man/rz-find.1',
+    'man/rz-gg.1',
+    'man/rz-hash.1',
+    'man/rz-run.1',
+    'man/rz-asm.1',
+    'man/rz-ax.1',
     'man/esil.7'
   )
 
@@ -706,6 +706,4 @@ if cli_enabled
     'doc/zsh/_rz_ax',
     install_dir: r2_zsh_compdir
   )
-
-  meson.add_install_script(host_machine.system() == 'windows' ? 'sys/create_rz.bat' : 'sys/create_rz.sh')
 endif

@@ -497,7 +497,7 @@ to contribute.
  - Set `RELEASE=1` in global.mk and r2-bindings/config.mk.acr.
  - Use `bsdtar` from libarchive package. GNU tar is broken.
 
-  RADARE2
+  RIZIN
   ---
    - bump revision
    - `./configure`

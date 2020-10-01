@@ -42,12 +42,12 @@ static void _libwrap_init(void) {
 	printf ("librz initialized. send SIGUSR1 to %d in order to reach the r2 prompt\n", getpid ());
 	printf ("kill -USR1 %d\n", getpid ());
 	fflush (stdout);
-	web = rz_sys_getenv ("RARUN2_WEB");
+	web = rz_sys_getenv ("RZ_RUN_WEB");
 	core = rz_core_new ();
 	rz_core_loadlibs (core, R_CORE_LOADLIBS_ALL, NULL);
 	if (web) {
 		rz_core_cmd0 (core, "=H&");
-		rz_sys_setenv ("RARUN2_WEB", NULL);
+		rz_sys_setenv ("RZ_RUN_WEB", NULL);
 		free (web);
 	}
 	// TODO: maybe reopen every time a signal is spawned to reload memory regions information

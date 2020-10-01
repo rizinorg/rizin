@@ -241,7 +241,7 @@ RZ_API char *rz_core_sysenv_begin(RzCore * core, const char *cmd) {
 		rz_sys_setenv ("R2_BYTES", s);
 		free (s);
 	}
-	rz_sys_setenv ("RABIN2_PDBSERVER", rz_config_get (core->config, "pdb.server"));
+	rz_sys_setenv ("RZ_BIN_PDBSERVER", rz_config_get (core->config, "pdb.server"));
 	if (desc && desc->name) {
 		rz_sys_setenv ("R2_FILE", desc->name);
 		rz_sys_setenv ("R2_SIZE", sdb_fmt ("%"PFMT64d, rz_io_desc_size (desc)));
@@ -273,8 +273,8 @@ RZ_API char *rz_core_sysenv_begin(RzCore * core, const char *cmd) {
 	sdb_free (config_sdb);
 	rz_sys_setenv ("R2_CONFIG", config_sdb_path);
 
-	rz_sys_setenv ("RABIN2_LANG", rz_config_get (core->config, "bin.lang"));
-	rz_sys_setenv ("RABIN2_DEMANGLE", rz_config_get (core->config, "bin.demangle"));
+	rz_sys_setenv ("RZ_BIN_LANG", rz_config_get (core->config, "bin.lang"));
+	rz_sys_setenv ("RZ_BIN_DEMANGLE", rz_config_get (core->config, "bin.demangle"));
 	rz_sys_setenv ("R2_ARCH", rz_config_get (core->config, "asm.arch"));
 	rz_sys_setenv ("R2_BITS", sdb_fmt ("%d", rz_config_get_i (core->config, "asm.bits")));
 	rz_sys_setenv ("R2_COLOR", rz_config_get_i (core->config, "scr.color")? "1": "0");

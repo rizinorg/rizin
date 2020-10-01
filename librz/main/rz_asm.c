@@ -277,7 +277,7 @@ static int rasm_show_help(int v) {
 	if (v != 1) {
 		printf (" -a [arch]    Set architecture to assemble/disassemble (see -L)\n"
 			" -A           Show Analysis information from given hexpairs\n"
-			" -b [bits]    Set cpu register size (8, 16, 32, 64) (RASM2_BITS)\n"
+			" -b [bits]    Set cpu register size (8, 16, 32, 64) (RZ_ASM_BITS)\n"
 			" -B           Binary input/output (-l is mandatory for binary input)\n"
 			" -c [cpu]     Select specific CPU (depends on arch)\n"
 			" -C           Output in C format\n"
@@ -304,9 +304,9 @@ static int rasm_show_help(int v) {
 			" If '-l' value is greater than output length, output is padded with nops\n"
 			" If the last argument is '-' reads from stdin\n");
 		printf ("Environment:\n"
-			" RASM2_NOPLUGINS  do not load shared plugins (speedup loading)\n"
-			" RASM2_ARCH       same as rz_asm -a\n"
-			" RASM2_BITS       same as rz_asm -b\n"
+			" RZ_ASM_NOPLUGINS  do not load shared plugins (speedup loading)\n"
+			" RZ_ASM_ARCH       same as rz_asm -a\n"
+			" RZ_ASM_BITS       same as rz_asm -b\n"
 			" R_DEBUG          if defined, show error messages and crash signal\n"
 			"");
 	}
@@ -505,7 +505,7 @@ static int print_assembly_output(RzAsmState *as, const char *buf, ut64 offset, u
 }
 
 static void __load_plugins(RzAsmState *as) {
-	char *tmp = rz_sys_getenv ("RASM2_NOPLUGINS");
+	char *tmp = rz_sys_getenv ("RZ_ASM_NOPLUGINS");
 	if (tmp) {
 		free (tmp);
 		return;
@@ -539,8 +539,8 @@ static void __load_plugins(RzAsmState *as) {
 }
 
 RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
-	const char *env_arch = rz_sys_getenv ("RASM2_ARCH");
-	const char *env_bits = rz_sys_getenv ("RASM2_BITS");
+	const char *env_arch = rz_sys_getenv ("RZ_ASM_ARCH");
+	const char *env_bits = rz_sys_getenv ("RZ_ASM_BITS");
 	const char *arch = NULL;
 	const char *cpu = NULL;
 	const char *kernel = NULL;

@@ -1,5 +1,5 @@
 .Dd May 17, 2020
-.Dt RADARE2 1
+.Dt RIZIN 1
 .Sh NAME
 .Nm rizin
 .Nd Advanced commandline hexadecimal editor, disassembler and debugger
@@ -16,8 +16,8 @@
 .Op Fl m Ar addr
 .Op Fl p Ar project
 .Op Fl P Ar patch
-.Op Fl r Ar rz_run
-.Op Fl R Ar rrz_testule
+.Op Fl r Ar rz-run
+.Op Fl R Ar rz-run-directives
 .Op Fl s Ar addr
 .Op Fl 0AdDwntLquvVxX
 .Ar -|--|=|file
@@ -88,10 +88,10 @@ Same as q, but exiting without freeing RCore, this produces leaks at exit time, 
 Set project file
 .It Fl P Ar file
 Apply rapatch file and quit (see doc/rapatch.md for more details)
-.It Fl r Ar rz_run
-Specify dbg.profile rz_run profile to use when spawning a program for debugging
-.It Fl R Ar rz_run-directive
-Specify custom rz_run directives without having to create a rz_run profile
+.It Fl r Ar rz-run
+Specify dbg.profile rz-run profile to use when spawning a program for debugging
+.It Fl R Ar rz-run-directive
+Specify custom rz-run directives without having to create a rz-run profile
 .It Fl s Ar addr
 Start seeking at this address
 .It Fl S
@@ -136,15 +136,15 @@ In r2 the debugger commands are implemented under the 'd' command. Type 'd?' for
 path to the current working file.
 .Sh SEE ALSO
 .Pp
-.Xr rz_test(1) ,
-.Xr rz_hash(1) ,
-.Xr rz_find(1) ,
-.Xr rz_bin(1) ,
-.Xr rz_diff(1) ,
-.Xr rz_asm(1) ,
-.Xr rz_ax(1) ,
-.Xr rz_gg(1) ,
-.Xr rz_run(1) ,
+.Xr rz-test(1) ,
+.Xr rz-hash(1) ,
+.Xr rz-find(1) ,
+.Xr rz-bin(1) ,
+.Xr rz-diff(1) ,
+.Xr rz-asm(1) ,
+.Xr rz-ax(1) ,
+.Xr rz-gg(1) ,
+.Xr rz-run(1) ,
 .Sh AUTHORS
 .Pp
 pancake <pancake@nopcode.org>

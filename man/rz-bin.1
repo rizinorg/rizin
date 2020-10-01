@@ -1,10 +1,10 @@
 .Dd Sep 29, 2016
-.Dt RABIN2 1
+.Dt RZ_BIN 1
 .Sh NAME
-.Nm RABIN2
+.Nm RZ_BIN
 .Nd Binary program info extractor
 .Sh SYNOPSIS
-.Nm rz_bin
+.Nm rz-bin
 .Op Fl AceghHiIsSMzlpRrLxvhqQTuUwV
 .Op Fl a Ar arch
 .Op Fl b Ar bits
@@ -71,7 +71,7 @@ Output in json
 .It Fl k Ar query
 Perform SDB query on loaded file
 .It Fl K Ar algo
-Select a rz_hash checksum algorithm to be performed on sections listing (and maybe others in the future) i.e 'rz_bin -K md5 -S /bin/ls'
+Select a rz-hash checksum algorithm to be performed on sections listing (and maybe others in the future) i.e 'rz-bin -K md5 -S /bin/ls'
 .It Fl l
 List linked libraries to the binary
 .It Fl L
@@ -139,46 +139,46 @@ Dump raw strings to stdout (for huge files)
 .El
 .Sh ENVIRONMENT
 .Pp
-RABIN2_LANG same as r2 -e bin.lang for rz_bin
+RZ_BIN_LANG same as r2 -e bin.lang for rz-bin
 .Pp
-RABIN2_DEMANGLE demangle symbols
+RZ_BIN_DEMANGLE demangle symbols
 .Pp
-RABIN2_MAXSTRBUF same as r2 -e bin.maxstrbuf for rz_bin
+RZ_BIN_MAXSTRBUF same as r2 -e bin.maxstrbuf for rz-bin
 .Pp
-RABIN2_DEBASE64 try to decode all strings as base64 if possible
+RZ_BIN_DEBASE64 try to decode all strings as base64 if possible
 .Pp
-RABIN2_STRFILTER same as r2 -e bin.str.filter for rz_bin
+RZ_BIN_STRFILTER same as r2 -e bin.str.filter for rz-bin
 .Pp
-RABIN2_STRPURGE same as r2 -e bin.str.purge for rz_bin
+RZ_BIN_STRPURGE same as r2 -e bin.str.purge for rz-bin
 .Sh EXAMPLES
 .Pp
 List symbols of a program
 .Pp
-  $ rz_bin \-s a.out
+  $ rz-bin \-s a.out
 .Pp
 Get offset of symbol
 .Pp
-  $ rz_bin \-n _main a.out
+  $ rz-bin \-n _main a.out
 .Pp
 Get entrypoint
 .Pp
-  $ rz_bin \-e a.out
+  $ rz-bin \-e a.out
 .Pp
 Load symbols and imports from rizin
 .Pp
   $ r2 -n /bin/ls
-  [0x00000000]> .!rz_bin \-prsi $FILE
+  [0x00000000]> .!rz-bin \-prsi $FILE
 .Sh SEE ALSO
 .Pp
-.Xr rz_hash(1) ,
-.Xr rz_find(1) ,
+.Xr rz-hash(1) ,
+.Xr rz-find(1) ,
 .Xr rizin(1) ,
-.Xr rz_diff(1) ,
-.Xr rz_asm(1) ,
-.Xr rz_ax(1) ,
+.Xr rz-diff(1) ,
+.Xr rz-asm(1) ,
+.Xr rz-ax(1) ,
 .Xr rsc2(1) ,
-.Xr rz_gg(1) ,
-.Xr rz_run(1) ,
+.Xr rz-gg(1) ,
+.Xr rz-run(1) ,
 .Sh AUTHORS
 .Pp
 Written by pancake <pancake@nopcode.org>.

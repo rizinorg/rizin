@@ -75,17 +75,17 @@ static int rabin_show_help(int v) {
 	}
 	if (v) {
 		printf ("Environment:\n"
-		" RABIN2_LANG:      e bin.lang         # assume lang for demangling\n"
-		" RABIN2_NOPLUGINS: # do not load shared plugins (speedup loading)\n"
-		" RABIN2_DEMANGLE=0:e bin.demangle     # do not demangle symbols\n"
-		" RABIN2_MAXSTRBUF: e bin.maxstrbuf    # specify maximum buffer size\n"
-		" RABIN2_STRFILTER: e bin.str.filter   #  r2 -qc 'e bin.str.filter=?" "?' -\n"
-		" RABIN2_STRPURGE:  e bin.str.purge    # try to purge false positives\n"
-		" RABIN2_DEBASE64:  e bin.debase64     # try to debase64 all strings\n"
-		" RABIN2_DMNGLRCMD: e bin.demanglercmd # try to purge false positives\n"
-		" RABIN2_PDBSERVER: e pdb.server       # use alternative PDB server\n"
-		" RABIN2_SYMSTORE:  e pdb.symstore     # path to downstream symbol store\n"
-		" RABIN2_PREFIX:    e bin.prefix       # prefix symbols/sections/relocs with a specific string\n"
+		" RZ_BIN_LANG:      e bin.lang         # assume lang for demangling\n"
+		" RZ_BIN_NOPLUGINS: # do not load shared plugins (speedup loading)\n"
+		" RZ_BIN_DEMANGLE=0:e bin.demangle     # do not demangle symbols\n"
+		" RZ_BIN_MAXSTRBUF: e bin.maxstrbuf    # specify maximum buffer size\n"
+		" RZ_BIN_STRFILTER: e bin.str.filter   #  r2 -qc 'e bin.str.filter=?" "?' -\n"
+		" RZ_BIN_STRPURGE:  e bin.str.purge    # try to purge false positives\n"
+		" RZ_BIN_DEBASE64:  e bin.debase64     # try to debase64 all strings\n"
+		" RZ_BIN_DMNGLRCMD: e bin.demanglercmd # try to purge false positives\n"
+		" RZ_BIN_PDBSERVER: e pdb.server       # use alternative PDB server\n"
+		" RZ_BIN_SYMSTORE:  e pdb.symstore     # path to downstream symbol store\n"
+		" RZ_BIN_PREFIX:    e bin.prefix       # prefix symbols/sections/relocs with a specific string\n"
 		" R2_CONFIG:        # sdb config file\n");
 	}
 	return 1;
@@ -568,7 +568,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	rz_core_init (&core);
 	bin = core.bin;
 
-	if (!(tmp = rz_sys_getenv ("RABIN2_NOPLUGINS"))) {
+	if (!(tmp = rz_sys_getenv ("RZ_BIN_NOPLUGINS"))) {
 		char *homeplugindir = rz_str_home (R2_HOME_PLUGINS);
 		char *plugindir = rz_str_rz_prefix (R2_PLUGINS);
 		char *extrasdir = rz_str_rz_prefix (R2_EXTRAS);
@@ -607,35 +607,35 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		}
 		free (tmp);
 	}
-	if ((tmp = rz_sys_getenv ("RABIN2_DMNGLRCMD"))) {
+	if ((tmp = rz_sys_getenv ("RZ_BIN_DMNGLRCMD"))) {
 		rz_config_set (core.config, "cmd.demangle", tmp);
 		free (tmp);
 	}
-	if ((tmp = rz_sys_getenv ("RABIN2_LANG"))) {
+	if ((tmp = rz_sys_getenv ("RZ_BIN_LANG"))) {
 		rz_config_set (core.config, "bin.lang", tmp);
 		free (tmp);
 	}
-	if ((tmp = rz_sys_getenv ("RABIN2_DEMANGLE"))) {
+	if ((tmp = rz_sys_getenv ("RZ_BIN_DEMANGLE"))) {
 		rz_config_set (core.config, "bin.demangle", tmp);
 		free (tmp);
 	}
-	if ((tmp = rz_sys_getenv ("RABIN2_MAXSTRBUF"))) {
+	if ((tmp = rz_sys_getenv ("RZ_BIN_MAXSTRBUF"))) {
 		rz_config_set (core.config, "bin.maxstrbuf", tmp);
 		free (tmp);
 	}
-	if ((tmp = rz_sys_getenv ("RABIN2_STRFILTER"))) {
+	if ((tmp = rz_sys_getenv ("RZ_BIN_STRFILTER"))) {
 		rz_config_set (core.config, "bin.str.filter", tmp);
 		free (tmp);
 	}
-	if ((tmp = rz_sys_getenv ("RABIN2_STRPURGE"))) {
+	if ((tmp = rz_sys_getenv ("RZ_BIN_STRPURGE"))) {
 		rz_config_set (core.config, "bin.str.purge", tmp);
 		free (tmp);
 	}
-	if ((tmp = rz_sys_getenv ("RABIN2_DEBASE64"))) {
+	if ((tmp = rz_sys_getenv ("RZ_BIN_DEBASE64"))) {
 		rz_config_set (core.config, "bin.debase64", tmp);
 		free (tmp);
 	}
-	if ((tmp = rz_sys_getenv ("RABIN2_PDBSERVER"))) {
+	if ((tmp = rz_sys_getenv ("RZ_BIN_PDBSERVER"))) {
 		rz_config_set (core.config, "pdb.server", tmp);
 		free (tmp);
 	}
@@ -771,7 +771,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			op = opt.arg;
 			set_action (R_BIN_REQ_OPERATION);
 			if (*op == 'c') {
-				rz_sys_setenv ("RABIN2_CODESIGN_VERBOSE", "1");
+				rz_sys_setenv ("RZ_BIN_CODESIGN_VERBOSE", "1");
 			}
 			if (isBinopHelp (op)) {
 				printf ("Usage: iO [expression]:\n"
@@ -1128,7 +1128,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		pdbopts.symbol_server = (char*) rz_config_get (core.config, "pdb.server");
 		pdbopts.extract = rz_config_get_i (core.config, "pdb.extract");
 
-		if ((tmp = rz_sys_getenv ("RABIN2_SYMSTORE"))) {
+		if ((tmp = rz_sys_getenv ("RZ_BIN_SYMSTORE"))) {
 			rz_config_set (core.config, "pdb.symstore", tmp);
 			R_FREE (tmp);
 		}
@@ -1139,7 +1139,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		return r;
 	}
 
-	if ((tmp = rz_sys_getenv ("RABIN2_PREFIX"))) {
+	if ((tmp = rz_sys_getenv ("RZ_BIN_PREFIX"))) {
 		rz_config_set (core.config, "bin.prefix", tmp);
 		free (tmp);
 	}
