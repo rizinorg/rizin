@@ -1,7 +1,7 @@
 var fs = require ('fs');
 
-var nfd_in = +process.env.R2PIPE_IN;
-var nfd_out = +process.env.R2PIPE_OUT;
+var nfd_in = +process.env.RZ_PIPE_IN;
+var nfd_out = +process.env.RZ_PIPE_OUT;
 
 if (!nfd_in || !nfd_out) {
 	console.error ("Only from r2");

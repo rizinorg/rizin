@@ -44,7 +44,7 @@ function runWebServer(r) {
 	});
 }
 
-if (process.env.R2PIPE_IN) {
+if (process.env.RZ_PIPE_IN) {
 	var r = r2p.rlangpipe(runWebServer);
 } else {
 	var targetfile = "/bin/ls";

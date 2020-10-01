@@ -153,7 +153,7 @@ RZ_API int rzpipe_close(R2Pipe *rzpipe) {
 #if __WINDOWS__
 static int w32_createPipe(R2Pipe *rzpipe, const char *cmd) {
 	CHAR buf[1024];
-	rzpipe->pipe = CreateNamedPipe (TEXT ("\\\\.\\pipe\\R2PIPE_IN"),
+	rzpipe->pipe = CreateNamedPipe (TEXT ("\\\\.\\pipe\\RZ_PIPE_IN"),
 		PIPE_ACCESS_DUPLEX,PIPE_TYPE_MESSAGE | \
 		PIPE_READMODE_MESSAGE | \
 		PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
@@ -170,8 +170,8 @@ static int w32_createPipe(R2Pipe *rzpipe, const char *cmd) {
 static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
 	rz_return_val_if_fail (r2p, NULL);
 #if __UNIX__ || defined(__CYGWIN__)
-	char *out = rz_sys_getenv ("R2PIPE_IN");
-	char *in = rz_sys_getenv ("R2PIPE_OUT");
+	char *out = rz_sys_getenv ("RZ_PIPE_IN");
+	char *in = rz_sys_getenv ("RZ_PIPE_OUT");
 	int done = false;
 	if (in && out) {
 		int i_in = atoi (in);
@@ -183,7 +183,7 @@ static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
 		}
 	}
 	if (!done) {
-		eprintf ("Cannot find R2PIPE_IN or R2PIPE_OUT environment\n");
+		eprintf ("Cannot find RZ_PIPE_IN or RZ_PIPE_OUT environment\n");
 		R_FREE (r2p);
 	}
 	free (in);
@@ -267,8 +267,8 @@ RZ_API R2Pipe *rzpipe_open(const char *cmd) {
 		rzpipe_close (r2p);
 		return NULL;
 	}
-	env ("R2PIPE_IN", r2p->input[0]);
-	env ("R2PIPE_OUT", r2p->output[1]);
+	env ("RZ_PIPE_IN", r2p->input[0]);
+	env ("RZ_PIPE_OUT", r2p->output[1]);
 
 	if (r2p->child) {
 		char ch = -1;
