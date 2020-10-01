@@ -6,8 +6,8 @@ var isMain = process.argv[1] == __filename;
 var fs = require ("fs");
 
 function langPipe () {
-	var IN = +process.env.R2PIPE_IN;
-	var OUT = +process.env.R2PIPE_OUT;
+	var IN = +process.env.RZ_PIPE_IN;
+	var OUT = +process.env.RZ_PIPE_OUT;
 
 	var r2io = {
 		r: fs.createReadStream (null, {fd: IN}),

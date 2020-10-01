@@ -71,8 +71,8 @@ static void r2cmd(int in, int out, const char *cmd) {
 
 static int rz_main_rzpipe(int argc, const char **argv) {
         int i, rc = 0;
-        char *_in = rz_sys_getenv ("R2PIPE_IN");
-        char *_out = rz_sys_getenv ("R2PIPE_OUT");
+        char *_in = rz_sys_getenv ("RZ_PIPE_IN");
+        char *_out = rz_sys_getenv ("RZ_PIPE_OUT");
         if (_in && _out) {
 		int in = atoi (_in);
 		int out = atoi (_out);

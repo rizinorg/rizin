@@ -155,8 +155,8 @@ static int lang_pipe_run(RzLang *lang, const char *code, int len) {
 		return false;
 	}
 	
-	env ("R2PIPE_IN", input[0]);
-	env ("R2PIPE_OUT", output[1]);
+	env ("RZ_PIPE_IN", input[0]);
+	env ("RZ_PIPE_OUT", output[1]);
 
 	child = rz_sys_fork ();
 	if (child == -1) {
@@ -234,7 +234,7 @@ static int lang_pipe_run(RzLang *lang, const char *code, int len) {
 	return true;
 #else
 #if __WINDOWS__
-	char *rzpipe_var = rz_str_newf ("R2PIPE_IN%x", _getpid ());
+	char *rzpipe_var = rz_str_newf ("RZ_PIPE_IN%x", _getpid ());
 	char *rzpipe_paz = rz_str_newf ("\\\\.\\pipe\\%s", rzpipe_var);
 	LPTSTR rzpipe_paz_ = rz_sys_conv_utf8_to_win (rzpipe_paz);
 
