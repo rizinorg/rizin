@@ -6,10 +6,10 @@ BTOP=$(shell pwd)
 
 .PHONY: all clean install install-symlink deinstall uninstall mrproper preload
 
-BINS=rz_ax rz_asm rz_bin rz_hash rz_diff rizin rz_find rz_run rz_gg rz_agent rz_sign
+BINS=rz-ax rz-asm rz-bin rz-hash rz-diff rizin rz-find rz-run rz-gg rz-agent rz-sign
 
 ifeq ($(WANT_R2R),1)
-    BINS+=rz_test
+    BINS+=rz-test
 endif
 
 LIBR2=$(call libname-version,librz.$(EXT_SO),${LIBVERSION})
@@ -31,7 +31,7 @@ install:
 		rm -f "${DESTDIR}${BINDIR}/$$BINARY" ; \
 		${INSTALL_PROGRAM} "$$BINARY/$$BINARY" "${DESTDIR}${BINDIR}/$$BINARY" ; \
 	done
-	${INSTALL_SCRIPT} "$(BTOP)/rz_pm/rz-pm" "${DESTDIR}${BINDIR}/rz-pm"
+	${INSTALL_SCRIPT} "$(BTOP)/rz-pm/rz-pm" "${DESTDIR}${BINDIR}/rz-pm"
 	rm -rf "${DESTDIR}${DATADIR}/rizin/${VERSION}/rz-pm"
 	-cd "${DESTDIR}${BINDIR}" && rm -f r2 ; ln -fs rizin r2 ; ln -fs rizin r2p
 ifeq ($(WITHPIC),1)
@@ -50,7 +50,7 @@ symstall install-symlink:
 	cd .. && \
 	mkdir -p "${DESTDIR}${BINDIR}" && \
 	for BINARY in ${BINS} ; do ln -fs "${BTOP}/$$BINARY/$$BINARY" "${DESTDIR}${BINDIR}/$$BINARY" ; done
-	cd .. && ln -fs "${BTOP}/rz_pm/rz-pm" "${DESTDIR}${BINDIR}/rz-pm"
+	cd .. && ln -fs "${BTOP}/rz-pm/rz-pm" "${DESTDIR}${BINDIR}/rz-pm"
 	cd .. && rm -rf "${DESTDIR}${DATADIR}/rizin/${VERSION}/rz-pm"
 	cd .. && mkdir -p "${DESTDIR}${DATADIR}/rizin/${VERSION}/"
 	-cd .. && ln -fs "${DESTDIR}${BINDIR}/rizin" "${DESTDIR}${BINDIR}/r2"

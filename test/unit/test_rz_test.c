@@ -1,8 +1,8 @@
 
 #define main not_main
-#include "../../binrz/rz_test/rz_test.c"
-#include "../../binrz/rz_test/load.c"
-#include "../../binrz/rz_test/run.c"
+#include "../../binrz/rz-test/rz-test.c"
+#include "../../binrz/rz-test/load.c"
+#include "../../binrz/rz-test/run.c"
 #undef main
 
 #include "minunit.h"

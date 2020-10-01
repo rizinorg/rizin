@@ -1,11 +1,11 @@
 PREFIX?=/usr
 DESTDIR?=/
 
-BINS=rz_bin rz_run rz_asm rz_gg rz_hash rz_ax rz_find rz_diff
+BINS=rz-bin rz-run rz-asm rz-gg rz-hash rz-ax rz-find rz-diff
 BINS2=rizin ${BINS}
 
-SOURCES= main.c rz_bin.c rizin.c rz_diff.c rz_find.c
-SOURCES+=rz_hash.c rz_run.c rz_asm.c rz_ax.c rz_gg.c
+SOURCES= main.c rz-bin.c rizin.c rz-diff.c rz-find.c
+SOURCES+=rz-hash.c rz-run.c rz-asm.c rz-ax.c rz-gg.c
 
 include ../../config-user.mk
 
