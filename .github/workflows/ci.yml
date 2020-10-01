@@ -122,7 +122,7 @@ jobs:
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools
     - name: Install meson and ninja
       if: matrix.build_system == 'meson' && matrix.enabled
-      run: pip3 install --user meson==0.52.0 ninja==1.10.0
+      run: pip3 install --user meson ninja
     - name: Checkout rzpipe
       if: matrix.enabled
       uses: actions/checkout@v2
