@@ -1,10 +1,10 @@
 all: r2r-tests unit_tests
 
 bins:
-	git clone --depth 1 https://github.com/radareorg/radare2-testbins bins
+	git clone --depth 1 https://github.com/rizinorg/rizin-testbins bins
 
 fuzz/targets:
-	git clone --depth 1 https://github.com/radareorg/radare2-fuzztargets fuzz/targets
+	git clone --depth 1 https://github.com/rizinorg/rizin-fuzztargets fuzz/targets
 
 RUNTEST=r2r -L
 
