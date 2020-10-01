@@ -26,8 +26,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # name: [linux-acr-gcc-tests, linux-acr-clang-build, linux-acr-clang-tests, linux-meson-gcc-build, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-clang-tests, linux-gcc-tests-asan, capstone-v3, capstone-v5]
-        name: [linux-acr-gcc-tests, linux-meson-gcc-newshell-tests, macos-clang-tests]
+        # name: [linux-acr-gcc-tests, linux-acr-clang-build, linux-acr-clang-tests, linux-meson-gcc-build, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-meson-clang-tests, linux-gcc-tests-asan, capstone-v3, capstone-v5]
+        name: [linux-acr-gcc-tests, linux-meson-gcc-newshell-tests, macos-meson-clang-tests]
         # ignore_error: [false]
         include:
           - name: linux-acr-gcc-tests
@@ -74,9 +74,9 @@ jobs:
             coverage: true
             enabled: true
             timeout: 50
-          - name: macos-clang-tests
+          - name: macos-meson-clang-tests
             os: macos-latest
-            build_system: acr
+            build_system: meson
             compiler: clang
             run_tests: true
             enabled: true
@@ -122,7 +122,7 @@ jobs:
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools
     - name: Install meson and ninja
       if: matrix.build_system == 'meson' && matrix.enabled
-      run: pip3 install --user meson==0.52.0 ninja==1.10.0
+      run: pip3 install --user meson ninja
     - name: Checkout rzpipe
       if: matrix.enabled
       uses: actions/checkout@v2
@@ -159,7 +159,7 @@ jobs:
     - name: Build with Meson
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
-        export PATH=${HOME}/.local/bin:${PATH}
+        export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/.local/bin:${PATH}
         if [ "$ASAN" == "true" ]; then
           export CFLAGS="-DASAN=1 ${CFLAGS}"
         fi
@@ -180,7 +180,7 @@ jobs:
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
         # Install the rizin
-        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+        export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/.local/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         ninja -C build install
