@@ -8,6 +8,7 @@ on:
 
 jobs:
   CodeQL-Build:
+    if: false # TODO: re-enable when public
 
     runs-on: ubuntu-latest
 
