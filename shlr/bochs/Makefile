@@ -1,4 +1,4 @@
-include ../../libr/config.mk
+include ../../librz/config.mk
 include ../../mk/platform.mk
 EDITOR?=vim
 CC?=gcc
@@ -12,11 +12,11 @@ MAJOR=0
 MINOR=1
 LD=$(CC)
 ifeq ($(LD),cccl)
-LDFLAGS+=-L${LIBR}/socket -llibr_socket
-LDFLAGS+=-L${LIBR}/util -llibr_util
+LDFLAGS+=-L${LIBR}/socket -llibrz_socket
+LDFLAGS+=-L${LIBR}/util -llibrz_util
 else
-LDFLAGS+=-L${LIBR}/socket -lr_socket
-LDFLAGS+=-L${LIBR}/util -lr_util
+LDFLAGS+=-L${LIBR}/socket -lrz_socket
+LDFLAGS+=-L${LIBR}/util -lrz_util
 endif
 ifeq ($(OSTYPE),darwin)
 LDFLAGS_SHARED=-dynamiclib
@@ -24,7 +24,7 @@ else
 LDFLAGS_SHARED=-shared
 endif
 #OSTYPE=windows
-include ../../libr/socket/deps.mk
+include ../../librz/socket/deps.mk
 include ../../shlr/zip/deps.mk
 include ../../shlr/sdb.mk
 

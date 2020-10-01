@@ -24,7 +24,7 @@
 #include <grub/disk.h>
 #include <grub/types.h>
 #include <grub/fshelp.h>
-#include <r_types.h>
+#include <rz_types.h>
 
 #define	XFS_INODE_EXTENTS	9
 

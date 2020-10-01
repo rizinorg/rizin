@@ -28,30 +28,30 @@ Build() {
 }
 
 RebuildIOSDebug() {
-	Rebuild libr/debug
-	# Rebuild libr/util
-	# Rebuild libr/core
-	Rebuild binr/radare2
-	$MAKE -C binr/radare2 ios-sign
+	Rebuild librz/debug
+	# Rebuild librz/util
+	# Rebuild librz/core
+	Rebuild binrz/rizin
+	$MAKE -C binrz/rizin ios-sign
 	if [ -n "${IOSIP}" ]; then
-		scp binr/radare2/radare2 root@"${IOSIP}:."
+		scp binrz/rizin/rizin root@"${IOSIP}:."
 	else
-		echo "Set IOSIP environment variable to scp the radare2 program"
+		echo "Set IOSIP environment variable to scp the rizin program"
 	fi
 }
 
 RebuildSpp() {
 	Rebuild shlr/spp
-	Rebuild libr/util
-	Rebuild libr/lang
+	Rebuild librz/util
+	Rebuild librz/lang
 }
 
 RebuildJava() {
 	Rebuild shlr/java
-	Rebuild libr/asm
-	Rebuild libr/anal
-	Rebuild libr/bin
-	Rebuild libr/core
+	Rebuild librz/asm
+	Rebuild librz/anal
+	Rebuild librz/bin
+	Rebuild librz/core
 }
 
 RebuildCapstone() {
@@ -59,45 +59,45 @@ RebuildCapstone() {
 		make -C shlr capstone
 	fi
 	Rebuild shlr/capstone
-	Rebuild libr/asm
-	Rebuild libr/anal
+	Rebuild librz/asm
+	Rebuild librz/anal
 }
 
 RebuildSdb() {
 	Rebuild shlr/sdb
-	Rebuild libr/util
+	Rebuild librz/util
 }
 
 RebuildFs() {
 	Rebuild shlr/grub
-	Rebuild libr/fs
+	Rebuild librz/fs
 }
 
 RebuildBin() {
-	Rebuild libr/bin
-	Rebuild libr/core
+	Rebuild librz/bin
+	Rebuild librz/core
 }
 
 RebuildGdb() {
 	Rebuild shlr/gdb
-	Rebuild libr/io
-	Rebuild libr/debug
+	Rebuild librz/io
+	Rebuild librz/debug
 }
 
 RebuildWinkd() {
 	Rebuild shlr/winkd
-	Rebuild libr/io
-	Rebuild libr/debug
+	Rebuild librz/io
+	Rebuild librz/debug
 }
 
 RebuildZip() {
 	Rebuild shlr/zip
-	Rebuild libr/io
+	Rebuild librz/io
 }
 
 RebuildTcc() {
 	Rebuild shlr/tcc
-	Rebuild libr/parse
+	Rebuild librz/parse
 }
 
 case "$1" in

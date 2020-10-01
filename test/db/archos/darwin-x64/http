@@ -27,7 +27,7 @@ EXPECT=<<EOF
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=false" />
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<meta name="language" content="en" />
-	<title>radare2 webui</title>
+	<title>rizin webui</title>
 	<script type="text/javascript" src="m/vendors/jquery.min.js"></script>
 	<script type="text/javascript" src="m/r2.js"></script>
 EOF
@@ -39,7 +39,7 @@ RUN
 NAME=r2 remote webserver two
 FILE=--
 CMDS=<<EOF
-& !rarun2 timeout=3 daemon=1 system="r2 -e http.root=/404 -e http.port=9292 -c=h -qcq -"
+& !rz_run timeout=3 daemon=1 system="r2 -e http.root=/404 -e http.port=9292 -c=h -qcq -"
 sleep 1
 =+ http://127.0.0.1:9292/cmd/
 =

@@ -1,0 +1,42 @@
+; Seatbelt script to sandbox rizin in OSX
+; =========================================
+; --pancake <nopcode.org>
+;
+
+(version 1)
+(debug all)
+
+; (allow default)
+
+(deny network*)
+(deny system*)
+(deny sysctl*)
+(deny file-write*)
+(deny file-ioctl)
+(deny mach*)
+
+
+; disables debugger and ! shell escape
+(allow process*)
+(deny process-fork)
+
+; record trace log
+; (trace "r2.log")
+
+; (deny file-read* (subpath "."))
+; (allow file-read*)
+; (deny file-read*)
+
+(allow file-read*
+    (regex
+        #"^/Users/[^.]+/.config/rizin/$"
+	#"^/Users/[^.]+/*/rizin/"
+        #"^/usr/share/rizin/*"
+        #"^/usr/lib/system/*"
+        #"^/usr/bin/rizin"
+        #"^/usr/lib/librz*"
+        #"^/usr/bin/r2"
+        #"^/bin/ls"
+    )   
+)
+(deny default)

@@ -27,15 +27,15 @@ Documentation:
 There is no need for a huge documentation!!! But code with fundamental
 importance often needs a few lines on what it should do, its concept and
 sometimes a few lines of the code itself need some kind of 'justification' or
-explanation. libr/io/vio.c is a hardcore example for this RIO-code has
+explanation. librz/io/vio.c is a hardcore example for this RIO-code has
 fundamental importance, because everything will fail if io does not work
 correctly.  This is needed to make bug-fixing easier, faster and better.
 
 Need review:
 ------------
 
-	libr/io/io.c
-	libr/core/file.c
+	librz/io/io.c
+	librz/core/file.c
 
 Tasks:
 ------

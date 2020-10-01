@@ -9,24 +9,24 @@ environment:
     CXX: clang++
     CC: clang
 sources:
-    - https://github.com/radareorg/radare2
-    - https://github.com/radareorg/radare2-testbins
+    - https://github.com/rizinorg/rizin
+    - https://github.com/rizinorg/rizin-testbins
 tasks:
-    - r2pipe: |
+    - rzpipe: |
         /usr/local/bin/python3 -m ensurepip --user
-        /usr/local/bin/python3 -m pip install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
+        /usr/local/bin/python3 -m pip install --user 'git+https://github.com/rizinorg/rizin-rzpipe#egg=rzpipe&subdirectory=python'
     - build: |
-        cd radare2
+        cd rizin
         ./configure --prefix=${HOME}
         gmake
     - install: |
-        cd radare2
+        cd rizin
         export PATH=${HOME}/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${PKG_CONFIG_PATH}
         gmake install
     - test: |
-        cd radare2
+        cd rizin
         export PATH=${HOME}/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${PKG_CONFIG_PATH}
@@ -35,7 +35,7 @@ tasks:
         ln -s /usr/local/bin/python3 ${HOME}/bin/python3
         # Workaround until the feature request is solved
         # https://todo.sr.ht/~sircmpwn/builds.sr.ht/274
-        ln -s ${HOME}/radare2-testbins test/bins
+        ln -s ${HOME}/rizin-testbins test/bins
         # Running the test suite
         cd test && gmake -k all
 

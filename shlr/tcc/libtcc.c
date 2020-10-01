@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#include <r_util.h>
+#include <rz_util.h>
 #include "tcc.h"
 
 /********************************************************/
@@ -805,13 +805,13 @@ PUB_FUNC void tcc_appendf(const char *fmt, ...) {
 
 PUB_FUNC void tcc_typedef_appendf(const char *fmt, ...) {
 	if (!tcc_typedefs) {
-		tcc_typedefs = r_pvector_new ((RPVectorFree) free);
+		tcc_typedefs = rz_pvector_new ((RPVectorFree) free);
 	}
 	char typedefs_tail[1024];
 	va_list ap;
 	va_start (ap, fmt);
 	if (vsnprintf (typedefs_tail, sizeof (typedefs_tail), fmt, ap) > 0) {
-		r_pvector_push (tcc_typedefs, strdup (typedefs_tail));
+		rz_pvector_push (tcc_typedefs, strdup (typedefs_tail));
 	} // XXX else? how this should behave if sizeof (typedefs_tail) is not enough?
 	va_end (ap);
 }
@@ -819,10 +819,10 @@ PUB_FUNC void tcc_typedef_appendf(const char *fmt, ...) {
 PUB_FUNC void tcc_typedef_alias_fields(const char *alias) {
 	if (tcc_typedefs) {
 		void **it;
-		r_pvector_foreach (tcc_typedefs, it) {
+		rz_pvector_foreach (tcc_typedefs, it) {
 			tcc_appendf (*it, alias);
 		}
-		r_pvector_free (tcc_typedefs);
+		rz_pvector_free (tcc_typedefs);
 		tcc_typedefs = NULL;
 	}
 }

@@ -1,3 +1,3 @@
-LINK+=$(STOP)/winkd/libr_winkd.${EXT_AR}
-LDFLAGS+=-lr_crypto -lr_hash
+LINK+=$(STOP)/winkd/librz_winkd.${EXT_AR}
+LDFLAGS+=-lrz_crypto -lrz_hash
 include $(LIBR)/socket/deps.mk

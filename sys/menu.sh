@@ -23,7 +23,7 @@ Todo() {
 MainMenu() {
 	while : ; do
 		#dialog --checklist foo 30 30 20 foo foo1 foo2 bar bar1 bar2
-		dialog --menu "radare2 build" 0 0 0 \
+		dialog --menu "rizin build" 0 0 0 \
 			"Load plugins profile" . \
 			"Select plugins" . \
 			"Build & Install" . \
@@ -91,7 +91,7 @@ SelectPluginStatic() {
 
 Packages() {
 	while : ; do
-		dialog --menu "radare2 packages" 0 0 0 \
+		dialog --menu "rizin packages" 0 0 0 \
 			"Install packages" . \
 			"Uninstall packages" . \
 			"Update all packages" . \
@@ -108,14 +108,14 @@ Packages() {
 			;;
 		"Update all packages")
 			# TODO: add a flag for this
-			for a in `r2pm -l` ; do r2pm -i $a ; done
+			for a in `rz_pm -l` ; do rz_pm -i $a ; done
 			;;
 		esac
 	done
 }
 
 PackagesInstall() {
-	PLUGINS="`r2pm -lu`"
+	PLUGINS="`rz_pm -lu`"
 	ARGS=""
 	for a in ${PLUGINS} ; do
 		ARGS="${ARGS} $a . off"
@@ -125,14 +125,14 @@ PackagesInstall() {
 	echo
 	if [ -n "${OPT}" ]; then
 		for a in ${OPT} ; do
-			r2pm -i "$a"
+			rz_pm -i "$a"
 			sleep 1
 		done
 	fi
 }
 
 PackagesUninstall() {
-	PLUGINS="`r2pm -l`"
+	PLUGINS="`rz_pm -l`"
 	ARGS=""
 	for a in ${PLUGINS} ; do
 		ARGS="${ARGS} $a . off"
@@ -141,7 +141,7 @@ PackagesUninstall() {
 	OPT=$(<.nconfig.tmp)
 	if [ -n "${OPT}" ]; then
 		for a in ${OPT} ; do
-			r2pm -u "$a"
+			rz_pm -u "$a"
 			sleep 1
 		done
 	fi
@@ -149,7 +149,7 @@ PackagesUninstall() {
 
 Cleanup() {
 	while : ; do
-		dialog --menu "radare2 build" 0 0 0 \
+		dialog --menu "rizin build" 0 0 0 \
 			"Uninstall" . \
 			"Purge previous installations" . \
 			"make clean" . \
@@ -182,7 +182,7 @@ Cleanup() {
 BuildAndInstall() {
 	while : ; do
 		#dialog --checklist foo 30 30 20 foo foo1 foo2 bar bar1 bar2
-		dialog --menu "radare2 build" 0 0 0 \
+		dialog --menu "rizin build" 0 0 0 \
 			"System build" . \
 			"Home build" . \
 			"iOS" . \
@@ -229,7 +229,7 @@ BuildAndInstall() {
 ConfigurePlugins() {
 	#dialog --checklist foo 30 30 20 foo foo1 foo2 bar bar1 bar2
 	ARGS=""
-	dialog --menu "radare2 build" 0 0 0 ${ARGS}
+	dialog --menu "rizin build" 0 0 0 ${ARGS}
 }
 
 SelectConfig() {

@@ -25,7 +25,7 @@
 #include <grub/types.h>
 #include <grub/fshelp.h>
 #include <grub/charset.h>
-#include <r_types.h>
+#include <rz_types.h>
 
 #define GRUB_UDF_MAX_PDS		2
 #define GRUB_UDF_MAX_PMS		6

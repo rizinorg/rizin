@@ -57,7 +57,7 @@ Compilation
 
 Usage
 -----
-	export R2DIR=/private/var/radare2
+	export R2DIR=/private/var/rizin
 	export PATH=${R2DIR}/bin:$PATH
 	export DYLD_LIBRARY_PATH=${R2DIR}/lib
 	r2 ...
@@ -102,7 +102,7 @@ Make a fake install in a temporary directory:
 Clone the cydia repo from radare's github
 
 	git clone https://github.com/radare/cydia
-	cd cydia/radare2*
+	cd cydia/rizin*
 	mkdir root
 	tar xzvf r2.tgz -C root
 	vim CONFIG # bump version
@@ -110,8 +110,8 @@ Clone the cydia repo from radare's github
 
 Signing
 -------
-In order to enable debugger capabilities to the radare2
+In order to enable debugger capabilities to the rizin
 executable you will need to sign it using the following command:
 
-	cd binr/radare2
+	cd binrz/rizin
 	make sign

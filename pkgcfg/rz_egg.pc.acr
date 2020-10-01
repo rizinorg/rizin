@@ -1,0 +1,11 @@
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=@LIBDIR@
+includedir=${prefix}/include
+
+Name: rz_egg
+Description: radare foundation libraries
+Version: @VERSION@
+Requires: rz_asm rz_syscall rz_util rz_parse rz_reg rz_flag rz_cons
+Libs: -L${libdir} -lrz_egg  
+Cflags: -I${includedir}/librz 

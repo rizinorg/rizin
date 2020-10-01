@@ -1,5 +1,5 @@
-include ../../libr/config.mk
-CFLAGS+=-I../../libr/include
+include ../../librz/config.mk
+CFLAGS+=-I../../librz/include
 # ################################################################
 # LZ4 library - Makefile
 # Copyright (C) Yann Collet 2011-2016

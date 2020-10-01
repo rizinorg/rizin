@@ -54,7 +54,7 @@ EOF
 RUN
 
 NAME=ELF: R_X86_64_PLT32 patch reloc
-FILE=bins/elf/radare2.c.obj
+FILE=bins/elf/rizin.c.obj
 ARGS=-e io.cache=true
 CMDS=<<EOF
 e asm.comments=false

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <r_util.h>
-#include <r_types.h>
+#include <rz_util.h>
+#include <rz_types.h>
 #include "x86/x86im/x86im.h"
 
 static int anal_op (char *buf, int bits) {
@@ -9,7 +9,7 @@ static int anal_op (char *buf, int bits) {
 	ut8 data[1024];
 	int ret;
 	
-	r_hex_str2bin (buf, data);
+	rz_hex_str2bin (buf, data);
 
 	if ((ret = x86im_dec (&io, bits == 32 ? X86IM_IO_MODE_32BIT : X86IM_IO_MODE_64BIT,
 			(unsigned char*)data)) == X86IM_STATUS_SUCCESS) {

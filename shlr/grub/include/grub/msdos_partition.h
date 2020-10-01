@@ -22,7 +22,7 @@
 #include <grub/symbol.h>
 #include <grub/types.h>
 #include <grub/err.h>
-#include "r_types.h"
+#include "rz_types.h"
 /* The signature.  */
 #define GRUB_PC_PARTITION_SIGNATURE		0xaa55
 

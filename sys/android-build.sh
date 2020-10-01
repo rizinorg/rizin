@@ -2,7 +2,7 @@
 
 BUILD=1
 FLAGS=""
-PREFIX="/data/data/org.radare.radare2installer/radare2"
+PREFIX="/data/data/org.radare.rizininstaller/rizin"
 MAKE=make
 gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
@@ -121,7 +121,7 @@ if [ "${BUILD}" = 1 ]; then
 	if [ 1 = 1 ]; then
 		${MAKE} mrproper
 		if [ $STATIC_BUILD = 1 ]; then
-			CFGFLAGS="--with-libr"
+			CFGFLAGS="--with-librz"
 		fi
 		# dup
 		echo ./configure --with-compiler=android \
@@ -151,8 +151,8 @@ rm -rf ${PWD}/${D}/lib/pkgconfig
 rm -rf ${PWD}/${D}/lib/libsdb.a
 #rm -rf "${HERE}/${D}/${PREFIX}/lib"
 
-rm -rf "${HERE}/${D}/${PREFIX}/radare2" # r2pm
-rm -rf "${HERE}/${D}/${PREFIX}/bin/r2pm"
+rm -rf "${HERE}/${D}/${PREFIX}/rizin" # rz_pm
+rm -rf "${HERE}/${D}/${PREFIX}/bin/rz_pm"
 #echo rm -rf ${PWD}/${D}/${BINDIR}/*
 
 #find $HERE/$D | grep www
@@ -160,7 +160,7 @@ rm -rf "${HERE}/${D}/${PREFIX}/bin/r2pm"
 #end build
 
 # use busybox style symlinkz
-cd binr/blob
+cd binrz/blob
 #${MAKE} || exit 1
 #CFLAGS=-static LDFLAGS=-static ${MAKE} -j4 || exit 1
 ${MAKE} -j4 || exit 1
@@ -172,16 +172,16 @@ mkdir -p ${HERE}/${D}/${PREFIX}/tmp
 cd ../..
 
 chmod +x "${HERE}/${D}/${BINDIR}/"*
-find ${D}/${DATADIR}/radare2/*/www
+find ${D}/${DATADIR}/rizin/*/www
 # Remove development files
-rm -f ${HERE}/${D}/${LIBDIR}/radare2/*/*.so
+rm -f ${HERE}/${D}/${LIBDIR}/rizin/*/*.so
 rm -f ${HERE}/${D}/${LIBDIR}/*.a
-rm -rf ${HERE}/${D}/${DATADIR}/radare2/*/www/*/node_modules
+rm -rf ${HERE}/${D}/${DATADIR}/rizin/*/www/*/node_modules
 rm -rf ${HERE}/${D}/${PREFIX}/include
 eval `grep ^VERSION= ${HERE}/config-user.mk`
-WWWROOT="/data/data/org.radare.radare2installer/radare2/share/radare2/${VERSION}/www"
-WWWWOOT="${HERE}/${D}/data/data/org.radare.radare2installer/www"
-WWWSOOT="${HERE}/${D}/data/data/org.radare.radare2installer/radare2/share/radare2/${VERSION}/www"
+WWWROOT="/data/data/org.radare.rizininstaller/rizin/share/rizin/${VERSION}/www"
+WWWWOOT="${HERE}/${D}/data/data/org.radare.rizininstaller/www"
+WWWSOOT="${HERE}/${D}/data/data/org.radare.rizininstaller/rizin/share/rizin/${VERSION}/www"
 echo WWWROOT="${WWWROOT}"
 echo WWWROOT="${WWWWOOT}"
 echo WWWROOT="${WWWSOOT}"
@@ -191,7 +191,7 @@ echo WWWROOT="${WWWSOOT}"
 	mv "${WWWSOOT}"/* "${WWWWOOT}"
 	# pax doesnt like symlinks when making it compatible with the java tar
 	#cd "${WWWWOOT}/.."
-	#ln -fs "../radare2/share/radare2/${VERSION}/www" www
+	#ln -fs "../rizin/share/rizin/${VERSION}/www" www
 	#ln -fs "${WWWROOT}" "${WWWWOOT}"
 )
 chmod -R o+rx "${WWWWOOT}"
@@ -218,5 +218,5 @@ fi
 echo `pwd`"/${D}.tar.gz"
 echo `pwd`"/${D}-${D2}.tar.gz"
 
-adb push `pwd`"/${D}-${D2}.tar.gz" /sdcard/radare2-android.tar.gz || true
+adb push `pwd`"/${D}-${D2}.tar.gz" /sdcard/rizin-android.tar.gz || true
 exit 0

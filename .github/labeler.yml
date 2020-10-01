@@ -1,127 +1,127 @@
-radare2:
-  - binr/radare2/*
-  - libr/main/radare2.c
+rizin:
+  - binrz/rizin/*
+  - librz/main/rizin.c
 
-rabin2:
-  - binr/rabin2/*
-  - libr/main/rabin2.c
+rz_bin:
+  - binrz/rz_bin/*
+  - librz/main/rz_bin.c
 
-radiff2:
-  - binr/radiff2/*
-  - libr/main/radiff2.c
+rz_diff:
+  - binrz/rz_diff/*
+  - librz/main/rz_diff.c
 
-rafind2:
-  - binr/rafind2/*
-  - libr/main/rafind2.c
+rz_find:
+  - binrz/rz_find/*
+  - librz/main/rz_find.c
 
-ragg2:
-  - binr/ragg2/*
-  - libr/main/ragg2.c
+rz_gg:
+  - binrz/rz_gg/*
+  - librz/main/rz_gg.c
 
-rahash2:
-  - binr/rahash2/*
-  - libr/main/rahash2.c
+rz_hash:
+  - binrz/rz_hash/*
+  - librz/main/rz_hash.c
 
-rarun2:
-  - binr/rarun2/*
-  - libr/main/rarun2.c
+rz_run:
+  - binrz/rz_run/*
+  - librz/main/rz_run.c
 
-rasm2:
-  - binr/rasm2/*
-  - libr/main/rasm2.c
+rz_asm:
+  - binrz/rz_asm/*
+  - librz/main/rz_asm.c
 
-rax2:
-  - binr/rax2/*
-  - libr/main/rax2.c
+rz_ax:
+  - binrz/rz_ax/*
+  - librz/main/rz_ax.c
 
 RAnal:
-  - libr/anal/**/*
+  - librz/anal/**/*
 
 RAsm-Assembler:
-  - libr/asm/**/*ass*
-  - libr/asm/asm_x86_nz.c
+  - librz/asm/**/*ass*
+  - librz/asm/asm_x86_nz.c
 
 RAsm-Disassembler:
-  - libr/asm/**/*dis*
+  - librz/asm/**/*dis*
 
 RBin:
-  - libr/bin/**/*
+  - librz/bin/**/*
 
 RBreakpoint:
-  - libr/bp/**/*
+  - librz/bp/**/*
 
 RConfig:
-  - libr/config/**/*
+  - librz/config/**/*
 
 RCons:
-  - libr/cons/**/*
+  - librz/cons/**/*
 
 RCore:
-  - libr/core/**/*
+  - librz/core/**/*
 
 RCrypto:
-  - libr/crypto/**/*
+  - librz/crypto/**/*
 
 RDebug:
-  - libr/debug/**/*
+  - librz/debug/**/*
 
 REgg:
-  - libr/egg/**/*
+  - librz/egg/**/*
 
 RFlag:
-  - libr/flag/**/*
+  - librz/flag/**/*
 
 RFS:
-  - libr/fs/**/*
+  - librz/fs/**/*
 
 RHash:
-  - libr/hash/**/*
+  - librz/hash/**/*
 
 RIO:
-  - libr/io/**/*
+  - librz/io/**/*
 
 RLang:
-  - libr/lang/**/*
+  - librz/lang/**/*
 
 RMagic:
-  - libr/magic/**/*
+  - librz/magic/**/*
 
 RParse:
-  - libr/parse/**/*
+  - librz/parse/**/*
 
 RReg:
-  - libr/reg/**/*
+  - librz/reg/**/*
 
 RSearch:
-  - libr/search/**/*
+  - librz/search/**/*
 
 RSocket:
-  - libr/socket/**/*
+  - librz/socket/**/*
 
 RSyscall:
-  - libr/syscall/**/*
+  - librz/syscall/**/*
 
 RUtil:
-  - libr/util/**/*
+  - librz/util/**/*
 
 API:
-  - libr/include/**/*
+  - librz/include/**/*
 
 buildsystem:
   - sys/**/*
 
 command:
-  - libr/core/cmd*
+  - librz/core/cmd*
 
 documentation:
   - doc/**/*
 
 ESIL:
-  - libr/anal/esil*
+  - librz/anal/esil*
 
 gdb:
   - shlr/gdb/**/*
-  - libr/io/p/io_gdb.c
+  - librz/io/p/io_gdb.c
 
 infrastructure:
   - .appveyor.yml
@@ -130,8 +130,8 @@ infrastructure:
   - .builds/**/*
   - .github/workflows/*
 
-r2r:
-  - binr/r2r/*
+rz_test:
+  - binrz/rz_test/*
   - test/**/*
 
 java:
@@ -139,13 +139,13 @@ java:
 
 WinDbg:
   - shlr/winkd/**/*
-  - libr/io/p/io_winkd.c
+  - librz/io/p/io_winkd.c
 
 webui:
   - shlr/www/**/*
 
 visual:
-  - libr/core/visual.c
+  - librz/core/visual.c
 
 panel:
-  - libr/core/panels.c
+  - librz/core/panels.c

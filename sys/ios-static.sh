@@ -17,7 +17,7 @@ fi
 STATIC_BINS=1
 CLEAN_BUILD=1
 
-R2BINS="radare2 rabin2 rasm2 r2pm r2agent radiff2 rafind2 ragg2 rahash2 rarun2 rasm2 rax2"
+R2BINS="rizin rz_bin rz_asm rz_pm rz_agent rz_diff rz_find rz_gg rz_hash rz_run rz_asm rz_ax"
 CAPSTONE_ARCHS="arm aarch64"
 #export CAPSTONE_MAKEFLAGS="CAPSTONE_ARCHS=\"arm aarch64\""
 # Build all archs for capstone, not just ARM/ARM64
@@ -68,7 +68,7 @@ cp -f plugins.ios.cfg plugins.cfg
 
 ./configure --prefix="${PREFIX}" \
 	${CFGFLAGS} \
-	--with-ostype=darwin --with-libr \
+	--with-ostype=darwin --with-librz \
 	--without-gpl --without-fork --without-libuv \
 	--with-compiler=ios-sdk --with-capstone5 \
 	--target=arm-unknown-darwin
@@ -80,32 +80,32 @@ if [ $? = 0 ]; then
 		if [ "${STATIC_BINS}" = 1 ]; then
 		(
 			find . -iname '*.dylib' |xargs rm -f
-			cd binr ; make clean
+			cd binrz ; make clean
 			make
 		)
 		fi
-		( cd binr/radare2 ; ${MAKE} ios_sdk_sign )
+		( cd binrz/rizin ; ${MAKE} ios_sdk_sign )
 		rm -rf /tmp/r2ios
 		${MAKE} install DESTDIR=/tmp/r2ios
-		rm -rf /tmp/r2ios/usr/share/radare2/*/www/enyo/node_modules
+		rm -rf /tmp/r2ios/usr/share/rizin/*/www/enyo/node_modules
 		( cd /tmp/r2ios && tar czvf ../r2ios-static-${CPU}.tar.gz ./* )
-		rm -rf sys/cydia/radare2/root
-		mkdir -p sys/cydia/radare2/root
-		sudo tar xpzvf /tmp/r2ios-static-${CPU}.tar.gz -C sys/cydia/radare2/root
-#		( cd sys/cydia/radare2 ; sudo ${MAKE} clean ; sudo ${MAKE} )
+		rm -rf sys/cydia/rizin/root
+		mkdir -p sys/cydia/rizin/root
+		sudo tar xpzvf /tmp/r2ios-static-${CPU}.tar.gz -C sys/cydia/rizin/root
+#		( cd sys/cydia/rizin ; sudo ${MAKE} clean ; sudo ${MAKE} )
 
 		# Creating tarball
-		export D=radare2-ios-${CPU}
+		export D=rizin-ios-${CPU}
 		rm -rf $D
 		mkdir -p $D/bin
 		for a in ${R2BINS} ; do
-			cp -f binr/$a/$a "$D/bin"
+			cp -f binrz/$a/$a "$D/bin"
 		done
 		mkdir -p "$D/include"
-		cp -rf sys/cydia/radare2/root/usr/include/* $D/include
+		cp -rf sys/cydia/rizin/root/usr/include/* $D/include
 		mkdir -p $D/lib
-		cp -f libr/libr.a $D/lib
-		cp -f binr/preload/libr2.dylib $D/lib
+		cp -f librz/librz.a $D/lib
+		cp -f binrz/preload/librz.dylib $D/lib
 		for a in $D/bin/* ; do
 			strip $a
 		done

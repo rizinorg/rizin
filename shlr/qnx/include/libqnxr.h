@@ -11,8 +11,8 @@ typedef int pid_t;
 #endif
 
 #include "arch.h"
-#include "r_types_base.h"
-#include "r_socket.h"
+#include "rz_types_base.h"
+#include "rz_socket.h"
 #include "dsmsgs.h"
 
 #define MSG_OK 0
@@ -40,7 +40,7 @@ typedef struct libqnxr_t {
 	ssize_t send_len;
 	ssize_t read_len;
 	ssize_t read_ptr;
-	RSocket *sock;
+	RzSocket *sock;
 	char host[256];
 	int port;
 	int connected;

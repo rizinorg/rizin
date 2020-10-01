@@ -13,8 +13,8 @@ bin.rawstr   =  [false] - load strings from unknown rbin
 Program args
 ------------
 ```
-rabin2 -z   # list strings
-rabin2 -zz  # list strings from raw binary (unknown rbin type)
+rz_bin -z   # list strings
+rz_bin -zz  # list strings from raw binary (unknown rbin type)
 ```
 
 Examples

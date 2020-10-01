@@ -9,7 +9,7 @@
 #include "libgdbr.h"
 #include "packet.h"
 #include "utils.h"
-#include "r_util/r_str.h"
+#include "rz_util/rz_str.h"
 
 static int _server_handle_qSupported(libgdbr_t *g) {
 	int ret;
@@ -503,91 +503,91 @@ int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 		if (g->data_len == 0) {
 			continue;
 		}
-		if (r_str_startswith (g->data, "k")) {
+		if (rz_str_startswith (g->data, "k")) {
 			return _server_handle_k (g, cmd_cb, core_ptr);
 		}
-		if (r_str_startswith (g->data, "vKill")) {
+		if (rz_str_startswith (g->data, "vKill")) {
 			return _server_handle_vKill (g, cmd_cb, core_ptr);
 		}
-		if (r_str_startswith (g->data, "qSupported")) {
+		if (rz_str_startswith (g->data, "qSupported")) {
 			if ((ret = _server_handle_qSupported (g)) < 0) {
 				return ret;
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "qTStatus")) {
+		if (rz_str_startswith (g->data, "qTStatus")) {
 			if ((ret = _server_handle_qTStatus (g)) < 0) {
 				return ret;
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "qC") && g->data_len == 2) {
+		if (rz_str_startswith (g->data, "qC") && g->data_len == 2) {
 			if ((ret = _server_handle_qC (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "qAttached")) {
+		if (rz_str_startswith (g->data, "qAttached")) {
 			if ((ret = _server_handle_qAttached (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "vMustReplyEmpty")) {
+		if (rz_str_startswith (g->data, "vMustReplyEmpty")) {
 			if ((ret = _server_handle_vMustReplyEmpty (g)) < 0) {
 				return ret;
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "qTfV")) {
+		if (rz_str_startswith (g->data, "qTfV")) {
 			if ((ret = _server_handle_qTfV (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "qfThreadInfo")) {
+		if (rz_str_startswith (g->data, "qfThreadInfo")) {
 			if ((ret = _server_handle_qfThreadInfo (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "qsThreadInfo")) {
+		if (rz_str_startswith (g->data, "qsThreadInfo")) {
 			if ((ret = _server_handle_qsThreadInfo (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "Hg")) {
+		if (rz_str_startswith (g->data, "Hg")) {
 			if ((ret = _server_handle_Hg (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "Hc")) {
+		if (rz_str_startswith (g->data, "Hc")) {
 			if ((ret = _server_handle_Hc (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "?")) {
+		if (rz_str_startswith (g->data, "?")) {
 			if ((ret = _server_handle_ques (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "g") && g->data_len == 1) {
+		if (rz_str_startswith (g->data, "g") && g->data_len == 1) {
 			if ((ret = _server_handle_g (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "vCont")) {
+		if (rz_str_startswith (g->data, "vCont")) {
 			if ((ret = _server_handle_vCont (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "qOffsets")) {
+		if (rz_str_startswith (g->data, "qOffsets")) {
 			if ((ret = _server_handle_qOffsets (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
@@ -611,37 +611,37 @@ int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "m")) {
+		if (rz_str_startswith (g->data, "m")) {
 			if ((ret = _server_handle_m (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "M")) {
+		if (rz_str_startswith (g->data, "M")) {
 			if ((ret = _server_handle_M (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "P")) {
+		if (rz_str_startswith (g->data, "P")) {
 			if ((ret = _server_handle_P (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "p")) {
+		if (rz_str_startswith (g->data, "p")) {
 			if ((ret = _server_handle_p (g, cmd_cb, core_ptr)) < 0) {
 				return ret;
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "qXfer:exec-file:read:")) {
+		if (rz_str_startswith (g->data, "qXfer:exec-file:read:")) {
 			if ((ret = _server_handle_exec_file_read (g, cmd_cb, core_ptr)) < 0 ) {
 				return ret;
 			}
 			continue;
 		}
-		if (r_str_startswith (g->data, "QStartNoAckMode")) {
+		if (rz_str_startswith (g->data, "QStartNoAckMode")) {
 			if (send_ack (g) < 0) {
 				return -1;
 			}

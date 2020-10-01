@@ -13,7 +13,7 @@ const GUID = 'guid';
 const DBG_FNAME = 'dbg_file';
 const CURL = 'curl';
 const CABEXTRACTOR = (os.platform() != 'win32') ? 'cabextract' : 'expand';
-const RABIN = 'rabin2'
+const RABIN = 'rz_bin'
 var IN_FOLDER = '';
 var OUT_FOLDER = '';
 const EOL = os.EOL;
@@ -119,19 +119,19 @@ var downloader = function (currentValue, index, array) {
   var saved_guid_and_dbg_fname = [];
   var spawn = require('child_process').spawn;
 
-  rabin2_cmd = spawn(RABIN, ['-I', currentValue]);
+  rz_bin_cmd = spawn(RABIN, ['-I', currentValue]);
 
   // skip pdb files
   if (currentValue.indexOf('pdb') != -1) {
     return;
   }
   
-  rabin2_cmd.stdout.on('error', function (err) {
+  rz_bin_cmd.stdout.on('error', function (err) {
     console.log('check if rabin is installed');
     process.exit(1);
   });
   
-  rabin2_cmd.stdout.on('data', function (data) {     
+  rz_bin_cmd.stdout.on('data', function (data) {     
     data.toString().split(EOL).map(function (str) {
       var parts = str.split(' ');
 
@@ -143,7 +143,7 @@ var downloader = function (currentValue, index, array) {
 	  curl_start(curr_guid, curr_dbg_fname);
 	} else {
 	  console.log('there is no guid and debug file information in binary');
-	  console.log('check version of rabin2 or maybe this is not PE binary');
+	  console.log('check version of rz_bin or maybe this is not PE binary');
 	  process.exit(1);
 	}
       }

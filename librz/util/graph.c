@@ -1,0 +1,321 @@
+/* radare - LGPL - Copyright 2007-2020 - pancake, ret2libc */
+
+#include <rz_util.h>
+
+enum {
+	WHITE_COLOR = 0,
+	GRAY_COLOR,
+	BLACK_COLOR
+};
+
+static RGraphNode *rz_graph_node_new (void *data) {
+	RGraphNode *p = R_NEW0 (RGraphNode);
+	if (p) {
+		p->data = data;
+		p->free = NULL;
+		p->out_nodes = rz_list_new ();
+		p->in_nodes = rz_list_new ();
+		p->all_neighbours = rz_list_new ();
+	}
+	return p;
+}
+
+static void rz_graph_node_free (RGraphNode *n) {
+	if (!n) {
+		return;
+	}
+	if (n->free) {
+		n->free (n->data);
+	}
+	rz_list_free (n->out_nodes);
+	rz_list_free (n->in_nodes);
+	rz_list_free (n->all_neighbours);
+	free (n);
+}
+
+static int node_cmp (unsigned int idx, RGraphNode *b) {
+	return idx == b->idx ? 0 : -1;
+}
+
+// direction == true => forwards
+static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[], const bool direction) {
+	if (!n) {
+		return;
+	}
+	RStack *s = rz_stack_new (2 * g->n_edges + 1);
+	if (!s) {
+		return;
+	}
+	RGraphEdge *edg = R_NEW0 (RGraphEdge);
+	if (!edg) {
+		rz_stack_free (s);
+		return;
+	}
+	edg->from = NULL;
+	edg->to = n;
+	rz_stack_push (s, edg);
+	while (!rz_stack_is_empty (s)) {
+		RGraphEdge *cur_edge = (RGraphEdge *)rz_stack_pop (s);
+		RGraphNode *v, *cur = cur_edge->to, *from = cur_edge->from;
+		RzListIter *it;
+		int i;
+
+		if (from && cur) {
+			if (color[cur->idx] == WHITE_COLOR && vis->tree_edge) {
+				vis->tree_edge (cur_edge, vis);
+			} else if (color[cur->idx] == GRAY_COLOR && vis->back_edge) {
+				vis->back_edge (cur_edge, vis);
+			} else if (color[cur->idx] == BLACK_COLOR && vis->fcross_edge) {
+				vis->fcross_edge (cur_edge, vis);
+			}
+		} else if (!cur && from) {
+			if (color[from->idx] != BLACK_COLOR && vis->finish_node) {
+				vis->finish_node (from, vis);
+			}
+			color[from->idx] = BLACK_COLOR;
+		}
+		free (cur_edge);
+		if (!cur || color[cur->idx] != WHITE_COLOR) {
+			continue;
+		}
+		if (color[cur->idx] == WHITE_COLOR && vis->discover_node) {
+			vis->discover_node (cur, vis);
+		}
+		color[cur->idx] = GRAY_COLOR;
+
+		edg = R_NEW0 (RGraphEdge);
+		if (!edg) {
+			break;
+		}
+		edg->from = cur;
+		rz_stack_push (s, edg);
+
+		i = 0;
+		const RzList *neighbours = direction ? cur->out_nodes : cur->in_nodes;
+		rz_list_foreach (neighbours, it, v) {
+			edg = R_NEW (RGraphEdge);
+			edg->from = cur;
+			edg->to = v;
+			edg->nth = i++;
+			rz_stack_push (s, edg);
+		}
+	}
+	rz_stack_free (s);
+}
+
+RZ_API RGraph *rz_graph_new(void) {
+	RGraph *t = R_NEW0 (RGraph);
+	if (!t) {
+		return NULL;
+	}
+	t->nodes = rz_list_new ();
+	if (!t->nodes) {
+		rz_graph_free(t);
+		return NULL;
+	}
+	t->nodes->free = (RzListFree)rz_graph_node_free;
+	t->n_nodes = 0;
+	t->last_index = 0;
+	return t;
+}
+
+RZ_API void rz_graph_free(RGraph* t) {
+	rz_list_free (t->nodes);
+	free (t);
+}
+
+RZ_API RGraphNode *rz_graph_get_node(const RGraph *t, unsigned int idx) {
+	RzListIter *it = rz_list_find (t->nodes, (void *)(size_t)idx, (RzListComparator)node_cmp);
+	if (!it) {
+		return NULL;
+	}
+	return (RGraphNode *)it->data;
+}
+
+RZ_API RzListIter *rz_graph_node_iter(const RGraph *t, unsigned int idx) {
+	return rz_list_find (t->nodes, (void *)(size_t)idx, (RzListComparator)node_cmp);
+}
+
+RZ_API void rz_graph_reset (RGraph *t) {
+	rz_list_free (t->nodes);
+	t->nodes = rz_list_new ();
+	if (!t->nodes) {
+		return;
+	}
+	t->nodes->free = (RzListFree)rz_graph_node_free;
+	t->n_nodes = 0;
+	t->n_edges = 0;
+	t->last_index = 0;
+}
+
+RZ_API RGraphNode *rz_graph_add_node(RGraph *t, void *data) {
+	if (!t) {
+		return NULL;
+	}
+	RGraphNode *n = rz_graph_node_new (data);
+	if (!n) {
+		return NULL;
+	}
+	n->idx = t->last_index++;
+	rz_list_append (t->nodes, n);
+	t->n_nodes++;
+	return n;
+}
+
+/* remove the node from the graph and free the node */
+/* users of this function should be aware they can't access n anymore */
+RZ_API void rz_graph_del_node(RGraph *t, RGraphNode *n) {
+	RGraphNode *gn;
+	RzListIter *it;
+	if (!n) {
+		return;
+	}
+	rz_list_foreach (n->in_nodes, it, gn) {
+		rz_list_delete_data (gn->out_nodes, n);
+		rz_list_delete_data (gn->all_neighbours, n);
+		t->n_edges--;
+	}
+
+	rz_list_foreach (n->out_nodes, it, gn) {
+		rz_list_delete_data (gn->in_nodes, n);
+		rz_list_delete_data (gn->all_neighbours, n);
+		t->n_edges--;
+	}
+
+	rz_list_delete_data (t->nodes, n);
+	t->n_nodes--;
+}
+
+RZ_API void rz_graph_add_edge(RGraph *t, RGraphNode *from, RGraphNode *to) {
+	rz_graph_add_edge_at (t, from, to, -1);
+}
+
+RZ_API void rz_graph_add_edge_at (RGraph *t, RGraphNode *from, RGraphNode *to, int nth) {
+	if (from && to) {
+		rz_list_insert (from->out_nodes, nth, to);
+		rz_list_append (from->all_neighbours, to);
+		rz_list_append (to->in_nodes, from);
+		rz_list_append (to->all_neighbours, from);
+		t->n_edges++;
+	}
+}
+
+// splits the "split_me", so that new node has it's outnodes
+RZ_API RGraphNode *rz_graph_node_split_forward(RGraph *g, RGraphNode *split_me, void *data) {
+	RGraphNode *front = rz_graph_add_node(g, data);
+	RzList *tmp = front->out_nodes;
+	front->out_nodes = split_me->out_nodes;
+	split_me->out_nodes = tmp;
+	RzListIter *iter;
+	RGraphNode *n;
+	rz_list_foreach (front->out_nodes, iter, n) {
+		rz_list_delete_data (n->in_nodes, split_me);		// optimize me
+		rz_list_delete_data (n->all_neighbours, split_me);	// boy this all_neighbours is so retarding perf here
+		rz_list_delete_data (split_me->all_neighbours, n);
+		rz_list_append (n->all_neighbours, front);
+		rz_list_append (n->in_nodes, front);
+		rz_list_append (front->all_neighbours, n);
+	}
+	return front;
+}
+
+
+RZ_API void rz_graph_del_edge(RGraph *t, RGraphNode *from, RGraphNode *to) {
+	if (!from || !to || !rz_graph_adjacent (t, from, to)) {
+		return;
+	}
+	rz_list_delete_data (from->out_nodes, to);
+	rz_list_delete_data (from->all_neighbours, to);
+	rz_list_delete_data (to->in_nodes, from);
+	rz_list_delete_data (to->all_neighbours, from);
+	t->n_edges--;
+}
+
+// XXX remove comments and static inline all this crap
+/* returns the list of nodes reachable from `n` */
+RZ_API const RzList *rz_graph_get_neighbours(const RGraph *g, const RGraphNode *n) {
+	return n? n->out_nodes: NULL;
+}
+
+/* returns the n-th nodes reachable from the give node `n`.
+ * This, of course, depends on the order of the nodes. */
+RZ_API RGraphNode *rz_graph_nth_neighbour(const RGraph *g, const RGraphNode *n, int nth) {
+	return n? (RGraphNode *)rz_list_get_n (n->out_nodes, nth): NULL;
+}
+
+/* returns the list of nodes that can reach `n` */
+RZ_API const RzList *rz_graph_innodes(const RGraph *g, const RGraphNode *n) {
+	return n? n->in_nodes: NULL;
+}
+
+/* returns the list of nodes reachable from `n` and that can reach `n`. */
+RZ_API const RzList *rz_graph_all_neighbours(const RGraph *g, const RGraphNode *n) {
+	return n? n->all_neighbours: NULL;
+}
+
+RZ_API const RzList *rz_graph_get_nodes(const RGraph *g) {
+	return g? g->nodes: NULL;
+}
+
+/* true if there is an edge from the node `from` to the node `to` */
+RZ_API bool rz_graph_adjacent(const RGraph *g, const RGraphNode *from, const RGraphNode *to) {
+	if (!g || !from) {
+		return false;
+	}
+	return rz_list_contains (from->out_nodes, to);
+}
+
+RZ_API void rz_graph_dfs_node(RGraph *g, RGraphNode *n, RGraphVisitor *vis) {
+	if (!g || !n || !vis) {
+		return;
+	}
+	int *color = R_NEWS0 (int, g->last_index);
+	if (color) {
+		dfs_node (g, n, vis, color, true);
+		free (color);
+	}
+}
+
+RZ_API void rz_graph_dfs_node_reverse(RGraph *g, RGraphNode *n, RGraphVisitor *vis) {
+	if (!g || !n || !vis) {
+		return;
+	}
+	int *color = R_NEWS0 (int, g->last_index);
+	if (color) {
+		dfs_node (g, n, vis, color, false);
+		free (color);
+	}
+}
+
+RZ_API void rz_graph_dfs(RGraph *g, RGraphVisitor *vis) {
+	rz_return_if_fail (g && vis);
+	RGraphNode *n;
+	RzListIter *it;
+
+	int *color = R_NEWS0 (int, g->last_index);
+	if (color) {
+		rz_list_foreach (g->nodes, it, n) {
+			if (color[n->idx] == WHITE_COLOR) {
+				dfs_node (g, n, vis, color, true);
+			}
+		}
+		free (color);
+	}
+}
+
+RZ_API void rz_graph_free_node_info(void *ptr) {
+	RGraphNodeInfo *info = ptr;
+	free (info->body);
+	free (info->title);
+	free (info);
+}
+
+RZ_API RGraphNodeInfo *rz_graph_create_node_info(char *title, char *body, ut64 offset) {
+	RGraphNodeInfo *data = R_NEW0 (RGraphNodeInfo);
+	if (data) {
+		data->title = title;
+		data->body = body;
+		data->offset = offset;
+	}
+	return data;
+}

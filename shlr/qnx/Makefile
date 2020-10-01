@@ -1,4 +1,4 @@
-include ../../libr/config.mk
+include ../../librz/config.mk
 include ../../mk/platform.mk
 include ../../shlr/zip/deps.mk
 EDITOR?=vim
@@ -13,11 +13,11 @@ MAJOR=0
 MINOR=1
 LD=$(CC)
 ifeq ($(LD),cccl)
-LDFLAGS+=-L${LIBR}/socket -llibr_socket
-LDFLAGS+=-L${LIBR}/util -llibr_util
+LDFLAGS+=-L${LIBR}/socket -llibrz_socket
+LDFLAGS+=-L${LIBR}/util -llibrz_util
 else
-LDFLAGS+=-L${LIBR}/socket -lr_socket
-LDFLAGS+=-L${LIBR}/util -lr_util
+LDFLAGS+=-L${LIBR}/socket -lrz_socket
+LDFLAGS+=-L${LIBR}/util -lrz_util
 endif
 ifeq ($(OSTYPE),darwin)
 LDFLAGS_SHARED=-dynamiclib
@@ -25,7 +25,7 @@ else
 LDFLAGS_SHARED=-shared
 endif
 #OSTYPE=windows
-include ../../libr/socket/deps.mk
+include ../../librz/socket/deps.mk
 include ../../shlr/sdb.mk
 
 # Test variables
@@ -83,13 +83,13 @@ client: lib
 	$(LD) $(TEST_D)/client.o -o $(TEST_D)/client -L$(LIB) -lqnxr
 
 run_test: client
-	rarun2 libpath=./lib program=./test/client
+	rz_run libpath=./lib program=./test/client
 
 gdb_test: client
-	rarun2 libpath=./lib system="gdb ./test/client"
+	rz_run libpath=./lib system="gdb ./test/client"
 
 valgrind_test: client
-	rarun2 libpath=./lib system="valgrind --track-origins=yes -v --leak-check=full ./test/client"
+	rz_run libpath=./lib system="valgrind --track-origins=yes -v --leak-check=full ./test/client"
 
 edit:
 	$(EDITOR) -c "args **/*.h **/*.c"

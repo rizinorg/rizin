@@ -5,7 +5,7 @@ if [ -z "$1" ]; then
 fi
 
 MOD=$1
-cat libr/include/${MOD}.h | \
+cat librz/include/${MOD}.h | \
   grep ^R_API | \
   sed -e 's,const ,,g' | \
   sed -e 's,struct ,,g' | \

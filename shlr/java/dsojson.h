@@ -3,8 +3,8 @@
 #ifndef _INCLUDE_DOSJSON_H_
 #define _INCLUDE_DOSJSON_H_
 
-#include <r_types.h>
-#include <r_util.h>
+#include <rz_types.h>
+#include <rz_util.h>
 
 struct  basic_json_t;
 typedef struct dso_json_info_t {
@@ -37,12 +37,12 @@ typedef struct  basic_json_dict_entry_t {
 
 typedef struct  basic_json_dict_t {
 	// TODO finish this
-	RList /*DsoJsonDictEntry*/ *json_dict;
+	RzList /*DsoJsonDictEntry*/ *json_dict;
 } DsoJsonDict;
 
 typedef struct  basic_json_list_t {
 	// TODO finish this
-	RList *json_list;
+	RzList *json_list;
 } DsoJsonList;
 
 

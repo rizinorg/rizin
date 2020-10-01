@@ -46,12 +46,12 @@ RUN echo -e "Building versions:\n\
   R2_VERSION=$R2_VERSION\n\
   R2_PIPE_PY_VERSION=${R2_PIPE_PY_VERSION}"
 
-# Build radare2 in a volume to minimize space used by build
+# Build rizin in a volume to minimize space used by build
 VOLUME ["/mnt"]
 
 # Install all build dependencies
 # Install bindings
-# Build and install radare2 on master branch
+# Build and install rizin on master branch
 # Remove all build dependencies
 # Cleanup
 RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
@@ -70,10 +70,10 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   libstdc++6:i386 \
   gnupg2 \
   python-pip && \
-  pip install r2pipe=="$R2_PIPE_PY_VERSION" && \
+  pip install rzpipe=="$R2_PIPE_PY_VERSION" && \
   cd /mnt && \
-  git clone -b "$R2_VERSION" -q --depth 1 https://github.com/radareorg/radare2.git && \
-  cd radare2 && \
+  git clone -b "$R2_VERSION" -q --depth 1 https://github.com/rizinorg/rizin.git && \
+  cd rizin && \
   ./configure && \
   make && \
   make install && \
@@ -95,9 +95,9 @@ USER r2
 WORKDIR /home/r2
 ENV HOME /home/r2
 
-# Setup r2pm
-RUN r2pm init && \
-  r2pm update && \
+# Setup rz_pm
+RUN rz_pm init && \
+  rz_pm update && \
   chown -R r2:r2 /home/r2/.config
 
 # Base command for container

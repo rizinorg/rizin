@@ -1,7 +1,7 @@
 #ifndef GDB_SERVER_CORE_H
 #define GDB_SERVER_CORE_H
 
-#include <r_socket.h>
+#include <rz_socket.h>
 #include "../libgdbr.h"
 
 typedef int (*gdbr_server_cmd_cb) (libgdbr_t*, void*, const char*, char*, size_t);

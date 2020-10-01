@@ -14,41 +14,41 @@ jobs:
       - uses: actions/checkout@v2
       - name: Download Coverity Build Tool
         run: |
-          wget -q https://scan.coverity.com/download/cxx/linux64 --post-data "token=$TOKEN&project=radare2" -O cov-analysis-linux64.tar.gz
+          wget -q https://scan.coverity.com/download/cxx/linux64 --post-data "token=$TOKEN&project=rizin" -O cov-analysis-linux64.tar.gz
           mkdir cov-analysis-linux64
           tar xzf cov-analysis-linux64.tar.gz --strip 1 -C cov-analysis-linux64
         env:
           TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
-        if: steps.determine-repo.outputs.repo == 'radareorg/radare2'
+        if: steps.determine-repo.outputs.repo == 'rizinorg/rizin'
 
       - name: Fixed world writable dirs
         run: |
           chmod go-w $HOME
           sudo chmod -R go-w /usr/share
-        if: steps.determine-repo.outputs.repo == 'radareorg/radare2'
+        if: steps.determine-repo.outputs.repo == 'rizinorg/rizin'
 
       - name: Configure
         run: ./configure
-        if: steps.determine-repo.outputs.repo == 'radareorg/radare2'
+        if: steps.determine-repo.outputs.repo == 'rizinorg/rizin'
 
       - name: Build with cov-build
         run: |
           export PATH=`pwd`/cov-analysis-linux64/bin:$PATH
           cov-build --dir cov-int make
-        if: steps.determine-repo.outputs.repo == 'radareorg/radare2'
+        if: steps.determine-repo.outputs.repo == 'rizinorg/rizin'
 
       # TODO: Make it GitHub Action instead
       - name: Submit the result to Coverity Scan
         run: |
-          tar czvf radare2.tgz cov-int
+          tar czvf rizin.tgz cov-int
           curl \
-            --form project=radare2 \
+            --form project=rizin \
             --form token=$TOKEN \
             --form email=noreply@radare.org \
-            --form file=@radare2.tgz \
+            --form file=@rizin.tgz \
             --form version=trunk \
-            --form description="radare2" \
-            https://scan.coverity.com/builds?project=radare2
+            --form description="rizin" \
+            https://scan.coverity.com/builds?project=rizin
         env:
           TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
-        if: steps.determine-repo.outputs.repo == 'radareorg/radare2'
+        if: steps.determine-repo.outputs.repo == 'rizinorg/rizin'

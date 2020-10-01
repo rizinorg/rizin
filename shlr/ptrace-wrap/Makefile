@@ -1,4 +1,4 @@
-include ../../libr/config.mk
+include ../../librz/config.mk
 include ../../mk/platform.mk
 
 CC ?= gcc

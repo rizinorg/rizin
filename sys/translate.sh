@@ -4,7 +4,7 @@ if [ -z "$1" ]; then
 	echo " sys/translate.sh [--options] [lang|path]"
 	echo "Options:"
 	echo " --list       list all supported languages"
-	echo " --update     update from radare2-translations git"
+	echo " --update     update from rizin-translations git"
 	echo " --reset      restore default strings"
 	echo "Languages:"
 	echo " - english"
@@ -20,7 +20,7 @@ if [ "$1" = "--update" ]; then
 	if [ -d "sys/lang" ]; then
 		( cd sys/lang && git pull )
 	else
-		git clone --depth 1 https://github.com/radare/radare2-translations sys/lang || exit 1
+		git clone --depth 1 https://github.com/radare/rizin-translations sys/lang || exit 1
 	fi
 	exit 0
 fi

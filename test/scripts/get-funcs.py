@@ -1,5 +1,5 @@
-import r2pipe
-r2 = r2pipe.open()
+import rzpipe
+r2 = rzpipe.open()
 r2.cmd('aa')
 print('\nFunction names:')
 for func in r2.cmdj('aflj'):

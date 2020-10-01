@@ -2,8 +2,8 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
-#include <r_types.h>
-#include <r_util.h>
+#include <rz_types.h>
+#include <rz_util.h>
 #include "transport.h"
 
 #if __WINDOWS__
@@ -11,7 +11,7 @@
 
 static void *iob_pipe_open(const char *path) {
 	HANDLE hPipe;
-	LPTSTR path_ = r_sys_conv_utf8_to_win (path);
+	LPTSTR path_ = rz_sys_conv_utf8_to_win (path);
 
 	hPipe = CreateFile (path_, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
 	free (path_);
@@ -31,7 +31,7 @@ static int iob_pipe_read(void *p, uint8_t *buf, const uint64_t count, const int 
 	}
 	if (!ReadFile (p, buf, count, NULL, &ov) &&
 		GetLastError () != ERROR_IO_PENDING) {
-		r_sys_perror ("ReadFile");
+		rz_sys_perror ("ReadFile");
 		return -1;
 	}
 	if (WaitForSingleObject (ov.hEvent, timeout) == WAIT_TIMEOUT) {
@@ -47,7 +47,7 @@ static int iob_pipe_write(void *p, const uint8_t *buf, const uint64_t count, con
 	OVERLAPPED ov = {0};
 	if (!WriteFile (p, buf, count, NULL, &ov) &&
 		GetLastError () != ERROR_IO_PENDING) {
-		r_sys_perror ("WriteFile");
+		rz_sys_perror ("WriteFile");
 		return -1;
 	}
 	GetOverlappedResult (p, &ov, &cbWrited, TRUE);
@@ -117,7 +117,7 @@ static int iob_pipe_read(void *p, uint8_t *buf, const uint64_t count, const int 
 static int iob_pipe_write(void *p, const uint8_t *buf, const uint64_t count, const int timeout) {
 	int ret = send ((int) (size_t) p, buf, count, 0);
 	if (ret < 1) {
-		r_sys_perror ("iob_pipe_write, send");
+		rz_sys_perror ("iob_pipe_write, send");
 		if (errno == EPIPE) {
 			exit (1);
 		}

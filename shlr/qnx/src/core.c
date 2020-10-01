@@ -1,7 +1,7 @@
 /* libqnxr - GPL - Copyright 2016 - defragger, madprogrammer, FSF Inc */
 
 #include <errno.h>
-#include <r_debug.h>
+#include <rz_debug.h>
 #include "libqnxr.h"
 #include "core.h"
 #include "signal.h"
@@ -144,7 +144,7 @@ int qnxr_connect (libqnxr_t *g, const char *host, int port) {
 	g->data_len = 0;
 	g->read_len = 0;
 	g->read_ptr = 0;
-	g->sock = r_socket_new (0);
+	g->sock = rz_socket_new (0);
 	g->connected = 0;
 	g->mid = 0;
 
@@ -154,7 +154,7 @@ int qnxr_connect (libqnxr_t *g, const char *host, int port) {
 
 	ret = snprintf (tmp, sizeof (tmp) - 1, "%d", port);
 	if (!ret) return -1;
-	ret = r_socket_connect_tcp (g->sock, host, tmp, 200);
+	ret = rz_socket_connect_tcp (g->sock, host, tmp, 200);
 	if (!ret) return -1;
 	g->connected = 1;
 
@@ -202,7 +202,7 @@ int qnxr_disconnect (libqnxr_t *g) {
 		g->connected = 0;
 		g->inferior_ptid = null_ptid;
 
-		if (!r_socket_close (g->sock))
+		if (!rz_socket_close (g->sock))
 			return -1;
 	}
 
@@ -213,7 +213,7 @@ ptid_t qnxr_attach (libqnxr_t *g, pid_t pid) {
 
 	if (g->inferior_ptid.pid != pid) {
 		qnxr_disconnect (g);
-		r_sys_sleep (1);
+		rz_sys_sleep (1);
 		qnxr_connect (g, g->host, g->port);
 	}
 

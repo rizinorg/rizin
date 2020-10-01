@@ -1,7 +1,7 @@
 # DEVELOPERS
 
 This file aims to describe an introduction for developers to work
-on the code base of radare2 project.
+on the code base of rizin project.
 
 ## Documentation
 There is support for Doxygen document generation in this repo.
@@ -238,7 +238,7 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
 
 * Do not use bashisms `[[`, `$'...'` etc.
 
-* Use our [shellcheck.sh](https://github.com/radareorg/radare2/blob/master/sys/shellcheck.sh) script to check for problems and for bashisms
+* Use our [shellcheck.sh](https://github.com/rizinorg/rizin/blob/master/sys/shellcheck.sh) script to check for problems and for bashisms
 
 # Manage Endianness
 
@@ -310,7 +310,7 @@ setl cino=:0,+0,(2,J0,{1,}0,>4,)1,m2
 Emacs:
 
 ```elisp
-(c-add-style "radare2"
+(c-add-style "rizin"
              '((c-basic-offset . 4)
                (tab-width . 4)
                (indent-tabs-mode . t)
@@ -326,14 +326,14 @@ Emacs:
 
 You may use directory-local variables by putting
 ```elisp
-((c-mode .  ((c-file-style . "radare2"))))
+((c-mode .  ((c-file-style . "rizin"))))
 ```
 
 into `.dir-locals.el`.
 
 ## Packed structures
 
-Due to the various differences between platforms and compilers radare2
+Due to the various differences between platforms and compilers rizin
 has a special helper macro - `R_PACKED()`. Instead of non-portable
 `#pragma pack` or `__attribute__((packed))` it is advised to use this macro
 instead. To wrap the code inside of it you just need to write:
@@ -353,8 +353,8 @@ R_PACKED (typedef structmystruct {
 
 ## Modules
 
-The radare2 code base is modularized into different libraries that are
-found in libr/ directory. The binr/ directory contains the programs
+The rizin code base is modularized into different libraries that are
+found in librz/ directory. The binrz/ directory contains the programs
 which use the libraries.
 
 It is possible to generate PIC/nonPIC builds of the libraries and also
@@ -370,9 +370,9 @@ The following presentation gives a good overview of the libraries:
 
 As mentioned in README.md, the API itself is maintained in a different
 repository. The API function definitions in C header files are derived
-from and documented in the radare2-bindings repository, found at:
+from and documented in the rizin-bindings repository, found at:
 ```sh
-   git clone git://github.com/radareorg/radare2-bindings
+   git clone git://github.com/rizinorg/rizin-bindings
 ```
 
 Currently the process of updating the header files from changed API
@@ -386,7 +386,7 @@ very welcome.
 
 ## Dependencies
 
-radare2 can be built without any special dependency. It just requires
+rizin can be built without any special dependency. It just requires
 a C compiler, a GNU make and a unix-like system.
 
 ## Cross compilation
@@ -404,11 +404,11 @@ linux-arm and others, but the procedure is like this:
 
 ## Source repository
 
-The source of radare2 can be found in the following GitHub repository.
+The source of rizin can be found in the following GitHub repository.
 ```sh
-   git clone git://github.com/radareorg/radare2
+   git clone git://github.com/rizinorg/rizin
 ```
-Other packages radare2 depends on, such as Capstone, are pulled from
+Other packages rizin depends on, such as Capstone, are pulled from
 their git repository as required.
 
 To get an up-to-date copy of the repository, you should perform the
@@ -446,7 +446,7 @@ you should use ccache in this way:
 
 Developers use to modify the code, type make and then try.
 
-radare2 has a specific makefile target that allows you to install
+rizin has a specific makefile target that allows you to install
 system wide but using symlinks instead of hard copies.
 ```sh
 sudo make symstall
@@ -459,11 +459,11 @@ in the code for various reasons.
 
 ## Regression testing
 
-The source of the radare2 regression test suite can be found in the
+The source of the rizin regression test suite can be found in the
  `test/` directory, while binaries for this test are located in the
  following GitHub repository.
 ```sh
-   git clone git://github.com/radareorg/radare2-testbins
+   git clone git://github.com/rizinorg/rizin-testbins
 ```
 
 See the `README.md` file in that repository for further information.
@@ -478,7 +478,7 @@ don't know how to do something which is supposed to be covered
 by this framework.
 
 You should report it into the GitHub issues page.
-   https://github.com/radareorg/radare2/issues
+   https://github.com/rizinorg/rizin/issues
 
 Otherwise, if you are looking for some more feedback, I will
 encourage you to send an email to any of the emails enumerated
@@ -509,6 +509,6 @@ to contribute.
    - `make`
    - `make dist`
 
-  - Update the [paths on the website](https://github.com/radareorg/radareorg/blob/master/source/download_paths.rst)
+  - Update the [paths on the website](https://github.com/rizinorg/rizinorg/blob/master/source/download_paths.rst)
 
 --pancake

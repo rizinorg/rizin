@@ -423,8 +423,8 @@ Class #1            -
 EOF
 RUN
 
-NAME=DEX radare2installer.dex classes (is getProper)
-FILE=bins/dex/org.radare.radare2installer.dex
+NAME=DEX rizininstaller.dex classes (is getProper)
+FILE=bins/dex/org.radare.rizininstaller.dex
 CMDS=is~getProper
 EXPECT=<<EOF
 1649  0x00006a20 0x00006a20 NONE   FUNC   0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;)Ljava/lang/String;
@@ -432,8 +432,8 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=DEX radare2installer.dex classes (ic command)
-FILE=bins/dex/org.radare.radare2installer.dex
+NAME=DEX rizininstaller.dex classes (ic command)
+FILE=bins/dex/org.radare.rizininstaller.dex
 CMDS=ic
 EXPECT=<<EOF
 0x00007890 [0x0000c6c0 - 0x0000cd2e]   1646 class 0 Lcom/ice/tar/FastTarStream :: Ljava/lang/Object;
@@ -1014,191 +1014,191 @@ EXPECT=<<EOF
 0x00007f90 [0x00019568 - 0x00019588]     32 class 56 Ljavax/activation/UnsupportedDataTypeException :: Ljava/io/IOException;
 0x00019568 method 0 pC   Ljavax/activation/UnsupportedDataTypeException.method.<init>()V
 0x00019580 method 1 pC   Ljavax/activation/UnsupportedDataTypeException.method.<init>(Ljava/lang/String;)V
-0x00007fb0 [0x00019598 - 0x0001987c]    740 class 57 Lorg/radare/r2pipe/R2Pipe :: Ljava/lang/Object;
-0x00019598 method 0 pC   Lorg/radare/r2pipe/R2Pipe.method.<init>(Ljava/lang/String;)V
-0x000195c0 method 1 pC   Lorg/radare/r2pipe/R2Pipe.method.<init>(Ljava/lang/String;Ljava/lang/String;Z)V
-0x000195f4 method 2 pC   Lorg/radare/r2pipe/R2Pipe.method.<init>(Ljava/lang/String;Z)V
-0x00019628 method 3 p    Lorg/radare/r2pipe/R2Pipe.method.cmd(Ljava/lang/String;)Ljava/lang/String;
-0x000196d0 method 4 r    Lorg/radare/r2pipe/R2Pipe.method.finalize()V
-0x000196e8 method 5 p    Lorg/radare/r2pipe/R2Pipe.method.httpCmd(Ljava/lang/String;)Ljava/lang/String;
-0x000197d0 method 6 p    Lorg/radare/r2pipe/R2Pipe.method.quit()V
-0x000197f4 method 7 p    Lorg/radare/r2pipe/R2Pipe.method.spawnProcess(Ljava/lang/String;)V
-0x00007fd0 [0x0001988c - 0x00019934]    168 class 58 Lorg/radare/radare2installer/BootReceiver :: Landroid/content/BroadcastReceiver;
-0x0001988c method 0 pC   Lorg/radare/radare2installer/BootReceiver.method.<init>()V
-0x000198a4 method 1 p    Lorg/radare/radare2installer/BootReceiver.method.onReceive(Landroid/content/Context;Landroid/content/Intent;)V
-0x00007ff0 [0x00019944 - 0x0001994c]      8 class 59 Lorg/radare/radare2installer/BuildConfig :: Ljava/lang/Object;
-0x00019944 method 0 pC   Lorg/radare/radare2installer/BuildConfig.method.<init>()V
-0x00008010 [0x0001995c - 0x00019a56]    250 class 60 Lorg/radare/radare2installer/ConsoleActivity$1 :: Ljava/lang/Object;
-0x0001995c method 0 C    Lorg/radare/radare2installer/ConsoleActivity$1.method.<init>(Lorg/radare/radare2installer/ConsoleActivity;)V
-0x00019978 method 1 p    Lorg/radare/radare2installer/ConsoleActivity$1.method.onClick(Landroid/view/View;)V
-0x00008030 [0x00019a78 - 0x00019b10]    152 class 61 Lorg/radare/radare2installer/ConsoleActivity$2 :: Ljava/lang/Object;
-0x00019a78 method 0 C    Lorg/radare/radare2installer/ConsoleActivity$2.method.<init>(Lorg/radare/radare2installer/ConsoleActivity;Ljava/lang/String;)V
-0x00019a98 method 1 p    Lorg/radare/radare2installer/ConsoleActivity$2.method.run()V
-0x00008050 [0x00019b20 - 0x00019b48]     40 class 62 Lorg/radare/radare2installer/ConsoleActivity$3 :: Ljava/lang/Object;
-0x00019b20 method 0 C    Lorg/radare/radare2installer/ConsoleActivity$3.method.<init>(Lorg/radare/radare2installer/ConsoleActivity;)V
-0x00019b3c method 1 p    Lorg/radare/radare2installer/ConsoleActivity$3.method.onClick(Landroid/view/View;)V
-0x00008070 [0x00019b58 - 0x00019e9e]    838 class 63 Lorg/radare/radare2installer/ConsoleActivity :: Landroid/app/Activity;
-0x00019b58 method 0 pC   Lorg/radare/radare2installer/ConsoleActivity.method.<init>()V
-0x00019b9c method 1 sh   Lorg/radare/radare2installer/ConsoleActivity.method.access$000(Lorg/radare/radare2installer/ConsoleActivity;)Landroid/widget/EditText;
-0x00019bb4 method 2 sh   Lorg/radare/radare2installer/ConsoleActivity.method.access$100(Lorg/radare/radare2installer/ConsoleActivity;)Lorg/radare/r2pipe/R2Pipe;
-0x00019bcc method 3 sh   Lorg/radare/radare2installer/ConsoleActivity.method.access$200(Lorg/radare/radare2installer/ConsoleActivity;Ljava/lang/String;)V
-0x00019be4 method 4 sh   Lorg/radare/radare2installer/ConsoleActivity.method.access$300(Lorg/radare/radare2installer/ConsoleActivity;)Landroid/widget/TextView;
-0x00019bfc method 5 sh   Lorg/radare/radare2installer/ConsoleActivity.method.access$400(Lorg/radare/radare2installer/ConsoleActivity;)Landroid/widget/ScrollView;
-0x00019c14 method 6 P    Lorg/radare/radare2installer/ConsoleActivity.method.output(Ljava/lang/String;)V
-0x00019c3c method 7 p    Lorg/radare/radare2installer/ConsoleActivity.method.onCreate(Landroid/os/Bundle;)V
-0x00019e50 method 8 p    Lorg/radare/radare2installer/ConsoleActivity.method.onDestroy()V
-0x00019e74 method 9 p    Lorg/radare/radare2installer/ConsoleActivity.method.onKeyDown(ILandroid/view/KeyEvent;)Z
-0x00008090 [0x00019ec0 - 0x00019eec]     44 class 64 Lorg/radare/radare2installer/LaunchActivity$1 :: Ljava/lang/Object;
-0x00019ec0 method 0 C    Lorg/radare/radare2installer/LaunchActivity$1.method.<init>(Lorg/radare/radare2installer/LaunchActivity;)V
-0x00019edc method 1 p    Lorg/radare/radare2installer/LaunchActivity$1.method.onClick(Landroid/view/View;)V
-0x000080b0 [0x00019efc - 0x00019f28]     44 class 65 Lorg/radare/radare2installer/LaunchActivity$2 :: Ljava/lang/Object;
-0x00019efc method 0 C    Lorg/radare/radare2installer/LaunchActivity$2.method.<init>(Lorg/radare/radare2installer/LaunchActivity;)V
-0x00019f18 method 1 p    Lorg/radare/radare2installer/LaunchActivity$2.method.onClick(Landroid/view/View;)V
-0x000080d0 [0x00019f38 - 0x0001a510]   1496 class 66 Lorg/radare/radare2installer/LaunchActivity :: Landroid/app/Activity;
-0x00019f38 method 0 pC   Lorg/radare/radare2installer/LaunchActivity.method.<init>()V
-0x00019f50 method 1 P    Lorg/radare/radare2installer/LaunchActivity.method.checkForRadare()Z
-0x00019f98 method 2 p    Lorg/radare/radare2installer/LaunchActivity.method.addListenerOnButton()V
-0x0001a014 method 3 p    Lorg/radare/radare2installer/LaunchActivity.method.onCreate(Landroid/os/Bundle;)V
-0x0001a20c method 4 p    Lorg/radare/radare2installer/LaunchActivity.method.onCreateOptionsMenu(Landroid/view/Menu;)Z
-0x0001a24c method 5 p    Lorg/radare/radare2installer/LaunchActivity.method.onDestroy()V
-0x0001a270 method 6 p    Lorg/radare/radare2installer/LaunchActivity.method.onOptionsItemSelected(Landroid/view/MenuItem;)Z
-0x0001a31c method 7 p    Lorg/radare/radare2installer/LaunchActivity.method.onResume()V
-0x0001a344 method 8 p    Lorg/radare/radare2installer/LaunchActivity.method.startStuff(Ljava/lang/String;)V
-0x000080f0 [0x0001a520 - 0x0001a7b6]    662 class 67 Lorg/radare/radare2installer/LauncherActivity :: Landroid/app/Activity;
-0x0001a520 method 0 pC   Lorg/radare/radare2installer/LauncherActivity.method.<init>()V
-0x0001a538 method 1 sP   Lorg/radare/radare2installer/LauncherActivity.method.filterSingleQuote(Ljava/lang/String;)Ljava/lang/String;
-0x0001a574 method 2 P    Lorg/radare/radare2installer/LauncherActivity.method.findTerminalApp()Ljava/lang/String;
-0x0001a5cc method 3 p    Lorg/radare/radare2installer/LauncherActivity.method.onCreate(Landroid/os/Bundle;)V
-0x0001a7a8 method 4 r    Lorg/radare/radare2installer/LauncherActivity.method.onPause()V
-0x00008110 [0x0001a7c8 - 0x0001a820]     88 class 68 Lorg/radare/radare2installer/MainActivity$1 :: Ljava/lang/Object;
-0x0001a7c8 method 0 C    Lorg/radare/radare2installer/MainActivity$1.method.<init>(Lorg/radare/radare2installer/MainActivity;Landroid/widget/CheckBox;Landroid/widget/CheckBox;)V
-0x0001a7ec method 1 p    Lorg/radare/radare2installer/MainActivity$1.method.onCheckedChanged(Landroid/widget/CompoundButton;Z)V
-0x00008130 [0x0001a830 - 0x0001aa4a]    538 class 69 Lorg/radare/radare2installer/MainActivity$2 :: Ljava/lang/Object;
-0x0001a830 method 0 C    Lorg/radare/radare2installer/MainActivity$2.method.<init>(Lorg/radare/radare2installer/MainActivity;Landroid/content/SharedPreferences;)V
-0x0001a850 method 1 p    Lorg/radare/radare2installer/MainActivity$2.method.run()V
-0x00008150 [0x0001aa5c - 0x0001aab0]     84 class 70 Lorg/radare/radare2installer/MainActivity$3 :: Ljava/lang/Object;
-0x0001aa5c method 0 C    Lorg/radare/radare2installer/MainActivity$3.method.<init>(Lorg/radare/radare2installer/MainActivity;)V
-0x0001aa78 method 1 p    Lorg/radare/radare2installer/MainActivity$3.method.onClick(Landroid/view/View;)V
-0x00008170 [0x0001aac0 - 0x0001ab1a]     90 class 71 Lorg/radare/radare2installer/MainActivity$4$1$1 :: Ljava/lang/Object;
-0x0001aac0 method 0 C    Lorg/radare/radare2installer/MainActivity$4$1$1.method.<init>(Lorg/radare/radare2installer/MainActivity$4$1;)V
-0x0001aadc method 1 p    Lorg/radare/radare2installer/MainActivity$4$1$1.method.run()V
-0x00008190 [0x0001ab2c - 0x0001c3ba]   6286 class 72 Lorg/radare/radare2installer/MainActivity$4$1 :: Ljava/lang/Object;
-0x0001ab2c method 0 C    Lorg/radare/radare2installer/MainActivity$4$1.method.<init>(Lorg/radare/radare2installer/MainActivity$4;Landroid/widget/CheckBox;Landroid/widget/CheckBox;Landroid/widget/CheckBox;Landroid/widget/CheckBox;)V
-0x0001ab58 method 1 P    Lorg/radare/radare2installer/MainActivity$4$1.method.resetButtons()V
-0x0001ab8c method 2 p    Lorg/radare/radare2installer/MainActivity$4$1.method.run()V
-0x000081b0 [0x0001c3e8 - 0x0001c562]    378 class 73 Lorg/radare/radare2installer/MainActivity$4 :: Ljava/lang/Object;
-0x0001c3e8 method 0 C    Lorg/radare/radare2installer/MainActivity$4.method.<init>(Lorg/radare/radare2installer/MainActivity;)V
-0x0001c404 method 1 p    Lorg/radare/radare2installer/MainActivity$4.method.onClick(Landroid/view/View;)V
-0x000081d0 [0x0001c590 - 0x0001c5fa]    106 class 74 Lorg/radare/radare2installer/MainActivity$5 :: Ljava/lang/Object;
-0x0001c590 method 0 C    Lorg/radare/radare2installer/MainActivity$5.method.<init>(Lorg/radare/radare2installer/MainActivity;Ljava/lang/String;)V
-0x0001c5b0 method 1 p    Lorg/radare/radare2installer/MainActivity$5.method.run()V
-0x000081f0 [0x0001c60c - 0x0001c65e]     82 class 75 Lorg/radare/radare2installer/MainActivity$6 :: Ljava/lang/Object;
-0x0001c60c method 0 C    Lorg/radare/radare2installer/MainActivity$6.method.<init>(Lorg/radare/radare2installer/MainActivity;)V
-0x0001c628 method 1 p    Lorg/radare/radare2installer/MainActivity$6.method.run()V
-0x00008210 [0x0001c670 - 0x0001cf9e]   2350 class 76 Lorg/radare/radare2installer/MainActivity :: Landroid/app/Activity;
-0x0001c670 method 0 pC   Lorg/radare/radare2installer/MainActivity.method.<init>()V
-0x0001c6c0 method 1 sh   Lorg/radare/radare2installer/MainActivity.method.access$000(Lorg/radare/radare2installer/MainActivity;)Lorg/radare/radare2installer/Utils;
-0x0001c6d8 method 2 sh   Lorg/radare/radare2installer/MainActivity.method.access$100(Lorg/radare/radare2installer/MainActivity;Ljava/lang/String;)V
-0x0001c6f0 method 3 sh   Lorg/radare/radare2installer/MainActivity.method.access$200(Lorg/radare/radare2installer/MainActivity;)Ljava/lang/String;
-0x0001c708 method 4 sh   Lorg/radare/radare2installer/MainActivity.method.access$300(Lorg/radare/radare2installer/MainActivity;)Z
-0x0001c724 method 5 sh   Lorg/radare/radare2installer/MainActivity.method.access$400(Lorg/radare/radare2installer/MainActivity;)Landroid/widget/Button;
-0x0001c73c method 6 sh   Lorg/radare/radare2installer/MainActivity.method.access$402(Lorg/radare/radare2installer/MainActivity;Landroid/widget/Button;)Landroid/widget/Button;
-0x0001c754 method 7 sh   Lorg/radare/radare2installer/MainActivity.method.access$500(Lorg/radare/radare2installer/MainActivity;)Landroid/widget/TextView;
-0x0001c76c method 8 sh   Lorg/radare/radare2installer/MainActivity.method.access$600(Lorg/radare/radare2installer/MainActivity;)Ljava/lang/Thread;
-0x0001c784 method 9 sh   Lorg/radare/radare2installer/MainActivity.method.access$602(Lorg/radare/radare2installer/MainActivity;Ljava/lang/Thread;)Ljava/lang/Thread;
-0x0001c79c method 10 sh   Lorg/radare/radare2installer/MainActivity.method.access$700(Lorg/radare/radare2installer/MainActivity;)Landroid/os/Handler;
-0x0001c7b4 method 11 sh   Lorg/radare/radare2installer/MainActivity.method.access$800(Lorg/radare/radare2installer/MainActivity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z
-0x0001c7d0 method 12 P    Lorg/radare/radare2installer/MainActivity.method.checkForRadare()Z
-0x0001c858 method 13 P    Lorg/radare/radare2installer/MainActivity.method.download(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z
-0x0001cb4c method 14 P    Lorg/radare/radare2installer/MainActivity.method.output(Ljava/lang/String;)V
-0x0001cb74 method 15 P    Lorg/radare/radare2installer/MainActivity.method.resetButtons()V
-0x0001cb9c method 16 sp   Lorg/radare/radare2installer/MainActivity.method.unTarGz(Ljava/lang/String;Ljava/lang/String;)V
-0x0001cc7c method 17 p    Lorg/radare/radare2installer/MainActivity.method.onCreate(Landroid/os/Bundle;)V
-0x0001ce38 method 18 p    Lorg/radare/radare2installer/MainActivity.method.onCreateOptionsMenu(Landroid/view/Menu;)Z
-0x0001ce6c method 19 p    Lorg/radare/radare2installer/MainActivity.method.onOptionsItemSelected(Landroid/view/MenuItem;)Z
-0x0001cf08 method 20 p    Lorg/radare/radare2installer/MainActivity.method.onResume()V
-0x00008230 [0x0001cfb0 - 0x0001d006]     86 class 77 Lorg/radare/radare2installer/PathReceiver :: Landroid/content/BroadcastReceiver;
-0x0001cfb0 method 0 pC   Lorg/radare/radare2installer/PathReceiver.method.<init>()V
-0x0001cfc8 method 1 p    Lorg/radare/radare2installer/PathReceiver.method.onReceive(Landroid/content/Context;Landroid/content/Intent;)V
-0x00008250 [0x0001d018 - 0x0001d264]    588 class 78 Lorg/radare/radare2installer/PubKeyManager :: Ljava/lang/Object;
-0x0001d018 method 0 sC   Lorg/radare/radare2installer/PubKeyManager.method.<clinit>()V
-0x0001d04c method 1 pC   Lorg/radare/radare2installer/PubKeyManager.method.<init>()V
-0x0001d064 method 2 p    Lorg/radare/radare2installer/PubKeyManager.method.checkClientTrusted([Ljava/security/cert/X509Certificate;Ljava/lang/String;)V
-0x0001d078 method 3 p    Lorg/radare/radare2installer/PubKeyManager.method.checkServerTrusted([Ljava/security/cert/X509Certificate;Ljava/lang/String;)V
-0x0001d260 method 4 p    Lorg/radare/radare2installer/PubKeyManager.method.getAcceptedIssuers()[Ljava/security/cert/X509Certificate;
-0x00008270 [0x0001d274 - 0x0001d27c]      8 class 79 Lorg/radare/radare2installer/R$array :: Ljava/lang/Object;
-0x0001d274 method 0 pC   Lorg/radare/radare2installer/R$array.method.<init>()V
-0x00008290 [0x0001d28c - 0x0001d294]      8 class 80 Lorg/radare/radare2installer/R$attr :: Ljava/lang/Object;
-0x0001d28c method 0 pC   Lorg/radare/radare2installer/R$attr.method.<init>()V
-0x000082b0 [0x0001d2a4 - 0x0001d2ac]      8 class 81 Lorg/radare/radare2installer/R$drawable :: Ljava/lang/Object;
-0x0001d2a4 method 0 pC   Lorg/radare/radare2installer/R$drawable.method.<init>()V
-0x000082d0 [0x0001d2bc - 0x0001d2c4]      8 class 82 Lorg/radare/radare2installer/R$id :: Ljava/lang/Object;
-0x0001d2bc method 0 pC   Lorg/radare/radare2installer/R$id.method.<init>()V
-0x000082f0 [0x0001d2d4 - 0x0001d2dc]      8 class 83 Lorg/radare/radare2installer/R$layout :: Ljava/lang/Object;
-0x0001d2d4 method 0 pC   Lorg/radare/radare2installer/R$layout.method.<init>()V
-0x00008310 [0x0001d2ec - 0x0001d2f4]      8 class 84 Lorg/radare/radare2installer/R$string :: Ljava/lang/Object;
-0x0001d2ec method 0 pC   Lorg/radare/radare2installer/R$string.method.<init>()V
-0x00008330 [0x0001d304 - 0x0001d30c]      8 class 85 Lorg/radare/radare2installer/R$style :: Ljava/lang/Object;
-0x0001d304 method 0 pC   Lorg/radare/radare2installer/R$style.method.<init>()V
-0x00008350 [0x0001d31c - 0x0001d324]      8 class 86 Lorg/radare/radare2installer/R$xml :: Ljava/lang/Object;
-0x0001d31c method 0 pC   Lorg/radare/radare2installer/R$xml.method.<init>()V
-0x00008370 [0x0001d334 - 0x0001d33c]      8 class 87 Lorg/radare/radare2installer/R :: Ljava/lang/Object;
-0x0001d334 method 0 pC   Lorg/radare/radare2installer/R.method.<init>()V
-0x00008390 [0x0001d34c - 0x0001d376]     42 class 88 Lorg/radare/radare2installer/SettingsActivity :: Landroid/preference/PreferenceActivity;
-0x0001d34c method 0 pC   Lorg/radare/radare2installer/SettingsActivity.method.<init>()V
-0x0001d364 method 1 p    Lorg/radare/radare2installer/SettingsActivity.method.onCreate(Landroid/os/Bundle;)V
-0x000083b0 [0x000083b0 - 0x000083b0]      0 class 89 Lorg/radare/radare2installer/UpdateCheckerService$1 :: Ljava/lang/Object;
-0x000083d0 [0x0001d388 - 0x0001d588]    512 class 90 Lorg/radare/radare2installer/UpdateCheckerService$PollTask :: Landroid/os/AsyncTask;
-0x0001d388 method 0 PC   Lorg/radare/radare2installer/UpdateCheckerService$PollTask.method.<init>(Lorg/radare/radare2installer/UpdateCheckerService;)V
-0x0001d3a4 method 1 hC   Lorg/radare/radare2installer/UpdateCheckerService$PollTask.method.<init>(Lorg/radare/radare2installer/UpdateCheckerService;Lorg/radare/radare2installer/UpdateCheckerService$1;)V
-0x0001d3bc method 2 rbh  Lorg/radare/radare2installer/UpdateCheckerService$PollTask.method.doInBackground([Ljava/lang/Object;)Ljava/lang/Object;
-0x0001d3dc method 3 rg   Lorg/radare/radare2installer/UpdateCheckerService$PollTask.method.doInBackground([Ljava/lang/Void;)Ljava/lang/Void;
-0x0001d4d0 method 4 rbh  Lorg/radare/radare2installer/UpdateCheckerService$PollTask.method.onPostExecute(Ljava/lang/Object;)V
-0x0001d4ec method 5 r    Lorg/radare/radare2installer/UpdateCheckerService$PollTask.method.onPostExecute(Ljava/lang/Void;)V
-0x000083f0 [0x0001d598 - 0x0001d6ee]    342 class 91 Lorg/radare/radare2installer/UpdateCheckerService :: Landroid/app/Service;
-0x0001d598 method 0 pC   Lorg/radare/radare2installer/UpdateCheckerService.method.<init>()V
-0x0001d5b8 method 1 sh   Lorg/radare/radare2installer/UpdateCheckerService.method.access$100(Lorg/radare/radare2installer/UpdateCheckerService;)Lorg/radare/radare2installer/Utils;
-0x0001d5d0 method 2 sh   Lorg/radare/radare2installer/UpdateCheckerService.method.access$102(Lorg/radare/radare2installer/UpdateCheckerService;Lorg/radare/radare2installer/Utils;)Lorg/radare/radare2installer/Utils;
-0x0001d5e8 method 3 sh   Lorg/radare/radare2installer/UpdateCheckerService.method.access$200(Lorg/radare/radare2installer/UpdateCheckerService;)Z
-0x0001d600 method 4 sh   Lorg/radare/radare2installer/UpdateCheckerService.method.access$202(Lorg/radare/radare2installer/UpdateCheckerService;Z)Z
-0x0001d618 method 5 P    Lorg/radare/radare2installer/UpdateCheckerService.method.handleIntent(Landroid/content/Intent;)V
-0x0001d694 method 6 p    Lorg/radare/radare2installer/UpdateCheckerService.method.onBind(Landroid/content/Intent;)Landroid/os/IBinder;
-0x0001d6a8 method 7 p    Lorg/radare/radare2installer/UpdateCheckerService.method.onDestroy()V
-0x0001d6cc method 8 p    Lorg/radare/radare2installer/UpdateCheckerService.method.onStart(Landroid/content/Intent;I)V
-0x0001d6e4 method 9 p    Lorg/radare/radare2installer/UpdateCheckerService.method.onStartCommand(Landroid/content/Intent;II)I
-0x00008410 [0x0001d700 - 0x0001dea0]   1952 class 92 Lorg/radare/radare2installer/Utils :: Ljava/lang/Object;
-0x0001d700 method 0 pC   Lorg/radare/radare2installer/Utils.method.<init>(Landroid/content/Context;)V
-0x0001d734 method 1 P    Lorg/radare/radare2installer/Utils.method.updateCheckGithub()Z
-0x0001d7a4 method 2 P    Lorg/radare/radare2installer/Utils.method.updateCheckInsecure(Ljava/lang/String;)Z
-0x0001d83c method 3 p    Lorg/radare/radare2installer/Utils.method.GetArch()Ljava/lang/String;
-0x0001d8c4 method 4 p    Lorg/radare/radare2installer/Utils.method.GetPref(Ljava/lang/String;)Ljava/lang/String;
-0x0001d8f0 method 5 p    Lorg/radare/radare2installer/Utils.method.GetStoragePath()Ljava/lang/String;
-0x0001d984 method 6 p    Lorg/radare/radare2installer/Utils.method.SendNotification(Ljava/lang/String;Ljava/lang/String;)V
-0x0001da14 method 7 p    Lorg/radare/radare2installer/Utils.method.StorePref(Ljava/lang/String;Ljava/lang/String;)V
-0x0001da48 method 8 p    Lorg/radare/radare2installer/Utils.method.UpdateCheck(Ljava/lang/String;Z)Z
-0x0001da70 method 9 p    Lorg/radare/radare2installer/Utils.method.exec(Ljava/lang/String;)Ljava/lang/String;
-0x0001dae8 method 10 p    Lorg/radare/radare2installer/Utils.method.getFreeSpace(Ljava/lang/String;)J
-0x0001db3c method 11 p    Lorg/radare/radare2installer/Utils.method.getGithubConnection(Ljava/lang/String;)Ljavax/net/ssl/HttpsURLConnection;
-0x0001dc0c method 12 p    Lorg/radare/radare2installer/Utils.method.getGithubREADME()Ljava/lang/String;
-0x0001dcd8 method 13 p    Lorg/radare/radare2installer/Utils.method.isAppInstalled(Ljava/lang/String;)Z
-0x0001dd14 method 14 p    Lorg/radare/radare2installer/Utils.method.isInstalled()Z
-0x0001dd70 method 15 pf   Lorg/radare/radare2installer/Utils.method.isInternetAvailable()Z
-0x0001ddbc method 16 p    Lorg/radare/radare2installer/Utils.method.killradare()V
-0x0001ddf0 method 17 p    Lorg/radare/radare2installer/Utils.method.myToast(Ljava/lang/String;I)V
-0x0001de88 method 18 p    Lorg/radare/radare2installer/Utils.method.sleep(I)V
-0x00008430 [0x00008430 - 0x00008430]      0 class 93 Lorg/radare/radare2installer/WebActivity$1 :: Ljava/lang/Object;
-0x00008450 [0x0001dec0 - 0x0001df9a]    218 class 94 Lorg/radare/radare2installer/WebActivity$RadareWebViewClient :: Landroid/webkit/WebViewClient;
-0x0001dec0 method 0 PC   Lorg/radare/radare2installer/WebActivity$RadareWebViewClient.method.<init>(Lorg/radare/radare2installer/WebActivity;)V
-0x0001dedc method 1 hC   Lorg/radare/radare2installer/WebActivity$RadareWebViewClient.method.<init>(Lorg/radare/radare2installer/WebActivity;Lorg/radare/radare2installer/WebActivity$1;)V
-0x0001def4 method 2 p    Lorg/radare/radare2installer/WebActivity$RadareWebViewClient.method.onReceivedError(Landroid/webkit/WebView;ILjava/lang/String;Ljava/lang/String;)V
-0x0001df90 method 3 p    Lorg/radare/radare2installer/WebActivity$RadareWebViewClient.method.shouldOverrideUrlLoading(Landroid/webkit/WebView;Ljava/lang/String;)Z
-0x00008470 [0x0001dfac - 0x0001e5e8]   1596 class 95 Lorg/radare/radare2installer/WebActivity :: Landroid/app/Activity;
-0x0001dfac method 0 pC   Lorg/radare/radare2installer/WebActivity.method.<init>()V
-0x0001dfc4 method 1 sh   Lorg/radare/radare2installer/WebActivity.method.access$100(Lorg/radare/radare2installer/WebActivity;)Lorg/radare/radare2installer/Utils;
-0x0001dfdc method 2 p    Lorg/radare/radare2installer/WebActivity.method.getLocalIpAddress()Ljava/lang/String;
-0x0001e06c method 3 p    Lorg/radare/radare2installer/WebActivity.method.onCreate(Landroid/os/Bundle;)V
-0x0001e574 method 4 p    Lorg/radare/radare2installer/WebActivity.method.onDestroy()V
-0x0001e5a4 method 5 p    Lorg/radare/radare2installer/WebActivity.method.onKeyDown(ILandroid/view/KeyEvent;)Z
+0x00007fb0 [0x00019598 - 0x0001987c]    740 class 57 Lorg/radare/rzpipe/R2Pipe :: Ljava/lang/Object;
+0x00019598 method 0 pC   Lorg/radare/rzpipe/R2Pipe.method.<init>(Ljava/lang/String;)V
+0x000195c0 method 1 pC   Lorg/radare/rzpipe/R2Pipe.method.<init>(Ljava/lang/String;Ljava/lang/String;Z)V
+0x000195f4 method 2 pC   Lorg/radare/rzpipe/R2Pipe.method.<init>(Ljava/lang/String;Z)V
+0x00019628 method 3 p    Lorg/radare/rzpipe/R2Pipe.method.cmd(Ljava/lang/String;)Ljava/lang/String;
+0x000196d0 method 4 r    Lorg/radare/rzpipe/R2Pipe.method.finalize()V
+0x000196e8 method 5 p    Lorg/radare/rzpipe/R2Pipe.method.httpCmd(Ljava/lang/String;)Ljava/lang/String;
+0x000197d0 method 6 p    Lorg/radare/rzpipe/R2Pipe.method.quit()V
+0x000197f4 method 7 p    Lorg/radare/rzpipe/R2Pipe.method.spawnProcess(Ljava/lang/String;)V
+0x00007fd0 [0x0001988c - 0x00019934]    168 class 58 Lorg/radare/rizininstaller/BootReceiver :: Landroid/content/BroadcastReceiver;
+0x0001988c method 0 pC   Lorg/radare/rizininstaller/BootReceiver.method.<init>()V
+0x000198a4 method 1 p    Lorg/radare/rizininstaller/BootReceiver.method.onReceive(Landroid/content/Context;Landroid/content/Intent;)V
+0x00007ff0 [0x00019944 - 0x0001994c]      8 class 59 Lorg/radare/rizininstaller/BuildConfig :: Ljava/lang/Object;
+0x00019944 method 0 pC   Lorg/radare/rizininstaller/BuildConfig.method.<init>()V
+0x00008010 [0x0001995c - 0x00019a56]    250 class 60 Lorg/radare/rizininstaller/ConsoleActivity$1 :: Ljava/lang/Object;
+0x0001995c method 0 C    Lorg/radare/rizininstaller/ConsoleActivity$1.method.<init>(Lorg/radare/rizininstaller/ConsoleActivity;)V
+0x00019978 method 1 p    Lorg/radare/rizininstaller/ConsoleActivity$1.method.onClick(Landroid/view/View;)V
+0x00008030 [0x00019a78 - 0x00019b10]    152 class 61 Lorg/radare/rizininstaller/ConsoleActivity$2 :: Ljava/lang/Object;
+0x00019a78 method 0 C    Lorg/radare/rizininstaller/ConsoleActivity$2.method.<init>(Lorg/radare/rizininstaller/ConsoleActivity;Ljava/lang/String;)V
+0x00019a98 method 1 p    Lorg/radare/rizininstaller/ConsoleActivity$2.method.run()V
+0x00008050 [0x00019b20 - 0x00019b48]     40 class 62 Lorg/radare/rizininstaller/ConsoleActivity$3 :: Ljava/lang/Object;
+0x00019b20 method 0 C    Lorg/radare/rizininstaller/ConsoleActivity$3.method.<init>(Lorg/radare/rizininstaller/ConsoleActivity;)V
+0x00019b3c method 1 p    Lorg/radare/rizininstaller/ConsoleActivity$3.method.onClick(Landroid/view/View;)V
+0x00008070 [0x00019b58 - 0x00019e9e]    838 class 63 Lorg/radare/rizininstaller/ConsoleActivity :: Landroid/app/Activity;
+0x00019b58 method 0 pC   Lorg/radare/rizininstaller/ConsoleActivity.method.<init>()V
+0x00019b9c method 1 sh   Lorg/radare/rizininstaller/ConsoleActivity.method.access$000(Lorg/radare/rizininstaller/ConsoleActivity;)Landroid/widget/EditText;
+0x00019bb4 method 2 sh   Lorg/radare/rizininstaller/ConsoleActivity.method.access$100(Lorg/radare/rizininstaller/ConsoleActivity;)Lorg/radare/rzpipe/R2Pipe;
+0x00019bcc method 3 sh   Lorg/radare/rizininstaller/ConsoleActivity.method.access$200(Lorg/radare/rizininstaller/ConsoleActivity;Ljava/lang/String;)V
+0x00019be4 method 4 sh   Lorg/radare/rizininstaller/ConsoleActivity.method.access$300(Lorg/radare/rizininstaller/ConsoleActivity;)Landroid/widget/TextView;
+0x00019bfc method 5 sh   Lorg/radare/rizininstaller/ConsoleActivity.method.access$400(Lorg/radare/rizininstaller/ConsoleActivity;)Landroid/widget/ScrollView;
+0x00019c14 method 6 P    Lorg/radare/rizininstaller/ConsoleActivity.method.output(Ljava/lang/String;)V
+0x00019c3c method 7 p    Lorg/radare/rizininstaller/ConsoleActivity.method.onCreate(Landroid/os/Bundle;)V
+0x00019e50 method 8 p    Lorg/radare/rizininstaller/ConsoleActivity.method.onDestroy()V
+0x00019e74 method 9 p    Lorg/radare/rizininstaller/ConsoleActivity.method.onKeyDown(ILandroid/view/KeyEvent;)Z
+0x00008090 [0x00019ec0 - 0x00019eec]     44 class 64 Lorg/radare/rizininstaller/LaunchActivity$1 :: Ljava/lang/Object;
+0x00019ec0 method 0 C    Lorg/radare/rizininstaller/LaunchActivity$1.method.<init>(Lorg/radare/rizininstaller/LaunchActivity;)V
+0x00019edc method 1 p    Lorg/radare/rizininstaller/LaunchActivity$1.method.onClick(Landroid/view/View;)V
+0x000080b0 [0x00019efc - 0x00019f28]     44 class 65 Lorg/radare/rizininstaller/LaunchActivity$2 :: Ljava/lang/Object;
+0x00019efc method 0 C    Lorg/radare/rizininstaller/LaunchActivity$2.method.<init>(Lorg/radare/rizininstaller/LaunchActivity;)V
+0x00019f18 method 1 p    Lorg/radare/rizininstaller/LaunchActivity$2.method.onClick(Landroid/view/View;)V
+0x000080d0 [0x00019f38 - 0x0001a510]   1496 class 66 Lorg/radare/rizininstaller/LaunchActivity :: Landroid/app/Activity;
+0x00019f38 method 0 pC   Lorg/radare/rizininstaller/LaunchActivity.method.<init>()V
+0x00019f50 method 1 P    Lorg/radare/rizininstaller/LaunchActivity.method.checkForRadare()Z
+0x00019f98 method 2 p    Lorg/radare/rizininstaller/LaunchActivity.method.addListenerOnButton()V
+0x0001a014 method 3 p    Lorg/radare/rizininstaller/LaunchActivity.method.onCreate(Landroid/os/Bundle;)V
+0x0001a20c method 4 p    Lorg/radare/rizininstaller/LaunchActivity.method.onCreateOptionsMenu(Landroid/view/Menu;)Z
+0x0001a24c method 5 p    Lorg/radare/rizininstaller/LaunchActivity.method.onDestroy()V
+0x0001a270 method 6 p    Lorg/radare/rizininstaller/LaunchActivity.method.onOptionsItemSelected(Landroid/view/MenuItem;)Z
+0x0001a31c method 7 p    Lorg/radare/rizininstaller/LaunchActivity.method.onResume()V
+0x0001a344 method 8 p    Lorg/radare/rizininstaller/LaunchActivity.method.startStuff(Ljava/lang/String;)V
+0x000080f0 [0x0001a520 - 0x0001a7b6]    662 class 67 Lorg/radare/rizininstaller/LauncherActivity :: Landroid/app/Activity;
+0x0001a520 method 0 pC   Lorg/radare/rizininstaller/LauncherActivity.method.<init>()V
+0x0001a538 method 1 sP   Lorg/radare/rizininstaller/LauncherActivity.method.filterSingleQuote(Ljava/lang/String;)Ljava/lang/String;
+0x0001a574 method 2 P    Lorg/radare/rizininstaller/LauncherActivity.method.findTerminalApp()Ljava/lang/String;
+0x0001a5cc method 3 p    Lorg/radare/rizininstaller/LauncherActivity.method.onCreate(Landroid/os/Bundle;)V
+0x0001a7a8 method 4 r    Lorg/radare/rizininstaller/LauncherActivity.method.onPause()V
+0x00008110 [0x0001a7c8 - 0x0001a820]     88 class 68 Lorg/radare/rizininstaller/MainActivity$1 :: Ljava/lang/Object;
+0x0001a7c8 method 0 C    Lorg/radare/rizininstaller/MainActivity$1.method.<init>(Lorg/radare/rizininstaller/MainActivity;Landroid/widget/CheckBox;Landroid/widget/CheckBox;)V
+0x0001a7ec method 1 p    Lorg/radare/rizininstaller/MainActivity$1.method.onCheckedChanged(Landroid/widget/CompoundButton;Z)V
+0x00008130 [0x0001a830 - 0x0001aa4a]    538 class 69 Lorg/radare/rizininstaller/MainActivity$2 :: Ljava/lang/Object;
+0x0001a830 method 0 C    Lorg/radare/rizininstaller/MainActivity$2.method.<init>(Lorg/radare/rizininstaller/MainActivity;Landroid/content/SharedPreferences;)V
+0x0001a850 method 1 p    Lorg/radare/rizininstaller/MainActivity$2.method.run()V
+0x00008150 [0x0001aa5c - 0x0001aab0]     84 class 70 Lorg/radare/rizininstaller/MainActivity$3 :: Ljava/lang/Object;
+0x0001aa5c method 0 C    Lorg/radare/rizininstaller/MainActivity$3.method.<init>(Lorg/radare/rizininstaller/MainActivity;)V
+0x0001aa78 method 1 p    Lorg/radare/rizininstaller/MainActivity$3.method.onClick(Landroid/view/View;)V
+0x00008170 [0x0001aac0 - 0x0001ab1a]     90 class 71 Lorg/radare/rizininstaller/MainActivity$4$1$1 :: Ljava/lang/Object;
+0x0001aac0 method 0 C    Lorg/radare/rizininstaller/MainActivity$4$1$1.method.<init>(Lorg/radare/rizininstaller/MainActivity$4$1;)V
+0x0001aadc method 1 p    Lorg/radare/rizininstaller/MainActivity$4$1$1.method.run()V
+0x00008190 [0x0001ab2c - 0x0001c3ba]   6286 class 72 Lorg/radare/rizininstaller/MainActivity$4$1 :: Ljava/lang/Object;
+0x0001ab2c method 0 C    Lorg/radare/rizininstaller/MainActivity$4$1.method.<init>(Lorg/radare/rizininstaller/MainActivity$4;Landroid/widget/CheckBox;Landroid/widget/CheckBox;Landroid/widget/CheckBox;Landroid/widget/CheckBox;)V
+0x0001ab58 method 1 P    Lorg/radare/rizininstaller/MainActivity$4$1.method.resetButtons()V
+0x0001ab8c method 2 p    Lorg/radare/rizininstaller/MainActivity$4$1.method.run()V
+0x000081b0 [0x0001c3e8 - 0x0001c562]    378 class 73 Lorg/radare/rizininstaller/MainActivity$4 :: Ljava/lang/Object;
+0x0001c3e8 method 0 C    Lorg/radare/rizininstaller/MainActivity$4.method.<init>(Lorg/radare/rizininstaller/MainActivity;)V
+0x0001c404 method 1 p    Lorg/radare/rizininstaller/MainActivity$4.method.onClick(Landroid/view/View;)V
+0x000081d0 [0x0001c590 - 0x0001c5fa]    106 class 74 Lorg/radare/rizininstaller/MainActivity$5 :: Ljava/lang/Object;
+0x0001c590 method 0 C    Lorg/radare/rizininstaller/MainActivity$5.method.<init>(Lorg/radare/rizininstaller/MainActivity;Ljava/lang/String;)V
+0x0001c5b0 method 1 p    Lorg/radare/rizininstaller/MainActivity$5.method.run()V
+0x000081f0 [0x0001c60c - 0x0001c65e]     82 class 75 Lorg/radare/rizininstaller/MainActivity$6 :: Ljava/lang/Object;
+0x0001c60c method 0 C    Lorg/radare/rizininstaller/MainActivity$6.method.<init>(Lorg/radare/rizininstaller/MainActivity;)V
+0x0001c628 method 1 p    Lorg/radare/rizininstaller/MainActivity$6.method.run()V
+0x00008210 [0x0001c670 - 0x0001cf9e]   2350 class 76 Lorg/radare/rizininstaller/MainActivity :: Landroid/app/Activity;
+0x0001c670 method 0 pC   Lorg/radare/rizininstaller/MainActivity.method.<init>()V
+0x0001c6c0 method 1 sh   Lorg/radare/rizininstaller/MainActivity.method.access$000(Lorg/radare/rizininstaller/MainActivity;)Lorg/radare/rizininstaller/Utils;
+0x0001c6d8 method 2 sh   Lorg/radare/rizininstaller/MainActivity.method.access$100(Lorg/radare/rizininstaller/MainActivity;Ljava/lang/String;)V
+0x0001c6f0 method 3 sh   Lorg/radare/rizininstaller/MainActivity.method.access$200(Lorg/radare/rizininstaller/MainActivity;)Ljava/lang/String;
+0x0001c708 method 4 sh   Lorg/radare/rizininstaller/MainActivity.method.access$300(Lorg/radare/rizininstaller/MainActivity;)Z
+0x0001c724 method 5 sh   Lorg/radare/rizininstaller/MainActivity.method.access$400(Lorg/radare/rizininstaller/MainActivity;)Landroid/widget/Button;
+0x0001c73c method 6 sh   Lorg/radare/rizininstaller/MainActivity.method.access$402(Lorg/radare/rizininstaller/MainActivity;Landroid/widget/Button;)Landroid/widget/Button;
+0x0001c754 method 7 sh   Lorg/radare/rizininstaller/MainActivity.method.access$500(Lorg/radare/rizininstaller/MainActivity;)Landroid/widget/TextView;
+0x0001c76c method 8 sh   Lorg/radare/rizininstaller/MainActivity.method.access$600(Lorg/radare/rizininstaller/MainActivity;)Ljava/lang/Thread;
+0x0001c784 method 9 sh   Lorg/radare/rizininstaller/MainActivity.method.access$602(Lorg/radare/rizininstaller/MainActivity;Ljava/lang/Thread;)Ljava/lang/Thread;
+0x0001c79c method 10 sh   Lorg/radare/rizininstaller/MainActivity.method.access$700(Lorg/radare/rizininstaller/MainActivity;)Landroid/os/Handler;
+0x0001c7b4 method 11 sh   Lorg/radare/rizininstaller/MainActivity.method.access$800(Lorg/radare/rizininstaller/MainActivity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z
+0x0001c7d0 method 12 P    Lorg/radare/rizininstaller/MainActivity.method.checkForRadare()Z
+0x0001c858 method 13 P    Lorg/radare/rizininstaller/MainActivity.method.download(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z
+0x0001cb4c method 14 P    Lorg/radare/rizininstaller/MainActivity.method.output(Ljava/lang/String;)V
+0x0001cb74 method 15 P    Lorg/radare/rizininstaller/MainActivity.method.resetButtons()V
+0x0001cb9c method 16 sp   Lorg/radare/rizininstaller/MainActivity.method.unTarGz(Ljava/lang/String;Ljava/lang/String;)V
+0x0001cc7c method 17 p    Lorg/radare/rizininstaller/MainActivity.method.onCreate(Landroid/os/Bundle;)V
+0x0001ce38 method 18 p    Lorg/radare/rizininstaller/MainActivity.method.onCreateOptionsMenu(Landroid/view/Menu;)Z
+0x0001ce6c method 19 p    Lorg/radare/rizininstaller/MainActivity.method.onOptionsItemSelected(Landroid/view/MenuItem;)Z
+0x0001cf08 method 20 p    Lorg/radare/rizininstaller/MainActivity.method.onResume()V
+0x00008230 [0x0001cfb0 - 0x0001d006]     86 class 77 Lorg/radare/rizininstaller/PathReceiver :: Landroid/content/BroadcastReceiver;
+0x0001cfb0 method 0 pC   Lorg/radare/rizininstaller/PathReceiver.method.<init>()V
+0x0001cfc8 method 1 p    Lorg/radare/rizininstaller/PathReceiver.method.onReceive(Landroid/content/Context;Landroid/content/Intent;)V
+0x00008250 [0x0001d018 - 0x0001d264]    588 class 78 Lorg/radare/rizininstaller/PubKeyManager :: Ljava/lang/Object;
+0x0001d018 method 0 sC   Lorg/radare/rizininstaller/PubKeyManager.method.<clinit>()V
+0x0001d04c method 1 pC   Lorg/radare/rizininstaller/PubKeyManager.method.<init>()V
+0x0001d064 method 2 p    Lorg/radare/rizininstaller/PubKeyManager.method.checkClientTrusted([Ljava/security/cert/X509Certificate;Ljava/lang/String;)V
+0x0001d078 method 3 p    Lorg/radare/rizininstaller/PubKeyManager.method.checkServerTrusted([Ljava/security/cert/X509Certificate;Ljava/lang/String;)V
+0x0001d260 method 4 p    Lorg/radare/rizininstaller/PubKeyManager.method.getAcceptedIssuers()[Ljava/security/cert/X509Certificate;
+0x00008270 [0x0001d274 - 0x0001d27c]      8 class 79 Lorg/radare/rizininstaller/R$array :: Ljava/lang/Object;
+0x0001d274 method 0 pC   Lorg/radare/rizininstaller/R$array.method.<init>()V
+0x00008290 [0x0001d28c - 0x0001d294]      8 class 80 Lorg/radare/rizininstaller/R$attr :: Ljava/lang/Object;
+0x0001d28c method 0 pC   Lorg/radare/rizininstaller/R$attr.method.<init>()V
+0x000082b0 [0x0001d2a4 - 0x0001d2ac]      8 class 81 Lorg/radare/rizininstaller/R$drawable :: Ljava/lang/Object;
+0x0001d2a4 method 0 pC   Lorg/radare/rizininstaller/R$drawable.method.<init>()V
+0x000082d0 [0x0001d2bc - 0x0001d2c4]      8 class 82 Lorg/radare/rizininstaller/R$id :: Ljava/lang/Object;
+0x0001d2bc method 0 pC   Lorg/radare/rizininstaller/R$id.method.<init>()V
+0x000082f0 [0x0001d2d4 - 0x0001d2dc]      8 class 83 Lorg/radare/rizininstaller/R$layout :: Ljava/lang/Object;
+0x0001d2d4 method 0 pC   Lorg/radare/rizininstaller/R$layout.method.<init>()V
+0x00008310 [0x0001d2ec - 0x0001d2f4]      8 class 84 Lorg/radare/rizininstaller/R$string :: Ljava/lang/Object;
+0x0001d2ec method 0 pC   Lorg/radare/rizininstaller/R$string.method.<init>()V
+0x00008330 [0x0001d304 - 0x0001d30c]      8 class 85 Lorg/radare/rizininstaller/R$style :: Ljava/lang/Object;
+0x0001d304 method 0 pC   Lorg/radare/rizininstaller/R$style.method.<init>()V
+0x00008350 [0x0001d31c - 0x0001d324]      8 class 86 Lorg/radare/rizininstaller/R$xml :: Ljava/lang/Object;
+0x0001d31c method 0 pC   Lorg/radare/rizininstaller/R$xml.method.<init>()V
+0x00008370 [0x0001d334 - 0x0001d33c]      8 class 87 Lorg/radare/rizininstaller/R :: Ljava/lang/Object;
+0x0001d334 method 0 pC   Lorg/radare/rizininstaller/R.method.<init>()V
+0x00008390 [0x0001d34c - 0x0001d376]     42 class 88 Lorg/radare/rizininstaller/SettingsActivity :: Landroid/preference/PreferenceActivity;
+0x0001d34c method 0 pC   Lorg/radare/rizininstaller/SettingsActivity.method.<init>()V
+0x0001d364 method 1 p    Lorg/radare/rizininstaller/SettingsActivity.method.onCreate(Landroid/os/Bundle;)V
+0x000083b0 [0x000083b0 - 0x000083b0]      0 class 89 Lorg/radare/rizininstaller/UpdateCheckerService$1 :: Ljava/lang/Object;
+0x000083d0 [0x0001d388 - 0x0001d588]    512 class 90 Lorg/radare/rizininstaller/UpdateCheckerService$PollTask :: Landroid/os/AsyncTask;
+0x0001d388 method 0 PC   Lorg/radare/rizininstaller/UpdateCheckerService$PollTask.method.<init>(Lorg/radare/rizininstaller/UpdateCheckerService;)V
+0x0001d3a4 method 1 hC   Lorg/radare/rizininstaller/UpdateCheckerService$PollTask.method.<init>(Lorg/radare/rizininstaller/UpdateCheckerService;Lorg/radare/rizininstaller/UpdateCheckerService$1;)V
+0x0001d3bc method 2 rbh  Lorg/radare/rizininstaller/UpdateCheckerService$PollTask.method.doInBackground([Ljava/lang/Object;)Ljava/lang/Object;
+0x0001d3dc method 3 rg   Lorg/radare/rizininstaller/UpdateCheckerService$PollTask.method.doInBackground([Ljava/lang/Void;)Ljava/lang/Void;
+0x0001d4d0 method 4 rbh  Lorg/radare/rizininstaller/UpdateCheckerService$PollTask.method.onPostExecute(Ljava/lang/Object;)V
+0x0001d4ec method 5 r    Lorg/radare/rizininstaller/UpdateCheckerService$PollTask.method.onPostExecute(Ljava/lang/Void;)V
+0x000083f0 [0x0001d598 - 0x0001d6ee]    342 class 91 Lorg/radare/rizininstaller/UpdateCheckerService :: Landroid/app/Service;
+0x0001d598 method 0 pC   Lorg/radare/rizininstaller/UpdateCheckerService.method.<init>()V
+0x0001d5b8 method 1 sh   Lorg/radare/rizininstaller/UpdateCheckerService.method.access$100(Lorg/radare/rizininstaller/UpdateCheckerService;)Lorg/radare/rizininstaller/Utils;
+0x0001d5d0 method 2 sh   Lorg/radare/rizininstaller/UpdateCheckerService.method.access$102(Lorg/radare/rizininstaller/UpdateCheckerService;Lorg/radare/rizininstaller/Utils;)Lorg/radare/rizininstaller/Utils;
+0x0001d5e8 method 3 sh   Lorg/radare/rizininstaller/UpdateCheckerService.method.access$200(Lorg/radare/rizininstaller/UpdateCheckerService;)Z
+0x0001d600 method 4 sh   Lorg/radare/rizininstaller/UpdateCheckerService.method.access$202(Lorg/radare/rizininstaller/UpdateCheckerService;Z)Z
+0x0001d618 method 5 P    Lorg/radare/rizininstaller/UpdateCheckerService.method.handleIntent(Landroid/content/Intent;)V
+0x0001d694 method 6 p    Lorg/radare/rizininstaller/UpdateCheckerService.method.onBind(Landroid/content/Intent;)Landroid/os/IBinder;
+0x0001d6a8 method 7 p    Lorg/radare/rizininstaller/UpdateCheckerService.method.onDestroy()V
+0x0001d6cc method 8 p    Lorg/radare/rizininstaller/UpdateCheckerService.method.onStart(Landroid/content/Intent;I)V
+0x0001d6e4 method 9 p    Lorg/radare/rizininstaller/UpdateCheckerService.method.onStartCommand(Landroid/content/Intent;II)I
+0x00008410 [0x0001d700 - 0x0001dea0]   1952 class 92 Lorg/radare/rizininstaller/Utils :: Ljava/lang/Object;
+0x0001d700 method 0 pC   Lorg/radare/rizininstaller/Utils.method.<init>(Landroid/content/Context;)V
+0x0001d734 method 1 P    Lorg/radare/rizininstaller/Utils.method.updateCheckGithub()Z
+0x0001d7a4 method 2 P    Lorg/radare/rizininstaller/Utils.method.updateCheckInsecure(Ljava/lang/String;)Z
+0x0001d83c method 3 p    Lorg/radare/rizininstaller/Utils.method.GetArch()Ljava/lang/String;
+0x0001d8c4 method 4 p    Lorg/radare/rizininstaller/Utils.method.GetPref(Ljava/lang/String;)Ljava/lang/String;
+0x0001d8f0 method 5 p    Lorg/radare/rizininstaller/Utils.method.GetStoragePath()Ljava/lang/String;
+0x0001d984 method 6 p    Lorg/radare/rizininstaller/Utils.method.SendNotification(Ljava/lang/String;Ljava/lang/String;)V
+0x0001da14 method 7 p    Lorg/radare/rizininstaller/Utils.method.StorePref(Ljava/lang/String;Ljava/lang/String;)V
+0x0001da48 method 8 p    Lorg/radare/rizininstaller/Utils.method.UpdateCheck(Ljava/lang/String;Z)Z
+0x0001da70 method 9 p    Lorg/radare/rizininstaller/Utils.method.exec(Ljava/lang/String;)Ljava/lang/String;
+0x0001dae8 method 10 p    Lorg/radare/rizininstaller/Utils.method.getFreeSpace(Ljava/lang/String;)J
+0x0001db3c method 11 p    Lorg/radare/rizininstaller/Utils.method.getGithubConnection(Ljava/lang/String;)Ljavax/net/ssl/HttpsURLConnection;
+0x0001dc0c method 12 p    Lorg/radare/rizininstaller/Utils.method.getGithubREADME()Ljava/lang/String;
+0x0001dcd8 method 13 p    Lorg/radare/rizininstaller/Utils.method.isAppInstalled(Ljava/lang/String;)Z
+0x0001dd14 method 14 p    Lorg/radare/rizininstaller/Utils.method.isInstalled()Z
+0x0001dd70 method 15 pf   Lorg/radare/rizininstaller/Utils.method.isInternetAvailable()Z
+0x0001ddbc method 16 p    Lorg/radare/rizininstaller/Utils.method.killradare()V
+0x0001ddf0 method 17 p    Lorg/radare/rizininstaller/Utils.method.myToast(Ljava/lang/String;I)V
+0x0001de88 method 18 p    Lorg/radare/rizininstaller/Utils.method.sleep(I)V
+0x00008430 [0x00008430 - 0x00008430]      0 class 93 Lorg/radare/rizininstaller/WebActivity$1 :: Ljava/lang/Object;
+0x00008450 [0x0001dec0 - 0x0001df9a]    218 class 94 Lorg/radare/rizininstaller/WebActivity$RadareWebViewClient :: Landroid/webkit/WebViewClient;
+0x0001dec0 method 0 PC   Lorg/radare/rizininstaller/WebActivity$RadareWebViewClient.method.<init>(Lorg/radare/rizininstaller/WebActivity;)V
+0x0001dedc method 1 hC   Lorg/radare/rizininstaller/WebActivity$RadareWebViewClient.method.<init>(Lorg/radare/rizininstaller/WebActivity;Lorg/radare/rizininstaller/WebActivity$1;)V
+0x0001def4 method 2 p    Lorg/radare/rizininstaller/WebActivity$RadareWebViewClient.method.onReceivedError(Landroid/webkit/WebView;ILjava/lang/String;Ljava/lang/String;)V
+0x0001df90 method 3 p    Lorg/radare/rizininstaller/WebActivity$RadareWebViewClient.method.shouldOverrideUrlLoading(Landroid/webkit/WebView;Ljava/lang/String;)Z
+0x00008470 [0x0001dfac - 0x0001e5e8]   1596 class 95 Lorg/radare/rizininstaller/WebActivity :: Landroid/app/Activity;
+0x0001dfac method 0 pC   Lorg/radare/rizininstaller/WebActivity.method.<init>()V
+0x0001dfc4 method 1 sh   Lorg/radare/rizininstaller/WebActivity.method.access$100(Lorg/radare/rizininstaller/WebActivity;)Lorg/radare/rizininstaller/Utils;
+0x0001dfdc method 2 p    Lorg/radare/rizininstaller/WebActivity.method.getLocalIpAddress()Ljava/lang/String;
+0x0001e06c method 3 p    Lorg/radare/rizininstaller/WebActivity.method.onCreate(Landroid/os/Bundle;)V
+0x0001e574 method 4 p    Lorg/radare/rizininstaller/WebActivity.method.onDestroy()V
+0x0001e5a4 method 5 p    Lorg/radare/rizininstaller/WebActivity.method.onKeyDown(ILandroid/view/KeyEvent;)Z
 0x00008490 [0x0001e608 - 0x0001e83c]    564 class 96 Lcom/ice/tar/TarGzOutputStream :: Lcom/ice/tar/TarOutputStream;
 0x0001e608 method 0 pC   Lcom/ice/tar/TarGzOutputStream.method.<init>(Ljava/io/OutputStream;)V
 0x0001e660 method 1 p    Lcom/ice/tar/TarGzOutputStream.method.close()V
@@ -1351,9 +1351,9 @@ EXPECT=<<EOF
 0x0002119c method 3 p    Ljavax/activation/URLDataSource.method.getName()Ljava/lang/String;
 0x000211bc method 4 p    Ljavax/activation/URLDataSource.method.getOutputStream()Ljava/io/OutputStream;
 0x000211f8 method 5 p    Ljavax/activation/URLDataSource.method.getURL()Ljava/net/URL;
-0x00008790 [0x00021210 - 0x00021262]     82 class 120 Lorg/radare/radare2installer/Utils$1 :: Lcom/stericson/RootTools/Command;
-0x00021210 method 0 gC   Lorg/radare/radare2installer/Utils$1.method.<init>(Lorg/radare/radare2installer/Utils;I[Ljava/lang/String;Ljava/lang/StringBuffer;)V
-0x00021230 method 1 p    Lorg/radare/radare2installer/Utils$1.method.output(ILjava/lang/String;)V
+0x00008790 [0x00021210 - 0x00021262]     82 class 120 Lorg/radare/rizininstaller/Utils$1 :: Lcom/stericson/RootTools/Command;
+0x00021210 method 0 gC   Lorg/radare/rizininstaller/Utils$1.method.<init>(Lorg/radare/rizininstaller/Utils;I[Ljava/lang/String;Ljava/lang/StringBuffer;)V
+0x00021230 method 1 p    Lorg/radare/rizininstaller/Utils$1.method.output(ILjava/lang/String;)V
 0x000087b0 [0x00021274 - 0x000212f6]    130 class 121 Lcom/stericson/RootTools/InternalMethods$10 :: Lcom/stericson/RootTools/RootTools$Result;
 0x00021274 method 0 C    Lcom/stericson/RootTools/InternalMethods$10.method.<init>(Ljava/lang/String;)V
 0x00021290 method 1 p    Lcom/stericson/RootTools/InternalMethods$10.method.onComplete(I)V
@@ -1381,8 +1381,8 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=DEX radare2installer.dex classes (ic command with name)
-FILE=bins/dex/org.radare.radare2installer.dex
+NAME=DEX rizininstaller.dex classes (ic command with name)
+FILE=bins/dex/org.radare.rizininstaller.dex
 CMDS=ic  Lcom/stericson/RootTools/Installer
 EXPECT=<<EOF
 class Lcom/stericson/RootTools/Installer
@@ -1392,8 +1392,8 @@ class Lcom/stericson/RootTools/Installer
 EOF
 RUN
 
-NAME=DEX radare2installer.dex classes (ic command with index)
-FILE=bins/dex/org.radare.radare2installer.dex
+NAME=DEX rizininstaller.dex classes (ic command with index)
+FILE=bins/dex/org.radare.rizininstaller.dex
 CMDS=ic 17
 EXPECT=<<EOF
 class Lcom/stericson/RootTools/Installer

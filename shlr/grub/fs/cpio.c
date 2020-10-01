@@ -21,7 +21,7 @@
 #include <grub/mm.h>
 #include <grub/misc.h>
 #include <grub/disk.h>
-#include <r_types.h>
+#include <rz_types.h>
 
 #ifndef MODE_USTAR
 /* cpio support */

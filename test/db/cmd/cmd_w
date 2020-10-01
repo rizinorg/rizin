@@ -69,7 +69,7 @@ RUN
 NAME=wh
 FILE=-
 CMDS=<<EOF
-wh radare2~?
+wh rizin~?
 EOF
 EXPECT=<<EOF
 1

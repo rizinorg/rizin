@@ -1,0 +1,45 @@
+.Dd Aug 6, 2020
+.Dt RASIGN2 1
+.Sh NAME
+.Nm RASIGN2
+.Nd rizin zignature utility
+.Sh SYNOPSIS
+.Nm rz_sign
+.Op Fl afhjqrv
+.Op Fl s Ar space
+.Op Fl o Ar outfile
+.Ar file
+.Sh DESCRIPTION
+rz_diff implements many binary diffing algorithms for data and code.
+.Pp
+.Bl -tag -width Fl
+.It Fl a
+Analyze binary after loading it with RCore and use -AA to run aaaa instead of aaa.
+.It Fl f
+Interpret the input file as a flirt database and dump the signatures.
+.It Fl h
+Show usage help message.
+.It Fl j
+Show output in JSON.
+.It Fl o Ar file.sdb
+Add signatures to file, create if it does not exist.
+.It Fl q
+Enable quiet mode.
+.It Fl r
+Show output in radare commands.
+.It Fl s Ar space
+Add signatures save all signatures under this signspace.
+.It Fl v
+Show version information.
+.El
+.Sh SEE ALSO
+.Pp
+.Xr rizin(1) ,
+.Xr rz_find(1) ,
+.Xr rz_hash(1) ,
+.Xr rz_bin(1) ,
+.Xr rz_asm(1) ,
+.Xr rz_gg(1) ,
+.Xr rz_run(1) ,
+.Xr rz_ax(1) ,
+.Xr rz_diff(1) ,

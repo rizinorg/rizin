@@ -1,7 +1,7 @@
 // Copyright (c) 2014-2017, The Lemon Man, All rights reserved. LGPLv3
 #ifndef KD_H
 #define KD_H
-#include <r_types_base.h>
+#include <rz_types_base.h>
 #include "transport.h"
 
 enum {
@@ -115,7 +115,7 @@ typedef struct kd_req_t {
 			uint64_t addr;
 			uint32_t length;
 			uint32_t read;
-		}) r_mem;
+		}) rz_mem;
 		R_PACKED (
 		struct {
 			uint16_t major;
@@ -128,39 +128,39 @@ typedef struct kd_req_t {
 			uint64_t kernel_base;
 			uint64_t mod_addr;
 			uint64_t dbg_addr;
-		}) r_ver;
+		}) rz_ver;
 		struct {
 			uint32_t reason;
 			uint32_t tf;
 			uint32_t dr7;
 			uint32_t css;
 			uint32_t cse;
-		} r_cont;
+		} rz_cont;
 		struct {
 			uint64_t addr;
 			uint32_t handle;
-		} r_set_bp;
+		} rz_set_bp;
 		struct {
 			uint32_t handle;
-		} r_del_bp;
+		} rz_del_bp;
 		struct {
 			uint64_t addr;
 			uint32_t flags;
-		} r_set_ibp;
+		} rz_set_ibp;
 		struct {
 			uint64_t addr;
 			uint32_t flags;
 			uint32_t calls;
-		} r_get_ibp;
+		} rz_get_ibp;
 		struct {
 			uint32_t flags;
-		} r_ctx;
+		} rz_ctx;
 		struct {
 			uint64_t addr;
 			uint64_t reserved;
 			uint32_t address_space;
 			uint32_t flags;
-		} r_query_mem;
+		} rz_query_mem;
 
 		// Pad the struct to 56 bytes
 		uint8_t raw[40];

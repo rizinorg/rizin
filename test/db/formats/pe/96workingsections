@@ -25,7 +25,7 @@ RUN
 NAME=PE: corkami 96workingsections.exe - section list
 FILE=bins/pe/96workingsections.exe
 ARGS=-n
-CMDS=!rabin2 -S bins/pe/96workingsections.exe
+CMDS=!rz_bin -S bins/pe/96workingsections.exe
 EXPECT=<<EOF
 [Sections]
 
@@ -134,7 +134,7 @@ RUN
 NAME=PE: corkami 96workingsections.exe - section list - unfiltered
 FILE=bins/pe/96workingsections.exe
 ARGS=-n
-CMDS=!rabin2 -uS bins/pe/96workingsections.exe
+CMDS=!rz_bin -uS bins/pe/96workingsections.exe
 EXPECT=<<EOF
 [Sections]
 

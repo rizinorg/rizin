@@ -1,0 +1,11 @@
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=@LIBDIR@
+includedir=${prefix}/include
+
+Name: rz_io
+Description: radare foundation libraries
+Version: @VERSION@
+Requires: rz_util rz_socket rz_hash rz_cons rz_crypto
+Libs: -L${libdir} -lrz_io  
+Cflags: -I${includedir}/librz 

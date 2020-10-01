@@ -1,5 +1,5 @@
 include ../../../config-user.mk
-include ../../../libr/config.mk
+include ../../../librz/config.mk
 include ../../../mk/platform.mk
 include ../../../mk/${COMPILER}.mk
 
@@ -41,7 +41,7 @@ SOVERSION=0
 EXT_SO=so
 SOVER=${EXT_SO}
 LDFLAGS_SHARED?=-fPIC -shared
-LDFLAGS_SHARED+=-Wl,-soname,libr_z.${EXT_SO}
+LDFLAGS_SHARED+=-Wl,-soname,librz_z.${EXT_SO}
 endif
 endif
 
@@ -76,18 +76,18 @@ OBJS=	zip_add.o zip_add_dir.o zip_add_entry.o \
 	zip_string.o zip_unchange.o zip_unchange_all.o \
 	zip_unchange_archive.o zip_unchange_data.o zip_utf-8.o
 
-#OFILES=libr_zip.$(EXT_AR) $(OBJS)
+#OFILES=librz_zip.$(EXT_AR) $(OBJS)
 OFILES=$(OBJS)
 
 #CFLAGS+=-g -fPIC
-CFLAGS+=-I../../../libr/include -I../include/
-LDFLAGS+=-L../../../libr/util
-LINKFLAGS=../zlib/libr_z.$(EXT_AR)
+CFLAGS+=-I../../../librz/include -I../include/
+LDFLAGS+=-L../../../librz/util
+LINKFLAGS=../zlib/librz_z.$(EXT_AR)
 #LDFLAGS=-shared
 EXT_SO?=dylib
-LIBNAME=libr_zip.${SOVER}
+LIBNAME=librz_zip.${SOVER}
 
-LIBAR=libr_zip.$(EXT_AR)
+LIBAR=librz_zip.$(EXT_AR)
 
 all:: ${LIBAR}
 ifeq ($(WITHPIC),1)

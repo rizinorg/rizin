@@ -77,7 +77,7 @@ int qnxr_read_packet (libqnxr_t *g) {
 	// or the buffer is empty
 	if (g->read_len == 0 || g->read_ptr == g->read_len) {
 		while (true) {
-			int ret = r_socket_ready (g->sock, 0, READ_TIMEOUT);
+			int ret = rz_socket_ready (g->sock, 0, READ_TIMEOUT);
 			if (ret < 0) {
 				if (errno == EINTR)
 					continue;
@@ -86,7 +86,7 @@ int qnxr_read_packet (libqnxr_t *g) {
 			}
 
 			g->read_ptr = 0;
-			g->read_len = r_socket_read (g->sock, (void *)g->read_buff,
+			g->read_len = rz_socket_read (g->sock, (void *)g->read_buff,
 
 						     DS_DATA_MAX_SIZE * 2);
 			if (g->read_len <= 0) {
@@ -127,19 +127,19 @@ int qnxr_read_packet (libqnxr_t *g) {
 }
 
 int qnxr_send_nak (libqnxr_t *g) {
-	return r_socket_write (g->sock, nak_packet, sizeof (nak_packet));
+	return rz_socket_write (g->sock, nak_packet, sizeof (nak_packet));
 }
 
 int qnxr_send_ch_reset (libqnxr_t *g) {
-	return r_socket_write (g->sock, ch_reset_packet, sizeof (ch_reset_packet));
+	return rz_socket_write (g->sock, ch_reset_packet, sizeof (ch_reset_packet));
 }
 
 int qnxr_send_ch_debug (libqnxr_t *g) {
-	return r_socket_write (g->sock, ch_debug_packet, sizeof (ch_debug_packet));
+	return rz_socket_write (g->sock, ch_debug_packet, sizeof (ch_debug_packet));
 }
 
 int qnxr_send_ch_text (libqnxr_t *g) {
-	return r_socket_write (g->sock, ch_text_packet, sizeof (ch_text_packet));
+	return rz_socket_write (g->sock, ch_text_packet, sizeof (ch_text_packet));
 }
 
 int qnxr_send_packet (libqnxr_t *g) {
@@ -192,5 +192,5 @@ int qnxr_send_packet (libqnxr_t *g) {
 		g->channelwr = g->tran.pkt.hdr.channel;
 	}
 
-	return r_socket_write (g->sock, g->send_buff, p - g->send_buff);
+	return rz_socket_write (g->sock, g->send_buff, p - g->send_buff);
 }

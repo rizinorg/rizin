@@ -1,55 +1,55 @@
-#include <r_util.h>
+#include <rz_util.h>
 #include "minunit.h"
 #define BUF_LENGTH 100
 
-//TODO test r_str_chop_path
+//TODO test rz_str_chop_path
 
 bool test_r_table(void) {
-	RTable *t = r_table_new ();
+	RTable *t = rz_table_new ();
 
-	// r_table_fromcsv (t, csv);
-	RTableColumnType *typeString = r_table_type ("string");
-	RTableColumnType *typeNumber = r_table_type ("number");
+	// rz_table_fromcsv (t, csv);
+	RTableColumnType *typeString = rz_table_type ("string");
+	RTableColumnType *typeNumber = rz_table_type ("number");
 
-	r_table_add_column (t, typeString, "name", 0);
-	r_table_add_column (t, typeNumber, "address", 0);
+	rz_table_add_column (t, typeString, "name", 0);
+	rz_table_add_column (t, typeNumber, "address", 0);
 
-	r_table_add_row (t, "hello", "100", NULL);
-	r_table_add_row (t, "namings", "20000", NULL);
+	rz_table_add_row (t, "hello", "100", NULL);
+	rz_table_add_row (t, "namings", "20000", NULL);
 
-	// r_table_filter (t, 1, '>', "200");
-	// r_table_filter (t, 1, '=', "100");
-	// r_table_query (t, "[1]/q/100");
-	r_table_sort (t, 1, true);
+	// rz_table_filter (t, 1, '>', "200");
+	// rz_table_filter (t, 1, '=', "100");
+	// rz_table_query (t, "[1]/q/100");
+	rz_table_sort (t, 1, true);
 	{
-		char *j = r_table_tojson (t);
+		char *j = rz_table_tojson (t);
 		const char *jOK = "[{\"name\":\"namings\",\"address\":20000},{\"name\":\"hello\",\"address\":100}]";
-		mu_assert_streq (j, jOK, "r_table_get_sections");
+		mu_assert_streq (j, jOK, "rz_table_get_sections");
 		free (j);
 	}
-	r_table_free (t);
+	rz_table_free (t);
 	mu_end;
 }
 
 RTable *__table_test_data1() {
-	RTable *t = r_table_new ();
+	RTable *t = rz_table_new ();
 
-	r_table_add_column (t, r_table_type ("string"), "ascii", 0);
-	r_table_add_column (t, r_table_type ("number"), "code", 0);
+	rz_table_add_column (t, rz_table_type ("string"), "ascii", 0);
+	rz_table_add_column (t, rz_table_type ("number"), "code", 0);
 
-	r_table_add_row (t, "a", "97", NULL);
-	r_table_add_row (t, "b", "98", NULL);
-	r_table_add_row (t, "c", "99", NULL);
+	rz_table_add_row (t, "a", "97", NULL);
+	rz_table_add_row (t, "b", "98", NULL);
+	rz_table_add_row (t, "c", "99", NULL);
 
 	return t;
 }
 
 bool test_r_table_column_type(void) {
 	RTable *t = __table_test_data1 ();
-	RTableColumn *c = r_list_get_n (t->cols, 1);
-	c->type = r_table_type ("NUMBER");
-	r_table_sort (t, 1, true);
-	char *s = r_table_tostring (t);
+	RTableColumn *c = rz_list_get_n (t->cols, 1);
+	c->type = rz_table_type ("NUMBER");
+	rz_table_sort (t, 1, true);
+	char *s = rz_table_tostring (t);
 	mu_assert_streq (s,
 		"ascii code\n"
 		"----------\n"
@@ -57,7 +57,7 @@ bool test_r_table_column_type(void) {
 		"b     98\n"
 		"c     99\n", "not sorted by second column due to undefined type");
 	free (s);
-	r_table_free (t);
+	rz_table_free (t);
 	mu_end;
 }
 
@@ -67,8 +67,8 @@ bool test_r_table_tostring(void) {
 
 	int i;
 	for (i = 0; i < 4; i++) {
-		char *s = r_table_tostring (t);
-		snprintf (buf, BUF_LENGTH, "%d-th call to r_table_tostring", i);
+		char *s = rz_table_tostring (t);
+		snprintf (buf, BUF_LENGTH, "%d-th call to rz_table_tostring", i);
 		mu_assert_streq (s,
 			"ascii code\n"
 			"----------\n"
@@ -77,15 +77,15 @@ bool test_r_table_tostring(void) {
 			"c     99\n", buf);
 		free (s);
 	}
-	r_table_free (t);
+	rz_table_free (t);
 	mu_end;
 }
 
 bool test_r_table_sort1(void) {
 	RTable *t = __table_test_data1 ();
 
-	r_table_sort (t, 1, true);
-	char *strd = r_table_tostring (t);
+	rz_table_sort (t, 1, true);
+	char *strd = rz_table_tostring (t);
 	mu_assert_streq (strd,
 		"ascii code\n"
 		"----------\n"
@@ -94,8 +94,8 @@ bool test_r_table_sort1(void) {
 		"a     97\n", "sort decreasing second column using number type");
 	free (strd);
 
-	r_table_sort (t, 1, false);
-	char *stri = r_table_tostring (t);
+	rz_table_sort (t, 1, false);
+	char *stri = rz_table_tostring (t);
 	mu_assert_streq (stri,
 		"ascii code\n"
 		"----------\n"
@@ -103,15 +103,15 @@ bool test_r_table_sort1(void) {
 		"b     98\n"
 		"c     99\n", "sort increasing second column using number type");
 	free (stri);
-	r_table_free (t);
+	rz_table_free (t);
 	mu_end;
 }
 
 bool test_r_table_uniq(void) {
 	RTable *t = __table_test_data1 ();
 
-	r_table_uniq (t);
-	char *strd = r_table_tostring (t);
+	rz_table_uniq (t);
+	char *strd = rz_table_tostring (t);
 	mu_assert_streq (strd,
 		"ascii code\n"
 		"----------\n"
@@ -121,21 +121,21 @@ bool test_r_table_uniq(void) {
 		"uniq delete nothing");
 	free (strd);
 
-	r_table_add_row (t, "a", "97", NULL);
-	r_table_add_row (t, "a", "97", NULL);
-	r_table_add_row (t, "a", "97", NULL);
-	r_table_add_row (t, "b", "98", NULL);
-	r_table_add_row (t, "c", "99", NULL);
-	r_table_add_row (t, "b", "98", NULL);
-	r_table_add_row (t, "c", "99", NULL);
-	r_table_add_row (t, "d", "99", NULL);
-	r_table_add_row (t, "b", "98", NULL);
-	r_table_add_row (t, "d", "99", NULL);
-	r_table_add_row (t, "c", "99", NULL);
-	r_table_add_row (t, "c", "100", NULL);
+	rz_table_add_row (t, "a", "97", NULL);
+	rz_table_add_row (t, "a", "97", NULL);
+	rz_table_add_row (t, "a", "97", NULL);
+	rz_table_add_row (t, "b", "98", NULL);
+	rz_table_add_row (t, "c", "99", NULL);
+	rz_table_add_row (t, "b", "98", NULL);
+	rz_table_add_row (t, "c", "99", NULL);
+	rz_table_add_row (t, "d", "99", NULL);
+	rz_table_add_row (t, "b", "98", NULL);
+	rz_table_add_row (t, "d", "99", NULL);
+	rz_table_add_row (t, "c", "99", NULL);
+	rz_table_add_row (t, "c", "100", NULL);
 
-	r_table_uniq (t);
-	char *stri = r_table_tostring (t);
+	rz_table_uniq (t);
+	char *stri = rz_table_tostring (t);
 	mu_assert_streq (stri,
 		"ascii code\n"
 		"----------\n"
@@ -146,15 +146,15 @@ bool test_r_table_uniq(void) {
 		"c     100\n",
 		"uniq delete some rows");
 	free (stri);
-	r_table_free (t);
+	rz_table_free (t);
 	mu_end;
 }
 
 static void simple_merge(RTableRow *acc, RTableRow *new_row, int nth) {
-	RList *lhs = acc->items;
-	RList *rhs = new_row->items;
-	RListIter *iter_lhs;
-	RListIter *iter_rhs;
+	RzList *lhs = acc->items;
+	RzList *rhs = new_row->items;
+	RzListIter *iter_lhs;
+	RzListIter *iter_rhs;
 
 	char *item_lhs;
 
@@ -169,16 +169,16 @@ static void simple_merge(RTableRow *acc, RTableRow *new_row, int nth) {
 		if (i != nth) {
 			if (!strcmp (item_lhs, "a")) {
 				free (iter_lhs->data);
-				iter_lhs->data = r_str_new ("a | e");
+				iter_lhs->data = rz_str_new ("a | e");
 			} else if (!strcmp (item_lhs, "b")) {
 				free (iter_lhs->data);
-				iter_lhs->data = r_str_new ("b | f");
+				iter_lhs->data = rz_str_new ("b | f");
 			} else if (!strcmp (item_lhs, "c")) {
 				free (iter_lhs->data);
-				iter_lhs->data = r_str_new ("c | h");
+				iter_lhs->data = rz_str_new ("c | h");
 			} else if (!strcmp (item_lhs, "d")) {
 				free (iter_lhs->data);
-				iter_lhs->data = r_str_new ("d | g");
+				iter_lhs->data = rz_str_new ("d | g");
 			}
 		}
 
@@ -189,8 +189,8 @@ static void simple_merge(RTableRow *acc, RTableRow *new_row, int nth) {
 bool test_r_table_group (void) {
 	RTable *t = __table_test_data1 ();
 
-	r_table_group (t, -1, NULL);
-	char *str = r_table_tostring (t);
+	rz_table_group (t, -1, NULL);
+	char *str = rz_table_tostring (t);
 	mu_assert_streq (str,
 		"ascii code\n"
 		"----------\n"
@@ -200,21 +200,21 @@ bool test_r_table_group (void) {
 		"group delete nothing");
 	free (str);
 
-	r_table_add_row (t, "a", "97", NULL);
-	r_table_add_row (t, "a", "97", NULL);
-	r_table_add_row (t, "a", "97", NULL);
-	r_table_add_row (t, "b", "98", NULL);
-	r_table_add_row (t, "c", "99", NULL);
-	r_table_add_row (t, "b", "98", NULL);
-	r_table_add_row (t, "c", "99", NULL);
-	r_table_add_row (t, "d", "1", NULL);
-	r_table_add_row (t, "b", "98", NULL);
-	r_table_add_row (t, "d", "99", NULL);
-	r_table_add_row (t, "c", "99", NULL);
-	r_table_add_row (t, "c", "100", NULL);
+	rz_table_add_row (t, "a", "97", NULL);
+	rz_table_add_row (t, "a", "97", NULL);
+	rz_table_add_row (t, "a", "97", NULL);
+	rz_table_add_row (t, "b", "98", NULL);
+	rz_table_add_row (t, "c", "99", NULL);
+	rz_table_add_row (t, "b", "98", NULL);
+	rz_table_add_row (t, "c", "99", NULL);
+	rz_table_add_row (t, "d", "1", NULL);
+	rz_table_add_row (t, "b", "98", NULL);
+	rz_table_add_row (t, "d", "99", NULL);
+	rz_table_add_row (t, "c", "99", NULL);
+	rz_table_add_row (t, "c", "100", NULL);
 
-	r_table_group (t, 0, NULL);
-	str = r_table_tostring (t);
+	rz_table_group (t, 0, NULL);
+	str = rz_table_tostring (t);
 	mu_assert_streq (str,
 		"ascii code\n"
 		"----------\n"
@@ -225,13 +225,13 @@ bool test_r_table_group (void) {
 		"group delete some rows");
 	free (str);
 
-	r_table_add_row (t, "e", "97", NULL);
-	r_table_add_row (t, "f", "98", NULL);
-	r_table_add_row (t, "g", "99", NULL);
-	r_table_add_row (t, "h", "1", NULL);
+	rz_table_add_row (t, "e", "97", NULL);
+	rz_table_add_row (t, "f", "98", NULL);
+	rz_table_add_row (t, "g", "99", NULL);
+	rz_table_add_row (t, "h", "1", NULL);
 
-	r_table_group (t, 1, simple_merge);
-	str = r_table_tostring (t);
+	rz_table_group (t, 1, simple_merge);
+	str = rz_table_tostring (t);
 	mu_assert_streq (str,
 		"ascii code\n"
 		"----------\n"
@@ -242,31 +242,31 @@ bool test_r_table_group (void) {
 		"group delete some rows");
 	free (str);
 
-	r_table_free (t);
+	rz_table_free (t);
 	mu_end;
 }
 
 bool test_r_table_columns () {
 	RTable *t = NULL;
 #define CREATE_TABLE                                                   \
-	r_table_free (t);                                              \
-	t = r_table_new ();                                            \
-	r_table_add_column (t, r_table_type ("number"), "name", 0);    \
-	r_table_add_column (t, r_table_type ("number"), "address", 0); \
-	r_table_add_row (t, "hello", "100", NULL);                     \
-	r_table_add_row (t, "namings", "20000", NULL);
+	rz_table_free (t);                                              \
+	t = rz_table_new ();                                            \
+	rz_table_add_column (t, rz_table_type ("number"), "name", 0);    \
+	rz_table_add_column (t, rz_table_type ("number"), "address", 0); \
+	rz_table_add_row (t, "hello", "100", NULL);                     \
+	rz_table_add_row (t, "namings", "20000", NULL);
 
 	CREATE_TABLE
-	char *s = r_table_tocsv (t);
+	char *s = rz_table_tocsv (t);
 	mu_assert_streq (s,
 		"name,address\n"
 		"hello,100\n"
 		"namings,20000\n", "original");
 	free (s);
 
-	RList *newcols = r_list_new ();
-	r_table_columns (t, newcols);
-	s = r_table_tocsv (t);
+	RzList *newcols = rz_list_new ();
+	rz_table_columns (t, newcols);
+	s = rz_table_tocsv (t);
 	mu_assert_streq (s,
 		"\n"
 		"\n"
@@ -274,9 +274,9 @@ bool test_r_table_columns () {
 	free (s);
 
 	CREATE_TABLE
-	r_list_push (newcols, "address");
-	r_table_columns (t, newcols);
-	s = r_table_tocsv (t);
+	rz_list_push (newcols, "address");
+	rz_table_columns (t, newcols);
+	s = rz_table_tocsv (t);
 	mu_assert_streq (s,
 		"address\n"
 		"100\n"
@@ -284,9 +284,9 @@ bool test_r_table_columns () {
 	free (s);
 
 	CREATE_TABLE
-	r_list_push (newcols, "name");
-	r_table_columns (t, newcols);
-	s = r_table_tocsv (t);
+	rz_list_push (newcols, "name");
+	rz_table_columns (t, newcols);
+	s = rz_table_tocsv (t);
 	mu_assert_streq (s,
 		"address,name\n"
 		"100,hello\n"
@@ -294,18 +294,18 @@ bool test_r_table_columns () {
 	free (s);
 
 	CREATE_TABLE
-	r_list_push (newcols, "name");
-	r_list_push (newcols, "address");
-	r_table_columns (t, newcols);
-	s = r_table_tocsv (t);
+	rz_list_push (newcols, "name");
+	rz_list_push (newcols, "address");
+	rz_table_columns (t, newcols);
+	s = rz_table_tocsv (t);
 	mu_assert_streq (s,
 		"address,name,name,address\n"
 		"100,hello,hello,100\n"
 		"20000,namings,namings,20000\n", "replicate");
 	free (s);
 
-	r_list_free (newcols);
-	r_table_free (t);
+	rz_list_free (newcols);
+	rz_table_free (t);
 	mu_end;
 #undef CREATE_TABLE
 }

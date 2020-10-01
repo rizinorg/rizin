@@ -1,0 +1,12 @@
+OBJ_REISERzFS=fs_reiserfs.o
+EXTRA=$(GRUB)
+CFLAGS+=-Igrub/include
+
+STATIC_OBJ+=${OBJ_REISERzFS}
+#STATIC_OBJ+=${EXTRA}
+TARGET_REISERzFS=fs_reiserfs.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_REISERzFS}
+
+${TARGET_REISERzFS}: ${OBJ_REISERzFS}
+	${CC} $(call libname,fs_reiserfs) ${LDFLAGS} ${CFLAGS} -o ${TARGET_REISERzFS} ${OBJ_REISERzFS} ${EXTRA}

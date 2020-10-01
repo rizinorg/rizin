@@ -160,14 +160,14 @@ int read_packet(libgdbr_t *g, bool vcont) {
 	}
 	g->data_len = 0;
 	for (i = 0; i < g->num_retries && !g->isbreaked; vcont ? 0 : i++) {
-		ret = r_socket_ready (g->sock, 0, READ_TIMEOUT);
+		ret = rz_socket_ready (g->sock, 0, READ_TIMEOUT);
 		if (ret == 0 && !vcont) {
 			continue;
 		}
 		if (ret <= 0) {
 			return -1;
 		}
-		int sz = r_socket_read (g->sock, (void *)g->read_buff, g->read_max - 1);
+		int sz = rz_socket_read (g->sock, (void *)g->read_buff, g->read_max - 1);
 		if (sz <= 0) {
 			eprintf ("%s: read failed\n", __func__);
 			return -1;
@@ -199,7 +199,7 @@ int send_packet(libgdbr_t *g) {
 		eprintf ("putpkt (\"%s\");  %s\n", g->send_buff,
 			 g->no_ack ? "[noack mode]" : "[looking for ack]");
 	}
-	return r_socket_write (g->sock, g->send_buff, g->send_len);
+	return rz_socket_write (g->sock, g->send_buff, g->send_len);
 }
 
 int pack(libgdbr_t *g, const char *msg) {

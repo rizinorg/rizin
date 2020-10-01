@@ -4,7 +4,7 @@ Authors
 Main developer (author and maintainer)
 --------------------------------------
 
-The author of radare and radare2 is the main contributor and designer of the tool, apis, bindings, etc.
+The author of radare and rizin is the main contributor and designer of the tool, apis, bindings, etc.
 
  - pancake <pancake@nopcode.org>
 
@@ -23,7 +23,7 @@ Most active in community, setting up CI servers, regression tests, esil, coverit
 Honoric Contributors
 --------------------
 
-Special mention for showing great interest and helping the project in fuzzing, bug fixing, the new web ui, r2pipe, PDB, windows support (console, debugger, windbg), ..
+Special mention for showing great interest and helping the project in fuzzing, bug fixing, the new web ui, rzpipe, PDB, windows support (console, debugger, windbg), ..
 
  - Alvaro Felipe
  - NighterMan

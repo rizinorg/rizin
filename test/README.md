@@ -11,7 +11,7 @@ Directory Hierarchy
  * db/:          The tests sources
  * unit/:        Unit tests (written in C, using minunit).
  * fuzz/:        Fuzzing helper scripts
- * bins/:        Sample binaries (fetched from the [external repository](https://github.com/radareorg/radare2-testbins))
+ * bins/:        Sample binaries (fetched from the [external repository](https://github.com/rizinorg/rizin-testbins))
 
 Requirements
 ------------
@@ -40,7 +40,7 @@ Reporting Radare2 Bugs
 Please do not post Radare2 bugs on the r2-regressions github tracker. Instead
 use the official r2 tracker:
 
-https://github.com/radareorg/radare2/issues?state=open
+https://github.com/rizinorg/rizin/issues?state=open
 
 Writing Assembly tests
 ----------------------

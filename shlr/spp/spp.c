@@ -1,11 +1,11 @@
 /* MIT pancake <pancake@nopcode.org> (C) 2009-2020 */
 
 #include "spp.h"
-#include "r_api.h"
+#include "rz_api.h"
 #include "config.h"
 
 #if !USE_R2
-#include "r_api.c"
+#include "rz_api.c"
 #endif
 
 S_API int spp_run(char *buf, Output *out) {
@@ -60,10 +60,10 @@ static char *spp_run_str(char *buf, int *rv) {
 	char *b;
 	Output tmp;
 	tmp.fout = NULL;
-	tmp.cout = r_strbuf_new ("");
+	tmp.cout = rz_strbuf_new ("");
 	int rc = spp_run (buf, &tmp);
-	b = strdup (r_strbuf_get (tmp.cout));
-	r_strbuf_free (tmp.cout);
+	b = strdup (rz_strbuf_get (tmp.cout));
+	rz_strbuf_free (tmp.cout);
 	if (rv) {
 		*rv = rc;
 	}
@@ -343,7 +343,7 @@ void out_printf(Output *out, char *str, ...) {
 		char tmp[4096];
 		vsnprintf (tmp, sizeof (tmp), str, ap);
 		tmp[sizeof (tmp) - 1] = 0;
-		r_strbuf_append (out->cout, tmp);
+		rz_strbuf_append (out->cout, tmp);
 	}
 	va_end (ap);
 }
@@ -363,12 +363,12 @@ S_API char *spp_eval_str(SppProc *p, const char *code) {
 	}
 	Output out;
 	out.fout = NULL;
-	out.cout = r_strbuf_new (NULL);
-	r_strbuf_init (out.cout);
+	out.cout = rz_strbuf_new (NULL);
+	rz_strbuf_init (out.cout);
 	char *c = strdup (code);
 	if (c) {
 		spp_proc_eval (p, c, &out);
 		free (c);
 	}
-	return r_strbuf_drain (out.cout);
+	return rz_strbuf_drain (out.cout);
 }

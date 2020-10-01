@@ -1,0 +1,11 @@
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=@LIBDIR@
+includedir=${prefix}/include
+
+Name: rz_parse
+Description: radare foundation libraries
+Version: @VERSION@
+Requires: rz_flag rz_util rz_syscall rz_reg rz_cons
+Libs: -L${libdir} -lrz_parse  
+Cflags: -I${includedir}/librz 

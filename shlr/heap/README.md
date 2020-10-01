@@ -1,4 +1,4 @@
-Trying to escape from the libr/core mess, we should put all the heap stuff into a separate place and use it from anal/heap.c
+Trying to escape from the librz/core mess, we should put all the heap stuff into a separate place and use it from anal/heap.c
 
 TODO
 

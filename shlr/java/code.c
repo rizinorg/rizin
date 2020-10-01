@@ -1,9 +1,9 @@
 /* radare - LGPL - Copyright 2007-2016 - pancake */
 
-#include <r_types.h>
-#include <r_util.h>
-#include <r_list.h>
-#include <r_anal.h>
+#include <rz_types.h>
+#include <rz_util.h>
+#include <rz_list.h>
+#include <rz_anal.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -18,8 +18,8 @@
 #define DO_THE_DBG 0
 #define IFDBG if(DO_THE_DBG)
 
-#ifndef R_API
-#define R_API
+#ifndef RZ_API
+#define RZ_API
 #endif
 
 static void init_switch_op(void);
@@ -107,7 +107,7 @@ static int handle_switch_op (ut64 addr, const ut8 * bytes, char *output, int out
 	return update_bytes_consumed (sz);
 }
 
-R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, int len, char *output, int outlen) {
+RZ_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, int len, char *output, int outlen) {
 	char *arg = NULL; //(char *) malloc (1024);
 	int sz = 0;
 	ut32 val_one = 0;
@@ -146,7 +146,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 		return update_bytes_consumed (JAVA_OPS[idx].size);
 
 	case 0x12: // ldc
-		arg = r_bin_java_resolve_without_space (obj, (ut16)bytes[1]);
+		arg = rz_bin_java_resolve_without_space (obj, (ut16)bytes[1]);
 		if (arg) {
 			snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
 			free (arg);
@@ -157,7 +157,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 		return update_bytes_consumed (JAVA_OPS[idx].size);
 	case 0x13:
 	case 0x14:
-		arg = r_bin_java_resolve_without_space (obj, (int)USHORT (bytes, 1));
+		arg = rz_bin_java_resolve_without_space (obj, (int)USHORT (bytes, 1));
 		if (arg) {
 			snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
 			free (arg);
@@ -205,7 +205,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	case 0xb8: // invokestatic
 	case 0xb9: // invokeinterface
 	case 0xba: // invokedynamic
-		arg = r_bin_java_resolve_without_space (obj, (int)USHORT (bytes, 1));
+		arg = rz_bin_java_resolve_without_space (obj, (int)USHORT (bytes, 1));
 		if (arg) {
 			snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
 			free (arg);
@@ -218,7 +218,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	case 0xbd: // anewarray
 	case 0xc0: // checkcast
 	case 0xc1: // instance of
-		arg = r_bin_java_resolve_without_space (obj, (int)USHORT (bytes, 1));
+		arg = rz_bin_java_resolve_without_space (obj, (int)USHORT (bytes, 1));
 		if (arg) {
 			snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
 			free (arg);
@@ -231,7 +231,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	case 0xb3: // putstatic
 	case 0xb4: // getfield
 	case 0xb5: // putfield
-		arg = r_bin_java_resolve_with_space (obj, (int)USHORT (bytes, 1));
+		arg = rz_bin_java_resolve_with_space (obj, (int)USHORT (bytes, 1));
 		if (arg) {
 			snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
 			free (arg);
@@ -256,20 +256,20 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	return update_bytes_consumed (JAVA_OPS[idx].size);
 }
 
-R_API void r_java_new_method (void) {
+RZ_API void rz_java_new_method (void) {
 	IFDBG eprintf ("Reseting the bytes consumed, they were: 0x%04"PFMT64x".\n", BYTES_CONSUMED);
 	init_switch_op ();
 	IN_SWITCH_OP = 0;
 	BYTES_CONSUMED = 0;
 }
 
-R_API void U(r_java_set_obj)(RBinJavaObj *obj) {
+RZ_API void U(rz_java_set_obj)(RBinJavaObj *obj) {
 	// eprintf ("SET CP (%p) %d\n", cp, n);
 	//BIN_OBJ = obj;
 }
 
-R_API int r_java_disasm(RBinJavaObj *obj, ut64 addr, const ut8 *bytes, int len, char *output, int outlen) {
-	//r_cons_printf ("r_java_disasm (allowed %d): 0x%02x, 0x%0x.\n", outlen, bytes[0], addr);
+RZ_API int rz_java_disasm(RBinJavaObj *obj, ut64 addr, const ut8 *bytes, int len, char *output, int outlen) {
+	//rz_cons_printf ("rz_java_disasm (allowed %d): 0x%02x, 0x%0x.\n", outlen, bytes[0], addr);
 	return java_print_opcode (obj, addr, bytes[0], bytes, len, output, outlen);
 }
 
@@ -285,7 +285,7 @@ static int parseJavaArgs(char *str, ut64 *args, int args_sz) {
 			if (q) {
 				*q++ = 0;
 			}
-			args[i] = r_num_math (NULL, p);
+			args[i] = rz_num_math (NULL, p);
 			if (q) {
 				p = q;
 			} else {
@@ -296,7 +296,7 @@ static int parseJavaArgs(char *str, ut64 *args, int args_sz) {
 	return nargs;
 }
 
-R_API int r_java_assemble(ut64 addr, ut8 *bytes, const char *string) {
+RZ_API int rz_java_assemble(ut64 addr, ut8 *bytes, const char *string) {
 	ut64 args[4] = {0};
 	int i, a, b, c, d;
 	char name[128];

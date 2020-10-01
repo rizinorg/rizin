@@ -1,6 +1,6 @@
-/* radare2 - LGPL - Copyright 2020 - pancake */
+/* rizin - LGPL - Copyright 2020 - pancake */
 
-#include <r_util.h>
+#include <rz_util.h>
 #include "minunit.h"
 
 int test_overflow_add(void) {

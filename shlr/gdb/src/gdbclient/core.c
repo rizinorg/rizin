@@ -8,9 +8,9 @@
 #include "libgdbr.h"
 #include "gdbr_common.h"
 #include "packet.h"
-#include "r_util/r_strbuf.h"
-#include "r_cons.h"
-#include "r_debug.h"
+#include "rz_util/rz_strbuf.h"
+#include "rz_cons.h"
+#include "rz_debug.h"
 
 #if __UNIX__
 #include <errno.h>
@@ -93,20 +93,20 @@ static void gdbr_break_process(void *arg) {
 }
 
 bool gdbr_lock_tryenter(libgdbr_t *g) {
-	if (!r_th_lock_tryenter (g->gdbr_lock)) {
+	if (!rz_th_lock_tryenter (g->gdbr_lock)) {
 		return false;
 	}
 	g->gdbr_lock_depth++;
-	r_cons_break_push (gdbr_break_process, g);
+	rz_cons_break_push (gdbr_break_process, g);
 	return true;
 }
 
 bool gdbr_lock_enter(libgdbr_t *g) {
-	r_cons_break_push (gdbr_break_process, g);
-	void *bed = r_cons_sleep_begin ();
-	r_th_lock_enter (g->gdbr_lock);
+	rz_cons_break_push (gdbr_break_process, g);
+	void *bed = rz_cons_sleep_begin ();
+	rz_th_lock_enter (g->gdbr_lock);
 	g->gdbr_lock_depth++;
-	r_cons_sleep_end (bed);
+	rz_cons_sleep_end (bed);
 	if (g->isbreaked) {
 		return false;
 	}
@@ -114,11 +114,11 @@ bool gdbr_lock_enter(libgdbr_t *g) {
 }
 
 void gdbr_lock_leave(libgdbr_t *g) {
-	r_cons_break_pop ();
+	rz_cons_break_pop ();
 	assert (g->gdbr_lock_depth > 0);
 	bool last_leave = g->gdbr_lock_depth == 1;
 	g->gdbr_lock_depth--;
-	r_th_lock_leave (g->gdbr_lock);
+	rz_th_lock_leave (g->gdbr_lock);
 	// if this is the last lock this thread holds make sure that we disable the break
 	if (last_leave) {
 		g->isbreaked = false;
@@ -167,21 +167,21 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	g->stub_features.pkt_sz = 64;
 	char *env_pktsz_str;
 	ut32 env_pktsz = 0;
-	if ((env_pktsz_str = r_sys_getenv ("R2_GDB_PKTSZ"))) {
+	if ((env_pktsz_str = rz_sys_getenv ("R2_GDB_PKTSZ"))) {
 		if ((env_pktsz = (ut32)strtoul (env_pktsz_str, NULL, 10))) {
 			g->stub_features.pkt_sz = R_MAX (env_pktsz, GDB_MAX_PKTSZ);
 		}
 	}
-	// Use the default break handler for r_socket_connect to send a signal
-	r_cons_break_pop ();
-	bed = r_cons_sleep_begin ();
+	// Use the default break handler for rz_socket_connect to send a signal
+	rz_cons_break_pop ();
+	bed = rz_cons_sleep_begin ();
 	if (*host == '/') {
-		ret = r_socket_connect_serial (g->sock, host, port, 1);
+		ret = rz_socket_connect_serial (g->sock, host, port, 1);
 	} else {
-		ret = r_socket_connect_tcp (g->sock, host, sdb_fmt ("%d", port), 1);
+		ret = rz_socket_connect_tcp (g->sock, host, sdb_fmt ("%d", port), 1);
 	}
-	r_cons_sleep_end (bed);
-	r_cons_break_push (gdbr_break_process, g);
+	rz_cons_sleep_end (bed);
+	rz_cons_break_push (gdbr_break_process, g);
 	if (!ret) {
 		ret = -1;
 		goto end;
@@ -191,7 +191,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	}
 	read_packet (g, true); // vcont=true lets us skip if we get no reply
 	g->connected = 1;
-	bed = r_cons_sleep_begin ();
+	bed = rz_cons_sleep_begin ();
 	// TODO add config possibility here
 	for (i = 0; i < QSUPPORTED_MAX_RETRIES && !g->isbreaked; i++) {
 		ret = send_msg (g, message);
@@ -208,7 +208,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		}
 		break;
 	}
-	r_cons_sleep_end (bed);
+	rz_cons_sleep_end (bed);
 	if (g->isbreaked) {
 		g->isbreaked = false;
 		ret = -1;
@@ -272,7 +272,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	ret = 0;
 end:
 	if (ret != 0) {
-		r_socket_close (g->sock);
+		rz_socket_close (g->sock);
 	}
 	gdbr_lock_leave (g);
 	return ret;
@@ -280,7 +280,7 @@ end:
 
 int gdbr_disconnect(libgdbr_t *g) {
 	// TODO Disconnect maybe send something to gdbserver
-	if (!g || !r_socket_close (g->sock)) {
+	if (!g || !rz_socket_close (g->sock)) {
 		return -1;
 	}
 	if (!gdbr_lock_enter (g)) {
@@ -1278,12 +1278,12 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 		goto end;
 	}
 
-	bed = r_cons_sleep_begin ();
-	while ((ret = read_packet (g, true)) < 0 && !g->isbreaked && r_socket_is_connected (g->sock));
+	bed = rz_cons_sleep_begin ();
+	while ((ret = read_packet (g, true)) < 0 && !g->isbreaked && rz_socket_is_connected (g->sock));
 	if (g->isbreaked) {
 		g->isbreaked = false;
 		// Stop target
-		r_socket_write (g->sock, "\x03", 1);
+		rz_socket_write (g->sock, "\x03", 1);
 		// Read the stop reason
 		if (read_packet (g, false) < 0) {
 			ret = -1;
@@ -1293,7 +1293,7 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 
 	ret = handle_cont (g);
 end:
-	r_cons_sleep_end (bed);
+	rz_cons_sleep_end (bed);
 	gdbr_lock_leave (g);
 	return ret;
 }
@@ -1669,7 +1669,7 @@ char* gdbr_exec_file_read(libgdbr_t *g, int pid) {
 			if (g->data_len == 1) {
 				break;
 			}
-			path = r_str_append (path, g->data + 1);
+			path = rz_str_append (path, g->data + 1);
 			break;
 		}
 		if (g->data[0] != 'm') {
@@ -1677,7 +1677,7 @@ char* gdbr_exec_file_read(libgdbr_t *g, int pid) {
 			goto end;
 		}
 		off += strlen (g->data + 1);
-		if (!(path = r_str_append (path, g->data + 1))) {
+		if (!(path = rz_str_append (path, g->data + 1))) {
 			ret = -1;
 			goto end;
 		}
@@ -1730,13 +1730,13 @@ end:
 	return ret;
 }
 
-RList* gdbr_pids_list(libgdbr_t *g, int pid) {
+RzList* gdbr_pids_list(libgdbr_t *g, int pid) {
 	int ret = -1;
-	RList *list = NULL;
+	RzList *list = NULL;
 	int tpid = -1, ttid = -1;
 	char *ptr, *ptr2, *exec_file;
-	RDebugPid *dpid = NULL;
-	RListIter *iter = NULL;
+	RzDebugPid *dpid = NULL;
+	RzListIter *iter = NULL;
 
 	if (!g) {
 		return NULL;
@@ -1745,7 +1745,7 @@ RList* gdbr_pids_list(libgdbr_t *g, int pid) {
 	if (!gdbr_lock_enter (g)) {
 		goto end;
 	}
-	if (!(list = r_list_new ())) {
+	if (!(list = rz_list_new ())) {
 		ret = -1;
 		goto end;
 	}
@@ -1783,12 +1783,12 @@ RList* gdbr_pids_list(libgdbr_t *g, int pid) {
 				continue;
 			}
 			// Avoid adding the same pid twice(could show more than once if it has threads)
-			r_list_foreach (list, iter, dpid) {
+			rz_list_foreach (list, iter, dpid) {
 				if (tpid == dpid->pid) {
 					continue;
 				}
 			}
-			if (!(dpid = R_NEW0 (RDebugPid)) || !(dpid->path = strdup (exec_file))) {
+			if (!(dpid = R_NEW0 (RzDebugPid)) || !(dpid->path = strdup (exec_file))) {
 				ret = -1;
 				goto end;
 			}
@@ -1800,7 +1800,7 @@ RList* gdbr_pids_list(libgdbr_t *g, int pid) {
 			dpid->uid = dpid->gid = -1;
 			dpid->runnable = true;
 			dpid->status = R_DBG_PROC_STOP;
-			r_list_append (list, dpid);
+			rz_list_append (list, dpid);
 			ptr = ptr2;
 		}
 		if (send_msg (g, "qsThreadInfo") < 0 || read_packet (g, false) < 0
@@ -1821,28 +1821,28 @@ end:
 		if (dpid) {
 			free (dpid);
 		}
-		// We can't use r_debug_pid_free here
+		// We can't use rz_debug_pid_free here
 		if (list) {
-			r_list_foreach (list, iter, dpid) {
+			rz_list_foreach (list, iter, dpid) {
 				if (dpid->path) {
 					free (dpid->path);
 				}
 				free (dpid);
 			}
-			r_list_free (list);
+			rz_list_free (list);
 		}
 		return NULL;
 	}
 	return list;
 }
 
-RList* gdbr_threads_list(libgdbr_t *g, int pid) {
+RzList* gdbr_threads_list(libgdbr_t *g, int pid) {
 	int ret = -1;
-	RList *list = NULL;
+	RzList *list = NULL;
 	int tpid = -1, ttid = -1;
 	char *ptr, *ptr2, *exec_file;
-	RDebugPid *dpid = NULL;
-	RListIter *iter = NULL;
+	RzDebugPid *dpid = NULL;
+	RzListIter *iter = NULL;
 
 	if (!g) {
 		return NULL;
@@ -1864,7 +1864,7 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 		ret = -1;
 		goto end;
 	}
-	if (!(list = r_list_new ())) {
+	if (!(list = rz_list_new ())) {
 		ret = -1;
 		goto end;
 	}
@@ -1885,7 +1885,7 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 				ptr = ptr2;
 				continue;
 			}
-			if (!(dpid = R_NEW0 (RDebugPid)) || !(dpid->path = strdup (exec_file))) {
+			if (!(dpid = R_NEW0 (RzDebugPid)) || !(dpid->path = strdup (exec_file))) {
 				ret = -1;
 				goto end;
 			}
@@ -1896,7 +1896,7 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 			// probably not correct.
 			// TODO: Implement getting correct thread status from GDB
 			dpid->status = R_DBG_PROC_STOP;
-			r_list_append (list, dpid);
+			rz_list_append (list, dpid);
 			ptr = ptr2;
 		}
 		if (send_msg (g, "qsThreadInfo") < 0 || read_packet (g, false) < 0
@@ -1910,7 +1910,7 @@ RList* gdbr_threads_list(libgdbr_t *g, int pid) {
 		}
 	}
 	// This is the all I've been able to extract from gdb so far
-	r_list_foreach (list, iter, dpid) {
+	rz_list_foreach (list, iter, dpid) {
 		if (gdbr_is_thread_dead (g, pid, dpid->pid)) {
 			dpid->status = R_DBG_PROC_DEAD;
 		}
@@ -1923,15 +1923,15 @@ end:
 		if (dpid) {
 			free (dpid);
 		}
-		// We can't use r_debug_pid_free here
+		// We can't use rz_debug_pid_free here
 		if (list) {
-			r_list_foreach (list, iter, dpid) {
+			rz_list_foreach (list, iter, dpid) {
 				if (dpid->path) {
 					free (dpid->path);
 				}
 				free (dpid);
 			}
-			r_list_free (list);
+			rz_list_free (list);
 		}
 		return NULL;
 	}
@@ -1953,7 +1953,7 @@ ut64 gdbr_get_baddr(libgdbr_t *g) {
 		min = UINT64_MAX;
 		goto end;
 	}
-	if (r_str_startswith (g->data, "TextSeg=")) {
+	if (rz_str_startswith (g->data, "TextSeg=")) {
 		ptr = g->data + strlen ("TextSeg=");
 		if (!isxdigit (*ptr)) {
 			goto end;
@@ -1966,7 +1966,7 @@ ut64 gdbr_get_baddr(libgdbr_t *g) {
 			goto end;
 		}
 		ptr++;
-		if (*ptr && r_str_startswith (ptr, "DataSeg=")) {
+		if (*ptr && rz_str_startswith (ptr, "DataSeg=")) {
 			ptr += strlen ("DataSeg=");
 			if (!isxdigit (*ptr)) {
 				goto end;
@@ -1978,7 +1978,7 @@ ut64 gdbr_get_baddr(libgdbr_t *g) {
 		}
 		goto end;
 	}
-	if (!r_str_startswith (g->data, "Text=")) {
+	if (!rz_str_startswith (g->data, "Text=")) {
 		goto end;
 	}
 	ptr = g->data + strlen ("Text=");
@@ -1989,7 +1989,7 @@ ut64 gdbr_get_baddr(libgdbr_t *g) {
 	if (off < min) {
 		min = off;
 	}
-	if (!(ptr = strchr (ptr, ';')) || !r_str_startswith (ptr + 1, "Data=")) {
+	if (!(ptr = strchr (ptr, ';')) || !rz_str_startswith (ptr + 1, "Data=")) {
 		min = UINT64_MAX;
 		goto end;
 	}
@@ -2006,7 +2006,7 @@ ut64 gdbr_get_baddr(libgdbr_t *g) {
 		goto end;
 	}
 	ptr++;
-	if (r_str_startswith (ptr, "Bss=")) {
+	if (rz_str_startswith (ptr, "Bss=")) {
 		ptr += strlen ("Bss=");
 		if (!isxdigit (*ptr)) {
 			goto end;

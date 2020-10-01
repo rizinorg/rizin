@@ -23,7 +23,7 @@
 #include <grub/misc.h>
 #include <grub/disk.h>
 #include <grub/types.h>
-#include <r_types.h>
+#include <rz_types.h>
 
 #ifdef MODE_UFS2
 #define GRUB_UFS_MAGIC		0x19540119

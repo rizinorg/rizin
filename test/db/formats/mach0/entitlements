@@ -40,9 +40,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=entitlements with rabin2
+NAME=entitlements with rz_bin
 FILE=bins/mach0/AppIOSEntitlements.ios
-CMDS=!rabin2 -OC `i~file:0[1]`
+CMDS=!rz_bin -OC `i~file:0[1]`
 EXPECT=<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

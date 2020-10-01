@@ -1,7 +1,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <r_util.h>
+#include <rz_util.h>
 #include "minunit.h"
 
 static void random_iota(int *a, int n) {
@@ -87,28 +87,28 @@ bool test_r_rbtree_bound_iterate() {
 	struct Node *x;
 	int i;
 
-	RBIter f = r_rbtree_first (tree);
+	RBIter f = rz_rbtree_first (tree);
 	mu_assert_eq (f.len, 0, "iter with 0 length");
 
 	for (i = 0; i < 99; i++) {
 		x = make (i * 2);
-		r_rbtree_insert (&tree, x, &x->rb, cmp, NULL);
+		rz_rbtree_insert (&tree, x, &x->rb, cmp, NULL);
 	}
 
 	// lower_bound
 	key.key = 0x24;
-	it = r_rbtree_lower_bound_forward (tree, &key, cmp, NULL);
+	it = rz_rbtree_lower_bound_forward (tree, &key, cmp, NULL);
 	i = 0x24;
-	r_rbtree_iter_while (it, x, struct Node, rb) {
+	rz_rbtree_iter_while (it, x, struct Node, rb) {
 		mu_assert_eq (x->key, i, "lower_bound_forward equal");
 		i += 2;
 	}
 	mu_assert_eq (i - 2, 98 * 2, "lower_bound_forward complete");
 
 	key.key = 0x25;
-	it = r_rbtree_lower_bound_forward (tree, &key, cmp, NULL);
+	it = rz_rbtree_lower_bound_forward (tree, &key, cmp, NULL);
 	i = 0x26;
-	r_rbtree_iter_while (it, x, struct Node, rb) {
+	rz_rbtree_iter_while (it, x, struct Node, rb) {
 		mu_assert_eq (x->key, i, "lower_bound_forward more");
 		i += 2;
 	}
@@ -116,24 +116,24 @@ bool test_r_rbtree_bound_iterate() {
 
 	// upper_bound
 	key.key = 0x24;
-	it = r_rbtree_upper_bound_backward (tree, &key, cmp, NULL);
+	it = rz_rbtree_upper_bound_backward (tree, &key, cmp, NULL);
 	i = 0x24;
-	r_rbtree_iter_while_prev (it, x, struct Node, rb) {
+	rz_rbtree_iter_while_prev (it, x, struct Node, rb) {
 		mu_assert_eq (x->key, i, "upper_bound_backward");
 		i -= 2;
 	}
 	mu_assert_eq (i + 2, 0, "upper_bound_backward complete");
 
 	key.key = 0x25;
-	it = r_rbtree_upper_bound_backward (tree, &key, cmp, NULL);
+	it = rz_rbtree_upper_bound_backward (tree, &key, cmp, NULL);
 	i = 0x24;
-	r_rbtree_iter_while_prev (it, x, struct Node, rb) {
+	rz_rbtree_iter_while_prev (it, x, struct Node, rb) {
 		mu_assert_eq (x->key, i, "upper_bound_backward less");
 		i -= 2;
 	}
 	mu_assert_eq (i + 2, 0, "upper_bound_backward complete");
 
-	r_rbtree_free (tree, freefn, NULL);
+	rz_rbtree_free (tree, freefn, NULL);
 	mu_end;
 }
 
@@ -145,25 +145,25 @@ bool test_r_rbtree_bound() {
 
 	for (i = 0; i < 99; i++) {
 		x = make (i*2);
-		r_rbtree_insert (&tree, x, &x->rb, cmp, NULL);
+		rz_rbtree_insert (&tree, x, &x->rb, cmp, NULL);
 	}
 
 	key.key = 0x24;
-	x = container_of (r_rbtree_lower_bound (tree, &key, cmp, NULL), struct Node, rb);
+	x = container_of (rz_rbtree_lower_bound (tree, &key, cmp, NULL), struct Node, rb);
 	mu_assert_eq (x->key, 0x24, "lower bound equal");
 
 	key.key = 0x25;
-	x = container_of (r_rbtree_lower_bound (tree, &key, cmp, NULL), struct Node, rb);
+	x = container_of (rz_rbtree_lower_bound (tree, &key, cmp, NULL), struct Node, rb);
 	mu_assert_eq (x->key, 0x26, "lower bound more");
 
 	key.key = 0x24;
-	x = container_of (r_rbtree_upper_bound (tree, &key, cmp, NULL), struct Node, rb);
+	x = container_of (rz_rbtree_upper_bound (tree, &key, cmp, NULL), struct Node, rb);
 	mu_assert_eq (x->key, 0x24, "upper bound equal");
 
 	key.key = 0x25;
-	x = container_of (r_rbtree_upper_bound (tree, &key, cmp, NULL), struct Node, rb);
+	x = container_of (rz_rbtree_upper_bound (tree, &key, cmp, NULL), struct Node, rb);
 	mu_assert_eq (x->key, 0x24, "upper bound less");
-	r_rbtree_free (tree, freefn, NULL);
+	rz_rbtree_free (tree, freefn, NULL);
 
 	mu_end;
 }
@@ -175,7 +175,7 @@ static bool insert_delete(int *a, int n, RBNodeSum sum) {
 
 	for (i = 0; i < n; i++) {
 		x = make (a[i]);
-		r_rbtree_aug_insert (&tree, x, &x->rb, cmp, NULL, sum);
+		rz_rbtree_aug_insert (&tree, x, &x->rb, cmp, NULL, sum);
 		if (sum) {
 			mu_assert_eq (i + 1, container_of (tree, struct Node, rb)->size, "size");
 			mu_assert ("shape", check (tree));
@@ -185,9 +185,9 @@ static bool insert_delete(int *a, int n, RBNodeSum sum) {
 	random_iota (a, n);
 	for (i = 0; i < n; i++) {
 		struct Node x = {.key = a[i]};
-		t = r_rbtree_aug_delete (&tree, &x, cmp, NULL, freefn, NULL, sum);
+		t = rz_rbtree_aug_delete (&tree, &x, cmp, NULL, freefn, NULL, sum);
 		mu_assert ("delete", t);
-		t = r_rbtree_aug_delete (&tree, &x, cmp, NULL, freefn, NULL, sum);
+		t = rz_rbtree_aug_delete (&tree, &x, cmp, NULL, freefn, NULL, sum);
 		mu_assert ("delete non-existent", !t);
 		if (sum) {
 			if (i == n-1)
@@ -198,7 +198,7 @@ static bool insert_delete(int *a, int n, RBNodeSum sum) {
 		}
 	}
 
-	r_rbtree_free (tree, freefn, NULL);
+	rz_rbtree_free (tree, freefn, NULL);
 	return MU_PASSED;
 }
 
@@ -256,17 +256,17 @@ bool test_r_rbtree_augmented_insert_delete2(void) {
 	random_iota (a, N);
 	for (i = 0; i < N; i++) {
 		x = make (a[i] * 2);
-		r_rbtree_aug_insert (&tree, x, &x->rb, cmp, NULL, size);
+		rz_rbtree_aug_insert (&tree, x, &x->rb, cmp, NULL, size);
 	}
 	for (i = 0; i < N; i++) {
 		struct Node x = {.key = a[i] * 2 + 1};
-		t = r_rbtree_aug_delete (&tree, &x, cmp, NULL, freefn, NULL, size);
+		t = rz_rbtree_aug_delete (&tree, &x, cmp, NULL, freefn, NULL, size);
 		mu_assert ("delete non-existent", !t);
 		mu_assert_eq (N - i, container_of (tree, struct Node, rb)->size, "size");
 		mu_assert ("shape", check (tree));
 
 		x.key = a[i] * 2;
-		t = r_rbtree_aug_delete (&tree, &x, cmp, NULL, freefn, NULL, size);
+		t = rz_rbtree_aug_delete (&tree, &x, cmp, NULL, freefn, NULL, size);
 		mu_assert ("delete", t);
 		mu_assert ("shape", check (tree));
 	}
@@ -283,19 +283,19 @@ bool test_r_rbtree_traverse(void) {
 
 	for (i = 0; i < 99; i++) {
 		x = make (i);
-		r_rbtree_insert (&tree, x, &x->rb, cmp, NULL);
+		rz_rbtree_insert (&tree, x, &x->rb, cmp, NULL);
 	}
 	i = 0;
-	r_rbtree_foreach (tree, it, x, struct Node, rb) {
+	rz_rbtree_foreach (tree, it, x, struct Node, rb) {
 		mu_assert_eq (i, x->key, "foreach");
 		i++;
 	}
-	r_rbtree_foreach_prev (tree, it, x, struct Node, rb) {
+	rz_rbtree_foreach_prev (tree, it, x, struct Node, rb) {
 		i--;
 		mu_assert_eq (i, x->key, "foreach_prev");
 	}
 
-	r_rbtree_free (tree, freefn, NULL);
+	rz_rbtree_free (tree, freefn, NULL);
 	mu_end;
 }
 

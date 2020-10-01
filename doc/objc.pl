@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# Extract OBJC class information into a radare2 script
+# Extract OBJC class information into a rizin script
 # author: pancake 2014-2015
 
 my $file = $ARGV[0] or die ("Usage: objc.pl [file] ([baddr])\n");

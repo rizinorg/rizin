@@ -15,28 +15,28 @@ jobs:
     - name: Checkout r2
       run: |
         git clone https://github.com/${{ github.repository }}
-        cd radare2
+        cd rizin
         git fetch origin ${{ github.ref }}
         git checkout -b local_branch FETCH_HEAD
     - name: Extract r2 version
       shell: bash
       run: echo "##[set-output name=branch;]$(python sys/version.py)"
       id: extract_version
-      working-directory: radare2
+      working-directory: rizin
     - name: Preparing the deb package
       run: |
         sys/debian.sh
-      working-directory: radare2
+      working-directory: rizin
     - name: Upload deb file
       uses: actions/upload-artifact@v2
       with:
-        name: radare2_${{ steps.extract_version.outputs.branch }}_amd64.deb
-        path: radare2/radare2_${{ steps.extract_version.outputs.branch }}_amd64.deb
+        name: rizin_${{ steps.extract_version.outputs.branch }}_amd64.deb
+        path: rizin/rizin_${{ steps.extract_version.outputs.branch }}_amd64.deb
     - name: Upload -dev deb file
       uses: actions/upload-artifact@v2
       with:
-        name: radare2-dev_${{ steps.extract_version.outputs.branch }}_amd64.deb
-        path: radare2/radare2-dev_${{ steps.extract_version.outputs.branch }}_amd64.deb
+        name: rizin-dev_${{ steps.extract_version.outputs.branch }}_amd64.deb
+        path: rizin/rizin-dev_${{ steps.extract_version.outputs.branch }}_amd64.deb
 
   create-release:
     name: Create/Update pre-release Continuous build
@@ -53,7 +53,7 @@ jobs:
       run: ls -R
     - name: Upload files
       shell: bash
-      run: .github/upload.sh ./radare2_${{ steps.extract_version.outputs.branch }}_amd64.deb/radare2_${{ steps.extract_version.outputs.branch }}_amd64.deb ./radare2-dev_${{ steps.extract_version.outputs.branch }}_amd64.deb/radare2-dev_${{ steps.extract_version.outputs.branch }}_amd64.deb
+      run: .github/upload.sh ./rizin_${{ steps.extract_version.outputs.branch }}_amd64.deb/rizin_${{ steps.extract_version.outputs.branch }}_amd64.deb ./rizin-dev_${{ steps.extract_version.outputs.branch }}_amd64.deb/rizin-dev_${{ steps.extract_version.outputs.branch }}_amd64.deb
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         UPLOADTOOL_BODY: Continuous build ${{ github.sha }}

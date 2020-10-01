@@ -24,4 +24,4 @@ Build for maemo6 (Harmattan) N9 - N950
 
 5. Install the package
 
-       dpkg -i radare2-*.deb
+       dpkg -i rizin-*.deb

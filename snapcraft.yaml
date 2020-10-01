@@ -1,4 +1,4 @@
-name: radare2
+name: rizin
 version: '4.5.0'
 base: core18
 summary: Radare2 reverse engineering framework and tool
@@ -14,53 +14,53 @@ description: |
 grade: devel # Development version, can only publish to beta/candidate channels.
 confinement: devmode # Unrestricted access, only to beta/candidate channels.
 
-# radare2 requires in most cases privileged access to resources.
+# rizin requires in most cases privileged access to resources.
 # The following "plugs" are thus superfluous because the "devmode" confinement
 # gives full access to the system as if it were a DEB/RPM package.
-# With the following plugs though, and the "strict" confinement, radare2
+# With the following plugs though, and the "strict" confinement, rizin
 # would be able to do things like editing an executable file in the $HOME folder.
 
 apps:
-  radare2:
-    command: usr/bin/radare2
+  rizin:
+    command: usr/bin/rizin
     plugs: [home]
-  r2pm:
-    command: usr/bin/r2pm
+  rz_pm:
+    command: usr/bin/rz_pm
     plugs: [home]
-  r2agent:
-    command: usr/bin/r2agent
+  rz_agent:
+    command: usr/bin/rz_agent
     plugs: [home, network-bind]
-  rafind2:
-    command: usr/bin/rafind2
+  rz_find:
+    command: usr/bin/rz_find
     plugs: [home]
-  rahash2:
-    command: usr/bin/rahash2
+  rz_hash:
+    command: usr/bin/rz_hash
     plugs: [home]
-  rasm2:
-    command: usr/bin/rasm2
+  rz_asm:
+    command: usr/bin/rz_asm
     plugs: [home]
-  rabin2:
-    command: usr/bin/rabin2
+  rz_bin:
+    command: usr/bin/rz_bin
     plugs: [home]
-  radiff2:
-    command: usr/bin/radiff2
+  rz_diff:
+    command: usr/bin/rz_diff
     plugs: [home]
-  ragg2:
-    command: usr/bin/ragg2
+  rz_gg:
+    command: usr/bin/rz_gg
     plugs: [home]
-  rarun2:
-    command: usr/bin/rarun2
+  rz_run:
+    command: usr/bin/rz_run
     plugs: [home]
-  rax2:
-    command: usr/bin/rax2
+  rz_ax:
+    command: usr/bin/rz_ax
     plugs: [home]
-  rasign2:
-    command: usr/bin/rasign2
+  rz_sign:
+    command: usr/bin/rz_sign
     plugs: [home]
 
 parts:
-  radare2:
-    source: https://github.com/radareorg/radare2.git
+  rizin:
+    source: https://github.com/rizinorg/rizin.git
     source-tag: '4.5.0'
     plugin: meson
     meson-parameters: [--prefix=/usr]

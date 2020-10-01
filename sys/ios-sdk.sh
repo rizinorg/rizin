@@ -34,7 +34,7 @@ fi
 
 iosConfigure() {
 	cp -f ${PLUGINS_CFG} plugins.cfg
-	./configure --with-libr --prefix=${PREFIX} --with-ostype=darwin \
+	./configure --with-librz --prefix=${PREFIX} --with-ostype=darwin \
 		--disable-debugger --without-gpl \
 		--without-fork --without-libuv --with-compiler=ios-sdk \
 		--target=arm64-unknown-darwin
@@ -43,54 +43,54 @@ iosConfigure() {
 
 iosClean() {
 	make clean
-	rm -rf libr/.libr libr/.libr2 libr/libr.a libr/libr.dylib shlr/libr_shlr.a
+	rm -rf librz/.librz librz/.librz librz/librz.a librz/librz.dylib shlr/libr_shlr.a
 	rm -rf shlr/capstone
 }
 
 iosBuild() {
 	time make -j4 AR="xcrun --sdk ${SDK} ar" || exit 1
 	# Build and sign
-	( cd binr/radare2 ; make ios_sdk_sign )
+	( cd binrz/rizin ; make ios_sdk_sign )
 	make install DESTDIR="$INSTALL_DST"
-	rm -rf "$INSTALL_DST/$PREFIX"/share/radare2/*/www/enyo/node_modules
+	rm -rf "$INSTALL_DST/$PREFIX"/share/rizin/*/www/enyo/node_modules
 	return $?
 }
 
 iosMergeLibs() {
 	mkdir -p $INSTALL_DST/$PREFIX/lib_merged
 	#echo "Merging dynamic libs"
-	#lipo "$INSTALL_DST/$PREFIX"/lib/libr*git.dylib $INSTALL_DST/$PREFIX/lib_simulator/libr*git.dylib -output $INSTALL_DST/$PREFIX/lib_merged/libr2.dylib -create
-	echo "Merging static libs (only libr.a)"
-	lipo "$INSTALL_DST/$PREFIX"/lib/libr.a "$INSTALL_DST/$PREFIX"/lib_simulator/libr.a -output "$INSTALL_DST/$PREFIX"/lib_merged/libr.a -create
-	echo "Merging shared libs (only libr.dylib)"
-	lipo "$INSTALL_DST/$PREFIX/lib/libr.dylib" \
-		"$INSTALL_DST/$PREFIX"/lib_simulator/libr.dylib \
-		-output "$INSTALL_DST/$PREFIX"/lib_merged/libr.dylib -create
+	#lipo "$INSTALL_DST/$PREFIX"/lib/librz*git.dylib $INSTALL_DST/$PREFIX/lib_simulator/librz*git.dylib -output $INSTALL_DST/$PREFIX/lib_merged/librz.dylib -create
+	echo "Merging static libs (only librz.a)"
+	lipo "$INSTALL_DST/$PREFIX"/lib/librz.a "$INSTALL_DST/$PREFIX"/lib_simulator/librz.a -output "$INSTALL_DST/$PREFIX"/lib_merged/librz.a -create
+	echo "Merging shared libs (only librz.dylib)"
+	lipo "$INSTALL_DST/$PREFIX/lib/librz.dylib" \
+		"$INSTALL_DST/$PREFIX"/lib_simulator/librz.dylib \
+		-output "$INSTALL_DST/$PREFIX"/lib_merged/librz.dylib -create
 	echo "You can find the merged libs in $INSTALL_DST$PREFIX/lib_merged"
 }
 
 iosPackage() {
 	( cd "$INSTALL_DST" && tar czvf $INSTALL_DST-${CPU}.tar.gz * )
-	# Prepare radare2
-	rm -rf sys/cydia/radare2/root
-	rm -rf sys/cydia/radare2/root/usr/lib/*.dSYM
-	rm -rf sys/cydia/radare2/root/usr/lib/*.a
-	mkdir -p sys/cydia/radare2/root
-	sudo tar xpzvf "$INSTALL_DST"-${CPU}.tar.gz -C sys/cydia/radare2/root
-	rm -rf sys/cydia/radare2-dev/root
-	# Prepare radare2-dev
-	mkdir -p sys/cydia/radare2-dev/root
-	mkdir -p sys/cydia/radare2-dev/root/usr/include
-	mv sys/cydia/radare2/root/usr/include/* sys/cydia/radare2-dev/root/usr/include
-	mkdir -p sys/cydia/radare2-dev/root/usr/lib
-	mv sys/cydia/radare2/root/usr/lib/lib* sys/cydia/radare2-dev/root/usr/lib
-	mv sys/cydia/radare2/root/usr/lib/pkgconfig sys/cydia/radare2-dev/root/usr/lib
+	# Prepare rizin
+	rm -rf sys/cydia/rizin/root
+	rm -rf sys/cydia/rizin/root/usr/lib/*.dSYM
+	rm -rf sys/cydia/rizin/root/usr/lib/*.a
+	mkdir -p sys/cydia/rizin/root
+	sudo tar xpzvf "$INSTALL_DST"-${CPU}.tar.gz -C sys/cydia/rizin/root
+	rm -rf sys/cydia/rizin-dev/root
+	# Prepare rizin-dev
+	mkdir -p sys/cydia/rizin-dev/root
+	mkdir -p sys/cydia/rizin-dev/root/usr/include
+	mv sys/cydia/rizin/root/usr/include/* sys/cydia/rizin-dev/root/usr/include
+	mkdir -p sys/cydia/rizin-dev/root/usr/lib
+	mv sys/cydia/rizin/root/usr/lib/lib* sys/cydia/rizin-dev/root/usr/lib
+	mv sys/cydia/rizin/root/usr/lib/pkgconfig sys/cydia/rizin-dev/root/usr/lib
 	(
-		cd sys/cydia/radare2/root/usr/bin ;
+		cd sys/cydia/rizin/root/usr/bin ;
 		for a in * ; do strip $a ; done
 	)
-	( cd sys/cydia/radare2 ; sudo make clean ; sudo make )
-	( cd sys/cydia/radare2-dev ; sudo make clean ; sudo make )
+	( cd sys/cydia/rizin ; sudo make clean ; sudo make )
+	( cd sys/cydia/rizin-dev ; sudo make clean ; sudo make )
 	return $?
 }
 
@@ -109,7 +109,7 @@ showHelp() {
 	echo "        Show this text."
 
 	echo "    -p, --package"
-	echo "        Package radare2."
+	echo "        Package rizin."
 
 	echo "    -s, --shell"
 	echo "        Run shell."
@@ -119,7 +119,7 @@ showHelp() {
 
 	echo "    -simulator"
 	echo "        Build also for i386 and x86_64 archs."
-	echo "        So you can use radare2 in the iOS simulator."
+	echo "        So you can use rizin in the iOS simulator."
 
 	echo "Examples:"
 	echo "    sys/ios-sdk.sh -archs arm64"
@@ -216,7 +216,7 @@ sleep 1
 
 rm -rf "$INSTALL_DST"
 
-# Build radare2 for i386 and x86_64
+# Build rizin for i386 and x86_64
 if [ "${USE_SIMULATOR}" = 1 ]; then
 	iosClean
 	if [ 1 = 0 ]; then
@@ -240,7 +240,7 @@ if [ "${USE_SIMULATOR}" = 1 ]; then
 	fi
 fi
 
-# check if arm archs were selected and if so build radare2 for them
+# check if arm archs were selected and if so build rizin for them
 # XXX this is a bashism
 if [ "${#ARCHS}" -gt 0 ]; then
 	iosClean

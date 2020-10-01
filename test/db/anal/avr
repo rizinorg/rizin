@@ -577,7 +577,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=bb generation for SBRx RJMP combo (radare2#12612)
+NAME=bb generation for SBRx RJMP combo (rizin#12612)
 FILE=bins/elf/avr-sbrx-rjmp.elf
 CMDS=af@sym.main;afb@sym.main
 EXPECT=<<EOF

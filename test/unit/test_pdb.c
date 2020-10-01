@@ -1,9 +1,9 @@
-#include <r_util.h>
+#include <rz_util.h>
 #include "minunit.h"
-#include <r_bin.h>
-#include <r_core.h>
-#include <r_bin_dwarf.h>
-#include "../../libr/bin/pdb/types.h"
+#include <rz_bin.h>
+#include <rz_core.h>
+#include <rz_bin_dwarf.h>
+#include "../../librz/bin/pdb/types.h"
 
 #define MODE 2
 
@@ -15,7 +15,7 @@
 
 // copy from cbin.c modified to get pdb back
 int pdb_info(const char *file, RPdb *pdb) {
-	pdb->cb_printf = r_cons_printf;
+	pdb->cb_printf = rz_cons_printf;
 	if (!init_pdb_parser (pdb, file)) {
 		return false;
 	}
@@ -27,8 +27,8 @@ int pdb_info(const char *file, RPdb *pdb) {
 	return true;
 }
 
-int pdb_info_save_types(RAnal *anal, const char *file, RPdb *pdb) {
-	pdb->cb_printf = r_cons_printf;
+int pdb_info_save_types(RzAnal *anal, const char *file, RPdb *pdb) {
+	pdb->cb_printf = rz_cons_printf;
 	if (!init_pdb_parser (pdb, file)) {
 		return false;
 	}
@@ -37,7 +37,7 @@ int pdb_info_save_types(RAnal *anal, const char *file, RPdb *pdb) {
 		pdb->finish_pdb_parse (pdb);
 		return false;
 	}
-	r_parse_pdb_types (anal, pdb);
+	rz_parse_pdb_types (anal, pdb);
 	pdb->finish_pdb_parse (pdb);
 	return true;
 }
@@ -46,22 +46,22 @@ bool test_pdb_tpi_cpp(void) {
 	RPdb pdb = R_EMPTY;
 	mu_assert_true (pdb_info ("bins/pdb/Project1.pdb", &pdb), "pdb parsing failed");
 
-	RList *plist = pdb.pdb_streams;
+	RzList *plist = pdb.pdb_streams;
 	mu_assert_notnull (plist, "PDB streams is NULL");
 
 	mu_assert_eq (pdb.root_stream->num_streams, 50, "Incorrect number of streams");
 
-	STpiStream *tpi_stream = r_list_get_n (plist, ePDB_STREAM_TPI);
+	STpiStream *tpi_stream = rz_list_get_n (plist, ePDB_STREAM_TPI);
 	mu_assert_notnull (tpi_stream, "TPIs stream not found in current PDB");
 	mu_assert_eq (tpi_stream->header.hdr_size + tpi_stream->header.follow_size, 117156, "Wrong TPI size");
 	mu_assert_eq (tpi_stream->header.idx_begin, 0x1000, "Wrong beginning index");
 
 	// tpi_stream->header.
 	mu_assert_eq (tpi_stream->types->length, 1148, "Incorrect number of types");
-	RListIter *it = r_list_iterator (tpi_stream->types);
+	RzListIter *it = rz_list_iterator (tpi_stream->types);
 	SType *type;
-	while (r_list_iter_next (it)) {
-		type = r_list_iter_get (it);
+	while (rz_list_iter_next (it)) {
+		type = rz_list_iter_get (it);
 		STypeInfo *type_info = &type->type_data;
 		if (type->tpi_idx == 0x1028) {
 			mu_assert_eq (type_info->leaf_type, eLF_PROCEDURE, "Incorrect data type");
@@ -103,7 +103,7 @@ bool test_pdb_tpi_cpp(void) {
 		} else if (type->tpi_idx == 0x145A) {
 			mu_assert_eq (type_info->leaf_type, eLF_ENUM, "Incorrect data type");
 			SType *dump;
-			RList *members;
+			RzList *members;
 			char *name;
 			type_info->get_name (type_info, &name);
 			mu_assert_streq (name, "EXCEPTION_DEBUGGER_ENUM", "wrong enum name");
@@ -130,7 +130,7 @@ bool test_pdb_tpi_cpp(void) {
 			char *name;
 			type_info->get_name (type_info, &name);
 			mu_assert_streq (name, "R2_TEST_UNION", "wrong union name");
-			RList *members;
+			RzList *members;
 			type_info->get_members (type_info, &members);
 			mu_assert_eq (members->length, 2, "wrong union member count");
 		} else if (type->tpi_idx == 0x100B) {
@@ -138,7 +138,7 @@ bool test_pdb_tpi_cpp(void) {
 			char *name;
 			type_info->get_name (type_info, &name);
 			mu_assert_streq (name, "TEST_CLASS", "wrong class name");
-			RList *members;
+			RzList *members;
 			type_info->get_members (type_info, &members);
 			mu_assert_eq (members->length, 2, "wrong class member count");
 			SType *stype = NULL;
@@ -173,13 +173,13 @@ bool test_pdb_tpi_cpp(void) {
 			mu_assert_eq (type->tpi_idx, 0x1027, "incorrect mfunction arglist");
 		} else if (type->tpi_idx == 0x113F) {
 			mu_assert_eq (type_info->leaf_type, eLF_FIELDLIST, "Incorrect data type");
-			RList *members = r_list_new ();
+			RzList *members = rz_list_new ();
 			type_info->get_members (&type->type_data, &members);
 			mu_assert_eq (members->length, 2725, "Incorrect members length");
-			RListIter *it = r_list_iterator (members);
+			RzListIter *it = rz_list_iterator (members);
 			int i = 0;
-			while (r_list_iter_next (it)) {
-				STypeInfo *type_info = (STypeInfo *)r_list_iter_get (it);
+			while (rz_list_iter_next (it)) {
+				STypeInfo *type_info = (STypeInfo *)rz_list_iter_get (it);
 				mu_assert_eq (type_info->leaf_type, eLF_ENUMERATE, "Incorrect data type");
 				if (i == 0) {
 					char *name = NULL;
@@ -210,13 +210,13 @@ bool test_pdb_tpi_cpp(void) {
 			mu_assert_streq (name, "threadlocaleinfostruct", "Wrong name");
 			type_info->is_fwdref (&type->type_data, &is_forward_ref);
 			mu_assert_eq (is_forward_ref, false, "Wrong is_fwdref");
-			RList *members = r_list_new ();
+			RzList *members = rz_list_new ();
 			type_info->get_members (&type->type_data, &members);
 			mu_assert_eq (members->length, 18, "Incorrect members count");
-			RListIter *it = r_list_iterator (members);
+			RzListIter *it = rz_list_iterator (members);
 			int i = 0;
-			while (r_list_iter_next (it)) {
-				STypeInfo *type_info = (STypeInfo *)r_list_iter_get (it);
+			while (rz_list_iter_next (it)) {
+				STypeInfo *type_info = (STypeInfo *)rz_list_iter_get (it);
 				if (i == 0) {
 					mu_assert_eq (type_info->leaf_type, eLF_MEMBER, "Incorrect data type");
 					char *name = NULL;
@@ -256,22 +256,22 @@ bool test_pdb_tpi_rust(void) {
 	RPdb pdb = R_EMPTY;
 	mu_assert_true (pdb_info ("bins/pdb/ghidra_rust_pdb_bug.pdb", &pdb), "pdb parsing failed");
 
-	RList *plist = pdb.pdb_streams;
+	RzList *plist = pdb.pdb_streams;
 	mu_assert_notnull (plist, "PDB streams is NULL");
 
 	mu_assert_eq (pdb.root_stream->num_streams, 88, "Incorrect number of streams");
 
-	STpiStream *tpi_stream = r_list_get_n (plist, ePDB_STREAM_TPI);
+	STpiStream *tpi_stream = rz_list_get_n (plist, ePDB_STREAM_TPI);
 	mu_assert_notnull (tpi_stream, "TPIs stream not found in current PDB");
 	mu_assert_eq (tpi_stream->header.hdr_size + tpi_stream->header.follow_size, 305632, "Wrong TPI size");
 	mu_assert_eq (tpi_stream->header.idx_begin, 0x1000, "Wrong beginning index");
 
 	// tpi_stream->header.
 	mu_assert_eq (tpi_stream->types->length, 4031, "Incorrect number of types");
-	RListIter *it = r_list_iterator (tpi_stream->types);
+	RzListIter *it = rz_list_iterator (tpi_stream->types);
 	SType *type;
-	while (r_list_iter_next (it)) {
-		type = r_list_iter_get (it);
+	while (rz_list_iter_next (it)) {
+		type = rz_list_iter_get (it);
 		STypeInfo *type_info = &type->type_data;
 		if (type->tpi_idx == 0x101B) {
 			mu_assert_eq (type_info->leaf_type, eLF_PROCEDURE, "Incorrect data type");
@@ -318,7 +318,7 @@ bool test_pdb_tpi_rust(void) {
 		} else if (type->tpi_idx == 0x1FB4) {
 			mu_assert_eq (type_info->leaf_type, eLF_ENUM, "Incorrect data type");
 			SType *dump;
-			RList *members;
+			RzList *members;
 			char *name;
 			type_info->get_name (type_info, &name);
 			mu_assert_streq (name, "ISA_AVAILABILITY", "wrong enum name");
@@ -345,7 +345,7 @@ bool test_pdb_tpi_rust(void) {
 		// 	char *name;
 		// 	type_info->get_name (type_info, &name);
 		// 	mu_assert_streq (name, "_SLIST_HEADER", "wrong union name");
-		// 	RList *members;
+		// 	RzList *members;
 		// 	type_info->get_members (type_info, &members);
 		// 	mu_assert_eq (members->length, 3, "wrong union member count");
 		// 	// mu_assert_eq (members->length, 4, "wrong union member count"); // Doesn't work, missing one (last) member for some reason TODO
@@ -358,7 +358,7 @@ bool test_pdb_tpi_rust(void) {
 			char *name;
 			type_info->get_name (type_info, &name);
 			mu_assert_streq (name, "std::bad_typeid", "wrong class name");
-			RList *members;
+			RzList *members;
 			type_info->get_members (type_info, &members);
 			// mu_assert_eq (members->length, 7, "wrong class member count"); // These members (fieldlist) isn't properly parsed?
 			SType *stype = NULL;
@@ -394,13 +394,13 @@ bool test_pdb_tpi_rust(void) {
 		} else if (type->tpi_idx == 0x13BF) {
 			mu_assert_eq (type_info->leaf_type, eLF_FIELDLIST, "Incorrect data type");
 			// check size
-			RList *members = r_list_new ();
+			RzList *members = rz_list_new ();
 			type_info->get_members (&type->type_data, &members);
 			mu_assert_eq (members->length, 3, "Incorrect members length");
-			RListIter *it = r_list_iterator (members);
+			RzListIter *it = rz_list_iterator (members);
 			int i = 0;
-			while (r_list_iter_next (it)) {
-				STypeInfo *type_info = (STypeInfo *)r_list_iter_get (it);
+			while (rz_list_iter_next (it)) {
+				STypeInfo *type_info = (STypeInfo *)rz_list_iter_get (it);
 				mu_assert_eq (type_info->leaf_type, eLF_MEMBER, "Incorrect data type");
 				if (i == 0) {
 					char *name = NULL;
@@ -432,14 +432,14 @@ bool test_pdb_tpi_rust(void) {
 			type_info->get_val (type_info, &size);
 			mu_assert_eq (size, 24, "Wrong struct size");
 
-			RList *members = r_list_new ();
+			RzList *members = rz_list_new ();
 			type_info->get_members (&type->type_data, &members);
 			mu_assert_eq (members->length, 2, "Incorrect members count");
 
-			RListIter *it = r_list_iterator (members);
+			RzListIter *it = rz_list_iterator (members);
 			int i = 0;
-			while (r_list_iter_next (it)) {
-				STypeInfo *type_info = (STypeInfo *)r_list_iter_get (it);
+			while (rz_list_iter_next (it)) {
+				STypeInfo *type_info = (STypeInfo *)rz_list_iter_get (it);
 				if (i == 0) {
 					mu_assert_eq (type_info->leaf_type, eLF_MEMBER, "Incorrect data type");
 					char *name = NULL;
@@ -463,7 +463,7 @@ bool test_pdb_tpi_rust(void) {
 
 bool test_pdb_type_save(void) {
 	RPdb pdb = R_EMPTY;
-	RAnal *anal = r_anal_new ();
+	RzAnal *anal = rz_anal_new ();
 	mu_assert_true (pdb_info_save_types (anal, "bins/pdb/Project1.pdb", &pdb), "pdb parsing failed");
 	check_kv ("R2_TEST_ENUM", "enum");
 	check_kv ("enum.R2_TEST_ENUM", "eENUM1_R2,eENUM2_R2,eENUM_R2_MAX");
@@ -496,7 +496,7 @@ bool test_pdb_type_save(void) {
 	check_kv ("struct.localeinfo_struct", "locinfo,mbcinfo");
 	check_kv ("struct.localeinfo_struct.locinfo", "struct threadlocaleinfostruct*,0,0");
 	check_kv ("struct.localeinfo_struct.mbcinfo", "struct threadmbcinfostruct*,4,0");
-	r_anal_free (anal);
+	rz_anal_free (anal);
 	mu_end;
 }
 

@@ -87,8 +87,8 @@ void * grub_named_list_find (grub_named_list_t head,
     GRUB_FIELD_MATCH (*pptr, grub_named_list_t, name))? \
    (grub_named_list_t *) (void *) pptr : grub_bad_type_cast ())
 
-#define GRUB_PRIO_LIST_PRIO_MASK	0xff
-#define GRUB_PRIO_LIST_FLAG_ACTIVE	0x100
+#define GRUB_PRzIO_LIST_PRzIO_MASK	0xff
+#define GRUB_PRzIO_LIST_FLAG_ACTIVE	0x100
 
 struct grub_prio_list
 {
@@ -104,18 +104,18 @@ void grub_prio_list_insert (grub_prio_list_t *head,
 static inline void
 grub_prio_list_remove (grub_prio_list_t *head, grub_prio_list_t item)
 {
-  if ((item->prio & GRUB_PRIO_LIST_FLAG_ACTIVE) && (item->next))
-    item->next->prio |= GRUB_PRIO_LIST_FLAG_ACTIVE;
+  if ((item->prio & GRUB_PRzIO_LIST_FLAG_ACTIVE) && (item->next))
+    item->next->prio |= GRUB_PRzIO_LIST_FLAG_ACTIVE;
   grub_list_remove (GRUB_AS_LIST_P (head), GRUB_AS_LIST (item));
 }
 
-#define GRUB_AS_PRIO_LIST(ptr) \
+#define GRUB_AS_PRzIO_LIST(ptr) \
   ((GRUB_FIELD_MATCH (ptr, grub_prio_list_t, next) && \
     GRUB_FIELD_MATCH (ptr, grub_prio_list_t, name) && \
     GRUB_FIELD_MATCH (ptr, grub_prio_list_t, prio))? \
    (grub_prio_list_t) ptr : grub_bad_type_cast ())
 
-#define GRUB_AS_PRIO_LIST_P(pptr) \
+#define GRUB_AS_PRzIO_LIST_P(pptr) \
   ((GRUB_FIELD_MATCH (*pptr, grub_prio_list_t, next) && \
     GRUB_FIELD_MATCH (*pptr, grub_prio_list_t, name) && \
     GRUB_FIELD_MATCH (*pptr, grub_prio_list_t, prio))? \

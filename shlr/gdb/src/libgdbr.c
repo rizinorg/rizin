@@ -30,8 +30,8 @@ int gdbr_init(libgdbr_t *g, bool is_server) {
 		R_FREE (g->send_buff);
 		return -1;
 	}
-	g->sock = r_socket_new (0);
-	g->gdbr_lock = r_th_lock_new (true);
+	g->sock = rz_socket_new (0);
+	g->gdbr_lock = rz_th_lock_new (true);
 	g->gdbr_lock_depth = 0;
 	g->last_code = MSG_OK;
 	g->connected = 0;
@@ -141,7 +141,7 @@ int gdbr_cleanup(libgdbr_t *g) {
 	g->send_len = 0;
 	R_FREE (g->send_buff);
 	R_FREE (g->read_buff);
-	r_socket_free (g->sock);
-	r_th_lock_free (g->gdbr_lock);
+	rz_socket_free (g->sock);
+	rz_th_lock_free (g->gdbr_lock);
 	return 0;
 }

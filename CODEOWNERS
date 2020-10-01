@@ -1,36 +1,36 @@
 * @trufae
 *.js @trufae
 CODEOWNERS @trufae @XVilka @kazarmy @thestr4ng3r @ret2libc
-libr/anal/ @thestr4ng3r
-libr/anal/esil* @trufae @condret
-libr/anal/xrefs.c @ret2libc
-libr/arch/gb/ @condret
-libr/asm/ @wargio @trufae
-libr/asm/p/x86_* @ret2libc
-libr/asm/p/arm_* @trufae
-libr/bin/ @ret2libc @trufae
-libr/bin/format/elf/ @ret2libc @kazarmy
-libr/bin/format/mach0/ @trufae
-libr/bin/format/objc/ @trufae
-libr/bin/format/wasm/ @wargio
-libr/config/ @trufae @ret2libc
-libr/cons/ @thestr4ng3r @trufae
-libr/core/cmd.c @ret2libc @trufae 
-libr/debug/ @yossizap @trufae
-libr/egg/ @trufae
-libr/flag/ @ret2libc @trufae
-libr/fs/ @trufae
-libr/io/ @condret @trufae @ret2libc
-libr/lang/ @thestr4ng3r @trufae @ret2libc
-libr/magic/ @trufae
-libr/parse/ @ret2libc @trufae
-libr/reg/ @XVilka @trufae
-libr/socket/ @XVilka @yossizap
-libr/syscall/ @ret2libc @trufae
-libr/util/ @ret2libc @thestr4ng3r
+librz/anal/ @thestr4ng3r
+librz/anal/esil* @trufae @condret
+librz/anal/xrefs.c @ret2libc
+librz/arch/gb/ @condret
+librz/asm/ @wargio @trufae
+librz/asm/p/x86_* @ret2libc
+librz/asm/p/arm_* @trufae
+librz/bin/ @ret2libc @trufae
+librz/bin/format/elf/ @ret2libc @kazarmy
+librz/bin/format/mach0/ @trufae
+librz/bin/format/objc/ @trufae
+librz/bin/format/wasm/ @wargio
+librz/config/ @trufae @ret2libc
+librz/cons/ @thestr4ng3r @trufae
+librz/core/cmd.c @ret2libc @trufae 
+librz/debug/ @yossizap @trufae
+librz/egg/ @trufae
+librz/flag/ @ret2libc @trufae
+librz/fs/ @trufae
+librz/io/ @condret @trufae @ret2libc
+librz/lang/ @thestr4ng3r @trufae @ret2libc
+librz/magic/ @trufae
+librz/parse/ @ret2libc @trufae
+librz/reg/ @XVilka @trufae
+librz/socket/ @XVilka @yossizap
+librz/syscall/ @ret2libc @trufae
+librz/util/ @ret2libc @thestr4ng3r
 shlr/gdb/ @yossizap
 shlr/ptrace-wrap/ @thestr4ng3r
-shlr/radare2-shell-parser/ @ret2libc
+shlr/rizin-shell-parser/ @ret2libc
 shlr/tcc/ @XVilka @trufae
 shlr/w32dbg_wrap/ @yossizap
 shlr/winkd/ @yossizap

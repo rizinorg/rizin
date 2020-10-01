@@ -5,14 +5,14 @@ if [ -z "$BASH" ]; then
 	bashcompinit
 fi
 
-_r2 () {
+_rz () {
 	local cur
 	COMPREPLY=()
 	cur=${COMP_WORDS[COMP_CWORD]}
 	prv=${COMP_WORDS[COMP_CWORD-1]}
 	case "$prv" in
 	-a)
-		COMPREPLY=( $(compgen -W "$(rasm2 -qL)" -- $cur))
+		COMPREPLY=( $(compgen -W "$(rz_asm -qL)" -- $cur))
 		return 0
 		;;
 	-b)
@@ -28,7 +28,7 @@ _r2 () {
 		return 0
 		;;
 	-F)
-		COMPREPLY=( $(compgen -W "$(rabin2 -qL)" -- $cur ))
+		COMPREPLY=( $(compgen -W "$(rz_bin -qL)" -- $cur ))
 		return 0
 		;;
 	-H)
@@ -57,17 +57,17 @@ _r2 () {
 	return 0
 }
 
-complete -F _r2 -o filenames r2
-complete -F _r2 -o filenames radare2
+complete -F _rz -o filenames r2
+complete -F _rz -o filenames rizin
 
-_rasm2 () {
+_rz_asm () {
 	local cur
 	COMPREPLY=()
 	cur=${COMP_WORDS[COMP_CWORD]}
 	prv=${COMP_WORDS[COMP_CWORD-1]}
 	case "$prv" in
 	-a)
-		COMPREPLY=( $(compgen -W "$(rasm2 -qL)" -- $cur))
+		COMPREPLY=( $(compgen -W "$(rz_asm -qL)" -- $cur))
 		return 0
 		;;
 	-b)
@@ -83,7 +83,7 @@ _rasm2 () {
 		return 0
 		;;
 	-s)
-		COMPREPLY=( $(compgen -W "$(rasm2 -s?)" -- $cur ))
+		COMPREPLY=( $(compgen -W "$(rz_asm -s?)" -- $cur ))
 		return 0
 		;;
 	esac
@@ -100,16 +100,16 @@ _rasm2 () {
 	return 0
 }
 
-complete -F _rasm2 -o filenames rasm2
+complete -F _rz_asm -o filenames rz_asm
 
-_rabin2 () {
+_rz_bin () {
 	local cur
 	COMPREPLY=()
 	cur=${COMP_WORDS[COMP_CWORD]}
 	prv=${COMP_WORDS[COMP_CWORD-1]}
 	case "$prv" in
 	-a)
-		COMPREPLY=( $(compgen -W "$(rasm2 -qL)" -- $cur))
+		COMPREPLY=( $(compgen -W "$(rz_asm -qL)" -- $cur))
 		return 0
 		;;
 	-b)
@@ -142,9 +142,9 @@ _rabin2 () {
 	return 0
 }
 
-complete -F _rabin2 -o filenames rabin2
+complete -F _rz_bin -o filenames rz_bin
 
-_rafind2 () {
+_rz_find () {
 	local cur
 	COMPREPLY=()
 	cur=${COMP_WORDS[COMP_CWORD]}
@@ -160,16 +160,16 @@ _rafind2 () {
 	return 0
 }
 
-complete -F _rafind2 -o filenames rafind2
+complete -F _rz_find -o filenames rz_find
 
-_radiff2() {
+_rz_diff() {
 	local cur
 	COMPREPLY=()
 	cur=${COMP_WORDS[COMP_CWORD]}
 	prv=${COMP_WORDS[COMP_CWORD-1]}
 	case "$prv" in
 	-a)
-		COMPREPLY=( $(compgen -W "$(rasm2 -qL)" -- $cur))
+		COMPREPLY=( $(compgen -W "$(rz_asm -qL)" -- $cur))
 		return 0
 		;;
 	-b)
@@ -189,4 +189,4 @@ _radiff2() {
 	return 0
 }
 
-complete -F _radiff2 -o filenames radiff2
+complete -F _rz_diff -o filenames rz_diff

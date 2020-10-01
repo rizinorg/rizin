@@ -1,4 +1,4 @@
-/* libbochs - radare2 - LGPL - Copyright 2016 - SkUaTeR */
+/* libbochs - rizin - LGPL - Copyright 2016 - SkUaTeR */
 
 #include "libbochs.h"
 
@@ -116,7 +116,7 @@ bool bochs_wait(libbochs_t *b) {
 }
 
 void bochs_send_cmd(libbochs_t* b, const char *cmd, bool bWait) {
-	char *cmdbuff = r_str_newf ("%s\n", cmd);
+	char *cmdbuff = rz_str_newf ("%s\n", cmd);
 	bochs_reset_buffer (b);
 	size_t cmdlen = strlen (cmdbuff);
 #if __WINDOWS__
@@ -159,7 +159,7 @@ int bochs_read(libbochs_t* b, ut64 addr, int count, ut8 * buf) {
 			data[fin] = 0;
 			if (data[i] == '<')
 				break;
-			pbuf += r_hex_str2bin (&data[ini], &buf[pbuf]);
+			pbuf += rz_hex_str2bin (&data[ini], &buf[pbuf]);
 			i++; // next line
 		} while (data[i] != '<' && i < lenRec);
 	}
@@ -219,7 +219,7 @@ bool bochs_open(libbochs_t* b, const char * pathBochs, const char * pathConfig) 
 		b->info.dwFlags |=  STARTF_USESTDHANDLES;
 		snprintf (commandline, sizeof (commandline), "\"%s\" -f \"%s\" -q ", pathBochs, pathConfig);
 		lprintf ("*** Creating process: %s\n", commandline);
-		commandline_ = r_sys_conv_utf8_to_win (commandline);
+		commandline_ = rz_sys_conv_utf8_to_win (commandline);
 		if (CreateProcess (NULL, commandline_, NULL, NULL, TRUE, CREATE_NEW_CONSOLE,
 				NULL, NULL, &b->info, &b->processInfo)) {
 			lprintf ("Process created\n");

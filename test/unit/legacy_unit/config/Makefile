@@ -1,5 +1,5 @@
 BIN=test
 OBJ=test.o
-BINDEPS=r_config r_util
+BINDEPS=rz_config rz_util
 
 include ../../rules.mk

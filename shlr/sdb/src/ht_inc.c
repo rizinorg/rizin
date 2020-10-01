@@ -1,4 +1,4 @@
-/* radare2 - BSD 3 Clause License - crowell, pancake, ret2libc 2016-2018 */
+/* rizin - BSD 3 Clause License - crowell, pancake, ret2libc 2016-2018 */
 
 #define LOAD_FACTOR 1
 #define S_ARRAY_SIZE(x) (sizeof (x) / sizeof (x[0]))

@@ -2,8 +2,8 @@
 #define CLIENT_COMMANDS_H
 
 #include "../libgdbr.h"
-#include "r_types_base.h"
-#include <r_util.h>
+#include "rz_types_base.h"
+#include <rz_util.h>
 
 /*!
  * \brief Acquires the gdbr lock and sets up breaking
@@ -129,12 +129,12 @@ int gdbr_close_file(libgdbr_t *g);
 /*!
  * \brief get list of threads for given pid
  */
-RList* gdbr_threads_list(libgdbr_t *g, int pid);
+RzList* gdbr_threads_list(libgdbr_t *g, int pid);
 
 /*!
  * \brief get a list of the child processes of the given pid
  */
-RList* gdbr_pids_list(libgdbr_t *g, int pid);
+RzList* gdbr_pids_list(libgdbr_t *g, int pid);
 
 /*!
  * Get absolute name of file executed to create a process

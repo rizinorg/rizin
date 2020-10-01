@@ -2,7 +2,7 @@
 #define _INCLUDE_GRUBFS_H_
 extern unsigned long long grub_hack_lastoff;
 
-#include <r_io.h>
+#include <rz_io.h>
 #include <grub/file.h>
 #include <grub/disk.h>
 #include <grub/partition.h>
@@ -13,7 +13,7 @@ typedef struct grubfs {
 
 GrubFS *grubfs_new (struct grub_fs *myfs, void *data);
 void grubfs_free (GrubFS *gf);
-void grubfs_bind_io (RIOBind *iob, ut64 _delta);
+void grubfs_bind_io (RzIOBind *iob, ut64 _delta);
 grub_disk_t grubfs_disk (void *data);
 void grubfs_disk_free (struct grub_disk *gd);
 

@@ -1,0 +1,521 @@
+NAME=rz_ax =10 0x46
+FILE=-
+CMDS=!rz_ax =10 0x46
+EXPECT=<<EOF
+70
+EOF
+RUN
+
+NAME=rz_ax =16 0x3+0x3
+FILE=-
+CMDS=!rz_ax =16 0x3+0x3
+EXPECT=<<EOF
+0x6
+EOF
+RUN
+
+NAME=rz_ax -E | rz_ax -D
+FILE=-
+CMDS=!rz_ax -E hello |rz_ax -D |rz_ax -E | rz_ax -D  |rz_ax -E|rz_ax -D |rz_ax -E | rz_ax -D
+EXPECT=hello
+RUN
+
+NAME=rz_ax -E | rz_ax -D 2
+FILE=-
+CMDS=!rz_ax -E hello |rz_ax -D |rz_ax -E | rz_ax -D  |rz_ax -E|rz_ax -D |rz_ax -E | rz_ax -Dl
+EXPECT=hello
+RUN
+
+NAME=rz_ax -E | rz_ax -D 3
+FILE=-
+CMDS=!echo hello | rz_ax -E |rz_ax -D |rz_ax -E | rz_ax -D  |rz_ax -E|rz_ax -D |rz_ax -E | rz_ax -D
+EXPECT=<<EOF
+hello
+EOF
+RUN
+
+NAME=rz_ax -S hello | rz_ax -s
+FILE=-
+CMDS=!rz_ax -S hello | rz_ax -s
+EXPECT=hello
+RUN
+
+NAME=rz_ax -S hello | rz_ax -s 2
+FILE=-
+CMDS=!echo hello | rz_ax -S | rz_ax -s
+EXPECT=<<EOF
+hello
+EOF
+RUN
+
+NAME=rz_ax -S hello | rz_ax -s (2)
+FILE=-
+CMDS=!echo hello | rz_ax -S | rz_ax -s | rz_ax -S | rz_ax -s
+EXPECT=<<EOF
+hello
+EOF
+RUN
+
+NAME=rz_ax -E | rz_ax -D -E
+FILE=-
+CMDS=!echo hello | rz_ax -E |rz_ax -D |rz_ax -E | rz_ax -D  |rz_ax -E|rz_ax -D |rz_ax -E | rz_ax -D
+EXPECT=<<EOF
+hello
+EOF
+RUN
+
+NAME=rz_ax -b 01101000011001010110110001101100011011110111011101101111011100100110110001100100
+FILE=-
+CMDS=!rz_ax -b 01101000011001010110110001101100011011110111011101101111011100100110110001100100
+EXPECT=helloworld
+RUN
+
+NAME=rz_ax -B hello world
+FILE=-
+CMDS=!rz_ax -B hello world
+EXPECT=01101000011001010110110001101100011011110111011101101111011100100110110001100100
+RUN
+
+NAME=rz_ax 10
+FILE=-
+CMDS=!rz_ax 10
+EXPECT=<<EOF
+0xa
+EOF
+RUN
+
+NAME=rz_ax 0xa
+FILE=-
+CMDS=!rz_ax 0xa
+EXPECT=<<EOF
+10
+EOF
+RUN
+
+NAME=rz_ax -1
+FILE=-
+CMDS=!rz_ax -1
+EXPECT=<<EOF
+0xffffffffffffffff
+EOF
+RUN
+
+NAME=rz_ax 0xffffffffffffffff
+FILE=-
+CMDS=!rz_ax 0xffffffffffffffff
+EXPECT=<<EOF
+-1
+EOF
+RUN
+
+NAME=rz_ax b30
+FILE=-
+CMDS=!rz_ax b3
+EXPECT=<<EOF
+11b
+EOF
+RUN
+
+NAME=rz_ax t42
+FILE=-
+CMDS=!rz_ax t42
+EXPECT=<<EOF
+1120t
+EOF
+RUN
+
+NAME=rz_ax 1010d
+FILE=-
+CMDS=!rz_ax 1010d
+EXPECT=<<EOF
+10
+EOF
+RUN
+
+NAME=rz_ax 3.33f
+FILE=-
+CMDS=!rz_ax 3.33f
+EXPECT=<<EOF
+Fx40551eb8
+EOF
+RUN
+
+NAME=rz_ax Fx40551ed8
+FILE=-
+CMDS=!rz_ax Fx40551ed8
+EXPECT=<<EOF
+3.330008f
+EOF
+RUN
+
+NAME=rz_ax 35o
+FILE=-
+CMDS=!rz_ax 35o
+EXPECT=<<EOF
+0x1d
+EOF
+RUN
+
+NAME=rz_ax Ox12
+FILE=-
+CMDS=!rz_ax Ox12
+EXPECT=<<EOF
+022
+EOF
+RUN
+
+NAME=rz_ax 1100011b
+FILE=-
+CMDS=!rz_ax 1100011b
+EXPECT=<<EOF
+0x63
+EOF
+RUN
+
+NAME=rz_ax Bx63
+FILE=-
+CMDS=!rz_ax Bx63
+EXPECT=<<EOF
+1100011b
+EOF
+RUN
+
+NAME=rz_ax Tx23
+FILE=-
+CMDS=!rz_ax Tx23
+EXPECT=<<EOF
+1022t
+EOF
+RUN
+
+NAME=rz_ax Tx23
+FILE=-
+CMDS=!rz_ax Tx23
+EXPECT=<<EOF
+1022t
+EOF
+RUN
+
+NAME=cat bins/other/admin.txt | rz_ax -S
+FILE=-
+CMDS=!cat bins/other/admin.txt | rz_ax -S
+EXPECT=<<EOF
+6161646d696e61
+EOF
+RUN
+
+NAME=echo "414141" | rz_ax -s
+FILE=-
+CMDS=!printf 414141 | rz_ax -s
+EXPECT=AAA
+RUN
+
+NAME=rz_ax -b 01000101 01110110
+FILE=-
+CMDS=!rz_ax -b 01000101 01110110
+EXPECT=Ev
+RUN
+
+NAME=rz_ax -k 33+3
+FILE=-
+CMDS=!rz_ax -k 33+3
+EXPECT=<<EOF
+36
+EOF
+RUN
+
+NAME=rz_ax -e 0x00000401
+FILE=-
+CMDS=!rz_ax -e 0x00000401
+EXPECT=<<EOF
+17039360
+EOF
+RUN
+
+NAME=rz_ax -f 6.3+2.1
+FILE=-
+CMDS=!rz_ax -f 6.3+2.1
+EXPECT=<<EOF
+8.4
+EOF
+RUN
+
+NAME=rz_ax -n 0x1234
+FILE=-
+CMDS=!rz_ax -n 0x1234
+EXPECT=<<EOF
+34120000
+EOF
+RUN
+
+NAME=rz_ax -n 0xFEDCBA9876543210
+FILE=-
+CMDS=!rz_ax -n 0xFEDCBA9876543210
+EXPECT=<<EOF
+1032547698badcfe
+EOF
+RUN
+
+NAME=rz_ax -N 0xFEDCBA9876543210
+FILE=-
+CMDS=!rz_ax -N 0xFEDCBA9876543210
+EXPECT=<<EOF
+\x10\x32\x54\x76\x98\xba\xdc\xfe
+EOF
+RUN
+
+NAME=rz_ax -N 0x1234
+FILE=-
+CMDS=!rz_ax -N 0x1234
+EXPECT=<<EOF
+\x34\x12\x00\x00
+EOF
+RUN
+
+NAME=rz_ax -d 3
+FILE=-
+CMDS=!rz_ax -d 3
+EXPECT=<<EOF
+3
+EOF
+RUN
+
+NAME=cat bins/other/shellcode.c | rz_ax sF
+FILE=-
+CMDS=!cat bins/other/shellcode.c | rz_ax -F
+EXPECT=<<EOF
+31c050686e2f7368682f2f626989e35089e25389e1b00bcd80
+EOF
+RUN
+
+NAME=C array {0x33,33,23,32}
+FILE=-
+CMDS=echo "main() {const char *foo = {0x33,33,23,23,23,23,4,13,32,23,32,23,32};}" | rz_ax -F
+EXPECT=<<EOF
+332117171717040d2017201720
+EOF
+RUN
+
+NAME=C string "\x33\x44\x88"
+FILE=-
+CMDS=echo 'main(){const char *foo = "\x33\x44\x88"; }' | rz_ax -F
+EXPECT=<<EOF
+334488
+EOF
+RUN
+
+NAME=cat bins/other/shellcode.py | rz_ax sF
+FILE=-
+CMDS=!cat bins/other/shellcode.py | rz_ax -F
+EXPECT=<<EOF
+31c050686e2f7368682f2f626989e35089e25389e1b00bcd80
+EOF
+RUN
+
+NAME=Python array [0x33,33,23,32]
+FILE=-
+CMDS=echo "foo = [0x33,33,23,23,23,23,4,13,32,23,32,23,32]" | rz_ax -F
+EXPECT=<<EOF
+332117171717040d2017201720
+EOF
+RUN
+
+NAME=Python string '\x33\x44\x88'
+FILE=-
+CMDS=echo "foo = '\x33\x44\x88'" | rz_ax -F
+EXPECT=<<EOF
+334488
+EOF
+RUN
+
+NAME=Python string "\x33\x44\x88"
+FILE=-
+CMDS=echo foo = "\x33\x44\x88" | rz_ax -F
+EXPECT=<<EOF
+334488
+EOF
+RUN
+
+NAME=rz_ax -s 43 4a 50
+FILE=-
+CMDS=!rz_ax -s 43 4a 50
+EXPECT=CJP
+RUN
+
+NAME=rz_ax -s 434a50
+FILE=-
+CMDS=!rz_ax -s 434a50
+EXPECT=CJP
+RUN
+
+NAME=rz_ax -S "hello\x2Aworld ZYX\234abc\n"
+FILE=-
+CMDS=!rz_ax -S "hello\x2Aworld ZYX\234abc\n"
+EXPECT=<<EOF
+68656c6c6f2a776f726c64205a59589c6162630a
+EOF
+RUN
+
+NAME=rz_ax -t "1234567890 GMT-1"
+FILE=-
+CMDS=!rz_ax -t "1234567890 GMT-1" | cut -d " " -f 1,2
+EXPECT=<<EOF
+Fri Feb
+EOF
+RUN
+
+NAME=rz_ax -x linux osx
+FILE=-
+CMDS=!rz_ax -x linux osx
+EXPECT=<<EOF
+0x5ca62a43
+0xad593a1
+EOF
+RUN
+
+NAME=rz_ax -u 3000
+FILE=-
+CMDS=!rz_ax -u 3000
+EXPECT=<<EOF
+2.9K
+EOF
+RUN
+
+NAME=rz_ax -h~Usage?"
+FILE=-
+CMDS=!!rz_ax -h~Usage?
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=long number conversion
+BROKEN=1
+FILE=-
+CMDS=!rz_ax 10000000000000000000000000000000000000000000000b
+EXPECT=<<EOF
+0x8000000000000000
+EOF
+RUN
+
+NAME=rz_ax -121.875f
+FILE=-
+CMDS=!rz_ax -121.875f
+EXPECT=<<EOF
+Fxc2f3c000
+EOF
+RUN
+
+NAME=rz_ax -0xf
+FILE=-
+CMDS=!rz_ax -0xf
+EXPECT=<<EOF
+-15
+EOF
+RUN
+
+NAME=rz_ax -L 0
+FILE=-
+CMDS=!rz_ax -L 0
+EXPECT=<<EOF
+0x0
+EOF
+RUN
+
+NAME=rz_ax -L 1
+FILE=-
+CMDS=!rz_ax -L 1
+EXPECT=<<EOF
+0x1
+EOF
+RUN
+
+NAME=rz_ax -L 10000010100001001000011010001000100010101000110010001110100100001001001010010100100101101001100010011010100111001001111
+FILE=-
+CMDS=!rz_ax -L 10000010100001001000011010001000100010101000110010001110100100001001001010010100100101101001100010011010100111001001111
+EXPECT=<<EOF
+0x4142434445464748494a4b4c4d4e4f
+EOF
+RUN
+
+NAME=rz_ax -L 00000000000000000000000000000000000000000000000000000000000000000
+FILE=-
+CMDS=!rz_ax -L 00000000000000000000000000000000000000000000000000000000000000000
+EXPECT=<<EOF
+0x0
+EOF
+RUN
+
+NAME=rz_ax -L 11111111111111111111111111111111111111111111111111111111111111111
+FILE=-
+CMDS=!rz_ax -L 11111111111111111111111111111111111111111111111111111111111111111
+EXPECT=<<EOF
+0x1ffffffffffffffff
+EOF
+RUN
+
+NAME=rz_ax -ke 0xdeadbeef
+FILE=-
+CMDS=!rz_ax -ke 0xdeadbeef
+EXPECT=<<EOF
+0xefbeadde
+EOF
+RUN
+
+NAME=rz_ax -a
+FILE=-
+CMDS=!rz_ax -a | grep -c ASCII
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=rz_ax -w 16 0xffff
+FILE=-
+CMDS=!rz_ax -w 16 0xffff
+EXPECT=<<EOF
+16
+-1
+EOF
+RUN
+
+NAME=rz_ax -K
+FILE=-
+CMDS=!printf 1 | rz_ax -K | grep -c 0x00000001
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=rz_ax -i
+FILE=-
+CMDS=!printf A | rz_ax -i
+EXPECT=<<EOF
+unsigned char buf[] = {
+  0x41
+};
+unsigned int buf_len = 1;
+EOF
+RUN
+
+NAME=rz_ax -o
+FILE=-
+CMDS=!rz_ax -o 162 62
+EXPECT=r2
+RUN
+
+NAME=rz_ax -r 0x1234
+FILE=-
+CMDS=!rz_ax -r 0x1234 | grep -c octal
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=rz_ax -v 
+FILE=-
+CMDS=!rz_ax -v | grep -c build
+EXPECT=<<EOF
+1
+EOF
+RUN

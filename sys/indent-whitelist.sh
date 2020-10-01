@@ -1,80 +1,80 @@
 #!/bin/sh
 FILES="
-libr/util/mem.c
-libr/util/base64.c
-libr/util/name.c
-libr/util/idpool.c
-libr/util/stack.c
-libr/util/slist.c
-libr/util/log.c
-libr/util/cache.c
-libr/util/print.c
+librz/util/mem.c
+librz/util/base64.c
+librz/util/name.c
+librz/util/idpool.c
+librz/util/stack.c
+librz/util/slist.c
+librz/util/log.c
+librz/util/cache.c
+librz/util/print.c
 
-libr/asm/p/asm_bf.c
+librz/asm/p/asm_bf.c
 
-libr/hash/calc.c
-libr/hash/crc16.c
-libr/hash/luhn.c
-libr/hash/xxhash.c
-libr/hash/md4.c
-libr/hash/adler32.c
-libr/hash/hash.c
-libr/hash/sha2.c
+librz/hash/calc.c
+librz/hash/crc16.c
+librz/hash/luhn.c
+librz/hash/xxhash.c
+librz/hash/md4.c
+librz/hash/adler32.c
+librz/hash/hash.c
+librz/hash/sha2.c
 
-libr/reg/reg.c
-libr/reg/arena.c
-libr/reg/double.c
-libr/reg/cond.c
-libr/reg/value.c
-libr/reg/profile.c
+librz/reg/reg.c
+librz/reg/arena.c
+librz/reg/double.c
+librz/reg/cond.c
+librz/reg/value.c
+librz/reg/profile.c
 
-libr/include/r_list.h
-libr/include/r_reg.h
-libr/include/r_util.h
+librz/include/r_list.h
+librz/include/r_reg.h
+librz/include/r_util.h
 
-libr/anal/var.c
-libr/anal/fcn.c
-libr/anal/cycles.c
-libr/anal/esil.c
-libr/anal/data.c
-libr/anal/flirt.c
-libr/anal/p/anal_arc.c
+librz/anal/var.c
+librz/anal/fcn.c
+librz/anal/cycles.c
+librz/anal/esil.c
+librz/anal/data.c
+librz/anal/flirt.c
+librz/anal/p/anal_arc.c
 
-libr/config/config.c
-libr/config/callback.c
-libr/config/t/test.c
+librz/config/config.c
+librz/config/callback.c
+librz/config/t/test.c
 
-libr/fs/fs.c
-libr/fs/file.c
+librz/fs/fs.c
+librz/fs/file.c
 
-libr/bin/bin.c
-libr/bin/bin_write.c
-libr/bin/dbginfo.c
-libr/bin/filter.c
-libr/bin/format/objc/mach0_classes.c
+librz/bin/bin.c
+librz/bin/bin_write.c
+librz/bin/dbginfo.c
+librz/bin/filter.c
+librz/bin/format/objc/mach0_classes.c
 
-libr/cons/hud.c
-libr/cons/2048.c
-libr/cons/utf8.c
-libr/cons/grep.c
-libr/cons/line.c
-libr/cons/canvas.c
-libr/cons/editor.c
+librz/cons/hud.c
+librz/cons/2048.c
+librz/cons/utf8.c
+librz/cons/grep.c
+librz/cons/line.c
+librz/cons/canvas.c
+librz/cons/editor.c
 
-libr/core/file.c
-libr/core/yank.c
-libr/core/blaze.c
-libr/core/cmd_egg.c
+librz/core/file.c
+librz/core/yank.c
+librz/core/blaze.c
+librz/core/cmd_egg.c
 
 shlr/tcc/tccgen.c
 shlr/tcc/libtcc.c
 shlr/tcc/tccpp.c
 
-binr/radare2/radare2.c
-binr/rabin2/rabin2.c
-binr/radiff2/radiff2.c
-binr/rasm2/rasm2.c
-binr/rax2/rax2.c
+binrz/rizin/rizin.c
+binrz/rz_bin/rz_bin.c
+binrz/rz_diff/rz_diff.c
+binrz/rz_asm/rz_asm.c
+binrz/rz_ax/rz_ax.c
 "
 
 chk() {
@@ -91,12 +91,12 @@ help|-h)
 --fix)
 	for f in $FILES ; do
 		chk $f $2 || continue
-		r2pm -r sys/indent.sh -i $f
+		rz_pm -r sys/indent.sh -i $f
 	done
 	;;
 *)
 	for f in $FILES ; do
 		chk $f $1 || continue
-		r2pm -r sys/indent.sh -u $f
+		rz_pm -r sys/indent.sh -u $f
 	done
 esac

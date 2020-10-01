@@ -1,6 +1,6 @@
-/* Copyright radare2 2014 - Author: pancake */
+/* Copyright rizin 2014 - Author: pancake */
 
-#include <r_cons.h>
+#include <rz_cons.h>
 
 typedef struct {
 	int x;
@@ -32,16 +32,16 @@ static Edge edges[] = {
 	{ -1 }
 };
 
-#define G(x,y) r_cons_canvas_gotoxy (can, x, y)
-#define W(x) r_cons_canvas_write (can, x)
-#define B(x,y,w,h) r_cons_canvas_box(can, x,y,w,h)
-#define L(x,y,x2,y2) r_cons_canvas_line(can, x,y,x2,y2,0)
-#define F(x,y,x2,y2,c) r_cons_canvas_fill(can, x,y,x2,y2,c,0)
+#define G(x,y) rz_cons_canvas_gotoxy (can, x, y)
+#define W(x) rz_cons_canvas_write (can, x)
+#define B(x,y,w,h) rz_cons_canvas_box(can, x,y,w,h)
+#define L(x,y,x2,y2) rz_cons_canvas_line(can, x,y,x2,y2,0)
+#define F(x,y,x2,y2,c) rz_cons_canvas_fill(can, x,y,x2,y2,c,0)
 
-static void Node_print(RConsCanvas *can, Node *n, int cur) {
+static void Node_print(RzConsCanvas *can, Node *n, int cur) {
 	char title[128];
 
-	n->w = r_str_bounds (n->text, &n->h);
+	n->w = rz_str_bounds (n->text, &n->h);
 	n->w += 4;
 	n->h += 4;
 	n->w = R_MAX(18, n->w);
@@ -62,7 +62,7 @@ static void Node_print(RConsCanvas *can, Node *n, int cur) {
 	B (n->x, n->y, n->w, n->h);
 }
 
-static void Edge_print(RConsCanvas *can, Node *a, Node *b, int nth) {
+static void Edge_print(RzConsCanvas *can, Node *a, Node *b, int nth) {
 	int x, y, x2, y2;
 	int xinc = 3+(nth*3);
 	x = a->x+xinc;
@@ -74,12 +74,12 @@ static void Edge_print(RConsCanvas *can, Node *a, Node *b, int nth) {
 
 main() {
 	int w, h, i;
-	RConsCanvas *can;
-	RCons *c = r_cons_new ();
-	w = r_cons_get_size (&h);
-	can = r_cons_canvas_new (w-1, h-1);
+	RzConsCanvas *can;
+	RzCons *c = rz_cons_new ();
+	w = rz_cons_get_size (&h);
+	can = rz_cons_canvas_new (w-1, h-1);
 repeat:
-	r_cons_canvas_clear (can);
+	rz_cons_canvas_clear (can);
 
 	for (i=0;edges[i].nth!=-1;i++) {
 		Node *a = &nodes[edges[i].from];
@@ -89,11 +89,11 @@ repeat:
 	for (i=0;nodes[i].text;i++) {
 		Node_print (can, &nodes[i], i==curnode);
 	}
-	//r_cons_canvas_line (can, 12, 4+5, X+5, 5, 0);
+	//rz_cons_canvas_line (can, 12, 4+5, X+5, 5, 0);
 
-	r_cons_canvas_print (can);
-	r_cons_flush ();
-	int key = r_cons_readchar ();
+	rz_cons_canvas_print (can);
+	rz_cons_flush ();
+	int key = rz_cons_readchar ();
 #define N nodes[curnode]
 	switch (key) {
 	case 9: curnode++;
@@ -110,8 +110,8 @@ repeat:
 	case 'L': N.x+=2; break;
 	case 'q': exit(0);
 	case 27: // ESC
-		if (r_cons_readchar () == 91) {
-			if (r_cons_readchar () == 90) {
+		if (rz_cons_readchar () == 91) {
+			if (rz_cons_readchar () == 90) {
 				if (curnode<1) {
 					int i;
 					for(i=0;nodes[i].text;i++){};
@@ -125,5 +125,5 @@ repeat:
 		sleep (1);
 	}
 	goto repeat;
-	r_cons_free (c);
+	rz_cons_free (c);
 }

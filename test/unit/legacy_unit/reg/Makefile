@@ -1,5 +1,5 @@
 OBJ=test.o
 BIN=regtest
-BINDEPS=r_reg r_util
+BINDEPS=rz_reg rz_util
 
 include ../../rules.mk

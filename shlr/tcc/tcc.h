@@ -21,7 +21,7 @@
 #ifndef _TCC_H
 #define _TCC_H
 
-#include "r_types.h"
+#include "rz_types.h"
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif

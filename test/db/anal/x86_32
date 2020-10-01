@@ -176,7 +176,7 @@ EOF
 RUN
 
 NAME=cyclomatic
-FILE=bins/pe/rabin2.exe
+FILE=bins/pe/rz_bin.exe
 CMDS=<<EOF
 s 0x140002510;af;afi~complex[1]
 afb.@0x14000253e

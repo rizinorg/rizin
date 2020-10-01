@@ -1,6 +1,6 @@
 NAME=binsym demangling
 FILE=bins/mach0/hellocxx-osx-i386
-CMDS=!rabin2 -qsD cxx all bins/mach0/hellocxx-osx-i386
+CMDS=!rz_bin -qsD cxx all bins/mach0/hellocxx-osx-i386
 EXPECT=<<EOF
 0x00002054 0 _NXArgc
 0x00002058 0 _NXArgv

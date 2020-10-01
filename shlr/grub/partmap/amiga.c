@@ -21,7 +21,7 @@
 #include <grub/misc.h>
 #include <grub/mm.h>
 #include <grub/partition.h>
-#include <r_types.h>
+#include <rz_types.h>
 R_PACKED(
 struct grub_amiga_rdsk
 {

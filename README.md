@@ -11,18 +11,18 @@
 
 | Service | Badge |
 |----------|---------------------------------------------------------------------|
-| **GithubCI**  | [![Tests Status](https://github.com/radareorg/radare2/workflows/Radare2%20CI/badge.svg)](https://github.com/radareorg/radare2/actions?query=workflow%3A%22Radare2+CI%22)|
-| **TravisCI** 	| [![Build Status](https://travis-ci.com/radareorg/radare2.svg?branch=master)](https://travis-ci.com/radareorg/radare2)|
-| **AppVeyor**  | [![Build status](https://ci.appveyor.com/api/projects/status/9cgkgxkc3203fm1o/branch/master?svg=true)](https://ci.appveyor.com/project/radareorg/radare2/branch/master)|
-| **FreeBSD (sr.ht)**  | [![builds.sr.ht status](https://builds.sr.ht/~xvilka/radare2/commits/freebsd.yml.svg)](https://builds.sr.ht/~xvilka/radare2/commits/freebsd.yml?)|
-| **OpenBSD (sr.ht)**  | [![builds.sr.ht status](https://builds.sr.ht/~xvilka/radare2/commits/openbsd.yml.svg)](https://builds.sr.ht/~xvilka/radare2/commits/openbsd.yml?)|
+| **GithubCI**  | [![Tests Status](https://github.com/rizinorg/rizin/workflows/Radare2%20CI/badge.svg)](https://github.com/rizinorg/rizin/actions?query=workflow%3A%22Radare2+CI%22)|
+| **TravisCI** 	| [![Build Status](https://travis-ci.com/rizinorg/rizin.svg?branch=master)](https://travis-ci.com/rizinorg/rizin)|
+| **AppVeyor**  | [![Build status](https://ci.appveyor.com/api/projects/status/9cgkgxkc3203fm1o/branch/master?svg=true)](https://ci.appveyor.com/project/rizinorg/rizin/branch/master)|
+| **FreeBSD (sr.ht)**  | [![builds.sr.ht status](https://builds.sr.ht/~xvilka/rizin/commits/freebsd.yml.svg)](https://builds.sr.ht/~xvilka/rizin/commits/freebsd.yml?)|
+| **OpenBSD (sr.ht)**  | [![builds.sr.ht status](https://builds.sr.ht/~xvilka/rizin/commits/openbsd.yml.svg)](https://builds.sr.ht/~xvilka/rizin/commits/openbsd.yml?)|
 | **Coverity** 	| [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) |
-| **LGTM** | [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/)
+| **LGTM** | [![Total alerts](https://img.shields.io/lgtm/alerts/g/rizinorg/rizin.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/rizinorg/rizin/alerts/)
 | **Infrastructure** |  [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) |
-| **Codecov** | [![codecov](https://codecov.io/gh/radareorg/radare2/branch/master/graph/badge.svg)](https://codecov.io/gh/radareorg/radare2)
+| **Codecov** | [![codecov](https://codecov.io/gh/rizinorg/rizin/branch/master/graph/badge.svg)](https://codecov.io/gh/rizinorg/rizin)
 | **Fuzzit** | [![fuzzit](https://app.fuzzit.dev/badge?org_id=2zv5qI33roZkRm0oO2Mi&target_id=YVkkS6RPVpKhSixyFWcT&branch=master)](https://app.fuzzit.dev/admin/2zv5qI33roZkRm0oO2Mi/target)
-<a href="https://repology.org/metapackage/radare2">
-<img src="https://repology.org/badge/vertical-allrepos/radare2.svg" alt="Packaging status" align="right" width="150px">
+<a href="https://repology.org/metapackage/rizin">
+<img src="https://repology.org/badge/vertical-allrepos/rizin.svg" alt="Packaging status" align="right" width="150px">
 </a>
 
 # Introduction
@@ -35,9 +35,9 @@ command-line hexadecimal editor able to open disk files,
 but later added support for analyzing binaries, disassembling
 code, debugging programs, attaching to remote gdb servers...
 
-radare2 is portable.
+rizin is portable.
 
-To learn more on radare2 you may want to read the [official radare2 book](https://book.rada.re).
+To learn more on rizin you may want to read the [official rizin book](https://book.rada.re).
 
 You can also use [r2lrn](https://github.com/0ki/r2lrn) or r2golf for a hands-on learning experience.
 
@@ -67,7 +67,7 @@ Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems
 ## Scripting
 
 Native bindings are supported but the recommended way to interact with r2
-from other languages is by using [r2pipe](https://github.com/radareorg/radare2-r2pipe)
+from other languages is by using [rzpipe](https://github.com/rizinorg/rizin-rzpipe)
 
 Python, Ruby, JavaScript, Lua, Perl, PHP, Go, Rust, Swift, C#, Java,
 Shell, OCaml, Haskell, Scheme (Guile), Common Lisp, Clojure, Erlang, D,
@@ -75,7 +75,7 @@ Vala/Genie, Prolog, Nim, Newlisp...
 
 # Install / Update
 
-The recommended way to install or update radare2 from git for single-user systems:
+The recommended way to install or update rizin from git for single-user systems:
 
 	$ sys/install.sh
 
@@ -107,25 +107,25 @@ To remove all stuff including libraries, use
 
 ## Package Manager
 
-Radare2 has its own package manager - r2pm. Its packages
-repository is on [GitHub too](https://github.com/radareorg/radare2-pm).
+Radare2 has its own package manager - rz_pm. Its packages
+repository is on [GitHub too](https://github.com/rizinorg/rizin-pm).
 To start to using it for the first time, you need to initialize packages:
 
-	$ r2pm init
+	$ rz_pm init
 
 Refresh the packages database before installing any package:
 
-	$ r2pm update
+	$ rz_pm update
 
 To install a package, use the following command:
 
-	$ r2pm install [package name]
+	$ rz_pm install [package name]
 
 # Development
 
 ## Coding Style
 
-Look at [CONTRIBUTING.md](https://github.com/radareorg/radare2/blob/master/CONTRIBUTING.md).
+Look at [CONTRIBUTING.md](https://github.com/rizinorg/rizin/blob/master/CONTRIBUTING.md).
 
 ## Tests
 
@@ -142,6 +142,6 @@ Website: [https://www.radare.org/](https://www.radare.org/)
 
 Telegram: [https://t.me/radare](https://t.me/radare)
 
-Twitter: [@radareorg](https://twitter.com/radareorg)
+Twitter: [@rizinorg](https://twitter.com/rizinorg)
 
 IRC: irc.freenode.net #radare

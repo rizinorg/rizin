@@ -1,13 +1,13 @@
 /* radare - LGPL - Copyright 2011-2017 pancake<nopcode.org> */
 
-#include <r_io.h>
-#include <r_fs.h>
+#include <rz_io.h>
+#include <rz_fs.h>
 #include "grubfs.h"
 #include <stdio.h>
 #include <string.h>
 
 
-static RIOBind *bio = NULL;
+static RzIOBind *bio = NULL;
 static ut64 delta = 0;
 
 static void* empty (int sz) {
@@ -22,7 +22,7 @@ static grub_err_t read_foo (struct grub_disk *disk, grub_disk_addr_t sector, gru
 		return 1;
 	}
 	const int blocksize = 512; // TODO unhardcode 512
-	RIOBind *iob = disk->data;
+	RzIOBind *iob = disk->data;
 	if (bio) {
 		iob = bio;
 	}
@@ -64,7 +64,7 @@ void grubfs_free (GrubFS *gf) {
 	}
 }
 
-void grubfs_bind_io (RIOBind *iob, ut64 _delta) {
+void grubfs_bind_io (RzIOBind *iob, ut64 _delta) {
 	bio = iob;
 	delta = _delta;
 }

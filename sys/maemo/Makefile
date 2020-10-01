@@ -39,8 +39,8 @@ ${PACKAGE_DIR}/data: ${SOURCE_DIR}
 	ls -al data/usr/bin/
 	mkdir -p control
 	printf "S 15 com.nokia.maemo H 40 " > control/digisums
-	printf `sha1sum $@/../data/usr/bin/radare2` >> control/digisums
-	echo "R 25 usr/bin/radare2" >> control/digisums
+	printf `sha1sum $@/../data/usr/bin/rizin` >> control/digisums
+	echo "R 25 usr/bin/rizin" >> control/digisums
 
 jiji:
 	rm -rf $@

@@ -2,7 +2,7 @@
 <installer-gui-script minSpecVersion="2">
     <title>Radare</title>
     <license file="COPYING.LESSER" mime-type="text/plain"/>
-    <pkg-ref id="org.radare.radare2">
+    <pkg-ref id="org.radare.rizin">
         <bundle-version/>
     </pkg-ref>
     <options customize="never" require-scripts="false" hostArchitectures="i386,x86_64"/>
@@ -13,14 +13,14 @@
     </volume-check>
     <choices-outline>
         <line choice="default">
-            <line choice="org.radare.radare2"/>
+            <line choice="org.radare.rizin"/>
         </line>
     </choices-outline>
     <choice id="default" customLocation="usr"/>
-    <choice id="org.radare.radare2" visible="false">
-        <pkg-ref id="org.radare.radare2"/>
+    <choice id="org.radare.rizin" visible="false">
+        <pkg-ref id="org.radare.rizin"/>
     </choice>
-    <pkg-ref id="org.radare.radare2" version="0" onConclusion="none" installKBytes="51182">#radare2.pkg</pkg-ref>
+    <pkg-ref id="org.radare.rizin" version="0" onConclusion="none" installKBytes="51182">#rizin.pkg</pkg-ref>
     <welcome file="welcome.rtf" mime-type="text/enriched"/>
     <background file="r2logo.png" mime-type="image/png" alignment="bottomleft"/>
 </installer-gui-script>

@@ -1,4 +1,4 @@
-#!/usr/bin/ragg2 -FO
+#!/usr/bin/rz_gg -FO
 goto(main);
 
 exit@syscall(1);

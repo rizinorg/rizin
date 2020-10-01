@@ -15,7 +15,7 @@ Or from the shell:
 
 */
 
-var r2p = require ("r2pipe")
+var r2p = require ("rzpipe")
 var http = require('http');
 var express = require('express');
 

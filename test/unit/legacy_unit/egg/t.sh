@@ -13,36 +13,36 @@ case "$1" in
 	echo " -t : create 't' program"
 	;;
 -t)
-	ragg2 -FO t.r
+	rz_gg -FO t.r
 	exit
 	;;
 -d)
-	rasm2 -d `ragg2 t.r`
+	rz_asm -d `rz_gg t.r`
 	;;
 -b)
-	ragg2 t.r
+	rz_gg t.r
 	;;
 -r)
 	cat t.r
 	;;
 -x)
-	ragg2 -FO t.r
+	rz_gg -FO t.r
 	./t
 	;;
 -s)
-	ragg2 -s t.r > fail-t-$0.s
+	rz_gg -s t.r > fail-t-$0.s
 	cat fail-t-$0.s
 	cp t fail-t-$0
 	;;
 *)
-	eval ${DEBUG} ragg2 -FO t.r
-	rarun2 '' program=./t timeout=1 > t.o 
+	eval ${DEBUG} rz_gg -FO t.r
+	rz_run '' program=./t timeout=1 > t.o 
 	if [ $? = "${EXIT}" -a "`cat t.o`" = "${OUTPUT}" ]; then
 		out=SUCCESS
 		rm -f fail-t-$0*
 	else
 		out=FAIL
-		ragg2 -s t.r 2>&1 > fail-t-$0.s
+		rz_gg -s t.r 2>&1 > fail-t-$0.s
 		cp -f t fail-t-$0
 		cp -f t.r fail-t-$0.r
 	fi

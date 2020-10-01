@@ -1,8 +1,8 @@
 include ../../config.mk
 
-BINDEPS=r_util
+BINDEPS=rz_util
 
-LDFLAGS+=-lr_util -L..
+LDFLAGS+=-lrz_util -L..
 
 BINS=sparse
 BINS+=array

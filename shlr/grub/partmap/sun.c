@@ -24,7 +24,7 @@
 #include <grub/symbol.h>
 #include <grub/types.h>
 #include <grub/err.h>
-#include <r_types.h>
+#include <rz_types.h>
 
 #define GRUB_PARTMAP_SUN_MAGIC 0xDABE
 #define GRUB_PARTMAP_SUN_MAX_PARTS 8

@@ -1,4 +1,4 @@
-#include <r_debug.h>
+#include <rz_debug.h>
 #include "minunit.h"
 #if __linux__
 #include <sys/user.h>
@@ -10,16 +10,16 @@
 #endif //__linux__
 
 bool test_r_debug_use(void) {
-	RDebug *dbg;
+	RzDebug *dbg;
 	bool res;
 
-	dbg = r_debug_new (true);
-	mu_assert_notnull (dbg, "r_debug_new () failed");
+	dbg = rz_debug_new (true);
+	mu_assert_notnull (dbg, "rz_debug_new () failed");
 
-	res = r_debug_use (dbg, "null");
-	mu_assert_eq (res, true, "r_debug_use () failed");
+	res = rz_debug_use (dbg, "null");
+	mu_assert_eq (res, true, "rz_debug_use () failed");
 
-	r_debug_free (dbg);
+	rz_debug_free (dbg);
 	mu_end;
 }
 

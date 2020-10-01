@@ -1,4 +1,4 @@
-project('radare2', 'c', license: 'LGPL3', meson_version: '>=0.50.1')
+project('rizin', 'c', license: 'LGPL3', meson_version: '>=0.50.1')
 
 py3_exe = import('python').find_installation('python3')
 git_exe = find_program('git', required: false)
@@ -71,7 +71,7 @@ endif
 if get_option('r2_gittap') != ''
   gittap = get_option('r2_gittap')
 endif
-# gittap is used for the version of each r_ library
+# gittap is used for the version of each rz_ library
 # in case it has not been set (e.g. a release tarball) set it
 if gittap == ''
   gittap = r2_version
@@ -110,7 +110,7 @@ else
 endif
 
 platform_deps = []
-platform_inc = ['.', 'libr/include']
+platform_inc = ['.', 'librz/include']
 if host_machine.system() == 'windows'
   platform_deps = [cc.find_library('ws2_32'), cc.find_library('wininet'), cc.find_library('psapi')]
 endif
@@ -140,7 +140,7 @@ library_cflags = ['-DR2_PLUGIN_INCORE=1']
 if host_machine.system() == 'windows'
   r2_prefix = '.'
   r2_libdir = 'lib'
-  r2_incdir = join_paths('include', 'libr')
+  r2_incdir = join_paths('include', 'librz')
   r2_datdir = 'share'
 
   opts1 = [
@@ -196,43 +196,43 @@ if host_machine.system() == 'windows'
 else
   r2_prefix = get_option('prefix')
   r2_libdir = get_option('libdir')
-  r2_incdir = join_paths(get_option('includedir'), 'libr')
+  r2_incdir = join_paths(get_option('includedir'), 'librz')
   r2_datdir = get_option('datadir')
-  r2_datdir_r2 = join_paths(r2_datdir, 'radare2')
-  r2_wwwroot = join_paths(r2_datdir_r2, r2_version, 'www')
-  r2_sdb = join_paths(r2_datdir_r2, r2_version)
-  r2_zigns = join_paths(r2_datdir_r2, r2_version, 'zigns')
-  r2_themes = join_paths(r2_datdir_r2, r2_version, 'cons')
-  r2_fortunes = join_paths(r2_datdir, 'doc', 'radare2')
-  r2_flags = join_paths(r2_datdir_r2, r2_version, 'flag')
-  r2_hud = join_paths(r2_datdir_r2, r2_version, 'hud')
-  r2_plugins = join_paths(r2_libdir, 'radare2', r2_version)
-  r2_extras = join_paths(r2_libdir, 'radare2-extras', r2_version)
-  r2_bindings = join_paths(r2_libdir, 'radare2-bindings', r2_version)
+  r2_datdir_rz = join_paths(r2_datdir, 'rizin')
+  r2_wwwroot = join_paths(r2_datdir_rz, r2_version, 'www')
+  r2_sdb = join_paths(r2_datdir_rz, r2_version)
+  r2_zigns = join_paths(r2_datdir_rz, r2_version, 'zigns')
+  r2_themes = join_paths(r2_datdir_rz, r2_version, 'cons')
+  r2_fortunes = join_paths(r2_datdir, 'doc', 'rizin')
+  r2_flags = join_paths(r2_datdir_rz, r2_version, 'flag')
+  r2_hud = join_paths(r2_datdir_rz, r2_version, 'hud')
+  r2_plugins = join_paths(r2_libdir, 'rizin', r2_version)
+  r2_extras = join_paths(r2_libdir, 'rizin-extras', r2_version)
+  r2_bindings = join_paths(r2_libdir, 'rizin-bindings', r2_version)
 endif
 
 r2_zsh_compdir = join_paths(r2_datdir, 'zsh', 'site-functions')
 
 # load plugin configuration
-subdir('libr')
+subdir('librz')
 
 conf_data = configuration_data()
-conf_data.set('plugins_core', '&r_core_plugin_' + ', &r_core_plugin_'.join(core_plugins) + ', 0')
-conf_data.set('plugins_anal', '&r_anal_plugin_' + ', &r_anal_plugin_'.join(anal_plugins) + ', 0')
-conf_data.set('plugins_asm', '&r_asm_plugin_' + ', &r_asm_plugin_'.join(asm_plugins) + ', 0')
-conf_data.set('plugins_bp', '&r_bp_plugin_' + ', &r_bp_plugin_'.join(bp_plugins) + ', 0')
-conf_data.set('plugins_bin', '&r_bin_plugin_' + ', &r_bin_plugin_'.join(bin_plugins) + ', 0')
-conf_data.set('plugins_bin_ldr', '&r_bin_ldr_plugin_' + ', &r_bin_ldr_plugin_'.join(bin_ldr_plugins) + ', 0')
-conf_data.set('plugins_bin_xtr', '&r_bin_xtr_plugin_' + ', &r_bin_xtr_plugin_'.join(bin_xtr_plugins) + ', 0')
-conf_data.set('plugins_crypto', '&r_crypto_plugin_' + ', &r_crypto_plugin_'.join(crypto_plugins) + ', 0')
-conf_data.set('plugins_io', '&r_io_plugin_' + ', &r_io_plugin_'.join(io_plugins) + ', 0')
-conf_data.set('plugins_fs', '&r_fs_plugin_' + ', &r_fs_plugin_'.join(fs_plugins) + ', 0')
-conf_data.set('plugins_debug', '&r_debug_plugin_' + ', &r_debug_plugin_'.join(debug_plugins) + ', 0')
-conf_data.set('plugins_egg', '&r_egg_plugin_' + ', &r_egg_plugin_'.join(egg_plugins) + ', 0')
-conf_data.set('plugins_lang', '&r_lang_plugin_' + ', &r_lang_plugin_'.join(lang_plugins) + ', 0')
-conf_data.set('plugins_parse', '&r_parse_plugin_' + ', &r_parse_plugin_'.join(parse_plugins) + ', 0')
+conf_data.set('plugins_core', '&rz_core_plugin_' + ', &rz_core_plugin_'.join(core_plugins) + ', 0')
+conf_data.set('plugins_anal', '&rz_anal_plugin_' + ', &rz_anal_plugin_'.join(anal_plugins) + ', 0')
+conf_data.set('plugins_asm', '&rz_asm_plugin_' + ', &rz_asm_plugin_'.join(asm_plugins) + ', 0')
+conf_data.set('plugins_bp', '&rz_bp_plugin_' + ', &rz_bp_plugin_'.join(bp_plugins) + ', 0')
+conf_data.set('plugins_bin', '&rz_bin_plugin_' + ', &rz_bin_plugin_'.join(bin_plugins) + ', 0')
+conf_data.set('plugins_bin_ldr', '&rz_bin_ldr_plugin_' + ', &rz_bin_ldr_plugin_'.join(bin_ldr_plugins) + ', 0')
+conf_data.set('plugins_bin_xtr', '&rz_bin_xtr_plugin_' + ', &rz_bin_xtr_plugin_'.join(bin_xtr_plugins) + ', 0')
+conf_data.set('plugins_crypto', '&rz_crypto_plugin_' + ', &rz_crypto_plugin_'.join(crypto_plugins) + ', 0')
+conf_data.set('plugins_io', '&rz_io_plugin_' + ', &rz_io_plugin_'.join(io_plugins) + ', 0')
+conf_data.set('plugins_fs', '&rz_fs_plugin_' + ', &rz_fs_plugin_'.join(fs_plugins) + ', 0')
+conf_data.set('plugins_debug', '&rz_debug_plugin_' + ', &rz_debug_plugin_'.join(debug_plugins) + ', 0')
+conf_data.set('plugins_egg', '&rz_egg_plugin_' + ', &rz_egg_plugin_'.join(egg_plugins) + ', 0')
+conf_data.set('plugins_lang', '&rz_lang_plugin_' + ', &rz_lang_plugin_'.join(lang_plugins) + ', 0')
+conf_data.set('plugins_parse', '&rz_parse_plugin_' + ', &rz_parse_plugin_'.join(parse_plugins) + ', 0')
 config_h = configure_file(
-  input: 'libr/config.h.in',
+  input: 'librz/config.h.in',
   output: 'config.h',
   configuration: conf_data
 )
@@ -323,7 +323,7 @@ if host_machine.system() == 'windows'
 else
   userconf.set('LIBDIR', join_paths(r2_prefix, r2_libdir))
   userconf.set('INCLUDEDIR', join_paths(r2_prefix, r2_incdir))
-  userconf.set('DATADIR_R2', r2_datdir_r2)
+  userconf.set('DATADIR_R2', r2_datdir_rz)
   userconf.set10('HAVE_JEMALLOC', true)
 endif
 userconf.set('DATADIR', join_paths(r2_prefix, r2_datdir))
@@ -365,9 +365,9 @@ foreach item : [
   userconf.set10('HAVE_@0@'.format(func.to_upper()), ok)
 endforeach
 
-r_userconf_h = configure_file(
-  input: 'libr/include/r_userconf.h.acr',
-  output: 'r_userconf.h',
+rz_userconf_h = configure_file(
+  input: 'librz/include/rz_userconf.h.acr',
+  output: 'rz_userconf.h',
   configuration: userconf,
   install_dir: join_paths(r2_incdir)
 )
@@ -383,9 +383,9 @@ versionconf.set('R2_VERSION', r2_version)
 versionconf.set('R2_GITTAP', gittap)
 versionconf.set('R2_GITTIP', gittip)
 versionconf.set('R2_BIRTH', r2birth)
-r_version_h = configure_file(
-  input: 'libr/include/r_version.h.in',
-  output: 'r_version.h',
+rz_version_h = configure_file(
+  input: 'librz/include/rz_version.h.in',
+  output: 'rz_version.h',
   configuration: versionconf,
   install_dir: join_paths(r2_incdir)
 )
@@ -398,8 +398,8 @@ pcconf.set('PREFIX', get_option('prefix'))
 pcconf.set('LIBDIR', join_paths(get_option('prefix'), get_option('libdir')))
 pcconf.set('VERSION', r2_version)
 libr_pc = configure_file(
-  input: 'libr/libr.pc.acr',
-  output: 'libr.pc',
+  input: 'librz/librz.pc.acr',
+  output: 'librz.pc',
   configuration: pcconf,
   install_dir: join_paths(get_option('libdir'), 'pkgconfig')
 )
@@ -429,13 +429,13 @@ if not zlib_dep.found() or not get_option('use_sys_zlib')
 
   zlib_inc = [platform_inc, include_directories('shlr/zip/zlib')]
 
-  libr2zlib = static_library('r2zlib', zlib_files,
+  librzzlib = static_library('r2zlib', zlib_files,
     include_directories: zlib_inc,
     implicit_include_directories: false
   )
 
   zlib_dep = declare_dependency(
-    link_with: libr2zlib,
+    link_with: librzzlib,
     include_directories: zlib_inc
   )
 else
@@ -503,14 +503,14 @@ sdb_inc_files = [
 ]
 install_headers(sdb_inc_files, install_dir: join_paths(r2_incdir, 'sdb'))
 
-libr2sdb = static_library('r2sdb', sdb_files,
+librzsdb = static_library('r2sdb', sdb_files,
   include_directories: sdb_inc,
   implicit_include_directories: false,
   c_args: host_machine.system() == 'windows' ? '-DSDB_API=__declspec(dllexport)' : [],
 )
 
 sdb_dep = declare_dependency(
-  link_whole: libr2sdb,
+  link_whole: librzsdb,
   include_directories: sdb_inc
 )
 
@@ -536,7 +536,7 @@ spp_files = [
 
 spp_inc = [platform_inc, include_directories('shlr/spp')]
 
-libr2spp = static_library('r2spp', spp_files,
+librzspp = static_library('r2spp', spp_files,
   dependencies: sdb_dep,
   include_directories: spp_inc,
   c_args: ['-DHAVE_R_UTIL', '-DUSE_R2=1'],
@@ -544,7 +544,7 @@ libr2spp = static_library('r2spp', spp_files,
 )
 
 spp_dep = declare_dependency(
-  link_with: libr2spp,
+  link_with: librzspp,
   include_directories: spp_inc
 )
 
@@ -563,40 +563,40 @@ if get_option('local') and get_option('default_library') == 'shared'
   rpath_lib = '$ORIGIN'
 endif
 
-subdir('libr/util')
-subdir('libr/socket')
-subdir('libr/hash')
-subdir('libr/crypto')
+subdir('librz/util')
+subdir('librz/socket')
+subdir('librz/hash')
+subdir('librz/crypto')
 subdir('shlr')
 
-subdir('libr/cons')
+subdir('librz/cons')
 subdir('shlr/gdb')
-subdir('libr/io')
-subdir('libr/bp')
-subdir('libr/syscall')
-subdir('libr/search')
-subdir('libr/magic')
-subdir('libr/flag')
-subdir('libr/reg')
-subdir('libr/bin')
-subdir('libr/config')
-subdir('libr/parse')
-subdir('libr/lang')
-subdir('libr/asm')
-subdir('libr/anal')
-subdir('libr/egg')
-subdir('libr/fs')
-subdir('libr/debug')
-subdir('libr/core')
+subdir('librz/io')
+subdir('librz/bp')
+subdir('librz/syscall')
+subdir('librz/search')
+subdir('librz/magic')
+subdir('librz/flag')
+subdir('librz/reg')
+subdir('librz/bin')
+subdir('librz/config')
+subdir('librz/parse')
+subdir('librz/lang')
+subdir('librz/asm')
+subdir('librz/anal')
+subdir('librz/egg')
+subdir('librz/fs')
+subdir('librz/debug')
+subdir('librz/core')
 
-subdir('libr/anal/d')
-subdir('libr/asm/d')
-subdir('libr/bin/d')
-subdir('libr/syscall/d')
-subdir('libr/cons/d')
-subdir('libr/magic/d')
-subdir('libr/flag/d')
-subdir('libr/main')
+subdir('librz/anal/d')
+subdir('librz/asm/d')
+subdir('librz/bin/d')
+subdir('librz/syscall/d')
+subdir('librz/cons/d')
+subdir('librz/magic/d')
+subdir('librz/flag/d')
+subdir('librz/main')
 
 cli_option = get_option('cli')
 if cli_option.auto()
@@ -606,52 +606,52 @@ else
 endif
 if cli_enabled
   if get_option('blob')
-    subdir('binr/blob')
+    subdir('binrz/blob')
   else
-    subdir('binr/rahash2')
-    subdir('binr/rarun2')
-    subdir('binr/rasm2')
-    subdir('binr/rabin2')
-    subdir('binr/radare2')
-    subdir('binr/ragg2')
-    subdir('binr/r2agent')
-    subdir('binr/radiff2')
-    subdir('binr/rafind2')
-    subdir('binr/rasign2')
-    subdir('binr/rax2')
+    subdir('binrz/rz_hash')
+    subdir('binrz/rz_run')
+    subdir('binrz/rz_asm')
+    subdir('binrz/rz_bin')
+    subdir('binrz/rizin')
+    subdir('binrz/rz_gg')
+    subdir('binrz/rz_agent')
+    subdir('binrz/rz_diff')
+    subdir('binrz/rz_find')
+    subdir('binrz/rz_sign')
+    subdir('binrz/rz_ax')
   endif
-  subdir('binr/r2pm')
-  subdir('binr/r2r')
+  subdir('binrz/rz_pm')
+  subdir('binrz/rz_test')
 endif
 
 if meson.is_subproject()
-  libr2_dep = declare_dependency(
+  librz_dep = declare_dependency(
     dependencies: [
-      r_anal_dep,
-      r_asm_dep,
-      r_bin_dep,
-      r_bp_dep,
-      r_config_dep,
-      r_cons_dep,
-      r_core_dep,
-      r_main_dep,
-      r_crypto_dep,
-      r_debug_dep,
-      r_egg_dep,
-      r_flag_dep,
-      r_fs_dep,
-      r_hash_dep,
-      r_io_dep,
-      r_lang_dep,
-      r_magic_dep,
-      r_parse_dep,
-      r_reg_dep,
-      r_search_dep,
-      r_socket_dep,
-      r_syscall_dep,
-      r_util_dep
+      rz_anal_dep,
+      rz_asm_dep,
+      rz_bin_dep,
+      rz_bp_dep,
+      rz_config_dep,
+      rz_cons_dep,
+      rz_core_dep,
+      rz_main_dep,
+      rz_crypto_dep,
+      rz_debug_dep,
+      rz_egg_dep,
+      rz_flag_dep,
+      rz_fs_dep,
+      rz_hash_dep,
+      rz_io_dep,
+      rz_lang_dep,
+      rz_magic_dep,
+      rz_parse_dep,
+      rz_reg_dep,
+      rz_search_dep,
+      rz_socket_dep,
+      rz_syscall_dep,
+      rz_util_dep
     ],
-    include_directories: include_directories('.', 'libr/include'),
+    include_directories: include_directories('.', 'librz/include'),
     version: r2_version
   )
 endif
@@ -675,18 +675,18 @@ install_data(
 
 if cli_enabled
   install_man(
-    'man/r2agent.1',
-    'man/r2-docker.1',
-    'man/r2pm.1',
-    'man/rabin2.1',
-    'man/radare2.1',
-    'man/radiff2.1',
-    'man/rafind2.1',
-    'man/ragg2.1',
-    'man/rahash2.1',
-    'man/rarun2.1',
-    'man/rasm2.1',
-    'man/rax2.1',
+    'man/rz_agent.1',
+    'man/rz-docker.1',
+    'man/rz_pm.1',
+    'man/rz_bin.1',
+    'man/rizin.1',
+    'man/rz_diff.1',
+    'man/rz_find.1',
+    'man/rz_gg.1',
+    'man/rz_hash.1',
+    'man/rz_run.1',
+    'man/rz_asm.1',
+    'man/rz_ax.1',
     'man/esil.7'
   )
 
@@ -696,16 +696,16 @@ if cli_enabled
   )
 
   install_data(
-    'doc/zsh/_r2',
-    'doc/zsh/_rabin2',
-    'doc/zsh/_radiff2',
-    'doc/zsh/_rafind2',
-    'doc/zsh/_ragg2',
-    'doc/zsh/_rahash2',
-    'doc/zsh/_rasm2',
-    'doc/zsh/_rax2',
+    'doc/zsh/_rz',
+    'doc/zsh/_rz_bin',
+    'doc/zsh/_rz_diff',
+    'doc/zsh/_rz_find',
+    'doc/zsh/_rz_gg',
+    'doc/zsh/_rz_hash',
+    'doc/zsh/_rz_asm',
+    'doc/zsh/_rz_ax',
     install_dir: r2_zsh_compdir
   )
 
-  meson.add_install_script(host_machine.system() == 'windows' ? 'sys/create_r2.bat' : 'sys/create_r2.sh')
+  meson.add_install_script(host_machine.system() == 'windows' ? 'sys/create_rz.bat' : 'sys/create_rz.sh')
 endif

@@ -51,7 +51,7 @@ we should specify the x86-32 too. (32 and 64 bit debugging is supported)
 
 On Windows you should run the following line:
 
-    $ radare2 -D winkd winkd://\\.\pipe\com_1
+    $ rizin -D winkd winkd://\\.\pipe\com_1
 
 At this point, we will get stuck here:
 

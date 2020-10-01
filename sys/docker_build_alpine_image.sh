@@ -77,13 +77,13 @@ Usage: ${0##*/} [OPTIONS]
 Build a Radare2 docker image that uses local user/group IDs.
 
 Options:
-    -b, --branch=BRANCH    Use specified radare2 branch (default:
+    -b, --branch=BRANCH    Use specified rizin branch (default:
                            master)
     -h, --help             Display this help message
     --node=VERSION         Use specified Node.js version (default: 10)
-    -n, --npm=VERSION      Use specified version of r2pipe npm binding
+    -n, --npm=VERSION      Use specified version of rzpipe npm binding
                            (default: newest)
-    -p, --py=VERSION       Use specified version of r2pipe python
+    -p, --py=VERSION       Use specified version of rzpipe python
                            binding (default: newest)
 
 EOF
@@ -91,8 +91,8 @@ EOF
 }
 
 args=""
-unset help r2pipe_npm r2pipe_py
-github="https://github.com/radareorg/radare2.git"
+unset help rzpipe_npm rzpipe_py
+github="https://github.com/rizinorg/rizin.git"
 r2branch="master"
 
 # Check for missing dependencies
@@ -104,8 +104,8 @@ while [ $# -gt 0 ]; do
 	"--") shift && args="$args${args:+ }$*" && break ;;
 	"-b"|"--branch"*) r2branch="$(long_opt "$@")" || shift ;;
 	"-h"|"--help") help="true" ;;
-	"-n"|"--npm"*) r2pipe_npm="@$(long_opt "$@")" || shift ;;
-	"-p"|"--py"*) r2pipe_py="==$(long_opt "$@")" || shift ;;
+	"-n"|"--npm"*) rzpipe_npm="@$(long_opt "$@")" || shift ;;
+	"-p"|"--py"*) rzpipe_py="==$(long_opt "$@")" || shift ;;
 	*) args="$args${args:+ }$1" ;;
 	esac
 	shift
@@ -130,7 +130,7 @@ gid="$(id -g)"
 gname="$(id -gn)"
 r2commit="$(
 	curl -Ls \
-	"http://api.github.com/repos/radare/radare2/commits/$r2branch" | \
+	"http://api.github.com/repos/radare/rizin/commits/$r2branch" | \
 	jq -cMrS ".sha"
 )"
 uid="$(id -u)"
@@ -146,7 +146,7 @@ RUN apk upgrade && apk add bash
 # Bash is better than sh
 SHELL ["/bin/bash", "-c"]
 
-# Build radare2 in a volume to minimize space used by build
+# Build rizin in a volume to minimize space used by build
 VOLUME ["/mnt"]
 
 # All one RUN layer, splitting into 3 increases size to ~360MB, wtf
@@ -155,7 +155,7 @@ VOLUME ["/mnt"]
 # 3. Create id and gid to match current local user
 # 4. Add new user to sudoers without password
 # 5. Add some convenient aliases to .bashrc
-# 6. Clone and install radare2
+# 6. Clone and install rizin
 # 7. Clean up unnecessary files and packages
 RUN set -o pipefail && \
 	( \
@@ -174,9 +174,9 @@ RUN set -o pipefail && \
 			shadow \
 			sudo \
 	) && ( \
-		npm install -g --unsafe-perm "r2pipe$r2pipe_npm" && \
+		npm install -g --unsafe-perm "rzpipe$rzpipe_npm" && \
 		pip install --upgrade pip && \
-		pip install r2pipe$r2pipe_py \
+		pip install rzpipe$rzpipe_py \
 	) && ( \
 		[ "$gname" != "root" ] || \
 		( \
@@ -201,7 +201,7 @@ RUN set -o pipefail && \
 	) && ( \
 		cd /mnt && \
 		git clone -b $r2branch --depth 1 $github && \
-		cd radare2 && \
+		cd rizin && \
 		git checkout $r2commit && \
 		./sys/install.sh && \
 		make install \
@@ -220,10 +220,10 @@ RUN set -o pipefail && \
 USER $(id -nu)
 WORKDIR /r2
 
-# Setup r2pm
+# Setup rz_pm
 RUN set -o pipefail && \
-	r2pm init && \
-	r2pm update
+	rz_pm init && \
+	rz_pm update
 
 CMD ["/bin/bash"]
 EOF
@@ -265,9 +265,9 @@ docker pull alpine:latest
 echo "[*] done"
 
 old_base="^(docker\.io\/)?alpine +<none>"
-old_r2="^r2_alpine +[^l ]"
+old_rz="^r2_alpine +[^l ]"
 found="$(
-	docker images | grep -E "($old_base)|($old_r2)"
+	docker images | grep -E "($old_base)|($old_rz)"
 )"
 if [ -n "$found" ]; then
 	# List old images
@@ -275,7 +275,7 @@ if [ -n "$found" ]; then
 	echo "[*] Old images:"
 	docker images | head -n 1
 
-	docker images | grep -E "($old_base)|($old_r2)" | \
+	docker images | grep -E "($old_base)|($old_rz)" | \
 		while read -r line; do
 		echo "$line"
 	done
@@ -297,7 +297,7 @@ if [ -n "$found" ]; then
 
 	if [ -n "$remove" ]; then
 		# Remove old images
-		docker images | awk "/$old_r2/ {print \$1\":\"\$3}" | \
+		docker images | awk "/$old_rz/ {print \$1\":\"\$3}" | \
 		while read -r tag; do
 			docker rmi "$tag"
 		done

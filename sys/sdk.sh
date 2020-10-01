@@ -18,16 +18,16 @@ if [ -z "${R2_PLUGINS_CFG}" ]; then
 fi
 cp -f "${R2_PLUGINS_CFG}" plugins.cfg
 #./configure-plugins
-./configure --prefix="$PREFIX" --with-libr --without-libuv --without-gpl || exit 1
+./configure --prefix="$PREFIX" --with-librz --without-libuv --without-gpl || exit 1
 #--disable-loadlibs || exit 1
 make -j8 || exit 1
 rm -rf "${SDKDIR}"
 mkdir -p "${SDKDIR}"/lib
-rm -f libr/libr.a
-cp -rf libr/include "${SDKDIR}"
+rm -f librz/librz.a
+cp -rf librz/include "${SDKDIR}"
 mkdir -p "${SDKDIR}/include/sdb"
 cp -rf shlr/sdb/src/*.h "${SDKDIR}/include/sdb/"
-FILES=`find libr shlr -iname '*.a'`
+FILES=`find librz shlr -iname '*.a'`
 cp -f ${FILES} "${SDKDIR}"/lib
 OS=`uname`
 AR=`uname -m`

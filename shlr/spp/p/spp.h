@@ -8,11 +8,11 @@
 #endif
 
 static char *spp_var_get(char *var) {
-	return r_sys_getenv (var);
+	return rz_sys_getenv (var);
 }
 
 static int spp_var_set(const char *var, const char *val) {
-	return r_sys_setenv (var, val);
+	return rz_sys_setenv (var, val);
 }
 
 #if HAVE_SYSTEM
@@ -90,7 +90,7 @@ static TAG_CALLBACK(spp_getrandom) {
 		return 0;
 	}
 	// XXX srsly? this is pretty bad random
-	srandom (r_sys_getpid ()); // TODO: change this to be portable
+	srandom (rz_sys_getpid ()); // TODO: change this to be portable
 	max = atoi (buf);
 	if (max > 0) {
 		max = (int)(rand () % max);
@@ -114,7 +114,7 @@ static TAG_CALLBACK(spp_add) {
 		}
 		ret += atoi (eq + 1);
 		snprintf (res, sizeof (res), "%d", ret);
-		r_sys_setenv (buf, res);
+		rz_sys_setenv (buf, res);
 	} else {
 		/* syntax error */
 	}
@@ -133,7 +133,7 @@ static TAG_CALLBACK(spp_sub) {
 		var = spp_var_get (buf);
 		ret = var? atoi (var): 0;
 		ret -= atoi (eq + 1);
-		r_sys_setenv (buf, eq + 1);
+		rz_sys_setenv (buf, eq + 1);
 	} else {
 		/* syntax error */
 	}
@@ -426,7 +426,7 @@ static struct Tag spp_tags[] = {
 };
 
 static ARG_CALLBACK(spp_arg_i) {
-	r_sys_setenv ("SPP_INCDIR", arg);
+	rz_sys_setenv ("SPP_INCDIR", arg);
 	return 0;
 }
 

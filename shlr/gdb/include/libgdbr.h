@@ -8,9 +8,9 @@ typedef unsigned int ssize_t;
 #endif
 
 #include "arch.h"
-#include "r_types_base.h"
-#include "r_socket.h"
-#include "r_th.h"
+#include "rz_types_base.h"
+#include "rz_socket.h"
+#include "rz_th.h"
 
 #define MSG_OK 0
 #define MSG_NOT_SUPPORTED -1
@@ -164,7 +164,7 @@ typedef struct libgdbr_t {
 	ssize_t read_len; // len of read_buff (if read_buff not fully consumed)
 
 	// is already handled (i.e. already send or ...)
-	RSocket *sock;
+	RzSocket *sock;
 	int connected;
 	int acks;
 	char *data;
@@ -188,7 +188,7 @@ typedef struct libgdbr_t {
 	bool get_baddr;
 	libgdbr_stop_reason_t stop_reason;
 
-	RThreadLock *gdbr_lock;
+	RzThreadLock *gdbr_lock;
 	int gdbr_lock_depth; // current depth inside the recursive lock
 
 	// parsed from target
@@ -223,7 +223,7 @@ const char *gdbr_get_reg_profile(int arch, int bits);
 
 /*!
  * \brief Function set the gdbr internal registers profile
- * \param registers profile string which shares the same format as RReg API
+ * \param registers profile string which shares the same format as RzReg API
  * \returns a failure code
  */
 int gdbr_set_reg_profile(libgdbr_t *g, const char *str);

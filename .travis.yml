@@ -1,4 +1,4 @@
-# travis.yml for testing radare2.
+# travis.yml for testing rizin.
 # Initially written in 2014-2016
 # by jn__. Updated 2018 by damo22
 # xvilka, pancake, ret2libc in 2020
@@ -106,7 +106,7 @@ before_install:
     if [ "${FUZZIT}" == "1" ]; then
       docker pull gcr.io/fuzzit-public/builders:llvm9.v1
     elif [ "$TRAVIS_OS_NAME" != "osx" ] && [ "$NODOCKER" != "1" ]; then
-      docker pull radareorg/r2-travis:latest || docker build -t radareorg/r2-travis:latest -f Dockerfile.travis .
+      docker pull rizinorg/r2-travis:latest || docker build -t rizinorg/r2-travis:latest -f Dockerfile.travis .
     fi
 
 script:
@@ -119,7 +119,7 @@ script:
     if [ "${FUZZIT}" == "1" ] ; then
       docker run -v /home/travis/.ccache:/root/.ccache -v "${TRAVIS_BUILD_DIR}":"${TRAVIS_BUILD_DIR}" --entrypoint "/bin/bash" gcr.io/fuzzit-public/builders:llvm9.v1 -c "cd ${TRAVIS_BUILD_DIR}; . docker-env.sh; bash travis-script"
     elif [ "$TRAVIS_OS_NAME" != "osx" ] && [ "$NODOCKER" != "1" ] ; then
-      docker run -v /home/travis/.ccache:/root/.ccache -v "${TRAVIS_BUILD_DIR}":"${TRAVIS_BUILD_DIR}" --entrypoint "/bin/bash" radareorg/r2-travis:latest -c "cd ${TRAVIS_BUILD_DIR}; . docker-env.sh; bash travis-script"
+      docker run -v /home/travis/.ccache:/root/.ccache -v "${TRAVIS_BUILD_DIR}":"${TRAVIS_BUILD_DIR}" --entrypoint "/bin/bash" rizinorg/r2-travis:latest -c "cd ${TRAVIS_BUILD_DIR}; . docker-env.sh; bash travis-script"
     else
       $SHELL travis-script
     fi

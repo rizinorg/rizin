@@ -1,6 +1,6 @@
 /* radare - LGPLv3 - Copyright 2017 - xarkes */
 #include <stdio.h>
-#include <r_util.h>
+#include <rz_util.h>
 #include "ar.h"
 
 #define BUF_SIZE 512
@@ -15,12 +15,12 @@ static int index_filename = -2;
 /**
  * Open an ar/lib file. If filename is NULL, list archive files
  */
-R_API RBuffer *ar_open_file(const char *arname, const char *filename) {
+RZ_API RBuffer *ar_open_file(const char *arname, const char *filename) {
 	int r;
-	RList *files = NULL;
-	RBuffer *b = r_buf_new_file (arname, O_RDWR, 0);
+	RzList *files = NULL;
+	RBuffer *b = rz_buf_new_file (arname, O_RDWR, 0);
 	if (!b) {
-		r_sys_perror (__FUNCTION__);
+		rz_sys_perror (__FUNCTION__);
 		return NULL;
 	}
 
@@ -33,7 +33,7 @@ R_API RBuffer *ar_open_file(const char *arname, const char *filename) {
 	if (!r) {
 		goto fail;
 	}
-	files = r_list_new ();
+	files = rz_list_new ();
 	/* Parse archive */
 	ar_read_file (b, buffer, true, NULL, NULL);
 	ar_read_filename_table (b, buffer, files, filename);
@@ -44,9 +44,9 @@ R_API RBuffer *ar_open_file(const char *arname, const char *filename) {
 	}
 
 	if (!filename) {
-		RListIter *iter;
+		RzListIter *iter;
 		char *name;
-		r_list_foreach (files, iter, name) {
+		rz_list_foreach (files, iter, name) {
 			printf ("%s\n", name);
 		}
 		goto fail;
@@ -57,34 +57,34 @@ R_API RBuffer *ar_open_file(const char *arname, const char *filename) {
 	}
 
 	free (buffer);
-	r_list_free (files);
+	rz_list_free (files);
 	return b;
 fail:
-	r_list_free (files);
+	rz_list_free (files);
 	free (buffer);
 	ar_close (b);
 	return NULL;
 }
 
-R_API int ar_close(RBuffer *b) {
-	r_buf_free (b);
+RZ_API int ar_close(RBuffer *b) {
+	rz_buf_free (b);
 	return 0;
 }
 
-R_API int ar_read_at(RBuffer *b, ut64 off, void *buf, int count) {
-	return r_buf_read_at (b, off, buf, count);
+RZ_API int ar_read_at(RBuffer *b, ut64 off, void *buf, int count) {
+	return rz_buf_read_at (b, off, buf, count);
 }
 
-R_API int ar_write_at(RBuffer *b, ut64 off, void *buf, int count) {
-	return r_buf_write_at (b, off, buf, count);
+RZ_API int ar_write_at(RBuffer *b, ut64 off, void *buf, int count) {
+	return rz_buf_write_at (b, off, buf, count);
 }
 
 int ar_read(RBuffer *b, void *dest, int len) {
-	int r = r_buf_read (b, dest, len);
+	int r = rz_buf_read (b, dest, len);
 	if (!r) {
 		return 0;
 	}
-	r_buf_seek (b, r, R_BUF_CUR);
+	rz_buf_seek (b, r, R_BUF_CUR);
 	return r;
 }
 
@@ -114,7 +114,7 @@ int ar_read_header(RBuffer *b, char *buffer) {
 	return r;
 }
 
-int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char *filename) {
+int ar_read_file(RBuffer *b, char *buffer, bool lookup, RzList *files, const char *filename) {
 	ut64 filesize = 0;
 	char *tmp = NULL;
 	char *curfile = NULL;
@@ -129,7 +129,7 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 		/* Fix padding issues */
 		if (*buffer == '\n') {
 			buffer[0] = buffer[1];
-			r_buf_seek (b, -1, R_BUF_CUR);
+			rz_buf_seek (b, -1, R_BUF_CUR);
 			ar_read (b, buffer, 2);
 		}
 		ar_read (b, buffer + 2, AR_FILENAME_LEN - 2);
@@ -138,14 +138,14 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 	/* Fix some padding issues */
 	if (buffer[AR_FILENAME_LEN - 1] != '/' && buffer[AR_FILENAME_LEN - 1] != ' ') {
 		// Find padding offset
-		tmp = (char *)r_str_lchr (buffer, ' ');
+		tmp = (char *)rz_str_lchr (buffer, ' ');
 		if (!tmp) {
 			goto fail;
 		}
 		int dif = (int) (tmp - buffer);
 		dif = 31 - dif;
 		// Re-read the whole filename
-		r_buf_seek (b, -dif, R_BUF_CUR);
+		rz_buf_seek (b, -dif, R_BUF_CUR);
 		r = ar_read (b, buffer, AR_FILENAME_LEN);
 		if (r != AR_FILENAME_LEN) {
 			goto fail;
@@ -167,7 +167,7 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 		}
 		*tmp = '\0';
 		if (files) {
-			r_list_append (files, strdup (curfile));
+			rz_list_append (files, strdup (curfile));
 		}
 	}
 	/* Timestamp 12
@@ -192,14 +192,14 @@ int ar_read_file(RBuffer *b, char *buffer, bool lookup, RList *files, const char
 	if (!lookup && filename) {
 		/* Check filename */
 		if (index == index_filename || !strcmp (curfile, filename)) {
-			r_buf_resize(b, filesize);
+			rz_buf_resize(b, filesize);
 			free (curfile);
-			return r_buf_size (b);
+			return rz_buf_size (b);
 		}
 	}
 	(void)ar_read (b, buffer, 1);
 
-	r_buf_seek (b, filesize - 1, R_BUF_CUR);
+	rz_buf_seek (b, filesize - 1, R_BUF_CUR);
 	free (curfile);
 	return filesize;
 fail:
@@ -207,19 +207,19 @@ fail:
 	return 0;
 }
 
-int ar_read_filename_table(RBuffer *b, char *buffer, RList *files, const char *filename) {
+int ar_read_filename_table(RBuffer *b, char *buffer, RzList *files, const char *filename) {
 	int r = ar_read (b, buffer, AR_FILENAME_LEN);
 	if (r != AR_FILENAME_LEN) {
 		return 0;
 	}
 	if (strncmp (buffer, "//", 2)) {
 		// What we read was not a filename table, just go back
-		r_buf_seek (b, -AR_FILENAME_LEN, R_BUF_CUR);
+		rz_buf_seek (b, -AR_FILENAME_LEN, R_BUF_CUR);
 		return 0;
 	}
 
 	/* Read table size */
-	r_buf_seek (b, 32, R_BUF_CUR);
+	rz_buf_seek (b, 32, R_BUF_CUR);
 	r = ar_read (b, buffer, 10);
 	if (r != 10) {
 		return 0;
@@ -243,11 +243,11 @@ int ar_read_filename_table(RBuffer *b, char *buffer, RList *files, const char *f
 		if (*(char *) buffer == '\n') {
 			break;
 		}
-		r_list_append (files, strdup ((char *) buffer));
+		rz_list_append (files, strdup ((char *) buffer));
 		/* End slash plus separation character ("/\n") */
 		len += r + 2;
 		/* Separation character (not always '\n') */
-		r_buf_seek (b, 1, R_BUF_CUR);
+		rz_buf_seek (b, 1, R_BUF_CUR);
 		index++;
 	}
 	return len;

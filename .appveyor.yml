@@ -66,7 +66,7 @@ init:
 install:
   # Update environment variables
   - ps: $env:R2_VERSION = ( python sys\\version.py )
-  - ps: $env:DIST_FOLDER = "radare2-$env:builder-$env:R2_VERSION"
+  - ps: $env:DIST_FOLDER = "rizin-$env:builder-$env:R2_VERSION"
   - ps: $env:ARTIFACT_ZIP = "$env:DIST_FOLDER.zip"
   # Download required packages
   - cmd: if defined BUILD_DIR ( %PYTHON%\python.exe -m pip install meson )
@@ -74,7 +74,7 @@ install:
 
 # Build scripts
 build_script:
-  - appveyor AddMessage "Compiling radare2 %R2_VERSION% (%builder%)"
+  - appveyor AddMessage "Compiling rizin %R2_VERSION% (%builder%)"
 
   - cmd: if %builder% == vs2017_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2017%" x64 && python sys\meson.py --backend vs2017 --release --xp --install --prefix="%DIST_FOLDER%" --webui --options static_runtime=true && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
@@ -94,27 +94,27 @@ for:
     test_script:
       - set PATH=%APPVEYOR_BUILD_FOLDER%\%DIST_FOLDER%\bin;C:\Python38-x64;C:\msys64\mingw64\bin;%PATH%
       - echo %PATH%
-      - where radare2
-      - radare2 -v
+      - where rizin
+      - rizin -v
       - copy C:\Python38-x64\python.exe C:\Python38-x64\python3.exe
-      - python3 -m pip install "git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python"
+      - python3 -m pip install "git+https://github.com/rizinorg/rizin-rzpipe#egg=rzpipe&subdirectory=python"
       - cd test
-      - git clone -q --depth 1 https://github.com/radareorg/radare2-testbins bins
-      - r2r -L db
+      - git clone -q --depth 1 https://github.com/rizinorg/rizin-testbins bins
+      - rz_test -L db
       - cd ..
 
     after_test:
-      - git clone --depth 1 https://github.com/radare/radare2-win-installer
+      - git clone --depth 1 https://github.com/radare/rizin-win-installer
       - set PATH=%PATH%;%INNO_SETUP%
-      - iscc radare2-win-installer/radare2.iss /DRadare2Location=..\%DIST_FOLDER%\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=%R2_VERSION%
-      - move radare2-win-installer\Output\radare2.exe radare2_installer-%builder%.exe
+      - iscc rizin-win-installer/rizin.iss /DRadare2Location=..\%DIST_FOLDER%\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=rizin.ico /DMyAppVersion=%R2_VERSION%
+      - move rizin-win-installer\Output\rizin.exe rizin_installer-%builder%.exe
 
 # Artifacts
 artifacts:
   # Binaries
   - path: "%ARTIFACT_ZIP%"
   # Inno Setup files
-  - path: radare2_installer-%builder%.exe
+  - path: rizin_installer-%builder%.exe
 
 # Upload builds to the CI release at GitHub
 deploy:

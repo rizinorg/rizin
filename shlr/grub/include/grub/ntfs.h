@@ -18,7 +18,7 @@
  */
 
 #ifndef GRUB_NTFS_H
-#include <r_types.h>
+#include <rz_types.h>
 #define GRUB_NTFS_H	1
 
 #define FILE_MFT      0

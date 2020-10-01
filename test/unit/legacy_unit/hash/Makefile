@@ -1,4 +1,4 @@
-BINDEPS=r_io r_hash r_util r_socket
+BINDEPS=rz_io rz_hash rz_util rz_socket
 BIN=hello
 OBJ=hello.o
 

@@ -1,0 +1,184 @@
+.Dd Sep 29, 2016
+.Dt RABIN2 1
+.Sh NAME
+.Nm RABIN2
+.Nd Binary program info extractor
+.Sh SYNOPSIS
+.Nm rz_bin
+.Op Fl AceghHiIsSMzlpRrLxvhqQTuUwV
+.Op Fl a Ar arch
+.Op Fl b Ar bits
+.Op Fl B Ar addr
+.Op Fl C Ar fmt:C:[D]
+.Op Fl D Ar lang sym|-
+.Op Fl f Ar subbin
+.Op Fl k Ar query
+.Op Fl K Ar algo
+.Op Fl O Ar binop
+.Op Fl o Ar str
+.Op Fl m Ar addr
+.Op Fl @ Ar addr
+.Op Fl n Ar str
+.Op Fl X Ar fmt file ...
+.Ar file
+.Sh DESCRIPTION
+This program allows you to get information about ELF/PE/MZ and CLASS files in a simple way.
+.Pp
+All those commandline flags are also available under the i command in rizin. Type i? for help.
+.Bl -tag -width Fl
+.It Fl @ Ar addr
+Show information (symbol, section, import) of the given address
+.It Fl A
+List sub-binaries and their associated arch-bits pairs
+.It Fl a Ar arch
+Set arch (x86, arm, .. accepts underscore for bits x86_32)
+.It Fl b Ar bits
+Set bits (32, 64, ...)
+.It Fl B Ar addr
+Override baddr
+.It Fl c
+List classes
+.It Fl cc
+List classes in header format
+.It Fl C Ar [fmt:C[:D]]
+Create [elf,mach0,pe] for arm and x86-32/64 tiny binaries where 'C' is an hexpair list of the code bytes and ':D' is an optional concatenation to describe the bytes for the data section.
+.It Fl d
+Show debug/dwarf information
+.It Fl D Ar lang symbolname|-
+Demangle symbol name (or - to read from stdin) for lang (cxx, swift, java, cxx, ..)
+.It Fl e
+Show entrypoints for disk and on-memory
+.It Fl ee
+Show constructor/destructors (extended entrypoints)
+.It Fl f Ar subbin
+Select sub-binary architecture. Useful for fat-mach0 binaries
+.It Fl F Ar binfmt
+Force to use that bin plugin (ignore header check)
+.It Fl g
+Show all possible information
+.It Fl G Ar addr
+Load address . offset to header
+.It Fl h
+Show usage help message.
+.It Fl H
+Show header fields (see ih command in r2)
+.It Fl I
+Show binary info (iI in r2)
+.It Fl i
+Show imports (symbols imported from libraries) (ii)
+.It Fl j
+Output in json
+.It Fl k Ar query
+Perform SDB query on loaded file
+.It Fl K Ar algo
+Select a rz_hash checksum algorithm to be performed on sections listing (and maybe others in the future) i.e 'rz_bin -K md5 -S /bin/ls'
+.It Fl l
+List linked libraries to the binary
+.It Fl L
+List supported bin plugins
+.It Fl M
+Show address of 'main' symbol
+.It Fl m Ar addr
+Show source line reference from a given address
+.It Fl N Ar minlen:maxlen
+Force minimum and maximum number of chars per string (see -z and -zz). if (strlen>minlen && (!maxlen || strlen<=maxlen))
+.It Fl n Ar str
+Show information (symbol, section, import) at string offset
+.It Fl o Ar str
+Output file/folder for write operations (out by default)
+.It Fl O Ar binop
+Perform binary operation on target binary (dump, resize, change sections, ...) see '-O help' for more information
+.It Fl p
+Disable VA. Show physical addresses
+.It Fl P
+Show debug/pdb information
+.It Fl PP
+Download pdb file for binary
+.It Fl q
+Be quiet, just show fewer data
+.It Fl qq
+Show less info (no offset/size for -z for ex.)
+.It Fl Q
+Show load address used by dlopen (non-aslr libs)
+.It Fl r
+Show output in radare format
+.It Fl R
+Show relocations
+.It Fl s
+Show exported symbols
+.It Fl S
+Show sections
+.It Fl SS
+Show segments
+.It Fl t
+Show file hashes
+.It Fl T
+Show Certificates
+.It Fl u
+Unfiltered (no rename duplicated symbols/sections)
+.It Fl U
+Show Resources
+.It Fl v
+Show version information
+.It Fl V
+Show binary version information
+.It Fl w
+Show try/catch blocks
+.It Fl x
+Extract all sub binaries from a fat binary (f.ex: fatmach0)
+.It Fl X Ar format file ...
+Package a fat or zip containing all the files passed (fat, zip)
+.It Fl z
+Show strings inside .data section (like gnu strings does)
+.It Fl Z
+Guess size of binary program
+.It Fl zz
+Shows strings from raw bins
+.It Fl zzz
+Dump raw strings to stdout (for huge files)
+.El
+.Sh ENVIRONMENT
+.Pp
+RABIN2_LANG same as r2 -e bin.lang for rz_bin
+.Pp
+RABIN2_DEMANGLE demangle symbols
+.Pp
+RABIN2_MAXSTRBUF same as r2 -e bin.maxstrbuf for rz_bin
+.Pp
+RABIN2_DEBASE64 try to decode all strings as base64 if possible
+.Pp
+RABIN2_STRFILTER same as r2 -e bin.str.filter for rz_bin
+.Pp
+RABIN2_STRPURGE same as r2 -e bin.str.purge for rz_bin
+.Sh EXAMPLES
+.Pp
+List symbols of a program
+.Pp
+  $ rz_bin \-s a.out
+.Pp
+Get offset of symbol
+.Pp
+  $ rz_bin \-n _main a.out
+.Pp
+Get entrypoint
+.Pp
+  $ rz_bin \-e a.out
+.Pp
+Load symbols and imports from rizin
+.Pp
+  $ r2 -n /bin/ls
+  [0x00000000]> .!rz_bin \-prsi $FILE
+.Sh SEE ALSO
+.Pp
+.Xr rz_hash(1) ,
+.Xr rz_find(1) ,
+.Xr rizin(1) ,
+.Xr rz_diff(1) ,
+.Xr rz_asm(1) ,
+.Xr rz_ax(1) ,
+.Xr rsc2(1) ,
+.Xr rz_gg(1) ,
+.Xr rz_run(1) ,
+.Sh AUTHORS
+.Pp
+Written by pancake <pancake@nopcode.org>.

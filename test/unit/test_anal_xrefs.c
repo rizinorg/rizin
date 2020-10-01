@@ -1,20 +1,20 @@
-#include <r_anal.h>
+#include <rz_anal.h>
 #include "minunit.h"
 
 bool test_r_anal_xrefs_count() {
-	RAnal *anal = r_anal_new ();
+	RzAnal *anal = rz_anal_new ();
 
-	mu_assert_eq (r_anal_xrefs_count (anal), 0, "xrefs count");
+	mu_assert_eq (rz_anal_xrefs_count (anal), 0, "xrefs count");
 
-	r_anal_xrefs_set (anal, 0x1337, 42, R_ANAL_REF_TYPE_NULL);
-	r_anal_xrefs_set (anal, 0x1337, 43, R_ANAL_REF_TYPE_CODE);
-	r_anal_xrefs_set (anal, 1234, 43, R_ANAL_REF_TYPE_CALL);
-	r_anal_xrefs_set (anal, 12345, 43, R_ANAL_REF_TYPE_CALL);
-	r_anal_xrefs_set (anal, 4321, 4242, R_ANAL_REF_TYPE_CALL);
+	rz_anal_xrefs_set (anal, 0x1337, 42, R_ANAL_REF_TYPE_NULL);
+	rz_anal_xrefs_set (anal, 0x1337, 43, R_ANAL_REF_TYPE_CODE);
+	rz_anal_xrefs_set (anal, 1234, 43, R_ANAL_REF_TYPE_CALL);
+	rz_anal_xrefs_set (anal, 12345, 43, R_ANAL_REF_TYPE_CALL);
+	rz_anal_xrefs_set (anal, 4321, 4242, R_ANAL_REF_TYPE_CALL);
 
-	mu_assert_eq (r_anal_xrefs_count (anal), 5, "xrefs count");
+	mu_assert_eq (rz_anal_xrefs_count (anal), 5, "xrefs count");
 
-	r_anal_free (anal);
+	rz_anal_free (anal);
 	mu_end;
 }
 

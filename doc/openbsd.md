@@ -13,8 +13,8 @@ Radare2 Dependencies:
 
 	doas pkg_add git gcc gmake pkgconf
 
-	git clone https://github.com/radareorg/radare2
-	cd radare2
+	git clone https://github.com/rizinorg/rizin
+	cd rizin
 	sys/install.sh /usr/local
 
 Python Swig Bindings Dependencies:
@@ -30,8 +30,8 @@ Python Swig Bindings Dependencies:
 Building Python Swig Bindings:
 ------------------------------
 
-	git clone https://github.com/radareorg/radare2-bindings
-	cd radare2-bindings
+	git clone https://github.com/rizinorg/rizin-bindings
+	cd rizin-bindings
 	export CC=cc
 	export CXX=c++
 	export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig

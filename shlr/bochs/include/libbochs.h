@@ -2,7 +2,7 @@
 #ifndef LIBBOCHS_H
 #define LIBBOCHS_H
 
-#include <r_util.h>
+#include <rz_util.h>
 
 #if __WINDOWS__
 #include <windows.h>

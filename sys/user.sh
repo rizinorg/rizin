@@ -59,7 +59,7 @@ if [ -z "${ROOT}" ]; then
 		echo "HOME is not a directory"
 		exit 1
 	fi
-	ROOT="${HOME}/bin/prefix/radare2"
+	ROOT="${HOME}/bin/prefix/rizin"
 	BINDIR="${HOME}/bin"
 fi
 
@@ -78,7 +78,7 @@ if [ $? != 0 ]; then
 fi
 ${MAKE} user-install
 echo
-echo "radare2 is now installed in ${BINDIR}"
+echo "rizin is now installed in ${BINDIR}"
 echo
 echo "Now add ${BINDIR} to your PATH"
 echo

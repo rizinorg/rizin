@@ -1,7 +1,7 @@
 /* libqnxr - GPL - Copyright 2016 - madprogrammer, FSF Inc */
 
 #include <errno.h>
-#include <r_types.h>
+#include <rz_types.h>
 #include "utils.h"
 
 #define I386_NUM_GREGS 16

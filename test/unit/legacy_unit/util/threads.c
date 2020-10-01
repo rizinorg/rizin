@@ -1,7 +1,7 @@
-#include <r_th.h>
-#include <r_util.h>
+#include <rz_th.h>
+#include <rz_util.h>
 
-int looper(struct r_th_t *th) {
+int looper(struct rz_th_t *th) {
 	int i;
 	int *ctr = th->user;
 	for (i=0;i<9999;i++) {
@@ -19,30 +19,30 @@ int looper(struct r_th_t *th) {
 
 int test1() {
 	int ctr = 0;
-	struct r_th_t *th;
+	struct rz_th_t *th;
 
-	th = r_th_new (&looper, &ctr, 0);
-	th = r_th_new (&looper, &ctr, 0);
-	//th = r_th_new (&looper, &ctr, 0);
+	th = rz_th_new (&looper, &ctr, 0);
+	th = rz_th_new (&looper, &ctr, 0);
+	//th = rz_th_new (&looper, &ctr, 0);
 
 #if __i386__ || __x86_64__
 	asm ("int3");
 #endif
-	//r_th_start (th, true);
-	while (r_th_wait_async (th)) {
+	//rz_th_start (th, true);
+	while (rz_th_wait_async (th)) {
 		printf ("\nwaiting...\n");
 		fflush (stdout);
-		r_sys_usleep (400);
-		//	r_th_break(th);
+		rz_sys_usleep (400);
+		//	rz_th_break(th);
 	}
 	printf ("\nfinished\n");
 #if 0
-	r_th_start(th, true);
+	rz_th_start(th, true);
 	sleep(1);
 #endif
 	/* wait and free */
-	r_th_wait (th);
-	r_th_free (th);
+	rz_th_wait (th);
+	rz_th_free (th);
 
 	printf ("\nresult %d\n", ctr);
 	return 0;
