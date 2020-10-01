@@ -720,6 +720,7 @@ static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_c
 		printf ("[**] %50s ", (const char *)rz_pvector_at (&state->completed_paths, prev_paths_completed));
 		print_state_counts (state);
 		printf ("\n");
+		fflush (stdout);
 	}
 }
 

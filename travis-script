@@ -18,7 +18,12 @@ fi
 if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     echo "Installing with meson + ninja"
 
-    OPTS=""
+    if [ "`uname`" = Darwin ]; then
+        HOMEBREW_NO_AUTO_UPDATE=1 brew install meson libuv
+        pip3 install --upgrade meson
+    fi
+
+    OPTS="-Duse_webui=true"
     if [ "${RZ_SYS_CAPSTONE}" != "" ] ; then
         OPTS="${OPTS} -D use_sys_capstone=${RZ_SYS_CAPSTONE}"
     fi
@@ -108,7 +113,11 @@ fi
 if [ "${RZ_TESTS_DISABLE}" != "1" ] ; then
     export NOREPORT=1
     cd test
-    VERBOSE=1 make -k all || exit 1
+
+    git clone http://github.com/rizinorg/rz-pipe
+    pip3 install --user "file://$(pwd)/rz-pipe#egg=rzpipe&subdirectory=python"
+
+    VERBOSE=1 RZ_TEST_ARGS=-t1920 make -k all || exit 1
 
     if [ "${COVERAGE}" == "1" ] ; then
         cd ../build

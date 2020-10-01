@@ -6,7 +6,7 @@ bins:
 fuzz/targets:
 	git clone --depth 1 https://github.com/rizinorg/rizin-fuzztargets fuzz/targets
 
-RUNTEST=rz-test -L
+RUNTEST=rz-test ${RZ_TEST_ARGS} -L
 
 rz-test-tests: bins
 	${RUNTEST}
