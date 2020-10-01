@@ -1,4 +1,4 @@
-BIN=rz_test
+BIN=rz-test
 BINDEPS=rz_util
 OBJ=load.o run.o
 

@@ -1611,7 +1611,7 @@ RZ_API int rz_core_visual_view_rop(RzCore *core) {
 	char *cursearch = strdup (line);
 	while (true) {
 		rz_cons_clear00 ();
-		rz_cons_printf ("[0x%08"PFMT64x"]-[visual-rz_testop] %s (see pdp command)\n",
+		rz_cons_printf ("[0x%08"PFMT64x"]-[visual-r2rop] %s (see pdp command)\n",
 			(addr == UT64_MAX)? 0: addr + delta, cursearch);
 
 		// compute chain
@@ -1684,7 +1684,7 @@ RZ_API int rz_core_visual_view_rop(RzCore *core) {
 			break;
 		case '?':
 			rz_cons_clear00 ();
-			rz_cons_printf ("[rz_testop-visual] Help\n"
+			rz_cons_printf ("[r2rop-visual] Help\n"
 					" jk - select next/prev rop gadget\n"
 					" JK - scroll next/prev page from list\n"
 					" hl - increase/decrease delta offset in disasm\n"

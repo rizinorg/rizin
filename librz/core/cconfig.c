@@ -1243,7 +1243,7 @@ static bool cb_cmdpdc(void *user, void *data) {
 	if (node->value[0] == '?') {
 		rz_cons_printf ("pdc\n");
 		// spaguetti
-		check_decompiler ("rz_testetdec");
+		check_decompiler ("r2retdec");
 		RzListIter *iter;
 		RzCorePlugin *cp;
 		rz_list_foreach (core->rcmd->plist, iter, cp) {

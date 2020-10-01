@@ -238,7 +238,7 @@ IFEQ WANT_PTRACE_WRAP 0 ; {
 	USE_PTRACE_WRAP = 0 ;
 }
 
-ARG_WITHOUT WANT_R2R rz_test build without rz_test for regression testing ;
+ARG_WITHOUT WANT_R2R rz-test build without rz-test for regression testing ;
 
 ARG_WITH R_CHECKS_LEVEL=2 checks-level value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) ;
 

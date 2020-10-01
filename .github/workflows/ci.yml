@@ -322,7 +322,7 @@ jobs:
     - name: Run tests
       run: |
         r2 -v
-        rz_test -v
+        rz-test -v
         cd test
         make
 

@@ -100,7 +100,7 @@ for:
       - python3 -m pip install "git+https://github.com/rizinorg/rizin-rzpipe#egg=rzpipe&subdirectory=python"
       - cd test
       - git clone -q --depth 1 https://github.com/rizinorg/rizin-testbins bins
-      - rz_test -L db
+      - rz-test -L db
       - cd ..
 
     after_test:

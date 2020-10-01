@@ -475,7 +475,7 @@ static int decode_imm2abs8(const ut8 *bytes, struct h8300_cmd *cmd)
 }
 
 /* [opcode] [ rn  |  rd ] */
-static int decode_rz_test8(const ut8 *bytes, struct h8300_cmd *cmd)
+static int decode_r2r8(const ut8 *bytes, struct h8300_cmd *cmd)
 {
 	int ret = 2;
 
@@ -876,7 +876,7 @@ int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd)
 	case H8300_CMP_1:
 	case H8300_MOV_1:
 	case H8300_BTST_R2R8:
-		ret = decode_rz_test8(instr, cmd);
+		ret = decode_r2r8(instr, cmd);
 		break;
 	case H8300_BCLR_R2IND16:
 		switch(instr[2]) {
@@ -982,7 +982,7 @@ int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd)
 		ret = decode_ldc(instr, cmd);
 		break;
 	case H8300_OR:
-		ret = decode_rz_test8(instr, cmd);
+		ret = decode_r2r8(instr, cmd);
 		break;
 	case H8300_MOV_2:
 	case H8300_SUBW:

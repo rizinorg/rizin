@@ -189,7 +189,7 @@ printf "\nOptional Features:
   --with-ostype          Choose OS type ( gnulinux windows darwin haiku ) (USEROSTYPE=auto)
   --with-libversion      specify different libversion (LIBVERSION=xxx)
   --without-jemalloc     build without jemalloc
-  --without-rz_test      build without rz_test for regression testing
+  --without-rz-test      build without rz-test for regression testing
   --with-checks-level    value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) (R_CHECKS_LEVEL=2)\n"
 printf "\nSome influential environment variables:
   CC          C compiler command
@@ -242,7 +242,7 @@ echo "LANGS:     c"
 echo "REQUIRED:  libdl"
 echo "OPTIONAL:  libmagic libz libzip libxxhash libssl liblibuv>=1.0.0"
 echo "PKG-CONFIG:  capstone openssl libuv"
-echo "FLAGS:     --disable-debugger --with-sysmagic --with-capstone5 --disable-loadlibs --without-dylink --without-fork --without-ptrace-wrap --with-librz --with-syscapstone --with-syszip --with-sysxxhash --without-gpl --with-openssl --without-libuv --with-rpath --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc --without-rz_test --with-checks-level=2"
+echo "FLAGS:     --disable-debugger --with-sysmagic --with-capstone5 --disable-loadlibs --without-dylink --without-fork --without-ptrace-wrap --with-librz --with-syscapstone --with-syszip --with-sysxxhash --without-gpl --with-openssl --without-libuv --with-rpath --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc --without-rz-test --with-checks-level=2"
 	exit 0
 	;;
 --cache-file)
@@ -307,7 +307,7 @@ echo "FLAGS:     --disable-debugger --with-sysmagic --with-capstone5 --disable-l
 --with-ostype) if [ -z "${value}" ]; then USEROSTYPE="auto"; else USEROSTYPE="${value}" ; fi ;;
 --with-libversion) if [ -z "${value}" ]; then LIBVERSION="xxx"; else LIBVERSION="${value}" ; fi ;;
 "--without-jemalloc") HAVE_JEMALLOC="0"; ;;
-"--without-rz_test") WANT_R2R="0"; ;;
+"--without-rz-test") WANT_R2R="0"; ;;
 --with-checks-level) if [ -z "${value}" ]; then R_CHECKS_LEVEL="2"; else R_CHECKS_LEVEL="${value}" ; fi ;;
 *) if [ "$value" ]; then eval "`echo $flag2=$value`" ;
 else echo ; echo "WARNING: Unknown flag '$flag'." >&2 ; echo ; fi ;;
