@@ -161,15 +161,19 @@ static int rafind_open_file(const char *file, const ut8 *data, int datalen) {
 		printf ("File: %s\n", file);
 	}
 
+	char *efile = r_str_escape_sh (file);
+
 	if (identify) {
-		char *cmd = rz_str_newf ("r2 -e search.show=false -e search.maxhits=1 -nqcpm '%s'", file);
+		char *cmd = rz_str_newf ("rizin -e search.show=false -e search.maxhits=1 -nqcpm \"%s\"", efile);
 		rz_sandbox_system (cmd, 1);
 		free (cmd);
+		free (efile);
 		return 0;
 	}
 
 	RzIO *io = rz_io_new ();
 	if (!io) {
+		free (efile);
 		return 1;
 	}
 
@@ -208,18 +212,19 @@ static int rafind_open_file(const char *file, const ut8 *data, int datalen) {
 
 	if (mode == RZ_SEARCH_STRING) {
 		/* TODO: implement using api */
-		rz_sys_cmdf ("rz_bin -q%szzz '%s'", json? "j": "", file);
+		rz_sys_cmdf ("rz_bin -q%szzz \"%s\"", json? "j": "", efile);
 		goto done;
 	}
 	if (mode == RZ_SEARCH_MAGIC) {
+		/* TODO: implement using api */
 		char *tostr = (to && to != UT64_MAX)?
 			rz_str_newf ("-e search.to=%"PFMT64d, to): strdup ("");
-		char *cmd = rz_str_newf ("r2"
+		char *cmd = rz_str_newf ("rizin"
 			" -e search.in=range"
 			" -e search.align=%d"
 			" -e search.from=%"PFMT64d
-			" %s -qnc/m%s '%s'",
-			align, from, tostr, json? "j": "", file);
+			" %s -qnc/m%s \"%s\"",
+			align, from, tostr, json? "j": "", efile);
 		rz_sandbox_system (cmd, 1);
 		free (cmd);
 		free (tostr);
@@ -227,11 +232,7 @@ static int rafind_open_file(const char *file, const ut8 *data, int datalen) {
 	}
 	if (mode == RZ_SEARCH_ESIL) {
 		rz_list_foreach (keywords, iter, kw) {
-			char *cmd = rz_str_newf ("r2 -qc \"/E %s\" %s", kw, file);
-			if (cmd) {
-				rz_sandbox_system (cmd, 1);
-				free (cmd);
-			}
+			rz_sys_cmdf ("rizin -qc \"/E %s\" \"%s\"", kw, efile);
 		}
 		goto done;
 	}
@@ -283,6 +284,7 @@ done:
 	rz_cons_free ();
 err:
 	free (buf);
+	free (efile);
 	rz_search_free (rs);
 	rz_io_free (io);
 	return result;
