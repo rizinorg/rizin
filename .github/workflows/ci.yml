@@ -79,6 +79,7 @@ jobs:
             build_system: meson
             compiler: clang
             run_tests: true
+            meson_options: -Duse_webui=true
             enabled: true
             timeout: 60
           # - name: linux-gcc-tests-asan
