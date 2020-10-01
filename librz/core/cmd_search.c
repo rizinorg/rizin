@@ -2259,7 +2259,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 	}
 
 	maxhits = (int) rz_config_get_i (core->config, "search.maxhits");
-	filter = (int) rz_config_get_i (core->config, "asm.filter");
+	filter = (int) rz_config_get_i (core->config, "asm.sub.names");
 	if (param->outmode == RZ_MODE_JSON) {
 		rz_cons_print ("[");
 	}

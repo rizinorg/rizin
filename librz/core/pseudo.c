@@ -191,7 +191,7 @@ RZ_API int rz_core_pseudo_code(RzCore *core, const char *input) {
 	}
 	rz_config_hold_i (hc, "asm.pseudo", "asm.decode", "asm.lines", "asm.bytes", "asm.stackptr", NULL);
 	rz_config_hold_i (hc, "asm.offset", "asm.flags", "asm.lines.fcn", "asm.comments", NULL);
-	rz_config_hold_i (hc, "asm.functions", "asm.section", "asm.cmt.col", "asm.filter", NULL);
+	rz_config_hold_i (hc, "asm.functions", "asm.section", "asm.cmt.col", "asm.sub.names", NULL);
 	rz_config_hold_i (hc, "scr.color", "emu.str", "asm.emu", "emu.write", NULL);
 	rz_config_hold_i (hc, "io.cache", NULL);
 	if (!fcn) {
@@ -203,7 +203,7 @@ RZ_API int rz_core_pseudo_code(RzCore *core, const char *input) {
 	rz_config_set_i (core->config, "asm.stackptr", 0);
 	rz_config_set_i (core->config, "asm.pseudo", 1);
 	rz_config_set_i (core->config, "asm.decode", 0);
-	rz_config_set_i (core->config, "asm.filter", 1);
+	rz_config_set_i (core->config, "asm.sub.names", 1);
 	rz_config_set_i (core->config, "asm.lines", 0);
 	rz_config_set_i (core->config, "asm.bytes", 0);
 	rz_config_set_i (core->config, "asm.offset", 0);

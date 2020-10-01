@@ -3037,7 +3037,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	n = NODECB ("emu.skip", "ds", &cb_emuskip);
 	SETDESC (n, "Skip metadata of given types in asm.emu");
 	SETOPTIONS (n, "d", "c", "s", "f", "m", "h", "C", "r", NULL);
-	SETBPREF ("asm.filter", "true", "Replace numeric values by flags (e.g. 0x4003e0 -> sym.imp.printf)");
+	SETBPREF ("asm.sub.names", "true", "Replace numeric values by flags (e.g. 0x4003e0 -> sym.imp.printf)");
 	SETPREF ("asm.strip", "", "strip all instructions given comma separated types");
 	SETBPREF ("asm.optype", "false", "show opcode type next to the instruction bytes");
 	SETBPREF ("asm.lines.fcn", "true", "Show function boundary lines");
