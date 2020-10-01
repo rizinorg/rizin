@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2020 - curly */
+
 #include <string.h>
 #include <rz_types.h>
 #include <rz_lib.h>
@@ -9,6 +11,7 @@ static bool set_reg_profile(RzAnal *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	a10\n"
+		"=A0	a0\n"
 		"gpr	p0	.64	0	0\n"
 		"gpr	a0	.32	0	0\n"
 		"gpr	a1	.32	4	0\n"
