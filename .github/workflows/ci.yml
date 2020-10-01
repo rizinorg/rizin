@@ -129,8 +129,16 @@ jobs:
       if: matrix.enabled
       uses: actions/checkout@v2
       with:
-          repository: radareorg/radare2-testbins
+          repository: rizinorg/rizin-testbins
+          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
           path: test/bins
+    - name: Checkout fuzz targets # TODO: this can be removed as soon as the fuzztargets repo is public
+      if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
+      uses: actions/checkout@v2
+      with:
+          repository: rizinorg/rizin-fuzztargets
+          token: ${{ secrets.RIZIN_TOKEN }}
+          path: test/fuzz/targets
     - name: Configure with ACR and build
       if: matrix.build_system == 'acr' && matrix.enabled
       run: ./configure --prefix=${HOME} && make
