@@ -23,7 +23,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name: [linux-acr-gcc-tests, linux-acr-clang-build, linux-acr-clang-tests, linux-meson-gcc-build, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-clang-tests, linux-gcc-tests-asan, capstone-v3, capstone-v5]
+        # name: [linux-acr-gcc-tests, linux-acr-clang-build, linux-acr-clang-tests, linux-meson-gcc-build, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-clang-tests, linux-gcc-tests-asan, capstone-v3, capstone-v5]
+        name: [linux-acr-gcc-tests, linux-meson-gcc-newshell-tests, macos-clang-tests]
         ignore_error: [false]
         include:
           - name: linux-acr-gcc-tests
