@@ -128,7 +128,7 @@ jobs:
           path: test/rz-pipe
     - name: Install test dependencies
       if: matrix.run_tests && matrix.enabled
-      run: pip3 install --user "file://$HOME/test/rz-pipe#egg=rzpipe&subdirectory=python"
+      run: pip3 install --user "file://$GITHUB_WORKSPACE/test/rz-pipe#egg=rzpipe&subdirectory=python"
     - name: Install clang
       if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest' && matrix.enabled
       run: sudo apt-get --assume-yes install clang
