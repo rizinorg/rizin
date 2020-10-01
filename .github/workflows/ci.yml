@@ -34,33 +34,33 @@ jobs:
             run_tests: true
             enabled: true
             timeout: 45
-          - name: linux-acr-clang-tests
-            os: ubuntu-latest
-            build_system: acr
-            compiler: clang
-            run_tests: true
-            enabled: ${{ github.event_name != 'pull_request' }}
-            timeout: 45
-          - name: linux-meson-gcc-tests
-            os: ubuntu-latest
-            build_system: meson
-            compiler: gcc
-            run_tests: true
-            meson_options: -Duse_webui=true
-            enabled: ${{ github.event_name != 'pull_request' }}
-            timeout: 45
-          - name: linux-acr-clang-build
-            os: ubuntu-latest
-            build_system: acr
-            compiler: clang
-            enabled: ${{ github.event_name == 'pull_request' }}
-            timeout: 45
-          - name: linux-meson-gcc-build
-            os: ubuntu-latest
-            build_system: meson
-            compiler: gcc
-            enabled: ${{ github.event_name == 'pull_request' }}
-            timeout: 45
+          # - name: linux-acr-clang-tests
+          #   os: ubuntu-latest
+          #   build_system: acr
+          #   compiler: clang
+          #   run_tests: true
+          #   enabled: ${{ github.event_name != 'pull_request' }}
+          #   timeout: 45
+          # - name: linux-meson-gcc-tests
+          #   os: ubuntu-latest
+          #   build_system: meson
+          #   compiler: gcc
+          #   run_tests: true
+          #   meson_options: -Duse_webui=true
+          #   enabled: ${{ github.event_name != 'pull_request' }}
+          #   timeout: 45
+          # - name: linux-acr-clang-build
+          #   os: ubuntu-latest
+          #   build_system: acr
+          #   compiler: clang
+          #   enabled: ${{ github.event_name == 'pull_request' }}
+          #   timeout: 45
+          # - name: linux-meson-gcc-build
+          #   os: ubuntu-latest
+          #   build_system: meson
+          #   compiler: gcc
+          #   enabled: ${{ github.event_name == 'pull_request' }}
+          #   timeout: 45
           - name: linux-meson-gcc-newshell-tests
             os: ubuntu-latest
             build_system: meson
@@ -78,35 +78,35 @@ jobs:
             run_tests: true
             enabled: true
             timeout: 60
-          - name: linux-gcc-tests-asan
-            os: ubuntu-20.04
-            build_system: meson
-            compiler: gcc
-            cflags: '-DR2_ASSERT_STDOUT=1'
-            meson_options: -Db_sanitize=address,undefined -Duse_webui=true
-            asan: true
-            asan_options: 'detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1'
-            run_tests: true
-            enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'asan') }}
-            timeout: 100
-            # NOTE: asan errors ignored for release- branch for now, because there are too many issues that would block the release
-            ignore_error: ${{ github.event_name == 'push' && contains(github.ref, 'release-') }}
-          - name: capstone-v3
-            os: ubuntu-latest
-            build_system: meson
-            compiler: gcc
-            meson_options: -Duse_capstone_version=v3
-            run_tests: false
-            enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
-            timeout: 45
-          - name: capstone-v5
-            os: ubuntu-latest
-            build_system: meson
-            compiler: gcc
-            meson_options: -Duse_capstone_version=v5
-            run_tests: false
-            enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
-            timeout: 45
+          # - name: linux-gcc-tests-asan
+          #   os: ubuntu-20.04
+          #   build_system: meson
+          #   compiler: gcc
+          #   cflags: '-DR2_ASSERT_STDOUT=1'
+          #   meson_options: -Db_sanitize=address,undefined -Duse_webui=true
+          #   asan: true
+          #   asan_options: 'detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1'
+          #   run_tests: true
+          #   enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'asan') }}
+          #   timeout: 100
+          #   # NOTE: asan errors ignored for release- branch for now, because there are too many issues that would block the release
+          #   ignore_error: ${{ github.event_name == 'push' && contains(github.ref, 'release-') }}
+          # - name: capstone-v3
+          #   os: ubuntu-latest
+          #   build_system: meson
+          #   compiler: gcc
+          #   meson_options: -Duse_capstone_version=v3
+          #   run_tests: false
+          #   enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
+          #   timeout: 45
+          # - name: capstone-v5
+          #   os: ubuntu-latest
+          #   build_system: meson
+          #   compiler: gcc
+          #   meson_options: -Duse_capstone_version=v5
+          #   run_tests: false
+          #   enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
+          #   timeout: 45
 
     steps:
     - uses: actions/checkout@v2
