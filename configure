@@ -177,7 +177,7 @@ printf "\nOptional Features:
   --without-dylink       disable support for dynamic loading of plugins
   --without-fork         disable fork
   --without-ptrace-wrap  disable ptrace-wrap build
-  --with-librz            build librz.a and librz.dylib
+  --with-librz           build librz.a and librz.dylib
   --with-syscapstone     force to use system-wide capstone
   --with-syszip          force to use system's libzip and zlib
   --with-sysxxhash       force to use system's xxhash
@@ -189,7 +189,7 @@ printf "\nOptional Features:
   --with-ostype          Choose OS type ( gnulinux windows darwin haiku ) (USEROSTYPE=auto)
   --with-libversion      specify different libversion (LIBVERSION=xxx)
   --without-jemalloc     build without jemalloc
-  --without-rz_test          build without rz_test for regression testing
+  --without-rz_test      build without rz_test for regression testing
   --with-checks-level    value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) (R_CHECKS_LEVEL=2)\n"
 printf "\nSome influential environment variables:
   CC          C compiler command
@@ -704,7 +704,7 @@ for A in ${ENVWORDS} ; do
 	SEDFLAGS="${SEDFLAGS}s,@${A}@,${VAR},g;"
 done
 SEDFLAGS="${SEDFLAGS}'"
-for A in ./config-user.mk librz/include/r_userconf.h pkgcfg/r_io.pc pkgcfg/r_magic.pc pkgcfg/r_asm.pc pkgcfg/r_bin.pc pkgcfg/r_anal.pc pkgcfg/r_hash.pc pkgcfg/r_cons.pc pkgcfg/r_core.pc pkgcfg/r_lang.pc pkgcfg/r_socket.pc pkgcfg/r_debug.pc pkgcfg/r_reg.pc pkgcfg/r_config.pc pkgcfg/r_flag.pc pkgcfg/r_syscall.pc pkgcfg/r_util.pc pkgcfg/r_search.pc pkgcfg/r_bp.pc pkgcfg/r_parse.pc pkgcfg/r_fs.pc pkgcfg/r_egg.pc pkgcfg/r_crypto.pc  ; do # SUBDIRS
+for A in ./config-user.mk librz/include/rz_userconf.h pkgcfg/rz_io.pc pkgcfg/rz_magic.pc pkgcfg/rz_asm.pc pkgcfg/rz_bin.pc pkgcfg/rz_anal.pc pkgcfg/rz_hash.pc pkgcfg/rz_cons.pc pkgcfg/rz_core.pc pkgcfg/rz_lang.pc pkgcfg/rz_socket.pc pkgcfg/rz_debug.pc pkgcfg/rz_reg.pc pkgcfg/rz_config.pc pkgcfg/rz_flag.pc pkgcfg/rz_syscall.pc pkgcfg/rz_util.pc pkgcfg/rz_search.pc pkgcfg/rz_bp.pc pkgcfg/rz_parse.pc pkgcfg/rz_fs.pc pkgcfg/rz_egg.pc pkgcfg/rz_crypto.pc  ; do # SUBDIRS
 if [ -f "${VPATH}/${A}.acr" ]; then
   SD_TARGET=${A}
  else

@@ -26,9 +26,9 @@ CFLAGS+=${CPPFLAGS}
 ifeq (1,1)
 #$(WITHPIC),1)
 LINK+=$(subst rz_,-L$(LIBR)/,$(R2DEPS))
-LINK+=$(subst rz_,-lr_,$(R2DEPS))
+LINK+=$(subst rz_,-lrz_,$(R2DEPS))
 LINK+=$(subst rz_,-L$(LIBR)/,$(BINDEPS))
-LINK+=$(subst rz_,-lr_,$(BINDEPS))
+LINK+=$(subst rz_,-lrz_,$(BINDEPS))
 CFLAGS+=${PIC_CFLAGS}
 LINK+=${PIC_CFLAGS}
 else

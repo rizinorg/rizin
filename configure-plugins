@@ -70,7 +70,7 @@ generate_configh () {
       echo "#define R_${uclib}_STATIC_PLUGINS \\"
       plugins="${plugins} __${uclib}"
     fi
-    echo "     &r_${lib}_plugin_${plg}, \\"
+    echo "     &rz_${lib}_plugin_${plg}, \\"
   done
   [ -n "$oldlib" ] && echo "     0"
 
