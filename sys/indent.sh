@@ -66,8 +66,8 @@ fi
 if [ "${UNCRUST}" = 1 ]; then
 	# yell, rather than overwrite an innocent file
 	command -v uncrustify >/dev/null 2>&1 || {
-		if ! rz_pm -r type uncrustify >/dev/null 2>&1; then
-			#echo "This script requires uncrustify to function. Check rz_pm -i uncrustify"
+		if ! rz-pm -r type uncrustify >/dev/null 2>&1; then
+			#echo "This script requires uncrustify to function. Check rz-pm -i uncrustify"
 			UNCRUST=0
 		fi
 	}
@@ -98,7 +98,7 @@ indentFile() {
 	if [ "${UNCRUST}" = 1 ]; then
 		cp -f .clang-format ${CWD}/.clang-format
 		cd "$CWD"
-		rz_pm -r uncrustify -c ${CWD}/doc/uncrustify.cfg -f "${IFILE}" -o .tmp-format
+		rz-pm -r uncrustify -c ${CWD}/doc/uncrustify.cfg -f "${IFILE}" -o .tmp-format
 	else
 		D=$(dirname ${IFILE})
 		if [ -f "${D}/.clang-format" ]; then

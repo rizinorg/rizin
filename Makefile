@@ -8,7 +8,7 @@ L=$(DESTDIR)$(LIBDIR)
 MESON?=meson
 PYTHON?=python
 R2R=test
-R2BINS=$(shell cd binrz ; echo r*2 rz_agent rz_pm r2-indent rz_test)
+R2BINS=$(shell cd binrz ; echo r*2 rz_agent rz-pm r2-indent rz_test)
 ifdef SOURCE_DATE_EPOCH
 BUILDSEC=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u "+__%H:%M:%S")
 else
@@ -416,7 +416,7 @@ meson-install:
 
 meson-symstall: symstall-sdb
 	@echo "[ Meson symstall (not stable) ]"
-	ln -fs $(PWD)/binrz/rz_pm/rz_pm ${B}/rz_pm
+	ln -fs $(PWD)/binrz/rz_pm/rz-pm ${B}/rz-pm
 	ln -fs $(PWD)/build/binrz/rz_asm/rz_asm ${B}/rz_asm
 	ln -fs $(PWD)/build/binrz/rz_run/rz_run ${B}/rz_run
 	ln -fs $(PWD)/build/binrz/rizin/rizin ${B}/rizin

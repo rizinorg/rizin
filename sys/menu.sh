@@ -108,14 +108,14 @@ Packages() {
 			;;
 		"Update all packages")
 			# TODO: add a flag for this
-			for a in `rz_pm -l` ; do rz_pm -i $a ; done
+			for a in `rz-pm -l` ; do rz-pm -i $a ; done
 			;;
 		esac
 	done
 }
 
 PackagesInstall() {
-	PLUGINS="`rz_pm -lu`"
+	PLUGINS="`rz-pm -lu`"
 	ARGS=""
 	for a in ${PLUGINS} ; do
 		ARGS="${ARGS} $a . off"
@@ -125,14 +125,14 @@ PackagesInstall() {
 	echo
 	if [ -n "${OPT}" ]; then
 		for a in ${OPT} ; do
-			rz_pm -i "$a"
+			rz-pm -i "$a"
 			sleep 1
 		done
 	fi
 }
 
 PackagesUninstall() {
-	PLUGINS="`rz_pm -l`"
+	PLUGINS="`rz-pm -l`"
 	ARGS=""
 	for a in ${PLUGINS} ; do
 		ARGS="${ARGS} $a . off"
@@ -141,7 +141,7 @@ PackagesUninstall() {
 	OPT=$(<.nconfig.tmp)
 	if [ -n "${OPT}" ]; then
 		for a in ${OPT} ; do
-			rz_pm -u "$a"
+			rz-pm -u "$a"
 			sleep 1
 		done
 	fi

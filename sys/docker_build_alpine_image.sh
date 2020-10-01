@@ -220,10 +220,10 @@ RUN set -o pipefail && \
 USER $(id -nu)
 WORKDIR /r2
 
-# Setup rz_pm
+# Setup rz-pm
 RUN set -o pipefail && \
-	rz_pm init && \
-	rz_pm update
+	rz-pm init && \
+	rz-pm update
 
 CMD ["/bin/bash"]
 EOF

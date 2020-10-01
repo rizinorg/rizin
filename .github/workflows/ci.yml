@@ -547,14 +547,14 @@ jobs:
         meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
         sudo ln -s rizin /usr/bin/r2
       working-directory: rizin
-    - name: Init rz_pm
-      run: rz_pm init && rz_pm update
+    - name: Init rz-pm
+      run: rz-pm init && rz-pm update
     - name: Compile and install plugins
       run: |
         set -e
         for p in $TESTS ; do
           echo $p
-          rz_pm -i $p
+          rz-pm -i $p
         done
         set +e
     - name: Compile and install rzpipe
@@ -562,7 +562,7 @@ jobs:
         set -e
         for p in $R2PIPE_TESTS ; do
           echo $p
-          rz_pm -i $p
+          rz-pm -i $p
         done
         set +e
 

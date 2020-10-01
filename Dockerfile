@@ -95,9 +95,9 @@ USER r2
 WORKDIR /home/r2
 ENV HOME /home/r2
 
-# Setup rz_pm
-RUN rz_pm init && \
-  rz_pm update && \
+# Setup rz-pm
+RUN rz-pm init && \
+  rz-pm update && \
   chown -R r2:r2 /home/r2/.config
 
 # Base command for container

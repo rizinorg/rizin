@@ -31,10 +31,8 @@ install:
 		rm -f "${DESTDIR}${BINDIR}/$$BINARY" ; \
 		${INSTALL_PROGRAM} "$$BINARY/$$BINARY" "${DESTDIR}${BINDIR}/$$BINARY" ; \
 	done
-	${INSTALL_SCRIPT} "$(BTOP)/rz_pm/rz_pm" "${DESTDIR}${BINDIR}/rz_pm"
-	rm -rf "${DESTDIR}${DATADIR}/rizin/${VERSION}/rz_pm"
-	#mkdir -p "${DESTDIR}${DATADIR}/rizin/${VERSION}/rz_pm"
-	#cp -rf rz_pm/d/* "${DESTDIR}${DATADIR}/rizin/${VERSION}/rz_pm"
+	${INSTALL_SCRIPT} "$(BTOP)/rz_pm/rz-pm" "${DESTDIR}${BINDIR}/rz-pm"
+	rm -rf "${DESTDIR}${DATADIR}/rizin/${VERSION}/rz-pm"
 	-cd "${DESTDIR}${BINDIR}" && rm -f r2 ; ln -fs rizin r2 ; ln -fs rizin r2p
 ifeq ($(WITHPIC),1)
 	${INSTALL_LIB} "preload/librz.$(EXT_SO)" "${DESTDIR}${LIBDIR}"
@@ -52,10 +50,9 @@ symstall install-symlink:
 	cd .. && \
 	mkdir -p "${DESTDIR}${BINDIR}" && \
 	for BINARY in ${BINS} ; do ln -fs "${BTOP}/$$BINARY/$$BINARY" "${DESTDIR}${BINDIR}/$$BINARY" ; done
-	cd .. && ln -fs "${BTOP}/rz_pm/rz_pm" "${DESTDIR}${BINDIR}/rz_pm"
-	cd .. && rm -rf "${DESTDIR}${DATADIR}/rizin/${VERSION}/rz_pm"
+	cd .. && ln -fs "${BTOP}/rz_pm/rz-pm" "${DESTDIR}${BINDIR}/rz-pm"
+	cd .. && rm -rf "${DESTDIR}${DATADIR}/rizin/${VERSION}/rz-pm"
 	cd .. && mkdir -p "${DESTDIR}${DATADIR}/rizin/${VERSION}/"
-	#ln -fs "$(BTOP)/rz_pm/d" "${DESTDIR}${DATADIR}/rizin/${VERSION}/rz_pm"
 	-cd .. && ln -fs "${DESTDIR}${BINDIR}/rizin" "${DESTDIR}${BINDIR}/r2"
 	-cd .. && ln -fs "${DESTDIR}${BINDIR}/rizin" "${DESTDIR}${BINDIR}/r2p"
 	-cd .. && ln -fs "${BTOP}/preload/librz.$(EXT_SO)" "${DESTDIR}${LIBDIR}/librz.$(EXT_SO)"
@@ -66,7 +63,7 @@ symstall install-symlink:
 deinstall uninstall:
 	-cd .. ; \
 	for BINARY in ${BINS} ; do rm -f "${DESTDIR}${BINDIR}/$$BINARY" ; done ; \
-	rm -f "${DESTDIR}${BINDIR}/rz_pm" ; \
+	rm -f "${DESTDIR}${BINDIR}/rz-pm" ; \
 	rm -f "${DESTDIR}${BINDIR}/r2p"
 	rm -f "${DESTDIR}${BINDIR}/r2"
 

@@ -91,12 +91,12 @@ help|-h)
 --fix)
 	for f in $FILES ; do
 		chk $f $2 || continue
-		rz_pm -r sys/indent.sh -i $f
+		rz-pm -r sys/indent.sh -i $f
 	done
 	;;
 *)
 	for f in $FILES ; do
 		chk $f $1 || continue
-		rz_pm -r sys/indent.sh -u $f
+		rz-pm -r sys/indent.sh -u $f
 	done
 esac

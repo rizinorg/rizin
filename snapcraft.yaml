@@ -24,8 +24,8 @@ apps:
   rizin:
     command: usr/bin/rizin
     plugs: [home]
-  rz_pm:
-    command: usr/bin/rz_pm
+  rz-pm:
+    command: usr/bin/rz-pm
     plugs: [home]
   rz_agent:
     command: usr/bin/rz_agent

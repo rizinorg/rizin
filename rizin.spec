@@ -90,8 +90,8 @@ cp shlr/sdb/src/libsdb.a %{buildroot}/%{_libdir}/libsdb.a
 %{_datadir}/%{name}/%{version}-git/cons/*
 %dir %{_datadir}/%{name}/%{version}-git/format
 %{_datadir}/%{name}/%{version}-git/format/*
-%dir %{_prefix}/%{name}/%{version}-git/rz_pm
-%{_prefix}/%{name}/%{version}-git/rz_pm/*
+%dir %{_prefix}/%{name}/%{version}-git/rz-pm
+%{_prefix}/%{name}/%{version}-git/rz-pm/*
 %dir %{_datadir}/%{name}/%{version}-git/www
 %{_datadir}/%{name}/%{version}-git/www/*
 

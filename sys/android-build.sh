@@ -151,8 +151,8 @@ rm -rf ${PWD}/${D}/lib/pkgconfig
 rm -rf ${PWD}/${D}/lib/libsdb.a
 #rm -rf "${HERE}/${D}/${PREFIX}/lib"
 
-rm -rf "${HERE}/${D}/${PREFIX}/rizin" # rz_pm
-rm -rf "${HERE}/${D}/${PREFIX}/bin/rz_pm"
+rm -rf "${HERE}/${D}/${PREFIX}/rizin" # rz-pm
+rm -rf "${HERE}/${D}/${PREFIX}/bin/rz-pm"
 #echo rm -rf ${PWD}/${D}/${BINDIR}/*
 
 #find $HERE/$D | grep www

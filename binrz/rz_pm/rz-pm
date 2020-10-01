@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# rz_pm
+# rz-pm
 # Honor user environment
 [ -z "${SUDO}" ] && SUDO=sudo
 [ -z "${WGET}" ] && WGET=wget
@@ -19,7 +19,7 @@ gmake --help >/dev/null 2>&1
 export MAKE
 export GLOBAL=0
 export R2PM_JOBS=4
-export R2PMCACHE="$HOME/.rz_pm.cache"
+export R2PMCACHE="$HOME/.rz-pm.cache"
 
 # Set R2_* Vars
 eval $(r2 -H)
@@ -27,15 +27,15 @@ export R2_VERSION
 
 R2PM=$0
 R2PMCACHE_LOADED=0
-if [ -f ~/.rz_pm.cache ]; then
-	. ~/.rz_pm.cache
+if [ -f ~/.rz-pm.cache ]; then
+	. ~/.rz-pm.cache
 	export LIBEXT="$LIBEXT"
 	LIBDIR="$LIBDIR"
 	export R2CONFIGHOME="$R2CONFIGHOME"
 	export R2DATAHOME="$R2DATAHOME"
 	PREFIX="$PREFIX"
 	if [ -z "${LIBEXT}" -o -z "${LIBDIR}" -o -z "${R2CONFIGHOME}" -o -z "${R2DATAHOME}" -o -z "${PREFIX}" ]; then
-		echo "[rz_pm] corrupted cache, please run rz_pm cache"
+		echo "[rz-pm] corrupted cache, please run rz-pm cache"
 	else
 		R2PMCACHE_LOADED=1
 	fi
@@ -96,7 +96,7 @@ fi
 TRAVIS_TYPE=XX
 TRAVIS_JOB=86948888
 IS_SYSPKG=0
-[ -z "$R2PM_USRDIR" ] && R2PM_USRDIR="${R2DATAHOME}/rz_pm"
+[ -z "$R2PM_USRDIR" ] && R2PM_USRDIR="${R2DATAHOME}/rz-pm"
 R2PM_ETCD="${R2CONFIGHOME}/rizinrc.d"
 
 # TODO. support system plugin installs R2PM_PLUGDIR="${R2PM_SYSLIBDIR}/rizin/last"
@@ -104,13 +104,13 @@ if [ -z "${R2PM_GITDIR}" ]; then
 	R2PM_GITDIR="${R2PM_USRDIR}/git"
 fi
 if [ -z "${R2PM_DBDIR}" ]; then
-	if [ -d "${R2DATAHOME}/rz_pm/db" ]; then
-		R2PM_DBDIR="${R2DATAHOME}/rz_pm/db"
+	if [ -d "${R2DATAHOME}/rz-pm/db" ]; then
+		R2PM_DBDIR="${R2DATAHOME}/rz-pm/db"
 	fi
 fi
 if [ -z "${R2PM_DBDIR}" ]; then
-	if [ -d "${PREFIX}/share/rizin/last/rz_pm" ]; then
-		R2PM_DBDIR="${PREFIX}/share/rizin/last/rz_pm/"
+	if [ -d "${PREFIX}/share/rizin/last/rz-pm" ]; then
+		R2PM_DBDIR="${PREFIX}/share/rizin/last/rz-pm/"
 	fi
 fi
 if [ -f "d/baleful" ]; then
@@ -128,7 +128,7 @@ confirm() {
 
 purgeR2() {
 	P="$1"
-	BINS="r2 rizin rz_bin rz_find rz_pm "
+	BINS="r2 rizin rz_bin rz_find rz-pm "
 	cd "$P/bin" && rm -f ${BINS}
 	cd "$P/lib" && rm -f libr_*
 	cd "$P/lib" && rm -rf rizin
@@ -207,14 +207,14 @@ init|up|update)
 
 	ln -fs "${R2PM_GITDIR}/rizin-pm/db" "${R2PM_DBDIR}"
 	if [ "$1" = "init" ]; then
-		echo "rz_pm database initialized. Use 'rz_pm update' to update later today."
+		echo "rz-pm database initialized. Use 'rz-pm update' to update later today."
 	fi
 	exit 0
 	;;
 esac
 if [ ! -d "${R2PM_DBDIR}" ]; then
 	echo '$R2PM_DBDIR: No such file or directory.'
-	echo "Run 'rz_pm init' to initialize the package repository"
+	echo "Run 'rz-pm init' to initialize the package repository"
 	exit 1
 fi
 
@@ -401,13 +401,13 @@ R2PM_DEPS() {
 	fi
 	for a in "$@" ; do
 		echo "DEPENDS: $a"
-		rz_pm -w "$a"
+		rz-pm -w "$a"
 		doInstall=$?
 		if [ "${R2PM_UPGRADE}" ]; then
 			doInstall=1
 		fi
 		if [ $doInstall = 1 ]; then
-			rz_pm -i "$a"
+			rz-pm -i "$a"
 		fi
 	done
 }
@@ -421,9 +421,9 @@ pkgFilePath() {
 	done
 }
 
-rz_pm_doc() {
+rz-pm_doc() {
 	if [ -z "$2" ]; then
-		echo "Usage: rz_pm -d [package]  # show docs on [package]"
+		echo "Usage: rz-pm -d [package]  # show docs on [package]"
 		exit 1
 	else
 		FILE="$(pkgFilePath "$1")"
@@ -434,7 +434,7 @@ rz_pm_doc() {
 	fi
 }
 
-rz_pm_install() {
+rz-pm_install() {
 	FILE="$(pkgFilePath "$2")"
 	if [ -f "${FILE}" ]; then
 		NAME="$2"
@@ -449,9 +449,9 @@ rz_pm_install() {
 	fi
 }
 
-rz_pm_uninstall() {
+rz-pm_uninstall() {
 	if [ -z "$2" ]; then
-		echo "Usage: rz_pm -u [package]  # uninstall [package]"
+		echo "Usage: rz-pm -u [package]  # uninstall [package]"
 		exit 1
 	else
 		FILE="`pkgFilePath $2`"
@@ -480,11 +480,11 @@ case "$1" in
 	;;
 -i|install)
 	if [ -z "$2" ]; then
-		echo "Usage: rz_pm -i [package]  # install [package]"
+		echo "Usage: rz-pm -i [package]  # install [package]"
 		exit 1
 	elif [ "$2" = "all" ]; then
 		for a in `cd ${R2PM_DBDIR} && ls` ; do
-			rz_pm_install "$a"
+			rz-pm_install "$a"
 			if [ "$?" != 0 ]; then
 				printf "\033[31mERROR: Installation failed for $a\033[0m\n"
 			fi
@@ -492,7 +492,7 @@ case "$1" in
 	else
 		A1="$1"
 		while [ -n "$2" ] ; do
-			rz_pm_install $A1 "$2"
+			rz-pm_install $A1 "$2"
 			shift
 		done
 	fi
@@ -503,7 +503,7 @@ case "$1" in
 	rm -f "${FILE}"
 	;;
 -u|uninstall)
-	rz_pm_uninstall "$@"
+	rz-pm_uninstall "$@"
 	;;
 -t|test)
 	[ -n "$2" ] && TRAVIS_TYPE="$2"
@@ -532,7 +532,7 @@ case "$1" in
 	PATH="${R2PM_BINDIR}:${PATH}" "$@"
 	;;
 -v|version)
-	echo "rz_pm ${R2_VERSION}"
+	echo "rz-pm ${R2_VERSION}"
 	;;
 -gi|global-install)
 	GLOBAL=1
@@ -545,7 +545,7 @@ case "$1" in
 	if [ ! -d "${R2PM_PLUGDIR}" ]; then
 		mkdir -p "${R2PM_PLUGDIR}"
 	fi
-	rz_pm_install "$@"
+	rz-pm_install "$@"
 	;;
 -gu|global-uninstall)
 	GLOBAL=1
@@ -555,7 +555,7 @@ case "$1" in
 	R2PM_BINDIR="${R2PM_SYSBINDIR}"
 	R2PM_WWWROOT="${R2PM_SYSWWWROOT}"
 	#TODO set R2PM_ETCD= to a "global" rizinrc.d
-	rz_pm_uninstall "$@"
+	rz-pm_uninstall "$@"
 	;;
 -cp)
 	if [ -n "${R2PM_PLUGDIR}" ]; then
@@ -602,7 +602,7 @@ case "$1" in
 			rm -rf "${R2PM_GITDIR}"
 			mkdir -p "${R2PM_GITDIR}"
 		else
-			echo "r2 is installed with rz_pm, do not clean the cache to avoid autodestruction"
+			echo "r2 is installed with rz-pm, do not clean the cache to avoid autodestruction"
 			echo "do not disassemble do not disassemble do not disassemble do not disassemble"
 			exit 1
 		fi
@@ -621,11 +621,11 @@ cd)
 		cd "${R2PM_GITDIR}/$2"
 		export R2PM_LEVEL=$((${R2PM_LEVEL}+1))
 		echo "Entering into ${SHELL} level ${R2PM_LEVEL}."
-		PS1="rz_pm:${R2PM_LEVEL}:\W\$ " ${SHELL}
+		PS1="rz-pm:${R2PM_LEVEL}:\W\$ " ${SHELL}
 		echo "Exiting level ${R2PM_LEVEL}."
 		exit 0
 	else
-		echo "Missing argument. See rz_pm ls"
+		echo "Missing argument. See rz-pm ls"
 		exit 1
 	fi
 	;;
@@ -643,15 +643,15 @@ cache)
 	echo "export R2CONFIGHOME=\"${R2CONFIGHOME}\"" >> "${R2PMCACHE}"
 	echo "export R2DATAHOME=\"${R2DATAHOME}\"" >> "${R2PMCACHE}"
 	echo "export PREFIX=\"${PREFIX}\"" >> "${R2PMCACHE}"
-	echo "[rz_pm] r2 environment cached in ${R2PMCACHE}"
+	echo "[rz-pm] r2 environment cached in ${R2PMCACHE}"
 	;;
 -a|add)
 	if [ "$2" = "help" ]; then
 		printf '%s\n' \
-			"Usage: rz_pm -a [url] ([name]) # manage package repositories" \
-			" $ rz_pm -a https://github.com/foo/bar  # register bar repo" \
-			" $ rz_pm -a                             # list all repos" \
-			" $ rz_pm -a - bar                       # delete 'foo' repo"
+			"Usage: rz-pm -a [url] ([name]) # manage package repositories" \
+			" $ rz-pm -a https://github.com/foo/bar  # register bar repo" \
+			" $ rz-pm -a                             # list all repos" \
+			" $ rz-pm -a - bar                       # delete 'foo' repo"
 		exit 1
 	fi
 	cd "${R2PM_DBDIR}"
@@ -681,7 +681,7 @@ cache)
 				git clone --recursive --depth=2 "$URL" "$NAME"
 			fi
 			if [ ! -d "$NAME/db" ]; then
-				echo "This is not an rz_pm repository"
+				echo "This is not an rz-pm repository"
 				rm -rf "$NAME"
 				exit 1
 			fi
@@ -693,7 +693,7 @@ cache)
 	;;
 -H)
 	if [ -z "$2" ]; then
-		echo "Usage: rz_pm -H [VARNAME]"
+		echo "Usage: rz-pm -H [VARNAME]"
 		echo "Variables: R2PM_PLUGDIR R2PM_BINDIR R2PM_DBDIR R2PM_GITDIR"
 		exit 1
 	fi
@@ -703,17 +703,17 @@ suicide)
 	commitSuicide
 	;;
 -d|doc|--doc)
-	rz_pm_doc "$2"
+	rz-pm_doc "$2"
 	;;
 *|help|-h)
 	cat <<HELP
-Usage: rz_pm [init|update|cmd] [...]
+Usage: rz-pm [init|update|cmd] [...]
 Commands:
  -I,info                     information about repository and installed packages
  -i,install <pkgname>        install or update package in your home (pkgname=all)
  -gi,global-install <pkg>    install or update package system-wide
  -gu,global-uninstall <pkg>  uninstall pkg from systemdir
- -u,uninstall <pkgname>      rz_pm -u baleful (-uu to force)
+ -u,uninstall <pkgname>      rz-pm -u baleful (-uu to force)
  -l,list                     list installed pkgs
  -r,run [cmd ...args]        run shell command with R2PM_BINDIR in PATH
  -s,search [<keyword>]       search in database
@@ -727,10 +727,10 @@ Commands:
  -d,doc [pkgname]            show documentation for given package
  -w <pkgname>                what/where is installed
  init | update ..            initialize/update database
- cd [git/dir]                cd into given git (see 'rz_pm ls')
+ cd [git/dir]                cd into given git (see 'rz-pm ls')
  ls                          ls all cloned git repos in GITDIR
  suicide                     self remove all (home + system) installations of r2
- cache                       cache contents of r2 -H to make rz_pm r2-independent
+ cache                       cache contents of r2 -H to make rz-pm r2-independent
 Environment:
  SUDO=sudo                    use this tool as sudo
  R2PM_PLUGDIR=${R2PM_PLUGDIR}

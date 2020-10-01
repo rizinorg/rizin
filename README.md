@@ -107,19 +107,19 @@ To remove all stuff including libraries, use
 
 ## Package Manager
 
-Radare2 has its own package manager - rz_pm. Its packages
+Radare2 has its own package manager - rz-pm. Its packages
 repository is on [GitHub too](https://github.com/rizinorg/rizin-pm).
 To start to using it for the first time, you need to initialize packages:
 
-	$ rz_pm init
+	$ rz-pm init
 
 Refresh the packages database before installing any package:
 
-	$ rz_pm update
+	$ rz-pm update
 
 To install a package, use the following command:
 
-	$ rz_pm install [package name]
+	$ rz-pm install [package name]
 
 # Development
 
