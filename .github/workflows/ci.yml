@@ -125,10 +125,10 @@ jobs:
       with:
           repository: rizinorg/rz-pipe
           token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
-          path: test/rz-pipe
+          path: $HOME/rz-pipe
     - name: Install test dependencies
       if: matrix.run_tests && matrix.enabled
-      run: pip3 install --user 'file:///home/runner/work/rizin/rizin/test/rz-pipe#egg=rzpipe&subdirectory=python'
+      run: pip3 install --user 'file:///$HOME/rz-pipe#egg=rzpipe&subdirectory=python'
     - name: Install clang
       if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest' && matrix.enabled
       run: sudo apt-get --assume-yes install clang
