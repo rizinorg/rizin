@@ -80,8 +80,8 @@ NAME=binary
 FILE=-
 CMDS=<<EOF
 ?e
-!rz_ax Bxff3f0000fcff
-!rz_ax Bxff3ffcff
+!rz-ax Bxff3f0000fcff
+!rz-ax Bxff3ffcff
 EOF
 EXPECT=<<EOF
 

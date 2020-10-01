@@ -15,7 +15,7 @@ extern int memorystatus_control(uint32_t command, pid_t pid, uint32_t flags, voi
 #endif
 
 static int usage (int v) {
-	printf ("Usage: rz_agent [-adhs] [-p port]\n"
+	printf ("Usage: rz-agent [-adhs] [-p port]\n"
 	"  -a        listen for everyone (localhost by default)\n"
 	"  -d        run in daemon mode (background)\n"
 	"  -h        show this help message\n"

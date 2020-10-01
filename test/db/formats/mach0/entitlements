@@ -7,14 +7,14 @@ EXPECT=<<EOF
 <plist version="1.0">
 <dict>
         <key>com.apple.application-identifier</key>
-        <string>9JTH7AWHE6.com.bot.r2ftw</string>
+        <string>9JTH7AWHE6.com.bot.rzftw</string>
         <key>com.apple.developer.aps-environment</key>
         <string>production</string>
         <key>com.apple.developer.icloud-container-environment</key>
         <string>Production</string>
         <key>com.apple.developer.icloud-container-identifiers</key>
         <array>
-                <string>iCloud.com.bot.r2ftw</string>
+                <string>iCloud.com.bot.rzftw</string>
         </array>
         <key>com.apple.developer.icloud-services</key>
         <array>
@@ -23,7 +23,7 @@ EXPECT=<<EOF
         <key>com.apple.developer.team-identifier</key>
         <string>9JTH7AWHE6</string>
         <key>com.apple.developer.ubiquity-kvstore-identifier</key>
-        <string>9JTH7AWHE6.com.bot.r2ftw</string>
+        <string>9JTH7AWHE6.com.bot.rzftw</string>
         <key>com.apple.security.app-sandbox</key>
         <true/>
         <key>com.apple.security.files.downloads.read-write</key>
@@ -40,23 +40,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=entitlements with rz_bin
+NAME=entitlements with rz-bin
 FILE=bins/mach0/AppIOSEntitlements.ios
-CMDS=!rz_bin -OC `i~file:0[1]`
+CMDS=!rz-bin -OC `i~file:0[1]`
 EXPECT=<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
         <key>com.apple.application-identifier</key>
-        <string>9JTH7AWHE6.com.bot.r2ftw</string>
+        <string>9JTH7AWHE6.com.bot.rzftw</string>
         <key>com.apple.developer.aps-environment</key>
         <string>production</string>
         <key>com.apple.developer.icloud-container-environment</key>
         <string>Production</string>
         <key>com.apple.developer.icloud-container-identifiers</key>
         <array>
-                <string>iCloud.com.bot.r2ftw</string>
+                <string>iCloud.com.bot.rzftw</string>
         </array>
         <key>com.apple.developer.icloud-services</key>
         <array>
@@ -65,7 +65,7 @@ EXPECT=<<EOF
         <key>com.apple.developer.team-identifier</key>
         <string>9JTH7AWHE6</string>
         <key>com.apple.developer.ubiquity-kvstore-identifier</key>
-        <string>9JTH7AWHE6.com.bot.r2ftw</string>
+        <string>9JTH7AWHE6.com.bot.rzftw</string>
         <key>com.apple.security.app-sandbox</key>
         <true/>
         <key>com.apple.security.files.downloads.read-write</key>

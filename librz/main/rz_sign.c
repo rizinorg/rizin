@@ -3,7 +3,7 @@
 #include <rz_core.h>
 
 static void rasign_show_help(void) {
-	printf ("Usage: rz_sign [options] [file]\n"
+	printf ("Usage: rz-sign [options] [file]\n"
 		" -a [-a]          add extra 'a' to analysis command\n"
 		" -f               interpret the file as a FLIRT .sig file and dump signatures\n"
 		" -h               help menu\n"

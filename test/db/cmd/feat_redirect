@@ -27,10 +27,10 @@ RUN
 NAME=append to file
 FILE=-
 CMDS=<<EOF
-echo Hello > .r2-append-to-file.test
-echo World >> .r2-append-to-file.test
-cat .r2-append-to-file.test
-rm -f .r2-append-to-file.test
+echo Hello > .rz-append-to-file.test
+echo World >> .rz-append-to-file.test
+cat .rz-append-to-file.test
+rm -f .rz-append-to-file.test
 EOF
 EXPECT=<<EOF
 Hello

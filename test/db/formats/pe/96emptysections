@@ -33,7 +33,7 @@ RUN
 NAME=PE: corkami 96workingsections.exe - sections list
 FILE=bins/pe/96emptysections.exe
 ARGS=-n
-CMDS=!rz_bin -pS bins/pe/96emptysections.exe
+CMDS=!rz-bin -pS bins/pe/96emptysections.exe
 EXPECT=<<EOF
 [Sections]
 

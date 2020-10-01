@@ -1,121 +1,121 @@
-NAME=rz_sign version
+NAME=rz-sign version
 FILE=-
-CMDS=!!rz_sign -v~?
+CMDS=!!rz-sign -v~?
 EXPECT=<<EOF
 2
 EOF
 RUN
 
-NAME=rz_sign help
+NAME=rz-sign help
 FILE=-
-CMDS=!!rz_sign -h~Usage
+CMDS=!!rz-sign -h~Usage
 EXPECT=<<EOF
-Usage: rz_sign [options] [file]
+Usage: rz-sign [options] [file]
 EOF
 RUN
 
-NAME=rz_sign -r
+NAME=rz-sign -r
 FILE=-
-CMDS=!!rz_sign -r bins/elf/hello_world~main?
-EXPECT=<<EOF
-7
-EOF
-RUN
-
-NAME=rz_sign -rj
-FILE=-
-CMDS=!!rz_sign -rj bins/elf/hello_world~main?
-EXPECT=<<EOF
-8
-EOF
-RUN
-
-NAME=rz_sign -raa 
-FILE=-
-CMDS=!!rz_sign -raa bins/elf/hello_world~main?
+CMDS=!!rz-sign -r bins/elf/hello_world~main?
 EXPECT=<<EOF
 7
 EOF
 RUN
 
-NAME=rz_sign -aarj
+NAME=rz-sign -rj
 FILE=-
-CMDS=!!rz_sign -aarj bins/elf/hello_world~main?
+CMDS=!!rz-sign -rj bins/elf/hello_world~main?
 EXPECT=<<EOF
 8
 EOF
 RUN
 
-NAME=rz_sign bytes
+NAME=rz-sign -raa 
 FILE=-
-CMDS=!!rz_sign -r bins/elf/libverifyPass.so~za sym.imp.memcpy b
+CMDS=!!rz-sign -raa bins/elf/hello_world~main?
+EXPECT=<<EOF
+7
+EOF
+RUN
+
+NAME=rz-sign -aarj
+FILE=-
+CMDS=!!rz-sign -aarj bins/elf/hello_world~main?
+EXPECT=<<EOF
+8
+EOF
+RUN
+
+NAME=rz-sign bytes
+FILE=-
+CMDS=!!rz-sign -r bins/elf/libverifyPass.so~za sym.imp.memcpy b
 EXPECT=<<EOF
 za sym.imp.memcpy b 00c68fe202ca8ce2f4fbbce5
 EOF
 RUN
 
 
-NAME=rz_sign graph metrics
+NAME=rz-sign graph metrics
 FILE=-
-CMDS=!!rz_sign -aarj bins/elf/hello_world~za main g
+CMDS=!!rz-sign -aarj bins/elf/hello_world~za main g
 EXPECT=<<EOF
 za main g cc=2 nbbs=3 edges=3 ebbs=1 bbsum=157
 EOF
 RUN
 
-NAME=rz_sign original offset
+NAME=rz-sign original offset
 FILE=-
-CMDS=!!rz_sign -aarj bins/elf/hello_world~^za main o
+CMDS=!!rz-sign -aarj bins/elf/hello_world~^za main o
 EXPECT=<<EOF
 za main o 0x000007aa
 EOF
 RUN
 
-NAME=rz_sign references
+NAME=rz-sign references
 FILE=-
-CMDS=!!rz_sign -aarj bins/elf/hello_world~^za main r
+CMDS=!!rz-sign -aarj bins/elf/hello_world~^za main r
 EXPECT=<<EOF
 za main r sym.imp.strlen sym.imp.strlen sym.imp.malloc sym.imp.strcpy sym.imp.strcat sym.imp.puts sym.imp.free
 EOF
 RUN
 
-NAME=rz_sign bbhash
+NAME=rz-sign bbhash
 FILE=-
-CMDS=!!rz_sign -aarj bins/elf/hello_world~^za main h
+CMDS=!!rz-sign -aarj bins/elf/hello_world~^za main h
 EXPECT=<<EOF
 za main h 44004dffff87483150d4f315ea8426b4d0c471ce4c56176c874513b24d0266b4
 EOF
 RUN
 
-NAME=rz_sign vars/args
+NAME=rz-sign vars/args
 FILE=-
-CMDS=!!rz_sign -aarj bins/elf/hello_world~^za main v
+CMDS=!!rz-sign -aarj bins/elf/hello_world~^za main v
 EXPECT=<<EOF
 za main v b-32 b-24 b-40 b-36 b-16
 EOF
 RUN
 
 
-NAME=rz_sign spaces check
+NAME=rz-sign spaces check
 FILE=-
-CMDS=!!rz_sign -s spacename -ar bins/elf/hello_world~spacename:sym.imp.puts n sym.imp.puts
+CMDS=!!rz-sign -s spacename -ar bins/elf/hello_world~spacename:sym.imp.puts n sym.imp.puts
 EXPECT=<<EOF
 za spacename:sym.imp.puts n sym.imp.puts
 EOF
 RUN
 
-NAME=rz_sign -f libc-v7.sig
+NAME=rz-sign -f libc-v7.sig
 FILE=
-CMDS=!rz_sign -f bins/other/sigs/libc-v7.sig
+CMDS=!rz-sign -f bins/other/sigs/libc-v7.sig
 EXPECT=<<EOF
 41564155B8........4154554D89C4534889CD4D89CD4881EC900000004885C0:
  0. 16 D2A2 0298 0000:__libc_start_main
 EOF
 RUN
 
-NAME=rz_sign -f libc-v10.sig
+NAME=rz-sign -f libc-v10.sig
 FILE=
-CMDS=!rz_sign -f bins/other/sigs/libc-v10.sig
+CMDS=!rz-sign -f bins/other/sigs/libc-v10.sig
 EXPECT=<<EOF
 41564155B8........4154554D89C4534889CD4D89CD4881EC900000004885C0:
  0. 16 D2A2 0298 0000:__libc_start_main

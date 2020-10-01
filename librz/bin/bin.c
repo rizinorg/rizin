@@ -1264,7 +1264,7 @@ RZ_API RBuffer *rz_bin_package(RBin *bin, const char *type, const char *file, Rz
 		rz_buf_free (buf);
 		return NULL;
 	} else {
-		eprintf ("Usage: rz_bin -X [fat|zip] [filename] [files ...]\n");
+		eprintf ("Usage: rz-bin -X [fat|zip] [filename] [files ...]\n");
 	}
 	return NULL;
 }

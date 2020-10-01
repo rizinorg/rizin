@@ -3,7 +3,7 @@ NAME=no preincrement/predecrement in 3rd part of for statement
 # Good: for (;; i++, j--)
 FILE=-
 # TODO: multiline
-CMDS="!git grep \"for[[:space:]]*([^;)]*;[^;)]*;\([^,)(]*,\)*[[:space:]]*\(++\|--\)[[:space:]]*[[:alpha:]_][[:alnum:]_]*[[:space:]]*[,)]\" -- .. :!db/tools/r2 :!../shlr/** :!../librz/asm/arch/** :!../**/mangling/cxx/cp-demangle.c"
+CMDS="!git grep \"for[[:space:]]*([^;)]*;[^;)]*;\([^,)(]*,\)*[[:space:]]*\(++\|--\)[[:space:]]*[[:alpha:]_][[:alnum:]_]*[[:space:]]*[,)]\" -- .. :!db/tools/rz :!../shlr/** :!../librz/asm/arch/** :!../**/mangling/cxx/cp-demangle.c"
 EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
@@ -21,7 +21,7 @@ EXPECT_ERR=<<EOF
 EOF
 RUN
 
-NAME=r2 -
+NAME=rz -
 FILE=-
 CMDS=e file.path
 EXPECT=<<EOF
@@ -29,7 +29,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=r2 -
+NAME=rz -
 FILE=-
 CMDS=e file.lastpath
 EXPECT=<<EOF
@@ -37,7 +37,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=r2 --
+NAME=rz --
 FILE=--
 CMDS=e file.path
 EXPECT=<<EOF
@@ -45,10 +45,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=r2 --
+NAME=rz --
 FILE=bins/elf/bomb
 BROKEN=1
-CMDS=r2 -s main -qcs bins/elf/bomb
+CMDS=rizin -s main -qcs bins/elf/bomb
 EXPECT=<<EOF
 0x400da0
 EOF
@@ -78,7 +78,7 @@ RUN
 
 NAME=rizin -V
 FILE=-
-CMDS=!!rizin -V~r_anal?
+CMDS=!!rizin -V~rz_anal?
 EXPECT=<<EOF
 1
 EOF
@@ -108,12 +108,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=r2 shortcut
+NAME=rizin shortcut
 FILE=-
 CMDS=<<EOF
-?q `!!r2 -h~Usage?`
+?q `!!rizin -h~Usage?`
 ?+ ?vi $?
-?! ?e `!!r2.bat -h~Usage?`
+?! ?e `!!rizin.bat -h~Usage?`
 EOF
 EXPECT=<<EOF
 1
@@ -122,7 +122,7 @@ RUN
 
 NAME=no-nl-at-eof script
 FILE=-
-CMDS=!rizin -i scripts/no-nl-at-eof.r2 -NQ -
+CMDS=!rizin -i scripts/no-nl-at-eof.rz -NQ -
 EXPECT=<<EOF
 1
 EOF
@@ -134,12 +134,12 @@ NAME=rizin -i -Q with missing script
 FILE=-
 CMDS=<<EOF
 # Should not hang
-!rizin -i script/missing.r2 -NQ -
+!rizin -i script/missing.rz -NQ -
 EOF
 EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
-Script 'script/missing.r2' not found.
+Script 'script/missing.rz' not found.
 EOF
 RUN
 

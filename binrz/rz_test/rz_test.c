@@ -41,7 +41,7 @@ static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results
 static void interact_diffchar(R2RTestResultInfo *result);
 
 static int help(bool verbose) {
-	printf ("Usage: rz_test [-qvVnL] [-j threads] [test file/dir | @test-type]\n");
+	printf ("Usage: rz-test [-qvVnL] [-j threads] [test file/dir | @test-type]\n");
 	if (verbose) {
 		printf (
 		" -h           print this help\n"

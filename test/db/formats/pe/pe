@@ -34,7 +34,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pe relocs [rz_bin a.exe]
+NAME=pe relocs [rz-bin a.exe]
 FILE=bins/pe/a.exe
 CMDS=ir
 EXPECT=<<EOF
@@ -68,7 +68,7 @@ vaddr      paddr      type   name
 EOF
 RUN
 
-NAME=pe relocs [rz_bin b.exe]
+NAME=pe relocs [rz-bin b.exe]
 FILE=bins/pe/b.exe
 CMDS=ir
 EXPECT=<<EOF

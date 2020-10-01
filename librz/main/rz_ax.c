@@ -220,7 +220,7 @@ static int rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) {
 					}
 					return format_output (num, out_mode, str, *fm, flags);
 				}
-				printf ("Usage: rz_ax [options] [expr ...]\n");
+				printf ("Usage: rz-ax [options] [expr ...]\n");
 				return help ();
 			}
 			str++;

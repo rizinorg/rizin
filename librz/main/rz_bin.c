@@ -9,7 +9,7 @@
 #include "../../librz/bin/pdb/pdb_downloader.h"
 
 static int rabin_show_help(int v) {
-	printf ("Usage: rz_bin [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
+	printf ("Usage: rz-bin [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
 		"              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P[-P] pdb]\n"
 		"              [-o str] [-O str] [-k query] [-D lang symname] file\n");
 	if (v) {
@@ -1004,7 +1004,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		int i, rc = 0;
 
 		if (opt.ind + 3 > argc) {
-			eprintf ("Usage: rz_bin -X [fat|zip] foo.zip a b c\n");
+			eprintf ("Usage: rz-bin -X [fat|zip] foo.zip a b c\n");
 			rz_core_fini (&core);
 			return 1;
 		}

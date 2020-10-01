@@ -42,7 +42,7 @@ BROKEN=1
 FILE=--
 CMDS=<<EOF
 e cfg.newshell=true
-& !rz_run timeout=3 daemon=1 system="r2 -e http.root=/404 -e http.port=9292 -c=h -qcq -"
+& !rz-run timeout=3 daemon=1 system="r2 -e http.root=/404 -e http.port=9292 -c=h -qcq -"
 sleep 1
 =+ http://127.0.0.1:9292/cmd/
 =

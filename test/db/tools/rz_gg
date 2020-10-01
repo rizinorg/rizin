@@ -1,22 +1,22 @@
-NAME=rz_gg -a x86 -b 64 -p A200 -d 50:0xccccccb
+NAME=rz-gg -a x86 -b 64 -p A200 -d 50:0xccccccb
 FILE=-
-CMDS=!rz_gg -a x86 -b 64 -p A200 -d 50:0xccccccb
+CMDS=!rz-gg -a x86 -b 64 -p A200 -d 50:0xccccccb
 EXPECT=<<EOF
 4141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141cbcccc0c4141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141
 EOF
 RUN
 
-NAME=rz_gg -a x86 -b 64 -p A200 -d 50:0xcb
+NAME=rz-gg -a x86 -b 64 -p A200 -d 50:0xcb
 FILE=-
-CMDS=!rz_gg -a x86 -b 64 -p A200 -d 50:0xcb
+CMDS=!rz-gg -a x86 -b 64 -p A200 -d 50:0xcb
 EXPECT=<<EOF
 4141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141cb0000004141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141
 EOF
 RUN
 
-NAME=rz_gg -a x86 -b 64 -p A10 -d 50:0xcb
+NAME=rz-gg -a x86 -b 64 -p A10 -d 50:0xcb
 FILE=-
-CMDS=!rz_gg -a x86 -b 64 -p A10 -d 50:0xcb
+CMDS=!rz-gg -a x86 -b 64 -p A10 -d 50:0xcb
 EXPECT=<<EOF
 41414141414141414141
 EOF
@@ -25,154 +25,154 @@ Cannot patch outside
 EOF
 RUN
 
-NAME=rz_gg -a x86 -b 64 -p A20 -w 10:cb
+NAME=rz-gg -a x86 -b 64 -p A20 -w 10:cb
 FILE=-
-CMDS=!rz_gg -a x86 -b 64 -p A20 -w 10:cb
+CMDS=!rz-gg -a x86 -b 64 -p A20 -w 10:cb
 EXPECT=<<EOF
 41414141414141414141cb414141414141414141
 EOF
 RUN
 
-NAME=rz_gg -a x86 -b 64 -p A20 -D 10:33
+NAME=rz-gg -a x86 -b 64 -p A20 -D 10:33
 FILE=-
-CMDS=!rz_gg -a x86 -b 64 -p A20 -D 10:33
+CMDS=!rz-gg -a x86 -b 64 -p A20 -D 10:33
 EXPECT=<<EOF
 4141414141414141414121000000000000004141
 EOF
 RUN
 
-NAME=rz_gg -a x86 -b 64 -p n2t2a2s2
+NAME=rz-gg -a x86 -b 64 -p n2t2a2s2
 FILE=-
-CMDS=!rz_gg -a x86 -b 64 -p n2t2a2s2
+CMDS=!rz-gg -a x86 -b 64 -p n2t2a2s2
 EXPECT=<<EOF
 00004141cccc9090
 EOF
 RUN
 
-NAME=rz_gg -i exec -z -a x86 -b32
+NAME=rz-gg -i exec -z -a x86 -b32
 FILE=-
-CMDS=!rz_gg -i exec -z -k linux -a x86 -b32
+CMDS=!rz-gg -i exec -z -k linux -a x86 -b32
 EXPECT=<<EOF
 "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80"
 EOF
 RUN
 
-NAME=rz_gg -k linux -i exec  -a x86 -b32 -p n3N3
+NAME=rz-gg -k linux -i exec  -a x86 -b32 -p n3N3
 FILE=-
-CMDS=!rz_gg -k linux -i exec  -a x86 -b32 -p n3N3
+CMDS=!rz-gg -k linux -i exec  -a x86 -b32 -p n3N3
 EXPECT=<<EOF
 90909031c050682f2f7368682f62696e89e3505389e199b00bcd80909090
 EOF
 RUN
 
-NAME=rz_gg -p n80 -w 79:c3 -x
+NAME=rz-gg -p n80 -w 79:c3 -x
 FILE=-
-CMDS=!rz_gg -p n80 -w 79:c3 -x
+CMDS=!rz-gg -p n80 -w 79:c3 -x
 EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz_gg -q 0x45414146
+NAME=rz-gg -q 0x45414146
 FILE=-
-CMDS=!rz_gg -q 0x45414146
+CMDS=!rz-gg -q 0x45414146
 EXPECT=<<EOF
 Little endian: -1
 Big endian: 12
 EOF
 RUN
 
-NAME=rz_gg -q 45414146
+NAME=rz-gg -q 45414146
 FILE=-
-CMDS=!rz_gg -q 45414146
+CMDS=!rz-gg -q 45414146
 EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz_gg -k linux -a x86 -b32 simple_cmp.r
+NAME=rz-gg -k linux -a x86 -b32 simple_cmp.r
 BROKEN=1
 FILE=-
-CMDS=!rz_gg -k linux -a x86 -b32 bins/other/rz_gg/simple_cmp.r
+CMDS=!rz-gg -k linux -a x86 -b32 bins/other/rz-gg/simple_cmp.r
 EXPECT=<<EOF
 5589e581ec80000000c745086869210ac7450c6e000000c74510000000008d4508898504000000c7450501000000c745060200000055583b45060f8f5a0000006a04546a018b1c248b8c24040000008b942408000000b804000000cd8083c40c6a008b1c24b801000000cd8083c40481c4800000005dc3
 EOF
 RUN
 
-NAME=rz_gg bugg8.r
+NAME=rz-gg bugg8.r
 FILE=-
-CMDS=!rz_gg bins/other/rz_gg/bugg8.r > /dev/null
+CMDS=!rz-gg bins/other/rz-gg/bugg8.r > /dev/null
 EXPECT=<<EOF
 EOF
 RUN
 
 #CLANG=e900000000488d3524000000bf01000000b80400000248c7c2070000000f05b80100000248c7c7000000000f0531c0c348656c6c6f210a00
-NAME=rz_ggc bins/other/rz_gg/hi.c
+NAME=rz-ggc bins/other/rz-gg/hi.c
 BROKEN=1
 FILE=-
-CMDS=!rz_gg bins/other/rz_gg/hi.c | grep e9
+CMDS=!rz-gg bins/other/rz-gg/hi.c | grep e9
 EXPECT=<<EOF
 e90800000048656c6c6f210a00bf01000000488d35ecffffffba07000000b8010000000f05b83c0000004030ff0f05c3
 EOF
 RUN
 
-NAME=rz_gg -v
+NAME=rz-gg -v
 FILE=-
-CMDS=!rz_gg -v | grep -c build
+CMDS=!rz-gg -v | grep -c build
 EXPECT=<<EOF
 1
 EOF
 RUN
 
-NAME=rz_gg -h
+NAME=rz-gg -h
 FILE=-
-CMDS=!rz_gg -h | grep -c Usage
+CMDS=!rz-gg -h | grep -c Usage
 EXPECT=<<EOF
 1
 EOF
 RUN
 
-NAME=rz_gg -L
+NAME=rz-gg -L
 FILE=-
-CMDS=!rz_gg -L | grep -c encoders
+CMDS=!rz-gg -L | grep -c encoders
 EXPECT=<<EOF
 1
 EOF
 RUN
 
-NAME=rz_gg empty file
+NAME=rz-gg empty file
 FILE=-
-CMDS=!rz_gg ""
+CMDS=!rz-gg ""
 EXPECT_ERR=<<EOF
 Cannot open empty path
 EOF
 RUN
 
-NAME=rz_gg empty include
-FILE=bins/other/rz_gg/hi.c
-CMDS=!rz_gg -I "" bins/other/rz_gg/hi.c
+NAME=rz-gg empty include
+FILE=bins/other/rz-gg/hi.c
+CMDS=!rz-gg -I "" bins/other/rz-gg/hi.c
 EXPECT_ERR=<<EOF
 Cannot open empty include path
 EOF
 RUN
 
-NAME=rz_gg empty contents
-FILE=bins/other/rz_gg/hi.c
-CMDS=!rz_gg -C "" bins/other/rz_gg/hi.c
+NAME=rz-gg empty contents
+FILE=bins/other/rz-gg/hi.c
+CMDS=!rz-gg -C "" bins/other/rz-gg/hi.c
 EXPECT_ERR=<<EOF
 Cannot open empty contents path
 EOF
 RUN
 
-NAME=rz_gg debruijn sequence 1
+NAME=rz-gg debruijn sequence 1
 FILE=-
-CMDS=!rz_gg -r -P 2; ?e
+CMDS=!rz-gg -r -P 2; ?e
 EXPECT=<<EOF
 AA
 EOF
 RUN
 
-NAME=rz_gg debruijn sequence 2
+NAME=rz-gg debruijn sequence 2
 FILE=-
-CMDS=!rz_gg -P 2 -r; ?e
+CMDS=!rz-gg -P 2 -r; ?e
 EXPECT=<<EOF
 AA
 EOF

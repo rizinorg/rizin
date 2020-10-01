@@ -271,7 +271,7 @@ static void rz_asm_list(RzAsmState *as, const char *arch) {
 
 static int rasm_show_help(int v) {
 	if (v < 2) {
-		printf ("Usage: rz_asm [-ACdDehLBvw] [-a arch] [-b bits] [-o addr] [-s syntax]\n"
+		printf ("Usage: rz-asm [-ACdDehLBvw] [-a arch] [-b bits] [-o addr] [-s syntax]\n"
 			"             [-f file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|-\n");
 	}
 	if (v != 1) {

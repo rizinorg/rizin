@@ -22,9 +22,9 @@ static void compare_hashes(const RzHash *ctx, const ut8 *compare, int length, in
 	if (compare) {
 		// algobit has only 1 bit set
 		if (!memcmp (ctx->digest, compare, length)) {
-			printf ("rz_hash: Computed hash matches the expected one.\n");
+			printf ("rz-hash: Computed hash matches the expected one.\n");
 		} else {
-			eprintf ("rz_hash: Computed hash doesn't match the expected one.\n");
+			eprintf ("rz-hash: Computed hash doesn't match the expected one.\n");
 			*ret = 1;
 		}
 	}
@@ -146,12 +146,12 @@ static int do_hash(const char *file, const char *algo, RzIO *io, int bsize, int 
 	ut64 i;
 	bool first = true;
 	if (algobit == R_HASH_NONE) {
-		eprintf ("rz_hash: Invalid hashing algorithm specified\n");
+		eprintf ("rz-hash: Invalid hashing algorithm specified\n");
 		return 1;
 	}
 	fsize = rz_io_desc_size (io->desc);
 	if (fsize < 1) {
-		eprintf ("rz_hash: Invalid file size\n");
+		eprintf ("rz-hash: Invalid file size\n");
 		return 1;
 	}
 	if (bsize < 0) {
@@ -164,11 +164,11 @@ static int do_hash(const char *file, const char *algo, RzIO *io, int bsize, int 
 		to = fsize;
 	}
 	if (from > to) {
-		eprintf ("rz_hash: Invalid -f -t range\n");
+		eprintf ("rz-hash: Invalid -f -t range\n");
 		return 1;
 	}
 	if (fsize == -1LL) {
-		eprintf ("rz_hash: Unknown file size\n");
+		eprintf ("rz-hash: Unknown file size\n");
 		return 1;
 	}
 	buf = calloc (1, bsize + 1);
@@ -267,7 +267,7 @@ static int do_hash(const char *file, const char *algo, RzIO *io, int bsize, int 
 }
 
 static int do_help(int line) {
-	printf ("Usage: rz_hash [-rBhLkv] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...\n");
+	printf ("Usage: rz-hash [-rBhLkv] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...\n");
 	if (line) {
 		return 0;
 	}
@@ -388,7 +388,7 @@ static int encrypt_or_decrypt_file(const char *algo, int direction, const char *
 					buf = (ut8 *)rz_file_slurp (filename, &file_size);
 				}
 				if (!buf) {
-					eprintf ("rz_hash: Cannot open '%s'\n", filename);
+					eprintf ("rz-hash: Cannot open '%s'\n", filename);
 					return -1;
 				}
 
@@ -481,13 +481,13 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 		}
 	}
 	if (encrypt && decrypt) {
-		eprintf ("rz_hash: Option -E and -D are incompatible with each other.\n");
+		eprintf ("rz-hash: Option -E and -D are incompatible with each other.\n");
 		return 1;
 	}
 	if (compareStr) {
 		int compareBin_len;
 		if (bsize && !incremental) {
-			eprintf ("rz_hash: Option -c incompatible with -b and -B options.\n");
+			eprintf ("rz-hash: Option -c incompatible with -b and -B options.\n");
 			return 1;
 		}
 		bool flag = false;
@@ -497,13 +497,13 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 			flag = !strcmp (decrypt, "base64") || !strcmp (decrypt, "base91");
 		}
 		if (flag) {
-			eprintf ("rz_hash: Option -c incompatible with -E base64, -E base91, -D base64 or -D base91 options.\n");
+			eprintf ("rz-hash: Option -c incompatible with -E base64, -E base91, -D base64 or -D base91 options.\n");
 			return 1;
 		}
 		algobit = rz_hash_name_to_bits (algo);
 		// if algobit represents a single algorithm then it's a power of 2
 		if (!is_power_of_two (algobit)) {
-			eprintf ("rz_hash: Option -c incompatible with multiple algorithms in -a.\n");
+			eprintf ("rz-hash: Option -c incompatible with multiple algorithms in -a.\n");
 			return 1;
 		}
 		compareBin = malloc ((strlen (compareStr) + 1) * 2);
@@ -512,12 +512,12 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 		}
 		compareBin_len = rz_hex_str2bin (compareStr, compareBin);
 		if (compareBin_len < 1) {
-			eprintf ("rz_hash: Invalid -c hex hash\n");
+			eprintf ("rz-hash: Invalid -c hex hash\n");
 			free (compareBin);
 			return 1;
 		} else if (compareBin_len != rz_hash_size (algobit))   {
 			eprintf (
-				"rz_hash: Given -c hash has %d byte(s) but the selected algorithm returns %d byte(s).\n",
+				"rz-hash: Given -c hash has %d byte(s) but the selected algorithm returns %d byte(s).\n",
 				compareBin_len,
 				rz_hash_size (algobit));
 			free (compareBin);
@@ -667,7 +667,7 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 	if (numblocks) {
 		bsize = -bsize;
 	} else if (bsize < 0) {
-		eprintf ("rz_hash: Invalid block size\n");
+		eprintf ("rz-hash: Invalid block size\n");
 		free (iv);
 		return 1;
 	}
@@ -704,7 +704,7 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 				if (sz > 0) {
 					desc = rz_io_open_nomap (io, uri, R_PERM_R, 0);
 					if (!desc) {
-						eprintf ("rz_hash: Cannot open malloc://1024\n");
+						eprintf ("rz-hash: Cannot open malloc://1024\n");
 						free (iv);
 						return 1;
 					}
@@ -713,13 +713,13 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 				free (uri);
 			} else {
 				if (rz_file_is_directory (argv[i])) {
-					eprintf ("rz_hash: Cannot hash directories\n");
+					eprintf ("rz-hash: Cannot hash directories\n");
 					free (iv);
 					return 1;
 				}
 				desc = rz_io_open_nomap (io, argv[i], R_PERM_R, 0);
 				if (!desc) {
-					eprintf ("rz_hash: Cannot open '%s'\n", argv[i]);
+					eprintf ("rz-hash: Cannot open '%s'\n", argv[i]);
 					free (iv);
 					return 1;
 				}

@@ -92,11 +92,11 @@ RUN
 NAME=wp
 FILE=-
 CMDS=<<EOF
-echo 0x10 "hello" > .r2-wp.test
-echo 0x20 01020304 >> .r2-wp.test
-cat .r2-wp.test
-wp .r2-wp.test
-rm .r2-wp.test
+echo 0x10 "hello" > .rz-wp.test
+echo 0x20 01020304 >> .rz-wp.test
+cat .rz-wp.test
+wp .rz-wp.test
+rm .rz-wp.test
 ps @ 0x10
 p8 3 @ 0x20
 EOF
@@ -189,10 +189,10 @@ NAME=wt
 FILE=-
 CMDS=<<EOF
 wx 01020304
-wt .r2-wt.test 4
+wt .rz-wt.test 4
 p8 4 @ 4
-wff .r2-wt.test @ 4
-rm .r2-wt.test
+wff .rz-wt.test @ 4
+rm .rz-wt.test
 p8 4 @ 4
 EOF
 EXPECT=<<EOF

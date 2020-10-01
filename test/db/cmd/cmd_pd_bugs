@@ -145,7 +145,7 @@ EOF
 RUN
 
 NAME=size of function in elf x64 stub
-FILE=bins/other/rz_diff/hellocxx-osx-fat-intel_1
+FILE=bins/other/rz-diff/hellocxx-osx-fat-intel_1
 ARGS=-ax86 -b64
 CMDS=<<EOF
 s 0x100000dae

@@ -426,7 +426,7 @@ static int bcb(RzDiff *d, void *user, RzDiffOp *op) {
 }
 
 static int show_help(int v) {
-	printf ("Usage: rz_diff [-abBcCdjrspOxuUvV] [-A[A]] [-g sym] [-m graph_mode][-t %%] [file] [file]\n");
+	printf ("Usage: rz-diff [-abBcCdjrspOxuUvV] [-A[A]] [-g sym] [-m graph_mode][-t %%] [file] [file]\n");
 	if (v) {
 		printf (
 			"  -a [arch]  specify architecture plugin to use (x86, arm, ..)\n"
