@@ -119,9 +119,16 @@ jobs:
     - name: Install meson and ninja
       if: matrix.build_system == 'meson' && matrix.enabled
       run: pip3 install --user meson==0.52.0 ninja==1.10.0
+    - name: Checkout rzpipe
+      if: matrix.enabled
+      uses: actions/checkout@v2
+      with:
+          repository: rizinorg/rz-pipe
+          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
+          path: test/rz-pipe
     - name: Install test dependencies
       if: matrix.run_tests && matrix.enabled
-      run: pip3 install --user 'git+https://github.com/rizinorg/rizin-rzpipe#egg=rzpipe&subdirectory=python'
+      run: pip3 install --user 'file://./test/rz-pipe#egg=rzpipe&subdirectory=python'
     - name: Install clang
       if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest' && matrix.enabled
       run: sudo apt-get --assume-yes install clang
