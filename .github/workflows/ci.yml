@@ -159,7 +159,7 @@ jobs:
     - name: Build with Meson
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
-        export PATH=${HOME}/.local/bin:${PATH}
+        export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/.local/bin:${PATH}
         if [ "$ASAN" == "true" ]; then
           export CFLAGS="-DASAN=1 ${CFLAGS}"
         fi
@@ -179,8 +179,13 @@ jobs:
     - name: Install with meson
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
+<<<<<<< HEAD
         # Install the rizin
         export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+=======
+        # Install the radare2
+        export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/.local/bin:${PATH}
+>>>>>>> 4b69b3c4b... fuck
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         ninja -C build install
