@@ -36,10 +36,10 @@ EXPECT_ERR=<<EOF
 EOF
 RUN
 
-NAME=r2 remote webserver two
+NAME=rizin remote webserver two
 FILE=--
 CMDS=<<EOF
-& !rz-run timeout=3 daemon=1 system="r2 -e http.root=/404 -e http.port=9292 -c=h -qcq -"
+& !rz-run timeout=3 daemon=1 system="rizin -e http.root=/404 -e http.port=9292 -c=h -qcq -"
 sleep 1
 =+ http://127.0.0.1:9292/cmd/
 =
@@ -53,7 +53,7 @@ EXPECT_ERR=<<EOF
 Cannot find http.root or http.homeroot
 Starting http server...
 open http://localhost:9292/
-r2 -C http://localhost:9292/cmd/
+rizin -C http://localhost:9292/cmd/
 EOF
 RUN
 

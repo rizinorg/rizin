@@ -842,7 +842,7 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 	super.blob.magic = rz_buf_read_ble32_at (bin->b, data, mach0_endian);
 	super.blob.length = rz_buf_read_ble32_at (bin->b, data + 4, mach0_endian);
 	super.count = rz_buf_read_ble32_at (bin->b, data + 8, mach0_endian);
-	char *verbose = rz_sys_getenv ("RABIN2_CODESIGN_VERBOSE");
+	char *verbose = rz_sys_getenv ("RZ_BIN_CODESIGN_VERBOSE");
 	bool isVerbose = false;
 	if (verbose) {
 		isVerbose = *verbose;

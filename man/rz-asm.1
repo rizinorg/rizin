@@ -1,10 +1,10 @@
 .Dd Oct 30, 2018
-.Dt RASM2 1
+.Dt RZ_ASM 1
 .Sh NAME
-.Nm rz_asm
+.Nm rz-asm
 .Nd rizin assembler and disassembler tool
 .Sh SYNOPSIS
-.Nm rz_asm
+.Nm rz-asm
 .Op Fl ABdDeEfCLvwrqx
 .Op Fl a Ar arch
 .Op Fl b Ar bits
@@ -34,7 +34,7 @@ Select specific CPU (depends on \-a arch)
 .It Fl C
 Output in C format
 .It Fl d
-Disassemble hexpair bytes. rz_asm \-d 9090
+Disassemble hexpair bytes. rz-asm \-d 9090
 .It Fl D
 Disassemble showing hexpair and opcode
 .It Fl e
@@ -60,7 +60,7 @@ Offset of the opcode to assemble (default is 0)
 .It Fl @ Ar offset
 Alias for -o
 .It Fl O Ar ofile
-output to file, for example 'rz_asm \-BF a a.asm'
+output to file, for example 'rz-asm \-BF a a.asm'
 .It Fl r
 Show output in r2 script
 .It Fl s Ar syntax
@@ -107,21 +107,21 @@ dentify the region fof aslerrger
 .Pp
 Assemble opcode:
 .Pp
-  $ rz_asm \-a x86 \-b 32 'mov eax, 33'
+  $ rz-asm \-a x86 \-b 32 'mov eax, 33'
 .Pp
 Disassemble opcode:
 .Pp
-  $ rz_asm \-d 90
+  $ rz-asm \-d 90
 .Sh SEE ALSO
 .Pp
 .Xr rizin(1) ,
-.Xr rz_find(1) ,
-.Xr rz_hash(1) ,
-.Xr rz_bin(1) ,
-.Xr rz_diff(1) ,
-.Xr rz_gg(1) ,
-.Xr rz_run(1) ,
-.Xr rz_ax(1) ,
+.Xr rz-find(1) ,
+.Xr rz-hash(1) ,
+.Xr rz-bin(1) ,
+.Xr rz-diff(1) ,
+.Xr rz-gg(1) ,
+.Xr rz-run(1) ,
+.Xr rz-ax(1) ,
 .Sh AUTHORS
 .Pp
 pancake <pancake@nopcode.org>

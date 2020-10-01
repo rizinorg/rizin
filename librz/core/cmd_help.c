@@ -47,9 +47,9 @@ static const char *help_msg_env[] = {
 	"R2_SIZE", "","file size",
 	"R2_ARCH", "", "value of asm.arch",
 	"R2_BITS", "", "arch reg size (8, 16, 32, 64)",
-	"RABIN2_LANG", "", "assume this lang to demangle",
-	"RABIN2_DEMANGLE", "", "demangle or not",
-	"RABIN2_PDBSERVER", "", "e pdb.server",
+	"RZ_BIN_LANG", "", "assume this lang to demangle",
+	"RZ_BIN_DEMANGLE", "", "demangle or not",
+	"RZ_BIN_PDBSERVER", "", "e pdb.server",
 	NULL
 };
 

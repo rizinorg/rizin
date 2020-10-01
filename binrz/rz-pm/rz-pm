@@ -18,15 +18,15 @@ gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
 export MAKE
 export GLOBAL=0
-export R2PM_JOBS=4
-export R2PMCACHE="$HOME/.rz-pm.cache"
+export RZPM_JOBS=4
+export RZPMCACHE="$HOME/.rz-pm.cache"
 
 # Set R2_* Vars
 eval $(r2 -H)
 export R2_VERSION
 
-R2PM=$0
-R2PMCACHE_LOADED=0
+RZPM=$0
+RZPMCACHE_LOADED=0
 if [ -f ~/.rz-pm.cache ]; then
 	. ~/.rz-pm.cache
 	export LIBEXT="$LIBEXT"
@@ -37,10 +37,10 @@ if [ -f ~/.rz-pm.cache ]; then
 	if [ -z "${LIBEXT}" -o -z "${LIBDIR}" -o -z "${R2CONFIGHOME}" -o -z "${R2DATAHOME}" -o -z "${PREFIX}" ]; then
 		echo "[rz-pm] corrupted cache, please run rz-pm cache"
 	else
-		R2PMCACHE_LOADED=1
+		RZPMCACHE_LOADED=1
 	fi
 fi
-if [ "${R2PMCACHE_LOADED}" != 1 ]; then
+if [ "${RZPMCACHE_LOADED}" != 1 ]; then
 	export LIBEXT="$R2_LIBEXT"
 	LIBDIR="$R2_LIBDIR"
 	export R2CONFIGHOME="$R2_RCONFIGHOME"
@@ -51,70 +51,70 @@ BINDIR="${PREFIX}/bin/"
 WRKDIR="$PWD"
 
 # prefix
-export R2PM_SYSPREFIX="${PREFIX}"
-export R2PM_HOMEPREFIX="${R2DATAHOME}/prefix"
-export R2PM_PREFIX="${R2PM_HOMEPREFIX}"
+export RZPM_SYSPREFIX="${PREFIX}"
+export RZPM_HOMEPREFIX="${R2DATAHOME}/prefix"
+export RZPM_PREFIX="${RZPM_HOMEPREFIX}"
 
 # bindir
-export R2PM_HOMEBINDIR="${R2PM_HOMEPREFIX}/bin"
-export R2PM_SYSBINDIR="${BINDIR}"
+export RZPM_HOMEBINDIR="${RZPM_HOMEPREFIX}/bin"
+export RZPM_SYSBINDIR="${BINDIR}"
 
-[ -z "${R2PM_BINDIR}" ] && R2PM_BINDIR=${R2PM_HOMEBINDIR}
-export R2PM_BINDIR
+[ -z "${RZPM_BINDIR}" ] && RZPM_BINDIR=${RZPM_HOMEBINDIR}
+export RZPM_BINDIR
 
 # libdir
-export R2PM_SYSLIBDIR="${LIBDIR}"
+export RZPM_SYSLIBDIR="${LIBDIR}"
 
 # plugdir
-export R2PM_SYSPLUGIN_DIR="$R2_LIBR_PLUGINS"
-export R2PM_USRPLUGIN_DIR="$R2_USER_PLUGINS"
-[ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${R2PM_USRPLUGIN_DIR}"
-[ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${R2DATAHOME}/plugins"
+export RZPM_SYSPLUGIN_DIR="$R2_LIBR_PLUGINS"
+export RZPM_USRPLUGIN_DIR="$R2_USER_PLUGINS"
+[ -z "${RZPM_PLUGDIR}" ] && RZPM_PLUGDIR="${RZPM_USRPLUGIN_DIR}"
+[ -z "${RZPM_PLUGDIR}" ] && RZPM_PLUGDIR="${R2DATAHOME}/plugins"
 
 # www
-export R2PM_SYSWWWROOT="`r2 -qc 'e http.root' --`"
-export R2PM_HOMEWWWROOT="${R2DATAHOME}/www/"
-export R2PM_WWWROOT="${R2PM_HOMEWWWROOT}"
+export RZPM_SYSWWWROOT="`r2 -qc 'e http.root' --`"
+export RZPM_HOMEWWWROOT="${R2DATAHOME}/www/"
+export RZPM_WWWROOT="${RZPM_HOMEWWWROOT}"
 
 # pkgconfig
-export PKG_CONFIG_PATH="${R2PM_HOMEPREFIX}/lib/pkgconfig:${R2PM_SYSLIBDIR}/pkgconfig:${PKG_CONFIG_PATH}"
-export CFLAGS="-I${R2PM_HOMEPREFIX}/include"
-export LDFLAGS="-L${R2PM_HOMEPREFIX}/lib"
+export PKG_CONFIG_PATH="${RZPM_HOMEPREFIX}/lib/pkgconfig:${RZPM_SYSLIBDIR}/pkgconfig:${PKG_CONFIG_PATH}"
+export CFLAGS="-I${RZPM_HOMEPREFIX}/include"
+export LDFLAGS="-L${RZPM_HOMEPREFIX}/lib"
 
-export R2PM_PYPATH="${R2PM_PREFIX}/python"
-export R2PM_OLDPWD="${PWD}"
+export RZPM_PYPATH="${RZPM_PREFIX}/python"
+export RZPM_OLDPWD="${PWD}"
 
 export RHOMEDIR="$R2_RCONFIGHOME"
 
 if [ "`uname`" = Darwin ]; then
-	export LD_LIBRARY_PATH="${R2PM_HOMEPREFIX}/lib"
+	export LD_LIBRARY_PATH="${RZPM_HOMEPREFIX}/lib"
 else
-	export DYLD_LIBRARY_PATH="${R2PM_HOMEPREFIX}/lib"
+	export DYLD_LIBRARY_PATH="${RZPM_HOMEPREFIX}/lib"
 fi
 
 # Global Vars
 TRAVIS_TYPE=XX
 TRAVIS_JOB=86948888
 IS_SYSPKG=0
-[ -z "$R2PM_USRDIR" ] && R2PM_USRDIR="${R2DATAHOME}/rz-pm"
-R2PM_ETCD="${R2CONFIGHOME}/rizinrc.d"
+[ -z "$RZPM_USRDIR" ] && RZPM_USRDIR="${R2DATAHOME}/rz-pm"
+RZPM_ETCD="${R2CONFIGHOME}/rizinrc.d"
 
-# TODO. support system plugin installs R2PM_PLUGDIR="${R2PM_SYSLIBDIR}/rizin/last"
-if [ -z "${R2PM_GITDIR}" ]; then
-	R2PM_GITDIR="${R2PM_USRDIR}/git"
+# TODO. support system plugin installs RZPM_PLUGDIR="${RZPM_SYSLIBDIR}/rizin/last"
+if [ -z "${RZPM_GITDIR}" ]; then
+	RZPM_GITDIR="${RZPM_USRDIR}/git"
 fi
-if [ -z "${R2PM_DBDIR}" ]; then
+if [ -z "${RZPM_DBDIR}" ]; then
 	if [ -d "${R2DATAHOME}/rz-pm/db" ]; then
-		R2PM_DBDIR="${R2DATAHOME}/rz-pm/db"
+		RZPM_DBDIR="${R2DATAHOME}/rz-pm/db"
 	fi
 fi
-if [ -z "${R2PM_DBDIR}" ]; then
+if [ -z "${RZPM_DBDIR}" ]; then
 	if [ -d "${PREFIX}/share/rizin/last/rz-pm" ]; then
-		R2PM_DBDIR="${PREFIX}/share/rizin/last/rz-pm/"
+		RZPM_DBDIR="${PREFIX}/share/rizin/last/rz-pm/"
 	fi
 fi
 if [ -f "d/baleful" ]; then
-	R2PM_DBDIR="$(pwd)/d/"
+	RZPM_DBDIR="$(pwd)/d/"
 fi
 
 confirm() {
@@ -175,10 +175,10 @@ commitSuicide() {
 
 case "$1" in
 init|up|update)
-	[ -z "$R2PM_DBDIR" ] && R2PM_DBDIR="${R2PM_USRDIR}/db"
-	mkdir -p "${R2PM_GITDIR}"
+	[ -z "$RZPM_DBDIR" ] && RZPM_DBDIR="${RZPM_USRDIR}/db"
+	mkdir -p "${RZPM_GITDIR}"
 	mkdir -p "${HOME}/.config"
-	cd "${R2PM_GITDIR}"
+	cd "${RZPM_GITDIR}"
 	if [ -d rizin-pm ]; then
 		cd rizin-pm
 		git reset --hard @^^
@@ -189,60 +189,60 @@ init|up|update)
 		cd rizin-pm
 		pwd
 	fi
-	for a in "${R2PM_DBDIR}" "${R2PM_USRDIR}"/db2/*/db ; do
+	for a in "${RZPM_DBDIR}" "${RZPM_USRDIR}"/db2/*/db ; do
 		if [ -d "$a" ]; then
 			echo "Updating $a ..."
 			( cd $a ; git pull )
 		fi
 	done
 
-	if [ -d "${R2PM_DBDIR}" ] && [ ! -L "${R2PM_DBDIR}" ]; then
+	if [ -d "${RZPM_DBDIR}" ] && [ ! -L "${RZPM_DBDIR}" ]; then
 		# that's weird, it should be a symlink
-		rm -f "${R2PM_DBDIR}/"*
-		rmdir "${R2PM_DBDIR}"
+		rm -f "${RZPM_DBDIR}/"*
+		rmdir "${RZPM_DBDIR}"
 	else
 		# doesn't exist, is a file or symlink
-		rm -f "${R2PM_DBDIR}"
+		rm -f "${RZPM_DBDIR}"
 	fi
 
-	ln -fs "${R2PM_GITDIR}/rizin-pm/db" "${R2PM_DBDIR}"
+	ln -fs "${RZPM_GITDIR}/rizin-pm/db" "${RZPM_DBDIR}"
 	if [ "$1" = "init" ]; then
 		echo "rz-pm database initialized. Use 'rz-pm update' to update later today."
 	fi
 	exit 0
 	;;
 esac
-if [ ! -d "${R2PM_DBDIR}" ]; then
-	echo '$R2PM_DBDIR: No such file or directory.'
+if [ ! -d "${RZPM_DBDIR}" ]; then
+	echo '$RZPM_DBDIR: No such file or directory.'
 	echo "Run 'rz-pm init' to initialize the package repository"
 	exit 1
 fi
 
-mkdir -p "${R2PM_USRDIR}/pkg/"
-mkdir -p "${R2PM_GITDIR}"
-mkdir -p "${R2PM_PLUGDIR}"
-mkdir -p "${R2PM_BINDIR}"
+mkdir -p "${RZPM_USRDIR}/pkg/"
+mkdir -p "${RZPM_GITDIR}"
+mkdir -p "${RZPM_PLUGDIR}"
+mkdir -p "${RZPM_BINDIR}"
 
-R2PM_SYSPKG() {
+RZPM_SYSPKG() {
 	IS_SYSPKG="$1"
-	echo "R2PM_SYSPKG is going to be deprecated" >&2
+	echo "RZPM_SYSPKG is going to be deprecated" >&2
 }
 
-R2PM_DESC() {
+RZPM_DESC() {
 	:
 }
 
-R2PM_SUDO() {
+RZPM_SUDO() {
 	if [ "${GLOBAL}" = 1 ]; then
 		${SUDO} "$@"
 	else
 		"$@"
 	fi
 }
-export R2PM_SUDO="R2PM_SUDO"
+export RZPM_SUDO="RZPM_SUDO"
 
-R2PM_List() {
-	cd "${R2PM_USRDIR}/pkg"
+RZPM_List() {
+	cd "${RZPM_USRDIR}/pkg"
 	if [ -n "$1" ]; then
 		ls | grep -i "$1"
 	else
@@ -250,28 +250,28 @@ R2PM_List() {
 	fi
 }
 
-R2PM_Search() {
+RZPM_Search() {
 	#helper for pretty printing tabbed lists
 	if ! type "column" > /dev/null; then
 		cols() { cat ; }
 	else
 		cols() { column -s `printf "\t"` -t; }
 	fi
-	for a in "${R2PM_DBDIR}" "${R2PM_USRDIR}"/db2/*/db ; do
+	for a in "${RZPM_DBDIR}" "${RZPM_USRDIR}"/db2/*/db ; do
 		[ -d "$a" ] || continue
 (
 		cd "${a}"
 		if [ -n "$1" ]; then
-			grep R2PM_DESC * /dev/null | sed -e "s,:R2PM_DESC,    `printf " \t"`," -e 's,",,g' | \
+			grep RZPM_DESC * /dev/null | sed -e "s,:RZPM_DESC,    `printf " \t"`," -e 's,",,g' | \
 				grep -i "$1" | cols
 		else
-			grep R2PM_DESC * /dev/null | sed -e "s,:R2PM_DESC,    `printf " \t"`," -e 's,",,g' | cols
+			grep RZPM_DESC * /dev/null | sed -e "s,:RZPM_DESC,    `printf " \t"`," -e 's,",,g' | cols
 		fi
 )
 	done
 }
 
-R2PM_TGZ() {
+RZPM_TGZ() {
 	URL="$1"
 	TARBALL="`basename $1`"
 	if [ -z "$2" ]; then
@@ -284,7 +284,7 @@ R2PM_TGZ() {
 	if [ -n "$3" ]; then
 		TARBALL="$3"
 	fi
-	cd "${R2PM_GITDIR}"
+	cd "${RZPM_GITDIR}"
 	if [ "$ACTION" = clean ]; then
 		rm -f "${TARBALL}"
 		exit 0
@@ -312,14 +312,14 @@ R2PM_TGZ() {
 			exit 1
 		fi
 	fi
-	cd "${DIR}" || R2PM_FAIL "Oops"
+	cd "${DIR}" || RZPM_FAIL "Oops"
 }
 
-R2PM_DOC() {
-	R2PM_DOC="$@"
+RZPM_DOC() {
+	RZPM_DOC="$@"
 }
 
-R2PM_GIT() {
+RZPM_GIT() {
 	[ -z "${NAME}" -o "$ACTION" = clean ] && return
 	URL="$1"
 	if [ -z "$2" ]; then
@@ -327,14 +327,14 @@ R2PM_GIT() {
 	else
 		DIR="$2"
 	fi
-	cd "${R2PM_GITDIR}"
+	cd "${RZPM_GITDIR}"
 	if [ -d "${DIR}" ]; then
 		cd "${DIR}"
 		git checkout master
 		git pull
 	else
-		git clone --depth 1 --recursive "${URL}" "${DIR}" || R2PM_FAIL "Oops"
-		cd "${DIR}" || R2PM_FAIL "Oops"
+		git clone --depth 1 --recursive "${URL}" "${DIR}" || RZPM_FAIL "Oops"
+		cd "${DIR}" || RZPM_FAIL "Oops"
 	fi
 	r2 -qv | grep -q git || { # r2 >= 4.5
 		git checkout "r2-${R2_VERSION}"
@@ -342,68 +342,68 @@ R2PM_GIT() {
 	}
 }
 
-R2PM_SVN() {
+RZPM_SVN() {
 	URL="$1"
 	if [ -z "$2" ]; then
 		DIR="${NAME}"
 	else
 		DIR="$2"
 	fi
-	cd "${R2PM_GITDIR}" || exit 1
+	cd "${RZPM_GITDIR}" || exit 1
 	if [ -d "${DIR}" ]; then
 		cd "${DIR}"
 		svn up
 	else
 		svn co "${URL}" "${DIR}"
-		cd "${DIR}" || R2PM_FAIL "Oops"
+		cd "${DIR}" || RZPM_FAIL "Oops"
 	fi
 }
 
-R2PM_FAIL() {
+RZPM_FAIL() {
 	printf "\033[31mERROR: \033[32m$@\033[0m\n"
 	exit 1
 }
 
-R2PM_BEGIN() {
-	R2PM_GIT=""
-	R2PM_DEPS=""
+RZPM_BEGIN() {
+	RZPM_GIT=""
+	RZPM_DEPS=""
 }
 
-R2PM_Info() {
-	if [ -n "${R2PM_DBDIR}" -a -d "${R2PM_DBDIR}" ]; then
+RZPM_Info() {
+	if [ -n "${RZPM_DBDIR}" -a -d "${RZPM_DBDIR}" ]; then
 		echo "# Repository Database:"
-		cd "${R2PM_DBDIR}"
+		cd "${RZPM_DBDIR}"
 		printf "# $(ls |wc -l) Packages\n" >&2
 	fi
-	cd "${R2PM_USRDIR}/pkg"
+	cd "${RZPM_USRDIR}/pkg"
 	echo "# Installed:"
 	printf "# %s Packages\n# " "$(ls | wc -l)" >&2
 	du -hs "${HOME}/.config/rizin" >&2
 }
 
-R2PM_REGISTER() {
-	date > "${R2PM_USRDIR}/pkg/$NAME"
+RZPM_REGISTER() {
+	date > "${RZPM_USRDIR}/pkg/$NAME"
 }
 
-R2PM_UNREGISTER() {
-	rm -f "${R2PM_USRDIR}/pkg/$NAME"
+RZPM_UNREGISTER() {
+	rm -f "${RZPM_USRDIR}/pkg/$NAME"
 }
 
-R2PM_END() {
+RZPM_END() {
 	if [ -n "${NAME}" ]; then
 		echo "${ACTION} Done For ${NAME}"
 	fi
 }
 
-R2PM_DEPS() {
-	if [ -n "${R2PM_IGNORE_DEPS}" ]; then
+RZPM_DEPS() {
+	if [ -n "${RZPM_IGNORE_DEPS}" ]; then
 		return
 	fi
 	for a in "$@" ; do
 		echo "DEPENDS: $a"
 		rz-pm -w "$a"
 		doInstall=$?
-		if [ "${R2PM_UPGRADE}" ]; then
+		if [ "${RZPM_UPGRADE}" ]; then
 			doInstall=1
 		fi
 		if [ $doInstall = 1 ]; then
@@ -413,7 +413,7 @@ R2PM_DEPS() {
 }
 
 pkgFilePath() {
-	for a in "${R2PM_DBDIR}" "${R2PM_USRDIR}"/db2/*/db ; do
+	for a in "${RZPM_DBDIR}" "${RZPM_USRDIR}"/db2/*/db ; do
 		if [ -f "$a/$1" ]; then
 			echo "$a/$1"
 			return
@@ -429,7 +429,7 @@ rz-pm_doc() {
 		FILE="$(pkgFilePath "$1")"
 		if [ -f "${FILE}" ]; then
 			. "${FILE}"
-			echo "${R2PM_DOC}"
+			echo "${RZPM_DOC}"
 		fi
 	fi
 }
@@ -439,10 +439,10 @@ rz-pm_install() {
 	if [ -f "${FILE}" ]; then
 		NAME="$2"
 		ACTION=Install
-		export PATH="${R2PM_HOMEBINDIR}:${PATH}"
+		export PATH="${RZPM_HOMEBINDIR}:${PATH}"
 		. "${FILE}"
-		R2PM_INSTALL
-		R2PM_REGISTER
+		RZPM_INSTALL
+		RZPM_REGISTER
 	else
 		echo "Cannot find $2"
 		exit 1
@@ -459,9 +459,9 @@ rz-pm_uninstall() {
 			NAME="$2"
 			ACTION=Uninstall
 			. "${FILE}"
-			R2PM_UNINSTALL
+			RZPM_UNINSTALL
 			if [ $? = 0 ]; then
-				R2PM_UNREGISTER
+				RZPM_UNREGISTER
 			else
 				echo Oops
 			fi
@@ -472,18 +472,18 @@ rz-pm_uninstall() {
 	fi
 }
 
-export PYTHON_PATH="${R2PM_PYPATH}:${PYTHON_PATH}"
+export PYTHON_PATH="${RZPM_PYPATH}:${PYTHON_PATH}"
 
 case "$1" in
 -I|info)
-	R2PM_Info
+	RZPM_Info
 	;;
 -i|install)
 	if [ -z "$2" ]; then
 		echo "Usage: rz-pm -i [package]  # install [package]"
 		exit 1
 	elif [ "$2" = "all" ]; then
-		for a in `cd ${R2PM_DBDIR} && ls` ; do
+		for a in `cd ${RZPM_DBDIR} && ls` ; do
 			rz-pm_install "$a"
 			if [ "$?" != 0 ]; then
 				printf "\033[31mERROR: Installation failed for $a\033[0m\n"
@@ -498,7 +498,7 @@ case "$1" in
 	fi
 	;;
 -uu)
-	FILE="${R2PM_USRDIR}/pkg/$2"
+	FILE="${RZPM_USRDIR}/pkg/$2"
 	$0 -u $2 2> /dev/null
 	rm -f "${FILE}"
 	;;
@@ -522,50 +522,50 @@ case "$1" in
 		grep -C 1 ${TRAVIS_TYPE} | grep '\[ ' | sed -e 's,\[  \],['${TRAVIS_TYPE}'],g'
 	;;
 -l|list)
-	R2PM_List "$2"
+	RZPM_List "$2"
 	;;
 -s|search)
-	R2PM_Search "$2"
+	RZPM_Search "$2"
 	;;
 -r|run)
 	shift
-	PATH="${R2PM_BINDIR}:${PATH}" "$@"
+	PATH="${RZPM_BINDIR}:${PATH}" "$@"
 	;;
 -v|version)
 	echo "rz-pm ${R2_VERSION}"
 	;;
 -gi|global-install)
 	GLOBAL=1
-	R2PM_PREFIX="${R2PM_SYSPREFIX}"
-	#R2PM_PLUGDIR="${R2PM_SYSLIBDIR}/rizin/${R2_VERSION}/"
-	R2PM_PLUGDIR="${R2PM_SYSPLUGIN_DIR}"
-	R2PM_BINDIR="${R2PM_SYSBINDIR}"
-	R2PM_WWWROOT="${R2PM_SYSWWWROOT}"
-	#TODO set R2PM_ETCD= to a "global" rizinrc.d
-	if [ ! -d "${R2PM_PLUGDIR}" ]; then
-		mkdir -p "${R2PM_PLUGDIR}"
+	RZPM_PREFIX="${RZPM_SYSPREFIX}"
+	#RZPM_PLUGDIR="${RZPM_SYSLIBDIR}/rizin/${R2_VERSION}/"
+	RZPM_PLUGDIR="${RZPM_SYSPLUGIN_DIR}"
+	RZPM_BINDIR="${RZPM_SYSBINDIR}"
+	RZPM_WWWROOT="${RZPM_SYSWWWROOT}"
+	#TODO set RZPM_ETCD= to a "global" rizinrc.d
+	if [ ! -d "${RZPM_PLUGDIR}" ]; then
+		mkdir -p "${RZPM_PLUGDIR}"
 	fi
 	rz-pm_install "$@"
 	;;
 -gu|global-uninstall)
 	GLOBAL=1
-	R2PM_PREFIX="${R2PM_SYSPREFIX}"
-	#R2PM_PLUGDIR="${R2PM_SYSLIBDIR}/rizin/${R2_VERSION}/"
-	R2PM_PLUGDIR="${R2PM_SYSPLUGIN_DIR}"
-	R2PM_BINDIR="${R2PM_SYSBINDIR}"
-	R2PM_WWWROOT="${R2PM_SYSWWWROOT}"
-	#TODO set R2PM_ETCD= to a "global" rizinrc.d
+	RZPM_PREFIX="${RZPM_SYSPREFIX}"
+	#RZPM_PLUGDIR="${RZPM_SYSLIBDIR}/rizin/${R2_VERSION}/"
+	RZPM_PLUGDIR="${RZPM_SYSPLUGIN_DIR}"
+	RZPM_BINDIR="${RZPM_SYSBINDIR}"
+	RZPM_WWWROOT="${RZPM_SYSWWWROOT}"
+	#TODO set RZPM_ETCD= to a "global" rizinrc.d
 	rz-pm_uninstall "$@"
 	;;
 -cp)
-	if [ -n "${R2PM_PLUGDIR}" ]; then
-		rm -f "${R2PM_PLUGDIR}/*"
+	if [ -n "${RZPM_PLUGDIR}" ]; then
+		rm -f "${RZPM_PLUGDIR}/*"
 	fi
 	;;
 -ci)
 	shift
-	${R2PM} clean $*
-	${R2PM} install $*
+	${RZPM} clean $*
+	${RZPM} install $*
 	;;
 -c|clean)
 	if [ -n "$2" ]; then
@@ -576,31 +576,31 @@ case "$1" in
 			if [ -f "${FILE}" ]; then
 				NAME="$2"
 				ACTION=clean
-				export PATH="${R2PM_HOMEBINDIR}:${PATH}"
+				export PATH="${RZPM_HOMEBINDIR}:${PATH}"
 				. "${FILE}"
-				echo $FILE TGZ=$R2PM_TGZ
+				echo $FILE TGZ=$RZPM_TGZ
 			else
 				echo "Cannot find $FILE" >&2
 				RC=1
 			fi
 
-			if [ -d "${R2PM_GITDIR}/$2" ]; then
-				echo "Cleaning up ${R2PM_GITDIR}/$2..."
-				rm -rf "${R2PM_GITDIR}/$2"
+			if [ -d "${RZPM_GITDIR}/$2" ]; then
+				echo "Cleaning up ${RZPM_GITDIR}/$2..."
+				rm -rf "${RZPM_GITDIR}/$2"
 			else
-				echo "Cannot find $2 in ${R2PM_GITDIR}" >&2
+				echo "Cannot find $2 in ${RZPM_GITDIR}" >&2
 				RC=1
 			fi
 			shift
 		done
 		exit $RC
 	else
-		R2PM_List rizin | grep rizin
+		RZPM_List rizin | grep rizin
 		if [ $? != 0 ]; then
 			echo "Press enter to remove the GITDIR or ^C to cancel operation"
 			read A
-			rm -rf "${R2PM_GITDIR}"
-			mkdir -p "${R2PM_GITDIR}"
+			rm -rf "${RZPM_GITDIR}"
+			mkdir -p "${RZPM_GITDIR}"
 		else
 			echo "r2 is installed with rz-pm, do not clean the cache to avoid autodestruction"
 			echo "do not disassemble do not disassemble do not disassemble do not disassemble"
@@ -610,19 +610,19 @@ case "$1" in
 	;;
 what|-w)
 	if [ -n "$2" ]; then
-		exec cat "${R2PM_USRDIR}/pkg/$2" 2> /dev/null
+		exec cat "${RZPM_USRDIR}/pkg/$2" 2> /dev/null
 	else
-		cd "${R2PM_USRDIR}/pkg/" 2> /dev/null
+		cd "${RZPM_USRDIR}/pkg/" 2> /dev/null
 		ls
 	fi
 	;;
 cd)
 	if [ -n "$2" ]; then
-		cd "${R2PM_GITDIR}/$2"
-		export R2PM_LEVEL=$((${R2PM_LEVEL}+1))
-		echo "Entering into ${SHELL} level ${R2PM_LEVEL}."
-		PS1="rz-pm:${R2PM_LEVEL}:\W\$ " ${SHELL}
-		echo "Exiting level ${R2PM_LEVEL}."
+		cd "${RZPM_GITDIR}/$2"
+		export RZPM_LEVEL=$((${RZPM_LEVEL}+1))
+		echo "Entering into ${SHELL} level ${RZPM_LEVEL}."
+		PS1="rz-pm:${RZPM_LEVEL}:\W\$ " ${SHELL}
+		echo "Exiting level ${RZPM_LEVEL}."
 		exit 0
 	else
 		echo "Missing argument. See rz-pm ls"
@@ -630,20 +630,20 @@ cd)
 	fi
 	;;
 ls)
-	if [ -d "${R2PM_GITDIR}" ]; then
-		ls "${R2PM_GITDIR}"
+	if [ -d "${RZPM_GITDIR}" ]; then
+		ls "${RZPM_GITDIR}"
 	else
-		echo "Cannot find ${R2PM_GITDIR}"
+		echo "Cannot find ${RZPM_GITDIR}"
 		exit 1
 	fi
 	;;
 cache)
-	echo "export LIBEXT=\"${LIBEXT}\"" > "${R2PMCACHE}"
-	echo "export LIBDIR=\"${LIBDIR}\"" >> "${R2PMCACHE}"
-	echo "export R2CONFIGHOME=\"${R2CONFIGHOME}\"" >> "${R2PMCACHE}"
-	echo "export R2DATAHOME=\"${R2DATAHOME}\"" >> "${R2PMCACHE}"
-	echo "export PREFIX=\"${PREFIX}\"" >> "${R2PMCACHE}"
-	echo "[rz-pm] r2 environment cached in ${R2PMCACHE}"
+	echo "export LIBEXT=\"${LIBEXT}\"" > "${RZPMCACHE}"
+	echo "export LIBDIR=\"${LIBDIR}\"" >> "${RZPMCACHE}"
+	echo "export R2CONFIGHOME=\"${R2CONFIGHOME}\"" >> "${RZPMCACHE}"
+	echo "export R2DATAHOME=\"${R2DATAHOME}\"" >> "${RZPMCACHE}"
+	echo "export PREFIX=\"${PREFIX}\"" >> "${RZPMCACHE}"
+	echo "[rz-pm] r2 environment cached in ${RZPMCACHE}"
 	;;
 -a|add)
 	if [ "$2" = "help" ]; then
@@ -654,7 +654,7 @@ cache)
 			" $ rz-pm -a - bar                       # delete 'foo' repo"
 		exit 1
 	fi
-	cd "${R2PM_DBDIR}"
+	cd "${RZPM_DBDIR}"
 	cd ..
 	mkdir -p db2
 	cd db2
@@ -694,7 +694,7 @@ cache)
 -H)
 	if [ -z "$2" ]; then
 		echo "Usage: rz-pm -H [VARNAME]"
-		echo "Variables: R2PM_PLUGDIR R2PM_BINDIR R2PM_DBDIR R2PM_GITDIR"
+		echo "Variables: RZPM_PLUGDIR RZPM_BINDIR RZPM_DBDIR RZPM_GITDIR"
 		exit 1
 	fi
 	eval echo "\$$2"
@@ -715,7 +715,7 @@ Commands:
  -gu,global-uninstall <pkg>  uninstall pkg from systemdir
  -u,uninstall <pkgname>      rz-pm -u baleful (-uu to force)
  -l,list                     list installed pkgs
- -r,run [cmd ...args]        run shell command with R2PM_BINDIR in PATH
+ -r,run [cmd ...args]        run shell command with RZPM_BINDIR in PATH
  -s,search [<keyword>]       search in database
  -t,test FX,XX,BR BID        check in Travis regressions
  -v,version                  show version
@@ -733,10 +733,10 @@ Commands:
  cache                       cache contents of r2 -H to make rz-pm r2-independent
 Environment:
  SUDO=sudo                    use this tool as sudo
- R2PM_PLUGDIR=${R2PM_PLUGDIR}
- R2PM_BINDIR=${R2PM_BINDIR}
- R2PM_DBDIR=${R2PM_DBDIR}
- R2PM_GITDIR=${R2PM_GITDIR}
+ RZPM_PLUGDIR=${RZPM_PLUGDIR}
+ RZPM_BINDIR=${RZPM_BINDIR}
+ RZPM_DBDIR=${RZPM_DBDIR}
+ RZPM_GITDIR=${RZPM_GITDIR}
 HELP
 	;;
 esac

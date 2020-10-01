@@ -1,17 +1,17 @@
 .Dd Jun 7, 2016
-.Dt R2PM 1
+.Dt RZPM 1
 .Sh NAME
-.Nm R2PM
+.Nm RZPM
 .Nd rizin package manager
 .Sh SYNOPSIS
-.Nm rz_pm
+.Nm rz-pm
 .Op init|update|cmd
 .Op ...
 .Sh DESCRIPTION
 Allows to install, update, uninstall and discover plugins and tools that can be used with rizin.
 .Bl -tag -width Fl
 .It Fl a, Cm repo
-Adds an external rz_pm repository, no arguments to -a will list all the registered repos, use '-a - repo' to unregister/remove those repos.
+Adds an external rz-pm repository, no arguments to -a will list all the registered repos, use '-a - repo' to unregister/remove those repos.
 .It Fl I, Cm info
 Show information about repository and installed packages
 .It Fl i, Cm install Ar pkgname
@@ -29,7 +29,7 @@ List installed packages
 .It Fl s, Cm search Ar keyword
 Search in database for packages matching keyword
 .It Fl r, Cm run Ar command ...args
-Run command with R2PM_BINDIR in PATH
+Run command with RZPM_BINDIR in PATH
 .It Fl v, Cm version
 Show version information
 .It Fl h, Cm help
@@ -43,24 +43,24 @@ Show when a package was installed or exit 1 if pkg does not exist
 .Pp
 Initialize and update the package database
 .Pp
-  $ rz_pm init
-  $ rz_pm update
+  $ rz-pm init
+  $ rz-pm update
 .Pp
 Install a package
 .Pp
-  $ rz_pm install yara3
+  $ rz-pm install yara3
 .Pp
 Uninstall a package
 .Pp
-  $ rz_pm uninstall yara3
+  $ rz-pm uninstall yara3
 .Pp
 Search a package
 .Pp
-  $ rz_pm search yara
+  $ rz-pm search yara
 .Pp
 List available packages
 .Pp
-  $ rz_pm -s
+  $ rz-pm -s
 .Sh SEE ALSO
 .Pp
 .Xr rizin(1)

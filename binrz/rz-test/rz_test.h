@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2020 - thestr4ng3r */
 
-#ifndef RADARE2_R2R_H
-#define RADARE2_R2R_H
+#ifndef RIZIN_RZTEST_H
+#define RIZIN_RZTEST_H
 
 #include <rz_util.h>
 

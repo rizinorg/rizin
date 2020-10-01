@@ -10,7 +10,7 @@ _rz_asm() {
   local -a options=(
   '-a+[Set architecture to assemble/disassemble (see -L)]: :->arch'
   '-A[Show Analysis information from given hexpairs]'
-  '-b+[Set cpu register size (8, 16, 32, 64) (RASM2_BITS)]:bits:(8 16 32 64)'
+  '-b+[Set cpu register size (8, 16, 32, 64) (RZ_ASM_BITS)]:bits:(8 16 32 64)'
   '-c+[Select specific CPU (depends on arch)]:cpu'
   '-C[Output in C format]'
   '(-d -D)'{-d,-D}'[Disassemble from hexpair bytes (-D show hexpairs)]'

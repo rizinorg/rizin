@@ -1,24 +1,24 @@
 .Dd Feb 3, 2017
-.Dt RARUN2 1
+.Dt RZ_RUN 1
 .Sh NAME
-.Nm rz_run
+.Nm rz-run
 .Nd rizin utility to run programs in exotic environments
 .Sh SYNOPSIS
-.Nm rz_run
+.Nm rz-run
 .Op [directives]
 .Op [script.rr2]
 .Op [--] [program] [args]
 .Sh DESCRIPTION
 This program is used as a launcher for running programs with different environment, arguments, permissions, directories and overridden default filedescriptors.
 .Pp
-rz_run -t will show the terminal name and wait for a connection from another process. try rz_run stdio=<ttypath> program=/bin/sh
+rz-run -t will show the terminal name and wait for a connection from another process. try rz-run stdio=<ttypath> program=/bin/sh
 .Pp
 The program just accepts a single argument which is the filename of the configuration file to run the program.
 .Pp
 It is useful when you have to run a program using long arguments or pass long data to stdin or things like that usually required for exploiting crackmes :)
 .Sh DIRECTIVES
 .Pp
-The rr2 (rz_run) configuration file accepts the following directives, described as key=value entries and comments defined as lines starting with '#'.
+The rr2 (rz-run) configuration file accepts the following directives, described as key=value entries and comments defined as lines starting with '#'.
 .Bl -tag -width Fl
 .It Ar arg[0-N]
 set value for argument N passed to the program
@@ -117,10 +117,10 @@ Parse hexpair string from output of command and store it in the variable
 Parses the input string and returns it as integer
 .El
 .Sh EXAMPLES
-Sample rz_run script
+Sample rz-run script
 .Pp
   $ cat foo.rr2
-  #!/usr/bin/rz_run
+  #!/usr/bin/rz-run
   program=./pp400
   arg0=10
   stdin=foo.txt
@@ -136,7 +136,7 @@ Sample rz_run script
 Connecting a program to a socket
 .Pp
   $ nc \-l 9999
-  $ rz_run program=/bin/ls connect=localhost:9999
+  $ rz-run program=/bin/ls connect=localhost:9999
 .Pp
 Debugging a program redirecting io to another terminal
 .Pp
@@ -146,27 +146,27 @@ Debugging a program redirecting io to another terminal
   ## in another terminal run r2
   $ r2 \-r foo.rr2 -d ls
   $ cat foo.rr2
-  #!/usr/bin/rz_run
+  #!/usr/bin/rz-run
   stdio=/dev/ttys010
   ## Or you can use -R to set a key=value
   r2 \-R stdio=/dev/ttys010 -d ls
 .Pp
 You can also use the -- flag to specify program and arguments in a more natural way:
 .Pp
-  $ rz_run timeout=2 -- sleep 4
+  $ rz-run timeout=2 -- sleep 4
 .Pp
 Run a library function
 .Pp
-  $ rz_run runlib=/lib/libc-2.25.so runlib.fcn=system arg1="ls /"
+  $ rz-run runlib=/lib/libc-2.25.so runlib.fcn=system arg1="ls /"
 .Sh SEE ALSO
 .Pp
 .Xr rizin(1) ,
-.Xr rz_hash(1) ,
-.Xr rz_find(1) ,
-.Xr rz_bin(1) ,
-.Xr rz_diff(1) ,
-.Xr rz_gg(1) ,
-.Xr rz_asm(1) ,
+.Xr rz-hash(1) ,
+.Xr rz-find(1) ,
+.Xr rz-bin(1) ,
+.Xr rz-diff(1) ,
+.Xr rz-gg(1) ,
+.Xr rz-asm(1) ,
 .Sh AUTHORS
 .Pp
 Written by pancake <pancake@nopcode.org>

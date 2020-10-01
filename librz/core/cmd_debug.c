@@ -1744,11 +1744,11 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 					/* TODO: do not spawn. use RBin API */
 					if (sectname) {
 						char *sect = rz_str_escape (sectname);
-						res  = rz_sys_cmd_strf ("env RABIN2_PREFIX=\"%s\" rz_bin %s-B 0x%08"
+						res  = rz_sys_cmd_strf ("env RZ_BIN_PREFIX=\"%s\" rz_bin %s-B 0x%08"
 							PFMT64x" -S \"%s\" | grep \"%s\"", name, mode, baddr, filesc, sect);
 						free (sect);
 					} else {
-						res = rz_sys_cmd_strf ("env RABIN2_PREFIX=\"%s\" rz_bin %s-B 0x%08"
+						res = rz_sys_cmd_strf ("env RZ_BIN_PREFIX=\"%s\" rz_bin %s-B 0x%08"
 							PFMT64x" -S \"%s\"", name, mode, baddr, filesc);
 					}
 					free (filesc);

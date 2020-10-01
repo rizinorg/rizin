@@ -145,7 +145,7 @@ windist:
 	mkdir -p "${WINDIST}/share/rizin/${VERSION}/opcodes"
 	cp -f librz/asm/d/*.sdb "${WINDIST}/share/rizin/${VERSION}/opcodes"
 	mkdir -p "${WINDIST}/share/rizin/${VERSION}/flag"
-	cp -f librz/flag/d/*.r2 "${WINDIST}/share/rizin/${VERSION}/flag"
+	cp -f librz/flag/d/*.rz "${WINDIST}/share/rizin/${VERSION}/flag"
 	mkdir -p "${WINDIST}/share/doc/rizin"
 	mkdir -p "${WINDIST}/include/librz/sdb"
 	mkdir -p "${WINDIST}/include/librz/rz_util"
@@ -192,7 +192,7 @@ install-man:
 	mkdir -p "${DESTDIR}${MANDIR}/man1"
 	mkdir -p "${DESTDIR}${MANDIR}/man7"
 	for FILE in man/*.1 ; do ${INSTALL_MAN} "$$FILE" "${DESTDIR}${MANDIR}/man1" ; done
-	cd "${DESTDIR}${MANDIR}/man1" && ln -fs rizin.1 r2.1
+	cd "${DESTDIR}${MANDIR}/man1"
 	for FILE in man/*.7 ; do ${INSTALL_MAN} "$$FILE" "${DESTDIR}${MANDIR}/man7" ; done
 
 install-man-symlink:
@@ -200,7 +200,7 @@ install-man-symlink:
 	mkdir -p "${DESTDIR}${MANDIR}/man7"
 	for FILE in $(shell cd man && ls *.1) ; do \
 		ln -fs "${PWD}/man/$$FILE" "${DESTDIR}${MANDIR}/man1/$$FILE" ; done
-	cd "${DESTDIR}${MANDIR}/man1" && ln -fs rizin.1 r2.1
+	cd "${DESTDIR}${MANDIR}/man1" && ln -fs rizin.1
 	for FILE in *.7 ; do \
 		ln -fs "${PWD}/man/$$FILE" "${DESTDIR}${MANDIR}/man7/$$FILE" ; done
 
@@ -230,7 +230,7 @@ install love: install-doc install-man install-www install-pkgconfig
 	rm -rf "${DESTDIR}${DATADIR}/rizin/${VERSION}/hud"
 	mkdir -p "${DESTDIR}${DATADIR}/rizin/${VERSION}/hud"
 	mkdir -p "${DESTDIR}${BINDIR}"
-	#${INSTALL_SCRIPT} "${PWD}/sys/indent.sh" "${DESTDIR}${BINDIR}/r2-indent"
+	#${INSTALL_SCRIPT} "${PWD}/sys/indent.sh" "${DESTDIR}${BINDIR}/rz-indent"
 	#${INSTALL_SCRIPT} "${PWD}/sys/r1-docker.sh" "${DESTDIR}${BINDIR}/rz-docker"
 	cp -f doc/hud "${DESTDIR}${DATADIR}/rizin/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/rizin/${VERSION}/"
@@ -273,12 +273,12 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	cd binrz && ${MAKE} install-symlink
 	cd shlr && ${MAKE} install-symlink
 	mkdir -p "${DESTDIR}${BINDIR}"
-	ln -fs "${PWD}/sys/indent.sh" "${DESTDIR}${BINDIR}/r2-indent"
+	ln -fs "${PWD}/sys/indent.sh" "${DESTDIR}${BINDIR}/rz-indent"
 	ln -fs "${PWD}/sys/rz-docker.sh" "${DESTDIR}${BINDIR}/rz-docker"
 	mkdir -p "${DESTDIR}${DATADIR}/rizin/${VERSION}/hud"
 	ln -fs "${PWD}/doc/hud" "${DESTDIR}${DATADIR}/rizin/${VERSION}/hud/main"
 	#mkdir -p "${DESTDIR}${DATADIR}/rizin/${VERSION}/flag"
-	#ln -fs $(PWD)/librz/flag/d/tags.r2 "${DESTDIR}${DATADIR}/rizin/${VERSION}/flag/tags.r2"
+	#ln -fs $(PWD)/librz/flag/d/tags.rz "${DESTDIR}${DATADIR}/rizin/${VERSION}/flag/tags.rz"
 	cd "$(DESTDIR)$(LIBDIR)/rizin/" ;\
 		rm -f last ; ln -fs $(VERSION) last
 	cd "$(DESTDIR)$(DATADIR)/rizin/" ;\
@@ -288,7 +288,7 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	$(SHELL) ./configure-plugins --rm-static $(DESTDIR)/$(LIBDIR)/rizin/last/
 
 deinstall uninstall:
-	rm -f $(DESTDIR)$(BINDIR)/r2-indent
+	rm -f $(DESTDIR)$(BINDIR)/rz-indent
 	rm -f $(DESTDIR)$(BINDIR)/rz-docker
 	cd librz && ${MAKE} uninstall
 	cd binrz && ${MAKE} uninstall
@@ -296,13 +296,12 @@ deinstall uninstall:
 	cd librz/syscall/d && ${MAKE} uninstall
 	cd librz/anal/d && ${MAKE} uninstall
 	@echo
-	@echo "Run 'make purge' to also remove installed files from previous versions of r2"
+	@echo "Run 'make purge' to also remove installed files from previous versions of rz"
 	@echo
 
 purge-doc:
 	rm -rf "${DESTDIR}${DOCDIR}"
 	cd man ; for FILE in *.1 ; do rm -f "${DESTDIR}${MANDIR}/man1/$$FILE" ; done
-	rm -f "${DESTDIR}${MANDIR}/man1/r2.1"
 
 user-wrap=echo "\#!/bin/sh" > ~/bin/"$1" \
 ; echo "${PWD}/env.sh '${PREFIX}' '$1' \"\$$@\"" >> ~/bin/"$1" \
@@ -311,11 +310,10 @@ user-wrap=echo "\#!/bin/sh" > ~/bin/"$1" \
 user-install:
 	mkdir -p ~/bin
 	$(foreach mod,$(R2BINS),$(call user-wrap,$(mod)))
-	cd ~/bin ; ln -fs rizin r2
+	cd ~/bin ;
 
 user-uninstall:
 	$(foreach mod,$(R2BINS),rm -f ~/bin/"$(mod)")
-	rm -f ~/bin/r2
 	-rmdir ~/bin
 
 purge-dev:
@@ -338,7 +336,6 @@ endif
 purge: purge-doc purge-dev user-uninstall
 	for FILE in ${R2BINS} ; do rm -f "${DESTDIR}${BINDIR}/$$FILE" ; done
 	rm -f "${DESTDIR}${BINDIR}/rz_gg-cc"
-	rm -f "${DESTDIR}${BINDIR}/r2"
 	rm -f "${DESTDIR}${LIBDIR}/librz_"*
 	rm -f "${DESTDIR}${LIBDIR}/librz"*".${EXT_SO}"
 	rm -rf "${DESTDIR}${LIBDIR}/rizin"
@@ -408,7 +405,7 @@ menu nconfig:
 	./sys/menu.sh || true
 
 meson:
-	@echo "[ Meson R2 Building ]"
+	@echo "[ Meson RZ Building ]"
 	$(PYTHON) sys/meson.py --prefix="${PREFIX}" --shared
 
 meson-install:
@@ -424,7 +421,7 @@ meson-symstall: symstall-sdb
 	ln -fs $(PWD)/build/binrz/rz_bin/rz_bin ${B}/rz_bin
 	ln -fs $(PWD)/build/binrz/rizin/rizin ${B}/rizin
 	ln -fs $(PWD)/build/binrz/rz_gg/rz_gg ${B}/rz_gg
-	cd $(B) && ln -fs rizin r2
+	cd $(B)
 	ln -fs $(PWD)/build/librz/util/librz_util.$(EXT_SO) ${L}/librz_util.$(EXT_SO)
 	ln -fs $(PWD)/build/librz/bp/librz_bp.$(EXT_SO) ${L}/librz_bp.$(EXT_SO)
 	ln -fs $(PWD)/build/librz/syscall/librz_syscall.$(EXT_SO) ${L}/librz_syscall.$(EXT_SO)

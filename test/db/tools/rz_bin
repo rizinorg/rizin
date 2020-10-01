@@ -95,8 +95,8 @@ FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 !rz-bin -S ${R2_FILE}|wc -l|awk "{print \$1}"
 !rz-bin -SS ${R2_FILE}|wc -l|awk "{print \$1}"
-!env RABIN2_PREFIX=prixfixe rz-bin -S ${R2_FILE}
-!env RABIN2_PREFIX=prixfixe rz-bin -SS ${R2_FILE}
+!env RZ_BIN_PREFIX=prixfixe rz-bin -S ${R2_FILE}
+!env RZ_BIN_PREFIX=prixfixe rz-bin -SS ${R2_FILE}
 EOF
 EXPECT=<<EOF
 35
