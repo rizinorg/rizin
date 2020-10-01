@@ -733,17 +733,17 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		if (p) {
 			*p = 0;
 			if (*filters) {
-				rz_asm_filter_input (as->a, filters);
+				rz_asm_sub_names_input (as->a, filters);
 			}
 			if (p[1]) {
-				rz_asm_filter_output (as->a, p + 1);
+				rz_asm_sub_names_output (as->a, p + 1);
 			}
 			*p = ':';
 		} else {
 			if (dis) {
-				rz_asm_filter_output (as->a, filters);
+				rz_asm_sub_names_output (as->a, filters);
 			} else {
-				rz_asm_filter_input (as->a, filters);
+				rz_asm_sub_names_input (as->a, filters);
 			}
 		}
 	}

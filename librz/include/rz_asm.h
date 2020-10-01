@@ -170,8 +170,8 @@ RZ_API RzAsmCode* rz_asm_rasm_assemble(RzAsm *a, const char *buf, bool use_spp);
 RZ_API char *rz_asm_to_string(RzAsm *a, ut64 addr, const ut8 *b, int l);
 /* to ease the use of the native bindings (not used in r2) */
 RZ_API ut8 *rz_asm_from_string(RzAsm *a, ut64 addr, const char *b, int *l);
-RZ_API int rz_asm_filter_input(RzAsm *a, const char *f);
-RZ_API int rz_asm_filter_output(RzAsm *a, const char *f);
+RZ_API int rz_asm_sub_names_input(RzAsm *a, const char *f);
+RZ_API int rz_asm_sub_names_output(RzAsm *a, const char *f);
 RZ_API char *rz_asm_describe(RzAsm *a, const char* str);
 RZ_API RzList* rz_asm_get_plugins(RzAsm *a);
 RZ_API void rz_asm_list_directives(void);
