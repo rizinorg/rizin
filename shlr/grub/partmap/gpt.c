@@ -17,7 +17,7 @@
  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <r_types.h>
+#include <rz_types.h>
 #include <grub/disk.h>
 #include <grub/misc.h>
 #include <grub/mm.h>

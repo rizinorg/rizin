@@ -26,7 +26,7 @@ e <property>=<value>: Change property value
 e? help about a configuration property
 	e? cmd.stack
 ```
-You will want to set your favourite options in `~/.radare2rc` since every line there will be interpreted at the beginning of each session. Mine for reference:
+You will want to set your favourite options in `~/.rizinrc` since every line there will be interpreted at the beginning of each session. Mine for reference:
 
 ```
 # Show comments at right of disassembly if they fit in screen
@@ -51,7 +51,7 @@ Command syntax: `[.][times][cmd][~grep][@[@iter]addr!size][|>pipe]`
 * `!` Run shell commands: `!cat /etc/passwd`
 * `!!` Escapes to shell, run command and pass output to radare buffer
 * Note: The double exclamation mark tells radare to skip the plugin list to find an IO plugin handling this command to launch it directly to the shell. A single one will walk through the io plugin list.
-* `` ` `` Radare commands: `` wx `!ragg2 -i exec` ``
+* `` ` `` Radare commands: `` wx `!rz_gg -i exec` ``
 * `~` grep
 * `~!` grep -v
 * `~[n]` grep by columns `afl~[0]`
@@ -303,7 +303,7 @@ gG: Begin or end of file
 HUD
 	_ Show HUD
 	backspace: Exits HUD
-	We can add new commands to HUD in: radare2/shlr/hud/main
+	We can add new commands to HUD in: rizin/shlr/hud/main
 ;[-]cmt: Add/remove comment
 m<char>: Define a bookmark
 '<char>: Go to previously defined bookmark
@@ -445,7 +445,7 @@ dot -Tpng -o /tmp/b.png b.dot
 Generate graph for file:
 
 ```
-radiff2 -g main crackme.bin crackme.bin > /tmp/a
+rz_diff -g main crackme.bin crackme.bin > /tmp/a
 xdot /tmp/a
 ```
 
@@ -460,12 +460,12 @@ ptrace://pid (debug backend does not notice, only access to mapped memory)
 To pass arguments:
 
 ```
-r2 -d rarun2 program=pwn1 arg1=$(python exploit.py)
+r2 -d rz_run program=pwn1 arg1=$(python exploit.py)
 ```
 To pass stdin:
 
 ```
-r2 -d rarun2 program=/bin/ls stdin=$(python exploit.py)
+r2 -d rz_run program=/bin/ls stdin=$(python exploit.py)
 ```
 Commands
 
@@ -523,7 +523,7 @@ continue with F9
 # Radare2 suite commands
 All suite commands include a `-r` flag to generate instructions for r2
 
-## rax2 - Base conversion
+## rz_ax - Base conversion
 ```
 -e: Change endian
 -K: random ASCII art to represent a number/hash. Similar to how SSH represents keys
@@ -531,7 +531,7 @@ All suite commands include a `-r` flag to generate instructions for r2
 -S: raw -> hexstr
 ```
 
-## rahash2 - Entropy, hashes and checksums
+## rz_hash - Entropy, hashes and checksums
 ```
 -a: Specify the algorithm
 -b XXX: Block size
@@ -539,7 +539,7 @@ All suite commands include a `-r` flag to generate instructions for r2
 -a entropy: Show file entropy or entropy per block (-B -b 512 -a entropy)
 ```
 
-## radiff2 - File diffing
+## rz_diff - File diffing
 ```
 -s: Calculate text distance from two files.
 -d: Delta diffing (For files with different sizes. Its not byte per byte)
@@ -549,37 +549,37 @@ Examples:
 
 ```
 Diff original and patched on x86_32, using graphdiff algorithm
-	radiff2 -a x86 -b32 -C original patched
+	rz_diff -a x86 -b32 -C original patched
 Show differences between original and patched on x86_32
-	radiff2 -a x86 -b32 original patched :
+	rz_diff -a x86 -b32 original patched :
 ```
 
-## rasm2 - Assembly/Disassembly
+## rz_asm - Assembly/Disassembly
 ```
 -L: Supported architectures
 -a arch instruction: Sets architecture
-	rasm2 -a x86 'mov eax,30' => b81e000000
+	rz_asm -a x86 'mov eax,30' => b81e000000
 -b tam: Sets block size
 -d: Disassembly
-	rasm2 -d b81e000000 => mov eax, 0x1e
+	rz_asm -d b81e000000 => mov eax, 0x1e
 -C: Assembly in C output
-	rasm2 -C 'mov eax,30' => "\xb8\x1e\x00\x00\x00"
+	rz_asm -C 'mov eax,30' => "\xb8\x1e\x00\x00\x00"
 -D:	Disassemble showing hexpair and opcode
-	rasm2 -D b81e0000 => 0x00000000   5               b81e000000  mov eax, 0x1e
+	rz_asm -D b81e0000 => 0x00000000   5               b81e000000  mov eax, 0x1e
 -f: Read data from file instead of ARG.
 -O filename: Write data to file
 ```
 
-## rafind2 - Search
+## rz_find - Search
 ```
 -Z: Look for Zero terminated strings
 -s str: Look for specific string
 ```
 
-## ragg2 - Shellcode generator, C/opcode compiler
+## rz_gg - Shellcode generator, C/opcode compiler
 ```
 -P: Generate De Bruijn patterns
-	ragg2 -P 300 -r
+	rz_gg -P 300 -r
 -a arch: Configure architecture
 -b bits: Specify architecture bits (32/64)
 -i shellcode: Specify shellcode to generate
@@ -588,10 +588,10 @@ Show differences between original and patched on x86_32
 Example:
 ```
 Generate a x86, 32 bits exec shellcode
-	ragg2 -a x86 -b 32 -i exec
+	rz_gg -a x86 -b 32 -i exec
 ```
 
-## rabin2 - Executable analysis: symbols, imports, strings ...
+## rz_bin - Executable analysis: symbols, imports, strings ...
 ```
 -I: Executable information
 -c: Returns classes. Useful to list Java Classes
@@ -600,11 +600,11 @@ Generate a x86, 32 bits exec shellcode
 -z: Strings
 ```
 
-## rarun2 - Launcher to run programs with different environments, args, stdin, permissions, fds
+## rz_run - Launcher to run programs with different environments, args, stdin, permissions, fds
 Examples:
 
 ```
-r2 -b 32 -d rarun2 program=pwn1 arg1=$(ragg2 -P 300 -r) : runs pwn1 with a De Bruijn Pattern as first argument, inside radare2's debugger, and force 32 bits
-r2 -d rarun2 program=/bin/ls stdin=$(python exploit.py) : runs /bin/ls with the output of exploit.py directed to stdin
+r2 -b 32 -d rz_run program=pwn1 arg1=$(rz_gg -P 300 -r) : runs pwn1 with a De Bruijn Pattern as first argument, inside rizin's debugger, and force 32 bits
+r2 -d rz_run program=/bin/ls stdin=$(python exploit.py) : runs /bin/ls with the output of exploit.py directed to stdin
 ```
 

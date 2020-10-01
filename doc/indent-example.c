@@ -1,14 +1,14 @@
-/* radare2 - LGPL - [$minyear-$maxyear] - [$author]*/
+/* rizin - LGPL - [$minyear-$maxyear] - [$author]*/
 
-#include <r_core.h>
+#include <rz_core.h>
 
-typedef struct r_core_rtr_host_t2 {
+typedef struct rz_core_rtr_host_t2 {
 	int proto;
 	int port;
 	char host[512];
 	char file[1024];
-	RSocket *fd;
-} RCoreRtrHost2;
+	RzSocket *fd;
+} RzCoreRtrHost2;
 
 static const char *help_msg_aa[] = {
 	"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
@@ -18,18 +18,18 @@ static const char *help_msg_aa[] = {
 };
 
 static int cmpaddr(const void *_a, const void *_b) {
-	const RAnalFunction *a = _a, *b = _b;
+	const RzAnalFunction *a = _a, *b = _b;
 	return a->addr - b->addr;
 }
 
 int main(int argc, char **argv) {
-	r_anal_esil_set_pc (core->anal->esil, fcn? fcn->addr: core->offset);
+	rz_anal_esil_set_pc (core->anal->esil, fcn? fcn->addr: core->offset);
 	switch (*input) {
 	case '\0': // "aft"
 		seek = core->offset;
-		r_anal_esil_set_pc (core->anal->esil, fcn? fcn->addr: core->offset);
-		r_core_anal_type_match (core, fcn);
-		r_core_seek (core, seek, true);
+		rz_anal_esil_set_pc (core->anal->esil, fcn? fcn->addr: core->offset);
+		rz_core_anal_type_match (core, fcn);
+		rz_core_seek (core, seek, true);
 		break;
 	case '0':
 		{
@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
 	case 'b':
 	case '?':
 	default:
-		r_core_cmd_help (core, help_msg_aft);
+		rz_core_cmd_help (core, help_msg_aft);
 		break;
 	}
 	return 0;

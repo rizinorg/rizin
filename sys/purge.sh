@@ -12,15 +12,15 @@ read answer
 case "$answer" in
 y|Y)
     if [ -x /usr/bin/apt-get ] ; then
-	    sudo apt-get remove radare2
-	    sudo apt-get remove libradare2-common
-	    sudo apt-get remove --auto-remove libradare2-common
-	    sudo apt-get purge libradare2-common
-	    sudo apt-get purge --auto-remove libradare2-common
-	    sudo apt-get remove libradare2
-	    sudo apt-get remove --auto-remove libradare2
-	    sudo apt-get purge libradare2
-	    sudo apt-get purge --auto-remove libradare2
+	    sudo apt-get remove rizin
+	    sudo apt-get remove librizin-common
+	    sudo apt-get remove --auto-remove librizin-common
+	    sudo apt-get purge librizin-common
+	    sudo apt-get purge --auto-remove librizin-common
+	    sudo apt-get remove librizin
+	    sudo apt-get remove --auto-remove librizin
+	    sudo apt-get purge librizin
+	    sudo apt-get purge --auto-remove librizin
     fi
     # TODO: support brew
     # TODO: support archlinux

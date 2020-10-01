@@ -78,7 +78,7 @@ struct Arg *args = (struct Arg *)&x##_args; \
 struct Proc *proc = &x##_proc;
 
 #if USE_R2
-#include <r_util.h>
+#include <rz_util.h>
 #define SStrBuf RStrBuf
 #else
 typedef struct s_strbuf_t {

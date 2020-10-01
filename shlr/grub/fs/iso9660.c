@@ -26,7 +26,7 @@
 #include <grub/types.h>
 #include <grub/fshelp.h>
 #include <grub/charset.h>
-#include <r_types.h>
+#include <rz_types.h>
 
 #define GRUB_ISO9660_FSTYPE_DIR		0040000
 #define GRUB_ISO9660_FSTYPE_REG		0100000

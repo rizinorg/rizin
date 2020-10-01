@@ -2,7 +2,7 @@
 #ifndef QNX_CORE_H
 #define QNX_CORE_H
 
-#include "r_types.h"
+#include "rz_types.h"
 
 #include <stdint.h>
 #include <stdlib.h>

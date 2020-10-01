@@ -1,6 +1,6 @@
 NAME=TriCore lea
 FILE=malloc://512
-CMDS=!rasm2 -a tricore -d d916606c
+CMDS=!rz-asm -a tricore -d d916606c
 EXPECT=<<EOF
 lea a6, [a1]-14944
 EOF
@@ -8,7 +8,7 @@ RUN
 
 NAME=TriCore sub
 FILE=malloc://512
-CMDS=!rasm2 -a tricore -d 200a
+CMDS=!rz-asm -a tricore -d 200a
 EXPECT=<<EOF
 sub.a sp, 10
 EOF
@@ -16,7 +16,7 @@ RUN
 
 NAME=TriCore multi
 FILE=malloc://512
-CMDS=!rasm2 -a tricore -d 0f0200007cb10880f8130200
+CMDS=!rz-asm -a tricore -d 0f0200007cb10880f8130200
 EXPECT=<<EOF
 sh d0, d2, d0
 jnz.a a11, 0x00000006
@@ -28,7 +28,7 @@ RUN
 
 NAME=TriCore multi
 FILE=malloc://512
-CMDS=!rasm2 -a tricore -d 0f0200007cb10880f8130200
+CMDS=!rz-asm -a tricore -d 0f0200007cb10880f8130200
 EXPECT=<<EOF
 sh d0, d2, d0
 jnz.a a11, 0x00000006

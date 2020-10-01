@@ -1,25 +1,25 @@
 No disassemble!!!
-Deltify your life with radare2
-In soviet russia, radare2 debugs you!
+Deltify your life with rizin
+In soviet russia, rizin debugs you!
 What do you want to debug today?
 I love the smell of bugs in the morning.
 I'm in your source securing your bits.
-radare2 contributes to the One Byte Per Child foundation.
+rizin contributes to the One Byte Per Child foundation.
 3nl4r9e y0\/r r4d4r3
 I did it for the pwnz.
 If you send the program you are debugging to 15 friends in 143 minutes and then step three times on the same opcode you will get the name of the person who loves you.
 To remove this message, put `dbxenv suppress_startup_message 7.5' in your .dbxrc
 Heisenbug: A bug that disappears or alters its behavior when one attempts to probe or isolate it.
-radare2 is for lulzhats
+rizin is for lulzhats
 Microloft Visual Radare.NET 2008. Now OOXML Powered!
 A C program is like a fast dance on a newly waxed dance floor by people carrying razors - Waldi Ravens
-radare2 is like windows 7 but even better.
+rizin is like windows 7 but even better.
 We are surrounded by the enemy. - Excellent, we can attack in any direction!
-radare2-built farm beats the facebook one.
-Thank you for using radare2. Have a nice night!
+rizin-built farm beats the facebook one.
+Thank you for using rizin. Have a nice night!
 Your r2 was built 20h ago. TOO OLD!
-Use radare2! Lemons included!
-rax2 -s 20e296b20ae296b220e296b20a
+Use rizin! Lemons included!
+rz_ax -s 20e296b20ae296b220e296b20a
 Connection lost with the license server, your r2 session will terminate in 30 minutes.
 This is amazing ...
 I love gradients.
@@ -30,15 +30,15 @@ Default scripting languages are NodeJS and Python.
 -bash: r2: command not found
 Press any key to continue ...
 Ilo ni li pona li pali e lipu. mi wile e ni: sina kama jo e musi
-radare2 for FideOS, now with extra potato
+rizin for FideOS, now with extra potato
 Your project name should contain an uppercase letter, 8 vowels, some numbers, and the first 5 characters of your private bitcoin key.
 This computer has gone to sleep.
-Have you ever ordered a pizza using radare2?
+Have you ever ordered a pizza using rizin?
 I thought we were friends. :_
 Welcome back, lazy human!
 Yo dawg!
 ---8<--------------------8<------------------8<-----------------8<------
-I accidentally the kernel with radare2.
+I accidentally the kernel with rizin.
 I endians swap.
 This page intentionally left blank.
 Here be dragons.
@@ -60,8 +60,8 @@ It's not you, it's me.
 This software comes with no brain included. Please use your own.
 rm: /: Permission denied.
 That's embarrassing.
-In soviet Afghanistan, you debug radare2!
-Wow, my cat knows radare2 hotkeys better than me!
+In soviet Afghanistan, you debug rizin!
+Wow, my cat knows rizin hotkeys better than me!
 Documentation is for weak people.
 PEBCAK ERROR: Documentation not found.
 License server overloaded (ETOOMUCHCASH)
@@ -93,7 +93,7 @@ May the segfault be with you.
 I script in C, because I can.
 EXPLICIT CONTENT
 Bindings are mostly powered by tears.
-In Soviet Russia, radare2 has documentation.
+In Soviet Russia, rizin has documentation.
 Initial frame selected; you cannot go up.
 Unk, unk, unk, unk
 Experts agree, security holes suck, and we fixed some of them!
@@ -149,7 +149,7 @@ Mess with the best, Die like the rest
 Sarah Connor?
 Log On. Hack In. Go Anywhere. Get Everything.
 phrack, better than java in the browser -- jvoisin
-Did you know that radare2 can decompile to assembly?
+Did you know that rizin can decompile to assembly?
 Are you still there?
 Follow the white rabbit
 Do not try to sploit that binary - that's impossible. Instead, only try to realize the truth: there is no binary.
@@ -160,11 +160,11 @@ What about taking a break? Here, have this nice 0xCC.
 r2 is meant to be read by machines.
 Prove you are a robot to continue ...
 This is fine.
-Using radare2 to generate intelligence ...
+Using rizin to generate intelligence ...
 Taking the file and moving it somewhere else
-It's the year of desktop on radare2
+It's the year of desktop on rizin
 💺
-It's the year of radare2 on the desktop
+It's the year of rizin on the desktop
 SSAbotage from ISIL
 "a collection of garbage" -- an r2 pro user
 A git pull a day keeps the segfault away
@@ -172,8 +172,8 @@ Are you a wizard?
 Learn pancake as if you were radare!
 r2 is a great OS, but a terrible hex editor
 THE CAKE IS A PIE
-radare2 0.9.7 is so old, my grandfarther was using it with his enigma in WWII
-Have you seen the latest radare2 TV spot?
+rizin 0.9.7 is so old, my grandfarther was using it with his enigma in WWII
+Have you seen the latest rizin TV spot?
 scp ~/.idapro/ida.key radare.org:/var/www/radare.org/pub/losers/
 Too bad there is no gif support in r2. Yet. -- @r2gif
 Almost 5am, maybe you should go to bed.
@@ -183,11 +183,11 @@ Mind that the 'g' in radare is silent
 Hang in there, Baby!
 Run a command with unspecified long sequence of 'a', pancake will be summoned and do the analysis for you.
 In r2land usability is treated as a bug
-radare2 is WYSIWYF - what you see is what you fix
+rizin is WYSIWYF - what you see is what you fix
 Your endian swaps
 *(ut64*)buffer ought to be illegal
 How about Global Thermonuclear War?
-There is no F5 key in radare2 yet
+There is no F5 key in rizin yet
 Did you know that r2 is 10 years old?
 Beer in mind.
 r2 -- leading options since 2006
@@ -199,11 +199,11 @@ Now i'm like an evil engineer. MUAHAHAH
 We only have bugs, features are an unintended side-effect
 There are 5 minutes from WTF to FIX in r2land
 Quantum dissasemble: it's there as long as you don't observe it
-Ceci n'est pas une r2pipe
+Ceci n'est pas une rzpipe
 Buy a mac
 (gdb) ^D
 ((fn [f s n] (str (f f s n) "dare2")) (fn [f s n] (pr s) (if (> n 0) (f f (str s "ra") (dec n)) s)) "" (/ 1.0 0))
-There's no way you could crash radare2. No. Way.
+There's no way you could crash rizin. No. Way.
 When in doubt, try 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; pd;'
 .-. .- -.. .- .-. . ..---
 Disassemble?! No Disassemble Johnny No. 5!!!
@@ -228,7 +228,7 @@ Buy a Mac
 You have been designated for disassembly
 Helping siol merge? No way, that would be like.. way too much not lazy. - vifino
 What is the most complex r2 command? q - then you have to deal with real life /o\
-If you're having fun using radare2, odds are that you're doing something wrong.
+If you're having fun using rizin, odds are that you're doing something wrong.
 Don't trust what can't be compiled
 Coffee time!
 Can you you challenge a perfect immortal machine?
@@ -266,17 +266,17 @@ This shell has been seized by the Internet's Police.
 OpenBSD might pledge r2 but r2 unveils OpenBSD.
 Error: There's a missing space before the opening parenthesis '('
 WARNING: r_list_length: assertion 'list' failed (line 55)
-This accessory is not supported by this version of radare2.
-When can we have an official anime mascot for radare2?
+This accessory is not supported by this version of rizin.
+When can we have an official anime mascot for rizin?
 Iaito became Cutter the same way Iai-giri became Cut.
-Sorry, radare2 has experienced an internal error.
+Sorry, rizin has experienced an internal error.
 Segmentation fault (core dumped)
-Use rabin2 to discover the real TRUTH
+Use rz_bin to discover the real TRUTH
 ==1337== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 **** COMMODORE 64 RADARE V2 ****  64K RAM SYSTEM  38911 DISASM BYTES FREE  READY.
 Most likely your core dump fell into a blackhole, can't see it.
 Long time no C
-radare2 is power, France is pancake.
+rizin is power, France is pancake.
 Come to C me!
 Unable to locate package gdb
 You C it, you fix it!
@@ -286,7 +286,7 @@ You will soon have an out of memory experience.
 This binary no good. Try another.
 BSOD!
 Mind the trap.
-For a full documentation see `r2 -qc iz /lib/libr_core.so`
+For a full documentation see `r2 -qc iz /lib/librz_core.so`
 99 bugs, take one down pass it around. 100 bugs...
 I like my binary stripped.
 Now 8-bit clean with better ＡＳＣＩＩ!

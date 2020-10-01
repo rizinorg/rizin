@@ -1,4 +1,4 @@
-PKGNAME radare2
+PKGNAME rizin
 VERSION 4.6.0-git
 CONTACT pancake ; pancake@nopcode.org
 
@@ -30,7 +30,7 @@ ARG_WITHOUT WANT_DYLINK dylink disable support for dynamic loading of plugins ;
 ARG_WITHOUT HAVE_FORK fork disable fork ;
 ARG_WITHOUT WANT_PTRACE_WRAP ptrace-wrap disable ptrace-wrap build ;
 
-ARG_WITH WITH_LIBR libr build libr.a and libr.dylib ;
+ARG_WITH WITH_LIBR librz build librz.a and librz.dylib ;
 
 ARG_WITH WITH_CAPSTONE syscapstone force to use system-wide capstone ;
 IF WITH_CAPSTONE {
@@ -238,7 +238,7 @@ IFEQ WANT_PTRACE_WRAP 0 ; {
 	USE_PTRACE_WRAP = 0 ;
 }
 
-ARG_WITHOUT WANT_R2R r2r build without r2r for regression testing ;
+ARG_WITHOUT WANT_R2R rz-test build without rz-test for regression testing ;
 
 ARG_WITH R_CHECKS_LEVEL=2 checks-level value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) ;
 
@@ -248,27 +248,27 @@ REPORT R_CHECKS_LEVEL WANT_R2R PREFIX HAVE_LIB_GMP HAVE_OPENSSL HAVE_LIBUV USE_C
 
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))
 SUBDIRS ./config-user.mk
-	libr/include/r_userconf.h
-	pkgcfg/r_io.pc
-	pkgcfg/r_magic.pc
-	pkgcfg/r_asm.pc
-	pkgcfg/r_bin.pc
-	pkgcfg/r_anal.pc
-	pkgcfg/r_hash.pc
-	pkgcfg/r_cons.pc
-	pkgcfg/r_core.pc
-	pkgcfg/r_lang.pc
-	pkgcfg/r_socket.pc
-	pkgcfg/r_debug.pc
-	pkgcfg/r_reg.pc
-	pkgcfg/r_config.pc
-	pkgcfg/r_flag.pc
-	pkgcfg/r_syscall.pc
-	pkgcfg/r_util.pc
-	pkgcfg/r_search.pc
-	pkgcfg/r_bp.pc
-	pkgcfg/r_parse.pc
-	pkgcfg/r_fs.pc
-	pkgcfg/r_egg.pc
-	pkgcfg/r_crypto.pc
+	librz/include/rz_userconf.h
+	pkgcfg/rz_io.pc
+	pkgcfg/rz_magic.pc
+	pkgcfg/rz_asm.pc
+	pkgcfg/rz_bin.pc
+	pkgcfg/rz_anal.pc
+	pkgcfg/rz_hash.pc
+	pkgcfg/rz_cons.pc
+	pkgcfg/rz_core.pc
+	pkgcfg/rz_lang.pc
+	pkgcfg/rz_socket.pc
+	pkgcfg/rz_debug.pc
+	pkgcfg/rz_reg.pc
+	pkgcfg/rz_config.pc
+	pkgcfg/rz_flag.pc
+	pkgcfg/rz_syscall.pc
+	pkgcfg/rz_util.pc
+	pkgcfg/rz_search.pc
+	pkgcfg/rz_bp.pc
+	pkgcfg/rz_parse.pc
+	pkgcfg/rz_fs.pc
+	pkgcfg/rz_egg.pc
+	pkgcfg/rz_crypto.pc
 ;

@@ -5,7 +5,7 @@
 #include "gdbclient/core.h"
 #include "gdbr_common.h"
 #include "utils.h"
-#include "r_util/r_str.h"
+#include "rz_util/rz_str.h"
 
 
 int handle_g(libgdbr_t *g) {
@@ -184,7 +184,7 @@ int handle_vFile_close(libgdbr_t *g) {
 	return send_ack (g);
 }
 
-#include <r_debug.h>
+#include <rz_debug.h>
 #include <gdbclient/commands.h>
 
 static int stop_reason_exit(libgdbr_t *g) {
@@ -279,7 +279,7 @@ int handle_stop_reason(libgdbr_t *g) {
 	g->stop_reason.is_valid = true;
 	g->stop_reason.reason = R_DEBUG_REASON_SIGNAL;
 	for (ptr1 = strtok (g->data + 3, ";"); ptr1; ptr1 = strtok (NULL, ";")) {
-		if (r_str_startswith (ptr1, "thread") && !g->stop_reason.thread.present) {
+		if (rz_str_startswith (ptr1, "thread") && !g->stop_reason.thread.present) {
 			if (!(ptr2 = strchr (ptr1, ':'))) {
 				continue;
 			}
@@ -292,7 +292,7 @@ int handle_stop_reason(libgdbr_t *g) {
 			g->stop_reason.thread.present = true;
 			continue;
 		}
-		if (r_str_startswith (ptr1, "core")) {
+		if (rz_str_startswith (ptr1, "core")) {
 			if (!(ptr2 = strchr (ptr1, ':'))) {
 				continue;
 			}
@@ -304,9 +304,9 @@ int handle_stop_reason(libgdbr_t *g) {
 			continue;
 		}
 		if (g->stop_reason.signum == 5) {
-			if (r_str_startswith (ptr1, "watch")
-			    || r_str_startswith (ptr1, "rwatch")
-			    || r_str_startswith (ptr1, "awatch")) {
+			if (rz_str_startswith (ptr1, "watch")
+			    || rz_str_startswith (ptr1, "rwatch")
+			    || rz_str_startswith (ptr1, "awatch")) {
 				if (!(ptr2 = strchr (ptr1, ':'))) {
 					continue;
 				}
@@ -318,7 +318,7 @@ int handle_stop_reason(libgdbr_t *g) {
 				g->stop_reason.watchpoint.present = true;
 				continue;
 			}
-			if (r_str_startswith (ptr1, "exec") && !g->stop_reason.exec.present) {
+			if (rz_str_startswith (ptr1, "exec") && !g->stop_reason.exec.present) {
 				if (!(ptr2 = strchr (ptr1, ':'))) {
 					continue;
 				}
@@ -330,7 +330,7 @@ int handle_stop_reason(libgdbr_t *g) {
 				g->stop_reason.exec.present = true;
 				continue;
 			}
-			if (r_str_startswith (ptr1, "fork") && !g->stop_reason.fork.present) {
+			if (rz_str_startswith (ptr1, "fork") && !g->stop_reason.fork.present) {
 				if (!(ptr2 = strchr (ptr1, ':'))) {
 					continue;
 				}
@@ -343,7 +343,7 @@ int handle_stop_reason(libgdbr_t *g) {
 				g->stop_reason.fork.present = true;
 				continue;
 			}
-			if (r_str_startswith (ptr1, "vfork") && !g->stop_reason.vfork.present) {
+			if (rz_str_startswith (ptr1, "vfork") && !g->stop_reason.vfork.present) {
 				if (!(ptr2 = strchr (ptr1, ':'))) {
 					continue;
 				}
@@ -356,23 +356,23 @@ int handle_stop_reason(libgdbr_t *g) {
 				g->stop_reason.vfork.present = true;
 				continue;
 			}
-			if (r_str_startswith (ptr1, "vforkdone")) {
+			if (rz_str_startswith (ptr1, "vforkdone")) {
 				g->stop_reason.vforkdone = true;
 				continue;
 			}
-			if (r_str_startswith (ptr1, "library")) {
+			if (rz_str_startswith (ptr1, "library")) {
 				g->stop_reason.library = true;
 				continue;
 			}
-			if (r_str_startswith (ptr1, "swbreak")) {
+			if (rz_str_startswith (ptr1, "swbreak")) {
 				g->stop_reason.swbreak = true;
 				continue;
 			}
-			if (r_str_startswith (ptr1, "hwbreak")) {
+			if (rz_str_startswith (ptr1, "hwbreak")) {
 				g->stop_reason.hwbreak = true;
 				continue;
 			}
-			if (r_str_startswith (ptr1, "create")) {
+			if (rz_str_startswith (ptr1, "create")) {
 				g->stop_reason.create = true;
 				continue;
 			}

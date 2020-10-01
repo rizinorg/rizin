@@ -1,0 +1,6 @@
+PACKAGE=rizin-dev
+SECTION=user/editors
+PRIORITY=optional
+MAINTAINER=pancake <pancake@nopcode.org>
+
+include ../../../config-user.mk

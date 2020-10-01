@@ -1,0 +1,11 @@
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: librz
+Description: radare framework libraries
+Version: 0.1
+Requires:
+Libs: -L${libdir} -lrz_core -lrz_lang -lrz_search -lrz_asm -lrz_util -lrz_reg
+Cflags: -I${includedir}/librz

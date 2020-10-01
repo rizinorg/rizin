@@ -1,13 +1,13 @@
-NAME=r_java
+NAME=rz_java
 ifeq ($(CC),cccl)
 EXT_AR=lib
 else
 EXT_AR=a
 endif
-LIBAR?=libr_java.$(EXT_AR)
+LIBAR?=librz_java.$(EXT_AR)
 
 include ../../config-user.mk
-include ../../libr/config.mk
+include ../../librz/config.mk
 include ../../global.mk
 include ../../mk/platform.mk
 _INCLUDE_MK_GCC_=
@@ -28,25 +28,25 @@ CFLAGS+=-DMINGW32=1
 endif
 CFLAGS+=-g
 
-CFLAGS+=-I../../libr/include
-LDFLAGS+=-L../../libr/util
+CFLAGS+=-I../../librz/include
+LDFLAGS+=-L../../librz/util
 OBJS=code.o class.o ops.o dsojson.o
 
 include ../../shlr/sdb.mk
 
-all: libr_java.$(EXT_AR)
+all: librz_java.$(EXT_AR)
 
 RANLIB?=ranlib
 
-libr_java.$(EXT_AR): ${OBJS}
-	rm -f libr_java.$(EXT_AR)
+librz_java.$(EXT_AR): ${OBJS}
+	rm -f librz_java.$(EXT_AR)
 	${CC_AR} ${OBJS}
-	${RANLIB} libr_java.$(EXT_AR)
+	${RANLIB} librz_java.$(EXT_AR)
 
 out: ${OBJS} main.o
 	echo "COMPILER: ${COMPILER} ${CC}"
 	${CC} ${LDFLAGS} ${CFLAGS} -I. ${OBJS} main.o \
-		-lr_util ../sdb/src/libsdb.$(EXT_AR) ${LINK} -o out
+		-lrz_util ../sdb/src/libsdb.$(EXT_AR) ${LINK} -o out
 
 clean:
-	rm -f ${OBJS} main.o a.out libr_java.$(EXT_AR) out
+	rm -f ${OBJS} main.o a.out librz_java.$(EXT_AR) out

@@ -1,0 +1,76 @@
+.Dd Jun 24, 2020
+.Dt RAFIND2 1
+.Sh NAME
+.Nm rz_find
+.Nd Advanced commandline hexadecimal editor
+.Sh SYNOPSIS
+.Nm rz_find
+.Op Fl ijzZXnrhqv
+.Op Fl b Ar size
+.Op Fl f Ar from
+.Op Fl F Ar file
+.Op Fl t Ar to
+.Op Fl [m|s|e] Ar str
+.Op Fl x Ar hex
+.Ar file|dir
+.Sh DESCRIPTION
+rz_find is a program to find byte patterns into files
+.Pp
+The options are:
+.Bl -tag -width Fl
+.It Fl z
+Search for zero-terminated strings
+.It Fl j
+Output in JSON format
+.It Fl a Ar align
+Only accept aligned hits
+.It Fl s Ar str
+Search for a specific string
+.It Fl S Ar str
+Search for a specific wide string
+.It Fl e Ar regex
+Search for a regular expression string matches
+.It Fl x Ar hex
+Search for an hexpair string
+.It Fl i
+Identify filetype (like file, uses r2 -qcpm)
+.It Fl m
+Carve for known file-types using the r_magic signatures
+.It Fl M Ar mask
+Set binary mask to be applied
+.It Fl f Ar from
+Specify the source adddress
+.It Fl F Ar file
+Read the keyword to search from the contents of the given file
+.It Fl t Ar to
+Specify the target adddress
+.It Fl X
+Display hexdump of search results
+.It Fl Z
+Display zero-terminated strings results
+.It Fl n
+Do not stop the search when a read error occurs
+.It Fl r
+Show output in radare commands
+.It Fl b Ar size
+Define block size
+.It Fl q
+Quiet mode - do not show headings (filenames) above matching contents (default for searching a single file)
+.It Fl h
+Show help message
+.It Fl v
+Print version and exit
+.El
+.Sh SEE ALSO
+.Pp
+.Xr rizin(1) ,
+.Xr rz_hash(1) ,
+.Xr rz_bin(1) ,
+.Xr rz_diff(1) ,
+.Xr rz_asm(1) ,
+.Xr rz_gg(1) ,
+.Xr rz_run(1) ,
+.Xr rz_ax(1) ,
+.Sh AUTHORS
+.Pp
+pancake <pancake@nopcode.org>

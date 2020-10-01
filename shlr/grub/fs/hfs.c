@@ -28,7 +28,7 @@
 #include <grub/types.h>
 #include <grub/hfs.h>
 #include <stdlib.h>
-#include <r_types.h>
+#include <rz_types.h>
 
 #define	GRUB_HFS_SBLOCK		2
 #define GRUB_HFS_EMBED_HFSPLUS_SIG 0x482B

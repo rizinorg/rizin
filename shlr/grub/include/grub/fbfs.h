@@ -15,7 +15,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with BURG.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <r_types.h>
+#include <rz_types.h>
 #ifndef GRUB_FBFS_H
 #define GRUB_FBFS_H	1
 

@@ -4,13 +4,13 @@ PWD=$(shell pwd)
 PREFIX?=/usr
 BINDIR=${DESTDIR}${PREFIX}/bin
 OBJ=spp.o bin/main.o
-# r_api.o
+# rz_api.o
 ODF=$(subst .o,.d,$(OBJ))
 BIN=spp
 
 ifeq ($(SPP_USE_R2),1)
-CFLAGS+=$(shell pkg-config --cflags r_util)
-LDFLAGS+=$(shell pkg-config --libs r_util)
+CFLAGS+=$(shell pkg-config --cflags rz_util)
+LDFLAGS+=$(shell pkg-config --libs rz_util)
 endif
 
 CFLAGS?=-Wall -O2

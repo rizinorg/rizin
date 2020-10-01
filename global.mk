@@ -4,9 +4,9 @@ DESTDIR=
 COMPILER?=gcc
 
 TOP:=$(dir $(lastword $(MAKEFILE_LIST)))
-LTOP:=$(TOP)/libr
+LTOP:=$(TOP)/librz
 STOP:=$(TOP)/shlr
-BTOP:=$(TOP)/binr
+BTOP:=$(TOP)/binrz
 
 ifeq ($(MAKEFLAGS),s)
 SILENT=1
@@ -41,5 +41,5 @@ endif
 -include $(TOP)/mk/platform.mk
 -include $(TOP)/mk/${COMPILER}.mk
 
-WWWROOT=${DATADIR}/radare2/${VERSION}/www
+WWWROOT=${DATADIR}/rizin/${VERSION}/www
 endif

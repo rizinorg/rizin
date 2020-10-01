@@ -1,6 +1,6 @@
 CFLAGS+=-I../../include
-LDFLAGS+=-lr_cons -L../../libr/cons
-LDFLAGS+=-lr_util -L../../libr/util
+LDFLAGS+=-lrz_cons -L../../librz/cons
+LDFLAGS+=-lrz_util -L../../librz/util
 
 all: graph test-rgb editor
 

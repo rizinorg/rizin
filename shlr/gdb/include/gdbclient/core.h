@@ -2,7 +2,7 @@
 #ifndef GDB_CLIENT_CORE_H
 #define GDB_CLIENT_CORE_H
 
-#include "r_types.h"
+#include "rz_types.h"
 
 #include <stdint.h>
 #include <stdlib.h>

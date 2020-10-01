@@ -6,7 +6,7 @@ hello world
 EOF
 RUN
 
-NAME=r2pipe.py
+NAME=rzpipe.py
 FILE=bins/elf/_Exit (42)
 CMDS=<<EOF
 ?q `env~?^ASAN=1$`

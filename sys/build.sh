@@ -54,7 +54,7 @@ if [ -z "${MAKE}" ]; then
 fi
 
 [ -z "${MAKE_JOBS}" ] && MAKE_JOBS=12
-[ -z "${CERTID}" ] && CERTID=org.radare.radare2
+[ -z "${CERTID}" ] && CERTID=org.radare.rizin
 
 # find root
 A=$(dirname "$PWD/$0")
@@ -114,8 +114,8 @@ fi
 
 # purge first
 if [ "${PREFIX}" != "/usr" ]; then
-	A=$(readlink /usr/bin/radare2 2>/dev/null)
-	B="${PWD}/binr/radare2/radare2"
+	A=$(readlink /usr/bin/rizin 2>/dev/null)
+	B="${PWD}/binrz/rizin/rizin"
 	if [ -n "$A" ] && [ ! -f "$A" ]; then
 		A="$B"
 	fi

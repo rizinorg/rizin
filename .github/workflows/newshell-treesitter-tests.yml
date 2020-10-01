@@ -6,24 +6,24 @@ on:
       - 'shlr/tree-sitter/*'
       - 'shlr/tree-sitter/lib/*'
       - 'shlr/tree-sitter/lib/**/*'
-      - 'shlr/radare2-shell-parser/*'
-      - 'shlr/radare2-shell-parser/**/*'
+      - 'shlr/rizin-shell-parser/*'
+      - 'shlr/rizin-shell-parser/**/*'
     branches:
       - master
 
 jobs:
   build:
-    name: radare2-shell-parser-tests
+    name: rizin-shell-parser-tests
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v1
       with:
         node-version: '12.x'
-    - run: cd shlr/radare2-shell-parser/ && npm install
+    - run: cd shlr/rizin-shell-parser/ && npm install
     - name: Run tests
       run: |
-        cd shlr/radare2-shell-parser
+        cd shlr/rizin-shell-parser
         export PATH=${PATH}:./node_modules/.bin
         tree-sitter generate
         tree-sitter test

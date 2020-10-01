@@ -89,9 +89,9 @@ Examples
 
 Python:
 
-	See radare2-bindings/python/remote.py and test-rap-*.py
+	See rizin-bindings/python/remote.py and test-rap-*.py
 
 C:
 
-	Server: libr/socket/rap_server.c
-	Client: libr/io/p/io_rap.c
+	Server: librz/socket/rap_server.c
+	Client: librz/io/p/io_rap.c

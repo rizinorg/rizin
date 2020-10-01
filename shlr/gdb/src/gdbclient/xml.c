@@ -6,8 +6,8 @@
 #include "arch.h"
 #include "gdbr_common.h"
 #include "packet.h"
-#include <r_util.h>
-#include <r_debug.h>
+#include <rz_util.h>
+#include <rz_debug.h>
 
 #define MAX_PID_CHARS (5)
 
@@ -169,14 +169,14 @@ typedef struct {
 
 static void _write_flag_bits(char *buf, const gdbr_xml_flags_t *flags);
 static int _resolve_arch(libgdbr_t *g, char *xml_data);
-static RList *_extract_flags(char *flagstr);
-static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias);
-static RDebugPid *_extract_pid_info(const char *info, const char *path, int tid);
+static RzList *_extract_flags(char *flagstr);
+static RzList *_extract_regs(char *regstr, RzList *flags, char *pc_alias);
+static RzDebugPid *_extract_pid_info(const char *info, const char *path, int tid);
 
 static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	char *regstr, *flagstr, *tmp, *profile = NULL, pc_alias[64], flag_bits[65];
-	RList *flags, *regs;
-	RListIter *iter;
+	RzList *flags, *regs;
+	RzListIter *iter;
 	gdbr_xml_flags_t *tmpflag;
 	gdbr_xml_reg_t *tmpreg;
 	int packed_size = 0;
@@ -194,18 +194,18 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		return -1;
 	}
 	if (!(regs = _extract_regs (regstr, flags, pc_alias))) {
-		r_list_free (flags);
+		rz_list_free (flags);
 		return -1;
 	}
-	if (!(arch_regs = malloc (sizeof (gdb_reg_t) * (r_list_length (regs) + 1)))) {
+	if (!(arch_regs = malloc (sizeof (gdb_reg_t) * (rz_list_length (regs) + 1)))) {
 		goto exit_err;
 	}
 	// approximate per-reg size estimates
-	profile_max_len = r_list_length (regs) * 128 + r_list_length (flags) * 128;
+	profile_max_len = rz_list_length (regs) * 128 + rz_list_length (flags) * 128;
 	if (!(profile = malloc (profile_max_len))) {
 		goto exit_err;
 	}
-	r_list_foreach (regs, iter, tmpreg) {
+	rz_list_foreach (regs, iter, tmpreg) {
 		if (!tmpreg) {
 			continue;
 		}
@@ -221,8 +221,8 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		}
 		flag_bits[0] = '\0';
 		tmpflag = NULL;
-		if (tmpreg->flagnum < r_list_length (flags)) {
-			tmpflag = r_list_get_n (flags, tmpreg->flagnum);
+		if (tmpreg->flagnum < rz_list_length (flags)) {
+			tmpflag = rz_list_get_n (flags, tmpreg->flagnum);
 			_write_flag_bits (flag_bits, tmpflag);
 		}
 		packed_size = 0;
@@ -262,7 +262,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	case R_SYS_ARCH_ARM:
 		switch (g->target.bits) {
 		case 32:
-			if (!(profile = r_str_prepend (profile,
+			if (!(profile = rz_str_prepend (profile,
 							"=PC	pc\n"
 							"=SP	sp\n" // XXX
 							"=A0	r0\n"
@@ -274,7 +274,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			}
 			break;
 		case 64:
-			if (!(profile = r_str_prepend (profile,
+			if (!(profile = rz_str_prepend (profile,
 							"=PC	pc\n"
 							"=SP	sp\n"
 							"=BP	x29\n"
@@ -295,7 +295,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	case R_SYS_ARCH_X86:
 		switch (g->target.bits) {
 		case 32:
-			if (!(profile = r_str_prepend (profile,
+			if (!(profile = rz_str_prepend (profile,
 						     "=PC	eip\n"
 						     "=SP	esp\n"
 						     "=BP	ebp\n"))) {
@@ -303,7 +303,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			}
 			break;
 		case 64:
-			if (!(profile = r_str_prepend (profile,
+			if (!(profile = rz_str_prepend (profile,
 						     "=PC	rip\n"
 						     "=SP	rsp\n"
 						     "=BP	rbp\n"))) {
@@ -312,7 +312,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		}
 		break;
 	case R_SYS_ARCH_MIPS:
-		if (!(profile = r_str_prepend (profile,
+		if (!(profile = rz_str_prepend (profile,
 						"=PC	pc\n"
 						"=SP	r29\n"))) {
 			goto exit_err;
@@ -321,7 +321,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	default:
 		// TODO others
 		if (*pc_alias) {
-			if (!(profile = r_str_prepend (profile, pc_alias))) {
+			if (!(profile = rz_str_prepend (profile, pc_alias))) {
 				goto exit_err;
 			}
 		}
@@ -332,8 +332,8 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			g->target.bits = 64;
 		}
 	}
-	r_list_free (flags);
-	r_list_free (regs);
+	rz_list_free (flags);
+	rz_list_free (regs);
 	free (g->target.regprofile);
 	if (profile) {
 		g->target.regprofile = strdup (profile);
@@ -344,8 +344,8 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	return 0;
 
 exit_err:
-	r_list_free (flags);
-	r_list_free (regs);
+	rz_list_free (flags);
+	rz_list_free (regs);
 	free (profile);
 	free (arch_regs);
 	return -1;
@@ -361,14 +361,14 @@ exit_err:
 </item>
 </osdata>
 */
-static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int pid, RList *list) {
+static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int pid, RzList *list) {
 	char pidstr[MAX_PID_CHARS + 1], status[1024], cmdline[1024];
 	char *itemstr, *itemstr_end, *column, *column_end, *proc_filename;
 	int ret = -1, ipid, column_data_len;
-	RDebugPid *pid_info = NULL;
+	RzDebugPid *pid_info = NULL;
 
 	// Make sure the given xml is valid
-	if (!r_str_startswith (xml_data, "<osdata type=\"processes\">")) {
+	if (!rz_str_startswith (xml_data, "<osdata type=\"processes\">")) {
 		ret = -1;
 		goto end;
 	}
@@ -415,7 +415,7 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 
 		// Attempt to read the pid's info from /proc. Non UNIX systems will have the
 		// correct pid and cmdline from the xml with everything else set to default
-		proc_filename = r_str_newf ("/proc/%d/status", ipid);
+		proc_filename = rz_str_newf ("/proc/%d/status", ipid);
 		if (gdbr_open_file (g, proc_filename, O_RDONLY, 0) == 0) {
 			if (gdbr_read_file (g, (unsigned char *)status, sizeof (status)) != -1) {
 				pid_info = _extract_pid_info (status, cmdline, ipid);
@@ -427,7 +427,7 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 			}
 		} else {
 			eprintf ("Failed to open procfs file of pid (%d)\n", ipid);
-			if (!(pid_info = R_NEW0 (RDebugPid)) || !(pid_info->path = strdup (cmdline))) {
+			if (!(pid_info = R_NEW0 (RzDebugPid)) || !(pid_info->path = strdup (cmdline))) {
 				ret = -1;
 				goto end;
 			}
@@ -439,7 +439,7 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 		}
 		// Unless pid 0 is requested, only add the requested pid and it's child processes
 		if (0 == pid || ipid == pid || pid_info->ppid == pid) {
-			r_list_append (list, pid_info);
+			rz_list_append (list, pid_info);
 		} else {
 			if (pid_info) {
 				free (pid_info);
@@ -473,7 +473,7 @@ int gdbr_read_target_xml(libgdbr_t *g) {
 	return 0;
 }
 
-int gdbr_read_processes_xml(libgdbr_t *g, int pid, RList *list) {
+int gdbr_read_processes_xml(libgdbr_t *g, int pid, RzList *list) {
 	if (!g->stub_features.qXfer_features_read) {
 		return -1;
 	}
@@ -531,20 +531,20 @@ static int _resolve_arch(libgdbr_t *g, char *xml_data) {
 			return -1;
 		}
 		arch++;
-		if (r_str_startswith (arch, "i386")) {
+		if (rz_str_startswith (arch, "i386")) {
 			g->target.arch = R_SYS_ARCH_X86;
 			g->target.bits = 32;
 			arch += 4;
-			if (r_str_startswith (arch, ":x86-64")) {
+			if (rz_str_startswith (arch, ":x86-64")) {
 				g->target.bits = 64;
 			}
-		} else if (r_str_startswith (arch, "aarch64")) {
+		} else if (rz_str_startswith (arch, "aarch64")) {
 			g->target.arch = R_SYS_ARCH_ARM;
 			g->target.bits = 64;
-		} else if (r_str_startswith (arch, "arm")) {
+		} else if (rz_str_startswith (arch, "arm")) {
 			g->target.arch = R_SYS_ARCH_ARM;
 			g->target.bits = 32;
-		} else if (r_str_startswith (arch, "mips")) {
+		} else if (rz_str_startswith (arch, "mips")) {
 			g->target.arch = R_SYS_ARCH_MIPS;
 			g->target.bits = 32;
 		}
@@ -568,12 +568,12 @@ static int _resolve_arch(libgdbr_t *g, char *xml_data) {
 	return 0;
 }
 
-static RList *_extract_flags(char *flagstr) {
+static RzList *_extract_flags(char *flagstr) {
 	char *tmp1, *tmp2, *flagsend, *field_start, *field_end;
 	ut64 num_fields, type_sz, name_sz;
 	gdbr_xml_flags_t *tmpflag = NULL;
-	RList *flags;
-	if (!(flags = r_list_new ())) {
+	RzList *flags;
+	if (!(flags = rz_list_new ())) {
 		return NULL;
 	}
 	flags->free = free;
@@ -662,21 +662,21 @@ static RList *_extract_flags(char *flagstr) {
 			field_start = field_end + 1;
 		}
 		tmpflag->num_fields = num_fields;
-		r_list_push (flags, tmpflag);
+		rz_list_push (flags, tmpflag);
 		*flagsend = '<';
 		flagstr = flagsend + 1;
 	}
 	return flags;
 exit_err:
 	if (flags) {
-		r_list_free (flags);
+		rz_list_free (flags);
 	}
 	free (tmpflag);
 	return NULL;
 }
 
-static RDebugPid *_extract_pid_info(const char *info, const char *path, int tid) {
-	RDebugPid *pid_info = R_NEW0 (RDebugPid);
+static RzDebugPid *_extract_pid_info(const char *info, const char *path, int tid) {
+	RzDebugPid *pid_info = R_NEW0 (RzDebugPid);
 	if (!pid_info) {
 		return NULL;
 	}
@@ -723,14 +723,14 @@ static RDebugPid *_extract_pid_info(const char *info, const char *path, int tid)
 	return pid_info;
 }
 
-static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
+static RzList *_extract_regs(char *regstr, RzList *flags, char *pc_alias) {
 	char *regstr_end, *regname, *regtype, *tmp1, *tmpregstr, *feature_end, *typegroup;
 	ut32 flagnum, regname_len, regsize, regnum;
-	RList *regs;
-	RListIter *iter;
+	RzList *regs;
+	RzListIter *iter;
 	gdbr_xml_reg_t *tmpreg;
 	gdbr_xml_flags_t *tmpflag;
-	if (!(regs = r_list_new ())) {
+	if (!(regs = rz_list_new ())) {
 		return NULL;
 	}
 	// Set gpr as the default register type for all of the following registers until `feature` is found
@@ -742,7 +742,7 @@ static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 		// Most regs don't have group/type params, attempt to get the type from `feature`.
 		// Multiple registers can be wrapped with a certain feature so this typegroup
 		// applies on all of the following registers until </feature>
-		if (r_str_startswith (regstr, "<feature")) {
+		if (rz_str_startswith (regstr, "<feature")) {
 			// Verify that we found the feature in the current node
 			feature_end = strchr (regstr, '>');
 			// To parse features of other architectures refer to:
@@ -808,38 +808,38 @@ static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 			}
 			regnum = strtoul (tmp1, NULL, 10);
 		}
-		flagnum = r_list_length (flags);
+		flagnum = rz_list_length (flags);
 		if ((tmp1 = strstr (regstr, "group="))) {
 			tmp1 += 7;
-			if (r_str_startswith (tmp1, "float")) {
+			if (rz_str_startswith (tmp1, "float")) {
 				regtype = "fpu";
-			} else if (r_str_startswith (tmp1, "mmx")) {
+			} else if (rz_str_startswith (tmp1, "mmx")) {
 				regtype = "mmx";
-			} else if (r_str_startswith (tmp1, "sse")) {
+			} else if (rz_str_startswith (tmp1, "sse")) {
 				regtype = "xmm";
-			} else if (r_str_startswith (tmp1, "vector")) {
+			} else if (rz_str_startswith (tmp1, "vector")) {
 				regtype = "ymm";
-			} else if (r_str_startswith (tmp1, "system")) {
+			} else if (rz_str_startswith (tmp1, "system")) {
 				regtype = "seg";
 			}
 			// We need type information in r2 register profiles
 		}
 		if ((tmp1 = strstr (regstr, "type="))) {
 			tmp1 += 6;
-			if (r_str_startswith (tmp1, "vec")
-			    || r_str_startswith (tmp1, "i387_ext")
-			    || r_str_startswith (tmp1, "ieee_single")
-			    || r_str_startswith (tmp1, "ieee_double")) {
+			if (rz_str_startswith (tmp1, "vec")
+			    || rz_str_startswith (tmp1, "i387_ext")
+			    || rz_str_startswith (tmp1, "ieee_single")
+			    || rz_str_startswith (tmp1, "ieee_double")) {
 				regtype = "fpu";
-			} else if (r_str_startswith (tmp1, "code_ptr")) {
+			} else if (rz_str_startswith (tmp1, "code_ptr")) {
 				strcpy (pc_alias, "=PC	");
 				strncpy (pc_alias + 4, regname, regname_len);
 				strcpy (pc_alias + 4 + regname_len, "\n");
 			} else {
 				// Check all flags. If reg is a flag, write flag data
 				flagnum = 0;
-				r_list_foreach (flags, iter, tmpflag) {
-					if (r_str_startswith (tmp1, tmpflag->type)) {
+				rz_list_foreach (flags, iter, tmpflag) {
+					if (rz_str_startswith (tmp1, tmpflag->type)) {
 						// Max 64-bit :/
 						if (tmpflag->num_bits <= 64) {
 							break;
@@ -875,22 +875,22 @@ static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 		tmpreg->size = regsize;
 		tmpreg->flagnum = flagnum;
 		if (regnum == UINT32_MAX) {
-			r_list_push (regs, tmpreg);
-		} else if (regnum >= r_list_length (regs)) {
+			rz_list_push (regs, tmpreg);
+		} else if (regnum >= rz_list_length (regs)) {
 			int i;
-			for (i = regnum - r_list_length (regs); i > 0; i--) {
+			for (i = regnum - rz_list_length (regs); i > 0; i--) {
 				// temporary placeholder reg. we trust the xml is correct and this will be replaced.
-				r_list_push (regs, tmpreg);
-				r_list_tail (regs)->data = NULL;
+				rz_list_push (regs, tmpreg);
+				rz_list_tail (regs)->data = NULL;
 			}
-			r_list_push (regs, tmpreg);
+			rz_list_push (regs, tmpreg);
 		} else {
 			// this is where we replace those placeholder regs
-			r_list_set_n (regs, regnum, tmpreg);
+			rz_list_set_n (regs, regnum, tmpreg);
 		}
 		*regstr_end = '/';
 		regstr = regstr_end + 3;
-		if (r_str_startswith (regstr, "</feature>")) {
+		if (rz_str_startswith (regstr, "</feature>")) {
 			regstr += sizeof ("</feature>");
 			// Revert to default
 			typegroup = "gpr";
@@ -901,7 +901,7 @@ static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 exit_err:
 	if (regs) {
 		regs->free = free;
-		r_list_free (regs);
+		rz_list_free (regs);
 	}
 	return NULL;
 }

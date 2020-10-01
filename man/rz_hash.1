@@ -1,0 +1,97 @@
+.Dd Feb 6, 2015
+.Dt RAHASH2 1
+.Sh NAME
+.Nm rz_hash
+.Nd block based hashing utility
+.Sh SYNOPSIS
+.Nm rz_hash
+.Op Fl BbdDehjrknvq
+.Op Fl a Ar algorithm
+.Op Fl b Ar size
+.Op Fl D Ar algo
+.Op Fl E Ar algo
+.Op Fl f Ar from
+.Op Fl i Ar iterations
+.Op Fl I Ar IV
+.Op Fl n Ar blocks
+.Op Fl s Ar string
+.Op Fl S Ar seed
+.Op Fl p Ar type
+.Op Fl x Ar hexstr
+.Op Fl t Ar to
+.Op Fl c Ar hash
+.Op [file] ...
+.Sh DESCRIPTION
+This program is part of the radare project.
+.Pp
+Rahash2 allows you to calculate, check and show the hash values of each block of a target file. The block size is 32768 bytes by default. It's allowed to hash from stdin using '-' as a target file. You can compare against a known hash and get the result in the exit status.
+.Pp
+You can hash big files by hashing each block and later determine what part of it has been modified. Useful for filesystem analysis.
+.Pp
+This command can be used to calculate hashes of a certain part of a file or a command line passed string.
+.Pp
+This is the command used by the 'ph' command of radare.
+.Bl -tag -width Fl
+.It Fl a Ar algo
+Select an algorithm for the hashing. Valid values are listed in: rz_hash -L
+.It Fl b Ar blocksize
+Define the block size
+.It Fl c Ar hash
+Compare the computed hash with this one. Allowed only when a single hash is computed.
+.It Fl D Ar algo
+Decrypt instead of hash using the given algorithm (base64, base91, rc4, aes, xor, blowfish, rot, rol, ror, rc2, rc6, punycode)
+.It Fl e
+Use little endian to display checksums
+.It Fl E Ar algo
+Encrypt instead of hash using the given algorithm (base64, base91, rc4, aes, xor, blowfish, rot, rol, ror, rc2, rc6, punycode)
+.It Fl i Ar iters
+Apply the hash Iters times to itself+seed
+.It Fl I Ar [^]s:string|hexstr
+Set initialization vector (IV) for the cryptographic functions.
+.It Fl j
+Show output in JSON (see -r)
+.It Fl B
+Show per-block hash
+.It Fl k
+Show result using OpenSSH's VisualHostKey randomart algorithm
+.It Fl n
+Amount of blocks to hash
+.It Fl s Ar string
+Hash this string instead of using the 'source' and 'hash-file' arguments.
+.It Fl S Ar [^]s:string|hexstr
+Set seed to hash with, use ^to prefix seed, otherwise its suffixed. If the seed is just a dash '-' it will read from stdin, this is useful to provide huge XOR payloads or other crypto keys bigger than few bytes.
+.It Fl f Ar from
+Start hashing at given address
+.It Fl t Ar to
+Stop hashing at given address
+.It Fl p Ar arg
+Show vertical entropy/statistical entropy graphs
+.It Fl q
+Quiet mode (-qq for even quieter!)
+.It Fl r
+Show output in radare commands
+.It Fl x Ar hexstr
+Hash the given hexpair string instead of using the 'source' and 'hash-file' arguments.
+.It Fl v
+Show version information
+.It Fl h
+Show usage help message.
+.El
+.Sh DIAGNOSTICS
+.Ex -std
+.Pp
+When -c is used, exit status 0 indicates a match between the expected and computed hashes.
+.Sh SEE ALSO
+.Pp
+.Xr rizin(1) ,
+.Xr rz_find(1) ,
+.Xr rz_hash(1) ,
+.Xr rz_bin(1) ,
+.Xr rz_diff(1) ,
+.Xr rz_asm(1) ,
+.Xr rz_gg(1) ,
+.Xr rz_run(1) ,
+.Xr rz_ax(1) ,
+.Sh AUTHORS
+.Pp
+pancake <pancake@nopcode.org>

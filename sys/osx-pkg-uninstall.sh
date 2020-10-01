@@ -1,5 +1,5 @@
 #!/bin/sh
-PKG=org.radare.radare2
+PKG=org.radare.rizin
 cd /
 
 pkgutil --files ${PKG} > /dev/null || exit 1

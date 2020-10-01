@@ -1,4 +1,4 @@
-#include <r_util.h>
+#include <rz_util.h>
 #include "arch.h"
 
 static ut64 parse_size(char *s, char **end) {
@@ -43,8 +43,8 @@ gdb_reg_t *arch_parse_reg_profile(const char * reg_profile) {
 	char tmp[128];
 	int i, j, l;
 	const char *p = reg_profile;
-	RList *gdb_regs_list = r_list_newf (free);
-	RListIter *iter;
+	RzList *gdb_regs_list = rz_list_newf (free);
+	RzListIter *iter;
 	gdb_reg_t *reg;
 
 	// Line number
@@ -109,10 +109,10 @@ gdb_reg_t *arch_parse_reg_profile(const char * reg_profile) {
 						free (tok[i]);
 					}
 					// Clean up
-					r_list_free (gdb_regs_list);
+					rz_list_free (gdb_regs_list);
 					return NULL;
 				}
-				r_list_append (gdb_regs_list, reg);
+				rz_list_append (gdb_regs_list, reg);
 			}
 			// Clean up
 			for (i = 0; i < j; i++) {
@@ -121,17 +121,17 @@ gdb_reg_t *arch_parse_reg_profile(const char * reg_profile) {
 		}
 	} while (*p++);
 
-	gdb_reg_t *gdb_regs = malloc ((r_list_length (gdb_regs_list) + 1) * sizeof (gdb_reg_t));
+	gdb_reg_t *gdb_regs = malloc ((rz_list_length (gdb_regs_list) + 1) * sizeof (gdb_reg_t));
 	if (!gdb_regs) {
 		return NULL;
 	}
 	i = 0;
-	r_list_foreach (gdb_regs_list, iter, reg) {
+	rz_list_foreach (gdb_regs_list, iter, reg) {
 		memcpy (reg, gdb_regs + i, sizeof (gdb_reg_t));
 		i++;
 	}
 	memset (gdb_regs + i, 0, sizeof (gdb_reg_t));
 
-	r_list_free (gdb_regs_list);
+	rz_list_free (gdb_regs_list);
 	return gdb_regs;
 }

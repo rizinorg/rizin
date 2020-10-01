@@ -5,7 +5,7 @@ include ../../global.mk
 include ../../mk/platform.mk
 NAME=grubfs
 _INCLUDE_MK_GCC_=
-include ../../libr/config.mk
+include ../../librz/config.mk
 include ../../mk/${COMPILER}.mk
 
 EXT_AR?=a
@@ -61,7 +61,7 @@ KERNFILES+=partmap/sunpc.c
 
 KERNOBJS=$(subst .c,.o,${KERNFILES})
 CFLAGS+=-Iinclude
-CFLAGS+=-I../../libr/include -DGRUB_TARGET_NO_MODULES
+CFLAGS+=-I../../librz/include -DGRUB_TARGET_NO_MODULES
 CFLAGS+=-g
 
 ifneq (,$(findstring cygwin,${OSTYPE}))

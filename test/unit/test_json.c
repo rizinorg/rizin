@@ -1,8 +1,8 @@
 /* radare - LGPL - Copyright 2020 - thestr4ng3r, Yaroslav Stavnichiy */
-/* r_json based on nxjson by Yaroslav Stavnichiy */
+/* rz_json based on nxjson by Yaroslav Stavnichiy */
 
-#include <r_util/r_json.h>
-#include <r_util/r_strbuf.h>
+#include <rz_util/rz_json.h>
+#include <rz_util/rz_strbuf.h>
 #include "minunit.h"
 
 typedef struct json_test_t {
@@ -1193,7 +1193,7 @@ JsonTest tests[] = {
 };
 
 static int test_json(int test_number, char *input, int (*check)(RJson *j)) {
-	RJson *json = r_json_parse (input);
+	RJson *json = rz_json_parse (input);
 	if (!check) {
 		mu_assert_null (json, "parse failure expected");
 	} else {
@@ -1201,7 +1201,7 @@ static int test_json(int test_number, char *input, int (*check)(RJson *j)) {
 		if (!check (json)) {
 			return MU_ERR;
 		}
-		r_json_free (json);
+		rz_json_free (json);
 	}
 	mu_end;
 }

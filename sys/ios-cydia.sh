@@ -17,7 +17,7 @@ if [ -z "${CPU}" ]; then
 	#export CPU=armv7
 fi
 if [ -z "${PACKAGE}" ]; then
-	PACKAGE=radare2
+	PACKAGE=rizin
 fi
 
 export BUILD=1
@@ -32,39 +32,39 @@ fi
 
 . sys/ios-env.sh
 if [ "${STOW}" = 1 ]; then
-PREFIX=/private/var/radare2
+PREFIX=/private/var/rizin
 else
 PREFIX=/usr
 fi
 
 makeDeb() {
-	make -C binr ios-sdk-sign
+	make -C binrz ios-sdk-sign
 	rm -rf /tmp/r2ios
 	make install DESTDIR=/tmp/r2ios
-	rm -rf /tmp/r2ios/${PREFIX}/share/radare2/*/www/enyo/node_modules
+	rm -rf /tmp/r2ios/${PREFIX}/share/rizin/*/www/enyo/node_modules
 	( cd /tmp/r2ios && tar czvf ../r2ios-${CPU}.tar.gz ./* )
-	rm -rf sys/cydia/radare2/root
-	mkdir -p sys/cydia/radare2/root
-	sudo tar xpzvf /tmp/r2ios-${CPU}.tar.gz -C sys/cydia/radare2/root
-	rm -f sys/cydia/radare2/root/${PREFIX}/lib/*.{a,dylib,dSYM}
+	rm -rf sys/cydia/rizin/root
+	mkdir -p sys/cydia/rizin/root
+	sudo tar xpzvf /tmp/r2ios-${CPU}.tar.gz -C sys/cydia/rizin/root
+	rm -f sys/cydia/rizin/root/${PREFIX}/lib/*.{a,dylib,dSYM}
 	if [ "$static" = 1 ]; then
 	(
-		rm -f sys/cydia/radare2/root/${PREFIX}/bin/*
-		cp -f binr/blob/radare2 sys/cydia/radare2/root/${PREFIX}/bin
-		cd sys/cydia/radare2/root/${PREFIX}/bin
-		for a in r2 rabin2 rarun2 rasm2 ragg2 rahash2 rax2 rafind2 radiff2 ; do ln -fs radare2 $a ; done
+		rm -f sys/cydia/rizin/root/${PREFIX}/bin/*
+		cp -f binrz/blob/rizin sys/cydia/rizin/root/${PREFIX}/bin
+		cd sys/cydia/rizin/root/${PREFIX}/bin
+		for a in r2 rz_bin rz_run rz_asm rz_gg rz_hash rz_ax rz_find rz_diff ; do ln -fs rizin $a ; done
 	)
-		echo "Signing radare2"
-		ldid2 -Sbinr/radare2/radare2_ios.xml sys/cydia/radare2/root/usr/bin/radare2
+		echo "Signing rizin"
+		ldid2 -Sbinr/rizin/rizin_ios.xml sys/cydia/rizin/root/usr/bin/rizin
 	else
-		for a in sys/cydia/radare2/root/usr/bin/* sys/cydia/radare2/root/usr/lib/*.dylib ; do
+		for a in sys/cydia/rizin/root/usr/bin/* sys/cydia/rizin/root/usr/lib/*.dylib ; do
 			echo "Signing $a"
-			ldid2 -Sbinr/radare2/radare2_ios.xml $a
+			ldid2 -Sbinr/rizin/rizin_ios.xml $a
 		done
 	fi
 if [ "${STOW}" = 1 ]; then
 	(
-		cd sys/cydia/radare2/root/
+		cd sys/cydia/rizin/root/
 		mkdir -p usr/bin
 		# stow
 		echo "Stowing ${PREFIX} into /usr..."
@@ -81,7 +81,7 @@ if [ "${STOW}" = 1 ]; then
 else
 	echo "No need to stow anything"
 fi
-	( cd sys/cydia/radare2 ; sudo make clean ; sudo make PACKAGE=${PACKAGE} )
+	( cd sys/cydia/rizin ; sudo make clean ; sudo make PACKAGE=${PACKAGE} )
 }
 
 if [ "$1" = makedeb ]; then
@@ -97,7 +97,7 @@ else
 		cp -f plugins.ios.cfg plugins.cfg
 		if [ "$static" = 1 ]; then
 			./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
-			--with-compiler=ios-sdk --target=arm-unknown-darwin --with-libr
+			--with-compiler=ios-sdk --target=arm-unknown-darwin --with-librz
 		else
 			./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
 			--with-compiler=ios-sdk --target=arm-unknown-darwin
@@ -107,13 +107,13 @@ else
 	if [ $RV = 0 ]; then
 		time make -j4 || exit 1
 		if [ "$static" = 1 ]; then
-			ls -l libr/util/libr_util.a || exit 1
-			ls -l libr/flag/libr_flag.a || exit 1
-			rm -f libr/*/*.dylib
+			ls -l librz/util/librz_util.a || exit 1
+			ls -l librz/flag/librz_flag.a || exit 1
+			rm -f librz/*/*.dylib
 			(
-			cd binr ; make clean ; 
+			cd binrz ; make clean ; 
 			cd blob ; make USE_LTO=1
-			xcrun --sdk iphoneos strip radare2
+			xcrun --sdk iphoneos strip rizin
 			)
 		fi
 		if [ $? = 0 ]; then

@@ -1,7 +1,7 @@
 BINDIR := bin
 BINS=$(patsubst %.c,$(BINDIR)/%,$(wildcard *.c))
-LDFLAGS += $(shell pkg-config --libs r_core)
-CFLAGS += $(shell pkg-config --cflags r_core) -g
+LDFLAGS += $(shell pkg-config --libs rz_core)
+CFLAGS += $(shell pkg-config --cflags rz_core) -g
 ifeq ($(ASAN),1)
 	ASAN_LD_PRELOAD=LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
 else

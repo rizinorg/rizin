@@ -1,6 +1,6 @@
 stat-todo:
 	@printf "XXX\tTODO\tName\n"
-	@for a in libr/* ; do \
+	@for a in librz/* ; do \
 		if [ -d "$$a" ]; then \
 			xxx=`grep -e XXX $$a/*.c $$a/p/*.c $$a/t/*.c 2>/dev/null | wc -l` ; \
 			todo=`grep -e TODO $$a/*.c $$a/p/*.c $$a/t/*.c 2>/dev/null | wc -l` ; \

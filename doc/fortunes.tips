@@ -1,8 +1,8 @@
 Tweak the disassembly output with `e asm.`
-Add custom Have you setup your ~/.radare2rc today?
+Add custom Have you setup your ~/.rizinrc today?
 In visual mode press 'c' to toggle the cursor mode. Use tab to navigate
 You can mark an offset in visual mode with the cursor and the ',' key. Later press '.' to go back
-You can debug a program from the graph view ('ag') using standard radare2 commands
+You can debug a program from the graph view ('ag') using standard rizin commands
 Use the '[' and ']' keys in visual mode to adjust the screen width
 Select your architecture with: 'e asm.arch=<arch>' or r2 -a from the shell
 Move between your search hits in visual mode using the 'f' and 'F' keys
@@ -13,7 +13,7 @@ Check your IO plugins with 'r2 -L'
 Change the size of the file with the 'r' (resize) command
 Calculate checksums for the current block with the commands starting with '#' (#md5, #crc32, #all, ..)
 Use +,-,*,/ to change the size of the block
-Change the block size with 'b <block-size>'. In visual mode you can also enter radare2 command pressing the ':' key (like vi does)
+Change the block size with 'b <block-size>'. In visual mode you can also enter rizin command pressing the ':' key (like vi does)
 If you want to open the file in read-write mode, invoke r2 with '-w'
 Print the contents of the current block with the 'p' command
 Command layout is: <repeat><command><bytes>@<offset>.  For example: 3x20@0x33 will show 3 hexdumps of 20 bytes at 0x33
@@ -24,14 +24,14 @@ Move around the bytes with h,j,k,l! Arrow keys are neither portable nor efficien
 Seek at relative offsets with 's +<offset>' or 's -<offset>'
 Invert the block bytes using the 'I' key in visual mode
 Switch between print modes using the 'p' and 'P' keys in visual mode
-Add comments using the ';' key in visual mode or the 'CC' command from the radare2 shell
+Add comments using the ';' key in visual mode or the 'CC' command from the rizin shell
 Assemble opcodes with the 'a' and 'A' keys in visual mode, which are bindings to the 'wa' and 'wA' commands
 Find expanded AES keys in memory with '/ca'
 Find wide-char strings with the '/w <string>' command
 Enable ascii-art jump lines in disassembly by setting 'e asm.lines=true'. asm.lines.out and asm.linestyle may interest you as well
 Control the signal handlers of the child process with the 'dk' command
-Get a free shell with 'ragg2 -i exec -x'
-Interpret radare2 scripts with '. <path-to-script>'. Similar to the bash source alias command.
+Get a free shell with 'rz_gg -i exec -x'
+Interpret rizin scripts with '. <path-to-script>'. Similar to the bash source alias command.
 Most of commands accept '?' as a suffix. Use it to understand how they work :)
 Find hexpairs with '/x a0 cc 33'
 Step through your seek history with the commands 'u' (undo) and 'U' (redo)
@@ -42,8 +42,8 @@ Add colors to your screen with 'e scr.color=X' where 1 is 16 colors, 2 is 256 co
 Move the comments to the right changing their margin with asm.cmt.margin
 Execute a command on the visual prompt with cmd.vprompt
 Reduce the delta where flag resolving by address is used with cfg.delta
-Disable these messages with 'e cfg.fortunes = false' in your ~/.radare2rc
-Change your fortune types with 'e cfg.fortunes.type = fun,tips,nsfw' in your ~/.radare2rc
+Disable these messages with 'e cfg.fortunes = false' in your ~/.rizinrc
+Change your fortune types with 'e cfg.fortunes.type = fun,tips,nsfw' in your ~/.rizinrc
 Show offsets in graphs with 'e graph.offset = true'
 Execute a command every time a breakpoint is hit with 'e cmd.bp = !my-program'
 Disassemble in intel syntax with 'e asm.syntax = intel'.
@@ -51,17 +51,17 @@ Change the UID of the debugged process with child.uid (requires root)
 Enhance your graphs by increasing the size of the block and graph.depth eval variable.
 Control the height of the terminal on serial consoles with e scr.height
 Emulate the base address of a file with e file.baddr.
-Bindiff two files with '$ radiff2 /bin/true /bin/false'
+Bindiff two files with '$ rz_diff /bin/true /bin/false'
 Execute commands on a temporary offset by appending '@ offset' to your command.
 Temporally drop the verbosity prefixing the commands with ':'
 Change the graph block definition with graph.callblocks, graph.jmpblocks, graph.flagblocks
 Use scr.accel to browse the file faster!
 Use the 'id' command to see the source line related to the current seek
-Analyze socket connections with the socket plugin: 'radare2 socket://www.foo.com:80'. Use 'w' to send data
+Analyze socket connections with the socket plugin: 'rizin socket://www.foo.com:80'. Use 'w' to send data
 Setup dbg.fpregs to true to visualize the fpu registers in the debugger view.
 To debug a program, you can call r2 with 'dbg://<path-to-program>' or '-d <path..>'
 Use 'e' and 't' in Visual mode to edit configuration and track flags.
-Use 'rabin2 -ris' to get the import/export symbols of any binary.
+Use 'rz_bin -ris' to get the import/export symbols of any binary.
 Remember to maintain your ~/.radare_history
 Enable the PAGER with 'e scr.pager=less -R'
 Use 'e asm.offset=true' to show offsets in 16bit segment addressing mode.
@@ -69,14 +69,14 @@ The '?' command can be used to evaluate math expressions. Like this: '? (0x34+22
 Set 'e bin.dbginfo=true' to load debug information at startup.
 Rename a function using the 'afr <newname> @ <offset>' command.
 You can redefine descriptive commands in the hud file and using the 'V_' command.
-Pass '-j' to rabin2 to get the information of the binary in JSON format.
-Use rarun2 to launch your programs with a predefined environment.
+Pass '-j' to rz_bin to get the information of the binary in JSON format.
+Use rz_run to launch your programs with a predefined environment.
 You are probably using an old version of r2, go checkout the git!
 Run your own r2 scripts in awk using the r2awk program.
 Use '-e bin.strings=false' to disable automatic string search when loading the binary.
 The unix-like reverse engineering framework.
 This code was intentionally left blank, try 'e asm.arch = ws'
-Thanks for using radare2!
+Thanks for using rizin!
 give | and > a try piping and redirection
 Run .dmm* to load the flags of the symbols of all modules loaded in the debugger
 Use V! to enter into the visual panels mode (dwm style)

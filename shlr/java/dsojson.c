@@ -2,8 +2,8 @@
 
 #include "dsojson.h"
 #include "class.h"
-#include <r_types.h>
-#include <r_util.h>
+#include <rz_types.h>
+#include <rz_util.h>
 #include <stdint.h>
 
 char * dso_json_dict_entry_to_str (DsoJsonDictEntry * entry);
@@ -27,14 +27,14 @@ static DsoJsonInfo DSO_JSON_INFOS []= {
 	{DSO_JSON_END},//, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
 };
 
-static RList * build_str_list_from_iterable (RList *the_list) {
-	RList * res = r_list_newf (free);
+static RzList * build_str_list_from_iterable (RzList *the_list) {
+	RzList * res = rz_list_newf (free);
 	DsoJsonObj *json_obj;
-	RListIter *iter;
-	r_list_foreach (the_list, iter, json_obj) {
+	RzListIter *iter;
+	rz_list_foreach (the_list, iter, json_obj) {
 		char *str = dso_json_obj_to_str (json_obj);
 		if (str && *str) {
-			r_list_append (res, str);
+			rz_list_append (res, str);
 		} else {
 			free (str);
 		}
@@ -42,13 +42,13 @@ static RList * build_str_list_from_iterable (RList *the_list) {
 	return res;
 }
 
-static char * build_str_from_str_list_for_iterable (RList *the_list, int is_array) {
+static char * build_str_from_str_list_for_iterable (RzList *the_list, int is_array) {
 	char *res = NULL, *str;
 	int len = 3, pos = 1;
-	RListIter *iter = NULL;
-	RList *str_list = build_str_list_from_iterable (the_list);
+	RzListIter *iter = NULL;
+	RzList *str_list = build_str_list_from_iterable (the_list);
 
-	r_list_foreach (str_list, iter, str) {
+	rz_list_foreach (str_list, iter, str) {
 		len += strlen (str) + 1;
 	}
 
@@ -56,13 +56,13 @@ static char * build_str_from_str_list_for_iterable (RList *the_list, int is_arra
 	// TODO: use [ if needed
 	if (res) {
 		strcpy (res, is_array? "[": "{");
-		r_list_foreach (str_list, iter, str) {
+		rz_list_foreach (str_list, iter, str) {
 			pos += snprintf (res+pos, len - pos, "%s%s",
 				str, iter->n? ",": "");
 		}
 		strcat (res, is_array?"]": "}");
 	}
-	r_list_free (str_list);
+	rz_list_free (str_list);
 	return res;
 }
 
@@ -151,8 +151,8 @@ static void allocDsoStr (DsoJsonStr *dsoStr, unsigned int sz) {
 	dsoStr->len = sz;
 }
 
-static RList * dso_json_get_list (DsoJsonObj *dso_obj) {
-	RList *the_list = NULL;
+static RzList * dso_json_get_list (DsoJsonObj *dso_obj) {
+	RzList *the_list = NULL;
 	if (dso_obj) {
 		switch (dso_obj->info->type) {
 		case DSO_JSON_LIST: the_list = dso_obj->val._list->json_list; break;
@@ -422,7 +422,7 @@ DsoJsonObj * dso_json_list_new () {
 		x->info = get_type_info (DSO_JSON_LIST);
 		x->val._list = calloc (sizeof (DsoJsonList), 1);
 		if (x->val._list) {
-			x->val._list->json_list = r_list_newf ((RListFree)dso_json_obj_del);
+			x->val._list->json_list = rz_list_newf ((RzListFree)dso_json_obj_del);
 		} else {
 			R_FREE (x);
 		}
@@ -433,7 +433,7 @@ DsoJsonObj * dso_json_list_new () {
 void dso_json_list_free (DsoJsonObj *x) {
 	if (!x) return;
 	if (x->val._list && x->val._list->json_list) {
-		r_list_free (x->val._list->json_list);
+		rz_list_free (x->val._list->json_list);
 		x->val._list->json_list = NULL;
 	}
 }
@@ -448,7 +448,7 @@ char * dso_json_list_to_str (DsoJsonList *list) {
 int dso_json_list_append (DsoJsonObj *list_obj, DsoJsonObj *y) {
 	if (get_type (list_obj) == DSO_JSON_LIST) {
 		DsoJsonList * list = list_obj->val._list;
-		r_list_append (list->json_list, y);
+		rz_list_append (list->json_list, y);
 		return true;
 	}
 	return false;
@@ -483,7 +483,7 @@ DsoJsonObj * dso_json_dict_new () {
 			dso_json_null_free (x);
 			return NULL;
 		}
-		x->val._dict->json_dict = r_list_newf ((RListFree)dso_json_obj_del);
+		x->val._dict->json_dict = rz_list_newf ((RzListFree)dso_json_obj_del);
 	}
 	return x;
 }
@@ -491,7 +491,7 @@ DsoJsonObj * dso_json_dict_new () {
 void dso_json_dict_free (void *y) {
 	DsoJsonDict *x = (DsoJsonDict *)y;
 	if (x && x->json_dict) {
-		r_list_free (x->json_dict);
+		rz_list_free (x->json_dict);
 		x->json_dict = NULL;
 	}
 	free (x);
@@ -567,18 +567,18 @@ int dso_json_dict_insert_num_key_str (DsoJsonObj *dict, int key, char *val) {
 // TODO inserting the dicts.
 int dso_json_dict_insert_key_obj (DsoJsonObj *dict, DsoJsonObj *key, DsoJsonObj *value) {
 	int res = false;
-	RList* the_list = dso_json_get_list (dict);
+	RzList* the_list = dso_json_get_list (dict);
 	if (!the_list) return false;
 	if (get_type (key) != DSO_JSON_STR) return false;
 	if (!value) value = dso_json_null_new ();
 	if (value && key && !dso_json_dict_contains_key_obj (dict, key)) {
 		DsoJsonObj *entry = dso_json_dict_entry_new_from_key_obj_val_obj (key, value);
-		r_list_append (the_list, entry);
+		rz_list_append (the_list, entry);
 		res = true;
 	//TODO implement the remove key
 	} else if (value && key && !dso_json_dict_remove_key_obj (dict, key)) {
 		DsoJsonObj *entry = dso_json_dict_entry_new_from_key_obj_val_obj (key, value);
-		r_list_append (the_list, entry);
+		rz_list_append (the_list, entry);
 		res = true;
 	} else {
 		dso_json_obj_del (value);
@@ -592,17 +592,17 @@ int dso_json_dict_remove_key_obj (DsoJsonObj *dict, DsoJsonObj *key) {
 }
 
 int dso_json_dict_remove_key_str (DsoJsonObj *dict, char *key) {
-	RListIter *iter;
+	RzListIter *iter;
 	DsoJsonObj *dso_obj;
 	int res = false;
-	RList* the_list = dso_json_get_list (dict);
+	RzList* the_list = dso_json_get_list (dict);
 	if (the_list) {
-		r_list_foreach (the_list, iter, dso_obj) {
+		rz_list_foreach (the_list, iter, dso_obj) {
 			if (get_type (dso_obj) == DSO_JSON_DICT_ENTRY &&
 				get_type (dso_obj->val._dict_entry->key) == DSO_JSON_STR) {
 				if (!cmpDsoStr_to_str (dso_json_get_str (dso_obj), key)) {
 					res = true;
-					r_list_delete (the_list, iter);
+					rz_list_delete (the_list, iter);
 					break;
 				}
 			}
@@ -616,11 +616,11 @@ int dso_json_dict_contains_key_obj (DsoJsonObj *dict, DsoJsonObj *key) {
 }
 
 int dso_json_dict_contains_key_str (DsoJsonObj *dict, char *key) {
-	RListIter *iter;
+	RzListIter *iter;
 	DsoJsonObj *dso_obj;
-	RList* the_list = dso_json_get_list (dict);
+	RzList* the_list = dso_json_get_list (dict);
 	if (the_list) {
-		r_list_foreach (the_list, iter, dso_obj) {
+		rz_list_foreach (the_list, iter, dso_obj) {
 			if (get_type (dso_obj) == DSO_JSON_DICT_ENTRY &&
 				get_type (dso_obj->val._dict_entry->key) == DSO_JSON_STR) {
 				if (!cmpDsoStr_to_str (dso_json_get_str (dso_obj),  key)) {
@@ -648,7 +648,7 @@ void dso_json_num_free (void *y) {
 }
 
 char * dso_json_num_to_str (DsoJsonNum * num) {
-	return r_str_newf ("%"PFMT64d, num->value);
+	return rz_str_newf ("%"PFMT64d, num->value);
 }
 
 DsoJsonObj * dso_json_num_new_from_num (ut64 num) {

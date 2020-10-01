@@ -2,7 +2,7 @@ NAME=rz
 LIBAR=librz.$(EXT_AR)
 
 include ../../config-user.mk
-include ../../libr/config.mk
+include ../../librz/config.mk
 include ../../mk/platform.mk
 include ../../mk/$(COMPILER).mk
 include ../../shlr/sdb.mk
@@ -17,16 +17,16 @@ RANLIB?=ranlib
 
 all: $(LIBAR)
 
-$(LIBAR): zip/libr_zip.$(EXT_AR)
+$(LIBAR): zip/librz_zip.$(EXT_AR)
 	@echo ${CC_AR} zlib/*.o zip/*.o
 	${CC_AR} zlib/*.o zip/*.o
 	@echo $(RANLIB) librz.$(EXT_AR)
 	$(RANLIB) librz.$(EXT_AR)
 
-zip/libr_zip.$(EXT_AR): zlib/libr_z.$(EXT_AR)
+zip/librz_zip.$(EXT_AR): zlib/librz_z.$(EXT_AR)
 	$(MAKE) -C zip
 
-zlib/libr_z.$(EXT_AR):
+zlib/librz_z.$(EXT_AR):
 	$(MAKE) -C zlib
 
 clean:

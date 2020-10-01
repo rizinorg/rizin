@@ -46,7 +46,7 @@ RUN
 NAME=ELF: main rebased 3
 FILE=-
 ARGS=-B 0x200000
-CMDS=!rabin2 -qMB 0x200000 bins/elf/analysis/main
+CMDS=!rz-bin -qMB 0x200000 bins/elf/analysis/main
 EXPECT=2098438
 RUN
 
@@ -104,7 +104,7 @@ CMDS=<<EOF
 ?v main
 aaa
 afo main
-!!rabin2 -M ${R2_FILE}
+!!rz-bin -M ${R2_FILE}
 EOF
 EXPECT=<<EOF
 0x8370
@@ -120,7 +120,7 @@ CMDS=<<EOF
 ?v main
 aaa
 afo main
-!!rabin2 -M ${R2_FILE}
+!!rz-bin -M ${R2_FILE}
 EOF
 EXPECT=<<EOF
 0x82ec
@@ -136,7 +136,7 @@ CMDS=<<EOF
 ?v main
 aaa
 afo main
-!!rabin2 -M ${R2_FILE}
+!!rz-bin -M ${R2_FILE}
 EOF
 EXPECT=<<EOF
 0x10310

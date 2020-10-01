@@ -11,9 +11,9 @@ if [ "${ARCH}" = "x86_64" ]; then
   ARCH=amd64
 fi
 
-echo "[debian] preparing radare2 package..."
-PKGDIR=sys/debian/radare2/root
-DEVDIR=sys/debian/radare2-dev/root
+echo "[debian] preparing rizin package..."
+PKGDIR=sys/debian/rizin/root
+DEVDIR=sys/debian/rizin-dev/root
 
 # clean
 rm -rf "${PKGDIR}" "${DEVDIR}"
@@ -35,16 +35,16 @@ for a in ${PKGDIR}/usr/bin/* ; do
   echo "[debian] strip $a"
   strip --strip-all "$a" 2> /dev/null || true
 done
-for a in ${PKGDIR}/usr/lib/libr*.so.* ; do
+for a in ${PKGDIR}/usr/lib/librz*.so.* ; do
   echo "[debian] strip $a"
   strip --strip-unneeded "$a" 2> /dev/null || true
 done
 
 # packages
-echo "[debian] building radare2 package..."
-make -C sys/debian/radare2 ARCH=${ARCH}
-cp -f sys/debian/radare2/*.deb .
+echo "[debian] building rizin package..."
+make -C sys/debian/rizin ARCH=${ARCH}
+cp -f sys/debian/rizin/*.deb .
 
-echo "[debian] building radare2-dev package..."
-make -C sys/debian/radare2-dev ARCH=${ARCH}
-cp -f sys/debian/radare2-dev/*.deb .
+echo "[debian] building rizin-dev package..."
+make -C sys/debian/rizin-dev ARCH=${ARCH}
+cp -f sys/debian/rizin-dev/*.deb .

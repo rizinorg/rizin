@@ -314,7 +314,7 @@ if [ "$WANT_R2" = "1" ]; then
 if [ ! "$R2_CFLAGS" = "" ]; then
 USE_R2="1"
 else
-case "$undefined_variable" in 0|"") echo ; echo "ERROR: Cannot find -lr_util using pkg-config" >&2 ; echo ; exit 1 ;; esac; fi; fi
+case "$undefined_variable" in 0|"") echo ; echo "ERROR: Cannot find -lrz_util using pkg-config" >&2 ; echo ; exit 1 ;; esac; fi; fi
 SEDFLAGS=" -e '"
 COUNT=0
 for A in ${ENVWORDS} ; do

@@ -27,7 +27,7 @@ jobs:
     - name: Checkout our Testsuite Binaries
       uses: actions/checkout@v2
       with:
-          repository: radareorg/radare2-testbins
+          repository: rizinorg/rizin-testbins
           path: test/bins
 
     - name: Configure, build and install
@@ -39,10 +39,10 @@ jobs:
           sudo make install
 
     - name: Install test dependencies
-      run: python3 -m pip install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
+      run: python3 -m pip install --user 'git+https://github.com/rizinorg/rizin-rzpipe#egg=rzpipe&subdirectory=python'
 
     - name: Run tests
       run: cd test && make
-      working-directory: radare2
+      working-directory: rizin
       env:
         PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig

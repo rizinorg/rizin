@@ -1,4 +1,4 @@
-include ../../libr/config.mk
+include ../../librz/config.mk
 include ../../config-user.mk
 include ../../mk/platform.mk
 include ../../mk/${COMPILER}.mk
@@ -26,10 +26,10 @@ endif
 endif
 endif
 
-CFLAGS+=-I../../libr/include
-LIBAR=libr_ar.${EXT_AR}
-LDFLAGS+=-L../../libr/util
-LIBS=-lr_util
+CFLAGS+=-I../../librz/include
+LIBAR=librz_ar.${EXT_AR}
+LDFLAGS+=-L../../librz/util
+LIBS=-lrz_util
 
 include ../../shlr/sdb.mk
 

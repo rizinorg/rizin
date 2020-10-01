@@ -12,7 +12,7 @@
 
 #if UNICODE
 
-static wchar_t *r_utf8_to_utf16_l (const char *cstring, int len) {
+static wchar_t *rz_utf8_to_utf16_l (const char *cstring, int len) {
 	if (!cstring || !len || len < -1) {
 		return NULL;
 	}
@@ -31,29 +31,29 @@ static wchar_t *r_utf8_to_utf16_l (const char *cstring, int len) {
 	return rutf16;
 }
 
-#define r_sys_conv_utf8_to_utf16(buf) r_utf8_to_utf16_l ((buf), -1)
+#define rz_sys_conv_utf8_to_utf16(buf) rz_utf8_to_utf16_l ((buf), -1)
 
-static bool r_sys_mkdir(const char *path) {
-	LPTSTR path_ = r_sys_conv_utf8_to_utf16 (path);
+static bool rz_sys_mkdir(const char *path) {
+	LPTSTR path_ = rz_sys_conv_utf8_to_utf16 (path);
 	bool ret = CreateDirectory (path_, NULL);
 
 	free (path_);
 	return ret;
 }
 #else
-#define r_sys_conv_utf8_to_utf16(buf) strdup (buf)
-#define r_sys_mkdir(x) CreateDirectory (x, NULL)
+#define rz_sys_conv_utf8_to_utf16(buf) strdup (buf)
+#define rz_sys_mkdir(x) CreateDirectory (x, NULL)
 #endif
 #ifndef ERROR_ALREADY_EXISTS
 #define ERROR_ALREADY_EXISTS 183
 #endif
-#define r_sys_mkdir_failed() (GetLastError () != 183)
+#define rz_sys_mkdir_failed() (GetLastError () != 183)
 #else
-#define r_sys_mkdir(x) (mkdir (x,0755)!=-1)
-#define r_sys_mkdir_failed() (errno != EEXIST)
+#define rz_sys_mkdir(x) (mkdir (x,0755)!=-1)
+#define rz_sys_mkdir_failed() (errno != EEXIST)
 #endif
 
-static inline int r_sys_mkdirp(char *dir) {
+static inline int rz_sys_mkdirp(char *dir) {
 	int ret = 1;
 	const char slash = DIRSEP;
 	char *path = dir;
@@ -69,8 +69,8 @@ static inline int r_sys_mkdirp(char *dir) {
 #endif
 	while ((ptr = strchr (ptr, slash))) {
 		*ptr = 0;
-		if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
-			eprintf ("r_sys_mkdirp: fail '%s' of '%s'\n", path, dir);
+		if (!rz_sys_mkdir (path) && rz_sys_mkdir_failed ()) {
+			eprintf ("rz_sys_mkdirp: fail '%s' of '%s'\n", path, dir);
 			*ptr = slash;
 			return 0;
 		}
@@ -98,13 +98,13 @@ SDB_API bool sdb_disk_create(Sdb* s) {
 		return false;
 	}
 	memcpy (str, dir, nlen + 1);
-	r_sys_mkdirp (str);
+	rz_sys_mkdirp (str);
 	memcpy (str + nlen, ".tmp", 5);
 	if (s->fdump != -1) {
 		close (s->fdump);
 	}
 #if __SDB_WINDOWS__ && UNICODE
-	wchar_t *wstr = r_sys_conv_utf8_to_utf16 (str);
+	wchar_t *wstr = rz_sys_conv_utf8_to_utf16 (str);
 	if (wstr) {
 		s->fdump = _wopen (wstr, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, SDB_MODE);
 		free (wstr);
@@ -149,8 +149,8 @@ SDB_API bool sdb_disk_finish (Sdb* s) {
 		reopen = true;
 	}
 #if __SDB_WINDOWS__
-	LPTSTR ndump_ = r_sys_conv_utf8_to_utf16 (s->ndump);
-	LPTSTR dir_ = r_sys_conv_utf8_to_utf16 (s->dir);
+	LPTSTR ndump_ = rz_sys_conv_utf8_to_utf16 (s->ndump);
+	LPTSTR dir_ = rz_sys_conv_utf8_to_utf16 (s->dir);
 
 	if (MoveFileEx (ndump_, dir_, MOVEFILE_REPLACE_EXISTING)) {
 		//eprintf ("Error 0x%02x\n", GetLastError ());

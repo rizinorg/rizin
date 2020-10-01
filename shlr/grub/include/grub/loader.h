@@ -45,14 +45,14 @@ grub_err_t grub_loader_boot (void);
    values even if external modules use them. */
 typedef enum {
   /* A preboot hook which can use everything and turns nothing off. */
-  GRUB_LOADER_PREBOOT_HOOK_PRIO_NORMAL = 400,
+  GRUB_LOADER_PREBOOT_HOOK_PRzIO_NORMAL = 400,
   /* A preboot hook which can't use disks and may stop disks. */
-  GRUB_LOADER_PREBOOT_HOOK_PRIO_DISK = 300,
+  GRUB_LOADER_PREBOOT_HOOK_PRzIO_DISK = 300,
   /* A preboot hook which can't use disks or console and may stop console. */
-  GRUB_LOADER_PREBOOT_HOOK_PRIO_CONSOLE = 200,
+  GRUB_LOADER_PREBOOT_HOOK_PRzIO_CONSOLE = 200,
   /* A preboot hook which can't use disks or console, can't modify memory map
      and may stop memory services or finalize memory map. */
-  GRUB_LOADER_PREBOOT_HOOK_PRIO_MEMORY = 100,
+  GRUB_LOADER_PREBOOT_HOOK_PRzIO_MEMORY = 100,
 } grub_loader_preboot_hook_prio_t;
 
 /* Register a preboot hook. */

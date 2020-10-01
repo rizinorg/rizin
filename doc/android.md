@@ -12,7 +12,7 @@ To build r2 for android you need to install the NDK:
 Edit `~/.r2androidrc` to setup the paths to your ndk
 
     sys/android-shell.sh
-    ./configure --with-compiler=android --with-ostype=android --prefix=/data/radare2 --without-pic --with-nonpic
+    ./configure --with-compiler=android --with-ostype=android --prefix=/data/rizin --without-pic --with-nonpic
     make -j 4
 
 To compile for android-x86

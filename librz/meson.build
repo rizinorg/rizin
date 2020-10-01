@@ -1,0 +1,498 @@
+anal_plugins = [
+  '6502',
+  '8051',
+  'amd29k',
+  'arc',
+  'arm_cs',
+  'arm_gnu',
+  'avr',
+  'bf',
+  'chip8',
+  'cr16',
+  'cris',
+  'dalvik',
+  'ebc',
+  'gb',
+  'h8300',
+  'hexagon',
+  'i4004',
+  'i8080',
+  'java',
+  'm68k_cs',
+  'm680x_cs',
+  'malbolge',
+  'mcore',
+  'mips_cs',
+  'mips_gnu',
+  'msp430',
+  'nios2',
+  'null',
+  'or1k',
+  'pic',
+  'ppc_cs',
+  'ppc_gnu',
+  'propeller',
+  'riscv',
+  'rsp',
+  'sh',
+  'snes',
+  'sparc_cs',
+  'sparc_gnu',
+  'sysz',
+  'tms320',
+  #'tms320c64x',
+  'tricore',
+  'v810',
+  'v850',
+  'vax',
+  'wasm',
+  'ws',
+  'x86_cs',
+  'xap',
+  'xcore_cs',
+  'xtensa',
+  'z80',
+]
+
+asm_plugins = [
+  '6502',
+  '8051',
+  'amd29k',
+  'arc',
+  'arm_as',
+  'arm_cs',
+  'arm_gnu',
+  'arm_winedbg',
+  'avr',
+  'bf',
+  'chip8',
+  'cr16',
+  'cris_gnu',
+  'dalvik',
+  'dcpu16',
+  'ebc',
+  'gb',
+  'h8300',
+  'hexagon',
+  #'hexagon_gnu',
+  'hppa_gnu',
+  'i4004',
+  'i8080',
+  'java',
+  'lanai_gnu',
+  'lh5801',
+  'lm32',
+  'm68k_cs',
+  'm680x_cs',
+  'malbolge',
+  'mcore',
+  'mcs96',
+  'mips_cs',
+  'mips_gnu',
+  'msp430',
+  'nios2',
+  'or1k',
+  'pic',
+  'ppc_cs',
+  'ppc_gnu',
+  'propeller',
+  'riscv',
+  'rsp',
+  'sh',
+  'snes',
+  'sparc_cs',
+  'sparc_gnu',
+  'spc700',
+  'sysz',
+  'tms320',
+  'tms320c64x',
+  'tricore',
+  'v810',
+  'v850',
+  'vax',
+  'wasm',
+  'ws',
+  'x86_as',
+  'x86_cs',
+  'x86_nasm',
+  'x86_nz',
+  'xap',
+  'xcore_cs',
+  'xtensa',
+  'z80',
+]
+
+bin_plugins = [
+  'any',
+  'art',
+  'avr',
+  'bf',
+  'bflt',
+  'bios',
+  'bootimg',
+  'cgc',
+  'coff',
+  'dex',
+  'dmp64',
+  'dol',
+  'dyldcache',
+  'elf',
+  'elf64',
+  'fs',
+  'java',
+  'le',
+  'mach0',
+  'mach064',
+  'mbn',
+  'mdmp',
+  'menuet',
+  'mz',
+  'ne',
+  'nes',
+  'nin3ds',
+  'ninds',
+  'ningb',
+  'ningba',
+  'nro',
+  'nso',
+  'omf',
+  'qnx',
+  'p9',
+  'pe',
+  'pe64',
+  'pebble',
+  'prg',
+  'psxexe',
+  'sfc',
+  'smd',
+  'sms',
+  'spc700',
+  'symbols',
+  'te',
+  'vsf',
+  'wasm',
+  'xbe',
+  'xnu_kernelcache',
+  'z64',
+  'zimg',
+]
+
+bin_ldr_plugins = [
+  'ldr_linux',
+]
+
+bin_xtr_plugins = [
+  'xtr_dyldcache',
+  'xtr_fatmach0',
+  'xtr_sep64',
+]
+
+bp_plugins = [
+  'arm',
+  'bf',
+  'mips',
+  'ppc',
+  'sh',
+  'x86'
+]
+
+core_plugins = [
+  'a2f',
+  'java'
+]
+
+crypto_plugins = [
+  'aes',
+  'aes_cbc',
+  'base64',
+  'base91',
+  'blowfish',
+  'cps2',
+  'des',
+  'punycode',
+  'rc2',
+  'rc4',
+  'rc6',
+  'rol',
+  'ror',
+  'rot',
+  'serpent',
+  'xor',
+]
+
+debug_plugins = [
+  'bf',
+  'bochs',
+  'esil',
+  'gdb',
+  'io',
+  'native',
+  'null',
+  'qnx',
+  'rap',
+  'winkd'
+]
+
+egg_plugins = [
+  'exec',
+  #'shya',
+  'xor'
+]
+
+fs_plugins = [
+  'cpio',
+  'ext2',
+  'fat',
+  'fb',
+  'hfs',
+  'hfsplus',
+  'io',
+  'iso9660',
+  'jfs',
+  'minix',
+  'ntfs',
+  'posix',
+  'rz',
+  'reiserfs',
+  'sfs',
+  'tar',
+  'udf',
+  'ufs',
+  'ufs2',
+  'xfs'
+]
+
+io_plugins = [
+  'ar',
+  'fd',
+  'bfdbg',
+  'bochs',
+  'debug',
+  'default',
+  'gdb',
+  'gprobe',
+  'gzip',
+  'http',
+  'ihex',
+  'mach',
+  'malloc',
+  'mmap',
+  'null',
+  'procpid',
+  'ptrace',
+  'qnx',
+  'rzk',
+  'rzpipe',
+  'rzweb',
+  'rap',
+  'rbuf',
+  'self',
+  'shm',
+  'sparse',
+  'tcp',
+  'winkd',
+  'winedbg',
+  'zip'
+]
+
+if host_machine.system() == 'windows'
+  io_plugins += [
+    'windbg',
+    'w32dbg',
+    'w32',
+  ]
+  debug_plugins += 'windbg'
+endif
+
+lang_plugins = [
+  'lib',
+  'pipe',
+  'rust',
+  'vala'
+]
+
+if host_machine.system() != 'windows'
+  lang_plugins += [
+    'c',
+    'cpipe'
+  ]
+endif
+
+parse_plugins = [
+  '6502_pseudo',
+  'arm_pseudo',
+  'att2intel',
+  'avr_pseudo',
+  'chip8_pseudo',
+  'tms320_pseudo',
+  'dalvik_pseudo',
+  'm68k_pseudo',
+  'mips_pseudo',
+  'ppc_pseudo',
+  'sh_pseudo',
+  'v850_pseudo',
+  'wasm_pseudo',
+  'x86_pseudo',
+  'z80_pseudo'
+]
+
+include_files =[
+  'include/rznaked.h',
+  'include/rz_agraph.h',
+  'include/rz_anal.h',
+  'include/rz_asm.h',
+  'include/rz_bind.h',
+  'include/rz_getopt.h',
+  'include/rz_bin_dwarf.h',
+  'include/rz_bin.h',
+  'include/rz_binheap.h',
+  'include/rz_bp.h',
+  'include/rz_cmd.h',
+  'include/rz_config.h',
+  'include/rz_cons.h',
+  'include/rz_core.h',
+  'include/rz_crypto.h',
+  'include/rz_debug.h',
+  'include/rz_diff.h',
+  'include/rz_egg.h',
+  'include/rz_main.h',
+  'include/rz_endian.h',
+  'include/rz_flag.h',
+  'include/rz_flist.h',
+  'include/rz_fs.h',
+  'include/rz_hash.h',
+  'include/rz_heap_glibc.h',
+  'include/rz_heap_jemalloc.h',
+  'include/rz_io.h',
+  'include/rz_lang.h',
+  'include/rz_lib.h',
+  'include/rz_list.h',
+  'include/rz_magic.h',
+  'include/rz_parse.h',
+  'include/rz_pdb.h',
+  'include/rz_qrcode.h',
+  'include/rz_regex.h',
+  'include/rz_reg.h',
+  'include/rz_search.h',
+  'include/rz_sign.h',
+  'include/rz_skiplist.h',
+  'include/rz_socket.h',
+  'include/rz_syscall.h',
+  'include/rz_th.h',
+  'include/rz_types_overflow.h',
+  'include/rz_types_base.h',
+  'include/rz_types.h',
+  'include/rz_util.h',
+  'include/rz_vector.h',
+]
+install_headers(include_files, install_dir: r2_incdir)
+
+rz_util_files = [
+  'include/rz_util/pj.h',
+  'include/rz_util/rz_ascii_table.h',
+  'include/rz_util/rz_asn1.h',
+  'include/rz_util/rz_assert.h',
+  'include/rz_util/rz_protobuf.h',
+  'include/rz_util/rz_base64.h',
+  'include/rz_util/rz_base91.h',
+  'include/rz_util/rz_big.h',
+  'include/rz_util/rz_bitmap.h',
+  'include/rz_util/rz_buf.h',
+  'include/rz_util/rz_cache.h',
+  'include/rz_util/rz_ctypes.h',
+  'include/rz_util/rz_debruijn.h',
+  'include/rz_util/rz_event.h',
+  'include/rz_util/rz_file.h',
+  'include/rz_util/rz_graph.h',
+  'include/rz_util/rz_hex.h',
+  'include/rz_util/rz_idpool.h',
+  'include/rz_util/rz_itv.h',
+  'include/rz_util/rz_json.h',
+  'include/rz_util/rz_log.h',
+  'include/rz_util/rz_mem.h',
+  'include/rz_util/rz_name.h',
+  'include/rz_util/rz_num.h',
+  'include/rz_util/rz_panels.h',
+  'include/rz_util/rz_table.h',
+  'include/rz_util/rz_pkcs7.h',
+  'include/rz_util/rz_pool.h',
+  'include/rz_util/rz_print.h',
+  'include/rz_util/rz_punycode.h',
+  'include/rz_util/rz_queue.h',
+  'include/rz_util/rz_range.h',
+  'include/rz_util/rz_rbtree.h',
+  'include/rz_util/rz_intervaltree.h',
+  'include/rz_util/rz_sandbox.h',
+  'include/rz_util/rz_signal.h',
+  'include/rz_util/rz_spaces.h',
+  'include/rz_util/rz_stack.h',
+  'include/rz_util/rz_strbuf.h',
+  'include/rz_util/rz_str.h',
+  'include/rz_util/rz_strpool.h',
+  'include/rz_util/rz_str_constpool.h',
+  'include/rz_util/rz_str_util.h',
+  'include/rz_util/rz_sys.h',
+  'include/rz_util/rz_alloc.h',
+  'include/rz_util/rz_time.h',
+  'include/rz_util/rz_tree.h',
+  'include/rz_util/rz_uleb128.h',
+  'include/rz_util/rz_utf16.h',
+  'include/rz_util/rz_utf32.h',
+  'include/rz_util/rz_utf8.h',
+  'include/rz_util/rz_x509.h',
+  'include/rz_util/rz_annotated_code.h'
+]
+install_headers(rz_util_files, install_dir: join_paths(r2_incdir, 'rz_util'))
+
+rz_crypto_files = [
+  'include/rz_crypto/rz_des.h'
+]
+install_headers(rz_crypto_files, install_dir: join_paths(r2_incdir, 'rz_crypto'))
+
+sflib_common_files = [
+  'include/sflib/common/sftypes.h',
+  'include/sflib/common/sfsocketcall.h'
+]
+
+sflib_arch = [
+  'linux-x86-64',
+  'linux-x86-32',
+  'linux-arm-64',
+  'linux-arm-32',
+  'darwin-x86-64',
+  'darwin-x86-32',
+  'darwin-arm-64'
+]
+
+sflib_arch_files = [
+  'sflib.h',
+  'sfsyscall.h',
+  'sfsysnr.h'
+]
+
+install_headers(sflib_common_files, install_dir: join_paths(r2_incdir, 'sflib/common'))
+foreach arch : sflib_arch
+  foreach file : sflib_arch_files
+    install_headers(join_paths('include/sflib', arch, file), install_dir: join_paths(r2_incdir, 'sflib', arch))
+  endforeach
+endforeach
+
+sdb_readlink_script = '''#script
+import os
+import sys
+infile = sys.argv[1]
+if os.name == 'nt' and os.path.getsize(infile) <= 64:
+    with open(infile) as sdb_txt:
+        fname = sdb_txt.readline()
+    if fname.endswith('.sdb.txt'):
+        infile = fname
+else:
+    infile = os.path.basename(infile)
+print(infile)
+'''
+
+sdb_readlink_cmd = [
+  py3_exe,
+  '-c',
+  sdb_readlink_script
+]

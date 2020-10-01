@@ -1,1 +1,1 @@
-LINK+=$(STOP)/ar/libr_ar.$(EXT_AR)
+LINK+=$(STOP)/ar/librz_ar.$(EXT_AR)

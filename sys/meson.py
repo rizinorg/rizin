@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Meson build for radare2"""
+"""Meson build for rizin"""
 
 import argparse
 import glob
@@ -160,8 +160,8 @@ def xp_compat(builddir):
             log.debug("%s .. OK", f)
 
 def build(args):
-    """ Build radare2 """
-    log.info('Building radare2')
+    """ Build rizin """
+    log.info('Building rizin')
     r2_builddir = os.path.join(ROOT, args.dir)
     options = ['-D%s' % x for x in args.options]
     if args.webui:
@@ -176,7 +176,7 @@ def build(args):
         if args.backend == 'vs2017' and args.xp:
             xp_compat(r2_builddir)
         if not args.project:
-            project = os.path.join(r2_builddir, 'radare2.sln')
+            project = os.path.join(r2_builddir, 'rizin.sln')
             params = ['/m', '/clp:Summary;Verbosity=minimal']
             if args.backend == 'vs2017' and args.xp:
                 params.append('/p:XPDeprecationWarning=false')
@@ -185,7 +185,7 @@ def build(args):
         ninja(r2_builddir)
 
 def install(args):
-    """ Install radare2 """
+    """ Install rizin """
     meson('install', options=['-C', '{}'.format(args.dir), '--no-rebuild'])
 
 def main():
@@ -193,11 +193,11 @@ def main():
     set_global_variables()
 
     # Create parser
-    parser = argparse.ArgumentParser(description='Mesonbuild scripts for radare2')
+    parser = argparse.ArgumentParser(description='Mesonbuild scripts for rizin')
     # --sanitize=address,signed-integer-overflow for faster build
     parser.add_argument('--sanitize', nargs='?',
             const='address,undefined,signed-integer-overflow', metavar='sanitizers',
-            help='Build radare2 with sanitizer support (default: %(const)s)')
+            help='Build rizin with sanitizer support (default: %(const)s)')
     parser.add_argument('--project', action='store_true',
             help='Create a visual studio project and do not build.')
     parser.add_argument('--release', action='store_true',
@@ -227,7 +227,7 @@ def main():
     parser.add_argument('--webui', action='store_true',
             help='Install WebUIs')
     parser.add_argument('--install', action='store_true',
-            help='Install radare2 after building')
+            help='Install rizin after building')
     parser.add_argument('--options', nargs='*', default=[])
     args = parser.parse_args()
     if args.alias:
@@ -285,11 +285,11 @@ def main():
     log.debug('Arguments: %s', args)
     build(args)
     if args.uninstall:
-        os.system(sudo + 'make uninstall PWD="$PWD/build" BTOP="$PWD/build/binr"')
+        os.system(sudo + 'make uninstall PWD="$PWD/build" BTOP="$PWD/build/binrz"')
     if args.install:
         install(args)
     if args.symstall:
-        os.system(sudo + 'make symstall PWD="$PWD/build" BTOP="$PWD/build/binr"')
+        os.system(sudo + 'make symstall PWD="$PWD/build" BTOP="$PWD/build/binrz"')
 
 if __name__ == '__main__':
     main()

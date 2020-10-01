@@ -49,7 +49,7 @@ print "$sys\n";
 
 get_graph("r2cdg.jpg", "r2 commit locdiff graph", 0);
 get_graph("r2clg.jpg", "r2 commit lines of code graph", 1);
-system("scp r2cdg.jpg radare.org:/srv/http/radareorg/get");
-system("scp r2clg.jpg radare.org:/srv/http/radareorg/get");
+system("scp r2cdg.jpg radare.org:/srv/http/rizinorg/get");
+system("scp r2clg.jpg radare.org:/srv/http/rizinorg/get");
 print ("http://radare.org/get/r2cdg.jpg\n");
 print ("http://radare.org/get/r2clg.jpg\n");

@@ -4,11 +4,11 @@
 # http://blog.coolaj86.com/articles/how-to-unpackage-and-repackage-pkg-osx.html
 
 # to uninstall:
-# sudo pkgutil --forget org.radare.radare2
+# sudo pkgutil --forget org.radare.rizin
 
 SRC=/tmp/r2osx
 PREFIX=/usr/local
-DST="$(pwd)/sys/osx-pkg/radare2.unpkg"
+DST="$(pwd)/sys/osx-pkg/rizin.unpkg"
 if [ -n "$1" ]; then
 	VERSION="$1"
 else
@@ -31,7 +31,7 @@ if [ -d "${SRC}" ]; then
 	)
 	mkbom ${SRC} "${DST}/Bom"
 	# Repackage
-	pkgutil --flatten "${DST}" "${DST}/../radare2-${VERSION}.pkg"
+	pkgutil --flatten "${DST}" "${DST}/../rizin-${VERSION}.pkg"
 else
 	echo "Failed install. DESTDIR is empty"
 	exit 1

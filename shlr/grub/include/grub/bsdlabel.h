@@ -62,7 +62,7 @@
 #define	GRUB_PC_PARTITION_OPENBSD_TYPE_EXT2FS	17
 #define	GRUB_PC_PARTITION_OPENBSD_TYPE_NTFS	18
 #define	GRUB_PC_PARTITION_OPENBSD_TYPE_RAID	19
-#include <r_types.h>
+#include <rz_types.h>
 /* The BSD partition entry.  */
 R_PACKED(
 struct grub_partition_bsd_entry

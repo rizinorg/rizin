@@ -1,7 +1,7 @@
 include ../config-user.mk
 include ../global.mk
 # for EXT_EXE
-include ../libr/config.mk
+include ../librz/config.mk
 include ../mk/platform.mk
 _INCLUDE_MK_GCC_=
 include ../mk/${COMPILER}.mk
@@ -79,7 +79,7 @@ endif
 ifeq (1,$(USE_PTRACE_WRAP))
 MODS+=ptrace-wrap
 endif
-SDB_URL=git://github.com/radareorg/sdb
+SDB_URL=git://github.com/rizinorg/sdb
 #SDB_URL=/Users/pancake/prg/sdb
 SPP_URL=git://github.com/radare/spp
 PTRACE_WRAP_URL=git://github.com/thestr4ng3r/ptrace-wrap
@@ -94,7 +94,7 @@ all:
 	exit 1
 endif
 
-preall: libwinkd capstone-build tree-sitter-build radare2-shell-parser-build bochs
+preall: libwinkd capstone-build tree-sitter-build rizin-shell-parser-build bochs
 	@for MOD in ${MODS} ; do \
 		echo $(MAKE) -C $$MOD ; \
 		$(MAKE) -C $$MOD HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
@@ -149,7 +149,7 @@ sdb-target:
 .PHONY: sdb-sync sync-sdb sdbclean sdb-native sdb-target
 SDB_F=README.md config.mk src Makefile meson.build
 SDB_SYNCFILES=$(addprefix sdb.vc/,${SDB_F})
-I=../libr/include
+I=../librz/include
 
 libgdbr:
 	$(MAKE) -C gdb all
@@ -189,7 +189,7 @@ ptrace-wrap-sync sync-ptrace-wrap:
 	mkdir -p ptrace-wrap
 	cp -rf ${PTRACE_WRAP_SYNCFILES} ptrace-wrap
 	sed -e "s, library(, static_library(," -e "s,project(,# project(," -e "s,subdir(,# subdir(," ptrace-wrap.vc/meson.build > ptrace-wrap/meson.build
-	printf "include ../../libr/config.mk\ninclude ../../mk/platform.mk\ninclude ../../mk/${COMPILER}.mk\n\n" | cat - ptrace-wrap.vc/Makefile > ptrace-wrap/Makefile
+	printf "include ../../librz/config.mk\ninclude ../../mk/platform.mk\ninclude ../../mk/${COMPILER}.mk\n\n" | cat - ptrace-wrap.vc/Makefile > ptrace-wrap/Makefile
 	rm -rf ptrace-wrap.vc
 	printf "CFLAGS+=-I\$$(STOP)/ptrace-wrap/include\nLINK+=\$$(STOP)/ptrace-wrap/libptrace_wrap.\$$(EXT_AR)\nPTRACEWRAP_OBJS=\$$(STOP)/ptrace-wrap/src/ptrace_wrap.o\n" > ptrace-wrap/deps.mk
 
@@ -199,11 +199,11 @@ ptrace-wrap:
 ptrace-wrap-clean clean-ptrace-wrap:
 	$(MAKE) -C ptrace-wrap clean
 
-$(TCCLIB) libr_tcc/libr_tcc.${EXT_AR}:
-	cd libr_tcc ; $(MAKE)
+$(TCCLIB) librz_tcc/librz_tcc.${EXT_AR}:
+	cd librz_tcc ; $(MAKE)
 
 tcc-clean tccclean:
-	cd libr_tcc ; $(MAKE) clean
+	cd librz_tcc ; $(MAKE) clean
 
 CFILES=i386-asm.c i386-gen.c libtcc.c tccasm.c tccelf.c tccgen.c tccpp.c
 HFILES=tcc.h i386-asm.h tcclib.h tcctok.h stab.h
@@ -222,17 +222,17 @@ tcc-sync sync-tcc:
 	$(GIT) add tcc
 	rm -rf _
 
-install: libr_shlr.${EXT_AR}
+install: librz_shlr.${EXT_AR}
 	mkdir -p ${DESTDIR}/${LIBDIR}
-	cp -f libr_shlr.${EXT_AR} ${DESTDIR}/${LIBDIR}
+	cp -f librz_shlr.${EXT_AR} ${DESTDIR}/${LIBDIR}
 
 install-symlink symstall:
 	mkdir -p "${DESTDIR}${LIBDIR}"
-	#cd tcc ; for FILE in libr_tcc* ; do \
+	#cd tcc ; for FILE in librz_tcc* ; do \
 	#	ln -fs `pwd`/$$FILE ${DESTDIR}${LIBDIR}/$$FILE ; done
 
 uninstall deinstall:
-	rm -f ${DESTDIR}${LIBDIR}/libr_shlr.${EXT_AR}
+	rm -f ${DESTDIR}${LIBDIR}/librz_shlr.${EXT_AR}
 
 ifeq ($(USE_CAPSTONE),1)
 # Do nothing here
@@ -292,14 +292,14 @@ ifneq (${EXT_AR},a)
 	-cp -f capstone/libcapstone.a capstone/libcapstone.${EXT_AR}
 endif
 endif
-../../radare2-webui:
-	cd ../.. ; git clone --depth 1 https://github.com/radareorg/radare2-webui
+../../rizin-webui:
+	cd ../.. ; git clone --depth 1 https://github.com/rizinorg/rizin-webui
 
-../../radare2-webui/dist/m: ../../radare2-webui
+../../rizin-webui/dist/m: ../../rizin-webui
 ifeq ($(WITHOUT_PULL),1)
-	cd ../../radare2-webui/www/m && npm i ; $(MAKE) release
+	cd ../../rizin-webui/www/m && npm i ; $(MAKE) release
 else
-	cd ../../radare2-webui/www/m && git pull ; npm i ; $(MAKE) release
+	cd ../../rizin-webui/www/m && git pull ; npm i ; $(MAKE) release
 endif
 
 tree-sitter-build: tree-sitter/libtree-sitter.$(EXT_AR)
@@ -319,35 +319,35 @@ tree-sitter-sync:
 	cp -rf ./tree-sitter.vc/lib/include ./tree-sitter/lib
 	rm -rf tree-sitter.vc
 
-radare2-shell-parser-build: radare2-shell-parser/libshell-parser.$(EXT_AR)
+rizin-shell-parser-build: rizin-shell-parser/libshell-parser.$(EXT_AR)
 
-radare2-shell-parser/libshell-parser.$(EXT_AR): radare2-shell-parser/src/parser.o radare2-shell-parser/src/scanner.o
-	$(AR) rvs $@ radare2-shell-parser/src/parser.o radare2-shell-parser/src/scanner.o
+rizin-shell-parser/libshell-parser.$(EXT_AR): rizin-shell-parser/src/parser.o rizin-shell-parser/src/scanner.o
+	$(AR) rvs $@ rizin-shell-parser/src/parser.o rizin-shell-parser/src/scanner.o
 	$(RANLIB) $@
 
-radare2-shell-parser/src/parser.o: radare2-shell-parser/src/parser.c
-	$(CC) $(NEWSHELL_CFLAGS) -c radare2-shell-parser/src/parser.c -o $@ -Iradare2-shell-parser/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
+rizin-shell-parser/src/parser.o: rizin-shell-parser/src/parser.c
+	$(CC) $(NEWSHELL_CFLAGS) -c rizin-shell-parser/src/parser.c -o $@ -Irizin-shell-parser/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
 
-radare2-shell-parser/src/scanner.o: radare2-shell-parser/src/scanner.c
-	$(CC) -c radare2-shell-parser/src/scanner.c -o $@ -Iradare2-shell-parser/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
+rizin-shell-parser/src/scanner.o: rizin-shell-parser/src/scanner.c
+	$(CC) -c rizin-shell-parser/src/scanner.c -o $@ -Irizin-shell-parser/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
 
 SHLRS+=tree-sitter/libtree-sitter.a
-SHLRS+=radare2-shell-parser/libshell-parser.a
+SHLRS+=rizin-shell-parser/libshell-parser.a
 
-www-sync-m sync-www-m: ../../radare2-webui/dist/m
-	cp -rf ../../radare2-webui/dist/m www/m.tmp
+www-sync-m sync-www-m: ../../rizin-webui/dist/m
+	cp -rf ../../rizin-webui/dist/m www/m.tmp
 	rm -rf www/m
 	mv www/m.tmp www/m
 	git add www/m
 
 www-sync-p sync-www-p:
-	cp -rf ../../radare2-webui/dist/p www/p.tmp
+	cp -rf ../../rizin-webui/dist/p www/p.tmp
 	rm -rf www/p
 	mv www/p.tmp www/p
 	git add www/p
 
 www-sync-t sync-www-t:
-	cp -rf ../../radare2-webui/dist/t www/t.tmp
+	cp -rf ../../rizin-webui/dist/t www/t.tmp
 	rm -rf www/t
 	mv www/t.tmp www/t
 	git add www/p
@@ -364,34 +364,34 @@ spp-sync sync-spp:
 	git add spp
 
 spp: spp-sync
-	CFLAGS="-DUSE_R2=1 -I../../libr/include -DHAVE_FORK=${HAVE_FORK} -fPIC" $(MAKE) -C spp r2lib
+	CFLAGS="-DUSE_R2=1 -I../../librz/include -DHAVE_FORK=${HAVE_FORK} -fPIC" $(MAKE) -C spp r2lib
 
-SHLRS+=ar/libr_ar.a
+SHLRS+=ar/librz_ar.a
 SHLRS+=bochs/lib/libbochs.a
 SHLRS+=capstone/libcapstone.a
 SHLRS+=gdb/lib/libgdbr.a
 SHLRS+=grub/libgrubfs.a
-SHLRS+=java/libr_java.a
+SHLRS+=java/librz_java.a
 SHLRS+=lz4/liblz4.a
 SHLRS+=qnx/lib/libqnxr.a
 SHLRS+=yxml/libyxml.a
-SHLRS+=winkd/libr_winkd.a
+SHLRS+=winkd/librz_winkd.a
 SHLRS+=zip/librz.a
 
-libr_shlr.${EXT_AR}:
-	rm -rf .libr
-	mkdir .libr
+librz_shlr.${EXT_AR}:
+	rm -rf .librz
+	mkdir .librz
 ifeq ($(CC),emcc)
 	for LIB in ${SHLRS} ; do \
-		if [ -f "$${LIB}" ]; then emcc -emit-llvm -nostdlib -Wl,--whole-archive -o .libr/$$(basename $${LIB}.a).o $${LIB} ; fi ; \
+		if [ -f "$${LIB}" ]; then emcc -emit-llvm -nostdlib -Wl,--whole-archive -o .librz/$$(basename $${LIB}.a).o $${LIB} ; fi ; \
 	done
-	${AR} rs $@ .libr/*.o
+	${AR} rs $@ .librz/*.o
 	$(RANLIB) $@
 else
 	for LIB in ${SHLRS} ; do \
-		if [ -f "$${LIB}" ]; then ${PARTIALLD} -o .libr/$$(basename $${LIB}.a).o $${LIB} ; fi ; \
+		if [ -f "$${LIB}" ]; then ${PARTIALLD} -o .librz/$$(basename $${LIB}.a).o $${LIB} ; fi ; \
 	done
-	${AR} rs $@ .libr/*.o
+	${AR} rs $@ .librz/*.o
 	$(RANLIB) $@
 endif
 

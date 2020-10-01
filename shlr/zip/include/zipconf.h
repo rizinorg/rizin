@@ -13,8 +13,8 @@
 #define LIBZIP_VERSION_MINOR 11
 #define LIBZIP_VERSION_MICRO 0
 
-#include <r_types.h>
-#include <r_types_base.h>
+#include <rz_types.h>
+#include <rz_types_base.h>
 
 typedef st8 zip_int8_t;
 #define ZIP_INT8_MIN ST8_MIN

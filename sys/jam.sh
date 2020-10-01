@@ -10,7 +10,7 @@ for a in ./* ; do
    cd ..
  fi
 done
-cd ../libr
+cd ../librz
 for a in ./* ; do
  if [ -e "$a/Jamroot" ]; then
    cd "$a" || exit 1
@@ -20,7 +20,7 @@ for a in ./* ; do
 done
 
 cd ..
-cd binr
+cd binrz
 for a in ./* ; do
  if [ -e "$a/Jamroot" ]; then
    cd "$a" || exit 1

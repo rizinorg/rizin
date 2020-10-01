@@ -1,7 +1,7 @@
 Sandboxing r2
 =============
 
-radare2 supports sandboxing natively by wrapping all attempts
+rizin supports sandboxing natively by wrapping all attempts
 to access the filesystem, network or run programs.
 
 But for some platforms, the kernel provides a native sandboxing
@@ -14,7 +14,7 @@ OSX
 OSX Seatbelt implements a system-level sandbox for applications,
 the rules are described in a lispy .sb file:
 
-	$ sandbox-exec -f radare2.sb r2 -S /bin/ls
+	$ sandbox-exec -f rizin.sb r2 -S /bin/ls
 
 **NOTE**: r2 -S is an alias for -e cfg.sandbox=true
 

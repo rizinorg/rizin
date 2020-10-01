@@ -11,30 +11,30 @@ environment:
     CC: clang
     HOST_CC: clang
 sources:
-    - https://github.com/radareorg/radare2
-    - https://github.com/radareorg/radare2-testbins
+    - https://github.com/rizinorg/rizin
+    - https://github.com/rizinorg/rizin-testbins
 tasks:
-    - r2pipe: |
+    - rzpipe: |
         sudo python3 -m ensurepip
-        sudo python3 -m pip install 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
+        sudo python3 -m pip install 'git+https://github.com/rizinorg/rizin-rzpipe#egg=rzpipe&subdirectory=python'
     - build: |
-        cd radare2
+        cd rizin
         ./configure --prefix=${HOME}
         gmake
     - install: |
-        cd radare2
+        cd rizin
         export PATH=${HOME}/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${PKG_CONFIG_PATH}
         gmake install
     - test: |
-        cd radare2
+        cd rizin
         export PATH=${HOME}/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${PKG_CONFIG_PATH}
         # Workaround until the feature request is solved
         # https://todo.sr.ht/~sircmpwn/builds.sr.ht/274
-        ln -s ${HOME}/radare2-testbins test/bins
+        ln -s ${HOME}/rizin-testbins test/bins
         # Running the test suite
         cd test && gmake -k all
 

@@ -28,7 +28,7 @@ Before any release we have to:
 
    If available, it would be good to have some unit tests to check nothing is
    broken. Maybe Vala is the way to go when writing tests, because this way
-   we ensure that pkg-config, libr and vapis works in a shot.
+   we ensure that pkg-config, librz and vapis works in a shot.
 
  - Test build on different platforms
 
@@ -44,7 +44,7 @@ Before any release we have to:
    while refactoring code or re-doing-it from scratch. This code, should be
    reviewed and removed if necessary.
 
-       $ grep -r -e TODO -e XXX -e FIX libr
+       $ grep -r -e TODO -e XXX -e FIX librz
 
  - Graph per symbol-module dependency graph to identify unused/dupped/-
    simplificable use cases of the API for every module.

@@ -858,7 +858,7 @@ NAME=search by whole file
 FILE=malloc://64
 CMDS=<<EOF
 wx 90 @ 0x10
-/F bins/other/radiff2/radiff2_c_2
+/F bins/other/rz-diff/rz-diff_c_2
 EOF
 EXPECT=<<EOF
 0x00000010 hit0_0 90

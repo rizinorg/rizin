@@ -1,0 +1,68 @@
+rz_main_sources = [
+  'main.c',
+  'rz_agent.c',
+  'rz_bin.c',
+  'rizin.c',
+  'rz_diff.c',
+  'rz_find.c',
+  'rz_gg.c',
+  'rz_hash.c',
+  'rz_run.c',
+  'rz_sign.c',
+  'rz_asm.c',
+  'rz_ax.c'
+]
+
+rz_main_deps = [
+  rz_config_dep,
+  rz_cons_dep,
+  rz_io_dep,
+  rz_util_dep,
+  rz_flag_dep,
+  rz_asm_dep,
+  rz_core_dep,
+  rz_debug_dep,
+  rz_hash_dep,
+  rz_bin_dep,
+  rz_lang_dep,
+  rz_io_dep,
+  rz_anal_dep,
+  rz_parse_dep,
+  rz_bp_dep,
+  rz_egg_dep,
+  rz_reg_dep,
+  rz_search_dep,
+  rz_syscall_dep,
+  rz_socket_dep,
+  rz_fs_dep,
+  rz_magic_dep,
+  rz_crypto_dep
+]
+
+rz_main = library('rz_main', rz_main_sources,
+  include_directories: [platform_inc],
+  c_args: library_cflags,
+  dependencies: rz_main_deps,
+  install: true,
+  implicit_include_directories: false,
+  install_rpath: rpath_lib,
+  soversion: r2_libversion
+)
+
+rz_main_dep = declare_dependency(link_with: rz_main,
+                                include_directories: [platform_inc],
+                                dependencies: rz_main_deps)
+
+pkgconfig_mod.generate(rz_main,
+  subdirs: 'librz',
+  version: r2_version,
+  name: 'rz_main',
+  libraries: pkgcfg_sanitize_libs,
+  filebase: 'rz_main',
+  requires: [
+    'rz_core',
+    'rz_asm',
+    'rz_syscall'
+  ],
+  description: 'radare foundation libraries'
+)

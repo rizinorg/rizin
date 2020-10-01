@@ -2,6 +2,6 @@ include ../../config.mk
 
 OBJS=parse.o
 BIN=parse
-BINDEPS=r_parse r_util r_flags r_cons r_anal r_reg r_syscall r_db
+BINDEPS=rz_parse rz_util rz_flags rz_cons rz_anal rz_reg rz_syscall rz_db
 
 include ../../rules.mk

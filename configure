@@ -111,7 +111,7 @@ create_environ() {
 : ${DATADIR:="${SPREFIX}/share"}
 : ${INFODIR:="${DATADIR}/info"}
 : ${MANDIR:="${DATADIR}/man"}
-: ${DOCDIR:="${DATADIR}/doc/radare2"}
+: ${DOCDIR:="${DATADIR}/doc/rizin"}
 : ${LOCALSTATEDIR:="${SPREFIX}/var"}
 for A in `echo ${PATH} | sed -e 's,:, ,g'` ; do
   [ -e "$A"/ginstall ] && : ${INSTALL:="$A"/ginstall} && break
@@ -124,12 +124,12 @@ done
 : ${INSTALL_PROGRAM_STRIP:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
 : ${INSTALL_LIB:=${INSTALL} -m 755 -c}
- PKGNAME='radare2' ; VERSION='4.6.0-git' ; VERSION_MAJOR=4; VERSION_MINOR=6; VERSION_PATCH=0; VERSION_NUMBER=40600; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
+ PKGNAME='rizin' ; VERSION='4.6.0-git' ; VERSION_MAJOR=4; VERSION_MINOR=6; VERSION_PATCH=0; VERSION_NUMBER=40600; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
 }
 
 show_usage() {
 cat <<EOF2
-'configure' configures radare2-4.6.0-git to adapt to many kinds of systems.
+'configure' configures rizin-4.6.0-git to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -151,7 +151,7 @@ Installation directories:
 Fine tuning of the installation directories:
   --bindir=DIR           user executables [EPREFIX/bin]
   --datadir=DIR          read-only architecture-independent data [PREFIX/share]
-  --docdir=DIR           documentation directory [DATADIR/doc/radare2]
+  --docdir=DIR           documentation directory [DATADIR/doc/rizin]
   --includedir=DIR       C header files [PREFIX/include]
   --infodir=DIR          info documentation [DATADIR/info]
   --libexecdir=DIR       program executables [EPREFIX/libexec]
@@ -177,7 +177,7 @@ printf "\nOptional Features:
   --without-dylink       disable support for dynamic loading of plugins
   --without-fork         disable fork
   --without-ptrace-wrap  disable ptrace-wrap build
-  --with-libr            build libr.a and libr.dylib
+  --with-librz           build librz.a and librz.dylib
   --with-syscapstone     force to use system-wide capstone
   --with-syszip          force to use system's libzip and zlib
   --with-sysxxhash       force to use system's xxhash
@@ -189,7 +189,7 @@ printf "\nOptional Features:
   --with-ostype          Choose OS type ( gnulinux windows darwin haiku ) (USEROSTYPE=auto)
   --with-libversion      specify different libversion (LIBVERSION=xxx)
   --without-jemalloc     build without jemalloc
-  --without-r2r          build without r2r for regression testing
+  --without-rz-test      build without rz-test for regression testing
   --with-checks-level    value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) (R_CHECKS_LEVEL=2)\n"
 printf "\nSome influential environment variables:
   CC          C compiler command
@@ -213,7 +213,7 @@ take_environ() {
 }
 
 show_version() {
-echo "radare2-4.6.0-git configuration script done with acr v1.9.3.
+echo "rizin-4.6.0-git configuration script done with acr v1.9.3.
 The 'Free Software Foundation' message is only for autodetection.
 Originally written by pancake <nopcode.org>."
 exit 0
@@ -236,13 +236,13 @@ case $flag in
 -V|-version|--version)
 	show_version ; ;;
 -r|--r|--report)
-echo "PKGNAME:   radare2"
+echo "PKGNAME:   rizin"
 echo "VERSION:   4.6.0-git"
 echo "LANGS:     c"
 echo "REQUIRED:  libdl"
 echo "OPTIONAL:  libmagic libz libzip libxxhash libssl liblibuv>=1.0.0"
 echo "PKG-CONFIG:  capstone openssl libuv"
-echo "FLAGS:     --disable-debugger --with-sysmagic --with-capstone5 --disable-loadlibs --without-dylink --without-fork --without-ptrace-wrap --with-libr --with-syscapstone --with-syszip --with-sysxxhash --without-gpl --with-openssl --without-libuv --with-rpath --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc --without-r2r --with-checks-level=2"
+echo "FLAGS:     --disable-debugger --with-sysmagic --with-capstone5 --disable-loadlibs --without-dylink --without-fork --without-ptrace-wrap --with-librz --with-syscapstone --with-syszip --with-sysxxhash --without-gpl --with-openssl --without-libuv --with-rpath --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc --without-rz-test --with-checks-level=2"
 	exit 0
 	;;
 --cache-file)
@@ -295,7 +295,7 @@ echo "FLAGS:     --disable-debugger --with-sysmagic --with-capstone5 --disable-l
 "--without-dylink") WANT_DYLINK="0"; ;;
 "--without-fork") HAVE_FORK="0"; ;;
 "--without-ptrace-wrap") WANT_PTRACE_WRAP="0"; ;;
-"--with-libr") WITH_LIBR="1"; ;;
+"--with-librz") WITH_LIBR="1"; ;;
 "--with-syscapstone") WITH_CAPSTONE="1"; ;;
 "--with-syszip") USE_ZIP="1"; ;;
 "--with-sysxxhash") USE_XXHASH="1"; ;;
@@ -307,7 +307,7 @@ echo "FLAGS:     --disable-debugger --with-sysmagic --with-capstone5 --disable-l
 --with-ostype) if [ -z "${value}" ]; then USEROSTYPE="auto"; else USEROSTYPE="${value}" ; fi ;;
 --with-libversion) if [ -z "${value}" ]; then LIBVERSION="xxx"; else LIBVERSION="${value}" ; fi ;;
 "--without-jemalloc") HAVE_JEMALLOC="0"; ;;
-"--without-r2r") WANT_R2R="0"; ;;
+"--without-rz-test") WANT_R2R="0"; ;;
 --with-checks-level) if [ -z "${value}" ]; then R_CHECKS_LEVEL="2"; else R_CHECKS_LEVEL="${value}" ; fi ;;
 *) if [ "$value" ]; then eval "`echo $flag2=$value`" ;
 else echo ; echo "WARNING: Unknown flag '$flag'." >&2 ; echo ; fi ;;
@@ -704,7 +704,7 @@ for A in ${ENVWORDS} ; do
 	SEDFLAGS="${SEDFLAGS}s,@${A}@,${VAR},g;"
 done
 SEDFLAGS="${SEDFLAGS}'"
-for A in ./config-user.mk libr/include/r_userconf.h pkgcfg/r_io.pc pkgcfg/r_magic.pc pkgcfg/r_asm.pc pkgcfg/r_bin.pc pkgcfg/r_anal.pc pkgcfg/r_hash.pc pkgcfg/r_cons.pc pkgcfg/r_core.pc pkgcfg/r_lang.pc pkgcfg/r_socket.pc pkgcfg/r_debug.pc pkgcfg/r_reg.pc pkgcfg/r_config.pc pkgcfg/r_flag.pc pkgcfg/r_syscall.pc pkgcfg/r_util.pc pkgcfg/r_search.pc pkgcfg/r_bp.pc pkgcfg/r_parse.pc pkgcfg/r_fs.pc pkgcfg/r_egg.pc pkgcfg/r_crypto.pc  ; do # SUBDIRS
+for A in ./config-user.mk librz/include/rz_userconf.h pkgcfg/rz_io.pc pkgcfg/rz_magic.pc pkgcfg/rz_asm.pc pkgcfg/rz_bin.pc pkgcfg/rz_anal.pc pkgcfg/rz_hash.pc pkgcfg/rz_cons.pc pkgcfg/rz_core.pc pkgcfg/rz_lang.pc pkgcfg/rz_socket.pc pkgcfg/rz_debug.pc pkgcfg/rz_reg.pc pkgcfg/rz_config.pc pkgcfg/rz_flag.pc pkgcfg/rz_syscall.pc pkgcfg/rz_util.pc pkgcfg/rz_search.pc pkgcfg/rz_bp.pc pkgcfg/rz_parse.pc pkgcfg/rz_fs.pc pkgcfg/rz_egg.pc pkgcfg/rz_crypto.pc  ; do # SUBDIRS
 if [ -f "${VPATH}/${A}.acr" ]; then
   SD_TARGET=${A}
  else

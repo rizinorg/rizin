@@ -3,9 +3,9 @@ PDB usage
 
 - To get information about functions, structures, unions, enumerates etc:
 ````
-rabin2 -P some_pdb_file
+rz_bin -P some_pdb_file
 For example:
-rabin2 -P Project1.pdb
+rz_bin -P Project1.pdb
 ...
 TEST_STRUCT: size 0x8
 	0x0: a type:(member) long
@@ -30,14 +30,14 @@ TEST_STRUCT: size 0x8
 
 - To display all mentioned above information in json format:
 ````
-rabin2 -Pj some_pdb_file
+rz_bin -Pj some_pdb_file
 ````
 
 - To export information about types, functions:
 ````
-rabin2 -Pr some_pdb_file
+rz_bin -Pr some_pdb_file
 For example:
-rabin2 -P Project1.pdb
+rz_bin -P Project1.pdb
 ...
 pf TEST_STRUCT ii a b
 "td enum TEST_ENUM eENUM1=00000010,eENUM2=00000020,eENUM_MAX=00000021 };"
@@ -54,9 +54,9 @@ Check out this post for more information about pf: http://radare.today/types/
 
 - To download PDB file for some binary (.exe, .dll):
 ````
-rabin2 -PP path_to_binary
+rz_bin -PP path_to_binary
 For example:
-rabin2 -PP ~/Downloads/libs/user32.dll
+rz_bin -PP ~/Downloads/libs/user32.dll
 % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current Dload  Upload   Total   Spent    Left  Speed
 100  336k  100  336k    0     0  34388      0  0:00:10  0:00:10 --:--:-- 38385
 Extracting cabinet: /home/inisider/Downloads/libs/user32.pd_

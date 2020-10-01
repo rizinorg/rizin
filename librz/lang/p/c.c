@@ -1,0 +1,124 @@
+/* radare - LGPL - Copyright 2011-2017 pancake */
+/* vala extension for librz (rizin) */
+// TODO: add cache directory (~/.r2/cache)
+
+#include "rz_lib.h"
+#include "rz_core.h"
+#include "rz_lang.h"
+
+#if __UNIX__
+static int ac = 0;
+static const char **av = NULL;
+
+static bool lang_c_set_argv(RzLang *lang, int argc, const char **argv) {
+	ac = argc;
+	av = argv;
+	return true;
+}
+
+static int lang_c_file(RzLang *lang, const char *file) {
+	char *a, *cc, *p, name[512];
+	const char *libpath, *libname;
+	void *lib;
+
+	if (strlen (file) > (sizeof (name) - 10)) {
+		return false;
+	}
+	if (!strstr (file, ".c")) {
+		sprintf (name, "%s.c", file);
+	} else {
+		strcpy (name, file);
+	}
+	if (!rz_file_exists (name)) {
+		eprintf ("file not found (%s)\n", name);
+		return false;
+	}
+
+	a = (char*)rz_str_lchr (name, '/');
+	if (a) {
+		*a = 0;
+		libpath = name;
+		libname = a + 1;
+	} else {
+		libpath = ".";
+		libname = name;
+	}
+	p = strstr (name, ".c");
+	if (p) {
+		*p = 0;
+	}
+	cc = rz_sys_getenv ("CC");
+	if (R_STR_ISEMPTY (cc)) {
+		cc = strdup ("gcc");
+	}
+	char *file_esc = rz_str_escape_sh (file);
+	char *libpath_esc = rz_str_escape_sh (libpath);
+	char *libname_esc = rz_str_escape_sh (libname);
+	char *buf = rz_str_newf ("%s -fPIC -shared \"%s\" -o \"%s/lib%s." R_LIB_EXT "\""
+		" $(PKG_CONFIG_PATH=%s pkg-config --cflags --libs rz_core)",
+		cc, file_esc, libpath_esc, libname_esc, R2_LIBDIR "/pkgconfig");
+	free (libname_esc);
+	free (libpath_esc);
+	free (file_esc);
+	free (cc);
+	if (rz_sandbox_system (buf, 1) != 0) {
+		free (buf);
+		return false;
+	}
+	free (buf);
+	buf = rz_str_newf ("%s/lib%s."R_LIB_EXT, libpath, libname);
+	lib = rz_lib_dl_open (buf);
+	if (lib) {
+		void (*fcn)(RzCore *, int argc, const char **argv);
+		fcn = rz_lib_dl_sym (lib, "entry");
+		if (fcn) {
+			fcn (lang->user, ac, av);
+			ac = 0;
+			av = NULL;
+		} else {
+			eprintf ("Cannot find 'entry' symbol in library\n");
+		}
+		rz_lib_dl_close (lib);
+	} else {
+		eprintf ("Cannot open library\n");
+	}
+	rz_file_rm (buf); // remove lib
+	free (buf);
+	return 0;
+}
+
+static int lang_c_init(void *user) {
+	// TODO: check if "valac" is found in path
+	return true;
+}
+
+static int lang_c_run(RzLang *lang, const char *code, int len) {
+	FILE *fd = rz_sandbox_fopen (".tmp.c", "w");
+	if (fd) {
+		fputs ("#include <rz_core.h>\n\nvoid entry(RzCore *core, int argc, const char **argv) {\n", fd);
+		fputs (code, fd);
+		fputs ("\n}\n", fd);
+		fclose (fd);
+		lang_c_file (lang, ".tmp.c");
+		rz_file_rm (".tmp.c");
+	} else eprintf ("Cannot open .tmp.c\n");
+	return true;
+}
+
+static RzLangPlugin rz_lang_plugin_c = {
+	.name = "c",
+	.ext = "c",
+	.desc = "C language extension",
+	.license = "LGPL",
+	.run = lang_c_run,
+	.init = (void*)lang_c_init,
+	.run_file = (void*)lang_c_file,
+	.set_argv = (void*)lang_c_set_argv,
+};
+#else
+#ifdef _MSC_VER
+#pragma message("Warning: C RzLangPlugin is not implemented on this platform")
+#else
+#warning C RzLangPlugin is not implemented on this platform
+#endif
+#endif

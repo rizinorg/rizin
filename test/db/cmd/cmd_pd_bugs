@@ -107,7 +107,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=lea edx bug segfault for x86 32bit #5710@radare2
+NAME=lea edx bug segfault for x86 32bit #5710@rizin
 FILE=malloc://128
 CMDS=<<EOF
 e asm.arch=x86
@@ -145,7 +145,7 @@ EOF
 RUN
 
 NAME=size of function in elf x64 stub
-FILE=bins/other/radiff2/hellocxx-osx-fat-intel_1
+FILE=bins/other/rz-diff/hellocxx-osx-fat-intel_1
 ARGS=-ax86 -b64
 CMDS=<<EOF
 s 0x100000dae

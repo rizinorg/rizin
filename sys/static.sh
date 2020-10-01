@@ -47,15 +47,15 @@ if [ 1 = "${DOCFG}" ]; then
 	#cp -f plugins.static.cfg plugins.cfg
 	cp -f plugins.static.nogpl.cfg plugins.cfg
 	./configure-plugins || exit 1
-	#./configure --prefix="$PREFIX" --without-gpl --with-libr --without-libuv --disable-loadlibs || exit 1
-	./configure --prefix="$PREFIX" --without-gpl --with-libr --without-libuv || exit 1
+	#./configure --prefix="$PREFIX" --without-gpl --with-librz --without-libuv --disable-loadlibs || exit 1
+	./configure --prefix="$PREFIX" --without-gpl --with-librz --without-libuv || exit 1
 fi
 ${MAKE} -j 8 || exit 1
-BINS="rarun2 rasm2 radare2 ragg2 rabin2 rax2 rahash2 rafind2 r2agent radiff2 r2r"
+BINS="rz_run rz_asm rizin rz_gg rz_bin rz_ax rz_hash rz_find rz_agent rz_diff rz_test"
 # shellcheck disable=SC2086
 for a in ${BINS} ; do
 (
-	cd binr/$a
+	cd binrz/$a
 	${MAKE} clean
 	if [ "`uname`" = Darwin ]; then
 		${MAKE} -j4 || exit 1
@@ -109,13 +109,13 @@ else
 	echo FAILURE
 fi
 
-echo "[*] Static building with libr.a..."
+echo "[*] Static building with librz.a..."
 set -x
 ${CC} .test.c \
 	${CFLAGS} \
-	-I ${PWD}/r2-static/usr/include/libr \
-	-I ${PWD}/r2-static/usr/include/libr/sdb \
-	r2-static/usr/lib/libr.a ${LDFLAGS}
+	-I ${PWD}/r2-static/usr/include/librz \
+	-I ${PWD}/r2-static/usr/include/librz/sdb \
+	r2-static/usr/lib/librz.a ${LDFLAGS}
 res=$?
 set +x
 if [ $res = 0 ]; then

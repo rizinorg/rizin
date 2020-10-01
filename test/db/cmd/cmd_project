@@ -74,7 +74,7 @@ CC "Second comment" @ 0x00404800
 Ps testset > /dev/null
 C- @ 0x00404890
 C- @ 0x00404800
-Po project.r2
+Po project.rz
 cat .tmp/testset/rc | grep CC
 rmdir -p .tmp/testset
 EOF

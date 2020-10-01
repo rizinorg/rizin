@@ -3,9 +3,9 @@ FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 e io.va=0
 ph sha1 $s-32 @ 32
-!rahash2 -a sha1 -f 32 -t 4898 bins/elf/analysis/x86-helloworld-gcc
+!rz-hash -a sha1 -f 32 -t 4898 bins/elf/analysis/x86-helloworld-gcc
 ph sha1 $s @0
-!rahash2 -a sha1 bins/elf/analysis/x86-helloworld-gcc
+!rz-hash -a sha1 bins/elf/analysis/x86-helloworld-gcc
 ph sha1 @s:fofofofo
 EOF
 EXPECT=<<EOF

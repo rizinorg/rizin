@@ -2,7 +2,7 @@
 #ifndef ARCH_H
 #define ARCH_H
 
-#include "r_types.h"
+#include "rz_types.h"
 
 #define ARCH_X86_64 0
 #define ARCH_X86_32 1

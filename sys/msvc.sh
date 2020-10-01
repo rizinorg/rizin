@@ -2,7 +2,7 @@
 CC=cccl
 
 # Configure
-if [ ! -e "libr/config.mk" ]; then
+if [ ! -e "librz/config.mk" ]; then
 	COMPILER=${CC} USERCC=${CC} CC=${CC} LD=${CC} ./configure --with-ostype=windows
 	if [ $? -ne 0 ]; then
 		echo "Configure failed. Exiting"
@@ -33,8 +33,8 @@ export R2DIR="${R2DIR}"
 # Set capstone to release
 sed -i s/CS_RELEASE=0/CS_RELEASE=1/ shlr/Makefile
 # Disable some plugins
-sed -i "s,p/tricore.mk ,," libr/config.mk
-sed -i "s,p/z80.mk ,," libr/config.mk
+sed -i "s,p/tricore.mk ,," librz/config.mk
+sed -i "s,p/z80.mk ,," librz/config.mk
 
 # Now we can make
 make CC=${CC} USERCC=${CC} HOST_CC=${CC} USE_CAPSTONE=1

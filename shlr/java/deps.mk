@@ -1,1 +1,1 @@
-LINK+=$(STOP)/java/libr_java.$(EXT_AR)
+LINK+=$(STOP)/java/librz_java.$(EXT_AR)

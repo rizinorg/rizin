@@ -5,7 +5,7 @@
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/radareorg/radare2.git"
+    "url": "https://github.com/rizinorg/rizin.git"
   },
   "dependencies": {
     "node-curl": "*"
@@ -15,7 +15,7 @@
   ],
   "keywords": [
     "radare",
-    "radare2",
+    "rizin",
     "pdb",
     "r2",
     "reversing",
@@ -31,7 +31,7 @@
   },
   "license": "LGPLv3",
   "bugs": {
-    "url": "https://github.com/radareorg/radare2/issues"
+    "url": "https://github.com/rizinorg/rizin/issues"
   },
   "homepage": "http://www.radare.org"
 }

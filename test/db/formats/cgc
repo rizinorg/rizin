@@ -10,7 +10,7 @@ NAME=CGC: Create
 FILE=-
 CMDS=<<EOF
 rm ./cgc.cgc__
-!rabin2 -C elf64:cc -a x86 -b 64 ./cgc.cgc____
+!rz-bin -C elf64:cc -a x86 -b 64 ./cgc.cgc____
 ls -l ./cgc.cgc__~[3]
 rm ./cgc.cgc____
 EOF

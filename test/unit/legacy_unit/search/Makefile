@@ -1,4 +1,4 @@
-BINDEPS=r_search r_util
+BINDEPS=rz_search rz_util
 
 BINS=test${EXT_EXE} test-str${EXT_EXE} test-regexp${EXT_EXE}
 

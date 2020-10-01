@@ -1,4 +1,4 @@
-/* radare2 - BSD 3 Clause License - 2016 - crowell */
+/* rizin - BSD 3 Clause License - 2016 - crowell */
 
 #ifndef HT_TYPE
 #error HT_TYPE should be defined before including this header

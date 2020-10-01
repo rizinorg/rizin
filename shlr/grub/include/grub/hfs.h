@@ -20,7 +20,7 @@
 #define GRUB_HFS_HEADER	1
 
 #include <grub/types.h>
-#include <r_types.h>
+#include <rz_types.h>
 
 #define GRUB_HFS_MAGIC		0x4244
 

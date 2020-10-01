@@ -8,7 +8,7 @@ RUN
 NAME=PE: corkami cm01.exe - sections
 FILE=bins/pe/cm01.exe
 ARGS=-n
-CMDS=!rabin2 -S bins/pe/cm01.exe
+CMDS=!rz-bin -S bins/pe/cm01.exe
 EXPECT=<<EOF
 [Sections]
 

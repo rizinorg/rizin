@@ -1,0 +1,11 @@
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=@LIBDIR@
+includedir=${prefix}/include
+
+Name: rz_bin
+Description: radare foundation libraries
+Version: @VERSION@
+Requires: rz_util rz_io rz_socket rz_magic
+Libs: -L${libdir} -lrz_bin  
+Cflags: -I${includedir}/librz 

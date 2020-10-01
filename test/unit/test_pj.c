@@ -1,5 +1,5 @@
-#include <r_types.h>
-#include <r_util/pj.h>
+#include <rz_types.h>
+#include <rz_util/pj.h>
 #include "minunit.h"
 
 bool test_pj_reset() {

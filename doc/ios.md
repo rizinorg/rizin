@@ -25,7 +25,7 @@ Signing
 
 Codesigning on iOS can be done by using the following command:
 
-	$ make -C binr/radare2 ios-sign
+	$ make -C binrz/rizin ios-sign
 
 Note that iOS signing is done by embedding an `entitlements` PLIST file instead of the `Info.plist` as required in OSX. This file describes all the specific fine-grained permissions that the application will need. It is also important to note that if you add an entitlement to an OSX binary it will be forbidden to run.
 
@@ -41,16 +41,16 @@ Installation
 The Cydia packages can be installed by copying the binary:
 
 	$ ssh root@192.168.0.13
-	# rm -f radare2
-	$ scp binr/radare2 root@192.168.0.13:.
+	# rm -f rizin
+	$ scp binrz/rizin root@192.168.0.13:.
 
 Note that it is important to remove the previous executable from the filesystem because `ldone` signing is associated with the filesystem inode, and it will fail to run if you overwrite the contents of the executable without removing it first.
 
 Installing the `cydia.radare.org` repository.
 
 	# apt-get update
-	# apt-install radare2
+	# apt-install rizin
 
 Or just doing it from the command line:
 
-	# dpkg -i radare2-*.deb
+	# dpkg -i rizin-*.deb

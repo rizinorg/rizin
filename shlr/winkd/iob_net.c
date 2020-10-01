@@ -1,16 +1,16 @@
 // Copyright (c) 2014-2020, abcSup, All rights reserved. LGPLv3
 #include <errno.h>
 
-#include <r_crypto.h>
-#include <r_hash.h>
-#include <r_socket.h>
-#include <r_util.h>
+#include <rz_crypto.h>
+#include <rz_hash.h>
+#include <rz_socket.h>
+#include <rz_util.h>
 
 #include "kd.h"
 #include "transport.h"
 
 typedef struct iobnet_t {
-	RSocket *sock;
+	RzSocket *sock;
 	bool hasDatakey;
 
 	// Internal buffer
@@ -76,18 +76,18 @@ static ut64 base36_decode(const char *str) {
  * @param resbuf, the buffer that contains the KDNet Data of a Response packet.
  */
 static bool _initializeDatakey(iobnet_t *obj, ut8 *resbuf, int size) {
-	RHash *ctx = r_hash_new (true, R_HASH_SHA256);
+	RzHash *ctx = rz_hash_new (true, R_HASH_SHA256);
 	if (!ctx) {
 		return false;
 	}
 	// Data Key = SHA256 (Key || resbuf)
-	r_hash_do_begin (ctx, R_HASH_SHA256);
-	r_hash_do_sha256 (ctx, obj->key, R_HASH_SIZE_SHA256);
-	r_hash_do_sha256 (ctx, resbuf, size);
-	r_hash_do_end (ctx, R_HASH_SHA256);
+	rz_hash_do_begin (ctx, R_HASH_SHA256);
+	rz_hash_do_sha256 (ctx, obj->key, R_HASH_SIZE_SHA256);
+	rz_hash_do_sha256 (ctx, resbuf, size);
+	rz_hash_do_end (ctx, R_HASH_SHA256);
 	memcpy (obj->datakey, ctx->digest, R_HASH_SIZE_SHA256);
 
-	r_hash_free (ctx);
+	rz_hash_free (ctx);
 	return true;
 }
 
@@ -122,7 +122,7 @@ static void *iob_net_open(const char *path) {
 		if (nkey) {
 			*nkey++ = 0;
 		}
-		r_write_le64 (obj->key + i * 8, base36_decode (key));
+		rz_write_le64 (obj->key + i * 8, base36_decode (key));
 	}
 
 	// HMAC Key is the negation of AES-256 Control Key bytes
@@ -130,8 +130,8 @@ static void *iob_net_open(const char *path) {
 		obj->hmackey[i] = ~(obj->key[i]);
 	}
 
-	RSocket *sock = r_socket_new (0);
-	if (!r_socket_connect_udp (sock, host, port, 1)) {
+	RzSocket *sock = rz_socket_new (0);
+	if (!rz_socket_connect_udp (sock, host, port, 1)) {
 		free (host);
 		free (obj);
 		return NULL;
@@ -146,34 +146,34 @@ static bool iob_net_close(void *p) {
 	int ret = true;
 	iobnet_t *obj = (iobnet_t *)p;
 
-	if (r_socket_close (obj->sock)) {
+	if (rz_socket_close (obj->sock)) {
 		ret = false;
 	}
 
-	r_socket_free (obj->sock);
+	rz_socket_free (obj->sock);
 	free (obj);
 	return ret;
 }
 
 static bool _encrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	bool ret = false;
-	RCrypto *cry = r_crypto_new ();
+	RzCrypto *cry = rz_crypto_new ();
 	if (!cry) {
 		return false;
 	}
-	if (!r_crypto_use (cry, "aes-cbc")) {
+	if (!rz_crypto_use (cry, "aes-cbc")) {
 		goto end;
 	}
 
 	// Set AES-256 Key based on the KDNet packet type
 	switch (type) {
 	case KDNET_PACKET_TYPE_DATA:
-		if (!r_crypto_set_key (cry, obj->datakey, sizeof (obj->datakey), 0, 0)) {
+		if (!rz_crypto_set_key (cry, obj->datakey, sizeof (obj->datakey), 0, 0)) {
 			goto end;
 		}
 		break;
 	case KDNET_PACKET_TYPE_CONTROL: // Control Channel
-		if (!r_crypto_set_key (cry, obj->key, sizeof (obj->key), 0, 0)) {
+		if (!rz_crypto_set_key (cry, obj->key, sizeof (obj->key), 0, 0)) {
 			goto end;
 		}
 		break;
@@ -182,17 +182,17 @@ static bool _encrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	}
 
 	// Set IV to the 16 bytes HMAC at the end of KDNet packet
-	if (!r_crypto_set_iv (cry, buf + size - KDNET_HMAC_SIZE, KDNET_HMAC_SIZE)) {
+	if (!rz_crypto_set_iv (cry, buf + size - KDNET_HMAC_SIZE, KDNET_HMAC_SIZE)) {
 		goto end;
 	}
 
 	// Encrypt the buffer except HMAC
-	if (r_crypto_final (cry, buf, size - KDNET_HMAC_SIZE) == 0) {
+	if (rz_crypto_final (cry, buf, size - KDNET_HMAC_SIZE) == 0) {
 		goto end;
 	}
 	// Overwrite the buffer with encrypted data
 	int sz;
-	ut8 *encbuf = r_crypto_get_output (cry, &sz);
+	ut8 *encbuf = rz_crypto_get_output (cry, &sz);
 	if (!encbuf) {
 		goto end;
 	}
@@ -201,7 +201,7 @@ static bool _encrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	free (encbuf);
 	ret = true;
 end:
-	r_crypto_free (cry);
+	rz_crypto_free (cry);
 	return ret;
 }
 
@@ -227,29 +227,29 @@ static ut8 *_createKDNetPacket(iobnet_t *obj, const ut8 *buf, int size, int *osi
 	}
 
 	// Write KDNet Header
-	r_write_at_be32 (encbuf, KDNET_MAGIC, 0); // Magic
-	r_write_at_be8 (encbuf, obj->version, 4); // Protocol Number
-	r_write_at_be8 (encbuf, type, 5); // Channel Type
+	rz_write_at_be32 (encbuf, KDNET_MAGIC, 0); // Magic
+	rz_write_at_be8 (encbuf, obj->version, 4); // Protocol Number
+	rz_write_at_be8 (encbuf, type, 5); // Channel Type
 	// Write KDNet Data (8 bytes)
 	// seqno (7 bytes) | direction (4 bits) | padsize (4 bits)
 	// seqno - sequence number
 	// direction - 0x0 Debuggee -> Debugger, 0x8 Debugger -> Debuggee
-	r_write_at_be64 (encbuf, ((seqno << 8) | 0x8 << 4 | padsize), 6);
+	rz_write_at_be64 (encbuf, ((seqno << 8) | 0x8 << 4 | padsize), 6);
 
 	// Copy KD Packet from buffer
 	memcpy (encbuf + sizeof (kdnet_packet_t) + KDNET_DATA_SIZE, buf, size);
 
 	// Generate HMAC from KDNet Data to KD packet
 	int off = sizeof (kdnet_packet_t) + KDNET_DATA_SIZE + size + padsize;
-	RHash *ctx = r_hash_new (true, R_HASH_SHA256);
+	RzHash *ctx = rz_hash_new (true, R_HASH_SHA256);
 	if (!ctx) {
 		free (encbuf);
 		return NULL;
 	}
-	r_hash_do_hmac_sha256 (ctx, encbuf, off, obj->hmackey, KDNET_HMACKEY_SIZE);
+	rz_hash_do_hmac_sha256 (ctx, encbuf, off, obj->hmackey, KDNET_HMACKEY_SIZE);
 	// Append KDNet HMAC at the end of encbuf
 	memcpy (encbuf + off, ctx->digest, KDNET_HMAC_SIZE);
-	r_hash_free (ctx);
+	rz_hash_free (ctx);
 
 	// Encrypt the KDNet Data, KD Packet and padding
 	if (!_encrypt (obj, encbuf + sizeof (kdnet_packet_t), encsize - sizeof (kdnet_packet_t), type)) {
@@ -265,23 +265,23 @@ static ut8 *_createKDNetPacket(iobnet_t *obj, const ut8 *buf, int size, int *osi
 
 static bool _decrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	bool ret = false;
-	RCrypto *cry = r_crypto_new ();
+	RzCrypto *cry = rz_crypto_new ();
 	if (!cry) {
 		return false;
 	}
-	if (!r_crypto_use (cry, "aes-cbc")) {
+	if (!rz_crypto_use (cry, "aes-cbc")) {
 		goto end;
 	}
 
 	// Set AES-256 Key based on the KDNet packet type
 	switch (type) {
 	case KDNET_PACKET_TYPE_DATA:
-		if (!r_crypto_set_key (cry, obj->datakey, sizeof (obj->datakey), 0, 1)) {
+		if (!rz_crypto_set_key (cry, obj->datakey, sizeof (obj->datakey), 0, 1)) {
 			goto end;
 		}
 		break;
 	case KDNET_PACKET_TYPE_CONTROL:
-		if (!r_crypto_set_key (cry, obj->key, sizeof (obj->key), 0, 1)) {
+		if (!rz_crypto_set_key (cry, obj->key, sizeof (obj->key), 0, 1)) {
 			goto end;
 		}
 		break;
@@ -290,17 +290,17 @@ static bool _decrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	}
 
 	// Set IV to the 16 bytes HMAC at the end of KDNet packet
-	if (!r_crypto_set_iv (cry, buf + size - KDNET_HMAC_SIZE, KDNET_HMAC_SIZE)) {
+	if (!rz_crypto_set_iv (cry, buf + size - KDNET_HMAC_SIZE, KDNET_HMAC_SIZE)) {
 		goto end;
 	}
 
 	// Decrypt the buffer except HMAC
-	if (r_crypto_final (cry, buf, size - KDNET_HMAC_SIZE) == 0) {
+	if (rz_crypto_final (cry, buf, size - KDNET_HMAC_SIZE) == 0) {
 		goto end;
 	}
 	// Overwrite it with decrypted data
 	int sz;
-	ut8 *decbuf = r_crypto_get_output (cry, &sz);
+	ut8 *decbuf = rz_crypto_get_output (cry, &sz);
 	if (!decbuf) {
 		goto end;
 	}
@@ -309,7 +309,7 @@ static bool _decrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 
 	free (decbuf);
 end:
-	r_crypto_free (cry);
+	rz_crypto_free (cry);
 	return ret;
 }
 
@@ -339,18 +339,18 @@ static bool _sendResponsePacket(iobnet_t *obj, const ut8 *pokedata) {
 	memcpy (resbuf + 2, pokedata + 10, 32);
 	// Generate 32 bytes random Host Key
 	for (i = 0; i < 32; i++) {
-		int rand = r_num_rand (0xFF);
+		int rand = rz_num_rand (0xFF);
 		resbuf[i + 34] = rand & 0xFF;
 	}
 
 	// Set seqno to the same seqno in Poke packet
-	ut64 seqno = r_read_be64 (pokedata) >> 8;
+	ut64 seqno = rz_read_be64 (pokedata) >> 8;
 	ut8 *pkt = _createKDNetPacket (obj, resbuf, 322, &size, seqno, 1);
 	if (!pkt) {
 		free (resbuf);
 	}
 
-	if (r_socket_write (obj->sock, (void *)pkt, size) < 0) {
+	if (rz_socket_write (obj->sock, (void *)pkt, size) < 0) {
 		free (pkt);
 		free (resbuf);
 		return false;
@@ -369,7 +369,7 @@ static bool _processControlPacket(iobnet_t *obj, const ut8 *ctrlbuf, int size) {
 		return true;
 	}
 	// Read KDNet Data to verify direction flag
-	ut64 kdnetdata = r_read_be64 (ctrlbuf);
+	ut64 kdnetdata = rz_read_be64 (ctrlbuf);
 	if ((kdnetdata & 0x80) != 0) {
 		eprintf ("Error: KdNet wrong direction flag\n");
 		return false;
@@ -385,14 +385,14 @@ static bool _processControlPacket(iobnet_t *obj, const ut8 *ctrlbuf, int size) {
 }
 
 bool _verifyhmac(iobnet_t *obj) {
-	RHash *ctx = r_hash_new (true, R_HASH_SHA256);
+	RzHash *ctx = rz_hash_new (true, R_HASH_SHA256);
 	if (!ctx) {
 		return false;
 	}
-	r_hash_do_hmac_sha256 (ctx, obj->buf, obj->size - KDNET_HMAC_SIZE, obj->hmackey, KDNET_HMACKEY_SIZE);
+	rz_hash_do_hmac_sha256 (ctx, obj->buf, obj->size - KDNET_HMAC_SIZE, obj->hmackey, KDNET_HMACKEY_SIZE);
 	int ret = memcmp (ctx->digest, obj->buf + obj->size - KDNET_HMAC_SIZE, KDNET_HMAC_SIZE);
 
-	r_hash_free (ctx);
+	rz_hash_free (ctx);
 	return ret == 0;
 }
 
@@ -402,9 +402,9 @@ static int iob_net_read(void *p, uint8_t *obuf, const uint64_t count, const int 
 
 	if (obj->size == 0) {
 		do {
-			obj->size = r_socket_read (obj->sock, obj->buf, 4096);
+			obj->size = rz_socket_read (obj->sock, obj->buf, 4096);
 			if (obj->size < 0) {
-				// Continue if RCons breaks
+				// Continue if RzCons breaks
 				if (errno == EINTR) {
 					continue;
 				}
@@ -414,7 +414,7 @@ static int iob_net_read(void *p, uint8_t *obuf, const uint64_t count, const int 
 			memcpy (&pkt, obj->buf, sizeof (kdnet_packet_t));
 
 			// Verify the KDNet Header magic
-			if (r_read_be32 (obj->buf) != KDNET_MAGIC) {
+			if (rz_read_be32 (obj->buf) != KDNET_MAGIC) {
 				eprintf ("Error: KdNet bad magic\n");
 				obj->size = 0;
 				return -1;
@@ -446,7 +446,7 @@ static int iob_net_read(void *p, uint8_t *obuf, const uint64_t count, const int 
 		} while (pkt.type == KDNET_PACKET_TYPE_CONTROL);
 
 		// Remove padding from the buffer
-		ut8 padsize = r_read_at_be64 (obj->buf, sizeof (kdnet_packet_t)) & 0xF;
+		ut8 padsize = rz_read_at_be64 (obj->buf, sizeof (kdnet_packet_t)) & 0xF;
 		obj->size -= KDNET_HMAC_SIZE + padsize;
 
 		// Seek to KD packet
@@ -454,7 +454,7 @@ static int iob_net_read(void *p, uint8_t *obuf, const uint64_t count, const int 
 
 		// KD_PACKET_TYPE_UNUSED KD packet does not have a checksum,
 		// but kd_read_packet always read for the 4-byte checksum
-		if (r_read_at_be16 (obj->buf, obj->off + 4) == KD_PACKET_TYPE_UNUSED) {
+		if (rz_read_at_be16 (obj->buf, obj->off + 4) == KD_PACKET_TYPE_UNUSED) {
 			obj->size += 4;
 		}
 	}
@@ -506,7 +506,7 @@ static int iob_net_write(void *p, const uint8_t *buf, const uint64_t count, cons
 		if (!pkt) {
 			return -1;
 		}
-		if (r_socket_write (obj->sock, (void *)pkt, size) < 0) {
+		if (rz_socket_write (obj->sock, (void *)pkt, size) < 0) {
 			free (pkt);
 			return -1;
 		}

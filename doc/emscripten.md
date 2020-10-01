@@ -21,15 +21,15 @@ export CC="emcc --ignore-dynamic-linking"
 ./configure --prefix=/usr --disable-shared --enable-static --disable-debugger --with-compiler=emscripten --without-pic --with-nonpic
 emmake make -j4 
 
-cd binr/radare2
- emcc ../../libr/*/*.o radare2.c -I ../../libr/include/ -DR2_BIRTH=\"pop\" -DR2_GITTIP=\"123\" ../../libr/db/sdb/src/*.o
+cd binrz/rizin
+ emcc ../../librz/*/*.o rizin.c -I ../../librz/include/ -DR2_BIRTH=\"pop\" -DR2_GITTIP=\"123\" ../../librz/db/sdb/src/*.o
 
-binr/rax2/rax2.js:
+binrz/rz_ax/rz_ax.js:
 
-emcc -O2 rax2.o ../../libr/util/libr_util.a -o rax2.js
+emcc -O2 rz_ax.o ../../librz/util/librz_util.a -o rz_ax.js
 
-binr/rasm2/rasm2.js:
+binrz/rz_asm/rz_asm.js:
 
-emcc -O2  -L.. -o rasm2.js   ../../shlr/sdb/src/libsdb.a ../../libr/fs/p/grub/libgrubfs.a -lm $A/util/libr_util.a $A/asm/libr_asm.a rasm2.o ../../libr/util/libr_util.a  ../../libr/parse/libr_parse.a  ../../libr/db/libr_db.a ../../libr/syscall/libr_syscall.a  ../../libr/asm/libr_asm.a  ../../libr/lib/libr_lib.a ../../libr/db/libr_db.a ../../shlr/sdb/src/libsdb.a ../../libr/util/libr_util.a
+emcc -O2  -L.. -o rz_asm.js   ../../shlr/sdb/src/libsdb.a ../../librz/fs/p/grub/libgrubfs.a -lm $A/util/librz_util.a $A/asm/librz_asm.a rz_asm.o ../../librz/util/librz_util.a  ../../librz/parse/librz_parse.a  ../../librz/db/libr_db.a ../../librz/syscall/librz_syscall.a  ../../librz/asm/librz_asm.a  ../../librz/lib/libr_lib.a ../../librz/db/libr_db.a ../../shlr/sdb/src/libsdb.a ../../librz/util/librz_util.a
 
 -->

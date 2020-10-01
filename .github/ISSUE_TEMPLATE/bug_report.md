@@ -6,7 +6,7 @@ about: Create a report to help us improve
 
 # This template is meant for bug reports, if you have a feature request, please be as descriptive as possible and delete the template
 
-Make sure you are testing using the latest git version of radare2 before submitting any issue.
+Make sure you are testing using the latest git version of rizin before submitting any issue.
 
 *If you would like to report a bug, please fill the template below*
 
@@ -17,7 +17,7 @@ Make sure you are testing using the latest git version of radare2 before submitt
 | OS/arch/bits (mandatory)                             | Debian arm 64, Ubuntu x86 32
 | File format of the file you reverse (mandatory)      | PE, ELF etc.
 | Architecture/bits of the file (mandatory)            | PPC, x86/32, x86/64 etc.
-| r2 -v full output, **not truncated** (mandatory)     | radare2 2.4.0-git 17284 @ darwin-x86-64 git.2.2.0-476-gf8cf84e06 commit: f8cf84e0653642d9ad34e760e0e56dd81860e799 build: 2018-02-17__11:08:27
+| r2 -v full output, **not truncated** (mandatory)     | rizin 2.4.0-git 17284 @ darwin-x86-64 git.2.2.0-476-gf8cf84e06 commit: f8cf84e0653642d9ad34e760e0e56dd81860e799 build: 2018-02-17__11:08:27
 
 ### Expected behavior
 

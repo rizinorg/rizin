@@ -53,11 +53,11 @@ diff: type: new
 EOF
 RUN
 
-NAME=aFr on same but ihex and .r2 script
+NAME=aFr on same but ihex and .rz script
 BROKEN=1
 FILE=ihex://bins/microcorruption/tutorial
 CMDS=<<EOF
-. bins/microcorruption/tutorial.r2
+. bins/microcorruption/tutorial.rz
 s main
 aFr
 pif

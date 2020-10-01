@@ -150,7 +150,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     capstone_includes += [include_directories('capstone/include/capstone')]
   endif
 
-  libr2capstone = static_library('r2capstone', cs_files,
+  librzcapstone = static_library('r2capstone', cs_files,
     c_args: [
       '-DCAPSTONE_X86_ATT_DISABLE_NO',
       '-DCAPSTONE_X86_REDUCE_NO',
@@ -173,7 +173,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
   )
 
   capstone_dep = declare_dependency(
-    link_with: libr2capstone,
+    link_with: librzcapstone,
     include_directories: capstone_includes
   )
 else
@@ -248,14 +248,14 @@ else
 endif
 
 
-# new radare2 shell parser
-shell_parser_path = 'radare2-shell-parser'
+# new rizin shell parser
+shell_parser_path = 'rizin-shell-parser'
 shell_parser_files = [
   join_paths(shell_parser_path, 'src/parser.c'),
   join_paths(shell_parser_path, 'src/scanner.c'),
 ]
 
-shell_parser_inc = [platform_inc, include_directories('radare2-shell-parser/src/tree_sitter')]
+shell_parser_inc = [platform_inc, include_directories('rizin-shell-parser/src/tree_sitter')]
 
 libshell_parser = static_library('shell_parser', shell_parser_files,
   include_directories: shell_parser_inc,
@@ -277,14 +277,14 @@ bochs_files = [
 
 bochs_inc = [platform_inc, include_directories('bochs/include')]
 
-libr2bochs = static_library('r2bochs', bochs_files,
-  dependencies: [r_util_dep],
+librzbochs = static_library('r2bochs', bochs_files,
+  dependencies: [rz_util_dep],
   include_directories: bochs_inc,
   implicit_include_directories: false
 )
 
 bochs_dep = declare_dependency(
-  link_with: libr2bochs,
+  link_with: librzbochs,
   include_directories: bochs_inc
 )
 
@@ -300,14 +300,14 @@ java_files = [
 
 java_inc = [platform_inc, include_directories('java')]
 
-libr2java = static_library('r2java', java_files,
-  dependencies: [r_util_dep],
+librzjava = static_library('r2java', java_files,
+  dependencies: [rz_util_dep],
   include_directories: java_inc,
   implicit_include_directories: false
 )
 
 java_dep = declare_dependency(
-  link_with: libr2java,
+  link_with: librzjava,
   include_directories: java_inc
 )
 
@@ -323,14 +323,14 @@ qnx_files = [
 
 qnx_inc = [platform_inc, include_directories('qnx/include')]
 
-libr2qnx = static_library('r2qnx', qnx_files,
-  dependencies: [r_socket_dep],
+librzqnx = static_library('r2qnx', qnx_files,
+  dependencies: [rz_socket_dep],
   include_directories: qnx_inc,
   implicit_include_directories: false
 )
 
 qnx_dep = declare_dependency(
-  link_with: libr2qnx,
+  link_with: librzqnx,
   include_directories: qnx_inc
 )
 
@@ -344,14 +344,14 @@ tcc_files = [
 
 tcc_inc = [platform_inc, include_directories('tcc')]
 
-libr2tcc = static_library('r2tcc', tcc_files,
-  dependencies: [r_util_dep],
+librztcc = static_library('r2tcc', tcc_files,
+  dependencies: [rz_util_dep],
   include_directories: tcc_inc,
   implicit_include_directories: false
 )
 
 tcc_dep = declare_dependency(
-  link_with: libr2tcc,
+  link_with: librztcc,
   include_directories: tcc_inc
 )
 
@@ -366,13 +366,13 @@ if not lz4_dep.found() or not get_option('use_sys_lz4')
 
   lz4_inc = [platform_inc, include_directories('lz4')]
 
-  libr2lz4 = static_library('r2lz4', lz4_files,
+  librzlz4 = static_library('r2lz4', lz4_files,
     include_directories: lz4_inc,
     implicit_include_directories: false
   )
 
   lz4_dep = declare_dependency(
-    link_with: libr2lz4,
+    link_with: librzlz4,
     include_directories: lz4_inc
   )
 else
@@ -472,14 +472,14 @@ if not zip_dep.found() or not get_option('use_sys_zip')
 
   zip_inc = [platform_inc, include_directories('zip/include')]
 
-  libr2zip = static_library('r2zip', zip_files,
+  librzzip = static_library('r2zip', zip_files,
     include_directories: zip_inc,
     implicit_include_directories: false,
     dependencies: zlib_dep
   )
 
   zip_dep = declare_dependency(
-    link_with: libr2zip,
+    link_with: librzzip,
     include_directories: zip_inc
   )
 else
@@ -542,14 +542,14 @@ grub_files = [
 
 grub_inc = [platform_inc, include_directories('grub', 'grub/include')]
 
-libr2grub = static_library('r2grub', grub_files,
-  dependencies: [r_util_dep],
+librzgrub = static_library('r2grub', grub_files,
+  dependencies: [rz_util_dep],
   include_directories: grub_inc,
   implicit_include_directories: false
 )
 
 grub_dep = declare_dependency(
-  link_with: libr2grub,
+  link_with: librzgrub,
   include_directories: grub_inc
 )
 
@@ -564,14 +564,14 @@ winkd_files = [
 
 winkd_inc = [platform_inc, include_directories('winkd')]
 
-libr2winkd = static_library('r2winkd', winkd_files,
-  dependencies: [r_hash_dep, r_crypto_dep, r_socket_dep, r_util_dep],
+librzwinkd = static_library('r2winkd', winkd_files,
+  dependencies: [rz_hash_dep, rz_crypto_dep, rz_socket_dep, rz_util_dep],
   include_directories: winkd_inc,
   implicit_include_directories: false
 )
 
 winkd_dep = declare_dependency(
-  link_with: libr2winkd,
+  link_with: librzwinkd,
   include_directories: winkd_inc
 )
 
@@ -583,14 +583,14 @@ ar_files = [
 
 ar_inc = [platform_inc, include_directories(['ar'])]
 
-libr2ar = static_library('r2ar', ar_files,
-  dependencies: [r_util_dep],
+librzar = static_library('r2ar', ar_files,
+  dependencies: [rz_util_dep],
   include_directories: ar_inc,
   implicit_include_directories: false
 )
 
 ar_dep = declare_dependency(
-  link_with: libr2ar,
+  link_with: librzar,
   include_directories: ar_inc
 )
 

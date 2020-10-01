@@ -1,0 +1,73 @@
+/* radare - LGPL - Copyright 2011-2019 - ninjahacker */
+
+#include <rz_types.h>
+#include <rz_util.h>
+#include <rz_lib.h>
+#include <rz_bin.h>
+#include "zimg/zimg.h"
+
+static Sdb *get_sdb(RBinFile *bf) {
+	rz_return_val_if_fail (bf && bf->o, false);
+	struct rz_bin_zimg_obj_t *bin = (struct rz_bin_zimg_obj_t *) bf->o->bin_obj;
+	return bin? bin->kv: NULL;
+}
+
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+	*bin_obj = rz_bin_zimg_new_buf (b);
+	return *bin_obj != NULL;
+}
+
+static ut64 baddr(RBinFile *bf) {
+	return 0;
+}
+
+static bool check_buffer(RBuffer *b) {
+	ut8 zimghdr[8];
+	if (rz_buf_read_at (b, 0, zimghdr, sizeof (zimghdr))) {
+		// Checking ARM zImage kernel
+		if (!memcmp (zimghdr, "\x00\x00\xa0\xe1\x00\x00\xa0\xe1", 8)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static RBinInfo *info(RBinFile *bf) {
+	RBinInfo *ret = R_NEW0 (RBinInfo);
+	if (!ret) {
+		return NULL;
+	}
+	ret->file = bf->file? strdup (bf->file): NULL;
+	ret->type = strdup ("Linux zImage Kernel");
+	ret->has_va = false;
+	ret->bclass = strdup ("Compressed Linux Kernel");
+	ret->rclass = strdup ("zimg");
+	ret->os = strdup ("linux");
+	ret->subsystem = strdup ("linux");
+	ret->machine = strdup ("ARM"); // TODO: can be other cpus
+	ret->arch = strdup ("arm");
+	ret->lang = "C";
+	ret->bits = 32;
+	ret->big_endian = 0;
+	ret->dbg_info = 0; // 1 | 4 | 8; /* Stripped | LineNums | Syms */
+	return ret;
+}
+
+RBinPlugin rz_bin_plugin_zimg = {
+	.name = "zimg",
+	.desc = "zimg format bin plugin",
+	.license = "LGPL3",
+	.get_sdb = &get_sdb,
+	.load_buffer = &load_buffer,
+	.check_buffer = &check_buffer,
+	.baddr = &baddr,
+	.info = &info,
+};
+
+#ifndef R2_PLUGIN_INCORE
+RZ_API RzLibStruct radare_plugin = {
+	.type = R_LIB_TYPE_BIN,
+	.data = &rz_bin_plugin_zimg,
+	.version = R2_VERSION
+};
+#endif

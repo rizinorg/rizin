@@ -24,7 +24,7 @@
 #include <grub/disk.h>
 #include <grub/types.h>
 #include <grub/fshelp.h>
-#include <r_types.h>
+#include <rz_types.h>
 /* The common header for a block.  */
 R_PACKED (
 struct grub_sfs_bheader

@@ -1,0 +1,106 @@
+.Dd Jul 28, 2017
+.Dt RAX2 1
+.Sh NAME
+.Nm rz_ax
+.Nd radare base converter
+.Sh SYNOPSIS
+.Nm rz_ax
+.Op Fl ebBsSvxkKh
+.Op [expr] ...
+.Sh DESCRIPTION
+This command is part of the radare project.
+.Pp
+This command allows you to convert values between positive and negative integer, float, octal, binary and hexadecimal values.
+.Sh OPTIONS
+.Bl -tag -width Fl
+.It Fl b
+Convert from binary string to character (rz_ax \-b 01000101)
+.It Fl k
+Keep the same base as the input data
+.It Fl e
+Swap endian.
+.It Fl F
+Read C strings from stdin and output in hexpairs. Useful to load shellcodes
+.It Fl l
+Append newline to the decoded output for human friendly-ness
+.It Fl K
+Show randomart key asciiart for values or hexpairs
+.It Fl s
+Convert from hex string to character (rz_ax \-s 43 4a 50)
+.It Fl S
+Convert from character to hex string (rz_ax \-S C J P)
+.It Fl n
+Show hexpairs from integer value
+.It Fl N
+Show hexadecimal C string from integer value
+.It Fl u
+Convert given value to human readable units format
+.It Fl v
+Show program version
+.It Fl x
+Convert a string into a hash
+.It Fl h
+Show usage help message
+.It Fl o
+Convert from octal string to char (rz_ax -o 162 62)
+.El
+.Sh USAGE
+.Pp
+Force output mode (numeric base)
+.Pp
+  =f    floating point
+  =2    binary
+  =3    ternary
+  =8    octal
+  =10   decimal
+  =16   hexadecimal
+.Pp
+Available variable types are:
+.Pp
+  int   \->  hex    rz_ax 10
+  hex   \->  int    rz_ax 0xa
+  \-int  \->  hex    rz_ax \-77
+  \-hex  \->  int    rz_ax 0xffffffb3
+  int   \->  bin    rz_ax b30
+  bin   \->  int    rz_ax 1010d
+  float \->  hex    rz_ax 3.33f
+  hex   \->  float  rz_ax Fx40551ed8
+  oct   \->  hex    rz_ax 35o
+  hex   \->  oct    rz_ax Ox12 (O is a letter)
+  bin   \->  hex    rz_ax 1100011b
+  hex   \->  bin    rz_ax Bx63
+.Pp
+With no arguments, rz_ax reads values from stdin. You can pass one or more values
+as arguments.
+.Pp
+  $ rz_ax 33 0x41 0101b
+  0x21
+  65
+  0x5
+.Pp
+You can do 'unpack' hexpair encoded strings easily.
+.Pp
+  $ rz_ax \-s 41 42 43
+  ABC
+.Pp
+And it supports some math operations.
+.Pp
+  $ rz_ax
+  0x5*101b+5
+  30
+.Pp
+It is a very useful tool for scripting, so you can read floating point values, or get the integer offset of a jump or a stack delta when analyzing programs.
+.Pp
+.Sh SEE ALSO
+.Pp
+.Xr rizin(1) ,
+.Xr rz_hash(1) ,
+.Xr rz_find(1) ,
+.Xr rz_bin(1) ,
+.Xr rz_diff(1) ,
+.Xr rz_gg(1) ,
+.Xr rz_run(1) ,
+.Xr rz_asm(1)
+.Sh AUTHORS
+.Pp
+Written by pancake <pancake@nopcode.org>.

@@ -1,4 +1,4 @@
-Not-much-updated graph of relationships between the libr APIs
+Not-much-updated graph of relationships between the librz APIs
 =============================================================
 
 ```

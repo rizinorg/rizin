@@ -1,4 +1,4 @@
-#include <r_util.h>
+#include <rz_util.h>
 #include "minunit.h"
 
 static RNum *num;
@@ -38,7 +38,7 @@ bool test_r_num_units() {
 	size_t nitems = sizeof (test_cases) / sizeof (test_cases[0]);
 	size_t i;
 	for (i = 0; i < nitems; i++) {
-		r_num_units (humansz, sizeof (humansz), test_cases[i].num);
+		rz_num_units (humansz, sizeof (humansz), test_cases[i].num);
 		mu_assert_streq (humansz, test_cases[i].expected_res, test_cases[i].message);
 	}
 	mu_end;
@@ -46,49 +46,49 @@ bool test_r_num_units() {
 
 bool test_r_num_minmax_swap_i() {
 	int a = -1, b = 2;
-	r_num_minmax_swap_i (&a, &b);
+	rz_num_minmax_swap_i (&a, &b);
 	mu_assert_eq (a == -1 && b == 2, 1, "a < b -> a < b");
 	a = 2, b = -1;
-	r_num_minmax_swap_i (&a, &b);
+	rz_num_minmax_swap_i (&a, &b);
 	mu_assert_eq (a == -1 && b == 2, 1, "b < a -> a < b");
 	mu_end;
 }
 
 bool test_r_num_minmax_swap() {
 	ut64 a = 1, b = 2;
-	r_num_minmax_swap (&a, &b);
+	rz_num_minmax_swap (&a, &b);
 	mu_assert_eq (a == 1 && b == 2, 1, "a < b -> a < b");
 	a = 2, b = 1;
-	r_num_minmax_swap (&a, &b);
+	rz_num_minmax_swap (&a, &b);
 	mu_assert_eq (a == 1 && b == 2, 1, "b < a -> a < b");
 	mu_end;
 }
 
 bool test_r_num_between() {
-	mu_assert_eq (r_num_between (num, "1 2 3"), 1, "1 <= 2 <= 3");
-	mu_assert_eq (r_num_between (num, "3 2 1"), 0, "3 <= 2 <= 1");
-	mu_assert_eq (r_num_between (num, "1 1 1"), 1, "1 <= 1 <= 1");
-	mu_assert_eq (r_num_between (num, "2 1 3"), 0, "2 <= 1 <= 3");
-	mu_assert_eq (r_num_between (num, "1 2 1+2"), 1, "1 <= 2 <= 1+2");
-	mu_assert_eq (r_num_between (num, "2 3 1+2+3"), 1, "2 <= 3 <= 1+2+3");
-	mu_assert_eq (r_num_between (num, "1+2 2 1+1"), 0, "1+2 <= 2 <= 1+1");
-	mu_assert_eq (r_num_between (num, "1 + 2 2 1 + 1"), 0, "1 + 2 <= 2 <= 1 + 1");
+	mu_assert_eq (rz_num_between (num, "1 2 3"), 1, "1 <= 2 <= 3");
+	mu_assert_eq (rz_num_between (num, "3 2 1"), 0, "3 <= 2 <= 1");
+	mu_assert_eq (rz_num_between (num, "1 1 1"), 1, "1 <= 1 <= 1");
+	mu_assert_eq (rz_num_between (num, "2 1 3"), 0, "2 <= 1 <= 3");
+	mu_assert_eq (rz_num_between (num, "1 2 1+2"), 1, "1 <= 2 <= 1+2");
+	mu_assert_eq (rz_num_between (num, "2 3 1+2+3"), 1, "2 <= 3 <= 1+2+3");
+	mu_assert_eq (rz_num_between (num, "1+2 2 1+1"), 0, "1+2 <= 2 <= 1+1");
+	mu_assert_eq (rz_num_between (num, "1 + 2 2 1 + 1"), 0, "1 + 2 <= 2 <= 1 + 1");
 	mu_end;
 }
 
 bool test_r_num_str_len() {
-	mu_assert_eq (r_num_str_len ("1"), 1, "\"1\"");
-	mu_assert_eq (r_num_str_len ("1+1"), 3, "\"1+1\"");
-	mu_assert_eq (r_num_str_len ("1 + 1"), 5, "\"1 + 1\"");
-	mu_assert_eq (r_num_str_len ("1 + 1 "), 5, "\"1 + 1 \"");
-	mu_assert_eq (r_num_str_len ("1 + 1  "), 5, "\"1 + 1  \"");
-	mu_assert_eq (r_num_str_len ("1 + 1 1"), 5, "\"1 + 1 1\"");
-	mu_assert_eq (r_num_str_len ("1 + 1 1 + 1"), 5, "\"1 + 1 1 + 1\"");
-	mu_assert_eq (r_num_str_len ("1 + (1 + 1) 1"), 11, "\"1 + (1 + 1) 1\"");
-	mu_assert_eq (r_num_str_len ("1 + (1 + (1 + 1)) 1"), 17, "\"1 + (1 + (1 + 1)) 1\"");
-	mu_assert_eq (r_num_str_len ("1+(1+(1+1)) 1"), 11, "\"1+(1+(1+1)) 1\"");
-	mu_assert_eq (r_num_str_len ("(1 + 1) + (1 + 1) 1"), 17, "\"(1 + 1) + (1 + 1) 1\"");
-	mu_assert_eq (r_num_str_len ("(1+1)+(1+1) 1"), 11, "\"(1+1)+(1+1) 1\"");
+	mu_assert_eq (rz_num_str_len ("1"), 1, "\"1\"");
+	mu_assert_eq (rz_num_str_len ("1+1"), 3, "\"1+1\"");
+	mu_assert_eq (rz_num_str_len ("1 + 1"), 5, "\"1 + 1\"");
+	mu_assert_eq (rz_num_str_len ("1 + 1 "), 5, "\"1 + 1 \"");
+	mu_assert_eq (rz_num_str_len ("1 + 1  "), 5, "\"1 + 1  \"");
+	mu_assert_eq (rz_num_str_len ("1 + 1 1"), 5, "\"1 + 1 1\"");
+	mu_assert_eq (rz_num_str_len ("1 + 1 1 + 1"), 5, "\"1 + 1 1 + 1\"");
+	mu_assert_eq (rz_num_str_len ("1 + (1 + 1) 1"), 11, "\"1 + (1 + 1) 1\"");
+	mu_assert_eq (rz_num_str_len ("1 + (1 + (1 + 1)) 1"), 17, "\"1 + (1 + (1 + 1)) 1\"");
+	mu_assert_eq (rz_num_str_len ("1+(1+(1+1)) 1"), 11, "\"1+(1+(1+1)) 1\"");
+	mu_assert_eq (rz_num_str_len ("(1 + 1) + (1 + 1) 1"), 17, "\"(1 + 1) + (1 + 1) 1\"");
+	mu_assert_eq (rz_num_str_len ("(1+1)+(1+1) 1"), 11, "\"(1+1)+(1+1) 1\"");
     mu_end;
 }
 
@@ -96,8 +96,8 @@ bool test_r_num_str_split() {
 	char *str = malloc (0x20);
 	strcpy (str, "1 1 + 2 1 + (2 + 3) 4 ");
 	//expected "1\01 + 2\01 + (2 + 3)\04\0"
-	int count = r_num_str_split (str);
-	mu_assert_eq (count, 4, "r_num_str_split (str) == 4");
+	int count = rz_num_str_split (str);
+	mu_assert_eq (count, 4, "rz_num_str_split (str) == 4");
 	mu_assert_streq (str+0, "1", "1");
 	mu_assert_streq (str+2, "1 + 2", "1 + 2");
 	mu_assert_streq (str+8, "1 + (2 + 3)", "1 + (2 + 3)");
@@ -111,18 +111,18 @@ bool test_r_num_str_split_list() {
 	char *str = malloc (0x20);
 	strcpy (str, "1 1 + 2 1 + (2 + 3) 4 ");
 	//expected {"1", "1 + 2", "1 + (2 + 3)", "4"} as list
-	RList *list = r_num_str_split_list (str);
-	mu_assert_eq (r_list_length (list), 4, "r_list_length (list) == 4");
-	s = (char *)r_list_pop_head (list);
+	RzList *list = rz_num_str_split_list (str);
+	mu_assert_eq (rz_list_length (list), 4, "rz_list_length (list) == 4");
+	s = (char *)rz_list_pop_head (list);
 	mu_assert_streq (s, "1", "1");
-	s = (char *)r_list_pop_head (list);
+	s = (char *)rz_list_pop_head (list);
 	mu_assert_streq (s, "1 + 2", "1 + 2");
-	s = (char *)r_list_pop_head (list);
+	s = (char *)rz_list_pop_head (list);
 	mu_assert_streq (s, "1 + (2 + 3)", "1 + (2 + 3)");
-	s = (char *)r_list_pop_head (list);
+	s = (char *)rz_list_pop_head (list);
 	mu_assert_streq (s, "4", "4");
 	free (str);
-	r_list_free (list);
+	rz_list_free (list);
     mu_end;
 }
 
@@ -138,6 +138,6 @@ bool all_tests() {
 }
 
 int main(int argc, char **argv) {
-	num = r_num_new (NULL, NULL, NULL);
+	num = rz_num_new (NULL, NULL, NULL);
 	return all_tests ();
 }

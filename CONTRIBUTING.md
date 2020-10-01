@@ -1,7 +1,7 @@
 # How to report issues
 
 Before reporting an issue with GitHub, be sure that:
-* you are using the git version of radare2
+* you are using the git version of rizin
 * you are using a clean installation
 * the issue was not already reported
 
@@ -35,15 +35,15 @@ try to keep the codebase consistent and clean.
 Every so often, your PR will lag behind `master` and get conflicts.
 
 To "update" your branch `my-awesome-feature`, you *rebase* it onto
-the latest `radareorg/master`, and *force-push* the result into your fork.
+the latest `rizinorg/master`, and *force-push* the result into your fork.
 
 #### Step 1: Switch to `master` branch.
 
     $ git checkout master
 
-#### Step 2: Pull new commits published to radareorg repo.
+#### Step 2: Pull new commits published to rizinorg repo.
 
-    $ git pull https://github.com/radareorg/radare2
+    $ git pull https://github.com/rizinorg/rizin
 
 #### Step 3: Switch back to `my-awesome-feature` branch.
 
@@ -111,11 +111,11 @@ rules to make the git history more readable and consistent:
 * ##projects - saving/loading state
 * ##refactor - improve code quality
 * ##remote   - r2 over tcp, http, rap, serial .. including collaboration
-* ##search   - rafind2, / command, ..
+* ##search   - rz_find, / command, ..
 * ##shell    - commandline, newshell, ..
 * ##signatures-searching/generating them
 * ##test     - testing infrastructure fixes/changes
-* ##tools    - r2pm, rarun2, rax2 ... that don't fit in other categories
+* ##tools    - rz-pm, rz_run, rz_ax ... that don't fit in other categories
 * ##util     - core apis
 * ##visual   - visual ui, including panels
 
@@ -124,8 +124,8 @@ rules to make the git history more readable and consistent:
  * [README.md][]
  * [DEVELOPERS.md][]
 
-[README.md]: https://github.com/radareorg/radare2/blob/master/README.md
-[DEVELOPERS.md]: https://github.com/radareorg/radare2/blob/master/DEVELOPERS.md
+[README.md]: https://github.com/rizinorg/rizin/blob/master/README.md
+[DEVELOPERS.md]: https://github.com/rizinorg/rizin/blob/master/DEVELOPERS.md
 
 If you need more confidence in your git skills, check out this quick guide:
 <https://learnxinyminutes.com/docs/git/>

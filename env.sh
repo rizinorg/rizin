@@ -24,7 +24,7 @@ fi
 
 new_env='
 R2_ENV_IS_SET=1
-R2_LIBR_PLUGINS=${pfx}/lib/radare2
+R2_LIBR_PLUGINS=${pfx}/lib/rizin
 PATH=$pfx/bin:${PATH}
 LD_LIBRARY_PATH=$pfx/lib:$LD_LIBRARY_PATH
 DYLD_LIBRARY_PATH=$pfx/lib:$DYLD_LIBRARY_PATH
@@ -40,7 +40,7 @@ fi
 
 if [ -z "$*" ]; then
 	echo
-	echo "==> Entering radare2 environment shell..."
+	echo "==> Entering rizin environment shell..."
 	echo
 	echo $new_env $* \
 	   | sed -e 's, ,\n,g' \

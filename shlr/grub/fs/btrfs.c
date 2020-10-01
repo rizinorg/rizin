@@ -23,15 +23,15 @@
 #include <grub/misc.h>
 #include <grub/disk.h>
 #include <grub/types.h>
-#include <r_types.h>
-#define BTRFS_SIGNATURE "_BHRfS_M"
+#include <rz_types.h>
+#define BTRzFS_SIGNATURE "_BHRfS_M"
 R_PACKED(
 struct btrfs_superblock
 { 
   grub_uint8_t dummy1[32];
   grub_uint16_t uuid[8];
   grub_uint8_t dummy2[16];
-  grub_uint8_t signature[sizeof (BTRFS_SIGNATURE) - 1];
+  grub_uint8_t signature[sizeof (BTRzFS_SIGNATURE) - 1];
 });
 
 struct grub_btrfs_data
@@ -50,7 +50,7 @@ grub_btrfs_mount (grub_disk_t disk)
 		      &data->sblock) != GRUB_ERR_NONE)
     goto fail;
 
-  if (grub_memcmp ((char *) data->sblock.signature, BTRFS_SIGNATURE, sizeof (BTRFS_SIGNATURE) - 1))
+  if (grub_memcmp ((char *) data->sblock.signature, BTRzFS_SIGNATURE, sizeof (BTRzFS_SIGNATURE) - 1))
     {
       grub_error (GRUB_ERR_BAD_FS, "not a Btrfs filesystem");
       goto fail;

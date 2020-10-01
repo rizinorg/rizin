@@ -1,5 +1,5 @@
 OBJ=serverssl.o
 BIN=serverssl
-BINDEPS=r_socket
+BINDEPS=rz_socket
 
 include ../../rules.mk

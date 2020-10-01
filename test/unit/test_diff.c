@@ -1,5 +1,5 @@
 #include <math.h>
-#include <r_diff.h>
+#include <rz_diff.h>
 #include "minunit.h"
 
 #define R(a,b,c,d) {(const ut8*)a, (const ut8*)b, (int)c, (int)d}
@@ -24,7 +24,7 @@ static struct {
 
 bool test_r_diff_buffers_distance(void) {
 	char msg[128];
-	RDiff *diff = r_diff_new ();
+	RzDiff *diff = rz_diff_new ();
 	if (!diff) {
 		return false;
 	}
@@ -35,16 +35,16 @@ bool test_r_diff_buffers_distance(void) {
 	diff->type = '\0';
 	for (i = 0; tests[i].a; i++) {
 		size_t la = strlen ((const char *)tests[i].a), lb = strlen ((const char *)tests[i].b);
-		r_diff_buffers_distance (diff, tests[i].a, la, tests[i].b, lb, &distance, NULL);
+		rz_diff_buffers_distance (diff, tests[i].a, la, tests[i].b, lb, &distance, NULL);
 		snprintf (msg, sizeof msg, "original %s/%s distance", tests[i].a, tests[i].b);
 		mu_assert_eq (distance, tests[i].dis_distance, msg);
 	}
 
-	// Broken r_diff_buffers_distance_levenshtein, uncomment and see why it is incorrect
+	// Broken rz_diff_buffers_distance_levenshtein, uncomment and see why it is incorrect
 	// diff->type = 'l';
 	// for (i = 0; i < R_ARRAY_SIZE (tests); i++) {
 	// 	size_t la = strlen (tests[i].a), lb = strlen ((const char *)tests[i].b);
-	// 	r_diff_buffers_distance (diff, tests[i].a, la, tests[i].b, lb, &distance, NULL);
+	// 	rz_diff_buffers_distance (diff, tests[i].a, la, tests[i].b, lb, &distance, NULL);
 	// 	snprintf (msg, sizeof msg, "levenshtein %s/%s distance", tests[i].a, tests[i].b);
 	// 	mu_assert_eq (distance, tests[i].dis_distance, msg);
 	// }
@@ -53,12 +53,12 @@ bool test_r_diff_buffers_distance(void) {
 	diff->type = 'm';
 	for (i = 0; tests[i].a; i++) {
 		size_t la = strlen ((const char *)tests[i].a), lb = strlen ((const char *)tests[i].b);
-		r_diff_buffers_distance (diff, tests[i].a, la, tests[i].b, lb, &distance, NULL);
+		rz_diff_buffers_distance (diff, tests[i].a, la, tests[i].b, lb, &distance, NULL);
 		snprintf (msg, sizeof msg, "myers %s/%s distance", tests[i].a, tests[i].b);
 		mu_assert_eq (distance, tests[i].di_distance, msg);
 	}
 
-	r_diff_free (diff);
+	rz_diff_free (diff);
 	mu_end;
 }
 

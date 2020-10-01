@@ -271,9 +271,9 @@ target_signal_from_host (int hostsig) {
 	if (hostsig == SIGSAK)
 		return TARGET_SIGNAL_SAK;
 #endif
-#if defined(SIGPRIO)
-	if (hostsig == SIGPRIO)
-		return TARGET_SIGNAL_PRIO;
+#if defined(SIGPRzIO)
+	if (hostsig == SIGPRzIO)
+		return TARGET_SIGNAL_PRzIO;
 #endif
 
 /* Mach exceptions.  Assumes that the values for EXC_ are positive! */
@@ -517,9 +517,9 @@ do_target_signal_to_host (enum target_signal oursig,
 	case TARGET_SIGNAL_SAK:
 		return SIGSAK;
 #endif
-#if defined(SIGPRIO)
-	case TARGET_SIGNAL_PRIO:
-		return SIGPRIO;
+#if defined(SIGPRzIO)
+	case TARGET_SIGNAL_PRzIO:
+		return SIGPRzIO;
 #endif
 
 /* Mach exceptions.  Assumes that the values for EXC_ are positive! */

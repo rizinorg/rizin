@@ -1,10 +1,10 @@
-Edit libr/config.h and libr/config.mk
+Edit librz/config.h and librz/config.mk
 
-In libr/config.mk set a list of static asm plugins...
+In librz/config.mk set a list of static asm plugins...
 
 STATIC_ASM_PLUGINS=p/java.mk p/mips.mk
 
-In libr/config.h define the list of struct plugins
+In librz/config.h define the list of struct plugins
 
 #define R_ASM_STATIC_PLUGINS \
 	&r_asm_plugin_java, 0

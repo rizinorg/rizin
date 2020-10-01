@@ -1,16 +1,16 @@
-include ../../libr/config.mk
+include ../../librz/config.mk
 include ../../config-user.mk
 include ../../mk/platform.mk
 include ../../mk/${COMPILER}.mk
 
 CFLAGS+=${PIC_CFLAGS}
 
-CFLAGS+=-I../../libr/include
-LIBAR=libr_winkd.${EXT_AR}
-LDFLAGS+=-L../../libr/crypto  -lr_crypto
-LDFLAGS+=-L../../libr/hash -lr_hash
-LDFLAGS+=-L../../libr/socket -lr_socket
-LDFLAGS+=-L../../libr/util -lr_util
+CFLAGS+=-I../../librz/include
+LIBAR=librz_winkd.${EXT_AR}
+LDFLAGS+=-L../../librz/crypto  -lrz_crypto
+LDFLAGS+=-L../../librz/hash -lrz_hash
+LDFLAGS+=-L../../librz/socket -lrz_socket
+LDFLAGS+=-L../../librz/util -lrz_util
 
 include ../../shlr/sdb.mk
 

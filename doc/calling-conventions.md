@@ -32,8 +32,8 @@ File Path
 
 In order to integrate the calling convention profile you created with the r2 source, few set of conventions should be followed:
 
-- Store the unparsed sdb file in `path-to-radare2-source/libr/anal/d`.
+- Store the unparsed sdb file in `path-to-rizin-source/librz/anal/d`.
 - If you want the sdb to be loaded for specific architecture the file name should follow this convention `cc-arch-bits`, for example to create profile that loads automatically for x86 arch with 16 bits call the file `cc-x86-16`
-- In the file `path-to-radare2-source/libr/anal/d/makefile` add entry `F+= cc-arch-bits` with desired arch and bits and you should be ready to go.
+- In the file `path-to-rizin-source/librz/anal/d/makefile` add entry `F+= cc-arch-bits` with desired arch and bits and you should be ready to go.
 
 

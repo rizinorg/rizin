@@ -1,5 +1,5 @@
 include ../../../config-user.mk
-include ../../../libr/config.mk
+include ../../../librz/config.mk
 include ../../../mk/platform.mk
 include ../../../mk/${COMPILER}.mk
 
@@ -41,7 +41,7 @@ else
 SOVERSION=0
 EXT_SO=so
 SOVER=${EXT_SO}
-LDFLAGS_SHARED+=-Wl,-soname,libr_z.${EXT_SO}
+LDFLAGS_SHARED+=-Wl,-soname,librz_z.${EXT_SO}
 endif
 endif
 
@@ -52,14 +52,14 @@ OBJS = adler32.o crc32.o deflate.o infback.o \
 	zutil.o compress.o uncompr.o gzclose.o \
 	gzlib.o gzread.o gzwrite.o
 
-#OFILES= libr_z.$(EXT_AR) $(OBJS)
+#OFILES= librz_z.$(EXT_AR) $(OBJS)
 OFILES= $(OBJS)
 
 CFLAGS+=-Wall
-CFLAGS+=-I../../libr/include -I../include/
-#LDFLAGS+=-L../../../libr/util
-LIBNAME=libr_z.${SOVER}
-LIBAR=libr_z.$(EXT_AR)
+CFLAGS+=-I../../librz/include -I../include/
+#LDFLAGS+=-L../../../librz/util
+LIBNAME=librz_z.${SOVER}
+LIBAR=librz_z.$(EXT_AR)
 
 all:: ${LIBAR}
 ifeq ($(WITHPIC),1)
@@ -72,9 +72,9 @@ ifneq ($(SILENT),)
 endif
 	${CC} ${CFLAGS} ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${OBJS}
 
-libr_z.$(EXT_AR): ${OFILES}
+librz_z.$(EXT_AR): ${OFILES}
 	${CC_AR} ${OFILES}
-	${RANLIB} libr_z.$(EXT_AR)
+	${RANLIB} librz_z.$(EXT_AR)
 
 clean:
 	rm -f ${LIBNAME} *.o *.$(EXT_AR) *.d *.dylib *.so

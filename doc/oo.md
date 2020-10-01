@@ -1,7 +1,7 @@
 Radare OO
 =========
 
-I do realize that Object Orientation sucks, so I tried to do libr API
+I do realize that Object Orientation sucks, so I tried to do librz API
 following some sane and basic OO concepts.
 
   - No inheritance
@@ -41,5 +41,5 @@ Class
 
 Library plugins
 ---------------
-  They are stored in the p/ directory of each library under the libr directory.
+  They are stored in the p/ directory of each library under the librz directory.
 

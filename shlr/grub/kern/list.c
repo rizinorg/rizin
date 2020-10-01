@@ -117,9 +117,9 @@ grub_prio_list_insert_test (grub_prio_list_t new_item, grub_prio_list_t item,
   if (r)
     return (r < 0);
 
-  if (new_item->prio >= (item->prio & GRUB_PRIO_LIST_PRIO_MASK))
+  if (new_item->prio >= (item->prio & GRUB_PRzIO_LIST_PRzIO_MASK))
     {
-      item->prio &= ~GRUB_PRIO_LIST_FLAG_ACTIVE;
+      item->prio &= ~GRUB_PRzIO_LIST_FLAG_ACTIVE;
       return 1;
     }
 
@@ -136,5 +136,5 @@ grub_prio_list_insert (grub_prio_list_t *head, grub_prio_list_t nitem)
   grub_list_insert (GRUB_AS_LIST_P (head), GRUB_AS_LIST (nitem),
 		    (grub_list_test_t) grub_prio_list_insert_test, &c);
   if (! c.inactive)
-    nitem->prio |= GRUB_PRIO_LIST_FLAG_ACTIVE;
+    nitem->prio |= GRUB_PRzIO_LIST_FLAG_ACTIVE;
 }

@@ -1,10 +1,10 @@
 /* libgdbr - LGPL - Copyright 2014 - defragger */
 
-#include "r_types.h"
-#include "r_util.h"
+#include "rz_types.h"
+#include "rz_util.h"
 #include "utils.h"
 
-// XXX: most of those functions are already implemented in r_util. reuse!
+// XXX: most of those functions are already implemented in rz_util. reuse!
 
 /**
  * Function creates the checksum
@@ -161,8 +161,8 @@ int read_thread_id(const char *src, int *pid, int *tid, bool multiprocess) {
 			return -1;
 		}
 		ptr1++;
-		if (r_str_startswith (src, "-1")) {
-			if (r_str_startswith (ptr1, "-1")) {
+		if (rz_str_startswith (src, "-1")) {
+			if (rz_str_startswith (ptr1, "-1")) {
 				*pid = *tid = -1;
 				return 0;
 			}
@@ -171,7 +171,7 @@ int read_thread_id(const char *src, int *pid, int *tid, bool multiprocess) {
 		if (!isxdigit (*src)) {
 			return -1;
 		}
-		if (r_str_startswith (ptr1, "-1")) {
+		if (rz_str_startswith (ptr1, "-1")) {
 			*pid = (int) strtol (src, NULL, 16);
 			*tid = -1;
 			return 0;
@@ -183,7 +183,7 @@ int read_thread_id(const char *src, int *pid, int *tid, bool multiprocess) {
 		*tid = (int) strtol (ptr1, NULL, 16);
 		return 0;
 	}
-	if (r_str_startswith (src, "-1")) {
+	if (rz_str_startswith (src, "-1")) {
 		*tid = -1;
 		return 0;
 	}

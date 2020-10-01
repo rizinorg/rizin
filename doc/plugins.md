@@ -16,8 +16,8 @@ Plugins can be:
   - compiled as shared
   - compiled as static (inside the related library)
 
-        libr/plugins/shared
-        libr/plugins/static
+        librz/plugins/shared
+        librz/plugins/static
 
 the configure-plugins script will regenerate the required Makefiles
 to build this stuff as defined.

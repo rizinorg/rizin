@@ -1,0 +1,89 @@
+.Dd Feb 10, 2018
+.Dt RADIFF2 1
+.Sh NAME
+.Nm RADIFF2
+.Nd unified binary diffing utility
+.Sh SYNOPSIS
+.Nm rz_diff
+.Op Fl AabcCdDhOrspxXvzZ
+.Op Fl t Ar 0-100
+.Op Fl g Ar sym
+.Op Fl S Ar algo
+.Ar file1
+.Ar file2
+.Sh DESCRIPTION
+rz_diff implements many binary diffing algorithms for data and code.
+.Pp
+.Bl -tag -width Fl
+.It Fl A
+Analyze binary after loading it with RCore (see -C) and use -AA to run aaaa instead of aaa.
+.It Fl a
+Specify architecture (x86, arm, ..)
+.It Fl b
+Select register size bits for given arch
+.It Fl B
+Binary output (GDIFF format)
+.It Fl c
+Count number of differences.
+.It Fl e [k=v]
+Specify eval config vars for all RCore instances created.
+.It Fl C
+Code diffing using graphdiff algorithm. Output columns are: file-a-address, percentage of most similar function in B file | file-b-address. (Use with -A to analyze the binaries to find more functions)
+.It Fl d
+Use delta diffing (slower).
+.It Fl D
+Show disasm instead of hexpairs (honors -a arch and -b bits)
+.It Fl g Ar sym | off1,off2
+Graph diff output of given symbol, or between two functions, at given offsets: one for each binary.
+.It Fl h
+Show usage help message.
+.It Fl i
+Compare the list of imports
+.It Fl n
+Suppress address names (show only addresses) when code diffing.
+.It Fl O
+Do code diffing with all bytes instead of just the fixed opcode bytes
+.It Fl p
+Use physical addressing (io.va=0)
+.It Fl q
+Quiet mode: disable colors and reduce output
+.It Fl r
+Output in radare commands as a binary patch.
+.It Fl x
+Show two column hexdump diffing.
+.It Fl X
+Show two column hexII diffing.
+.It Fl s
+Calculate text distance from two files.
+.It Fl ss
+Same as before but using the Levenstein algorithm (faster but sometimes buggy)
+.It Fl S Ar [name, namelen, dist, size, ...]
+Specify which column of the code diffing algo use for diffing
+.It Fl t Ar 0\-100
+Choose matching threshold for binary code diffing
+.It Fl u
+Unified diff output
+.It Fl U
+Unified diff output using system\'s diff program
+.It Fl v
+Show version information.
+.It Fl V
+Be verbose sometimes
+.It Fl z
+Perform diff on extracted strings
+.It Fl Z
+Perform diff using zignatures instead of function list (NEW)
+.El
+.Sh SEE ALSO
+.Pp
+.Xr rizin(1) ,
+.Xr rz_find(1) ,
+.Xr rz_hash(1) ,
+.Xr rz_bin(1) ,
+.Xr rz_asm(1) ,
+.Xr rz_gg(1) ,
+.Xr rz_run(1) ,
+.Xr rz_ax(1) ,
+.Sh AUTHORS
+.Pp
+pancake <pancake@nopcode.org>

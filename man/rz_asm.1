@@ -1,0 +1,127 @@
+.Dd Oct 30, 2018
+.Dt RASM2 1
+.Sh NAME
+.Nm rz_asm
+.Nd rizin assembler and disassembler tool
+.Sh SYNOPSIS
+.Nm rz_asm
+.Op Fl ABdDeEfCLvwrqx
+.Op Fl a Ar arch
+.Op Fl b Ar bits
+.Op Fl c Ar cpu
+.Op Fl F Ar in:out
+.Op Fl o Ar offset
+.Op Fl @ Ar offset
+.Op Fl O Ar ofile
+.Op Fl s Ar syntax
+.Op Fl i Ar int
+.Op Fl l Ar int
+.Op ARG
+.Sh DESCRIPTION
+This tool uses r_asm to assemble and disassemble files or hexpair strings. It supports a large list of architectures which can be listed using the \-L flag.
+.Pp
+.Bl -tag -width Fl
+.It Fl a Ar arch
+Set architecture plugin
+.It Fl A
+Show analysis information of given hexpair string
+.It Fl b Ar bits
+Set architecture bits
+.It Fl B
+Binary input/output (\-l is mandatory for binary input)
+.It Fl c Ar cpu
+Select specific CPU (depends on \-a arch)
+.It Fl C
+Output in C format
+.It Fl d
+Disassemble hexpair bytes. rz_asm \-d 9090
+.It Fl D
+Disassemble showing hexpair and opcode
+.It Fl e
+Use big endian (or swap endianness if used more than once)
+.It Fl E
+Output disassembled instructions in ESIL format.
+.It Fl f
+Read data from file instead of ARG.
+.It Fl F Ar in:out
+Specify input and/or output filters (att2intel, x86.pseudo, ...)
+.It Fl h
+Show usage help message.
+.It Fl hh
+Show long help message including supported assembler directives
+.It Fl l Ar int
+Input/Output length
+.It Fl i Ar int
+Ignore/skip N bytes from the beginning of the input buffer
+.It Fl L
+List supported asm plugins
+.It Fl o Ar offset
+Offset of the opcode to assemble (default is 0)
+.It Fl @ Ar offset
+Alias for -o
+.It Fl O Ar ofile
+output to file, for example 'rz_asm \-BF a a.asm'
+.It Fl r
+Show output in r2 script
+.It Fl s Ar syntax
+Select syntax output (intel, att)
+.It Fl w
+Describe opcode (whats op)
+.It Fl x
+Use hex dwords instead of hexpairs in the assembler output
+.It Fl q
+Quiet output (handy for -L, -v, ...)
+.El
+.Sh different than filename
+.Pp
+.Bl -tag -width Fl
+.It Fl .intel_syntax
+Use intel syntax rather than att:w
+.It Fl .att_syntax
+Use ATT syntax rather than flu :w
+dentify the region fof aslerrger
+.It Fl string
+dentify the region fof aslerrger
+.It Fl .align
+.It Fl .arch
+.It Fl .arm
+.It Fl .ascii
+.It Fl .bits
+.It Fl .data
+.It Fl .equ
+.It Fl .fill
+.It Fl .glob
+.It Fl .hex
+.It Fl .int16
+.It Fl .int32
+.It Fl .int64
+.It Fl .kernel
+.It Fl .offset
+.It Fl .org
+.It Fl .os
+.It Fl .short
+.It Fl .text
+.It Fl .thumb
+.El
+.Sh EXAMPLES
+.Pp
+Assemble opcode:
+.Pp
+  $ rz_asm \-a x86 \-b 32 'mov eax, 33'
+.Pp
+Disassemble opcode:
+.Pp
+  $ rz_asm \-d 90
+.Sh SEE ALSO
+.Pp
+.Xr rizin(1) ,
+.Xr rz_find(1) ,
+.Xr rz_hash(1) ,
+.Xr rz_bin(1) ,
+.Xr rz_diff(1) ,
+.Xr rz_gg(1) ,
+.Xr rz_run(1) ,
+.Xr rz_ax(1) ,
+.Sh AUTHORS
+.Pp
+pancake <pancake@nopcode.org>

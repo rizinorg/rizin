@@ -17,7 +17,7 @@
  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <r_fs.h>
+#include <rz_fs.h>
 #include <grub/fs.h>
 #include <grub/fshelp.h>
 #include <grub/disk.h>

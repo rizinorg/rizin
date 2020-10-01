@@ -1,4 +1,4 @@
 #!/bin/sh
 export CPU=armv7
-export PACKAGE=radare2-arm32
+export PACKAGE=rizin-arm32
 sys/ios-cydia.sh

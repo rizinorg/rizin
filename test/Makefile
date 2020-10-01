@@ -1,4 +1,4 @@
-all: r2r-tests unit_tests
+all: rz-test-tests unit_tests
 
 bins:
 	git clone --depth 1 https://github.com/rizinorg/rizin-testbins bins
@@ -6,13 +6,13 @@ bins:
 fuzz/targets:
 	git clone --depth 1 https://github.com/rizinorg/rizin-fuzztargets fuzz/targets
 
-RUNTEST=r2r -L
+RUNTEST=rz-test -L
 
-r2r-tests: bins
+rz-test-tests: bins
 	${RUNTEST}
 
 fuzz-tests: bins
-	r2r -LF bins/fuzzed @fuzz
+	rz-test -LF bins/fuzzed @fuzz
 
 keystone: bins
 	${RUNTEST} db/extras/asm/x86.ks_

@@ -1,0 +1,43 @@
+#compdef rz_ax
+local context state state_descr line
+
+_rz_ax() {
+  local -a options=(
+  '-b[bin -> str        ;  rz_ax -b 01000101 01110110]'
+  '-B[str -> bin        ;  rz_ax -B hello]'
+  '-d[force integer     ;  rz_ax -d 3 -> 3 instead of 0x3]'
+  '-e[swap endianness   ;  rz_ax -e 0x33]'
+  '-D[base64 decode     ;]'
+  '-E[base64 encode     ;]'
+  '-f[floating point    ;  rz_ax -f 6.3+2.1]'
+  '-F[stdin slurp C hex ;  rz_ax -F < shellcode.c]'
+  '-h[help              ;  rz_ax -h]'
+  '-i[dump as C array   ;  rz_ax -i < bytes]'
+  '-k[keep base         ;  rz_ax -k 33+3 -> 36]'
+  '-K[randomart         ;  rz_ax -K 0x34 1020304050]'
+  '-L[bin -> hex        ;  rz_ax -L 1111111]'
+  '-n[binary number     ;  rz_ax -n 0x1234 # 34120000]'
+  '-N[binary number     ;  rz_ax -N 0x1234 # \x34\x12\x00\x00]'
+  '-r[r2 style output   ;  rz_ax -r 0x1234]'
+  '-s[hexstr -> raw     ;  rz_ax -s 43 4a 50]'
+  '-S[raw -> hexstr     ;  rz_ax -S < /bin/ls > ls.hex]'
+  '-t[tstamp -> str     ;  rz_ax -t 1234567890]'
+  '-x[hash string       ;  rz_ax -x linux osx]'
+  '-u[units             ;  rz_ax -u 389289238 # 317.0M]'
+  '-w[signed word       ;  rz_ax -w 16 0xffff]'
+  '-v[version           ;  rz_ax -v]'
+  )
+
+  _arguments -S -s : $options '*:expr'
+}
+
+_rz_ax "$@"
+
+# Local Variables:
+# mode: shell-script
+# coding: utf-8-unix
+# indent-tabs-mode: nil
+# sh-indentation: 2
+# sh-basic-offset: 2
+# End:
+# vim: ft=zsh sw=2 sts=2 et

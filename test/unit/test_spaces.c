@@ -1,63 +1,63 @@
-#include <r_util.h>
+#include <rz_util.h>
 #include "minunit.h"
 
 bool test_space_basic(void) {
-	RSpaces *sps = r_spaces_new ("spacename");
+	RSpaces *sps = rz_spaces_new ("spacename");
 	mu_assert_streq (sps->name, "spacename", "spacename should be the name");
 
-	RSpace *sp = r_spaces_get (sps, "notexisting");
+	RSpace *sp = rz_spaces_get (sps, "notexisting");
 	mu_assert_null (sp, "NULL should be returned if not existing");
-	sp = r_spaces_current (sps);
+	sp = rz_spaces_current (sps);
 	mu_assert_null (sp, "the current flagspace should not exist");
 
-	sp = r_spaces_set (sps, "firstspace");
+	sp = rz_spaces_set (sps, "firstspace");
 	mu_assert_notnull (sp, "a flagspace should be created");
 	mu_assert_streq (sp->name, "firstspace", "right flag space name");
 
-	sp = r_spaces_current (sps);
+	sp = rz_spaces_current (sps);
 	mu_assert_notnull (sp, "the current flagspace should exist");
 	mu_assert_streq (sp->name, "firstspace", "right flag space name");
 
-	sp = r_spaces_get (sps, "firstspace");
+	sp = rz_spaces_get (sps, "firstspace");
 	mu_assert_notnull (sp, "a flagspace should be created");
 	mu_assert_streq (sp->name, "firstspace", "right flag space name");
 
-	r_spaces_free (sps);
+	rz_spaces_free (sps);
 	mu_end;
 }
 
 bool test_space_stack(void) {
-	RSpaces *sps = r_spaces_new ("spacename");
+	RSpaces *sps = rz_spaces_new ("spacename");
 
-	RSpace *first = r_spaces_set (sps, "firstspace");
-	r_spaces_set (sps, "secondspace");
-	RSpace *third = r_spaces_set (sps, "thirdspace");
-	r_spaces_set (sps, NULL);
+	RSpace *first = rz_spaces_set (sps, "firstspace");
+	rz_spaces_set (sps, "secondspace");
+	RSpace *third = rz_spaces_set (sps, "thirdspace");
+	rz_spaces_set (sps, NULL);
 
-	r_spaces_push (sps, "firstspace");
-	r_spaces_push (sps, "*");
-	r_spaces_push (sps, "thirdspace");
+	rz_spaces_push (sps, "firstspace");
+	rz_spaces_push (sps, "*");
+	rz_spaces_push (sps, "thirdspace");
 
-	RSpace *s = r_spaces_current (sps);
+	RSpace *s = rz_spaces_current (sps);
 	mu_assert_ptreq (s, third, "third now set");
-	r_spaces_pop (sps);
-	s = r_spaces_current (sps);
+	rz_spaces_pop (sps);
+	s = rz_spaces_current (sps);
 	mu_assert_null (s, "all set");
-	r_spaces_pop (sps);
-	s = r_spaces_current (sps);
+	rz_spaces_pop (sps);
+	s = rz_spaces_current (sps);
 	mu_assert_ptreq (s, first, "first now set");
-	r_spaces_pop (sps);
-	s = r_spaces_current (sps);
+	rz_spaces_pop (sps);
+	s = rz_spaces_current (sps);
 	mu_assert_null (s, "nothing set");
 
-	r_spaces_push (sps, "fourthspace");
-	s = r_spaces_current (sps);
+	rz_spaces_push (sps, "fourthspace");
+	s = rz_spaces_current (sps);
 	mu_assert_streq (s->name, "fourthspace", "fourth created");
 
-	s = r_spaces_get (sps, "fourthspace");
+	s = rz_spaces_get (sps, "fourthspace");
 	mu_assert_notnull (s, "fourth should exist");
 
-	r_spaces_free (sps);
+	rz_spaces_free (sps);
 	mu_end;
 }
 
@@ -80,35 +80,35 @@ static void test_event(REvent *ev, int type, void *user, void *data) {
 }
 
 bool test_space_event(void) {
-	RSpaces *sps = r_spaces_new ("spacename");
-	r_spaces_add (sps, "firstspace");
-	r_spaces_add (sps, "secondspace");
-	RSpace *third = r_spaces_add (sps, "thirdspace");
+	RSpaces *sps = rz_spaces_new ("spacename");
+	rz_spaces_add (sps, "firstspace");
+	rz_spaces_add (sps, "secondspace");
+	RSpace *third = rz_spaces_add (sps, "thirdspace");
 
-	r_event_hook (sps->event, R_SPACE_EVENT_COUNT, count_event, NULL);
-	r_event_hook (sps->event, R_SPACE_EVENT_UNSET, test_event, NULL);
-	r_event_hook (sps->event, R_SPACE_EVENT_RENAME, test_event, NULL);
+	rz_event_hook (sps->event, R_SPACE_EVENT_COUNT, count_event, NULL);
+	rz_event_hook (sps->event, R_SPACE_EVENT_UNSET, test_event, NULL);
+	rz_event_hook (sps->event, R_SPACE_EVENT_RENAME, test_event, NULL);
 
-	int c = r_spaces_count (sps, "firstspace");
+	int c = rz_spaces_count (sps, "firstspace");
 	mu_assert_eq (c, 1, "first contain 1");
-	c = r_spaces_count (sps, "thirdspace");
+	c = rz_spaces_count (sps, "thirdspace");
 	mu_assert_eq (c, 3, "third contain 3");
 
 	test_event_called = false;
-	r_spaces_rename (sps, "thirdspace", "mynewname");
+	rz_spaces_rename (sps, "thirdspace", "mynewname");
 	mu_assert ("rename_event has been called", test_event_called);
 
-	RSpace *s = r_spaces_get (sps, "thirdspace");
+	RSpace *s = rz_spaces_get (sps, "thirdspace");
 	mu_assert_null (s, "thirdspace should not exist anymore");
-	s = r_spaces_get (sps, "mynewname");
+	s = rz_spaces_get (sps, "mynewname");
 	mu_assert_notnull (s, "mynewname should exist now");
 	mu_assert_ptreq (s, third, "and it should be equal to thirdspace ptr");
 
 	test_event_called = false;
-	r_spaces_unset (sps, "mynewname");
+	rz_spaces_unset (sps, "mynewname");
 	mu_assert ("unset_event has been called", test_event_called);
 
-	r_spaces_free (sps);
+	rz_spaces_free (sps);
 	mu_end;
 }
 

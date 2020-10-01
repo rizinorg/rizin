@@ -17,14 +17,14 @@ Requirements
 ------------
 
 You can either install libyara with your preferred package manager, or you
-can execute `r2pm -i yara` in order to retrieve latest source, compile,
+can execute `rz_pm -i yara` in order to retrieve latest source, compile,
 and install the library via the r2 package manager. You will also need `yara-r2`
 to execute the yara utility from the r2 shell.
 
-Yara in radare2
+Yara in rizin
 ----------
 
-radare2 provides several commands, allowing the user, to add or remove rules,
+rizin provides several commands, allowing the user, to add or remove rules,
 scan a file, and list or use rules tags.
 
 You can list the yara commands with the following r2 command `yara [help]`.
@@ -32,9 +32,9 @@ You can list the yara commands with the following r2 command `yara [help]`.
 Rules
 -----
 
-By default, radare2 ships with some common crypto and packers rules that you
-can find in `/usr/local/share/radare2/last/yara/` if you installed it r2 or
-`radare2/shlr/yara/` in the git repo.
+By default, rizin ships with some common crypto and packers rules that you
+can find in `/usr/local/share/rizin/last/yara/` if you installed it r2 or
+`rizin/shlr/yara/` in the git repo.
 They are loaded as soon as you start using the yara plugin.
 So you can issue `yara scan` and automatically see if your binary is packed
 with a known packer.
@@ -50,7 +50,7 @@ yara scan
 Yara versions
 -------------
 
-Because radare2 has support for both yara versions currently,
+Because rizin has support for both yara versions currently,
 depending from the version/plugin you've loaded, you need
 to use the proper versioned command.
 E.g. `yara` or `yara`. For example `yara scan`.

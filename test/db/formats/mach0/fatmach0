@@ -129,28 +129,28 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=fatmach0 entry1 rabin2
+NAME=fatmach0 entry1 rz-bin
 FILE=bins/mach0/fatmach0-3true
 ARGS=-n
-CMDS=!rabin2 -a x86 -b 32 -qe bins/mach0/fatmach0-3true
+CMDS=!rz-bin -a x86 -b 32 -qe bins/mach0/fatmach0-3true
 EXPECT=<<EOF
 0x00001f44
 EOF
 RUN
 
-NAME=fatmach0 entry1 rabin2
+NAME=fatmach0 entry1 rz-bin
 FILE=bins/mach0/fatmach0-3true
 ARGS=-n
-CMDS=!rabin2 -p -a x86 -b 32 -qe bins/mach0/fatmach0-3true
+CMDS=!rz-bin -p -a x86 -b 32 -qe bins/mach0/fatmach0-3true
 EXPECT=<<EOF
 0x00005f44
 EOF
 RUN
 
-NAME=fatmach0 entry1 rabin2 (2)
+NAME=fatmach0 entry1 rz-bin (2)
 FILE=bins/mach0/fatmach0-3true
 ARGS=-n
-CMDS=!rabin2 -a x86 -b 32 -e bins/mach0/fatmach0-3true | grep paddr=
+CMDS=!rz-bin -a x86 -b 32 -e bins/mach0/fatmach0-3true | grep paddr=
 EXPECT=<<EOF
 vaddr=0x00001f44 paddr=0x00005f44 haddr=0x00000420 type=program
 EOF
@@ -184,7 +184,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=fatmach0 rabin2 archs iA
+NAME=fatmach0 rz-bin archs iA
 FILE=bins/mach0/fatmach0-3true
 CMDS=iA
 EXPECT=<<EOF
@@ -194,9 +194,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=fatmach0 rabin2 archs
+NAME=fatmach0 rz-bin archs
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rabin2 -A bins/mach0/fatmach0-3true
+CMDS=!rz-bin -A bins/mach0/fatmach0-3true
 EXPECT=<<EOF
 000 0x00001000 13792 x86_64 x86 64 all
 001 0x00005000 13760 x86_32 386
@@ -207,7 +207,7 @@ RUN
 NAME=fatmach0 extract
 FILE=bins/mach0/fatmach0-3true
 ARGS=-n
-CMDS=!rabin2 -x bins/mach0/fatmach0-3true;!rm -rf fatmach0-3true.fat
+CMDS=!rz-bin -x bins/mach0/fatmach0-3true;!rm -rf fatmach0-3true.fat
 EXPECT=<<EOF
 fatmach0-3true.fat/fatmach0-3true.x86_64.0 created (13792)
 fatmach0-3true.fat/fatmach0-3true.x86_32.1 created (13760)

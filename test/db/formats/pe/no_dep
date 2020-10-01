@@ -8,7 +8,7 @@ RUN
 NAME=1: PE: corkami dep.exe - dep not enabled
 FILE=bins/pe/no_dep.exe
 ARGS=-n
-CMDS=!rabin2 -k pe/nx bins/pe/no_dep.exe
+CMDS=!rz-bin -k pe/nx bins/pe/no_dep.exe
 EXPECT=<<EOF
 false
 

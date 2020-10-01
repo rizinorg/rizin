@@ -1,0 +1,11 @@
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=@LIBDIR@
+includedir=${prefix}/include
+
+Name: rz_core
+Description: radare foundation libraries
+Version: @VERSION@
+Requires: rz_config rz_cons rz_io rz_util rz_flag rz_asm rz_debug rz_hash rz_bin rz_lang rz_io rz_anal rz_parse rz_bp rz_egg rz_reg rz_search rz_syscall rz_socket rz_fs rz_magic rz_crypto
+Libs: -L${libdir} -lrz_core  @SSL_LDFLAGS@ @CAPSTONE_LDFLAGS@
+Cflags: -I${includedir}/librz @SSL_CFLAGS@ @CAPSTONE_CFLAGS@

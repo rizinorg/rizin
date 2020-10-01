@@ -6,14 +6,14 @@
 #
 # -- pancake
 
-r2pm -h >/dev/null 2>&1
+rz-pm -h >/dev/null 2>&1
 if [ $? = 0 ]; then
 	echo "Installing the last version of 'acr'..."
-	r2pm -i acr > /dev/null
-	r2pm -r acr -h > /dev/null 2>&1
+	rz-pm -i acr > /dev/null
+	rz-pm -r acr -h > /dev/null 2>&1
 	if [ $? = 0 ]; then
 		echo "Running 'acr -p'..."
-		r2pm -r acr -p
+		rz-pm -r acr -p
 	else
 		echo "Cannot find 'acr' in PATH"
 	fi

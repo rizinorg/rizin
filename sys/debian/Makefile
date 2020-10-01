@@ -1,11 +1,11 @@
 all:
-	make -C radare2
-	make -C radare2-dev
+	make -C rizin
+	make -C rizin-dev
 
 clean:
-	make -C radare2 clean
-	make -C radare2-dev clean
+	make -C rizin clean
+	make -C rizin-dev clean
 
 mrproper:
-	make -C radare2 mrproper
-	make -C radare2-dev mrproper
+	make -C rizin mrproper
+	make -C rizin-dev mrproper

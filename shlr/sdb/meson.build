@@ -120,7 +120,7 @@ pkgconfig_mod.generate(
   description: 'Simple DataBase',
   subdirs: ['sdb'],
   version: sdb_version,
-  url: 'https://github.com/radareorg/sdb'
+  url: 'https://github.com/rizinorg/sdb'
 )
 
 if not meson.is_subproject()
