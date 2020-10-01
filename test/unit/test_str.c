@@ -186,15 +186,15 @@ bool test_r_str_word_count(void) {
 bool test_r_str_ichr(void) {
 	char* test = "rrrrrrizin";
 	char* out = rz_str_ichr (test, 'r');
-	mu_assert_streq (out, "adare2",
+	mu_assert_streq (out, "izin",
 			"string after the first non-r character in rrrrrrizin");
 	mu_end;
 }
 
 bool test_r_str_lchr(void) {
 	const char* test = "rizin";
-	const char* out = rz_str_lchr (test, 'r');
-	mu_assert_streq (out, "re2", "pointer to last r in rizin");
+	const char* out = rz_str_lchr (test, 'i');
+	mu_assert_streq (out, "in", "pointer to last i in rizin");
 	mu_end;
 }
 
@@ -235,7 +235,7 @@ bool test_r_str_ansi_len(void) {
 	int len;
 
 	len = rz_str_ansi_len ("rizin");
-	mu_assert_eq (len, 7, "len(ascii only)");
+	mu_assert_eq (len, 5, "len(ascii only)");
 
 	len = rz_str_ansi_len ("r\x1b[38;2;208;80;0madare2");
 	mu_assert_eq (len, 7, "len(ascii + ansi ending with m)");
@@ -262,7 +262,7 @@ bool test_r_str_len_utf8_ansi(void) {
 	int len;
 
 	len = rz_str_len_utf8_ansi ("rizin");
-	mu_assert_eq (len, 7, "len(ascii only)");
+	mu_assert_eq (len, 5, "len(ascii only)");
 
 	len = rz_str_len_utf8_ansi ("r\x1b[38;2;208;80;0madare2");
 	mu_assert_eq (len, 7, "len(ascii + ansi ending with m)");
