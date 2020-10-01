@@ -637,8 +637,3 @@ yxml_dep = declare_dependency(
   link_with: libyxml,
   include_directories: yxml_inc
 )
-
-install_subdir('www',
-  install_dir: r2_wwwroot,
-  strip_directory: true
-)
