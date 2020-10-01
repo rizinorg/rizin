@@ -5,7 +5,7 @@
 
 #define WORKERS_DEFAULT        8
 #define RADARE2_CMD_DEFAULT    "rizin"
-#define RASM2_CMD_DEFAULT      "rz_asm"
+#define RASM2_CMD_DEFAULT      "rz-asm"
 #define JSON_TEST_FILE_DEFAULT "bins/elf/crackme0x00b"
 #define TIMEOUT_DEFAULT        960
 
@@ -54,7 +54,7 @@ static int help(bool verbose) {
 		" -F [dir]     run fuzz tests (open and default analysis) on all files in the given dir\n"
 		" -j [threads] how many threads to use for running tests concurrently (default is "WORKERS_DEFAULT_STR")\n"
 		" -r [rizin] path to rizin executable (default is "RADARE2_CMD_DEFAULT")\n"
-		" -m [rz_asm]   path to rz_asm executable (default is "RASM2_CMD_DEFAULT")\n"
+		" -m [rz-asm]   path to rz-asm executable (default is "RASM2_CMD_DEFAULT")\n"
 		" -f [file]    file to use for json tests (default is "JSON_TEST_FILE_DEFAULT")\n"
 		" -C [dir]     chdir before running rz_test (default follows executable symlink + test/new\n"
 		" -t [seconds] timeout per test (default is "TIMEOUT_DEFAULT_STR")\n"

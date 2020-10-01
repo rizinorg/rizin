@@ -4508,7 +4508,7 @@ EOF
 RUN
 
 NAME=macho-ghost-symbols
-FILE=bins/mach0/librz_flag.dylib
+FILE=bins/mach0/libr_flag.dylib
 CMDS=<<EOF
 is~?
 is~entry?
