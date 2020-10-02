@@ -464,7 +464,6 @@ static int cmd_uname(void *data, const char *input) { // "uniq"
 }
 
 static int cmd_uniq(void *data, const char *input) { // "uniq"
-	RzCore *core = (RzCore *)data;
 	const char *arg = strchr (input, ' ');
 	if (arg) {
 		arg = rz_str_trim_head_ro (arg + 1);
@@ -487,8 +486,7 @@ static int cmd_uniq(void *data, const char *input) { // "uniq"
 	return 0;
 }
 
-static int cmd_head (void *data, const char *_input) { // "head"
-	RzCore *core = (RzCore *)data;
+static int cmd_head(void *data, const char *_input) { // "head"
 	int lines = 5;
 	char *input = strdup (_input);
 	char *arg = strchr (input, ' ');
@@ -1218,7 +1216,6 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 }
 
 static int cmd_join(void *data, const char *input) { // "join"
-	RzCore *core = (RzCore *)data;
 	char *tmp = strdup (input);
 	const char *arg1 = strchr (tmp, ' ');
 	if (!arg1) {

@@ -276,7 +276,7 @@ static char *gdb_to_rz_profile(const char *gdb) {
 	int number, rel, offset, size, type_bits, ret;
 	// Every line is -
 	// Name Number Rel Offset Size Type Groups
-	char *ptr = rz_str_trim_head_ro (gdb);
+	const char *ptr = rz_str_trim_head_ro (gdb);
 
 	// It's possible someone includes the heading line too. Skip it
 	if (rz_str_startswith (ptr, "Name")) {
@@ -382,7 +382,7 @@ static char *gdb_to_rz_profile(const char *gdb) {
 }
 
 RZ_API char *rz_reg_parse_gdb_profile(const char *profile_file) {
-	char *base, *str = NULL;
+	char *str = NULL;
 	if (!(str = rz_file_slurp (profile_file, NULL))) {
 		char *base = rz_sys_getenv (RZ_LIB_ENV);
 		if (base) {

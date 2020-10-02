@@ -317,7 +317,6 @@ static void showFormat(RzCore *core, const char *name, int mode) {
 
 static int cmd_tail(void *data, const char *_input) { // "tail"
 	char *input = strdup (_input);
-	RzCore *core = (RzCore *)data;
 	int lines = 5;
 	char *arg = strchr (input, ' ');
 	char *tmp, *count;

@@ -221,7 +221,6 @@ static void seek_to_register(RzCore *core, const char *input, bool is_silent) {
 }
 
 static int cmd_sort(void *data, const char *input) { // "sort"
-	RzCore *core = (RzCore *)data;
 	const char *arg = strchr (input, ' ');
 	if (arg) {
 		arg = rz_str_trim_head_ro (arg + 1);

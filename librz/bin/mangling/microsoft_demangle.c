@@ -1442,7 +1442,6 @@ static EDemanglerErr parse_microsoft_mangled_name(const char *sym, char **demang
 	bool is_abbr_type = false;
 	bool is_implicit_this_pointer;
 	bool is_static;
-	bool is_based = false;
 	char *memb_func_access_code = NULL;
 	const char *call_conv = NULL;
 	const char *storage_class_code_for_ret = NULL;
@@ -1483,7 +1482,6 @@ static EDemanglerErr parse_microsoft_mangled_name(const char *sym, char **demang
 
 	if (curr_pos[0] == '_') {
 		// TODO: __based()
-		is_based = true;
 		curr_pos++;
 	}
 

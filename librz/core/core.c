@@ -2284,8 +2284,7 @@ static void __init_autocomplete_default (RzCore* core) {
 	}
 }
 
-static void __init_autocomplete (RzCore* core) {
-	int i;
+static void __init_autocomplete(RzCore* core) {
 	core->autocomplete = RZ_NEW0 (RzCoreAutocomplete);
 	if (core->autocomplete_type == AUTOCOMPLETE_DEFAULT) {
 		__init_autocomplete_default (core);

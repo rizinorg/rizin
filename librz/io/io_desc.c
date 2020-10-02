@@ -231,7 +231,7 @@ RZ_API bool rz_io_desc_exchange(RzIO* io, int fd, int fdx) {
 	rz_id_storage_set (io->files, desc,  fdx);
 	rz_id_storage_set (io->files, descx, fd);
 	if (io->p_cache) {
-		Sdb* cache = desc->cache;
+		HtUP* cache = desc->cache;
 		desc->cache = descx->cache;
 		descx->cache = cache;
 		rz_io_desc_cache_cleanup (desc);

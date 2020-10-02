@@ -7621,8 +7621,6 @@ static bool cmd_anal_refs(RzCore *core, const char *input) {
 		RzAnalRef *ref;
 		RzListIter *iter;
 		char *space = strchr (input, ' ');
-		char *tmp = NULL;
-		char *name = space ? strdup (space + 1): NULL;
 		if (space) {
 			addr = rz_num_math (core->num, space + 1);
 		} else {
