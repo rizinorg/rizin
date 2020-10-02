@@ -314,7 +314,7 @@ do_it_again:
 				case VK_DOWN: buf[idx++] = 'B'; break;
 				case VK_RIGHT: buf[idx++] = 'C'; break;
 				case VK_LEFT: buf[idx++] = 'D'; break;
-				case VK_PRzIOR: buf[idx++] = '5'; break; // PAGE UP
+				case VK_PRIOR: buf[idx++] = '5'; break; // PAGE UP
 				case VK_NEXT: buf[idx++] = '6'; break; // PAGE DOWN
 				case VK_DELETE: buf[idx++] = '3'; break; // SUPR KEY
 				case VK_HOME: buf[idx++] = 'H'; break;	// HOME KEY

@@ -113,7 +113,7 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 			case VK_LEFT: // key left
 				ch = bCtrl ? 'H' : 'h';
 				break;
-			case VK_PRzIOR: // key home
+			case VK_PRIOR: // key home
 				ch = 'K';
 				break;
 			case VK_NEXT: // key end
@@ -497,7 +497,7 @@ static int __cons_readchar_w32(ut32 usec) {
 						case VK_RIGHT: // key right
 						case VK_UP: // key up
 						case VK_LEFT: // key left
-						case VK_PRzIOR: // key home
+						case VK_PRIOR: // key home
 						case VK_NEXT: // key end
 							ch = irInBuf.Event.KeyEvent.wVirtualKeyCode;
 							is_arrow = true;
