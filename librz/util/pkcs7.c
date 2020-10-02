@@ -49,7 +49,7 @@ static void rz_pkcs7_free_certificaterevocationlists(RPKCS7CertificateRevocation
 			rz_x509_free_crl (crls->elements[i]);
 			crls->elements[i] = NULL;
 		}
-		R_FREE (crls->elements);
+		RZ_FREE (crls->elements);
 		// Used internally pkcs #7, so it shouldn't free crls.
 	}
 }
@@ -80,7 +80,7 @@ static void rz_pkcs7_free_extendedcertificatesandcertificates(RPKCS7ExtendedCert
 			rz_x509_free_certificate (ecac->elements[i]);
 			ecac->elements[i] = NULL;
 		}
-		R_FREE (ecac->elements);
+		RZ_FREE (ecac->elements);
 		// Used internally pkcs #7, so it shouldn't free ecac.
 	}
 }
@@ -120,10 +120,10 @@ static void rz_pkcs7_free_digestalgorithmidentifier(RPKCS7DigestAlgorithmIdentif
 				rz_x509_free_algorithmidentifier (dai->elements[i]);
 				// rz_x509_free_algorithmidentifier doesn't free the pointer
 				// because on x509 the original use was internal.
-				R_FREE (dai->elements[i]);
+				RZ_FREE (dai->elements[i]);
 			}
 		}
-		R_FREE (dai->elements);
+		RZ_FREE (dai->elements);
 		// Used internally pkcs #7, so it shouldn't free dai.
 	}
 }
@@ -212,7 +212,7 @@ static void rz_pkcs7_free_attributes(RPKCS7Attributes *attributes) {
 		for (i = 0; i < attributes->length; i++) {
 			rz_pkcs7_free_attribute (attributes->elements[i]);
 		}
-		R_FREE (attributes->elements);
+		RZ_FREE (attributes->elements);
 		// Used internally pkcs #7, so it shouldn't free attributes.
 	}
 }
@@ -243,7 +243,7 @@ static bool rz_pkcs7_parse_signerinfos(RPKCS7SignerInfos *ss, RASN1Object *objec
 		for (i = 0; i < ss->length; i++) {
 			// rz_pkcs7_parse_signerinfo returns bool,
 			// so i have to allocate before calling the function
-			ss->elements[i] = R_NEW0 (RPKCS7SignerInfo);
+			ss->elements[i] = RZ_NEW0 (RPKCS7SignerInfo);
 			//should i handle invalid memory? the function checks the pointer
 			//or it should return if si->elements[i] == NULL ?
 			rz_pkcs7_parse_signerinfo (ss->elements[i], object->list.objects[i]);
@@ -259,7 +259,7 @@ static void rz_pkcs7_free_signerinfos(RPKCS7SignerInfos *ss) {
 			rz_pkcs7_free_signerinfo (ss->elements[i]);
 			ss->elements[i] = NULL;
 		}
-		R_FREE (ss->elements);
+		RZ_FREE (ss->elements);
 		// Used internally pkcs #7, so it shouldn't free ss.
 	}
 }
@@ -310,7 +310,7 @@ RZ_API RCMS *rz_pkcs7_parse_cms(const ut8 *buffer, ut32 length) {
 	if (!buffer || !length) {
 		return NULL;
 	}
-	container = R_NEW0 (RCMS);
+	container = RZ_NEW0 (RCMS);
 	if (!container) {
 		return NULL;
 	}
@@ -349,7 +349,7 @@ static RPKCS7Attribute *rz_pkcs7_parse_attribute(RASN1Object *object) {
 	if (!object || object->list.length < 1) {
 		return NULL;
 	}
-	attribute = R_NEW0 (RPKCS7Attribute);
+	attribute = RZ_NEW0 (RPKCS7Attribute);
 	if (!attribute) {
 		return NULL;
 	}
@@ -373,7 +373,7 @@ static bool rz_pkcs7_parse_attributes(RPKCS7Attributes *attributes, RASN1Object 
 
 	attributes->length = object->list.length;
 	if (attributes->length > 0) {
-		attributes->elements = R_NEWS0 (RPKCS7Attribute *, attributes->length);
+		attributes->elements = RZ_NEWS0 (RPKCS7Attribute *, attributes->length);
 		if (!attributes->elements) {
 			attributes->length = 0;
 			return false;
@@ -677,7 +677,7 @@ RZ_API SpcIndirectDataContent *rz_pkcs7_parse_spcinfo(RCMS *cms) {
 		return NULL;
 	}
 
-	SpcIndirectDataContent *spcinfo = R_NEW0 (SpcIndirectDataContent);
+	SpcIndirectDataContent *spcinfo = RZ_NEW0 (SpcIndirectDataContent);
 	if (!spcinfo) {
 		return NULL;
 	}
@@ -690,18 +690,18 @@ RZ_API SpcIndirectDataContent *rz_pkcs7_parse_spcinfo(RCMS *cms) {
 	RASN1Object *object = rz_asn1_create_object (content->binary, content->length, content->binary);
 	if (!object || object->list.length < 2 || !object->list.objects ||
 		!object->list.objects[0] || !object->list.objects[1]) {
-		R_FREE (spcinfo);
+		RZ_FREE (spcinfo);
 		goto beach;
 	}
 	if (object->list.objects[0]) {
 		if (!rz_pkcs7_parse_spcdata (&spcinfo->data, object->list.objects[0])) {
-			R_FREE (spcinfo);
+			RZ_FREE (spcinfo);
 			goto beach;
 		}
 	}
 	if (object->list.objects[1]) {
 		if (!rz_pkcs7_parse_spcmessagedigest (&spcinfo->messageDigest, object->list.objects[1])) {
-			R_FREE (spcinfo);
+			RZ_FREE (spcinfo);
 			goto beach;
 		}
 	}

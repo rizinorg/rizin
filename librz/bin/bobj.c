@@ -49,12 +49,12 @@ static void object_delete_items(RBinObject *o) {
 	rz_list_free (o->lines);
 	sdb_free (o->kv);
 	rz_list_free (o->mem);
-	for (i = 0; i < R_BIN_SYM_LAST; i++) {
+	for (i = 0; i < RZ_BIN_SYM_LAST; i++) {
 		free (o->binsym[i]);
 	}
 }
 
-R_IPI void rz_bin_object_free(void /*RBinObject*/ *o_) {
+RZ_IPI void rz_bin_object_free(void /*RBinObject*/ *o_) {
 	RBinObject *o = o_;
 	if (o) {
 		free (o->regstate);
@@ -128,11 +128,11 @@ static RzList *classes_from_symbols(RBinFile *bf) {
 }
 
 // TODO: kill offset and sz, because those should be inferred from binfile->buf
-R_IPI RBinObject *rz_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz) {
+RZ_IPI RBinObject *rz_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz) {
 	rz_return_val_if_fail (bf && plugin, NULL);
 	ut64 bytes_sz = rz_buf_size (bf->buf);
 	Sdb *sdb = bf->sdb;
-	RBinObject *o = R_NEW0 (RBinObject);
+	RBinObject *o = RZ_NEW0 (RBinObject);
 	if (!o) {
 		return NULL;
 	}
@@ -159,7 +159,7 @@ R_IPI RBinObject *rz_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basea
 			return NULL;
 		}
 	} else {
-		R_LOG_WARN ("Plugin %s should implement load_buffer method.\n", plugin->name);
+		RZ_LOG_WARN ("Plugin %s should implement load_buffer method.\n", plugin->name);
 		sdb_free (o->kv);
 		free (o);
 		return NULL;
@@ -279,7 +279,7 @@ RZ_API int rz_bin_object_set_items(RBinFile *bf, RBinObject *o) {
 
 	if (p->file_type) {
 		int type = p->file_type (bf);
-		if (type == R_BIN_TYPE_CORE) {
+		if (type == RZ_BIN_TYPE_CORE) {
 			if (p->regstate) {
 				o->regstate = p->regstate (bf);
 			}
@@ -300,7 +300,7 @@ RZ_API int rz_bin_object_set_items(RBinFile *bf, RBinObject *o) {
 	}
 	// XXX this is expensive because is O(n^n)
 	if (p->binsym) {
-		for (i = 0; i < R_BIN_SYM_LAST; i++) {
+		for (i = 0; i < RZ_BIN_SYM_LAST; i++) {
 			o->binsym[i] = p->binsym (bf, i);
 			if (o->binsym[i]) {
 				o->binsym[i]->paddr += o->loadaddr;
@@ -349,7 +349,7 @@ RZ_API int rz_bin_object_set_items(RBinFile *bf, RBinObject *o) {
 			rz_bin_filter_sections (bf, o->sections);
 		}
 	}
-	if (bin->filter_rules & (R_BIN_REQ_RELOCS | R_BIN_REQ_IMPORTS)) {
+	if (bin->filter_rules & (RZ_BIN_REQ_RELOCS | RZ_BIN_REQ_IMPORTS)) {
 		if (p->relocs) {
 			RzList *l = p->relocs (bf);
 			if (l) {
@@ -360,7 +360,7 @@ RZ_API int rz_bin_object_set_items(RBinFile *bf, RBinObject *o) {
 			}
 		}
 	}
-	if (bin->filter_rules & R_BIN_REQ_STRINGS) {
+	if (bin->filter_rules & RZ_BIN_REQ_STRINGS) {
 		o->strings = p->strings
 			? p->strings (bf)
 			: rz_bin_file_get_strings (bf, minlen, 0, bf->rawstr);
@@ -369,7 +369,7 @@ RZ_API int rz_bin_object_set_items(RBinFile *bf, RBinObject *o) {
 		}
 		REBASE_PADDR (o, o->strings, RBinString);
 	}
-	if (bin->filter_rules & R_BIN_REQ_CLASSES) {
+	if (bin->filter_rules & RZ_BIN_REQ_CLASSES) {
 		if (p->classes) {
 			RzList *classes = p->classes (bf);
 			if (classes) {
@@ -423,13 +423,13 @@ RZ_API int rz_bin_object_set_items(RBinFile *bf, RBinObject *o) {
 	if (p->mem)  {
 		o->mem = p->mem (bf);
 	}
-	if (bin->filter_rules & (R_BIN_REQ_INFO | R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS)) {
-		o->lang = isSwift? R_BIN_NM_SWIFT: rz_bin_load_languages (bf);
+	if (bin->filter_rules & (RZ_BIN_REQ_INFO | RZ_BIN_REQ_SYMBOLS | RZ_BIN_REQ_IMPORTS)) {
+		o->lang = isSwift? RZ_BIN_NM_SWIFT: rz_bin_load_languages (bf);
 	}
 	return true;
 }
 
-R_IPI RBNode *rz_bin_object_patch_relocs(RBin *bin, RBinObject *o) {
+RZ_IPI RBNode *rz_bin_object_patch_relocs(RBin *bin, RBinObject *o) {
 	rz_return_val_if_fail (bin && o, NULL);
 
 	static bool first = true;
@@ -451,12 +451,12 @@ R_IPI RBNode *rz_bin_object_patch_relocs(RBin *bin, RBinObject *o) {
 	return o->relocs;
 }
 
-R_IPI RBinObject *rz_bin_object_get_cur(RBin *bin) {
+RZ_IPI RBinObject *rz_bin_object_get_cur(RBin *bin) {
 	rz_return_val_if_fail (bin && bin->cur, NULL);
 	return bin->cur->o;
 }
 
-R_IPI RBinObject *rz_bin_object_find_by_arch_bits(RBinFile *bf, const char *arch, int bits, const char *name) {
+RZ_IPI RBinObject *rz_bin_object_find_by_arch_bits(RBinFile *bf, const char *arch, int bits, const char *name) {
 	rz_return_val_if_fail (bf && arch && name, NULL);
 	if (bf->o) {
 		RBinInfo *info = bf->o->info;
@@ -487,7 +487,7 @@ RZ_API bool rz_bin_object_delete(RBin *bin, ut32 bf_id) {
 	return res;
 }
 
-R_IPI void rz_bin_object_filter_strings(RBinObject *bo) {
+RZ_IPI void rz_bin_object_filter_strings(RBinObject *bo) {
 	rz_return_if_fail (bo && bo->strings);
 
 	RzList *strings = bo->strings;
@@ -512,7 +512,7 @@ R_IPI void rz_bin_object_filter_strings(RBinObject *bo) {
 			if (rz_str_is_printable (dec) && strlen (dec) > 3) {
 				free (ptr->string);
 				ptr->string = dec;
-				ptr->type = R_STRING_TYPE_BASE64;
+				ptr->type = RZ_STRING_TYPE_BASE64;
 			} else {
 				free (dec);
 			}

@@ -168,15 +168,15 @@ int file_buffer(RzMagic *ms, int fd, const char *inname, const void *buf, size_t
 	if (!ms) {
 		return -1;
 	}
-	mime = ms->flags & R_MAGIC_MIME;
+	mime = ms->flags & RZ_MAGIC_MIME;
 	if (nb == 0) {
-		if ((!mime || (mime & R_MAGIC_MIME_TYPE)) &&
+		if ((!mime || (mime & RZ_MAGIC_MIME_TYPE)) &&
 			file_printf (ms, mime ? "application/x-empty" : "empty") == -1) {
 			return -1;
 		}
 		return 1;
 	} else if (nb == 1) {
-		if ((!mime || (mime & R_MAGIC_MIME_TYPE)) &&
+		if ((!mime || (mime & RZ_MAGIC_MIME_TYPE)) &&
 			file_printf (ms, mime ? "application/octet-stream" : "very short file (no magic)") == -1) {
 			return -1;
 		}
@@ -185,20 +185,20 @@ int file_buffer(RzMagic *ms, int fd, const char *inname, const void *buf, size_t
 
 #if 0
 	/* try compression stuff */
-	if ((ms->flags & R_MAGIC_NO_CHECK_COMPRESS) != 0 ||
+	if ((ms->flags & RZ_MAGIC_NO_CHECK_COMPRESS) != 0 ||
 	    (m = file_zmagic(ms, fd, inname, buf, nb)) == 0) {
 #endif
 	    /* Check if we have a tar file */
-	    if ((ms->flags & R_MAGIC_NO_CHECK_TAR) != 0 ||
+	    if ((ms->flags & RZ_MAGIC_NO_CHECK_TAR) != 0 ||
 		(m = file_is_tar(ms, buf, nb)) == 0) {
 		/* try tests in /etc/magic (or surrogate magic file) */
-		if ((ms->flags & R_MAGIC_NO_CHECK_SOFT) != 0 ||
+		if ((ms->flags & RZ_MAGIC_NO_CHECK_SOFT) != 0 ||
 		    (m = file_softmagic(ms, buf, nb, BINTEST)) == 0) {
 		    /* try known keywords, check whether it is ASCII */
-		    if ((ms->flags & R_MAGIC_NO_CHECK_ASCII) != 0 ||
+		    if ((ms->flags & RZ_MAGIC_NO_CHECK_ASCII) != 0 ||
 			(m = file_ascmagic(ms, buf, nb)) == 0) {
 			/* abandon hope, all ye who remain here */
-			if ((!mime || (mime & R_MAGIC_MIME_TYPE))) {
+			if ((!mime || (mime & RZ_MAGIC_MIME_TYPE))) {
 		//		if (mime)
 					file_printf (ms, "application/octet-stream");
 				return -1;
@@ -244,7 +244,7 @@ const char *file_getbuffer(RzMagic *ms) {
 		return NULL;
 	}
 
-	if (ms->flags & R_MAGIC_RAW) {
+	if (ms->flags & RZ_MAGIC_RAW) {
 		return ms->o.buf;
 	}
 

@@ -22,13 +22,13 @@ static int iscallret(RzDebug *dbg, ut64 addr) {
 	} else {
 		RzAnalOp op;
 		(void) dbg->iob.read_at (dbg->iob.io, addr-8, buf, 8);
-		(void) rz_anal_op (dbg->anal, &op, addr-8, buf, 8, R_ANAL_OP_MASK_BASIC);
-		if (op.type == R_ANAL_OP_TYPE_CALL || op.type == R_ANAL_OP_TYPE_UCALL) {
+		(void) rz_anal_op (dbg->anal, &op, addr-8, buf, 8, RZ_ANAL_OP_MASK_BASIC);
+		if (op.type == RZ_ANAL_OP_TYPE_CALL || op.type == RZ_ANAL_OP_TYPE_UCALL) {
 			return 1;
 		}
 		/* delay slot */
-		(void) rz_anal_op (dbg->anal, &op, addr-4, buf, 4, R_ANAL_OP_MASK_BASIC);
-		if (op.type == R_ANAL_OP_TYPE_CALL || op.type == R_ANAL_OP_TYPE_UCALL) {
+		(void) rz_anal_op (dbg->anal, &op, addr-4, buf, 4, RZ_ANAL_OP_MASK_BASIC);
+		if (op.type == RZ_ANAL_OP_TYPE_CALL || op.type == RZ_ANAL_OP_TYPE_UCALL) {
 			return 1;
 		}
 	}
@@ -52,13 +52,13 @@ static RzList *backtrace_fuzzy(RzDebug *dbg, ut64 at) {
 	if (at == UT64_MAX) {
 		RzRegItem *ri;
 		RzReg *reg = dbg->reg;
-		const char *spname = rz_reg_get_name (reg, R_REG_NAME_SP);
+		const char *spname = rz_reg_get_name (reg, RZ_REG_NAME_SP);
 		if (!spname) {
 			eprintf ("Cannot find stack pointer register\n");
 			free (stack);
 			return NULL;
 		}
-		ri = rz_reg_get (reg, spname, R_REG_TYPE_GPR);
+		ri = rz_reg_get (reg, spname, RZ_REG_TYPE_GPR);
 		if (!ri) {
 			eprintf ("Cannot find stack pointer register\n");
 			free (stack);
@@ -88,7 +88,7 @@ static RzList *backtrace_fuzzy(RzDebug *dbg, ut64 at) {
 			return NULL;
 		}
 		if (iscallret (dbg, addr)) {
-			RzDebugFrame *frame = R_NEW0 (RzDebugFrame);
+			RzDebugFrame *frame = RZ_NEW0 (RzDebugFrame);
 			frame->addr = addr;
 			frame->size = cursp - oldsp;
 			frame->sp = cursp;

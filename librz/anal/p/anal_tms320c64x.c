@@ -80,35 +80,35 @@ static int tms320c64x_analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf,
 	// capstone-next
 	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = RZ_ANAL_OP_TYPE_ILL;
 	} else {
-		if (mask & R_ANAL_OP_MASK_OPEX) {
+		if (mask & RZ_ANAL_OP_MASK_OPEX) {
 			opex (&op->opex, handle, insn);
 		}
 		op->size = insn->size;
 		op->id = insn->id;
 		switch (insn->id) {
 		case TMS320C64X_INS_INVALID:
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = RZ_ANAL_OP_TYPE_ILL;
 			break;
 		case TMS320C64X_INS_AND:
 		case TMS320C64X_INS_ANDN:
-			op->type = R_ANAL_OP_TYPE_AND;
+			op->type = RZ_ANAL_OP_TYPE_AND;
 			break;
 		case TMS320C64X_INS_NOT:
-			op->type = R_ANAL_OP_TYPE_NOT;
+			op->type = RZ_ANAL_OP_TYPE_NOT;
 			break;
 		case TMS320C64X_INS_NEG:
-			op->type = R_ANAL_OP_TYPE_NOT;
+			op->type = RZ_ANAL_OP_TYPE_NOT;
 			break;
 		case TMS320C64X_INS_SWAP2:
 		case TMS320C64X_INS_SWAP4:
-		op->type = R_ANAL_OP_TYPE_MOV;
-			op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANAL_OP_TYPE_MOV;
+			op->type = RZ_ANAL_OP_TYPE_MOV;
 			break;
 		case TMS320C64X_INS_BNOP:
 		case TMS320C64X_INS_NOP:
-			op->type = R_ANAL_OP_TYPE_NOP;
+			op->type = RZ_ANAL_OP_TYPE_NOP;
 			break;
 		case TMS320C64X_INS_CMPEQ:
 		case TMS320C64X_INS_CMPEQ2:
@@ -118,10 +118,10 @@ static int tms320c64x_analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf,
 		case TMS320C64X_INS_CMPGTU4:
 		case TMS320C64X_INS_CMPLT:
 		case TMS320C64X_INS_CMPLTU:
-			op->type = R_ANAL_OP_TYPE_CMP;
+			op->type = RZ_ANAL_OP_TYPE_CMP;
 			break;
 		case TMS320C64X_INS_B:
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = RZ_ANAL_OP_TYPE_JMP;
 			// higher 32bits of the 64bit address is lost, lets clone
 			op->jump = INSOP(0).imm + (addr & 0xFFFFFFFF00000000);
 			break;
@@ -134,7 +134,7 @@ static int tms320c64x_analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf,
 		case TMS320C64X_INS_LDNW:
 		case TMS320C64X_INS_LDW:
 		case TMS320C64X_INS_LMBD:
-			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->type = RZ_ANAL_OP_TYPE_LOAD;
 			break;
 		case TMS320C64X_INS_STB:
 		case TMS320C64X_INS_STDW:
@@ -142,10 +142,10 @@ static int tms320c64x_analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf,
 		case TMS320C64X_INS_STNDW:
 		case TMS320C64X_INS_STNW:
 		case TMS320C64X_INS_STW:
-			op->type = R_ANAL_OP_TYPE_STORE;
+			op->type = RZ_ANAL_OP_TYPE_STORE;
 			break;
 		case TMS320C64X_INS_OR:
-			op->type = R_ANAL_OP_TYPE_OR;
+			op->type = RZ_ANAL_OP_TYPE_OR;
 			break;
 		case TMS320C64X_INS_SSUB:
 		case TMS320C64X_INS_SUB:
@@ -157,7 +157,7 @@ static int tms320c64x_analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf,
 		case TMS320C64X_INS_SUBAW:
 		case TMS320C64X_INS_SUBC:
 		case TMS320C64X_INS_SUBU:
-			op->type = R_ANAL_OP_TYPE_SUB;
+			op->type = RZ_ANAL_OP_TYPE_SUB;
 			break;
 		case TMS320C64X_INS_ADD:
 		case TMS320C64X_INS_ADD2:
@@ -173,7 +173,7 @@ static int tms320c64x_analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf,
 		case TMS320C64X_INS_SADD2:
 		case TMS320C64X_INS_SADDU4:
 		case TMS320C64X_INS_SADDUS2:
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = RZ_ANAL_OP_TYPE_ADD;
 			break;
 		}
 		cs_free (insn, n);
@@ -208,11 +208,11 @@ RzAnalPlugin rz_anal_plugin_tms320c64x = {
 };
 #endif
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_tms320c64x,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif
 */

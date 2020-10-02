@@ -65,15 +65,15 @@ RzAsmPlugin rz_asm_plugin_sparc_cs = {
 	.arch = "sparc",
 	.cpus = "v9",
 	.bits = 32|64,
-	.endian = R_SYS_ENDIAN_BIG | R_SYS_ENDIAN_LITTLE,
+	.endian = RZ_SYS_ENDIAN_BIG | RZ_SYS_ENDIAN_LITTLE,
 	.disassemble = &disassemble,
 	.mnemonics = mnemonics
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_sparc_cs,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

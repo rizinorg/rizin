@@ -27,7 +27,7 @@ static char* get_file_in_cur_dir(const char *filepath) {
 static int rz_main_version_verify(int show) {
 	int i, ret;
 	typedef const char* (*vc)();
-	const char *base = R2_GITTAP;
+	const char *base = RZ_GITTAP;
 	struct vcs_t {
 		const char *name;
 		vc callback;
@@ -139,32 +139,32 @@ static int main_help(int line) {
 		" -z, -zz      do not load strings or load them even in raw\n");
 	}
 	if (line == 2) {
-		char *datahome = rz_str_home (R2_HOME_DATADIR);
+		char *datahome = rz_str_home (RZ_HOME_DATADIR);
 		const char *dirPrefix = rz_sys_prefix (NULL);
 		printf (
 		"Scripts:\n"
-		" system       ${R2_PREFIX}/share/rizin/rizinrc\n"
-		" user         ~/.rizinrc " R_JOIN_2_PATHS ("~", R2_HOME_RC) " (and " R_JOIN_3_PATHS ("~", R2_HOME_RC_DIR,"") ")\n"
+		" system       ${RZ_PREFIX}/share/rizin/rizinrc\n"
+		" user         ~/.rizinrc " RZ_JOIN_2_PATHS ("~", RZ_HOME_RC) " (and " RZ_JOIN_3_PATHS ("~", RZ_HOME_RC_DIR,"") ")\n"
 		" file         ${filename}.rz\n"
 		"Plugins:\n"
-		" binrc        " R_JOIN_4_PATHS ("~", R2_HOME_BINRC, "bin-<format>",  "") " (elf, elf64, mach0, ..)\n"
-		" R2_USER_PLUGINS " R_JOIN_2_PATHS ("~", R2_HOME_PLUGINS) "\n"
-		" R2_LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
-		" R2_USER_ZIGNS " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS) "\n"
+		" binrc        " RZ_JOIN_4_PATHS ("~", RZ_HOME_BINRC, "bin-<format>",  "") " (elf, elf64, mach0, ..)\n"
+		" RZ_USER_PLUGINS " RZ_JOIN_2_PATHS ("~", RZ_HOME_PLUGINS) "\n"
+		" RZ_LIBR_PLUGINS " RZ_JOIN_2_PATHS ("%s", RZ_PLUGINS) "\n"
+		" RZ_USER_ZIGNS " RZ_JOIN_2_PATHS ("~", RZ_HOME_ZIGNS) "\n"
 		"Environment:\n"
-		" R2_CFG_NEWSHELL sets cfg.newshell=true\n"
-		" R2_DEBUG      if defined, show error messages and crash signal\n"
-		" R2_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
-		" R2_MAGICPATH " R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC) "\n"
-		" R2_NOPLUGINS do not load r2 shared plugins\n"
-		" R2_RCFILE    ~/.rizinrc (user preferences, batch script)\n" // TOO GENERIC
-		" R2_RDATAHOME %s\n" // TODO: rename to RHOME R2HOME?
-		" R2_VERSION   contains the current version of r2\n" 
+		" RZ_CFG_NEWSHELL sets cfg.newshell=true\n"
+		" RZ_DEBUG      if defined, show error messages and crash signal\n"
+		" RZ_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
+		" RZ_MAGICPATH " RZ_JOIN_2_PATHS ("%s", RZ_SDB_MAGIC) "\n"
+		" RZ_NOPLUGINS do not load r2 shared plugins\n"
+		" RZ_RCFILE    ~/.rizinrc (user preferences, batch script)\n" // TOO GENERIC
+		" RZ_RDATAHOME %s\n" // TODO: rename to RHOME R2HOME?
+		" RZ_VERSION   contains the current version of r2\n" 
 		"Paths:\n"
-		" R2_PREFIX    "R2_PREFIX"\n"
-		" R2_INCDIR    "R2_INCDIR"\n"
-		" R2_LIBDIR    "R2_LIBDIR"\n"
-		" R2_LIBEXT    "R_LIB_EXT"\n"
+		" RZ_PREFIX    "RZ_PREFIX"\n"
+		" RZ_INCDIR    "RZ_INCDIR"\n"
+		" RZ_LIBDIR    "RZ_LIBDIR"\n"
+		" RZ_LIBEXT    "RZ_LIB_EXT"\n"
 		, dirPrefix, datahome, dirPrefix);
 		free (datahome);
 	}
@@ -174,39 +174,39 @@ static int main_help(int line) {
 static int main_print_var(const char *var_name) {
 	int i = 0;
 #ifdef __WINDOWS__
-	char *incdir = rz_str_rz_prefix (R2_INCDIR);
-	char *libdir = rz_str_rz_prefix (R2_LIBDIR);
+	char *incdir = rz_str_rz_prefix (RZ_INCDIR);
+	char *libdir = rz_str_rz_prefix (RZ_LIBDIR);
 #else
-	char *incdir = strdup (R2_INCDIR);
-	char *libdir = strdup (R2_LIBDIR);
+	char *incdir = strdup (RZ_INCDIR);
+	char *libdir = strdup (RZ_LIBDIR);
 #endif
-	char *confighome = rz_str_home (R2_HOME_CONFIGDIR);
-	char *datahome = rz_str_home (R2_HOME_DATADIR);
-	char *cachehome = rz_str_home (R2_HOME_CACHEDIR);
-	char *homeplugins = rz_str_home (R2_HOME_PLUGINS);
-	char *homezigns = rz_str_home (R2_HOME_ZIGNS);
-	char *plugins = rz_str_rz_prefix (R2_PLUGINS);
-	char *magicpath = rz_str_rz_prefix (R2_SDB_MAGIC);
+	char *confighome = rz_str_home (RZ_HOME_CONFIGDIR);
+	char *datahome = rz_str_home (RZ_HOME_DATADIR);
+	char *cachehome = rz_str_home (RZ_HOME_CACHEDIR);
+	char *homeplugins = rz_str_home (RZ_HOME_PLUGINS);
+	char *homezigns = rz_str_home (RZ_HOME_ZIGNS);
+	char *plugins = rz_str_rz_prefix (RZ_PLUGINS);
+	char *magicpath = rz_str_rz_prefix (RZ_SDB_MAGIC);
 	struct rizin_var_t {
 		const char *name;
 		const char *value;
 	} r2_vars[] = {
-		{ "R2_VERSION", R2_VERSION },
-		{ "R2_PREFIX", R2_PREFIX },
-		{ "R2_MAGICPATH", magicpath },
-		{ "R2_INCDIR", incdir },
-		{ "R2_LIBDIR", libdir },
-		{ "R2_LIBEXT", R_LIB_EXT },
-		{ "R2_RCONFIGHOME", confighome },
-		{ "R2_RDATAHOME", datahome },
-		{ "R2_RCACHEHOME", cachehome },
-		{ "R2_LIBR_PLUGINS", plugins },
-		{ "R2_USER_PLUGINS", homeplugins },
-		{ "R2_USER_ZIGNS", homezigns },
+		{ "RZ_VERSION", RZ_VERSION },
+		{ "RZ_PREFIX", RZ_PREFIX },
+		{ "RZ_MAGICPATH", magicpath },
+		{ "RZ_INCDIR", incdir },
+		{ "RZ_LIBDIR", libdir },
+		{ "RZ_LIBEXT", RZ_LIB_EXT },
+		{ "RZ_RCONFIGHOME", confighome },
+		{ "RZ_RDATAHOME", datahome },
+		{ "RZ_RCACHEHOME", cachehome },
+		{ "RZ_LIBR_PLUGINS", plugins },
+		{ "RZ_USER_PLUGINS", homeplugins },
+		{ "RZ_USER_ZIGNS", homezigns },
 		{ NULL, NULL }
 	};
 	int delta = 0;
-	if (var_name && strncmp (var_name, "R2_", 3)) {
+	if (var_name && strncmp (var_name, "RZ_", 3)) {
 		delta = 3;
 	}
 	if (var_name) {
@@ -342,7 +342,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	int help = 0;
 	enum { LOAD_BIN_ALL, LOAD_BIN_NOTHING, LOAD_BIN_STRUCTURES_ONLY } load_bin = LOAD_BIN_ALL;
 	bool run_rc = true;
- 	int ret, c, perms = R_PERM_RX;
+ 	int ret, c, perms = RZ_PERM_RX;
 	bool sandbox = false;
 	ut64 baddr = UT64_MAX;
 	ut64 seek = UT64_MAX;
@@ -388,8 +388,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	char **env = rz_sys_get_environ ();
 	char *envprofile = rz_run_get_environ_profile (env);
 
-	if (rz_sys_getenv_asbool ("R2_DEBUG")) {
-		char *sysdbg = rz_sys_getenv ("R2_DEBUG_TOOL");
+	if (rz_sys_getenv_asbool ("RZ_DEBUG")) {
+		char *sysdbg = rz_sys_getenv ("RZ_DEBUG_TOOL");
 		char *fmt = (sysdbg && *sysdbg)
 			? rz_str_newf ("%s %%d", sysdbg)
 #if __APPLE__
@@ -450,7 +450,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	while ((c = rz_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case '=':
-			R_FREE (r->cmdremote);
+			RZ_FREE (r->cmdremote);
 			r->cmdremote = strdup ("");
 			break;
 		case '2':
@@ -529,7 +529,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			LISTS_FREE ();
 			return 0;
 		case 'i':
-			if (R_STR_ISEMPTY (opt.arg)) {
+			if (RZ_STR_ISEMPTY (opt.arg)) {
 				eprintf ("Cannot open empty script path\n");
 				ret = 1;
 				goto beach;
@@ -537,7 +537,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			rz_list_append (files, (void*)opt.arg);
 			break;
 		case 'I':
-			if (R_STR_ISEMPTY (opt.arg)) {
+			if (RZ_STR_ISEMPTY (opt.arg)) {
 				eprintf ("Cannot open empty script path\n");
 				ret = 1;
 				goto beach;
@@ -587,7 +587,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			rz_config_set (r->config, "prj.name", opt.arg);
 			break;
 		case 'P':
-			if (R_STR_ISEMPTY (opt.arg)) {
+			if (RZ_STR_ISEMPTY (opt.arg)) {
 				eprintf ("Cannot open empty rapatch path\n");
 				ret = 1;
 				goto beach;
@@ -608,7 +608,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			quiet = true;
 			break;
 		case 'r':
-			if (R_STR_ISEMPTY (opt.arg)) {
+			if (RZ_STR_ISEMPTY (opt.arg)) {
 				eprintf ("Cannot open empty rz_run profile path\n");
 				ret = 1;
 				goto beach;
@@ -639,7 +639,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			break;
 		case 'v':
 			if (quiet) {
-				printf ("%s\n", R2_VERSION);
+				printf ("%s\n", RZ_VERSION);
 				LISTS_FREE ();
 				free (customRarunProfile);
 				return 0;
@@ -652,10 +652,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		case 'V':
 			return rz_main_version_verify (1);
 		case 'w':
-			perms |= R_PERM_W;
+			perms |= RZ_PERM_W;
 			break;
 		case 'x':
-			perms &= ~R_PERM_X;
+			perms &= ~RZ_PERM_X;
 			rz_config_set (r->config, "io.exec", "false");
 			break;
 		default:
@@ -666,28 +666,28 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (-1 == close (2)) {
 			eprintf ("Failed to close stderr");
 			LISTS_FREE ();
-			R_FREE (debugbackend);
+			RZ_FREE (debugbackend);
 			return 1;
 		}
-		const char nul[] = R_SYS_DEVNULL;
+		const char nul[] = RZ_SYS_DEVNULL;
 		int new_stderr = open (nul, O_RDWR);
 		if (-1 == new_stderr) {
 			eprintf ("Failed to open %s", nul);
 			LISTS_FREE ();
-			R_FREE (debugbackend);
+			RZ_FREE (debugbackend);
 			return 1;
 		}
 		if (2 != new_stderr) {
 			if (-1 == dup2 (new_stderr, 2)) {
 				eprintf ("Failed to dup2 stderr");
 				LISTS_FREE ();
-				R_FREE (debugbackend);
+				RZ_FREE (debugbackend);
 				return 1;
 			}
 			if (-1 == close (new_stderr)) {
 				eprintf ("Failed to close %s", nul);
 				LISTS_FREE ();
-				R_FREE (debugbackend);
+				RZ_FREE (debugbackend);
 				return 1;
 			}
 		}
@@ -728,7 +728,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	if (do_list_io_plugins) {
 		if (rz_config_get_i (r->config, "cfg.plugins")) {
-			rz_core_loadlibs (r, R_CORE_LOADLIBS_ALL, NULL);
+			rz_core_loadlibs (r, RZ_CORE_LOADLIBS_ALL, NULL);
 		}
 		run_commands (r, NULL, prefiles, false, do_analysis);
 		run_commands (r, cmds, files, quiet, do_analysis);
@@ -739,14 +739,14 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_cons_flush ();
 		LISTS_FREE ();
 		free (pfile);
-		R_FREE (debugbackend);
+		RZ_FREE (debugbackend);
 		return 0;
 	}
 
 	if (help > 0) {
 		LISTS_FREE ();
 		free (pfile);
-		R_FREE (debugbackend);
+		RZ_FREE (debugbackend);
 		return main_help (help > 1? 2: 0);
 	}
 #if __WINDOWS__
@@ -766,7 +766,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (opt.ind >= argc && !haveRarunProfile) {
 			eprintf ("Missing argument for -d\n");
 			LISTS_FREE ();
-			R_FREE (debugbackend);
+			RZ_FREE (debugbackend);
 			return 1;
 		}
 		const char *src = haveRarunProfile? pfile: argv[opt.ind];
@@ -791,12 +791,12 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	}
 
 	tmp = NULL;
-	if (!load_l || (tmp = rz_sys_getenv ("R2_NOPLUGINS"))) {
+	if (!load_l || (tmp = rz_sys_getenv ("RZ_NOPLUGINS"))) {
 		rz_config_set_i (r->config, "cfg.plugins", 0);
 		free (tmp);
 	}
 	if (rz_config_get_i (r->config, "cfg.plugins")) {
-		rz_core_loadlibs (r, R_CORE_LOADLIBS_ALL, NULL);
+		rz_core_loadlibs (r, RZ_CORE_LOADLIBS_ALL, NULL);
 	}
 	ret = run_commands (r, NULL, prefiles, false, do_analysis);
 	rz_list_free (prefiles);
@@ -815,7 +815,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (opt.ind >= argc) {
 			eprintf ("Missing URI for -C\n");
 			LISTS_FREE ();
-			R_FREE (debugbackend);
+			RZ_FREE (debugbackend);
 			return 1;
 		}
 		if (strstr (uri, "://")) {
@@ -855,7 +855,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		char *file = NULL;
 		rz_list_foreach (list, iter, file) {
 			if (file && *file && *file != '.') {
-				complete_path = rz_str_newf ("%s"R_SYS_DIR"%s", path, file);
+				complete_path = rz_str_newf ("%s"RZ_SYS_DIR"%s", path, file);
 				if (rz_str_endswith (complete_path, "gz")) {
 					rz_sign_load_gz (r->anal, complete_path);
 				} else {
@@ -873,14 +873,14 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			eprintf ("Error: Cannot debug directories, yet.\n");
 			LISTS_FREE ();
 			free (pfile);
-			R_FREE (debugbackend);
+			RZ_FREE (debugbackend);
 			return 1;
 		}
 		if (rz_sys_chdir (argv[opt.ind])) {
 			eprintf ("[d] Cannot open directory\n");
 			LISTS_FREE ();
 			free (pfile);
-			R_FREE (debugbackend);
+			RZ_FREE (debugbackend);
 			return 1;
 		}
 	} else if (argv[opt.ind] && !strcmp (argv[opt.ind], "=")) {
@@ -930,11 +930,11 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			}
 			rz_config_set (r->config, "search.in", "dbg.map"); // implicit?
 			rz_config_set (r->config, "cfg.debug", "true");
-			perms = R_PERM_RWX;
+			perms = RZ_PERM_RWX;
 			if (opt.ind >= argc) {
 				eprintf ("No program given to -d\n");
 				LISTS_FREE ();
-				R_FREE (debugbackend);
+				RZ_FREE (debugbackend);
 				return 1;
 			}
 			if (debug == 2) {
@@ -944,7 +944,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					if (!haveRarunProfile) {
 						pfile = strdup (argv[opt.ind++]);
 					}
-					perms = R_PERM_RX; // XXX. should work with rw too
+					perms = RZ_PERM_RX; // XXX. should work with rw too
 					debug = 2;
 					if (!strstr (pfile, "://")) {
 						opt.ind--; // take filename
@@ -995,7 +995,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				}
 			} else {
 				const char *f = (haveRarunProfile && pfile)? pfile: argv[opt.ind];
-				is_gdb = (!memcmp (f, "gdb://", R_MIN (f? strlen (f):0, 6)));
+				is_gdb = (!memcmp (f, "gdb://", RZ_MIN (f? strlen (f):0, 6)));
 				if (!is_gdb) {
 					pfile = strdup ("dbg://");
 				}
@@ -1017,8 +1017,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					escaped_path = rz_str_arg_escape (path);
 					pfile = rz_str_append (pfile, escaped_path);
 					file = pfile; // probably leaks
-					R_FREE (escaped_path);
-					R_FREE (path);
+					RZ_FREE (escaped_path);
+					RZ_FREE (path);
 				}
 #else
 #	if __WINDOWS__
@@ -1055,10 +1055,10 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (!debug || debug == 2) {
 			const char *dbg_profile = rz_config_get (r->config, "dbg.profile");
 			if (opt.ind == argc && dbg_profile && *dbg_profile) {
-				if (R_STR_ISEMPTY (pfile)) {
+				if (RZ_STR_ISEMPTY (pfile)) {
 					eprintf ("Missing file to open\n");
 					ret = 1;
-					R_FREE (debugbackend);
+					RZ_FREE (debugbackend);
 					goto beach;
 				}
 				fh = rz_core_file_open (r, pfile, perms, mapaddr);
@@ -1067,18 +1067,18 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				}
 			}
 			if (opt.ind < argc) {
-				R_FREE (pfile);
+				RZ_FREE (pfile);
 				while (opt.ind < argc) {
 					pfile = strdup (argv[opt.ind++]);
 #if __WINDOWS__
 					pfile = rz_acp_to_utf8 (pfile);
 #endif
 					fh = rz_core_file_open (r, pfile, perms, mapaddr);
-					if (!fh && perms & R_PERM_W) {
-						perms |= R_PERM_CREAT;
+					if (!fh && perms & RZ_PERM_W) {
+						perms |= RZ_PERM_CREAT;
 						fh = rz_core_file_open (r, pfile, perms, mapaddr);
 					}
-					if (perms & R_PERM_CREAT) {
+					if (perms & RZ_PERM_CREAT) {
 						if (fh) {
 							rz_config_set_i (r->config, "io.va", false);
 						} else {
@@ -1087,8 +1087,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					}
 					if (fh) {
 						iod = r->io ? rz_io_desc_get (r->io, fh->fd) : NULL;
-						if (iod && perms & R_PERM_X) {
-							iod->perm |= R_PERM_X;
+						if (iod && perms & RZ_PERM_X) {
+							iod->perm |= RZ_PERM_X;
 						}
 						if (load_bin == LOAD_BIN_ALL) {
 							const char *filepath = NULL;
@@ -1194,7 +1194,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (!fh) {
 			if (pfile && *pfile) {
 				rz_cons_flush ();
-				if (perms & R_PERM_W) {
+				if (perms & RZ_PERM_W) {
 					eprintf ("[w] Cannot open '%s' for writing.\n", pfile);
 				} else {
 					eprintf ("[r] Cannot open '%s'\n", pfile);
@@ -1237,7 +1237,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (debug) {
 			rz_core_setup_debugger (r, debugbackend, baddr == UT64_MAX);
 		}
-		R_FREE (debugbackend);
+		RZ_FREE (debugbackend);
 		RBinObject *o = rz_bin_cur_object (r->bin);
 		if (!debug && o && !o->regstate) {
 			RzFlagItem *fi = rz_flag_get (r->flags, "entry0");
@@ -1249,7 +1249,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					RzListIter *iter;
 					RBinSection *s;
 					rz_list_foreach (sections, iter, s) {
-						if (s->perm & R_PERM_X) {
+						if (s->perm & RZ_PERM_X) {
 							ut64 addr = s->vaddr? s->vaddr: s->paddr;
 							rz_core_seek (r, addr, true);
 							break;
@@ -1317,7 +1317,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_core_block_read (r);
 	}
 	{
-		char *global_rc = rz_str_rz_prefix (R2_GLOBAL_RC);
+		char *global_rc = rz_str_rz_prefix (RZ_GLOBAL_RC);
 		if (rz_file_exists (global_rc)) {
 			(void)rz_core_run_script (r, global_rc);
 		}
@@ -1354,7 +1354,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	if (fullfile) {
 		rz_core_block_size (r, rz_io_desc_size (iod));
 	}
-	if (perms & R_PERM_W) {
+	if (perms & RZ_PERM_W) {
 		rz_core_cmd0 (r, "omfg+w");
 	}
 	ret = run_commands (r, cmds, files, quiet, do_analysis);
@@ -1478,7 +1478,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	}
 
 	if (mustSaveHistory (r->config)) {
-		rz_line_hist_save (R2_HOME_HISTORY);
+		rz_line_hist_save (RZ_HOME_HISTORY);
 	}
 
 	/* capture return value */
@@ -1499,6 +1499,6 @@ beach:
 	rz_cons_set_raw (0);
 	rz_cons_free ();
 	LISTS_FREE ();
-	R_FREE (pfile);
+	RZ_FREE (pfile);
 	return ret;
 }

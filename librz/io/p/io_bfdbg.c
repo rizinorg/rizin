@@ -133,8 +133,8 @@ static int __close(RzIODesc *fd) {
 	}
 	riom = fd->data;
 	bfvm_free (riom->bfvm);
-	R_FREE (riom->buf);
-	R_FREE (fd->data);
+	RZ_FREE (riom->buf);
+	RZ_FREE (fd->data);
 	return 0;
 }
 
@@ -159,7 +159,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 	char *out;
 	if (__plugin_open (io, pathname, 0)) {
 		RzIOBind iob;
-		RzIOBfdbg *mal = R_NEW0 (RzIOBfdbg);
+		RzIOBfdbg *mal = RZ_NEW0 (RzIOBfdbg);
 		if (!mal) {
 			return NULL;
 		}
@@ -206,10 +206,10 @@ RzIOPlugin rz_io_plugin_bfdbg = {
 	.write = __write,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_bfdbg,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

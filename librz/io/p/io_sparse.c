@@ -27,7 +27,7 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	o = RzIOSPARSE_OFF(fd);
 	int r = rz_buf_write_at (b, o, buf, count);
 	if (r >= 0) {
-		rz_buf_seek (b, r, R_BUF_CUR);
+		rz_buf_seek (b, r, RZ_BUF_CUR);
 	}
 	return r;
 }
@@ -42,7 +42,7 @@ static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 	o = RzIOSPARSE_OFF(fd);
 	int r = rz_buf_read_at (b, o, buf, count);
 	if (r >= 0) {
-		rz_buf_seek (b, count, R_BUF_CUR);
+		rz_buf_seek (b, count, RZ_BUF_CUR);
 	}
 	return count;
 }
@@ -53,8 +53,8 @@ static int __close(RzIODesc *fd) {
 		return -1;
 	}
 	riom = fd->data;
-	R_FREE (riom->buf);
-	R_FREE (fd->data);
+	RZ_FREE (riom->buf);
+	RZ_FREE (fd->data);
 	return 0;
 }
 
@@ -77,7 +77,7 @@ static bool __plugin_open(struct rz_io_t *io, const char *pathname, bool many) {
 
 static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname,0)) {
-		RzIOSparse *mal = R_NEW0 (RzIOSparse);
+		RzIOSparse *mal = RZ_NEW0 (RzIOSparse);
 		int size = (int)rz_num_math (NULL, pathname + 9);
 		mal->buf = rz_buf_new_sparse (io->Oxff);
 		if (!mal->buf) {
@@ -120,10 +120,10 @@ RzIOPlugin rz_io_plugin_sparse = {
 	.resize = NULL,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_sparse,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

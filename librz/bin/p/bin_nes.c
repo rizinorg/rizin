@@ -27,7 +27,7 @@ static RBinInfo *info(RBinFile *bf) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
@@ -41,7 +41,7 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static void addsym(RzList *ret, const char *name, ut64 addr, ut32 size) {
-	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
+	RBinSymbol *ptr = RZ_NEW0 (RBinSymbol);
 	if (!ptr) {
 		return;
 	}
@@ -95,7 +95,7 @@ static RzList* sections(RBinFile *bf) {
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("ROM");
@@ -103,12 +103,12 @@ static RzList* sections(RBinFile *bf) {
 	ptr->size = ihdr.prg_page_count_16k * PRG_PAGE_SIZE;
 	ptr->vaddr = ROM_START_ADDRESS;
 	ptr->vsize = ROM_SIZE;
-	ptr->perm = R_PERM_RX;
+	ptr->perm = RZ_PERM_RX;
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 	if (ROM_START_ADDRESS + ptr->size <= ROM_MIRROR_ADDRESS) {
 		// not a 256bit ROM, mapper 0 mirrors the complete ROM in this case
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RBinSection))) {
 			return ret;
 		}
 		ptr->name = strdup ("ROM_MIRROR");
@@ -116,7 +116,7 @@ static RzList* sections(RBinFile *bf) {
 		ptr->size = ihdr.prg_page_count_16k * PRG_PAGE_SIZE;
 		ptr->vaddr = ROM_MIRROR_ADDRESS;
 		ptr->vsize = ROM_MIRROR_SIZE;
-		ptr->perm = R_PERM_RX;
+		ptr->perm = RZ_PERM_RX;
 		ptr->add = true;
 		rz_list_append (ret, ptr);
 	}
@@ -130,7 +130,7 @@ static RzList *mem(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	if (!(m = R_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RBinMem))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -139,7 +139,7 @@ static RzList *mem(RBinFile *bf) {
 	m->size = RAM_SIZE;
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
-	if (!(n = R_NEW0 (RBinMem))) {
+	if (!(n = RZ_NEW0 (RBinMem))) {
 		return ret;
 	}
 	m->mirrors = rz_list_new ();
@@ -148,7 +148,7 @@ static RzList *mem(RBinFile *bf) {
 	n->size = RAM_MIRROR_2_SIZE;
 	n->perms = rz_str_rwx ("rwx");
 	rz_list_append (m->mirrors, n);
-	if (!(n = R_NEW0 (RBinMem))) {
+	if (!(n = RZ_NEW0 (RBinMem))) {
 		rz_list_free (m->mirrors);
 		m->mirrors = NULL;
 		return ret;
@@ -158,7 +158,7 @@ static RzList *mem(RBinFile *bf) {
 	n->size = RAM_MIRROR_3_SIZE;
 	n->perms = rz_str_rwx ("rwx");
 	rz_list_append (m->mirrors, n);
-	if (!(m = R_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RBinMem))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -170,7 +170,7 @@ static RzList *mem(RBinFile *bf) {
 	m->mirrors = rz_list_new ();
 	int i;
 	for (i = 1; i < 1024; i++) {
-		if (!(n = R_NEW0 (RBinMem))) {
+		if (!(n = RZ_NEW0 (RBinMem))) {
 			rz_list_free (m->mirrors);
 			m->mirrors = NULL;
 			return ret;
@@ -181,7 +181,7 @@ static RzList *mem(RBinFile *bf) {
 		n->perms = rz_str_rwx ("rwx");
 		rz_list_append (m->mirrors, n);
 	}
-	if (!(m = R_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RBinMem))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -190,7 +190,7 @@ static RzList *mem(RBinFile *bf) {
 	m->size = APU_AND_IOREGS_SIZE;
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
-	if (!(m = R_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RBinMem))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -208,7 +208,7 @@ static RzList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RES
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
-	if (!(ptr = R_NEW0 (RBinAddr))) {
+	if (!(ptr = RZ_NEW0 (RBinAddr))) {
 		return ret;
 	}
 	ptr->paddr = INES_HDR_SIZE;
@@ -236,10 +236,10 @@ RBinPlugin rz_bin_plugin_nes = {
 	.mem = &mem,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_nes,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

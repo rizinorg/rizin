@@ -9,10 +9,10 @@ static RzList *backtrace_x86_64(RzDebug *dbg, ut64 at) {
 	RzReg *reg = dbg->reg;
 	RzIOBind *bio = &dbg->iob;
 
-	_rip = rz_reg_get_value (reg, rz_reg_get (reg, "rip", R_REG_TYPE_GPR));
+	_rip = rz_reg_get_value (reg, rz_reg_get (reg, "rip", RZ_REG_TYPE_GPR));
 	if (at == UT64_MAX) {
-		_rsp = rz_reg_get_value (reg, rz_reg_get (reg, "rsp", R_REG_TYPE_GPR));
-		_rbp = rz_reg_get_value (reg, rz_reg_get (reg, "rbp", R_REG_TYPE_GPR));
+		_rsp = rz_reg_get_value (reg, rz_reg_get (reg, "rsp", RZ_REG_TYPE_GPR));
+		_rbp = rz_reg_get_value (reg, rz_reg_get (reg, "rbp", RZ_REG_TYPE_GPR));
 	} else {
 		_rsp = _rbp = at;
 	}
@@ -29,7 +29,7 @@ static RzList *backtrace_x86_64(RzDebug *dbg, ut64 at) {
 			free (list);
 			return false;
 		}
-		frame = R_NEW0 (RzDebugFrame);
+		frame = RZ_NEW0 (RzDebugFrame);
 		frame->addr = ptr;
 		frame->size = 0; // TODO ?
 		rz_list_append (list, frame);
@@ -44,7 +44,7 @@ static RzList *backtrace_x86_64(RzDebug *dbg, ut64 at) {
 		bio->read_at (bio->io, _rbp+8, (ut8*)&ptr, 8);
 		if (!ptr || !_rbp)
 			break;
-		frame = R_NEW0 (RzDebugFrame);
+		frame = RZ_NEW0 (RzDebugFrame);
 		frame->addr = ptr;
 		frame->size = 0; // TODO ?
 		rz_list_append (list, frame);
@@ -64,10 +64,10 @@ static RzList *backtrace_x86_64_anal(RzDebug *dbg, ut64 at) {
 	RzIOBind *bio = &dbg->iob;
 	RzAnalFunction *fcn;
 
-	_rip = rz_reg_get_value (reg, rz_reg_get (reg, "rip", R_REG_TYPE_GPR));
+	_rip = rz_reg_get_value (reg, rz_reg_get (reg, "rip", RZ_REG_TYPE_GPR));
 	if (at == UT64_MAX) {
-		//_rsp = rz_reg_get_value (reg, rz_reg_get (reg, "rsp", R_REG_TYPE_GPR));
-		_rbp = rz_reg_get_value (reg, rz_reg_get (reg, "rbp", R_REG_TYPE_GPR));
+		//_rsp = rz_reg_get_value (reg, rz_reg_get (reg, "rsp", RZ_REG_TYPE_GPR));
+		_rbp = rz_reg_get_value (reg, rz_reg_get (reg, "rbp", RZ_REG_TYPE_GPR));
 	} else {
 		_rbp = at;
 	}
@@ -77,9 +77,9 @@ static RzList *backtrace_x86_64_anal(RzDebug *dbg, ut64 at) {
 	bio->read_at (bio->io, _rip, (ut8*)&buf, 8);
 
 	// TODO : frame->size by using esil to emulate first instructions
-	fcn = rz_anal_get_fcn_in (dbg->anal, _rip, R_ANAL_FCN_TYPE_NULL);
+	fcn = rz_anal_get_fcn_in (dbg->anal, _rip, RZ_ANAL_FCN_TYPE_NULL);
 	if (fcn) {
-		frame = R_NEW0 (RzDebugFrame);
+		frame = RZ_NEW0 (RzDebugFrame);
 		frame->addr = _rip;
 		frame->size = 0;
 		frame->sp = _rbp;
@@ -95,8 +95,8 @@ static RzList *backtrace_x86_64_anal(RzDebug *dbg, ut64 at) {
 		bio->read_at (bio->io, _rbp+8, (ut8*)&ptr, 8);
 		if (!ptr || !_rbp)
 			break;
-		//fcn = rz_anal_get_fcn_in (dbg->anal, ptr, R_ANAL_FCN_TYPE_NULL);
-		frame = R_NEW0 (RzDebugFrame);
+		//fcn = rz_anal_get_fcn_in (dbg->anal, ptr, RZ_ANAL_FCN_TYPE_NULL);
+		frame = RZ_NEW0 (RzDebugFrame);
 		frame->addr = ptr;
 		frame->size = 0;
 		frame->sp = _rbp;

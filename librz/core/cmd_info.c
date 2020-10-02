@@ -103,13 +103,13 @@ static bool demangle_internal(RzCore *core, const char *lang, const char *s) {
 	char *res = NULL;
 	int type = rz_bin_demangle_type (lang);
 	switch (type) {
-	case R_BIN_NM_CXX: res = rz_bin_demangle_cxx (core->bin->cur, s, 0); break;
-	case R_BIN_NM_JAVA: res = rz_bin_demangle_java (s); break;
-	case R_BIN_NM_OBJC: res = rz_bin_demangle_objc (NULL, s); break;
-	case R_BIN_NM_SWIFT: res = rz_bin_demangle_swift (s, core->bin->demanglercmd); break;
-	case R_BIN_NM_DLANG: res = rz_bin_demangle_plugin (core->bin, "dlang", s); break;
-	case R_BIN_NM_MSVC: res = rz_bin_demangle_msvc (s); break;
-	case R_BIN_NM_RUST: res = rz_bin_demangle_rust (core->bin->cur, s, 0); break;
+	case RZ_BIN_NM_CXX: res = rz_bin_demangle_cxx (core->bin->cur, s, 0); break;
+	case RZ_BIN_NM_JAVA: res = rz_bin_demangle_java (s); break;
+	case RZ_BIN_NM_OBJC: res = rz_bin_demangle_objc (NULL, s); break;
+	case RZ_BIN_NM_SWIFT: res = rz_bin_demangle_swift (s, core->bin->demanglercmd); break;
+	case RZ_BIN_NM_DLANG: res = rz_bin_demangle_plugin (core->bin, "dlang", s); break;
+	case RZ_BIN_NM_MSVC: res = rz_bin_demangle_msvc (s); break;
+	case RZ_BIN_NM_RUST: res = rz_bin_demangle_rust (core->bin->cur, s, 0); break;
 	default:
 		rz_bin_demangle_list (core->bin);
 		return true;
@@ -215,26 +215,26 @@ static void rz_core_file_info(RzCore *core, int mode) {
 	int fd = rz_io_fd_get_current (core->io);
 	RzIODesc *desc = rz_io_desc_get (core->io, fd);
 	RBinPlugin *plugin = rz_bin_file_cur_plugin (binfile);
-	if (mode == R_MODE_JSON) {
+	if (mode == RZ_MODE_JSON) {
 		rz_cons_printf ("{");
 	}
-	if (mode == R_MODE_RADARE) {
+	if (mode == RZ_MODE_RADARE) {
 		return;
 	}
-	if (mode == R_MODE_SIMPLE) {
+	if (mode == RZ_MODE_SIMPLE) {
 		return;
 	}
 	const char *comma = "";
 	if (info) {
 		fn = info->file;
-		if (mode == R_MODE_JSON) {
+		if (mode == RZ_MODE_JSON) {
 			comma = ",";
 			rz_cons_printf ("\"type\":\"%s\"", STR (info->type));
 		}
 	} else {
 		fn = desc ? desc->name: NULL;
 	}
-	if (mode == R_MODE_JSON) {
+	if (mode == RZ_MODE_JSON) {
 		const char *uri = fn;
 		if (!uri) {
 			if (desc && desc->uri && *desc->uri) {
@@ -250,7 +250,7 @@ static void rz_core_file_info(RzCore *core, int mode) {
 			free (escapedFile);
 		}
 		if (dbg) {
-			dbg = R_PERM_WX;
+			dbg = RZ_PERM_WX;
 		}
 		if (desc) {
 			ut64 fsz = rz_io_desc_size (desc);
@@ -262,8 +262,8 @@ static void rz_core_file_info(RzCore *core, int mode) {
 				rz_num_units (humansz, sizeof (humansz), fsz);
 				rz_cons_printf (",\"humansz\":\"%s\"", humansz);
 			}
-			rz_cons_printf (",\"iorw\":%s", rz_str_bool ( io_cache || desc->perm & R_PERM_W));
-			rz_cons_printf (",\"mode\":\"%s\"", rz_str_rwx_i (desc->perm & R_PERM_RWX));
+			rz_cons_printf (",\"iorw\":%s", rz_str_bool ( io_cache || desc->perm & RZ_PERM_W));
+			rz_cons_printf (",\"mode\":\"%s\"", rz_str_rwx_i (desc->perm & RZ_PERM_RWX));
 			if (desc->referer && *desc->referer) {
 				rz_cons_printf (",\"referer\":\"%s\"", desc->referer);
 			}
@@ -280,10 +280,10 @@ static void rz_core_file_info(RzCore *core, int mode) {
 			}
 		}
 		rz_cons_printf ("}");
-	} else if (desc && mode != R_MODE_SIMPLE) {
+	} else if (desc && mode != RZ_MODE_SIMPLE) {
 		//rz_cons_printf ("# Core file info\n");
 		if (dbg) {
-			dbg = R_PERM_WX;
+			dbg = RZ_PERM_WX;
 		}
 		if (desc) {
 			pair ("fd", sdb_fmt ("%d", desc->fd));
@@ -305,13 +305,13 @@ static void rz_core_file_info(RzCore *core, int mode) {
 			}
 		}
 		if (desc) {
-			pair ("mode", rz_str_rwx_i (desc->perm & R_PERM_RWX));
+			pair ("mode", rz_str_rwx_i (desc->perm & RZ_PERM_RWX));
 		}
 		if (plugin) {
 			pair ("format", plugin->name);
 		}
 		if (desc) {
-			pair ("iorw", rz_str_bool (io_cache || desc->perm & R_PERM_W));
+			pair ("iorw", rz_str_bool (io_cache || desc->perm & RZ_PERM_W));
 		}
 		pair ("block", sdb_fmt ("0x%x", core->blocksize));
 
@@ -336,7 +336,7 @@ static int bin_is_executable(RBinObject *obj){
 			return true;
 		}
 		rz_list_foreach (obj->sections, it, sec){
-			if (sec->perm & R_PERM_X) {
+			if (sec->perm & RZ_PERM_X) {
 				return true;
 			}
 		}
@@ -348,23 +348,23 @@ static void cmd_info_bin(RzCore *core, int va, int mode) {
 	RBinObject *obj = rz_bin_cur_object (core->bin);
 	int array = 0;
 	if (core->file) {
-		if ((mode & R_MODE_JSON) && !(mode & R_MODE_ARRAY)) {
-			mode = R_MODE_JSON;
+		if ((mode & RZ_MODE_JSON) && !(mode & RZ_MODE_ARRAY)) {
+			mode = RZ_MODE_JSON;
 			rz_cons_strcat ("{\"core\":");
 		}
-		if ((mode & R_MODE_JSON) && (mode & R_MODE_ARRAY)) {
-			mode = R_MODE_JSON;
+		if ((mode & RZ_MODE_JSON) && (mode & RZ_MODE_ARRAY)) {
+			mode = RZ_MODE_JSON;
 			array = 1;
 			rz_cons_strcat (",\"core\":");
 		}
 		rz_core_file_info (core, mode);
 		if (bin_is_executable (obj)) {
-			if ((mode & R_MODE_JSON)) {
+			if ((mode & RZ_MODE_JSON)) {
 				rz_cons_strcat (",\"bin\":");
 			}
-			rz_core_bin_info (core, R_CORE_BIN_ACC_INFO, mode, va, NULL, NULL);
+			rz_core_bin_info (core, RZ_CORE_BIN_ACC_INFO, mode, va, NULL, NULL);
 		}
-		if ((mode & R_MODE_JSON) && array == 0) {
+		if ((mode & RZ_MODE_JSON) && array == 0) {
 			rz_cons_strcat ("}\n");
 		}
 	} else {
@@ -451,7 +451,7 @@ static int cmd_info(void *data, const char *input) {
 	int fd = rz_io_fd_get_current (core->io);
 	RzIODesc *desc = rz_io_desc_get (core->io, fd);
 	int i, va = core->io->va || core->bin->is_debugger;
-	int mode = 0; //R_MODE_SIMPLE;
+	int mode = 0; //RZ_MODE_SIMPLE;
 	bool rdump = false;
 	int is_array = 0;
 	bool is_izzzj = false;
@@ -461,12 +461,12 @@ static int cmd_info(void *data, const char *input) {
 		;
 	if (i > 0) {
 		switch (input[i - 1]) {
-		case '*': mode = R_MODE_RADARE; break;
-		case 'j': mode = R_MODE_JSON; break;
-		case 'q': mode = R_MODE_SIMPLE; break;
+		case '*': mode = RZ_MODE_RADARE; break;
+		case 'j': mode = RZ_MODE_JSON; break;
+		case 'q': mode = RZ_MODE_SIMPLE; break;
 		}
 	}
-	if (mode == R_MODE_JSON) {
+	if (mode == RZ_MODE_JSON) {
 		int suffix_shift = 0;
 		if (!strncmp (input, "SS", 2) || !strncmp (input, "ee", 2)
 		    || !strncmp (input, "zz", 2)) {
@@ -505,7 +505,7 @@ static int cmd_info(void *data, const char *input) {
 		free (prefix);
 		goto done;
 	}
-	R_FREE (core->table_query);
+	RZ_FREE (core->table_query);
 	if (space && *space == ' ') {
 		core->table_query = rz_str_trim_dup (space + 1);
 	}
@@ -545,7 +545,7 @@ static int cmd_info(void *data, const char *input) {
 				}
 				break;
 			case '*':
-				rz_core_bin_export_info (core, R_MODE_RADARE);
+				rz_core_bin_export_info (core, RZ_MODE_RADARE);
 				break;
 			case '.':
 			case ' ':
@@ -603,10 +603,10 @@ static int cmd_info(void *data, const char *input) {
 		case 'E': // "iE"
 		{
 			if (input[1] == 'j' && input[2] == '.') {
-				mode = R_MODE_JSON;
-				RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 2, 0);
+				mode = RZ_MODE_JSON;
+				RBININFO ("exports", RZ_CORE_BIN_ACC_EXPORTS, input + 2, 0);
 			} else {
-				RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 1, 0);
+				RBININFO ("exports", RZ_CORE_BIN_ACC_EXPORTS, input + 1, 0);
 			}
 			while (*(++input)) ;
 			input--;
@@ -687,7 +687,7 @@ static int cmd_info(void *data, const char *input) {
 			}
 			break;
 		case 'Z': // "iZ"
-			RBININFO ("size", R_CORE_BIN_ACC_SIZE, NULL, 0);
+			RBININFO ("size", RZ_CORE_BIN_ACC_SIZE, NULL, 0);
 			break;
 		case 'O': // "iO"
 			switch (input[1]) {
@@ -702,30 +702,30 @@ static int cmd_info(void *data, const char *input) {
 		case 'S': // "iS"
 			//we comes from ia or iS
 			if ((input[1] == 'm' && input[2] == 'z') || !input[1]) {
-				RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, NULL, 0);
+				RBININFO ("sections", RZ_CORE_BIN_ACC_SECTIONS, NULL, 0);
 			} else if (input[1] == 'S' && !input[2]) {  // "iSS"
-				RBININFO ("segments", R_CORE_BIN_ACC_SEGMENTS, NULL, 0);
+				RBININFO ("segments", RZ_CORE_BIN_ACC_SEGMENTS, NULL, 0);
 			} else {  //iS/iSS entropy,sha1
 				const char *name = "sections";
-				int action = R_CORE_BIN_ACC_SECTIONS;
+				int action = RZ_CORE_BIN_ACC_SECTIONS;
 				int param_shift = 0;
 				if (input[1] == 'S') {
 					name = "segments";
 					input++;
-					action = R_CORE_BIN_ACC_SEGMENTS;
+					action = RZ_CORE_BIN_ACC_SEGMENTS;
 				}
 				// case for iS=
 				if (input[1] == '=') {
-					mode = R_MODE_EQUAL;
+					mode = RZ_MODE_EQUAL;
 				} else if (input[1] == '*') {
-					mode = R_MODE_RADARE;
+					mode = RZ_MODE_RADARE;
 				} else if (input[1] == 'q' && input[2] == '.') {
-					mode = R_MODE_SIMPLE;
+					mode = RZ_MODE_SIMPLE;
 				} else if (input[1] == 'j' && input[2] == '.') {
-					mode = R_MODE_JSON;
+					mode = RZ_MODE_JSON;
 				}
 				RBinObject *obj = rz_bin_cur_object (core->bin);
-				if (mode == R_MODE_RADARE || mode == R_MODE_JSON || mode == R_MODE_SIMPLE) {
+				if (mode == RZ_MODE_RADARE || mode == RZ_MODE_JSON || mode == RZ_MODE_SIMPLE) {
 					if (input[param_shift + 1]) {
 						param_shift ++;
 					}
@@ -741,15 +741,15 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'H': // "iH"
 			if (input[1] == 'H') { // "iHH"
-				RBININFO ("header", R_CORE_BIN_ACC_HEADER, NULL, -1);
+				RBININFO ("header", RZ_CORE_BIN_ACC_HEADER, NULL, -1);
 				break;
 			}
 		case 'h': // "ih"
-			RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL, 0);
+			RBININFO ("fields", RZ_CORE_BIN_ACC_FIELDS, NULL, 0);
 			break;
 		case 'l': { // "il"
 			RBinObject *obj = rz_bin_cur_object (core->bin);
-			RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL, (obj && obj->libs)? rz_list_length (obj->libs): 0);
+			RBININFO ("libs", RZ_CORE_BIN_ACC_LIBS, NULL, (obj && obj->libs)? rz_list_length (obj->libs): 0);
 			break;
 		}
 		case 'L': { // "iL"
@@ -772,16 +772,16 @@ static int cmd_info(void *data, const char *input) {
 			RBinObject *obj = rz_bin_cur_object (core->bin);
 			// Case for isj.
 			if (input[1] == 'j' && input[2] == '.') {
-				mode = R_MODE_JSON;
-				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, (obj && obj->symbols)? rz_list_length (obj->symbols): 0);
+				mode = RZ_MODE_JSON;
+				RBININFO ("symbols", RZ_CORE_BIN_ACC_SYMBOLS, input + 2, (obj && obj->symbols)? rz_list_length (obj->symbols): 0);
 			} else if (input[1] == 'q' && input[2] == 'q') {
-				mode = R_MODE_SIMPLEST;
-				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? rz_list_length (obj->symbols): 0);
+				mode = RZ_MODE_SIMPLEST;
+				RBININFO ("symbols", RZ_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? rz_list_length (obj->symbols): 0);
 			} else if (input[1] == 'q' && input[2] == '.') {
-				mode = R_MODE_SIMPLE;
-				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, 0);
+				mode = RZ_MODE_SIMPLE;
+				RBININFO ("symbols", RZ_CORE_BIN_ACC_SYMBOLS, input + 2, 0);
 			} else {
-				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? rz_list_length (obj->symbols): 0);
+				RBININFO ("symbols", RZ_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? rz_list_length (obj->symbols): 0);
 			}
 			while (*(++input)) ;
 			input--;
@@ -789,17 +789,17 @@ static int cmd_info(void *data, const char *input) {
 		}
 		case 'R': // "iR"
 			if  (input[1] == '*') {
-				mode = R_MODE_RADARE;
+				mode = RZ_MODE_RADARE;
 			} else if (input[1] == 'j') {
-				mode = R_MODE_JSON;
+				mode = RZ_MODE_JSON;
 			}
-			RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0);
+			RBININFO ("resources", RZ_CORE_BIN_ACC_RESOURCES, NULL, 0);
 			break;
 		case 'r': // "ir"
-			RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL, 0);
+			RBININFO ("relocs", RZ_CORE_BIN_ACC_RELOCS, NULL, 0);
 			break;
 		case 'X': // "iX"
-			RBININFO ("source", R_CORE_BIN_ACC_SOURCE, NULL, 0);
+			RBININFO ("source", RZ_CORE_BIN_ACC_SOURCE, NULL, 0);
 			break;
 		case 'd': // "id"
 			if (input[1] == 'p') { // "idp"
@@ -877,13 +877,13 @@ static int cmd_info(void *data, const char *input) {
 						if (!file_found) {
 							const char* symstore_path = rz_config_get (core->config, "pdb.symstore");
 							const char *base_file = rz_file_basename (info->debug_file_name);
-							char* pdb_path = rz_str_newf ("%s" R_SYS_DIR "%s" R_SYS_DIR "%s" R_SYS_DIR "%s",
+							char* pdb_path = rz_str_newf ("%s" RZ_SYS_DIR "%s" RZ_SYS_DIR "%s" RZ_SYS_DIR "%s",
 										     symstore_path, base_file, info->guid, base_file);
 							file_found = rz_file_exists (pdb_path);
 							if (file_found) {
 								filename = pdb_path;
 							} else {
-								R_FREE(pdb_path);
+								RZ_FREE(pdb_path);
 							}
 						}
 					}
@@ -912,41 +912,41 @@ static int cmd_info(void *data, const char *input) {
 				rz_core_cmd_help (core, help_msg_id);
 				input++;
 			} else { // "id"
-				RBININFO ("dwarf", R_CORE_BIN_ACC_DWARF, NULL, -1);
+				RBININFO ("dwarf", RZ_CORE_BIN_ACC_DWARF, NULL, -1);
 			}
 			break;
 		case 'i': { // "ii"
 			RBinObject *obj = rz_bin_cur_object (core->bin);
-			RBININFO ("imports", R_CORE_BIN_ACC_IMPORTS, NULL,
+			RBININFO ("imports", RZ_CORE_BIN_ACC_IMPORTS, NULL,
 				(obj && obj->imports)? rz_list_length (obj->imports): 0);
 			break;
 		}
 		case 'I': // "iI"
-			RBININFO ("info", R_CORE_BIN_ACC_INFO, NULL, 0);
+			RBININFO ("info", RZ_CORE_BIN_ACC_INFO, NULL, 0);
 			break;
 		case 'e': // "ie"
 			if (input[1] == 'e') {
-				RBININFO ("initfini", R_CORE_BIN_ACC_INITFINI, NULL, 0);
+				RBININFO ("initfini", RZ_CORE_BIN_ACC_INITFINI, NULL, 0);
 				input++;
 			} else {
-				RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0);
+				RBININFO ("entries", RZ_CORE_BIN_ACC_ENTRIES, NULL, 0);
 			}
 			break;
 		case 'M': // "iM"
-			RBININFO ("main", R_CORE_BIN_ACC_MAIN, NULL, 0);
+			RBININFO ("main", RZ_CORE_BIN_ACC_MAIN, NULL, 0);
 			break;
 		case 'm': // "im"
-			RBININFO ("memory", R_CORE_BIN_ACC_MEM, NULL, 0);
+			RBININFO ("memory", RZ_CORE_BIN_ACC_MEM, NULL, 0);
 			break;
 		case 'w': // "iw"
-			RBININFO ("trycatch", R_CORE_BIN_ACC_TRYCATCH, NULL, 0);
+			RBININFO ("trycatch", RZ_CORE_BIN_ACC_TRYCATCH, NULL, 0);
 			break;
 		case 'V': // "iV"
-			RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL, 0);
+			RBININFO ("versioninfo", RZ_CORE_BIN_ACC_VERSIONINFO, NULL, 0);
 			break;
 		case 'T': // "iT"
 		case 'C': // "iC" // rz_bin -C create // should be deprecated and just use iT (or find a better name)
-			RBININFO ("signature", R_CORE_BIN_ACC_SIGNATURE, NULL, 0);
+			RBININFO ("signature", RZ_CORE_BIN_ACC_SIGNATURE, NULL, 0);
 			break;
 		case 'z': // "iz"
 			if (input[1] == '-') { //iz-
@@ -975,21 +975,21 @@ static int cmd_info(void *data, const char *input) {
 					rdump = true;
 					break;
 				case '*':
-					mode = R_MODE_RADARE;
+					mode = RZ_MODE_RADARE;
 					break;
 				case 'j':
-					mode = R_MODE_JSON;
+					mode = RZ_MODE_JSON;
 					break;
 				case 'q': //izzq
 					if (input[3] == 'q') { //izzqq
-						mode = R_MODE_SIMPLEST;
+						mode = RZ_MODE_SIMPLEST;
 						input++;
 					} else {
-						mode = R_MODE_SIMPLE;
+						mode = RZ_MODE_SIMPLE;
 					}
 					break;
 				default:
-					mode = R_MODE_PRINT;
+					mode = RZ_MODE_PRINT;
 					break;
 				}
 				input++;
@@ -1002,17 +1002,17 @@ static int cmd_info(void *data, const char *input) {
 					}
 					goto done;
 				}
-				RBININFO ("strings", R_CORE_BIN_ACC_RAW_STRINGS, NULL, 0);
+				RBININFO ("strings", RZ_CORE_BIN_ACC_RAW_STRINGS, NULL, 0);
 			} else {
 				RBinObject *obj = rz_bin_cur_object (core->bin);
 				if (input[1] == 'q') {
 					mode = (input[2] == 'q')
-					? R_MODE_SIMPLEST
-					: R_MODE_SIMPLE;
+					? RZ_MODE_SIMPLEST
+					: RZ_MODE_SIMPLE;
 					input++;
 				}
 				if (obj) {
-					RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL,
+					RBININFO ("strings", RZ_CORE_BIN_ACC_STRINGS, NULL,
 						(obj && obj->strings)? rz_list_length (obj->strings): 0);
 				}
 			}
@@ -1114,10 +1114,10 @@ static int cmd_info(void *data, const char *input) {
 								const char *comma = iter2->p? ",": "";
 
 								if (sym->method_flags) {
-									char *flags = rz_core_bin_method_flags_str (sym->method_flags, R_MODE_JSON);
+									char *flags = rz_core_bin_method_flags_str (sym->method_flags, RZ_MODE_JSON);
 									rz_cons_printf ("%s{\"name\":\"%s\",\"flags\":%s,\"vaddr\":%"PFMT64d "}",
 										comma, sym->name, flags, sym->vaddr);
-									R_FREE (flags);
+									RZ_FREE (flags);
 								} else {
 									rz_cons_printf ("%s{\"name\":\"%s\",\"vaddr\":%"PFMT64d "}",
 										comma, sym->name, sym->vaddr);
@@ -1131,7 +1131,7 @@ static int cmd_info(void *data, const char *input) {
 								char *flags = rz_core_bin_method_flags_str (sym->method_flags, 0);
 								rz_cons_printf ("0x%08"PFMT64x " method %s %s %s\n",
 									sym->vaddr, cls->name, flags, sym->name);
-								R_FREE (flags);
+								RZ_FREE (flags);
 							}
 							break;
 						}
@@ -1157,17 +1157,17 @@ static int cmd_info(void *data, const char *input) {
 							}
 						}
 					} else if (input[1] == 'c') { // "icc"
-						mode = R_MODE_CLASSDUMP;
+						mode = RZ_MODE_CLASSDUMP;
 						if (input[2] == '*') {
-							mode |= R_MODE_RADARE;
+							mode |= RZ_MODE_RADARE;
 						}
-						RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, rz_list_length (obj->classes));
+						RBININFO ("classes", RZ_CORE_BIN_ACC_CLASSES, NULL, rz_list_length (obj->classes));
 						input = " ";
 					} else { // "icq"
 						if (input[2] == 'j') {
-							mode |= R_MODE_JSON; // default mode is R_MODE_SIMPLE
+							mode |= RZ_MODE_JSON; // default mode is RZ_MODE_SIMPLE
 						}
-						RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, rz_list_length (obj->classes));
+						RBININFO ("classes", RZ_CORE_BIN_ACC_CLASSES, NULL, rz_list_length (obj->classes));
 					}
 					goto done;
 				}
@@ -1175,7 +1175,7 @@ static int cmd_info(void *data, const char *input) {
 				RBinObject *obj = rz_bin_cur_object (core->bin);
 				if (obj && obj->classes) {
 					int len = rz_list_length (obj->classes);
-					RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
+					RBININFO ("classes", RZ_CORE_BIN_ACC_CLASSES, NULL, len);
 				}
 			}
 			break;
@@ -1186,9 +1186,9 @@ static int cmd_info(void *data, const char *input) {
 			return 0;
 		case 'a': // "ia"
 			switch (mode) {
-			case R_MODE_RADARE: cmd_info (core, "IieEcsSmz*"); break;
-			case R_MODE_JSON: cmd_info (core, "IieEcsSmzj"); break;
-			case R_MODE_SIMPLE: cmd_info (core, "IieEcsSmzq"); break;
+			case RZ_MODE_RADARE: cmd_info (core, "IieEcsSmz*"); break;
+			case RZ_MODE_JSON: cmd_info (core, "IieEcsSmzj"); break;
+			case RZ_MODE_SIMPLE: cmd_info (core, "IieEcsSmzq"); break;
 			default: cmd_info (core, "IiEecsSmz"); break;
 			}
 			break;
@@ -1196,21 +1196,21 @@ static int cmd_info(void *data, const char *input) {
 			rz_core_cmd_help (core, help_msg_i);
 			goto redone;
 		case '*': // "i*"
-			if (mode == R_MODE_RADARE) {
+			if (mode == RZ_MODE_RADARE) {
 				// TODO:handle ** submodes
-				mode = R_MODE_RADARE;
+				mode = RZ_MODE_RADARE;
 			} else {
-				mode = R_MODE_RADARE;
+				mode = RZ_MODE_RADARE;
 			}
 			goto done;
 		case 'q': // "iq"
-			mode = R_MODE_SIMPLE;
+			mode = RZ_MODE_SIMPLE;
 			cmd_info_bin (core, va, mode);
 			goto done;
 		case 'j': // "ij"
-			mode = R_MODE_JSON;
+			mode = RZ_MODE_JSON;
 			if (is_array > 1) {
-				mode |= R_MODE_ARRAY;
+				mode |= RZ_MODE_ARRAY;
 			}
 			cmd_info_bin (core, va, mode);
 			goto done;

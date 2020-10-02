@@ -90,13 +90,13 @@ int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 /*
 #if OLDIESHIT
 #if __x86_64__
-#define R_DEBUG_STATE_T x86_THREAD_STATE
-#define R_DEBUG_REG_T _STRUCT_X86_THREAD_STATE64
-#define R_DEBUG_STATE_SZ x86_THREAD_STATE_COUNT
+#define RZ_DEBUG_STATE_T x86_THREAD_STATE
+#define RZ_DEBUG_REG_T _STRUCT_X86_THREAD_STATE64
+#define RZ_DEBUG_STATE_SZ x86_THREAD_STATE_COUNT
 #else
-#define R_DEBUG_REG_T _STRUCT_X86_THREAD_STATE32
-#define R_DEBUG_STATE_T i386_THREAD_STATE
-#define R_DEBUG_STATE_SZ i386_THREAD_STATE_COUNT
+#define RZ_DEBUG_REG_T _STRUCT_X86_THREAD_STATE32
+#define RZ_DEBUG_STATE_T i386_THREAD_STATE
+#define RZ_DEBUG_STATE_SZ i386_THREAD_STATE_COUNT
 #endif
 #endif
 */
@@ -113,12 +113,12 @@ int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 #define IMAGE_OFFSET 0x201000
 #define KERNEL_LOWER 0x80000000
 #endif
-//#define R_DEBUG_STATE_T XXX
+//#define RZ_DEBUG_STATE_T XXX
 //(dbg->bits==64)?x86_THREAD_STATE:_STRUCT_X86_THREAD_STATE32
-//#define R_DEBUG_REG_T _STRUCT_X86_THREAD_STATE64
-//#define R_DEBUG_STATE_SZ ((dbg->bits == R_SYS_BITS_64) ? 168 : 64)
-#define REG_PC ((dbg->bits == R_SYS_BITS_64) ? 16 : 10)
-#define REG_FL ((dbg->bits == R_SYS_BITS_64) ? 17 : 9)
+//#define RZ_DEBUG_REG_T _STRUCT_X86_THREAD_STATE64
+//#define RZ_DEBUG_STATE_SZ ((dbg->bits == RZ_SYS_BITS_64) ? 168 : 64)
+#define REG_PC ((dbg->bits == RZ_SYS_BITS_64) ? 16 : 10)
+#define REG_FL ((dbg->bits == RZ_SYS_BITS_64) ? 17 : 9)
 #define REG_SP (7)
 #endif
 
@@ -251,7 +251,7 @@ static int coredump_nflavors = 1;
 
 #define MAX_TSTATE_FLAVORS 10
 #define DEFAULT_COREFILE_DEST "core.%u"
-#define R_DEBUG_REASON_MACH_RCV_INTERRUPTED -2
+#define RZ_DEBUG_REASON_MACH_RCV_INTERRUPTED -2
 
 typedef struct {
 	vm_offset_t header;

@@ -135,7 +135,7 @@ if get_option('default_library') == 'shared'
   endif
 endif
 
-library_cflags = ['-DR2_PLUGIN_INCORE=1']
+library_cflags = ['-DRZ_PLUGIN_INCORE=1']
 
 if host_machine.system() == 'windows'
   r2_prefix = '.'
@@ -304,10 +304,10 @@ if checks_level == 9999
   endif
 endif
 
-message('R2_CHECKS_LEVEL: @0@'.format(checks_level))
+message('RZ_CHECKS_LEVEL: @0@'.format(checks_level))
 
 userconf = configuration_data()
-userconf.set('R_CHECKS_LEVEL', checks_level)
+userconf.set('RZ_CHECKS_LEVEL', checks_level)
 userconf.set10('HAVE_LIB_MAGIC', sys_magic.found())
 userconf.set10('USE_LIB_MAGIC', use_syslib_magic)
 userconf.set10('HAVE_LIB_XXHASH', sys_xxhash.found())
@@ -374,14 +374,14 @@ rz_userconf_h = configure_file(
 versionconf = configuration_data()
 versionconf.set('MESON_VERSION', meson.version())
 versionconf.set('VERSIONCOMMIT', version_commit)
-versionconf.set('R2_VERSION_MAJOR', r2_version_major)
-versionconf.set('R2_VERSION_MINOR', r2_version_minor)
-versionconf.set('R2_VERSION_PATCH', r2_version_patch)
-versionconf.set('R2_VERSION_NUMBER', r2_version_number)
-versionconf.set('R2_VERSION', r2_version)
-versionconf.set('R2_GITTAP', gittap)
-versionconf.set('R2_GITTIP', gittip)
-versionconf.set('R2_BIRTH', r2birth)
+versionconf.set('RZ_VERSION_MAJOR', r2_version_major)
+versionconf.set('RZ_VERSION_MINOR', r2_version_minor)
+versionconf.set('RZ_VERSION_PATCH', r2_version_patch)
+versionconf.set('RZ_VERSION_NUMBER', r2_version_number)
+versionconf.set('RZ_VERSION', r2_version)
+versionconf.set('RZ_GITTAP', gittap)
+versionconf.set('RZ_GITTIP', gittip)
+versionconf.set('RZ_BIRTH', r2birth)
 rz_version_h = configure_file(
   input: 'librz/include/rz_version.h.in',
   output: 'rz_version.h',

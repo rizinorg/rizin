@@ -15,10 +15,10 @@ static int i8080_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 	char out[32];
 	int ilen = i8080_disasm (data, out, len);
 	op->addr = addr;
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->type = RZ_ANAL_OP_TYPE_UNK;
 	switch (data[0]) {
 	case 0x00:
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = RZ_ANAL_OP_TYPE_NOP;
 		break;
 	case 0x03:
 	case 0x04:
@@ -32,7 +32,7 @@ static int i8080_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 	case 0x33:
 	case 0x34:
 	case 0x3c:
-		op->type = R_ANAL_OP_TYPE_ADD; // INC
+		op->type = RZ_ANAL_OP_TYPE_ADD; // INC
 		break;
 	case 0x09:
 	case 0x19:
@@ -47,7 +47,7 @@ static int i8080_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 	case 0x86:
 	case 0x87:
 	case 0xc6:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANAL_OP_TYPE_ADD;
 		break;
 	case 0x90:
 	case 0x91:
@@ -58,7 +58,7 @@ static int i8080_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 	case 0x96:
 	case 0x97:
 	case 0xd6:
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = RZ_ANAL_OP_TYPE_SUB;
 		break;
 	case 0xc0:
 	case 0xc8:
@@ -68,10 +68,10 @@ static int i8080_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 	case 0xe8:
 	case 0xf0:
 	case 0xf8:
-		op->type = R_ANAL_OP_TYPE_CRET;
+		op->type = RZ_ANAL_OP_TYPE_CRET;
 		break;
 	case 0xc9:
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = RZ_ANAL_OP_TYPE_RET;
 		break;
 	case 0x05:
 	case 0x0b:
@@ -86,19 +86,19 @@ static int i8080_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 	case 0x3b:
 	case 0x3d:
 		// XXXX: DEC
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = RZ_ANAL_OP_TYPE_SUB;
 		break;
 	case 0xc5:
 	case 0xd5:
 	case 0xe5:
 	case 0xf5:
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = RZ_ANAL_OP_TYPE_PUSH;
 		break;
 	case 0xc1:
 	case 0xd1:
 	case 0xe1:
 	case 0xf1:
-		op->type = R_ANAL_OP_TYPE_POP;
+		op->type = RZ_ANAL_OP_TYPE_POP;
 		break;
 	case 0x40:
 	case 0x49:
@@ -108,7 +108,7 @@ static int i8080_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 	case 0x6d:
 	case 0x76:
 	case 0x7f:
-		op->type = R_ANAL_OP_TYPE_TRAP; // HALT
+		op->type = RZ_ANAL_OP_TYPE_TRAP; // HALT
 		break;
 	case 0x10:
 	case 0x18:
@@ -126,7 +126,7 @@ static int i8080_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 	case 0xea:
 	case 0xf2:
 	case 0xfa:
-		op->type = R_ANAL_OP_TYPE_JMP; // jmpz
+		op->type = RZ_ANAL_OP_TYPE_JMP; // jmpz
 		break;
 
 	case 0xc4:
@@ -141,47 +141,47 @@ static int i8080_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 	case 0xf4:
 	case 0xfc:
 	case 0xfd:
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = RZ_ANAL_OP_TYPE_CALL;
 		break;
 	case 0xc7:				//rst 0
 		op->jump = 0x00;
 		op->fail = addr + ilen;
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = RZ_ANAL_OP_TYPE_JMP;
 		break;
 	case 0xcf:				//rst 8
 		op->jump = 0x08;
 		op->fail = addr + ilen;
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = RZ_ANAL_OP_TYPE_JMP;
 		break;
 	case 0xd7:				//rst 16
 		op->jump = 0x10;
 		op->fail = addr + ilen;
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = RZ_ANAL_OP_TYPE_JMP;
 		break;
 	case 0xdf:				 //rst 24
 		op->jump = 0x18;
 		op->fail = addr + ilen;
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = RZ_ANAL_OP_TYPE_JMP;
 		break;
 	case 0xe7:				//rst 32
 		op->jump = 0x20;
 		op->fail = addr + ilen;
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = RZ_ANAL_OP_TYPE_JMP;
 		break;
 	case 0xef:				//rst 40
 		op->jump = 0x28;
 		op->fail = addr + ilen;
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = RZ_ANAL_OP_TYPE_JMP;
 		break;
 	case 0xf7:				//rst 48
 		op->jump = 0x30;
 		op->fail = addr + ilen;
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = RZ_ANAL_OP_TYPE_JMP;
 		break;
 	case 0xff:				//rst 56
 		op->jump = 0x38;
 		op->fail = addr + ilen;
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = RZ_ANAL_OP_TYPE_JMP;
 	break;					// copypasta from gb and z80
 	}
 	return op->size = ilen;
@@ -196,10 +196,10 @@ RzAnalPlugin rz_anal_plugin_i8080 = {
 	.op = &i8080_op,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_i8080,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

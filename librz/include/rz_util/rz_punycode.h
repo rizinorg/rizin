@@ -1,5 +1,5 @@
-#ifndef R_PUNYCODE_H
-#define R_PUNYCODE_H
+#ifndef RZ_PUNYCODE_H
+#define RZ_PUNYCODE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,4 +12,4 @@ RZ_API char *rz_punycode_decode(const char *src, int srclen, int *dstlen);
 }
 #endif
 
-#endif //  R_PUNYCODE_H
+#endif //  RZ_PUNYCODE_H

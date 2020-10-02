@@ -1,5 +1,5 @@
-#ifndef R_UTF8_H
-#define R_UTF8_H
+#ifndef RZ_UTF8_H
+#define RZ_UTF8_H
 
 /* For RStrEnc definition */
 #include "rz_str.h"
@@ -29,4 +29,4 @@ RZ_API char *rz_utf8_to_acp_l(const char *str, int len);
 #define rz_utf8_to_acp(cstring) rz_utf8_to_acp_l ((char *)cstring, -1)
 #endif // __WINDOWS__
 
-#endif //  R_UTF8_H
+#endif //  RZ_UTF8_H

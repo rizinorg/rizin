@@ -22,7 +22,7 @@ static void pj_comma(PJ *j) {
 }
 
 RZ_API PJ *pj_new(void) {
-	PJ *j = R_NEW0 (PJ);
+	PJ *j = RZ_NEW0 (PJ);
 	if (j) {
 		rz_strbuf_init (&j->sb);
 		j->is_first = true;
@@ -58,7 +58,7 @@ RZ_API const char *pj_string(PJ *j) {
 
 static PJ *pj_begin(PJ *j, char type) {
 	if (j) {
-		if (!j || j->level >= R_PRINT_JSON_DEPTH_LIMIT) {
+		if (!j || j->level >= RZ_PRINT_JSON_DEPTH_LIMIT) {
 			return NULL;
 		}
 		char msg[2] = { type, 0 };

@@ -148,10 +148,10 @@ static RBuffer *build (RzEgg *egg) {
 	char *port = rz_egg_option_get (egg, "port");
 	//TODO: char *udp = rz_egg_option_get (egg, "udp");
 	switch (egg->os) {
-	case R_EGG_OS_OSX:
-	case R_EGG_OS_DARWIN:
+	case RZ_EGG_OS_OSX:
+	case RZ_EGG_OS_DARWIN:
 		switch (egg->arch) {
-		case R_SYS_ARCH_X86:
+		case RZ_SYS_ARCH_X86:
 			if (suid) {
 				sc = x86_osx_suid_binsh;
 				cd = 7+36;
@@ -159,23 +159,23 @@ static RBuffer *build (RzEgg *egg) {
 				sc = x86_osx_binsh;
 				cd = 36;
 			}
-		case R_SYS_ARCH_ARM:
+		case RZ_SYS_ARCH_ARM:
 			// TODO
 			break;
 		}
 		break;
-	case R_EGG_OS_LINUX:
+	case RZ_EGG_OS_LINUX:
 		if (suid) eprintf ("no suid for this platform\n");
 		suid = 0;
 		switch (egg->arch) {
-		case R_SYS_ARCH_X86:
+		case RZ_SYS_ARCH_X86:
 			switch (egg->bits) {
 			case 32: sc = x86_linux_binsh; break;
 			case 64: sc = x86_64_linux_binsh; break;
 			default: eprintf ("Unsupportted\n");
 			}
 			break;
-		case R_SYS_ARCH_ARM:
+		case RZ_SYS_ARCH_ARM:
 			sc = arm_linux_binsh;
 			break;
 		}
@@ -199,15 +199,15 @@ static RBuffer *build (RzEgg *egg) {
 //TODO: rename plugin to run
 RzEggPlugin rz_egg_plugin_bind = {
 	.name = "bind",
-	.type = R_EGG_PLUGIN_SHELLCODE,
+	.type = RZ_EGG_PLUGIN_SHELLCODE,
 	.desc = "listen port=4444",
 	.build = (void *)build
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_EGG,
+	.type = RZ_LIB_TYPE_EGG,
 	.data = &rz_egg_plugin_bind,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

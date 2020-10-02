@@ -106,7 +106,7 @@ bool winkd_lock_leave(WindCtx *ctx) {
 }
 
 int winkd_get_bits(WindCtx *ctx) {
-	return ctx->is_x64 ? R_SYS_BITS_64 : R_SYS_BITS_32;
+	return ctx->is_x64 ? RZ_SYS_BITS_64 : RZ_SYS_BITS_32;
 }
 
 int winkd_get_cpus(WindCtx *ctx) {
@@ -188,9 +188,9 @@ void winkd_ctx_free(WindCtx **ctx) {
 	rz_list_free ((*ctx)->tlist_cache);
 	io_desc_t *desc = (*ctx)->desc;
 	desc->iob->close (desc->fp);
-	R_FREE (desc);
+	RZ_FREE (desc);
 	rz_th_lock_free ((*ctx)->dontmix);
-	R_FREE (*ctx);
+	RZ_FREE (*ctx);
 }
 
 #define PKT_REQ(p) ((kd_req_t *) (((kd_packet_t *) p)->data))
@@ -256,7 +256,7 @@ int winkd_wait_packet(WindCtx *ctx, const uint32_t type, kd_packet_t **p) {
 
 	do {
 		if (pkt) {
-			R_FREE (pkt);
+			RZ_FREE (pkt);
 		}
 		// Try to read a whole packet
 		ret = kd_read_packet (ctx->desc, &pkt);
@@ -306,7 +306,7 @@ int winkd_wait_packet(WindCtx *ctx, const uint32_t type, kd_packet_t **p) {
 }
 
 // http://dfrws.org/2007/proceedings/p62-dolan-gavitt.pdf
-R_PACKED (
+RZ_PACKED (
 	typedef struct {
 	char tag[4];
 	uint32_t start_vpn;
@@ -432,7 +432,7 @@ int winkd_write_at_uva(WindCtx *ctx, const uint8_t *buf, ut64 offset, int count)
 			return 0;
 		}
 		ut32 restOfPage = 0x1000 - (offset & 0xfff);
-		int written = winkd_write_at_phys (ctx, buf + totwritten, pa, R_MIN (count - totwritten, restOfPage));
+		int written = winkd_write_at_phys (ctx, buf + totwritten, pa, RZ_MIN (count - totwritten, restOfPage));
 		if (!written) {
 			break;
 		}
@@ -450,7 +450,7 @@ int winkd_read_at_uva(WindCtx *ctx, uint8_t *buf, ut64 offset, int count) {
 			return 0;
 		}
 		ut32 restOfPage = 0x1000 - (offset & 0xfff);
-		int read = winkd_read_at_phys (ctx, buf + totread, pa, R_MIN (count - totread, restOfPage));
+		int read = winkd_read_at_phys (ctx, buf + totread, pa, RZ_MIN (count - totread, restOfPage));
 		if (!read) {
 			break;
 		}
@@ -514,7 +514,7 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 
 		ptr -= (4 << ctx->is_x64) * 2;
 
-		WindModule *mod = R_NEW0 (WindModule);
+		WindModule *mod = RZ_NEW0 (WindModule);
 		if (!mod) {
 			break;
 		}
@@ -1030,7 +1030,7 @@ int winkd_read_reg(WindCtx *ctx, uint8_t *buf, int size) {
 		return 0;
 	}
 
-	memcpy (buf, rr->data, R_MIN (size, pkt->length - sizeof (*rr)));
+	memcpy (buf, rr->data, RZ_MIN (size, pkt->length - sizeof (*rr)));
 
 	free (pkt);
 
@@ -1168,7 +1168,7 @@ int winkd_read_at_phys(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int 
 	req.req = DbgKdReadPhysicalMemoryApi;
 	req.cpu = ctx->cpu;
 	req.rz_mem.addr = offset;
-	req.rz_mem.length = R_MIN (count, KD_MAX_PAYLOAD);
+	req.rz_mem.length = RZ_MIN (count, KD_MAX_PAYLOAD);
 	req.rz_mem.read = 0;	// Default caching option
 
 	// Don't wait on the lock in read_reg since it's frequently called. Otherwise the user
@@ -1224,7 +1224,7 @@ int winkd_read_at(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int count
 	req.req = DbgKdReadVirtualMemoryApi;
 	req.cpu = ctx->cpu;
 	req.rz_mem.addr = offset;
-	req.rz_mem.length = R_MIN (count, KD_MAX_PAYLOAD);
+	req.rz_mem.length = RZ_MIN (count, KD_MAX_PAYLOAD);
 
 	// Don't wait on the lock in read_at since it's frequently called, including each
 	// time "enter" is pressed. Otherwise the user will be forced to interrupt exit
@@ -1277,7 +1277,7 @@ int winkd_write_at(WindCtx *ctx, const uint8_t *buf, const ut64 offset, const in
 		return 0;
 	}
 
-	payload = R_MIN (count, KD_MAX_PAYLOAD - sizeof(kd_req_t));
+	payload = RZ_MIN (count, KD_MAX_PAYLOAD - sizeof(kd_req_t));
 	req.req = DbgKdWriteVirtualMemoryApi;
 	req.cpu = ctx->cpu;
 	req.rz_mem.addr = offset;
@@ -1329,7 +1329,7 @@ int winkd_write_at_phys(WindCtx *ctx, const uint8_t *buf, const ut64 offset, con
 		return 0;
 	}
 
-	payload = R_MIN (count, KD_MAX_PAYLOAD - sizeof(kd_req_t));
+	payload = RZ_MIN (count, KD_MAX_PAYLOAD - sizeof(kd_req_t));
 
 	memset (&req, 0, sizeof(kd_req_t));
 

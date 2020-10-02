@@ -58,10 +58,10 @@ RzIOPlugin rz_io_plugin_rbuf = {
 	.check = __check
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_rbuf,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

@@ -99,6 +99,6 @@ init_demangler_err:
 ///////////////////////////////////////////////////////////////////////////////
 void free_demangler(SDemangler *demangler)
 {
-	R_FREE(demangler->symbol);
-	R_FREE(demangler);
+	RZ_FREE(demangler->symbol);
+	RZ_FREE(demangler);
 }

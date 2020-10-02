@@ -1,5 +1,5 @@
-#ifndef R_BUF_H
-#define R_BUF_H
+#ifndef RZ_BUF_H
+#define RZ_BUF_H
 #include <rz_util/rz_mem.h>
 
 #ifdef __cplusplus
@@ -8,9 +8,9 @@ extern "C" {
 
 // TODO: choose whether the _at operations should preserve the current seek or not
 
-#define R_BUF_SET 0
-#define R_BUF_CUR 1
-#define R_BUF_END 2
+#define RZ_BUF_SET 0
+#define RZ_BUF_CUR 1
+#define RZ_BUF_END 2
 
 typedef struct rz_buf_t RBuffer;
 
@@ -100,7 +100,7 @@ RZ_API st64 rz_buf_fwrite_at(RBuffer *b, ut64 addr, const ut8 *buf, const char *
 // WARNING: this function should be used with care because it may allocate the
 // entire buffer in memory. Consider using the rz_buf_read* APIs instead and read
 // only the chunks you need.
-R_DEPRECATE RZ_API const ut8 *rz_buf_data(RBuffer *b, ut64 *size);
+RZ_DEPRECATE RZ_API const ut8 *rz_buf_data(RBuffer *b, ut64 *size);
 RZ_API ut64 rz_buf_size(RBuffer *b);
 RZ_API bool rz_buf_resize(RBuffer *b, ut64 newsize);
 RZ_API RBuffer *rz_buf_ref(RBuffer *b);
@@ -202,11 +202,11 @@ RZ_API st64 rz_buf_uleb128(RBuffer *b, ut64 *v);
 RZ_API st64 rz_buf_sleb128(RBuffer *b, st64 *v);
 
 static inline st64 rz_buf_uleb128_at(RBuffer *b, ut64 addr, ut64 *v) {
-	rz_buf_seek (b, addr, R_BUF_SET);
+	rz_buf_seek (b, addr, RZ_BUF_SET);
 	return rz_buf_uleb128 (b, v);
 }
 static inline st64 rz_buf_sleb128_at(RBuffer *b, ut64 addr, st64 *v) {
-	rz_buf_seek (b, addr, R_BUF_SET);
+	rz_buf_seek (b, addr, RZ_BUF_SET);
 	return rz_buf_sleb128 (b, v);
 }
 
@@ -214,4 +214,4 @@ static inline st64 rz_buf_sleb128_at(RBuffer *b, ut64 addr, st64 *v) {
 }
 #endif
 
-#endif //  R_BUF_H
+#endif //  RZ_BUF_H

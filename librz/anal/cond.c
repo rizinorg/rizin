@@ -4,28 +4,28 @@
 
 RZ_API const char *rz_anal_cond_tostring(int cc) {
 	switch (cc) {
-	case R_ANAL_COND_EQ: return "eq";
-	case R_ANAL_COND_NV: return "nv";
-	case R_ANAL_COND_NE: return "ne";
-	case R_ANAL_COND_HS: return "hs";
-	case R_ANAL_COND_LO: return "lo";
-	case R_ANAL_COND_MI: return "mi";
-	case R_ANAL_COND_PL: return "pl";
-	case R_ANAL_COND_VS: return "vs";
-	case R_ANAL_COND_VC: return "vc";
-	case R_ANAL_COND_HI: return "hi";
-	case R_ANAL_COND_LS: return "ls";
-	case R_ANAL_COND_GE: return "ge";
-	case R_ANAL_COND_LT: return "lt";
-	case R_ANAL_COND_GT: return "gt";
-	case R_ANAL_COND_LE: return "le";
-	case R_ANAL_COND_AL: return "al";
+	case RZ_ANAL_COND_EQ: return "eq";
+	case RZ_ANAL_COND_NV: return "nv";
+	case RZ_ANAL_COND_NE: return "ne";
+	case RZ_ANAL_COND_HS: return "hs";
+	case RZ_ANAL_COND_LO: return "lo";
+	case RZ_ANAL_COND_MI: return "mi";
+	case RZ_ANAL_COND_PL: return "pl";
+	case RZ_ANAL_COND_VS: return "vs";
+	case RZ_ANAL_COND_VC: return "vc";
+	case RZ_ANAL_COND_HI: return "hi";
+	case RZ_ANAL_COND_LS: return "ls";
+	case RZ_ANAL_COND_GE: return "ge";
+	case RZ_ANAL_COND_LT: return "lt";
+	case RZ_ANAL_COND_GT: return "gt";
+	case RZ_ANAL_COND_LE: return "le";
+	case RZ_ANAL_COND_AL: return "al";
 	}
 	return "??";
 }
 
 RZ_API RzAnalCond *rz_anal_cond_new(void) {
-	return R_NEW0 (RzAnalCond);
+	return RZ_NEW0 (RzAnalCond);
 }
 
 RZ_API void rz_anal_cond_fini (RzAnalCond *c) {
@@ -47,7 +47,7 @@ RZ_API void rz_anal_cond_free (RzAnalCond *c) {
 
 // XXX?
 RZ_API RzAnalCond *rz_anal_cond_clone(RzAnalCond *cond) {
-	RzAnalCond *c = R_NEW (RzAnalCond);
+	RzAnalCond *c = RZ_NEW (RzAnalCond);
 	if (!c) {
 		return NULL;
 	}
@@ -74,21 +74,21 @@ RZ_API int rz_anal_cond_eval(RzAnal *anal, RzAnalCond *cond) {
 	if (cond->arg[1]) {
 		st64 arg1 = (st64) rz_anal_value_to_ut64 (anal, cond->arg[1]);
 		switch (cond->type) {
-		case R_ANAL_COND_EQ: return arg0 == arg1;
-		case R_ANAL_COND_NE: return arg0 != arg1;
-		case R_ANAL_COND_GE: return arg0 >= arg1;
-		case R_ANAL_COND_GT: return arg0 > arg1;
-		case R_ANAL_COND_LE: return arg0 <= arg1;
-		case R_ANAL_COND_LT: return arg0 < arg1;
+		case RZ_ANAL_COND_EQ: return arg0 == arg1;
+		case RZ_ANAL_COND_NE: return arg0 != arg1;
+		case RZ_ANAL_COND_GE: return arg0 >= arg1;
+		case RZ_ANAL_COND_GT: return arg0 > arg1;
+		case RZ_ANAL_COND_LE: return arg0 <= arg1;
+		case RZ_ANAL_COND_LT: return arg0 < arg1;
 		}
 	} else {
 		switch (cond->type) {
-		case R_ANAL_COND_EQ: return !arg0;
-		case R_ANAL_COND_NE: return arg0;
-		case R_ANAL_COND_GT: return arg0>0;
-		case R_ANAL_COND_GE: return arg0>=0;
-		case R_ANAL_COND_LT: return arg0<0;
-		case R_ANAL_COND_LE: return arg0<=0;
+		case RZ_ANAL_COND_EQ: return !arg0;
+		case RZ_ANAL_COND_NE: return arg0;
+		case RZ_ANAL_COND_GT: return arg0>0;
+		case RZ_ANAL_COND_GE: return arg0>=0;
+		case RZ_ANAL_COND_LT: return arg0<0;
+		case RZ_ANAL_COND_LE: return arg0<=0;
 		}
 	}
 	return false;
@@ -105,7 +105,7 @@ RZ_API char *rz_anal_cond_to_string(RzAnalCond *cond) {
 	val0 = rz_anal_value_to_string (cond->arg[0]);
 	val1 = rz_anal_value_to_string (cond->arg[1]);
 	if (val0) {
-		if (R_ANAL_COND_SINGLE (cond)) {
+		if (RZ_ANAL_COND_SINGLE (cond)) {
 			int val0len = strlen (val0) + 10;
 			if ((out = malloc (val0len))) {
 				snprintf (out, val0len, "%s%s", cnd, val0);
@@ -141,7 +141,7 @@ RZ_API RzAnalCond *rz_anal_cond_new_from_op(RzAnalOp *op) {
 }
 
 RZ_API RzAnalCond *rz_anal_cond_new_from_string(const char *str) {
-	RzAnalCond *cond = R_NEW (RzAnalCond);
+	RzAnalCond *cond = RZ_NEW (RzAnalCond);
 	// TODO: find '<','=','>','!'...
 	return cond;
 }

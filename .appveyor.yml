@@ -65,8 +65,8 @@ init:
 # Required software for building
 install:
   # Update environment variables
-  - ps: $env:R2_VERSION = ( python sys\\version.py )
-  - ps: $env:DIST_FOLDER = "rizin-$env:builder-$env:R2_VERSION"
+  - ps: $env:RZ_VERSION = ( python sys\\version.py )
+  - ps: $env:DIST_FOLDER = "rizin-$env:builder-$env:RZ_VERSION"
   - ps: $env:ARTIFACT_ZIP = "$env:DIST_FOLDER.zip"
   # Download required packages
   - cmd: if defined BUILD_DIR ( %PYTHON%\python.exe -m pip install meson )
@@ -74,7 +74,7 @@ install:
 
 # Build scripts
 build_script:
-  - appveyor AddMessage "Compiling rizin %R2_VERSION% (%builder%)"
+  - appveyor AddMessage "Compiling rizin %RZ_VERSION% (%builder%)"
 
   - cmd: if %builder% == vs2017_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2017%" x64 && python sys\meson.py --backend vs2017 --release --xp --install --prefix="%DIST_FOLDER%" --webui --options static_runtime=true && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
@@ -106,7 +106,7 @@ for:
     after_test:
       - git clone --depth 1 https://github.com/radare/rizin-win-installer
       - set PATH=%PATH%;%INNO_SETUP%
-      - iscc rizin-win-installer/rizin.iss /DRadare2Location=..\%DIST_FOLDER%\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=rizin.ico /DMyAppVersion=%R2_VERSION%
+      - iscc rizin-win-installer/rizin.iss /DRadare2Location=..\%DIST_FOLDER%\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=rizin.ico /DMyAppVersion=%RZ_VERSION%
       - move rizin-win-installer\Output\rizin.exe rizin_installer-%builder%.exe
 
 # Artifacts

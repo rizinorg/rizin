@@ -21,7 +21,7 @@ static bool hexstr = false;
 static bool widestr = false;
 static bool nonstop = false;
 static bool json = false;
-static int mode = R_SEARCH_STRING;
+static int mode = RZ_SEARCH_STRING;
 static int align = 0;
 static ut8 *buf = NULL;
 static ut64 bsize = 4096;
@@ -173,7 +173,7 @@ static int rafind_open_file(const char *file, const ut8 *data, int datalen) {
 		return 1;
 	}
 
-	if (!rz_io_open_nomap (io, file, R_PERM_R, 0)) {
+	if (!rz_io_open_nomap (io, file, RZ_PERM_R, 0)) {
 		eprintf ("Cannot open file '%s'\n", file);
 		result = 1;
 		goto err;
@@ -206,12 +206,12 @@ static int rafind_open_file(const char *file, const ut8 *data, int datalen) {
 		goto err;
 	}
 
-	if (mode == R_SEARCH_STRING) {
+	if (mode == RZ_SEARCH_STRING) {
 		/* TODO: implement using api */
 		rz_sys_cmdf ("rz_bin -q%szzz '%s'", json? "j": "", file);
 		goto done;
 	}
-	if (mode == R_SEARCH_MAGIC) {
+	if (mode == RZ_SEARCH_MAGIC) {
 		char *tostr = (to && to != UT64_MAX)?
 			rz_str_newf ("-e search.to=%"PFMT64d, to): strdup ("");
 		char *cmd = rz_str_newf ("r2"
@@ -225,7 +225,7 @@ static int rafind_open_file(const char *file, const ut8 *data, int datalen) {
 		free (tostr);
 		goto done;
 	}
-	if (mode == R_SEARCH_ESIL) {
+	if (mode == RZ_SEARCH_ESIL) {
 		rz_list_foreach (keywords, iter, kw) {
 			char *cmd = rz_str_newf ("r2 -qc \"/E %s\" %s", kw, file);
 			if (cmd) {
@@ -235,7 +235,7 @@ static int rafind_open_file(const char *file, const ut8 *data, int datalen) {
 		}
 		goto done;
 	}
-	if (mode == R_SEARCH_KEYWORD) {
+	if (mode == RZ_SEARCH_KEYWORD) {
 		rz_list_foreach (keywords, iter, kw) {
 			if (hexstr) {
 				if (mask) {
@@ -249,13 +249,13 @@ static int rafind_open_file(const char *file, const ut8 *data, int datalen) {
 				rz_search_kw_add (rs, rz_search_keyword_new_str (kw, mask, NULL, 0));
 			}
 		}
-	} else if (mode == R_SEARCH_STRING) {
+	} else if (mode == RZ_SEARCH_STRING) {
 		rz_search_kw_add (rs, rz_search_keyword_new_hexmask ("00", NULL)); //XXX
 	}
 
 	curfile = file;
 	rz_search_begin (rs);
-	(void)rz_io_seek (io, from, R_IO_SEEK_SET);
+	(void)rz_io_seek (io, from, RZ_IO_SEEK_SET);
 	result = 0;
 	for (cur = from; !last && cur < to; cur += bsize) {
 		if ((cur + bsize) > to) {
@@ -317,7 +317,7 @@ static int rafind_open_dir(const char *dir) {
 			if (*fname == '.') {
 				continue;
 			}
-			fullpath = rz_str_newf ("%s"R_SYS_DIR"%s", dir, fname);
+			fullpath = rz_str_newf ("%s"RZ_SYS_DIR"%s", dir, fname);
 			(void)rafind_open (fullpath);
 			free (fullpath);
 		}
@@ -351,25 +351,25 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			nonstop = 1;
 			break;
 		case 'm':
-			mode = R_SEARCH_MAGIC;
+			mode = RZ_SEARCH_MAGIC;
 			break;
 		case 'e':
-			mode = R_SEARCH_REGEXP;
+			mode = RZ_SEARCH_REGEXP;
 			hexstr = 0;
 			rz_list_append (keywords, (void*)opt.arg);
 			break;
 		case 'E':
-			mode = R_SEARCH_ESIL;
+			mode = RZ_SEARCH_ESIL;
 			rz_list_append (keywords, (void*)opt.arg);
 			break;
 		case 's':
-			mode = R_SEARCH_KEYWORD;
+			mode = RZ_SEARCH_KEYWORD;
 			hexstr = 0;
 			widestr = 0;
 			rz_list_append (keywords, (void*)opt.arg);
 			break;
 		case 'S':
-			mode = R_SEARCH_KEYWORD;
+			mode = RZ_SEARCH_KEYWORD;
 			hexstr = 0;
 			widestr = 1;
 			rz_list_append (keywords, (void*)opt.arg);
@@ -394,7 +394,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 				}
 				char *hexdata = rz_hex_bin2strdup ((ut8*)data, data_size);
 				if (hexdata) {
-					mode = R_SEARCH_KEYWORD;
+					mode = RZ_SEARCH_KEYWORD;
 					hexstr = true;
 					widestr = false;
 					rz_list_append (keywords, (void*)hexdata);
@@ -406,7 +406,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			to = rz_num_math (NULL, opt.arg);
 			break;
 		case 'x':
-			mode = R_SEARCH_KEYWORD;
+			mode = RZ_SEARCH_KEYWORD;
 			hexstr = 1;
 			widestr = 0;
 			rz_list_append (keywords, (void*)opt.arg);
@@ -422,7 +422,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 		case 'h':
 			return show_help(argv[0], 0);
 		case 'z':
-			mode = R_SEARCH_STRING;
+			mode = RZ_SEARCH_STRING;
 			break;
 		case 'Z':
 			showstr = true;

@@ -21,7 +21,7 @@ static ut32 get_msb(ut32 v) {
 RZ_API RIDPool* rz_id_pool_new(ut32 start_id, ut32 last_id) {
 	RIDPool* pool = NULL;
 	if (start_id < last_id) {
-		pool = R_NEW0 (RIDPool);
+		pool = RZ_NEW0 (RIDPool);
 		if (!pool) {
 			return NULL;
 		}
@@ -78,7 +78,7 @@ RZ_API RIDStorage* rz_id_storage_new(ut32 start_id, ut32 last_id) {
 	RIDPool* pool;
 	RIDStorage* storage = NULL;
 	if ((start_id < 16) && (pool = rz_id_pool_new (start_id, last_id))) {
-		storage = R_NEW0 (RIDStorage);
+		storage = RZ_NEW0 (RIDStorage);
 		if (!storage) {
 			rz_id_pool_free (pool);
 			return NULL;
@@ -110,7 +110,7 @@ static bool oid_storage_preallocate(ROIDStorage *st, ut32 size) {
 		return false;
 	}
 	if (!size) {
-		R_FREE (st->permutation);
+		RZ_FREE (st->permutation);
 		st->psize = 0;
 	}
 	permutation = realloc (st->permutation, size * sizeof (ut32));
@@ -177,7 +177,7 @@ RZ_API void rz_id_storage_delete(RIDStorage* storage, ut32 id) {
 				id_storage_reallocate (storage, 2);
 			} else {
 				RIDPool* pool = rz_id_pool_new (storage->pool->start_id, storage->pool->last_id);
-				R_FREE (storage->data);
+				RZ_FREE (storage->data);
 				storage->size = 0;
 				rz_id_pool_free (storage->pool);
 				storage->pool = pool;
@@ -234,7 +234,7 @@ RZ_API RzList *rz_id_storage_list(RIDStorage *s) {		//remove this pls
 }
 
 RZ_API ROIDStorage * rz_oids_new (ut32 start_id, ut32 last_id) {
-	ROIDStorage *storage = R_NEW0 (ROIDStorage);
+	ROIDStorage *storage = RZ_NEW0 (ROIDStorage);
 	if (!storage) {
 		return NULL;
 	}
@@ -355,7 +355,7 @@ RZ_API void rz_oids_delete (ROIDStorage *storage, ut32 id) {
 	rz_id_storage_delete (storage->data, id);
 	storage->ptop--;
 	if (!storage->ptop) {
-		R_FREE (storage->permutation);
+		RZ_FREE (storage->permutation);
 		storage->psize = 0;
 	} else if ((storage->ptop + 1) < (storage->psize / 4)) {
 		oid_storage_preallocate (storage, storage->psize / 2);
@@ -372,7 +372,7 @@ RZ_API void rz_oids_odelete (ROIDStorage *st, ut32 od) {
 	memmove (&st->permutation[od], &st->permutation[od + 1], n * sizeof(ut32));
 	st->ptop--;
 	if (!st->ptop) {
-		R_FREE (st->permutation);
+		RZ_FREE (st->permutation);
 		st->psize = 0;
 	} else if ((st->ptop + 1) < (st->psize / 4)) {
 		oid_storage_preallocate (st, st->psize / 2);
@@ -539,7 +539,7 @@ RZ_API bool rz_oids_sort (ROIDStorage *storage, void *user) {
 		return true;
 	}
 	permutation = storage->permutation;
-	storage->permutation = R_NEWS0 (ut32, storage->psize);
+	storage->permutation = RZ_NEWS0 (ut32, storage->psize);
 	if (!storage->permutation) {
 		storage->permutation = permutation;
 		return false;

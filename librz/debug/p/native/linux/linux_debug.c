@@ -34,13 +34,13 @@ char *linux_reg_profile (RzDebug *dbg) {
 #elif __arm64__ || __aarch64__
 #	include "reg/linux-arm64.h"
 #elif __mips__
-	if ((dbg->bits & R_SYS_BITS_32) && (dbg->bp->endian == 1)) {
+	if ((dbg->bits & RZ_SYS_BITS_32) && (dbg->bp->endian == 1)) {
 #		include "reg/linux-mips.h"
 	} else {
 #		include "reg/linux-mips64.h"
 	}
 #elif (__i386__ || __x86_64__)
-	if (dbg->bits & R_SYS_BITS_32) {
+	if (dbg->bits & RZ_SYS_BITS_32) {
 #if __x86_64__
 #		include "reg/linux-x64-32.h"
 #else
@@ -50,7 +50,7 @@ char *linux_reg_profile (RzDebug *dbg) {
 #		include "reg/linux-x64.h"
 	}
 #elif __powerpc__
-	if (dbg->bits & R_SYS_BITS_32) {
+	if (dbg->bits & RZ_SYS_BITS_32) {
 #		include "reg/linux-ppc.h"
 	} else {
 #		include "reg/linux-ppc64.h"
@@ -80,7 +80,7 @@ int linux_handle_signals(RzDebug *dbg, int tid) {
 	if (ret == -1) {
 		/* ESRCH means the process already went away :-/ */
 		if (errno == ESRCH) {
-			dbg->reason.type = R_DEBUG_REASON_DEAD;
+			dbg->reason.type = RZ_DEBUG_REASON_DEAD;
 			return true;
 		}
 		rz_sys_perror ("ptrace GETSIGINFO");
@@ -90,7 +90,7 @@ int linux_handle_signals(RzDebug *dbg, int tid) {
 	if (siginfo.si_signo > 0) {
 		//siginfo_t newsiginfo = {0};
 		//ptrace (PTRACE_SETSIGINFO, dbg->pid, 0, &siginfo);
-		dbg->reason.type = R_DEBUG_REASON_SIGNAL;
+		dbg->reason.type = RZ_DEBUG_REASON_SIGNAL;
 		dbg->reason.signum = siginfo.si_signo;
 		dbg->stopaddr = (ut64)siginfo.si_addr;
 		//dbg->errno = siginfo.si_errno;
@@ -108,27 +108,27 @@ int linux_handle_signals(RzDebug *dbg, int tid) {
 						if (rz_str_startswith (p, "dbg.libs")) {
 							const char *name;
 							if (strstr (b->data, "sym.imp.dlopen")) {
-								name = rz_reg_get_name (dbg->reg, R_REG_NAME_A0);
+								name = rz_reg_get_name (dbg->reg, RZ_REG_NAME_A0);
 							} else {
-								name = rz_reg_get_name (dbg->reg, R_REG_NAME_A1);
+								name = rz_reg_get_name (dbg->reg, RZ_REG_NAME_A1);
 							}
 							b->data = rz_str_appendf (b->data, ";ps@r:%s", name);
-							dbg->reason.type = R_DEBUG_REASON_NEW_LIB;
+							dbg->reason.type = RZ_DEBUG_REASON_NEW_LIB;
 							break;
 						} else if (rz_str_startswith (p, "dbg.unlibs")) {
-							dbg->reason.type = R_DEBUG_REASON_EXIT_LIB;
+							dbg->reason.type = RZ_DEBUG_REASON_EXIT_LIB;
 							break;
 						}
 					}
 				}
 			}
-			if (dbg->reason.type != R_DEBUG_REASON_NEW_LIB &&
-				dbg->reason.type != R_DEBUG_REASON_EXIT_LIB) {
+			if (dbg->reason.type != RZ_DEBUG_REASON_NEW_LIB &&
+				dbg->reason.type != RZ_DEBUG_REASON_EXIT_LIB) {
 				if (siginfo.si_code == TRAP_TRACE) {
-					dbg->reason.type = R_DEBUG_REASON_STEP;
+					dbg->reason.type = RZ_DEBUG_REASON_STEP;
 				} else {
 					dbg->reason.bp_addr = (ut64)(size_t)siginfo.si_addr;
-					dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
+					dbg->reason.type = RZ_DEBUG_REASON_BREAKPOINT;
 					// Switch to the thread that hit the breakpoint
 					rz_debug_select (dbg, dbg->pid, tid);
 					dbg->tid = tid;
@@ -136,16 +136,16 @@ int linux_handle_signals(RzDebug *dbg, int tid) {
 			}
 		} break;
 		case SIGINT:
-			dbg->reason.type = R_DEBUG_REASON_USERSUSP;
+			dbg->reason.type = RZ_DEBUG_REASON_USERSUSP;
 			break;
 		case SIGABRT: // 6 / SIGIOT // SIGABRT
-			dbg->reason.type = R_DEBUG_REASON_ABORT;
+			dbg->reason.type = RZ_DEBUG_REASON_ABORT;
 			break;
 		case SIGSEGV:
-			dbg->reason.type = R_DEBUG_REASON_SEGFAULT;
+			dbg->reason.type = RZ_DEBUG_REASON_SEGFAULT;
 			break;
 		case SIGCHLD:
-			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
+			dbg->reason.type = RZ_DEBUG_REASON_SIGNAL;
 			break;
 		default:
 			break;
@@ -181,11 +181,11 @@ static void linux_remove_fork_bps(RzDebug *dbg) {
 	rz_debug_select (dbg, dbg->forked_pid, dbg->forked_pid);
 
 	// Unset all hw breakpoints in the child process
-	rz_debug_reg_sync (dbg, R_REG_TYPE_DRX, false);
+	rz_debug_reg_sync (dbg, RZ_REG_TYPE_DRX, false);
 	rz_list_foreach (dbg->bp->bps, iter, b) {
 		rz_debug_drx_unset (dbg, rz_bp_get_index_at (dbg->bp, b->addr));
 	}
-	rz_debug_reg_sync (dbg, R_REG_TYPE_DRX, true);
+	rz_debug_reg_sync (dbg, RZ_REG_TYPE_DRX, true);
 
 	// Unset software breakpoints in the child process
 	rz_debug_bp_update (dbg);
@@ -206,8 +206,8 @@ static void linux_remove_fork_bps(RzDebug *dbg) {
  *
  * @param dowait Do waitpid to consume any signal in the newly created task
  * @return RzDebugReasonType,
- * - R_DEBUG_REASON_UNKNOWN if the ptrace_event cannot be handled,
- * - R_DEBUG_REASON_ERROR if a ptrace command failed.
+ * - RZ_DEBUG_REASON_UNKNOWN if the ptrace_event cannot be handled,
+ * - RZ_DEBUG_REASON_ERROR if a ptrace command failed.
  *
  * NOTE: This API was added in Linux 2.5.46
  */
@@ -220,7 +220,7 @@ RzDebugReasonType linux_ptrace_event (RzDebug *dbg, int ptid, int status, bool d
 #endif
 	/* we only handle stops with SIGTRAP here */
 	if (!WIFSTOPPED (status) || WSTOPSIG (status) != SIGTRAP) {
-		return R_DEBUG_REASON_UNKNOWN;
+		return RZ_DEBUG_REASON_UNKNOWN;
 	}
 
 	pt_evt = status >> 16;
@@ -232,7 +232,7 @@ RzDebugReasonType linux_ptrace_event (RzDebug *dbg, int ptid, int status, bool d
 		// Get the tid of the new thread
 		if (rz_debug_ptrace (dbg, PTRACE_GETEVENTMSG, ptid, 0, (rz_ptrace_data_t)(size_t)&data) == -1) {
 			rz_sys_perror ("ptrace GETEVENTMSG");
-			return R_DEBUG_REASON_ERROR;
+			return RZ_DEBUG_REASON_ERROR;
 		}
 		if (dowait) {
 			// The new child has a pending SIGSTOP.  We can't affect it until it
@@ -247,13 +247,13 @@ RzDebugReasonType linux_ptrace_event (RzDebug *dbg, int ptid, int status, bool d
 			rz_debug_select (dbg, dbg->pid, (int)data);
 		}
 		eprintf ("(%d) Created thread %d\n", ptid, (int)data);
-		return R_DEBUG_REASON_NEW_TID;
+		return RZ_DEBUG_REASON_NEW_TID;
 	case PTRACE_EVENT_VFORK:
 	case PTRACE_EVENT_FORK:
 		// Get the pid of the new process
 		if (rz_debug_ptrace (dbg, PTRACE_GETEVENTMSG, ptid, 0, (rz_ptrace_data_t)(size_t)&data) == -1) {
 			rz_sys_perror ("ptrace GETEVENTMSG");
-			return R_DEBUG_REASON_ERROR;
+			return RZ_DEBUG_REASON_ERROR;
 		}
 		dbg->forked_pid = data;
 		if (dowait) {
@@ -272,26 +272,26 @@ RzDebugReasonType linux_ptrace_event (RzDebug *dbg, int ptid, int status, bool d
 				perror ("PTRACE_DETACH");
 			}
 		}
-		return R_DEBUG_REASON_NEW_PID;
+		return RZ_DEBUG_REASON_NEW_PID;
 	case PTRACE_EVENT_EXIT:
 		// Get the exit status of the exiting task
 		if (rz_debug_ptrace (dbg, PTRACE_GETEVENTMSG, ptid, 0, (rz_ptrace_data_t)(size_t)&data) == -1) {
 			rz_sys_perror ("ptrace GETEVENTMSG");
-			return R_DEBUG_REASON_ERROR;
+			return RZ_DEBUG_REASON_ERROR;
 		}
 		//TODO: Check other processes exit if dbg->trace_forks is on
 		if (ptid != dbg->pid) {
 			eprintf ("(%d) Thread exited with status=0x%"PFMT64x"\n", ptid, (ut64)data);
-			return R_DEBUG_REASON_EXIT_TID;
+			return RZ_DEBUG_REASON_EXIT_TID;
 		} else {
 			eprintf ("(%d) Process exited with status=0x%"PFMT64x"\n", ptid, (ut64)data);
-			return R_DEBUG_REASON_EXIT_PID;
+			return RZ_DEBUG_REASON_EXIT_PID;
 		}
 	default:
 		eprintf ("Unknown PTRACE_EVENT encountered: %d\n", pt_evt);
 		break;
 	}
-	return R_DEBUG_REASON_UNKNOWN;
+	return RZ_DEBUG_REASON_UNKNOWN;
 }
 #endif
 
@@ -338,7 +338,7 @@ static RzDebugReasonType linux_handle_new_task(RzDebug *dbg, int tid) {
 #endif
 		}
 	}
-	return R_DEBUG_REASON_UNKNOWN;
+	return RZ_DEBUG_REASON_UNKNOWN;
 }
 
 int linux_step(RzDebug *dbg) {
@@ -475,7 +475,7 @@ static void linux_dbg_wait_break(RzDebug *dbg) {
 }
 
 RzDebugReasonType linux_dbg_wait(RzDebug *dbg, int pid) {
-	RzDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
+	RzDebugReasonType reason = RZ_DEBUG_REASON_UNKNOWN;
 	int tid;
 	int status, flags = __WALL;
 	int ret = -1;
@@ -517,7 +517,7 @@ RzDebugReasonType linux_dbg_wait(RzDebug *dbg, int pid) {
 
 			// Handle SIGTRAP with PTRACE_EVENT_*
 			reason = linux_ptrace_event (dbg, tid, status, true);
-			if (reason != R_DEBUG_REASON_UNKNOWN) {
+			if (reason != RZ_DEBUG_REASON_UNKNOWN) {
 				break;
 			}
 
@@ -525,7 +525,7 @@ RzDebugReasonType linux_dbg_wait(RzDebug *dbg, int pid) {
 				if (tid == dbg->main_pid) {
 					rz_list_free (dbg->threads);
 					dbg->threads = NULL;
-					reason = R_DEBUG_REASON_DEAD;
+					reason = RZ_DEBUG_REASON_DEAD;
 					eprintf ("(%d) Process terminated with status %d\n", tid, WEXITSTATUS (status));
 					break;
 				} else {
@@ -535,14 +535,14 @@ RzDebugReasonType linux_dbg_wait(RzDebug *dbg, int pid) {
 				}
 			} else if (WIFSIGNALED (status)) {
 				eprintf ("child received signal %d\n", WTERMSIG (status));
-				reason = R_DEBUG_REASON_SIGNAL;
+				reason = RZ_DEBUG_REASON_SIGNAL;
 			} else if (WIFSTOPPED (status)) {
 				// If tid is not in the thread list and stopped by SIGSTOP,
 				// handle it as a new task.
 				if (!rz_list_find (dbg->threads, &tid, &match_pid) &&
 					WSTOPSIG (status) == SIGSTOP) {
 					reason = linux_handle_new_task (dbg, tid);
-					if (reason != R_DEBUG_REASON_UNKNOWN) {
+					if (reason != RZ_DEBUG_REASON_UNKNOWN) {
 						break;
 					}
 				}
@@ -551,27 +551,27 @@ RzDebugReasonType linux_dbg_wait(RzDebug *dbg, int pid) {
 					reason = dbg->reason.type;
 				} else {
 					eprintf ("can't handle signals\n");
-					return R_DEBUG_REASON_ERROR;
+					return RZ_DEBUG_REASON_ERROR;
 				}
 #ifdef WIFCONTINUED
 			} else if (WIFCONTINUED (status)) {
 				eprintf ("child continued...\n");
-				reason = R_DEBUG_REASON_NONE;
+				reason = RZ_DEBUG_REASON_NONE;
 #endif
 			} else if (status == 1) {
 				eprintf ("EEK DEAD DEBUGEE!\n");
-				reason = R_DEBUG_REASON_DEAD;
+				reason = RZ_DEBUG_REASON_DEAD;
 			} else if (status == 0) {
 				eprintf ("STATUS=0?!?!?!?\n");
-				reason = R_DEBUG_REASON_DEAD;
+				reason = RZ_DEBUG_REASON_DEAD;
 			} else {
 				if (ret != tid) {
-					reason = R_DEBUG_REASON_NEW_PID;
+					reason = RZ_DEBUG_REASON_NEW_PID;
 				} else {
 					eprintf ("CRAP. returning from wait without knowing why...\n");
 				}
 			}
-			if (reason != R_DEBUG_REASON_UNKNOWN) {
+			if (reason != RZ_DEBUG_REASON_UNKNOWN) {
 				break;
 			}
 		}
@@ -719,7 +719,7 @@ static char *read_link(int pid, const char *file) {
 
 RzDebugInfo *linux_info(RzDebug *dbg, const char *arg) {
 	char proc_buff[1024];
-	RzDebugInfo *rdi = R_NEW0 (RzDebugInfo);
+	RzDebugInfo *rdi = RZ_NEW0 (RzDebugInfo);
 	if (!rdi) {
 		return NULL;
 	}
@@ -754,7 +754,7 @@ RzDebugInfo *linux_info(RzDebug *dbg, const char *arg) {
 	rdi->cmdline = rz_file_slurp (proc_buff, NULL);
 	snprintf (proc_buff, sizeof (proc_buff), "/proc/%d/stack", rdi->pid);
 	rdi->kernel_stack = rz_file_slurp (proc_buff, NULL);
-	rdi->status = found ? th->status : R_DBG_PROC_STOP;
+	rdi->status = found ? th->status : RZ_DBG_PROC_STOP;
 	if (list_alloc) {
 		rz_list_free (th_list);
 	}
@@ -762,7 +762,7 @@ RzDebugInfo *linux_info(RzDebug *dbg, const char *arg) {
 }
 
 RzDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
-	RzDebugPid *pid_info = R_NEW0 (RzDebugPid);
+	RzDebugPid *pid_info = RZ_NEW0 (RzDebugPid);
 	if (!pid_info) {
 		return NULL;
 	}
@@ -770,23 +770,23 @@ RzDebugPid *fill_pid_info(const char *info, const char *path, int tid) {
 	if (ptr) {
 		switch (*(ptr + 7)) {
 		case 'R':
-			pid_info->status = R_DBG_PROC_RUN;
+			pid_info->status = RZ_DBG_PROC_RUN;
 			break;
 		case 'S':
-			pid_info->status = R_DBG_PROC_SLEEP;
+			pid_info->status = RZ_DBG_PROC_SLEEP;
 			break;
 		case 'T':
 		case 't':
-			pid_info->status = R_DBG_PROC_STOP;
+			pid_info->status = RZ_DBG_PROC_STOP;
 			break;
 		case 'Z':
-			pid_info->status = R_DBG_PROC_ZOMBIE;
+			pid_info->status = RZ_DBG_PROC_ZOMBIE;
 			break;
 		case 'X':
-			pid_info->status = R_DBG_PROC_DEAD;
+			pid_info->status = RZ_DBG_PROC_DEAD;
 			break;
 		default:
-			pid_info->status = R_DBG_PROC_SLEEP;
+			pid_info->status = RZ_DBG_PROC_SLEEP;
 			break;
 		}
 	}
@@ -836,7 +836,7 @@ RzList *linux_pid_list(int pid, RzList *list) {
 			// Get information about pid (status, pc, etc.)
 			pid_info = fill_pid_info (info, path, i);
 		} else {
-			pid_info = rz_debug_pid_new (path, i, 0, R_DBG_PROC_STOP, 0);
+			pid_info = rz_debug_pid_new (path, i, 0, RZ_DBG_PROC_STOP, 0);
 		}
 		// Unless pid 0 is requested, only add the requested pid and it's child processes
 		if (0 == pid || i == pid || pid_info->ppid == pid) {
@@ -895,7 +895,7 @@ RzList *linux_thread_list(RzDebug *dbg, int pid, RzList *list) {
 				dbg->tid = tid;
 			}
 
-			rz_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
+			rz_debug_reg_sync (dbg, RZ_REG_TYPE_GPR, false);
 			pc = rz_debug_reg_get (dbg, "PC");
 
 			if (!procfs_pid_slurp (tid, "status", info, sizeof (info))) {
@@ -912,7 +912,7 @@ RzList *linux_thread_list(RzDebug *dbg, int pid, RzList *list) {
 		// Return to the original thread
 		linux_attach_single_pid (dbg, prev_tid);
 		dbg->tid = prev_tid;
-		rz_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
+		rz_debug_reg_sync (dbg, RZ_REG_TYPE_GPR, false);
 	} else {
 		/* Some linux configurations might hide threads from /proc, use this workaround instead */
 #undef MAXPID
@@ -1068,7 +1068,7 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 		type = -type;
 	}
 	switch (type) {
-	case R_REG_TYPE_DRX:
+	case RZ_REG_TYPE_DRX:
 #if __POWERPC__
 		// no drx for powerpc
 		return false;
@@ -1097,15 +1097,15 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 #endif
 		return true;
 		break;
-	case R_REG_TYPE_FPU:
-	case R_REG_TYPE_MMX:
-	case R_REG_TYPE_XMM:
+	case RZ_REG_TYPE_FPU:
+	case RZ_REG_TYPE_MMX:
+	case RZ_REG_TYPE_XMM:
 #if __POWERPC__
 		return false;
 #elif __x86_64__ || __i386__
 		{
 		struct user_fpregs_struct fpregs;
-		if (type == R_REG_TYPE_FPU) {
+		if (type == RZ_REG_TYPE_FPU) {
 #if __x86_64__
 			ret = rz_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, &fpregs);
 			if (ret != 0) {
@@ -1115,7 +1115,7 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 			if (showfpu) {
 				print_fpu ((void *)&fpregs);
 			}
-			size = R_MIN (sizeof (fpregs), size);
+			size = RZ_MIN (sizeof (fpregs), size);
 			memcpy (buf, &fpregs, size);
 			return size;
 #elif __i386__
@@ -1126,7 +1126,7 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 				if (showfpu) {
 					print_fpu ((void *)&fpxregs);
 				}
-				size = R_MIN (sizeof (fpxregs), size);
+				size = RZ_MIN (sizeof (fpxregs), size);
 				memcpy (buf, &fpxregs, size);
 				return size;
 			} else {
@@ -1138,7 +1138,7 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 					rz_sys_perror ("PTRACE_GETFPREGS");
 					return false;
 				}
-				size = R_MIN (sizeof (fpregs), size);
+				size = RZ_MIN (sizeof (fpregs), size);
 				memcpy (buf, &fpregs, size);
 				return size;
 			}
@@ -1151,7 +1151,7 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 				rz_sys_perror ("PTRACE_GETFPREGS");
 				return false;
 			}
-			size = R_MIN (sizeof (fpregs), size);
+			size = RZ_MIN (sizeof (fpregs), size);
 			memcpy (buf, &fpregs, size);
 			return size;
 #endif // !__ANDROID__
@@ -1162,11 +1162,11 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	#warning getfpregs not implemented for this platform
 #endif
 		break;
-	case R_REG_TYPE_SEG:
-	case R_REG_TYPE_FLG:
-	case R_REG_TYPE_GPR:
+	case RZ_REG_TYPE_SEG:
+	case RZ_REG_TYPE_FLG:
+	case RZ_REG_TYPE_GPR:
 		{
-			R_DEBUG_REG_T regs;
+			RZ_DEBUG_REG_T regs;
 			memset (&regs, 0, sizeof (regs));
 			memset (buf, 0, size);
 #if (__arm64__ || __aarch64__ || __s390x__) && defined(PTRACE_GETREGSET)
@@ -1196,12 +1196,12 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 				rz_sys_perror ("PTRACE_GETREGS");
 				return false;
 			}
-			size = R_MIN (sizeof (regs), size);
+			size = RZ_MIN (sizeof (regs), size);
 			memcpy (buf, &regs, size);
 			return size;
 		}
 		break;
-	case R_REG_TYPE_YMM:
+	case RZ_REG_TYPE_YMM:
 		{
 #if HAVE_YMM && __x86_64__ && defined(PTRACE_GETREGSET)
 		ut32 ymm_space[128];	// full ymm registers
@@ -1224,7 +1224,7 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 				ymm_space[ri*8+(rj+4)] = xstate.ymmh.ymmh_space[ri*4+rj];
 			}
 		}
-		size = R_MIN (sizeof (ymm_space), size);
+		size = RZ_MIN (sizeof (ymm_space), size);
 		memcpy (buf, &ymm_space, size);
 		return size;
 #endif
@@ -1238,7 +1238,7 @@ int linux_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 int linux_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 	int pid = dbg->tid;
 
-	if (type == R_REG_TYPE_DRX) {
+	if (type == RZ_REG_TYPE_DRX) {
 #if !__ANDROID__ && (__i386__ || __x86_64__)
 		int i;
 		long *val = (long*)buf;
@@ -1252,16 +1252,16 @@ int linux_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 				rz_sys_perror ("ptrace POKEUSER");
 			}
 		}
-		return sizeof (R_DEBUG_REG_T);
+		return sizeof (RZ_DEBUG_REG_T);
 #else
 		return false;
 #endif
 	}
-	if (type == R_REG_TYPE_GPR) {
+	if (type == RZ_REG_TYPE_GPR) {
 #if __arm64__ || __aarch64__ || __s390x__
 		struct iovec io = {
 			.iov_base = (void*)buf,
-			.iov_len = sizeof (R_DEBUG_REG_T)
+			.iov_len = sizeof (RZ_DEBUG_REG_T)
 		};
 		int ret = rz_debug_ptrace (dbg, PTRACE_SETREGSET, pid, (void*)(size_t)NT_PRSTATUS, (rz_ptrace_data_t)(size_t)&io);
 #elif __POWERPC__ || __sparc__
@@ -1270,8 +1270,8 @@ int linux_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 		int ret = rz_debug_ptrace (dbg, PTRACE_SETREGS, pid, 0, (void*)buf);
 #endif
 #if DEAD_CODE
-		if (size > sizeof (R_DEBUG_REG_T)) {
-			size = sizeof (R_DEBUG_REG_T);
+		if (size > sizeof (RZ_DEBUG_REG_T)) {
+			size = sizeof (RZ_DEBUG_REG_T);
 		}
 #endif
 		if (ret == -1) {
@@ -1280,7 +1280,7 @@ int linux_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 		}
 		return true;
 	}
-	if (type == R_REG_TYPE_FPU) {
+	if (type == RZ_REG_TYPE_FPU) {
 #if __i386__ || __x86_64__
 		int ret = rz_debug_ptrace (dbg, PTRACE_SETFPREGS, pid, 0, (void*)buf);
 		return (ret != 0) ? false : true;
@@ -1339,10 +1339,10 @@ RzList *linux_desc_list (int pid) {
 		}
 		if (lstat(path, &st) != -1) {
 			if (st.st_mode & S_IRUSR) {
-				perm |= R_PERM_R;
+				perm |= RZ_PERM_R;
 			}
 			if (st.st_mode & S_IWUSR) {
-				perm |= R_PERM_W;
+				perm |= RZ_PERM_W;
 			}
 		}
 		//TODO: Offset

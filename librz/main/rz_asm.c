@@ -22,15 +22,15 @@ typedef struct {
 static void __load_plugins(RzAsmState *as);
 
 static void __as_set_archbits(RzAsmState *as) {
-	rz_asm_use (as->a, R_SYS_ARCH);
-	rz_anal_use (as->anal, R_SYS_ARCH);
-	int sysbits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
+	rz_asm_use (as->a, RZ_SYS_ARCH);
+	rz_anal_use (as->anal, RZ_SYS_ARCH);
+	int sysbits = (RZ_SYS_BITS & RZ_SYS_BITS_64)? 64: 32;
 	rz_asm_set_bits (as->a, sysbits);
 	rz_anal_set_bits (as->anal, sysbits);
 }
 
 static RzAsmState *__as_new(void) {
-	RzAsmState *as = R_NEW0 (RzAsmState);
+	RzAsmState *as = RZ_NEW0 (RzAsmState);
 	if (as) {
 		as->l = rz_lib_new (NULL, NULL);
 		as->a = rz_asm_new ();
@@ -56,17 +56,17 @@ static void __as_free(RzAsmState *as) {
 
 static char *stackop2str(int type) {
 	switch (type) {
-	case R_ANAL_STACK_NULL: return strdup ("null");
-	case R_ANAL_STACK_NOP: return strdup ("nop");
-	//case R_ANAL_STACK_INCSTACK: return strdup ("incstack");
-	case R_ANAL_STACK_GET: return strdup ("get");
-	case R_ANAL_STACK_SET: return strdup ("set");
+	case RZ_ANAL_STACK_NULL: return strdup ("null");
+	case RZ_ANAL_STACK_NOP: return strdup ("nop");
+	//case RZ_ANAL_STACK_INCSTACK: return strdup ("incstack");
+	case RZ_ANAL_STACK_GET: return strdup ("get");
+	case RZ_ANAL_STACK_SET: return strdup ("set");
 	}
 	return strdup ("unknown");
 }
 
 static int showanal(RzAsmState *as, RzAnalOp *op, ut64 offset, ut8 *buf, int len, PJ *pj) {
-	int ret = rz_anal_op (as->anal, op, offset, buf, len, R_ANAL_OP_MASK_ESIL);
+	int ret = rz_anal_op (as->anal, op, offset, buf, len, RZ_ANAL_OP_MASK_ESIL);
 	if (ret < 1) {
 		return ret;
 	}
@@ -137,7 +137,7 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 	}
 	for (ret = 0; ret < len;) {
 		aop.size = 0;
-		if (rz_anal_op (as->anal, &aop, offset, buf + ret, len - ret, R_ANAL_OP_MASK_BASIC) < 1) {
+		if (rz_anal_op (as->anal, &aop, offset, buf + ret, len - ret, RZ_ANAL_OP_MASK_BASIC) < 1) {
 			eprintf ("Error analyzing instruction at 0x%08"PFMT64x"\n", offset);
 			break;
 		}
@@ -307,7 +307,7 @@ static int rasm_show_help(int v) {
 			" RZ_ASM_NOPLUGINS  do not load shared plugins (speedup loading)\n"
 			" RZ_ASM_ARCH       same as rz_asm -a\n"
 			" RZ_ASM_BITS       same as rz_asm -b\n"
-			" R_DEBUG          if defined, show error messages and crash signal\n"
+			" RZ_DEBUG          if defined, show error messages and crash signal\n"
 			"");
 	}
 	if (v == 2) {
@@ -349,8 +349,8 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 		RzAnalOp aop = { 0 };
 		while (ret < len) {
 			aop.size = 0;
-			if (rz_anal_op (as->anal, &aop, addr, data + ret, len - ret, R_ANAL_OP_MASK_ESIL) > 0) {
-				printf ("%s\n", R_STRBUF_SAFEGET (&aop.esil));
+			if (rz_anal_op (as->anal, &aop, addr, data + ret, len - ret, RZ_ANAL_OP_MASK_ESIL) > 0) {
+				printf ("%s\n", RZ_STRBUF_SAFEGET (&aop.esil));
 			}
 			if (aop.size < 1) {
 				eprintf ("Invalid\n");
@@ -448,7 +448,7 @@ static int rasm_asm(RzAsmState *as, const char *buf, ut64 offset, ut64 len, int 
 				if (hexwords) {
 					size_t i = 0;
 					for (i = 0; i < acode->len; i += sizeof (ut32)) {
-						ut32 dword = rz_read_ble32 (acode->bytes + i, R_SYS_ENDIAN);
+						ut32 dword = rz_read_ble32 (acode->bytes + i, RZ_SYS_ENDIAN);
 						printf ("0x%08x ", dword);
 						if ((i/4) == 7) {
 							printf ("\n");
@@ -488,7 +488,7 @@ static int __lib_anal_cb(RzLibPlugin *pl, void *user, void *data) {
 static int print_assembly_output(RzAsmState *as, const char *buf, ut64 offset, ut64 len, int bits,
                                  int bin, bool use_spp, bool rad, bool hexwords, const char *arch) {
 	if (rad) {
-		printf ("e asm.arch=%s\n", arch? arch: R_SYS_ARCH);
+		printf ("e asm.arch=%s\n", arch? arch: RZ_SYS_ARCH);
 		printf ("e asm.bits=%d\n", bits);
 		if (offset) {
 			printf ("s 0x%"PFMT64x"\n", offset);
@@ -510,23 +510,23 @@ static void __load_plugins(RzAsmState *as) {
 		free (tmp);
 		return;
 	}
-	rz_lib_add_handler (as->l, R_LIB_TYPE_ASM, "(dis)assembly plugins", &__lib_asm_cb, NULL, as);
-	rz_lib_add_handler (as->l, R_LIB_TYPE_ANAL, "analysis/emulation plugins", &__lib_anal_cb, NULL, as);
+	rz_lib_add_handler (as->l, RZ_LIB_TYPE_ASM, "(dis)assembly plugins", &__lib_asm_cb, NULL, as);
+	rz_lib_add_handler (as->l, RZ_LIB_TYPE_ANAL, "analysis/emulation plugins", &__lib_anal_cb, NULL, as);
 
-	char *path = rz_sys_getenv (R_LIB_ENV);
+	char *path = rz_sys_getenv (RZ_LIB_ENV);
 	if (path && *path) {
 		rz_lib_opendir (as->l, path);
 	}
 
 	// load plugins from the home directory
-	char *homeplugindir = rz_str_home (R2_HOME_PLUGINS);
+	char *homeplugindir = rz_str_home (RZ_HOME_PLUGINS);
 	rz_lib_opendir (as->l, homeplugindir);
 	free (homeplugindir);
 
 	// load plugins from the system directory
-	char *plugindir = rz_str_rz_prefix (R2_PLUGINS);
-	char *extrasdir = rz_str_rz_prefix (R2_EXTRAS);
-	char *bindingsdir = rz_str_rz_prefix (R2_BINDINGS);
+	char *plugindir = rz_str_rz_prefix (RZ_PLUGINS);
+	char *extrasdir = rz_str_rz_prefix (RZ_EXTRAS);
+	char *bindingsdir = rz_str_rz_prefix (RZ_BINDINGS);
 	rz_lib_opendir (as->l, plugindir);
 	rz_lib_opendir (as->l, extrasdir);
 	rz_lib_opendir (as->l, bindingsdir);
@@ -563,12 +563,12 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 	RzAsmState *as = __as_new ();
 
 	// TODO set addrbytes
-	char *r2arch = rz_sys_getenv ("R2_ARCH");
+	char *r2arch = rz_sys_getenv ("RZ_ARCH");
 	if (r2arch) {
 		arch = r2arch;
 	}
 
-	char *r2bits = rz_sys_getenv ("R2_BITS");
+	char *r2bits = rz_sys_getenv ("RZ_BITS");
 	if (r2bits) {
 		bits = rz_num_math (NULL, r2bits);
 		free (r2bits);
@@ -667,7 +667,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			break;
 		case 'v':
 			if (as->quiet) {
-				printf ("%s\n", R2_VERSION);
+				printf ("%s\n", RZ_VERSION);
 			} else {
 				ret = rz_main_version_print ("rz_asm");
 			}
@@ -869,7 +869,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			}
 			if (rad) {
 				as->oneliner = true;
-				printf ("e asm.arch=%s\n", arch? arch: R_SYS_ARCH);
+				printf ("e asm.arch=%s\n", arch? arch: RZ_SYS_ARCH);
 				printf ("e asm.bits=%d\n", bits);
 				printf ("\"wa ");
 			}

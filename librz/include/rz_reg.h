@@ -1,5 +1,5 @@
-#ifndef R2_REG_H
-#define R2_REG_H
+#ifndef RZ_REG_H
+#define RZ_REG_H
 
 #include <rz_types.h>
 #include <rz_list.h>
@@ -10,23 +10,23 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER (rz_reg);
+RZ_LIB_VERSION_HEADER (rz_reg);
 
 /*
  * various CPUs have registers within various types/classes
  * this enum aims to cover them all.
  */
 typedef enum {
-	R_REG_TYPE_GPR,
-	R_REG_TYPE_DRX,
-	R_REG_TYPE_FPU,
-	R_REG_TYPE_MMX,
-	R_REG_TYPE_XMM,
-	R_REG_TYPE_YMM,
-	R_REG_TYPE_FLG,
-	R_REG_TYPE_SEG,
-	R_REG_TYPE_LAST,
-	R_REG_TYPE_ALL = -1, // TODO; rename to ANY
+	RZ_REG_TYPE_GPR,
+	RZ_REG_TYPE_DRX,
+	RZ_REG_TYPE_FPU,
+	RZ_REG_TYPE_MMX,
+	RZ_REG_TYPE_XMM,
+	RZ_REG_TYPE_YMM,
+	RZ_REG_TYPE_FLG,
+	RZ_REG_TYPE_SEG,
+	RZ_REG_TYPE_LAST,
+	RZ_REG_TYPE_ALL = -1, // TODO; rename to ANY
 } RzRegisterType;
 
 /*
@@ -34,57 +34,57 @@ typedef enum {
  * this enum aims to create an abstraction to ease cross-arch handling.
  */
 typedef enum {
-	R_REG_NAME_PC, // program counter
-	R_REG_NAME_SP, // stack pointer
-	R_REG_NAME_SR, // status register
-	R_REG_NAME_BP, // base pointer
-	R_REG_NAME_LR, // link register
+	RZ_REG_NAME_PC, // program counter
+	RZ_REG_NAME_SP, // stack pointer
+	RZ_REG_NAME_SR, // status register
+	RZ_REG_NAME_BP, // base pointer
+	RZ_REG_NAME_LR, // link register
 	/* args */
-	R_REG_NAME_A0, // arguments
-	R_REG_NAME_A1,
-	R_REG_NAME_A2,
-	R_REG_NAME_A3,
-	R_REG_NAME_A4,
-	R_REG_NAME_A5,
-	R_REG_NAME_A6,
-	R_REG_NAME_A7,
-	R_REG_NAME_A8,
-	R_REG_NAME_A9,
+	RZ_REG_NAME_A0, // arguments
+	RZ_REG_NAME_A1,
+	RZ_REG_NAME_A2,
+	RZ_REG_NAME_A3,
+	RZ_REG_NAME_A4,
+	RZ_REG_NAME_A5,
+	RZ_REG_NAME_A6,
+	RZ_REG_NAME_A7,
+	RZ_REG_NAME_A8,
+	RZ_REG_NAME_A9,
 	/* retval */
-	R_REG_NAME_R0, // return registers
-	R_REG_NAME_R1,
-	R_REG_NAME_R2,
-	R_REG_NAME_R3,
+	RZ_REG_NAME_R0, // return registers
+	RZ_REG_NAME_R1,
+	RZ_REG_NAME_R2,
+	RZ_REG_NAME_R3,
 	/* flags */
-	R_REG_NAME_ZF,
-	R_REG_NAME_SF,
-	R_REG_NAME_CF,
-	R_REG_NAME_OF,
+	RZ_REG_NAME_ZF,
+	RZ_REG_NAME_SF,
+	RZ_REG_NAME_CF,
+	RZ_REG_NAME_OF,
 	/* syscall number (orig_eax,rax,r0,x0) */
-	R_REG_NAME_SN,
-	R_REG_NAME_LAST,
+	RZ_REG_NAME_SN,
+	RZ_REG_NAME_LAST,
 } RzRegisterId;
 
 // TODO: use enum here?
-#define R_REG_COND_EQ 0
-#define R_REG_COND_NE 1
-#define R_REG_COND_CF 2
-#define R_REG_COND_CARRY 2
-#define R_REG_COND_NEG 3
-#define R_REG_COND_NEGATIVE 3
-#define R_REG_COND_OF 4
-#define R_REG_COND_OVERFLOW 4
+#define RZ_REG_COND_EQ 0
+#define RZ_REG_COND_NE 1
+#define RZ_REG_COND_CF 2
+#define RZ_REG_COND_CARRY 2
+#define RZ_REG_COND_NEG 3
+#define RZ_REG_COND_NEGATIVE 3
+#define RZ_REG_COND_OF 4
+#define RZ_REG_COND_OVERFLOW 4
 // unsigned
-#define R_REG_COND_HI 5
-#define R_REG_COND_HE 6
-#define R_REG_COND_LO 7
-#define R_REG_COND_LOE 8
+#define RZ_REG_COND_HI 5
+#define RZ_REG_COND_HE 6
+#define RZ_REG_COND_LO 7
+#define RZ_REG_COND_LOE 8
 // signed
-#define R_REG_COND_GE 9
-#define R_REG_COND_GT 10
-#define R_REG_COND_LT 11
-#define R_REG_COND_LE 12
-#define R_REG_COND_LAST 13
+#define RZ_REG_COND_GE 9
+#define RZ_REG_COND_GT 10
+#define RZ_REG_COND_LT 11
+#define RZ_REG_COND_LE 12
+#define RZ_REG_COND_LAST 13
 
 typedef struct rz_reg_item_t {
 	char *name;
@@ -110,15 +110,15 @@ typedef struct rz_reg_set_t {
 	RzList *regs;      /* RzRegItem */
 	HtPP *ht_regs;    /* name:RzRegItem */
 	RzListIter *cur;
-	int maskregstype; /* which type of regs have this reg set (logic mask with RzRegisterType  R_REG_TYPE_XXX) */
+	int maskregstype; /* which type of regs have this reg set (logic mask with RzRegisterType  RZ_REG_TYPE_XXX) */
 } RzRegSet;
 
 typedef struct rz_reg_t {
 	char *profile;
 	char *reg_profile_cmt;
 	char *reg_profile_str;
-	char *name[R_REG_NAME_LAST]; // aliases
-	RzRegSet regset[R_REG_TYPE_LAST];
+	char *name[RZ_REG_NAME_LAST]; // aliases
+	RzRegSet regset[RZ_REG_TYPE_LAST];
 	RzList *allregs;
 	RzList *roregs;
 	int iters;

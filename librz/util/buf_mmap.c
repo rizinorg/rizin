@@ -22,12 +22,12 @@ static inline struct buf_mmap_priv *get_priv_mmap(RBuffer *b) {
 
 static bool buf_mmap_init(RBuffer *b, const void *user) {
 	const struct buf_mmap_user *u = (const struct buf_mmap_user *)user;
-	struct buf_mmap_priv *priv = R_NEW0 (struct buf_mmap_priv);
+	struct buf_mmap_priv *priv = RZ_NEW0 (struct buf_mmap_priv);
 	if (!priv) {
 		return false;
 	}
 
-	priv->mmap = rz_file_mmap (u->filename, u->perm & R_PERM_W, 0);
+	priv->mmap = rz_file_mmap (u->filename, u->perm & RZ_PERM_W, 0);
 	if (!priv->mmap) {
 		free (priv);
 		return false;
@@ -42,7 +42,7 @@ static bool buf_mmap_init(RBuffer *b, const void *user) {
 static bool buf_mmap_fini(RBuffer *b) {
 	struct buf_mmap_priv *priv = get_priv_mmap (b);
 	rz_file_mmap_free (priv->mmap);
-	R_FREE (b->priv);
+	RZ_FREE (b->priv);
 	return true;
 }
 

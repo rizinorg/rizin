@@ -19,26 +19,26 @@ if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     echo "Installing with meson + ninja"
 
     OPTS=""
-    if [ "${R2_SYS_CAPSTONE}" != "" ] ; then
-        OPTS="${OPTS} -D use_sys_capstone=${R2_SYS_CAPSTONE}"
+    if [ "${RZ_SYS_CAPSTONE}" != "" ] ; then
+        OPTS="${OPTS} -D use_sys_capstone=${RZ_SYS_CAPSTONE}"
     fi
-    if [ "${R2_SYS_MAGIC}" != "" ] ; then
-        OPTS="${OPTS} -D use_sys_magic=${R2_SYS_MAGIC}"
+    if [ "${RZ_SYS_MAGIC}" != "" ] ; then
+        OPTS="${OPTS} -D use_sys_magic=${RZ_SYS_MAGIC}"
     fi
-    if [ "${R2_SYS_ZLIB}" != "" ] ; then
-        OPTS="${OPTS} -D use_sys_zlib=${R2_SYS_ZLIB}"
+    if [ "${RZ_SYS_ZLIB}" != "" ] ; then
+        OPTS="${OPTS} -D use_sys_zlib=${RZ_SYS_ZLIB}"
     fi
-    if [ "${R2_SYS_ZIP}" != "" ] ; then
-        OPTS="${OPTS} -D use_sys_zip=${R2_SYS_ZIP}"
+    if [ "${RZ_SYS_ZIP}" != "" ] ; then
+        OPTS="${OPTS} -D use_sys_zip=${RZ_SYS_ZIP}"
     fi
-    if [ "${R2_SYS_LZ4}" != "" ] ; then
-        OPTS="${OPTS} -D use_sys_lz4=${R2_SYS_LZ4}"
+    if [ "${RZ_SYS_LZ4}" != "" ] ; then
+        OPTS="${OPTS} -D use_sys_lz4=${RZ_SYS_LZ4}"
     fi
-    if [ "${R2_SYS_OPENSSL}" != "" ] ; then
-        OPTS="${OPTS} -D use_sys_openssl=${R2_SYS_OPENSSL}"
+    if [ "${RZ_SYS_OPENSSL}" != "" ] ; then
+        OPTS="${OPTS} -D use_sys_openssl=${RZ_SYS_OPENSSL}"
     fi
-    if [ "${R2_NEWSHELL}" != "" ] ; then
-        OPTS="${OPTS} -D use_treesitter=${R2_NEWSHELL}"
+    if [ "${RZ_NEWSHELL}" != "" ] ; then
+        OPTS="${OPTS} -D use_treesitter=${RZ_NEWSHELL}"
     fi
     if [ "${COVERAGE}" == "1" ] ; then
         OPTS="${OPTS} -Db_coverage=true"
@@ -80,8 +80,8 @@ elif [ "${INSTALL_SYSTEM}" == "static" ]; then
 	./fuzzit create job --type sanity --args "-fork=1 -close_fd_mask=3" --revision $TRAVIS_COMMIT --branch $TRAVIS_BRANCH $TARGET_ID ia_fuzz || exit 1
 else
     echo "Installing with acr + make"
-    if [ "${R2_PLUGINS_FILE}" != "" ] ; then
-	cp "plugins.${R2_PLUGINS_FILE}.cfg" plugins.cfg
+    if [ "${RZ_PLUGINS_FILE}" != "" ] ; then
+	cp "plugins.${RZ_PLUGINS_FILE}.cfg" plugins.cfg
     fi
     if [ "${ASAN}" == "1" ] ; then
         export CFLAGS="${CFLAGS} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer"
@@ -105,7 +105,7 @@ else
     fi
 fi
 
-if [ "${R2_TESTS_DISABLE}" != "1" ] ; then
+if [ "${RZ_TESTS_DISABLE}" != "1" ] ; then
     export NOREPORT=1
     cd test
     VERBOSE=1 make -k all || exit 1

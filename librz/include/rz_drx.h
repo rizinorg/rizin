@@ -1,5 +1,5 @@
-#ifndef R2_DRX_H
-#define R2_DRX_H
+#ifndef RZ_DRX_H
+#define RZ_DRX_H
 
 enum {
   DRX_API_LIST = 0,

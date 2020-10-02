@@ -3,7 +3,7 @@
 
 int _main(void) {
 	RzRegex rx;
-	int rc = rz_regex_comp (&rx, "^hi", R_REGEX_NOSUB);	
+	int rc = rz_regex_comp (&rx, "^hi", RZ_REGEX_NOSUB);	
 	if (rc) {
 		printf ("error\n");
 

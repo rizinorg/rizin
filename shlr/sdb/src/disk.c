@@ -91,7 +91,7 @@ SDB_API bool sdb_disk_create(Sdb* s) {
 		s->dir = strdup (s->name);
 	}
 	dir = s->dir ? s->dir : "./";
-	R_FREE (s->ndump);
+	RZ_FREE (s->ndump);
 	nlen = strlen (dir);
 	str = malloc (nlen + 5);
 	if (!str) {

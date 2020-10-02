@@ -245,7 +245,7 @@ static void free_extra_info(PDEBUG_HEAP_INFORMATION heap) {
 	HeapBlock hb;
 	if (GetFirstHeapBlock (heap, &hb)) {
 		do {
-			R_FREE (hb.extraInfo);
+			RZ_FREE (hb.extraInfo);
 		} while (GetNextHeapBlock (heap, &hb));
 	}
 }
@@ -350,11 +350,11 @@ static bool GetLFHKey(RzDebug *dbg, HANDLE h_proc, bool segment, WPARAM *lfhKey)
 
 static bool DecodeHeapEntry(RzDebug *dbg, PHEAP heap, PHEAP_ENTRY entry) {
 	rz_return_val_if_fail (heap && entry, false);
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (dbg->bits == RZ_SYS_BITS_64) {
 		entry = (PHEAP_ENTRY)((ut8 *)entry + dbg->bits);
 	}
 	if (heap->EncodeFlagMask && (*(UINT32 *)entry & heap->EncodeFlagMask)) {
-		if (dbg->bits == R_SYS_BITS_64) {
+		if (dbg->bits == RZ_SYS_BITS_64) {
 			heap = (PHEAP)((ut8 *)heap + dbg->bits);
 		}
 		*(WPARAM *)entry ^= *(WPARAM *)&heap->Encoding;
@@ -364,7 +364,7 @@ static bool DecodeHeapEntry(RzDebug *dbg, PHEAP heap, PHEAP_ENTRY entry) {
 
 static bool DecodeLFHEntry(RzDebug *dbg, PHEAP heap, PHEAP_ENTRY entry, PHEAP_USERDATA_HEADER userBlocks, WPARAM key, WPARAM addr) {
 	rz_return_val_if_fail (heap && entry, false);
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (dbg->bits == RZ_SYS_BITS_64) {
 		entry = (PHEAP_ENTRY)((ut8 *)entry + dbg->bits);
 	}
 
@@ -406,7 +406,7 @@ static RzList *GetListOfHeaps(RzDebug *dbg, HANDLE ph) {
 	PVOID heapAddress;
 	PVOID *processHeaps;
 	ULONG numberOfHeaps;
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (dbg->bits == RZ_SYS_BITS_64) {
 		processHeaps = *((PVOID *)(((ut8 *)&peb) + 0xF0));
 		numberOfHeaps = *((ULONG *)(((ut8 *)& peb) + 0xE8));
 	} else {
@@ -436,7 +436,7 @@ static PDEBUG_BUFFER InitHeapInfo(RzDebug *dbg, DWORD mask) {
 	if (!db) {
 		return NULL;
 	}
-	th_query_params *params = R_NEW0 (th_query_params);
+	th_query_params *params = RZ_NEW0 (th_query_params);
 	if (!params) {
 		RtlDestroyQueryDebugBuffer (db);
 		return NULL;
@@ -472,14 +472,14 @@ static PDEBUG_BUFFER InitHeapInfo(RzDebug *dbg, DWORD mask) {
 		if (!db) {
 			return NULL;
 		}
-		PHeapInformation heapInfo = R_NEW0 (HeapInformation);
+		PHeapInformation heapInfo = RZ_NEW0 (HeapInformation);
 		if (!heapInfo) {
 			RtlDestroyQueryDebugBuffer (db);
 			return NULL;
 		}
 		HANDLE h_proc = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dbg->pid);
 		if (!h_proc) {
-			R_LOG_ERROR ("OpenProcess failed\n");
+			RZ_LOG_ERROR ("OpenProcess failed\n");
 			free (heapInfo);
 			RtlDestroyQueryDebugBuffer (db);
 			return NULL;
@@ -557,7 +557,7 @@ static bool __lfh_segment_loop(HANDLE h_proc, PHeapBlockBasicInfo *blocks, SIZE_
 				(*blocks)[*count].address = next + off;
 				(*blocks)[*count].size = subsegment.BlockOffsets.BlockSize;
 				(*blocks)[*count].flags = 1 | SEGMENT_HEAP_BLOCK | LFH_BLOCK;
-				PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
+				PHeapBlockExtraInfo extra = RZ_NEW0 (HeapBlockExtraInfo);
 				if (!extra) {
 					return false;
 				}
@@ -633,7 +633,7 @@ static bool GetSegmentHeapBlocks(RzDebug *dbg, HANDLE h_proc, PVOID heapBase, PH
 			(*blocks)[*count].address = entry.VirtualAddess - entry.UnusedBytes; // This is a union
 			(*blocks)[*count].flags = 1 | SEGMENT_HEAP_BLOCK | LARGE_BLOCK;
 			(*blocks)[*count].size = ((entry.AllocatedPages >> 12) << 12);
-			PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
+			PHeapBlockExtraInfo extra = RZ_NEW0 (HeapBlockExtraInfo);
 			if (!extra) {
 				return false;
 			}
@@ -668,7 +668,7 @@ static bool GetSegmentHeapBlocks(RzDebug *dbg, HANDLE h_proc, PVOID heapBase, PH
 					(*blocks)[*count].address = currPageSegment + j * 0x1000;
 					(*blocks)[*count].size = (WPARAM)pageSegment.DescArray[j].UnitSize * 0x1000;
 					(*blocks)[*count].flags = SEGMENT_HEAP_BLOCK | BACKEND_BLOCK | 1;
-					PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
+					PHeapBlockExtraInfo extra = RZ_NEW0 (HeapBlockExtraInfo);
 					if (!extra) {
 						return false;
 					}
@@ -694,7 +694,7 @@ static bool GetSegmentHeapBlocks(RzDebug *dbg, HANDLE h_proc, PVOID heapBase, PH
 							(*blocks)[*count].address = from;
 							(*blocks)[*count].size = sz;
 							(*blocks)[*count].flags = VS_BLOCK | SEGMENT_HEAP_BLOCK | 1;
-							PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
+							PHeapBlockExtraInfo extra = RZ_NEW0 (HeapBlockExtraInfo);
 							if (!extra) {
 								return false;
 							}
@@ -719,7 +719,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RzDebug *dbg) {
 			x86 vs x64 vs WOW64	(use dbg->bits or new structs or just a big union with both versions)
 	*/
 #if defined (_M_X64)
-	if (dbg->bits == R_SYS_BITS_32) {
+	if (dbg->bits == RZ_SYS_BITS_32) {
 		return NULL; // Nope nope nope
 	}
 #endif
@@ -727,12 +727,12 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RzDebug *dbg) {
 	HANDLE h_proc = NULL;
 	PDEBUG_BUFFER db = InitHeapInfo (dbg, PDI_HEAPS);
 	if (!db || !db->HeapInformation) {
-		R_LOG_ERROR ("InitHeapInfo Failed\n");
+		RZ_LOG_ERROR ("InitHeapInfo Failed\n");
 		goto err;
 	}
 	h_proc = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 	if (!h_proc) {
-		R_LOG_ERROR ("OpenProcess failed\n");
+		RZ_LOG_ERROR ("OpenProcess failed\n");
 		goto err;
 	}
 
@@ -758,7 +758,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RzDebug *dbg) {
 		SIZE_T allocated = 128 * sizeof (HeapBlockBasicInfo);
 		PHeapBlockBasicInfo blocks = calloc (allocated, 1);
 		if (!blocks) {
-			R_LOG_ERROR ("Memory Allocation failed\n");
+			RZ_LOG_ERROR ("Memory Allocation failed\n");
 			goto err;
 		}
 
@@ -784,7 +784,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RzDebug *dbg) {
 			blocks[count].address = (WPARAM)entry;
 			blocks[count].flags = 1 | ((vAlloc.BusyBlock.Flags | NT_BLOCK | LARGE_BLOCK) & ~2ULL);
 			blocks[count].size = vAlloc.ReserveSize;
-			PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
+			PHeapBlockExtraInfo extra = RZ_NEW0 (HeapBlockExtraInfo);
 			if (!extra) {
 				goto err;
 			}
@@ -857,7 +857,7 @@ static PDEBUG_BUFFER GetHeapBlocks(DWORD pid, RzDebug *dbg) {
 							blocks[count].address = from;
 							blocks[count].flags = 1 | NT_BLOCK | LFH_BLOCK;
 							blocks[count].size = sz;
-							PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
+							PHeapBlockExtraInfo extra = RZ_NEW0 (HeapBlockExtraInfo);
 							if (!extra) {
 								goto err;
 							}
@@ -903,7 +903,7 @@ next_subsegment:
 				SIZE_T real_sz = heapEntry.Size * sz_entry;
 
 				GROW_BLOCKS ();
-				PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
+				PHeapBlockExtraInfo extra = RZ_NEW0 (HeapBlockExtraInfo);
 				if (!extra) {
 					goto err;
 				}
@@ -940,7 +940,7 @@ err:
 		for (i = 0; i < heapInfo->count; i++) {
 			PDEBUG_HEAP_INFORMATION heap = &heapInfo->heaps[i];
 			free_extra_info (heap);
-			R_FREE (heap->Blocks);
+			RZ_FREE (heap->Blocks);
 		}
 		RtlDestroyQueryDebugBuffer (db);
 	}
@@ -952,14 +952,14 @@ static PHeapBlock GetSingleSegmentBlock(RzDebug *dbg, HANDLE h_proc, PSEGMENT_HE
 	*	TODO:
 	*		- Backend (Is this needed?)
 	*/
-	PHeapBlock hb = R_NEW0 (HeapBlock);
+	PHeapBlock hb = RZ_NEW0 (HeapBlock);
 	if (!hb) {
-		R_LOG_ERROR ("GetSingleSegmentBlock: Allocation failed.\n");
+		RZ_LOG_ERROR ("GetSingleSegmentBlock: Allocation failed.\n");
 		return NULL;
 	}
-	PHeapBlockExtraInfo extra = R_NEW0 (HeapBlockExtraInfo);
+	PHeapBlockExtraInfo extra = RZ_NEW0 (HeapBlockExtraInfo);
 	if (!extra) {
-		R_LOG_ERROR ("GetSingleSegmentBlock: Allocation failed.\n");
+		RZ_LOG_ERROR ("GetSingleSegmentBlock: Allocation failed.\n");
 		goto err;
 	}
 	hb->extraInfo = extra;
@@ -1053,12 +1053,12 @@ err:
 }
 
 static PHeapBlock GetSingleBlock(RzDebug *dbg, ut64 offset) {
-	PHeapBlock hb = R_NEW0 (HeapBlock);
+	PHeapBlock hb = RZ_NEW0 (HeapBlock);
 	PDEBUG_BUFFER db = NULL;
 	PHeapBlockExtraInfo extra = NULL;
 
 	if (!hb) {
-		R_LOG_ERROR ("GetSingleBlock: Allocation failed.\n");
+		RZ_LOG_ERROR ("GetSingleBlock: Allocation failed.\n");
 		return NULL;
 	}
 	HANDLE h_proc = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dbg->pid);
@@ -1070,9 +1070,9 @@ static PHeapBlock GetSingleBlock(RzDebug *dbg, ut64 offset) {
 	if (!db) {
 		goto err;
 	}
-	extra = R_NEW0 (HeapBlockExtraInfo);
+	extra = RZ_NEW0 (HeapBlockExtraInfo);
 	if (!extra) {
-		R_LOG_ERROR ("GetSingleBlock: Allocation failed.\n");
+		RZ_LOG_ERROR ("GetSingleBlock: Allocation failed.\n");
 		goto err;
 	}
 	WPARAM NtLFHKey;
@@ -1083,7 +1083,7 @@ static PHeapBlock GetSingleBlock(RzDebug *dbg, ut64 offset) {
 		DEBUG_HEAP_INFORMATION heap = heapInfo->heaps[i];
 		if (is_segment_heap (h_proc, heap.Base)) {
 			free (hb);
-			R_FREE (extra);
+			RZ_FREE (extra);
 			hb = GetSingleSegmentBlock (dbg, h_proc, heap.Base, offset);
 			if (!hb) {
 				goto err;
@@ -1122,7 +1122,7 @@ static PHeapBlock GetSingleBlock(RzDebug *dbg, ut64 offset) {
 			if (entry.UnusedBytes & 0x80) {
 				tmpEntry = entry;
 				WPARAM userBlocksOffset;
-				if (dbg->bits == R_SYS_BITS_64) {
+				if (dbg->bits == RZ_SYS_BITS_64) {
 					*(((WPARAM *)&tmpEntry) + 1) ^= PtrToInt (h.BaseAddress) ^ (entryOffset >> 0x4) ^ (DWORD)NtLFHKey;
 					userBlocksOffset = entryOffset - (USHORT)((*(((WPARAM *)&tmpEntry) + 1)) >> 0xC);
 				} else {
@@ -1216,7 +1216,7 @@ static void w32_list_heaps(RzCore *core, const char format) {
 		}
 		if (!(db->InfoClassMask & PDI_HEAP_BLOCKS)) {
 			free_extra_info (&heap);
-			R_FREE (heap.Blocks);
+			RZ_FREE (heap.Blocks);
 		}
 	}
 	if (format == 'j') {
@@ -1304,7 +1304,7 @@ static void w32_list_heaps_blocks(RzCore *core, const char format) {
 		if (!(db->InfoClassMask & PDI_HEAP_BLOCKS)) {
 			// RtlDestroyQueryDebugBuffer wont free this for some reason
 			free_extra_info (&heapInfo->heaps[i]);
-			R_FREE (heapInfo->heaps[i].Blocks);
+			RZ_FREE (heapInfo->heaps[i].Blocks);
 		}
 	}
 	if (format == 'j') {

@@ -113,7 +113,7 @@ static char *pchar(int);
 #ifdef REDEBUG
 #define	SP(t, s, c)	print(m, t, s, c, stdout)
 #define	AT(t, p1, p2, s1, s2)	at(m, t, p1, p2, s1, s2)
-#define	NOTE(str)	{ if (m->eflags&R_REGEX_TRACE) (void)printf("=%s\n", (str)); }
+#define	NOTE(str)	{ if (m->eflags&RZ_REGEX_TRACE) (void)printf("=%s\n", (str)); }
 static int nope = 0;
 #else
 #define	SP(t, s, c)	/* nothing */
@@ -124,7 +124,7 @@ static int nope = 0;
 /*
  - matcher - the actual matching engine
  */
-static int			/* 0 success, R_REGEX_NOMATCH failure */
+static int			/* 0 success, RZ_REGEX_NOMATCH failure */
 matcher(struct re_guts *g, char *string, size_t nmatch, RzRegexMatch pmatch[],
     int eflags)
 {
@@ -139,9 +139,9 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RzRegexMatch pmatch[],
 	char *stop;
 
 	/* simplify the situation where possible */
-	if (g->cflags&R_REGEX_NOSUB)
+	if (g->cflags&RZ_REGEX_NOSUB)
 		nmatch = 0;
-	if (eflags&R_REGEX_STARTEND) {
+	if (eflags&RZ_REGEX_STARTEND) {
 		start = string + pmatch[0].rm_so;
 		stop = string + pmatch[0].rm_eo;
 	} else {
@@ -149,7 +149,7 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RzRegexMatch pmatch[],
 		stop = start + strlen(start);
 	}
 	if (stop < start)
-		return(R_REGEX_INVARG);
+		return(RZ_REGEX_INVARG);
 
 	/* prescreening; this does wonders for this rather slow code */
 	if (g->must != NULL) {
@@ -158,7 +158,7 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RzRegexMatch pmatch[],
 				memcmp(dp, g->must, (size_t)g->mlen) == 0)
 				break;
 		if (dp == stop)		/* we didn't find g->must */
-			return(R_REGEX_NOMATCH);
+			return(RZ_REGEX_NOMATCH);
 	}
 
 	/* match struct setup */
@@ -171,7 +171,7 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RzRegexMatch pmatch[],
 	m->endp = stop;
 
 	if (m->g->nstates * 4 < m->g->nstates)
-		return R_REGEX_NOMATCH;
+		return RZ_REGEX_NOMATCH;
 	STATESETUP(m, 4);
 	SETUP(m->st);
 	SETUP(m->fresh);
@@ -186,7 +186,7 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RzRegexMatch pmatch[],
 			free(m->pmatch);
 			free(m->lastpos);
 			STATETEARDOWN(m);
-			return(R_REGEX_NOMATCH);
+			return(RZ_REGEX_NOMATCH);
 		}
 		if (nmatch == 0 && !g->backrefs)
 			break;		/* no further info needed */
@@ -209,18 +209,18 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RzRegexMatch pmatch[],
 		/* oh my, he wants the subexpressions... */
 		if (!m->pmatch) {
 			if ((m->g->nsub + 1) * sizeof(RzRegexMatch) < m->g->nsub) {
-				return R_REGEX_ESPACE;
+				return RZ_REGEX_ESPACE;
 			}
 			m->pmatch = (RzRegexMatch *)malloc((m->g->nsub + 1) *
 							sizeof(RzRegexMatch));
 		}
 		if (!m->pmatch) {
 			STATETEARDOWN(m);
-			return(R_REGEX_ESPACE);
+			return(RZ_REGEX_ESPACE);
 		}
 		for (i = 1; i <= m->g->nsub; i++)
 			m->pmatch[i].rm_so = m->pmatch[i].rm_eo = -1;
-		if (!g->backrefs && !(m->eflags&R_REGEX_BACKR)) {
+		if (!g->backrefs && !(m->eflags&RZ_REGEX_BACKR)) {
 			NOTE("dissecting");
 			dp = dissect(m, m->coldp, endp, gf, gl);
 		} else {
@@ -228,7 +228,7 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RzRegexMatch pmatch[],
 				if ((g->nplus + 1) * sizeof(char *) < g->nplus) {
 					free (m->pmatch);
 					STATETEARDOWN(m);
-					return R_REGEX_ESPACE;
+					return RZ_REGEX_ESPACE;
 				}
 				m->lastpos = (char **)malloc((g->nplus+1) *
 							sizeof(char *));
@@ -236,7 +236,7 @@ matcher(struct re_guts *g, char *string, size_t nmatch, RzRegexMatch pmatch[],
 			if (g->nplus > 0 && !m->lastpos) {
 				free(m->pmatch);
 				STATETEARDOWN(m);
-				return(R_REGEX_ESPACE);
+				return(RZ_REGEX_ESPACE);
 			}
 			NOTE("backref dissect");
 			dp = backref(m, m->coldp, endp, gf, gl, (sopno)0, 0);
@@ -542,25 +542,25 @@ backref(struct match *m, char *start, char *stop, sopno startst, sopno stopst,
 				return(NULL);
 			break;
 		case OBOL:
-			if ( (sp == m->beginp && !(m->eflags&R_REGEX_NOTBOL)) ||
+			if ( (sp == m->beginp && !(m->eflags&RZ_REGEX_NOTBOL)) ||
 					(sp < m->endp && *(sp-1) == '\n' &&
-						(m->g->cflags&R_REGEX_NEWLINE)) )
+						(m->g->cflags&RZ_REGEX_NEWLINE)) )
 				{ /* yes */ }
 			else
 				return(NULL);
 			break;
 		case OEOL:
-			if ( (sp == m->endp && !(m->eflags&R_REGEX_NOTEOL)) ||
+			if ( (sp == m->endp && !(m->eflags&RZ_REGEX_NOTEOL)) ||
 					(sp < m->endp && *sp == '\n' &&
-						(m->g->cflags&R_REGEX_NEWLINE)) )
+						(m->g->cflags&RZ_REGEX_NEWLINE)) )
 				{ /* yes */ }
 			else
 				return(NULL);
 			break;
 		case OBOW:
-			if (( (sp == m->beginp && !(m->eflags&R_REGEX_NOTBOL)) ||
+			if (( (sp == m->beginp && !(m->eflags&RZ_REGEX_NOTBOL)) ||
 					(sp < m->endp && *(sp-1) == '\n' &&
-						(m->g->cflags&R_REGEX_NEWLINE)) ||
+						(m->g->cflags&RZ_REGEX_NEWLINE)) ||
 					(sp > m->beginp &&
 							!ISWORD((unsigned char)*(sp-1))) ) &&
 					(sp < m->endp && ISWORD((unsigned char)*sp)) )
@@ -569,9 +569,9 @@ backref(struct match *m, char *start, char *stop, sopno startst, sopno stopst,
 				return(NULL);
 			break;
 		case OEOW:
-			if (( (sp == m->endp && !(m->eflags&R_REGEX_NOTEOL)) ||
+			if (( (sp == m->endp && !(m->eflags&RZ_REGEX_NOTEOL)) ||
 					(sp < m->endp && *sp == '\n' &&
-						(m->g->cflags&R_REGEX_NEWLINE)) ||
+						(m->g->cflags&RZ_REGEX_NEWLINE)) ||
 					(sp < m->endp && !ISWORD((unsigned char)*sp)) ) &&
 					(sp > m->beginp && ISWORD((unsigned char)*(sp-1))) )
 				{ /* yes */ }
@@ -743,13 +743,13 @@ fast(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
 		/* is there an EOL and/or BOL between lastc and c? */
 		flagch = '\0';
 		i = 0;
-		if ( (lastc == '\n' && m->g->cflags&R_REGEX_NEWLINE) ||
-				(lastc == OUT && !(m->eflags&R_REGEX_NOTBOL)) ) {
+		if ( (lastc == '\n' && m->g->cflags&RZ_REGEX_NEWLINE) ||
+				(lastc == OUT && !(m->eflags&RZ_REGEX_NOTBOL)) ) {
 			flagch = BOL;
 			i = m->g->nbol;
 		}
-		if ( (c == '\n' && m->g->cflags&R_REGEX_NEWLINE) ||
-				(c == OUT && !(m->eflags&R_REGEX_NOTEOL)) ) {
+		if ( (c == '\n' && m->g->cflags&RZ_REGEX_NEWLINE) ||
+				(c == OUT && !(m->eflags&RZ_REGEX_NOTEOL)) ) {
 			flagch = (flagch == BOL) ? BOLEOL : EOL;
 			i += m->g->neol;
 		}
@@ -829,13 +829,13 @@ slow(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
 		/* is there an EOL and/or BOL between lastc and c? */
 		flagch = '\0';
 		i = 0;
-		if ( (lastc == '\n' && m->g->cflags&R_REGEX_NEWLINE) ||
-				(lastc == OUT && !(m->eflags&R_REGEX_NOTBOL)) ) {
+		if ( (lastc == '\n' && m->g->cflags&RZ_REGEX_NEWLINE) ||
+				(lastc == OUT && !(m->eflags&RZ_REGEX_NOTBOL)) ) {
 			flagch = BOL;
 			i = m->g->nbol;
 		}
-		if ( (c == '\n' && m->g->cflags&R_REGEX_NEWLINE) ||
-				(c == OUT && !(m->eflags&R_REGEX_NOTEOL)) ) {
+		if ( (c == '\n' && m->g->cflags&RZ_REGEX_NEWLINE) ||
+				(c == OUT && !(m->eflags&RZ_REGEX_NOTEOL)) ) {
 			flagch = (flagch == BOL) ? BOLEOL : EOL;
 			i += m->g->neol;
 		}
@@ -1016,7 +1016,7 @@ print(struct match *m, char *caption, states st, int ch, FILE *d)
 	int i;
 	int first = 1;
 
-	if (!(m->eflags&R_REGEX_TRACE))
+	if (!(m->eflags&RZ_REGEX_TRACE))
 		return;
 
 	(void)fprintf(d, "%s", caption);
@@ -1037,7 +1037,7 @@ static void
 at(struct match *m, char *title, char *start, char *stop, sopno startst,
     sopno stopst)
 {
-	if (!(m->eflags&R_REGEX_TRACE))
+	if (!(m->eflags&RZ_REGEX_TRACE))
 		return;
 
 	(void)printf("%s %s-", title, pchar(*start));

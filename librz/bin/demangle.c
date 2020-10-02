@@ -38,28 +38,28 @@ RZ_API char *rz_bin_demangle_plugin(RBin *bin, const char *name, const char *str
 RZ_API int rz_bin_demangle_type(const char *str) {
 	if (str && *str) {
 		if (!strcmp (str, "swift")) {
-			return R_BIN_NM_SWIFT;
+			return RZ_BIN_NM_SWIFT;
 		}
 		if (!strcmp (str, "java")) {
-			return R_BIN_NM_JAVA;
+			return RZ_BIN_NM_JAVA;
 		}
 		if (!strcmp (str, "objc")) {
-			return R_BIN_NM_OBJC;
+			return RZ_BIN_NM_OBJC;
 		}
 		if (!strcmp (str, "cxx") || !strcmp (str, "c++")) {
-			return R_BIN_NM_CXX;
+			return RZ_BIN_NM_CXX;
 		}
 		if (!strcmp (str, "dlang")) {
-			return R_BIN_NM_DLANG;
+			return RZ_BIN_NM_DLANG;
 		}
 		if (!strcmp (str, "msvc")) {
-			return R_BIN_NM_MSVC;
+			return RZ_BIN_NM_MSVC;
 		}
 		if (!strcmp (str, "rust")) {
-			return R_BIN_NM_RUST;
+			return RZ_BIN_NM_RUST;
 		}
 	}
-	return R_BIN_NM_NONE;
+	return RZ_BIN_NM_NONE;
 }
 
 RZ_API char *rz_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs) {
@@ -107,9 +107,9 @@ RZ_API char *rz_bin_demangle(RBinFile *bf, const char *def, const char *str, ut6
 	}
 	if (!strncmp (str, "__", 2)) {
 		if (str[2] == 'T') {
-			type = R_BIN_NM_SWIFT;
+			type = RZ_BIN_NM_SWIFT;
 		} else {
-			type = R_BIN_NM_CXX;
+			type = RZ_BIN_NM_CXX;
 		//	str++;
 		}
 	}
@@ -122,13 +122,13 @@ RZ_API char *rz_bin_demangle(RBinFile *bf, const char *def, const char *str, ut6
 	}
 	char *demangled = NULL;
 	switch (type) {
-	case R_BIN_NM_JAVA: demangled = rz_bin_demangle_java (str); break;
-	case R_BIN_NM_RUST: demangled = rz_bin_demangle_rust (bf, str, vaddr); break;
-	case R_BIN_NM_OBJC: demangled = rz_bin_demangle_objc (NULL, str); break;
-	case R_BIN_NM_SWIFT: demangled = rz_bin_demangle_swift (str, bin? bin->demanglercmd: false); break;
-	case R_BIN_NM_CXX: demangled = rz_bin_demangle_cxx (bf, str, vaddr); break;
-	case R_BIN_NM_MSVC: demangled = rz_bin_demangle_msvc (str); break;
-	case R_BIN_NM_DLANG: demangled = rz_bin_demangle_plugin (bin, "dlang", str); break;
+	case RZ_BIN_NM_JAVA: demangled = rz_bin_demangle_java (str); break;
+	case RZ_BIN_NM_RUST: demangled = rz_bin_demangle_rust (bf, str, vaddr); break;
+	case RZ_BIN_NM_OBJC: demangled = rz_bin_demangle_objc (NULL, str); break;
+	case RZ_BIN_NM_SWIFT: demangled = rz_bin_demangle_swift (str, bin? bin->demanglercmd: false); break;
+	case RZ_BIN_NM_CXX: demangled = rz_bin_demangle_cxx (bf, str, vaddr); break;
+	case RZ_BIN_NM_MSVC: demangled = rz_bin_demangle_msvc (str); break;
+	case RZ_BIN_NM_DLANG: demangled = rz_bin_demangle_plugin (bin, "dlang", str); break;
 	}
 	if (libs && demangled && lib) {
 		char *d = rz_str_newf ("%s_%s", lib, demangled);

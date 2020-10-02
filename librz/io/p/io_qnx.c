@@ -61,7 +61,7 @@ static int debug_qnx_write_at (const ut8 *buf, int sz, ut64 addr) {
 		return -1;
 	}
 	if (c_addr != UT64_MAX && addr >= c_addr && c_addr + sz < (c_addr + c_size)) {
-		R_FREE (c_buff);
+		RZ_FREE (c_buff);
 		c_addr = UT64_MAX;
 	}
 	for (x = 0; x < packets; x++) {
@@ -105,7 +105,7 @@ static RzIODesc *__open (RzIO *io, const char *file, int rw, int mode) {
 		eprintf ("sandbox: Cannot use network\n");
 		return NULL;
 	}
-	rioq = R_NEW0 (RzIOQnx);
+	rioq = RZ_NEW0 (RzIOQnx);
 	qnxr_init (&rioq->desc);
 	int i_port = atoi (port);
 	if (qnxr_connect (&rioq->desc, host, i_port) == 0) {
@@ -163,10 +163,10 @@ RzIOPlugin rz_io_plugin_qnx = {
 	.isdbg = true
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_qnx,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

@@ -10,14 +10,14 @@
 #define FILENAME "unit/rz_test_cmd_test"
 
 bool test_rz_test_database_load_cmd(void) {
-	R2RTestDatabase *db = rz_test_test_database_new ();
+	RzTestDatabase *db = rz_test_test_database_new ();
 	database_load (db, FILENAME, 1);
 
 	mu_assert_eq (rz_pvector_len (&db->tests), 4, "tests count");
 
-	R2RTest *test = rz_pvector_at (&db->tests, 0);
-	mu_assert_eq (test->type, R2R_TEST_TYPE_CMD, "test type");
-	R2RzCmdTest *cmd_test = test->cmd_test;
+	RzTest *test = rz_pvector_at (&db->tests, 0);
+	mu_assert_eq (test->type, RZ_TEST_TYPE_CMD, "test type");
+	RzCmdTest *cmd_test = test->cmd_test;
 	mu_assert_streq (cmd_test->name.value, "multiline0", "name");
 	mu_assert_streq (cmd_test->file.value, "-", "file");
 	mu_assert_streq (cmd_test->cmds.value, "rm -rf /\n", "cmds");
@@ -26,7 +26,7 @@ bool test_rz_test_database_load_cmd(void) {
 	mu_assert_eq (cmd_test->expect.line_end, 10, "line begin");
 
 	test = rz_pvector_at (&db->tests, 1);
-	mu_assert_eq (test->type, R2R_TEST_TYPE_CMD, "test type");
+	mu_assert_eq (test->type, RZ_TEST_TYPE_CMD, "test type");
 	cmd_test = test->cmd_test;
 	mu_assert_streq (cmd_test->name.value, "singleline0", "name");
 	mu_assert_streq (cmd_test->expect.value, "", "expect");
@@ -34,7 +34,7 @@ bool test_rz_test_database_load_cmd(void) {
 	mu_assert_eq (cmd_test->expect.line_end, 18, "line begin");
 
 	test = rz_pvector_at (&db->tests, 2);
-	mu_assert_eq (test->type, R2R_TEST_TYPE_CMD, "test type");
+	mu_assert_eq (test->type, RZ_TEST_TYPE_CMD, "test type");
 	cmd_test = test->cmd_test;
 	mu_assert_streq (cmd_test->name.value, "multiline1", "name");
 	mu_assert_streq (cmd_test->expect.value, "more\nexpected\noutput\n", "expect");
@@ -42,7 +42,7 @@ bool test_rz_test_database_load_cmd(void) {
 	mu_assert_eq (cmd_test->expect.line_end, 30, "line begin");
 
 	test = rz_pvector_at (&db->tests, 3);
-	mu_assert_eq (test->type, R2R_TEST_TYPE_CMD, "test type");
+	mu_assert_eq (test->type, RZ_TEST_TYPE_CMD, "test type");
 	cmd_test = test->cmd_test;
 	mu_assert_streq (cmd_test->name.value, "singleline1", "name");
 	mu_assert_streq (cmd_test->expect.value, "", "expect");
@@ -54,40 +54,40 @@ bool test_rz_test_database_load_cmd(void) {
 }
 
 bool test_rz_test_fix(void) {
-	R2RTestDatabase *db = rz_test_test_database_new ();
+	RzTestDatabase *db = rz_test_test_database_new ();
 	database_load (db, FILENAME, 1);
 
 	RPVector *results = rz_pvector_new ((RPVectorFree)rz_test_test_result_info_free);
 
-	R2RTestResultInfo *result0 = R_NEW0 (R2RTestResultInfo);
+	RzTestResultInfo *result0 = RZ_NEW0 (RzTestResultInfo);
 	rz_pvector_push (results, result0);
 	result0->test = rz_pvector_at (&db->tests, 0);
-	result0->result = R2R_TEST_RESULT_FAILED;
-	result0->proc_out = R_NEW0 (R2RProcessOutput);
+	result0->result = RZ_TEST_RESULT_FAILED;
+	result0->proc_out = RZ_NEW0 (RzTestProcessOutput);
 	result0->proc_out->out = strdup ("fixed\nresult\nfor\n0\n");
 	result0->proc_out->err = strdup ("");
 
-	R2RTestResultInfo *result1 = R_NEW0 (R2RTestResultInfo);
+	RzTestResultInfo *result1 = RZ_NEW0 (RzTestResultInfo);
 	rz_pvector_push (results, result1);
 	result1->test = rz_pvector_at (&db->tests, 1);
-	result1->result = R2R_TEST_RESULT_FAILED;
-	result1->proc_out = R_NEW0 (R2RProcessOutput);
+	result1->result = RZ_TEST_RESULT_FAILED;
+	result1->proc_out = RZ_NEW0 (RzTestProcessOutput);
 	result1->proc_out->out = strdup ("fixed\nresult\nfor\n1\n");
 	result1->proc_out->err = strdup ("");
 
-	R2RTestResultInfo *result2 = R_NEW0 (R2RTestResultInfo);
+	RzTestResultInfo *result2 = RZ_NEW0 (RzTestResultInfo);
 	rz_pvector_push (results, result2);
 	result2->test = rz_pvector_at (&db->tests, 2);
-	result2->result = R2R_TEST_RESULT_FAILED;
-	result2->proc_out = R_NEW0 (R2RProcessOutput);
+	result2->result = RZ_TEST_RESULT_FAILED;
+	result2->proc_out = RZ_NEW0 (RzTestProcessOutput);
 	result2->proc_out->out = strdup ("fixed\nresult\nfor\n2\n");
 	result2->proc_out->err = strdup ("");
 
-	R2RTestResultInfo *result3 = R_NEW0 (R2RTestResultInfo);
+	RzTestResultInfo *result3 = RZ_NEW0 (RzTestResultInfo);
 	rz_pvector_push (results, result3);
 	result3->test = rz_pvector_at (&db->tests, 3);
-	result3->result = R2R_TEST_RESULT_FAILED;
-	result3->proc_out = R_NEW0 (R2RProcessOutput);
+	result3->result = RZ_TEST_RESULT_FAILED;
+	result3->proc_out = RZ_NEW0 (RzTestProcessOutput);
 	result3->proc_out->out = strdup ("fixed\nresult\nfor\n3\n");
 	result3->proc_out->err = strdup ("");
 

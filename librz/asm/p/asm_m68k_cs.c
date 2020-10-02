@@ -77,7 +77,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 
 	ut8 mybuf[M68K_LONGEST_INSTRUCTION] = {0};
-	int mylen = R_MIN (M68K_LONGEST_INSTRUCTION, len);
+	int mylen = RZ_MIN (M68K_LONGEST_INSTRUCTION, len);
 	memcpy (mybuf, buf, mylen);
 
 	n = cs_disasm (cd, mybuf, mylen, a->pc, 1, &insn);
@@ -131,7 +131,7 @@ RzAsmPlugin rz_asm_plugin_m68k_cs = {
 	.license = "BSD",
 	.arch = "m68k",
 	.bits = 32,
-	.endian = R_SYS_ENDIAN_BIG,
+	.endian = RZ_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
 	.mnemonics = &mnemonics,
 };
@@ -141,11 +141,11 @@ static bool check_features(RzAsm *a, cs_insn *insn) {
 	return true;
 }
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_m68k_cs,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif
 
@@ -157,14 +157,14 @@ RzAsmPlugin rz_asm_plugin_m68k_cs = {
 	.author = "pancake",
 	.arch = "m68k",
 	.bits = 32,
-	.endian = R_SYS_ENDIAN_BIG,
+	.endian = RZ_SYS_ENDIAN_BIG,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_m68k_cs,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif
 

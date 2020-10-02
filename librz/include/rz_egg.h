@@ -1,5 +1,5 @@
-#ifndef R2_EGG_H
-#define R2_EGG_H
+#ifndef RZ_EGG_H
+#define RZ_EGG_H
 
 #include <rz_asm.h>
 #include <rz_lib.h>
@@ -10,14 +10,14 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(rz_egg);
+RZ_LIB_VERSION_HEADER(rz_egg);
 
-#define R_EGG_INCDIR_ENV "EGG_INCDIR"
-#define R_EGG_INCDIR_PATH "/lib/rizin/" R2_VERSION "/egg"
+#define RZ_EGG_INCDIR_ENV "EGG_INCDIR"
+#define RZ_EGG_INCDIR_PATH "/lib/rizin/" RZ_VERSION "/egg"
 
 // rename to RzEggShellcode
-#define R_EGG_PLUGIN_SHELLCODE 0
-#define R_EGG_PLUGIN_ENCODER 1
+#define RZ_EGG_PLUGIN_SHELLCODE 0
+#define RZ_EGG_PLUGIN_ENCODER 1
 
 typedef struct rz_egg_plugin_t {
 	const char *name;
@@ -113,40 +113,40 @@ typedef struct rz_egg_t {
 /* XXX: this may fail in different arches */
 #if 0
 r2 -q - <<EOF
-?e #define R_EGG_OS_LINUX \`?h linux\`
-?e #define R_EGG_OS_OSX \`?h osx\`
-?e #define R_EGG_OS_DARWIN \`?h darwin\`
-?e #define R_EGG_OS_MACOS \`?h macos\`
-?e #define R_EGG_OS_W32 \`?h w32\`
-?e #define R_EGG_OS_WINDOWS \`?h windows\`
-?e #define R_EGG_OS_BEOS \`?h beos\`
-?e #define R_EGG_OS_FREEBSD \`?h freebsd\`
+?e #define RZ_EGG_OS_LINUX \`?h linux\`
+?e #define RZ_EGG_OS_OSX \`?h osx\`
+?e #define RZ_EGG_OS_DARWIN \`?h darwin\`
+?e #define RZ_EGG_OS_MACOS \`?h macos\`
+?e #define RZ_EGG_OS_W32 \`?h w32\`
+?e #define RZ_EGG_OS_WINDOWS \`?h windows\`
+?e #define RZ_EGG_OS_BEOS \`?h beos\`
+?e #define RZ_EGG_OS_FREEBSD \`?h freebsd\`
 EOF
 #endif
 
-#define R_EGG_OS_LINUX 0x5ca62a43
-#define R_EGG_OS_OSX 0x0ad593a1
-#define R_EGG_OS_DARWIN 0xd86d1ae2
-#define R_EGG_OS_WATCHOS 0x14945c70
-#define R_EGG_OS_IOS 0x0ad58830
-#define R_EGG_OS_MACOS 0x5cb23c16
-#define R_EGG_OS_W32 0x0ad5fbb3
-#define R_EGG_OS_WINDOWS 0x05b7de9a
-#define R_EGG_OS_BEOS 0x506108be
-#define R_EGG_OS_FREEBSD 0x73a72944
+#define RZ_EGG_OS_LINUX 0x5ca62a43
+#define RZ_EGG_OS_OSX 0x0ad593a1
+#define RZ_EGG_OS_DARWIN 0xd86d1ae2
+#define RZ_EGG_OS_WATCHOS 0x14945c70
+#define RZ_EGG_OS_IOS 0x0ad58830
+#define RZ_EGG_OS_MACOS 0x5cb23c16
+#define RZ_EGG_OS_W32 0x0ad5fbb3
+#define RZ_EGG_OS_WINDOWS 0x05b7de9a
+#define RZ_EGG_OS_BEOS 0x506108be
+#define RZ_EGG_OS_FREEBSD 0x73a72944
 
 #if __APPLE__
-#define R_EGG_OS_DEFAULT R_EGG_OS_OSX
-#define R_EGG_OS_NAME "darwin"
-#define R_EGG_FORMAT_DEFAULT "mach0"
+#define RZ_EGG_OS_DEFAULT RZ_EGG_OS_OSX
+#define RZ_EGG_OS_NAME "darwin"
+#define RZ_EGG_FORMAT_DEFAULT "mach0"
 #elif __WINDOWS__
-#define R_EGG_OS_DEFAULT R_EGG_OS_W32
-#define R_EGG_OS_NAME "windows"
-#define R_EGG_FORMAT_DEFAULT "pe"
+#define RZ_EGG_OS_DEFAULT RZ_EGG_OS_W32
+#define RZ_EGG_OS_NAME "windows"
+#define RZ_EGG_FORMAT_DEFAULT "pe"
 #else
-#define R_EGG_OS_DEFAULT R_EGG_OS_LINUX
-#define R_EGG_OS_NAME "linux"
-#define R_EGG_FORMAT_DEFAULT "elf"
+#define RZ_EGG_OS_DEFAULT RZ_EGG_OS_LINUX
+#define RZ_EGG_OS_NAME "linux"
+#define RZ_EGG_FORMAT_DEFAULT "elf"
 #endif
 
 typedef struct rz_egg_emit_t {
@@ -191,7 +191,7 @@ RZ_API void rz_egg_reset (RzEgg *egg);
 RZ_API int rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, const char *os);
 RZ_API int rz_egg_include(RzEgg *egg, const char *file, int format);
 RZ_API void rz_egg_load(RzEgg *egg, const char *code, int format);
-RZ_API void rz_egg_syscall(RzEgg *egg, const char *arg, ...) R_PRINTF_CHECK(2, 3);
+RZ_API void rz_egg_syscall(RzEgg *egg, const char *arg, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API void rz_egg_alloc(RzEgg *egg, int n);
 RZ_API void rz_egg_label(RzEgg *egg, const char *name);
 RZ_API int rz_egg_raw(RzEgg *egg, const ut8 *b, int len);
@@ -201,7 +201,7 @@ RZ_API int rz_egg_shellcode(RzEgg *egg, const char *name);
 RZ_API void rz_egg_option_set (RzEgg *egg, const char *k, const char *v);
 RZ_API char *rz_egg_option_get (RzEgg *egg, const char *k);
 RZ_API void rz_egg_if(RzEgg *egg, const char *reg, char cmp, int v);
-RZ_API void rz_egg_printf(RzEgg *egg, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
+RZ_API void rz_egg_printf(RzEgg *egg, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API int rz_egg_compile(RzEgg *egg);
 RZ_API int rz_egg_padding (RzEgg *egg, const char *pad);
 RZ_API bool rz_egg_assemble(RzEgg *egg);

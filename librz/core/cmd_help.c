@@ -35,18 +35,18 @@ static const char *help_msg_percent[] = {
 // unidirectional ones.
 static const char *help_msg_env[] = {
 	"\nEnvironment:", "", "",
-	"R2_FILE", "", "file name",
-	"R2_OFFSET", "", "10base offset 64bit value",
-	"R2_BYTES", "", "TODO: variable with bytes in curblock",
-	"R2_XOFFSET", "", "same as above, but in 16 base",
-	"R2_BSIZE", "", "block size",
-	"R2_ENDIAN", "", "'big' or 'little'",
-	"R2_IOVA", "", "is io.va true? virtual addressing (1,0)",
-	"R2_DEBUG", "", "debug mode enabled? (1,0)",
-	"R2_BLOCK", "", "TODO: dump current block to tmp file",
-	"R2_SIZE", "","file size",
-	"R2_ARCH", "", "value of asm.arch",
-	"R2_BITS", "", "arch reg size (8, 16, 32, 64)",
+	"RZ_FILE", "", "file name",
+	"RZ_OFFSET", "", "10base offset 64bit value",
+	"RZ_BYTES", "", "TODO: variable with bytes in curblock",
+	"RZ_XOFFSET", "", "same as above, but in 16 base",
+	"RZ_BSIZE", "", "block size",
+	"RZ_ENDIAN", "", "'big' or 'little'",
+	"RZ_IOVA", "", "is io.va true? virtual addressing (1,0)",
+	"RZ_DEBUG", "", "debug mode enabled? (1,0)",
+	"RZ_BLOCK", "", "TODO: dump current block to tmp file",
+	"RZ_SIZE", "","file size",
+	"RZ_ARCH", "", "value of asm.arch",
+	"RZ_BITS", "", "arch reg size (8, 16, 32, 64)",
 	"RZ_BIN_LANG", "", "assume this lang to demangle",
 	"RZ_BIN_DEMANGLE", "", "demangle or not",
 	"RZ_BIN_PDBSERVER", "", "e pdb.server",
@@ -63,7 +63,7 @@ static const char *help_msg_exclamation[] = {
 	"!!!", "cmd [args|$type]", "adds the autocomplete value",
 	"!!!-", "cmd [args]", "removes the autocomplete value",
 	".!", "rz_bin -rpsei ${FILE}", "run each output line as a r2 cmd",
-	"!", "echo $R2_SIZE", "display file size",
+	"!", "echo $RZ_SIZE", "display file size",
 	"!-", "", "clear history in current session",
 	"!-*", "", "clear and save empty history log",
 	"!=!", "", "enable remotecmd mode",
@@ -400,19 +400,19 @@ static const char *avatar_cybcat[] = {
 };
 
 enum {
-	R_AVATAR_ORANGG,
-	R_AVATAR_CYBCAT,
-	R_AVATAR_CLIPPY,
+	RZ_AVATAR_ORANGG,
+	RZ_AVATAR_CYBCAT,
+	RZ_AVATAR_CLIPPY,
 };
 
 RZ_API void rz_core_clippy(RzCore *core, const char *msg) {
-	int type = R_AVATAR_CLIPPY;
+	int type = RZ_AVATAR_CLIPPY;
 	if (*msg == '+' || *msg == '3') {
 		char *space = strchr (msg, ' ');
 		if (!space) {
 			return;
 		}
-		type = (*msg == '+')? R_AVATAR_ORANGG: R_AVATAR_CYBCAT;
+		type = (*msg == '+')? RZ_AVATAR_ORANGG: RZ_AVATAR_CYBCAT;
 		msg = space + 1;
 	}
 	const char *f;
@@ -420,18 +420,18 @@ RZ_API void rz_core_clippy(RzCore *core, const char *msg) {
 	char *s = strdup (rz_str_pad (' ', msglen));
 	char *l;
 
-	if (type == R_AVATAR_ORANGG) {
+	if (type == RZ_AVATAR_ORANGG) {
 		l = strdup (rz_str_pad ('-', msglen));
 		f = avatar_orangg[0];
-	} else if (type == R_AVATAR_CYBCAT) {
+	} else if (type == RZ_AVATAR_CYBCAT) {
 		l = strdup (rz_str_pad ('-', msglen));
-		f = avatar_cybcat[rz_num_rand (R_ARRAY_SIZE (avatar_cybcat))];
+		f = avatar_cybcat[rz_num_rand (RZ_ARRAY_SIZE (avatar_cybcat))];
 	} else if (rz_config_get_i (core->config, "scr.utf8")) {
 		l = (char *)rz_str_repeat ("─", msglen);
-		f = avatar_clippy_utf8[rz_num_rand (R_ARRAY_SIZE (avatar_clippy_utf8))];
+		f = avatar_clippy_utf8[rz_num_rand (RZ_ARRAY_SIZE (avatar_clippy_utf8))];
 	} else {
 		l = strdup (rz_str_pad ('-', msglen));
-		f = avatar_clippy[rz_num_rand (R_ARRAY_SIZE (avatar_clippy))];
+		f = avatar_clippy[rz_num_rand (RZ_ARRAY_SIZE (avatar_clippy))];
 	}
 
 	rz_cons_printf (f, l, s, msg, s, l);
@@ -445,7 +445,7 @@ static int cmd_help(void *data, const char *input) {
 	RzIOMap *map;
 	const char *k;
 	RzListIter *iter;
-	char *p, out[128] = R_EMPTY;
+	char *p, out[128] = RZ_EMPTY;
 	ut64 n;
 	int i;
 	RzList *tmp;
@@ -848,53 +848,53 @@ static int cmd_help(void *data, const char *input) {
 			rz_core_cmd_help (core, help_msg_question_V);
 			break;
 		case 0: // "?V"
-#if R2_VERSION_COMMIT == 0
-			rz_cons_printf ("%s release\n", R2_VERSION);
+#if RZ_VERSION_COMMIT == 0
+			rz_cons_printf ("%s release\n", RZ_VERSION);
 #else
-			if (!strcmp (R2_VERSION, R2_GITTAP)) {
-				rz_cons_printf ("%s %d\n", R2_VERSION, R2_VERSION_COMMIT);
+			if (!strcmp (RZ_VERSION, RZ_GITTAP)) {
+				rz_cons_printf ("%s %d\n", RZ_VERSION, RZ_VERSION_COMMIT);
 			} else {
-				rz_cons_printf ("%s aka %s commit %d\n", R2_VERSION, R2_GITTAP, R2_VERSION_COMMIT);
+				rz_cons_printf ("%s aka %s commit %d\n", RZ_VERSION, RZ_GITTAP, RZ_VERSION_COMMIT);
 			}
 #endif
 			break;
 		case 'c': // "?Vc"
-			rz_cons_printf ("%d\n", vernum (R2_VERSION));
+			rz_cons_printf ("%d\n", vernum (RZ_VERSION));
 			break;
 		case 'j': // "?Vj"
 			{
 				PJ *pj = pj_new ();
 				pj_o (pj);
-				pj_ks (pj, "arch", R_SYS_ARCH);
-				pj_ks (pj, "os", R_SYS_OS);
-				pj_ki (pj, "bits", R_SYS_BITS);
-				pj_ki (pj, "commit", R2_VERSION_COMMIT);
-				pj_ks (pj, "tap", R2_GITTAP);
-				pj_ki (pj, "major", R2_VERSION_MAJOR);
-				pj_ki (pj, "minor", R2_VERSION_MINOR);
-				pj_ki (pj, "patch", R2_VERSION_PATCH);
-				pj_ki (pj, "number", R2_VERSION_NUMBER);
-				pj_ki (pj, "nversion", vernum (R2_VERSION));
-				pj_ks (pj, "version", R2_VERSION);
+				pj_ks (pj, "arch", RZ_SYS_ARCH);
+				pj_ks (pj, "os", RZ_SYS_OS);
+				pj_ki (pj, "bits", RZ_SYS_BITS);
+				pj_ki (pj, "commit", RZ_VERSION_COMMIT);
+				pj_ks (pj, "tap", RZ_GITTAP);
+				pj_ki (pj, "major", RZ_VERSION_MAJOR);
+				pj_ki (pj, "minor", RZ_VERSION_MINOR);
+				pj_ki (pj, "patch", RZ_VERSION_PATCH);
+				pj_ki (pj, "number", RZ_VERSION_NUMBER);
+				pj_ki (pj, "nversion", vernum (RZ_VERSION));
+				pj_ks (pj, "version", RZ_VERSION);
 				pj_end (pj);
 				rz_cons_printf ("%s\n", pj_string (pj));
 				pj_free (pj);
 			}
 			break;
 		case 'n': // "?Vn"
-			rz_cons_printf ("%d\n", R2_VERSION_NUMBER);
+			rz_cons_printf ("%d\n", RZ_VERSION_NUMBER);
 			break;
 		case 'q': // "?Vq"
-			rz_cons_println (R2_VERSION);
+			rz_cons_println (RZ_VERSION);
 			break;
 		case '0':
-			rz_cons_printf ("%d\n", R2_VERSION_MAJOR);
+			rz_cons_printf ("%d\n", RZ_VERSION_MAJOR);
 			break;
 		case '1':
-			rz_cons_printf ("%d\n", R2_VERSION_MINOR);
+			rz_cons_printf ("%d\n", RZ_VERSION_MINOR);
 			break;
 		case '2':
-			rz_cons_printf ("%d\n", R2_VERSION_PATCH);
+			rz_cons_printf ("%d\n", RZ_VERSION_PATCH);
 			break;
 		}
 		break;
@@ -1165,7 +1165,7 @@ static int cmd_help(void *data, const char *input) {
 				rz_line_set_prompt (foo);
 				rz_cons_fgets (foo, sizeof (foo), 0, NULL);
 				foo[sizeof (foo) - 1] = 0;
-				rz_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, foo, strlen (foo) + 1);
+				rz_core_yank_set_str (core, RZ_CORE_FOREIGN_ADDR, foo, strlen (foo) + 1);
 				core->num->value = rz_num_math (core->num, foo);
 				}
 				break;

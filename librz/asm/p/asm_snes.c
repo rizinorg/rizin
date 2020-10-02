@@ -54,15 +54,15 @@ RzAsmPlugin rz_asm_plugin_snes = {
 	.bits = 8|16,
 	.init = snes_asm_init,
 	.fini = snes_asm_fini,
-	.endian = R_SYS_ENDIAN_LITTLE,
+	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.license = "LGPL3",
 	.disassemble = &dis
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_snes,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

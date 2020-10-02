@@ -1,5 +1,5 @@
-#ifndef R2_LANG_H
-#define R2_LANG_H
+#ifndef RZ_LANG_H
+#define RZ_LANG_H
 
 #include <rz_types.h>
 #include <rz_list.h>
@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(rz_lang);
+RZ_LIB_VERSION_HEADER(rz_lang);
 
 typedef char* (*RzCoreCmdStrCallback)(void* core, const char *s);
 typedef int (*RzCoreCmdfCallback)(void* core, const char *s, ...);

@@ -1,5 +1,5 @@
-#ifndef R2_LIB_H
-#define R2_LIB_H
+#ifndef RZ_LIB_H
+#define RZ_LIB_H
 
 #include "rz_types.h"
 #include "rz_list.h"
@@ -12,23 +12,23 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER (rz_lib);
+RZ_LIB_VERSION_HEADER (rz_lib);
 
 // rename to '.' ??
-#define R_LIB_SEPARATOR "."
-#define R_LIB_SYMNAME "radare_plugin"
-#define R_LIB_SYMFUNC "radare_plugin_function"
+#define RZ_LIB_SEPARATOR "."
+#define RZ_LIB_SYMNAME "radare_plugin"
+#define RZ_LIB_SYMFUNC "radare_plugin_function"
 
-#define R_LIB_ENV "R2_LIBR_PLUGINS"
+#define RZ_LIB_ENV "RZ_LIBR_PLUGINS"
 
 /* TODO: This must depend on HOST_OS, and maybe move into rz_types */
 #if __WINDOWS__
 #include <windows.h>
-#define R_LIB_EXT "dll"
+#define RZ_LIB_EXT "dll"
 #elif __APPLE__
-#define R_LIB_EXT "dylib"
+#define RZ_LIB_EXT "dylib"
 #else
-#define R_LIB_EXT "so"
+#define RZ_LIB_EXT "so"
 #endif
 
 /* store list of loaded plugins */
@@ -66,22 +66,22 @@ typedef RzLibStruct* (*RzLibStructFunc) (void);
 
 // order matters because of librz/util/lib.c
 enum {
-	R_LIB_TYPE_IO,      /* io layer */
-	R_LIB_TYPE_DBG,     /* debugger */
-	R_LIB_TYPE_LANG,    /* language */
-	R_LIB_TYPE_ASM,     /* assembler */
-	R_LIB_TYPE_ANAL,    /* analysis */
-	R_LIB_TYPE_PARSE,   /* parsers */
-	R_LIB_TYPE_BIN,     /* bin headers */
-	R_LIB_TYPE_BIN_XTR, /* bin extractors */
-	R_LIB_TYPE_BIN_LDR, /* bin loaders */
-	R_LIB_TYPE_BP,      /* breakpoint */
-	R_LIB_TYPE_SYSCALL, /* syscall */
-	R_LIB_TYPE_FASTCALL,/* fastcall */
-	R_LIB_TYPE_CRYPTO,  /* cryptography */
-	R_LIB_TYPE_CORE,    /* RzCore commands */
-	R_LIB_TYPE_EGG,     /* rz_egg plugin */
-	R_LIB_TYPE_LAST
+	RZ_LIB_TYPE_IO,      /* io layer */
+	RZ_LIB_TYPE_DBG,     /* debugger */
+	RZ_LIB_TYPE_LANG,    /* language */
+	RZ_LIB_TYPE_ASM,     /* assembler */
+	RZ_LIB_TYPE_ANAL,    /* analysis */
+	RZ_LIB_TYPE_PARSE,   /* parsers */
+	RZ_LIB_TYPE_BIN,     /* bin headers */
+	RZ_LIB_TYPE_BIN_XTR, /* bin extractors */
+	RZ_LIB_TYPE_BIN_LDR, /* bin loaders */
+	RZ_LIB_TYPE_BP,      /* breakpoint */
+	RZ_LIB_TYPE_SYSCALL, /* syscall */
+	RZ_LIB_TYPE_FASTCALL,/* fastcall */
+	RZ_LIB_TYPE_CRYPTO,  /* cryptography */
+	RZ_LIB_TYPE_CORE,    /* RzCore commands */
+	RZ_LIB_TYPE_EGG,     /* rz_egg plugin */
+	RZ_LIB_TYPE_LAST
 };
 
 typedef struct rz_lib_t {

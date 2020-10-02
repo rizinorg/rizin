@@ -1,5 +1,5 @@
-#ifndef R_TREE_H
-#define R_TREE_H
+#ifndef RZ_TREE_H
+#define RZ_TREE_H
 #include <rz_list.h>
 #include <rz_util/rz_queue.h>
 
@@ -33,4 +33,4 @@ RZ_API void rz_tree_reset(RTree *t);
 RZ_API void rz_tree_free(RTree *t);
 RZ_API void rz_tree_dfs(RTree *t, RTreeVisitor *vis);
 RZ_API void rz_tree_bfs(RTree *t, RTreeVisitor *vis);
-#endif //  R_TREE_H
+#endif //  RZ_TREE_H

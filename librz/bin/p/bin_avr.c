@@ -79,7 +79,7 @@ static void destroy(RBinFile *bf) {
 
 static RBinInfo* info(RBinFile *bf) {
 	rz_return_val_if_fail (bf, NULL);
-	RBinInfo *bi = R_NEW0 (RBinInfo);
+	RBinInfo *bi = RZ_NEW0 (RBinInfo);
 	if (bi) {
 		bi->file = strdup (bf->file);
 		bi->type = strdup ("ROM");
@@ -103,7 +103,7 @@ static RzList* entries(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	if ((ptr = R_NEW0 (RBinAddr))) {
+	if ((ptr = RZ_NEW0 (RBinAddr))) {
 		ut64 addr = tmp_entry;
 		ptr->vaddr = ptr->paddr = addr;
 		rz_list_append (ret, ptr);
@@ -112,7 +112,7 @@ static RzList* entries(RBinFile *bf) {
 }
 
 static void addsym(RzList *ret, const char *name, ut64 addr) {
-	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
+	RBinSymbol *ptr = RZ_NEW0 (RBinSymbol);
 	if (ptr) {
 		ptr->name = strdup (name? name: "");
 		ptr->paddr = ptr->vaddr = addr;
@@ -165,10 +165,10 @@ RBinPlugin rz_bin_plugin_avr = {
 	.strings = &strings,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_avr,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

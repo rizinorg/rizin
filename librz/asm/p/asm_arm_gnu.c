@@ -105,7 +105,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		return -1;
 	}
 	memset (bytes, 0, sizeof (bytes));
-	memcpy (bytes, buf, R_MIN (len, 4));
+	memcpy (bytes, buf, RZ_MIN (len, 4));
 	if (a->bits < 64 && len < (a->bits / 8)) {
 		return -1;
 	}
@@ -211,16 +211,16 @@ RzAsmPlugin rz_asm_plugin_arm_gnu = {
 	.arch = "arm",
 	.cpus = "v2,v2a,v3M,v4,v5,v5t,v5te,v5j,XScale,ep9312,iWMMXt,iWMMXt2",
 	.bits = 16 | 32 | 64,
-	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
+	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.desc = "Acorn RISC Machine CPU",
 	.disassemble = &disassemble,
 	.license = "GPL3"
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_arm_gnu,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

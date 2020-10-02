@@ -729,7 +729,7 @@ static int gprobe_read(struct gport *port, ut32 addr, ut8 *buf, ut32 count) {
 		return -1;
 	}
 
-	count = R_MIN (port->max_rx_size, count);
+	count = RZ_MIN (port->max_rx_size, count);
 
 	rz_write_be32 (addr_be, addr);
 	rz_write_be32 (count_be, count);
@@ -774,7 +774,7 @@ static int gprobe_write (struct gport *port, ut32 addr, const ut8 *buf, ut32 cou
 		return -1;
 	}
 
-	count = R_MIN (port->max_tx_size, count);
+	count = RZ_MIN (port->max_tx_size, count);
 
 	rz_write_be32 (addr_be, addr);
 	rz_write_be32 (count_be, count);
@@ -1086,7 +1086,7 @@ static int __close (RzIODesc *fd) {
 	gprobe = (RzIOGprobe *)fd->data;
 
 	sp_close (&gprobe->gport);
-	R_FREE (fd->data);
+	RZ_FREE (fd->data);
 
 	return 0;
 }
@@ -1120,7 +1120,7 @@ static bool __plugin_open (RzIO *io, const char *pathname, bool many) {
 
 static RzIODesc *__open (RzIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
-		RzIOGprobe *gprobe = R_NEW0 (RzIOGprobe);
+		RzIOGprobe *gprobe = RZ_NEW0 (RzIOGprobe);
 
 		gprobe->offset = 0LL;
 		gprobe->gport.name = pathname + strlen ("gprobe://");
@@ -1134,11 +1134,11 @@ static RzIODesc *__open (RzIO *io, const char *pathname, int rw, int mode) {
 			gprobe->gport.max_rx_size = 121;
 
 			if (i2c_open (&gprobe->gport)) {
-				R_FREE (gprobe);
+				RZ_FREE (gprobe);
 				return NULL;
 			}
 #else
-			R_FREE (gprobe);
+			RZ_FREE (gprobe);
 			return NULL;
 #endif
 		} else {
@@ -1149,7 +1149,7 @@ static RzIODesc *__open (RzIO *io, const char *pathname, int rw, int mode) {
 			gprobe->gport.max_rx_size = 252;
 
 			if (sp_open (&gprobe->gport)) {
-				R_FREE (gprobe);
+				RZ_FREE (gprobe);
 				return NULL;
 			}
 		}
@@ -1241,9 +1241,9 @@ RzIOPlugin rz_io_plugin_gprobe = {
 	.system = __system,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_gprobe,
-	.version = R2_VERSION};
+	.version = RZ_VERSION};
 #endif

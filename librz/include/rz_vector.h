@@ -1,5 +1,5 @@
-#ifndef R2_VECTOR_H
-#define R2_VECTOR_H
+#ifndef RZ_VECTOR_H
+#define RZ_VECTOR_H
 
 #include <rz_types.h>
 #include <rz_util/rz_assert.h>

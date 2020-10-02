@@ -74,7 +74,7 @@ static RzList *__xrefs(RzCore *core, ut64 addr) {
 		if (ref->type != 'C') {
 			continue;
 		}
-		RzCoreVisualViewGraphItem *item = R_NEW0 (RzCoreVisualViewGraphItem);
+		RzCoreVisualViewGraphItem *item = RZ_NEW0 (RzCoreVisualViewGraphItem);
 		RzFlagItem *f = rz_flag_get_at (core->flags, ref->addr, 0);
 		item->addr = ref->addr;
 		item->name = f? f->name: NULL;
@@ -101,7 +101,7 @@ static RzList *__refs(RzCore *core, ut64 addr) {
 		if (ref->type != 'C') {
 			continue;
 		}
-		RzCoreVisualViewGraphItem *item = R_NEW0 (RzCoreVisualViewGraphItem);
+		RzCoreVisualViewGraphItem *item = RZ_NEW0 (RzCoreVisualViewGraphItem);
 		RzFlagItem *f = rz_flag_get_at (core->flags, ref->addr, 0);
 		item->addr = ref->addr;
 		item->name = f? f->name: NULL;
@@ -120,7 +120,7 @@ static RzList *__fcns(RzCore *core) {
 	RzListIter *iter;
 	RzAnalFunction *fcn;
 	rz_list_foreach (core->anal->fcns, iter, fcn) {
-		RzCoreVisualViewGraphItem *item = R_NEW0 (RzCoreVisualViewGraphItem);
+		RzCoreVisualViewGraphItem *item = RZ_NEW0 (RzCoreVisualViewGraphItem);
 		item->addr = fcn->addr;
 		item->name = fcn->name;
 		item->fcn = fcn;

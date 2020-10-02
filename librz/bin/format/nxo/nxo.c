@@ -50,21 +50,21 @@ static void walkSymbols (RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab
 		if (!symName) {
 			break;
 		}
-		sym = R_NEW0 (RBinSymbol);
+		sym = RZ_NEW0 (RBinSymbol);
 		if (!sym) {
 			free (symName);
 			break;
 		}
-		sym->type = R_BIN_TYPE_FUNC_STR;
+		sym->type = RZ_BIN_TYPE_FUNC_STR;
 		sym->bind = "NONE";
 		sym->size = size;
 
 		if (addr == 0) {
 			import ++;
 			ut64 pltSym = rz_buf_read_le64_at (buf, relplt + (import * 24));
-			imp = R_NEW0 (RBinImport);
+			imp = RZ_NEW0 (RBinImport);
 			if (!imp) {
-				R_FREE (sym);
+				RZ_FREE (sym);
 				free (symName);
 				break;
 			}
@@ -93,7 +93,7 @@ static void walkSymbols (RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab
 		} else {
 			sym->name = symName;
 			if (!sym->name) {
-				R_FREE (sym);
+				RZ_FREE (sym);
 				break;
 			}
 			sym->paddr = addr;
@@ -106,8 +106,8 @@ static void walkSymbols (RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab
     return;
 
 out_walk_symbol:
-	R_FREE (sym);
-	R_FREE (imp);
+	RZ_FREE (sym);
+	RZ_FREE (imp);
 	return;
 }
 

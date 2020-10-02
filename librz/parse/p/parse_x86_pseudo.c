@@ -278,9 +278,9 @@ static int parse(RzParse *p, const char *data, char *str) {
 		replace (nw, wa, str);
 	} else if (strstr (w0, "ret") && p->retleave_asm) {
 		rz_str_ncpy (str, p->retleave_asm, sz);
-		R_FREE (p->retleave_asm);
+		RZ_FREE (p->retleave_asm);
 	} else if (p->retleave_asm) {
-		R_FREE (p->retleave_asm);
+		RZ_FREE (p->retleave_asm);
 		replace (nw, wa, str);
 	} else {
 		replace (nw, wa, str);
@@ -441,7 +441,7 @@ static bool subvar(RzParse *p, RzAnalFunction *f, ut64 addr, int oplen, char *da
 			reg = p->get_reg_at (f, sparg->delta, addr);
 		}
 		if (!reg) {
-			reg = anal->reg->name[R_REG_NAME_SP];
+			reg = anal->reg->name[RZ_REG_NAME_SP];
 		}
 		mk_reg_str (reg, delta, sign == '+', att, ireg, oldstr, sizeof (oldstr));
 
@@ -488,7 +488,7 @@ static bool subvar(RzParse *p, RzAnalFunction *f, ut64 addr, int oplen, char *da
 			reg = p->get_reg_at (f, bparg->delta, addr);
 		}
 		if (!reg) {
-			reg = anal->reg->name[R_REG_NAME_BP];
+			reg = anal->reg->name[RZ_REG_NAME_BP];
 		}
 		mk_reg_str (reg, delta, sign == '+', att, ireg, oldstr, sizeof (oldstr));
 		if (ucase) {
@@ -522,8 +522,8 @@ static bool subvar(RzParse *p, RzAnalFunction *f, ut64 addr, int oplen, char *da
 	}
 
 	char bp[32];
-	if (anal->reg->name[R_REG_NAME_BP]) {
-		strncpy (bp, anal->reg->name[R_REG_NAME_BP], sizeof (bp) - 1);
+	if (anal->reg->name[RZ_REG_NAME_BP]) {
+		strncpy (bp, anal->reg->name[RZ_REG_NAME_BP], sizeof (bp) - 1);
 		if (isupper ((ut8)*str)) {
 			rz_str_case (bp, true);
 		}
@@ -553,10 +553,10 @@ RzParsePlugin rz_parse_plugin_x86_pseudo = {
 	.subvar = &subvar,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_PARSE,
+	.type = RZ_LIB_TYPE_PARSE,
 	.data = &rz_parse_plugin_x86_pseudo,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

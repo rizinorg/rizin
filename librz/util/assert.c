@@ -2,7 +2,7 @@
 
 #include <rz_util.h>
 
-#ifdef R2_ASSERT_STDOUT
+#ifdef RZ_ASSERT_STDOUT
 static void stdout_log(const char *output, const char *funcname, const char *filename,
 	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) {
 	printf ("%s", output);
@@ -10,12 +10,12 @@ static void stdout_log(const char *output, const char *funcname, const char *fil
 
 static void print_message(RLogLevel level, const char *fmt, va_list args) {
 	rz_log_add_callback (stdout_log);
-	R_VLOG (level, NULL, fmt, args);
+	RZ_VLOG (level, NULL, fmt, args);
 	rz_log_del_callback (stdout_log);
 }
 #else
 static void print_message(RLogLevel level, const char *fmt, va_list args) {
-	R_VLOG (level, NULL, fmt, args);
+	RZ_VLOG (level, NULL, fmt, args);
 }
 #endif
 /*
@@ -27,7 +27,7 @@ RZ_API void rz_assert_log(RLogLevel level, const char *fmt, ...) {
 	va_start (args, fmt);
 	print_message (level, fmt, args);
 	va_end (args);
-	char *env = rz_sys_getenv ("R2_DEBUG_ASSERT");
+	char *env = rz_sys_getenv ("RZ_DEBUG_ASSERT");
 	if (env) {
 		rz_sys_backtrace ();
 		if (*env && atoi (env)) {

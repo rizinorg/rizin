@@ -16,10 +16,10 @@ struct rz_bp_plugin_t rz_bp_plugin_x86 = {
 	.bps = rz_bp_plugin_x86_bps,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BP,
+	.type = RZ_LIB_TYPE_BP,
 	.data = &rz_bp_plugin_x86,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

@@ -165,7 +165,7 @@ def main():
             continue
 
         debug('formatted_code: ' + formatted_code[i])
-        if formatted_code[i].startswith('R_API ') or formatted_code[i].startswith('static ') or formatted_code[i].startswith('R_IPI '):
+        if formatted_code[i].startswith('RZ_API ') or formatted_code[i].startswith('static ') or formatted_code[i].startswith('RZ_IPI '):
             formatted_code[i] = formatted_code[i].replace(' (', '(')
 
         formatted_code[i] = formatted_code[i].replace('Elf_ (', 'Elf_(')

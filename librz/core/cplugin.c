@@ -9,7 +9,7 @@
 #include <stdio.h>
 
 static RzCorePlugin *cmd_static_plugins[] = {
-	R_CORE_STATIC_PLUGINS
+	RZ_CORE_STATIC_PLUGINS
 };
 
 RZ_API int rz_core_plugin_fini(RzCmd *cmd) {

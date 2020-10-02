@@ -1,5 +1,5 @@
-#ifndef R_GRAPH_H
-#define R_GRAPH_H
+#ifndef RZ_GRAPH_H
+#define RZ_GRAPH_H
 
 #include <rz_list.h>
 
@@ -80,4 +80,4 @@ RZ_API RGraphNodeInfo *rz_graph_create_node_info(char *title, char *body, ut64 o
 }
 #endif
 
-#endif //  R_GRAPH_H
+#endif //  RZ_GRAPH_H

@@ -49,8 +49,8 @@ static int __close(RzIODesc *fd) {
 		return -1;
 	}
 	riom = fd->data;
-	R_FREE (riom->buf);
-	R_FREE (fd->data);
+	RZ_FREE (riom->buf);
+	RZ_FREE (fd->data);
 	return 0;
 }
 
@@ -103,10 +103,10 @@ static ut8 *tcpme (const char *pathname, int *code, int *len) {
 		if (port) {
 			*port++ = 0;
 			RzSocket *s = rz_socket_new (false);
-			if (rz_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, 0)) {
+			if (rz_socket_connect (s, host, port, RZ_SOCKET_PROTO_TCP, 0)) {
 				ut8 *res = rz_socket_slurp (s, len);
 				if (*len < 1) {
-					R_FREE (res);
+					RZ_FREE (res);
 				} else {
 					*code = 200;
 				}
@@ -129,7 +129,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
 		out = tcpme (pathname, &code, &rlen);
 		if (out && rlen > 0) {
-			RzIOMalloc *mal = R_NEW0 (RzIOMalloc);
+			RzIOMalloc *mal = RZ_NEW0 (RzIOMalloc);
 			if (!mal) {
 				free (out);
 				return NULL;
@@ -170,10 +170,10 @@ RzIOPlugin rz_io_plugin_tcp = {
 	.write = __write,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_tcp,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

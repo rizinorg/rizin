@@ -37,7 +37,7 @@ static int lang_vala_file(RzLang *lang, const char *file, bool silent) {
 		libname = strdup (file);
 		strcpy (srcdir, ".");
 	}
-	rz_sys_setenv ("PKG_CONFIG_PATH", R2_LIBDIR"/pkgconfig");
+	rz_sys_setenv ("PKG_CONFIG_PATH", RZ_LIBDIR"/pkgconfig");
 	vapidir = rz_sys_getenv ("VAPIDIR");
 	char *tail = silent?  " > /dev/null 2>&1": "";
 	char *src = rz_file_slurp (name, NULL);
@@ -85,14 +85,14 @@ static int lang_vala_file(RzLang *lang, const char *file, bool silent) {
 		*p = 0;
 	}
 	// TODO: use CC environ if possible
-	len = snprintf (buf, sizeof (buf), "gcc -fPIC -shared %s.c -o lib%s." R_LIB_EXT
+	len = snprintf (buf, sizeof (buf), "gcc -fPIC -shared %s.c -o lib%s." RZ_LIB_EXT
 		" $(pkg-config --cflags --libs rz_core gobject-2.0 %s)", name, libname, libs);
 	if (len >= sizeof (buf) || rz_sandbox_system (buf, 1) != 0) {
 		free (libname);
 		return false;
 	}
 
-	len = snprintf (buf, sizeof (buf), "./lib%s." R_LIB_EXT, libname);
+	len = snprintf (buf, sizeof (buf), "./lib%s." RZ_LIB_EXT, libname);
 	free (libname);
 	if (len >= sizeof (buf)) {
 		return false;

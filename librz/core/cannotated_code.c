@@ -24,56 +24,56 @@ RZ_API void rz_core_annotated_code_print_json(RAnnotatedCode *code) {
 		pj_kn (pj, "start", (ut64)annotation->start);
 		pj_kn (pj, "end", (ut64)annotation->end);
 		switch (annotation->type) {
-		case R_CODE_ANNOTATION_TYPE_OFFSET:
+		case RZ_CODE_ANNOTATION_TYPE_OFFSET:
 			pj_ks (pj, "type", "offset");
 			pj_kn (pj, "offset", annotation->offset.offset);
 			break;
-		case R_CODE_ANNOTATION_TYPE_FUNCTION_NAME:
+		case RZ_CODE_ANNOTATION_TYPE_FUNCTION_NAME:
 			pj_ks (pj, "type", "function_name");
 			pj_ks (pj, "name", annotation->reference.name);
 			pj_kn (pj, "offset", annotation->reference.offset);
 			break;
-		case R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE:
+		case RZ_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE:
 			pj_ks (pj, "type", "global_variable");
 			pj_kn (pj, "offset", annotation->reference.offset);
 			break;
-		case R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE:
+		case RZ_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE:
 			pj_ks (pj, "type", "constant_variable");
 			pj_kn (pj, "offset", annotation->reference.offset);
 			break;
-		case R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE:
+		case RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE:
 			pj_ks (pj, "type", "local_variable");
 			pj_ks (pj, "name", annotation->variable.name);
 			break;
-		case R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER:
+		case RZ_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER:
 			pj_ks (pj, "type", "function_parameter");
 			pj_ks (pj, "name", annotation->variable.name);
 			break;
-		case R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT:
+		case RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT:
 			pj_ks (pj, "type", "syntax_highlight");
 			switch (annotation->syntax_highlight.type) {
-			case R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD:
+			case RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD:
 				type_str = "keyword";
 				break;
-			case R_SYNTAX_HIGHLIGHT_TYPE_COMMENT:
+			case RZ_SYNTAX_HIGHLIGHT_TYPE_COMMENT:
 				type_str = "comment";
 				break;
-			case R_SYNTAX_HIGHLIGHT_TYPE_DATATYPE:
+			case RZ_SYNTAX_HIGHLIGHT_TYPE_DATATYPE:
 				type_str = "datatype";
 				break;
-			case R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME:
+			case RZ_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME:
 				type_str = "function_name";
 				break;
-			case R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_PARAMETER:
+			case RZ_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_PARAMETER:
 				type_str = "function_parameter";
 				break;
-			case R_SYNTAX_HIGHLIGHT_TYPE_LOCAL_VARIABLE:
+			case RZ_SYNTAX_HIGHLIGHT_TYPE_LOCAL_VARIABLE:
 				type_str = "local_variable";
 				break;
-			case R_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE:
+			case RZ_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE:
 				type_str = "constant_variable";
 				break;
-			case R_SYNTAX_HIGHLIGHT_TYPE_GLOBAL_VARIABLE:
+			case RZ_SYNTAX_HIGHLIGHT_TYPE_GLOBAL_VARIABLE:
 				type_str = "global_variable";
 				break;
 			}
@@ -168,7 +168,7 @@ RZ_API void rz_core_annotated_code_print(RAnnotatedCode *code, RzVector *line_of
 	RzCons *cons = rz_cons_singleton ();
 	RCodeAnnotation *annotation;
 	rz_vector_foreach (&code->annotations, annotation) {
-		if (annotation->type != R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT) {
+		if (annotation->type != RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT) {
 			continue;
 		}
 
@@ -177,23 +177,23 @@ RZ_API void rz_core_annotated_code_print(RAnnotatedCode *code, RzVector *line_of
 		// pick a suitable color for it.
 		const char *color = Color_RESET;
 		switch (annotation->syntax_highlight.type) {
-		case R_SYNTAX_HIGHLIGHT_TYPE_COMMENT:
+		case RZ_SYNTAX_HIGHLIGHT_TYPE_COMMENT:
 			color = PALETTE (comment)
 			    : Color_WHITE;
 			break;
-		case R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD:
+		case RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD:
 			color = PALETTE (pop)
 			    : Color_MAGENTA;
 			break;
-		case R_SYNTAX_HIGHLIGHT_TYPE_DATATYPE:
+		case RZ_SYNTAX_HIGHLIGHT_TYPE_DATATYPE:
 			color = PALETTE (func_var_type)
 			    : Color_BLUE;
 			break;
-		case R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME:
+		case RZ_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME:
 			color = PALETTE (fname)
 			    : Color_RED;
 			break;
-		case R_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE:
+		case RZ_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE:
 			color = PALETTE (num)
 			    : Color_YELLOW;
 		default:
@@ -266,7 +266,7 @@ RZ_API void rz_core_annotated_code_print_comment_cmds(RAnnotatedCode *code) {
 	RCodeAnnotation *annotation;
 	HtUP *ht = ht_up_new0 ();
 	rz_vector_foreach (&code->annotations, annotation) {
-		if (annotation->type != R_CODE_ANNOTATION_TYPE_OFFSET) {
+		if (annotation->type != RZ_CODE_ANNOTATION_TYPE_OFFSET) {
 			continue;
 		}
 		// choose the "best" annotation at a single offset

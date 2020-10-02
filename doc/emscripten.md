@@ -22,7 +22,7 @@ export CC="emcc --ignore-dynamic-linking"
 emmake make -j4 
 
 cd binrz/rizin
- emcc ../../librz/*/*.o rizin.c -I ../../librz/include/ -DR2_BIRTH=\"pop\" -DR2_GITTIP=\"123\" ../../librz/db/sdb/src/*.o
+ emcc ../../librz/*/*.o rizin.c -I ../../librz/include/ -DRZ_BIRTH=\"pop\" -DRZ_GITTIP=\"123\" ../../librz/db/sdb/src/*.o
 
 binrz/rz_ax/rz_ax.js:
 

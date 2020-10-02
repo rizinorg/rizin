@@ -19,7 +19,7 @@ RZ_API ut8 *rz_reg_get_bytes(RzReg *reg, int type, int *size) {
 		if (!buf) {
 			return NULL;
 		}
-		for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 			arena = reg->regset[i].arena;
 			sz += arena->size;
 			newbuf = realloc (buf, sz);
@@ -35,7 +35,7 @@ RZ_API ut8 *rz_reg_get_bytes(RzReg *reg, int type, int *size) {
 		}
 		return buf;
 	}
-	if (type < 0 || type > (R_REG_TYPE_LAST - 1)) {
+	if (type < 0 || type > (RZ_REG_TYPE_LAST - 1)) {
 		return NULL;
 	}
 	sz = reg->regset[type].arena->size;
@@ -57,11 +57,11 @@ RZ_API ut8 *rz_reg_get_bytes(RzReg *reg, int type, int *size) {
 RZ_API bool rz_reg_read_regs(RzReg *reg, ut8 *buf, const int len) {
 	int i, off = 0;
 	RzRegArena *arena;
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		if (reg->regset[i].arena) {
 			arena = reg->regset[i].arena;
 		} else {
-			arena = reg->regset[i].arena = R_NEW0 (RzRegArena);
+			arena = reg->regset[i].arena = RZ_NEW0 (RzRegArena);
 			if (!arena) {
 				return false;
 			}
@@ -78,7 +78,7 @@ RZ_API bool rz_reg_read_regs(RzReg *reg, ut8 *buf, const int len) {
 		}
 		memset (arena->bytes, 0, arena->size);
 		memcpy (arena->bytes, buf + off,
-			R_MIN (len - off, arena->size));
+			RZ_MIN (len - off, arena->size));
 		off += arena->size;
 		if (off > len) {
 			return false;
@@ -95,7 +95,7 @@ RZ_API bool rz_reg_set_bytes(RzReg *reg, int type, const ut8 *buf, const int len
 	if (len < 1 || !buf) {
 		return false;
 	}
-	if (type < 0 || type >= R_REG_TYPE_LAST) {
+	if (type < 0 || type >= RZ_REG_TYPE_LAST) {
 		return false;
 	}
 	regset = &reg->regset[type];
@@ -103,8 +103,8 @@ RZ_API bool rz_reg_set_bytes(RzReg *reg, int type, const ut8 *buf, const int len
 	if (!arena) {
 		return false;
 	}
-	maxsz = R_MAX (arena->size, len);
-	minsz = R_MIN (arena->size, len);
+	maxsz = RZ_MAX (arena->size, len);
+	minsz = RZ_MIN (arena->size, len);
 	if ((arena->size != len) || (!arena->bytes)) {
 		free (arena->bytes);
 		arena->bytes = calloc (1, maxsz);
@@ -137,7 +137,7 @@ RZ_API int rz_reg_fit_arena(RzReg *reg) {
 	RzRegItem *r;
 	int size, i, newsize;
 
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		arena = reg->regset[i].arena;
 		if (!arena) {
 			continue;
@@ -146,10 +146,10 @@ RZ_API int rz_reg_fit_arena(RzReg *reg) {
 		rz_list_foreach (reg->regset[i].regs, iter, r) {
 			// XXX: bits2bytes doesnt seems to work fine
 			size = BITS2BYTES (r->offset + r->size);
-			newsize = R_MAX (size, newsize);
+			newsize = RZ_MAX (size, newsize);
 		}
 		if (newsize < 1) {
-			R_FREE (arena->bytes);
+			RZ_FREE (arena->bytes);
 			arena->size = 0;
 		} else {
 			ut8 *buf = realloc (arena->bytes, newsize);
@@ -167,13 +167,13 @@ RZ_API int rz_reg_fit_arena(RzReg *reg) {
 }
 
 RZ_API RzRegArena *rz_reg_arena_new(int size) {
-	RzRegArena *arena = R_NEW0 (RzRegArena);
+	RzRegArena *arena = RZ_NEW0 (RzRegArena);
 	if (arena) {
 		if (size < 1) {
 			size = 1;
 		}
 		if (!(arena->bytes = calloc (1, size + 8))) {
-			R_FREE (arena);
+			RZ_FREE (arena);
 		} else {
 			arena->size = size;
 		}
@@ -191,7 +191,7 @@ RZ_API void rz_reg_arena_free(RzRegArena *ra) {
 RZ_API void rz_reg_arena_swap(RzReg *reg, int copy) {
 	/* XXX: swap current arena to head(previous arena) */
 	int i;
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		if (!reg->regset[i].pool) {
 			continue;
 		}
@@ -211,7 +211,7 @@ RZ_API void rz_reg_arena_swap(RzReg *reg, int copy) {
 RZ_API void rz_reg_arena_pop(RzReg *reg) {
 	RzRegArena *a;
 	int i;
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		if (!reg->regset[i].pool) {
 			continue;
 		}
@@ -230,7 +230,7 @@ RZ_API void rz_reg_arena_pop(RzReg *reg) {
 
 RZ_API int rz_reg_arena_push(RzReg *reg) {
 	int i;
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		RzRegArena *a = reg->regset[i].arena; // current arena
 		if (!a) {
 			continue;
@@ -255,7 +255,7 @@ RZ_API int rz_reg_arena_push(RzReg *reg) {
 
 RZ_API void rz_reg_arena_zero(RzReg *reg) {
 	int i;
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		RzRegArena *a = reg->regset[i].arena;
 		if (a->size > 0) {
 			memset (reg->regset[i].arena->bytes, 0, a->size);
@@ -264,7 +264,7 @@ RZ_API void rz_reg_arena_zero(RzReg *reg) {
 }
 
 RZ_API ut8 *rz_reg_arena_peek(RzReg *reg) {
-	RzRegSet *regset = rz_reg_regset_get (reg, R_REG_TYPE_GPR);
+	RzRegSet *regset = rz_reg_regset_get (reg, RZ_REG_TYPE_GPR);
 	if (!reg || !regset || !regset->arena || (regset->arena->size < 1)) {
 		return NULL;
 	}
@@ -277,7 +277,7 @@ RZ_API ut8 *rz_reg_arena_peek(RzReg *reg) {
 }
 
 RZ_API void rz_reg_arena_poke(RzReg *reg, const ut8 *ret) {
-	RzRegSet *regset = rz_reg_regset_get (reg, R_REG_TYPE_GPR);
+	RzRegSet *regset = rz_reg_regset_get (reg, RZ_REG_TYPE_GPR);
 	if (!ret || !regset || !regset->arena || !regset->arena->bytes) {
 		return;
 	}
@@ -285,7 +285,7 @@ RZ_API void rz_reg_arena_poke(RzReg *reg, const ut8 *ret) {
 }
 
 RZ_API ut8 *rz_reg_arena_dup(RzReg *reg, const ut8 *source) {
-	RzRegSet *regset = rz_reg_regset_get (reg, R_REG_TYPE_GPR);
+	RzRegSet *regset = rz_reg_regset_get (reg, RZ_REG_TYPE_GPR);
 	if (!reg || !regset || !regset->arena || (regset->arena->size < 1)) {
 		return NULL;
 	}
@@ -313,7 +313,7 @@ RZ_API int rz_reg_arena_set_bytes(RzReg *reg, const char *str) {
 	rz_hex_str2bin (str, bin_str);
 
 	int i, n = 0; //n - cumulative sum of arena's sizes
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		int sz = reg->regset[i].arena->size;
 		int bl = bin_str_len - n; //bytes left
 		int bln = bl - n;
@@ -332,7 +332,7 @@ RZ_API void rz_reg_arena_shrink(RzReg *reg) {
 	RzListIter *iter;
 	RzRegArena *a;
 	int i;
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		rz_list_foreach (reg->regset[i].pool, iter, a) {
 			free (a->bytes);
 			/* ha ha ha */

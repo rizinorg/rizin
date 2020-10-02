@@ -32,14 +32,14 @@ RzAsmPlugin rz_asm_plugin_amd29k = {
 	.arch = CPU_29000","CPU_29050,
 	.cpus = "amd29k",
 	.bits = 32,
-	.endian = R_SYS_ENDIAN_LITTLE,
+	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.disassemble = &disassemble,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_amd29k,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

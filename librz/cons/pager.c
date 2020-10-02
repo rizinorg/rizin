@@ -5,14 +5,14 @@
 #include <rz_cons.h>
 #include "pager_private.h"
 
-R_IPI void pager_color_line(const char *line, RStrpool *p, RzList *ml) {
+RZ_IPI void pager_color_line(const char *line, RStrpool *p, RzList *ml) {
 	int m_len, offset = 0;
 	char *m_addr;
 	RzListIter *it;
 	RzRegexMatch *m;
 	char *inv[2] = {
-		R_CONS_INVERT (true, true),
-		R_CONS_INVERT (false, true)
+		RZ_CONS_INVERT (true, true),
+		RZ_CONS_INVERT (false, true)
 	};
 	int linv[2] = {
 		strlen (inv[0]),
@@ -45,7 +45,7 @@ R_IPI void pager_color_line(const char *line, RStrpool *p, RzList *ml) {
 	rz_strpool_append (p, line + offset);
 }
 
-R_IPI void pager_printpage(const char *line, int *index, RzList **mla, int from, int to, int w) {
+RZ_IPI void pager_printpage(const char *line, int *index, RzList **mla, int from, int to, int w) {
 	int i;
 
 	rz_cons_clear00 ();
@@ -71,7 +71,7 @@ R_IPI void pager_printpage(const char *line, int *index, RzList **mla, int from,
 	rz_cons_flush ();
 }
 
-R_IPI int pager_next_match(int from, RzList **mla, int lcount) {
+RZ_IPI int pager_next_match(int from, RzList **mla, int lcount) {
 	int l;
 	if (from > lcount - 2) {
 		return from;
@@ -85,7 +85,7 @@ R_IPI int pager_next_match(int from, RzList **mla, int lcount) {
 	return from;
 }
 
-R_IPI int pager_prev_match(int from, RzList **mla) {
+RZ_IPI int pager_prev_match(int from, RzList **mla) {
 	int l;
 	if (from < 1) {
 		return from;
@@ -98,7 +98,7 @@ R_IPI int pager_prev_match(int from, RzList **mla) {
 	return from;
 }
 
-R_IPI bool pager_all_matches(const char *s, RzRegex *rx, RzList **mla, int *lines, int lcount) {
+RZ_IPI bool pager_all_matches(const char *s, RzRegex *rx, RzList **mla, int *lines, int lcount) {
 	bool res = false;
 	RzRegexMatch m;
 	int l, slen;
@@ -113,11 +113,11 @@ R_IPI bool pager_all_matches(const char *s, RzRegex *rx, RzList **mla, int *line
 		int ncpos = rz_str_ansi_filter (clean, NULL, &cpos, -1);
 		m.rm_eo = slen = strlen (clean);
 		rz_list_purge (mla[l]);
-		while (!rz_regex_exec (rx, clean, 1, &m, R_REGEX_STARTEND)) {
+		while (!rz_regex_exec (rx, clean, 1, &m, RZ_REGEX_STARTEND)) {
 			if (!cpos || m.rm_so >= ncpos) {
 				break;
 			}
-			RzRegexMatch *ms = R_NEW0 (RzRegexMatch);
+			RzRegexMatch *ms = RZ_NEW0 (RzRegexMatch);
 			if (ms && cpos) {
 				ms->rm_so = cpos[m.rm_so];
 				ms->rm_eo = cpos[m.rm_eo];
@@ -133,7 +133,7 @@ R_IPI bool pager_all_matches(const char *s, RzRegex *rx, RzList **mla, int *line
 	return res;
 }
 
-R_IPI int *pager_splitlines(char *s, int *lines_count) {
+RZ_IPI int *pager_splitlines(char *s, int *lines_count) {
 	int lines_size = 128;
 	int *lines = NULL;
 	int i, row = 0;

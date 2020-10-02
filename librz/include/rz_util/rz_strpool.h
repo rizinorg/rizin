@@ -1,7 +1,7 @@
-#ifndef R_STRPOOL_H
-#define R_STRPOOL_H
+#ifndef RZ_STRPOOL_H
+#define RZ_STRPOOL_H
 
-#define R_STRPOOL_INC 1024
+#define RZ_STRPOOL_INC 1024
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,4 +31,4 @@ RZ_API char *rz_strpool_empty(RStrpool *p);
 }
 #endif
 
-#endif //  R_STRPOOL_H
+#endif //  RZ_STRPOOL_H

@@ -1,5 +1,5 @@
-#ifndef R_GETOPT_H
-#define R_GETOPT_H 1
+#ifndef RZ_GETOPT_H
+#define RZ_GETOPT_H 1
 
 #include <rz_util.h>
 

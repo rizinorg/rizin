@@ -21,22 +21,22 @@ bool PE_(rz_bin_pe_section_perms)(RBinFile *bf, const char *name, int perms) {
 			ut32 newperms_le;
 
 			/* Apply permission flags */
-			if (perms & R_PERM_X) {
+			if (perms & RZ_PERM_X) {
 				newperms |=  PE_IMAGE_SCN_MEM_EXECUTE;
 			} else {
 				newperms &= ~PE_IMAGE_SCN_MEM_EXECUTE;
 			}
-			if (perms & R_PERM_W) {
+			if (perms & RZ_PERM_W) {
 				newperms |=  PE_IMAGE_SCN_MEM_WRITE;
 			} else {
 				newperms &= ~PE_IMAGE_SCN_MEM_WRITE;
 			}
-			if (perms & R_PERM_R) {
+			if (perms & RZ_PERM_R) {
 				newperms |=  PE_IMAGE_SCN_MEM_READ;
 			} else {
 				newperms &= ~PE_IMAGE_SCN_MEM_READ;
 			}
-			if (perms & R_PERM_SHAR) {
+			if (perms & RZ_PERM_SHAR) {
 				newperms |=  PE_IMAGE_SCN_MEM_SHARED;
 			} else {
 				newperms &= ~PE_IMAGE_SCN_MEM_SHARED;

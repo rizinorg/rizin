@@ -12,7 +12,7 @@
 #define COUNT_LINES 1
 #define CTX(x) I.context->x
 
-R_LIB_VERSION (rz_cons);
+RZ_LIB_VERSION (rz_cons);
 
 static RzConsContext rz_cons_context_default = {{{{0}}}};
 static RzCons rz_cons_instance = {0};
@@ -43,7 +43,7 @@ static void cons_stack_free(void *ptr) {
 	RzConsStack *s = (RzConsStack *)ptr;
 	free (s->buf);
 	if (s->grep) {
-		R_FREE (s->grep->str);
+		RZ_FREE (s->grep->str);
 		CTX (grep.str) = NULL;
 	}
 	free (s->grep);
@@ -51,14 +51,14 @@ static void cons_stack_free(void *ptr) {
 }
 
 static RzConsStack *cons_stack_dump(bool recreate) {
-	RzConsStack *data = R_NEW0 (RzConsStack);
+	RzConsStack *data = RZ_NEW0 (RzConsStack);
 	if (data) {
 		if (CTX (buffer)) {
 			data->buf = CTX (buffer);
 			data->buf_len = CTX (buffer_len);
 			data->buf_size = CTX (buffer_sz);
 		}
-		data->grep = R_NEW0 (RzConsGrep);
+		data->grep = RZ_NEW0 (RzConsGrep);
 		if (data->grep) {
 			memcpy (data->grep, &I.context->grep, sizeof (RzConsGrep));
 			if (I.context->grep.str) {
@@ -94,9 +94,9 @@ static void cons_stack_load(RzConsStack *data, bool free_current) {
 	}
 }
 
-static void cons_context_init(RzConsContext *context, R_NULLABLE RzConsContext *parent) {
+static void cons_context_init(RzConsContext *context, RZ_NULLABLE RzConsContext *parent) {
 	context->breaked = false;
-	context->cmd_depth = R_CONS_CMD_DEPTH + 1;
+	context->cmd_depth = RZ_CONS_CMD_DEPTH + 1;
 	context->buffer = NULL;
 	context->buffer_sz = 0;
 	context->lastEnabled = true;
@@ -186,16 +186,16 @@ RZ_API RColor rz_cons_color_random(ut8 alpha) {
 	case 14: case 15: rcolor = (RColor) RColor_GRAY; break;
 	}
 	if (r & 1) {
-		rcolor.attr = R_CONS_ATTR_BOLD;
+		rcolor.attr = RZ_CONS_ATTR_BOLD;
 	}
 	return rcolor;
 }
 
 RZ_API void rz_cons_color(int fg, int r, int g, int b) {
 	int k;
-	r = R_DIM (r, 0, 255);
-	g = R_DIM (g, 0, 255);
-	b = R_DIM (b, 0, 255);
+	r = RZ_DIM (r, 0, 255);
+	g = RZ_DIM (g, 0, 255);
+	b = RZ_DIM (b, 0, 255);
 	if (r == g && g == b) { // b&w
 		k = 232 + (int)(((r+g+b)/3)/10.3);
 	} else {
@@ -248,7 +248,7 @@ RZ_API void rz_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
 		}
 	}
 	char *str = rz_str_ansi_crop (_str, 0, 0, w + 1, h);
-	rz_cons_strcat (R_CONS_CURSOR_SAVE);
+	rz_cons_strcat (RZ_CONS_CURSOR_SAVE);
 	for (o = i = len = 0; str[i]; i++, len++) {
 		if (w < 0 || rows > w) {
 			break;
@@ -256,10 +256,10 @@ RZ_API void rz_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
 		if (str[i] == '\n') {
 			rz_cons_gotoxy (x, y + rows);
 			int ansilen = rz_str_ansi_len (str + o);
-			cols = R_MIN (w, ansilen);
+			cols = RZ_MIN (w, ansilen);
 			const char *end = rz_str_ansi_chrn (str + o, cols);
 			cols = end - str + o;
-			rz_cons_memcat (str + o, R_MIN (len, cols));
+			rz_cons_memcat (str + o, RZ_MIN (len, cols));
 			o = i + 1;
 			len = 0;
 			rows++;
@@ -270,7 +270,7 @@ RZ_API void rz_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
 		rz_cons_memcat (str + o, len);
 	}
 	rz_cons_strcat (Color_RESET);
-	rz_cons_strcat (R_CONS_CURSOR_RESTORE);
+	rz_cons_strcat (RZ_CONS_CURSOR_RESTORE);
 	free (str);
 }
 
@@ -288,7 +288,7 @@ RZ_API void rz_cons_context_break_push(RzConsContext *context, RzConsBreak cb, v
 	}
 
 	//if we don't have any element in the stack start the signal
-	RzConsBreakStack *b = R_NEW0 (RzConsBreakStack);
+	RzConsBreakStack *b = RZ_NEW0 (RzConsBreakStack);
 	if (!b) {
 		return;
 	}
@@ -378,7 +378,7 @@ RZ_API int rz_cons_get_cur_line(void) {
 	cfmakeraw (&raw);
 	(void) tcsetattr (0, TCSANOW, &raw);
 	if (isatty (fileno (stdin))) {
-		if (write (1, R_CONS_GET_CURSOR_POSITION, sizeof (R_CONS_GET_CURSOR_POSITION)) != -1) {
+		if (write (1, RZ_CONS_GET_CURSOR_POSITION, sizeof (RZ_CONS_GET_CURSOR_POSITION)) != -1) {
 			if (read (0, buf, sizeof (buf)) != sizeof (buf)) {
 				if (isdigit (buf[2])) {
 					curline = (buf[2] - '0');
@@ -601,12 +601,12 @@ RZ_API RzCons *rz_cons_free(void) {
 		rz_line_free ();
 		I.line = NULL;
 	}
-	R_FREE (I.context->buffer);
-	R_FREE (I.break_word);
+	RZ_FREE (I.context->buffer);
+	RZ_FREE (I.break_word);
 	cons_context_deinit (I.context);
-	R_FREE (I.context->lastOutput);
+	RZ_FREE (I.context->lastOutput);
 	I.context->lastLength = 0;
-	R_FREE (I.pager);
+	RZ_FREE (I.pager);
 	return NULL;
 }
 
@@ -683,7 +683,7 @@ RZ_API void rz_cons_fill_line(void) {
 RZ_API void rz_cons_clear_line(int std_err) {
 #if __WINDOWS__
 	if (I.vtmode) {
-		fprintf (std_err? stderr: stdout,"%s", R_CONS_CLEAR_LINE);
+		fprintf (std_err? stderr: stdout,"%s", RZ_CONS_CLEAR_LINE);
 	} else {
 		char white[1024];
 		memset (&white, ' ', sizeof (white));
@@ -697,7 +697,7 @@ RZ_API void rz_cons_clear_line(int std_err) {
 		fprintf (std_err? stderr: stdout, "\r%s\r", white);
 	}
 #else
-	fprintf (std_err? stderr: stdout,"%s", R_CONS_CLEAR_LINE);
+	fprintf (std_err? stderr: stdout,"%s", RZ_CONS_CLEAR_LINE);
 #endif
 	fflush (std_err? stderr: stdout);
 }
@@ -716,12 +716,12 @@ RZ_API void rz_cons_clear(void) {
 #if __WINDOWS__
 	rz_cons_w32_clear ();
 #else
-	rz_cons_strcat (Color_RESET R_CONS_CLEAR_SCREEN);
+	rz_cons_strcat (Color_RESET RZ_CONS_CLEAR_SCREEN);
 #endif
 }
 
 static void cons_grep_reset(RzConsGrep *grep) {
-	R_FREE (grep->str);
+	RZ_FREE (grep->str);
 	ZERO_FILL (*grep);
 	grep->line = -1;
 	grep->sort = -1;
@@ -798,8 +798,8 @@ RZ_API void rz_cons_pop(void) {
 	cons_stack_free ((void *)data);
 }
 
-RZ_API RzConsContext *rz_cons_context_new(R_NULLABLE RzConsContext *parent) {
-	RzConsContext *context = R_NEW0 (RzConsContext);
+RZ_API RzConsContext *rz_cons_context_new(RZ_NULLABLE RzConsContext *parent) {
+	RzConsContext *context = RZ_NEW0 (RzConsContext);
 	if (!context) {
 		return NULL;
 	}
@@ -949,7 +949,7 @@ RZ_API void rz_cons_flush(void) {
 	if (rz_cons_is_interactive () && !rz_sandbox_enable (false)) {
 		if (I.linesleep > 0 && I.linesleep < 1000) {
 			int i = 0;
-			int pagesize = R_MAX (1, I.pagesize);
+			int pagesize = RZ_MAX (1, I.pagesize);
 			char *ptr = I.context->buffer;
 			char *nl = strchr (ptr, '\n');
 			int len = I.context->buffer_len;
@@ -1079,7 +1079,7 @@ RZ_API void rz_cons_visual_write(char *buffer) {
 			if (lines > 0) {
 				__cons_write (pptr, plen);
 				if (len != olen) {
-					__cons_write (R_CONS_CLEAR_FROM_CURSOR_TO_END, -1);
+					__cons_write (RZ_CONS_CLEAR_FROM_CURSOR_TO_END, -1);
 					__cons_write (Color_RESET, strlen (Color_RESET));
 				}
 			}
@@ -1308,7 +1308,7 @@ RZ_API bool rz_cons_isatty(void) {
 #if __WINDOWS__
 static int __xterm_get_cur_pos(int *xpos) {
 	int ypos = 0;
-	const char *get_pos = R_CONS_GET_CURSOR_POSITION;
+	const char *get_pos = RZ_CONS_GET_CURSOR_POSITION;
 	if (write (I.fdout, get_pos, sizeof (get_pos)) < 1) {
 		return 0;
 	}
@@ -1330,7 +1330,7 @@ static int __xterm_get_cur_pos(int *xpos) {
 			}
 		}
 		(void)rz_cons_readchar ();
-		for (i = 0; i < R_ARRAY_SIZE (pos) - 1; i++) {
+		for (i = 0; i < RZ_ARRAY_SIZE (pos) - 1; i++) {
 			ch = rz_cons_readchar ();
 			if ((!i && !IS_DIGIT (ch)) || // dumps arrow keys etc.
 			    (i == 1 && ch == '~')) {  // dumps PgUp, PgDn etc.
@@ -1344,23 +1344,23 @@ static int __xterm_get_cur_pos(int *xpos) {
 			pos[i] = ch;
 		}
 	} while (!is_reply);
-	pos[R_ARRAY_SIZE (pos) - 1] = 0;
+	pos[RZ_ARRAY_SIZE (pos) - 1] = 0;
 	ypos = atoi (pos);
-	for (i = 0; i < R_ARRAY_SIZE (pos) - 1; i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE (pos) - 1; i++) {
 		if ((ch = rz_cons_readchar ()) == 'R') {
 			pos[i] = 0;
 			break;
 		}
 		pos[i] = ch;
 	}
-	pos[R_ARRAY_SIZE (pos) - 1] = 0;
+	pos[RZ_ARRAY_SIZE (pos) - 1] = 0;
 	*xpos = atoi (pos);
 
 	return ypos;
 }
 
 static bool __xterm_get_size(void) {
-	if (write (I.fdout, R_CONS_CURSOR_SAVE, sizeof (R_CONS_CURSOR_SAVE)) < 1) {
+	if (write (I.fdout, RZ_CONS_CURSOR_SAVE, sizeof (RZ_CONS_CURSOR_SAVE)) < 1) {
 		return false;
 	}
 	int rows, columns;
@@ -1370,7 +1370,7 @@ static bool __xterm_get_size(void) {
 		I.rows = rows;
 		I.columns = columns;
 	} // otherwise reuse previous values
-	(void)write (I.fdout, R_CONS_CURSOR_RESTORE, sizeof (R_CONS_CURSOR_RESTORE));
+	(void)write (I.fdout, RZ_CONS_CURSOR_RESTORE, sizeof (RZ_CONS_CURSOR_RESTORE));
 	return true;
 }
 
@@ -1459,8 +1459,8 @@ RZ_API int rz_cons_get_size(int *rows) {
 	if (rows) {
 		*rows = I.rows;
 	}
-	I.rows = R_MAX (0, I.rows);
-	return R_MAX (0, I.columns);
+	I.rows = RZ_MAX (0, I.rows);
+	return RZ_MAX (0, I.columns);
 }
 
 #if __WINDOWS__
@@ -1605,7 +1605,7 @@ RZ_API void rz_cons_set_utf8(bool b) {
 				rz_sys_perror ("rz_cons_set_utf8");
 			}
 		} else {
-			R_LOG_WARN ("UTF-8 Codepage not installed.\n");
+			RZ_LOG_WARN ("UTF-8 Codepage not installed.\n");
 		}
 	} else {
 		UINT acp = GetACP ();
@@ -1617,7 +1617,7 @@ RZ_API void rz_cons_set_utf8(bool b) {
 }
 
 RZ_API void rz_cons_invert(int set, int color) {
-	rz_cons_strcat (R_CONS_INVERT (set, color));
+	rz_cons_strcat (RZ_CONS_INVERT (set, color));
 }
 
 /*
@@ -1685,7 +1685,7 @@ RZ_API void rz_cons_set_title(const char *str) {
 	wchar_t* wstr = rz_utf8_to_utf16_l (str, strlen (str));
 	if (wstr) {
 		SetConsoleTitleW (wstr);
-		R_FREE (wstr);
+		RZ_FREE (wstr);
 	}
 #  else // defined(_UNICODE)
 	SetConsoleTitle (str);
@@ -1706,8 +1706,8 @@ RZ_API void rz_cons_highlight(const char *word) {
 	int l, *cpos = NULL;
 	char *rword = NULL, *res, *clean = NULL;
 	char *inv[2] = {
-		R_CONS_INVERT (true, true),
-		R_CONS_INVERT (false, true)
+		RZ_CONS_INVERT (true, true),
+		RZ_CONS_INVERT (false, true)
 	};
 	int linv[2] = {
 		strlen (inv[0]),
@@ -1754,7 +1754,7 @@ RZ_API void rz_cons_highlight(const char *word) {
 		/* don't free orig - it's assigned
 		 * to I.context->buffer and possibly realloc'd */
 	} else {
-		R_FREE (I.highlight);
+		RZ_FREE (I.highlight);
 	}
 }
 
@@ -1884,7 +1884,7 @@ RZ_API const char* rz_cons_get_rune(const ut8 ch) {
 	return NULL;
 }
 
-RZ_API void rz_cons_breakword(R_NULLABLE const char *s) {
+RZ_API void rz_cons_breakword(RZ_NULLABLE const char *s) {
 	free (I.break_word);
 	if (s) {
 		I.break_word = strdup (s);
@@ -1912,7 +1912,7 @@ RZ_API void rz_cons_cmd_help(const char *help[], bool use_color) {
 		int len0 = strlen (help[i]);
 		int len1 = strlen (help[i + 1]);
 		if (i) {
-			max_length = R_MAX (max_length, len0 + len1);
+			max_length = RZ_MAX (max_length, len0 + len1);
 		}
 	}
 

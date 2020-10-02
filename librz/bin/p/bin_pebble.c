@@ -10,13 +10,13 @@
 #define APP_NAME_BYTES 32
 #define COMPANY_NAME_BYTES 32
 
-R_PACKED (
+RZ_PACKED (
 typedef struct  {
 	ut8 major; //!< "compatibility" version number
 	ut8 minor;
 }) Version;
 
-R_PACKED (
+RZ_PACKED (
 typedef struct  {
 	char header[8];               //!< Sentinel value, should always be 'PBLAPP\0\0'
 	Version struct_version;       //!< version of this structure's format
@@ -65,7 +65,7 @@ static RBinInfo* info(RBinFile *bf) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 	ret->lang = NULL;
@@ -98,13 +98,13 @@ static RzList* sections(RBinFile *bf) {
 	}
 	ret->free = free;
 	// TODO: load all relocs
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("relocs");
 	ptr->vsize = ptr->size = pai.num_reloc_entries * sizeof (ut32);
 	ptr->vaddr = ptr->paddr = pai.reloc_list_start;
-	ptr->perm = R_PERM_RW;
+	ptr->perm = RZ_PERM_RW;
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 	if (ptr->vaddr < textsize) {
@@ -112,36 +112,36 @@ static RzList* sections(RBinFile *bf) {
 	}
 
 	// imho this must be a symbol
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("symtab");
 	ptr->vsize = ptr->size = 0;
 	ptr->vaddr = ptr->paddr = pai.sym_table_addr;
-	ptr->perm = R_PERM_R;
+	ptr->perm = RZ_PERM_R;
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 	if (ptr->vaddr < textsize) {
 		textsize = ptr->vaddr;
 	}
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("text");
 	ptr->vaddr = ptr->paddr = 0x80;
 	ptr->vsize = ptr->size = textsize - ptr->paddr;
-	ptr->perm = R_PERM_RWX;
+	ptr->perm = RZ_PERM_RWX;
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("header");
 	ptr->vsize = ptr->size = sizeof (PebbleAppInfo);
 	ptr->vaddr = ptr->paddr = 0;
-	ptr->perm = R_PERM_R;
+	ptr->perm = RZ_PERM_R;
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
@@ -174,7 +174,7 @@ static RzList* entries(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	if (!(ptr = R_NEW0 (RBinAddr))) {
+	if (!(ptr = RZ_NEW0 (RBinAddr))) {
 		return ret;
 	}
 	ptr->paddr = pai.offset;
@@ -197,10 +197,10 @@ RBinPlugin rz_bin_plugin_pebble = {
 	//.relocs = &relocs
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_pebble,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

@@ -117,15 +117,15 @@ RzAsmPlugin rz_asm_plugin_ppc_cs = {
 	.arch = "ppc",
 	.cpus = "ppc,vle,ps",
 	.bits = 32 | 64,
-	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
+	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.fini = the_end,
 	.disassemble = &disassemble,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_ppc_cs,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

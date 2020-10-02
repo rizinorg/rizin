@@ -1,5 +1,5 @@
-#ifndef R2_AGRAPH_H
-#define R2_AGRAPH_H
+#ifndef RZ_AGRAPH_H
+#define RZ_AGRAPH_H
 
 #include <rz_types.h>
 #include <rz_cons.h>
@@ -33,13 +33,13 @@ typedef struct rz_core_graph_hits_t {
 } RzAGraphHits;
 
 
-#define R_AGRAPH_MODE_NORMAL 0
-#define R_AGRAPH_MODE_OFFSET 1
-#define R_AGRAPH_MODE_MINI 2
-#define R_AGRAPH_MODE_TINY 3
-#define R_AGRAPH_MODE_SUMMARY 4
-#define R_AGRAPH_MODE_COMMENTS 5
-#define R_AGRAPH_MODE_MAX 6
+#define RZ_AGRAPH_MODE_NORMAL 0
+#define RZ_AGRAPH_MODE_OFFSET 1
+#define RZ_AGRAPH_MODE_MINI 2
+#define RZ_AGRAPH_MODE_TINY 3
+#define RZ_AGRAPH_MODE_SUMMARY 4
+#define RZ_AGRAPH_MODE_COMMENTS 5
+#define RZ_AGRAPH_MODE_MAX 6
 
 typedef void (*RzANodeCallback)(RzANode *n, void *user);
 typedef void (*RAEdgeCallback)(RzANode *from, RzANode *to, void *user);

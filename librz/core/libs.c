@@ -18,7 +18,7 @@
 		struct rz_ ## x ## _plugin_t *hand = (struct rz_ ## x ## _plugin_t *)data;\
 		struct rz_ ## x ## _plugin_t *instance;\
 		RzCore *core = (RzCore *) user;\
-		instance = R_NEW (struct rz_ ## x ## _plugin_t);\
+		instance = RZ_NEW (struct rz_ ## x ## _plugin_t);\
 		memcpy (instance, hand, sizeof (struct rz_ ## x ## _plugin_t));\
 		rz_ ## x ## _add (core->y, instance);\
 		return true;\
@@ -57,7 +57,7 @@ static void __openPluginsAt(RzCore *core, const char *arg, const char *user_path
 }
 
 static void __loadSystemPlugins(RzCore *core, int where, const char *path) {
-#if R2_LOADLIBS
+#if RZ_LOADLIBS
 	if (!where) {
 		where = -1;
 	}
@@ -65,34 +65,34 @@ static void __loadSystemPlugins(RzCore *core, int where, const char *path) {
 		rz_lib_opendir (core->lib, path);
 	}
 	const char *dir_plugins = rz_config_get (core->config, "dir.plugins");
-	if (where & R_CORE_LOADLIBS_CONFIG) {
+	if (where & RZ_CORE_LOADLIBS_CONFIG) {
 		rz_lib_opendir (core->lib, dir_plugins);
 	}
-	if (where & R_CORE_LOADLIBS_ENV) {
-		char *p = rz_sys_getenv (R_LIB_ENV);
+	if (where & RZ_CORE_LOADLIBS_ENV) {
+		char *p = rz_sys_getenv (RZ_LIB_ENV);
 		if (p && *p) {
 			rz_lib_opendir (core->lib, p);
 		}
 		free (p);
 	}
-	if (where & R_CORE_LOADLIBS_HOME) {
-		char *hpd = rz_str_home (R2_HOME_PLUGINS);
+	if (where & RZ_CORE_LOADLIBS_HOME) {
+		char *hpd = rz_str_home (RZ_HOME_PLUGINS);
 		if (hpd) {
 			rz_lib_opendir (core->lib, hpd);
 			free (hpd);
 		}
 	}
-	if (where & R_CORE_LOADLIBS_SYSTEM) {
-		__openPluginsAt (core, R2_PLUGINS, dir_plugins);
-		__openPluginsAt (core, R2_EXTRAS, dir_plugins);
-		__openPluginsAt (core, R2_BINDINGS, dir_plugins);
+	if (where & RZ_CORE_LOADLIBS_SYSTEM) {
+		__openPluginsAt (core, RZ_PLUGINS, dir_plugins);
+		__openPluginsAt (core, RZ_EXTRAS, dir_plugins);
+		__openPluginsAt (core, RZ_BINDINGS, dir_plugins);
 	}
 #endif
 }
 
 RZ_API void rz_core_loadlibs_init(RzCore *core) {
 	ut64 prev = rz_time_now_mono ();
-#define DF(x, y, z) rz_lib_add_handler (core->lib, R_LIB_TYPE_ ## x, y, &__lib_ ## z ## _cb, &__lib_ ## z ## _dt, core);
+#define DF(x, y, z) rz_lib_add_handler (core->lib, RZ_LIB_TYPE_ ## x, y, &__lib_ ## z ## _cb, &__lib_ ## z ## _dt, core);
 	core->lib = rz_lib_new (NULL, NULL);
 	DF (IO, "io plugins", io);
 	DF (CORE, "core plugins", core);
@@ -129,7 +129,7 @@ RZ_API int rz_core_loadlibs(RzCore *core, int where, const char *path) {
 		return false;
 	}
 	// load script plugins
-	char *homeplugindir = rz_str_home (R2_HOME_PLUGINS);
+	char *homeplugindir = rz_str_home (RZ_HOME_PLUGINS);
         RzList *files = rz_sys_dir (homeplugindir);
 	RzListIter *iter;
 	char *file;

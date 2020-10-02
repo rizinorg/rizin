@@ -45,7 +45,7 @@ static const i8051_cpu_model *cpu_curr_model = NULL;
 
 static bool i8051_reg_write (RzReg *reg, const char *regname, ut32 num) {
 	if (reg) {
-		RzRegItem *item = rz_reg_get (reg, regname, R_REG_TYPE_GPR);
+		RzRegItem *item = rz_reg_get (reg, regname, RZ_REG_TYPE_GPR);
 		if (item) {
 			rz_reg_set_value (reg, item, num);
 			return true;
@@ -56,7 +56,7 @@ static bool i8051_reg_write (RzReg *reg, const char *regname, ut32 num) {
 
 static ut32 i8051_reg_read (RzReg *reg, const char *regname) {
 	if (reg) {
-		RzRegItem *item = rz_reg_get (reg, regname, R_REG_TYPE_GPR);
+		RzRegItem *item = rz_reg_get (reg, regname, RZ_REG_TYPE_GPR);
 		if (item) {
 			return rz_reg_get_value (reg, item);
 		}
@@ -90,7 +90,7 @@ static void map_cpu_memory (RzAnal *anal, int entry, ut32 addr, ut32 size, bool 
 	} else {
 		// allocate memory for address space
 		char *mstr = rz_str_newf ("malloc://%d", size);
-		desc = anal->iob.open_at (anal->iob.io, mstr, R_PERM_RW, 0, addr);
+		desc = anal->iob.open_at (anal->iob.io, mstr, RZ_PERM_RW, 0, addr);
 		free (mstr);
 		// set 8051 address space as name of mapped memory
 		if (desc && anal->iob.fd_get_name (anal->iob.io, desc->fd)) {
@@ -806,7 +806,7 @@ static int esil_i8051_fini (RzAnalEsil *esil) {
 	if (!i8051_is_init) {
 		return false;
 	}
-	R_FREE (ocbs.user);
+	RZ_FREE (ocbs.user);
 	i8051_is_init = false;
 	return true;
 }
@@ -894,27 +894,27 @@ static int i8051_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int l
 	op->nopcode = 1;
 	op->size = _8051_ops[i].len;
 	op->type = _8051_ops[i].type;
-	op->family = R_ANAL_OP_FAMILY_CPU; // maybe also FAMILY_IO...
+	op->family = RZ_ANAL_OP_FAMILY_CPU; // maybe also FAMILY_IO...
 	op->id = i;
 
 	switch (_8051_ops[i].instr) {
 	default:
-		op->cond = R_ANAL_COND_AL;
+		op->cond = RZ_ANAL_COND_AL;
 	break;
 	case OP_CJNE:
 	case OP_DJNZ:
 	case OP_JB:
 	case OP_JBC:
 	case OP_JNZ:
-		op->cond = R_ANAL_COND_NE;
+		op->cond = RZ_ANAL_COND_NE;
 	break;
 	case OP_JNB:
 	case OP_JZ:
-		op->cond = R_ANAL_COND_EQ;
+		op->cond = RZ_ANAL_COND_EQ;
 	break; case OP_JC:
-		op->cond = R_ANAL_COND_HS;
+		op->cond = RZ_ANAL_COND_HS;
 	break; case OP_JNC:
-		op->cond = R_ANAL_COND_LO;
+		op->cond = RZ_ANAL_COND_LO;
 	}
 
 	switch (_8051_ops[i].instr) {
@@ -967,16 +967,16 @@ static int i8051_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int l
 	switch(_8051_ops[i].instr) {
 	default:
 	break; case OP_PUSH:
-		op->stackop = R_ANAL_STACK_INC;
+		op->stackop = RZ_ANAL_STACK_INC;
 		op->stackptr = 1;
 	break; case OP_POP:
-		op->stackop = R_ANAL_STACK_INC;
+		op->stackop = RZ_ANAL_STACK_INC;
 		op->stackptr = -1;
 	break; case OP_RET:
-		op->stackop = R_ANAL_STACK_INC;
+		op->stackop = RZ_ANAL_STACK_INC;
 		op->stackptr = -2;
 	break; case OP_CALL:
-		op->stackop = R_ANAL_STACK_INC;
+		op->stackop = RZ_ANAL_STACK_INC;
 		op->stackptr = 2;
 		if (arg1 == A_ADDR11) {
 			op->jump = arg_addr11 (addr + op->size, buf);
@@ -1014,7 +1014,7 @@ static int i8051_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int l
 		op->refptr = 1;
 	}
 
-	if (mask & R_ANAL_OP_MASK_ESIL) {
+	if (mask & RZ_ANAL_OP_MASK_ESIL) {
 		ut8 copy[3] = {0, 0, 0};
 		memcpy (copy, buf, len >= 3 ? 3 : len);
 		analop_esil (anal, op, addr, copy);
@@ -1024,7 +1024,7 @@ static int i8051_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int l
 	op->mnemonic = rz_8051_disas (addr, buf, len, &olen);
 	op->size = olen;
 
-	if (mask & R_ANAL_OP_MASK_HINT) {
+	if (mask & RZ_ANAL_OP_MASK_HINT) {
 		// TODO: op->hint
 	}
 
@@ -1044,10 +1044,10 @@ RzAnalPlugin rz_anal_plugin_8051 = {
 	.esil_fini = esil_i8051_fini
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_8051,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

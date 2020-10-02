@@ -12,11 +12,11 @@
 #define SKIPLIST_MAX_DEPTH 31
 
 static RzSkipListNode *rz_skiplist_node_new (void *data, int level) {
-	RzSkipListNode *res = R_NEW0 (RzSkipListNode);
+	RzSkipListNode *res = RZ_NEW0 (RzSkipListNode);
 	if (!res) {
 		return NULL;
 	}
-	res->forward = R_NEWS0 (RzSkipListNode *, level + 1);
+	res->forward = RZ_NEWS0 (RzSkipListNode *, level + 1);
 	if (!res->forward)  {
 		free (res);
 		return NULL;
@@ -106,7 +106,7 @@ static bool delete_element(RzSkipList* list, void* data, bool by_data) {
 // when unequal (for sorting).
 // Returns a new heap-allocated skiplist.
 RZ_API RzSkipList* rz_skiplist_new(RzListFree freefn, RzListComparator comparefn) {
-	RzSkipList *list = R_NEW0 (RzSkipList);
+	RzSkipList *list = RZ_NEW0 (RzSkipList);
 	if (!list) {
 		return NULL;
 	}

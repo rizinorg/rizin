@@ -36,20 +36,20 @@
 
 #define SET_SRC_DST_3_REGS(op) \
 	CREATE_SRC_DST_3 (op);\
-	(op)->dst->reg = rz_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
-	(op)->src[0]->reg = rz_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);\
-	(op)->src[1]->reg = rz_reg_get (anal->reg, REG (2), R_REG_TYPE_GPR);
+	(op)->dst->reg = rz_reg_get (anal->reg, REG (0), RZ_REG_TYPE_GPR);\
+	(op)->src[0]->reg = rz_reg_get (anal->reg, REG (1), RZ_REG_TYPE_GPR);\
+	(op)->src[1]->reg = rz_reg_get (anal->reg, REG (2), RZ_REG_TYPE_GPR);
 
 #define SET_SRC_DST_3_IMM(op) \
 	CREATE_SRC_DST_3 (op);\
-	(op)->dst->reg = rz_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
-	(op)->src[0]->reg = rz_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);\
+	(op)->dst->reg = rz_reg_get (anal->reg, REG (0), RZ_REG_TYPE_GPR);\
+	(op)->src[0]->reg = rz_reg_get (anal->reg, REG (1), RZ_REG_TYPE_GPR);\
 	(op)->src[1]->imm = IMM (2);
 
 #define SET_SRC_DST_2_REGS(op) \
 	CREATE_SRC_DST_2 (op);\
-	(op)->dst->reg = rz_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
-	(op)->src[0]->reg = rz_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);
+	(op)->dst->reg = rz_reg_get (anal->reg, REG (0), RZ_REG_TYPE_GPR);\
+	(op)->src[0]->reg = rz_reg_get (anal->reg, REG (1), RZ_REG_TYPE_GPR);
 
 #define SET_SRC_DST_3_REG_OR_IMM(op) \
 	if (OPERAND(2).type == RISCV_OP_IMM) {\
@@ -220,8 +220,8 @@ static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num
 
 static void op_fillval(RzAnal *anal, RzAnalOp *op, csh *handle, cs_insn *insn) {
 	static RzRegItem reg;
-	switch (op->type & R_ANAL_OP_TYPE_MASK) {
-	case R_ANAL_OP_TYPE_LOAD:
+	switch (op->type & RZ_ANAL_OP_TYPE_MASK) {
+	case RZ_ANAL_OP_TYPE_LOAD:
 		if (OPERAND(1).type == RISCV_OP_MEM) {
 			ZERO_FILL (reg);
 			op->src[0] = rz_anal_value_new ();
@@ -230,7 +230,7 @@ static void op_fillval(RzAnal *anal, RzAnalOp *op, csh *handle, cs_insn *insn) {
 			op->src[0]->delta = OPERAND(1).mem.disp;
 		}
 		break;
-	case R_ANAL_OP_TYPE_STORE:
+	case RZ_ANAL_OP_TYPE_STORE:
 		if (OPERAND(1).type == RISCV_OP_MEM) {
 			ZERO_FILL (reg);
 			op->dst = rz_anal_value_new ();
@@ -239,20 +239,20 @@ static void op_fillval(RzAnal *anal, RzAnalOp *op, csh *handle, cs_insn *insn) {
 			op->dst->delta = OPERAND(1).mem.disp;
 		}
 		break;
-	case R_ANAL_OP_TYPE_SHL:
-	case R_ANAL_OP_TYPE_SHR:
-	case R_ANAL_OP_TYPE_SAR:
-	case R_ANAL_OP_TYPE_XOR:
-	case R_ANAL_OP_TYPE_SUB:
-	case R_ANAL_OP_TYPE_AND:
-	case R_ANAL_OP_TYPE_ADD:
-	case R_ANAL_OP_TYPE_OR:
+	case RZ_ANAL_OP_TYPE_SHL:
+	case RZ_ANAL_OP_TYPE_SHR:
+	case RZ_ANAL_OP_TYPE_SAR:
+	case RZ_ANAL_OP_TYPE_XOR:
+	case RZ_ANAL_OP_TYPE_SUB:
+	case RZ_ANAL_OP_TYPE_AND:
+	case RZ_ANAL_OP_TYPE_ADD:
+	case RZ_ANAL_OP_TYPE_OR:
 		SET_SRC_DST_3_REG_OR_IMM (op);
 		break;
-	case R_ANAL_OP_TYPE_MOV:
+	case RZ_ANAL_OP_TYPE_MOV:
 		SET_SRC_DST_3_REG_OR_IMM (op);
 		break;
-	case R_ANAL_OP_TYPE_DIV: // UDIV
+	case RZ_ANAL_OP_TYPE_DIV: // UDIV
 #if 0
 capstone bug
 ------------
@@ -295,21 +295,21 @@ capstone bug
 }
 
 static void set_opdir(RzAnalOp *op) {
-        switch (op->type & R_ANAL_OP_TYPE_MASK) {
-        case R_ANAL_OP_TYPE_LOAD:
-                op->direction = R_ANAL_OP_DIR_READ;
+        switch (op->type & RZ_ANAL_OP_TYPE_MASK) {
+        case RZ_ANAL_OP_TYPE_LOAD:
+                op->direction = RZ_ANAL_OP_DIR_READ;
                 break;
-        case R_ANAL_OP_TYPE_STORE:
-                op->direction = R_ANAL_OP_DIR_WRITE;
+        case RZ_ANAL_OP_TYPE_STORE:
+                op->direction = RZ_ANAL_OP_DIR_WRITE;
                 break;
-        case R_ANAL_OP_TYPE_LEA:
-                op->direction = R_ANAL_OP_DIR_REF;
+        case RZ_ANAL_OP_TYPE_LEA:
+                op->direction = RZ_ANAL_OP_DIR_REF;
                 break;
-        case R_ANAL_OP_TYPE_CALL:
-        case R_ANAL_OP_TYPE_JMP:
-        case R_ANAL_OP_TYPE_UJMP:
-        case R_ANAL_OP_TYPE_UCALL:
-                op->direction = R_ANAL_OP_DIR_EXEC;
+        case RZ_ANAL_OP_TYPE_CALL:
+        case RZ_ANAL_OP_TYPE_JMP:
+        case RZ_ANAL_OP_TYPE_UJMP:
+        case RZ_ANAL_OP_TYPE_UCALL:
+                op->direction = RZ_ANAL_OP_DIR_EXEC;
                 break;
         default:
                 break;
@@ -350,42 +350,42 @@ static int analop(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len
 	opsize = op->size = insn->size;
 	switch (insn->id) {
 	case RISCV_INS_C_NOP:
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = RZ_ANAL_OP_TYPE_NOP;
 		break;
 	case RISCV_INS_INVALID:
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = RZ_ANAL_OP_TYPE_ILL;
 		break;
 	case RISCV_INS_C_JALR:
-		op->type = R_ANAL_OP_TYPE_UCALL;
+		op->type = RZ_ANAL_OP_TYPE_UCALL;
 		break;
 	case RISCV_INS_C_JR:
-		op->type = R_ANAL_OP_TYPE_UJMP;
+		op->type = RZ_ANAL_OP_TYPE_UJMP;
 		break;
 	case RISCV_INS_C_MV:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANAL_OP_TYPE_MOV;
 		break;
 	case RISCV_INS_JAL:
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = RZ_ANAL_OP_TYPE_CALL;
 		op->jump = IMM(0);
 		op->fail = op->addr + op->size;
 		break;
 	case RISCV_INS_MRET:
 	case RISCV_INS_SRET:
 	case RISCV_INS_URET:
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = RZ_ANAL_OP_TYPE_RET;
 		break;
 	}
 beach:
 	set_opdir (op);
-	if (insn && mask & R_ANAL_OP_MASK_OPEX) {
+	if (insn && mask & RZ_ANAL_OP_MASK_OPEX) {
 		opex (&op->opex, hndl, insn);
 	}
-	if (mask & R_ANAL_OP_MASK_ESIL) {
+	if (mask & RZ_ANAL_OP_MASK_ESIL) {
 		if (analop_esil (anal, op, addr, buf, len, &hndl, insn) != 0) {
 			rz_strbuf_fini (&op->esil);
 		}
 	}
-	if (mask & R_ANAL_OP_MASK_VAL) {
+	if (mask & RZ_ANAL_OP_MASK_VAL) {
 		op_fillval (anal, op, &hndl, insn);
 	}
 	cs_free (insn, n);
@@ -572,11 +572,11 @@ static char *get_reg_profile(RzAnal *anal) {
 
 static int archinfo(RzAnal *anal, int q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_ALIGN:
+	case RZ_ANAL_ARCHINFO_ALIGN:
 		return 4;
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case RZ_ANAL_ARCHINFO_MAX_OP_SIZE:
 		return 4;
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case RZ_ANAL_ARCHINFO_MIN_OP_SIZE:
 		if (anal->bits == 64) {
 			return 4;
 		}
@@ -597,20 +597,20 @@ RzAnalPlugin rz_anal_plugin_riscv_cs = {
 	.op = &analop,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_riscv_cs,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif
 
 #else
 RzAnalPlugin rz_anal_plugin_riscv_cs = {0};
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.version = R2_VERSION
+	.type = RZ_LIB_TYPE_ANAL,
+	.version = RZ_VERSION
 };
 #endif
 #endif

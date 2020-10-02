@@ -85,48 +85,48 @@ enum {
 	FCC_ULE = 0xe,
 };
 /* Define some additional conditions that are nor mappable to
-   the existing R_ANAL_COND* ones and need to be handled in a
+   the existing RZ_ANAL_COND* ones and need to be handled in a
    special way. */
 enum {
-	R_ANAL_COND_ALWAYS = -1,
-	R_ANAL_COND_NEVER = -2,
-	R_ANAL_COND_UNKNOWN = -3,
+	RZ_ANAL_COND_ALWAYS = -1,
+	RZ_ANAL_COND_NEVER = -2,
+	RZ_ANAL_COND_UNKNOWN = -3,
 };
 
 static int icc_to_r_cond(const int cond) {
 	/* we treat signed and unsigned the same here */
 	switch(cond) {
-	case ICC_A: return R_ANAL_COND_ALWAYS;
-	case ICC_CC: return R_ANAL_COND_GE;
-	case ICC_CS: return R_ANAL_COND_LT;
-	case ICC_E: return R_ANAL_COND_EQ;
-	case ICC_G: return R_ANAL_COND_GT;
-	case ICC_GE: return R_ANAL_COND_GE;
-	case ICC_GU: return R_ANAL_COND_GT;
-	case ICC_L: return R_ANAL_COND_LT;
-	case ICC_LE: return R_ANAL_COND_LE;
-	case ICC_LEU: return R_ANAL_COND_LE;
-	case ICC_N: return R_ANAL_COND_NEVER;
-	case ICC_NE: return R_ANAL_COND_NE;
+	case ICC_A: return RZ_ANAL_COND_ALWAYS;
+	case ICC_CC: return RZ_ANAL_COND_GE;
+	case ICC_CS: return RZ_ANAL_COND_LT;
+	case ICC_E: return RZ_ANAL_COND_EQ;
+	case ICC_G: return RZ_ANAL_COND_GT;
+	case ICC_GE: return RZ_ANAL_COND_GE;
+	case ICC_GU: return RZ_ANAL_COND_GT;
+	case ICC_L: return RZ_ANAL_COND_LT;
+	case ICC_LE: return RZ_ANAL_COND_LE;
+	case ICC_LEU: return RZ_ANAL_COND_LE;
+	case ICC_N: return RZ_ANAL_COND_NEVER;
+	case ICC_NE: return RZ_ANAL_COND_NE;
 	case ICC_NEG:
 	case ICC_POS:
 	case ICC_VC:
 	case ICC_VS:
-	default: return R_ANAL_COND_UNKNOWN;
+	default: return RZ_ANAL_COND_UNKNOWN;
 	}
 }
 
 static int fcc_to_r_cond(const int cond) {
 	switch (cond) {
-	case FCC_A: return R_ANAL_COND_ALWAYS;
-	case FCC_E: return R_ANAL_COND_EQ;
-	case FCC_G: return R_ANAL_COND_GT;
-	case FCC_GE: return R_ANAL_COND_GE;
-	case FCC_L: return R_ANAL_COND_LT;
-	case FCC_LE: return R_ANAL_COND_LE;
-	case FCC_LG: return R_ANAL_COND_NE;
-	case FCC_N: return R_ANAL_COND_NEVER;
-	case FCC_NE: return R_ANAL_COND_NE;
+	case FCC_A: return RZ_ANAL_COND_ALWAYS;
+	case FCC_E: return RZ_ANAL_COND_EQ;
+	case FCC_G: return RZ_ANAL_COND_GT;
+	case FCC_GE: return RZ_ANAL_COND_GE;
+	case FCC_L: return RZ_ANAL_COND_LT;
+	case FCC_LE: return RZ_ANAL_COND_LE;
+	case FCC_LG: return RZ_ANAL_COND_NE;
+	case FCC_N: return RZ_ANAL_COND_NEVER;
+	case FCC_NE: return RZ_ANAL_COND_NE;
 	case FCC_O:
 	case FCC_U:
 	case FCC_UE:
@@ -135,7 +135,7 @@ static int fcc_to_r_cond(const int cond) {
 	case FCC_UL:
 	case FCC_ULE:
 	default:
-		return R_ANAL_COND_UNKNOWN;
+		return RZ_ANAL_COND_UNKNOWN;
 	}
 }
 
@@ -282,21 +282,21 @@ static RzAnalValue * value_fill_addr_pc_disp(const ut64 addr, const st64 disp) {
 
 static RzAnalValue * value_fill_addr_reg_regdelta(RzAnal const * const anal, const int ireg, const int iregdelta) {
 	RzAnalValue *val = rz_anal_value_new();
-	val->reg = rz_reg_get(anal->reg, gpr_regs[ireg], R_REG_TYPE_GPR);
-	val->reg = rz_reg_get(anal->reg, gpr_regs[iregdelta], R_REG_TYPE_GPR);
+	val->reg = rz_reg_get(anal->reg, gpr_regs[ireg], RZ_REG_TYPE_GPR);
+	val->reg = rz_reg_get(anal->reg, gpr_regs[iregdelta], RZ_REG_TYPE_GPR);
 	return val;
 }
 
 static RzAnalValue * value_fill_addr_reg_disp(RzAnal const * const anal, const int ireg, const st64 disp) {
 	RzAnalValue *val = rz_anal_value_new();
-	val->reg = rz_reg_get(anal->reg, gpr_regs[ireg], R_REG_TYPE_GPR);
+	val->reg = rz_reg_get(anal->reg, gpr_regs[ireg], RZ_REG_TYPE_GPR);
 	val->delta = disp;
 	return val;
 }
 
 static void anal_call(RzAnalOp *op, const ut32 insn, const ut64 addr) {
 	const st64 disp = (get_immed_sgnext(insn, 29) * 4);
-	op->type = R_ANAL_OP_TYPE_CALL;
+	op->type = RZ_ANAL_OP_TYPE_CALL;
 	op->dst = value_fill_addr_pc_disp(addr, disp);
 	op->jump = addr + disp;
 	op->fail = addr + 4;
@@ -309,18 +309,18 @@ static void anal_jmpl(RzAnal const * const anal, RzAnalOp *op, const ut32 insn, 
 	}
 
 	if (X_RD(insn) == GPR_O7) {
-		op->type = R_ANAL_OP_TYPE_UCALL;
+		op->type = RZ_ANAL_OP_TYPE_UCALL;
 		op->fail = addr + 4;
 	} else if (X_RD(insn) == GPR_G0
 		&& X_LDST_I(insn) == 1
 		&& (X_RS1(insn) == GPR_I7 || X_RS1(insn) == GPR_O7)
 		&& disp == 8) {
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = RZ_ANAL_OP_TYPE_RET;
 			op->eob = true;
 			return;
 		 }
 	else {
-		op->type = R_ANAL_OP_TYPE_UJMP;
+		op->type = RZ_ANAL_OP_TYPE_UJMP;
 		op->eob = true;
 	}
 
@@ -342,16 +342,16 @@ static void anal_branch(RzAnalOp *op, const ut32 insn, const ut64 addr) {
 	} else if(X_OP2(insn) == OP2_FBfcc || X_OP2(insn) == OP2_FBPfcc) {
 		rz_cond = fcc_to_r_cond (X_COND(insn));
 	} else if(X_OP2(insn) == OP2_BPr) {
-		rz_cond = R_ANAL_COND_UNKNOWN;
+		rz_cond = RZ_ANAL_COND_UNKNOWN;
 	}
 
-	if (rz_cond == R_ANAL_COND_ALWAYS) {
-		op->type = R_ANAL_OP_TYPE_JMP;
-	} else if (rz_cond == R_ANAL_COND_NEVER) {
-		op->type = R_ANAL_OP_TYPE_NOP;
+	if (rz_cond == RZ_ANAL_COND_ALWAYS) {
+		op->type = RZ_ANAL_OP_TYPE_JMP;
+	} else if (rz_cond == RZ_ANAL_COND_NEVER) {
+		op->type = RZ_ANAL_OP_TYPE_NOP;
 		return;
 	} else {
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = RZ_ANAL_OP_TYPE_CJMP;
 		op->fail = addr + 4;
 	}
 
@@ -373,7 +373,7 @@ static int sparc_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 	int sz = 4;
 	ut32 insn;
 
-	op->family = R_ANAL_OP_FAMILY_CPU;
+	op->family = RZ_ANAL_OP_FAMILY_CPU;
 	op->addr = addr;
 	op->size = sz;
 
@@ -390,7 +390,7 @@ static int sparc_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 		switch(X_OP2(insn)) {
 		case OP2_ILLTRAP:
 		case OP2_INV:
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = RZ_ANAL_OP_TYPE_ILL;
 			sz = 0; /* make rz_core_anal_bb stop */
 			break;
 		case OP2_BPcc:
@@ -411,24 +411,24 @@ static int sparc_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 		case OP32_INV3:
 		case OP32_INV4:
 		case OP32_INV5:
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = RZ_ANAL_OP_TYPE_ILL;
 			sz = 0; /* make rz_core_anal_bb stop */
 			break;
 		case OP32_CONDINV1:
 			if(X_RD(insn) == 1) {
-				op->type = R_ANAL_OP_TYPE_ILL;
+				op->type = RZ_ANAL_OP_TYPE_ILL;
 				sz = 0; /* make rz_core_anal_bb stop */
 			}
 			break;
 		case OP32_CONDINV2:
 			if(X_RS1(insn) == 1) {
-				op->type = R_ANAL_OP_TYPE_ILL;
+				op->type = RZ_ANAL_OP_TYPE_ILL;
 				sz = 0; /* make rz_core_anal_bb stop */
 			}
 			break;
 		case OP32_CONDINV3:
 			if(X_RS1(insn) != 0) {
-				op->type = R_ANAL_OP_TYPE_ILL;
+				op->type = RZ_ANAL_OP_TYPE_ILL;
 				sz = 0; /* make rz_core_anal_bb stop */
 			}
 			break;
@@ -455,7 +455,7 @@ static int sparc_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 		case OP33_INV14:
 		case OP33_INV15:
 		case OP33_INV16:
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = RZ_ANAL_OP_TYPE_ILL;
 			sz = 0; /* make rz_core_anal_bb stop */
 			break;
 		 }
@@ -616,10 +616,10 @@ RzAnalPlugin rz_anal_plugin_sparc_gnu = {
 	.set_reg_profile = set_reg_profile,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_sparc_gnu,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

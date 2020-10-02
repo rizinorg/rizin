@@ -7,7 +7,7 @@
 #undef PE_DWord
 #undef PE_VWord
 
-#ifdef R_BIN_PE64
+#ifdef RZ_BIN_PE64
 #define PE_(name) Pe64_ ## name
 #define ILT_MASK1 0x8000000000000000LL
 #define ILT_MASK2 0x7fffffffffffffffLL
@@ -535,7 +535,7 @@ typedef struct {
 
 
 //resource types
-#define R_PE_MAX_RESOURCES 2056
+#define RZ_PE_MAX_RESOURCES 2056
 #define PE_RESOURCE_ENTRY_CURSOR          1
 #define PE_RESOURCE_ENTRY_BITMAP          2
 #define PE_RESOURCE_ENTRY_ICON            3

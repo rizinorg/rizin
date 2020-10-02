@@ -27,14 +27,14 @@ RzAsmPlugin rz_asm_plugin_x86_gas = {
 	.license = "LGPL3",
 	.desc = "GNU Assembler (gas)",
 	.bits = 16|32|64,
-	.endian = R_SYS_ENDIAN_LITTLE,
+	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.assemble = &assemble
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_x86_gas,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

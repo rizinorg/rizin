@@ -34,26 +34,26 @@ enum pa_arch {pa10 = 10, pa11 = 11, pa20 = 20, pa20w = 25};
 
 enum hppa_reloc_field_selector_type
   {
-    R_HPPA_FSEL = 0x0,
-    R_HPPA_LSSEL = 0x1,
-    R_HPPA_RSSEL = 0x2,
-    R_HPPA_LSEL = 0x3,
-    R_HPPA_RSEL = 0x4,
-    R_HPPA_LDSEL = 0x5,
-    R_HPPA_RDSEL = 0x6,
-    R_HPPA_LRSEL = 0x7,
-    R_HPPA_RRSEL = 0x8,
-    R_HPPA_NSEL  = 0x9,
-    R_HPPA_NLSEL  = 0xa,
-    R_HPPA_NLRSEL  = 0xb,
-    R_HPPA_PSEL = 0xc,
-    R_HPPA_LPSEL = 0xd,
-    R_HPPA_RPSEL = 0xe,
-    R_HPPA_TSEL = 0xf,
-    R_HPPA_LTSEL = 0x10,
-    R_HPPA_RTSEL = 0x11,
-    R_HPPA_LTPSEL = 0x12,
-    R_HPPA_RTPSEL = 0x13
+    RZ_HPPA_FSEL = 0x0,
+    RZ_HPPA_LSSEL = 0x1,
+    RZ_HPPA_RSSEL = 0x2,
+    RZ_HPPA_LSEL = 0x3,
+    RZ_HPPA_RSEL = 0x4,
+    RZ_HPPA_LDSEL = 0x5,
+    RZ_HPPA_RDSEL = 0x6,
+    RZ_HPPA_LRSEL = 0x7,
+    RZ_HPPA_RRSEL = 0x8,
+    RZ_HPPA_NSEL  = 0x9,
+    RZ_HPPA_NLSEL  = 0xa,
+    RZ_HPPA_NLRSEL  = 0xb,
+    RZ_HPPA_PSEL = 0xc,
+    RZ_HPPA_LPSEL = 0xd,
+    RZ_HPPA_RPSEL = 0xe,
+    RZ_HPPA_TSEL = 0xf,
+    RZ_HPPA_LTSEL = 0x10,
+    RZ_HPPA_RTSEL = 0x11,
+    RZ_HPPA_LTPSEL = 0x12,
+    RZ_HPPA_RTPSEL = 0x13
   };
 
 /* /usr/include/reloc.h defines these to constants.  We want to use
@@ -89,47 +89,47 @@ enum hppa_reloc_field_selector_type
 /* for compatibility */
 enum hppa_reloc_field_selector_type_alt
   {
-    e_fsel = R_HPPA_FSEL,
-    e_lssel = R_HPPA_LSSEL,
-    e_rssel = R_HPPA_RSSEL,
-    e_lsel = R_HPPA_LSEL,
-    e_rsel = R_HPPA_RSEL,
-    e_ldsel = R_HPPA_LDSEL,
-    e_rdsel = R_HPPA_RDSEL,
-    e_lrsel = R_HPPA_LRSEL,
-    e_rrsel = R_HPPA_RRSEL,
-    e_nsel = R_HPPA_NSEL,
-    e_nlsel = R_HPPA_NLSEL,
-    e_nlrsel = R_HPPA_NLRSEL,
-    e_psel = R_HPPA_PSEL,
-    e_lpsel = R_HPPA_LPSEL,
-    e_rpsel = R_HPPA_RPSEL,
-    e_tsel = R_HPPA_TSEL,
-    e_ltsel = R_HPPA_LTSEL,
-    e_rtsel = R_HPPA_RTSEL,
-    e_ltpsel = R_HPPA_LTPSEL,
-    e_rtpsel = R_HPPA_RTPSEL
+    e_fsel = RZ_HPPA_FSEL,
+    e_lssel = RZ_HPPA_LSSEL,
+    e_rssel = RZ_HPPA_RSSEL,
+    e_lsel = RZ_HPPA_LSEL,
+    e_rsel = RZ_HPPA_RSEL,
+    e_ldsel = RZ_HPPA_LDSEL,
+    e_rdsel = RZ_HPPA_RDSEL,
+    e_lrsel = RZ_HPPA_LRSEL,
+    e_rrsel = RZ_HPPA_RRSEL,
+    e_nsel = RZ_HPPA_NSEL,
+    e_nlsel = RZ_HPPA_NLSEL,
+    e_nlrsel = RZ_HPPA_NLRSEL,
+    e_psel = RZ_HPPA_PSEL,
+    e_lpsel = RZ_HPPA_LPSEL,
+    e_rpsel = RZ_HPPA_RPSEL,
+    e_tsel = RZ_HPPA_TSEL,
+    e_ltsel = RZ_HPPA_LTSEL,
+    e_rtsel = RZ_HPPA_RTSEL,
+    e_ltpsel = RZ_HPPA_LTPSEL,
+    e_rtpsel = RZ_HPPA_RTPSEL
   };
 
 enum hppa_reloc_expr_type
   {
-    R_HPPA_E_ONE = 0,
-    R_HPPA_E_TWO = 1,
-    R_HPPA_E_PCREL = 2,
-    R_HPPA_E_CON = 3,
-    R_HPPA_E_PLABEL = 7,
-    R_HPPA_E_ABS = 18
+    RZ_HPPA_E_ONE = 0,
+    RZ_HPPA_E_TWO = 1,
+    RZ_HPPA_E_PCREL = 2,
+    RZ_HPPA_E_CON = 3,
+    RZ_HPPA_E_PLABEL = 7,
+    RZ_HPPA_E_ABS = 18
   };
 
 /* for compatibility */
 enum hppa_reloc_expr_type_alt
   {
-    e_one = R_HPPA_E_ONE,
-    e_two = R_HPPA_E_TWO,
-    e_pcrel = R_HPPA_E_PCREL,
-    e_con = R_HPPA_E_CON,
-    e_plabel = R_HPPA_E_PLABEL,
-    e_abs = R_HPPA_E_ABS
+    e_one = RZ_HPPA_E_ONE,
+    e_two = RZ_HPPA_E_TWO,
+    e_pcrel = RZ_HPPA_E_PCREL,
+    e_con = RZ_HPPA_E_CON,
+    e_plabel = RZ_HPPA_E_PLABEL,
+    e_abs = RZ_HPPA_E_ABS
   };
 
 
@@ -538,7 +538,7 @@ bfd_hppa_insn2fmt (bfd *abfd, int insn)
 }
 
 
-/* Insert VALUE into INSN using R_FORMAT to determine exactly what
+/* Insert VALUE into INSN using RZ_FORMAT to determine exactly what
    bits to change.  */
 
 static inline int

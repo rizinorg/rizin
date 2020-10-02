@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2016 pancake */
 
-#define R_BIN_ELF64 1
+#define RZ_BIN_ELF64 1
 #include "bin_write_elf.inc"
 
 RBinWrite rz_bin_write_elf64 = {

@@ -4,14 +4,14 @@
 #include <rz_util/rz_alloc.h>
 
 RZ_API void rz_alloc_init (void) {
-#if R_MALLOC_WRAPPER
+#if RZ_MALLOC_WRAPPER
 	rz_alloc_hooks (malloc, calloc, realloc, free);
 #endif
 }
 
-#if R_MALLOC_WRAPPER
+#if RZ_MALLOC_WRAPPER
 
-#if R_MALLOC_GLOBAL
+#if RZ_MALLOC_GLOBAL
 RZ_API RMalloc *rz_malloc = malloc;
 RZ_API RCalloc *rz_calloc = calloc;
 RZ_API RRealloc *rz_realloc = realloc;

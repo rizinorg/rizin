@@ -18,21 +18,21 @@ static int mcore_anal(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int
 	if ((instr = mcore_next (&handle))) {
 		op->type = instr->type;
 		switch (instr->type) {
-		case R_ANAL_OP_TYPE_CALL:
-		case R_ANAL_OP_TYPE_CJMP:
+		case RZ_ANAL_OP_TYPE_CALL:
+		case RZ_ANAL_OP_TYPE_CJMP:
 			op->fail = addr + 2;
 			op->jump = addr + instr->args[0].value + 1;
 			break;
-		case R_ANAL_OP_TYPE_JMP:
+		case RZ_ANAL_OP_TYPE_JMP:
 			op->jump = addr + instr->args[0].value + 1;
 			break;
-		case R_ANAL_OP_TYPE_ICALL:
+		case RZ_ANAL_OP_TYPE_ICALL:
 			// the loading address depends on the word
 			// that this pointer points to.
 			// op->jump = addr + ((instr->args[i].value << 2) & 0xfffffffc);
 			break;
-		case R_ANAL_OP_TYPE_RET:
-		case R_ANAL_OP_TYPE_ILL:
+		case RZ_ANAL_OP_TYPE_RET:
+		case RZ_ANAL_OP_TYPE_ILL:
 			op->eob = true;
 			break;
 		default:
@@ -124,10 +124,10 @@ RzAnalPlugin rz_anal_plugin_mcore = {
 	.set_reg_profile = &set_reg_profile,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_mcore,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

@@ -6,7 +6,7 @@ void show_regs(struct rz_reg_t *reg, int bitsize) {
 	RzRegItem *ri;
 	printf("%d bit registers:\n", bitsize);
 	reglist = rz_reg_get_list(reg, bitsize==1?
-		R_REG_TYPE_FLG: R_REG_TYPE_GPR);
+		RZ_REG_TYPE_FLG: RZ_REG_TYPE_GPR);
 	rz_list_foreach (reglist, iter, ri) {
 		if (ri->size == bitsize)
 			printf(" - %s : 0x%08"PFMT64x"\n", ri->name, rz_reg_get_value(reg, ri));
@@ -45,7 +45,7 @@ int main() {
 {
 	ut64 a;
 	RzRegItem *item;
-	item = rz_reg_get (reg, "eflags", R_REG_TYPE_GPR);
+	item = rz_reg_get (reg, "eflags", RZ_REG_TYPE_GPR);
 	rz_reg_set_value (reg, item, 0x00000346); //0xffffffffffff);
 	a = rz_reg_get_value (reg, item);
 	eprintf ("A32 = 0x%x\n", (int)a);
@@ -54,14 +54,14 @@ int main() {
 	}
 
 print_eflags_bits (reg);
-	item = rz_reg_get (reg, "zf", R_REG_TYPE_GPR);
+	item = rz_reg_get (reg, "zf", RZ_REG_TYPE_GPR);
 	a = rz_reg_get_value (reg, item);
 	eprintf ("A = %d\n", (int)a);
 	if (a != 1) {
 		eprintf ("2 FAIL\n");
 	}
 
-	item = rz_reg_get (reg, "zf", R_REG_TYPE_GPR);
+	item = rz_reg_get (reg, "zf", RZ_REG_TYPE_GPR);
 	rz_reg_set_value (reg, item, 1);
 	a = rz_reg_get_value (reg, item);
 	eprintf ("A = %d\n", (int)a);
@@ -81,7 +81,7 @@ exit (0);
 	show_regs (reg, 32);
 	/* --- */
 	rz_reg_set_profile(reg, "../p/x86-linux.regs");
-	printf ("Program counter is named: %s\n", rz_reg_get_name (reg, R_REG_NAME_PC));
+	printf ("Program counter is named: %s\n", rz_reg_get_name (reg, RZ_REG_NAME_PC));
 	show_regs (reg, 32);
 	rz_reg_set_value(reg, rz_reg_get(reg, "eax", -1), 0x414141);
 	rz_reg_set_value(reg, rz_reg_get(reg, "ecx", -1), 666);

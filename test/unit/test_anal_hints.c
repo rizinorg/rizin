@@ -82,8 +82,8 @@ bool test_r_anal_addr_hints() {
 	cur.syntax = "mysyntax";
 	CHECK
 
-	rz_anal_hint_set_type (anal, 0x1337, R_ANAL_OP_TYPE_RET);
-	cur.type = R_ANAL_OP_TYPE_RET;
+	rz_anal_hint_set_type (anal, 0x1337, RZ_ANAL_OP_TYPE_RET);
+	cur.type = RZ_ANAL_OP_TYPE_RET;
 	CHECK
 
 	rz_anal_hint_set_jump (anal, 0x1337, 0xdeadbeef);

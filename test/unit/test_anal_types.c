@@ -67,7 +67,7 @@ static bool test_anal_get_base_type_struct(void) {
 	RzAnalBaseType *base = rz_anal_get_base_type (anal, "kappa");
 	mu_assert_notnull (base, "Couldn't create get base type of struct \"kappa\"");
 
-	mu_assert_eq (R_ANAL_BASE_TYPE_KIND_STRUCT, base->kind, "Wrong base type");
+	mu_assert_eq (RZ_ANAL_BASE_TYPE_KIND_STRUCT, base->kind, "Wrong base type");
 	mu_assert_streq (base->name, "kappa", "type name");
 
 	RzAnalStructMember *member;
@@ -92,7 +92,7 @@ static bool test_anal_save_base_type_struct(void) {
 	mu_assert_notnull (anal, "Couldn't create new RzAnal");
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
 
-	RzAnalBaseType *base = rz_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	RzAnalBaseType *base = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_STRUCT);
 	base->name = strdup ("kappa");
 
 	RzAnalStructMember member = {
@@ -129,7 +129,7 @@ static bool test_anal_get_base_type_union(void) {
 	RzAnalBaseType *base = rz_anal_get_base_type (anal, "kappa");
 	mu_assert_notnull (base, "Couldn't create get base type of union \"kappa\"");
 
-	mu_assert_eq (R_ANAL_BASE_TYPE_KIND_UNION, base->kind, "Wrong base type");
+	mu_assert_eq (RZ_ANAL_BASE_TYPE_KIND_UNION, base->kind, "Wrong base type");
 	mu_assert_streq (base->name, "kappa", "type name");
 
 	RzAnalUnionMember *member;
@@ -152,7 +152,7 @@ static bool test_anal_save_base_type_union(void) {
 	mu_assert_notnull (anal, "Couldn't create new RzAnal");
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
 
-	RzAnalBaseType *base = rz_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_UNION);
+	RzAnalBaseType *base = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_UNION);
 	base->name = strdup ("kappa");
 
 	RzAnalUnionMember member = {
@@ -189,7 +189,7 @@ static bool test_anal_get_base_type_enum(void) {
 	RzAnalBaseType *base = rz_anal_get_base_type (anal, "foo");
 	mu_assert_notnull (base, "Couldn't create get base type of enum \"foo\"");
 
-	mu_assert_eq (R_ANAL_BASE_TYPE_KIND_ENUM, base->kind, "Wrong base type");
+	mu_assert_eq (RZ_ANAL_BASE_TYPE_KIND_ENUM, base->kind, "Wrong base type");
 	mu_assert_streq (base->name, "foo", "type name");
 
 	RzAnalEnumCase *cas = rz_vector_index_ptr (&base->enum_data.cases, 0);
@@ -210,7 +210,7 @@ static bool test_anal_save_base_type_enum(void) {
 	mu_assert_notnull (anal, "Couldn't create new RzAnal");
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
 
-	RzAnalBaseType *base = rz_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ENUM);
+	RzAnalBaseType *base = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ENUM);
 	base->name = strdup ("foo");
 
 	RzAnalEnumCase cas = {
@@ -245,7 +245,7 @@ static bool test_anal_get_base_type_typedef(void) {
 	RzAnalBaseType *base = rz_anal_get_base_type (anal, "string");
 	mu_assert_notnull (base, "Couldn't create get base type of typedef \"string\"");
 
-	mu_assert_eq (R_ANAL_BASE_TYPE_KIND_TYPEDEF, base->kind, "Wrong base type");
+	mu_assert_eq (RZ_ANAL_BASE_TYPE_KIND_TYPEDEF, base->kind, "Wrong base type");
 	mu_assert_streq (base->name, "string", "type name");
 	mu_assert_streq (base->type, "char *", "typedefd type");
 
@@ -259,7 +259,7 @@ static bool test_anal_save_base_type_typedef(void) {
 	mu_assert_notnull (anal, "Couldn't create new RzAnal");
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
 
-	RzAnalBaseType *base = rz_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_TYPEDEF);
+	RzAnalBaseType *base = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_TYPEDEF);
 	base->name = strdup ("string");
 	base->type = strdup ("char *");
 
@@ -285,7 +285,7 @@ static bool test_anal_get_base_type_atomic(void) {
 	RzAnalBaseType *base = rz_anal_get_base_type (anal, "char");
 	mu_assert_notnull (base, "Couldn't create get base type of atomic type \"char\"");
 
-	mu_assert_eq (R_ANAL_BASE_TYPE_KIND_ATOMIC, base->kind, "Wrong base type");
+	mu_assert_eq (RZ_ANAL_BASE_TYPE_KIND_ATOMIC, base->kind, "Wrong base type");
 	mu_assert_streq (base->name, "char", "type name");
 	mu_assert_streq (base->type, "c", "atomic type type");
 	mu_assert_eq (base->size, 8, "atomic type size");
@@ -300,7 +300,7 @@ static bool test_anal_save_base_type_atomic(void) {
 	mu_assert_notnull (anal, "Couldn't create new RzAnal");
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
 
-	RzAnalBaseType *base = rz_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ATOMIC);
+	RzAnalBaseType *base = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ATOMIC);
 	base->name = strdup ("char");
 	base->type = strdup ("c");
 	base->size = 8;

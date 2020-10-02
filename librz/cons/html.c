@@ -125,7 +125,7 @@ RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen) {
 			continue;
 		} else if (esc == 2) {
 			// TODO: use dword comparison here
-			if (ptr[0] == '0' && ptr[1] == 'J') { // R_CONS_CLEAR_FROM_CURSOR_TO_END
+			if (ptr[0] == '0' && ptr[1] == 'J') { // RZ_CONS_CLEAR_FROM_CURSOR_TO_END
 				ptr += 2;
 				esc = 0;
 				str = ptr;

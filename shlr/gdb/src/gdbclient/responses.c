@@ -189,7 +189,7 @@ int handle_vFile_close(libgdbr_t *g) {
 
 static int stop_reason_exit(libgdbr_t *g) {
 	int status = 0, pid = g->pid;
-	g->stop_reason.reason = R_DEBUG_REASON_DEAD;
+	g->stop_reason.reason = RZ_DEBUG_REASON_DEAD;
 	if (g->stub_features.multiprocess && g->data_len > 3) {
 		if (sscanf (g->data + 1, "%x;process:%x", &status, &pid) != 2) {
 			eprintf ("Message from remote: %s\n", g->data);
@@ -216,7 +216,7 @@ static int stop_reason_exit(libgdbr_t *g) {
 
 static int stop_reason_terminated(libgdbr_t *g) {
 	int signal = 0, pid = g->pid;
-	g->stop_reason.reason = R_DEBUG_REASON_DEAD;
+	g->stop_reason.reason = RZ_DEBUG_REASON_DEAD;
 	if (g->stub_features.multiprocess && g->data_len > 3) {
 		if (sscanf (g->data + 1, "%x;process:%x", &signal, &pid) != 2) {
 			eprintf ("Message from remote: %s\n", g->data);
@@ -258,7 +258,7 @@ int handle_stop_reason(libgdbr_t *g) {
 		}
 		memset (&g->stop_reason, 0, sizeof (libgdbr_stop_reason_t));
 		g->stop_reason.signum = -1;
-		g->stop_reason.reason = R_DEBUG_REASON_NONE;
+		g->stop_reason.reason = RZ_DEBUG_REASON_NONE;
 		return 0;
 	case 'W':
 		return stop_reason_exit (g);
@@ -277,7 +277,7 @@ int handle_stop_reason(libgdbr_t *g) {
 		return -1;
 	}
 	g->stop_reason.is_valid = true;
-	g->stop_reason.reason = R_DEBUG_REASON_SIGNAL;
+	g->stop_reason.reason = RZ_DEBUG_REASON_SIGNAL;
 	for (ptr1 = strtok (g->data + 3, ";"); ptr1; ptr1 = strtok (NULL, ";")) {
 		if (rz_str_startswith (ptr1, "thread") && !g->stop_reason.thread.present) {
 			if (!(ptr2 = strchr (ptr1, ':'))) {
@@ -379,7 +379,7 @@ int handle_stop_reason(libgdbr_t *g) {
 		}
 	}
 	if (g->stop_reason.signum == 5) {
-		g->stop_reason.reason = R_DEBUG_REASON_BREAKPOINT;
+		g->stop_reason.reason = RZ_DEBUG_REASON_BREAKPOINT;
 	}
 	return 0;
 }

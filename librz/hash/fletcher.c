@@ -44,7 +44,7 @@ RZ_API ut32 rz_hash_fletcher32(const ut8 *data, size_t len) {
 		for (i = 0; i < 360; i+=2) {
 			size_t left = 360 - i;
 			memset (word, 0, sizeof (word));
-			memcpy (word, data, R_MIN (sizeof (word), left));
+			memcpy (word, data, RZ_MIN (sizeof (word), left));
 			c0 += rz_read_le16 (word);
 			c1 += c0;
 			data += 2;
@@ -55,7 +55,7 @@ RZ_API ut32 rz_hash_fletcher32(const ut8 *data, size_t len) {
 	for (i = 0; i < len; i+=2) {
 		size_t left = len - i;
 		memset (word, 0, sizeof (word));
-		memcpy (word, data, R_MIN (sizeof (word), left));
+		memcpy (word, data, RZ_MIN (sizeof (word), left));
 		c0 += rz_read_le16 (word);
 		c1 += c0;
 		data += 2;
@@ -75,7 +75,7 @@ RZ_API ut64 rz_hash_fletcher64(const ut8 *addr, size_t len) {
 	while (p32 < p32end) {
 		size_t left = p32end - p32;
 		memset (word, 0, sizeof (word));
-		memcpy (word, p32, R_MIN (sizeof (word), left));
+		memcpy (word, p32, RZ_MIN (sizeof (word), left));
 		ut32 w = rz_read_le32 (word);
 		lo32 += w;
 		p32 += sizeof (ut32);

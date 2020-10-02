@@ -28,5 +28,5 @@ RZ_API double rz_hash_entropy(const ut8 *data, ut64 size) {
 }
 RZ_API double rz_hash_entropy_fraction(const ut8 *data, ut64 size) {
 	return size ? rz_hash_entropy (data, size) / \
-		log2 ((double) R_MIN (size, 256)) : 0;
+		log2 ((double) RZ_MIN (size, 256)) : 0;
 }

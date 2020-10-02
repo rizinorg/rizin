@@ -2038,86 +2038,86 @@ typedef struct
 
 /* m68k relocs.  */
 
-#define R_68K_NONE	0		/* No reloc */
-#define R_68K_32	1		/* Direct 32 bit  */
-#define R_68K_16	2		/* Direct 16 bit  */
-#define R_68K_8		3		/* Direct 8 bit  */
-#define R_68K_PC32	4		/* PC relative 32 bit */
-#define R_68K_PC16	5		/* PC relative 16 bit */
-#define R_68K_PC8	6		/* PC relative 8 bit */
-#define R_68K_GOT32	7		/* 32 bit PC relative GOT entry */
-#define R_68K_GOT16	8		/* 16 bit PC relative GOT entry */
-#define R_68K_GOT8	9		/* 8 bit PC relative GOT entry */
-#define R_68K_GOT32O	10		/* 32 bit GOT offset */
-#define R_68K_GOT16O	11		/* 16 bit GOT offset */
-#define R_68K_GOT8O	12		/* 8 bit GOT offset */
-#define R_68K_PLT32	13		/* 32 bit PC relative PLT address */
-#define R_68K_PLT16	14		/* 16 bit PC relative PLT address */
-#define R_68K_PLT8	15		/* 8 bit PC relative PLT address */
-#define R_68K_PLT32O	16		/* 32 bit PLT offset */
-#define R_68K_PLT16O	17		/* 16 bit PLT offset */
-#define R_68K_PLT8O	18		/* 8 bit PLT offset */
-#define R_68K_COPY	19		/* Copy symbol at runtime */
-#define R_68K_GLOB_DAT	20		/* Create GOT entry */
-#define R_68K_JMP_SLOT	21		/* Create PLT entry */
-#define R_68K_RELATIVE	22		/* Adjust by program base */
+#define RZ_68K_NONE	0		/* No reloc */
+#define RZ_68K_32	1		/* Direct 32 bit  */
+#define RZ_68K_16	2		/* Direct 16 bit  */
+#define RZ_68K_8		3		/* Direct 8 bit  */
+#define RZ_68K_PC32	4		/* PC relative 32 bit */
+#define RZ_68K_PC16	5		/* PC relative 16 bit */
+#define RZ_68K_PC8	6		/* PC relative 8 bit */
+#define RZ_68K_GOT32	7		/* 32 bit PC relative GOT entry */
+#define RZ_68K_GOT16	8		/* 16 bit PC relative GOT entry */
+#define RZ_68K_GOT8	9		/* 8 bit PC relative GOT entry */
+#define RZ_68K_GOT32O	10		/* 32 bit GOT offset */
+#define RZ_68K_GOT16O	11		/* 16 bit GOT offset */
+#define RZ_68K_GOT8O	12		/* 8 bit GOT offset */
+#define RZ_68K_PLT32	13		/* 32 bit PC relative PLT address */
+#define RZ_68K_PLT16	14		/* 16 bit PC relative PLT address */
+#define RZ_68K_PLT8	15		/* 8 bit PC relative PLT address */
+#define RZ_68K_PLT32O	16		/* 32 bit PLT offset */
+#define RZ_68K_PLT16O	17		/* 16 bit PLT offset */
+#define RZ_68K_PLT8O	18		/* 8 bit PLT offset */
+#define RZ_68K_COPY	19		/* Copy symbol at runtime */
+#define RZ_68K_GLOB_DAT	20		/* Create GOT entry */
+#define RZ_68K_JMP_SLOT	21		/* Create PLT entry */
+#define RZ_68K_RELATIVE	22		/* Adjust by program base */
 /* Keep this the last entry.  */
-#define R_68K_NUM	23
+#define RZ_68K_NUM	23
 
 /* Intel 80386 specific definitions.  */
 
 /* i386 relocs.  */
 
-#define R_386_NONE	   0		/* No reloc */
-#define R_386_32	   1		/* Direct 32 bit  */
-#define R_386_PC32	   2		/* PC relative 32 bit */
-#define R_386_GOT32	   3		/* 32 bit GOT entry */
-#define R_386_PLT32	   4		/* 32 bit PLT address */
-#define R_386_COPY	   5		/* Copy symbol at runtime */
-#define R_386_GLOB_DAT	   6		/* Create GOT entry */
-#define R_386_JMP_SLOT	   7		/* Create PLT entry */
-#define R_386_RELATIVE	   8		/* Adjust by program base */
-#define R_386_GOTOFF	   9		/* 32 bit offset to GOT */
-#define R_386_GOTPC	   10		/* 32 bit PC relative offset to GOT */
-#define R_386_32PLT	   11
-#define R_386_TLS_TPOFF	   14		/* Offset in static TLS block */
-#define R_386_TLS_IE	   15		/* Address of GOT entry for static TLS
+#define RZ_386_NONE	   0		/* No reloc */
+#define RZ_386_32	   1		/* Direct 32 bit  */
+#define RZ_386_PC32	   2		/* PC relative 32 bit */
+#define RZ_386_GOT32	   3		/* 32 bit GOT entry */
+#define RZ_386_PLT32	   4		/* 32 bit PLT address */
+#define RZ_386_COPY	   5		/* Copy symbol at runtime */
+#define RZ_386_GLOB_DAT	   6		/* Create GOT entry */
+#define RZ_386_JMP_SLOT	   7		/* Create PLT entry */
+#define RZ_386_RELATIVE	   8		/* Adjust by program base */
+#define RZ_386_GOTOFF	   9		/* 32 bit offset to GOT */
+#define RZ_386_GOTPC	   10		/* 32 bit PC relative offset to GOT */
+#define RZ_386_32PLT	   11
+#define RZ_386_TLS_TPOFF	   14		/* Offset in static TLS block */
+#define RZ_386_TLS_IE	   15		/* Address of GOT entry for static TLS
 					   block offset */
-#define R_386_TLS_GOTIE	   16		/* GOT entry for static TLS block
+#define RZ_386_TLS_GOTIE	   16		/* GOT entry for static TLS block
 					   offset */
-#define R_386_TLS_LE	   17		/* Offset relative to static TLS
+#define RZ_386_TLS_LE	   17		/* Offset relative to static TLS
 					   block */
-#define R_386_TLS_GD	   18		/* Direct 32 bit for GNU version of
+#define RZ_386_TLS_GD	   18		/* Direct 32 bit for GNU version of
 					   general dynamic thread local data */
-#define R_386_TLS_LDM	   19		/* Direct 32 bit for GNU version of
+#define RZ_386_TLS_LDM	   19		/* Direct 32 bit for GNU version of
 					   local dynamic thread local data
 					   in LE code */
-#define R_386_16	   20
-#define R_386_PC16	   21
-#define R_386_8		   22
-#define R_386_PC8	   23
-#define R_386_TLS_GD_32	   24		/* Direct 32 bit for general dynamic
+#define RZ_386_16	   20
+#define RZ_386_PC16	   21
+#define RZ_386_8		   22
+#define RZ_386_PC8	   23
+#define RZ_386_TLS_GD_32	   24		/* Direct 32 bit for general dynamic
 					   thread local data */
-#define R_386_TLS_GD_PUSH  25		/* Tag for pushl in GD TLS code */
-#define R_386_TLS_GD_CALL  26		/* Relocation for call to
+#define RZ_386_TLS_GD_PUSH  25		/* Tag for pushl in GD TLS code */
+#define RZ_386_TLS_GD_CALL  26		/* Relocation for call to
 					   __tls_get_addr() */
-#define R_386_TLS_GD_POP   27		/* Tag for popl in GD TLS code */
-#define R_386_TLS_LDM_32   28		/* Direct 32 bit for local dynamic
+#define RZ_386_TLS_GD_POP   27		/* Tag for popl in GD TLS code */
+#define RZ_386_TLS_LDM_32   28		/* Direct 32 bit for local dynamic
 					   thread local data in LE code */
-#define R_386_TLS_LDM_PUSH 29		/* Tag for pushl in LDM TLS code */
-#define R_386_TLS_LDM_CALL 30		/* Relocation for call to
+#define RZ_386_TLS_LDM_PUSH 29		/* Tag for pushl in LDM TLS code */
+#define RZ_386_TLS_LDM_CALL 30		/* Relocation for call to
 					   __tls_get_addr() in LDM code */
-#define R_386_TLS_LDM_POP  31		/* Tag for popl in LDM TLS code */
-#define R_386_TLS_LDO_32   32		/* Offset relative to TLS block */
-#define R_386_TLS_IE_32	   33		/* GOT entry for negated static TLS
+#define RZ_386_TLS_LDM_POP  31		/* Tag for popl in LDM TLS code */
+#define RZ_386_TLS_LDO_32   32		/* Offset relative to TLS block */
+#define RZ_386_TLS_IE_32	   33		/* GOT entry for negated static TLS
 					   block offset */
-#define R_386_TLS_LE_32	   34		/* Negated offset relative to static
+#define RZ_386_TLS_LE_32	   34		/* Negated offset relative to static
 					   TLS block */
-#define R_386_TLS_DTPMOD32 35		/* ID of module containing symbol */
-#define R_386_TLS_DTPOFF32 36		/* Offset in TLS block */
-#define R_386_TLS_TPOFF32  37		/* Negated offset in static TLS block */
+#define RZ_386_TLS_DTPMOD32 35		/* ID of module containing symbol */
+#define RZ_386_TLS_DTPOFF32 36		/* Offset in TLS block */
+#define RZ_386_TLS_TPOFF32  37		/* Negated offset in static TLS block */
 /* Keep this the last entry.  */
-#define R_386_NUM	   38
+#define RZ_386_NUM	   38
 
 /* SUN SPARC specific definitions.  */
 
@@ -2140,90 +2140,90 @@ typedef struct
 
 /* SPARC relocs.  */
 
-#define R_SPARC_NONE		0	/* No reloc */
-#define R_SPARC_8		1	/* Direct 8 bit */
-#define R_SPARC_16		2	/* Direct 16 bit */
-#define R_SPARC_32		3	/* Direct 32 bit */
-#define R_SPARC_DISP8		4	/* PC relative 8 bit */
-#define R_SPARC_DISP16		5	/* PC relative 16 bit */
-#define R_SPARC_DISP32		6	/* PC relative 32 bit */
-#define R_SPARC_WDISP30		7	/* PC relative 30 bit shifted */
-#define R_SPARC_WDISP22		8	/* PC relative 22 bit shifted */
-#define R_SPARC_HI22		9	/* High 22 bit */
-#define R_SPARC_22		10	/* Direct 22 bit */
-#define R_SPARC_13		11	/* Direct 13 bit */
-#define R_SPARC_LO10		12	/* Truncated 10 bit */
-#define R_SPARC_GOT10		13	/* Truncated 10 bit GOT entry */
-#define R_SPARC_GOT13		14	/* 13 bit GOT entry */
-#define R_SPARC_GOT22		15	/* 22 bit GOT entry shifted */
-#define R_SPARC_PC10		16	/* PC relative 10 bit truncated */
-#define R_SPARC_PC22		17	/* PC relative 22 bit shifted */
-#define R_SPARC_WPLT30		18	/* 30 bit PC relative PLT address */
-#define R_SPARC_COPY		19	/* Copy symbol at runtime */
-#define R_SPARC_GLOB_DAT	20	/* Create GOT entry */
-#define R_SPARC_JMP_SLOT	21	/* Create PLT entry */
-#define R_SPARC_RELATIVE	22	/* Adjust by program base */
-#define R_SPARC_UA32		23	/* Direct 32 bit unaligned */
+#define RZ_SPARC_NONE		0	/* No reloc */
+#define RZ_SPARC_8		1	/* Direct 8 bit */
+#define RZ_SPARC_16		2	/* Direct 16 bit */
+#define RZ_SPARC_32		3	/* Direct 32 bit */
+#define RZ_SPARC_DISP8		4	/* PC relative 8 bit */
+#define RZ_SPARC_DISP16		5	/* PC relative 16 bit */
+#define RZ_SPARC_DISP32		6	/* PC relative 32 bit */
+#define RZ_SPARC_WDISP30		7	/* PC relative 30 bit shifted */
+#define RZ_SPARC_WDISP22		8	/* PC relative 22 bit shifted */
+#define RZ_SPARC_HI22		9	/* High 22 bit */
+#define RZ_SPARC_22		10	/* Direct 22 bit */
+#define RZ_SPARC_13		11	/* Direct 13 bit */
+#define RZ_SPARC_LO10		12	/* Truncated 10 bit */
+#define RZ_SPARC_GOT10		13	/* Truncated 10 bit GOT entry */
+#define RZ_SPARC_GOT13		14	/* 13 bit GOT entry */
+#define RZ_SPARC_GOT22		15	/* 22 bit GOT entry shifted */
+#define RZ_SPARC_PC10		16	/* PC relative 10 bit truncated */
+#define RZ_SPARC_PC22		17	/* PC relative 22 bit shifted */
+#define RZ_SPARC_WPLT30		18	/* 30 bit PC relative PLT address */
+#define RZ_SPARC_COPY		19	/* Copy symbol at runtime */
+#define RZ_SPARC_GLOB_DAT	20	/* Create GOT entry */
+#define RZ_SPARC_JMP_SLOT	21	/* Create PLT entry */
+#define RZ_SPARC_RELATIVE	22	/* Adjust by program base */
+#define RZ_SPARC_UA32		23	/* Direct 32 bit unaligned */
 
 /* Additional Sparc64 relocs.  */
 
-#define R_SPARC_PLT32		24	/* Direct 32 bit ref to PLT entry */
-#define R_SPARC_HIPLT22		25	/* High 22 bit PLT entry */
-#define R_SPARC_LOPLT10		26	/* Truncated 10 bit PLT entry */
-#define R_SPARC_PCPLT32		27	/* PC rel 32 bit ref to PLT entry */
-#define R_SPARC_PCPLT22		28	/* PC rel high 22 bit PLT entry */
-#define R_SPARC_PCPLT10		29	/* PC rel trunc 10 bit PLT entry */
-#define R_SPARC_10		30	/* Direct 10 bit */
-#define R_SPARC_11		31	/* Direct 11 bit */
-#define R_SPARC_64		32	/* Direct 64 bit */
-#define R_SPARC_OLO10		33	/* 10bit with secondary 13bit addend */
-#define R_SPARC_HH22		34	/* Top 22 bits of direct 64 bit */
-#define R_SPARC_HM10		35	/* High middle 10 bits of ... */
-#define R_SPARC_LM22		36	/* Low middle 22 bits of ... */
-#define R_SPARC_PC_HH22		37	/* Top 22 bits of pc rel 64 bit */
-#define R_SPARC_PC_HM10		38	/* High middle 10 bit of ... */
-#define R_SPARC_PC_LM22		39	/* Low miggle 22 bits of ... */
-#define R_SPARC_WDISP16		40	/* PC relative 16 bit shifted */
-#define R_SPARC_WDISP19		41	/* PC relative 19 bit shifted */
-#define R_SPARC_7		43	/* Direct 7 bit */
-#define R_SPARC_5		44	/* Direct 5 bit */
-#define R_SPARC_6		45	/* Direct 6 bit */
-#define R_SPARC_DISP64		46	/* PC relative 64 bit */
-#define R_SPARC_PLT64		47	/* Direct 64 bit ref to PLT entry */
-#define R_SPARC_HIX22		48	/* High 22 bit complemented */
-#define R_SPARC_LOX10		49	/* Truncated 11 bit complemented */
-#define R_SPARC_H44		50	/* Direct high 12 of 44 bit */
-#define R_SPARC_M44		51	/* Direct mid 22 of 44 bit */
-#define R_SPARC_L44		52	/* Direct low 10 of 44 bit */
-#define R_SPARC_REGISTER	53	/* Global register usage */
-#define R_SPARC_UA64		54	/* Direct 64 bit unaligned */
-#define R_SPARC_UA16		55	/* Direct 16 bit unaligned */
-#define R_SPARC_TLS_GD_HI22	56
-#define R_SPARC_TLS_GD_LO10	57
-#define R_SPARC_TLS_GD_ADD	58
-#define R_SPARC_TLS_GD_CALL	59
-#define R_SPARC_TLS_LDM_HI22	60
-#define R_SPARC_TLS_LDM_LO10	61
-#define R_SPARC_TLS_LDM_ADD	62
-#define R_SPARC_TLS_LDM_CALL	63
-#define R_SPARC_TLS_LDO_HIX22	64
-#define R_SPARC_TLS_LDO_LOX10	65
-#define R_SPARC_TLS_LDO_ADD	66
-#define R_SPARC_TLS_IE_HI22	67
-#define R_SPARC_TLS_IE_LO10	68
-#define R_SPARC_TLS_IE_LD	69
-#define R_SPARC_TLS_IE_LDX	70
-#define R_SPARC_TLS_IE_ADD	71
-#define R_SPARC_TLS_LE_HIX22	72
-#define R_SPARC_TLS_LE_LOX10	73
-#define R_SPARC_TLS_DTPMOD32	74
-#define R_SPARC_TLS_DTPMOD64	75
-#define R_SPARC_TLS_DTPOFF32	76
-#define R_SPARC_TLS_DTPOFF64	77
-#define R_SPARC_TLS_TPOFF32	78
-#define R_SPARC_TLS_TPOFF64	79
+#define RZ_SPARC_PLT32		24	/* Direct 32 bit ref to PLT entry */
+#define RZ_SPARC_HIPLT22		25	/* High 22 bit PLT entry */
+#define RZ_SPARC_LOPLT10		26	/* Truncated 10 bit PLT entry */
+#define RZ_SPARC_PCPLT32		27	/* PC rel 32 bit ref to PLT entry */
+#define RZ_SPARC_PCPLT22		28	/* PC rel high 22 bit PLT entry */
+#define RZ_SPARC_PCPLT10		29	/* PC rel trunc 10 bit PLT entry */
+#define RZ_SPARC_10		30	/* Direct 10 bit */
+#define RZ_SPARC_11		31	/* Direct 11 bit */
+#define RZ_SPARC_64		32	/* Direct 64 bit */
+#define RZ_SPARC_OLO10		33	/* 10bit with secondary 13bit addend */
+#define RZ_SPARC_HH22		34	/* Top 22 bits of direct 64 bit */
+#define RZ_SPARC_HM10		35	/* High middle 10 bits of ... */
+#define RZ_SPARC_LM22		36	/* Low middle 22 bits of ... */
+#define RZ_SPARC_PC_HH22		37	/* Top 22 bits of pc rel 64 bit */
+#define RZ_SPARC_PC_HM10		38	/* High middle 10 bit of ... */
+#define RZ_SPARC_PC_LM22		39	/* Low miggle 22 bits of ... */
+#define RZ_SPARC_WDISP16		40	/* PC relative 16 bit shifted */
+#define RZ_SPARC_WDISP19		41	/* PC relative 19 bit shifted */
+#define RZ_SPARC_7		43	/* Direct 7 bit */
+#define RZ_SPARC_5		44	/* Direct 5 bit */
+#define RZ_SPARC_6		45	/* Direct 6 bit */
+#define RZ_SPARC_DISP64		46	/* PC relative 64 bit */
+#define RZ_SPARC_PLT64		47	/* Direct 64 bit ref to PLT entry */
+#define RZ_SPARC_HIX22		48	/* High 22 bit complemented */
+#define RZ_SPARC_LOX10		49	/* Truncated 11 bit complemented */
+#define RZ_SPARC_H44		50	/* Direct high 12 of 44 bit */
+#define RZ_SPARC_M44		51	/* Direct mid 22 of 44 bit */
+#define RZ_SPARC_L44		52	/* Direct low 10 of 44 bit */
+#define RZ_SPARC_REGISTER	53	/* Global register usage */
+#define RZ_SPARC_UA64		54	/* Direct 64 bit unaligned */
+#define RZ_SPARC_UA16		55	/* Direct 16 bit unaligned */
+#define RZ_SPARC_TLS_GD_HI22	56
+#define RZ_SPARC_TLS_GD_LO10	57
+#define RZ_SPARC_TLS_GD_ADD	58
+#define RZ_SPARC_TLS_GD_CALL	59
+#define RZ_SPARC_TLS_LDM_HI22	60
+#define RZ_SPARC_TLS_LDM_LO10	61
+#define RZ_SPARC_TLS_LDM_ADD	62
+#define RZ_SPARC_TLS_LDM_CALL	63
+#define RZ_SPARC_TLS_LDO_HIX22	64
+#define RZ_SPARC_TLS_LDO_LOX10	65
+#define RZ_SPARC_TLS_LDO_ADD	66
+#define RZ_SPARC_TLS_IE_HI22	67
+#define RZ_SPARC_TLS_IE_LO10	68
+#define RZ_SPARC_TLS_IE_LD	69
+#define RZ_SPARC_TLS_IE_LDX	70
+#define RZ_SPARC_TLS_IE_ADD	71
+#define RZ_SPARC_TLS_LE_HIX22	72
+#define RZ_SPARC_TLS_LE_LOX10	73
+#define RZ_SPARC_TLS_DTPMOD32	74
+#define RZ_SPARC_TLS_DTPMOD64	75
+#define RZ_SPARC_TLS_DTPOFF32	76
+#define RZ_SPARC_TLS_DTPOFF64	77
+#define RZ_SPARC_TLS_TPOFF32	78
+#define RZ_SPARC_TLS_TPOFF64	79
 /* Keep this the last entry.  */
-#define R_SPARC_NUM		80
+#define RZ_SPARC_NUM		80
 
 /* For Sparc64, legal values for d_tag of Elf64_Dyn.  */
 
@@ -2437,44 +2437,44 @@ typedef struct
 
 /* MIPS relocs.  */
 
-#define R_MIPS_NONE		0	/* No reloc */
-#define R_MIPS_16		1	/* Direct 16 bit */
-#define R_MIPS_32		2	/* Direct 32 bit */
-#define R_MIPS_REL32		3	/* PC relative 32 bit */
-#define R_MIPS_26		4	/* Direct 26 bit shifted */
-#define R_MIPS_HI16		5	/* High 16 bit */
-#define R_MIPS_LO16		6	/* Low 16 bit */
-#define R_MIPS_GPREL16		7	/* GP relative 16 bit */
-#define R_MIPS_LITERAL		8	/* 16 bit literal entry */
-#define R_MIPS_GOT16		9	/* 16 bit GOT entry */
-#define R_MIPS_PC16		10	/* PC relative 16 bit */
-#define R_MIPS_CALL16		11	/* 16 bit GOT entry for function */
-#define R_MIPS_GPREL32		12	/* GP relative 32 bit */
+#define RZ_MIPS_NONE		0	/* No reloc */
+#define RZ_MIPS_16		1	/* Direct 16 bit */
+#define RZ_MIPS_32		2	/* Direct 32 bit */
+#define RZ_MIPS_REL32		3	/* PC relative 32 bit */
+#define RZ_MIPS_26		4	/* Direct 26 bit shifted */
+#define RZ_MIPS_HI16		5	/* High 16 bit */
+#define RZ_MIPS_LO16		6	/* Low 16 bit */
+#define RZ_MIPS_GPREL16		7	/* GP relative 16 bit */
+#define RZ_MIPS_LITERAL		8	/* 16 bit literal entry */
+#define RZ_MIPS_GOT16		9	/* 16 bit GOT entry */
+#define RZ_MIPS_PC16		10	/* PC relative 16 bit */
+#define RZ_MIPS_CALL16		11	/* 16 bit GOT entry for function */
+#define RZ_MIPS_GPREL32		12	/* GP relative 32 bit */
 
-#define R_MIPS_SHIFT5		16
-#define R_MIPS_SHIFT6		17
-#define R_MIPS_64		18
-#define R_MIPS_GOT_DISP		19
-#define R_MIPS_GOT_PAGE		20
-#define R_MIPS_GOT_OFST		21
-#define R_MIPS_GOT_HI16		22
-#define R_MIPS_GOT_LO16		23
-#define R_MIPS_SUB		24
-#define R_MIPS_INSERT_A		25
-#define R_MIPS_INSERT_B		26
-#define R_MIPS_DELETE		27
-#define R_MIPS_HIGHER		28
-#define R_MIPS_HIGHEST		29
-#define R_MIPS_CALL_HI16	30
-#define R_MIPS_CALL_LO16	31
-#define R_MIPS_SCN_DISP		32
-#define R_MIPS_REL16		33
-#define R_MIPS_ADD_IMMEDIATE	34
-#define R_MIPS_PJUMP		35
-#define R_MIPS_RELGOT		36
-#define R_MIPS_JALR		37
+#define RZ_MIPS_SHIFT5		16
+#define RZ_MIPS_SHIFT6		17
+#define RZ_MIPS_64		18
+#define RZ_MIPS_GOT_DISP		19
+#define RZ_MIPS_GOT_PAGE		20
+#define RZ_MIPS_GOT_OFST		21
+#define RZ_MIPS_GOT_HI16		22
+#define RZ_MIPS_GOT_LO16		23
+#define RZ_MIPS_SUB		24
+#define RZ_MIPS_INSERT_A		25
+#define RZ_MIPS_INSERT_B		26
+#define RZ_MIPS_DELETE		27
+#define RZ_MIPS_HIGHER		28
+#define RZ_MIPS_HIGHEST		29
+#define RZ_MIPS_CALL_HI16	30
+#define RZ_MIPS_CALL_LO16	31
+#define RZ_MIPS_SCN_DISP		32
+#define RZ_MIPS_REL16		33
+#define RZ_MIPS_ADD_IMMEDIATE	34
+#define RZ_MIPS_PJUMP		35
+#define RZ_MIPS_RELGOT		36
+#define RZ_MIPS_JALR		37
 /* Keep this the last entry.  */
-#define R_MIPS_NUM		38
+#define RZ_MIPS_NUM		38
 
 /* Legal values for p_type field of Elf32_Phdr.  */
 
@@ -2643,94 +2643,94 @@ typedef Elf32_Addr Elf32_Conflict;
 
 /* HPPA relocs.  */
 
-#define R_PARISC_NONE		0	/* No reloc.  */
-#define R_PARISC_DIR32		1	/* Direct 32-bit reference.  */
-#define R_PARISC_DIR21L		2	/* Left 21 bits of eff. address.  */
-#define R_PARISC_DIR17R		3	/* Right 17 bits of eff. address.  */
-#define R_PARISC_DIR17F		4	/* 17 bits of eff. address.  */
-#define R_PARISC_DIR14R		6	/* Right 14 bits of eff. address.  */
-#define R_PARISC_PCREL32	9	/* 32-bit rel. address.  */
-#define R_PARISC_PCREL21L	10	/* Left 21 bits of rel. address.  */
-#define R_PARISC_PCREL17R	11	/* Right 17 bits of rel. address.  */
-#define R_PARISC_PCREL17F	12	/* 17 bits of rel. address.  */
-#define R_PARISC_PCREL14R	14	/* Right 14 bits of rel. address.  */
-#define R_PARISC_DPREL21L	18	/* Left 21 bits of rel. address.  */
-#define R_PARISC_DPREL14R	22	/* Right 14 bits of rel. address.  */
-#define R_PARISC_GPREL21L	26	/* GP-relative, left 21 bits.  */
-#define R_PARISC_GPREL14R	30	/* GP-relative, right 14 bits.  */
-#define R_PARISC_LTOFF21L	34	/* LT-relative, left 21 bits.  */
-#define R_PARISC_LTOFF14R	38	/* LT-relative, right 14 bits.  */
-#define R_PARISC_SECREL32	41	/* 32 bits section rel. address.  */
-#define R_PARISC_SEGBASE	48	/* No relocation, set segment base.  */
-#define R_PARISC_SEGREL32	49	/* 32 bits segment rel. address.  */
-#define R_PARISC_PLTOFF21L	50	/* PLT rel. address, left 21 bits.  */
-#define R_PARISC_PLTOFF14R	54	/* PLT rel. address, right 14 bits.  */
-#define R_PARISC_LTOFF_FPTR32	57	/* 32 bits LT-rel. function pointer. */
-#define R_PARISC_LTOFF_FPTR21L	58	/* LT-rel. fct ptr, left 21 bits. */
-#define R_PARISC_LTOFF_FPTR14R	62	/* LT-rel. fct ptr, right 14 bits. */
-#define R_PARISC_FPTR64		64	/* 64 bits function address.  */
-#define R_PARISC_PLABEL32	65	/* 32 bits function address.  */
-#define R_PARISC_PCREL64	72	/* 64 bits PC-rel. address.  */
-#define R_PARISC_PCREL22F	74	/* 22 bits PC-rel. address.  */
-#define R_PARISC_PCREL14WR	75	/* PC-rel. address, right 14 bits.  */
-#define R_PARISC_PCREL14DR	76	/* PC rel. address, right 14 bits.  */
-#define R_PARISC_PCREL16F	77	/* 16 bits PC-rel. address.  */
-#define R_PARISC_PCREL16WF	78	/* 16 bits PC-rel. address.  */
-#define R_PARISC_PCREL16DF	79	/* 16 bits PC-rel. address.  */
-#define R_PARISC_DIR64		80	/* 64 bits of eff. address.  */
-#define R_PARISC_DIR14WR	83	/* 14 bits of eff. address.  */
-#define R_PARISC_DIR14DR	84	/* 14 bits of eff. address.  */
-#define R_PARISC_DIR16F		85	/* 16 bits of eff. address.  */
-#define R_PARISC_DIR16WF	86	/* 16 bits of eff. address.  */
-#define R_PARISC_DIR16DF	87	/* 16 bits of eff. address.  */
-#define R_PARISC_GPREL64	88	/* 64 bits of GP-rel. address.  */
-#define R_PARISC_GPREL14WR	91	/* GP-rel. address, right 14 bits.  */
-#define R_PARISC_GPREL14DR	92	/* GP-rel. address, right 14 bits.  */
-#define R_PARISC_GPREL16F	93	/* 16 bits GP-rel. address.  */
-#define R_PARISC_GPREL16WF	94	/* 16 bits GP-rel. address.  */
-#define R_PARISC_GPREL16DF	95	/* 16 bits GP-rel. address.  */
-#define R_PARISC_LTOFF64	96	/* 64 bits LT-rel. address.  */
-#define R_PARISC_LTOFF14WR	99	/* LT-rel. address, right 14 bits.  */
-#define R_PARISC_LTOFF14DR	100	/* LT-rel. address, right 14 bits.  */
-#define R_PARISC_LTOFF16F	101	/* 16 bits LT-rel. address.  */
-#define R_PARISC_LTOFF16WF	102	/* 16 bits LT-rel. address.  */
-#define R_PARISC_LTOFF16DF	103	/* 16 bits LT-rel. address.  */
-#define R_PARISC_SECREL64	104	/* 64 bits section rel. address.  */
-#define R_PARISC_SEGREL64	112	/* 64 bits segment rel. address.  */
-#define R_PARISC_PLTOFF14WR	115	/* PLT-rel. address, right 14 bits.  */
-#define R_PARISC_PLTOFF14DR	116	/* PLT-rel. address, right 14 bits.  */
-#define R_PARISC_PLTOFF16F	117	/* 16 bits LT-rel. address.  */
-#define R_PARISC_PLTOFF16WF	118	/* 16 bits PLT-rel. address.  */
-#define R_PARISC_PLTOFF16DF	119	/* 16 bits PLT-rel. address.  */
-#define R_PARISC_LTOFF_FPTR64	120	/* 64 bits LT-rel. function ptr.  */
-#define R_PARISC_LTOFF_FPTR14WR	123	/* LT-rel. fct. ptr., right 14 bits. */
-#define R_PARISC_LTOFF_FPTR14DR	124	/* LT-rel. fct. ptr., right 14 bits. */
-#define R_PARISC_LTOFF_FPTR16F	125	/* 16 bits LT-rel. function ptr.  */
-#define R_PARISC_LTOFF_FPTR16WF	126	/* 16 bits LT-rel. function ptr.  */
-#define R_PARISC_LTOFF_FPTR16DF	127	/* 16 bits LT-rel. function ptr.  */
-#define R_PARISC_LORESERVE	128
-#define R_PARISC_COPY		128	/* Copy relocation.  */
-#define R_PARISC_IPLT		129	/* Dynamic reloc, imported PLT */
-#define R_PARISC_EPLT		130	/* Dynamic reloc, exported PLT */
-#define R_PARISC_TPREL32	153	/* 32 bits TP-rel. address.  */
-#define R_PARISC_TPREL21L	154	/* TP-rel. address, left 21 bits.  */
-#define R_PARISC_TPREL14R	158	/* TP-rel. address, right 14 bits.  */
-#define R_PARISC_LTOFF_TP21L	162	/* LT-TP-rel. address, left 21 bits. */
-#define R_PARISC_LTOFF_TP14R	166	/* LT-TP-rel. address, right 14 bits.*/
-#define R_PARISC_LTOFF_TP14F	167	/* 14 bits LT-TP-rel. address.  */
-#define R_PARISC_TPREL64	216	/* 64 bits TP-rel. address.  */
-#define R_PARISC_TPREL14WR	219	/* TP-rel. address, right 14 bits.  */
-#define R_PARISC_TPREL14DR	220	/* TP-rel. address, right 14 bits.  */
-#define R_PARISC_TPREL16F	221	/* 16 bits TP-rel. address.  */
-#define R_PARISC_TPREL16WF	222	/* 16 bits TP-rel. address.  */
-#define R_PARISC_TPREL16DF	223	/* 16 bits TP-rel. address.  */
-#define R_PARISC_LTOFF_TP64	224	/* 64 bits LT-TP-rel. address.  */
-#define R_PARISC_LTOFF_TP14WR	227	/* LT-TP-rel. address, right 14 bits.*/
-#define R_PARISC_LTOFF_TP14DR	228	/* LT-TP-rel. address, right 14 bits.*/
-#define R_PARISC_LTOFF_TP16F	229	/* 16 bits LT-TP-rel. address.  */
-#define R_PARISC_LTOFF_TP16WF	230	/* 16 bits LT-TP-rel. address.  */
-#define R_PARISC_LTOFF_TP16DF	231	/* 16 bits LT-TP-rel. address.  */
-#define R_PARISC_HIRESERVE	255
+#define RZ_PARISC_NONE		0	/* No reloc.  */
+#define RZ_PARISC_DIR32		1	/* Direct 32-bit reference.  */
+#define RZ_PARISC_DIR21L		2	/* Left 21 bits of eff. address.  */
+#define RZ_PARISC_DIR17R		3	/* Right 17 bits of eff. address.  */
+#define RZ_PARISC_DIR17F		4	/* 17 bits of eff. address.  */
+#define RZ_PARISC_DIR14R		6	/* Right 14 bits of eff. address.  */
+#define RZ_PARISC_PCREL32	9	/* 32-bit rel. address.  */
+#define RZ_PARISC_PCREL21L	10	/* Left 21 bits of rel. address.  */
+#define RZ_PARISC_PCREL17R	11	/* Right 17 bits of rel. address.  */
+#define RZ_PARISC_PCREL17F	12	/* 17 bits of rel. address.  */
+#define RZ_PARISC_PCREL14R	14	/* Right 14 bits of rel. address.  */
+#define RZ_PARISC_DPREL21L	18	/* Left 21 bits of rel. address.  */
+#define RZ_PARISC_DPREL14R	22	/* Right 14 bits of rel. address.  */
+#define RZ_PARISC_GPREL21L	26	/* GP-relative, left 21 bits.  */
+#define RZ_PARISC_GPREL14R	30	/* GP-relative, right 14 bits.  */
+#define RZ_PARISC_LTOFF21L	34	/* LT-relative, left 21 bits.  */
+#define RZ_PARISC_LTOFF14R	38	/* LT-relative, right 14 bits.  */
+#define RZ_PARISC_SECREL32	41	/* 32 bits section rel. address.  */
+#define RZ_PARISC_SEGBASE	48	/* No relocation, set segment base.  */
+#define RZ_PARISC_SEGREL32	49	/* 32 bits segment rel. address.  */
+#define RZ_PARISC_PLTOFF21L	50	/* PLT rel. address, left 21 bits.  */
+#define RZ_PARISC_PLTOFF14R	54	/* PLT rel. address, right 14 bits.  */
+#define RZ_PARISC_LTOFF_FPTR32	57	/* 32 bits LT-rel. function pointer. */
+#define RZ_PARISC_LTOFF_FPTR21L	58	/* LT-rel. fct ptr, left 21 bits. */
+#define RZ_PARISC_LTOFF_FPTR14R	62	/* LT-rel. fct ptr, right 14 bits. */
+#define RZ_PARISC_FPTR64		64	/* 64 bits function address.  */
+#define RZ_PARISC_PLABEL32	65	/* 32 bits function address.  */
+#define RZ_PARISC_PCREL64	72	/* 64 bits PC-rel. address.  */
+#define RZ_PARISC_PCREL22F	74	/* 22 bits PC-rel. address.  */
+#define RZ_PARISC_PCREL14WR	75	/* PC-rel. address, right 14 bits.  */
+#define RZ_PARISC_PCREL14DR	76	/* PC rel. address, right 14 bits.  */
+#define RZ_PARISC_PCREL16F	77	/* 16 bits PC-rel. address.  */
+#define RZ_PARISC_PCREL16WF	78	/* 16 bits PC-rel. address.  */
+#define RZ_PARISC_PCREL16DF	79	/* 16 bits PC-rel. address.  */
+#define RZ_PARISC_DIR64		80	/* 64 bits of eff. address.  */
+#define RZ_PARISC_DIR14WR	83	/* 14 bits of eff. address.  */
+#define RZ_PARISC_DIR14DR	84	/* 14 bits of eff. address.  */
+#define RZ_PARISC_DIR16F		85	/* 16 bits of eff. address.  */
+#define RZ_PARISC_DIR16WF	86	/* 16 bits of eff. address.  */
+#define RZ_PARISC_DIR16DF	87	/* 16 bits of eff. address.  */
+#define RZ_PARISC_GPREL64	88	/* 64 bits of GP-rel. address.  */
+#define RZ_PARISC_GPREL14WR	91	/* GP-rel. address, right 14 bits.  */
+#define RZ_PARISC_GPREL14DR	92	/* GP-rel. address, right 14 bits.  */
+#define RZ_PARISC_GPREL16F	93	/* 16 bits GP-rel. address.  */
+#define RZ_PARISC_GPREL16WF	94	/* 16 bits GP-rel. address.  */
+#define RZ_PARISC_GPREL16DF	95	/* 16 bits GP-rel. address.  */
+#define RZ_PARISC_LTOFF64	96	/* 64 bits LT-rel. address.  */
+#define RZ_PARISC_LTOFF14WR	99	/* LT-rel. address, right 14 bits.  */
+#define RZ_PARISC_LTOFF14DR	100	/* LT-rel. address, right 14 bits.  */
+#define RZ_PARISC_LTOFF16F	101	/* 16 bits LT-rel. address.  */
+#define RZ_PARISC_LTOFF16WF	102	/* 16 bits LT-rel. address.  */
+#define RZ_PARISC_LTOFF16DF	103	/* 16 bits LT-rel. address.  */
+#define RZ_PARISC_SECREL64	104	/* 64 bits section rel. address.  */
+#define RZ_PARISC_SEGREL64	112	/* 64 bits segment rel. address.  */
+#define RZ_PARISC_PLTOFF14WR	115	/* PLT-rel. address, right 14 bits.  */
+#define RZ_PARISC_PLTOFF14DR	116	/* PLT-rel. address, right 14 bits.  */
+#define RZ_PARISC_PLTOFF16F	117	/* 16 bits LT-rel. address.  */
+#define RZ_PARISC_PLTOFF16WF	118	/* 16 bits PLT-rel. address.  */
+#define RZ_PARISC_PLTOFF16DF	119	/* 16 bits PLT-rel. address.  */
+#define RZ_PARISC_LTOFF_FPTR64	120	/* 64 bits LT-rel. function ptr.  */
+#define RZ_PARISC_LTOFF_FPTR14WR	123	/* LT-rel. fct. ptr., right 14 bits. */
+#define RZ_PARISC_LTOFF_FPTR14DR	124	/* LT-rel. fct. ptr., right 14 bits. */
+#define RZ_PARISC_LTOFF_FPTR16F	125	/* 16 bits LT-rel. function ptr.  */
+#define RZ_PARISC_LTOFF_FPTR16WF	126	/* 16 bits LT-rel. function ptr.  */
+#define RZ_PARISC_LTOFF_FPTR16DF	127	/* 16 bits LT-rel. function ptr.  */
+#define RZ_PARISC_LORESERVE	128
+#define RZ_PARISC_COPY		128	/* Copy relocation.  */
+#define RZ_PARISC_IPLT		129	/* Dynamic reloc, imported PLT */
+#define RZ_PARISC_EPLT		130	/* Dynamic reloc, exported PLT */
+#define RZ_PARISC_TPREL32	153	/* 32 bits TP-rel. address.  */
+#define RZ_PARISC_TPREL21L	154	/* TP-rel. address, left 21 bits.  */
+#define RZ_PARISC_TPREL14R	158	/* TP-rel. address, right 14 bits.  */
+#define RZ_PARISC_LTOFF_TP21L	162	/* LT-TP-rel. address, left 21 bits. */
+#define RZ_PARISC_LTOFF_TP14R	166	/* LT-TP-rel. address, right 14 bits.*/
+#define RZ_PARISC_LTOFF_TP14F	167	/* 14 bits LT-TP-rel. address.  */
+#define RZ_PARISC_TPREL64	216	/* 64 bits TP-rel. address.  */
+#define RZ_PARISC_TPREL14WR	219	/* TP-rel. address, right 14 bits.  */
+#define RZ_PARISC_TPREL14DR	220	/* TP-rel. address, right 14 bits.  */
+#define RZ_PARISC_TPREL16F	221	/* 16 bits TP-rel. address.  */
+#define RZ_PARISC_TPREL16WF	222	/* 16 bits TP-rel. address.  */
+#define RZ_PARISC_TPREL16DF	223	/* 16 bits TP-rel. address.  */
+#define RZ_PARISC_LTOFF_TP64	224	/* 64 bits LT-TP-rel. address.  */
+#define RZ_PARISC_LTOFF_TP14WR	227	/* LT-TP-rel. address, right 14 bits.*/
+#define RZ_PARISC_LTOFF_TP14DR	228	/* LT-TP-rel. address, right 14 bits.*/
+#define RZ_PARISC_LTOFF_TP16F	229	/* 16 bits LT-TP-rel. address.  */
+#define RZ_PARISC_LTOFF_TP16WF	230	/* 16 bits LT-TP-rel. address.  */
+#define RZ_PARISC_LTOFF_TP16DF	231	/* 16 bits LT-TP-rel. address.  */
+#define RZ_PARISC_HIRESERVE	255
 
 /* Legal values for p_type field of Elf32_Phdr/Elf64_Phdr.  */
 
@@ -2789,41 +2789,41 @@ typedef Elf32_Addr Elf32_Conflict;
 
 /* Alpha relocs.  */
 
-#define R_ALPHA_NONE		0	/* No reloc */
-#define R_ALPHA_REFLONG		1	/* Direct 32 bit */
-#define R_ALPHA_REFQUAD		2	/* Direct 64 bit */
-#define R_ALPHA_GPREL32		3	/* GP relative 32 bit */
-#define R_ALPHA_LITERAL		4	/* GP relative 16 bit w/optimization */
-#define R_ALPHA_LITUSE		5	/* Optimization hint for LITERAL */
-#define R_ALPHA_GPDISP		6	/* Add displacement to GP */
-#define R_ALPHA_BRADDR		7	/* PC+4 relative 23 bit shifted */
-#define R_ALPHA_HINT		8	/* PC+4 relative 16 bit shifted */
-#define R_ALPHA_SREL16		9	/* PC relative 16 bit */
-#define R_ALPHA_SREL32		10	/* PC relative 32 bit */
-#define R_ALPHA_SREL64		11	/* PC relative 64 bit */
-#define R_ALPHA_GPRELHIGH	17	/* GP relative 32 bit, high 16 bits */
-#define R_ALPHA_GPRELLOW	18	/* GP relative 32 bit, low 16 bits */
-#define R_ALPHA_GPREL16		19	/* GP relative 16 bit */
-#define R_ALPHA_COPY		24	/* Copy symbol at runtime */
-#define R_ALPHA_GLOB_DAT	25	/* Create GOT entry */
-#define R_ALPHA_JMP_SLOT	26	/* Create PLT entry */
-#define R_ALPHA_RELATIVE	27	/* Adjust by program base */
-#define R_ALPHA_TLS_GD_HI	28
-#define R_ALPHA_TLSGD		29
-#define R_ALPHA_TLS_LDM		30
-#define R_ALPHA_DTPMOD64	31
-#define R_ALPHA_GOTDTPREL	32
-#define R_ALPHA_DTPREL64	33
-#define R_ALPHA_DTPRELHI	34
-#define R_ALPHA_DTPRELLO	35
-#define R_ALPHA_DTPREL16	36
-#define R_ALPHA_GOTTPREL	37
-#define R_ALPHA_TPREL64		38
-#define R_ALPHA_TPRELHI		39
-#define R_ALPHA_TPRELLO		40
-#define R_ALPHA_TPREL16		41
+#define RZ_ALPHA_NONE		0	/* No reloc */
+#define RZ_ALPHA_REFLONG		1	/* Direct 32 bit */
+#define RZ_ALPHA_REFQUAD		2	/* Direct 64 bit */
+#define RZ_ALPHA_GPREL32		3	/* GP relative 32 bit */
+#define RZ_ALPHA_LITERAL		4	/* GP relative 16 bit w/optimization */
+#define RZ_ALPHA_LITUSE		5	/* Optimization hint for LITERAL */
+#define RZ_ALPHA_GPDISP		6	/* Add displacement to GP */
+#define RZ_ALPHA_BRADDR		7	/* PC+4 relative 23 bit shifted */
+#define RZ_ALPHA_HINT		8	/* PC+4 relative 16 bit shifted */
+#define RZ_ALPHA_SREL16		9	/* PC relative 16 bit */
+#define RZ_ALPHA_SREL32		10	/* PC relative 32 bit */
+#define RZ_ALPHA_SREL64		11	/* PC relative 64 bit */
+#define RZ_ALPHA_GPRELHIGH	17	/* GP relative 32 bit, high 16 bits */
+#define RZ_ALPHA_GPRELLOW	18	/* GP relative 32 bit, low 16 bits */
+#define RZ_ALPHA_GPREL16		19	/* GP relative 16 bit */
+#define RZ_ALPHA_COPY		24	/* Copy symbol at runtime */
+#define RZ_ALPHA_GLOB_DAT	25	/* Create GOT entry */
+#define RZ_ALPHA_JMP_SLOT	26	/* Create PLT entry */
+#define RZ_ALPHA_RELATIVE	27	/* Adjust by program base */
+#define RZ_ALPHA_TLS_GD_HI	28
+#define RZ_ALPHA_TLSGD		29
+#define RZ_ALPHA_TLS_LDM		30
+#define RZ_ALPHA_DTPMOD64	31
+#define RZ_ALPHA_GOTDTPREL	32
+#define RZ_ALPHA_DTPREL64	33
+#define RZ_ALPHA_DTPRELHI	34
+#define RZ_ALPHA_DTPRELLO	35
+#define RZ_ALPHA_DTPREL16	36
+#define RZ_ALPHA_GOTTPREL	37
+#define RZ_ALPHA_TPREL64		38
+#define RZ_ALPHA_TPRELHI		39
+#define RZ_ALPHA_TPRELLO		40
+#define RZ_ALPHA_TPREL16		41
 /* Keep this the last entry.  */
-#define R_ALPHA_NUM		46
+#define RZ_ALPHA_NUM		46
 
 /* Magic values of the LITUSE relocation addend.  */
 #define LITUSE_ALPHA_ADDR	0
@@ -2845,223 +2845,223 @@ typedef Elf32_Addr Elf32_Conflict;
 						   flag */
 
 /* PowerPC relocations defined by the ABIs */
-#define R_PPC_NONE		0
-#define R_PPC_ADDR32		1	/* 32bit absolute address */
-#define R_PPC_ADDR24		2	/* 26bit address, 2 bits ignored.  */
-#define R_PPC_ADDR16		3	/* 16bit absolute address */
-#define R_PPC_ADDR16_LO		4	/* lower 16bit of absolute address */
-#define R_PPC_ADDR16_HI		5	/* high 16bit of absolute address */
-#define R_PPC_ADDR16_HA		6	/* adjusted high 16bit */
-#define R_PPC_ADDR14		7	/* 16bit address, 2 bits ignored */
-#define R_PPC_ADDR14_BRTAKEN	8
-#define R_PPC_ADDR14_BRNTAKEN	9
-#define R_PPC_REL24		10	/* PC relative 26 bit */
-#define R_PPC_REL14		11	/* PC relative 16 bit */
-#define R_PPC_REL14_BRTAKEN	12
-#define R_PPC_REL14_BRNTAKEN	13
-#define R_PPC_GOT16		14
-#define R_PPC_GOT16_LO		15
-#define R_PPC_GOT16_HI		16
-#define R_PPC_GOT16_HA		17
-#define R_PPC_PLTREL24		18
-#define R_PPC_COPY		19
-#define R_PPC_GLOB_DAT		20
-#define R_PPC_JMP_SLOT		21
-#define R_PPC_RELATIVE		22
-#define R_PPC_LOCAL24PC		23
-#define R_PPC_UADDR32		24
-#define R_PPC_UADDR16		25
-#define R_PPC_REL32		26
-#define R_PPC_PLT32		27
-#define R_PPC_PLTREL32		28
-#define R_PPC_PLT16_LO		29
-#define R_PPC_PLT16_HI		30
-#define R_PPC_PLT16_HA		31
-#define R_PPC_SDAREL16		32
-#define R_PPC_SECTOFF		33
-#define R_PPC_SECTOFF_LO	34
-#define R_PPC_SECTOFF_HI	35
-#define R_PPC_SECTOFF_HA	36
+#define RZ_PPC_NONE		0
+#define RZ_PPC_ADDR32		1	/* 32bit absolute address */
+#define RZ_PPC_ADDR24		2	/* 26bit address, 2 bits ignored.  */
+#define RZ_PPC_ADDR16		3	/* 16bit absolute address */
+#define RZ_PPC_ADDR16_LO		4	/* lower 16bit of absolute address */
+#define RZ_PPC_ADDR16_HI		5	/* high 16bit of absolute address */
+#define RZ_PPC_ADDR16_HA		6	/* adjusted high 16bit */
+#define RZ_PPC_ADDR14		7	/* 16bit address, 2 bits ignored */
+#define RZ_PPC_ADDR14_BRTAKEN	8
+#define RZ_PPC_ADDR14_BRNTAKEN	9
+#define RZ_PPC_REL24		10	/* PC relative 26 bit */
+#define RZ_PPC_REL14		11	/* PC relative 16 bit */
+#define RZ_PPC_REL14_BRTAKEN	12
+#define RZ_PPC_REL14_BRNTAKEN	13
+#define RZ_PPC_GOT16		14
+#define RZ_PPC_GOT16_LO		15
+#define RZ_PPC_GOT16_HI		16
+#define RZ_PPC_GOT16_HA		17
+#define RZ_PPC_PLTREL24		18
+#define RZ_PPC_COPY		19
+#define RZ_PPC_GLOB_DAT		20
+#define RZ_PPC_JMP_SLOT		21
+#define RZ_PPC_RELATIVE		22
+#define RZ_PPC_LOCAL24PC		23
+#define RZ_PPC_UADDR32		24
+#define RZ_PPC_UADDR16		25
+#define RZ_PPC_REL32		26
+#define RZ_PPC_PLT32		27
+#define RZ_PPC_PLTREL32		28
+#define RZ_PPC_PLT16_LO		29
+#define RZ_PPC_PLT16_HI		30
+#define RZ_PPC_PLT16_HA		31
+#define RZ_PPC_SDAREL16		32
+#define RZ_PPC_SECTOFF		33
+#define RZ_PPC_SECTOFF_LO	34
+#define RZ_PPC_SECTOFF_HI	35
+#define RZ_PPC_SECTOFF_HA	36
 
 /* PowerPC relocations defined for the TLS access ABI.  */
-#define R_PPC_TLS		67 /* none	(sym+add)@tls */
-#define R_PPC_DTPMOD32		68 /* word32	(sym+add)@dtpmod */
-#define R_PPC_TPREL16		69 /* half16*	(sym+add)@tprel */
-#define R_PPC_TPREL16_LO	70 /* half16	(sym+add)@tprel@l */
-#define R_PPC_TPREL16_HI	71 /* half16	(sym+add)@tprel@h */
-#define R_PPC_TPREL16_HA	72 /* half16	(sym+add)@tprel@ha */
-#define R_PPC_TPREL32		73 /* word32	(sym+add)@tprel */
-#define R_PPC_DTPREL16		74 /* half16*	(sym+add)@dtprel */
-#define R_PPC_DTPREL16_LO	75 /* half16	(sym+add)@dtprel@l */
-#define R_PPC_DTPREL16_HI	76 /* half16	(sym+add)@dtprel@h */
-#define R_PPC_DTPREL16_HA	77 /* half16	(sym+add)@dtprel@ha */
-#define R_PPC_DTPREL32		78 /* word32	(sym+add)@dtprel */
-#define R_PPC_GOT_TLSGD16	79 /* half16*	(sym+add)@got@tlsgd */
-#define R_PPC_GOT_TLSGD16_LO	80 /* half16	(sym+add)@got@tlsgd@l */
-#define R_PPC_GOT_TLSGD16_HI	81 /* half16	(sym+add)@got@tlsgd@h */
-#define R_PPC_GOT_TLSGD16_HA	82 /* half16	(sym+add)@got@tlsgd@ha */
-#define R_PPC_GOT_TLSLD16	83 /* half16*	(sym+add)@got@tlsld */
-#define R_PPC_GOT_TLSLD16_LO	84 /* half16	(sym+add)@got@tlsld@l */
-#define R_PPC_GOT_TLSLD16_HI	85 /* half16	(sym+add)@got@tlsld@h */
-#define R_PPC_GOT_TLSLD16_HA	86 /* half16	(sym+add)@got@tlsld@ha */
-#define R_PPC_GOT_TPREL16	87 /* half16*	(sym+add)@got@tprel */
-#define R_PPC_GOT_TPREL16_LO	88 /* half16	(sym+add)@got@tprel@l */
-#define R_PPC_GOT_TPREL16_HI	89 /* half16	(sym+add)@got@tprel@h */
-#define R_PPC_GOT_TPREL16_HA	90 /* half16	(sym+add)@got@tprel@ha */
-#define R_PPC_GOT_DTPREL16	91 /* half16*	(sym+add)@got@dtprel */
-#define R_PPC_GOT_DTPREL16_LO	92 /* half16*	(sym+add)@got@dtprel@l */
-#define R_PPC_GOT_DTPREL16_HI	93 /* half16*	(sym+add)@got@dtprel@h */
-#define R_PPC_GOT_DTPREL16_HA	94 /* half16*	(sym+add)@got@dtprel@ha */
+#define RZ_PPC_TLS		67 /* none	(sym+add)@tls */
+#define RZ_PPC_DTPMOD32		68 /* word32	(sym+add)@dtpmod */
+#define RZ_PPC_TPREL16		69 /* half16*	(sym+add)@tprel */
+#define RZ_PPC_TPREL16_LO	70 /* half16	(sym+add)@tprel@l */
+#define RZ_PPC_TPREL16_HI	71 /* half16	(sym+add)@tprel@h */
+#define RZ_PPC_TPREL16_HA	72 /* half16	(sym+add)@tprel@ha */
+#define RZ_PPC_TPREL32		73 /* word32	(sym+add)@tprel */
+#define RZ_PPC_DTPREL16		74 /* half16*	(sym+add)@dtprel */
+#define RZ_PPC_DTPREL16_LO	75 /* half16	(sym+add)@dtprel@l */
+#define RZ_PPC_DTPREL16_HI	76 /* half16	(sym+add)@dtprel@h */
+#define RZ_PPC_DTPREL16_HA	77 /* half16	(sym+add)@dtprel@ha */
+#define RZ_PPC_DTPREL32		78 /* word32	(sym+add)@dtprel */
+#define RZ_PPC_GOT_TLSGD16	79 /* half16*	(sym+add)@got@tlsgd */
+#define RZ_PPC_GOT_TLSGD16_LO	80 /* half16	(sym+add)@got@tlsgd@l */
+#define RZ_PPC_GOT_TLSGD16_HI	81 /* half16	(sym+add)@got@tlsgd@h */
+#define RZ_PPC_GOT_TLSGD16_HA	82 /* half16	(sym+add)@got@tlsgd@ha */
+#define RZ_PPC_GOT_TLSLD16	83 /* half16*	(sym+add)@got@tlsld */
+#define RZ_PPC_GOT_TLSLD16_LO	84 /* half16	(sym+add)@got@tlsld@l */
+#define RZ_PPC_GOT_TLSLD16_HI	85 /* half16	(sym+add)@got@tlsld@h */
+#define RZ_PPC_GOT_TLSLD16_HA	86 /* half16	(sym+add)@got@tlsld@ha */
+#define RZ_PPC_GOT_TPREL16	87 /* half16*	(sym+add)@got@tprel */
+#define RZ_PPC_GOT_TPREL16_LO	88 /* half16	(sym+add)@got@tprel@l */
+#define RZ_PPC_GOT_TPREL16_HI	89 /* half16	(sym+add)@got@tprel@h */
+#define RZ_PPC_GOT_TPREL16_HA	90 /* half16	(sym+add)@got@tprel@ha */
+#define RZ_PPC_GOT_DTPREL16	91 /* half16*	(sym+add)@got@dtprel */
+#define RZ_PPC_GOT_DTPREL16_LO	92 /* half16*	(sym+add)@got@dtprel@l */
+#define RZ_PPC_GOT_DTPREL16_HI	93 /* half16*	(sym+add)@got@dtprel@h */
+#define RZ_PPC_GOT_DTPREL16_HA	94 /* half16*	(sym+add)@got@dtprel@ha */
 
 /* Keep this the last entry.  */
-#define R_PPC_NUM		95
+#define RZ_PPC_NUM		95
 
 /* The remaining relocs are from the Embedded ELF ABI, and are not
    in the SVR4 ELF ABI.  */
-#define R_PPC_EMB_NADDR32	101
-#define R_PPC_EMB_NADDR16	102
-#define R_PPC_EMB_NADDR16_LO	103
-#define R_PPC_EMB_NADDR16_HI	104
-#define R_PPC_EMB_NADDR16_HA	105
-#define R_PPC_EMB_SDAI16	106
-#define R_PPC_EMB_SDA2I16	107
-#define R_PPC_EMB_SDA2REL	108
-#define R_PPC_EMB_SDA21		109	/* 16 bit offset in SDA */
-#define R_PPC_EMB_MRKREF	110
-#define R_PPC_EMB_RELSEC16	111
-#define R_PPC_EMB_RELST_LO	112
-#define R_PPC_EMB_RELST_HI	113
-#define R_PPC_EMB_RELST_HA	114
-#define R_PPC_EMB_BIT_FLD	115
-#define R_PPC_EMB_RELSDA	116	/* 16 bit relative offset in SDA */
+#define RZ_PPC_EMB_NADDR32	101
+#define RZ_PPC_EMB_NADDR16	102
+#define RZ_PPC_EMB_NADDR16_LO	103
+#define RZ_PPC_EMB_NADDR16_HI	104
+#define RZ_PPC_EMB_NADDR16_HA	105
+#define RZ_PPC_EMB_SDAI16	106
+#define RZ_PPC_EMB_SDA2I16	107
+#define RZ_PPC_EMB_SDA2REL	108
+#define RZ_PPC_EMB_SDA21		109	/* 16 bit offset in SDA */
+#define RZ_PPC_EMB_MRKREF	110
+#define RZ_PPC_EMB_RELSEC16	111
+#define RZ_PPC_EMB_RELST_LO	112
+#define RZ_PPC_EMB_RELST_HI	113
+#define RZ_PPC_EMB_RELST_HA	114
+#define RZ_PPC_EMB_BIT_FLD	115
+#define RZ_PPC_EMB_RELSDA	116	/* 16 bit relative offset in SDA */
 
 /* Diab tool relocations.  */
-#define R_PPC_DIAB_SDA21_LO	180	/* like EMB_SDA21, but lower 16 bit */
-#define R_PPC_DIAB_SDA21_HI	181	/* like EMB_SDA21, but high 16 bit */
-#define R_PPC_DIAB_SDA21_HA	182	/* like EMB_SDA21, adjusted high 16 */
-#define R_PPC_DIAB_RELSDA_LO	183	/* like EMB_RELSDA, but lower 16 bit */
-#define R_PPC_DIAB_RELSDA_HI	184	/* like EMB_RELSDA, but high 16 bit */
-#define R_PPC_DIAB_RELSDA_HA	185	/* like EMB_RELSDA, adjusted high 16 */
+#define RZ_PPC_DIAB_SDA21_LO	180	/* like EMB_SDA21, but lower 16 bit */
+#define RZ_PPC_DIAB_SDA21_HI	181	/* like EMB_SDA21, but high 16 bit */
+#define RZ_PPC_DIAB_SDA21_HA	182	/* like EMB_SDA21, adjusted high 16 */
+#define RZ_PPC_DIAB_RELSDA_LO	183	/* like EMB_RELSDA, but lower 16 bit */
+#define RZ_PPC_DIAB_RELSDA_HI	184	/* like EMB_RELSDA, but high 16 bit */
+#define RZ_PPC_DIAB_RELSDA_HA	185	/* like EMB_RELSDA, adjusted high 16 */
 
 /* This is a phony reloc to handle any old fashioned TOC16 references
    that may still be in object files.  */
-#define R_PPC_TOC16		255
+#define RZ_PPC_TOC16		255
 
 
 /* PowerPC64 relocations defined by the ABIs */
-#define R_PPC64_NONE		R_PPC_NONE
-#define R_PPC64_ADDR32		R_PPC_ADDR32 /* 32bit absolute address */
-#define R_PPC64_ADDR24		R_PPC_ADDR24 /* 26bit address, word aligned */
-#define R_PPC64_ADDR16		R_PPC_ADDR16 /* 16bit absolute address */
-#define R_PPC64_ADDR16_LO	R_PPC_ADDR16_LO	/* lower 16bits of address */
-#define R_PPC64_ADDR16_HI	R_PPC_ADDR16_HI	/* high 16bits of address. */
-#define R_PPC64_ADDR16_HA	R_PPC_ADDR16_HA /* adjusted high 16bits.  */
-#define R_PPC64_ADDR14		R_PPC_ADDR14 /* 16bit address, word aligned */
-#define R_PPC64_ADDR14_BRTAKEN	R_PPC_ADDR14_BRTAKEN
-#define R_PPC64_ADDR14_BRNTAKEN	R_PPC_ADDR14_BRNTAKEN
-#define R_PPC64_REL24		R_PPC_REL24 /* PC-rel. 26 bit, word aligned */
-#define R_PPC64_REL14		R_PPC_REL14 /* PC relative 16 bit */
-#define R_PPC64_REL14_BRTAKEN	R_PPC_REL14_BRTAKEN
-#define R_PPC64_REL14_BRNTAKEN	R_PPC_REL14_BRNTAKEN
-#define R_PPC64_GOT16		R_PPC_GOT16
-#define R_PPC64_GOT16_LO	R_PPC_GOT16_LO
-#define R_PPC64_GOT16_HI	R_PPC_GOT16_HI
-#define R_PPC64_GOT16_HA	R_PPC_GOT16_HA
+#define RZ_PPC64_NONE		RZ_PPC_NONE
+#define RZ_PPC64_ADDR32		RZ_PPC_ADDR32 /* 32bit absolute address */
+#define RZ_PPC64_ADDR24		RZ_PPC_ADDR24 /* 26bit address, word aligned */
+#define RZ_PPC64_ADDR16		RZ_PPC_ADDR16 /* 16bit absolute address */
+#define RZ_PPC64_ADDR16_LO	RZ_PPC_ADDR16_LO	/* lower 16bits of address */
+#define RZ_PPC64_ADDR16_HI	RZ_PPC_ADDR16_HI	/* high 16bits of address. */
+#define RZ_PPC64_ADDR16_HA	RZ_PPC_ADDR16_HA /* adjusted high 16bits.  */
+#define RZ_PPC64_ADDR14		RZ_PPC_ADDR14 /* 16bit address, word aligned */
+#define RZ_PPC64_ADDR14_BRTAKEN	RZ_PPC_ADDR14_BRTAKEN
+#define RZ_PPC64_ADDR14_BRNTAKEN	RZ_PPC_ADDR14_BRNTAKEN
+#define RZ_PPC64_REL24		RZ_PPC_REL24 /* PC-rel. 26 bit, word aligned */
+#define RZ_PPC64_REL14		RZ_PPC_REL14 /* PC relative 16 bit */
+#define RZ_PPC64_REL14_BRTAKEN	RZ_PPC_REL14_BRTAKEN
+#define RZ_PPC64_REL14_BRNTAKEN	RZ_PPC_REL14_BRNTAKEN
+#define RZ_PPC64_GOT16		RZ_PPC_GOT16
+#define RZ_PPC64_GOT16_LO	RZ_PPC_GOT16_LO
+#define RZ_PPC64_GOT16_HI	RZ_PPC_GOT16_HI
+#define RZ_PPC64_GOT16_HA	RZ_PPC_GOT16_HA
 
-#define R_PPC64_COPY		R_PPC_COPY
-#define R_PPC64_GLOB_DAT	R_PPC_GLOB_DAT
-#define R_PPC64_JMP_SLOT	R_PPC_JMP_SLOT
-#define R_PPC64_RELATIVE	R_PPC_RELATIVE
+#define RZ_PPC64_COPY		RZ_PPC_COPY
+#define RZ_PPC64_GLOB_DAT	RZ_PPC_GLOB_DAT
+#define RZ_PPC64_JMP_SLOT	RZ_PPC_JMP_SLOT
+#define RZ_PPC64_RELATIVE	RZ_PPC_RELATIVE
 
-#define R_PPC64_UADDR32		R_PPC_UADDR32
-#define R_PPC64_UADDR16		R_PPC_UADDR16
-#define R_PPC64_REL32		R_PPC_REL32
-#define R_PPC64_PLT32		R_PPC_PLT32
-#define R_PPC64_PLTREL32	R_PPC_PLTREL32
-#define R_PPC64_PLT16_LO	R_PPC_PLT16_LO
-#define R_PPC64_PLT16_HI	R_PPC_PLT16_HI
-#define R_PPC64_PLT16_HA	R_PPC_PLT16_HA
+#define RZ_PPC64_UADDR32		RZ_PPC_UADDR32
+#define RZ_PPC64_UADDR16		RZ_PPC_UADDR16
+#define RZ_PPC64_REL32		RZ_PPC_REL32
+#define RZ_PPC64_PLT32		RZ_PPC_PLT32
+#define RZ_PPC64_PLTREL32	RZ_PPC_PLTREL32
+#define RZ_PPC64_PLT16_LO	RZ_PPC_PLT16_LO
+#define RZ_PPC64_PLT16_HI	RZ_PPC_PLT16_HI
+#define RZ_PPC64_PLT16_HA	RZ_PPC_PLT16_HA
 
-#define R_PPC64_SECTOFF		R_PPC_SECTOFF
-#define R_PPC64_SECTOFF_LO	R_PPC_SECTOFF_LO
-#define R_PPC64_SECTOFF_HI	R_PPC_SECTOFF_HI
-#define R_PPC64_SECTOFF_HA	R_PPC_SECTOFF_HA
-#define R_PPC64_ADDR30		37 /* word30 (S + A - P) >> 2 */
-#define R_PPC64_ADDR64		38 /* doubleword64 S + A */
-#define R_PPC64_ADDR16_HIGHER	39 /* half16 #higher(S + A) */
-#define R_PPC64_ADDR16_HIGHERA	40 /* half16 #highera(S + A) */
-#define R_PPC64_ADDR16_HIGHEST	41 /* half16 #highest(S + A) */
-#define R_PPC64_ADDR16_HIGHESTA	42 /* half16 #highesta(S + A) */
-#define R_PPC64_UADDR64		43 /* doubleword64 S + A */
-#define R_PPC64_REL64		44 /* doubleword64 S + A - P */
-#define R_PPC64_PLT64		45 /* doubleword64 L + A */
-#define R_PPC64_PLTREL64	46 /* doubleword64 L + A - P */
-#define R_PPC64_TOC16		47 /* half16* S + A - .TOC */
-#define R_PPC64_TOC16_LO	48 /* half16 #lo(S + A - .TOC.) */
-#define R_PPC64_TOC16_HI	49 /* half16 #hi(S + A - .TOC.) */
-#define R_PPC64_TOC16_HA	50 /* half16 #ha(S + A - .TOC.) */
-#define R_PPC64_TOC		51 /* doubleword64 .TOC */
-#define R_PPC64_PLTGOT16	52 /* half16* M + A */
-#define R_PPC64_PLTGOT16_LO	53 /* half16 #lo(M + A) */
-#define R_PPC64_PLTGOT16_HI	54 /* half16 #hi(M + A) */
-#define R_PPC64_PLTGOT16_HA	55 /* half16 #ha(M + A) */
+#define RZ_PPC64_SECTOFF		RZ_PPC_SECTOFF
+#define RZ_PPC64_SECTOFF_LO	RZ_PPC_SECTOFF_LO
+#define RZ_PPC64_SECTOFF_HI	RZ_PPC_SECTOFF_HI
+#define RZ_PPC64_SECTOFF_HA	RZ_PPC_SECTOFF_HA
+#define RZ_PPC64_ADDR30		37 /* word30 (S + A - P) >> 2 */
+#define RZ_PPC64_ADDR64		38 /* doubleword64 S + A */
+#define RZ_PPC64_ADDR16_HIGHER	39 /* half16 #higher(S + A) */
+#define RZ_PPC64_ADDR16_HIGHERA	40 /* half16 #highera(S + A) */
+#define RZ_PPC64_ADDR16_HIGHEST	41 /* half16 #highest(S + A) */
+#define RZ_PPC64_ADDR16_HIGHESTA	42 /* half16 #highesta(S + A) */
+#define RZ_PPC64_UADDR64		43 /* doubleword64 S + A */
+#define RZ_PPC64_REL64		44 /* doubleword64 S + A - P */
+#define RZ_PPC64_PLT64		45 /* doubleword64 L + A */
+#define RZ_PPC64_PLTREL64	46 /* doubleword64 L + A - P */
+#define RZ_PPC64_TOC16		47 /* half16* S + A - .TOC */
+#define RZ_PPC64_TOC16_LO	48 /* half16 #lo(S + A - .TOC.) */
+#define RZ_PPC64_TOC16_HI	49 /* half16 #hi(S + A - .TOC.) */
+#define RZ_PPC64_TOC16_HA	50 /* half16 #ha(S + A - .TOC.) */
+#define RZ_PPC64_TOC		51 /* doubleword64 .TOC */
+#define RZ_PPC64_PLTGOT16	52 /* half16* M + A */
+#define RZ_PPC64_PLTGOT16_LO	53 /* half16 #lo(M + A) */
+#define RZ_PPC64_PLTGOT16_HI	54 /* half16 #hi(M + A) */
+#define RZ_PPC64_PLTGOT16_HA	55 /* half16 #ha(M + A) */
 
-#define R_PPC64_ADDR16_DS	56 /* half16ds* (S + A) >> 2 */
-#define R_PPC64_ADDR16_LO_DS	57 /* half16ds  #lo(S + A) >> 2 */
-#define R_PPC64_GOT16_DS	58 /* half16ds* (G + A) >> 2 */
-#define R_PPC64_GOT16_LO_DS	59 /* half16ds  #lo(G + A) >> 2 */
-#define R_PPC64_PLT16_LO_DS	60 /* half16ds  #lo(L + A) >> 2 */
-#define R_PPC64_SECTOFF_DS	61 /* half16ds* (R + A) >> 2 */
-#define R_PPC64_SECTOFF_LO_DS	62 /* half16ds  #lo(R + A) >> 2 */
-#define R_PPC64_TOC16_DS	63 /* half16ds* (S + A - .TOC.) >> 2 */
-#define R_PPC64_TOC16_LO_DS	64 /* half16ds  #lo(S + A - .TOC.) >> 2 */
-#define R_PPC64_PLTGOT16_DS	65 /* half16ds* (M + A) >> 2 */
-#define R_PPC64_PLTGOT16_LO_DS	66 /* half16ds  #lo(M + A) >> 2 */
+#define RZ_PPC64_ADDR16_DS	56 /* half16ds* (S + A) >> 2 */
+#define RZ_PPC64_ADDR16_LO_DS	57 /* half16ds  #lo(S + A) >> 2 */
+#define RZ_PPC64_GOT16_DS	58 /* half16ds* (G + A) >> 2 */
+#define RZ_PPC64_GOT16_LO_DS	59 /* half16ds  #lo(G + A) >> 2 */
+#define RZ_PPC64_PLT16_LO_DS	60 /* half16ds  #lo(L + A) >> 2 */
+#define RZ_PPC64_SECTOFF_DS	61 /* half16ds* (R + A) >> 2 */
+#define RZ_PPC64_SECTOFF_LO_DS	62 /* half16ds  #lo(R + A) >> 2 */
+#define RZ_PPC64_TOC16_DS	63 /* half16ds* (S + A - .TOC.) >> 2 */
+#define RZ_PPC64_TOC16_LO_DS	64 /* half16ds  #lo(S + A - .TOC.) >> 2 */
+#define RZ_PPC64_PLTGOT16_DS	65 /* half16ds* (M + A) >> 2 */
+#define RZ_PPC64_PLTGOT16_LO_DS	66 /* half16ds  #lo(M + A) >> 2 */
 
 /* PowerPC64 relocations defined for the TLS access ABI.  */
-#define R_PPC64_TLS		67 /* none	(sym+add)@tls */
-#define R_PPC64_DTPMOD64	68 /* doubleword64 (sym+add)@dtpmod */
-#define R_PPC64_TPREL16		69 /* half16*	(sym+add)@tprel */
-#define R_PPC64_TPREL16_LO	70 /* half16	(sym+add)@tprel@l */
-#define R_PPC64_TPREL16_HI	71 /* half16	(sym+add)@tprel@h */
-#define R_PPC64_TPREL16_HA	72 /* half16	(sym+add)@tprel@ha */
-#define R_PPC64_TPREL64		73 /* doubleword64 (sym+add)@tprel */
-#define R_PPC64_DTPREL16	74 /* half16*	(sym+add)@dtprel */
-#define R_PPC64_DTPREL16_LO	75 /* half16	(sym+add)@dtprel@l */
-#define R_PPC64_DTPREL16_HI	76 /* half16	(sym+add)@dtprel@h */
-#define R_PPC64_DTPREL16_HA	77 /* half16	(sym+add)@dtprel@ha */
-#define R_PPC64_DTPREL64	78 /* doubleword64 (sym+add)@dtprel */
-#define R_PPC64_GOT_TLSGD16	79 /* half16*	(sym+add)@got@tlsgd */
-#define R_PPC64_GOT_TLSGD16_LO	80 /* half16	(sym+add)@got@tlsgd@l */
-#define R_PPC64_GOT_TLSGD16_HI	81 /* half16	(sym+add)@got@tlsgd@h */
-#define R_PPC64_GOT_TLSGD16_HA	82 /* half16	(sym+add)@got@tlsgd@ha */
-#define R_PPC64_GOT_TLSLD16	83 /* half16*	(sym+add)@got@tlsld */
-#define R_PPC64_GOT_TLSLD16_LO	84 /* half16	(sym+add)@got@tlsld@l */
-#define R_PPC64_GOT_TLSLD16_HI	85 /* half16	(sym+add)@got@tlsld@h */
-#define R_PPC64_GOT_TLSLD16_HA	86 /* half16	(sym+add)@got@tlsld@ha */
-#define R_PPC64_GOT_TPREL16_DS	87 /* half16ds*	(sym+add)@got@tprel */
-#define R_PPC64_GOT_TPREL16_LO_DS 88 /* half16ds (sym+add)@got@tprel@l */
-#define R_PPC64_GOT_TPREL16_HI	89 /* half16	(sym+add)@got@tprel@h */
-#define R_PPC64_GOT_TPREL16_HA	90 /* half16	(sym+add)@got@tprel@ha */
-#define R_PPC64_GOT_DTPREL16_DS	91 /* half16ds*	(sym+add)@got@dtprel */
-#define R_PPC64_GOT_DTPREL16_LO_DS 92 /* half16ds (sym+add)@got@dtprel@l */
-#define R_PPC64_GOT_DTPREL16_HI	93 /* half16	(sym+add)@got@dtprel@h */
-#define R_PPC64_GOT_DTPREL16_HA	94 /* half16	(sym+add)@got@dtprel@ha */
-#define R_PPC64_TPREL16_DS	95 /* half16ds*	(sym+add)@tprel */
-#define R_PPC64_TPREL16_LO_DS	96 /* half16ds	(sym+add)@tprel@l */
-#define R_PPC64_TPREL16_HIGHER	97 /* half16	(sym+add)@tprel@higher */
-#define R_PPC64_TPREL16_HIGHERA	98 /* half16	(sym+add)@tprel@highera */
-#define R_PPC64_TPREL16_HIGHEST	99 /* half16	(sym+add)@tprel@highest */
-#define R_PPC64_TPREL16_HIGHESTA 100 /* half16	(sym+add)@tprel@highesta */
-#define R_PPC64_DTPREL16_DS	101 /* half16ds* (sym+add)@dtprel */
-#define R_PPC64_DTPREL16_LO_DS	102 /* half16ds	(sym+add)@dtprel@l */
-#define R_PPC64_DTPREL16_HIGHER	103 /* half16	(sym+add)@dtprel@higher */
-#define R_PPC64_DTPREL16_HIGHERA 104 /* half16	(sym+add)@dtprel@highera */
-#define R_PPC64_DTPREL16_HIGHEST 105 /* half16	(sym+add)@dtprel@highest */
-#define R_PPC64_DTPREL16_HIGHESTA 106 /* half16	(sym+add)@dtprel@highesta */
+#define RZ_PPC64_TLS		67 /* none	(sym+add)@tls */
+#define RZ_PPC64_DTPMOD64	68 /* doubleword64 (sym+add)@dtpmod */
+#define RZ_PPC64_TPREL16		69 /* half16*	(sym+add)@tprel */
+#define RZ_PPC64_TPREL16_LO	70 /* half16	(sym+add)@tprel@l */
+#define RZ_PPC64_TPREL16_HI	71 /* half16	(sym+add)@tprel@h */
+#define RZ_PPC64_TPREL16_HA	72 /* half16	(sym+add)@tprel@ha */
+#define RZ_PPC64_TPREL64		73 /* doubleword64 (sym+add)@tprel */
+#define RZ_PPC64_DTPREL16	74 /* half16*	(sym+add)@dtprel */
+#define RZ_PPC64_DTPREL16_LO	75 /* half16	(sym+add)@dtprel@l */
+#define RZ_PPC64_DTPREL16_HI	76 /* half16	(sym+add)@dtprel@h */
+#define RZ_PPC64_DTPREL16_HA	77 /* half16	(sym+add)@dtprel@ha */
+#define RZ_PPC64_DTPREL64	78 /* doubleword64 (sym+add)@dtprel */
+#define RZ_PPC64_GOT_TLSGD16	79 /* half16*	(sym+add)@got@tlsgd */
+#define RZ_PPC64_GOT_TLSGD16_LO	80 /* half16	(sym+add)@got@tlsgd@l */
+#define RZ_PPC64_GOT_TLSGD16_HI	81 /* half16	(sym+add)@got@tlsgd@h */
+#define RZ_PPC64_GOT_TLSGD16_HA	82 /* half16	(sym+add)@got@tlsgd@ha */
+#define RZ_PPC64_GOT_TLSLD16	83 /* half16*	(sym+add)@got@tlsld */
+#define RZ_PPC64_GOT_TLSLD16_LO	84 /* half16	(sym+add)@got@tlsld@l */
+#define RZ_PPC64_GOT_TLSLD16_HI	85 /* half16	(sym+add)@got@tlsld@h */
+#define RZ_PPC64_GOT_TLSLD16_HA	86 /* half16	(sym+add)@got@tlsld@ha */
+#define RZ_PPC64_GOT_TPREL16_DS	87 /* half16ds*	(sym+add)@got@tprel */
+#define RZ_PPC64_GOT_TPREL16_LO_DS 88 /* half16ds (sym+add)@got@tprel@l */
+#define RZ_PPC64_GOT_TPREL16_HI	89 /* half16	(sym+add)@got@tprel@h */
+#define RZ_PPC64_GOT_TPREL16_HA	90 /* half16	(sym+add)@got@tprel@ha */
+#define RZ_PPC64_GOT_DTPREL16_DS	91 /* half16ds*	(sym+add)@got@dtprel */
+#define RZ_PPC64_GOT_DTPREL16_LO_DS 92 /* half16ds (sym+add)@got@dtprel@l */
+#define RZ_PPC64_GOT_DTPREL16_HI	93 /* half16	(sym+add)@got@dtprel@h */
+#define RZ_PPC64_GOT_DTPREL16_HA	94 /* half16	(sym+add)@got@dtprel@ha */
+#define RZ_PPC64_TPREL16_DS	95 /* half16ds*	(sym+add)@tprel */
+#define RZ_PPC64_TPREL16_LO_DS	96 /* half16ds	(sym+add)@tprel@l */
+#define RZ_PPC64_TPREL16_HIGHER	97 /* half16	(sym+add)@tprel@higher */
+#define RZ_PPC64_TPREL16_HIGHERA	98 /* half16	(sym+add)@tprel@highera */
+#define RZ_PPC64_TPREL16_HIGHEST	99 /* half16	(sym+add)@tprel@highest */
+#define RZ_PPC64_TPREL16_HIGHESTA 100 /* half16	(sym+add)@tprel@highesta */
+#define RZ_PPC64_DTPREL16_DS	101 /* half16ds* (sym+add)@dtprel */
+#define RZ_PPC64_DTPREL16_LO_DS	102 /* half16ds	(sym+add)@dtprel@l */
+#define RZ_PPC64_DTPREL16_HIGHER	103 /* half16	(sym+add)@dtprel@higher */
+#define RZ_PPC64_DTPREL16_HIGHERA 104 /* half16	(sym+add)@dtprel@highera */
+#define RZ_PPC64_DTPREL16_HIGHEST 105 /* half16	(sym+add)@dtprel@highest */
+#define RZ_PPC64_DTPREL16_HIGHESTA 106 /* half16	(sym+add)@dtprel@highesta */
 
 /* Keep this the last entry.  */
-#define R_PPC64_NUM		107
+#define RZ_PPC64_NUM		107
 
 /* PowerPC64 specific values for the Dyn d_tag field.  */
 #define DT_PPC64_GLINK  (DT_LOPROC + 0)
@@ -3108,50 +3108,50 @@ typedef Elf32_Addr Elf32_Conflict;
 					   addressed by the static base */
 
 /* ARM relocs.  */
-#define R_ARM_NONE		0	/* No reloc */
-#define R_ARM_PC24		1	/* PC relative 26 bit branch */
-#define R_ARM_ABS32		2	/* Direct 32 bit  */
-#define R_ARM_REL32		3	/* PC relative 32 bit */
-#define R_ARM_PC13		4
-#define R_ARM_ABS16		5	/* Direct 16 bit */
-#define R_ARM_ABS12		6	/* Direct 12 bit */
-#define R_ARM_THM_ABS5		7
-#define R_ARM_ABS8		8	/* Direct 8 bit */
-#define R_ARM_SBREL32		9
-#define R_ARM_THM_PC22		10
-#define R_ARM_THM_PC8		11
-#define R_ARM_AMP_VCALL9	12
-#define R_ARM_SWI24		13
-#define R_ARM_THM_SWI8		14
-#define R_ARM_XPC25		15
-#define R_ARM_THM_XPC22		16
-#define R_ARM_COPY		20	/* Copy symbol at runtime */
-#define R_ARM_GLOB_DAT		21	/* Create GOT entry */
-#define R_ARM_JUMP_SLOT		22	/* Create PLT entry */
-#define R_ARM_RELATIVE		23	/* Adjust by program base */
-#define R_ARM_GOTOFF		24	/* 32 bit offset to GOT */
-#define R_ARM_GOTPC		25	/* 32 bit PC relative offset to GOT */
-#define R_ARM_GOT32		26	/* 32 bit GOT entry */
-#define R_ARM_PLT32		27	/* 32 bit PLT address */
-#define R_ARM_ALU_PCREL_7_0	32
-#define R_ARM_ALU_PCREL_15_8	33
-#define R_ARM_ALU_PCREL_23_15	34
-#define R_ARM_LDR_SBREL_11_0	35
-#define R_ARM_ALU_SBREL_19_12	36
-#define R_ARM_ALU_SBREL_27_20	37
-#define R_ARM_GNU_VTENTRY	100
-#define R_ARM_GNU_VTINHERIT	101
-#define R_ARM_THM_PC11		102	/* thumb unconditional branch */
-#define R_ARM_THM_PC9		103	/* thumb conditional branch */
-#define R_ARM_RXPC25		249
-#define R_ARM_RSBREL32		250
-#define R_ARM_THM_RPC22		251
-#define R_ARM_RREL32		252
-#define R_ARM_RABS22		253
-#define R_ARM_RPC24		254
-#define R_ARM_RBASE		255
+#define RZ_ARM_NONE		0	/* No reloc */
+#define RZ_ARM_PC24		1	/* PC relative 26 bit branch */
+#define RZ_ARM_ABS32		2	/* Direct 32 bit  */
+#define RZ_ARM_REL32		3	/* PC relative 32 bit */
+#define RZ_ARM_PC13		4
+#define RZ_ARM_ABS16		5	/* Direct 16 bit */
+#define RZ_ARM_ABS12		6	/* Direct 12 bit */
+#define RZ_ARM_THM_ABS5		7
+#define RZ_ARM_ABS8		8	/* Direct 8 bit */
+#define RZ_ARM_SBREL32		9
+#define RZ_ARM_THM_PC22		10
+#define RZ_ARM_THM_PC8		11
+#define RZ_ARM_AMP_VCALL9	12
+#define RZ_ARM_SWI24		13
+#define RZ_ARM_THM_SWI8		14
+#define RZ_ARM_XPC25		15
+#define RZ_ARM_THM_XPC22		16
+#define RZ_ARM_COPY		20	/* Copy symbol at runtime */
+#define RZ_ARM_GLOB_DAT		21	/* Create GOT entry */
+#define RZ_ARM_JUMP_SLOT		22	/* Create PLT entry */
+#define RZ_ARM_RELATIVE		23	/* Adjust by program base */
+#define RZ_ARM_GOTOFF		24	/* 32 bit offset to GOT */
+#define RZ_ARM_GOTPC		25	/* 32 bit PC relative offset to GOT */
+#define RZ_ARM_GOT32		26	/* 32 bit GOT entry */
+#define RZ_ARM_PLT32		27	/* 32 bit PLT address */
+#define RZ_ARM_ALU_PCREL_7_0	32
+#define RZ_ARM_ALU_PCREL_15_8	33
+#define RZ_ARM_ALU_PCREL_23_15	34
+#define RZ_ARM_LDR_SBREL_11_0	35
+#define RZ_ARM_ALU_SBREL_19_12	36
+#define RZ_ARM_ALU_SBREL_27_20	37
+#define RZ_ARM_GNU_VTENTRY	100
+#define RZ_ARM_GNU_VTINHERIT	101
+#define RZ_ARM_THM_PC11		102	/* thumb unconditional branch */
+#define RZ_ARM_THM_PC9		103	/* thumb conditional branch */
+#define RZ_ARM_RXPC25		249
+#define RZ_ARM_RSBREL32		250
+#define RZ_ARM_THM_RPC22		251
+#define RZ_ARM_RREL32		252
+#define RZ_ARM_RABS22		253
+#define RZ_ARM_RPC24		254
+#define RZ_ARM_RBASE		255
 /* Keep this the last entry.  */
-#define R_ARM_NUM		256
+#define RZ_ARM_NUM		256
 
 /* IA-64 specific declarations.  */
 
@@ -3183,356 +3183,356 @@ typedef Elf32_Addr Elf32_Conflict;
 #define DT_IA_64_NUM		1
 
 /* IA-64 relocations.  */
-#define R_IA64_NONE		0x00	/* none */
-#define R_IA64_IMM14		0x21	/* symbol + addend, add imm14 */
-#define R_IA64_IMM22		0x22	/* symbol + addend, add imm22 */
-#define R_IA64_IMM64		0x23	/* symbol + addend, mov imm64 */
-#define R_IA64_DIR32MSB		0x24	/* symbol + addend, data4 MSB */
-#define R_IA64_DIR32LSB		0x25	/* symbol + addend, data4 LSB */
-#define R_IA64_DIR64MSB		0x26	/* symbol + addend, data8 MSB */
-#define R_IA64_DIR64LSB		0x27	/* symbol + addend, data8 LSB */
-#define R_IA64_GPREL22		0x2a	/* @gprel(sym + add), add imm22 */
-#define R_IA64_GPREL64I		0x2b	/* @gprel(sym + add), mov imm64 */
-#define R_IA64_GPREL32MSB	0x2c	/* @gprel(sym + add), data4 MSB */
-#define R_IA64_GPREL32LSB	0x2d	/* @gprel(sym + add), data4 LSB */
-#define R_IA64_GPREL64MSB	0x2e	/* @gprel(sym + add), data8 MSB */
-#define R_IA64_GPREL64LSB	0x2f	/* @gprel(sym + add), data8 LSB */
-#define R_IA64_LTOFF22		0x32	/* @ltoff(sym + add), add imm22 */
-#define R_IA64_LTOFF64I		0x33	/* @ltoff(sym + add), mov imm64 */
-#define R_IA64_PLTOFF22		0x3a	/* @pltoff(sym + add), add imm22 */
-#define R_IA64_PLTOFF64I	0x3b	/* @pltoff(sym + add), mov imm64 */
-#define R_IA64_PLTOFF64MSB	0x3e	/* @pltoff(sym + add), data8 MSB */
-#define R_IA64_PLTOFF64LSB	0x3f	/* @pltoff(sym + add), data8 LSB */
-#define R_IA64_FPTR64I		0x43	/* @fptr(sym + add), mov imm64 */
-#define R_IA64_FPTR32MSB	0x44	/* @fptr(sym + add), data4 MSB */
-#define R_IA64_FPTR32LSB	0x45	/* @fptr(sym + add), data4 LSB */
-#define R_IA64_FPTR64MSB	0x46	/* @fptr(sym + add), data8 MSB */
-#define R_IA64_FPTR64LSB	0x47	/* @fptr(sym + add), data8 LSB */
-#define R_IA64_PCREL60B		0x48	/* @pcrel(sym + add), brl */
-#define R_IA64_PCREL21B		0x49	/* @pcrel(sym + add), ptb, call */
-#define R_IA64_PCREL21M		0x4a	/* @pcrel(sym + add), chk.s */
-#define R_IA64_PCREL21F		0x4b	/* @pcrel(sym + add), fchkf */
-#define R_IA64_PCREL32MSB	0x4c	/* @pcrel(sym + add), data4 MSB */
-#define R_IA64_PCREL32LSB	0x4d	/* @pcrel(sym + add), data4 LSB */
-#define R_IA64_PCREL64MSB	0x4e	/* @pcrel(sym + add), data8 MSB */
-#define R_IA64_PCREL64LSB	0x4f	/* @pcrel(sym + add), data8 LSB */
-#define R_IA64_LTOFF_FPTR22	0x52	/* @ltoff(@fptr(s+a)), imm22 */
-#define R_IA64_LTOFF_FPTR64I	0x53	/* @ltoff(@fptr(s+a)), imm64 */
-#define R_IA64_LTOFF_FPTR32MSB	0x54	/* @ltoff(@fptr(s+a)), data4 MSB */
-#define R_IA64_LTOFF_FPTR32LSB	0x55	/* @ltoff(@fptr(s+a)), data4 LSB */
-#define R_IA64_LTOFF_FPTR64MSB	0x56	/* @ltoff(@fptr(s+a)), data8 MSB */
-#define R_IA64_LTOFF_FPTR64LSB	0x57	/* @ltoff(@fptr(s+a)), data8 LSB */
-#define R_IA64_SEGREL32MSB	0x5c	/* @segrel(sym + add), data4 MSB */
-#define R_IA64_SEGREL32LSB	0x5d	/* @segrel(sym + add), data4 LSB */
-#define R_IA64_SEGREL64MSB	0x5e	/* @segrel(sym + add), data8 MSB */
-#define R_IA64_SEGREL64LSB	0x5f	/* @segrel(sym + add), data8 LSB */
-#define R_IA64_SECREL32MSB	0x64	/* @secrel(sym + add), data4 MSB */
-#define R_IA64_SECREL32LSB	0x65	/* @secrel(sym + add), data4 LSB */
-#define R_IA64_SECREL64MSB	0x66	/* @secrel(sym + add), data8 MSB */
-#define R_IA64_SECREL64LSB	0x67	/* @secrel(sym + add), data8 LSB */
-#define R_IA64_REL32MSB		0x6c	/* data 4 + REL */
-#define R_IA64_REL32LSB		0x6d	/* data 4 + REL */
-#define R_IA64_REL64MSB		0x6e	/* data 8 + REL */
-#define R_IA64_REL64LSB		0x6f	/* data 8 + REL */
-#define R_IA64_LTV32MSB		0x74	/* symbol + addend, data4 MSB */
-#define R_IA64_LTV32LSB		0x75	/* symbol + addend, data4 LSB */
-#define R_IA64_LTV64MSB		0x76	/* symbol + addend, data8 MSB */
-#define R_IA64_LTV64LSB		0x77	/* symbol + addend, data8 LSB */
-#define R_IA64_PCREL21BI	0x79	/* @pcrel(sym + add), 21bit inst */
-#define R_IA64_PCREL22		0x7a	/* @pcrel(sym + add), 22bit inst */
-#define R_IA64_PCREL64I		0x7b	/* @pcrel(sym + add), 64bit inst */
-#define R_IA64_IPLTMSB		0x80	/* dynamic reloc, imported PLT, MSB */
-#define R_IA64_IPLTLSB		0x81	/* dynamic reloc, imported PLT, LSB */
-#define R_IA64_COPY		0x84	/* copy relocation */
-#define R_IA64_SUB		0x85	/* Addend and symbol difference */
-#define R_IA64_LTOFF22X		0x86	/* LTOFF22, relaxable.  */
-#define R_IA64_LDXMOV		0x87	/* Use of LTOFF22X.  */
-#define R_IA64_TPREL14		0x91	/* @tprel(sym + add), imm14 */
-#define R_IA64_TPREL22		0x92	/* @tprel(sym + add), imm22 */
-#define R_IA64_TPREL64I		0x93	/* @tprel(sym + add), imm64 */
-#define R_IA64_TPREL64MSB	0x96	/* @tprel(sym + add), data8 MSB */
-#define R_IA64_TPREL64LSB	0x97	/* @tprel(sym + add), data8 LSB */
-#define R_IA64_LTOFF_TPREL22	0x9a	/* @ltoff(@tprel(s+a)), imm2 */
-#define R_IA64_DTPMOD64MSB	0xa6	/* @dtpmod(sym + add), data8 MSB */
-#define R_IA64_DTPMOD64LSB	0xa7	/* @dtpmod(sym + add), data8 LSB */
-#define R_IA64_LTOFF_DTPMOD22	0xaa	/* @ltoff(@dtpmod(sym + add)), imm22 */
-#define R_IA64_DTPREL14		0xb1	/* @dtprel(sym + add), imm14 */
-#define R_IA64_DTPREL22		0xb2	/* @dtprel(sym + add), imm22 */
-#define R_IA64_DTPREL64I	0xb3	/* @dtprel(sym + add), imm64 */
-#define R_IA64_DTPREL32MSB	0xb4	/* @dtprel(sym + add), data4 MSB */
-#define R_IA64_DTPREL32LSB	0xb5	/* @dtprel(sym + add), data4 LSB */
-#define R_IA64_DTPREL64MSB	0xb6	/* @dtprel(sym + add), data8 MSB */
-#define R_IA64_DTPREL64LSB	0xb7	/* @dtprel(sym + add), data8 LSB */
-#define R_IA64_LTOFF_DTPREL22	0xba	/* @ltoff(@dtprel(s+a)), imm22 */
+#define RZ_IA64_NONE		0x00	/* none */
+#define RZ_IA64_IMM14		0x21	/* symbol + addend, add imm14 */
+#define RZ_IA64_IMM22		0x22	/* symbol + addend, add imm22 */
+#define RZ_IA64_IMM64		0x23	/* symbol + addend, mov imm64 */
+#define RZ_IA64_DIR32MSB		0x24	/* symbol + addend, data4 MSB */
+#define RZ_IA64_DIR32LSB		0x25	/* symbol + addend, data4 LSB */
+#define RZ_IA64_DIR64MSB		0x26	/* symbol + addend, data8 MSB */
+#define RZ_IA64_DIR64LSB		0x27	/* symbol + addend, data8 LSB */
+#define RZ_IA64_GPREL22		0x2a	/* @gprel(sym + add), add imm22 */
+#define RZ_IA64_GPREL64I		0x2b	/* @gprel(sym + add), mov imm64 */
+#define RZ_IA64_GPREL32MSB	0x2c	/* @gprel(sym + add), data4 MSB */
+#define RZ_IA64_GPREL32LSB	0x2d	/* @gprel(sym + add), data4 LSB */
+#define RZ_IA64_GPREL64MSB	0x2e	/* @gprel(sym + add), data8 MSB */
+#define RZ_IA64_GPREL64LSB	0x2f	/* @gprel(sym + add), data8 LSB */
+#define RZ_IA64_LTOFF22		0x32	/* @ltoff(sym + add), add imm22 */
+#define RZ_IA64_LTOFF64I		0x33	/* @ltoff(sym + add), mov imm64 */
+#define RZ_IA64_PLTOFF22		0x3a	/* @pltoff(sym + add), add imm22 */
+#define RZ_IA64_PLTOFF64I	0x3b	/* @pltoff(sym + add), mov imm64 */
+#define RZ_IA64_PLTOFF64MSB	0x3e	/* @pltoff(sym + add), data8 MSB */
+#define RZ_IA64_PLTOFF64LSB	0x3f	/* @pltoff(sym + add), data8 LSB */
+#define RZ_IA64_FPTR64I		0x43	/* @fptr(sym + add), mov imm64 */
+#define RZ_IA64_FPTR32MSB	0x44	/* @fptr(sym + add), data4 MSB */
+#define RZ_IA64_FPTR32LSB	0x45	/* @fptr(sym + add), data4 LSB */
+#define RZ_IA64_FPTR64MSB	0x46	/* @fptr(sym + add), data8 MSB */
+#define RZ_IA64_FPTR64LSB	0x47	/* @fptr(sym + add), data8 LSB */
+#define RZ_IA64_PCREL60B		0x48	/* @pcrel(sym + add), brl */
+#define RZ_IA64_PCREL21B		0x49	/* @pcrel(sym + add), ptb, call */
+#define RZ_IA64_PCREL21M		0x4a	/* @pcrel(sym + add), chk.s */
+#define RZ_IA64_PCREL21F		0x4b	/* @pcrel(sym + add), fchkf */
+#define RZ_IA64_PCREL32MSB	0x4c	/* @pcrel(sym + add), data4 MSB */
+#define RZ_IA64_PCREL32LSB	0x4d	/* @pcrel(sym + add), data4 LSB */
+#define RZ_IA64_PCREL64MSB	0x4e	/* @pcrel(sym + add), data8 MSB */
+#define RZ_IA64_PCREL64LSB	0x4f	/* @pcrel(sym + add), data8 LSB */
+#define RZ_IA64_LTOFF_FPTR22	0x52	/* @ltoff(@fptr(s+a)), imm22 */
+#define RZ_IA64_LTOFF_FPTR64I	0x53	/* @ltoff(@fptr(s+a)), imm64 */
+#define RZ_IA64_LTOFF_FPTR32MSB	0x54	/* @ltoff(@fptr(s+a)), data4 MSB */
+#define RZ_IA64_LTOFF_FPTR32LSB	0x55	/* @ltoff(@fptr(s+a)), data4 LSB */
+#define RZ_IA64_LTOFF_FPTR64MSB	0x56	/* @ltoff(@fptr(s+a)), data8 MSB */
+#define RZ_IA64_LTOFF_FPTR64LSB	0x57	/* @ltoff(@fptr(s+a)), data8 LSB */
+#define RZ_IA64_SEGREL32MSB	0x5c	/* @segrel(sym + add), data4 MSB */
+#define RZ_IA64_SEGREL32LSB	0x5d	/* @segrel(sym + add), data4 LSB */
+#define RZ_IA64_SEGREL64MSB	0x5e	/* @segrel(sym + add), data8 MSB */
+#define RZ_IA64_SEGREL64LSB	0x5f	/* @segrel(sym + add), data8 LSB */
+#define RZ_IA64_SECREL32MSB	0x64	/* @secrel(sym + add), data4 MSB */
+#define RZ_IA64_SECREL32LSB	0x65	/* @secrel(sym + add), data4 LSB */
+#define RZ_IA64_SECREL64MSB	0x66	/* @secrel(sym + add), data8 MSB */
+#define RZ_IA64_SECREL64LSB	0x67	/* @secrel(sym + add), data8 LSB */
+#define RZ_IA64_REL32MSB		0x6c	/* data 4 + REL */
+#define RZ_IA64_REL32LSB		0x6d	/* data 4 + REL */
+#define RZ_IA64_REL64MSB		0x6e	/* data 8 + REL */
+#define RZ_IA64_REL64LSB		0x6f	/* data 8 + REL */
+#define RZ_IA64_LTV32MSB		0x74	/* symbol + addend, data4 MSB */
+#define RZ_IA64_LTV32LSB		0x75	/* symbol + addend, data4 LSB */
+#define RZ_IA64_LTV64MSB		0x76	/* symbol + addend, data8 MSB */
+#define RZ_IA64_LTV64LSB		0x77	/* symbol + addend, data8 LSB */
+#define RZ_IA64_PCREL21BI	0x79	/* @pcrel(sym + add), 21bit inst */
+#define RZ_IA64_PCREL22		0x7a	/* @pcrel(sym + add), 22bit inst */
+#define RZ_IA64_PCREL64I		0x7b	/* @pcrel(sym + add), 64bit inst */
+#define RZ_IA64_IPLTMSB		0x80	/* dynamic reloc, imported PLT, MSB */
+#define RZ_IA64_IPLTLSB		0x81	/* dynamic reloc, imported PLT, LSB */
+#define RZ_IA64_COPY		0x84	/* copy relocation */
+#define RZ_IA64_SUB		0x85	/* Addend and symbol difference */
+#define RZ_IA64_LTOFF22X		0x86	/* LTOFF22, relaxable.  */
+#define RZ_IA64_LDXMOV		0x87	/* Use of LTOFF22X.  */
+#define RZ_IA64_TPREL14		0x91	/* @tprel(sym + add), imm14 */
+#define RZ_IA64_TPREL22		0x92	/* @tprel(sym + add), imm22 */
+#define RZ_IA64_TPREL64I		0x93	/* @tprel(sym + add), imm64 */
+#define RZ_IA64_TPREL64MSB	0x96	/* @tprel(sym + add), data8 MSB */
+#define RZ_IA64_TPREL64LSB	0x97	/* @tprel(sym + add), data8 LSB */
+#define RZ_IA64_LTOFF_TPREL22	0x9a	/* @ltoff(@tprel(s+a)), imm2 */
+#define RZ_IA64_DTPMOD64MSB	0xa6	/* @dtpmod(sym + add), data8 MSB */
+#define RZ_IA64_DTPMOD64LSB	0xa7	/* @dtpmod(sym + add), data8 LSB */
+#define RZ_IA64_LTOFF_DTPMOD22	0xaa	/* @ltoff(@dtpmod(sym + add)), imm22 */
+#define RZ_IA64_DTPREL14		0xb1	/* @dtprel(sym + add), imm14 */
+#define RZ_IA64_DTPREL22		0xb2	/* @dtprel(sym + add), imm22 */
+#define RZ_IA64_DTPREL64I	0xb3	/* @dtprel(sym + add), imm64 */
+#define RZ_IA64_DTPREL32MSB	0xb4	/* @dtprel(sym + add), data4 MSB */
+#define RZ_IA64_DTPREL32LSB	0xb5	/* @dtprel(sym + add), data4 LSB */
+#define RZ_IA64_DTPREL64MSB	0xb6	/* @dtprel(sym + add), data8 MSB */
+#define RZ_IA64_DTPREL64LSB	0xb7	/* @dtprel(sym + add), data8 LSB */
+#define RZ_IA64_LTOFF_DTPREL22	0xba	/* @ltoff(@dtprel(s+a)), imm22 */
 
 /* SH specific declarations */
 
 /* SH relocs.  */
-#define	R_SH_NONE		0
-#define	R_SH_DIR32		1
-#define	R_SH_REL32		2
-#define	R_SH_DIR8WPN		3
-#define	R_SH_IND12W		4
-#define	R_SH_DIR8WPL		5
-#define	R_SH_DIR8WPZ		6
-#define	R_SH_DIR8BP		7
-#define	R_SH_DIR8W		8
-#define	R_SH_DIR8L		9
-#define	R_SH_SWITCH16		25
-#define	R_SH_SWITCH32		26
-#define	R_SH_USES		27
-#define	R_SH_COUNT		28
-#define	R_SH_ALIGN		29
-#define	R_SH_CODE		30
-#define	R_SH_DATA		31
-#define	R_SH_LABEL		32
-#define	R_SH_SWITCH8		33
-#define	R_SH_GNU_VTINHERIT	34
-#define	R_SH_GNU_VTENTRY	35
-#define	R_SH_TLS_GD_32		144
-#define	R_SH_TLS_LD_32		145
-#define	R_SH_TLS_LDO_32		146
-#define	R_SH_TLS_IE_32		147
-#define	R_SH_TLS_LE_32		148
-#define	R_SH_TLS_DTPMOD32	149
-#define	R_SH_TLS_DTPOFF32	150
-#define	R_SH_TLS_TPOFF32	151
-#define	R_SH_GOT32		160
-#define	R_SH_PLT32		161
-#define	R_SH_COPY		162
-#define	R_SH_GLOB_DAT		163
-#define	R_SH_JMP_SLOT		164
-#define	R_SH_RELATIVE		165
-#define	R_SH_GOTOFF		166
-#define	R_SH_GOTPC		167
+#define	RZ_SH_NONE		0
+#define	RZ_SH_DIR32		1
+#define	RZ_SH_REL32		2
+#define	RZ_SH_DIR8WPN		3
+#define	RZ_SH_IND12W		4
+#define	RZ_SH_DIR8WPL		5
+#define	RZ_SH_DIR8WPZ		6
+#define	RZ_SH_DIR8BP		7
+#define	RZ_SH_DIR8W		8
+#define	RZ_SH_DIR8L		9
+#define	RZ_SH_SWITCH16		25
+#define	RZ_SH_SWITCH32		26
+#define	RZ_SH_USES		27
+#define	RZ_SH_COUNT		28
+#define	RZ_SH_ALIGN		29
+#define	RZ_SH_CODE		30
+#define	RZ_SH_DATA		31
+#define	RZ_SH_LABEL		32
+#define	RZ_SH_SWITCH8		33
+#define	RZ_SH_GNU_VTINHERIT	34
+#define	RZ_SH_GNU_VTENTRY	35
+#define	RZ_SH_TLS_GD_32		144
+#define	RZ_SH_TLS_LD_32		145
+#define	RZ_SH_TLS_LDO_32		146
+#define	RZ_SH_TLS_IE_32		147
+#define	RZ_SH_TLS_LE_32		148
+#define	RZ_SH_TLS_DTPMOD32	149
+#define	RZ_SH_TLS_DTPOFF32	150
+#define	RZ_SH_TLS_TPOFF32	151
+#define	RZ_SH_GOT32		160
+#define	RZ_SH_PLT32		161
+#define	RZ_SH_COPY		162
+#define	RZ_SH_GLOB_DAT		163
+#define	RZ_SH_JMP_SLOT		164
+#define	RZ_SH_RELATIVE		165
+#define	RZ_SH_GOTOFF		166
+#define	RZ_SH_GOTPC		167
 /* Keep this the last entry.  */
-#define	R_SH_NUM		256
+#define	RZ_SH_NUM		256
 
 /* Additional s390 relocs */
 
-#define R_390_NONE		0	/* No reloc.  */
-#define R_390_8			1	/* Direct 8 bit.  */
-#define R_390_12		2	/* Direct 12 bit.  */
-#define R_390_16		3	/* Direct 16 bit.  */
-#define R_390_32		4	/* Direct 32 bit.  */
-#define R_390_PC32		5	/* PC relative 32 bit.	*/
-#define R_390_GOT12		6	/* 12 bit GOT offset.  */
-#define R_390_GOT32		7	/* 32 bit GOT offset.  */
-#define R_390_PLT32		8	/* 32 bit PC relative PLT address.  */
-#define R_390_COPY		9	/* Copy symbol at runtime.  */
-#define R_390_GLOB_DAT		10	/* Create GOT entry.  */
-#define R_390_JMP_SLOT		11	/* Create PLT entry.  */
-#define R_390_RELATIVE		12	/* Adjust by program base.  */
-#define R_390_GOTOFF32		13	/* 32 bit offset to GOT.	 */
-#define R_390_GOTPC		14	/* 32 bit PC relative offset to GOT.  */
-#define R_390_GOT16		15	/* 16 bit GOT offset.  */
-#define R_390_PC16		16	/* PC relative 16 bit.	*/
-#define R_390_PC16DBL		17	/* PC relative 16 bit shifted by 1.  */
-#define R_390_PLT16DBL		18	/* 16 bit PC rel. PLT shifted by 1.  */
-#define R_390_PC32DBL		19	/* PC relative 32 bit shifted by 1.  */
-#define R_390_PLT32DBL		20	/* 32 bit PC rel. PLT shifted by 1.  */
-#define R_390_GOTPCDBL		21	/* 32 bit PC rel. GOT shifted by 1.  */
-#define R_390_64		22	/* Direct 64 bit.  */
-#define R_390_PC64		23	/* PC relative 64 bit.	*/
-#define R_390_GOT64		24	/* 64 bit GOT offset.  */
-#define R_390_PLT64		25	/* 64 bit PC relative PLT address.  */
-#define R_390_GOTENT		26	/* 32 bit PC rel. to GOT entry >> 1. */
-#define R_390_GOTOFF16		27	/* 16 bit offset to GOT. */
-#define R_390_GOTOFF64		28	/* 64 bit offset to GOT. */
-#define R_390_GOTPLT12		29	/* 12 bit offset to jump slot.	*/
-#define R_390_GOTPLT16		30	/* 16 bit offset to jump slot.	*/
-#define R_390_GOTPLT32		31	/* 32 bit offset to jump slot.	*/
-#define R_390_GOTPLT64		32	/* 64 bit offset to jump slot.	*/
-#define R_390_GOTPLTENT		33	/* 32 bit rel. offset to jump slot.  */
-#define R_390_PLTOFF16		34	/* 16 bit offset from GOT to PLT. */
-#define R_390_PLTOFF32		35	/* 32 bit offset from GOT to PLT. */
-#define R_390_PLTOFF64		36	/* 16 bit offset from GOT to PLT. */
-#define R_390_TLS_LOAD		37	/* Tag for load insn in TLS code.  */
-#define R_390_TLS_GDCALL	38	/* Tag for function call in general
+#define RZ_390_NONE		0	/* No reloc.  */
+#define RZ_390_8			1	/* Direct 8 bit.  */
+#define RZ_390_12		2	/* Direct 12 bit.  */
+#define RZ_390_16		3	/* Direct 16 bit.  */
+#define RZ_390_32		4	/* Direct 32 bit.  */
+#define RZ_390_PC32		5	/* PC relative 32 bit.	*/
+#define RZ_390_GOT12		6	/* 12 bit GOT offset.  */
+#define RZ_390_GOT32		7	/* 32 bit GOT offset.  */
+#define RZ_390_PLT32		8	/* 32 bit PC relative PLT address.  */
+#define RZ_390_COPY		9	/* Copy symbol at runtime.  */
+#define RZ_390_GLOB_DAT		10	/* Create GOT entry.  */
+#define RZ_390_JMP_SLOT		11	/* Create PLT entry.  */
+#define RZ_390_RELATIVE		12	/* Adjust by program base.  */
+#define RZ_390_GOTOFF32		13	/* 32 bit offset to GOT.	 */
+#define RZ_390_GOTPC		14	/* 32 bit PC relative offset to GOT.  */
+#define RZ_390_GOT16		15	/* 16 bit GOT offset.  */
+#define RZ_390_PC16		16	/* PC relative 16 bit.	*/
+#define RZ_390_PC16DBL		17	/* PC relative 16 bit shifted by 1.  */
+#define RZ_390_PLT16DBL		18	/* 16 bit PC rel. PLT shifted by 1.  */
+#define RZ_390_PC32DBL		19	/* PC relative 32 bit shifted by 1.  */
+#define RZ_390_PLT32DBL		20	/* 32 bit PC rel. PLT shifted by 1.  */
+#define RZ_390_GOTPCDBL		21	/* 32 bit PC rel. GOT shifted by 1.  */
+#define RZ_390_64		22	/* Direct 64 bit.  */
+#define RZ_390_PC64		23	/* PC relative 64 bit.	*/
+#define RZ_390_GOT64		24	/* 64 bit GOT offset.  */
+#define RZ_390_PLT64		25	/* 64 bit PC relative PLT address.  */
+#define RZ_390_GOTENT		26	/* 32 bit PC rel. to GOT entry >> 1. */
+#define RZ_390_GOTOFF16		27	/* 16 bit offset to GOT. */
+#define RZ_390_GOTOFF64		28	/* 64 bit offset to GOT. */
+#define RZ_390_GOTPLT12		29	/* 12 bit offset to jump slot.	*/
+#define RZ_390_GOTPLT16		30	/* 16 bit offset to jump slot.	*/
+#define RZ_390_GOTPLT32		31	/* 32 bit offset to jump slot.	*/
+#define RZ_390_GOTPLT64		32	/* 64 bit offset to jump slot.	*/
+#define RZ_390_GOTPLTENT		33	/* 32 bit rel. offset to jump slot.  */
+#define RZ_390_PLTOFF16		34	/* 16 bit offset from GOT to PLT. */
+#define RZ_390_PLTOFF32		35	/* 32 bit offset from GOT to PLT. */
+#define RZ_390_PLTOFF64		36	/* 16 bit offset from GOT to PLT. */
+#define RZ_390_TLS_LOAD		37	/* Tag for load insn in TLS code.  */
+#define RZ_390_TLS_GDCALL	38	/* Tag for function call in general
 					   dynamic TLS code. */
-#define R_390_TLS_LDCALL	39	/* Tag for function call in local
+#define RZ_390_TLS_LDCALL	39	/* Tag for function call in local
 					   dynamic TLS code. */
-#define R_390_TLS_GD32		40	/* Direct 32 bit for general dynamic
+#define RZ_390_TLS_GD32		40	/* Direct 32 bit for general dynamic
 					   thread local data.  */
-#define R_390_TLS_GD64		41	/* Direct 64 bit for general dynamic
+#define RZ_390_TLS_GD64		41	/* Direct 64 bit for general dynamic
 					  thread local data.  */
-#define R_390_TLS_GOTIE12	42	/* 12 bit GOT offset for static TLS
+#define RZ_390_TLS_GOTIE12	42	/* 12 bit GOT offset for static TLS
 					   block offset.  */
-#define R_390_TLS_GOTIE32	43	/* 32 bit GOT offset for static TLS
+#define RZ_390_TLS_GOTIE32	43	/* 32 bit GOT offset for static TLS
 					   block offset.  */
-#define R_390_TLS_GOTIE64	44	/* 64 bit GOT offset for static TLS
+#define RZ_390_TLS_GOTIE64	44	/* 64 bit GOT offset for static TLS
 					   block offset. */
-#define R_390_TLS_LDM32		45	/* Direct 32 bit for local dynamic
+#define RZ_390_TLS_LDM32		45	/* Direct 32 bit for local dynamic
 					   thread local data in LE code.  */
-#define R_390_TLS_LDM64		46	/* Direct 64 bit for local dynamic
+#define RZ_390_TLS_LDM64		46	/* Direct 64 bit for local dynamic
 					   thread local data in LE code.  */
-#define R_390_TLS_IE32		47	/* 32 bit address of GOT entry for
+#define RZ_390_TLS_IE32		47	/* 32 bit address of GOT entry for
 					   negated static TLS block offset.  */
-#define R_390_TLS_IE64		48	/* 64 bit address of GOT entry for
+#define RZ_390_TLS_IE64		48	/* 64 bit address of GOT entry for
 					   negated static TLS block offset.  */
-#define R_390_TLS_IEENT		49	/* 32 bit rel. offset to GOT entry for
+#define RZ_390_TLS_IEENT		49	/* 32 bit rel. offset to GOT entry for
 					   negated static TLS block offset.  */
-#define R_390_TLS_LE32		50	/* 32 bit negated offset relative to
+#define RZ_390_TLS_LE32		50	/* 32 bit negated offset relative to
 					   static TLS block.  */
-#define R_390_TLS_LE64		51	/* 64 bit negated offset relative to
+#define RZ_390_TLS_LE64		51	/* 64 bit negated offset relative to
 					   static TLS block.  */
-#define R_390_TLS_LDO32		52	/* 32 bit offset relative to TLS
+#define RZ_390_TLS_LDO32		52	/* 32 bit offset relative to TLS
 					   block.  */
-#define R_390_TLS_LDO64		53	/* 64 bit offset relative to TLS
+#define RZ_390_TLS_LDO64		53	/* 64 bit offset relative to TLS
 					   block.  */
-#define R_390_TLS_DTPMOD	54	/* ID of module containing symbol.  */
-#define R_390_TLS_DTPOFF	55	/* Offset in TLS block.	 */
-#define R_390_TLS_TPOFF		56	/* Negated offset in static TLS
+#define RZ_390_TLS_DTPMOD	54	/* ID of module containing symbol.  */
+#define RZ_390_TLS_DTPOFF	55	/* Offset in TLS block.	 */
+#define RZ_390_TLS_TPOFF		56	/* Negated offset in static TLS
 					   block.  */
-#define R_390_20		57	/* Direct 20 bit.  */
-#define R_390_GOT20		58	/* 20 bit GOT offset.  */
-#define R_390_GOTPLT20		59	/* 20 bit offset to jump slot.  */
-#define R_390_TLS_GOTIE20	60	/* 20 bit GOT offset for static TLS
+#define RZ_390_20		57	/* Direct 20 bit.  */
+#define RZ_390_GOT20		58	/* 20 bit GOT offset.  */
+#define RZ_390_GOTPLT20		59	/* 20 bit offset to jump slot.  */
+#define RZ_390_TLS_GOTIE20	60	/* 20 bit GOT offset for static TLS
 					   block offset.  */
 /* Keep this the last entry.  */
-#define R_390_NUM		61
+#define RZ_390_NUM		61
 
 
 /* CRIS relocations.  */
-#define R_CRIS_NONE		0
-#define R_CRIS_8		1
-#define R_CRIS_16		2
-#define R_CRIS_32		3
-#define R_CRIS_8_PCREL		4
-#define R_CRIS_16_PCREL		5
-#define R_CRIS_32_PCREL		6
-#define R_CRIS_GNU_VTINHERIT	7
-#define R_CRIS_GNU_VTENTRY	8
-#define R_CRIS_COPY		9
-#define R_CRIS_GLOB_DAT		10
-#define R_CRIS_JUMP_SLOT	11
-#define R_CRIS_RELATIVE		12
-#define R_CRIS_16_GOT		13
-#define R_CRIS_32_GOT		14
-#define R_CRIS_16_GOTPLT	15
-#define R_CRIS_32_GOTPLT	16
-#define R_CRIS_32_GOTREL	17
-#define R_CRIS_32_PLT_GOTREL	18
-#define R_CRIS_32_PLT_PCREL	19
+#define RZ_CRIS_NONE		0
+#define RZ_CRIS_8		1
+#define RZ_CRIS_16		2
+#define RZ_CRIS_32		3
+#define RZ_CRIS_8_PCREL		4
+#define RZ_CRIS_16_PCREL		5
+#define RZ_CRIS_32_PCREL		6
+#define RZ_CRIS_GNU_VTINHERIT	7
+#define RZ_CRIS_GNU_VTENTRY	8
+#define RZ_CRIS_COPY		9
+#define RZ_CRIS_GLOB_DAT		10
+#define RZ_CRIS_JUMP_SLOT	11
+#define RZ_CRIS_RELATIVE		12
+#define RZ_CRIS_16_GOT		13
+#define RZ_CRIS_32_GOT		14
+#define RZ_CRIS_16_GOTPLT	15
+#define RZ_CRIS_32_GOTPLT	16
+#define RZ_CRIS_32_GOTREL	17
+#define RZ_CRIS_32_PLT_GOTREL	18
+#define RZ_CRIS_32_PLT_PCREL	19
 
-#define R_CRIS_NUM		20
+#define RZ_CRIS_NUM		20
 
 
 /* AMD x86-64 relocations.  */
-#define R_X86_64_NONE		0	/* No reloc */
-#define R_X86_64_64		1	/* Direct 64 bit  */
-#define R_X86_64_PC32		2	/* PC relative 32 bit signed */
-#define R_X86_64_GOT32		3	/* 32 bit GOT entry */
-#define R_X86_64_PLT32		4	/* 32 bit PLT address */
-#define R_X86_64_COPY		5	/* Copy symbol at runtime */
-#define R_X86_64_GLOB_DAT	6	/* Create GOT entry */
-#define R_X86_64_JUMP_SLOT	7	/* Create PLT entry */
-#define R_X86_64_RELATIVE	8	/* Adjust by program base */
-#define R_X86_64_GOTPCREL	9	/* 32 bit signed PC relative
+#define RZ_X86_64_NONE		0	/* No reloc */
+#define RZ_X86_64_64		1	/* Direct 64 bit  */
+#define RZ_X86_64_PC32		2	/* PC relative 32 bit signed */
+#define RZ_X86_64_GOT32		3	/* 32 bit GOT entry */
+#define RZ_X86_64_PLT32		4	/* 32 bit PLT address */
+#define RZ_X86_64_COPY		5	/* Copy symbol at runtime */
+#define RZ_X86_64_GLOB_DAT	6	/* Create GOT entry */
+#define RZ_X86_64_JUMP_SLOT	7	/* Create PLT entry */
+#define RZ_X86_64_RELATIVE	8	/* Adjust by program base */
+#define RZ_X86_64_GOTPCREL	9	/* 32 bit signed PC relative
 					   offset to GOT */
-#define R_X86_64_32		10	/* Direct 32 bit zero extended */
-#define R_X86_64_32S		11	/* Direct 32 bit sign extended */
-#define R_X86_64_16		12	/* Direct 16 bit zero extended */
-#define R_X86_64_PC16		13	/* 16 bit sign extended pc relative */
-#define R_X86_64_8		14	/* Direct 8 bit sign extended  */
-#define R_X86_64_PC8		15	/* 8 bit sign extended pc relative */
-#define R_X86_64_DTPMOD64	16	/* ID of module containing symbol */
-#define R_X86_64_DTPOFF64	17	/* Offset in module's TLS block */
-#define R_X86_64_TPOFF64	18	/* Offset in initial TLS block */
-#define R_X86_64_TLSGD		19	/* 32 bit signed PC relative offset
+#define RZ_X86_64_32		10	/* Direct 32 bit zero extended */
+#define RZ_X86_64_32S		11	/* Direct 32 bit sign extended */
+#define RZ_X86_64_16		12	/* Direct 16 bit zero extended */
+#define RZ_X86_64_PC16		13	/* 16 bit sign extended pc relative */
+#define RZ_X86_64_8		14	/* Direct 8 bit sign extended  */
+#define RZ_X86_64_PC8		15	/* 8 bit sign extended pc relative */
+#define RZ_X86_64_DTPMOD64	16	/* ID of module containing symbol */
+#define RZ_X86_64_DTPOFF64	17	/* Offset in module's TLS block */
+#define RZ_X86_64_TPOFF64	18	/* Offset in initial TLS block */
+#define RZ_X86_64_TLSGD		19	/* 32 bit signed PC relative offset
 					   to two GOT entries for GD symbol */
-#define R_X86_64_TLSLD		20	/* 32 bit signed PC relative offset
+#define RZ_X86_64_TLSLD		20	/* 32 bit signed PC relative offset
 					   to two GOT entries for LD symbol */
-#define R_X86_64_DTPOFF32	21	/* Offset in TLS block */
-#define R_X86_64_GOTTPOFF	22	/* 32 bit signed PC relative offset
+#define RZ_X86_64_DTPOFF32	21	/* Offset in TLS block */
+#define RZ_X86_64_GOTTPOFF	22	/* 32 bit signed PC relative offset
 					   to GOT entry for IE symbol */
-#define R_X86_64_TPOFF32	23	/* Offset in initial TLS block */
+#define RZ_X86_64_TPOFF32	23	/* Offset in initial TLS block */
 
-#define R_X86_64_NUM		24
+#define RZ_X86_64_NUM		24
 
 
 /* AM33 relocations.  */
-#define R_MN10300_NONE		0	/* No reloc.  */
-#define R_MN10300_32		1	/* Direct 32 bit.  */
-#define R_MN10300_16		2	/* Direct 16 bit.  */
-#define R_MN10300_8		3	/* Direct 8 bit.  */
-#define R_MN10300_PCREL32	4	/* PC-relative 32-bit.  */
-#define R_MN10300_PCREL16	5	/* PC-relative 16-bit signed.  */
-#define R_MN10300_PCREL8	6	/* PC-relative 8-bit signed.  */
-#define R_MN10300_GNU_VTINHERIT	7	/* Ancient C++ vtable garbage... */
-#define R_MN10300_GNU_VTENTRY	8	/* ... collection annotation.  */
-#define R_MN10300_24		9	/* Direct 24 bit.  */
-#define R_MN10300_GOTPC32	10	/* 32-bit PCrel offset to GOT.  */
-#define R_MN10300_GOTPC16	11	/* 16-bit PCrel offset to GOT.  */
-#define R_MN10300_GOTOFF32	12	/* 32-bit offset from GOT.  */
-#define R_MN10300_GOTOFF24	13	/* 24-bit offset from GOT.  */
-#define R_MN10300_GOTOFF16	14	/* 16-bit offset from GOT.  */
-#define R_MN10300_PLT32		15	/* 32-bit PCrel to PLT entry.  */
-#define R_MN10300_PLT16		16	/* 16-bit PCrel to PLT entry.  */
-#define R_MN10300_GOT32		17	/* 32-bit offset to GOT entry.  */
-#define R_MN10300_GOT24		18	/* 24-bit offset to GOT entry.  */
-#define R_MN10300_GOT16		19	/* 16-bit offset to GOT entry.  */
-#define R_MN10300_COPY		20	/* Copy symbol at runtime.  */
-#define R_MN10300_GLOB_DAT	21	/* Create GOT entry.  */
-#define R_MN10300_JMP_SLOT	22	/* Create PLT entry.  */
-#define R_MN10300_RELATIVE	23	/* Adjust by program base.  */
+#define RZ_MN10300_NONE		0	/* No reloc.  */
+#define RZ_MN10300_32		1	/* Direct 32 bit.  */
+#define RZ_MN10300_16		2	/* Direct 16 bit.  */
+#define RZ_MN10300_8		3	/* Direct 8 bit.  */
+#define RZ_MN10300_PCREL32	4	/* PC-relative 32-bit.  */
+#define RZ_MN10300_PCREL16	5	/* PC-relative 16-bit signed.  */
+#define RZ_MN10300_PCREL8	6	/* PC-relative 8-bit signed.  */
+#define RZ_MN10300_GNU_VTINHERIT	7	/* Ancient C++ vtable garbage... */
+#define RZ_MN10300_GNU_VTENTRY	8	/* ... collection annotation.  */
+#define RZ_MN10300_24		9	/* Direct 24 bit.  */
+#define RZ_MN10300_GOTPC32	10	/* 32-bit PCrel offset to GOT.  */
+#define RZ_MN10300_GOTPC16	11	/* 16-bit PCrel offset to GOT.  */
+#define RZ_MN10300_GOTOFF32	12	/* 32-bit offset from GOT.  */
+#define RZ_MN10300_GOTOFF24	13	/* 24-bit offset from GOT.  */
+#define RZ_MN10300_GOTOFF16	14	/* 16-bit offset from GOT.  */
+#define RZ_MN10300_PLT32		15	/* 32-bit PCrel to PLT entry.  */
+#define RZ_MN10300_PLT16		16	/* 16-bit PCrel to PLT entry.  */
+#define RZ_MN10300_GOT32		17	/* 32-bit offset to GOT entry.  */
+#define RZ_MN10300_GOT24		18	/* 24-bit offset to GOT entry.  */
+#define RZ_MN10300_GOT16		19	/* 16-bit offset to GOT entry.  */
+#define RZ_MN10300_COPY		20	/* Copy symbol at runtime.  */
+#define RZ_MN10300_GLOB_DAT	21	/* Create GOT entry.  */
+#define RZ_MN10300_JMP_SLOT	22	/* Create PLT entry.  */
+#define RZ_MN10300_RELATIVE	23	/* Adjust by program base.  */
 
-#define R_MN10300_NUM		24
+#define RZ_MN10300_NUM		24
 
 
 /* M32R relocs.  */
-#define R_M32R_NONE		0	/* No reloc. */
-#define R_M32R_16		1	/* Direct 16 bit. */
-#define R_M32R_32		2	/* Direct 32 bit. */
-#define R_M32R_24		3	/* Direct 24 bit. */
-#define R_M32R_10_PCREL		4	/* PC relative 10 bit shifted. */
-#define R_M32R_18_PCREL		5	/* PC relative 18 bit shifted. */
-#define R_M32R_26_PCREL		6	/* PC relative 26 bit shifted. */
-#define R_M32R_HI16_ULO		7	/* High 16 bit with unsigned low. */
-#define R_M32R_HI16_SLO		8	/* High 16 bit with signed low. */
-#define R_M32R_LO16		9	/* Low 16 bit. */
-#define R_M32R_SDA16		10	/* 16 bit offset in SDA. */
-#define R_M32R_GNU_VTINHERIT	11
-#define R_M32R_GNU_VTENTRY	12
+#define RZ_M32R_NONE		0	/* No reloc. */
+#define RZ_M32R_16		1	/* Direct 16 bit. */
+#define RZ_M32R_32		2	/* Direct 32 bit. */
+#define RZ_M32R_24		3	/* Direct 24 bit. */
+#define RZ_M32R_10_PCREL		4	/* PC relative 10 bit shifted. */
+#define RZ_M32R_18_PCREL		5	/* PC relative 18 bit shifted. */
+#define RZ_M32R_26_PCREL		6	/* PC relative 26 bit shifted. */
+#define RZ_M32R_HI16_ULO		7	/* High 16 bit with unsigned low. */
+#define RZ_M32R_HI16_SLO		8	/* High 16 bit with signed low. */
+#define RZ_M32R_LO16		9	/* Low 16 bit. */
+#define RZ_M32R_SDA16		10	/* 16 bit offset in SDA. */
+#define RZ_M32R_GNU_VTINHERIT	11
+#define RZ_M32R_GNU_VTENTRY	12
 /* M32R relocs use SHT_RELA.  */
-#define R_M32R_16_RELA		33	/* Direct 16 bit. */
-#define R_M32R_32_RELA		34	/* Direct 32 bit. */
-#define R_M32R_24_RELA		35	/* Direct 24 bit. */
-#define R_M32R_10_PCREL_RELA	36	/* PC relative 10 bit shifted. */
-#define R_M32R_18_PCREL_RELA	37	/* PC relative 18 bit shifted. */
-#define R_M32R_26_PCREL_RELA	38	/* PC relative 26 bit shifted. */
-#define R_M32R_HI16_ULO_RELA	39	/* High 16 bit with unsigned low */
-#define R_M32R_HI16_SLO_RELA	40	/* High 16 bit with signed low */
-#define R_M32R_LO16_RELA	41	/* Low 16 bit */
-#define R_M32R_SDA16_RELA	42	/* 16 bit offset in SDA */
-#define R_M32R_RELA_GNU_VTINHERIT	43
-#define R_M32R_RELA_GNU_VTENTRY	44
+#define RZ_M32R_16_RELA		33	/* Direct 16 bit. */
+#define RZ_M32R_32_RELA		34	/* Direct 32 bit. */
+#define RZ_M32R_24_RELA		35	/* Direct 24 bit. */
+#define RZ_M32R_10_PCREL_RELA	36	/* PC relative 10 bit shifted. */
+#define RZ_M32R_18_PCREL_RELA	37	/* PC relative 18 bit shifted. */
+#define RZ_M32R_26_PCREL_RELA	38	/* PC relative 26 bit shifted. */
+#define RZ_M32R_HI16_ULO_RELA	39	/* High 16 bit with unsigned low */
+#define RZ_M32R_HI16_SLO_RELA	40	/* High 16 bit with signed low */
+#define RZ_M32R_LO16_RELA	41	/* Low 16 bit */
+#define RZ_M32R_SDA16_RELA	42	/* 16 bit offset in SDA */
+#define RZ_M32R_RELA_GNU_VTINHERIT	43
+#define RZ_M32R_RELA_GNU_VTENTRY	44
 
-#define R_M32R_GOT24		48	/* 24 bit GOT entry */
-#define R_M32R_26_PLTREL	49	/* 26 bit PC relative to PLT shifted */
-#define R_M32R_COPY		50	/* Copy symbol at runtime */
-#define R_M32R_GLOB_DAT		51	/* Create GOT entry */
-#define R_M32R_JMP_SLOT		52	/* Create PLT entry */
-#define R_M32R_RELATIVE		53	/* Adjust by program base */
-#define R_M32R_GOTOFF		54	/* 24 bit offset to GOT */
-#define R_M32R_GOTPC24		55	/* 24 bit PC relative offset to GOT */
-#define R_M32R_GOT16_HI_ULO	56	/* High 16 bit GOT entry with unsigned
+#define RZ_M32R_GOT24		48	/* 24 bit GOT entry */
+#define RZ_M32R_26_PLTREL	49	/* 26 bit PC relative to PLT shifted */
+#define RZ_M32R_COPY		50	/* Copy symbol at runtime */
+#define RZ_M32R_GLOB_DAT		51	/* Create GOT entry */
+#define RZ_M32R_JMP_SLOT		52	/* Create PLT entry */
+#define RZ_M32R_RELATIVE		53	/* Adjust by program base */
+#define RZ_M32R_GOTOFF		54	/* 24 bit offset to GOT */
+#define RZ_M32R_GOTPC24		55	/* 24 bit PC relative offset to GOT */
+#define RZ_M32R_GOT16_HI_ULO	56	/* High 16 bit GOT entry with unsigned
 					   low */
-#define R_M32R_GOT16_HI_SLO	57	/* High 16 bit GOT entry with signed
+#define RZ_M32R_GOT16_HI_SLO	57	/* High 16 bit GOT entry with signed
 					   low */
-#define R_M32R_GOT16_LO		58	/* Low 16 bit GOT entry */
-#define R_M32R_GOTPC_HI_ULO	59	/* High 16 bit PC relative offset to
+#define RZ_M32R_GOT16_LO		58	/* Low 16 bit GOT entry */
+#define RZ_M32R_GOTPC_HI_ULO	59	/* High 16 bit PC relative offset to
 					   GOT with unsigned low */
-#define R_M32R_GOTPC_HI_SLO	60	/* High 16 bit PC relative offset to
+#define RZ_M32R_GOTPC_HI_SLO	60	/* High 16 bit PC relative offset to
 					   GOT with signed low */
-#define R_M32R_GOTPC_LO		61	/* Low 16 bit PC relative offset to
+#define RZ_M32R_GOTPC_LO		61	/* Low 16 bit PC relative offset to
 					   GOT */
-#define R_M32R_GOTOFF_HI_ULO	62	/* High 16 bit offset to GOT
+#define RZ_M32R_GOTOFF_HI_ULO	62	/* High 16 bit offset to GOT
 					   with unsigned low */
-#define R_M32R_GOTOFF_HI_SLO	63	/* High 16 bit offset to GOT
+#define RZ_M32R_GOTOFF_HI_SLO	63	/* High 16 bit offset to GOT
 					   with signed low */
-#define R_M32R_GOTOFF_LO	64	/* Low 16 bit offset to GOT */
-#define R_M32R_NUM		256	/* Keep this the last entry. */
+#define RZ_M32R_GOTOFF_LO	64	/* Low 16 bit offset to GOT */
+#define RZ_M32R_NUM		256	/* Keep this the last entry. */
 
 
 struct rusage {

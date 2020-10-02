@@ -42,7 +42,7 @@ bool test_r_diff_buffers_distance(void) {
 
 	// Broken rz_diff_buffers_distance_levenshtein, uncomment and see why it is incorrect
 	// diff->type = 'l';
-	// for (i = 0; i < R_ARRAY_SIZE (tests); i++) {
+	// for (i = 0; i < RZ_ARRAY_SIZE (tests); i++) {
 	// 	size_t la = strlen (tests[i].a), lb = strlen ((const char *)tests[i].b);
 	// 	rz_diff_buffers_distance (diff, tests[i].a, la, tests[i].b, lb, &distance, NULL);
 	// 	snprintf (msg, sizeof msg, "levenshtein %s/%s distance", tests[i].a, tests[i].b);

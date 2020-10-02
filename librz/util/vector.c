@@ -37,7 +37,7 @@ RZ_API void rz_vector_init(RzVector *vec, size_t elem_size, RzVectorFree free, v
 }
 
 RZ_API RzVector *rz_vector_new(size_t elem_size, RzVectorFree free, void *free_user) {
-	RzVector *vec = R_NEW (RzVector);
+	RzVector *vec = RZ_NEW (RzVector);
 	if (!vec) {
 		return NULL;
 	}
@@ -65,7 +65,7 @@ RZ_API void rz_vector_fini(RzVector *vec) {
 RZ_API void rz_vector_clear(RzVector *vec) {
 	rz_return_if_fail (vec);
 	vector_free_elems (vec);
-	R_FREE (vec->a);
+	RZ_FREE (vec->a);
 	vec->capacity = 0;
 }
 
@@ -97,7 +97,7 @@ static bool vector_clone(RzVector *dst, RzVector *src) {
 
 RZ_API RzVector *rz_vector_clone(RzVector *vec) {
 	rz_return_val_if_fail (vec, NULL);
-	RzVector *ret = R_NEW (RzVector);
+	RzVector *ret = RZ_NEW (RzVector);
 	if (!ret) {
 		return NULL;
 	}
@@ -152,7 +152,7 @@ RZ_API void *rz_vector_insert(RzVector *vec, size_t index, void *x) {
 RZ_API void *rz_vector_insert_range(RzVector *vec, size_t index, void *first, size_t count) {
 	rz_return_val_if_fail (vec && index <= vec->len, NULL);
 	if (vec->len + count > vec->capacity) {
-		RESIZE_OR_RETURN_NULL (R_MAX (NEXT_VECTOR_CAPACITY, vec->len + count));
+		RESIZE_OR_RETURN_NULL (RZ_MAX (NEXT_VECTOR_CAPACITY, vec->len + count));
 	}
 	size_t sz = count * vec->elem_size;
 	void *p = rz_vector_index_ptr (vec, index);
@@ -225,7 +225,7 @@ RZ_API void rz_pvector_init(RPVector *vec, RPVectorFree free) {
 }
 
 RZ_API RPVector *rz_pvector_new(RPVectorFree free) {
-	RPVector *v = R_NEW (RPVector);
+	RPVector *v = RZ_NEW (RPVector);
 	if (!v) {
 		return NULL;
 	}

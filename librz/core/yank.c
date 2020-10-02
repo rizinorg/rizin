@@ -45,12 +45,12 @@ static int perform_mapped_file_yank(RzCore *core, ut64 offset, ut64 len, const c
 	if (filename && *filename) {
 		ut64 load_align = rz_config_get_i (core->config, "file.loadalign");
 		RzIOMap *map = NULL;
-		yankdesc = rz_io_open_nomap (core->io, filename, R_PERM_R, 0644);
+		yankdesc = rz_io_open_nomap (core->io, filename, RZ_PERM_R, 0644);
 		// map the file in for IO operations.
 		if (yankdesc && load_align) {
 			yank_file_sz = rz_io_size (core->io);
 			ut64 addr = rz_io_map_next_available (core->io, 0, yank_file_sz, load_align);
-        		map = rz_io_map_new (core->io, yankdesc->fd, R_PERM_R, 0, addr, yank_file_sz);
+        		map = rz_io_map_new (core->io, yankdesc->fd, RZ_PERM_R, 0, addr, yank_file_sz);
 			loadaddr = map? map->itv.addr: -1;
 			if (yankdesc && map && loadaddr != -1) {
 				// ***NOTE*** this is important, we need to
@@ -74,7 +74,7 @@ static int perform_mapped_file_yank(RzCore *core, ut64 offset, ut64 len, const c
 	// this wont happen if the file failed to open or the file failed to
 	// map into the IO layer
 	if (yankdesc) {
-		ut64 res = rz_io_seek (core->io, addr, R_IO_SEEK_SET);
+		ut64 res = rz_io_seek (core->io, addr, RZ_IO_SEEK_SET);
 		ut64 actual_len = len <= yank_file_sz? len: 0;
 		ut8 *buf = NULL;
 		if (actual_len > 0 && res == addr) {
@@ -82,7 +82,7 @@ static int perform_mapped_file_yank(RzCore *core, ut64 offset, ut64 len, const c
 			if (!rz_io_read_at (core->io, addr, buf, actual_len)) {
 				actual_len = 0;
 			}
-			rz_core_yank_set (core, R_CORE_FOREIGN_ADDR, buf, len);
+			rz_core_yank_set (core, RZ_CORE_FOREIGN_ADDR, buf, len);
 			res = true;
 		} else if (res != addr) {
 			eprintf (
@@ -195,7 +195,7 @@ RZ_API int rz_core_yank_paste(RzCore *core, ut64 addr, int len) {
 	if (len == 0 || len >= rz_buf_size (core->yank_buf)) {
 		len = rz_buf_size (core->yank_buf);
 	}
-	ut8 *buf = R_NEWS (ut8, len);
+	ut8 *buf = RZ_NEWS (ut8, len);
 	if (!buf) {
 		return false;
 	}
@@ -294,7 +294,7 @@ RZ_API int rz_core_yank_hexdump(RzCore *core, ut64 pos) {
 	int ybl = rz_buf_size (core->yank_buf);
 	if (ybl > 0) {
 		if (pos < ybl) {
-			ut8 *buf = R_NEWS (ut8, ybl - pos);
+			ut8 *buf = RZ_NEWS (ut8, ybl - pos);
 			if (!buf) {
 				return false;
 			}
@@ -316,7 +316,7 @@ RZ_API int rz_core_yank_cat(RzCore *core, ut64 pos) {
 	if (ybl > 0) {
 		if (pos < ybl) {
 			ut64 sz = ybl - pos;
-			char *buf = R_NEWS (char, sz);
+			char *buf = RZ_NEWS (char, sz);
 			if (!buf) {
 				return false;
 			}
@@ -337,7 +337,7 @@ RZ_API int rz_core_yank_cat_string(RzCore *core, ut64 pos) {
 	if (ybl > 0) {
 		if (pos < ybl) {
 			ut64 sz = ybl - pos;
-			char *buf = R_NEWS (char, sz);
+			char *buf = RZ_NEWS (char, sz);
 			if (!buf) {
 				return false;
 			}
@@ -366,7 +366,7 @@ RZ_API int rz_core_yank_hud_file(RzCore *core, const char *input) {
 	}
 	buf = rz_cons_hud_file (input);
 	len = buf? strlen ((const char *) buf) + 1: 0;
-	res = rz_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, buf, len);
+	res = rz_core_yank_set_str (core, RZ_CORE_FOREIGN_ADDR, buf, len);
 	free (buf);
 	return res;
 }
@@ -380,7 +380,7 @@ RZ_API int rz_core_yank_hud_path(RzCore *core, const char *input, int dir) {
 	}
 	buf = rz_cons_hud_path (input, dir);
 	len = buf? strlen ((const char *) buf) + 1: 0;
-	res = rz_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, buf, len);
+	res = rz_core_yank_set_str (core, RZ_CORE_FOREIGN_ADDR, buf, len);
 	free (buf);
 	return res;
 }

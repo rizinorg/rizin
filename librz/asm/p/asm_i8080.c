@@ -8,7 +8,7 @@
 
 static int do_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	int dlen = i8080_disasm (buf, rz_strbuf_get (&op->buf_asm), len);
-	return op->size = R_MAX (0, dlen);
+	return op->size = RZ_MAX (0, dlen);
 }
 
 RzAsmPlugin rz_asm_plugin_i8080 = {
@@ -17,14 +17,14 @@ RzAsmPlugin rz_asm_plugin_i8080 = {
 	.arch = "i8080",
 	.license = "BSD",
 	.bits = 8,
-	.endian = R_SYS_ENDIAN_NONE,
+	.endian = RZ_SYS_ENDIAN_NONE,
 	.disassemble = &do_disassemble
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_i8080,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

@@ -53,7 +53,7 @@ static RBuffer *build (RzEgg *egg) {
 	// TODO: alphanumeric? :D
 	// This is the x86-32/64 xor encoder
 	rz_buf_append_buf (sc, egg->bin);
-	if (egg->arch == R_SYS_ARCH_X86) {
+	if (egg->arch == RZ_SYS_ARCH_X86) {
 		#define STUBLEN 18
 		ut8 stub[STUBLEN] =
 			"\xe8\xff\xff\xff\xff" // call $$+4
@@ -90,17 +90,17 @@ static RBuffer *build (RzEgg *egg) {
 //TODO: rename plugin to run
 RzEggPlugin rz_egg_plugin_xor = {
 	.name = "xor",
-	.type = R_EGG_PLUGIN_ENCODER,
+	.type = RZ_EGG_PLUGIN_ENCODER,
 	.desc = "xor encoder for shellcode",
 	.build = (void *)build
 };
 
 #if 0
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_EGG,
+	.type = RZ_LIB_TYPE_EGG,
 	.data = &rz_egg_plugin_xor,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif
 #endif

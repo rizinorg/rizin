@@ -72,7 +72,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
 	buf_global = &op->buf_asm;
 	Offset = a->pc;
-	memcpy (bytes, buf, R_MIN (len, 8)); // TODO handle thumb
+	memcpy (bytes, buf, RZ_MIN (len, 8)); // TODO handle thumb
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
@@ -101,15 +101,15 @@ RzAsmPlugin rz_asm_plugin_tricore = {
 	.arch = "tricore",
 	.license = "GPL3",
 	.bits = 32,
-	.endian = R_SYS_ENDIAN_LITTLE,
+	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.desc = "Siemens TriCore CPU",
 	.disassemble = &disassemble,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_tricore,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

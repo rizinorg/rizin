@@ -5,7 +5,7 @@
 /* locks/mutex/sems */
 
 RZ_API RzThreadLock *rz_th_lock_new(bool recursive) {
-	RzThreadLock *thl = R_NEW0 (RzThreadLock);
+	RzThreadLock *thl = RZ_NEW0 (RzThreadLock);
 	if (thl) {
 #if HAVE_PTHREAD
 		if (recursive) {

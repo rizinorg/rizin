@@ -1,5 +1,5 @@
-#ifndef R_BASE64_H
-#define R_BASE64_H
+#ifndef RZ_BASE64_H
+#define RZ_BASE64_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -13,4 +13,4 @@ RZ_API char *rz_base64_encode_dyn(const char *str, int len);
 }
 #endif
 
-#endif //  R_BASE64_H
+#endif //  RZ_BASE64_H

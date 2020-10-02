@@ -1,5 +1,5 @@
-#ifndef R2_V810_DISASM_H
-#define R2_V810_DISASM_H
+#ifndef RZ_V810_DISASM_H
+#define RZ_V810_DISASM_H
 
 #define V810_INSTR_MAXLEN     24
 
@@ -143,4 +143,4 @@ struct v810_cmd {
 
 int v810_decode_command(const ut8 *instr, int len, struct v810_cmd *cmd);
 
-#endif /* R2_V810_DISASM_H */
+#endif /* RZ_V810_DISASM_H */

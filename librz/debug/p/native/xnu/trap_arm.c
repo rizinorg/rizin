@@ -87,7 +87,7 @@ static bool ios_hwstep_enable32(RzDebug *dbg, bool enable) {
 }
 
 bool xnu_native_hwstep_enable(RzDebug *dbg, bool enable) {
-	if (dbg->bits == R_SYS_BITS_64 || dbg->bits == 64) {
+	if (dbg->bits == RZ_SYS_BITS_64 || dbg->bits == 64) {
 		return ios_hwstep_enable64 (dbg, enable);
 	}
 	return ios_hwstep_enable32 (dbg, enable);

@@ -3,7 +3,7 @@
 #include <rz_asm.h>
 
 RZ_API RzAsmOp *rz_asm_op_new(void) {
-	return R_NEW0 (RzAsmOp);
+	return RZ_NEW0 (RzAsmOp);
 }
 
 RZ_API void rz_asm_op_free(RzAsmOp *op) {
@@ -46,7 +46,7 @@ RZ_API ut8 *rz_asm_op_get_buf(RzAsmOp *op) {
 RZ_API int rz_asm_op_get_size(RzAsmOp *op) {
 	rz_return_val_if_fail (op, 1);
 	const int len = op->size - op->payload;
-	return R_MAX (1, len);
+	return RZ_MAX (1, len);
 }
 
 RZ_API void rz_asm_op_set_asm(RzAsmOp *op, const char *str) {

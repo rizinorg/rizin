@@ -101,7 +101,7 @@ enum KD_PACKET_MANIPULATE_TYPE {
 #define DBGKD_VERS_FLAG_DATA	0x0002
 #define DBGKD_VERS_FLAG_PTR64	0x0004
 
-R_PACKED (
+RZ_PACKED (
 typedef struct kd_req_t {
 	uint32_t req;
 	uint16_t cpu_level;
@@ -110,13 +110,13 @@ typedef struct kd_req_t {
 	// Pad to 16-byte boundary (?)
 	uint32_t pad;
 	union {
-		R_PACKED(
+		RZ_PACKED(
 		struct {
 			uint64_t addr;
 			uint32_t length;
 			uint32_t read;
 		}) rz_mem;
-		R_PACKED (
+		RZ_PACKED (
 		struct {
 			uint16_t major;
 			uint16_t minor;
@@ -169,7 +169,7 @@ typedef struct kd_req_t {
 }) kd_req_t;
 
 #define KD_EXC_BKPT 0x80000003
-R_PACKED (
+RZ_PACKED (
 typedef struct kd_stc_64 {
 	uint32_t state;
 	uint16_t cpu_level;
@@ -179,7 +179,7 @@ typedef struct kd_stc_64 {
 	uint64_t kthread;
 	uint64_t pc;
 	union {
-		R_PACKED (
+		RZ_PACKED (
 		struct {
 			uint32_t code;
 			uint32_t flags;
@@ -195,7 +195,7 @@ typedef struct kd_ioc_t {
 	uint64_t pad[7];
 } kd_ioc_t;
 
-R_PACKED (
+RZ_PACKED (
 typedef struct kd_packet_t {
 	uint32_t leader;
 	uint16_t type;
@@ -214,7 +214,7 @@ typedef struct kd_packet_t {
 #define KDNET_PACKET_TYPE_DATA 0
 #define KDNET_PACKET_TYPE_CONTROL 1
 
-R_PACKED (
+RZ_PACKED (
 typedef struct kdnet_packet_t {
 	ut32 magic; // KDNET_MAGIC
 	ut8 version; // Protocol Number

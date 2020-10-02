@@ -53,9 +53,9 @@ static void render_ansi(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
 }
 
 static int rgb(int r, int g, int b) {
-	r = R_DIM (r, 0, 255);
-	g = R_DIM (g, 0, 255);
-	b = R_DIM (b, 0, 255);
+	r = RZ_DIM (r, 0, 255);
+	g = RZ_DIM (g, 0, 255);
+	b = RZ_DIM (b, 0, 255);
 	r = (int)(r/50.6); 
 	g = (int)(g/50.6);
 	b = (int)(b/50.6);

@@ -73,10 +73,10 @@ RZ_API char *rz_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 add
 			y += (input & 0x2) ? 1 : -1;
 
 			/* assure we are still in bounds */
-			x = R_MAX(x, 0);
-			y = R_MAX(y, 0);
-			x = R_MIN(x, FLDSIZE_X - 1);
-			y = R_MIN(y, FLDSIZE_Y - 1);
+			x = RZ_MAX(x, 0);
+			y = RZ_MAX(y, 0);
+			x = RZ_MIN(x, FLDSIZE_X - 1);
+			y = RZ_MIN(y, FLDSIZE_Y - 1);
 
 			/* augment the field */
 			if (field[x][y] < len - 2) {
@@ -110,7 +110,7 @@ RZ_API char *rz_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 add
 	for (y = 0; y < FLDSIZE_Y; y++) {
 		*p++ = '|';
 		for (x = 0; x < FLDSIZE_X; x++) {
-			*p++ = augmentation_string[R_MIN (field[x][y], len)];
+			*p++ = augmentation_string[RZ_MIN (field[x][y], len)];
 		}
 		*p++ = '|';
 		*p++ = '\n';

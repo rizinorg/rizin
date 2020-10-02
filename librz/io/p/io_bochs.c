@@ -45,7 +45,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		eprintf ("Error can't find :\n");
 		return NULL;
 	}
-	riob = R_NEW0 (RzIOBochs);
+	riob = RZ_NEW0 (RzIOBochs);
 
 	// Inicializamos
 	if (bochs_open (&riob->desc, fileBochs, fileCfg) == true) {
@@ -121,10 +121,10 @@ RzIOPlugin rz_io_plugin_bochs = {
 	.isdbg = true
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_bochs,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

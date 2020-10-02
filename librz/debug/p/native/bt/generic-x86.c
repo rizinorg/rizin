@@ -15,7 +15,7 @@ static RzList *backtrace_x86_32(RzDebug *dbg, ut64 at) {
 	ut8 buf[4];
 
 	list->free = free;
-	ri = (at==UT64_MAX)? rz_reg_get (reg, "ebp", R_REG_TYPE_GPR): NULL;
+	ri = (at==UT64_MAX)? rz_reg_get (reg, "ebp", RZ_REG_TYPE_GPR): NULL;
 	_esp = (ut32) ((ri)? rz_reg_get_value (reg, ri): at);
 		// TODO: implement [stack] map uptrace method too
 	esp = _esp;
@@ -28,7 +28,7 @@ static RzList *backtrace_x86_32(RzDebug *dbg, ut64 at) {
 
 		// TODO: arch_is_call() here and this fun will be portable
 		if (buf[(ebp2-5)%4] == 0xe8) {
-			RzDebugFrame *frame = R_NEW0 (RzDebugFrame);
+			RzDebugFrame *frame = RZ_NEW0 (RzDebugFrame);
 			frame->addr = ebp2;
 			frame->size = esp - _esp;
 			rz_list_append (list, frame);
@@ -53,15 +53,15 @@ static RzList *backtrace_x86_32_anal(RzDebug *dbg, ut64 at) {
 	list = rz_list_new ();
 	list->free = free;
 
-	ri = (at==UT64_MAX)? rz_reg_get (reg, "ebp", R_REG_TYPE_GPR): NULL;
+	ri = (at==UT64_MAX)? rz_reg_get (reg, "ebp", RZ_REG_TYPE_GPR): NULL;
 	_esp = (ut32) ((ri)? rz_reg_get_value (reg, ri): at);
 		// TODO: implement [stack] map uptrace method too
 	esp = _esp;
 
-	eip = rz_reg_get_value (reg, rz_reg_get (reg, "eip", R_REG_TYPE_GPR));
-	fcn = rz_anal_get_fcn_in (dbg->anal, eip, R_ANAL_FCN_TYPE_NULL);
+	eip = rz_reg_get_value (reg, rz_reg_get (reg, "eip", RZ_REG_TYPE_GPR));
+	fcn = rz_anal_get_fcn_in (dbg->anal, eip, RZ_ANAL_FCN_TYPE_NULL);
 	if (fcn != NULL) {
-		frame = R_NEW0 (RzDebugFrame);
+		frame = RZ_NEW0 (RzDebugFrame);
 		frame->addr = eip;
 		frame->size = 0;
 		rz_list_append (list, frame);
@@ -76,7 +76,7 @@ static RzList *backtrace_x86_32_anal(RzDebug *dbg, ut64 at) {
 
 		// TODO: arch_is_call() here and this fun will be portable
 		if (buf[(ebp2-5)%4]==0xe8) {
-			frame = R_NEW0 (RzDebugFrame);
+			frame = RZ_NEW0 (RzDebugFrame);
 			frame->addr = ebp2;
 			frame->size = esp - _esp;
 			frame->sp = _esp;

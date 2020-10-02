@@ -22,7 +22,7 @@ RZ_API bool rz_io_is_valid_offset(RzIO* io, ut64 offset, int hasperm) {
 		if (!hasperm) {
 			// return rz_io_map_is_mapped (io, offset);
 			RzIOMap* map = rz_io_map_get (io, offset);
-			return map? map->perm & R_PERM_R: false;
+			return map? map->perm & RZ_PERM_R: false;
 		}
 		RzIOMap* map = rz_io_map_get (io, offset);
 		return map? (map->perm & hasperm) == hasperm: false;
@@ -40,7 +40,7 @@ RZ_API bool rz_io_is_valid_offset(RzIO* io, ut64 offset, int hasperm) {
 RZ_API bool rz_io_read_i(RzIO* io, ut64 addr, ut64 *val, int size, bool endian) {
 	ut8 buf[8];
 	rz_return_val_if_fail (io && val, false);
-	size = R_DIM (size, 1, 8);
+	size = RZ_DIM (size, 1, 8);
 	if (!rz_io_read_at (io, addr, buf, size)) {
 		return false;
 	}
@@ -52,7 +52,7 @@ RZ_API bool rz_io_read_i(RzIO* io, ut64 addr, ut64 *val, int size, bool endian) 
 RZ_API bool rz_io_write_i(RzIO* io, ut64 addr, ut64 *val, int size, bool endian) {
 	ut8 buf[8];
 	rz_return_val_if_fail (io && val, false);
-	size = R_DIM (size, 1, 8);
+	size = RZ_DIM (size, 1, 8);
 	//size says the number of bytes to read transform to bits for rz_read_ble
 	rz_write_ble (buf, *val, endian, size * 8);
 	return rz_io_write_at (io, addr, buf, size) == size;

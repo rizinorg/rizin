@@ -11,47 +11,47 @@
 // version 0x1 (WIP)
 // https://github.com/WebAssembly/design/blob/master/BinaryEncoding.md
 
-#define R_BIN_WASM_MAGIC_BYTES "\x00" \
+#define RZ_BIN_WASM_MAGIC_BYTES "\x00" \
 			       "asm"
-#define R_BIN_WASM_VERSION 0x1
-#define R_BIN_WASM_STRING_LENGTH 256
-#define R_BIN_WASM_END_OF_CODE 0xb
+#define RZ_BIN_WASM_VERSION 0x1
+#define RZ_BIN_WASM_STRING_LENGTH 256
+#define RZ_BIN_WASM_END_OF_CODE 0xb
 
-#define R_BIN_WASM_SECTION_CUSTOM 0x0
-#define R_BIN_WASM_SECTION_TYPE 0x1
-#define R_BIN_WASM_SECTION_IMPORT 0x2
-#define R_BIN_WASM_SECTION_FUNCTION 0x3
-#define R_BIN_WASM_SECTION_TABLE 0x4
-#define R_BIN_WASM_SECTION_MEMORY 0x5
-#define R_BIN_WASM_SECTION_GLOBAL 0x6
-#define R_BIN_WASM_SECTION_EXPORT 0x7
-#define R_BIN_WASM_SECTION_START 0x8
-#define R_BIN_WASM_SECTION_ELEMENT 0x9
-#define R_BIN_WASM_SECTION_CODE 0xa
-#define R_BIN_WASM_SECTION_DATA 0xb
+#define RZ_BIN_WASM_SECTION_CUSTOM 0x0
+#define RZ_BIN_WASM_SECTION_TYPE 0x1
+#define RZ_BIN_WASM_SECTION_IMPORT 0x2
+#define RZ_BIN_WASM_SECTION_FUNCTION 0x3
+#define RZ_BIN_WASM_SECTION_TABLE 0x4
+#define RZ_BIN_WASM_SECTION_MEMORY 0x5
+#define RZ_BIN_WASM_SECTION_GLOBAL 0x6
+#define RZ_BIN_WASM_SECTION_EXPORT 0x7
+#define RZ_BIN_WASM_SECTION_START 0x8
+#define RZ_BIN_WASM_SECTION_ELEMENT 0x9
+#define RZ_BIN_WASM_SECTION_CODE 0xa
+#define RZ_BIN_WASM_SECTION_DATA 0xb
 
 typedef enum {
-	R_BIN_WASM_VALUETYPE_i32 = 0x1,
-	R_BIN_WASM_VALUETYPE_i64 = 0x2,
-	R_BIN_WASM_VALUETYPE_f32 = 0x3,
-	R_BIN_WASM_VALUETYPE_f64 = 0x4,
-	R_BIN_WASM_VALUETYPE_v128 = 0x5,
-	R_BIN_WASM_VALUETYPE_ANYFUNC = 0x10,
-	R_BIN_WASM_VALUETYPE_FUNC = 0x20,
-	R_BIN_WASM_VALUETYPE_EMPTY = 0x40,
+	RZ_BIN_WASM_VALUETYPE_i32 = 0x1,
+	RZ_BIN_WASM_VALUETYPE_i64 = 0x2,
+	RZ_BIN_WASM_VALUETYPE_f32 = 0x3,
+	RZ_BIN_WASM_VALUETYPE_f64 = 0x4,
+	RZ_BIN_WASM_VALUETYPE_v128 = 0x5,
+	RZ_BIN_WASM_VALUETYPE_ANYFUNC = 0x10,
+	RZ_BIN_WASM_VALUETYPE_FUNC = 0x20,
+	RZ_BIN_WASM_VALUETYPE_EMPTY = 0x40,
 } rz_bin_wasm_value_type_t;
 
 typedef enum {
-	R_BIN_WASM_EXTERNALKIND_Function = 0x0,
-	R_BIN_WASM_EXTERNALKIND_Table = 0x1,
-	R_BIN_WASM_EXTERNALKIND_Memory = 0x2,
-	R_BIN_WASM_EXTERNALKIND_Global = 0x3,
+	RZ_BIN_WASM_EXTERNALKIND_Function = 0x0,
+	RZ_BIN_WASM_EXTERNALKIND_Table = 0x1,
+	RZ_BIN_WASM_EXTERNALKIND_Memory = 0x2,
+	RZ_BIN_WASM_EXTERNALKIND_Global = 0x3,
 } rz_bin_wasm_external_kind_t;
 
 typedef enum {
-	R_BIN_WASM_NAMETYPE_Module = 0x0,
-	R_BIN_WASM_NAMETYPE_Function = 0x1,
-	R_BIN_WASM_NAMETYPE_Local = 0x2,
+	RZ_BIN_WASM_NAMETYPE_Module = 0x0,
+	RZ_BIN_WASM_NAMETYPE_Function = 0x1,
+	RZ_BIN_WASM_NAMETYPE_Local = 0x2,
 } rz_bin_wasm_custom_name_type_t;
 
 struct rz_bin_wasm_init_expr_t {
@@ -67,14 +67,14 @@ struct rz_bin_wasm_resizable_limits_t {
 
 struct rz_bin_wasm_name_t {
 	ut32 len;
-	ut8 name[R_BIN_WASM_STRING_LENGTH];
+	ut8 name[RZ_BIN_WASM_STRING_LENGTH];
 };
 
 typedef struct rz_bin_wasm_section_t {
 	ut8 id;
 	ut32 size;
 	ut32 name_len;
-	char name[R_BIN_WASM_STRING_LENGTH];
+	char name[RZ_BIN_WASM_STRING_LENGTH];
 	ut32 offset;
 	ut32 payload_data;
 	ut32 payload_len;
@@ -87,7 +87,7 @@ typedef struct rz_bin_wasm_type_t {
 	rz_bin_wasm_value_type_t *param_types;
 	st8 return_count; // MVP = 1
 	rz_bin_wasm_value_type_t return_type;
-	char to_str[R_BIN_WASM_STRING_LENGTH];
+	char to_str[RZ_BIN_WASM_STRING_LENGTH];
 } RBinWasmTypeEntry;
 
 // Other Types
@@ -107,9 +107,9 @@ struct rz_bin_wasm_memory_type_t {
 
 typedef struct rz_bin_wasm_import_t {
 	ut32 module_len;
-	char module_str[R_BIN_WASM_STRING_LENGTH];
+	char module_str[RZ_BIN_WASM_STRING_LENGTH];
 	ut32 field_len;
-	char field_str[R_BIN_WASM_STRING_LENGTH];
+	char field_str[RZ_BIN_WASM_STRING_LENGTH];
 	ut8 kind;
 	union {
 		ut32 type_f;
@@ -141,7 +141,7 @@ typedef struct rz_bin_wasm_global_t {
 
 typedef struct rz_bin_wasm_export_t {
 	ut32 field_len;
-	char field_str[R_BIN_WASM_STRING_LENGTH];
+	char field_str[RZ_BIN_WASM_STRING_LENGTH];
 	ut8 kind;
 	ut32 index;
 } RBinWasmExportEntry;
@@ -169,7 +169,7 @@ typedef struct rz_bin_wasm_code_t {
 	ut32 code; // offset
 	ut32 len; // real bytecode length
 	ut8 byte; // 0xb, indicating end of the body
-	char name[R_BIN_WASM_STRING_LENGTH];
+	char name[RZ_BIN_WASM_STRING_LENGTH];
 	char *signature;
 } RBinWasmCodeEntry;
 

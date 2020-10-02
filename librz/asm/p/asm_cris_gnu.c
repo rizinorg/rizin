@@ -59,7 +59,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 	buf_global = &op->buf_asm;
 	Offset = a->pc;
-	memcpy (bytes, buf, R_MIN (len, 8)); // TODO handle thumb
+	memcpy (bytes, buf, RZ_MIN (len, 8)); // TODO handle thumb
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
@@ -89,7 +89,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		mode = 2;
 	}
 	(void)cris_parse_disassembler_options (&disasm_obj, mode);
-	if (a->syntax == R_ASM_SYNTAX_ATT) {
+	if (a->syntax == RZ_ASM_SYNTAX_ATT) {
 		switch (mode) {
 		case 0:
 			op->size = print_insn_cris_with_register_prefix ((bfd_vma)Offset, &disasm_obj);
@@ -127,15 +127,15 @@ RzAsmPlugin rz_asm_plugin_cris_gnu = {
 	.license = "GPL3",
 	.author = "pancake",
 	.bits = 32,
-	.endian = R_SYS_ENDIAN_LITTLE,
+	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.desc = "Axis Communications 32-bit embedded processor",
 	.disassemble = &disassemble
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_cris_gnu,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

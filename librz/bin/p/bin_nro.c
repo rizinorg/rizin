@@ -40,7 +40,7 @@ static bool check_buffer(RBuffer *b) {
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	// XX bf->buf vs b :D this load_b
-	RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
+	RBinNXOObj *bin = RZ_NEW0 (RBinNXOObj);
 	if (bin) {
 		ut64 ba = baddr (bf);
 		bin->methods_list = rz_list_newf ((RzListFree)free);
@@ -64,7 +64,7 @@ static RzList *entries(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	if ((ptr = R_NEW0 (RBinAddr))) {
+	if ((ptr = RZ_NEW0 (RBinAddr))) {
 		ptr->paddr = 0x80;
 		ptr->vaddr = ptr->paddr + baddr (bf);
 		rz_list_append (ret, ptr);
@@ -98,7 +98,7 @@ static RzList *sections(RBinFile *bf) {
 
 	ut64 ba = baddr (bf);
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("header");
@@ -106,7 +106,7 @@ static RzList *sections(RBinFile *bf) {
 	ptr->vsize = 0x80;
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
-	ptr->perm = R_PERM_R;
+	ptr->perm = RZ_PERM_R;
 	ptr->add = false;
 	rz_list_append (ret, ptr);
 
@@ -114,7 +114,7 @@ static RzList *sections(RBinFile *bf) {
 
 	ut32 mod0 = rz_buf_read_le32_at (bf->buf, NRO_OFFSET_MODMEMOFF);
 	if (mod0 && mod0 + 8 < bufsz) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RBinSection))) {
 			return ret;
 		}
 		ut32 mod0sz = rz_buf_read_le32_at (bf->buf, mod0 + 4);
@@ -123,7 +123,7 @@ static RzList *sections(RBinFile *bf) {
 		ptr->vsize = mod0sz;
 		ptr->paddr = mod0;
 		ptr->vaddr = mod0 + ba;
-		ptr->perm = R_PERM_R; // rw-
+		ptr->perm = RZ_PERM_R; // rw-
 		ptr->add = false;
 		rz_list_append (ret, ptr);
 	} else {
@@ -132,7 +132,7 @@ static RzList *sections(RBinFile *bf) {
 
 	ut32 sig0 = rz_buf_read_le32_at (bf->buf, 0x18);
 	if (sig0 && sig0 + 8 < bufsz) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RBinSection))) {
 			return ret;
 		}
 		ut32 sig0sz = rz_buf_read_le32_at (bf->buf, sig0 + 4);
@@ -141,7 +141,7 @@ static RzList *sections(RBinFile *bf) {
 		ptr->vsize = sig0sz;
 		ptr->paddr = sig0;
 		ptr->vaddr = sig0 + ba;
-		ptr->perm = R_PERM_R; // r--
+		ptr->perm = RZ_PERM_R; // r--
 		ptr->add = true;
 		rz_list_append (ret, ptr);
 	} else {
@@ -149,7 +149,7 @@ static RzList *sections(RBinFile *bf) {
 	}
 
 	// add text segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("text");
@@ -157,12 +157,12 @@ static RzList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = rz_buf_read_le32_at (b, NRO_OFF (text_memoffset));
 	ptr->vaddr = ptr->paddr + ba;
-	ptr->perm = R_PERM_RX; // r-x
+	ptr->perm = RZ_PERM_RX; // r-x
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
 	// add ro segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("ro");
@@ -170,12 +170,12 @@ static RzList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = rz_buf_read_le32_at (b, NRO_OFF (ro_memoffset));
 	ptr->vaddr = ptr->paddr + ba;
-	ptr->perm = R_PERM_R; // r-x
+	ptr->perm = RZ_PERM_R; // r-x
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
 	// add data segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("data");
@@ -183,7 +183,7 @@ static RzList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = rz_buf_read_le32_at (b, NRO_OFF (data_memoffset));
 	ptr->vaddr = ptr->paddr + ba;
-	ptr->perm = R_PERM_RW;
+	ptr->perm = RZ_PERM_RW;
 	ptr->add = true;
 	eprintf ("Base Address 0x%08"PFMT64x "\n", ba);
 	eprintf ("BSS Size 0x%08"PFMT64x "\n", (ut64)
@@ -215,7 +215,7 @@ static RzList *libs(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = RZ_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -250,7 +250,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-#if !R_BIN_NRO
+#if !RZ_BIN_NRO
 
 RBinPlugin rz_bin_plugin_nro = {
 	.name = "nro",
@@ -269,11 +269,11 @@ RBinPlugin rz_bin_plugin_nro = {
 	.libs = &libs,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_nro,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif
 #endif

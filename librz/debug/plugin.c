@@ -4,7 +4,7 @@
 #include <config.h>
 
 static RzDebugPlugin *debug_static_plugins[] = {
-	R_DEBUG_STATIC_PLUGINS
+	RZ_DEBUG_STATIC_PLUGINS
 };
 
 RZ_API void rz_debug_plugin_init(RzDebug *dbg) {
@@ -88,7 +88,7 @@ RZ_API bool rz_debug_plugin_add(RzDebug *dbg, RzDebugPlugin *foo) {
 	if (!dbg || !foo || !foo->name) {
 		return false;
 	}
-	RzDebugPlugin *dp = R_NEW (RzDebugPlugin);
+	RzDebugPlugin *dp = RZ_NEW (RzDebugPlugin);
 	memcpy (dp, foo, sizeof (RzDebugPlugin));
 	rz_list_append (dbg->plugins, dp);
 	return true;

@@ -206,11 +206,11 @@ int elf32xtensa_no_literal_movement = 1;
 
 static reloc_howto_type elf_howto_table[] =
 {
-  HOWTO (R_XTENSA_NONE, 0, 3, 0, FALSE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_NONE",
+  HOWTO (RZ_XTENSA_NONE, 0, 3, 0, FALSE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_NONE",
 	 FALSE, 0, 0, FALSE),
-  HOWTO (R_XTENSA_32, 0, 2, 32, FALSE, 0, complain_overflow_bitfield,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_32",
+  HOWTO (RZ_XTENSA_32, 0, 2, 32, FALSE, 0, complain_overflow_bitfield,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_32",
 	 TRUE, 0xffffffff, 0xffffffff, FALSE),
 
   /* Replace a 32-bit value with a value from the runtime linker (only
@@ -218,147 +218,147 @@ static reloc_howto_type elf_howto_table[] =
      special: 1 means to substitute a pointer to the runtime linker's
      dynamic resolver function; 2 means to substitute the link map for
      the shared object.  */
-  HOWTO (R_XTENSA_RTLD, 0, 2, 32, FALSE, 0, complain_overflow_dont,
-	 NULL, "R_XTENSA_RTLD", FALSE, 0, 0, FALSE),
+  HOWTO (RZ_XTENSA_RTLD, 0, 2, 32, FALSE, 0, complain_overflow_dont,
+	 NULL, "RZ_XTENSA_RTLD", FALSE, 0, 0, FALSE),
 
-  HOWTO (R_XTENSA_GLOB_DAT, 0, 2, 32, FALSE, 0, complain_overflow_bitfield,
-	 bfd_elf_generic_reloc, "R_XTENSA_GLOB_DAT",
+  HOWTO (RZ_XTENSA_GLOB_DAT, 0, 2, 32, FALSE, 0, complain_overflow_bitfield,
+	 bfd_elf_generic_reloc, "RZ_XTENSA_GLOB_DAT",
 	 FALSE, 0, 0xffffffff, FALSE),
-  HOWTO (R_XTENSA_JMP_SLOT, 0, 2, 32, FALSE, 0, complain_overflow_bitfield,
-	 bfd_elf_generic_reloc, "R_XTENSA_JMP_SLOT",
+  HOWTO (RZ_XTENSA_JMP_SLOT, 0, 2, 32, FALSE, 0, complain_overflow_bitfield,
+	 bfd_elf_generic_reloc, "RZ_XTENSA_JMP_SLOT",
 	 FALSE, 0, 0xffffffff, FALSE),
-  HOWTO (R_XTENSA_RELATIVE, 0, 2, 32, FALSE, 0, complain_overflow_bitfield,
-	 bfd_elf_generic_reloc, "R_XTENSA_RELATIVE",
+  HOWTO (RZ_XTENSA_RELATIVE, 0, 2, 32, FALSE, 0, complain_overflow_bitfield,
+	 bfd_elf_generic_reloc, "RZ_XTENSA_RELATIVE",
 	 FALSE, 0, 0xffffffff, FALSE),
-  HOWTO (R_XTENSA_PLT, 0, 2, 32, FALSE, 0, complain_overflow_bitfield,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_PLT",
+  HOWTO (RZ_XTENSA_PLT, 0, 2, 32, FALSE, 0, complain_overflow_bitfield,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_PLT",
 	 FALSE, 0, 0xffffffff, FALSE),
 
   EMPTY_HOWTO (7),
 
   /* Old relocations for backward compatibility.  */
-  HOWTO (R_XTENSA_OP0, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_OP0", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_OP1, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_OP1", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_OP2, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_OP2", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_OP0, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_OP0", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_OP1, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_OP1", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_OP2, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_OP2", FALSE, 0, 0, TRUE),
 
   /* Assembly auto-expansion.  */
-  HOWTO (R_XTENSA_ASM_EXPAND, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_ASM_EXPAND", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_ASM_EXPAND, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_ASM_EXPAND", FALSE, 0, 0, TRUE),
   /* Relax assembly auto-expansion.  */
-  HOWTO (R_XTENSA_ASM_SIMPLIFY, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_ASM_SIMPLIFY", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_ASM_SIMPLIFY, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_ASM_SIMPLIFY", FALSE, 0, 0, TRUE),
 
   EMPTY_HOWTO (13),
 
-  HOWTO (R_XTENSA_32_PCREL, 0, 2, 32, TRUE, 0, complain_overflow_bitfield,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_32_PCREL",
+  HOWTO (RZ_XTENSA_32_PCREL, 0, 2, 32, TRUE, 0, complain_overflow_bitfield,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_32_PCREL",
 	 FALSE, 0, 0xffffffff, TRUE),
 
   /* GNU extension to record C++ vtable hierarchy.  */
-  HOWTO (R_XTENSA_GNU_VTINHERIT, 0, 2, 0, FALSE, 0, complain_overflow_dont,
-         NULL, "R_XTENSA_GNU_VTINHERIT",
+  HOWTO (RZ_XTENSA_GNU_VTINHERIT, 0, 2, 0, FALSE, 0, complain_overflow_dont,
+         NULL, "RZ_XTENSA_GNU_VTINHERIT",
 	 FALSE, 0, 0, FALSE),
   /* GNU extension to record C++ vtable member usage.  */
-  HOWTO (R_XTENSA_GNU_VTENTRY, 0, 2, 0, FALSE, 0, complain_overflow_dont,
-         _bfd_elf_rel_vtable_reloc_fn, "R_XTENSA_GNU_VTENTRY",
+  HOWTO (RZ_XTENSA_GNU_VTENTRY, 0, 2, 0, FALSE, 0, complain_overflow_dont,
+         _bfd_elf_rel_vtable_reloc_fn, "RZ_XTENSA_GNU_VTENTRY",
 	 FALSE, 0, 0, FALSE),
 
   /* Relocations for supporting difference of symbols.  */
-  HOWTO (R_XTENSA_DIFF8, 0, 0, 8, FALSE, 0, complain_overflow_signed,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_DIFF8", FALSE, 0, 0xff, FALSE),
-  HOWTO (R_XTENSA_DIFF16, 0, 1, 16, FALSE, 0, complain_overflow_signed,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_DIFF16", FALSE, 0, 0xffff, FALSE),
-  HOWTO (R_XTENSA_DIFF32, 0, 2, 32, FALSE, 0, complain_overflow_signed,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_DIFF32", FALSE, 0, 0xffffffff, FALSE),
+  HOWTO (RZ_XTENSA_DIFF8, 0, 0, 8, FALSE, 0, complain_overflow_signed,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_DIFF8", FALSE, 0, 0xff, FALSE),
+  HOWTO (RZ_XTENSA_DIFF16, 0, 1, 16, FALSE, 0, complain_overflow_signed,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_DIFF16", FALSE, 0, 0xffff, FALSE),
+  HOWTO (RZ_XTENSA_DIFF32, 0, 2, 32, FALSE, 0, complain_overflow_signed,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_DIFF32", FALSE, 0, 0xffffffff, FALSE),
 
   /* General immediate operand relocations.  */
-  HOWTO (R_XTENSA_SLOT0_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT0_OP", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT1_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT1_OP", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT2_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT2_OP", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT3_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT3_OP", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT4_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT4_OP", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT5_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT5_OP", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT6_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT6_OP", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT7_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT7_OP", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT8_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT8_OP", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT9_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT9_OP", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT10_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT10_OP", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT11_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT11_OP", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT12_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT12_OP", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT13_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT13_OP", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT14_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT14_OP", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT0_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT0_OP", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT1_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT1_OP", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT2_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT2_OP", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT3_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT3_OP", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT4_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT4_OP", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT5_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT5_OP", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT6_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT6_OP", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT7_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT7_OP", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT8_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT8_OP", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT9_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT9_OP", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT10_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT10_OP", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT11_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT11_OP", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT12_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT12_OP", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT13_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT13_OP", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT14_OP, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT14_OP", FALSE, 0, 0, TRUE),
 
   /* "Alternate" relocations.  The meaning of these is opcode-specific.  */
-  HOWTO (R_XTENSA_SLOT0_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT0_ALT", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT1_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT1_ALT", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT2_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT2_ALT", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT3_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT3_ALT", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT4_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT4_ALT", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT5_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT5_ALT", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT6_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT6_ALT", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT7_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT7_ALT", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT8_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT8_ALT", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT9_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT9_ALT", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT10_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT10_ALT", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT11_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT11_ALT", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT12_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT12_ALT", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT13_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT13_ALT", FALSE, 0, 0, TRUE),
-  HOWTO (R_XTENSA_SLOT14_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_SLOT14_ALT", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT0_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT0_ALT", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT1_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT1_ALT", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT2_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT2_ALT", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT3_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT3_ALT", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT4_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT4_ALT", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT5_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT5_ALT", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT6_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT6_ALT", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT7_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT7_ALT", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT8_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT8_ALT", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT9_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT9_ALT", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT10_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT10_ALT", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT11_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT11_ALT", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT12_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT12_ALT", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT13_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT13_ALT", FALSE, 0, 0, TRUE),
+  HOWTO (RZ_XTENSA_SLOT14_ALT, 0, 0, 0, TRUE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_SLOT14_ALT", FALSE, 0, 0, TRUE),
 
   /* TLS relocations.  */
-  HOWTO (R_XTENSA_TLSDESC_FN, 0, 2, 32, FALSE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_TLSDESC_FN",
+  HOWTO (RZ_XTENSA_TLSDESC_FN, 0, 2, 32, FALSE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_TLSDESC_FN",
 	 FALSE, 0, 0xffffffff, FALSE),
-  HOWTO (R_XTENSA_TLSDESC_ARG, 0, 2, 32, FALSE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_TLSDESC_ARG",
+  HOWTO (RZ_XTENSA_TLSDESC_ARG, 0, 2, 32, FALSE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_TLSDESC_ARG",
 	 FALSE, 0, 0xffffffff, FALSE),
-  HOWTO (R_XTENSA_TLS_DTPOFF, 0, 2, 32, FALSE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_TLS_DTPOFF",
+  HOWTO (RZ_XTENSA_TLS_DTPOFF, 0, 2, 32, FALSE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_TLS_DTPOFF",
 	 FALSE, 0, 0xffffffff, FALSE),
-  HOWTO (R_XTENSA_TLS_TPOFF, 0, 2, 32, FALSE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_TLS_TPOFF",
+  HOWTO (RZ_XTENSA_TLS_TPOFF, 0, 2, 32, FALSE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_TLS_TPOFF",
 	 FALSE, 0, 0xffffffff, FALSE),
-  HOWTO (R_XTENSA_TLS_FUNC, 0, 0, 0, FALSE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_TLS_FUNC",
+  HOWTO (RZ_XTENSA_TLS_FUNC, 0, 0, 0, FALSE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_TLS_FUNC",
 	 FALSE, 0, 0, FALSE),
-  HOWTO (R_XTENSA_TLS_ARG, 0, 0, 0, FALSE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_TLS_ARG",
+  HOWTO (RZ_XTENSA_TLS_ARG, 0, 0, 0, FALSE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_TLS_ARG",
 	 FALSE, 0, 0, FALSE),
-  HOWTO (R_XTENSA_TLS_CALL, 0, 0, 0, FALSE, 0, complain_overflow_dont,
-	 bfd_elf_xtensa_reloc, "R_XTENSA_TLS_CALL",
+  HOWTO (RZ_XTENSA_TLS_CALL, 0, 0, 0, FALSE, 0, complain_overflow_dont,
+	 bfd_elf_xtensa_reloc, "RZ_XTENSA_TLS_CALL",
 	 FALSE, 0, 0, FALSE),
 };
 
@@ -377,109 +377,109 @@ elf_xtensa_reloc_type_lookup (bfd *abfd ATTRIBUTE_UNUSED,
     {
     case BFD_RELOC_NONE:
       TRACE ("BFD_RELOC_NONE");
-      return &elf_howto_table[(unsigned) R_XTENSA_NONE ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_NONE ];
 
     case BFD_RELOC_32:
       TRACE ("BFD_RELOC_32");
-      return &elf_howto_table[(unsigned) R_XTENSA_32 ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_32 ];
 
     case BFD_RELOC_32_PCREL:
       TRACE ("BFD_RELOC_32_PCREL");
-      return &elf_howto_table[(unsigned) R_XTENSA_32_PCREL ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_32_PCREL ];
 
     case BFD_RELOC_XTENSA_DIFF8:
       TRACE ("BFD_RELOC_XTENSA_DIFF8");
-      return &elf_howto_table[(unsigned) R_XTENSA_DIFF8 ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_DIFF8 ];
 
     case BFD_RELOC_XTENSA_DIFF16:
       TRACE ("BFD_RELOC_XTENSA_DIFF16");
-      return &elf_howto_table[(unsigned) R_XTENSA_DIFF16 ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_DIFF16 ];
 
     case BFD_RELOC_XTENSA_DIFF32:
       TRACE ("BFD_RELOC_XTENSA_DIFF32");
-      return &elf_howto_table[(unsigned) R_XTENSA_DIFF32 ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_DIFF32 ];
 
     case BFD_RELOC_XTENSA_RTLD:
       TRACE ("BFD_RELOC_XTENSA_RTLD");
-      return &elf_howto_table[(unsigned) R_XTENSA_RTLD ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_RTLD ];
 
     case BFD_RELOC_XTENSA_GLOB_DAT:
       TRACE ("BFD_RELOC_XTENSA_GLOB_DAT");
-      return &elf_howto_table[(unsigned) R_XTENSA_GLOB_DAT ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_GLOB_DAT ];
 
     case BFD_RELOC_XTENSA_JMP_SLOT:
       TRACE ("BFD_RELOC_XTENSA_JMP_SLOT");
-      return &elf_howto_table[(unsigned) R_XTENSA_JMP_SLOT ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_JMP_SLOT ];
 
     case BFD_RELOC_XTENSA_RELATIVE:
       TRACE ("BFD_RELOC_XTENSA_RELATIVE");
-      return &elf_howto_table[(unsigned) R_XTENSA_RELATIVE ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_RELATIVE ];
 
     case BFD_RELOC_XTENSA_PLT:
       TRACE ("BFD_RELOC_XTENSA_PLT");
-      return &elf_howto_table[(unsigned) R_XTENSA_PLT ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_PLT ];
 
     case BFD_RELOC_XTENSA_OP0:
       TRACE ("BFD_RELOC_XTENSA_OP0");
-      return &elf_howto_table[(unsigned) R_XTENSA_OP0 ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_OP0 ];
 
     case BFD_RELOC_XTENSA_OP1:
       TRACE ("BFD_RELOC_XTENSA_OP1");
-      return &elf_howto_table[(unsigned) R_XTENSA_OP1 ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_OP1 ];
 
     case BFD_RELOC_XTENSA_OP2:
       TRACE ("BFD_RELOC_XTENSA_OP2");
-      return &elf_howto_table[(unsigned) R_XTENSA_OP2 ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_OP2 ];
 
     case BFD_RELOC_XTENSA_ASM_EXPAND:
       TRACE ("BFD_RELOC_XTENSA_ASM_EXPAND");
-      return &elf_howto_table[(unsigned) R_XTENSA_ASM_EXPAND ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_ASM_EXPAND ];
 
     case BFD_RELOC_XTENSA_ASM_SIMPLIFY:
       TRACE ("BFD_RELOC_XTENSA_ASM_SIMPLIFY");
-      return &elf_howto_table[(unsigned) R_XTENSA_ASM_SIMPLIFY ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_ASM_SIMPLIFY ];
 
     case BFD_RELOC_VTABLE_INHERIT:
       TRACE ("BFD_RELOC_VTABLE_INHERIT");
-      return &elf_howto_table[(unsigned) R_XTENSA_GNU_VTINHERIT ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_GNU_VTINHERIT ];
 
     case BFD_RELOC_VTABLE_ENTRY:
       TRACE ("BFD_RELOC_VTABLE_ENTRY");
-      return &elf_howto_table[(unsigned) R_XTENSA_GNU_VTENTRY ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_GNU_VTENTRY ];
 
     case BFD_RELOC_XTENSA_TLSDESC_FN:
       TRACE ("BFD_RELOC_XTENSA_TLSDESC_FN");
-      return &elf_howto_table[(unsigned) R_XTENSA_TLSDESC_FN ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_TLSDESC_FN ];
 
     case BFD_RELOC_XTENSA_TLSDESC_ARG:
       TRACE ("BFD_RELOC_XTENSA_TLSDESC_ARG");
-      return &elf_howto_table[(unsigned) R_XTENSA_TLSDESC_ARG ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_TLSDESC_ARG ];
 
     case BFD_RELOC_XTENSA_TLS_DTPOFF:
       TRACE ("BFD_RELOC_XTENSA_TLS_DTPOFF");
-      return &elf_howto_table[(unsigned) R_XTENSA_TLS_DTPOFF ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_TLS_DTPOFF ];
 
     case BFD_RELOC_XTENSA_TLS_TPOFF:
       TRACE ("BFD_RELOC_XTENSA_TLS_TPOFF");
-      return &elf_howto_table[(unsigned) R_XTENSA_TLS_TPOFF ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_TLS_TPOFF ];
 
     case BFD_RELOC_XTENSA_TLS_FUNC:
       TRACE ("BFD_RELOC_XTENSA_TLS_FUNC");
-      return &elf_howto_table[(unsigned) R_XTENSA_TLS_FUNC ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_TLS_FUNC ];
 
     case BFD_RELOC_XTENSA_TLS_ARG:
       TRACE ("BFD_RELOC_XTENSA_TLS_ARG");
-      return &elf_howto_table[(unsigned) R_XTENSA_TLS_ARG ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_TLS_ARG ];
 
     case BFD_RELOC_XTENSA_TLS_CALL:
       TRACE ("BFD_RELOC_XTENSA_TLS_CALL");
-      return &elf_howto_table[(unsigned) R_XTENSA_TLS_CALL ];
+      return &elf_howto_table[(unsigned) RZ_XTENSA_TLS_CALL ];
 
     default:
       if (code >= BFD_RELOC_XTENSA_SLOT0_OP
 	  && code <= BFD_RELOC_XTENSA_SLOT14_OP)
 	{
-	  unsigned n = (R_XTENSA_SLOT0_OP +
+	  unsigned n = (RZ_XTENSA_SLOT0_OP +
 			(code - BFD_RELOC_XTENSA_SLOT0_OP));
 	  return &elf_howto_table[n];
 	}
@@ -487,7 +487,7 @@ elf_xtensa_reloc_type_lookup (bfd *abfd ATTRIBUTE_UNUSED,
       if (code >= BFD_RELOC_XTENSA_SLOT0_ALT
 	  && code <= BFD_RELOC_XTENSA_SLOT14_ALT)
 	{
-	  unsigned n = (R_XTENSA_SLOT0_ALT +
+	  unsigned n = (RZ_XTENSA_SLOT0_ALT +
 			(code - BFD_RELOC_XTENSA_SLOT0_ALT));
 	  return &elf_howto_table[n];
 	}
@@ -524,7 +524,7 @@ elf_xtensa_info_to_howto_rela (bfd *abfd ATTRIBUTE_UNUSED,
 {
   unsigned int rz_type = ELF32_R_TYPE (dst->rz_info);
 
-  if (rz_type >= (unsigned int) R_XTENSA_max)
+  if (rz_type >= (unsigned int) RZ_XTENSA_max)
     {
       _bfd_error_handler (_("%B: invalid XTENSA reloc number: %d"), abfd, rz_type);
       rz_type = 0;
@@ -897,7 +897,7 @@ xtensa_read_table_entries (bfd *abfd,
       while (irel &&
 	     (irel->rz_offset < off
 	      || (irel->rz_offset == off
-		  && ELF32_R_TYPE (irel->rz_info) == R_XTENSA_NONE)))
+		  && ELF32_R_TYPE (irel->rz_info) == RZ_XTENSA_NONE)))
 	{
 	  irel += 1;
 	  if (irel >= rel_end)
@@ -908,7 +908,7 @@ xtensa_read_table_entries (bfd *abfd,
 	{
 	  bfd_vma sym_off;
 	  unsigned long rz_symndx = ELF32_R_SYM (irel->rz_info);
-	  BFD_ASSERT (ELF32_R_TYPE (irel->rz_info) == R_XTENSA_32);
+	  BFD_ASSERT (ELF32_R_TYPE (irel->rz_info) == RZ_XTENSA_32);
 
 	  if (get_elf_r_symndx_section (abfd, rz_symndx) != section)
 	    continue;
@@ -1064,7 +1064,7 @@ elf_xtensa_check_relocs (bfd *abfd,
 
       switch (rz_type)
 	{
-	case R_XTENSA_TLSDESC_FN:
+	case RZ_XTENSA_TLSDESC_FN:
 	  if (info->shared)
 	    {
 	      tls_type = GOT_TLS_GD;
@@ -1075,7 +1075,7 @@ elf_xtensa_check_relocs (bfd *abfd,
 	    tls_type = GOT_TLS_IE;
 	  break;
 
-	case R_XTENSA_TLSDESC_ARG:
+	case RZ_XTENSA_TLSDESC_ARG:
 	  if (info->shared)
 	    {
 	      tls_type = GOT_TLS_GD;
@@ -1089,14 +1089,14 @@ elf_xtensa_check_relocs (bfd *abfd,
 	    }
 	  break;
 
-	case R_XTENSA_TLS_DTPOFF:
+	case RZ_XTENSA_TLS_DTPOFF:
 	  if (info->shared)
 	    tls_type = GOT_TLS_GD;
 	  else
 	    tls_type = GOT_TLS_IE;
 	  break;
 
-	case R_XTENSA_TLS_TPOFF:
+	case RZ_XTENSA_TLS_TPOFF:
 	  tls_type = GOT_TLS_IE;
 	  if (info->shared)
 	    info->flags |= DF_STATIC_TLS;
@@ -1104,24 +1104,24 @@ elf_xtensa_check_relocs (bfd *abfd,
 	    is_got = TRUE;
 	  break;
 
-	case R_XTENSA_32:
+	case RZ_XTENSA_32:
 	  tls_type = GOT_NORMAL;
 	  is_got = TRUE;
 	  break;
 
-	case R_XTENSA_PLT:
+	case RZ_XTENSA_PLT:
 	  tls_type = GOT_NORMAL;
 	  is_plt = TRUE;
 	  break;
 
-	case R_XTENSA_GNU_VTINHERIT:
+	case RZ_XTENSA_GNU_VTINHERIT:
 	  /* This relocation describes the C++ object vtable hierarchy.
 	     Reconstruct it for later use during GC.  */
 	  if (!bfd_elf_gc_record_vtinherit (abfd, sec, h, rel->rz_offset))
 	    return FALSE;
 	  continue;
 
-	case R_XTENSA_GNU_VTENTRY:
+	case RZ_XTENSA_GNU_VTENTRY:
 	  /* This relocation describes which C++ vtable entries are actually
 	     used.  Record for later use during GC.  */
 	  BFD_ASSERT (h != NULL);
@@ -1305,8 +1305,8 @@ elf_xtensa_gc_mark_hook (asection *sec,
   if (h != NULL)
     switch (ELF32_R_TYPE (rel->rz_info))
       {
-      case R_XTENSA_GNU_VTINHERIT:
-      case R_XTENSA_GNU_VTENTRY:
+      case RZ_XTENSA_GNU_VTINHERIT:
+      case RZ_XTENSA_GNU_VTENTRY:
 	return NULL;
       }
 
@@ -1365,7 +1365,7 @@ elf_xtensa_gc_sweep_hook (bfd *abfd,
       rz_type = ELF32_R_TYPE (rel->rz_info);
       switch (rz_type)
 	{
-	case R_XTENSA_TLSDESC_FN:
+	case RZ_XTENSA_TLSDESC_FN:
 	  if (info->shared)
 	    {
 	      is_got = TRUE;
@@ -1373,7 +1373,7 @@ elf_xtensa_gc_sweep_hook (bfd *abfd,
 	    }
 	  break;
 
-	case R_XTENSA_TLSDESC_ARG:
+	case RZ_XTENSA_TLSDESC_ARG:
 	  if (info->shared)
 	    is_got = TRUE;
 	  else
@@ -1383,16 +1383,16 @@ elf_xtensa_gc_sweep_hook (bfd *abfd,
 	    }
 	  break;
 
-	case R_XTENSA_TLS_TPOFF:
+	case RZ_XTENSA_TLS_TPOFF:
 	  if (info->shared || h)
 	    is_got = TRUE;
 	  break;
 
-	case R_XTENSA_32:
+	case RZ_XTENSA_32:
 	  is_got = TRUE;
 	  break;
 
-	case R_XTENSA_PLT:
+	case RZ_XTENSA_PLT:
 	  is_plt = TRUE;
 	  break;
 
@@ -1702,7 +1702,7 @@ elf_xtensa_size_dynamic_sections (bfd *output_bfd ATTRIBUTE_UNUSED,
 			      (void *) info);
 
       /* If we are generating a shared object, we also need space in
-	 ".rela.got" for R_XTENSA_RELATIVE relocs for literals that
+	 ".rela.got" for RZ_XTENSA_RELATIVE relocs for literals that
 	 reference local symbols.  */
       if (info->shared)
 	elf_xtensa_allocate_local_got_size (info);
@@ -1841,7 +1841,7 @@ elf_xtensa_size_dynamic_sections (bfd *output_bfd ATTRIBUTE_UNUSED,
 	  bfd_byte *loc;
 
 	  irela.rz_offset = 0;
-	  irela.rz_info = ELF32_R_INFO (0, R_XTENSA_RTLD);
+	  irela.rz_info = ELF32_R_INFO (0, RZ_XTENSA_RTLD);
 	  irela.rz_addend = 0;
 
 	  loc = (srelgot->contents
@@ -1998,16 +1998,16 @@ elf_xtensa_do_reloc (reloc_howto_type *howto,
 
   switch (howto->type)
     {
-    case R_XTENSA_NONE:
-    case R_XTENSA_DIFF8:
-    case R_XTENSA_DIFF16:
-    case R_XTENSA_DIFF32:
-    case R_XTENSA_TLS_FUNC:
-    case R_XTENSA_TLS_ARG:
-    case R_XTENSA_TLS_CALL:
+    case RZ_XTENSA_NONE:
+    case RZ_XTENSA_DIFF8:
+    case RZ_XTENSA_DIFF16:
+    case RZ_XTENSA_DIFF32:
+    case RZ_XTENSA_TLS_FUNC:
+    case RZ_XTENSA_TLS_ARG:
+    case RZ_XTENSA_TLS_CALL:
       return bfd_reloc_ok;
 
-    case R_XTENSA_ASM_EXPAND:
+    case RZ_XTENSA_ASM_EXPAND:
       if (!is_weak_undef)
 	{
 	  /* Check for windowed CALL across a 1GB boundary.  */
@@ -2026,7 +2026,7 @@ elf_xtensa_do_reloc (reloc_howto_type *howto,
 	}
       return bfd_reloc_ok;
 
-    case R_XTENSA_ASM_SIMPLIFY:
+    case RZ_XTENSA_ASM_SIMPLIFY:
       {
         /* Convert the L32R/CALLX to CALL.  */
 	bfd_reloc_status_type retval =
@@ -2038,11 +2038,11 @@ elf_xtensa_do_reloc (reloc_howto_type *howto,
 	/* The CALL needs to be relocated.  Continue below for that part.  */
 	address += 3;
 	self_address += 3;
-	howto = &elf_howto_table[(unsigned) R_XTENSA_SLOT0_OP ];
+	howto = &elf_howto_table[(unsigned) RZ_XTENSA_SLOT0_OP ];
       }
       break;
 
-    case R_XTENSA_32:
+    case RZ_XTENSA_32:
       {
 	bfd_vma x;
 	x = bfd_get_32 (abfd, contents + address);
@@ -2051,15 +2051,15 @@ elf_xtensa_do_reloc (reloc_howto_type *howto,
       }
       return bfd_reloc_ok;
 
-    case R_XTENSA_32_PCREL:
+    case RZ_XTENSA_32_PCREL:
       bfd_put_32 (abfd, relocation - self_address, contents + address);
       return bfd_reloc_ok;
 
-    case R_XTENSA_PLT:
-    case R_XTENSA_TLSDESC_FN:
-    case R_XTENSA_TLSDESC_ARG:
-    case R_XTENSA_TLS_DTPOFF:
-    case R_XTENSA_TLS_TPOFF:
+    case RZ_XTENSA_PLT:
+    case RZ_XTENSA_TLSDESC_FN:
+    case RZ_XTENSA_TLSDESC_ARG:
+    case RZ_XTENSA_TLS_DTPOFF:
+    case RZ_XTENSA_TLS_TPOFF:
       bfd_put_32 (abfd, relocation, contents + address);
       return bfd_reloc_ok;
     }
@@ -2451,8 +2451,8 @@ replace_tls_insn (Elf_Internal_Rela *rel,
   rz_type = ELF32_R_TYPE (rel->rz_info);
   switch (rz_type)
     {
-    case R_XTENSA_TLS_FUNC:
-    case R_XTENSA_TLS_ARG:
+    case RZ_XTENSA_TLS_FUNC:
+    case RZ_XTENSA_TLS_ARG:
       if (old_op != get_l32r_opcode ()
 	  || xtensa_operand_get_field (isa, old_op, 0, fmt, 0,
 				       sbuff, &dest_reg) != 0)
@@ -2462,7 +2462,7 @@ replace_tls_insn (Elf_Internal_Rela *rel,
 	}
       break;
 
-    case R_XTENSA_TLS_CALL:
+    case RZ_XTENSA_TLS_CALL:
       if (! get_indirect_call_dest_reg (old_op, &dest_reg)
 	  || xtensa_operand_get_field (isa, old_op, 0, fmt, 0,
 				       sbuff, &src_reg) != 0)
@@ -2480,8 +2480,8 @@ replace_tls_insn (Elf_Internal_Rela *rel,
     {
       switch (rz_type)
 	{
-	case R_XTENSA_TLS_FUNC:
-	case R_XTENSA_TLS_ARG:
+	case RZ_XTENSA_TLS_FUNC:
+	case RZ_XTENSA_TLS_ARG:
 	  /* Change the instruction to a NOP (or "OR a1, a1, a1" for older
 	     versions of Xtensa).  */
 	  new_op = xtensa_opcode_lookup (isa, "nop");
@@ -2511,7 +2511,7 @@ replace_tls_insn (Elf_Internal_Rela *rel,
 	    }
 	  break;
 
-	case R_XTENSA_TLS_CALL:
+	case RZ_XTENSA_TLS_CALL:
 	  /* Read THREADPTR into the CALLX's return value register.  */
 	  new_op = xtensa_opcode_lookup (isa, "rur.threadptr");
 	  if (new_op == XTENSA_UNDEFINED
@@ -2529,7 +2529,7 @@ replace_tls_insn (Elf_Internal_Rela *rel,
     {
       switch (rz_type)
 	{
-	case R_XTENSA_TLS_FUNC:
+	case RZ_XTENSA_TLS_FUNC:
 	  new_op = xtensa_opcode_lookup (isa, "rur.threadptr");
 	  if (new_op == XTENSA_UNDEFINED
 	      || xtensa_opcode_encode (isa, fmt, 0, sbuff, new_op) != 0
@@ -2541,11 +2541,11 @@ replace_tls_insn (Elf_Internal_Rela *rel,
 	    }
 	  break;
 
-	case R_XTENSA_TLS_ARG:
+	case RZ_XTENSA_TLS_ARG:
 	  /* Nothing to do.  Keep the original L32R instruction.  */
 	  return TRUE;
 
-	case R_XTENSA_TLS_CALL:
+	case RZ_XTENSA_TLS_CALL:
 	  /* Add the CALLX's src register (holding the THREADPTR value)
 	     to the first argument register (holding the offset) and put
 	     the result in the CALLX's return value register.  */
@@ -2574,14 +2574,14 @@ replace_tls_insn (Elf_Internal_Rela *rel,
 }
 
 
-#define IS_XTENSA_TLS_RELOC(R_TYPE) \
-  ((R_TYPE) == R_XTENSA_TLSDESC_FN \
-   || (R_TYPE) == R_XTENSA_TLSDESC_ARG \
-   || (R_TYPE) == R_XTENSA_TLS_DTPOFF \
-   || (R_TYPE) == R_XTENSA_TLS_TPOFF \
-   || (R_TYPE) == R_XTENSA_TLS_FUNC \
-   || (R_TYPE) == R_XTENSA_TLS_ARG \
-   || (R_TYPE) == R_XTENSA_TLS_CALL)
+#define IS_XTENSA_TLS_RELOC(RZ_TYPE) \
+  ((RZ_TYPE) == RZ_XTENSA_TLSDESC_FN \
+   || (RZ_TYPE) == RZ_XTENSA_TLSDESC_ARG \
+   || (RZ_TYPE) == RZ_XTENSA_TLS_DTPOFF \
+   || (RZ_TYPE) == RZ_XTENSA_TLS_TPOFF \
+   || (RZ_TYPE) == RZ_XTENSA_TLS_FUNC \
+   || (RZ_TYPE) == RZ_XTENSA_TLS_ARG \
+   || (RZ_TYPE) == RZ_XTENSA_TLS_CALL)
 
 /* Relocate an Xtensa ELF section.  This is invoked by the linker for
    both relocatable and final links.  */
@@ -2652,11 +2652,11 @@ elf_xtensa_relocate_section (bfd *output_bfd,
       bfd_boolean dynamic_symbol;
 
       rz_type = ELF32_R_TYPE (rel->rz_info);
-      if (rz_type == (int) R_XTENSA_GNU_VTINHERIT
-	  || rz_type == (int) R_XTENSA_GNU_VTENTRY)
+      if (rz_type == (int) RZ_XTENSA_GNU_VTINHERIT
+	  || rz_type == (int) RZ_XTENSA_GNU_VTENTRY)
 	continue;
 
-      if (rz_type < 0 || rz_type >= (int) R_XTENSA_max)
+      if (rz_type < 0 || rz_type >= (int) RZ_XTENSA_max)
 	{
 	  bfd_set_error (bfd_error_bad_value);
 	  return FALSE;
@@ -2674,7 +2674,7 @@ elf_xtensa_relocate_section (bfd *output_bfd,
 
       if (howto->partial_inplace && !info->relocatable)
 	{
-	  /* Because R_XTENSA_32 was made partial_inplace to fix some
+	  /* Because RZ_XTENSA_32 was made partial_inplace to fix some
 	     problems with DWARF info in partial links, there may be
 	     an addend stored in the contents.  Take it out of there
 	     and move it back into the addend field of the reloc.  */
@@ -2734,7 +2734,7 @@ elf_xtensa_relocate_section (bfd *output_bfd,
 	  dest_addr = sym_sec->output_section->vma + sym_sec->output_offset
 	    + get_elf_r_symndx_offset (input_bfd, rz_symndx) + rel->rz_addend;
 
-	  if (rz_type == R_XTENSA_ASM_SIMPLIFY)
+	  if (rz_type == RZ_XTENSA_ASM_SIMPLIFY)
 	    {
 	      error_message = NULL;
 	      /* Convert ASM_SIMPLIFY into the simpler relocation
@@ -2789,7 +2789,7 @@ elf_xtensa_relocate_section (bfd *output_bfd,
 		 relocations on anything other than calls and l32r's.  */
 
 	      /* If it is not in the same section, there is nothing we can do.  */
-	      if (rz_type >= R_XTENSA_SLOT0_OP && rz_type <= R_XTENSA_SLOT14_OP &&
+	      if (rz_type >= RZ_XTENSA_SLOT0_OP && rz_type <= RZ_XTENSA_SLOT14_OP &&
 		  sym_sec->output_section == input_section->output_section)
 		{
 		  r = elf_xtensa_do_reloc (howto, input_bfd, input_section,
@@ -2821,7 +2821,7 @@ elf_xtensa_relocate_section (bfd *output_bfd,
 
       /* Sanity check the address.  */
       if (rel->rz_offset >= input_size
-	  && ELF32_R_TYPE (rel->rz_info) != R_XTENSA_NONE)
+	  && ELF32_R_TYPE (rel->rz_info) != RZ_XTENSA_NONE)
 	{
 	  (*_bfd_error_handler)
 	    (_("%B(%A+0x%lx): relocation offset out of range (size=0x%x)"),
@@ -2841,7 +2841,7 @@ elf_xtensa_relocate_section (bfd *output_bfd,
 	}
 
       if (rz_symndx != STN_UNDEF
-	  && rz_type != R_XTENSA_NONE
+	  && rz_type != RZ_XTENSA_NONE
 	  && (h == NULL
 	      || h->root.type == bfd_link_hash_defined
 	      || h->root.type == bfd_link_hash_defweak)
@@ -2868,8 +2868,8 @@ elf_xtensa_relocate_section (bfd *output_bfd,
 
       switch (rz_type)
 	{
-	case R_XTENSA_32:
-	case R_XTENSA_PLT:
+	case RZ_XTENSA_32:
+	case RZ_XTENSA_PLT:
 	  if (elf_hash_table (info)->dynamic_sections_created
 	      && (input_section->flags & SEC_ALLOC) != 0
 	      && (dynamic_symbol || info->shared))
@@ -2878,7 +2878,7 @@ elf_xtensa_relocate_section (bfd *output_bfd,
 	      bfd_byte *loc;
 	      asection *srel;
 
-	      if (dynamic_symbol && rz_type == R_XTENSA_PLT)
+	      if (dynamic_symbol && rz_type == RZ_XTENSA_PLT)
 		srel = htab->srelplt;
 	      else
 		srel = htab->srelgot;
@@ -2915,16 +2915,16 @@ elf_xtensa_relocate_section (bfd *output_bfd,
 		      outrel.rz_addend = rel->rz_addend;
 		      rel->rz_addend = 0;
 
-		      if (rz_type == R_XTENSA_32)
+		      if (rz_type == RZ_XTENSA_32)
 			{
 			  outrel.rz_info =
-			    ELF32_R_INFO (h->dynindx, R_XTENSA_GLOB_DAT);
+			    ELF32_R_INFO (h->dynindx, RZ_XTENSA_GLOB_DAT);
 			  relocation = 0;
 			}
-		      else /* rz_type == R_XTENSA_PLT */
+		      else /* rz_type == RZ_XTENSA_PLT */
 			{
 			  outrel.rz_info =
-			    ELF32_R_INFO (h->dynindx, R_XTENSA_JMP_SLOT);
+			    ELF32_R_INFO (h->dynindx, RZ_XTENSA_JMP_SLOT);
 
 			  /* Create the PLT entry and set the initial
 			     contents of the literal entry to the address of
@@ -2938,7 +2938,7 @@ elf_xtensa_relocate_section (bfd *output_bfd,
 		  else
 		    {
 		      /* Generate a RELATIVE relocation.  */
-		      outrel.rz_info = ELF32_R_INFO (0, R_XTENSA_RELATIVE);
+		      outrel.rz_info = ELF32_R_INFO (0, RZ_XTENSA_RELATIVE);
 		      outrel.rz_addend = 0;
 		    }
 		}
@@ -2949,7 +2949,7 @@ elf_xtensa_relocate_section (bfd *output_bfd,
 	      BFD_ASSERT (sizeof (Elf32_External_Rela) * srel->reloc_count
 			  <= srel->size);
 	    }
-	  else if (rz_type == R_XTENSA_ASM_EXPAND && dynamic_symbol)
+	  else if (rz_type == RZ_XTENSA_ASM_EXPAND && dynamic_symbol)
 	    {
 	      /* This should only happen for non-PIC code, which is not
 		 supposed to be used on systems with dynamic linking.
@@ -2958,7 +2958,7 @@ elf_xtensa_relocate_section (bfd *output_bfd,
 	    }
 	  break;
 
-	case R_XTENSA_TLS_TPOFF:
+	case RZ_XTENSA_TLS_TPOFF:
 	  /* Switch to LE model for local symbols in an executable.  */
 	  if (! info->shared && ! dynamic_symbol)
 	    {
@@ -2967,24 +2967,24 @@ elf_xtensa_relocate_section (bfd *output_bfd,
 	    }
 	  /* fall through */
 
-	case R_XTENSA_TLSDESC_FN:
-	case R_XTENSA_TLSDESC_ARG:
+	case RZ_XTENSA_TLSDESC_FN:
+	case RZ_XTENSA_TLSDESC_ARG:
 	  {
-	    if (rz_type == R_XTENSA_TLSDESC_FN)
+	    if (rz_type == RZ_XTENSA_TLSDESC_FN)
 	      {
 		if (! info->shared || (tls_type & GOT_TLS_IE) != 0)
-		  rz_type = R_XTENSA_NONE;
+		  rz_type = RZ_XTENSA_NONE;
 	      }
-	    else if (rz_type == R_XTENSA_TLSDESC_ARG)
+	    else if (rz_type == RZ_XTENSA_TLSDESC_ARG)
 	      {
 		if (info->shared)
 		  {
 		    if ((tls_type & GOT_TLS_IE) != 0)
-		      rz_type = R_XTENSA_TLS_TPOFF;
+		      rz_type = RZ_XTENSA_TLS_TPOFF;
 		  }
 		else
 		  {
-		    rz_type = R_XTENSA_TLS_TPOFF;
+		    rz_type = RZ_XTENSA_TLS_TPOFF;
 		    if (! dynamic_symbol)
 		      {
 			relocation = tpoff (info, relocation);
@@ -2993,7 +2993,7 @@ elf_xtensa_relocate_section (bfd *output_bfd,
 		  }
 	      }
 
-	    if (rz_type == R_XTENSA_NONE)
+	    if (rz_type == RZ_XTENSA_NONE)
 	      /* Nothing to do here; skip to the next reloc.  */
 	      continue;
 
@@ -3052,7 +3052,7 @@ elf_xtensa_relocate_section (bfd *output_bfd,
 	  }
 	  break;
 
-	case R_XTENSA_TLS_DTPOFF:
+	case RZ_XTENSA_TLS_DTPOFF:
 	  if (! info->shared)
 	    /* Switch from LD model to LE model.  */
 	    relocation = tpoff (info, relocation);
@@ -3060,9 +3060,9 @@ elf_xtensa_relocate_section (bfd *output_bfd,
 	    relocation -= dtpoff_base (info);
 	  break;
 
-	case R_XTENSA_TLS_FUNC:
-	case R_XTENSA_TLS_ARG:
-	case R_XTENSA_TLS_CALL:
+	case RZ_XTENSA_TLS_FUNC:
+	case RZ_XTENSA_TLS_ARG:
+	case RZ_XTENSA_TLS_CALL:
 	  /* Check if optimizing to IE or LE model.  */
 	  if ((tls_type & GOT_TLS_IE) != 0)
 	    {
@@ -3077,7 +3077,7 @@ elf_xtensa_relocate_section (bfd *output_bfd,
 		    return FALSE;
 		}
 
-	      if (rz_type != R_XTENSA_TLS_ARG || is_ld_model)
+	      if (rz_type != RZ_XTENSA_TLS_ARG || is_ld_model)
 		{
 		  /* Skip subsequent relocations on the same instruction.  */
 		  while (rel + 1 < relend && rel[1].rz_offset == rel->rz_offset)
@@ -3089,7 +3089,7 @@ elf_xtensa_relocate_section (bfd *output_bfd,
 	default:
 	  if (elf_hash_table (info)->dynamic_sections_created
 	      && dynamic_symbol && (is_operand_relocation (rz_type)
-				    || rz_type == R_XTENSA_32_PCREL))
+				    || rz_type == RZ_XTENSA_32_PCREL))
 	    {
 	      error_message =
 		vsprint_msg ("invalid relocation for dynamic symbol", ": %s",
@@ -3362,7 +3362,7 @@ elf_xtensa_finish_dynamic_sections (bfd *output_bfd,
 	{
 	  loc = srelgot->contents + rtld_reloc * sizeof (Elf32_External_Rela);
 	  bfd_elf32_swap_reloca_in (output_bfd, loc, &irela);
-	  if (ELF32_R_TYPE (irela.rz_info) == R_XTENSA_RTLD)
+	  if (ELF32_R_TYPE (irela.rz_info) == RZ_XTENSA_RTLD)
 	    break;
 	}
       BFD_ASSERT (rtld_reloc < srelgot->reloc_count);
@@ -3383,7 +3383,7 @@ elf_xtensa_finish_dynamic_sections (bfd *output_bfd,
 
 	  loc = srelgot->contents + rtld_reloc * sizeof (Elf32_External_Rela);
 	  bfd_elf32_swap_reloca_in (output_bfd, loc, &irela);
-	  BFD_ASSERT (ELF32_R_TYPE (irela.rz_info) == R_XTENSA_RTLD);
+	  BFD_ASSERT (ELF32_R_TYPE (irela.rz_info) == RZ_XTENSA_RTLD);
 	  irela.rz_offset = (sgotplt->output_section->vma
 			    + sgotplt->output_offset);
 	  irela.rz_addend = 1; /* tell rtld to set value to resolver function */
@@ -3394,7 +3394,7 @@ elf_xtensa_finish_dynamic_sections (bfd *output_bfd,
 	  /* Next literal immediately follows the first.  */
 	  loc += sizeof (Elf32_External_Rela);
 	  bfd_elf32_swap_reloca_in (output_bfd, loc, &irela);
-	  BFD_ASSERT (ELF32_R_TYPE (irela.rz_info) == R_XTENSA_RTLD);
+	  BFD_ASSERT (ELF32_R_TYPE (irela.rz_info) == RZ_XTENSA_RTLD);
 	  irela.rz_offset = (sgotplt->output_section->vma
 			    + sgotplt->output_offset + 4);
 	  /* Tell rtld to set value to object's link map.  */
@@ -3651,9 +3651,9 @@ elf_xtensa_reloc_type_class (const struct bfd_link_info *info ATTRIBUTE_UNUSED,
 {
   switch ((int) ELF32_R_TYPE (rela->rz_info))
     {
-    case R_XTENSA_RELATIVE:
+    case RZ_XTENSA_RELATIVE:
       return reloc_class_relative;
-    case R_XTENSA_JMP_SLOT:
+    case RZ_XTENSA_JMP_SLOT:
       return reloc_class_plt;
     default:
       return reloc_class_normal;
@@ -3724,7 +3724,7 @@ elf_xtensa_discard_info_for_section (bfd *abfd,
 	      /* Remove the table entry.  (If the reloc type is NONE, then
 		 the entry has already been merged with another and deleted
 		 during relaxation.)  */
-	      if (ELF32_R_TYPE (cookie->rel->rz_info) != R_XTENSA_NONE)
+	      if (ELF32_R_TYPE (cookie->rel->rz_info) != RZ_XTENSA_NONE)
 		{
 		  /* Shift the contents up.  */
 		  if (offset + entry_size < sec->size)
@@ -3735,7 +3735,7 @@ elf_xtensa_discard_info_for_section (bfd *abfd,
 		}
 
 	      /* Remove this relocation.  */
-	      cookie->rel->rz_info = ELF32_R_INFO (0, R_XTENSA_NONE);
+	      cookie->rel->rz_info = ELF32_R_INFO (0, RZ_XTENSA_NONE);
 	    }
 
 	  /* Adjust the relocation offset for previous removals.  This
@@ -4050,9 +4050,9 @@ get_relocation_opnd (xtensa_opcode opcode, int rz_type)
 
   /* If the operand number was specified in an old-style relocation,
      check for consistency with the operand computed above.  */
-  if (rz_type >= R_XTENSA_OP0 && rz_type <= R_XTENSA_OP2)
+  if (rz_type >= RZ_XTENSA_OP0 && rz_type <= RZ_XTENSA_OP2)
     {
-      int reloc_opnd = rz_type - R_XTENSA_OP0;
+      int reloc_opnd = rz_type - RZ_XTENSA_OP0;
       if (reloc_opnd != last_immed)
 	return XTENSA_UNDEFINED;
     }
@@ -4066,16 +4066,16 @@ get_relocation_slot (int rz_type)
 {
   switch (rz_type)
     {
-    case R_XTENSA_OP0:
-    case R_XTENSA_OP1:
-    case R_XTENSA_OP2:
+    case RZ_XTENSA_OP0:
+    case RZ_XTENSA_OP1:
+    case RZ_XTENSA_OP2:
       return 0;
 
     default:
-      if (rz_type >= R_XTENSA_SLOT0_OP && rz_type <= R_XTENSA_SLOT14_OP)
-	return rz_type - R_XTENSA_SLOT0_OP;
-      if (rz_type >= R_XTENSA_SLOT0_ALT && rz_type <= R_XTENSA_SLOT14_ALT)
-	return rz_type - R_XTENSA_SLOT0_ALT;
+      if (rz_type >= RZ_XTENSA_SLOT0_OP && rz_type <= RZ_XTENSA_SLOT14_OP)
+	return rz_type - RZ_XTENSA_SLOT0_OP;
+      if (rz_type >= RZ_XTENSA_SLOT0_ALT && rz_type <= RZ_XTENSA_SLOT14_ALT)
+	return rz_type - RZ_XTENSA_SLOT0_ALT;
       break;
     }
 
@@ -4161,8 +4161,8 @@ get_asm_simplify_size (bfd_byte *contents,
 bfd_boolean
 is_alt_relocation (int rz_type)
 {
-  return (rz_type >= R_XTENSA_SLOT0_ALT
-	  && rz_type <= R_XTENSA_SLOT14_ALT);
+  return (rz_type >= RZ_XTENSA_SLOT0_ALT
+	  && rz_type <= RZ_XTENSA_SLOT14_ALT);
 }
 
 
@@ -4171,15 +4171,15 @@ is_operand_relocation (int rz_type)
 {
   switch (rz_type)
     {
-    case R_XTENSA_OP0:
-    case R_XTENSA_OP1:
-    case R_XTENSA_OP2:
+    case RZ_XTENSA_OP0:
+    case RZ_XTENSA_OP1:
+    case RZ_XTENSA_OP2:
       return TRUE;
 
     default:
-      if (rz_type >= R_XTENSA_SLOT0_OP && rz_type <= R_XTENSA_SLOT14_OP)
+      if (rz_type >= RZ_XTENSA_SLOT0_OP && rz_type <= RZ_XTENSA_SLOT14_OP)
 	return TRUE;
-      if (rz_type >= R_XTENSA_SLOT0_ALT && rz_type <= R_XTENSA_SLOT14_ALT)
+      if (rz_type >= RZ_XTENSA_SLOT0_ALT && rz_type <= RZ_XTENSA_SLOT14_ALT)
 	return TRUE;
       break;
     }
@@ -4820,7 +4820,7 @@ contract_asm_expansion (bfd_byte *contents,
   /* Update the irel->rz_offset field so that the right immediate and
      the right instruction are modified during the relocation.  */
   irel->rz_offset += 3;
-  irel->rz_info = ELF32_R_INFO (ELF32_R_SYM (irel->rz_info), R_XTENSA_SLOT0_OP);
+  irel->rz_info = ELF32_R_INFO (ELF32_R_SYM (irel->rz_info), RZ_XTENSA_SLOT0_OP);
   return bfd_reloc_ok;
 }
 
@@ -7125,7 +7125,7 @@ find_relaxable_sections (bfd *abfd,
 	 the section as "relaxable".  */
       if (source_relax_info
 	  && !source_relax_info->is_relaxable_asm_section
-	  && ELF32_R_TYPE (irel->rz_info) == R_XTENSA_ASM_EXPAND)
+	  && ELF32_R_TYPE (irel->rz_info) == RZ_XTENSA_ASM_EXPAND)
 	{
 	  bfd_boolean is_reachable = FALSE;
 	  if (is_resolvable_asm_expansion (abfd, sec, contents, irel,
@@ -7312,8 +7312,8 @@ collect_source_relocs (bfd *abfd,
 
 	  /* Convert this reloc to ASM_SIMPLIFY.  */
 	  irel->rz_info = ELF32_R_INFO (ELF32_R_SYM (irel->rz_info),
-				       R_XTENSA_ASM_SIMPLIFY);
-	  l32r_irel->rz_info = ELF32_R_INFO (0, R_XTENSA_NONE);
+				       RZ_XTENSA_ASM_SIMPLIFY);
+	  l32r_irel->rz_info = ELF32_R_INFO (0, RZ_XTENSA_NONE);
 
 	  pin_internal_relocs (sec, internal_relocs);
 	}
@@ -7322,7 +7322,7 @@ collect_source_relocs (bfd *abfd,
 	  /* It is resolvable but doesn't reach.  We resolve now
 	     by eliminating the relocation -- the call will remain
 	     expanded into L32R/CALLX.  */
-	  irel->rz_info = ELF32_R_INFO (0, R_XTENSA_NONE);
+	  irel->rz_info = ELF32_R_INFO (0, RZ_XTENSA_NONE);
 	  pin_internal_relocs (sec, internal_relocs);
 	}
     }
@@ -7362,7 +7362,7 @@ is_resolvable_asm_expansion (bfd *abfd,
   if (contents == NULL)
     return FALSE;
 
-  if (ELF32_R_TYPE (irel->rz_info) != R_XTENSA_ASM_EXPAND)
+  if (ELF32_R_TYPE (irel->rz_info) != RZ_XTENSA_ASM_EXPAND)
     return FALSE;
 
   sec_size = bfd_get_section_limit (abfd, sec);
@@ -7562,8 +7562,8 @@ build_reloc_ranges (bfd *abfd, asection *sec,
       reloc_howto_type *howto = &elf_howto_table[rz_type];
       rz_reloc rz_rel;
 
-      if (rz_type == R_XTENSA_ASM_SIMPLIFY
-	  || rz_type == R_XTENSA_32_PCREL
+      if (rz_type == RZ_XTENSA_ASM_SIMPLIFY
+	  || rz_type == RZ_XTENSA_32_PCREL
 	  || !howto->pc_relative)
 	continue;
 
@@ -7780,7 +7780,7 @@ compute_text_actions (bfd *abfd,
       ebb_constraint ebb_table;
       bfd_size_type simplify_size;
 
-      if (irel && ELF32_R_TYPE (irel->rz_info) != R_XTENSA_ASM_SIMPLIFY)
+      if (irel && ELF32_R_TYPE (irel->rz_info) != RZ_XTENSA_ASM_SIMPLIFY)
 	continue;
       rz_offset = irel->rz_offset;
 
@@ -7963,13 +7963,13 @@ compute_ebb_proposed_actions (ebb_constraint *ebb_table)
 		 && (ebb->relocs[rel_idx].rz_offset < offset
 		     || (ebb->relocs[rel_idx].rz_offset == offset
 			 && (ELF32_R_TYPE (ebb->relocs[rel_idx].rz_info)
-			     != R_XTENSA_ASM_SIMPLIFY))))
+			     != RZ_XTENSA_ASM_SIMPLIFY))))
 	    rel_idx++;
 
 	  /* Check for longcall.  */
 	  irel = &ebb->relocs[rel_idx];
 	  if (irel->rz_offset == offset
-	      && ELF32_R_TYPE (irel->rz_info) == R_XTENSA_ASM_SIMPLIFY)
+	      && ELF32_R_TYPE (irel->rz_info) == RZ_XTENSA_ASM_SIMPLIFY)
 	    {
 	      bfd_size_type simplify_size;
 
@@ -8557,8 +8557,8 @@ check_section_ebb_pcrels_fit (bfd *abfd,
 	 that fit before linking must fit after linking.  Thus we only
 	 need to deal with relocations to the same section that are
 	 PC-relative.  */
-      if (rz_type == R_XTENSA_ASM_SIMPLIFY
-	  || rz_type == R_XTENSA_32_PCREL
+      if (rz_type == RZ_XTENSA_ASM_SIMPLIFY
+	  || rz_type == RZ_XTENSA_32_PCREL
 	  || !howto->pc_relative)
 	continue;
 
@@ -8808,11 +8808,11 @@ compute_removed_literals (bfd *abfd,
       irel = get_irel_at_offset (sec, internal_relocs,
 				 rel->rz_rel.target_offset);
 
-      /* If the relocation on this is not a simple R_XTENSA_32 or
-	 R_XTENSA_PLT then do not consider it.  This may happen when
+      /* If the relocation on this is not a simple RZ_XTENSA_32 or
+	 RZ_XTENSA_PLT then do not consider it.  This may happen when
 	 the difference of two symbols is used in a literal.  */
-      if (irel && (ELF32_R_TYPE (irel->rz_info) != R_XTENSA_32
-		   && ELF32_R_TYPE (irel->rz_info) != R_XTENSA_PLT))
+      if (irel && (ELF32_R_TYPE (irel->rz_info) != RZ_XTENSA_32
+		   && ELF32_R_TYPE (irel->rz_info) != RZ_XTENSA_PLT))
 	continue;
 
       /* If the target_offset for this relocation is the same as the
@@ -8904,7 +8904,7 @@ get_irel_at_offset (asection *sec,
     {
       irel = &internal_relocs[i];
       rz_type = ELF32_R_TYPE (irel->rz_info);
-      if (irel->rz_offset == offset && rz_type != R_XTENSA_NONE)
+      if (irel->rz_offset == offset && rz_type != RZ_XTENSA_NONE)
 	return irel;
     }
 
@@ -9010,7 +9010,7 @@ remove_dead_literal (bfd *abfd,
       if (elf_hash_table (link_info)->dynamic_sections_created)
 	shrink_dynamic_reloc_sections (link_info, abfd, sec, irel);
 
-      irel->rz_info = ELF32_R_INFO (0, R_XTENSA_NONE);
+      irel->rz_info = ELF32_R_INFO (0, RZ_XTENSA_NONE);
       pin_internal_relocs (sec, internal_relocs);
     }
 
@@ -9502,20 +9502,20 @@ relax_section (bfd *abfd, asection *sec, struct bfd_link_info *link_info)
 	    {
 	      pin_internal_relocs (sec, internal_relocs);
 
-	      if (rz_type != R_XTENSA_NONE
+	      if (rz_type != RZ_XTENSA_NONE
 		  && find_removed_literal (&relax_info->removed_list,
 					   irel->rz_offset))
 		{
 		  /* Remove this relocation.  */
 		  if (elf_hash_table (link_info)->dynamic_sections_created)
 		    shrink_dynamic_reloc_sections (link_info, abfd, sec, irel);
-		  irel->rz_info = ELF32_R_INFO (0, R_XTENSA_NONE);
+		  irel->rz_info = ELF32_R_INFO (0, RZ_XTENSA_NONE);
 		  irel->rz_offset = offset_with_removed_text_map
 		    (&relax_info->action_list, irel->rz_offset);
 		  continue;
 		}
 
-	      if (rz_type == R_XTENSA_ASM_SIMPLIFY)
+	      if (rz_type == RZ_XTENSA_ASM_SIMPLIFY)
 		{
 		  text_action *action =
 		    find_insn_action (&relax_info->action_list,
@@ -9619,9 +9619,9 @@ relax_section (bfd *abfd, asection *sec, struct bfd_link_info *link_info)
 	      rz_reloc new_reloc;
 	      target_sec = translate_reloc (&rz_rel, &new_reloc, target_sec);
 
-	      if (rz_type == R_XTENSA_DIFF8
-		  || rz_type == R_XTENSA_DIFF16
-		  || rz_type == R_XTENSA_DIFF32)
+	      if (rz_type == RZ_XTENSA_DIFF8
+		  || rz_type == RZ_XTENSA_DIFF16
+		  || rz_type == RZ_XTENSA_DIFF32)
 		{
 		  bfd_signed_vma diff_value = 0;
 		  bfd_vma new_end_offset, diff_mask = 0;
@@ -9636,15 +9636,15 @@ relax_section (bfd *abfd, asection *sec, struct bfd_link_info *link_info)
 
 		  switch (rz_type)
 		    {
-		    case R_XTENSA_DIFF8:
+		    case RZ_XTENSA_DIFF8:
 		      diff_value =
 			bfd_get_signed_8 (abfd, &contents[old_source_offset]);
 		      break;
-		    case R_XTENSA_DIFF16:
+		    case RZ_XTENSA_DIFF16:
 		      diff_value =
 			bfd_get_signed_16 (abfd, &contents[old_source_offset]);
 		      break;
-		    case R_XTENSA_DIFF32:
+		    case RZ_XTENSA_DIFF32:
 		      diff_value =
 			bfd_get_signed_32 (abfd, &contents[old_source_offset]);
 		      break;
@@ -9657,17 +9657,17 @@ relax_section (bfd *abfd, asection *sec, struct bfd_link_info *link_info)
 
 		  switch (rz_type)
 		    {
-		    case R_XTENSA_DIFF8:
+		    case RZ_XTENSA_DIFF8:
 		      diff_mask = 0x7f;
 		      bfd_put_signed_8 (abfd, diff_value,
 				 &contents[old_source_offset]);
 		      break;
-		    case R_XTENSA_DIFF16:
+		    case RZ_XTENSA_DIFF16:
 		      diff_mask = 0x7fff;
 		      bfd_put_signed_16 (abfd, diff_value,
 				  &contents[old_source_offset]);
 		      break;
-		    case R_XTENSA_DIFF32:
+		    case RZ_XTENSA_DIFF32:
 		      diff_mask = 0x7fffffff;
 		      bfd_put_signed_32 (abfd, diff_value,
 				  &contents[old_source_offset]);
@@ -10163,14 +10163,14 @@ shrink_dynamic_reloc_sections (struct bfd_link_info *info,
 
   dynamic_symbol = elf_xtensa_dynamic_symbol_p (h, info);
 
-  if ((rz_type == R_XTENSA_32 || rz_type == R_XTENSA_PLT)
+  if ((rz_type == RZ_XTENSA_32 || rz_type == RZ_XTENSA_PLT)
       && (input_section->flags & SEC_ALLOC) != 0
       && (dynamic_symbol || info->shared))
     {
       asection *srel;
       bfd_boolean is_plt = FALSE;
 
-      if (dynamic_symbol && rz_type == R_XTENSA_PLT)
+      if (dynamic_symbol && rz_type == RZ_XTENSA_PLT)
 	{
 	  srel = htab->srelplt;
 	  is_plt = TRUE;
@@ -10415,7 +10415,7 @@ relax_property_section (bfd *abfd,
 
 	  irel = &internal_relocs[i];
 	  rz_type = ELF32_R_TYPE (irel->rz_info);
-	  if (rz_type == R_XTENSA_NONE)
+	  if (rz_type == RZ_XTENSA_NONE)
 	    continue;
 
 	  /* Find the literal value.  */
@@ -10550,7 +10550,7 @@ relax_property_section (bfd *abfd,
 	      for (irel = next_rel; irel < rel_end; irel++)
 		{
 		  if ((irel->rz_offset == offset
-		       && ELF32_R_TYPE (irel->rz_info) != R_XTENSA_NONE)
+		       && ELF32_R_TYPE (irel->rz_info) != RZ_XTENSA_NONE)
 		      || irel->rz_offset > offset)
 		    {
 		      offset_rel = irel;
@@ -10566,7 +10566,7 @@ relax_property_section (bfd *abfd,
 	    {
 	      for (irel = offset_rel + 1; irel < rel_end; irel++)
 		{
-		  if (ELF32_R_TYPE (irel->rz_info) != R_XTENSA_NONE)
+		  if (ELF32_R_TYPE (irel->rz_info) != RZ_XTENSA_NONE)
 		    {
 		      extra_rel = irel;
 		      break;
@@ -10627,7 +10627,7 @@ relax_property_section (bfd *abfd,
 		remove_this_rel = TRUE;
 	    }
 	  else if (offset_rel
-		   && ELF32_R_TYPE (offset_rel->rz_info) == R_XTENSA_32)
+		   && ELF32_R_TYPE (offset_rel->rz_info) == RZ_XTENSA_32)
 	    {
 	      if (last_irel)
 		{
@@ -10668,7 +10668,7 @@ relax_property_section (bfd *abfd,
 
 	  if (remove_this_rel)
 	    {
-	      offset_rel->rz_info = ELF32_R_INFO (0, R_XTENSA_NONE);
+	      offset_rel->rz_info = ELF32_R_INFO (0, RZ_XTENSA_NONE);
 	      offset_rel->rz_offset = 0;
 	    }
 
@@ -10805,7 +10805,7 @@ do_fix_for_relocatable_link (Elf_Internal_Rela *rel,
   int rz_type = ELF32_R_TYPE (rel->rz_info);
   reloc_bfd_fix *fix;
 
-  if (rz_type == R_XTENSA_NONE)
+  if (rz_type == RZ_XTENSA_NONE)
     return TRUE;
 
   fix = get_bfd_fix (input_section, rel->rz_offset, rz_type);
@@ -10819,7 +10819,7 @@ do_fix_for_relocatable_link (Elf_Internal_Rela *rel,
 
   if (!old_sec || !rz_reloc_is_defined (&rz_rel))
     {
-      if (rz_type != R_XTENSA_ASM_EXPAND)
+      if (rz_type != RZ_XTENSA_ASM_EXPAND)
 	{
 	  (*_bfd_error_handler)
 	    (_("%B(%A+0x%lx): unexpected fix for %s relocation"),
@@ -10851,7 +10851,7 @@ do_fix_for_final_link (Elf_Internal_Rela *rel,
   reloc_bfd_fix *fix;
   bfd_vma fixup_diff;
 
-  if (rz_type == R_XTENSA_NONE)
+  if (rz_type == RZ_XTENSA_NONE)
     return;
 
   fix = get_bfd_fix (input_section, rel->rz_offset, rz_type);

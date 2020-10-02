@@ -13,20 +13,20 @@ static int hack_handle_dp_reg(ut32 insn, RzAnalOp *op) {
 			if (!S) {
 				if (opcode == 4) {
 					// irg
-					op->type = R_ANAL_OP_TYPE_MOV;
+					op->type = RZ_ANAL_OP_TYPE_MOV;
 					return op->size = 4;
 				} else if (opcode == 0) {
 					// subp
-					op->type = R_ANAL_OP_TYPE_SUB;
+					op->type = RZ_ANAL_OP_TYPE_SUB;
 					return op->size = 4;
 				} else if (opcode == 5) {
 					// gmi
-					op->type = R_ANAL_OP_TYPE_MOV;
+					op->type = RZ_ANAL_OP_TYPE_MOV;
 					return op->size = 4;
 				}
 			} else if (S && opcode == 0) {
 				// subps
-				op->type = R_ANAL_OP_TYPE_SUB;
+				op->type = RZ_ANAL_OP_TYPE_SUB;
 				return op->size = 4;
 			}
 		}
@@ -48,38 +48,38 @@ static int hack_handle_ldst(ut32 insn, RzAnalOp *op) {
 			switch (opc) {
 			case 0:
 				// stg
-				op->type = R_ANAL_OP_TYPE_STORE;
+				op->type = RZ_ANAL_OP_TYPE_STORE;
 				return op->size = 4;
 			case 1:
 				// stzg
-				op->type = R_ANAL_OP_TYPE_STORE;
+				op->type = RZ_ANAL_OP_TYPE_STORE;
 				return op->size = 4;
 			case 2:
 				// st2g
-				op->type = R_ANAL_OP_TYPE_STORE;
+				op->type = RZ_ANAL_OP_TYPE_STORE;
 				return op->size = 4;
 			case 3:
 				// stz2g
-				op->type = R_ANAL_OP_TYPE_STORE;
+				op->type = RZ_ANAL_OP_TYPE_STORE;
 				return op->size = 4;
 			}
 		} else if (op2 == 0) {
 			switch (opc) {
 			case 0:
 				// stzgm
-				op->type = R_ANAL_OP_TYPE_STORE;
+				op->type = RZ_ANAL_OP_TYPE_STORE;
 				return op->size = 4;
 			case 1:
 				// ldg
-				op->type = R_ANAL_OP_TYPE_LOAD;
+				op->type = RZ_ANAL_OP_TYPE_LOAD;
 				return op->size = 4;
 			case 2:
 				// stgm
-				op->type = R_ANAL_OP_TYPE_STORE;
+				op->type = RZ_ANAL_OP_TYPE_STORE;
 				return op->size = 4;
 			case 3:
 				// ldgm
-				op->type = R_ANAL_OP_TYPE_LOAD;
+				op->type = RZ_ANAL_OP_TYPE_LOAD;
 				return op->size = 4;
 			}
 		}
@@ -90,7 +90,7 @@ static int hack_handle_ldst(ut32 insn, RzAnalOp *op) {
 		const bool L = (insn >> 22) & 0x1;
 		if (opc == 1 && !V && !L) {
 			// stgp
-			op->type = R_ANAL_OP_TYPE_STORE;
+			op->type = RZ_ANAL_OP_TYPE_STORE;
 			return op->size = 4;
 		}
 	}
@@ -109,11 +109,11 @@ static int hack_handle_dp_imm(ut32 insn, RzAnalOp *op) {
 		if (sf && !S && !o2) {
 			if (op_ ) {
 				// subg
-				op->type = R_ANAL_OP_TYPE_SUB;
+				op->type = RZ_ANAL_OP_TYPE_SUB;
 				return op->size = 4;
 			}
 			// addg
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = RZ_ANAL_OP_TYPE_ADD;
 			return op->size = 4;
 		}
 	}
@@ -135,7 +135,7 @@ static int hack_handle_br_exc_sys(ut32 insn, RzAnalOp *op) {
 			case 2:
 			case 4:
 			case 6:
-				op->type = R_ANAL_OP_TYPE_CMP;
+				op->type = RZ_ANAL_OP_TYPE_CMP;
 				return op->size = 4;
 			}
 		}
@@ -151,17 +151,17 @@ static inline int hackyArmAnal(RzAnal *a, RzAnalOp *op, const ut8 *buf, int len)
 		int insn_class = (*insn >> 25) & 0xf;
 		// xpaci // e#43c1da
 		if (!memcmp (buf + 1, "\x43\xc1\xda", 3)) {
-			op->type = R_ANAL_OP_TYPE_MOV;
+			op->type = RZ_ANAL_OP_TYPE_MOV;
 			return op->size = 4;
 		}
 		// retaa
 		if (!memcmp (buf, "\xff\x0b\x5f\xd6", 4)) {
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = RZ_ANAL_OP_TYPE_RET;
 			return op->size = 4;
 		}
 		// retab
 		if (!memcmp (buf, "\xff\x0f\x5f\xd6", 4)) {
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = RZ_ANAL_OP_TYPE_RET;
 			return op->size = 4;
 		}
 
@@ -196,7 +196,7 @@ static inline int hackyArmAnal(RzAnal *a, RzAnalOp *op, const ut8 *buf, int len)
 		}
 
 		if (ret > 0) {
-			op->family = R_ANAL_OP_FAMILY_SECURITY;
+			op->family = RZ_ANAL_OP_FAMILY_SECURITY;
 		}
 
 	}

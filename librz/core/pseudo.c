@@ -184,7 +184,7 @@ RZ_API int rz_core_pseudo_code(RzCore *core, const char *input) {
 	Sdb *db;
 	ut64 queuegoto = 0LL;
 	const char *blocktype = "else";
-	RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, RZ_ANAL_FCN_TYPE_NULL);
 	RConfigHold *hc = rz_config_hold_new (core->config);
 	if (!hc) {
 		return false;
@@ -340,7 +340,7 @@ RZ_API int rz_core_pseudo_code(RzCore *core, const char *input) {
 				ut64 jump = swap ? bb->jump : bb->fail;
 				ut64 fail = swap ? bb->fail : bb->jump;
 				// if its from another function chop it!
-				RzAnalFunction *curfcn = rz_anal_get_fcn_in (core->anal, jump, R_ANAL_FCN_TYPE_NULL);
+				RzAnalFunction *curfcn = rz_anal_get_fcn_in (core->anal, jump, RZ_ANAL_FCN_TYPE_NULL);
 				if (curfcn != fcn) {
 					// chop that branch
 					rz_cons_printf ("\n  // chop\n");

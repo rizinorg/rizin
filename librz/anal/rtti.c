@@ -5,7 +5,7 @@
 RZ_API char *rz_anal_rtti_demangle_class_name(RzAnal *anal, const char *name) {
 	RVTableContext context;
 	rz_anal_vtable_begin (anal, &context);
-	if (context.abi == R_ANAL_CPP_ABI_MSVC) {
+	if (context.abi == RZ_ANAL_CPP_ABI_MSVC) {
 		return rz_anal_rtti_msvc_demangle_class_name (&context, name);
 	}
 	return rz_anal_rtti_itanium_demangle_class_name (&context, name);
@@ -19,7 +19,7 @@ RZ_API void rz_anal_rtti_print_at_vtable(RzAnal *anal, ut64 addr, int mode) {
 
 	RVTableContext context;
 	rz_anal_vtable_begin (anal, &context);
-	if (context.abi == R_ANAL_CPP_ABI_MSVC) {
+	if (context.abi == RZ_ANAL_CPP_ABI_MSVC) {
 		rz_anal_rtti_msvc_print_at_vtable (&context, addr, mode, false);
 	} else {
 		rz_anal_rtti_itanium_print_at_vtable (&context, addr, mode);
@@ -55,7 +55,7 @@ RZ_API void rz_anal_rtti_print_all(RzAnal *anal, int mode) {
 				rz_cons_print (",");
 				comma = true;
 			}
-			if (context.abi == R_ANAL_CPP_ABI_MSVC) {
+			if (context.abi == RZ_ANAL_CPP_ABI_MSVC) {
 				success = rz_anal_rtti_msvc_print_at_vtable (&context, table->saddr, mode, true);
 			} else {
 				success = rz_anal_rtti_itanium_print_at_vtable (&context, table->saddr, mode);
@@ -88,7 +88,7 @@ RZ_API void rz_anal_rtti_recover_all(RzAnal *anal) {
 	rz_cons_break_push (NULL, NULL);
 	RzList *vtables = rz_anal_vtable_search (&context);
 	if (vtables) {
-		if (context.abi == R_ANAL_CPP_ABI_MSVC) {
+		if (context.abi == RZ_ANAL_CPP_ABI_MSVC) {
 			rz_anal_rtti_msvc_recover_all (&context, vtables);
 		} else {
 			rz_anal_rtti_itanium_recover_all (&context, vtables);

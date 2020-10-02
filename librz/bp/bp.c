@@ -3,10 +3,10 @@
 #include <rz_bp.h>
 #include <config.h>
 
-R_LIB_VERSION (rz_bp);
+RZ_LIB_VERSION (rz_bp);
 
 static struct rz_bp_plugin_t *bp_static_plugins[] =
-	{ R_BP_STATIC_PLUGINS };
+	{ RZ_BP_STATIC_PLUGINS };
 
 static void rz_bp_item_free (RBreakpointItem *b) {
 	free (b->name);
@@ -21,20 +21,20 @@ static void rz_bp_item_free (RBreakpointItem *b) {
 RZ_API RBreakpoint *rz_bp_new(void) {
 	int i;
 	RBreakpointPlugin *static_plugin;
-	RBreakpoint *bp = R_NEW0 (RBreakpoint);
+	RBreakpoint *bp = RZ_NEW0 (RBreakpoint);
 	if (!bp) {
 		return NULL;
 	}
 	bp->bps_idx_count = 16;
-	bp->bps_idx = R_NEWS0 (RBreakpointItem*, bp->bps_idx_count);
-	bp->stepcont = R_BP_CONT_NORMAL;
+	bp->bps_idx = RZ_NEWS0 (RBreakpointItem*, bp->bps_idx_count);
+	bp->stepcont = RZ_BP_CONT_NORMAL;
 	bp->traces = rz_bp_traptrace_new ();
 	bp->cb_printf = (PrintfCallback)printf;
 	bp->bps = rz_list_newf ((RzListFree)rz_bp_item_free);
 	bp->plugins = rz_list_newf ((RzListFree)free);
 	bp->nhwbps = 0;
 	for (i = 0; bp_static_plugins[i]; i++) {
-		static_plugin = R_NEW (RBreakpointPlugin);
+		static_plugin = RZ_NEW (RBreakpointPlugin);
 		memcpy (static_plugin, bp_static_plugins[i],
 			sizeof (RBreakpointPlugin));
 		rz_bp_plugin_add (bp, static_plugin);
@@ -226,13 +226,13 @@ RZ_API RBreakpointItem* rz_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int p
 	if (bp->iob.read_at) {
 		bp->iob.read_at (bp->iob.io, addr, bytes, size);
 	}
-	item = rz_bp_add (bp, bytes, addr, size, R_BP_TYPE_SW, perm);
+	item = rz_bp_add (bp, bytes, addr, size, RZ_BP_TYPE_SW, perm);
 	free (bytes);
 	return item;
 }
 
 RZ_API RBreakpointItem* rz_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int perm) {
-	return rz_bp_add (bp, NULL, addr, size, R_BP_TYPE_HW, perm);
+	return rz_bp_add (bp, NULL, addr, size, RZ_BP_TYPE_HW, perm);
 }
 
 RZ_API int rz_bp_del_all(RBreakpoint *bp) {
@@ -295,9 +295,9 @@ RZ_API int rz_bp_list(RBreakpoint *bp, int rad) {
 				" %d %c%c%c %s %s %s %s cmd=\"%s\" cond=\"%s\" " \
 				"name=\"%s\" module=\"%s\"\n",
 				b->addr, b->addr + b->size, b->size,
-				((b->perm & R_BP_PROT_READ) | (b->perm & R_BP_PROT_ACCESS)) ? 'r' : '-',
-				((b->perm & R_BP_PROT_WRITE)| (b->perm & R_BP_PROT_ACCESS)) ? 'w' : '-',
-				(b->perm & R_BP_PROT_EXEC) ? 'x' : '-',
+				((b->perm & RZ_BP_PROT_READ) | (b->perm & RZ_BP_PROT_ACCESS)) ? 'r' : '-',
+				((b->perm & RZ_BP_PROT_WRITE)| (b->perm & RZ_BP_PROT_ACCESS)) ? 'w' : '-',
+				(b->perm & RZ_BP_PROT_EXEC) ? 'x' : '-',
 				b->hw ? "hw": "sw",
 				b->trace ? "trace" : "break",
 				b->enabled ? "enabled" : "disabled",
@@ -328,9 +328,9 @@ RZ_API int rz_bp_list(RBreakpoint *bp, int rad) {
 				"\"cond\":\"%s\"}",
 				iter->p ? "," : "",
 				b->addr, b->size,
-				(b->perm & R_BP_PROT_READ) ? 'r' : '-',
-				(b->perm & R_BP_PROT_WRITE) ? 'w' : '-',
-				(b->perm & R_BP_PROT_EXEC) ? 'x' : '-',
+				(b->perm & RZ_BP_PROT_READ) ? 'r' : '-',
+				(b->perm & RZ_BP_PROT_WRITE) ? 'w' : '-',
+				(b->perm & RZ_BP_PROT_EXEC) ? 'x' : '-',
 				b->hw ? "true" : "false",
 				b->trace ? "true" : "false",
 				b->enabled ? "true" : "false",
@@ -369,7 +369,7 @@ RZ_API RBreakpointItem *rz_bp_item_new (RBreakpoint *bp) {
 	}
 return_slot:
 	/* empty slot */
-	return (bp->bps_idx[i] = R_NEW0 (RBreakpointItem));
+	return (bp->bps_idx[i] = RZ_NEW0 (RBreakpointItem));
 }
 
 RZ_API RBreakpointItem *rz_bp_get_index(RBreakpoint *bp, int idx) {

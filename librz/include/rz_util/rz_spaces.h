@@ -1,7 +1,7 @@
-#ifndef R_SPACES_H
-#define R_SPACES_H
+#ifndef RZ_SPACES_H
+#define RZ_SPACES_H
 
-#define R_SPACES_MAX 512
+#define RZ_SPACES_MAX 512
 
 #include "rz_util.h"
 
@@ -18,9 +18,9 @@ extern "C" {
  * zign info, groups of flags, etc.
  *
  * It is possible to hook into the RSpaces functions by using REvent.
- * R_SPACE_EVENT_COUNT: called when you need to count how many elements there are in a given RSpace
- * R_SPACE_EVENT_RENAME: called when renaming a RSpace with an oldname to a newname
- * R_SPACE_EVENT_UNSET: called when deleting a RSpace with a given name
+ * RZ_SPACE_EVENT_COUNT: called when you need to count how many elements there are in a given RSpace
+ * RZ_SPACE_EVENT_RENAME: called when renaming a RSpace with an oldname to a newname
+ * RZ_SPACE_EVENT_UNSET: called when deleting a RSpace with a given name
  */
 
 typedef struct rz_space_t {
@@ -29,9 +29,9 @@ typedef struct rz_space_t {
 } RSpace;
 
 typedef enum {
-	R_SPACE_EVENT_COUNT = 1,
-	R_SPACE_EVENT_RENAME,
-	R_SPACE_EVENT_UNSET,
+	RZ_SPACE_EVENT_COUNT = 1,
+	RZ_SPACE_EVENT_RENAME,
+	RZ_SPACE_EVENT_UNSET,
 } RSpaceEventType;
 
 typedef struct rz_space_event_t {
@@ -107,4 +107,4 @@ typedef RBIter RSpaceIter;
 }
 #endif
 
-#endif //  R_SPACES_H
+#endif //  RZ_SPACES_H

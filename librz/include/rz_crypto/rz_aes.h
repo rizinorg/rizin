@@ -1,5 +1,5 @@
-#ifndef R_AES_H
-#define R_AES_H
+#ifndef RZ_AES_H
+#define RZ_AES_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,4 +57,4 @@ static const ut8 InvSbox[256] = { // inverse s-box
 }
 #endif
 
-#endif //  R_AES_H
+#endif //  RZ_AES_H

@@ -12,10 +12,10 @@ RZ_API int rz_search_regexp_update(RzSearch *s, ut64 from, const ut8 *buf, int l
 	int ret = 0;
 
 	rz_list_foreach (s->kws, iter, kw) {
-		int reflags = R_REGEX_EXTENDED;
+		int reflags = RZ_REGEX_EXTENDED;
 
 		if (kw->icase) {
-			reflags |= R_REGEX_ICASE;
+			reflags |= RZ_REGEX_ICASE;
 		}
 
 		if (rz_regex_comp (&compiled, (char *)kw->bin_keyword, reflags)) {
@@ -26,7 +26,7 @@ RZ_API int rz_search_regexp_update(RzSearch *s, ut64 from, const ut8 *buf, int l
 		match.rm_so = 0;
 		match.rm_eo = len;
 
-		while (!rz_regex_exec (&compiled, (char *)buf, 1, &match, R_REGEX_STARTEND)) {
+		while (!rz_regex_exec (&compiled, (char *)buf, 1, &match, RZ_REGEX_STARTEND)) {
 			int t = rz_search_hit_new (s, kw, from + match.rm_so);
 			if (!t) {
 				ret = -1;
@@ -35,7 +35,7 @@ RZ_API int rz_search_regexp_update(RzSearch *s, ut64 from, const ut8 *buf, int l
 			if (t > 1) {
 				goto beach;
 			}
-			/* Setup the boundaries for R_REGEX_STARTEND */
+			/* Setup the boundaries for RZ_REGEX_STARTEND */
 			match.rm_so = match.rm_eo;
 			match.rm_eo = len;
 		}

@@ -146,7 +146,7 @@ a = (b << 3) * 5;
 +       return (!rwx || (rwx && b->rwx));
 +}
 +
- R_API RBreakpointItem *r_bp_get_in(RBreakpoint *bp, ut64 addr, int rwx) {
+ RZ_API RBreakpointItem *r_bp_get_in(RBreakpoint *bp, ut64 addr, int rwx) {
         RBreakpointItem *b;
         RListIter *iter;
         r_list_foreach (bp->bps, iter, b) {
@@ -169,8 +169,8 @@ The structure of the C files in r2 must be like this:
 #include <r_core.h>           ## includes
 static int globals            ## const, define, global variables
 static void helper(void) {}   ## static functions
-R_IPI void internal(void) {}  ## internal apis (used only inside the library)
-R_API void public(void) {}    ## public apis starting with constructor/destructor
+RZ_IPI void internal(void) {}  ## internal apis (used only inside the library)
+RZ_API void public(void) {}    ## public apis starting with constructor/destructor
 
 ```
 
@@ -193,7 +193,7 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
 
 * Do not use assert.h, use r_util/r_assert.h instead.
 
-* You can use `export R2_DEBUG_ASSERT=1` to set a breakpoint when hitting an assert.
+* You can use `export RZ_DEBUG_ASSERT=1` to set a breakpoint when hitting an assert.
 
 * Do not use C99 variable declaration
     - This way we reduce the number of local variables per function
@@ -206,7 +206,7 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
 * Function names should be explicit enough to not require a comment
   explaining what it does when seen elsewhere in code.
 
-* Use 'R_API' define to mark exportable (public) methods only for module APIs
+* Use 'RZ_API' define to mark exportable (public) methods only for module APIs
 
 * The rest of functions must be static, to avoid polluting the global space.
 
@@ -334,18 +334,18 @@ into `.dir-locals.el`.
 ## Packed structures
 
 Due to the various differences between platforms and compilers rizin
-has a special helper macro - `R_PACKED()`. Instead of non-portable
+has a special helper macro - `RZ_PACKED()`. Instead of non-portable
 `#pragma pack` or `__attribute__((packed))` it is advised to use this macro
 instead. To wrap the code inside of it you just need to write:
 ```c
-R_PACKED (union mystruct {
+RZ_PACKED (union mystruct {
 	int a;
 	char b;
 })
 ```
 or in case of typedef:
 ```c
-R_PACKED (typedef structmystruct {
+RZ_PACKED (typedef structmystruct {
 	int a;
 	char b;
 })

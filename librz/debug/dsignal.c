@@ -69,10 +69,10 @@ static bool siglistcb (void *p, const char *k, const char *v) {
 		opt = sdb_num_get (DB, key, 0);
 		if (opt) {
 			rz_cons_printf ("%s %s", k, v);
-			if (opt & R_DBG_SIGNAL_CONT) {
+			if (opt & RZ_DBG_SIGNAL_CONT) {
 				rz_cons_strcat (" cont");
 			}
-			if (opt & R_DBG_SIGNAL_SKIP) {
+			if (opt & RZ_DBG_SIGNAL_SKIP) {
 				rz_cons_strcat (" skip");
 			}
 			rz_cons_newline ();
@@ -98,9 +98,9 @@ static bool siglistjsoncb (void *p, const char *k, const char *v) {
 			rz_cons_strcat (",");
 		}
 		rz_cons_printf ("{\"signum\":\"%s\",\"name\":\"%s\",\"option\":", k, v);
-		if (opt & R_DBG_SIGNAL_CONT) {
+		if (opt & RZ_DBG_SIGNAL_CONT) {
 			rz_cons_strcat ("\"cont\"");
-		} else if (opt & R_DBG_SIGNAL_SKIP) {
+		} else if (opt & RZ_DBG_SIGNAL_SKIP) {
 			rz_cons_strcat ("\"skip\"");
 		} else {
 			rz_cons_strcat ("null");

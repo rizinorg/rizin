@@ -171,7 +171,7 @@ static const ut8 PADDING[64] = {
 };
 
 /* MD5 initialization. Begins an MD5 operation, writing a new context */
-void MD5_Init(R_MD5_CTX *context) {
+void MD5_Init(RZ_MD5_CTX *context) {
 	if (context) {
 		context->count[0] = context->count[1] = 0;
 		context->state[0] = 0x67452301;
@@ -183,7 +183,7 @@ void MD5_Init(R_MD5_CTX *context) {
 
 /* MD5 block update operation. Continues an MD5 message-digest operation,
  * processing another message block, and updating the context */
-void MD5_Update(R_MD5_CTX *context, const ut8 *input, ut32 inputLen) {
+void MD5_Update(RZ_MD5_CTX *context, const ut8 *input, ut32 inputLen) {
 	ut32 i;
 
 	/* Compute number of bytes mod 64 */
@@ -212,7 +212,7 @@ void MD5_Update(R_MD5_CTX *context, const ut8 *input, ut32 inputLen) {
 	memmove ((void*)&context->buffer[index], (void*)&input[i], inputLen - i);
 }
 
-void MD5_Final(ut8 digest[16], R_MD5_CTX *context) {
+void MD5_Final(ut8 digest[16], RZ_MD5_CTX *context) {
 	ut8 bits[8];
 
 	/* Save number of bits */

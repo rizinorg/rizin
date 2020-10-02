@@ -70,7 +70,7 @@ TODO:
 			case 'i':
 				{
 #if __UNIX__
-#define COLORFLAGS (core->print->flags & R_PRINT_FLAGS_COLOR)
+#define COLORFLAGS (core->print->flags & RZ_PRINT_FLAGS_COLOR)
 #else
 #define COLORFLAGS 0
 #endif

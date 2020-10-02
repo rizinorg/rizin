@@ -1,5 +1,5 @@
-#ifndef R2_CMD_H
-#define R2_CMD_H
+#ifndef RZ_CMD_H
+#define RZ_CMD_H
 
 #include <rz_types.h>
 #include <rz_util.h>
@@ -11,18 +11,18 @@ extern "C" {
 
 typedef struct rz_core_t RzCore;
 
-//R_LIB_VERSION_HEADER (rz_cmd);
+//RZ_LIB_VERSION_HEADER (rz_cmd);
 
 #define MACRO_LIMIT 1024
 #define MACRO_LABELS 20
-#define R_CMD_MAXLEN 4096
+#define RZ_CMD_MAXLEN 4096
 
 typedef enum rz_cmd_status_t {
-	R_CMD_STATUS_OK = 0, // command handler exited in the right way
-	R_CMD_STATUS_WRONG_ARGS, // command handler could not handle the arguments passed to it
-	R_CMD_STATUS_ERROR, // command handler had issues while running (e.g. allocation error, etc.)
-	R_CMD_STATUS_INVALID, // command could not be executed (e.g. shell level error, not existing command, bad expression, etc.)
-	R_CMD_STATUS_EXIT, // command handler asks to exit the prompt loop
+	RZ_CMD_STATUS_OK = 0, // command handler exited in the right way
+	RZ_CMD_STATUS_WRONG_ARGS, // command handler could not handle the arguments passed to it
+	RZ_CMD_STATUS_ERROR, // command handler had issues while running (e.g. allocation error, etc.)
+	RZ_CMD_STATUS_INVALID, // command could not be executed (e.g. shell level error, not existing command, bad expression, etc.)
+	RZ_CMD_STATUS_EXIT, // command handler asks to exit the prompt loop
 } RzCmdStatus;
 
 typedef int (*RzCmdCb) (void *user, const char *input);
@@ -134,20 +134,20 @@ typedef struct rz_cmd_desc_help_t {
 
 typedef enum {
 	// for old handlers that parse their own input and accept a single string
-	R_CMD_DESC_TYPE_OLDINPUT = 0,
+	RZ_CMD_DESC_TYPE_OLDINPUT = 0,
 	// for handlers that accept argc/argv
-	R_CMD_DESC_TYPE_ARGV,
+	RZ_CMD_DESC_TYPE_ARGV,
 	// for cmd descriptors that are just used to group together related
 	// sub-commands. Do not use this if the command can be used by itself or
 	// if it's necessary to show its help, because this descriptor is not
 	// stored in the hashtable and cannot be retrieved except by listing the
 	// children of its parent.
-	R_CMD_DESC_TYPE_INNER,
+	RZ_CMD_DESC_TYPE_INNER,
 	// for cmd descriptors that are parent of other sub-commands but that
 	// may also have a sub-command with the same name. For example, `wc` is
 	// both the parent of `wci`, `wc*`, etc. but there is also `wc` as a
 	// sub-command.
-	R_CMD_DESC_TYPE_GROUP,
+	RZ_CMD_DESC_TYPE_GROUP,
 } RzCmdDescType;
 
 typedef struct rz_cmd_desc_t {
@@ -242,23 +242,23 @@ RZ_API char *rz_cmd_get_help(RzCmd *cmd, RzCmdParsedArgs *args, bool use_color);
 
 static inline RzCmdStatus rz_cmd_int2status(int v) {
 	if (v == -2) {
-		return R_CMD_STATUS_EXIT;
+		return RZ_CMD_STATUS_EXIT;
 	} else if (v < 0) {
-		return R_CMD_STATUS_ERROR;
+		return RZ_CMD_STATUS_ERROR;
 	} else {
-		return R_CMD_STATUS_OK;
+		return RZ_CMD_STATUS_OK;
 	}
 }
 
 static inline int rz_cmd_status2int(RzCmdStatus s) {
 	switch (s) {
-	case R_CMD_STATUS_OK:
+	case RZ_CMD_STATUS_OK:
 		return 0;
-	case R_CMD_STATUS_ERROR:
-	case R_CMD_STATUS_WRONG_ARGS:
-	case R_CMD_STATUS_INVALID:
+	case RZ_CMD_STATUS_ERROR:
+	case RZ_CMD_STATUS_WRONG_ARGS:
+	case RZ_CMD_STATUS_INVALID:
 		return -1;
-	case R_CMD_STATUS_EXIT:
+	case RZ_CMD_STATUS_EXIT:
 	default:
 		return -2;
 	}

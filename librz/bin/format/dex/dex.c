@@ -28,7 +28,7 @@ void rz_bin_dex_free(RBinDexObj *dex) {
 
 RBinDexObj *rz_bin_dex_new_buf(RBuffer *buf) {
 	rz_return_val_if_fail (buf, NULL);
-	RBinDexObj *bin = R_NEW0 (RBinDexObj);
+	RBinDexObj *bin = RZ_NEW0 (RBinDexObj);
 	int i;
 	struct dex_header_t *dexhdr;
 	if (!bin) {
@@ -46,7 +46,7 @@ RBinDexObj *rz_bin_dex_new_buf(RBuffer *buf) {
 		goto fail;
 	}
 
-	rz_buf_seek (bin->b, 0, R_BUF_SET);
+	rz_buf_seek (bin->b, 0, RZ_BUF_SET);
 	rz_buf_read (bin->b, (ut8 *)&dexhdr->magic, 8);
 	dexhdr->checksum = rz_buf_read_le32 (bin->b);
 	rz_buf_read (bin->b, (ut8 *)&dexhdr->signature, 20);
@@ -78,7 +78,7 @@ RBinDexObj *rz_bin_dex_new_buf(RBuffer *buf) {
 	if (dexhdr->strings_size > bin->size) {
 		goto fail;
 	}
-	bin->strings = R_NEWS0 (ut32, dexhdr->strings_size + 1);
+	bin->strings = RZ_NEWS0 (ut32, dexhdr->strings_size + 1);
 	if (!bin->strings) {
 		goto fail;
 	}
@@ -112,7 +112,7 @@ RBinDexObj *rz_bin_dex_new_buf(RBuffer *buf) {
 			free (bin->classes);
 			goto fail;
 		}
-		rz_buf_seek (bin->b, offset, R_BUF_SET);
+		rz_buf_seek (bin->b, offset, RZ_BUF_SET);
 		bin->classes[i].class_id = rz_buf_read_le32 (bin->b);
 		bin->classes[i].access_flags = rz_buf_read_le32 (bin->b);
 		bin->classes[i].super_class = rz_buf_read_le32 (bin->b);
@@ -142,7 +142,7 @@ RBinDexObj *rz_bin_dex_new_buf(RBuffer *buf) {
 			free (bin->methods);
 			goto fail;
 		}
-		rz_buf_seek (bin->b, offset, R_BUF_SET);
+		rz_buf_seek (bin->b, offset, RZ_BUF_SET);
 		bin->methods[i].class_id = rz_buf_read_le16 (bin->b);
 		bin->methods[i].proto_id = rz_buf_read_le16 (bin->b);
 		bin->methods[i].name_id = rz_buf_read_le32 (bin->b);
@@ -188,7 +188,7 @@ RBinDexObj *rz_bin_dex_new_buf(RBuffer *buf) {
 			free (bin->fields);
 			goto fail;
 		}
-		rz_buf_seek (bin->b, offset, R_BUF_SET);
+		rz_buf_seek (bin->b, offset, RZ_BUF_SET);
 		bin->fields[i].class_id = rz_buf_read_le16 (bin->b);
 		bin->fields[i].type_id = rz_buf_read_le16 (bin->b);
 		bin->fields[i].name_id = rz_buf_read_le32 (bin->b);
@@ -216,7 +216,7 @@ RBinDexObj *rz_bin_dex_new_buf(RBuffer *buf) {
 			free (bin->protos);
 			goto fail;
 		}
-		rz_buf_seek (bin->b, offset, R_BUF_SET);
+		rz_buf_seek (bin->b, offset, RZ_BUF_SET);
 		bin->protos[i].shorty_id = rz_buf_read_le32 (bin->b);
 		bin->protos[i].return_type_id = rz_buf_read_le32 (bin->b);
 		bin->protos[i].parameters_off = rz_buf_read_le32 (bin->b);

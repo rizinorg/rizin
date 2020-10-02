@@ -414,7 +414,7 @@ void* rz_bin_te_free(struct rz_bin_te_obj_t* bin) {
 }
 
 struct rz_bin_te_obj_t* rz_bin_te_new(const char* file) {
-	struct rz_bin_te_obj_t *bin = R_NEW0 (struct rz_bin_te_obj_t);
+	struct rz_bin_te_obj_t *bin = RZ_NEW0 (struct rz_bin_te_obj_t);
 	if (!bin) {
 		return NULL;
 	}
@@ -438,7 +438,7 @@ struct rz_bin_te_obj_t* rz_bin_te_new(const char* file) {
 }
 
 struct rz_bin_te_obj_t* rz_bin_te_new_buf(RBuffer *buf) {
-	struct rz_bin_te_obj_t *bin = R_NEW0 (struct rz_bin_te_obj_t);
+	struct rz_bin_te_obj_t *bin = RZ_NEW0 (struct rz_bin_te_obj_t);
 	if (!bin) {
 		return NULL;
 	}

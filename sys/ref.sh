@@ -1,5 +1,5 @@
 # create .h from .c
-# > git grep R_API open.c |cut -d : -f 2- | sed -e 's, {,;,'
+# > git grep RZ_API open.c |cut -d : -f 2- | sed -e 's, {,;,'
 
 # find files with \r\n
 # > git grep `printf "\r\n"`
@@ -8,7 +8,7 @@
 
 case "$1" in
 h)
-	git grep ^R_API $2 |cut -d : -f 2- | sed -e 's, {,;,'
+	git grep ^RZ_API $2 |cut -d : -f 2- | sed -e 's, {,;,'
 	;;
 g)
 	git grep "$2"
@@ -25,7 +25,7 @@ n)
 	;;
 *)
 	echo "Usage sys/ref.sh [action] [...]"
-	echo " h [path]          # print R_API function signatures from C to H"
+	echo " h [path]          # print RZ_API function signatures from C to H"
 	echo " s [sed]           # perform regex on a bunch of files"
 	echo " n [newlines]      # newlines replacements"
 	echo " g [regex] [path]  # perform regex on a bunch of files"

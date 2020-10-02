@@ -15,15 +15,15 @@ static bool checkExtract(void) {
 
 static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {
 	char *dir = rz_str_newf ("%s%s%s%s%s",
-		opt->symbol_store_path, R_SYS_DIR,
-		opt->dbg_file, R_SYS_DIR,
+		opt->symbol_store_path, RZ_SYS_DIR,
+		opt->dbg_file, RZ_SYS_DIR,
 		opt->guid);
 	if (!rz_sys_mkdirp (dir)) {
 		free (dir);
 		return false;
 	}
 	char *url = rz_str_newf ("%s/%s/%s/%s", opt->symbol_server, opt->dbg_file, opt->guid, file);
-	char *path = rz_str_newf ("%s%s%s", dir, R_SYS_DIR, opt->dbg_file);
+	char *path = rz_str_newf ("%s%s%s", dir, RZ_SYS_DIR, opt->dbg_file);
 #if __WINDOWS__
 	if (rz_str_startswith (url, "\\\\")) { // Network path
 		LPCWSTR origin = rz_utf8_to_utf16 (url);
@@ -39,7 +39,7 @@ static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {
 	int len;
 	char *file_buf = rz_socket_http_get (url, NULL, &len);
 	free (url);
-	if (!len || R_STR_ISEMPTY (file_buf)) {
+	if (!len || RZ_STR_ISEMPTY (file_buf)) {
 		free (dir);
 		free (file_buf);
 		free (path);
@@ -67,9 +67,9 @@ static int download(struct SPDBDownloader *pd) {
 	}
 
 	char *abspath_to_file = rz_str_newf ("%s%s%s%s%s%s%s",
-		opt->symbol_store_path, R_SYS_DIR,
-		opt->dbg_file, R_SYS_DIR,
-		opt->guid, R_SYS_DIR,
+		opt->symbol_store_path, RZ_SYS_DIR,
+		opt->dbg_file, RZ_SYS_DIR,
+		opt->guid, RZ_SYS_DIR,
 		opt->dbg_file);
 
 	if (rz_file_exists (abspath_to_file)) {
@@ -83,9 +83,9 @@ static int download(struct SPDBDownloader *pd) {
 		char *archive_name = strdup (opt->dbg_file);
 		archive_name[strlen (archive_name) - 1] = '_';
 		char *abspath_to_archive = rz_str_newf ("%s%s%s%s%s%s%s",
-			opt->symbol_store_path, R_SYS_DIR,
-			opt->dbg_file, R_SYS_DIR,
-			opt->guid, R_SYS_DIR,
+			opt->symbol_store_path, RZ_SYS_DIR,
+			opt->dbg_file, RZ_SYS_DIR,
+			opt->guid, RZ_SYS_DIR,
 			archive_name);
 
 		eprintf ("Attempting to download compressed pdb in %s\n", abspath_to_archive);
@@ -132,7 +132,7 @@ static int download(struct SPDBDownloader *pd) {
 }
 
 void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
-	pd->opt = R_NEW0 (SPDBDownloaderOpt);
+	pd->opt = RZ_NEW0 (SPDBDownloaderOpt);
 	if (!pd->opt) {
 		pd->download = 0;
 		eprintf ("Cannot allocate memory for SPDBDownloaderOpt.\n");
@@ -148,12 +148,12 @@ void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
 }
 
 void deinit_pdb_downloader(SPDBDownloader *pd) {
-	R_FREE (pd->opt->dbg_file);
-	R_FREE (pd->opt->guid);
-	R_FREE (pd->opt->symbol_server);
-	R_FREE (pd->opt->user_agent);
-	R_FREE (pd->opt->symbol_store_path);
-	R_FREE (pd->opt);
+	RZ_FREE (pd->opt->dbg_file);
+	RZ_FREE (pd->opt->guid);
+	RZ_FREE (pd->opt->symbol_server);
+	RZ_FREE (pd->opt->user_agent);
+	RZ_FREE (pd->opt->symbol_store_path);
+	RZ_FREE (pd->opt);
 	pd->download = 0;
 }
 

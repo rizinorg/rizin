@@ -44,7 +44,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 	struct rz_bin_vsf_obj* res = NULL;
 	if (check_buffer (bf->buf)) {
 		int i = 0;
-		if (!(res = R_NEW0 (struct rz_bin_vsf_obj))) {
+		if (!(res = RZ_NEW0 (struct rz_bin_vsf_obj))) {
 		    return false;
 		}
 		offset = rz_offsetof(struct vsf_hdr, machine);
@@ -94,7 +94,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 			} else if (!CMP_MODULE (VICE_C128ROM) && !module.major) {
 				res->rom = offset + read;
 			} else if (!CMP_MODULE (VICE_MAINCPU) && module.major == 1) {
-				res->maincpu = R_NEW (struct vsf_maincpu);
+				res->maincpu = RZ_NEW (struct vsf_maincpu);
 				rz_buf_read_at (bf->buf, offset + read, (ut8 *)res->maincpu, sizeof (*res->maincpu));
 			}
 #undef CMP_MODULE
@@ -125,7 +125,7 @@ static RzList *mem(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	if (!(m = R_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RBinMem))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -157,7 +157,7 @@ static RzList* sections(RBinFile* bf) {
 		if (!vsf_obj->machine_idx) {
 			// Commodore 64 ROMS
 			// BASIC (0xa000 - 0xbfff)
-			if (!(ptr = R_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RBinSection))) {
 				return ret;
 			}
 			ptr->name = strdup ("BASIC");
@@ -165,12 +165,12 @@ static RzList* sections(RBinFile* bf) {
 			ptr->size = 1024 * 8; // (8k)
 			ptr->vaddr = 0xa000;
 			ptr->vsize = 1024 * 8;	// BASIC size (8k)
-			ptr->perm = R_PERM_RX;
+			ptr->perm = RZ_PERM_RX;
 			ptr->add = true;
 			rz_list_append (ret, ptr);
 
 			// KERNAL (0xe000 - 0xffff)
-			if (!(ptr = R_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RBinSection))) {
 				return ret;
 			}
 			ptr->name = strdup ("KERNAL");
@@ -178,7 +178,7 @@ static RzList* sections(RBinFile* bf) {
 			ptr->size = 1024 * 8; // (8k)
 			ptr->vaddr = 0xe000;
 			ptr->vsize = 1024 * 8;	// KERNAL size (8k)
-			ptr->perm = R_PERM_RX;
+			ptr->perm = RZ_PERM_RX;
 			ptr->add = true;
 			rz_list_append (ret, ptr);
 
@@ -186,7 +186,7 @@ static RzList* sections(RBinFile* bf) {
 		} else {
 			// Commodore 128 ROMS
 			// BASIC (0x4000 - 0xafff)
-			if (!(ptr = R_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RBinSection))) {
 				return ret;
 			}
 			ptr->name = strdup ("BASIC");
@@ -194,12 +194,12 @@ static RzList* sections(RBinFile* bf) {
 			ptr->size = 1024 * 28; // (28k)
 			ptr->vaddr = 0x4000;
 			ptr->vsize = 1024 * 28;	// BASIC size (28k)
-			ptr->perm = R_PERM_RX;
+			ptr->perm = RZ_PERM_RX;
 			ptr->add = true;
 			rz_list_append (ret, ptr);
 
 			// MONITOR (0xb000 - 0xbfff)
-			if (!(ptr = R_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RBinSection))) {
 				return ret;
 			}
 			ptr->name = strdup ("MONITOR");
@@ -208,12 +208,12 @@ static RzList* sections(RBinFile* bf) {
 			ptr->size = 1024 * 4; // (4k)
 			ptr->vaddr = 0xb000;
 			ptr->vsize = 1024 * 4;	// BASIC size (4k)
-			ptr->perm = R_PERM_RX;
+			ptr->perm = RZ_PERM_RX;
 			ptr->add = true;
 			rz_list_append (ret, ptr);
 
 			// EDITOR (0xc000 - 0xcfff)
-			if (!(ptr = R_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RBinSection))) {
 				return ret;
 			}
 			ptr->name = strdup ("EDITOR");
@@ -221,12 +221,12 @@ static RzList* sections(RBinFile* bf) {
 			ptr->size = 1024 * 4; // (4k)
 			ptr->vaddr = 0xc000;
 			ptr->vsize = 1024 * 4;	// BASIC size (4k)
-			ptr->perm = R_PERM_RX;
+			ptr->perm = RZ_PERM_RX;
 			ptr->add = true;
 			rz_list_append (ret, ptr);
 
 			// KERNAL (0xe000 - 0xffff)
-			if (!(ptr = R_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RBinSection))) {
 				return ret;
 			}
 			ptr->name = strdup ("KERNAL");
@@ -234,7 +234,7 @@ static RzList* sections(RBinFile* bf) {
 			ptr->size = 1024 * 8; // (8k)
 			ptr->vaddr = 0xe000;
 			ptr->vsize = 1024 * 8;	// KERNAL size (8k)
-			ptr->perm = R_PERM_RX;
+			ptr->perm = RZ_PERM_RX;
 			ptr->add = true;
 			rz_list_append (ret, ptr);
 
@@ -247,7 +247,7 @@ static RzList* sections(RBinFile* bf) {
 		if (!vsf_obj->machine_idx) {
 			// RAM C64 (0x0000 - 0xffff)
 			int size = _machines[m_idx].ram_size;
-			if (!(ptr = R_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RBinSection))) {
 				return ret;
 			}
 			ptr->name = strdup ("RAM");
@@ -255,7 +255,7 @@ static RzList* sections(RBinFile* bf) {
 			ptr->size = size;
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;
-			ptr->perm = R_PERM_RWX;
+			ptr->perm = RZ_PERM_RWX;
 			ptr->add = true;
 			rz_list_append (ret, ptr);
 		} else {
@@ -264,7 +264,7 @@ static RzList* sections(RBinFile* bf) {
 
 			// size of each bank: 64k
 			int size = 1024 * 64;
-			if (!(ptr = R_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RBinSection))) {
 				return ret;
 			}
 			ptr->name = strdup ("RAM BANK 0");
@@ -272,11 +272,11 @@ static RzList* sections(RBinFile* bf) {
 			ptr->size = size;
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;
-			ptr->perm = R_PERM_RWX;
+			ptr->perm = RZ_PERM_RWX;
 			ptr->add = true;
 			rz_list_append (ret, ptr);
 
-			if (!(ptr = R_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RBinSection))) {
 				return ret;
 			}
 			ptr->name = strdup ("RAM BANK 1");
@@ -284,7 +284,7 @@ static RzList* sections(RBinFile* bf) {
 			ptr->size = size;
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;
-			ptr->perm = R_PERM_RWX;
+			ptr->perm = RZ_PERM_RWX;
 			ptr->add = true;
 			rz_list_append (ret, ptr);
 		}
@@ -310,7 +310,7 @@ static RBinInfo* info(RBinFile *bf) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
@@ -488,13 +488,13 @@ static RzList* symbols(RBinFile *bf) {
 	int i;
 	for (i = 0; i < SYMBOLS_MAX; i++)
 	{
-		if (!(ptr = R_NEW0 (RBinSymbol))) {
+		if (!(ptr = RZ_NEW0 (RBinSymbol))) {
 			return ret;
 		}
 		if (!ptr->name) {
-			ptr->name = calloc(1, R_BIN_SIZEOF_STRINGS);
+			ptr->name = calloc(1, RZ_BIN_SIZEOF_STRINGS);
 		}
-		strncpy (ptr->name, _symbols[i].symbol_name, R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->name, _symbols[i].symbol_name, RZ_BIN_SIZEOF_STRINGS);
 		ptr->vaddr = _symbols[i].address;
 		ptr->size = 2;
 		ptr->paddr = vsf_obj->mem + offset + _symbols[i].address;
@@ -525,7 +525,7 @@ static RzList* entries(RBinFile *bf) {
 	}
 	int offset = _machines[m_idx].offset_mem;
 	// PC
-	if (!(ptr = R_NEW0 (RBinAddr))) {
+	if (!(ptr = RZ_NEW0 (RBinAddr))) {
 		return ret;
 	}
 	ptr->paddr = vsf_obj->mem + offset;
@@ -533,7 +533,7 @@ static RzList* entries(RBinFile *bf) {
 	rz_list_append (ret, ptr);
 
 	// IRQ: 0xFFFE or 0x0314 ?
-//	if (!(ptr = R_NEW0 (RBinAddr)))
+//	if (!(ptr = RZ_NEW0 (RBinAddr)))
 //		return ret;
 //	ptr->paddr = (vsf_obj->mem + offset) - (void*) bf->buf->buf;
 //	ptr->vaddr = 0x314; // or 0xfffe ?
@@ -557,10 +557,10 @@ RBinPlugin rz_bin_plugin_vsf = {
 	.mem = &mem,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_vsf,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

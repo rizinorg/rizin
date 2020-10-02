@@ -12,10 +12,10 @@ static RCodeAnnotation make_code_annotation(int st, int en, RCodeAnnotationType 
 	annotation.start = st;
 	annotation.end = en;
 	annotation.type = typec;
-	if (annotation.type == R_CODE_ANNOTATION_TYPE_OFFSET) {
+	if (annotation.type == RZ_CODE_ANNOTATION_TYPE_OFFSET) {
 		annotation.offset.offset = offset;
 	}
-	if (annotation.type == R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT) {
+	if (annotation.type == RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT) {
 		annotation.syntax_highlight.type = types;
 	}
 	return annotation;
@@ -38,7 +38,7 @@ static RCodeAnnotation make_reference_annotation(int st, int en, RCodeAnnotation
 	annotation.end = en;
 	annotation.type = typec;
 	annotation.reference.offset = offset;
-	if (annotation.type == R_CODE_ANNOTATION_TYPE_FUNCTION_NAME) {
+	if (annotation.type == RZ_CODE_ANNOTATION_TYPE_FUNCTION_NAME) {
 		annotation.reference.name = strdup (name);
 	} else {
 		annotation.reference.name = NULL;
@@ -50,9 +50,9 @@ static RzVector *get_some_code_annotation_for_add(void) {
 	RzVector *test_annotations = rz_vector_new (sizeof (RCodeAnnotation), NULL, NULL);
 	RCodeAnnotation annotation;
 	rz_vector_init (test_annotations, sizeof (RCodeAnnotation), NULL, NULL);
-	annotation = make_code_annotation (1, 2, R_CODE_ANNOTATION_TYPE_OFFSET, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
+	annotation = make_code_annotation (1, 2, RZ_CODE_ANNOTATION_TYPE_OFFSET, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	rz_vector_push (test_annotations, &annotation);
-	annotation = make_code_annotation (1, 5, R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
+	annotation = make_code_annotation (1, 5, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	rz_vector_push (test_annotations, &annotation);
 	return test_annotations;
 }
@@ -60,21 +60,21 @@ static RzVector *get_some_code_annotation_for_add(void) {
 static RzVector *get_some_annotations_for_in(void) {
 	RzVector *test_annotations = rz_vector_new (sizeof (RCodeAnnotation), NULL, NULL);
 	RCodeAnnotation annotation;
-	annotation = make_code_annotation (1, 2, R_CODE_ANNOTATION_TYPE_OFFSET, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
+	annotation = make_code_annotation (1, 2, RZ_CODE_ANNOTATION_TYPE_OFFSET, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	rz_vector_push (test_annotations, &annotation);
-	annotation = make_code_annotation (1, 7, R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
+	annotation = make_code_annotation (1, 7, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	rz_vector_push (test_annotations, &annotation);
-	annotation = make_code_annotation (9, 11, R_CODE_ANNOTATION_TYPE_OFFSET, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
+	annotation = make_code_annotation (9, 11, RZ_CODE_ANNOTATION_TYPE_OFFSET, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	rz_vector_push (test_annotations, &annotation);
 
 	// For offset = 11, indices expected = 3, 4, 5
-	annotation = make_code_annotation (7, 13, R_CODE_ANNOTATION_TYPE_OFFSET, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
+	annotation = make_code_annotation (7, 13, RZ_CODE_ANNOTATION_TYPE_OFFSET, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	rz_vector_push (test_annotations, &annotation);
-	annotation = make_code_annotation (11, 15, R_CODE_ANNOTATION_TYPE_OFFSET, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
+	annotation = make_code_annotation (11, 15, RZ_CODE_ANNOTATION_TYPE_OFFSET, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	rz_vector_push (test_annotations, &annotation);
-	annotation = make_code_annotation (10, 16, R_CODE_ANNOTATION_TYPE_OFFSET, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
+	annotation = make_code_annotation (10, 16, RZ_CODE_ANNOTATION_TYPE_OFFSET, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	rz_vector_push (test_annotations, &annotation);
-	annotation = make_code_annotation (17, 20, R_CODE_ANNOTATION_TYPE_OFFSET, 32, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
+	annotation = make_code_annotation (17, 20, RZ_CODE_ANNOTATION_TYPE_OFFSET, 32, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	rz_vector_push (test_annotations, &annotation);
 
 	return test_annotations;
@@ -85,23 +85,23 @@ static RzVector *get_annotations_for_hello_world(void) {
 	RCodeAnnotation annotation;
 	// rz_vector_init (&test_annotations, sizeof (RCodeAnnotation), NULL, NULL);
 	//Code Annotations for a hello world program
-	annotation = make_code_annotation (1, 5, R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, R_SYNTAX_HIGHLIGHT_TYPE_DATATYPE);
+	annotation = make_code_annotation (1, 5, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_DATATYPE);
 	rz_vector_push (test_annotations, &annotation); //1
-	annotation = make_code_annotation (6, 10, R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME);
+	annotation = make_code_annotation (6, 10, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME);
 	rz_vector_push (test_annotations, &annotation); //2
-	annotation = make_code_annotation (11, 15, R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
+	annotation = make_code_annotation (11, 15, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	rz_vector_push (test_annotations, &annotation); //3
-	annotation = make_code_annotation (23, 35, R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME);
+	annotation = make_code_annotation (23, 35, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME);
 	rz_vector_push (test_annotations, &annotation); //4
-	annotation = make_code_annotation (36, 51, R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, R_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE);
+	annotation = make_code_annotation (36, 51, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE);
 	rz_vector_push (test_annotations, &annotation); //5
-	annotation = make_code_annotation (23, 52, R_CODE_ANNOTATION_TYPE_OFFSET, 4440, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
+	annotation = make_code_annotation (23, 52, RZ_CODE_ANNOTATION_TYPE_OFFSET, 4440, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	rz_vector_push (test_annotations, &annotation); //6
-	annotation = make_code_annotation (58, 64, R_CODE_ANNOTATION_TYPE_OFFSET, 4447, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
+	annotation = make_code_annotation (58, 64, RZ_CODE_ANNOTATION_TYPE_OFFSET, 4447, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	rz_vector_push (test_annotations, &annotation); //7
-	annotation = make_code_annotation (58, 64, R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
+	annotation = make_code_annotation (58, 64, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	rz_vector_push (test_annotations, &annotation); //8
-	annotation = make_code_annotation (58, 64, R_CODE_ANNOTATION_TYPE_OFFSET, 4447, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
+	annotation = make_code_annotation (58, 64, RZ_CODE_ANNOTATION_TYPE_OFFSET, 4447, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	rz_vector_push (test_annotations, &annotation); //9
 
 	return test_annotations;
@@ -125,11 +125,11 @@ static RAnnotatedCode *get_hello_world(void) {
 static RAnnotatedCode *get_all_context_annotated_code(void) {
 	char *test_string = strdup ("\nfunc-name\nconst-var\n   global-var(\"Hello, local-var\");\n    function-param\n}\n");
 	RAnnotatedCode *code = rz_annotated_code_new (test_string);
-	RCodeAnnotation function_name = make_reference_annotation (1, 10, R_CODE_ANNOTATION_TYPE_FUNCTION_NAME, 1234, "func-name");
-	RCodeAnnotation constant_variable = make_reference_annotation (10, 19, R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, 12345, NULL);
-	RCodeAnnotation global_variable = make_reference_annotation (23, 33, R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, 123456, NULL);
-	RCodeAnnotation local_variable = make_variable_annotation (42, 51, R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "local-var");
-	RCodeAnnotation function_parameter = make_variable_annotation (59, 73, R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER, "function-param");
+	RCodeAnnotation function_name = make_reference_annotation (1, 10, RZ_CODE_ANNOTATION_TYPE_FUNCTION_NAME, 1234, "func-name");
+	RCodeAnnotation constant_variable = make_reference_annotation (10, 19, RZ_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, 12345, NULL);
+	RCodeAnnotation global_variable = make_reference_annotation (23, 33, RZ_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, 123456, NULL);
+	RCodeAnnotation local_variable = make_variable_annotation (42, 51, RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "local-var");
+	RCodeAnnotation function_parameter = make_variable_annotation (59, 73, RZ_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER, "function-param");
 	rz_annotated_code_add_annotation (code, &function_name);
 	rz_annotated_code_add_annotation (code, &constant_variable);
 	rz_annotated_code_add_annotation (code, &global_variable);
@@ -156,9 +156,9 @@ static bool test_r_annotated_code_free(void) {
 	RAnnotatedCode *code = rz_annotated_code_new (test_string);
 
 	RCodeAnnotation test_annotation1, test_annotation2;
-	test_annotation1 = make_code_annotation (1, 2, R_CODE_ANNOTATION_TYPE_OFFSET, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
+	test_annotation1 = make_code_annotation (1, 2, RZ_CODE_ANNOTATION_TYPE_OFFSET, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	rz_vector_push (&code->annotations, &test_annotation1);
-	test_annotation2 = make_code_annotation (1, 5, R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
+	test_annotation2 = make_code_annotation (1, 5, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	rz_vector_push (&code->annotations, &test_annotation2);
 
 	// This test is only for run errors
@@ -171,11 +171,11 @@ static bool test_equal(RCodeAnnotation *first, RCodeAnnotation *second) { // Fir
 	mu_assert_eq (first->start, second->start, "start of annotations doesn't match");
 	mu_assert_eq (first->end, second->end, "end of annotations doesn't match");
 	mu_assert_eq (first->type, second->type, "type of annotation doesn't match");
-	if (first->type == R_CODE_ANNOTATION_TYPE_OFFSET) {
+	if (first->type == RZ_CODE_ANNOTATION_TYPE_OFFSET) {
 		mu_assert_eq (first->offset.offset, second->offset.offset, "offset of annotations doesn't match");
 		return true;
 	}
-	if (first->type == R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT) {
+	if (first->type == RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT) {
 		mu_assert_eq (first->syntax_highlight.type, second->syntax_highlight.type, "syntax highlight type of offset doesn't match");
 		return true;
 	}
@@ -388,13 +388,13 @@ static bool test_r_core_annotated_code_print_comment_cmds(void) {
  */
 static bool test_r_annotation_free_and_is_annotation_type_functions(void) {
 	// Making all types of annotations
-	RCodeAnnotation offset = make_code_annotation (58, 64, R_CODE_ANNOTATION_TYPE_OFFSET, 4447, R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	RCodeAnnotation syntax_highlight = make_code_annotation (1, 5, R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, R_SYNTAX_HIGHLIGHT_TYPE_DATATYPE);
-	RCodeAnnotation local_variable = make_variable_annotation (1, 2, R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "RADARE2");
-	RCodeAnnotation function_parameter = make_variable_annotation (4, 10, R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "Cutter");
-	RCodeAnnotation function_name = make_reference_annotation (10, 12, R_CODE_ANNOTATION_TYPE_FUNCTION_NAME, 123513, "test_function");
-	RCodeAnnotation global_variable = make_reference_annotation (10, 12, R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, 1234234, NULL);
-	RCodeAnnotation constant_variable = make_reference_annotation (21, 200, R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, 12342314, NULL);
+	RCodeAnnotation offset = make_code_annotation (58, 64, RZ_CODE_ANNOTATION_TYPE_OFFSET, 4447, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
+	RCodeAnnotation syntax_highlight = make_code_annotation (1, 5, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_DATATYPE);
+	RCodeAnnotation local_variable = make_variable_annotation (1, 2, RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "RADARE2");
+	RCodeAnnotation function_parameter = make_variable_annotation (4, 10, RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "Cutter");
+	RCodeAnnotation function_name = make_reference_annotation (10, 12, RZ_CODE_ANNOTATION_TYPE_FUNCTION_NAME, 123513, "test_function");
+	RCodeAnnotation global_variable = make_reference_annotation (10, 12, RZ_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, 1234234, NULL);
+	RCodeAnnotation constant_variable = make_reference_annotation (21, 200, RZ_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, 12342314, NULL);
 	// Test rz_annotation_is_variable()
 	char *error_message = "rz_annotation_is_variable() result doesn't match with the expected output";
 	mu_assert_true (rz_annotation_is_variable (&local_variable), error_message);

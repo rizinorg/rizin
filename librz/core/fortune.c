@@ -7,13 +7,13 @@ static const char *fortunes[] = {
 };
 
 static char *getFortuneFile(RzCore *core, const char *type) {
-	return rz_str_newf (R_JOIN_3_PATHS ("%s", R2_FORTUNES, "fortunes.%s"),
+	return rz_str_newf (RZ_JOIN_3_PATHS ("%s", RZ_FORTUNES, "fortunes.%s"),
 		rz_sys_prefix (NULL), type);
 }
 
 RZ_API void rz_core_fortune_list_types(void) {
 	size_t i;
-	for (i = 0; i < R_ARRAY_SIZE (fortunes); i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE (fortunes); i++) {
 		rz_cons_printf ("%s\n", fortunes[i]);
 	}
 }
@@ -22,7 +22,7 @@ RZ_API void rz_core_fortune_list(RzCore *core) {
 	// TODO: use file.fortunes // can be dangerous in sandbox mode
 	const char *types = (char *)rz_config_get (core->config, "cfg.fortunes.type");
 	size_t i, j;
-	for (i = 0; i < R_ARRAY_SIZE (fortunes); i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE (fortunes); i++) {
 		if (strstr (types, fortunes[i])) {
 			char *file = getFortuneFile (core, fortunes[i]);
 			char *str = rz_file_slurp (file, NULL);
@@ -49,7 +49,7 @@ static char *getrandomline(RzCore *core) {
 	size_t i;
 	const char *types = (char *)rz_config_get (core->config, "cfg.fortunes.type");
 	char *line = NULL, *templine;
-	for (i = 0; i < R_ARRAY_SIZE (fortunes); i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE (fortunes); i++) {
 		if (strstr (types, fortunes[i])) {
 			int lines = 0;
 			char *file = getFortuneFile(core, fortunes[i]);

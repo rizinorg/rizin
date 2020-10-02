@@ -16,7 +16,7 @@ static RzCoreFile *openself(void) {
 	char *out = rz_core_cmd_str (core, "o");
 	if (out) {
 		if (!strstr (out, "self://")) {
-			fd = rz_core_file_open (core, "self://", R_PERM_RW, 0);
+			fd = rz_core_file_open (core, "self://", RZ_PERM_RW, 0);
 		}
 		free (out);
 	}
@@ -44,7 +44,7 @@ static void _libwrap_init(void) {
 	fflush (stdout);
 	web = rz_sys_getenv ("RZ_RUN_WEB");
 	core = rz_core_new ();
-	rz_core_loadlibs (core, R_CORE_LOADLIBS_ALL, NULL);
+	rz_core_loadlibs (core, RZ_CORE_LOADLIBS_ALL, NULL);
 	if (web) {
 		rz_core_cmd0 (core, "=H&");
 		rz_sys_setenv ("RZ_RUN_WEB", NULL);
@@ -73,8 +73,8 @@ void alloc_console(void) {
 
 static void start_rz(void) {
 	core = rz_core_new ();
-	rz_core_loadlibs (core, R_CORE_LOADLIBS_ALL, NULL);
-	RzCoreFile *fd = rz_core_file_open (core, "self://", R_PERM_RW, 0);
+	rz_core_loadlibs (core, RZ_CORE_LOADLIBS_ALL, NULL);
+	RzCoreFile *fd = rz_core_file_open (core, "self://", RZ_PERM_RW, 0);
 	rz_core_prompt_loop (core);
 	rz_core_file_close (core, fd);
 }

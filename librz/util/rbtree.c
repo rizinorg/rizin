@@ -87,7 +87,7 @@ static void _check(RBNode *x) {
 
 // Returns true if a node with an equal key is deleted
 RZ_API bool rz_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void *cmp_user, RBNodeFree freefn, void *free_user, RBNodeSum sum) {
-	RBNode head, *del = NULL, **del_link = NULL, *g = NULL, *p = NULL, *q = &head, *path[R_RBTREE_MAX_HEIGHT];
+	RBNode head, *del = NULL, **del_link = NULL, *g = NULL, *p = NULL, *q = &head, *path[RZ_RBTREE_MAX_HEIGHT];
 	int d = 1, d2, dep = 0;
 	head.child[0] = NULL;
 	head.child[1] = *root;
@@ -108,7 +108,7 @@ RZ_API bool rz_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, vo
 			}
 		}
 		if (q != &head) {
-			if (dep >= R_RBTREE_MAX_HEIGHT) {
+			if (dep >= RZ_RBTREE_MAX_HEIGHT) {
 				eprintf ("Too deep tree\n");
 				break;
 			}
@@ -124,7 +124,7 @@ RZ_API bool rz_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, vo
 			}
 			p->child[d2] = zag (q, !d, sum);
 			p = p->child[d2];
-			if (dep >= R_RBTREE_MAX_HEIGHT) {
+			if (dep >= RZ_RBTREE_MAX_HEIGHT) {
 				eprintf ("Too deep tree\n");
 				break;
 			}
@@ -195,7 +195,7 @@ RZ_API bool rz_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBComp
 	RBNode *t = NULL, *g = NULL, *p = NULL, *q = *root;
 	int d = 0, dep = 0;
 	bool done = false;
-	RBNode *path[R_RBTREE_MAX_HEIGHT];
+	RBNode *path[RZ_RBTREE_MAX_HEIGHT];
 	for (;;) {
 		if (!q) {
 			q = node;
@@ -231,7 +231,7 @@ RZ_API bool rz_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBComp
 		t = g;
 		g = p;
 		p = q;
-		if (dep >= R_RBTREE_MAX_HEIGHT) {
+		if (dep >= RZ_RBTREE_MAX_HEIGHT) {
 			eprintf ("Too deep tree\n");
 			break;
 		}
@@ -256,13 +256,13 @@ RZ_API bool rz_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBComp
 // returns true if the sum has been updated, false if node has not been found
 RZ_API bool rz_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBComparator cmp, void *cmp_user, RBNodeSum sum) {
 	size_t dep = 0;
-	RBNode *path[R_RBTREE_MAX_HEIGHT];
+	RBNode *path[RZ_RBTREE_MAX_HEIGHT];
 	RBNode *cur = root;
 	for (;;) {
 		if (!cur) {
 			return false;
 		}
-		if (dep >= R_RBTREE_MAX_HEIGHT) {
+		if (dep >= RZ_RBTREE_MAX_HEIGHT) {
 			eprintf ("Too deep tree\n");
 			return false;
 		}
@@ -380,7 +380,7 @@ RZ_API void rz_rbtree_iter_prev(RBIter *it) {
 }
 
 RZ_API RContRBTree *rz_rbtree_cont_new(void) {
-	return R_NEW0 (RContRBTree);
+	return RZ_NEW0 (RContRBTree);
 }
 
 RZ_API RContRBTree *rz_rbtree_cont_newf(RContRBFree f) {
@@ -423,16 +423,16 @@ static int cont_rbtree_free_cmp_wrapper(const void *data, const RBNode *in_tree,
 RZ_API bool rz_rbtree_cont_insert(RContRBTree *tree, void *data, RContRBCmp cmp, void *user) {
 	rz_return_val_if_fail (tree && cmp, false);
 	if (!tree->root) {
-		tree->root = R_NEW0 (RContRBNode);
+		tree->root = RZ_NEW0 (RContRBNode);
 		if (tree->root) {
 			tree->root->data = data;
-			//			tree->root->node.red = false;	// not needed since R_NEW0 initializes with false anyway
+			//			tree->root->node.red = false;	// not needed since RZ_NEW0 initializes with false anyway
 			return true;
 		}
 		eprintf ("Allocation failed\n");
 		return false;
 	}
-	RContRBNode *incoming_node = R_NEW0 (RContRBNode);
+	RContRBNode *incoming_node = RZ_NEW0 (RContRBNode);
 	if (!incoming_node) {
 		eprintf ("Allocation failed\n");
 		return false;

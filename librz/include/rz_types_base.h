@@ -1,5 +1,5 @@
-#ifndef R2_TYPES_BASE_H
-#define R2_TYPES_BASE_H
+#ifndef RZ_TYPES_BASE_H
+#define RZ_TYPES_BASE_H
 
 #include <ctype.h>
 #include <sys/types.h>
@@ -16,17 +16,17 @@
 #define boolt int
 
 #if defined(_MSC_VER)
-# define R_ALIGNED(x) __declspec(align(x))
+# define RZ_ALIGNED(x) __declspec(align(x))
 #else
-# define R_ALIGNED(x) __attribute__((aligned(x)))
+# define RZ_ALIGNED(x) __attribute__((aligned(x)))
 #endif
 
-typedef R_ALIGNED(1) ut16 uut16;
-typedef R_ALIGNED(1) ut32 uut32;
-typedef R_ALIGNED(1) ut64 uut64;
-typedef R_ALIGNED(1) st16 ust16;
-typedef R_ALIGNED(1) st32 ust32;
-typedef R_ALIGNED(1) st64 ust64;
+typedef RZ_ALIGNED(1) ut16 uut16;
+typedef RZ_ALIGNED(1) ut32 uut32;
+typedef RZ_ALIGNED(1) ut64 uut64;
+typedef RZ_ALIGNED(1) st16 ust16;
+typedef RZ_ALIGNED(1) st32 ust32;
+typedef RZ_ALIGNED(1) st64 ust64;
 
 typedef union {
 	ut8 v8;
@@ -60,8 +60,8 @@ typedef struct _utX {
 
 #include <stdbool.h>
 
-#define R_EMPTY { 0 }
-#define R_EMPTY2 {{ 0 }}
+#define RZ_EMPTY { 0 }
+#define RZ_EMPTY2 {{ 0 }}
 
 /* limits */
 #undef UT64_MAX
@@ -117,19 +117,19 @@ typedef struct _utX {
 #define UT32_LO(x) ((ut32)((x)&UT32_MAX))
 #define UT32_HI(x) ((ut32)(((ut64)(x))>>32)&UT32_MAX)
 
-#define R_BETWEEN(x,y,z) (((y)>=(x)) && ((y)<=(z)))
-#define R_ROUND(x,y) ((x)%(y))?(x)+((y)-((x)%(y))):(x)
-#define R_DIM(x,y,z) (((x)<(y))?(y):((x)>(z))?(z):(x))
-#ifndef R_MAX_DEFINED
-#define R_MAX(x,y) (((x)>(y))?(x):(y))
-#define R_MAX_DEFINED
+#define RZ_BETWEEN(x,y,z) (((y)>=(x)) && ((y)<=(z)))
+#define RZ_ROUND(x,y) ((x)%(y))?(x)+((y)-((x)%(y))):(x)
+#define RZ_DIM(x,y,z) (((x)<(y))?(y):((x)>(z))?(z):(x))
+#ifndef RZ_MAX_DEFINED
+#define RZ_MAX(x,y) (((x)>(y))?(x):(y))
+#define RZ_MAX_DEFINED
 #endif
-#ifndef R_MIN_DEFINED
-#define R_MIN(x,y) (((x)>(y))?(y):(x))
-#define R_MIN_DEFINED
+#ifndef RZ_MIN_DEFINED
+#define RZ_MIN(x,y) (((x)>(y))?(y):(x))
+#define RZ_MIN_DEFINED
 #endif
-#define R_ABS(x) (((x)<0)?-(x):(x))
-#define R_BTW(x,y,z) (((x)>=(y))&&((y)<=(z)))?y:x
+#define RZ_ABS(x) (((x)<0)?-(x):(x))
+#define RZ_BTW(x,y,z) (((x)>=(y))&&((y)<=(z)))?y:x
 
 #include "rz_types_overflow.h"
 
@@ -181,11 +181,11 @@ typedef struct _utX {
 #endif
 
 #ifdef _MSC_VER
-#define R_PACKED( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
+#define RZ_PACKED( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
 #undef INFINITY
 #undef NAN
 #elif defined(__GNUC__) || defined(__TINYC__)
-#define R_PACKED( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+#define RZ_PACKED( __Declaration__ ) __Declaration__ __attribute__((__packed__))
 #endif
 
 #if APPLE_SDK_IPHONESIMULATOR
@@ -201,4 +201,4 @@ typedef struct _utX {
 		return m? *m = n, m: m; \
 	}
 
-#endif // R2_TYPES_BASE_H
+#endif // RZ_TYPES_BASE_H

@@ -38,7 +38,7 @@
 
 #define SHA_ROT(X, n) (((X) << (n)) | ((X) >> (32 - (n))))
 
-static void shaHashBlock(R_SHA_CTX *ctx) {
+static void shaHashBlock(RZ_SHA_CTX *ctx) {
 	int t;
 	unsigned int A, B, C, D, E, TEMP;
 
@@ -77,7 +77,7 @@ static void shaHashBlock(R_SHA_CTX *ctx) {
 	ctx->H[4] += E;
 }
 
-void SHA1_Init(R_SHA_CTX *ctx) {
+void SHA1_Init(RZ_SHA_CTX *ctx) {
 	int i;
 
 	ctx->lenW = 0;
@@ -95,7 +95,7 @@ void SHA1_Init(R_SHA_CTX *ctx) {
 	}
 }
 
-void SHA1_Update(R_SHA_CTX *ctx, const void *_dataIn, int len) {
+void SHA1_Update(RZ_SHA_CTX *ctx, const void *_dataIn, int len) {
 	const ut8 *dataIn = _dataIn;
 	int i;
 
@@ -112,7 +112,7 @@ void SHA1_Update(R_SHA_CTX *ctx, const void *_dataIn, int len) {
 	}
 }
 
-void SHA1_Final(ut8 hashout[20], R_SHA_CTX *ctx) {
+void SHA1_Final(ut8 hashout[20], RZ_SHA_CTX *ctx) {
 	ut8 pad0x80 = 0x80;
 	ut8 pad0x00 = 0x00;
 	ut8 padlen[8];

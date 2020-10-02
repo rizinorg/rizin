@@ -7,7 +7,7 @@
 
 SDB_API dict *dict_new (ut32 size, dict_freecb f) {
 	dict *m = calloc (1, sizeof (dict));
-	if (!dict_init (m, R_MAX (size, 1), f)) {
+	if (!dict_init (m, RZ_MAX (size, 1), f)) {
 		free (m);
 		m = NULL;
 	}

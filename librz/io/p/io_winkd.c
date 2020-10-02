@@ -76,11 +76,11 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 
 static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
-	case R_IO_SEEK_SET:
+	case RZ_IO_SEEK_SET:
 		return io->off = offset;
-	case R_IO_SEEK_CUR:
+	case RZ_IO_SEEK_CUR:
 		return io->off + offset;
-	case R_IO_SEEK_END:
+	case RZ_IO_SEEK_END:
 		return ST64_MAX;
 	default:
 		return offset;
@@ -118,10 +118,10 @@ RzIOPlugin rz_io_plugin_winkd = {
 	.isdbg = true
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_winkd,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

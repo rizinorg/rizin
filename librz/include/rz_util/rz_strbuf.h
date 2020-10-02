@@ -1,5 +1,5 @@
-#ifndef R_STRBUF_H
-#define R_STRBUF_H
+#ifndef RZ_STRBUF_H
+#define RZ_STRBUF_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -13,7 +13,7 @@ typedef struct {
 	bool weakref; // ptr is not owned
 } RStrBuf;
 
-#define R_STRBUF_SAFEGET(sb) (rz_strbuf_get (sb) ? rz_strbuf_get (sb) : "")
+#define RZ_STRBUF_SAFEGET(sb) (rz_strbuf_get (sb) ? rz_strbuf_get (sb) : "")
 RZ_API RStrBuf *rz_strbuf_new(const char *s);
 RZ_API const char *rz_strbuf_set(RStrBuf *sb, const char *s); // return = the string or NULL on fail
 RZ_API bool rz_strbuf_slice(RStrBuf *sb, int from, int len);
@@ -45,4 +45,4 @@ RZ_API bool rz_strbuf_setptr(RStrBuf *sb, char *p, int l);
 }
 #endif
 
-#endif //  R_STRBUF_H
+#endif //  RZ_STRBUF_H

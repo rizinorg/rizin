@@ -1,5 +1,5 @@
-#ifndef R2_HEAP_JEMALLOC_H
-#define R2_HEAP_JEMALLOC_H
+#ifndef RZ_HEAP_JEMALLOC_H
+#define RZ_HEAP_JEMALLOC_H
 
 #include "rz_jemalloc/internal/jemalloc_internal.h"
 

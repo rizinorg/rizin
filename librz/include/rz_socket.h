@@ -1,5 +1,5 @@
-#ifndef R2_SOCKET_H
-#define R2_SOCKET_H
+#ifndef RZ_SOCKET_H
+#define RZ_SOCKET_H
 
 #include "rz_types.h"
 #include "rz_bind.h"
@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER (rz_socket);
+RZ_LIB_VERSION_HEADER (rz_socket);
 
 #if __UNIX__
 #include <netinet/in.h>
@@ -41,9 +41,9 @@ R_LIB_VERSION_HEADER (rz_socket);
 #endif
 
 #if _MSC_VER
-#define R_INVALID_SOCKET INVALID_SOCKET
+#define RZ_INVALID_SOCKET INVALID_SOCKET
 #else
-#define R_INVALID_SOCKET -1
+#define RZ_INVALID_SOCKET -1
 #endif
 
 typedef struct {
@@ -82,11 +82,11 @@ typedef struct rz_socket_http_options {
 	bool httpauth;
 } RzSocketHTTPOptions;
 
-#define R_SOCKET_PROTO_TCP IPPROTO_TCP
-#define R_SOCKET_PROTO_UDP IPPROTO_UDP
-#define R_SOCKET_PROTO_UNIX 0x1337
-#define R_SOCKET_PROTO_NONE 0
-#define R_SOCKET_PROTO_DEFAULT R_SOCKET_PROTO_TCP
+#define RZ_SOCKET_PROTO_TCP IPPROTO_TCP
+#define RZ_SOCKET_PROTO_UDP IPPROTO_UDP
+#define RZ_SOCKET_PROTO_UNIX 0x1337
+#define RZ_SOCKET_PROTO_NONE 0
+#define RZ_SOCKET_PROTO_DEFAULT RZ_SOCKET_PROTO_TCP
 
 #ifdef RZ_API
 RZ_API RzSocket *rz_socket_new_from_fd(int fd);
@@ -94,10 +94,10 @@ RZ_API RzSocket *rz_socket_new(bool is_ssl);
 RZ_API bool rz_socket_spawn(RzSocket *s, const char *cmd, unsigned int timeout);
 RZ_API bool rz_socket_connect(RzSocket *s, const char *host, const char *port, int proto, unsigned int timeout);
 RZ_API int rz_socket_connect_serial(RzSocket *sock, const char *path, int speed, int parity);
-#define rz_socket_connect_tcp(a, b, c, d) rz_socket_connect (a, b, c, R_SOCKET_PROTO_TCP, d)
-#define rz_socket_connect_udp(a, b, c, d) rz_socket_connect (a, b, c, R_SOCKET_PROTO_UDP, d)
+#define rz_socket_connect_tcp(a, b, c, d) rz_socket_connect (a, b, c, RZ_SOCKET_PROTO_TCP, d)
+#define rz_socket_connect_udp(a, b, c, d) rz_socket_connect (a, b, c, RZ_SOCKET_PROTO_UDP, d)
 #if __UNIX__
-#define rz_socket_connect_unix(a, b) rz_socket_connect (a, b, b, R_SOCKET_PROTO_UNIX, 0)
+#define rz_socket_connect_unix(a, b) rz_socket_connect (a, b, b, RZ_SOCKET_PROTO_UNIX, 0)
 #else
 #define rz_socket_connect_unix(a, b) (false)
 #endif
@@ -114,7 +114,7 @@ RZ_API int rz_socket_ready(RzSocket *s, int secs, int usecs);
 RZ_API char *rz_socket_to_string(RzSocket *s);
 RZ_API int rz_socket_write(RzSocket *s, void *buf, int len);
 RZ_API int rz_socket_puts(RzSocket *s, char *buf);
-RZ_API void rz_socket_printf(RzSocket *s, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
+RZ_API void rz_socket_printf(RzSocket *s, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API int rz_socket_read(RzSocket *s, ut8 *read, int len);
 RZ_API int rz_socket_read_block(RzSocket *s, unsigned char *buf, int len);
 RZ_API int rz_socket_gets(RzSocket *s, char *buf, int size);
@@ -133,7 +133,7 @@ RZ_API int rz_socket_proc_close(RzSocketProc *sp);
 RZ_API int rz_socket_proc_read(RzSocketProc *sp, unsigned char *buf, int len);
 RZ_API int rz_socket_proc_gets(RzSocketProc *sp, char *buf, int size);
 RZ_API int rz_socket_proc_write(RzSocketProc *sp, void *buf, int len);
-RZ_API void rz_socket_proc_printf(RzSocketProc *sp, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
+RZ_API void rz_socket_proc_printf(RzSocketProc *sp, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API int rz_socket_proc_ready(RzSocketProc *sp, int secs, int usecs);
 
 /* HTTP */
@@ -206,9 +206,9 @@ RZ_API int rz_socket_rap_client_read(RzSocket *s, ut8 *buf, int count);
 RZ_API int rz_socket_rap_client_seek(RzSocket *s, ut64 offset, int whence);
 
 /* run.c */
-#define R_RUN_PROFILE_NARGS 512
+#define RZ_RUN_PROFILE_NARGS 512
 typedef struct rz_run_profile_t {
-	char *_args[R_RUN_PROFILE_NARGS];
+	char *_args[RZ_RUN_PROFILE_NARGS];
 	int _argc;
 	bool _daemon;
 	char *_system;
@@ -266,7 +266,7 @@ RZ_API R2Pipe *rap_open_corebind(RzCoreBind *coreb);
 RZ_API int rap_close(R2Pipe *rap);
 
 RZ_API char *rap_cmd(R2Pipe *rap, const char *str);
-RZ_API char *rap_cmdf(R2Pipe *rap, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
+RZ_API char *rap_cmdf(R2Pipe *rap, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 
 RZ_API int rap_write(R2Pipe *rap, const char *str);
 RZ_API char *rap_read(R2Pipe *rap);
@@ -278,7 +278,7 @@ RZ_API R2Pipe *rzpipe_open_corebind(RzCoreBind *coreb);
 RZ_API R2Pipe *rzpipe_open(const char *cmd);
 RZ_API R2Pipe *rzpipe_open_dl(const char *file);
 RZ_API char *rzpipe_cmd(R2Pipe *rzpipe, const char *str);
-RZ_API char *rzpipe_cmdf(R2Pipe *rzpipe, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
+RZ_API char *rzpipe_cmdf(R2Pipe *rzpipe, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 #endif
 
 #ifdef __cplusplus

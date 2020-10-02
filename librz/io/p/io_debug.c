@@ -264,7 +264,7 @@ static RRunProfile* _get_run_profile(RzIO *io, int bits, char **argv) {
 			rz_run_free (rp);
 			return NULL;
 		}
-		if (strstr (io->runprofile, R_SYS_DIR ".rz_run.")) {
+		if (strstr (io->runprofile, RZ_SYS_DIR ".rz_run.")) {
 			(void)rz_file_rm (io->runprofile);
 		}
 	} else if (io->envprofile) {
@@ -592,10 +592,10 @@ RzIOPlugin rz_io_plugin_debug = {
 };
 #endif
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_debug,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

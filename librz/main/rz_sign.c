@@ -24,7 +24,7 @@ static RzCore *opencore(const char *fname) {
 		eprintf ("Count not get core\n");
 		return NULL;
 	}
-	rz_core_loadlibs (c, R_CORE_LOADLIBS_ALL, NULL);
+	rz_core_loadlibs (c, RZ_CORE_LOADLIBS_ALL, NULL);
 	rz_config_set_i (c->config, "scr.interactive", false);
 	if (fname) {
 #if __WINDOWS__

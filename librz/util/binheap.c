@@ -41,7 +41,7 @@ RZ_API void rz_binheap_free(RBinHeap *h) {
 }
 
 RZ_API RBinHeap *rz_binheap_new(RPVectorComparator cmp) {
-	RBinHeap *h = R_NEW (RBinHeap);
+	RBinHeap *h = RZ_NEW (RBinHeap);
 	if (!h) {
 		return NULL;
 	}

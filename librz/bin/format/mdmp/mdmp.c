@@ -47,22 +47,22 @@ ut32 rz_bin_mdmp_get_perm(struct rz_bin_mdmp_obj *obj, ut64 vaddr) {
 
 	if (!(mem_info = rz_bin_mdmp_get_mem_info(obj, vaddr))) {
 		/* if there is no mem info in the dump, assume default permission */
-		return R_PERM_R;
+		return RZ_PERM_R;
 	}
 
 	/* FIXME: Have I got these mappings right, I am not sure I have!!! */
 
 	switch (mem_info->protect) {
 	case MINIDUMP_PAGE_READONLY:
-		return R_PERM_R;
+		return RZ_PERM_R;
 	case MINIDUMP_PAGE_READWRITE:
-		return R_PERM_RW;
+		return RZ_PERM_RW;
 	case MINIDUMP_PAGE_EXECUTE:
-		return R_PERM_X;
+		return RZ_PERM_X;
 	case MINIDUMP_PAGE_EXECUTE_READ:
-		return R_PERM_RX;
+		return RZ_PERM_RX;
 	case MINIDUMP_PAGE_EXECUTE_READWRITE:
-		return R_PERM_RWX;
+		return RZ_PERM_RWX;
 	case MINIDUMP_PAGE_NOACCESS:
 	case MINIDUMP_PAGE_WRITECOPY:
 	case MINIDUMP_PAGE_EXECUTE_WRITECOPY:
@@ -79,7 +79,7 @@ static void rz_bin_mdmp_free_pe32_bin(void *pe_bin_) {
 	if (pe_bin) {
 		sdb_free (pe_bin->bin->kv);
 		Pe32_rz_bin_pe_free (pe_bin->bin);
-		R_FREE (pe_bin);
+		RZ_FREE (pe_bin);
 	}
 }
 
@@ -88,7 +88,7 @@ static void rz_bin_mdmp_free_pe64_bin(void *pe_bin_) {
 	if (pe_bin) {
 		sdb_free (pe_bin->bin->kv);
 		Pe64_rz_bin_pe_free (pe_bin->bin);
-		R_FREE (pe_bin);
+		RZ_FREE (pe_bin);
 	}
 }
 
@@ -324,7 +324,7 @@ static void rz_bin_mdmp_init_parsing(struct rz_bin_mdmp_obj *obj) {
 }
 
 static bool rz_bin_mdmp_init_hdr(struct rz_bin_mdmp_obj *obj) {
-	obj->hdr = R_NEW (struct minidump_header);
+	obj->hdr = RZ_NEW (struct minidump_header);
 	if (!obj->hdr) {
 		return false;
 	}
@@ -422,7 +422,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 
 		offset = entry->location.rva + sizeof (module_list);
 		for (i = 0; i < module_list.number_of_modules; i++) {
-			struct minidump_module *module = R_NEW (struct minidump_module);
+			struct minidump_module *module = RZ_NEW (struct minidump_module);
 			if (!module) {
 				break;
 			}
@@ -452,7 +452,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 
 		offset = entry->location.rva + sizeof (memory_list);
 		for (i = 0; i < memory_list.number_of_memory_ranges; i++) {
-			struct minidump_memory_descriptor *desc = R_NEW (struct minidump_memory_descriptor);
+			struct minidump_memory_descriptor *desc = RZ_NEW (struct minidump_memory_descriptor);
 			if (!desc) {
 				break;
 			}
@@ -466,7 +466,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 		break;
 	case EXCEPTION_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.exception = R_NEW (struct minidump_exception_stream);
+		obj->streams.exception = RZ_NEW (struct minidump_exception_stream);
 		if (!obj->streams.exception) {
 			break;
 		}
@@ -493,7 +493,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 
 		break;
 	case SYSTEM_INFO_STREAM:
-		obj->streams.system_info = R_NEW (struct minidump_system_info);
+		obj->streams.system_info = RZ_NEW (struct minidump_system_info);
 		if (!obj->streams.system_info) {
 			break;
 		}
@@ -535,7 +535,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 
 		offset = entry->location.rva + sizeof (thread_ex_list);
 		for (i = 0; i < thread_ex_list.number_of_threads; i++) {
-			struct minidump_thread_ex *thread = R_NEW (struct minidump_thread_ex);
+			struct minidump_thread_ex *thread = RZ_NEW (struct minidump_thread_ex);
 			if (!thread) {
 				break;
 			}
@@ -565,7 +565,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 		obj->streams.memories64.base_rva = memory64_list.base_rva;
 		offset = entry->location.rva + sizeof (memory64_list);
 		for (i = 0; i < memory64_list.number_of_memory_ranges; i++) {
-			struct minidump_memory_descriptor64 *desc = R_NEW (struct minidump_memory_descriptor64);
+			struct minidump_memory_descriptor64 *desc = RZ_NEW (struct minidump_memory_descriptor64);
 			if (!desc) {
 				break;
 			}
@@ -579,7 +579,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 		break;
 	case COMMENT_STREAM_A:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.comments_a = R_NEWS (ut8, COMMENTS_SIZE);
+		obj->streams.comments_a = RZ_NEWS (ut8, COMMENTS_SIZE);
 		if (!obj->streams.comments_a) {
 			break;
 		}
@@ -596,7 +596,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 		break;
 	case COMMENT_STREAM_W:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.comments_w = R_NEWS (ut8, COMMENTS_SIZE);
+		obj->streams.comments_w = RZ_NEWS (ut8, COMMENTS_SIZE);
 		if (!obj->streams.comments_w) {
 			break;
 		}
@@ -613,7 +613,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 		break;
 	case HANDLE_DATA_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.handle_data = R_NEW (struct minidump_handle_data_stream);
+		obj->streams.handle_data = RZ_NEW (struct minidump_handle_data_stream);
 		if (!obj->streams.handle_data) {
 			break;
 		}
@@ -630,7 +630,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 		break;
 	case FUNCTION_TABLE_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.function_table = R_NEW (struct minidump_function_table_stream);
+		obj->streams.function_table = RZ_NEW (struct minidump_function_table_stream);
 		if (!obj->streams.function_table) {
 			break;
 		}
@@ -663,7 +663,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 
 		offset = entry->location.rva + sizeof (unloaded_module_list);
 		for (i = 0; i < unloaded_module_list.number_of_entries; i++) {
-			struct minidump_unloaded_module *module = R_NEW (struct minidump_unloaded_module);
+			struct minidump_unloaded_module *module = RZ_NEW (struct minidump_unloaded_module);
 			if (!module) {
 				break;
 			}
@@ -677,7 +677,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 		break;
 	case MISC_INFO_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.misc_info.misc_info_1 = R_NEW (struct minidump_misc_info);
+		obj->streams.misc_info.misc_info_1 = RZ_NEW (struct minidump_misc_info);
 		if (!obj->streams.misc_info.misc_info_1) {
 			break;
 		}
@@ -718,7 +718,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 
 		offset = entry->location.rva + sizeof (memory_info_list);
 		for (i = 0; i < memory_info_list.number_of_entries; i++) {
-			struct minidump_memory_info *info = R_NEW (struct minidump_memory_info);
+			struct minidump_memory_info *info = RZ_NEW (struct minidump_memory_info);
 			if (!info) {
 				break;
 			}
@@ -748,7 +748,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 
 		offset = entry->location.rva + sizeof (thread_info_list);
 		for (i = 0; i < thread_info_list.number_of_entries; i++) {
-			struct minidump_thread_info *info = R_NEW (struct minidump_thread_info);
+			struct minidump_thread_info *info = RZ_NEW (struct minidump_thread_info);
 			if (!info) {
 				break;
 			}
@@ -774,7 +774,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 
 		offset = entry->location.rva + sizeof (handle_operation_list);
 		for (i = 0; i < handle_operation_list.number_of_entries; i++) {
-			struct avrf_handle_operation *op = R_NEW (struct avrf_handle_operation);
+			struct avrf_handle_operation *op = RZ_NEW (struct avrf_handle_operation);
 			if (!op) {
 				break;
 			}
@@ -804,7 +804,7 @@ static bool rz_bin_mdmp_init_directory_entry(struct rz_bin_mdmp_obj *obj, struct
 
 		offset = entry->location.rva + sizeof (token_info_list);
 		for (i = 0; i < token_info_list.number_of_entries; i++) {
-			struct minidump_token_info *info = R_NEW (struct minidump_token_info);
+			struct minidump_token_info *info = RZ_NEW (struct minidump_token_info);
 			if (!info) {
 				break;
 			}
@@ -844,7 +844,7 @@ static bool rz_bin_mdmp_init_directory(struct rz_bin_mdmp_obj *obj) {
 
 	ut64 rvadir = obj->hdr->stream_directory_rva;
 	ut64 bytes_left = rvadir < obj->size ? obj->size - rvadir : 0;
-	size_t max_entries = R_MIN (obj->hdr->number_of_streams, bytes_left / sizeof (struct minidump_directory));
+	size_t max_entries = RZ_MIN (obj->hdr->number_of_streams, bytes_left / sizeof (struct minidump_directory));
 	if (max_entries < obj->hdr->number_of_streams) {
 		eprintf ("[ERROR] Number of streams = %u is greater than is supportable by bin size\n",
 		         obj->hdr->number_of_streams);
@@ -934,7 +934,7 @@ static bool rz_bin_mdmp_init_pe_bins(struct rz_bin_mdmp_obj *obj) {
 		if (!(paddr = rz_bin_mdmp_get_paddr (obj, module->base_of_image))) {
 			continue;
 		}
-		ut8 *b = R_NEWS (ut8, module->size_of_image);
+		ut8 *b = RZ_NEWS (ut8, module->size_of_image);
 		if (!b) {
 			continue;
 		}
@@ -951,7 +951,7 @@ static bool rz_bin_mdmp_init_pe_bins(struct rz_bin_mdmp_obj *obj) {
 			if (dup) {
 				continue;
 			}
-			if (!(pe32_bin = R_NEW0 (struct Pe32_rz_bin_mdmp_pe_bin))) {
+			if (!(pe32_bin = RZ_NEW0 (struct Pe32_rz_bin_mdmp_pe_bin))) {
 				continue;
 			}
 			rz_bin_mdmp_patch_pe_headers (buf);
@@ -970,7 +970,7 @@ static bool rz_bin_mdmp_init_pe_bins(struct rz_bin_mdmp_obj *obj) {
 			if (dup) {
 				continue;
 			}
-			if (!(pe64_bin = R_NEW0 (struct Pe64_rz_bin_mdmp_pe_bin))) {
+			if (!(pe64_bin = RZ_NEW0 (struct Pe64_rz_bin_mdmp_pe_bin))) {
 				continue;
 			}
 			rz_bin_mdmp_patch_pe_headers (buf);
@@ -1008,7 +1008,7 @@ static int rz_bin_mdmp_init(struct rz_bin_mdmp_obj *obj) {
 
 struct rz_bin_mdmp_obj *rz_bin_mdmp_new_buf(RBuffer *buf) {
 	bool fail = false;
-	struct rz_bin_mdmp_obj *obj = R_NEW0 (struct rz_bin_mdmp_obj);
+	struct rz_bin_mdmp_obj *obj = RZ_NEW0 (struct rz_bin_mdmp_obj);
 	if (!obj) {
 		return NULL;
 	}

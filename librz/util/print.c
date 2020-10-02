@@ -30,7 +30,7 @@ static int libc_eprintf(const char *format, ...) {
 static RPrintIsInterruptedCallback is_interrupted_cb = NULL;
 
 RZ_API void rz_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
-	const int use_color = p->flags & R_PRINT_FLAGS_COLOR;
+	const int use_color = p->flags & RZ_PRINT_FLAGS_COLOR;
 	int i, j;
 	ut64 total = 0LL;
 	for (i = 0; i < n_portions; i++) {
@@ -70,7 +70,7 @@ RZ_API void rz_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 	int cols = 78; // TODO: do not hardcode this value, columns should be defined by the user
 	int rows = height > 0 ? height : 10;
 	// int realrows = rows * 2;
-	bool colors = p->flags & R_PRINT_FLAGS_COLOR;
+	bool colors = p->flags & RZ_PRINT_FLAGS_COLOR;
 	RzConsPrintablePalette *pal = &p->cons->context->pal;
 	const char *vline = p->cons->use_utf8 ? RUNE_LINE_VERT : "|";
 	const char *block = p->cons->use_utf8 ? UTF_BLOCK : "#";
@@ -283,7 +283,7 @@ RZ_API char* rz_print_stereogram_bytes(const ut8 *buf, int len) {
 
 RZ_API void rz_print_stereogram_print(RPrint *p, const char *ret) {
 	int i;
-	const int use_color = p->flags & R_PRINT_FLAGS_COLOR;
+	const int use_color = p->flags & RZ_PRINT_FLAGS_COLOR;
 	if (!ret) {
 		return;
 	}
@@ -298,7 +298,7 @@ RZ_API void rz_print_stereogram_print(RPrint *p, const char *ret) {
 }
 
 RZ_API RPrint* rz_print_new(void) {
-	RPrint *p = R_NEW0 (RPrint);
+	RPrint *p = RZ_NEW0 (RPrint);
 	if (!p) {
 		return NULL;
 	}
@@ -322,12 +322,12 @@ RZ_API RPrint* rz_print_new(void) {
 	p->formats = sdb_new0 ();
 	p->addrmod = 4;
 	p->flags =
-		R_PRINT_FLAGS_COLOR |
-		R_PRINT_FLAGS_OFFSET |
-		R_PRINT_FLAGS_HEADER |
-		R_PRINT_FLAGS_ADDRMOD;
+		RZ_PRINT_FLAGS_COLOR |
+		RZ_PRINT_FLAGS_OFFSET |
+		RZ_PRINT_FLAGS_HEADER |
+		RZ_PRINT_FLAGS_ADDRMOD;
 	p->seggrn = 4;
-	p->zoom = R_NEW0 (RPrintZoom);
+	p->zoom = RZ_NEW0 (RPrintZoom);
 	p->reg = NULL;
 	p->get_register = NULL;
 	p->get_register_value = NULL;
@@ -350,14 +350,14 @@ RZ_API RPrint* rz_print_free(RPrint *p) {
 	}
 	sdb_free (p->formats);
 	p->formats = NULL;
-	R_FREE (p->strconv_mode);
+	RZ_FREE (p->strconv_mode);
 	if (p->zoom) {
 		free (p->zoom->buf);
 		free (p->zoom);
 		p->zoom = NULL;
 	}
-	R_FREE (p->lines_cache);
-	R_FREE (p->row_offsets);
+	RZ_FREE (p->lines_cache);
+	RZ_FREE (p->row_offsets);
 	free (p);
 	return NULL;
 }
@@ -418,7 +418,7 @@ RZ_API bool rz_print_cursor_pointer(RPrint *p, int cur, int len) {
 
 RZ_API void rz_print_cursor(RPrint *p, int cur, int len, int set) {
 	if (rz_print_have_cursor (p, cur, len)) {
-		p->cb_printf ("%s", R_CONS_INVERT (set, 1));
+		p->cb_printf ("%s", RZ_CONS_INVERT (set, 1));
 	}
 }
 
@@ -429,12 +429,12 @@ RZ_API void rz_print_addr(RPrint *p, ut64 addr) {
 	const char *white = "";
 #define PREOFF(x) (p && p->cons && p->cons->context && p->cons->context->pal.x)? p->cons->context->pal.x
 	PrintfCallback printfmt = (PrintfCallback) (p? p->cb_printf: libc_printf);
-	bool use_segoff = p? (p->flags & R_PRINT_FLAGS_SEGOFF): false;
-	bool use_color = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
-	bool dec = p? (p->flags & R_PRINT_FLAGS_ADDRDEC): false;
-	bool mod = p? (p->flags & R_PRINT_FLAGS_ADDRMOD): false;
+	bool use_segoff = p? (p->flags & RZ_PRINT_FLAGS_SEGOFF): false;
+	bool use_color = p? (p->flags & RZ_PRINT_FLAGS_COLOR): false;
+	bool dec = p? (p->flags & RZ_PRINT_FLAGS_ADDRDEC): false;
+	bool mod = p? (p->flags & RZ_PRINT_FLAGS_ADDRMOD): false;
 	char ch = p? ((p->addrmod && mod)? ((addr % p->addrmod)? ' ': ','): ' '): ' ';
-	if (p && p->flags & R_PRINT_FLAGS_COMPACT && p->col == 1) {
+	if (p && p->flags & RZ_PRINT_FLAGS_COMPACT && p->col == 1) {
 		ch = '|';
 	}
 	if (p && p->pava) {
@@ -469,13 +469,13 @@ RZ_API void rz_print_addr(RPrint *p, ut64 addr) {
 	} else {
 		if (dec) {
 			snprintf (space, sizeof (space), "%" PFMT64d, addr);
-			int w = R_MAX (10 - strlen (space), 0);
+			int w = RZ_MAX (10 - strlen (space), 0);
 			white = rz_str_pad (' ', w);
 		}
 		if (use_color) {
 			const char *pre = PREOFF (offset): Color_GREEN;
 			const char *fin = Color_RESET;
-			if (p && p->flags & R_PRINT_FLAGS_RAINBOW) {
+			if (p && p->flags & RZ_PRINT_FLAGS_RAINBOW) {
 				// pre = rz_cons_rgb_str_off (rgbstr, addr);
 				if (p->cons && p->cons->rgbstr) {
 					static char rgbstr[32];
@@ -510,7 +510,7 @@ RZ_API void rz_print_addr(RPrint *p, ut64 addr) {
 RZ_API char* rz_print_hexpair(RPrint *p, const char *str, int n) {
 	const char *s, *lastcol = Color_WHITE;
 	char *d, *dst = (char *) calloc ((strlen (str) + 2), 32);
-	int colors = p->flags & R_PRINT_FLAGS_COLOR;
+	int colors = p->flags & RZ_PRINT_FLAGS_COLOR;
 	const char *color_0x00 = "";
 	const char *color_0x7f = "";
 	const char *color_0xff = "";
@@ -519,8 +519,8 @@ RZ_API char* rz_print_hexpair(RPrint *p, const char *str, int n) {
 	int bs = p->bytespace;
 	/* XXX That's hacky as shit.. but partially works O:) */
 	/* TODO: Use rz_print_set_cursor for win support */
-	int cur = R_MIN (p->cur, p->ocur);
-	int ocur = R_MAX (p->cur, p->ocur);
+	int cur = RZ_MIN (p->cur, p->ocur);
+	int ocur = RZ_MAX (p->cur, p->ocur);
 	int ch, i;
 
 	if (colors) {
@@ -600,13 +600,13 @@ RZ_API char* rz_print_hexpair(RPrint *p, const char *str, int n) {
 static char colorbuffer[64];
 #define P(x) (p->cons && p->cons->context->pal.x)? p->cons->context->pal.x
 RZ_API const char *rz_print_byte_color(RPrint *p, int ch) {
-	if (p->flags & R_PRINT_FLAGS_RAINBOW) {
+	if (p->flags & RZ_PRINT_FLAGS_RAINBOW) {
 		// EXPERIMENTAL
-		int bg = (p->flags & R_PRINT_FLAGS_NONHEX)? 48: 38;
+		int bg = (p->flags & RZ_PRINT_FLAGS_NONHEX)? 48: 38;
 		snprintf (colorbuffer, sizeof (colorbuffer), "\033[%d;5;%dm", bg, ch);
 		return colorbuffer;
 	}
-	const bool use_color = p->flags & R_PRINT_FLAGS_COLOR;
+	const bool use_color = p->flags & RZ_PRINT_FLAGS_COLOR;
 	if (!use_color) {
 		return NULL;
 	}
@@ -626,7 +626,7 @@ RZ_API void rz_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 		rch = '.';
 	}
 	rz_print_cursor (p, idx, 1, 1);
-	if (p && p->flags & R_PRINT_FLAGS_COLOR) {
+	if (p && p->flags & RZ_PRINT_FLAGS_COLOR) {
 		const char *bytecolor = rz_print_byte_color (p, ch);
 		if (bytecolor) {
 			printfmt (bytecolor);
@@ -643,12 +643,12 @@ RZ_API void rz_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 
 RZ_API int rz_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int options) {
 	int i;
-	bool wide = (options & R_PRINT_STRING_WIDE);
-	bool wide32 = (options & R_PRINT_STRING_WIDE32);
-	bool zeroend = (options & R_PRINT_STRING_ZEROEND);
-	bool wrap = (options & R_PRINT_STRING_WRAP);
-	bool urlencode = (options & R_PRINT_STRING_URLENCODE);
-	bool esc_nl = (options & R_PRINT_STRING_ESC_NL);
+	bool wide = (options & RZ_PRINT_STRING_WIDE);
+	bool wide32 = (options & RZ_PRINT_STRING_WIDE32);
+	bool zeroend = (options & RZ_PRINT_STRING_ZEROEND);
+	bool wrap = (options & RZ_PRINT_STRING_WRAP);
+	bool urlencode = (options & RZ_PRINT_STRING_URLENCODE);
+	bool esc_nl = (options & RZ_PRINT_STRING_ESC_NL);
 	int col = 0;
 	i = 0;
 	for (; !rz_print_is_interrupted () && i < len; i++) {
@@ -727,7 +727,7 @@ static bool isAllZeros(const ut8 *buf, int len) {
 #define Pal(x,y) (x->cons && x->cons->context->pal.y)? x->cons->context->pal.y
 RZ_API void rz_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int step) {
 	PrintfCallback p = (PrintfCallback) rp->cb_printf;
-	bool c = rp->flags & R_PRINT_FLAGS_COLOR;
+	bool c = rp->flags & RZ_PRINT_FLAGS_COLOR;
 	const char *color_0xff = c? (Pal (rp, b0xff): Color_RED): "";
 	const char *color_text = c? (Pal (rp, btext): Color_MAGENTA): "";
 	const char *color_other = c? (Pal (rp, other): Color_WHITE): "";
@@ -735,7 +735,7 @@ RZ_API void rz_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int s
 	int i, j;
 	bool show_offset = rp->show_offset;
 
-	if (rp->flags & R_PRINT_FLAGS_HEADER) {
+	if (rp->flags & RZ_PRINT_FLAGS_HEADER) {
 		p ("         ");
 		for (i = 0; i < step; i++) {
 			p ("%3X", i);
@@ -744,7 +744,7 @@ RZ_API void rz_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int s
 	}
 
 	for (i = 0; i < len; i += step) {
-		int inc = R_MIN (step, (len - i));
+		int inc = RZ_MIN (step, (len - i));
 		if (isAllZeros (buf + i, inc)) {
 			continue;
 		}
@@ -796,7 +796,7 @@ RZ_API void rz_print_set_screenbounds(RPrint *p, ut64 addr) {
 }
 
 RZ_API void rz_print_section(RPrint *p, ut64 at) {
-	bool use_section = p && p->flags & R_PRINT_FLAGS_SECTION;
+	bool use_section = p && p->flags & RZ_PRINT_FLAGS_SECTION;
 	if (use_section) {
 		const char *s = p->get_section_name (p->user, at);
 		if (!s) {
@@ -810,7 +810,7 @@ RZ_API void rz_print_section(RPrint *p, ut64 at) {
 
 RZ_API void rz_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz) {
 	PrintfCallback printfmt = (PrintfCallback)printf;
-	bool c = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
+	bool c = p? (p->flags & RZ_PRINT_FLAGS_COLOR): false;
 	const char *color_title = c? (Pal (p, offset): Color_MAGENTA): "";
 	int inc = p? p->cols : 16;
 	size_t i, j, k;
@@ -839,16 +839,16 @@ RZ_API void rz_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int 
 	len = len - (len % step);
 	if (p) {
 		pairs = p->pairs;
-		use_sparse = p->flags & R_PRINT_FLAGS_SPARSE;
-		use_header = p->flags & R_PRINT_FLAGS_HEADER;
-		use_hdroff = p->flags & R_PRINT_FLAGS_HDROFF;
-		use_segoff = p->flags & R_PRINT_FLAGS_SEGOFF;
-		use_align = p->flags & R_PRINT_FLAGS_ALIGN;
-		use_offset = p->flags & R_PRINT_FLAGS_OFFSET;
-		hex_style = p->flags & R_PRINT_FLAGS_STYLE;
-		use_hexa = !(p->flags & R_PRINT_FLAGS_NONHEX);
-		use_unalloc = p->flags & R_PRINT_FLAGS_UNALLOC;
-		compact = p->flags & R_PRINT_FLAGS_COMPACT;
+		use_sparse = p->flags & RZ_PRINT_FLAGS_SPARSE;
+		use_header = p->flags & RZ_PRINT_FLAGS_HEADER;
+		use_hdroff = p->flags & RZ_PRINT_FLAGS_HDROFF;
+		use_segoff = p->flags & RZ_PRINT_FLAGS_SEGOFF;
+		use_align = p->flags & RZ_PRINT_FLAGS_ALIGN;
+		use_offset = p->flags & RZ_PRINT_FLAGS_OFFSET;
+		hex_style = p->flags & RZ_PRINT_FLAGS_STYLE;
+		use_hexa = !(p->flags & RZ_PRINT_FLAGS_NONHEX);
+		use_unalloc = p->flags & RZ_PRINT_FLAGS_UNALLOC;
+		compact = p->flags & RZ_PRINT_FLAGS_COMPACT;
 		inc = p->cols; // row width
 		col = p->col;
 		printfmt = (PrintfCallback) p->cb_printf;
@@ -985,7 +985,7 @@ RZ_API void rz_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int 
 			} else {
 				printfmt (col == 2? "|": space);
 			}
-			if (!p || !(p->flags & R_PRINT_FLAGS_NONASCII)) {
+			if (!p || !(p->flags & RZ_PRINT_FLAGS_NONASCII)) {
 				for (i = 0; i < inc; i++) {
 					printfmt ("%c", hex[(i + k) % 16]);
 				}
@@ -1016,7 +1016,7 @@ RZ_API void rz_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int 
 	int bytes = 0;
 	bool printValue = true;
 	bool oPrintValue = true;
-	bool isPxr = (p && p->flags & R_PRINT_FLAGS_REFS);
+	bool isPxr = (p && p->flags & RZ_PRINT_FLAGS_REFS);
 
 	for (i = j = 0; i < len; i += (stride? stride: inc)) {
 		if (p && p->cons && p->cons->context && p->cons->context->breaked) {
@@ -1104,7 +1104,7 @@ RZ_API void rz_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int 
 					size_t sz_n = (base == 64)
 						? sizeof (ut64) : (step == 2)
 						? sizeof (ut16) : sizeof (ut32);
-					sz_n = R_MIN (left, sz_n);
+					sz_n = RZ_MIN (left, sz_n);
 					if (j + sz_n > len) {
 						// oob
 						j += sz_n;
@@ -1237,7 +1237,7 @@ RZ_API void rz_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int 
 			} else {
 				printfmt ((col == 2)? "|": " ");
 			}
-			if (!p || !(p->flags & R_PRINT_FLAGS_NONASCII)) {
+			if (!p || !(p->flags & RZ_PRINT_FLAGS_NONASCII)) {
 				bytes = 0;
 				for (j = i; j < i + inc; j++) {
 					if (j!=i && use_align  && bytes >= rowbytes) {
@@ -1261,7 +1261,7 @@ RZ_API void rz_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int 
 				printfmt ("|");
 			}
 			bool eol = false;
-			if (!eol && p && p->flags & R_PRINT_FLAGS_REFS) {
+			if (!eol && p && p->flags & RZ_PRINT_FLAGS_REFS) {
 				ut64 off = 0;
 				if (i + 8 < len) {
 					ut64 *foo = (ut64 *) (buf + i);
@@ -1394,8 +1394,8 @@ static ut8* M(const ut8 *b, int len) {
 RZ_API void rz_print_hexdiff(RPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const ut8 *_b, int len, int scndcol) {
 	ut8 *a, *b;
 	char linediff, fmt[64];
-	int color = p->flags & R_PRINT_FLAGS_COLOR;
-	int diffskip = p->flags & R_PRINT_FLAGS_DIFFOUT;
+	int color = p->flags & RZ_PRINT_FLAGS_COLOR;
+	int diffskip = p->flags & RZ_PRINT_FLAGS_DIFFOUT;
 	int i, j, min;
 	if (!((a = M (_a, len)))) {
 		return;
@@ -1405,7 +1405,7 @@ RZ_API void rz_print_hexdiff(RPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const u
 		return;
 	}
 	for (i = 0; i < len; i += 16) {
-		min = R_MIN (16, len - i);
+		min = RZ_MIN (16, len - i);
 		linediff = (memcmp (a + i, b + i, min))? '!': '|';
 		if (diffskip && linediff == '|') {
 			continue;
@@ -1549,8 +1549,8 @@ RZ_API void rz_print_progressbar(RPrint *p, int pc, int _cols) {
 	const char *h_line = p->cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
 	const char *block = p->cons->use_utf8 ? UTF_BLOCK : "#";
 
-	pc = R_MAX (0, R_MIN (100, pc));
-	if (p->flags & R_PRINT_FLAGS_HEADER) {
+	pc = RZ_MAX (0, RZ_MIN (100, pc));
+	if (p->flags & RZ_PRINT_FLAGS_HEADER) {
 		p->cb_printf ("%4d%% ", pc);
 	}
 	cols -= 15;
@@ -1567,7 +1567,7 @@ RZ_API void rz_print_progressbar(RPrint *p, int pc, int _cols) {
 RZ_API void rz_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols) {
 	const char *h_line = p->cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
 	const char *block = p->cons->use_utf8 ? UTF_BLOCK : "#";
-	const bool show_colors = p->flags & R_PRINT_FLAGS_COLOR;
+	const bool show_colors = p->flags & RZ_PRINT_FLAGS_COLOR;
 	int j = 0;
 	p->cb_printf ("|");
 	if (cols < 1) {
@@ -1653,9 +1653,9 @@ RZ_API void rz_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 fro
 	ut64 size = (to - from);
 	rz_print_zoom_buf (p, user, cb, from, to, len, maxlen);
 	size = len? size / len: 0;
-	p->flags &= ~R_PRINT_FLAGS_HEADER;
+	p->flags &= ~RZ_PRINT_FLAGS_HEADER;
 	rz_print_hexdump (p, from, p->zoom->buf, p->zoom->size, 16, 1, size);
-	p->flags |= R_PRINT_FLAGS_HEADER;
+	p->flags |= RZ_PRINT_FLAGS_HEADER;
 }
 
 static inline void printHistBlock (RPrint *p, int k, int cols) {
@@ -1671,7 +1671,7 @@ static inline void printHistBlock (RPrint *p, int k, int cols) {
 	if (cols < 1) {
 		cols = 1;
 	}
-	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
+	const bool show_colors = (p && (p->flags & RZ_PRINT_FLAGS_COLOR));
 	if (show_colors) {
 		int idx = (int) ((k * 4) / cols);
 		const char *str = kol[idx];
@@ -1691,8 +1691,8 @@ static inline void printHistBlock (RPrint *p, int k, int cols) {
 
 RZ_API void rz_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step) {
 	rz_return_if_fail (p && arr);
-	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
-	const bool show_offset = (p && (p->flags & R_PRINT_FLAGS_OFFSET));
+	const bool show_colors = (p && (p->flags & RZ_PRINT_FLAGS_COLOR));
+	const bool show_offset = (p && (p->flags & RZ_PRINT_FLAGS_OFFSET));
 	bool useUtf8 = p->cons->use_utf8;
 	const char *v_line = useUtf8 ? RUNE_LINE_VERT : "|";
 	int i = 0, j;
@@ -1778,7 +1778,7 @@ RZ_API void rz_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int st
 }
 
 RZ_API void rz_print_2bpp_row(RPrint *p, ut8 *buf) {
-	const bool useColor = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
+	const bool useColor = p? (p->flags & RZ_PRINT_FLAGS_COLOR): false;
 	int i, c = 0;
 	for (i = 0; i < 8; i++) {
 		if (buf[1] & ((1 << 7) >> i)) {
@@ -1823,7 +1823,7 @@ RZ_API void rz_print_2bpp_row(RPrint *p, ut8 *buf) {
 
 RZ_API void rz_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles) {
 	int i, r;
-	const bool useColor = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
+	const bool useColor = p? (p->flags & RZ_PRINT_FLAGS_COLOR): false;
 	for (i = 0; i < 8; i++) {
 		for (r = 0; r < tiles; r++) {
 			rz_print_2bpp_row (p, buf + 2 * i + r * 16);
@@ -1840,84 +1840,84 @@ RZ_API void rz_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles) {
 	}
 }
 
-// probably move somewhere else. RPrint doesnt needs to know about the R_ANAL_ enums
+// probably move somewhere else. RPrint doesnt needs to know about the RZ_ANAL_ enums
 RZ_API const char* rz_print_color_op_type(RPrint *p, ut32 anal_type) {
 	RzConsPrintablePalette *pal = &p->cons->context->pal;
-	switch (anal_type & R_ANAL_OP_TYPE_MASK) {
-	case R_ANAL_OP_TYPE_NOP:
+	switch (anal_type & RZ_ANAL_OP_TYPE_MASK) {
+	case RZ_ANAL_OP_TYPE_NOP:
 		return pal->nop;
-	case R_ANAL_OP_TYPE_ADD:
-	case R_ANAL_OP_TYPE_SUB:
-	case R_ANAL_OP_TYPE_MUL:
-	case R_ANAL_OP_TYPE_DIV:
-	case R_ANAL_OP_TYPE_MOD:
-	case R_ANAL_OP_TYPE_LENGTH:
+	case RZ_ANAL_OP_TYPE_ADD:
+	case RZ_ANAL_OP_TYPE_SUB:
+	case RZ_ANAL_OP_TYPE_MUL:
+	case RZ_ANAL_OP_TYPE_DIV:
+	case RZ_ANAL_OP_TYPE_MOD:
+	case RZ_ANAL_OP_TYPE_LENGTH:
 		return pal->math;
-	case R_ANAL_OP_TYPE_AND:
-	case R_ANAL_OP_TYPE_OR:
-	case R_ANAL_OP_TYPE_XOR:
-	case R_ANAL_OP_TYPE_NOT:
-	case R_ANAL_OP_TYPE_SHL:
-	case R_ANAL_OP_TYPE_SAL:
-	case R_ANAL_OP_TYPE_SAR:
-	case R_ANAL_OP_TYPE_SHR:
-	case R_ANAL_OP_TYPE_ROL:
-	case R_ANAL_OP_TYPE_ROR:
-	case R_ANAL_OP_TYPE_CPL:
+	case RZ_ANAL_OP_TYPE_AND:
+	case RZ_ANAL_OP_TYPE_OR:
+	case RZ_ANAL_OP_TYPE_XOR:
+	case RZ_ANAL_OP_TYPE_NOT:
+	case RZ_ANAL_OP_TYPE_SHL:
+	case RZ_ANAL_OP_TYPE_SAL:
+	case RZ_ANAL_OP_TYPE_SAR:
+	case RZ_ANAL_OP_TYPE_SHR:
+	case RZ_ANAL_OP_TYPE_ROL:
+	case RZ_ANAL_OP_TYPE_ROR:
+	case RZ_ANAL_OP_TYPE_CPL:
 		return pal->bin;
-	case R_ANAL_OP_TYPE_IO:
+	case RZ_ANAL_OP_TYPE_IO:
 		return pal->swi;
-	case R_ANAL_OP_TYPE_JMP:
-	case R_ANAL_OP_TYPE_UJMP:
+	case RZ_ANAL_OP_TYPE_JMP:
+	case RZ_ANAL_OP_TYPE_UJMP:
 		return pal->ujmp;
-	case R_ANAL_OP_TYPE_IJMP:
-	case R_ANAL_OP_TYPE_RJMP:
-	case R_ANAL_OP_TYPE_IRJMP:
-	case R_ANAL_OP_TYPE_MJMP:
+	case RZ_ANAL_OP_TYPE_IJMP:
+	case RZ_ANAL_OP_TYPE_RJMP:
+	case RZ_ANAL_OP_TYPE_IRJMP:
+	case RZ_ANAL_OP_TYPE_MJMP:
 		return pal->jmp;
-	case R_ANAL_OP_TYPE_CJMP:
-	case R_ANAL_OP_TYPE_UCJMP:
-	case R_ANAL_OP_TYPE_SWITCH:
+	case RZ_ANAL_OP_TYPE_CJMP:
+	case RZ_ANAL_OP_TYPE_UCJMP:
+	case RZ_ANAL_OP_TYPE_SWITCH:
 		return pal->cjmp;
-	case R_ANAL_OP_TYPE_CMP:
-	case R_ANAL_OP_TYPE_ACMP:
+	case RZ_ANAL_OP_TYPE_CMP:
+	case RZ_ANAL_OP_TYPE_ACMP:
 		return pal->cmp;
-	case R_ANAL_OP_TYPE_UCALL:
+	case RZ_ANAL_OP_TYPE_UCALL:
 		return pal->ucall;
-	case R_ANAL_OP_TYPE_ICALL:
-	case R_ANAL_OP_TYPE_RCALL:
-	case R_ANAL_OP_TYPE_IRCALL:
-	case R_ANAL_OP_TYPE_UCCALL:
-	case R_ANAL_OP_TYPE_CALL:
-	case R_ANAL_OP_TYPE_CCALL:
+	case RZ_ANAL_OP_TYPE_ICALL:
+	case RZ_ANAL_OP_TYPE_RCALL:
+	case RZ_ANAL_OP_TYPE_IRCALL:
+	case RZ_ANAL_OP_TYPE_UCCALL:
+	case RZ_ANAL_OP_TYPE_CALL:
+	case RZ_ANAL_OP_TYPE_CCALL:
 		return pal->call;
-	case R_ANAL_OP_TYPE_NEW:
-	case R_ANAL_OP_TYPE_SWI:
+	case RZ_ANAL_OP_TYPE_NEW:
+	case RZ_ANAL_OP_TYPE_SWI:
 		return pal->swi;
-	case R_ANAL_OP_TYPE_ILL:
-	case R_ANAL_OP_TYPE_TRAP:
+	case RZ_ANAL_OP_TYPE_ILL:
+	case RZ_ANAL_OP_TYPE_TRAP:
 		return pal->trap;
-	case R_ANAL_OP_TYPE_CRET:
-	case R_ANAL_OP_TYPE_RET:
+	case RZ_ANAL_OP_TYPE_CRET:
+	case RZ_ANAL_OP_TYPE_RET:
 		return pal->ret;
-	case R_ANAL_OP_TYPE_CAST:
-	case R_ANAL_OP_TYPE_MOV:
-	case R_ANAL_OP_TYPE_LEA:
-	case R_ANAL_OP_TYPE_CMOV: // TODO: add cmov cathegory?
+	case RZ_ANAL_OP_TYPE_CAST:
+	case RZ_ANAL_OP_TYPE_MOV:
+	case RZ_ANAL_OP_TYPE_LEA:
+	case RZ_ANAL_OP_TYPE_CMOV: // TODO: add cmov cathegory?
 		return pal->mov;
-	case R_ANAL_OP_TYPE_PUSH:
-	case R_ANAL_OP_TYPE_UPUSH:
-	case R_ANAL_OP_TYPE_RPUSH:
-	case R_ANAL_OP_TYPE_LOAD:
+	case RZ_ANAL_OP_TYPE_PUSH:
+	case RZ_ANAL_OP_TYPE_UPUSH:
+	case RZ_ANAL_OP_TYPE_RPUSH:
+	case RZ_ANAL_OP_TYPE_LOAD:
 		return pal->push;
-	case R_ANAL_OP_TYPE_POP:
-	case R_ANAL_OP_TYPE_STORE:
+	case RZ_ANAL_OP_TYPE_POP:
+	case RZ_ANAL_OP_TYPE_STORE:
 		return pal->pop;
-	case R_ANAL_OP_TYPE_CRYPTO:
+	case RZ_ANAL_OP_TYPE_CRYPTO:
 		return pal->crypto;
-	case R_ANAL_OP_TYPE_NULL:
+	case RZ_ANAL_OP_TYPE_NULL:
 		return pal->other;
-	case R_ANAL_OP_TYPE_UNK:
+	case RZ_ANAL_OP_TYPE_UNK:
 	default:
 		return pal->invalid;
 	}
@@ -2111,7 +2111,7 @@ RZ_API char* rz_print_colorize_opcode(RPrint *print, char *p, const char *reg, c
 			break;
 		case '0': /* address */
 			if (p[i + 1] == 'x') {
-				if (print->flags & R_PRINT_FLAGS_SECSUB) {
+				if (print->flags & RZ_PRINT_FLAGS_SECSUB) {
 					RzIOMap *map = print->iob.map_get (print->iob.io, rz_num_get (NULL, p + i));
 					if (map && map->name) {
 						if (strlen (map->name) + j + 1 >= COLORIZE_BUFSIZE) {
@@ -2144,7 +2144,7 @@ RZ_API char* rz_print_colorize_opcode(RPrint *print, char *p, const char *reg, c
 // reset the status of row_offsets
 RZ_API void rz_print_init_rowoffsets(RPrint *p) {
 	if (p->calc_row_offsets) {
-		R_FREE (p->row_offsets);
+		RZ_FREE (p->row_offsets);
 		p->row_offsets_sz = 0;
 	}
 }
@@ -2158,8 +2158,8 @@ RZ_API void rz_print_set_rowoff(RPrint *p, int i, ut32 offset, bool overwrite) {
 		return;
 	}
 	if (!p->row_offsets || !p->row_offsets_sz) {
-		p->row_offsets_sz = R_MAX (i + 1, DFLT_ROWS);
-		p->row_offsets = R_NEWS (ut32, p->row_offsets_sz);
+		p->row_offsets_sz = RZ_MAX (i + 1, DFLT_ROWS);
+		p->row_offsets = RZ_NEWS (ut32, p->row_offsets_sz);
 	}
 	if (i >= p->row_offsets_sz) {
 		size_t new_size;
@@ -2276,7 +2276,7 @@ RZ_API void rz_print_hex_from_bin (RPrint *p, char *bin_str) {
 }
 
 RZ_API const char* rz_print_rowlog(RPrint *print, const char *str) {
-	int use_color = print->flags & R_PRINT_FLAGS_COLOR;
+	int use_color = print->flags & RZ_PRINT_FLAGS_COLOR;
 	bool verbose = print->scr_prompt;
 	rz_return_val_if_fail (print->cb_eprintf, NULL);
 	if (!verbose) {
@@ -2291,7 +2291,7 @@ RZ_API const char* rz_print_rowlog(RPrint *print, const char *str) {
 }
 
 RZ_API void rz_print_rowlog_done(RPrint *print, const char *str) {
-	int use_color = print->flags & R_PRINT_FLAGS_COLOR;
+	int use_color = print->flags & RZ_PRINT_FLAGS_COLOR;
 	bool verbose =  print->scr_prompt;
 	rz_return_if_fail (print->cb_eprintf);
 	if (verbose) {

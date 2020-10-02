@@ -48,15 +48,15 @@ static int lang_c_file(RzLang *lang, const char *file) {
 		*p = 0;
 	}
 	cc = rz_sys_getenv ("CC");
-	if (R_STR_ISEMPTY (cc)) {
+	if (RZ_STR_ISEMPTY (cc)) {
 		cc = strdup ("gcc");
 	}
 	char *file_esc = rz_str_escape_sh (file);
 	char *libpath_esc = rz_str_escape_sh (libpath);
 	char *libname_esc = rz_str_escape_sh (libname);
-	char *buf = rz_str_newf ("%s -fPIC -shared \"%s\" -o \"%s/lib%s." R_LIB_EXT "\""
+	char *buf = rz_str_newf ("%s -fPIC -shared \"%s\" -o \"%s/lib%s." RZ_LIB_EXT "\""
 		" $(PKG_CONFIG_PATH=%s pkg-config --cflags --libs rz_core)",
-		cc, file_esc, libpath_esc, libname_esc, R2_LIBDIR "/pkgconfig");
+		cc, file_esc, libpath_esc, libname_esc, RZ_LIBDIR "/pkgconfig");
 	free (libname_esc);
 	free (libpath_esc);
 	free (file_esc);
@@ -66,7 +66,7 @@ static int lang_c_file(RzLang *lang, const char *file) {
 		return false;
 	}
 	free (buf);
-	buf = rz_str_newf ("%s/lib%s."R_LIB_EXT, libpath, libname);
+	buf = rz_str_newf ("%s/lib%s."RZ_LIB_EXT, libpath, libname);
 	lib = rz_lib_dl_open (buf);
 	if (lib) {
 		void (*fcn)(RzCore *, int argc, const char **argv);

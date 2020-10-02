@@ -1,5 +1,5 @@
-#ifndef R_PANELS_H
-#define R_PANELS_H
+#ifndef RZ_PANELS_H
+#define RZ_PANELS_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,10 +67,10 @@ typedef struct rz_panel_t {
     RPanelView *view;
 } RPanel;
 
-typedef void (*RPanelAlmightyCallback)(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title);
+typedef void (*RPanelAlmightyCallback)(void *user, RPanel *panel, const RPanelLayout dir, RZ_NULLABLE const char *title);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif //  R_PANELS_H
+#endif //  RZ_PANELS_H

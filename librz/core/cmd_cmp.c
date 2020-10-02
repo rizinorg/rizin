@@ -60,7 +60,7 @@ RZ_API int rz_core_cmpwatch_add(RzCore *core, ut64 addr, int size, const char *c
 	}
 	cmpw = rz_core_cmpwatch_get (core, addr);
 	if (!cmpw) {
-		cmpw = R_NEW (RzCoreCmpWatcher);
+		cmpw = RZ_NEW (RzCoreCmpWatcher);
 		if (!cmpw) {
 			return false;
 		}
@@ -218,12 +218,12 @@ static int radare_compare_unified(RzCore *core, ut64 of, ut64 od, int len) {
 	}
 	rz_io_read_at (core->io, of, f, len);
 	rz_io_read_at (core->io, od, d, len);
-	int headers = B_IS_SET (core->print->flags, R_PRINT_FLAGS_HEADER);
+	int headers = B_IS_SET (core->print->flags, RZ_PRINT_FLAGS_HEADER);
 	if (headers) {
-		B_UNSET (core->print->flags, R_PRINT_FLAGS_HEADER);
+		B_UNSET (core->print->flags, RZ_PRINT_FLAGS_HEADER);
 	}
 	for (i = 0; i < len; i += inc) {
-		min = R_MIN (16, (len - i));
+		min = RZ_MIN (16, (len - i));
 		if (!memcmp (f + i, d + i, min)) {
 			rz_cons_printf ("  ");
 			rz_print_hexdiff (core->print, of + i, f + i, of + i, f + i, min, 0);
@@ -235,7 +235,7 @@ static int radare_compare_unified(RzCore *core, ut64 of, ut64 od, int len) {
 		}
 	}
 	if (headers) {
-		B_SET (core->print->flags, R_PRINT_FLAGS_HEADER);
+		B_SET (core->print->flags, RZ_PRINT_FLAGS_HEADER);
 	}
 	return true;
 }
@@ -725,7 +725,7 @@ static int cmd_cmp(void *data, const char *input) {
 				}
 			}
 		} else {
-			char *home = rz_sys_getenv (R_SYS_HOME);
+			char *home = rz_sys_getenv (RZ_SYS_HOME);
 			if (!home || rz_sandbox_chdir (home) == -1) {
 				eprintf ("Cannot find home.\n");
 			}
@@ -760,7 +760,7 @@ static int cmd_cmp(void *data, const char *input) {
 			ut32 oflags = core->print->flags;
 			ut64 addr = 0; // TOTHINK: Not sure what default address should be
 			if (input[1] == 'c') { // "ccc"
-				core->print->flags |= R_PRINT_FLAGS_DIFFOUT;
+				core->print->flags |= RZ_PRINT_FLAGS_DIFFOUT;
 				addr = rz_num_math (core->num, input + 2);
 			} else {
 				if (*input && input[1]) {
@@ -821,7 +821,7 @@ static int cmd_cmp(void *data, const char *input) {
 			eprintf ("Cannot init diff core\n");
 			return false;
 		}
-		rz_core_loadlibs (core2, R_CORE_LOADLIBS_ALL, NULL);
+		rz_core_loadlibs (core2, RZ_CORE_LOADLIBS_ALL, NULL);
 		core2->io->va = core->io->va;
 		if (!rz_core_file_open (core2, file2, 0, 0LL)) {
 			eprintf ("Cannot open diff file '%s'\n", file2);

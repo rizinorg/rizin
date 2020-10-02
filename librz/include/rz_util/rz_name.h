@@ -1,5 +1,5 @@
-#ifndef R_NAME_H
-#define R_NAME_H
+#ifndef RZ_NAME_H
+#define RZ_NAME_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,4 +14,4 @@ RZ_API bool rz_name_validate_char(const char ch);
 }
 #endif
 
-#endif //  R_NAME_H
+#endif //  RZ_NAME_H

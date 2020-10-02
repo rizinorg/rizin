@@ -284,7 +284,7 @@ static int header_size = 0;
 // XXX need more infos on compression of version 5 sigs
 // rz_inflate doesn't work with them
 
-#define R_FLIRT_NAME_MAX 1024
+#define RZ_FLIRT_NAME_MAX 1024
 
 typedef struct RFlirtTailByte {
 	ut16 offset; // from pattern_size + crc_length
@@ -292,7 +292,7 @@ typedef struct RFlirtTailByte {
 } RFlirtTailByte;
 
 typedef struct RFlirtFunction {
-	char name[R_FLIRT_NAME_MAX];
+	char name[RZ_FLIRT_NAME_MAX];
 	ut16 offset; // function offset from the module start
 	ut8 negative_offset; // true if offset is negative, for referenced functions
 	ut8 is_local; // true if function is static
@@ -672,7 +672,7 @@ static int node_match_functions(RzAnal *anal, const RFlirtNode *root_node) {
 	RzListIter *it_func;
 	RzAnalFunction *func;
 	rz_list_foreach (anal->fcns, it_func, func) {
-		if (func->type != R_ANAL_FCN_TYPE_FCN && func->type != R_ANAL_FCN_TYPE_LOC) { // scan only for unknown functions
+		if (func->type != RZ_ANAL_FCN_TYPE_FCN && func->type != RZ_ANAL_FCN_TYPE_LOC) { // scan only for unknown functions
 			continue;
 		}
 
@@ -719,7 +719,7 @@ static ut8 read_module_tail_bytes(RFlirtModule *module, RBuffer *b) {
 		number_of_tail_bytes = 1;
 	}
 	for (i = 0; i < number_of_tail_bytes; i++) {
-		tail_byte = R_NEW0 (RFlirtTailByte);
+		tail_byte = RZ_NEW0 (RFlirtTailByte);
 		if (!tail_byte) {
 			return false;
 		}
@@ -773,7 +773,7 @@ static ut8 read_module_referenced_functions(RFlirtModule *module, RBuffer *b) {
 	}
 
 	for (i = 0; i < number_of_referenced_functions; i++) {
-		ref_function = R_NEW0 (RFlirtFunction);
+		ref_function = RZ_NEW0 (RFlirtFunction);
 		if (!ref_function) {
 			goto err_exit;
 		}
@@ -799,7 +799,7 @@ static ut8 read_module_referenced_functions(RFlirtModule *module, RBuffer *b) {
 				goto err_exit;
 			}
 		}
-		if ((int) ref_function_name_length < 0 || ref_function_name_length >= R_FLIRT_NAME_MAX) {
+		if ((int) ref_function_name_length < 0 || ref_function_name_length >= RZ_FLIRT_NAME_MAX) {
 			goto err_exit;
 		}
 		for (j = 0; j < ref_function_name_length; j++) {
@@ -838,7 +838,7 @@ static ut8 read_module_public_functions(RFlirtModule *module, RBuffer *b, ut8 *f
 	module->public_functions = rz_list_new ();
 
 	do {
-		function = R_NEW0 (RFlirtFunction);
+		function = RZ_NEW0 (RFlirtFunction);
 		if (version >= 9) {   // seems like version 9 introduced some larger offsets
 			offset += read_multiple_bytes (b); // offsets are dependent of the previous ones
 			if (buf_eof || buf_err) {
@@ -877,7 +877,7 @@ static ut8 read_module_public_functions(RFlirtModule *module, RBuffer *b, ut8 *f
 			}
 		}
 
-		for (i = 0; current_byte >= 0x20 && i < R_FLIRT_NAME_MAX; i++) {
+		for (i = 0; current_byte >= 0x20 && i < RZ_FLIRT_NAME_MAX; i++) {
 			function->name[i] = current_byte;
 			current_byte = read_byte (b);
 			if (buf_eof || buf_err) {
@@ -885,9 +885,9 @@ static ut8 read_module_public_functions(RFlirtModule *module, RBuffer *b, ut8 *f
 			}
 		}
 
-		if (i == R_FLIRT_NAME_MAX) {
+		if (i == RZ_FLIRT_NAME_MAX) {
 			eprintf ("Function name too long\n");
-			function->name[R_FLIRT_NAME_MAX - 1] = '\0';
+			function->name[RZ_FLIRT_NAME_MAX - 1] = '\0';
 		} else {
 			function->name[i] = '\0';
 		}
@@ -934,7 +934,7 @@ static ut8 parse_leaf(const RzAnal *anal, RBuffer *b, RFlirtNode *node) {
 #endif
 
 		do { // loop for all modules having the same crc
-			module = R_NEW0 (RFlirtModule);
+			module = RZ_NEW0 (RFlirtModule);
 			if (!module) {
 				goto err_exit;
 			}
@@ -1062,7 +1062,7 @@ static ut8 parse_tree(const RzAnal *anal, RBuffer *b, RFlirtNode *root_node) {
 	root_node->child_list = rz_list_new ();
 
 	for (i = 0; i < tree_nodes; i++) {
-		if (!(node = R_NEW0 (RFlirtNode))) {
+		if (!(node = RZ_NEW0 (RFlirtNode))) {
 			goto err_exit;
 		}
 		if (!read_node_length (node, b)) {
@@ -1225,7 +1225,7 @@ static void print_header(idasig_v5_t *header) {
 #endif
 
 static int parse_header(RBuffer *buf, idasig_v5_t *header) {
-	rz_buf_seek (buf, 0, R_BUF_SET);
+	rz_buf_seek (buf, 0, RZ_BUF_SET);
 	if (rz_buf_read (buf, header->magic, sizeof(header->magic)) != sizeof(header->magic)) {
 		return false;
 	}
@@ -1314,14 +1314,14 @@ static RFlirtNode *flirt_parse(const RzAnal *anal, RBuffer *flirt_buf) {
 		goto exit;
 	}
 
-	if (!(header = R_NEW0 (idasig_v5_t))) {
+	if (!(header = RZ_NEW0 (idasig_v5_t))) {
 		goto exit;
 	}
 
 	parse_header (flirt_buf, header);
 
 	if (version >= 6) {
-		if (!(v6_v7 = R_NEW0 (idasig_v6_v7_t))) {
+		if (!(v6_v7 = RZ_NEW0 (idasig_v6_v7_t))) {
 			goto exit;
 		}
 		if (!parse_v6_v7_header (flirt_buf, v6_v7)) {
@@ -1329,7 +1329,7 @@ static RFlirtNode *flirt_parse(const RzAnal *anal, RBuffer *flirt_buf) {
 		}
 
 		if (version >= 8) {
-			if (!(v8_v9 = R_NEW0 (idasig_v8_v9_t))) {
+			if (!(v8_v9 = RZ_NEW0 (idasig_v8_v9_t))) {
 				goto exit;
 			}
 			if (!parse_v8_v9_header (flirt_buf, v8_v9)) {
@@ -1337,7 +1337,7 @@ static RFlirtNode *flirt_parse(const RzAnal *anal, RBuffer *flirt_buf) {
 			}
 
 			if (version >= 10) {
-				if (!(v10 = R_NEW0 (idasig_v10_t))) {
+				if (!(v10 = RZ_NEW0 (idasig_v10_t))) {
 					goto exit;
 				}
 				if (!parse_v10_header (flirt_buf, v10)) {
@@ -1380,12 +1380,12 @@ static RFlirtNode *flirt_parse(const RzAnal *anal, RBuffer *flirt_buf) {
 			goto exit;
 		}
 
-		R_FREE (buf);
+		RZ_FREE (buf);
 		buf = decompressed_buf;
 		size = decompressed_size;
 	}
 
-	if (!(node = R_NEW0 (RFlirtNode))) {
+	if (!(node = RZ_NEW0 (RFlirtNode))) {
 		goto exit;
 	}
 	rz_buf = rz_buf_new_with_pointers (buf, size, false);
@@ -1412,7 +1412,7 @@ RZ_API int rz_sign_is_flirt(RBuffer *buf) {
 	/*if buf is a flirt signature, returns signature version, otherwise returns false*/
 	int ret = false;
 
-	idasig_v5_t *header = R_NEW0 (idasig_v5_t);
+	idasig_v5_t *header = RZ_NEW0 (idasig_v5_t);
 	if (rz_buf_read (buf, header->magic, sizeof(header->magic)) != sizeof(header->magic)) {
 		goto exit;
 	}

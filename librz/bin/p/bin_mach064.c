@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2019 - nibble, pancake, alvaro_fe */
 
-#define R_BIN_MACH064 1
+#define RZ_BIN_MACH064 1
 #include "bin_mach0.c"
 
 #include "objc/mach064_classes.h"
@@ -268,9 +268,9 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 	ut64 addr;
 	RBinAddr *ret = NULL;
 	switch (sym) {
-	case R_BIN_SYM_MAIN:
+	case RZ_BIN_SYM_MAIN:
 		addr = MACH0_(get_main) (bf->o->bin_obj);
-		if (!addr || !(ret = R_NEW0 (RBinAddr))) {
+		if (!addr || !(ret = RZ_NEW0 (RBinAddr))) {
 			return NULL;
 		}
 		ret->paddr = ret->vaddr = addr;
@@ -305,10 +305,10 @@ RBinPlugin rz_bin_plugin_mach064 = {
 	.write = &rz_bin_write_mach0,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_mach064,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

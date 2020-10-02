@@ -195,7 +195,7 @@ typedef enum thread_write_flags_t {
 } thread_write_flags;
 
 /* Contains header information for the minidump file. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_header {
 	ut32 	signature;
 	ut32	version;
@@ -213,7 +213,7 @@ struct minidump_header {
 
 /* Contains information describing the location of a data stream within a
  * minidump file. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_location_descriptor {
 	ut32	data_size;
 	rva_t	rva;
@@ -221,35 +221,35 @@ struct minidump_location_descriptor {
 
 /* Contains information describing the location of a data stream within a
  * minidump file. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_location_descriptor64 {
 	ut64 	data_size;
 	rva64_t	rva;
 });
 
 /* Describes a range of memory. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_memory_descriptor {
 	ut64 start_of_memory_range;
 	struct minidump_location_descriptor memory;
 });
 
 /* Describes a range of memory. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_memory_descriptor64 {
 	ut64	start_of_memory_range;
 	ut64	data_size;
 });
 
 /* Contains the information needed to access a specific data stream in a minidump file. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_directory {
 	ut32	stream_type;
 	struct minidump_location_descriptor location;
 });
 
 /* Contains exception information. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_exception {
 	ut32 	exception_code;
 	ut32	exception_flags;
@@ -261,7 +261,7 @@ struct minidump_exception {
 });
 
 /* Contains exception information. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_exception_stream {
 	ut32	thread_id;
 	ut32	 __alignment;
@@ -271,7 +271,7 @@ struct minidump_exception_stream {
 });
 
 /* Describes an exception. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_exception_record {
 	ut32	exception_code;
 	ut32	exception_flags;
@@ -286,7 +286,7 @@ struct minidump_exception_record {
 /* Contains an exception record with a machine-independent description of an
  * exception and a context record with a machine-dependent description of the
  * processor context at the time of the exception. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_exception_pointers {
 	struct minidump_exception_record exception_record;
 	void /* struct context */ *context_record;
@@ -294,7 +294,7 @@ struct minidump_exception_pointers {
 
 /* Contains the exception information written to the minidump file by the
  * MiniDumpWriteDump function. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_exception_information {
 	ut32	thread_id;
 
@@ -304,7 +304,7 @@ struct minidump_exception_information {
 });
 
 /* Represents a function table stream. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_function_table_descriptor {
 	ut64	minimum_address;
 	ut64	maximum_address;
@@ -314,7 +314,7 @@ struct minidump_function_table_descriptor {
 });
 
 /* Represents the header for the function table stream. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_function_table_stream {
 	ut32	size_of_header;
 	ut32	size_of_descriptor;
@@ -325,7 +325,7 @@ struct minidump_function_table_stream {
 });
 
 /* Represents the header for a handle data stream. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_handle_data_stream {
 	ut32	size_of_header;
 	ut32	size_of_descriptor;
@@ -335,7 +335,7 @@ struct minidump_handle_data_stream {
 
 /* Contains the state of an individual system handle at the time the minidump
  * was written. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_handle_descriptor {
 	ut64	handle;
 	rva_t	type_name_rva;
@@ -348,7 +348,7 @@ struct minidump_handle_descriptor {
 
 /* Contains the state of an individual system handle at the time the minidump
  * was written. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_handle_descriptor_2 {
 	ut64	handle;
 	rva_t	type_name_rva;
@@ -362,7 +362,7 @@ struct minidump_handle_descriptor_2 {
 });
 
 /* Contains object-specific information for a handle. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_handle_object_information {
 	rva_t	next_info_rva;
 	ut32	info_type;
@@ -370,14 +370,14 @@ struct minidump_handle_object_information {
 });
 
 /* Contains a list of memory ranges. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_memory_list {
 	ut32	number_of_memory_ranges;
 	struct minidump_memory_descriptor memory_ranges[];
 });
 
 /* Contains a list of memory ranges. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_memory64_list {
 	ut64	number_of_memory_ranges;
 	rva64_t	base_rva;
@@ -385,7 +385,7 @@ struct minidump_memory64_list {
 });
 
 /* Describes a region of memory. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_memory_info {
 	ut64	base_address;
 	ut64	allocation_base;
@@ -399,7 +399,7 @@ struct minidump_memory_info {
 });
 
 /* Contains a list of memory regions. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_memory_info_list {
 	ut32	size_of_header;
 	ut32	size_of_entry;
@@ -408,7 +408,7 @@ struct minidump_memory_info_list {
 });
 
 /* Contains a variety of information. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_misc_info {
 	ut32	size_of_info;
 	ut32	flags_1;
@@ -419,7 +419,7 @@ struct minidump_misc_info {
 });
 
 /* Represents information in the miscellaneous information stream. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_misc_info_2 {
 	ut32	size_of_info;
 	ut32	flags_1;
@@ -436,7 +436,7 @@ struct minidump_misc_info_2 {
 
 /* Contains version information for a file. This information is language and
  * code page independent. */
-R_PACKED (
+RZ_PACKED (
 struct vs_fixedfileinfo {
 	ut32	dw_signature;
 	ut32	dw_struc_version;
@@ -454,7 +454,7 @@ struct vs_fixedfileinfo {
 });
 
 /* Contains information for a specific module. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_module {
 	ut64	base_of_image;
 	ut32	size_of_image;
@@ -471,21 +471,21 @@ struct minidump_module {
 });
 
 /* Contains a list of modules. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_module_list {
 	ut32 number_of_modules;
 	struct minidump_module modules[];
 });
 
 /* Describes a string. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_string {
 	ut32 length;
 	ut16 *buffer;
 });
 
 /* Contains processor and operating system information. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_system_info {
 	ut16 processor_architecture;
 	ut16 processor_level;
@@ -527,7 +527,7 @@ struct minidump_system_info {
 });
 
 /* Contains information for a specific thread. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_thread {
 	ut32 thread_id;
 	ut32 suspend_count;
@@ -539,14 +539,14 @@ struct minidump_thread {
 });
 
 /* Contains a list of threads. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_thread_list {
 	ut32 number_of_threads;
 	struct minidump_thread threads[0];
 });
 
 /* Contains extended information for a specific thread. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_thread_ex {
 	ut32	thread_id;
 	ut32	suspend_count;
@@ -560,14 +560,14 @@ struct minidump_thread_ex {
 });
 
 /* Contains a list of threads. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_thread_ex_list {
 	ut32	number_of_threads;
 	struct minidump_thread_ex threads[];
 });
 
 /* Contains thread state information. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_thread_info {
 	ut32	thread_id;
 	ut32	dump_flags;
@@ -582,7 +582,7 @@ struct minidump_thread_info {
 });
 
 /* Contains a list of threads. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_thread_info_list {
 	ut32	size_of_header;
 	ut32	size_of_entry;
@@ -591,7 +591,7 @@ struct minidump_thread_info_list {
 });
 
 /* Contains a token information. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_token_info {
 	ut32	token_size;
 	ut32	token_id;
@@ -599,7 +599,7 @@ struct minidump_token_info {
 });
 
 /* Contains a list of token information. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_token_info_list {
 	ut32	size_of_list;
 	ut32	number_of_entries;
@@ -610,7 +610,7 @@ struct minidump_token_info_list {
 
 /* Contains information about a module that has been unloaded. This information
  * can help diagnose problems calling code that is no longer loaded. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_unloaded_module {
 	ut64	base_of_image;
 	ut32	size_of_image;
@@ -620,7 +620,7 @@ struct minidump_unloaded_module {
 });
 
 /* Contains a list of unloaded modules. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_unloaded_module_list {
 	ut32	size_of_header;
 	ut32	size_of_entry;
@@ -629,7 +629,7 @@ struct minidump_unloaded_module_list {
 });
 
 /* Contains user-defined information stored in a data stream. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_user_stream {
 	ut32	type;
 	ut32	buffer_size;
@@ -637,7 +637,7 @@ struct minidump_user_stream {
 });
 
 /* Contains a list of user data streams used by the MiniDumpWriteDump function. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_user_stream_information {
 	ut32	user_stream_count;
 
@@ -646,14 +646,14 @@ struct minidump_user_stream_information {
 
 /* Contains information for the MiniDumpCallback function when the callback
  * type is IncludeThreadCallback. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_include_thread_callback {
 	ut32	thread_id;
 });
 
 /* Contains module information for the MiniDumpCallback function when the
  * callback type is ModuleCallback. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_module_callback {
 	ut16	/*pwchar*/ *full_path;
 	ut64	base_of_image;
@@ -671,7 +671,7 @@ struct minidump_module_callback {
 
 /* Contains information for the MiniDumpCallback function when the callback
  * type is IncludeModuleCallback. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_include_module_callback {
 	ut64	base_of_image;
 });
@@ -679,7 +679,7 @@ struct minidump_include_module_callback {
 /* Contains I/O callback information. This structure is used by the
  * MiniDumpCallback function when the callback type is IoStartCallback,
  * IoWriteAllCallback, or IoFinishCallback. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_io_callback {
 	void	/*handle*/ *Handle;
 	ut64	offset;
@@ -690,7 +690,7 @@ struct minidump_io_callback {
 /* Contains information about a failed memory read operation. This structure is
  * used by the MiniDumpCallback function when the callback type is
  * ReadMemoryFailureCallback. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_read_memory_failure_callback {
 	ut64	offset;
 	ut32	bytes;
@@ -698,7 +698,7 @@ struct minidump_read_memory_failure_callback {
 });
 
 /* Contains information returned by the MiniDumpCallback function. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_callback_output {
 	union {
 		ut32	module_write_flags;
@@ -723,14 +723,14 @@ struct minidump_callback_output {
 	st32 /* HRESULT */ status;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct avrf_backtrace_information {
 	ut32	 depth;
 	ut32	 index;
 	ut64	 return_addresses[AVRF_MAX_TRACES];
 });
 
-R_PACKED (
+RZ_PACKED (
 struct avrf_handle_operation {
 	ut64	handle;
 	ut32	process_id;
@@ -742,7 +742,7 @@ struct avrf_handle_operation {
 });
 
 /* Contains a list of handle operations. */
-R_PACKED (
+RZ_PACKED (
 struct minidump_handle_operation_list {
 	ut32 size_of_header;
 	ut32 size_of_entry;

@@ -6,28 +6,28 @@
 #include <rz_lib.h>
 #include <rz_bin.h>
 
-#define R_BIN_DEX_MAXSTR 256
+#define RZ_BIN_DEX_MAXSTR 256
 #define DEX_CLASS_SIZE (32)
 #define LEB_MAX_SIZE 6
 
 /* method flags */
-#define R_DEX_METH_PUBLIC 0x0001
-#define R_DEX_METH_PRIVATE 0x0002
-#define R_DEX_METH_PROTECTED 0x0004
-#define R_DEX_METH_STATIC 0x0008
-#define R_DEX_METH_FINAL 0x0010
-#define R_DEX_METH_SYNCHRONIZED 0x0020
-#define R_DEX_METH_BRIDGE 0x0040
-#define R_DEX_METH_VARARGS 0x0080
-#define R_DEX_METH_NATIVE 0x0100
-#define R_DEX_METH_ABSTRACT 0x0400
-#define R_DEX_METH_STRICT 0x0800
-#define R_DEX_METH_SYNTHETIC 0x1000
-#define R_DEX_METH_MIRANDA 0x8000
-#define R_DEX_METH_CONSTRUCTOR 0x10000
-#define R_DEX_METH_DECLARED_SYNCHRONIZED 0x20000
+#define RZ_DEX_METH_PUBLIC 0x0001
+#define RZ_DEX_METH_PRIVATE 0x0002
+#define RZ_DEX_METH_PROTECTED 0x0004
+#define RZ_DEX_METH_STATIC 0x0008
+#define RZ_DEX_METH_FINAL 0x0010
+#define RZ_DEX_METH_SYNCHRONIZED 0x0020
+#define RZ_DEX_METH_BRIDGE 0x0040
+#define RZ_DEX_METH_VARARGS 0x0080
+#define RZ_DEX_METH_NATIVE 0x0100
+#define RZ_DEX_METH_ABSTRACT 0x0400
+#define RZ_DEX_METH_STRICT 0x0800
+#define RZ_DEX_METH_SYNTHETIC 0x1000
+#define RZ_DEX_METH_MIRANDA 0x8000
+#define RZ_DEX_METH_CONSTRUCTOR 0x10000
+#define RZ_DEX_METH_DECLARED_SYNCHRONIZED 0x20000
 
-R_PACKED(
+RZ_PACKED(
 typedef struct dex_header_t {
 	ut8 magic[8];
 	ut32 checksum;
@@ -54,7 +54,7 @@ typedef struct dex_header_t {
 	ut32 data_offset;
 }) DexHeader;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct dex_proto_t {
 	ut32 shorty_id;
 	ut32 return_type_id;
@@ -72,14 +72,14 @@ typedef struct dex_field_t {
 	ut32 name_id;
 } DexField;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct dex_method_t {
 	ut16 class_id;
 	ut16 proto_id;
 	ut32 name_id;
 }) RBinDexMethod;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct dex_class_t {
 	ut32 class_id; // index into typeids
 	ut32 access_flags;
@@ -92,7 +92,7 @@ typedef struct dex_class_t {
 	struct dex_class_data_item_t *class_data;
 }) RBinDexClass;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct dex_class_data_item_t {
 	ut64 static_fields_size;
 	ut64 instance_fields_size;
@@ -124,7 +124,7 @@ typedef struct rz_bin_dex_obj_t {
 } RBinDexObj;
 
 struct rz_bin_dex_str_t {
-	char str[R_BIN_DEX_MAXSTR];
+	char str[RZ_BIN_DEX_MAXSTR];
 	ut64 offset;
 	ut64 ordinal;
 	int size;

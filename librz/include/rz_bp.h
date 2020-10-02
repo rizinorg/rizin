@@ -1,5 +1,5 @@
-#ifndef R2_BP_H
-#define R2_BP_H
+#ifndef RZ_BP_H
+#define RZ_BP_H
 
 #include <rz_types.h>
 #include <rz_lib.h>
@@ -10,11 +10,11 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(rz_bp);
+RZ_LIB_VERSION_HEADER(rz_bp);
 
-#define R_BP_MAXPIDS 10
-#define R_BP_CONT_NORMAL 0
-#define R_BP_CONT_NORMAL 0
+#define RZ_BP_MAXPIDS 10
+#define RZ_BP_CONT_NORMAL 0
+#define RZ_BP_CONT_NORMAL 0
 
 typedef struct rz_bp_arch_t {
 	int bits;
@@ -24,17 +24,17 @@ typedef struct rz_bp_arch_t {
 } RBreakpointArch;
 
 enum {
-	R_BP_TYPE_SW,
-	R_BP_TYPE_HW,
-	R_BP_TYPE_COND,
-	R_BP_TYPE_FAULT,
-	R_BP_TYPE_DELETE,
+	RZ_BP_TYPE_SW,
+	RZ_BP_TYPE_HW,
+	RZ_BP_TYPE_COND,
+	RZ_BP_TYPE_FAULT,
+	RZ_BP_TYPE_DELETE,
 };
 
 typedef struct rz_bp_plugin_t {
 	char *name;
 	char *arch;
-	int type; // R_BP_TYPE_SW
+	int type; // RZ_BP_TYPE_SW
 	int nbps;
 	RBreakpointArch *bps;
 } RBreakpointPlugin;
@@ -57,7 +57,7 @@ typedef struct rz_bp_item_t {
 	int hits;
 	ut8 *obytes; /* original bytes */
 	ut8 *bbytes; /* breakpoint bytes */
-	int pids[R_BP_MAXPIDS];
+	int pids[RZ_BP_MAXPIDS];
 	char *data;
 	char *cond; /* used for conditional breakpoints */
 	char *expr; /* to be used for named breakpoints (see rz_debug_bp_update) */
@@ -89,12 +89,12 @@ typedef struct rz_bp_t {
 	ut64 baddr;
 } RBreakpoint;
 
-// DEPRECATED: USE R_PERM
+// DEPRECATED: USE RZ_PERM
 enum {
-	R_BP_PROT_EXEC = 1,
-	R_BP_PROT_WRITE = 2,
-	R_BP_PROT_READ = 4,
-	R_BP_PROT_ACCESS = 8,
+	RZ_BP_PROT_EXEC = 1,
+	RZ_BP_PROT_WRITE = 2,
+	RZ_BP_PROT_READ = 4,
+	RZ_BP_PROT_ACCESS = 8,
 };
 
 typedef struct rz_bp_trace_t {

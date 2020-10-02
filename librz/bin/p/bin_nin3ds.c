@@ -39,7 +39,7 @@ static RzList *sections(RBinFile *bf) {
 	for (i = 0; i < 4; i++) {
 		/* Check if section is used */
 		if (loaded_header.sections[i].size) {
-			sections[i] = R_NEW0 (RBinSection);
+			sections[i] = RZ_NEW0 (RBinSection);
 			/* Firmware Type ('0'=ARM9/'1'=ARM11) */
 			if (loaded_header.sections[i].type == 0x0) {
 				sections[i]->name = strdup ("arm9");
@@ -85,11 +85,11 @@ static RzList *entries(RBinFile *bf) {
 			return NULL;
 		}
 		ret->free = free;
-		if (!(ptr9 = R_NEW0 (RBinAddr))) {
+		if (!(ptr9 = RZ_NEW0 (RBinAddr))) {
 			rz_list_free (ret);
 			return NULL;
 		}
-		if (!(ptr11 = R_NEW0 (RBinAddr))) {
+		if (!(ptr11 = RZ_NEW0 (RBinAddr))) {
 			rz_list_free (ret);
 			free (ptr9);
 			return NULL;
@@ -107,7 +107,7 @@ static RzList *entries(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = RZ_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -138,10 +138,10 @@ RBinPlugin rz_bin_plugin_nin3ds = {
 	.info = &info,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_nin3ds,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

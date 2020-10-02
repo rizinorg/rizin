@@ -104,7 +104,7 @@ CMDS=<<EOF
 ?v main
 aaa
 afo main
-!!rz-bin -M ${R2_FILE}
+!!rz-bin -M ${RZ_FILE}
 EOF
 EXPECT=<<EOF
 0x8370
@@ -120,7 +120,7 @@ CMDS=<<EOF
 ?v main
 aaa
 afo main
-!!rz-bin -M ${R2_FILE}
+!!rz-bin -M ${RZ_FILE}
 EOF
 EXPECT=<<EOF
 0x82ec
@@ -136,7 +136,7 @@ CMDS=<<EOF
 ?v main
 aaa
 afo main
-!!rz-bin -M ${R2_FILE}
+!!rz-bin -M ${RZ_FILE}
 EOF
 EXPECT=<<EOF
 0x10310

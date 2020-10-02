@@ -42,7 +42,7 @@ struct PE_(rz_bin_pe_obj_t)* rz_bin_pemixed_init_dos(struct PE_(rz_bin_pe_obj_t)
 		return NULL;
 	}
 
-	struct PE_(rz_bin_pe_obj_t)* sub_bin_dos = R_NEW0 (struct PE_(rz_bin_pe_obj_t));
+	struct PE_(rz_bin_pe_obj_t)* sub_bin_dos = RZ_NEW0 (struct PE_(rz_bin_pe_obj_t));
 	if (!(sub_bin_dos->b = rz_buf_new_with_bytes(tmp_buf, pe_hdr_off))) {
 		PE_(rz_bin_pe_free) (sub_bin_dos);
 		return NULL;
@@ -58,7 +58,7 @@ struct PE_(rz_bin_pe_obj_t)* rz_bin_pemixed_init_dos(struct PE_(rz_bin_pe_obj_t)
 struct PE_(rz_bin_pe_obj_t)* rz_bin_pemixed_init_native(struct PE_(rz_bin_pe_obj_t)* pe_bin) {
 	ut8* zero_out;
 
-	struct PE_(rz_bin_pe_obj_t)* sub_bin_native = R_NEW0 (struct PE_(rz_bin_pe_obj_t));
+	struct PE_(rz_bin_pe_obj_t)* sub_bin_native = RZ_NEW0 (struct PE_(rz_bin_pe_obj_t));
 	memcpy (sub_bin_native, pe_bin, sizeof(struct PE_(rz_bin_pe_obj_t)));
 
 	//copy pe_bin->b and assign to sub_bin_native
@@ -149,12 +149,12 @@ void* rz_bin_pemixed_free(struct rz_bin_pemixed_obj_t* bin) {
 	// PE_(rz_bin_pe_free)(bin->sub_bin_native);
 	// PE_(rz_bin_pe_free)(bin->sub_bin_net);
 	rz_buf_free (bin->b);
-	R_FREE(bin);
+	RZ_FREE(bin);
 	return NULL;
 }
 
 struct rz_bin_pemixed_obj_t * rz_bin_pemixed_from_bytes_new(const ut8* buf, ut64 size) {
-	struct rz_bin_pemixed_obj_t* bin = R_NEW0 (struct rz_bin_pemixed_obj_t);
+	struct rz_bin_pemixed_obj_t* bin = RZ_NEW0 (struct rz_bin_pemixed_obj_t);
 	struct PE_(rz_bin_pe_obj_t)* pe_bin;
 	if (!bin || !buf) {
 		return rz_bin_pemixed_free (bin);

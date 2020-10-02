@@ -15,7 +15,7 @@ OBJS+=cannotated_code.o
 
 CFLAGS+=-I../../shlr/heap/include
 CFLAGS+=-I../../shlr/tree-sitter/lib/include -I../../shlr/rizin-shell-parser/src/tree_parser
-CFLAGS+=-DR2_PLUGIN_INCORE -I../../shlr
+CFLAGS+=-DRZ_PLUGIN_INCORE -I../../shlr
 LDFLAGS+=${DL_LIBS}
 LDFLAGS+=${CLOCK_LDFLAGS}
 

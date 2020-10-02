@@ -4,7 +4,7 @@
 #include <rz_userconf.h>
 #include <rz_magic.h>
 
-R_LIB_VERSION (rz_magic);
+RZ_LIB_VERSION (rz_magic);
 
 #ifdef _MSC_VER
 # include <io.h>
@@ -200,7 +200,7 @@ done:
 
 // TODO: reinitialize all the time
 RZ_API RzMagic* rz_magic_new(int flags) {
-	RzMagic *ms = R_NEW0 (RzMagic);
+	RzMagic *ms = RZ_NEW0 (RzMagic);
 	if (!ms) {
 		return NULL;
 	}

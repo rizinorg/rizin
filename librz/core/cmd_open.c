@@ -219,7 +219,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 			char *filename = strchr (arg, ' ');
 			if (filename && *filename && (filename[1] == '/' || filename[1] == '.')) {
 				int saved_fd = rz_io_fd_get_current (core->io);
-				RzIODesc *desc = rz_io_open (core->io, filename + 1, R_PERM_R, 0);
+				RzIODesc *desc = rz_io_open (core->io, filename + 1, RZ_PERM_R, 0);
 				if (desc) {
 					*filename = 0;
 					ut64 addr = rz_num_math (core->num, arg);
@@ -500,7 +500,7 @@ static void cmd_omf(RzCore *core, const char *input) {
 		// change perms of Nth map
 		*sp++ = 0;
 		int id = rz_num_math (core->num, arg);
-		int perm = (*sp)? rz_str_rwx (sp): R_PERM_RWX;
+		int perm = (*sp)? rz_str_rwx (sp): RZ_PERM_RWX;
 		void **it;
 		rz_pvector_foreach (&core->io->maps, it) {
 			RzIOMap *map = *it;
@@ -511,7 +511,7 @@ static void cmd_omf(RzCore *core, const char *input) {
 		}
 	} else {
 		// change perms of current map
-		int perm = (arg && *arg)? rz_str_rwx (arg): R_PERM_RWX;
+		int perm = (arg && *arg)? rz_str_rwx (arg): RZ_PERM_RWX;
 		void **it;
 		rz_pvector_foreach (&core->io->maps, it) {
 			RzIOMap *map = *it;
@@ -688,7 +688,7 @@ static void cmd_open_map(RzCore *core, const char *input) {
 				eprintf ("Invalid fd %d\n", (int)fd);
 			}
 		}
-		R_FREE (s);
+		RZ_FREE (s);
 		break;
 	case 'n': // "omn"
 		if (input[2] == '.') { // "omn."
@@ -845,7 +845,7 @@ static void cmd_open_map(RzCore *core, const char *input) {
 		rz_core_cmd_help (core, help_msg_om);
 		break;
 	}
-	R_FREE (s);
+	RZ_FREE (s);
 	rz_core_block_read (core);
 }
 
@@ -875,7 +875,7 @@ static bool reopen_in_malloc_cb(void *user, void *data, ut32 id) {
 		return false;
 	}
 
-	RzIODesc *ndesc = rz_io_open_nomap (io, uri, R_PERM_RW, 0);
+	RzIODesc *ndesc = rz_io_open_nomap (io, uri, RZ_PERM_RW, 0);
 	free (uri);
 	if (!ndesc) {
 		free (buf);
@@ -911,7 +911,7 @@ static RzList *__save_old_sections(RzCore *core) {
 
 	old_sections->free = sections->free;
 	rz_list_foreach (sections, it, sec) {
-		RBinSection *old_sec = R_NEW0 (RBinSection);
+		RBinSection *old_sec = RZ_NEW0 (RBinSection);
 		if (!old_sec) {
 			break;
 		}
@@ -1053,7 +1053,7 @@ RZ_API void rz_core_file_reopen_remote_debug(RzCore *core, char *uri, ut64 addr)
 	desc->referer = desc->uri;
 	desc->uri = strdup (uri);
 
-	if ((file = rz_core_file_open (core, uri, R_PERM_R | R_PERM_W, addr))) {
+	if ((file = rz_core_file_open (core, uri, RZ_PERM_R | RZ_PERM_W, addr))) {
 		fd = file->fd;
 		core->num->value = fd;
 		// if no baddr is defined, use the one provided by the file
@@ -1090,10 +1090,10 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 
 	// Reopen the original file as read only since we can't open native debug while the
 	// file is open with write permissions
-	if (!(desc->plugin && desc->plugin->isdbg) && (desc->perm & R_PERM_W)) {
+	if (!(desc->plugin && desc->plugin->isdbg) && (desc->perm & RZ_PERM_W)) {
 		eprintf ("Cannot debug file (%s) with permissions set to 0x%x.\n"
 			"Reopening the original file in read-only mode.\n", desc->name, desc->perm);
-		rz_io_reopen (core->io, ofile->fd, R_PERM_R, 644);
+		rz_io_reopen (core->io, ofile->fd, RZ_PERM_R, 644);
 		desc = rz_io_desc_get (core->io, ofile->fd);
 	}
 
@@ -1149,7 +1149,7 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 	rz_cons_printf ("%2d %c %s 0x%08"PFMT64x" ", desc->fd,
 			(desc->io && (desc->io->desc == desc)) ? '*' : '-', rz_str_rwx_i (desc->perm), sz);
 	int flags = p->flags;
-	p->flags &= ~R_PRINT_FLAGS_HEADER;
+	p->flags &= ~RZ_PRINT_FLAGS_HEADER;
 	rz_print_progressbar (p, sz * 100 / fdsz, rz_cons_get_size (NULL) - 40);
 	p->flags = flags;
 	rz_cons_printf (" %s\n", desc->uri);
@@ -1203,7 +1203,7 @@ static bool desc_list_json_cb(void *user, void *data, ut32 id) {
 	pj_kN (pj, "fd", desc->fd);
 	pj_ks (pj, "uri", desc->uri);
 	pj_kn (pj, "from", from);
-	pj_kb (pj, "writable", desc->perm & R_PERM_W);
+	pj_kb (pj, "writable", desc->perm & RZ_PERM_W);
 	pj_kN (pj, "size", rz_io_desc_size (desc));
 	pj_end (pj);
 	return true;
@@ -1211,7 +1211,7 @@ static bool desc_list_json_cb(void *user, void *data, ut32 id) {
 
 static int cmd_open(void *data, const char *input) {
 	RzCore *core = (RzCore*)data;
-	int perms = R_PERM_R;
+	int perms = RZ_PERM_R;
 	ut64 baddr = rz_config_get_i (core->config, "bin.baddr");
 	ut64 addr = 0LL;
 	int argc, fd = -1;
@@ -1281,7 +1281,7 @@ static int cmd_open(void *data, const char *input) {
 		}
 		if (input[1] == '+') { // "on+"
 			write = true;
-			perms |= R_PERM_W;
+			perms |= RZ_PERM_W;
 			if (input[2] != ' ') {
 				eprintf ("Usage: on+ file [addr] [rwx]\n");
 				return 0;
@@ -1389,7 +1389,7 @@ static int cmd_open(void *data, const char *input) {
 		return 0;
 		break;
 	case '+': // "o+"
-		perms |= R_PERM_W;
+		perms |= RZ_PERM_W;
 		/* fallthrough */
 	case ' ': // "o" "o "
 		ptr = input + 1;
@@ -1425,12 +1425,12 @@ static int cmd_open(void *data, const char *input) {
 				rz_core_bin_load (core, argv0, addr);
 				if (*input == '+') { // "o+"
 					RzIODesc *desc = rz_io_desc_get (core->io, fd);
-					if (desc && (desc->perm & R_PERM_W)) {
+					if (desc && (desc->perm & RZ_PERM_W)) {
 						void **it;
 						rz_pvector_foreach_prev (&core->io->maps, it) {
 							RzIOMap *map = *it;
 							if (map->fd == fd) {
-								map->perm |= R_PERM_WX;
+								map->perm |= RZ_PERM_WX;
 							}
 						}
 					} else {
@@ -1622,7 +1622,7 @@ static int cmd_open(void *data, const char *input) {
 			char *uri = rz_str_newf ("malloc://%d", len);
 			ut8 *data = calloc (len, 1);
 			rz_io_read_at (core->io, core->offset, data, len);
-			if ((file = rz_core_file_open (core, uri, R_PERM_RWX, 0))) {
+			if ((file = rz_core_file_open (core, uri, RZ_PERM_RWX, 0))) {
 				fd = file->fd;
 				core->num->value = fd;
 				rz_core_bin_load (core, uri, 0);
@@ -1688,7 +1688,7 @@ static int cmd_open(void *data, const char *input) {
 				rz_core_file_reopen (core, NULL, 0, 0);
 				break;
 			case '+': // "oon+"
-				rz_core_file_reopen (core, NULL, R_PERM_RW, 0);
+				rz_core_file_reopen (core, NULL, RZ_PERM_RW, 0);
 				break;
 			case 'n': // "oonn"
 				if ('?' == input[3] || !core->file) {
@@ -1699,7 +1699,7 @@ static int cmd_open(void *data, const char *input) {
 				if (desc) {
 					perms = core->io->desc->perm;
 					if (input[3] == '+') {
-						perms |= R_PERM_RW;
+						perms |= RZ_PERM_RW;
 					}
 					char *fname = strdup (desc->name);
 					if (fname) {
@@ -1721,7 +1721,7 @@ static int cmd_open(void *data, const char *input) {
 				rz_core_cmd_help (core, help_msg_oo_plus);
 			} else if (core && core->io && core->io->desc) {
 				int fd;
-				int perms = R_PERM_RW;
+				int perms = RZ_PERM_RW;
 				if ((ptr = strrchr (input, ' ')) && ptr[1]) {
 					fd = (int)rz_num_math (core->num, ptr + 1);
 				} else {
@@ -1733,7 +1733,7 @@ static int cmd_open(void *data, const char *input) {
 					rz_pvector_foreach_prev (&core->io->maps, it) {
 						RzIOMap *map = *it;
 						if (map->fd == fd) {
-							map->perm |= R_PERM_WX;
+							map->perm |= RZ_PERM_WX;
 						}
 					}
 				}
@@ -1770,7 +1770,7 @@ static int cmd_open(void *data, const char *input) {
 						eprintf ("Nothing to do.\n");
 					}
 				} else {
-					rz_io_reopen (core->io, fd, R_PERM_R, 644);
+					rz_io_reopen (core->io, fd, RZ_PERM_R, 644);
 				}
 			}
 			break;
@@ -1798,7 +1798,7 @@ static int cmd_open(void *data, const char *input) {
 			rz_core_fini (core);
 			rz_core_init (core);
 			rz_core_task_sync_begin (&core->tasks);
-			if (!rz_core_file_open (core, input + 2, R_PERM_R, 0)) {
+			if (!rz_core_file_open (core, input + 2, RZ_PERM_R, 0)) {
 				eprintf ("Cannot open file\n");
 			}
 			(void)rz_core_bin_load (core, NULL, baddr);

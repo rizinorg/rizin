@@ -1,5 +1,5 @@
-#ifndef R_DES_H
-#define R_DES_H
+#ifndef RZ_DES_H
+#define RZ_DES_H
 
 #define DES_KEY_SIZE 8
 #define DES_BLOCK_SIZE 8
@@ -24,4 +24,4 @@ RZ_API void rz_des_round (ut32 *buflo, ut32 *bufhi, ut32 *roundkeylo, ut32 *roun
 }
 #endif
 
-#endif //  R_DES_H
+#endif //  RZ_DES_H

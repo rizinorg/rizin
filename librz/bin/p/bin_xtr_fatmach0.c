@@ -69,7 +69,7 @@ static RBinXtrData *extract(RBin* bin, int idx) {
 	if (!arch) {
 		return NULL;
 	}
-	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
+	RBinXtrMetadata *metadata = RZ_NEW0 (RBinXtrMetadata);
 	if (!metadata) {
 		rz_buf_free (arch->b);
 		free (arch);
@@ -100,7 +100,7 @@ static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
 	struct rz_bin_fatmach0_obj_t *fb = bin->cur->xtr_obj;
 	struct rz_bin_fatmach0_arch_t *arch = rz_bin_fatmach0_extract (fb, idx, &narch);
 	if (arch) {
-		RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
+		RBinXtrMetadata *metadata = RZ_NEW0 (RBinXtrMetadata);
 		if (metadata) {
 			struct MACH0_(mach_header) *hdr = MACH0_(get_hdr) (arch->b);
 			if (hdr) {
@@ -155,10 +155,10 @@ RBinXtrPlugin rz_bin_xtr_plugin_xtr_fatmach0 = {
 	.check_buffer = check_buffer,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN_XTR,
+	.type = RZ_LIB_TYPE_BIN_XTR,
 	.data = &rz_bin_xtr_plugin_fatmach0,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

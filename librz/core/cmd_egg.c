@@ -44,7 +44,7 @@ static void cmd_egg_option(RzEgg *egg, const char *key, const char *input) {
 static void showBuffer(RBuffer *b) {
 	int i;
 	if (b && rz_buf_size (b) > 0) {
-		rz_buf_seek (b, 0, R_BUF_SET);
+		rz_buf_seek (b, 0, RZ_BUF_SET);
 		for (i = 0; i < rz_buf_size (b); i++) {
 			rz_cons_printf ("%02x", rz_buf_read8 (b));
 		}
@@ -225,7 +225,7 @@ static int cmd_egg(void *data, const char *input) {
 		RzEggPlugin *p;
 		rz_list_foreach (egg->plugins, iter, p) {
 			rz_cons_printf ("%s  %6s : %s\n",
-				(p->type == R_EGG_PLUGIN_SHELLCODE)?
+				(p->type == RZ_EGG_PLUGIN_SHELLCODE)?
 				"shc": "enc", p->name, p->desc);
 		}
 	}

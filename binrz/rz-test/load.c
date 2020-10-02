@@ -6,16 +6,16 @@
 
 #define LINEFMT "%s, line %"PFMT64u": "
 
-RZ_API R2RzCmdTest *rz_test_cmd_test_new(void) {
-	return R_NEW0 (R2RzCmdTest);
+RZ_API RzCmdTest *rz_test_cmd_test_new(void) {
+	return RZ_NEW0 (RzCmdTest);
 }
 
-RZ_API void rz_test_cmd_test_free(R2RzCmdTest *test) {
+RZ_API void rz_test_cmd_test_free(RzCmdTest *test) {
 	if (!test) {
 		return;
 	}
 #define DO_KEY_STR(key, field) free (test->field.value);
-	R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, R2R_CMD_TEST_FOREACH_RECORD_NOP, R2R_CMD_TEST_FOREACH_RECORD_NOP)
+	RZ_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, RZ_CMD_TEST_FOREACH_RECORD_NOP, RZ_CMD_TEST_FOREACH_RECORD_NOP)
 #undef DO_KEY_STR
 	free (test);
 }
@@ -113,7 +113,7 @@ RZ_API RPVector *rz_test_load_cmd_test_file(const char *file) {
 		free (contents);
 		return NULL;
 	}
-	R2RzCmdTest *test = rz_test_cmd_test_new ();
+	RzCmdTest *test = rz_test_cmd_test_new ();
 	if (!test) {
 		free (contents);
 		rz_pvector_free (ret);
@@ -231,7 +231,7 @@ RZ_API RPVector *rz_test_load_cmd_test_file(const char *file) {
 			continue; \
 		}
 
-		R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, DO_KEY_BOOL, DO_KEY_NUM)
+		RZ_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, DO_KEY_BOOL, DO_KEY_NUM)
 #undef DO_KEY_STR
 #undef DO_KEY_BOOL
 #undef DO_KEY_NUM
@@ -254,11 +254,11 @@ fail:
 	goto beach;
 }
 
-RZ_API R2RzAsmTest *rz_test_asm_test_new(void) {
-	return R_NEW0 (R2RzAsmTest);
+RZ_API RzAsmTest *rz_test_asm_test_new(void) {
+	return RZ_NEW0 (RzAsmTest);
 }
 
-RZ_API void rz_test_asm_test_free(R2RzAsmTest *test) {
+RZ_API void rz_test_asm_test_free(RzAsmTest *test) {
 	if (!test) {
 		return;
 	}
@@ -268,7 +268,7 @@ RZ_API void rz_test_asm_test_free(R2RzAsmTest *test) {
 }
 
 static bool parse_asm_path(const char *path, RStrConstPool *strpool, const char **arch_out, const char **cpuout, int *bitsout) {
-	RzList *file_tokens = rz_str_split_duplist (path, R_SYS_DIR, true);
+	RzList *file_tokens = rz_str_split_duplist (path, RZ_SYS_DIR, true);
 	if (!file_tokens || rz_list_empty (file_tokens)) {
 		rz_list_free (file_tokens);
 		return false;
@@ -345,16 +345,16 @@ RZ_API RPVector *rz_test_load_asm_test_file(RStrConstPool *strpool, const char *
 		while (*line && *line != ' ') {
 			switch (*line) {
 			case 'a':
-				mode |= R2R_ASM_TEST_MODE_ASSEMBLE;
+				mode |= RZ_ASM_TEST_MODE_ASSEMBLE;
 				break;
 			case 'd':
-				mode |= R2R_ASM_TEST_MODE_DISASSEMBLE;
+				mode |= RZ_ASM_TEST_MODE_DISASSEMBLE;
 				break;
 			case 'E':
-				mode |= R2R_ASM_TEST_MODE_BIG_ENDIAN;
+				mode |= RZ_ASM_TEST_MODE_BIG_ENDIAN;
 				break;
 			case 'B':
-				mode |= R2R_ASM_TEST_MODE_BROKEN;
+				mode |= RZ_ASM_TEST_MODE_BROKEN;
 				break;
 			default:
 				eprintf (LINEFMT "Warning: Invalid mode char '%c'\n", file, linenum, *line);
@@ -362,7 +362,7 @@ RZ_API RPVector *rz_test_load_asm_test_file(RStrConstPool *strpool, const char *
 			}
 			line++;
 		}
-		if (!(mode & R2R_ASM_TEST_MODE_ASSEMBLE) && !(mode & R2R_ASM_TEST_MODE_DISASSEMBLE)) {
+		if (!(mode & RZ_ASM_TEST_MODE_ASSEMBLE) && !(mode & RZ_ASM_TEST_MODE_DISASSEMBLE)) {
 			eprintf (LINEFMT "Warning: Mode specifies neither assemble nor disassemble.\n", file, linenum);
 			continue;
 		}
@@ -411,7 +411,7 @@ RZ_API RPVector *rz_test_load_asm_test_file(RStrConstPool *strpool, const char *
 			goto fail;
 		}
 
-		R2RzAsmTest *test = rz_test_asm_test_new ();
+		RzAsmTest *test = rz_test_asm_test_new ();
 		if (!test) {
 			free (bytes);
 			goto fail;
@@ -437,11 +437,11 @@ fail:
 	goto beach;
 }
 
-RZ_API R2RJsonTest *rz_test_json_test_new(void) {
-	return R_NEW0 (R2RJsonTest);
+RZ_API RzJsonTest *rz_test_json_test_new(void) {
+	return RZ_NEW0 (RzJsonTest);
 }
 
-RZ_API void rz_test_json_test_free(R2RJsonTest *test) {
+RZ_API void rz_test_json_test_free(RzJsonTest *test) {
 	if (!test) {
 		return;
 	}
@@ -487,7 +487,7 @@ RZ_API RPVector *rz_test_load_json_test_file(const char *file) {
 			continue;
 		}
 
-		R2RJsonTest *test = rz_test_json_test_new ();
+		RzJsonTest *test = rz_test_json_test_new ();
 		if (!test) {
 			break;
 		}
@@ -505,7 +505,7 @@ RZ_API RPVector *rz_test_load_json_test_file(const char *file) {
 	return ret;
 }
 
-RZ_API void rz_test_fuzz_test_free(R2RFuzzTest *test) {
+RZ_API void rz_test_fuzz_test_free(RzFuzzTest *test) {
 	if (!test) {
 		return;
 	}
@@ -513,29 +513,29 @@ RZ_API void rz_test_fuzz_test_free(R2RFuzzTest *test) {
 	free (test);
 }
 
-RZ_API void rz_test_test_free(R2RTest *test) {
+RZ_API void rz_test_test_free(RzTest *test) {
 	if (!test) {
 		return;
 	}
 	switch (test->type) {
-	case R2R_TEST_TYPE_CMD:
+	case RZ_TEST_TYPE_CMD:
 		rz_test_cmd_test_free (test->cmd_test);
 		break;
-	case R2R_TEST_TYPE_ASM:
+	case RZ_TEST_TYPE_ASM:
 		rz_test_asm_test_free (test->asm_test);
 		break;
-	case R2R_TEST_TYPE_JSON:
+	case RZ_TEST_TYPE_JSON:
 		rz_test_json_test_free (test->json_test);
 		break;
-	case R2R_TEST_TYPE_FUZZ:
+	case RZ_TEST_TYPE_FUZZ:
 		rz_test_fuzz_test_free (test->fuzz_test);
 		break;
 	}
 	free (test);
 }
 
-RZ_API R2RTestDatabase *rz_test_test_database_new(void) {
-	R2RTestDatabase *db = R_NEW (R2RTestDatabase);
+RZ_API RzTestDatabase *rz_test_test_database_new(void) {
+	RzTestDatabase *db = RZ_NEW (RzTestDatabase);
 	if (!db) {
 		return NULL;
 	}
@@ -544,7 +544,7 @@ RZ_API R2RTestDatabase *rz_test_test_database_new(void) {
 	return db;
 }
 
-RZ_API void rz_test_test_database_free(R2RTestDatabase *db) {
+RZ_API void rz_test_test_database_free(RzTestDatabase *db) {
 	if (!db) {
 		return;
 	}
@@ -553,10 +553,10 @@ RZ_API void rz_test_test_database_free(R2RTestDatabase *db) {
 	free (db);
 }
 
-static R2RTestType test_type_for_path(const char *path, bool *load_plugins) {
-	R2RTestType ret = R2R_TEST_TYPE_CMD;
+static RzTestType test_type_for_path(const char *path, bool *load_plugins) {
+	RzTestType ret = RZ_TEST_TYPE_CMD;
 	char *pathdup = strdup (path);
-	RzList *tokens = rz_str_split_list (pathdup, R_SYS_DIR, 0);
+	RzList *tokens = rz_str_split_list (pathdup, RZ_SYS_DIR, 0);
 	if (!tokens) {
 		return ret;
 	}
@@ -568,11 +568,11 @@ static R2RTestType test_type_for_path(const char *path, bool *load_plugins) {
 	*load_plugins = false;
 	rz_list_foreach (tokens, it, token) {
 		if (!strcmp (token, "asm")) {
-			ret = R2R_TEST_TYPE_ASM;
+			ret = RZ_TEST_TYPE_ASM;
 			continue;
 		}
 		if (!strcmp (token, "json")) {
-			ret = R2R_TEST_TYPE_JSON;
+			ret = RZ_TEST_TYPE_JSON;
 			continue;
 		}
 		if (!strcmp (token, "extras")) {
@@ -584,7 +584,7 @@ static R2RTestType test_type_for_path(const char *path, bool *load_plugins) {
 	return ret;
 }
 
-static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
+static bool database_load(RzTestDatabase *db, const char *path, int depth) {
 	if (depth <= 0) {
 		eprintf ("Directories for loading tests too deep: %s\n", path);
 		return false;
@@ -605,15 +605,15 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			}
 			if (!strcmp (subname, "extras")) {
 				// Only load "extras" dirs if explicitly specified
-				eprintf ("Skipping %s"R_SYS_DIR"%s because it requires additional dependencies.\n", path, subname);
+				eprintf ("Skipping %s"RZ_SYS_DIR"%s because it requires additional dependencies.\n", path, subname);
 				continue;
 			}
-			if ((!strcmp (path, "archos") || rz_str_endswith (path, R_SYS_DIR"archos"))
-				&& strcmp (subname, R2R_ARCH_OS)) {
-				eprintf ("Skipping %s"R_SYS_DIR"%s because it does not match the current platform.\n", path, subname);
+			if ((!strcmp (path, "archos") || rz_str_endswith (path, RZ_SYS_DIR"archos"))
+				&& strcmp (subname, RZ_TEST_ARCH_OS)) {
+				eprintf ("Skipping %s"RZ_SYS_DIR"%s because it does not match the current platform.\n", path, subname);
 				continue;
 			}
-			rz_strbuf_setf (&subpath, "%s%s%s", path, R_SYS_DIR, subname);
+			rz_strbuf_setf (&subpath, "%s%s%s", path, RZ_SYS_DIR, subname);
 			if (!database_load (db, rz_strbuf_get (&subpath), depth - 1)) {
 				ret = false;
 				break;
@@ -632,20 +632,20 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 	// Not a directory but exists, load a file
 	const char *pooled_path = rz_str_constpool_get (&db->strpool, path);
 	bool load_plugins = false;
-	R2RTestType test_type = test_type_for_path (path, &load_plugins);
+	RzTestType test_type = test_type_for_path (path, &load_plugins);
 	switch (test_type) {
-	case R2R_TEST_TYPE_CMD: {
+	case RZ_TEST_TYPE_CMD: {
 		RPVector *cmd_tests = rz_test_load_cmd_test_file (path);
 		if (!cmd_tests) {
 			return false;
 		}
 		void **it;
 		rz_pvector_foreach (cmd_tests, it) {
-			R2RTest *test = R_NEW (R2RTest);
+			RzTest *test = RZ_NEW (RzTest);
 			if (!test) {
 				continue;
 			}
-			test->type = R2R_TEST_TYPE_CMD;
+			test->type = RZ_TEST_TYPE_CMD;
 			test->path = pooled_path;
 			test->cmd_test = *it;
 			test->cmd_test->load_plugins = load_plugins;
@@ -654,18 +654,18 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		rz_pvector_free (cmd_tests);
 		break;
 	}
-	case R2R_TEST_TYPE_ASM: {
+	case RZ_TEST_TYPE_ASM: {
 		RPVector *asm_tests = rz_test_load_asm_test_file (&db->strpool, path);
 		if (!asm_tests) {
 			return false;
 		}
 		void **it;
 		rz_pvector_foreach (asm_tests, it) {
-			R2RTest *test = R_NEW (R2RTest);
+			RzTest *test = RZ_NEW (RzTest);
 			if (!test) {
 				continue;
 			}
-			test->type = R2R_TEST_TYPE_ASM;
+			test->type = RZ_TEST_TYPE_ASM;
 			test->path = pooled_path;
 			test->asm_test = *it;
 			rz_pvector_push (&db->tests, test);
@@ -673,18 +673,18 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		rz_pvector_free (asm_tests);
 		break;
 	}
-	case R2R_TEST_TYPE_JSON: {
+	case RZ_TEST_TYPE_JSON: {
 		RPVector *json_tests = rz_test_load_json_test_file (path);
 		if (!json_tests) {
 			return false;
 		}
 		void **it;
 		rz_pvector_foreach (json_tests, it) {
-			R2RTest *test = R_NEW (R2RTest);
+			RzTest *test = RZ_NEW (RzTest);
 			if (!test) {
 				continue;
 			}
-			test->type = R2R_TEST_TYPE_JSON;
+			test->type = RZ_TEST_TYPE_JSON;
 			test->path = pooled_path;
 			test->json_test = *it;
 			test->json_test->load_plugins = load_plugins;
@@ -693,7 +693,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		rz_pvector_free (json_tests);
 		break;
 	}
-	case R2R_TEST_TYPE_FUZZ:
+	case RZ_TEST_TYPE_FUZZ:
 		// shouldn't come here, fuzz tests are loaded differently
 		break;
 	}
@@ -701,12 +701,12 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 	return true;
 }
 
-RZ_API bool rz_test_test_database_load(R2RTestDatabase *db, const char *path) {
+RZ_API bool rz_test_test_database_load(RzTestDatabase *db, const char *path) {
 	return database_load (db, path, 4);
 }
 
-static void database_load_fuzz_file(R2RTestDatabase *db, const char *path, const char *file) {
-	R2RFuzzTest *fuzz_test = R_NEW (R2RFuzzTest);
+static void database_load_fuzz_file(RzTestDatabase *db, const char *path, const char *file) {
+	RzFuzzTest *fuzz_test = RZ_NEW (RzFuzzTest);
 	if (!fuzz_test) {
 		return;
 	}
@@ -715,19 +715,19 @@ static void database_load_fuzz_file(R2RTestDatabase *db, const char *path, const
 		free (fuzz_test);
 		return;
 	}
-	R2RTest *test = R_NEW (R2RTest);
+	RzTest *test = RZ_NEW (RzTest);
 	if (!test) {
 		free (fuzz_test->file);
 		free (fuzz_test);
 		return;
 	}
-	test->type = R2R_TEST_TYPE_FUZZ;
+	test->type = RZ_TEST_TYPE_FUZZ;
 	test->fuzz_test = fuzz_test;
 	test->path = rz_str_constpool_get (&db->strpool, path);
 	rz_pvector_push (&db->tests, test);
 }
 
-RZ_API bool rz_test_test_database_load_fuzz(R2RTestDatabase *db, const char *path) {
+RZ_API bool rz_test_test_database_load_fuzz(RzTestDatabase *db, const char *path) {
 	if (rz_file_is_directory (path)) {
 		RzList *dir = rz_sys_dir (path);
 		if (!dir) {
@@ -742,7 +742,7 @@ RZ_API bool rz_test_test_database_load_fuzz(R2RTestDatabase *db, const char *pat
 			if (*subname == '.') {
 				continue;
 			}
-			rz_strbuf_setf (&subpath, "%s%s%s", path, R_SYS_DIR, subname);
+			rz_strbuf_setf (&subpath, "%s%s%s", path, RZ_SYS_DIR, subname);
 			if (rz_file_is_directory (rz_strbuf_get (&subpath))) {
 				// only load 1 level deep
 				continue;

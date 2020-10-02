@@ -11,7 +11,7 @@
 #undef ELF_M_SIZE
 #undef ELF_M_INFO
 
-#ifdef R_BIN_ELF64
+#ifdef RZ_BIN_ELF64
 # define Elf_(name) Elf64_##name
 # define ELF_ST_BIND       ELF64_ST_BIND
 # define ELF_ST_TYPE       ELF64_ST_TYPE

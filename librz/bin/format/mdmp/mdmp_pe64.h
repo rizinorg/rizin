@@ -3,7 +3,7 @@
 #ifndef MDMP_PE64_H
 #define MDMP_PE64_H
 
-#define R_BIN_PE64 1
+#define RZ_BIN_PE64 1
 
 #ifdef MDMP_PE_H
 #undef MDMP_PE_H

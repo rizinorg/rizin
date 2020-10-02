@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <math.h>  /* for ceill */
 #include <rz_util.h>
-#define R_NUM_USE_CALC 1
+#define RZ_NUM_USE_CALC 1
 
 static ut64 rz_num_tailff(RNum *num, const char *hex);
 
@@ -62,7 +62,7 @@ RZ_API void rz_num_minmax_swap_i(int *a, int *b) {
 }
 
 RZ_API RNum *rz_num_new(RNumCallback cb, RNumCallback2 cb2, void *ptr) {
-	RNum *num = R_NEW0 (RNum);
+	RNum *num = RZ_NEW0 (RNum);
 	if (!num) {
 		return NULL;
 	}
@@ -388,7 +388,7 @@ RZ_API ut64 rz_num_get(RNum *num, const char *str) {
 	return ret;
 }
 
-#if !R_NUM_USE_CALC
+#if !RZ_NUM_USE_CALC
 static ut64 rz_num_op(RNum *num, char op, ut64 a, ut64 b) {
 	switch (op) {
 	case '+': return a + b;
@@ -418,10 +418,10 @@ RZ_API static ut64 rz_num_math_internal(RNum *num, char *s) {
 	}
 	return rz_num_op (op, ret, rz_num_get (num, p));
 }
-#endif /* !R_NUM_USE_CALC */
+#endif /* !RZ_NUM_USE_CALC */
 
 RZ_API ut64 rz_num_math(RNum *num, const char *str) {
-#if R_NUM_USE_CALC
+#if RZ_NUM_USE_CALC
 	ut64 ret;
 	const char *err = NULL;
 	if (!str || !*str) {
@@ -809,7 +809,7 @@ RZ_API int rz_num_between(RNum *num, const char *input_value) {
 	}
 	free (str);
 	rz_list_free (nums);
-	return num->value = R_BETWEEN (ns[0], ns[1], ns[2]);
+	return num->value = RZ_BETWEEN (ns[0], ns[1], ns[2]);
 }
 
 RZ_API bool rz_num_is_op(const char c) {

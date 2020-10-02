@@ -75,7 +75,7 @@ static bool rtti_msvc_read_complete_object_locator(RVTableContext *context, ut64
 	col->vtable_offset = read_at_32 (buf, 4);
 	col->cd_offset = read_at_32 (buf, 8);
 
-	int offsetSize = R_MIN (context->word_size, 4);
+	int offsetSize = RZ_MIN (context->word_size, 4);
 	col->type_descriptor_addr = (ut32) rz_read_ble (buf + 12, (bool) context->anal->big_endian, offsetSize * 8);
 	col->class_descriptor_addr = (ut32) rz_read_ble (buf + 12 + offsetSize, (bool) context->anal->big_endian, offsetSize * 8);
 	if (context->word_size == 8) {
@@ -97,7 +97,7 @@ static bool rtti_msvc_read_class_hierarchy_descriptor(RVTableContext *context, u
 	}
 
 	ut8 buf[4 * sizeof (ut32)];
-	int chdSize = 3 * sizeof (ut32) + R_MIN (4, context->word_size);
+	int chdSize = 3 * sizeof (ut32) + RZ_MIN (4, context->word_size);
 	if (chdSize > sizeof (buf)) {
 		return false;
 	}
@@ -141,7 +141,7 @@ static bool rtti_msvc_read_base_class_descriptor(RVTableContext *context, ut64 a
 	}
 
 	ut32 (*read_at_32)(const void *src, size_t offset) = context->anal->big_endian ? rz_read_at_be32 : rz_read_at_le32;
-	int typeDescriptorAddrSize = R_MIN (context->word_size, 4);
+	int typeDescriptorAddrSize = RZ_MIN (context->word_size, 4);
 	bcd->type_descriptor_addr = (ut32) rz_read_ble (buf, (bool) context->anal->big_endian, typeDescriptorAddrSize * 8);
 	size_t offset = (size_t) typeDescriptorAddrSize;
 	bcd->num_contained_bases = read_at_32 (buf, offset);
@@ -163,7 +163,7 @@ static RzList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num
 	}
 
 	ut64 addr = base + offset;
-	ut64 stride = R_MIN (context->word_size, 4);
+	ut64 stride = RZ_MIN (context->word_size, 4);
 
 	if (num_base_classes > BASE_CLASSES_MAX) {
 		if (context->anal->verbose) {
@@ -395,10 +395,10 @@ RZ_API char *rz_anal_rtti_msvc_demangle_class_name(RVTableContext *context, cons
 			free (ret);
 			ret = tmp;
 		} else {
-			R_FREE (ret);
+			RZ_FREE (ret);
 		}
 	} else {
-		R_FREE (ret);
+		RZ_FREE (ret);
 	}
 	return ret;
 }
@@ -608,7 +608,7 @@ typedef struct recovery_complete_object_locator_t {
 } RecoveryCompleteObjectLocator;
 
 RecoveryCompleteObjectLocator *recovery_complete_object_locator_new() {
-	RecoveryCompleteObjectLocator *col = R_NEW0 (RecoveryCompleteObjectLocator);
+	RecoveryCompleteObjectLocator *col = RZ_NEW0 (RecoveryCompleteObjectLocator);
 	if (!col) {
 		return NULL;
 	}
@@ -634,7 +634,7 @@ struct recovery_type_descriptor_t {
 };
 
 RecoveryTypeDescriptor *recovery_type_descriptor_new() {
-	RecoveryTypeDescriptor *td = R_NEW (RecoveryTypeDescriptor);
+	RecoveryTypeDescriptor *td = RZ_NEW (RecoveryTypeDescriptor);
 	if (!td) {
 		return NULL;
 	}

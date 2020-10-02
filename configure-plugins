@@ -67,7 +67,7 @@ generate_configh () {
         uclib=$(echo $lib | tr '[a-z]' '[A-Z]')
       fi
       echo
-      echo "#define R_${uclib}_STATIC_PLUGINS \\"
+      echo "#define RZ_${uclib}_STATIC_PLUGINS \\"
       plugins="${plugins} __${uclib}"
     fi
     echo "     &rz_${lib}_plugin_${plg}, \\"
@@ -88,7 +88,7 @@ generate_configh () {
       if [ -z "`echo ${plugins} | grep __${uclib}`" ]; then
         plugins="${plugins} __${uclib}"
         echo
-        echo "#define R_${uclib}_STATIC_PLUGINS 0"
+        echo "#define RZ_${uclib}_STATIC_PLUGINS 0"
       fi
     fi
   done
@@ -134,7 +134,7 @@ generate_configmk () {
 generate () {
   echo "configure-plugins: Generating librz/config.h .."
   cat librz/config.h.head > librz/config.h
-  echo "#define R2_LOADLIBS ${LOADLIBS}" >> librz/config.h
+  echo "#define RZ_LOADLIBS ${LOADLIBS}" >> librz/config.h
   generate_configh >> librz/config.h
   cat librz/config.h.tail >> librz/config.h
 

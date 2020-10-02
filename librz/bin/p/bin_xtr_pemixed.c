@@ -94,7 +94,7 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int sub_bin_t
 	if (!pe) {
 		return NULL;
 	}
-	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
+	RBinXtrMetadata *metadata = RZ_NEW0 (RBinXtrMetadata);
 	if (!metadata) {
 		return NULL;
 	}
@@ -115,10 +115,10 @@ RBinXtrPlugin rz_bin_xtr_plugin_xtr_pemixed = {
 	.check_buffer = &check_buffer,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN_XTR,
+	.type = RZ_LIB_TYPE_BIN_XTR,
 	.data = &rz_bin_xtr_plugin_pemixed,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

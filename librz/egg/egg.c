@@ -3,7 +3,7 @@
 #include <rz_egg.h>
 #include <config.h>
 
-R_LIB_VERSION (rz_egg);
+RZ_LIB_VERSION (rz_egg);
 
 // TODO: must be plugins
 extern RzEggEmit emit_x86;
@@ -12,7 +12,7 @@ extern RzEggEmit emit_arm;
 extern RzEggEmit emit_trace;
 
 static RzEggPlugin *egg_static_plugins[] =
-	{ R_EGG_STATIC_PLUGINS };
+	{ RZ_EGG_STATIC_PLUGINS };
 
 struct egg_patch_t {
 	RBuffer *b;
@@ -27,7 +27,7 @@ void egg_patch_free (void *p) {
 
 RZ_API RzEgg *rz_egg_new(void) {
 	int i;
-	RzEgg *egg = R_NEW0 (RzEgg);
+	RzEgg *egg = RZ_NEW0 (RzEgg);
 	if (!egg) {
 		return NULL;
 	}
@@ -125,11 +125,11 @@ RZ_API int rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, cons
 	const char *asmcpu = NULL; // TODO
 	egg->remit = NULL;
 
-	egg->os = os? rz_str_hash (os): R_EGG_OS_DEFAULT;
-	//eprintf ("%s -> %x (linux=%x) (darwin=%x)\n", os, egg->os, R_EGG_OS_LINUX, R_EGG_OS_DARWIN);
+	egg->os = os? rz_str_hash (os): RZ_EGG_OS_DEFAULT;
+	//eprintf ("%s -> %x (linux=%x) (darwin=%x)\n", os, egg->os, RZ_EGG_OS_LINUX, RZ_EGG_OS_DARWIN);
 	// TODO: setup egg->arch for all archs
 	if (!strcmp (arch, "x86")) {
-		egg->arch = R_SYS_ARCH_X86;
+		egg->arch = RZ_SYS_ARCH_X86;
 		switch (bits) {
 		case 32:
 			rz_syscall_setup (egg->syscall, arch, bits, asmcpu, os);
@@ -143,7 +143,7 @@ RZ_API int rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, cons
 			break;
 		}
 	} else if (!strcmp (arch, "arm")) {
-		egg->arch = R_SYS_ARCH_ARM;
+		egg->arch = RZ_SYS_ARCH_ARM;
 		switch (bits) {
 		case 16:
 		case 32:
@@ -310,7 +310,7 @@ RZ_API bool rz_egg_assemble_asm(RzEgg *egg, char **asm_list) {
 		rz_asm_use (egg->rasm, asm_name);
 		rz_asm_set_bits (egg->rasm, egg->bits);
 		rz_asm_set_big_endian (egg->rasm, egg->endian);
-		rz_asm_set_syntax (egg->rasm, R_ASM_SYNTAX_INTEL);
+		rz_asm_set_syntax (egg->rasm, RZ_ASM_SYNTAX_INTEL);
 		code = rz_buf_to_string (egg->buf);
 		asmcode = rz_asm_massemble (egg->rasm, code);
 		if (asmcode) {
@@ -333,7 +333,7 @@ RZ_API bool rz_egg_assemble(RzEgg *egg) {
 }
 
 RZ_API int rz_egg_compile(RzEgg *egg) {
-	rz_buf_seek (egg->src, 0, R_BUF_SET);
+	rz_buf_seek (egg->src, 0, RZ_BUF_SET);
 	char b;
 	int r = rz_buf_read (egg->src, (ut8 *)&b, sizeof (b));
 	if (r != sizeof (b) || !egg->remit) {
@@ -394,11 +394,11 @@ RZ_API int rz_egg_run_rop(RzEgg *egg) {
 	return rz_sys_run_rop (tmp, sz);
 }
 
-#define R_EGG_FILL_TYPE_TRAP
-#define R_EGG_FILL_TYPE_NOP
-#define R_EGG_FILL_TYPE_CHAR
-#define R_EGG_FILL_TYPE_SEQ
-#define R_EGG_FILL_TYPE_SEQ
+#define RZ_EGG_FILL_TYPE_TRAP
+#define RZ_EGG_FILL_TYPE_NOP
+#define RZ_EGG_FILL_TYPE_CHAR
+#define RZ_EGG_FILL_TYPE_SEQ
+#define RZ_EGG_FILL_TYPE_SEQ
 
 static inline char *eon(char *n) {
 	while (*n && (*n >= '0' && *n <= '9')) {
@@ -479,7 +479,7 @@ RZ_API int rz_egg_shellcode(RzEgg *egg, const char *name) {
 	RzListIter *iter;
 	RBuffer *b;
 	rz_list_foreach (egg->plugins, iter, p) {
-		if (p->type == R_EGG_PLUGIN_SHELLCODE && !strcmp (name, p->name)) {
+		if (p->type == RZ_EGG_PLUGIN_SHELLCODE && !strcmp (name, p->name)) {
 			b = p->build (egg);
 			if (!b) {
 				eprintf ("%s Shellcode has failed\n", p->name);
@@ -499,7 +499,7 @@ RZ_API int rz_egg_encode(RzEgg *egg, const char *name) {
 	RzListIter *iter;
 	RBuffer *b;
 	rz_list_foreach (egg->plugins, iter, p) {
-		if (p->type == R_EGG_PLUGIN_ENCODER && !strcmp (name, p->name)) {
+		if (p->type == RZ_EGG_PLUGIN_ENCODER && !strcmp (name, p->name)) {
 			b = p->build (egg);
 			if (!b) {
 				return false;
@@ -513,7 +513,7 @@ RZ_API int rz_egg_encode(RzEgg *egg, const char *name) {
 }
 
 RZ_API int rz_egg_patch(RzEgg *egg, int off, const ut8 *buf, int len) {
-	struct egg_patch_t *ep = R_NEW (struct egg_patch_t);
+	struct egg_patch_t *ep = RZ_NEW (struct egg_patch_t);
 	if (!ep) {
 		return false;
 	}

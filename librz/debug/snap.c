@@ -7,7 +7,7 @@ RZ_API void rz_debug_snap_free(RzDebugSnap *snap) {
 	if (snap) {
 		free (snap->name);
 		free (snap->data);
-		R_FREE (snap);
+		RZ_FREE (snap);
 	}
 }
 
@@ -18,7 +18,7 @@ RZ_API RzDebugSnap *rz_debug_snap_map(RzDebug *dbg, RzDebugMap *map) {
 		return NULL;
 	}
 
-	RzDebugSnap *snap = R_NEW0 (RzDebugSnap);
+	RzDebugSnap *snap = RZ_NEW0 (RzDebugSnap);
 	if (!snap) {
 		return NULL;
 	}
@@ -57,12 +57,12 @@ RZ_API ut8 *rz_debug_snap_get_hash(RzDebugSnap *snap) {
 	rz_hash_calculate (ctx, algobit, snap->data, snap->size);
 	rz_hash_do_end (ctx, algobit);
 
-	ut8 *ret = malloc (R_HASH_SIZE_SHA256);
+	ut8 *ret = malloc (RZ_HASH_SIZE_SHA256);
 	if (!ret) {
 		rz_hash_free (ctx);
 		return NULL;
 	}
-	memcpy (ret, ctx->digest, R_HASH_SIZE_SHA256);
+	memcpy (ret, ctx->digest, RZ_HASH_SIZE_SHA256);
 
 	rz_hash_free (ctx);
 	return ret;
@@ -80,18 +80,18 @@ RZ_API bool rz_debug_snap_is_equal(RzDebugSnap *a, RzDebugSnap *b) {
 	rz_hash_calculate (ctx, algobit, a->data, a->size);
 	rz_hash_do_end (ctx, algobit);
 
-	ut8 *temp = malloc (R_HASH_SIZE_SHA256);
+	ut8 *temp = malloc (RZ_HASH_SIZE_SHA256);
 	if (!temp) {
 		rz_hash_free (ctx);
 		return ret;
 	}
-	memcpy (temp, ctx->digest, R_HASH_SIZE_SHA256);
+	memcpy (temp, ctx->digest, RZ_HASH_SIZE_SHA256);
 
 	rz_hash_do_begin (ctx, algobit);
 	rz_hash_calculate (ctx, algobit, b->data, b->size);
 	rz_hash_do_end (ctx, algobit);
 
-	ret = memcmp (temp, ctx->digest, R_HASH_SIZE_SHA256) == 0;
+	ret = memcmp (temp, ctx->digest, RZ_HASH_SIZE_SHA256) == 0;
 	free (temp);
 	rz_hash_free (ctx);
 	return ret;

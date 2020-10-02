@@ -41,7 +41,7 @@ static void destroy(RBinFile *bf) {
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	QnxObj *qo = R_NEW0 (QnxObj);
+	QnxObj *qo = RZ_NEW0 (QnxObj);
 	if (!qo) {
 		return false;
 	}
@@ -79,7 +79,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 		if (lrec.rec_type == LMF_IMAGE_END_REC) {
 			break;
 		} else if (lrec.rec_type == LMF_RESOURCE_REC) {
-			RBinSection *ptr = R_NEW0 (RBinSection);
+			RBinSection *ptr = RZ_NEW0 (RBinSection);
 			if (!ptr) {
 				goto beach;
 			}
@@ -93,7 +93,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 			ptr->add = true;
 		 	rz_list_append (sections, ptr);
 		} else if (lrec.rec_type == LMF_LOAD_REC) {
-			RBinSection *ptr = R_NEW0 (RBinSection);
+			RBinSection *ptr = RZ_NEW0 (RBinSection);
 			if (rz_buf_fread_at (bf->buf, offset, (ut8 *)&ldata, "si", 1) < sizeof (lmf_data)) {
 				goto beach;
 			}
@@ -108,7 +108,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 			ptr->add = true;
 		 	rz_list_append (sections, ptr);
 		} else if (lrec.rec_type == LMF_FIXUP_REC) {
-			RBinReloc *ptr = R_NEW0 (RBinReloc);
+			RBinReloc *ptr = RZ_NEW0 (RBinReloc);
 			if (!ptr || rz_buf_fread_at (bf->buf, offset, (ut8 *)&ldata, "si", 1) < sizeof (lmf_data)) {
 				goto beach;
 			}
@@ -116,7 +116,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 			ptr->type = 'f'; // "LMF_FIXUP";
 			rz_list_append (fixups, ptr);
 		} else if (lrec.rec_type == LMF_8087_FIXUP_REC) {
-			RBinReloc *ptr = R_NEW0 (RBinReloc);
+			RBinReloc *ptr = RZ_NEW0 (RBinReloc);
 			if (!ptr || rz_buf_fread_at (bf->buf, offset, (ut8 *)&ldata, "si", 1) < sizeof (lmf_data)) {
 				goto beach;
 			}
@@ -147,7 +147,7 @@ beach:
  */
 static RBinInfo *info(RBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = RZ_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -241,7 +241,7 @@ static RzList* entries(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	if (!(ptr = R_NEW0 (RBinAddr))) {
+	if (!(ptr = RZ_NEW0 (RBinAddr))) {
 		return ret;
 	}
 	ptr->paddr = qo->lmfh.code_offset;
@@ -288,10 +288,10 @@ RBinPlugin rz_bin_plugin_qnx = {
 	.info = &info
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_qnx,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

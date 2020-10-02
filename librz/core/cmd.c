@@ -44,7 +44,7 @@ RZ_API void rz_save_panels_layout(RzCore *core, const char *_name);
 RZ_API bool rz_load_panels_layout(RzCore *core, const char *_name);
 
 static RzCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
-	RzCmdDescriptor *d = R_NEW0 (RzCmdDescriptor);
+	RzCmdDescriptor *d = RZ_NEW0 (RzCmdDescriptor);
 	if (d) {
 		d->cmd = cmd;
 		d->help_msg = help;
@@ -81,7 +81,7 @@ static RzCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
 
 #define DEFINE_CMD_DESCRIPTOR_SPECIAL(core, cmd_, named_cmd) \
 	{ \
-		RzCmdDescriptor *d = R_NEW0 (RzCmdDescriptor); \
+		RzCmdDescriptor *d = RZ_NEW0 (RzCmdDescriptor); \
 		if (d) { \
 			d->cmd = #cmd_; \
 			d->help_msg = help_msg_##named_cmd; \
@@ -339,7 +339,7 @@ static const char *help_msg_vertical_bar[] = {
 };
 
 RZ_API void rz_core_cmd_help(const RzCore *core, const char *help[]) {
-	rz_cons_cmd_help (help, core->print->flags & R_PRINT_FLAGS_COLOR);
+	rz_cons_cmd_help (help, core->print->flags & RZ_PRINT_FLAGS_COLOR);
 }
 
 struct duplicate_flag_t {
@@ -373,7 +373,7 @@ static void recursive_help_go(RzCore *core, int detail, RzCmdDescriptor *desc) {
 			rz_core_cmd_help (core, desc->help_detail2);
 		}
 	}
-	for (i = 32; i < R_ARRAY_SIZE (desc->sub); i++) {
+	for (i = 32; i < RZ_ARRAY_SIZE (desc->sub); i++) {
 		if (desc->sub[i]) {
 			recursive_help_go (core, detail, desc->sub[i]);
 		}
@@ -383,7 +383,7 @@ static void recursive_help_go(RzCore *core, int detail, RzCmdDescriptor *desc) {
 static void recursive_help(RzCore *core, int detail, const char *cmd_prefix) {
 	const ut8 *p;
 	RzCmdDescriptor *desc = &core->root_cmd_descriptor;
-	for (p = (const ut8 *)cmd_prefix; *p && *p < R_ARRAY_SIZE (desc->sub); p++) {
+	for (p = (const ut8 *)cmd_prefix; *p && *p < RZ_ARRAY_SIZE (desc->sub); p++) {
 		if (!(desc = desc->sub[*p])) {
 			return;
 		}
@@ -784,9 +784,9 @@ static int cmd_rap(void *data, const char *input) {
 		break;
 	case '!': // "=!"
 		if (input[1] == 'q') {
-			R_FREE (core->cmdremote);
+			RZ_FREE (core->cmdremote);
 		} else if (input[1] == '=') { // =!=0 or =!= for iosystem
-			R_FREE (core->cmdremote);
+			RZ_FREE (core->cmdremote);
 			core->cmdremote = rz_str_trim_dup (input + 2);
 		} else {
 			char *res = rz_io_system (core->io, input + 1);
@@ -1331,7 +1331,7 @@ static int cmd_interpret(void *data, const char *input) {
 			if (sp) {
 				*sp = 0;
 			}
-			if (R_STR_ISNOTEMPTY (s)) {
+			if (RZ_STR_ISNOTEMPTY (s)) {
 				rz_core_run_script (core, s);
 			}
 			free (s);
@@ -1423,7 +1423,7 @@ RZ_API int rz_line_hist_sdb_up(RLine *line) {
 		return false;
 	}
 	line->sdbshell_hist_iter = line->sdbshell_hist_iter->n;
-	strncpy (line->buffer.data, line->sdbshell_hist_iter->data, R_LINE_BUFSIZE - 1);
+	strncpy (line->buffer.data, line->sdbshell_hist_iter->data, RZ_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
 	return true;
 }
@@ -1433,7 +1433,7 @@ RZ_API int rz_line_hist_sdb_down(RLine *line) {
 		return false;
 	}
 	line->sdbshell_hist_iter = line->sdbshell_hist_iter->p;
-	strncpy (line->buffer.data, line->sdbshell_hist_iter->data, R_LINE_BUFSIZE - 1);
+	strncpy (line->buffer.data, line->sdbshell_hist_iter->data, RZ_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
 	return true;
 }
@@ -1501,7 +1501,7 @@ static int cmd_kuery(void *data, const char *input) {
 			rz_cons_println (a);
 			free (a);
 		}
-		R_FREE (next_cmd);
+		RZ_FREE (next_cmd);
 		free (next_cmd);
 		free (cur_cmd);
 		free (temp_storage);
@@ -2084,19 +2084,19 @@ static struct autocomplete_flag_map_t {
 	const char* desc;
 	int type;
 } autocomplete_flags [] = {
-	{ "$dflt", "default autocomplete flag", R_CORE_AUTOCMPLT_DFLT },
-	{ "$flag", "shows known flag hints", R_CORE_AUTOCMPLT_FLAG },
-	{ "$flsp", "shows known flag-spaces hints", R_CORE_AUTOCMPLT_FLSP },
-	{ "$zign", "shows known zignatures hints", R_CORE_AUTOCMPLT_ZIGN },
-	{ "$eval", "shows known evals hints", R_CORE_AUTOCMPLT_EVAL },
-	{ "$prjt", "shows known projects hints", R_CORE_AUTOCMPLT_PRJT },
-	{ "$mins", NULL, R_CORE_AUTOCMPLT_MINS },
-	{ "$brkp", "shows known breakpoints hints", R_CORE_AUTOCMPLT_BRKP },
-	{ "$macro", NULL, R_CORE_AUTOCMPLT_MACR },
-	{ "$file", "hints file paths", R_CORE_AUTOCMPLT_FILE },
-	{ "$thme", "shows known themes hints", R_CORE_AUTOCMPLT_THME },
-	{ "$optn", "allows the selection for multiple options", R_CORE_AUTOCMPLT_OPTN },
-	{ "$sdb", "shows sdb hints", R_CORE_AUTOCMPLT_SDB},
+	{ "$dflt", "default autocomplete flag", RZ_CORE_AUTOCMPLT_DFLT },
+	{ "$flag", "shows known flag hints", RZ_CORE_AUTOCMPLT_FLAG },
+	{ "$flsp", "shows known flag-spaces hints", RZ_CORE_AUTOCMPLT_FLSP },
+	{ "$zign", "shows known zignatures hints", RZ_CORE_AUTOCMPLT_ZIGN },
+	{ "$eval", "shows known evals hints", RZ_CORE_AUTOCMPLT_EVAL },
+	{ "$prjt", "shows known projects hints", RZ_CORE_AUTOCMPLT_PRJT },
+	{ "$mins", NULL, RZ_CORE_AUTOCMPLT_MINS },
+	{ "$brkp", "shows known breakpoints hints", RZ_CORE_AUTOCMPLT_BRKP },
+	{ "$macro", NULL, RZ_CORE_AUTOCMPLT_MACR },
+	{ "$file", "hints file paths", RZ_CORE_AUTOCMPLT_FILE },
+	{ "$thme", "shows known themes hints", RZ_CORE_AUTOCMPLT_THME },
+	{ "$optn", "allows the selection for multiple options", RZ_CORE_AUTOCMPLT_OPTN },
+	{ "$sdb", "shows sdb hints", RZ_CORE_AUTOCMPLT_SDB},
 	{ NULL, NULL, 0 }
 };
 
@@ -2111,7 +2111,7 @@ static inline void print_dict(RzCoreAutocomplete* a, int sub) {
 		if (b->locked) {
 			continue;
 		}
-		for (j = 0; j < R_CORE_AUTOCMPLT_END; j++) {
+		for (j = 0; j < RZ_CORE_AUTOCMPLT_END; j++) {
 			if (b->type == autocomplete_flags[j].type) {
 				name = autocomplete_flags[j].name;
 				break;
@@ -2124,13 +2124,13 @@ static inline void print_dict(RzCoreAutocomplete* a, int sub) {
 
 static int autocomplete_type(const char* strflag) {
 	int i;
-	for (i = 0; i < R_CORE_AUTOCMPLT_END; i++) {
+	for (i = 0; i < RZ_CORE_AUTOCMPLT_END; i++) {
 		if (autocomplete_flags[i].desc && !strncmp (strflag, autocomplete_flags[i].name, 5)) {
 			return autocomplete_flags[i].type;
 		}
 	}
 	eprintf ("Invalid flag '%s'\n", strflag);
-	return R_CORE_AUTOCMPLT_END;
+	return RZ_CORE_AUTOCMPLT_END;
 }
 
 static void cmd_autocomplete(RzCore *core, const char *input) {
@@ -2145,7 +2145,7 @@ static void cmd_autocomplete(RzCore *core, const char *input) {
 		rz_core_cmd_help (core, help_msg_triple_exclamation);
 		int i;
 		rz_cons_printf ("|Types:\n");
-		for (i = 0; i < R_CORE_AUTOCMPLT_END; i++) {
+		for (i = 0; i < RZ_CORE_AUTOCMPLT_END; i++) {
 			if (autocomplete_flags[i].desc) {
 				rz_cons_printf ("| %s     %s\n",
 					autocomplete_flags[i].name,
@@ -2181,17 +2181,17 @@ static void cmd_autocomplete(RzCore *core, const char *input) {
 		RzCoreAutocomplete* a = rz_core_autocomplete_find (b, arg, true);
 		input = rz_str_trim_head_ro (end);
 		if (input && *input && !a) {
-			if (b->type == R_CORE_AUTOCMPLT_DFLT && !(b = rz_core_autocomplete_add (b, arg, R_CORE_AUTOCMPLT_DFLT, false))) {
+			if (b->type == RZ_CORE_AUTOCMPLT_DFLT && !(b = rz_core_autocomplete_add (b, arg, RZ_CORE_AUTOCMPLT_DFLT, false))) {
 				eprintf ("ENOMEM\n");
 				return;
-			} else if (b->type != R_CORE_AUTOCMPLT_DFLT) {
+			} else if (b->type != RZ_CORE_AUTOCMPLT_DFLT) {
 				eprintf ("Cannot add autocomplete to '%s'. type not $dflt\n", b->cmd);
 				return;
 			}
 		} else if ((!input || !*input) && !a) {
 			if (arg[0] == '$') {
 				int type = autocomplete_type (arg);
-				if (type != R_CORE_AUTOCMPLT_END && !b->locked && !b->n_subcmds) {
+				if (type != RZ_CORE_AUTOCMPLT_END && !b->locked && !b->n_subcmds) {
 					b->type = type;
 				} else if (b->locked || b->n_subcmds) {
 					if (!b->cmd) {
@@ -2200,7 +2200,7 @@ static void cmd_autocomplete(RzCore *core, const char *input) {
 					eprintf ("Changing type of '%s' is forbidden.\n", b->cmd);
 				}
 			} else {
-				if (!rz_core_autocomplete_add (b, arg, R_CORE_AUTOCMPLT_DFLT, false)) {
+				if (!rz_core_autocomplete_add (b, arg, RZ_CORE_AUTOCMPLT_DFLT, false)) {
 					eprintf ("ENOMEM\n");
 					return;
 				}
@@ -2235,7 +2235,7 @@ static int cmd_system(void *data, const char *input) {
 	case '-': //!-
 		if (input[1]) {
 			rz_line_hist_free();
-			rz_line_hist_save (R2_HOME_HISTORY);
+			rz_line_hist_save (RZ_HOME_HISTORY);
 		} else {
 			rz_line_hist_free();
 		}
@@ -2245,7 +2245,7 @@ static int cmd_system(void *data, const char *input) {
 			rz_cons_printf ("Usage: !=[!]  - enable/disable remote commands\n");
 		} else {
 			if (!rz_sandbox_enable (0)) {
-				R_FREE (core->cmdremote);
+				RZ_FREE (core->cmdremote);
 			}
 		}
 		break;
@@ -2277,8 +2277,8 @@ static int cmd_system(void *data, const char *input) {
 					free (cmd);
 				} //else eprintf ("Error setting up system environment\n");
 			} else {
-				eprintf ("History saved to "R2_HOME_HISTORY"\n");
-				rz_line_hist_save (R2_HOME_HISTORY);
+				eprintf ("History saved to "RZ_HOME_HISTORY"\n");
+				rz_line_hist_save (RZ_HOME_HISTORY);
 			}
 		}
 		break;
@@ -2325,7 +2325,7 @@ static int cmd_system(void *data, const char *input) {
 }
 
 static char *unescape_special_chars(const char *s, const char *special_chars) {
-	char *dst = R_NEWS (char, strlen (s) + 1);
+	char *dst = RZ_NEWS (char, strlen (s) + 1);
 	int i, j = 0;
 
 	for (i = 0; s[i]; i++) {
@@ -3399,7 +3399,7 @@ repeat_arroba:
 			if (ptr[2] == '.') { // "@.."
 				if (ptr[3] == '.') { // "@..."
 					ut64 addr = rz_num_tail (core->num, core->offset, ptr + 4);
-					rz_core_block_size (core, R_ABS ((st64)addr - (st64)core->offset));
+					rz_core_block_size (core, RZ_ABS ((st64)addr - (st64)core->offset));
 					goto fuji;
 				} else {
 					addr = rz_num_tail (core->num, core->offset, ptr + 3);
@@ -3444,7 +3444,7 @@ repeat_arroba:
 				if (f) {
 					{
 						RBuffer *b = rz_buf_new_with_bytes ((const ut8*)f, (ut64)sz);
-						RzIODesc *d = rz_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+						RzIODesc *d = rz_io_open_buffer (core->io, b, RZ_PERM_RWX, 0);
 						if (d) {
 							if (tmpdesc) {
 								rz_io_desc_close (tmpdesc);
@@ -3517,9 +3517,9 @@ repeat_arroba:
 						rz_write_ble32 (buf, v, be);
 						len = 4;
 					}
-					rz_core_block_size (core, R_ABS (len));
+					rz_core_block_size (core, RZ_ABS (len));
 					RBuffer *b = rz_buf_new_with_bytes (buf, len);
-					RzIODesc *d = rz_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+					RzIODesc *d = rz_io_open_buffer (core->io, b, RZ_PERM_RWX, 0);
 					if (d) {
 						if (tmpdesc) {
 							rz_io_desc_close (tmpdesc);
@@ -3541,10 +3541,10 @@ repeat_arroba:
 					buf = malloc (strlen (ptr + 2) + 1);
 					if (buf) {
 						len = rz_hex_str2bin (ptr + 2, buf);
-						rz_core_block_size (core, R_ABS (len));
+						rz_core_block_size (core, RZ_ABS (len));
 						if (len > 0) {
 							RBuffer *b = rz_buf_new_with_bytes (buf, len);
-							RzIODesc *d = rz_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+							RzIODesc *d = rz_io_open_buffer (core->io, b, RZ_PERM_RWX, 0);
 							if (d) {
 								if (tmpdesc) {
 									rz_io_desc_close (tmpdesc);
@@ -3605,7 +3605,7 @@ repeat_arroba:
 
 					if (len > 0) {
 						RBuffer *b = rz_buf_new_with_bytes (buf, len);
-						RzIODesc *d = rz_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+						RzIODesc *d = rz_io_open_buffer (core->io, b, RZ_PERM_RWX, 0);
 						if (!core->io->va) {
 							rz_config_set_i (core->config, "io.va", 1);
 						}
@@ -3709,7 +3709,7 @@ next_arroba:
 			bool tmpseek = false;
 			const char *fromvars[] = { "anal.from", "diff.from", "graph.from", "search.from", "zoom.from", NULL };
 			const char *tovars[] = { "anal.to", "diff.to", "graph.to", "search.to", "zoom.to", NULL };
-			ut64 curfrom[R_ARRAY_SIZE (fromvars) - 1], curto[R_ARRAY_SIZE (tovars) - 1];
+			ut64 curfrom[RZ_ARRAY_SIZE (fromvars) - 1], curto[RZ_ARRAY_SIZE (tovars) - 1];
 
 			// "@{A B}"
 			if (ptr[1] == '{') {
@@ -3780,7 +3780,7 @@ next_arroba:
 		if (is_arch_set) {
 			core->fixedarch = oldfixedarch;
 			rz_config_set (core->config, "asm.arch", tmpasm);
-			R_FREE (tmpasm);
+			RZ_FREE (tmpasm);
 		}
 		if (tmpfd != -1) {
 			// TODO: reuse tmpfd instead of
@@ -3802,7 +3802,7 @@ next_arroba:
 		}
 		if (tmpeval) {
 			rz_core_cmd0 (core, tmpeval);
-			R_FREE (tmpeval);
+			RZ_FREE (tmpeval);
 		}
 		if (flgspc_changed) {
 			rz_flag_space_pop (core->flags);
@@ -3919,7 +3919,7 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 		RIntervalTreeIter it;
 		RzAnalMetaItem *meta;
 		rz_interval_tree_foreach (&core->anal->meta, it, meta) {
-			if (meta->type != R_META_TYPE_COMMENT) {
+			if (meta->type != RZ_META_TYPE_COMMENT) {
 				continue;
 			}
 			if (!glob || (meta->str && rz_str_glob (meta->str, glob))) {
@@ -3978,7 +3978,7 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 	case 'r': // @@@r
 		{
 			ut64 offorig = core->offset;
-			for (i = 0; i < R_REG_TYPE_LAST; i++) {
+			for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 				RzRegItem *item;
 				ut64 value;
 				head = rz_reg_get_list (core->dbg->reg, i);
@@ -4016,7 +4016,7 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 			rz_list_foreach (list, iter, imp) {
 				char *impflag = rz_str_newf ("sym.imp.%s", imp->name);
 				ut64 addr = rz_num_math (core->num, impflag);
-				ut64 *n = R_NEW (ut64);
+				ut64 *n = RZ_NEW (ut64);
 				*n = addr;
 				rz_list_append (lost, n);
 				free (impflag);
@@ -4060,7 +4060,7 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 				ut64 addr = sec->vaddr;
 				ut64 size = sec->vsize;
 				// TODO:
-				//if (R_BIN_SCN_EXECUTABLE & sec->perm) {
+				//if (RZ_BIN_SCN_EXECUTABLE & sec->perm) {
 				//	continue;
 				//}
 				rz_core_seek_size (core, addr, size);
@@ -4381,7 +4381,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 			RzDebugPid *p;
 			int pid = core->dbg->pid;
 			if (core->dbg->h && core->dbg->h->pids) {
-				RzList *list = core->dbg->h->pids (core->dbg, R_MAX (0, pid));
+				RzList *list = core->dbg->h->pids (core->dbg, RZ_MAX (0, pid));
 				rz_list_foreach (list, iter, p) {
 					rz_cons_printf ("# PID %d\n", p->pid);
 					rz_debug_select (core->dbg, p->pid, p->pid);
@@ -4571,7 +4571,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 
 				rz_list_free (match_flag_items);
 				core->rcmd->macro.counter++ ;
-				R_FREE (word);
+				RZ_FREE (word);
 			}
 		}
 	}
@@ -4654,7 +4654,7 @@ static char *ts_node_sub_parent_string(TSNode parent, TSNode node, const char *c
 	static RzCmdStatus handle_ts_##name##_internal(struct tsr2cmd_state *state, TSNode node, char *node_string); \
 	static RzCmdStatus handle_ts_##name(struct tsr2cmd_state *state, TSNode node) { \
 		char *node_string = ts_node_sub_string (node, state->input); \
-		R_LOG_DEBUG (#name ": '%s'\n", node_string); \
+		RZ_LOG_DEBUG (#name ": '%s'\n", node_string); \
 		RzCmdStatus res = handle_ts_##name##_internal (state, node, node_string); \
 		free (node_string); \
 		return res; \
@@ -4666,7 +4666,7 @@ static char *ts_node_sub_parent_string(TSNode parent, TSNode node, const char *c
 	DEFINE_HANDLE_TS_FCN (name)
 
 #define UPDATE_CMD_STATUS_RES(res, cmd_res, label) \
-	if ((cmd_res) != R_CMD_STATUS_OK) { \
+	if ((cmd_res) != RZ_CMD_STATUS_OK) { \
 		res = (cmd_res); \
 		goto label; \
 	}
@@ -4695,7 +4695,7 @@ DEFINE_IS_TS_FCN_AND_SYMBOL(grep_specifier)
 DEFINE_IS_TS_FCN_AND_SYMBOL(commands)
 
 static struct tsr2cmd_edit *create_cmd_edit(struct tsr2cmd_state *state, TSNode arg, char *new_text) {
-	struct tsr2cmd_edit *e = R_NEW0 (struct tsr2cmd_edit);
+	struct tsr2cmd_edit *e = RZ_NEW0 (struct tsr2cmd_edit);
 	ut32 command_start = ts_node_start_byte (state->substitute_cmd);
 	TSPoint command_point = ts_node_start_point (state->substitute_cmd);
 	e->new_text = new_text;
@@ -4732,7 +4732,7 @@ static void replace_whitespaces(char *s, char ch) {
 
 static char *escape_special_chars(char *s, const char *special_chars) {
 	size_t s_len = strlen (s);
-	char *d = R_NEWS (char, s_len * 2 + 1);
+	char *d = RZ_NEWS (char, s_len * 2 + 1);
 	int i, j = 0;
 	for (i = 0; i < s_len; i++) {
 		if (strchr (special_chars, s[i])) {
@@ -4775,7 +4775,7 @@ static char *do_handle_substitution_cmd(struct tsr2cmd_state *state, TSNode inn_
 	// replace the output of the sub command with the current argument
 	char *out = strdup (o_out);
 	rz_str_trim (out);
-	R_LOG_DEBUG ("output of inner command: '%s'\n", out);
+	RZ_LOG_DEBUG ("output of inner command: '%s'\n", out);
 	free (o_out);
 
 	// replace newlines and similar with spaces
@@ -4836,7 +4836,7 @@ static void handle_substitution_args(struct tsr2cmd_state *state, TSNode args, R
 
 static char *unescape_arg_str(struct tsr2cmd_state *state, const char *arg_str, const char *special_chars) {
 	char *unescaped_arg = unescape_special_chars (arg_str, special_chars);
-	R_LOG_DEBUG ("original arg = '%s', unescaped arg = '%s'\n", arg_str, unescaped_arg);
+	RZ_LOG_DEBUG ("original arg = '%s', unescaped arg = '%s'\n", arg_str, unescaped_arg);
 	return unescaped_arg;
 }
 
@@ -4884,7 +4884,7 @@ static RzCmdParsedArgs *parse_args(struct tsr2cmd_state *state, TSNode args, boo
 	} else if (is_ts_args (args)) {
 		uint32_t n_children = ts_node_named_child_count (args);
 		uint32_t i;
-		char **unescaped_args = R_NEWS0 (char *, n_children);
+		char **unescaped_args = RZ_NEWS0 (char *, n_children);
 		for (i = 0; i < n_children; i++) {
 			TSNode arg = ts_node_named_child (args, i);
 			unescaped_args[i] = do_handle_ts_unescape_arg (state, arg, do_unwrap);
@@ -4907,12 +4907,12 @@ static TSTree *apply_edits(struct tsr2cmd_state *state, RzList *edits) {
 	struct tsr2cmd_edit *edit;
 	RzListIter *it;
 
-	R_LOG_DEBUG ("old input = '%s'\n", state->input);
+	RZ_LOG_DEBUG ("old input = '%s'\n", state->input);
 	rz_list_foreach (edits, it, edit) {
-		R_LOG_DEBUG ("apply_edits: about to replace '%s' with '%s'\n", edit->old_text, edit->new_text);
+		RZ_LOG_DEBUG ("apply_edits: about to replace '%s' with '%s'\n", edit->old_text, edit->new_text);
 		state->input = rz_str_replace (state->input, edit->old_text, edit->new_text, 0);
 	}
-	R_LOG_DEBUG ("new input = '%s'\n", state->input);
+	RZ_LOG_DEBUG ("new input = '%s'\n", state->input);
 	return ts_parser_parse_string (state->parser, NULL, state->input, strlen (state->input));
 }
 
@@ -4934,7 +4934,7 @@ static void substitute_args_init(struct tsr2cmd_state *state, TSNode command) {
 	state->saved_tree = state->tree;
 	state->substitute_cmd = command;
 	state->input = ts_node_sub_string (state->substitute_cmd, state->input);
-	R_LOG_DEBUG ("Shrinking input to '%s'\n", state->input);
+	RZ_LOG_DEBUG ("Shrinking input to '%s'\n", state->input);
 }
 
 static bool substitute_args_do(struct tsr2cmd_state *state, RzList *edits, TSNode *new_command) {
@@ -4971,14 +4971,14 @@ static RzCmdParsedArgs *ts_node_handle_arg_prargs(struct tsr2cmd_state *state, T
 	substitute_args_init (state, command);
 	bool ok = substitute_args (state, arg, &new_command);
 	if (!ok) {
-		R_LOG_ERROR ("Error while substituting arguments\n");
+		RZ_LOG_ERROR ("Error while substituting arguments\n");
 		goto err;
 	}
 
 	arg = ts_node_named_child (new_command, child_idx);
 	res = parse_args (state, arg, do_unwrap);
 	if (res == NULL) {
-		R_LOG_ERROR ("Cannot parse arg\n");
+		RZ_LOG_ERROR ("Cannot parse arg\n");
 		goto err;
 	}
 err:
@@ -4997,9 +4997,9 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_command) {
 	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
 	rz_return_val_if_fail (!ts_node_is_null (command), false);
 	char *command_str = ts_node_sub_string (command, state->input);
-	R_LOG_DEBUG ("arged_command command: '%s'\n", command_str);
+	RZ_LOG_DEBUG ("arged_command command: '%s'\n", command_str);
 	TSNode args = ts_node_child_by_field_name (node, "args", strlen ("args"));
-	RzCmdStatus res = R_CMD_STATUS_INVALID;
+	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
 
 	// FIXME: this special handling should be removed once we have a proper
 	//        command tree
@@ -5016,7 +5016,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_command) {
 	RzCmdParsedArgs *pr_args = NULL;
 	if (!ts_node_is_null (args)) {
 		RzCmdDesc *cd = rz_cmd_get_desc (state->core->rcmd, command_str);
-		bool do_unwrap = cd && cd->type != R_CMD_DESC_TYPE_OLDINPUT;
+		bool do_unwrap = cd && cd->type != RZ_CMD_DESC_TYPE_OLDINPUT;
 		pr_args = ts_node_handle_arg_prargs (state, node, args, 1, do_unwrap);
 		if (!pr_args) {
 			goto err;
@@ -5032,17 +5032,17 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_command) {
 	int i;
 	const char *s;
 	rz_cmd_parsed_args_foreach_arg (pr_args, i, s) {
-		R_LOG_DEBUG ("parsed_arg %d: '%s'\n", i, s);
+		RZ_LOG_DEBUG ("parsed_arg %d: '%s'\n", i, s);
 	}
 
 	pr_args->has_space_after_cmd = !ts_node_is_null (args) && ts_node_end_byte (command) < ts_node_start_byte (args);
 	res = rz_cmd_call_parsed_args (state->core->rcmd, pr_args);
-	if (res == R_CMD_STATUS_WRONG_ARGS) {
+	if (res == RZ_CMD_STATUS_WRONG_ARGS) {
 		const char *cmdname = rz_cmd_parsed_args_cmd (pr_args);
 		eprintf ("Wrong number of arguments passed to `%s`, see its help with `%s?`\n", cmdname, cmdname);
-	} else if (res == R_CMD_STATUS_ERROR) {
+	} else if (res == RZ_CMD_STATUS_ERROR) {
 		const char *cmdname = rz_cmd_parsed_args_cmd (pr_args);
-		R_LOG_DEBUG ("Something wrong during the execution of `%s` command.\n", cmdname);
+		RZ_LOG_DEBUG ("Something wrong during the execution of `%s` command.\n", cmdname);
 	}
 
 err:
@@ -5064,15 +5064,15 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(repeat_command) {
 	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
 	if (rep > 1 && rz_sandbox_enable (0)) {
 		eprintf ("Command repeat sugar disabled in sandbox mode (%s)\n", node_string);
-		return R_CMD_STATUS_INVALID;
+		return RZ_CMD_STATUS_INVALID;
 	}
 	if (rep > INTERACTIVE_MAX_REP && rz_cons_is_interactive ()) {
 		if (!rz_cons_yesno ('n', "Are you sure to repeat this %" PFMT64d " times? (y/N)", rep)) {
-			return R_CMD_STATUS_INVALID;
+			return RZ_CMD_STATUS_INVALID;
 		}
 	}
 
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	size_t i;
 	for (i = 0; i < rep; i++) {
 		RzCmdStatus cmd_res = handle_ts_command (state, command);
@@ -5086,7 +5086,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_command) {
 	int pipecolor = rz_config_get_i (state->core->config, "scr.color.pipe");
 	int ocolor = rz_config_get_i (state->core->config, "scr.color");
 	int scr_html = -1;
-	RzCmdStatus res = R_CMD_STATUS_INVALID, is_append = false, is_html = false;
+	RzCmdStatus res = RZ_CMD_STATUS_INVALID, is_append = false, is_html = false;
 	int fdn = 1;
 
 	TSNode redirect_op = ts_node_child_by_field_name (node, "redirect_operator", strlen ("redirect_operator"));
@@ -5100,7 +5100,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_command) {
 		is_html = true;
 		is_append = true;
 	} else {
-		R_LOG_ERROR ("This should never happen, redirect_operator is no known type");
+		RZ_LOG_ERROR ("This should never happen, redirect_operator is no known type");
 		rz_warn_if_reached ();
 	}
 
@@ -5126,7 +5126,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_command) {
 
 	if (arg_str[0] == '$') {
 		// redirect output of command to an alias variable
-		R_LOG_DEBUG ("redirect_command: alias = '%s'\n", arg_str);
+		RZ_LOG_DEBUG ("redirect_command: alias = '%s'\n", arg_str);
 		TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
 		char *command_str = ts_node_sub_string (command, state->input);
 
@@ -5143,10 +5143,10 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_command) {
 		rz_cmd_alias_set (state->core->rcmd, arg_str, new_alias_value, 1);
 		free (new_alias_value);
 		free (command_str);
-		res = R_CMD_STATUS_OK;
+		res = RZ_CMD_STATUS_OK;
 	} else {
 		rz_cons_flush ();
-		R_LOG_DEBUG ("redirect_command: fdn = %d, is_append = %d\n", fdn, is_append);
+		RZ_LOG_DEBUG ("redirect_command: fdn = %d, is_append = %d\n", fdn, is_append);
 		int pipefd = rz_cons_pipe_open (arg_str, fdn, is_append);
 		if (pipefd != -1) {
 			if (!pipecolor) {
@@ -5157,7 +5157,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_command) {
 			rz_cons_flush ();
 			rz_cons_pipe_close (pipefd);
 		} else {
-			R_LOG_WARN ("Could not open pipe to %d", fdn);
+			RZ_LOG_WARN ("Could not open pipe to %d", fdn);
 		}
 	}
 	free (arg_str);
@@ -5198,16 +5198,16 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_command) {
 		}
 		node_string[node_str_len - 2 - detail] = '\0';
 		recursive_help (state->core, detail, node_string);
-		return R_CMD_STATUS_OK;
+		return RZ_CMD_STATUS_OK;
 	} else {
 		TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
 		char *command_str = ts_node_sub_string (command, state->input);
 		TSNode args = ts_node_child_by_field_name (node, "args", strlen ("args"));
 		RzCmdParsedArgs *pr_args = NULL;
-		RzCmdStatus res = R_CMD_STATUS_INVALID;
+		RzCmdStatus res = RZ_CMD_STATUS_INVALID;
 		if (!ts_node_is_null (args)) {
 			RzCmdDesc *cd = rz_cmd_get_desc (state->core->rcmd, command_str);
-			bool do_unwrap = cd && cd->type != R_CMD_DESC_TYPE_OLDINPUT;
+			bool do_unwrap = cd && cd->type != RZ_CMD_DESC_TYPE_OLDINPUT;
 			pr_args = ts_node_handle_arg_prargs (state, node, args, 1, do_unwrap);
 			if (!pr_args) {
 				goto err_else;
@@ -5222,11 +5222,11 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_command) {
 
 		// let's try first with the new auto-generated help, if
 		// something fails fallback to old behaviour
-		char *help_msg = rz_cmd_get_help (state->core->rcmd, pr_args, state->core->print->flags & R_PRINT_FLAGS_COLOR);
+		char *help_msg = rz_cmd_get_help (state->core->rcmd, pr_args, state->core->print->flags & RZ_PRINT_FLAGS_COLOR);
 		if (help_msg) {
 			rz_cons_printf ("%s", help_msg);
 			free (help_msg);
-			res = R_CMD_STATUS_OK;
+			res = RZ_CMD_STATUS_OK;
 		} else {
 			res = rz_cmd_call_parsed_args (state->core->rcmd, pr_args);
 		}
@@ -5235,7 +5235,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_command) {
 		free (command_str);
 		return res;
 	}
-	return R_CMD_STATUS_OK;
+	return RZ_CMD_STATUS_OK;
 }
 
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_seek_command) {
@@ -5248,13 +5248,13 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_seek_command) {
 		if (!rz_flag_get (state->core->flags, offset_string)) {
 			eprintf ("Invalid address (%s)\n", offset_string);
 			free (offset_string);
-			return R_CMD_STATUS_INVALID;
+			return RZ_CMD_STATUS_INVALID;
 		}
 	}
 	if (offset_string[0] == '-' || offset_string[0] == '+') {
 		offset_val += state->core->offset;
 	}
-	R_LOG_DEBUG ("tmp_seek_command, changing offset to %" PFMT64x "\n", offset_val);
+	RZ_LOG_DEBUG ("tmp_seek_command, changing offset to %" PFMT64x "\n", offset_val);
 	rz_core_seek (state->core, offset_val, true);
 	RzCmdStatus res = handle_ts_command_tmpseek (state, command);
 	rz_core_seek (state->core, orig_offset, true);
@@ -5267,7 +5267,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_blksz_command) {
 	TSNode blksz = ts_node_named_child (node, 1);
 	char *blksz_string = ts_node_handle_arg (state, node, blksz, 1);
 	ut64 orig_blksz = state->core->blocksize;
-	R_LOG_DEBUG ("tmp_blksz_command, changing blksz to %s\n", blksz_string);
+	RZ_LOG_DEBUG ("tmp_blksz_command, changing blksz to %s\n", blksz_string);
 	rz_core_block_size (state->core, rz_num_math (state->core->num, blksz_string));
 	RzCmdStatus res = handle_ts_command (state, command);
 	rz_core_block_size (state->core, orig_blksz);
@@ -5289,7 +5289,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_fromto_command) {
 		"io.buffer.to", "lines.to", "search.to", "zoom.to", NULL };
 	ut64 from_val = rz_num_math (core->num, from_str);
 	ut64 to_val = rz_num_math (core->num, to_str);
-	R_LOG_DEBUG ("tmp_fromto_command, changing fromto to (%" PFMT64x ", %" PFMT64x ")\n", from_val, to_val);
+	RZ_LOG_DEBUG ("tmp_fromto_command, changing fromto to (%" PFMT64x ", %" PFMT64x ")\n", from_val, to_val);
 
 	RConfigHold *hc = rz_config_hold_new (core->config);
 	int i;
@@ -5513,9 +5513,9 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_reg_command) {
 static bool handle_tmp_desc(struct tsr2cmd_state *state, TSNode command, const ut8 *buf, int sz) {
 	RzCore *core = state->core;
 	int pamode = !core->io->va;
-	RzCmdStatus res = R_CMD_STATUS_INVALID, o_fixedblock = core->fixedblock;
+	RzCmdStatus res = RZ_CMD_STATUS_INVALID, o_fixedblock = core->fixedblock;
 	RBuffer *b = rz_buf_new_with_bytes (buf, sz);
-	RzIODesc *d = rz_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+	RzIODesc *d = rz_io_open_buffer (core->io, b, RZ_PERM_RWX, 0);
 	if (!d) {
 		eprintf ("Cannot open io buffer\n");
 		goto out_buf;
@@ -5546,7 +5546,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_file_command) {
 	TSNode arg = ts_node_named_child (node, 1);
 	char *arg_str = ts_node_handle_arg (state, node, arg, 1);
 	size_t sz;
-	RzCmdStatus res = R_CMD_STATUS_INVALID;
+	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
 
 	char *f = rz_file_slurp (arg_str, &sz);
 	if (!f) {
@@ -5584,7 +5584,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_hex_command) {
 	int sz;
 
 	size_t len = strlen (arg_str);
-	ut8 *buf = R_NEWS (ut8, len + 1);
+	ut8 *buf = RZ_NEWS (ut8, len + 1);
 	sz = rz_hex_str2bin (arg_str, buf);
 
 	RzCmdStatus res = handle_tmp_desc (state, command, buf, sz);
@@ -5602,10 +5602,10 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_flags_command) {
 	const RSpace *flagspace = rz_flag_space_cur (core->flags);
 	RzFlagItem *flag;
 	RzListIter *iter;
-	RzCmdStatus ret = R_CMD_STATUS_OK;
+	RzCmdStatus ret = RZ_CMD_STATUS_OK;
 	RzList *match_flag_items = rz_list_newf ((RzListFree)rz_flag_item_free);
 	if (!match_flag_items) {
-		return R_CMD_STATUS_OK;
+		return RZ_CMD_STATUS_OK;
 	}
 
 	/* duplicate flags that match word, to be sure the command is going to
@@ -5625,7 +5625,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_flags_command) {
 
 		char *buf = NULL;
 		const char *tmp = NULL;
-		R_LOG_DEBUG ("iter_flags_command: seek to %" PFMT64x "\n", flag->offset);
+		RZ_LOG_DEBUG ("iter_flags_command: seek to %" PFMT64x "\n", flag->offset);
 		rz_core_seek (core, flag->offset, true);
 		rz_cons_push ();
 		RzCmdStatus cmd_res = handle_ts_command_tmpseek (state, command);
@@ -5657,7 +5657,7 @@ static bool iter_dbt_commands(struct tsr2cmd_state *state, TSNode node, enum dbt
 	ut64 orig_offset = core->offset;
 	RzDebugFrame *frame;
 	RzListIter *iter;
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 
 	rz_list_foreach (list, iter, frame) {
 		switch (mode) {
@@ -5672,7 +5672,7 @@ static bool iter_dbt_commands(struct tsr2cmd_state *state, TSNode node, enum dbt
 			break;
 		default:
 			rz_warn_if_reached ();
-			return R_CMD_STATUS_INVALID;
+			return RZ_CMD_STATUS_INVALID;
 		}
 		RzCmdStatus cmd_res = handle_ts_command_tmpseek (state, command);
 		rz_cons_newline ();
@@ -5699,14 +5699,14 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_dbts_command) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_file_lines_command) {
 	// TODO: old implementation has some unknown check on '('
 	RzCore *core = state->core;
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	TSNode command = ts_node_named_child (node, 0);
 	TSNode arg = ts_node_named_child (node, 1);
 	char *arg_str = ts_node_handle_arg(state, node, arg, 1);
 	ut64 orig_offset = core->offset;
 	FILE *fd = rz_sandbox_fopen (arg_str, "r");
 	if (!fd) {
-		res = R_CMD_STATUS_INVALID;
+		res = RZ_CMD_STATUS_INVALID;
 		goto arg_out;
 	}
 
@@ -5734,11 +5734,11 @@ arg_out:
 
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_offsets_command) {
 	RzCore *core = state->core;
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	TSNode command = ts_node_named_child (node, 0);
 	if (ts_node_named_child_count (node) < 2) {
 		// no offsets provided, all's good.
-		return R_CMD_STATUS_OK;
+		return RZ_CMD_STATUS_OK;
 	}
 
 	TSNode args = ts_node_named_child (node, 1);
@@ -5746,15 +5746,15 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_offsets_command) {
 
 	RzCmdParsedArgs *a = ts_node_handle_arg_prargs (state, node, args, 1, true);
 	if (!a) {
-		R_LOG_ERROR ("Cannot parse args\n");
-		return R_CMD_STATUS_INVALID;
+		RZ_LOG_ERROR ("Cannot parse args\n");
+		return RZ_CMD_STATUS_INVALID;
 	}
 
 	const char *s;
 	int i;
 	rz_cmd_parsed_args_foreach_arg (a, i, s) {
 		ut64 addr = rz_num_math (core->num, s);
-		R_LOG_DEBUG ("iter_offsets_command: seek to %" PFMT64x "\n", addr);
+		RZ_LOG_DEBUG ("iter_offsets_command: seek to %" PFMT64x "\n", addr);
 		rz_core_seek (core, addr, true);
 		RzCmdStatus cmd_res = handle_ts_command_tmpseek (state, command);
 		rz_cons_flush ();
@@ -5776,11 +5776,11 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_sdbquery_command) {
 
 	char *out = sdb_querys (core->sdb, NULL, 0, arg_str);
 	if (!out) {
-		return R_CMD_STATUS_INVALID;
+		return RZ_CMD_STATUS_INVALID;
 	}
 	char *str, *each = out;
 	ut64 addr;
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	do {
 		while (*each == ' ') {
 			each++;
@@ -5814,11 +5814,11 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_threads_command) {
 	TSNode command = ts_node_named_child (node, 0);
 	int pid = core->dbg->pid;
 	if (!core->dbg->h || !core->dbg->h->pids) {
-		return R_CMD_STATUS_INVALID;
+		return RZ_CMD_STATUS_INVALID;
 	}
 
-	RzCmdStatus res = R_CMD_STATUS_OK;
-	RzList *list = core->dbg->h->pids (core->dbg, R_MAX (0, pid));
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
+	RzList *list = core->dbg->h->pids (core->dbg, RZ_MAX (0, pid));
 	RzListIter *iter;
 	RzDebugPid *p;
 	rz_list_foreach (list, iter, p) {
@@ -5841,11 +5841,11 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_bbs_command) {
 	RzAnalBlock *bb;
 	int bs = core->blocksize;
 	ut64 orig_offset = core->offset;
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	RzAnalFunction *fcn = rz_anal_get_function_at (core->anal, core->offset);
 	if (!fcn) {
 		eprintf ("No function at current address\n");
-		return R_CMD_STATUS_INVALID;
+		return RZ_CMD_STATUS_INVALID;
 	}
 	rz_list_sort (fcn->bbs, bb_cmp);
 	rz_list_foreach (fcn->bbs, iter, bb) {
@@ -5869,13 +5869,13 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_instrs_command) {
 	RzListIter *iter;
 	RzAnalBlock *bb;
 	int i;
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	ut64 orig_offset = core->offset;
 	int bs = core->blocksize;
 	RzAnalFunction *fcn = rz_anal_get_function_at (core->anal, core->offset);
 	if (!fcn) {
 		eprintf ("No function at current address\n");
-		return R_CMD_STATUS_INVALID;
+		return RZ_CMD_STATUS_INVALID;
 	}
 	rz_list_sort (fcn->bbs, bb_cmp);
 	rz_list_foreach (fcn->bbs, iter, bb) {
@@ -5903,7 +5903,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_functions_command) {
 	TSNode arg = ts_node_named_child (node, 1);
 	char *arg_str = NULL;
 	RzCore *core = state->core;
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	ut64 orig_offset = core->offset;
 	int bs = core->blocksize;
 	RzAnalFunction *fcn;
@@ -5948,7 +5948,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_step_command) {
 	TSNode to_n = ts_node_named_child (node, 2);
 	TSNode step_n = ts_node_named_child (node, 3);
 	RzCore *core = state->core;
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	ut64 orig_offset = core->offset;
 	int bs = core->blocksize;
 
@@ -6001,7 +6001,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_interpret_command) {
 	if (!ok) {
 		rz_list_free (edits);
 		substitute_args_fini (state);
-		return R_CMD_STATUS_INVALID;
+		return RZ_CMD_STATUS_INVALID;
 	}
 	TSNode args = ts_node_named_child (new_command, 1);
 
@@ -6009,7 +6009,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_interpret_command) {
 	if (!a) {
 		rz_list_free (edits);
 		substitute_args_fini (state);
-		return R_CMD_STATUS_INVALID;
+		return RZ_CMD_STATUS_INVALID;
 	}
 
 	rz_list_free (edits);
@@ -6018,10 +6018,10 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_interpret_command) {
 	const char *s;
 	int i;
 	ut64 orig_offset = core->offset;
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	rz_cmd_parsed_args_foreach_arg (a, i, s) {
 		ut64 addr = rz_num_math (core->num, s);
-		R_LOG_DEBUG ("iter_interpret_command: seek to %" PFMT64x "\n", addr);
+		RZ_LOG_DEBUG ("iter_interpret_command: seek to %" PFMT64x "\n", addr);
 		rz_core_seek (core, addr, true);
 		RzCmdStatus cmd_res = handle_ts_command_tmpseek (state, command);
 		rz_cons_flush ();
@@ -6050,7 +6050,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_addrsize_command) {
 	RzCore *core = state->core;
 	TSNode command = ts_node_named_child (node, 0);
 	uint32_t i = 1;
-	RzCmdStatus ret = R_CMD_STATUS_OK;
+	RzCmdStatus ret = RZ_CMD_STATUS_OK;
 	TSNode seek_addr_node = ts_node_named_child (node, i);
 	TSNode blk_sz_node = ts_node_named_child (node, i + 1);
 	ut64 orig_offset = core->offset;
@@ -6083,12 +6083,12 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_bb_command) {
 	ut64 offorig = core->offset;
 	ut64 obs = core->blocksize;
 	if (!fcn) {
-		return R_CMD_STATUS_INVALID;
+		return RZ_CMD_STATUS_INVALID;
 	}
 
 	RzListIter *iter;
 	RzAnalBlock *bb;
-	RzCmdStatus ret = R_CMD_STATUS_OK;
+	RzCmdStatus ret = RZ_CMD_STATUS_OK;
 	rz_list_foreach (fcn->bbs, iter, bb) {
 		rz_core_seek (core, bb->addr, true);
 		rz_core_block_size (core, bb->size);
@@ -6110,7 +6110,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_cmd_command) {
 	RzList *edits = rz_list_newf ((RzListFree)free_tsr2cmd_edit);
 	if (!edits) {
 		substitute_args_fini (state);
-		return R_CMD_STATUS_INVALID;
+		return RZ_CMD_STATUS_INVALID;
 	}
 
 	char *in_cmd_out = do_handle_substitution_cmd (state, in_cmd);
@@ -6126,7 +6126,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_cmd_command) {
 	if (!substitute_args_do (state, edits, &new_command)) {
 		rz_list_free (edits);
 		substitute_args_fini (state);
-		return R_CMD_STATUS_INVALID;
+		return RZ_CMD_STATUS_INVALID;
 	}
 	RzCmdStatus res = handle_ts_command (state, new_command);
 	rz_list_free (edits);
@@ -6142,11 +6142,11 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_comment_command) {
 			? ts_node_sub_string (filter_node, state->input)
 			: NULL;
 	ut64 off = core->offset;
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	RIntervalTreeIter it;
 	RzAnalMetaItem *meta;
 	rz_interval_tree_foreach (&core->anal->meta, it, meta) {
-		if (meta->type != R_META_TYPE_COMMENT) {
+		if (meta->type != RZ_META_TYPE_COMMENT) {
 			continue;
 		}
 		if (!glob || (meta->str && rz_str_glob (meta->str, glob))) {
@@ -6168,7 +6168,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_import_command) {
 	ut64 offorig = core->offset;
 	RzList *list = rz_bin_get_imports (core->bin);
 	if (!list) {
-		return R_CMD_STATUS_OK;
+		return RZ_CMD_STATUS_OK;
 	}
 
 	RzList *lost = rz_list_newf (free);
@@ -6176,13 +6176,13 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_import_command) {
 	rz_list_foreach (list, iter, imp) {
 		char *impflag = rz_str_newf ("sym.imp.%s", imp->name);
 		ut64 addr = rz_num_math (core->num, impflag);
-		ut64 *n = R_NEW (ut64);
+		ut64 *n = RZ_NEW (ut64);
 		*n = addr;
 		rz_list_append (lost, n);
 		free (impflag);
 	}
 	ut64 *naddr;
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	rz_list_foreach (lost, iter, naddr) {
 		ut64 addr = *naddr;
 		if (addr && addr != UT64_MAX) {
@@ -6202,8 +6202,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_register_command) {
 	TSNode command = ts_node_named_child (node, 0);
 	ut64 offorig = core->offset;
 	int i;
-	RzCmdStatus res = R_CMD_STATUS_OK;
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		RzRegItem *item;
 		ut64 value;
 		RzList *head = rz_reg_get_list (core->dbg->reg, i);
@@ -6250,7 +6250,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_symbol_command) {
 		RBinSymbol *bs = rz_mem_dup (sym, sizeof (RBinSymbol));
 		rz_list_append (lost, bs);
 	}
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	rz_list_foreach (lost, iter, sym) {
 		if (rz_cons_is_breaked ()) {
 			break;
@@ -6272,7 +6272,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_string_command) {
 	RzCore *core = state->core;
 	TSNode command = ts_node_named_child (node, 0);
 	RzList *list = rz_bin_get_strings (core->bin);
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	if (list) {
 		ut64 offorig = core->offset;
 		ut64 obs = core->blocksize;
@@ -6304,7 +6304,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_section_command) {
 	if (!obj) {
 		return false;
 	}
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	ut64 offorig = core->offset;
 	ut64 bszorig = core->blocksize;
 	RBinSection *sec;
@@ -6328,7 +6328,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_iomap_command) {
 	// only iterate maps of current fd
 	RzList *maps = rz_io_map_get_for_fd (core->io, fd);
 	RzIOMap *map;
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	if (maps) {
 		RzListIter *iter;
 		rz_list_foreach (maps, iter, map) {
@@ -6347,7 +6347,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_dbgmap_command) {
 	RzCore *core = state->core;
 	TSNode command = ts_node_named_child (node, 0);
 	RzDebug *dbg = core->dbg;
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	if (dbg && dbg->h && dbg->maps) {
 		RzDebugMap *map;
 		RzListIter *iter;
@@ -6375,7 +6375,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_flag_command) {
 	rz_flag_foreach_glob (core->flags, glob, copy_into_flagitem_list, flags);
 	RzListIter *iter;
 	RzFlagItem *f;
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	rz_list_foreach (flags, iter, f) {
 		rz_core_block_size (core, f->size);
 		rz_core_seek (core, f->offset, true);
@@ -6402,7 +6402,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_function_command) {
 	RzAnalFunction *fcn;
 	RzList *list = core->anal->fcns;
 	RzListIter *iter;
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	rz_cons_break_push (NULL, NULL);
 	rz_list_foreach (list, iter, fcn) {
 		if (rz_cons_is_breaked ()) {
@@ -6426,13 +6426,13 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_thread_command) {
 	RzCore *core = state->core;
 	TSNode command = ts_node_named_child (node, 0);
 	RzDebug *dbg = core->dbg;
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	if (dbg && dbg->h && dbg->h->threads) {
 		int origtid = dbg->tid;
 		RzDebugPid *p;
 		RzList *list = dbg->h->threads (dbg, dbg->pid);
 		if (!list) {
-			return R_CMD_STATUS_INVALID;
+			return RZ_CMD_STATUS_INVALID;
 		}
 		RzListIter *iter;
 		rz_list_foreach (list, iter, p) {
@@ -6451,7 +6451,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_thread_command) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(last_command) {
 	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
 	char *command_str = ts_node_sub_string (command, state->input);
-	RzCmdStatus res = R_CMD_STATUS_INVALID;
+	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
 	state->is_last_cmd = true;
 	if (!strcmp (command_str, ".")) {
 		res = lastcmd_repeat (state->core, 0);
@@ -6469,13 +6469,13 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(grep_command) {
 	TSNode arg = ts_node_child_by_field_name (node, "specifier", strlen ("specifier"));
 	char *arg_str = ts_node_handle_arg (state, node, arg, 1);
 	RzCmdStatus res = handle_ts_command (state, command);
-	R_LOG_DEBUG ("grep_command specifier: '%s'\n", arg_str);
+	RZ_LOG_DEBUG ("grep_command specifier: '%s'\n", arg_str);
 	RStrBuf *sb = rz_strbuf_new (arg_str);
 	rz_strbuf_prepend (sb, "~");
 	char *specifier_str = rz_cons_grep_strip (rz_strbuf_get (sb), "`");
 	rz_strbuf_free (sb);
 	specifier_str = unescape_special_chars (specifier_str, SPECIAL_CHARS_REGULAR);
-	R_LOG_DEBUG ("grep_command processed specifier: '%s'\n", specifier_str);
+	RZ_LOG_DEBUG ("grep_command processed specifier: '%s'\n", specifier_str);
 	rz_cons_grep_process (specifier_str);
 	free (arg_str);
 	return res;
@@ -6546,11 +6546,11 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(task_command) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(number_command) {
 	ut64 addr = rz_num_math (state->core->num, node_string);
 	rz_core_seek (state->core, addr, true);
-	return R_CMD_STATUS_OK;
+	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus handle_ts_command(struct tsr2cmd_state *state, TSNode node) {
-	RzCmdStatus ret = R_CMD_STATUS_INVALID;
+	RzCmdStatus ret = RZ_CMD_STATUS_INVALID;
 	RzCmd *cmd = state->core->rcmd;
 
 	TSSymbol node_symbol = ts_node_symbol (node);
@@ -6560,7 +6560,7 @@ static RzCmdStatus handle_ts_command(struct tsr2cmd_state *state, TSNode node) {
 	if (handler) {
 		ret = handler (state, node);
 	} else {
-		R_LOG_WARN ("No handler for this kind of command `%s`\n", ts_node_type (node));
+		RZ_LOG_WARN ("No handler for this kind of command `%s`\n", ts_node_type (node));
 	}
 	if (state->log && !state->is_last_cmd) {
 		free (state->core->lastcmd);
@@ -6580,28 +6580,28 @@ static RzCmdStatus handle_ts_command_tmpseek(struct tsr2cmd_state *state, TSNode
 
 DEFINE_HANDLE_TS_FCN(commands) {
 	RzCore *core = state->core;
-	RzCmdStatus res = R_CMD_STATUS_OK;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	ut32 child_count = ts_node_named_child_count (node);
 	int i;
 
-	R_LOG_DEBUG ("commands with %d childs\n", child_count);
+	RZ_LOG_DEBUG ("commands with %d childs\n", child_count);
 	if (child_count == 0 && !*state->input) {
 		if (core->cons->context->breaked) {
 			core->cons->context->breaked = false;
-			return R_CMD_STATUS_INVALID;
+			return RZ_CMD_STATUS_INVALID;
 		}
 		if (!core->cmdrepeat) {
-			return R_CMD_STATUS_OK;
+			return RZ_CMD_STATUS_OK;
 		}
-		return lastcmd_repeat (core, true)? R_CMD_STATUS_OK: R_CMD_STATUS_INVALID;
+		return lastcmd_repeat (core, true)? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_INVALID;
 	}
 	if (state->split_lines) {
 		rz_cons_break_push (NULL, NULL);
 	}
 	for (i = 0; i < child_count; i++) {
 		if (core->cons->context->cmd_depth < 1) {
-			R_LOG_ERROR ("handle_ts_commands: That was too deep...\n");
-			return R_CMD_STATUS_INVALID;
+			RZ_LOG_ERROR ("handle_ts_commands: That was too deep...\n");
+			return RZ_CMD_STATUS_INVALID;
 		}
 		core->cons->context->cmd_depth--;
 		if (core->max_cmd_depth - core->cons->context->cmd_depth == 1) {
@@ -6619,13 +6619,13 @@ DEFINE_HANDLE_TS_FCN(commands) {
 			rz_core_task_yield (&core->tasks);
 		}
 		core->cons->context->cmd_depth++;
-		if (cmd_res == R_CMD_STATUS_INVALID) {
+		if (cmd_res == RZ_CMD_STATUS_INVALID) {
 			char *command_str = ts_node_sub_string (command, state->input);
 			eprintf ("Error while executing command: %s\n", command_str);
 			free (command_str);
 			res = cmd_res;
 			goto err;
-		} else if (cmd_res != R_CMD_STATUS_OK) {
+		} else if (cmd_res != RZ_CMD_STATUS_OK) {
 			res = cmd_res;
 			goto err;
 		}
@@ -6686,7 +6686,7 @@ static RzCmdStatus core_cmd_tsr2cmd(RzCore *core, const char *cstr, bool split_l
 	TSTree *tree = ts_parser_parse_string (parser, NULL, input, strlen (input));
 	TSNode root = ts_tree_root_node (tree);
 
-	RzCmdStatus res = R_CMD_STATUS_INVALID;
+	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
 	struct tsr2cmd_state state;
 	state.parser = parser;
 	state.core = core;
@@ -6700,7 +6700,7 @@ static RzCmdStatus core_cmd_tsr2cmd(RzCore *core, const char *cstr, bool split_l
 	}
 
 	char *ts_str = ts_node_string (root);
-	R_LOG_DEBUG("s-expr %s\n", ts_str);
+	RZ_LOG_DEBUG("s-expr %s\n", ts_str);
 	free (ts_str);
 
 	if (is_ts_commands (root) && !ts_node_has_error (root)) {
@@ -6767,7 +6767,7 @@ RZ_API int rz_core_cmd(RzCore *core, const char *cstr, int log) {
 	}
 	if (core->cmdremote) {
 		if (*cstr == 'q') {
-			R_FREE (core->cmdremote);
+			RZ_FREE (core->cmdremote);
 			goto beach; // false
 		} else if (*cstr != '=' && strncmp (cstr, "!=", 2)) {
 			if (core->cmdremote[0]) {
@@ -6828,7 +6828,7 @@ beach:
 RZ_API int rz_core_cmd_lines(RzCore *core, const char *lines) {
 	if (core->use_tree_sitter_rzcmd) {
 		RzCmdStatus status = core_cmd_tsr2cmd (core, lines, true, false);
-		return status == R_CMD_STATUS_OK;
+		return status == RZ_CMD_STATUS_OK;
 	}
 	int r, ret = true;
 	char *nl, *data, *odata;
@@ -7054,7 +7054,7 @@ RZ_API int rz_core_cmd_task_sync(RzCore *core, const char *cmd, bool log) {
 	}
 	task->cmd = s;
 	task->cmd_log = log;
-	task->state = R_CORE_TASK_STATE_BEFORE_START;
+	task->state = RZ_CORE_TASK_STATE_BEFORE_START;
 	int res = rz_core_task_run_sync (&core->tasks, task);
 	free (s);
 	return res;
@@ -7082,7 +7082,7 @@ static void cmd_descriptor_init(RzCore *core) {
 		for (p = (const ut8 *)y->cmd; *p; p++) {
 			if (!x->sub[*p]) {
 				if (p[1]) {
-					RzCmdDescriptor *d = R_NEW0 (RzCmdDescriptor);
+					RzCmdDescriptor *d = RZ_NEW0 (RzCmdDescriptor);
 					rz_list_append (core->cmd_descriptors, d);
 					x->sub[*p] = d;
 				} else {
@@ -7156,7 +7156,7 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{"<",        "pipe into RzCons.readChar", cmd_pipein, NULL, &pipein_help},
 		{"V",   "enter visual mode", cmd_visual, NULL, &V_help},
 		{"v",   "enter visual mode", cmd_panels, NULL, &v_help},
-		{"w",    "write bytes", cmd_write, cmd_write_init, &w_help, &w_group_help, R_CMD_DESC_TYPE_GROUP, w_handler},
+		{"w",    "write bytes", cmd_write, cmd_write_init, &w_help, &w_group_help, RZ_CMD_DESC_TYPE_GROUP, w_handler},
 		{"x",        "alias for px", cmd_hexdump, NULL, &x_help},
 		{"y",     "yank bytes", cmd_yank, NULL, &y_help},
 		{"z",     "zignatures", cmd_zign, cmd_zign_init, &z_help},
@@ -7173,21 +7173,21 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 
 	RzCmdDesc *root = rz_cmd_get_root (core->rcmd);
 	size_t i;
-	for (i = 0; i < R_ARRAY_SIZE (cmds); i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE (cmds); i++) {
 		rz_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].cb);
 
 		RzCmdDesc *cd;
 		switch (cmds[i].type) {
-		case R_CMD_DESC_TYPE_OLDINPUT:
+		case RZ_CMD_DESC_TYPE_OLDINPUT:
 			cd = rz_cmd_desc_oldinput_new (core->rcmd, root, cmds[i].cmd, cmds[i].cb, cmds[i].help);
 			break;
-		case R_CMD_DESC_TYPE_ARGV:
+		case RZ_CMD_DESC_TYPE_ARGV:
 			cd = rz_cmd_desc_argv_new (core->rcmd, root, cmds[i].cmd, cmds[i].argv_cb, cmds[i].help);
 			break;
-		case R_CMD_DESC_TYPE_INNER:
+		case RZ_CMD_DESC_TYPE_INNER:
 			cd = rz_cmd_desc_inner_new (core->rcmd, root, cmds[i].cmd, cmds[i].help);
 			break;
-		case R_CMD_DESC_TYPE_GROUP:
+		case RZ_CMD_DESC_TYPE_GROUP:
 			cd = rz_cmd_desc_group_new (core->rcmd, root, cmds[i].cmd, cmds[i].argv_cb, cmds[i].help, cmds[i].group_help);
 			break;
 		}

@@ -1,7 +1,7 @@
 include ../config.mk
 
 NAME=rz_util
-CFLAGS+=-DR2_PLUGIN_INCORE -I$(TOP)/shlr
+CFLAGS+=-DRZ_PLUGIN_INCORE -I$(TOP)/shlr
 PCLIBS=@LIBZIP@ @DL_LIBS@
 
 ifneq ($(OSTYPE),darwin)

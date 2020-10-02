@@ -8,12 +8,12 @@ RZ_API ut64 rz_debug_arg_get (RzDebug *dbg, int cctype, int num) {
 	char reg[32];
 	//TODO replace the hardcoded implementation with the sdb
 	switch (cctype) {
-	case R_ANAL_CC_TYPE_SYSV:
-	case R_ANAL_CC_TYPE_FASTCALL:
+	case RZ_ANAL_CC_TYPE_SYSV:
+	case RZ_ANAL_CC_TYPE_FASTCALL:
 		snprintf (reg, sizeof (reg)-1, "A%d", num);
 		return rz_debug_reg_get (dbg, reg);
-	case R_ANAL_CC_TYPE_STDCALL:
-	case R_ANAL_CC_TYPE_PASCAL:
+	case RZ_ANAL_CC_TYPE_STDCALL:
+	case RZ_ANAL_CC_TYPE_PASCAL:
 		sp = rz_debug_reg_get (dbg, "SP");
 		if (dbg->bits == 64) {
 			sp += 8; // skip return address, assume we are inside the call
@@ -37,12 +37,12 @@ RZ_API bool rz_debug_arg_set (RzDebug *dbg, int cctype, int num, ut64 val) {
 	// TODO replace the hardcoded implementation with the sdb
 	char reg[32];
 	switch (cctype) {
-	case R_ANAL_CC_TYPE_SYSV:
-	case R_ANAL_CC_TYPE_FASTCALL:
+	case RZ_ANAL_CC_TYPE_SYSV:
+	case RZ_ANAL_CC_TYPE_FASTCALL:
 		snprintf (reg, 30, "A%d", num);
 		return rz_debug_reg_set (dbg, reg, val);
-	case R_ANAL_CC_TYPE_STDCALL:
-	case R_ANAL_CC_TYPE_PASCAL:
+	case RZ_ANAL_CC_TYPE_STDCALL:
+	case RZ_ANAL_CC_TYPE_PASCAL:
 		/* TODO: get from stack */
 		break;
 	}

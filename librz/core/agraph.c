@@ -110,31 +110,31 @@ struct rz_agraph_location {
 #define F(x, y, x2, y2, c) rz_cons_canvas_fill (g->can, x, y, x2, y2, c)
 
 static bool is_offset(const RzAGraph *g) {
-	return g->mode == R_AGRAPH_MODE_OFFSET;
+	return g->mode == RZ_AGRAPH_MODE_OFFSET;
 }
 
 static bool is_mini(const RzAGraph *g) {
-	return g->mode == R_AGRAPH_MODE_MINI;
+	return g->mode == RZ_AGRAPH_MODE_MINI;
 }
 
 static bool is_tiny(const RzAGraph *g) {
-	return g->is_tiny || g->mode == R_AGRAPH_MODE_TINY;
+	return g->is_tiny || g->mode == RZ_AGRAPH_MODE_TINY;
 }
 
 static bool is_summary(const RzAGraph *g) {
-	return g->mode == R_AGRAPH_MODE_SUMMARY;
+	return g->mode == RZ_AGRAPH_MODE_SUMMARY;
 }
 
 static bool is_comments(const RzAGraph *g) {
-	return g->mode == R_AGRAPH_MODE_COMMENTS;
+	return g->mode == RZ_AGRAPH_MODE_COMMENTS;
 }
 
 static int next_mode(int mode) {
-	return (mode + 1) % R_AGRAPH_MODE_MAX;
+	return (mode + 1) % RZ_AGRAPH_MODE_MAX;
 }
 
 static int prev_mode(int mode) {
-	return (mode + R_AGRAPH_MODE_MAX - 1) % R_AGRAPH_MODE_MAX;
+	return (mode + RZ_AGRAPH_MODE_MAX - 1) % RZ_AGRAPH_MODE_MAX;
 }
 
 static RGraphNode *agraph_get_title(const RzAGraph *g, RzANode *n, bool in) {
@@ -223,20 +223,20 @@ static void update_node_dimension(const RGraph *g, int is_mini, int zoom, int ed
 			if (len > n->w) {
 				n->w = len;
 			}
-			// n->w = n->w; //R_MIN (n->w, (int)len);
+			// n->w = n->w; //RZ_MIN (n->w, (int)len);
 			n->w += BORDER_WIDTH;
 			n->h += BORDER_HEIGHT;
 			/* scale node by zoom */
-			n->w = R_MAX (MIN_NODE_WIDTH, (n->w * zoom) / 100);
-			n->h = R_MAX (MIN_NODE_HEIGHT, (n->h * zoom) / 100);
+			n->w = RZ_MAX (MIN_NODE_WIDTH, (n->w * zoom) / 100);
+			n->h = RZ_MAX (MIN_NODE_HEIGHT, (n->h * zoom) / 100);
 
 			if (edgemode == 2 && !callgraph) {
 				if (!layout) {
-					n->w = R_MAX (n->w, (rz_list_length (n->gnode->out_nodes) * 2 + 1) + R_EDGES_X_INC * 2);
-					n->w = R_MAX (n->w, (rz_list_length (n->gnode->in_nodes) * 2 + 1) + R_EDGES_X_INC * 2);
+					n->w = RZ_MAX (n->w, (rz_list_length (n->gnode->out_nodes) * 2 + 1) + RZ_EDGES_X_INC * 2);
+					n->w = RZ_MAX (n->w, (rz_list_length (n->gnode->in_nodes) * 2 + 1) + RZ_EDGES_X_INC * 2);
 				} else {
-					n->h = R_MAX (n->h, (rz_list_length (n->gnode->out_nodes) + 1) + R_EDGES_X_INC);
-					n->h = R_MAX (n->h, (rz_list_length (n->gnode->in_nodes) + 1) + R_EDGES_X_INC);
+					n->h = RZ_MAX (n->h, (rz_list_length (n->gnode->out_nodes) + 1) + RZ_EDGES_X_INC);
+					n->h = RZ_MAX (n->h, (rz_list_length (n->gnode->in_nodes) + 1) + RZ_EDGES_X_INC);
 				}
 			}
 		}
@@ -330,8 +330,8 @@ static char *get_node_color (int color, int cur) {
                 return cur ? cons->context->pal.graph_box2 : cons->context->pal.graph_box;
         }
         return color ? (\
-                color==R_ANAL_DIFF_TYPE_MATCH ? cons->context->pal.graph_diff_match:
-                color==R_ANAL_DIFF_TYPE_UNMATCH? cons->context->pal.graph_diff_unmatch : cons->context->pal.graph_diff_new): cons->context->pal.graph_diff_unknown;
+                color==RZ_ANAL_DIFF_TYPE_MATCH ? cons->context->pal.graph_diff_match:
+                color==RZ_ANAL_DIFF_TYPE_UNMATCH? cons->context->pal.graph_diff_unmatch : cons->context->pal.graph_diff_new): cons->context->pal.graph_diff_unknown;
 }
 
 static void normal_RzANode_print(const RzAGraph *g, const RzANode *n, int cur) {
@@ -354,7 +354,7 @@ static void normal_RzANode_print(const RzAGraph *g, const RzANode *n, int cur) {
 		return;
 	}
 	if (y < -1) {
-		delta_y = R_MIN (n->h - BORDER_HEIGHT - 1, -y - MARGIN_TEXT_Y);
+		delta_y = RZ_MIN (n->h - BORDER_HEIGHT - 1, -y - MARGIN_TEXT_Y);
 	}
 	/* print the title */
 	if (showTitle) {
@@ -376,8 +376,8 @@ static void normal_RzANode_print(const RzAGraph *g, const RzANode *n, int cur) {
 	if (g->zoom > ZOOM_DEFAULT) {
 		center_x = (g->zoom - ZOOM_DEFAULT) / 10;
 		center_y = (g->zoom - ZOOM_DEFAULT) / 30;
-		delta_txt_x = R_MIN (delta_x, center_x);
-		delta_txt_y = R_MIN (delta_y, center_y);
+		delta_txt_x = RZ_MIN (delta_x, center_x);
+		delta_txt_y = RZ_MIN (delta_y, center_y);
 	}
 	if (showBody) {
 		if (G (n->x + MARGIN_TEXT_X + delta_x + center_x - delta_txt_x,
@@ -432,12 +432,12 @@ static int **get_crossing_matrix(const RGraph *g,
                                  int *n_rows) {
 	int j, len = layers[i].n_nodes;
 
-	int **m = R_NEWS0 (int *, len);
+	int **m = RZ_NEWS0 (int *, len);
 	if (!m) {
 		return NULL;
 	}
 	for (j = 0; j < len; j++) {
-		m[j] = R_NEWS0 (int, len);
+		m[j] = RZ_NEWS0 (int, len);
 		if (!m[j]) {
 			goto err_row;
 		}
@@ -589,7 +589,7 @@ static int layer_sweep(const RGraph *g, const struct layer_t layers[],
 
 static void view_cyclic_edge(const RGraphEdge *e, const RGraphVisitor *vis) {
 	const RzAGraph *g = (RzAGraph *) vis->data;
-	RGraphEdge *new_e = R_NEW0 (RGraphEdge);
+	RGraphEdge *new_e = RZ_NEW0 (RGraphEdge);
 	if (!new_e) {
 		return;
 	}
@@ -606,8 +606,8 @@ static void view_dummy(const RGraphEdge *e, const RGraphVisitor *vis) {
 	if (!a || !b) {
 		return;
 	}
-	if (R_ABS (a->layer - b->layer) > 1) {
-		RGraphEdge *new_e = R_NEW0 (RGraphEdge);
+	if (RZ_ABS (a->layer - b->layer) > 1) {
+		RGraphEdge *new_e = RZ_NEW0 (RGraphEdge);
 		if (!new_e) {
 			return;
 		}
@@ -711,7 +711,7 @@ static void create_dummy_nodes(RzAGraph *g) {
 	rz_list_foreach (g->long_edges, it, e) {
 		RzANode *from = get_anode (e->from);
 		RzANode *to = get_anode (e->to);
-		int diff_layer = R_ABS (from->layer - to->layer);
+		int diff_layer = RZ_ABS (from->layer - to->layer);
 		RzANode *prev = get_anode (e->from);
 		int i, nth = e->nth;
 
@@ -755,7 +755,7 @@ static void create_layers(RzAGraph *g) {
 	if (sizeof (struct layer_t) * g->n_layers < g->n_layers) {
 		return;
 	}
-	g->layers = R_NEWS0 (struct layer_t, g->n_layers);
+	g->layers = RZ_NEWS0 (struct layer_t, g->n_layers);
 
 	graph_foreach_anode (nodes, it, gn, n) {
 		g->layers[n->layer].n_nodes++;
@@ -765,7 +765,7 @@ static void create_layers(RzAGraph *g) {
 		if (sizeof (RGraphNode *) * g->layers[i].n_nodes < g->layers[i].n_nodes) {
 			continue;
 		}
-		g->layers[i].nodes = R_NEWS0 (RGraphNode *,
+		g->layers[i].nodes = RZ_NEWS0 (RGraphNode *,
 			1 + g->layers[i].n_nodes);
 		g->layers[i].position = 0;
 	}
@@ -894,7 +894,7 @@ static void set_dist_nodes(const RzAGraph *g, int l, int cur, int next) {
 	find_el.from = vi;
 	find_el.to = vip;
 	it = rz_list_find (g->dists, &find_el, (RzListComparator) find_dist);
-	d = it? (struct dist_t *) rz_list_iter_get_data (it): R_NEW0 (struct dist_t);
+	d = it? (struct dist_t *) rz_list_iter_get_data (it): RZ_NEW0 (struct dist_t);
 
 	d->from = vi;
 	d->to = vip;
@@ -954,7 +954,7 @@ static Sdb *compute_vertical_nodes(const RzAGraph *g) {
  * - w E C, the s+(w) exists and is not in any class yet => s+(w) E C */
 static RzList **compute_classes(const RzAGraph *g, Sdb *v_nodes, int is_left, int *n_classes) {
 	int i, j, c;
-	RzList **res = R_NEWS0 (RzList *, g->n_layers);
+	RzList **res = RZ_NEWS0 (RzList *, g->n_layers);
 	RGraphNode *gn;
 	const RzListIter *it;
 	RzANode *n;
@@ -1042,7 +1042,7 @@ static void adjust_class(const RzAGraph *g, int is_left, RzList **classes, Sdb *
 			continue;
 		}
 		v = adjust_class_val (g, gn, sibling, res, is_left);
-		dist = is_first? v: R_MIN (dist, v);
+		dist = is_first? v: RZ_MIN (dist, v);
 		is_first = false;
 	}
 
@@ -1096,9 +1096,9 @@ static int place_nodes_sel_p(int newval, int oldval, int is_first, int is_left) 
 		return newval;
 	}
 	if (is_left) {
-		return R_MAX (oldval, newval);
+		return RZ_MAX (oldval, newval);
 	}
-	return R_MIN (oldval, newval);
+	return RZ_MIN (oldval, newval);
 }
 
 /* places left/right the nodes of a class */
@@ -1323,11 +1323,11 @@ static void place_single(const RzAGraph *g, int l, const RGraphNode *bm, const R
 	}
 	if (bm) {
 		const RzANode *bma = get_anode (bm);
-		av->x = R_MAX (av->x, bma->x + dist_nodes (g, bm, v));
+		av->x = RZ_MAX (av->x, bma->x + dist_nodes (g, bm, v));
 	}
 	if (bp) {
 		const RzANode *bpa = get_anode (bp);
-		av->x = R_MIN (av->x, bpa->x - dist_nodes (g, v, bp));
+		av->x = RZ_MIN (av->x, bpa->x - dist_nodes (g, v, bp));
 	}
 }
 
@@ -1365,7 +1365,7 @@ static void collect_changes(const RzAGraph *g, int l, const RGraphNode *b, int f
 			if ((is_left && av->x >= avi->x) || (!is_left && av->x <= avi->x)) {
 				c++;
 			} else {
-				cx = R_NEW (struct len_pos_t);
+				cx = RZ_NEW (struct len_pos_t);
 				c--;
 				cx->len = 2;
 				cx->pos = av->x;
@@ -1378,7 +1378,7 @@ static void collect_changes(const RzAGraph *g, int l, const RGraphNode *b, int f
 			}
 		}
 
-		cx = R_NEW0 (struct len_pos_t);
+		cx = RZ_NEW0 (struct len_pos_t);
 		cx->len = c;
 		cx->pos = avi->x;
 		if (is_left) {
@@ -1391,7 +1391,7 @@ static void collect_changes(const RzAGraph *g, int l, const RGraphNode *b, int f
 
 	if (b) {
 		const RzANode *ab = get_anode (b);
-		cx = R_NEW (struct len_pos_t);
+		cx = RZ_NEW (struct len_pos_t);
 		if (cx) {
 			cx->len = is_left? INT_MAX: INT_MIN;
 			cx->pos = ab->x;
@@ -1437,7 +1437,7 @@ static void combine_sequences(const RzAGraph *g, int l, const RGraphNode *bm, co
 					} else {
 						struct len_pos_t *cx = (struct len_pos_t *) rz_list_pop (Rm);
 						rm = rm + cx->len;
-						at->x = R_MAX (cx->pos, atp->x - m);
+						at->x = RZ_MAX (cx->pos, atp->x - m);
 						free (cx);
 					}
 				} else {
@@ -1446,7 +1446,7 @@ static void combine_sequences(const RzAGraph *g, int l, const RGraphNode *bm, co
 					} else {
 						struct len_pos_t *cx = (struct len_pos_t *) rz_list_pop (Rp);
 						rp = rp + cx->len;
-						atp->x = R_MIN (cx->pos, at->x + m);
+						atp->x = RZ_MIN (cx->pos, at->x + m);
 						free (cx);
 					}
 				}
@@ -1461,7 +1461,7 @@ static void combine_sequences(const RzAGraph *g, int l, const RGraphNode *bm, co
 		const RGraphNode *gv = g->layers[l].nodes[i];
 		RzANode *av = get_anode (gv);
 		if (av && at) {
-			av->x = R_MIN (av->x, at->x - dist_nodes (g, gv, vt));
+			av->x = RZ_MIN (av->x, at->x - dist_nodes (g, gv, vt));
 		}
 	}
 
@@ -1469,7 +1469,7 @@ static void combine_sequences(const RzAGraph *g, int l, const RGraphNode *bm, co
 		const RGraphNode *gv = g->layers[l].nodes[i];
 		RzANode *av = get_anode (gv);
 		if (av && atp) {
-			av->x = R_MAX (av->x, atp->x + dist_nodes (g, vtp, gv));
+			av->x = RZ_MAX (av->x, atp->x + dist_nodes (g, vtp, gv));
 		}
 	}
 }
@@ -1758,12 +1758,12 @@ static void backedge_info (RzAGraph *g) {
 	int inedge = 0;
 	int outedge = 0;
 
-	int **arr = R_NEWS0 (int *, g->n_layers);
+	int **arr = RZ_NEWS0 (int *, g->n_layers);
 	if (!arr) {
 		return;
 	}
 	for (i = 0; i < g->n_layers; i++) {
-		arr[i] = R_NEWS0 (int, 2);
+		arr[i] = RZ_NEWS0 (int, 2);
 		if (!arr[i]) {
 			goto err;
 		}
@@ -1818,7 +1818,7 @@ static void backedge_info (RzAGraph *g) {
 				}
 
 				int nth = count_edges (g, a, b);
-				int xinc = R_EDGES_X_INC + 2 * (nth + 1);
+				int xinc = RZ_EDGES_X_INC + 2 * (nth + 1);
 
 				int ax = g->layout == 0 ? a->x + xinc : a->y + (a->h / 2) + nth;
 				int bx = g->layout == 0 ? b->x + xinc : b->y + (b->h / 2) + nth;
@@ -1850,7 +1850,7 @@ static void backedge_info (RzAGraph *g) {
 					}
 				}
 
-				AEdge *e = R_NEW0 (AEdge);
+				AEdge *e = RZ_NEW0 (AEdge);
 				if (!e) {
 					free (arr);
 					return;
@@ -1876,7 +1876,7 @@ static void backedge_info (RzAGraph *g) {
 	//Assumption: layer layout is not changed w.r.t x-coordinate/y-coordinate for horizontal/vertical layout respectively.
 	if (inedge) {
 		RzANode *n = (RzANode *)g->layers[0].nodes[0]->data;
-		AEdge *e = R_NEW0 (AEdge);
+		AEdge *e = RZ_NEW0 (AEdge);
 		if (!e) {
 			free (arr);
 			return;
@@ -1896,7 +1896,7 @@ static void backedge_info (RzAGraph *g) {
 
 	if (outedge) {
 		RzANode *n = (RzANode *)g->layers[g->n_layers - 1].nodes[0]->data;
-		AEdge *e = R_NEW0 (AEdge);
+		AEdge *e = RZ_NEW0 (AEdge);
 		if (!e) {
 			free (arr);
 			return;
@@ -2142,7 +2142,7 @@ static char *get_bb_body(RzCore *core, RzAnalBlock *b, int opts, RzAnalFunction 
 		core->anal->gp = saved_gp;
 		if (b->parent_reg_arena) {
 			rz_reg_arena_poke (core->anal->reg, b->parent_reg_arena);
-			R_FREE (b->parent_reg_arena);
+			RZ_FREE (b->parent_reg_arena);
 			ut64 gp = rz_reg_getv (core->anal->reg, "gp");
 			if (gp) {
 				core->anal->gp = gp;
@@ -2203,7 +2203,7 @@ static void get_bbupdate(RzAGraph *g, RzCore *core, RzAnalFunction *fcn) {
 		saved_arena = rz_reg_arena_peek (core->anal->reg);
 	}
 	if (!fcn) {
-		R_FREE (saved_arena);
+		RZ_FREE (saved_arena);
 		return;
 	}
 	rz_list_sort (fcn->bbs, (RzListComparator) bbcmp);
@@ -2238,7 +2238,7 @@ static void get_bbupdate(RzAGraph *g, RzCore *core, RzAnalFunction *fcn) {
 		core->anal->gp = saved_gp;
 		if (saved_arena) {
 			rz_reg_arena_poke (core->anal->reg, saved_arena);
-			R_FREE (saved_arena);
+			RZ_FREE (saved_arena);
 		}
 	}
 	core->anal->stackptr = saved_stackptr;
@@ -2407,7 +2407,7 @@ cleanup:
 		core->anal->gp = saved_gp;
 		if (saved_arena) {
 			rz_reg_arena_poke (core->anal->reg, saved_arena);
-			R_FREE (saved_arena);
+			RZ_FREE (saved_arena);
 		}
 	}
 	core->anal->stackptr = saved_stackptr;
@@ -2872,7 +2872,7 @@ static void agraph_print_edges(RzAGraph *g) {
 		}
 
 		if (!tm) {
-			tm = R_NEW0 (struct tmplayer);
+			tm = RZ_NEW0 (struct tmplayer);
 			if (tm) {
 				tm->layer = a->layer;
 				tm->edgectr = 0;
@@ -2942,15 +2942,15 @@ static void agraph_print_edges(RzAGraph *g) {
 					style.dot_style = DOT_STYLE_BACKEDGE;
 				}
 
-				a_x_inc = R_EDGES_X_INC + 2 * (out_nth + 1);
-				b_x_inc = R_EDGES_X_INC + 2 * (in_nth + 1);
+				a_x_inc = RZ_EDGES_X_INC + 2 * (out_nth + 1);
+				b_x_inc = RZ_EDGES_X_INC + 2 * (in_nth + 1);
 
 				bx = b->is_dummy ? b->x : (b->x + b_x_inc);
 				ay = a->y + a->h;
 				by = b->y - 1;
 
 				if (many && !g->is_callgraph) {
-					int t = R_EDGES_X_INC + 2 * (neighbours->length + 1);
+					int t = RZ_EDGES_X_INC + 2 * (neighbours->length + 1);
 					ax = a->is_dummy ? a->x : (a->x + a->w/2 + (t/2 - a_x_inc));
 					bendpoint = bx < ax ? neighbours->length - out_nth :  out_nth;
 				} else {
@@ -3004,12 +3004,12 @@ static void agraph_print_edges(RzAGraph *g) {
 				}
 				ay = a->y;
 				if (!a->is_dummy && g->zoom > 0) {
-					ay += R_EDGES_X_INC + out_nth;
+					ay += RZ_EDGES_X_INC + out_nth;
 				}
 				bx = b->x - 1;
 				by = b->y;
 				if (!b->is_dummy && g->zoom > 0) {
-					by += R_EDGES_X_INC + out_nth;
+					by += RZ_EDGES_X_INC + out_nth;
 				}
 
 				if (a->w < a->layer_width) {
@@ -3128,12 +3128,12 @@ static void agraph_set_zoom(RzAGraph *g, int v) {
 	if (v >= -10) {
 		g->is_tiny = false;
 		if (v == 0) {
-			g->mode = R_AGRAPH_MODE_MINI;
+			g->mode = RZ_AGRAPH_MODE_MINI;
 		} else if (v < 0) {
-			g->mode = R_AGRAPH_MODE_TINY;
+			g->mode = RZ_AGRAPH_MODE_TINY;
 			g->is_tiny = true;
 		} else {
-			g->mode = R_AGRAPH_MODE_NORMAL;
+			g->mode = RZ_AGRAPH_MODE_NORMAL;
 		}
 		const int K = 920;
 		if (g->zoom < v) {
@@ -3504,7 +3504,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	// allow to change the current function during debugging
 	if (g->is_instep && core->bin->is_debugger) {
 		// seek only when the graph node changes
-		const char *pc = rz_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
+		const char *pc = rz_reg_get_name (core->dbg->reg, RZ_REG_NAME_PC);
 		RzRegItem *r = rz_reg_get (core->dbg->reg, pc, -1);
 		ut64 addr = rz_reg_get_value (core->dbg->reg, r);
 		RzANode *acur = get_anode (g->curnode);
@@ -3690,7 +3690,7 @@ RZ_API RzANode *rz_agraph_add_node_with_color(const RzAGraph *g, const char *tit
 	if (res) {
 		return res;
 	}
-	res = R_NEW0 (RzANode);
+	res = RZ_NEW0 (RzANode);
 	if (!res) {
 		return NULL;
 	}
@@ -3877,7 +3877,7 @@ RZ_API void rz_agraph_free(RzAGraph *g) {
 }
 
 RZ_API RzAGraph *rz_agraph_new(RzConsCanvas *can) {
-	RzAGraph *g = R_NEW0 (RzAGraph);
+	RzAGraph *g = RZ_NEW0 (RzAGraph);
 	if (!g) {
 		return NULL;
 	}
@@ -3894,7 +3894,7 @@ static void visual_offset(RzAGraph *g, RzCore *core) {
 	rz_cons_get_size (&rows);
 	rz_cons_gotoxy (0, rows);
 	rz_cons_flush ();
-	core->cons->line->prompt_type = R_LINE_PROMPT_OFFSET;
+	core->cons->line->prompt_type = RZ_LINE_PROMPT_OFFSET;
 	rz_line_set_hist_callback (core->cons->line, &rz_line_hist_offset_up, &rz_line_hist_offset_down);
 	rz_line_set_prompt ("[offset]> ");
 	strcpy (buf, "s ");
@@ -3905,12 +3905,12 @@ static void visual_offset(RzAGraph *g, RzCore *core) {
 		rz_core_cmd0 (core, buf);
 		rz_line_set_hist_callback (core->cons->line, &rz_line_hist_cmd_up, &rz_line_hist_cmd_down);
 	}
-	core->cons->line->prompt_type = R_LINE_PROMPT_DEFAULT;
+	core->cons->line->prompt_type = RZ_LINE_PROMPT_DEFAULT;
 }
 
 static void goto_asmqjmps(RzAGraph *g, RzCore *core) {
 	const char *h = "[Fast goto call/jmp]> ";
-	char obuf[R_CORE_ASMQJMPS_LEN_LETTERS + 1];
+	char obuf[RZ_CORE_ASMQJMPS_LEN_LETTERS + 1];
 	int rows, i = 0;
 	bool cont;
 
@@ -3926,7 +3926,7 @@ static void goto_asmqjmps(RzAGraph *g, RzCore *core) {
 		obuf[i++] = ch;
 		rz_cons_printf ("%c", ch);
 		cont = isalpha ((ut8) ch) && !islower ((ut8) ch);
-	} while (i < R_CORE_ASMQJMPS_LEN_LETTERS && cont);
+	} while (i < RZ_CORE_ASMQJMPS_LEN_LETTERS && cont);
 	rz_cons_flush ();
 
 	obuf[i] = '\0';
@@ -4031,7 +4031,7 @@ static void rotateColor(RzCore *core) {
 
 // dupe in visual.c
 static bool toggle_bb(RzCore *core, ut64 addr) {
-	RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
 	if (fcn) {
 		RzAnalBlock *bb = rz_anal_fcn_bbget_in (core->anal, fcn, addr);
 		if (bb) {
@@ -4059,7 +4059,7 @@ static char *get_graph_string(RzCore *core, RzAGraph *g) {
 
 static void nextword(RzCore *core, RzAGraph *g, const char *word) {
 	rz_return_if_fail (core && core->graph && g && g->can && word);
-	if (R_STR_ISEMPTY (word)) {
+	if (RZ_STR_ISEMPTY (word)) {
 		return;
 	}
 	RzAGraphHits *gh = &g->ghits;
@@ -4184,7 +4184,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalFunction *_fcn,
 	core->is_asmqjmps_letter = true;
 	core->vmode = true;
 
-	grd = R_NEW0 (struct agraph_refresh_data);
+	grd = RZ_NEW0 (struct agraph_refresh_data);
 	if (!grd) {
 		rz_cons_canvas_free (can);
 		rz_config_hold_restore (hc);
@@ -4456,10 +4456,10 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalFunction *_fcn,
 			rz_config_toggle (core->config, "graph.refs");
 			break;
 		case '#':
-			if (g->mode == R_AGRAPH_MODE_COMMENTS) {
-				g->mode = R_AGRAPH_MODE_NORMAL;
+			if (g->mode == RZ_AGRAPH_MODE_COMMENTS) {
+				g->mode = RZ_AGRAPH_MODE_NORMAL;
 			} else {
-				g->mode = R_AGRAPH_MODE_COMMENTS;
+				g->mode = RZ_AGRAPH_MODE_COMMENTS;
 			}
 			g->need_reload_nodes = true;
 			discroll = 0;
@@ -4797,13 +4797,13 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalFunction *_fcn,
 		case '_':
 			rz_core_visual_hudstuff (core);
 			break;
-		case R_CONS_KEY_F1:
+		case RZ_CONS_KEY_F1:
 			cmd = rz_config_get (core->config, "key.f1");
 			if (cmd && *cmd) {
 				(void) rz_core_cmd0 (core, cmd);
 			}
 			break;
-		case R_CONS_KEY_F2:
+		case RZ_CONS_KEY_F2:
 			cmd = rz_config_get (core->config, "key.f2");
 			if (cmd && *cmd) {
 				(void) rz_core_cmd0 (core, cmd);
@@ -4811,31 +4811,31 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalFunction *_fcn,
 				graph_breakpoint (core);
 			}
 			break;
-		case R_CONS_KEY_F3:
+		case RZ_CONS_KEY_F3:
 			cmd = rz_config_get (core->config, "key.f3");
 			if (cmd && *cmd) {
 				(void) rz_core_cmd0 (core, cmd);
 			}
 			break;
-		case R_CONS_KEY_F4:
+		case RZ_CONS_KEY_F4:
 			cmd = rz_config_get (core->config, "key.f4");
 			if (cmd && *cmd) {
 				(void) rz_core_cmd0 (core, cmd);
 			}
 			break;
-		case R_CONS_KEY_F5:
+		case RZ_CONS_KEY_F5:
 			cmd = rz_config_get (core->config, "key.f5");
 			if (cmd && *cmd) {
 				(void)rz_core_cmd0 (core, cmd);
 			}
 			break;
-		case R_CONS_KEY_F6:
+		case RZ_CONS_KEY_F6:
 			cmd = rz_config_get (core->config, "key.f6");
 			if (cmd && *cmd) {
 				(void)rz_core_cmd0 (core, cmd);
 			}
 			break;
-		case R_CONS_KEY_F7:
+		case RZ_CONS_KEY_F7:
 			cmd = rz_config_get (core->config, "key.f7");
 			if (cmd && *cmd) {
 				(void)rz_core_cmd0 (core, cmd);
@@ -4843,7 +4843,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalFunction *_fcn,
 				graph_single_step_in (core, g);
 			}
 			break;
-		case R_CONS_KEY_F8:
+		case RZ_CONS_KEY_F8:
 			cmd = rz_config_get (core->config, "key.f8");
 			if (cmd && *cmd) {
 				(void)rz_core_cmd0 (core, cmd);
@@ -4851,7 +4851,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalFunction *_fcn,
 				graph_single_step_over (core, g);
 			}
 			break;
-		case R_CONS_KEY_F9:
+		case RZ_CONS_KEY_F9:
 			cmd = rz_config_get (core->config, "key.f9");
 			if (cmd && *cmd) {
 				(void)rz_core_cmd0 (core, cmd);
@@ -4859,19 +4859,19 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalFunction *_fcn,
 				graph_continue (core);
 			}
 			break;
-		case R_CONS_KEY_F10:
+		case RZ_CONS_KEY_F10:
 			cmd = rz_config_get (core->config, "key.f10");
 			if (cmd && *cmd) {
 				(void)rz_core_cmd0 (core, cmd);
 			}
 			break;
-		case R_CONS_KEY_F11:
+		case RZ_CONS_KEY_F11:
 			cmd = rz_config_get (core->config, "key.f11");
 			if (cmd && *cmd) {
 				(void)rz_core_cmd0 (core, cmd);
 			}
 			break;
-		case R_CONS_KEY_F12:
+		case RZ_CONS_KEY_F12:
 			cmd = rz_config_get (core->config, "key.f12");
 			if (cmd && *cmd) {
 				(void)rz_core_cmd0 (core, cmd);

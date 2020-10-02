@@ -28,7 +28,7 @@ static RBinInfo* info(RBinFile* bf) {
 		return NULL;
 	}
 
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 
@@ -52,7 +52,7 @@ static RzList* sections(RBinFile* bf) {
 		return NULL;
 	}
 
-	if (!(sect = R_NEW0 (RBinSection))) {
+	if (!(sect = RZ_NEW0 (RBinSection))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -71,7 +71,7 @@ static RzList* sections(RBinFile* bf) {
 	sect->size = sz - PSXEXE_TEXTSECTION_OFFSET;
 	sect->vaddr = psxheader.t_addr;
 	sect->vsize = psxheader.t_size;
-	sect->perm = R_PERM_RX;
+	sect->perm = RZ_PERM_RX;
 	sect->add = true;
 	sect->has_strings = true;
 
@@ -88,7 +88,7 @@ static RzList* entries(RBinFile* bf) {
 		return NULL;
 	}
 
-	if (!(addr = R_NEW0 (RBinAddr))) {
+	if (!(addr = RZ_NEW0 (RBinAddr))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -124,10 +124,10 @@ RBinPlugin rz_bin_plugin_psxexe = {
 	.strings = &strings,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_psxexe,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

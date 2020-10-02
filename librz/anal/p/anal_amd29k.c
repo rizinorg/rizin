@@ -292,23 +292,23 @@ static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 	if (amd29k_instr_decode (buf, len, &instruction, a->cpu)) {
 		op->type = instruction.op_type;
 		switch (op->type) {
-		case R_ANAL_OP_TYPE_JMP:
+		case RZ_ANAL_OP_TYPE_JMP:
 			op->jump = amd29k_instr_jump (addr, &instruction);
 			//op->delay = 1;
 			break;
-		case R_ANAL_OP_TYPE_CJMP:
+		case RZ_ANAL_OP_TYPE_CJMP:
 			op->jump = amd29k_instr_jump (addr, &instruction);
 			op->fail = addr + 4;
 			//op->delay = 1;
 			break;
-		case R_ANAL_OP_TYPE_ICALL:
+		case RZ_ANAL_OP_TYPE_ICALL:
 			if (amd29k_instr_is_ret (&instruction)) {
-				op->type = R_ANAL_OP_TYPE_RET;
+				op->type = RZ_ANAL_OP_TYPE_RET;
 				op->eob = true;
 			}
 			//op->delay = 1;
 			break;
-		case R_ANAL_OP_TYPE_RET:
+		case RZ_ANAL_OP_TYPE_RET:
 			op->eob = true;
 			//op->delay = 1;
 			break;
@@ -333,10 +333,10 @@ RzAnalPlugin rz_anal_plugin_amd29k = {
 	.set_reg_profile = &set_reg_profile,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_amd29k,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

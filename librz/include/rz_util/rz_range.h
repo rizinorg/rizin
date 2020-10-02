@@ -1,5 +1,5 @@
-#ifndef R_RANGE_H
-#define R_RANGE_H
+#ifndef RZ_RANGE_H
+#define RZ_RANGE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,4 +41,4 @@ RZ_API int rz_range_overlap(ut64 a0, ut64 a1, ut64 b0, ut64 b1, int *d);
 }
 #endif
 
-#endif //  R_RANGE_H
+#endif //  RZ_RANGE_H

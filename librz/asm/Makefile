@@ -3,7 +3,7 @@ include ../../global.mk
 NAME=rz_asm
 R2DEPS=rz_syscall rz_lang rz_util rz_parse
 R2DEPS+=rz_flag rz_cons rz_reg
-CFLAGS+=-DR2_PLUGIN_INCORE -Iarch/include -Iarch -I../../shlr
+CFLAGS+=-DRZ_PLUGIN_INCORE -Iarch/include -Iarch -I../../shlr
 CURDIR=p/
 
 include $(TOP)/librz/config.mk

@@ -6,7 +6,7 @@
 // TODO: optimize reallocs.. store RBuffer info.. wait. extend rz_buf_ for that?
 
 RZ_API RCache *rz_cache_new(void) {
-	RCache *c = R_NEW0 (RCache);
+	RCache *c = RZ_NEW0 (RCache);
 	if (!c) {
 		return NULL;
 	}
@@ -92,6 +92,6 @@ RZ_API void rz_cache_flush(RCache *c) {
 	if (c) {
 		c->base = 0;
 		c->len = 0;
-		R_FREE (c->buf);
+		RZ_FREE (c->buf);
 	}
 }

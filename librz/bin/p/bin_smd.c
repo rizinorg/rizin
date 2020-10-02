@@ -110,7 +110,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
@@ -128,7 +128,7 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static void addsym(RzList *ret, const char *name, ut64 addr) {
-	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
+	RBinSymbol *ptr = RZ_NEW0 (RBinSymbol);
 	if (!ptr) {
 		return;
 	}
@@ -257,27 +257,27 @@ static RzList *sections(RBinFile *bf) {
 		return NULL;
 	}
 	RBinSection *ptr;
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("vtable");
 	ptr->paddr = ptr->vaddr = 0;
 	ptr->size = ptr->vsize = 0x100;
-	ptr->perm = R_PERM_R;
+	ptr->perm = RZ_PERM_R;
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("header");
 	ptr->paddr = ptr->vaddr = 0x100;
 	ptr->size = ptr->vsize = sizeof (SMD_Header);
-	ptr->perm = R_PERM_R;
+	ptr->perm = RZ_PERM_R;
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("text");
@@ -289,7 +289,7 @@ static RzList *sections(RBinFile *bf) {
 		ptr->vaddr += baddr;
 	}
 	ptr->size = ptr->vsize = rz_buf_size (bf->buf) - ptr->paddr;
-	ptr->perm = R_PERM_RX;
+	ptr->perm = RZ_PERM_RX;
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 	return ret;
@@ -301,7 +301,7 @@ static RzList *entries(RBinFile *bf) { // Should be 3 offsets pointed by NMI, RE
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
-	if (!(ptr = R_NEW0 (RBinAddr))) {
+	if (!(ptr = RZ_NEW0 (RBinAddr))) {
 		return ret;
 	}
 	if (bf->size < sizeof (SMD_Vectors)) {
@@ -332,10 +332,10 @@ RBinPlugin rz_bin_plugin_smd = {
 	.strfilter = 'U'
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_smd,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

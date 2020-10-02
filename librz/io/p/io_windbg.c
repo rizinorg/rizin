@@ -55,11 +55,11 @@ static P##IFace IFace##_impl_new(                     \
 	if (!idbg) {                                      \
 		return NULL;                                  \
 	}                                                 \
-	P##IFace##_IMPL callbacks = R_NEW (IFace##_IMPL); \
+	P##IFace##_IMPL callbacks = RZ_NEW (IFace##_IMPL); \
 	if (!callbacks) {                                 \
 		return NULL;                                  \
 	}                                                 \
-	callbacks->lpVtbl = R_NEW (IVtbl);                \
+	callbacks->lpVtbl = RZ_NEW (IVtbl);                \
 	if (!callbacks->lpVtbl) {                         \
 		free (callbacks);                             \
 		return NULL;                                  \
@@ -157,7 +157,7 @@ static STDMETHODIMP __input_cb(PDEBUG_INPUT_CALLBACKS This, ULONG BufferSize) {
 	ITHISCALL (dbgCtrl, GetPromptText, prompt, sizeof (prompt), NULL);
 	rz_line_set_prompt (prompt);
 	const char *str = rz_line_readline ();
-	char *ret = rz_str_ndup (str, R_MIN (strlen (str), BufferSize));
+	char *ret = rz_str_ndup (str, RZ_MIN (strlen (str), BufferSize));
 	ITHISCALL (dbgCtrl, ReturnInput, ret);
 	return S_OK;
 }
@@ -261,7 +261,7 @@ fail:
 }
 
 static DbgEngContext *create_remote_context(const char *opts) {
-	DbgEngContext *idbg = R_NEW0 (DbgEngContext);
+	DbgEngContext *idbg = RZ_NEW0 (DbgEngContext);
 
 	if (!idbg) {
 		return false;
@@ -302,7 +302,7 @@ fail:
 }
 
 static DbgEngContext *create_context(void) {
-	DbgEngContext *idbg = R_NEW0 (DbgEngContext);
+	DbgEngContext *idbg = RZ_NEW0 (DbgEngContext);
 
 	if (!idbg) {
 		return false;
@@ -346,7 +346,7 @@ static int windbg_init(void) {
 	}
 	char *ext_path = rz_sys_getenv ("_NT_DEBUGGER_EXTENSION_PATH");
 	HANDLE h = NULL;
-	if (R_STR_ISNOTEMPTY (ext_path)) {
+	if (RZ_STR_ISNOTEMPTY (ext_path)) {
 		char *s = strtok (ext_path, ";");
 		do {
 			PWCHAR dir = rz_utf8_to_utf16 (s);
@@ -566,7 +566,7 @@ static RzIODesc *windbg_open(RzIO *io, const char *uri, int perm, int mode) {
 	}
 	rz_str_argv_free (argv);
 remote_client:
-	fd = rz_io_desc_new (io, &rz_io_plugin_windbg, uri, perm | R_PERM_X, mode, idbg);
+	fd = rz_io_desc_new (io, &rz_io_plugin_windbg, uri, perm | RZ_PERM_X, mode, idbg);
 	fd->name = strdup (args);
 	core->dbg->user = idbg;
 	io->corebind.cmd (io->corebind.core, "dL windbg");
@@ -588,13 +588,13 @@ static int windbg_close(RzIODesc *fd) {
 
 static ut64 windbg_lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
-	case R_IO_SEEK_SET:
+	case RZ_IO_SEEK_SET:
 		io->off = offset;
 		break;
-	case R_IO_SEEK_CUR:
+	case RZ_IO_SEEK_CUR:
 		io->off += (st64)offset;
 		break;
-	case R_IO_SEEK_END:
+	case RZ_IO_SEEK_END:
 		io->off = UT64_MAX;
 		break;
 	}
@@ -660,7 +660,7 @@ static bool windbg_getbase(RzIODesc *fd, ut64 *base) {
 
 static char *windbg_system(RzIO *io, RzIODesc *fd, const char *cmd) {
 	DbgEngContext *idbg = fd->data;
-	if (R_STR_ISEMPTY (cmd) || !strncmp ("pid", cmd, 3)) {
+	if (RZ_STR_ISEMPTY (cmd) || !strncmp ("pid", cmd, 3)) {
 		return NULL;
 	}
 	ITHISCALL (dbgCtrl, Execute, DEBUG_OUTCTL_ALL_CLIENTS, cmd, DEBUG_EXECUTE_DEFAULT);
@@ -686,10 +686,10 @@ RzIOPlugin rz_io_plugin_windbg = {
 	.check = windbg_check,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_windbg,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

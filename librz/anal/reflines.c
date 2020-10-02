@@ -24,7 +24,7 @@ static int cmp_by_ref_lvl(const RzAnalRefline *a, const RzAnalRefline *b) {
 }
 
 static ReflineEnd *refline_end_new(ut64 val, bool is_from, RzAnalRefline *ref) {
-	ReflineEnd *re = R_NEW0 (struct refline_end);
+	ReflineEnd *re = RZ_NEW0 (struct refline_end);
 	if (!re) {
 		return NULL;
 	}
@@ -36,7 +36,7 @@ static ReflineEnd *refline_end_new(ut64 val, bool is_from, RzAnalRefline *ref) {
 
 static bool add_refline(RzList *list, RzList *sten, ut64 addr, ut64 to, int *idx) {
 	ReflineEnd *re1, *re2;
-	RzAnalRefline *item = R_NEW0 (RzAnalRefline);
+	RzAnalRefline *item = RZ_NEW0 (RzAnalRefline);
 	if (!item) {
 		return false;
 	}
@@ -130,11 +130,11 @@ RZ_API RzList *rz_anal_reflines_get(RzAnal *anal, ut64 addr, const ut8 *buf, ut6
 					RIntervalNode *node = *it;
 					RzAnalMetaItem *meta = node->data;
 					switch (meta->type) {
-					case R_META_TYPE_DATA:
-					case R_META_TYPE_STRING:
-					case R_META_TYPE_HIDE:
-					case R_META_TYPE_FORMAT:
-					case R_META_TYPE_MAGIC:
+					case RZ_META_TYPE_DATA:
+					case RZ_META_TYPE_STRING:
+					case RZ_META_TYPE_HIDE:
+					case RZ_META_TYPE_FORMAT:
+					case RZ_META_TYPE_MAGIC:
 						skip = rz_meta_node_size (node);
 						goto do_skip;
 					default:
@@ -159,7 +159,7 @@ do_skip:
 
 		// This can segfault if opcode length and buffer check fails
 		rz_anal_op_fini (&op);
-		sz = rz_anal_op (anal, &op, addr, ptr, (int)(end - ptr), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
+		sz = rz_anal_op (anal, &op, addr, ptr, (int)(end - ptr), RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_HINT);
 		sz = op.size;
 		if (sz <= 0) {
 			sz = 1;
@@ -168,12 +168,12 @@ do_skip:
 
 		/* store data */
 		switch (op.type) {
-		case R_ANAL_OP_TYPE_CALL:
+		case RZ_ANAL_OP_TYPE_CALL:
 			if (!linescall) {
 				break;
 			}
-		case R_ANAL_OP_TYPE_CJMP:
-		case R_ANAL_OP_TYPE_JMP:
+		case RZ_ANAL_OP_TYPE_CJMP:
+		case RZ_ANAL_OP_TYPE_JMP:
 			if ((!linesout && (op.jump > opc + len || op.jump < opc)) || !op.jump) {
 				break;
 			}
@@ -189,7 +189,7 @@ do_skip:
 				}
 			}
 			break;
-		case R_ANAL_OP_TYPE_SWITCH:
+		case RZ_ANAL_OP_TYPE_SWITCH:
 		{
 			RzAnalCaseOp *caseop;
 			RzListIter *iter;
@@ -216,7 +216,7 @@ do_skip:
 	rz_anal_op_fini (&op);
 	rz_cons_break_pop ();
 
-	free_levels = R_NEWS0 (ut8, rz_list_length (list) + 1);
+	free_levels = RZ_NEWS0 (ut8, rz_list_length (list) + 1);
 	if (!free_levels) {
 		goto sten_err;
 	}
@@ -348,10 +348,10 @@ RZ_API RzAnalRefStr *rz_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	RzListIter *iter;
 	RzAnalRefline *ref;
 	int l;
-	bool wide = opts & R_ANAL_REFLINE_TYPE_WIDE;
+	bool wide = opts & RZ_ANAL_REFLINE_TYPE_WIDE;
 	int dir = 0, pos = -1, max_level = -1;
-	bool middle_before = opts & R_ANAL_REFLINE_TYPE_MIDDLE_BEFORE;
-	bool middle_after = opts & R_ANAL_REFLINE_TYPE_MIDDLE_AFTER;
+	bool middle_before = opts & RZ_ANAL_REFLINE_TYPE_MIDDLE_BEFORE;
+	bool middle_after = opts & RZ_ANAL_REFLINE_TYPE_MIDDLE_AFTER;
 	char *str = NULL;
 	char *col_str = NULL;
 
@@ -472,7 +472,7 @@ RZ_API RzAnalRefStr *rz_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	col_str = rz_str_append (col_str, arr_col);
 
 	rz_list_free (lvls);
-	RzAnalRefStr *out = R_NEW0 (RzAnalRefStr);
+	RzAnalRefStr *out = RZ_NEW0 (RzAnalRefStr);
 	out->str = str;
 	out->cols = col_str;
 	return out;

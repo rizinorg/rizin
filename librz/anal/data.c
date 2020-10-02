@@ -117,7 +117,7 @@ RZ_API char *rz_anal_data_to_string(RzAnalData *d, RzConsPrintablePalette *pal) 
 		rz_strbuf_appendf (sb, "0x%08" PFMT64x "  ", d->addr);
 	}
 	n32 = (ut32)d->ptr;
-	len = R_MIN (d->len, 8);
+	len = RZ_MIN (d->len, 8);
 	for (i = 0; i < len; i++) {
 		rz_strbuf_appendf (sb, "%02x", d->buf[i]);
 	}
@@ -126,17 +126,17 @@ RZ_API char *rz_anal_data_to_string(RzAnalData *d, RzConsPrintablePalette *pal) 
 	}
 	rz_strbuf_append (sb, "  ");
 	switch (d->type) {
-	case R_ANAL_DATA_TYPE_STRING:
+	case RZ_ANAL_DATA_TYPE_STRING:
 		if (pal) {
 			rz_strbuf_appendf (sb, "%sstring \"%s\""Color_RESET, pal->comment, d->str);
 		} else {
 			rz_strbuf_appendf (sb, "string \"%s\"", d->str);
 		}
 		break;
-	case R_ANAL_DATA_TYPE_WIDE_STRING:
+	case RZ_ANAL_DATA_TYPE_WIDE_STRING:
 		rz_strbuf_append (sb, "wide string");
 		break;
-	case R_ANAL_DATA_TYPE_NUMBER:
+	case RZ_ANAL_DATA_TYPE_NUMBER:
 		if (pal) {
 			const char *k = pal->num;
 			if (n32 == d->ptr) {
@@ -154,7 +154,7 @@ RZ_API char *rz_anal_data_to_string(RzAnalData *d, RzConsPrintablePalette *pal) 
 			}
 		}
 		break;
-	case R_ANAL_DATA_TYPE_POINTER:
+	case RZ_ANAL_DATA_TYPE_POINTER:
 		rz_strbuf_append (sb, "pointer ");
 		if (pal) {
 			const char *k = pal->offset;
@@ -163,23 +163,23 @@ RZ_API char *rz_anal_data_to_string(RzAnalData *d, RzConsPrintablePalette *pal) 
 			rz_strbuf_appendf (sb, " 0x%08" PFMT64x, d->ptr);
 		}
 		break;
-	case R_ANAL_DATA_TYPE_INVALID:
+	case RZ_ANAL_DATA_TYPE_INVALID:
 		if (pal) {
 			rz_strbuf_appendf (sb, "%sinvalid"Color_RESET, pal->invalid);
 		} else {
 			rz_strbuf_append (sb, "invalid");
 		}
 		break;
-	case R_ANAL_DATA_TYPE_HEADER:
+	case RZ_ANAL_DATA_TYPE_HEADER:
 		rz_strbuf_append (sb, "header");
 		break;
-	case R_ANAL_DATA_TYPE_SEQUENCE:
+	case RZ_ANAL_DATA_TYPE_SEQUENCE:
 		rz_strbuf_append (sb, "sequence");
 		break;
-	case R_ANAL_DATA_TYPE_PATTERN:
+	case RZ_ANAL_DATA_TYPE_PATTERN:
 		rz_strbuf_append (sb, "pattern");
 		break;
-	case R_ANAL_DATA_TYPE_UNKNOWN:
+	case RZ_ANAL_DATA_TYPE_UNKNOWN:
 		if (pal) {
 			rz_strbuf_appendf (sb, "%sunknown"Color_RESET, pal->invalid);
 		} else {
@@ -198,7 +198,7 @@ RZ_API char *rz_anal_data_to_string(RzAnalData *d, RzConsPrintablePalette *pal) 
 }
 
 RZ_API RzAnalData *rz_anal_data_new_string(ut64 addr, const char *p, int len, int type) {
-	RzAnalData *ad = R_NEW0 (RzAnalData);
+	RzAnalData *ad = RZ_NEW0 (RzAnalData);
 	if (!ad) {
 		return NULL;
 	}
@@ -209,7 +209,7 @@ RZ_API RzAnalData *rz_anal_data_new_string(ut64 addr, const char *p, int len, in
 		len = strlen (p);
 	}
 
-	if (type == R_ANAL_DATA_TYPE_WIDE_STRING) {
+	if (type == RZ_ANAL_DATA_TYPE_WIDE_STRING) {
 		/* TODO: add support for wide strings */
 	} else {
 		ad->str = malloc (len + 1);
@@ -233,8 +233,8 @@ RZ_API RzAnalData *rz_anal_data_new_string(ut64 addr, const char *p, int len, in
 }
 
 RZ_API RzAnalData *rz_anal_data_new(ut64 addr, int type, ut64 n, const ut8 *buf, int len) {
-	RzAnalData *ad = R_NEW0 (RzAnalData);
-	int l = R_MIN (len, 8);
+	RzAnalData *ad = RZ_NEW0 (RzAnalData);
+	int l = RZ_MIN (len, 8);
 	if (!ad) {
 		return NULL;
 	}
@@ -251,8 +251,8 @@ RZ_API RzAnalData *rz_anal_data_new(ut64 addr, int type, ut64 n, const ut8 *buf,
 	ad->type = type;
 	ad->str = NULL;
 	switch (type) {
-	case R_ANAL_DATA_TYPE_PATTERN:
-	case R_ANAL_DATA_TYPE_SEQUENCE:
+	case RZ_ANAL_DATA_TYPE_PATTERN:
+	case RZ_ANAL_DATA_TYPE_SEQUENCE:
 		ad->len = len;
 		break;
 	default:
@@ -276,16 +276,16 @@ RZ_API RzAnalData *rz_anal_data(RzAnal *anal, ut64 addr, const ut8 *buf, int siz
 	ut64 dst = 0;
 	int n, nsize = 0;
 	int bits = anal->bits;
-	int word = wordsize? wordsize: R_MIN (8, bits / 8);
+	int word = wordsize? wordsize: RZ_MIN (8, bits / 8);
 
 	if (size < 4) {
 		return NULL;
 	}
 	if (size >= word && is_invalid (buf, word)) {
-		return rz_anal_data_new (addr, R_ANAL_DATA_TYPE_INVALID, -1, buf, word);
+		return rz_anal_data_new (addr, RZ_ANAL_DATA_TYPE_INVALID, -1, buf, word);
 	}
 	{
-		int i, len = R_MIN (size, 64);
+		int i, len = RZ_MIN (size, 64);
 		int is_pattern = 0;
 		int is_sequence = 0;
 		char ch = buf[0];
@@ -302,37 +302,37 @@ RZ_API RzAnalData *rz_anal_data(RzAnal *anal, ut64 addr, const ut8 *buf, int siz
 			}
 		}
 		if (is_sequence > len - 2) {
-			return rz_anal_data_new (addr, R_ANAL_DATA_TYPE_SEQUENCE, -1,
+			return rz_anal_data_new (addr, RZ_ANAL_DATA_TYPE_SEQUENCE, -1,
 						buf, is_sequence);
 		}
 		if (is_pattern > len - 2) {
-			return rz_anal_data_new (addr, R_ANAL_DATA_TYPE_PATTERN, -1,
+			return rz_anal_data_new (addr, RZ_ANAL_DATA_TYPE_PATTERN, -1,
 						buf, is_pattern);
 		}
 	}
 	if (size >= word && is_null (buf, word)) {
-		return rz_anal_data_new (addr, R_ANAL_DATA_TYPE_NULL, -1, buf, word);
+		return rz_anal_data_new (addr, RZ_ANAL_DATA_TYPE_NULL, -1, buf, word);
 	}
 	if (is_bin (buf, size)) {
-		return rz_anal_data_new (addr, R_ANAL_DATA_TYPE_HEADER, -1, buf, word);
+		return rz_anal_data_new (addr, RZ_ANAL_DATA_TYPE_HEADER, -1, buf, word);
 	}
 	if (size >= word) {
 		dst = is_pointer (anal, buf, word);
 		if (dst) {
-			return rz_anal_data_new (addr, R_ANAL_DATA_TYPE_POINTER, dst, buf, word);
+			return rz_anal_data_new (addr, RZ_ANAL_DATA_TYPE_POINTER, dst, buf, word);
 		}
 	}
 	switch (is_string (buf, size, &nsize)) {
-	case 1: return rz_anal_data_new_string (addr, (const char *)buf, nsize, R_ANAL_DATA_TYPE_STRING);
-	case 2: return rz_anal_data_new_string (addr, (const char *)buf, nsize, R_ANAL_DATA_TYPE_WIDE_STRING);
+	case 1: return rz_anal_data_new_string (addr, (const char *)buf, nsize, RZ_ANAL_DATA_TYPE_STRING);
+	case 2: return rz_anal_data_new_string (addr, (const char *)buf, nsize, RZ_ANAL_DATA_TYPE_WIDE_STRING);
 	}
 	if (size >= word) {
 		n = is_number (buf, word);
 		if (n) {
-			return rz_anal_data_new (addr, R_ANAL_DATA_TYPE_NUMBER, n, buf, word);
+			return rz_anal_data_new (addr, RZ_ANAL_DATA_TYPE_NUMBER, n, buf, word);
 		}
 	}
-	return rz_anal_data_new (addr, R_ANAL_DATA_TYPE_UNKNOWN, dst, buf, R_MIN (word, size));
+	return rz_anal_data_new (addr, RZ_ANAL_DATA_TYPE_UNKNOWN, dst, buf, RZ_MIN (word, size));
 }
 
 RZ_API const char *rz_anal_data_kind(RzAnal *a, ut64 addr, const ut8 *buf, int len) {
@@ -353,21 +353,21 @@ RZ_API const char *rz_anal_data_kind(RzAnal *a, ut64 addr, const ut8 *buf, int l
 			continue;
 		}
 		switch (data->type) {
-		case R_ANAL_DATA_TYPE_INVALID:
+		case RZ_ANAL_DATA_TYPE_INVALID:
 			inv++;
 			i += word;
 			break;
-		case R_ANAL_DATA_TYPE_NUMBER:
+		case RZ_ANAL_DATA_TYPE_NUMBER:
 			if (data->ptr > 1000) {
 				num++;
 			}
 			i += word;
 			break;
-		case R_ANAL_DATA_TYPE_UNKNOWN:
+		case RZ_ANAL_DATA_TYPE_UNKNOWN:
 			unk++;
 			i += word;
 			break;
-		case R_ANAL_DATA_TYPE_STRING:
+		case RZ_ANAL_DATA_TYPE_STRING:
 			if (data->len > 0) {
 				i += data->len;
 			} else {
@@ -400,25 +400,25 @@ RZ_API const char *rz_anal_data_kind(RzAnal *a, ut64 addr, const ut8 *buf, int l
 
 RZ_API const char *rz_anal_datatype_to_string(RzAnalDataType t) {
 	switch (t) {
-	case R_ANAL_DATATYPE_NULL:
+	case RZ_ANAL_DATATYPE_NULL:
 		return NULL;
-	case R_ANAL_DATATYPE_ARRAY:
+	case RZ_ANAL_DATATYPE_ARRAY:
 		return "array";
-	case R_ANAL_DATATYPE_OBJECT: // instance
+	case RZ_ANAL_DATATYPE_OBJECT: // instance
 		return "object";
-	case R_ANAL_DATATYPE_STRING:
+	case RZ_ANAL_DATATYPE_STRING:
 		return "string";
-	case R_ANAL_DATATYPE_CLASS:
+	case RZ_ANAL_DATATYPE_CLASS:
 		return "class";
-	case R_ANAL_DATATYPE_BOOLEAN:
+	case RZ_ANAL_DATATYPE_BOOLEAN:
 		return "boolean";
-	case R_ANAL_DATATYPE_INT16:
+	case RZ_ANAL_DATATYPE_INT16:
 		return "int16";
-	case R_ANAL_DATATYPE_INT32:
+	case RZ_ANAL_DATATYPE_INT32:
 		return "int32";
-	case R_ANAL_DATATYPE_INT64:
+	case RZ_ANAL_DATATYPE_INT64:
 		return "int64";
-	case R_ANAL_DATATYPE_FLOAT:
+	case RZ_ANAL_DATATYPE_FLOAT:
 		return "float";
 	}
 	return NULL;

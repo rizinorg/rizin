@@ -1,5 +1,5 @@
-#ifndef R_PKCS7_H
-#define R_PKCS7_H
+#ifndef RZ_PKCS7_H
+#define RZ_PKCS7_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -95,4 +95,4 @@ RZ_API void rz_pkcs7_free_spcinfo(SpcIndirectDataContent *spcinfo);
 }
 #endif
 
-#endif /* R_PKCS7_H */
+#endif /* RZ_PKCS7_H */

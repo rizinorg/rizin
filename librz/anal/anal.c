@@ -6,15 +6,15 @@
 #include <rz_io.h>
 #include <config.h>
 
-R_LIB_VERSION(rz_anal);
+RZ_LIB_VERSION(rz_anal);
 
 static RzAnalPlugin *anal_static_plugins[] = {
-	R_ANAL_STATIC_PLUGINS
+	RZ_ANAL_STATIC_PLUGINS
 };
 
 RZ_API void rz_anal_set_limits(RzAnal *anal, ut64 from, ut64 to) {
 	free (anal->limit);
-	anal->limit = R_NEW0 (RzAnalRange);
+	anal->limit = RZ_NEW0 (RzAnalRange);
 	if (anal->limit) {
 		anal->limit->from = from;
 		anal->limit->to = to;
@@ -22,7 +22,7 @@ RZ_API void rz_anal_set_limits(RzAnal *anal, ut64 from, ut64 to) {
 }
 
 RZ_API void rz_anal_unset_limits(RzAnal *anal) {
-	R_FREE (anal->limit);
+	RZ_FREE (anal->limit);
 }
 
 static void meta_unset_for(REvent *ev, int type, void *user, void *data) {
@@ -78,7 +78,7 @@ static void rz_meta_item_free(void *_item) {
 
 RZ_API RzAnal *rz_anal_new(void) {
 	int i;
-	RzAnal *anal = R_NEW0 (RzAnal);
+	RzAnal *anal = RZ_NEW0 (RzAnal);
 	if (!anal) {
 		return NULL;
 	}
@@ -89,23 +89,23 @@ RZ_API RzAnal *rz_anal_new(void) {
 	anal->bb_tree = NULL;
 	anal->ht_addr_fun = ht_up_new0 ();
 	anal->ht_name_fun = ht_pp_new0 ();
-	anal->os = strdup (R_SYS_OS);
-	anal->esil_goto_limit = R_ANAL_ESIL_GOTO_LIMIT;
+	anal->os = strdup (RZ_SYS_OS);
+	anal->esil_goto_limit = RZ_ANAL_ESIL_GOTO_LIMIT;
 	anal->opt.nopskip = true; // skip nops in code analysis
 	anal->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
 	anal->gp = 0LL;
 	anal->sdb = sdb_new0 ();
-	anal->cpp_abi = R_ANAL_CPP_ABI_ITANIUM;
+	anal->cpp_abi = RZ_ANAL_CPP_ABI_ITANIUM;
 	anal->opt.depth = 32;
 	anal->opt.noncode = false; // do not analyze data by default
 	rz_spaces_init (&anal->meta_spaces, "CS");
-	rz_event_hook (anal->meta_spaces.event, R_SPACE_EVENT_UNSET, meta_unset_for, NULL);
-	rz_event_hook (anal->meta_spaces.event, R_SPACE_EVENT_COUNT, meta_count_for, NULL);
+	rz_event_hook (anal->meta_spaces.event, RZ_SPACE_EVENT_UNSET, meta_unset_for, NULL);
+	rz_event_hook (anal->meta_spaces.event, RZ_SPACE_EVENT_COUNT, meta_count_for, NULL);
 
 	rz_spaces_init (&anal->zign_spaces, "zs");
-	rz_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_UNSET, zign_unset_for, NULL);
-	rz_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_COUNT, zign_count_for, NULL);
-	rz_event_hook (anal->zign_spaces.event, R_SPACE_EVENT_RENAME, zign_rename_for, NULL);
+	rz_event_hook (anal->zign_spaces.event, RZ_SPACE_EVENT_UNSET, zign_unset_for, NULL);
+	rz_event_hook (anal->zign_spaces.event, RZ_SPACE_EVENT_COUNT, zign_count_for, NULL);
+	rz_event_hook (anal->zign_spaces.event, RZ_SPACE_EVENT_RENAME, zign_rename_for, NULL);
 	rz_anal_hint_storage_init (anal);
 	rz_interval_tree_init (&anal->meta, rz_meta_item_free);
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
@@ -118,8 +118,8 @@ RZ_API RzAnal *rz_anal_new(void) {
 	anal->cb_printf = (PrintfCallback) printf;
 	(void)rz_anal_pin_init (anal);
 	(void)rz_anal_xrefs_init (anal);
-	anal->diff_thbb = R_ANAL_THRESHOLDBB;
-	anal->diff_thfcn = R_ANAL_THRESHOLDFCN;
+	anal->diff_thbb = RZ_ANAL_THRESHOLDBB;
+	anal->diff_thfcn = RZ_ANAL_THRESHOLDFCN;
 	anal->syscall = rz_syscall_new ();
 	rz_io_bind_init (anal->iob);
 	rz_flag_bind_init (anal->flb);
@@ -243,10 +243,10 @@ RZ_API bool rz_anal_set_reg_profile(RzAnal *anal) {
 RZ_API bool rz_anal_set_triplet(RzAnal *anal, const char *os, const char *arch, int bits) {
 	rz_return_val_if_fail (anal, false);
 	if (!os || !*os) {
-		os = R_SYS_OS;
+		os = RZ_SYS_OS;
 	}
 	if (!arch || !*arch) {
-		arch = anal->cur? anal->cur->arch: R_SYS_ARCH;
+		arch = anal->cur? anal->cur->arch: RZ_SYS_ARCH;
 	}
 	if (bits < 1) {
 		bits = anal->bits;
@@ -268,7 +268,7 @@ static void sdb_concat_by_path(Sdb *s, const char *path) {
 RZ_API bool rz_anal_set_os(RzAnal *anal, const char *os) {
 	Sdb *types = anal->sdb_types;
 	const char *dir_prefix = rz_sys_prefix (NULL);
-	const char *dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s.sdb"),
+	const char *dbpath = sdb_fmt (RZ_JOIN_3_PATHS ("%s", RZ_SDB_FCNSIGN, "types-%s.sdb"),
 		dir_prefix, os);
 	if (rz_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
@@ -295,7 +295,7 @@ RZ_API bool rz_anal_set_bits(RzAnal *anal, int bits) {
 RZ_API void rz_anal_set_cpu(RzAnal *anal, const char *cpu) {
 	free (anal->cpu);
 	anal->cpu = cpu ? strdup (cpu) : NULL;
-	int v = rz_anal_archinfo (anal, R_ANAL_ARCHINFO_ALIGN);
+	int v = rz_anal_archinfo (anal, RZ_ANAL_ARCHINFO_ALIGN);
 	if (v != -1) {
 		anal->pcalign = v;
 	}
@@ -332,7 +332,7 @@ RZ_API ut8 *rz_anal_mask(RzAnal *anal, int size, const ut8 *data, ut64 at) {
 	memset (ret, 0xff, size);
 
 	while (idx < size) {
-		if ((oplen = rz_anal_op (anal, op, at, data + idx, size - idx, R_ANAL_OP_MASK_BASIC)) < 1) {
+		if ((oplen = rz_anal_op (anal, op, at, data + idx, size - idx, RZ_ANAL_OP_MASK_BASIC)) < 1) {
 			break;
 		}
 		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode != 0) {
@@ -377,7 +377,7 @@ RZ_API RzList* rz_anal_get_fcns (RzAnal *anal) {
 }
 
 RZ_API RzAnalOp *rz_anal_op_hexstr(RzAnal *anal, ut64 addr, const char *str) {
-	RzAnalOp *op = R_NEW0 (RzAnalOp);
+	RzAnalOp *op = RZ_NEW0 (RzAnalOp);
 	if (!op) {
 		return NULL;
 	}
@@ -387,7 +387,7 @@ RZ_API RzAnalOp *rz_anal_op_hexstr(RzAnal *anal, ut64 addr, const char *str) {
 		return NULL;
 	}
 	int len = rz_hex_str2bin (str, buf);
-	rz_anal_op (anal, op, addr, buf, len, R_ANAL_OP_MASK_BASIC);
+	rz_anal_op (anal, op, addr, buf, len, RZ_ANAL_OP_MASK_BASIC);
 	free (buf);
 	return op;
 }
@@ -397,14 +397,14 @@ RZ_API bool rz_anal_op_is_eob(RzAnalOp *op) {
 		return true;
 	}
 	switch (op->type) {
-	case R_ANAL_OP_TYPE_JMP:
-	case R_ANAL_OP_TYPE_UJMP:
-	case R_ANAL_OP_TYPE_RJMP:
-	case R_ANAL_OP_TYPE_IJMP:
-	case R_ANAL_OP_TYPE_IRJMP:
-	case R_ANAL_OP_TYPE_CJMP:
-	case R_ANAL_OP_TYPE_RET:
-	case R_ANAL_OP_TYPE_TRAP:
+	case RZ_ANAL_OP_TYPE_JMP:
+	case RZ_ANAL_OP_TYPE_UJMP:
+	case RZ_ANAL_OP_TYPE_RJMP:
+	case RZ_ANAL_OP_TYPE_IJMP:
+	case RZ_ANAL_OP_TYPE_IRJMP:
+	case RZ_ANAL_OP_TYPE_CJMP:
+	case RZ_ANAL_OP_TYPE_RET:
+	case RZ_ANAL_OP_TYPE_TRAP:
 		return true;
 	default:
 		return false;
@@ -430,9 +430,9 @@ RZ_API void rz_anal_purge(RzAnal *anal) {
 RZ_API int rz_anal_archinfo(RzAnal *anal, int query) {
 	rz_return_val_if_fail (anal, -1);
 	switch (query) {
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
-	case R_ANAL_ARCHINFO_ALIGN:
+	case RZ_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case RZ_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case RZ_ANAL_ARCHINFO_ALIGN:
 		if (anal->cur && anal->cur->archinfo) {
 			return anal->cur->archinfo (anal, query);
 		}
@@ -608,25 +608,25 @@ static bool noreturn_recurse(RzAnal *anal, ut64 addr) {
 		eprintf ("Couldn't read buffer\n");
 		return false;
 	}
-	if (rz_anal_op (anal, &op, addr, bbuf, sizeof (bbuf), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL) < 1) {
+	if (rz_anal_op (anal, &op, addr, bbuf, sizeof (bbuf), RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_VAL) < 1) {
 		return false;
 	}
-	switch (op.type & R_ANAL_OP_TYPE_MASK) {
-	case R_ANAL_OP_TYPE_JMP:
+	switch (op.type & RZ_ANAL_OP_TYPE_MASK) {
+	case RZ_ANAL_OP_TYPE_JMP:
 		if (op.jump == UT64_MAX) {
 			recurse_addr = op.ptr;
 		} else {
 			recurse_addr = op.jump;
 		}
 		break;
-	case R_ANAL_OP_TYPE_UCALL:
-	case R_ANAL_OP_TYPE_RCALL:
-	case R_ANAL_OP_TYPE_ICALL:
-	case R_ANAL_OP_TYPE_IRCALL:
+	case RZ_ANAL_OP_TYPE_UCALL:
+	case RZ_ANAL_OP_TYPE_RCALL:
+	case RZ_ANAL_OP_TYPE_ICALL:
+	case RZ_ANAL_OP_TYPE_IRCALL:
 		recurse_addr = op.ptr;
 		break;
-	case R_ANAL_OP_TYPE_CCALL:
-	case R_ANAL_OP_TYPE_CALL:
+	case RZ_ANAL_OP_TYPE_CCALL:
+	case RZ_ANAL_OP_TYPE_CALL:
 		recurse_addr = op.jump;
 		break;
 	}

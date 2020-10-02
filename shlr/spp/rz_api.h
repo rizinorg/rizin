@@ -1,11 +1,11 @@
 #ifndef S_STRBUF_H
 #define S_STRBUF_H
 
-#ifndef R_FREE
-#define R_FREE(x) { free(x); x = NULL; }
+#ifndef RZ_FREE
+#define RZ_FREE(x) { free(x); x = NULL; }
 #endif
-#ifndef R_NEW0
-#define R_NEW0(x) (x*)calloc(1,sizeof(x))
+#ifndef RZ_NEW0
+#define RZ_NEW0(x) (x*)calloc(1,sizeof(x))
 #endif
 
 #ifdef _MSC_VER

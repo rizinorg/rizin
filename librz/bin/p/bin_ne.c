@@ -76,7 +76,7 @@ static void header(RBinFile *bf) {
 
 RBinInfo *info(RBinFile *bf) {
 	rz_bin_ne_obj_t *ne = bf->o->bin_obj;
-	RBinInfo *i = R_NEW0 (RBinInfo);
+	RBinInfo *i = RZ_NEW0 (RBinInfo);
 	if (i) {
 		i->bits = 16;
 		i->arch = strdup ("x86");
@@ -124,10 +124,10 @@ RBinPlugin rz_bin_plugin_ne = {
 	.minstrlen = 4
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_ne,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

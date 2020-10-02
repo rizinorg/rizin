@@ -24,7 +24,7 @@ static int rcoreasm_address_comparator(RzCoreAsmHit *a, RzCoreAsmHit *b){
 }
 
 RZ_API RzCoreAsmHit *rz_core_asm_hit_new(void) {
-	RzCoreAsmHit *hit = R_NEW0 (RzCoreAsmHit);
+	RzCoreAsmHit *hit = RZ_NEW0 (RzCoreAsmHit);
 	if (!hit) {
 		return NULL;
 	}
@@ -110,7 +110,7 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 		return NULL;
 	}
 	tokens[0] = NULL;
-	for (tokcount = 0; tokcount < R_ARRAY_SIZE (tokens) - 1; tokcount++) {
+	for (tokcount = 0; tokcount < RZ_ARRAY_SIZE (tokens) - 1; tokcount++) {
 		tok = strtok (tokcount? NULL: ptr, ";");
 		if (!tok) {
 			break;
@@ -138,8 +138,8 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 			rz_asm_set_pc (core->rasm, addr);
 			if (mode == 'i') {
 				RzAnalOp analop = {0};
-				ut64 len = R_MIN (15, core->blocksize - idx);
-				if (rz_anal_op (core->anal, &analop, addr, buf + idx, len, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM) < 1) {
+				ut64 len = RZ_MIN (15, core->blocksize - idx);
+				if (rz_anal_op (core->anal, &analop, addr, buf + idx, len, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM) < 1) {
 					idx ++; // TODO: honor mininstrsz
 					continue;
 				}
@@ -156,7 +156,7 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 				if (match) {
 					if (!(hit = rz_core_asm_hit_new ())) {
 						rz_list_purge (hits);
-						R_FREE (hits);
+						RZ_FREE (hits);
 						goto beach;
 					}
 					hit->addr = addr;
@@ -178,7 +178,7 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 				continue;
 			} else if (mode == 'e') {
 				RzAnalOp analop = {0};
-				if (rz_anal_op (core->anal, &analop, addr, buf + idx, 15, R_ANAL_OP_MASK_ESIL) < 1) {
+				if (rz_anal_op (core->anal, &analop, addr, buf + idx, 15, RZ_ANAL_OP_MASK_ESIL) < 1) {
 					idx ++; // TODO: honor mininstrsz
 					continue;
 				}
@@ -224,7 +224,7 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 					}
 					if (!(hit = rz_core_asm_hit_new ())) {
 						rz_list_purge (hits);
-						R_FREE (hits);
+						RZ_FREE (hits);
 						goto beach;
 					}
 					hit->addr = addr;
@@ -236,7 +236,7 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 					code[strlen (code) - 2] = 0;
 					hit->code = strdup (code);
 					rz_list_append (hits, hit);
-					R_FREE (code);
+					RZ_FREE (code);
 					matchcount = 0;
 					idx = tidx + 1;
 					if (maxhits) {
@@ -258,12 +258,12 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 				if (everyByte) {
 					idx = matchcount? tidx + 1: idx + 1;
 				} else {
-					idx += R_MAX (1, len);
+					idx += RZ_MAX (1, len);
 				}
-				R_FREE (code);
+				RZ_FREE (code);
 				matchcount = 0;
 			}
-			R_FREE (opst);
+			RZ_FREE (opst);
 		}
 	}
 	rz_cons_break_pop ();
@@ -272,7 +272,7 @@ beach:
 	free (buf);
 	free (ptr);
 	free (code);
-	R_FREE (opst);
+	RZ_FREE (opst);
 	rz_cons_break_pop ();
 	return hits;
 }
@@ -304,7 +304,7 @@ static void add_hit_to_hits(RzList* hits, ut64 addr, int len, ut8 is_valid) {
 }
 
 static int prune_hits_in_addr_range(RzList *hits, ut64 addr, ut64 len, ut8 is_valid) {
-	RzCoreAsmHit hit = R_EMPTY;
+	RzCoreAsmHit hit = RZ_EMPTY;
 	hit.addr = addr;
 	hit.len = len;
 	hit.valid = is_valid;
@@ -391,7 +391,7 @@ static int handle_forward_disassemble(RzCore* core, RzList *hits, ut8* buf, ut64
 				rz_list_add_sorted (hits, hit, ((RzListComparator)rcoreasm_address_comparator));
 				IFDBG eprintf("Pruned %u hits from list in fwd sweep.\n", prune_results);
 			} else {
-				R_FREE (hit);
+				RZ_FREE (hit);
 			}
 		}
 
@@ -488,7 +488,7 @@ RZ_API RzList *rz_core_asm_bwdisassemble(RzCore *core, ut64 addr, int n, int len
 		return NULL;
 	}
 
-	len = R_MIN (len - len % addrbytes, addrbytes * addr);
+	len = RZ_MIN (len - len % addrbytes, addrbytes * addr);
 	if (len < 1) {
 		rz_list_free (hits);
 		return NULL;

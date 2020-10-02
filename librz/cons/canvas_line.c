@@ -367,9 +367,9 @@ loop:
 }
 
 RZ_API void rz_cons_canvas_line_square (RzConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style) {
-	int min_x = R_MIN (x, x2);
-	int diff_x = R_ABS (x - x2);
-	int diff_y = R_ABS (y - y2);
+	int min_x = RZ_MIN (x, x2);
+	int diff_x = RZ_ABS (x - x2);
+	int diff_y = RZ_ABS (y - y2);
 
 	apply_line_style (c, x, y, x2, y2, style, 1);
 
@@ -401,10 +401,10 @@ RZ_API void rz_cons_canvas_line_square_defined (RzConsCanvas *c, int x, int y, i
 		rz_cons_canvas_line (c, x, y, x2, y2, style);
 		return;
 	}
-	int min_x = R_MIN (x, x2);
-	int diff_x = R_ABS (x - x2);
-	int diff_y = R_ABS (y - y2);
-	int min_y = R_MIN (y, y2);
+	int min_x = RZ_MIN (x, x2);
+	int diff_x = RZ_ABS (x - x2);
+	int diff_y = RZ_ABS (y - y2);
+	int min_y = RZ_MIN (y, y2);
 
 	apply_line_style (c, x, y, x2, y2, style, isvert);
 
@@ -454,13 +454,13 @@ RZ_API void rz_cons_canvas_line_back_edge (RzConsCanvas *c, int x, int y, int x2
 		rz_cons_canvas_line (c, x, y, x2, y2, style);
 		return;
 	}
-	int min_x1 = R_MIN (x, xbendpoint);
-	int min_x2 = R_MIN (x2, xbendpoint);
+	int min_x1 = RZ_MIN (x, xbendpoint);
+	int min_x2 = RZ_MIN (x2, xbendpoint);
 
-	int diff_x1 = R_ABS (x - xbendpoint);
-	int diff_x2 = R_ABS (x2 - xbendpoint);
+	int diff_x1 = RZ_ABS (x - xbendpoint);
+	int diff_x2 = RZ_ABS (x2 - xbendpoint);
 
-	int diff_y = R_ABS ((y + ybendpoint1 + 1) - (y2 - ybendpoint2- 1));
+	int diff_y = RZ_ABS ((y + ybendpoint1 + 1) - (y2 - ybendpoint2- 1));
 
 	int w1 = diff_x1 == 0 ? 0 : diff_x1 + 1;
 	int w2 = diff_x2 == 0 ? 0 : diff_x2 + 1;
@@ -474,10 +474,10 @@ RZ_API void rz_cons_canvas_line_back_edge (RzConsCanvas *c, int x, int y, int x2
 		draw_horizontal_line (c, min_x2, y2 - ybendpoint2, w2, DOT_DOT, style->dot_style);
 		draw_vertical_line (c, x2, y2 - ybendpoint2 + 1, ybendpoint2 + 1, style->dot_style);
 	} else {
-		int miny1 = R_MIN (y, xbendpoint);
-		int miny2 = R_MIN (y2, xbendpoint);
-		int diff_y1 = R_ABS (y - xbendpoint);
-		int diff_y2 = R_ABS (y2 - xbendpoint);
+		int miny1 = RZ_MIN (y, xbendpoint);
+		int miny2 = RZ_MIN (y2, xbendpoint);
+		int diff_y1 = RZ_ABS (y - xbendpoint);
+		int diff_y2 = RZ_ABS (y2 - xbendpoint);
 
 		draw_horizontal_line (c, x + 1, y, 1 + ybendpoint1 + 1, xbendpoint > y ? NRM_DOT : NRM_APEX, style->dot_style);
 		draw_vertical_line (c, x + 1 + ybendpoint1 + 1, miny1 + 1, diff_y1 - 1, style->dot_style);

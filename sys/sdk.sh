@@ -13,10 +13,10 @@ fi
 # Builds an SDK to build stuff for rbin
 export CFLAGS="-Os -fPIC"
 make mrproper
-if [ -z "${R2_PLUGINS_CFG}" ]; then
-	R2_PLUGINS_CFG=plugins.bin.cfg
+if [ -z "${RZ_PLUGINS_CFG}" ]; then
+	RZ_PLUGINS_CFG=plugins.bin.cfg
 fi
-cp -f "${R2_PLUGINS_CFG}" plugins.cfg
+cp -f "${RZ_PLUGINS_CFG}" plugins.cfg
 #./configure-plugins
 ./configure --prefix="$PREFIX" --with-librz --without-libuv --without-gpl || exit 1
 #--disable-loadlibs || exit 1

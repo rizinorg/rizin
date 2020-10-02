@@ -50,7 +50,7 @@ static void header(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret;
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
@@ -97,7 +97,7 @@ static RzList *sections(RBinFile *bf) {
 	}
 
 	rz_list_foreach (obj->pages, it, page) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RBinSection))) {
 			return ret;
 		}
 
@@ -107,7 +107,7 @@ static RzList *sections(RBinFile *bf) {
 		ptr->vaddr = page->start;
 		ptr->vsize = PAGE_SIZE;
 		ptr->add = true;
-		ptr->perm = R_PERM_R;
+		ptr->perm = RZ_PERM_R;
 
 		rz_list_append (ret, ptr);
 	}
@@ -146,10 +146,10 @@ RBinPlugin rz_bin_plugin_dmp64 = {
 	.sections = &sections
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_dmp64,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

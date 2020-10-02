@@ -60,7 +60,7 @@ enum {
 	P_DirectoryTableBase, // PCB
 	P_ImageBaseAddress,   // PEB
 	P_ProcessParameters,  // PEB
-	R_ImagePathName,      // RTL_USER_PROCESS_PARAMETERS
+	RZ_ImagePathName,      // RTL_USER_PROCESS_PARAMETERS
 	ET_Tcb,               // ETHREAD
 	ET_ThreadListEntry,   // ETHREAD
 	ET_Win32StartAddress, // ETHREAD

@@ -781,7 +781,7 @@ static void set_offset_hint(RzCore *core, RzAnalOp *op, const char *type, ut64 l
 			rz_anal_hint_set_offset (core->anal, at, res);
 		}
 	} else if (cmt && rz_anal_op_ismemref (op->type)) {
-		rz_meta_set_string (core->anal, R_META_TYPE_VARTYPE, at, cmt);
+		rz_meta_set_string (core->anal, RZ_META_TYPE_VARTYPE, at, cmt);
 	}
 }
 
@@ -792,15 +792,15 @@ RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to) {
 	if (from >= to) {
 		return 0;
 	}
-	const int mininstrsz = rz_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
-	const int minopcode = R_MAX (1, mininstrsz);
+	const int mininstrsz = rz_anal_archinfo (core->anal, RZ_ANAL_ARCHINFO_MIN_OP_SIZE);
+	const int minopcode = RZ_MAX (1, mininstrsz);
 	while (at < to) {
-		RzAnalOp *op = rz_core_anal_op (core, at, R_ANAL_OP_MASK_BASIC);
+		RzAnalOp *op = rz_core_anal_op (core, at, RZ_ANAL_OP_MASK_BASIC);
 		if (!op || op->size <= 0) {
 			at += minopcode;
 			continue;
 		}
-		if ((op->stackop == R_ANAL_STACK_INC) && R_ABS (op->stackptr) < 8096) {
+		if ((op->stackop == RZ_ANAL_STACK_INC) && RZ_ABS (op->stackptr) < 8096) {
 			stack += op->stackptr;
 			if (stack > maxstack) {
 				maxstack = stack;
@@ -850,8 +850,8 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalFunction *fcn) {
 	int iotrap = rz_config_get_i (core->config, "esil.iotrap");
 	int stacksize = rz_config_get_i (core->config, "esil.stack.depth");
 	unsigned int addrsize = rz_config_get_i (core->config, "esil.addr.size");
-	const char *pc_name = rz_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	const char *sp_name = rz_reg_get_name (core->anal->reg, R_REG_NAME_SP);
+	const char *pc_name = rz_reg_get_name (core->anal->reg, RZ_REG_NAME_PC);
+	const char *sp_name = rz_reg_get_name (core->anal->reg, RZ_REG_NAME_SP);
 	RzRegItem *pc = rz_reg_get (core->anal->reg, pc_name, -1);
 
 	if (!fcn) {
@@ -861,10 +861,10 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalFunction *fcn) {
 		return;
 	}
 	rz_anal_esil_setup (esil, core->anal, 0, 0, 0);
-	int i, ret, bsize = R_MAX (64, core->blocksize);
-	const int mininstrsz = rz_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
-	const int maxinstrsz = rz_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
-	const int minopcode = R_MAX (1, mininstrsz);
+	int i, ret, bsize = RZ_MAX (64, core->blocksize);
+	const int mininstrsz = rz_anal_archinfo (core->anal, RZ_ANAL_ARCHINFO_MIN_OP_SIZE);
+	const int maxinstrsz = rz_anal_archinfo (core->anal, RZ_ANAL_ARCHINFO_MAX_OP_SIZE);
+	const int minopcode = RZ_MAX (1, mininstrsz);
 	ut8 *buf = malloc (bsize);
 	if (!buf) {
 		free (buf);
@@ -872,7 +872,7 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalFunction *fcn) {
 		return;
 	}
 	rz_reg_arena_push (core->anal->reg);
-	rz_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
+	rz_debug_reg_sync (core->dbg, RZ_REG_TYPE_ALL, true);
 	ut64 spval = rz_reg_getv (esil->anal->reg, sp_name);
 	if (spval) {
 		// reset stack pointer to initial value
@@ -911,7 +911,7 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalFunction *fcn) {
 			if (!i) {
 				rz_io_read_at (core->io, at, buf, bsize);
 			}
-			ret = rz_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_VAL);
+			ret = rz_anal_op (core->anal, &aop, at, buf + i, bsize - i, RZ_ANAL_OP_MASK_VAL);
 			if (ret <= 0) {
 				i += minopcode;
 				at += minopcode;
@@ -948,7 +948,7 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalFunction *fcn) {
 			char *dlink = rz_type_link_at (TDB, dst_addr);
 			//TODO: Handle register based arg for struct offset propgation
 			if (vlink && var && var->kind != 'r') {
-				if (rz_type_kind (TDB, vlink) == R_TYPE_UNION) {
+				if (rz_type_kind (TDB, vlink) == RZ_TYPE_UNION) {
 					varpfx = "union";
 				} else {
 					varpfx = "struct";
@@ -1151,7 +1151,7 @@ static int cmd_type(void *data, const char *input) {
 		if (member_name) {
 			*member_name++ = 0;
 		}
-		if (name && (rz_type_kind (TDB, name) != R_TYPE_ENUM)) {
+		if (name && (rz_type_kind (TDB, name) != RZ_TYPE_ENUM)) {
 			eprintf ("%s is not an enum\n", name);
 			free (name);
 			break;

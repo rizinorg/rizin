@@ -1,5 +1,5 @@
-#ifndef R2_RBTREE_H
-#define R2_RBTREE_H
+#ifndef RZ_RBTREE_H
+#define RZ_RBTREE_H
 
 #include <limits.h>
 #include <stdbool.h>
@@ -13,7 +13,7 @@ extern "C" {
 
 // max height <= 2 * floor(log2(n + 1))
 // We use `int` for size, so <= 2 * 31
-#define R_RBTREE_MAX_HEIGHT 62
+#define RZ_RBTREE_MAX_HEIGHT 62
 
 // Singleton can be zero initialized
 typedef struct rz_rb_node_t {
@@ -40,7 +40,7 @@ typedef struct rz_rb_iter_t {
 	// current path from root to the current node
 	// excluding nodes into whose right (or left, for reverse iteration) branch the iterator has descended
 	// (these nodes are before the current)
-	RBNode *path[R_RBTREE_MAX_HEIGHT];
+	RBNode *path[RZ_RBTREE_MAX_HEIGHT];
 } RBIter;
 
 typedef int (*RContRBCmp)(void *incoming, void *in, void *user);

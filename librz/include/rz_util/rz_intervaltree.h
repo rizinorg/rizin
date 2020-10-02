@@ -1,7 +1,7 @@
 /* rizin - LGPL - Copyright 2019 - thestr4ng3r */
 
-#ifndef R_INTERVALTREE_H
-#define R_INTERVALTREE_H
+#ifndef RZ_INTERVALTREE_H
+#define RZ_INTERVALTREE_H
 
 #include "rz_rbtree.h"
 #include "../rz_types.h"
@@ -94,4 +94,4 @@ static inline RIntervalNode *rz_interval_tree_iter_get(RIntervalTreeIter *it) {
 	for ((it) = rz_rbtree_last (&(tree)->root->node); rz_rbtree_iter_has (&it) && (dat = rz_rbtree_iter_get (&it, RIntervalNode, node)->data); rz_rbtree_iter_prev (&(it)))
 
 
-#endif //R_INTERVALTREE_H
+#endif //RZ_INTERVALTREE_H

@@ -1,5 +1,5 @@
-#ifndef R_SIGNAL_H
-#define R_SIGNAL_H
+#ifndef RZ_SIGNAL_H
+#define RZ_SIGNAL_H
 
 #if __UNIX__
 #include <signal.h>
@@ -24,4 +24,4 @@ RZ_API void rz_signal_sigmask(int how, const sigset_t *newmask, sigset_t *oldmas
 }
 #endif
 
-#endif //  R_SIGNAL_H
+#endif //  RZ_SIGNAL_H

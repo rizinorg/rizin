@@ -11,12 +11,12 @@ static bool test_anal_sign_get_set(void) {
 	item->realname = strdup ("sym.Mah.Boi");
 	item->comment = strdup ("This peace is what all true warriors strive for");
 
-	item->bytes = R_NEW0 (RzSignBytes);
+	item->bytes = RZ_NEW0 (RzSignBytes);
 	item->bytes->size = 4;
 	item->bytes->bytes = (ut8 *)strdup ("\xde\xad\xbe\xef");
 	item->bytes->mask = (ut8 *)strdup ("\xc0\xff\xee\x42");
 
-	item->graph = R_NEW0 (RzSignGraph);
+	item->graph = RZ_NEW0 (RzSignGraph);
 	item->graph->bbsum = 42;
 	item->graph->cc = 123;
 	item->graph->ebbs = 13;
@@ -44,7 +44,7 @@ static bool test_anal_sign_get_set(void) {
 	rz_list_append (item->types, strdup ("func.sym.mahboi.arg.0=\"int,arg0\""));
 	rz_list_append (item->types, strdup ("func.sym.mahboi.arg.1=\"uint32_t,die\""));
 
-	item->hash = R_NEW0 (RzSignHash);
+	item->hash = RZ_NEW0 (RzSignHash);
 	item->hash->bbhash = strdup ("7bfa1358c427e26bc03c2384f41de7be6ebc01958a57e9a6deda5bdba9768851");
 
 	rz_sign_add_item (anal, item);

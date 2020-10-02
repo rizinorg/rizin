@@ -4,7 +4,7 @@
 #define _BSD_DEBUG_H
 #include <rz_debug.h>
 #include <sys/ptrace.h>
-#define R_DEBUG_REG_T struct reg
+#define RZ_DEBUG_REG_T struct reg
 
 int bsd_handle_signals(RzDebug *dbg);
 int bsd_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size);

@@ -50,22 +50,22 @@ static const char *parse_def(RzReg *reg, char **tok, const int n) {
 	} else {
 		type2 = type = rz_reg_type_by_name (tok[0]);
 		/* Hack to put flags in the same arena as gpr */
-		if (type == R_REG_TYPE_FLG) {
-			type2 = R_REG_TYPE_GPR;
+		if (type == RZ_REG_TYPE_FLG) {
+			type2 = RZ_REG_TYPE_GPR;
 		}
 	}
 	if (type < 0 || type2 < 0) {
 		return "Invalid register type";
 	}
 #if 1
-	if (rz_reg_get (reg, tok[1], R_REG_TYPE_ALL)) {
+	if (rz_reg_get (reg, tok[1], RZ_REG_TYPE_ALL)) {
 		eprintf ("Ignoring duplicated register definition '%s'\n", tok[1]);
 		return NULL;
 		//return "Duplicate register definition";
 	}
 #endif
 
-	RzRegItem *item = R_NEW0 (RzRegItem);
+	RzRegItem *item = RZ_NEW0 (RzRegItem);
 	if (!item) {
 		return "Unable to allocate memory";
 	}
@@ -222,7 +222,7 @@ RZ_API bool rz_reg_set_profile_string(RzReg *reg, const char *str) {
 		}
 	} while (*p++);
 	reg->size = 0;
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		RzRegSet *rs = &reg->regset[i];
 		//eprintf ("* arena %s size %d\n", rz_reg_get_type (i), rs->arena->size);
 		if (rs && rs->arena) {
@@ -247,7 +247,7 @@ RZ_API bool rz_reg_set_profile(RzReg *reg, const char *profile) {
 	char *base, *file;
 	char *str = rz_file_slurp (profile, NULL);
 	if (!str) {
-		base = rz_sys_getenv (R_LIB_ENV);
+		base = rz_sys_getenv (RZ_LIB_ENV);
 		if (base) {
 			file = rz_str_append (base, profile);
 			str = rz_file_slurp (file, NULL);
@@ -384,9 +384,9 @@ static char *gdb_to_rz_profile(const char *gdb) {
 RZ_API char *rz_reg_parse_gdb_profile(const char *profile_file) {
 	char *base, *str = NULL;
 	if (!(str = rz_file_slurp (profile_file, NULL))) {
-		char *base = rz_sys_getenv (R_LIB_ENV);
+		char *base = rz_sys_getenv (RZ_LIB_ENV);
 		if (base) {
-			char *file = rz_str_appendf (base, R_SYS_DIR "%s", profile_file);
+			char *file = rz_str_appendf (base, RZ_SYS_DIR "%s", profile_file);
 			if (file) {
 				str = rz_file_slurp (file, NULL);
 				free (file);

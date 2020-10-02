@@ -1,5 +1,5 @@
-#ifndef R_POOL_H
-#define R_POOL_H
+#ifndef RZ_POOL_H
+#define RZ_POOL_H
 #include <rz_util/rz_mem.h>
 
 #ifdef __cplusplus
@@ -22,4 +22,4 @@ RZ_API void rz_poolfactory_free(RPoolFactory *pf);
 }
 #endif
 
-#endif //  R_POOL_H
+#endif //  RZ_POOL_H

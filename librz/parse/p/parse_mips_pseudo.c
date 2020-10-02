@@ -278,18 +278,18 @@ static bool subvar(RzParse *p, RzAnalFunction *f, ut64 addr, int oplen, char *da
 			reg = p->get_reg_at (f, var->delta, addr);
 		}
 		if (!reg) {
-			reg = anal->reg->name[R_REG_NAME_SP];
+			reg = anal->reg->name[RZ_REG_NAME_SP];
 		}
 		char *tmpf;
 		//TODO: honor asm pseudo
-		if (R_ABS (delta) < 10) {
+		if (RZ_ABS (delta) < 10) {
 			tmpf = "%d(%s)";
 		} else if (delta > 0) {
 			tmpf = "0x%x(%s)";
 		} else {
 			tmpf = "-0x%x(%s)";
 		}
-		oldstr = rz_str_newf (tmpf, R_ABS (delta), reg);
+		oldstr = rz_str_newf (tmpf, RZ_ABS (delta), reg);
 		if (ucase) {
 			char *comma = strchr (oldstr, ',');
 			if (comma) {
@@ -324,16 +324,16 @@ static bool subvar(RzParse *p, RzAnalFunction *f, ut64 addr, int oplen, char *da
 			reg = p->get_reg_at (f, var->delta, addr);
 		}
 		if (!reg) {
-			reg = anal->reg->name[R_REG_NAME_BP];
+			reg = anal->reg->name[RZ_REG_NAME_BP];
 		}
-		if (R_ABS (delta) < 10) {
+		if (RZ_ABS (delta) < 10) {
 			tmpf = "%d(%s)";
 		} else if (delta > 0) {
 			tmpf = "0x%x(%s)";
 		} else {
 			tmpf = "-0x%x(%s)";
 		}
-		oldstr = rz_str_newf (tmpf, R_ABS (delta), reg);
+		oldstr = rz_str_newf (tmpf, RZ_ABS (delta), reg);
 		if (ucase) {
 			char *comma = strchr (oldstr, ',');
 			if (comma) {
@@ -375,10 +375,10 @@ RzParsePlugin rz_parse_plugin_mips_pseudo = {
 	.subvar = subvar,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_PARSE,
+	.type = RZ_LIB_TYPE_PARSE,
 	.data = &rz_parse_plugin_mips_pseudo,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

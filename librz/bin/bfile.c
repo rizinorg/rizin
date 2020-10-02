@@ -5,8 +5,8 @@
 #include "i/private.h"
 
 // maybe too big sometimes? 2KB of stack eaten here..
-#define R_STRING_SCAN_BUFFER_SIZE 2048
-#define R_STRING_MAX_UNI_BLOCKS 4
+#define RZ_STRING_SCAN_BUFFER_SIZE 2048
+#define RZ_STRING_MAX_UNI_BLOCKS 4
 
 static RBinClass *__getClass(RBinFile *bf, const char *name) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->classes_ht && name, NULL);
@@ -55,7 +55,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 	// If raw string dump mode, use printf to dump directly to stdout.
 	//  PrintfCallback temp = io->cb_printf;
 	switch (mode) {
-	case R_MODE_JSON:
+	case RZ_MODE_JSON:
 		{
 			if (pj) {
 				pj_o (pj);
@@ -71,17 +71,17 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 			}
 		}
 		break;
-	case R_MODE_SIMPLEST:
+	case RZ_MODE_SIMPLEST:
 		io->cb_printf ("%s\n", string->string);
 		break;
-	case R_MODE_SIMPLE:
+	case RZ_MODE_SIMPLE:
 		if (raw == 2) {
 			io->cb_printf ("0x%08"PFMT64x" %s\n", addr, string->string);
 		} else {
 			io->cb_printf ("%s\n", string->string);
 		}
 		break;
-	case R_MODE_RADARE: {
+	case RZ_MODE_RADARE: {
 		char *f_name, *nstr;
 		f_name = strdup (string->string);
 		rz_name_filter (f_name, 512);
@@ -102,7 +102,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 		free (f_name);
 		break;
 		}
-	case R_MODE_PRINT:
+	case RZ_MODE_PRINT:
 		io->cb_printf ("%03u 0x%08" PFMT64x " 0x%08" PFMT64x " %3u %3u "
 			       "(%s) %5s %s\n",
 			string->ordinal, string->paddr, vaddr,
@@ -115,16 +115,16 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 static int string_scan_range(RzList *list, RBinFile *bf, int min,
 			      const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
 	RBin *bin = bf->rbin;
-	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
+	ut8 tmp[RZ_STRING_SCAN_BUFFER_SIZE];
 	ut64 str_start, needle = from;
 	int count = 0, i, rc, runes;
-	int str_type = R_STRING_TYPE_DETECT;
+	int str_type = RZ_STRING_TYPE_DETECT;
 
 	// if list is null it means its gonna dump
 	rz_return_val_if_fail (bf, -1);
 
 	if (type == -1) {
-		type = R_STRING_TYPE_DETECT;
+		type = RZ_STRING_TYPE_DETECT;
 	}
 	if (from == to) {
 		return 0;
@@ -143,7 +143,7 @@ static int string_scan_range(RzList *list, RBinFile *bf, int min,
 	RBinSection *s = NULL;
 	bool ascii_only = false;
 	PJ *pj = NULL;
-	if (bf->strmode == R_MODE_JSON && !list) {
+	if (bf->strmode == RZ_MODE_JSON && !list) {
 		pj = pj_new ();
 		if (pj) {
 			pj_a (pj);
@@ -162,21 +162,21 @@ static int string_scan_range(RzList *list, RBinFile *bf, int min,
 			needle++;
 			continue;
 		}
-		if (type == R_STRING_TYPE_DETECT) {
+		if (type == RZ_STRING_TYPE_DETECT) {
 			char *w = (char *)buf + needle + rc - from;
 			if ((to - needle) > 5 + rc) {
 				bool is_wide32 = (needle + rc + 2 < to) && (!w[0] && !w[1] && !w[2] && w[3] && !w[4]);
 				if (is_wide32) {
-					str_type = R_STRING_TYPE_WIDE32;
+					str_type = RZ_STRING_TYPE_WIDE32;
 				} else {
 					bool is_wide = needle + rc + 2 < to && !w[0] && w[1] && !w[2];
-					str_type = is_wide? R_STRING_TYPE_WIDE: R_STRING_TYPE_ASCII;
+					str_type = is_wide? RZ_STRING_TYPE_WIDE: RZ_STRING_TYPE_ASCII;
 				}
 			} else {
-				str_type = R_STRING_TYPE_ASCII;
+				str_type = RZ_STRING_TYPE_ASCII;
 			}
-		} else if (type == R_STRING_TYPE_UTF8) {
-			str_type = R_STRING_TYPE_ASCII; // initial assumption
+		} else if (type == RZ_STRING_TYPE_UTF8) {
+			str_type = RZ_STRING_TYPE_ASCII; // initial assumption
 		} else {
 			str_type = type;
 		}
@@ -187,12 +187,12 @@ static int string_scan_range(RzList *list, RBinFile *bf, int min,
 		for (i = 0; i < sizeof (tmp) - 4 && needle < to; i += rc) {
 			RRune r = {0};
 
-			if (str_type == R_STRING_TYPE_WIDE32) {
+			if (str_type == RZ_STRING_TYPE_WIDE32) {
 				rc = rz_utf32le_decode (buf + needle - from, to - needle, &r);
 				if (rc) {
 					rc = 4;
 				}
-			} else if (str_type == R_STRING_TYPE_WIDE) {
+			} else if (str_type == RZ_STRING_TYPE_WIDE) {
 				rc = rz_utf16le_decode (buf + needle - from, to - needle, &r);
 				if (rc == 1) {
 					rc = 2;
@@ -200,7 +200,7 @@ static int string_scan_range(RzList *list, RBinFile *bf, int min,
 			} else {
 				rc = rz_utf8_decode (buf + needle - from, to - needle, &r);
 				if (rc > 1) {
-					str_type = R_STRING_TYPE_UTF8;
+					str_type = RZ_STRING_TYPE_UTF8;
 				}
 			}
 
@@ -213,7 +213,7 @@ static int string_scan_range(RzList *list, RBinFile *bf, int min,
 			needle += rc;
 
 			if (rz_isprint (r) && r != '\\') {
-				if (str_type == R_STRING_TYPE_WIDE32) {
+				if (str_type == RZ_STRING_TYPE_WIDE32) {
 					if (r == 0xff) {
 						r = 0;
 					}
@@ -242,7 +242,7 @@ static int string_scan_range(RzList *list, RBinFile *bf, int min,
 
 		tmp[i++] = '\0';
 
-		if (runes < min && runes >= 2 && str_type == R_STRING_TYPE_ASCII && needle < to) {
+		if (runes < min && runes >= 2 && str_type == RZ_STRING_TYPE_ASCII && needle < to) {
 			// back up past the \0 to the last char just in case it starts a wide string
 			needle -= 2;
 		}
@@ -250,7 +250,7 @@ static int string_scan_range(RzList *list, RBinFile *bf, int min,
 			// reduce false positives
 			int j, num_blocks, *block_list;
 			int *freq_list = NULL, expected_ascii, actual_ascii, num_chars;
-			if (str_type == R_STRING_TYPE_ASCII) {
+			if (str_type == RZ_STRING_TYPE_ASCII) {
 				for (j = 0; j < i; j++) {
 					char ch = tmp[j];
 					if (ch != '\n' && ch != '\r' && ch != '\t') {
@@ -261,12 +261,12 @@ static int string_scan_range(RzList *list, RBinFile *bf, int min,
 				}
 			}
 			switch (str_type) {
-			case R_STRING_TYPE_UTF8:
-			case R_STRING_TYPE_WIDE:
-			case R_STRING_TYPE_WIDE32:
+			case RZ_STRING_TYPE_UTF8:
+			case RZ_STRING_TYPE_WIDE:
+			case RZ_STRING_TYPE_WIDE32:
 				num_blocks = 0;
 				block_list = rz_utf_block_list ((const ut8*)tmp, i - 1,
-				                               str_type == R_STRING_TYPE_WIDE ? &freq_list : NULL);
+				                               str_type == RZ_STRING_TYPE_WIDE ? &freq_list : NULL);
 				if (block_list) {
 					for (j = 0; block_list[j] != -1; j++) {
 						num_blocks++;
@@ -291,11 +291,11 @@ static int string_scan_range(RzList *list, RBinFile *bf, int min,
 					}
 				}
 				free (block_list);
-				if (num_blocks > R_STRING_MAX_UNI_BLOCKS) {
+				if (num_blocks > RZ_STRING_MAX_UNI_BLOCKS) {
 					continue;
 				}
 			}
-			RBinString *bs = R_NEW0 (RBinString);
+			RBinString *bs = RZ_NEW0 (RBinString);
 			if (!bs) {
 				break;
 			}
@@ -305,7 +305,7 @@ static int string_scan_range(RzList *list, RBinFile *bf, int min,
 			bs->ordinal = count++;
 			// TODO: move into adjust_offset
 			switch (str_type) {
-			case R_STRING_TYPE_WIDE:
+			case RZ_STRING_TYPE_WIDE:
 				if (str_start - from > 1) {
 					const ut8 *p = buf + str_start - 2 - from;
 					if (p[0] == 0xff && p[1] == 0xfe) {
@@ -313,7 +313,7 @@ static int string_scan_range(RzList *list, RBinFile *bf, int min,
 					}
 				}
 				break;
-			case R_STRING_TYPE_WIDE32:
+			case RZ_STRING_TYPE_WIDE32:
 				if (str_start - from > 3) {
 					const ut8 *p = buf + str_start - 4 - from;
 					if (p[0] == 0xff && p[1] == 0xfe) {
@@ -412,15 +412,15 @@ static void get_strings_range(RBinFile *bf, RzList *list, int min, int raw, ut64
 	int type;
 	const char *enc = bf->rbin->strenc;
 	if (!enc) {
-		type = R_STRING_TYPE_DETECT;
+		type = RZ_STRING_TYPE_DETECT;
 	} else if (!strcmp (enc, "latin1")) {
-		type = R_STRING_TYPE_ASCII;
+		type = RZ_STRING_TYPE_ASCII;
 	} else if (!strcmp (enc, "utf8")) {
-		type = R_STRING_TYPE_UTF8;
+		type = RZ_STRING_TYPE_UTF8;
 	} else if (!strcmp (enc, "utf16le")) {
-		type = R_STRING_TYPE_WIDE;
+		type = RZ_STRING_TYPE_WIDE;
 	} else if (!strcmp (enc, "utf32le")) {
-		type = R_STRING_TYPE_WIDE32;
+		type = RZ_STRING_TYPE_WIDE32;
 	} else { // TODO utf16be, utf32be
 		eprintf ("ERROR: encoding %s not supported\n", enc);
 		return;
@@ -428,12 +428,12 @@ static void get_strings_range(RBinFile *bf, RzList *list, int min, int raw, ut64
 	string_scan_range (list, bf, min, from, to, type, raw, section);
 }
 
-R_IPI RBinFile *rz_bin_file_new(RBin *bin, const char *file, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr) {
+RZ_IPI RBinFile *rz_bin_file_new(RBin *bin, const char *file, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr) {
 	ut32 bf_id;
 	if (!rz_id_pool_grab_id (bin->ids->pool, &bf_id)) {
 		return NULL;
 	}
-	RBinFile *bf = R_NEW0 (RBinFile);
+	RBinFile *bf = RZ_NEW0 (RBinFile);
 	if (bf) {
 		bf->id = bf_id;
 		bf->rbin = bin;
@@ -488,7 +488,7 @@ RZ_API bool rz_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 b
 	}
 	bf->narch = data->file_count;
 	if (!o->info) {
-		o->info = R_NEW0 (RBinInfo);
+		o->info = RZ_NEW0 (RBinInfo);
 	}
 	free (o->info->file);
 	free (o->info->arch);
@@ -513,7 +513,7 @@ static bool xtr_metadata_match(RBinXtrData *xtr_data, const char *arch, int bits
 	return bits == iter_bits && !strcmp (iter_arch, arch) && !xtr_data->loaded;
 }
 
-R_IPI RBinFile *rz_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer *buf, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname) {
+RZ_IPI RBinFile *rz_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer *buf, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname) {
 	rz_return_val_if_fail (bin && file && buf, NULL);
 
 	RBinFile *bf = rz_bin_file_new (bin, file, rz_buf_size (buf), rawstr, fd, pluginname, NULL, false);
@@ -561,7 +561,7 @@ RZ_API RBinFile *rz_bin_file_find_by_arch_bits(RBin *bin, const char *arch, int 
 	return binfile;
 }
 
-R_IPI RBinFile *rz_bin_file_find_by_id(RBin *bin, ut32 bf_id) {
+RZ_IPI RBinFile *rz_bin_file_find_by_id(RBin *bin, ut32 bf_id) {
 	RBinFile *bf;
 	RzListIter *iter;
 	rz_list_foreach (bin->binfiles, iter, bf) {
@@ -629,7 +629,7 @@ RZ_API RBinFile *rz_bin_file_find_by_name(RBin *bin, const char *name) {
 	return NULL;
 }
 
-R_IPI RBinFile *rz_bin_file_find_by_name_n(RBin *bin, const char *name, int idx) {
+RZ_IPI RBinFile *rz_bin_file_find_by_name_n(RBin *bin, const char *name, int idx) {
 	RzListIter *iter;
 	RBinFile *bf = NULL;
 	int i = 0;
@@ -659,7 +659,7 @@ RZ_API bool rz_bin_file_set_cur_by_fd(RBin *bin, ut32 bin_fd) {
 	return bf? rz_bin_file_set_cur_binfile (bin, bf): false;
 }
 
-R_IPI bool rz_bin_file_set_obj(RBin *bin, RBinFile *bf, RBinObject *obj) {
+RZ_IPI bool rz_bin_file_set_obj(RBin *bin, RBinFile *bf, RBinObject *obj) {
 	rz_return_val_if_fail (bin && bf, false);
 	bin->file = bf->file;
 	bin->cur = bf;
@@ -736,7 +736,7 @@ RZ_API void rz_bin_file_free(void /*RBinFile*/ *_bf) {
 	free (bf);
 }
 
-R_IPI RBinFile *rz_bin_file_xtr_load_buffer(RBin *bin, RBinXtrPlugin *xtr, const char *filename, RBuffer *buf, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
+RZ_IPI RBinFile *rz_bin_file_xtr_load_buffer(RBin *bin, RBinXtrPlugin *xtr, const char *filename, RBuffer *buf, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
 	rz_return_val_if_fail (bin && xtr && buf, NULL);
 
 	RBinFile *bf = rz_bin_file_find_by_name (bin, filename);
@@ -775,7 +775,7 @@ R_IPI RBinFile *rz_bin_file_xtr_load_buffer(RBin *bin, RBinXtrPlugin *xtr, const
 }
 
 // XXX deprecate this function imho.. wee can just access bf->buf directly
-R_IPI bool rz_bin_file_set_bytes(RBinFile *bf, const ut8 *bytes, ut64 sz, bool steal_ptr) {
+RZ_IPI bool rz_bin_file_set_bytes(RBinFile *bf, const ut8 *bytes, ut64 sz, bool steal_ptr) {
 	rz_return_val_if_fail (bf && bytes, false);
 	rz_buf_free (bf->buf);
 	if (steal_ptr) {
@@ -791,7 +791,7 @@ RZ_API RBinPlugin *rz_bin_file_cur_plugin(RBinFile *bf) {
 }
 
 // TODO: searchStrings() instead
-R_IPI RzList *rz_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
+RZ_IPI RzList *rz_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 	rz_return_val_if_fail (bf, NULL);
 	RzListIter *iter;
 	RBinSection *section;
@@ -832,7 +832,7 @@ R_IPI RzList *rz_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) 
 					ut64 cstr_vaddr = (bits == 64) ? rz_read_le64 (p) : rz_read_le32 (p);
 					RBinString *s = __stringAt (bf, ret, cstr_vaddr);
 					if (s) {
-						RBinString *bs = R_NEW0 (RBinString);
+						RBinString *bs = RZ_NEW0 (RBinString);
 						if (bs) {
 							bs->type = s->type;
 							bs->length = s->length;
@@ -901,9 +901,9 @@ RZ_API RzList *rz_bin_file_compute_hashes(RBin *bin, ut64 limit) {
 	}
 
 	char hash[128];
-	RzHash *ctx = rz_hash_new (false, R_HASH_MD5 | R_HASH_SHA1 | R_HASH_SHA256);
+	RzHash *ctx = rz_hash_new (false, RZ_HASH_MD5 | RZ_HASH_SHA1 | RZ_HASH_SHA256);
 	while (r + blocksize < buf_len) {
-		rz_io_desc_seek (iod, r, R_IO_SEEK_SET);
+		rz_io_desc_seek (iod, r, RZ_IO_SEEK_SET);
 		int b = rz_io_desc_read (iod, buf, blocksize);
 		(void)rz_hash_do_md5 (ctx, buf, blocksize);
 		(void)rz_hash_do_sha1 (ctx, buf, blocksize);
@@ -911,7 +911,7 @@ RZ_API RzList *rz_bin_file_compute_hashes(RBin *bin, ut64 limit) {
 		r += b;
 	}
 	if (r < buf_len) {
-		rz_io_desc_seek (iod, r, R_IO_SEEK_SET);
+		rz_io_desc_seek (iod, r, RZ_IO_SEEK_SET);
 		const size_t rem_len = buf_len-r;
 		int b = rz_io_desc_read (iod, buf, rem_len);
 		if (b < 1) {
@@ -922,29 +922,29 @@ RZ_API RzList *rz_bin_file_compute_hashes(RBin *bin, ut64 limit) {
 			(void)rz_hash_do_sha256 (ctx, buf, b);
 		}
 	}
-	rz_hash_do_end (ctx, R_HASH_MD5);
-	rz_hex_bin2str (ctx->digest, R_HASH_SIZE_MD5, hash);
+	rz_hash_do_end (ctx, RZ_HASH_MD5);
+	rz_hex_bin2str (ctx->digest, RZ_HASH_SIZE_MD5, hash);
 
 	RzList *file_hashes = rz_list_newf ((RzListFree) rz_bin_file_hash_free);
-	RBinFileHash *md5h = R_NEW0 (RBinFileHash);
+	RBinFileHash *md5h = RZ_NEW0 (RBinFileHash);
 	if (md5h) {
 		md5h->type = strdup ("md5");
 		md5h->hex = strdup (hash);
 		rz_list_push (file_hashes, md5h);
 	}
-	rz_hash_do_end (ctx, R_HASH_SHA1);
-	rz_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA1, hash);
+	rz_hash_do_end (ctx, RZ_HASH_SHA1);
+	rz_hex_bin2str (ctx->digest, RZ_HASH_SIZE_SHA1, hash);
 
-	RBinFileHash *sha1h = R_NEW0 (RBinFileHash);
+	RBinFileHash *sha1h = RZ_NEW0 (RBinFileHash);
 	if (sha1h) {
 		sha1h->type = strdup ("sha1");
 		sha1h->hex = strdup (hash);
 		rz_list_push (file_hashes, sha1h);
 	}
-	rz_hash_do_end (ctx, R_HASH_SHA256);
-	rz_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA256, hash);
+	rz_hash_do_end (ctx, RZ_HASH_SHA256);
+	rz_hex_bin2str (ctx->digest, RZ_HASH_SIZE_SHA256, hash);
 
-	RBinFileHash *sha256h = R_NEW0 (RBinFileHash);
+	RBinFileHash *sha256h = RZ_NEW0 (RBinFileHash);
 	if (sha256h) {
 		sha256h->type = strdup ("sha256");
 		sha256h->hex = strdup (hash);
@@ -975,9 +975,9 @@ RZ_API RzList *rz_bin_file_set_hashes(RBin *bin, RzList/*<RBinFileHash*/ *new_ha
 	return prev_hashes;
 }
 
-R_IPI RBinClass *rz_bin_class_new(const char *name, const char *super, int view) {
+RZ_IPI RBinClass *rz_bin_class_new(const char *name, const char *super, int view) {
 	rz_return_val_if_fail (name, NULL);
-	RBinClass *c = R_NEW0 (RBinClass);
+	RBinClass *c = RZ_NEW0 (RBinClass);
 	if (c) {
 		c->name = strdup (name);
 		c->super = super? strdup (super): NULL;
@@ -988,7 +988,7 @@ R_IPI RBinClass *rz_bin_class_new(const char *name, const char *super, int view)
 	return c;
 }
 
-R_IPI void rz_bin_class_free(RBinClass *k) {
+RZ_IPI void rz_bin_class_free(RBinClass *k) {
 	if (k && k->name) {
 		free (k->name);
 		free (k->super);
@@ -1028,7 +1028,7 @@ RZ_API RBinSymbol *rz_bin_file_add_method(RBinFile *bf, const char *klass, const
 	}
 	RBinSymbol *sym = __getMethod (bf, klass, method);
 	if (!sym) {
-		sym = R_NEW0 (RBinSymbol);
+		sym = RZ_NEW0 (RBinSymbol);
 		if (sym) {
 			sym->name = strdup (method);
 			rz_list_append (c->methods, sym);

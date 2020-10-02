@@ -62,16 +62,16 @@ RZ_API void rz_core_task_print (RzCore *core, RzCoreTask *task, int mode) {
 		{
 		rz_cons_printf ("{\"id\":%d,\"state\":\"", task->id);
 		switch (task->state) {
-		case R_CORE_TASK_STATE_BEFORE_START:
+		case RZ_CORE_TASK_STATE_BEFORE_START:
 			rz_cons_print ("before_start");
 			break;
-		case R_CORE_TASK_STATE_RUNNING:
+		case RZ_CORE_TASK_STATE_RUNNING:
 			rz_cons_print ("running");
 			break;
-		case R_CORE_TASK_STATE_SLEEPING:
+		case RZ_CORE_TASK_STATE_SLEEPING:
 			rz_cons_print ("sleeping");
 			break;
-		case R_CORE_TASK_STATE_DONE:
+		case RZ_CORE_TASK_STATE_DONE:
 			rz_cons_print ("done");
 			break;
 		}
@@ -127,7 +127,7 @@ RZ_API int rz_core_task_running_tasks_count(RzCoreTaskScheduler *scheduler) {
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter (scheduler, &old_sigset);
 	rz_list_foreach (scheduler->tasks, iter, task) {
-		if (task != scheduler->main_task && task->state != R_CORE_TASK_STATE_DONE) {
+		if (task != scheduler->main_task && task->state != RZ_CORE_TASK_STATE_DONE) {
 			count++;
 		}
 	}
@@ -208,7 +208,7 @@ static void task_free (RzCoreTask *task) {
 }
 
 RZ_API RzCoreTask *rz_core_task_new(RzCore *core, bool create_cons, const char *cmd, RzCoreTaskCallback cb, void *user) {
-	RzCoreTask *task = R_NEW0 (RzCoreTask);
+	RzCoreTask *task = RZ_NEW0 (RzCoreTask);
 	if (!task) {
 		goto hell;
 	}
@@ -234,7 +234,7 @@ RZ_API RzCoreTask *rz_core_task_new(RzCore *core, bool create_cons, const char *
 	}
 
 	task->id = core->tasks.task_id_next++;
-	task->state = R_CORE_TASK_STATE_BEFORE_START;
+	task->state = RZ_CORE_TASK_STATE_BEFORE_START;
 	task->refcount = 1;
 	task->transient = false;
 	task->core = core;
@@ -275,7 +275,7 @@ RZ_API void rz_core_task_decref (RzCoreTask *task) {
 RZ_API void rz_core_task_schedule(RzCoreTask *current, RTaskState next_state) {
 	RzCore *core = current->core;
 	RzCoreTaskScheduler *scheduler = &core->tasks;
-	bool stop = next_state != R_CORE_TASK_STATE_RUNNING;
+	bool stop = next_state != RZ_CORE_TASK_STATE_RUNNING;
 
 	if (scheduler->oneshot_running || (!stop && scheduler->tasks_running == 1 && scheduler->oneshots_enqueued == 0)) {
 		return;
@@ -345,7 +345,7 @@ static void task_wakeup(RzCoreTask *current) {
 	tasks_lock_enter (scheduler, &old_sigset);
 
 	scheduler->tasks_running++;
-	current->state = R_CORE_TASK_STATE_RUNNING;
+	current->state = RZ_CORE_TASK_STATE_RUNNING;
 
 	// check if there are other tasks running
 	bool single = scheduler->tasks_running == 1 || scheduler->tasks_running == 0;
@@ -383,11 +383,11 @@ RZ_API void rz_core_task_yield(RzCoreTaskScheduler *scheduler) {
 	if (!task) {
 		return;
 	}
-	rz_core_task_schedule (task, R_CORE_TASK_STATE_RUNNING);
+	rz_core_task_schedule (task, RZ_CORE_TASK_STATE_RUNNING);
 }
 
 static void task_end(RzCoreTask *t) {
-	rz_core_task_schedule (t, R_CORE_TASK_STATE_DONE);
+	rz_core_task_schedule (t, RZ_CORE_TASK_STATE_DONE);
 }
 
 static RzThreadFunctionRet task_run(RzCoreTask *task) {
@@ -397,7 +397,7 @@ static RzThreadFunctionRet task_run(RzCoreTask *task) {
 	task_wakeup (task);
 
 	if (task->cons_context && task->cons_context->breaked) {
-		// breaked in R_CORE_TASK_STATE_BEFORE_START
+		// breaked in RZ_CORE_TASK_STATE_BEFORE_START
 		goto stillbirth;
 	}
 
@@ -434,14 +434,14 @@ stillbirth:
 		rz_cons_context_break_pop (task->cons_context, false);
 	}
 
-	int ret = R_TH_STOP;
+	int ret = RZ_TH_STOP;
 	if (task->transient) {
 		RzCoreTask *ltask;
 		RzListIter *iter;
 		rz_list_foreach (scheduler->tasks, iter, ltask) {
 			if (ltask == task) {
 				rz_list_delete (scheduler->tasks, iter);
-				ret = R_TH_FREED;
+				ret = RZ_TH_FREED;
 				break;
 			}
 		}
@@ -489,7 +489,7 @@ RZ_API void rz_core_task_enqueue_oneshot(RzCoreTaskScheduler *scheduler, RzCoreT
 		func (user);
 		scheduler->oneshot_running = false;
 	} else {
-		OneShot *oneshot = R_NEW (OneShot);
+		OneShot *oneshot = RZ_NEW (OneShot);
 		if (oneshot) {
 			oneshot->func = func;
 			oneshot->user = user;
@@ -513,7 +513,7 @@ RZ_API void rz_core_task_sync_begin(RzCoreTaskScheduler *scheduler) {
 	task->thread = NULL;
 	task->cmd = NULL;
 	task->cmd_log = false;
-	task->state = R_CORE_TASK_STATE_BEFORE_START;
+	task->state = RZ_CORE_TASK_STATE_BEFORE_START;
 	tasks_lock_leave (scheduler, &old_sigset);
 	task_wakeup (task);
 }
@@ -526,7 +526,7 @@ RZ_API void rz_core_task_sync_end(RzCoreTaskScheduler *scheduler) {
 /* To be called from within a task.
  * Begin sleeping and schedule other tasks until rz_core_task_sleep_end() is called. */
 RZ_API void rz_core_task_sleep_begin(RzCoreTask *task) {
-	rz_core_task_schedule (task, R_CORE_TASK_STATE_SLEEPING);
+	rz_core_task_schedule (task, RZ_CORE_TASK_STATE_SLEEPING);
 }
 
 RZ_API void rz_core_task_sleep_end(RzCoreTask *task) {
@@ -535,13 +535,13 @@ RZ_API void rz_core_task_sleep_end(RzCoreTask *task) {
 
 RZ_API const char *rz_core_task_status (RzCoreTask *task) {
 	switch (task->state) {
-	case R_CORE_TASK_STATE_RUNNING:
+	case RZ_CORE_TASK_STATE_RUNNING:
 		return "running";
-	case R_CORE_TASK_STATE_SLEEPING:
+	case RZ_CORE_TASK_STATE_SLEEPING:
 		return "sleeping";
-	case R_CORE_TASK_STATE_DONE:
+	case RZ_CORE_TASK_STATE_DONE:
 		return "done";
-	case R_CORE_TASK_STATE_BEFORE_START:
+	case RZ_CORE_TASK_STATE_BEFORE_START:
 		return "before start";
 	default:
 		return "unknown";
@@ -578,7 +578,7 @@ RZ_API void rz_core_task_break(RzCoreTaskScheduler *scheduler, int id) {
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter (scheduler, &old_sigset);
 	RzCoreTask *task = task_get (scheduler, id);
-	if (!task || task->state == R_CORE_TASK_STATE_DONE) {
+	if (!task || task->state == RZ_CORE_TASK_STATE_DONE) {
 		tasks_lock_leave (scheduler, &old_sigset);
 		return;
 	}
@@ -594,7 +594,7 @@ RZ_API void rz_core_task_break_all(RzCoreTaskScheduler *scheduler) {
 	RzCoreTask *task;
 	RzListIter *iter;
 	rz_list_foreach (scheduler->tasks, iter, task) {
-		if (task->state != R_CORE_TASK_STATE_DONE) {
+		if (task->state != RZ_CORE_TASK_STATE_DONE) {
 			rz_cons_context_break (task->cons_context);
 		}
 	}
@@ -612,7 +612,7 @@ RZ_API int rz_core_task_del (RzCoreTaskScheduler *scheduler, int id) {
 			if (task == scheduler->main_task) {
 				break;
 			}
-			if (task->state == R_CORE_TASK_STATE_DONE) {
+			if (task->state == RZ_CORE_TASK_STATE_DONE) {
 				rz_list_delete (scheduler->tasks, iter);
 			} else {
 				task->transient = true;
@@ -629,7 +629,7 @@ RZ_API void rz_core_task_del_all_done (RzCoreTaskScheduler *scheduler) {
 	RzCoreTask *task;
 	RzListIter *iter, *iter2;
 	rz_list_foreach_safe (scheduler->tasks, iter, iter2, task) {
-		if (task != scheduler->main_task && task->state == R_CORE_TASK_STATE_DONE) {
+		if (task != scheduler->main_task && task->state == RZ_CORE_TASK_STATE_DONE) {
 			rz_list_delete (scheduler->tasks, iter);
 		}
 	}

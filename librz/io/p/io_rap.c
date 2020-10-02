@@ -41,7 +41,7 @@ static int __rap_close(RzIODesc *fd) {
 				if (r->client) {
 					ret = rz_socket_close (r->client);
 				}
-				R_FREE (r);
+				RZ_FREE (r);
 			}
 		}
 	} else {
@@ -93,7 +93,7 @@ static RzIODesc *__rap_open(RzIO *io, const char *pathname, int rw, int mode) {
 		}
 		//TODO: Handle ^C signal (SIGINT, exit); // ???
 		eprintf ("rap: listening at port %s ssl %s\n", port, (is_ssl)?"on":"off");
-		RzIORap *rior = R_NEW0 (RzIORap);
+		RzIORap *rior = RZ_NEW0 (RzIORap);
 		rior->listener = true;
 		rior->client = rior->fd = rz_socket_new (is_ssl);
 		if (!rior->fd) {
@@ -127,13 +127,13 @@ static RzIODesc *__rap_open(RzIO *io, const char *pathname, int rw, int mode) {
 		return NULL;
 	}
 	eprintf ("Connecting to %s, port %s\n", host, port);
-	if (!rz_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, 0)) {
+	if (!rz_socket_connect (s, host, port, RZ_SOCKET_PROTO_TCP, 0)) {
 		eprintf ("Cannot connect to '%s' (%d)\n", host, p);
 		rz_socket_free (s);
 		return NULL;
 	}
 	eprintf ("Connected to: %s at port %s\n", host, port);
-	RzIORap *rior = R_NEW0 (RzIORap);
+	RzIORap *rior = RZ_NEW0 (RzIORap);
 	if (!rior) {
 		rz_socket_free (s);
 		return NULL;
@@ -289,10 +289,10 @@ RzIOPlugin rz_io_plugin_rap = {
 	.accept = __rap_accept,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_rap,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

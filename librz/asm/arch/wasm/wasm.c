@@ -431,7 +431,7 @@ static WasmOpDef opcodes_simd[256] = {
 
 #ifndef WASM_NO_ASM
 // assembles the given line of wasm assembly.
-R_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len) {
+RZ_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len) {
 	int i = 0, len = 0;
 	char tmp[256];
 	WasmOpDef *opdef = NULL;
@@ -473,7 +473,7 @@ R_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len) {
 #endif
 
 // disassemble an instruction from the given buffer.
-R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
+RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 	RStrBuf *sb = rz_strbuf_new ("");
 	int id = buf[0];
 	if (id < 0xc0) {
@@ -626,22 +626,22 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 					goto err;
 				}
 				switch (0x80 - val) {
-				case R_BIN_WASM_VALUETYPE_EMPTY:
+				case RZ_BIN_WASM_VALUETYPE_EMPTY:
 					rz_strbuf_set (sb, opdef->txt);
 					break;
-				case R_BIN_WASM_VALUETYPE_i32:
+				case RZ_BIN_WASM_VALUETYPE_i32:
 					rz_strbuf_setf (sb, "%s (result i32)", opdef->txt);
 					break;
-				case R_BIN_WASM_VALUETYPE_i64:
+				case RZ_BIN_WASM_VALUETYPE_i64:
 					rz_strbuf_setf (sb, "%s (result i64)", opdef->txt);
 					break;
-				case R_BIN_WASM_VALUETYPE_f32:
+				case RZ_BIN_WASM_VALUETYPE_f32:
 					rz_strbuf_setf (sb, "%s (result f32)", opdef->txt);
 					break;
-				case R_BIN_WASM_VALUETYPE_f64:
+				case RZ_BIN_WASM_VALUETYPE_f64:
 					rz_strbuf_setf (sb, "%s (result f64)", opdef->txt);
 					break;
-				case R_BIN_WASM_VALUETYPE_v128:
+				case RZ_BIN_WASM_VALUETYPE_v128:
 					rz_strbuf_setf (sb, "%s (result v128)", opdef->txt);
 					break;
 				default:

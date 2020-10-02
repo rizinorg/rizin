@@ -3,7 +3,7 @@ include ../config.mk
 NAME=rz_debug
 R2DEPS=rz_reg rz_anal rz_bp rz_io rz_parse rz_cons rz_syscall rz_hash rz_flag rz_util rz_egg rz_crypto
 R2DEPS+=rz_socket
-CFLAGS+=-DR2_PLUGIN_INCORE
+CFLAGS+=-DRZ_PLUGIN_INCORE
 
 ifeq ($(OSTYPE),bsd)
 LDFLAGS=-lkvm

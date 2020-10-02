@@ -8,7 +8,7 @@ More formats to support: https://www.3dbrew.org/wiki/Category:File_formats
 #define NIN_N3DS_H
 
 #include <rz_types_base.h>
-R_PACKED (
+RZ_PACKED (
 struct n3ds_firm_sect_hdr
 {
 	ut32 offset;
@@ -18,7 +18,7 @@ struct n3ds_firm_sect_hdr
 	ut8 sha256[0x20];
 });
 
-R_PACKED (
+RZ_PACKED (
 struct n3ds_firm_hdr
 {
 	ut8 magic[4];

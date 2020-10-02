@@ -43,7 +43,7 @@ int pdb_info_save_types(RzAnal *anal, const char *file, RPdb *pdb) {
 }
 
 bool test_pdb_tpi_cpp(void) {
-	RPdb pdb = R_EMPTY;
+	RPdb pdb = RZ_EMPTY;
 	mu_assert_true (pdb_info ("bins/pdb/Project1.pdb", &pdb), "pdb parsing failed");
 
 	RzList *plist = pdb.pdb_streams;
@@ -203,7 +203,6 @@ bool test_pdb_tpi_cpp(void) {
 			mu_assert_eq (type_info->leaf_type, eLF_ARGLIST, "Incorrect data type");
 		} else if (type->tpi_idx == 0x101A) {
 			mu_assert_eq (type_info->leaf_type, eLF_STRUCTURE, "Incorrect data type");
-			SType *return_type;
 			char *name;
 			int is_forward_ref;
 			type_info->get_name (&type->type_data, &name);
@@ -253,7 +252,7 @@ bool test_pdb_tpi_cpp(void) {
 }
 
 bool test_pdb_tpi_rust(void) {
-	RPdb pdb = R_EMPTY;
+	RPdb pdb = RZ_EMPTY;
 	mu_assert_true (pdb_info ("bins/pdb/ghidra_rust_pdb_bug.pdb", &pdb), "pdb parsing failed");
 
 	RzList *plist = pdb.pdb_streams;
@@ -462,7 +461,7 @@ bool test_pdb_tpi_rust(void) {
 }
 
 bool test_pdb_type_save(void) {
-	RPdb pdb = R_EMPTY;
+	RPdb pdb = RZ_EMPTY;
 	RzAnal *anal = rz_anal_new ();
 	mu_assert_true (pdb_info_save_types (anal, "bins/pdb/Project1.pdb", &pdb), "pdb parsing failed");
 	check_kv ("R2_TEST_ENUM", "enum");

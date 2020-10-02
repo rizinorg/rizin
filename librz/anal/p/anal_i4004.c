@@ -114,13 +114,13 @@ static int i4004_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int l
 	switch (high) {
 	case 0:
 		if (low) {
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = RZ_ANAL_OP_TYPE_ILL;
 		} else {
-			op->type = R_ANAL_OP_TYPE_NOP;
+			op->type = RZ_ANAL_OP_TYPE_NOP;
 		}
 		break;
 	case 1: //snprintf (basm, basz, "jcn %d 0x%02x", low, buf[1]); break;
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = RZ_ANAL_OP_TYPE_CJMP;
 		op->jump = (addr & (~0xFF)) + buf[1];
 		op->fail = addr + rlen;
 		break;
@@ -128,55 +128,55 @@ static int i4004_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int l
 		if (rlen == 1) {
 			snprintf (basm, basz, "scr r%d", (low & 0xe));
 		} else {
-			op->type = R_ANAL_OP_TYPE_MOV;
+			op->type = RZ_ANAL_OP_TYPE_MOV;
 			op->val = buf[1];
 			snprintf (basm, basz, "fim r%d, 0x%02x", (low & 0xe), buf[1]);
 		}
 		break;
 	case 3:
 		if (low & 1) {
-			op->type = R_ANAL_OP_TYPE_RJMP;
+			op->type = RZ_ANAL_OP_TYPE_RJMP;
 		} else {
-			op->type = R_ANAL_OP_TYPE_MOV;
+			op->type = RZ_ANAL_OP_TYPE_MOV;
 			snprintf (basm, basz, "fin r%d", (low & 0xe));
 		}
 		break;
 	case 4:
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = RZ_ANAL_OP_TYPE_JMP;
 		op->jump = (ut16) (low<<8) | buf[1];
 		break;
 	case 5: //snprintf (basm, basz, "jms 0x%03x", ((ut16)(low<<8) | buf[1])); break;
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = RZ_ANAL_OP_TYPE_CALL;
 		op->jump = (ut16) (low<<8) | buf[1];
 		op->fail = addr + rlen;
 		break;
 	case 6: //snprintf (basm, basz, "inc r%d", low); break;
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANAL_OP_TYPE_ADD;
 		break;
 	case 7: //snprintf (basm, basz, "isz r%d, 0x%02x", low, buf[1]);
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = RZ_ANAL_OP_TYPE_CJMP;
 		op->fail = (addr & (~0xFF)) + buf[1];
 		op->jump = addr + rlen;
 		break;
 	case 8:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANAL_OP_TYPE_ADD;
 		//snprintf (basm, basz, "add r%d", low); break;
 		break;
 	case 9:
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = RZ_ANAL_OP_TYPE_SUB;
 		//snprintf (basm, basz, "sub r%d", low); break;
 		break;
 	case 10: //snprintf (basm, basz, "ld r%d", low); break;
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANAL_OP_TYPE_MOV;
 		break;
 	case 11: //snprintf (basm, basz, "xch r%d", low); break;
-		op->type = R_ANAL_OP_TYPE_XCHG;
+		op->type = RZ_ANAL_OP_TYPE_XCHG;
 		break;
 	case 12: //snprintf (basm, basz, "bbl %d", low); break;
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = RZ_ANAL_OP_TYPE_RET;
 		break;
 	case 13:
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = RZ_ANAL_OP_TYPE_LOAD;
 		//snprintf (basm, basz, "ldm %d", low); break;
 		break;
 	case 14:
@@ -187,16 +187,16 @@ static int i4004_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int l
 		strncpy (basm, i4004_f[low], basz);
 		basm[basz] = '\0';
 		if (!strcmp (basm, "dac")) {
-			op->type = R_ANAL_OP_TYPE_SUB;
+			op->type = RZ_ANAL_OP_TYPE_SUB;
 		}
 		break;
 	}
 	if (!strcmp (basm, "invalid")) {
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = RZ_ANAL_OP_TYPE_ILL;
 	} else if (!strcmp (basm, "ral")) {
-		op->type = R_ANAL_OP_TYPE_SHL;
+		op->type = RZ_ANAL_OP_TYPE_SHL;
 	} else if (!strcmp (basm, "rar")) {
-		op->type = R_ANAL_OP_TYPE_SHR;
+		op->type = RZ_ANAL_OP_TYPE_SHR;
 	}
 	return op->size = rlen;
 }
@@ -212,10 +212,10 @@ RzAnalPlugin rz_anal_plugin_i4004 = {
 	.set_reg_profile = &set_reg_profile
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_i4004,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

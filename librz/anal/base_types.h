@@ -1,5 +1,5 @@
-#ifndef R_BASE_TYPES_H
-#define R_BASE_TYPES_H
+#ifndef RZ_BASE_TYPES_H
+#define RZ_BASE_TYPES_H
 
 #include "rz_util.h"
 
@@ -7,9 +7,9 @@
 extern "C" {
 #endif
 
-R_IPI void enum_type_case_free(void *e, void *user);
-R_IPI void struct_type_member_free(void *e, void *user);
-R_IPI void union_type_member_free(void *e, void *user);
+RZ_IPI void enum_type_case_free(void *e, void *user);
+RZ_IPI void struct_type_member_free(void *e, void *user);
+RZ_IPI void union_type_member_free(void *e, void *user);
 
 #ifdef __cplusplus
 }

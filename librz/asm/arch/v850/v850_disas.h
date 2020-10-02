@@ -1,5 +1,5 @@
-#ifndef R2_V850_DISASM_H
-#define R2_V850_DISASM_H
+#ifndef RZ_V850_DISASM_H
+#define RZ_V850_DISASM_H
 
 #define V850_INSTR_MAXLEN	24
 
@@ -191,4 +191,4 @@ static inline ut8 get_reg2(const ut16 instr) {
 }
 
 int v850_decode_command (const ut8 *instr, int len, struct v850_cmd *cmd);
-#endif /* R2_V850_DISASM_H */
+#endif /* RZ_V850_DISASM_H */

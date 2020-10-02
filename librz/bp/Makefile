@@ -3,7 +3,7 @@ include ../config.mk
 NAME=rz_bp
 R2DEPS+=rz_util
 
-CFLAGS+=-DR2_PLUGIN_INCORE
+CFLAGS+=-DRZ_PLUGIN_INCORE
 
 .PHONY: pre
 pre: librz_bp.${EXT_SO} librz_bp.${EXT_AR}

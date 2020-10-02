@@ -9,7 +9,7 @@ static char *rz_debug_native_reg_profile(RzDebug *dbg) {
  |   |   |
  |___|___|
 */
-	if (dbg->bits & R_SYS_BITS_64) {
+	if (dbg->bits & RZ_SYS_BITS_64) {
 #include "reg/windows-x64.h"
 	} else {
 #include "reg/windows-x86.h"

@@ -48,7 +48,7 @@ static const char *help_msg_ec[] = {
 	"Vars:", "", "",
 	"colors:", "", "rgb:000, red, green, blue, #ff0000, ...",
 	"e scr.color", "=0", "use more colors (0: no color 1: ansi 16, 2: 256, 3: 16M)",
-	"$DATADIR/rizin/cons", "", R_JOIN_2_PATHS ("~", R2_HOME_THEMES) " ./",
+	"$DATADIR/rizin/cons", "", RZ_JOIN_2_PATHS ("~", RZ_HOME_THEMES) " ./",
 	NULL
 };
 
@@ -60,7 +60,7 @@ static const char *help_msg_eco[] = {
 	"ecoq", "", "list available themes without showing the current one",
 	"ecoj", "", "list available themes in JSON",
 	"Path:", "", "",
-	"$DATADIR/rizin/cons", "", R_JOIN_2_PATHS ("~", R2_HOME_THEMES) " ./",
+	"$DATADIR/rizin/cons", "", RZ_JOIN_2_PATHS ("~", RZ_HOME_THEMES) " ./",
 	NULL
 };
 
@@ -129,11 +129,11 @@ static bool cmd_load_theme(RzCore *core, const char *_arg) {
 	}
 	char *arg = strdup (_arg);
 
-	char *tmp = rz_str_newf (R_JOIN_2_PATHS (R2_HOME_THEMES, "%s"), arg);
+	char *tmp = rz_str_newf (RZ_JOIN_2_PATHS (RZ_HOME_THEMES, "%s"), arg);
 	char *home = tmp ? rz_str_home (tmp) : NULL;
 	free (tmp);
 
-	tmp = rz_str_newf (R_JOIN_2_PATHS (R2_THEMES, "%s"), arg);
+	tmp = rz_str_newf (RZ_JOIN_2_PATHS (RZ_THEMES, "%s"), arg);
 	path = tmp ? rz_str_rz_prefix (tmp) : NULL;
 	free (tmp);
 
@@ -178,16 +178,16 @@ RZ_API RzList *rz_core_list_themes(RzCore *core) {
 	getNext = false;
 	char *tmp = strdup ("default");
 	rz_list_append (list, tmp);
-	char *path = rz_str_home (R2_HOME_THEMES R_SYS_DIR);
+	char *path = rz_str_home (RZ_HOME_THEMES RZ_SYS_DIR);
 	if (path) {
 		list_themes_in_path (list, path);
-		R_FREE (path);
+		RZ_FREE (path);
 	}
 
-	path = rz_str_rz_prefix (R2_THEMES R_SYS_DIR);
+	path = rz_str_rz_prefix (RZ_THEMES RZ_SYS_DIR);
 	if (path) {
 		list_themes_in_path (list, path);
-		R_FREE (path);
+		RZ_FREE (path);
 	}
 
 	return list;
@@ -200,7 +200,7 @@ static void nextpal(RzCore *core, int mode) {
 	const char *fn;
 	char *path = NULL;
 	int ctr = 0;
-	char *home = rz_str_home (R2_HOME_THEMES R_SYS_DIR);
+	char *home = rz_str_home (RZ_HOME_THEMES RZ_SYS_DIR);
 
 	getNext = false;
 	if (mode == 'j') {
@@ -223,24 +223,24 @@ static void nextpal(RzCore *core, int mode) {
 						files = NULL;
 						free (curtheme);
 						curtheme = strdup (fn);
-						R_FREE (home);
+						RZ_FREE (home);
 						goto done;
 					}
 				} else {
 					if (!nextpal_item (core, mode, fn, ctr++)) {
 						rz_list_free (files);
 						files = NULL;
-						R_FREE (home);
+						RZ_FREE (home);
 						goto done;
 					}
 				}
 			}
 		}
 		rz_list_free (files);
-		R_FREE (home);
+		RZ_FREE (home);
 	}
 
-	path = rz_str_rz_prefix (R2_THEMES R_SYS_DIR);
+	path = rz_str_rz_prefix (RZ_THEMES RZ_SYS_DIR);
 	if (path) {
 		files = rz_sys_dir (path);
 		rz_list_foreach (files, iter, fn) {
@@ -270,7 +270,7 @@ static void nextpal(RzCore *core, int mode) {
 done:
 	free (path);
 	if (getNext) {
-		R_FREE (curtheme);
+		RZ_FREE (curtheme);
 		nextpal (core, mode);
 		return;
 	}
@@ -465,27 +465,27 @@ static int cmd_eval(void *data, const char *input) {
 				return false;
 			case '-': // ecH-
 				if (input[3] == '*') {
-					rz_meta_del (core->anal, R_META_TYPE_HIGHLIGHT, 0, UT64_MAX);
+					rz_meta_del (core->anal, RZ_META_TYPE_HIGHLIGHT, 0, UT64_MAX);
 				} else {
-					rz_meta_del (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, 1);
-					// rz_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, "");
+					rz_meta_del (core->anal, RZ_META_TYPE_HIGHLIGHT, core->offset, 1);
+					// rz_meta_set_string (core->anal, RZ_META_TYPE_HIGHLIGHT, core->offset, "");
 				}
 				rz_str_argv_free (argv);
 				return false;
 			case '.':
-				rz_meta_print_list_in_function (core->anal, R_META_TYPE_HIGHLIGHT, 0, core->offset);
+				rz_meta_print_list_in_function (core->anal, RZ_META_TYPE_HIGHLIGHT, 0, core->offset);
 				rz_str_argv_free (argv);
 				return false;
 			case '\0':
-				rz_meta_print_list_all (core->anal, R_META_TYPE_HIGHLIGHT, 0);
+				rz_meta_print_list_all (core->anal, RZ_META_TYPE_HIGHLIGHT, 0);
 				rz_str_argv_free (argv);
 				return false;
 			case 'j':
-				rz_meta_print_list_all (core->anal, R_META_TYPE_HIGHLIGHT, 'j');
+				rz_meta_print_list_all (core->anal, RZ_META_TYPE_HIGHLIGHT, 'j');
 				rz_str_argv_free (argv);
 				return false;
 			case '*':
-				rz_meta_print_list_all (core->anal, R_META_TYPE_HIGHLIGHT, '*');
+				rz_meta_print_list_all (core->anal, RZ_META_TYPE_HIGHLIGHT, '*');
 				rz_str_argv_free (argv);
 				return false;
 			case ' ':
@@ -493,7 +493,7 @@ static int cmd_eval(void *data, const char *input) {
 				if (argc) {
 					char *dup = rz_str_newf ("bgonly %s", argv[0]);
 					color_code = rz_cons_pal_parse (dup, NULL);
-					R_FREE (dup);
+					RZ_FREE (dup);
 					if (!color_code) {
 						eprintf ("Unknown color %s\n", argv[0]);
 						rz_str_argv_free (argv);
@@ -511,7 +511,7 @@ static int cmd_eval(void *data, const char *input) {
 				if (argc > 1) {
 					char *dup = rz_str_newf ("bgonly %s", argv[1]);
 					color_code = rz_cons_pal_parse (dup, NULL);
-					R_FREE (dup);
+					RZ_FREE (dup);
 					if (!color_code) {
 						eprintf ("Unknown color %s\n", argv[1]);
 						rz_str_argv_free (argv);
@@ -525,13 +525,13 @@ static int cmd_eval(void *data, const char *input) {
 				rz_str_argv_free (argv);
 				return true;
 			}
-			rz_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, "");
-			const char *str = rz_meta_get_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset);
+			rz_meta_set_string (core->anal, RZ_META_TYPE_HIGHLIGHT, core->offset, "");
+			const char *str = rz_meta_get_string (core->anal, RZ_META_TYPE_HIGHLIGHT, core->offset);
 			char *dup = rz_str_newf ("%s \"%s%s\"", str?str:"", word?word:"", color_code?color_code:rz_cons_singleton ()->context->pal.wordhl);
-			rz_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, dup);
+			rz_meta_set_string (core->anal, RZ_META_TYPE_HIGHLIGHT, core->offset, dup);
 			rz_str_argv_free (argv);
-			R_FREE (word);
-			R_FREE (dup);
+			RZ_FREE (word);
+			RZ_FREE (dup);
 			break;
 			  }
 		default: {

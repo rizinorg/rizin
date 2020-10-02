@@ -94,7 +94,7 @@ static bool __resize(RzIO *io, RzIODesc *fd, ut64 count) {
 	if (!new_buf) {
 		return false;
 	}
-	memcpy (new_buf, _io_malloc_buf (fd), R_MIN (count, mallocsz));
+	memcpy (new_buf, _io_malloc_buf (fd), RZ_MIN (count, mallocsz));
 	if (count > mallocsz) {
 		memset (new_buf + mallocsz, 0, count - mallocsz);
 	}
@@ -127,8 +127,8 @@ static int __close(RzIODesc *fd) {
 		return -1;
 	}
 	riom = fd->data;
-	R_FREE (riom->buf);
-	R_FREE (fd->data);
+	RZ_FREE (riom->buf);
+	RZ_FREE (fd->data);
 	return 0;
 }
 
@@ -159,7 +159,7 @@ static bool __check(RzIO *io, const char *pathname, bool many) {
 
 static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 	if (__check (io, pathname, 0)) {
-		RzIOMalloc *mal = R_NEW0 (RzIOMalloc);
+		RzIOMalloc *mal = RZ_NEW0 (RzIOMalloc);
 		if (!strncmp (pathname, "hex://", 6)) {
 			mal->size = strlen (pathname);
 			mal->buf = calloc (1, mal->size + 1);
@@ -170,7 +170,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 			mal->offset = 0;
 			mal->size = rz_hex_str2bin (pathname + 6, mal->buf);
 			if ((int)mal->size < 1) {
-				R_FREE (mal->buf);
+				RZ_FREE (mal->buf);
 			}
 		} else {
 			mal->size = rz_num_math (NULL, pathname + 9);
@@ -183,7 +183,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 			mal->buf = calloc (1, mal->size + 1);
 		}
 		if (mal->buf) {
-			return rz_io_desc_new (io, &rz_io_plugin_malloc, pathname, R_PERM_RW | rw, mode, mal);
+			return rz_io_desc_new (io, &rz_io_plugin_malloc, pathname, RZ_PERM_RW | rw, mode, mal);
 		}
 		eprintf ("Cannot allocate (%s) %d byte(s)\n", pathname + 9, mal->size);
 		free (mal);
@@ -205,10 +205,10 @@ RzIOPlugin rz_io_plugin_malloc = {
 	.resize = __resize,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_malloc,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

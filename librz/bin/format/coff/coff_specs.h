@@ -153,7 +153,7 @@
 #define COFF_REL_AMD64_REL32_4		8
 #define COFF_REL_AMD64_REL32_5		9
 
-R_PACKED(
+RZ_PACKED(
 struct coff_hdr {
 	ut16 f_magic;	/* Magic number */
 	ut16 f_nscns;	/* Number of Sections */
@@ -164,7 +164,7 @@ struct coff_hdr {
 	ut16 f_flags;	/* Flags */
 });// __attribute__ ((packed));
 
-R_PACKED (
+RZ_PACKED (
 struct coff_opt_hdr {
 	ut16 magic;			/* Magic Number                    */
 	ut16 vstamp;		/* Version stamp                   */
@@ -176,7 +176,7 @@ struct coff_opt_hdr {
 	ut32 data_start;	/* Base of Data used for this file */
 });
 
-R_PACKED (
+RZ_PACKED (
 struct coff_scn_hdr {
 	char s_name[8];	/* Section Name */
 	ut32 s_paddr;	/* Physical Address */
@@ -190,7 +190,7 @@ struct coff_scn_hdr {
 	ut32 s_flags;	/* Flags for this section */
 });
 
-R_PACKED (
+RZ_PACKED (
 struct coff_symbol {
 	char n_name[8];	/* Symbol Name */
 	ut32 n_value;	/* Value of Symbol */
@@ -200,7 +200,7 @@ struct coff_symbol {
 	ut8 n_numaux;	/* Auxiliary Count */
 });
 
-R_PACKED (
+RZ_PACKED (
 struct coff_reloc {
 	ut32 rz_vaddr;	/* Reference Address */
 	ut32 rz_symndx;	/* Symbol index */

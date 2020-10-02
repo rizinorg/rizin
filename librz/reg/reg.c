@@ -3,9 +3,9 @@
 #include <rz_reg.h>
 #include <rz_util.h>
 
-R_LIB_VERSION (rz_reg);
+RZ_LIB_VERSION (rz_reg);
 
-static const char *types[R_REG_TYPE_LAST + 1] = {
+static const char *types[RZ_REG_TYPE_LAST + 1] = {
 	"gpr", "drx", "fpu", "mmx", "xmm", "ymm", "flg", "seg", NULL
 };
 
@@ -16,7 +16,7 @@ RZ_API const char *rz_reg_32_to_64(RzReg *reg, const char *rreg32) {
 	int i, j = -1;
 	RzListIter *iter;
 	RzRegItem *item;
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		rz_list_foreach (reg->regset[i].regs, iter, item) {
 			if (item->size == 32 && !rz_str_casecmp (rreg32, item->name)) {
 				j = item->offset;
@@ -25,7 +25,7 @@ RZ_API const char *rz_reg_32_to_64(RzReg *reg, const char *rreg32) {
 		}
 	}
 	if (j != -1) {
-		for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 			rz_list_foreach (reg->regset[i].regs, iter, item) {
 				if (item->offset == j && item->size == 64) {
 					return item->name;
@@ -43,7 +43,7 @@ RZ_API const char *rz_reg_64_to_32(RzReg *reg, const char *rreg64) {
 	int i, j = -1;
 	RzListIter *iter;
 	RzRegItem *item;
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		rz_list_foreach (reg->regset[i].regs, iter, item) {
 			if (item->size == 64 && !rz_str_casecmp (rreg64, item->name)) {
 				j = item->offset;
@@ -52,7 +52,7 @@ RZ_API const char *rz_reg_64_to_32(RzReg *reg, const char *rreg64) {
 		}
 	}
 	if (j != -1) {
-		for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 			rz_list_foreach (reg->regset[i].regs, iter, item) {
 				if (item->offset == j && item->size == 32) {
 					return item->name;
@@ -64,7 +64,7 @@ RZ_API const char *rz_reg_64_to_32(RzReg *reg, const char *rreg64) {
 }
 
 RZ_API const char *rz_reg_get_type(int idx) {
-	return (idx >= 0 && idx < R_REG_TYPE_LAST) ? types[idx] : NULL;
+	return (idx >= 0 && idx < RZ_REG_TYPE_LAST) ? types[idx] : NULL;
 }
 
 RZ_API const char *rz_reg_get_name_by_type(RzReg *reg, const char *alias_name) {
@@ -75,13 +75,13 @@ RZ_API const char *rz_reg_get_name_by_type(RzReg *reg, const char *alias_name) {
 RZ_API int rz_reg_type_by_name(const char *str) {
 	rz_return_val_if_fail (str, -1);
 	int i;
-	for (i = 0; i < R_REG_TYPE_LAST && types[i]; i++) {
+	for (i = 0; i < RZ_REG_TYPE_LAST && types[i]; i++) {
 		if (!strcmp (types[i], str)) {
 			return i;
 		}
 	}
 	if (!strcmp (str, "all")) {
-		return R_REG_TYPE_ALL;
+		return RZ_REG_TYPE_ALL;
 	}
 	return -1;
 }
@@ -97,40 +97,40 @@ RZ_API int rz_reg_get_name_idx(const char *type) {
 	if (type[0] && type[1] && !type[2])
 	switch (*type | (type[1] << 8)) {
 	/* flags */
-	case 'Z' + ('F' << 8): return R_REG_NAME_ZF;
-	case 'S' + ('F' << 8): return R_REG_NAME_SF;
-	case 'C' + ('F' << 8): return R_REG_NAME_CF;
-	case 'O' + ('F' << 8): return R_REG_NAME_OF;
+	case 'Z' + ('F' << 8): return RZ_REG_NAME_ZF;
+	case 'S' + ('F' << 8): return RZ_REG_NAME_SF;
+	case 'C' + ('F' << 8): return RZ_REG_NAME_CF;
+	case 'O' + ('F' << 8): return RZ_REG_NAME_OF;
 	/* gpr */
-	case 'P' + ('C' << 8): return R_REG_NAME_PC;
-	case 'S' + ('R' << 8): return R_REG_NAME_SR;
-	case 'L' + ('R' << 8): return R_REG_NAME_LR;
-	case 'S' + ('P' << 8): return R_REG_NAME_SP;
-	case 'B' + ('P' << 8): return R_REG_NAME_BP;
-	case 'S' + ('N' << 8): return R_REG_NAME_SN;
+	case 'P' + ('C' << 8): return RZ_REG_NAME_PC;
+	case 'S' + ('R' << 8): return RZ_REG_NAME_SR;
+	case 'L' + ('R' << 8): return RZ_REG_NAME_LR;
+	case 'S' + ('P' << 8): return RZ_REG_NAME_SP;
+	case 'B' + ('P' << 8): return RZ_REG_NAME_BP;
+	case 'S' + ('N' << 8): return RZ_REG_NAME_SN;
 	/* args */
-	case 'A' + ('0' << 8): return R_REG_NAME_A0;
-	case 'A' + ('1' << 8): return R_REG_NAME_A1;
-	case 'A' + ('2' << 8): return R_REG_NAME_A2;
-	case 'A' + ('3' << 8): return R_REG_NAME_A3;
-	case 'A' + ('4' << 8): return R_REG_NAME_A4;
-	case 'A' + ('5' << 8): return R_REG_NAME_A5;
-	case 'A' + ('6' << 8): return R_REG_NAME_A6;
-	case 'A' + ('7' << 8): return R_REG_NAME_A7;
-	case 'A' + ('8' << 8): return R_REG_NAME_A8;
-	case 'A' + ('9' << 8): return R_REG_NAME_A9;
+	case 'A' + ('0' << 8): return RZ_REG_NAME_A0;
+	case 'A' + ('1' << 8): return RZ_REG_NAME_A1;
+	case 'A' + ('2' << 8): return RZ_REG_NAME_A2;
+	case 'A' + ('3' << 8): return RZ_REG_NAME_A3;
+	case 'A' + ('4' << 8): return RZ_REG_NAME_A4;
+	case 'A' + ('5' << 8): return RZ_REG_NAME_A5;
+	case 'A' + ('6' << 8): return RZ_REG_NAME_A6;
+	case 'A' + ('7' << 8): return RZ_REG_NAME_A7;
+	case 'A' + ('8' << 8): return RZ_REG_NAME_A8;
+	case 'A' + ('9' << 8): return RZ_REG_NAME_A9;
 	/* return values */
-	case 'R' + ('0' << 8): return R_REG_NAME_R0;
-	case 'R' + ('1' << 8): return R_REG_NAME_R1;
-	case 'R' + ('2' << 8): return R_REG_NAME_R2;
-	case 'R' + ('3' << 8): return R_REG_NAME_R3;
+	case 'R' + ('0' << 8): return RZ_REG_NAME_R0;
+	case 'R' + ('1' << 8): return RZ_REG_NAME_R1;
+	case 'R' + ('2' << 8): return RZ_REG_NAME_R2;
+	case 'R' + ('3' << 8): return RZ_REG_NAME_R3;
 	}
 	return -1;
 }
 
 RZ_API bool rz_reg_set_name(RzReg *reg, int role, const char *name) {
 	rz_return_val_if_fail (reg && name, false);
-	if (role >= 0 && role < R_REG_NAME_LAST) {
+	if (role >= 0 && role < RZ_REG_NAME_LAST) {
 		reg->name[role] = rz_str_dup (reg->name[role], name);
 		return true;
 	}
@@ -138,13 +138,13 @@ RZ_API bool rz_reg_set_name(RzReg *reg, int role, const char *name) {
 }
 
 RZ_API const char *rz_reg_get_name(RzReg *reg, int role) {
-	if (reg && role >= 0 && role < R_REG_NAME_LAST) {
+	if (reg && role >= 0 && role < RZ_REG_NAME_LAST) {
 		return reg->name[role];
 	}
 	return NULL;
 }
 
-static const char *roles[R_REG_NAME_LAST + 1] = {
+static const char *roles[RZ_REG_NAME_LAST + 1] = {
 	"PC", "SP", "SR", "BP", "LR",
 	"A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9",
 	"R0", "R1", "R2", "R3",
@@ -154,7 +154,7 @@ static const char *roles[R_REG_NAME_LAST + 1] = {
 };
 
 RZ_API const char *rz_reg_get_role(int role) {
-	if (role >= 0 && role < R_REG_NAME_LAST) {
+	if (role >= 0 && role < RZ_REG_NAME_LAST) {
 		return roles[role];
 	}
 	return NULL;
@@ -166,15 +166,15 @@ RZ_API void rz_reg_free_internal(RzReg *reg, bool init) {
 
 	rz_list_free (reg->roregs);
 	reg->roregs = NULL;
-	R_FREE (reg->reg_profile_str);
-	R_FREE (reg->reg_profile_cmt);
+	RZ_FREE (reg->reg_profile_str);
+	RZ_FREE (reg->reg_profile_cmt);
 
-	for (i = 0; i < R_REG_NAME_LAST; i++) {
+	for (i = 0; i < RZ_REG_NAME_LAST; i++) {
 		if (reg->name[i]) {
-			R_FREE (reg->name[i]);
+			RZ_FREE (reg->name[i]);
 		}
 	}
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		ht_pp_free (reg->regset[i].ht_regs);
 		reg->regset[i].ht_regs = NULL;
 		if (!reg->regset[i].pool) {
@@ -213,7 +213,7 @@ RZ_API void rz_reg_reindex(RzReg *reg) {
 	RzListIter *iter;
 	RzRegItem *r;
 	RzList *all = rz_list_newf (NULL);
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		rz_list_foreach (reg->regset[i].regs, iter, r) {
 			rz_list_append (all, r);
 		}
@@ -253,12 +253,12 @@ RZ_API void rz_reg_free(RzReg *reg) {
 
 RZ_API RzReg *rz_reg_new(void) {
 	RzRegArena *arena;
-	RzReg *reg = R_NEW0 (RzReg);
+	RzReg *reg = RZ_NEW0 (RzReg);
 	int i;
 	if (!reg) {
 		return NULL;
 	}
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		arena = rz_reg_arena_new (0);
 		if (!arena) {
 			free (reg);
@@ -270,7 +270,7 @@ RZ_API RzReg *rz_reg_new(void) {
 		reg->regset[i].arena = arena;
 	}
 	rz_reg_arena_push (reg);
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		reg->regset[i].cur = rz_list_tail (reg->regset[i].pool);
 	}
 	return reg;
@@ -306,13 +306,13 @@ RZ_API ut64 rz_reg_getv(RzReg *reg, const char *name) {
 RZ_API RzRegItem *rz_reg_get(RzReg *reg, const char *name, int type) {
 	int i, e;
 	rz_return_val_if_fail (reg && name, NULL);
-	//TODO: define flag register as R_REG_TYPE_FLG
-	if (type == R_REG_TYPE_FLG) {
-		type = R_REG_TYPE_GPR;
+	//TODO: define flag register as RZ_REG_TYPE_FLG
+	if (type == RZ_REG_TYPE_FLG) {
+		type = RZ_REG_TYPE_GPR;
 	}
 	if (type == -1) {
 		i = 0;
-		e = R_REG_TYPE_LAST;
+		e = RZ_REG_TYPE_LAST;
 		int alias = rz_reg_get_name_idx (name);
 		if (alias != -1) {
 			const char *nname = rz_reg_get_name (reg, alias);
@@ -338,20 +338,20 @@ RZ_API RzRegItem *rz_reg_get(RzReg *reg, const char *name, int type) {
 }
 
 RZ_API RzList *rz_reg_get_list(RzReg *reg, int type) {
-	if (type == R_REG_TYPE_ALL) {
+	if (type == RZ_REG_TYPE_ALL) {
 		return reg->allregs;
 	}
 
 	RzList *regs;
 	int i, mask;
-	if (type < 0 || type > (R_REG_TYPE_LAST - 1)) {
+	if (type < 0 || type > (RZ_REG_TYPE_LAST - 1)) {
 		return NULL;
 	}
 
 	regs = reg->regset[type].regs;
 	if (rz_list_length (regs) == 0) {
 		mask = ((int)1 << type);
-		for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 			if (reg->regset[i].maskregstype & mask) {
 				regs = reg->regset[i].regs;
 			}
@@ -380,7 +380,7 @@ RZ_API RzRegItem *rz_reg_get_at(RzReg *reg, int type, int regsize, int delta) {
 /* return the next register in the current regset that differs from */
 RZ_API RzRegItem *rz_reg_next_diff(RzReg *reg, int type, const ut8 *buf, int buflen, RzRegItem *prev_ri, int regsize) {
 	rz_return_val_if_fail (reg && buf, NULL);
-	if (type < 0 || type > (R_REG_TYPE_LAST - 1)) {
+	if (type < 0 || type > (RZ_REG_TYPE_LAST - 1)) {
 		return NULL;
 	}
 	RzRegArena *arena = reg->regset[type].arena;
@@ -402,7 +402,7 @@ RZ_API RzRegItem *rz_reg_next_diff(RzReg *reg, int type, const ut8 *buf, int buf
 
 RZ_API RzRegSet *rz_reg_regset_get(RzReg *r, int type) {
 	rz_return_val_if_fail (r, NULL);
-	if (type < 0 || type >= R_REG_TYPE_LAST) {
+	if (type < 0 || type >= RZ_REG_TYPE_LAST) {
 		return NULL;
 	}
 	RzRegSet *rs = &r->regset[type];

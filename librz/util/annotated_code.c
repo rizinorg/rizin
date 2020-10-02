@@ -4,7 +4,7 @@
 #include <rz_util.h>
 
 RZ_API RAnnotatedCode *rz_annotated_code_new(char *code) {
-	RAnnotatedCode *r = R_NEW0 (RAnnotatedCode);
+	RAnnotatedCode *r = RZ_NEW0 (RAnnotatedCode);
 	if (!r) {
 		return NULL;
 	}
@@ -16,19 +16,19 @@ RZ_API RAnnotatedCode *rz_annotated_code_new(char *code) {
 RZ_API void rz_annotation_free(void *e, void *user) {
 	(void)user;
 	RCodeAnnotation *annotation = e;
-	if (annotation->type == R_CODE_ANNOTATION_TYPE_FUNCTION_NAME) {
+	if (annotation->type == RZ_CODE_ANNOTATION_TYPE_FUNCTION_NAME) {
 		free (annotation->reference.name);
-	} else if (annotation->type == R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE || annotation->type == R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER) {
+	} else if (annotation->type == RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE || annotation->type == RZ_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER) {
 		free (annotation->variable.name);
 	}
 }
 
 RZ_API bool rz_annotation_is_reference(RCodeAnnotation *annotation) {
-	return (annotation->type == R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE || annotation->type == R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE || annotation->type == R_CODE_ANNOTATION_TYPE_FUNCTION_NAME);
+	return (annotation->type == RZ_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE || annotation->type == RZ_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE || annotation->type == RZ_CODE_ANNOTATION_TYPE_FUNCTION_NAME);
 }
 
 RZ_API bool rz_annotation_is_variable(RCodeAnnotation *annotation) {
-	return (annotation->type == R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE || annotation->type == R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER);
+	return (annotation->type == RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE || annotation->type == RZ_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER);
 }
 
 RZ_API void rz_annotated_code_free(RAnnotatedCode *code) {
@@ -88,7 +88,7 @@ RZ_API RzVector *rz_annotated_code_line_offsets(RAnnotatedCode *code) {
 		void **it;
 		rz_pvector_foreach (annotations, it) {
 			RCodeAnnotation *annotation = *it;
-			if (annotation->type != R_CODE_ANNOTATION_TYPE_OFFSET) {
+			if (annotation->type != RZ_CODE_ANNOTATION_TYPE_OFFSET) {
 				continue;
 			}
 			offset = annotation->offset.offset;

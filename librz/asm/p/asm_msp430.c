@@ -18,7 +18,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			rz_strbuf_set (&op->buf_asm, sdb_fmt ("%s", cmd.instr));
 		}
 	}
-	if (a->syntax != R_ASM_SYNTAX_ATT) {
+	if (a->syntax != RZ_ASM_SYNTAX_ATT) {
 		char *ba = (char *)rz_strbuf_get (&op->buf_asm);
 		rz_str_replace_ch (ba, '#', 0, 1);
 		// rz_str_replace_ch (ba, "$", "$$", 1);
@@ -35,14 +35,14 @@ RzAsmPlugin rz_asm_plugin_msp430 = {
 	.desc = "msp430 disassembly plugin",
 	.arch = "msp430",
 	.bits = 16,
-	.endian = R_SYS_ENDIAN_LITTLE,
+	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.disassemble = &disassemble,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_msp430,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

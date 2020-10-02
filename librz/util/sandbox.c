@@ -21,7 +21,7 @@ static bool disabled = false;
 static bool inHomeWww(const char *path) {
 	rz_return_val_if_fail (path, false);
 	bool ret = false;
-	char *homeWww = rz_str_home (R2_HOME_WWWROOT R_SYS_DIR);
+	char *homeWww = rz_str_home (RZ_HOME_WWWROOT RZ_SYS_DIR);
 	if (homeWww) {
 		if (!strncmp (path, homeWww, strlen (homeWww))) {
 			ret = true;
@@ -42,22 +42,22 @@ RZ_API bool rz_sandbox_check_path (const char *path) {
 	size_t root_len;
 	char *p;
 	/* XXX: the sandbox can be bypassed if a directory is symlink */
-	root_len = strlen (R2_LIBDIR"/rizin");
-	if (!strncmp (path, R2_LIBDIR"/rizin", root_len)) {
+	root_len = strlen (RZ_LIBDIR"/rizin");
+	if (!strncmp (path, RZ_LIBDIR"/rizin", root_len)) {
 		return true;
 	}
-	root_len = strlen (R2_DATDIR"/rizin");
-	if (!strncmp (path, R2_DATDIR"/rizin", root_len)) {
+	root_len = strlen (RZ_DATDIR"/rizin");
+	if (!strncmp (path, RZ_DATDIR"/rizin", root_len)) {
 		return true;
 	}
 	if (inHomeWww (path)) {
 		return true;
 	}
 	// Accessing stuff inside the webroot is ok even if we need .. or leading / for that
-	root_len = strlen (R2_WWWROOT);
-	if (R2_WWWROOT[0] && !strncmp (path, R2_WWWROOT, root_len) && (
-			R2_WWWROOT[root_len-1] == '/' || path[root_len] == '/' || path[root_len] == '\0')) {
-		path += strlen (R2_WWWROOT);
+	root_len = strlen (RZ_WWWROOT);
+	if (RZ_WWWROOT[0] && !strncmp (path, RZ_WWWROOT, root_len) && (
+			RZ_WWWROOT[root_len-1] == '/' || path[root_len] == '/' || path[root_len] == '\0')) {
+		path += strlen (RZ_WWWROOT);
 		while (*path == '/') {
 			path++;
 		}

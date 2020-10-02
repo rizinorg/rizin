@@ -1,5 +1,5 @@
-#ifndef R2_BIN_DWARF_H
-#define R2_BIN_DWARF_H
+#ifndef RZ_BIN_DWARF_H
+#define RZ_BIN_DWARF_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -636,7 +636,7 @@ typedef struct {
 	const char **incdirs;
 	const char *file[128];
 } RBinDwarfInfoHeader;
-#define R_BIN_DWARF_INFO_HEADER_FILE_LENGTH(x) (sizeof (x->file)/sizeof(*(x->file)))
+#define RZ_BIN_DWARF_INFO_HEADER_FILE_LENGTH(x) (sizeof (x->file)/sizeof(*(x->file)))
 
 typedef struct {
 	ut64 address;

@@ -1,19 +1,19 @@
-#ifndef R_CF_DICT_H
-#define R_CF_DICT_H
+#ifndef RZ_CF_DICT_H
+#define RZ_CF_DICT_H
 
-#define R_CF_OPTION_NONE 0
-#define R_CF_OPTION_SKIP_NSDATA 1
+#define RZ_CF_OPTION_NONE 0
+#define RZ_CF_OPTION_SKIP_NSDATA 1
 
 typedef enum {
-	R_CF_INVALID,
-	R_CF_DICT,
-	R_CF_ARRAY,
-	R_CF_STRING,
-	R_CF_INTEGER,
-	R_CF_DATA,
-	R_CF_NULL,
-	R_CF_TRUE,
-	R_CF_FALSE
+	RZ_CF_INVALID,
+	RZ_CF_DICT,
+	RZ_CF_ARRAY,
+	RZ_CF_STRING,
+	RZ_CF_INTEGER,
+	RZ_CF_DATA,
+	RZ_CF_NULL,
+	RZ_CF_TRUE,
+	RZ_CF_FALSE
 } RCFValueType;
 
 typedef struct _CFValue {

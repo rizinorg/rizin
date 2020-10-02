@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2018 - pancake */
 
-#ifndef R_EVENT_H
-#define R_EVENT_H
+#ifndef RZ_EVENT_H
+#define RZ_EVENT_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,18 +26,18 @@ typedef struct rz_event_callback_handle_t {
 typedef void (*REventCallback)(REvent *ev, int type, void *user, void *data);
 
 typedef enum {
-	R_EVENT_ALL = 0,
-	R_EVENT_META_SET, // REventMeta
-	R_EVENT_META_DEL, // REventMeta
-	R_EVENT_META_CLEAR, // REventMeta
-	R_EVENT_CLASS_NEW, // REventClass
-	R_EVENT_CLASS_DEL, // REventClass
-	R_EVENT_CLASS_RENAME, // REventClassRename
-	R_EVENT_CLASS_ATTR_SET, // REventClassAttr
-	R_EVENT_CLASS_ATTR_DEL, // REventClassAttrSet
-	R_EVENT_CLASS_ATTR_RENAME, // REventClassAttrRename
-	R_EVENT_DEBUG_PROCESS_FINISHED, // REventDebugProcessFinished
-	R_EVENT_MAX,
+	RZ_EVENT_ALL = 0,
+	RZ_EVENT_META_SET, // REventMeta
+	RZ_EVENT_META_DEL, // REventMeta
+	RZ_EVENT_META_CLEAR, // REventMeta
+	RZ_EVENT_CLASS_NEW, // REventClass
+	RZ_EVENT_CLASS_DEL, // REventClass
+	RZ_EVENT_CLASS_RENAME, // REventClassRename
+	RZ_EVENT_CLASS_ATTR_SET, // REventClassAttr
+	RZ_EVENT_CLASS_ATTR_DEL, // REventClassAttrSet
+	RZ_EVENT_CLASS_ATTR_RENAME, // REventClassAttrRename
+	RZ_EVENT_DEBUG_PROCESS_FINISHED, // REventDebugProcessFinished
+	RZ_EVENT_MAX,
 } REventType;
 
 typedef struct rz_event_meta_t {

@@ -24,16 +24,16 @@ RzAsmPlugin rz_asm_plugin_null = {
 	.arch = "null",
 	.license = "MIT",
 	.bits = 16 | 32 | 64,
-	.endian = R_SYS_ENDIAN_NONE,
+	.endian = RZ_SYS_ENDIAN_NONE,
 	.desc = "no disassemble",
 	.disassemble = &disassemble,
 	.assemble = &assemble
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_null,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

@@ -9,7 +9,7 @@
 static const char *help_msg_L[] = {
 	"Usage:", "L[acio]", "[-name][ file]",
 	"L",  "", "show this help",
-	"L", " blah."R_LIB_EXT, "load plugin file",
+	"L", " blah."RZ_LIB_EXT, "load plugin file",
 	"L-", "duk", "unload core plugin by name",
 	"Ll", "", "list lang plugins (same as #!)",
 	"LL", "", "lock screen",

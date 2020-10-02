@@ -15,9 +15,9 @@ static int archinfo(RzAnal *anal, int query) {
 	}
 
 	switch (query) {
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case RZ_ANAL_ARCHINFO_MIN_OP_SIZE:
 		return (anal->bits == 16)? 1: 2;
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case RZ_ANAL_ARCHINFO_MAX_OP_SIZE:
 		return (anal->bits == 16)? 3: 2;
 	default:
 		return -1;
@@ -47,7 +47,7 @@ static int pyc_op(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *data, int len, 
 	RzListIter *iter = NULL;
 	pyc_code_object *func = NULL, *t = NULL;
 	rz_list_foreach (cobjs, iter, t) {
-		if (R_BETWEEN (t->start_offset, addr, t->end_offset - 1)) { // addr in [start_offset, end_offset)
+		if (RZ_BETWEEN (t->start_offset, addr, t->end_offset - 1)) { // addr in [start_offset, end_offset)
 			func = t;
 			break;
 		}
@@ -61,7 +61,7 @@ static int pyc_op(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *data, int len, 
 	ut8 op_code = data[0];
 	op->addr = addr;
 	op->sign = true;
-	op->type = R_ANAL_OP_TYPE_ILL;
+	op->type = RZ_ANAL_OP_TYPE_ILL;
 	op->id = op_code;
 
 	if (!ops || !pyc_opcodes_equal (ops, a->cpu)) {
@@ -72,7 +72,7 @@ static int pyc_op(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *data, int len, 
 	bool is_python36 = a->bits == 8;
 	pyc_opcode_object *op_obj = &ops->opcodes[op_code];
 	if (!op_obj->op_name) {
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = RZ_ANAL_OP_TYPE_ILL;
 		op->size = 1;
 		goto anal_end;
 	}
@@ -92,29 +92,29 @@ static int pyc_op(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *data, int len, 
 	}
 
 	if (op_obj->type & HASJABS) {
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = RZ_ANAL_OP_TYPE_JMP;
 		op->jump = func_base + oparg;
 
 		if (op_obj->type & HASCONDITION) {
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = RZ_ANAL_OP_TYPE_CJMP;
 			op->fail = addr + ((is_python36)? 2: 3);
 		}
 		goto anal_end;
 	}
 	if (op_obj->type & HASJREL) {
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = RZ_ANAL_OP_TYPE_JMP;
 		op->jump = addr + oparg + ((is_python36)? 2: 3);
 		op->fail = addr + ((is_python36)? 2: 3);
 
 		if (op_obj->type & HASCONDITION) {
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = RZ_ANAL_OP_TYPE_CJMP;
 			//op->fail = addr + ((is_python36)? 2: 3);
 		}
 		//goto anal_end;
 	}
 
 	if (op_obj->type & HASCOMPARE) {
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = RZ_ANAL_OP_TYPE_CMP;
 		goto anal_end;
 	}
 
@@ -146,10 +146,10 @@ RzAnalPlugin rz_anal_plugin_pyc = {
 	.fini = &finish,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_pyc,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

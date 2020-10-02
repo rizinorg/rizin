@@ -46,11 +46,11 @@ static RzList *sections(RBinFile *bf) {
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
-	if (!(ptr9 = R_NEW0 (RBinSection))) {
+	if (!(ptr9 = RZ_NEW0 (RBinSection))) {
 		rz_list_free (ret);
 		return NULL;
 	}
-	if (!(ptr7 = R_NEW0 (RBinSection))) {
+	if (!(ptr7 = RZ_NEW0 (RBinSection))) {
 		rz_list_free (ret);
 		free (ptr9);
 		return NULL;
@@ -86,11 +86,11 @@ static RzList *entries(RBinFile *bf) {
 			return NULL;
 		}
 		ret->free = free;
-		if (!(ptr9 = R_NEW0 (RBinAddr))) {
+		if (!(ptr9 = RZ_NEW0 (RBinAddr))) {
 			rz_list_free (ret);
 			return NULL;
 		}
-		if (!(ptr7 = R_NEW0 (RBinAddr))) {
+		if (!(ptr7 = RZ_NEW0 (RBinAddr))) {
 			rz_list_free (ret);
 			free (ptr9);
 			return NULL;
@@ -111,7 +111,7 @@ static RzList *entries(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->buf, NULL);
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = RZ_NEW0 (RBinInfo);
 	if (ret) {
 		char *filepath = rz_str_newf ("%.12s - %.4s",
 			loaded_header.title, loaded_header.gamecode);
@@ -139,10 +139,10 @@ RBinPlugin rz_bin_plugin_ninds = {
 	.info = &info,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_ninds,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

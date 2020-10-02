@@ -7,7 +7,7 @@
 
 
 RZ_API RzDiff *rz_diff_new_from(ut64 off_a, ut64 off_b) {
-	RzDiff *d = R_NEW0 (RzDiff);
+	RzDiff *d = RZ_NEW0 (RzDiff);
 	if (d) {
 		d->delta = 1;
 		d->user = NULL;
@@ -101,8 +101,8 @@ RZ_API char *rz_diff_buffers_to_string(RzDiff *d, const ut8 *a, int la, const ut
 	int ra = la - i_hit;\
 	int rb = lb - i_hit;\
 	struct rz_diff_op_t o = {\
-		.a_off = d->off_a+i-hit, .a_buf = a+i-hit, .a_len = R_MIN (hit, ra),\
-		.b_off = d->off_b+i-hit, .b_buf = b+i-hit, .b_len = R_MIN (hit, rb)\
+		.a_off = d->off_a+i-hit, .a_buf = a+i-hit, .a_len = RZ_MIN (hit, ra),\
+		.b_off = d->off_b+i-hit, .b_buf = b+i-hit, .b_len = RZ_MIN (hit, rb)\
 	};\
 	d->callback (d, d->user, &o);\
 }
@@ -110,11 +110,11 @@ RZ_API char *rz_diff_buffers_to_string(RzDiff *d, const ut8 *a, int la, const ut
 RZ_API int rz_diff_buffers_static(RzDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
 	int i, len;
 	int hit = 0;
-	la = R_ABS (la);
-	lb = R_ABS (lb);
+	la = RZ_ABS (la);
+	lb = RZ_ABS (lb);
 	if (la != lb) {
-	 	len = R_MIN (la, lb);
-		eprintf ("Buffer truncated to %d byte(s) (%d not compared)\n", len, R_ABS(lb-la));
+	 	len = RZ_MIN (la, lb);
+		eprintf ("Buffer truncated to %d byte(s) (%d not compared)\n", len, RZ_ABS(lb-la));
 	} else {
 		len = la;
 	}
@@ -139,7 +139,7 @@ RZ_API char *rz_diff_buffers_unified(RzDiff *d, const ut8 *a, int la, const ut8 
 	rz_file_dump (".a", a, la, 0);
 	rz_file_dump (".b", b, lb, 0);
 #if 0
-	if (rz_mem_is_printable (a, R_MIN (5, la))) {
+	if (rz_mem_is_printable (a, RZ_MIN (5, la))) {
 		rz_file_dump (".a", a, la, 0);
 		rz_file_dump (".b", b, lb, 0);
 	} else {
@@ -243,7 +243,7 @@ RZ_API bool rz_diff_buffers_distance_levenstein(RzDiff *d, const ut8 *a, ut32 la
 	// one or both buffers empty?
 	if (aLen == 0 || bLen == 0) {
 		if (distance) {
-			*distance = R_MAX (aLen, bLen);
+			*distance = RZ_MAX (aLen, bLen);
 		}
 		if (similarity) {
 			*similarity = aLen == bLen? 1.0: 0.0;
@@ -291,7 +291,7 @@ RZ_API bool rz_diff_buffers_distance_levenstein(RzDiff *d, const ut8 *a, ut32 la
 		// bLen (so we don't run off the end of our array)
 		// or 'two below the diagonal' PLUS any extension we need for 'double up' edge values
 		// (see extendStop for logic)
-		stop = R_MIN ((i + extendStop + 2), bLen);
+		stop = RZ_MIN ((i + extendStop + 2), bLen);
 
 		// We need a value in the result column (v1[start]).
 		// If you look at the loop below, we need it because we look at v1[j] as one of the
@@ -312,8 +312,8 @@ RZ_API bool rz_diff_buffers_distance_levenstein(RzDiff *d, const ut8 *a, ut32 la
 
 			// The main levenshtein comparison:
 			cost = (aBufPtr[i] == bBufPtr[j]) ? 0 : 1;
-			smallest = R_MIN ((v1[j] + 1), (v0[j + 1] + 1));
-			smallest = R_MIN (smallest, (v0[j] + cost));
+			smallest = RZ_MIN ((v1[j] + 1), (v0[j + 1] + 1));
+			smallest = RZ_MIN (smallest, (v0[j] + cost));
 
 			// populate the next two entries in v1.
 			// only really required if this is the last loop.
@@ -324,7 +324,7 @@ RZ_API bool rz_diff_buffers_distance_levenstein(RzDiff *d, const ut8 *a, ut32 la
 			v1[j + 2] = smallest + 1;
 
 			// If we have seen a smaller number, it's the new column Minimum
-			colMin = R_MIN ((colMin), (smallest));
+			colMin = RZ_MIN ((colMin), (smallest));
 
 		}
 
@@ -372,7 +372,7 @@ RZ_API bool rz_diff_buffers_distance_levenstein(RzDiff *d, const ut8 *a, ut32 la
 		*distance = v0[stop];
 	}
 	if (similarity) {
-		double diff = (double) (v0[stop]) / (double) (R_MAX (aLen, bLen));
+		double diff = (double) (v0[stop]) / (double) (RZ_MAX (aLen, bLen));
 		*similarity = (double)1 - diff;
 	}
 	free (v0);
@@ -403,8 +403,8 @@ RZ_API bool rz_diff_buffers_distance_myers(RzDiff *diff, const ut8 *a, ut32 la, 
 	v = v0 + lb;
 	v[1] = 0;
 	for (di = 0; di <= m; di++) {
-		low = -di + 2 * R_MAX (0, di - (st64)lb);
-		high = di - 2 * R_MAX (0, di - (st64)la);
+		low = -di + 2 * RZ_MAX (0, di - (st64)lb);
+		high = di - 2 * RZ_MAX (0, di - (st64)la);
 		for (i = low; i <= high; i += 2) {
 			x = i == -di || (i != di && v[i-1] < v[i+1]) ? v[i+1] : v[i-1] + 1;
 			y = x - i;
@@ -443,7 +443,7 @@ RZ_API bool rz_diff_buffers_distance_original(RzDiff *diff, const ut8 *a, ut32 l
 	}
 
 	const bool verbose = diff ? diff->verbose : false;
-	const ut32 length = R_MAX (la, lb);
+	const ut32 length = RZ_MAX (la, lb);
 	const ut8 *ea = a + la, *eb = b + lb, *t;
 	ut32 *d, i, j;
 	// Strip prefix
@@ -472,7 +472,7 @@ RZ_API bool rz_diff_buffers_distance_original(RzDiff *diff, const ut8 *a, ut32 l
 		d[0] = i + 1;
 		for (j = 0; j < lb; j++) {
 			ut32 u = d[j + 1];
-			d[j + 1] = a[i] == b[j] ? ul : R_MIN (ul, R_MIN (d[j], u)) + 1;
+			d[j + 1] = a[i] == b[j] ? ul : RZ_MIN (ul, RZ_MIN (d[j], u)) + 1;
 			ul = u;
 		}
 		if (verbose && i % 10000 == 0) {
@@ -513,7 +513,7 @@ RZ_API bool rz_diff_buffers_distance(RzDiff *d, const ut8 *a, ut32 la, const ut8
 // TODO Discard common prefix and suffix
 RZ_API RzDiffChar *rz_diffchar_new(const ut8 *a, const ut8 *b) {
 	rz_return_val_if_fail (a && b, NULL);
-	RzDiffChar *diffchar = R_NEW0 (RzDiffChar);
+	RzDiffChar *diffchar = RZ_NEW0 (RzDiffChar);
 	if (!diffchar) {
 		return NULL;
 	}
@@ -688,77 +688,77 @@ RZ_API RzDiffChar *rz_diffchar_new(const ut8 *a, const ut8 *b) {
 }
 
 typedef enum {
-	R2R_ALIGN_MATCH, R2R_ALIGN_MISMATCH, R2R_ALIGN_TOP_GAP, R2R_ALIGN_BOTTOM_GAP
-} R2RCharAlignment;
+	RZ_TEST_ALIGN_MATCH, RZ_TEST_ALIGN_MISMATCH, RZ_TEST_ALIGN_TOP_GAP, RZ_TEST_ALIGN_BOTTOM_GAP
+} RzTestCharAlignment;
 
 typedef enum {
-	R2R_DIFF_MATCH, R2R_DIFF_DELETE, R2R_DIFF_INSERT
-} R2RPrintDiffMode;
+	RZ_TEST_DIFF_MATCH, RZ_TEST_DIFF_DELETE, RZ_TEST_DIFF_INSERT
+} RzTestPrintDiffMode;
 
 RZ_API void rz_diffchar_print(RzDiffChar *diffchar) {
 	rz_return_if_fail (diffchar);
-	R2RPrintDiffMode cur_mode = R2R_DIFF_MATCH;
-	R2RCharAlignment cur_align;
+	RzTestPrintDiffMode cur_mode = RZ_TEST_DIFF_MATCH;
+	RzTestCharAlignment cur_align;
 	size_t idx_align = diffchar->start_align;
 	while (idx_align < 2 * diffchar->len_buf) {
 		const ut8 a_ch = diffchar->align_a[idx_align];
 		const ut8 b_ch = diffchar->align_b[idx_align];
 		if (a_ch && !b_ch) {
-			cur_align = R2R_ALIGN_BOTTOM_GAP;
+			cur_align = RZ_TEST_ALIGN_BOTTOM_GAP;
 		} else if (!a_ch && b_ch) {
-			cur_align = R2R_ALIGN_TOP_GAP;
+			cur_align = RZ_TEST_ALIGN_TOP_GAP;
 		} else if (a_ch != b_ch) {
 			eprintf ("Internal error: mismatch detected!\n");
-			cur_align = R2R_ALIGN_MISMATCH;
+			cur_align = RZ_TEST_ALIGN_MISMATCH;
 		} else {
-			cur_align = R2R_ALIGN_MATCH;
+			cur_align = RZ_TEST_ALIGN_MATCH;
 		}
-		if (cur_mode == R2R_DIFF_MATCH) {
-			if (cur_align == R2R_ALIGN_MATCH) {
+		if (cur_mode == RZ_TEST_DIFF_MATCH) {
+			if (cur_align == RZ_TEST_ALIGN_MATCH) {
 				if (a_ch) {
 					printf ("%c", a_ch);
 				}
-			} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
+			} else if (cur_align == RZ_TEST_ALIGN_BOTTOM_GAP) {
 				printf (a_ch == '\n' ?
 				        "%c"Color_HLDELETE :
 				        Color_HLDELETE"%c", a_ch);
-				cur_mode = R2R_DIFF_DELETE;
-			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
+				cur_mode = RZ_TEST_DIFF_DELETE;
+			} else if (cur_align == RZ_TEST_ALIGN_TOP_GAP) {
 				printf (b_ch == '\n' ?
 				        "%c"Color_HLINSERT :
 				        Color_HLINSERT"%c", b_ch);
-				cur_mode = R2R_DIFF_INSERT;
+				cur_mode = RZ_TEST_DIFF_INSERT;
 			}
-		} else if (cur_mode == R2R_DIFF_DELETE) {
-			if (cur_align == R2R_ALIGN_MATCH) {
+		} else if (cur_mode == RZ_TEST_DIFF_DELETE) {
+			if (cur_align == RZ_TEST_ALIGN_MATCH) {
 				printf (Color_RESET);
 				if (a_ch) {
 					printf ("%c", a_ch);
 				}
-				cur_mode = R2R_DIFF_MATCH;
-			} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
+				cur_mode = RZ_TEST_DIFF_MATCH;
+			} else if (cur_align == RZ_TEST_ALIGN_BOTTOM_GAP) {
 				printf (a_ch == '\n' ?
 				        Color_RESET"%c"Color_HLDELETE :
 				        "%c", a_ch);
-			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
+			} else if (cur_align == RZ_TEST_ALIGN_TOP_GAP) {
 				printf (b_ch == '\n' ?
 				        Color_RESET"%c"Color_HLINSERT :
 				        Color_HLINSERT"%c", b_ch);
-				cur_mode = R2R_DIFF_INSERT;
+				cur_mode = RZ_TEST_DIFF_INSERT;
 			}
-		} else if (cur_mode == R2R_DIFF_INSERT) {
-			if (cur_align == R2R_ALIGN_MATCH) {
+		} else if (cur_mode == RZ_TEST_DIFF_INSERT) {
+			if (cur_align == RZ_TEST_ALIGN_MATCH) {
 				printf (Color_RESET);
 				if (a_ch) {
 					printf ("%c", a_ch);
 				}
-				cur_mode = R2R_DIFF_MATCH;
-			} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
+				cur_mode = RZ_TEST_DIFF_MATCH;
+			} else if (cur_align == RZ_TEST_ALIGN_BOTTOM_GAP) {
 				printf (a_ch == '\n' ?
 				        Color_RESET"%c"Color_HLDELETE :
 				        Color_HLDELETE"%c", a_ch);
-				cur_mode = R2R_DIFF_DELETE;
-			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
+				cur_mode = RZ_TEST_DIFF_DELETE;
+			} else if (cur_align == RZ_TEST_ALIGN_TOP_GAP) {
 				printf (b_ch == '\n' ?
 				        Color_RESET"%c"Color_HLINSERT :
 				        "%c", b_ch);

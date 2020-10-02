@@ -41,8 +41,8 @@ static ut64 baddr(RBinFile *bf) {
 static RBinAddr *binsym(RBinFile *bf, int type) {
 	RBinAddr *ret = NULL;
 	switch (type) {
-	case R_BIN_SYM_MAIN:
-		if (!(ret = R_NEW (RBinAddr))) {
+	case RZ_BIN_SYM_MAIN:
+		if (!(ret = RZ_NEW (RBinAddr))) {
 			return NULL;
 		}
 		ret->paddr = ret->vaddr = rz_bin_te_get_main_paddr (bf->o->bin_obj);
@@ -56,7 +56,7 @@ static RzList *entries(RBinFile *bf) {
 	if (ret) {
 		RBinAddr *entry = rz_bin_te_get_entrypoint (bf->o->bin_obj);
 		if (entry) {
-			RBinAddr *ptr = R_NEW0 (RBinAddr);
+			RBinAddr *ptr = RZ_NEW0 (RBinAddr);
 			if (ptr) {
 				ptr->paddr = entry->paddr;
 				ptr->vaddr = entry->vaddr;
@@ -83,7 +83,7 @@ static RzList *sections(RBinFile *bf) {
 		return NULL;
 	}
 	for (i = 0; !sections[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RBinSection))) {
 			break;
 		}
 		ptr->name = strdup ((char*)sections[i].name);
@@ -93,22 +93,22 @@ static RzList *sections(RBinFile *bf) {
 		ptr->vaddr = sections[i].vaddr;
 		ptr->perm = 0;
 		ptr->add = true;
-		if (R_BIN_TE_SCN_IS_EXECUTABLE (sections[i].flags)) {
-			ptr->perm |= R_PERM_X;
+		if (RZ_BIN_TE_SCN_IS_EXECUTABLE (sections[i].flags)) {
+			ptr->perm |= RZ_PERM_X;
 		}
-		if (R_BIN_TE_SCN_IS_WRITABLE (sections[i].flags)) {
-			ptr->perm |= R_PERM_W;
+		if (RZ_BIN_TE_SCN_IS_WRITABLE (sections[i].flags)) {
+			ptr->perm |= RZ_PERM_W;
 		}
-		if (R_BIN_TE_SCN_IS_READABLE (sections[i].flags)) {
-			ptr->perm |= R_PERM_R;
+		if (RZ_BIN_TE_SCN_IS_READABLE (sections[i].flags)) {
+			ptr->perm |= RZ_PERM_R;
 		}
-		if (R_BIN_TE_SCN_IS_SHAREABLE (sections[i].flags)) {
-			ptr->perm |= R_PERM_SHAR;
+		if (RZ_BIN_TE_SCN_IS_SHAREABLE (sections[i].flags)) {
+			ptr->perm |= RZ_PERM_SHAR;
 		}
 		/* All TE files have _TEXT_RE section, which is 16-bit, because of
 		 * CPU start in this mode */
 		if (!strncmp (ptr->name, "_TEXT_RE", 8)) {
-			ptr->bits = R_SYS_BITS_16;
+			ptr->bits = RZ_SYS_BITS_16;
 		}
 		rz_list_append (ret, ptr);
 	}
@@ -117,7 +117,7 @@ static RzList *sections(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = RZ_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -163,10 +163,10 @@ RBinPlugin rz_bin_plugin_te = {
 	.minstrlen = 4,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_te,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

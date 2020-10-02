@@ -27,7 +27,7 @@ static int vax_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 lengt
 	if (delta > length) {
 		return -1;
 	}
-	memcpy (myaddr, bytes + delta, R_MIN (length, bytes_size));
+	memcpy (myaddr, bytes + delta, RZ_MIN (length, bytes_size));
 	return 0;
 }
 
@@ -75,15 +75,15 @@ RzAsmPlugin rz_asm_plugin_vax = {
 	.arch = "vax",
 	.license = "GPL",
 	.bits = 8 | 32,
-	.endian = R_SYS_ENDIAN_LITTLE,
+	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.desc = "VAX",
 	.disassemble = &disassemble
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_vax,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

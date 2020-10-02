@@ -56,7 +56,7 @@ static RzList *strings(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 	ret->lang = NULL;
@@ -84,26 +84,26 @@ static RzList *sections(RBinFile *bf) {
 		return NULL;
 	}
 	// program headers is another section
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("bootblk"); // Maps to 0xF000:0000 segment
 	ptr->vsize = ptr->size = 0x10000;
 	ptr->paddr = rz_buf_size (bf->buf) - ptr->size;
 	ptr->vaddr = 0xf0000;
-	ptr->perm = R_PERM_RWX;
+	ptr->perm = RZ_PERM_RWX;
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 	// If image bigger than 128K - add one more section
 	if (bf->size >= 0x20000) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RBinSection))) {
 			return ret;
 		}
 		ptr->name = strdup ("_e000"); // Maps to 0xE000:0000 segment
 		ptr->vsize = ptr->size = 0x10000;
 		ptr->paddr = rz_buf_size (obj) - 2 * ptr->size;
 		ptr->vaddr = 0xe0000;
-		ptr->perm = R_PERM_RWX;
+		ptr->perm = RZ_PERM_RWX;
 		ptr->add = true;
 		rz_list_append (ret, ptr);
 	}
@@ -117,7 +117,7 @@ static RzList *entries(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	if (!(ptr = R_NEW0 (RBinAddr))) {
+	if (!(ptr = RZ_NEW0 (RBinAddr))) {
 		return ret;
 	}
 	ptr->paddr = 0; // 0x70000;
@@ -140,10 +140,10 @@ RBinPlugin rz_bin_plugin_bios = {
 	.info = &info,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_bios,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

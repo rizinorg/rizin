@@ -20,15 +20,15 @@ static ut64 rz_io_mmap_seek(RzIO *io, RzIOMMapFileObj *mmo, ut64 offset, int whe
 	switch (whence) {
 	case SEEK_SET:
 		seek_val = (rz_buf_size (mmo->buf) < offset)? rz_buf_size (mmo->buf): offset;
-		rz_buf_seek (mmo->buf, io->off = seek_val, R_BUF_SET);
+		rz_buf_seek (mmo->buf, io->off = seek_val, RZ_BUF_SET);
 		return seek_val;
 	case SEEK_CUR:
 		seek_val = (rz_buf_size (mmo->buf) < (offset + rz_buf_tell (mmo->buf)))? rz_buf_size (mmo->buf): offset + rz_buf_tell (mmo->buf);
-		rz_buf_seek (mmo->buf, io->off = seek_val, R_BUF_SET);
+		rz_buf_seek (mmo->buf, io->off = seek_val, RZ_BUF_SET);
 		return seek_val;
 	case SEEK_END:
 		seek_val = rz_buf_size (mmo->buf);
-		rz_buf_seek (mmo->buf, io->off = seek_val, R_BUF_SET);
+		rz_buf_seek (mmo->buf, io->off = seek_val, RZ_BUF_SET);
 		return seek_val;
 	}
 	return seek_val;
@@ -60,7 +60,7 @@ RzIOMMapFileObj *rz_io_mmap_create_new_file(RzIO  *io, const char *filename, int
 	if (!io) {
 		return NULL;
 	}
-	mmo = R_NEW0 (RzIOMMapFileObj);
+	mmo = RZ_NEW0 (RzIOMMapFileObj);
 	if (!mmo) {
 		return NULL;
 	}
@@ -100,7 +100,7 @@ static int rz_io_mmap_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 	}
 	int r = rz_buf_read_at (mmo->buf, io->off, buf, count);
 	if (r >= 0) {
-		rz_buf_seek (mmo->buf, r, R_BUF_CUR);
+		rz_buf_seek (mmo->buf, r, RZ_BUF_CUR);
 	}
 	return r;
 }
@@ -115,7 +115,7 @@ static int rz_io_mmap_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	}
 	mmo = fd->data;
 	addr = io->off;
-	if ( !(mmo->flags & R_PERM_W)) {
+	if ( !(mmo->flags & RZ_PERM_W)) {
 		return -1;
 	}
 	if ( (count + addr > rz_buf_size (mmo->buf)) || rz_buf_size (mmo->buf) == 0) {
@@ -207,10 +207,10 @@ struct rz_io_plugin_t rz_io_plugin_mmap = {
 	.resize = __resize,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_mmap,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

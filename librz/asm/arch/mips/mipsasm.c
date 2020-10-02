@@ -144,7 +144,7 @@ static int getreg(const char *p) {
 	return -1;
 }
 
-R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
+RZ_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 	int i, hasp, is_branch;
 	char *s = strdup (str);
 	char w0[32], w1[32], w2[32], w3[32];

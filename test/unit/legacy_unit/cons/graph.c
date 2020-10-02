@@ -44,7 +44,7 @@ static void Node_print(RzConsCanvas *can, Node *n, int cur) {
 	n->w = rz_str_bounds (n->text, &n->h);
 	n->w += 4;
 	n->h += 4;
-	n->w = R_MAX(18, n->w);
+	n->w = RZ_MAX(18, n->w);
 	if (cur) {
 		F (n->x,n->y, n->w, n->h, '.');
 		snprintf (title, sizeof (title)-1,

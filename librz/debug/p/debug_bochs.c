@@ -229,7 +229,7 @@ static RzList *rz_debug_bochs_map_get(RzDebug* dbg) { //TODO
 	if (!list) {
 		return NULL;
 	}
-	mr = R_NEW0 (RzDebugMap);
+	mr = RZ_NEW0 (RzDebugMap);
 	if (!mr) {
 		rz_list_free (list);
 		return NULL;
@@ -547,7 +547,7 @@ RzDebugPlugin rz_debug_plugin_bochs = {
 	.name = "bochs",
 	.license = "LGPL3",
 	.arch = "x86",
-	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
+	.bits = RZ_SYS_BITS_16 | RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
 	.step = rz_debug_bochs_step,
 	.cont = rz_debug_bochs_continue,
 	.attach = &rz_debug_bochs_attach,
@@ -562,10 +562,10 @@ RzDebugPlugin rz_debug_plugin_bochs = {
 	.reg_profile = (void *)rz_debug_bochs_reg_profile,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_DBG,
+	.type = RZ_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_bochs,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

@@ -228,7 +228,7 @@ SDB_API bool sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, 
 		// DELETE KEY
 		rs.f -= 2;
 		kidx = findkey (&rs);
-		len[0] = R_MAX (1, kidx - 1);
+		len[0] = RZ_MAX (1, kidx - 1);
 
 		// Delete quote if deleted value was a string
 		if (beg[2][0] == '"') {

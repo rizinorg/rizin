@@ -53,14 +53,14 @@ int main(int argc, char **argv) {
 	//printf("--> regs pre step\n");
 	//rz_io_system(io, "reg");
 
-	rz_debug_reg_sync (dbg, R_REG_TYPE_GPR, 0);
-	rz_debug_reg_list (dbg, R_REG_TYPE_GPR, 32, NULL);
+	rz_debug_reg_sync (dbg, RZ_REG_TYPE_GPR, 0);
+	rz_debug_reg_list (dbg, RZ_REG_TYPE_GPR, 32, NULL);
 
 	printf ("--> perform 2 steps (only 1 probably?)\n");
 	rz_debug_step (dbg, 2);
 
-	rz_debug_reg_sync(dbg, R_REG_TYPE_GPR, 0);
-	rz_debug_reg_list(dbg, R_REG_TYPE_GPR, 32, NULL);
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, 0);
+	rz_debug_reg_list(dbg, RZ_REG_TYPE_GPR, 32, NULL);
 
 	//printf("--> regs post step\n");
 	//rz_io_system(io, "reg");

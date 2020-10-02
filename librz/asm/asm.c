@@ -9,7 +9,7 @@
 #include <spp/spp.h>
 #include <config.h>
 
-R_LIB_VERSION (rz_asm);
+RZ_LIB_VERSION (rz_asm);
 
 static char *directives[] = {
 	".include", ".error", ".warning",
@@ -17,7 +17,7 @@ static char *directives[] = {
 	".else", ".set", ".get", NULL
 };
 
-static RzAsmPlugin *asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
+static RzAsmPlugin *asm_static_plugins[] = { RZ_ASM_STATIC_PLUGINS };
 
 static void parseHeap(RzParse *p, RStrBuf *s) {
 	char *op_buf_asm = rz_strbuf_get (s);
@@ -193,14 +193,14 @@ static void plugin_free(RzAsmPlugin *p) {
 
 RZ_API RzAsm *rz_asm_new(void) {
 	int i;
-	RzAsm *a = R_NEW0 (RzAsm);
+	RzAsm *a = RZ_NEW0 (RzAsm);
 	if (!a) {
 		return NULL;
 	}
 	a->dataalign = 1;
-	a->bits = R_SYS_BITS;
+	a->bits = RZ_SYS_BITS;
 	a->bitshift = 0;
-	a->syntax = R_ASM_SYNTAX_INTEL;
+	a->syntax = RZ_ASM_SYNTAX_INTEL;
 	a->plugins = rz_list_newf ((RzListFree)plugin_free);
 	if (!a->plugins) {
 		free (a);
@@ -327,7 +327,7 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 	rz_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (h->name, name) && h->arch) {
 			if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
-				char *r2prefix = rz_str_rz_prefix (R2_SDB_OPCODES);
+				char *r2prefix = rz_str_rz_prefix (RZ_SDB_OPCODES);
 				char *file = rz_str_newf ("%s/%s.sdb", rz_str_get (r2prefix), h->arch);
 				if (file) {
 					rz_asm_set_cpu (a, NULL);
@@ -346,7 +346,7 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 	return false;
 }
 
-R_DEPRECATE RZ_API void rz_asm_set_cpu(RzAsm *a, const char *cpu) {
+RZ_DEPRECATE RZ_API void rz_asm_set_cpu(RzAsm *a, const char *cpu) {
 	if (a) {
 		free (a->cpu);
 		a->cpu = cpu? strdup (cpu): NULL;
@@ -357,7 +357,7 @@ static bool has_bits(RzAsmPlugin *h, int bits) {
 	return (h && h->bits && (bits & h->bits));
 }
 
-R_DEPRECATE RZ_API int rz_asm_set_bits(RzAsm *a, int bits) {
+RZ_DEPRECATE RZ_API int rz_asm_set_bits(RzAsm *a, int bits) {
 	if (has_bits (a->cur, bits)) {
 		a->bits = bits; // TODO : use OR? :)
 		return true;
@@ -369,15 +369,15 @@ RZ_API bool rz_asm_set_big_endian(RzAsm *a, bool b) {
 	rz_return_val_if_fail (a && a->cur, false);
 	a->big_endian = false; // little endian by default
 	switch (a->cur->endian) {
-	case R_SYS_ENDIAN_NONE:
-	case R_SYS_ENDIAN_BI:
+	case RZ_SYS_ENDIAN_NONE:
+	case RZ_SYS_ENDIAN_BI:
 		// TODO: not yet implemented
 		a->big_endian = b;
 		break;
-	case R_SYS_ENDIAN_LITTLE:
+	case RZ_SYS_ENDIAN_LITTLE:
 		a->big_endian = false;
 		break;
-	case R_SYS_ENDIAN_BIG:
+	case RZ_SYS_ENDIAN_BIG:
 		a->big_endian = true;
 		break;
 	default:
@@ -390,11 +390,11 @@ RZ_API bool rz_asm_set_big_endian(RzAsm *a, bool b) {
 RZ_API bool rz_asm_set_syntax(RzAsm *a, int syntax) {
 	// TODO: move into rz_arch ?
 	switch (syntax) {
-	case R_ASM_SYNTAX_REGNUM:
-	case R_ASM_SYNTAX_INTEL:
-	case R_ASM_SYNTAX_MASM:
-	case R_ASM_SYNTAX_ATT:
-	case R_ASM_SYNTAX_JZ:
+	case RZ_ASM_SYNTAX_REGNUM:
+	case RZ_ASM_SYNTAX_INTEL:
+	case RZ_ASM_SYNTAX_MASM:
+	case RZ_ASM_SYNTAX_ATT:
+	case RZ_ASM_SYNTAX_JZ:
 		a->syntax = syntax;
 		return true;
 	default:
@@ -474,7 +474,7 @@ RZ_API int rz_asm_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (a->ofilter) {
 		parseHeap (a->ofilter, &op->buf_asm);
 	}
-	int opsz = (op->size > 0)? R_MAX (0, R_MIN (len, op->size)): 1;
+	int opsz = (op->size > 0)? RZ_MAX (0, RZ_MIN (len, op->size)): 1;
 	rz_asm_op_set_buf (op, buf, opsz);
 	return ret;
 }
@@ -833,7 +833,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 				// # followed by number literal also
 				// isn't likely to be a comment
 				likely_comment = likely_comment && ptr
-					&& !R_BETWEEN ('0', ptr[1], '9')
+					&& !RZ_BETWEEN ('0', ptr[1], '9')
 					&& ptr[1] != '-' ;
 				if (likely_comment) {
 					*ptr = '\0';
@@ -886,9 +886,9 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 				ptr = ptr_start;
 				rz_str_trim (ptr);
 				if (!strncmp (ptr, ".intel_syntax", 13)) {
-					a->syntax = R_ASM_SYNTAX_INTEL;
+					a->syntax = RZ_ASM_SYNTAX_INTEL;
 				} else if (!strncmp (ptr, ".att_syntax", 11)) {
-					a->syntax = R_ASM_SYNTAX_ATT;
+					a->syntax = RZ_ASM_SYNTAX_ATT;
 				} else if (!strncmp (ptr, ".endian", 7)) {
 					rz_asm_set_big_endian (a, atoi (ptr + 7));
 				} else if (!strncmp (ptr, ".big_endian", 7 + 4)) {
@@ -1092,19 +1092,19 @@ RZ_API ut8 *rz_asm_from_string(RzAsm *a, ut64 addr, const char *b, int *l) {
 RZ_API int rz_asm_syntax_from_string(const char *name) {
 	rz_return_val_if_fail (name, -1);
 	if (!strcmp (name, "regnum")) {
-		return R_ASM_SYNTAX_REGNUM;
+		return RZ_ASM_SYNTAX_REGNUM;
 	}
 	if (!strcmp (name, "jz")) {
-		return R_ASM_SYNTAX_JZ;
+		return RZ_ASM_SYNTAX_JZ;
 	}
 	if (!strcmp (name, "intel")) {
-		return R_ASM_SYNTAX_INTEL;
+		return RZ_ASM_SYNTAX_INTEL;
 	}
 	if (!strcmp (name, "masm")) {
-		return R_ASM_SYNTAX_MASM;
+		return RZ_ASM_SYNTAX_MASM;
 	}
 	if (!strcmp (name, "att")) {
-		return R_ASM_SYNTAX_ATT;
+		return RZ_ASM_SYNTAX_ATT;
 	}
 	return -1;
 }

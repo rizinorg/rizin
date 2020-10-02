@@ -105,7 +105,7 @@ typedef struct libgdbr_stub_features_t {
 /*!
  * Structure for fstat data sent by gdb remote server
  */
-R_PACKED(
+RZ_PACKED(
 typedef struct libgdbr_fstat_t {
 	unsigned dev;
 	unsigned ino;

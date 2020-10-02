@@ -1,5 +1,5 @@
-#ifndef R_TYPES_OVERFLOW_H
-#define R_TYPES_OVERFLOW_H
+#ifndef RZ_TYPES_OVERFLOW_H
+#define RZ_TYPES_OVERFLOW_H
 
 // TODO: Use CLANG/GCC builtins if available: __builtin_mul_overflow
 

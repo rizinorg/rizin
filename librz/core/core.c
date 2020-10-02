@@ -10,13 +10,13 @@
 
 #define DB core->sdb
 
-R_LIB_VERSION(rz_core);
+RZ_LIB_VERSION(rz_core);
 
-static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
-	R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS,
-	R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS,
-	R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS,
-	R_CORE_ASMQJMPS_LETTERS
+static ut64 letter_divs[RZ_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
+	RZ_CORE_ASMQJMPS_LETTERS * RZ_CORE_ASMQJMPS_LETTERS * RZ_CORE_ASMQJMPS_LETTERS * RZ_CORE_ASMQJMPS_LETTERS,
+	RZ_CORE_ASMQJMPS_LETTERS * RZ_CORE_ASMQJMPS_LETTERS * RZ_CORE_ASMQJMPS_LETTERS,
+	RZ_CORE_ASMQJMPS_LETTERS * RZ_CORE_ASMQJMPS_LETTERS,
+	RZ_CORE_ASMQJMPS_LETTERS
 };
 
 extern bool rz_core_is_project (RzCore *core, const char *name);
@@ -139,13 +139,13 @@ RZ_API ut64 rz_core_get_asmqjmps(RzCore *core, const char *str) {
 			if (!isupper ((ut8)str[i])) {
 				return UT64_MAX;
 			}
-			pos *= R_CORE_ASMQJMPS_LETTERS;
+			pos *= RZ_CORE_ASMQJMPS_LETTERS;
 			pos += str[i] - 'A' + 1;
 		}
 		if (!islower ((ut8)str[i])) {
 			return UT64_MAX;
 		}
-		pos *= R_CORE_ASMQJMPS_LETTERS;
+		pos *= RZ_CORE_ASMQJMPS_LETTERS;
 		pos += str[i] - 'a';
 		if (pos < core->asmqjmps_count) {
 			return core->asmqjmps[pos + 1];
@@ -169,7 +169,7 @@ RZ_API char* rz_core_add_asmqjmp(RzCore *core, ut64 addr) {
 		return NULL;
 	}
 	if (core->is_asmqjmps_letter) {
-		if (core->asmqjmps_count >= R_CORE_ASMQJMPS_MAX_LETTERS) {
+		if (core->asmqjmps_count >= RZ_CORE_ASMQJMPS_MAX_LETTERS) {
 			return NULL;
 		}
 		if (core->asmqjmps_count >= core->asmqjmps_size - 2) {
@@ -182,7 +182,7 @@ RZ_API char* rz_core_add_asmqjmp(RzCore *core, ut64 addr) {
 	}
 	if (core->asmqjmps_count < core->asmqjmps_size - 1) {
 		int i = 0;
-		char t[R_CORE_ASMQJMPS_LEN_LETTERS + 1] = {0};
+		char t[RZ_CORE_ASMQJMPS_LEN_LETTERS + 1] = {0};
 		for (i = 0; i < core->asmqjmps_count + 1; i++) {
 			if (core->asmqjmps[i] == addr) {
 				found = true;
@@ -213,7 +213,7 @@ RZ_API void rz_core_set_asmqjmps(RzCore *core, char *str, size_t len, int pos) {
 		// if (pos > 0) {
 			pos --;
 		////  }
-		for (i = 0; i < R_CORE_ASMQJMPS_LEN_LETTERS - 1; i++) {
+		for (i = 0; i < RZ_CORE_ASMQJMPS_LEN_LETTERS - 1; i++) {
 			int div = pos / letter_divs[i];
 			pos %= letter_divs[i];
 			if (div > 0 && j < len) {
@@ -221,7 +221,7 @@ RZ_API void rz_core_set_asmqjmps(RzCore *core, char *str, size_t len, int pos) {
 			}
 		}
 		if (j < len) {
-			int div = pos % R_CORE_ASMQJMPS_LETTERS;
+			int div = pos % RZ_CORE_ASMQJMPS_LETTERS;
 			str[j++] = 'a' + div;
 		}
 		str[j] = '\0';
@@ -371,7 +371,7 @@ static ut64 bbInstructions(RzAnalFunction *fcn, ut64 addr) {
 	RzListIter *iter;
 	RzAnalBlock *bb;
 	rz_list_foreach (fcn->bbs, iter, bb) {
-		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
+		if (RZ_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->ninstr;
 		}
 	}
@@ -382,7 +382,7 @@ static ut64 bbBegin(RzAnalFunction *fcn, ut64 addr) {
 	RzListIter *iter;
 	RzAnalBlock *bb;
 	rz_list_foreach (fcn->bbs, iter, bb) {
-		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
+		if (RZ_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->addr;
 		}
 	}
@@ -393,7 +393,7 @@ static ut64 bbJump(RzAnalFunction *fcn, ut64 addr) {
 	RzListIter *iter;
 	RzAnalBlock *bb;
 	rz_list_foreach (fcn->bbs, iter, bb) {
-		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
+		if (RZ_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->jump;
 		}
 	}
@@ -404,7 +404,7 @@ static ut64 bbFail(RzAnalFunction *fcn, ut64 addr) {
 	RzListIter *iter;
 	RzAnalBlock *bb;
 	rz_list_foreach (fcn->bbs, iter, bb) {
-		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
+		if (RZ_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->fail;
 		}
 	}
@@ -415,7 +415,7 @@ static ut64 bbSize(RzAnalFunction *fcn, ut64 addr) {
 	RzListIter *iter;
 	RzAnalBlock *bb;
 	rz_list_foreach (fcn->bbs, iter, bb) {
-		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
+		if (RZ_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->size;
 		}
 	}
@@ -518,8 +518,8 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		if (ok) {
 			*ok = 1;
 		}
-		ut8 buf[sizeof (ut64)] = R_EMPTY;
-		(void)rz_io_read_at (core->io, n, buf, R_MIN (sizeof (buf), refsz));
+		ut8 buf[sizeof (ut64)] = RZ_EMPTY;
+		(void)rz_io_read_at (core->io, n, buf, RZ_MIN (sizeof (buf), refsz));
 		switch (refsz) {
 		case 8:
 			return rz_read_ble64 (buf, core->print->big_endian);
@@ -540,7 +540,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			*ok = 1;
 		}
 		// TODO: group analop-dependant vars after a char, so i can filter
-		rz_anal_op (core->anal, &op, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC);
+		rz_anal_op (core->anal, &op, core->offset, core->block, core->blocksize, RZ_ANAL_OP_MASK_BASIC);
 		rz_anal_op_fini (&op); // we don't need strings or pointers, just values, which are not nullified in fini
 		// XXX the above line is assuming op after fini keeps jump, fail, ptr, val, size and rz_anal_op_is_eob()
 		switch (str[1]) {
@@ -596,7 +596,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				}
 				*ptr = 0;
 				if (rz_config_get_i (core->config, "cfg.debug")) {
-					if (rz_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
+					if (rz_debug_reg_sync (core->dbg, RZ_REG_TYPE_GPR, false)) {
 						RzRegItem *r = rz_reg_get (core->dbg->reg, bptr, -1);
 						if (r) {
 							free (bptr);
@@ -711,7 +711,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			if (str[2] == 'B') { // $DD
 				return rz_debug_get_baddr (core->dbg, NULL);
 			} else if (IS_DIGIT (str[2])) {
-				return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_DATA);
+				return getref (core, atoi (str + 2), 'r', RZ_ANAL_REF_TYPE_DATA);
 			} else {
 				RzDebugMap *map;
 				RzListIter *iter;
@@ -737,11 +737,11 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			  }
 			  return core->offset;
 		case 'C': // $C nth call
-			return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CALL);
+			return getref (core, atoi (str + 2), 'r', RZ_ANAL_REF_TYPE_CALL);
 		case 'J': // $J nth jump
-			return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CODE);
+			return getref (core, atoi (str + 2), 'r', RZ_ANAL_REF_TYPE_CODE);
 		case 'X': // $X nth xref
-			return getref (core, atoi (str + 2), 'x', R_ANAL_REF_TYPE_CALL);
+			return getref (core, atoi (str + 2), 'x', RZ_ANAL_REF_TYPE_CALL);
 		case 'F': // $F function size
 			fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
@@ -822,7 +822,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 }
 
 RZ_API RzCore *rz_core_new(void) {
-	RzCore *c = R_NEW0 (RzCore);
+	RzCore *c = RZ_NEW0 (RzCore);
 	if (c) {
 		rz_core_init (c);
 	}
@@ -1038,14 +1038,14 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 #if __WINDOWS__
 	rz_str_replace_ch (lpath, '/', '\\', true);
 #endif
-	p = (char *)rz_str_last (lpath, R_SYS_DIR);
+	p = (char *)rz_str_last (lpath, RZ_SYS_DIR);
 	if (p) {
 		*p = 0;
 		if (p == lpath) { // /xxx
 #if __WINDOWS__
 			dirname = strdup ("\\.\\");
 #else
-			dirname = rz_str_new (R_SYS_DIR);
+			dirname = rz_str_new (RZ_SYS_DIR);
 #endif
 		} else if (lpath[0] == '~' && lpath[1]) { // ~/xxx/yyy
 			dirname = rz_str_home (lpath + 2);
@@ -1053,10 +1053,10 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 			if (!(home = rz_str_home (NULL))) {
 				goto out;
 			}
-			dirname = rz_str_newf ("%s%s", home, R_SYS_DIR);
+			dirname = rz_str_newf ("%s%s", home, RZ_SYS_DIR);
 			free (home);
-		} else if (lpath[0] == '.' || lpath[0] == R_SYS_DIR[0] ) { // ./xxx/yyy || /xxx/yyy
-			dirname = rz_str_newf ("%s%s", lpath, R_SYS_DIR);
+		} else if (lpath[0] == '.' || lpath[0] == RZ_SYS_DIR[0] ) { // ./xxx/yyy || /xxx/yyy
+			dirname = rz_str_newf ("%s%s", lpath, RZ_SYS_DIR);
 		} else { // xxx/yyy
 			char *fmt = ".%s%s%s";
 #if __WINDOWS__
@@ -1064,11 +1064,11 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 				fmt = "%.0s%s%s";
 			}
 #endif
-			dirname = rz_str_newf (fmt, R_SYS_DIR, lpath, R_SYS_DIR);
+			dirname = rz_str_newf (fmt, RZ_SYS_DIR, lpath, RZ_SYS_DIR);
 		}
 		basename = rz_str_new (p + 1);
 	} else { // xxx
-		dirname = rz_str_newf (".%s", R_SYS_DIR);
+		dirname = rz_str_newf (".%s", RZ_SYS_DIR);
 		basename = rz_str_new (lpath);
 	}
 
@@ -1087,7 +1087,7 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 			if (!basename[0] || !strncmp (filename, basename, n))  {
 				char *tmpstring = rz_str_newf ("%s%s", dirname, filename);
 				if (rz_file_is_directory (tmpstring)) {
-					char *s = rz_str_newf ("%s%s", tmpstring, R_SYS_DIR);
+					char *s = rz_str_newf ("%s%s", tmpstring, RZ_SYS_DIR);
 					rz_line_completion_push (completion, s);
 					free (s);
 				} else if (!chgdir) {
@@ -1135,7 +1135,7 @@ static void autocompleteFilename(RLineCompletion *completion, RLineBuffer *buf, 
 	}
 
 	for (i = 0; extra_paths[i]; i ++) {
-		char *s = rz_str_newf ("%s%s%s", extra_paths[i], R_SYS_DIR, tinput);
+		char *s = rz_str_newf ("%s%s%s", extra_paths[i], RZ_SYS_DIR, tinput);
 		if (!s) {
 			break;
 		}
@@ -1178,7 +1178,7 @@ static int autocomplete_pfele (RzCore *core, RLineCompletion *completion, char *
 
 #define ADDARG(x) if (!strncmp (buf->data+chr, x, strlen (buf->data+chr))) { rz_line_completion_push (completion, x); }
 
-static void autocomplete_default(R_NULLABLE RzCore *core, RLineCompletion *completion, RLineBuffer *buf) {
+static void autocomplete_default(RZ_NULLABLE RzCore *core, RLineCompletion *completion, RLineBuffer *buf) {
 	RzCoreAutocomplete *a = core ? core->autocomplete : NULL;
 	int i;
 	if (a) {
@@ -1518,7 +1518,7 @@ static bool find_autocomplete(RzCore *core, RLineCompletion *completion, RLineBu
 			// if is spaced then i can provide the
 			// next subtree as suggestion..
 			p = rz_str_trim_head_ro (p + child->length);
-			if (child->type == R_CORE_AUTOCMPLT_OPTN) {
+			if (child->type == RZ_CORE_AUTOCMPLT_OPTN) {
 				continue;
 			}
 			parent = child;
@@ -1530,45 +1530,45 @@ static bool find_autocomplete(RzCore *core, RLineCompletion *completion, RLineBu
 	/* if something went wrong this will prevent bad behavior */
 	rz_line_completion_clear (completion);
 	switch (parent->type) {
-	case R_CORE_AUTOCMPLT_SEEK:
+	case RZ_CORE_AUTOCMPLT_SEEK:
 		autocomplete_functions (core, completion, p);
-	case R_CORE_AUTOCMPLT_FLAG:
+	case RZ_CORE_AUTOCMPLT_FLAG:
 		autocomplete_flags (core, completion, p);
 		break;
-	case R_CORE_AUTOCMPLT_FLSP:
+	case RZ_CORE_AUTOCMPLT_FLSP:
 		autocomplete_flagspaces (core, completion, p);
 		break;
-	case R_CORE_AUTOCMPLT_FCN:
+	case RZ_CORE_AUTOCMPLT_FCN:
 		autocomplete_functions (core, completion, p);
 		break;
-	case R_CORE_AUTOCMPLT_ZIGN:
+	case RZ_CORE_AUTOCMPLT_ZIGN:
 		autocomplete_zignatures (core, completion, p);
 		break;
-	case R_CORE_AUTOCMPLT_EVAL:
+	case RZ_CORE_AUTOCMPLT_EVAL:
 		autocomplete_evals (core, completion, p);
 		break;
-	case R_CORE_AUTOCMPLT_PRJT:
+	case RZ_CORE_AUTOCMPLT_PRJT:
 		autocomplete_project (core, completion, p);
 		break;
-	case R_CORE_AUTOCMPLT_MINS:
+	case RZ_CORE_AUTOCMPLT_MINS:
 		autocomplete_minus (core, completion, p);
 		break;
-	case R_CORE_AUTOCMPLT_BRKP:
+	case RZ_CORE_AUTOCMPLT_BRKP:
 		autocomplete_breakpoints (core, completion, p);
 		break;
-	case R_CORE_AUTOCMPLT_MACR:
+	case RZ_CORE_AUTOCMPLT_MACR:
 		autocomplete_macro (core, completion, p);
 		break;
-	case R_CORE_AUTOCMPLT_FILE:
+	case RZ_CORE_AUTOCMPLT_FILE:
 		autocomplete_file (completion, p);
 		break;
-	case R_CORE_AUTOCMPLT_THME:
+	case RZ_CORE_AUTOCMPLT_THME:
 		autocomplete_theme (core, completion, p);
 		break;
-	case R_CORE_AUTOCMPLT_SDB:
+	case RZ_CORE_AUTOCMPLT_SDB:
 		autocomplete_sdb (core, completion, p);
 		break;
-	case R_CORE_AUTOCMPLT_OPTN:
+	case RZ_CORE_AUTOCMPLT_OPTN:
 		// handled before
 		break;
 	default:
@@ -1576,7 +1576,7 @@ static bool find_autocomplete(RzCore *core, RLineCompletion *completion, RLineBu
 			RzCmdDescriptor *desc = &core->root_cmd_descriptor;
 			for (i = 0; arg[i] && desc; i++) {
 				ut8 c = arg[i];
-				desc = c < R_ARRAY_SIZE (desc->sub) ? desc->sub[c] : NULL;
+				desc = c < RZ_ARRAY_SIZE (desc->sub) ? desc->sub[c] : NULL;
 			}
 			if (desc && desc->help_msg) {
 				rz_core_cmd_help (core, desc->help_msg);
@@ -1596,7 +1596,7 @@ static bool find_autocomplete(RzCore *core, RLineCompletion *completion, RLineBu
 	return true;
 }
 
-RZ_API void rz_core_autocomplete(R_NULLABLE RzCore *core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type) {
+RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type) {
 	if (!core) {
 		autocomplete_default (core, completion, buf);
 		return;
@@ -1710,7 +1710,7 @@ RZ_API void rz_core_autocomplete(R_NULLABLE RzCore *core, RLineCompletion *compl
 		int j = 0;
 		ls_foreach (sls, iter, kv) {
 			int len = strlen (buf->data + chr);
-			int minlen = R_MIN (len,  strlen (sdbkv_key (kv)));
+			int minlen = RZ_MIN (len,  strlen (sdbkv_key (kv)));
 			if (!len || !strncmp (buf->data + chr, sdbkv_key (kv), minlen)) {
 				char *p = strchr (buf->data + chr, '.');
 				if (p) {
@@ -1728,9 +1728,9 @@ RZ_API void rz_core_autocomplete(R_NULLABLE RzCore *core, RLineCompletion *compl
 		RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
 		RzList *vars;
 		if (!strncmp (buf->data, "afvn ", 5)) {
-			vars = rz_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_BPV);
+			vars = rz_anal_var_list (core->anal, fcn, RZ_ANAL_VAR_KIND_BPV);
 		} else {
-			vars = rz_list_new (); // TODO wtf rz_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_ARG);
+			vars = rz_list_new (); // TODO wtf rz_anal_var_list (core->anal, fcn, RZ_ANAL_VAR_KIND_ARG);
 		}
 		const char *f_ptr, *l_ptr;
 		RzAnalVar *var;
@@ -1821,9 +1821,9 @@ RZ_API void rz_core_autocomplete(R_NULLABLE RzCore *core, RLineCompletion *compl
 		}
 	} else if (find_e_opts (core, completion, buf)) {
 		return;
-	} else if (prompt_type == R_LINE_PROMPT_OFFSET) {
+	} else if (prompt_type == RZ_LINE_PROMPT_OFFSET) {
 		autocomplete_flags (core, completion, buf->data);
-	} else if (prompt_type == R_LINE_PROMPT_FILE) {
+	} else if (prompt_type == RZ_LINE_PROMPT_FILE) {
 		autocomplete_file (completion, buf->data);
 	} else if (!find_autocomplete (core, completion, buf)) {
 		autocomplete_default (core, completion, buf);
@@ -1969,7 +1969,7 @@ static char *rz_core_anal_hasrefs_to_depth(RzCore *core, ut64 value, int depth) 
 	}
 	if (mapname) {
 		rz_strbuf_appendf (s, " (%s)", mapname);
-		R_FREE (mapname);
+		RZ_FREE (mapname);
 	}
 	int bits = core->rasm->bits;
 	switch (bits) {
@@ -2002,7 +2002,7 @@ static char *rz_core_anal_hasrefs_to_depth(RzCore *core, ut64 value, int depth) 
 		break;
 	}
 	RBinSection *sect = value? rz_bin_get_section_at (rz_bin_cur_object (core->bin), value, true): NULL;
-	if(! ((type&R_ANAL_ADDR_TYPE_HEAP)||(type&R_ANAL_ADDR_TYPE_STACK)) ) {
+	if(! ((type&RZ_ANAL_ADDR_TYPE_HEAP)||(type&RZ_ANAL_ADDR_TYPE_STACK)) ) {
 		// Do not repeat "stack" or "heap" words unnecessarily.
 		if (sect && sect->name[0]) {
 			rz_strbuf_appendf (s," (%s)", sect->name);
@@ -2024,30 +2024,30 @@ static char *rz_core_anal_hasrefs_to_depth(RzCore *core, ut64 value, int depth) 
 		if (!c) {
 			c = "";
 		}
-		if (type & R_ANAL_ADDR_TYPE_HEAP) {
+		if (type & RZ_ANAL_ADDR_TYPE_HEAP) {
 			rz_strbuf_appendf (s, " %sheap%s", c, cend);
-		} else if (type & R_ANAL_ADDR_TYPE_STACK) {
+		} else if (type & RZ_ANAL_ADDR_TYPE_STACK) {
 			rz_strbuf_appendf (s, " %sstack%s", c, cend);
 		}
-		if (type & R_ANAL_ADDR_TYPE_PROGRAM) {
+		if (type & RZ_ANAL_ADDR_TYPE_PROGRAM) {
 			rz_strbuf_appendf (s, " %sprogram%s", c, cend);
 		}
-		if (type & R_ANAL_ADDR_TYPE_LIBRARY) {
+		if (type & RZ_ANAL_ADDR_TYPE_LIBRARY) {
 			rz_strbuf_appendf (s, " %slibrary%s", c, cend);
 		}
-		if (type & R_ANAL_ADDR_TYPE_ASCII) {
+		if (type & RZ_ANAL_ADDR_TYPE_ASCII) {
 			rz_strbuf_appendf (s, " %sascii%s ('%c')", c, cend, value);
 		}
-		if (type & R_ANAL_ADDR_TYPE_SEQUENCE) {
+		if (type & RZ_ANAL_ADDR_TYPE_SEQUENCE) {
 			rz_strbuf_appendf (s, " %ssequence%s", c, cend);
 		}
-		if (type & R_ANAL_ADDR_TYPE_READ) {
+		if (type & RZ_ANAL_ADDR_TYPE_READ) {
 			rz_strbuf_appendf (s, " %sR%s", c, cend);
 		}
-		if (type & R_ANAL_ADDR_TYPE_WRITE) {
+		if (type & RZ_ANAL_ADDR_TYPE_WRITE) {
 			rz_strbuf_appendf (s, " %sW%s", c, cend);
 		}
-		if (type & R_ANAL_ADDR_TYPE_EXEC) {
+		if (type & RZ_ANAL_ADDR_TYPE_EXEC) {
 			RzAsmOp op;
 			ut8 buf[32];
 			rz_strbuf_appendf (s, " %sX%s", c, cend);
@@ -2070,7 +2070,7 @@ static char *rz_core_anal_hasrefs_to_depth(RzCore *core, ut64 value, int depth) 
 					}
 				}
 			}
-		} else if (type & R_ANAL_ADDR_TYPE_READ) {
+		} else if (type & RZ_ANAL_ADDR_TYPE_READ) {
 			ut8 buf[32];
 			ut32 *n32 = (ut32 *)buf;
 			ut64 *n64 = (ut64*)buf;
@@ -2103,7 +2103,7 @@ static char *rz_core_anal_hasrefs_to_depth(RzCore *core, ut64 value, int depth) 
 		}
 
 	}
-	if ((type & R_ANAL_ADDR_TYPE_READ) && !(type & R_ANAL_ADDR_TYPE_EXEC) && depth) {
+	if ((type & RZ_ANAL_ADDR_TYPE_READ) && !(type & RZ_ANAL_ADDR_TYPE_EXEC) && depth) {
 		// Try to telescope further, but only several levels deep.
 		ut8 buf[32];
 		ut32 *n32 = (ut32 *)buf;
@@ -2126,8 +2126,8 @@ static char *rz_core_anal_hasrefs_to_depth(RzCore *core, ut64 value, int depth) 
 
 RZ_API char *rz_core_anal_get_comments(RzCore *core, ut64 addr) {
 	if (core) {
-		const char *type = rz_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);
-		const char *cmt = rz_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+		const char *type = rz_meta_get_string (core->anal, RZ_META_TYPE_VARTYPE, addr);
+		const char *cmt = rz_meta_get_string (core->anal, RZ_META_TYPE_COMMENT, addr);
 		if (type && cmt) {
 			return rz_str_newf ("%s %s", type, cmt);
 		} else if (type) {
@@ -2141,26 +2141,26 @@ RZ_API char *rz_core_anal_get_comments(RzCore *core, ut64 addr) {
 
 RZ_API const char *rz_core_anal_optype_colorfor(RzCore *core, ut64 addr, bool verbose) {
 	ut64 type;
-	if (!(core->print->flags & R_PRINT_FLAGS_COLOR)) {
+	if (!(core->print->flags & RZ_PRINT_FLAGS_COLOR)) {
 		return NULL;
 	}
 	if (!rz_config_get_i (core->config, "scr.color")) {
 		return NULL;
 	}
 	type = rz_core_anal_address (core, addr);
-	if (type & R_ANAL_ADDR_TYPE_EXEC) {
+	if (type & RZ_ANAL_ADDR_TYPE_EXEC) {
 		return core->cons->context->pal.ai_exec; //Color_RED;
 	}
-	if (type & R_ANAL_ADDR_TYPE_WRITE) {
+	if (type & RZ_ANAL_ADDR_TYPE_WRITE) {
 		return core->cons->context->pal.ai_write; //Color_BLUE;
 	}
-	if (type & R_ANAL_ADDR_TYPE_READ) {
+	if (type & RZ_ANAL_ADDR_TYPE_READ) {
 		return core->cons->context->pal.ai_read; //Color_GREEN;
 	}
-	if (type & R_ANAL_ADDR_TYPE_SEQUENCE) {
+	if (type & RZ_ANAL_ADDR_TYPE_SEQUENCE) {
 		return core->cons->context->pal.ai_seq; //Color_MAGENTA;
 	}
-	if (type & R_ANAL_ADDR_TYPE_ASCII) {
+	if (type & RZ_ANAL_ADDR_TYPE_ASCII) {
 		return core->cons->context->pal.ai_ascii; //Color_YELLOW;
 	}
 	return NULL;
@@ -2168,8 +2168,8 @@ RZ_API const char *rz_core_anal_optype_colorfor(RzCore *core, ut64 addr, bool ve
 
 static void rz_core_setenv (RzCore *core) {
 	char *e = rz_sys_getenv ("PATH");
-	char *h = rz_str_home (R2_HOME_BIN);
-	char *n = rz_str_newf ("%s%s%s", h, R_SYS_ENVSEP, e);
+	char *h = rz_str_home (RZ_HOME_BIN);
+	char *n = rz_str_newf ("%s%s%s", h, RZ_SYS_ENVSEP, e);
 	rz_sys_setenv ("PATH", n);
 	free (n);
 	free (h);
@@ -2248,45 +2248,45 @@ static void __init_autocomplete_default (RzCore* core) {
 	const char *files[] = {
 		".", "..", ".*", "/F", "/m", "!", "!!", "#!c", "#!v", "#!cpipe", "#!vala",
 		"#!rust", "#!zig", "#!pipe", "#!python", "aeli", "arp", "arpg", "dmd", "drp", "drpg", "o",
-		"idp", "idpi", "L", "obf", "o+", "oc", "r2", "rabin2", "rasm2", "rahash2", "rax2",
-		"rafind2", "cd", "on", "op", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
+		"idp", "idpi", "L", "obf", "o+", "oc", "rz", "rz_bin", "rz_asm", "rz_hash", "rz_ax",
+		"rz_find", "cd", "on", "op", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
 		"/m", "zos", "zfd", "zfs", "zfz", "cat", "wta", "wtf", "wxf", "dml", "vi",
 		"less", "head", "tail", NULL
 	};
 	const char *projs[] = {
 		"Pc", "Pd", "Pi", "Po", "Ps", "P-", NULL
 	};
-	__foreach (core, flags, R_CORE_AUTOCMPLT_FLAG);
-	__foreach (core, seeks, R_CORE_AUTOCMPLT_SEEK);
-	__foreach (core, fcns, R_CORE_AUTOCMPLT_FCN);
-	__foreach (core, evals, R_CORE_AUTOCMPLT_EVAL);
-	__foreach (core, breaks, R_CORE_AUTOCMPLT_BRKP);
-	__foreach (core, files, R_CORE_AUTOCMPLT_FILE);
-	__foreach (core, projs, R_CORE_AUTOCMPLT_PRJT);
+	__foreach (core, flags, RZ_CORE_AUTOCMPLT_FLAG);
+	__foreach (core, seeks, RZ_CORE_AUTOCMPLT_SEEK);
+	__foreach (core, fcns, RZ_CORE_AUTOCMPLT_FCN);
+	__foreach (core, evals, RZ_CORE_AUTOCMPLT_EVAL);
+	__foreach (core, breaks, RZ_CORE_AUTOCMPLT_BRKP);
+	__foreach (core, files, RZ_CORE_AUTOCMPLT_FILE);
+	__foreach (core, projs, RZ_CORE_AUTOCMPLT_PRJT);
 
-	rz_core_autocomplete_add (core->autocomplete, "-", R_CORE_AUTOCMPLT_MINS, true);
-	rz_core_autocomplete_add (core->autocomplete, "zs", R_CORE_AUTOCMPLT_ZIGN, true);
-	rz_core_autocomplete_add (core->autocomplete, "fs", R_CORE_AUTOCMPLT_FLSP, true);
+	rz_core_autocomplete_add (core->autocomplete, "-", RZ_CORE_AUTOCMPLT_MINS, true);
+	rz_core_autocomplete_add (core->autocomplete, "zs", RZ_CORE_AUTOCMPLT_ZIGN, true);
+	rz_core_autocomplete_add (core->autocomplete, "fs", RZ_CORE_AUTOCMPLT_FLSP, true);
 	rz_core_autocomplete_add (
-		rz_core_autocomplete_add (core->autocomplete, "ls", R_CORE_AUTOCMPLT_DFLT, true),
-		"-l", R_CORE_AUTOCMPLT_FILE, true);
-	rz_core_autocomplete_add (core->autocomplete, "eco", R_CORE_AUTOCMPLT_THME, true);
-	rz_core_autocomplete_add (core->autocomplete, "k", R_CORE_AUTOCMPLT_SDB, true);
+		rz_core_autocomplete_add (core->autocomplete, "ls", RZ_CORE_AUTOCMPLT_DFLT, true),
+		"-l", RZ_CORE_AUTOCMPLT_FILE, true);
+	rz_core_autocomplete_add (core->autocomplete, "eco", RZ_CORE_AUTOCMPLT_THME, true);
+	rz_core_autocomplete_add (core->autocomplete, "k", RZ_CORE_AUTOCMPLT_SDB, true);
 	/* macros */
-	rz_core_autocomplete_add (core->autocomplete, ".(", R_CORE_AUTOCMPLT_MACR, true);
-	rz_core_autocomplete_add (core->autocomplete, "(-", R_CORE_AUTOCMPLT_MACR, true);
+	rz_core_autocomplete_add (core->autocomplete, ".(", RZ_CORE_AUTOCMPLT_MACR, true);
+	rz_core_autocomplete_add (core->autocomplete, "(-", RZ_CORE_AUTOCMPLT_MACR, true);
 	/* just for hints */
 	int i;
 	for (i = 0; i < rizin_argc && rizin_argv[i]; i++) {
 		if (!rz_core_autocomplete_find (core->autocomplete, rizin_argv[i], true)) {
-			rz_core_autocomplete_add (core->autocomplete, rizin_argv[i], R_CORE_AUTOCMPLT_DFLT, true);
+			rz_core_autocomplete_add (core->autocomplete, rizin_argv[i], RZ_CORE_AUTOCMPLT_DFLT, true);
 		}
 	}
 }
 
 static void __init_autocomplete (RzCore* core) {
 	int i;
-	core->autocomplete = R_NEW0 (RzCoreAutocomplete);
+	core->autocomplete = RZ_NEW0 (RzCoreAutocomplete);
 	if (core->autocomplete_type == AUTOCOMPLETE_DEFAULT) {
 		__init_autocomplete_default (core);
 	}
@@ -2316,7 +2316,7 @@ static void cb_event_handler(REvent *ev, int event_type, void *user, void *data)
 	REventMeta *rems = data;
 	char *str = rz_base64_encode_dyn (rems->string, -1);
 	switch (event_type) {
-	case R_EVENT_META_SET:
+	case RZ_EVENT_META_SET:
 		switch (rems->type) {
 		case 'C':
 			rz_core_log_add (ev->user, sdb_fmt (":add-comment 0x%08"PFMT64x" %s\n", rems->addr, str? str: ""));
@@ -2325,7 +2325,7 @@ static void cb_event_handler(REvent *ev, int event_type, void *user, void *data)
 			break;
 		}
 		break;
-	case R_EVENT_META_DEL:
+	case RZ_EVENT_META_DEL:
 		switch (rems->type) {
 		case 'C':
 			rz_core_log_add (ev->user, sdb_fmt (":del-comment 0x%08"PFMT64x, rems->addr));
@@ -2335,7 +2335,7 @@ static void cb_event_handler(REvent *ev, int event_type, void *user, void *data)
 			break;
 		}
 		break;
-	case R_EVENT_META_CLEAR:
+	case RZ_EVENT_META_CLEAR:
 		switch (rems->type) {
 		case 'C':
 			rz_core_log_add (ev->user, sdb_fmt (":clear-comments 0x%08"PFMT64x, rems->addr));
@@ -2353,21 +2353,21 @@ static void cb_event_handler(REvent *ev, int event_type, void *user, void *data)
 }
 
 static RzFlagItem *core_flg_class_set(RzFlag *f, const char *name, ut64 addr, ut32 size) {
-	rz_flag_space_push (f, R_FLAGS_FS_CLASSES);
+	rz_flag_space_push (f, RZ_FLAGS_FS_CLASSES);
 	RzFlagItem *res = rz_flag_set (f, name, addr, size);
 	rz_flag_space_pop (f);
 	return res;
 }
 
 static RzFlagItem *core_flg_class_get(RzFlag *f, const char *name) {
-	rz_flag_space_push (f, R_FLAGS_FS_CLASSES);
+	rz_flag_space_push (f, RZ_FLAGS_FS_CLASSES);
 	RzFlagItem *res = rz_flag_get (f, name);
 	rz_flag_space_pop (f);
 	return res;
 }
 
 static RzFlagItem *core_flg_fcn_set(RzFlag *f, const char *name, ut64 addr, ut32 size) {
-	rz_flag_space_push (f, R_FLAGS_FS_FUNCTIONS);
+	rz_flag_space_push (f, RZ_FLAGS_FS_FUNCTIONS);
 	RzFlagItem *res = rz_flag_set (f, name, addr, size);
 	rz_flag_space_pop (f);
 	return res;
@@ -2381,17 +2381,17 @@ RZ_API void rz_core_autocomplete_reload (RzCore *core) {
 
 RZ_API RzFlagItem *rz_core_flag_get_by_spaces(RzFlag *f, ut64 off) {
 	return rz_flag_get_by_spaces (f, off,
-		R_FLAGS_FS_FUNCTIONS,
-		R_FLAGS_FS_SIGNS,
-		R_FLAGS_FS_CLASSES,
-		R_FLAGS_FS_SYMBOLS,
-		R_FLAGS_FS_IMPORTS,
-		R_FLAGS_FS_RELOCS,
-		R_FLAGS_FS_STRINGS,
-		R_FLAGS_FS_RESOURCES,
-		R_FLAGS_FS_SYMBOLS_SECTIONS,
-		R_FLAGS_FS_SECTIONS,
-		R_FLAGS_FS_SEGMENTS,
+		RZ_FLAGS_FS_FUNCTIONS,
+		RZ_FLAGS_FS_SIGNS,
+		RZ_FLAGS_FS_CLASSES,
+		RZ_FLAGS_FS_SYMBOLS,
+		RZ_FLAGS_FS_IMPORTS,
+		RZ_FLAGS_FS_RELOCS,
+		RZ_FLAGS_FS_STRINGS,
+		RZ_FLAGS_FS_RESOURCES,
+		RZ_FLAGS_FS_SYMBOLS_SECTIONS,
+		RZ_FLAGS_FS_SECTIONS,
+		RZ_FLAGS_FS_SEGMENTS,
 		NULL);
 }
 
@@ -2407,17 +2407,17 @@ static int win_eprintf(const char *format, ...) {
 #endif
 
 RZ_API bool rz_core_init(RzCore *core) {
-	core->blocksize = R_CORE_BLOCKSIZE;
-	core->block = (ut8 *)calloc (R_CORE_BLOCKSIZE + 1, 1);
+	core->blocksize = RZ_CORE_BLOCKSIZE;
+	core->block = (ut8 *)calloc (RZ_CORE_BLOCKSIZE + 1, 1);
 	if (!core->block) {
-		eprintf ("Cannot allocate %d byte(s)\n", R_CORE_BLOCKSIZE);
+		eprintf ("Cannot allocate %d byte(s)\n", RZ_CORE_BLOCKSIZE);
 		/* XXX memory leak */
 		return false;
 	}
 	rz_core_setenv (core);
 	core->ev = rz_event_new (core);
-	rz_event_hook (core->ev, R_EVENT_ALL, cb_event_handler, NULL);
-	core->max_cmd_depth = R_CONS_CMD_DEPTH + 1;
+	rz_event_hook (core->ev, RZ_EVENT_ALL, cb_event_handler, NULL);
+	core->max_cmd_depth = RZ_CONS_CMD_DEPTH + 1;
 	core->sdb = sdb_new (NULL, "rzkv.sdb", 0); // XXX: path must be in home?
 	core->lastsearch = NULL;
 	core->cmdfilter = NULL;
@@ -2449,14 +2449,14 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->print->get_section_name = get_section_name;
 	core->print->use_comments = false;
 	core->rtr_n = 0;
-	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;
+	core->blocksize_max = RZ_CORE_BLOCKSIZE_MAX;
 	rz_core_task_scheduler_init (&core->tasks, core);
 	core->watchers = rz_list_new ();
 	core->watchers->free = (RzListFree)rz_core_cmpwatch_free;
 	core->scriptstack = rz_list_new ();
 	core->scriptstack->free = (RzListFree)free;
 	core->log = rz_core_log_new ();
-	core->times = R_NEW0 (RzCoreTimes);
+	core->times = RZ_NEW0 (RzCoreTimes);
 	core->vmode = false;
 	core->printidx = 0;
 	core->lastcmd = NULL;
@@ -2467,7 +2467,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->yank_buf = rz_buf_new ();
 	core->num = rz_num_new (&num_callback, &str_callback, core);
 	core->egg = rz_egg_new ();
-	rz_egg_setup (core->egg, R_SYS_ARCH, R_SYS_BITS, 0, R_SYS_OS);
+	rz_egg_setup (core->egg, RZ_SYS_ARCH, RZ_SYS_BITS, 0, RZ_SYS_OS);
 
 	core->undos = rz_list_newf ((RzListFree)rz_core_undo_free);
 	core->fixedarch = false;
@@ -2489,7 +2489,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 		core->cons->user_fgets = (void *)rz_core_fgets;
 #endif
 		//rz_line_singleton ()->user = (void *)core;
-		rz_line_hist_load (R2_HOME_HISTORY);
+		rz_line_hist_load (RZ_HOME_HISTORY);
 	}
 	core->print->cons = core->cons;
 	rz_cons_bind (&core->print->consbind);
@@ -2530,18 +2530,18 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_bin_set_user_ptr (core->bin, core);
 	core->io = rz_io_new ();
 	core->io->ff = 1;
-	core->search = rz_search_new (R_SEARCH_KEYWORD);
+	core->search = rz_search_new (RZ_SEARCH_KEYWORD);
 	rz_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
 	core->flags = rz_flag_new ();
 	core->flags->cb_printf = rz_cons_printf;
 	core->graph = rz_agraph_new (rz_cons_canvas_new (1, 1));
 	core->graph->need_reload_nodes = false;
-	core->asmqjmps_size = R_CORE_ASMQJMPS_NUM;
+	core->asmqjmps_size = RZ_CORE_ASMQJMPS_NUM;
 	if (sizeof (ut64) * core->asmqjmps_size < core->asmqjmps_size) {
 		core->asmqjmps_size = 0;
 		core->asmqjmps = NULL;
 	} else {
-		core->asmqjmps = R_NEWS (ut64, core->asmqjmps_size);
+		core->asmqjmps = RZ_NEWS (ut64, core->asmqjmps_size);
 	}
 
 	rz_bin_bind (core->bin, &(core->rasm->binb));
@@ -2590,20 +2590,20 @@ RZ_API bool rz_core_init(RzCore *core) {
 	//rz_core_loadlibs (core);
 
 	// TODO: get arch from rz_bin or from native arch
-	rz_asm_use (core->rasm, R_SYS_ARCH);
-	rz_anal_use (core->anal, R_SYS_ARCH);
-	if (R_SYS_BITS & R_SYS_BITS_64) {
+	rz_asm_use (core->rasm, RZ_SYS_ARCH);
+	rz_anal_use (core->anal, RZ_SYS_ARCH);
+	if (RZ_SYS_BITS & RZ_SYS_BITS_64) {
 		rz_config_set_i (core->config, "asm.bits", 64);
 	} else {
-		if (R_SYS_BITS & R_SYS_BITS_32) {
+		if (RZ_SYS_BITS & RZ_SYS_BITS_32) {
 			rz_config_set_i (core->config, "asm.bits", 32);
 		}
 	}
-	rz_config_set (core->config, "asm.arch", R_SYS_ARCH);
-	rz_bp_use (core->dbg->bp, R_SYS_ARCH, core->anal->bits);
+	rz_config_set (core->config, "asm.arch", RZ_SYS_ARCH);
+	rz_bp_use (core->dbg->bp, RZ_SYS_ARCH, core->anal->bits);
 	update_sdb (core);
 	{
-		char *a = rz_str_rz_prefix (R2_FLAGS);
+		char *a = rz_str_rz_prefix (RZ_FLAGS);
 		if (a) {
 			char *file = rz_str_newf ("%s/tags.r2", a);
 			(void)rz_core_run_script (core, file);
@@ -2652,7 +2652,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_event_free (c->ev);
 	free (c->cmdlog);
 	free (c->lastsearch);
-	R_FREE (c->cons->pager);
+	RZ_FREE (c->cons->pager);
 	free (c->cmdqueue);
 	free (c->lastcmd);
 	free (c->stkcmd);
@@ -2667,7 +2667,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	// TODO: sync all dbs?
 	//rz_core_file_free (c->file);
 	//c->file = NULL;
-	R_FREE (c->table_query);
+	RZ_FREE (c->table_query);
 	rz_list_free (c->files);
 	rz_list_free (c->watchers);
 	rz_list_free (c->scriptstack);
@@ -2721,7 +2721,7 @@ RZ_API void rz_core_prompt_loop(RzCore *r) {
 		if ((ret = rz_core_prompt_exec (r)) == -2) {
 			break;
 		}
-	} while (ret != R_CORE_CMD_EXIT);
+	} while (ret != RZ_CORE_CMD_EXIT);
 }
 
 static int prompt_flag (RzCore *r, char *s, size_t maxlen) {
@@ -2760,7 +2760,7 @@ static void chop_prompt (const char *filename, char *tmp, size_t max_tmp_size) {
 	w = rz_cons_get_size (NULL);
 	file_len = strlen (filename);
 	tmp_len = strlen (tmp);
-	p_len = R_MAX (0, w - 6);
+	p_len = RZ_MAX (0, w - 6);
 	if (file_len + tmp_len + OTHRSCH >= p_len) {
 		size_t dots_size = sizeof (DOTS);
 		size_t chop_point = (size_t)(p_len - OTHRSCH - file_len - dots_size - 1);
@@ -2821,7 +2821,7 @@ static void set_prompt (RzCore *r) {
 		}
 
 		if (!promptset) {
-			if (r->print->wide_offsets && r->dbg->bits & R_SYS_BITS_64) {
+			if (r->print->wide_offsets && r->dbg->bits & RZ_SYS_BITS_64) {
 				snprintf (p, sizeof (p), "0x%016" PFMT64x, r->offset);
 			} else {
 				snprintf (p, sizeof (p), "0x%08" PFMT64x, r->offset);
@@ -2835,8 +2835,8 @@ static void set_prompt (RzCore *r) {
 		tmp, END);
 	rz_line_set_prompt (prompt ? prompt : "");
 
-	R_FREE (filename);
-	R_FREE (prompt);
+	RZ_FREE (filename);
+	RZ_FREE (prompt);
 }
 
 RZ_API int rz_core_prompt(RzCore *r, int sync) {
@@ -2846,7 +2846,7 @@ RZ_API int rz_core_prompt(RzCore *r, int sync) {
 	set_prompt (r);
 	int ret = rz_cons_fgets (line, sizeof (line), 0, NULL);
 	if (ret == -2) {
-		return R_CORE_CMD_EXIT; // ^D
+		return RZ_CORE_CMD_EXIT; // ^D
 	}
 	if (ret == -1) {
 		return false; // FD READ ERROR
@@ -2971,7 +2971,7 @@ RZ_API char *rz_core_op_str(RzCore *core, ut64 addr) {
 
 RZ_API RzAnalOp *rz_core_op_anal(RzCore *core, ut64 addr, RzAnalOpMask mask) {
 	ut8 buf[64];
-	RzAnalOp *op = R_NEW (RzAnalOp);
+	RzAnalOp *op = RZ_NEW (RzAnalOp);
 	rz_io_read_at (core->io, addr, buf, sizeof (buf));
 	rz_anal_op (core->anal, op, addr, buf, sizeof (buf), mask);
 	return op;
@@ -3043,9 +3043,9 @@ reaccept:
 					ut64 baddr = rz_config_get_i (core->config, "bin.laddr");
 					rz_socket_read_block (c, ptr, cmd);
 					ptr[cmd] = 0;
-					ut32 perm = R_PERM_R;
-					if (flg & R_PERM_W) {
-						perm |= R_PERM_W;
+					ut32 perm = RZ_PERM_R;
+					if (flg & RZ_PERM_W) {
+						perm |= RZ_PERM_W;
 					}
 					if (rz_core_file_open (core, (const char *)ptr, perm, 0)) {
 						int fd = rz_io_fd_get_current (core->io);
@@ -3074,7 +3074,7 @@ reaccept:
 				rz_write_be32 (buf + 1, pipefd);
 				rz_socket_write (c, buf, 5);
 				rz_socket_flush (c);
-				R_FREE (ptr);
+				RZ_FREE (ptr);
 				break;
 			case RAP_PACKET_READ:
 				rz_socket_read_block (c, (ut8*)&buf, 4);
@@ -3096,7 +3096,7 @@ reaccept:
 					memcpy (ptr + 5, core->block, i); //core->blocksize);
 					rz_socket_write (c, ptr, i + 5);
 					rz_socket_flush (c);
-					R_FREE (ptr);
+					RZ_FREE (ptr);
 				} else {
 					eprintf ("Cannot read %d byte(s)\n", i);
 					rz_socket_free (c);
@@ -3186,7 +3186,7 @@ reaccept:
 				rz_write_be32 (buf + 1, ret);
 				rz_socket_write (c, buf, 5);
 				rz_socket_flush (c);
-				R_FREE (ptr);
+				RZ_FREE (ptr);
 				break;
 			case RAP_PACKET_SEEK:
 				rz_socket_read_block (c, buf, 9);
@@ -3252,7 +3252,7 @@ reaccept:
 				} else {
 					eprintf ("[rap] unknown command 0x%02x\n", cmd);
 					rz_socket_close (c);
-					R_FREE (ptr);
+					RZ_FREE (ptr);
 				}
 				if (rz_config_get_i (core->config, "rap.loop")) {
 					eprintf ("rap: waiting for new connection\n");
@@ -3453,10 +3453,10 @@ RZ_API RBuffer *rz_core_syscall (RzCore *core, const char *name, const char *arg
 }
 
 RZ_API RzCoreAutocomplete *rz_core_autocomplete_add(RzCoreAutocomplete *parent, const char* cmd, int type, bool lock) {
-	if (!parent || !cmd || type < 0 || type >= R_CORE_AUTOCMPLT_END) {
+	if (!parent || !cmd || type < 0 || type >= RZ_CORE_AUTOCMPLT_END) {
 		return NULL;
 	}
-	RzCoreAutocomplete *autocmpl = R_NEW0 (RzCoreAutocomplete);
+	RzCoreAutocomplete *autocmpl = RZ_NEW0 (RzCoreAutocomplete);
 	if (!autocmpl) {
 		return NULL;
 	}

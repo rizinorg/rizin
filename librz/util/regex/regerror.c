@@ -51,22 +51,22 @@ static struct rerr {
 	char *name;
 	char *explain;
 } rerrs[] = {
-	{ R_REGEX_NOMATCH,	"R_REGEX_NOMATCH",	"regexec() failed to match" },
-	{ R_REGEX_BADPAT,	"R_REGEX_BADPAT",	"invalid regular expression" },
-	{ R_REGEX_ECOLLATE,	"R_REGEX_ECOLLATE",	"invalid collating element" },
-	{ R_REGEX_ECTYPE,	"R_REGEX_ECTYPE",	"invalid character class" },
-	{ R_REGEX_EESCAPE,	"R_REGEX_EESCAPE",	"trailing backslash (\\)" },
-	{ R_REGEX_ESUBREG,	"R_REGEX_ESUBREG",	"invalid backreference number" },
-	{ R_REGEX_EBRACK,	"R_REGEX_EBRACK",	"brackets ([ ]) not balanced" },
-	{ R_REGEX_EPAREN,	"R_REGEX_EPAREN",	"parentheses not balanced" },
-	{ R_REGEX_EBRACE,	"R_REGEX_EBRACE",	"braces not balanced" },
-	{ R_REGEX_BADBR,	"R_REGEX_BADBR",	"invalid repetition count(s)" },
-	{ R_REGEX_ERANGE,	"R_REGEX_ERANGE",	"invalid character range" },
-	{ R_REGEX_ESPACE,	"R_REGEX_ESPACE",	"out of memory" },
-	{ R_REGEX_BADRPT,	"R_REGEX_BADRPT",	"repetition-operator operand invalid" },
-	{ R_REGEX_EMPTY,	"R_REGEX_EMPTY",	"empty (sub)expression" },
-	{ R_REGEX_ASSERT,	"R_REGEX_ASSERT",	"\"can't happen\" -- you found a bug" },
-	{ R_REGEX_INVARG,	"R_REGEX_INVARG",	"invalid argument to regex routine" },
+	{ RZ_REGEX_NOMATCH,	"RZ_REGEX_NOMATCH",	"regexec() failed to match" },
+	{ RZ_REGEX_BADPAT,	"RZ_REGEX_BADPAT",	"invalid regular expression" },
+	{ RZ_REGEX_ECOLLATE,	"RZ_REGEX_ECOLLATE",	"invalid collating element" },
+	{ RZ_REGEX_ECTYPE,	"RZ_REGEX_ECTYPE",	"invalid character class" },
+	{ RZ_REGEX_EESCAPE,	"RZ_REGEX_EESCAPE",	"trailing backslash (\\)" },
+	{ RZ_REGEX_ESUBREG,	"RZ_REGEX_ESUBREG",	"invalid backreference number" },
+	{ RZ_REGEX_EBRACK,	"RZ_REGEX_EBRACK",	"brackets ([ ]) not balanced" },
+	{ RZ_REGEX_EPAREN,	"RZ_REGEX_EPAREN",	"parentheses not balanced" },
+	{ RZ_REGEX_EBRACE,	"RZ_REGEX_EBRACE",	"braces not balanced" },
+	{ RZ_REGEX_BADBR,	"RZ_REGEX_BADBR",	"invalid repetition count(s)" },
+	{ RZ_REGEX_ERANGE,	"RZ_REGEX_ERANGE",	"invalid character range" },
+	{ RZ_REGEX_ESPACE,	"RZ_REGEX_ESPACE",	"out of memory" },
+	{ RZ_REGEX_BADRPT,	"RZ_REGEX_BADRPT",	"repetition-operator operand invalid" },
+	{ RZ_REGEX_EMPTY,	"RZ_REGEX_EMPTY",	"empty (sub)expression" },
+	{ RZ_REGEX_ASSERT,	"RZ_REGEX_ASSERT",	"\"can't happen\" -- you found a bug" },
+	{ RZ_REGEX_INVARG,	"RZ_REGEX_INVARG",	"invalid argument to regex routine" },
 	{ 0,		"",		"*** unknown regexp error code ***" }
 };
 
@@ -80,11 +80,11 @@ rz_regex_error(int errcode, const RzRegex *preg, char *errbuf, size_t errbuf_siz
 {
 	struct rerr *r;
 	size_t len;
-	int target = errcode &~ R_REGEX_ITOA;
+	int target = errcode &~ RZ_REGEX_ITOA;
 	char *s;
 	char convbuf[50];
 
-	if (errcode == R_REGEX_ATOI) {
+	if (errcode == RZ_REGEX_ATOI) {
 		s = regatoi(preg, convbuf, sizeof convbuf);
 	} else {
 		for (r = rerrs; r->code != 0; r++) {
@@ -93,11 +93,11 @@ rz_regex_error(int errcode, const RzRegex *preg, char *errbuf, size_t errbuf_siz
 			}
 		}
 
-		if (errcode&R_REGEX_ITOA) {
+		if (errcode&RZ_REGEX_ITOA) {
 			if (r->code != 0) {
 				STRLCPY (convbuf, r->name, sizeof (convbuf)-1);
 			} else {
-				snprintf (convbuf, sizeof convbuf, "R_REGEX_0x%x", target);
+				snprintf (convbuf, sizeof convbuf, "RZ_REGEX_0x%x", target);
 			}
 			s = convbuf;
 		} else {
@@ -114,7 +114,7 @@ rz_regex_error(int errcode, const RzRegex *preg, char *errbuf, size_t errbuf_siz
 }
 
 /*
- - regatoi - internal routine to implement R_REGEX_ATOI
+ - regatoi - internal routine to implement RZ_REGEX_ATOI
  */
 static char *
 regatoi(const RzRegex *preg, char *localbuf, int localbufsize)

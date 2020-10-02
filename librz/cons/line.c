@@ -90,7 +90,7 @@ RZ_API void rz_line_completion_set(RLineCompletion *completion, int argc, const 
 	if (argc > completion->args_limit) {
                 eprintf ("WARNING: Maximum completion capacity reached, increase scr.maxtab");
 	}
-	size_t count = R_MIN (argc, completion->args_limit);
+	size_t count = RZ_MIN (argc, completion->args_limit);
 	rz_pvector_reserve (&completion->args, count);
 	int i;
 	for (i = 0; i < count; i++) {

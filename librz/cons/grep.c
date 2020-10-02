@@ -68,10 +68,10 @@ RZ_API void rz_cons_grep_help(void) {
 	rz_cons_cmd_help (help_detail_tilde, true);
 }
 
-#define R_CONS_GREP_BUFSIZE 4096
+#define RZ_CONS_GREP_BUFSIZE 4096
 
 static void parse_grep_expression(const char *str) {
-	static char buf[R_CONS_GREP_BUFSIZE];
+	static char buf[RZ_CONS_GREP_BUFSIZE];
 	int wlen, len, is_range, num_is_parsed, fail = 0;
 	char *ptr, *optr, *ptr2, *ptr3, *end_ptr = NULL, last;
 	ut64 range_begin, range_end;
@@ -189,13 +189,13 @@ static void parse_grep_expression(const char *str) {
 while_end:
 
 	len = strlen (str) - 1;
-	if (len > R_CONS_GREP_BUFSIZE - 1) {
+	if (len > RZ_CONS_GREP_BUFSIZE - 1) {
 		eprintf ("rz_cons_grep: too long!\n");
 		return;
 	}
 	if (len > 0 && str[len] == '?') {
 		grep->counter = 1;
-		strncpy (buf, str, R_MIN (len, sizeof (buf) - 1));
+		strncpy (buf, str, RZ_MIN (len, sizeof (buf) - 1));
 		buf[len] = 0;
 		len--;
 	} else {
@@ -230,7 +230,7 @@ while_end:
 			case ']':  // fallthrough to handle ']' like ','
 			case ',':
 				for (; range_begin <= range_end; range_begin++) {
-					if (range_begin >= R_CONS_GREP_TOKENS) {
+					if (range_begin >= RZ_CONS_GREP_TOKENS) {
 						fail = 1;
 						break;
 					}
@@ -267,7 +267,7 @@ while_end:
 	ptr2 = strchr_ns (ptr, ':'); // line number
 	grep->range_line = 2; // there is not :
 	if (ptr2 && ptr2[1] != ':' && ptr2[1] && (IS_DIGIT (ptr2[1]) || ptr2[1] == '-' || ptr2[1] == '.')) {
-		end_ptr = end_ptr ? R_MIN (end_ptr, ptr2) : ptr2;
+		end_ptr = end_ptr ? RZ_MIN (end_ptr, ptr2) : ptr2;
 		char *p, *token = ptr2 + 1;
 		p = strstr (token, "..");
 		if (!p) {
@@ -311,17 +311,17 @@ while_end:
 			if (!wlen) {
 				continue;
 			}
-			if (wlen >= R_CONS_GREP_WORD_SIZE - 1) {
+			if (wlen >= RZ_CONS_GREP_WORD_SIZE - 1) {
 				eprintf ("grep string too long\n");
 				continue;
 			}
 			grep->nstrings++;
-			if (grep->nstrings > R_CONS_GREP_WORDS - 1) {
+			if (grep->nstrings > RZ_CONS_GREP_WORDS - 1) {
 				eprintf ("too many grep strings\n");
 				break;
 			}
 			strncpy (grep->strings[grep->nstrings - 1],
-				optr, R_CONS_GREP_WORD_SIZE - 1);
+				optr, RZ_CONS_GREP_WORD_SIZE - 1);
 		} while (ptr);
 	} else {
 		grep->str = strdup (ptr);
@@ -467,7 +467,7 @@ RZ_API void rz_cons_grepbuf(void) {
 	bool show = false;
 	if (cons->filter) {
 		cons->context->buffer_len = 0;
-		R_FREE (cons->context->buffer);
+		RZ_FREE (cons->context->buffer);
 		return;
 	}
 
@@ -503,7 +503,7 @@ RZ_API void rz_cons_grepbuf(void) {
 				grep->json = 0;
 				rz_cons_newline ();
 			}
-			R_FREE (grep->json_path);
+			RZ_FREE (grep->json_path);
 		} else {
 			const char *palette[] = {
 				cons->context->pal.graph_false, // f
@@ -553,7 +553,7 @@ RZ_API void rz_cons_grepbuf(void) {
 			if (cons->context->buffer) {
 				cons->context->buffer[0] = 0;
 			}
-			R_FREE (cons->context->buffer);
+			RZ_FREE (cons->context->buffer);
 		}
 		return;
 	}
@@ -780,12 +780,12 @@ RZ_API int rz_cons_grep_line(char *buf, int len) {
 				use_tok = true;
 			}
 		} else if (grep->range_line == 1) {
-			use_tok = R_BETWEEN (grep->f_line, cons->lines, grep->l_line);
+			use_tok = RZ_BETWEEN (grep->f_line, cons->lines, grep->l_line);
 		} else {
 			use_tok = true;
 		}
 		if (use_tok && grep->tokens_used) {
-			for (i = 0; i < R_CONS_GREP_TOKENS; i++) {
+			for (i = 0; i < RZ_CONS_GREP_TOKENS; i++) {
 				tok = strtok (i? NULL: in, delims);
 				if (tok) {
 					if (grep->tokens[i]) {

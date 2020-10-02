@@ -21,9 +21,9 @@ export GLOBAL=0
 export RZPM_JOBS=4
 export RZPMCACHE="$HOME/.rz-pm.cache"
 
-# Set R2_* Vars
+# Set RZ_* Vars
 eval $(r2 -H)
-export R2_VERSION
+export RZ_VERSION
 
 RZPM=$0
 RZPMCACHE_LOADED=0
@@ -41,11 +41,11 @@ if [ -f ~/.rz-pm.cache ]; then
 	fi
 fi
 if [ "${RZPMCACHE_LOADED}" != 1 ]; then
-	export LIBEXT="$R2_LIBEXT"
-	LIBDIR="$R2_LIBDIR"
-	export R2CONFIGHOME="$R2_RCONFIGHOME"
-	export R2DATAHOME="$R2_RDATAHOME"
-	PREFIX="$R2_PREFIX"
+	export LIBEXT="$RZ_LIBEXT"
+	LIBDIR="$RZ_LIBDIR"
+	export R2CONFIGHOME="$RZ_RCONFIGHOME"
+	export R2DATAHOME="$RZ_RDATAHOME"
+	PREFIX="$RZ_PREFIX"
 fi
 BINDIR="${PREFIX}/bin/"
 WRKDIR="$PWD"
@@ -66,8 +66,8 @@ export RZPM_BINDIR
 export RZPM_SYSLIBDIR="${LIBDIR}"
 
 # plugdir
-export RZPM_SYSPLUGIN_DIR="$R2_LIBR_PLUGINS"
-export RZPM_USRPLUGIN_DIR="$R2_USER_PLUGINS"
+export RZPM_SYSPLUGIN_DIR="$RZ_LIBR_PLUGINS"
+export RZPM_USRPLUGIN_DIR="$RZ_USER_PLUGINS"
 [ -z "${RZPM_PLUGDIR}" ] && RZPM_PLUGDIR="${RZPM_USRPLUGIN_DIR}"
 [ -z "${RZPM_PLUGDIR}" ] && RZPM_PLUGDIR="${R2DATAHOME}/plugins"
 
@@ -84,7 +84,7 @@ export LDFLAGS="-L${RZPM_HOMEPREFIX}/lib"
 export RZPM_PYPATH="${RZPM_PREFIX}/python"
 export RZPM_OLDPWD="${PWD}"
 
-export RHOMEDIR="$R2_RCONFIGHOME"
+export RHOMEDIR="$RZ_RCONFIGHOME"
 
 if [ "`uname`" = Darwin ]; then
 	export LD_LIBRARY_PATH="${RZPM_HOMEPREFIX}/lib"
@@ -337,7 +337,7 @@ RZPM_GIT() {
 		cd "${DIR}" || RZPM_FAIL "Oops"
 	fi
 	r2 -qv | grep -q git || { # r2 >= 4.5
-		git checkout "r2-${R2_VERSION}"
+		git checkout "r2-${RZ_VERSION}"
 		git pull
 	}
 }
@@ -532,12 +532,12 @@ case "$1" in
 	PATH="${RZPM_BINDIR}:${PATH}" "$@"
 	;;
 -v|version)
-	echo "rz-pm ${R2_VERSION}"
+	echo "rz-pm ${RZ_VERSION}"
 	;;
 -gi|global-install)
 	GLOBAL=1
 	RZPM_PREFIX="${RZPM_SYSPREFIX}"
-	#RZPM_PLUGDIR="${RZPM_SYSLIBDIR}/rizin/${R2_VERSION}/"
+	#RZPM_PLUGDIR="${RZPM_SYSLIBDIR}/rizin/${RZ_VERSION}/"
 	RZPM_PLUGDIR="${RZPM_SYSPLUGIN_DIR}"
 	RZPM_BINDIR="${RZPM_SYSBINDIR}"
 	RZPM_WWWROOT="${RZPM_SYSWWWROOT}"
@@ -550,7 +550,7 @@ case "$1" in
 -gu|global-uninstall)
 	GLOBAL=1
 	RZPM_PREFIX="${RZPM_SYSPREFIX}"
-	#RZPM_PLUGDIR="${RZPM_SYSLIBDIR}/rizin/${R2_VERSION}/"
+	#RZPM_PLUGDIR="${RZPM_SYSLIBDIR}/rizin/${RZ_VERSION}/"
 	RZPM_PLUGDIR="${RZPM_SYSPLUGIN_DIR}"
 	RZPM_BINDIR="${RZPM_SYSBINDIR}"
 	RZPM_WWWROOT="${RZPM_SYSWWWROOT}"

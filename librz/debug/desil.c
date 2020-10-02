@@ -71,10 +71,10 @@ static int esilbreak_check_pc (RzDebug *dbg, ut64 pc) {
 	EsilBreak *ew;
 	RzListIter *iter;
 	if (!pc) {
-		pc = rz_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+		pc = rz_debug_reg_get (dbg, dbg->reg->name[RZ_REG_NAME_PC]);
 	}
 	rz_list_foreach (EWPS, iter, ew) {
-		if (ew->rwx & R_PERM_X) {
+		if (ew->rwx & RZ_PERM_X) {
 			if (exprmatch (dbg, pc, ew->expr)) {
 				return 1;
 			}
@@ -88,7 +88,7 @@ static int esilbreak_mem_read(RzAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	RzListIter *iter;
 	eprintf (Color_GREEN"MEM READ 0x%"PFMT64x"\n"Color_RESET, addr);
 	rz_list_foreach (EWPS, iter, ew) {
-		if (ew->rwx & R_PERM_R && ew->dev == 'm') {
+		if (ew->rwx & RZ_PERM_R && ew->dev == 'm') {
 			if (exprmatch (dbg, addr, ew->expr)) {
 				has_match = 1;
 				return 1;
@@ -103,7 +103,7 @@ static int esilbreak_mem_write(RzAnalEsil *esil, ut64 addr, const ut8 *buf, int 
 	RzListIter *iter;
 	eprintf (Color_RED"MEM WRTE 0x%"PFMT64x"\n"Color_RESET, addr);
 	rz_list_foreach (EWPS, iter, ew) {
-		if (ew->rwx & R_PERM_W && ew->dev == 'm') {
+		if (ew->rwx & RZ_PERM_W && ew->dev == 'm') {
 			if (exprmatch (dbg, addr, ew->expr)) {
 				has_match = 1;
 				return 1;
@@ -122,7 +122,7 @@ static int esilbreak_reg_read(RzAnalEsil *esil, const char *regname, ut64 *num, 
 	}
 	eprintf (Color_YELLOW"REG READ %s\n"Color_RESET, regname);
 	rz_list_foreach (EWPS, iter, ew) {
-		if (ew->rwx & R_PERM_R && ew->dev == 'r') {
+		if (ew->rwx & RZ_PERM_R && ew->dev == 'r') {
 			// XXX: support array of regs in expr
 			if (!strcmp (regname, ew->expr)) {
 				has_match = 1;
@@ -198,7 +198,7 @@ static int esilbreak_reg_write(RzAnalEsil *esil, const char *regname, ut64 *num)
 	}
 	eprintf (Color_MAGENTA"REG WRTE %s 0x%"PFMT64x"\n"Color_RESET, regname, *num);
 	rz_list_foreach (EWPS, iter, ew) {
-		if ((ew->rwx & R_PERM_W) && (ew->dev == 'r')) {
+		if ((ew->rwx & RZ_PERM_W) && (ew->dev == 'r')) {
 			// XXX: support array of regs in expr
 			if (exprmatchreg (dbg, regname, ew->expr)) {
 				has_match = 1;
@@ -226,8 +226,8 @@ RZ_API int rz_debug_esil_stepi (RzDebug *d) {
 		}
 	}
 
-	rz_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
-	opc = rz_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+	rz_debug_reg_sync (dbg, RZ_REG_TYPE_GPR, false);
+	opc = rz_debug_reg_get (dbg, dbg->reg->name[RZ_REG_NAME_PC]);
 	dbg->iob.read_at (dbg->iob.io, opc, obuf, sizeof (obuf));
 
 	//dbg->iob.read_at (dbg->iob.io, npc, buf, sizeof (buf));
@@ -245,18 +245,18 @@ RZ_API int rz_debug_esil_stepi (RzDebug *d) {
 			eprintf ("Step failed\n");
 			return 0;
 		}
-		rz_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
-		//	npc = rz_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+		rz_debug_reg_sync (dbg, RZ_REG_TYPE_GPR, false);
+		//	npc = rz_debug_reg_get (dbg, dbg->reg->name[RZ_REG_NAME_PC]);
 	}
 
-	if (rz_anal_op (dbg->anal, &op, opc, obuf, sizeof (obuf), R_ANAL_OP_MASK_ESIL)) {
+	if (rz_anal_op (dbg->anal, &op, opc, obuf, sizeof (obuf), RZ_ANAL_OP_MASK_ESIL)) {
 		if (esilbreak_check_pc (dbg, opc)) {
 			eprintf ("STOP AT 0x%08"PFMT64x"\n", opc);
 			ret = 0;
 		} else {
 			rz_anal_esil_set_pc (ESIL, opc);
-			eprintf ("0x%08"PFMT64x"  %s\n", opc, R_STRBUF_SAFEGET (&op.esil));
-			(void)rz_anal_esil_parse (ESIL, R_STRBUF_SAFEGET (&op.esil));
+			eprintf ("0x%08"PFMT64x"  %s\n", opc, RZ_STRBUF_SAFEGET (&op.esil));
+			(void)rz_anal_esil_parse (ESIL, RZ_STRBUF_SAFEGET (&op.esil));
 			//rz_anal_esil_dumpstack (ESIL);
 			rz_anal_esil_stack_free (ESIL);
 			ret = 1;
@@ -268,8 +268,8 @@ RZ_API int rz_debug_esil_stepi (RzDebug *d) {
 				eprintf ("Step failed\n");
 				return 0;
 			}
-			rz_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
-			//	npc = rz_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+			rz_debug_reg_sync (dbg, RZ_REG_TYPE_GPR, false);
+			//	npc = rz_debug_reg_get (dbg, dbg->reg->name[RZ_REG_NAME_PC]);
 		}
 	}
 	return ret;
@@ -304,7 +304,7 @@ RZ_API ut64 rz_debug_esil_continue (RzDebug *dbg) {
 }
 
 static void ewps_free(EsilBreak *ew) {
-	R_FREE (ew->expr);
+	RZ_FREE (ew->expr);
 	free (ew);
 }
 
@@ -320,9 +320,9 @@ RZ_API void rz_debug_esil_watch(RzDebug *dbg, int rwx, int dev, const char *expr
 		}
 		EWPS->free = (RzListFree)ewps_free;
 	}
-	EsilBreak *ew = R_NEW0 (EsilBreak);
+	EsilBreak *ew = RZ_NEW0 (EsilBreak);
 	if (!ew) {
-		R_FREE (EWPS);
+		RZ_FREE (EWPS);
 		return;
 	}
 	ew->rwx = rwx;

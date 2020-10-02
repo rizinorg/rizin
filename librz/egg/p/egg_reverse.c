@@ -33,18 +33,18 @@ static RBuffer *build (RzEgg *egg) {
 	char *port = rz_egg_option_get (egg, "port");
 	//TODO: char *udp = rz_egg_option_get (egg, "udp");
 	switch (egg->os) {
-	case R_EGG_OS_OSX:
-	case R_EGG_OS_DARWIN:
+	case RZ_EGG_OS_OSX:
+	case RZ_EGG_OS_DARWIN:
 		switch (egg->arch) {
-		case R_SYS_ARCH_ARM:
+		case RZ_SYS_ARCH_ARM:
 			sc = armle_osx_reverse;
 			cd = 7+36;
 			break;
 		}
 		break;
-	case R_EGG_OS_FREEBSD:
+	case RZ_EGG_OS_FREEBSD:
 		switch (egg->arch) {
-		case R_SYS_ARCH_X86:
+		case RZ_SYS_ARCH_X86:
 			switch (egg->bits) {
 			case 32: sc = x86_freebsd_reverse; break;
 			default: eprintf ("Unsupportted\n");
@@ -71,15 +71,15 @@ static RBuffer *build (RzEgg *egg) {
 //TODO: rename plugin to run
 RzEggPlugin rz_egg_plugin_bind = {
 	.name = "bind",
-	.type = R_EGG_PLUGIN_SHELLCODE,
+	.type = RZ_EGG_PLUGIN_SHELLCODE,
 	.desc = "listen port=4444",
 	.build = (void *)build
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_EGG,
+	.type = RZ_LIB_TYPE_EGG,
 	.data = &rz_egg_plugin_bind,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

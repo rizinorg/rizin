@@ -62,7 +62,7 @@ struct rz_bin_dyldcache_lib_t *rz_bin_dyldcache_extract(struct rz_bin_dyldcache_
 		return NULL;
 	}
 	*nlib = bin->nlibs;
-	ret = R_NEW0 (struct rz_bin_dyldcache_lib_t);
+	ret = RZ_NEW0 (struct rz_bin_dyldcache_lib_t);
 	if (!ret) {
 		return NULL;
 	}
@@ -257,7 +257,7 @@ void rz_bin_dydlcache_get_libname(struct rz_bin_dyldcache_lib_t *lib, char **lib
 
 struct rz_bin_dyldcache_obj_t* rz_bin_dyldcache_new(const char* file) {
 	struct rz_bin_dyldcache_obj_t *bin;
-	if (!(bin = R_NEW0 (struct rz_bin_dyldcache_obj_t))) {
+	if (!(bin = RZ_NEW0 (struct rz_bin_dyldcache_obj_t))) {
 		return NULL;
 	}
 	bin->file = file;
@@ -280,7 +280,7 @@ struct rz_bin_dyldcache_obj_t* rz_bin_dyldcache_new(const char* file) {
 }
 
 struct rz_bin_dyldcache_obj_t* rz_bin_dyldcache_from_bytes_new(const ut8* buf, ut64 size) {
-	struct rz_bin_dyldcache_obj_t *bin = R_NEW0 (struct rz_bin_dyldcache_obj_t);
+	struct rz_bin_dyldcache_obj_t *bin = RZ_NEW0 (struct rz_bin_dyldcache_obj_t);
 	if (!bin) {
 		return NULL;
 	}

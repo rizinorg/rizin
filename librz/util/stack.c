@@ -3,11 +3,11 @@
 #include <rz_util.h>
 
 RZ_API RStack *rz_stack_new(ut32 n) {
-	RStack *s = R_NEW0 (RStack);
+	RStack *s = RZ_NEW0 (RStack);
 	if (!s) {
 		return NULL;
 	}
-	s->elems = R_NEWS0 (void *, n);
+	s->elems = RZ_NEWS0 (void *, n);
 	if (!s->elems) {
 		free (s);
 		return NULL;

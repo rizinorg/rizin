@@ -19,7 +19,7 @@
 #define PDB7_SIGNATURE "Microsoft C/C++ MSF 7.00\r\n\x1A" "DS\0\0\0"
 #define PDB7_SIGNATURE_LEN 32
 
-typedef void (*parse_stream_)(void *stream, R_STREAM_FILE *stream_file);
+typedef void (*parse_stream_)(void *stream, RZ_STREAM_FILE *stream_file);
 
 typedef struct {
 	int indx;
@@ -31,9 +31,9 @@ typedef struct {
 
 ///////////////////////////////////////////////////////////////////////////////
 static void free_pdb_stream(void *stream) {
-	R_PDB_STREAM *pdb_stream = (R_PDB_STREAM *) stream;
+	RZ_PDB_STREAM *pdb_stream = (RZ_PDB_STREAM *) stream;
 	if (pdb_stream) {
-		// R_FREE (pdb_stream->pages);
+		// RZ_FREE (pdb_stream->pages);
 		if (pdb_stream->pages) {
 // free(pdb_stream->pages);
 			pdb_stream->pages = 0;
@@ -54,7 +54,7 @@ static char *create_type_name_from_offset(ut64 offset) {
 	return str;
 }
 
-// static void pdb_stream_get_data(R_PDB_STREAM *pdb_stream, char *data)
+// static void pdb_stream_get_data(RZ_PDB_STREAM *pdb_stream, char *data)
 // {
 // int pos = stream_file_tell(&pdb_stream->stream_file);
 // stream_file_seek(&pdb_stream->stream_file, 0, 0);
@@ -66,7 +66,7 @@ static char *create_type_name_from_offset(ut64 offset) {
 /// size - default value = -1
 /// page_size - default value = 0x1000
 ///////////////////////////////////////////////////////////////////////////////
-static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, RBuffer *buf /*FILE *fp*/, int *pages,
+static int init_r_pdb_stream(RZ_PDB_STREAM *pdb_stream, RBuffer *buf /*FILE *fp*/, int *pages,
 			     int pages_amount, int index, int size, int page_size) {
 	pdb_stream->buf = buf;
 	pdb_stream->pages = pages;
@@ -112,7 +112,7 @@ static int count_pages(int length, int page_size) {
 ///////////////////////////////////////////////////////////////////////////////
 static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amount,
 				 EStream indx, int root_size, int page_size) {
-	R_PDB_STREAM *pdb_stream = 0;
+	RZ_PDB_STREAM *pdb_stream = 0;
 	int tmp_data_max_size = 0;
 	char *tmp_data = NULL, *data_end;
 	int stream_size = 0;
@@ -124,9 +124,9 @@ static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amoun
 	int i = 0;
 	int pos = 0;
 
-	R_PDB7_ROOT_STREAM *root_stream7;
+	RZ_PDB7_ROOT_STREAM *root_stream7;
 
-	pdb->root_stream = R_NEW0 (R_PDB7_ROOT_STREAM);
+	pdb->root_stream = RZ_NEW0 (RZ_PDB7_ROOT_STREAM);
 	init_r_pdb_stream (&pdb->root_stream->pdb_stream, pdb->buf, root_page_list, pages_amount,
 		indx, root_size, page_size);
 
@@ -149,19 +149,19 @@ static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amoun
 	tmp_data_max_size = (data_size - (num_streams * 4 - 4));
 	data_end = data + tmp_data_max_size;
 	if (tmp_data_max_size > data_size) {
-		R_FREE (data);
+		RZ_FREE (data);
 		eprintf ("Invalid max tmp data size.\n");
 		return 0;
 	}
 	if (num_streams < 0 || tmp_data_max_size <= 0) {
-		R_FREE (data);
+		RZ_FREE (data);
 		eprintf ("Too many streams: current PDB file is incorrect.\n");
 		return 0;
 	}
 
 	sizes = (int *) calloc (num_streams, 4);
 	if (!sizes) {
-		R_FREE (data);
+		RZ_FREE (data);
 		eprintf ("Size too big: current PDB file is incorrect.\n");
 		return 0;
 	}
@@ -186,22 +186,22 @@ static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amoun
 		num_pages = count_pages (sizes[i], page_size);
 
 		if ((pos + num_pages) > tmp_data_max_size) {
-			R_FREE (data);
-			R_FREE (sizes);
+			RZ_FREE (data);
+			RZ_FREE (sizes);
 			eprintf ("Warning: looks like there is no correct values of stream size in PDB file.\n");
 			return 0;
 		}
 
 		ut32 size = num_pages * 4;
 		ut8 *tmp = (ut8 *) calloc (num_pages, 4);
-		page = R_NEW0 (SPage);
+		page = RZ_NEW0 (SPage);
 		if (num_pages != 0) {
 			if ((pos + size) > tmp_data_max_size) {
 				eprintf ("Data overrun by num_pages.\n");
-				R_FREE (data);
-				R_FREE (sizes);
-				R_FREE (tmp);
-				R_FREE (page);
+				RZ_FREE (data);
+				RZ_FREE (sizes);
+				RZ_FREE (tmp);
+				RZ_FREE (page);
 				return 0;
 			}
 			memcpy (tmp, tmp_data + pos, num_pages * 4);
@@ -238,7 +238,7 @@ static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amoun
 // int pages_amount, int index, int size,
 // int page_size, f_load pLoad)
 // {
-// pdb_stream->pdb_stream = (R_PDB_STREAM *) malloc(sizeof(R_PDB_STREAM));
+// pdb_stream->pdb_stream = (RZ_PDB_STREAM *) malloc(sizeof(RZ_PDB_STREAM));
 // init_r_pdb_stream(pdb_stream->pdb_stream, fp, pages, pages_amount, index, size, page_size);
 // pdb_stream->load = pLoad;
 // if (pLoad != NULL) {
@@ -247,7 +247,7 @@ static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amoun
 // }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void parse_pdb_info_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream) {
+static void parse_pdb_info_stream(void *parsed_pdb_stream, RZ_STREAM_FILE *stream) {
 	SPDBInfoStream *tmp = (SPDBInfoStream *) parsed_pdb_stream;
 
 	tmp->names = 0;
@@ -274,7 +274,7 @@ static void free_info_stream(void *stream) {
 ///////////////////////////////////////////////////////////////////////////////
 #define ADD_INDX_TO_LIST(list, index, stream_size, stream_type, free_func, parse_func) {\
 		if ((index) != -1) {							\
-			SStreamParseFunc *stream_parse_func = R_NEW0 (SStreamParseFunc);\
+			SStreamParseFunc *stream_parse_func = RZ_NEW0 (SStreamParseFunc);\
 			if (!stream_parse_func) { return; }				\
 			stream_parse_func->indx = (index);				\
 			stream_parse_func->type = (stream_type);			\
@@ -283,7 +283,7 @@ static void free_info_stream(void *stream) {
 			if (stream_size) {						\
 				stream_parse_func->stream = calloc (1, stream_size);	\
 				if (!stream_parse_func->stream) {			\
-					R_FREE (stream_parse_func);			\
+					RZ_FREE (stream_parse_func);			\
 					return;						\
 				}							\
 			} else {							\
@@ -336,11 +336,11 @@ static void find_indx_in_list(RzList *l, int index, SStreamParseFunc **res) {
 static int pdb_read_root(RPdb *pdb) {
 	int i = 0;
 	RzList *pList = pdb->pdb_streams;
-	R_PDB7_ROOT_STREAM *root_stream = pdb->root_stream;
-	R_PDB_STREAM *pdb_stream = 0;
+	RZ_PDB7_ROOT_STREAM *root_stream = pdb->root_stream;
+	RZ_PDB_STREAM *pdb_stream = 0;
 	SPDBInfoStream *pdb_info_stream = 0;
 	STpiStream *tpi_stream = 0;
-	R_STREAM_FILE stream_file;
+	RZ_STREAM_FILE stream_file;
 	RzListIter *it;
 	SPage *page = 0;
 	SStreamParseFunc *stream_parse_func = 0;
@@ -362,7 +362,7 @@ static int pdb_read_root(RPdb *pdb) {
 		// TODO: rewrite for style like for streams from dbg stream
 		// look default
 		case ePDB_STREAM_PDB:
-			pdb_info_stream = R_NEW0 (SPDBInfoStream);
+			pdb_info_stream = RZ_NEW0 (SPDBInfoStream);
 			if (!pdb_info_stream) {
 				return 0;
 			}
@@ -371,7 +371,7 @@ static int pdb_read_root(RPdb *pdb) {
 			rz_list_append (pList, pdb_info_stream);
 			break;
 		case ePDB_STREAM_TPI:
-			tpi_stream = R_NEW0 (STpiStream);
+			tpi_stream = RZ_NEW0 (STpiStream);
 			if (!tpi_stream) {
 				return 0;
 			}
@@ -384,7 +384,7 @@ static int pdb_read_root(RPdb *pdb) {
 			break;
 		case ePDB_STREAM_DBI:
 		{
-			SDbiStream *dbi_stream = R_NEW0 (SDbiStream);
+			SDbiStream *dbi_stream = RZ_NEW0 (SDbiStream);
 			if (!dbi_stream) {
 				return 0;
 			}
@@ -402,7 +402,7 @@ static int pdb_read_root(RPdb *pdb) {
 				break;
 			}
 
-			pdb_stream = R_NEW0 (R_PDB_STREAM);
+			pdb_stream = RZ_NEW0 (RZ_PDB_STREAM);
 			if (!pdb_stream) {
 				return 0;
 			}
@@ -463,7 +463,7 @@ static bool pdb7_parse(RPdb *pdb) {
 
 	num_root_pages = count_pages (root_size, page_size);
 	num_root_index_pages = count_pages ((num_root_pages * 4), page_size);
-	root_index_pages = (int *) calloc (sizeof (int), R_MAX (num_root_index_pages, 1));
+	root_index_pages = (int *) calloc (sizeof (int), RZ_MAX (num_root_index_pages, 1));
 	if (!root_index_pages) {
 		eprintf ("Error memory allocation.\n");
 		goto error;
@@ -490,7 +490,7 @@ static bool pdb7_parse(RPdb *pdb) {
 			break;
 		}
 		rz_buf_seek (pdb->buf, root_index_pages[i] * page_size,
-			   R_BUF_SET);
+			   RZ_BUF_SET);
 		rz_buf_read (pdb->buf, p_tmp, page_size);
 		p_tmp = (char *) p_tmp + page_size;
 	}
@@ -517,19 +517,19 @@ static bool pdb7_parse(RPdb *pdb) {
 		goto error;
 	}
 
-	R_FREE (root_page_list);
-	R_FREE (root_page_data);
-	R_FREE (root_index_pages);
+	RZ_FREE (root_page_list);
+	RZ_FREE (root_page_data);
+	RZ_FREE (root_index_pages);
 	return true;
 error:
-	R_FREE (root_page_list);
-	R_FREE (root_page_data);
-	R_FREE (root_index_pages);
+	RZ_FREE (root_page_list);
+	RZ_FREE (root_page_data);
+	RZ_FREE (root_index_pages);
 	return false;
 }
 
 static void finish_pdb_parse(RPdb *pdb) {
-	R_PDB7_ROOT_STREAM *p = pdb->root_stream;
+	RZ_PDB7_ROOT_STREAM *p = pdb->root_stream;
 	RzListIter *it;
 	SPage *page = 0;
 
@@ -548,7 +548,7 @@ static void finish_pdb_parse(RPdb *pdb) {
 	p->streams_list = 0;
 	free (p);
 	p = 0;
-	// end of free of R_PDB7_ROOT_STREAM
+	// end of free of RZ_PDB7_ROOT_STREAM
 
 	// TODO: maybe create some kind of destructor?
 	// free of pdb->pdb_streams
@@ -557,7 +557,7 @@ static void finish_pdb_parse(RPdb *pdb) {
 	STpiStream *tpi_stream = 0;
 	SDbiStream *dbi_stream = 0;
 	SStreamParseFunc *stream_parse_func;
-	R_PDB_STREAM *pdb_stream = 0;
+	RZ_PDB_STREAM *pdb_stream = 0;
 	int i = 0;
 #if 1
 /* rz_list_free should be enough, all the items in a list should be freeable using a generic destructor
@@ -588,7 +588,7 @@ static void finish_pdb_parse(RPdb *pdb) {
 			if (stream_parse_func) {
 				break;
 			}
-			pdb_stream = (R_PDB_STREAM *) rz_list_iter_get (it);
+			pdb_stream = (RZ_PDB_STREAM *) rz_list_iter_get (it);
 			free_pdb_stream (pdb_stream);
 			free (pdb_stream);
 			break;
@@ -967,7 +967,7 @@ static void print_struct(const char *name, const int size, const RzList *members
 			type_info->get_print_type (type_info, &type_name);
 		}
 		printf ("  %s %s; // offset +0x%x\n", type_name, member_name, offset);
-		R_FREE (type_name);
+		RZ_FREE (type_name);
 	}
 	printf ("};\n");
 }
@@ -1000,7 +1000,7 @@ static void print_union(const char *name, const int size, const RzList *members,
 			type_info->get_print_type (type_info, &type_name);
 		}
 		printf ("  %s %s;\n", type_name, member_name);
-		R_FREE (type_name);
+		RZ_FREE (type_name);
 	}
 	printf ("};\n");
 }
@@ -1163,7 +1163,7 @@ static void print_types_json(const RPdb *pdb, PJ *pj, const RzList *types) {
 					pj_ks (pj, "member_name", member_name);
 					pj_kN (pj, "offset", offset);
 					pj_end (pj);
-					R_FREE (type_name);
+					RZ_FREE (type_name);
 				}
 			}
 			pj_end (pj);
@@ -1282,15 +1282,15 @@ static void print_types_format(const RPdb *pdb, const RzList *types) {
 		pdb->cb_printf ("pf.%s %s %s\n", sanitized_name, rz_strbuf_get (&format), rz_strbuf_get (&member_names));
 
 		if (to_free_name) { // name can be generated or part of the PDB data
-			R_FREE (name);
+			RZ_FREE (name);
 		}
-		R_FREE (sanitized_name);
+		RZ_FREE (sanitized_name);
 		rz_strbuf_fini (&format);
 		rz_strbuf_fini (&member_names);
 
 	fail: // if we can't print whole type correctly, don't print at all
 		if (to_free_name) {
-			R_FREE (name);
+			RZ_FREE (name);
 		}
 		rz_strbuf_fini (&format);
 		rz_strbuf_fini (&member_names);
@@ -1423,7 +1423,7 @@ RZ_API bool init_pdb_parser_with_buf(RPdb *pdb, RBuffer* buf) {
 	int bytes_read = 0;
 
 	if (!pdb) {
-		eprintf ("R_PDB structure is incorrect.\n");
+		eprintf ("RZ_PDB structure is incorrect.\n");
 		goto error;
 	}
 	if (!pdb->cb_printf) {
@@ -1446,7 +1446,7 @@ RZ_API bool init_pdb_parser_with_buf(RPdb *pdb, RBuffer* buf) {
 		goto error;
 	}
 
-	rz_buf_seek (pdb->buf, 0, R_BUF_SET);
+	rz_buf_seek (pdb->buf, 0, RZ_BUF_SET);
 
 	if (!memcmp (signature, PDB7_SIGNATURE, PDB7_SIGNATURE_LEN)) {
 		pdb->pdb_parse = pdb7_parse;
@@ -1454,7 +1454,7 @@ RZ_API bool init_pdb_parser_with_buf(RPdb *pdb, RBuffer* buf) {
 		goto error;
 	}
 
-	R_FREE (signature);
+	RZ_FREE (signature);
 
 	pdb->pdb_streams = rz_list_new ();
 	pdb->stream_map = 0;
@@ -1464,7 +1464,7 @@ RZ_API bool init_pdb_parser_with_buf(RPdb *pdb, RBuffer* buf) {
 // printf("init_pdb_parser() finish with success\n");
 	return true;
 error:
-	R_FREE (signature);
+	RZ_FREE (signature);
 	return false;
 }
 

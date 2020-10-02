@@ -61,7 +61,7 @@ static inline bool inBetween(RBinSection *s, ut64 addr) {
 	}
 	const ut64 from = s->vaddr;
 	const ut64 to = from + s->vsize;
-	return R_BETWEEN (from, addr, to);
+	return RZ_BETWEEN (from, addr, to);
 }
 
 static ut32 readDword(RzCoreObjc *objc, ut64 addr, bool *success) {
@@ -136,7 +136,7 @@ static bool objc_build_refs(RzCoreObjc *objc) {
 	size_t ss_selrefs = objc->_selrefs->vsize;
 
 	// TODO: check if ss_const or ss_selrefs are too big before going further
-	size_t maxsize = R_MAX (ss_const, ss_selrefs);
+	size_t maxsize = RZ_MAX (ss_const, ss_selrefs);
 	ut8 *buf = calloc (1, maxsize);
 	if (!buf) {
 		return false;
@@ -173,7 +173,7 @@ static RzCoreObjc *core_objc_new(RzCore *core) {
 	if (!sections) {
 		return false;
 	}
-	RzCoreObjc *o = R_NEW0 (RzCoreObjc);
+	RzCoreObjc *o = RZ_NEW0 (RzCoreObjc);
 	o->core = core;
 	o->word_size = (core->rasm->bits == 64)? 8: 4;
 	if (o->word_size != 8) {
@@ -276,7 +276,7 @@ static bool objc_find_refs(RzCore *core) {
 				RzListIter *iter;
 				RzAnalRef *ref;
 				rz_list_foreach (list, iter, ref) {
-					rz_anal_xrefs_set (core->anal, ref->addr, funcVA, R_ANAL_REF_TYPE_CODE);
+					rz_anal_xrefs_set (core->anal, ref->addr, funcVA, RZ_ANAL_REF_TYPE_CODE);
 					total_xrefs++;
 				}
 			}
@@ -293,7 +293,7 @@ static bool objc_find_refs(RzCore *core) {
 	ut64 a;
 	const size_t word_size = objc->word_size;
 	for (a = va_selrefs; a < ss_selrefs; a += word_size) {
-		rz_meta_set (core->anal, R_META_TYPE_DATA, a, word_size, NULL);
+		rz_meta_set (core->anal, RZ_META_TYPE_DATA, a, word_size, NULL);
 		total_words++;
 	}
 	snprintf (rs, sizeof (rs), "Found %zu objc xrefs in %zu dwords.", total_xrefs, total_words);

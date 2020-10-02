@@ -7,8 +7,8 @@
 
 // https://en.wikipedia.org/wiki/Skip_list
 
-#ifndef R2_SKIP_LIST_H
-#define R2_SKIP_LIST_H
+#ifndef RZ_SKIP_LIST_H
+#define RZ_SKIP_LIST_H
 
 #include <rz_list.h>
 
@@ -54,4 +54,4 @@ RZ_API RzList *rz_skiplist_to_list(RzSkipList *list);
 	if (list)\
 		for (it = list->head->forward[0]; it != list->head && ((pos = it->data) || 1) && ((tmp = it->forward[0]) || 1); it = tmp)
 
-#endif // R2_SKIP_LIST_H
+#endif // RZ_SKIP_LIST_H

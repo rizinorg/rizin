@@ -1,5 +1,5 @@
-#ifndef R_HEX_H
-#define R_HEX_H
+#ifndef RZ_HEX_H
+#define RZ_HEX_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,4 +25,4 @@ RZ_API char *rz_hex_from_c_array(char *out, const char *code);
 }
 #endif
 
-#endif //  R_HEX_H
+#endif //  RZ_HEX_H

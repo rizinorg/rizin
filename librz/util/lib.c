@@ -3,7 +3,7 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 
-R_LIB_VERSION(rz_lib);
+RZ_LIB_VERSION(rz_lib);
 
 /* TODO: avoid globals */
 #define IFDBG if(__has_debug)
@@ -16,7 +16,7 @@ static const char *rz_lib_types[] = {
 };
 
 static const char *__lib_types_get(int idx) {
-	if (idx < 0 || idx > R_LIB_TYPE_LAST - 1) {
+	if (idx < 0 || idx > RZ_LIB_TYPE_LAST - 1) {
 		return "unk";
 	}
 	return rz_lib_types[idx];
@@ -51,7 +51,7 @@ RZ_API void *rz_lib_dl_open(const char *libname) {
 	} else {
 		libname_ = calloc (MAX_PATH, sizeof (TCHAR));
 		if (!libname_) {
-			R_LOG_ERROR ("lib/rz_lib_dl_open: Failed to allocate memory.\n");
+			RZ_LOG_ERROR ("lib/rz_lib_dl_open: Failed to allocate memory.\n");
 			return NULL;
 		}
 		if (!GetModuleFileName (NULL, libname_, MAX_PATH)) {
@@ -92,7 +92,7 @@ RZ_API int rz_lib_dl_close(void *handler) {
 
 RZ_API char *rz_lib_path(const char *libname) {
 #if __WINDOWS__
-	char *tmp = rz_str_newf ("%s." R_LIB_EXT, libname);
+	char *tmp = rz_str_newf ("%s." RZ_LIB_EXT, libname);
 	if (!tmp) {
 		return NULL;
 	}
@@ -113,7 +113,7 @@ RZ_API char *rz_lib_path(const char *libname) {
 		goto err;
 	}
 	if (!(count = SearchPathW (NULL, name, NULL, count, path, NULL))) {
-		R_FREE (path);
+		RZ_FREE (path);
 		rz_sys_perror ("SearchPath");
 		goto err;
 	}
@@ -141,7 +141,7 @@ err:
 		if (next) {
 			*next = 0;
 		}
-		char *libpath = rz_str_newf ("%s/%s." R_LIB_EXT, path0, libname);
+		char *libpath = rz_str_newf ("%s/%s." RZ_LIB_EXT, path0, libname);
 		if (rz_file_exists (libpath)) {
 			free (env);
 			return libpath;
@@ -155,13 +155,13 @@ err:
 }
 
 RZ_API RzLib *rz_lib_new(const char *symname, const char *symnamefunc) {
-	RzLib *lib = R_NEW (RzLib);
+	RzLib *lib = RZ_NEW (RzLib);
 	if (lib) {
-		__has_debug = rz_sys_getenv_asbool ("R2_DEBUG");
+		__has_debug = rz_sys_getenv_asbool ("RZ_DEBUG");
 		lib->handlers = rz_list_newf (free);
 		lib->plugins = rz_list_newf (free);
-		lib->symname = strdup (symname? symname: R_LIB_SYMNAME);
-		lib->symnamefunc = strdup (symnamefunc? symnamefunc: R_LIB_SYMFUNC);
+		lib->symname = strdup (symname? symname: RZ_LIB_SYMNAME);
+		lib->symnamefunc = strdup (symnamefunc? symnamefunc: RZ_LIB_SYMFUNC);
 	}
 	return lib;
 }
@@ -178,7 +178,7 @@ RZ_API void rz_lib_free(RzLib *lib) {
 }
 
 static bool __lib_dl_check_filename(const char *file) {
-	return rz_str_endswith (file, "." R_LIB_EXT);
+	return rz_str_endswith (file, "." RZ_LIB_EXT);
 }
 
 RZ_API int rz_lib_run_handler(RzLib *lib, RzLibPlugin *plugin, RzLibStruct *symbol) {
@@ -242,12 +242,12 @@ RZ_API int rz_lib_close(RzLib *lib, const char *file) {
 }
 
 static bool __already_loaded(RzLib *lib, const char *file) {
-	const char *fileName = rz_str_rstr (file, R_SYS_DIR);
+	const char *fileName = rz_str_rstr (file, RZ_SYS_DIR);
 	RzLibPlugin *p;
 	RzListIter *iter;
 	if (fileName) {
 		rz_list_foreach (lib->plugins, iter, p) {
-			const char *pFileName = rz_str_rstr (p->file, R_SYS_DIR);
+			const char *pFileName = rz_str_rstr (p->file, RZ_SYS_DIR);
 			if (pFileName && !strcmp (fileName, pFileName)) {
 				return true;
 			}
@@ -312,13 +312,13 @@ RZ_API int rz_lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStr
 	rz_return_val_if_fail (lib && file && stru, -1);
 	if (stru->version) {
 		char *mm0 = major_minor (stru->version);
-		char *mm1 = major_minor (R2_VERSION);
+		char *mm1 = major_minor (RZ_VERSION);
 		bool mismatch = strcmp (mm0, mm1);
 		free (mm0);
 		free (mm1);
 		if (mismatch) {
 			eprintf ("Module version mismatch %s (%s) vs (%s)\n",
-				file, stru->version, R2_VERSION);
+				file, stru->version, RZ_VERSION);
 			if (stru->pkgname) {
 				const char *dot = strchr (stru->version, '.');
 				int major = atoi (stru->version);
@@ -331,7 +331,7 @@ RZ_API int rz_lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStr
 			return -1;
 		}
 	}
-	RzLibPlugin *p = R_NEW0 (RzLibPlugin);
+	RzLibPlugin *p = RZ_NEW0 (RzLibPlugin);
 	p->type = stru->type;
 	p->data = stru->data;
 	p->file = strdup (file);
@@ -367,9 +367,9 @@ RZ_API bool rz_lib_opendir(RzLib *lib, const char *path) {
 	struct dirent *de;
 	DIR *dh;
 #endif
-#ifdef R2_LIBR_PLUGINS
+#ifdef RZ_LIBR_PLUGINS
 	if (!path) {
-		path = R2_LIBR_PLUGINS;
+		path = RZ_LIBR_PLUGINS;
 	}
 #endif
 	if (!path) {
@@ -444,7 +444,7 @@ RZ_API bool rz_lib_add_handler(RzLib *lib,
 		}
 	}
 	if (!handler) {
-		handler = R_NEW (RzLibHandler);
+		handler = RZ_NEW (RzLibHandler);
 		if (!handler) {
 			return false;
 		}

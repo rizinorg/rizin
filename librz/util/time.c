@@ -13,7 +13,7 @@ RZ_API ut64 rz_time_now(void) {
 	ut64 ret;
 	struct timeval now;
 	gettimeofday (&now, NULL);
-	ret = now.tv_sec * R_USEC_PER_SEC;
+	ret = now.tv_sec * RZ_USEC_PER_SEC;
 	ret += now.tv_usec;
 	return ret;
 }
@@ -35,12 +35,12 @@ RZ_API ut64 rz_time_now_mono(void) {
 	ut64 ticks = mach_absolute_time ();
 	static mach_timebase_info_data_t tb;
 	mach_timebase_info (&tb);
-	return ((ticks * tb.numer) / tb.denom) / R_NSEC_PER_USEC;
+	return ((ticks * tb.numer) / tb.denom) / RZ_NSEC_PER_USEC;
 #else
 	struct timespec now;
 	clock_gettime (CLOCK_MONOTONIC, &now);
-	return now.tv_sec * R_USEC_PER_SEC
-		+ now.tv_nsec / R_NSEC_PER_USEC;
+	return now.tv_sec * RZ_USEC_PER_SEC
+		+ now.tv_nsec / RZ_NSEC_PER_USEC;
 #endif
 }
 

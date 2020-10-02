@@ -54,12 +54,12 @@ const char *reg_profile =
 
 static void dumpregs(RzReg *reg) {
 	int sz;
-	ut8 *buf = rz_reg_get_bytes (reg, R_REG_TYPE_GPR, &sz);
+	ut8 *buf = rz_reg_get_bytes (reg, RZ_REG_TYPE_GPR, &sz);
 	rz_print_hexdump (NULL, 0, buf, sz, 16, 16);
 	free (buf);
 }
 int main() {
-	int sz, type = R_REG_TYPE_GPR;
+	int sz, type = RZ_REG_TYPE_GPR;
 	RzReg *reg = rz_reg_new();
 	RzReg *reg2 = rz_reg_new();
 	rz_reg_set_profile_string (reg, reg_profile);
@@ -67,7 +67,7 @@ int main() {
 	rz_reg_setv (reg2, "ecx", 0xdeadbeef);
 	RzRegItem* current = NULL;
 
-	free (rz_reg_get_bytes (reg, R_REG_TYPE_GPR, &sz));
+	free (rz_reg_get_bytes (reg, RZ_REG_TYPE_GPR, &sz));
 	eprintf ("arena: %d\n", sz);
 	if (sz != 308) {
 		eprintf ("ARENA SIZE IS WRONG\n");

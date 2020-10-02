@@ -42,7 +42,7 @@ static int cmp(const void *a, const RBNode *b, void *user) {
 }
 
 static struct Node *make(int key) {
-	struct Node *x = R_NEW (struct Node);
+	struct Node *x = RZ_NEW (struct Node);
 	x->key = key;
 	return x;
 }

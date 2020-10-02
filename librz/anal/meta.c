@@ -3,8 +3,8 @@
 #include <rz_anal.h>
 #include <rz_core.h>
 
-static bool item_matches_filter(RzAnalMetaItem *item, RzAnalMetaType type, R_NULLABLE const RSpace *space) {
-	return (type == R_META_TYPE_ANY || item->type == type)
+static bool item_matches_filter(RzAnalMetaItem *item, RzAnalMetaType type, RZ_NULLABLE const RSpace *space) {
+	return (type == RZ_META_TYPE_ANY || item->type == type)
 		   && (!space || item->space == space);
 }
 
@@ -24,7 +24,7 @@ static bool find_node_cb(RIntervalNode *node, void *user) {
 	return true;
 }
 
-static RIntervalNode *find_node_at(RzAnal *anal, RzAnalMetaType type, R_NULLABLE const RSpace *space, ut64 addr) {
+static RIntervalNode *find_node_at(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RSpace *space, ut64 addr) {
 	FindCtx ctx = {
 		.type = type,
 		.space = space,
@@ -34,7 +34,7 @@ static RIntervalNode *find_node_at(RzAnal *anal, RzAnalMetaType type, R_NULLABLE
 	return ctx.node;
 }
 
-static RIntervalNode *find_node_in(RzAnal *anal, RzAnalMetaType type, R_NULLABLE const RSpace *space, ut64 addr) {
+static RIntervalNode *find_node_in(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RSpace *space, ut64 addr) {
 	FindCtx ctx = {
 		.type = type,
 		.space = space,
@@ -59,7 +59,7 @@ static bool collect_nodes_cb(RIntervalNode *node, void *user) {
 	return true;
 }
 
-static RPVector *collect_nodes_at(RzAnal *anal, RzAnalMetaType type, R_NULLABLE const RSpace *space, ut64 addr) {
+static RPVector *collect_nodes_at(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RSpace *space, ut64 addr) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -72,7 +72,7 @@ static RPVector *collect_nodes_at(RzAnal *anal, RzAnalMetaType type, R_NULLABLE 
 	return ctx.result;
 }
 
-static RPVector *collect_nodes_in(RzAnal *anal, RzAnalMetaType type, R_NULLABLE const RSpace *space, ut64 addr) {
+static RPVector *collect_nodes_in(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RSpace *space, ut64 addr) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -85,7 +85,7 @@ static RPVector *collect_nodes_in(RzAnal *anal, RzAnalMetaType type, R_NULLABLE 
 	return ctx.result;
 }
 
-static RPVector *collect_nodes_intersect(RzAnal *anal, RzAnalMetaType type, R_NULLABLE const RSpace *space, ut64 start, ut64 end) {
+static RPVector *collect_nodes_intersect(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RSpace *space, ut64 start, ut64 end) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -104,7 +104,7 @@ static bool meta_set(RzAnal *a, RzAnalMetaType type, int subtype, ut64 from, ut6
 	}
 	RSpace *space = rz_spaces_current (&a->meta_spaces);
 	RIntervalNode *node = find_node_at (a, type, space, from);
-	RzAnalMetaItem *item = node ? node->data : R_NEW0 (RzAnalMetaItem);
+	RzAnalMetaItem *item = node ? node->data : RZ_NEW0 (RzAnalMetaItem);
 	if (!item) {
 		return false;
 	}
@@ -190,7 +190,7 @@ RZ_API bool rz_meta_set_with_subtype(RzAnal *m, RzAnalMetaType type, int subtype
 	return meta_set (m, type, subtype, addr, end, str);
 }
 
-RZ_API RzAnalMetaItem *rz_meta_get_at(RzAnal *a, ut64 addr, RzAnalMetaType type, R_OUT R_NULLABLE ut64 *size) {
+RZ_API RzAnalMetaItem *rz_meta_get_at(RzAnal *a, ut64 addr, RzAnalMetaType type, RZ_OUT RZ_NULLABLE ut64 *size) {
 	RIntervalNode *node = find_node_at (a, type, rz_spaces_current (&a->meta_spaces), addr);
 	if (node && size) {
 		*size = rz_meta_item_size (node->start, node->end);
@@ -203,7 +203,7 @@ RZ_API RIntervalNode *rz_meta_get_in(RzAnal *a, ut64 addr, RzAnalMetaType type) 
 }
 
 RZ_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_at(RzAnal *a, ut64 at) {
-	return collect_nodes_at (a, R_META_TYPE_ANY, rz_spaces_current (&a->meta_spaces), at);
+	return collect_nodes_at (a, RZ_META_TYPE_ANY, rz_spaces_current (&a->meta_spaces), at);
 }
 
 RZ_API RPVector *rz_meta_get_all_in(RzAnal *a, ut64 at, RzAnalMetaType type) {
@@ -222,16 +222,16 @@ RZ_API RPVector *rz_meta_get_all_intersect(RzAnal *a, ut64 start, ut64 size, RzA
 RZ_API const char *rz_meta_type_to_string(int type) {
 	// XXX: use type as '%c'
 	switch (type) {
-	case R_META_TYPE_DATA: return "Cd";
-	case R_META_TYPE_CODE: return "Cc";
-	case R_META_TYPE_STRING: return "Cs";
-	case R_META_TYPE_FORMAT: return "Cf";
-	case R_META_TYPE_MAGIC: return "Cm";
-	case R_META_TYPE_HIDE: return "Ch";
-	case R_META_TYPE_COMMENT: return "CCu";
-	case R_META_TYPE_RUN: return "Cr"; // not in C? help
-	case R_META_TYPE_HIGHLIGHT: return "ecHi"; // not in C?
-	case R_META_TYPE_VARTYPE: return "Ct";
+	case RZ_META_TYPE_DATA: return "Cd";
+	case RZ_META_TYPE_CODE: return "Cc";
+	case RZ_META_TYPE_STRING: return "Cs";
+	case RZ_META_TYPE_FORMAT: return "Cf";
+	case RZ_META_TYPE_MAGIC: return "Cm";
+	case RZ_META_TYPE_HIDE: return "Ch";
+	case RZ_META_TYPE_COMMENT: return "CCu";
+	case RZ_META_TYPE_RUN: return "Cr"; // not in C? help
+	case RZ_META_TYPE_HIGHLIGHT: return "ecHi"; // not in C?
+	case RZ_META_TYPE_VARTYPE: return "Ct";
 	}
 	return "# unknown meta # ";
 }
@@ -247,8 +247,8 @@ RZ_API void rz_meta_print(RzAnal *a, RzAnalMetaItem *d, ut64 start, ut64 size, i
 	}
 	char *str = NULL;
 	if (d->str) {
-		if (d->type == R_META_TYPE_STRING) {
-			if (d->subtype == R_STRING_ENC_UTF8) {
+		if (d->type == RZ_META_TYPE_STRING) {
+			if (d->subtype == RZ_STRING_ENC_UTF8) {
 				str = rz_str_escape_utf8 (d->str, false, esc_bslash);
 			} else {
 				if (!d->subtype) {  /* temporary legacy workaround */
@@ -260,8 +260,8 @@ RZ_API void rz_meta_print(RzAnal *a, RzAnalMetaItem *d, ut64 start, ut64 size, i
 			str = rz_str_escape (d->str);
 		}
 	}
-	if (str || d->type == R_META_TYPE_DATA) {
-		if (d->type == R_META_TYPE_STRING && !*str) {
+	if (str || d->type == RZ_META_TYPE_DATA) {
+		if (d->type == RZ_META_TYPE_STRING && !*str) {
 			free (str);
 			return;
 		}
@@ -321,7 +321,7 @@ RZ_API void rz_meta_print(RzAnal *a, RzAnalMetaItem *d, ut64 start, ut64 size, i
 			} else if (d->type == 's') {
 				const char *enc;
 				switch (d->subtype) {
-				case R_STRING_ENC_UTF8:
+				case RZ_STRING_ENC_UTF8:
 					enc = "utf8";
 					break;
 				case 0:  /* temporary legacy encoding */
@@ -341,7 +341,7 @@ RZ_API void rz_meta_print(RzAnal *a, RzAnalMetaItem *d, ut64 start, ut64 size, i
 		case '*':
 		default:
 			switch (d->type) {
-			case R_META_TYPE_COMMENT:
+			case RZ_META_TYPE_COMMENT:
 				{
 				const char *type = rz_meta_type_to_string (d->type);
 				char *s = sdb_encode ((const ut8*)pstr, -1);
@@ -370,7 +370,7 @@ RZ_API void rz_meta_print(RzAnal *a, RzAnalMetaItem *d, ut64 start, ut64 size, i
 				free (s);
 				}
 				break;
-			case R_META_TYPE_STRING:
+			case RZ_META_TYPE_STRING:
 				if (rad) {
 					char cmd[] = "Cs#";
 					switch (d->subtype) {
@@ -401,8 +401,8 @@ RZ_API void rz_meta_print(RzAnal *a, RzAnalMetaItem *d, ut64 start, ut64 size, i
 					}
 				}
 				break;
-			case R_META_TYPE_HIDE:
-			case R_META_TYPE_DATA:
+			case RZ_META_TYPE_HIDE:
+			case RZ_META_TYPE_DATA:
 				if (rad) {
 					a->cb_printf ("%s %"PFMT64u" @ 0x%08"PFMT64x"\n",
 							rz_meta_type_to_string (d->type),
@@ -418,8 +418,8 @@ RZ_API void rz_meta_print(RzAnal *a, RzAnalMetaItem *d, ut64 start, ut64 size, i
 					}
 				}
 				break;
-			case R_META_TYPE_MAGIC:
-			case R_META_TYPE_FORMAT:
+			case RZ_META_TYPE_MAGIC:
+			case RZ_META_TYPE_FORMAT:
 				if (rad) {
 					a->cb_printf ("%s %"PFMT64u" %s @ 0x%08"PFMT64x"\n",
 							rz_meta_type_to_string (d->type),
@@ -434,7 +434,7 @@ RZ_API void rz_meta_print(RzAnal *a, RzAnalMetaItem *d, ut64 start, ut64 size, i
 					}
 				}
 				break;
-			case R_META_TYPE_VARTYPE:
+			case RZ_META_TYPE_VARTYPE:
 				if (rad) {
 					a->cb_printf ("%s %s @ 0x%08"PFMT64x"\n",
 						rz_meta_type_to_string (d->type), pstr, start);
@@ -442,7 +442,7 @@ RZ_API void rz_meta_print(RzAnal *a, RzAnalMetaItem *d, ut64 start, ut64 size, i
 					a->cb_printf ("0x%08"PFMT64x" %s\n", start, pstr);
 				}
 				break;
-			case R_META_TYPE_HIGHLIGHT:
+			case RZ_META_TYPE_HIGHLIGHT:
 				{
 					ut8 r = 0, g = 0, b = 0, A = 0;
 					const char *esc = strchr (d->str, '\x1b');
@@ -474,7 +474,7 @@ RZ_API void rz_meta_print(RzAnal *a, RzAnalMetaItem *d, ut64 start, ut64 size, i
 }
 
 RZ_API void rz_meta_print_list_at(RzAnal *a, ut64 addr, int rad) {
-	RPVector *nodes = collect_nodes_at (a, R_META_TYPE_ANY, rz_spaces_current (&a->meta_spaces), addr);
+	RPVector *nodes = collect_nodes_at (a, RZ_META_TYPE_ANY, rz_spaces_current (&a->meta_spaces), addr);
 	if (!nodes) {
 		return;
 	}
@@ -508,7 +508,7 @@ static void print_meta_list(RzAnal *a, int type, int rad, ut64 addr) {
 	RzAnalMetaItem *item;
 	rz_interval_tree_foreach (&a->meta, it, item) {
 		RIntervalNode *node = rz_interval_tree_iter_get (&it);
-		if (type != R_META_TYPE_ANY && item->type != type) {
+		if (type != RZ_META_TYPE_ANY && item->type != type) {
 			continue;
 		}
 		if (fcn && !rz_anal_function_contains (fcn, node->start)) {
@@ -557,7 +557,7 @@ RZ_API void rz_meta_rebase(RzAnal *anal, ut64 diff) {
 }
 
 RZ_API void rz_meta_space_unset_for(RzAnal *a, const RSpace *space) {
-	del (a, R_META_TYPE_ANY, space, 0, UT64_MAX);
+	del (a, RZ_META_TYPE_ANY, space, 0, UT64_MAX);
 }
 
 RZ_API ut64 rz_meta_get_size(RzAnal *a, RzAnalMetaType type) {
@@ -567,10 +567,10 @@ RZ_API ut64 rz_meta_get_size(RzAnal *a, RzAnalMetaType type) {
 	RIntervalNode *prev = NULL;
 	rz_interval_tree_foreach (&a->meta, it, item) {
 		RIntervalNode *node = rz_interval_tree_iter_get (&it);
-		if (type != R_META_TYPE_ANY && item->type != type) {
+		if (type != RZ_META_TYPE_ANY && item->type != type) {
 			continue;
 		}
-		ut64 start = R_MAX (prev ? prev->end : 0, node->start);
+		ut64 start = RZ_MAX (prev ? prev->end : 0, node->start);
 		sum += node->end - start + 1;
 		prev = node;
 	}
@@ -591,5 +591,5 @@ RZ_API int rz_meta_space_count_for(RzAnal *a, const RSpace *space) {
 
 RZ_API void rz_meta_set_data_at(RzAnal *a, ut64 addr, ut64 wordsz) {
 	rz_return_if_fail (wordsz);
-	rz_meta_set (a, R_META_TYPE_DATA, addr, wordsz, NULL);
+	rz_meta_set (a, RZ_META_TYPE_DATA, addr, wordsz, NULL);
 }

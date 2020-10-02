@@ -93,15 +93,15 @@ RzAsmPlugin rz_asm_plugin_rsp = {
 	.desc = "Reality Signal Processor",
 	.arch = "rsp",
 	.bits = 32,
-	.endian = R_SYS_ENDIAN_BI, /* For conveniance, we don't force BIG endian but allow both to be used */
+	.endian = RZ_SYS_ENDIAN_BI, /* For conveniance, we don't force BIG endian but allow both to be used */
 	.license = "LGPL3",
 	.disassemble = &disassemble
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_rsp,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

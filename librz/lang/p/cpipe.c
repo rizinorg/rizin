@@ -38,7 +38,7 @@ static int lang_cpipe_file(RzLang *lang, const char *file) {
 		*p = 0;
 	}
 	cc = rz_sys_getenv ("CC");
-	if (R_STR_ISEMPTY (cc)) {
+	if (RZ_STR_ISEMPTY (cc)) {
 		free (cc);
 		cc = strdup ("gcc");
 	}
@@ -47,14 +47,14 @@ static int lang_cpipe_file(RzLang *lang, const char *file) {
 	char *libname_esc = rz_str_escape_sh (libname);
 	char *buf = rz_str_newf ("%s \"%s\" -o \"%s/bin%s\""
 		" $(PKG_CONFIG_PATH=%s pkg-config --cflags --libs rz_socket)",
-		cc, file_esc, libpath_esc, libname_esc, R2_LIBDIR "/pkgconfig");
+		cc, file_esc, libpath_esc, libname_esc, RZ_LIBDIR "/pkgconfig");
 	free (libname_esc);
 	free (libpath_esc);
 	free (file_esc);
 	free (cc);
 	if (rz_sandbox_system (buf, 1) == 0) {
 		char *o_ld_path = rz_sys_getenv ("LD_LIBRARY_PATH");
-		rz_sys_setenv ("LD_LIBRARY_PATH", R2_LIBDIR);
+		rz_sys_setenv ("LD_LIBRARY_PATH", RZ_LIBDIR);
 		char *binfile = rz_str_newf ("%s/bin%s", libpath, libname);
 		lang_pipe_run (lang, binfile, -1);
 		rz_file_rm (binfile);

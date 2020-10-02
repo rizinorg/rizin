@@ -20,7 +20,7 @@ RZ_API char *rz_bin_demangle_objc(RBinFile *bf, const char *sym) {
 		const char *className = sym + 12;
 		ret = rz_str_newf ("class %s", className);
 		if (bf) {
-			rz_bin_file_add_class (bf, className, NULL, R_BIN_CLASS_PUBLIC);
+			rz_bin_file_add_class (bf, className, NULL, RZ_BIN_CLASS_PUBLIC);
 		}
 		return ret;
 	}
@@ -28,7 +28,7 @@ RZ_API char *rz_bin_demangle_objc(RBinFile *bf, const char *sym) {
 		const char *className = sym + 14;
 		ret = rz_str_newf ("class %s", className);
 		if (bf) {
-			rz_bin_file_add_class (bf, className, NULL, R_BIN_CLASS_PUBLIC);
+			rz_bin_file_add_class (bf, className, NULL, RZ_BIN_CLASS_PUBLIC);
 		}
 		return ret;
 	}

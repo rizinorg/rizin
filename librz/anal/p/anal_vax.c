@@ -16,34 +16,34 @@ static int vax_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len
 	if (len < 1) {
 		return -1;
 	}
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->type = RZ_ANAL_OP_TYPE_UNK;
 	switch (buf[0]) {
 	case 0xd0:
 	case 0x2e:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANAL_OP_TYPE_MOV;
 		op->size = 8;
 		break;
 	case 0x78:
-		op->type = R_ANAL_OP_TYPE_SHL;
+		op->type = RZ_ANAL_OP_TYPE_SHL;
 		op->size = 8;
 		break;
 	case 0xc0:
 	case 0xd8:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANAL_OP_TYPE_ADD;
 		op->size = 8;
 		break;
 	case 0x00:
-		op->type = R_ANAL_OP_TYPE_TRAP; // HALT
+		op->type = RZ_ANAL_OP_TYPE_TRAP; // HALT
 		break;
 	case 0x01:
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = RZ_ANAL_OP_TYPE_NOP;
 		break;
 	case 0x51:
 	case 0x73:
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = RZ_ANAL_OP_TYPE_CMP;
 		break;
 	case 0xac:
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = RZ_ANAL_OP_TYPE_XOR;
 		op->size = 4;
 		break;
 	case 0x5a:
@@ -52,25 +52,25 @@ static int vax_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case 0x11:
 	case 0x18:
 		op->size = 2;
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = RZ_ANAL_OP_TYPE_CJMP;
 		break;
 	case 0x31:
 	case 0xe9:
 		op->size = 3;
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = RZ_ANAL_OP_TYPE_CJMP;
 		break;
 	case 0xc6:
 	case 0xc7:
 		op->size = 8;
-		op->type = R_ANAL_OP_TYPE_DIV;
+		op->type = RZ_ANAL_OP_TYPE_DIV;
 		break;
 	case 0xd6:
 	case 0x61:
 		op->size = 2;
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANAL_OP_TYPE_ADD;
 		break;
 	case 0x62:
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = RZ_ANAL_OP_TYPE_SUB;
 		break;
 	case 0xff:
 		op->size = 2;
@@ -95,10 +95,10 @@ RzAnalPlugin rz_anal_plugin_vax = {
 	#endif
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_vax,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

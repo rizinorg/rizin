@@ -327,7 +327,7 @@ RZ_API char *rz_bin_demangle_swift(const char *s, bool syscmd) {
 					strcat (out, ".");
 				}
 				STRCAT_BOUNDS (len);
-				len = R_MIN (len, strlen (q));
+				len = RZ_MIN (len, strlen (q));
 				strcat (out, getstring (q, len));
 			}
 		}

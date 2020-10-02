@@ -69,7 +69,7 @@ RzDebugPlugin rz_debug_plugin_rap = {
 	.name = "rap",
 	.license = "LGPL3",
 	.arch = "any",
-	.bits = R_SYS_BITS_32,
+	.bits = RZ_SYS_BITS_32,
 	.step = __rap_step,
 	.cont = __rap_continue,
 	.attach = &__rap_attach,
@@ -83,10 +83,10 @@ RzDebugPlugin rz_debug_plugin_rap = {
 	//.bp_read = &__rap_bp_read,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_DBG,
+	.type = RZ_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_rap,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

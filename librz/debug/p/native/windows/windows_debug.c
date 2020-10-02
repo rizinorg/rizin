@@ -176,9 +176,9 @@ static PTHREAD_ITEM __r_debug_thread_add(RzDebug *dbg, DWORD pid, DWORD tid, HAN
 		*pthread = th;
 		return NULL;
 	}
-	pthread = R_NEW0 (THREAD_ITEM);
+	pthread = RZ_NEW0 (THREAD_ITEM);
 	if (!pthread) {
-		R_LOG_ERROR ("__r_debug_thread_add: Memory allocation failed.\n");
+		RZ_LOG_ERROR ("__r_debug_thread_add: Memory allocation failed.\n");
 		return NULL;
 	}
 	*pthread = th;
@@ -188,7 +188,7 @@ static PTHREAD_ITEM __r_debug_thread_add(RzDebug *dbg, DWORD pid, DWORD tid, HAN
 
 static int __suspend_thread(HANDLE th, int bits) {
 	int ret;
-	//if (bits == R_SYS_BITS_32) {
+	//if (bits == RZ_SYS_BITS_32) {
 		if ((ret = SuspendThread (th)) == -1) {
 			rz_sys_perror ("__suspend_thread/SuspendThread");
 		}
@@ -202,7 +202,7 @@ static int __suspend_thread(HANDLE th, int bits) {
 
 static int __resume_thread(HANDLE th, int bits) {
 	int ret;
-	//if (bits == R_SYS_BITS_32) {
+	//if (bits == RZ_SYS_BITS_32) {
 		if ((ret = ResumeThread (th)) == -1) {
 			rz_sys_perror ("__resume_thread/ResumeThread");
 		}
@@ -250,7 +250,7 @@ static bool __is_proc_alive(HANDLE ph) {
 static int __set_thread_context(HANDLE th, const ut8 *buf, int size, int bits) {
 	bool ret;
 	CONTEXT ctx = {0};
-	size = R_MIN (size, sizeof (ctx));
+	size = RZ_MIN (size, sizeof (ctx));
 	memcpy (&ctx, buf, size);
 	if(!(ret = SetThreadContext (th, &ctx))) {
 		rz_sys_perror ("__set_thread_context/SetThreadContext");
@@ -431,7 +431,7 @@ int w32_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	HANDLE th = wrap->pi.dwThreadId == dbg->tid ? wrap->pi.hThread : NULL;
 	if (!th || th == INVALID_HANDLE_VALUE) {
 		DWORD flags = THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT;
-		if (dbg->bits == R_SYS_BITS_64) {
+		if (dbg->bits == RZ_SYS_BITS_64) {
 				flags |= THREAD_QUERY_INFORMATION;
 		}
 		th = w32_OpenThread (flags, FALSE, dbg->tid);
@@ -463,7 +463,7 @@ int w32_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 
 static void __transfer_drx(RzDebug *dbg, const ut8 *buf) {
 	CONTEXT cur_ctx;
-	if (w32_reg_read (dbg, R_REG_TYPE_ALL, (ut8 *)&cur_ctx, sizeof (CONTEXT))) {
+	if (w32_reg_read (dbg, RZ_REG_TYPE_ALL, (ut8 *)&cur_ctx, sizeof (CONTEXT))) {
 		CONTEXT *new_ctx = (CONTEXT *)buf;
 		size_t drx_size = offsetof (CONTEXT, Dr7) - offsetof (CONTEXT, Dr0) + sizeof (new_ctx->Dr7);
 		memcpy (&cur_ctx.Dr0, &new_ctx->Dr0, drx_size);
@@ -473,7 +473,7 @@ static void __transfer_drx(RzDebug *dbg, const ut8 *buf) {
 
 int w32_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 	DWORD flags = THREAD_SUSPEND_RESUME | THREAD_SET_CONTEXT;
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (dbg->bits == RZ_SYS_BITS_64) {
 		flags |= THREAD_QUERY_INFORMATION;
 	}
 	HANDLE th = w32_OpenThread (flags, FALSE, dbg->tid);
@@ -487,7 +487,7 @@ int w32_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 		CloseHandle (th);
 		return false;
 	}
-	if (type == R_REG_TYPE_DRX) {
+	if (type == RZ_REG_TYPE_DRX) {
 		__transfer_drx (dbg, buf);
 	}
 	bool ret = __set_thread_context (th, buf, size, dbg->bits);
@@ -563,7 +563,7 @@ static char *__get_file_name_from_handle(HANDLE handle_file) {
 	/* Create a file mapping to get the file name. */
 	map = MapViewOfFile (handle_file_map, FILE_MAP_READ, 0, 0, 1);
 	if (!map || !GetMappedFileName (GetCurrentProcess (), map, filename, MAX_PATH)) {
-		R_FREE (filename);
+		RZ_FREE (filename);
 		goto err_get_file_name_from_handle;
 	}
 	TCHAR temp_buffer[512];
@@ -676,7 +676,7 @@ static PLIB_ITEM lib_list_add(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char 
 	if (lib_list == NULL) {
 		lib_list = rz_list_newf ((RzListFree)libfree);
 		if (!lib_list) {
-			R_LOG_ERROR ("Failed to allocate memory");
+			RZ_LOG_ERROR ("Failed to allocate memory");
 			return NULL;
 		}
 	}
@@ -687,9 +687,9 @@ static PLIB_ITEM lib_list_add(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char 
 			return lib;
 		}
 	}
-	lib = R_NEW0 (LIB_ITEM);
+	lib = RZ_NEW0 (LIB_ITEM);
 	if (!lib) {
-		R_LOG_ERROR ("Failed to allocate memory");
+		RZ_LOG_ERROR ("Failed to allocate memory");
 		return NULL;
 	}
 	lib->pid = pid;
@@ -821,9 +821,9 @@ static RzDebugReasonType exception_to_reason (DWORD ExceptionCode) {
 	switch (ExceptionCode) {
 	case EXCEPTION_ACCESS_VIOLATION:
 	case EXCEPTION_GUARD_PAGE:
-		return R_DEBUG_REASON_SEGFAULT;
+		return RZ_DEBUG_REASON_SEGFAULT;
 	case EXCEPTION_BREAKPOINT:
-		return R_DEBUG_REASON_BREAKPOINT;
+		return RZ_DEBUG_REASON_BREAKPOINT;
 	case EXCEPTION_FLT_DENORMAL_OPERAND:
 	case EXCEPTION_FLT_DIVIDE_BY_ZERO:
 	case EXCEPTION_FLT_INEXACT_RESULT:
@@ -831,15 +831,15 @@ static RzDebugReasonType exception_to_reason (DWORD ExceptionCode) {
 	case EXCEPTION_FLT_OVERFLOW:
 	case EXCEPTION_FLT_STACK_CHECK:
 	case EXCEPTION_FLT_UNDERFLOW:
-		return R_DEBUG_REASON_FPU;
+		return RZ_DEBUG_REASON_FPU;
 	case EXCEPTION_ILLEGAL_INSTRUCTION:
-		return R_DEBUG_REASON_ILLEGAL;
+		return RZ_DEBUG_REASON_ILLEGAL;
 	case EXCEPTION_INT_DIVIDE_BY_ZERO:
-		return R_DEBUG_REASON_DIVBYZERO;
+		return RZ_DEBUG_REASON_DIVBYZERO;
 	case EXCEPTION_SINGLE_STEP:
-		return R_DEBUG_REASON_STEP;
+		return RZ_DEBUG_REASON_STEP;
 	default:
-		return R_DEBUG_REASON_TRAP;
+		return RZ_DEBUG_REASON_TRAP;
 	}
 }
 
@@ -924,7 +924,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 	DEBUG_EVENT de;
 	int tid, next_event = 0;
 	char *dllname = NULL;
-	int ret = R_DEBUG_REASON_UNKNOWN;
+	int ret = RZ_DEBUG_REASON_UNKNOWN;
 	static int exited_already = 0;
 
 	rz_cons_break_push (w32_break_process, dbg);
@@ -933,7 +933,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 	do {
 		/* do not continue when already exited but still open for examination */
 		if (exited_already == pid) {
-			return R_DEBUG_REASON_DEAD;
+			return RZ_DEBUG_REASON_DEAD;
 		}
 		memset (&de, 0, sizeof (DEBUG_EVENT));
 		do {
@@ -952,7 +952,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 				if (!__is_thread_alive (dbg, dbg->tid)) {
 					ret = w32_select (dbg, dbg->pid, dbg->tid);
 					if (ret == -1) {
-						ret = R_DEBUG_REASON_DEAD;
+						ret = RZ_DEBUG_REASON_DEAD;
 						goto end;
 					}
 				}
@@ -962,7 +962,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 		} while (!breaked);
 
 		if (breaked) {
-			ret = R_DEBUG_REASON_USERSUSP;
+			ret = RZ_DEBUG_REASON_USERSUSP;
 			breaked = false;
 		}
 
@@ -977,13 +977,13 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 			wrap->pi.hProcess = de.u.CreateProcessInfo.hProcess;
 			wrap->pi.hThread = de.u.CreateProcessInfo.hThread;
 			wrap->winbase = (ULONG_PTR)de.u.CreateProcessInfo.lpBaseOfImage;
-			ret = R_DEBUG_REASON_NEW_PID;
+			ret = RZ_DEBUG_REASON_NEW_PID;
 			next_event = 0;
 			break;
 		case CREATE_THREAD_DEBUG_EVENT:
 			__r_debug_thread_add (dbg, pid, tid, de.u.CreateThread.hThread, de.u.CreateThread.lpThreadLocalBase, de.u.CreateThread.lpStartAddress, FALSE);
-			if (ret != R_DEBUG_REASON_USERSUSP) {
-				ret = R_DEBUG_REASON_NEW_TID;
+			if (ret != RZ_DEBUG_REASON_USERSUSP) {
+				ret = RZ_DEBUG_REASON_NEW_TID;
 			}
 			dbg->corebind.cmdf (dbg->corebind.core, "f teb.%d @ 0x%p", tid, de.u.CreateThread.lpThreadLocalBase);
 			next_event = 0;
@@ -1003,9 +1003,9 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 			if (de.dwDebugEventCode == EXIT_PROCESS_DEBUG_EVENT) {
 				exited_already = pid;
 				w32_continue (dbg, pid, tid, DBG_CONTINUE);
-				ret = pid == dbg->main_pid ? R_DEBUG_REASON_DEAD : R_DEBUG_REASON_EXIT_PID;
+				ret = pid == dbg->main_pid ? RZ_DEBUG_REASON_DEAD : RZ_DEBUG_REASON_EXIT_PID;
 			} else {
-				ret = R_DEBUG_REASON_EXIT_TID;
+				ret = RZ_DEBUG_REASON_EXIT_TID;
 			}
 			next_event = 0;
 			break;
@@ -1016,7 +1016,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 				last_lib = lib_list_add (pid, de.u.LoadDll.lpBaseOfDll, de.u.LoadDll.hFile, dllname);
 				free (dllname);
 			}
-			ret = R_DEBUG_REASON_NEW_LIB;
+			ret = RZ_DEBUG_REASON_NEW_LIB;
 			next_event = 0;
 			break;
 		case UNLOAD_DLL_DEBUG_EVENT:
@@ -1027,7 +1027,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 				lib->hFile = INVALID_HANDLE_VALUE;
 			}
 			last_lib = lib;
-			ret = R_DEBUG_REASON_EXIT_LIB;
+			ret = RZ_DEBUG_REASON_EXIT_LIB;
 			next_event = 0;
 			break;
 		}
@@ -1052,27 +1052,27 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 			eprintf ("(%d) RIP event\n", pid);
 			w32_continue (dbg, pid, tid, -1);
 			next_event = 1;
-			// XXX unknown ret = R_DEBUG_REASON_TRAP;
+			// XXX unknown ret = RZ_DEBUG_REASON_TRAP;
 			break;
 		case EXCEPTION_DEBUG_EVENT:
 			switch (de.u.Exception.ExceptionRecord.ExceptionCode) {
 			case DBG_CONTROL_C:
 				eprintf ("Received CTRL+C, suspending execution\n");
-				ret = R_DEBUG_REASON_SIGNAL;
+				ret = RZ_DEBUG_REASON_SIGNAL;
 				next_event = 0;
 				break;
 #if _WIN64
 			case 0x4000001f: /* STATUS_WX86_BREAKPOINT */
 #endif
 			case EXCEPTION_BREAKPOINT:
-				ret = R_DEBUG_REASON_BREAKPOINT;
+				ret = RZ_DEBUG_REASON_BREAKPOINT;
 				next_event = 0;
 				break;
 #if _WIN64
 			case 0x4000001e: /* STATUS_WX86_SINGLE_STEP */
 #endif
 			case EXCEPTION_SINGLE_STEP:
-				ret = R_DEBUG_REASON_STEP;
+				ret = RZ_DEBUG_REASON_STEP;
 				next_event = 0;
 				break;
 			default:
@@ -1092,7 +1092,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 			break;
 		default:
 			// This case might be reached if break doesn't trigger an event
-			if (ret != R_DEBUG_REASON_USERSUSP) {
+			if (ret != RZ_DEBUG_REASON_USERSUSP) {
 				eprintf ("(%d) unknown event: %lu\n", pid, de.dwDebugEventCode);
 				ret = -1;
 			}
@@ -1110,7 +1110,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 	}
 
 end:
-	if (ret == R_DEBUG_REASON_DEAD) {
+	if (ret == RZ_DEBUG_REASON_DEAD) {
 		w32_detach (dbg, dbg->pid);
 		rz_list_purge (dbg->threads);
 		rz_list_purge (lib_list);
@@ -1122,11 +1122,11 @@ end:
 int w32_step(RzDebug *dbg) {
 	/* set TRAP flag */
 	CONTEXT ctx;
-	if (!w32_reg_read (dbg, R_REG_TYPE_GPR, (ut8 *)&ctx, sizeof (ctx))) {
+	if (!w32_reg_read (dbg, RZ_REG_TYPE_GPR, (ut8 *)&ctx, sizeof (ctx))) {
 		return false;
 	}
 	ctx.EFlags |= 0x100;
-	if (!w32_reg_write (dbg, R_REG_TYPE_GPR, (ut8 *)&ctx, sizeof (ctx))) {
+	if (!w32_reg_write (dbg, RZ_REG_TYPE_GPR, (ut8 *)&ctx, sizeof (ctx))) {
 		return false;
 	}
 	return w32_continue (dbg, dbg->pid, dbg->tid, dbg->reason.signum);
@@ -1195,19 +1195,19 @@ int w32_map_dealloc(RzDebug *dbg, ut64 addr, int size) {
 static int __io_perms_to_prot(int io_perms) {
 	int prot_perms;
 
-	if ((io_perms & R_PERM_RWX) == R_PERM_RWX) {
+	if ((io_perms & RZ_PERM_RWX) == RZ_PERM_RWX) {
 		prot_perms = PAGE_EXECUTE_READWRITE;
-	} else if ((io_perms & (R_PERM_W | R_PERM_X)) == (R_PERM_W | R_PERM_X)) {
+	} else if ((io_perms & (RZ_PERM_W | RZ_PERM_X)) == (RZ_PERM_W | RZ_PERM_X)) {
 		prot_perms = PAGE_EXECUTE_READWRITE;
-	} else if ((io_perms & (R_PERM_R | R_PERM_X)) == (R_PERM_R | R_PERM_X)) {
+	} else if ((io_perms & (RZ_PERM_R | RZ_PERM_X)) == (RZ_PERM_R | RZ_PERM_X)) {
 		prot_perms = PAGE_EXECUTE_READ;
-	} else if ((io_perms & R_PERM_RW) == R_PERM_RW) {
+	} else if ((io_perms & RZ_PERM_RW) == RZ_PERM_RW) {
 		prot_perms = PAGE_READWRITE;
-	} else if (io_perms & R_PERM_W) {
+	} else if (io_perms & RZ_PERM_W) {
 		prot_perms = PAGE_READWRITE;
-	} else if (io_perms & R_PERM_X) {
+	} else if (io_perms & RZ_PERM_X) {
 		prot_perms = PAGE_EXECUTE;
-	} else if (io_perms & R_PERM_R) {
+	} else if (io_perms & RZ_PERM_R) {
 		prot_perms = PAGE_READONLY;
 	} else {
 		prot_perms = PAGE_NOACCESS;
@@ -1249,13 +1249,13 @@ RzList *w32_thread_list(RzDebug *dbg, int pid, RzList *list) {
 		}
 		int saved_tid = dbg->tid;
 		do {
-			char status = R_DBG_PROC_SLEEP;
+			char status = RZ_DBG_PROC_SLEEP;
 			if (te.th32OwnerProcessID == pid) {
 				ut64 pc = 0;
 				if (dbg->pid == pid) {
 					CONTEXT ctx = {0};
 					dbg->tid = te.th32ThreadID;
-					w32_reg_read (dbg, R_REG_TYPE_GPR, (ut8 *)&ctx, sizeof (ctx));
+					w32_reg_read (dbg, RZ_REG_TYPE_GPR, (ut8 *)&ctx, sizeof (ctx));
 					// TODO: is needed check context for x32 and x64??
 #if _WIN64
 					pc = ctx.Rip;
@@ -1265,11 +1265,11 @@ RzList *w32_thread_list(RzDebug *dbg, int pid, RzList *list) {
 					PTHREAD_ITEM pthread = __find_thread (dbg, te.th32ThreadID);
 					if (pthread) {
 						if (pthread->bFinished) {
-							status = R_DBG_PROC_DEAD;
+							status = RZ_DBG_PROC_DEAD;
 						} else if (pthread->bSuspended) {
-							status = R_DBG_PROC_SLEEP;
+							status = RZ_DBG_PROC_SLEEP;
 						} else {
-							status = R_DBG_PROC_RUN; // TODO: Get more precise thread status
+							status = RZ_DBG_PROC_RUN; // TODO: Get more precise thread status
 						}
 					}
 				}
@@ -1352,11 +1352,11 @@ static void __w32_info_exe(RzDebug *dbg, RzDebugInfo *rdi) {
 }
 
 RzDebugInfo *w32_info(RzDebug *dbg, const char *arg) {
-	RzDebugInfo *rdi = R_NEW0 (RzDebugInfo);
+	RzDebugInfo *rdi = RZ_NEW0 (RzDebugInfo);
 	if (!rdi) {
 		return NULL;
 	}
-	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
+	rdi->status = RZ_DBG_PROC_SLEEP; // TODO: Fix this
 	rdi->pid = dbg->pid;
 	rdi->tid = dbg->tid;
 	rdi->lib = last_lib;
@@ -1491,13 +1491,13 @@ RzList *w32_desc_list(int pid) {
 		}
 		GENERIC_MAPPING *gm = &objectTypeInfo->GenericMapping;
 		if ((handle.GrantedAccess & gm->GenericRead) == gm->GenericRead) {
-			perms |= R_PERM_R;
+			perms |= RZ_PERM_R;
 		}
 		if ((handle.GrantedAccess & gm->GenericWrite) == gm->GenericWrite) {
-			perms |= R_PERM_W;
+			perms |= RZ_PERM_W;
 		}
 		if ((handle.GrantedAccess & gm->GenericExecute) == gm->GenericExecute) {
-			perms |= R_PERM_X;
+			perms |= RZ_PERM_X;
 		}
 		objectNameInfo = malloc (0x1000);
 		if (!objectNameInfo) {

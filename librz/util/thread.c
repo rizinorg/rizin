@@ -56,14 +56,14 @@ RZ_API int rz_th_push_task(struct rz_th_t *th, void *user) {
 	return ret;
 }
 
-RZ_API R_TH_TID rz_th_self(void) {
+RZ_API RZ_TH_TID rz_th_self(void) {
 #if HAVE_PTHREAD
 	return pthread_self ();
 #elif __WINDOWS__
 	return GetCurrentThread ();
 #else
 #pragma message("Not implemented on this platform")
-	return (R_TH_TID)-1;
+	return (RZ_TH_TID)-1;
 #endif
 }
 
@@ -190,8 +190,8 @@ RZ_API bool rz_th_setaffinity(RzThread *th, int cpuid) {
 	return true;
 }
 
-RZ_API RzThread *rz_th_new(R_TH_FUNCTION(fun), void *user, int delay) {
-	RzThread *th = R_NEW0 (RzThread);
+RZ_API RzThread *rz_th_new(RZ_TH_FUNCTION(fun), void *user, int delay) {
+	RzThread *th = RZ_NEW0 (RzThread);
 	if (th) {
 		th->lock = rz_th_lock_new (false);
 		th->running = false;

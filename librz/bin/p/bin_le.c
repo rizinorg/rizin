@@ -126,7 +126,7 @@ static RzList *relocs(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *info = R_NEW0 (RBinInfo);
+	RBinInfo *info = RZ_NEW0 (RBinInfo);
 	if (info) {
 		rz_bin_le_obj_t *bin = bf->o->bin_obj;
 		LE_image_header *h = bin->header;
@@ -163,10 +163,10 @@ RBinPlugin rz_bin_plugin_le = {
 	// .regstate = &regstate
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_le,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

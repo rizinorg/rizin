@@ -12,7 +12,7 @@
 #define ARM_MAX_BREAKPOINTS 8
 #define ARM_MAX_WATCHPOINTS 1
 
-R_PACKED (
+RZ_PACKED (
 struct windows_floating_save_area {
 	ut32	control_word;
 	ut32	status_word;
@@ -25,7 +25,7 @@ struct windows_floating_save_area {
 	ut32	spare_0;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct windows_systemtime {
 	ut16	w_year;
 	ut16	w_month;
@@ -37,7 +37,7 @@ struct windows_systemtime {
 	ut16	w_milliseconds;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct windows_timezone_information {
 	ut32	bias;
 	ut16	standard_name[32];
@@ -48,25 +48,25 @@ struct windows_timezone_information {
 	ut32	daylight_bias;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct windows_m128a {
 	ut64	low;
 	st64	high;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct windows_neon128 {
 	ut64	low;
 	st64	high;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct windows_float128 {
 	ut64 low;
 	st64 high;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct context_type_i386 {
 	ut32	context_flags;
 
@@ -101,7 +101,7 @@ struct context_type_i386 {
 	ut8	extended_registers[MAXIMUM_SUPPORTED_EXTENSION];
 });
 
-R_PACKED (
+RZ_PACKED (
 struct context_type_ia64 {
 	ut32	context_flags;
 	ut32	fill_1[3];
@@ -337,7 +337,7 @@ struct context_type_ia64 {
 	ut64	unusedpack;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct context_type_arm {
 	ut32	context_flags;
 
@@ -375,7 +375,7 @@ struct context_type_arm {
 	ut32 padding_2[2];
 });
 
-R_PACKED (
+RZ_PACKED (
 struct windows_xsave_format32 {
 	ut16	control_word;
 	ut16	status_word;
@@ -395,7 +395,7 @@ struct windows_xsave_format32 {
 	ut8 reserved_4[224];
 });
 
-R_PACKED (
+RZ_PACKED (
 struct context_type_amd64 {
 	ut64	p1_home;
 	ut64	p2_home;
@@ -475,7 +475,7 @@ struct context_type_amd64 {
 	ut64	last_exception_from_rip;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct windows_exception_record32 {
 	ut32	exception_code;
 	ut32	exception_flags;
@@ -485,7 +485,7 @@ struct windows_exception_record32 {
 	ut32	exception_information[EXCEPTION_MAXIMUM_PARAMETERS];
 });
 
-R_PACKED (
+RZ_PACKED (
 struct windows_exception_record64 {
 	ut32 exception_code;
 	ut32 exception_flags;
@@ -496,7 +496,7 @@ struct windows_exception_record64 {
 	ut64 exception_information[EXCEPTION_MAXIMUM_PARAMETERS];
 });
 
-R_PACKED (
+RZ_PACKED (
 struct exception_pointers_i386 {
 	struct windows_exception_record32 *exception_record;
 	void /*struct context*/ *context_record;

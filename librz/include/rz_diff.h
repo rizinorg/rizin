@@ -1,5 +1,5 @@
-#ifndef R2_DIFF_H
-#define R2_DIFF_H
+#ifndef RZ_DIFF_H
+#define RZ_DIFF_H
 
 #include <rz_types.h>
 #include <rz_util.h>
@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(rz_diff);
+RZ_LIB_VERSION_HEADER(rz_diff);
 
 #define Color_INSERT Color_BGREEN
 #define Color_DELETE Color_BRED

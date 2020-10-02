@@ -12,7 +12,7 @@
 #define BITMAP_WORD_COUNT(bit) (BITWORD_MULT(bit) >> BITWORD_BITS_SHIFT)
 
 RZ_API RBitmap *rz_bitmap_new(size_t len) {
-	RBitmap *b = R_NEW0 (RBitmap);
+	RBitmap *b = RZ_NEW0 (RBitmap);
 	if (!b) {
 		return NULL;
 	}

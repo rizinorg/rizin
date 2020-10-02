@@ -71,7 +71,7 @@ return 0;
 	size_t ulen, mlen;
 	const struct names *p;
 	int rv = -1;
-	int mime = ms->flags & R_MAGIC_MIME;
+	int mime = ms->flags & RZ_MAGIC_MIME;
 
 	const char *code = NULL;
 	const char *code_mime = NULL;
@@ -187,7 +187,7 @@ return 0;
 	}
 
 	/* look for tokens from names.h - this is expensive! */
-	if ((ms->flags & R_MAGIC_NO_CHECK_TOKENS) != 0) {
+	if ((ms->flags & RZ_MAGIC_NO_CHECK_TOKENS) != 0) {
 		goto subtype_identified;
 	}
 
@@ -269,7 +269,7 @@ subtype_identified:
 	}
 
 	if (mime) {
-		if (mime & R_MAGIC_MIME_TYPE) {
+		if (mime & RZ_MAGIC_MIME_TYPE) {
 			if (subtype_mime) {
 				if (file_printf (ms, subtype_mime) == -1) {
 					goto done;
@@ -281,8 +281,8 @@ subtype_identified:
 			}
 		}
 
-		if ((mime == 0 || mime == R_MAGIC_MIME) && code_mime) {
-			if ((mime & R_MAGIC_MIME_TYPE) &&
+		if ((mime == 0 || mime == RZ_MAGIC_MIME) && code_mime) {
+			if ((mime & RZ_MAGIC_MIME_TYPE) &&
 				file_printf (ms, " charset=") == -1) {
 				goto done;
 			}
@@ -291,7 +291,7 @@ subtype_identified:
 			}
 		}
 
-		if (mime == R_MAGIC_MIME_ENCODING) {
+		if (mime == RZ_MAGIC_MIME_ENCODING) {
 			if (file_printf (ms, "binary") == -1) {
 				rv = 1;
 				goto done;

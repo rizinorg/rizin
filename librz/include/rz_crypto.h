@@ -1,5 +1,5 @@
-#ifndef R2_CRYPTO_H
-#define R2_CRYPTO_H
+#ifndef RZ_CRYPTO_H
+#define RZ_CRYPTO_H
 
 #include "rz_types.h"
 #include "rz_list.h"
@@ -9,18 +9,18 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(rz_crypto);
+RZ_LIB_VERSION_HEADER(rz_crypto);
 
 enum {
-	R_CRYPTO_MODE_ECB,
-	R_CRYPTO_MODE_CBC,
-	R_CRYPTO_MODE_OFB,
-	R_CRYPTO_MODE_CFB,
+	RZ_CRYPTO_MODE_ECB,
+	RZ_CRYPTO_MODE_CBC,
+	RZ_CRYPTO_MODE_OFB,
+	RZ_CRYPTO_MODE_CFB,
 };
 
 enum {
-	R_CRYPTO_DIR_CIPHER,
-	R_CRYPTO_DIR_DECIPHER,
+	RZ_CRYPTO_DIR_CIPHER,
+	RZ_CRYPTO_DIR_DECIPHER,
 };
 
 typedef struct rz_crypto_t {
@@ -85,27 +85,27 @@ extern RzCryptoPlugin rz_crypto_plugin_rc6;
 extern RzCryptoPlugin rz_crypto_plugin_cps2;
 extern RzCryptoPlugin rz_crypto_plugin_serpent;
 
-#define R_CRYPTO_NONE 0ULL
-#define R_CRYPTO_RC2 1ULL
-#define R_CRYPTO_RC4 1ULL<<1
-#define R_CRYPTO_RC6 1ULL<<2
-#define R_CRYPTO_AES_ECB 1ULL<<3
-#define R_CRYPTO_AES_CBC 1ULL<<4
-#define R_CRYPTO_ROR 1ULL<<5
-#define R_CRYPTO_ROL 1ULL<<6
-#define R_CRYPTO_ROT 1ULL<<7
-#define R_CRYPTO_BLOWFISH 1ULL<<8
-#define R_CRYPTO_CPS2 1ULL<<9
-#define R_CRYPTO_DES_ECB 1ULL<<10
-#define R_CRYPTO_XOR 1ULL<<11
-#define R_CRYPTO_SERPENT 1ULL<<12
-#define R_CRYPTO_ALL 0xFFFF
+#define RZ_CRYPTO_NONE 0ULL
+#define RZ_CRYPTO_RC2 1ULL
+#define RZ_CRYPTO_RC4 1ULL<<1
+#define RZ_CRYPTO_RC6 1ULL<<2
+#define RZ_CRYPTO_AES_ECB 1ULL<<3
+#define RZ_CRYPTO_AES_CBC 1ULL<<4
+#define RZ_CRYPTO_ROR 1ULL<<5
+#define RZ_CRYPTO_ROL 1ULL<<6
+#define RZ_CRYPTO_ROT 1ULL<<7
+#define RZ_CRYPTO_BLOWFISH 1ULL<<8
+#define RZ_CRYPTO_CPS2 1ULL<<9
+#define RZ_CRYPTO_DES_ECB 1ULL<<10
+#define RZ_CRYPTO_XOR 1ULL<<11
+#define RZ_CRYPTO_SERPENT 1ULL<<12
+#define RZ_CRYPTO_ALL 0xFFFF
 
-#define R_CODEC_NONE 0ULL
-#define R_CODEC_B64 1ULL
-#define R_CODEC_B91 1ULL<<1
-#define R_CODEC_PUNYCODE 1ULL<<2
-#define R_CODEC_ALL 0xFFFF
+#define RZ_CODEC_NONE 0ULL
+#define RZ_CODEC_B64 1ULL
+#define RZ_CODEC_B91 1ULL<<1
+#define RZ_CODEC_PUNYCODE 1ULL<<2
+#define RZ_CODEC_ALL 0xFFFF
 
 #ifdef __cplusplus
 }

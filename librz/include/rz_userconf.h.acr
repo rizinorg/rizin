@@ -1,9 +1,9 @@
-#ifndef R2_CONFIGURE_H
-#define R2_CONFIGURE_H
+#ifndef RZ_CONFIGURE_H
+#define RZ_CONFIGURE_H
 
 #include "rz_version.h"
 
-#define R_CHECKS_LEVEL @R_CHECKS_LEVEL@
+#define RZ_CHECKS_LEVEL @RZ_CHECKS_LEVEL@
 #define DEBUGGER @DEBUGGER@
 #define HAVE_DECL_ADDR_NO_RANDOMIZE @HAVE_DECL_ADDR_NO_RANDOMIZE@
 #define HAVE_ARC4RANDOM_UNIFORM @HAVE_ARC4RANDOM_UNIFORM@
@@ -12,77 +12,77 @@
 #define HAVE_CLOCK_NANOSLEEP @HAVE_CLOCK_NANOSLEEP@
 #define HAVE_SIGACTION @HAVE_SIGACTION@
 
-#ifdef R_MESON_VERSION
-#define R2_PREFIX "@PREFIX@"
-#define R2_LIBDIR "@LIBDIR@"
-#define R2_INCDIR "@INCLUDEDIR@"
-#define R2_DATDIR "@DATADIR@"
-#define R2_WWWROOT "@WWWROOT@"
-#define R2_PLUGINS "@PLUGINS@"
-#define R2_EXTRAS "@EXTRAS@"
-#define R2_BINDINGS "@BINDINGS@"
-#define R2_DATDIR_R2 "@DATADIR_R2@"
-#define R2_SDB "@SDB@"
-#define R2_ZIGNS "@ZIGNS@"
-#define R2_THEMES "@THEMES@"
-#define R2_FORTUNES "@FORTUNES@"
-#define R2_FLAGS "@FLAGS@"
-#define R2_HUD "@HUD@"
+#ifdef RZ_MESON_VERSION
+#define RZ_PREFIX "@PREFIX@"
+#define RZ_LIBDIR "@LIBDIR@"
+#define RZ_INCDIR "@INCLUDEDIR@"
+#define RZ_DATDIR "@DATADIR@"
+#define RZ_WWWROOT "@WWWROOT@"
+#define RZ_PLUGINS "@PLUGINS@"
+#define RZ_EXTRAS "@EXTRAS@"
+#define RZ_BINDINGS "@BINDINGS@"
+#define RZ_DATDIR_R2 "@DATADIR_R2@"
+#define RZ_SDB "@SDB@"
+#define RZ_ZIGNS "@ZIGNS@"
+#define RZ_THEMES "@THEMES@"
+#define RZ_FORTUNES "@FORTUNES@"
+#define RZ_FLAGS "@FLAGS@"
+#define RZ_HUD "@HUD@"
 #else
 #if __WINDOWS__ || _MSC_VER
-#define R2_PREFIX "."
-#define R2_LIBDIR "lib"
-#define R2_INCDIR "include\\librz"
-#define R2_DATDIR "share"
-#define R2_WWWROOT "www"
-#define R2_PLUGINS "lib\\plugins"
-#define R2_EXTRAS "lib\\extras"
-#define R2_BINDINGS "lib\\bindings"
+#define RZ_PREFIX "."
+#define RZ_LIBDIR "lib"
+#define RZ_INCDIR "include\\librz"
+#define RZ_DATDIR "share"
+#define RZ_WWWROOT "www"
+#define RZ_PLUGINS "lib\\plugins"
+#define RZ_EXTRAS "lib\\extras"
+#define RZ_BINDINGS "lib\\bindings"
 #else
-#define R2_PREFIX "@PREFIX@"
-#define R2_LIBDIR "@LIBDIR@"
-#define R2_INCDIR "@INCLUDEDIR@/librz"
-#define R2_DATDIR "@DATADIR@"
-#define R2_WWWROOT R2_DATDIR "/rizin/" R2_VERSION "/www"
-#define R2_PLUGINS "lib/rizin/" R2_VERSION
-#define R2_EXTRAS "lib/rizin-extras/" R2_VERSION
-#define R2_BINDINGS "lib/rizin-bindings/" R2_VERSION
+#define RZ_PREFIX "@PREFIX@"
+#define RZ_LIBDIR "@LIBDIR@"
+#define RZ_INCDIR "@INCLUDEDIR@/librz"
+#define RZ_DATDIR "@DATADIR@"
+#define RZ_WWWROOT RZ_DATDIR "/rizin/" RZ_VERSION "/www"
+#define RZ_PLUGINS "lib/rizin/" RZ_VERSION
+#define RZ_EXTRAS "lib/rizin-extras/" RZ_VERSION
+#define RZ_BINDINGS "lib/rizin-bindings/" RZ_VERSION
 #endif
-#define R2_DATDIR_R2        R_JOIN_2_PATHS ("share", "rizin")
-#define R2_SDB              R_JOIN_3_PATHS ("share", "rizin", R2_VERSION)
-#define R2_ZIGNS            R_JOIN_4_PATHS ("share", "rizin", R2_VERSION, "zigns")
-#define R2_THEMES           R_JOIN_4_PATHS ("share", "rizin", R2_VERSION, "cons")
-#define R2_FLAGS            R_JOIN_4_PATHS ("share", "rizin", R2_VERSION, "flag")
-#define R2_FORTUNES         R_JOIN_3_PATHS ("share", "doc", "rizin")
-#define R2_HUD              R_JOIN_4_PATHS ("share", "rizin", R2_VERSION, "hud")
+#define RZ_DATDIR_R2        RZ_JOIN_2_PATHS ("share", "rizin")
+#define RZ_SDB              RZ_JOIN_3_PATHS ("share", "rizin", RZ_VERSION)
+#define RZ_ZIGNS            RZ_JOIN_4_PATHS ("share", "rizin", RZ_VERSION, "zigns")
+#define RZ_THEMES           RZ_JOIN_4_PATHS ("share", "rizin", RZ_VERSION, "cons")
+#define RZ_FLAGS            RZ_JOIN_4_PATHS ("share", "rizin", RZ_VERSION, "flag")
+#define RZ_FORTUNES         RZ_JOIN_3_PATHS ("share", "doc", "rizin")
+#define RZ_HUD              RZ_JOIN_4_PATHS ("share", "rizin", RZ_VERSION, "hud")
 #endif
 
-#define R2_SDB_FCNSIGN      R_JOIN_2_PATHS (R2_SDB, "fcnsign")
-#define R2_SDB_OPCODES      R_JOIN_2_PATHS (R2_SDB, "opcodes")
-#define R2_SDB_MAGIC        R_JOIN_2_PATHS (R2_SDB, "magic")
-#define R2_SDB_FORMAT       R_JOIN_2_PATHS (R2_SDB, "format")
+#define RZ_SDB_FCNSIGN      RZ_JOIN_2_PATHS (RZ_SDB, "fcnsign")
+#define RZ_SDB_OPCODES      RZ_JOIN_2_PATHS (RZ_SDB, "opcodes")
+#define RZ_SDB_MAGIC        RZ_JOIN_2_PATHS (RZ_SDB, "magic")
+#define RZ_SDB_FORMAT       RZ_JOIN_2_PATHS (RZ_SDB, "format")
 
-#define R2_HOME_CONFIGDIR   R_JOIN_2_PATHS (".config", "rizin")
-#define R2_HOME_DATADIR     R_JOIN_3_PATHS (".local", "share", "rizin")
-#define R2_HOME_CACHEDIR    R_JOIN_2_PATHS (".cache", "rizin")
+#define RZ_HOME_CONFIGDIR   RZ_JOIN_2_PATHS (".config", "rizin")
+#define RZ_HOME_DATADIR     RZ_JOIN_3_PATHS (".local", "share", "rizin")
+#define RZ_HOME_CACHEDIR    RZ_JOIN_2_PATHS (".cache", "rizin")
 
-#define R2_HOME_THEMES      R_JOIN_2_PATHS (R2_HOME_DATADIR, "cons")
-#define R2_HOME_PLUGINS     R_JOIN_2_PATHS (R2_HOME_DATADIR, "plugins")
-#define R2_HOME_ZIGNS       R_JOIN_2_PATHS (R2_HOME_DATADIR, "zigns")
-#define R2_HOME_PDB         R_JOIN_2_PATHS (R2_HOME_DATADIR, "pdb")
-#define R2_HOME_PROJECTS    R_JOIN_2_PATHS (R2_HOME_DATADIR, "projects")
-#define R2_HOME_WWWROOT     R_JOIN_2_PATHS (R2_HOME_DATADIR, "www")
-#define R2_HOME_SDB_FCNSIGN R_JOIN_2_PATHS (R2_HOME_DATADIR, "fcnsign")
-#define R2_HOME_SDB_FORMAT  R_JOIN_2_PATHS (R2_HOME_DATADIR, "format")
-#define R2_HOME_HUD         R_JOIN_2_PATHS (R2_HOME_DATADIR, "hud")
-#define R2_HOME_BINRC       R_JOIN_2_PATHS (R2_HOME_DATADIR, "rc.d")
-#define R2_HOME_BIN         R_JOIN_3_PATHS (R2_HOME_DATADIR, "prefix", "bin")
+#define RZ_HOME_THEMES      RZ_JOIN_2_PATHS (RZ_HOME_DATADIR, "cons")
+#define RZ_HOME_PLUGINS     RZ_JOIN_2_PATHS (RZ_HOME_DATADIR, "plugins")
+#define RZ_HOME_ZIGNS       RZ_JOIN_2_PATHS (RZ_HOME_DATADIR, "zigns")
+#define RZ_HOME_PDB         RZ_JOIN_2_PATHS (RZ_HOME_DATADIR, "pdb")
+#define RZ_HOME_PROJECTS    RZ_JOIN_2_PATHS (RZ_HOME_DATADIR, "projects")
+#define RZ_HOME_WWWROOT     RZ_JOIN_2_PATHS (RZ_HOME_DATADIR, "www")
+#define RZ_HOME_SDB_FCNSIGN RZ_JOIN_2_PATHS (RZ_HOME_DATADIR, "fcnsign")
+#define RZ_HOME_SDB_FORMAT  RZ_JOIN_2_PATHS (RZ_HOME_DATADIR, "format")
+#define RZ_HOME_HUD         RZ_JOIN_2_PATHS (RZ_HOME_DATADIR, "hud")
+#define RZ_HOME_BINRC       RZ_JOIN_2_PATHS (RZ_HOME_DATADIR, "rc.d")
+#define RZ_HOME_BIN         RZ_JOIN_3_PATHS (RZ_HOME_DATADIR, "prefix", "bin")
 
-#define R2_HOME_HISTORY     R_JOIN_2_PATHS (R2_HOME_CACHEDIR, "history")
+#define RZ_HOME_HISTORY     RZ_JOIN_2_PATHS (RZ_HOME_CACHEDIR, "history")
 
-#define R2_HOME_RC          R_JOIN_2_PATHS (R2_HOME_CONFIGDIR, "rizinrc")
-#define R2_HOME_RC_DIR      R_JOIN_2_PATHS (R2_HOME_CONFIGDIR, "rizinrc.d")
-#define R2_GLOBAL_RC        R_JOIN_2_PATHS (R2_DATDIR_R2, "rizinrc")
+#define RZ_HOME_RC          RZ_JOIN_2_PATHS (RZ_HOME_CONFIGDIR, "rizinrc")
+#define RZ_HOME_RC_DIR      RZ_JOIN_2_PATHS (RZ_HOME_CONFIGDIR, "rizinrc.d")
+#define RZ_GLOBAL_RC        RZ_JOIN_2_PATHS (RZ_DATDIR_R2, "rizinrc")
 
 #define HAVE_LIB_MAGIC @HAVE_LIB_MAGIC@
 #define USE_LIB_MAGIC @USE_LIB_MAGIC@

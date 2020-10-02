@@ -30,12 +30,12 @@ static int lang_zig_file(RzLang *lang, const char *file) {
 	}
 	cc = rz_sys_getenv ("ZIG");
 	if (cc && !*cc) {
-		R_FREE (cc);
+		RZ_FREE (cc);
 	}
 	if (!cc) {
 		cc = strdup ("zig");
 	}
-	char *cmd = rz_str_newf ("zig build-lib --output %s.%s --release-fast %s.zig --library rz_core", name, R_LIB_EXT, name);
+	char *cmd = rz_str_newf ("zig build-lib --output %s.%s --release-fast %s.zig --library rz_core", name, RZ_LIB_EXT, name);
 	if (rz_sandbox_system (cmd, 1) != 0) {
 		free (name);
 		free (cmd);
@@ -44,7 +44,7 @@ static int lang_zig_file(RzLang *lang, const char *file) {
 	}
 	free (cmd);
 
-	char *path = rz_str_newf ("%s/%s.%s", libpath, libname, R_LIB_EXT);
+	char *path = rz_str_newf ("%s/%s.%s", libpath, libname, RZ_LIB_EXT);
 	lib = rz_lib_dl_open (path);
 	if (lib) {
 		void (*fcn)(RzCore *);

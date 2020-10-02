@@ -109,7 +109,7 @@ static int __reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	rz_str_trim ((char *)bregs);
 	int sz = rz_hex_str2bin (dr8, bregs);
 	if (sz > 0) {
-		memcpy (buf, bregs, R_MIN (size, sz));
+		memcpy (buf, bregs, RZ_MIN (size, sz));
 		free (bregs);
 		free (dr8);
 		return size;
@@ -140,7 +140,7 @@ RzDebugPlugin rz_debug_plugin_io = {
 	.name = "io",
 	.license = "MIT",
 	.arch = "any", // TODO: exception!
-	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
+	.bits = RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
 	.step = __io_step,
 	.map_get = __io_maps,
 	.attach = &__io_attach,
@@ -160,10 +160,10 @@ RzDebugPlugin rz_debug_plugin_io = {
 #endif
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_DBG,
+	.type = RZ_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_io,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

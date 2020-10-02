@@ -3,7 +3,7 @@
 #include <rz_th.h>
 
 RZ_API RzThreadCond *rz_th_cond_new(void) {
-	RzThreadCond *cond = R_NEW0 (RzThreadCond);
+	RzThreadCond *cond = RZ_NEW0 (RzThreadCond);
 	if (!cond) {
 		return NULL;
 	}

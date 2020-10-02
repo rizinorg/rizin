@@ -18,7 +18,7 @@ static RBinInfo* info(RBinFile *bf);
 static int get_file_type(RBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = bf->o->bin_obj;
 	char *type = Elf_(rz_bin_elf_get_file_type (obj));
-	int res = type? ((!strncmp (type, "CORE", 4)) ? R_BIN_TYPE_CORE : R_BIN_TYPE_DEFAULT) : -1;
+	int res = type? ((!strncmp (type, "CORE", 4)) ? RZ_BIN_TYPE_CORE : RZ_BIN_TYPE_DEFAULT) : -1;
 	free (type);
 	return res;
 }
@@ -103,7 +103,7 @@ static void destroy(RBinFile *bf) {
 				eobj->imports_by_ord[i] = NULL;
 			}
 		}
-		R_FREE (eobj->imports_by_ord);
+		RZ_FREE (eobj->imports_by_ord);
 	}
 	Elf_(rz_bin_elf_free) ((struct Elf_(rz_bin_elf_obj_t)*)bf->o->bin_obj);
 }
@@ -122,20 +122,20 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 	ut64 addr = 0LL;
 
 	switch (sym) {
-	case R_BIN_SYM_ENTRY:
+	case RZ_BIN_SYM_ENTRY:
 		addr = Elf_(rz_bin_elf_get_entry_offset) (bf->o->bin_obj);
 		break;
-	case R_BIN_SYM_MAIN:
+	case RZ_BIN_SYM_MAIN:
 		addr = Elf_(rz_bin_elf_get_main_offset) (bf->o->bin_obj);
 		break;
-	case R_BIN_SYM_INIT:
+	case RZ_BIN_SYM_INIT:
 		addr = Elf_(rz_bin_elf_get_init_offset) (bf->o->bin_obj);
 		break;
-	case R_BIN_SYM_FINI:
+	case RZ_BIN_SYM_FINI:
 		addr = Elf_(rz_bin_elf_get_fini_offset) (bf->o->bin_obj);
 		break;
 	}
-	if (addr && addr != UT64_MAX && (ret = R_NEW0 (RBinAddr))) {
+	if (addr && addr != UT64_MAX && (ret = RZ_NEW0 (RBinAddr))) {
 		struct Elf_(rz_bin_elf_obj_t) *bin = bf->o->bin_obj;
 		bool is_arm = bin->ehdr.e_machine == EM_ARM;
 		ret->paddr = addr;
@@ -187,7 +187,7 @@ static RzList* sections(RBinFile *bf) {
 	//and freed within Elf_(rz_bin_elf_free)
 	if ((section = Elf_(rz_bin_elf_get_sections) (obj))) {
 		for (i = 0; !section[i].last; i++) {
-			if (!(ptr = R_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RBinSection))) {
 				break;
 			}
 			ptr->name = strdup ((char*)section[i].name);
@@ -198,7 +198,7 @@ static RzList* sections(RBinFile *bf) {
 			}
 			if (is_wordable_section (ptr->name)) {
 				ptr->format = rz_str_newf ("Cd %d[%"PFMT64d"]",
-					R_BIN_ELF_WORDSIZE, section[i].size / R_BIN_ELF_WORDSIZE);
+					RZ_BIN_ELF_WORDSIZE, section[i].size / RZ_BIN_ELF_WORDSIZE);
 			}
 			ptr->size = section[i].type != SHT_NOBITS ? section[i].size : 0;
 			ptr->vsize = section[i].size;
@@ -206,14 +206,14 @@ static RzList* sections(RBinFile *bf) {
 			ptr->vaddr = section[i].rva;
 			ptr->add = !obj->phdr; // Load sections if there is no PHDR
 			ptr->perm = 0;
-			if (R_BIN_ELF_SCN_IS_EXECUTABLE (section[i].flags)) {
-				ptr->perm |= R_PERM_X;
+			if (RZ_BIN_ELF_SCN_IS_EXECUTABLE (section[i].flags)) {
+				ptr->perm |= RZ_PERM_X;
 			}
-			if (R_BIN_ELF_SCN_IS_WRITABLE (section[i].flags)) {
-				ptr->perm |= R_PERM_W;
+			if (RZ_BIN_ELF_SCN_IS_WRITABLE (section[i].flags)) {
+				ptr->perm |= RZ_PERM_W;
 			}
-			if (R_BIN_ELF_SCN_IS_READABLE (section[i].flags)) {
-				ptr->perm |= R_PERM_R;
+			if (RZ_BIN_ELF_SCN_IS_READABLE (section[i].flags)) {
+				ptr->perm |= RZ_PERM_R;
 			}
 			rz_list_append (ret, ptr);
 		}
@@ -226,7 +226,7 @@ static RzList* sections(RBinFile *bf) {
 	if (phdr) {
 		int n = 0;
 		for (i = 0; i < num; i++) {
-			if (!(ptr = R_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RBinSection))) {
 				return ret;
 			}
 			ptr->add = false;
@@ -242,7 +242,7 @@ static RzList* sections(RBinFile *bf) {
 				break;
 			case PT_LOAD:
 				ptr->name = rz_str_newf ("LOAD%d", n++);
-				ptr->perm |= R_PERM_R;
+				ptr->perm |= RZ_PERM_R;
 				found_load = 1;
 				ptr->add = true;
 				break;
@@ -294,7 +294,7 @@ static RzList* sections(RBinFile *bf) {
 			bf->size = bin? bin->size: 0x9999;
 		}
 		if (found_load == 0) {
-			if (!(ptr = R_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RBinSection))) {
 				return ret;
 			}
 			ptr->name = strdup ("uphdr");
@@ -303,12 +303,12 @@ static RzList* sections(RBinFile *bf) {
 			ptr->paddr = 0;
 			ptr->vaddr = 0x10000;
 			ptr->add = true;
-			ptr->perm = R_PERM_RWX;
+			ptr->perm = RZ_PERM_RWX;
 			rz_list_append (ret, ptr);
 		}
 	}
 	// add entry for ehdr
-	ptr = R_NEW0 (RBinSection);
+	ptr = RZ_NEW0 (RBinSection);
 	if (ptr) {
 		ut64 ehdr_size = sizeof (obj->ehdr);
 		if (bf->size < ehdr_size) {
@@ -323,7 +323,7 @@ static RzList* sections(RBinFile *bf) {
 		if (obj->ehdr.e_type == ET_REL) {
 			ptr->add = true;
 		}
-		ptr->perm = R_PERM_RW;
+		ptr->perm = RZ_PERM_RW;
 		ptr->is_segment = true;
 		rz_list_append (ret, ptr);
 	}
@@ -334,7 +334,7 @@ static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, in
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 
 	struct Elf_(rz_bin_elf_obj_t)* obj = bf->o->bin_obj;
-	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	RBinAddr *ptr = RZ_NEW0 (RBinAddr);
 	if (ptr) {
 		ptr->paddr = Elf_(rz_bin_elf_v2p) (obj, vaddr);
 		ptr->vaddr = vaddr;
@@ -359,11 +359,11 @@ static void process_constructors(RBinFile *bf, RzList *ret, int bits) {
 	rz_list_foreach (secs, iter, sec) {
 		type = -1;
 		if (!strcmp (sec->name, ".fini_array")) {
-			type = R_BIN_ENTRY_TYPE_FINI;
+			type = RZ_BIN_ENTRY_TYPE_FINI;
 		} else if (!strcmp (sec->name, ".init_array")) {
-			type = R_BIN_ENTRY_TYPE_INIT;
+			type = RZ_BIN_ENTRY_TYPE_INIT;
 		} else if (!strcmp (sec->name, ".preinit_array")) {
-			type = R_BIN_ENTRY_TYPE_PREINIT;
+			type = RZ_BIN_ENTRY_TYPE_PREINIT;
 		}
 		if (type != -1) {
 			ut8 *buf = calloc (sec->size, 1);
@@ -410,7 +410,7 @@ static RzList* entries(RBinFile *bf) {
 	}
 	ut64 pa = Elf_(rz_bin_elf_get_entry_offset) (obj);
 	if (pa != UT64_MAX) {
-		if (!(ptr = R_NEW0 (RBinAddr))) {
+		if (!(ptr = RZ_NEW0 (RBinAddr))) {
 			return ret;
 		}
 		ptr->paddr = pa;
@@ -461,13 +461,13 @@ static RzList* entries(RBinFile *bf) {
 	for (i = 0; !symbol[i].last; i++) {
 		if (!strncmp (symbol[i].name, "Java", 4)) {
 			if (rz_str_endswith (symbol[i].name, "_init")) {
-				if (!(ptr = R_NEW0 (RBinAddr))) {
+				if (!(ptr = RZ_NEW0 (RBinAddr))) {
 					return ret;
 				}
 				ptr->paddr = symbol[i].offset;
 				ptr->vaddr = Elf_(rz_bin_elf_p2v) (obj, ptr->paddr);
 				ptr->hpaddr = UT64_MAX;
-				ptr->type = R_BIN_ENTRY_TYPE_INIT;
+				ptr->type = RZ_BIN_ENTRY_TYPE_INIT;
 				rz_list_append (ret, ptr);
 				break;
 			}
@@ -551,7 +551,7 @@ static RzList* imports(RBinFile *bf) {
 		return NULL;
 	}
 	for (i = 0; !import[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinImport))) {
+		if (!(ptr = RZ_NEW0 (RBinImport))) {
 			break;
 		}
 		ptr->name = strdup (import[i].name);
@@ -588,7 +588,7 @@ static RBinReloc *reloc_convert(struct Elf_(rz_bin_elf_obj_t) *bin, RBinElfReloc
 
 	ut64 B = bin->baddr;
 	ut64 P = rel->rva; // rva has taken baddr into account
-	RBinReloc *r = R_NEW0 (RBinReloc);
+	RBinReloc *r = RZ_NEW0 (RBinReloc);
 	if (!r) {
 		return NULL;
 	}
@@ -606,86 +606,86 @@ static RBinReloc *reloc_convert(struct Elf_(rz_bin_elf_obj_t) *bin, RBinElfReloc
 	r->vaddr = rel->rva;
 	r->paddr = rel->offset;
 
-	#define SET(T) r->type = R_BIN_RELOC_ ## T; r->additive = 0; return r
-	#define ADD(T, A) r->type = R_BIN_RELOC_ ## T; r->addend += A; r->additive = rel->rel_mode == DT_RELA; return r
+	#define SET(T) r->type = RZ_BIN_RELOC_ ## T; r->additive = 0; return r
+	#define ADD(T, A) r->type = RZ_BIN_RELOC_ ## T; r->addend += A; r->additive = rel->rel_mode == DT_RELA; return r
 
 	switch (bin->ehdr.e_machine) {
 	case EM_386: switch (rel->type) {
-		case R_386_NONE:     break; // malloc then free. meh. then again, there's no real world use for _NONE.
-		case R_386_32:       ADD(32, 0);
-		case R_386_PC32:     ADD(32,-P);
-		case R_386_GLOB_DAT: SET(32);
-		case R_386_JMP_SLOT: SET(32);
-		case R_386_RELATIVE: ADD(32, B);
-		case R_386_GOTOFF:   ADD(32,-GOT);
-		case R_386_GOTPC:    ADD(32, GOT-P);
-		case R_386_16:       ADD(16, 0);
-		case R_386_PC16:     ADD(16,-P);
-		case R_386_8:        ADD(8,  0);
-		case R_386_PC8:      ADD(8, -P);
-		case R_386_COPY:     ADD(32, 0); // XXX: copy symbol at runtime
-		case R_386_IRELATIVE: r->is_ifunc = true; SET(32);
+		case RZ_386_NONE:     break; // malloc then free. meh. then again, there's no real world use for _NONE.
+		case RZ_386_32:       ADD(32, 0);
+		case RZ_386_PC32:     ADD(32,-P);
+		case RZ_386_GLOB_DAT: SET(32);
+		case RZ_386_JMP_SLOT: SET(32);
+		case RZ_386_RELATIVE: ADD(32, B);
+		case RZ_386_GOTOFF:   ADD(32,-GOT);
+		case RZ_386_GOTPC:    ADD(32, GOT-P);
+		case RZ_386_16:       ADD(16, 0);
+		case RZ_386_PC16:     ADD(16,-P);
+		case RZ_386_8:        ADD(8,  0);
+		case RZ_386_PC8:      ADD(8, -P);
+		case RZ_386_COPY:     ADD(32, 0); // XXX: copy symbol at runtime
+		case RZ_386_IRELATIVE: r->is_ifunc = true; SET(32);
 		default: break;
 		}
 		break;
 	case EM_X86_64: switch (rel->type) {
-		case R_X86_64_NONE:	break; // malloc then free. meh. then again, there's no real world use for _NONE.
-		case R_X86_64_64:	ADD(64, 0);
-		case R_X86_64_PLT32:	ADD(32,-P /* +L */);
-		case R_X86_64_GOT32:	ADD(32, GOT);
-		case R_X86_64_PC32:	ADD(32,-P);
-		case R_X86_64_GLOB_DAT: r->vaddr -= rel->sto; SET(64);
-		case R_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64);
-		case R_X86_64_RELATIVE:	ADD(64, B);
-		case R_X86_64_32:	ADD(32, 0);
-		case R_X86_64_32S:	ADD(32, 0);
-		case R_X86_64_16:	ADD(16, 0);
-		case R_X86_64_PC16:	ADD(16,-P);
-		case R_X86_64_8:	ADD(8,  0);
-		case R_X86_64_PC8:	ADD(8, -P);
-		case R_X86_64_GOTPCREL:	ADD(64, GOT-P);
-		case R_X86_64_COPY:	ADD(64, 0); // XXX: copy symbol at runtime
-		case R_X86_64_IRELATIVE: r->is_ifunc = true; SET(64);
+		case RZ_X86_64_NONE:	break; // malloc then free. meh. then again, there's no real world use for _NONE.
+		case RZ_X86_64_64:	ADD(64, 0);
+		case RZ_X86_64_PLT32:	ADD(32,-P /* +L */);
+		case RZ_X86_64_GOT32:	ADD(32, GOT);
+		case RZ_X86_64_PC32:	ADD(32,-P);
+		case RZ_X86_64_GLOB_DAT: r->vaddr -= rel->sto; SET(64);
+		case RZ_X86_64_JUMP_SLOT: r->vaddr -= rel->sto; SET(64);
+		case RZ_X86_64_RELATIVE:	ADD(64, B);
+		case RZ_X86_64_32:	ADD(32, 0);
+		case RZ_X86_64_32S:	ADD(32, 0);
+		case RZ_X86_64_16:	ADD(16, 0);
+		case RZ_X86_64_PC16:	ADD(16,-P);
+		case RZ_X86_64_8:	ADD(8,  0);
+		case RZ_X86_64_PC8:	ADD(8, -P);
+		case RZ_X86_64_GOTPCREL:	ADD(64, GOT-P);
+		case RZ_X86_64_COPY:	ADD(64, 0); // XXX: copy symbol at runtime
+		case RZ_X86_64_IRELATIVE: r->is_ifunc = true; SET(64);
 		default: break;
 		}
 		break;
 	case EM_ARM:
 		switch (rel->type) {
-		case R_ARM_NONE:	break;
-		case R_ARM_ABS32:	ADD(32, 0);
-		case R_ARM_REL32:	ADD(32,-P);
-		case R_ARM_ABS16:	ADD(16, 0);
-		case R_ARM_ABS8:	ADD(8,  0);
-		case R_ARM_SBREL32:	ADD(32, -B);
-		case R_ARM_GLOB_DAT:	ADD(32, 0);
-		case R_ARM_JUMP_SLOT:	ADD(32, 0);
-		case R_ARM_RELATIVE:	ADD(32, B);
-		case R_ARM_GOTOFF:	ADD(32,-GOT);
+		case RZ_ARM_NONE:	break;
+		case RZ_ARM_ABS32:	ADD(32, 0);
+		case RZ_ARM_REL32:	ADD(32,-P);
+		case RZ_ARM_ABS16:	ADD(16, 0);
+		case RZ_ARM_ABS8:	ADD(8,  0);
+		case RZ_ARM_SBREL32:	ADD(32, -B);
+		case RZ_ARM_GLOB_DAT:	ADD(32, 0);
+		case RZ_ARM_JUMP_SLOT:	ADD(32, 0);
+		case RZ_ARM_RELATIVE:	ADD(32, B);
+		case RZ_ARM_GOTOFF:	ADD(32,-GOT);
 		default: ADD(32,GOT); break; // reg relocations
 		}
 		break;
 	case EM_RISCV:
 		switch (rel->type) {
-		case R_RISCV_NONE: break;
-		case R_RISCV_JUMP_SLOT: ADD(64, 0);
-		case R_RISCV_RELATIVE: ADD(64, B);
+		case RZ_RISCV_NONE: break;
+		case RZ_RISCV_JUMP_SLOT: ADD(64, 0);
+		case RZ_RISCV_RELATIVE: ADD(64, B);
 		default: ADD(64, GOT); break; // reg relocations
 		}
 		break;
 	case EM_AARCH64: switch (rel->type) {
-		case R_AARCH64_NONE: break;
-		case R_AARCH64_ABS32: ADD (32, 0);
-		case R_AARCH64_ABS16: ADD (16, 0);
-		case R_AARCH64_GLOB_DAT: SET (64);
-		case R_AARCH64_JUMP_SLOT: SET (64);
-		case R_AARCH64_RELATIVE: ADD (64, B);
+		case RZ_AARCH64_NONE: break;
+		case RZ_AARCH64_ABS32: ADD (32, 0);
+		case RZ_AARCH64_ABS16: ADD (16, 0);
+		case RZ_AARCH64_GLOB_DAT: SET (64);
+		case RZ_AARCH64_JUMP_SLOT: SET (64);
+		case RZ_AARCH64_RELATIVE: ADD (64, B);
 		default: break; // reg relocations
 		}
 		break;
 	case EM_PPC: switch (rel->type) {
-		case R_PPC_NONE:    	break;
-		case R_PPC_GLOB_DAT:    ADD (32, 0);
-		case R_PPC_JMP_SLOT:    ADD (32, 0);
+		case RZ_PPC_NONE:    	break;
+		case RZ_PPC_GLOB_DAT:    ADD (32, 0);
+		case RZ_PPC_JMP_SLOT:    ADD (32, 0);
 		default:
 			eprintf ("unimplemented ELF/PPC reloc type %d\n", rel->type);
 		break;
@@ -759,23 +759,23 @@ static void _patch_reloc(ut16 e_machine, RzIOBind *iob, RBinElfReloc *rel, ut64 
 	case EM_PPC64: {
 		int low = 0, word = 0;
 		switch (rel->type) {
-		case R_PPC64_REL16_HA:
+		case RZ_PPC64_REL16_HA:
 			word = 2;
 			val = (S + A - P + 0x8000) >> 16;
 			break;
-		case R_PPC64_REL16_LO:
+		case RZ_PPC64_REL16_LO:
 			word = 2;
 			val = (S + A - P) & 0xffff;
 			break;
-		case R_PPC64_REL14:
+		case RZ_PPC64_REL14:
 			low = 14;
 			val = (st64)(S + A - P) >> 2;
 			break;
-		case R_PPC64_REL24:
+		case RZ_PPC64_REL24:
 			low = 24;
 			val = (st64)(S + A - P) >> 2;
 			break;
-		case R_PPC64_REL32:
+		case RZ_PPC64_REL32:
 			word = 4;
 			val = S + A - P;
 			break;
@@ -816,49 +816,49 @@ static void _patch_reloc(ut16 e_machine, RzIOBind *iob, RBinElfReloc *rel, ut64 
 	case EM_X86_64: {
 		int word = 0;
 		switch (rel->type) {
-		case R_X86_64_8:
+		case RZ_X86_64_8:
 			word = 1;
 			val = S + A;
 			break;
-		case R_X86_64_16:
+		case RZ_X86_64_16:
 			word = 2;
 			val = S + A;
 			break;
-		case R_X86_64_32:
-		case R_X86_64_32S:
+		case RZ_X86_64_32:
+		case RZ_X86_64_32S:
 			word = 4;
 			val = S + A;
 			break;
-		case R_X86_64_64:
+		case RZ_X86_64_64:
 			word = 8;
 			val = S + A;
 			break;
-		case R_X86_64_GLOB_DAT:
-		case R_X86_64_JUMP_SLOT:
+		case RZ_X86_64_GLOB_DAT:
+		case RZ_X86_64_JUMP_SLOT:
 			word = 4;
 			val = S;
 			break;
-		case R_X86_64_PC8:
+		case RZ_X86_64_PC8:
 			word = 1;
 			val = S + A - P;
 			break;
-		case R_X86_64_PC16:
+		case RZ_X86_64_PC16:
 			word = 2;
 			val = S + A - P;
 			break;
-		case R_X86_64_PC32:
+		case RZ_X86_64_PC32:
 			word = 4;
 			val = S + A - P;
 			break;
-		case R_X86_64_PC64:
+		case RZ_X86_64_PC64:
 			word = 8;
 			val = S + A - P;
 			break;
-		case R_X86_64_PLT32:
+		case RZ_X86_64_PLT32:
 			word = 4;
 			val = L + A - P;
 			break;
-		case R_X86_64_RELATIVE:
+		case RZ_X86_64_RELATIVE:
 			word = 8;
 			val = B + A;
 			break;
@@ -939,7 +939,7 @@ static RzList* patch_relocs(RBin *b) {
 	// reserve at least that space
 	size = bin->g_reloc_num * cdsz;
 	char *muri = rz_str_newf ("malloc://%" PFMT64u, size);
-	RzIODesc *gotr2desc = b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr);
+	RzIODesc *gotr2desc = b->iob.open_at (io, muri, RZ_PERM_R, 0664, n_vaddr);
 	free (muri);
 	if (!gotr2desc) {
 		return NULL;
@@ -1044,10 +1044,10 @@ static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
 			ret->lang = "go";
 			is_go = true;
 		}
-		# define R_BIN_RANDOMDATA_RETGUARD_SZ 48
+		# define RZ_BIN_RANDOMDATA_RETGUARD_SZ 48
 		if (!strcmp (section->name, ".openbsd.randomdata")) {
 			// The retguard cookie adds 8 per return function inst.
-			ret->has_retguard = (section->size >= R_BIN_RANDOMDATA_RETGUARD_SZ);
+			ret->has_retguard = (section->size >= RZ_BIN_RANDOMDATA_RETGUARD_SZ);
 			break;
 		}
 	}
@@ -1074,7 +1074,7 @@ static RBinInfo* info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	char *str;
 
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 	ret->file = bf->file
@@ -1145,12 +1145,12 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->compiler = Elf_(rz_bin_elf_compiler) (obj);
 	ret->dbg_info = 0;
 	if (!Elf_(rz_bin_elf_get_stripped) (obj)) {
-		ret->dbg_info |= R_BIN_DBG_LINENUMS | R_BIN_DBG_SYMS | R_BIN_DBG_RELOCS;
+		ret->dbg_info |= RZ_BIN_DBG_LINENUMS | RZ_BIN_DBG_SYMS | RZ_BIN_DBG_RELOCS;
 	} else {
-		ret->dbg_info |= R_BIN_DBG_STRIPPED;
+		ret->dbg_info |= RZ_BIN_DBG_STRIPPED;
 	}
 	if (Elf_(rz_bin_elf_is_static) (obj)) {
-		ret->dbg_info |= R_BIN_DBG_STATIC;
+		ret->dbg_info |= RZ_BIN_DBG_STATIC;
 	}
 	lookup_sections (bf, ret);
 	lookup_symbols (bf, ret);

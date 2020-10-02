@@ -80,10 +80,10 @@ static void visual_tabset(RzCore *core, RzCoreVisualTab *tab) {
 	rz_config_set_i (core->config, "asm.cmt.col", tab->asm_cmt_col);
 	rz_config_set_i (core->config, "hex.cols", tab->cols);
 	rz_config_set_i (core->config, "scr.dumpcols", tab->dumpCols);
-	printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
-	printfmtSingle[2] = print3Formats[R_ABS(current3format) % PRINT_3_FORMATS];
-	printfmtSingle[3] = print4Formats[R_ABS(current4format) % PRINT_4_FORMATS];
-	printfmtSingle[4] = print5Formats[R_ABS(current5format) % PRINT_5_FORMATS];
+	printfmtSingle[0] = printHexFormats[RZ_ABS(hexMode) % PRINT_HEX_FORMATS];
+	printfmtSingle[2] = print3Formats[RZ_ABS(current3format) % PRINT_3_FORMATS];
+	printfmtSingle[3] = print4Formats[RZ_ABS(current4format) % PRINT_4_FORMATS];
+	printfmtSingle[4] = print5Formats[RZ_ABS(current5format) % PRINT_5_FORMATS];
 }
 
 static void visual_tabget(RzCore *core, RzCoreVisualTab *tab) {
@@ -111,7 +111,7 @@ static void visual_tabget(RzCore *core, RzCoreVisualTab *tab) {
 }
 
 static RzCoreVisualTab *rz_core_visual_tab_new(RzCore *core) {
-	RzCoreVisualTab *tab = R_NEW0 (RzCoreVisualTab);
+	RzCoreVisualTab *tab = RZ_NEW0 (RzCoreVisualTab);
 	if (tab) {
 		visual_tabget (core, tab);
 	}

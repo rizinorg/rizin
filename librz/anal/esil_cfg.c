@@ -71,7 +71,7 @@ static char *condrets_strtok(char *str, const char tok) {
 }
 
 RzAnalEsilOp *esil_get_op (RzAnalEsil *esil, const char *op) {
-	rz_return_val_if_fail (R_STR_ISNOTEMPTY (op) && esil && esil->ops, NULL);
+	rz_return_val_if_fail (RZ_STR_ISNOTEMPTY (op) && esil && esil->ops, NULL);
 	return ht_pp_find (esil->ops, op, NULL);
 }
 
@@ -154,16 +154,16 @@ void _handle_if_enter (EsilCfgGen *gen, ut32 id, const bool has_next) {
 		return;
 	}
 	// TODO: check allocation here
-	EsilCfgScopeCookie *cookie = R_NEW0 (EsilCfgScopeCookie);
+	EsilCfgScopeCookie *cookie = RZ_NEW0 (EsilCfgScopeCookie);
 
 	// get current bb
 	//	RzAnalEsilBB *bb = (RzAnalEsilBB *)gen->cur->data;
 
 	// create if-enter-bb
-	RzAnalEsilBB *entered_bb = R_NEW0 (RzAnalEsilBB);
+	RzAnalEsilBB *entered_bb = RZ_NEW0 (RzAnalEsilBB);
 	entered_bb->first.off = entered_bb->last.off = gen->off;
 	entered_bb->first.idx = entered_bb->last.idx = id + 1;
-	entered_bb->enter = R_ANAL_ESIL_BLOCK_ENTER_TRUE;
+	entered_bb->enter = RZ_ANAL_ESIL_BLOCK_ENTER_TRUE;
 
 	// create if-entered-graph-node
 	RGraphNode *entered_node = rz_graph_add_node (gen->cfg->g, entered_bb);
@@ -188,7 +188,7 @@ void _handle_else_enter (EsilCfgGen *gen, ut32 id, const bool has_next) {
 	EsilCfgScopeCookie *cookie = (EsilCfgScopeCookie *)rz_stack_peek (gen->ifelse);
 
 	// create if-enter-bb
-	RzAnalEsilBB *entered_bb = R_NEW0 (RzAnalEsilBB);
+	RzAnalEsilBB *entered_bb = RZ_NEW0 (RzAnalEsilBB);
 	entered_bb->first.off = entered_bb->last.off = gen->off;
 	entered_bb->first.idx = entered_bb->last.idx = id + 1;
 
@@ -198,13 +198,13 @@ void _handle_else_enter (EsilCfgGen *gen, ut32 id, const bool has_next) {
 	rz_rbtree_cont_insert (gen->blocks, entered_node, _graphnode_esilbb_insert_cmp, NULL);
 
 	if (cookie->is_else) {
-		entered_bb->enter = R_ANAL_ESIL_BLOCK_ENTER_TRUE;
+		entered_bb->enter = RZ_ANAL_ESIL_BLOCK_ENTER_TRUE;
 		rz_graph_add_edge (gen->cfg->g, cookie->if_block, entered_node);
 		cookie->if_block = entered_node;
 		cookie->else_block = gen->cur;
 		cookie->is_else = false;
 	} else {
-		entered_bb->enter = R_ANAL_ESIL_BLOCK_ENTER_FALSE;
+		entered_bb->enter = RZ_ANAL_ESIL_BLOCK_ENTER_FALSE;
 		rz_graph_add_edge (gen->cfg->g, cookie->else_block, entered_node);
 		cookie->else_block = entered_node;
 		cookie->if_block = gen->cur;
@@ -225,7 +225,7 @@ void _handle_fi_leave (EsilCfgGen *gen, ut32 id, const bool has_next) {
 	if (memcmp (&cur_bb->first, &cur_bb->last, sizeof (RzAnalEsilEOffset))) {
 		// TODO: add some thoughts in comments here
 		cur_bb->last.idx--;
-		RzAnalEsilBB *leaving_bb = R_NEW0 (RzAnalEsilBB);
+		RzAnalEsilBB *leaving_bb = RZ_NEW0 (RzAnalEsilBB);
 		leaving_bb->first.off = leaving_bb->last.off = gen->off;
 		leaving_bb->first.idx = leaving_bb->last.idx = id;
 		RGraphNode *leaving_node = rz_graph_add_node (gen->cfg->g, leaving_bb);
@@ -265,7 +265,7 @@ bool _round_0_cb (void *user, void *data, ut32 id) {
 	RzAnalEsilBB *bb = (RzAnalEsilBB *)gen->cur->data;
 	RzAnalEsilOp *op = esil_get_op (gen->esil, atom);
 	bb->last.idx = (ut16)id;
-	if (op && op->type == R_ANAL_ESIL_OP_TYPE_CONTROL_FLOW) {
+	if (op && op->type == RZ_ANAL_ESIL_OP_TYPE_CONTROL_FLOW) {
 		_handle_control_flow_ifelsefi (gen, atom, id);
 	}
 	return true;
@@ -276,7 +276,7 @@ RGraphNode *_common_break_goto (EsilCfgGen *gen, ut32 id) {
 	RGraphNode *gnode = rz_rbtree_cont_find (gen->blocks, &off, _graphnode_esilbb_find_cmp, NULL);
 	RzAnalEsilBB *bb = (RzAnalEsilBB *)gnode->data;
 	if (id != bb->last.idx) {
-		RzAnalEsilBB *next_bb = R_NEW0 (RzAnalEsilBB);
+		RzAnalEsilBB *next_bb = RZ_NEW0 (RzAnalEsilBB);
 		// split blocks
 		next_bb->first.off = gen->off;
 		next_bb->first.idx = id + 1;
@@ -326,12 +326,12 @@ void _handle_goto (EsilCfgGen *gen, ut32 idx) {
 				free (rz_stack_pop (gen->vals));
 			}
 			for (j = 0; j < op->push; j++) {
-				EsilVal *val = R_NEW (EsilVal);
+				EsilVal *val = RZ_NEW (EsilVal);
 				val->type = ESIL_VAL_RESULT;
 				rz_stack_push (gen->vals, val);
 			}
 		} else {
-			EsilVal *val = R_NEW (EsilVal);
+			EsilVal *val = RZ_NEW (EsilVal);
 			if (rz_reg_get (gen->esil->anal->reg, atom, -1)) {
 				val->type = ESIL_VAL_REG;
 			} else {
@@ -358,7 +358,7 @@ void _handle_goto (EsilCfgGen *gen, ut32 idx) {
 	} else {
 		RzAnalEsilBB *dst_bb = (RzAnalEsilBB *)dst_node->data;
 		if (dst_bb->first.idx != v->val) {
-			RzAnalEsilBB *split_bb = R_NEW0 (RzAnalEsilBB);
+			RzAnalEsilBB *split_bb = RZ_NEW0 (RzAnalEsilBB);
 			split_bb[0] = dst_bb[0];
 			dst_bb->last.idx = v->val - 1;
 			split_bb->first.idx = v->val;
@@ -379,7 +379,7 @@ bool _round_1_cb (void *user, void *data, ut32 id) {
 	EsilCfgGen *gen = (EsilCfgGen *)user;
 	char *atom = (char *)data;
 	RzAnalEsilOp *op = esil_get_op (gen->esil, atom);
-	if (op && op->type == R_ANAL_ESIL_OP_TYPE_CONTROL_FLOW) {
+	if (op && op->type == RZ_ANAL_ESIL_OP_TYPE_CONTROL_FLOW) {
 		if (!strcmp ("BREAK", atom)) {
 			_handle_break (gen, id);
 		}
@@ -418,7 +418,7 @@ static RzAnalEsilCFG *esil_cfg_gen(RzAnalEsilCFG *cfg, RzAnal *anal, RIDStorage 
 	if (!_expr) {
 		return cfg; //NULL?
 	}
-	RzAnalEsilBB *end_bb = R_NEW0 (RzAnalEsilBB);
+	RzAnalEsilBB *end_bb = RZ_NEW0 (RzAnalEsilBB);
 	if (!end_bb) {
 		free (_expr);
 		return cfg;
@@ -499,9 +499,9 @@ static RzAnalEsilCFG *esil_cfg_gen(RzAnalEsilCFG *cfg, RzAnal *anal, RIDStorage 
 }
 
 RZ_API RzAnalEsilCFG *rz_anal_esil_cfg_new(void) {
-	RzAnalEsilCFG *cf = R_NEW0 (RzAnalEsilCFG);
+	RzAnalEsilCFG *cf = RZ_NEW0 (RzAnalEsilCFG);
 	if (cf) {
-		RzAnalEsilBB *p = R_NEW0 (RzAnalEsilBB);
+		RzAnalEsilBB *p = RZ_NEW0 (RzAnalEsilBB);
 		if (!p) {
 			free (cf);
 			return NULL;
@@ -575,7 +575,7 @@ RZ_API RzAnalEsilCFG *rz_anal_esil_cfg_op(RzAnalEsilCFG *cfg, RzAnal *anal, RzAn
 	if (!op || !anal || !anal->reg || !anal->esil) {
 		return NULL;
 	}
-	RzAnalEsilBB *glue_bb = R_NEW0 (RzAnalEsilBB);
+	RzAnalEsilBB *glue_bb = RZ_NEW0 (RzAnalEsilBB);
 	if (!glue_bb) {
 		eprintf ("Couldn't allocate glue_bb\n");
 		return NULL;
@@ -586,7 +586,7 @@ RZ_API RzAnalEsilCFG *rz_anal_esil_cfg_op(RzAnalEsilCFG *cfg, RzAnal *anal, RzAn
 		eprintf ("Couldn't allocate glue\n");
 		return NULL;
 	}
-	const char *pc = rz_reg_get_name (anal->reg, R_REG_NAME_PC);
+	const char *pc = rz_reg_get_name (anal->reg, RZ_REG_NAME_PC);
 	rz_strbuf_setf (glue, "0x%" PFMT64x ",%s,:=,", op->addr + op->size, pc);
 	glue_bb->expr = strdup (rz_strbuf_get (glue));
 	rz_strbuf_free (glue);
@@ -595,7 +595,7 @@ RZ_API RzAnalEsilCFG *rz_anal_esil_cfg_op(RzAnalEsilCFG *cfg, RzAnal *anal, RzAn
 		eprintf ("Couldn't strdup\n");
 		return NULL;
 	}
-	glue_bb->enter = R_ANAL_ESIL_BLOCK_ENTER_GLUE;
+	glue_bb->enter = RZ_ANAL_ESIL_BLOCK_ENTER_GLUE;
 	glue_bb->first.off = glue_bb->last.off = op->addr;
 	glue_bb->first.idx = glue_bb->last.idx = 0;
 
@@ -634,10 +634,10 @@ static void merge_2_blocks(RzAnalEsilCFG *cfg, RGraphNode *node, RGraphNode *blo
 	}
 	RzAnalEsilBB *block_bb, *node_bb = (RzAnalEsilBB *)node->data;
 	block_bb = (RzAnalEsilBB *)block->data;
-	if ((block_bb->enter == R_ANAL_ESIL_BLOCK_ENTER_TRUE) || (block_bb->enter == R_ANAL_ESIL_BLOCK_ENTER_FALSE)) {
+	if ((block_bb->enter == RZ_ANAL_ESIL_BLOCK_ENTER_TRUE) || (block_bb->enter == RZ_ANAL_ESIL_BLOCK_ENTER_FALSE)) {
 		node_bb->enter = block_bb->enter;
 	} else {
-		node_bb->enter = R_ANAL_ESIL_BLOCK_ENTER_NORMAL;
+		node_bb->enter = RZ_ANAL_ESIL_BLOCK_ENTER_NORMAL;
 	}
 	RStrBuf *buf = rz_strbuf_new (block_bb->expr);
 	node_bb->first = block_bb->first;
@@ -662,7 +662,7 @@ RZ_API void rz_anal_esil_cfg_merge_blocks(RzAnalEsilCFG *cfg) {
 			RzAnalEsilBB *bb = (RzAnalEsilBB *)node->data;
 			RGraphNode *top = (RGraphNode *)rz_list_get_top (node->out_nodes);
 			// segfaults here ?
-			if (!(top && bb->enter == R_ANAL_ESIL_BLOCK_ENTER_GLUE && (rz_list_length (top->in_nodes) > 1))) {
+			if (!(top && bb->enter == RZ_ANAL_ESIL_BLOCK_ENTER_GLUE && (rz_list_length (top->in_nodes) > 1))) {
 				RGraphNode *block = (RGraphNode *)rz_list_get_top (node->in_nodes);
 				if (rz_list_length (block->out_nodes) == 1) {
 					merge_2_blocks (cfg, node, block);

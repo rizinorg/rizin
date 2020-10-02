@@ -93,7 +93,7 @@ static RzList *entries(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	RBinAddr *ptr = RZ_NEW0 (RBinAddr);
 	if (ptr) {
 		ptr->paddr = N64_ROM_START;
 		ptr->vaddr = baddr (bf);
@@ -107,7 +107,7 @@ static RzList *sections(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	RBinSection *text = R_NEW0 (RBinSection);
+	RBinSection *text = RZ_NEW0 (RBinSection);
 	if (!text) {
 		rz_list_free (ret);
 		return NULL;
@@ -117,7 +117,7 @@ static RzList *sections(RBinFile *bf) {
 	text->vsize = text->size;
 	text->paddr = N64_ROM_START;
 	text->vaddr = baddr (bf);
-	text->perm = R_PERM_RX;
+	text->perm = RZ_PERM_RX;
 	text->add = true;
 	rz_list_append (ret, text);
 	return ret;
@@ -129,7 +129,7 @@ static ut64 boffset(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	char GameName[21] = {0};
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = RZ_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -145,7 +145,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-#if !R_BIN_Z64
+#if !RZ_BIN_Z64
 
 RBinPlugin rz_bin_plugin_z64 = {
 	.name = "z64",
@@ -160,11 +160,11 @@ RBinPlugin rz_bin_plugin_z64 = {
 	.info = &info
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_z64,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif
 #endif

@@ -2,12 +2,12 @@
 
 #include <rz_core.h>
 
-#define R_VISUAL_ASM_BUFSIZE 1024
+#define RZ_VISUAL_ASM_BUFSIZE 1024
 
 typedef struct {
 	RzCore *core;
-	char blockbuf[R_VISUAL_ASM_BUFSIZE];
-	char codebuf[R_VISUAL_ASM_BUFSIZE];
+	char blockbuf[RZ_VISUAL_ASM_BUFSIZE];
+	char codebuf[RZ_VISUAL_ASM_BUFSIZE];
 	int oplen;
 	ut8 buf[128];
 	RzAsmCode *acode;
@@ -40,7 +40,7 @@ static int readline_callback(void *_a, const char *str) {
 			} else {
 				rz_cons_print ("\n\n");
 			}
-			int xlen = R_MIN (strlen (hex), R_VISUAL_ASM_BUFSIZE - 2);
+			int xlen = RZ_MIN (strlen (hex), RZ_VISUAL_ASM_BUFSIZE - 2);
 			strcpy (a->codebuf, a->blockbuf);
 			memcpy (a->codebuf, hex, xlen);
 			if (xlen >= strlen (a->blockbuf)) {

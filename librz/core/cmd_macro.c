@@ -20,7 +20,7 @@ static const char *help_msg_lparen[] = {
 };
 
 static void cmd_macro_init(RzCore *core, RzCmdDesc *parent) {
-	RzCmdDescriptor *d = R_NEW0 (RzCmdDescriptor);
+	RzCmdDescriptor *d = RZ_NEW0 (RzCmdDescriptor);
 	if (d) {
 		d->cmd = "(";
 		d->help_msg = help_msg_lparen;

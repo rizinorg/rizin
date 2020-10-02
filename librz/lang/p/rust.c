@@ -31,16 +31,16 @@ static int lang_rust_file(RzLang *lang, const char *file) {
 		libpath = ".";
 		libname = name;
 	}
-	rz_sys_setenv ("PKG_CONFIG_PATH", R2_LIBDIR"/pkgconfig");
+	rz_sys_setenv ("PKG_CONFIG_PATH", RZ_LIBDIR"/pkgconfig");
 	p = strstr (name, ".rs"); if (p) *p=0;
 	cc = rz_sys_getenv ("RUSTC");
 	if (cc && !*cc) {
-		R_FREE (cc);
+		RZ_FREE (cc);
 	}
 	if (!cc) {
 		cc = strdup ("rustc");
 	}
-	char *cmd = rz_str_newf ("%s --crate-type dylib %s -o %s/lib%s."R_LIB_EXT" -L native=/usr/local/lib/ -l rz_core",
+	char *cmd = rz_str_newf ("%s --crate-type dylib %s -o %s/lib%s."RZ_LIB_EXT" -L native=/usr/local/lib/ -l rz_core",
 		cc, file, libpath, libname);
 	free (cc);
 	if (rz_sandbox_system (cmd, 1) != 0) {
@@ -49,7 +49,7 @@ static int lang_rust_file(RzLang *lang, const char *file) {
 	}
 	free (cmd);
 
-	char *path = rz_str_newf ("%s/lib%s."R_LIB_EXT, libpath, libname);
+	char *path = rz_str_newf ("%s/lib%s."RZ_LIB_EXT, libpath, libname);
 	lib = rz_lib_dl_open (path);
 	if (lib!= NULL) {
 		void (*fcn)(RzCore *);

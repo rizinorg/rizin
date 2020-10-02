@@ -42,7 +42,7 @@ static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length, const ut8
 		return NULL;
 	}
 
-	RASN1Object *object = R_NEW0 (RASN1Object);
+	RASN1Object *object = RZ_NEW0 (RASN1Object);
 	if (!object) {
 		return NULL;
 	}
@@ -105,14 +105,14 @@ static ut32 rz_asn1_count_objects (const ut8 *buffer, ut32 length) {
 		// i do not care about the offset now.
 		object = asn1_parse_header (next, end - next, 0);
 		if (!object || next == object->sector) {
-			R_FREE (object);
+			RZ_FREE (object);
 			break;
 		}
 		next = object->sector + object->length;
 		counter++;
-		R_FREE (object);
+		RZ_FREE (object);
 	}
-	R_FREE (object);
+	RZ_FREE (object);
 	return counter;
 }
 
@@ -128,7 +128,7 @@ RZ_API RASN1Object *rz_asn1_create_object (const ut8 *buffer, ut32 length, const
 		ut32 count = rz_asn1_count_objects (object->sector, object->length);
 		if (count > 0) {
 			object->list.length = count;
-			object->list.objects = R_NEWS0 (RASN1Object*, count);
+			object->list.objects = RZ_NEWS0 (RASN1Object*, count);
 			if (!object->list.objects) {
 				rz_asn1_free_object (object);
 				return NULL;
@@ -156,7 +156,7 @@ RZ_API RASN1Binary *rz_asn1_create_binary (const ut8 *buffer, ut32 length) {
 	if (!buf) {
 		return NULL;
 	}
-	RASN1Binary* bin = R_NEW0 (RASN1Binary);
+	RASN1Binary* bin = RZ_NEW0 (RASN1Binary);
 	if (!bin) {
 		free (buf);
 		return NULL;
@@ -452,7 +452,7 @@ RZ_API void rz_asn1_free_object (RASN1Object *object) {
 		for (i = 0; i < object->list.length; i++) {
 			rz_asn1_free_object (object->list.objects[i]);
 		}
-		R_FREE (object->list.objects);
+		RZ_FREE (object->list.objects);
 	}
 	object->list.objects = NULL;
 	object->list.length = 0;

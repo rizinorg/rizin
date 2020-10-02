@@ -13,7 +13,7 @@ RZ_API RzSocketHTTPRequest *rz_socket_http_accept (RzSocket *s, RzSocketHTTPOpti
 	int content_length = 0, xx, yy;
 	int pxx = 1, first = 0;
 	char buf[1500], *p, *q;
-	RzSocketHTTPRequest *hr = R_NEW0 (RzSocketHTTPRequest);
+	RzSocketHTTPRequest *hr = RZ_NEW0 (RzSocketHTTPRequest);
 	if (!hr) {
 		return NULL;
 	}

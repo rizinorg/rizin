@@ -61,7 +61,7 @@ static bool _fill_bin_symbol(RBin *rbin, struct rz_bin_coff_obj *bin, int idx, R
 	}
 	ptr->name = coffname;
 	ptr->forwarder = "NONE";
-	ptr->bind = R_BIN_BIND_LOCAL_STR;
+	ptr->bind = RZ_BIN_BIND_LOCAL_STR;
 	ptr->is_imported = false;
 	if (s->n_scnum < bin->hdr.f_nscns + 1 && s->n_scnum > 0) {
 		//first index is 0 that is why -1
@@ -71,13 +71,13 @@ static bool _fill_bin_symbol(RBin *rbin, struct rz_bin_coff_obj *bin, int idx, R
 
 	switch (s->n_sclass) {
 	case COFF_SYM_CLASS_FUNCTION:
-		ptr->type = R_BIN_TYPE_FUNC_STR;
+		ptr->type = RZ_BIN_TYPE_FUNC_STR;
 		break;
 	case COFF_SYM_CLASS_FILE:
-		ptr->type = R_BIN_TYPE_FILE_STR;
+		ptr->type = RZ_BIN_TYPE_FILE_STR;
 		break;
 	case COFF_SYM_CLASS_SECTION:
-		ptr->type = R_BIN_TYPE_SECTION_STR;
+		ptr->type = RZ_BIN_TYPE_SECTION_STR;
 		break;
 	case COFF_SYM_CLASS_EXTERNAL:
 		if (s->n_scnum == COFF_SYM_SCNUM_UNDEF) {
@@ -85,11 +85,11 @@ static bool _fill_bin_symbol(RBin *rbin, struct rz_bin_coff_obj *bin, int idx, R
 			ptr->paddr = UT64_MAX;
 			ptr->bind = "NONE";
 		} else {
-			ptr->bind = R_BIN_BIND_GLOBAL_STR;
+			ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
 		}
 		ptr->type = (DTYPE_IS_FUNCTION (s->n_type) || !strcmp (coffname, "main"))
-			? R_BIN_TYPE_FUNC_STR
-			: R_BIN_TYPE_UNKNOWN_STR;
+			? RZ_BIN_TYPE_FUNC_STR
+			: RZ_BIN_TYPE_UNKNOWN_STR;
 		break;
 	case COFF_SYM_CLASS_STATIC:
 		if (s->n_scnum == COFF_SYM_SCNUM_ABS) {
@@ -97,16 +97,16 @@ static bool _fill_bin_symbol(RBin *rbin, struct rz_bin_coff_obj *bin, int idx, R
 			ptr->paddr = UT64_MAX;
 			ptr->name = rz_str_newf ("%s-0x%08x", coffname, s->n_value);
 			if (ptr->name) {
-				R_FREE (coffname);
+				RZ_FREE (coffname);
 			} else {
 				ptr->name = coffname;
 			}
 		} else if (sc_hdr && !memcmp (sc_hdr->s_name, s->n_name, 8)) {
-			ptr->type = R_BIN_TYPE_SECTION_STR;
+			ptr->type = RZ_BIN_TYPE_SECTION_STR;
 		} else {
 			ptr->type = DTYPE_IS_FUNCTION (s->n_type)
-				? R_BIN_TYPE_FUNC_STR
-				: R_BIN_TYPE_UNKNOWN_STR;
+				? RZ_BIN_TYPE_FUNC_STR
+				: RZ_BIN_TYPE_UNKNOWN_STR;
 		}
 		break;
 	default:
@@ -124,7 +124,7 @@ static bool is_imported_symbol(struct coff_symbol *s) {
 }
 
 static RBinImport *_fill_bin_import(struct rz_bin_coff_obj *bin, int idx) {
-	RBinImport *ptr = R_NEW0 (RBinImport);
+	RBinImport *ptr = RZ_NEW0 (RBinImport);
 	if (!ptr || idx < 0 || idx > bin->hdr.f_nsyms) {
 		free (ptr);
 		return NULL;
@@ -142,8 +142,8 @@ static RBinImport *_fill_bin_import(struct rz_bin_coff_obj *bin, int idx) {
 	ptr->name = coffname;
 	ptr->bind = "NONE";
 	ptr->type = DTYPE_IS_FUNCTION (s->n_type)
-		? R_BIN_TYPE_FUNC_STR
-		: R_BIN_TYPE_UNKNOWN_STR;
+		? RZ_BIN_TYPE_FUNC_STR
+		: RZ_BIN_TYPE_UNKNOWN_STR;
 	return ptr;
 }
 
@@ -179,7 +179,7 @@ static RzList *sections(RBinFile *bf) {
 			}
 			//IO does not like sections with the same name append idx
 			//since it will update it
-			ptr = R_NEW0 (RBinSection);
+			ptr = RZ_NEW0 (RBinSection);
 			if (!ptr) {
 				free (tmp);
 				return ret;
@@ -195,13 +195,13 @@ static RzList *sections(RBinFile *bf) {
 			ptr->add = true;
 			ptr->perm = 0;
 			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_READ) {
-				ptr->perm |= R_PERM_R;
+				ptr->perm |= RZ_PERM_R;
 			}
 			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_WRITE) {
-				ptr->perm |= R_PERM_W;
+				ptr->perm |= RZ_PERM_W;
 			}
 			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_EXECUTE) {
-				ptr->perm |= R_PERM_X;
+				ptr->perm |= RZ_PERM_X;
 			}
 			rz_list_append (ret, ptr);
 		}
@@ -220,7 +220,7 @@ static RzList *symbols(RBinFile *bf) {
 	ret->free = free;
 	if (obj->symbols) {
 		for (i = 0; i < obj->hdr.f_nsyms; i++) {
-			if (!(ptr = R_NEW0 (RBinSymbol))) {
+			if (!(ptr = RZ_NEW0 (RBinSymbol))) {
 				break;
 			}
 			if (_fill_bin_symbol (bf->rbin, obj, i, &ptr)) {
@@ -314,7 +314,7 @@ static RzList *_relocs_list(RBin *rbin, struct rz_bin_coff_obj *bin, bool patch,
 			if (!symbol) {
 				continue;
 			}
-			reloc = R_NEW0 (RBinReloc);
+			reloc = RZ_NEW0 (RBinReloc);
 			if (!reloc) {
 				continue;
 			}
@@ -345,12 +345,12 @@ static RzList *_relocs_list(RBin *rbin, struct rz_bin_coff_obj *bin, bool patch,
 				case COFF_FILE_MACHINE_I386:
 					switch (rel[j].rz_type) {
 					case COFF_REL_I386_DIR32:
-						reloc->type = R_BIN_RELOC_32;
+						reloc->type = RZ_BIN_RELOC_32;
 						rz_write_le32 (patch_buf, (ut32)sym_vaddr);
 						plen = 4;
 						break;
 					case COFF_REL_I386_REL32:
-						reloc->type = R_BIN_RELOC_32;
+						reloc->type = RZ_BIN_RELOC_32;
 						reloc->additive = 1;
 						ut64 data = _read_le32 (rbin, reloc->vaddr);
 						if (data == UT32_MAX) {
@@ -366,7 +366,7 @@ static RzList *_relocs_list(RBin *rbin, struct rz_bin_coff_obj *bin, bool patch,
 				case COFF_FILE_MACHINE_AMD64:
 					switch (rel[j].rz_type) {
 					case COFF_REL_AMD64_REL32:
-						reloc->type = R_BIN_RELOC_32;
+						reloc->type = RZ_BIN_RELOC_32;
 						reloc->additive = 1;
 						ut64 data = _read_le32 (rbin, reloc->vaddr);
 						if (data == UT32_MAX) {
@@ -412,7 +412,7 @@ static RzList *patch_relocs(RBin *b) {
 	if (bin->hdr.f_flags & COFF_FLAGS_TI_F_EXEC) {
 		return NULL;
 	}
-	if (!(io->cached & R_PERM_W)) {
+	if (!(io->cached & RZ_PERM_W)) {
 		eprintf (
 			"Warning: please run r2 with -e io.cache=true to patch "
 			"relocations\n");
@@ -432,7 +432,7 @@ static RzList *patch_relocs(RBin *b) {
 		m_vaddr = bin->size;
 		ut64 size = nimports * BYTES_PER_IMP_RELOC;
 		char *muri = rz_str_newf ("malloc://%" PFMT64u, size);
-		RzIODesc *desc = b->iob.open_at (io, muri, R_PERM_R, 0664, m_vaddr);
+		RzIODesc *desc = b->iob.open_at (io, muri, RZ_PERM_R, 0664, m_vaddr);
 		free (muri);
 		if (!desc) {
 			return NULL;
@@ -449,7 +449,7 @@ static RzList *patch_relocs(RBin *b) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = R_NEW0(RBinInfo);
+	RBinInfo *ret = RZ_NEW0(RBinInfo);
 	struct rz_bin_coff_obj *obj = (struct rz_bin_coff_obj*)bf->o->bin_obj;
 
 	ret->file = bf->file? strdup (bf->file): NULL;
@@ -464,16 +464,16 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->has_lit = true;
 
 	if (rz_coff_is_stripped (obj)) {
-		ret->dbg_info |= R_BIN_DBG_STRIPPED;
+		ret->dbg_info |= RZ_BIN_DBG_STRIPPED;
 	} else {
 		if (!(obj->hdr.f_flags & COFF_FLAGS_TI_F_RELFLG)) {
-			ret->dbg_info |= R_BIN_DBG_RELOCS;
+			ret->dbg_info |= RZ_BIN_DBG_RELOCS;
 		}
 		if (!(obj->hdr.f_flags & COFF_FLAGS_TI_F_LNNO)) {
-			ret->dbg_info |= R_BIN_DBG_LINENUMS;
+			ret->dbg_info |= RZ_BIN_DBG_LINENUMS;
 		}
 		if (!(obj->hdr.f_flags & COFF_FLAGS_TI_F_EXEC)) {
-			ret->dbg_info |= R_BIN_DBG_SYMS;
+			ret->dbg_info |= RZ_BIN_DBG_SYMS;
 		}
 	}
 
@@ -575,10 +575,10 @@ RBinPlugin rz_bin_plugin_coff = {
 	.patch_relocs = &patch_relocs
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_coff,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

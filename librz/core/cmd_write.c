@@ -368,7 +368,7 @@ static int wo_handler_old(void *data, const char *input) {
 				for (i = 0; ; i++) {
 					bits = ((ut64)1) << i;
 					const char *name = rz_hash_name (bits);
-					if R_STR_ISEMPTY (name) {
+					if RZ_STR_ISEMPTY (name) {
 						break;
 					}
 					printf ("  %s\n", name);
@@ -377,7 +377,7 @@ static int wo_handler_old(void *data, const char *input) {
 				for (i = 0; ; i++) {
 					bits = (1ULL) << i;
 					const char *name = rz_crypto_codec_name ((const RzCryptoSelector)bits);
-					if (R_STR_ISEMPTY (name)) {
+					if (RZ_STR_ISEMPTY (name)) {
 						break;
 					}
 					printf ("  %s\n", name);
@@ -386,7 +386,7 @@ static int wo_handler_old(void *data, const char *input) {
 				for (i = 0; ; i++) {
 					bits = (1ULL) << i;
 					const char *name = rz_crypto_name ((const RzCryptoSelector)bits);
-					if R_STR_ISEMPTY (name) {
+					if RZ_STR_ISEMPTY (name) {
 						break;
 					}
 					printf ("  %s\n", name);
@@ -476,7 +476,7 @@ static void cmd_write_value(RzCore *core, const char *input) {
 	if (core->file) {
 		rz_io_use_fd (core->io, core->file->fd);
 	}
-	ut64 res = rz_io_seek (core->io, core->offset, R_IO_SEEK_SET);
+	ut64 res = rz_io_seek (core->io, core->offset, RZ_IO_SEEK_SET);
 	if (res == UT64_MAX) return;
 	if (type == 0)
 		type = (off&UT64_32U)? 8: 4;
@@ -525,7 +525,7 @@ static RzCmdStatus common_wv_handler(RzCore *core, int argc, const char **argv, 
 
 	core->num->value = 0;
 	if (argc != 2) {
-		return R_CMD_STATUS_WRONG_ARGS;
+		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
 
 	off = rz_num_math (core->num, argv[1]);
@@ -533,9 +533,9 @@ static RzCmdStatus common_wv_handler(RzCore *core, int argc, const char **argv, 
 		rz_io_use_fd (core->io, core->file->fd);
 	}
 
-	ut64 res = rz_io_seek (core->io, core->offset, R_IO_SEEK_SET);
+	ut64 res = rz_io_seek (core->io, core->offset, RZ_IO_SEEK_SET);
 	if (res == UT64_MAX) {
-		return R_CMD_STATUS_ERROR;
+		return RZ_CMD_STATUS_ERROR;
 	}
 	if (type == 0) {
 		type = off & UT64_32U? 8: 4;
@@ -563,7 +563,7 @@ static RzCmdStatus common_wv_handler(RzCore *core, int argc, const char **argv, 
 	}
 
 	rz_core_block_read (core);
-	return R_CMD_STATUS_OK;
+	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus wv_handler(RzCore *core, int argc, const char **argv) {
@@ -866,18 +866,18 @@ static int wB_handler_old(void *data, const char *input) {
 
 static RzCmdStatus wB_handler(RzCore *core, int argc, const char **argv) {
 	if (argc != 2) {
-		return R_CMD_STATUS_WRONG_ARGS;
+		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
 	cmd_write_bits (core, 1, rz_num_math (core->num, argv[1]));
-	return R_CMD_STATUS_OK;
+	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus wB_minus_handler(RzCore *core, int argc, const char **argv) {
 	if (argc != 2) {
-		return R_CMD_STATUS_WRONG_ARGS;
+		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
 	cmd_write_bits (core, 0, rz_num_math (core->num, argv[1]));
-	return R_CMD_STATUS_OK;
+	return RZ_CMD_STATUS_OK;
 }
 
 static int w0_handler_common(RzCore *core, ut64 len) {
@@ -907,7 +907,7 @@ static int w0_handler_old(void *data, const char *input) {
 
 static RzCmdStatus w0_handler(RzCore *core, int argc, const char **argv) {
 	if (argc != 2) {
-		return R_CMD_STATUS_WRONG_ARGS;
+		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
 	ut64 len = rz_num_math (core->num, argv[1]);
 	return rz_cmd_int2status (w0_handler_common (core, len));
@@ -934,7 +934,7 @@ static int w_incdec_handler_old(void *data, const char *input, int inc) {
 
 static RzCmdStatus w_incdec_handler(RzCore *core, int argc, const char **argv, int inc_size) {
 	if (argc > 2) {
-		return R_CMD_STATUS_WRONG_ARGS;
+		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
 	st64 num = argc > 1? rz_num_math (core->num, argv[1]): 1;
 	const char *command = argv[0];
@@ -942,7 +942,7 @@ static RzCmdStatus w_incdec_handler(RzCore *core, int argc, const char **argv, i
 		num *= -1;
 	}
 	cmd_write_inc (core, inc_size, num);
-	return R_CMD_STATUS_OK;
+	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus w1_incdec_handler(RzCore *core, int argc, const char **argv) {
@@ -1419,12 +1419,12 @@ static int w_handler_old(void *data, const char *input) {
 
 static RzCmdStatus w_handler(RzCore *core, int argc, const char **argv) {
 	if (argc < 2) {
-		return R_CMD_STATUS_WRONG_ARGS;
+		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
 	char *s = rz_str_array_join (argv + 1, argc - 1, " ");
 	w_handler_common (core, s);
 	free (s);
-	return R_CMD_STATUS_OK;
+	return RZ_CMD_STATUS_OK;
 }
 
 static int wz_handler_old(void *data, const char *input) {
@@ -1476,7 +1476,7 @@ static int wt_handler_old(void *data, const char *input) {
 					ut8 *buf = calloc (1, sz);
 					rz_io_read_at (core->io, addr, buf, sz);
 					RzSocket *s = rz_socket_new (false);
-					if (rz_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, 0)) {
+					if (rz_socket_connect (s, host, port, RZ_SOCKET_PROTO_TCP, 0)) {
 						int done = 0;
 						eprintf ("Transfering file to the end-point...\n");
 						while (done < sz) {
@@ -1746,7 +1746,7 @@ static int wa_handler_old(void *data, const char *input) {
 		if (acode) {
 			if (input[0] == 'i') { // "wai"
 				RzAnalOp analop;
-				if (!rz_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC)) {
+				if (!rz_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, RZ_ANAL_OP_MASK_BASIC)) {
 					eprintf ("Invalid instruction?\n");
 					break;
 				}

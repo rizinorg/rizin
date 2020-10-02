@@ -1,18 +1,18 @@
 /* rizin - LGPL - Copyright 2017-2020 - condret, pancake, alvaro */
 
-#ifndef R2_IO_H
-#define R2_IO_H
+#ifndef RZ_IO_H
+#define RZ_IO_H
 
 #include "rz_list.h"
 #include <rz_util.h>
 #include "rz_socket.h"
 #include "rz_vector.h"
 
-#define R_IO_SEEK_SET	0
-#define R_IO_SEEK_CUR	1
-#define R_IO_SEEK_END	2
+#define RZ_IO_SEEK_SET	0
+#define RZ_IO_SEEK_CUR	1
+#define RZ_IO_SEEK_END	2
 
-#define R_IO_UNDOS 64
+#define RZ_IO_UNDOS 64
 
 #if HAVE_PTRACE
 
@@ -27,16 +27,16 @@
 #if (defined(__GLIBC__) && defined(__linux__))
 typedef enum __ptrace_request rz_ptrace_request_t;
 typedef void * rz_ptrace_data_t;
-#define R_PTRACE_NODATA NULL
+#define RZ_PTRACE_NODATA NULL
 #else
 #if __ANDROID__
 typedef int rz_ptrace_request_t;
 typedef void * rz_ptrace_data_t;
-#define R_PTRACE_NODATA NULL
+#define RZ_PTRACE_NODATA NULL
 #else
 typedef int rz_ptrace_request_t;
 typedef int rz_ptrace_data_t;
-#define R_PTRACE_NODATA 0
+#define RZ_PTRACE_NODATA 0
 #endif
 #endif
 #endif
@@ -45,7 +45,7 @@ typedef int rz_ptrace_data_t;
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(rz_io);
+RZ_LIB_VERSION_HEADER(rz_io);
 
 typedef struct rz_io_undos_t {
 	ut64 off;
@@ -62,8 +62,8 @@ typedef struct rz_io_undo_t {
 	int idx;
 	int undos; /* available undos */
 	int redos; /* available redos */
-	RzIOUndos seek[R_IO_UNDOS];
-	/*int fd[R_IO_UNDOS]; // XXX: Must be RzIODesc* */
+	RzIOUndos seek[RZ_IO_UNDOS];
+	/*int fd[RZ_IO_UNDOS]; // XXX: Must be RzIODesc* */
 } RzIOUndo;
 
 typedef struct rz_io_undo_w_t {
@@ -190,10 +190,10 @@ typedef struct rz_io_cache_t {
 	int written;
 } RzIOCache;
 
-#define R_IO_DESC_CACHE_SIZE (sizeof(ut64) * 8)
+#define RZ_IO_DESC_CACHE_SIZE (sizeof(ut64) * 8)
 typedef struct rz_io_desc_cache_t {
 	ut64 cached;
-	ut8 cdata[R_IO_DESC_CACHE_SIZE];
+	ut8 cdata[RZ_IO_DESC_CACHE_SIZE];
 } RzIODescCache;
 
 struct rz_io_bind_t;
@@ -406,8 +406,8 @@ RZ_API int rz_io_desc_read_at (RzIODesc *desc, ut64 addr, ut8 *buf, int len);
 RZ_API int rz_io_desc_write_at (RzIODesc *desc, ut64 addr, const ut8 *buf, int len);
 
 /* lifecycle */
-R_IPI bool rz_io_desc_init (RzIO *io);
-R_IPI bool rz_io_desc_fini (RzIO *io);
+RZ_IPI bool rz_io_desc_init (RzIO *io);
+RZ_IPI bool rz_io_desc_fini (RzIO *io);
 
 /* io/cache.c */
 RZ_API int rz_io_cache_invalidate(RzIO *io, ut64 from, ut64 to);
@@ -457,7 +457,7 @@ RZ_API int rz_io_fd_get_current(RzIO *io);
 RZ_API bool rz_io_use_fd (RzIO *io, int fd);
 
 
-#define rz_io_range_new()	R_NEW0(RzIORange)
+#define rz_io_range_new()	RZ_NEW0(RzIORange)
 #define rz_io_range_free(x)	free(x)
 
 /* io/ioutils.c */

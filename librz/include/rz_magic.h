@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2011-2014 - pancake */
 
-#ifndef R2_MAGIC_H
-#define R2_MAGIC_H
+#ifndef RZ_MAGIC_H
+#define RZ_MAGIC_H
 
 #include <rz_types.h>
 
@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(rz_magic);
+RZ_LIB_VERSION_HEADER(rz_magic);
 
 #ifndef MAGICFILE
 #define MAGICFILE "/etc/magic"
@@ -210,26 +210,26 @@ struct mlist {
 	struct mlist *next, *prev;
 };
 
-#define R_MAGIC_NONE                0x000000 /* No flags */
-#define R_MAGIC_DEBUG               0x000001 /* Turn on debugging */
-#define R_MAGIC_SYMLINK             0x000002 /* Follow symlinks */
-#define R_MAGIC_COMPRESS            0x000004 /* Check inside compressed files */
-#define R_MAGIC_DEVICES             0x000008 /* Look at the contents of devices */
-#define R_MAGIC_MIME_TYPE           0x000010 /* Return only the MIME type */
-#define R_MAGIC_CONTINUE            0x000020 /* Return all matches */
-#define R_MAGIC_CHECK               0x000040 /* Print warnings to stderr */
-#define R_MAGIC_PRESERVE_ATIME      0x000080 /* Restore access time on exit */
-#define R_MAGIC_RAW                 0x000100 /* Don't translate unprint chars */
-#define R_MAGIC_ERROR               0x000200 /* Handle ENOENT etc as real errors */
-#define R_MAGIC_MIME_ENCODING       0x000400 /* Return only the MIME encoding */
-#define R_MAGIC_MIME                (R_MAGIC_MIME_TYPE|R_MAGIC_MIME_ENCODING)
-#define R_MAGIC_NO_CHECK_COMPRESS   0x001000 /* Don't check for compressed files */
-#define R_MAGIC_NO_CHECK_TAR        0x002000 /* Don't check for tar files */
-#define R_MAGIC_NO_CHECK_SOFT       0x004000 /* Don't check magic entries */
-#define R_MAGIC_NO_CHECK_APPTYPE    0x008000 /* Don't check application type */
-#define R_MAGIC_NO_CHECK_ELF        0x010000 /* Don't check for elf details */
-#define R_MAGIC_NO_CHECK_ASCII      0x020000 /* Don't check for ascii files */
-#define R_MAGIC_NO_CHECK_TOKENS     0x100000 /* Don't check ascii/tokens */
+#define RZ_MAGIC_NONE                0x000000 /* No flags */
+#define RZ_MAGIC_DEBUG               0x000001 /* Turn on debugging */
+#define RZ_MAGIC_SYMLINK             0x000002 /* Follow symlinks */
+#define RZ_MAGIC_COMPRESS            0x000004 /* Check inside compressed files */
+#define RZ_MAGIC_DEVICES             0x000008 /* Look at the contents of devices */
+#define RZ_MAGIC_MIME_TYPE           0x000010 /* Return only the MIME type */
+#define RZ_MAGIC_CONTINUE            0x000020 /* Return all matches */
+#define RZ_MAGIC_CHECK               0x000040 /* Print warnings to stderr */
+#define RZ_MAGIC_PRESERVE_ATIME      0x000080 /* Restore access time on exit */
+#define RZ_MAGIC_RAW                 0x000100 /* Don't translate unprint chars */
+#define RZ_MAGIC_ERROR               0x000200 /* Handle ENOENT etc as real errors */
+#define RZ_MAGIC_MIME_ENCODING       0x000400 /* Return only the MIME encoding */
+#define RZ_MAGIC_MIME                (RZ_MAGIC_MIME_TYPE|RZ_MAGIC_MIME_ENCODING)
+#define RZ_MAGIC_NO_CHECK_COMPRESS   0x001000 /* Don't check for compressed files */
+#define RZ_MAGIC_NO_CHECK_TAR        0x002000 /* Don't check for tar files */
+#define RZ_MAGIC_NO_CHECK_SOFT       0x004000 /* Don't check magic entries */
+#define RZ_MAGIC_NO_CHECK_APPTYPE    0x008000 /* Don't check application type */
+#define RZ_MAGIC_NO_CHECK_ELF        0x010000 /* Don't check for elf details */
+#define RZ_MAGIC_NO_CHECK_ASCII      0x020000 /* Don't check for ascii files */
+#define RZ_MAGIC_NO_CHECK_TOKENS     0x100000 /* Don't check ascii/tokens */
 
 /* Defined for backwards compatibility; do nothing */
 #define MAGIC_NO_CHECK_FORTRAN      0x000000 /* Don't check ascii/fortran */

@@ -16,7 +16,7 @@
 #define CHKFLAG(x) if (!flags || flags & (x))
 
 RZ_API RzHash *rz_hash_new(bool rst, ut64 flags) {
-	RzHash *ctx = R_NEW0 (RzHash);
+	RzHash *ctx = RZ_NEW0 (RzHash);
 	if (ctx) {
 		rz_hash_do_begin (ctx, flags);
 		ctx->rst = rst;
@@ -25,20 +25,20 @@ RZ_API RzHash *rz_hash_new(bool rst, ut64 flags) {
 }
 
 RZ_API void rz_hash_do_begin(RzHash *ctx, ut64 flags) {
-	CHKFLAG (R_HASH_MD5) rz_hash_do_md5 (ctx, NULL, -1);
-	CHKFLAG (R_HASH_SHA1) SHA1_Init (&ctx->sha1);
-	CHKFLAG (R_HASH_SHA256) SHA256_Init (&ctx->sha256);
-	CHKFLAG (R_HASH_SHA384) SHA384_Init (&ctx->sha384);
-	CHKFLAG (R_HASH_SHA512) SHA512_Init (&ctx->sha512);
+	CHKFLAG (RZ_HASH_MD5) rz_hash_do_md5 (ctx, NULL, -1);
+	CHKFLAG (RZ_HASH_SHA1) SHA1_Init (&ctx->sha1);
+	CHKFLAG (RZ_HASH_SHA256) SHA256_Init (&ctx->sha256);
+	CHKFLAG (RZ_HASH_SHA384) SHA384_Init (&ctx->sha384);
+	CHKFLAG (RZ_HASH_SHA512) SHA512_Init (&ctx->sha512);
 	ctx->rst = false;
 }
 
 RZ_API void rz_hash_do_end(RzHash *ctx, ut64 flags) {
-	CHKFLAG (R_HASH_MD5) rz_hash_do_md5 (ctx, NULL, -2);
-	CHKFLAG (R_HASH_SHA1) SHA1_Final (ctx->digest, &ctx->sha1);
-	CHKFLAG (R_HASH_SHA256) SHA256_Final (ctx->digest, &ctx->sha256);
-	CHKFLAG (R_HASH_SHA384) SHA384_Final (ctx->digest, &ctx->sha384);
-	CHKFLAG (R_HASH_SHA512) SHA512_Final (ctx->digest, &ctx->sha512);
+	CHKFLAG (RZ_HASH_MD5) rz_hash_do_md5 (ctx, NULL, -2);
+	CHKFLAG (RZ_HASH_SHA1) SHA1_Final (ctx->digest, &ctx->sha1);
+	CHKFLAG (RZ_HASH_SHA256) SHA256_Final (ctx->digest, &ctx->sha256);
+	CHKFLAG (RZ_HASH_SHA384) SHA384_Final (ctx->digest, &ctx->sha384);
+	CHKFLAG (RZ_HASH_SHA512) SHA512_Final (ctx->digest, &ctx->sha512);
 	ctx->rst = true;
 }
 
@@ -148,7 +148,7 @@ RZ_API ut8 *rz_hash_do_hmac_sha256(RzHash *ctx, const ut8 *input, int len, const
 		SHA256_Init (&ctx->sha256);
 		SHA256_Update (&ctx->sha256, key, klen);
 		SHA256_Final (ctx->digest, &ctx->sha256);
-		memcpy (bskey, ctx->digest, R_HASH_SIZE_SHA256);
+		memcpy (bskey, ctx->digest, RZ_HASH_SIZE_SHA256);
 	} else {
 		memcpy (bskey, key, klen);
 	}
@@ -176,7 +176,7 @@ RZ_API ut8 *rz_hash_do_hmac_sha256(RzHash *ctx, const ut8 *input, int len, const
 	// Outer hash (key ^ opad || Inner hash)
 	SHA256_Init (&ctx->sha256);
 	SHA256_Update (&ctx->sha256, kpad, SHA256_BLOCK_LENGTH);
-	SHA256_Update (&ctx->sha256, ctx->digest, R_HASH_SIZE_SHA256);
+	SHA256_Update (&ctx->sha256, ctx->digest, RZ_HASH_SIZE_SHA256);
 	SHA256_Final (ctx->digest, &ctx->sha256);
 
 	return ctx->digest;

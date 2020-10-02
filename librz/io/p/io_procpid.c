@@ -83,7 +83,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		snprintf (procpidpath, sizeof (procpidpath), "/proc/%d/mem", pid);
 		fd = rz_sandbox_open (procpidpath, O_RDWR, 0);
 		if (fd != -1) {
-			RzIOProcpid *riop = R_NEW0 (RzIOProcpid);
+			RzIOProcpid *riop = RZ_NEW0 (RzIOProcpid);
 			if (!riop) {
 				close (fd);
 				return NULL;
@@ -107,7 +107,7 @@ static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 
 static int __close(RzIODesc *fd) {
 	int ret = ptrace (PTRACE_DETACH, RzIOPROCPID_PID (fd), 0, 0);
-	R_FREE (fd->data);
+	RZ_FREE (fd->data);
 	return ret;
 }
 
@@ -145,10 +145,10 @@ RzIOPlugin rz_io_plugin_procpid = {
 };
 #endif
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_procpid,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2014 - crowell */
 
-#ifndef R_DEBRUIJN_H
-#define R_DEBRUIJN_H
+#ifndef RZ_DEBRUIJN_H
+#define RZ_DEBRUIJN_H
 
 #include <rz_types.h>
 
@@ -26,4 +26,4 @@ RZ_API int rz_debruijn_offset(ut64 value, bool is_big_endian);
 }
 #endif
 
-#endif // R_DEBRUIJN_H
+#endif // RZ_DEBRUIJN_H

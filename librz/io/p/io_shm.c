@@ -64,7 +64,7 @@ static int shm__close(RzIODesc *fd) {
 	} else {
 		ret = close (shm->fd);
 	}
-	R_FREE (fd->data);
+	RZ_FREE (fd->data);
 	return ret;
 }
 
@@ -96,7 +96,7 @@ static inline int getshmfd (RzIOShm *shm) {
 
 static RzIODesc *shm__open(RzIO *io, const char *pathname, int rw, int mode) {
 	if (!strncmp (pathname, "shm://", 6)) {
-		RzIOShm *shm = R_NEW0 (RzIOShm);
+		RzIOShm *shm = RZ_NEW0 (RzIOShm);
 		if (!shm) {
 			return NULL;
 		}
@@ -148,10 +148,10 @@ RzIOPlugin rz_io_plugin_shm = {
 };
 #endif
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_shm,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

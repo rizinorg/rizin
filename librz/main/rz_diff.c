@@ -63,7 +63,7 @@ static RzCore *opencore(const char *f) {
 	if (!c) {
 		return NULL;
 	}
-	rz_core_loadlibs (c, R_CORE_LOADLIBS_ALL, NULL);
+	rz_core_loadlibs (c, RZ_CORE_LOADLIBS_ALL, NULL);
 	rz_config_set_i (c->config, "io.va", useva);
 	rz_config_set_i (c->config, "scr.interactive", false);
 	rz_list_foreach (evals, iter, e) {
@@ -114,7 +114,7 @@ static RzCore *opencore(const char *f) {
 
 static void readstr(char *s, int sz, const ut8 *buf, int len) {
 	*s = 0;
-	int last = R_MIN (len, sz);
+	int last = RZ_MIN (len, sz);
 	if (last < 1) {
 		return;
 	}
@@ -142,7 +142,7 @@ static int cb(RzDiff *d, void *user, RzDiffOp *op) {
 					printf (Color_RED);
 				}
 				printf ("-0x%08"PFMT64x":", op->a_off);
-				int len = op->a_len; // R_MIN (op->a_len, strlen (op->a_buf));
+				int len = op->a_len; // RZ_MIN (op->a_len, strlen (op->a_buf));
 				for (i = 0; i < len; i++) {
 					printf ("%02x ", op->a_buf[i]);
 				}
@@ -240,7 +240,7 @@ static int cb(RzDiff *d, void *user, RzDiffOp *op) {
 			}
 			printf ("\n");
 			if (core) {
-				int len = R_MAX (4, op->a_len);
+				int len = RZ_MAX (4, op->a_len);
 				RzAsmCode *ac = rz_asm_mdisassemble (core->rasm, op->a_buf, len);
 				char *acbufasm = strdup (ac->assembly);
 				if (quiet) {
@@ -272,7 +272,7 @@ static int cb(RzDiff *d, void *user, RzDiffOp *op) {
 			}
 			printf ("\n");
 			if (core) {
-				int len = R_MAX (4, op->b_len);
+				int len = RZ_MAX (4, op->b_len);
 				RzAsmCode *ac = rz_asm_mdisassemble (core->rasm, op->b_buf, len);
 				char *acbufasm = strdup (ac->assembly);
 				if (quiet) {
@@ -476,7 +476,7 @@ static int show_help(int v) {
 
 #define DUMP_CONTEXT 2
 static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
-	ut32 sz = R_MIN (as, bs);
+	ut32 sz = RZ_MIN (as, bs);
 	ut32 i, j;
 	int ctx = DUMP_CONTEXT;
 	int pad = 0;
@@ -587,7 +587,7 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 
 static void dump_cols_hexii(ut8 *a, int as, ut8 *b, int bs, int w) {
 	bool spacy = false;
-	ut32 sz = R_MIN (as, bs);
+	ut32 sz = RZ_MIN (as, bs);
 	ut32 i, j;
 	int ctx = DUMP_CONTEXT;
 	int pad = 0;
@@ -688,13 +688,13 @@ static void dump_cols_hexii(ut8 *a, int as, ut8 *b, int bs, int w) {
 
 static void handle_sha256(const ut8 *block, int len) {
 	int i = 0;
-	RzHash *ctx = rz_hash_new (true, R_HASH_SHA256);
+	RzHash *ctx = rz_hash_new (true, RZ_HASH_SHA256);
 	const ut8 *c = rz_hash_do_sha256 (ctx, block, len);
 	if (!c) {
 		rz_hash_free (ctx);
 		return;
 	}
-	for (i = 0; i < R_HASH_SIZE_SHA256; i++) {
+	for (i = 0; i < RZ_HASH_SIZE_SHA256; i++) {
 		printf ("%02x", c[i]);
 	}
 	rz_hash_free (ctx);
@@ -727,7 +727,7 @@ static ut8 *slurp(RzCore **c, const char *file, size_t *sz) {
 				}
 			} else {
 				eprintf ("slurp: read error\n");
-				R_FREE (data);
+				RZ_FREE (data);
 			}
 		} else {
 			eprintf ("slurp: Invalid file size\n");
@@ -833,7 +833,7 @@ static char *get_graph_commands(RzCore *c, ut64 off) {
         bool tmp_html = rz_cons_singleton ()->is_html;
         rz_cons_singleton ()->is_html = false;
         rz_cons_push ();
-        rz_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF |  R_CORE_ANAL_STAR);
+        rz_core_anal_graph (c, off, RZ_CORE_ANAL_GRAPHBODY | RZ_CORE_ANAL_GRAPHDIFF |  RZ_CORE_ANAL_STAR);
         const char *static_str = rz_cons_get_buffer ();
         char *retstr = strdup (static_str? static_str: "");
         rz_cons_pop ();
@@ -876,7 +876,7 @@ static void __generate_graph (RzCore *c, ut64 off) {
 }
 
 static void __print_diff_graph(RzCore *c, ut64 off, int gmode) {
-        int opts = R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF;
+        int opts = RZ_CORE_ANAL_GRAPHBODY | RZ_CORE_ANAL_GRAPHDIFF;
         int use_utf8 = rz_config_get_i (c->config, "scr.utf8");
         rz_agraph_reset(c->graph);
         switch (gmode) {
@@ -884,7 +884,7 @@ static void __print_diff_graph(RzCore *c, ut64 off, int gmode) {
                 rz_core_anal_graph (c, off, opts);
                 break;
         case GRAPH_STAR_MODE:
-                rz_core_anal_graph (c, off, opts |  R_CORE_ANAL_STAR);
+                rz_core_anal_graph (c, off, opts |  RZ_CORE_ANAL_STAR);
                 break;
         case GRAPH_TINY_MODE:
                 __generate_graph (c, off);
@@ -904,10 +904,10 @@ static void __print_diff_graph(RzCore *c, ut64 off, int gmode) {
                 rz_core_agraph_print (c, use_utf8, "g");
                 break;
         case GRAPH_JSON_MODE:
-                rz_core_anal_graph (c, off, opts | R_CORE_ANAL_JSON);
+                rz_core_anal_graph (c, off, opts | RZ_CORE_ANAL_JSON);
                 break;
         case GRAPH_JSON_DIS_MODE:
-                rz_core_anal_graph (c, off, opts | R_CORE_ANAL_JSON | R_CORE_ANAL_JSON_FORMAT_DISASM);
+                rz_core_anal_graph (c, off, opts | RZ_CORE_ANAL_JSON | RZ_CORE_ANAL_JSON_FORMAT_DISASM);
                 break;
         case GRAPH_DEFAULT_MODE:
         default:
@@ -1065,7 +1065,7 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 	file = (opt.ind < argc)? argv[opt.ind]: NULL;
 	file2 = (opt.ind + 1 < argc)? argv[opt.ind + 1]: NULL;
 
-	if (R_STR_ISEMPTY (file) || R_STR_ISEMPTY(file2)) {
+	if (RZ_STR_ISEMPTY (file) || RZ_STR_ISEMPTY(file2)) {
 		eprintf ("Cannot open empty path\n");
 		return 1;
 	}
@@ -1131,16 +1131,16 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 				*second++ = 0;
 				ut64 off = rz_num_math (c->num, words);
 				// define the same function at each offset
-				rz_core_anal_fcn (c, off, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
+				rz_core_anal_fcn (c, off, UT64_MAX, RZ_ANAL_REF_TYPE_NULL, depth);
 				rz_core_anal_fcn (c2, rz_num_math (c2->num, second),
-					UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
+					UT64_MAX, RZ_ANAL_REF_TYPE_NULL, depth);
 				rz_core_gdiff (c, c2);
 				__print_diff_graph (c, off, gmode);
 			} else {
 				rz_core_anal_fcn (c, rz_num_math (c->num, words),
-					UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
+					UT64_MAX, RZ_ANAL_REF_TYPE_NULL, depth);
 				rz_core_anal_fcn (c2, rz_num_math (c2->num, words),
-					UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
+					UT64_MAX, RZ_ANAL_REF_TYPE_NULL, depth);
 				rz_core_gdiff (c, c2);
 				__print_diff_graph (c, rz_num_math (c->num, addr), gmode);
 			}

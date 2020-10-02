@@ -239,7 +239,7 @@ RZ_API ut64 rz_reg_set_bvalue(RzReg *reg, RzRegItem *item, const char *str) {
 	return num;
 }
 
-RZ_API R_HEAP char *rz_reg_get_bvalue(RzReg *reg, RzRegItem *item) {
+RZ_API RZ_HEAP char *rz_reg_get_bvalue(RzReg *reg, RzRegItem *item) {
 	char *out = NULL;
 	if (reg && item && item->flags) {
 		out = malloc (strlen (item->flags) + 1);

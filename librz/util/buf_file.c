@@ -22,7 +22,7 @@ static inline struct buf_file_priv *get_priv_file(RBuffer *b) {
 
 static bool buf_file_init(RBuffer *b, const void *user) {
 	const struct buf_file_user *u = (const struct buf_file_user *)user;
-	struct buf_file_priv *priv = R_NEW0 (struct buf_file_priv);
+	struct buf_file_priv *priv = RZ_NEW0 (struct buf_file_priv);
 	if (!priv) {
 		return false;
 	}
@@ -39,7 +39,7 @@ static bool buf_file_init(RBuffer *b, const void *user) {
 static bool buf_file_fini(RBuffer *b) {
 	struct buf_file_priv *priv = get_priv_file (b);
 	rz_sandbox_close (priv->fd);
-	R_FREE (b->priv);
+	RZ_FREE (b->priv);
 	return true;
 }
 
@@ -64,9 +64,9 @@ static st64 buf_file_write(RBuffer *b, const ut8 *buf, ut64 len) {
 static st64 buf_file_seek(RBuffer *b, st64 addr, int whence) {
 	struct buf_file_priv *priv = get_priv_file (b);
 	switch (whence) {
-	case R_BUF_CUR: whence = SEEK_CUR; break;
-	case R_BUF_SET: whence = SEEK_SET; break;
-	case R_BUF_END: whence = SEEK_END; break;
+	case RZ_BUF_CUR: whence = SEEK_CUR; break;
+	case RZ_BUF_SET: whence = SEEK_SET; break;
+	case RZ_BUF_END: whence = SEEK_END; break;
 	}
 	return rz_sandbox_lseek (priv->fd, addr, whence);
 }

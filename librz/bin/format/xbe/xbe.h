@@ -11,7 +11,7 @@
 #define XBE_KP_CHIHIRO 0x2290059D
 
 #define XBE_MAX_THUNK 378
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut32 magic;
 	ut8  signature[0x100];
@@ -42,7 +42,7 @@ typedef struct {
 
 #define SECT_FLAG_X 0x00000004
 #define SECT_FLAG_W 0x00000001
-R_PACKED (
+RZ_PACKED (
 typedef struct  {
 	ut32 flags;
 	ut32 vaddr;
@@ -55,7 +55,7 @@ typedef struct  {
 	ut8  digest[20];
 }) xbe_section;
 
-R_PACKED (
+RZ_PACKED (
 typedef struct  {
 	ut8 name[8];
 	ut16 major;

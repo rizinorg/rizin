@@ -1,7 +1,7 @@
-#ifndef R_NUM_H
-#define R_NUM_H
+#ifndef RZ_NUM_H
+#define RZ_NUM_H
 
-#define R_NUMCALC_STRSZ 1024
+#define RZ_NUMCALC_STRSZ 1024
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,7 +24,7 @@ typedef enum {
 typedef struct rz_num_calc_t {
 	RNumCalcToken curr_tok;
 	RNumCalcValue number_value;
-	char string_value[R_NUMCALC_STRSZ];
+	char string_value[RZ_NUMCALC_STRSZ];
 	int errors;
 	char oc;
 	const char *calc_err;
@@ -90,4 +90,4 @@ static inline st64 rz_num_abs(st64 num) {
 }
 #endif
 
-#endif //  R_NUM_H
+#endif //  RZ_NUM_H

@@ -17,9 +17,9 @@ int handle_qSupported(libgdbr_t *g) {
 	while (tok) {
 		if (rz_str_startswith (tok, "PacketSize=")) {
 			// Largest packet size we support is 2048
-			g->stub_features.pkt_sz = R_MIN (strtoul (tok + strlen ("PacketSize="), NULL, 16), 2048);
+			g->stub_features.pkt_sz = RZ_MIN (strtoul (tok + strlen ("PacketSize="), NULL, 16), 2048);
 			// Shouldn't be smaller than 64 (Erroneous 0 etc.)
-			g->stub_features.pkt_sz = R_MAX (g->stub_features.pkt_sz, 64);
+			g->stub_features.pkt_sz = RZ_MAX (g->stub_features.pkt_sz, 64);
 		} else if (rz_str_startswith (tok, "qXfer:")) {
 			if (!tok[6]) {
 				tok = strtok (NULL, ";");

@@ -72,28 +72,28 @@
 #define ut64 unsigned long long
 #define st64 long long
 #define boolt int
-// TODO: deprecate R_NEW
-#ifndef R_NEW
+// TODO: deprecate RZ_NEW
+#ifndef RZ_NEW
 //it means we are within sdb
-#define R_NEW(x) (x*)malloc(sizeof(x))
+#define RZ_NEW(x) (x*)malloc(sizeof(x))
 #endif
-#ifndef R_NEW0
-#define R_NEW0(x) (x*)calloc(1, sizeof(x))
+#ifndef RZ_NEW0
+#define RZ_NEW0(x) (x*)calloc(1, sizeof(x))
 #endif
-#ifndef R_FREE
-#define R_FREE(x) { free (x); x = NULL; }
+#ifndef RZ_FREE
+#define RZ_FREE(x) { free (x); x = NULL; }
 #endif
 #define UT32_MAX ((ut32)0xffffffff)
 #define UT64_MAX ((ut64)(0xffffffffffffffffLL))
 #endif
-#ifndef R_MAX_DEFINED
-#define R_MAX(x,y) (((x)>(y))?(x):(y))
-#define R_MAX_DEFINED 1
+#ifndef RZ_MAX_DEFINED
+#define RZ_MAX(x,y) (((x)>(y))?(x):(y))
+#define RZ_MAX_DEFINED 1
 #endif
 
-#ifndef R_MIN_DEFINED
-#define R_MIN(x,y) (((x)>(y))?(y):(x))
-#define R_MIN_DEFINED 1
+#ifndef RZ_MIN_DEFINED
+#define RZ_MIN(x,y) (((x)>(y))?(y):(x))
+#define RZ_MIN_DEFINED 1
 #endif
 
 #include "config.h"

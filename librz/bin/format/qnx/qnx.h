@@ -22,7 +22,7 @@ enum {
 	LMF_LINEAR_FIXUP_REC
 };
 
-R_PACKED (
+RZ_PACKED (
 typedef struct lmf_record {
 	ut8      rec_type;
 	ut8      reserved;       // must be 0
@@ -30,13 +30,13 @@ typedef struct lmf_record {
 	ut16     spare;          // must be 0
 }) lmf_record;
 
-R_PACKED (
+RZ_PACKED (
 typedef struct lmf_data {
 	ut16     segment;
 	ut32     offset;
 }) lmf_data;
 
-R_PACKED (
+RZ_PACKED (
 typedef struct lmf_header {
 	ut16     version;
 	ut16     cflags;
@@ -54,7 +54,7 @@ typedef struct lmf_header {
 	ut32     spare3[2];
 }) lmf_header;
 
-R_PACKED (
+RZ_PACKED (
 typedef struct lmf_eof {
 	ut8  spare[6];
 }) lmf_eof;
@@ -64,19 +64,19 @@ enum {
 	RES_USAGE = 0
 };
 
-R_PACKED (
+RZ_PACKED (
 typedef struct lmf_resource {
 	ut16 res_type;
 	ut16 spare[3];
 }) lmf_resource;
 
-R_PACKED (
+RZ_PACKED (
 typedef struct lmf_rw_end {
 	ut16     verify;
 	ut32     signature;
 }) lmf_rw_end;
 
-R_PACKED (
+RZ_PACKED (
 typedef struct {
 	Sdb *kv;
 	lmf_header lmfh;

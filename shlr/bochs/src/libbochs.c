@@ -181,8 +181,8 @@ void bochs_close(libbochs_t* b) {
 	close (b->hReadPipeIn);
 	close (b->hWritePipeOut);
 	kill (b->pid, SIGKILL);
-	R_FREE (b->data);
-	R_FREE (lpTmpBuffer);
+	RZ_FREE (b->data);
+	RZ_FREE (lpTmpBuffer);
 #endif
 }
 
@@ -195,7 +195,7 @@ bool bochs_open(libbochs_t* b, const char * pathBochs, const char * pathConfig) 
 	}
 	lpTmpBuffer = malloc (SIZE_BUF);
 	if (!lpTmpBuffer) {
-		R_FREE (b->data);
+		RZ_FREE (b->data);
 		return false;
 	}
 #if __WINDOWS__

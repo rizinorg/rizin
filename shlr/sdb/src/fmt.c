@@ -72,7 +72,7 @@ SDB_API char *sdb_fmt_tostr(void *p, const char *fmt) {
 			n = sizeof (size_t);
 			break;
 		}
-		len += R_MAX ((long)sizeof (void*), n); // align
+		len += RZ_MAX ((long)sizeof (void*), n); // align
 	}
 	return out;
 }
@@ -109,7 +109,7 @@ SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru) {
 			*((void**)(stru8 + idx)) = (void*)(size_t)sdb_atoi (word);
 			break;
 		}
-		idx += R_MAX ((long)sizeof (void*), n); // align
+		idx += RZ_MAX ((long)sizeof (void*), n); // align
 		if (!next) {
 			break;
 		}
@@ -138,7 +138,7 @@ SDB_API void sdb_fmt_free (void *stru, const char *fmt) {
 			free ((void*)*((char**)((ut8*)stru + len)));
 			break;
 		}
-		len += R_MAX ((long)sizeof (void*), n); // align
+		len += RZ_MAX ((long)sizeof (void*), n); // align
 	}
 }
 

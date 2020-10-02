@@ -1,7 +1,7 @@
 NAME=ppc-asserts
 FILE=bins/elf/powerpc-linux-gnu-symexec-palindrome
 CMDS=<<EOF
-%R2_DEBUG_ASSERT=1
+%RZ_DEBUG_ASSERT=1
 aaa
 ?e done
 EOF

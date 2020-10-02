@@ -1,7 +1,7 @@
 #include <rz_util.h>
 
 RZ_API RNumBig *rz_big_new(void) {
-	RNumBig *n = R_NEW (RNumBig);
+	RNumBig *n = RZ_NEW (RNumBig);
 	if (n) {
 		mpz_init (*n);
 	}

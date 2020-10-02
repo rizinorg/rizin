@@ -25,22 +25,22 @@
    Given a header file like this:
 
    	START_RELOC_NUMBERS (foo)
-   	    RELOC_NUMBER (R_foo_NONE,    0)
-   	    RELOC_NUMBER (R_foo_32,      1)
-   	    EMPTY_RELOC  (R_foo_good)
-   	    FAKE_RELOC   (R_foo_illegal, 9)
-   	END_RELOC_NUMBERS (R_foo_count)
+   	    RELOC_NUMBER (RZ_foo_NONE,    0)
+   	    RELOC_NUMBER (RZ_foo_32,      1)
+   	    EMPTY_RELOC  (RZ_foo_good)
+   	    FAKE_RELOC   (RZ_foo_illegal, 9)
+   	END_RELOC_NUMBERS (RZ_foo_count)
 
    Then the following will be produced by default (ie if
    RELOC_MACROS_GEN_FUNC is *not* defined).
 
    	enum foo
 	{
-   	  R_foo_NONE = 0,
-   	  R_foo_32 = 1,
-	  R_foo_good,
-   	  R_foo_illegal = 9,
-   	  R_foo_count
+   	  RZ_foo_NONE = 0,
+   	  RZ_foo_32 = 1,
+	  RZ_foo_good,
+   	  RZ_foo_illegal = 9,
+   	  RZ_foo_count
    	};
 
    If RELOC_MACROS_GEN_FUNC *is* defined, then instead the
@@ -52,8 +52,8 @@
    	{
    	   switch (rtype)
    	   {
-   	   case 0: return "R_foo_NONE";
-   	   case 1: return "R_foo_32";
+   	   case 0: return "RZ_foo_NONE";
+   	   case 1: return "RZ_foo_32";
    	   default: return NULL;
    	   }
    	}

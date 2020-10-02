@@ -1,5 +1,5 @@
-#ifndef R_CACHE_H
-#define R_CACHE_H
+#ifndef RZ_CACHE_H
+#define RZ_CACHE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,4 +27,4 @@ RZ_API double rz_prof_end(RProfile *p);
 #ifdef __cplusplus
 }
 #endif
-#endif //  R_CACHE_H
+#endif //  RZ_CACHE_H

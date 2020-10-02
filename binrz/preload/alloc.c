@@ -1,5 +1,5 @@
 #define RZ_API
-#define R_ALLOC_USE_MMAP 1
+#define RZ_ALLOC_USE_MMAP 1
 #define USE_MALLOC 0
 
 #include <stdio.h>
@@ -103,21 +103,21 @@ void rz_free(void *p) {
 #if __MAIN__
 int main() {
 #define MB 1024*1024
-#define R_MALLOC_MAX 2*MB
+#define RZ_MALLOC_MAX 2*MB
 
-#if R_ALLOC_USE_STACK
-	char B[R_MALLOC_MAX];
+#if RZ_ALLOC_USE_STACK
+	char B[RZ_MALLOC_MAX];
 #endif
-#if R_ALLOC_USE_MMAP
+#if RZ_ALLOC_USE_MMAP
 	int fd = open (".mem", O_CREAT|O_RDWR, 0600);
-	ftruncate (fd, R_MALLOC_MAX);
-	char *B = mmap (NULL, R_MALLOC_MAX, PROT_WRITE|PROT_READ,
+	ftruncate (fd, RZ_MALLOC_MAX);
+	char *B = mmap (NULL, RZ_MALLOC_MAX, PROT_WRITE|PROT_READ,
 		MAP_FILE|MAP_PRIVATE, fd, 0);
 	unlink (".mem");
 	close (fd);
 #endif
 
-	InitMem (B, R_MALLOC_MAX);
+	InitMem (B, RZ_MALLOC_MAX);
 
 	char *a = rz_malloc (10);
 	if (!a) {

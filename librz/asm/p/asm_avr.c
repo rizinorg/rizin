@@ -430,7 +430,7 @@ RzAsmPlugin rz_asm_plugin_avr = {
 	.arch = "avr",
 	.license = "GPL",
 	.bits = 8|16,
-	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
+	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.desc = "AVR Atmel",
 	.disassemble = &disassemble,
 	.assemble = &assemble,
@@ -449,10 +449,10 @@ RzAsmPlugin rz_asm_plugin_avr = {
 		"ATxmega128a4u"
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_avr,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

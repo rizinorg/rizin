@@ -493,7 +493,7 @@ static int bin_pe_parse_imports(struct PE_(rz_bin_pe_obj_t)* bin,
 						db = sdb_new (NULL, filename, 0);
 					} else {
 						const char *dirPrefix = rz_sys_prefix (NULL);
-						filename = sdb_fmt (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"),
+						filename = sdb_fmt (RZ_JOIN_4_PATHS ("%s", RZ_SDB_FORMAT, "dll", "%s.sdb"),
 							dirPrefix, symdllname);
 						if (rz_file_exists (filename)) {
 							db = sdb_new (NULL, filename, 0);
@@ -504,7 +504,7 @@ static int bin_pe_parse_imports(struct PE_(rz_bin_pe_obj_t)* bin,
 					symname = resolveModuleOrdinal (db, symdllname, import_ordinal);
 					if (symname) {
 						snprintf (import_name, PE_NAME_LENGTH, "%s", symname);
-						R_FREE (symname);
+						RZ_FREE (symname);
 					}
 				} else {
 					bprintf ("Cannot find %s\n", filename);
@@ -612,7 +612,7 @@ static int bin_pe_init_hdr(struct PE_(rz_bin_pe_obj_t)* bin) {
 		" IMAGE_DLLCHARACTERISTICS_NX_COMPAT=0x0100, IMAGE_DLLCHARACTERISTICS_NO_ISOLATION=0x0200,IMAGE_DLLCHARACTERISTICS_NO_SEH=0x0400, "
 		" IMAGE_DLLCHARACTERISTICS_NO_BIND=0x0800, IMAGE_DLLCHARACTERISTICS_APPCONTAINER=0x1000, IMAGE_DLLCHARACTERISTICS_WDM_DRIVER=0x2000, "
 		" IMAGE_DLLCHARACTERISTICS_GUARD_CF=0x4000, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE=0x8000};", 0);
-#if R_BIN_PE64
+#if RZ_BIN_PE64
 	sdb_num_set (bin->kv, "pe_nt_image_headers64.offset", bin->dos_header->e_lfanew, 0);
 	sdb_set (bin->kv, "pe_nt_image_headers64.format",      "[4]z?? signature (pe_image_file_header)fileHeader (pe_image_optional_header64)optionalHeader", 0);
 	sdb_set (bin->kv, "pe_image_optional_header64.format", "[2]Ebbxxxxxqxxwwwwwwxxxx[2]E[2]Bqqqqxx[16]?"
@@ -797,7 +797,7 @@ static int bin_pe_init_sections(struct PE_(rz_bin_pe_obj_t)* bin) {
 		bin->nt_headers->file_header.SizeOfOptionalHeader;
 	if (rz_buf_read_at (bin->b, bin->section_header_offset, (ut8*) bin->section_header, sections_size) < 0) {
 		bprintf ("Warning: read (sections)\n");
-		R_FREE (bin->section_header);
+		RZ_FREE (bin->section_header);
 		goto out_error;
 	}
 #if 0
@@ -932,7 +932,7 @@ const char* PE_(bin_pe_compute_authentihash)(struct PE_(rz_bin_pe_obj_t)* bin) {
 	char *hashtype = strdup (bin->spcinfo->messageDigest.digestAlgorithm.algorithm->string);
 	rz_str_replace_char (hashtype, '-', 0);
 	ut64 algobit = rz_hash_name_to_bits (hashtype);
-	if (!(algobit & (R_HASH_MD5 | R_HASH_SHA1 | R_HASH_SHA256))) {
+	if (!(algobit & (RZ_HASH_MD5 | RZ_HASH_SHA1 | RZ_HASH_SHA256))) {
 		eprintf ("Authenticode only supports md5, sha1, sha256. This PE uses %s\n", hashtype);
 		free (hashtype);
 		return NULL;
@@ -1057,7 +1057,7 @@ static int bin_pe_read_metadata_string(char* to, RBuffer *frombuf, int fromoff) 
 
 static int bin_pe_init_metadata_hdr(struct PE_(rz_bin_pe_obj_t)* bin) {
 	PE_DWord metadata_directory = bin->clr_hdr? bin_pe_rva_to_paddr (bin, bin->clr_hdr->MetaDataDirectoryAddress): 0;
-	PE_(image_metadata_header) * metadata = R_NEW0 (PE_(image_metadata_header));
+	PE_(image_metadata_header) * metadata = RZ_NEW0 (PE_(image_metadata_header));
 	int rr;
 	if (!metadata) {
 		return 0;
@@ -1129,7 +1129,7 @@ static int bin_pe_init_metadata_hdr(struct PE_(rz_bin_pe_obj_t)* bin) {
 	int count = 0;
 
 	while (count < metadata->NumberOfStreams) {
-		stream = R_NEW0 (PE_(image_metadata_stream));
+		stream = RZ_NEW0 (PE_(image_metadata_stream));
 		if (!stream) {
 			free (streams);
 			goto fail;
@@ -1190,7 +1190,7 @@ static int bin_pe_init_clr_hdr(struct PE_(rz_bin_pe_obj_t)* bin) {
 	PE_(image_data_directory) * clr_dir = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR];
 	PE_DWord image_clr_hdr_paddr = bin_pe_rva_to_paddr (bin, clr_dir->VirtualAddress);
 	// int clr_dir_size = clr_dir? clr_dir->Size: 0;
-	PE_(image_clr_header) * clr_hdr = R_NEW0 (PE_(image_clr_header));
+	PE_(image_clr_header) * clr_hdr = RZ_NEW0 (PE_(image_clr_header));
 	int rr, len = sizeof (PE_(image_clr_header));
 
 	if (!clr_hdr) {
@@ -1248,14 +1248,14 @@ static int bin_pe_init_imports(struct PE_(rz_bin_pe_obj_t)* bin) {
 		// asume 1 entry for each
 		delay_import_dir_size = data_dir_delay_import->Size = 0xffff;
 	}
-	int maxidsz = R_MIN ((PE_DWord) bin->size, import_dir_offset + import_dir_size);
+	int maxidsz = RZ_MIN ((PE_DWord) bin->size, import_dir_offset + import_dir_size);
 	maxidsz -= import_dir_offset;
 	if (maxidsz < 0) {
 		maxidsz = 0;
 	}
 	//int maxcount = maxidsz/ sizeof (struct rz_bin_pe_import_t);
 
-	R_FREE (bin->import_directory);
+	RZ_FREE (bin->import_directory);
 	if (import_dir_paddr != 0) {
 		if (import_dir_size < 1 || import_dir_size > maxidsz) {
 			bprintf ("Warning: Invalid import directory size: 0x%x is now 0x%x\n", import_dir_size, maxidsz);
@@ -1267,7 +1267,7 @@ static int bin_pe_init_imports(struct PE_(rz_bin_pe_obj_t)* bin) {
 			new_import_dir = (PE_(image_import_directory)*)realloc (import_dir, ((1 + indx) * dir_size));
 			if (!new_import_dir) {
 				rz_sys_perror ("malloc (import directory)");
-				R_FREE (import_dir);
+				RZ_FREE (import_dir);
 				break; //
 				//			goto fail;
 			}
@@ -1276,7 +1276,7 @@ static int bin_pe_init_imports(struct PE_(rz_bin_pe_obj_t)* bin) {
 			curr_import_dir = import_dir + indx;
 			if (rz_buf_read_at (bin->b, import_dir_offset + indx * dir_size, (ut8*) (curr_import_dir), dir_size) <= 0) {
 				bprintf ("Warning: read (import directory)\n");
-				R_FREE (import_dir);
+				RZ_FREE (import_dir);
 				break; //return false;
 			}
 			if (((2 + indx) * dir_size) > import_dir_size) {
@@ -1326,7 +1326,7 @@ static int bin_pe_init_imports(struct PE_(rz_bin_pe_obj_t)* bin) {
 
 	return true;
 fail:
-	R_FREE (import_dir);
+	RZ_FREE (import_dir);
 	bin->import_directory = import_dir;
 	free (delay_import_dir);
 	return false;
@@ -1348,7 +1348,7 @@ static int bin_pe_init_exports(struct PE_(rz_bin_pe_obj_t)* bin) {
 	}
 	if (rz_buf_read_at (bin->b, export_dir_paddr, (ut8*) bin->export_directory, sizeof (PE_(image_export_directory))) < 0) {
 		bprintf ("Warning: read (export directory)\n");
-		R_FREE (bin->export_directory);
+		RZ_FREE (bin->export_directory);
 		return false;
 	}
 	return true;
@@ -1384,7 +1384,7 @@ static int bin_pe_init_resource(struct PE_(rz_bin_pe_obj_t)* bin) {
 	if (rz_buf_read_at (bin->b, resource_dir_paddr, (ut8*) bin->resource_directory,
 		sizeof (*bin->resource_directory)) != sizeof (*bin->resource_directory)) {
 		bprintf ("Warning: read (resource directory)\n");
-		R_FREE (bin->resource_directory);
+		RZ_FREE (bin->resource_directory);
 		return false;
 	}
 	bin->resource_directory_offset = resource_dir_paddr;
@@ -1429,7 +1429,7 @@ static int bin_pe_init_tls(struct PE_(rz_bin_pe_obj_t)* bin) {
 	PE_(image_data_directory) * data_dir_tls = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_TLS];
 	PE_DWord tls_paddr = bin_pe_rva_to_paddr (bin, data_dir_tls->VirtualAddress);
 
-	image_tls_directory = R_NEW0 (PE_(image_tls_directory));
+	image_tls_directory = RZ_NEW0 (PE_(image_tls_directory));
 	if (rz_buf_read_at (bin->b, tls_paddr, (ut8*) image_tls_directory, sizeof (PE_(image_tls_directory))) != sizeof (PE_(image_tls_directory))) {
 		bprintf ("Warning: read (image_tls_directory)\n");
 		free (image_tls_directory);
@@ -1733,7 +1733,7 @@ static String* Pe_r_bin_pe_parse_string(struct PE_(rz_bin_pe_obj_t)* bin, PE_DWo
 		}
 	}
 	align32 (*curAddr);
-	len_value = R_MIN (string->wValueLength * 2, string->wLength - (*curAddr - begAddr));
+	len_value = RZ_MIN (string->wValueLength * 2, string->wLength - (*curAddr - begAddr));
 	string->wValueLength = len_value;
 	if (len_value < 0) {
 		len_value = 0;
@@ -2479,7 +2479,7 @@ static void bin_pe_init_rich_info(struct PE_(rz_bin_pe_obj_t) *bin) {
 	int data;
 	off -= sizeof (ut32);
 	while (((data = rz_buf_read_le32_at (bin->b, off)) != magic) && data ^ mask && off > 0x80) {
-		Pe_image_rich_entry *entry = R_NEW0 (Pe_image_rich_entry);
+		Pe_image_rich_entry *entry = RZ_NEW0 (Pe_image_rich_entry);
 		if (!entry) {
 			return;
 		}
@@ -2671,7 +2671,7 @@ static void _parse_resource_directory(struct PE_(rz_bin_pe_obj_t) *bin, Pe_image
 	ut32 totalRes = dir->NumberOfNamedEntries + dir->NumberOfIdEntries;
 	ut64 rsrc_base = bin->resource_directory_offset;
 	ut64 off;
-	if (totalRes > R_PE_MAX_RESOURCES) {
+	if (totalRes > RZ_PE_MAX_RESOURCES) {
 		return;
 	}
 	for (index = 0; index < totalRes; index++) {
@@ -2701,7 +2701,7 @@ static void _parse_resource_directory(struct PE_(rz_bin_pe_obj_t) *bin, Pe_image
 					ut8 byte;
 					int r = rz_buf_read_at (bin->b, bin->resource_directory_offset + entry.u1.s.NameOffset + 2 + (i*2), &byte, sizeof (ut8));
 					if (r != sizeof (ut8) || !byte) {
-						R_FREE (resourceEntryName);
+						RZ_FREE (resourceEntryName);
 						break;
 					}
 					resourceEntryName[i] = byte;
@@ -2717,12 +2717,12 @@ static void _parse_resource_directory(struct PE_(rz_bin_pe_obj_t) *bin, Pe_image
 				eprintf ("Warning: parsing resource directory\n");
 			}
 			_parse_resource_directory (bin, &identEntry, entry.u2.s.OffsetToDirectory, type, entry.u1.Id, dirs, resourceEntryName);
-			R_FREE (resourceEntryName);
+			RZ_FREE (resourceEntryName);
 			continue;
 		}
-		R_FREE (resourceEntryName);
+		RZ_FREE (resourceEntryName);
 
-		Pe_image_resource_data_entry *data = R_NEW0 (Pe_image_resource_data_entry);
+		Pe_image_resource_data_entry *data = RZ_NEW0 (Pe_image_resource_data_entry);
 		if (!data) {
 			break;
 		}
@@ -2777,7 +2777,7 @@ static void _parse_resource_directory(struct PE_(rz_bin_pe_obj_t) *bin, Pe_image
 			}
 			sdb_ns_set (bin->kv, "vs_version_info", sdb);
 		}
-		rz_pe_resource *rs = R_NEW0 (rz_pe_resource);
+		rz_pe_resource *rs = RZ_NEW0 (rz_pe_resource);
 		if (!rs) {
 			free (data);
 			break;
@@ -2847,7 +2847,7 @@ RZ_API void PE_(bin_pe_parse_resource)(struct PE_(rz_bin_pe_obj_t) *bin) {
 	}
 	curRes = rs_directory->NumberOfNamedEntries;
 	totalRes = curRes + rs_directory->NumberOfIdEntries;
-	if (totalRes > R_PE_MAX_RESOURCES) {
+	if (totalRes > RZ_PE_MAX_RESOURCES) {
 		eprintf ("Error parsing resource directory\n");
 		ht_uu_free (dirs);
 		return;
@@ -2892,7 +2892,7 @@ static int bin_pe_init_security(struct PE_(rz_bin_pe_obj_t) * bin) {
 		return false;
 	}
 
-	Pe_image_security_directory *security_directory = R_NEW0 (Pe_image_security_directory);
+	Pe_image_security_directory *security_directory = RZ_NEW0 (Pe_image_security_directory);
 	if (!security_directory) {
 		return false;
 	}
@@ -2905,7 +2905,7 @@ static int bin_pe_init_security(struct PE_(rz_bin_pe_obj_t) * bin) {
 			return false;
 		}
 		security_directory->certificates = tmp;
-		Pe_certificate *cert = R_NEW0 (Pe_certificate);
+		Pe_certificate *cert = RZ_NEW0 (Pe_certificate);
 		if (!cert) {
 			return false;
 		}
@@ -2913,18 +2913,18 @@ static int bin_pe_init_security(struct PE_(rz_bin_pe_obj_t) * bin) {
 		cert->dwLength += (8 - (cert->dwLength & 7)) & 7; // align32
 		if (offset + cert->dwLength > paddr + size) {
 			bprintf ("Invalid certificate entry");
-			R_FREE (cert);
+			RZ_FREE (cert);
 			return false;
 		}
 		cert->wRevision = rz_buf_read_le16_at (bin->b, offset + 4);
 		cert->wCertificateType = rz_buf_read_le16_at (bin->b, offset + 6);
 		if (cert->dwLength < 6) {
 			eprintf ("Cert.dwLength must be > 6\n");
-			R_FREE (cert);
+			RZ_FREE (cert);
 			return false;
 		}
 		if (!(cert->bCertificate = malloc (cert->dwLength - 6))) {
-			R_FREE (cert);
+			RZ_FREE (cert);
 			return false;
 		}
 		rz_buf_read_at (bin->b, offset + 8, cert->bCertificate, cert->dwLength - 6);
@@ -3095,7 +3095,7 @@ struct rz_bin_pe_addr_t* PE_(rz_bin_pe_get_entrypoint)(struct PE_(rz_bin_pe_obj_
 			if (min_off == -1) {
 				//no section just a hack to try to fix entrypoint
 				//maybe doesn't work always
-				int sa = R_MAX (bin->optional_header->SectionAlignment, 0x1000);
+				int sa = RZ_MAX (bin->optional_header->SectionAlignment, 0x1000);
 				entry->paddr = pe_entry & ((sa << 1) - 1);
 				entry->vaddr = entry->paddr + base_addr;
 			}
@@ -3261,7 +3261,7 @@ beach:
 }
 
 static void free_rsdr_hdr(SCV_RSDS_HEADER* rsds_hdr) {
-	R_FREE (rsds_hdr->file_name);
+	RZ_FREE (rsds_hdr->file_name);
 }
 
 static void init_rsdr_hdr(SCV_RSDS_HEADER* rsds_hdr) {
@@ -3270,7 +3270,7 @@ static void init_rsdr_hdr(SCV_RSDS_HEADER* rsds_hdr) {
 }
 
 static void free_cv_nb10_header(SCV_NB10_HEADER* cv_nb10_header) {
-	R_FREE (cv_nb10_header->file_name);
+	RZ_FREE (cv_nb10_header->file_name);
 }
 
 static void init_cv_nb10_header(SCV_NB10_HEADER* cv_nb10_header) {
@@ -3388,8 +3388,8 @@ int PE_(rz_bin_pe_get_debug_data)(struct PE_(rz_bin_pe_obj_t)* bin, SDebugInfo* 
 	if ((rz_buf_size (bin->b) - dbg_dir_offset) < sizeof (PE_(image_debug_directory_entry))) {
 		return false;
 	}
-	ut32 dbg_data_poff = R_MIN (img_dbg_dir_entry.PointerToRawData, rz_buf_size (bin->b));
-	int dbg_data_len = R_MIN (img_dbg_dir_entry.SizeOfData, rz_buf_size (bin->b) - dbg_data_poff);
+	ut32 dbg_data_poff = RZ_MIN (img_dbg_dir_entry.PointerToRawData, rz_buf_size (bin->b));
+	int dbg_data_len = RZ_MIN (img_dbg_dir_entry.SizeOfData, rz_buf_size (bin->b) - dbg_data_poff);
 	if (dbg_data_len < 1) {
 		return false;
 	}
@@ -3397,7 +3397,7 @@ int PE_(rz_bin_pe_get_debug_data)(struct PE_(rz_bin_pe_obj_t)* bin, SDebugInfo* 
 	if (dbg_data) {
 		rz_buf_read_at (bin->b, dbg_data_poff, dbg_data, dbg_data_len);
 		result = get_debug_info (bin, &img_dbg_dir_entry, dbg_data, dbg_data_len, res);
-		R_FREE (dbg_data);
+		RZ_FREE (dbg_data);
 	}
 	return result;
 }
@@ -3920,7 +3920,7 @@ static struct rz_bin_pe_section_t* PE_(rz_bin_pe_get_sections)(struct PE_(rz_bin
 		}
 		if (shdr[i].Name[0] == '\0') {
 			char* new_name = rz_str_newf ("sect_%d", j);
-			strncpy ((char*) sections[j].name, new_name, R_ARRAY_SIZE (sections[j].name) - 1);
+			strncpy ((char*) sections[j].name, new_name, RZ_ARRAY_SIZE (sections[j].name) - 1);
 			free (new_name);
 		} else if (shdr[i].Name[0] == '/') {
 			//long name is something deprecated but still used
@@ -4102,7 +4102,7 @@ void* PE_(rz_bin_pe_free)(struct PE_(rz_bin_pe_obj_t)* bin) {
 }
 
 struct PE_(rz_bin_pe_obj_t)* PE_(rz_bin_pe_new)(const char* file, bool verbose) {
-	struct PE_(rz_bin_pe_obj_t)* bin = R_NEW0 (struct PE_(rz_bin_pe_obj_t));
+	struct PE_(rz_bin_pe_obj_t)* bin = RZ_NEW0 (struct PE_(rz_bin_pe_obj_t));
 	if (!bin) {
 		return NULL;
 	}
@@ -4127,7 +4127,7 @@ struct PE_(rz_bin_pe_obj_t)* PE_(rz_bin_pe_new)(const char* file, bool verbose) 
 }
 
 struct PE_(rz_bin_pe_obj_t)* PE_(rz_bin_pe_new_buf)(RBuffer *buf, bool verbose) {
-	struct PE_(rz_bin_pe_obj_t)* bin = R_NEW0 (struct PE_(rz_bin_pe_obj_t));
+	struct PE_(rz_bin_pe_obj_t)* bin = RZ_NEW0 (struct PE_(rz_bin_pe_obj_t));
 	if (!bin) {
 		return NULL;
 	}

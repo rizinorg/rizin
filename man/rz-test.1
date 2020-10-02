@@ -1,10 +1,10 @@
 .Dd Mar 31, 2020
-.Dt R2R 1
+.Dt RZ_TEST 1
 .Sh NAME
-.Nm rz_test
+.Nm rz-test
 .Nd rizin regression testsuite
 .Sh SYNOPSIS
-.Nm rz_test
+.Nm rz-test
 .Op Fl h
 .Op Fl n
 .Op Fl q
@@ -12,7 +12,7 @@
 .Op Fl V
 .Op Fl j Ar threads
 .Op Fl r Ar r2-path
-.Op Fl m Ar rz_asm-pth
+.Op Fl m Ar rz-asm-pth
 .Op Fl f Ar bin-for-json-tests
 .Op Fl C Ar chdir
 .Op [test-(dir|file) ...]
@@ -29,7 +29,7 @@ Show the help/usage message
 .It Fl n
 Do not run any test, just load/parse them
 .It Fl q
-Quiet mode (use like this: rz_test -qv)
+Quiet mode (use like this: rz-test -qv)
 .It Fl v
 Show version number
 .It Fl V
@@ -38,10 +38,10 @@ Be verbose
 Specify the number of tasks to run in parallel
 .It Fl r Ar r2-path
 Set path to rizin executable
-.It Fl n Ar rz_asm-path
-Set path to rz_asmexecutable
-.It Fl m Ar rz_asm-path
-Set path to rz_asmexecutable
+.It Fl n Ar rz-asm-path
+Set path to rz-asmexecutable
+.It Fl m Ar rz-asm-path
+Set path to rz-asmexecutable
 .It Fl f Ar bin-for-json-tests
 Load the given binary when running the JSON tests
 .It Fl C Ar directory
@@ -51,18 +51,18 @@ Early chdir before running any test
 .Pp
 Use the -n flag to dont run any test. Just load them.
 .Pp
-  $ rz_test -n
-  [rz_test] Loading tests...
+  $ rz-test -n
+  [rz-test] Loading tests...
 .Pp
 .Sh SEE ALSO
 .Pp
 .Xr rizin(1) ,
-.Xr rz_hash(1) ,
-.Xr rz_find(1) ,
-.Xr rz_bin(1) ,
-.Xr rz_find(1) ,
-.Xr rz_diff(1) ,
-.Xr rz_asm(1) ,
+.Xr rz-hash(1) ,
+.Xr rz-find(1) ,
+.Xr rz-bin(1) ,
+.Xr rz-find(1) ,
+.Xr rz-diff(1) ,
+.Xr rz-asm(1) ,
 .Sh AUTHORS
 .Pp
 Written by pancake <pancake@nopcode.org>.

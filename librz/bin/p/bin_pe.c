@@ -66,7 +66,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	p_start = 0x7c; //HACK: Headersize
 	hdrsize = 0x7c;
 
-	D (R_ROUND (codelen, 4)); // SizeOfCode (Unused)
+	D (RZ_ROUND (codelen, 4)); // SizeOfCode (Unused)
 	D (0); // SizeOfInitializedData (Unused)
 	D (codelen); // codesize
 	D (p_start);
@@ -82,8 +82,8 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	H (4); // MajorSubsystemVersion
 	H (0); // MinorSubsystemVersion (Unused)
 	D (0); // Win32VersionValue (Unused)
-	D ((R_ROUND (hdrsize, 4)) + (R_ROUND (codelen, 4))); // SizeOfImage
-	D (R_ROUND (hdrsize, 4)); // SizeOfHeaders
+	D ((RZ_ROUND (hdrsize, 4)) + (RZ_ROUND (codelen, 4))); // SizeOfImage
+	D (RZ_ROUND (hdrsize, 4)); // SizeOfHeaders
 	D (0); // CheckSum (Unused)
 	H (2); // Subsystem (Win32 GUI)
 	H (0x400); // DllCharacteristics (Unused)
@@ -433,10 +433,10 @@ RBinPlugin rz_bin_plugin_pe = {
 	.hashes = &compute_hashes
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_pe,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

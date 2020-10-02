@@ -1,5 +1,5 @@
-#ifndef R2_EBC_DISAS_H
-#define R2_EBC_DISAS_H
+#ifndef RZ_EBC_DISAS_H
+#define RZ_EBC_DISAS_H
 
 #include <stdint.h>
 

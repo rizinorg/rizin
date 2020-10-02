@@ -1,5 +1,5 @@
-#ifndef R_CMD_HELPS_H_
-#define R_CMD_HELPS_H_
+#ifndef RZ_CMD_HELPS_H_
+#define RZ_CMD_HELPS_H_
 
 #include <rz_cmd.h>
 

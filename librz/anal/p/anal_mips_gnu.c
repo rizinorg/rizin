@@ -31,7 +31,7 @@ static int mips_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *b, int len,
 		return oplen;
 	}
 
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->type = RZ_ANAL_OP_TYPE_UNK;
 	op->size = oplen;
 	op->addr = addr;
 
@@ -40,7 +40,7 @@ static int mips_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *b, int len,
 
 	// eprintf ("MIPS: %02x %02x %02x %02x (after endian: big=%d)\n", buf[0], buf[1], buf[2], buf[3], anal->big_endian);
 	if (opcode == 0) {
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = RZ_ANAL_OP_TYPE_NOP;
 		return oplen;
 	}
 
@@ -91,22 +91,22 @@ static int mips_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *b, int len,
 			//eprintf ("%llx jr\n", addr);
 			// TODO: check return value or gtfo
 			if (((buf[0]&3)<<3) + (buf[1]>>5) == 31) {
-				op->type = R_ANAL_OP_TYPE_RET;
+				op->type = RZ_ANAL_OP_TYPE_RET;
 			} else {
-				op->type = R_ANAL_OP_TYPE_JMP;
+				op->type = RZ_ANAL_OP_TYPE_JMP;
 			}
 			op->delay = 1;
 			break;
 		case 9: // jalr
 			//eprintf ("%llx jalr\n", addr);
-			op->type = R_ANAL_OP_TYPE_UCALL;
+			op->type = RZ_ANAL_OP_TYPE_UCALL;
 			op->delay = 1;
 			break;
 		case 12: // syscall
-			op->type = R_ANAL_OP_TYPE_SWI;
+			op->type = RZ_ANAL_OP_TYPE_SWI;
 			break;
 		case 13: // break
-			op->type = R_ANAL_OP_TYPE_TRAP;
+			op->type = RZ_ANAL_OP_TYPE_TRAP;
 			break;
 		case 16: // mfhi
 		case 18: // mflo
@@ -119,24 +119,24 @@ static int mips_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *b, int len,
 
 		case 26: // div
 		case 27: // divu
-			op->type = R_ANAL_OP_TYPE_DIV;
+			op->type = RZ_ANAL_OP_TYPE_DIV;
 			break;
 		case 32: // add
 		case 33: // addu
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = RZ_ANAL_OP_TYPE_ADD;
 			break;
 		case 34: // sub
 		case 35: // subu
-			op->type = R_ANAL_OP_TYPE_SUB;
+			op->type = RZ_ANAL_OP_TYPE_SUB;
 			break;
 		case 36: // and
-			op->type = R_ANAL_OP_TYPE_AND;
+			op->type = RZ_ANAL_OP_TYPE_AND;
 			break;
 		case 37: // or
-			op->type = R_ANAL_OP_TYPE_OR;
+			op->type = RZ_ANAL_OP_TYPE_OR;
 			break;
 		case 38: // xor
-			op->type = R_ANAL_OP_TYPE_XOR;
+			op->type = RZ_ANAL_OP_TYPE_XOR;
 			break;
 		case 39: // nor
 		case 42: // slt
@@ -180,13 +180,13 @@ static int mips_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *b, int len,
 		ut64 page_hack = addr & 0xf0000000;
 		switch (optype) {
 		case 2: // j
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = RZ_ANAL_OP_TYPE_JMP;
 			op->jump = page_hack + address;
 			op->delay = 1;
 			rz_strbuf_setf (&op->esil, "0x%08x,pc,=", address);
 			break;
 		case 3: // jal
-			op->type = R_ANAL_OP_TYPE_CALL;
+			op->type = RZ_ANAL_OP_TYPE_CALL;
 			op->jump = page_hack + address;
 			op->fail = addr+8;
 			op->delay = 1;
@@ -255,7 +255,7 @@ static int mips_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *b, int len,
 		case 6: // blez
 		case 7: // bgtz
 			// XXX: use imm here
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = RZ_ANAL_OP_TYPE_CJMP;
 			op->jump = addr+(imm<<2)+4;
 			op->fail = addr+8;
 			op->delay = 1;
@@ -278,16 +278,16 @@ static int mips_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *b, int len,
 		// flags directly, as suggested here: https://github.com/rizinorg/rizin/issues/949#issuecomment-43654922
 		case 15: // lui
 			op->dst = rz_anal_value_new ();
-			op->dst->reg = rz_reg_get (anal->reg, mips_reg_decode(rt), R_REG_TYPE_GPR);
+			op->dst->reg = rz_reg_get (anal->reg, mips_reg_decode(rt), RZ_REG_TYPE_GPR);
 			// TODO: currently there is no way for the macro to get access to this register
 			op->val = imm;
 			break;
 		case 9: // addiu
 			op->dst = rz_anal_value_new ();
-			op->dst->reg = rz_reg_get (anal->reg, mips_reg_decode(rt), R_REG_TYPE_GPR);
+			op->dst->reg = rz_reg_get (anal->reg, mips_reg_decode(rt), RZ_REG_TYPE_GPR);
 			// TODO: currently there is no way for the macro to get access to this register
 			op->src[0] = rz_anal_value_new ();
-			op->src[0]->reg = rz_reg_get (anal->reg, mips_reg_decode(rs), R_REG_TYPE_GPR);
+			op->src[0]->reg = rz_reg_get (anal->reg, mips_reg_decode(rs), RZ_REG_TYPE_GPR);
 			op->val = imm; // Beware: this one is signed... use `?vi $v`
 			break;
 		case 8: // addi
@@ -308,7 +308,7 @@ static int mips_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *b, int len,
 		case 57: // swc1
 			break;
 		case 29: // jalx
-			op->type = R_ANAL_OP_TYPE_CALL;
+			op->type = RZ_ANAL_OP_TYPE_CALL;
 			op->jump = addr + 4*((buf[3] | buf[2]<<8 | buf[1]<<16));
 			op->fail = addr + 8;
 			op->delay = 1;
@@ -320,16 +320,16 @@ static int mips_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *b, int len,
 #if 0
 	switch (optype) {
 	case 'R': // register only
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANAL_OP_TYPE_ADD;
 		break;
 	case 'I': // immediate
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = RZ_ANAL_OP_TYPE_JMP;
 		break;
 	case 'J': // memory address jumps
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = RZ_ANAL_OP_TYPE_CALL;
 		break;
 	case 'C': // coprocessor
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = RZ_ANAL_OP_TYPE_RET;
 		break;
 	}
 #endif
@@ -540,9 +540,9 @@ RzAnalPlugin rz_anal_plugin_mips_gnu = {
 	.set_reg_profile = mips_set_reg_profile,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-        .type = R_LIB_TYPE_ANAL,
+        .type = RZ_LIB_TYPE_ANAL,
         .data = &rz_anal_plugin_mips_gnu
 };
 #endif

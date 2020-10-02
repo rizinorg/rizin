@@ -495,9 +495,9 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 
 	RzAnalBaseTypeKind kind;
 	if (die->tag == DW_TAG_union_type) {
-		kind = R_ANAL_BASE_TYPE_KIND_UNION;
+		kind = RZ_ANAL_BASE_TYPE_KIND_UNION;
 	} else {
-		kind = R_ANAL_BASE_TYPE_KIND_STRUCT;
+		kind = RZ_ANAL_BASE_TYPE_KIND_STRUCT;
 	}
 
 	RzAnalBaseType *base_type = rz_anal_base_type_new (kind);
@@ -570,7 +570,7 @@ cleanup:
 static void parse_enum_type(Context *ctx, ut64 idx) {
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
 
-	RzAnalBaseType *base_type = rz_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ENUM);
+	RzAnalBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
 		return;
 	}
@@ -665,7 +665,7 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 	if (!name) { // type has to have a name for now
 		goto cleanup;
 	}
-	RzAnalBaseType *base_type = rz_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_TYPEDEF);
+	RzAnalBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_TYPEDEF);
 	if (!base_type) {
 		goto cleanup;
 	}
@@ -715,7 +715,7 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 	if (!name) { // type has to have a name for now
 		return;
 	}
-	RzAnalBaseType *base_type = rz_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ATOMIC);
+	RzAnalBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ATOMIC);
 	if (!base_type) {
 		return;
 	}
@@ -1130,7 +1130,7 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 	if (kind == LOCATION_UNKNOWN) {
 		return NULL;
 	}
-	VariableLocation *location = R_NEW0 (VariableLocation);
+	VariableLocation *location = RZ_NEW0 (VariableLocation);
 	if (location) {
 		location->reg_name = reg_name;
 		location->reg_num = reg_num;
@@ -1158,7 +1158,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 			rz_strbuf_init (&type);
 			const char *name = NULL;
 			if (child_die->tag == DW_TAG_formal_parameter || child_die->tag == DW_TAG_variable) {
-				Variable *var = R_NEW0 (Variable);
+				Variable *var = RZ_NEW0 (Variable);
 				size_t i;
 				for (i = 0; i < child_die->count; i++) {
 					const RBinDwarfAttrValue *val = &child_die->attr_values[i];
@@ -1593,7 +1593,7 @@ RZ_API void rz_anal_dwarf_integrate_functions(RzAnal *anal, RzFlag *flags, Sdb *
 			char *fcnstr = sdb_get (dwarf_sdb, tmp, 0);
 			free (tmp);
 			/* Apply signature as a comment at a function address */
-			rz_meta_set_string (anal, R_META_TYPE_COMMENT, faddr, fcnstr);
+			rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, faddr, fcnstr);
 			free (fcnstr);
 		}
 		char *var_names_key = rz_str_newf ("fcn.%s.vars", func_sname);

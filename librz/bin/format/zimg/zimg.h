@@ -6,7 +6,7 @@
 #include <rz_lib.h>
 #include <rz_bin.h>
 
-#define R_BIN_ZIMG_MAXSTR 256
+#define RZ_BIN_ZIMG_MAXSTR 256
 
 struct zimg_header_t {
 	ut8 magic[8];
@@ -30,7 +30,7 @@ typedef struct rz_bin_zimg_obj_t {
 } RBinZimgObj;
 
 struct rz_bin_zimg_str_t {
-	char str[R_BIN_ZIMG_MAXSTR];
+	char str[RZ_BIN_ZIMG_MAXSTR];
 	ut64 offset;
 	ut64 ordinal;
 	int size;

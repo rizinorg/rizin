@@ -11,7 +11,7 @@
 
 static int disassemble(RzAsm *a, RzAsmOp *rz_op, const ut8 *buf, int len) {
 	int dlen = gbDisass(rz_op,buf,len);
-	return rz_op->size = R_MAX (0, dlen);
+	return rz_op->size = RZ_MAX (0, dlen);
 }
 
 static int assemble(RzAsm *a, RzAsmOp *rz_op, const char *buf) {
@@ -25,15 +25,15 @@ RzAsmPlugin rz_asm_plugin_gb = {
 	.author = "condret",
 	.license = "LGPL3",
 	.bits = 16,
-	.endian = R_SYS_ENDIAN_LITTLE,
+	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.disassemble = &disassemble,
 	.assemble = &assemble,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_gb,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

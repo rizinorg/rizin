@@ -132,7 +132,7 @@ static void __cons_pal_update_event(RzConsContext *ctx) {
 		RColor *rcolor = (RColor *) (((ut8 *) &(ctx->cpal)) + keys[i].coff);
 		char **color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
 		// Color is dynamically allocated, needs to be freed
-		R_FREE (*color);
+		RZ_FREE (*color);
 		*color = rz_cons_rgb_str_mode (ctx->color_mode, NULL, 0, rcolor);
 		const char *rgb = sdb_fmt ("rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
 		sdb_set (db, rgb, "1", 0);
@@ -160,7 +160,7 @@ RZ_API void rz_cons_pal_init(RzConsContext *ctx) {
 	ctx->cpal.bin                = (RColor) RColor_CYAN;
 	ctx->cpal.btext              = (RColor) RColor_YELLOW;
 	ctx->cpal.call               = (RColor) RColor_BGREEN;
-	ctx->cpal.call.attr          = R_CONS_ATTR_BOLD;
+	ctx->cpal.call.attr          = RZ_CONS_ATTR_BOLD;
 	ctx->cpal.ucall              = (RColor) RColor_GREEN;
 	ctx->cpal.ujmp               = (RColor) RColor_GREEN;
 	ctx->cpal.cjmp               = (RColor) RColor_GREEN;
@@ -177,7 +177,7 @@ RZ_API void rz_cons_pal_init(RzConsContext *ctx) {
 	ctx->cpal.help               = (RColor) RColor_GREEN;
 	ctx->cpal.input              = (RColor) RColor_WHITE;
 	ctx->cpal.invalid            = (RColor) RColor_BRED;
-	ctx->cpal.invalid.attr       = R_CONS_ATTR_BOLD;
+	ctx->cpal.invalid.attr       = RZ_CONS_ATTR_BOLD;
 	ctx->cpal.jmp                = (RColor) RColor_GREEN;
 	ctx->cpal.label              = (RColor) RColor_CYAN;
 	ctx->cpal.math               = (RColor) RColor_YELLOW;
@@ -187,7 +187,7 @@ RZ_API void rz_cons_pal_init(RzConsContext *ctx) {
 	ctx->cpal.offset             = (RColor) RColor_GREEN;
 	ctx->cpal.other              = (RColor) RColor_WHITE;
 	ctx->cpal.pop                = (RColor) RColor_BMAGENTA;
-	ctx->cpal.pop.attr           = R_CONS_ATTR_BOLD;
+	ctx->cpal.pop.attr           = RZ_CONS_ATTR_BOLD;
 	ctx->cpal.prompt             = (RColor) RColor_YELLOW;
 	ctx->cpal.push               = (RColor) RColor_MAGENTA;
 	ctx->cpal.crypto             = (RColor) RColor_BGBLUE;
@@ -195,7 +195,7 @@ RZ_API void rz_cons_pal_init(RzConsContext *ctx) {
 	ctx->cpal.ret                = (RColor) RColor_RED;
 	ctx->cpal.swi                = (RColor) RColor_MAGENTA;
 	ctx->cpal.trap               = (RColor) RColor_BRED;
-	ctx->cpal.trap.attr          = R_CONS_ATTR_BOLD;
+	ctx->cpal.trap.attr          = RZ_CONS_ATTR_BOLD;
 
 	ctx->cpal.ai_read            = (RColor) RColor_GREEN;
 	ctx->cpal.ai_write           = (RColor) RColor_BLUE;
@@ -248,7 +248,7 @@ RZ_API void rz_cons_pal_free(RzConsContext *ctx) {
 	for (i = 0; keys[i].name; i++) {
 		char **color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
 		if (color && *color) {
-			R_FREE (*color);
+			RZ_FREE (*color);
 		}
 	}
 	rz_cons_rainbow_free (ctx);
@@ -388,15 +388,15 @@ RZ_API char *rz_cons_pal_parse(const char *str, RColor *outcol) {
 		const char *p = attr;
 		while (p) {
 			if (!strncmp(p, "bold", 4)) {
-				rcolor.attr |= R_CONS_ATTR_BOLD;
+				rcolor.attr |= RZ_CONS_ATTR_BOLD;
 			} else if (!strncmp(p, "dim", 3)) {
-				rcolor.attr |= R_CONS_ATTR_DIM;
+				rcolor.attr |= RZ_CONS_ATTR_DIM;
 			} else if (!strncmp(p, "italic", 6)) {
-				rcolor.attr |= R_CONS_ATTR_ITALIC;
+				rcolor.attr |= RZ_CONS_ATTR_ITALIC;
 			} else if (!strncmp(p, "underline", 9)) {
-				rcolor.attr |= R_CONS_ATTR_UNDERLINE;
+				rcolor.attr |= RZ_CONS_ATTR_UNDERLINE;
 			} else if (!strncmp(p, "blink", 5)) {
-				rcolor.attr |= R_CONS_ATTR_BLINK;
+				rcolor.attr |= RZ_CONS_ATTR_BLINK;
 			} else {
 				eprintf ("Failed to parse terminal attributes: %s\n", p);
 				break;
@@ -580,17 +580,17 @@ RZ_API void rz_cons_pal_list(int rad, const char *arg) {
 			}
 			if (rcolor->attr) {
 				const RAttrStr attrs[] = {
-				    { R_CONS_ATTR_BOLD, "bold" },
-				    { R_CONS_ATTR_DIM, "dim" },
-				    { R_CONS_ATTR_ITALIC, "italic" },
-				    { R_CONS_ATTR_UNDERLINE, "underline" },
-				    { R_CONS_ATTR_BLINK, "blink" }
+				    { RZ_CONS_ATTR_BOLD, "bold" },
+				    { RZ_CONS_ATTR_DIM, "dim" },
+				    { RZ_CONS_ATTR_ITALIC, "italic" },
+				    { RZ_CONS_ATTR_UNDERLINE, "underline" },
+				    { RZ_CONS_ATTR_BLINK, "blink" }
 				};
 				int j;
 				if (rcolor->a != ALPHA_FGBG) {
 					rz_cons_strcat (" .");
 				}
-				for (j = 0; j < R_ARRAY_SIZE (attrs); j++) {
+				for (j = 0; j < RZ_ARRAY_SIZE (attrs); j++) {
 					if (rcolor->attr & attrs[j].val) {
 						rz_cons_printf (" %s", attrs[j].str);
 					}
@@ -670,7 +670,7 @@ RZ_API void rz_cons_rainbow_free(RzConsContext *ctx) {
 		}
 	}
 	ctx->pal.rainbow_sz = 0;
-	R_FREE (ctx->pal.rainbow);
+	RZ_FREE (ctx->pal.rainbow);
 }
 
 RZ_API char *rz_cons_rainbow_get(int idx, int last, bool bg) {

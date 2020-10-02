@@ -7,8 +7,8 @@ bool test_r_reg_set_name(void) {
 	reg = rz_reg_new ();
 	mu_assert_notnull (reg, "rz_reg_new () failed");
 
-	rz_reg_set_name (reg, R_REG_NAME_PC, "eip");
-	const char *name = rz_reg_get_name (reg, R_REG_NAME_PC);
+	rz_reg_set_name (reg, RZ_REG_NAME_PC, "eip");
+	const char *name = rz_reg_get_name (reg, RZ_REG_NAME_PC);
 	mu_assert_streq (name, "eip", "PC register alias is eip");
 
 	rz_reg_free (reg);
@@ -22,7 +22,7 @@ bool test_r_reg_set_profile_string(void) {
 	mu_assert_notnull (reg, "rz_reg_new () failed");
 
 	rz_reg_set_profile_string (reg, "=PC eip");
-	const char *name = rz_reg_get_name (reg, R_REG_NAME_PC);
+	const char *name = rz_reg_get_name (reg, RZ_REG_NAME_PC);
 	mu_assert_streq (name, "eip", "PC register alias is eip");
 
 	mu_assert_eq (rz_reg_set_profile_string (reg, "gpr eax .32 24 0"),
@@ -110,7 +110,7 @@ bool test_r_reg_get_value_flag(void) {
 		gpr		df		.1	.10	0	direction\n\
 		gpr		of		.1	.11	0	overflow");
 
-	r = rz_reg_get (reg, "eflags", R_REG_TYPE_FLG);
+	r = rz_reg_get (reg, "eflags", RZ_REG_TYPE_FLG);
 	rz_reg_set_value (reg, r, 0x00000346);
 
 	value = rz_reg_getv (reg, "cf");
@@ -151,17 +151,17 @@ bool test_r_reg_get(void) {
 		xmm		xmm0	.64	160	4");
 	mu_assert_eq (success, true, "define eax, sf0 and xmm0 register");
 
-	r = rz_reg_get (reg, "sf0", R_REG_TYPE_FPU);
-	mu_assert_streq (r->name, "sf0", "found sf0 as R_REG_TYPE_FPU");
-	mu_assert_eq (r->type, R_REG_TYPE_FPU, "sf0 type is R_REG_TYPE_FPU");
+	r = rz_reg_get (reg, "sf0", RZ_REG_TYPE_FPU);
+	mu_assert_streq (r->name, "sf0", "found sf0 as RZ_REG_TYPE_FPU");
+	mu_assert_eq (r->type, RZ_REG_TYPE_FPU, "sf0 type is RZ_REG_TYPE_FPU");
 
-	r = rz_reg_get (reg, "xmm0", R_REG_TYPE_XMM);
-	mu_assert_streq (r->name, "xmm0", "found xmm0 as R_REG_TYPE_XMM");
-	mu_assert_eq (r->type, R_REG_TYPE_XMM, "xmm0 type is R_REG_TYPE_XMM");
+	r = rz_reg_get (reg, "xmm0", RZ_REG_TYPE_XMM);
+	mu_assert_streq (r->name, "xmm0", "found xmm0 as RZ_REG_TYPE_XMM");
+	mu_assert_eq (r->type, RZ_REG_TYPE_XMM, "xmm0 type is RZ_REG_TYPE_XMM");
 
 	r = rz_reg_get (reg, "xmm0", -1);
 	mu_assert_streq (r->name, "xmm0", "found xmm0");
-	mu_assert_eq (r->type, R_REG_TYPE_XMM, "xmm0 type is R_REG_TYPE_XMM");
+	mu_assert_eq (r->type, RZ_REG_TYPE_XMM, "xmm0 type is RZ_REG_TYPE_XMM");
 
 	rz_reg_free (reg);
 	mu_end;
@@ -181,12 +181,12 @@ bool test_r_reg_get_list(void) {
 		xmm@fpu		xmm0	.64	160	4");
 	mu_assert_eq (success, true, "define eax, sf0 and xmm0 register");
 
-	mask = ((int)1 << R_REG_TYPE_XMM);
-	mu_assert_eq ((reg->regset[R_REG_TYPE_FPU].maskregstype & mask), mask,
-		"xmm0 stored as R_REG_TYPE_FPU");
+	mask = ((int)1 << RZ_REG_TYPE_XMM);
+	mu_assert_eq ((reg->regset[RZ_REG_TYPE_FPU].maskregstype & mask), mask,
+		"xmm0 stored as RZ_REG_TYPE_FPU");
 
-	l = rz_reg_get_list (reg, R_REG_TYPE_XMM);
-	mu_assert_eq (rz_list_length (l), 2, "sf0 and xmm0 stored as R_REG_TYPE_FPU");
+	l = rz_reg_get_list (reg, RZ_REG_TYPE_XMM);
+	mu_assert_eq (rz_list_length (l), 2, "sf0 and xmm0 stored as RZ_REG_TYPE_FPU");
 
 	rz_reg_free (reg);
 	mu_end;
@@ -208,7 +208,7 @@ bool test_r_reg_get_pack(void) {
 		xmm    xmm1h	.64		16	8\n\
 		xmm    xmm1l	.64		24	8");
 
-	r = rz_reg_get (reg, "xmm0", R_REG_TYPE_XMM);
+	r = rz_reg_get (reg, "xmm0", RZ_REG_TYPE_XMM);
 	rz_reg_set_pack (reg, r, 0, 64, 0x0011223344556677);
 	value = rz_reg_get_pack (reg, r, 0, 64);
 	mu_assert_eq (value, 0x0011223344556677,
@@ -223,9 +223,9 @@ bool test_r_reg_get_pack(void) {
 	mu_assert_eq (value, 0xdeadbeef,
 		"get xmm0 value at index 2 and bitsize 32");
 
-	r = rz_reg_get (reg, "xmm1", R_REG_TYPE_XMM);
+	r = rz_reg_get (reg, "xmm1", RZ_REG_TYPE_XMM);
 	rz_reg_set_pack (reg, r, 1, 64, 0x8899aabbccddeeff);
-	r = rz_reg_get (reg, "xmm1l", R_REG_TYPE_XMM);
+	r = rz_reg_get (reg, "xmm1l", RZ_REG_TYPE_XMM);
 	value = rz_reg_get_pack (reg, r, 0, 32);
 	mu_assert_eq (value, 0xccddeeff,
 		"get xmm1l value at index 0 and bitsize 32");

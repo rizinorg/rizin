@@ -1612,7 +1612,7 @@ old_proto:
 		s->next = first;
 		type->t = VT_FUNC;
 		type->ref = s;
-		R_FREE (symname);
+		RZ_FREE (symname);
 	} else if (tok == '[') {
 		/* array definition */
 		next ();
@@ -1671,8 +1671,8 @@ old_proto:
 static void type_decl(CType *type, AttributeDef *ad, int *v, int td) {
 	Sym *s;
 	int qualifiers, storage;
-	CType *type1 = R_NEW0 (CType);
-	CType *type2 = R_NEW0 (CType);
+	CType *type1 = RZ_NEW0 (CType);
+	CType *type2 = RZ_NEW0 (CType);
 	if (!type1 || !type2) {
 		free (type1);
 		free (type2);

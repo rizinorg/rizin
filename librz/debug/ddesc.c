@@ -5,7 +5,7 @@
 #include <rz_debug.h>
 
 RZ_API RzDebugDesc *rz_debug_desc_new (int fd, char* path, int perm, int type, int off) {
-	RzDebugDesc *desc = R_NEW (RzDebugDesc);
+	RzDebugDesc *desc = RZ_NEW (RzDebugDesc);
 	if (desc) {
 		desc->fd = fd;
 		desc->path = strdup (path);
@@ -82,8 +82,8 @@ RZ_API int rz_debug_desc_list(RzDebug *dbg, int rad) {
 			list = dbg->h->desc.list (dbg->pid);
 			rz_list_foreach (list, iter, p) {
 				dbg->cb_printf ("%i 0x%"PFMT64x" %c%c%c %s\n", p->fd, p->off,
-						(p->perm & R_PERM_R)?'r':'-',
-						(p->perm & R_PERM_W)?'w':'-',
+						(p->perm & RZ_PERM_R)?'r':'-',
+						(p->perm & RZ_PERM_W)?'w':'-',
 						p->type, p->path);
 			}
 			rz_list_purge (list);

@@ -76,16 +76,16 @@ static ut64 base36_decode(const char *str) {
  * @param resbuf, the buffer that contains the KDNet Data of a Response packet.
  */
 static bool _initializeDatakey(iobnet_t *obj, ut8 *resbuf, int size) {
-	RzHash *ctx = rz_hash_new (true, R_HASH_SHA256);
+	RzHash *ctx = rz_hash_new (true, RZ_HASH_SHA256);
 	if (!ctx) {
 		return false;
 	}
 	// Data Key = SHA256 (Key || resbuf)
-	rz_hash_do_begin (ctx, R_HASH_SHA256);
-	rz_hash_do_sha256 (ctx, obj->key, R_HASH_SIZE_SHA256);
+	rz_hash_do_begin (ctx, RZ_HASH_SHA256);
+	rz_hash_do_sha256 (ctx, obj->key, RZ_HASH_SIZE_SHA256);
 	rz_hash_do_sha256 (ctx, resbuf, size);
-	rz_hash_do_end (ctx, R_HASH_SHA256);
-	memcpy (obj->datakey, ctx->digest, R_HASH_SIZE_SHA256);
+	rz_hash_do_end (ctx, RZ_HASH_SHA256);
+	memcpy (obj->datakey, ctx->digest, RZ_HASH_SIZE_SHA256);
 
 	rz_hash_free (ctx);
 	return true;
@@ -94,21 +94,21 @@ static bool _initializeDatakey(iobnet_t *obj, ut8 *resbuf, int size) {
 static void *iob_net_open(const char *path) {
 	size_t i;
 
-	iobnet_t *obj = R_NEW0 (iobnet_t);
+	iobnet_t *obj = RZ_NEW0 (iobnet_t);
 	if (!obj) {
 		return NULL;
 	}
 
 	char *host = strdup (path);
 	char *port = strchr (host, ':');
-	if (R_STR_ISEMPTY (port)) {
+	if (RZ_STR_ISEMPTY (port)) {
 		free (host);
 		free (obj);
 		return NULL;
 	}
 	*port++ = 0;
 	char *key = strchr (port, ':');
-	if (R_STR_ISEMPTY (key)) {
+	if (RZ_STR_ISEMPTY (key)) {
 		free (host);
 		free (obj);
 		return NULL;
@@ -241,7 +241,7 @@ static ut8 *_createKDNetPacket(iobnet_t *obj, const ut8 *buf, int size, int *osi
 
 	// Generate HMAC from KDNet Data to KD packet
 	int off = sizeof (kdnet_packet_t) + KDNET_DATA_SIZE + size + padsize;
-	RzHash *ctx = rz_hash_new (true, R_HASH_SHA256);
+	RzHash *ctx = rz_hash_new (true, RZ_HASH_SHA256);
 	if (!ctx) {
 		free (encbuf);
 		return NULL;
@@ -385,7 +385,7 @@ static bool _processControlPacket(iobnet_t *obj, const ut8 *ctrlbuf, int size) {
 }
 
 bool _verifyhmac(iobnet_t *obj) {
-	RzHash *ctx = rz_hash_new (true, R_HASH_SHA256);
+	RzHash *ctx = rz_hash_new (true, RZ_HASH_SHA256);
 	if (!ctx) {
 		return false;
 	}

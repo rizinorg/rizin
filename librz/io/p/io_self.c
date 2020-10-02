@@ -121,9 +121,9 @@ static int update_self_regions(RzIO *io, int pid) {
 		perm = 0;
 		for (i = 0; i < 4 && perms[i]; i++) {
 			switch (perms[i]) {
-			case 'r': perm |= R_PERM_R; break;
-			case 'w': perm |= R_PERM_W; break;
-			case 'x': perm |= R_PERM_X; break;
+			case 'r': perm |= RZ_PERM_R; break;
+			case 'w': perm |= RZ_PERM_W; break;
+			case 'x': perm |= RZ_PERM_X; break;
 			}
 		}
 		self_sections[self_sections_count].from = rz_num_get (NULL, region);
@@ -198,13 +198,13 @@ static int update_self_regions(RzIO *io, int pid) {
 		int perm = 0;
 
 		if ((c->pr_mflags & MA_READ)) {
-			perm |= R_PERM_R;
+			perm |= RZ_PERM_R;
 		}
 		if ((c->pr_mflags & MA_WRITE)) {
-			perm |= R_PERM_W;
+			perm |= RZ_PERM_W;
 		}
 		if ((c->pr_mflags & MA_EXEC)) {
-			perm |= R_PERM_X;
+			perm |= RZ_PERM_X;
 		}
 
 		self_sections[self_sections_count].from = (ut64)c->pr_vaddr;
@@ -226,18 +226,18 @@ static int update_self_regions(RzIO *io, int pid) {
 	HANDLE h = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, pid);
 	LPTSTR name = calloc (name_size, sizeof (TCHAR));
 	if (!name) {
-		R_LOG_ERROR ("io_self/update_self_regions: Failed to allocate memory.\n");
+		RZ_LOG_ERROR ("io_self/update_self_regions: Failed to allocate memory.\n");
 		CloseHandle (h);
 		return false;
 	}
 	while (VirtualQuery (to, &mbi, sizeof (mbi))) {
 		to = (PBYTE) mbi.BaseAddress + mbi.RegionSize;
 		perm = 0;
-		perm |= mbi.Protect & PAGE_READONLY ? R_PERM_R : 0;
-		perm |= mbi.Protect & PAGE_READWRITE ? R_PERM_RW : 0;
-		perm |= mbi.Protect & PAGE_EXECUTE ? R_PERM_X : 0;
-		perm |= mbi.Protect & PAGE_EXECUTE_READ ? R_PERM_RX : 0;
-		perm |= mbi.Protect & PAGE_EXECUTE_READWRITE ? R_PERM_RWX : 0;
+		perm |= mbi.Protect & PAGE_READONLY ? RZ_PERM_R : 0;
+		perm |= mbi.Protect & PAGE_READWRITE ? RZ_PERM_RW : 0;
+		perm |= mbi.Protect & PAGE_EXECUTE ? RZ_PERM_X : 0;
+		perm |= mbi.Protect & PAGE_EXECUTE_READ ? RZ_PERM_RX : 0;
+		perm |= mbi.Protect & PAGE_EXECUTE_READWRITE ? RZ_PERM_RWX : 0;
 		perm = mbi.Protect & PAGE_NOACCESS ? 0 : perm;
 		if (perm && !GetMappedFileName (h, (LPVOID) mbi.BaseAddress, name, name_size)) {
 			name[0] = '\0';
@@ -280,8 +280,8 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int len) {
 	int left, perm;
 	if (self_in_section (io, io->off, &left, &perm)) {
-		if (perm & R_PERM_R) {
-			int newlen = R_MIN (len, left);
+		if (perm & RZ_PERM_R) {
+			int newlen = RZ_MIN (len, left);
 			ut8 *ptr = (ut8*)(size_t)io->off;
 			memcpy (buf, ptr, newlen);
 			return newlen;
@@ -291,10 +291,10 @@ static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int len) {
 }
 
 static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int len) {
-	if (fd->perm & R_PERM_W) {
+	if (fd->perm & RZ_PERM_W) {
 		int left, perm;
 		if (self_in_section (io, io->off, &left, &perm)) {
-			int newlen = R_MIN (len, left);
+			int newlen = RZ_MIN (len, left);
 			ut8 *ptr = (ut8*)(size_t)io->off;
 			if (newlen > 0) {
 				memcpy (ptr, buf, newlen);
@@ -503,11 +503,11 @@ RzIOPlugin rz_io_plugin_self = {
 	.write = __write,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_mach,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif
 
@@ -583,13 +583,13 @@ void macosx_debug_regions (RzIO *io, task_t task, mach_vm_address_t address, int
 					info.ref_count);
 
 			if (info.protection & VM_PROT_READ) {
-				perm |= R_PERM_R;
+				perm |= RZ_PERM_R;
 			}
 			if (info.protection & VM_PROT_WRITE) {
-				perm |= R_PERM_W;
+				perm |= RZ_PERM_W;
 			}
 			if (info.protection & VM_PROT_EXECUTE) {
-				perm |= R_PERM_X;
+				perm |= RZ_PERM_X;
 			}
 
 			self_sections[self_sections_count].from = address;
@@ -648,13 +648,13 @@ bool bsd_proc_vmmaps(RzIO *io, int pid) {
 			}
 
 			if (entry->kve_protection & KVME_PROT_READ) {
-				perm |= R_PERM_R;
+				perm |= RZ_PERM_R;
 			}
 			if (entry->kve_protection & KVME_PROT_WRITE) {
-				perm |= R_PERM_W;
+				perm |= RZ_PERM_W;
 			}
 			if (entry->kve_protection & KVME_PROT_EXEC) {
-				perm |= R_PERM_X;
+				perm |= RZ_PERM_X;
 			}
 
 			if (entry->kve_path[0] != '\0') {
@@ -702,13 +702,13 @@ exit:
 		}
 
 		if (entry.kve_protection & KVE_PROT_READ) {
-			perm |= R_PERM_R;
+			perm |= RZ_PERM_R;
 		}
 		if (entry.kve_protection & KVE_PROT_WRITE) {
-			perm |= R_PERM_W;
+			perm |= RZ_PERM_W;
 		}
 		if (entry.kve_protection & KVE_PROT_EXEC) {
-			perm |= R_PERM_X;
+			perm |= RZ_PERM_X;
 		}
 
 		io->cb_printf (" %p - %p %s [off. %zu]\n",
@@ -757,13 +757,13 @@ exit:
 			}
 
 			if (entry->kve_protection & KVME_PROT_READ) {
-				perm |= R_PERM_R;
+				perm |= RZ_PERM_R;
 			}
 			if (entry->kve_protection & KVME_PROT_WRITE) {
-				perm |= R_PERM_W;
+				perm |= RZ_PERM_W;
 			}
 			if (entry->kve_protection & KVME_PROT_EXEC) {
-				perm |= R_PERM_X;
+				perm |= RZ_PERM_X;
 			}
 
 			if (entry->kve_path[0] != '\0') {
@@ -816,14 +816,14 @@ exit:
 	while (ep) {
 		int perm = 0;
 		if (entry.protection & VM_PROT_READ) {
-			perm |= R_PERM_R;
+			perm |= RZ_PERM_R;
 		}
 		if (entry.protection & VM_PROT_WRITE) {
-			perm |= R_PERM_W;
+			perm |= RZ_PERM_W;
 		}
 
 		if (entry.protection & VM_PROT_EXECUTE) {
-			perm |= R_PERM_X;
+			perm |= RZ_PERM_X;
 		}
 
 		io->cb_printf (" %p - %p %s [off. %zu]\n",
@@ -851,11 +851,11 @@ RzIOPlugin rz_io_plugin_self = {
 	.desc = "read memory from myself using 'self://' (UNSUPPORTED)",
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_mach,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif
 #endif

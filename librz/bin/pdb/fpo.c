@@ -30,7 +30,7 @@ static int parse_fpo_data_v2(char *data, int data_size, int *read_bytes, SFPO_DA
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void parse_fpo_stream(void *stream, R_STREAM_FILE *stream_file)
+void parse_fpo_stream(void *stream, RZ_STREAM_FILE *stream_file)
 {
 	int data_size;
 	char *data = 0, *ptmp = 0;
@@ -92,7 +92,7 @@ void free_fpo_new_stream(void *stream)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void parse_fpo_new_stream(void *stream, R_STREAM_FILE *stream_file)
+void parse_fpo_new_stream(void *stream, RZ_STREAM_FILE *stream_file)
 {
 	int data_size;
 	char *data = 0, *ptmp = 0;

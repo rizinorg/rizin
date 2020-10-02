@@ -323,7 +323,7 @@ RZ_API int rz_core_write_op(RzCore *core, const char *arg, char op) {
 
 // Get address-specific bits and arch at a certain address.
 // If there are no specific infos (i.e. asm.bits and asm.arch should apply), the bits and arch will be 0 or NULL respectively!
-RZ_API void rz_core_arch_bits_at(RzCore *core, ut64 addr, R_OUT R_NULLABLE int *bits, R_OUT R_BORROW R_NULLABLE const char **arch) {
+RZ_API void rz_core_arch_bits_at(RzCore *core, ut64 addr, RZ_OUT RZ_NULLABLE int *bits, RZ_OUT RZ_BORROW RZ_NULLABLE const char **arch) {
 	int bitsval = 0;
 	const char *archval = NULL;
 	RBinObject *o = rz_bin_cur_object (core->bin);
@@ -335,9 +335,9 @@ RZ_API void rz_core_arch_bits_at(RzCore *core, ut64 addr, R_OUT R_NULLABLE int *
 		if (!core->fixedbits && s->bits) {
 			// only enforce if there's one bits set
 			switch (s->bits) {
-			case R_SYS_BITS_16:
-			case R_SYS_BITS_32:
-			case R_SYS_BITS_64:
+			case RZ_SYS_BITS_16:
+			case RZ_SYS_BITS_32:
+			case RZ_SYS_BITS_64:
 				bitsval = s->bits * 8;
 				break;
 			}
@@ -371,7 +371,7 @@ RZ_API void rz_core_seek_arch_bits(RzCore *core, ut64 addr) {
 }
 
 RZ_API bool rz_core_seek(RzCore *core, ut64 addr, bool rb) {
-	core->offset = rz_io_seek (core->io, addr, R_IO_SEEK_SET);
+	core->offset = rz_io_seek (core->io, addr, RZ_IO_SEEK_SET);
 	if (rb) {
 		rz_core_block_read (core);
 	}
@@ -458,8 +458,8 @@ RZ_API int rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist) 
 			file_sz = 0;
 		}
 #if 0
-		bstart = rz_io_seek (core->io, addr, R_IO_SEEK_SET);
-		fend = rz_io_seek (core->io, 0, R_IO_SEEK_END);
+		bstart = rz_io_seek (core->io, addr, RZ_IO_SEEK_SET);
+		fend = rz_io_seek (core->io, 0, RZ_IO_SEEK_END);
 		if (fend < 1) {
 			fend = 0;
 		}

@@ -15,9 +15,9 @@
 #define TIMEOUT_DEFAULT_STR STR(TIMEOUT_DEFAULT)
 
 typedef struct rz_test_state_t {
-	R2RRunConfig run_config;
+	RzTestRunConfig run_config;
 	bool verbose;
-	R2RTestDatabase *db;
+	RzTestDatabase *db;
 
 	RzThreadCond *cond; // signaled from workers to main thread to update status
 	RzThreadLock *lock; // protects everything below
@@ -29,16 +29,16 @@ typedef struct rz_test_state_t {
 	ut64 fx_count;
 	RPVector queue;
 	RPVector results;
-} R2RState;
+} RzTestState;
 
 static RzThreadFunctionRet worker_th(RzThread *th);
-static void print_state(R2RState *state, ut64 prev_completed);
-static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_completed);
-static void interact(R2RState *state);
-static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results);
-static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results);
-static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results);
-static void interact_diffchar(R2RTestResultInfo *result);
+static void print_state(RzTestState *state, ut64 prev_completed);
+static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_completed);
+static void interact(RzTestState *state);
+static void interact_fix(RzTestResultInfo *result, RPVector *fixup_results);
+static void interact_break(RzTestResultInfo *result, RPVector *fixup_results);
+static void interact_commands(RzTestResultInfo *result, RPVector *fixup_results);
+static void interact_diffchar(RzTestResultInfo *result);
 
 static int help(bool verbose) {
 	printf ("Usage: rz-test [-qvVnL] [-j threads] [test file/dir | @test-type]\n");
@@ -60,7 +60,7 @@ static int help(bool verbose) {
 		" -t [seconds] timeout per test (default is "TIMEOUT_DEFAULT_STR")\n"
 		"\n"
 		"Supported test types: @json @unit @fuzz @cmds\n"
-		"OS/Arch for archos tests: "R2R_ARCH_OS"\n");
+		"OS/Arch for archos tests: "RZ_TEST_ARCH_OS"\n");
 	}
 	return 1;
 }
@@ -78,10 +78,10 @@ static bool rz_test_chdir(const char *argv0) {
 	char *rz_test_path = rz_file_path (argv0);
 	bool found = false;
 	if (readlink (rz_test_path, src_path, sizeof (src_path)) != -1) {
-		char *p = strstr (src_path, R_SYS_DIR "binrz"R_SYS_DIR"rz_test"R_SYS_DIR"rz_test");
+		char *p = strstr (src_path, RZ_SYS_DIR "binrz"RZ_SYS_DIR"rz_test"RZ_SYS_DIR"rz_test");
 		if (p) {
 			*p = 0;
-			strcat (src_path, R_SYS_DIR"test"R_SYS_DIR);
+			strcat (src_path, RZ_SYS_DIR"test"RZ_SYS_DIR);
 			if (rz_file_is_directory (src_path)) {
 				if (chdir (src_path) != -1) {
 					eprintf ("Running from %s\n", src_path);
@@ -109,7 +109,7 @@ static bool rz_test_chdir_fromtest(const char *test_path) {
 	}
 	char *abs_test_path = rz_file_abspath (test_path);
 	if (!rz_file_is_directory (abs_test_path)) {
-		char *last_slash = (char *)rz_str_lchr (abs_test_path, R_SYS_DIR[0]);
+		char *last_slash = (char *)rz_str_lchr (abs_test_path, RZ_SYS_DIR[0]);
 		if (last_slash) {
 			*last_slash = 0;
 		}
@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
 		HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
 		DWORD mode;
 		int i;
-		for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
+		for (i = 0; i < RZ_ARRAY_SIZE (streams); i++) {
 			GetConsoleMode (streams[i], &mode);
 			SetConsoleMode (streams[i],
 			                mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
 			break;
 		case 'v':
 			if (quiet) {
-				printf (R2_VERSION "\n");
+				printf (RZ_VERSION "\n");
 			} else {
 				char *s = rz_str_version ("rz_test");
 				printf ("%s\n", s);
@@ -283,7 +283,7 @@ int main(int argc, char **argv) {
 	atexit (rz_test_subprocess_fini);
 
 	ut64 time_start = rz_time_now_mono ();
-	R2RState state = {{0}};
+	RzTestState state = {{0}};
 	state.run_config.r2_cmd = rizin_cmd ? rizin_cmd : RIZIN_CMD_DEFAULT;
 	state.run_config.rz_asm_cmd = rz_asm_cmd ? rz_asm_cmd : RZ_ASM_CMD_DEFAULT;
 	state.run_config.json_test_file = json_test_file ? json_test_file : JSON_TEST_FILE_DEFAULT;
@@ -358,7 +358,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	R_FREE (cwd);
+	RZ_FREE (cwd);
 	uint32_t loaded_tests = rz_pvector_len (&state.db->tests);
 	printf ("Loaded %u tests.\n", loaded_tests);
 	if (nothing) {
@@ -370,8 +370,8 @@ int main(int argc, char **argv) {
 		eprintf ("Skipping json tests because jq is not available.\n");
 		size_t i;
 		for (i = 0; i < rz_pvector_len (&state.db->tests);) {
-			R2RTest *test = rz_pvector_at (&state.db->tests, i);
-			if (test->type == R2R_TEST_TYPE_JSON) {
+			RzTest *test = rz_pvector_at (&state.db->tests, i);
+			if (test->type == RZ_TEST_TYPE_JSON) {
 				rz_test_test_free (test);
 				rz_pvector_remove_at (&state.db->tests, i);
 				continue;
@@ -389,7 +389,7 @@ int main(int argc, char **argv) {
 		if (state.path_left) {
 			void **it;
 			rz_pvector_foreach (&state.queue, it) {
-				R2RTest *test = *it;
+				RzTest *test = *it;
 				ut64 *count = ht_pp_find (state.path_left, test->path, NULL);
 				if (!count) {
 					count = malloc (sizeof (ut64));
@@ -484,30 +484,30 @@ beach:
 }
 
 static RzThreadFunctionRet worker_th(RzThread *th) {
-	R2RState *state = th->user;
+	RzTestState *state = th->user;
 	rz_th_lock_enter (state->lock);
 	while (true) {
 		if (rz_pvector_empty (&state->queue)) {
 			break;
 		}
-		R2RTest *test = rz_pvector_pop (&state->queue);
+		RzTest *test = rz_pvector_pop (&state->queue);
 		rz_th_lock_leave (state->lock);
 
-		R2RTestResultInfo *result = rz_test_run_test (&state->run_config, test);
+		RzTestResultInfo *result = rz_test_run_test (&state->run_config, test);
 
 		rz_th_lock_enter (state->lock);
 		rz_pvector_push (&state->results, result);
 		switch (result->result) {
-		case R2R_TEST_RESULT_OK:
+		case RZ_TEST_RESULT_OK:
 			state->ok_count++;
 			break;
-		case R2R_TEST_RESULT_FAILED:
+		case RZ_TEST_RESULT_FAILED:
 			state->xx_count++;
 			break;
-		case R2R_TEST_RESULT_BROKEN:
+		case RZ_TEST_RESULT_BROKEN:
 			state->br_count++;
 			break;
-		case R2R_TEST_RESULT_FIXED:
+		case RZ_TEST_RESULT_FIXED:
 			state->fx_count++;
 			break;
 		}
@@ -523,7 +523,7 @@ static RzThreadFunctionRet worker_th(RzThread *th) {
 		rz_th_cond_signal (state->cond);
 	}
 	rz_th_lock_leave (state->lock);
-	return R_TH_STOP;
+	return RZ_TH_STOP;
 }
 
 static void print_diff(const char *actual, const char *expected, bool diffchar) {
@@ -589,7 +589,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 	printf ("\n");
 }
 
-static R2RProcessOutput *print_runner(const char *file, const char *args[], size_t args_size,
+static RzTestProcessOutput *print_runner(const char *file, const char *args[], size_t args_size,
 	const char *envvars[], const char *envvals[], size_t env_size, ut64 timeout_ms, void *user) {
 	size_t i;
 	for (i = 0; i < env_size; i++) {
@@ -608,13 +608,13 @@ static R2RProcessOutput *print_runner(const char *file, const char *args[], size
 	return NULL;
 }
 
-static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
+static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result) {
 	if (result->run_failed) {
 		printf (Color_RED "RUN FAILED (e.g. wrong rizin path)" Color_RESET "\n");
 		return;
 	}
 	switch (result->test->type) {
-	case R2R_TEST_TYPE_CMD: {
+	case RZ_TEST_TYPE_CMD: {
 		rz_test_run_cmd_test (config, result->test->cmd_test, print_runner, NULL);
 		const char *expect = result->test->cmd_test->expect.value;
 		if (expect && strcmp (result->proc_out->out, expect)) {
@@ -634,12 +634,12 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 		}
 		break;
 	}
-	case R2R_TEST_TYPE_ASM:
+	case RZ_TEST_TYPE_ASM:
 		// TODO
 		break;
-	case R2R_TEST_TYPE_JSON:
+	case RZ_TEST_TYPE_JSON:
 		break;
-	case R2R_TEST_TYPE_FUZZ:
+	case RZ_TEST_TYPE_FUZZ:
 		rz_test_run_fuzz_test (config, result->test->fuzz_test, print_runner, NULL);
 		printf ("-- stdout\n%s\n", result->proc_out->out);
 		printf ("-- stderr\n%s\n", result->proc_out->err);
@@ -648,31 +648,31 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 	}
 }
 
-static void print_new_results(R2RState *state, ut64 prev_completed) {
+static void print_new_results(RzTestState *state, ut64 prev_completed) {
 	// Detailed test result (with diff if necessary)
 	ut64 completed = (ut64)rz_pvector_len (&state->results);
 	ut64 i;
 	for (i = prev_completed; i < completed; i++) {
-		R2RTestResultInfo *result = rz_pvector_at (&state->results, (size_t)i);
-		if (!state->verbose && (result->result == R2R_TEST_RESULT_OK || result->result == R2R_TEST_RESULT_FIXED || result->result == R2R_TEST_RESULT_BROKEN)) {
+		RzTestResultInfo *result = rz_pvector_at (&state->results, (size_t)i);
+		if (!state->verbose && (result->result == RZ_TEST_RESULT_OK || result->result == RZ_TEST_RESULT_FIXED || result->result == RZ_TEST_RESULT_BROKEN)) {
 			continue;
 		}
 		char *name = rz_test_test_name (result->test);
 		if (!name) {
 			continue;
 		}
-		printf ("\n"R_CONS_CURSOR_UP R_CONS_CLEAR_LINE);
+		printf ("\n"RZ_CONS_CURSOR_UP RZ_CONS_CLEAR_LINE);
 		switch (result->result) {
-		case R2R_TEST_RESULT_OK:
+		case RZ_TEST_RESULT_OK:
 			printf (Color_GREEN"[OK]"Color_RESET);
 			break;
-		case R2R_TEST_RESULT_FAILED:
+		case RZ_TEST_RESULT_FAILED:
 			printf (Color_RED"[XX]"Color_RESET);
 			break;
-		case R2R_TEST_RESULT_BROKEN:
+		case RZ_TEST_RESULT_BROKEN:
 			printf (Color_BLUE"[BR]"Color_RESET);
 			break;
-		case R2R_TEST_RESULT_FIXED:
+		case RZ_TEST_RESULT_FIXED:
 			printf (Color_CYAN"[FX]"Color_RESET);
 			break;
 		}
@@ -680,26 +680,26 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 			printf (Color_CYAN" TIMEOUT"Color_RESET);
 		}
 		printf (" %s "Color_YELLOW"%s"Color_RESET"\n", result->test->path, name);
-		if (result->result == R2R_TEST_RESULT_FAILED || (state->verbose && result->result == R2R_TEST_RESULT_BROKEN)) {
+		if (result->result == RZ_TEST_RESULT_FAILED || (state->verbose && result->result == RZ_TEST_RESULT_BROKEN)) {
 			print_result_diff (&state->run_config, result);
 		}
 		free (name);
 	}
 }
 
-static void print_state_counts(R2RState *state) {
+static void print_state_counts(RzTestState *state) {
 	printf ("%8"PFMT64u" OK  %8"PFMT64u" BR %8"PFMT64u" XX %8"PFMT64u" FX",
 			state->ok_count, state->br_count, state->xx_count, state->fx_count);
 }
 
-static void print_state(R2RState *state, ut64 prev_completed) {
+static void print_state(RzTestState *state, ut64 prev_completed) {
 #if __WINDOWS__
 	setvbuf (stdout, NULL, _IOFBF, 8192);
 #endif
 	print_new_results (state, prev_completed);
 
 	// [x/x] OK  42 BR  0 ...
-	printf (R_CONS_CLEAR_LINE);
+	printf (RZ_CONS_CLEAR_LINE);
 	int w = printf ("[%"PFMT64u"/%"PFMT64u"]", (ut64)rz_pvector_len (&state->results), (ut64)rz_pvector_len (&state->db->tests));
 	while (w >= 0 && w < 20) {
 		printf (" ");
@@ -713,7 +713,7 @@ static void print_state(R2RState *state, ut64 prev_completed) {
 #endif
 }
 
-static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_completed) {
+static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_completed) {
 	print_new_results (state, prev_completed);
 	ut64 paths_completed = rz_pvector_len (&state->completed_paths);
 	for (; prev_paths_completed < paths_completed; prev_paths_completed++) {
@@ -723,13 +723,13 @@ static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_comp
 	}
 }
 
-static void interact(R2RState *state) {
+static void interact(RzTestState *state) {
 	void **it;
 	RPVector failed_results;
 	rz_pvector_init (&failed_results, NULL);
 	rz_pvector_foreach (&state->results, it) {
-		R2RTestResultInfo *result = *it;
-		if (result->result == R2R_TEST_RESULT_FAILED) {
+		RzTestResultInfo *result = *it;
+		if (result->result == RZ_TEST_RESULT_FAILED) {
 			rz_pvector_push (&failed_results, result);
 		}
 	}
@@ -746,8 +746,8 @@ static void interact(R2RState *state) {
 	        (ut64)rz_pvector_len (&failed_results));
 
 	rz_pvector_foreach (&failed_results, it) {
-		R2RTestResultInfo *result = *it;
-		if (result->test->type != R2R_TEST_TYPE_CMD) {
+		RzTestResultInfo *result = *it;
+		if (result->test->type != RZ_TEST_TYPE_CMD) {
 			// TODO: other types of tests
 			continue;
 		}
@@ -852,14 +852,14 @@ static char *replace_lines(const char *src, size_t from, size_t to, const char *
 static void fixup_tests(RPVector *results, const char *edited_file, ut64 start_line, st64 delta) {
 	void **it;
 	rz_pvector_foreach (results, it) {
-		R2RTestResultInfo *result = *it;
-		if (result->test->type != R2R_TEST_TYPE_CMD) {
+		RzTestResultInfo *result = *it;
+		if (result->test->type != RZ_TEST_TYPE_CMD) {
 			continue;
 		}
 		if (result->test->path != edited_file) { // this works because all the paths come from the string pool
 			continue;
 		}
-		R2RzCmdTest *test = result->test->cmd_test;
+		RzCmdTest *test = result->test->cmd_test;
 		test->run_line += delta;
 
 #define DO_KEY_STR(key, field) \
@@ -882,7 +882,7 @@ static void fixup_tests(RPVector *results, const char *edited_file, ut64 start_l
 			test->field.line += delta; \
 		}
 
-		R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, DO_KEY_BOOL, DO_KEY_NUM)
+		RZ_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, DO_KEY_BOOL, DO_KEY_NUM)
 #undef DO_KEY_STR
 #undef DO_KEY_BOOL
 #undef DO_KEY_NUM
@@ -930,10 +930,10 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 	free (newc);
 }
 
-static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results) {
-	assert (result->test->type == R2R_TEST_TYPE_CMD);
-	R2RzCmdTest *test = result->test->cmd_test;
-	R2RProcessOutput *out = result->proc_out;
+static void interact_fix(RzTestResultInfo *result, RPVector *fixup_results) {
+	assert (result->test->type == RZ_TEST_TYPE_CMD);
+	RzCmdTest *test = result->test->cmd_test;
+	RzTestProcessOutput *out = result->proc_out;
 	if (test->expect.value && out->out) {
 		replace_cmd_kv_file (result->test->path, test->expect.line_begin, test->expect.line_end, "EXPECT", out->out, fixup_results);
 	}
@@ -942,9 +942,9 @@ static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results) {
 	}
 }
 
-static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results) {
-	assert (result->test->type == R2R_TEST_TYPE_CMD);
-	R2RzCmdTest *test = result->test->cmd_test;
+static void interact_break(RzTestResultInfo *result, RPVector *fixup_results) {
+	assert (result->test->type == RZ_TEST_TYPE_CMD);
+	RzCmdTest *test = result->test->cmd_test;
 	ut64 line_begin;
 	ut64 line_end;
 	if (test->broken.set) {
@@ -956,9 +956,9 @@ static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results) {
 	replace_cmd_kv_file (result->test->path, line_begin, line_end, "BROKEN", "1", fixup_results);
 }
 
-static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results) {
-	assert (result->test->type == R2R_TEST_TYPE_CMD);
-	R2RzCmdTest *test = result->test->cmd_test;
+static void interact_commands(RzTestResultInfo *result, RPVector *fixup_results) {
+	assert (result->test->type == RZ_TEST_TYPE_CMD);
+	RzCmdTest *test = result->test->cmd_test;
 	if (!test->cmds.value) {
 		return;
 	}
@@ -1014,7 +1014,7 @@ static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results
 	free (newcmds);
 }
 
-static void interact_diffchar(R2RTestResultInfo *result) {
+static void interact_diffchar(RzTestResultInfo *result) {
 	const char *actual = result->proc_out->out;
 	const char *expected = result->test->cmd_test->expect.value;
 	printf ("-- stdout\n");

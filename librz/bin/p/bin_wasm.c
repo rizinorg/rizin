@@ -12,11 +12,11 @@
 
 static bool check_buffer (RBuffer *rbuf) {
 	ut8 buf[4] = { 0 };
-	return rbuf && rz_buf_read_at (rbuf, 0, buf, 4) == 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4);
+	return rbuf && rz_buf_read_at (rbuf, 0, buf, 4) == 4 && !memcmp (buf, RZ_BIN_WASM_MAGIC_BYTES, 4);
 }
 
 static bool find_export (const ut32 *p, const RBinWasmExportEntry *q) {
-	if (q->kind != R_BIN_WASM_EXTERNALKIND_Function) {
+	if (q->kind != RZ_BIN_WASM_EXTERNALKIND_Function) {
 		return true;
 	}
 	return q->index != (*p);
@@ -73,7 +73,7 @@ static RzList *entries (RBinFile *bf) {
 			return NULL;
 		}
 	}
-	if ((ptr = R_NEW0 (RBinAddr))) {
+	if ((ptr = RZ_NEW0 (RBinAddr))) {
 		ptr->paddr = addr;
 		ptr->vaddr = addr;
 		rz_list_append (ret, ptr);
@@ -97,13 +97,13 @@ static RzList *sections (RBinFile *bf) {
 	}
 	RzListIter *iter;
 	rz_list_foreach (secs, iter, sec) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RBinSection))) {
 			rz_list_free (secs);
 			rz_list_free (ret);
 			return NULL;
 		}
 		ptr->name = strdup ((char *)sec->name);
-		if (sec->id == R_BIN_WASM_SECTION_DATA || sec->id == R_BIN_WASM_SECTION_MEMORY) {
+		if (sec->id == RZ_BIN_WASM_SECTION_DATA || sec->id == RZ_BIN_WASM_SECTION_MEMORY) {
 			ptr->is_data = true;
 		}
 		ptr->size = sec->payload_len;
@@ -149,7 +149,7 @@ static RzList *symbols (RBinFile *bf) {
 	RBinWasmImportEntry *imp;
 	RzListIter *iter;
 	rz_list_foreach (imports, iter, imp) {
-		if (!(ptr = R_NEW0 (RBinSymbol))) {
+		if (!(ptr = RZ_NEW0 (RBinSymbol))) {
 			goto bad_alloc;
 		}
 		ptr->name = strdup (imp->field_str);
@@ -158,20 +158,20 @@ static RzList *symbols (RBinFile *bf) {
 		ptr->forwarder = "NONE";
 		ptr->bind = "NONE";
 		switch (imp->kind) {
-		case R_BIN_WASM_EXTERNALKIND_Function:
-			ptr->type = R_BIN_TYPE_FUNC_STR;
+		case RZ_BIN_WASM_EXTERNALKIND_Function:
+			ptr->type = RZ_BIN_TYPE_FUNC_STR;
 			fcn_idx++;
 			break;
-		case R_BIN_WASM_EXTERNALKIND_Table:
+		case RZ_BIN_WASM_EXTERNALKIND_Table:
 			ptr->type = "TABLE";
 			table_idx++;
 			break;
-		case R_BIN_WASM_EXTERNALKIND_Memory:
+		case RZ_BIN_WASM_EXTERNALKIND_Memory:
 			ptr->type = "MEMORY";
 			mem_idx++;
 			break;
-		case R_BIN_WASM_EXTERNALKIND_Global:
-			ptr->type = R_BIN_BIND_GLOBAL_STR;
+		case RZ_BIN_WASM_EXTERNALKIND_Global:
+			ptr->type = RZ_BIN_BIND_GLOBAL_STR;
 			global_idx++;
 			break;
 		}
@@ -187,7 +187,7 @@ static RzList *symbols (RBinFile *bf) {
 	RBinWasmCodeEntry *func;
 	// RBinWasmExportEntry *export = NULL;
 	rz_list_foreach (codes, iter, func) {
-		if (!(ptr = R_NEW0 (RBinSymbol))) {
+		if (!(ptr = RZ_NEW0 (RBinSymbol))) {
 			goto bad_alloc;
 		}
 
@@ -197,7 +197,7 @@ static RzList *symbols (RBinFile *bf) {
 
 			is_exp = rz_list_find (exports, &fcn_idx, (RzListComparator)find_export);
 			if (is_exp) {
-				ptr->bind = R_BIN_BIND_GLOBAL_STR;
+				ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
 			}
 		} else {
 			// fallback if symbol is not found.
@@ -208,7 +208,7 @@ static RzList *symbols (RBinFile *bf) {
 		if (!ptr->bind) {
 			ptr->bind = "NONE";
 		}
-		ptr->type = R_BIN_TYPE_FUNC_STR;
+		ptr->type = RZ_BIN_TYPE_FUNC_STR;
 		ptr->size = func->len;
 		ptr->vaddr = (ut64)func->code;
 		ptr->paddr = (ut64)func->code;
@@ -249,7 +249,7 @@ static RzList *imports (RBinFile *bf) {
 	ut32 i = 0;
 	RzListIter *iter;
 	rz_list_foreach (imports, iter, import) {
-		if (!(ptr = R_NEW0 (RBinImport))) {
+		if (!(ptr = RZ_NEW0 (RBinImport))) {
 			goto bad_alloc;
 		}
 		ptr->name = strdup (import->field_str);
@@ -257,16 +257,16 @@ static RzList *imports (RBinFile *bf) {
 		ptr->ordinal = i;
 		ptr->bind = "NONE";
 		switch (import->kind) {
-		case R_BIN_WASM_EXTERNALKIND_Function:
+		case RZ_BIN_WASM_EXTERNALKIND_Function:
 			ptr->type = "FUNC";
 			break;
-		case R_BIN_WASM_EXTERNALKIND_Table:
+		case RZ_BIN_WASM_EXTERNALKIND_Table:
 			ptr->type = "TABLE";
 			break;
-		case R_BIN_WASM_EXTERNALKIND_Memory:
+		case RZ_BIN_WASM_EXTERNALKIND_Memory:
 			ptr->type = "MEM";
 			break;
-		case R_BIN_WASM_EXTERNALKIND_Global:
+		case RZ_BIN_WASM_EXTERNALKIND_Global:
 			ptr->type = "GLOBAL";
 			break;
 		}
@@ -286,7 +286,7 @@ static RzList *libs (RBinFile *bf) {
 static RBinInfo *info (RBinFile *bf) {
 	RBinInfo *ret = NULL;
 
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
@@ -342,10 +342,10 @@ RBinPlugin rz_bin_plugin_wasm = {
 	.create = &create,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_wasm,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

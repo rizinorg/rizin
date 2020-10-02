@@ -128,12 +128,12 @@ int file_is_tar(RzMagic *ms, const ut8 *buf, size_t nbytes) {
 	 * archive starts with a dot, we can confuse it with an nroff file.
 	 */
 	int tar = is_tar(buf, nbytes);
-	int mime = ms->flags & R_MAGIC_MIME;
+	int mime = ms->flags & RZ_MAGIC_MIME;
 
 	if (tar < 1 || tar > 3) {
 		return 0;
 	}
-	if (mime == R_MAGIC_MIME_ENCODING) {
+	if (mime == RZ_MAGIC_MIME_ENCODING) {
 		return 0;
 	}
 	if (file_printf (ms, mime ? "application/x-tar" : tartype[tar - 1]) == -1) {

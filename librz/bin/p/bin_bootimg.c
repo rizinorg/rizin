@@ -16,7 +16,7 @@ typedef struct boot_img_hdr BootImage;
 #define ADD_REMAINDER(val, aln) ((val) + ((aln) != 0 ? ((val) % (aln)) : 0))
 #define ROUND_DOWN(val, aln) ((aln) != 0 ? (((val) / (aln)) * (aln)) : (val))
 
-R_PACKED (
+RZ_PACKED (
 struct boot_img_hdr {
 	ut8 magic[BOOT_MAGIC_SIZE];
 
@@ -85,7 +85,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	BootImageObj *bio = R_NEW0 (BootImageObj);
+	BootImageObj *bio = RZ_NEW0 (BootImageObj);
 	if (!bio) {
 		return false;
 	}
@@ -107,7 +107,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 static void destroy(RBinFile *bf) {
 	BootImageObj *bio = bf->o->bin_obj;
 	rz_buf_free (bio->buf);
-	R_FREE (bf->o->bin_obj);
+	RZ_FREE (bf->o->bin_obj);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -124,7 +124,7 @@ static RBinInfo *info(RBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	ret = R_NEW0 (RBinInfo);
+	ret = RZ_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -163,7 +163,7 @@ static RzList *entries(RBinFile *bf) {
 	if (!(ret = rz_list_newf (free))) {
 		return NULL;
 	}
-	if (!(ptr = R_NEW0 (RBinAddr))) {
+	if (!(ptr = RZ_NEW0 (RBinAddr))) {
 		return ret;
 	}
 	ptr->paddr = bi->page_size;
@@ -186,7 +186,7 @@ static RzList *sections(RBinFile *bf) {
 	}
 	ret->free = free;
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("header");
@@ -194,11 +194,11 @@ static RzList *sections(RBinFile *bf) {
 	ptr->vsize = bi->page_size;
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
-	ptr->perm = R_PERM_R; // r--
+	ptr->perm = RZ_PERM_R; // r--
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("kernel");
@@ -206,13 +206,13 @@ static RzList *sections(RBinFile *bf) {
 	ptr->vsize = ADD_REMAINDER (ptr->size, bi->page_size);
 	ptr->paddr = bi->page_size;
 	ptr->vaddr = bi->kernel_addr;
-	ptr->perm = R_PERM_R; // r--
+	ptr->perm = RZ_PERM_R; // r--
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
 	if (bi->ramdisk_size > 0) {
 		ut64 base = bi->kernel_size + 2 * bi->page_size - 1;
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RBinSection))) {
 			return ret;
 		}
 		ptr->name = strdup ("ramdisk");
@@ -220,14 +220,14 @@ static RzList *sections(RBinFile *bf) {
 		ptr->vsize = ADD_REMAINDER (bi->ramdisk_size, bi->page_size);
 		ptr->paddr = ROUND_DOWN (base, bi->page_size);
 		ptr->vaddr = bi->ramdisk_addr;
-		ptr->perm = R_PERM_RX; // r-x
+		ptr->perm = RZ_PERM_RX; // r-x
 		ptr->add = true;
 		rz_list_append (ret, ptr);
 	}
 
 	if (bi->second_size > 0) {
 		ut64 base = bi->kernel_size + bi->ramdisk_size + 2 * bi->page_size - 1;
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RBinSection))) {
 			return ret;
 		}
 		ptr->name = strdup ("second");
@@ -235,7 +235,7 @@ static RzList *sections(RBinFile *bf) {
 		ptr->vsize = ADD_REMAINDER (bi->second_size, bi->page_size);
 		ptr->paddr = ROUND_DOWN (base, bi->page_size);
 		ptr->vaddr = bi->second_addr;
-		ptr->perm = R_PERM_RX; // r-x
+		ptr->perm = RZ_PERM_RX; // r-x
 		ptr->add = true;
 		rz_list_append (ret, ptr);
 	}
@@ -258,10 +258,10 @@ RBinPlugin rz_bin_plugin_bootimg = {
 	.info = &info,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_bootimg,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif
