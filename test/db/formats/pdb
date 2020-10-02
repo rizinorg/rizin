@@ -36,31 +36,31 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=find structure RZ_TEST_STRUCT
+NAME=find structure R2_TEST_STRUCT
 FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep -ao RZ_TEST_STRUCT
+CMDS=!rz-bin -P ${RZ_FILE} | grep -ao R2_TEST_STRUCT
 EXPECT=<<EOF
-RZ_TEST_STRUCT
+R2_TEST_STRUCT
 EOF
 RUN
 
-NAME=find union RZ_TEST_UNION
+NAME=find union R2_TEST_UNION
 FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep -ao RZ_TEST_UNION
+CMDS=!rz-bin -P ${RZ_FILE} | grep -ao R2_TEST_UNION
 EXPECT=<<EOF
-RZ_TEST_UNION
+R2_TEST_UNION
 EOF
 RUN
 
-NAME=find enum RZ_TEST_ENUM
+NAME=find enum R2_TEST_ENUM
 FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep -ao RZ_TEST_ENUM
+CMDS=!rz-bin -P ${RZ_FILE} | grep -ao R2_TEST_ENUM
 EXPECT=<<EOF
-RZ_TEST_ENUM
+R2_TEST_ENUM
 EOF
 RUN
 
-NAME=member1 offset of structure RZ_TEST_STRUCT
+NAME=member1 offset of structure R2_TEST_STRUCT
 FILE=bins/pdb/Project1.pdb
 CMDS=!rz-bin -P ${RZ_FILE} | grep r2_struct_var_1 | grep -ao 0x0
 EXPECT=<<EOF
@@ -68,7 +68,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=member2 offset of structure RZ_TEST_STRUCT
+NAME=member2 offset of structure R2_TEST_STRUCT
 
 FILE=bins/pdb/Project1.pdb
 CMDS=!rz-bin -P ${RZ_FILE} | grep r2_struct_var_2 | grep -ao 0x4
@@ -77,7 +77,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=member1 name of structure RZ_TEST_STRUCT
+NAME=member1 name of structure R2_TEST_STRUCT
 FILE=bins/pdb/Project1.pdb
 CMDS=!rz-bin -P ${RZ_FILE} | grep -ao r2_struct_var_1
 EXPECT=<<EOF
@@ -85,7 +85,7 @@ r2_struct_var_1
 EOF
 RUN
 
-NAME=member2 name of structure RZ_TEST_STRUCT
+NAME=member2 name of structure R2_TEST_STRUCT
 FILE=bins/pdb/Project1.pdb
 CMDS=!rz-bin -P ${RZ_FILE} | grep -ao r2_struct_var_2
 EXPECT=<<EOF
@@ -93,7 +93,7 @@ r2_struct_var_2
 EOF
 RUN
 
-NAME=member1 type of structure RZ_TEST_STRUCT
+NAME=member1 type of structure R2_TEST_STRUCT
 FILE=bins/pdb/Project1.pdb
 CMDS=!rz-bin -P ${RZ_FILE} | grep r2_struct_var_1 | grep -ao int32_t
 EXPECT=<<EOF
@@ -101,7 +101,7 @@ int32_t
 EOF
 RUN
 
-NAME=member2 type of structure RZ_TEST_STRUCT
+NAME=member2 type of structure R2_TEST_STRUCT
 FILE=bins/pdb/Project1.pdb
 CMDS=!rz-bin -P ${RZ_FILE} | grep r2_struct_var_2 | grep -ao uint16_t
 EXPECT=<<EOF
@@ -109,15 +109,15 @@ uint16_t
 EOF
 RUN
 
-NAME=check size of structure RZ_TEST_STRUCT
+NAME=check size of structure R2_TEST_STRUCT
 FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep RZ_TEST_STRUCT | grep -ao 0x8
+CMDS=!rz-bin -P ${RZ_FILE} | grep R2_TEST_STRUCT | grep -ao 0x8
 EXPECT=<<EOF
 0x8
 EOF
 RUN
 
-NAME=member1 name of union RZ_TEST_UNION
+NAME=member1 name of union R2_TEST_UNION
 FILE=bins/pdb/Project1.pdb
 CMDS=!rz-bin -P ${RZ_FILE} | grep -ao r2_union_var_1
 EXPECT=<<EOF
@@ -125,7 +125,7 @@ r2_union_var_1
 EOF
 RUN
 
-NAME=member2 name of union RZ_TEST_UNION
+NAME=member2 name of union R2_TEST_UNION
 FILE=bins/pdb/Project1.pdb
 CMDS=!rz-bin -P ${RZ_FILE} | grep -ao r2_union_var_2
 EXPECT=<<EOF
@@ -133,7 +133,7 @@ r2_union_var_2
 EOF
 RUN
 
-NAME=member1 type of union RZ_TEST_UNION
+NAME=member1 type of union R2_TEST_UNION
 FILE=bins/pdb/Project1.pdb
 CMDS=!rz-bin -P ${RZ_FILE} | grep r2_union_var_1 | grep -ao int32_t
 EXPECT=<<EOF
@@ -141,7 +141,7 @@ int32_t
 EOF
 RUN
 
-NAME=member2 type of union RZ_TEST_UNION
+NAME=member2 type of union R2_TEST_UNION
 FILE=bins/pdb/Project1.pdb
 CMDS=!rz-bin -P ${RZ_FILE} | grep r2_union_var_2 | grep -ao double
 EXPECT=<<EOF
@@ -149,9 +149,9 @@ double
 EOF
 RUN
 
-NAME=check size of union RZ_TEST_UNION
+NAME=check size of union R2_TEST_UNION
 FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep RZ_TEST_UNION | grep -ao 0x8
+CMDS=!rz-bin -P ${RZ_FILE} | grep R2_TEST_UNION | grep -ao 0x8
 EXPECT=<<EOF
 0x8
 EOF
@@ -167,15 +167,15 @@ RUN
 
 NAME=struct export test
 FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -Pr ${RZ_FILE} | grep -ao RZ_TEST_STRUCT
+CMDS=!rz-bin -Pr ${RZ_FILE} | grep -ao R2_TEST_STRUCT
 EXPECT=<<EOF
-RZ_TEST_STRUCT
+R2_TEST_STRUCT
 EOF
 RUN
 
 NAME=struct export command
 FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -Pr ${RZ_FILE} | grep RZ_TEST_STRUCT | grep -ao pf
+CMDS=!rz-bin -Pr ${RZ_FILE} | grep R2_TEST_STRUCT | grep -ao pf
 EXPECT=<<EOF
 pf
 EOF
@@ -183,7 +183,7 @@ RUN
 
 NAME=struct export types
 FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -Pr ${RZ_FILE} | grep RZ_TEST_STRUCT | grep -ao n4n2
+CMDS=!rz-bin -Pr ${RZ_FILE} | grep R2_TEST_STRUCT | grep -ao n4n2
 EXPECT=<<EOF
 n4n2
 EOF
@@ -191,7 +191,7 @@ RUN
 
 NAME=struct export name1
 FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -Pr ${RZ_FILE} | grep RZ_TEST_STRUCT | grep -ao r2_struct_var_1
+CMDS=!rz-bin -Pr ${RZ_FILE} | grep R2_TEST_STRUCT | grep -ao r2_struct_var_1
 EXPECT=<<EOF
 r2_struct_var_1
 EOF
@@ -199,7 +199,7 @@ RUN
 
 NAME=struct export name2
 FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -Pr ${RZ_FILE} | grep RZ_TEST_STRUCT | grep -ao r2_struct_var_2
+CMDS=!rz-bin -Pr ${RZ_FILE} | grep R2_TEST_STRUCT | grep -ao r2_struct_var_2
 EXPECT=<<EOF
 r2_struct_var_2
 EOF
