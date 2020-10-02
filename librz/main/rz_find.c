@@ -161,7 +161,7 @@ static int rafind_open_file(const char *file, const ut8 *data, int datalen) {
 		printf ("File: %s\n", file);
 	}
 
-	char *efile = r_str_escape_sh (file);
+	char *efile = rz_str_escape_sh (file);
 
 	if (identify) {
 		char *cmd = rz_str_newf ("rizin -e search.show=false -e search.maxhits=1 -nqcpm \"%s\"", efile);
