@@ -8,7 +8,7 @@ BTOP=$(shell pwd)
 
 BINS=rz-ax rz-asm rz-bin rz-hash rz-diff rizin rz-find rz-run rz-gg rz-agent rz-sign
 
-ifeq ($(WANT_R2R),1)
+ifeq ($(WANT_RZ_TEST),1)
     BINS+=rz-test
 endif
 

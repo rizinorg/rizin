@@ -689,16 +689,16 @@ RZ_API RzDiffChar *rz_diffchar_new(const ut8 *a, const ut8 *b) {
 
 typedef enum {
 	RZ_TEST_ALIGN_MATCH, RZ_TEST_ALIGN_MISMATCH, RZ_TEST_ALIGN_TOP_GAP, RZ_TEST_ALIGN_BOTTOM_GAP
-} R2RCharAlignment;
+} RzTestCharAlignment;
 
 typedef enum {
 	RZ_TEST_DIFF_MATCH, RZ_TEST_DIFF_DELETE, RZ_TEST_DIFF_INSERT
-} R2RPrintDiffMode;
+} RzTestPrintDiffMode;
 
 RZ_API void rz_diffchar_print(RzDiffChar *diffchar) {
 	rz_return_if_fail (diffchar);
-	R2RPrintDiffMode cur_mode = RZ_TEST_DIFF_MATCH;
-	R2RCharAlignment cur_align;
+	RzTestPrintDiffMode cur_mode = RZ_TEST_DIFF_MATCH;
+	RzTestCharAlignment cur_align;
 	size_t idx_align = diffchar->start_align;
 	while (idx_align < 2 * diffchar->len_buf) {
 		const ut8 a_ch = diffchar->align_a[idx_align];

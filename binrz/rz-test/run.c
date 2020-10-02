@@ -125,10 +125,10 @@ error:
 	return ret;
 }
 
-RZ_API R2RSubprocess *rz_test_subprocess_start(
+RZ_API RzTestSubprocess *rz_test_subprocess_start(
 		const char *file, const char *args[], size_t args_size,
 		const char *envvars[], const char *envvals[], size_t env_size) {
-	R2RSubprocess *proc = NULL;
+	RzTestSubprocess *proc = NULL;
 	HANDLE stdin_read = NULL;
 	HANDLE stdout_write = NULL;
 	HANDLE stderr_write = NULL;
@@ -147,7 +147,7 @@ RZ_API R2RSubprocess *rz_test_subprocess_start(
 		return NULL;
 	}
 
-	proc = RZ_NEW0 (R2RSubprocess);
+	proc = RZ_NEW0 (RzTestSubprocess);
 	if (!proc) {
 		goto error;
 	}
@@ -230,7 +230,7 @@ error:
 	goto beach;
 }
 
-RZ_API bool rz_test_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
+RZ_API bool rz_test_subprocess_wait(RzTestSubprocess *proc, ut64 timeout_ms) {
 	OVERLAPPED stdout_overlapped = { 0 };
 	stdout_overlapped.hEvent = CreateEvent (NULL, TRUE, FALSE, NULL);
 	if (!stdout_overlapped.hEvent) {
@@ -338,18 +338,18 @@ RZ_API bool rz_test_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 	return stdout_eof && stderr_eof && child_dead;
 }
 
-RZ_API void rz_test_subprocess_kill(R2RSubprocess *proc) {
+RZ_API void rz_test_subprocess_kill(RzTestSubprocess *proc) {
 	TerminateProcess (proc->proc, 255);
 }
 
-RZ_API void rz_test_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, size_t buf_size) {
+RZ_API void rz_test_subprocess_stdin_write(RzTestSubprocess *proc, const ut8 *buf, size_t buf_size) {
 	DWORD read;
 	WriteFile (proc->stdin_write, buf, buf_size, &read, NULL);
 }
 
 
-RZ_API R2RProcessOutput *rz_test_subprocess_drain(R2RSubprocess *proc) {
-	R2RProcessOutput *out = RZ_NEW (R2RProcessOutput);
+RZ_API RzTestProcessOutput *rz_test_subprocess_drain(RzTestSubprocess *proc) {
+	RzTestProcessOutput *out = RZ_NEW (RzTestProcessOutput);
 	if (!out) {
 		return NULL;
 	}
@@ -359,7 +359,7 @@ RZ_API R2RProcessOutput *rz_test_subprocess_drain(R2RSubprocess *proc) {
 	return out;
 }
 
-RZ_API void rz_test_subprocess_free(R2RSubprocess *proc) {
+RZ_API void rz_test_subprocess_free(RzTestSubprocess *proc) {
 	if (!proc) {
 		return;
 	}
@@ -419,9 +419,9 @@ static RzThreadFunctionRet sigchld_th(RzThread *th) {
 
 			rz_th_lock_enter (subprocs_mutex);
 			void **it;
-			R2RSubprocess *proc = NULL;
+			RzTestSubprocess *proc = NULL;
 			rz_pvector_foreach (&subprocs, it) {
-				R2RSubprocess *p = *it;
+				RzTestSubprocess *p = *it;
 				if (p->pid == pid) {
 					proc = p;
 					break;
@@ -484,7 +484,7 @@ RZ_API void rz_test_subprocess_fini(void) {
 	rz_th_lock_free (subprocs_mutex);
 }
 
-RZ_API R2RSubprocess *rz_test_subprocess_start(
+RZ_API RzTestSubprocess *rz_test_subprocess_start(
 		const char *file, const char *args[], size_t args_size,
 		const char *envvars[], const char *envvals[], size_t env_size) {
 	char **argv = calloc (args_size + 2, sizeof (char *));
@@ -497,7 +497,7 @@ RZ_API R2RSubprocess *rz_test_subprocess_start(
 	}
 	// done by calloc: argv[args_size + 1] = NULL;
 	rz_th_lock_enter (subprocs_mutex);
-	R2RSubprocess *proc = RZ_NEW0 (R2RSubprocess);
+	RzTestSubprocess *proc = RZ_NEW0 (RzTestSubprocess);
 	if (!proc) {
 		goto error;
 	}
@@ -615,7 +615,7 @@ error:
 	return NULL;
 }
 
-RZ_API bool rz_test_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
+RZ_API bool rz_test_subprocess_wait(RzTestSubprocess *proc, ut64 timeout_ms) {
 	ut64 timeout_abs;
 	if (timeout_ms != UT64_MAX) {
 		timeout_abs = rz_time_now_mono () + timeout_ms * RZ_USEC_PER_MSEC;
@@ -709,19 +709,19 @@ RZ_API bool rz_test_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 	return child_dead;
 }
 
-RZ_API void rz_test_subprocess_kill(R2RSubprocess *proc) {
+RZ_API void rz_test_subprocess_kill(RzTestSubprocess *proc) {
 	kill (proc->pid, SIGKILL);
 }
 
-RZ_API void rz_test_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, size_t buf_size) {
+RZ_API void rz_test_subprocess_stdin_write(RzTestSubprocess *proc, const ut8 *buf, size_t buf_size) {
 	write (proc->stdin_fd, buf, buf_size);
 	close (proc->stdin_fd);
 	proc->stdin_fd = -1;
 }
 
-RZ_API R2RProcessOutput *rz_test_subprocess_drain(R2RSubprocess *proc) {
+RZ_API RzTestProcessOutput *rz_test_subprocess_drain(RzTestSubprocess *proc) {
 	rz_th_lock_enter (subprocs_mutex);
-	R2RProcessOutput *out = RZ_NEW (R2RProcessOutput);
+	RzTestProcessOutput *out = RZ_NEW (RzTestProcessOutput);
 	if (out) {
 		out->out = rz_strbuf_drain_nofree (&proc->out);
 		out->err = rz_strbuf_drain_nofree (&proc->err);
@@ -732,7 +732,7 @@ RZ_API R2RProcessOutput *rz_test_subprocess_drain(R2RSubprocess *proc) {
 	return out;
 }
 
-RZ_API void rz_test_subprocess_free(R2RSubprocess *proc) {
+RZ_API void rz_test_subprocess_free(RzTestSubprocess *proc) {
 	if (!proc) {
 		return;
 	}
@@ -752,7 +752,7 @@ RZ_API void rz_test_subprocess_free(R2RSubprocess *proc) {
 }
 #endif
 
-RZ_API void rz_test_process_output_free(R2RProcessOutput *out) {
+RZ_API void rz_test_process_output_free(RzTestProcessOutput *out) {
 	if (!out) {
 		return;
 	}
@@ -761,9 +761,9 @@ RZ_API void rz_test_process_output_free(R2RProcessOutput *out) {
 	free (out);
 }
 
-static R2RProcessOutput *subprocess_runner(const char *file, const char *args[], size_t args_size,
+static RzTestProcessOutput *subprocess_runner(const char *file, const char *args[], size_t args_size,
 	const char *envvars[], const char *envvals[], size_t env_size, ut64 timeout_ms, void *user) {
-	R2RSubprocess *proc = rz_test_subprocess_start (file, args, args_size, envvars, envvals, env_size);
+	RzTestSubprocess *proc = rz_test_subprocess_start (file, args, args_size, envvars, envvals, env_size);
 	if (!proc) {
 		return NULL;
 	}
@@ -771,7 +771,7 @@ static R2RProcessOutput *subprocess_runner(const char *file, const char *args[],
 	if (timeout) {
 		rz_test_subprocess_kill (proc);
 	}
-	R2RProcessOutput *out = rz_test_subprocess_drain (proc);
+	RzTestProcessOutput *out = rz_test_subprocess_drain (proc);
 	if (out) {
 		out->timeout = timeout;
 	}
@@ -845,7 +845,7 @@ static char *convert_win_cmds(const char *cmds) {
 }
 #endif
 
-static R2RProcessOutput *run_rz_test(R2RRunConfig *config, ut64 timeout_ms, const char *cmds, RzList *files, RzList *extra_args, bool load_plugins, R2RzCmdRunner runner, void *user) {
+static RzTestProcessOutput *run_rz_test(RzTestRunConfig *config, ut64 timeout_ms, const char *cmds, RzList *files, RzList *extra_args, bool load_plugins, RzTestCmdRunner runner, void *user) {
 	RPVector args;
 	rz_pvector_init (&args, NULL);
 	rz_pvector_push (&args, "-escr.utf8=0");
@@ -885,7 +885,7 @@ static R2RProcessOutput *run_rz_test(R2RRunConfig *config, ut64 timeout_ms, cons
 #else
 	size_t env_size = load_plugins ? 0 : 1;
 #endif
-	R2RProcessOutput *out = runner (config->r2_cmd, args.v.a, rz_pvector_len (&args), envvars, envvals, env_size, timeout_ms, user);
+	RzTestProcessOutput *out = runner (config->r2_cmd, args.v.a, rz_pvector_len (&args), envvars, envvals, env_size, timeout_ms, user);
 	rz_pvector_clear (&args);
 #if __WINDOWS__
 	free (wcmds);
@@ -893,7 +893,7 @@ static R2RProcessOutput *run_rz_test(R2RRunConfig *config, ut64 timeout_ms, cons
 	return out;
 }
 
-RZ_API R2RProcessOutput *rz_test_run_cmd_test(R2RRunConfig *config, R2RzCmdTest *test, R2RzCmdRunner runner, void *user) {
+RZ_API RzTestProcessOutput *rz_test_run_cmd_test(RzTestRunConfig *config, RzCmdTest *test, RzTestCmdRunner runner, void *user) {
 	RzList *extra_args = test->args.value ? rz_str_split_duplist (test->args.value, " ", true) : NULL;
 	RzList *files = rz_str_split_duplist (test->file.value, "\n", true);
 	RzListIter *it;
@@ -918,13 +918,13 @@ RZ_API R2RProcessOutput *rz_test_run_cmd_test(R2RRunConfig *config, R2RzCmdTest 
 		rz_list_push (files, "-");
 	}
 	ut64 timeout_ms = test->timeout.set? test->timeout.value * 1000: config->timeout_ms;
-	R2RProcessOutput *out = run_rz_test (config, timeout_ms, test->cmds.value, files, extra_args, test->load_plugins, runner, user);
+	RzTestProcessOutput *out = run_rz_test (config, timeout_ms, test->cmds.value, files, extra_args, test->load_plugins, runner, user);
 	rz_list_free (extra_args);
 	rz_list_free (files);
 	return out;
 }
 
-RZ_API bool rz_test_check_cmd_test(R2RProcessOutput *out, R2RzCmdTest *test) {
+RZ_API bool rz_test_check_cmd_test(RzTestProcessOutput *out, RzCmdTest *test) {
 	if (!out || out->ret != 0 || !out->out || !out->err || out->timeout) {
 		return false;
 	}
@@ -944,7 +944,7 @@ RZ_API bool rz_test_check_cmd_test(R2RProcessOutput *out, R2RzCmdTest *test) {
 RZ_API bool rz_test_check_jq_available(void) {
 	const char *args[] = {"."};
 	const char *invalid_json = "this is not json lol";
-	R2RSubprocess *proc = rz_test_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
+	RzTestSubprocess *proc = rz_test_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
 	if (proc) {
 		rz_test_subprocess_stdin_write (proc, (const ut8 *)invalid_json, strlen (invalid_json));
 		rz_test_subprocess_wait (proc, UT64_MAX);
@@ -964,20 +964,20 @@ RZ_API bool rz_test_check_jq_available(void) {
 	return invalid_detected && valid_detected;
 }
 
-RZ_API R2RProcessOutput *rz_test_run_json_test(R2RRunConfig *config, R2RJsonTest *test, R2RzCmdRunner runner, void *user) {
+RZ_API RzTestProcessOutput *rz_test_run_json_test(RzTestRunConfig *config, RzJsonTest *test, RzTestCmdRunner runner, void *user) {
 	RzList *files = rz_list_new ();
 	rz_list_push (files, (void *)config->json_test_file);
-	R2RProcessOutput *ret = run_rz_test (config, config->timeout_ms, test->cmd, files, NULL, test->load_plugins, runner, user);
+	RzTestProcessOutput *ret = run_rz_test (config, config->timeout_ms, test->cmd, files, NULL, test->load_plugins, runner, user);
 	rz_list_free (files);
 	return ret;
 }
 
-RZ_API bool rz_test_check_json_test(R2RProcessOutput *out, R2RJsonTest *test) {
+RZ_API bool rz_test_check_json_test(RzTestProcessOutput *out, RzJsonTest *test) {
 	if (!out || out->ret != 0 || !out->out || !out->err || out->timeout) {
 		return false;
 	}
 	const char *args[] = {"."};
-	R2RSubprocess *proc = rz_test_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
+	RzTestSubprocess *proc = rz_test_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
 	rz_test_subprocess_stdin_write (proc, (const ut8 *)out->out, strlen (out->out));
 	rz_test_subprocess_wait (proc, UT64_MAX);
 	bool ret = proc->ret == 0;
@@ -985,8 +985,8 @@ RZ_API bool rz_test_check_json_test(R2RProcessOutput *out, R2RJsonTest *test) {
 	return ret;
 }
 
-RZ_API R2RzAsmTestOutput *rz_test_run_asm_test(R2RRunConfig *config, R2RzAsmTest *test) {
-	R2RzAsmTestOutput *out = RZ_NEW0 (R2RzAsmTestOutput);
+RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest *test) {
+	RzAsmTestOutput *out = RZ_NEW0 (RzAsmTestOutput);
 	if (!out) {
 		return NULL;
 	}
@@ -1026,7 +1026,7 @@ RZ_API R2RzAsmTestOutput *rz_test_run_asm_test(R2RRunConfig *config, R2RzAsmTest
 	rz_strbuf_init (&cmd_buf);
 	if (test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) {
 		rz_pvector_push (&args, test->disasm);
-		R2RSubprocess *proc = rz_test_subprocess_start (config->rz_asm_cmd, args.v.a, rz_pvector_len (&args), NULL, NULL, 0);
+		RzTestSubprocess *proc = rz_test_subprocess_start (config->rz_asm_cmd, args.v.a, rz_pvector_len (&args), NULL, NULL, 0);
 		if (!rz_test_subprocess_wait (proc, config->timeout_ms)) {
 			rz_test_subprocess_kill (proc);
 			out->as_timeout = true;
@@ -1059,7 +1059,7 @@ rip:
 		}
 		rz_pvector_push (&args, "-d");
 		rz_pvector_push (&args, hex);
-		R2RSubprocess *proc = rz_test_subprocess_start (config->rz_asm_cmd, args.v.a, rz_pvector_len (&args), NULL, NULL, 0);
+		RzTestSubprocess *proc = rz_test_subprocess_start (config->rz_asm_cmd, args.v.a, rz_pvector_len (&args), NULL, NULL, 0);
 		if (!rz_test_subprocess_wait (proc, config->timeout_ms)) {
 			rz_test_subprocess_kill (proc);
 			out->disas_timeout = true;
@@ -1084,7 +1084,7 @@ beach:
 	return out;
 }
 
-RZ_API bool rz_test_check_asm_test(R2RzAsmTestOutput *out, R2RzAsmTest *test) {
+RZ_API bool rz_test_check_asm_test(RzAsmTestOutput *out, RzAsmTest *test) {
 	if (!out) {
 		return false;
 	}
@@ -1107,7 +1107,7 @@ RZ_API bool rz_test_check_asm_test(R2RzAsmTestOutput *out, R2RzAsmTest *test) {
 	return true;
 }
 
-RZ_API void rz_test_asm_test_output_free(R2RzAsmTestOutput *out) {
+RZ_API void rz_test_asm_test_output_free(RzAsmTestOutput *out) {
 	if (!out) {
 		return;
 	}
@@ -1116,19 +1116,19 @@ RZ_API void rz_test_asm_test_output_free(R2RzAsmTestOutput *out) {
 	free (out);
 }
 
-RZ_API R2RProcessOutput *rz_test_run_fuzz_test(R2RRunConfig *config, R2RFuzzTest *test, R2RzCmdRunner runner, void *user) {
+RZ_API RzTestProcessOutput *rz_test_run_fuzz_test(RzTestRunConfig *config, RzFuzzTest *test, RzTestCmdRunner runner, void *user) {
 	RzList *files = rz_list_new ();
 	rz_list_push (files, test->file);
-	R2RProcessOutput *ret = run_rz_test (config, config->timeout_ms, "aaa", files, NULL, false, runner, user);
+	RzTestProcessOutput *ret = run_rz_test (config, config->timeout_ms, "aaa", files, NULL, false, runner, user);
 	rz_list_free (files);
 	return ret;
 }
 
-RZ_API bool rz_test_check_fuzz_test(R2RProcessOutput *out) {
+RZ_API bool rz_test_check_fuzz_test(RzTestProcessOutput *out) {
 	return out && out->ret == 0 && out->out && out->err && !out->timeout;
 }
 
-RZ_API char *rz_test_test_name(R2RTest *test) {
+RZ_API char *rz_test_test_name(RzTest *test) {
 	switch (test->type) {
 	case RZ_TEST_TYPE_CMD:
 		if (test->cmd_test->name.value) {
@@ -1145,7 +1145,7 @@ RZ_API char *rz_test_test_name(R2RTest *test) {
 	return NULL;
 }
 
-RZ_API bool rz_test_test_broken(R2RTest *test) {
+RZ_API bool rz_test_test_broken(RzTest *test) {
 	switch (test->type) {
 	case RZ_TEST_TYPE_CMD:
 		return test->cmd_test->broken.value;
@@ -1159,8 +1159,8 @@ RZ_API bool rz_test_test_broken(R2RTest *test) {
 	return false;
 }
 
-RZ_API R2RTestResultInfo *rz_test_run_test(R2RRunConfig *config, R2RTest *test) {
-	R2RTestResultInfo *ret = RZ_NEW0 (R2RTestResultInfo);
+RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test) {
+	RzTestResultInfo *ret = RZ_NEW0 (RzTestResultInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -1168,8 +1168,8 @@ RZ_API R2RTestResultInfo *rz_test_run_test(R2RRunConfig *config, R2RTest *test) 
 	bool success = false;
 	switch (test->type) {
 	case RZ_TEST_TYPE_CMD: {
-		R2RzCmdTest *cmd_test = test->cmd_test;
-		R2RProcessOutput *out = rz_test_run_cmd_test (config, cmd_test, subprocess_runner, NULL);
+		RzCmdTest *cmd_test = test->cmd_test;
+		RzTestProcessOutput *out = rz_test_run_cmd_test (config, cmd_test, subprocess_runner, NULL);
 		success = rz_test_check_cmd_test (out, cmd_test);
 		ret->proc_out = out;
 		ret->timeout = out && out->timeout;
@@ -1177,8 +1177,8 @@ RZ_API R2RTestResultInfo *rz_test_run_test(R2RRunConfig *config, R2RTest *test) 
 		break;
 	}
 	case RZ_TEST_TYPE_ASM: {
-		R2RzAsmTest *asm_test = test->asm_test;
-		R2RzAsmTestOutput *out = rz_test_run_asm_test (config, asm_test);
+		RzAsmTest *asm_test = test->asm_test;
+		RzAsmTestOutput *out = rz_test_run_asm_test (config, asm_test);
 		success = rz_test_check_asm_test (out, asm_test);
 		ret->asm_out = out;
 		ret->timeout = out->as_timeout || out->disas_timeout;
@@ -1186,8 +1186,8 @@ RZ_API R2RTestResultInfo *rz_test_run_test(R2RRunConfig *config, R2RTest *test) 
 		break;
 	}
 	case RZ_TEST_TYPE_JSON: {
-		R2RJsonTest *json_test = test->json_test;
-		R2RProcessOutput *out = rz_test_run_json_test (config, json_test, subprocess_runner, NULL);
+		RzJsonTest *json_test = test->json_test;
+		RzTestProcessOutput *out = rz_test_run_json_test (config, json_test, subprocess_runner, NULL);
 		success = rz_test_check_json_test (out, json_test);
 		ret->proc_out = out;
 		ret->timeout = out->timeout;
@@ -1195,8 +1195,8 @@ RZ_API R2RTestResultInfo *rz_test_run_test(R2RRunConfig *config, R2RTest *test) 
 		break;
 	}
 	case RZ_TEST_TYPE_FUZZ: {
-		R2RFuzzTest *fuzz_test = test->fuzz_test;
-		R2RProcessOutput *out = rz_test_run_fuzz_test (config, fuzz_test, subprocess_runner, NULL);
+		RzFuzzTest *fuzz_test = test->fuzz_test;
+		RzTestProcessOutput *out = rz_test_run_fuzz_test (config, fuzz_test, subprocess_runner, NULL);
 		success = rz_test_check_fuzz_test (out);
 		ret->proc_out = out;
 		ret->timeout = out->timeout;
@@ -1208,7 +1208,7 @@ RZ_API R2RTestResultInfo *rz_test_run_test(R2RRunConfig *config, R2RTest *test) 
 # if !RZ_ASSERT_STDOUT
 # error RZ_ASSERT_STDOUT undefined or 0
 # endif
-	R2RProcessOutput *out = ret->proc_out;
+	RzTestProcessOutput *out = ret->proc_out;
 	if (!success && test->type == RZ_TEST_TYPE_CMD && strstr (test->path, "/dbg")
 	    && (!out->out ||
 	        (!strstr (out->out, "WARNING:") && !strstr (out->out, "ERROR:") && !strstr (out->out, "FATAL:")))
@@ -1225,7 +1225,7 @@ RZ_API R2RTestResultInfo *rz_test_run_test(R2RRunConfig *config, R2RTest *test) 
 	return ret;
 }
 
-RZ_API void rz_test_test_result_info_free(R2RTestResultInfo *result) {
+RZ_API void rz_test_test_result_info_free(RzTestResultInfo *result) {
 	if (!result) {
 		return;
 	}

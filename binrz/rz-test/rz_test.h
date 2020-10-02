@@ -31,33 +31,33 @@ typedef struct rz_test_cmd_test_string_record {
 	char *value;
 	ut64 line_begin; // inclusive
 	ut64 line_end; // exclusive
-} R2RzCmdTestStringRecord;
+} RzCmdTestStringRecord;
 
 typedef struct rz_test_cmd_test_bool_record {
 	bool value;
 	ut64 line; // bools are always oneliners (e.g. BROKEN=1)
 	bool set;
-} R2RzCmdTestBoolRecord;
+} RzCmdTestBoolRecord;
 
 typedef struct rz_test_cmd_test_num_record {
 	ut64 value;
 	ut64 line; // nums are always oneliners (e.g. TIMEOUT=10)
 	bool set;
-} R2RzCmdTestNumRecord;
+} RzCmdTestNumRecord;
 
 typedef struct rz_test_cmd_test_t {
-	R2RzCmdTestStringRecord name;
-	R2RzCmdTestStringRecord file;
-	R2RzCmdTestStringRecord args;
-	R2RzCmdTestStringRecord source;
-	R2RzCmdTestStringRecord cmds;
-	R2RzCmdTestStringRecord expect;
-	R2RzCmdTestStringRecord expect_err;
-	R2RzCmdTestBoolRecord broken;
-	R2RzCmdTestNumRecord timeout;
+	RzCmdTestStringRecord name;
+	RzCmdTestStringRecord file;
+	RzCmdTestStringRecord args;
+	RzCmdTestStringRecord source;
+	RzCmdTestStringRecord cmds;
+	RzCmdTestStringRecord expect;
+	RzCmdTestStringRecord expect_err;
+	RzCmdTestBoolRecord broken;
+	RzCmdTestNumRecord timeout;
 	ut64 run_line;
 	bool load_plugins;
-} R2RzCmdTest;
+} RzCmdTest;
 
 #define RZ_CMD_TEST_FOREACH_RECORD_NOP(name, field)
 #define RZ_CMD_TEST_FOREACH_RECORD(macro_str, macro_bool, macro_int) \
@@ -76,7 +76,7 @@ typedef enum rz_test_asm_test_mode_t {
 	RZ_ASM_TEST_MODE_DISASSEMBLE = (1 << 1),
 	RZ_ASM_TEST_MODE_BIG_ENDIAN = (1 << 2),
 	RZ_ASM_TEST_MODE_BROKEN = (1 << 3)
-} R2RzAsmTestMode;
+} RzAsmTestMode;
 
 typedef struct rz_test_asm_test_t {
 	ut64 line;
@@ -88,55 +88,55 @@ typedef struct rz_test_asm_test_t {
 	char *disasm;
 	ut8 *bytes;
 	size_t bytes_size;
-} R2RzAsmTest;
+} RzAsmTest;
 
 typedef struct rz_test_json_test_t {
 	ut64 line;
 	char *cmd;
 	bool broken;
 	bool load_plugins;
-} R2RJsonTest;
+} RzJsonTest;
 
 typedef struct rz_test_fuzz_test_t {
 	char *file;
-} R2RFuzzTest;
+} RzFuzzTest;
 
 typedef enum rz_test_test_type_t {
 	RZ_TEST_TYPE_CMD,
 	RZ_TEST_TYPE_ASM,
 	RZ_TEST_TYPE_JSON,
 	RZ_TEST_TYPE_FUZZ
-} R2RTestType;
+} RzTestType;
 
 typedef struct rz_test_test_t {
 	const char *path;
-	R2RTestType type;
+	RzTestType type;
 	union {
-		R2RzCmdTest *cmd_test;
-		R2RzAsmTest *asm_test;
-		R2RJsonTest *json_test;
-		R2RFuzzTest *fuzz_test;
+		RzCmdTest *cmd_test;
+		RzAsmTest *asm_test;
+		RzJsonTest *json_test;
+		RzFuzzTest *fuzz_test;
 	};
-} R2RTest;
+} RzTest;
 
 typedef struct rz_test_test_database_t {
 	RPVector tests;
 	RStrConstPool strpool;
-} R2RTestDatabase;
+} RzTestDatabase;
 
 typedef struct rz_test_run_config_t {
 	const char *r2_cmd;
 	const char *rz_asm_cmd;
 	const char *json_test_file;
 	ut64 timeout_ms;
-} R2RRunConfig;
+} RzTestRunConfig;
 
 typedef struct rz_test_process_output_t {
 	char *out; // stdout
 	char *err; // stderr
 	int ret; // exit code of the process
 	bool timeout;
-} R2RProcessOutput;
+} RzTestProcessOutput;
 
 typedef struct rz_test_asm_test_output_t {
 	char *disasm;
@@ -144,72 +144,72 @@ typedef struct rz_test_asm_test_output_t {
 	size_t bytes_size;
 	bool as_timeout;
 	bool disas_timeout;
-} R2RzAsmTestOutput;
+} RzAsmTestOutput;
 
 typedef enum rz_test_test_result_t {
 	RZ_TEST_RESULT_OK,
 	RZ_TEST_RESULT_FAILED,
 	RZ_TEST_RESULT_BROKEN,
 	RZ_TEST_RESULT_FIXED
-} R2RTestResult;
+} RzTestResult;
 
 typedef struct rz_test_test_result_info_t {
-	R2RTest *test;
-	R2RTestResult result;
+	RzTest *test;
+	RzTestResult result;
 	bool timeout;
 	bool run_failed; // something went seriously wrong (e.g. r2 not found)
 	union {
-		R2RProcessOutput *proc_out; // for test->type == RZ_TEST_TYPE_CMD, RZ_TEST_TYPE_JSON or RZ_TEST_TYPE_FUZZ
-		R2RzAsmTestOutput *asm_out;  // for test->type == RZ_TEST_TYPE_ASM
+		RzTestProcessOutput *proc_out; // for test->type == RZ_TEST_TYPE_CMD, RZ_TEST_TYPE_JSON or RZ_TEST_TYPE_FUZZ
+		RzAsmTestOutput *asm_out;  // for test->type == RZ_TEST_TYPE_ASM
 	};
-} R2RTestResultInfo;
+} RzTestResultInfo;
 
-RZ_API R2RzCmdTest *rz_test_cmd_test_new(void);
-RZ_API void rz_test_cmd_test_free(R2RzCmdTest *test);
+RZ_API RzCmdTest *rz_test_cmd_test_new(void);
+RZ_API void rz_test_cmd_test_free(RzCmdTest *test);
 RZ_API RPVector *rz_test_load_cmd_test_file(const char *file);
 
-RZ_API R2RzAsmTest *rz_test_asm_test_new(void);
-RZ_API void rz_test_asm_test_free(R2RzAsmTest *test);
+RZ_API RzAsmTest *rz_test_asm_test_new(void);
+RZ_API void rz_test_asm_test_free(RzAsmTest *test);
 RZ_API RPVector *rz_test_load_asm_test_file(RStrConstPool *strpool, const char *file);
 
-RZ_API R2RJsonTest *rz_test_json_test_new(void);
-RZ_API void rz_test_json_test_free(R2RJsonTest *test);
+RZ_API RzJsonTest *rz_test_json_test_new(void);
+RZ_API void rz_test_json_test_free(RzJsonTest *test);
 RZ_API RPVector *rz_test_load_json_test_file(const char *file);
 
-RZ_API R2RTestDatabase *rz_test_test_database_new(void);
-RZ_API void rz_test_test_database_free(R2RTestDatabase *db);
-RZ_API bool rz_test_test_database_load(R2RTestDatabase *db, const char *path);
-RZ_API bool rz_test_test_database_load_fuzz(R2RTestDatabase *db, const char *path);
+RZ_API RzTestDatabase *rz_test_test_database_new(void);
+RZ_API void rz_test_test_database_free(RzTestDatabase *db);
+RZ_API bool rz_test_test_database_load(RzTestDatabase *db, const char *path);
+RZ_API bool rz_test_test_database_load_fuzz(RzTestDatabase *db, const char *path);
 
-typedef struct rz_test_subprocess_t R2RSubprocess;
+typedef struct rz_test_subprocess_t RzTestSubprocess;
 
 RZ_API bool rz_test_subprocess_init(void);
 RZ_API void rz_test_subprocess_fini(void);
-RZ_API R2RSubprocess *rz_test_subprocess_start(
+RZ_API RzTestSubprocess *rz_test_subprocess_start(
 		const char *file, const char *args[], size_t args_size,
 		const char *envvars[], const char *envvals[], size_t env_size);
-RZ_API bool rz_test_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms);
-RZ_API void rz_test_subprocess_free(R2RSubprocess *proc);
+RZ_API bool rz_test_subprocess_wait(RzTestSubprocess *proc, ut64 timeout_ms);
+RZ_API void rz_test_subprocess_free(RzTestSubprocess *proc);
 
-typedef R2RProcessOutput *(*R2RzCmdRunner)(const char *file, const char *args[], size_t args_size,
+typedef RzTestProcessOutput *(*RzTestCmdRunner)(const char *file, const char *args[], size_t args_size,
 	const char *envvars[], const char *envvals[], size_t env_size, ut64 timeout_ms, void *user);
 
-RZ_API void rz_test_process_output_free(R2RProcessOutput *out);
-RZ_API R2RProcessOutput *rz_test_run_cmd_test(R2RRunConfig *config, R2RzCmdTest *test, R2RzCmdRunner runner, void *user);
-RZ_API bool rz_test_check_cmd_test(R2RProcessOutput *out, R2RzCmdTest *test);
+RZ_API void rz_test_process_output_free(RzTestProcessOutput *out);
+RZ_API RzTestProcessOutput *rz_test_run_cmd_test(RzTestRunConfig *config, RzCmdTest *test, RzTestCmdRunner runner, void *user);
+RZ_API bool rz_test_check_cmd_test(RzTestProcessOutput *out, RzCmdTest *test);
 RZ_API bool rz_test_check_jq_available(void);
-RZ_API R2RProcessOutput *rz_test_run_json_test(R2RRunConfig *config, R2RJsonTest *test, R2RzCmdRunner runner, void *user);
-RZ_API bool rz_test_check_json_test(R2RProcessOutput *out, R2RJsonTest *test);
-RZ_API R2RzAsmTestOutput *rz_test_run_asm_test(R2RRunConfig *config, R2RzAsmTest *test);
-RZ_API bool rz_test_check_asm_test(R2RzAsmTestOutput *out, R2RzAsmTest *test);
-RZ_API void rz_test_asm_test_output_free(R2RzAsmTestOutput *out);
-RZ_API R2RProcessOutput *rz_test_run_fuzz_test(R2RRunConfig *config, R2RFuzzTest *test, R2RzCmdRunner runner, void *user);
-RZ_API bool rz_test_check_fuzz_test(R2RProcessOutput *out);
+RZ_API RzTestProcessOutput *rz_test_run_json_test(RzTestRunConfig *config, RzJsonTest *test, RzTestCmdRunner runner, void *user);
+RZ_API bool rz_test_check_json_test(RzTestProcessOutput *out, RzJsonTest *test);
+RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest *test);
+RZ_API bool rz_test_check_asm_test(RzAsmTestOutput *out, RzAsmTest *test);
+RZ_API void rz_test_asm_test_output_free(RzAsmTestOutput *out);
+RZ_API RzTestProcessOutput *rz_test_run_fuzz_test(RzTestRunConfig *config, RzFuzzTest *test, RzTestCmdRunner runner, void *user);
+RZ_API bool rz_test_check_fuzz_test(RzTestProcessOutput *out);
 
-RZ_API void rz_test_test_free(R2RTest *test);
-RZ_API char *rz_test_test_name(R2RTest *test);
-RZ_API bool rz_test_test_broken(R2RTest *test);
-RZ_API R2RTestResultInfo *rz_test_run_test(R2RRunConfig *config, R2RTest *test);
-RZ_API void rz_test_test_result_info_free(R2RTestResultInfo *result);
+RZ_API void rz_test_test_free(RzTest *test);
+RZ_API char *rz_test_test_name(RzTest *test);
+RZ_API bool rz_test_test_broken(RzTest *test);
+RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test);
+RZ_API void rz_test_test_result_info_free(RzTestResultInfo *result);
 
 #endif // RIZIN_RZTEST_H

@@ -6,11 +6,11 @@
 
 #define LINEFMT "%s, line %"PFMT64u": "
 
-RZ_API R2RzCmdTest *rz_test_cmd_test_new(void) {
-	return RZ_NEW0 (R2RzCmdTest);
+RZ_API RzCmdTest *rz_test_cmd_test_new(void) {
+	return RZ_NEW0 (RzCmdTest);
 }
 
-RZ_API void rz_test_cmd_test_free(R2RzCmdTest *test) {
+RZ_API void rz_test_cmd_test_free(RzCmdTest *test) {
 	if (!test) {
 		return;
 	}
@@ -113,7 +113,7 @@ RZ_API RPVector *rz_test_load_cmd_test_file(const char *file) {
 		free (contents);
 		return NULL;
 	}
-	R2RzCmdTest *test = rz_test_cmd_test_new ();
+	RzCmdTest *test = rz_test_cmd_test_new ();
 	if (!test) {
 		free (contents);
 		rz_pvector_free (ret);
@@ -254,11 +254,11 @@ fail:
 	goto beach;
 }
 
-RZ_API R2RzAsmTest *rz_test_asm_test_new(void) {
-	return RZ_NEW0 (R2RzAsmTest);
+RZ_API RzAsmTest *rz_test_asm_test_new(void) {
+	return RZ_NEW0 (RzAsmTest);
 }
 
-RZ_API void rz_test_asm_test_free(R2RzAsmTest *test) {
+RZ_API void rz_test_asm_test_free(RzAsmTest *test) {
 	if (!test) {
 		return;
 	}
@@ -411,7 +411,7 @@ RZ_API RPVector *rz_test_load_asm_test_file(RStrConstPool *strpool, const char *
 			goto fail;
 		}
 
-		R2RzAsmTest *test = rz_test_asm_test_new ();
+		RzAsmTest *test = rz_test_asm_test_new ();
 		if (!test) {
 			free (bytes);
 			goto fail;
@@ -437,11 +437,11 @@ fail:
 	goto beach;
 }
 
-RZ_API R2RJsonTest *rz_test_json_test_new(void) {
-	return RZ_NEW0 (R2RJsonTest);
+RZ_API RzJsonTest *rz_test_json_test_new(void) {
+	return RZ_NEW0 (RzJsonTest);
 }
 
-RZ_API void rz_test_json_test_free(R2RJsonTest *test) {
+RZ_API void rz_test_json_test_free(RzJsonTest *test) {
 	if (!test) {
 		return;
 	}
@@ -487,7 +487,7 @@ RZ_API RPVector *rz_test_load_json_test_file(const char *file) {
 			continue;
 		}
 
-		R2RJsonTest *test = rz_test_json_test_new ();
+		RzJsonTest *test = rz_test_json_test_new ();
 		if (!test) {
 			break;
 		}
@@ -505,7 +505,7 @@ RZ_API RPVector *rz_test_load_json_test_file(const char *file) {
 	return ret;
 }
 
-RZ_API void rz_test_fuzz_test_free(R2RFuzzTest *test) {
+RZ_API void rz_test_fuzz_test_free(RzFuzzTest *test) {
 	if (!test) {
 		return;
 	}
@@ -513,7 +513,7 @@ RZ_API void rz_test_fuzz_test_free(R2RFuzzTest *test) {
 	free (test);
 }
 
-RZ_API void rz_test_test_free(R2RTest *test) {
+RZ_API void rz_test_test_free(RzTest *test) {
 	if (!test) {
 		return;
 	}
@@ -534,8 +534,8 @@ RZ_API void rz_test_test_free(R2RTest *test) {
 	free (test);
 }
 
-RZ_API R2RTestDatabase *rz_test_test_database_new(void) {
-	R2RTestDatabase *db = RZ_NEW (R2RTestDatabase);
+RZ_API RzTestDatabase *rz_test_test_database_new(void) {
+	RzTestDatabase *db = RZ_NEW (RzTestDatabase);
 	if (!db) {
 		return NULL;
 	}
@@ -544,7 +544,7 @@ RZ_API R2RTestDatabase *rz_test_test_database_new(void) {
 	return db;
 }
 
-RZ_API void rz_test_test_database_free(R2RTestDatabase *db) {
+RZ_API void rz_test_test_database_free(RzTestDatabase *db) {
 	if (!db) {
 		return;
 	}
@@ -553,8 +553,8 @@ RZ_API void rz_test_test_database_free(R2RTestDatabase *db) {
 	free (db);
 }
 
-static R2RTestType test_type_for_path(const char *path, bool *load_plugins) {
-	R2RTestType ret = RZ_TEST_TYPE_CMD;
+static RzTestType test_type_for_path(const char *path, bool *load_plugins) {
+	RzTestType ret = RZ_TEST_TYPE_CMD;
 	char *pathdup = strdup (path);
 	RzList *tokens = rz_str_split_list (pathdup, RZ_SYS_DIR, 0);
 	if (!tokens) {
@@ -584,7 +584,7 @@ static R2RTestType test_type_for_path(const char *path, bool *load_plugins) {
 	return ret;
 }
 
-static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
+static bool database_load(RzTestDatabase *db, const char *path, int depth) {
 	if (depth <= 0) {
 		eprintf ("Directories for loading tests too deep: %s\n", path);
 		return false;
@@ -632,7 +632,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 	// Not a directory but exists, load a file
 	const char *pooled_path = rz_str_constpool_get (&db->strpool, path);
 	bool load_plugins = false;
-	R2RTestType test_type = test_type_for_path (path, &load_plugins);
+	RzTestType test_type = test_type_for_path (path, &load_plugins);
 	switch (test_type) {
 	case RZ_TEST_TYPE_CMD: {
 		RPVector *cmd_tests = rz_test_load_cmd_test_file (path);
@@ -641,7 +641,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		}
 		void **it;
 		rz_pvector_foreach (cmd_tests, it) {
-			R2RTest *test = RZ_NEW (R2RTest);
+			RzTest *test = RZ_NEW (RzTest);
 			if (!test) {
 				continue;
 			}
@@ -661,7 +661,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		}
 		void **it;
 		rz_pvector_foreach (asm_tests, it) {
-			R2RTest *test = RZ_NEW (R2RTest);
+			RzTest *test = RZ_NEW (RzTest);
 			if (!test) {
 				continue;
 			}
@@ -680,7 +680,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		}
 		void **it;
 		rz_pvector_foreach (json_tests, it) {
-			R2RTest *test = RZ_NEW (R2RTest);
+			RzTest *test = RZ_NEW (RzTest);
 			if (!test) {
 				continue;
 			}
@@ -701,12 +701,12 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 	return true;
 }
 
-RZ_API bool rz_test_test_database_load(R2RTestDatabase *db, const char *path) {
+RZ_API bool rz_test_test_database_load(RzTestDatabase *db, const char *path) {
 	return database_load (db, path, 4);
 }
 
-static void database_load_fuzz_file(R2RTestDatabase *db, const char *path, const char *file) {
-	R2RFuzzTest *fuzz_test = RZ_NEW (R2RFuzzTest);
+static void database_load_fuzz_file(RzTestDatabase *db, const char *path, const char *file) {
+	RzFuzzTest *fuzz_test = RZ_NEW (RzFuzzTest);
 	if (!fuzz_test) {
 		return;
 	}
@@ -715,7 +715,7 @@ static void database_load_fuzz_file(R2RTestDatabase *db, const char *path, const
 		free (fuzz_test);
 		return;
 	}
-	R2RTest *test = RZ_NEW (R2RTest);
+	RzTest *test = RZ_NEW (RzTest);
 	if (!test) {
 		free (fuzz_test->file);
 		free (fuzz_test);
@@ -727,7 +727,7 @@ static void database_load_fuzz_file(R2RTestDatabase *db, const char *path, const
 	rz_pvector_push (&db->tests, test);
 }
 
-RZ_API bool rz_test_test_database_load_fuzz(R2RTestDatabase *db, const char *path) {
+RZ_API bool rz_test_test_database_load_fuzz(RzTestDatabase *db, const char *path) {
 	if (rz_file_is_directory (path)) {
 		RzList *dir = rz_sys_dir (path);
 		if (!dir) {
