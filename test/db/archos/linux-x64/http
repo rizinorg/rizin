@@ -56,6 +56,6 @@ EXPECT_ERR=<<EOF
 Cannot find http.root or http.homeroot
 Starting http server...
 open http://localhost:9292/
-r2 -C http://localhost:9292/cmd/
+rizin -C http://localhost:9292/cmd/
 EOF
 RUN

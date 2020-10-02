@@ -339,14 +339,10 @@ static int cmd_tail(void *data, const char *_input) { // "tail"
 		if (!arg) {
 			arg = "";
 		}
-		if (rz_fs_check (core->fs, arg)) {
-			rz_core_cmdf (core, "md %s", arg);
-		} else {
-			char *res = rz_syscmd_tail (arg, lines);
-			if (res) {
-				rz_cons_print (res);
-				free (res);
-			}
+		char *res = rz_syscmd_tail (arg, lines);
+		if (res) {
+			rz_cons_print (res);
+			free (res);
 		}
 		break;
 	}

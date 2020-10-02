@@ -234,14 +234,10 @@ static int cmd_sort(void *data, const char *input) { // "sort"
 		if (!arg) {
 			arg = "";
 		}
-		if (rz_fs_check (core->fs, arg)) {
-			rz_core_cmdf (core, "md %s", arg);
-		} else {
-			char *res = rz_syscmd_sort (arg);
-			if (res) {
-				rz_cons_print (res);
-				free (res);
-			}
+		char *res = rz_syscmd_sort (arg);
+		if (res) {
+			rz_cons_print (res);
+			free (res);
 		}
 		break;
 	}

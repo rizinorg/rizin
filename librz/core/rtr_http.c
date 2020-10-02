@@ -134,7 +134,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 	}
 	eprintf ("Starting http server...\n");
 	eprintf ("open http://%s:%d/\n", host, atoi (port));
-	eprintf ("r2 -C http://%s:%d/cmd/\n", host, atoi (port));
+	eprintf ("rizin -C http://%s:%d/cmd/\n", host, atoi (port));
 	core->http_up = true;
 
 	ut64 newoff, origoff = core->offset;

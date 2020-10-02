@@ -6,7 +6,7 @@ ISLIB=1
 BINDEPS=rz_core rz_parse rz_search rz_cons rz_config
 BINDEPS+=rz_bin rz_debug rz_anal rz_reg rz_bp rz_io
 BINDEPS+=rz_lang rz_asm rz_syscall rz_hash rz_crypto
-BINDEPS+=rz_magic rz_socket rz_flag rz_util rz_egg rz_fs
+BINDEPS+=rz_magic rz_socket rz_flag rz_util rz_egg
 
 include ../rules.mk
 

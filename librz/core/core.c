@@ -830,13 +830,9 @@ RZ_API RzCore *rz_core_new(void) {
 }
 
 /*-----------------------------------*/
-#define radare_argc (sizeof (radare_argv) / sizeof(const char*) - 1)
-#define ms_argc (sizeof (ms_argv) / sizeof (const char*) - 1)
-static const char *ms_argv[] = {
-	"?", "!", "ls", "cd", "cat", "get", "mount", "help", "q", "exit", NULL
-};
+#define rizin_argc (sizeof (rizin_argv) / sizeof(const char*) - 1)
 
-static const char *radare_argv[] = {
+static const char *rizin_argv[] = {
 	"whereis", "which", "ls", "rm", "mkdir", "pwd", "cat", "sort", "uniq", "join", "less", "exit", "quit",
 	"#?", "#!", "#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5",
 	"#!python", "#!vala", "#!pipe",
@@ -951,7 +947,6 @@ static const char *radare_argv[] = {
 	"k?", "k", "ko", "kd", "ks", "kj",
 	"l",
 	"L?", "L", "L-", "Ll", "LL", "La", "Lc", "Ld", "Lh", "Li", "Lo",
-	"m?", "m", "m*", "ml", "m-", "md", "mf?", "mf", "mg", "mo", "mi", "mp", "ms", "my",
 	"o?", "o", "o-", "o--", "o+", "oa", "oa-", "oq", "o*", "o.", "o=",
 	"ob?", "ob", "ob*", "obo", "oba", "obf", "obj", "obr", "ob-", "ob-*",
 	"oc", "of", "oi", "oj", "oL", "om", "on",
@@ -1027,91 +1022,6 @@ static const char *radare_argv[] = {
 	"?", "?v", "?$?", "?@?", "?>?",
 	NULL
 };
-
-static void autocomplete_mount_point (RLineCompletion *completion, RzCore *core, const char *path) {
-	RzFSRoot *r;
-	RzListIter *iter;
-	rz_list_foreach (core->fs->roots, iter, r) {
-		char *base = strdup (r->path);
-		char *ls = (char *) rz_str_lchr (base, '/');
-		if (ls) {
-			ls++;
-			*ls = 0;
-		}
-		if (!strcmp (path, base)) {
-			rz_line_completion_push (completion, r->path);
-		}
-		free (base);
-	}
-}
-
-static void autocomplete_ms_path(RLineCompletion *completion, RzCore *core, const char *str, const char *path) {
-	char *lpath = NULL, *dirname = NULL , *basename = NULL;
-	char *p = NULL;
-	char *pwd = (core->rfs && *(core->rfs->cwd)) ? *(core->rfs->cwd): ".";
-	int n = 0;
-	RzList *list;
-	RzListIter *iter;
-	RzFSFile *file;
-	rz_return_if_fail (path);
-	lpath = rz_str_new (path);
-	p = (char *)rz_str_last (lpath, RZ_SYS_DIR);
-	if (p) {
-		*p = 0;
-		if (p == lpath) { // /xxx
-			dirname  = rz_str_new ("/");
-		} else if (lpath[0] == '.') { // ./xxx/yyy
-			dirname = rz_str_newf ("%s%s", pwd, RZ_SYS_DIR);
-		} else if (lpath[0] == '/') { // /xxx/yyy
-      			dirname = rz_str_newf ("%s%s", lpath, RZ_SYS_DIR);
-    		} else { // xxx/yyy
-      			if (strlen (pwd) == 1) { // if pwd is root
-        			dirname = rz_str_newf ("%s%s%s", RZ_SYS_DIR, lpath, RZ_SYS_DIR);
-      			} else {
-				dirname = rz_str_newf ("%s%s%s%s", pwd, RZ_SYS_DIR, lpath, RZ_SYS_DIR);
-      			}
-		}
-		basename = rz_str_new (p + 1);
-	} else { // xxx
-    		if (strlen (pwd) == 1) {
-      			dirname = rz_str_newf ("%s", RZ_SYS_DIR);
-    		} else {
-      			dirname = rz_str_newf ("%s%s", pwd, RZ_SYS_DIR);
-    		}
-		basename = rz_str_new (lpath);
-	}
-
-	if (!dirname || !basename) {
-		goto out;
-	}
-	list= rz_fs_dir (core->fs, dirname);
-	n = strlen (basename);
-	bool chgdir = !strncmp (str, "cd ", 3);
-	if (list) {
-		rz_list_foreach (list, iter, file) {
-			if (!file) {
-				continue;
-			}
-			if (!basename[0] || !strncmp (file->name, basename, n))  {
-				char *tmpstring = rz_str_newf ("%s%s", dirname, file->name);
-				if (rz_file_is_directory (tmpstring)) {
-					char *s = rz_str_newf ("%s/", tmpstring);
-					rz_line_completion_push (completion, s);
-					free (s);
-				} else if (!chgdir) {
-					rz_line_completion_push (completion, tmpstring);
-				}
-				free (tmpstring);
-			}
-		}
-		rz_list_free (list);
-	}
-	autocomplete_mount_point (completion, core, path);
-out:
-	free (lpath);
-	free (dirname);
-	free (basename);
-}
 
 static void autocomplete_process_path(RLineCompletion *completion, const char *str, const char *path) {
 	char *lpath = NULL, *dirname = NULL , *basename = NULL;
@@ -1278,10 +1188,10 @@ static void autocomplete_default(RZ_NULLABLE RzCore *core, RLineCompletion *comp
 			}
 		}
 	} else {
-		for (i = 0; i < radare_argc && radare_argv[i]; i++) {
-			int length = strlen (radare_argv[i]);
-			if (!strncmp (radare_argv[i], buf->data, length)) {
-				rz_line_completion_push (completion, radare_argv[i]);
+		for (i = 0; i < rizin_argc && rizin_argv[i]; i++) {
+			int length = strlen (rizin_argv[i]);
+			if (!strncmp (rizin_argv[i], buf->data, length)) {
+				rz_line_completion_push (completion, rizin_argv[i]);
 			}
 		}
 	}
@@ -1522,20 +1432,6 @@ static void autocomplete_file(RLineCompletion *completion, const char *str) {
 
 }
 
-static void autocomplete_ms_file(RzCore* core, RLineCompletion *completion, const char *str) {
-	rz_return_if_fail (str);
-	char *pipe = strchr (str, '>');
-	char *path = (core->rfs && *(core->rfs->cwd)) ? *(core->rfs->cwd): "/";
-	if (pipe) {
-		str = rz_str_trim_head_ro (pipe + 1);
-	}
-	if (str && !*str) {
-		autocomplete_ms_path (completion, core, str, path);
-	} else {
-		autocomplete_ms_path (completion, core, str, str);
-	}
-}
-
 static void autocomplete_theme(RzCore *core, RLineCompletion *completion, const char *str) {
 	rz_return_if_fail (str);
 	int len = strlen (str);
@@ -1662,9 +1558,6 @@ static bool find_autocomplete(RzCore *core, RLineCompletion *completion, RLineBu
 		break;
 	case RZ_CORE_AUTOCMPLT_MACR:
 		autocomplete_macro (core, completion, p);
-		break;
-	case RZ_CORE_AUTOCMPLT_MS:
-		autocomplete_ms_file(core, completion, p);
 		break;
 	case RZ_CORE_AUTOCMPLT_FILE:
 		autocomplete_file (completion, p);
@@ -1947,7 +1840,7 @@ RZ_API int rz_core_fgets(char *buf, int len) {
 	const char *ptr;
 	RLine *rli = rz_line_singleton ();
 	buf[0] = '\0';
-	rz_line_completion_set (&rli->completion, radare_argc, radare_argv);
+	rz_line_completion_set (&rli->completion, rizin_argc, rizin_argv);
  	rli->completion.run = autocomplete;
  	rli->completion.run_user = rli->user;
 	ptr = rz_line_readline ();
@@ -2333,6 +2226,7 @@ static void __foreach(RzCore *core, const char **cmds, int type) {
 	}
 }
 
+
 static void __init_autocomplete_default (RzCore* core) {
 	const char *fcns[] = {
 		"afi", "afcf", "afn", NULL
@@ -2354,16 +2248,13 @@ static void __init_autocomplete_default (RzCore* core) {
 	const char *files[] = {
 		".", "..", ".*", "/F", "/m", "!", "!!", "#!c", "#!v", "#!cpipe", "#!vala",
 		"#!rust", "#!zig", "#!pipe", "#!python", "aeli", "arp", "arpg", "dmd", "drp", "drpg", "o",
-		"idp", "idpi", "L", "obf", "o+", "oc", "r2", "rz_bin", "rz_asm", "rz_hash", "rz_ax",
+		"idp", "idpi", "L", "obf", "o+", "oc", "rz", "rz_bin", "rz_asm", "rz_hash", "rz_ax",
 		"rz_find", "cd", "on", "op", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
 		"/m", "zos", "zfd", "zfs", "zfz", "cat", "wta", "wtf", "wxf", "dml", "vi",
 		"less", "head", "tail", NULL
 	};
 	const char *projs[] = {
 		"Pc", "Pd", "Pi", "Po", "Ps", "P-", NULL
-	};
-	const char *mounts[] = {
-		"md", "mg", "mo", "ms", "mc", "mi", "mw", NULL
 	};
 	__foreach (core, flags, RZ_CORE_AUTOCMPLT_FLAG);
 	__foreach (core, seeks, RZ_CORE_AUTOCMPLT_SEEK);
@@ -2372,7 +2263,6 @@ static void __init_autocomplete_default (RzCore* core) {
 	__foreach (core, breaks, RZ_CORE_AUTOCMPLT_BRKP);
 	__foreach (core, files, RZ_CORE_AUTOCMPLT_FILE);
 	__foreach (core, projs, RZ_CORE_AUTOCMPLT_PRJT);
-	__foreach (core, mounts, RZ_CORE_AUTOCMPLT_MS);
 
 	rz_core_autocomplete_add (core->autocomplete, "-", RZ_CORE_AUTOCMPLT_MINS, true);
 	rz_core_autocomplete_add (core->autocomplete, "zs", RZ_CORE_AUTOCMPLT_ZIGN, true);
@@ -2387,9 +2277,9 @@ static void __init_autocomplete_default (RzCore* core) {
 	rz_core_autocomplete_add (core->autocomplete, "(-", RZ_CORE_AUTOCMPLT_MACR, true);
 	/* just for hints */
 	int i;
-	for (i = 0; i < radare_argc && radare_argv[i]; i++) {
-		if (!rz_core_autocomplete_find (core->autocomplete, radare_argv[i], true)) {
-			rz_core_autocomplete_add (core->autocomplete, radare_argv[i], RZ_CORE_AUTOCMPLT_DFLT, true);
+	for (i = 0; i < rizin_argc && rizin_argv[i]; i++) {
+		if (!rz_core_autocomplete_find (core->autocomplete, rizin_argv[i], true)) {
+			rz_core_autocomplete_add (core->autocomplete, rizin_argv[i], RZ_CORE_AUTOCMPLT_DFLT, true);
 		}
 	}
 }
@@ -2399,17 +2289,6 @@ static void __init_autocomplete (RzCore* core) {
 	core->autocomplete = RZ_NEW0 (RzCoreAutocomplete);
 	if (core->autocomplete_type == AUTOCOMPLETE_DEFAULT) {
 		__init_autocomplete_default (core);
-	} else if (core->autocomplete_type == AUTOCOMPLETE_MS) {
-		rz_core_autocomplete_add (core->autocomplete, "ls", RZ_CORE_AUTOCMPLT_MS, true);
-		rz_core_autocomplete_add (core->autocomplete, "cd", RZ_CORE_AUTOCMPLT_MS, true);
-		rz_core_autocomplete_add (core->autocomplete, "cat", RZ_CORE_AUTOCMPLT_MS, true);
-		rz_core_autocomplete_add (core->autocomplete, "get", RZ_CORE_AUTOCMPLT_MS, true);
-		rz_core_autocomplete_add (core->autocomplete, "mount", RZ_CORE_AUTOCMPLT_MS, true);
-		for (i = 0; i < ms_argc && ms_argv[i]; i++) {
-			if (!rz_core_autocomplete_find (core->autocomplete, ms_argv[i], true)) {
-				rz_core_autocomplete_add (core->autocomplete, ms_argv[i], RZ_CORE_AUTOCMPLT_MS, true);
-			}
-		}
 	}
 }
 
@@ -2653,7 +2532,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->io->ff = 1;
 	core->search = rz_search_new (RZ_SEARCH_KEYWORD);
 	rz_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
-	core->fs = rz_fs_new ();
 	core->flags = rz_flag_new ();
 	core->flags->cb_printf = rz_cons_printf;
 	core->graph = rz_agraph_new (rz_cons_canvas_new (1, 1));
@@ -2673,9 +2551,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_io_bind (core->io, &(core->search->iob));
 	rz_io_bind (core->io, &(core->print->iob));
 	rz_io_bind (core->io, &(core->anal->iob));
-	rz_io_bind (core->io, &(core->fs->iob));
-	rz_cons_bind (&(core->fs->csb));
-	rz_core_bind (core, &(core->fs->cob));
 	rz_io_bind (core->io, &(core->bin->iob));
 	rz_flag_bind (core->flags, &(core->anal->flb));
 	core->anal->flg_class_set = core_flg_class_set;
@@ -2815,7 +2690,6 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_cons_singleton ()->teefile = NULL; // HACK
 	rz_search_free (c->search);
 	rz_flag_free (c->flags);
-	rz_fs_free (c->fs);
 	rz_egg_free (c->egg);
 	rz_lib_free (c->lib);
 	rz_buf_free (c->yank_buf);

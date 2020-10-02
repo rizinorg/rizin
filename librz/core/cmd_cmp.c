@@ -567,14 +567,10 @@ static int cmd_cmp(void *data, const char *input) {
 					rz_cons_printf ("%s\n", oldText + 1);
 				}
 			} else {
-				if (rz_fs_check (core->fs, path)) {
-					rz_core_cmdf (core, "mg %s", path);
-				} else {
-					char *res = rz_syscmd_cat (path);
-					if (res) {
-						rz_cons_print (res);
-						free (res);
-					}
+				char *res = rz_syscmd_cat (path);
+				if (res) {
+					rz_cons_print (res);
+					free (res);
 				}
 			}
 		}

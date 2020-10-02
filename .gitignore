@@ -55,9 +55,9 @@ build_sdb
 config-user.mk
 librz/bin/d/dll/dll
 librz/config.h
-librz/include/r_userconf.h
-librz/include/r_version.h
-librz/include/r_version.h.tmp
+librz/include/rz_userconf.h
+librz/include/rz_version.h
+librz/include/rz_version.h.tmp
 shlr/capstone/
 shlr/java/out
 shlr/java/out.exe

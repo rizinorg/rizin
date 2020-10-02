@@ -40,7 +40,6 @@ CB (asm, rasm)
 CB (parse, parser)
 CB (bin, bin)
 CB (egg, egg)
-CB (fs, fs)
 
 static void __openPluginsAt(RzCore *core, const char *arg, const char *user_path) {
 	if (arg && *arg) {
@@ -105,7 +104,6 @@ RZ_API void rz_core_loadlibs_init(RzCore *core) {
 	DF (PARSE, "parsing plugins", parse);
 	DF (BIN, "bin plugins", bin);
 	DF (EGG, "egg plugins", egg);
-	DF (FS, "fs plugins", fs);
 	core->times->loadlibs_init_time = rz_time_now_mono () - prev;
 }
 

@@ -68,11 +68,6 @@ RebuildSdb() {
 	Rebuild librz/util
 }
 
-RebuildFs() {
-	Rebuild shlr/grub
-	Rebuild librz/fs
-}
-
 RebuildBin() {
 	Rebuild librz/bin
 	Rebuild librz/core
@@ -101,7 +96,6 @@ RebuildTcc() {
 }
 
 case "$1" in
-grub|fs)RebuildFs; ;;
 bin)    RebuildBin ; ;;
 gdb)    RebuildGdb ; ;;
 winkd)  RebuildWinkd ; ;;

@@ -116,7 +116,6 @@ static void cmd_debug_reg(RzCore *core, const char *str);
 #include "cmd_info.c"
 #include "cmd_macro.c"
 #include "cmd_magic.c"
-#include "cmd_mount.c"
 #include "cmd_seek.c"
 #include "cmd_search.c" // defines incDigitBuffer... used by cmd_print
 #include "cmd_print.c"
@@ -478,14 +477,10 @@ static int cmd_uniq(void *data, const char *input) { // "uniq"
 		if (!arg) {
 			arg = "";
 		}
-		if (rz_fs_check (core->fs, arg)) {
-			rz_core_cmdf (core, "md %s", arg);
-		} else {
-			char *res = rz_syscmd_uniq (arg);
-			if (res) {
-				rz_cons_print (res);
-				free (res);
-			}
+		char *res = rz_syscmd_uniq (arg);
+		if (res) {
+			rz_cons_print (res);
+			free (res);
 		}
 		break;
 	}
@@ -516,14 +511,10 @@ static int cmd_head (void *data, const char *_input) { // "head"
 		if (!arg) {
 			arg = "";
 		}
-		if (rz_fs_check (core->fs, arg)) {
-			rz_core_cmdf (core, "md %s", arg);
-		} else {
-			char *res = rz_syscmd_head (arg, lines);
-			if (res) {
-				rz_cons_print (res);
-				free (res);
-			}
+		char *res = rz_syscmd_head (arg, lines);
+		if (res) {
+			rz_cons_print (res);
+			free (res);
 		}
 		break;
 	}
@@ -1175,6 +1166,26 @@ RZ_API bool rz_core_run_script(RzCore *core, const char *file) {
 	return ret;
 }
 
+static int cmd_m(void *data, const char *input) {
+	switch (*input) {
+	case '?': // "m?"
+		eprintf ("Usage: m[kv] # mkdir to create directory, mv to move a file\n");
+		break;
+	case 'k': { // "mkdir"
+		char *res = rz_syscmd_mkdir (input);
+		if (res) {
+			rz_cons_print (res);
+			free (res);
+		}
+		break;
+	}
+	case 'v': // "mv"
+		return rz_syscmd_mv (input) ? 1: 0;
+		break;
+	}
+	return 0;
+}
+
 static int cmd_ls(void *data, const char *input) { // "ls"
 	RzCore *core = (RzCore *)data;
 	const char *arg = strchr (input, ' ');
@@ -1196,14 +1207,10 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 		if (!arg) {
 			arg = "";
 		}
-		if (rz_fs_check (core->fs, arg)) {
-			rz_core_cmdf (core, "md %s", arg);
-		} else {
-			char *res = rz_syscmd_ls (arg);
-			if (res) {
-				rz_cons_print (res);
-				free (res);
-			}
+		char *res = rz_syscmd_ls (arg);
+		if (res) {
+			rz_cons_print (res);
+			free (res);
 		}
 		break;
 	}
@@ -1241,12 +1248,10 @@ static int cmd_join(void *data, const char *input) { // "join"
 		if (!arg2) {
 			arg2 = "";
 		}
-		if (!rz_fs_check (core->fs, arg1) && !rz_fs_check (core->fs, arg2)) {
-			char *res = rz_syscmd_join (arg1, arg2);
-			if (res) {
-				rz_cons_print (res);
-				free (res);
-			}
+		char *res = rz_syscmd_join (arg1, arg2);
+		if (res) {
+			rz_cons_print (res);
+			free (res);
 		}
 		break;
 	}
@@ -2091,7 +2096,6 @@ static struct autocomplete_flag_map_t {
 	{ "$file", "hints file paths", RZ_CORE_AUTOCMPLT_FILE },
 	{ "$thme", "shows known themes hints", RZ_CORE_AUTOCMPLT_THME },
 	{ "$optn", "allows the selection for multiple options", RZ_CORE_AUTOCMPLT_OPTN },
-	{ "$ms", "shows mount hints", RZ_CORE_AUTOCMPLT_MS},
 	{ "$sdb", "shows sdb hints", RZ_CORE_AUTOCMPLT_SDB},
 	{ NULL, NULL, 0 }
 };
@@ -7135,9 +7139,9 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{"k",    "perform sdb query", cmd_kuery, NULL, &k_help},
 		{"l",       "list files and directories", cmd_ls, NULL, &l_help},
 		{"j",    "join the contents of the two files", cmd_join, NULL, &j_help},
+		{"m",    "make directory and move files", cmd_m, NULL, &m_help},
 		{"h",    "show the top n number of line in file", cmd_head, NULL, &h_help},
 		{"L",        "manage dynamically loaded plugins", cmd_plugins, NULL, &L_help},
-		{"m",    "mount filesystem", cmd_mount, cmd_mount_init, &m_help},
 		{"o",     "open or map file", cmd_open, cmd_open_init, &o_help},
 		{"p",    "print current block", cmd_print, cmd_print_init, &p_help},
 		{"P",  "project", cmd_project, cmd_project_init, &P_help},

@@ -4,7 +4,7 @@ NAME=rz_core
 
 R2DEPS=rz_config rz_cons rz_io rz_util rz_flag rz_asm
 R2DEPS+=rz_debug rz_hash rz_bin rz_lang rz_io rz_anal rz_parse rz_bp rz_egg
-R2DEPS+=rz_reg rz_search rz_syscall rz_socket rz_fs rz_magic rz_crypto
+R2DEPS+=rz_reg rz_search rz_syscall rz_socket rz_magic rz_crypto
 
 OBJS=core.o cmd.o cmd_helps.o cfile.o cconfig.o visual.o cio.o yank.o libs.o agraph.o
 OBJS+=fortune.o hack.o vasm.o patch.o cbin.o corelog.o rtr.o cmd_api.o
@@ -44,7 +44,7 @@ include $(TOP)/shlr/rizin-shell-parser-deps.mk
 include $(LTOP)/rules.mk
 
 cmd.o: cmd_hash.c cmd_debug.c cmd_zign.c cmd_project.c \
-	cmd_open.c cmd_meta.c cmd_macro.c cmd_magic.c cmd_mount.c cmd_eval.c \
+	cmd_open.c cmd_meta.c cmd_macro.c cmd_magic.c cmd_eval.c \
 	cmd_seek.c cmd_print.c cmd_help.c cmd_anal.c cmd_search.c cmd_log.c \
 	cmd_cmp.c cmd_write.c cmd_egg.c cmd_info.c cmd_type.c cmd_flag.c \
 	cmd_search_rop.c

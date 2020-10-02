@@ -226,7 +226,6 @@ conf_data.set('plugins_bin_ldr', '&rz_bin_ldr_plugin_' + ', &rz_bin_ldr_plugin_'
 conf_data.set('plugins_bin_xtr', '&rz_bin_xtr_plugin_' + ', &rz_bin_xtr_plugin_'.join(bin_xtr_plugins) + ', 0')
 conf_data.set('plugins_crypto', '&rz_crypto_plugin_' + ', &rz_crypto_plugin_'.join(crypto_plugins) + ', 0')
 conf_data.set('plugins_io', '&rz_io_plugin_' + ', &rz_io_plugin_'.join(io_plugins) + ', 0')
-conf_data.set('plugins_fs', '&rz_fs_plugin_' + ', &rz_fs_plugin_'.join(fs_plugins) + ', 0')
 conf_data.set('plugins_debug', '&rz_debug_plugin_' + ', &rz_debug_plugin_'.join(debug_plugins) + ', 0')
 conf_data.set('plugins_egg', '&rz_egg_plugin_' + ', &rz_egg_plugin_'.join(egg_plugins) + ', 0')
 conf_data.set('plugins_lang', '&rz_lang_plugin_' + ', &rz_lang_plugin_'.join(lang_plugins) + ', 0')
@@ -585,7 +584,6 @@ subdir('librz/lang')
 subdir('librz/asm')
 subdir('librz/anal')
 subdir('librz/egg')
-subdir('librz/fs')
 subdir('librz/debug')
 subdir('librz/core')
 
@@ -639,7 +637,6 @@ if meson.is_subproject()
       rz_debug_dep,
       rz_egg_dep,
       rz_flag_dep,
-      rz_fs_dep,
       rz_hash_dep,
       rz_io_dep,
       rz_lang_dep,
