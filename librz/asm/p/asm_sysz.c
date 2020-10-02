@@ -59,14 +59,14 @@ RzAsmPlugin rz_asm_plugin_sysz = {
 	.license = "BSD",
 	.arch = "sysz",
 	.bits = 32,
-	.endian = R_SYS_ENDIAN_BIG,
+	.endian = RZ_SYS_ENDIAN_BIG,
 	.fini = the_end,
 	.disassemble = &disassemble,
 };
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_sysz,
 	.version = RZ_VERSION
 };

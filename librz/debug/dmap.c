@@ -46,7 +46,7 @@ static void print_debug_map_line(RzDebug *dbg, RzDebugMap *map, ut64 addr, const
 		);
 		free (name);
 	} else {
-		const char *fmtstr = dbg->bits & R_SYS_BITS_64
+		const char *fmtstr = dbg->bits & RZ_SYS_BITS_64
 			? "0x%016" PFMT64x " - 0x%016" PFMT64x " %c %s %6s %c %s %s %s%s%s\n"
 			: "0x%08" PFMT64x " - 0x%08" PFMT64x " %c %s %6s %c %s %s %s%s%s\n";
 		const char *type = map->shared ? "sys": "usr";
@@ -224,7 +224,7 @@ static void print_debug_maps_ascii_art(RzDebug *dbg, RzList *maps, ut64 addr, in
 				mul = findMinMax (maps, &min, &max, skip, width); //  Recalculate minmax
 			}
 			skip++;
-			fmtstr = dbg->bits & R_SYS_BITS_64 // Prefix formatting string (before bar)
+			fmtstr = dbg->bits & RZ_SYS_BITS_64 // Prefix formatting string (before bar)
 				? "map %4.8s %c %s0x%016" PFMT64x "%s |"
 				: "map %4.8s %c %s0x%08" PFMT64x "%s |";
 			dbg->cb_printf (fmtstr, humansz,
@@ -241,7 +241,7 @@ static void print_debug_maps_ascii_art(RzDebug *dbg, RzList *maps, ut64 addr, in
 					dbg->cb_printf ("-");
 				}
 			}
-			fmtstr = dbg->bits & R_SYS_BITS_64 ? // Suffix formatting string (after bar)
+			fmtstr = dbg->bits & RZ_SYS_BITS_64 ? // Suffix formatting string (after bar)
 				"| %s0x%016" PFMT64x "%s %s %s\n" :
 				"| %s0x%08" PFMT64x "%s %s %s\n";
 			dbg->cb_printf (fmtstr, color_prefix, map->addr_end, color_suffix,
@@ -282,7 +282,7 @@ RZ_API RzDebugMap *rz_debug_map_new(char *name, ut64 addr, ut64 addr_end, int pe
 			%" PFMT64x ">%" PFMT64x ")\n", addr, addr_end);
 		return NULL;
 	}
-	map = R_NEW0 (RzDebugMap);
+	map = RZ_NEW0 (RzDebugMap);
 	if (!map) {
 		return NULL;
 	}

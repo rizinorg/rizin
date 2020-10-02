@@ -23,14 +23,14 @@ RzAsmPlugin rz_asm_plugin_z80 = {
 	.author = "condret",
 	.arch = "z80",
 	.bits = 8,
-	.endian = R_SYS_ENDIAN_NONE,
+	.endian = RZ_SYS_ENDIAN_NONE,
 	.disassemble = &do_disassemble,
 	.assemble = &do_assemble,
 };
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_z80,
 	.version = RZ_VERSION
 };

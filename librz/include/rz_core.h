@@ -35,46 +35,46 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-R_LIB_VERSION_HEADER(rz_core);
+RZ_LIB_VERSION_HEADER(rz_core);
 
-#define R_CORE_CMD_OK 0
-#define R_CORE_CMD_INVALID -1
-#define R_CORE_CMD_EXIT -2
+#define RZ_CORE_CMD_OK 0
+#define RZ_CORE_CMD_INVALID -1
+#define RZ_CORE_CMD_EXIT -2
 
-#define R_CORE_BLOCKSIZE 0x100
-#define R_CORE_BLOCKSIZE_MAX 0x3200000 /* 32MB */
+#define RZ_CORE_BLOCKSIZE 0x100
+#define RZ_CORE_BLOCKSIZE_MAX 0x3200000 /* 32MB */
 
-#define R_CORE_ANAL_GRAPHLINES          1
-#define R_CORE_ANAL_GRAPHBODY           2
-#define R_CORE_ANAL_GRAPHDIFF           4
-#define R_CORE_ANAL_JSON                8
-#define R_CORE_ANAL_KEYVALUE            16
-#define R_CORE_ANAL_JSON_FORMAT_DISASM  32
-#define R_CORE_ANAL_STAR                64
+#define RZ_CORE_ANAL_GRAPHLINES          1
+#define RZ_CORE_ANAL_GRAPHBODY           2
+#define RZ_CORE_ANAL_GRAPHDIFF           4
+#define RZ_CORE_ANAL_JSON                8
+#define RZ_CORE_ANAL_KEYVALUE            16
+#define RZ_CORE_ANAL_JSON_FORMAT_DISASM  32
+#define RZ_CORE_ANAL_STAR                64
 
-#define R_FLAGS_FS_CLASSES "classes"
-#define R_FLAGS_FS_FUNCTIONS "functions"
-#define R_FLAGS_FS_IMPORTS "imports"
-#define R_FLAGS_FS_RELOCS "relocs"
-#define R_FLAGS_FS_RESOURCES "resources"
-#define R_FLAGS_FS_SECTIONS "sections"
-#define R_FLAGS_FS_SEGMENTS "segments"
-#define R_FLAGS_FS_SIGNS "sign"
-#define R_FLAGS_FS_STRINGS "strings"
-#define R_FLAGS_FS_SYMBOLS "symbols"
-#define R_FLAGS_FS_SYMBOLS_SECTIONS "symbols.sections"
-#define R_FLAGS_FS_SYSCALLS "syscalls"
+#define RZ_FLAGS_FS_CLASSES "classes"
+#define RZ_FLAGS_FS_FUNCTIONS "functions"
+#define RZ_FLAGS_FS_IMPORTS "imports"
+#define RZ_FLAGS_FS_RELOCS "relocs"
+#define RZ_FLAGS_FS_RESOURCES "resources"
+#define RZ_FLAGS_FS_SECTIONS "sections"
+#define RZ_FLAGS_FS_SEGMENTS "segments"
+#define RZ_FLAGS_FS_SIGNS "sign"
+#define RZ_FLAGS_FS_STRINGS "strings"
+#define RZ_FLAGS_FS_SYMBOLS "symbols"
+#define RZ_FLAGS_FS_SYMBOLS_SECTIONS "symbols.sections"
+#define RZ_FLAGS_FS_SYSCALLS "syscalls"
 
-#define R_GRAPH_FORMAT_NO           0
-#define R_GRAPH_FORMAT_GMLFCN       1
-#define R_GRAPH_FORMAT_JSON         2
-#define R_GRAPH_FORMAT_GML          3
-#define R_GRAPH_FORMAT_DOT          4
-#define R_GRAPH_FORMAT_CMD          5
+#define RZ_GRAPH_FORMAT_NO           0
+#define RZ_GRAPH_FORMAT_GMLFCN       1
+#define RZ_GRAPH_FORMAT_JSON         2
+#define RZ_GRAPH_FORMAT_GML          3
+#define RZ_GRAPH_FORMAT_DOT          4
+#define RZ_GRAPH_FORMAT_CMD          5
 
 ///
-#define R_CONS_COLOR_DEF(x, def) ((core->cons && core->cons->context->pal.x)? core->cons->context->pal.x: def)
-#define R_CONS_COLOR(x) R_CONS_COLOR_DEF (x, "")
+#define RZ_CONS_COLOR_DEF(x, def) ((core->cons && core->cons->context->pal.x)? core->cons->context->pal.x: def)
+#define RZ_CONS_COLOR(x) RZ_CONS_COLOR_DEF (x, "")
 
 /* rtr */
 #define RTR_PROTOCOL_RAP 0
@@ -87,20 +87,20 @@ R_LIB_VERSION_HEADER(rz_core);
 
 /* visual mode */
 typedef enum {
-	R_CORE_VISUAL_MODE_PX = 0,
-	R_CORE_VISUAL_MODE_PD = 1,
-	R_CORE_VISUAL_MODE_DB = 2,
-	R_CORE_VISUAL_MODE_OV = 3,
-	R_CORE_VISUAL_MODE_CD = 4
+	RZ_CORE_VISUAL_MODE_PX = 0,
+	RZ_CORE_VISUAL_MODE_PD = 1,
+	RZ_CORE_VISUAL_MODE_DB = 2,
+	RZ_CORE_VISUAL_MODE_OV = 3,
+	RZ_CORE_VISUAL_MODE_CD = 4
 } RzCoreVisualMode;
 
 /*
-#define R_CORE_VISUAL_MODE_PC    4
-#define R_CORE_VISUAL_MODE_PXA   5
-#define R_CORE_VISUAL_MODE_PSS   6
-#define R_CORE_VISUAL_MODE_PRC   7
-#define R_CORE_VISUAL_MODE_PXa   8
-#define R_CORE_VISUAL_MODE_PXR   9
+#define RZ_CORE_VISUAL_MODE_PC    4
+#define RZ_CORE_VISUAL_MODE_PXA   5
+#define RZ_CORE_VISUAL_MODE_PSS   6
+#define RZ_CORE_VISUAL_MODE_PRC   7
+#define RZ_CORE_VISUAL_MODE_PXa   8
+#define RZ_CORE_VISUAL_MODE_PXR   9
 */
 
 typedef struct rz_core_rtr_host_t {
@@ -150,30 +150,30 @@ typedef struct rz_core_times_t {
 	ut64 file_open_time;
 } RzCoreTimes;
 
-#define R_CORE_ASMQJMPS_NUM 10
-#define R_CORE_ASMQJMPS_LETTERS 26
-#define R_CORE_ASMQJMPS_MAX_LETTERS (26 * 26 * 26 * 26 * 26)
-#define R_CORE_ASMQJMPS_LEN_LETTERS 5
+#define RZ_CORE_ASMQJMPS_NUM 10
+#define RZ_CORE_ASMQJMPS_LETTERS 26
+#define RZ_CORE_ASMQJMPS_MAX_LETTERS (26 * 26 * 26 * 26 * 26)
+#define RZ_CORE_ASMQJMPS_LEN_LETTERS 5
 
 typedef enum rz_core_autocomplete_types_t {
-	R_CORE_AUTOCMPLT_DFLT = 0,
-	R_CORE_AUTOCMPLT_FLAG,
-	R_CORE_AUTOCMPLT_FLSP,
-	R_CORE_AUTOCMPLT_SEEK,
-	R_CORE_AUTOCMPLT_FCN,
-	R_CORE_AUTOCMPLT_ZIGN,
-	R_CORE_AUTOCMPLT_EVAL,
-	R_CORE_AUTOCMPLT_PRJT,
-	R_CORE_AUTOCMPLT_MINS,
-	R_CORE_AUTOCMPLT_BRKP,
-	R_CORE_AUTOCMPLT_MACR,
-	R_CORE_AUTOCMPLT_FILE,
-	R_CORE_AUTOCMPLT_THME,
-	R_CORE_AUTOCMPLT_OPTN,
-	R_CORE_AUTOCMPLT_MS,
-	R_CORE_AUTOCMPLT_SDB,
+	RZ_CORE_AUTOCMPLT_DFLT = 0,
+	RZ_CORE_AUTOCMPLT_FLAG,
+	RZ_CORE_AUTOCMPLT_FLSP,
+	RZ_CORE_AUTOCMPLT_SEEK,
+	RZ_CORE_AUTOCMPLT_FCN,
+	RZ_CORE_AUTOCMPLT_ZIGN,
+	RZ_CORE_AUTOCMPLT_EVAL,
+	RZ_CORE_AUTOCMPLT_PRJT,
+	RZ_CORE_AUTOCMPLT_MINS,
+	RZ_CORE_AUTOCMPLT_BRKP,
+	RZ_CORE_AUTOCMPLT_MACR,
+	RZ_CORE_AUTOCMPLT_FILE,
+	RZ_CORE_AUTOCMPLT_THME,
+	RZ_CORE_AUTOCMPLT_OPTN,
+	RZ_CORE_AUTOCMPLT_MS,
+	RZ_CORE_AUTOCMPLT_SDB,
 // --- left as last always
-	R_CORE_AUTOCMPLT_END,
+	RZ_CORE_AUTOCMPLT_END,
 } RzCoreAutocompleteType;
 
 typedef struct rz_core_autocomplete_t {
@@ -285,7 +285,7 @@ struct rz_core_t {
 	bool cfglog; // cfg.corelog
 	int cmdrepeat; // cmd.repeat
 	const char *cmdtimes; // cmd.times
-	R_DEPRECATE bool cmd_in_backticks; // whether currently executing a cmd out of backticks
+	RZ_DEPRECATE bool cmd_in_backticks; // whether currently executing a cmd out of backticks
 	int rtr_n;
 	RzCoreRtrHost rtr_host[RTR_MAX_HOSTS];
 	ut64 *asmqjmps;
@@ -412,7 +412,7 @@ RZ_API int rz_core_cmd0(RzCore *core, const char *cmd);
 RZ_API void rz_core_cmd_init(RzCore *core);
 RZ_API int rz_core_cmd_pipe(RzCore *core, char *radare_cmd, char *shell_cmd);
 RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd);
-RZ_API char *rz_core_cmd_strf(RzCore *core, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
+RZ_API char *rz_core_cmd_strf(RzCore *core, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd);
 RZ_API int rz_core_cmd_file(RzCore *core, const char *file);
 RZ_API int rz_core_cmd_lines(RzCore *core, const char *lines);
@@ -424,14 +424,14 @@ RZ_API int rz_core_seek_base (RzCore *core, const char *hex);
 RZ_API void rz_core_seek_previous (RzCore *core, const char *type);
 RZ_API void rz_core_seek_next (RzCore *core, const char *type);
 RZ_API int rz_core_seek_align(RzCore *core, ut64 align, int count);
-RZ_API void rz_core_arch_bits_at(RzCore *core, ut64 addr, R_OUT R_NULLABLE int *bits, R_OUT R_BORROW R_NULLABLE const char **arch);
+RZ_API void rz_core_arch_bits_at(RzCore *core, ut64 addr, RZ_OUT RZ_NULLABLE int *bits, RZ_OUT RZ_BORROW RZ_NULLABLE const char **arch);
 RZ_API void rz_core_seek_arch_bits(RzCore *core, ut64 addr);
 RZ_API int rz_core_block_read(RzCore *core);
 RZ_API int rz_core_block_size(RzCore *core, int bsize);
 RZ_API int rz_core_seek_size(RzCore *core, ut64 addr, int bsize);
 RZ_API int rz_core_is_valid_offset (RzCore *core, ut64 offset);
 RZ_API int rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist);
-RZ_API void rz_core_autocomplete(R_NULLABLE RzCore *core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type);
+RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type);
 RZ_API void rz_core_print_scrollbar(RzCore *core);
 RZ_API void rz_core_print_scrollbar_bottom(RzCore *core);
 RZ_API void rz_core_visual_prompt_input (RzCore *core);
@@ -530,7 +530,7 @@ RZ_API bool rz_core_project_load(RzCore *core, const char *prjfile, const char *
 RZ_API RzThread *rz_core_project_load_bg(RzCore *core, const char *prjfile, const char *rcfile);
 RZ_API void rz_core_project_execute_cmds(RzCore *core, const char *prjfile);
 
-#define R_CORE_FOREIGN_ADDR -1
+#define RZ_CORE_FOREIGN_ADDR -1
 RZ_API int rz_core_yank(RzCore *core, ut64 addr, int len);
 RZ_API int rz_core_yank_string(RzCore *core, ut64 addr, int maxlen);
 RZ_API bool rz_core_yank_hexpair(RzCore *core, const char *input);
@@ -547,11 +547,11 @@ RZ_API int rz_core_yank_hud_path (RzCore *core, const char *input, int dir);
 RZ_API bool rz_core_yank_file_ex (RzCore *core, const char *input);
 RZ_API int rz_core_yank_file_all (RzCore *core, const char *input);
 
-#define R_CORE_LOADLIBS_ENV 1
-#define R_CORE_LOADLIBS_HOME 2
-#define R_CORE_LOADLIBS_SYSTEM 4
-#define R_CORE_LOADLIBS_CONFIG 8
-#define R_CORE_LOADLIBS_ALL UT32_MAX
+#define RZ_CORE_LOADLIBS_ENV 1
+#define RZ_CORE_LOADLIBS_HOME 2
+#define RZ_CORE_LOADLIBS_SYSTEM 4
+#define RZ_CORE_LOADLIBS_CONFIG 8
+#define RZ_CORE_LOADLIBS_ALL UT32_MAX
 
 RZ_API void rz_core_loadlibs_init(RzCore *core);
 RZ_API int rz_core_loadlibs(RzCore *core, int where, const char *path);
@@ -619,9 +619,9 @@ RZ_API RzList *rz_core_anal_fcn_get_calls (RzCore *core, RzAnalFunction *fcn); /
 RZ_API void rz_core_anal_type_match(RzCore *core, RzAnalFunction *fcn);
 
 /* asm.c */
-#define R_MIDFLAGS_SHOW 1
-#define R_MIDFLAGS_REALIGN 2
-#define R_MIDFLAGS_SYMALIGN 3
+#define RZ_MIDFLAGS_SHOW 1
+#define RZ_MIDFLAGS_REALIGN 2
+#define RZ_MIDFLAGS_SYMALIGN 3
 
 typedef struct rz_core_asm_hit {
 	char *code;
@@ -631,7 +631,7 @@ typedef struct rz_core_asm_hit {
 } RzCoreAsmHit;
 
 RZ_API RBuffer *rz_core_syscall (RzCore *core, const char *name, const char *args);
-RZ_API RBuffer *rz_core_syscallf (RzCore *core, const char *name, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
+RZ_API RBuffer *rz_core_syscallf (RzCore *core, const char *name, const char *fmt, ...) RZ_PRINTF_CHECK(3, 4);
 RZ_API RzCoreAsmHit *rz_core_asm_hit_new(void);
 RZ_API RzList *rz_core_asm_hit_list_new(void);
 RZ_API void rz_core_asm_hit_free(void *_hit);
@@ -692,48 +692,48 @@ RZ_API void rz_core_sysenv_end(RzCore *core, const char *cmd);
 RZ_API void rz_core_recover_vars(RzCore *core, RzAnalFunction *fcn, bool argonly);
 // XXX dupe from rz_bin.h
 /* bin.c */
-#define R_CORE_BIN_ACC_STRINGS	0x001
-#define R_CORE_BIN_ACC_INFO	0x002
-#define R_CORE_BIN_ACC_MAIN	0x004
-#define R_CORE_BIN_ACC_ENTRIES	0x008
-#define R_CORE_BIN_ACC_RELOCS	0x010
-#define R_CORE_BIN_ACC_IMPORTS	0x020
-#define R_CORE_BIN_ACC_SYMBOLS	0x040
-#define R_CORE_BIN_ACC_SECTIONS	0x080
-#define R_CORE_BIN_ACC_FIELDS	0x100
-#define R_CORE_BIN_ACC_LIBS	0x200
-#define R_CORE_BIN_ACC_CLASSES	0x400
-#define R_CORE_BIN_ACC_DWARF	0x800
-#define R_CORE_BIN_ACC_SIZE     0x1000
-#define R_CORE_BIN_ACC_PDB	0x2000
-#define R_CORE_BIN_ACC_MEM	0x4000
-#define R_CORE_BIN_ACC_EXPORTS  0x8000
-#define R_CORE_BIN_ACC_VERSIONINFO 0x10000
-#define R_CORE_BIN_ACC_SIGNATURE 0x20000
-#define R_CORE_BIN_ACC_RAW_STRINGS	0x40000
-#define R_CORE_BIN_ACC_HEADER 0x80000
-#define R_CORE_BIN_ACC_RESOURCES 0x100000
-#define R_CORE_BIN_ACC_INITFINI 0x200000
-#define R_CORE_BIN_ACC_SEGMENTS 0x400000
-#define R_CORE_BIN_ACC_SOURCE 0x800000
-#define R_CORE_BIN_ACC_HASHES 0x10000000
-#define R_CORE_BIN_ACC_TRYCATCH 0x20000000
-#define R_CORE_BIN_ACC_SECTIONS_MAPPING 0x40000000
-#define R_CORE_BIN_ACC_ALL	0x504FFF
+#define RZ_CORE_BIN_ACC_STRINGS	0x001
+#define RZ_CORE_BIN_ACC_INFO	0x002
+#define RZ_CORE_BIN_ACC_MAIN	0x004
+#define RZ_CORE_BIN_ACC_ENTRIES	0x008
+#define RZ_CORE_BIN_ACC_RELOCS	0x010
+#define RZ_CORE_BIN_ACC_IMPORTS	0x020
+#define RZ_CORE_BIN_ACC_SYMBOLS	0x040
+#define RZ_CORE_BIN_ACC_SECTIONS	0x080
+#define RZ_CORE_BIN_ACC_FIELDS	0x100
+#define RZ_CORE_BIN_ACC_LIBS	0x200
+#define RZ_CORE_BIN_ACC_CLASSES	0x400
+#define RZ_CORE_BIN_ACC_DWARF	0x800
+#define RZ_CORE_BIN_ACC_SIZE     0x1000
+#define RZ_CORE_BIN_ACC_PDB	0x2000
+#define RZ_CORE_BIN_ACC_MEM	0x4000
+#define RZ_CORE_BIN_ACC_EXPORTS  0x8000
+#define RZ_CORE_BIN_ACC_VERSIONINFO 0x10000
+#define RZ_CORE_BIN_ACC_SIGNATURE 0x20000
+#define RZ_CORE_BIN_ACC_RAW_STRINGS	0x40000
+#define RZ_CORE_BIN_ACC_HEADER 0x80000
+#define RZ_CORE_BIN_ACC_RESOURCES 0x100000
+#define RZ_CORE_BIN_ACC_INITFINI 0x200000
+#define RZ_CORE_BIN_ACC_SEGMENTS 0x400000
+#define RZ_CORE_BIN_ACC_SOURCE 0x800000
+#define RZ_CORE_BIN_ACC_HASHES 0x10000000
+#define RZ_CORE_BIN_ACC_TRYCATCH 0x20000000
+#define RZ_CORE_BIN_ACC_SECTIONS_MAPPING 0x40000000
+#define RZ_CORE_BIN_ACC_ALL	0x504FFF
 
-#define R_CORE_PRJ_FLAGS	0x0001
-#define R_CORE_PRJ_EVAL		0x0002
-#define R_CORE_PRJ_IO_MAPS	0x0004
-#define R_CORE_PRJ_SECTIONS	0x0008
-#define R_CORE_PRJ_META		0x0010
-#define R_CORE_PRJ_XREFS	0x0020
-#define R_CORE_PRJ_FCNS		0x0040
-#define R_CORE_PRJ_ANAL_HINTS	0x0080
-#define R_CORE_PRJ_ANAL_TYPES	0x0100
-#define R_CORE_PRJ_ANAL_MACROS	0x0200
-#define R_CORE_PRJ_ANAL_SEEK	0x0400
-#define R_CORE_PRJ_DBG_BREAK   0x0800
-#define R_CORE_PRJ_ALL		0xFFFF
+#define RZ_CORE_PRJ_FLAGS	0x0001
+#define RZ_CORE_PRJ_EVAL		0x0002
+#define RZ_CORE_PRJ_IO_MAPS	0x0004
+#define RZ_CORE_PRJ_SECTIONS	0x0008
+#define RZ_CORE_PRJ_META		0x0010
+#define RZ_CORE_PRJ_XREFS	0x0020
+#define RZ_CORE_PRJ_FCNS		0x0040
+#define RZ_CORE_PRJ_ANAL_HINTS	0x0080
+#define RZ_CORE_PRJ_ANAL_TYPES	0x0100
+#define RZ_CORE_PRJ_ANAL_MACROS	0x0200
+#define RZ_CORE_PRJ_ANAL_SEEK	0x0400
+#define RZ_CORE_PRJ_DBG_BREAK   0x0800
+#define RZ_CORE_PRJ_ALL		0xFFFF
 
 typedef struct rz_core_bin_filter_t {
 	ut64 offset;
@@ -859,10 +859,10 @@ RZ_API char *cmd_syscall_dostr(RzCore *core, st64 num, ut64 addr);
 typedef void (*RzCoreTaskCallback)(void *user, char *out);
 
 typedef enum {
-	R_CORE_TASK_STATE_BEFORE_START,
-	R_CORE_TASK_STATE_RUNNING,
-	R_CORE_TASK_STATE_SLEEPING,
-	R_CORE_TASK_STATE_DONE
+	RZ_CORE_TASK_STATE_BEFORE_START,
+	RZ_CORE_TASK_STATE_RUNNING,
+	RZ_CORE_TASK_STATE_SLEEPING,
+	RZ_CORE_TASK_STATE_DONE
 } RTaskState;
 
 typedef struct rz_core_task_t {

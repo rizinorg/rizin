@@ -30,19 +30,19 @@ RZ_API int rz_type_kind(Sdb *TDB, const char *name) {
 		return -1;
 	}
 	if (!strcmp (type, "enum")) {
-		return R_TYPE_ENUM;
+		return RZ_TYPE_ENUM;
 	}
 	if (!strcmp (type, "struct")) {
-		return R_TYPE_STRUCT;
+		return RZ_TYPE_STRUCT;
 	}
 	if (!strcmp (type, "union")) {
-		return R_TYPE_UNION;
+		return RZ_TYPE_UNION;
 	}
 	if (!strcmp (type, "type")) {
-		return R_TYPE_BASIC;
+		return RZ_TYPE_BASIC;
 	}
 	if (!strcmp (type, "typedef")) {
-		return R_TYPE_TYPEDEF;
+		return RZ_TYPE_TYPEDEF;
 	}
 	return -1;
 }
@@ -51,13 +51,13 @@ RZ_API RzList* rz_type_get_enum (Sdb *TDB, const char *name) {
 	char *p, var[130];
 	int n;
 
-	if (rz_type_kind (TDB, name) != R_TYPE_ENUM) {
+	if (rz_type_kind (TDB, name) != RZ_TYPE_ENUM) {
 		return NULL;
 	}
 	RzList *res = rz_list_new ();
 	snprintf (var, sizeof (var), "enum.%s", name);
 	for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
-		RTypeEnum *member = R_NEW0 (RTypeEnum);
+		RTypeEnum *member = RZ_NEW0 (RTypeEnum);
 		if (member) {
 			char *var2 = rz_str_newf ("%s.%s", var, p);
 			if (var2) {
@@ -79,7 +79,7 @@ RZ_API RzList* rz_type_get_enum (Sdb *TDB, const char *name) {
 }
 
 RZ_API char *rz_type_enum_member(Sdb *TDB, const char *name, const char *member, ut64 val) {
-	if (rz_type_kind (TDB, name) != R_TYPE_ENUM) {
+	if (rz_type_kind (TDB, name) != RZ_TYPE_ENUM) {
 		return NULL;
 	}
 	const char *q = member
@@ -93,7 +93,7 @@ RZ_API char *rz_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 	const char *res;
 	int i;
 
-	if (rz_type_kind (TDB, name) != R_TYPE_ENUM) {
+	if (rz_type_kind (TDB, name) != RZ_TYPE_ENUM) {
 		return NULL;
 	}
 	bool isFirst = true;
@@ -161,7 +161,7 @@ RZ_API ut64 rz_type_get_bitsize(Sdb *TDB, const char *type) {
 				free (query);
 				query = rz_str_newf ("%s.%s.%s", t, tmptype, name);
 				char *subtype = sdb_get (TDB, query, 0);
-				R_FREE (query);
+				RZ_FREE (query);
 				if (!subtype) {
 					break;
 				}
@@ -541,7 +541,7 @@ RZ_API int rz_type_func_args_count(Sdb *TDB, const char *func_name) {
 	return sdb_num_get (TDB, query, 0);
 }
 
-RZ_API R_OWN char *rz_type_func_args_type(Sdb *TDB, R_NONNULL const char *func_name, int i) {
+RZ_API RZ_OWN char *rz_type_func_args_type(Sdb *TDB, RZ_NONNULL const char *func_name, int i) {
 	const char *query = sdb_fmt ("func.%s.arg.%d", func_name, i);
 	char *ret = sdb_get (TDB, query, 0);
 	if (ret) {
@@ -555,7 +555,7 @@ RZ_API R_OWN char *rz_type_func_args_type(Sdb *TDB, R_NONNULL const char *func_n
 	return NULL;
 }
 
-RZ_API const char *rz_type_func_args_name(Sdb *TDB, R_NONNULL const char *func_name, int i) {
+RZ_API const char *rz_type_func_args_name(Sdb *TDB, RZ_NONNULL const char *func_name, int i) {
 	const char *query = sdb_fmt ("func.%s.arg.%d", func_name, i);
 	const char *get = sdb_const_get (TDB, query, 0);
 	if (get) {
@@ -567,7 +567,7 @@ RZ_API const char *rz_type_func_args_name(Sdb *TDB, R_NONNULL const char *func_n
 
 #define MIN_MATCH_LEN 4
 
-static R_OWN char *type_func_try_guess(Sdb *TDB, R_NONNULL char *name) {
+static RZ_OWN char *type_func_try_guess(Sdb *TDB, RZ_NONNULL char *name) {
 	const char *res;
 	if (rz_str_nlen (name, MIN_MATCH_LEN) < MIN_MATCH_LEN) {
 		return NULL;
@@ -584,7 +584,7 @@ static R_OWN char *type_func_try_guess(Sdb *TDB, R_NONNULL char *name) {
 // TODO:
 // - symbol names are long and noisy, some of them might not be matched due
 //	 to additional information added around name
-RZ_API R_OWN char *rz_type_func_guess(Sdb *TDB, R_NONNULL char *func_name) {
+RZ_API RZ_OWN char *rz_type_func_guess(Sdb *TDB, RZ_NONNULL char *func_name) {
 	int offset = 0;
 	char *str = func_name;
 	char *result = NULL;

@@ -45,7 +45,7 @@ static RzAnalStructMember *parse_member(STypeInfo *type_info, RzList *types) {
 	type_info->get_val (type_info, &offset); // gets offset
 	type_info->get_name (type_info, &name);
 	type_info->get_print_type (type_info, &type);
-	RzAnalStructMember *member = R_NEW0 (RzAnalStructMember);
+	RzAnalStructMember *member = RZ_NEW0 (RzAnalStructMember);
 	if (!member) {
 		goto cleanup;
 	}
@@ -74,7 +74,7 @@ static RzAnalEnumCase *parse_enumerate(STypeInfo *type_info, RzList *types) {
 	// sometimes, the type doesn't have get_val for some reason
 	type_info->get_val (type_info, &value);
 	type_info->get_name (type_info, &name);
-	RzAnalEnumCase *cas = R_NEW0 (RzAnalEnumCase);
+	RzAnalEnumCase *cas = RZ_NEW0 (RzAnalEnumCase);
 	if (!cas) {
 		goto cleanup;
 	}
@@ -101,7 +101,7 @@ static void parse_enum(const RzAnal *anal, SType *type, RzList *types) {
 		type_info->get_name &&
 		type_info->get_utype);
 
-	RzAnalBaseType *base_type = rz_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ENUM);
+	RzAnalBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
 		return;
 	}
@@ -144,7 +144,7 @@ static void parse_enum(const RzAnal *anal, SType *type, RzList *types) {
 	rz_anal_save_base_type (anal, base_type);
 cleanup:
 	if (to_free_name) {
-		R_FREE (name);
+		RZ_FREE (name);
 	}
 	rz_anal_base_type_free (base_type);
 	return;
@@ -166,7 +166,7 @@ static void parse_structure(const RzAnal *anal, SType *type, RzList *types) {
 		type_info->get_name &&
 		type_info->get_val);
 
-	RzAnalBaseType *base_type = rz_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	RzAnalBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_STRUCT);
 	if (!base_type) {
 		return;
 	}
@@ -197,9 +197,9 @@ static void parse_structure(const RzAnal *anal, SType *type, RzList *types) {
 		}
 	}
 	if (type_info->leaf_type == eLF_STRUCTURE || type_info->leaf_type == eLF_CLASS) {
-		base_type->kind = R_ANAL_BASE_TYPE_KIND_STRUCT;
+		base_type->kind = RZ_ANAL_BASE_TYPE_KIND_STRUCT;
 	} else { // union
-		base_type->kind = R_ANAL_BASE_TYPE_KIND_UNION;
+		base_type->kind = RZ_ANAL_BASE_TYPE_KIND_UNION;
 	}
 	char *sname = rz_str_sanitize_sdb_key (name);
 	base_type->name = sname;
@@ -207,7 +207,7 @@ static void parse_structure(const RzAnal *anal, SType *type, RzList *types) {
 	rz_anal_save_base_type (anal, base_type);
 cleanup:
 	if (to_free_name) {
-		R_FREE (name);
+		RZ_FREE (name);
 	}
 	rz_anal_base_type_free (base_type);
 	return;

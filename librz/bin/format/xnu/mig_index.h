@@ -8,12 +8,12 @@
  *
  */
 
-#ifndef R_MIG_INDEX_H
-#define R_MIG_INDEX_H
+#ifndef RZ_MIG_INDEX_H
+#define RZ_MIG_INDEX_H
 
-#define R_MIG_INDEX_LEN 846
+#define RZ_MIG_INDEX_LEN 846
 
-static const char *mig_index[R_MIG_INDEX_LEN] = {
+static const char *mig_index[RZ_MIG_INDEX_LEN] = {
 	"65", "mach_notify_port_deleted",
 	"69", "mach_notify_port_destroyed",
 	"70", "mach_notify_no_senders",

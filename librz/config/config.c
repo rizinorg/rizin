@@ -4,7 +4,7 @@
 
 RZ_API RConfigNode* rz_config_node_new(const char *name, const char *value) {
 	rz_return_val_if_fail (name && *name && value, NULL);
-	RConfigNode *node = R_NEW0 (RConfigNode);
+	RConfigNode *node = RZ_NEW0 (RConfigNode);
 	if (!node) {
 		return NULL;
 	}
@@ -18,7 +18,7 @@ RZ_API RConfigNode* rz_config_node_new(const char *name, const char *value) {
 
 RZ_API RConfigNode* rz_config_node_clone(RConfigNode *n) {
 	rz_return_val_if_fail (n, NULL);
-	RConfigNode *cn = R_NEW0 (RConfigNode);
+	RConfigNode *cn = RZ_NEW0 (RConfigNode);
 	if (!cn) {
 		return NULL;
 	}
@@ -494,7 +494,7 @@ RZ_API bool rz_config_rm(RConfig *cfg, const char *name) {
 	return false;
 }
 
-RZ_API void rz_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, R_NULLABLE RConfigNode *node) {
+RZ_API void rz_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, RZ_NULLABLE RConfigNode *node) {
 	if (node && rz_config_node_is_bool (node)) {
 		rz_str_ncpy (buf, rz_str_bool ((int) i), buf_size);
 		return;
@@ -635,14 +635,14 @@ RZ_API bool rz_config_readonly(RConfig *cfg, const char *key) {
 }
 
 RZ_API RConfig* rz_config_new(void *user) {
-	RConfig *cfg = R_NEW0 (RConfig);
+	RConfig *cfg = RZ_NEW0 (RConfig);
 	if (!cfg) {
 		return NULL;
 	}
 	cfg->ht = ht_pp_new0 ();
 	cfg->nodes = rz_list_newf ((RzListFree)rz_config_node_free);
 	if (!cfg->nodes) {
-		R_FREE (cfg);
+		RZ_FREE (cfg);
 		return NULL;
 	}
 	cfg->user = user;
@@ -693,7 +693,7 @@ RZ_API void rz_config_bump(RConfig *cfg, const char *key) {
 	}
 }
 
-RZ_API void rz_config_serialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db) {
+RZ_API void rz_config_serialize(RZ_NONNULL RConfig *config, RZ_NONNULL Sdb *db) {
 	RzListIter *iter;
 	RConfigNode *node;
 	rz_list_foreach (config->nodes, iter, node) {
@@ -710,7 +710,7 @@ static bool load_config_cb(void *user, const char *k, const char *v) {
 	return true;
 }
 
-RZ_API bool rz_config_unserialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db, R_NULLABLE char **err) {
+RZ_API bool rz_config_unserialize(RZ_NONNULL RConfig *config, RZ_NONNULL Sdb *db, RZ_NULLABLE char **err) {
 	sdb_foreach (db, load_config_cb, config);
 	return true;
 }

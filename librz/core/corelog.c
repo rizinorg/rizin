@@ -47,7 +47,7 @@ RZ_API int rz_core_log_list(RzCore *core, int n, int nth, char fmt) {
 }
 
 RZ_API RzCoreLog *rz_core_log_new(void) {
-	RzCoreLog *log = R_NEW0 (RzCoreLog);
+	RzCoreLog *log = RZ_NEW0 (RzCoreLog);
 	if (!log) {
 		return NULL;
 	}

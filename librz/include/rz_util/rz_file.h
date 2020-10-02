@@ -1,5 +1,5 @@
-#ifndef R_FILE_H
-#define R_FILE_H
+#ifndef RZ_FILE_H
+#define RZ_FILE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,7 +30,7 @@ RZ_API char *rz_file_abspath(const char *file);
 RZ_API ut8 *rz_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen);
 RZ_API ut8 *rz_file_gzslurp(const char *str, int *outlen, int origonfail);
 RZ_API char *rz_stdin_slurp(int *sz);
-RZ_API char *rz_file_slurp(const char *str, R_NULLABLE size_t *usz);
+RZ_API char *rz_file_slurp(const char *str, RZ_NULLABLE size_t *usz);
 //RZ_API char *rz_file_slurp_range(const char *str, ut64 off, ut64 sz);
 RZ_API char *rz_file_slurp_range(const char *str, ut64 off, int sz, int *osz);
 RZ_API char *rz_file_slurp_random_line(const char *file);
@@ -56,4 +56,4 @@ RZ_API RMmap *rz_file_mmap_arch (RMmap *map, const char *filename, int fd);
 }
 #endif
 
-#endif //  R_FILE_H
+#endif //  RZ_FILE_H

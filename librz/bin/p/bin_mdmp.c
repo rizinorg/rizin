@@ -49,7 +49,7 @@ static RBinInfo *info(RBinFile *bf) {
 	struct rz_bin_mdmp_obj *obj;
 	RBinInfo *ret;
 
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 
@@ -200,7 +200,7 @@ static RzList *sections(RBinFile *bf) {
 	** implemented correctly, currently it is never called!?!? Is it a
 	** relic? */
 	rz_list_foreach (obj->streams.memories, it, memory) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RBinSection))) {
 			return ret;
 		}
 
@@ -219,7 +219,7 @@ static RzList *sections(RBinFile *bf) {
 
 	index = obj->streams.memories64.base_rva;
 	rz_list_foreach (obj->streams.memories64.memories, it, memory64) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RBinSection))) {
 			return ret;
 		}
 
@@ -242,7 +242,7 @@ static RzList *sections(RBinFile *bf) {
 	rz_list_foreach (obj->streams.modules, it, module) {
 		ut8 b[512];
 
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RBinSection))) {
 			return ret;
 		}
 		if (module->module_name_rva + sizeof (struct minidump_string) >= rz_buf_size (obj->b)) {
@@ -323,7 +323,7 @@ static RzList *mem(RBinFile *bf) {
 	/* [1] As there isnt a better place to put this info at the moment we will
 	** mash it into the name field, but without enumeration for now  */
 	rz_list_foreach (obj->streams.memories, it, module) {
-		if (!(ptr = R_NEW0 (RBinMem))) {
+		if (!(ptr = RZ_NEW0 (RBinMem))) {
 			return ret;
 		}
 		ptr->addr = module->start_of_memory_range;
@@ -347,7 +347,7 @@ static RzList *mem(RBinFile *bf) {
 
 	index = obj->streams.memories64.base_rva;
 	rz_list_foreach (obj->streams.memories64.memories, it, module64) {
-		if (!(ptr = R_NEW0 (RBinMem))) {
+		if (!(ptr = RZ_NEW0 (RBinMem))) {
 			return ret;
 		}
 		ptr->addr = module64->start_of_memory_range;
@@ -484,7 +484,7 @@ RBinPlugin rz_bin_plugin_mdmp = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_mdmp,
 	.version = RZ_VERSION
 };

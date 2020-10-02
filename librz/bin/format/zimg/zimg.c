@@ -6,7 +6,7 @@
 
 
 struct rz_bin_zimg_obj_t* rz_bin_zimg_new_buf(RBuffer *buf) {
-	struct rz_bin_zimg_obj_t *bin = R_NEW0 (struct rz_bin_zimg_obj_t);
+	struct rz_bin_zimg_obj_t *bin = RZ_NEW0 (struct rz_bin_zimg_obj_t);
 	if (!bin) {
 		goto fail;
 	}

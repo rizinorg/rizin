@@ -25,7 +25,7 @@ static MachoPointers findLastCommand(RBinFile *bf) {
 	for (i = 0, off = 0x20 + bin->header_at; i < mp.ncmds; i++) {
 		ut32 loadc[2] = {0};
 		rz_buf_read_at (bin->b, off, (ut8*)&loadc, sizeof (loadc));
-		//rz_buf_seek (bin->b, off, R_BUF_SET);
+		//rz_buf_seek (bin->b, off, RZ_BUF_SET);
 		int len = loadc[1]; // rz_buf_read_le32 (loadc[1]); // bin->b); // 
 		if (len < 1) {
 			eprintf ("Error: read (lc) at 0x%08"PFMT64x"\n", off);
@@ -75,7 +75,7 @@ static bool addlib(RBinFile *bf, const char *lib) {
 	return MACH0_(write_addlib) (bf, lib);
 }
 
-#if !R_BIN_MACH064
+#if !RZ_BIN_MACH064
 RBinWrite rz_bin_write_mach0 = {
 #if 0
 	.scn_resize = &scn_resize,

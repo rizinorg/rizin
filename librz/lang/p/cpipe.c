@@ -38,7 +38,7 @@ static int lang_cpipe_file(RzLang *lang, const char *file) {
 		*p = 0;
 	}
 	cc = rz_sys_getenv ("CC");
-	if (R_STR_ISEMPTY (cc)) {
+	if (RZ_STR_ISEMPTY (cc)) {
 		free (cc);
 		cc = strdup ("gcc");
 	}

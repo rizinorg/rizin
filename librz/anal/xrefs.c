@@ -25,11 +25,11 @@ xrefs
 //      if it is, things need to be adjusted
 
 static RzAnalRef *rz_anal_ref_new(ut64 addr, ut64 at, ut64 type) {
-	RzAnalRef *ref = R_NEW (RzAnalRef);
+	RzAnalRef *ref = RZ_NEW (RzAnalRef);
 	if (ref) {
 		ref->addr = addr;
 		ref->at = at;
-		ref->type = (type == -1)? R_ANAL_REF_TYPE_CODE: type;
+		ref->type = (type == -1)? RZ_ANAL_REF_TYPE_CODE: type;
 	}
 	return ref;
 }
@@ -146,11 +146,11 @@ RZ_API int rz_anal_xrefs_deln(RzAnal *anal, ut64 from, ut64 to, const RzAnalRefT
 
 RZ_API int rz_anal_xref_del(RzAnal *anal, ut64 from, ut64 to) {
 	bool res = false;
-	res |= rz_anal_xrefs_deln (anal, from, to, R_ANAL_REF_TYPE_NULL);
-	res |= rz_anal_xrefs_deln (anal, from, to, R_ANAL_REF_TYPE_CODE);
-	res |= rz_anal_xrefs_deln (anal, from, to, R_ANAL_REF_TYPE_CALL);
-	res |= rz_anal_xrefs_deln (anal, from, to, R_ANAL_REF_TYPE_DATA);
-	res |= rz_anal_xrefs_deln (anal, from, to, R_ANAL_REF_TYPE_STRING);
+	res |= rz_anal_xrefs_deln (anal, from, to, RZ_ANAL_REF_TYPE_NULL);
+	res |= rz_anal_xrefs_deln (anal, from, to, RZ_ANAL_REF_TYPE_CODE);
+	res |= rz_anal_xrefs_deln (anal, from, to, RZ_ANAL_REF_TYPE_CALL);
+	res |= rz_anal_xrefs_deln (anal, from, to, RZ_ANAL_REF_TYPE_DATA);
+	res |= rz_anal_xrefs_deln (anal, from, to, RZ_ANAL_REF_TYPE_STRING);
 	return res;
 }
 
@@ -281,15 +281,15 @@ RZ_API void rz_anal_xrefs_list(RzAnal *anal, int rad) {
 
 RZ_API const char *rz_anal_xrefs_type_tostring(RzAnalRefType type) {
 	switch (type) {
-	case R_ANAL_REF_TYPE_CODE:
+	case RZ_ANAL_REF_TYPE_CODE:
 		return "CODE";
-	case R_ANAL_REF_TYPE_CALL:
+	case RZ_ANAL_REF_TYPE_CALL:
 		return "CALL";
-	case R_ANAL_REF_TYPE_DATA:
+	case RZ_ANAL_REF_TYPE_DATA:
 		return "DATA";
-	case R_ANAL_REF_TYPE_STRING:
+	case RZ_ANAL_REF_TYPE_STRING:
 		return "STRING";
-	case R_ANAL_REF_TYPE_NULL:
+	case RZ_ANAL_REF_TYPE_NULL:
 	default:
 		return "UNKNOWN";
 	}
@@ -297,14 +297,14 @@ RZ_API const char *rz_anal_xrefs_type_tostring(RzAnalRefType type) {
 
 RZ_API RzAnalRefType rz_anal_xrefs_type(char ch) {
 	switch (ch) {
-	case R_ANAL_REF_TYPE_CODE:
-	case R_ANAL_REF_TYPE_CALL:
-	case R_ANAL_REF_TYPE_DATA:
-	case R_ANAL_REF_TYPE_STRING:
-	case R_ANAL_REF_TYPE_NULL:
+	case RZ_ANAL_REF_TYPE_CODE:
+	case RZ_ANAL_REF_TYPE_CALL:
+	case RZ_ANAL_REF_TYPE_DATA:
+	case RZ_ANAL_REF_TYPE_STRING:
+	case RZ_ANAL_REF_TYPE_NULL:
 		return (RzAnalRefType)ch;
 	default:
-		return R_ANAL_REF_TYPE_NULL;
+		return RZ_ANAL_REF_TYPE_NULL;
 	}
 }
 
@@ -372,15 +372,15 @@ RZ_API RzList *rz_anal_function_get_xrefs(RzAnalFunction *fcn) {
 
 RZ_API const char *rz_anal_ref_type_tostring(RzAnalRefType t) {
 	switch (t) {
-	case R_ANAL_REF_TYPE_NULL:
+	case RZ_ANAL_REF_TYPE_NULL:
 		return "null";
-	case R_ANAL_REF_TYPE_CODE:
+	case RZ_ANAL_REF_TYPE_CODE:
 		return "code";
-	case R_ANAL_REF_TYPE_CALL:
+	case RZ_ANAL_REF_TYPE_CALL:
 		return "call";
-	case R_ANAL_REF_TYPE_DATA:
+	case RZ_ANAL_REF_TYPE_DATA:
 		return "data";
-	case R_ANAL_REF_TYPE_STRING:
+	case RZ_ANAL_REF_TYPE_STRING:
 		return "string";
 	}
 	return "unknown";

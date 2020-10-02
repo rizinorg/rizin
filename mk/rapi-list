@@ -6,7 +6,7 @@ fi
 
 MOD=$1
 cat librz/include/${MOD}.h | \
-  grep ^R_API | \
+  grep ^RZ_API | \
   sed -e 's,const ,,g' | \
   sed -e 's,struct ,,g' | \
   sed -e 's,\*,,g' | \

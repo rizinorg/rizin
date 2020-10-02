@@ -15,9 +15,9 @@
 #ifdef S_API
 #undef S_API
 #endif
-#if R_SWIG
+#if RZ_SWIG
   #define S_API export
-#elif R_INLINE
+#elif RZ_INLINE
   #define S_API inline
 #else
   #if defined(__GNUC__) && __GNUC__ >= 4

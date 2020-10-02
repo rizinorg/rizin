@@ -70,7 +70,7 @@ static char *__read_nonnull_str_at(RBuffer *buf, ut64 *offset) {
 }
 
 static RBinSymbol *__get_symbol(rz_bin_le_obj_t *bin, ut64 *offset) {
-	RBinSymbol *sym = R_NEW0 (RBinSymbol);
+	RBinSymbol *sym = RZ_NEW0 (RBinSymbol);
 	if (!sym) {
 		return NULL;
 	}
@@ -163,8 +163,8 @@ static void __get_symbols_at(rz_bin_le_obj_t *bin, RzList *syml, RzList *entl, u
 			const char *n = rz_list_get_n (entl, sym->ordinal - 1);
 			if (n) {
 				sym->vaddr = rz_num_get (NULL, n);
-				sym->bind = R_BIN_BIND_GLOBAL_STR;
-				sym->type = R_BIN_TYPE_FUNC_STR;
+				sym->bind = RZ_BIN_BIND_GLOBAL_STR;
+				sym->type = RZ_BIN_TYPE_FUNC_STR;
 				rz_list_append (syml, sym);
 			}
 		} else {
@@ -196,7 +196,7 @@ RzList *rz_bin_le_get_imports(rz_bin_le_obj_t *bin) {
 	ut64 offset = (ut64)h->impproc + bin->headerOff + 1; // First entry is a null string
 	ut64 end = (ut64)h->fixupsize + h->fpagetab + bin->headerOff;
 	while (offset < end) {
-		RBinImport *imp = R_NEW0 (RBinImport);
+		RBinImport *imp = RZ_NEW0 (RBinImport);
 		if (!imp) {
 			break;
 		}
@@ -205,7 +205,7 @@ RzList *rz_bin_le_get_imports(rz_bin_le_obj_t *bin) {
 			rz_bin_import_free (imp);
 			break;
 		}
-		imp->type = R_BIN_TYPE_FUNC_STR;
+		imp->type = RZ_BIN_TYPE_FUNC_STR;
 		rz_list_append (l, imp);
 	}
 	return l;
@@ -217,7 +217,7 @@ RzList *rz_bin_le_get_entrypoints(rz_bin_le_obj_t *bin) {
 	if (!l) {
 		return NULL;
 	}
-	RBinAddr *entry = R_NEW0 (RBinAddr);
+	RBinAddr *entry = RZ_NEW0 (RBinAddr);
 	if (entry) {
 		if ((bin->header->startobj - 1) < bin->header->objcnt){
 			entry->vaddr = (ut64)bin->objtbl[bin->header->startobj - 1].reloc_base_addr + bin->header->eip;
@@ -268,7 +268,7 @@ static void __create_iter_sections(RzList *l, rz_bin_le_obj_t *bin, RBinSection 
 	while (iter_n && bytes_left > 0) {
 		int i;
 		for (i = 0; i < iter_n; i++) {
-			RBinSection *s = R_NEW0 (RBinSection);
+			RBinSection *s = RZ_NEW0 (RBinSection);
 			if (!s) {
 				break;
 			}
@@ -294,7 +294,7 @@ static void __create_iter_sections(RzList *l, rz_bin_le_obj_t *bin, RBinSection 
 		offset += sizeof (ut16);
 	}
 	if (tot_size < h->pagesize) {
-		RBinSection *s = R_NEW0 (RBinSection);
+		RBinSection *s = RZ_NEW0 (RBinSection);
 		if (!s) {
 			return;
 		}
@@ -318,7 +318,7 @@ RzList *rz_bin_le_get_sections(rz_bin_le_obj_t *bin) {
 	ut32 pages_start_off = h->datapage;
 	int i;
 	for (i = 0; i < h->objcnt; i++) {
-		RBinSection *sec = R_NEW0 (RBinSection);
+		RBinSection *sec = RZ_NEW0 (RBinSection);
 		if (!sec) {
 			return l;
 		}
@@ -332,20 +332,20 @@ RzList *rz_bin_le_get_sections(rz_bin_le_obj_t *bin) {
 		sec->vaddr = entry->reloc_base_addr;
 		sec->add = true;
 		if (entry->flags & O_READABLE) {
-			sec->perm |= R_PERM_R;
+			sec->perm |= RZ_PERM_R;
 		}
 		if (entry->flags & O_WRITABLE) {
-			sec->perm |= R_PERM_W;
+			sec->perm |= RZ_PERM_W;
 		}
 		if (entry->flags & O_EXECUTABLE) {
-			sec->perm |= R_PERM_X;
+			sec->perm |= RZ_PERM_X;
 		}
 		if (entry->flags & O_BIG_BIT) {
-			sec->bits = R_SYS_BITS_32;
+			sec->bits = RZ_SYS_BITS_32;
 		} else {
-			sec->bits = R_SYS_BITS_16;
+			sec->bits = RZ_SYS_BITS_16;
 		}
-		sec->is_data = entry->flags & O_RESOURCE || !(sec->perm & R_PERM_X);
+		sec->is_data = entry->flags & O_RESOURCE || !(sec->perm & RZ_PERM_X);
 		if (!entry->page_tbl_entries) {
 			rz_list_append (l, sec);
 		}
@@ -356,7 +356,7 @@ RzList *rz_bin_le_get_sections(rz_bin_le_obj_t *bin) {
 		ut64 objpageentrysz =  bin->is_le ? sizeof (ut32) : sizeof (LE_object_page_entry);
 		for (j = 0; j < entry->page_tbl_entries; j++) {
 			LE_object_page_entry page;
-			RBinSection *s = R_NEW0 (RBinSection);
+			RBinSection *s = RZ_NEW0 (RBinSection);
 			if (!s) {
 				rz_bin_section_free (sec);
 				return l;
@@ -385,7 +385,7 @@ RzList *rz_bin_le_get_sections(rz_bin_le_obj_t *bin) {
 					continue;
 				} else if (page.flags == P_COMPRESSED) {
 					// TODO
-					R_LOG_WARN ("Compressed page not handled: %s", s->name);
+					RZ_LOG_WARN ("Compressed page not handled: %s", s->name);
 				} else if (page.flags != P_ZEROED) {
 					s->paddr = ((ut64)page.offset << h->pageshift) + pages_start_off;
 				}
@@ -432,7 +432,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 	const RBinSection *cur_section = (RBinSection *)rz_list_get_n (sections, cur_page);
 	ut64 cur_page_offset = cur_section ? cur_section->vaddr : 0;
 	while (cur_page < h->mpages) {
-		RBinReloc *rel = R_NEW0 (RBinReloc);
+		RBinReloc *rel = RZ_NEW0 (RBinReloc);
 		bool rel_appended = false; // whether rel has been appended to l and must not be freed
 		if (!rel) {
 			break;
@@ -446,16 +446,16 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 		offset += sizeof (header);
 		switch (header.source & F_SOURCE_TYPE_MASK) {
 		case BYTEFIXUP:
-			rel->type = R_BIN_RELOC_8;
+			rel->type = RZ_BIN_RELOC_8;
 			break;
 		case SELECTOR16:
 		case OFFSET16:
-			rel->type = R_BIN_RELOC_16;
+			rel->type = RZ_BIN_RELOC_16;
 			break;
 		case OFFSET32:
 		case POINTER32:
 		case SELFOFFSET32:
-			rel->type = R_BIN_RELOC_32;
+			rel->type = RZ_BIN_RELOC_32;
 			break;
 		case POINTER48:
 			rel->type = 48;
@@ -495,7 +495,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 			break;
 		case IMPORTORD:
 		{
-			RBinImport *imp = R_NEW0 (RBinImport);
+			RBinImport *imp = RZ_NEW0 (RBinImport);
 			if (!imp) {
 				break;
 			}
@@ -523,7 +523,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 		}
 		case IMPORTNAME:
 		{
-			RBinImport *imp = R_NEW0 (RBinImport);
+			RBinImport *imp = RZ_NEW0 (RBinImport);
 			if (!imp) {
 				break;
 			}
@@ -569,7 +569,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 			ut64 base_target_address = rel->addend - (fixupinfo & 0xFFFFF);
 			do {
 				fixupinfo = rz_buf_read_ble32_at (bin->buf, cur_page_offset + source, h->worder);
-				RBinReloc *new = R_NEW0 (RBinReloc);
+				RBinReloc *new = RZ_NEW0 (RBinReloc);
 				*new = *rel;
 				new->addend = base_target_address + (fixupinfo & 0xFFFFF);
 				rz_list_append (l, new);
@@ -581,7 +581,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 			ut16 off =  rz_buf_read_ble16_at (bin->buf, offset, h->worder);
 			rel->vaddr = cur_page_offset + off;
 			rel->paddr = cur_section ? cur_section->paddr + off : 0;
-			RBinReloc *new = R_NEW0 (RBinReloc);
+			RBinReloc *new = RZ_NEW0 (RBinReloc);
 			*new = *rel;
 			rz_list_append (l, new);
 			offset += sizeof (ut16);
@@ -619,11 +619,11 @@ static bool __init_header(rz_bin_le_obj_t *bin, RBuffer *buf) {
 	} else {
 		bin->headerOff = 0;
 	}
-	bin->header = R_NEW0 (LE_image_header);
+	bin->header = RZ_NEW0 (LE_image_header);
 	if (bin->header) {
 		rz_buf_read_at (buf, bin->headerOff, (ut8 *)bin->header, sizeof (LE_image_header));
 	} else {
-		R_LOG_ERROR ("Failed to allocate memory");
+		RZ_LOG_ERROR ("Failed to allocate memory");
 		return false;
 	}
 	return true;
@@ -638,7 +638,7 @@ void rz_bin_le_free(rz_bin_le_obj_t *bin) {
 }
 
 rz_bin_le_obj_t *rz_bin_le_new_buf(RBuffer *buf) {
-	rz_bin_le_obj_t *bin = R_NEW0 (rz_bin_le_obj_t);
+	rz_bin_le_obj_t *bin = RZ_NEW0 (rz_bin_le_obj_t);
 	if (!bin) {
 		return NULL;
 	}

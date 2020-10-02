@@ -37,7 +37,7 @@ static int rz_debug_native_reg_write (RzDebug *dbg, int type, const ut8* buf, in
 // TODO: Move these onto windows.h?
 RZ_API RzList *rz_w32_dbg_modules(RzDebug *); //ugly!
 RZ_API RzList *rz_w32_dbg_maps(RzDebug *);
-#define R_DEBUG_REG_T CONTEXT
+#define RZ_DEBUG_REG_T CONTEXT
 #ifdef NTSTATUS
 #undef NTSTATUS
 #endif
@@ -55,7 +55,7 @@ RZ_API RzList *rz_w32_dbg_maps(RzDebug *);
 
 #elif __sun
 
-# define R_DEBUG_REG_T gregset_t
+# define RZ_DEBUG_REG_T gregset_t
 # undef DEBUGGER
 # define DEBUGGER 0
 # warning No debugger support for SunOS yet
@@ -298,11 +298,11 @@ static bool tracelib(RzDebug *dbg, const char *mode, PLIB_ITEM item) {
 /*
  * Wait for an event and start trying to figure out what to do with it.
  *
- * Returns R_DEBUG_REASON_*
+ * Returns RZ_DEBUG_REASON_*
  */
 #if __WINDOWS__
 static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
-	RzDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
+	RzDebugReasonType reason = RZ_DEBUG_REASON_UNKNOWN;
 	// Store the original TID to attempt to switch back after handling events that
 	// require switching to the event's thread that shouldn't bother the user
 	int orig_tid = dbg->tid;
@@ -311,15 +311,15 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 
 	if (pid == -1) {
 		eprintf ("ERROR: rz_debug_native_wait called with pid -1\n");
-		return R_DEBUG_REASON_ERROR;
+		return RZ_DEBUG_REASON_ERROR;
 	}
 
 	reason = w32_dbg_wait (dbg, pid);
-	if (reason == R_DEBUG_REASON_NEW_LIB) {
+	if (reason == RZ_DEBUG_REASON_NEW_LIB) {
 		RzDebugInfo *r = rz_debug_native_info (dbg, "");
 		if (r && r->lib) {
 			if (tracelib (dbg, "load", r->lib)) {
-				reason = R_DEBUG_REASON_TRAP;
+				reason = RZ_DEBUG_REASON_TRAP;
 			}
 
 			/* Check if autoload PDB is set, and load PDB information if yes */
@@ -348,11 +348,11 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 			rz_cons_flush ();
 		}
 		restore_thread = true;
-	} else if (reason == R_DEBUG_REASON_EXIT_LIB) {
+	} else if (reason == RZ_DEBUG_REASON_EXIT_LIB) {
 		RzDebugInfo *r = rz_debug_native_info (dbg, "");
 		if (r && r->lib) {
 			if (tracelib (dbg, "unload", r->lib)) {
-				reason = R_DEBUG_REASON_TRAP;
+				reason = RZ_DEBUG_REASON_TRAP;
 			}
 			rz_debug_info_free (r);
 		} else {
@@ -360,7 +360,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 			rz_cons_flush ();
 		}
 		restore_thread = true;
-	} else if (reason == R_DEBUG_REASON_NEW_TID) {
+	} else if (reason == RZ_DEBUG_REASON_NEW_TID) {
 		RzDebugInfo *r = rz_debug_native_info (dbg, "");
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
@@ -370,7 +370,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 			rz_debug_info_free (r);
 		}
 		restore_thread = true;
-	} else if (reason == R_DEBUG_REASON_EXIT_TID) {
+	} else if (reason == RZ_DEBUG_REASON_EXIT_TID) {
 		RzDebugInfo *r = rz_debug_native_info (dbg, "");
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
@@ -382,7 +382,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 		if (dbg->tid != orig_tid) {
 			restore_thread = true;
 		}
-	} else if (reason == R_DEBUG_REASON_DEAD) {
+	} else if (reason == RZ_DEBUG_REASON_DEAD) {
 		RzDebugInfo *r = rz_debug_native_info (dbg, "");
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
@@ -392,7 +392,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 		}
 		dbg->pid = -1;
 		dbg->tid = -1;
-	} else if (reason == R_DEBUG_REASON_USERSUSP && dbg->tid != orig_tid) {
+	} else if (reason == RZ_DEBUG_REASON_USERSUSP && dbg->tid != orig_tid) {
 		RzDebugInfo *r = rz_debug_native_info (dbg, "");
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
@@ -405,9 +405,9 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 		// tid here to ignore it once the breakpoint is hit.
 		wrap->break_tid = dbg->tid;
 		restore_thread = true;
-	} else if (reason == R_DEBUG_REASON_BREAKPOINT && dbg->tid == wrap->break_tid) {
+	} else if (reason == RZ_DEBUG_REASON_BREAKPOINT && dbg->tid == wrap->break_tid) {
 		wrap->break_tid = -2;
-		reason = R_DEBUG_REASON_NONE;
+		reason = RZ_DEBUG_REASON_NONE;
 		restore_thread = true;
 	}
 
@@ -416,11 +416,11 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 		dbg->tid = w32_select(dbg, dbg->pid, orig_tid);
 		if (dbg->tid == -1) {
 			dbg->pid = -1;
-			reason = R_DEBUG_REASON_DEAD;
+			reason = RZ_DEBUG_REASON_DEAD;
 		} else {
 			rz_io_system (dbg->iob.io, sdb_fmt ("pid %d", dbg->tid));
 			if (dbg->tid != orig_tid) {
-				reason = R_DEBUG_REASON_UNKNOWN;
+				reason = RZ_DEBUG_REASON_UNKNOWN;
 			}
 		}
 	}
@@ -432,11 +432,11 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 // FIXME: Should WAIT_ON_ALL_CHILDREN be a compilation flag instead of runtime debug config?
 #elif __linux__ && !defined(WAIT_ON_ALL_CHILDREN) // __WINDOWS__
 static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
-	RzDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
+	RzDebugReasonType reason = RZ_DEBUG_REASON_UNKNOWN;
 
 	if (pid == -1) {
 		eprintf ("ERROR: rz_debug_native_wait called with pid -1\n");
-		return R_DEBUG_REASON_ERROR;
+		return RZ_DEBUG_REASON_ERROR;
 	}
 
 	reason = linux_dbg_wait (dbg, dbg->tid);
@@ -445,24 +445,24 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 }
 #else // if __WINDOWS__ & elif __linux__ && !defined (WAIT_ON_ALL_CHILDREN)
 static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
-	RzDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
+	RzDebugReasonType reason = RZ_DEBUG_REASON_UNKNOWN;
 
 	if (pid == -1) {
 		eprintf ("ERROR: rz_debug_native_wait called with pid -1\n");
-		return R_DEBUG_REASON_ERROR;
+		return RZ_DEBUG_REASON_ERROR;
 	}
 
 #if __APPLE__
 	rz_cons_break_push (NULL, NULL);
 	do {
 		reason = xnu_wait (dbg, pid);
-		if (reason == R_DEBUG_REASON_MACH_RCV_INTERRUPTED) {
+		if (reason == RZ_DEBUG_REASON_MACH_RCV_INTERRUPTED) {
 			if (rz_cons_is_breaked ()) {
 				// Perhaps check the inferior is still alive,
 				// otherwise xnu_stop will fail.
 				reason = xnu_stop (dbg, pid)
-					? R_DEBUG_REASON_USERSUSP
-					: R_DEBUG_REASON_UNKNOWN;
+					? RZ_DEBUG_REASON_USERSUSP
+					: RZ_DEBUG_REASON_UNKNOWN;
 			} else {
 				// Weird; we'll retry the wait.
 				continue;
@@ -479,19 +479,19 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 #else
 	int ret = waitpid (-1, &status, 0);
 	if (ret != -1) {
-		reason = R_DEBUG_REASON_TRAP;
+		reason = RZ_DEBUG_REASON_TRAP;
 	}
 #endif // WAIT_ON_ALL_CHILDREN
 	if (ret == -1) {
 		rz_sys_perror ("waitpid");
-		return R_DEBUG_REASON_ERROR;
+		return RZ_DEBUG_REASON_ERROR;
 	}
 
 	//eprintf ("rz_debug_native_wait: status=%d (0x%x) (return=%d)\n", status, status, ret);
 
 #ifdef WAIT_ON_ALL_CHILDREN
 	if (ret != pid) {
-		reason = R_DEBUG_REASON_NEW_PID;
+		reason = RZ_DEBUG_REASON_NEW_PID;
 		eprintf ("switching to pid %d\n", ret);
 		rz_debug_select (dbg, ret, ret);
 	}
@@ -503,22 +503,22 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 #endif // __linux__
 
 	/* propagate errors */
-	if (reason == R_DEBUG_REASON_ERROR) {
+	if (reason == RZ_DEBUG_REASON_ERROR) {
 		return reason;
 	}
 
 	/* we don't know what to do yet, let's try harder to figure it out. */
 #if __FreeBSD__
-	if (reason == R_DEBUG_REASON_TRAP) {
+	if (reason == RZ_DEBUG_REASON_TRAP) {
 #else
-	if (reason == R_DEBUG_REASON_UNKNOWN) {
+	if (reason == RZ_DEBUG_REASON_UNKNOWN) {
 #endif
 		if (WIFEXITED (status)) {
 			eprintf ("child exited with status %d\n", WEXITSTATUS (status));
-			reason = R_DEBUG_REASON_DEAD;
+			reason = RZ_DEBUG_REASON_DEAD;
 		} else if (WIFSIGNALED (status)) {
 			eprintf ("child received signal %d\n", WTERMSIG (status));
-			reason = R_DEBUG_REASON_SIGNAL;
+			reason = RZ_DEBUG_REASON_SIGNAL;
 		} else if (WIFSTOPPED (status)) {
 			if (WSTOPSIG (status) != SIGTRAP &&
 				WSTOPSIG (status) != SIGSTOP) {
@@ -531,29 +531,29 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 			 * this might modify dbg->reason.signum
 			 */
 #if __OpenBSD__ || __NetBSD__
-			reason = R_DEBUG_REASON_BREAKPOINT;
+			reason = RZ_DEBUG_REASON_BREAKPOINT;
 #else
 			if (!rz_debug_handle_signals (dbg)) {
-				return R_DEBUG_REASON_ERROR;
+				return RZ_DEBUG_REASON_ERROR;
 			}
 			reason = dbg->reason.type;
 #endif
 #ifdef WIFCONTINUED
 		} else if (WIFCONTINUED (status)) {
 			eprintf ("child continued...\n");
-			reason = R_DEBUG_REASON_NONE;
+			reason = RZ_DEBUG_REASON_NONE;
 #endif
 		} else if (status == 1) {
 			/* XXX(jjd): does this actually happen? */
 			eprintf ("EEK DEAD DEBUGEE!\n");
-			reason = R_DEBUG_REASON_DEAD;
+			reason = RZ_DEBUG_REASON_DEAD;
 		} else if (status == 0) {
 			/* XXX(jjd): does this actually happen? */
 			eprintf ("STATUS=0?!?!?!?\n");
-			reason = R_DEBUG_REASON_DEAD;
+			reason = RZ_DEBUG_REASON_DEAD;
 		} else {
 			if (ret != pid) {
-				reason = R_DEBUG_REASON_NEW_PID;
+				reason = RZ_DEBUG_REASON_NEW_PID;
 			} else {
 				/* ugh. still don't know :-/ */
 				eprintf ("CRAP. returning from wait without knowing why...\n");
@@ -562,9 +562,9 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 	}
 
 	/* if we still don't know what to do, we have a problem... */
-	if (reason == R_DEBUG_REASON_UNKNOWN) {
+	if (reason == RZ_DEBUG_REASON_UNKNOWN) {
 		eprintf ("%s: no idea what happened... wtf?!?!\n", __func__);
-		reason = R_DEBUG_REASON_ERROR;
+		reason = RZ_DEBUG_REASON_ERROR;
 	}
 #endif // __APPLE__
 	dbg->reason.tid = pid;
@@ -641,7 +641,7 @@ static int bsd_reg_read (RzDebug *dbg, int type, ut8* buf, int size) {
 		type = -type;
 	}
 	switch (type) {
-	case R_REG_TYPE_DRX:
+	case RZ_REG_TYPE_DRX:
 #if __i386__ || __x86_64__
 #if __KFBSD__
 	{
@@ -655,15 +655,15 @@ static int bsd_reg_read (RzDebug *dbg, int type, ut8* buf, int size) {
 #endif
 		return true;
 		break;
-	case R_REG_TYPE_FPU:
-	case R_REG_TYPE_MMX:
-	case R_REG_TYPE_XMM:
+	case RZ_REG_TYPE_FPU:
+	case RZ_REG_TYPE_MMX:
+	case RZ_REG_TYPE_XMM:
 		break;
-	case R_REG_TYPE_SEG:
-	case R_REG_TYPE_FLG:
-	case R_REG_TYPE_GPR:
+	case RZ_REG_TYPE_SEG:
+	case RZ_REG_TYPE_FLG:
+	case RZ_REG_TYPE_GPR:
 		{
-		R_DEBUG_REG_T regs;
+		RZ_DEBUG_REG_T regs;
 		memset (&regs, 0, sizeof(regs));
 		memset (buf, 0, size);
 		#if __NetBSD__ || __OpenBSD__
@@ -713,7 +713,7 @@ static int rz_debug_native_reg_read (RzDebug *dbg, int type, ut8 *buf, int size)
 
 static int rz_debug_native_reg_write (RzDebug *dbg, int type, const ut8* buf, int size) {
 	// XXX use switch or so
-	if (type == R_REG_TYPE_DRX) {
+	if (type == RZ_REG_TYPE_DRX) {
 #if __i386__ || __x86_64__
 #if __APPLE__
 		return xnu_reg_write (dbg, type, buf, size);
@@ -727,7 +727,7 @@ static int rz_debug_native_reg_write (RzDebug *dbg, int type, const ut8* buf, in
 #else // i386/x86-64
 		return false;
 #endif
-	} else if (type == R_REG_TYPE_GPR) {
+	} else if (type == RZ_REG_TYPE_GPR) {
 #if __APPLE__
 		return xnu_reg_write (dbg, type, buf, size);
 #elif __WINDOWS__
@@ -736,14 +736,14 @@ static int rz_debug_native_reg_write (RzDebug *dbg, int type, const ut8* buf, in
 		return linux_reg_write (dbg, type, buf, size);
 #elif __sun
 		int ret = ptrace (PTRACE_SETREGS, dbg->pid,
-			(void*)(size_t)buf, sizeof (R_DEBUG_REG_T));
-		if (sizeof (R_DEBUG_REG_T) < size)
-			size = sizeof (R_DEBUG_REG_T);
+			(void*)(size_t)buf, sizeof (RZ_DEBUG_REG_T));
+		if (sizeof (RZ_DEBUG_REG_T) < size)
+			size = sizeof (RZ_DEBUG_REG_T);
 		return ret == 0;
 #else
 		return bsd_reg_write (dbg, type, buf, size);
 #endif
-	} else if (type == R_REG_TYPE_FPU) {
+	} else if (type == RZ_REG_TYPE_FPU) {
 #if __linux__
 		return linux_reg_write (dbg, type, buf, size);
 #elif __APPLE__
@@ -761,13 +761,13 @@ static int rz_debug_native_reg_write (RzDebug *dbg, int type, const ut8* buf, in
 static int io_perms_to_prot (int io_perms) {
 	int prot_perms = PROT_NONE;
 
-	if (io_perms & R_PERM_R) {
+	if (io_perms & RZ_PERM_R) {
 		prot_perms |= PROT_READ;
 	}
-	if (io_perms & R_PERM_W) {
+	if (io_perms & RZ_PERM_W) {
 		prot_perms |= PROT_WRITE;
 	}
-	if (io_perms & R_PERM_X) {
+	if (io_perms & RZ_PERM_X) {
 		prot_perms |= PROT_EXEC;
 	}
 	return prot_perms;
@@ -1093,9 +1093,9 @@ static RzList *rz_debug_native_map_get (RzDebug *dbg) {
 		perm = 0;
 		for (i = 0; i < 5 && perms[i]; i++) {
 			switch (perms[i]) {
-			case 'r': perm |= R_PERM_R; break;
-			case 'w': perm |= R_PERM_W; break;
-			case 'x': perm |= R_PERM_X; break;
+			case 'r': perm |= RZ_PERM_R; break;
+			case 'w': perm |= RZ_PERM_W; break;
+			case 'x': perm |= RZ_PERM_X; break;
 			case 'p': map_is_shared = false; break;
 			case 's': map_is_shared = true; break;
 			}
@@ -1596,30 +1596,30 @@ RzDebugPlugin rz_debug_plugin_native = {
 	.name = "native",
 	.license = "LGPL3",
 #if __i386__
-	.bits = R_SYS_BITS_32,
+	.bits = RZ_SYS_BITS_32,
 	.arch = "x86",
 	.canstep = 1,
 #elif __x86_64__
-	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
+	.bits = RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
 	.arch = "x86",
 	.canstep = 1, // XXX it's 1 on some platforms...
 #elif __aarch64__ || __arm64__
-	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
+	.bits = RZ_SYS_BITS_16 | RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
 	.arch = "arm",
 	.canstep = 1,
 #elif __arm__
-	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
+	.bits = RZ_SYS_BITS_16 | RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
 	.arch = "arm",
 	.canstep = 0,
 #elif __mips__
-	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
+	.bits = RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
 	.arch = "mips",
 	.canstep = 0,
 #elif __powerpc__
 # if __powerpc64__
-	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
+	.bits = RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
 # else
-	.bits = R_SYS_BITS_32,
+	.bits = RZ_SYS_BITS_32,
 #endif
 	.arch = "ppc",
 	.canstep = 1,
@@ -1666,7 +1666,7 @@ RzDebugPlugin rz_debug_plugin_native = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_DBG,
+	.type = RZ_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_native,
 	.version = RZ_VERSION
 };

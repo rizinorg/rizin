@@ -83,7 +83,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 		perm = 7;
 	} else {
 		if (!perm) {
-			perm = 4; //R_PERM_R;
+			perm = 4; //RZ_PERM_R;
 		}
 	}
 	if (!ofilepath) {
@@ -116,7 +116,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 		// Reset previous pid and tid
 		core->dbg->pid = -1;
 		core->dbg->tid = -1;
-		core->dbg->recoil_mode = R_DBG_RECOIL_NONE;
+		core->dbg->recoil_mode = RZ_DBG_RECOIL_NONE;
 		memset (&core->dbg->reason, 0, sizeof (core->dbg->reason));
 		// Reopen and attach
 		rz_core_setup_debugger (core, "native", true);
@@ -137,7 +137,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 		odesc = NULL;
 		//	core->file = file;
 		eprintf ("File %s reopened in %s mode\n", path,
-			(perm & R_PERM_W)? "read-write": "read-only");
+			(perm & RZ_PERM_W)? "read-write": "read-only");
 
 		if (loadbin && (loadbin == 2 || had_rbin_info)) {
 			ut64 baddr;
@@ -165,7 +165,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 		eprintf ("rz_core_file_reopen: Cannot reopen file: %s with perms 0x%x,"
 			" attempting to open read-only.\n", path, perm);
 		// lower it down back
-		//ofile = rz_core_file_open (core, path, R_PERM_R, addr);
+		//ofile = rz_core_file_open (core, path, RZ_PERM_R, addr);
 		rz_core_file_set_by_file (core, ofile);
 	} else {
 		eprintf ("Cannot reopen\n");
@@ -326,7 +326,7 @@ static bool setbpint(RzCore *r, const char *mode, const char *sym) {
 	if (!fi) {
 		return false;
 	}
-	bp = rz_bp_add_sw (r->dbg->bp, fi->offset, 1, R_BP_PROT_EXEC);
+	bp = rz_bp_add_sw (r->dbg->bp, fi->offset, 1, RZ_BP_PROT_EXEC);
 	if (bp) {
 		bp->internal = true;
 #if __linux__
@@ -440,7 +440,7 @@ static int rz_core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loa
 	binfile = rz_bin_cur (r->bin);
 	if (rz_core_bin_set_env (r, binfile)) {
 		if (!r->anal->sdb_cc->path) {
-			R_LOG_WARN ("No calling convention defined for this file, analysis may be inaccurate.\n");
+			RZ_LOG_WARN ("No calling convention defined for this file, analysis may be inaccurate.\n");
 		}
 	}
 	plugin = rz_bin_file_cur_plugin (binfile);
@@ -496,7 +496,7 @@ RZ_API bool rz_core_file_loadlib(RzCore *core, const char *lib, ut64 libaddr) {
 		free_libdir = false;
 	}
 	if (!dirlibs || !*dirlibs) {
-		dirlibs = "." R_SYS_DIR;
+		dirlibs = "." RZ_SYS_DIR;
 	}
 	const char *ldlibrarypath[] = {
 		dirlibs,
@@ -506,7 +506,7 @@ RZ_API bool rz_core_file_loadlib(RzCore *core, const char *lib, ut64 libaddr) {
 		"/usr/lib",
 		"/lib",
 #endif
-		"." R_SYS_DIR,
+		"." RZ_SYS_DIR,
 		NULL
 	};
 	const char * *libpath = (const char * *) &ldlibrarypath;
@@ -522,7 +522,7 @@ RZ_API bool rz_core_file_loadlib(RzCore *core, const char *lib, ut64 libaddr) {
 		}
 	} else {
 		while (*libpath) {
-			char *s = rz_str_newf ("%s" R_SYS_DIR "%s", *libpath, lib);
+			char *s = rz_str_newf ("%s" RZ_SYS_DIR "%s", *libpath, lib);
 			if (try_loadlib (core, s, libaddr)) {
 				ret = true;
 			}
@@ -557,7 +557,7 @@ static void load_scripts_for(RzCore *core, const char *name) {
 	// TODO:
 	char *file;
 	RzListIter *iter;
-	char *hdir = rz_str_newf (R_JOIN_2_PATHS (RZ_HOME_BINRC, "bin-%s"), name);
+	char *hdir = rz_str_newf (RZ_JOIN_2_PATHS (RZ_HOME_BINRC, "bin-%s"), name);
 	char *path = rz_str_home (hdir);
 	RzList *files = rz_sys_dir (path);
 	if (!rz_list_empty (files)) {
@@ -718,7 +718,7 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 		}
 	}
 	if (desc && rz_config_get_i (r->config, "io.exec")) {
-		desc->perm |= R_PERM_X;
+		desc->perm |= RZ_PERM_X;
 	}
 	if (plugin && plugin->name && !strcmp (plugin->name, "dex")) {
 		rz_core_cmd0 (r, "\"(fix-dex,wx `ph sha1 $s-32 @32` @12 ;"
@@ -771,9 +771,9 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 		}
 	}
 
-	//If type == R_BIN_TYPE_CORE, we need to create all the maps
+	//If type == RZ_BIN_TYPE_CORE, we need to create all the maps
 	if (plugin && binfile && plugin->file_type
-		 && plugin->file_type (binfile) == R_BIN_TYPE_CORE) {
+		 && plugin->file_type (binfile) == RZ_BIN_TYPE_CORE) {
 		ut64 sp_addr = (ut64)-1;
 		RzIOMap *stack_map = NULL;
 
@@ -790,7 +790,7 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 				eprintf ("Setting up coredump: Problem while setting the registers\n");
 			} else {
 				eprintf ("Setting up coredump: Registers have been set\n");
-				const char *regname = rz_reg_get_name (r->anal->reg, R_REG_NAME_SP);
+				const char *regname = rz_reg_get_name (r->anal->reg, RZ_REG_NAME_SP);
 				if (regname) {
 					RzRegItem *reg = rz_reg_get (r->anal->reg, regname, -1);
 					if (reg) {
@@ -798,7 +798,7 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 						stack_map = rz_io_map_get (r->io, sp_addr);
 					}
 				}
-				regname = rz_reg_get_name (r->anal->reg, R_REG_NAME_PC);
+				regname = rz_reg_get_name (r->anal->reg, RZ_REG_NAME_PC);
 				if (regname) {
 					RzRegItem *reg = rz_reg_get (r->anal->reg, regname, -1);
 					if (reg) {
@@ -856,7 +856,7 @@ RZ_API RzCoreFile *rz_core_file_open_many(RzCore *r, const char *file, int perm,
 			rz_list_delete (list_fds, fd_iter);
 			continue;
 		}
-		RzCoreFile *fh = R_NEW0 (RzCoreFile);
+		RzCoreFile *fh = RZ_NEW0 (RzCoreFile);
 		if (fh) {
 			fh->alive = 1;
 			fh->core = r;
@@ -882,7 +882,7 @@ RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut6
 	}
 	//if not flags was passed open it with -r--
 	if (!flags) {
-		flags = R_PERM_R;
+		flags = RZ_PERM_R;
 	}
 	r->io->bits = r->rasm->bits; // TODO: we need an api for this
 	RzIODesc *fd = rz_io_open_nomap (r->io, file, flags, 0644);
@@ -897,8 +897,8 @@ RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut6
 		}
 	}
 	if (!fd) {
-		if (flags & R_PERM_W) {
-		//	flags |= R_IO_CREAT;
+		if (flags & RZ_PERM_W) {
+		//	flags |= RZ_IO_CREAT;
 			if (!(fd = rz_io_open_nomap (r->io, file, flags, 0644))) {
 				goto beach;
 			}
@@ -912,7 +912,7 @@ RZ_API RzCoreFile *rz_core_file_open(RzCore *r, const char *file, int flags, ut6
 		goto beach;
 	}
 
-	fh = R_NEW0 (RzCoreFile);
+	fh = RZ_NEW0 (RzCoreFile);
 	if (!fh) {
 		eprintf ("core/file.c: rz_core_open failed to allocate RzCoreFile.\n");
 		goto beach;
@@ -997,7 +997,7 @@ RZ_API int rz_core_file_close(RzCore *r, RzCoreFile *fh) {
 	RzCoreFile *prev_cf = r && r->file != fh? r->file: NULL;
 
 	// TODO: This is not correctly done. because map and iodesc are
-	// still referenced // we need to fully clear all R_IO structs
+	// still referenced // we need to fully clear all RZ_IO structs
 	// related to a file as well as the ones needed for RBin.
 	//
 	// XXX -these checks are intended to *try* and catch
@@ -1077,7 +1077,7 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 				PFMT64d ",\"writable\":%s,\"size\":%d}%s",
 				rz_str_bool (core->io->desc->fd == f->fd),
 				(int) f->fd, desc->uri, (ut64) from,
-				rz_str_bool (desc->perm & R_PERM_W),
+				rz_str_bool (desc->perm & RZ_PERM_W),
 				(int) rz_io_desc_size (desc),
 				iter->n? ",": "");
 			break;
@@ -1137,7 +1137,7 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 				core->io->desc->fd == f->fd ? '*': '-',
 				count,
 				(int) f->fd, desc->uri, (ut64) from,
-				desc->perm & R_PERM_W? "rw": "r",
+				desc->perm & RZ_PERM_W? "rw": "r",
 				rz_io_desc_size (desc));
 		}
 		break;
@@ -1187,7 +1187,7 @@ RZ_API int rz_core_file_binlist(RzCore *core) {
 		if (cf) {
 			rz_cons_printf ("%c %d %s ; %s\n",
 				core->io->desc == desc ? '*': '-',
-				fd, desc->uri, desc->perm & R_PERM_W? "rw": "r");
+				fd, desc->uri, desc->perm & RZ_PERM_W? "rw": "r");
 		}
 	}
 	rz_core_file_set_by_file (core, cur_cf);

@@ -3,7 +3,7 @@
 #include <rz_fs.h>
 
 RZ_API RzFSFile* rz_fs_file_new(RzFSRoot* root, const char* path) {
-	RzFSFile* file = R_NEW0 (RzFSFile);
+	RzFSFile* file = RZ_NEW0 (RzFSFile);
 	if (!file) {
 		return NULL;
 	}
@@ -44,13 +44,13 @@ RZ_API char* rz_fs_file_copy_abs_path(RzFSFile* file) {
 // TODO: Use RzFSRoot and pass it in the stack instead of heap? problematic with bindings
 RZ_API RzFSRoot* rz_fs_root_new(const char* path, ut64 delta) {
 	char* p;
-	RzFSRoot* root = R_NEW0 (RzFSRoot);
+	RzFSRoot* root = RZ_NEW0 (RzFSRoot);
 	if (!root) {
 		return NULL;
 	}
 	root->path = strdup (path);
 	if (!root->path) {
-		R_FREE (root);
+		RZ_FREE (root);
 		return NULL;
 	}
 	p = root->path + strlen (path);
@@ -72,7 +72,7 @@ RZ_API void rz_fs_root_free(RzFSRoot* root) {
 }
 
 RZ_API RzFSPartition* rz_fs_partition_new(int num, ut64 start, ut64 length) {
-	RzFSPartition* p = R_NEW0 (RzFSPartition);
+	RzFSPartition* p = RZ_NEW0 (RzFSPartition);
 	if (!p) {
 		return NULL;
 	}

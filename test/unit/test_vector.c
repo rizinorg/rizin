@@ -684,7 +684,7 @@ static bool test_pvector_clear(void) {
 
 static bool test_pvector_free(void) {
 	// run with asan or valgrind
-	RPVector *v = R_NEW (RPVector);
+	RPVector *v = RZ_NEW (RPVector);
 	init_test_pvector (v, 5, 5);
 	mu_assert_eq (v->v.len, 5UL, "initial len");
 	mu_assert ("initial a", v->v.a);

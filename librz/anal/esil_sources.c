@@ -16,7 +16,7 @@ RZ_API ut32 rz_anal_esil_load_source(RzAnalEsil *esil, const char *path) {
 		return 0;
 	}
 	
-	src = R_NEW0 (RzAnalEsilSource);
+	src = RZ_NEW0 (RzAnalEsilSource);
 	src->content = rz_lib_dl_open(path);
 	if (!src->content) {
 		eprintf ("no content\n");

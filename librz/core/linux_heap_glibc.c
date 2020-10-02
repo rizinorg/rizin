@@ -132,7 +132,7 @@ static bool GH(is_tcache)(RzCore *core) {
 static GHT GH(tcache_chunk_size)(RzCore *core, GHT brk_start) {
 	GHT sz = 0;
 
-	GH (RzHeapChunk) *cnk = R_NEW0 (GH (RzHeapChunk));
+	GH (RzHeapChunk) *cnk = RZ_NEW0 (GH (RzHeapChunk));
 	if (!cnk) {
 		return sz;
 	}
@@ -189,14 +189,14 @@ static void GH(update_arena_without_tc)(GH(RzHeap_MallocState) *cmain_arena, Mal
 static bool GH(update_main_arena)(RzCore *core, GHT m_arena, MallocState *main_arena) {
 	const int tcache = rz_config_get_i (core->config, "dbg.glibc.tcache");
 	if (tcache) {
-		GH(RzHeap_MallocState_tcache) *cmain_arena = R_NEW0 (GH(RzHeap_MallocState_tcache));
+		GH(RzHeap_MallocState_tcache) *cmain_arena = RZ_NEW0 (GH(RzHeap_MallocState_tcache));
 		if (!cmain_arena) {
 			return false;
 		}
 		(void)rz_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RzHeap_MallocState_tcache)));
 		GH(update_arena_with_tc)(cmain_arena,main_arena);
 	} else {
-		GH(RzHeap_MallocState) *cmain_arena = R_NEW0 (GH(RzHeap_MallocState));
+		GH(RzHeap_MallocState) *cmain_arena = RZ_NEW0 (GH(RzHeap_MallocState));
 		if (!cmain_arena) {
 			return false;
 		}
@@ -410,7 +410,7 @@ static bool GH(rz_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 				first_libc = false;
 				main_arena_sym = GH (get_main_arena_with_symbol) (core, map);
 			}
-			if (strstr (map->name, "/libc-") && map->perm == R_PERM_RW) {
+			if (strstr (map->name, "/libc-") && map->perm == RZ_PERM_RW) {
 				libc_addr_sta = map->addr;
 				libc_addr_end = map->addr_end;
 				break;
@@ -445,7 +445,7 @@ static bool GH(rz_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 
 	addr_srch = libc_addr_sta;
 	heap_sz = brk_end - brk_start;
-	MallocState *ta = R_NEW0 (MallocState);
+	MallocState *ta = RZ_NEW0 (MallocState);
 	if (!ta) {
 		return false;
 	}
@@ -477,7 +477,7 @@ static bool GH(rz_resolve_main_arena)(RzCore *core, GHT *m_arena) {
 }
 
 void GH(print_heap_chunk)(RzCore *core) {
-	GH(RzHeapChunk) *cnk = R_NEW0 (GH(RzHeapChunk));
+	GH(RzHeapChunk) *cnk = RZ_NEW0 (GH(RzHeapChunk));
 	GHT chunk = core->offset;
 	RzConsPrintablePalette *pal = &rz_cons_singleton ()->context->pal;
 
@@ -534,7 +534,7 @@ static bool GH(is_arena)(RzCore *core, GHT m_arena, GHT m_state) {
 	if (m_arena == m_state) {
 		return true;
 	}
-	MallocState *ta = R_NEW0 (MallocState);
+	MallocState *ta = RZ_NEW0 (MallocState);
 	if (!ta) {
 		return false;
 	}
@@ -563,7 +563,7 @@ static bool GH(is_arena)(RzCore *core, GHT m_arena, GHT m_state) {
 static int GH(print_double_linked_list_bin_simple)(RzCore *core, GHT bin, MallocState *main_arena, GHT brk_start) {
 	GHT next = GHT_MAX;
 	int ret = 1;
-	GH(RzHeapChunk) *cnk = R_NEW0 (GH(RzHeapChunk));
+	GH(RzHeapChunk) *cnk = RZ_NEW0 (GH(RzHeapChunk));
 	RzConsPrintablePalette *pal = &rz_cons_singleton ()->context->pal;
 
 	if (!cnk) {
@@ -619,7 +619,7 @@ static int GH(print_double_linked_list_bin_graph)(RzCore *core, GHT bin, MallocS
 	GHT next = GHT_MAX;
 	char title[256], chunk[256];
 	RzANode *bin_node = NULL, *prev_node = NULL, *next_node = NULL;
-	GH(RzHeapChunk) *cnk = R_NEW0 (GH(RzHeapChunk));
+	GH(RzHeapChunk) *cnk = RZ_NEW0 (GH(RzHeapChunk));
 	RzConsPrintablePalette *pal = &rz_cons_singleton ()->context->pal;
 
 	if (!cnk || !g) {
@@ -762,7 +762,7 @@ static int GH(print_single_linked_list_bin)(RzCore *core, MallocState *main_aren
 	GHT next = GHT_MAX, brk_start = GHT_MAX, brk_end = GHT_MAX;
 	RzConsPrintablePalette *pal = &rz_cons_singleton ()->context->pal;
 
-	GH(RzHeapChunk) *cnk = R_NEW0 (GH(RzHeapChunk));
+	GH(RzHeapChunk) *cnk = RZ_NEW0 (GH(RzHeapChunk));
 	if (!cnk) {
 		return 0;
 	}
@@ -885,13 +885,13 @@ void GH(print_heap_fastbin)(RzCore *core, GHT m_arena, MallocState *main_arena, 
 
 static GH (RTcache)* GH (tcache_new) (RzCore *core) {
 	rz_return_val_if_fail (core, NULL);
-	GH (RTcache) *tcache = R_NEW0 (GH (RTcache));
+	GH (RTcache) *tcache = RZ_NEW0 (GH (RTcache));
 	if (core->dbg->glibc_version >= TCACHE_NEW_VERSION) {
 		tcache->type = NEW;
-		tcache->RzHeapTcache.heap_tcache = R_NEW0(GH (RzHeapTcache));
+		tcache->RzHeapTcache.heap_tcache = RZ_NEW0(GH (RzHeapTcache));
 	} else {
 		tcache->type = OLD;
-		tcache->RzHeapTcache.heap_tcache_pre_230 = R_NEW0(GH (RzHeapTcachePre230));
+		tcache->RzHeapTcache.heap_tcache_pre_230 = RZ_NEW0(GH (RzHeapTcachePre230));
 	}
 	return tcache;
 }
@@ -996,7 +996,7 @@ static void GH (print_tcache_instance)(RzCore *core, GHT m_arena, MallocState *m
 
 	if (main_arena->GH (next) != m_arena) {
 		GHT mmap_start = GHT_MAX, tcache_start = GHT_MAX;
-		MallocState *ta = R_NEW0 (MallocState);
+		MallocState *ta = RZ_NEW0 (MallocState);
 		if (!ta) {
 			free(ta);
 			GH (tcache_free) (rz_tcache);
@@ -1074,11 +1074,11 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 	}
 
 	GHT next_chunk = initial_brk, prev_chunk = next_chunk;
-	GH(RzHeapChunk) *cnk = R_NEW0 (GH(RzHeapChunk));
+	GH(RzHeapChunk) *cnk = RZ_NEW0 (GH(RzHeapChunk));
 	if (!cnk) {
 		return;
 	}
-	GH(RzHeapChunk) *cnk_next = R_NEW0 (GH(RzHeapChunk));
+	GH(RzHeapChunk) *cnk_next = RZ_NEW0 (GH(RzHeapChunk));
 	if (!cnk_next) {
 		free (cnk);
 		return;
@@ -1110,7 +1110,7 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 		return;
 	}
 
-	RzANode *top = R_EMPTY, *chunk_node = R_EMPTY, *prev_node = R_EMPTY;
+	RzANode *top = RZ_EMPTY, *chunk_node = RZ_EMPTY, *prev_node = RZ_EMPTY;
 	char *top_title, *top_data, *node_title, *node_data;
 	bool first_node = true;
 
@@ -1363,7 +1363,7 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 }
 
 void GH(print_malloc_states)( RzCore *core, GHT m_arena, MallocState *main_arena) {
-	MallocState *ta = R_NEW0 (MallocState);
+	MallocState *ta = RZ_NEW0 (MallocState);
 	RzConsPrintablePalette *pal = &rz_cons_singleton ()->context->pal;
 
 	if (!ta) {
@@ -1415,13 +1415,13 @@ void GH(print_malloc_info)(RzCore *core, GHT m_state, GHT malloc_state) {
 	} else if (GH(is_arena) (core, malloc_state, m_state)) {
 
 		h_info = (malloc_state >> 16) << 16;
-		GH(RzHeapInfo) *heap_info = R_NEW0 (GH(RzHeapInfo));
+		GH(RzHeapInfo) *heap_info = RZ_NEW0 (GH(RzHeapInfo));
 		if (!heap_info) {
 			return;
 		}
 		rz_io_read_at (core->io, h_info, (ut8*)heap_info, sizeof (GH(RzHeapInfo)));
 		GH(print_inst_minfo) (heap_info, h_info);
-		MallocState *ms = R_NEW0 (MallocState);
+		MallocState *ms = RZ_NEW0 (MallocState);
 		if (!ms) {
 			free (heap_info);
 			return;
@@ -1473,7 +1473,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 
 	GHT global_max_fast = (64 * SZ / 4);
 
-	MallocState *main_arena = R_NEW0 (MallocState);
+	MallocState *main_arena = RZ_NEW0 (MallocState);
 	if (!main_arena) {
 		return false;
 	}

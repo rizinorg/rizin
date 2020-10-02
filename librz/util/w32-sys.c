@@ -22,7 +22,7 @@ RZ_API char *rz_sys_get_src_dir_w32(void) {
 	}
 	char *path = rz_sys_conv_win_to_utf8 (shortpath);
 	char *dir = rz_file_dirname (path);
-	if (!rz_sys_getenv_asbool ("R_ALT_SRC_DIR")) {
+	if (!rz_sys_getenv_asbool ("RZ_ALT_SRC_DIR")) {
 		char *tmp = dir;
 		dir = rz_file_dirname (tmp);
 		free (tmp);
@@ -121,7 +121,7 @@ RZ_API bool rz_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE 
 	LPTSTR _cmdline_ = malloc (max_length);
 
 	if (!_cmdline_) {
-		R_LOG_ERROR ("Failed to allocate memory\n");
+		RZ_LOG_ERROR ("Failed to allocate memory\n");
 		return false;
 	}
 

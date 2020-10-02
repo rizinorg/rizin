@@ -25,7 +25,7 @@
 #include <grub/types.h>
 #include <rz_types.h>
 #define BTRzFS_SIGNATURE "_BHRfS_M"
-R_PACKED(
+RZ_PACKED(
 struct btrfs_superblock
 { 
   grub_uint8_t dummy1[32];

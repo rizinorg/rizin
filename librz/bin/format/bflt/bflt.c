@@ -8,7 +8,7 @@
 #define READ(x, i) rz_read_be32 ((x) + (i)); (i) += 4;
 
 RBinAddr *rz_bflt_get_entry(struct rz_bin_bflt_obj *bin) {
-        RBinAddr *addr = R_NEW0 (RBinAddr);
+        RBinAddr *addr = RZ_NEW0 (RBinAddr);
         if (addr && bin && bin->hdr) {
         	addr->paddr = bin->hdr->entry;
         }
@@ -30,7 +30,7 @@ static int bflt_init_hdr (struct rz_bin_bflt_obj *bin) {
 		eprintf ("Warning: wrong magic number in bFLT file\n");
 		goto fail;
 	}
-	p_hdr = R_NEW0 (struct bflt_hdr);
+	p_hdr = RZ_NEW0 (struct bflt_hdr);
 	if (!p_hdr) {
 		eprintf ("Warning: couldn't allocate memory\n");
 		goto fail;
@@ -50,7 +50,7 @@ static int bflt_init_hdr (struct rz_bin_bflt_obj *bin) {
 
 	if (p_hdr->rev != FLAT_VERSION) {
 		eprintf ("Warning: only v4 is supported!\n");
-		R_FREE (p_hdr);
+		RZ_FREE (p_hdr);
 		goto fail;
 	}
 	bin->hdr = p_hdr;
@@ -74,7 +74,7 @@ static int rz_bin_bflt_init(struct rz_bin_bflt_obj *obj, RBuffer *buf) {
 }
 
 struct rz_bin_bflt_obj *rz_bin_bflt_new_buf(RBuffer *buf) {
-	struct rz_bin_bflt_obj *bin = R_NEW0 (struct rz_bin_bflt_obj);
+	struct rz_bin_bflt_obj *bin = RZ_NEW0 (struct rz_bin_bflt_obj);
 	if (bin && rz_bin_bflt_init (bin, buf)) {
 		return bin;
 	}
@@ -84,8 +84,8 @@ struct rz_bin_bflt_obj *rz_bin_bflt_new_buf(RBuffer *buf) {
 
 void rz_bin_bflt_free(struct rz_bin_bflt_obj *obj) {
 	if (obj) {
-		R_FREE (obj->hdr);
+		RZ_FREE (obj->hdr);
 		rz_buf_free (obj->b);
-		R_FREE (obj);
+		RZ_FREE (obj);
 	}
 }

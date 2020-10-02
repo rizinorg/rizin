@@ -1,5 +1,5 @@
-#ifndef R_STR_UTIL_H
-#define R_STR_UTIL_H
+#ifndef RZ_STR_UTIL_H
+#define RZ_STR_UTIL_H
  
 #define IS_NULLSTR(x) (!(x) || !*(x))
 #define IS_WHITECHAR(x) ((x) == ' ' || (x)=='\t' || (x) == '\n' || (x) == '\r')
@@ -14,4 +14,4 @@
 #define IS_UPPER(c) ((c) >= 'A' && (c) <= 'Z')
 #define IS_LOWER(c) ((c) >= 'a' && (c) <= 'z')
 
-#endif //  R_STR_UTIL_H
+#endif //  RZ_STR_UTIL_H

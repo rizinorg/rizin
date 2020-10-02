@@ -49,7 +49,7 @@
 				 | GRUB_FAT_ATTR_DIRECTORY \
 				 | GRUB_FAT_ATTR_ARCHIVE \
 				 | GRUB_FAT_ATTR_VOLUME_ID)
-R_PACKED(
+RZ_PACKED(
 struct grub_fat_bpb
 {
   grub_uint8_t jmp_boot[3];
@@ -66,10 +66,10 @@ struct grub_fat_bpb
   grub_uint16_t num_heads;
   grub_uint32_t num_hidden_sectors;
   grub_uint32_t num_total_sectors_32;
-  R_PACKED(
+  RZ_PACKED(
   union
   {
-    R_PACKED(
+    RZ_PACKED(
 	struct
     {
       grub_uint8_t num_ph_drive;
@@ -79,7 +79,7 @@ struct grub_fat_bpb
       grub_uint8_t label[11];
       grub_uint8_t fstype[8];
     }) fat12_or_fat16;
-    R_PACKED(
+    RZ_PACKED(
 	struct
     {
       grub_uint32_t sectors_per_fat_32;
@@ -98,7 +98,7 @@ struct grub_fat_bpb
     }) fat32;
   }) version_specific;
 });
-R_PACKED(
+RZ_PACKED(
 struct grub_fat_dir_entry
 {
   grub_uint8_t name[11];
@@ -115,7 +115,7 @@ struct grub_fat_dir_entry
   grub_uint32_t file_size;
 });
 
-R_PACKED(
+RZ_PACKED(
 struct grub_fat_long_name_entry
 {
   grub_uint8_t id;
@@ -539,7 +539,7 @@ grub_fat_iterate_dir (grub_disk_t disk, struct grub_fat_data *data,
 	}
 
       /* Check if this entry is valid.  */
-      if (!(grub_fshelp_view & R_FS_VIEW_DELETED)) {
+      if (!(grub_fshelp_view & RZ_FS_VIEW_DELETED)) {
         if (dir.name[0] == 0xe5 || (dir.attr & ~GRUB_FAT_ATTR_VALID))
 	  continue;
       }

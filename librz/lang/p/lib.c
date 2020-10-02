@@ -18,8 +18,8 @@ static int lang_lib_file_run (RzLang *user, const char *file) {
 		libpath = rz_str_prepend (libpath, "./");
 	}
 	if (!rz_file_exists (libpath)) {
-		if (!rz_str_endswith (libpath, R_LIB_EXT)) {
-			libpath = rz_str_appendf (libpath, ".%s", R_LIB_EXT);
+		if (!rz_str_endswith (libpath, RZ_LIB_EXT)) {
+			libpath = rz_str_appendf (libpath, ".%s", RZ_LIB_EXT);
 		}
 	}
 	if (!rz_file_exists (libpath)) {
@@ -44,7 +44,7 @@ static int lang_lib_file_run (RzLang *user, const char *file) {
 
 static RzLangPlugin rz_lang_plugin_lib = {
 	.name = "lib",
-	.ext = R_LIB_EXT,
+	.ext = RZ_LIB_EXT,
 	.desc = "Load libs directly into r2",
 	.license = "LGPL",
 	.init = lang_lib_init,

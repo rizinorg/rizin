@@ -11,7 +11,7 @@ TODO:
 #endif
 
 RZ_API RzCoreUndo *rz_core_undo_new(ut64 offset, const char *action, const char *revert) {
-	RzCoreUndo *cu = R_NEW (RzCoreUndo);
+	RzCoreUndo *cu = RZ_NEW (RzCoreUndo);
 	if (cu) {
 		cu->action = strdup (action);
 		cu->revert = strdup (revert);

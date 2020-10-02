@@ -76,59 +76,59 @@ extern char **environ;
 #endif
 #endif
 
-R_LIB_VERSION(rz_util);
+RZ_LIB_VERSION(rz_util);
 
 #ifdef __x86_64__
 # ifdef _MSC_VER
-#  define R_SYS_ASM_START_ROP() \
+#  define RZ_SYS_ASM_START_ROP() \
 	 eprintf ("rz_sys_run_rop: Unsupported arch\n");
 # else
-#  define R_SYS_ASM_START_ROP() \
+#  define RZ_SYS_ASM_START_ROP() \
 	 __asm__ __volatile__ ("leaq %0, %%rsp; ret" \
 				: \
 				: "m" (*bufptr));
 # endif
 #elif __i386__
 # ifdef _MSC_VER
-#  define R_SYS_ASM_START_ROP() \
+#  define RZ_SYS_ASM_START_ROP() \
 	__asm \
 	{ \
 		__asm lea esp, bufptr\
 		__asm ret\
 	}
 # else
-#  define R_SYS_ASM_START_ROP() \
+#  define RZ_SYS_ASM_START_ROP() \
 	__asm__ __volatile__ ("leal %0, %%esp; ret" \
 				: \
 				: "m" (*bufptr));
 # endif
 #else
-# define R_SYS_ASM_START_ROP() \
+# define RZ_SYS_ASM_START_ROP() \
 	eprintf ("rz_sys_run_rop: Unsupported arch\n");
 #endif
 
 static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
-    {"x86", R_SYS_ARCH_X86},
-    {"arm", R_SYS_ARCH_ARM},
-    {"ppc", R_SYS_ARCH_PPC},
-    {"m68k", R_SYS_ARCH_M68K},
-    {"java", R_SYS_ARCH_JAVA},
-    {"mips", R_SYS_ARCH_MIPS},
-    {"sparc", R_SYS_ARCH_SPARC},
-    {"xap", R_SYS_ARCH_XAP},
-    {"tms320", R_SYS_ARCH_TMS320},
-    {"msil", R_SYS_ARCH_MSIL},
-    {"objd", R_SYS_ARCH_OBJD},
-    {"bf", R_SYS_ARCH_BF},
-    {"sh", R_SYS_ARCH_SH},
-    {"avr", R_SYS_ARCH_AVR},
-    {"dalvik", R_SYS_ARCH_DALVIK},
-    {"z80", R_SYS_ARCH_Z80},
-    {"arc", R_SYS_ARCH_ARC},
-    {"i8080", R_SYS_ARCH_I8080},
-    {"rar", R_SYS_ARCH_RAR},
-    {"lm32", R_SYS_ARCH_LM32},
-    {"v850", R_SYS_ARCH_V850},
+    {"x86", RZ_SYS_ARCH_X86},
+    {"arm", RZ_SYS_ARCH_ARM},
+    {"ppc", RZ_SYS_ARCH_PPC},
+    {"m68k", RZ_SYS_ARCH_M68K},
+    {"java", RZ_SYS_ARCH_JAVA},
+    {"mips", RZ_SYS_ARCH_MIPS},
+    {"sparc", RZ_SYS_ARCH_SPARC},
+    {"xap", RZ_SYS_ARCH_XAP},
+    {"tms320", RZ_SYS_ARCH_TMS320},
+    {"msil", RZ_SYS_ARCH_MSIL},
+    {"objd", RZ_SYS_ARCH_OBJD},
+    {"bf", RZ_SYS_ARCH_BF},
+    {"sh", RZ_SYS_ARCH_SH},
+    {"avr", RZ_SYS_ARCH_AVR},
+    {"dalvik", RZ_SYS_ARCH_DALVIK},
+    {"z80", RZ_SYS_ARCH_Z80},
+    {"arc", RZ_SYS_ARCH_ARC},
+    {"i8080", RZ_SYS_ARCH_I8080},
+    {"rar", RZ_SYS_ARCH_RAR},
+    {"lm32", RZ_SYS_ARCH_LM32},
+    {"v850", RZ_SYS_ARCH_V850},
     {NULL, 0}
 };
 
@@ -682,7 +682,7 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 				}
 				char *tmp = realloc (outputptr, out_len + bytes + 1);
 				if (!tmp) {
-					R_FREE (outputptr);
+					RZ_FREE (outputptr);
 					break;
 				}
 				outputptr = tmp;
@@ -694,7 +694,7 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 				}
 				char *tmp = realloc (*sterr, err_len + bytes + 1);
 				if (!tmp) {
-					R_FREE (*sterr);
+					RZ_FREE (*sterr);
 					break;
 				}
 				*sterr = tmp;
@@ -831,7 +831,7 @@ RZ_API bool rz_sys_mkdir(const char *dir) {
 
 RZ_API bool rz_sys_mkdirp(const char *dir) {
 	bool ret = true;
-	char slash = R_SYS_DIR[0];
+	char slash = RZ_SYS_DIR[0];
 	char *path = strdup (dir), *ptr = path;
 	if (!path) {
 		eprintf ("rz_sys_mkdirp: Unable to allocate memory\n");
@@ -953,7 +953,7 @@ RZ_API int rz_sys_run(const ut8 *buf, int len) {
 #if USE_FORK
 	int st, pid;
 #endif
-// TODO: define R_SYS_ALIGN_FORWARD in rz_util.h
+// TODO: define RZ_SYS_ALIGN_FORWARD in rz_util.h
 	ut8 *ptr, *p = malloc ((sz + len) << 1);
 	ptr = p;
 	pdelta = ((size_t)(p)) & (4096 - 1);
@@ -1003,7 +1003,7 @@ RZ_API int rz_sys_run_rop(const ut8 *buf, int len) {
 #if USE_FORK
 	int st;
 #endif
-	// TODO: define R_SYS_ALIGN_FORWARD in rz_util.h
+	// TODO: define RZ_SYS_ALIGN_FORWARD in rz_util.h
 	ut8 *bufptr = malloc (len);
 	if (!bufptr) {
 		eprintf ("rz_sys_run_rop: Cannot allocate buffer\n");
@@ -1023,9 +1023,9 @@ RZ_API int rz_sys_run_rop(const ut8 *buf, int len) {
 	pid = -1;
 #endif
 	if (pid < 0) {
-		R_SYS_ASM_START_ROP ();
+		RZ_SYS_ASM_START_ROP ();
 	} else {
-		R_SYS_ASM_START_ROP ();
+		RZ_SYS_ASM_START_ROP ();
 		exit (0);
                 return 0;
 	}
@@ -1043,7 +1043,7 @@ RZ_API int rz_sys_run_rop(const ut8 *buf, int len) {
 		ret = WEXITSTATUS (st);
 	}
 #else
-	R_SYS_ASM_START_ROP ();
+	RZ_SYS_ASM_START_ROP ();
 #endif
 	free (bufptr);
 	return 0;
@@ -1289,7 +1289,7 @@ RZ_API RSysInfo *rz_sys_info(void) {
 #if __UNIX__
 	struct utsname un = {{0}};
 	if (uname (&un) != -1) {
-		RSysInfo *si = R_NEW0 (RSysInfo);
+		RSysInfo *si = RZ_NEW0 (RSysInfo);
 		if (si) {
 			si->sysname  = strdup (un.sysname);
 			si->nodename = strdup (un.nodename);
@@ -1306,7 +1306,7 @@ RZ_API RSysInfo *rz_sys_info(void) {
 	DWORD major;
 	DWORD minor;
 	char tmp[256] = {0};
-	RSysInfo *si = R_NEW0 (RSysInfo);
+	RSysInfo *si = RZ_NEW0 (RSysInfo);
 	if (!si) {
 		return NULL;
 	}

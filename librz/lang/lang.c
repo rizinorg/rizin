@@ -3,7 +3,7 @@
 #include <rz_lang.h>
 #include <rz_util.h>
 
-R_LIB_VERSION(rz_lang);
+RZ_LIB_VERSION(rz_lang);
 
 #include "p/pipe.c"  // hardcoded
 #include "p/vala.c"  // hardcoded
@@ -25,7 +25,7 @@ RZ_API void rz_lang_plugin_free (RzLangPlugin *p) {
 }
 
 RZ_API RzLang *rz_lang_new(void) {
-	RzLang *lang = R_NEW0 (RzLang);
+	RzLang *lang = RZ_NEW0 (RzLang);
 	if (!lang) {
 		return NULL;
 	}
@@ -85,7 +85,7 @@ RZ_API bool rz_lang_define(RzLang *lang, const char *type, const char *name, voi
 			return  true;
 		}
 	}
-	def = R_NEW0 (RzLangDef);
+	def = RZ_NEW0 (RzLangDef);
 	if (!def) {
 		return false;
 	}

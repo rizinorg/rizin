@@ -10,7 +10,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 }
 
 int main(int argc, char **argv) {
-	RzSearch *rs = rz_search_new (R_SEARCH_KEYWORD);
+	RzSearch *rs = rz_search_new (RZ_SEARCH_KEYWORD);
 	rz_search_kw_add (rs, 
 		rz_search_keyword_new_str ("lib", "", NULL, 0));
 	rz_search_set_callback (rs, &hit, buffer);
@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
 	printf("--\n");
 
 	/* test binmask */
-	rs = rz_search_new (R_SEARCH_KEYWORD);
+	rs = rz_search_new (RZ_SEARCH_KEYWORD);
 	{
 		RzSearchKeyword *kw = rz_search_keyword_new_str ("lib", "ff00ff", NULL, 0);
 		printf ("Keyword (%02x %02x %02x)\n", kw->bin_binmask[0],

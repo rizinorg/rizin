@@ -2036,7 +2036,7 @@ PUSH { r4, r5, r6, r7, lr }
 		rz_strbuf_setf (&op->esil, "");
 		for (i = 1; i < insn->detail->arm.op_count; i++) {
 			rz_strbuf_appendf (&op->esil, "%s,%s,%d,%c,=[4],",
-				REG (i), ARG (0), R_ABS ((i - 1) * 4), i > 0? '+': '-');
+				REG (i), ARG (0), RZ_ABS ((i - 1) * 4), i > 0? '+': '-');
 		}
 		if (insn->detail->arm.writeback == true) { //writeback, reg should be incremented
 			rz_strbuf_appendf (&op->esil, "%d,%s,+=,",
@@ -2361,7 +2361,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	case ARM_INS_LDREXB:
 	case ARM_INS_LDREXD:
 	case ARM_INS_LDREXH:
-		op->family = R_ANAL_OP_FAMILY_THREAD;
+		op->family = RZ_ANAL_OP_FAMILY_THREAD;
 		// intentional fallthrough
 	case ARM_INS_LDRHT:
 	case ARM_INS_LDRH:
@@ -2606,23 +2606,23 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 
 static int cond_cs2r2(int cc) {
 	if (cc == ARM_CC_AL || cc < 0) {
-		cc = R_ANAL_COND_AL;
+		cc = RZ_ANAL_COND_AL;
 	} else {
 		switch (cc) {
-		case ARM_CC_EQ: cc = R_ANAL_COND_EQ; break;
-		case ARM_CC_NE: cc = R_ANAL_COND_NE; break;
-		case ARM_CC_HS: cc = R_ANAL_COND_HS; break;
-		case ARM_CC_LO: cc = R_ANAL_COND_LO; break;
-		case ARM_CC_MI: cc = R_ANAL_COND_MI; break;
-		case ARM_CC_PL: cc = R_ANAL_COND_PL; break;
-		case ARM_CC_VS: cc = R_ANAL_COND_VS; break;
-		case ARM_CC_VC: cc = R_ANAL_COND_VC; break;
-		case ARM_CC_HI: cc = R_ANAL_COND_HI; break;
-		case ARM_CC_LS: cc = R_ANAL_COND_LS; break;
-		case ARM_CC_GE: cc = R_ANAL_COND_GE; break;
-		case ARM_CC_LT: cc = R_ANAL_COND_LT; break;
-		case ARM_CC_GT: cc = R_ANAL_COND_GT; break;
-		case ARM_CC_LE: cc = R_ANAL_COND_LE; break;
+		case ARM_CC_EQ: cc = RZ_ANAL_COND_EQ; break;
+		case ARM_CC_NE: cc = RZ_ANAL_COND_NE; break;
+		case ARM_CC_HS: cc = RZ_ANAL_COND_HS; break;
+		case ARM_CC_LO: cc = RZ_ANAL_COND_LO; break;
+		case ARM_CC_MI: cc = RZ_ANAL_COND_MI; break;
+		case ARM_CC_PL: cc = RZ_ANAL_COND_PL; break;
+		case ARM_CC_VS: cc = RZ_ANAL_COND_VS; break;
+		case ARM_CC_VC: cc = RZ_ANAL_COND_VC; break;
+		case ARM_CC_HI: cc = RZ_ANAL_COND_HI; break;
+		case ARM_CC_LS: cc = RZ_ANAL_COND_LS; break;
+		case ARM_CC_GE: cc = RZ_ANAL_COND_GE; break;
+		case ARM_CC_LT: cc = RZ_ANAL_COND_LT; break;
+		case ARM_CC_GT: cc = RZ_ANAL_COND_GT; break;
+		case ARM_CC_LE: cc = RZ_ANAL_COND_LE; break;
 		}
 	}
 	return cc;
@@ -2633,24 +2633,24 @@ static void anop64(csh handle, RzAnalOp *op, cs_insn *insn) {
 
 	/* grab family */
 	if (cs_insn_group (handle, insn, ARM64_GRP_CRYPTO)) {
-		op->family = R_ANAL_OP_FAMILY_CRYPTO;
+		op->family = RZ_ANAL_OP_FAMILY_CRYPTO;
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_CRC)) {
-		op->family = R_ANAL_OP_FAMILY_CRYPTO;
+		op->family = RZ_ANAL_OP_FAMILY_CRYPTO;
 #if CS_API_MAJOR >= 4
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_PRIVILEGE)) {
-		op->family = R_ANAL_OP_FAMILY_PRIV;
+		op->family = RZ_ANAL_OP_FAMILY_PRIV;
 #endif
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_NEON)) {
-		op->family = R_ANAL_OP_FAMILY_MMX;
+		op->family = RZ_ANAL_OP_FAMILY_MMX;
 	} else if (cs_insn_group (handle, insn, ARM64_GRP_FPARMV8)) {
-		op->family = R_ANAL_OP_FAMILY_FPU;
+		op->family = RZ_ANAL_OP_FAMILY_FPU;
 	} else {
-		op->family = R_ANAL_OP_FAMILY_CPU;
+		op->family = RZ_ANAL_OP_FAMILY_CPU;
 	}
 
 	op->cond = cond_cs2r2 (insn->detail->arm64.cc);
-	if (op->cond == R_ANAL_COND_NV) {
-		op->type = R_ANAL_OP_TYPE_NOP;
+	if (op->cond == RZ_ANAL_COND_NV) {
+		op->type = RZ_ANAL_OP_TYPE_NOP;
 		return;
 	}
 
@@ -2699,26 +2699,26 @@ static void anop64(csh handle, RzAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_XPACD:
 	case ARM64_INS_XPACI:
 	case ARM64_INS_XPACLRI:
-		op->type = R_ANAL_OP_TYPE_CMP;
-		op->family = R_ANAL_OP_FAMILY_SECURITY;
+		op->type = RZ_ANAL_OP_TYPE_CMP;
+		op->family = RZ_ANAL_OP_FAMILY_SECURITY;
 		break;
 #endif
 	case ARM64_INS_SVC:
-		op->type = R_ANAL_OP_TYPE_SWI;
+		op->type = RZ_ANAL_OP_TYPE_SWI;
 		op->val = IMM64(0);
 		break;
 	case ARM64_INS_ADRP:
 	case ARM64_INS_ADR:
-		op->type = R_ANAL_OP_TYPE_LEA;
+		op->type = RZ_ANAL_OP_TYPE_LEA;
 		op->ptr = IMM64(1);
 		break;
 	case ARM64_INS_NOP:
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = RZ_ANAL_OP_TYPE_NOP;
 		op->cycles = 1;
 		break;
 	case ARM64_INS_SUB:
 		if (ISREG64(0) && REGID64(0) == ARM64_REG_SP) {
-			op->stackop = R_ANAL_STACK_INC;
+			op->stackop = RZ_ANAL_STACK_INC;
 			if (ISIMM64(1)) {
 				//sub sp, 0x54
 				op->stackptr = IMM(1);
@@ -2728,19 +2728,19 @@ static void anop64(csh handle, RzAnalOp *op, cs_insn *insn) {
 			}
 			op->val = op->stackptr;
 		} else {
-			op->stackop = R_ANAL_STACK_RESET;
+			op->stackop = RZ_ANAL_STACK_RESET;
 			op->stackptr = 0;
 		}
 		op->cycles = 1;
 		/* fallthru */
 	case ARM64_INS_MSUB:
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = RZ_ANAL_OP_TYPE_SUB;
 		break;
 	case ARM64_INS_FDIV:
 	case ARM64_INS_SDIV:
 	case ARM64_INS_UDIV:
 		op->cycles = 4;
-		op->type = R_ANAL_OP_TYPE_DIV;
+		op->type = RZ_ANAL_OP_TYPE_DIV;
 		break;
 	case ARM64_INS_MUL:
 	case ARM64_INS_SMULL:
@@ -2749,7 +2749,7 @@ static void anop64(csh handle, RzAnalOp *op, cs_insn *insn) {
 		/* TODO: if next instruction is also a MUL, cycles are /=2 */
 		/* also known as Register Indexing Addressing */
 		op->cycles = 4;
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = RZ_ANAL_OP_TYPE_MUL;
 		break;
 	case ARM64_INS_ADD:
 		op->cycles = 1;
@@ -2760,17 +2760,17 @@ static void anop64(csh handle, RzAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_SMADDL:
 	case ARM64_INS_FMADD:
 	case ARM64_INS_MADD:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANAL_OP_TYPE_ADD;
 		break;
 	case ARM64_INS_CSEL:
 	case ARM64_INS_FCSEL:
 	case ARM64_INS_CSET:
 	case ARM64_INS_CINC:
-		op->type = R_ANAL_OP_TYPE_CMOV;
+		op->type = RZ_ANAL_OP_TYPE_CMOV;
 		break;
 	case ARM64_INS_MOV:
 		if (REGID64(0) == ARM64_REG_SP) {
-			op->stackop = R_ANAL_STACK_RESET;
+			op->stackop = RZ_ANAL_STACK_RESET;
 			op->stackptr = 0;
 		}
 		op->cycles = 1;
@@ -2789,50 +2789,50 @@ static void anop64(csh handle, RzAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_BIC:
 	case ARM64_INS_BFI:
 	case ARM64_INS_BFXIL:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANAL_OP_TYPE_MOV;
 		break;
 	case ARM64_INS_MRS:
 	case ARM64_INS_MSR:
-		op->type = R_ANAL_OP_TYPE_MOV;
-		op->family = R_ANAL_OP_FAMILY_PRIV;
+		op->type = RZ_ANAL_OP_TYPE_MOV;
+		op->family = RZ_ANAL_OP_FAMILY_PRIV;
 		break;
 	case ARM64_INS_MOVZ:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANAL_OP_TYPE_MOV;
 		op->ptr = 0LL;
 		op->ptrsize = 8;
 		op->val = IMM64(1);
 		break;
 	case ARM64_INS_UXTB:
 	case ARM64_INS_SXTB:
-		op->type = R_ANAL_OP_TYPE_CAST;
+		op->type = RZ_ANAL_OP_TYPE_CAST;
 		op->ptr = 0LL;
 		op->ptrsize = 1;
 		break;
 	case ARM64_INS_UXTH:
 	case ARM64_INS_SXTH:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANAL_OP_TYPE_MOV;
 		op->ptr = 0LL;
 		op->ptrsize = 2;
 		break;
 	case ARM64_INS_UXTW:
 	case ARM64_INS_SXTW:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANAL_OP_TYPE_MOV;
 		op->ptr = 0LL;
 		op->ptrsize = 4;
 		break;
 	case ARM64_INS_BRK:
 	case ARM64_INS_HLT:
-		op->type = R_ANAL_OP_TYPE_TRAP;
+		op->type = RZ_ANAL_OP_TYPE_TRAP;
 		// hlt stops the process, not skips some cycles like in x86
 		break;
 	case ARM64_INS_DMB:
 	case ARM64_INS_DSB:
 	case ARM64_INS_ISB:
-		op->family = R_ANAL_OP_FAMILY_THREAD;
+		op->family = RZ_ANAL_OP_FAMILY_THREAD;
 		// intentional fallthrough
 	case ARM64_INS_IC: // instruction cache invalidate
 	case ARM64_INS_DC: // data cache invalidate
-		op->type = R_ANAL_OP_TYPE_SYNC; // or cache
+		op->type = RZ_ANAL_OP_TYPE_SYNC; // or cache
 		break;
 	//  XXX unimplemented instructions
 	case ARM64_INS_DUP:
@@ -2841,28 +2841,28 @@ static void anop64(csh handle, RzAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_REV64:
 	case ARM64_INS_EXT:
 	case ARM64_INS_INS:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANAL_OP_TYPE_MOV;
 		break;
 	case ARM64_INS_LSL:
 		op->cycles = 1;
 		/* fallthru */
 	case ARM64_INS_SHL:
 	case ARM64_INS_USHLL:
-		op->type = R_ANAL_OP_TYPE_SHL;
+		op->type = RZ_ANAL_OP_TYPE_SHL;
 		break;
 	case ARM64_INS_LSR:
 		op->cycles = 1;
-		op->type = R_ANAL_OP_TYPE_SHR;
+		op->type = RZ_ANAL_OP_TYPE_SHR;
 		break;
 	case ARM64_INS_ASR:
 		op->cycles = 1;
-		op->type = R_ANAL_OP_TYPE_SAR;
+		op->type = RZ_ANAL_OP_TYPE_SAR;
 		break;
 	case ARM64_INS_NEG:
 #if CS_API_MAJOR > 3
 	case ARM64_INS_NEGS:
 #endif
-		op->type = R_ANAL_OP_TYPE_NOT;
+		op->type = RZ_ANAL_OP_TYPE_NOT;
 		break;
 	case ARM64_INS_FCMP:
 	case ARM64_INS_CCMP:
@@ -2870,22 +2870,22 @@ static void anop64(csh handle, RzAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_CMP:
 	case ARM64_INS_CMN:
 	case ARM64_INS_TST:
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = RZ_ANAL_OP_TYPE_CMP;
 		break;
 	case ARM64_INS_ROR:
 		op->cycles = 1;
-		op->type = R_ANAL_OP_TYPE_ROR;
+		op->type = RZ_ANAL_OP_TYPE_ROR;
 		break;
 	case ARM64_INS_AND:
-		op->type = R_ANAL_OP_TYPE_AND;
+		op->type = RZ_ANAL_OP_TYPE_AND;
 		break;
 	case ARM64_INS_ORR:
 	case ARM64_INS_ORN:
-		op->type = R_ANAL_OP_TYPE_OR;
+		op->type = RZ_ANAL_OP_TYPE_OR;
 		break;
 	case ARM64_INS_EOR:
 	case ARM64_INS_EON:
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = RZ_ANAL_OP_TYPE_XOR;
 		break;
 	case ARM64_INS_STRB:
 	case ARM64_INS_STURB:
@@ -2898,9 +2898,9 @@ static void anop64(csh handle, RzAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_STLXR:
 	case ARM64_INS_STLXRH:
 	case ARM64_INS_STXRB:
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = RZ_ANAL_OP_TYPE_STORE;
 		if (REGBASE64(1) == ARM64_REG_X29) {
-			op->stackop = R_ANAL_STACK_SET;
+			op->stackop = RZ_ANAL_STACK_SET;
 			op->stackptr = 0;
 			op->ptr = -MEMDISP64(1);
 		}
@@ -2918,13 +2918,13 @@ static void anop64(csh handle, RzAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_LDRH:
 	case ARM64_INS_LDRB:
 		if (REGID(0) == ARM_REG_PC) {
-			op->type = R_ANAL_OP_TYPE_UJMP;
+			op->type = RZ_ANAL_OP_TYPE_UJMP;
 			if (insn->detail->arm.cc != ARM_CC_AL) {
-				//op->type = R_ANAL_OP_TYPE_MCJMP;
-				op->type = R_ANAL_OP_TYPE_UCJMP;
+				//op->type = RZ_ANAL_OP_TYPE_MCJMP;
+				op->type = RZ_ANAL_OP_TYPE_UCJMP;
 			}
 		} else {
-			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->type = RZ_ANAL_OP_TYPE_LOAD;
 		}
 		switch (insn->id) {
 		case ARM64_INS_LDPSW:
@@ -2935,12 +2935,12 @@ static void anop64(csh handle, RzAnalOp *op, cs_insn *insn) {
 			break;
 		}
 		if (REGBASE64(1) == ARM64_REG_X29) {
-			op->stackop = R_ANAL_STACK_GET;
+			op->stackop = RZ_ANAL_STACK_GET;
 			op->stackptr = 0;
 			op->ptr = MEMDISP64(1);
 		} else {
 			if (ISIMM64(1)) {
-				op->type = R_ANAL_OP_TYPE_LEA;
+				op->type = RZ_ANAL_OP_TYPE_LEA;
 				op->ptr = IMM64(1);
 				op->refptr = 8;
 			} else {
@@ -2955,77 +2955,77 @@ static void anop64(csh handle, RzAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_BLRAAZ:
 	case ARM64_INS_BLRAB:
 	case ARM64_INS_BLRABZ:
-		op->family = R_ANAL_OP_FAMILY_SECURITY;
-		op->type = R_ANAL_OP_TYPE_RCALL;
+		op->family = RZ_ANAL_OP_FAMILY_SECURITY;
+		op->type = RZ_ANAL_OP_TYPE_RCALL;
 		break;
 	case ARM64_INS_BRAA:
 	case ARM64_INS_BRAAZ:
 	case ARM64_INS_BRAB:
 	case ARM64_INS_BRABZ:
-		op->family = R_ANAL_OP_FAMILY_SECURITY;
-		op->type = R_ANAL_OP_TYPE_RJMP;
+		op->family = RZ_ANAL_OP_FAMILY_SECURITY;
+		op->type = RZ_ANAL_OP_TYPE_RJMP;
 		break;
 	case ARM64_INS_LDRAA:
 	case ARM64_INS_LDRAB:
-		op->family = R_ANAL_OP_FAMILY_SECURITY;
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->family = RZ_ANAL_OP_FAMILY_SECURITY;
+		op->type = RZ_ANAL_OP_TYPE_LOAD;
 		break;
 	case ARM64_INS_RETAA:
 	case ARM64_INS_RETAB:
 	case ARM64_INS_ERETAA:
 	case ARM64_INS_ERETAB:
-		op->family = R_ANAL_OP_FAMILY_SECURITY;
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->family = RZ_ANAL_OP_FAMILY_SECURITY;
+		op->type = RZ_ANAL_OP_TYPE_RET;
 		break;
 #endif
 	case ARM64_INS_ERET:
-		op->family = R_ANAL_OP_FAMILY_PRIV;
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->family = RZ_ANAL_OP_FAMILY_PRIV;
+		op->type = RZ_ANAL_OP_TYPE_RET;
 		break;
 	case ARM64_INS_RET:
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = RZ_ANAL_OP_TYPE_RET;
 		break;
 	case ARM64_INS_BL: // bl 0x89480
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = RZ_ANAL_OP_TYPE_CALL;
 		op->jump = IMM64(0);
 		op->fail = addr + 4;
 		break;
 	case ARM64_INS_BLR: // blr x0
-		op->type = R_ANAL_OP_TYPE_UCALL;
+		op->type = RZ_ANAL_OP_TYPE_UCALL;
 		op->fail = addr + 4;
 		//op->jump = IMM64(0);
 		break;
 	case ARM64_INS_CBZ:
 	case ARM64_INS_CBNZ:
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = RZ_ANAL_OP_TYPE_CJMP;
 		op->jump = IMM64(1);
 		op->fail = addr+op->size;
 		break;
 	case ARM64_INS_TBZ:
 	case ARM64_INS_TBNZ:
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = RZ_ANAL_OP_TYPE_CJMP;
 		op->jump = IMM64(2);
 		op->fail = addr+op->size;
 		break;
 	case ARM64_INS_BR:
-		op->type = R_ANAL_OP_TYPE_UJMP; // RJMP ?
+		op->type = RZ_ANAL_OP_TYPE_UJMP; // RJMP ?
 		op->eob = true;
 		break;
 	case ARM64_INS_B:
 		// BX LR == RET
 		if (insn->detail->arm64.operands[0].reg == ARM64_REG_LR) {
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = RZ_ANAL_OP_TYPE_RET;
 		} else if (insn->detail->arm64.cc) {
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = RZ_ANAL_OP_TYPE_CJMP;
 			op->jump = IMM64(0);
 			op->fail = addr + op->size;
 		} else {
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = RZ_ANAL_OP_TYPE_JMP;
 			op->jump = IMM64(0);
 		}
 		break;
 	default:
-		R_LOG_DEBUG ("ARM64 analysis: Op type %d at 0x%" PFMT64x " not handled\n", insn->id, op->addr);
+		RZ_LOG_DEBUG ("ARM64 analysis: Op type %d at 0x%" PFMT64x " not handled\n", insn->id, op->addr);
 		break;
 	}
 }
@@ -3068,30 +3068,30 @@ static void anop32(RzAnal *a, csh handle, RzAnalOp *op, cs_insn *insn, bool thum
 	ut64 itcond;
 
 	op->cond = cond_cs2r2 (insn->detail->arm.cc);
-	if (op->cond == R_ANAL_COND_NV) {
-		op->type = R_ANAL_OP_TYPE_NOP;
+	if (op->cond == RZ_ANAL_COND_NV) {
+		op->type = RZ_ANAL_OP_TYPE_NOP;
 		return;
 	}
 	op->cycles = 1;
 	/* grab family */
 	if (cs_insn_group (handle, insn, ARM_GRP_CRYPTO)) {
-		op->family = R_ANAL_OP_FAMILY_CRYPTO;
+		op->family = RZ_ANAL_OP_FAMILY_CRYPTO;
 	} else if (cs_insn_group (handle, insn, ARM_GRP_CRC)) {
-		op->family = R_ANAL_OP_FAMILY_CRYPTO;
+		op->family = RZ_ANAL_OP_FAMILY_CRYPTO;
 #if CS_API_MAJOR >= 4
 	} else if (cs_insn_group (handle, insn, ARM_GRP_PRIVILEGE)) {
-		op->family = R_ANAL_OP_FAMILY_PRIV;
+		op->family = RZ_ANAL_OP_FAMILY_PRIV;
 	} else if (cs_insn_group (handle, insn, ARM_GRP_VIRTUALIZATION)) {
-		op->family = R_ANAL_OP_FAMILY_VIRT;
+		op->family = RZ_ANAL_OP_FAMILY_VIRT;
 #endif
 	} else if (cs_insn_group (handle, insn, ARM_GRP_NEON)) {
-		op->family = R_ANAL_OP_FAMILY_MMX;
+		op->family = RZ_ANAL_OP_FAMILY_MMX;
 	} else if (cs_insn_group (handle, insn, ARM_GRP_FPARMV8)) {
-		op->family = R_ANAL_OP_FAMILY_FPU;
+		op->family = RZ_ANAL_OP_FAMILY_FPU;
 	} else if (cs_insn_group (handle, insn, ARM_GRP_THUMB2DSP)) {
-		op->family = R_ANAL_OP_FAMILY_MMX;
+		op->family = RZ_ANAL_OP_FAMILY_MMX;
 	} else {
-		op->family = R_ANAL_OP_FAMILY_CPU;
+		op->family = RZ_ANAL_OP_FAMILY_CPU;
 	}
 
 	if (insn->id != ARM_INS_IT) {
@@ -3109,19 +3109,19 @@ jmp $$ + 4 + ( [delta] * 2 )
 
 #endif
 	case ARM_INS_TBH: // half word table
-		op->type = R_ANAL_OP_TYPE_UJMP;
+		op->type = RZ_ANAL_OP_TYPE_UJMP;
 		op->cycles = 2;
 		op->ptrsize = 2;
 		op->ireg = rz_str_get (cs_reg_name (handle, INSOP (0).mem.index));
 		break;
 	case ARM_INS_TBB: // byte jump table
-		op->type = R_ANAL_OP_TYPE_UJMP;
+		op->type = RZ_ANAL_OP_TYPE_UJMP;
 		op->cycles = 2;
 		op->ptrsize = 1;
 		op->ireg = rz_str_get (cs_reg_name (handle, INSOP (0).mem.index));
 		break;
 	case ARM_INS_PLD:
-		op->type = R_ANAL_OP_TYPE_LEA; // not really a lea, just a prefetch
+		op->type = RZ_ANAL_OP_TYPE_LEA; // not really a lea, just a prefetch
 		if (ISMEM (0)) {
 			int regBase = REGBASE(0);
 			int delta = MEMDISP(0);
@@ -3137,15 +3137,15 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->cycles = 2;
 		break;
 	case ARM_INS_BKPT:
-		op->type = R_ANAL_OP_TYPE_TRAP;
+		op->type = RZ_ANAL_OP_TYPE_TRAP;
 		op->cycles = 4;
 		break;
 	case ARM_INS_NOP:
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = RZ_ANAL_OP_TYPE_NOP;
 		op->cycles = 1;
 		break;
 	case ARM_INS_POP:
-		op->stackop = R_ANAL_STACK_INC;
+		op->stackop = RZ_ANAL_STACK_INC;
 		op->stackptr = -4LL * insn->detail->arm.op_count;
 		// fallthrough
 	case ARM_INS_FLDMDBX:
@@ -3154,15 +3154,15 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_LDMDB:
 	case ARM_INS_LDMIB:
 	case ARM_INS_LDM:
-		op->type = R_ANAL_OP_TYPE_POP;
+		op->type = RZ_ANAL_OP_TYPE_POP;
 		op->cycles = 2;
 		for (i = 0; i < insn->detail->arm.op_count; i++) {
 			if (insn->detail->arm.operands[i].type == ARM_OP_REG &&
 					insn->detail->arm.operands[i].reg == ARM_REG_PC) {
 				if (insn->detail->arm.cc == ARM_CC_AL) {
-					op->type = R_ANAL_OP_TYPE_RET;
+					op->type = RZ_ANAL_OP_TYPE_RET;
 				} else {
-					op->type = R_ANAL_OP_TYPE_CRET;
+					op->type = RZ_ANAL_OP_TYPE_CRET;
 				}
 				break;
 			}
@@ -3170,7 +3170,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		break;
 	case ARM_INS_SUB:
 		if (ISREG(0) && REGID(0) == ARM_REG_SP) {
-				op->stackop = R_ANAL_STACK_INC;
+				op->stackop = RZ_ANAL_STACK_INC;
 				if (ISIMM(1)) {
 					//0x0000bf4e      95b0           sub sp, 0x54
 					op->stackptr = IMM(1);
@@ -3185,16 +3185,16 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_SUBW:
 	case ARM_INS_SSUB8:
 	case ARM_INS_SSUB16:
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = RZ_ANAL_OP_TYPE_SUB;
 		break;
 	case ARM_INS_ADD:
 	case ARM_INS_ADC:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANAL_OP_TYPE_ADD;
 		if (REGID(0) == ARM_REG_PC) {
-			op->type = R_ANAL_OP_TYPE_UJMP;
+			op->type = RZ_ANAL_OP_TYPE_UJMP;
 			if (REGID(1) == ARM_REG_PC && insn->detail->arm.cc != ARM_CC_AL) {
-				//op->type = R_ANAL_OP_TYPE_RCJMP;
-				op->type = R_ANAL_OP_TYPE_UCJMP;
+				//op->type = RZ_ANAL_OP_TYPE_RCJMP;
+				op->type = RZ_ANAL_OP_TYPE_UCJMP;
 				op->fail = addr+op->size;
 				op->jump = ((addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1)) & UT64_MAX;
 				op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1);
@@ -3209,14 +3209,14 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_ADDW:
 	case ARM_INS_SADD8:
 	case ARM_INS_SADD16:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANAL_OP_TYPE_ADD;
 		break;
 	case ARM_INS_SDIV:
 	case ARM_INS_UDIV:
 		op->cycles = 4;
 		/* fall-thru */
 	case ARM_INS_VDIV:
-		op->type = R_ANAL_OP_TYPE_DIV;
+		op->type = RZ_ANAL_OP_TYPE_DIV;
 		break;
 	case ARM_INS_MUL:
 	case ARM_INS_SMULL:
@@ -3226,18 +3226,18 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->cycles = 4;
 		/* fall-thru */
 	case ARM_INS_VMUL:
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = RZ_ANAL_OP_TYPE_MUL;
 		break;
 	case ARM_INS_TRAP:
-		op->type = R_ANAL_OP_TYPE_TRAP;
+		op->type = RZ_ANAL_OP_TYPE_TRAP;
 		op->cycles = 2;
 		break;
 	case ARM_INS_MOV:
 		if (REGID(0) == ARM_REG_PC) {
 			if (REGID(1) == ARM_REG_LR) {
-				op->type = R_ANAL_OP_TYPE_RET;
+				op->type = RZ_ANAL_OP_TYPE_RET;
 			} else {
-				op->type = R_ANAL_OP_TYPE_UJMP;
+				op->type = RZ_ANAL_OP_TYPE_UJMP;
 			}
 		}
 		if (ISIMM(1)) {
@@ -3254,35 +3254,35 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_UBFX:
 	case ARM_INS_BIC:
 	case ARM_INS_BFI:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANAL_OP_TYPE_MOV;
 		break;
 	case ARM_INS_VMOV:
-		op->type = R_ANAL_OP_TYPE_MOV;
-		op->family = R_ANAL_OP_FAMILY_FPU;
+		op->type = RZ_ANAL_OP_TYPE_MOV;
+		op->family = RZ_ANAL_OP_FAMILY_FPU;
 		op->cycles = 2;
 		break;
 	case ARM_INS_UDF:
-		op->type = R_ANAL_OP_TYPE_TRAP;
+		op->type = RZ_ANAL_OP_TYPE_TRAP;
 		op->cycles = 4;
 		break;
 	case ARM_INS_SVC:
-		op->type = R_ANAL_OP_TYPE_SWI;
+		op->type = RZ_ANAL_OP_TYPE_SWI;
 		op->val = IMM(0);
 		break;
 	case ARM_INS_ROR:
 	case ARM_INS_RRX:
 		op->cycles = 1;
-		op->type = R_ANAL_OP_TYPE_ROR;
+		op->type = RZ_ANAL_OP_TYPE_ROR;
 		break;
 	case ARM_INS_AND:
-		op->type = R_ANAL_OP_TYPE_AND;
+		op->type = RZ_ANAL_OP_TYPE_AND;
 		break;
 	case ARM_INS_ORR:
 	case ARM_INS_ORN:
-		op->type = R_ANAL_OP_TYPE_OR;
+		op->type = RZ_ANAL_OP_TYPE_OR;
 		break;
 	case ARM_INS_EOR:
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = RZ_ANAL_OP_TYPE_XOR;
 		break;
 	case ARM_INS_CMP:
 	case ARM_INS_CMN:
@@ -3293,32 +3293,32 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->reg = rz_str_get (cs_reg_name (handle, INSOP (0).reg));
 		/* fall-thru */
 	case ARM_INS_VCMP:
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = RZ_ANAL_OP_TYPE_CMP;
 		break;
 	case ARM_INS_LSL:
 		op->cycles = 1;
-		op->type = R_ANAL_OP_TYPE_SHL;
+		op->type = RZ_ANAL_OP_TYPE_SHL;
 		break;
 	case ARM_INS_LSR:
 		op->cycles = 1;
-		op->type = R_ANAL_OP_TYPE_SHR;
+		op->type = RZ_ANAL_OP_TYPE_SHR;
 		break;
 	case ARM_INS_ASR:
 		op->cycles = 1;
-		op->type = R_ANAL_OP_TYPE_SAR;
+		op->type = RZ_ANAL_OP_TYPE_SAR;
 		break;
 	case ARM_INS_PUSH:
-		op->stackop = R_ANAL_STACK_INC;
+		op->stackop = RZ_ANAL_STACK_INC;
 		op->stackptr = 4LL * insn->detail->arm.op_count;
 		// fallthrough
 	case ARM_INS_STM:
 	case ARM_INS_STMDA:
 	case ARM_INS_STMDB:
-		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->type = RZ_ANAL_OP_TYPE_PUSH;
 // 0x00008160    04202de5     str r2, [sp, -4]!
 // 0x000082a0    28000be5     str r0, [fp, -0x28]
 		if (REGBASE(1) == ARM_REG_FP) {
-			op->stackop = R_ANAL_STACK_SET;
+			op->stackop = RZ_ANAL_STACK_SET;
 			op->stackptr = 0;
 			op->ptr = MEMDISP(1);
 		}
@@ -3327,7 +3327,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_STREXB:
 	case ARM_INS_STREXD:
 	case ARM_INS_STREXH:
-		op->family = R_ANAL_OP_FAMILY_THREAD;
+		op->family = RZ_ANAL_OP_FAMILY_THREAD;
 		/* fall-thru */
 	case ARM_INS_STR:
 	case ARM_INS_STRB:
@@ -3337,9 +3337,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_STRHT:
 	case ARM_INS_STRT:
 		op->cycles = 4;
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = RZ_ANAL_OP_TYPE_STORE;
 		if (REGBASE(1) == ARM_REG_FP) {
-			op->stackop = R_ANAL_STACK_SET;
+			op->stackop = RZ_ANAL_STACK_SET;
 			op->stackptr = 0;
 			op->ptr = -MEMDISP(1);
 		}
@@ -3347,13 +3347,13 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_SXTB:
 	case ARM_INS_SXTH:
 		op->cycles = 1;
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANAL_OP_TYPE_MOV;
 		break;
 	case ARM_INS_LDREX:
 	case ARM_INS_LDREXB:
 	case ARM_INS_LDREXD:
 	case ARM_INS_LDREXH:
-		op->family = R_ANAL_OP_FAMILY_THREAD;
+		op->family = RZ_ANAL_OP_FAMILY_THREAD;
 		/* fall-thru */
 	case ARM_INS_LDR:
 	case ARM_INS_LDRD:
@@ -3369,13 +3369,13 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->cycles = 4;
 // 0x000082a8    28301be5     ldr r3, [fp, -0x28]
 		if (REGID(0) == ARM_REG_PC) {
-			op->type = R_ANAL_OP_TYPE_UJMP;
+			op->type = RZ_ANAL_OP_TYPE_UJMP;
 			if (insn->detail->arm.cc != ARM_CC_AL) {
-				//op->type = R_ANAL_OP_TYPE_MCJMP;
-				op->type = R_ANAL_OP_TYPE_UCJMP;
+				//op->type = RZ_ANAL_OP_TYPE_MCJMP;
+				op->type = RZ_ANAL_OP_TYPE_UCJMP;
 			}
 		} else {
-			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->type = RZ_ANAL_OP_TYPE_LOAD;
 		}
 		switch (insn->id) {
 		case ARM_INS_LDRB:
@@ -3387,15 +3387,15 @@ jmp $$ + 4 + ( [delta] * 2 )
 			break;
 		}
 		if (REGBASE(1) == ARM_REG_FP) {
-			op->stackop = R_ANAL_STACK_GET;
+			op->stackop = RZ_ANAL_STACK_GET;
 			op->stackptr = 0;
 			op->ptr = -MEMDISP(1);
 		} else if (REGBASE(1) == ARM_REG_PC) {
 			op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1);
 			op->refptr = 4;
 			if (REGID(0) == ARM_REG_PC && insn->detail->arm.cc != ARM_CC_AL) {
-				//op->type = R_ANAL_OP_TYPE_MCJMP;
-				op->type = R_ANAL_OP_TYPE_UCJMP;
+				//op->type = RZ_ANAL_OP_TYPE_MCJMP;
+				op->type = RZ_ANAL_OP_TYPE_UCJMP;
 				op->fail = addr+op->size;
 				op->jump = ((addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1)) & UT64_MAX;
 				op->ireg = rz_str_get (cs_reg_name (handle, INSOP (1).mem.index));
@@ -3405,17 +3405,17 @@ jmp $$ + 4 + ( [delta] * 2 )
 		break;
 	case ARM_INS_MRS:
 	case ARM_INS_MSR:
-		op->type = R_ANAL_OP_TYPE_MOV;
-		op->family = R_ANAL_OP_FAMILY_PRIV;
+		op->type = RZ_ANAL_OP_TYPE_MOV;
+		op->family = RZ_ANAL_OP_FAMILY_PRIV;
 		break;
 	case ARM_INS_BLX:
 		op->cycles = 4;
 		if (ISREG(0)) {
 			/* blx reg */
-			op->type = R_ANAL_OP_TYPE_RCALL;
+			op->type = RZ_ANAL_OP_TYPE_RCALL;
 		} else {
 			/* blx label */
-			op->type = R_ANAL_OP_TYPE_CALL;
+			op->type = RZ_ANAL_OP_TYPE_CALL;
 			op->jump = IMM(0) & UT32_MAX;
 			op->fail = addr + op->size;
 			op->hint.new_bits = (a->bits == 32)? 16 : 32;
@@ -3426,7 +3426,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_BL:
 		/* bl label */
 		op->cycles = 4;
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = RZ_ANAL_OP_TYPE_CALL;
 		op->jump = IMM(0) & UT32_MAX;
 		op->fail = addr + op->size;
 		op->hint.new_bits = a->bits;
@@ -3434,11 +3434,11 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_CBZ:
 	case ARM_INS_CBNZ:
 		op->cycles = 4;
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = RZ_ANAL_OP_TYPE_CJMP;
 		op->jump = IMM(1) & UT32_MAX;
 		op->fail = addr + op->size;
 		if (op->jump == op->fail) {
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = RZ_ANAL_OP_TYPE_JMP;
 			op->fail = UT64_MAX;
 		}
 		break;
@@ -3446,13 +3446,13 @@ jmp $$ + 4 + ( [delta] * 2 )
 		/* b.cc label */
 		op->cycles = 4;
 		if (insn->detail->arm.cc == ARM_CC_INVALID) {
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = RZ_ANAL_OP_TYPE_ILL;
 			op->fail = addr+op->size;
 		} else if (insn->detail->arm.cc == ARM_CC_AL) {
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = RZ_ANAL_OP_TYPE_JMP;
 			op->fail = UT64_MAX;
 		} else {
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = RZ_ANAL_OP_TYPE_CJMP;
 			op->fail = addr+op->size;
 		}
 		op->jump = IMM(0) & UT32_MAX;
@@ -3465,54 +3465,54 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->cycles = 4;
 		switch (REGID(0)) {
 		case ARM_REG_LR:
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = RZ_ANAL_OP_TYPE_RET;
 			break;
 		case ARM_REG_IP:
-			op->type = R_ANAL_OP_TYPE_UJMP;
+			op->type = RZ_ANAL_OP_TYPE_UJMP;
 			break;
 		case ARM_REG_PC:
 			// bx pc is well known without ESIL
-			op->type = R_ANAL_OP_TYPE_UJMP;
+			op->type = RZ_ANAL_OP_TYPE_UJMP;
 			op->jump = (addr & ~3LL) + pcdelta;
 			op->hint.new_bits = 32;
 			break;
 		default:
-			op->type = R_ANAL_OP_TYPE_UJMP;
+			op->type = RZ_ANAL_OP_TYPE_UJMP;
 			op->eob = true;
 			break;
 		}
 		break;
 	case ARM_INS_ADR:
 		op->cycles = 2;
-		op->type = R_ANAL_OP_TYPE_LEA;
+		op->type = RZ_ANAL_OP_TYPE_LEA;
 		// Set the pointer address and align it
 		op->ptr = IMM(1) + addr + 4 - (addr%4);
 		op->refptr = 1;
 		break;
 	case ARM_INS_UXTAB:
 	case ARM_INS_UXTAB16:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANAL_OP_TYPE_ADD;
 		op->ptr = 0LL;
 		op->ptrsize = 1;
 		break;
 	case ARM_INS_UXTAH:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANAL_OP_TYPE_ADD;
 		op->ptr = 0LL;
 		op->ptrsize = 2;
 		break;
 	case ARM_INS_UXTB:
 	case ARM_INS_UXTB16:
-		op->type = R_ANAL_OP_TYPE_CAST;
+		op->type = RZ_ANAL_OP_TYPE_CAST;
 		op->ptr = 0LL;
 		op->ptrsize = 1;
 		break;
 	case ARM_INS_UXTH:
-		op->type = R_ANAL_OP_TYPE_CAST;
+		op->type = RZ_ANAL_OP_TYPE_CAST;
 		op->ptr = 0LL;
 		op->ptrsize = 2;
 		break;
 	default:
-		R_LOG_DEBUG ("ARM analysis: Op type %d at 0x%" PFMT64x " not handled\n", insn->id, op->addr);
+		RZ_LOG_DEBUG ("ARM analysis: Op type %d at 0x%" PFMT64x " not handled\n", insn->id, op->addr);
 		break;
 	}
 	itcond = ht_uu_find (ht_it,  addr, &found);
@@ -3594,21 +3594,21 @@ static int parse_reg64_name(RzRegItem *reg_base, RzRegItem *reg_delta, csh handl
 }
 
 static void set_opdir(RzAnalOp *op) {
-	switch (op->type & R_ANAL_OP_TYPE_MASK) {
-	case R_ANAL_OP_TYPE_LOAD:
-		op->direction = R_ANAL_OP_DIR_READ;
+	switch (op->type & RZ_ANAL_OP_TYPE_MASK) {
+	case RZ_ANAL_OP_TYPE_LOAD:
+		op->direction = RZ_ANAL_OP_DIR_READ;
 		break;
-	case R_ANAL_OP_TYPE_STORE:
-		op->direction = R_ANAL_OP_DIR_WRITE;
+	case RZ_ANAL_OP_TYPE_STORE:
+		op->direction = RZ_ANAL_OP_DIR_WRITE;
 		break;
-	case R_ANAL_OP_TYPE_LEA:
-		op->direction = R_ANAL_OP_DIR_REF;
+	case RZ_ANAL_OP_TYPE_LEA:
+		op->direction = RZ_ANAL_OP_DIR_REF;
 		break;
-	case R_ANAL_OP_TYPE_CALL:
-	case R_ANAL_OP_TYPE_JMP:
-	case R_ANAL_OP_TYPE_UJMP:
-	case R_ANAL_OP_TYPE_UCALL:
-		op->direction = R_ANAL_OP_DIR_EXEC;
+	case RZ_ANAL_OP_TYPE_CALL:
+	case RZ_ANAL_OP_TYPE_JMP:
+	case RZ_ANAL_OP_TYPE_UJMP:
+	case RZ_ANAL_OP_TYPE_UCALL:
+		op->direction = RZ_ANAL_OP_DIR_EXEC;
 		break;
 	default:
 		break;
@@ -3665,33 +3665,33 @@ static void create_src_dst(RzAnalOp *op) {
 
 static void op_fillval(RzAnalOp *op , csh handle, cs_insn *insn, int bits) {
 	create_src_dst (op);
-	switch (op->type & R_ANAL_OP_TYPE_MASK) {
-	case R_ANAL_OP_TYPE_MOV:
-	case R_ANAL_OP_TYPE_CMP:
-	case R_ANAL_OP_TYPE_ADD:
-	case R_ANAL_OP_TYPE_SUB:
-	case R_ANAL_OP_TYPE_MUL:
-	case R_ANAL_OP_TYPE_DIV:
-	case R_ANAL_OP_TYPE_SHR:
-	case R_ANAL_OP_TYPE_SHL:
-	case R_ANAL_OP_TYPE_SAL:
-	case R_ANAL_OP_TYPE_SAR:
-	case R_ANAL_OP_TYPE_OR:
-	case R_ANAL_OP_TYPE_AND:
-	case R_ANAL_OP_TYPE_XOR:
-	case R_ANAL_OP_TYPE_NOR:
-	case R_ANAL_OP_TYPE_NOT:
-	case R_ANAL_OP_TYPE_LOAD:
-	case R_ANAL_OP_TYPE_LEA:
-	case R_ANAL_OP_TYPE_ROR:
-	case R_ANAL_OP_TYPE_ROL:
-	case R_ANAL_OP_TYPE_CAST:
+	switch (op->type & RZ_ANAL_OP_TYPE_MASK) {
+	case RZ_ANAL_OP_TYPE_MOV:
+	case RZ_ANAL_OP_TYPE_CMP:
+	case RZ_ANAL_OP_TYPE_ADD:
+	case RZ_ANAL_OP_TYPE_SUB:
+	case RZ_ANAL_OP_TYPE_MUL:
+	case RZ_ANAL_OP_TYPE_DIV:
+	case RZ_ANAL_OP_TYPE_SHR:
+	case RZ_ANAL_OP_TYPE_SHL:
+	case RZ_ANAL_OP_TYPE_SAL:
+	case RZ_ANAL_OP_TYPE_SAR:
+	case RZ_ANAL_OP_TYPE_OR:
+	case RZ_ANAL_OP_TYPE_AND:
+	case RZ_ANAL_OP_TYPE_XOR:
+	case RZ_ANAL_OP_TYPE_NOR:
+	case RZ_ANAL_OP_TYPE_NOT:
+	case RZ_ANAL_OP_TYPE_LOAD:
+	case RZ_ANAL_OP_TYPE_LEA:
+	case RZ_ANAL_OP_TYPE_ROR:
+	case RZ_ANAL_OP_TYPE_ROL:
+	case RZ_ANAL_OP_TYPE_CAST:
 		set_src_dst (op->src[2], &handle, insn, 3, bits);
 		set_src_dst (op->src[1], &handle, insn, 2, bits);
 		set_src_dst (op->src[0], &handle, insn, 1, bits);
 		set_src_dst (op->dst, &handle, insn, 0, bits);
 		break;
-	case R_ANAL_OP_TYPE_STORE:
+	case RZ_ANAL_OP_TYPE_STORE:
 		set_src_dst (op->dst, &handle, insn, 1, bits);
 		set_src_dst (op->src[0], &handle, insn, 0, bits);
 		break;
@@ -3743,12 +3743,12 @@ static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 	if (n < 1) {
-		op->type = R_ANAL_OP_TYPE_ILL;
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->type = RZ_ANAL_OP_TYPE_ILL;
+		if (mask & RZ_ANAL_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
 	} else {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & RZ_ANAL_OP_MASK_DISASM) {
 			op->mnemonic = rz_str_newf ("%s%s%s",
 				insn->mnemonic,
 				insn->op_str[0]?" ":"",
@@ -3760,23 +3760,23 @@ static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 		op->id = insn->id;
 		if (a->bits == 64) {
 			anop64 (handle, op, insn);
-			if (mask & R_ANAL_OP_MASK_OPEX) {
+			if (mask & RZ_ANAL_OP_MASK_OPEX) {
 				opex64 (&op->opex, handle, insn);
 			}
-			if (mask & R_ANAL_OP_MASK_ESIL) {
+			if (mask & RZ_ANAL_OP_MASK_ESIL) {
 				analop64_esil (a, op, addr, buf, len, &handle, insn);
 			}
 		} else {
 			anop32 (a, handle, op, insn, thumb, (ut8*)buf, len);
-			if (mask & R_ANAL_OP_MASK_OPEX) {
+			if (mask & RZ_ANAL_OP_MASK_OPEX) {
 				opex (&op->opex, handle, insn);
 			}
-			if (mask & R_ANAL_OP_MASK_ESIL) {
+			if (mask & RZ_ANAL_OP_MASK_ESIL) {
 				analop_esil (a, op, addr, buf, len, &handle, insn, thumb);
 			}
 		}
 		set_opdir (op);
-		if (mask & R_ANAL_OP_MASK_VAL) {
+		if (mask & RZ_ANAL_OP_MASK_VAL) {
 			op_fillval (op, handle, insn, a->bits);
 		}
 		cs_free (insn, n);
@@ -4173,19 +4173,19 @@ static char *get_reg_profile(RzAnal *anal) {
 }
 
 static int archinfo(RzAnal *anal, int q) {
-	if (q == R_ANAL_ARCHINFO_DATA_ALIGN) {
+	if (q == RZ_ANAL_ARCHINFO_DATA_ALIGN) {
 		return 4;
 	}
-	if (q == R_ANAL_ARCHINFO_ALIGN) {
+	if (q == RZ_ANAL_ARCHINFO_ALIGN) {
 		if (anal && anal->bits == 16) {
 			return 2;
 		}
 		return 4;
 	}
-	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE) {
+	if (q == RZ_ANAL_ARCHINFO_MAX_OP_SIZE) {
 		return 4;
 	}
-	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
+	if (q == RZ_ANAL_ARCHINFO_MIN_OP_SIZE) {
 		if (anal && anal->bits == 16) {
 			return 2;
 		}
@@ -4217,7 +4217,7 @@ static ut8 *anal_mask(RzAnal *anal, int size, const ut8 *data, ut64 at) {
 			free (hint);
 		}
 
-		if ((oplen = analop (anal, op, at + idx, data + idx, size - idx, R_ANAL_OP_MASK_BASIC)) < 1) {
+		if ((oplen = analop (anal, op, at + idx, data + idx, size - idx, RZ_ANAL_OP_MASK_BASIC)) < 1) {
 			break;
 		}
 		if (op->ptr != UT64_MAX || op->jump != UT64_MAX) {
@@ -4285,7 +4285,7 @@ static ut8 *anal_mask(RzAnal *anal, int size, const ut8 *data, ut64 at) {
 					case ARM64_INS_BL:
 					case ARM64_INS_CBZ:
 					case ARM64_INS_CBNZ:
-						if (op->type == R_ANAL_OP_TYPE_CJMP) {
+						if (op->type == RZ_ANAL_OP_TYPE_CJMP) {
 							rz_write_ble (ret + idx, 0xff00001f, anal->big_endian, 32);
 						} else {
 							rz_write_ble (ret + idx, 0xfc000000, anal->big_endian, 32);
@@ -4376,7 +4376,7 @@ RzAnalPlugin rz_anal_plugin_arm_cs = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_arm_cs,
 	.version = RZ_VERSION
 };

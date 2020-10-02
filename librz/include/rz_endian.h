@@ -1,5 +1,5 @@
-#ifndef R_ENDIAN_H
-#define R_ENDIAN_H
+#ifndef RZ_ENDIAN_H
+#define RZ_ENDIAN_H
 
 #ifdef __cplusplus
 extern "C" {

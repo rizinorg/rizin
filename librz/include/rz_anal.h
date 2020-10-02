@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(rz_anal);
+RZ_LIB_VERSION_HEADER(rz_anal);
 
 /* dwarf processing context */
 typedef struct rz_anal_dwarf_context {
@@ -61,52 +61,52 @@ typedef struct rz_anal_range_t {
 	RBNode rb;
 } RzAnalRange;
 
-#define R_ANAL_GET_OFFSET(x,y,z) \
+#define RZ_ANAL_GET_OFFSET(x,y,z) \
 	(x && x->binb.bin && x->binb.get_offset)? \
 		x->binb.get_offset (x->binb.bin, y, z): -1
 enum {
-	R_ANAL_DATA_TYPE_NULL = 0,
-	R_ANAL_DATA_TYPE_UNKNOWN = 1,
-	R_ANAL_DATA_TYPE_STRING = 2,
-	R_ANAL_DATA_TYPE_WIDE_STRING = 3,
-	R_ANAL_DATA_TYPE_POINTER = 4,
-	R_ANAL_DATA_TYPE_NUMBER = 5,
-	R_ANAL_DATA_TYPE_INVALID = 6,
-	R_ANAL_DATA_TYPE_HEADER = 7,
-	R_ANAL_DATA_TYPE_SEQUENCE = 8,
-	R_ANAL_DATA_TYPE_PATTERN = 9,
+	RZ_ANAL_DATA_TYPE_NULL = 0,
+	RZ_ANAL_DATA_TYPE_UNKNOWN = 1,
+	RZ_ANAL_DATA_TYPE_STRING = 2,
+	RZ_ANAL_DATA_TYPE_WIDE_STRING = 3,
+	RZ_ANAL_DATA_TYPE_POINTER = 4,
+	RZ_ANAL_DATA_TYPE_NUMBER = 5,
+	RZ_ANAL_DATA_TYPE_INVALID = 6,
+	RZ_ANAL_DATA_TYPE_HEADER = 7,
+	RZ_ANAL_DATA_TYPE_SEQUENCE = 8,
+	RZ_ANAL_DATA_TYPE_PATTERN = 9,
 };
 
 // used from core/anal.c
-#define R_ANAL_ADDR_TYPE_EXEC      1
-#define R_ANAL_ADDR_TYPE_READ      1 << 1
-#define R_ANAL_ADDR_TYPE_WRITE     1 << 2
-#define R_ANAL_ADDR_TYPE_FLAG      1 << 3
-#define R_ANAL_ADDR_TYPE_FUNC      1 << 4
-#define R_ANAL_ADDR_TYPE_HEAP      1 << 5
-#define R_ANAL_ADDR_TYPE_STACK     1 << 6
-#define R_ANAL_ADDR_TYPE_REG       1 << 7
-#define R_ANAL_ADDR_TYPE_PROGRAM   1 << 8
-#define R_ANAL_ADDR_TYPE_LIBRARY   1 << 9
-#define R_ANAL_ADDR_TYPE_ASCII     1 << 10
-#define R_ANAL_ADDR_TYPE_SEQUENCE  1 << 11
+#define RZ_ANAL_ADDR_TYPE_EXEC      1
+#define RZ_ANAL_ADDR_TYPE_READ      1 << 1
+#define RZ_ANAL_ADDR_TYPE_WRITE     1 << 2
+#define RZ_ANAL_ADDR_TYPE_FLAG      1 << 3
+#define RZ_ANAL_ADDR_TYPE_FUNC      1 << 4
+#define RZ_ANAL_ADDR_TYPE_HEAP      1 << 5
+#define RZ_ANAL_ADDR_TYPE_STACK     1 << 6
+#define RZ_ANAL_ADDR_TYPE_REG       1 << 7
+#define RZ_ANAL_ADDR_TYPE_PROGRAM   1 << 8
+#define RZ_ANAL_ADDR_TYPE_LIBRARY   1 << 9
+#define RZ_ANAL_ADDR_TYPE_ASCII     1 << 10
+#define RZ_ANAL_ADDR_TYPE_SEQUENCE  1 << 11
 
-#define R_ANAL_ARCHINFO_MIN_OP_SIZE 0
-#define R_ANAL_ARCHINFO_MAX_OP_SIZE 1
-#define R_ANAL_ARCHINFO_ALIGN 2
-#define R_ANAL_ARCHINFO_DATA_ALIGN 4
+#define RZ_ANAL_ARCHINFO_MIN_OP_SIZE 0
+#define RZ_ANAL_ARCHINFO_MAX_OP_SIZE 1
+#define RZ_ANAL_ARCHINFO_ALIGN 2
+#define RZ_ANAL_ARCHINFO_DATA_ALIGN 4
 
 /* copypaste from rz_asm.h */
 
-#define R_ANAL_GET_OFFSET(x,y,z) \
+#define RZ_ANAL_GET_OFFSET(x,y,z) \
         (x && x->binb.bin && x->binb.get_offset)? \
                 x->binb.get_offset (x->binb.bin, y, z): -1
 
-#define R_ANAL_GET_NAME(x,y,z) \
+#define RZ_ANAL_GET_NAME(x,y,z) \
         (x && x->binb.bin && x->binb.get_name)? \
                 x->binb.get_name (x->binb.bin, y, z): NULL
 
-/* type = (R_ANAL_VAR_TYPE_BYTE & R_ANAL_VAR_TYPE_SIZE_MASK) |
+/* type = (RZ_ANAL_VAR_TYPE_BYTE & RZ_ANAL_VAR_TYPE_SIZE_MASK) |
  *			( RANAL_VAR_TYPE_SIGNED & RANAL_VAR_TYPE_SIGN_MASK) |
  *			( RANAL_VAR_TYPE_CONST & RANAL_VAR_TYPE_MODIFIER_MASK)
  */
@@ -176,39 +176,39 @@ typedef struct rz_anal_type_alloca_t {
 } RzAnalTypeAlloca;
 
 enum {
-	R_ANAL_FQUALIFIER_NONE = 0,
-	R_ANAL_FQUALIFIER_STATIC = 1,
-	R_ANAL_FQUALIFIER_VOLATILE = 2,
-	R_ANAL_FQUALIFIER_INLINE = 3,
-	R_ANAL_FQUALIFIER_NAKED	= 4,
-	R_ANAL_FQUALIFIER_VIRTUAL = 5,
+	RZ_ANAL_FQUALIFIER_NONE = 0,
+	RZ_ANAL_FQUALIFIER_STATIC = 1,
+	RZ_ANAL_FQUALIFIER_VOLATILE = 2,
+	RZ_ANAL_FQUALIFIER_INLINE = 3,
+	RZ_ANAL_FQUALIFIER_NAKED	= 4,
+	RZ_ANAL_FQUALIFIER_VIRTUAL = 5,
 };
 
 /*--------------------Function Conventions-----------*/
 //XXX don't use them in the future
-#define R_ANAL_CC_TYPE_STDCALL 0
-#define R_ANAL_CC_TYPE_PASCAL 1
-#define R_ANAL_CC_TYPE_FASTCALL 'A' // syscall
-#define R_ANAL_CC_TYPE_SYSV 8
-#define R_ANAL_CC_MAXARG 16
+#define RZ_ANAL_CC_TYPE_STDCALL 0
+#define RZ_ANAL_CC_TYPE_PASCAL 1
+#define RZ_ANAL_CC_TYPE_FASTCALL 'A' // syscall
+#define RZ_ANAL_CC_TYPE_SYSV 8
+#define RZ_ANAL_CC_MAXARG 16
 
 enum {
-	R_ANAL_FCN_TYPE_NULL = 0,
-	R_ANAL_FCN_TYPE_FCN = 1 << 0,
-	R_ANAL_FCN_TYPE_LOC = 1 << 1,
-	R_ANAL_FCN_TYPE_SYM = 1 << 2,
-	R_ANAL_FCN_TYPE_IMP = 1 << 3,
-	R_ANAL_FCN_TYPE_INT = 1 << 4,  /* privileged function - ends with iret/reti/.. */
-	R_ANAL_FCN_TYPE_ROOT = 1 << 5, /* matching flag */
-	R_ANAL_FCN_TYPE_ANY = -1       /* all the bits set */
+	RZ_ANAL_FCN_TYPE_NULL = 0,
+	RZ_ANAL_FCN_TYPE_FCN = 1 << 0,
+	RZ_ANAL_FCN_TYPE_LOC = 1 << 1,
+	RZ_ANAL_FCN_TYPE_SYM = 1 << 2,
+	RZ_ANAL_FCN_TYPE_IMP = 1 << 3,
+	RZ_ANAL_FCN_TYPE_INT = 1 << 4,  /* privileged function - ends with iret/reti/.. */
+	RZ_ANAL_FCN_TYPE_ROOT = 1 << 5, /* matching flag */
+	RZ_ANAL_FCN_TYPE_ANY = -1       /* all the bits set */
 };
 
 #define RzAnalBlock struct rz_anal_bb_t
 
 enum {
-	R_ANAL_DIFF_TYPE_NULL = 0,
-	R_ANAL_DIFF_TYPE_MATCH = 'm',
-	R_ANAL_DIFF_TYPE_UNMATCH = 'u'
+	RZ_ANAL_DIFF_TYPE_NULL = 0,
+	RZ_ANAL_DIFF_TYPE_MATCH = 'm',
+	RZ_ANAL_DIFF_TYPE_UNMATCH = 'u'
 };
 
 typedef struct rz_anal_enum_case_t {
@@ -231,11 +231,11 @@ typedef struct rz_anal_union_member_t {
 } RzAnalUnionMember;
 
 typedef enum {
-	R_ANAL_BASE_TYPE_KIND_STRUCT,
-	R_ANAL_BASE_TYPE_KIND_UNION,
-	R_ANAL_BASE_TYPE_KIND_ENUM,
-	R_ANAL_BASE_TYPE_KIND_TYPEDEF, // probably temporary addition, dev purposes
-	R_ANAL_BASE_TYPE_KIND_ATOMIC, // For real atomic base types
+	RZ_ANAL_BASE_TYPE_KIND_STRUCT,
+	RZ_ANAL_BASE_TYPE_KIND_UNION,
+	RZ_ANAL_BASE_TYPE_KIND_ENUM,
+	RZ_ANAL_BASE_TYPE_KIND_TYPEDEF, // probably temporary addition, dev purposes
+	RZ_ANAL_BASE_TYPE_KIND_ATOMIC, // For real atomic base types
 } RzAnalBaseTypeKind;
 
 typedef struct rz_anal_base_type_struct_t {
@@ -337,17 +337,17 @@ struct rz_anal_type_t {
 };
 
 typedef enum {
-	R_META_TYPE_ANY = -1,
-	R_META_TYPE_DATA = 'd',
-	R_META_TYPE_CODE = 'c',
-	R_META_TYPE_STRING = 's',
-	R_META_TYPE_FORMAT = 'f',
-	R_META_TYPE_MAGIC = 'm',
-	R_META_TYPE_HIDE = 'h',
-	R_META_TYPE_COMMENT = 'C',
-	R_META_TYPE_RUN = 'r',
-	R_META_TYPE_HIGHLIGHT = 'H',
-	R_META_TYPE_VARTYPE = 't',
+	RZ_META_TYPE_ANY = -1,
+	RZ_META_TYPE_DATA = 'd',
+	RZ_META_TYPE_CODE = 'c',
+	RZ_META_TYPE_STRING = 's',
+	RZ_META_TYPE_FORMAT = 'f',
+	RZ_META_TYPE_MAGIC = 'm',
+	RZ_META_TYPE_HIDE = 'h',
+	RZ_META_TYPE_COMMENT = 'C',
+	RZ_META_TYPE_RUN = 'r',
+	RZ_META_TYPE_HIGHLIGHT = 'H',
+	RZ_META_TYPE_VARTYPE = 't',
 } RzAnalMetaType;
 
 /* meta */
@@ -360,18 +360,18 @@ typedef struct rz_anal_meta_item_t {
 
 // anal
 typedef enum {
-	R_ANAL_OP_FAMILY_UNKNOWN = -1,
-	R_ANAL_OP_FAMILY_CPU = 0,	/* normal cpu instruction */
-	R_ANAL_OP_FAMILY_FPU,    	/* fpu (floating point) */
-	R_ANAL_OP_FAMILY_MMX,    	/* multimedia instruction (packed data) */
-	R_ANAL_OP_FAMILY_SSE,    	/* extended multimedia instruction (packed data) */
-	R_ANAL_OP_FAMILY_PRIV,   	/* privileged instruction */
-	R_ANAL_OP_FAMILY_CRYPTO, 	/* cryptographic instructions */
-	R_ANAL_OP_FAMILY_THREAD, 	/* thread/lock/sync instructions */
-	R_ANAL_OP_FAMILY_VIRT,   	/* virtualization instructions */
-	R_ANAL_OP_FAMILY_SECURITY,	/* security instructions */
-	R_ANAL_OP_FAMILY_IO,     	/* IO instructions (i.e. IN/OUT) */
-	R_ANAL_OP_FAMILY_LAST
+	RZ_ANAL_OP_FAMILY_UNKNOWN = -1,
+	RZ_ANAL_OP_FAMILY_CPU = 0,	/* normal cpu instruction */
+	RZ_ANAL_OP_FAMILY_FPU,    	/* fpu (floating point) */
+	RZ_ANAL_OP_FAMILY_MMX,    	/* multimedia instruction (packed data) */
+	RZ_ANAL_OP_FAMILY_SSE,    	/* extended multimedia instruction (packed data) */
+	RZ_ANAL_OP_FAMILY_PRIV,   	/* privileged instruction */
+	RZ_ANAL_OP_FAMILY_CRYPTO, 	/* cryptographic instructions */
+	RZ_ANAL_OP_FAMILY_THREAD, 	/* thread/lock/sync instructions */
+	RZ_ANAL_OP_FAMILY_VIRT,   	/* virtualization instructions */
+	RZ_ANAL_OP_FAMILY_SECURITY,	/* security instructions */
+	RZ_ANAL_OP_FAMILY_IO,     	/* IO instructions (i.e. IN/OUT) */
+	RZ_ANAL_OP_FAMILY_LAST
 } RzAnalOpFamily;
 
 #if 0
@@ -396,155 +396,155 @@ On x86 according to Wikipedia
 	0x67: Address-size override prefix
 #endif
 	typedef enum {
-		R_ANAL_OP_PREFIX_COND     = 1,
-		R_ANAL_OP_PREFIX_REP      = 1<<1,
-		R_ANAL_OP_PREFIX_REPNE    = 1<<2,
-		R_ANAL_OP_PREFIX_LOCK     = 1<<3,
-		R_ANAL_OP_PREFIX_LIKELY   = 1<<4,
-		R_ANAL_OP_PREFIX_UNLIKELY = 1<<5
+		RZ_ANAL_OP_PREFIX_COND     = 1,
+		RZ_ANAL_OP_PREFIX_REP      = 1<<1,
+		RZ_ANAL_OP_PREFIX_REPNE    = 1<<2,
+		RZ_ANAL_OP_PREFIX_LOCK     = 1<<3,
+		RZ_ANAL_OP_PREFIX_LIKELY   = 1<<4,
+		RZ_ANAL_OP_PREFIX_UNLIKELY = 1<<5
 		/* TODO: add segment override typemods? */
 	} RzAnalOpPrefix;
 
 // XXX: this definition is plain wrong. use enum or empower bits
-#define R_ANAL_OP_TYPE_MASK 0x8000ffff
-#define R_ANAL_OP_HINT_MASK 0xf0000000
+#define RZ_ANAL_OP_TYPE_MASK 0x8000ffff
+#define RZ_ANAL_OP_HINT_MASK 0xf0000000
 typedef enum {
-	R_ANAL_OP_TYPE_COND  = 0x80000000, // TODO must be moved to prefix?
+	RZ_ANAL_OP_TYPE_COND  = 0x80000000, // TODO must be moved to prefix?
 	//TODO: MOVE TO PREFIX .. it is used by anal_java.. must be updated
-	R_ANAL_OP_TYPE_REP   = 0x40000000, /* repeats next instruction N times */
-	R_ANAL_OP_TYPE_MEM   = 0x20000000, // TODO must be moved to prefix?
-	R_ANAL_OP_TYPE_REG   = 0x10000000, // operand is a register
-	R_ANAL_OP_TYPE_IND   = 0x08000000, // operand is indirect
-	R_ANAL_OP_TYPE_NULL  = 0,
-	R_ANAL_OP_TYPE_JMP   = 1,  /* mandatory jump */
-	R_ANAL_OP_TYPE_UJMP  = 2,  /* unknown jump (register or so) */
-	R_ANAL_OP_TYPE_RJMP  = R_ANAL_OP_TYPE_REG | R_ANAL_OP_TYPE_UJMP,
-	R_ANAL_OP_TYPE_IJMP  = R_ANAL_OP_TYPE_IND | R_ANAL_OP_TYPE_UJMP,
-	R_ANAL_OP_TYPE_IRJMP = R_ANAL_OP_TYPE_IND | R_ANAL_OP_TYPE_REG | R_ANAL_OP_TYPE_UJMP,
-	R_ANAL_OP_TYPE_CJMP  = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_JMP,  /* conditional jump */
-	R_ANAL_OP_TYPE_RCJMP = R_ANAL_OP_TYPE_REG | R_ANAL_OP_TYPE_CJMP,  /* conditional jump register */
-	R_ANAL_OP_TYPE_MJMP  = R_ANAL_OP_TYPE_MEM | R_ANAL_OP_TYPE_JMP,   /* memory jump */
-	R_ANAL_OP_TYPE_MCJMP = R_ANAL_OP_TYPE_MEM | R_ANAL_OP_TYPE_CJMP,  /* memory conditional jump */
-	R_ANAL_OP_TYPE_UCJMP = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_UJMP, /* conditional unknown jump */
-	R_ANAL_OP_TYPE_CALL  = 3,  /* call to subroutine (branch+link) */
-	R_ANAL_OP_TYPE_UCALL = 4, /* unknown call (register or so) */
-	R_ANAL_OP_TYPE_RCALL = R_ANAL_OP_TYPE_REG | R_ANAL_OP_TYPE_UCALL,
-	R_ANAL_OP_TYPE_ICALL = R_ANAL_OP_TYPE_IND | R_ANAL_OP_TYPE_UCALL,
-	R_ANAL_OP_TYPE_IRCALL= R_ANAL_OP_TYPE_IND | R_ANAL_OP_TYPE_REG | R_ANAL_OP_TYPE_UCALL,
-	R_ANAL_OP_TYPE_CCALL = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL, /* conditional call to subroutine */
-	R_ANAL_OP_TYPE_UCCALL= R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_UCALL, /* conditional unknown call */
-	R_ANAL_OP_TYPE_RET   = 5, /* returns from subroutine */
-	R_ANAL_OP_TYPE_CRET  = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_RET, /* conditional return from subroutine */
-	R_ANAL_OP_TYPE_ILL   = 6,  /* illegal instruction // trap */
-	R_ANAL_OP_TYPE_UNK   = 7, /* unknown opcode type */
-	R_ANAL_OP_TYPE_NOP   = 8, /* does nothing */
-	R_ANAL_OP_TYPE_MOV   = 9, /* register move */
-	R_ANAL_OP_TYPE_CMOV  = 9 | R_ANAL_OP_TYPE_COND, /* conditional move */
-	R_ANAL_OP_TYPE_TRAP  = 10, /* it's a trap! */
-	R_ANAL_OP_TYPE_SWI   = 11,  /* syscall, software interrupt */
-	R_ANAL_OP_TYPE_CSWI  = 11 | R_ANAL_OP_TYPE_COND,  /* syscall, software interrupt */
-	R_ANAL_OP_TYPE_UPUSH = 12, /* unknown push of data into stack */
-	R_ANAL_OP_TYPE_RPUSH = R_ANAL_OP_TYPE_UPUSH | R_ANAL_OP_TYPE_REG, /* push register */
-	R_ANAL_OP_TYPE_PUSH  = 13,  /* push value into stack */
-	R_ANAL_OP_TYPE_POP   = 14,   /* pop value from stack to register */
-	R_ANAL_OP_TYPE_CMP   = 15,  /* compare something */
-	R_ANAL_OP_TYPE_ACMP  = 16,  /* compare via and */
-	R_ANAL_OP_TYPE_ADD   = 17,
-	R_ANAL_OP_TYPE_SUB   = 18,
-	R_ANAL_OP_TYPE_IO    = 19,
-	R_ANAL_OP_TYPE_MUL   = 20,
-	R_ANAL_OP_TYPE_DIV   = 21,
-	R_ANAL_OP_TYPE_SHR   = 22,
-	R_ANAL_OP_TYPE_SHL   = 23,
-	R_ANAL_OP_TYPE_SAL   = 24,
-	R_ANAL_OP_TYPE_SAR   = 25,
-	R_ANAL_OP_TYPE_OR    = 26,
-	R_ANAL_OP_TYPE_AND   = 27,
-	R_ANAL_OP_TYPE_XOR   = 28,
-	R_ANAL_OP_TYPE_NOR   = 29,
-	R_ANAL_OP_TYPE_NOT   = 30,
-	R_ANAL_OP_TYPE_STORE = 31,  /* store from register to memory */
-	R_ANAL_OP_TYPE_LOAD  = 32,  /* load from memory to register */
-	R_ANAL_OP_TYPE_LEA   = 33, /* TODO add ulea */
-	R_ANAL_OP_TYPE_LEAVE = 34,
-	R_ANAL_OP_TYPE_ROR   = 35,
-	R_ANAL_OP_TYPE_ROL   = 36,
-	R_ANAL_OP_TYPE_XCHG  = 37,
-	R_ANAL_OP_TYPE_MOD   = 38,
-	R_ANAL_OP_TYPE_SWITCH = 39,
-	R_ANAL_OP_TYPE_CASE = 40,
-	R_ANAL_OP_TYPE_LENGTH = 41,
-	R_ANAL_OP_TYPE_CAST = 42,
-	R_ANAL_OP_TYPE_NEW = 43,
-	R_ANAL_OP_TYPE_ABS = 44,
-	R_ANAL_OP_TYPE_CPL = 45,	/* complement */
-	R_ANAL_OP_TYPE_CRYPTO = 46,
-	R_ANAL_OP_TYPE_SYNC = 47,
-	//R_ANAL_OP_TYPE_DEBUG = 43, // monitor/trace/breakpoint
+	RZ_ANAL_OP_TYPE_REP   = 0x40000000, /* repeats next instruction N times */
+	RZ_ANAL_OP_TYPE_MEM   = 0x20000000, // TODO must be moved to prefix?
+	RZ_ANAL_OP_TYPE_REG   = 0x10000000, // operand is a register
+	RZ_ANAL_OP_TYPE_IND   = 0x08000000, // operand is indirect
+	RZ_ANAL_OP_TYPE_NULL  = 0,
+	RZ_ANAL_OP_TYPE_JMP   = 1,  /* mandatory jump */
+	RZ_ANAL_OP_TYPE_UJMP  = 2,  /* unknown jump (register or so) */
+	RZ_ANAL_OP_TYPE_RJMP  = RZ_ANAL_OP_TYPE_REG | RZ_ANAL_OP_TYPE_UJMP,
+	RZ_ANAL_OP_TYPE_IJMP  = RZ_ANAL_OP_TYPE_IND | RZ_ANAL_OP_TYPE_UJMP,
+	RZ_ANAL_OP_TYPE_IRJMP = RZ_ANAL_OP_TYPE_IND | RZ_ANAL_OP_TYPE_REG | RZ_ANAL_OP_TYPE_UJMP,
+	RZ_ANAL_OP_TYPE_CJMP  = RZ_ANAL_OP_TYPE_COND | RZ_ANAL_OP_TYPE_JMP,  /* conditional jump */
+	RZ_ANAL_OP_TYPE_RCJMP = RZ_ANAL_OP_TYPE_REG | RZ_ANAL_OP_TYPE_CJMP,  /* conditional jump register */
+	RZ_ANAL_OP_TYPE_MJMP  = RZ_ANAL_OP_TYPE_MEM | RZ_ANAL_OP_TYPE_JMP,   /* memory jump */
+	RZ_ANAL_OP_TYPE_MCJMP = RZ_ANAL_OP_TYPE_MEM | RZ_ANAL_OP_TYPE_CJMP,  /* memory conditional jump */
+	RZ_ANAL_OP_TYPE_UCJMP = RZ_ANAL_OP_TYPE_COND | RZ_ANAL_OP_TYPE_UJMP, /* conditional unknown jump */
+	RZ_ANAL_OP_TYPE_CALL  = 3,  /* call to subroutine (branch+link) */
+	RZ_ANAL_OP_TYPE_UCALL = 4, /* unknown call (register or so) */
+	RZ_ANAL_OP_TYPE_RCALL = RZ_ANAL_OP_TYPE_REG | RZ_ANAL_OP_TYPE_UCALL,
+	RZ_ANAL_OP_TYPE_ICALL = RZ_ANAL_OP_TYPE_IND | RZ_ANAL_OP_TYPE_UCALL,
+	RZ_ANAL_OP_TYPE_IRCALL= RZ_ANAL_OP_TYPE_IND | RZ_ANAL_OP_TYPE_REG | RZ_ANAL_OP_TYPE_UCALL,
+	RZ_ANAL_OP_TYPE_CCALL = RZ_ANAL_OP_TYPE_COND | RZ_ANAL_OP_TYPE_CALL, /* conditional call to subroutine */
+	RZ_ANAL_OP_TYPE_UCCALL= RZ_ANAL_OP_TYPE_COND | RZ_ANAL_OP_TYPE_UCALL, /* conditional unknown call */
+	RZ_ANAL_OP_TYPE_RET   = 5, /* returns from subroutine */
+	RZ_ANAL_OP_TYPE_CRET  = RZ_ANAL_OP_TYPE_COND | RZ_ANAL_OP_TYPE_RET, /* conditional return from subroutine */
+	RZ_ANAL_OP_TYPE_ILL   = 6,  /* illegal instruction // trap */
+	RZ_ANAL_OP_TYPE_UNK   = 7, /* unknown opcode type */
+	RZ_ANAL_OP_TYPE_NOP   = 8, /* does nothing */
+	RZ_ANAL_OP_TYPE_MOV   = 9, /* register move */
+	RZ_ANAL_OP_TYPE_CMOV  = 9 | RZ_ANAL_OP_TYPE_COND, /* conditional move */
+	RZ_ANAL_OP_TYPE_TRAP  = 10, /* it's a trap! */
+	RZ_ANAL_OP_TYPE_SWI   = 11,  /* syscall, software interrupt */
+	RZ_ANAL_OP_TYPE_CSWI  = 11 | RZ_ANAL_OP_TYPE_COND,  /* syscall, software interrupt */
+	RZ_ANAL_OP_TYPE_UPUSH = 12, /* unknown push of data into stack */
+	RZ_ANAL_OP_TYPE_RPUSH = RZ_ANAL_OP_TYPE_UPUSH | RZ_ANAL_OP_TYPE_REG, /* push register */
+	RZ_ANAL_OP_TYPE_PUSH  = 13,  /* push value into stack */
+	RZ_ANAL_OP_TYPE_POP   = 14,   /* pop value from stack to register */
+	RZ_ANAL_OP_TYPE_CMP   = 15,  /* compare something */
+	RZ_ANAL_OP_TYPE_ACMP  = 16,  /* compare via and */
+	RZ_ANAL_OP_TYPE_ADD   = 17,
+	RZ_ANAL_OP_TYPE_SUB   = 18,
+	RZ_ANAL_OP_TYPE_IO    = 19,
+	RZ_ANAL_OP_TYPE_MUL   = 20,
+	RZ_ANAL_OP_TYPE_DIV   = 21,
+	RZ_ANAL_OP_TYPE_SHR   = 22,
+	RZ_ANAL_OP_TYPE_SHL   = 23,
+	RZ_ANAL_OP_TYPE_SAL   = 24,
+	RZ_ANAL_OP_TYPE_SAR   = 25,
+	RZ_ANAL_OP_TYPE_OR    = 26,
+	RZ_ANAL_OP_TYPE_AND   = 27,
+	RZ_ANAL_OP_TYPE_XOR   = 28,
+	RZ_ANAL_OP_TYPE_NOR   = 29,
+	RZ_ANAL_OP_TYPE_NOT   = 30,
+	RZ_ANAL_OP_TYPE_STORE = 31,  /* store from register to memory */
+	RZ_ANAL_OP_TYPE_LOAD  = 32,  /* load from memory to register */
+	RZ_ANAL_OP_TYPE_LEA   = 33, /* TODO add ulea */
+	RZ_ANAL_OP_TYPE_LEAVE = 34,
+	RZ_ANAL_OP_TYPE_ROR   = 35,
+	RZ_ANAL_OP_TYPE_ROL   = 36,
+	RZ_ANAL_OP_TYPE_XCHG  = 37,
+	RZ_ANAL_OP_TYPE_MOD   = 38,
+	RZ_ANAL_OP_TYPE_SWITCH = 39,
+	RZ_ANAL_OP_TYPE_CASE = 40,
+	RZ_ANAL_OP_TYPE_LENGTH = 41,
+	RZ_ANAL_OP_TYPE_CAST = 42,
+	RZ_ANAL_OP_TYPE_NEW = 43,
+	RZ_ANAL_OP_TYPE_ABS = 44,
+	RZ_ANAL_OP_TYPE_CPL = 45,	/* complement */
+	RZ_ANAL_OP_TYPE_CRYPTO = 46,
+	RZ_ANAL_OP_TYPE_SYNC = 47,
+	//RZ_ANAL_OP_TYPE_DEBUG = 43, // monitor/trace/breakpoint
 #if 0
-	R_ANAL_OP_TYPE_PRIV = 40, /* privileged instruction */
-	R_ANAL_OP_TYPE_FPU = 41, /* floating point stuff */
+	RZ_ANAL_OP_TYPE_PRIV = 40, /* privileged instruction */
+	RZ_ANAL_OP_TYPE_FPU = 41, /* floating point stuff */
 #endif
 } _RzAnalOpType;
 
 typedef enum {
-	R_ANAL_OP_MASK_BASIC = 0, // Just fills basic op info , it's fast
-	R_ANAL_OP_MASK_ESIL  = 1, // It fills RzAnalop->esil info
-	R_ANAL_OP_MASK_VAL   = 2, // It fills RzAnalop->dst/src info
-	R_ANAL_OP_MASK_HINT  = 4, // It calls rz_anal_op_hint to override anal options
-	R_ANAL_OP_MASK_OPEX  = 8, // It fills RzAnalop->opex info
-	R_ANAL_OP_MASK_DISASM = 16, // It fills RzAnalop->mnemonic // should be RzAnalOp->disasm // only from rz_core_anal_op()
-	R_ANAL_OP_MASK_ALL   = 1 | 2 | 4 | 8 | 16
+	RZ_ANAL_OP_MASK_BASIC = 0, // Just fills basic op info , it's fast
+	RZ_ANAL_OP_MASK_ESIL  = 1, // It fills RzAnalop->esil info
+	RZ_ANAL_OP_MASK_VAL   = 2, // It fills RzAnalop->dst/src info
+	RZ_ANAL_OP_MASK_HINT  = 4, // It calls rz_anal_op_hint to override anal options
+	RZ_ANAL_OP_MASK_OPEX  = 8, // It fills RzAnalop->opex info
+	RZ_ANAL_OP_MASK_DISASM = 16, // It fills RzAnalop->mnemonic // should be RzAnalOp->disasm // only from rz_core_anal_op()
+	RZ_ANAL_OP_MASK_ALL   = 1 | 2 | 4 | 8 | 16
 } RzAnalOpMask;
 
 /* TODO: what to do with signed/unsigned conditionals? */
 typedef enum {
-	R_ANAL_COND_AL = 0,        // Always executed (no condition)
-	R_ANAL_COND_EQ,            // Equal
-	R_ANAL_COND_NE,            // Not equal
-	R_ANAL_COND_GE,            // Greater or equal
-	R_ANAL_COND_GT,            // Greater than
-	R_ANAL_COND_LE,            // Less or equal
-	R_ANAL_COND_LT,            // Less than
-	R_ANAL_COND_NV,            // Never executed             must be a nop? :D
-	R_ANAL_COND_HS,            // Carry set                  >, ==, or unordered
-	R_ANAL_COND_LO,            // Carry clear                Less than
-	R_ANAL_COND_MI,            // Minus, negative            Less than
-	R_ANAL_COND_PL,            // Plus, positive or zero     >, ==, or unordered
-	R_ANAL_COND_VS,            // Overflow                   Unordered
-	R_ANAL_COND_VC,            // No overflow                Not unordered
-	R_ANAL_COND_HI,            // Unsigned higher            Greater than, or unordered
-	R_ANAL_COND_LS             // Unsigned lower or same     Less than or equal
+	RZ_ANAL_COND_AL = 0,        // Always executed (no condition)
+	RZ_ANAL_COND_EQ,            // Equal
+	RZ_ANAL_COND_NE,            // Not equal
+	RZ_ANAL_COND_GE,            // Greater or equal
+	RZ_ANAL_COND_GT,            // Greater than
+	RZ_ANAL_COND_LE,            // Less or equal
+	RZ_ANAL_COND_LT,            // Less than
+	RZ_ANAL_COND_NV,            // Never executed             must be a nop? :D
+	RZ_ANAL_COND_HS,            // Carry set                  >, ==, or unordered
+	RZ_ANAL_COND_LO,            // Carry clear                Less than
+	RZ_ANAL_COND_MI,            // Minus, negative            Less than
+	RZ_ANAL_COND_PL,            // Plus, positive or zero     >, ==, or unordered
+	RZ_ANAL_COND_VS,            // Overflow                   Unordered
+	RZ_ANAL_COND_VC,            // No overflow                Not unordered
+	RZ_ANAL_COND_HI,            // Unsigned higher            Greater than, or unordered
+	RZ_ANAL_COND_LS             // Unsigned lower or same     Less than or equal
 } _RzAnalCond;
 
 typedef enum {
-	R_ANAL_VAR_SCOPE_LOCAL  = 0x01
+	RZ_ANAL_VAR_SCOPE_LOCAL  = 0x01
 } _RzAnalVarScope;
 
 typedef enum {
-	R_ANAL_STACK_NULL = 0,
-	R_ANAL_STACK_NOP,
-	R_ANAL_STACK_INC,
-	R_ANAL_STACK_GET,
-	R_ANAL_STACK_SET,
-	R_ANAL_STACK_RESET,
-	R_ANAL_STACK_ALIGN,
+	RZ_ANAL_STACK_NULL = 0,
+	RZ_ANAL_STACK_NOP,
+	RZ_ANAL_STACK_INC,
+	RZ_ANAL_STACK_GET,
+	RZ_ANAL_STACK_SET,
+	RZ_ANAL_STACK_RESET,
+	RZ_ANAL_STACK_ALIGN,
 } RzAnalStackOp;
 
 enum {
-	R_ANAL_REFLINE_TYPE_UTF8 = 1,
-	R_ANAL_REFLINE_TYPE_WIDE = 2,  /* reflines have a space between them */
-	R_ANAL_REFLINE_TYPE_MIDDLE_BEFORE = 4, /* do not consider starts/ends of
+	RZ_ANAL_REFLINE_TYPE_UTF8 = 1,
+	RZ_ANAL_REFLINE_TYPE_WIDE = 2,  /* reflines have a space between them */
+	RZ_ANAL_REFLINE_TYPE_MIDDLE_BEFORE = 4, /* do not consider starts/ends of
 	                                        * reflines (used for comment lines before disasm) */
-	R_ANAL_REFLINE_TYPE_MIDDLE_AFTER = 8 /* as above but for lines after disasm */
+	RZ_ANAL_REFLINE_TYPE_MIDDLE_AFTER = 8 /* as above but for lines after disasm */
 };
 
 enum {
-	R_ANAL_RET_NOP = 0,
-	R_ANAL_RET_ERROR = -1,
-	R_ANAL_RET_DUP = -2,
-	R_ANAL_RET_NEW = -3,
-	R_ANAL_RET_END = -4
+	RZ_ANAL_RET_NOP = 0,
+	RZ_ANAL_RET_ERROR = -1,
+	RZ_ANAL_RET_DUP = -2,
+	RZ_ANAL_RET_NEW = -3,
+	RZ_ANAL_RET_END = -4
 };
 
 typedef struct rz_anal_case_obj_t {
@@ -570,7 +570,7 @@ typedef struct rz_anal_callbacks_t {
 	int (*on_fcn_bb_new) (struct rz_anal_t *, void *user, RzAnalFunction *fcn, struct rz_anal_bb_t *bb);
 } RzAnalCallbacks;
 
-#define R_ANAL_ESIL_GOTO_LIMIT 4096
+#define RZ_ANAL_ESIL_GOTO_LIMIT 4096
 
 typedef struct rz_anal_options_t {
 	int depth;
@@ -606,8 +606,8 @@ typedef struct rz_anal_options_t {
 } RzAnalOptions;
 
 typedef enum {
-	R_ANAL_CPP_ABI_ITANIUM = 0,
-	R_ANAL_CPP_ABI_MSVC
+	RZ_ANAL_CPP_ABI_ITANIUM = 0,
+	RZ_ANAL_CPP_ABI_MSVC
 } RzAnalCPPABI;
 
 typedef struct rz_anal_hint_cb_t {
@@ -689,22 +689,22 @@ typedef struct rz_anal_t {
 } RzAnal;
 
 typedef enum rz_anal_addr_hint_type_t {
-	R_ANAL_ADDR_HINT_TYPE_IMMBASE,
-	R_ANAL_ADDR_HINT_TYPE_JUMP,
-	R_ANAL_ADDR_HINT_TYPE_FAIL,
-	R_ANAL_ADDR_HINT_TYPE_STACKFRAME,
-	R_ANAL_ADDR_HINT_TYPE_PTR,
-	R_ANAL_ADDR_HINT_TYPE_NWORD,
-	R_ANAL_ADDR_HINT_TYPE_RET,
-	R_ANAL_ADDR_HINT_TYPE_NEW_BITS,
-	R_ANAL_ADDR_HINT_TYPE_SIZE,
-	R_ANAL_ADDR_HINT_TYPE_SYNTAX,
-	R_ANAL_ADDR_HINT_TYPE_OPTYPE,
-	R_ANAL_ADDR_HINT_TYPE_OPCODE,
-	R_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET,
-	R_ANAL_ADDR_HINT_TYPE_ESIL,
-	R_ANAL_ADDR_HINT_TYPE_HIGH,
-	R_ANAL_ADDR_HINT_TYPE_VAL
+	RZ_ANAL_ADDR_HINT_TYPE_IMMBASE,
+	RZ_ANAL_ADDR_HINT_TYPE_JUMP,
+	RZ_ANAL_ADDR_HINT_TYPE_FAIL,
+	RZ_ANAL_ADDR_HINT_TYPE_STACKFRAME,
+	RZ_ANAL_ADDR_HINT_TYPE_PTR,
+	RZ_ANAL_ADDR_HINT_TYPE_NWORD,
+	RZ_ANAL_ADDR_HINT_TYPE_RET,
+	RZ_ANAL_ADDR_HINT_TYPE_NEW_BITS,
+	RZ_ANAL_ADDR_HINT_TYPE_SIZE,
+	RZ_ANAL_ADDR_HINT_TYPE_SYNTAX,
+	RZ_ANAL_ADDR_HINT_TYPE_OPTYPE,
+	RZ_ANAL_ADDR_HINT_TYPE_OPCODE,
+	RZ_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET,
+	RZ_ANAL_ADDR_HINT_TYPE_ESIL,
+	RZ_ANAL_ADDR_HINT_TYPE_HIGH,
+	RZ_ANAL_ADDR_HINT_TYPE_VAL
 } RzAnalAddrHintType;
 
 typedef struct rz_anal_addr_hint_record_t {
@@ -762,17 +762,17 @@ typedef struct rz_anal_bind_t {
 typedef const char *(*RzAnalLabelAt) (RzAnalFunction *fcn, ut64);
 
 typedef enum {
-	R_ANAL_VAR_KIND_REG = 'r',
-	R_ANAL_VAR_KIND_BPV = 'b',
-	R_ANAL_VAR_KIND_SPV = 's'
+	RZ_ANAL_VAR_KIND_REG = 'r',
+	RZ_ANAL_VAR_KIND_BPV = 'b',
+	RZ_ANAL_VAR_KIND_SPV = 's'
 } RzAnalVarKind;
 
 #define VARPREFIX "var"
 #define ARGPREFIX "arg"
 
 typedef enum {
-	R_ANAL_VAR_ACCESS_TYPE_READ = (1 << 0),
-	R_ANAL_VAR_ACCESS_TYPE_WRITE = (1 << 1)
+	RZ_ANAL_VAR_ACCESS_TYPE_READ = (1 << 0),
+	RZ_ANAL_VAR_ACCESS_TYPE_WRITE = (1 << 1)
 } RzAnalVarAccessType;
 
 typedef struct rz_anal_var_access_t {
@@ -805,22 +805,22 @@ typedef struct rz_anal_var_t {
 } RzAnalVar;
 
 // Refers to a variable or a struct field inside a variable, only for varsub
-R_DEPRECATE typedef struct rz_anal_var_field_t {
+RZ_DEPRECATE typedef struct rz_anal_var_field_t {
 	char *name;
 	st64 delta;
 	bool field;
 } RzAnalVarField;
 
 typedef enum {
-	R_ANAL_ACC_UNKNOWN = 0,
-	R_ANAL_ACC_R = (1 << 0),
-	R_ANAL_ACC_W = (1 << 1),
+	RZ_ANAL_ACC_UNKNOWN = 0,
+	RZ_ANAL_ACC_R = (1 << 0),
+	RZ_ANAL_ACC_W = (1 << 1),
 } RzAnalValueAccess;
 
 typedef enum {
-	R_ANAL_VAL_REG,
-	R_ANAL_VAL_MEM,
-	R_ANAL_VAL_IMM,
+	RZ_ANAL_VAL_REG,
+	RZ_ANAL_VAL_MEM,
+	RZ_ANAL_VAL_IMM,
 } RzAnalValueType;
 
 // base+reg+regdelta*mul+delta
@@ -839,23 +839,23 @@ typedef struct rz_anal_value_t {
 } RzAnalValue;
 
 typedef enum {
-	R_ANAL_OP_DIR_READ = 1,
-	R_ANAL_OP_DIR_WRITE = 2,
-	R_ANAL_OP_DIR_EXEC = 4,
-	R_ANAL_OP_DIR_REF = 8,
+	RZ_ANAL_OP_DIR_READ = 1,
+	RZ_ANAL_OP_DIR_WRITE = 2,
+	RZ_ANAL_OP_DIR_EXEC = 4,
+	RZ_ANAL_OP_DIR_REF = 8,
 } RzAnalOpDirection;
 
 typedef enum rz_anal_data_type_t {
-	R_ANAL_DATATYPE_NULL = 0,
-	R_ANAL_DATATYPE_ARRAY,
-	R_ANAL_DATATYPE_OBJECT, // instance
-	R_ANAL_DATATYPE_STRING,
-	R_ANAL_DATATYPE_CLASS,
-	R_ANAL_DATATYPE_BOOLEAN,
-	R_ANAL_DATATYPE_INT16,
-	R_ANAL_DATATYPE_INT32,
-	R_ANAL_DATATYPE_INT64,
-	R_ANAL_DATATYPE_FLOAT,
+	RZ_ANAL_DATATYPE_NULL = 0,
+	RZ_ANAL_DATATYPE_ARRAY,
+	RZ_ANAL_DATATYPE_OBJECT, // instance
+	RZ_ANAL_DATATYPE_STRING,
+	RZ_ANAL_DATATYPE_CLASS,
+	RZ_ANAL_DATATYPE_BOOLEAN,
+	RZ_ANAL_DATATYPE_INT16,
+	RZ_ANAL_DATATYPE_INT32,
+	RZ_ANAL_DATATYPE_INT64,
+	RZ_ANAL_DATATYPE_FLOAT,
 } RzAnalDataType;
 
 typedef struct rz_anal_op_t {
@@ -898,7 +898,7 @@ typedef struct rz_anal_op_t {
 	RzAnalDataType datatype;
 } RzAnalOp;
 
-#define R_ANAL_COND_SINGLE(x) (!x->arg[1] || x->arg[0]==x->arg[1])
+#define RZ_ANAL_COND_SINGLE(x) (!x->arg[1] || x->arg[0]==x->arg[1])
 
 typedef struct rz_anal_cond_t {
 	int type; // filled by CJMP opcode
@@ -937,11 +937,11 @@ typedef struct rz_anal_bb_t {
 } RzAnalBlock;
 
 typedef enum {
-	R_ANAL_REF_TYPE_NULL = 0,
-	R_ANAL_REF_TYPE_CODE = 'c', // code ref
-	R_ANAL_REF_TYPE_CALL = 'C', // code ref (call)
-	R_ANAL_REF_TYPE_DATA = 'd', // mem ref
-	R_ANAL_REF_TYPE_STRING='s'  // string ref
+	RZ_ANAL_REF_TYPE_NULL = 0,
+	RZ_ANAL_REF_TYPE_CODE = 'c', // code ref
+	RZ_ANAL_REF_TYPE_CALL = 'C', // code ref (call)
+	RZ_ANAL_REF_TYPE_DATA = 'd', // mem ref
+	RZ_ANAL_REF_TYPE_STRING='s'  // string ref
 } RzAnalRefType;
 
 typedef struct rz_anal_ref_t {
@@ -979,32 +979,32 @@ typedef struct rz_anal_esil_word_t {
 
 // only flags that affect control flow
 enum {
-	R_ANAL_ESIL_FLAG_ZERO = 1,
-	R_ANAL_ESIL_FLAG_CARRY = 2,
-	R_ANAL_ESIL_FLAG_OVERFLOW = 4,
-	R_ANAL_ESIL_FLAG_PARITY = 8,
-	R_ANAL_ESIL_FLAG_SIGN = 16,
+	RZ_ANAL_ESIL_FLAG_ZERO = 1,
+	RZ_ANAL_ESIL_FLAG_CARRY = 2,
+	RZ_ANAL_ESIL_FLAG_OVERFLOW = 4,
+	RZ_ANAL_ESIL_FLAG_PARITY = 8,
+	RZ_ANAL_ESIL_FLAG_SIGN = 16,
 	// ...
 };
 
 enum {
-	R_ANAL_TRAP_NONE = 0,
-	R_ANAL_TRAP_UNHANDLED = 1,
-	R_ANAL_TRAP_BREAKPOINT = 2,
-	R_ANAL_TRAP_DIVBYZERO = 3,
-	R_ANAL_TRAP_WRITE_ERR = 4,
-	R_ANAL_TRAP_READ_ERR = 5,
-	R_ANAL_TRAP_EXEC_ERR = 6,
-	R_ANAL_TRAP_INVALID = 7,
-	R_ANAL_TRAP_UNALIGNED = 8,
-	R_ANAL_TRAP_TODO = 9,
-	R_ANAL_TRAP_HALT = 10,
+	RZ_ANAL_TRAP_NONE = 0,
+	RZ_ANAL_TRAP_UNHANDLED = 1,
+	RZ_ANAL_TRAP_BREAKPOINT = 2,
+	RZ_ANAL_TRAP_DIVBYZERO = 3,
+	RZ_ANAL_TRAP_WRITE_ERR = 4,
+	RZ_ANAL_TRAP_READ_ERR = 5,
+	RZ_ANAL_TRAP_EXEC_ERR = 6,
+	RZ_ANAL_TRAP_INVALID = 7,
+	RZ_ANAL_TRAP_UNALIGNED = 8,
+	RZ_ANAL_TRAP_TODO = 9,
+	RZ_ANAL_TRAP_HALT = 10,
 };
 
 enum {
-	R_ANAL_ESIL_PARM_INVALID = 0,
-	R_ANAL_ESIL_PARM_REG,
-	R_ANAL_ESIL_PARM_NUM,
+	RZ_ANAL_ESIL_PARM_INVALID = 0,
+	RZ_ANAL_ESIL_PARM_REG,
+	RZ_ANAL_ESIL_PARM_NUM,
 };
 
 /* Constructs to convert from ESIL to REIL */
@@ -1128,7 +1128,7 @@ typedef struct rz_anal_esil_trace_t {
 	int end_idx;
 	HtUP *registers;
 	HtUP *memory;
-	RzRegArena *arena[R_REG_TYPE_LAST];
+	RzRegArena *arena[RZ_REG_TYPE_LAST];
 	ut64 stack_addr;
 	ut64 stack_size;
 	ut8 *stack_data;
@@ -1212,13 +1212,13 @@ typedef struct rz_anal_esil_t {
 
 
 enum {
-	R_ANAL_ESIL_OP_TYPE_UNKNOWN = 0x1,
-	R_ANAL_ESIL_OP_TYPE_CONTROL_FLOW,
-	R_ANAL_ESIL_OP_TYPE_MEM_READ = 0x4,
-	R_ANAL_ESIL_OP_TYPE_MEM_WRITE = 0x8,
-	R_ANAL_ESIL_OP_TYPE_REG_WRITE = 0x10,
-	R_ANAL_ESIL_OP_TYPE_MATH = 0x20,
-	R_ANAL_ESIL_OP_TYPE_CUSTOM = 0x40
+	RZ_ANAL_ESIL_OP_TYPE_UNKNOWN = 0x1,
+	RZ_ANAL_ESIL_OP_TYPE_CONTROL_FLOW,
+	RZ_ANAL_ESIL_OP_TYPE_MEM_READ = 0x4,
+	RZ_ANAL_ESIL_OP_TYPE_MEM_WRITE = 0x8,
+	RZ_ANAL_ESIL_OP_TYPE_REG_WRITE = 0x10,
+	RZ_ANAL_ESIL_OP_TYPE_MATH = 0x20,
+	RZ_ANAL_ESIL_OP_TYPE_CUSTOM = 0x40
 };
 
 
@@ -1239,10 +1239,10 @@ typedef struct rz_anal_esil_expr_offset_t {
 } RzAnalEsilEOffset;
 
 typedef enum {
-	R_ANAL_ESIL_BLOCK_ENTER_NORMAL = 0,
-	R_ANAL_ESIL_BLOCK_ENTER_TRUE,
-	R_ANAL_ESIL_BLOCK_ENTER_FALSE,
-	R_ANAL_ESIL_BLOCK_ENTER_GLUE,
+	RZ_ANAL_ESIL_BLOCK_ENTER_NORMAL = 0,
+	RZ_ANAL_ESIL_BLOCK_ENTER_TRUE,
+	RZ_ANAL_ESIL_BLOCK_ENTER_FALSE,
+	RZ_ANAL_ESIL_BLOCK_ENTER_GLUE,
 } RzAnalEsilBlockEnterType;
 
 typedef struct rz_anal_esil_basic_block_t {
@@ -1259,11 +1259,11 @@ typedef struct rz_anal_esil_cfg_t {
 } RzAnalEsilCFG;
 
 typedef enum {
-	R_ANAL_ESIL_DFG_BLOCK_CONST = 1,
-	R_ANAL_ESIL_DFG_BLOCK_VAR = 2,
-	R_ANAL_ESIL_DFG_BLOCK_PTR = 4,
-	R_ANAL_ESIL_DFG_BLOCK_RESULT = 8,
-	R_ANAL_ESIL_DFG_BLOCK_GENERATIVE = 16,
+	RZ_ANAL_ESIL_DFG_BLOCK_CONST = 1,
+	RZ_ANAL_ESIL_DFG_BLOCK_VAR = 2,
+	RZ_ANAL_ESIL_DFG_BLOCK_PTR = 4,
+	RZ_ANAL_ESIL_DFG_BLOCK_RESULT = 8,
+	RZ_ANAL_ESIL_DFG_BLOCK_GENERATIVE = 16,
 } RzAnalEsilDFGBlockType;
 
 typedef struct rz_anal_esil_dfg_t {
@@ -1433,13 +1433,13 @@ RZ_API bool rz_anal_block_recurse_followthrough(RzAnalBlock *block, RzAnalBlockC
 // Call cb on block and every (recursive) successor of it
 // Call on_exit on block that doesn't have non-visited successors
 // returns false if the loop was breaked by cb
-RZ_API bool rz_anal_block_recurse_depth_first(RzAnalBlock *block, RzAnalBlockCb cb, R_NULLABLE RzAnalBlockCb on_exit, void *user);
+RZ_API bool rz_anal_block_recurse_depth_first(RzAnalBlock *block, RzAnalBlockCb cb, RZ_NULLABLE RzAnalBlockCb on_exit, void *user);
 
 // same as rz_anal_block_recurse, but returns the blocks as a list
 RZ_API RzList *rz_anal_block_recurse_list(RzAnalBlock *block);
 
 // return one shortest path from block to dst or NULL if none exists.
-RZ_API R_NULLABLE RzList/*<RzAnalBlock *>*/ *rz_anal_block_shortest_path(RzAnalBlock *block, ut64 dst);
+RZ_API RZ_NULLABLE RzList/*<RzAnalBlock *>*/ *rz_anal_block_shortest_path(RzAnalBlock *block, ut64 dst);
 
 // Add a case to the block's switch_op.
 // If block->switch_op is NULL, it will be created with the given switch_addr.
@@ -1612,11 +1612,11 @@ RZ_API void rz_anal_pin_list(RzAnal *a);
 
 /* fcn.c */
 RZ_API ut32 rz_anal_function_cost(RzAnalFunction *fcn);
-RZ_API int rz_anal_function_count_edges(const RzAnalFunction *fcn, R_NULLABLE int *ebbs);
+RZ_API int rz_anal_function_count_edges(const RzAnalFunction *fcn, RZ_NULLABLE int *ebbs);
 
 // Use rz_anal_get_functions_in¿() instead
-R_DEPRECATE RZ_API RzAnalFunction *rz_anal_get_fcn_in(RzAnal *anal, ut64 addr, int type);
-R_DEPRECATE RZ_API RzAnalFunction *rz_anal_get_fcn_in_bounds(RzAnal *anal, ut64 addr, int type);
+RZ_DEPRECATE RZ_API RzAnalFunction *rz_anal_get_fcn_in(RzAnal *anal, ut64 addr, int type);
+RZ_DEPRECATE RZ_API RzAnalFunction *rz_anal_get_fcn_in_bounds(RzAnal *anal, ut64 addr, int type);
 
 RZ_API RzAnalFunction *rz_anal_get_function_byname(RzAnal *anal, const char *name);
 
@@ -1625,14 +1625,14 @@ RZ_API int rz_anal_fcn_del(RzAnal *anal, ut64 addr);
 RZ_API int rz_anal_fcn_del_locs(RzAnal *anal, ut64 addr);
 RZ_API bool rz_anal_fcn_add_bb(RzAnal *anal, RzAnalFunction *fcn,
 		ut64 addr, ut64 size,
-		ut64 jump, ut64 fail, R_BORROW RzAnalDiff *diff);
+		ut64 jump, ut64 fail, RZ_BORROW RzAnalDiff *diff);
 RZ_API bool rz_anal_check_fcn(RzAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);
 RZ_API void rz_anal_fcn_invalidate_read_ahead_cache(void);
 
 RZ_API void rz_anal_function_check_bp_use(RzAnalFunction *fcn);
 
 
-#define R_ANAL_FCN_VARKIND_LOCAL 'v'
+#define RZ_ANAL_FCN_VARKIND_LOCAL 'v'
 
 
 RZ_API int rz_anal_fcn_var_del_byindex (RzAnal *a, ut64 fna, const char kind, int scope, ut32 idx);
@@ -1680,20 +1680,20 @@ RZ_API void rz_anal_remove_parsed_type(RzAnal *anal, const char *name);
 RZ_API void rz_anal_save_parsed_type(RzAnal *anal, const char *parsed);
 
 /* var.c */
-RZ_API R_OWN char *rz_anal_function_autoname_var(RzAnalFunction *fcn, char kind, const char *pfx, int ptr);
-RZ_API R_BORROW RzAnalVar *rz_anal_function_set_var(RzAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name);
-RZ_API R_BORROW RzAnalVar *rz_anal_function_get_var(RzAnalFunction *fcn, char kind, int delta);
-RZ_API R_BORROW RzAnalVar *rz_anal_function_get_var_byname(RzAnalFunction *fcn, const char *name);
+RZ_API RZ_OWN char *rz_anal_function_autoname_var(RzAnalFunction *fcn, char kind, const char *pfx, int ptr);
+RZ_API RZ_BORROW RzAnalVar *rz_anal_function_set_var(RzAnalFunction *fcn, int delta, char kind, RZ_NULLABLE const char *type, int size, bool isarg, RZ_NONNULL const char *name);
+RZ_API RZ_BORROW RzAnalVar *rz_anal_function_get_var(RzAnalFunction *fcn, char kind, int delta);
+RZ_API RZ_BORROW RzAnalVar *rz_anal_function_get_var_byname(RzAnalFunction *fcn, const char *name);
 RZ_API void rz_anal_function_delete_vars_by_kind(RzAnalFunction *fcn, RzAnalVarKind kind);
 RZ_API void rz_anal_function_delete_all_vars(RzAnalFunction *fcn);
 RZ_API void rz_anal_function_delete_var(RzAnalFunction *fcn, RzAnalVar *var);
 RZ_API bool rz_anal_function_rebase_vars(RzAnal *a, RzAnalFunction *fcn);
 RZ_API st64 rz_anal_function_get_var_stackptr_at(RzAnalFunction *fcn, st64 delta, ut64 addr);
 RZ_API const char *rz_anal_function_get_var_reg_at(RzAnalFunction *fcn, st64 delta, ut64 addr);
-RZ_API R_BORROW RPVector *rz_anal_function_get_vars_used_at(RzAnalFunction *fcn, ut64 op_addr);
+RZ_API RZ_BORROW RPVector *rz_anal_function_get_vars_used_at(RzAnalFunction *fcn, ut64 op_addr);
 
 // There could be multiple vars used in multiple functions. Use rz_anal_get_functions_in()+rz_anal_function_get_vars_used_at() instead.
-RZ_API R_DEPRECATE RzAnalVar *rz_anal_get_used_function_var(RzAnal *anal, ut64 addr);
+RZ_API RZ_DEPRECATE RzAnalVar *rz_anal_get_used_function_var(RzAnal *anal, ut64 addr);
 
 RZ_API bool rz_anal_var_rename(RzAnalVar *var, const char *new_name, bool verbose);
 RZ_API void rz_anal_var_set_type(RzAnalVar *var, const char *type);
@@ -1702,7 +1702,7 @@ RZ_API ut64 rz_anal_var_addr(RzAnalVar *var);
 RZ_API void rz_anal_var_set_access(RzAnalVar *var, const char *reg, ut64 access_addr, int access_type, st64 stackptr);
 RZ_API void rz_anal_var_remove_access_at(RzAnalVar *var, ut64 address);
 RZ_API void rz_anal_var_clear_accesses(RzAnalVar *var);
-RZ_API void rz_anal_var_add_constraint(RzAnalVar *var, R_BORROW RzAnalVarConstraint *constraint);
+RZ_API void rz_anal_var_add_constraint(RzAnalVar *var, RZ_BORROW RzAnalVarConstraint *constraint);
 RZ_API char *rz_anal_var_get_constraints_readable(RzAnalVar *var);
 
 // Get the access to var at exactly addr if there is one
@@ -1726,15 +1726,15 @@ typedef struct rz_anal_fcn_vars_cache {
 RZ_API void rz_anal_fcn_vars_cache_init(RzAnal *anal, RzAnalFcnVarsCache *cache, RzAnalFunction *fcn);
 RZ_API void rz_anal_fcn_vars_cache_fini(RzAnalFcnVarsCache *cache);
 
-RZ_API char *rz_anal_fcn_format_sig(R_NONNULL RzAnal *anal, R_NONNULL RzAnalFunction *fcn, R_NULLABLE char *fcn_name,
-		R_NULLABLE RzAnalFcnVarsCache *reuse_cache, R_NULLABLE const char *fcn_name_pre, R_NULLABLE const char *fcn_name_post);
+RZ_API char *rz_anal_fcn_format_sig(RZ_NONNULL RzAnal *anal, RZ_NONNULL RzAnalFunction *fcn, RZ_NULLABLE char *fcn_name,
+		RZ_NULLABLE RzAnalFcnVarsCache *reuse_cache, RZ_NULLABLE const char *fcn_name_pre, RZ_NULLABLE const char *fcn_name_post);
 
 
 /* project */
 RZ_API bool rz_anal_xrefs_init (RzAnal *anal);
 
-#define R_ANAL_THRESHOLDFCN 0.7F
-#define R_ANAL_THRESHOLDBB 0.7F
+#define RZ_ANAL_THRESHOLDFCN 0.7F
+#define RZ_ANAL_THRESHOLDBB 0.7F
 
 /* diff.c */
 RZ_API RzAnalDiff *rz_anal_diff_new(void);
@@ -1785,8 +1785,8 @@ RZ_API void rz_anal_reflines_str_free(RzAnalRefStr *refstr);
 /* TODO move to rz_core */
 RZ_API void rz_anal_var_list_show(RzAnal *anal, RzAnalFunction *fcn, int kind, int mode, PJ* pj);
 RZ_API RzList *rz_anal_var_list(RzAnal *anal, RzAnalFunction *fcn, int kind);
-RZ_API R_DEPRECATE RzList/*<RzAnalVar *>*/ *rz_anal_var_all_list(RzAnal *anal, RzAnalFunction *fcn);
-RZ_API R_DEPRECATE RzList/*<RzAnalVarField *>*/ *rz_anal_function_get_var_fields(RzAnalFunction *fcn, int kind);
+RZ_API RZ_DEPRECATE RzList/*<RzAnalVar *>*/ *rz_anal_var_all_list(RzAnal *anal, RzAnalFunction *fcn);
+RZ_API RZ_DEPRECATE RzList/*<RzAnalVarField *>*/ *rz_anal_function_get_var_fields(RzAnalFunction *fcn, int kind);
 
 // calling conventions API
 RZ_API bool rz_anal_cc_exist(RzAnal *anal, const char *convention);
@@ -1857,11 +1857,11 @@ RZ_API bool rz_meta_set_string(RzAnal *a, RzAnalMetaType type, ut64 addr, const 
 // Convenience function to get the str content of the item at addr with given type in the current space.
 RZ_API const char *rz_meta_get_string(RzAnal *a, RzAnalMetaType type, ut64 addr);
 
-// Convenience function to add an R_META_TYPE_DATA item at the given addr in the current space.
+// Convenience function to add an RZ_META_TYPE_DATA item at the given addr in the current space.
 RZ_API void rz_meta_set_data_at(RzAnal *a, ut64 addr, ut64 wordsz);
 
 // Returns the item with given type that starts at addr in the current space or NULL. The size of this item  optionally returned through size.
-RZ_API RzAnalMetaItem *rz_meta_get_at(RzAnal *a, ut64 addr, RzAnalMetaType type, R_OUT R_NULLABLE ut64 *size);
+RZ_API RzAnalMetaItem *rz_meta_get_at(RzAnal *a, ut64 addr, RzAnalMetaType type, RZ_OUT RZ_NULLABLE ut64 *size);
 
 // Returns the node for one meta item with the given type that contains addr in the current space or NULL.
 // To get all the nodes, use rz_meta_get_all_in().
@@ -1915,7 +1915,7 @@ RZ_API void rz_anal_hint_set_ret(RzAnal *a, ut64 addr, ut64 val);
 RZ_API void rz_anal_hint_set_high(RzAnal *a, ut64 addr);
 RZ_API void rz_anal_hint_set_stackframe(RzAnal *a, ut64 addr, ut64 size);
 RZ_API void rz_anal_hint_set_val(RzAnal *a, ut64 addr, ut64 v);
-RZ_API void rz_anal_hint_set_arch(RzAnal *a, ut64 addr, R_NULLABLE const char *arch); // arch == NULL => use global default
+RZ_API void rz_anal_hint_set_arch(RzAnal *a, ut64 addr, RZ_NULLABLE const char *arch); // arch == NULL => use global default
 RZ_API void rz_anal_hint_set_bits(RzAnal *a, ut64 addr, int bits); // bits == NULL => use global default
 RZ_API void rz_anal_hint_unset_val (RzAnal *a, ut64 addr);
 RZ_API void rz_anal_hint_unset_high(RzAnal *a, ut64 addr);
@@ -1935,10 +1935,10 @@ RZ_API void rz_anal_hint_unset_newbits(RzAnal *a, ut64 addr);
 RZ_API void rz_anal_hint_unset_stackframe(RzAnal *a, ut64 addr);
 RZ_API void rz_anal_hint_unset_arch(RzAnal *a, ut64 addr);
 RZ_API void rz_anal_hint_unset_bits(RzAnal *a, ut64 addr);
-RZ_API R_NULLABLE const RzVector/*<const RzAnalAddrHintRecord>*/ *rz_anal_addr_hints_at(RzAnal *anal, ut64 addr);
+RZ_API RZ_NULLABLE const RzVector/*<const RzAnalAddrHintRecord>*/ *rz_anal_addr_hints_at(RzAnal *anal, ut64 addr);
 typedef bool (*RzAnalAddrHintRecordsCb)(ut64 addr, const RzVector/*<const RzAnalAddrHintRecord>*/ *records, void *user);
 RZ_API void rz_anal_addr_hints_foreach(RzAnal *anal, RzAnalAddrHintRecordsCb cb, void *user);
-typedef bool (*RzAnalArchHintCb)(ut64 addr, R_NULLABLE const char *arch, void *user);
+typedef bool (*RzAnalArchHintCb)(ut64 addr, RZ_NULLABLE const char *arch, void *user);
 RZ_API void rz_anal_arch_hints_foreach(RzAnal *anal, RzAnalArchHintCb cb, void *user);
 typedef bool (*RzAnalBitsHintCb)(ut64 addr, int bits, void *user);
 RZ_API void rz_anal_bits_hints_foreach(RzAnal *anal, RzAnalBitsHintCb cb, void *user);
@@ -1946,12 +1946,12 @@ RZ_API void rz_anal_bits_hints_foreach(RzAnal *anal, RzAnalBitsHintCb cb, void *
 // get the hint-specified arch value to be considered at addr
 // hint_addr will optionally be set to the address where the hint that specifies this arch is placed or UT64_MAX
 // if there is no hint affecting addr.
-RZ_API R_NULLABLE R_BORROW const char *rz_anal_hint_arch_at(RzAnal *anal, ut64 addr, R_NULLABLE ut64 *hint_addr);
+RZ_API RZ_NULLABLE RZ_BORROW const char *rz_anal_hint_arch_at(RzAnal *anal, ut64 addr, RZ_NULLABLE ut64 *hint_addr);
 
 // get the hint-specified bits value to be considered at addr
 // hint_addr will optionally be set to the address where the hint that specifies this arch is placed or UT64_MAX
 // if there is no hint affecting addr.
-RZ_API int rz_anal_hint_bits_at(RzAnal *anal, ut64 addr, R_NULLABLE ut64 *hint_addr);
+RZ_API int rz_anal_hint_bits_at(RzAnal *anal, ut64 addr, RZ_NULLABLE ut64 *hint_addr);
 
 RZ_API RzAnalHint *rz_anal_hint_get(RzAnal *anal, ut64 addr); // accumulate all available hints affecting the given address
 
@@ -2061,11 +2061,11 @@ typedef struct rz_anal_vtable_t {
 } RzAnalVTable;
 
 typedef enum {
-	R_ANAL_CLASS_ERR_SUCCESS = 0,
-	R_ANAL_CLASS_ERR_CLASH,
-	R_ANAL_CLASS_ERR_NONEXISTENT_ATTR,
-	R_ANAL_CLASS_ERR_NONEXISTENT_CLASS,
-	R_ANAL_CLASS_ERR_OTHER
+	RZ_ANAL_CLASS_ERR_SUCCESS = 0,
+	RZ_ANAL_CLASS_ERR_CLASH,
+	RZ_ANAL_CLASS_ERR_NONEXISTENT_ATTR,
+	RZ_ANAL_CLASS_ERR_NONEXISTENT_CLASS,
+	RZ_ANAL_CLASS_ERR_OTHER
 } RzAnalClassErr;
 
 RZ_API void rz_anal_class_create(RzAnal *anal, const char *name);

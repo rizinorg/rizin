@@ -30,7 +30,7 @@
 void decompile_vm(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	const char *buf_asm = "invalid";
 	if (len > 3 && buf[0] == 0x0F && buf[1] == 0x3F && (VPCEXT2 (buf, 0x01) || VPCEXT2 (buf, 0x05) || VPCEXT2 (buf, 0x07) || VPCEXT2 (buf, 0x0D) || VPCEXT2 (buf, 0x10))) {
-		if (a->syntax == R_ASM_SYNTAX_ATT) {
+		if (a->syntax == RZ_ASM_SYNTAX_ATT) {
 			buf_asm = sdb_fmt ("vpcext $0x%x, $0x%x", buf[3], buf[2]);
 		} else {
 			buf_asm = sdb_fmt ("vpcext %xh, %xh", buf[2], buf[3]);

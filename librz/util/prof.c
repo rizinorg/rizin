@@ -38,7 +38,7 @@ RZ_API double rz_prof_end(struct rz_prof_t *p) {
 	int sign;
 	gettimeofday (&end, NULL);
 	sign = timeval_subtract (&diff, begin, &end);
-	p->result = R_ABS (((double)(diff.tv_sec)
+	p->result = RZ_ABS (((double)(diff.tv_sec)
 		+ ((double)diff.tv_usec / 1000000.)));
-	return R_ABS (sign);
+	return RZ_ABS (sign);
 }

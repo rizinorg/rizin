@@ -153,7 +153,7 @@ pyc_opcodes *get_opcode_by_version(char *version) {
 
 pyc_opcodes *new_pyc_opcodes() {
 	size_t i, j;
-	pyc_opcodes *ret = R_NEW0 (pyc_opcodes);
+	pyc_opcodes *ret = RZ_NEW0 (pyc_opcodes);
 	if (!ret) {
 		return NULL;
 	}
@@ -170,7 +170,7 @@ pyc_opcodes *new_pyc_opcodes() {
 				free (ret->opcodes[j].op_name);
 			}
 			free (ret->opcodes);
-			R_FREE (ret);
+			RZ_FREE (ret);
 			return NULL;
 		}
 		ret->opcodes[i].type = 0;
@@ -194,7 +194,7 @@ void free_opcode(pyc_opcodes *opcodes) {
 }
 
 void add_arg_fmt(pyc_opcodes *ret, char *op_name, const char *(*formatter) (ut32 oparg)) {
-	pyc_arg_fmt *fmt = R_NEW0 (pyc_arg_fmt);
+	pyc_arg_fmt *fmt = RZ_NEW0 (pyc_arg_fmt);
 	if (!fmt) {
 		return;
 	}

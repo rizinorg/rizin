@@ -63,11 +63,11 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 #if CS_API_MAJOR >= 4
 	cs_option (cd, CS_OPT_UNSIGNED, CS_OPT_ON);
 #endif
-	if (a->syntax == R_ASM_SYNTAX_MASM) {
+	if (a->syntax == RZ_ASM_SYNTAX_MASM) {
 #if CS_API_MAJOR >= 4
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_MASM);
 #endif
-	} else if (a->syntax == R_ASM_SYNTAX_ATT) {
+	} else if (a->syntax == RZ_ASM_SYNTAX_ATT) {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
 	} else {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
@@ -117,7 +117,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	} else {
 		decompile_vm (a, op, buf, len);
 	}
-	if (a->syntax == R_ASM_SYNTAX_JZ) {
+	if (a->syntax == RZ_ASM_SYNTAX_JZ) {
 		char *buf_asm = rz_strbuf_get (&op->buf_asm);
 		if (!strncmp (buf_asm, "je ", 3)) {
 			memcpy (buf_asm, "jz", 2);
@@ -161,7 +161,7 @@ RzAsmPlugin rz_asm_plugin_x86_cs = {
 	.license = "BSD",
 	.arch = "x86",
 	.bits = 16|32|64,
-	.endian = R_SYS_ENDIAN_LITTLE,
+	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.fini = the_end,
 	.mnemonics = mnemonics,
 	.disassemble = &disassemble,
@@ -200,9 +200,9 @@ static int check_features(RzAsm *a, cs_insn *insn) {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct *radare_plugin_function(void) {
-	RzLibStruct *rp = R_NEW0 (RzLibStruct);
+	RzLibStruct *rp = RZ_NEW0 (RzLibStruct);
 	if (rp) {
-		rp->type = R_LIB_TYPE_ASM;
+		rp->type = RZ_LIB_TYPE_ASM;
 		rp->data = &rz_asm_plugin_x86_cs;
 		rp->version = RZ_VERSION;
 	}

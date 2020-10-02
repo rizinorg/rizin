@@ -57,7 +57,7 @@ static void update_depth (RTreeNode *n, RTreeVisitor *vis) {
 }
 
 static RTreeNode *node_new (RTree *t, void *data) {
-	RTreeNode *n = R_NEW0 (RTreeNode);
+	RTreeNode *n = RZ_NEW0 (RTreeNode);
 	if (!n) {
 		return NULL;
 	}
@@ -68,7 +68,7 @@ static RTreeNode *node_new (RTree *t, void *data) {
 }
 
 RZ_API RTree *rz_tree_new (void) {
-	return R_NEW0 (RTree);
+	return RZ_NEW0 (RTree);
 }
 
 RZ_API void rz_tree_free (RTree* t) {

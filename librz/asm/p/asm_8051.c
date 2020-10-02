@@ -29,7 +29,7 @@ RzAsmPlugin rz_asm_plugin_8051 = {
 	.name = "8051",
 	.arch = "8051",
 	.bits = 8,
-	.endian = R_SYS_ENDIAN_NONE,
+	.endian = RZ_SYS_ENDIAN_NONE,
 	.desc = "8051 Intel CPU",
 	.disassemble = &disassemble,
 	.assemble = &assemble_8051,
@@ -41,7 +41,7 @@ RzAsmPlugin rz_asm_plugin_8051 = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_8051,
 	.version = RZ_VERSION
 };

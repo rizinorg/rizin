@@ -42,12 +42,12 @@ def convert (trace_codes, trap_json):
     result.sort(key = lambda x: x[0])
 
     print header
-    print '#ifndef R_MIG_INDEX_H'
-    print '#define R_MIG_INDEX_H\n'
+    print '#ifndef RZ_MIG_INDEX_H'
+    print '#define RZ_MIG_INDEX_H\n'
 
-    print '#define R_MIG_INDEX_LEN %d\n' % (len(data) * 2)
+    print '#define RZ_MIG_INDEX_LEN %d\n' % (len(data) * 2)
 
-    print 'static const char * mig_index[R_MIG_INDEX_LEN] = {'
+    print 'static const char * mig_index[RZ_MIG_INDEX_LEN] = {'
     for pair in result:
         print '\t"%d", "%s",' % pair
     print '};\n'

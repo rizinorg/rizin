@@ -111,147 +111,147 @@
 
 START_RELOC_NUMBERS (elf_arm_reloc_type)
 /* AAELF official names and numbers.  */
-  RELOC_NUMBER (R_ARM_NONE,            	  0)
-  RELOC_NUMBER (R_ARM_PC24,            	  1)   /* deprecated */
-  RELOC_NUMBER (R_ARM_ABS32,           	  2)
-  RELOC_NUMBER (R_ARM_REL32,           	  3)
-  RELOC_NUMBER (R_ARM_LDR_PC_G0,       	  4)
-  RELOC_NUMBER (R_ARM_ABS16,           	  5)
-  RELOC_NUMBER (R_ARM_ABS12,           	  6)
-  RELOC_NUMBER (R_ARM_THM_ABS5,        	  7)
-  RELOC_NUMBER (R_ARM_ABS8,            	  8)
-  RELOC_NUMBER (R_ARM_SBREL32,         	  9)
-  RELOC_NUMBER (R_ARM_THM_CALL,        	 10)
-  RELOC_NUMBER (R_ARM_THM_PC8,         	 11)
-  RELOC_NUMBER (R_ARM_BREL_ADJ,	       	 12)
-  RELOC_NUMBER (R_ARM_TLS_DESC,          13)
-  RELOC_NUMBER (R_ARM_THM_SWI8,        	 14)   /* obsolete */
-  RELOC_NUMBER (R_ARM_XPC25,           	 15)   /* obsolete */
-  RELOC_NUMBER (R_ARM_THM_XPC22,       	 16)   /* obsolete */
-  RELOC_NUMBER (R_ARM_TLS_DTPMOD32,    	 17)
-  RELOC_NUMBER (R_ARM_TLS_DTPOFF32,    	 18)
-  RELOC_NUMBER (R_ARM_TLS_TPOFF32,     	 19)
-  RELOC_NUMBER (R_ARM_COPY,            	 20)   /* Copy symbol at runtime.  */
-  RELOC_NUMBER (R_ARM_GLOB_DAT,        	 21)   /* Create GOT entry.  */
-  RELOC_NUMBER (R_ARM_JUMP_SLOT,       	 22)   /* Create PLT entry.  */
-  RELOC_NUMBER (R_ARM_RELATIVE,        	 23)   /* Adjust by program base.  */
-  RELOC_NUMBER (R_ARM_GOTOFF32,        	 24)   /* 32 bit offset to GOT.  */
-  RELOC_NUMBER (R_ARM_BASE_PREL,       	 25)   /* 32 bit PC relative offset to GOT.  */
-  RELOC_NUMBER (R_ARM_GOT_BREL,        	 26)   /* 32 bit GOT entry.  */
-  RELOC_NUMBER (R_ARM_PLT32,           	 27)   /* deprecated - 32 bit PLT address.  */
-  RELOC_NUMBER (R_ARM_CALL,            	 28)
-  RELOC_NUMBER (R_ARM_JUMP24,          	 29)
-  RELOC_NUMBER (R_ARM_THM_JUMP24,      	 30)
-  RELOC_NUMBER (R_ARM_BASE_ABS,        	 31)
-  RELOC_NUMBER (R_ARM_ALU_PCREL7_0,    	 32)   /* obsolete */
-  RELOC_NUMBER (R_ARM_ALU_PCREL15_8,   	 33)   /* obsolete */
-  RELOC_NUMBER (R_ARM_ALU_PCREL23_15,  	 34)   /* obsolete */
-  RELOC_NUMBER (R_ARM_LDR_SBREL_11_0,  	 35)   /* deprecated, should have _NC suffix */
-  RELOC_NUMBER (R_ARM_ALU_SBREL_19_12, 	 36)   /* deprecated, should have _NC suffix */
-  RELOC_NUMBER (R_ARM_ALU_SBREL_27_20, 	 37)   /* deprecated, should have _CK suffix */
-  RELOC_NUMBER (R_ARM_TARGET1,         	 38)
-  RELOC_NUMBER (R_ARM_SBREL31,         	 39)   /* deprecated */
-  RELOC_NUMBER (R_ARM_V4BX,            	 40)
-  RELOC_NUMBER (R_ARM_TARGET2,	       	 41)
-  RELOC_NUMBER (R_ARM_PREL31,	       	 42)
-  RELOC_NUMBER (R_ARM_MOVW_ABS_NC,     	 43)
-  RELOC_NUMBER (R_ARM_MOVT_ABS,        	 44)
-  RELOC_NUMBER (R_ARM_MOVW_PREL_NC,    	 45)
-  RELOC_NUMBER (R_ARM_MOVT_PREL,       	 46)
-  RELOC_NUMBER (R_ARM_THM_MOVW_ABS_NC, 	 47)
-  RELOC_NUMBER (R_ARM_THM_MOVT_ABS,    	 48)
-  RELOC_NUMBER (R_ARM_THM_MOVW_PREL_NC,	 49)
-  RELOC_NUMBER (R_ARM_THM_MOVT_PREL,   	 50)
-  RELOC_NUMBER (R_ARM_THM_JUMP19,      	 51)
-  RELOC_NUMBER (R_ARM_THM_JUMP6,       	 52)
-  RELOC_NUMBER (R_ARM_THM_ALU_PREL_11_0, 53)
-  RELOC_NUMBER (R_ARM_THM_PC12,        	 54)
-  RELOC_NUMBER (R_ARM_ABS32_NOI,       	 55)
-  RELOC_NUMBER (R_ARM_REL32_NOI,       	 56)
-  RELOC_NUMBER (R_ARM_ALU_PC_G0_NC,      57)
-  RELOC_NUMBER (R_ARM_ALU_PC_G0,         58)
-  RELOC_NUMBER (R_ARM_ALU_PC_G1_NC,      59)
-  RELOC_NUMBER (R_ARM_ALU_PC_G1,         60)
-  RELOC_NUMBER (R_ARM_ALU_PC_G2,         61)
-  RELOC_NUMBER (R_ARM_LDR_PC_G1,         62)
-  RELOC_NUMBER (R_ARM_LDR_PC_G2,         63)
-  RELOC_NUMBER (R_ARM_LDRS_PC_G0,        64)
-  RELOC_NUMBER (R_ARM_LDRS_PC_G1,        65)
-  RELOC_NUMBER (R_ARM_LDRS_PC_G2,        66)
-  RELOC_NUMBER (R_ARM_LDC_PC_G0,         67)
-  RELOC_NUMBER (R_ARM_LDC_PC_G1,         68)
-  RELOC_NUMBER (R_ARM_LDC_PC_G2,         69)
-  RELOC_NUMBER (R_ARM_ALU_SB_G0_NC,      70)
-  RELOC_NUMBER (R_ARM_ALU_SB_G0,         71)
-  RELOC_NUMBER (R_ARM_ALU_SB_G1_NC,      72)
-  RELOC_NUMBER (R_ARM_ALU_SB_G1,         73)
-  RELOC_NUMBER (R_ARM_ALU_SB_G2,         74)
-  RELOC_NUMBER (R_ARM_LDR_SB_G0,         75)
-  RELOC_NUMBER (R_ARM_LDR_SB_G1,         76)
-  RELOC_NUMBER (R_ARM_LDR_SB_G2,         77)
-  RELOC_NUMBER (R_ARM_LDRS_SB_G0,        78)
-  RELOC_NUMBER (R_ARM_LDRS_SB_G1,        79)
-  RELOC_NUMBER (R_ARM_LDRS_SB_G2,        80)
-  RELOC_NUMBER (R_ARM_LDC_SB_G0,         81)
-  RELOC_NUMBER (R_ARM_LDC_SB_G1,         82)
-  RELOC_NUMBER (R_ARM_LDC_SB_G2,         83)
-  RELOC_NUMBER (R_ARM_MOVW_BREL_NC,    	 84)
-  RELOC_NUMBER (R_ARM_MOVT_BREL,       	 85)
-  RELOC_NUMBER (R_ARM_MOVW_BREL,       	 86)
-  RELOC_NUMBER (R_ARM_THM_MOVW_BREL_NC,	 87)
-  RELOC_NUMBER (R_ARM_THM_MOVT_BREL,   	 88)
-  RELOC_NUMBER (R_ARM_THM_MOVW_BREL,   	 89)
-  RELOC_NUMBER (R_ARM_TLS_GOTDESC,       90)
-  RELOC_NUMBER (R_ARM_TLS_CALL,          91)
-  RELOC_NUMBER (R_ARM_TLS_DESCSEQ,       92)
-  RELOC_NUMBER (R_ARM_THM_TLS_CALL,      93)
-  RELOC_NUMBER (R_ARM_PLT32_ABS,       	 94)
-  RELOC_NUMBER (R_ARM_GOT_ABS,	       	 95)
-  RELOC_NUMBER (R_ARM_GOT_PREL,	       	 96)
-  RELOC_NUMBER (R_ARM_GOT_BREL12,      	 97)
-  RELOC_NUMBER (R_ARM_GOTOFF12,	       	 98)
-  RELOC_NUMBER (R_ARM_GOTRELAX,	       	 99)
-  RELOC_NUMBER (R_ARM_GNU_VTENTRY,    	100)   /* deprecated - old C++ abi */
-  RELOC_NUMBER (R_ARM_GNU_VTINHERIT,  	101)   /* deprecated - old C++ abi */
-  RELOC_NUMBER (R_ARM_THM_JUMP11,     	102)
-  RELOC_NUMBER (R_ARM_THM_JUMP8,      	103)
-  RELOC_NUMBER (R_ARM_TLS_GD32,	      	104)
-  RELOC_NUMBER (R_ARM_TLS_LDM32,      	105)
-  RELOC_NUMBER (R_ARM_TLS_LDO32,      	106)
-  RELOC_NUMBER (R_ARM_TLS_IE32,       	107)
-  RELOC_NUMBER (R_ARM_TLS_LE32,	      	108)
-  RELOC_NUMBER (R_ARM_TLS_LDO12,      	109)
-  RELOC_NUMBER (R_ARM_TLS_LE12,	      	110)
-  RELOC_NUMBER (R_ARM_TLS_IE12GP,     	111)
+  RELOC_NUMBER (RZ_ARM_NONE,            	  0)
+  RELOC_NUMBER (RZ_ARM_PC24,            	  1)   /* deprecated */
+  RELOC_NUMBER (RZ_ARM_ABS32,           	  2)
+  RELOC_NUMBER (RZ_ARM_REL32,           	  3)
+  RELOC_NUMBER (RZ_ARM_LDR_PC_G0,       	  4)
+  RELOC_NUMBER (RZ_ARM_ABS16,           	  5)
+  RELOC_NUMBER (RZ_ARM_ABS12,           	  6)
+  RELOC_NUMBER (RZ_ARM_THM_ABS5,        	  7)
+  RELOC_NUMBER (RZ_ARM_ABS8,            	  8)
+  RELOC_NUMBER (RZ_ARM_SBREL32,         	  9)
+  RELOC_NUMBER (RZ_ARM_THM_CALL,        	 10)
+  RELOC_NUMBER (RZ_ARM_THM_PC8,         	 11)
+  RELOC_NUMBER (RZ_ARM_BREL_ADJ,	       	 12)
+  RELOC_NUMBER (RZ_ARM_TLS_DESC,          13)
+  RELOC_NUMBER (RZ_ARM_THM_SWI8,        	 14)   /* obsolete */
+  RELOC_NUMBER (RZ_ARM_XPC25,           	 15)   /* obsolete */
+  RELOC_NUMBER (RZ_ARM_THM_XPC22,       	 16)   /* obsolete */
+  RELOC_NUMBER (RZ_ARM_TLS_DTPMOD32,    	 17)
+  RELOC_NUMBER (RZ_ARM_TLS_DTPOFF32,    	 18)
+  RELOC_NUMBER (RZ_ARM_TLS_TPOFF32,     	 19)
+  RELOC_NUMBER (RZ_ARM_COPY,            	 20)   /* Copy symbol at runtime.  */
+  RELOC_NUMBER (RZ_ARM_GLOB_DAT,        	 21)   /* Create GOT entry.  */
+  RELOC_NUMBER (RZ_ARM_JUMP_SLOT,       	 22)   /* Create PLT entry.  */
+  RELOC_NUMBER (RZ_ARM_RELATIVE,        	 23)   /* Adjust by program base.  */
+  RELOC_NUMBER (RZ_ARM_GOTOFF32,        	 24)   /* 32 bit offset to GOT.  */
+  RELOC_NUMBER (RZ_ARM_BASE_PREL,       	 25)   /* 32 bit PC relative offset to GOT.  */
+  RELOC_NUMBER (RZ_ARM_GOT_BREL,        	 26)   /* 32 bit GOT entry.  */
+  RELOC_NUMBER (RZ_ARM_PLT32,           	 27)   /* deprecated - 32 bit PLT address.  */
+  RELOC_NUMBER (RZ_ARM_CALL,            	 28)
+  RELOC_NUMBER (RZ_ARM_JUMP24,          	 29)
+  RELOC_NUMBER (RZ_ARM_THM_JUMP24,      	 30)
+  RELOC_NUMBER (RZ_ARM_BASE_ABS,        	 31)
+  RELOC_NUMBER (RZ_ARM_ALU_PCREL7_0,    	 32)   /* obsolete */
+  RELOC_NUMBER (RZ_ARM_ALU_PCREL15_8,   	 33)   /* obsolete */
+  RELOC_NUMBER (RZ_ARM_ALU_PCREL23_15,  	 34)   /* obsolete */
+  RELOC_NUMBER (RZ_ARM_LDR_SBREL_11_0,  	 35)   /* deprecated, should have _NC suffix */
+  RELOC_NUMBER (RZ_ARM_ALU_SBREL_19_12, 	 36)   /* deprecated, should have _NC suffix */
+  RELOC_NUMBER (RZ_ARM_ALU_SBREL_27_20, 	 37)   /* deprecated, should have _CK suffix */
+  RELOC_NUMBER (RZ_ARM_TARGET1,         	 38)
+  RELOC_NUMBER (RZ_ARM_SBREL31,         	 39)   /* deprecated */
+  RELOC_NUMBER (RZ_ARM_V4BX,            	 40)
+  RELOC_NUMBER (RZ_ARM_TARGET2,	       	 41)
+  RELOC_NUMBER (RZ_ARM_PREL31,	       	 42)
+  RELOC_NUMBER (RZ_ARM_MOVW_ABS_NC,     	 43)
+  RELOC_NUMBER (RZ_ARM_MOVT_ABS,        	 44)
+  RELOC_NUMBER (RZ_ARM_MOVW_PREL_NC,    	 45)
+  RELOC_NUMBER (RZ_ARM_MOVT_PREL,       	 46)
+  RELOC_NUMBER (RZ_ARM_THM_MOVW_ABS_NC, 	 47)
+  RELOC_NUMBER (RZ_ARM_THM_MOVT_ABS,    	 48)
+  RELOC_NUMBER (RZ_ARM_THM_MOVW_PREL_NC,	 49)
+  RELOC_NUMBER (RZ_ARM_THM_MOVT_PREL,   	 50)
+  RELOC_NUMBER (RZ_ARM_THM_JUMP19,      	 51)
+  RELOC_NUMBER (RZ_ARM_THM_JUMP6,       	 52)
+  RELOC_NUMBER (RZ_ARM_THM_ALU_PREL_11_0, 53)
+  RELOC_NUMBER (RZ_ARM_THM_PC12,        	 54)
+  RELOC_NUMBER (RZ_ARM_ABS32_NOI,       	 55)
+  RELOC_NUMBER (RZ_ARM_REL32_NOI,       	 56)
+  RELOC_NUMBER (RZ_ARM_ALU_PC_G0_NC,      57)
+  RELOC_NUMBER (RZ_ARM_ALU_PC_G0,         58)
+  RELOC_NUMBER (RZ_ARM_ALU_PC_G1_NC,      59)
+  RELOC_NUMBER (RZ_ARM_ALU_PC_G1,         60)
+  RELOC_NUMBER (RZ_ARM_ALU_PC_G2,         61)
+  RELOC_NUMBER (RZ_ARM_LDR_PC_G1,         62)
+  RELOC_NUMBER (RZ_ARM_LDR_PC_G2,         63)
+  RELOC_NUMBER (RZ_ARM_LDRS_PC_G0,        64)
+  RELOC_NUMBER (RZ_ARM_LDRS_PC_G1,        65)
+  RELOC_NUMBER (RZ_ARM_LDRS_PC_G2,        66)
+  RELOC_NUMBER (RZ_ARM_LDC_PC_G0,         67)
+  RELOC_NUMBER (RZ_ARM_LDC_PC_G1,         68)
+  RELOC_NUMBER (RZ_ARM_LDC_PC_G2,         69)
+  RELOC_NUMBER (RZ_ARM_ALU_SB_G0_NC,      70)
+  RELOC_NUMBER (RZ_ARM_ALU_SB_G0,         71)
+  RELOC_NUMBER (RZ_ARM_ALU_SB_G1_NC,      72)
+  RELOC_NUMBER (RZ_ARM_ALU_SB_G1,         73)
+  RELOC_NUMBER (RZ_ARM_ALU_SB_G2,         74)
+  RELOC_NUMBER (RZ_ARM_LDR_SB_G0,         75)
+  RELOC_NUMBER (RZ_ARM_LDR_SB_G1,         76)
+  RELOC_NUMBER (RZ_ARM_LDR_SB_G2,         77)
+  RELOC_NUMBER (RZ_ARM_LDRS_SB_G0,        78)
+  RELOC_NUMBER (RZ_ARM_LDRS_SB_G1,        79)
+  RELOC_NUMBER (RZ_ARM_LDRS_SB_G2,        80)
+  RELOC_NUMBER (RZ_ARM_LDC_SB_G0,         81)
+  RELOC_NUMBER (RZ_ARM_LDC_SB_G1,         82)
+  RELOC_NUMBER (RZ_ARM_LDC_SB_G2,         83)
+  RELOC_NUMBER (RZ_ARM_MOVW_BREL_NC,    	 84)
+  RELOC_NUMBER (RZ_ARM_MOVT_BREL,       	 85)
+  RELOC_NUMBER (RZ_ARM_MOVW_BREL,       	 86)
+  RELOC_NUMBER (RZ_ARM_THM_MOVW_BREL_NC,	 87)
+  RELOC_NUMBER (RZ_ARM_THM_MOVT_BREL,   	 88)
+  RELOC_NUMBER (RZ_ARM_THM_MOVW_BREL,   	 89)
+  RELOC_NUMBER (RZ_ARM_TLS_GOTDESC,       90)
+  RELOC_NUMBER (RZ_ARM_TLS_CALL,          91)
+  RELOC_NUMBER (RZ_ARM_TLS_DESCSEQ,       92)
+  RELOC_NUMBER (RZ_ARM_THM_TLS_CALL,      93)
+  RELOC_NUMBER (RZ_ARM_PLT32_ABS,       	 94)
+  RELOC_NUMBER (RZ_ARM_GOT_ABS,	       	 95)
+  RELOC_NUMBER (RZ_ARM_GOT_PREL,	       	 96)
+  RELOC_NUMBER (RZ_ARM_GOT_BREL12,      	 97)
+  RELOC_NUMBER (RZ_ARM_GOTOFF12,	       	 98)
+  RELOC_NUMBER (RZ_ARM_GOTRELAX,	       	 99)
+  RELOC_NUMBER (RZ_ARM_GNU_VTENTRY,    	100)   /* deprecated - old C++ abi */
+  RELOC_NUMBER (RZ_ARM_GNU_VTINHERIT,  	101)   /* deprecated - old C++ abi */
+  RELOC_NUMBER (RZ_ARM_THM_JUMP11,     	102)
+  RELOC_NUMBER (RZ_ARM_THM_JUMP8,      	103)
+  RELOC_NUMBER (RZ_ARM_TLS_GD32,	      	104)
+  RELOC_NUMBER (RZ_ARM_TLS_LDM32,      	105)
+  RELOC_NUMBER (RZ_ARM_TLS_LDO32,      	106)
+  RELOC_NUMBER (RZ_ARM_TLS_IE32,       	107)
+  RELOC_NUMBER (RZ_ARM_TLS_LE32,	      	108)
+  RELOC_NUMBER (RZ_ARM_TLS_LDO12,      	109)
+  RELOC_NUMBER (RZ_ARM_TLS_LE12,	      	110)
+  RELOC_NUMBER (RZ_ARM_TLS_IE12GP,     	111)
   /* 112 - 127 private range */
-  RELOC_NUMBER (R_ARM_ME_TOO,	        128)   /* obsolete */
-  RELOC_NUMBER (R_ARM_THM_TLS_DESCSEQ  ,129)
+  RELOC_NUMBER (RZ_ARM_ME_TOO,	        128)   /* obsolete */
+  RELOC_NUMBER (RZ_ARM_THM_TLS_DESCSEQ  ,129)
 
-  RELOC_NUMBER (R_ARM_IRELATIVE,      	160)
+  RELOC_NUMBER (RZ_ARM_IRELATIVE,      	160)
 
   /* Extensions?  R=read-only?  */
-  RELOC_NUMBER (R_ARM_RXPC25,         	249)
-  RELOC_NUMBER (R_ARM_RSBREL32,       	250)
-  RELOC_NUMBER (R_ARM_THM_RPC22,      	251)
-  RELOC_NUMBER (R_ARM_RREL32,         	252)
-  RELOC_NUMBER (R_ARM_RABS32,         	253)
-  RELOC_NUMBER (R_ARM_RPC24,          	254)
-  RELOC_NUMBER (R_ARM_RBASE,          	255)
+  RELOC_NUMBER (RZ_ARM_RXPC25,         	249)
+  RELOC_NUMBER (RZ_ARM_RSBREL32,       	250)
+  RELOC_NUMBER (RZ_ARM_THM_RPC22,      	251)
+  RELOC_NUMBER (RZ_ARM_RREL32,         	252)
+  RELOC_NUMBER (RZ_ARM_RABS32,         	253)
+  RELOC_NUMBER (RZ_ARM_RPC24,          	254)
+  RELOC_NUMBER (RZ_ARM_RBASE,          	255)
 
   /* Unofficial names for some of the relocs.  */
-  FAKE_RELOC (R_ARM_GOTOFF,             R_ARM_GOTOFF32)   /* 32 bit offset to GOT.  */
-  FAKE_RELOC (R_ARM_THM_PC22,           R_ARM_THM_CALL)
-  FAKE_RELOC (R_ARM_THM_PC11,           R_ARM_THM_JUMP11)
-  FAKE_RELOC (R_ARM_THM_PC9,            R_ARM_THM_JUMP8)
+  FAKE_RELOC (RZ_ARM_GOTOFF,             RZ_ARM_GOTOFF32)   /* 32 bit offset to GOT.  */
+  FAKE_RELOC (RZ_ARM_THM_PC22,           RZ_ARM_THM_CALL)
+  FAKE_RELOC (RZ_ARM_THM_PC11,           RZ_ARM_THM_JUMP11)
+  FAKE_RELOC (RZ_ARM_THM_PC9,            RZ_ARM_THM_JUMP8)
 
   /* Relocs with both a different name, and (apparently) different meaning in
      GNU usage.  */
-  FAKE_RELOC (R_ARM_GOTPC,              R_ARM_BASE_PREL)  /* 32 bit PC relative offset to GOT.  */
-  FAKE_RELOC (R_ARM_GOT32,              R_ARM_GOT_BREL)   /* 32 bit GOT entry.  */
-  FAKE_RELOC (R_ARM_ROSEGREL32,         R_ARM_SBREL31)    /* ??? */
-  FAKE_RELOC (R_ARM_AMP_VCALL9,         R_ARM_BREL_ADJ)   /* Thumb-something.  Not used.  */
+  FAKE_RELOC (RZ_ARM_GOTPC,              RZ_ARM_BASE_PREL)  /* 32 bit PC relative offset to GOT.  */
+  FAKE_RELOC (RZ_ARM_GOT32,              RZ_ARM_GOT_BREL)   /* 32 bit GOT entry.  */
+  FAKE_RELOC (RZ_ARM_ROSEGREL32,         RZ_ARM_SBREL31)    /* ??? */
+  FAKE_RELOC (RZ_ARM_AMP_VCALL9,         RZ_ARM_BREL_ADJ)   /* Thumb-something.  Not used.  */
 
-END_RELOC_NUMBERS (R_ARM_max = 256)
+END_RELOC_NUMBERS (RZ_ARM_max = 256)
 
 #ifdef BFD_ARCH_SIZE
 /* EABI object attributes.  */

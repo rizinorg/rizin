@@ -55,7 +55,7 @@ enum grub_hfs_cnid_type
   };
 
 /* A node descriptor.  This is the header of every node.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_hfs_node
 {
   grub_uint32_t next;
@@ -67,7 +67,7 @@ struct grub_hfs_node
 });
 
 /* The head of the B*-Tree.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_hfs_treeheader
 {
   grub_uint16_t tree_depth;
@@ -102,7 +102,7 @@ struct grub_hfs_data
 
 /* The key as used on disk in a catalog tree.  This is used to lookup
    file/directory nodes by parent directory ID and filename.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_hfs_catalog_key
 {
   grub_uint8_t unused;
@@ -118,7 +118,7 @@ struct grub_hfs_catalog_key
 /* The key as used on disk in a extent overflow tree.  Using this key
    the extents can be looked up using a fileid and logical start block
    as index.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_hfs_extent_key
 {
   /* The kind of fork.  This is used to store meta information like
@@ -130,7 +130,7 @@ struct grub_hfs_extent_key
 });
 
 /* A directory record.  This is used to find out the directory ID.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_hfs_dirrec
 {
   /* For a directory, type == 1.  */
@@ -140,7 +140,7 @@ struct grub_hfs_dirrec
 });
 
 /* Information about a file.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_hfs_filerec
 {
   /* For a file, type == 2.  */
@@ -726,7 +726,7 @@ if (!node.offsets) {
       for (i = 0; i < grub_be_to_cpu16 (node.node.reccnt); i++)
 	{
 	  int pos = (nodesize >> 1) - 1 - i;
-	  R_PACKED (
+	  RZ_PACKED (
 	  struct pointer
 	  {
 	    grub_uint8_t keylen;

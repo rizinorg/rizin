@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(rz_heap_glibc);
+RZ_LIB_VERSION_HEADER(rz_heap_glibc);
 
 #define PRINTF_A(color, fmt , ...) rz_cons_printf (color fmt Color_RESET, __VA_ARGS__)
 #define PRINTF_YA(fmt, ...) PRINTF_A ("%s", fmt, pal->offset, __VA_ARGS__)

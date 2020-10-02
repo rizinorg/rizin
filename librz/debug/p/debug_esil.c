@@ -25,7 +25,7 @@ static int __esil_step(RzDebug *dbg) {
 	ut64 pc = 0LL; // getreg("pc")
 	RzAnalOp op = {0};
 
-	rz_debug_reg_sync(dbg, R_REG_TYPE_GPR, false);
+	rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
 	pc = rz_debug_reg_get (dbg, "PC");
 	eprintf ("PC = 0x%" PFMT64x "\n", pc);
 /// XXX. hack to trick vaddr issue
@@ -33,11 +33,11 @@ static int __esil_step(RzDebug *dbg) {
 	//memset (buf, 0, sizeof (buf));
 	dbg->iob.read_at (dbg->iob.io, pc, buf, 64);
 	eprintf ("READ 0x%08"PFMT64x" %02x %02x %02x\n", pc, buf[0], buf[1], buf[2]);
-	oplen = rz_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_ESIL);
+	oplen = rz_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), RZ_ANAL_OP_MASK_ESIL);
 	if (oplen > 0) {
-		if (*R_STRBUF_SAFEGET (&op.esil)) {
-			eprintf ("ESIL: %s\n", R_STRBUF_SAFEGET (&op.esil));
-			rz_anal_esil_parse (dbg->anal->esil, R_STRBUF_SAFEGET (&op.esil));
+		if (*RZ_STRBUF_SAFEGET (&op.esil)) {
+			eprintf ("ESIL: %s\n", RZ_STRBUF_SAFEGET (&op.esil));
+			rz_anal_esil_parse (dbg->anal->esil, RZ_STRBUF_SAFEGET (&op.esil));
 		}
 	}
 	rz_anal_op_fini (&op);
@@ -129,7 +129,7 @@ static int __reg_read (RzDebug *dbg, int type, ut8 *buf, int size) {
 	int sz;
 	/* do nothing */
 	ut8 *bytes = rz_reg_get_bytes (dbg->reg, type, &sz);
-	memcpy (buf, bytes, R_MIN (size, sz));
+	memcpy (buf, bytes, RZ_MIN (size, sz));
 	free (bytes);
 	return size;
 }
@@ -138,7 +138,7 @@ RzDebugPlugin rz_debug_plugin_esil = {
 	.name = "esil",
 	.license = "LGPL3",
 	.arch = "any", // TODO: exception!
-	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
+	.bits = RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
 	.init = __esil_init,
 	.step = __esil_step,
 	.step_over = __esil_step_over,
@@ -156,7 +156,7 @@ RzDebugPlugin rz_debug_plugin_esil = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_DBG,
+	.type = RZ_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_esil,
 	.version = RZ_VERSION
 };

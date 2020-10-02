@@ -1,7 +1,7 @@
-#ifndef R_BITMAP_H
-#define R_BITMAP_H
+#ifndef RZ_BITMAP_H
+#define RZ_BITMAP_H
 
-#if R_SYS_BITS == 4
+#if RZ_SYS_BITS == 4
 #define BITWORD_BITS_SHIFT 5
 #define RBitword ut32
 #else
@@ -29,4 +29,4 @@ RZ_API int rz_bitmap_test(RBitmap *b, size_t bit);
 }
 #endif
 
-#endif //  R_BITMAP_H
+#endif //  RZ_BITMAP_H

@@ -9,29 +9,29 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(rz_sign);
+RZ_LIB_VERSION_HEADER(rz_sign);
 
 // XXX those limits should go away
-#define R_SIGN_KEY_MAXSZ 1024
-#define R_SIGN_VAL_MAXSZ 10240
+#define RZ_SIGN_KEY_MAXSZ 1024
+#define RZ_SIGN_VAL_MAXSZ 10240
 
 #define ZIGN_HASH "sha256"
-#define R_ZIGN_HASH R_HASH_SHA256
+#define RZ_ZIGN_HASH RZ_HASH_SHA256
 
 typedef enum {
-	R_SIGN_BYTES     = 'b', // bytes pattern
-	R_SIGN_BYTES_MASK= 'm', // bytes pattern
-	R_SIGN_BYTES_SIZE= 's', // bytes pattern
-	R_SIGN_ANAL      = 'a', // bytes pattern (anal mask) // wtf ?
-	R_SIGN_COMMENT   = 'c', // comment
-	R_SIGN_GRAPH     = 'g', // graph metrics
-	R_SIGN_OFFSET    = 'o', // addr
-	R_SIGN_NAME      = 'n', // real name
-	R_SIGN_REFS      = 'r', // references
-	R_SIGN_XREFS     = 'x', // xrefs
-	R_SIGN_VARS      = 'v', // variables
-	R_SIGN_TYPES     = 't', // types
-	R_SIGN_BBHASH    = 'h', // basic block hash
+	RZ_SIGN_BYTES     = 'b', // bytes pattern
+	RZ_SIGN_BYTES_MASK= 'm', // bytes pattern
+	RZ_SIGN_BYTES_SIZE= 's', // bytes pattern
+	RZ_SIGN_ANAL      = 'a', // bytes pattern (anal mask) // wtf ?
+	RZ_SIGN_COMMENT   = 'c', // comment
+	RZ_SIGN_GRAPH     = 'g', // graph metrics
+	RZ_SIGN_OFFSET    = 'o', // addr
+	RZ_SIGN_NAME      = 'n', // real name
+	RZ_SIGN_REFS      = 'r', // references
+	RZ_SIGN_XREFS     = 'x', // xrefs
+	RZ_SIGN_VARS      = 'v', // variables
+	RZ_SIGN_TYPES     = 't', // types
+	RZ_SIGN_BBHASH    = 'h', // basic block hash
 } RzSignType;
 
 typedef struct rz_sign_graph_t {

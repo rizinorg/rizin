@@ -25,8 +25,8 @@ typedef struct {
 #define RzIOPTRACE_FD(x) (((RzIOPtrace*)(x)->data)->fd)
 static void open_pidmem (RzIOPtrace *iop);
 
-#undef R_IO_NFDS
-#define R_IO_NFDS 2
+#undef RZ_IO_NFDS
+#define RZ_IO_NFDS 2
 #ifndef __ANDROID__
 extern int errno;
 #endif
@@ -52,7 +52,7 @@ static int __waitpid(int pid) {
 	return (waitpid (pid, &st, 0) != -1);
 }
 
-#define debug_read_raw(io,x,y) rz_io_ptrace((io), PTRACE_PEEKTEXT, (x), (void *)(y), R_PTRACE_NODATA)
+#define debug_read_raw(io,x,y) rz_io_ptrace((io), PTRACE_PEEKTEXT, (x), (void *)(y), RZ_PTRACE_NODATA)
 #define debug_write_raw(io,x,y,z) rz_io_ptrace((io), PTRACE_POKEDATA, (x), (void *)(y), (rz_ptrace_data_t)(z))
 #if __OpenBSD__ || __NetBSD__ || __KFBSD__
 typedef int ptrace_word;   // int ptrace(int request, pid_t pid, caddr_t addr, int data);
@@ -244,14 +244,14 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		}
 	}
 
-	RzIOPtrace *riop = R_NEW0 (RzIOPtrace);
+	RzIOPtrace *riop = RZ_NEW0 (RzIOPtrace);
 	if (!riop) {
 		return NULL;
 	}
 
 	riop->pid = riop->tid = pid;
 	open_pidmem (riop);
-	desc = rz_io_desc_new (io, &rz_io_plugin_ptrace, file, rw | R_PERM_X, mode, riop);
+	desc = rz_io_desc_new (io, &rz_io_plugin_ptrace, file, rw | RZ_PERM_X, mode, riop);
 	desc->name = rz_sys_pid_to_path (pid);
 
 	return desc;
@@ -259,13 +259,13 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 
 static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
-	case R_IO_SEEK_SET:
+	case RZ_IO_SEEK_SET:
 		io->off = offset;
 		break;
-	case R_IO_SEEK_CUR:
+	case RZ_IO_SEEK_CUR:
 		io->off += offset;
 		break;
-	case R_IO_SEEK_END:
+	case RZ_IO_SEEK_END:
 		io->off = ST64_MAX;
 	}
 	return io->off;
@@ -365,7 +365,7 @@ struct rz_io_plugin_t rz_io_plugin_ptrace = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_ptrace,
 	.version = RZ_VERSION
 };

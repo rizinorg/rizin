@@ -95,13 +95,13 @@ RZ_API int rz_io_desc_cache_write(RzIODesc *desc, ut64 paddr, const ut8 *buf, in
 	if (paddr > (desc_sz - len)) {
 		len = (int)(desc_sz - paddr);
 	}
-	caddr = paddr / R_IO_DESC_CACHE_SIZE;
-	cbaddr = paddr % R_IO_DESC_CACHE_SIZE;
+	caddr = paddr / RZ_IO_DESC_CACHE_SIZE;
+	cbaddr = paddr % RZ_IO_DESC_CACHE_SIZE;
 	while (written < len) {
 		//get an existing desc-cache, if it exists
 		if (!(cache = (RzIODescCache *)ht_up_find (desc->cache, caddr, NULL))) {
 			//create new desc-cache
-			cache = R_NEW0 (RzIODescCache);
+			cache = RZ_NEW0 (RzIODescCache);
 			if (!cache) {
 				return 0;
 			}
@@ -109,10 +109,10 @@ RZ_API int rz_io_desc_cache_write(RzIODesc *desc, ut64 paddr, const ut8 *buf, in
 			ht_up_insert (desc->cache, caddr, cache);
 		}
 		//check if the remaining data fits into the cache
-		if ((len - written) > (R_IO_DESC_CACHE_SIZE - cbaddr)) {
-			written += (R_IO_DESC_CACHE_SIZE - cbaddr);
+		if ((len - written) > (RZ_IO_DESC_CACHE_SIZE - cbaddr)) {
+			written += (RZ_IO_DESC_CACHE_SIZE - cbaddr);
 			//this can be optimized
-			for (; cbaddr < R_IO_DESC_CACHE_SIZE; cbaddr++) {
+			for (; cbaddr < RZ_IO_DESC_CACHE_SIZE; cbaddr++) {
 				//write to cache
 				cache->cdata[cbaddr] = *buf;
 				//save, that its cached
@@ -149,18 +149,18 @@ RZ_API int rz_io_desc_cache_read(RzIODesc *desc, ut64 paddr, ut8 *buf, int len) 
 	if (paddr > (desc_sz - len)) {
 		len = (int)(desc_sz - paddr);
 	}
-	caddr = paddr / R_IO_DESC_CACHE_SIZE;
-	cbaddr = paddr % R_IO_DESC_CACHE_SIZE;
+	caddr = paddr / RZ_IO_DESC_CACHE_SIZE;
+	cbaddr = paddr % RZ_IO_DESC_CACHE_SIZE;
 	while (amount < len) {
 		// get an existing desc-cache, if it exists
 		if (!(cache = (RzIODescCache *)ht_up_find (desc->cache, caddr, NULL))) {	
-			amount += (R_IO_DESC_CACHE_SIZE - cbaddr);
-			ptr += (R_IO_DESC_CACHE_SIZE - cbaddr);
+			amount += (RZ_IO_DESC_CACHE_SIZE - cbaddr);
+			ptr += (RZ_IO_DESC_CACHE_SIZE - cbaddr);
 			goto beach;
 		}
-		if ((len - amount) > (R_IO_DESC_CACHE_SIZE - cbaddr)) {
-			amount += (R_IO_DESC_CACHE_SIZE - cbaddr);
-			for (; cbaddr < R_IO_DESC_CACHE_SIZE; cbaddr++) {
+		if ((len - amount) > (RZ_IO_DESC_CACHE_SIZE - cbaddr)) {
+			amount += (RZ_IO_DESC_CACHE_SIZE - cbaddr);
+			for (; cbaddr < RZ_IO_DESC_CACHE_SIZE; cbaddr++) {
 				if (cache->cached & (0x1ULL << cbaddr)) {
 					*ptr = cache->cdata[cbaddr];
 				}
@@ -201,15 +201,15 @@ static bool __desc_cache_list_cb(void *user, const ut64 k, const void *v) {
 		return false;
 	}
 	const RzIODescCache *dcache = v;
-	blockaddr = k * R_IO_DESC_CACHE_SIZE;
-	for (i = byteaddr = 0; byteaddr < R_IO_DESC_CACHE_SIZE; byteaddr++) {
+	blockaddr = k * RZ_IO_DESC_CACHE_SIZE;
+	for (i = byteaddr = 0; byteaddr < RZ_IO_DESC_CACHE_SIZE; byteaddr++) {
 		if (dcache->cached & (0x1LL << byteaddr)) {
 			if (!cache) {
-				cache = R_NEW0 (RzIOCache);
+				cache = RZ_NEW0 (RzIOCache);
 				if (!cache) {
 					return false;
 				}
-				cache->data = malloc (R_IO_DESC_CACHE_SIZE - byteaddr);
+				cache->data = malloc (RZ_IO_DESC_CACHE_SIZE - byteaddr);
 				if (!cache->data) {
 					free (cache);
 					return false;
@@ -234,7 +234,7 @@ static bool __desc_cache_list_cb(void *user, const ut64 k, const void *v) {
 	if (cache) {
 #if 0
 		cache->size = i;
-		cache->to = blockaddr + R_IO_DESC_CACHE_SIZE;
+		cache->to = blockaddr + RZ_IO_DESC_CACHE_SIZE;
 #endif
 		cache->itv.size = i;
 		rz_list_push (writes, cache);
@@ -274,13 +274,13 @@ RZ_API RzList *rz_io_desc_cache_list(RzIODesc *desc) {
 static bool __desc_cache_commit_cb(void *user, const ut64 k, const void *v) {
 	RzIODesc *desc = (RzIODesc *)user;
 	int byteaddr, i;
-	ut8 buf[R_IO_DESC_CACHE_SIZE] = {0};
+	ut8 buf[RZ_IO_DESC_CACHE_SIZE] = {0};
 	if (!desc || !desc->io) {
 		return false;
 	}
 	const RzIODescCache *dcache = v;
-	ut64 blockaddr = R_IO_DESC_CACHE_SIZE * k;
-	for (i = byteaddr = 0; byteaddr < R_IO_DESC_CACHE_SIZE; byteaddr++) {
+	ut64 blockaddr = RZ_IO_DESC_CACHE_SIZE * k;
+	for (i = byteaddr = 0; byteaddr < RZ_IO_DESC_CACHE_SIZE; byteaddr++) {
 		if (dcache->cached & (0x1LL << byteaddr)) {
 			buf[i] = dcache->cdata[byteaddr];
 			i++;
@@ -290,14 +290,14 @@ static bool __desc_cache_commit_cb(void *user, const ut64 k, const void *v) {
 		}
 	}
 	if (i > 0) {
-		rz_io_pwrite_at (desc->io, blockaddr + R_IO_DESC_CACHE_SIZE - i, buf, i);
+		rz_io_pwrite_at (desc->io, blockaddr + RZ_IO_DESC_CACHE_SIZE - i, buf, i);
 	}
 	return true;
 }
 
 RZ_API bool rz_io_desc_cache_commit(RzIODesc *desc) {
 	RzIODesc *current;
-	if (!desc || !(desc->perm & R_PERM_W) || !desc->io || !desc->io->files || !desc->io->p_cache) {
+	if (!desc || !(desc->perm & RZ_PERM_W) || !desc->io || !desc->io->files || !desc->io->p_cache) {
 		return false;
 	}
 	if (!desc->cache) {
@@ -322,13 +322,13 @@ static bool __desc_cache_cleanup_cb(void *user, const ut64 k, const void *v) {
 		return false;
 	}
 	RzIODescCache *cache = (RzIODescCache *)v;
-	blockaddr = R_IO_DESC_CACHE_SIZE * k;
+	blockaddr = RZ_IO_DESC_CACHE_SIZE * k;
 	size = rz_io_desc_size (desc);
 	if (size <= blockaddr) {
 		ht_up_delete (desc->cache, k);
 		return true;
 	}
-	if (size <= (blockaddr + R_IO_DESC_CACHE_SIZE - 1)) {
+	if (size <= (blockaddr + RZ_IO_DESC_CACHE_SIZE - 1)) {
 		//this looks scary, but it isn't
 		byteaddr = (int)(size - blockaddr) - 1;		
 		cache->cached &= cleanup_masks[byteaddr];

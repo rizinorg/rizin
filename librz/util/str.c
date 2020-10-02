@@ -131,13 +131,13 @@ RZ_API int rz_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) 
 
 RZ_API const char *rz_str_sysbits(const int v) {
 	switch (v) {
-	case R_SYS_BITS_8: return "8";
-	case R_SYS_BITS_16: return "16";
-	case R_SYS_BITS_32: return "32";
-	case R_SYS_BITS_64: return "64";
-	case R_SYS_BITS_16 | R_SYS_BITS_32: return "16,32";
-	case R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64: return "16,32,64";
-	case R_SYS_BITS_32 | R_SYS_BITS_64: return "32,64";
+	case RZ_SYS_BITS_8: return "8";
+	case RZ_SYS_BITS_16: return "16";
+	case RZ_SYS_BITS_32: return "32";
+	case RZ_SYS_BITS_64: return "64";
+	case RZ_SYS_BITS_16 | RZ_SYS_BITS_32: return "16,32";
+	case RZ_SYS_BITS_16 | RZ_SYS_BITS_32 | RZ_SYS_BITS_64: return "16,32,64";
+	case RZ_SYS_BITS_32 | RZ_SYS_BITS_64: return "32,64";
 	}
 	return "?";
 }
@@ -237,7 +237,7 @@ RZ_API int rz_str_rwx(const char *str) {
 		ret |= strchr (str, 'r') ? 4 : 0;
 		ret |= strchr (str, 'w') ? 2 : 0;
 		ret |= strchr (str, 'x') ? 1 : 0;
-	} else if (ret < 0 || ret >= R_ARRAY_SIZE (rwxstr)) {
+	} else if (ret < 0 || ret >= RZ_ARRAY_SIZE (rwxstr)) {
 		ret = 0;
 	}
 	return ret;
@@ -245,7 +245,7 @@ RZ_API int rz_str_rwx(const char *str) {
 
 // Returns the string representation of the permission of the inputted integer.
 RZ_API const char *rz_str_rwx_i(int rwx) {
-	if (rwx < 0 || rwx >= R_ARRAY_SIZE (rwxstr)) {
+	if (rwx < 0 || rwx >= RZ_ARRAY_SIZE (rwxstr)) {
 		rwx = 0;
 	}
 	return rwxstr[rwx % 24]; // 15 for srwx
@@ -267,7 +267,7 @@ RZ_API void rz_str_case(char *str, bool up) {
 }
 
 RZ_API char *rz_str_home(const char *str) {
-	char *dst, *home = rz_sys_getenv (R_SYS_HOME);
+	char *dst, *home = rz_sys_getenv (RZ_SYS_HOME);
 	size_t length;
 	if (!home) {
 		home = rz_file_tmpdir ();
@@ -277,7 +277,7 @@ RZ_API char *rz_str_home(const char *str) {
 	}
 	length = strlen (home) + 1;
 	if (str) {
-		length += strlen (R_SYS_DIR) + strlen (str);
+		length += strlen (RZ_SYS_DIR) + strlen (str);
 	}
 	dst = (char *)malloc (length);
 	if (!dst) {
@@ -286,7 +286,7 @@ RZ_API char *rz_str_home(const char *str) {
 	int home_len = strlen (home);
 	memcpy (dst, home, home_len + 1);
 	if (str) {
-		dst[home_len] = R_SYS_DIR[0];
+		dst[home_len] = RZ_SYS_DIR[0];
 		strcpy (dst + home_len + 1, str);
 	}
 fail:
@@ -295,7 +295,7 @@ fail:
 }
 
 RZ_API char *rz_str_rz_prefix(const char *str) {
-	return rz_str_newf ("%s%s%s", rz_sys_prefix (NULL), R_SYS_DIR, str);
+	return rz_str_newf ("%s%s%s", rz_sys_prefix (NULL), RZ_SYS_DIR, str);
 }
 
 // Compute a 64 bit DJB hash of a string.
@@ -957,7 +957,7 @@ RZ_API char* rz_str_replace(char *str, const char *key, const char *val, int g) 
 				newstr = realloc (str, slen + 1);
 				if (!newstr) {
 					eprintf ("realloc fail\n");
-					R_FREE (str);
+					RZ_FREE (str);
 					break;
 				}
 				str = newstr;
@@ -1085,7 +1085,7 @@ RZ_API char* rz_str_replace_thunked(char *str, char *clean, int *thunk, int clen
 		newstr = realloc (str, slen + klen);
 		if (!newstr) {
 			eprintf ("realloc fail\n");
-			R_FREE (str);
+			RZ_FREE (str);
 			free (scnd);
 			break;
 		}
@@ -1400,14 +1400,14 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool 
 		return NULL;
 	}
 	switch (enc) {
-	case R_STRING_ENC_UTF16LE:
-	case R_STRING_ENC_UTF16BE:
-	case R_STRING_ENC_UTF32LE:
-	case R_STRING_ENC_UTF32BE:
+	case RZ_STRING_ENC_UTF16LE:
+	case RZ_STRING_ENC_UTF16BE:
+	case RZ_STRING_ENC_UTF32LE:
+	case RZ_STRING_ENC_UTF32BE:
 		if (buf_size < 0) {
 			return NULL;
 		}
-		if (enc == R_STRING_ENC_UTF16LE || enc == R_STRING_ENC_UTF16BE) {
+		if (enc == RZ_STRING_ENC_UTF16LE || enc == RZ_STRING_ENC_UTF16BE) {
 			end = (char *)rz_mem_mem_aligned ((ut8 *)buf, buf_size, (ut8 *)"\0\0", 2, 2);
 		} else {
 			end = (char *)rz_mem_mem_aligned ((ut8 *)buf, buf_size, (ut8 *)"\0\0\0\0", 4, 4);
@@ -1430,14 +1430,14 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool 
 	q = new_buf;
 	while (p < end) {
 		switch (enc) {
-		case R_STRING_ENC_UTF16LE:
-		case R_STRING_ENC_UTF16BE:
-		case R_STRING_ENC_UTF32LE:
-		case R_STRING_ENC_UTF32BE:
-			if (enc == R_STRING_ENC_UTF16LE || enc == R_STRING_ENC_UTF16BE) {
-				ch_bytes = rz_utf16_decode ((ut8 *)p, end - p, &ch, enc == R_STRING_ENC_UTF16BE);
+		case RZ_STRING_ENC_UTF16LE:
+		case RZ_STRING_ENC_UTF16BE:
+		case RZ_STRING_ENC_UTF32LE:
+		case RZ_STRING_ENC_UTF32BE:
+			if (enc == RZ_STRING_ENC_UTF16LE || enc == RZ_STRING_ENC_UTF16BE) {
+				ch_bytes = rz_utf16_decode ((ut8 *)p, end - p, &ch, enc == RZ_STRING_ENC_UTF16BE);
 			} else {
-				ch_bytes = rz_utf32_decode ((ut8 *)p, end - p, &ch, enc == R_STRING_ENC_UTF32BE);
+				ch_bytes = rz_utf32_decode ((ut8 *)p, end - p, &ch, enc == RZ_STRING_ENC_UTF32BE);
 			}
 			if (ch_bytes == 0) {
 				p++;
@@ -1464,16 +1464,16 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool 
 				}
 			}
 		} else {
-			int offset = enc == R_STRING_ENC_UTF16BE ? 1 : enc == R_STRING_ENC_UTF32BE ? 3 : 0;
+			int offset = enc == RZ_STRING_ENC_UTF16BE ? 1 : enc == RZ_STRING_ENC_UTF32BE ? 3 : 0;
 			rz_str_byte_escape (p + offset, &q, false, false, esc_bslash);
 		}
 		switch (enc) {
-		case R_STRING_ENC_UTF16LE:
-		case R_STRING_ENC_UTF16BE:
+		case RZ_STRING_ENC_UTF16LE:
+		case RZ_STRING_ENC_UTF16BE:
 			p += ch_bytes < 2 ? 2 : ch_bytes;
 			break;
-		case R_STRING_ENC_UTF32LE:
-		case R_STRING_ENC_UTF32BE:
+		case RZ_STRING_ENC_UTF32LE:
+		case RZ_STRING_ENC_UTF32BE:
 			p += 4;
 			break;
 		default:
@@ -1485,27 +1485,27 @@ static char *rz_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool 
 }
 
 RZ_API char *rz_str_escape_utf8(const char *buf, bool show_asciidot, bool esc_bslash) {
-	return rz_str_escape_utf (buf, -1, R_STRING_ENC_UTF8, show_asciidot, esc_bslash, false);
+	return rz_str_escape_utf (buf, -1, RZ_STRING_ENC_UTF8, show_asciidot, esc_bslash, false);
 }
 
 RZ_API char *rz_str_escape_utf8_keep_printable(const char *buf, bool show_asciidot, bool esc_bslash) {
-	return rz_str_escape_utf (buf, -1, R_STRING_ENC_UTF8, show_asciidot, esc_bslash, true);
+	return rz_str_escape_utf (buf, -1, RZ_STRING_ENC_UTF8, show_asciidot, esc_bslash, true);
 }
 
 RZ_API char *rz_str_escape_utf16le(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
-	return rz_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF16LE, show_asciidot, esc_bslash, false);
+	return rz_str_escape_utf (buf, buf_size, RZ_STRING_ENC_UTF16LE, show_asciidot, esc_bslash, false);
 }
 
 RZ_API char *rz_str_escape_utf32le(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
-	return rz_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32LE, show_asciidot, esc_bslash, false);
+	return rz_str_escape_utf (buf, buf_size, RZ_STRING_ENC_UTF32LE, show_asciidot, esc_bslash, false);
 }
 
 RZ_API char *rz_str_escape_utf16be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
-	return rz_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF16BE, show_asciidot, esc_bslash, false);
+	return rz_str_escape_utf (buf, buf_size, RZ_STRING_ENC_UTF16BE, show_asciidot, esc_bslash, false);
 }
 
 RZ_API char *rz_str_escape_utf32be(const char *buf, int buf_size, bool show_asciidot, bool esc_bslash) {
-	return rz_str_escape_utf (buf, buf_size, R_STRING_ENC_UTF32BE, show_asciidot, esc_bslash, false);
+	return rz_str_escape_utf (buf, buf_size, RZ_STRING_ENC_UTF32BE, show_asciidot, esc_bslash, false);
 }
 
 // JSON has special escaping requirements
@@ -2028,16 +2028,16 @@ RZ_API bool rz_str_char_fullwidth (const char* s, size_t left) {
 	return (codepoint >= 0x1100 &&
 		 (codepoint <= 0x115f ||                  /* Hangul Jamo init. consonants */
 			  codepoint == 0x2329 || codepoint == 0x232a ||
-		 (R_BETWEEN (0x2e80, codepoint, 0xa4cf)
+		 (RZ_BETWEEN (0x2e80, codepoint, 0xa4cf)
 			&& codepoint != 0x303f) ||        /* CJK ... Yi */
-		 R_BETWEEN (0xac00, codepoint, 0xd7a3) || /* Hangul Syllables */
-		 R_BETWEEN (0xf900, codepoint, 0xfaff) || /* CJK Compatibility Ideographs */
-		 R_BETWEEN (0xfe10, codepoint, 0xfe19) || /* Vertical forms */
-		 R_BETWEEN (0xfe30, codepoint, 0xfe6f) || /* CJK Compatibility Forms */
-		 R_BETWEEN (0xff00, codepoint, 0xff60) || /* Fullwidth Forms */
-		 R_BETWEEN (0xffe0, codepoint, 0xffe6) ||
-		 R_BETWEEN (0x20000, codepoint, 0x2fffd) ||
-		 R_BETWEEN (0x30000, codepoint, 0x3fffd)));
+		 RZ_BETWEEN (0xac00, codepoint, 0xd7a3) || /* Hangul Syllables */
+		 RZ_BETWEEN (0xf900, codepoint, 0xfaff) || /* CJK Compatibility Ideographs */
+		 RZ_BETWEEN (0xfe10, codepoint, 0xfe19) || /* Vertical forms */
+		 RZ_BETWEEN (0xfe30, codepoint, 0xfe6f) || /* CJK Compatibility Forms */
+		 RZ_BETWEEN (0xff00, codepoint, 0xff60) || /* Fullwidth Forms */
+		 RZ_BETWEEN (0xffe0, codepoint, 0xffe6) ||
+		 RZ_BETWEEN (0x20000, codepoint, 0x2fffd) ||
+		 RZ_BETWEEN (0x30000, codepoint, 0x3fffd)));
 
 }
 
@@ -2068,7 +2068,7 @@ RZ_API size_t rz_str_utf8_charsize(const char *str) {
 RZ_API size_t rz_str_utf8_charsize_prev(const char *str, int prev_len) {
 	rz_return_val_if_fail (str, 0);
 	int pos = 0;
-	size_t size = 0, minsize = R_MIN (5, prev_len);
+	size_t size = 0, minsize = RZ_MIN (5, prev_len);
 	while (size < minsize) {
 		size++;
 		if ((str[--pos] & 0xc0) != 0x80) {
@@ -2414,7 +2414,7 @@ RZ_API const char *rz_str_firstbut(const char *s, char ch, const char *but) {
 		isbut = strchr (but, *p);
 		if (isbut) {
 			idx = (int)(size_t)(isbut - but);
-			_b = R_BIT_TOGGLE (b, idx);
+			_b = RZ_BIT_TOGGLE (b, idx);
 			continue;
 		}
 		if (*p == ch && !_b) {
@@ -2440,7 +2440,7 @@ RZ_API const char *rz_str_lastbut(const char *s, char ch, const char *but) {
 		isbut = strchr (but, *p);
 		if (isbut) {
 			idx = (int)(size_t)(isbut - but);
-			_b = R_BIT_TOGGLE (b, idx);
+			_b = RZ_BIT_TOGGLE (b, idx);
 			continue;
 		}
 		if (*p == ch && !_b) {
@@ -3005,7 +3005,7 @@ RZ_API const char *rz_str_pad(const char ch, int sz) {
 	if (sz < 0) {
 		sz = 0;
 	}
-	memset (pad, ch, R_MIN (sz, sizeof (pad)));
+	memset (pad, ch, RZ_MIN (sz, sizeof (pad)));
 	if (sz < sizeof (pad)) {
 		pad[sz] = 0;
 	}
@@ -3337,7 +3337,7 @@ RZ_API wchar_t* rz_str_mb_to_wc_l(const char *buf, int len) {
 	fail = false;
 err_r_str_mb_to_wc:
 	if (fail) {
-		R_FREE (res_buf);
+		RZ_FREE (res_buf);
 	}
 	return res_buf;
 }
@@ -3365,7 +3365,7 @@ RZ_API char* rz_str_wc_to_mb_l(const wchar_t *buf, int len) {
 	fail = false;
 err_r_str_wc_to_mb:
 	if (fail) {
-		R_FREE (res_buf);
+		RZ_FREE (res_buf);
 	}
 	return res_buf;
 }
@@ -3536,7 +3536,7 @@ RZ_API char *rz_str_scale(const char *s, int w, int h) {
 
 	rows = rz_list_length (lines);
 	rz_list_foreach (lines, iter, line) {
-		maxcol = R_MAX (strlen (line), maxcol);
+		maxcol = RZ_MAX (strlen (line), maxcol);
 	}
 
 	RzList *out = rz_list_newf (free);
@@ -3600,10 +3600,10 @@ RZ_API const char *rz_str_str_xy(const char *s, const char *word, const char *pr
 
 RZ_API char *rz_str_version(const char *program) {
 	char *s = rz_str_newf ("%s "RZ_VERSION" %d @ "
-			R_SYS_OS"-"
-			R_SYS_ARCH"-%d git.%s\n",
+			RZ_SYS_OS"-"
+			RZ_SYS_ARCH"-%d git.%s\n",
 			program, RZ_VERSION_COMMIT,
-			(R_SYS_BITS & 8)? 64: 32,
+			(RZ_SYS_BITS & 8)? 64: 32,
 			*RZ_GITTAP ? RZ_GITTAP: "");
 	if (*RZ_GITTIP) {
 		s = rz_str_appendf (s, "commit: "RZ_GITTIP" build: "RZ_BIRTH);

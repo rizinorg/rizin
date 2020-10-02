@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2016 - bobby.smiles32@gmail.com */
-#ifndef R_ASM_ARCH_RSP_RSP_IDEC_H
-#define R_ASM_ARCH_RSP_RSP_IDEC_H
+#ifndef RZ_ASM_ARCH_RSP_RSP_IDEC_H
+#define RZ_ASM_ARCH_RSP_RSP_IDEC_H
 
 #include <rz_types.h>
 

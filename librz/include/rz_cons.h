@@ -56,13 +56,13 @@ extern "C" {
 #define CONS_PALETTE_SIZE 22
 #define CONS_COLORS_SIZE 21
 
-#define R_CONS_GREP_WORDS 10
-#define R_CONS_GREP_WORD_SIZE 64
-#define R_CONS_GREP_TOKENS 64
+#define RZ_CONS_GREP_WORDS 10
+#define RZ_CONS_GREP_WORD_SIZE 64
+#define RZ_CONS_GREP_TOKENS 64
 
-R_LIB_VERSION_HEADER(rz_cons);
+RZ_LIB_VERSION_HEADER(rz_cons);
 
-#define R_CONS_CMD_DEPTH 100
+#define RZ_CONS_CMD_DEPTH 100
 
 typedef int (*RzConsGetSize)(int *rows);
 typedef int (*RzConsGetCursor)(int *rows);
@@ -80,7 +80,7 @@ typedef struct rz_cons_bind_t {
 } RzConsBind;
 
 typedef struct rz_cons_grep_t {
-	char strings[R_CONS_GREP_WORDS][R_CONS_GREP_WORD_SIZE];
+	char strings[RZ_CONS_GREP_WORDS][RZ_CONS_GREP_WORD_SIZE];
 	int nstrings;
 	char *str;
 	int counter;
@@ -97,7 +97,7 @@ typedef struct rz_cons_grep_t {
 	bool sort_invert;
 	int f_line; //first line
 	int l_line; //last line
-	int tokens[R_CONS_GREP_TOKENS];
+	int tokens[RZ_CONS_GREP_TOKENS];
 	int tokens_used;
 	int amp;
 	int zoom;
@@ -112,74 +112,74 @@ typedef struct rz_cons_grep_t {
 // TODO Might be better than using rz_cons_pal_get_i
 // And have smaller RzConsPrintablePalette and RzConsPalette
 enum {
-	R_CONS_PAL_0x00 = 0,
-	R_CONS_PAL_0x7f,
-	R_CONS_PAL_0xff,
-	R_CONS_PAL_ARGS,
-	R_CONS_PAL_BIN,
-	R_CONS_PAL_BTEXT,
-	R_CONS_PAL_CALL,
-	R_CONS_PAL_CJMP,
-	R_CONS_PAL_CMP,
-	R_CONS_PAL_COMMENT,
-	R_CONS_PAL_CREG,
-	R_CONS_PAL_FLAG,
-	R_CONS_PAL_FLINE,
-	R_CONS_PAL_FLOC,
-	R_CONS_PAL_FLOW,
-	R_CONS_PAL_FLOW2,
-	R_CONS_PAL_FNAME,
-	R_CONS_PAL_HELP,
-	R_CONS_PAL_INPUT,
-	R_CONS_PAL_INVALID,
-	R_CONS_PAL_JMP,
-	R_CONS_PAL_LABEL,
-	R_CONS_PAL_MATH,
-	R_CONS_PAL_MOV,
-	R_CONS_PAL_NOP,
-	R_CONS_PAL_NUM,
-	R_CONS_PAL_OFFSET,
-	R_CONS_PAL_OTHER,
-	R_CONS_PAL_POP,
-	R_CONS_PAL_PROMPT,
-	R_CONS_PAL_PUSH,
-	R_CONS_PAL_CRYPTO,
-	R_CONS_PAL_REG,
-	R_CONS_PAL_RESET,
-	R_CONS_PAL_RET,
-	R_CONS_PAL_SWI,
-	R_CONS_PAL_TRAP,
-	R_CONS_PAL_AI_READ,
-	R_CONS_PAL_AI_WRITE,
-	R_CONS_PAL_AI_EXEC,
-	R_CONS_PAL_AI_SEQ,
-	R_CONS_PAL_AI_ASCII,
-	R_CONS_PAL_AI_UNMAP,
-	R_CONS_PAL_GUI_CFLOW,
-	R_CONS_PAL_GUI_DATAOFFSET,
-	R_CONS_PAL_GUI_BACKGROUND,
-	R_CONS_PAL_GUI_ALT_BACKGROUND,
-	R_CONS_PAL_GUI_BORDER,
-	R_CONS_PAL_LINEHL,
-	R_CONS_PAL_GRAPH_BOX,
-	R_CONS_PAL_GRAPH_BOX2,
-	R_CONS_PAL_GRAPH_BOX3,
-	R_CONS_PAL_GRAPH_BOX4,
-	R_CONS_PAL_GRAPH_TRUE,
-	R_CONS_PAL_GRAPH_FALSE,
-	R_CONS_PAL_GRAPH_TRUFAE,
-	R_CONS_PAL_GRAPH_TRACED,
-	R_CONS_PAL_GRAPH_CURRENT,
-	R_CONS_PAL_LAST
+	RZ_CONS_PAL_0x00 = 0,
+	RZ_CONS_PAL_0x7f,
+	RZ_CONS_PAL_0xff,
+	RZ_CONS_PAL_ARGS,
+	RZ_CONS_PAL_BIN,
+	RZ_CONS_PAL_BTEXT,
+	RZ_CONS_PAL_CALL,
+	RZ_CONS_PAL_CJMP,
+	RZ_CONS_PAL_CMP,
+	RZ_CONS_PAL_COMMENT,
+	RZ_CONS_PAL_CREG,
+	RZ_CONS_PAL_FLAG,
+	RZ_CONS_PAL_FLINE,
+	RZ_CONS_PAL_FLOC,
+	RZ_CONS_PAL_FLOW,
+	RZ_CONS_PAL_FLOW2,
+	RZ_CONS_PAL_FNAME,
+	RZ_CONS_PAL_HELP,
+	RZ_CONS_PAL_INPUT,
+	RZ_CONS_PAL_INVALID,
+	RZ_CONS_PAL_JMP,
+	RZ_CONS_PAL_LABEL,
+	RZ_CONS_PAL_MATH,
+	RZ_CONS_PAL_MOV,
+	RZ_CONS_PAL_NOP,
+	RZ_CONS_PAL_NUM,
+	RZ_CONS_PAL_OFFSET,
+	RZ_CONS_PAL_OTHER,
+	RZ_CONS_PAL_POP,
+	RZ_CONS_PAL_PROMPT,
+	RZ_CONS_PAL_PUSH,
+	RZ_CONS_PAL_CRYPTO,
+	RZ_CONS_PAL_REG,
+	RZ_CONS_PAL_RESET,
+	RZ_CONS_PAL_RET,
+	RZ_CONS_PAL_SWI,
+	RZ_CONS_PAL_TRAP,
+	RZ_CONS_PAL_AI_READ,
+	RZ_CONS_PAL_AI_WRITE,
+	RZ_CONS_PAL_AI_EXEC,
+	RZ_CONS_PAL_AI_SEQ,
+	RZ_CONS_PAL_AI_ASCII,
+	RZ_CONS_PAL_AI_UNMAP,
+	RZ_CONS_PAL_GUI_CFLOW,
+	RZ_CONS_PAL_GUI_DATAOFFSET,
+	RZ_CONS_PAL_GUI_BACKGROUND,
+	RZ_CONS_PAL_GUI_ALT_BACKGROUND,
+	RZ_CONS_PAL_GUI_BORDER,
+	RZ_CONS_PAL_LINEHL,
+	RZ_CONS_PAL_GRAPH_BOX,
+	RZ_CONS_PAL_GRAPH_BOX2,
+	RZ_CONS_PAL_GRAPH_BOX3,
+	RZ_CONS_PAL_GRAPH_BOX4,
+	RZ_CONS_PAL_GRAPH_TRUE,
+	RZ_CONS_PAL_GRAPH_FALSE,
+	RZ_CONS_PAL_GRAPH_TRUFAE,
+	RZ_CONS_PAL_GRAPH_TRACED,
+	RZ_CONS_PAL_GRAPH_CURRENT,
+	RZ_CONS_PAL_LAST
 };
 #endif
 
 enum { ALPHA_RESET = 0x00, ALPHA_FG = 0x01, ALPHA_BG = 0x02, ALPHA_FGBG = 0x03 };
-enum { R_CONS_ATTR_BOLD = 1u << 1,
-       R_CONS_ATTR_DIM = 1u << 2,
-       R_CONS_ATTR_ITALIC = 1u << 3,
-       R_CONS_ATTR_UNDERLINE = 1u << 4,
-       R_CONS_ATTR_BLINK = 1u << 5
+enum { RZ_CONS_ATTR_BOLD = 1u << 1,
+       RZ_CONS_ATTR_DIM = 1u << 2,
+       RZ_CONS_ATTR_ITALIC = 1u << 3,
+       RZ_CONS_ATTR_UNDERLINE = 1u << 4,
+       RZ_CONS_ATTR_BLINK = 1u << 5
 };
 
 typedef struct rcolor_t {
@@ -526,7 +526,7 @@ typedef struct rz_cons_t {
 	struct rz_line_t *line;
 	const char **vline;
 	int refcnt;
-	R_DEPRECATE bool newline;
+	RZ_DEPRECATE bool newline;
 	int vtmode;
 	bool flush;
 	bool use_utf8; // use utf8 features
@@ -560,32 +560,32 @@ typedef struct rz_cons_t {
 // not needed anymoar
 //extern int (*rz_cons_user_fgets)(char *buf, int len);
 
-#define R_CONS_KEY_F1 0xf1
-#define R_CONS_KEY_F2 0xf2
-#define R_CONS_KEY_F3 0xf3
-#define R_CONS_KEY_F4 0xf4
-#define R_CONS_KEY_F5 0xf5
-#define R_CONS_KEY_F6 0xf6
-#define R_CONS_KEY_F7 0xf7
-#define R_CONS_KEY_F8 0xf8
-#define R_CONS_KEY_F9 0xf9
-#define R_CONS_KEY_F10 0xfa
-#define R_CONS_KEY_F11 0xfb
-#define R_CONS_KEY_F12 0xfc
+#define RZ_CONS_KEY_F1 0xf1
+#define RZ_CONS_KEY_F2 0xf2
+#define RZ_CONS_KEY_F3 0xf3
+#define RZ_CONS_KEY_F4 0xf4
+#define RZ_CONS_KEY_F5 0xf5
+#define RZ_CONS_KEY_F6 0xf6
+#define RZ_CONS_KEY_F7 0xf7
+#define RZ_CONS_KEY_F8 0xf8
+#define RZ_CONS_KEY_F9 0xf9
+#define RZ_CONS_KEY_F10 0xfa
+#define RZ_CONS_KEY_F11 0xfb
+#define RZ_CONS_KEY_F12 0xfc
 
-#define R_CONS_KEY_ESC 0x1b
+#define RZ_CONS_KEY_ESC 0x1b
 
-#define R_CONS_CLEAR_LINE "\x1b[2K\r"
-#define R_CONS_CLEAR_SCREEN "\x1b[2J\r"
-#define R_CONS_CLEAR_FROM_CURSOR_TO_END "\x1b[0J\r"
+#define RZ_CONS_CLEAR_LINE "\x1b[2K\r"
+#define RZ_CONS_CLEAR_SCREEN "\x1b[2J\r"
+#define RZ_CONS_CLEAR_FROM_CURSOR_TO_END "\x1b[0J\r"
 
-#define R_CONS_CURSOR_SAVE "\x1b[s"
-#define R_CONS_CURSOR_RESTORE "\x1b[u"
-#define R_CONS_GET_CURSOR_POSITION "\x1b[6n"
-#define R_CONS_CURSOR_UP "\x1b[A"
-#define R_CONS_CURSOR_DOWN "\x1b[B"
-#define R_CONS_CURSOR_RIGHT "\x1b[C"
-#define R_CONS_CURSOR_LEFT "\x1b[D"
+#define RZ_CONS_CURSOR_SAVE "\x1b[s"
+#define RZ_CONS_CURSOR_RESTORE "\x1b[u"
+#define RZ_CONS_GET_CURSOR_POSITION "\x1b[6n"
+#define RZ_CONS_CURSOR_UP "\x1b[A"
+#define RZ_CONS_CURSOR_DOWN "\x1b[B"
+#define RZ_CONS_CURSOR_RIGHT "\x1b[C"
+#define RZ_CONS_CURSOR_LEFT "\x1b[D"
 
 #define Color_BLINK        "\x1b[5m"
 #define Color_INVERT       "\x1b[7m"
@@ -850,14 +850,14 @@ RZ_API int rz_cons_is_vtcompat(void);
 RZ_API void rz_cons_w32_clear(void);
 RZ_API void rz_cons_w32_gotoxy(int fd, int x, int y);
 RZ_API int rz_cons_w32_print(const char *ptr, int len, bool vmode);
-RZ_API int rz_cons_win_printf(bool vmode, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
-RZ_API int rz_cons_win_eprintf(bool vmode, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
+RZ_API int rz_cons_win_printf(bool vmode, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
+RZ_API int rz_cons_win_eprintf(bool vmode, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API int rz_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap);
 #endif
 
 RZ_API void rz_cons_push(void);
 RZ_API void rz_cons_pop(void);
-RZ_API RzConsContext *rz_cons_context_new(R_NULLABLE RzConsContext *parent);
+RZ_API RzConsContext *rz_cons_context_new(RZ_NULLABLE RzConsContext *parent);
 RZ_API void rz_cons_context_free(RzConsContext *context);
 RZ_API void rz_cons_context_load(RzConsContext *context);
 RZ_API void rz_cons_context_reset(void);
@@ -917,7 +917,7 @@ RZ_API void rz_cons_visual_write(char *buffer);
 RZ_API bool rz_cons_is_utf8(void);
 RZ_API void rz_cons_cmd_help(const char * help[], bool use_color);
 RZ_API void rz_cons_log_stub(const char *output, const char *funcname, const char *filename,
- unsigned int lineno, unsigned int level, const char *tag, const char *fmtstr, ...) R_PRINTF_CHECK(7, 8);
+ unsigned int lineno, unsigned int level, const char *tag, const char *fmtstr, ...) RZ_PRINTF_CHECK(7, 8);
 
 
 /* input */
@@ -995,15 +995,15 @@ RZ_API const char* rz_cons_get_rune(const ut8 ch);
 #endif
 
 /* rz_line */
-#define R_LINE_BUFSIZE 4096
-#define R_LINE_HISTSIZE 256
+#define RZ_LINE_BUFSIZE 4096
+#define RZ_LINE_HISTSIZE 256
 
-#define R_EDGES_X_INC 4
+#define RZ_EDGES_X_INC 4
 
-#define R_SELWIDGET_MAXH 15
-#define R_SELWIDGET_MAXW 30
-#define R_SELWIDGET_DIR_UP 0
-#define R_SELWIDGET_DIR_DOWN 1
+#define RZ_SELWIDGET_MAXH 15
+#define RZ_SELWIDGET_MAXW 30
+#define RZ_SELWIDGET_DIR_UP 0
+#define RZ_SELWIDGET_DIR_DOWN 1
 
 typedef struct rz_selection_widget_t {
 	const char **options;
@@ -1024,7 +1024,7 @@ typedef struct rz_line_hist_t {
 } RLineHistory;
 
 typedef struct rz_line_buffer_t {
-	char data[R_LINE_BUFSIZE];
+	char data[RZ_LINE_BUFSIZE];
 	int index;
 	int length;
 } RLineBuffer;
@@ -1039,7 +1039,7 @@ typedef struct rz_hud_t {
 typedef struct rz_line_t RLine; // forward declaration
 typedef struct rz_line_comp_t RLineCompletion;
 
-typedef enum { R_LINE_PROMPT_DEFAULT, R_LINE_PROMPT_OFFSET, R_LINE_PROMPT_FILE } RLinePromptType;
+typedef enum { RZ_LINE_PROMPT_DEFAULT, RZ_LINE_PROMPT_OFFSET, RZ_LINE_PROMPT_FILE } RLinePromptType;
 
 typedef int (*RLineCompletionCb)(RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type, void *user);
 
@@ -1125,7 +1125,7 @@ RZ_API void rz_line_completion_push(RLineCompletion *completion, const char *str
 RZ_API void rz_line_completion_set(RLineCompletion *completion, int argc, const char **argv);
 RZ_API void rz_line_completion_clear(RLineCompletion *completion);
 
-#define R_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
+#define RZ_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
 
 #endif
 

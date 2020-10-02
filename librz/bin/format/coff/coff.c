@@ -62,7 +62,7 @@ static int rz_coff_rebase_sym(struct rz_bin_coff_obj *obj, RBinAddr *addr, struc
 /* Try to get a valid entrypoint using the methods outlined in 
  * http://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
 RBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
-	RBinAddr *addr = R_NEW0 (RBinAddr);
+	RBinAddr *addr = RZ_NEW0 (RBinAddr);
 	int i;
 	if (!addr) {
 		return NULL;
@@ -161,7 +161,7 @@ static bool rz_bin_coff_init_scn_hdr(struct rz_bin_coff_obj *obj) {
 	}
 	ret = rz_buf_fread_at (obj->b, offset, (ut8 *)obj->scn_hdrs, obj->endian? "8c6I2S1I": "8c6i2s1i", obj->hdr.f_nscns);
 	if (ret != size) {
-		R_FREE (obj->scn_hdrs);
+		RZ_FREE (obj->scn_hdrs);
 		return false;
 	}
 	return true;
@@ -186,7 +186,7 @@ static bool rz_bin_coff_init_symtable(struct rz_bin_coff_obj *obj) {
 	}
 	ret = rz_buf_fread_at (obj->b, offset, (ut8 *)obj->symbols, obj->endian? "8c1I2S2c": "8c1i2s2c", obj->hdr.f_nsyms);
 	if (ret != size) {
-		R_FREE (obj->symbols);
+		RZ_FREE (obj->symbols);
 		return false;
 	}
 	return true;
@@ -224,7 +224,7 @@ void rz_bin_coff_free(struct rz_bin_coff_obj *obj) {
 }
 
 struct rz_bin_coff_obj* rz_bin_coff_new_buf(RBuffer *buf, bool verbose) {
-	struct rz_bin_coff_obj* bin = R_NEW0 (struct rz_bin_coff_obj);
+	struct rz_bin_coff_obj* bin = RZ_NEW0 (struct rz_bin_coff_obj);
 	rz_bin_coff_init (bin, buf, verbose);
 	return bin;
 }

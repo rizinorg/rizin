@@ -9,7 +9,7 @@
 //void (*ranges_new_callback)(struct range_t *r) = NULL;
 
 RZ_API RRange *rz_range_new(void) {
-	RRange *r = R_NEW0 (RRange);
+	RRange *r = RZ_NEW0 (RRange);
 	if (r) {
 		r->count = r->changed = 0;
 		r->ranges = rz_list_new ();
@@ -169,7 +169,7 @@ RRangeItem *rz_range_add(RRange *rgs, ut64 fr, ut64 to, int rw) {
 	}
 
 	if (rw && add) {
-		ret = R_NEW (RRangeItem);
+		ret = RZ_NEW (RRangeItem);
 		ret->fr = fr;
 		ret->to = to;
 		ret->datalen = 0;

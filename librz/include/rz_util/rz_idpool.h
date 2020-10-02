@@ -1,7 +1,7 @@
 /* rizin - LGPL - Copyright 2017-2018 - condret */
 
-#ifndef R_ID_STORAGE_H
-#define R_ID_STORAGE_H
+#ifndef RZ_ID_STORAGE_H
+#define RZ_ID_STORAGE_H
 
 #include <rz_util/rz_pool.h>
 #include <rz_util/rz_queue.h>

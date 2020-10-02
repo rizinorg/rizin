@@ -85,7 +85,7 @@ static ut64 baddr(RBinFile *bf) {
 static RzList* entries(RBinFile *bf) {
 	RzList* ret = rz_list_newf (free);;
 	if (ret) {
-		RBinAddr *ptr = R_NEW0 (RBinAddr);
+		RBinAddr *ptr = RZ_NEW0 (RBinAddr);
 		if (ptr) {
 			ptr->paddr = 40 + sb.code_pa;
 			ptr->vaddr = 40 + sb.code_pa + sb.vaddr;
@@ -111,7 +111,7 @@ static RzList* sections(RBinFile *bf) {
 	}
 
 	// add text segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("text");
@@ -119,12 +119,12 @@ static RzList* sections(RBinFile *bf) {
 	ptr->vsize = sb.psize;
 	ptr->paddr = sb.paddr + 40;
 	ptr->vaddr = sb.vaddr;
-	ptr->perm = R_PERM_RX; // r-x
+	ptr->perm = RZ_PERM_RX; // r-x
 	ptr->add = true;
 	ptr->has_strings = true;
 	rz_list_append (ret, ptr);
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("sign");
@@ -132,13 +132,13 @@ static RzList* sections(RBinFile *bf) {
 	ptr->vsize = sb.sign_sz;
 	ptr->paddr = sb.sign_va - sb.vaddr;
 	ptr->vaddr = sb.sign_va;
-	ptr->perm = R_PERM_R; // r--
+	ptr->perm = RZ_PERM_R; // r--
 	ptr->has_strings = true;
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
 	if (sb.cert_sz && sb.cert_va > sb.vaddr) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RBinSection))) {
 			return ret;
 		}
 		ptr->name = strdup ("cert");
@@ -146,7 +146,7 @@ static RzList* sections(RBinFile *bf) {
 		ptr->vsize = sb.cert_sz;
 		ptr->paddr = sb.cert_va - sb.vaddr;
 		ptr->vaddr = sb.cert_va;
-		ptr->perm = R_PERM_R; // r--
+		ptr->perm = RZ_PERM_R; // r--
 		ptr->has_strings = true;
 		ptr->add = true;
 		rz_list_append (ret, ptr);
@@ -157,7 +157,7 @@ static RzList* sections(RBinFile *bf) {
 static RBinInfo* info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	const int bits = 16;
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
@@ -198,7 +198,7 @@ RBinPlugin rz_bin_plugin_mbn = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_mbn,
 	.version = RZ_VERSION
 };

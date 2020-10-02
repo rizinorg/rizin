@@ -64,7 +64,7 @@ static int java_switch_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data
 					// switch is too big can't read further
 					break;
 				}
-				int offset = (int)(ut32)(R_BIN_JAVA_UINT (data, pos));
+				int offset = (int)(ut32)(RZ_BIN_JAVA_UINT (data, pos));
 				rz_anal_switch_op_add_case (op->switch_op, addr + pos, cur_case + min_val, addr + offset);
 			}
 		} else {
@@ -77,139 +77,139 @@ static int java_switch_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data
 
 
 static ut64 extract_bin_op(ut64 ranal2_op_type) {
-	ut64 bin_op_val = ranal2_op_type & (R_ANAL_JAVA_BIN_OP | 0x80000);
+	ut64 bin_op_val = ranal2_op_type & (RZ_ANAL_JAVA_BIN_OP | 0x80000);
 	switch (bin_op_val) {
-	case R_ANAL_JAVA_BINOP_XCHG:return R_ANAL_OP_TYPE_XCHG;
-	case R_ANAL_JAVA_BINOP_CMP: return R_ANAL_OP_TYPE_CMP;
-	case R_ANAL_JAVA_BINOP_ADD: return R_ANAL_OP_TYPE_ADD;
-	case R_ANAL_JAVA_BINOP_SUB: return R_ANAL_OP_TYPE_SUB;
-	case R_ANAL_JAVA_BINOP_MUL: return R_ANAL_OP_TYPE_MUL;
-	case R_ANAL_JAVA_BINOP_DIV: return R_ANAL_OP_TYPE_DIV;
-	case R_ANAL_JAVA_BINOP_SHR: return R_ANAL_OP_TYPE_SHR;
-	case R_ANAL_JAVA_BINOP_SHL: return R_ANAL_OP_TYPE_SHL;
-	case R_ANAL_JAVA_BINOP_SAL: return R_ANAL_OP_TYPE_SAL;
-	case R_ANAL_JAVA_BINOP_SAR: return R_ANAL_OP_TYPE_SAR;
-	case R_ANAL_JAVA_BINOP_OR : return R_ANAL_OP_TYPE_OR;
-	case R_ANAL_JAVA_BINOP_AND: return R_ANAL_OP_TYPE_AND;
-	case R_ANAL_JAVA_BINOP_XOR: return R_ANAL_OP_TYPE_XOR;
-	case R_ANAL_JAVA_BINOP_NOT: return R_ANAL_OP_TYPE_NOT;
-	case R_ANAL_JAVA_BINOP_MOD: return R_ANAL_OP_TYPE_MOD;
-	case R_ANAL_JAVA_BINOP_ROR: return R_ANAL_OP_TYPE_ROR;
-	case R_ANAL_JAVA_BINOP_ROL: return R_ANAL_OP_TYPE_ROL;
+	case RZ_ANAL_JAVA_BINOP_XCHG:return RZ_ANAL_OP_TYPE_XCHG;
+	case RZ_ANAL_JAVA_BINOP_CMP: return RZ_ANAL_OP_TYPE_CMP;
+	case RZ_ANAL_JAVA_BINOP_ADD: return RZ_ANAL_OP_TYPE_ADD;
+	case RZ_ANAL_JAVA_BINOP_SUB: return RZ_ANAL_OP_TYPE_SUB;
+	case RZ_ANAL_JAVA_BINOP_MUL: return RZ_ANAL_OP_TYPE_MUL;
+	case RZ_ANAL_JAVA_BINOP_DIV: return RZ_ANAL_OP_TYPE_DIV;
+	case RZ_ANAL_JAVA_BINOP_SHR: return RZ_ANAL_OP_TYPE_SHR;
+	case RZ_ANAL_JAVA_BINOP_SHL: return RZ_ANAL_OP_TYPE_SHL;
+	case RZ_ANAL_JAVA_BINOP_SAL: return RZ_ANAL_OP_TYPE_SAL;
+	case RZ_ANAL_JAVA_BINOP_SAR: return RZ_ANAL_OP_TYPE_SAR;
+	case RZ_ANAL_JAVA_BINOP_OR : return RZ_ANAL_OP_TYPE_OR;
+	case RZ_ANAL_JAVA_BINOP_AND: return RZ_ANAL_OP_TYPE_AND;
+	case RZ_ANAL_JAVA_BINOP_XOR: return RZ_ANAL_OP_TYPE_XOR;
+	case RZ_ANAL_JAVA_BINOP_NOT: return RZ_ANAL_OP_TYPE_NOT;
+	case RZ_ANAL_JAVA_BINOP_MOD: return RZ_ANAL_OP_TYPE_MOD;
+	case RZ_ANAL_JAVA_BINOP_ROR: return RZ_ANAL_OP_TYPE_ROR;
+	case RZ_ANAL_JAVA_BINOP_ROL: return RZ_ANAL_OP_TYPE_ROL;
 	default: break;
 	}
-	return R_ANAL_OP_TYPE_UNK;
+	return RZ_ANAL_OP_TYPE_UNK;
 }
 
 
 
 
 ut64 extract_unknown_op(ut64 ranal2_op_type) {
-	if ((ranal2_op_type & R_ANAL_JAVA_CODEOP_JMP) == R_ANAL_JAVA_CODEOP_JMP) {
-		return R_ANAL_OP_TYPE_UJMP;
+	if ((ranal2_op_type & RZ_ANAL_JAVA_CODEOP_JMP) == RZ_ANAL_JAVA_CODEOP_JMP) {
+		return RZ_ANAL_OP_TYPE_UJMP;
 	}
-	if ((ranal2_op_type & R_ANAL_JAVA_CODEOP_CALL) == R_ANAL_JAVA_CODEOP_CALL) {
-		return R_ANAL_OP_TYPE_UCALL;
+	if ((ranal2_op_type & RZ_ANAL_JAVA_CODEOP_CALL) == RZ_ANAL_JAVA_CODEOP_CALL) {
+		return RZ_ANAL_OP_TYPE_UCALL;
 	}
-	if ((ranal2_op_type & R_ANAL_JAVA_LDST_OP_PUSH) == R_ANAL_JAVA_LDST_OP_PUSH) {
-		return R_ANAL_OP_TYPE_UPUSH;
+	if ((ranal2_op_type & RZ_ANAL_JAVA_LDST_OP_PUSH) == RZ_ANAL_JAVA_LDST_OP_PUSH) {
+		return RZ_ANAL_OP_TYPE_UPUSH;
 	}
-	return R_ANAL_OP_TYPE_UNK;
+	return RZ_ANAL_OP_TYPE_UNK;
 }
 
 static ut64 extract_code_op(ut64 ranal2_op_type) {
-	ut64 conditional = R_ANAL_JAVA_COND_OP & ranal2_op_type ? R_ANAL_OP_TYPE_COND : 0;
-	ut64 code_op_val = ranal2_op_type & (R_ANAL_JAVA_CODE_OP | 0x1FF);
+	ut64 conditional = RZ_ANAL_JAVA_COND_OP & ranal2_op_type ? RZ_ANAL_OP_TYPE_COND : 0;
+	ut64 code_op_val = ranal2_op_type & (RZ_ANAL_JAVA_CODE_OP | 0x1FF);
 	switch (code_op_val) {
-	case R_ANAL_JAVA_CODEOP_CALL: return conditional | R_ANAL_OP_TYPE_CALL;
-	case R_ANAL_JAVA_CODEOP_JMP: return conditional | R_ANAL_OP_TYPE_JMP;
-	case R_ANAL_JAVA_CODEOP_RET: return conditional | R_ANAL_OP_TYPE_RET;
-	case R_ANAL_JAVA_CODEOP_LEAVE: return R_ANAL_OP_TYPE_LEAVE;
-	case R_ANAL_JAVA_CODEOP_SWI: return R_ANAL_OP_TYPE_SWI;
-	case R_ANAL_JAVA_CODEOP_TRAP: return R_ANAL_OP_TYPE_TRAP;
-	case R_ANAL_JAVA_CODEOP_SWITCH: return R_ANAL_OP_TYPE_SWITCH;
+	case RZ_ANAL_JAVA_CODEOP_CALL: return conditional | RZ_ANAL_OP_TYPE_CALL;
+	case RZ_ANAL_JAVA_CODEOP_JMP: return conditional | RZ_ANAL_OP_TYPE_JMP;
+	case RZ_ANAL_JAVA_CODEOP_RET: return conditional | RZ_ANAL_OP_TYPE_RET;
+	case RZ_ANAL_JAVA_CODEOP_LEAVE: return RZ_ANAL_OP_TYPE_LEAVE;
+	case RZ_ANAL_JAVA_CODEOP_SWI: return RZ_ANAL_OP_TYPE_SWI;
+	case RZ_ANAL_JAVA_CODEOP_TRAP: return RZ_ANAL_OP_TYPE_TRAP;
+	case RZ_ANAL_JAVA_CODEOP_SWITCH: return RZ_ANAL_OP_TYPE_SWITCH;
 	}
-	return R_ANAL_OP_TYPE_UNK;
+	return RZ_ANAL_OP_TYPE_UNK;
 }
 
 ut64 extract_load_store_op(ut64 ranal2_op_type) {
-	if ( (ranal2_op_type & R_ANAL_JAVA_LDST_OP_PUSH) == R_ANAL_JAVA_LDST_OP_PUSH) {
-		return R_ANAL_OP_TYPE_PUSH;
+	if ( (ranal2_op_type & RZ_ANAL_JAVA_LDST_OP_PUSH) == RZ_ANAL_JAVA_LDST_OP_PUSH) {
+		return RZ_ANAL_OP_TYPE_PUSH;
 	}
-	if ( (ranal2_op_type & R_ANAL_JAVA_LDST_OP_POP) == R_ANAL_JAVA_LDST_OP_POP) {
-		return R_ANAL_OP_TYPE_POP;
+	if ( (ranal2_op_type & RZ_ANAL_JAVA_LDST_OP_POP) == RZ_ANAL_JAVA_LDST_OP_POP) {
+		return RZ_ANAL_OP_TYPE_POP;
 	}
-	if ( (ranal2_op_type & R_ANAL_JAVA_LDST_OP_MOV) == R_ANAL_JAVA_LDST_OP_MOV) {
-		return R_ANAL_OP_TYPE_MOV;
+	if ( (ranal2_op_type & RZ_ANAL_JAVA_LDST_OP_MOV) == RZ_ANAL_JAVA_LDST_OP_MOV) {
+		return RZ_ANAL_OP_TYPE_MOV;
 	}
-	if ( (ranal2_op_type & R_ANAL_JAVA_LDST_OP_EFF_ADDR) == R_ANAL_JAVA_LDST_OP_EFF_ADDR) {
-		return R_ANAL_OP_TYPE_LEA;
+	if ( (ranal2_op_type & RZ_ANAL_JAVA_LDST_OP_EFF_ADDR) == RZ_ANAL_JAVA_LDST_OP_EFF_ADDR) {
+		return RZ_ANAL_OP_TYPE_LEA;
 	}
-	return R_ANAL_OP_TYPE_UNK;
+	return RZ_ANAL_OP_TYPE_UNK;
 }
 
 static ut64 map_java_op_to_anal_op_type (ut64 t) {
 	ut64 t2 = extract_bin_op(t);
-	if (t2 != R_ANAL_OP_TYPE_UNK) {
+	if (t2 != RZ_ANAL_OP_TYPE_UNK) {
 		return t2;
 	}
 	switch (t) {
-	case R_ANAL_JAVA_NULL_OP: return R_ANAL_OP_TYPE_NULL;
-	case R_ANAL_JAVA_NOP: return R_ANAL_OP_TYPE_NOP;
-	case R_ANAL_JAVA_BINOP_ADD: return R_ANAL_OP_TYPE_ADD;
-	case R_ANAL_JAVA_BINOP_AND: return R_ANAL_OP_TYPE_AND;
-	case R_ANAL_JAVA_BINOP_MUL: return R_ANAL_OP_TYPE_MUL;
-	case R_ANAL_JAVA_BINOP_XOR: return R_ANAL_OP_TYPE_XOR;
-	case R_ANAL_JAVA_BINOP_XCHG: return R_ANAL_OP_TYPE_MOV;
-	case R_ANAL_JAVA_OBJOP_NEW: return R_ANAL_OP_TYPE_UCALL;
-	case R_ANAL_JAVA_OBJOP_SIZE: return R_ANAL_OP_TYPE_UCALL;
-	case R_ANAL_JAVA_ILL_OP: return R_ANAL_OP_TYPE_ILL;
+	case RZ_ANAL_JAVA_NULL_OP: return RZ_ANAL_OP_TYPE_NULL;
+	case RZ_ANAL_JAVA_NOP: return RZ_ANAL_OP_TYPE_NOP;
+	case RZ_ANAL_JAVA_BINOP_ADD: return RZ_ANAL_OP_TYPE_ADD;
+	case RZ_ANAL_JAVA_BINOP_AND: return RZ_ANAL_OP_TYPE_AND;
+	case RZ_ANAL_JAVA_BINOP_MUL: return RZ_ANAL_OP_TYPE_MUL;
+	case RZ_ANAL_JAVA_BINOP_XOR: return RZ_ANAL_OP_TYPE_XOR;
+	case RZ_ANAL_JAVA_BINOP_XCHG: return RZ_ANAL_OP_TYPE_MOV;
+	case RZ_ANAL_JAVA_OBJOP_NEW: return RZ_ANAL_OP_TYPE_UCALL;
+	case RZ_ANAL_JAVA_OBJOP_SIZE: return RZ_ANAL_OP_TYPE_UCALL;
+	case RZ_ANAL_JAVA_ILL_OP: return RZ_ANAL_OP_TYPE_ILL;
 	default:
-		if (t & R_ANAL_JAVA_UNK_OP) {
+		if (t & RZ_ANAL_JAVA_UNK_OP) {
 			return extract_unknown_op (t);
 		}
-		if (t & R_ANAL_JAVA_CODE_OP) {
+		if (t & RZ_ANAL_JAVA_CODE_OP) {
 			return extract_code_op (t);
 		}
-		if (t & R_ANAL_JAVA_REP_OP) {
-			ut64 ret = map_java_op_to_anal_op_type (t & ~R_ANAL_JAVA_REP_OP);
-			return R_ANAL_OP_TYPE_REP | ret;
+		if (t & RZ_ANAL_JAVA_REP_OP) {
+			ut64 ret = map_java_op_to_anal_op_type (t & ~RZ_ANAL_JAVA_REP_OP);
+			return RZ_ANAL_OP_TYPE_REP | ret;
 		}
-		if (t & (R_ANAL_JAVA_LOAD_OP | R_ANAL_JAVA_STORE_OP)) {
+		if (t & (RZ_ANAL_JAVA_LOAD_OP | RZ_ANAL_JAVA_STORE_OP)) {
 			return extract_load_store_op(t);
 		}
-		if (t & R_ANAL_JAVA_BIN_OP) {
+		if (t & RZ_ANAL_JAVA_BIN_OP) {
 			return extract_bin_op (t);
 		}
 		break;
 	}
-	if (R_ANAL_JAVA_OBJOP_CAST & t) {
-		return R_ANAL_OP_TYPE_MOV;
+	if (RZ_ANAL_JAVA_OBJOP_CAST & t) {
+		return RZ_ANAL_OP_TYPE_MOV;
 	}
-	return R_ANAL_OP_TYPE_UNK;
+	return RZ_ANAL_OP_TYPE_UNK;
 }
 
 static int rz_anal_java_is_op_type_eop(ut64 x) {
-	ut8 result = (x & R_ANAL_JAVA_CODE_OP) ? 1 : 0;
+	ut8 result = (x & RZ_ANAL_JAVA_CODE_OP) ? 1 : 0;
 	return result &&
-			( (x & R_ANAL_JAVA_CODEOP_LEAVE) == R_ANAL_JAVA_CODEOP_LEAVE ||
-			 (x & R_ANAL_JAVA_CODEOP_RET) == R_ANAL_JAVA_CODEOP_RET ||
-			 (x & R_ANAL_JAVA_CODEOP_JMP) == R_ANAL_JAVA_CODEOP_JMP ||
-			 (x & R_ANAL_JAVA_CODEOP_SWITCH) == R_ANAL_JAVA_CODEOP_SWITCH);
+			( (x & RZ_ANAL_JAVA_CODEOP_LEAVE) == RZ_ANAL_JAVA_CODEOP_LEAVE ||
+			 (x & RZ_ANAL_JAVA_CODEOP_RET) == RZ_ANAL_JAVA_CODEOP_RET ||
+			 (x & RZ_ANAL_JAVA_CODEOP_JMP) == RZ_ANAL_JAVA_CODEOP_JMP ||
+			 (x & RZ_ANAL_JAVA_CODEOP_SWITCH) == RZ_ANAL_JAVA_CODEOP_SWITCH);
 }
 
 
 static int java_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask) {
 	/* get opcode size */
 	if (len < 1) {
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = RZ_ANAL_OP_TYPE_ILL;
 		return 1;
 	}
 	//ut8 op_byte = data[0];
 	ut8 op_byte = data[0];
 	int sz = JAVA_OPS[op_byte].size;
 	if (!op) {
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = RZ_ANAL_OP_TYPE_ILL;
 		return sz;
 	}
 	IFDBG {
@@ -238,7 +238,7 @@ static int java_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->addr = addr;
 		op->size = 4;
 		op->type2 = 0;
-		op->type = R_ANAL_OP_TYPE_CASE
+		op->type = RZ_ANAL_OP_TYPE_CASE
 		op->eob = 0;
 		return op->sizes;
 	}
@@ -257,24 +257,24 @@ static int java_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int l
 		// incomplete analysis here
 		return 0;
 	}
-	if (op->type == R_ANAL_OP_TYPE_POP) {
-		op->stackop = R_ANAL_STACK_INC;
+	if (op->type == RZ_ANAL_OP_TYPE_POP) {
+		op->stackop = RZ_ANAL_STACK_INC;
 		op->stackptr = 8;
 	}
-		op->direction = R_ANAL_OP_DIR_EXEC;
-	if (op->type == R_ANAL_OP_TYPE_PUSH) {
-		op->stackop = R_ANAL_STACK_INC;
+		op->direction = RZ_ANAL_OP_DIR_EXEC;
+	if (op->type == RZ_ANAL_OP_TYPE_PUSH) {
+		op->stackop = RZ_ANAL_STACK_INC;
 		op->stackptr = -8;
 	}
-	if (op->type == R_ANAL_OP_TYPE_CJMP) {
+	if (op->type == RZ_ANAL_OP_TYPE_CJMP) {
 		op->jump = addr + (short)(USHORT (data, 1));
 		op->fail = addr + sz;
 		IFDBG eprintf ("%s jmpto 0x%04"PFMT64x"  failto 0x%04"PFMT64x".\n",
 			JAVA_OPS[op_byte].name, op->jump, op->fail);
-	} else if (op->type  == R_ANAL_OP_TYPE_JMP) {
+	} else if (op->type  == RZ_ANAL_OP_TYPE_JMP) {
 		op->jump = addr + (short)(USHORT (data, 1));
 		IFDBG eprintf ("%s jmpto 0x%04"PFMT64x".\n", JAVA_OPS[op_byte].name, op->jump);
-	} else if ( (op->type & R_ANAL_OP_TYPE_CALL) == R_ANAL_OP_TYPE_CALL ) {
+	} else if ( (op->type & RZ_ANAL_OP_TYPE_CALL) == RZ_ANAL_OP_TYPE_CALL ) {
 		op->jump = (int)(short)(USHORT (data, 1));
 		op->fail = addr + sz;
 		//IFDBG eprintf ("%s callto 0x%04x  failto 0x%04x.\n", JAVA_OPS[op_byte].name, op->jump, op->fail);
@@ -347,7 +347,7 @@ RzAnalPlugin rz_anal_plugin_java = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_java,
 	.version = RZ_VERSION
 };

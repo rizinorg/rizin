@@ -7,10 +7,10 @@
 #define MAX_FORMAT 3
 
 enum {
-	R_BYTE_DATA  = 1,
-	R_WORD_DATA  = 2,
-	R_DWORD_DATA = 4,
-	R_QWORD_DATA = 8
+	RZ_BYTE_DATA  = 1,
+	RZ_WORD_DATA  = 2,
+	RZ_DWORD_DATA = 4,
+	RZ_QWORD_DATA = 8
 };
 
 enum {
@@ -39,7 +39,7 @@ static char *prompt(const char *str, const char *txt) {
 		free (rz_cons_singleton ()->line->contents);
 		rz_cons_singleton ()->line->contents = strdup (txt);
 	} else {
-		R_FREE (rz_cons_singleton ()->line->contents);
+		RZ_FREE (rz_cons_singleton ()->line->contents);
 	}
 	*cmd = '\0';
 	rz_line_set_prompt (str);
@@ -52,7 +52,7 @@ static char *prompt(const char *str, const char *txt) {
 	}
 	rz_line_set_prompt (oprompt);
 	free (oprompt);
-	R_FREE (rz_cons_singleton ()->line->contents);
+	RZ_FREE (rz_cons_singleton ()->line->contents);
 	return res;
 }
 
@@ -64,10 +64,10 @@ static inline char *getformat (RzCoreVisualTypes *vt, const char *k) {
 static char *colorize_asm_string(RzCore *core, const char *buf_asm, int optype, ut64 addr) {
 	char *tmp, *spacer = NULL;
 	char *source = (char*)buf_asm;
-	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
+	bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 	const char *color_num = core->cons->context->pal.num;
 	const char *color_reg = core->cons->context->pal.reg;
-	RzAnalFunction* fcn = rz_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	RzAnalFunction* fcn = rz_anal_get_fcn_in (core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
 
 	if (!use_color) {
 		return strdup (source);
@@ -146,11 +146,11 @@ RZ_API bool rz_core_visual_esil(RzCore *core) {
 	rz_anal_esil_set_pc (esil, core->offset);
 	for (;;) {
 		rz_cons_clear00 ();
-		// bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
+		// bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 		(void) rz_asm_disassemble (core->rasm, &asmop, buf, sizeof (ut64));
 		analop.type = -1;
-		(void)rz_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ANAL_OP_MASK_ESIL);
-		analopType = analop.type & R_ANAL_OP_TYPE_MASK;
+		(void)rz_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), RZ_ANAL_OP_MASK_ESIL);
+		analopType = analop.type & RZ_ANAL_OP_TYPE_MASK;
 		rz_cons_printf ("r2's esil debugger:\n\n");
 		rz_cons_printf ("pos: %d\n", x);
 		{
@@ -222,7 +222,7 @@ RZ_API bool rz_core_visual_esil(RzCore *core) {
 		case 's':
 			eprintf ("step ((%s))\n", word);
 			rz_sys_usleep (500);
-			x = R_MIN (x + 1, nbits - 1);
+			x = RZ_MIN (x + 1, nbits - 1);
 			rz_anal_esil_runword (esil, word);
 			break;
 		case 'S':
@@ -231,7 +231,7 @@ RZ_API bool rz_core_visual_esil(RzCore *core) {
 			break;
 		case 'r':
 		case 'h':
-			x = 0; //R_MAX (x - 1, 0);
+			x = 0; //RZ_MAX (x - 1, 0);
 			break;
 		case '?':
 			rz_cons_clear00 ();
@@ -292,11 +292,11 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 	memcpy (buf, core->block + cur, sizeof (ut64));
 	for (;;) {
 		rz_cons_clear00 ();
-		bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
+		bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 		(void) rz_asm_disassemble (core->rasm, &asmop, buf, sizeof (ut64));
 		analop.type = -1;
-		(void)rz_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ANAL_OP_MASK_ESIL);
-		analopType = analop.type & R_ANAL_OP_TYPE_MASK;
+		(void)rz_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), RZ_ANAL_OP_MASK_ESIL);
+		analopType = analop.type & RZ_ANAL_OP_TYPE_MASK;
 		rz_cons_printf ("r2's bit editor:\n\n");
 		rz_cons_printf ("offset: 0x%08"PFMT64x"\n"Color_RESET, core->offset + cur);
 		{
@@ -359,7 +359,7 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 					colorBits = false;
 				}
 				for (j = 0; j < 8; j++) {
-					bool bit = R_BIT_CHK (byte, 7 - j);
+					bool bit = RZ_BIT_CHK (byte, 7 - j);
 					rz_cons_printf ("%d", bit? 1: 0);
 				}
 				rz_cons_print (" ");
@@ -379,7 +379,7 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 						colorBits = false;
 					}
 					for (j = 0; j < 8; j++) {
-						bool bit = R_BIT_CHK (byte, 7 - j);
+						bool bit = RZ_BIT_CHK (byte, 7 - j);
 						if (set && bit) {
 							rz_cons_printf ("1");
 						} else if (!set && !bit) {
@@ -434,14 +434,14 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 			return false;
 		case 'H':
 			{
-				int y = R_MAX (x - 8, 0);
+				int y = RZ_MAX (x - 8, 0);
 				x = y - y%8;
 			}
 			break;
 		case 'L':
 		case 9:
 			{
-				int y = R_MIN (x + 8, nbits - 8);
+				int y = RZ_MIN (x + 8, nbits - 8);
 				x = y - y%8;
 			}
 			break;
@@ -454,11 +454,11 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 				const int nbyte = x / 8;
 				const int nbit = 7 - (x - (nbyte * 8));
 				ut8 *byte = buf + nbyte;
-				bool bit = R_BIT_CHK (byte, nbit);
+				bool bit = RZ_BIT_CHK (byte, nbit);
 				if (bit) {
-					R_BIT_UNSET (byte, nbit);
+					RZ_BIT_UNSET (byte, nbit);
 				} else {
-					R_BIT_SET (byte, nbit);
+					RZ_BIT_SET (byte, nbit);
 				}
 			}
 			break;
@@ -492,10 +492,10 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 			buf[(x/8)]--;
 			break;
 		case 'h':
-			x = R_MAX (x - 1, 0);
+			x = RZ_MAX (x - 1, 0);
 			break;
 		case 'l':
-			x = R_MIN (x + 1, nbits - 1);
+			x = RZ_MIN (x + 1, nbits - 1);
 			break;
 		case 'b':
 			bitsInLine = !bitsInLine;
@@ -544,7 +544,7 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 static bool sdbforcb (void *p, const char *k, const char *v) {
 	const char *pre = " ";
 	RzCoreVisualTypes *vt = (RzCoreVisualTypes*)p;
-	bool use_color = vt->core->print->flags & R_PRINT_FLAGS_COLOR;
+	bool use_color = vt->core->print->flags & RZ_PRINT_FLAGS_COLOR;
 	char *color_sel = vt->core->cons->context->pal.prompt;
 	if (vt->optword) {
 		if (!strcmp (vt->type, "struct")) {
@@ -652,7 +652,7 @@ RZ_API int rz_core_visual_types(RzCore *core) {
 		"cc",
 		NULL
 	};
-	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
+	bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 	if (rz_flag_space_is_empty (core->flags)) {
 		menu = 1;
 	}
@@ -699,7 +699,7 @@ RZ_API int rz_core_visual_types(RzCore *core) {
 				h_opt = 0;
 			}
 			option = 0;
-			R_FREE (optword);
+			RZ_FREE (optword);
 			break;
 		case 'l':
 			h_opt++;
@@ -707,7 +707,7 @@ RZ_API int rz_core_visual_types(RzCore *core) {
 			if (!opts[h_opt]) {
 				h_opt--;
 			}
-			R_FREE (optword);
+			RZ_FREE (optword);
 			break;
 		case 'o':
 			 {
@@ -747,7 +747,7 @@ RZ_API int rz_core_visual_types(RzCore *core) {
 		case 'Q':
 		case 'q':
 			if (optword) {
-				R_FREE (optword);
+				RZ_FREE (optword);
 				break;
 			}
 			if (menu <= 0) {
@@ -901,7 +901,7 @@ RZ_API bool rz_core_visual_hudstuff(RzCore *core) {
 	RIntervalTreeIter it;
 	RzAnalMetaItem *mi;
 	rz_interval_tree_foreach (&core->anal->meta, it, mi) {
-		if (mi->type == R_META_TYPE_COMMENT) {
+		if (mi->type == RZ_META_TYPE_COMMENT) {
 			char *s = rz_str_newf ("0x%08"PFMT64x" %s", rz_interval_tree_iter_get (&it)->start, mi->str);
 			if (s) {
 				rz_list_push (list, s);
@@ -1059,7 +1059,7 @@ static void *show_class(RzCore *core, int mode, int *idx, RBinClass *_c, const c
 					(i==*idx)? ">>": "- ", i, f->vaddr, mflags, name);
 			}
 
-			R_FREE (mflags);
+			RZ_FREE (mflags);
 
 			if (i++ == *idx) {
 				fur = f;
@@ -1120,7 +1120,7 @@ static void *show_class(RzCore *core, int mode, int *idx, RBinClass *_c, const c
 					(i==*idx)? ">>": "- ", i, m->vaddr, mflags, name);
 			}
 
-			R_FREE (mflags);
+			RZ_FREE (mflags);
 
 			if (i++ == *idx) {
 				mur = m;
@@ -1179,7 +1179,7 @@ RZ_API int rz_core_visual_classes(RzCore *core) {
 		rz_cons_visual_flush ();
 		ch = rz_cons_readchar ();
 		if (ch == -1 || ch == 4) {
-			R_FREE (grep);
+			RZ_FREE (grep);
 			return false;
 		}
 
@@ -1198,7 +1198,7 @@ RZ_API int rz_core_visual_classes(RzCore *core) {
 			case ' ':
 			case '\r':
 			case '\n':
-				R_FREE (grep);
+				RZ_FREE (grep);
 				grepmode = false;
 				break;
 			default:
@@ -1605,7 +1605,7 @@ RZ_API int rz_core_visual_view_rop(RzCore *core) {
 	char *ropstr = rz_core_cmd_strf (core, "\"/Rl %s\" @e:scr.color=0", line);
 	RzList *rops = rz_str_split_list (ropstr, "\n", 0);
 	int delta = 0;
-	bool show_color = core->print->flags & R_PRINT_FLAGS_COLOR;
+	bool show_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 	bool forceaddr = false;
 	ut64 addr = UT64_MAX;
 	char *cursearch = strdup (line);
@@ -1662,7 +1662,7 @@ RZ_API int rz_core_visual_view_rop(RzCore *core) {
 			int extra = strlen (chainstr) / scr_w;
 			rz_cons_gotoxy (0, extra + 22 + count);
 			rz_cons_strcat (msg);
-			const char *cmt = rz_meta_get_string (core->anal, R_META_TYPE_COMMENT, rz_num_get (NULL, msg));
+			const char *cmt = rz_meta_get_string (core->anal, RZ_META_TYPE_COMMENT, rz_num_get (NULL, msg));
 			if (cmt) {
 				rz_cons_strcat (cmt);
 			}
@@ -1673,7 +1673,7 @@ RZ_API int rz_core_visual_view_rop(RzCore *core) {
 		if (ch == -1 || ch == 4) {
 			free (curline);
 			free (cursearch);
-			R_FREE (chainstr);
+			RZ_FREE (chainstr);
 			return false;
 		}
 #define NEWTYPE(x,y) rz_mem_dup (&(y), sizeof (x));
@@ -1839,10 +1839,10 @@ RZ_API int rz_core_visual_view_rop(RzCore *core) {
 		case 'q':
 			free (curline);
 			free (cursearch);
-			R_FREE (chainstr);
+			RZ_FREE (chainstr);
 			return true;
 		}
-		R_FREE (chainstr);
+		RZ_FREE (chainstr);
 		free (curline);
 	}
 	free (cursearch);
@@ -2165,7 +2165,7 @@ RZ_API int rz_core_visual_comments (RzCore *core) {
 		RzAnalMetaItem *item;
 		i = 0;
 		rz_interval_tree_foreach (&core->anal->meta, it, item) {
-			if (item->type != R_META_TYPE_COMMENT) {
+			if (item->type != RZ_META_TYPE_COMMENT) {
 				continue;
 			}
 			str = item->str;
@@ -2211,7 +2211,7 @@ RZ_API int rz_core_visual_comments (RzCore *core) {
 			break;
 		case 'd':
 			if (p) {
-				rz_meta_del (core->anal, R_META_TYPE_ANY, from, size);
+				rz_meta_del (core->anal, RZ_META_TYPE_ANY, from, size);
 			}
 			break;
 		case 'P':
@@ -2244,11 +2244,11 @@ RZ_API int rz_core_visual_comments (RzCore *core) {
 		case '\r':
 		case '\n':
 			rz_core_cmdf (core, "s 0x%"PFMT64x, from);
-			R_FREE (p);
+			RZ_FREE (p);
 			return true;
 		case 'Q':
 		case 'q':
-			R_FREE (p);
+			RZ_FREE (p);
 			return true;
 		case '?':
 		case 'h':
@@ -2265,7 +2265,7 @@ RZ_API int rz_core_visual_comments (RzCore *core) {
 			rz_cons_any_key (NULL);
 			break;
 		}
-		R_FREE (p);
+		RZ_FREE (p);
 	}
 	return true;
 }
@@ -2591,7 +2591,7 @@ RZ_API void rz_core_visual_mounts(RzCore *core) {
 		ch = rz_cons_arrow_to_hjkl (ch);
 		switch (ch) {
 			case '/':
-				R_FREE (root);
+				RZ_FREE (root);
 				root = strdup ("/");
 				strncpy (path, root, sizeof (path)-1);
 				mode = 2;
@@ -2820,7 +2820,7 @@ static void function_rename(RzCore *core, ut64 addr, const char *name) {
 }
 
 static void variable_rename (RzCore *core, ut64 addr, int vindex, const char *name) {
-	RzAnalFunction* fcn = rz_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	RzAnalFunction* fcn = rz_anal_get_fcn_in (core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
 	ut64 a_tmp = core->offset;
 	int i = 0;
 	RzListIter *iter;
@@ -2840,7 +2840,7 @@ static void variable_rename (RzCore *core, ut64 addr, int vindex, const char *na
 }
 
 static void variable_set_type (RzCore *core, ut64 addr, int vindex, const char *type) {
-	RzAnalFunction* fcn = rz_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	RzAnalFunction* fcn = rz_anal_get_fcn_in (core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
 	RzList *list = rz_anal_var_all_list (core->anal, fcn);
 	RzListIter *iter;
 	RzAnalVar* var;
@@ -2923,7 +2923,7 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 static ut64 var_variables_show(RzCore* core, int idx, int *vindex, int show, int cols) {
 	int i = 0;
 	const ut64 addr = var_functions_show (core, idx, 0, cols);
-	RzAnalFunction* fcn = rz_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	RzAnalFunction* fcn = rz_anal_get_fcn_in (core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
 	int window;
 	int wdelta = (idx > 5) ? idx - 5 : 0;
 	RzListIter *iter;
@@ -2967,7 +2967,7 @@ static ut64 var_variables_show(RzCore* core, int idx, int *vindex, int show, int
 							i == *vindex ? "* ":"  ",
 							var->delta < 0? "var": "arg",
 							var->type, var->name,
-							core->anal->reg->name[R_REG_NAME_BP],
+							core->anal->reg->name[RZ_REG_NAME_BP],
 							(var->kind == 'v')?"-":"+",
 							var->delta);
 					break;
@@ -2976,7 +2976,7 @@ static ut64 var_variables_show(RzCore* core, int idx, int *vindex, int show, int
 							i == *vindex ? "* ":"  ",
 							var->delta < 0? "var": "arg",
 							var->type, var->name,
-							core->anal->reg->name[R_REG_NAME_BP],
+							core->anal->reg->name[RZ_REG_NAME_BP],
 							(var->kind == 'v')?"-":"+",
 							var->delta);
 					break;
@@ -3004,9 +3004,9 @@ static void rz_core_visual_anal_refresh_column (RzCore *core, int colpos) {
 	const ut64 addr = (level != 0 && level != 1)
 		? core->offset
 		: var_functions_show (core, option, 0, colpos);
-	// RzAnalFunction* fcn = rz_anal_get_fcn_in(core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	// RzAnalFunction* fcn = rz_anal_get_fcn_in(core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
 	int h, w = rz_cons_get_size (&h);
-	// int sz = (fcn)? R_MIN (rz_anal_fcn_size (fcn), h * 15) : 16; // max instr is 15 bytes.
+	// int sz = (fcn)? RZ_MIN (rz_anal_fcn_size (fcn), h * 15) : 16; // max instr is 15 bytes.
 
 	const char *cmd;
 	if (printMode > 0 && printMode < lastPrintMode) {
@@ -3024,7 +3024,7 @@ static void rz_core_visual_anal_refresh_column (RzCore *core, int colpos) {
 		char *out = rz_str_ansi_crop (output, 0, 0, w - colpos, h - 2);
 		rz_cons_printf ("\n%s\n", out);
 		free (out);
-		R_FREE (output);
+		RZ_FREE (output);
 	}
 	free (cmdf);
 }
@@ -3154,10 +3154,10 @@ static ut64 rz_core_visual_anal_refresh (RzCore *core) {
 				char *out = rz_str_ansi_crop(output, 0, 0, cols, h - 2);
 				rz_cons_printf ("\n%s\n", out);
 				free (out);
-				R_FREE (output);
+				RZ_FREE (output);
 			} else {
 				rz_cons_printf ("\n%s\n", output);
-				R_FREE (output);
+				RZ_FREE (output);
 			}
 		}
 		break;
@@ -3630,7 +3630,7 @@ RZ_API void rz_core_seek_next(RzCore *core, const char *type) {
 	ut64 next = UT64_MAX;
 	if (strstr (type, "opc")) {
 		RzAnalOp aop;
-		if (rz_anal_op (core->anal, &aop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC)) {
+		if (rz_anal_op (core->anal, &aop, core->offset, core->block, core->blocksize, RZ_ANAL_OP_MASK_BASIC)) {
 			next = core->offset + aop.size;
 		} else {
 			eprintf ("Invalid opcode\n");
@@ -3685,12 +3685,12 @@ RZ_API void rz_core_seek_previous (RzCore *core, const char *type) {
 //define the data at offset according to the type (byte, word...) n times
 static void define_data_ntimes (RzCore *core, ut64 off, int times, int type) {
 	int i = 0;
-	rz_meta_del (core->anal, R_META_TYPE_ANY, off, core->blocksize);
+	rz_meta_del (core->anal, RZ_META_TYPE_ANY, off, core->blocksize);
 	if (times < 0) {
 		times = 1;
 	}
 	for (i = 0; i < times; i++, off += type) {
-		rz_meta_set (core->anal, R_META_TYPE_DATA, off, type, "");
+		rz_meta_set (core->anal, RZ_META_TYPE_DATA, off, type, "");
 	}
 }
 
@@ -3701,7 +3701,7 @@ static bool isDisasmPrint(int mode) {
 static void handleHints(RzCore *core) {
 	//TODO extend for more anal hints
 	int i = 0;
-	char ch[64] = R_EMPTY;
+	char ch[64] = RZ_EMPTY;
 	const char *lines[] = {"[dh]- Define anal hint:"
 		," b [16,32,64]     set bits hint"
 		, NULL};
@@ -3740,7 +3740,7 @@ RZ_API void rz_core_visual_define(RzCore *core, const char *args, int distance) 
 	if (core->print->cur_enabled) {
 		int cur = core->print->cur;
 		if (core->print->ocur != -1) {
-			plen = R_ABS (core->print->cur - core->print->ocur) + 1;
+			plen = RZ_ABS (core->print->cur - core->print->ocur) + 1;
 			if (core->print->ocur<cur) {
 				cur = core->print->ocur;
 			}
@@ -3872,35 +3872,35 @@ onemoretime:
 		if (plen != core->blocksize) {
 			rep = plen / 2;
 		}
-		define_data_ntimes (core, off, rep, R_BYTE_DATA);
+		define_data_ntimes (core, off, rep, RZ_BYTE_DATA);
 		wordsize = 1;
 		break;
 	case 'B': // "VdB"
 		if (plen != core->blocksize) {
 			rep = plen / 2;
 		}
-		define_data_ntimes (core, off, rep, R_WORD_DATA);
+		define_data_ntimes (core, off, rep, RZ_WORD_DATA);
 		wordsize = 2;
 		break;
 	case 'w':
 		if (plen != core->blocksize) {
 			rep = plen / 4;
 		}
-		define_data_ntimes (core, off, rep, R_DWORD_DATA);
+		define_data_ntimes (core, off, rep, RZ_DWORD_DATA);
 		wordsize = 4;
 		break;
 	case 'W':
 		if (plen != core->blocksize) {
 			rep = plen / 8;
 		}
-		define_data_ntimes (core, off, rep, R_QWORD_DATA);
+		define_data_ntimes (core, off, rep, RZ_QWORD_DATA);
 		wordsize = 8;
 		break;
 	case 'm':
 		{
 			char *man = NULL;
 			/* check for manpage */
-			RzAnalOp *op = rz_core_anal_op (core, off, R_ANAL_OP_MASK_BASIC);
+			RzAnalOp *op = rz_core_anal_op (core, off, RZ_ANAL_OP_MASK_BASIC);
 			if (op) {
 				if (op->jump != UT64_MAX) {
 					RzFlagItem *item = rz_flag_get_i (core->flags, op->jump);
@@ -3936,7 +3936,7 @@ onemoretime:
 		}
 		// TODO: get the aligned instruction even if the cursor is in the middle of it.
 		rz_anal_op (core->anal, &op, off,
-			core->block + off - core->offset, 32, R_ANAL_OP_MASK_BASIC);
+			core->block + off - core->offset, 32, RZ_ANAL_OP_MASK_BASIC);
 
 		tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
 		RzAnalVar *var = rz_anal_get_used_function_var (core->anal, op.addr);
@@ -4019,7 +4019,7 @@ onemoretime:
 			RzAnalOp op;
 			ut64 size;
 			if (rz_anal_op (core->anal, &op, off, core->block+delta,
-					core->blocksize-delta, R_ANAL_OP_MASK_BASIC)) {
+					core->blocksize-delta, RZ_ANAL_OP_MASK_BASIC)) {
 				size = off - fcn->addr + op.size;
 				rz_anal_function_resize (fcn, size);
 			}
@@ -4077,11 +4077,11 @@ onemoretime:
 			}
 			name[4 + n] = '\0';
 			if (is_wide) {
-				rz_meta_set (core->anal, R_META_TYPE_STRING,
+				rz_meta_set (core->anal, RZ_META_TYPE_STRING,
 							off + ntotal, (n * 2) + ntotal,
 							(const char *) name + 4);
 			} else {
-				rz_meta_set (core->anal, R_META_TYPE_STRING,
+				rz_meta_set (core->anal, RZ_META_TYPE_STRING,
 							off + ntotal, n + ntotal,
 							(const char *) name + 4);
 			}
@@ -4130,10 +4130,10 @@ onemoretime:
 		//handle wide strings
 		//memcpy (name + 4, (const char *)p, n);
 		if (is_wide) {
-			rz_meta_set (core->anal, R_META_TYPE_STRING, off,
+			rz_meta_set (core->anal, RZ_META_TYPE_STRING, off,
 						n * 2, (const char *) name + 4);
 		} else {
-			rz_meta_set (core->anal, R_META_TYPE_STRING, off,
+			rz_meta_set (core->anal, RZ_META_TYPE_STRING, off,
 						n, (const char *) name + 4);
 		}
 		rz_name_filter (name, n + 10);
@@ -4143,12 +4143,12 @@ onemoretime:
 		}
 		break;
 	case 'd': // TODO: check
-		rz_meta_del (core->anal, R_META_TYPE_ANY, off, plen);
-		rz_meta_set (core->anal, R_META_TYPE_DATA, off, plen, "");
+		rz_meta_del (core->anal, RZ_META_TYPE_ANY, off, plen);
+		rz_meta_set (core->anal, RZ_META_TYPE_DATA, off, plen, "");
 		break;
 	case 'c': // TODO: check
-		rz_meta_del (core->anal, R_META_TYPE_ANY, off, plen);
-		rz_meta_set (core->anal, R_META_TYPE_CODE, off, plen, "");
+		rz_meta_del (core->anal, RZ_META_TYPE_ANY, off, plen);
+		rz_meta_set (core->anal, RZ_META_TYPE_CODE, off, plen, "");
 		break;
 	case 'u':
 		rz_core_anal_undefine (core, off);
@@ -4202,7 +4202,7 @@ onemoretime:
 		RzAnalVar *var = NULL;
 		for (try_off = start_off; try_off < start_off + incr*16; try_off += incr) {
 			rz_anal_op_free (op);
-			op = rz_core_anal_op (core, try_off, R_ANAL_OP_MASK_ALL);
+			op = rz_core_anal_op (core, try_off, RZ_ANAL_OP_MASK_ALL);
 			if (!op) {
 				break;
 			}

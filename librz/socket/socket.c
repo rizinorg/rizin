@@ -14,7 +14,7 @@
 
 #define D if(0)
 
-R_LIB_VERSION(rz_socket);
+RZ_LIB_VERSION(rz_socket);
 
 
 #if NETWORK_DISABLED
@@ -177,7 +177,7 @@ static bool __listen_unix(RzSocket *s, const char *file) {
 #endif
 
 RZ_API RzSocket *rz_socket_new(bool is_ssl) {
-	RzSocket *s = R_NEW0 (RzSocket);
+	RzSocket *s = RZ_NEW0 (RzSocket);
 	if (!s) {
 		return NULL;
 	}
@@ -187,7 +187,7 @@ RZ_API RzSocket *rz_socket_new(bool is_ssl) {
 	rz_sys_signal (SIGPIPE, SIG_IGN);
 #endif
 	s->local = 0;
-	s->fd = R_INVALID_SOCKET;
+	s->fd = RZ_INVALID_SOCKET;
 #if HAVE_LIB_SSL
 	if (is_ssl) {
 		s->sfd = NULL;
@@ -236,7 +236,7 @@ RZ_API bool rz_socket_spawn(RzSocket *s, const char *cmd, unsigned int timeout) 
 	char aport[32];
 	sprintf (aport, "%d", port);
 	// redirect stdin/stdout/stderr
-	bool sock = rz_socket_connect (s, "127.0.0.1", aport, R_SOCKET_PROTO_TCP, 2000);
+	bool sock = rz_socket_connect (s, "127.0.0.1", aport, RZ_SOCKET_PROTO_TCP, 2000);
 	if (!sock) {
 		return false;
 	}
@@ -269,13 +269,13 @@ RZ_API bool rz_socket_connect(RzSocket *s, const char *host, const char *port, i
 	int ret;
 	struct addrinfo hints = { 0 };
 	struct addrinfo *res, *rp;
-	if (proto == R_SOCKET_PROTO_NONE) {
-		proto = R_SOCKET_PROTO_DEFAULT;
+	if (proto == RZ_SOCKET_PROTO_NONE) {
+		proto = RZ_SOCKET_PROTO_DEFAULT;
 	}
 #if __UNIX__
 	rz_sys_signal (SIGPIPE, SIG_IGN);
 #endif
-	if (proto == R_SOCKET_PROTO_UNIX) {
+	if (proto == RZ_SOCKET_PROTO_UNIX) {
 #if __UNIX__
 		if (!__connect_unix (s, host)) {
 			return false;
@@ -300,7 +300,7 @@ RZ_API bool rz_socket_connect(RzSocket *s, const char *host, const char *port, i
 			}
 
 			switch (proto) {
-			case R_SOCKET_PROTO_TCP:
+			case RZ_SOCKET_PROTO_TCP:
 				ret = setsockopt (s->fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof (flag));
 				if (ret < 0) {
 					perror ("setsockopt");
@@ -311,7 +311,7 @@ RZ_API bool rz_socket_connect(RzSocket *s, const char *host, const char *port, i
 				rz_socket_block_time (s, true, 1, 0);
 				ret = connect (s->fd, rp->ai_addr, rp->ai_addrlen);
 				break;
-			case R_SOCKET_PROTO_UDP:
+			case RZ_SOCKET_PROTO_UDP:
 				memset (&s->sa, 0, sizeof (s->sa));
 				s->sa.sin_family = AF_INET;
 				s->sa.sin_addr.s_addr = htonl (s->local? INADDR_LOOPBACK: INADDR_ANY);
@@ -422,7 +422,7 @@ RZ_API int rz_socket_close(RzSocket *s) {
 	if (!s) {
 		return false;
 	}
-	if (s->fd != R_INVALID_SOCKET) {
+	if (s->fd != RZ_INVALID_SOCKET) {
 #if __UNIX__
 		shutdown (s->fd, SHUT_RDWR);
 #endif
@@ -439,7 +439,7 @@ RZ_API int rz_socket_close(RzSocket *s) {
 #else
 		ret = close (s->fd);
 #endif
-		s->fd = R_INVALID_SOCKET;
+		s->fd = RZ_INVALID_SOCKET;
 	}
 #if HAVE_LIB_SSL
 	if (s->is_ssl && s->sfd) {
@@ -477,7 +477,7 @@ RZ_API bool rz_socket_listen(RzSocket *s, const char *port, const char *certfile
 	int ret;
 	struct linger linger = { 0 };
 
-	if (s->proto == R_SOCKET_PROTO_UNIX) {
+	if (s->proto == RZ_SOCKET_PROTO_UNIX) {
 #if __UNIX__
 		return __listen_unix (s, port);
 #endif
@@ -494,17 +494,17 @@ RZ_API bool rz_socket_listen(RzSocket *s, const char *port, const char *certfile
 		return false;
 	}
 #endif
-	if (s->proto == R_SOCKET_PROTO_NONE) {
-		s->proto = R_SOCKET_PROTO_DEFAULT;
+	if (s->proto == RZ_SOCKET_PROTO_NONE) {
+		s->proto = RZ_SOCKET_PROTO_DEFAULT;
 	}
 	switch (s->proto) {
-	case R_SOCKET_PROTO_TCP:
-		if ((s->fd = socket (AF_INET, SOCK_STREAM, R_SOCKET_PROTO_TCP)) == R_INVALID_SOCKET) {
+	case RZ_SOCKET_PROTO_TCP:
+		if ((s->fd = socket (AF_INET, SOCK_STREAM, RZ_SOCKET_PROTO_TCP)) == RZ_INVALID_SOCKET) {
 			return false;
 		}
 		break;
-	case R_SOCKET_PROTO_UDP:
-		if ((s->fd = socket (AF_INET, SOCK_DGRAM, R_SOCKET_PROTO_UDP)) == R_INVALID_SOCKET) {
+	case RZ_SOCKET_PROTO_UDP:
+		if ((s->fd = socket (AF_INET, SOCK_DGRAM, RZ_SOCKET_PROTO_UDP)) == RZ_INVALID_SOCKET) {
 			return false;
 		}
 		break;
@@ -551,7 +551,7 @@ RZ_API bool rz_socket_listen(RzSocket *s, const char *port, const char *certfile
 #if __UNIX__
 	rz_sys_signal (SIGPIPE, SIG_IGN);
 #endif
-	if (s->proto == R_SOCKET_PROTO_TCP) {
+	if (s->proto == RZ_SOCKET_PROTO_TCP) {
 		if (listen (s->fd, 32) < 0) {
 			rz_sys_perror ("listen");
 #ifdef _MSC_VER
@@ -589,13 +589,13 @@ RZ_API RzSocket *rz_socket_accept(RzSocket *s) {
 	if (!s) {
 		return NULL;
 	}
-	sock = R_NEW0 (RzSocket);
+	sock = RZ_NEW0 (RzSocket);
 	if (!sock) {
 		return NULL;
 	}
 	//signal (SIGPIPE, SIG_DFL);
 	sock->fd = accept (s->fd, (struct sockaddr *)&s->sa, &salen);
-	if (sock->fd == R_INVALID_SOCKET) {
+	if (sock->fd == RZ_INVALID_SOCKET) {
 		if (errno != EWOULDBLOCK) {
 			// not just a timeout
 			rz_sys_perror ("accept");
@@ -694,7 +694,7 @@ RZ_API int rz_socket_flush(RzSocket *s) {
 RZ_API int rz_socket_ready(RzSocket *s, int secs, int usecs) {
 	fd_set rfds;
 	struct timeval tv = {secs, usecs};
-	if (s->fd == R_INVALID_SOCKET) {
+	if (s->fd == RZ_INVALID_SOCKET) {
 		return -1;
 	}
 	FD_ZERO (&rfds);
@@ -770,7 +770,7 @@ RZ_API int rz_socket_puts(RzSocket *s, char *buf) {
 RZ_API void rz_socket_printf(RzSocket *s, const char *fmt, ...) {
 	char buf[BUFFER_SIZE];
 	va_list ap;
-	if (s->fd != R_INVALID_SOCKET) {
+	if (s->fd != RZ_INVALID_SOCKET) {
 		va_start (ap, fmt);
 		vsnprintf (buf, BUFFER_SIZE, fmt, ap);
 		(void) rz_socket_write (s, buf, strlen (buf));
@@ -822,7 +822,7 @@ RZ_API int rz_socket_gets(RzSocket *s, char *buf,	int size) {
 	int i = 0;
 	int ret = 0;
 
-	if (s->fd == R_INVALID_SOCKET) {
+	if (s->fd == RZ_INVALID_SOCKET) {
 		return -1;
 	}
 	while (i < size) {
@@ -848,10 +848,10 @@ RZ_API int rz_socket_gets(RzSocket *s, char *buf,	int size) {
 }
 
 RZ_API RzSocket *rz_socket_new_from_fd(int fd) {
-	RzSocket *s = R_NEW0 (RzSocket);
+	RzSocket *s = RZ_NEW0 (RzSocket);
 	if (s) {
 		s->fd = fd;
-		s->proto = R_SOCKET_PROTO_DEFAULT;
+		s->proto = RZ_SOCKET_PROTO_DEFAULT;
 	}
 	return s;
 }
@@ -881,7 +881,7 @@ RZ_API ut8* rz_socket_slurp(RzSocket *s, int *len) {
 		}
 	}
 	if (copied == 0) {
-		R_FREE (buf);
+		RZ_FREE (buf);
 	}
 	if (len) {
 		*len = copied;

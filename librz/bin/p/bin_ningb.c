@@ -24,9 +24,9 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 static RBinAddr* binsym(RBinFile *bf, int type) {
-	if (type == R_BIN_SYM_MAIN && bf && bf->buf) {
+	if (type == RZ_BIN_SYM_MAIN && bf && bf->buf) {
 		ut8 init_jmp[4];
-		RBinAddr *ret = R_NEW0 (RBinAddr);
+		RBinAddr *ret = RZ_NEW0 (RBinAddr);
 		if (!ret) {
 			return NULL;
 		}
@@ -49,7 +49,7 @@ static RzList* entries(RBinFile *bf) {
 			return NULL;
 		}
 		ret->free = free;
-		if (!(ptr = R_NEW0 (RBinAddr))) {
+		if (!(ptr = RZ_NEW0 (RBinAddr))) {
 			return ret;
 		}
 		ptr->paddr = ptr->vaddr = ptr->hpaddr = 0x100;
@@ -90,7 +90,7 @@ static RzList* sections(RBinFile *bf){
 
 	ret->free = free;
 
-	rombank[0] = R_NEW0 (RBinSection);
+	rombank[0] = RZ_NEW0 (RBinSection);
 	rombank[0]->name = strdup ("rombank00");
 	rombank[0]->paddr = 0;
 	rombank[0]->size = 0x4000;
@@ -102,7 +102,7 @@ static RzList* sections(RBinFile *bf){
 	rz_list_append (ret, rombank[0]);
 
 	for (i = 1; i < bank; i++) {
-		rombank[i] = R_NEW0 (RBinSection);
+		rombank[i] = RZ_NEW0 (RBinSection);
 		rombank[i]->name = rz_str_newf ("rombank%02x", i);
 		rombank[i]->paddr = i*0x4000;
 		rombank[i]->vaddr = i*0x10000-0xc000;			//spaaaaaaaaaaaaaaaace!!!
@@ -127,7 +127,7 @@ static RzList* symbols(RBinFile *bf) {
 	ret->free = free;
 
 	for (i = 0; i < 8; i++) {
-		if (!(ptr[i] = R_NEW0 (RBinSymbol))) {
+		if (!(ptr[i] = RZ_NEW0 (RBinSymbol))) {
 			ret->free (ret);
 			return NULL;
 		}
@@ -138,7 +138,7 @@ static RzList* symbols(RBinFile *bf) {
 		rz_list_append (ret, ptr[i]);
 	}
 
-	if (!(ptr[8] = R_NEW0 (RBinSymbol))) {
+	if (!(ptr[8] = RZ_NEW0 (RBinSymbol))) {
 		return ret;
 	}
 
@@ -148,7 +148,7 @@ static RzList* symbols(RBinFile *bf) {
 	ptr[8]->ordinal = 8;
 	rz_list_append (ret, ptr[8]);
 
-	if (!(ptr[9] = R_NEW0 (RBinSymbol))) {
+	if (!(ptr[9] = RZ_NEW0 (RBinSymbol))) {
 		return ret;
 	}
 
@@ -158,7 +158,7 @@ static RzList* symbols(RBinFile *bf) {
 	ptr[9]->ordinal = 9;
 	rz_list_append (ret, ptr[9]);
 
-	if (!(ptr[10] = R_NEW0 (RBinSymbol))) {
+	if (!(ptr[10] = RZ_NEW0 (RBinSymbol))) {
 		return ret;
 	}
 
@@ -168,7 +168,7 @@ static RzList* symbols(RBinFile *bf) {
 	ptr[10]->ordinal = 10;
 	rz_list_append (ret, ptr[10]);
 
-	if (!(ptr[11] = R_NEW0 (RBinSymbol))) {
+	if (!(ptr[11] = RZ_NEW0 (RBinSymbol))) {
 		return ret;
 	}
 
@@ -178,7 +178,7 @@ static RzList* symbols(RBinFile *bf) {
 	ptr[11]->ordinal = 11;
 	rz_list_append (ret, ptr[11]);
 
-	if (!(ptr[12] = R_NEW0 (RBinSymbol))) {
+	if (!(ptr[12] = RZ_NEW0 (RBinSymbol))) {
 		return ret;
 	}
 
@@ -193,7 +193,7 @@ static RzList* symbols(RBinFile *bf) {
 
 static RBinInfo* info(RBinFile *bf) {
 	ut8 rom_header[76];
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = RZ_NEW0 (RBinInfo);
 	if (!ret || !bf || !bf->buf) {
 		free (ret);
 		return NULL;
@@ -221,7 +221,7 @@ RzList *mem (RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	if (!(m = R_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RBinMem))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -231,7 +231,7 @@ RzList *mem (RBinFile *bf) {
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
 
-	if (!(m = R_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RBinMem))) {
 		return ret;
 	}
 	m->name = strdup ("ioports");
@@ -240,7 +240,7 @@ RzList *mem (RBinFile *bf) {
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
 
-	if (!(m = R_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RBinMem))) {
 		return ret;
 	}
 	m->name = strdup ("oam");
@@ -249,7 +249,7 @@ RzList *mem (RBinFile *bf) {
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
 
-	if (!(m = R_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RBinMem))) {
 		return ret;
 	}
 	m->name = strdup ("videoram");
@@ -258,7 +258,7 @@ RzList *mem (RBinFile *bf) {
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
 
-	if (!(m = R_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RBinMem))) {
 		return ret;
 	}
 	m->name = strdup ("iram");
@@ -269,7 +269,7 @@ RzList *mem (RBinFile *bf) {
 	if (!(m->mirrors = rz_list_new ())) {
 		return ret;
 	}
-	if (!(n = R_NEW0 (RBinMem))) {
+	if (!(n = RZ_NEW0 (RBinMem))) {
 		rz_list_free (m->mirrors);
 		m->mirrors = NULL;
 		return ret;
@@ -300,7 +300,7 @@ RBinPlugin rz_bin_plugin_ningb = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_ningb,
 	.version = RZ_VERSION
 };

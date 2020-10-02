@@ -5,11 +5,11 @@
 #include <rz_cons.h>
 #include <stdio.h>
 
-R_LIB_VERSION(rz_flag);
+RZ_LIB_VERSION(rz_flag);
 
 #define IS_FI_NOTIN_SPACE(f, i) (rz_flag_space_cur (f) && (i)->space != rz_flag_space_cur (f))
 #define IS_FI_IN_SPACE(fi, sp) (!(sp) || (fi)->space == (sp))
-#define STRDUP_OR_NULL(s) (!R_STR_ISEMPTY (s)? strdup (s): NULL)
+#define STRDUP_OR_NULL(s) (!RZ_STR_ISEMPTY (s)? strdup (s): NULL)
 
 static const char *str_callback(RNum *user, ut64 off, int *ok) {
 	RzFlag *f = (RzFlag*)user;
@@ -104,7 +104,7 @@ static RzFlagsAtOffset *flags_at_offset(RzFlag *f, ut64 off) {
 	}
 
 	// there is no existing flagsAtOffset, we create one now
-	res = R_NEW (RzFlagsAtOffset);
+	res = RZ_NEW (RzFlagsAtOffset);
 	if (!res) {
 		return NULL;
 	}
@@ -211,12 +211,12 @@ static void unset_flagspace(REvent *ev, int type, void *user, void *data) {
 
 static void new_spaces(RzFlag *f) {
 	rz_spaces_init (&f->spaces, "fs");
-	rz_event_hook (f->spaces.event, R_SPACE_EVENT_COUNT, count_flags_in_space, NULL);
-	rz_event_hook (f->spaces.event, R_SPACE_EVENT_UNSET, unset_flagspace, NULL);
+	rz_event_hook (f->spaces.event, RZ_SPACE_EVENT_COUNT, count_flags_in_space, NULL);
+	rz_event_hook (f->spaces.event, RZ_SPACE_EVENT_UNSET, unset_flagspace, NULL);
 }
 
 RZ_API RzFlag *rz_flag_new(void) {
-	RzFlag *f = R_NEW0 (RzFlag);
+	RzFlag *f = RZ_NEW0 (RzFlag);
 	if (!f) {
 		return NULL;
 	}
@@ -227,7 +227,7 @@ RZ_API RzFlag *rz_flag_new(void) {
 	}
 	f->base = 0;
 	f->cb_printf = (PrintfCallback)printf;
-#if R_FLAG_ZONE_USE_SDB
+#if RZ_FLAG_ZONE_USE_SDB
 	f->zones = sdb_new0 ();
 #else
 	f->zones = NULL;
@@ -235,7 +235,7 @@ RZ_API RzFlag *rz_flag_new(void) {
 	f->tags = sdb_new0 ();
 	f->ht_name = ht_pp_new (NULL, ht_free_flag, NULL);
 	f->by_off = rz_skiplist_new (flag_skiplist_free, flag_skiplist_cmp);
-#if R_FLAG_ZONE_USE_SDB
+#if RZ_FLAG_ZONE_USE_SDB
 	sdb_free (f->zones);
 #else
 	rz_list_free (f->zones);
@@ -247,7 +247,7 @@ RZ_API RzFlag *rz_flag_new(void) {
 RZ_API RzFlagItem *rz_flag_item_clone(RzFlagItem *item) {
 	rz_return_val_if_fail (item, NULL);
 
-	RzFlagItem *n = R_NEW0 (RzFlagItem);
+	RzFlagItem *n = RZ_NEW0 (RzFlagItem);
 	if (!n) {
 		return NULL;
 	}
@@ -548,7 +548,7 @@ RZ_API RzFlagItem *rz_flag_get_by_spaces(RzFlag *f, ut64 off, ...) {
 
 	// get RSpaces from the names
 	i = 0;
-	spaces = R_NEWS (RSpace *, n_spaces);
+	spaces = RZ_NEWS (RSpace *, n_spaces);
 	spacename = va_arg (ap, const char *);
 	while (spacename) {
 		RSpace *space = rz_flag_space_get (f, spacename);
@@ -731,7 +731,7 @@ RZ_API RzFlagItem *rz_flag_set(RzFlag *f, const char *name, ut64 off, ut32 size)
 	}
 
 	if (!item) {
-		item = R_NEW0 (RzFlagItem);
+		item = RZ_NEW0 (RzFlagItem);
 		if (!item) {
 			goto err;
 		}
@@ -753,21 +753,21 @@ err:
 RZ_API void rz_flag_item_set_alias(RzFlagItem *item, const char *alias) {
 	rz_return_if_fail (item);
 	free (item->alias);
-	item->alias = R_STR_ISEMPTY (alias)? NULL: strdup (alias);
+	item->alias = RZ_STR_ISEMPTY (alias)? NULL: strdup (alias);
 }
 
 /* add/replace/remove the comment of a flag item */
 RZ_API void rz_flag_item_set_comment(RzFlagItem *item, const char *comment) {
 	rz_return_if_fail (item);
 	free (item->comment);
-	item->comment = R_STR_ISEMPTY (comment)? NULL: strdup (comment);
+	item->comment = RZ_STR_ISEMPTY (comment)? NULL: strdup (comment);
 }
 
 /* add/replace/remove the realname of a flag item */
 RZ_API void rz_flag_item_set_realname(RzFlagItem *item, const char *realname) {
 	rz_return_if_fail (item);
 	free_item_realname (item);
-	item->realname = R_STR_ISEMPTY (realname)? NULL: strdup (realname);
+	item->realname = RZ_STR_ISEMPTY (realname)? NULL: strdup (realname);
 }
 
 /* add/replace/remove the color of a flag item */

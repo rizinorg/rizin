@@ -73,8 +73,8 @@ endif
 
 librz/include/rz_version.h:
 	@echo Generating rz_version.h file
-	@echo $(Q)#ifndef R_VERSION_H$(Q) > $@.tmp
-	@echo $(Q)#define R_VERSION_H 1$(Q) >> $@.tmp
+	@echo $(Q)#ifndef RZ_VERSION_H$(Q) > $@.tmp
+	@echo $(Q)#define RZ_VERSION_H 1$(Q) >> $@.tmp
 	@echo $(Q)#define RZ_VERSION_COMMIT $(R2VC)$(Q) >> $@.tmp
 	@echo $(Q)#define RZ_VERSION $(ESC)"$(RZ_VERSION)$(ESC)"$(Q) >> $@.tmp
 	@echo $(Q)#define RZ_VERSION_MAJOR $(RZ_VERSION_MAJOR)$(Q) >> $@.tmp

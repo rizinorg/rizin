@@ -39,7 +39,7 @@ RZ_API void rz_anal_esil_interrupts_init(RzAnalEsil *esil) {
 
 RZ_API RzAnalEsilInterrupt *rz_anal_esil_interrupt_new(RzAnalEsil *esil, ut32 src_id,  RzAnalEsilInterruptHandler *ih) {
 	rz_return_val_if_fail (esil && ih && ih->cb, NULL);
-	RzAnalEsilInterrupt *intr = R_NEW0 (RzAnalEsilInterrupt);
+	RzAnalEsilInterrupt *intr = RZ_NEW0 (RzAnalEsilInterrupt);
 	if (!intr) {
 		return NULL;
 	}

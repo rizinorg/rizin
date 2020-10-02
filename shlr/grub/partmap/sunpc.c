@@ -30,7 +30,7 @@
 #define GRUB_PARTMAP_SUN_PC_MAX_PARTS 16
 #define GRUB_PARTMAP_SUN_PC_WHOLE_DISK_ID 0x05
 
-R_PACKED (
+RZ_PACKED (
 struct grub_sun_pc_partition_descriptor
 {
   grub_uint16_t id;
@@ -39,7 +39,7 @@ struct grub_sun_pc_partition_descriptor
   grub_uint32_t num_sectors;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_sun_pc_block
 {
   grub_uint8_t unused[72];

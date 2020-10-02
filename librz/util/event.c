@@ -14,7 +14,7 @@ static void ht_callback_free(HtUPKv *kv) {
 }
 
 RZ_API REvent *rz_event_new(void *user) {
-	REvent *ev = R_NEW0 (REvent);
+	REvent *ev = RZ_NEW0 (REvent);
 	if (!ev) {
 		return NULL;
 	}
@@ -60,7 +60,7 @@ RZ_API REventCallbackHandle rz_event_hook(REvent *ev, int type, REventCallback c
 	hook.cb = cb;
 	hook.user = user;
 	hook.handle = ev->next_handle++;
-	if (type == R_EVENT_ALL) {
+	if (type == RZ_EVENT_ALL) {
 		rz_vector_push (&ev->all_callbacks, &hook);
 	} else {
 		RzVector *cbs = get_cbs (ev, type);
@@ -91,7 +91,7 @@ static bool del_hook(void *user, const ut64 k, const void *v) {
 
 RZ_API void rz_event_unhook(REvent *ev, REventCallbackHandle handle) {
 	rz_return_if_fail (ev);
-	if (handle.type == R_EVENT_ALL) {
+	if (handle.type == RZ_EVENT_ALL) {
 		// try to delete it both from each list of callbacks and from
 		// the "all_callbacks" vector
 		ht_up_foreach (ev->callbacks, del_hook, &handle.handle);

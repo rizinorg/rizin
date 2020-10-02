@@ -30,13 +30,13 @@ RzAsmPlugin rz_asm_plugin_propeller = {
 	.desc = "propeller disassembly plugin",
 	.arch = "propeller",
 	.bits = 32,
-	.endian = R_SYS_ENDIAN_BIG,
+	.endian = RZ_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble
 };
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_propeller,
 	.version = RZ_VERSION
 };

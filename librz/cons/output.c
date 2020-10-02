@@ -9,7 +9,7 @@ static void __fill_tail(int cols, int lines) {
 	lines++;
 	if (lines > 0) {
 		char white[1024];
-		cols = R_MIN (cols, sizeof (white));
+		cols = RZ_MIN (cols, sizeof (white));
 		memset (white, ' ', cols - 1);
 		lines--;
 		white[cols] = '\n';
@@ -25,7 +25,7 @@ RZ_API void rz_cons_w32_clear(void) {
 	COORD startCoords;
 	DWORD dummy;
 	if (I->vtmode) {
-		rz_cons_strcat (Color_RESET R_CONS_CLEAR_SCREEN);
+		rz_cons_strcat (Color_RESET RZ_CONS_CLEAR_SCREEN);
 		return;
 	}
 	if (I->is_wine == 1) {

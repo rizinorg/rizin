@@ -17,7 +17,7 @@ static ut64 parse_size(char *s, char **end) {
 
 gdb_reg_t *parse_def(char **tok) {
 	char *end;
-	gdb_reg_t *r = R_NEW0 (gdb_reg_t);
+	gdb_reg_t *r = RZ_NEW0 (gdb_reg_t);
 	if (!r) {
 		return NULL;
 	}

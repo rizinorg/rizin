@@ -205,7 +205,7 @@ int XXH32_feed (void *state_in, const void *input, int len) {
 	}
 
 	if (p < bEnd) {
-		state->memsize = R_MIN (bEnd - p, sizeof (state->memory));
+		state->memsize = RZ_MIN (bEnd - p, sizeof (state->memory));
 		memcpy (state->memory, p, state->memsize);
 	}
 	return 0;

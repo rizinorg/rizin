@@ -166,7 +166,7 @@ RZ_API int rz_list_join(RzList *list1, RzList *list2) {
 }
 
 RZ_API RzList *rz_list_new(void) {
-	RzList *list = R_NEW0 (RzList);
+	RzList *list = RZ_NEW0 (RzList);
 	if (!list) {
 		return NULL;
 	}
@@ -183,7 +183,7 @@ RZ_API RzList *rz_list_newf(RzListFree f) {
 }
 
 RZ_API RzListIter *rz_list_item_new(void *data) {
-	RzListIter *item = R_NEW0 (RzListIter);
+	RzListIter *item = RZ_NEW0 (RzListIter);
 	if (item) {
 		item->data = data;
 	}
@@ -195,7 +195,7 @@ RZ_API RzListIter *rz_list_append(RzList *list, void *data) {
 
 	rz_return_val_if_fail (list, NULL);
 
-	item = R_NEW (RzListIter);
+	item = RZ_NEW (RzListIter);
 	if (!item) {
 		return item;
 	}
@@ -217,7 +217,7 @@ RZ_API RzListIter *rz_list_append(RzList *list, void *data) {
 RZ_API RzListIter *rz_list_prepend(RzList *list, void *data) {
 	rz_return_val_if_fail (list, NULL);
 
-	RzListIter *item = R_NEW0 (RzListIter);
+	RzListIter *item = RZ_NEW0 (RzListIter);
 	if (!item) {
 		return NULL;
 	}
@@ -247,7 +247,7 @@ RZ_API RzListIter *rz_list_insert(RzList *list, int n, void *data) {
 	}
 	for (it = list->head, i = 0; it && it->data; it = it->n, i++) {
 		if (i == n) {
-			item = R_NEW (RzListIter);
+			item = RZ_NEW (RzListIter);
 			if (!item) {
 				return NULL;
 			}
@@ -389,7 +389,7 @@ RZ_API RzListIter *rz_list_add_sorted(RzList *list, void *data, RzListComparator
 		;
 	}
 	if (it) {
-		item = R_NEW0 (RzListIter);
+		item = RZ_NEW0 (RzListIter);
 		if (!item) {
 			return NULL;
 		}

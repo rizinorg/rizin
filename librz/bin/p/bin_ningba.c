@@ -26,7 +26,7 @@ static RzList *entries(RBinFile *bf) {
 		if (!ret) {
 			return NULL;
 		}
-		if (!(ptr = R_NEW0 (RBinAddr))) {
+		if (!(ptr = RZ_NEW0 (RBinAddr))) {
 			return ret;
 		}
 		ptr->paddr = ptr->vaddr = 0x8000000;
@@ -37,7 +37,7 @@ static RzList *entries(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	ut8 rom_info[16];
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = RZ_NEW0 (RBinInfo);
 
 	if (!ret) {
 		return NULL;
@@ -64,7 +64,7 @@ static RBinInfo *info(RBinFile *bf) {
 
 static RzList *sections(RBinFile *bf) {
 	RzList *ret = NULL;
-	RBinSection *s = R_NEW0 (RBinSection);
+	RBinSection *s = RZ_NEW0 (RBinSection);
 	ut64 sz = rz_buf_size (bf->buf);
 	if (!(ret = rz_list_new ())) {
 		free (s);
@@ -75,7 +75,7 @@ static RzList *sections(RBinFile *bf) {
 	s->vaddr = 0x8000000;
 	s->size = sz;
 	s->vsize = 0x2000000;
-	s->perm = R_PERM_RX;
+	s->perm = RZ_PERM_RX;
 	s->add = true;
 
 	rz_list_append (ret, s);
@@ -95,7 +95,7 @@ RBinPlugin rz_bin_plugin_ningba = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_ningba,
 	.version = RZ_VERSION
 };

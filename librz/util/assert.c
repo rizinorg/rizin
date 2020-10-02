@@ -10,12 +10,12 @@ static void stdout_log(const char *output, const char *funcname, const char *fil
 
 static void print_message(RLogLevel level, const char *fmt, va_list args) {
 	rz_log_add_callback (stdout_log);
-	R_VLOG (level, NULL, fmt, args);
+	RZ_VLOG (level, NULL, fmt, args);
 	rz_log_del_callback (stdout_log);
 }
 #else
 static void print_message(RLogLevel level, const char *fmt, va_list args) {
-	R_VLOG (level, NULL, fmt, args);
+	RZ_VLOG (level, NULL, fmt, args);
 }
 #endif
 /*

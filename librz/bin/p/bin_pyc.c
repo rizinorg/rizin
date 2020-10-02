@@ -33,7 +33,7 @@ static ut64 get_entrypoint(RBuffer *buf) {
 		rz_buf_read_at (buf, addr, &b, sizeof (b));
 		if (pyc_is_code (b, version.magic)) {
 			code_start_offset = addr;
-			rz_buf_seek (buf, addr + 1, R_BUF_SET);
+			rz_buf_seek (buf, addr + 1, RZ_BUF_SET);
 			if ((result = get_code_object_addr (buf, version.magic)) == 0) {
 				return addr;
 			}
@@ -44,7 +44,7 @@ static ut64 get_entrypoint(RBuffer *buf) {
 }
 
 static RBinInfo *info(RBinFile *arch) {
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = RZ_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -70,7 +70,7 @@ static RzList *entries(RBinFile *arch) {
 	if (!entries) {
 		return NULL;
 	}
-	RBinAddr *addr = R_NEW0 (RBinAddr);
+	RBinAddr *addr = RZ_NEW0 (RBinAddr);
 	if (!addr) {
 		rz_list_free (entries);
 		return NULL;
@@ -78,7 +78,7 @@ static RzList *entries(RBinFile *arch) {
 	ut64 entrypoint = get_entrypoint (arch->buf);
 	addr->paddr = entrypoint;
 	addr->vaddr = entrypoint;
-	rz_buf_seek (arch->buf, entrypoint, R_IO_SEEK_SET);
+	rz_buf_seek (arch->buf, entrypoint, RZ_IO_SEEK_SET);
 	rz_list_append (entries, addr);
 	return entries;
 }
@@ -120,7 +120,7 @@ static RzList *symbols(RBinFile *arch) {
 		return NULL;
 	}
 	RBuffer *buffer = arch->buf;
-	rz_buf_seek (buffer, code_start_offset, R_BUF_SET);
+	rz_buf_seek (buffer, code_start_offset, RZ_BUF_SET);
 	pyc_get_sections_symbols (sections, symbols, cobjs, buffer, version.magic);
 	sections_cache = sections;
 	return symbols;
@@ -141,7 +141,7 @@ RBinPlugin rz_bin_plugin_pyc = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_pyc,
 	.version = RZ_VERSION,
 };

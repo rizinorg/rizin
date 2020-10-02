@@ -214,7 +214,7 @@ static int apprentice_1(RzMagic *ms, const char *fn, int action, struct mlist *m
 	}
 
 	if ((rv = apprentice_map (ms, &magic, &nmagic, fn)) == -1) {
-		//if (ms->flags & R_MAGIC_CHECK)
+		//if (ms->flags & RZ_MAGIC_CHECK)
 		//	file_magwarn(ms, "using regular magic file `%s'", fn);
 		rv = apprentice_load (ms, &magic, &nmagic, fn, action);
 		if (rv != 0) {
@@ -259,7 +259,7 @@ void file_delmagic(struct rz_magic *p, int type, size_t entries) {
 		p--;
 		/*FALLTHROUGH*/
 	case 0:
-		R_FREE (p);
+		RZ_FREE (p);
 		break;
 	default:
 		abort (); // do not abort, ever XXX this is a lib, so it shouldn just report an error
@@ -300,12 +300,12 @@ struct mlist * file_apprentice(RzMagic *ms, const char *fn, int action) {
 			break;
 		}
 		file_err = apprentice_1 (ms, fn, action, mlist);
-		errs = R_MAX (errs, file_err);
+		errs = RZ_MAX (errs, file_err);
 		fn = p;
 	}
 	if (errs == -1) {
 		free (mfn);
-		R_FREE (mlist);
+		RZ_FREE (mlist);
 		file_error (ms, 0, "could not find any magic files!");
 		return NULL;
 	}
@@ -347,7 +347,7 @@ static size_t apprentice_r_magic_strength(const struct rz_magic *m) {
 		break;
 	case FILE_SEARCH:
 	case FILE_REGEX:
-		val += m->vallen * R_MAX (MULT / m->vallen, 1);
+		val += m->vallen * RZ_MAX (MULT / m->vallen, 1);
 		break;
 	case FILE_DATE:
 	case FILE_LEDATE:
@@ -489,7 +489,7 @@ static const char* bgets(char *line, size_t line_sz, const char *data) {
 	const char *nl = strchr (data, '\n');
 	const int nlsz = nl
 		? nl - data + 1
-		: R_MIN (line_sz, strlen (data));
+		: RZ_MIN (line_sz, strlen (data));
 	rz_str_ncpy (line, data, nlsz);
 	if (!data[nlsz]) {
 		return NULL;
@@ -601,7 +601,7 @@ static int apprentice_load(RzMagic *ms, struct rz_magic **magicp, ut32 *nmagicp,
 	struct dirent *d;
 	char subfn[MAXPATHLEN];
 #endif
-	ms->flags |= R_MAGIC_CHECK;	/* Enable checks for parsed files */
+	ms->flags |= RZ_MAGIC_CHECK;	/* Enable checks for parsed files */
 
         maxmagic = MAXMAGIS;
 	if (!(marray = calloc (maxmagic, sizeof (*marray)))) {
@@ -677,7 +677,7 @@ static int apprentice_load(RzMagic *ms, struct rz_magic **magicp, ut32 *nmagicp,
 		starttest = i;
 		do {
 			set_test_type(marray[starttest].mp, marray[i].mp);
-			if (ms->flags & R_MAGIC_DEBUG) {
+			if (ms->flags & RZ_MAGIC_DEBUG) {
 				(void)fprintf(stderr, "%s%s%s: %s\n",
 					marray[i].mp->mimetype,
 					marray[i].mp->mimetype[0] == '\0' ? "" : "; ",
@@ -807,7 +807,7 @@ ut64 file_signextend(RzMagic *ms, struct rz_magic *m, ut64 v) {
 		case FILE_DEFAULT:
 			break;
 		default:
-			if (ms->flags & R_MAGIC_CHECK) {
+			if (ms->flags & RZ_MAGIC_CHECK) {
 				file_magwarn (ms, "cannot happen: m->type=%d\n",
 					m->type);
 			}
@@ -818,7 +818,7 @@ ut64 file_signextend(RzMagic *ms, struct rz_magic *m, ut64 v) {
 }
 
 static int string_modifier_check(RzMagic *ms, struct rz_magic *m) {
-	if ((ms->flags & R_MAGIC_CHECK) == 0) {
+	if ((ms->flags & RZ_MAGIC_CHECK) == 0) {
 		return 0;
 	}
 
@@ -915,7 +915,7 @@ static int check_cond(RzMagic *ms, int cond, ut32 cont_level) {
 	switch (cond) {
 	case COND_IF:
 		if (last_cond != COND_NONE && last_cond != COND_ELIF) {
-			if (ms->flags & R_MAGIC_CHECK) {
+			if (ms->flags & RZ_MAGIC_CHECK) {
 				file_magwarn (ms, "syntax error: `if'");
 			}
 			return -1;
@@ -924,7 +924,7 @@ static int check_cond(RzMagic *ms, int cond, ut32 cont_level) {
 		break;
 	case COND_ELIF:
 		if (last_cond != COND_IF && last_cond != COND_ELIF) {
-			if (ms->flags & R_MAGIC_CHECK) {
+			if (ms->flags & RZ_MAGIC_CHECK) {
 				file_magwarn (ms, "syntax error: `elif'");
 			}
 			return -1;
@@ -933,7 +933,7 @@ static int check_cond(RzMagic *ms, int cond, ut32 cont_level) {
 		break;
 	case COND_ELSE:
 		if (last_cond != COND_IF && last_cond != COND_ELIF) {
-			if (ms->flags & R_MAGIC_CHECK) {
+			if (ms->flags & RZ_MAGIC_CHECK) {
 				file_magwarn (ms, "syntax error: `else'");
 			}
 			return -1;
@@ -1039,14 +1039,14 @@ static int parse(RzMagic *ms, struct rz_magic_entry **mentryp, ut32 *nmentryp, c
 	}
 	/* Indirect offsets are not valid at level 0. */
 	if (m->cont_level == 0 && (m->flag & (OFFADD | INDIROFFADD))) {
-		if (ms->flags & R_MAGIC_CHECK) {
+		if (ms->flags & RZ_MAGIC_CHECK) {
 			file_magwarn (ms, "relative offset at level 0");
 		}
 	}
 
 	/* get offset, then skip over it */
 	m->offset = (ut32)strtoul(l, &t, 0);
-	if ((l == t) && (ms->flags & R_MAGIC_CHECK)) {
+	if ((l == t) && (ms->flags & RZ_MAGIC_CHECK)) {
 		file_magwarn (ms, "offset `%s' invalid", l);
 	}
 	l = t;
@@ -1094,7 +1094,7 @@ static int parse(RzMagic *ms, struct rz_magic_entry **mentryp, ut32 *nmentryp, c
 				m->in_type = FILE_BEDOUBLE;
 				break;
 			default:
-				if (ms->flags & R_MAGIC_CHECK) {
+				if (ms->flags & RZ_MAGIC_CHECK) {
 					file_magwarn (ms,
 						"indirect offset type `%c' invalid",
 						*l);
@@ -1120,7 +1120,7 @@ static int parse(RzMagic *ms, struct rz_magic_entry **mentryp, ut32 *nmentryp, c
 		if (isdigit((ut8)*l) || *l == '-') {
 			m->in_offset = (int32_t)strtol(l, &t, 0);
 			if (l == t) {
-				if (ms->flags & R_MAGIC_CHECK) {
+				if (ms->flags & RZ_MAGIC_CHECK) {
 					file_magwarn (ms,
 						"in_offset `%s' invalid", l);
 				}
@@ -1129,7 +1129,7 @@ static int parse(RzMagic *ms, struct rz_magic_entry **mentryp, ut32 *nmentryp, c
 		}
 		if (*l++ != ')' ||
 			((m->in_op & FILE_OPINDIRECT) && *l++ != ')')) {
-			if (ms->flags & R_MAGIC_CHECK) {
+			if (ms->flags & RZ_MAGIC_CHECK) {
 				file_magwarn (ms,
 					"missing ')' in indirect offset");
 			}
@@ -1150,7 +1150,7 @@ static int parse(RzMagic *ms, struct rz_magic_entry **mentryp, ut32 *nmentryp, c
 
 	m->type = get_type(l, &l);
 	if (m->type == FILE_INVALID) {
-		if (ms->flags & R_MAGIC_CHECK) {
+		if (ms->flags & RZ_MAGIC_CHECK) {
 			file_magwarn (ms, "type `%s' invalid", l);
 		}
 		return -1;
@@ -1163,7 +1163,7 @@ static int parse(RzMagic *ms, struct rz_magic_entry **mentryp, ut32 *nmentryp, c
 	if (*l == '~') {
 		if (!MAGIC_IS_STRING (m->type)) {
 			m->mask_op |= FILE_OPINVERSE;
-		} else if (ms->flags & R_MAGIC_CHECK) {
+		} else if (ms->flags & RZ_MAGIC_CHECK) {
 			file_magwarn (ms, "'~' invalid for string types");
 		}
 		++l;
@@ -1190,7 +1190,7 @@ static int parse(RzMagic *ms, struct rz_magic_entry **mentryp, ut32 *nmentryp, c
 				case '6':  case '7':  case '8':
 				case '9':
 					if (have_range &&
-						(ms->flags & R_MAGIC_CHECK)) {
+						(ms->flags & RZ_MAGIC_CHECK)) {
 						file_magwarn (ms,
 							"multiple ranges");
 					}
@@ -1219,7 +1219,7 @@ static int parse(RzMagic *ms, struct rz_magic_entry **mentryp, ut32 *nmentryp, c
 					m->str_flags |= REGEX_OFFSET_START;
 					break;
 				default:
-					if (ms->flags & R_MAGIC_CHECK) {
+					if (ms->flags & RZ_MAGIC_CHECK) {
 						file_magwarn (ms,
 							"string extension `%c' invalid",
 							*l);
@@ -1235,7 +1235,7 @@ static int parse(RzMagic *ms, struct rz_magic_entry **mentryp, ut32 *nmentryp, c
 				return -1;
 			}
 		} else {
-			if (ms->flags & R_MAGIC_CHECK) {
+			if (ms->flags & RZ_MAGIC_CHECK) {
 				file_magwarn (ms, "invalid string op: %c", *t);
 			}
 			return -1;
@@ -1302,7 +1302,7 @@ static int parse(RzMagic *ms, struct rz_magic_entry **mentryp, ut32 *nmentryp, c
 	for (i = 0; (m->desc[i++] = *l++) != '\0' && i < sizeof (m->desc);) {}
 	if (i == sizeof (m->desc)) {
 		m->desc[sizeof (m->desc) - 1] = '\0';
-		if (ms->flags & R_MAGIC_CHECK) {
+		if (ms->flags & RZ_MAGIC_CHECK) {
 			file_magwarn (ms, "description `%s' truncated", m->desc);
 		}
 	}
@@ -1311,7 +1311,7 @@ static int parse(RzMagic *ms, struct rz_magic_entry **mentryp, ut32 *nmentryp, c
 	 * We only do this check while compiling, or if any of the magic
 	 * files were not compiled.
          */
-	if (ms->flags & R_MAGIC_CHECK) {
+	if (ms->flags & RZ_MAGIC_CHECK) {
 		if (check_format (ms, m) == -1) {
 			return -1;
 		}
@@ -1356,7 +1356,7 @@ static int parse_mime(RzMagic *ms, struct rz_magic_entry **mentryp, ut32 *nmentr
 		m->mimetype[i++] = *l++) {}
 	if (i == sizeof (m->mimetype)) {
 		m->desc[sizeof (m->mimetype) - 1] = '\0';
-		if (ms->flags & R_MAGIC_CHECK) {
+		if (ms->flags & RZ_MAGIC_CHECK) {
 			file_magwarn (ms, "MIME type `%s' truncated %zu",
 				m->mimetype, i);
 		}
@@ -1572,7 +1572,7 @@ static int getvalue(RzMagic *ms, struct rz_magic *m, const char **p, int action)
 	case FILE_SEARCH:
 		*p = getstr(ms, *p, m->value.s, sizeof (m->value.s), &slen, action);
 		if (!*p) {
-			if (ms->flags & R_MAGIC_CHECK) {
+			if (ms->flags & RZ_MAGIC_CHECK) {
 				file_magwarn (ms, "cannot get string from `%s'",
 					m->value.s);
 			}

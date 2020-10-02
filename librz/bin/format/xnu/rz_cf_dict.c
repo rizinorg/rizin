@@ -9,12 +9,12 @@
 #define XMLBUFSIZE 4096
 
 typedef enum {
-	R_CF_STATE_ROOT,
-	R_CF_STATE_IN_DICT,
-	R_CF_STATE_IN_ARRAY,
-	R_CF_STATE_IN_KEY,
-	R_CF_STATE_IN_SCALAR,
-	R_CF_STATE_IN_IGNORE,
+	RZ_CF_STATE_ROOT,
+	RZ_CF_STATE_IN_DICT,
+	RZ_CF_STATE_IN_ARRAY,
+	RZ_CF_STATE_IN_KEY,
+	RZ_CF_STATE_IN_SCALAR,
+	RZ_CF_STATE_IN_IGNORE,
 } RCFParsePhase;
 
 typedef struct _RCFParseState {
@@ -80,7 +80,7 @@ RCFValueDict *rz_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size,
 		goto beach;
 	}
 
-	rz_list_push (stack, rz_cf_parse_state_new (R_CF_STATE_ROOT));
+	rz_list_push (stack, rz_cf_parse_state_new (RZ_CF_STATE_ROOT));
 
 	for (i = 0; i < size; i++) {
 		ut8 doc = 0;
@@ -102,57 +102,57 @@ RCFValueDict *rz_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size,
 			RCFParseState *next_state = NULL;
 
 			if (!strcmp (x.elem, "dict")) {
-				next_state = rz_cf_parse_state_new (R_CF_STATE_IN_DICT);
+				next_state = rz_cf_parse_state_new (RZ_CF_STATE_IN_DICT);
 				if (!next_state) {
 					goto beach;
 				}
 				next_state->dict = rz_cf_value_dict_new ();
 			} else if (!strcmp (x.elem, "array")) {
-				next_state = rz_cf_parse_state_new (R_CF_STATE_IN_ARRAY);
+				next_state = rz_cf_parse_state_new (RZ_CF_STATE_IN_ARRAY);
 				if (!next_state) {
 					goto beach;
 				}
 				next_state->array = rz_cf_value_array_new ();
-			} else if (!strcmp (x.elem, "key") && state->phase == R_CF_STATE_IN_DICT) {
-				next_state = rz_cf_parse_state_new (R_CF_STATE_IN_KEY);
+			} else if (!strcmp (x.elem, "key") && state->phase == RZ_CF_STATE_IN_DICT) {
+				next_state = rz_cf_parse_state_new (RZ_CF_STATE_IN_KEY);
 				if (!next_state) {
 					goto beach;
 				}
 				next_state->dict = state->dict;
 			} else if (!strcmp (x.elem, "string")) {
-				next_state = rz_cf_parse_state_new (R_CF_STATE_IN_SCALAR);
+				next_state = rz_cf_parse_state_new (RZ_CF_STATE_IN_SCALAR);
 				if (!next_state) {
 					goto beach;
 				}
-				next_state->value_type = R_CF_STRING;
+				next_state->value_type = RZ_CF_STRING;
 			} else if (!strcmp (x.elem, "integer")) {
-				next_state = rz_cf_parse_state_new (R_CF_STATE_IN_SCALAR);
+				next_state = rz_cf_parse_state_new (RZ_CF_STATE_IN_SCALAR);
 				if (!next_state) {
 					goto beach;
 				}
-				next_state->value_type = R_CF_INTEGER;
+				next_state->value_type = RZ_CF_INTEGER;
 			} else if (!strcmp (x.elem, "data")) {
-				if (options & R_CF_OPTION_SKIP_NSDATA) {
-					next_state = rz_cf_parse_state_new (R_CF_STATE_IN_IGNORE);
+				if (options & RZ_CF_OPTION_SKIP_NSDATA) {
+					next_state = rz_cf_parse_state_new (RZ_CF_STATE_IN_IGNORE);
 				} else {
-					next_state = rz_cf_parse_state_new (R_CF_STATE_IN_SCALAR);
+					next_state = rz_cf_parse_state_new (RZ_CF_STATE_IN_SCALAR);
 					if (!next_state) {
 						goto beach;
 					}
-					next_state->value_type = R_CF_DATA;
+					next_state->value_type = RZ_CF_DATA;
 				}
 			} else if (!strcmp (x.elem, "true")) {
-				next_state = rz_cf_parse_state_new (R_CF_STATE_IN_SCALAR);
+				next_state = rz_cf_parse_state_new (RZ_CF_STATE_IN_SCALAR);
 				if (!next_state) {
 					goto beach;
 				}
-				next_state->value_type = R_CF_TRUE;
+				next_state->value_type = RZ_CF_TRUE;
 			} else if (!strcmp (x.elem, "false")) {
-				next_state = rz_cf_parse_state_new (R_CF_STATE_IN_SCALAR);
+				next_state = rz_cf_parse_state_new (RZ_CF_STATE_IN_SCALAR);
 				if (!next_state) {
 					goto beach;
 				}
-				next_state->value_type = R_CF_FALSE;
+				next_state->value_type = RZ_CF_FALSE;
 			}
 
 			if (next_state) {
@@ -172,8 +172,8 @@ RCFValueDict *rz_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size,
 				goto beach;
 			}
 
-			if (next_state->phase == R_CF_STATE_ROOT) {
-				if (state->phase == R_CF_STATE_IN_DICT) {
+			if (next_state->phase == RZ_CF_STATE_ROOT) {
+				if (state->phase == RZ_CF_STATE_IN_DICT) {
 					result = state->dict;
 					rz_cf_parse_state_free (state);
 					break;
@@ -183,7 +183,7 @@ RCFValueDict *rz_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size,
 				}
 			}
 
-			if (next_state->phase == R_CF_STATE_IN_DICT && state->phase == R_CF_STATE_IN_KEY) {
+			if (next_state->phase == RZ_CF_STATE_IN_DICT && state->phase == RZ_CF_STATE_IN_KEY) {
 				if (!content) {
 					eprintf ("NULL key not supported");
 					goto beach;
@@ -191,36 +191,36 @@ RCFValueDict *rz_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size,
 				next_state->key = content;
 			}
 
-			if (state->phase != R_CF_STATE_IN_KEY) {
+			if (state->phase != RZ_CF_STATE_IN_KEY) {
 				RCFValue *value = NULL;
 
 				switch (state->phase) {
-				case R_CF_STATE_IN_DICT:
+				case RZ_CF_STATE_IN_DICT:
 					value = (RCFValue *)state->dict;
 					break;
-				case R_CF_STATE_IN_ARRAY:
+				case RZ_CF_STATE_IN_ARRAY:
 					value = (RCFValue *)state->array;
 					break;
-				case R_CF_STATE_IN_SCALAR:
-					if (!content && state->value_type != R_CF_FALSE && state->value_type != R_CF_TRUE) {
+				case RZ_CF_STATE_IN_SCALAR:
+					if (!content && state->value_type != RZ_CF_FALSE && state->value_type != RZ_CF_TRUE) {
 						value = (RCFValue *)rz_cf_value_null_new ();
 					} else {
 						switch (state->value_type) {
-						case R_CF_STRING:
+						case RZ_CF_STRING:
 							value = (RCFValue *)rz_cf_value_string_new (content);
 							break;
-						case R_CF_INTEGER:
+						case RZ_CF_INTEGER:
 							value = (RCFValue *)rz_cf_value_integer_new (content);
-							R_FREE (content);
+							RZ_FREE (content);
 							break;
-						case R_CF_DATA:
+						case RZ_CF_DATA:
 							value = (RCFValue *)rz_cf_value_data_new (content);
-							R_FREE (content);
+							RZ_FREE (content);
 							break;
-						case R_CF_TRUE:
+						case RZ_CF_TRUE:
 							value = (RCFValue *)rz_cf_value_bool_new (true);
 							break;
-						case R_CF_FALSE:
+						case RZ_CF_FALSE:
 							value = (RCFValue *)rz_cf_value_bool_new (false);
 							break;
 						default:
@@ -232,19 +232,19 @@ RCFValueDict *rz_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size,
 					break;
 				}
 
-				if (next_state->phase == R_CF_STATE_IN_DICT) {
+				if (next_state->phase == RZ_CF_STATE_IN_DICT) {
 					if (value) {
 						RCFKeyValue *key_value = rz_cf_key_value_new (next_state->key, value);
 						rz_cf_value_dict_add (next_state->dict, key_value);
-					} else if (state->phase != R_CF_STATE_IN_IGNORE) {
+					} else if (state->phase != RZ_CF_STATE_IN_IGNORE) {
 						eprintf ("Missing value for key %s\n", next_state->key);
 						rz_cf_value_free ((RCFValue *)value);
 						goto beach;
 					}
-				} else if (next_state->phase == R_CF_STATE_IN_ARRAY) {
+				} else if (next_state->phase == RZ_CF_STATE_IN_ARRAY) {
 					if (value) {
 						rz_cf_value_array_add (next_state->array, value);
-					} else if (state->phase != R_CF_STATE_IN_IGNORE) {
+					} else if (state->phase != RZ_CF_STATE_IN_IGNORE) {
 						eprintf ("Missing value for array\n");
 						rz_cf_value_free ((RCFValue *)value);
 						goto beach;
@@ -259,7 +259,7 @@ RCFValueDict *rz_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size,
 		}
 		case YXML_CONTENT: {
 			RCFParseState *state = (RCFParseState *)rz_list_get_top (stack);
-			if (state->phase == R_CF_STATE_IN_IGNORE) {
+			if (state->phase == RZ_CF_STATE_IN_IGNORE) {
 				break;
 			}
 			if (!content) {
@@ -284,7 +284,7 @@ RCFValueDict *rz_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size,
 	}
 
 beach:
-	R_FREE (xml_buf);
+	RZ_FREE (xml_buf);
 	if (stack) {
 		rz_list_free (stack);
 	}
@@ -293,7 +293,7 @@ beach:
 }
 
 static RCFParseState *rz_cf_parse_state_new(RCFParsePhase phase) {
-	RCFParseState *state = R_NEW0 (RCFParseState);
+	RCFParseState *state = RZ_NEW0 (RCFParseState);
 	if (state) {
 		state->phase = phase;
 	}
@@ -302,12 +302,12 @@ static RCFParseState *rz_cf_parse_state_new(RCFParsePhase phase) {
 
 static void rz_cf_parse_state_free(RCFParseState *state) {
 	if (state) {
-		R_FREE (state);
+		RZ_FREE (state);
 	}
 }
 
 static RCFKeyValue *rz_cf_key_value_new(char *key, RCFValue *value) {
-	RCFKeyValue *key_value = R_NEW0 (RCFKeyValue);
+	RCFKeyValue *key_value = RZ_NEW0 (RCFKeyValue);
 	if (!key_value) {
 		return NULL;
 	}
@@ -324,23 +324,23 @@ static void rz_cf_key_value_free(RCFKeyValue *key_value) {
 	}
 
 	if (key_value->key) {
-		R_FREE (key_value->key);
+		RZ_FREE (key_value->key);
 	}
 	if (key_value->value) {
 		rz_cf_value_free (key_value->value);
 		key_value->value = NULL;
 	}
 
-	R_FREE (key_value);
+	RZ_FREE (key_value);
 }
 
 static RCFValueDict *rz_cf_value_dict_new(void) {
-	RCFValueDict *dict = R_NEW0 (RCFValueDict);
+	RCFValueDict *dict = RZ_NEW0 (RCFValueDict);
 	if (!dict) {
 		return NULL;
 	}
 
-	dict->type = R_CF_DICT;
+	dict->type = RZ_CF_DICT;
 	dict->pairs = rz_list_newf ((RzListFree)&rz_cf_key_value_free);
 
 	return dict;
@@ -353,8 +353,8 @@ void rz_cf_value_dict_free (RCFValueDict *dict) {
 		rz_list_free (dict->pairs);
 		dict->pairs = NULL;
 	}
-	dict->type = R_CF_INVALID;
-	R_FREE (dict);
+	dict->type = RZ_CF_INVALID;
+	RZ_FREE (dict);
 }
 
 static void rz_cf_value_dict_add(RCFValueDict *dict, RCFKeyValue *key_value) {
@@ -382,12 +382,12 @@ static void rz_cf_value_dict_print(RCFValueDict *dict) {
 }
 
 static RCFValueArray *rz_cf_value_array_new(void) {
-	RCFValueArray *array = R_NEW0 (RCFValueArray);
+	RCFValueArray *array = RZ_NEW0 (RCFValueArray);
 	if (!array) {
 		return NULL;
 	}
 
-	array->type = R_CF_ARRAY;
+	array->type = RZ_CF_ARRAY;
 	array->values = rz_list_newf ((RzListFree)&rz_cf_value_free);
 
 	return array;
@@ -403,8 +403,8 @@ static void rz_cf_value_array_free(RCFValueArray *array) {
 		array->values = NULL;
 	}
 
-	array->type = R_CF_INVALID;
-	R_FREE (array);
+	array->type = RZ_CF_INVALID;
+	RZ_FREE (array);
 }
 
 static void rz_cf_value_array_add(RCFValueArray *array, RCFValue *value) {
@@ -431,12 +431,12 @@ static void rz_cf_value_array_print(RCFValueArray *array) {
 }
 
 static RCFValueString *rz_cf_value_string_new(char *string) {
-	RCFValueString *value_string = R_NEW0 (RCFValueString);
+	RCFValueString *value_string = RZ_NEW0 (RCFValueString);
 	if (!value_string) {
 		return NULL;
 	}
 
-	value_string->type = R_CF_STRING;
+	value_string->type = RZ_CF_STRING;
 	value_string->value = string;
 
 	return value_string;
@@ -448,27 +448,27 @@ static void rz_cf_value_string_free(RCFValueString *string) {
 	}
 
 	if (string->value) {
-		R_FREE (string->value);
+		RZ_FREE (string->value);
 	}
 
-	string->type = R_CF_INVALID;
-	R_FREE (string);
+	string->type = RZ_CF_INVALID;
+	RZ_FREE (string);
 }
 
 static void rz_cf_value_string_print(RCFValueString *string) {
 	char *escaped = strdup (string->value);
 	escaped = rz_str_replace (escaped, "\"", "\\\"", 1);
 	printf ("\"%s\"", escaped);
-	R_FREE (escaped);
+	RZ_FREE (escaped);
 }
 
 static RCFValueInteger *rz_cf_value_integer_new(char *string) {
-	RCFValueInteger *integer = R_NEW0 (RCFValueInteger);
+	RCFValueInteger *integer = RZ_NEW0 (RCFValueInteger);
 	if (!integer) {
 		return NULL;
 	}
 
-	integer->type = R_CF_INTEGER;
+	integer->type = RZ_CF_INTEGER;
 	integer->value = rz_num_get (NULL, string);
 
 	return integer;
@@ -479,8 +479,8 @@ static void rz_cf_value_integer_free(RCFValueInteger *integer) {
 		return;
 	}
 
-	integer->type = R_CF_INVALID;
-	R_FREE (integer);
+	integer->type = RZ_CF_INVALID;
+	RZ_FREE (integer);
 }
 
 static void rz_cf_value_integer_print(RCFValueInteger *integer) {
@@ -488,7 +488,7 @@ static void rz_cf_value_integer_print(RCFValueInteger *integer) {
 }
 
 static RCFValueData *rz_cf_value_data_new(char *string) {
-	RCFValueData *data = R_NEW0 (RCFValueData);
+	RCFValueData *data = RZ_NEW0 (RCFValueData);
 	if (!data) {
 		return NULL;
 	}
@@ -497,12 +497,12 @@ static RCFValueData *rz_cf_value_data_new(char *string) {
 	const int out_len = len / 4 * 3 + 1;
 	ut8 *out = calloc (sizeof (ut8), out_len);
 	if (!out) {
-		R_FREE (data);
+		RZ_FREE (data);
 		return NULL;
 	}
 	rz_base64_decode (out, string, len);
 
-	data->type = R_CF_DATA;
+	data->type = RZ_CF_DATA;
 	data->value = rz_buf_new_with_pointers (out, out_len, true);
 
 	return data;
@@ -513,13 +513,13 @@ static void rz_cf_value_data_free(RCFValueData *data) {
 		return;
 	}
 
-	data->type = R_CF_INVALID;
+	data->type = RZ_CF_INVALID;
 	if (data->value) {
 		rz_buf_free (data->value);
 		data->value = NULL;
 	}
 
-	R_FREE (data);
+	RZ_FREE (data);
 }
 
 static void rz_cf_value_data_print(RCFValueData *data) {
@@ -527,12 +527,12 @@ static void rz_cf_value_data_print(RCFValueData *data) {
 }
 
 static RCFValueNULL *rz_cf_value_null_new(void) {
-	RCFValueNULL *null = R_NEW0 (RCFValueNULL);
+	RCFValueNULL *null = RZ_NEW0 (RCFValueNULL);
 	if (!null) {
 		return NULL;
 	}
 
-	null->type = R_CF_NULL;
+	null->type = RZ_CF_NULL;
 
 	return null;
 }
@@ -542,8 +542,8 @@ static void rz_cf_value_null_free(RCFValueNULL *null) {
 		return;
 	}
 
-	null->type = R_CF_INVALID;
-	R_FREE (null);
+	null->type = RZ_CF_INVALID;
+	RZ_FREE (null);
 }
 
 static void rz_cf_value_null_print(RCFValueNULL *null) {
@@ -551,24 +551,24 @@ static void rz_cf_value_null_print(RCFValueNULL *null) {
 }
 
 static RCFValueBool *rz_cf_value_bool_new(bool value) {
-	RCFValueBool *bool_value = R_NEW0 (RCFValueBool);
+	RCFValueBool *bool_value = RZ_NEW0 (RCFValueBool);
 	if (!bool_value) {
 		return NULL;
 	}
 
-	bool_value->type = value ? R_CF_TRUE : R_CF_FALSE;
+	bool_value->type = value ? RZ_CF_TRUE : RZ_CF_FALSE;
 	return bool_value;
 }
 
 static void rz_cf_value_bool_free(RCFValueBool *bool_value) {
 	if (bool_value) {
-		bool_value->type = R_CF_INVALID;
-		R_FREE (bool_value);
+		bool_value->type = RZ_CF_INVALID;
+		RZ_FREE (bool_value);
 	}
 }
 
 static void rz_cf_value_bool_print(RCFValueBool *bool_value) {
-	if (bool_value->type == R_CF_TRUE) {
+	if (bool_value->type == RZ_CF_TRUE) {
 		printf ("true");
 	} else {
 		printf ("false");
@@ -580,26 +580,26 @@ static void rz_cf_value_free(RCFValue *value) {
 	}
 
 	switch (value->type) {
-	case R_CF_DICT:
+	case RZ_CF_DICT:
 		rz_cf_value_dict_free ((RCFValueDict *)value);
 		break;
-	case R_CF_ARRAY:
+	case RZ_CF_ARRAY:
 		rz_cf_value_array_free ((RCFValueArray *)value);
 		break;
-	case R_CF_STRING:
+	case RZ_CF_STRING:
 		rz_cf_value_string_free ((RCFValueString *)value);
 		break;
-	case R_CF_INTEGER:
+	case RZ_CF_INTEGER:
 		rz_cf_value_integer_free ((RCFValueInteger *)value);
 		break;
-	case R_CF_DATA:
+	case RZ_CF_DATA:
 		rz_cf_value_data_free ((RCFValueData *)value);
 		break;
-	case R_CF_NULL:
+	case RZ_CF_NULL:
 		rz_cf_value_null_free ((RCFValueNULL *)value);
 		break;
-	case R_CF_TRUE:
-	case R_CF_FALSE:
+	case RZ_CF_TRUE:
+	case RZ_CF_FALSE:
 		rz_cf_value_bool_free ((RCFValueBool *)value);
 		break;
 	default:
@@ -613,26 +613,26 @@ void rz_cf_value_print (RCFValue *value) {
 	}
 
 	switch (value->type) {
-	case R_CF_DICT:
+	case RZ_CF_DICT:
 		rz_cf_value_dict_print ((RCFValueDict *)value);
 		break;
-	case R_CF_ARRAY:
+	case RZ_CF_ARRAY:
 		rz_cf_value_array_print ((RCFValueArray *)value);
 		break;
-	case R_CF_STRING:
+	case RZ_CF_STRING:
 		rz_cf_value_string_print ((RCFValueString *)value);
 		break;
-	case R_CF_INTEGER:
+	case RZ_CF_INTEGER:
 		rz_cf_value_integer_print ((RCFValueInteger *)value);
 		break;
-	case R_CF_DATA:
+	case RZ_CF_DATA:
 		rz_cf_value_data_print ((RCFValueData *)value);
 		break;
-	case R_CF_NULL:
+	case RZ_CF_NULL:
 		rz_cf_value_null_print ((RCFValueNULL *)value);
 		break;
-	case R_CF_TRUE:
-	case R_CF_FALSE:
+	case RZ_CF_TRUE:
+	case RZ_CF_FALSE:
 		rz_cf_value_bool_print ((RCFValueBool *)value);
 		break;
 	default:

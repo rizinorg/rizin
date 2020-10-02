@@ -591,14 +591,14 @@ bool test_r_anal_block_automerge() {
 		RzAnalBlock *f = rz_anal_create_block (anal, 0x150, 0x10);
 		e->jump = f->addr;
 
-		RzAnalFunction *fa = rz_anal_create_function (anal, "fcn", 0x100, R_ANAL_FCN_TYPE_FCN, NULL);
+		RzAnalFunction *fa = rz_anal_create_function (anal, "fcn", 0x100, RZ_ANAL_FCN_TYPE_FCN, NULL);
 		rz_anal_function_add_block (fa, a);
 		rz_anal_function_add_block (fa, c);
 		rz_anal_function_add_block (fa, d);
 		rz_anal_function_add_block (fa, e);
 		rz_anal_function_add_block (fa, f);
 
-		RzAnalFunction *fb = rz_anal_create_function (anal, "fcn2", 0x110, R_ANAL_FCN_TYPE_FCN, NULL);
+		RzAnalFunction *fb = rz_anal_create_function (anal, "fcn2", 0x110, RZ_ANAL_FCN_TYPE_FCN, NULL);
 		rz_anal_function_add_block (fb, b);
 		rz_anal_function_add_block (fb, c);
 		rz_anal_function_add_block (fb, d);
@@ -655,12 +655,12 @@ bool test_r_anal_block_chop_noreturn(void) {
 	a->jump = c->addr;
 	b->jump = c->addr;
 
-	RzAnalFunction *fa = rz_anal_create_function (anal, "fcn", 0x100, R_ANAL_FCN_TYPE_FCN, NULL);
+	RzAnalFunction *fa = rz_anal_create_function (anal, "fcn", 0x100, RZ_ANAL_FCN_TYPE_FCN, NULL);
 	rz_anal_function_add_block (fa, a);
 	rz_anal_function_add_block (fa, b);
 	rz_anal_function_add_block (fa, c);
 
-	RzAnalFunction *fb = rz_anal_create_function (anal, "fcn2", 0x130, R_ANAL_FCN_TYPE_FCN, NULL);
+	RzAnalFunction *fb = rz_anal_create_function (anal, "fcn2", 0x130, RZ_ANAL_FCN_TYPE_FCN, NULL);
 	fb->is_noreturn = true;
 
 	rz_anal_block_chop_noreturn (b, 0x111);

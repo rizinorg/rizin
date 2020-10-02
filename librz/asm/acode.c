@@ -4,7 +4,7 @@
 #include <rz_asm.h>
 
 RZ_API RzAsmCode *rz_asm_code_new(void) {
-	return R_NEW0 (RzAsmCode);
+	return RZ_NEW0 (RzAsmCode);
 }
 
 RZ_API void* rz_asm_code_free(RzAsmCode *acode) {
@@ -26,7 +26,7 @@ RZ_API void rz_asm_equ_item_free(RzAsmEqu *equ) {
 }
 
 static RzAsmEqu *__asm_equ_new(const char *key, const char *value) {
-	RzAsmEqu *equ = R_NEW0 (RzAsmEqu);
+	RzAsmEqu *equ = RZ_NEW0 (RzAsmEqu);
 	if (equ) {
 		equ->key = strdup (key);
 		equ->value = strdup (value);

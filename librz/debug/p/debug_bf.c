@@ -205,7 +205,7 @@ RzDebugPlugin rz_debug_plugin_bf = {
 	.name = "bf",
 	.arch = "bf",
 	.license = "LGPL3",
-	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
+	.bits = RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
 	.step = rz_debug_bf_step,
 	.step_over = rz_debug_bf_step_over,
 	.cont = rz_debug_bf_continue,
@@ -224,7 +224,7 @@ RzDebugPlugin rz_debug_plugin_bf = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_DBG,
+	.type = RZ_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_bf,
 	.version = RZ_VERSION
 };

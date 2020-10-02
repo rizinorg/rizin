@@ -147,7 +147,7 @@ RZ_API R2RSubprocess *rz_test_subprocess_start(
 		return NULL;
 	}
 
-	proc = R_NEW0 (R2RSubprocess);
+	proc = RZ_NEW0 (R2RSubprocess);
 	if (!proc) {
 		goto error;
 	}
@@ -245,7 +245,7 @@ RZ_API bool rz_test_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 
 	ut64 timeout_us_abs = UT64_MAX;
 	if (timeout_ms != UT64_MAX) {
-		timeout_us_abs = rz_time_now_mono () + timeout_ms * R_USEC_PER_MSEC;
+		timeout_us_abs = rz_time_now_mono () + timeout_ms * RZ_USEC_PER_MSEC;
 	}
 
 	ut8 stdout_buf[0x500];
@@ -291,7 +291,7 @@ RZ_API bool rz_test_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			if (now >= timeout_us_abs) {
 				return false;
 			}
-			timeout = (DWORD)((timeout_us_abs - now) / R_USEC_PER_MSEC);
+			timeout = (DWORD)((timeout_us_abs - now) / RZ_USEC_PER_MSEC);
 		}
 		DWORD signaled = WaitForMultipleObjects (handles.len, handles.a, FALSE, timeout);
 		if (!stdout_eof && signaled == stdout_index) {
@@ -349,7 +349,7 @@ RZ_API void rz_test_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, 
 
 
 RZ_API R2RProcessOutput *rz_test_subprocess_drain(R2RSubprocess *proc) {
-	R2RProcessOutput *out = R_NEW (R2RProcessOutput);
+	R2RProcessOutput *out = RZ_NEW (R2RProcessOutput);
 	if (!out) {
 		return NULL;
 	}
@@ -442,7 +442,7 @@ static RzThreadFunctionRet sigchld_th(RzThread *th) {
 			rz_th_lock_leave (subprocs_mutex);
 		}
 	}
-	return R_TH_STOP;
+	return RZ_TH_STOP;
 }
 
 RZ_API bool rz_test_subprocess_init(void) {
@@ -497,7 +497,7 @@ RZ_API R2RSubprocess *rz_test_subprocess_start(
 	}
 	// done by calloc: argv[args_size + 1] = NULL;
 	rz_th_lock_enter (subprocs_mutex);
-	R2RSubprocess *proc = R_NEW0 (R2RSubprocess);
+	R2RSubprocess *proc = RZ_NEW0 (R2RSubprocess);
 	if (!proc) {
 		goto error;
 	}
@@ -618,7 +618,7 @@ error:
 RZ_API bool rz_test_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 	ut64 timeout_abs;
 	if (timeout_ms != UT64_MAX) {
-		timeout_abs = rz_time_now_mono () + timeout_ms * R_USEC_PER_MSEC;
+		timeout_abs = rz_time_now_mono () + timeout_ms * RZ_USEC_PER_MSEC;
 	}
 
 	int r = 0;
@@ -657,8 +657,8 @@ RZ_API bool rz_test_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 				break;
 			}
 			ut64 usec_diff = timeout_abs - rz_time_now_mono ();
-			timeout_s.tv_sec = usec_diff / R_USEC_PER_SEC;
-			timeout_s.tv_usec = usec_diff % R_USEC_PER_SEC;
+			timeout_s.tv_sec = usec_diff / RZ_USEC_PER_SEC;
+			timeout_s.tv_usec = usec_diff % RZ_USEC_PER_SEC;
 			timeout = &timeout_s;
 		}
 		r = select (nfds, &rfds, NULL, NULL, timeout);
@@ -721,7 +721,7 @@ RZ_API void rz_test_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, 
 
 RZ_API R2RProcessOutput *rz_test_subprocess_drain(R2RSubprocess *proc) {
 	rz_th_lock_enter (subprocs_mutex);
-	R2RProcessOutput *out = R_NEW (R2RProcessOutput);
+	R2RProcessOutput *out = RZ_NEW (R2RProcessOutput);
 	if (out) {
 		out->out = rz_strbuf_drain_nofree (&proc->out);
 		out->err = rz_strbuf_drain_nofree (&proc->err);
@@ -986,7 +986,7 @@ RZ_API bool rz_test_check_json_test(R2RProcessOutput *out, R2RJsonTest *test) {
 }
 
 RZ_API R2RzAsmTestOutput *rz_test_run_asm_test(R2RRunConfig *config, R2RzAsmTest *test) {
-	R2RzAsmTestOutput *out = R_NEW0 (R2RzAsmTestOutput);
+	R2RzAsmTestOutput *out = RZ_NEW0 (R2RzAsmTestOutput);
 	if (!out) {
 		return NULL;
 	}
@@ -1160,7 +1160,7 @@ RZ_API bool rz_test_test_broken(R2RTest *test) {
 }
 
 RZ_API R2RTestResultInfo *rz_test_run_test(R2RRunConfig *config, R2RTest *test) {
-	R2RTestResultInfo *ret = R_NEW0 (R2RTestResultInfo);
+	R2RTestResultInfo *ret = RZ_NEW0 (R2RTestResultInfo);
 	if (!ret) {
 		return NULL;
 	}

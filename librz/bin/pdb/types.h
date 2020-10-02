@@ -90,7 +90,7 @@
 	} \
 }
 
-typedef struct R_STREAM_FILE_{
+typedef struct RZ_STREAM_FILE_{
 //	FILE *fp;
 	RBuffer *buf;
 	int *pages;
@@ -99,7 +99,7 @@ typedef struct R_STREAM_FILE_{
 	int end;
 	int pos;
 	int error;
-} R_STREAM_FILE;
+} RZ_STREAM_FILE;
 
 typedef void (*free_func)(void *);
 typedef void (*get_value_name)(void *type, char **res_name);
@@ -601,7 +601,7 @@ typedef union {
 	ut16 fldattr;
 } UCV_fldattr;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut16 return_type;
 	ECV_CALL call_conv;
@@ -611,7 +611,7 @@ typedef struct {
 	ut8 pad;
 }) SLF_PROCEDURE;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut32 return_type;
 	ut32 class_type;
@@ -624,14 +624,14 @@ typedef struct {
 	ut8 pad;
 }) SLF_MFUNCTION;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut32 count;
 	ut32 *arg_type;
 	ut8 pad;
 }) SLF_ARGLIST;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut32 modified_type;
 	union {
@@ -673,7 +673,7 @@ typedef enum {
 	eTypeMax
 } EType;
 
-R_PACKED(
+RZ_PACKED(
 typedef union {
 	struct {
 		ut32 ptrtype : 5; // ordinal specifying pointer type
@@ -692,14 +692,14 @@ typedef union {
 	ut32 ptr_attr;
 }) UPTR_ATTR;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut32 utype;
 	UPTR_ATTR ptr_attr;
 	ut8 pad;
 }) SLF_POINTER;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	st32 stream_size;
 	st32 num_pages;
@@ -714,18 +714,18 @@ typedef struct {
 	int indx;
 	int page_size;
 	int size;
-	R_STREAM_FILE stream_file;
+	RZ_STREAM_FILE stream_file;
 	// int fast_load;
 	// ... parent;
 
 	free_func free_;
-} R_PDB_STREAM;
+} RZ_PDB_STREAM;
 
-typedef struct R_PDB7_ROOT_STREAM{
-	R_PDB_STREAM pdb_stream;
+typedef struct RZ_PDB7_ROOT_STREAM{
+	RZ_PDB_STREAM pdb_stream;
 	int num_streams;
 	RzList *streams_list;
-} R_PDB7_ROOT_STREAM;
+} RZ_PDB7_ROOT_STREAM;
 
 typedef enum EStream_{
 	ePDB_STREAM_ROOT = 0, // PDB_ROOT_DIRECTORY
@@ -746,37 +746,37 @@ typedef enum EStream_{
 	ePDB_STREAM_MAX
 } EStream;
 
-typedef void (*f_load)(void *parsed_pdb_stream, R_STREAM_FILE *stream);
+typedef void (*f_load)(void *parsed_pdb_stream, RZ_STREAM_FILE *stream);
 
 typedef struct {
-	R_PDB_STREAM *pdb_stream;
+	RZ_PDB_STREAM *pdb_stream;
 	f_load load;
 } SParsedPDBStream;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	char *name;
 	ut32 size;
 }) SCString;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	SCString name;
 }) SNoVal;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	char value;
 	SCString name;
 }) SVal_LF_CHAR;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	st16 value;
 	SCString name;
 }) SVal_LF_SHORT;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut16 value;
 	SCString name;
@@ -802,13 +802,13 @@ typedef struct {
 	SCString name;
 } SVal_LF_UQUADWORD;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut16 value_or_type;
 	void *name_or_val;
 }) SVal;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut32 element_type;
 	ut32 index_type;
@@ -816,7 +816,7 @@ typedef struct {
 	ut8 pad;
 }) SLF_ARRAY;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut16 count;
 	UCV_PROPERTY prop; // // property attribute field
@@ -827,7 +827,7 @@ typedef struct {
 	ut8 pad;
 }) SLF_STRUCTURE, SLF_CLASS;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut16 count;
 	UCV_PROPERTY prop;
@@ -836,7 +836,7 @@ typedef struct {
 	ut32 pad;
 }) SLF_UNION;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut32 base_type;
 	ut8 length;
@@ -844,14 +844,14 @@ typedef struct {
 	ut8 pad;
 }) SLF_BITFIELD;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut16 count;
 	char *vt_descriptors;
 	ut8 pad;
 }) SLF_VTSHAPE;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut16 count;
 	UCV_PROPERTY prop;
@@ -861,7 +861,7 @@ typedef struct {
 	ut8 pad;
 }) SLF_ENUM;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	UCV_fldattr fldattr;
 	SVal enum_value;
@@ -870,7 +870,7 @@ typedef struct {
 	free_func free_;
 }) SLF_ENUMERATE;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut16 pad;
 	ut32 index;
@@ -879,7 +879,7 @@ typedef struct {
 	free_func free_;
 }) SLF_NESTTYPE;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut16 count;
 	ut32 mlist;
@@ -889,7 +889,7 @@ typedef struct {
 	free_func free_;
 }) SLF_METHOD;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	UCV_fldattr fldattr;
 	ut32 index;
@@ -900,13 +900,13 @@ typedef struct {
 	free_func free_;
 }) SLF_MEMBER;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut32 val;
 	SCString str_data;
 }) SLF_ONEMETHOD_VAL;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	UCV_fldattr fldattr;
 	ut32 index;
@@ -1109,7 +1109,7 @@ typedef enum {
 	eLF_MAX                  = 0xFFFFFFFF
 } ELeafType;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ELeafType leaf_type;
 	void *type_info;
@@ -1138,7 +1138,7 @@ typedef struct {
 
 }) STypeInfo;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut16 length;
 	ut32 tpi_idx;
@@ -1182,7 +1182,7 @@ typedef enum {
 	eMaxMachine
 } EMachine;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut16 section;
 	ut16 padding1;
@@ -1195,7 +1195,7 @@ typedef struct {
 	ut32 reloc_crc;
 }) SSymbolRange;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut32 opened;
 	SSymbolRange range;
@@ -1213,7 +1213,7 @@ typedef struct {
 	SCString objName;
 }) SDBIExHeader;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	st16 sn_fpo;
 	st16 sn_exception;
@@ -1228,7 +1228,7 @@ typedef struct {
 	st16 sn_section_hdr_orig;
 }) SDbiDbgHeader;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut32 magic;
 	ut32 version;
@@ -1274,7 +1274,7 @@ typedef union {
 	ut16 bit_values;
 } UBit_values;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut32 ul_off_start;
 	ut32 cb_proc_size;
@@ -1294,7 +1294,7 @@ typedef enum {
 	eFPO_DATA_FLAGS_MAX
 } EFPO_DATA_FLAGS;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	ut32 ul_off_start;
 	ut32 cb_proc_size;
@@ -1317,7 +1317,7 @@ typedef struct {
 	RzList *globals_list;
 } SGDATAStream;
 
-R_PACKED (
+RZ_PACKED (
 typedef struct {
 	ut16 leaf_type;
 	ut32 symtype;
@@ -1336,7 +1336,7 @@ typedef union {
 
 #define PDB_SIZEOF_SECTION_NAME 8
 
-R_PACKED(
+RZ_PACKED(
 typedef struct {
 	char name[PDB_SIZEOF_SECTION_NAME];
 	UMISC misc;

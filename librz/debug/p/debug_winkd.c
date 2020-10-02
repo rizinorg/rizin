@@ -39,7 +39,7 @@ static int rz_debug_winkd_reg_write(RzDebug *dbg, int type, const ut8 *buf, int 
 		return false;
 	}
 	int arena_size;
-	ut8 *arena = rz_reg_get_bytes (dbg->reg, R_REG_TYPE_ALL, &arena_size);
+	ut8 *arena = rz_reg_get_bytes (dbg->reg, RZ_REG_TYPE_ALL, &arena_size);
 	if (!arena) {
 		eprintf ("Could not retrieve the register arena!\n");
 		return false;
@@ -54,7 +54,7 @@ static int rz_debug_winkd_continue(RzDebug *dbg, int pid, int tid, int sig) {
 }
 
 static RzDebugReasonType rz_debug_winkd_wait(RzDebug *dbg, int pid) {
-	RzDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
+	RzDebugReasonType reason = RZ_DEBUG_REASON_UNKNOWN;
 	kd_packet_t *pkt = NULL;
 	kd_stc_64 *stc;
 	winkd_lock_enter (wctx);
@@ -63,7 +63,7 @@ static RzDebugReasonType rz_debug_winkd_wait(RzDebug *dbg, int pid) {
 		int ret = winkd_wait_packet (wctx, KD_PACKET_TYPE_STATE_CHANGE64, &pkt);
 		rz_cons_sleep_end (bed);
 		if (ret != KD_E_OK || !pkt) {
-			reason = R_DEBUG_REASON_ERROR;
+			reason = RZ_DEBUG_REASON_ERROR;
 			break;
 		}
 		stc = (kd_stc_64 *) pkt->data;
@@ -72,15 +72,15 @@ static RzDebugReasonType rz_debug_winkd_wait(RzDebug *dbg, int pid) {
 		dbg->reason.signum = stc->state;
 		winkd_set_cpu (wctx, stc->cpu);
 		if (stc->state == DbgKdExceptionStateChange) {
-			dbg->reason.type = R_DEBUG_REASON_INT;
-			reason = R_DEBUG_REASON_INT;
+			dbg->reason.type = RZ_DEBUG_REASON_INT;
+			reason = RZ_DEBUG_REASON_INT;
 			break;
 		} else if (stc->state == DbgKdLoadSymbolsStateChange) {
-			dbg->reason.type = R_DEBUG_REASON_NEW_LIB;
-			reason = R_DEBUG_REASON_NEW_LIB;
+			dbg->reason.type = RZ_DEBUG_REASON_NEW_LIB;
+			reason = RZ_DEBUG_REASON_NEW_LIB;
 			break;
 		}
-		R_FREE (pkt);
+		RZ_FREE (pkt);
 	}
 	winkd_lock_leave (wctx);
 	free (pkt);
@@ -130,9 +130,9 @@ static char *rz_debug_winkd_reg_profile(RzDebug *dbg) {
 		return NULL;
 	}
 	rz_debug_winkd_attach (dbg, 0);
-	if (dbg->bits == R_SYS_BITS_32) {
+	if (dbg->bits == RZ_SYS_BITS_32) {
 #include "native/reg/windows-x86.h"
-	} else if (dbg->bits == R_SYS_BITS_64) {
+	} else if (dbg->bits == RZ_SYS_BITS_64) {
 #include "native/reg/windows-x64.h"
 	}
 	return NULL;
@@ -145,7 +145,7 @@ static int rz_debug_winkd_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool s
 	}
 	// Use a 32 bit word here to keep this compatible with 32 bit hosts
 	if (!b->data) {
-		b->data = (char *)R_NEW0 (int);
+		b->data = (char *)RZ_NEW0 (int);
 		if (!b->data) {
 			return 0;
 		}
@@ -172,7 +172,7 @@ static RzList *rz_debug_winkd_pids(RzDebug *dbg, int pid) {
 		return ret;
 	}
 	rz_list_foreach (pids, it, p) {
-		RzDebugPid *newpid = R_NEW0 (RzDebugPid);
+		RzDebugPid *newpid = RZ_NEW0 (RzDebugPid);
 		if (!newpid) {
 			rz_list_free (ret);
 			return NULL;
@@ -218,7 +218,7 @@ static RzList *rz_debug_winkd_threads(RzDebug *dbg, int pid) {
 	}
 
 	rz_list_foreach (threads, it, t) {
-		RzDebugPid *newpid = R_NEW0 (RzDebugPid);
+		RzDebugPid *newpid = RZ_NEW0 (RzDebugPid);
 		if (!newpid) {
 			rz_list_free (ret);
 			return NULL;
@@ -248,7 +248,7 @@ static RzList *rz_debug_winkd_modules(RzDebug *dbg) {
 	}
 
 	rz_list_foreach (modules, it, m) {
-		RzDebugMap *mod = R_NEW0 (RzDebugMap);
+		RzDebugMap *mod = RZ_NEW0 (RzDebugMap);
 		if (!mod) {
 			rz_list_free (modules);
 			rz_list_free (ret);
@@ -269,7 +269,7 @@ RzDebugPlugin rz_debug_plugin_winkd = {
 	.name = "winkd",
 	.license = "LGPL3",
 	.arch = "x86",
-	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
+	.bits = RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
 	.init = &rz_debug_winkd_init,
 	.step = &rz_debug_winkd_step,
 	.cont = &rz_debug_winkd_continue,
@@ -288,7 +288,7 @@ RzDebugPlugin rz_debug_plugin_winkd = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_DBG,
+	.type = RZ_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_winkd,
 	.version = RZ_VERSION
 };

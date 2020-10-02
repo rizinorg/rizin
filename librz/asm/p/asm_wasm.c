@@ -32,7 +32,7 @@ RzAsmPlugin rz_asm_plugin_wasm = {
 	.arch = "wasm",
 	.license = "MIT",
 	.bits = 32,
-	.endian = R_SYS_ENDIAN_LITTLE,
+	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.desc = "WebAssembly",
 	.disassemble = &disassemble,
 	.assemble = &assemble
@@ -40,7 +40,7 @@ RzAsmPlugin rz_asm_plugin_wasm = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_wasm,
 	.version = RZ_VERSION
 };

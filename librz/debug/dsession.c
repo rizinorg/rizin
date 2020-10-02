@@ -12,14 +12,14 @@ RZ_API void rz_debug_session_free(RzDebugSession *session) {
 		rz_vector_free (session->checkpoints);
 		ht_up_free (session->registers);
 		ht_up_free (session->memory);
-		R_FREE (session);
+		RZ_FREE (session);
 	}
 }
 
 static void rz_debug_checkpoint_fini(void *element, void *user) {
 	RzDebugCheckpoint *checkpoint = element;
 	size_t i;
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		rz_reg_arena_free (checkpoint->arena[i]);
 	}
 	rz_list_free (checkpoint->snaps);
@@ -30,7 +30,7 @@ static void htup_vector_free(HtUPKv *kv) {
 }
 
 RZ_API RzDebugSession *rz_debug_session_new(void) {
-	RzDebugSession *session = R_NEW0 (RzDebugSession);
+	RzDebugSession *session = RZ_NEW0 (RzDebugSession);
 	if (!session) {
 		return NULL;
 	}
@@ -60,8 +60,8 @@ RZ_API bool rz_debug_add_checkpoint(RzDebug *dbg) {
 	RzDebugCheckpoint checkpoint = { 0 };
 
 	// Save current registers arena iter
-	rz_debug_reg_sync (dbg, R_REG_TYPE_ALL, 0);
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	rz_debug_reg_sync (dbg, RZ_REG_TYPE_ALL, 0);
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		RzRegArena *a = dbg->reg->regset[i].arena;
 		RzRegArena *b = rz_reg_arena_new (a->size);
 		memcpy (b->bytes, a->bytes, b->size);
@@ -77,7 +77,7 @@ RZ_API bool rz_debug_add_checkpoint(RzDebug *dbg) {
 	RzDebugMap *map;
 	rz_debug_map_sync (dbg);
 	rz_list_foreach (dbg->maps, iter, map) {
-		if ((map->perm & R_PERM_RW) == R_PERM_RW) {
+		if ((map->perm & RZ_PERM_RW) == RZ_PERM_RW) {
 			RzDebugSnap *snap = rz_debug_snap_map (dbg, map);
 			if (snap) {
 				rz_list_append (checkpoint.snaps, snap);
@@ -89,7 +89,7 @@ RZ_API bool rz_debug_add_checkpoint(RzDebug *dbg) {
 	rz_vector_push (dbg->session->checkpoints, &checkpoint);
 
 	// Add PC register change so we can check for breakpoints when continue [back]
-	RzRegItem *ripc = rz_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], R_REG_TYPE_GPR);
+	RzRegItem *ripc = rz_reg_get (dbg->reg, dbg->reg->name[RZ_REG_NAME_PC], RZ_REG_TYPE_GPR);
 	ut64 data = rz_reg_get_value (dbg->reg, ripc);
 	rz_debug_session_add_reg_change (dbg->session, ripc->arena, ripc->offset, data);
 
@@ -98,7 +98,7 @@ RZ_API bool rz_debug_add_checkpoint(RzDebug *dbg) {
 
 static void _set_initial_registers(RzDebug *dbg) {
 	size_t i;
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		RzRegArena *a = dbg->session->cur_chkpt->arena[i];
 		RzRegArena *b = dbg->reg->regset[i].arena;
 		if (a && b && a->bytes && b->bytes) {
@@ -175,7 +175,7 @@ RZ_API void rz_debug_session_restore_reg_mem(RzDebug *dbg, ut32 cnum) {
 
 	// Restore registers
 	_restore_registers (dbg, cnum);
-	rz_debug_reg_sync (dbg, R_REG_TYPE_ALL, true);
+	rz_debug_reg_sync (dbg, RZ_REG_TYPE_ALL, true);
 
 	// Restore memory
 	_restore_memory (dbg, cnum);
@@ -186,7 +186,7 @@ RZ_API void rz_debug_session_list_memory(RzDebug *dbg) {
 	RzDebugMap *map;
 	rz_debug_map_sync (dbg);
 	rz_list_foreach (dbg->maps, iter, map) {
-		if ((map->perm & R_PERM_RW) == R_PERM_RW) {
+		if ((map->perm & RZ_PERM_RW) == RZ_PERM_RW) {
 			RzDebugSnap *snap = rz_debug_snap_map (dbg, map);
 			if (!snap) {
 				return;
@@ -198,7 +198,7 @@ RZ_API void rz_debug_session_list_memory(RzDebug *dbg) {
 				return;
 			}
 
-			char *hexstr = rz_hex_bin2strdup (hash, R_HASH_SIZE_SHA256);
+			char *hexstr = rz_hex_bin2strdup (hash, RZ_HASH_SIZE_SHA256);
 			if (!hexstr) {
 				free (hash);
 				rz_debug_snap_free (snap);
@@ -319,7 +319,7 @@ static void serialize_checkpoints(Sdb *db, RzVector *checkpoints) {
 		// Serialize RzRegArena to "registers"
 		// {"size":<int>, "bytes":"<base64>"}
 		pj_ka (j, "registers");
-		for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 			RzRegArena *arena = chkpt->arena[i];
 			if (arena->bytes) {
 				pj_o (j);
@@ -411,7 +411,7 @@ static bool session_sdb_save(Sdb *db, const char *path) {
 		return false;
 	}
 
-	filename = rz_str_newf ("%s%ssession.sdb", path, R_SYS_DIR);
+	filename = rz_str_newf ("%s%ssession.sdb", path, RZ_SYS_DIR);
 	sdb_file (db, filename);
 	if (!sdb_sync (db)) {
 		eprintf ("Failed to sync session to %s\n", filename);
@@ -425,7 +425,7 @@ static bool session_sdb_save(Sdb *db, const char *path) {
 	SdbListIter *it;
 	SdbNs *ns;
 	ls_foreach (db->ns, it, ns) {
-		char *filename = rz_str_newf ("%s%s%s.sdb", path, R_SYS_DIR, ns->name);
+		char *filename = rz_str_newf ("%s%s%s.sdb", path, RZ_SYS_DIR, ns->name);
 		sdb_file (ns->sdb, filename);
 		if (!sdb_sync (ns->sdb)) {
 			eprintf ("Failed to sync %s to %s\n", ns->name, filename);
@@ -467,7 +467,7 @@ static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
 		return true;
 	}
 	RJson *reg_json = rz_json_parse (json_str);
-	if (!reg_json || reg_json->type != R_JSON_ARRAY) {
+	if (!reg_json || reg_json->type != RZ_JSON_ARRAY) {
 		free (json_str);
 		return true;
 	}
@@ -483,15 +483,15 @@ static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
 
 	// Extract <RzDebugChangeMem>'s into the new vector
 	for (child = reg_json->children.first; child; child = child->next) {
-		if (child->type != R_JSON_OBJECT) {
+		if (child->type != RZ_JSON_OBJECT) {
 			continue;
 		}
 		const RJson *baby = rz_json_get (child, "cnum");
-		CHECK_TYPE (baby, R_JSON_INTEGER);
+		CHECK_TYPE (baby, RZ_JSON_INTEGER);
 		int cnum = baby->num.s_value;
 
 		baby = rz_json_get (child, "data");
-		CHECK_TYPE (baby, R_JSON_INTEGER);
+		CHECK_TYPE (baby, RZ_JSON_INTEGER);
 		ut64 data = baby->num.u_value;
 
 		RzDebugChangeMem mem = { cnum, data };
@@ -512,7 +512,7 @@ static bool deserialize_registers_cb(void *user, const char *addr, const char *v
 		return true;
 	}
 	RJson *reg_json = rz_json_parse (json_str);
-	if (!reg_json || reg_json->type != R_JSON_ARRAY) {
+	if (!reg_json || reg_json->type != RZ_JSON_ARRAY) {
 		free (json_str);
 		return true;
 	}
@@ -530,15 +530,15 @@ static bool deserialize_registers_cb(void *user, const char *addr, const char *v
 
 	// Extract <RzDebugChangeReg>'s into the new vector
 	for (child = reg_json->children.first; child; child = child->next) {
-		if (child->type != R_JSON_OBJECT) {
+		if (child->type != RZ_JSON_OBJECT) {
 			continue;
 		}
 		const RJson *baby = rz_json_get (child, "cnum");
-		CHECK_TYPE (baby, R_JSON_INTEGER);
+		CHECK_TYPE (baby, RZ_JSON_INTEGER);
 		int cnum = baby->num.s_value;
 
 		baby = rz_json_get (child, "data");
-		CHECK_TYPE (baby, R_JSON_INTEGER);
+		CHECK_TYPE (baby, RZ_JSON_INTEGER);
 		ut64 data = baby->num.u_value;
 
 		RzDebugChangeReg reg = { cnum, data };
@@ -564,7 +564,7 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 		return true;
 	}
 	RJson *chkpt_json = rz_json_parse (json_str);
-	if (!chkpt_json || chkpt_json->type != R_JSON_OBJECT) {
+	if (!chkpt_json || chkpt_json->type != RZ_JSON_OBJECT) {
 		free (json_str);
 		return true;
 	}
@@ -575,25 +575,25 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 
 	// Extract RzRegArena's from "registers"
 	const RJson *regs_json = rz_json_get (chkpt_json, "registers");
-	if (!regs_json || regs_json->type != R_JSON_ARRAY) {
+	if (!regs_json || regs_json->type != RZ_JSON_ARRAY) {
 		return true;
 	}
 	for (child = regs_json->children.first; child; child = child->next) {
 		const RJson *baby;
 		baby = rz_json_get (child, "arena");
-		CHECK_TYPE (baby, R_JSON_INTEGER);
+		CHECK_TYPE (baby, RZ_JSON_INTEGER);
 		int arena = baby->num.s_value;
-		if (arena < R_REG_TYPE_GPR || arena > R_REG_TYPE_SEG) {
+		if (arena < RZ_REG_TYPE_GPR || arena > RZ_REG_TYPE_SEG) {
 			continue;
 		}
 		baby = rz_json_get (child, "size");
-		CHECK_TYPE (baby, R_JSON_INTEGER);
+		CHECK_TYPE (baby, RZ_JSON_INTEGER);
 		int size = baby->num.s_value;
 		if (size < 0) {
 			continue;
 		}
 		baby = rz_json_get (child, "bytes");
-		CHECK_TYPE (baby, R_JSON_STRING);
+		CHECK_TYPE (baby, RZ_JSON_STRING);
 		ut8 *bytes = sdb_decode (baby->str_value, NULL);
 
 		RzRegArena *a = rz_reg_arena_new (size);
@@ -609,28 +609,28 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 	// Extract RzDebugSnap's from "snaps"
 	checkpoint.snaps = rz_list_newf ((RzListFree)rz_debug_snap_free);
 	const RJson *snaps_json = rz_json_get (chkpt_json, "snaps");
-	if (!snaps_json || snaps_json->type != R_JSON_ARRAY) {
+	if (!snaps_json || snaps_json->type != RZ_JSON_ARRAY) {
 		goto end;
 	}
 	for (child = snaps_json->children.first; child; child = child->next) {
 		const RJson *namej = rz_json_get (child, "name");
-		CHECK_TYPE (namej, R_JSON_STRING);
+		CHECK_TYPE (namej, RZ_JSON_STRING);
 		const RJson *dataj = rz_json_get (child, "data");
-		CHECK_TYPE (dataj, R_JSON_STRING);
+		CHECK_TYPE (dataj, RZ_JSON_STRING);
 		const RJson *sizej = rz_json_get (child, "size");
-		CHECK_TYPE (sizej, R_JSON_INTEGER);
+		CHECK_TYPE (sizej, RZ_JSON_INTEGER);
 		const RJson *addrj = rz_json_get (child, "addr");
-		CHECK_TYPE (addrj, R_JSON_INTEGER);
+		CHECK_TYPE (addrj, RZ_JSON_INTEGER);
 		const RJson *addr_endj = rz_json_get (child, "addr_end");
-		CHECK_TYPE (addr_endj, R_JSON_INTEGER);
+		CHECK_TYPE (addr_endj, RZ_JSON_INTEGER);
 		const RJson *permj = rz_json_get (child, "perm");
-		CHECK_TYPE (permj, R_JSON_INTEGER);
+		CHECK_TYPE (permj, RZ_JSON_INTEGER);
 		const RJson *userj = rz_json_get (child, "user");
-		CHECK_TYPE (userj, R_JSON_INTEGER);
+		CHECK_TYPE (userj, RZ_JSON_INTEGER);
 		const RJson *sharedj = rz_json_get (child, "shared");
-		CHECK_TYPE (sharedj, R_JSON_BOOLEAN);
+		CHECK_TYPE (sharedj, RZ_JSON_BOOLEAN);
 
-		RzDebugSnap *snap = R_NEW0 (RzDebugSnap);
+		RzDebugSnap *snap = RZ_NEW0 (RzDebugSnap);
 		if (!snap) {
 			eprintf ("Error: failed to allocate RzDebugSnap snap");
 			continue;
@@ -676,7 +676,7 @@ static Sdb *session_sdb_load(const char *path) {
 	}
 
 #define SDB_LOAD(fn, ns) do { \
-		filename = rz_str_newf ("%s%s" fn ".sdb", path, R_SYS_DIR); \
+		filename = rz_str_newf ("%s%s" fn ".sdb", path, RZ_SYS_DIR); \
 		if (!session_sdb_load_ns (db, ns, filename)) { \
 			free (filename); \
 			goto error; \

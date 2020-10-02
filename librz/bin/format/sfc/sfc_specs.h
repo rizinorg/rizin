@@ -42,7 +42,7 @@
 #define EXTRAM_START_ADDRESS		    0x7E8000
 #define EXTRAM_SIZE			    0x18000
 
-R_PACKED (
+RZ_PACKED (
 typedef struct {
 	char name[0x15];	//game title.
 	ut8 rom_setup;		//ROM setup (LoROM/HiROM, etc.)

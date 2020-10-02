@@ -67,7 +67,7 @@ RZ_API int bfvm_init(BfvmCPU *c, ut32 size, int circular) {
 }
 
 RZ_API BfvmCPU *bfvm_new(RzIOBind *iob) {
-	BfvmCPU *c = R_NEW0 (BfvmCPU);
+	BfvmCPU *c = RZ_NEW0 (BfvmCPU);
 	bfvm_init (c, 4096, 1);
 	memcpy (&c->iob, iob, sizeof (c->iob));
 	return c;

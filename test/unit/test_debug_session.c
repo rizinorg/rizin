@@ -52,13 +52,13 @@ RzDebugSession *ref_session() {
 
 	// Checkpoints
 	RzDebugCheckpoint checkpoint = { 0 };
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		RzRegArena *a = rz_reg_arena_new (0x10);
 		memset (a->bytes, i, a->size);
 		checkpoint.arena[i] = a;
 	}
 	checkpoint.snaps = rz_list_newf ((RzListFree)rz_debug_snap_free);
-	RzDebugSnap *snap = R_NEW0 (RzDebugSnap);
+	RzDebugSnap *snap = RZ_NEW0 (RzDebugSnap);
 	snap->name = strdup ("[stack]");
 	snap->addr = 0x7fffffde000;
 	snap->addr_end = 0x7fffffde100;
@@ -170,7 +170,7 @@ static bool test_session_load(void) {
 	rz_vector_enumerate (s->checkpoints, chkpt, chkpt_idx) {
 		ref_chkpt = rz_vector_index_ptr (ref->checkpoints, chkpt_idx);
 		// Registers
-		for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 			arena_eq (chkpt->arena[i], ref_chkpt->arena[i]);
 		}	
 		// Snaps

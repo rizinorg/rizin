@@ -5,7 +5,7 @@
 // DO IT WITH SDB
 
 RZ_API RzDebugTrace *rz_debug_trace_new (void) {
-	RzDebugTrace *t = R_NEW0 (RzDebugTrace);
+	RzDebugTrace *t = RZ_NEW0 (RzDebugTrace);
 	if (!t) {
 		return NULL;
 	}
@@ -33,7 +33,7 @@ RZ_API void rz_debug_trace_free (RzDebugTrace *trace) {
 	rz_list_purge (trace->traces);
 	free (trace->traces);
 	ht_pp_free (trace->ht);
-	R_FREE (trace);
+	RZ_FREE (trace);
 }
 
 // TODO: added overlap/mask support here... wtf?
@@ -49,18 +49,18 @@ RZ_API bool rz_debug_trace_ins_before(RzDebug *dbg) {
 	ut8 buf_pc[32];
 
 	// Analyze current instruction
-	ut64 pc = rz_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+	ut64 pc = rz_debug_reg_get (dbg, dbg->reg->name[RZ_REG_NAME_PC]);
 	if (!dbg->iob.read_at) {
 		return false;
 	}
 	if (!dbg->iob.read_at (dbg->iob.io, pc, buf_pc, sizeof (buf_pc))) {
 		return false;
 	}
-	dbg->cur_op = R_NEW0 (RzAnalOp);
+	dbg->cur_op = RZ_NEW0 (RzAnalOp);
 	if (!dbg->cur_op) {
 		return false;
 	}
-	if (!rz_anal_op (dbg->anal, dbg->cur_op, pc, buf_pc, sizeof (buf_pc), R_ANAL_OP_MASK_VAL)) {
+	if (!rz_anal_op (dbg->anal, dbg->cur_op, pc, buf_pc, sizeof (buf_pc), RZ_ANAL_OP_MASK_VAL)) {
 		rz_anal_op_free (dbg->cur_op);
 		dbg->cur_op = NULL;
 		return false;
@@ -69,19 +69,19 @@ RZ_API bool rz_debug_trace_ins_before(RzDebug *dbg) {
 	// resolve mem write address
 	rz_list_foreach_safe (dbg->cur_op->access, it, it_tmp, val) {
 		switch (val->type) {
-		case R_ANAL_VAL_REG:
-			if (!(val->access & R_ANAL_ACC_W)) {
+		case RZ_ANAL_VAL_REG:
+			if (!(val->access & RZ_ANAL_ACC_W)) {
 				rz_list_delete (dbg->cur_op->access, it);
 			}
 			break;
-		case R_ANAL_VAL_MEM:
+		case RZ_ANAL_VAL_MEM:
 			if (val->memref > 32) {
 				eprintf ("Error: adding changes to %d bytes in memory.\n", val->memref);
 				rz_list_delete (dbg->cur_op->access, it);
 				break;
 			}
 
-			if (val->access & R_ANAL_ACC_W) {
+			if (val->access & RZ_ANAL_ACC_W) {
 				// resolve memory address
 				ut64 addr = 0;
 				addr += val->delta;
@@ -112,14 +112,14 @@ RZ_API bool rz_debug_trace_ins_after(RzDebug *dbg) {
 	RzAnalValue *val;
 
 	// Add reg/mem write change
-	rz_debug_reg_sync (dbg, R_REG_TYPE_ALL, false);
+	rz_debug_reg_sync (dbg, RZ_REG_TYPE_ALL, false);
 	rz_list_foreach (dbg->cur_op->access, it, val) {
-		if (!(val->access & R_ANAL_ACC_W)) {
+		if (!(val->access & RZ_ANAL_ACC_W)) {
 			continue;
 		}
 
 		switch (val->type) {
-		case R_ANAL_VAL_REG:
+		case RZ_ANAL_VAL_REG:
 		{
 			ut64 data = rz_reg_get_value (dbg->reg, val->reg);
 
@@ -127,7 +127,7 @@ RZ_API bool rz_debug_trace_ins_after(RzDebug *dbg) {
 			rz_debug_session_add_reg_change (dbg->session, val->reg->arena, val->reg->offset, data);
 			break;
 		}
-		case R_ANAL_VAL_MEM:
+		case RZ_ANAL_VAL_MEM:
 		{
 			ut8 buf[32] = { 0 };
 			if (!dbg->iob.read_at (dbg->iob.io, val->base, buf, val->memref)) {
@@ -162,7 +162,7 @@ RZ_API int rz_debug_trace_pc(RzDebug *dbg, ut64 pc) {
 		return false;
 	}
 	(void)dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-	if (rz_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_ESIL) < 1) {
+	if (rz_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), RZ_ANAL_OP_MASK_ESIL) < 1) {
 		eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", pc);
 		return false;
 	}
@@ -222,7 +222,7 @@ RZ_API void rz_debug_trace_list (RzDebug *dbg, int mode, ut64 offset) {
 				dbg->cb_printf ("0x%"PFMT64x"\n", trace->addr);
 				break;
 			case '=': {
-				RzListInfo *info = R_NEW0 (RzListInfo);
+				RzListInfo *info = RZ_NEW0 (RzListInfo);
 				if (!info) {
 					return;
 				}
@@ -277,7 +277,7 @@ RZ_API RzDebugTracepoint *rz_debug_trace_add (RzDebug *dbg, ut64 addr, int size)
 		return NULL;
 	}
 	rz_anal_trace_bb (dbg->anal, addr);
-	tp = R_NEW0 (RzDebugTracepoint);
+	tp = RZ_NEW0 (RzDebugTracepoint);
 	if (!tp) {
 		return NULL;
 	}

@@ -12,13 +12,13 @@
 
 
 typedef enum {
-	R_IO_PARENT_ZIP = 0x0001,
-	R_IO_CHILD_FILE = 0x0002,
-	R_IO_NEW_FILE = 0x0004,
-	R_IO_EXISTING_FILE = 0x0008,
-	R_IO_MODIFIED_FILE = 0x0010,
-	R_IO_DELETED_FILE = 0x0020,
-} R_IO_ZIP_ARCHIVE_TYPE;
+	RZ_IO_PARENT_ZIP = 0x0001,
+	RZ_IO_CHILD_FILE = 0x0002,
+	RZ_IO_NEW_FILE = 0x0004,
+	RZ_IO_EXISTING_FILE = 0x0008,
+	RZ_IO_MODIFIED_FILE = 0x0010,
+	RZ_IO_DELETED_FILE = 0x0020,
+} RZ_IO_ZIP_ARCHIVE_TYPE;
 
 typedef struct rz_io_zip_uri_const_t {
 	const char *name;
@@ -230,7 +230,7 @@ static void rz_io_zip_free_zipfileobj(RzIOZipFileObj *zfo) {
 }
 
 RzIOZipFileObj *rz_io_zip_create_new_file(const char *archivename, const char *filename, struct zip_stat *sb, ut32 perm, int mode, int rw) {
-	RzIOZipFileObj *zfo = R_NEW0 (RzIOZipFileObj);
+	RzIOZipFileObj *zfo = RZ_NEW0 (RzIOZipFileObj);
 	if (zfo) {
 		zfo->b = rz_buf_new ();
 		zfo->archivename = strdup (archivename);
@@ -453,11 +453,11 @@ static RzIODesc *rz_io_zip_open(RzIO *io, const char *file, int rw, int mode) {
 				ZIP_CREATE, mode, rw);
 		} else {
 			filename_in_zipfile = rz_str_newf ("%s", zip_filename);
-			R_FREE (tmp);
+			RZ_FREE (tmp);
 			zip_filename = strdup (pikaboo + 3);
 			if (!strcmp (zip_filename, filename_in_zipfile)) {
-				//R_FREE (zip_filename);
-				R_FREE (filename_in_zipfile);
+				//RZ_FREE (zip_filename);
+				RZ_FREE (filename_in_zipfile);
 			}
 		}
 	}
@@ -531,17 +531,17 @@ static ut64 rz_io_zip_lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	case SEEK_SET:
 		seek_val = (rz_buf_size (zfo->b) < offset)? rz_buf_size (zfo->b): offset;
 		io->off = seek_val;
-		rz_buf_seek (zfo->b, seek_val, R_BUF_SET);
+		rz_buf_seek (zfo->b, seek_val, RZ_BUF_SET);
 		return seek_val;
 	case SEEK_CUR:
 		seek_val = (rz_buf_size (zfo->b) < (offset + rz_buf_tell (zfo->b)))? rz_buf_size (zfo->b): offset + rz_buf_tell (zfo->b);
 		io->off = seek_val;
-		rz_buf_seek (zfo->b, seek_val, R_BUF_SET);
+		rz_buf_seek (zfo->b, seek_val, RZ_BUF_SET);
 		return seek_val;
 	case SEEK_END:
 		seek_val = rz_buf_size (zfo->b);
 		io->off = seek_val;
-		rz_buf_seek (zfo->b, seek_val, R_BUF_SET);
+		rz_buf_seek (zfo->b, seek_val, RZ_BUF_SET);
 		return seek_val;
 	}
 	return seek_val;
@@ -558,7 +558,7 @@ static int rz_io_zip_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 	}
 	int r = rz_buf_read_at (zfo->b, io->off, buf, count);
 	if (r >= 0) {
-		rz_buf_seek (zfo->b, r, R_BUF_CUR);
+		rz_buf_seek (zfo->b, r, RZ_BUF_CUR);
 	}
 	return r;
 }
@@ -592,7 +592,7 @@ static int rz_io_zip_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 		return -1;
 	}
 	zfo = fd->data;
-	if (!(zfo->perm & R_PERM_W)) {
+	if (!(zfo->perm & RZ_PERM_W)) {
 		return -1;
 	}
 	if (rz_buf_tell (zfo->b) + count >= rz_buf_size (zfo->b)) {
@@ -604,7 +604,7 @@ static int rz_io_zip_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	zfo->modified = 1;
 	ret = rz_buf_write_at (zfo->b, io->off, buf, count);
 	if (ret >= 0) {
-		rz_buf_seek (zfo->b, ret, R_BUF_CUR);
+		rz_buf_seek (zfo->b, ret, RZ_BUF_CUR);
 	}
 	// XXX - Implement a flush of some sort, but until then, lets
 	// just write through
@@ -640,7 +640,7 @@ RzIOPlugin rz_io_plugin_zip = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_zip,
 	.version = RZ_VERSION
 };

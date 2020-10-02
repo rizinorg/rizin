@@ -254,7 +254,7 @@ void __free_window (void *ptr) {
 
 static window *__window_from_handle(HANDLE hwnd) {
 	rz_return_val_if_fail (hwnd, NULL);
-	window *win = R_NEW0 (window);
+	window *win = RZ_NEW0 (window);
 	if (!win) {
 		return NULL;
 	}
@@ -494,7 +494,7 @@ RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *input) {
 		cond = rz_str_newf ("?= `ae %d,edx,-`", type);
 	} else {
 		char *reg;
-		if (dbg->bits == R_SYS_BITS_64) {
+		if (dbg->bits == RZ_SYS_BITS_64) {
 			reg = "rcx";
 		} else {
 			reg = "ecx";

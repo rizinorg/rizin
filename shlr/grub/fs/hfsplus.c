@@ -35,7 +35,7 @@
 #define GRUB_HFSPLUS_SBLOCK 2
 
 /* A HFS+ extent.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_hfsplus_extent
 {
   /* The first block of a file on disk.  */
@@ -45,7 +45,7 @@ struct grub_hfsplus_extent
 });
 
 /* The descriptor of a fork.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_hfsplus_forkdata
 {
   grub_uint64_t size;
@@ -55,7 +55,7 @@ struct grub_hfsplus_forkdata
 });
 
 /* The HFS+ Volume Header.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_hfsplus_volheader
 {
   grub_uint16_t magic;
@@ -83,7 +83,7 @@ enum grub_hfsplus_btnode_type
     GRUB_HFSPLUS_BTNODE_TYPE_MAP = 2,
   };
 
-R_PACKED (
+RZ_PACKED (
 struct grub_hfsplus_btnode
 {
   grub_uint32_t next;
@@ -95,7 +95,7 @@ struct grub_hfsplus_btnode
 });
 
 /* The header of a HFS+ B+ Tree.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_hfsplus_btheader
 {
   grub_uint16_t depth;
@@ -115,7 +115,7 @@ struct grub_hfsplus_btheader
 });
 
 /* The on disk layout of a catalog key.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_hfsplus_catkey
 {
   grub_uint16_t keylen;
@@ -125,7 +125,7 @@ struct grub_hfsplus_catkey
 });
 
 /* The on disk layout of an extent overflow file key.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_hfsplus_extkey
 {
   grub_uint16_t keylen;
@@ -135,7 +135,7 @@ struct grub_hfsplus_extkey
   grub_uint32_t start;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_hfsplus_key
 {
   union
@@ -145,7 +145,7 @@ struct grub_hfsplus_key
     grub_uint16_t keylen;
   };
 });
-R_PACKED (
+RZ_PACKED (
 struct grub_hfsplus_catfile
 {
   grub_uint16_t type;

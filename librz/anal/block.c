@@ -43,7 +43,7 @@ RZ_API void rz_anal_block_ref(RzAnalBlock *bb) {
 #define DFLT_NINSTR 3
 
 static RzAnalBlock *block_new(RzAnal *a, ut64 addr, ut64 size) {
-	RzAnalBlock *block = R_NEW0 (RzAnalBlock);
+	RzAnalBlock *block = RZ_NEW0 (RzAnalBlock);
 	if (!block) {
 		return NULL;
 	}
@@ -53,7 +53,7 @@ static RzAnalBlock *block_new(RzAnal *a, ut64 addr, ut64 size) {
 	block->ref = 1;
 	block->jump = UT64_MAX;
 	block->fail = UT64_MAX;
-	block->op_pos = R_NEWS0 (ut16, DFLT_NINSTR);
+	block->op_pos = RZ_NEWS0 (ut16, DFLT_NINSTR);
 	block->op_pos_size = DFLT_NINSTR;
 	block->stackptr = 0;
 	block->parent_stackptr = INT_MAX;
@@ -471,7 +471,7 @@ typedef struct {
 	RzListIter *switch_it;
 } RecurseDepthFirstCtx;
 
-RZ_API bool rz_anal_block_recurse_depth_first(RzAnalBlock *block, RzAnalBlockCb cb, R_NULLABLE RzAnalBlockCb on_exit, void *user) {
+RZ_API bool rz_anal_block_recurse_depth_first(RzAnalBlock *block, RzAnalBlockCb cb, RZ_NULLABLE RzAnalBlockCb on_exit, void *user) {
 	bool breaked = false;
 	HtUP *visited = ht_up_new0 ();
 	if (!visited) {
@@ -596,7 +596,7 @@ static bool shortest_path_successor_cb(ut64 addr, void *user) {
 }
 
 
-RZ_API R_NULLABLE RzList/*<RzAnalBlock *>*/ *rz_anal_block_shortest_path(RzAnalBlock *block, ut64 dst) {
+RZ_API RZ_NULLABLE RzList/*<RzAnalBlock *>*/ *rz_anal_block_shortest_path(RzAnalBlock *block, ut64 dst) {
 	RzList *ret = NULL;
 	PathContext ctx;
 	ctx.anal = block->anal;
@@ -667,7 +667,7 @@ static void noreturn_successor_free(HtUPKv *kv) {
 
 static bool noreturn_successors_cb(RzAnalBlock *block, void *user) {
 	HtUP *succs = user;
-	NoreturnSuccessor *succ = R_NEW0 (NoreturnSuccessor);
+	NoreturnSuccessor *succ = RZ_NEW0 (NoreturnSuccessor);
 	if (!succ) {
 		return false;
 	}

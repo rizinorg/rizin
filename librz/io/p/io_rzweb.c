@@ -54,7 +54,7 @@ static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 			goto beach;
 		}
 		ret = rz_hex_str2bin (out, tmp);
-		memcpy (buf, tmp, R_MIN (count, rlen));
+		memcpy (buf, tmp, RZ_MIN (count, rlen));
 		free (tmp);
 		if (ret < 0) {
 			ret = -ret;
@@ -73,8 +73,8 @@ static int __close(RzIODesc *fd) {
 		return -1;
 	}
 	riom = fd->data;
-	R_FREE (riom->url);
-	R_FREE (fd->data);
+	RZ_FREE (riom->url);
+	RZ_FREE (fd->data);
 	return 0;
 }
 
@@ -100,7 +100,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 	char *out;
 	int rlen, code;
 	if (__plugin_open (io, pathname, 0)) {
-		RzIOR2Web *mal = R_NEW0 (RzIOR2Web);
+		RzIOR2Web *mal = RZ_NEW0 (RzIOR2Web);
 		if (!mal) {
 			return NULL;
 		}
@@ -167,7 +167,7 @@ RzIOPlugin rz_io_plugin_rzweb = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_rzweb,
 	.version = RZ_VERSION
 };

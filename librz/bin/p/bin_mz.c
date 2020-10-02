@@ -121,7 +121,7 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 	RBinAddr *mzaddr = NULL;
 	if (bf && bf->o && bf->o->bin_obj) {
 		switch (type) {
-		case R_BIN_SYM_MAIN:
+		case RZ_BIN_SYM_MAIN:
 			mzaddr = rz_bin_mz_get_main_vaddr (bf->o->bin_obj);
 			break;
 		}
@@ -147,7 +147,7 @@ static RzList *sections(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *const ret = R_NEW0 (RBinInfo);
+	RBinInfo *const ret = RZ_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -220,12 +220,12 @@ static RzList *relocs(RBinFile *bf) {
 		return ret;
 	}
 	for (i = 0; !relocs[i].last; i++) {
-		if (!(rel = R_NEW0 (RBinReloc))) {
+		if (!(rel = RZ_NEW0 (RBinReloc))) {
 			free ((void *)relocs);
 			rz_list_free (ret);
 			return NULL;
 		}
-		rel->type = R_BIN_RELOC_16;
+		rel->type = RZ_BIN_RELOC_16;
 		rel->vaddr = relocs[i].vaddr;
 		rel->paddr = relocs[i].paddr;
 		rz_list_append (ret, rel);
@@ -253,7 +253,7 @@ RBinPlugin rz_bin_plugin_mz = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_mz,
 	.version = RZ_VERSION
 };

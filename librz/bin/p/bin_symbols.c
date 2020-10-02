@@ -10,7 +10,7 @@
 
 // enable debugging messages
 #define D if (0)
-#define R_UUID_LENGTH 33
+#define RZ_UUID_LENGTH 33
 
 typedef struct symbols_header_t {
 	ut32 magic;
@@ -136,7 +136,7 @@ static RBinSection *bin_section_from_section(RzCoreSymCacheElementSection *sect)
 	if (!sect->name) {
 		return NULL;
 	}
-	RBinSection *s = R_NEW0 (RBinSection);
+	RBinSection *s = RZ_NEW0 (RBinSection);
 	if (!s) {
 		return NULL;
 	}
@@ -155,7 +155,7 @@ static RBinSection *bin_section_from_segment(RzCoreSymCacheElementSegment *seg) 
 	if (!seg->name) {
 		return NULL;
 	}
-	RBinSection *s = R_NEW0 (RBinSection);
+	RBinSection *s = RZ_NEW0 (RBinSection);
 	if (!s) {
 		return NULL;
 	}
@@ -174,7 +174,7 @@ static RBinSymbol *bin_symbol_from_symbol(RzCoreSymCacheElement *element, RzCore
 	if (!s->name && !s->mangled_name) {
 		return NULL;
 	}
-	RBinSymbol *sym = R_NEW0 (RBinSymbol);
+	RBinSymbol *sym = RZ_NEW0 (RBinSymbol);
 	if (sym) {
 		if (s->name && s->mangled_name) {
 			sym->dname = strdup (s->name);
@@ -187,7 +187,7 @@ static RBinSymbol *bin_symbol_from_symbol(RzCoreSymCacheElement *element, RzCore
 		sym->paddr = s->paddr;
 		sym->vaddr = rz_coresym_cache_element_pa2va (element, s->paddr);
 		sym->size = s->size;
-		sym->type = R_BIN_TYPE_FUNC_STR;
+		sym->type = RZ_BIN_TYPE_FUNC_STR;
 		sym->bind = "NONE";
 	}
 	return sym;
@@ -327,7 +327,7 @@ static ut64 baddr(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	SymbolsMetadata sm = parseMetadata (bf->buf, 0x40);
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = RZ_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -418,7 +418,7 @@ static void header(RBinFile *bf) {
 	if (element->binary_version) {
 		pj_ks (pj, "version", element->binary_version);
 	}
-	char uuidstr[R_UUID_LENGTH];
+	char uuidstr[RZ_UUID_LENGTH];
 	rz_hex_bin2str (element->hdr->uuid, 16, uuidstr);
 	pj_ks (pj, "uuid", uuidstr);
 	pj_kn (pj, "segments", element->hdr->n_segments);
@@ -449,7 +449,7 @@ RBinPlugin rz_bin_plugin_symbols = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_symbols,
 	.version = RZ_VERSION
 };

@@ -5,7 +5,7 @@
 #include <config.h>
 #include "io_private.h"
 
-R_LIB_VERSION (rz_io);
+RZ_LIB_VERSION (rz_io);
 
 static int fd_read_at_wrap (RzIO *io, int fd, ut64 addr, ut8 *buf, int len, RzIOMap *map, void *user) {
 	return rz_io_fd_read_at (io, fd, addr, buf, len);
@@ -58,7 +58,7 @@ static st64 on_map_skyline(RzIO *io, ut64 vaddr, ut8 *buf, int len, int match_fl
 			addr = part->itv.addr;
 		}
 		// Now left endpoint <= addr < right endpoint
-		ut64 len1 = R_MIN (vaddr + len - addr, rz_itv_end (part->itv) - addr);
+		ut64 len1 = RZ_MIN (vaddr + len - addr, rz_itv_end (part->itv) - addr);
 		if (len1 < 1) {
 			break;
 		}
@@ -99,7 +99,7 @@ static st64 on_map_skyline(RzIO *io, ut64 vaddr, ut8 *buf, int len, int match_fl
 }
 
 RZ_API RzIO* rz_io_new(void) {
-	return rz_io_init (R_NEW0 (RzIO));
+	return rz_io_init (RZ_NEW0 (RzIO));
 }
 
 RZ_API RzIO* rz_io_init(RzIO* io) {
@@ -266,11 +266,11 @@ RZ_API bool rz_io_vread_at_mapped(RzIO* io, ut64 vaddr, ut8* buf, int len) {
 	if (io->ff) {
 		memset (buf, io->Oxff, len);
 	}
-	return on_map_skyline (io, vaddr, buf, len, R_PERM_R, fd_read_at_wrap, false);
+	return on_map_skyline (io, vaddr, buf, len, RZ_PERM_R, fd_read_at_wrap, false);
 }
 
 static bool rz_io_vwrite_at(RzIO* io, ut64 vaddr, const ut8* buf, int len) {
-	return on_map_skyline (io, vaddr, (ut8*)buf, len, R_PERM_W, fd_write_at_wrap, false);
+	return on_map_skyline (io, vaddr, (ut8*)buf, len, RZ_PERM_W, fd_write_at_wrap, false);
 }
 
 // Deprecated, use either rz_io_read_at_mapped or rz_io_nread_at instead.
@@ -286,7 +286,7 @@ RZ_API bool rz_io_read_at(RzIO *io, ut64 addr, ut8 *buf, int len) {
 	bool ret = (io->va)
 		? rz_io_vread_at_mapped (io, addr, buf, len)
 		: rz_io_pread_at (io, addr, buf, len) > 0;
-	if (io->cached & R_PERM_R) {
+	if (io->cached & RZ_PERM_R) {
 		(void)rz_io_cache_read (io, addr, buf, len);
 	}
 	return ret;
@@ -303,11 +303,11 @@ RZ_API bool rz_io_read_at_mapped(RzIO *io, ut64 addr, ut8 *buf, int len) {
 		memset (buf, io->Oxff, len);
 	}
 	if (io->va) {
-		ret = on_map_skyline (io, addr, buf, len, R_PERM_R, fd_read_at_wrap, false);
+		ret = on_map_skyline (io, addr, buf, len, RZ_PERM_R, fd_read_at_wrap, false);
 	} else {
 		ret = rz_io_pread_at (io, addr, buf, len) > 0;
 	}
-	if (io->cached & R_PERM_R) {
+	if (io->cached & RZ_PERM_R) {
 		(void)rz_io_cache_read(io, addr, buf, len);
 	}
 	return ret;
@@ -326,11 +326,11 @@ RZ_API int rz_io_nread_at(RzIO *io, ut64 addr, ut8 *buf, int len) {
 		if (io->ff) {
 			memset (buf, io->Oxff, len);
 		}
-		ret = on_map_skyline (io, addr, buf, len, R_PERM_R, fd_read_at_wrap, true);
+		ret = on_map_skyline (io, addr, buf, len, RZ_PERM_R, fd_read_at_wrap, true);
 	} else {
 		ret = rz_io_pread_at (io, addr, buf, len);
 	}
-	if (ret > 0 && io->cached & R_PERM_R) {
+	if (ret > 0 && io->cached & RZ_PERM_R) {
 		(void)rz_io_cache_read (io, addr, buf, len);
 	}
 	return ret;
@@ -348,7 +348,7 @@ RZ_API bool rz_io_write_at(RzIO* io, ut64 addr, const ut8* buf, int len) {
 			mybuf[i] &= io->write_mask[i % io->write_mask_len];
 		}
 	}
-	if (io->cached & R_PERM_W) {
+	if (io->cached & RZ_PERM_W) {
 		ret = rz_io_cache_write (io, addr, mybuf, len);
 	} else if (io->va) {
 		ret = rz_io_vwrite_at (io, addr, mybuf, len);
@@ -427,13 +427,13 @@ RZ_API int rz_io_extend_at(RzIO* io, ut64 addr, ut64 size) {
 	if (io->desc->plugin->extend) {
 		int ret;
 		ut64 cur_off = io->off;
-		rz_io_seek (io, addr, R_IO_SEEK_SET);
+		rz_io_seek (io, addr, RZ_IO_SEEK_SET);
 		ret = rz_io_desc_extend (io->desc, size);
 		//no need to seek here
 		io->off = cur_off;
 		return ret;
 	}
-	if ((io->desc->perm & R_PERM_RW) != R_PERM_RW) {
+	if ((io->desc->perm & RZ_PERM_RW) != RZ_PERM_RW) {
 		return false;
 	}
 	cur_size = rz_io_desc_size (io->desc);
@@ -570,7 +570,7 @@ RZ_API bool rz_io_shift(RzIO* io, ut64 start, ut64 end, st64 move) {
 		rest -= chunksize;
 	}
 	free (buf);
-	io->off = rz_io_desc_seek (io->desc, saved_off, R_IO_SEEK_SET);
+	io->off = rz_io_desc_seek (io->desc, saved_off, RZ_IO_SEEK_SET);
 	return true;
 }
 
@@ -579,13 +579,13 @@ RZ_API ut64 rz_io_seek(RzIO* io, ut64 offset, int whence) {
 		return 0LL;
 	}
 	switch (whence) {
-	case R_IO_SEEK_SET:
+	case RZ_IO_SEEK_SET:
 		io->off = offset;
 		break;
-	case R_IO_SEEK_CUR:
+	case RZ_IO_SEEK_CUR:
 		io->off += offset;
 		break;
-	case R_IO_SEEK_END:
+	case RZ_IO_SEEK_END:
 	default:
 		io->off = rz_io_desc_seek (io->desc, offset, whence);
 		break;
@@ -601,12 +601,12 @@ RZ_API ut64 rz_io_seek(RzIO* io, ut64 offset, int whence) {
 
 static ptrace_wrap_instance *io_ptrace_wrap_instance(RzIO *io) {
 	if (!io->ptrace_wrap) {
-		io->ptrace_wrap = R_NEW (ptrace_wrap_instance);
+		io->ptrace_wrap = RZ_NEW (ptrace_wrap_instance);
 		if (!io->ptrace_wrap) {
 			return NULL;
 		}
 		if (ptrace_wrap_instance_start (io->ptrace_wrap) < 0) {
-			R_FREE (io->ptrace_wrap);
+			RZ_FREE (io->ptrace_wrap);
 			return NULL;
 		}
 	}
@@ -668,9 +668,9 @@ RZ_API int rz_io_fini(RzIO* io) {
 	rz_list_free (io->cache);
 	rz_list_free (io->undo.w_list);
 	if (io->runprofile) {
-		R_FREE (io->runprofile);
+		RZ_FREE (io->runprofile);
 	}
-#if R_IO_USE_PTRACE_WRAP
+#if RZ_IO_USE_PTRACE_WRAP
 	if (io->ptrace_wrap) {
 		ptrace_wrap_instance_stop (io->ptrace_wrap);
 		free (io->ptrace_wrap);

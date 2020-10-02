@@ -26,7 +26,7 @@ static const char *lang =
 
 
 RZ_API RzParseCType *rz_parse_ctype_new(void) {
-	RzParseCType *ctype = R_NEW (RzParseCType);
+	RzParseCType *ctype = RZ_NEW (RzParseCType);
 	if (!ctype) {
 		return NULL;
 	}
@@ -123,22 +123,22 @@ static RzParseCTypeType *ctype_convert_ast(mpc_ast_t *a) {
 				// identifier should always be the innermost type
 				goto beach;
 			}
-			cur = R_NEW0 (RzParseCTypeType);
+			cur = RZ_NEW0 (RzParseCTypeType);
 			if (!cur) {
 				goto beach;
 			}
-			cur->kind = R_PARSE_CTYPE_TYPE_KIND_IDENTIFIER;
+			cur->kind = RZ_PARSE_CTYPE_TYPE_KIND_IDENTIFIER;
 			cur->identifier.is_const = is_const;
-			cur->identifier.kind = R_PARSE_CTYPE_IDENTIFIER_KIND_UNSPECIFIED;
+			cur->identifier.kind = RZ_PARSE_CTYPE_IDENTIFIER_KIND_UNSPECIFIED;
 			if (is_identifier_string (child)) {
 				cur->identifier.name = strdup (child->contents);
 			} else if (is_identifier_kind (child)) {
 				if (strcmp (child->children[0]->contents, "struct") == 0) {
-					cur->identifier.kind = R_PARSE_CTYPE_IDENTIFIER_KIND_STRUCT;
+					cur->identifier.kind = RZ_PARSE_CTYPE_IDENTIFIER_KIND_STRUCT;
 				} else if (strcmp (child->children[0]->contents, "union") == 0) {
-					cur->identifier.kind = R_PARSE_CTYPE_IDENTIFIER_KIND_UNION;
+					cur->identifier.kind = RZ_PARSE_CTYPE_IDENTIFIER_KIND_UNION;
 				} else if (strcmp (child->children[0]->contents, "enum") == 0) {
-					cur->identifier.kind = R_PARSE_CTYPE_IDENTIFIER_KIND_ENUM;
+					cur->identifier.kind = RZ_PARSE_CTYPE_IDENTIFIER_KIND_ENUM;
 				}
 				cur->identifier.name = strdup (child->children[1]->contents);
 			} else {
@@ -156,12 +156,12 @@ static RzParseCTypeType *ctype_convert_ast(mpc_ast_t *a) {
 				// identifier should always be the innermost type
 				goto beach;
 			}
-			cur = R_NEW0 (RzParseCTypeType);
+			cur = RZ_NEW0 (RzParseCTypeType);
 			if (!cur) {
 				goto beach;
 			}
-			cur->kind = R_PARSE_CTYPE_TYPE_KIND_IDENTIFIER;
-			cur->identifier.kind = R_PARSE_CTYPE_IDENTIFIER_KIND_UNSPECIFIED;
+			cur->kind = RZ_PARSE_CTYPE_TYPE_KIND_IDENTIFIER;
+			cur->identifier.kind = RZ_PARSE_CTYPE_IDENTIFIER_KIND_UNSPECIFIED;
 			cur->identifier.is_const = is_const;
 			cur->identifier.name = strdup (child->contents);
 			if (!cur->identifier.name) {
@@ -172,11 +172,11 @@ static RzParseCTypeType *ctype_convert_ast(mpc_ast_t *a) {
 
 		// *
 		else if (is_non_const_pointer (child)) {
-			RzParseCTypeType *pointer = R_NEW0 (RzParseCTypeType);
+			RzParseCTypeType *pointer = RZ_NEW0 (RzParseCTypeType);
 			if (!pointer) {
 				goto beach;
 			}
-			pointer->kind = R_PARSE_CTYPE_TYPE_KIND_POINTER;
+			pointer->kind = RZ_PARSE_CTYPE_TYPE_KIND_POINTER;
 			pointer->pointer.is_const = false;
 			pointer->pointer.type = cur;
 			cur = pointer;
@@ -184,11 +184,11 @@ static RzParseCTypeType *ctype_convert_ast(mpc_ast_t *a) {
 
 		// const *
 		else if (is_const_pointer (child)) {
-			RzParseCTypeType *pointer = R_NEW0 (RzParseCTypeType);
+			RzParseCTypeType *pointer = RZ_NEW0 (RzParseCTypeType);
 			if (!pointer) {
 				goto beach;
 			}
-			pointer->kind = R_PARSE_CTYPE_TYPE_KIND_POINTER;
+			pointer->kind = RZ_PARSE_CTYPE_TYPE_KIND_POINTER;
 			pointer->pointer.is_const = true;
 			pointer->pointer.type = cur;
 			cur = pointer;
@@ -196,11 +196,11 @@ static RzParseCTypeType *ctype_convert_ast(mpc_ast_t *a) {
 
 		// <array>
 		else if (is_array (child)) {
-			RzParseCTypeType *array = R_NEW0 (RzParseCTypeType);
+			RzParseCTypeType *array = RZ_NEW0 (RzParseCTypeType);
 			if (!array) {
 				goto beach;
 			}
-			array->kind = R_PARSE_CTYPE_TYPE_KIND_ARRAY;
+			array->kind = RZ_PARSE_CTYPE_TYPE_KIND_ARRAY;
 			array->array.count = strtoull (child->children[1]->contents, NULL, 0);
 			array->array.type = cur;
 			cur = array;
@@ -240,13 +240,13 @@ RZ_API void rz_parse_ctype_type_free(RzParseCTypeType *type) {
 		return;
 	}
 	switch (type->kind) {
-	case R_PARSE_CTYPE_TYPE_KIND_IDENTIFIER:
+	case RZ_PARSE_CTYPE_TYPE_KIND_IDENTIFIER:
 		free (type->identifier.name);
 		break;
-	case R_PARSE_CTYPE_TYPE_KIND_POINTER:
+	case RZ_PARSE_CTYPE_TYPE_KIND_POINTER:
 		rz_parse_ctype_type_free (type->pointer.type);
 		break;
-	case R_PARSE_CTYPE_TYPE_KIND_ARRAY:
+	case RZ_PARSE_CTYPE_TYPE_KIND_ARRAY:
 		rz_parse_ctype_type_free (type->array.type);
 		break;
 	}

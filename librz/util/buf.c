@@ -5,12 +5,12 @@
 #include <rz_io.h>
 
 typedef enum {
-	R_BUFFER_FILE,
-	R_BUFFER_IO,
-	R_BUFFER_BYTES,
-	R_BUFFER_MMAP,
-	R_BUFFER_SPARSE,
-	R_BUFFER_REF,
+	RZ_BUFFER_FILE,
+	RZ_BUFFER_IO,
+	RZ_BUFFER_BYTES,
+	RZ_BUFFER_MMAP,
+	RZ_BUFFER_SPARSE,
+	RZ_BUFFER_REF,
 } RBufferType;
 
 #include "buf_file.c"
@@ -42,7 +42,7 @@ static st64 buf_read(RBuffer *b, ut8 *buf, size_t len) {
 
 static st64 buf_write(RBuffer *b, const ut8 *buf, size_t len) {
 	rz_return_val_if_fail (b && b->methods, -1);
-	R_FREE (b->whole_buf);
+	RZ_FREE (b->whole_buf);
 	return b->methods->write? b->methods->write (b, buf, len): -1;
 }
 
@@ -67,7 +67,7 @@ static ut8 *get_whole_buf(RBuffer *b, ut64 *sz) {
 		return NULL;
 	}
 	free (b->whole_buf);
-	b->whole_buf = R_NEWS (ut8, bsz);
+	b->whole_buf = RZ_NEWS (ut8, bsz);
 	if (!b->whole_buf) {
 		return NULL;
 	}
@@ -79,27 +79,27 @@ static ut8 *get_whole_buf(RBuffer *b, ut64 *sz) {
 }
 
 static RBuffer *new_buffer(RBufferType type, const void *user) {
-	RBuffer *b = R_NEW0 (RBuffer);
+	RBuffer *b = RZ_NEW0 (RBuffer);
 	if (!b) {
 		return NULL;
 	}
 	switch (type) {
-	case R_BUFFER_BYTES:
+	case RZ_BUFFER_BYTES:
 		b->methods = &buffer_bytes_methods;
 		break;
-	case R_BUFFER_MMAP:
+	case RZ_BUFFER_MMAP:
 		b->methods = &buffer_mmap_methods;
 		break;
-	case R_BUFFER_SPARSE:
+	case RZ_BUFFER_SPARSE:
 		b->methods = &buffer_sparse_methods;
 		break;
-	case R_BUFFER_FILE:
+	case RZ_BUFFER_FILE:
 		b->methods = &buffer_file_methods;
 		break;
-	case R_BUFFER_IO:
+	case RZ_BUFFER_IO:
 		b->methods = &buffer_io_methods;
 		break;
-	case R_BUFFER_REF:
+	case RZ_BUFFER_REF:
 		b->methods = &buffer_ref_methods;
 		break;
 	default:
@@ -123,7 +123,7 @@ RZ_API RBuffer *rz_buf_new_with_io(void *iob, int fd) {
 	struct buf_io_user u = { 0 };
 	u.iob = (RzIOBind *)iob;
 	u.fd = fd;
-	return new_buffer (R_BUFFER_IO, &u);
+	return new_buffer (RZ_BUFFER_IO, &u);
 }
 
 RZ_API RBuffer *rz_buf_new_with_pointers(const ut8 *bytes, ut64 len, bool steal) {
@@ -131,11 +131,11 @@ RZ_API RBuffer *rz_buf_new_with_pointers(const ut8 *bytes, ut64 len, bool steal)
 	u.data_steal = bytes;
 	u.length = len;
 	u.steal = steal;
-	return new_buffer (R_BUFFER_BYTES, &u);
+	return new_buffer (RZ_BUFFER_BYTES, &u);
 }
 
 RZ_API RBuffer *rz_buf_new_empty(ut64 len) {
-	ut8 *buf = R_NEWS0 (ut8, len);
+	ut8 *buf = RZ_NEWS0 (ut8, len);
 	if (!buf) {
 		return NULL;
 	}
@@ -144,7 +144,7 @@ RZ_API RBuffer *rz_buf_new_empty(ut64 len) {
 	u.data_steal = buf;
 	u.length = len;
 	u.steal = true;
-	RBuffer *res = new_buffer (R_BUFFER_BYTES, &u);
+	RBuffer *res = new_buffer (RZ_BUFFER_BYTES, &u);
 	if (!res) {
 		free (buf);
 	}
@@ -155,7 +155,7 @@ RZ_API RBuffer *rz_buf_new_with_bytes(const ut8 *bytes, ut64 len) {
 	struct buf_bytes_user u = { 0 };
 	u.data = bytes;
 	u.length = len;
-	return new_buffer (R_BUFFER_BYTES, &u);
+	return new_buffer (RZ_BUFFER_BYTES, &u);
 }
 
 RZ_API RBuffer *rz_buf_new_slice(RBuffer *b, ut64 offset, ut64 size) {
@@ -163,7 +163,7 @@ RZ_API RBuffer *rz_buf_new_slice(RBuffer *b, ut64 offset, ut64 size) {
 	u.parent = b;
 	u.offset = offset;
 	u.size = size;
-	return new_buffer (R_BUFFER_REF, &u);
+	return new_buffer (RZ_BUFFER_REF, &u);
 }
 
 RZ_API RBuffer *rz_buf_new_with_string(const char *msg) {
@@ -177,7 +177,7 @@ RZ_API RBuffer *rz_buf_new_with_buf(RBuffer *b) {
 }
 
 RZ_API RBuffer *rz_buf_new_sparse(ut8 Oxff) {
-	RBuffer *b = new_buffer (R_BUFFER_SPARSE, NULL);
+	RBuffer *b = new_buffer (RZ_BUFFER_SPARSE, NULL);
 	if (b) {
 		b->Oxff_priv = Oxff;
 	}
@@ -188,10 +188,10 @@ RZ_API RBuffer *rz_buf_new(void) {
 	struct buf_bytes_user u = { 0 };
 	u.data = NULL;
 	u.length = 0;
-	return new_buffer (R_BUFFER_BYTES, &u);
+	return new_buffer (RZ_BUFFER_BYTES, &u);
 }
 
-R_DEPRECATE RZ_API const ut8 *rz_buf_data(RBuffer *b, ut64 *size) {
+RZ_DEPRECATE RZ_API const ut8 *rz_buf_data(RBuffer *b, ut64 *size) {
 	rz_return_val_if_fail (b, NULL);
 	b->whole_buf = get_whole_buf (b, size);
 	return b->whole_buf;
@@ -208,7 +208,7 @@ RZ_API RBuffer *rz_buf_new_mmap(const char *filename, int perm) {
 	struct buf_mmap_user u = { 0 };
 	u.filename = filename;
 	u.perm = perm;
-	return new_buffer (R_BUFFER_MMAP, &u);
+	return new_buffer (RZ_BUFFER_MMAP, &u);
 }
 
 RZ_API RBuffer *rz_buf_new_file(const char *file, int perm, int mode) {
@@ -216,7 +216,7 @@ RZ_API RBuffer *rz_buf_new_file(const char *file, int perm, int mode) {
 	u.file = file;
 	u.perm = perm;
 	u.mode = mode;
-	return new_buffer (R_BUFFER_FILE, &u);
+	return new_buffer (RZ_BUFFER_FILE, &u);
 }
 
 // TODO: rename to new_from_file ?
@@ -231,7 +231,7 @@ RZ_API RBuffer *rz_buf_new_slurp(const char *file) {
 	u.data_steal = (ut8 *)tmp;
 	u.length = (ut64)len;
 	u.steal = true;
-	return new_buffer (R_BUFFER_BYTES, &u);
+	return new_buffer (RZ_BUFFER_BYTES, &u);
 }
 
 RZ_API bool rz_buf_dump(RBuffer *b, const char *file) {
@@ -250,7 +250,7 @@ RZ_API st64 rz_buf_seek(RBuffer *b, st64 addr, int whence) {
 }
 
 RZ_API ut64 rz_buf_tell(RBuffer *b) {
-	return rz_buf_seek (b, 0, R_BUF_CUR);
+	return rz_buf_seek (b, 0, RZ_BUF_CUR);
 }
 
 RZ_API bool rz_buf_set_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
@@ -258,13 +258,13 @@ RZ_API bool rz_buf_set_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
 	if (!rz_buf_resize (b, 0)) {
 		return false;
 	}
-	if (rz_buf_seek (b, 0, R_BUF_SET) < 0) {
+	if (rz_buf_seek (b, 0, RZ_BUF_SET) < 0) {
 		return false;
 	}
 	if (!rz_buf_append_bytes (b, buf, length)) {
 		return false;
 	}
-	return rz_buf_seek (b, 0, R_BUF_SET) >= 0;
+	return rz_buf_seek (b, 0, RZ_BUF_SET) >= 0;
 }
 
 RZ_API bool rz_buf_prepend_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
@@ -289,7 +289,7 @@ RZ_API char *rz_buf_to_string(RBuffer *b) {
 RZ_API bool rz_buf_append_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
 	rz_return_val_if_fail (b && buf && !b->readonly, false);
 
-	if (rz_buf_seek (b, 0, R_BUF_END) < 0) {
+	if (rz_buf_seek (b, 0, RZ_BUF_END) < 0) {
 		return false;
 	}
 
@@ -298,7 +298,7 @@ RZ_API bool rz_buf_append_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
 
 RZ_API bool rz_buf_append_nbytes(RBuffer *b, ut64 length) {
 	rz_return_val_if_fail (b && !b->readonly, false);
-	ut8 *buf = R_NEWS0 (ut8, length);
+	ut8 *buf = RZ_NEWS0 (ut8, length);
 	if (!buf) {
 		return false;
 	}
@@ -309,18 +309,18 @@ RZ_API bool rz_buf_append_nbytes(RBuffer *b, ut64 length) {
 
 RZ_API st64 rz_buf_insert_bytes(RBuffer *b, ut64 addr, const ut8 *buf, ut64 length) {
 	rz_return_val_if_fail (b && !b->readonly, -1);
-	st64 pos, r = rz_buf_seek (b, 0, R_BUF_CUR);
+	st64 pos, r = rz_buf_seek (b, 0, RZ_BUF_CUR);
 	if (r < 0) {
 		return r;
 	}
 	pos = r;
-	r = rz_buf_seek (b, addr, R_BUF_SET);
+	r = rz_buf_seek (b, addr, RZ_BUF_SET);
 	if (r < 0) {
 		goto restore_pos;
 	}
 
 	ut64 sz = rz_buf_size (b);
-	ut8 *tmp = R_NEWS (ut8, sz - addr);
+	ut8 *tmp = RZ_NEWS (ut8, sz - addr);
 	r = rz_buf_read (b, tmp, sz - addr);
 	if (r < 0) {
 		goto free_tmp;
@@ -329,7 +329,7 @@ RZ_API st64 rz_buf_insert_bytes(RBuffer *b, ut64 addr, const ut8 *buf, ut64 leng
 	if (!rz_buf_resize (b, sz + length)) {
 		goto free_tmp;
 	}
-	r = rz_buf_seek (b, addr + length, R_BUF_SET);
+	r = rz_buf_seek (b, addr + length, RZ_BUF_SET);
 	if (r < 0) {
 		goto free_tmp;
 	}
@@ -337,7 +337,7 @@ RZ_API st64 rz_buf_insert_bytes(RBuffer *b, ut64 addr, const ut8 *buf, ut64 leng
 	if (r < 0) {
 		goto free_tmp;
 	}
-	r = rz_buf_seek (b, addr, R_BUF_SET);
+	r = rz_buf_seek (b, addr, RZ_BUF_SET);
 	if (r < 0) {
 		goto free_tmp;
 	}
@@ -345,7 +345,7 @@ RZ_API st64 rz_buf_insert_bytes(RBuffer *b, ut64 addr, const ut8 *buf, ut64 leng
 free_tmp:
 	free (tmp);
 restore_pos:
-	rz_buf_seek (b, pos, R_BUF_SET);
+	rz_buf_seek (b, pos, RZ_BUF_SET);
 	return r;
 }
 
@@ -373,7 +373,7 @@ RZ_API bool rz_buf_append_buf(RBuffer *b, RBuffer *a) {
 
 RZ_API bool rz_buf_append_buf_slice(RBuffer *b, RBuffer *a, ut64 offset, ut64 size) {
 	rz_return_val_if_fail (b && a && !b->readonly, false);
-	ut8 *tmp = R_NEWS (ut8, size);
+	ut8 *tmp = RZ_NEWS (ut8, size);
 	bool res = false;
 
 	if (!tmp) {
@@ -394,7 +394,7 @@ err:
 // the buffer, there is no string, thus NULL is returned.
 RZ_API char *rz_buf_get_string(RBuffer *b, ut64 addr) {
 	const int MIN_RES_SZ = 64;
-	ut8 *res = R_NEWS (ut8, MIN_RES_SZ + 1);
+	ut8 *res = RZ_NEWS (ut8, MIN_RES_SZ + 1);
 	ut64 sz = 0;
 	st64 r = rz_buf_read_at (b, addr, res, MIN_RES_SZ);
 	bool null_found = false;
@@ -538,13 +538,13 @@ RZ_API st64 rz_buf_fread(RBuffer *b, ut8 *buf, const char *fmt, int n) {
 
 RZ_API st64 rz_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {
 	rz_return_val_if_fail (b && buf && fmt, -1);
-	st64 o_addr = rz_buf_seek (b, 0, R_BUF_CUR);
-	int r = rz_buf_seek (b, addr, R_BUF_SET);
+	st64 o_addr = rz_buf_seek (b, 0, RZ_BUF_CUR);
+	int r = rz_buf_seek (b, addr, RZ_BUF_SET);
 	if (r < 0) {
 		return r;
 	}
 	r = rz_buf_fread (b, buf, fmt, n);
-	rz_buf_seek (b, o_addr, R_BUF_SET);
+	rz_buf_seek (b, o_addr, RZ_BUF_SET);
 	return r;
 }
 
@@ -559,39 +559,39 @@ RZ_API st64 rz_buf_fwrite(RBuffer *b, const ut8 *buf, const char *fmt, int n) {
 
 RZ_API st64 rz_buf_fwrite_at(RBuffer *b, ut64 addr, const ut8 *buf, const char *fmt, int n) {
 	rz_return_val_if_fail (b && buf && fmt && !b->readonly, -1);
-	st64 o_addr = rz_buf_seek (b, 0, R_BUF_CUR);
-	st64 r = rz_buf_seek (b, addr, R_BUF_SET);
+	st64 o_addr = rz_buf_seek (b, 0, RZ_BUF_CUR);
+	st64 r = rz_buf_seek (b, addr, RZ_BUF_SET);
 	if (r < 0) {
 		return r;
 	}
 	r = rz_buf_fwrite (b, buf, fmt, n);
-	rz_buf_seek (b, o_addr, R_BUF_SET);
+	rz_buf_seek (b, o_addr, RZ_BUF_SET);
 	return r;
 }
 
 RZ_API st64 rz_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, ut64 len) {
 	rz_return_val_if_fail (b && buf, -1);
-	st64 o_addr = rz_buf_seek (b, 0, R_BUF_CUR);
-	st64 r = rz_buf_seek (b, addr, R_BUF_SET);
+	st64 o_addr = rz_buf_seek (b, 0, RZ_BUF_CUR);
+	st64 r = rz_buf_seek (b, addr, RZ_BUF_SET);
 	if (r < 0) {
 		return r;
 	}
 
 	r = rz_buf_read (b, buf, len);
-	rz_buf_seek (b, o_addr, R_BUF_SET);
+	rz_buf_seek (b, o_addr, RZ_BUF_SET);
 	return r;
 }
 
 RZ_API st64 rz_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, ut64 len) {
 	rz_return_val_if_fail (b && buf && !b->readonly, -1);
-	st64 o_addr = rz_buf_seek (b, 0, R_BUF_CUR);
-	st64 r = rz_buf_seek (b, addr, R_BUF_SET);
+	st64 o_addr = rz_buf_seek (b, 0, RZ_BUF_CUR);
+	st64 r = rz_buf_seek (b, addr, RZ_BUF_SET);
 	if (r < 0) {
 		return r;
 	}
 
 	r = rz_buf_write (b, buf, len);
-	rz_buf_seek (b, o_addr, R_BUF_SET);
+	rz_buf_seek (b, o_addr, RZ_BUF_SET);
 	return r;
 }
 
@@ -610,7 +610,7 @@ RZ_API bool rz_buf_fini(RBuffer *b) {
 			b->methods->free_whole_buf (b);
 		}
 	} else {
-		R_FREE (b->whole_buf);
+		RZ_FREE (b->whole_buf);
 	}
 	return buf_fini (b);
 }

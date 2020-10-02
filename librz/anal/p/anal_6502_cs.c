@@ -56,26 +56,26 @@ static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 #endif
 	if (n < 1) {
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = RZ_ANAL_OP_TYPE_ILL;
 	} else {
 		op->nopcode = 1;
 		op->size = insn->size;
 		op->id = insn->id;
-		op->family = R_ANAL_OP_FAMILY_CPU; // almost everything is CPU
+		op->family = RZ_ANAL_OP_FAMILY_CPU; // almost everything is CPU
 		op->prefix = 0;
 		op->cond = 0;
 		switch (insn->id) {
 		case MOS65XX_INS_INVALID:
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = RZ_ANAL_OP_TYPE_ILL;
 			break;
 		case MOS65XX_INS_ADC:
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = RZ_ANAL_OP_TYPE_ADD;
 			break;
 		case MOS65XX_INS_AND:
-			op->type = R_ANAL_OP_TYPE_AND;
+			op->type = RZ_ANAL_OP_TYPE_AND;
 			break;
 		case MOS65XX_INS_ASL:
-			op->type = R_ANAL_OP_TYPE_SHL;
+			op->type = RZ_ANAL_OP_TYPE_SHL;
 			break;
 		case MOS65XX_INS_BCC:
 		case MOS65XX_INS_BCS:
@@ -84,10 +84,10 @@ static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 		case MOS65XX_INS_BMI:
 		case MOS65XX_INS_BNE:
 		case MOS65XX_INS_BPL:
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = RZ_ANAL_OP_TYPE_CJMP;
 			break;
 		case MOS65XX_INS_BRK:
-			op->type = R_ANAL_OP_TYPE_TRAP;
+			op->type = RZ_ANAL_OP_TYPE_TRAP;
 			break;
 		case MOS65XX_INS_BVC:
 		case MOS65XX_INS_BVS:
@@ -99,38 +99,38 @@ static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 		case MOS65XX_INS_CPY:
 			break;
 		case MOS65XX_INS_CMP:
-			op->type = R_ANAL_OP_TYPE_CMP;
+			op->type = RZ_ANAL_OP_TYPE_CMP;
 			break;
 		case MOS65XX_INS_DEC:
 		case MOS65XX_INS_DEX:
 		case MOS65XX_INS_DEY:
-			op->type = R_ANAL_OP_TYPE_SUB;
+			op->type = RZ_ANAL_OP_TYPE_SUB;
 			break;
 		case MOS65XX_INS_EOR:
-			op->type = R_ANAL_OP_TYPE_XOR;
+			op->type = RZ_ANAL_OP_TYPE_XOR;
 			break;
 		case MOS65XX_INS_INC:
 		case MOS65XX_INS_INX:
 		case MOS65XX_INS_INY:
-			op->type = R_ANAL_OP_TYPE_ADD;
+			op->type = RZ_ANAL_OP_TYPE_ADD;
 			break;
 		case MOS65XX_INS_JMP:
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = RZ_ANAL_OP_TYPE_JMP;
 			break;
 		case MOS65XX_INS_JSR:
-			op->type = R_ANAL_OP_TYPE_RJMP;
+			op->type = RZ_ANAL_OP_TYPE_RJMP;
 			break;
 		case MOS65XX_INS_LDA:
 		case MOS65XX_INS_LDX:
 		case MOS65XX_INS_LDY:
-			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->type = RZ_ANAL_OP_TYPE_LOAD;
 			break;
 		case MOS65XX_INS_LSR:
 		case MOS65XX_INS_NOP:
-			op->type = R_ANAL_OP_TYPE_NOP;
+			op->type = RZ_ANAL_OP_TYPE_NOP;
 			break;
 		case MOS65XX_INS_ORA:
-			op->type = R_ANAL_OP_TYPE_OR;
+			op->type = RZ_ANAL_OP_TYPE_OR;
 			break;
 		case MOS65XX_INS_PHA:
 		case MOS65XX_INS_PLA:
@@ -138,10 +138,10 @@ static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 		case MOS65XX_INS_PLP:
 			break;
 		case MOS65XX_INS_ROL:
-			op->type = R_ANAL_OP_TYPE_SHR;
+			op->type = RZ_ANAL_OP_TYPE_SHR;
 			break;
 		case MOS65XX_INS_ROR:
-			op->type = R_ANAL_OP_TYPE_ROR;
+			op->type = RZ_ANAL_OP_TYPE_ROR;
 			break;
 		case MOS65XX_INS_RTI:
 		case MOS65XX_INS_RTS:
@@ -203,7 +203,7 @@ RzAnalPlugin rz_anal_plugin_6502_cs = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_6502_cs,
 	.version = RZ_VERSION
 };
@@ -220,7 +220,7 @@ RzAnalPlugin rz_anal_plugin_6502_cs = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.version = RZ_VERSION
 };
 #endif

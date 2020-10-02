@@ -251,7 +251,7 @@ static int cmd_mount(void *data, const char *_input) {
 		if (file) {
 			rz_fs_read (core->fs, file, 0, file->size);
 			char *uri = rz_str_newf ("malloc://%d", file->size);
-			RzIODesc *fd = rz_io_open (core->io, uri, R_PERM_RW, 0);
+			RzIODesc *fd = rz_io_open (core->io, uri, RZ_PERM_RW, 0);
 			if (fd) {
 				rz_io_desc_write (fd, file->data, file->size);
 			}
@@ -388,7 +388,7 @@ static int cmd_mount(void *data, const char *_input) {
 			rz_fs_shell_prompt (&shell, core->fs, input);
 			core->autocomplete_type = AUTOCOMPLETE_DEFAULT;
 			rz_core_autocomplete_reload (core);
-			R_FREE (cwd);
+			RZ_FREE (cwd);
 		}
 		break;
 	case 'w':

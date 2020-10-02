@@ -161,7 +161,7 @@ static task_t task_for_pid_ios9pangu(int pid) {
 
 int xnu_wait(RzDebug *dbg, int pid) {
 #if XNU_USE_PTRACE
-	return R_DEBUG_REASON_UNKNOWN;
+	return RZ_DEBUG_REASON_UNKNOWN;
 #else
 	return __xnu_wait (dbg, pid);
 #endif
@@ -324,9 +324,9 @@ int xnu_continue(RzDebug *dbg, int pid, int tid, int sig) {
 
 char *xnu_reg_profile(RzDebug *dbg) {
 #if __i386__ || __x86_64__
-	if (dbg->bits & R_SYS_BITS_32) {
+	if (dbg->bits & RZ_SYS_BITS_32) {
 #		include "reg/darwin-x86.h"
-	} else if (dbg->bits == R_SYS_BITS_64) {
+	} else if (dbg->bits == RZ_SYS_BITS_64) {
 #		include "reg/darwin-x64.h"
 	} else {
 		eprintf ("invalid bit size\n");
@@ -335,7 +335,7 @@ char *xnu_reg_profile(RzDebug *dbg) {
 #elif __POWERPC__
 #	include "reg/darwin-ppc.h"
 #elif __APPLE__ && (__aarch64__ || __arm64__ || __arm__)
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (dbg->bits == RZ_SYS_BITS_64) {
 #		include "reg/darwin-arm64.h"
 	} else {
 #		include "reg/darwin-arm.h"
@@ -356,19 +356,19 @@ int xnu_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 		return 0;
 	}
 	switch (type) {
-	case R_REG_TYPE_DRX:
+	case RZ_REG_TYPE_DRX:
 #if __x86_64__
-		memcpy (&th->drx.uds.ds32, buf, R_MIN (size, sizeof (th->drx)));
+		memcpy (&th->drx.uds.ds32, buf, RZ_MIN (size, sizeof (th->drx)));
 #elif __i386__
-		memcpy (&th->drx.uds.ds64, buf, R_MIN (size, sizeof (th->drx)));
+		memcpy (&th->drx.uds.ds64, buf, RZ_MIN (size, sizeof (th->drx)));
 #elif __arm64 || __aarch64
-		if (dbg->bits == R_SYS_BITS_64) {
-			memcpy (&th->debug.drx64, buf, R_MIN (size, sizeof (th->debug.drx64)));
+		if (dbg->bits == RZ_SYS_BITS_64) {
+			memcpy (&th->debug.drx64, buf, RZ_MIN (size, sizeof (th->debug.drx64)));
 		} else {
-			memcpy (&th->debug.drx32, buf, R_MIN (size, sizeof (th->debug.drx32)));
+			memcpy (&th->debug.drx32, buf, RZ_MIN (size, sizeof (th->debug.drx32)));
 		}
 #elif __arm || __armv7 || __arm__ || __armv7__
-		memcpy (&th->debug.drx, buf, R_MIN (size, sizeof (th->debug.drx)));
+		memcpy (&th->debug.drx, buf, RZ_MIN (size, sizeof (th->debug.drx)));
 #endif
 		ret = xnu_thread_set_drx (dbg, th);
 		break;
@@ -377,7 +377,7 @@ int xnu_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 #if __POWERPC__
 #warning TODO powerpc support here
 #else
-		memcpy (&th->gpr.uts, buf, R_MIN (size, sizeof (th->gpr.uts)));
+		memcpy (&th->gpr.uts, buf, RZ_MIN (size, sizeof (th->gpr.uts)));
 #endif
 		ret = xnu_thread_set_gpr (dbg, th);
 		break;
@@ -391,14 +391,14 @@ int xnu_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 		return 0;
 	}
 	switch (type) {
-	case R_REG_TYPE_SEG:
-	case R_REG_TYPE_FLG:
-	case R_REG_TYPE_GPR:
+	case RZ_REG_TYPE_SEG:
+	case RZ_REG_TYPE_FLG:
+	case RZ_REG_TYPE_GPR:
 		if (!xnu_thread_get_gpr (dbg, th)) {
 			return 0;
 		}
 		break;
-	case R_REG_TYPE_DRX:
+	case RZ_REG_TYPE_DRX:
 		if (!xnu_thread_get_drx (dbg, th)) {
 			return 0;
 		}
@@ -407,7 +407,7 @@ int xnu_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 		return 0;
 	}
 	if (th->state) {
-		int rsz = R_MIN (th->state_size, size);
+		int rsz = RZ_MIN (th->state_size, size);
 		if (rsz > 0) {
 			memcpy (buf, th->state, rsz);
 			return rsz;
@@ -470,7 +470,7 @@ static int xnu_get_kinfo_proc (int pid, struct kinfo_proc *kp) {
 RzDebugInfo *xnu_info (RzDebug *dbg, const char *arg) {
 	struct kinfo_proc kp; // XXX This need to be freed?
 	int kinfo_proc_error = 0;
-	RzDebugInfo *rdi = R_NEW0 (RzDebugInfo);
+	RzDebugInfo *rdi = RZ_NEW0 (RzDebugInfo);
 	if (!rdi) return NULL;
 
 	kinfo_proc_error = xnu_get_kinfo_proc(dbg->pid, &kp);
@@ -479,7 +479,7 @@ RzDebugInfo *xnu_info (RzDebug *dbg, const char *arg) {
 		eprintf ("Error while querying the process info to sysctl\n");
 		return NULL;
 	}
-	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this w/o libproc ?
+	rdi->status = RZ_DBG_PROC_SLEEP; // TODO: Fix this w/o libproc ?
 	rdi->pid = dbg->pid;
 	rdi->tid = dbg->tid;
 	rdi->uid = kp.kp_eproc.e_ucred.cr_uid;
@@ -497,10 +497,10 @@ RzDebugInfo *xnu_info (RzDebug *dbg, const char *arg) {
 	if (proc_pidinfo (rdi->pid, PROC_PIDTBSDINFO, 0,
 		&proc, PROC_PIDTBSDINFO_SIZE) == PROC_PIDTBSDINFO_SIZE) {
 		if ((proc.pbi_flags & PROC_FLAG_TRACED) != 0) {
-			rdi->status = R_DBG_PROC_RUN;
+			rdi->status = RZ_DBG_PROC_RUN;
 		}
 		if ((proc.pbi_flags & PROC_FLAG_INEXIT) != 0) {
-			rdi->status = R_DBG_PROC_STOP;
+			rdi->status = RZ_DBG_PROC_STOP;
 		}
 	}
 #endif
@@ -524,17 +524,17 @@ static void xnu_free_threads_ports (RzDebugPid *p) {
 
 RzList *xnu_thread_list (RzDebug *dbg, int pid, RzList *list) {
 #if __arm__ || __arm64__ || __aarch_64__
-	#define CPU_PC (dbg->bits == R_SYS_BITS_64) ? \
+	#define CPU_PC (dbg->bits == RZ_SYS_BITS_64) ? \
 		state.ts_64.__pc : state.ts_32.__pc
 #elif __POWERPC__
 	#define CPU_PC state.srr0
 #elif __x86_64__ || __i386__
-	#define CPU_PC (dbg->bits == R_SYS_BITS_64) ? \
+	#define CPU_PC (dbg->bits == RZ_SYS_BITS_64) ? \
 		state.uts.ts64.__rip : state.uts.ts32.__eip
 #endif
 	RzListIter *iter;
 	xnu_thread_t *thread;
-	R_REG_T state;
+	RZ_REG_T state;
 	xnu_update_thread_list (dbg);
 	list->free = (RzListFree)&rz_debug_pid_free;
 	rz_list_foreach (dbg->threads, iter, thread) {
@@ -543,7 +543,7 @@ RzList *xnu_thread_list (RzDebug *dbg, int pid, RzList *list) {
 			continue;
 		}
 		thread->state_size = sizeof (thread->gpr);
-		memcpy (&state, &thread->gpr, sizeof (R_REG_T));
+		memcpy (&state, &thread->gpr, sizeof (RZ_REG_T));
 		rz_list_append (list, rz_debug_pid_new (thread->name,
 			thread->port, getuid (), 's', CPU_PC));
 	}
@@ -1223,7 +1223,7 @@ static RzList *xnu_dbg_modules(RzDebug *dbg) {
 	if (info_array_address == 0) {
 		return NULL;
 	}
-	info_array_size = R_ABS (info_array_size);
+	info_array_size = RZ_ABS (info_array_size);
 	info_array = calloc (1, info_array_size);
 	if (!info_array) {
 		eprintf ("Cannot allocate info_array_size %d\n",
@@ -1273,7 +1273,7 @@ static RzDebugMap *moduleAt(RzList *list, ut64 addr) {
 	RzListIter *iter;
 	RzDebugMap *map;
 	rz_list_foreach (list, iter, map) {
-		if (R_BETWEEN (map->addr, addr, map->addr_end)) {
+		if (RZ_BETWEEN (map->addr, addr, map->addr_end)) {
 			return map;
 		}
 	}
@@ -1293,7 +1293,7 @@ static int cmp (const void *_a, const void *_b) {
 }
 
 static RzDebugMap *rz_debug_map_clone (RzDebugMap *m) {
-	RzDebugMap *map = R_NEWCOPY (RzDebugMap, m);
+	RzDebugMap *map = RZ_NEWCOPY (RzDebugMap, m);
 	// memcpy (map, m, sizeof (RzDebugMap));
 	if (m->name) {
 		map->name = strdup (m->name);

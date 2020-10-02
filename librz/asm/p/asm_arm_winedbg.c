@@ -37,7 +37,7 @@ RzAsmPlugin rz_asm_plugin_arm_winedbg = {
 	.name = "arm.winedbg",
 	.arch = "arm",
 	.bits = 16|32,
-	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
+	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.desc = "WineDBG's ARM disassembler",
 	.disassemble = &disassemble,
 	.license = "LGPL2"
@@ -45,7 +45,7 @@ RzAsmPlugin rz_asm_plugin_arm_winedbg = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_arm_winedbg,
 	.version = RZ_VERSION
 };

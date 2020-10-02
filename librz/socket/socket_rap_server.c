@@ -5,7 +5,7 @@
 
 RZ_API RzSocketRapServer *rz_socket_rap_server_new(bool use_ssl, const char *port) {
 	rz_return_val_if_fail (port, NULL);
-	RzSocketRapServer *s = R_NEW0 (RzSocketRapServer);
+	RzSocketRapServer *s = RZ_NEW0 (RzSocketRapServer);
 	if (s) {
 		s->port = strdup (port);
 		s->fd = rz_socket_new (use_ssl);
@@ -120,7 +120,7 @@ RZ_API bool rz_socket_rap_server_continue(RzSocketRapServer *s) {
 				rz_socket_write (s->fd, ptr, i);
 			}
 			rz_socket_flush (s->fd);
-			R_FREE (ptr);
+			RZ_FREE (ptr);
 		}
 		break;
 	case RAP_PACKET_CLOSE:

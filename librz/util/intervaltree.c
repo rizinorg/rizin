@@ -119,7 +119,7 @@ RZ_API void rz_interval_tree_fini(RIntervalTree *tree) {
 
 RZ_API bool rz_interval_tree_insert(RIntervalTree *tree, ut64 start, ut64 end, void *data) {
 	rz_return_val_if_fail (end >= start, false);
-	RIntervalNode *node = R_NEW0 (RIntervalNode);
+	RIntervalNode *node = RZ_NEW0 (RIntervalNode);
 	if (!node) {
 		return false;
 	}

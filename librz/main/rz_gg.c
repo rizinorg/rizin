@@ -54,13 +54,13 @@ static void list(RzEgg *egg) {
 	RzEggPlugin *p;
 	printf ("shellcodes:\n");
 	rz_list_foreach (egg->plugins, iter, p) {
-		if (p->type == R_EGG_PLUGIN_SHELLCODE) {
+		if (p->type == RZ_EGG_PLUGIN_SHELLCODE) {
 			printf ("%10s : %s\n", p->name, p->desc);
 		}
 	}
 	printf ("encoders:\n");
 	rz_list_foreach (egg->plugins, iter, p) {
-		if (p->type == R_EGG_PLUGIN_ENCODER) {
+		if (p->type == RZ_EGG_PLUGIN_ENCODER) {
 			printf ("%10s : %s\n", p->name, p->desc);
 		}
 	}
@@ -120,8 +120,8 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	const char *str = NULL;
 	char *bytes = NULL;
 	const char *contents = NULL;
-	const char *arch = R_SYS_ARCH;
-	const char *os = R_EGG_OS_NAME;
+	const char *arch = RZ_SYS_ARCH;
+	const char *os = RZ_EGG_OS_NAME;
 	const char *format = "raw";
 	bool show_execute = false;
 	bool show_execute_rop = false;
@@ -134,7 +134,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	const char *shellcode = NULL;
 	const char *encoder = NULL;
 	char *sequence = NULL;
-	int bits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
+	int bits = (RZ_SYS_BITS & RZ_SYS_BITS_64)? 64: 32;
 	int fmt = 0;
 	const char *ofile = NULL;
 	int ofileauto = 0;
@@ -163,7 +163,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			bytes = rz_str_append (bytes, opt.arg);
 			break;
 		case 'C':
-			if (R_STR_ISEMPTY (opt.arg)) {
+			if (RZ_STR_ISEMPTY (opt.arg)) {
 				eprintf ("Cannot open empty contents path\n");
 				free (sequence);
 				rz_egg_free (egg);
@@ -247,7 +247,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			ofileauto = 1;
 			break;
 		case 'I':
-			if (R_STR_ISEMPTY (opt.arg)) {
+			if (RZ_STR_ISEMPTY (opt.arg)) {
 				eprintf ("Cannot open empty include path\n");
 				free (sequence);
 				rz_egg_free (egg);
@@ -371,7 +371,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	// initialize egg
 	rz_egg_setup (egg, arch, bits, 0, os);
 	if (file) {
-		if (R_STR_ISEMPTY (file)) {
+		if (RZ_STR_ISEMPTY (file)) {
 			eprintf ("Cannot open empty path\n");
 			goto fail;
 		}
@@ -586,7 +586,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 					}
 					printf ("\"\n");
 				} else if (show_hex) {
-					rz_buf_seek (b, 0, R_BUF_SET);
+					rz_buf_seek (b, 0, RZ_BUF_SET);
 					for (i = 0; i < tmpsz; i++) {
 						printf ("%02x", tmp[i]);
 					}

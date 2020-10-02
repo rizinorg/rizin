@@ -31,25 +31,25 @@ static RzDebugMap *add_map(RzList *list, const char *name, ut64 addr, ut64 len, 
 
 	switch (mbi->Protect) {
 	case PAGE_EXECUTE:
-		perm = R_PERM_X;
+		perm = RZ_PERM_X;
 		break;
 	case PAGE_EXECUTE_READ:
-		perm = R_PERM_RX;
+		perm = RZ_PERM_RX;
 		break;
 	case PAGE_EXECUTE_READWRITE:
-		perm = R_PERM_RWX;
+		perm = RZ_PERM_RWX;
 		break;
 	case PAGE_READONLY:
-		perm = R_PERM_R;
+		perm = RZ_PERM_R;
 		break;
 	case PAGE_READWRITE:
-		perm = R_PERM_RW;
+		perm = RZ_PERM_RW;
 		break;
 	case PAGE_WRITECOPY:
-		perm = R_PERM_W;
+		perm = RZ_PERM_W;
 		break;
 	case PAGE_EXECUTE_WRITECOPY:
-		perm = R_PERM_X;
+		perm = RZ_PERM_X;
 		break;
 	default:
 		perm = 0;
@@ -159,7 +159,7 @@ static int set_mod_inf(HANDLE h_proc, RzDebugMap *map, RWinModInfo *mod) {
 		}
 	}
 	if (mod_inf_fill == -1) {
-		R_FREE (mod->sect_hdr);
+		RZ_FREE (mod->sect_hdr);
 	}
 	return mod_inf_fill;
 }

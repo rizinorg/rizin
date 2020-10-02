@@ -3,9 +3,9 @@
 
 #if __POWERPC__
 //TODO add better support for PPC
-#	define R_REG_T ppc_thread_state_t
-#	define R_REG_STATE_T PPC_THREAD_STATE
-#	define R_REG_STATE_SZ PPC_THREAD_STATE_SZ
+#	define RZ_REG_T ppc_thread_state_t
+#	define RZ_REG_STATE_T PPC_THREAD_STATE
+#	define RZ_REG_STATE_SZ PPC_THREAD_STATE_SZ
 
 #elif __arm || __arm64 || __aarch64
 #	include <mach/arm/thread_status.h>
@@ -15,13 +15,13 @@
 #	ifndef ARM_THREAD_STATE64
 #		define ARM_THREAD_STATE64 6
 #	endif
-#	define R_REG_T arm_unified_thread_state_t
-#	define R_REG_STATE_T MACHINE_THREAD_STATE
-#	define R_REG_STATE_SZ MACHINE_THREAD_STATE_COUNT
+#	define RZ_REG_T arm_unified_thread_state_t
+#	define RZ_REG_STATE_T MACHINE_THREAD_STATE
+#	define RZ_REG_STATE_SZ MACHINE_THREAD_STATE_COUNT
 #elif __x86_64__ || __i386__
-#	define R_REG_T x86_thread_state_t
-#	define R_REG_STATE_T MACHINE_THREAD_STATE
-#	define R_REG_STATE_SZ MACHINE_THREAD_STATE_COUNT
+#	define RZ_REG_T x86_thread_state_t
+#	define RZ_REG_STATE_T MACHINE_THREAD_STATE
+#	define RZ_REG_STATE_SZ MACHINE_THREAD_STATE_COUNT
 #endif
 
 #define RETURN_ON_MACH_ERROR(msg, retval)\
@@ -44,7 +44,7 @@ typedef struct _xnu_thread {
 	char *name; //name of thread
 	thread_basic_info_data_t basic_info; //need this?
 	ut8 stepping; // thread is stepping or not //TODO implement stepping
-	R_REG_T gpr; // type R_REG_T using unified API XXX bad naming
+	RZ_REG_T gpr; // type RZ_REG_T using unified API XXX bad naming
 	void *state;
 	ut32 state_size;
 #if __arm64 || __aarch64 || __arm64__ || __aarch64__

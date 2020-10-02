@@ -6,7 +6,7 @@
 #include <rz_types.h>
 #include <rz_getopt.h>
 
-R_LIB_VERSION_HEADER(rz_main);
+RZ_LIB_VERSION_HEADER(rz_main);
 
 typedef struct rz_main_t {
 	const char *name;

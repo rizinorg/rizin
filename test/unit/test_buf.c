@@ -21,12 +21,12 @@ bool test_buf(RBuffer *b) {
 	bool res = rz_buf_set_bytes (b, (ut8 *)s, sl);
 	mu_assert ("New content should be written", res);
 
-	rz_buf_seek (b, 0, R_BUF_SET);
+	rz_buf_seek (b, 0, RZ_BUF_SET);
 	r = rz_buf_read (b, buffer, sl);
 	mu_assert_eq (r, sl, "rz_buf_read_at failed");
 	mu_assert_memeq (buffer, (ut8 *)s, sl, "rz_buf_read_at has corrupted content");
 
-	rz_buf_seek (b, 0, R_BUF_SET);
+	rz_buf_seek (b, 0, RZ_BUF_SET);
 	r = rz_buf_read (b, buffer, 3);
 	mu_assert_eq (r, 3, "rz_buf_read_at failed");
 	mu_assert_memeq (buffer, (ut8 *)"Thi", 3, "rz_buf_read_at has corrupted content");
@@ -71,7 +71,7 @@ bool test_buf(RBuffer *b) {
 	mu_assert_streq (st2, "Hello, World", "comma inserted");
 	free (st2);
 
-	r = rz_buf_seek (b, 0x100, R_BUF_SET);
+	r = rz_buf_seek (b, 0x100, RZ_BUF_SET);
 	mu_assert_eq (r, 0x100, "moving seek out of current length");
 	r = rz_buf_write (b, (ut8 *)"mydata", 6);
 	mu_assert_eq (r, 6, "writes 6 bytes");
@@ -154,7 +154,7 @@ bool test_r_buf_mmap(void) {
 	write (fd, content, length);
 	close (fd);
 
-	b = rz_buf_new_mmap (filename, R_PERM_RW);
+	b = rz_buf_new_mmap (filename, RZ_PERM_RW);
 	mu_assert_notnull (b, "rz_buf_new_mmap failed");
 
 	if (test_buf (b) != MU_PASSED) {
@@ -174,7 +174,7 @@ bool test_r_buf_io(void) {
 	const int length = 23;
 
 	RzIO *io = rz_io_new ();
-	RzIODesc *desc = rz_io_open_at (io, "file:///tmp/r-buf-io.test", R_PERM_RW | R_PERM_CREAT, 0644, 0);
+	RzIODesc *desc = rz_io_open_at (io, "file:///tmp/r-buf-io.test", RZ_PERM_RW | RZ_PERM_CREAT, 0644, 0);
 	mu_assert_notnull (desc, "file should be opened for writing");
 
 	bool res = rz_io_write_at (io, 0, (ut8 *)content, length);
@@ -206,7 +206,7 @@ bool test_r_buf_sparse(void) {
 	mu_assert_notnull (b, "rz_buf_new_file failed");
 
 	rz_buf_write (b, (ut8 *)content, length);
-	rz_buf_seek (b, 0, R_BUF_SET);
+	rz_buf_seek (b, 0, RZ_BUF_SET);
 
 	if (test_buf (b) != MU_PASSED) {
 		mu_fail ("test failed");
@@ -332,7 +332,7 @@ bool test_r_buf_slice(void) {
 	mu_assert_eq (r, 23, "rz_buf_read_at failed");
 	mu_assert_memeq (buffer, (ut8 *)"Something To\nSay Here..", 23, "rz_buf_read_at has corrupted content");
 
-	rz_buf_seek (b, 3, R_BUF_SET);
+	rz_buf_seek (b, 3, RZ_BUF_SET);
 	r = rz_buf_read (b, buffer, 3);
 	mu_assert_eq (r, 3, "only 3 read");
 	mu_assert_memeq (buffer, (ut8 *)"eth", 3, "base should be considered");

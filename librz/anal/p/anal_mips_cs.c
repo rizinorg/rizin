@@ -34,20 +34,20 @@ static ut64 t9_pre = UT64_MAX;
 
 #define SET_SRC_DST_3_REGS(op) \
 	CREATE_SRC_DST_3 (op);\
-	(op)->dst->reg = rz_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
-	(op)->src[0]->reg = rz_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);\
-	(op)->src[1]->reg = rz_reg_get (anal->reg, REG (2), R_REG_TYPE_GPR);
+	(op)->dst->reg = rz_reg_get (anal->reg, REG (0), RZ_REG_TYPE_GPR);\
+	(op)->src[0]->reg = rz_reg_get (anal->reg, REG (1), RZ_REG_TYPE_GPR);\
+	(op)->src[1]->reg = rz_reg_get (anal->reg, REG (2), RZ_REG_TYPE_GPR);
 
 #define SET_SRC_DST_3_IMM(op) \
 	CREATE_SRC_DST_3 (op);\
-	(op)->dst->reg = rz_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
-	(op)->src[0]->reg = rz_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);\
+	(op)->dst->reg = rz_reg_get (anal->reg, REG (0), RZ_REG_TYPE_GPR);\
+	(op)->src[0]->reg = rz_reg_get (anal->reg, REG (1), RZ_REG_TYPE_GPR);\
 	(op)->src[1]->imm = IMM (2);
 
 #define SET_SRC_DST_2_REGS(op) \
 	CREATE_SRC_DST_2 (op);\
-	(op)->dst->reg = rz_reg_get (anal->reg, REG (0), R_REG_TYPE_GPR);\
-	(op)->src[0]->reg = rz_reg_get (anal->reg, REG (1), R_REG_TYPE_GPR);
+	(op)->dst->reg = rz_reg_get (anal->reg, REG (0), RZ_REG_TYPE_GPR);\
+	(op)->src[0]->reg = rz_reg_get (anal->reg, REG (1), RZ_REG_TYPE_GPR);
 
 #define SET_SRC_DST_3_REG_OR_IMM(op) \
 	if (OPERAND(2).type == MIPS_OP_IMM) {\
@@ -625,8 +625,8 @@ static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num
 
 static void op_fillval(RzAnal *anal, RzAnalOp *op, csh *handle, cs_insn *insn) {
 	static RzRegItem reg;
-	switch (op->type & R_ANAL_OP_TYPE_MASK) {
-	case R_ANAL_OP_TYPE_LOAD:
+	switch (op->type & RZ_ANAL_OP_TYPE_MASK) {
+	case RZ_ANAL_OP_TYPE_LOAD:
 		if (OPERAND(1).type == MIPS_OP_MEM) {
 			ZERO_FILL (reg);
 			op->src[0] = rz_anal_value_new ();
@@ -635,7 +635,7 @@ static void op_fillval(RzAnal *anal, RzAnalOp *op, csh *handle, cs_insn *insn) {
 			op->src[0]->delta = OPERAND(1).mem.disp;
 		}
 		break;
-	case R_ANAL_OP_TYPE_STORE:
+	case RZ_ANAL_OP_TYPE_STORE:
 		if (OPERAND(1).type == MIPS_OP_MEM) {
 			ZERO_FILL (reg);
 			op->dst = rz_anal_value_new ();
@@ -644,20 +644,20 @@ static void op_fillval(RzAnal *anal, RzAnalOp *op, csh *handle, cs_insn *insn) {
 			op->dst->delta = OPERAND(1).mem.disp;
 		}
 		break;
-	case R_ANAL_OP_TYPE_SHL:
-	case R_ANAL_OP_TYPE_SHR:
-	case R_ANAL_OP_TYPE_SAR:
-	case R_ANAL_OP_TYPE_XOR:
-	case R_ANAL_OP_TYPE_SUB:
-	case R_ANAL_OP_TYPE_AND:
-	case R_ANAL_OP_TYPE_ADD:
-	case R_ANAL_OP_TYPE_OR:
+	case RZ_ANAL_OP_TYPE_SHL:
+	case RZ_ANAL_OP_TYPE_SHR:
+	case RZ_ANAL_OP_TYPE_SAR:
+	case RZ_ANAL_OP_TYPE_XOR:
+	case RZ_ANAL_OP_TYPE_SUB:
+	case RZ_ANAL_OP_TYPE_AND:
+	case RZ_ANAL_OP_TYPE_ADD:
+	case RZ_ANAL_OP_TYPE_OR:
 		SET_SRC_DST_3_REG_OR_IMM (op);
 		break;
-	case R_ANAL_OP_TYPE_MOV:
+	case RZ_ANAL_OP_TYPE_MOV:
 		SET_SRC_DST_3_REG_OR_IMM (op);
 		break;
-	case R_ANAL_OP_TYPE_DIV: // UDIV
+	case RZ_ANAL_OP_TYPE_DIV: // UDIV
 #if 0
 capstone bug
 ------------
@@ -700,21 +700,21 @@ capstone bug
 }
 
 static void set_opdir(RzAnalOp *op) {
-        switch (op->type & R_ANAL_OP_TYPE_MASK) {
-        case R_ANAL_OP_TYPE_LOAD:
-                op->direction = R_ANAL_OP_DIR_READ;
+        switch (op->type & RZ_ANAL_OP_TYPE_MASK) {
+        case RZ_ANAL_OP_TYPE_LOAD:
+                op->direction = RZ_ANAL_OP_DIR_READ;
                 break;
-        case R_ANAL_OP_TYPE_STORE:
-                op->direction = R_ANAL_OP_DIR_WRITE;
+        case RZ_ANAL_OP_TYPE_STORE:
+                op->direction = RZ_ANAL_OP_DIR_WRITE;
                 break;
-        case R_ANAL_OP_TYPE_LEA:
-                op->direction = R_ANAL_OP_DIR_REF;
+        case RZ_ANAL_OP_TYPE_LEA:
+                op->direction = RZ_ANAL_OP_DIR_REF;
                 break;
-        case R_ANAL_OP_TYPE_CALL:
-        case R_ANAL_OP_TYPE_JMP:
-        case R_ANAL_OP_TYPE_UJMP:
-        case R_ANAL_OP_TYPE_UCALL:
-                op->direction = R_ANAL_OP_DIR_EXEC;
+        case RZ_ANAL_OP_TYPE_CALL:
+        case RZ_ANAL_OP_TYPE_JMP:
+        case RZ_ANAL_OP_TYPE_UJMP:
+        case RZ_ANAL_OP_TYPE_UCALL:
+                op->direction = RZ_ANAL_OP_DIR_EXEC;
                 break;
         default:
                 break;
@@ -764,12 +764,12 @@ static int analop(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len
 	}
 	n = cs_disasm (hndl, (ut8*)buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
-		if (mask & R_ANAL_OP_MASK_DISASM) {
+		if (mask & RZ_ANAL_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
 		goto beach;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & RZ_ANAL_OP_MASK_DISASM) {
 		op->mnemonic = rz_str_newf ("%s%s%s",
 			insn->mnemonic,
 			insn->op_str[0]?" ":"",
@@ -780,7 +780,7 @@ static int analop(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len
 	op->refptr = 0;
 	switch (insn->id) {
 	case MIPS_INS_INVALID:
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = RZ_ANAL_OP_TYPE_ILL;
 		break;
 	case MIPS_INS_LB:
 	case MIPS_INS_LBU:
@@ -803,7 +803,7 @@ static int analop(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_LDL:
 	case MIPS_INS_LDR:
 	case MIPS_INS_LDXC1:
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = RZ_ANAL_OP_TYPE_LOAD;
 		if (!op->refptr) {
 			op->refptr = 8;
 		}
@@ -838,24 +838,24 @@ static int analop(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_SWL:
 	case MIPS_INS_SWR:
 	case MIPS_INS_SWXC1:
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = RZ_ANAL_OP_TYPE_STORE;
 		break;
 	case MIPS_INS_NOP:
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = RZ_ANAL_OP_TYPE_NOP;
 		break;
 	case MIPS_INS_SYSCALL:
-		op->type = R_ANAL_OP_TYPE_SWI;
+		op->type = RZ_ANAL_OP_TYPE_SWI;
 		break;
 	case MIPS_INS_BREAK:
-		op->type = R_ANAL_OP_TYPE_TRAP;
+		op->type = RZ_ANAL_OP_TYPE_TRAP;
 		break;
 	case MIPS_INS_JALR:
-		op->type = R_ANAL_OP_TYPE_UCALL;
+		op->type = RZ_ANAL_OP_TYPE_UCALL;
 		op->delay = 1;
 		if (REGID(0) == MIPS_REG_25) {
 			op->jump = t9_pre;
 			t9_pre = UT64_MAX;
-			op->type = R_ANAL_OP_TYPE_RCALL;
+			op->type = RZ_ANAL_OP_TYPE_RCALL;
 		} 
 		break;
 	case MIPS_INS_JAL:
@@ -874,7 +874,7 @@ static int analop(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_BGTZALC:
 	case MIPS_INS_JIALC:
 	case MIPS_INS_JIC:
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = RZ_ANAL_OP_TYPE_CALL;
 		op->jump = IMM(0);
 
 		switch (insn->id) {
@@ -897,10 +897,10 @@ static int analop(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_LI:
 	case MIPS_INS_LUI:
 		SET_VAL (op, 1);
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANAL_OP_TYPE_MOV;
 		break;
 	case MIPS_INS_MOVE:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANAL_OP_TYPE_MOV;
 		break;
 	case MIPS_INS_ADD:
 	case MIPS_INS_ADDI:
@@ -911,12 +911,12 @@ static int analop(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_DADDIU:
 		SET_VAL (op, 2);
 		op->sign = (insn->id == MIPS_INS_ADDI || insn->id == MIPS_INS_ADD);
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANAL_OP_TYPE_ADD;
 		if (REGID(0) == MIPS_REG_T9) {
 				t9_pre += IMM(2);
 		} 
 		if (REGID(0) == MIPS_REG_SP) {
-			op->stackop = R_ANAL_STACK_INC;
+			op->stackop = RZ_ANAL_STACK_INC;
 			op->stackptr = -IMM(2);
 		}
 		break;
@@ -934,7 +934,7 @@ static int analop(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_SUBUH_R:
 		SET_VAL (op,2);
 		op->sign = insn->id == MIPS_INS_SUB;
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = RZ_ANAL_OP_TYPE_SUB;
 		break;
 	case MIPS_INS_MULV:
 	case MIPS_INS_MULT:
@@ -943,28 +943,28 @@ static int analop(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_MUL:
 	case MIPS_INS_DMULT:
 	case MIPS_INS_DMULTU:
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = RZ_ANAL_OP_TYPE_MUL;
 		break;
 	case MIPS_INS_XOR:
 	case MIPS_INS_XORI:
 		SET_VAL (op,2);
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = RZ_ANAL_OP_TYPE_XOR;
 		break;
 	case MIPS_INS_AND:
 	case MIPS_INS_ANDI:
 		SET_VAL (op,2);
-		op->type = R_ANAL_OP_TYPE_AND;
+		op->type = RZ_ANAL_OP_TYPE_AND;
 		if (REGID(0) == MIPS_REG_SP) {
-			op->stackop = R_ANAL_STACK_ALIGN;
+			op->stackop = RZ_ANAL_STACK_ALIGN;
 		}
 		break;
 	case MIPS_INS_NOT:
-		op->type = R_ANAL_OP_TYPE_NOT;
+		op->type = RZ_ANAL_OP_TYPE_NOT;
 		break;
 	case MIPS_INS_OR:
 	case MIPS_INS_ORI:
 		SET_VAL (op,2);
-		op->type = R_ANAL_OP_TYPE_OR;
+		op->type = RZ_ANAL_OP_TYPE_OR;
 		break;
 	case MIPS_INS_DIV:
 	case MIPS_INS_DIVU:
@@ -973,13 +973,13 @@ static int analop(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_FDIV:
 	case MIPS_INS_DIV_S:
 	case MIPS_INS_DIV_U:
-		op->type = R_ANAL_OP_TYPE_DIV;
+		op->type = RZ_ANAL_OP_TYPE_DIV;
 		break;
 	case MIPS_INS_CMPGDU:
 	case MIPS_INS_CMPGU:
 	case MIPS_INS_CMPU:
 	case MIPS_INS_CMPI:
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = RZ_ANAL_OP_TYPE_CMP;
 		break;
 	case MIPS_INS_J:
 	case MIPS_INS_B:
@@ -1008,9 +1008,9 @@ static int analop(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_BLTZC:
 	case MIPS_INS_BGTZC:
 		if (insn->id == MIPS_INS_J || insn->id == MIPS_INS_B ) {
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = RZ_ANAL_OP_TYPE_JMP;
 		} else {
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = RZ_ANAL_OP_TYPE_CJMP;
 		}
 
 		if (OPERAND(0).type == MIPS_OP_IMM) {
@@ -1039,11 +1039,11 @@ static int analop(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case MIPS_INS_JR:
 	case MIPS_INS_JRC:
-		op->type = R_ANAL_OP_TYPE_RJMP;
+		op->type = RZ_ANAL_OP_TYPE_RJMP;
 		op->delay = 1;
 		// register is $ra, so jmp is a return
 		if (insn->detail->mips.operands[0].reg == MIPS_REG_RA) {
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = RZ_ANAL_OP_TYPE_RET;
 			t9_pre = UT64_MAX;
 		}
 		if (REGID(0) == MIPS_REG_25) {
@@ -1065,32 +1065,32 @@ static int analop(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case MIPS_INS_SHRA:
 	case MIPS_INS_SHRA_R:
 	case MIPS_INS_SRA:
-		op->type = R_ANAL_OP_TYPE_SAR;
+		op->type = RZ_ANAL_OP_TYPE_SAR;
 		SET_VAL (op,2);
 		break;
 	case MIPS_INS_SHRL:
 	case MIPS_INS_SRLV:
 	case MIPS_INS_SRL:
-		op->type = R_ANAL_OP_TYPE_SHR;
+		op->type = RZ_ANAL_OP_TYPE_SHR;
 		SET_VAL (op,2);
 		break;
 	case MIPS_INS_SLLV:
 	case MIPS_INS_SLL:
-		op->type = R_ANAL_OP_TYPE_SHL;
+		op->type = RZ_ANAL_OP_TYPE_SHL;
 		SET_VAL (op,2);
 		break;
 	}
 beach:
 	set_opdir (op);
-	if (insn && mask & R_ANAL_OP_MASK_OPEX) {
+	if (insn && mask & RZ_ANAL_OP_MASK_OPEX) {
 		opex (&op->opex, hndl, insn);
 	}
-	if (mask & R_ANAL_OP_MASK_ESIL) {
+	if (mask & RZ_ANAL_OP_MASK_ESIL) {
 		if (analop_esil (anal, op, addr, buf, len, &hndl, insn) != 0) {
 			rz_strbuf_fini (&op->esil);
 		}
 	}
-	if (mask & R_ANAL_OP_MASK_VAL) {
+	if (mask & RZ_ANAL_OP_MASK_VAL) {
 		op_fillval (anal, op, &hndl, insn);
 	}
 	cs_free (insn, n);
@@ -1229,7 +1229,7 @@ RzAnalPlugin rz_anal_plugin_mips_cs = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_mips_cs,
 	.version = RZ_VERSION
 };

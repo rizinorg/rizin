@@ -15,7 +15,7 @@
 
 RZ_API struct rz_socket_proc_t *rz_socket_proc_open(char* const argv[]) {
 #if __UNIX__ && LIBC_HAVE_FORK
-	RzSocketProc *sp = R_NEW (RzSocketProc);
+	RzSocketProc *sp = RZ_NEW (RzSocketProc);
 #ifdef O_CLOEXEC
 	const int flags = O_CLOEXEC; //O_NONBLOCK|O_CLOEXEC;
 #else
@@ -115,7 +115,7 @@ RZ_API void rz_socket_proc_printf (RzSocketProc *sp, const char *fmt, ...) {
 	va_list ap;
 	s.is_ssl = false;
 	s.fd = sp->fd0[1];
-	if (s.fd != R_INVALID_SOCKET) {
+	if (s.fd != RZ_INVALID_SOCKET) {
 		va_start (ap, fmt);
 		vsnprintf (buf, BUFFER_SIZE, fmt, ap);
 		rz_socket_write (&s, buf, strlen(buf));

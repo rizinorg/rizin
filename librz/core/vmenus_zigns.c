@@ -98,7 +98,7 @@ RZ_API int rz_core_visual_view_zigns(RzCore *core) {
 		case 'd':
 			if (cur_name && *cur_name) {
 				rz_sign_delete (core->anal, cur_name);
-				R_FREE (cur_name);
+				RZ_FREE (cur_name);
 			}
 			break;
 		case 'J':
@@ -152,7 +152,7 @@ RZ_API int rz_core_visual_view_zigns(RzCore *core) {
 			rz_cons_any_key (NULL);
 			break;
 		case 'q':
-			R_FREE (cur_name);
+			RZ_FREE (cur_name);
 			return false;
 		case ':': // TODO: move this into a separate helper function
 			{

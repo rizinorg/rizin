@@ -5,16 +5,16 @@
 #include <rz_hash.h>
 #include "coresymbolication.h"
 
-#define R_CS_EL_OFF_SEGS 0x58
-#define R_CS_EL_SIZE_SEG 0x20
-#define R_CS_EL_SIZE_SECT_64 0x18
-#define R_CS_EL_SIZE_SECT_32 0x10
-#define R_CS_EL_SIZE_SYM 0x18
-#define R_CS_EL_SIZE_LSYM 0x24
-#define R_CS_EL_SIZE_LINFO 0x14
+#define RZ_CS_EL_OFF_SEGS 0x58
+#define RZ_CS_EL_SIZE_SEG 0x20
+#define RZ_CS_EL_SIZE_SECT_64 0x18
+#define RZ_CS_EL_SIZE_SECT_32 0x10
+#define RZ_CS_EL_SIZE_SYM 0x18
+#define RZ_CS_EL_SIZE_LSYM 0x24
+#define RZ_CS_EL_SIZE_LINFO 0x14
 
 static RzCoreSymCacheElementHdr *rz_coresym_cache_element_header_new(RBuffer *buf, size_t off, int bits) {
-	RzCoreSymCacheElementHdr *hdr = R_NEW0 (RzCoreSymCacheElementHdr);
+	RzCoreSymCacheElementHdr *hdr = RZ_NEW0 (RzCoreSymCacheElementHdr);
 	if (hdr && rz_buf_fread_at (buf, off, (ut8 *)hdr, "13i16c5i", 1) == sizeof (RzCoreSymCacheElementHdr)) {
 		return hdr;
 	}
@@ -122,7 +122,7 @@ static void meta_add_fileline(RBinFile *bf, ut64 vaddr, ut32 size, RzCoreSymCach
 	}
 	char aoffset[64];
 	ut64 cursor = vaddr;
-	ut64 end = cursor + R_MAX (size, 1);
+	ut64 end = cursor + RZ_MAX (size, 1);
 	char *fileline = rz_str_newf ("%s:%d", flc->file, flc->line);
 	while (cursor < end) {
 		char *aoffsetptr = sdb_itoa (cursor, aoffset, 16);
@@ -172,7 +172,7 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, 
 		eprintf ("Corrupted CoreSymbolication header: size out of bounds (0x%x)\n", hdr->size);
 		goto beach;
 	}
-	result = R_NEW0 (RzCoreSymCacheElement);
+	result = RZ_NEW0 (RzCoreSymCacheElement);
 	if (!result) {
 		goto beach;
 	}
@@ -195,12 +195,12 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, 
 	ut64 page_zero_size = 0;
 	size_t page_zero_idx = 0;
 	if (hdr->n_segments > 0) {
-		result->segments = R_NEWS0 (RzCoreSymCacheElementSegment, hdr->n_segments);
+		result->segments = RZ_NEWS0 (RzCoreSymCacheElementSegment, hdr->n_segments);
 		if (!result->segments) {
 			goto beach;
 		}
 		size_t i;
-		ut8 *cursor = b + R_CS_EL_OFF_SEGS;
+		ut8 *cursor = b + RZ_CS_EL_OFF_SEGS;
 		for (i = 0; i < hdr->n_segments && cursor < end; i++) {
 			RzCoreSymCacheElementSegment *seg = &result->segments[i];
 			seg->paddr = seg->vaddr = rz_read_le64 (cursor);
@@ -236,9 +236,9 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, 
 			}
 		}
 	}
-	const ut64 start_of_sections = (ut64)hdr->n_segments * R_CS_EL_SIZE_SEG + R_CS_EL_OFF_SEGS;
+	const ut64 start_of_sections = (ut64)hdr->n_segments * RZ_CS_EL_SIZE_SEG + RZ_CS_EL_OFF_SEGS;
 	if (hdr->n_sections > 0) {
-		result->sections = R_NEWS0 (RzCoreSymCacheElementSection, hdr->n_sections);
+		result->sections = RZ_NEWS0 (RzCoreSymCacheElementSection, hdr->n_sections);
 		if (!result->sections) {
 			goto beach;
 		}
@@ -268,16 +268,16 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, 
 			sect->name = str_dup_safe (b, sect_start + (size_t)sect_name_off, end);
 		}
 	}
-	const ut64 sect_size = (bits == 32) ? R_CS_EL_SIZE_SECT_32 : R_CS_EL_SIZE_SECT_64;
+	const ut64 sect_size = (bits == 32) ? RZ_CS_EL_SIZE_SECT_32 : RZ_CS_EL_SIZE_SECT_64;
 	const ut64 start_of_symbols = start_of_sections + (ut64)hdr->n_sections * sect_size;
 	if (hdr->n_symbols) {
-		result->symbols = R_NEWS0 (RzCoreSymCacheElementSymbol, hdr->n_symbols);
+		result->symbols = RZ_NEWS0 (RzCoreSymCacheElementSymbol, hdr->n_symbols);
 		if (!result->symbols) {
 			goto beach;
 		}
 		size_t i;
 		ut8 *cursor = b + start_of_symbols;
-		for (i = 0; i < hdr->n_symbols && cursor + R_CS_EL_SIZE_SYM <= end; i++) {
+		for (i = 0; i < hdr->n_symbols && cursor + RZ_CS_EL_SIZE_SYM <= end; i++) {
 			RzCoreSymCacheElementSymbol *sym = &result->symbols[i];
 			sym->paddr = rz_read_le32 (cursor);
 			sym->size = rz_read_le32 (cursor + 0x4);
@@ -287,26 +287,26 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, 
 			sym->unk2 = (st32)rz_read_le32 (cursor + 0x14);
 			sym->name = str_dup_safe (b, cursor + name_off, end);
 			if (!sym->name) {
-				cursor += R_CS_EL_SIZE_SYM;
+				cursor += RZ_CS_EL_SIZE_SYM;
 				continue;
 			}
 			sym->mangled_name = str_dup_safe (b, cursor + mangled_name_off, end);
 			if (!sym->mangled_name) {
-				cursor += R_CS_EL_SIZE_SYM;
+				cursor += RZ_CS_EL_SIZE_SYM;
 				continue;
 			}
-			cursor += R_CS_EL_SIZE_SYM;
+			cursor += RZ_CS_EL_SIZE_SYM;
 		}
 	}
-	const ut64 start_of_lined_symbols = start_of_symbols + (ut64)hdr->n_symbols * R_CS_EL_SIZE_SYM;
+	const ut64 start_of_lined_symbols = start_of_symbols + (ut64)hdr->n_symbols * RZ_CS_EL_SIZE_SYM;
 	if (hdr->n_lined_symbols) {
-		result->lined_symbols = R_NEWS0 (RzCoreSymCacheElementLinedSymbol, hdr->n_lined_symbols);
+		result->lined_symbols = RZ_NEWS0 (RzCoreSymCacheElementLinedSymbol, hdr->n_lined_symbols);
 		if (!result->lined_symbols) {
 			goto beach;
 		}
 		size_t i;
 		ut8 *cursor = b + start_of_lined_symbols;
-		for (i = 0; i < hdr->n_lined_symbols && cursor + R_CS_EL_SIZE_LSYM <= end; i++) {
+		for (i = 0; i < hdr->n_lined_symbols && cursor + RZ_CS_EL_SIZE_LSYM <= end; i++) {
 			RzCoreSymCacheElementLinedSymbol *lsym = &result->lined_symbols[i];
 			lsym->sym.paddr = rz_read_le32 (cursor);
 			lsym->sym.size = rz_read_le32 (cursor + 0x4);
@@ -319,32 +319,32 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, 
 			lsym->flc.col = rz_read_le32 (cursor + 0x20);
 			lsym->sym.name = str_dup_safe (b, cursor + name_off, end);
 			if (!lsym->sym.name) {
-				cursor += R_CS_EL_SIZE_LSYM;
+				cursor += RZ_CS_EL_SIZE_LSYM;
 				continue;
 			}
 			lsym->sym.mangled_name = str_dup_safe (b, cursor + mangled_name_off, end);
 			if (!lsym->sym.mangled_name) {
-				cursor += R_CS_EL_SIZE_LSYM;
+				cursor += RZ_CS_EL_SIZE_LSYM;
 				continue;
 			}
 			lsym->flc.file = str_dup_safe (b, cursor + file_name_off, end);
 			if (!lsym->flc.file) {
-				cursor += R_CS_EL_SIZE_LSYM;
+				cursor += RZ_CS_EL_SIZE_LSYM;
 				continue;
 			}
-			cursor += R_CS_EL_SIZE_LSYM;
+			cursor += RZ_CS_EL_SIZE_LSYM;
 			meta_add_fileline (bf, rz_coresym_cache_element_pa2va (result, lsym->sym.paddr), lsym->sym.size, &lsym->flc);
 		}
 	}
-	const ut64 start_of_line_info = start_of_lined_symbols + (ut64)hdr->n_lined_symbols * R_CS_EL_SIZE_LSYM;
+	const ut64 start_of_line_info = start_of_lined_symbols + (ut64)hdr->n_lined_symbols * RZ_CS_EL_SIZE_LSYM;
 	if (hdr->n_line_info) {
-		result->line_info = R_NEWS0 (RzCoreSymCacheElementLineInfo, hdr->n_line_info);
+		result->line_info = RZ_NEWS0 (RzCoreSymCacheElementLineInfo, hdr->n_line_info);
 		if (!result->line_info) {
 			goto beach;
 		}
 		size_t i;
 		ut8 *cursor = b + start_of_line_info;
-		for (i = 0; i < hdr->n_line_info && cursor + R_CS_EL_SIZE_LINFO <= end; i++) {
+		for (i = 0; i < hdr->n_line_info && cursor + RZ_CS_EL_SIZE_LINFO <= end; i++) {
 			RzCoreSymCacheElementLineInfo *info = &result->line_info[i];
 			info->paddr = rz_read_le32 (cursor);
 			info->size = rz_read_le32 (cursor + 4);
@@ -355,7 +355,7 @@ RzCoreSymCacheElement *rz_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, 
 			if (!info->flc.file) {
 				break;
 			}
-			cursor += R_CS_EL_SIZE_LINFO;
+			cursor += RZ_CS_EL_SIZE_LINFO;
 			meta_add_fileline (bf, rz_coresym_cache_element_pa2va (result, info->paddr), info->size, &info->flc);
 		}
 	}

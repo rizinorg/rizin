@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(rz_config);
+RZ_LIB_VERSION_HEADER(rz_config);
 
 #define CN_BOOL  0x000001
 #define CN_INT   0x000002
@@ -90,7 +90,7 @@ RZ_API void rz_config_list(RConfig *cfg, const char *str, int rad);
 RZ_API RConfigNode *rz_config_node_get(RConfig *cfg, const char *name);
 RZ_API RConfigNode *rz_config_node_new(const char *name, const char *value);
 RZ_API void rz_config_node_free(void *n);
-RZ_API void rz_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, R_NULLABLE RConfigNode *node);
+RZ_API void rz_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, RZ_NULLABLE RConfigNode *node);
 RZ_API bool rz_config_toggle(RConfig *cfg, const char *name);
 RZ_API bool rz_config_readonly (RConfig *cfg, const char *key);
 
@@ -98,8 +98,8 @@ RZ_API void rz_config_set_sort_column (char *column);
 RZ_API bool rz_config_set_setter (RConfig *cfg, const char *key, RConfigCallback cb);
 RZ_API bool rz_config_set_getter (RConfig *cfg, const char *key, RConfigCallback cb);
 
-RZ_API void rz_config_serialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db);
-RZ_API bool rz_config_unserialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db, R_NULLABLE char **err);
+RZ_API void rz_config_serialize(RZ_NONNULL RConfig *config, RZ_NONNULL Sdb *db);
+RZ_API bool rz_config_unserialize(RZ_NONNULL RConfig *config, RZ_NONNULL Sdb *db, RZ_NULLABLE char **err);
 
 static inline bool rz_config_node_is_bool(RConfigNode *node) {
 	return node->flags & CN_BOOL;

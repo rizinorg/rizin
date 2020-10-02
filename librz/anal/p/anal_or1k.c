@@ -70,7 +70,7 @@ static int insn_to_op(RzAnal *a, RzAnalOp *op, ut64 addr, insn_t *descr, insn_ex
 		break;
 	case 0x03: /* l.bnf */
 		o.n = get_operand_value(insn, type_descr, INSN_OPER_N);
-		op->cond = R_ANAL_COND_NE;
+		op->cond = RZ_ANAL_COND_NE;
 		op->jump = n_oper_to_addr(o.n, get_operand_mask(type_descr, INSN_OPER_N),
 				addr);
 		op->fail = addr + 8;
@@ -78,7 +78,7 @@ static int insn_to_op(RzAnal *a, RzAnalOp *op, ut64 addr, insn_t *descr, insn_ex
 		break;
 	case 0x04: /* l.bf */
 		o.n = get_operand_value(insn, type_descr, INSN_OPER_N);
-		op->cond = R_ANAL_COND_EQ;
+		op->cond = RZ_ANAL_COND_EQ;
 		op->jump = n_oper_to_addr(o.n, get_operand_mask(type_descr, INSN_OPER_N),
 				addr);
 		op->fail = addr + 8;
@@ -140,7 +140,7 @@ static int insn_to_op(RzAnal *a, RzAnalOp *op, ut64 addr, insn_t *descr, insn_ex
 	}
 
 	/* temporary solution to prevent using wrong register values */
-	if ((op->type & R_ANAL_OP_TYPE_JMP) == R_ANAL_OP_TYPE_JMP) {
+	if ((op->type & RZ_ANAL_OP_TYPE_JMP) == RZ_ANAL_OP_TYPE_JMP) {
 		/* FIXME: handle delay slot after branches */
 		cpu_enable = 0;
 	}
@@ -198,7 +198,7 @@ RzAnalPlugin rz_anal_plugin_or1k = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_or1k,
 	.version = RZ_VERSION
 };

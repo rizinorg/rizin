@@ -21,7 +21,7 @@ static int parse_global(char *data, int data_size, SGlobal *global) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void parse_gdata_stream(void *stream, R_STREAM_FILE *stream_file) {
+void parse_gdata_stream(void *stream, RZ_STREAM_FILE *stream_file) {
 	unsigned short len = 0;
 	unsigned short leaf_type = 0;
 	char *data = 0;

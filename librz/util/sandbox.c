@@ -21,7 +21,7 @@ static bool disabled = false;
 static bool inHomeWww(const char *path) {
 	rz_return_val_if_fail (path, false);
 	bool ret = false;
-	char *homeWww = rz_str_home (RZ_HOME_WWWROOT R_SYS_DIR);
+	char *homeWww = rz_str_home (RZ_HOME_WWWROOT RZ_SYS_DIR);
 	if (homeWww) {
 		if (!strncmp (path, homeWww, strlen (homeWww))) {
 			ret = true;

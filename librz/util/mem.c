@@ -91,10 +91,10 @@ static inline void writebit (ut8 *dst, int i, bool c) {
 	dst += byte;
 	if (c) {
 		//dst[byte] |= (1 << bit);
-		R_BIT_SET (dst , bit);
+		RZ_BIT_SET (dst , bit);
 	} else {
 		//dst[byte] &= (1 << bit);
-		R_BIT_UNSET (dst , bit);
+		RZ_BIT_UNSET (dst , bit);
 	}
 }
 
@@ -201,8 +201,8 @@ RZ_API void rz_mem_swapendian(ut8 *dest, const ut8 *orig, int size) {
 	}
 }
 
-// R_DOC rz_mem_mem: Finds the needle of nlen size into the haystack of hlen size
-// R_UNIT printf("%s\n", rz_mem_mem("food is pure lame", 20, "is", 2));
+// RZ_DOC rz_mem_mem: Finds the needle of nlen size into the haystack of hlen size
+// RZ_UNIT printf("%s\n", rz_mem_mem("food is pure lame", 20, "is", 2));
 RZ_API const ut8 *rz_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen) {
 	int i, until = hlen - nlen + 1;
 	if (hlen < 1 || nlen < 1) {

@@ -22,7 +22,7 @@ static bool get_line(RBinFile *bf, ut64 addr, char *file, int len, int *line) {
 	return false;
 }
 
-#if R_BIN_ELF64
+#if RZ_BIN_ELF64
 RBinDbgInfo rz_bin_dbginfo_elf64 = {
 	.get_line = &get_line,
 };

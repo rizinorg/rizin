@@ -110,12 +110,12 @@ static bool __expandLine(RzConsCanvas *c, int real_len, int utf8_len) {
 		return true;
 	}
 	int buf_utf8_len = __getUtf8Length2 (c->b[c->y] + c->x, utf8_len, c->blen[c->y] - c->x);
-	int goback = R_MAX (0, (buf_utf8_len - utf8_len));
+	int goback = RZ_MAX (0, (buf_utf8_len - utf8_len));
 	int padding = (real_len - utf8_len) - goback;
 
 	if (padding) {
 		if (padding > 0 && c->blen[c->y] + padding > c->bsize[c->y]) {
-			int newsize = R_MAX (c->bsize[c->y] * 1.5, c->blen[c->y] + padding);
+			int newsize = RZ_MAX (c->bsize[c->y] * 1.5, c->blen[c->y] + padding);
 			char * newline = realloc (c->b[c->y], sizeof (*c->b[c->y])*(newsize));
 			if (!newline) {
 				return false;
@@ -124,7 +124,7 @@ static bool __expandLine(RzConsCanvas *c, int real_len, int utf8_len) {
 			c->b[c->y] = newline;
 			c->bsize[c->y] = newsize;
 		}
-		int size = R_MAX (c->blen[c->y] - c->x - goback, 0);
+		int size = RZ_MAX (c->blen[c->y] - c->x - goback, 0);
 		char *start = c->b[c->y] + c->x + goback;
 		char *tmp = malloc (size);
 		if (!tmp) {
@@ -132,7 +132,7 @@ static bool __expandLine(RzConsCanvas *c, int real_len, int utf8_len) {
 		}
 		memcpy (tmp, start, size);
 		if (padding < 0) {
-			int lap = R_MAX (0, c->b[c->y] - (start + padding));
+			int lap = RZ_MAX (0, c->b[c->y] - (start + padding));
 			memcpy (start + padding + lap,  tmp + lap, size - lap);
 			free (tmp);
 			c->blen[c->y] += padding;
@@ -222,7 +222,7 @@ RZ_API RzConsCanvas *rz_cons_canvas_new(int w, int h) {
 	if (w < 1 || h < 1) {
 		return NULL;
 	}
-	RzConsCanvas *c = R_NEW0 (RzConsCanvas);
+	RzConsCanvas *c = RZ_NEW0 (RzConsCanvas);
 	if (!c) {
 		return NULL;
 	}
@@ -279,7 +279,7 @@ beach:
 }
 
 RZ_API void rz_cons_canvas_write(RzConsCanvas *c, const char *s) {
-	if (!c || !s || !*s || !R_BETWEEN (0, c->y, c->h - 1) || !R_BETWEEN (0, c->x, c->w - 1)) {
+	if (!c || !s || !*s || !RZ_BETWEEN (0, c->y, c->h - 1) || !RZ_BETWEEN (0, c->x, c->w - 1)) {
 		return;
 	}
 
@@ -544,7 +544,7 @@ RZ_API void rz_cons_canvas_box(RzConsCanvas *c, int x, int y, int w, int h, cons
 	row_ptr = row;
 	x_mod = x;
 	if (x < -c->sx) {
-		x_mod = R_MIN (-c->sx, x_mod + w);
+		x_mod = RZ_MIN (-c->sx, x_mod + w);
 		row_ptr += x_mod - x;
 	}
 	if (G (x_mod, y)) {

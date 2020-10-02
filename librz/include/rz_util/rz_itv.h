@@ -1,5 +1,5 @@
-#ifndef R_INTERVAL_H
-#define R_INTERVAL_H
+#ifndef RZ_INTERVAL_H
+#define RZ_INTERVAL_H
 
 #include <rz_types.h>
 
@@ -19,7 +19,7 @@ typedef struct rz_interval_t {
 typedef RInterval rz_itv_t;
 
 static inline RInterval *rz_itv_new(ut64 addr, ut64 size) {
-	RInterval *itv = R_NEW (RInterval);
+	RInterval *itv = RZ_NEW (RInterval);
 	if (itv) {
 		itv->addr = addr;
 		itv->size = size;
@@ -74,8 +74,8 @@ static inline bool rz_itv_overlap2(RInterval itv, ut64 addr, ut64 size) {
 // Precondition: itv and x overlap
 // Returns the intersection of itv and x
 static inline RInterval rz_itv_intersect(RInterval itv, RInterval x) {
-	const ut64 addr = R_MAX (itv.addr, x.addr);
-	const ut64 end = R_MIN (itv.addr + itv.size - 1, x.addr + x.size - 1) + 1;
+	const ut64 addr = RZ_MAX (itv.addr, x.addr);
+	const ut64 end = RZ_MIN (itv.addr + itv.size - 1, x.addr + x.size - 1) + 1;
 	RInterval rai = {addr, end - addr};
 	return rai;
 }
@@ -84,4 +84,4 @@ static inline RInterval rz_itv_intersect(RInterval itv, RInterval x) {
 }
 #endif
 
-#endif  // R_INTERVAL_H
+#endif  // RZ_INTERVAL_H

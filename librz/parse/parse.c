@@ -6,14 +6,14 @@
 #include <rz_parse.h>
 #include <config.h>
 
-R_LIB_VERSION (rz_parse);
+RZ_LIB_VERSION (rz_parse);
 
 static RzParsePlugin *parse_static_plugins[] =
-	{ R_PARSE_STATIC_PLUGINS };
+	{ RZ_PARSE_STATIC_PLUGINS };
 
 RZ_API RzParse *rz_parse_new(void) {
 	int i;
-	RzParse *p = R_NEW0 (RzParse);
+	RzParse *p = RZ_NEW0 (RzParse);
 	if (!p) {
 		return NULL;
 	}

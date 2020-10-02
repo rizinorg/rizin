@@ -65,12 +65,12 @@ static RzList *entries(RBinFile *bf) {
 	if (!(ret = rz_list_newf (free))) {
 		return NULL;
 	}
-	if (!(addr = R_NEW0 (RBinAddr))) {
+	if (!(addr = RZ_NEW0 (RBinAddr))) {
 		rz_list_free (ret);
 		return NULL;
 	}
 	if (!rz_bin_omf_get_entry (bf->o->bin_obj, addr)) {
-		R_FREE (addr);
+		RZ_FREE (addr);
 	} else {
 		rz_list_append (ret, addr);
 	}
@@ -114,7 +114,7 @@ static RzList *symbols(RBinFile *bf) {
 	ret->free = free;
 
 	while (ct_sym < ((rz_bin_omf_obj *) bf->o->bin_obj)->nb_symbol) {
-		if (!(sym = R_NEW0 (RBinSymbol))) {
+		if (!(sym = RZ_NEW0 (RBinSymbol))) {
 			return ret;
 		}
 		sym_omf = ((rz_bin_omf_obj *) bf->o->bin_obj)->symbols[ct_sym++];
@@ -132,7 +132,7 @@ static RzList *symbols(RBinFile *bf) {
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret;
 
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
@@ -173,7 +173,7 @@ RBinPlugin rz_bin_plugin_omf = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_omf,
 	.version = RZ_VERSION
 };

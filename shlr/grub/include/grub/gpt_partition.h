@@ -21,7 +21,7 @@
 
 #include <grub/types.h>
 
-R_PACKED(
+RZ_PACKED(
 struct grub_gpt_part_type
 {
   grub_uint32_t data1;
@@ -48,7 +48,7 @@ typedef struct grub_gpt_part_type grub_gpt_part_type_t;
   }
 #endif
 
-R_PACKED (
+RZ_PACKED (
 struct grub_gpt_header
 {
   grub_uint8_t magic[8];
@@ -67,7 +67,7 @@ struct grub_gpt_header
   grub_uint32_t partentry_crc32;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_gpt_partentry
 {
   grub_gpt_part_type_t type;

@@ -65,7 +65,7 @@ RzAsmPlugin rz_asm_plugin_tms320c64x = {
 	.license = "BSD",
 	.arch = "tms320c64x",
 	.bits = 32,
-	.endian = R_SYS_ENDIAN_BIG | R_SYS_ENDIAN_LITTLE,
+	.endian = RZ_SYS_ENDIAN_BIG | RZ_SYS_ENDIAN_LITTLE,
 	.disassemble = &disassemble,
 	.mnemonics = mnemonics
 };
@@ -78,7 +78,7 @@ RzAsmPlugin rz_asm_plugin_tms320c64x = {
 	.license = "BSD",
 	.arch = "tms320c64x",
 	.bits = 32,
-	.endian = R_SYS_ENDIAN_LITTLE,
+	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.mnemonics = mnemonics
 };
 
@@ -86,7 +86,7 @@ RzAsmPlugin rz_asm_plugin_tms320c64x = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_tms320c64x,
 	.version = RZ_VERSION
 };

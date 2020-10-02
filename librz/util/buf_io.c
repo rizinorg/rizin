@@ -21,7 +21,7 @@ static inline struct buf_io_priv *get_priv_io(RBuffer *b) {
 
 static bool buf_io_init(RBuffer *b, const void *user) {
 	const struct buf_io_user *u = (const struct buf_io_user *)user;
-	struct buf_io_priv *priv = R_NEW0 (struct buf_io_priv);
+	struct buf_io_priv *priv = RZ_NEW0 (struct buf_io_priv);
 	if (!priv) {
 		return false;
 	}
@@ -33,7 +33,7 @@ static bool buf_io_init(RBuffer *b, const void *user) {
 
 static bool buf_io_fini(RBuffer *b) {
 	//struct buf_io_priv *priv = get_priv_io (b);
-	R_FREE (b->priv);
+	RZ_FREE (b->priv);
 	return true;
 }
 
@@ -44,14 +44,14 @@ static st64 buf_io_seek(RBuffer *b, st64 addr, int whence) {
 	switch (whence) {
 	default:
 		rz_warn_if_reached ();
-	case R_BUF_SET:
-		io_whence = R_IO_SEEK_SET;
+	case RZ_BUF_SET:
+		io_whence = RZ_IO_SEEK_SET;
 		break;
-	case R_BUF_END:
-		io_whence = R_IO_SEEK_END;
+	case RZ_BUF_END:
+		io_whence = RZ_IO_SEEK_END;
 		break;
-	case R_BUF_CUR:
-		io_whence = R_IO_SEEK_CUR;
+	case RZ_BUF_CUR:
+		io_whence = RZ_IO_SEEK_CUR;
 		break;
 	}
 	return priv->iob->fd_seek (priv->iob->io, priv->fd, addr, io_whence);

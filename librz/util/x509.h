@@ -1,5 +1,5 @@
-#ifndef R_X509_INTERNAL_H
-#define R_X509_INTERNAL_H
+#ifndef RZ_X509_INTERNAL_H
+#define RZ_X509_INTERNAL_H
 
 RZ_API bool rz_x509_parse_algorithmidentifier(RX509AlgorithmIdentifier *ai, RASN1Object * object);
 RZ_API void rz_x509_free_algorithmidentifier(RX509AlgorithmIdentifier * ai);
@@ -22,5 +22,5 @@ RZ_API void rz_x509_free_tbscertificate(RX509TBSCertificate * tbsc);
 RZ_API RX509CRLEntry *rz_x509_parse_crlentry(RASN1Object *object);
 RZ_API void rz_x509_name_dump(RX509Name* name, const char* pad, RStrBuf *sb);
 
-#endif /* R_X509_INTERNAL_H */
+#endif /* RZ_X509_INTERNAL_H */
 

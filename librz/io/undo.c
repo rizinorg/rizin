@@ -42,7 +42,7 @@ RZ_API RzIOUndos *rz_io_sundo(RzIO *io, ut64 offset) {
 		undo->cursor = 0;
 	}
 
-	io->undo.idx = (io->undo.idx - 1 + R_IO_UNDOS) % R_IO_UNDOS;
+	io->undo.idx = (io->undo.idx - 1 + RZ_IO_UNDOS) % RZ_IO_UNDOS;
 	io->undo.undos--;
 	io->undo.redos++;
 
@@ -64,7 +64,7 @@ RZ_API RzIOUndos *rz_io_sundo_redo(RzIO *io) {
 		return NULL;
 	}
 
-	io->undo.idx = (io->undo.idx + 1) % R_IO_UNDOS;
+	io->undo.idx = (io->undo.idx + 1) % RZ_IO_UNDOS;
 	io->undo.undos++;
 	io->undo.redos--;
 
@@ -85,7 +85,7 @@ RZ_API void rz_io_sundo_push(RzIO *io, ut64 off, int cursor) {
 	}
 	// don't push duplicate seek
 	if (io->undo.undos > 0) {
-		undo = &io->undo.seek[(io->undo.idx - 1 + R_IO_UNDOS) % R_IO_UNDOS];
+		undo = &io->undo.seek[(io->undo.idx - 1 + RZ_IO_UNDOS) % RZ_IO_UNDOS];
 		if (undo->off == off && undo->cursor == cursor) {
 			return;
 		}
@@ -94,11 +94,11 @@ RZ_API void rz_io_sundo_push(RzIO *io, ut64 off, int cursor) {
 	undo = &io->undo.seek[io->undo.idx];
 	undo->off = off;
 	undo->cursor = cursor;
-	io->undo.idx = (io->undo.idx + 1) % R_IO_UNDOS;
-	/* Only R_IO_UNDOS - 1 undos can be used because rz_io_sundo_undo () must
+	io->undo.idx = (io->undo.idx + 1) % RZ_IO_UNDOS;
+	/* Only RZ_IO_UNDOS - 1 undos can be used because rz_io_sundo_undo () must
 	 * push the current position for redo as well, which takes one entry in
 	 * the table. */
-	if (io->undo.undos < R_IO_UNDOS - 1) {
+	if (io->undo.undos < RZ_IO_UNDOS - 1) {
 		io->undo.undos++;
 	}
 	/* We only have linear undo/redo, no tree. So after this new possible
@@ -126,8 +126,8 @@ RZ_API RzList *rz_io_sundo_list(RzIO *io, int mode) {
 	redos = io->undo.redos;
 
 	idx = io->undo.idx;
-	start = (idx - undos + R_IO_UNDOS) % R_IO_UNDOS;
-	end = (idx + redos + 1 - 1) % R_IO_UNDOS; // +1 slot for current position, -1 due to inclusive end
+	start = (idx - undos + RZ_IO_UNDOS) % RZ_IO_UNDOS;
+	end = (idx + redos + 1 - 1) % RZ_IO_UNDOS; // +1 slot for current position, -1 due to inclusive end
 
 	j = 0;
 	switch (mode) {
@@ -138,7 +138,7 @@ RZ_API RzList *rz_io_sundo_list(RzIO *io, int mode) {
 		list = rz_list_newf (free);
 		break;
 	}
-	for (i = start;/* condition at the end of loop */; i = (i + 1) % R_IO_UNDOS) {
+	for (i = start;/* condition at the end of loop */; i = (i + 1) % RZ_IO_UNDOS) {
 		int idx = (j < undos)? undos - j - 1: j - undos - 1;
 		RzIOUndos *undo = &io->undo.seek[i];
 		ut64 addr = undo->off;
@@ -160,7 +160,7 @@ RZ_API RzList *rz_io_sundo_list(RzIO *io, int mode) {
 			break;
 		case 0:
 			if (list) {
-				RzIOUndos  *u = R_NEW0 (RzIOUndos);
+				RzIOUndos  *u = RZ_NEW0 (RzIOUndos);
 				if (u) {
 					if (!(j == undos && redos == 0)) {
 						// Current position gets pushed before seek, so there
@@ -195,7 +195,7 @@ RZ_API void rz_io_wundo_new(RzIO *io, ut64 off, const ut8 *data, int len) {
 		return;
 	}
 	/* undo write changes */
-	uw = R_NEW0 (RzIOUndoWrite);
+	uw = RZ_NEW0 (RzIOUndoWrite);
 	if (!uw) {
 		return;
 	}
@@ -210,7 +210,7 @@ RZ_API void rz_io_wundo_new(RzIO *io, ut64 off, const ut8 *data, int len) {
 	memcpy (uw->n, data, len);
 	uw->o = (ut8*) malloc (len);
 	if (!uw->o) {
-		R_FREE (uw);
+		RZ_FREE (uw);
 		return;
 	}
 	memset (uw->o, 0xff, len);

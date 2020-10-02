@@ -11,7 +11,7 @@ int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 int main(int argc, char **argv) {
 	struct rz_search_t *rs;
 
-	rs = rz_search_new (R_SEARCH_STRING);
+	rs = rz_search_new (RZ_SEARCH_STRING);
 	rz_search_set_callback (rs, &hit, (void *)buffer);
 	rz_search_begin (rs);
 	printf ("Searching strings in '%s'\n", buffer);

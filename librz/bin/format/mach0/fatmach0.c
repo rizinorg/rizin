@@ -38,7 +38,7 @@ static int rz_bin_fatmach0_init(struct rz_bin_fatmach0_obj_t* bin) {
 		len = rz_buf_read_at (bin->b, 8 + i * sizeof (struct fat_arch), &archbytes[0], sizeof (struct fat_arch));
 		if (len != sizeof (struct fat_arch)) {
 			perror ("read (fat_arch)");
-			R_FREE (bin->archs);
+			RZ_FREE (bin->archs);
 			return false;
 		}
 		bin->archs[i].cputype = rz_read_be32 (&archbytes[0]);
@@ -61,7 +61,7 @@ struct rz_bin_fatmach0_arch_t *rz_bin_fatmach0_extract(struct rz_bin_fatmach0_ob
 	if (narch) {
 		*narch = bin->nfat_arch;
 	}
-	struct rz_bin_fatmach0_arch_t *ret = R_NEW0 (struct rz_bin_fatmach0_arch_t);
+	struct rz_bin_fatmach0_arch_t *ret = RZ_NEW0 (struct rz_bin_fatmach0_arch_t);
 	if (ret) {
 		ret->size = bin->archs[idx].size;
 		if (!ret->size || ret->size > bin->size) {
@@ -81,12 +81,12 @@ void* rz_bin_fatmach0_free(struct rz_bin_fatmach0_obj_t* bin) {
 	}
 	free (bin->archs);
 	rz_buf_free (bin->b);
-	R_FREE (bin);
+	RZ_FREE (bin);
 	return NULL;
 }
 
 struct rz_bin_fatmach0_obj_t* rz_bin_fatmach0_new(const char* file) {
-	struct rz_bin_fatmach0_obj_t *bin = R_NEW0 (struct rz_bin_fatmach0_obj_t);
+	struct rz_bin_fatmach0_obj_t *bin = RZ_NEW0 (struct rz_bin_fatmach0_obj_t);
 	if (!bin) {
 		return NULL;
 	}
@@ -111,7 +111,7 @@ struct rz_bin_fatmach0_obj_t* rz_bin_fatmach0_new(const char* file) {
 
 struct rz_bin_fatmach0_obj_t* rz_bin_fatmach0_from_buffer_new(RBuffer *b) {
 	rz_return_val_if_fail (b, NULL);
-	struct rz_bin_fatmach0_obj_t *bo = R_NEW0 (struct rz_bin_fatmach0_obj_t);
+	struct rz_bin_fatmach0_obj_t *bo = RZ_NEW0 (struct rz_bin_fatmach0_obj_t);
 	if (bo) {
 		bo->b = rz_buf_ref (b);
 		bo->size = rz_buf_size (bo->b); // XXX implicit in bo->b
@@ -123,7 +123,7 @@ struct rz_bin_fatmach0_obj_t* rz_bin_fatmach0_from_buffer_new(RBuffer *b) {
 }
 
 struct rz_bin_fatmach0_obj_t* rz_bin_fatmach0_from_bytes_new(const ut8* buf, ut64 size) {
-	struct rz_bin_fatmach0_obj_t *bin = R_NEW0 (struct rz_bin_fatmach0_obj_t);
+	struct rz_bin_fatmach0_obj_t *bin = RZ_NEW0 (struct rz_bin_fatmach0_obj_t);
 	if (!bin) {
 		return NULL;
 	}

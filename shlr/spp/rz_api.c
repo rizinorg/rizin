@@ -9,7 +9,7 @@
 #include "rz_api.h"
 
 SStrBuf *rz_strbuf_new(const char *str) {
-	SStrBuf *s = R_NEW0 (SStrBuf);
+	SStrBuf *s = RZ_NEW0 (SStrBuf);
 	if (str) rz_strbuf_set (s, str);
 	return s;
 }
@@ -50,7 +50,7 @@ bool rz_strbuf_append(SStrBuf *sb, const char *s) {
 	}
 	if ((sb->len + l + 1) < sizeof (sb->buf)) {
 		memcpy (sb->buf + sb->len, s, l + 1);
-		R_FREE (sb->ptr);
+		RZ_FREE (sb->ptr);
 	} else {
 		int newlen = sb->len + l + 128;
 		char *p = sb->ptr;
@@ -95,7 +95,7 @@ void rz_strbuf_free(SStrBuf *sb) {
 
 void rz_strbuf_fini(SStrBuf *sb) {
 	if (sb && sb->ptr)
-		R_FREE (sb->ptr);
+		RZ_FREE (sb->ptr);
 }
 
 /* --------- */

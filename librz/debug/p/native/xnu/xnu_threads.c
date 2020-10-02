@@ -29,14 +29,14 @@ static bool xnu_thread_get_drx (RzDebug *dbg, xnu_thread_t *thread) {
 #if __x86_64__ || __i386__
 	thread->flavor = x86_DEBUG_STATE;
 	thread->count = x86_DEBUG_STATE_COUNT;
-	thread->state_size = (dbg->bits == R_SYS_BITS_64)
+	thread->state_size = (dbg->bits == RZ_SYS_BITS_64)
 		? sizeof (x86_debug_state64_t)
 		: sizeof (x86_debug_state32_t);
 	thread->state = &thread->drx.uds;
 	rc = thread_get_state (thread->port, thread->flavor,
 	       (thread_state_t)&thread->drx, &thread->count);
 #elif __arm64__ || __arm64 || __aarch64 || __aarch64__
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (dbg->bits == RZ_SYS_BITS_64) {
 		thread->count = ARM_DEBUG_STATE64_COUNT;
 		thread->flavor = ARM_DEBUG_STATE64;
 		rc = thread_get_state (thread->port, thread->flavor,
@@ -77,7 +77,7 @@ static bool xnu_thread_set_drx (RzDebug *dbg, xnu_thread_t *thread) {
 	}
 	thread->flavor = x86_DEBUG_STATE;
 	thread->count = x86_DEBUG_STATE_COUNT;
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (dbg->bits == RZ_SYS_BITS_64) {
 		regs->dsh.flavor = x86_DEBUG_STATE64;
 		regs->dsh.count  = x86_DEBUG_STATE64_COUNT;
 	} else {
@@ -87,7 +87,7 @@ static bool xnu_thread_set_drx (RzDebug *dbg, xnu_thread_t *thread) {
 	rc = thread_set_state (thread->port, thread->flavor,
 			       (thread_state_t)regs, thread->count);
 #elif __arm64__ || __arm64 || __aarch64 || __aarch64__
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (dbg->bits == RZ_SYS_BITS_64) {
 		thread->count = ARM_DEBUG_STATE64_COUNT;
 		thread->flavor = ARM_DEBUG_STATE64;
 		rc = thread_set_state (thread->port, thread->flavor,
@@ -113,7 +113,7 @@ static bool xnu_thread_set_drx (RzDebug *dbg, xnu_thread_t *thread) {
 # endif
 	ppc_debug_state_t *regs;
 	//thread->flavor = PPC_DEBUG_STATE32;
-	//thread->count  = R_MIN (thread->count, sizeof (regs->uds.ds32));
+	//thread->count  = RZ_MIN (thread->count, sizeof (regs->uds.ds32));
 	return false;
 #else
 	regs->dsh.flavor = 0;
@@ -130,7 +130,7 @@ static bool xnu_thread_set_drx (RzDebug *dbg, xnu_thread_t *thread) {
 static bool xnu_thread_set_gpr (RzDebug *dbg, xnu_thread_t *thread) {
 	rz_return_val_if_fail (dbg && thread, false);
 	kern_return_t rc;
-	R_REG_T *regs = (R_REG_T *)&thread->gpr;
+	RZ_REG_T *regs = (RZ_REG_T *)&thread->gpr;
 	if (!regs) {
 		return false;
 	}
@@ -141,7 +141,7 @@ static bool xnu_thread_set_gpr (RzDebug *dbg, xnu_thread_t *thread) {
 	//thread->state = regs;
 	thread->flavor = x86_THREAD_STATE;
 	thread->count = x86_THREAD_STATE_COUNT;
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (dbg->bits == RZ_SYS_BITS_64) {
 		regs->tsh.flavor = x86_THREAD_STATE64;
 		regs->tsh.count  = x86_THREAD_STATE64_COUNT;
 	} else {
@@ -156,7 +156,7 @@ static bool xnu_thread_set_gpr (RzDebug *dbg, xnu_thread_t *thread) {
 #endif
 	//thread->state = regs;
 	thread->state = &regs->uts;
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (dbg->bits == RZ_SYS_BITS_64) {
 		thread->flavor = ARM_THREAD_STATE64;
 		thread->count = ARM_THREAD_STATE64_COUNT;
 		thread->state_size = sizeof (arm_thread_state64_t);
@@ -183,7 +183,7 @@ static bool xnu_thread_set_gpr (RzDebug *dbg, xnu_thread_t *thread) {
 
 static bool xnu_thread_get_gpr (RzDebug *dbg, xnu_thread_t *thread) {
 	rz_return_val_if_fail (dbg && thread, false);
-	R_REG_T *regs = &thread->gpr;
+	RZ_REG_T *regs = &thread->gpr;
 	if (!regs) {
 		return false;
 	}
@@ -193,7 +193,7 @@ static bool xnu_thread_get_gpr (RzDebug *dbg, xnu_thread_t *thread) {
 #elif  __arm64 || __aarch64 || __arch64__ || __arm64__
 	//thread->state = regs;
 	thread->state = &regs->uts;
-	if (dbg->bits == R_SYS_BITS_64) {
+	if (dbg->bits == RZ_SYS_BITS_64) {
 		thread->flavor = ARM_THREAD_STATE64;
 		thread->count = ARM_THREAD_STATE64_COUNT;
 		thread->state_size = sizeof (arm_thread_state64_t);
@@ -211,7 +211,7 @@ static bool xnu_thread_get_gpr (RzDebug *dbg, xnu_thread_t *thread) {
 	thread->state = &regs->uts;
 	thread->flavor = x86_THREAD_STATE;
 	thread->count = x86_THREAD_STATE_COUNT;
-	thread->state_size = (dbg->bits == R_SYS_BITS_64) ?
+	thread->state_size = (dbg->bits == RZ_SYS_BITS_64) ?
 				     sizeof (x86_thread_state64_t) :
 				     sizeof (x86_thread_state32_t);
 #endif
@@ -245,7 +245,7 @@ static bool xnu_fill_info_thread (RzDebug *dbg, xnu_thread_t *thread) {
 		eprintf ("Fail to get thread_identifier_info\n");
 		return false;
 	}
-	R_FREE (thread->name);
+	RZ_FREE (thread->name);
 #if TARGET_OS_IPHONE
 	// TODO proc_pidinfo here
 	thread->name = strdup ("unknown");
@@ -265,7 +265,7 @@ static bool xnu_fill_info_thread (RzDebug *dbg, xnu_thread_t *thread) {
 }
 
 static xnu_thread_t *xnu_get_thread_with_info (RzDebug *dbg, thread_t port) {
-	xnu_thread_t *thread = R_NEW0 (xnu_thread_t);
+	xnu_thread_t *thread = RZ_NEW0 (xnu_thread_t);
 	if (!thread) {
 		return NULL;
 	}

@@ -83,7 +83,7 @@ int gettimeofday (struct timeval* p, void* tz);
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(rz_util);
+RZ_LIB_VERSION_HEADER(rz_util);
 
 #ifdef __cplusplus
 }

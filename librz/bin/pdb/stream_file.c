@@ -5,7 +5,7 @@
 /// size = -1 (default value)
 /// pages_size = 0x1000 (default value)
 ////////////////////////////////////////////////////////////////////////////////
-int init_r_stream_file(R_STREAM_FILE *stream_file, RBuffer *buf, int *pages, int pages_amount, int size, int page_size) {
+int init_r_stream_file(RZ_STREAM_FILE *stream_file, RBuffer *buf, int *pages, int pages_amount, int size, int page_size) {
 	stream_file->error = 0;
 	stream_file->buf = buf;
 	stream_file->pages = pages;
@@ -21,21 +21,21 @@ int init_r_stream_file(R_STREAM_FILE *stream_file, RBuffer *buf, int *pages, int
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void stream_file_read_pages(R_STREAM_FILE *stream_file, int start_indx, int end_indx, char *res) {
+static void stream_file_read_pages(RZ_STREAM_FILE *stream_file, int start_indx, int end_indx, char *res) {
 	int i, page_offset;
 
 	if ((end_indx - start_indx) > stream_file->end) {
 		stream_file->error = READ_PAGE_FAIL;
 		return;
 	}
-	end_indx = R_MIN (end_indx, stream_file->pages_amount);
+	end_indx = RZ_MIN (end_indx, stream_file->pages_amount);
 
 	for (i = start_indx; i < end_indx; i++) {
 		page_offset = stream_file->pages[i] * stream_file->page_size;
 		if (page_offset < 1) {
 			return;
 		}
-		rz_buf_seek (stream_file->buf, page_offset, R_BUF_SET);
+		rz_buf_seek (stream_file->buf, page_offset, RZ_BUF_SET);
 		rz_buf_read_at (stream_file->buf, page_offset,
 			(ut8 *)res, stream_file->page_size);
 		res += stream_file->page_size;
@@ -44,7 +44,7 @@ static void stream_file_read_pages(R_STREAM_FILE *stream_file, int start_indx, i
 
 // size by default = -1
 ///////////////////////////////////////////////////////////////////////////////
-void stream_file_read(R_STREAM_FILE *stream_file, int size, char *res) {
+void stream_file_read(RZ_STREAM_FILE *stream_file, int size, char *res) {
 	int pn_start, off_start, pn_end, off_end;
 	if (size == -1) {
 		char *pdata = (char *) malloc(stream_file->pages_amount * stream_file->page_size);
@@ -71,7 +71,7 @@ void stream_file_read(R_STREAM_FILE *stream_file, int size, char *res) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void stream_file_seek(R_STREAM_FILE *stream_file, int offset, int whence) {
+void stream_file_seek(RZ_STREAM_FILE *stream_file, int offset, int whence) {
 	switch (whence) {
 	case 0:
 		stream_file->pos = offset;
@@ -94,12 +94,12 @@ void stream_file_seek(R_STREAM_FILE *stream_file, int offset, int whence) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int stream_file_tell(R_STREAM_FILE *stream_file) {
+int stream_file_tell(RZ_STREAM_FILE *stream_file) {
 	return stream_file->pos;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void stream_file_get_data(R_STREAM_FILE *stream_file, char *data) {
+void stream_file_get_data(RZ_STREAM_FILE *stream_file, char *data) {
 	int pos = stream_file_tell (stream_file);
 	stream_file_seek (stream_file, 0, 0);
 	stream_file_read (stream_file, -1, data);
@@ -107,7 +107,7 @@ void stream_file_get_data(R_STREAM_FILE *stream_file, char *data) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void stream_file_get_size(R_STREAM_FILE *stream_file, int *data_size) {
+void stream_file_get_size(RZ_STREAM_FILE *stream_file, int *data_size) {
 	int pn_start = 0, off_start = 0;
 	GET_PAGE(pn_start, off_start, stream_file->pos, stream_file->page_size);
 	(void)pn_start; // hack for remove unused warning

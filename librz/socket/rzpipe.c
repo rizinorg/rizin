@@ -89,7 +89,7 @@ RZ_API char *rzpipe_read(R2Pipe *rzpipe) {
 			bufsz += 4096;
 			newbuf = realloc (buf, bufsz);
 			if (!newbuf) {
-				R_FREE (buf);
+				RZ_FREE (buf);
 				break;
 			}
 			buf = newbuf;
@@ -184,7 +184,7 @@ static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
 	}
 	if (!done) {
 		eprintf ("Cannot find RZ_PIPE_IN or RZ_PIPE_OUT environment\n");
-		R_FREE (r2p);
+		RZ_FREE (r2p);
 	}
 	free (in);
 	free (out);
@@ -196,7 +196,7 @@ static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
 }
 
 static R2Pipe *rzpipe_new(void) {
-	R2Pipe *rzpipe = R_NEW0 (R2Pipe);
+	R2Pipe *rzpipe = RZ_NEW0 (R2Pipe);
 	if (rzpipe) {
 #if __UNIX__
 		rzpipe->input[0] = rzpipe->input[1] = -1;
@@ -238,7 +238,7 @@ RZ_API R2Pipe *rzpipe_open(const char *cmd) {
 	if (!r2p) {
 		return NULL;
 	}
-	if (R_STR_ISEMPTY (cmd)) {
+	if (RZ_STR_ISEMPTY (cmd)) {
 		r2p->child = -1;
 		return r2p_open_spawn (r2p, cmd);
 	}

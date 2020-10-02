@@ -14,24 +14,24 @@ bool test_r_parse_ctype(void) {
 
 	RzParseCTypeType *cur = type;
 
-	mu_assert_eq (cur->kind, R_PARSE_CTYPE_TYPE_KIND_ARRAY, "array");
+	mu_assert_eq (cur->kind, RZ_PARSE_CTYPE_TYPE_KIND_ARRAY, "array");
 	mu_assert_eq (cur->array.count, 23, "array count (dec)");
 	cur = cur->array.type;
 
-	mu_assert_eq (cur->kind, R_PARSE_CTYPE_TYPE_KIND_POINTER, "pointer");
+	mu_assert_eq (cur->kind, RZ_PARSE_CTYPE_TYPE_KIND_POINTER, "pointer");
 	mu_assert_eq (cur->pointer.is_const, true, "pointer const");
 	cur = cur->pointer.type;
 
-	mu_assert_eq (cur->kind, R_PARSE_CTYPE_TYPE_KIND_ARRAY, "array");
+	mu_assert_eq (cur->kind, RZ_PARSE_CTYPE_TYPE_KIND_ARRAY, "array");
 	mu_assert_eq (cur->array.count, 0x42, "array count (hex)");
 	cur = cur->array.type;
 
-	mu_assert_eq (cur->kind, R_PARSE_CTYPE_TYPE_KIND_POINTER, "pointer");
+	mu_assert_eq (cur->kind, RZ_PARSE_CTYPE_TYPE_KIND_POINTER, "pointer");
 	mu_assert_eq (cur->pointer.is_const, false, "pointer non-const");
 	cur = cur->pointer.type;
 
-	mu_assert_eq (cur->kind, R_PARSE_CTYPE_TYPE_KIND_IDENTIFIER, "identifier");
-	mu_assert_eq (cur->identifier.kind, R_PARSE_CTYPE_IDENTIFIER_KIND_UNSPECIFIED, "identifier kind");
+	mu_assert_eq (cur->kind, RZ_PARSE_CTYPE_TYPE_KIND_IDENTIFIER, "identifier");
+	mu_assert_eq (cur->identifier.kind, RZ_PARSE_CTYPE_IDENTIFIER_KIND_UNSPECIFIED, "identifier kind");
 	mu_assert_eq (cur->identifier.is_const, true, "identifier const");
 	mu_assert_streq (cur->identifier.name, "char", "identifier name");
 
@@ -50,8 +50,8 @@ bool test_r_parse_ctype_identifier_kind(void) {
 		free (error);
 	}
 	mu_assert_notnull (type, "rz_parse_ctype_parse(\"struct ulu\")");
-	mu_assert_eq (type->kind, R_PARSE_CTYPE_TYPE_KIND_IDENTIFIER, "identifier");
-	mu_assert_eq (type->identifier.kind, R_PARSE_CTYPE_IDENTIFIER_KIND_STRUCT, "identifier kind");
+	mu_assert_eq (type->kind, RZ_PARSE_CTYPE_TYPE_KIND_IDENTIFIER, "identifier");
+	mu_assert_eq (type->identifier.kind, RZ_PARSE_CTYPE_IDENTIFIER_KIND_STRUCT, "identifier kind");
 	mu_assert_eq (type->identifier.is_const, false, "identifier const");
 	mu_assert_streq (type->identifier.name, "ulu", "identifier name");
 	rz_parse_ctype_type_free (type);
@@ -62,8 +62,8 @@ bool test_r_parse_ctype_identifier_kind(void) {
 		free (error);
 	}
 	mu_assert_notnull (type, "rz_parse_ctype_parse(\"union mulu\")");
-	mu_assert_eq (type->kind, R_PARSE_CTYPE_TYPE_KIND_IDENTIFIER, "identifier");
-	mu_assert_eq (type->identifier.kind, R_PARSE_CTYPE_IDENTIFIER_KIND_UNION, "identifier kind");
+	mu_assert_eq (type->kind, RZ_PARSE_CTYPE_TYPE_KIND_IDENTIFIER, "identifier");
+	mu_assert_eq (type->identifier.kind, RZ_PARSE_CTYPE_IDENTIFIER_KIND_UNION, "identifier kind");
 	mu_assert_eq (type->identifier.is_const, false, "identifier const");
 	mu_assert_streq (type->identifier.name, "mulu", "identifier name");
 	rz_parse_ctype_type_free (type);
@@ -74,8 +74,8 @@ bool test_r_parse_ctype_identifier_kind(void) {
 		free (error);
 	}
 	mu_assert_notnull (type, "rz_parse_ctype_parse(\"enum urshak\")");
-	mu_assert_eq (type->kind, R_PARSE_CTYPE_TYPE_KIND_IDENTIFIER, "identifier");
-	mu_assert_eq (type->identifier.kind, R_PARSE_CTYPE_IDENTIFIER_KIND_ENUM, "identifier kind");
+	mu_assert_eq (type->kind, RZ_PARSE_CTYPE_TYPE_KIND_IDENTIFIER, "identifier");
+	mu_assert_eq (type->identifier.kind, RZ_PARSE_CTYPE_IDENTIFIER_KIND_ENUM, "identifier kind");
 	mu_assert_eq (type->identifier.is_const, false, "identifier const");
 	mu_assert_streq (type->identifier.name, "urshak", "identifier name");
 	rz_parse_ctype_type_free (type);

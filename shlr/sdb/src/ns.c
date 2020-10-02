@@ -165,7 +165,7 @@ SDB_API int sdb_ns_set (Sdb *s, const char *name, Sdb *r) {
 	if (s->ns_lock) {
 		return 0;
 	}
-	ns = R_NEW (SdbNs);
+	ns = RZ_NEW (SdbNs);
 	ns->name = strdup (name);
 	ns->hash = hash;
 	ns->sdb = r;

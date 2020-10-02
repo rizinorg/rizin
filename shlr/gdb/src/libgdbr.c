@@ -27,7 +27,7 @@ int gdbr_init(libgdbr_t *g, bool is_server) {
 	g->read_max = 4096;
 	g->read_buff = (char *) calloc (g->read_max, 1);
 	if (!g->read_buff) {
-		R_FREE (g->send_buff);
+		RZ_FREE (g->send_buff);
 		return -1;
 	}
 	g->sock = rz_socket_new (0);
@@ -39,8 +39,8 @@ int gdbr_init(libgdbr_t *g, bool is_server) {
 	g->data_max = 4096;
 	g->data = calloc (g->data_max, 1);
 	if (!g->data) {
-		R_FREE (g->send_buff);
-		R_FREE (g->read_buff);
+		RZ_FREE (g->send_buff);
+		RZ_FREE (g->read_buff);
 		return -1;
 	}
 	g->remote_type = GDB_REMOTE_TYPE_GDB;
@@ -73,7 +73,7 @@ int gdbr_set_architecture(libgdbr_t *g, int arch, int bits) {
 
 const char *gdbr_get_reg_profile(int arch, int bits) {
 	switch (arch) {
-	case R_SYS_ARCH_X86:
+	case RZ_SYS_ARCH_X86:
 		if (bits == 32) {
 #include "reg/x86_32.h"
 		} else if (bits == 64) {
@@ -83,7 +83,7 @@ const char *gdbr_get_reg_profile(int arch, int bits) {
 			return NULL;
 		}
 		break;
-	case R_SYS_ARCH_ARM:
+	case RZ_SYS_ARCH_ARM:
 		if (bits == 32) {
 #include "reg/arm32.h"
 		} else if (bits == 64) {
@@ -93,19 +93,19 @@ const char *gdbr_get_reg_profile(int arch, int bits) {
 			return NULL;
 		}
 		break;
-	case R_SYS_ARCH_SH:
+	case RZ_SYS_ARCH_SH:
 #include "reg/sh.h"
 		break;
-	case R_SYS_ARCH_LM32:
+	case RZ_SYS_ARCH_LM32:
 #include "reg/lm32.h"
 		break;
-	case R_SYS_ARCH_MIPS:
+	case RZ_SYS_ARCH_MIPS:
 #include "reg/mips.h"
 		break;
-	case R_SYS_ARCH_AVR:
+	case RZ_SYS_ARCH_AVR:
 #include "reg/avr.h"
 		break;
-	case R_SYS_ARCH_V850:
+	case RZ_SYS_ARCH_V850:
 #include "reg/v850.h"
 		break;
 	}
@@ -137,10 +137,10 @@ int gdbr_cleanup(libgdbr_t *g) {
 	if (!g) {
 		return -1;
 	}
-	R_FREE (g->data);
+	RZ_FREE (g->data);
 	g->send_len = 0;
-	R_FREE (g->send_buff);
-	R_FREE (g->read_buff);
+	RZ_FREE (g->send_buff);
+	RZ_FREE (g->read_buff);
 	rz_socket_free (g->sock);
 	rz_th_lock_free (g->gdbr_lock);
 	return 0;

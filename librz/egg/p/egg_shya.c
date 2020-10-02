@@ -23,7 +23,7 @@ static RBuffer *build (RzEgg *egg) {
 
 RzEggPlugin rz_egg_plugin_shya = {
 	.name = "shya",
-	.type = R_EGG_PLUGIN_ENCODER,
+	.type = RZ_EGG_PLUGIN_ENCODER,
 	.desc = "shoorisu yagana",
 	.build = (void *)build
 };
@@ -31,7 +31,7 @@ RzEggPlugin rz_egg_plugin_shya = {
 #if 0
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_EGG,
+	.type = RZ_LIB_TYPE_EGG,
 	.data = &rz_egg_plugin_shya,
 	.version = RZ_VERSION
 };

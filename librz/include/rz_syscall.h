@@ -11,9 +11,9 @@ extern "C" {
 #include <rz_util.h>
 #include <sdb.h>
 
-R_LIB_VERSION_HEADER (rz_syscall);
+RZ_LIB_VERSION_HEADER (rz_syscall);
 
-#define R_SYSCALL_ARGS 7
+#define RZ_SYSCALL_ARGS 7
 
 typedef struct rz_syscall_item_t {
 	char *name;

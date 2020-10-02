@@ -125,7 +125,7 @@ indentFile() {
 #	cat .tmp-format2 | perl -ne 's/\r//g;print' | sed -e 's, : ,: ,g' > .tmp-format
 	mv .tmp-format .tmp-format2
 	# do not space before parenthesis on function signatures
-	awk '{if (/^static/ || /^R_API/) { gsub(/ \(/,"("); }; print;}' \
+	awk '{if (/^static/ || /^RZ_API/) { gsub(/ \(/,"("); }; print;}' \
 		< .tmp-format2 > .tmp-format
 	# allow oneliner else statements
 	mv .tmp-format .tmp-format2

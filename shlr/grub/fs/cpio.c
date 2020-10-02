@@ -26,7 +26,7 @@
 #ifndef MODE_USTAR
 /* cpio support */
 #define	MAGIC_BCPIO	070707
-R_PACKED(
+RZ_PACKED(
 struct head
 {
   grub_uint16_t magic;
@@ -47,7 +47,7 @@ struct head
 /* tar support */
 #define MAGIC_USTAR	"ustar"
 
-R_PACKED (
+RZ_PACKED (
 struct head
 {
   char name[100];

@@ -170,7 +170,7 @@ static void fillRegisterValues (RzCore *core) {
 	RzRegItem *reg_item;
 	int nr = 10;
 
-	regs = rz_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
+	regs = rz_reg_get_list (core->dbg->reg, RZ_REG_TYPE_GPR);
 	if (!regs) {
 		return;
 	}
@@ -203,9 +203,9 @@ static void esil_split_flg (char *esil_str, char **esil_main, char **esil_flg) {
 }
 
 #define FREE_ROP  { \
-	R_FREE (out); \
-	R_FREE (esil_flg);       \
-	R_FREE (esil_main);      \
+	RZ_FREE (out); \
+	RZ_FREE (esil_flg);       \
+	RZ_FREE (esil_main);      \
 	rz_list_free (ops_list);  \
 	ops_list = NULL; \
 	rz_list_free (flg_read);  \
@@ -247,7 +247,7 @@ static char* rop_classify_constant(RzCore *core, RzList *ropList) {
 		}
 		// init regs with known values
 		fillRegisterValues (core);
-		head = rz_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
+		head = rz_reg_get_list (core->dbg->reg, RZ_REG_TYPE_GPR);
 		if (!head) {
 			ct = NULL;
 			goto continue_error;
@@ -268,7 +268,7 @@ static char* rop_classify_constant(RzCore *core, RzList *ropList) {
 		if (!rz_list_find (ops_list, "=", (RzListComparator)strcmp)) {
 			goto continue_error;
 		}
-		head = rz_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
+		head = rz_reg_get_list (core->dbg->reg, RZ_REG_TYPE_GPR);
 		if (!head) {
 			goto out_error;
 		}
@@ -296,7 +296,7 @@ static char* rop_classify_constant(RzCore *core, RzList *ropList) {
 		}
 continue_error:
 		// coverity may complain here but as long as the pointer is set back to
-		// NULL is safe that is why is used R_FREE
+		// NULL is safe that is why is used RZ_FREE
 		FREE_ROP;
 		rz_list_free (constants);
 	}
@@ -327,7 +327,7 @@ static char* rop_classify_mov(RzCore *core, RzList *ropList) {
 	rz_list_foreach (ropList, iter_r, esil_str) {
 		// init regs with known values
 		fillRegisterValues (core);
-		head = rz_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
+		head = rz_reg_get_list (core->dbg->reg, RZ_REG_TYPE_GPR);
 		if (!head) {
 			goto out_error;
 		}
@@ -350,7 +350,7 @@ static char* rop_classify_mov(RzCore *core, RzList *ropList) {
 			goto continue_error;
 		}
 
-		head = rz_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
+		head = rz_reg_get_list (core->dbg->reg, RZ_REG_TYPE_GPR);
 		if (!head) {
 			goto out_error;
 		}
@@ -413,8 +413,8 @@ static char* rop_classify_arithmetic(RzCore *core, RzList *ropList) {
 	      *mem_write  = NULL;
 	const bool romem = rz_config_get_i (core->config, "esil.romem");
 	const bool stats = rz_config_get_i (core->config, "esil.stats");
-	ut64 *op_result = R_NEW0 (ut64);
-	ut64 *op_result_r = R_NEW0 (ut64);
+	ut64 *op_result = RZ_NEW0 (ut64);
+	ut64 *op_result_r = RZ_NEW0 (ut64);
 
 	if (!romem || !stats) {
 		// eprintf ("Error: esil.romem and esil.stats must be set TRUE");
@@ -426,7 +426,7 @@ static char* rop_classify_arithmetic(RzCore *core, RzList *ropList) {
 	rz_list_foreach (ropList, iter_r, esil_str) {
 		// init regs with known values
 		fillRegisterValues (core);
-		head = rz_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
+		head = rz_reg_get_list (core->dbg->reg, RZ_REG_TYPE_GPR);
 		if (!head) {
 			goto out_error;
 		}
@@ -540,13 +540,13 @@ static char* rop_classify_arithmetic_const(RzCore *core, RzList *ropList) {
 		*reg_write = NULL, *mem_read = NULL, *mem_write = NULL;
 	const bool romem = rz_config_get_i (core->config, "esil.romem");
 	const bool stats = rz_config_get_i (core->config, "esil.stats");
-	ut64 *op_result = R_NEW0 (ut64);
-	ut64 *op_result_r = R_NEW0 (ut64);
+	ut64 *op_result = RZ_NEW0 (ut64);
+	ut64 *op_result_r = RZ_NEW0 (ut64);
 
 	if (!romem || !stats) {
 		// eprintf ("Error: esil.romem and esil.stats must be set TRUE");
-		R_FREE (op_result);
-		R_FREE (op_result_r);
+		RZ_FREE (op_result);
+		RZ_FREE (op_result_r);
 		return NULL;
 	}
 
@@ -558,7 +558,7 @@ static char* rop_classify_arithmetic_const(RzCore *core, RzList *ropList) {
 		}
 		// init regs with known values
 		fillRegisterValues (core);
-		head = rz_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
+		head = rz_reg_get_list (core->dbg->reg, RZ_REG_TYPE_GPR);
 		if (!head) {
 			arithmetic = NULL;
 			continue;
@@ -580,8 +580,8 @@ static char* rop_classify_arithmetic_const(RzCore *core, RzList *ropList) {
 			mem_read  = parse_list (strstr (out, "mem.read"));
 			mem_write = parse_list (strstr (out, "mem.write"));
 		} else {
-			R_FREE (op_result);
-			R_FREE (op_result_r);
+			RZ_FREE (op_result);
+			RZ_FREE (op_result_r);
 			goto continue_error;
 		}
 

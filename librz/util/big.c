@@ -12,7 +12,7 @@ static void _rshift_word(RNumBig *a, int nwords);
 static void _r_big_zero_out(RNumBig *n);
 
 RZ_API RNumBig *rz_big_new(void) {
-	RNumBig *n = R_NEW (RNumBig);
+	RNumBig *n = RZ_NEW (RNumBig);
 	if (n) {
 		_r_big_zero_out (n);
 	}
@@ -36,22 +36,22 @@ RZ_API void rz_big_from_int(RNumBig *b, st64 n) {
 
 	_r_big_zero_out (b);
 	b->sign = (n < 0)? -1: 1;
-	R_BIG_DTYPE_TMP v = n * b->sign;
+	RZ_BIG_DTYPE_TMP v = n * b->sign;
 
 	/* Endianness issue if machine is not little-endian? */
-#ifdef R_BIG_WORD_SIZE
-#if (R_BIG_WORD_SIZE == 1)
+#ifdef RZ_BIG_WORD_SIZE
+#if (RZ_BIG_WORD_SIZE == 1)
 	b->array[0] = (v & 0x000000ff);
 	b->array[1] = (v & 0x0000ff00) >> 8;
 	b->array[2] = (v & 0x00ff0000) >> 16;
 	b->array[3] = (v & 0xff000000) >> 24;
-#elif (R_BIG_WORD_SIZE == 2)
+#elif (RZ_BIG_WORD_SIZE == 2)
 	b->array[0] = (v & 0x0000ffff);
 	b->array[1] = (v & 0xffff0000) >> 16;
-#elif (R_BIG_WORD_SIZE == 4)
+#elif (RZ_BIG_WORD_SIZE == 4)
 	b->array[0] = v;
-	R_BIG_DTYPE_TMP num_32 = 32;
-	R_BIG_DTYPE_TMP tmp = v >> num_32;
+	RZ_BIG_DTYPE_TMP num_32 = 32;
+	RZ_BIG_DTYPE_TMP tmp = v >> num_32;
 	b->array[1] = tmp;
 #endif
 #endif
@@ -63,19 +63,19 @@ static void rz_big_from_unsigned(RNumBig *b, ut64 v) {
 	_r_big_zero_out (b);
 
 	/* Endianness issue if machine is not little-endian? */
-#ifdef R_BIG_WORD_SIZE
-#if (R_BIG_WORD_SIZE == 1)
+#ifdef RZ_BIG_WORD_SIZE
+#if (RZ_BIG_WORD_SIZE == 1)
 	b->array[0] = (v & 0x000000ff);
 	b->array[1] = (v & 0x0000ff00) >> 8;
 	b->array[2] = (v & 0x00ff0000) >> 16;
 	b->array[3] = (v & 0xff000000) >> 24;
-#elif (R_BIG_WORD_SIZE == 2)
+#elif (RZ_BIG_WORD_SIZE == 2)
 	b->array[0] = (v & 0x0000ffff);
 	b->array[1] = (v & 0xffff0000) >> 16;
-#elif (R_BIG_WORD_SIZE == 4)
+#elif (RZ_BIG_WORD_SIZE == 4)
 	b->array[0] = v;
-	R_BIG_DTYPE_TMP num_32 = 32;
-	R_BIG_DTYPE_TMP tmp = v >> num_32;
+	RZ_BIG_DTYPE_TMP num_32 = 32;
+	RZ_BIG_DTYPE_TMP tmp = v >> num_32;
 	b->array[1] = tmp;
 #endif
 #endif
@@ -84,18 +84,18 @@ static void rz_big_from_unsigned(RNumBig *b, ut64 v) {
 RZ_API st64 rz_big_to_int(RNumBig *b) {
 	rz_return_val_if_fail (b, 0);
 
-	R_BIG_DTYPE_TMP ret = 0;
+	RZ_BIG_DTYPE_TMP ret = 0;
 
 	/* Endianness issue if machine is not little-endian? */
-#if (R_BIG_WORD_SIZE == 1)
+#if (RZ_BIG_WORD_SIZE == 1)
 	ret += b->array[0];
 	ret += b->array[1] << 8;
 	ret += b->array[2] << 16;
 	ret += b->array[3] << 24;
-#elif (R_BIG_WORD_SIZE == 2)
+#elif (RZ_BIG_WORD_SIZE == 2)
 	ret += b->array[0];
 	ret += b->array[1] << 16;
-#elif (R_BIG_WORD_SIZE == 4)
+#elif (RZ_BIG_WORD_SIZE == 4)
 	ret += b->array[1];
 	ret <<= 32;
 	ret += b->array[0];
@@ -126,27 +126,27 @@ RZ_API void rz_big_from_hexstr(RNumBig *n, const char *str) {
 	}
 	rz_return_if_fail (nbytes > 0);
 
-	R_BIG_DTYPE tmp;
-	int i = nbytes - (2 * R_BIG_WORD_SIZE); /* index into string */
+	RZ_BIG_DTYPE tmp;
+	int i = nbytes - (2 * RZ_BIG_WORD_SIZE); /* index into string */
 	int j = 0; /* index into array */
 
 	while (i >= 0) {
 		tmp = 0;
-		sscanf (&str[i], R_BIG_SSCANF_FORMAT_STR, &tmp);
+		sscanf (&str[i], RZ_BIG_SSCANF_FORMAT_STR, &tmp);
 		n->array[j] = tmp;
-		i -= (2 * R_BIG_WORD_SIZE); /* step R_BIG_WORD_SIZE hex-byte(s) back in the string. */
+		i -= (2 * RZ_BIG_WORD_SIZE); /* step RZ_BIG_WORD_SIZE hex-byte(s) back in the string. */
 		j += 1; /* step one element forward in the array. */
 	}
 
-	if (-2 * R_BIG_WORD_SIZE < i) {
-		char buffer[2 * R_BIG_WORD_SIZE];
+	if (-2 * RZ_BIG_WORD_SIZE < i) {
+		char buffer[2 * RZ_BIG_WORD_SIZE];
 		memset (buffer, 0, sizeof (buffer));
-		i += 2 * R_BIG_WORD_SIZE - 1;
+		i += 2 * RZ_BIG_WORD_SIZE - 1;
 		for (; i >= 0; i--) {
 			buffer[i] = str[i];
 		}
 		tmp = 0;
-		sscanf (buffer, R_BIG_SSCANF_FORMAT_STR, &tmp);
+		sscanf (buffer, RZ_BIG_SSCANF_FORMAT_STR, &tmp);
 		n->array[j] = tmp;
 	}
 }
@@ -154,10 +154,10 @@ RZ_API void rz_big_from_hexstr(RNumBig *n, const char *str) {
 RZ_API char *rz_big_to_hexstr(RNumBig *b) {
 	rz_return_val_if_fail (b, NULL);
 
-	int j = R_BIG_ARRAY_SIZE - 1; /* index into array - reading "MSB" first -> big-endian */
+	int j = RZ_BIG_ARRAY_SIZE - 1; /* index into array - reading "MSB" first -> big-endian */
 	size_t i = 0; /* index into string representation. */
 	size_t k = 0; /* Leading zero's amount */
-	size_t z, last_z = 2 * R_BIG_WORD_SIZE;
+	size_t z, last_z = 2 * RZ_BIG_WORD_SIZE;
 
 	for (; b->array[j] == 0 && j >= 0; j--) {
 	}
@@ -165,7 +165,7 @@ RZ_API char *rz_big_to_hexstr(RNumBig *b) {
 		return "0x0";
 	}
 
-	size_t size = 3 + 2 * R_BIG_WORD_SIZE * (j + 1) + ((b->sign > 0)? 0: 1);
+	size_t size = 3 + 2 * RZ_BIG_WORD_SIZE * (j + 1) + ((b->sign > 0)? 0: 1);
 	char *ret_str = calloc (size, sizeof (char));
 	if (!ret_str) {
 		return NULL;
@@ -177,8 +177,8 @@ RZ_API char *rz_big_to_hexstr(RNumBig *b) {
 	ret_str[i++] = '0';
 	ret_str[i++] = 'x';
 
-	rz_snprintf (ret_str + i, R_BIG_FORMAT_STR_LEN, R_BIG_SPRINTF_FORMAT_STR, b->array[j--]);
-	for (; ret_str[i + k] == '0' && k < 2 * R_BIG_WORD_SIZE; k++) {
+	rz_snprintf (ret_str + i, RZ_BIG_FORMAT_STR_LEN, RZ_BIG_SPRINTF_FORMAT_STR, b->array[j--]);
+	for (; ret_str[i + k] == '0' && k < 2 * RZ_BIG_WORD_SIZE; k++) {
 	}
 	for (z = k; ret_str[i + z] && z < last_z; z++) {
 		ret_str[i + z - k] = ret_str[i + z];
@@ -187,8 +187,8 @@ RZ_API char *rz_big_to_hexstr(RNumBig *b) {
 	ret_str[i] = '\x00'; // Truncate string for case(j < 0)
 
 	for (; j >= 0; j--) {
-		rz_snprintf (ret_str + i, R_BIG_FORMAT_STR_LEN, R_BIG_SPRINTF_FORMAT_STR, b->array[j]);
-		i += 2 * R_BIG_WORD_SIZE;
+		rz_snprintf (ret_str + i, RZ_BIG_FORMAT_STR_LEN, RZ_BIG_SPRINTF_FORMAT_STR, b->array[j]);
+		i += 2 * RZ_BIG_WORD_SIZE;
 	}
 
 	return ret_str;
@@ -202,21 +202,21 @@ RZ_API void rz_big_assign(RNumBig *dst, RNumBig *src) {
 }
 
 static void rz_big_add_inner(RNumBig *c, RNumBig *a, RNumBig *b) {
-	R_BIG_DTYPE_TMP tmp;
+	RZ_BIG_DTYPE_TMP tmp;
 	int carry = 0;
 	int i;
-	for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
-		tmp = (R_BIG_DTYPE_TMP)a->array[i] + b->array[i] + carry;
-		carry = (tmp > R_BIG_MAX_VAL);
-		c->array[i] = (tmp & R_BIG_MAX_VAL);
+	for (i = 0; i < RZ_BIG_ARRAY_SIZE; i++) {
+		tmp = (RZ_BIG_DTYPE_TMP)a->array[i] + b->array[i] + carry;
+		carry = (tmp > RZ_BIG_MAX_VAL);
+		c->array[i] = (tmp & RZ_BIG_MAX_VAL);
 	}
 }
 
 static void rz_big_sub_inner(RNumBig *c, RNumBig *a, RNumBig *b) {
-	R_BIG_DTYPE_TMP res;
+	RZ_BIG_DTYPE_TMP res;
 	RNumBig *tmp;
-	R_BIG_DTYPE_TMP tmp1;
-	R_BIG_DTYPE_TMP tmp2;
+	RZ_BIG_DTYPE_TMP tmp1;
+	RZ_BIG_DTYPE_TMP tmp2;
 	int borrow = 0;
 	int sign = rz_big_cmp (a, b);
 	c->sign = (sign >= 0? 1: -1);
@@ -226,13 +226,13 @@ static void rz_big_sub_inner(RNumBig *c, RNumBig *a, RNumBig *b) {
 		b = tmp;
 	}
 	int i;
-	for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
-		tmp1 = (R_BIG_DTYPE_TMP)a->array[i] + (R_BIG_MAX_VAL + 1); /* + number_base */
-		tmp2 = (R_BIG_DTYPE_TMP)b->array[i] + borrow;
+	for (i = 0; i < RZ_BIG_ARRAY_SIZE; i++) {
+		tmp1 = (RZ_BIG_DTYPE_TMP)a->array[i] + (RZ_BIG_MAX_VAL + 1); /* + number_base */
+		tmp2 = (RZ_BIG_DTYPE_TMP)b->array[i] + borrow;
 
 		res = (tmp1 - tmp2);
-		c->array[i] = (R_BIG_DTYPE) (res & R_BIG_MAX_VAL); /* "modulo number_base" == "% (number_base - 1)" if nu    mber_base is 2^N */
-		borrow = (res <= R_BIG_MAX_VAL);
+		c->array[i] = (RZ_BIG_DTYPE) (res & RZ_BIG_MAX_VAL); /* "modulo number_base" == "% (number_base - 1)" if nu    mber_base is 2^N */
+		borrow = (res <= RZ_BIG_MAX_VAL);
 	}
 }
 
@@ -296,13 +296,13 @@ RZ_API void rz_big_mul(RNumBig *c, RNumBig *a, RNumBig *b) {
 	RNumBig *res = rz_big_new ();
 	int i, j;
 
-	for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
+	for (i = 0; i < RZ_BIG_ARRAY_SIZE; i++) {
 		_r_big_zero_out (row);
 
-		for (j = 0; j < R_BIG_ARRAY_SIZE; j++) {
-			if (i + j < R_BIG_ARRAY_SIZE) {
+		for (j = 0; j < RZ_BIG_ARRAY_SIZE; j++) {
+			if (i + j < RZ_BIG_ARRAY_SIZE) {
 				_r_big_zero_out (tmp);
-				R_BIG_DTYPE_TMP intermediate = ((R_BIG_DTYPE_TMP)a->array[i] * (R_BIG_DTYPE_TMP)b->array[j]);
+				RZ_BIG_DTYPE_TMP intermediate = ((RZ_BIG_DTYPE_TMP)a->array[i] * (RZ_BIG_DTYPE_TMP)b->array[j]);
 				rz_big_from_unsigned (tmp, intermediate);
 				_lshift_word (tmp, i + j);
 				rz_big_add (row, row, tmp);
@@ -341,7 +341,7 @@ RZ_API void rz_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
 	_lshift_one_bit (tmp); // tmp <= 1
 
 	while (rz_big_cmp (tmp, a) != 1) { // while (tmp <= a)
-		if ((denom->array[R_BIG_ARRAY_SIZE - 1] >> (R_BIG_WORD_SIZE * 8 - 1)) == 1) {
+		if ((denom->array[RZ_BIG_ARRAY_SIZE - 1] >> (RZ_BIG_WORD_SIZE * 8 - 1)) == 1) {
 			break; // Reach the max value
 		}
 		_lshift_one_bit (tmp); // tmp <= 1
@@ -426,7 +426,7 @@ RZ_API void rz_big_and(RNumBig *c, RNumBig *a, RNumBig *b) {
 	rz_return_if_fail (b->sign > 0);
 
 	int i;
-	for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
+	for (i = 0; i < RZ_BIG_ARRAY_SIZE; i++) {
 		c->array[i] = (a->array[i] & b->array[i]);
 	}
 }
@@ -439,7 +439,7 @@ RZ_API void rz_big_or(RNumBig *c, RNumBig *a, RNumBig *b) {
 	rz_return_if_fail (b->sign > 0);
 
 	int i;
-	for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
+	for (i = 0; i < RZ_BIG_ARRAY_SIZE; i++) {
 		c->array[i] = (a->array[i] | b->array[i]);
 	}
 }
@@ -452,7 +452,7 @@ RZ_API void rz_big_xor(RNumBig *c, RNumBig *a, RNumBig *b) {
 	rz_return_if_fail (b->sign > 0);
 
 	int i;
-	for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
+	for (i = 0; i < RZ_BIG_ARRAY_SIZE; i++) {
 		c->array[i] = (a->array[i] ^ b->array[i]);
 	}
 }
@@ -465,7 +465,7 @@ RZ_API void rz_big_lshift(RNumBig *b, RNumBig *a, size_t nbits) {
 
 	rz_big_assign (b, a);
 	/* Handle shift in multiples of word-size */
-	const int nbits_pr_word = (R_BIG_WORD_SIZE * 8);
+	const int nbits_pr_word = (RZ_BIG_WORD_SIZE * 8);
 	int nwords = nbits / nbits_pr_word;
 	if (nwords != 0) {
 		_lshift_word (b, nwords);
@@ -474,8 +474,8 @@ RZ_API void rz_big_lshift(RNumBig *b, RNumBig *a, size_t nbits) {
 
 	if (nbits != 0) {
 		int i;
-		for (i = (R_BIG_ARRAY_SIZE - 1); i > 0; i--) {
-			b->array[i] = (b->array[i] << nbits) | (b->array[i - 1] >> ((8 * R_BIG_WORD_SIZE) - nbits));
+		for (i = (RZ_BIG_ARRAY_SIZE - 1); i > 0; i--) {
+			b->array[i] = (b->array[i] << nbits) | (b->array[i - 1] >> ((8 * RZ_BIG_WORD_SIZE) - nbits));
 		}
 		b->array[i] <<= nbits;
 	}
@@ -489,7 +489,7 @@ RZ_API void rz_big_rshift(RNumBig *b, RNumBig *a, size_t nbits) {
 
 	rz_big_assign (b, a);
 	/* Handle shift in multiples of word-size */
-	const int nbits_pr_word = (R_BIG_WORD_SIZE * 8);
+	const int nbits_pr_word = (RZ_BIG_WORD_SIZE * 8);
 	int nwords = nbits / nbits_pr_word;
 	if (nwords != 0) {
 		_rshift_word (b, nwords);
@@ -498,8 +498,8 @@ RZ_API void rz_big_rshift(RNumBig *b, RNumBig *a, size_t nbits) {
 
 	if (nbits != 0) {
 		int i;
-		for (i = 0; i < (R_BIG_ARRAY_SIZE - 1); i++) {
-			b->array[i] = (b->array[i] >> nbits) | (b->array[i + 1] << ((8 * R_BIG_WORD_SIZE) - nbits));
+		for (i = 0; i < (RZ_BIG_ARRAY_SIZE - 1); i++) {
+			b->array[i] = (b->array[i] >> nbits) | (b->array[i + 1] << ((8 * RZ_BIG_WORD_SIZE) - nbits));
 		}
 		b->array[i] >>= nbits;
 	}
@@ -512,7 +512,7 @@ RZ_API int rz_big_cmp(RNumBig *a, RNumBig *b) {
 	if (a->sign != b->sign)
 		return a->sign > 0? 1: -1;
 
-	int i = R_BIG_ARRAY_SIZE;
+	int i = RZ_BIG_ARRAY_SIZE;
 	do {
 		i -= 1; /* Decrement first, to start with last array element */
 		if (a->array[i] > b->array[i]) {
@@ -530,7 +530,7 @@ RZ_API int rz_big_is_zero(RNumBig *a) {
 	rz_return_val_if_fail (a, -1);
 
 	int i;
-	for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
+	for (i = 0; i < RZ_BIG_ARRAY_SIZE; i++) {
 		if (a->array[i]) {
 			return 0;
 		}
@@ -628,17 +628,17 @@ static void _rshift_word(RNumBig *a, int nwords) {
 	rz_return_if_fail (nwords >= 0);
 
 	size_t i;
-	if (nwords >= R_BIG_ARRAY_SIZE) {
-		for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
+	if (nwords >= RZ_BIG_ARRAY_SIZE) {
+		for (i = 0; i < RZ_BIG_ARRAY_SIZE; i++) {
 			a->array[i] = 0;
 		}
 		return;
 	}
 
-	for (i = 0; i < R_BIG_ARRAY_SIZE - nwords; i++) {
+	for (i = 0; i < RZ_BIG_ARRAY_SIZE - nwords; i++) {
 		a->array[i] = a->array[i + nwords];
 	}
-	for (; i < R_BIG_ARRAY_SIZE; i++) {
+	for (; i < RZ_BIG_ARRAY_SIZE; i++) {
 		a->array[i] = 0;
 	}
 }
@@ -649,7 +649,7 @@ static void _lshift_word(RNumBig *a, int nwords) {
 
 	int i;
 	/* Shift whole words */
-	for (i = (R_BIG_ARRAY_SIZE - 1); i >= nwords; i--) {
+	for (i = (RZ_BIG_ARRAY_SIZE - 1); i >= nwords; i--) {
 		a->array[i] = a->array[i - nwords];
 	}
 	/* Zero pad shifted words. */
@@ -662,8 +662,8 @@ static void _lshift_one_bit(RNumBig *a) {
 	rz_return_if_fail (a);
 
 	int i;
-	for (i = (R_BIG_ARRAY_SIZE - 1); i > 0; i--) {
-		a->array[i] = (a->array[i] << 1) | (a->array[i - 1] >> ((8 * R_BIG_WORD_SIZE) - 1));
+	for (i = (RZ_BIG_ARRAY_SIZE - 1); i > 0; i--) {
+		a->array[i] = (a->array[i] << 1) | (a->array[i - 1] >> ((8 * RZ_BIG_WORD_SIZE) - 1));
 	}
 	a->array[0] <<= 1;
 }
@@ -672,17 +672,17 @@ static void _rshift_one_bit(RNumBig *a) {
 	rz_return_if_fail (a);
 
 	int i;
-	for (i = 0; i < (R_BIG_ARRAY_SIZE - 1); i++) {
-		a->array[i] = (a->array[i] >> 1) | (a->array[i + 1] << ((8 * R_BIG_WORD_SIZE) - 1));
+	for (i = 0; i < (RZ_BIG_ARRAY_SIZE - 1); i++) {
+		a->array[i] = (a->array[i] >> 1) | (a->array[i + 1] << ((8 * RZ_BIG_WORD_SIZE) - 1));
 	}
-	a->array[R_BIG_ARRAY_SIZE - 1] >>= 1;
+	a->array[RZ_BIG_ARRAY_SIZE - 1] >>= 1;
 }
 
 static void _r_big_zero_out(RNumBig *a) {
 	rz_return_if_fail (a);
 
 	size_t i;
-	for (i = 0; i < R_BIG_ARRAY_SIZE; i++) {
+	for (i = 0; i < RZ_BIG_ARRAY_SIZE; i++) {
 		a->array[i] = 0;
 	}
 	a->sign = 1; /* hack to avoid -0 */

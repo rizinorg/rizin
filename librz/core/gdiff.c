@@ -131,13 +131,13 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2) {
 
         rz_list_foreach (fcns, iter, f) {
                 switch (f->type) {
-                case R_ANAL_FCN_TYPE_FCN:
-                case R_ANAL_FCN_TYPE_SYM:
+                case RZ_ANAL_FCN_TYPE_FCN:
+                case RZ_ANAL_FCN_TYPE_SYM:
                         switch (f->diff->type) {
-                        case R_ANAL_DIFF_TYPE_MATCH:
+                        case RZ_ANAL_DIFF_TYPE_MATCH:
                                 match = "MATCH";
                                 break;
-                        case R_ANAL_DIFF_TYPE_UNMATCH:
+                        case RZ_ANAL_DIFF_TYPE_UNMATCH:
                                 match = "UNMATCH";
                                 break;
                         default:
@@ -154,9 +154,9 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2) {
 	rz_list_sort (fcns, c2->anal->columnSort);
         rz_list_foreach (fcns, iter, f) {
                 switch (f->type) {
-                case R_ANAL_FCN_TYPE_FCN:
-                case R_ANAL_FCN_TYPE_SYM:
-                        if (f->diff->type == R_ANAL_DIFF_TYPE_NULL) {
+                case RZ_ANAL_FCN_TYPE_FCN:
+                case RZ_ANAL_FCN_TYPE_SYM:
+                        if (f->diff->type == RZ_ANAL_DIFF_TYPE_NULL) {
                                 diffrow (f->addr, f->name, rz_anal_function_linear_size (f), maxnamelen,
 									digits, f->diff->addr, f->diff->name, f->diff->size,
 									"NEW", 0, bare); //f->diff->dist, bare);

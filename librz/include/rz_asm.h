@@ -13,52 +13,52 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(rz_asm);
+RZ_LIB_VERSION_HEADER(rz_asm);
 
 /* backward compatibility */
-#define R_ASM_ARCH_NONE R_SYS_ARCH_NONE
-#define R_ASM_ARCH_X86 R_SYS_ARCH_X86
-#define R_ASM_ARCH_ARM R_SYS_ARCH_ARM
-#define R_ASM_ARCH_PPC R_SYS_ARCH_PPC
-#define R_ASM_ARCH_M68K R_SYS_ARCH_M68K
-#define R_ASM_ARCH_JAVA R_SYS_ARCH_JAVA
-#define R_ASM_ARCH_LM32 R_SYS_ARCH_LM32
-#define R_ASM_ARCH_MIPS R_SYS_ARCH_MIPS
-#define R_ASM_ARCH_SPARC R_SYS_ARCH_SPARC
-#define R_ASM_ARCH_XAP R_SYS_ARCH_XAP
-#define R_ASM_ARCH_MSIL R_SYS_ARCH_MSIL
-#define R_ASM_ARCH_OBJD R_SYS_ARCH_OBJD
-#define R_ASM_ARCH_BF R_SYS_ARCH_BF
-#define R_ASM_ARCH_SH R_SYS_ARCH_SH
-#define R_ASM_ARCH_Z80 R_SYS_ARCH_Z80
-#define R_ASM_ARCH_I8080 R_SYS_ARCH_I8080
-#define R_ASM_ARCH_ARC R_SYS_ARCH_ARC
-#define R_ASM_ARCH_HPPA R_SYS_ARCH_HPPA
+#define RZ_ASM_ARCH_NONE RZ_SYS_ARCH_NONE
+#define RZ_ASM_ARCH_X86 RZ_SYS_ARCH_X86
+#define RZ_ASM_ARCH_ARM RZ_SYS_ARCH_ARM
+#define RZ_ASM_ARCH_PPC RZ_SYS_ARCH_PPC
+#define RZ_ASM_ARCH_M68K RZ_SYS_ARCH_M68K
+#define RZ_ASM_ARCH_JAVA RZ_SYS_ARCH_JAVA
+#define RZ_ASM_ARCH_LM32 RZ_SYS_ARCH_LM32
+#define RZ_ASM_ARCH_MIPS RZ_SYS_ARCH_MIPS
+#define RZ_ASM_ARCH_SPARC RZ_SYS_ARCH_SPARC
+#define RZ_ASM_ARCH_XAP RZ_SYS_ARCH_XAP
+#define RZ_ASM_ARCH_MSIL RZ_SYS_ARCH_MSIL
+#define RZ_ASM_ARCH_OBJD RZ_SYS_ARCH_OBJD
+#define RZ_ASM_ARCH_BF RZ_SYS_ARCH_BF
+#define RZ_ASM_ARCH_SH RZ_SYS_ARCH_SH
+#define RZ_ASM_ARCH_Z80 RZ_SYS_ARCH_Z80
+#define RZ_ASM_ARCH_I8080 RZ_SYS_ARCH_I8080
+#define RZ_ASM_ARCH_ARC RZ_SYS_ARCH_ARC
+#define RZ_ASM_ARCH_HPPA RZ_SYS_ARCH_HPPA
 
-#define R_ASM_GET_OFFSET(x,y,z) \
+#define RZ_ASM_GET_OFFSET(x,y,z) \
 	(x && x->binb.bin && x->binb.get_offset)? \
 		x->binb.get_offset (x->binb.bin, y, z): -1
 
-#define R_ASM_GET_NAME(x,y,z) \
+#define RZ_ASM_GET_NAME(x,y,z) \
 	(x && x->binb.bin && x->binb.get_name)? \
 		x->binb.get_name (x->binb.bin, y, z, x->pseudo): NULL
 
 enum {
-	R_ASM_SYNTAX_NONE = 0,
-	R_ASM_SYNTAX_INTEL,
-	R_ASM_SYNTAX_ATT,
-	R_ASM_SYNTAX_MASM,
-	R_ASM_SYNTAX_REGNUM, // alias for capstone's NOREGNAME
-	R_ASM_SYNTAX_JZ, // hack to use jz instead of je on x86
+	RZ_ASM_SYNTAX_NONE = 0,
+	RZ_ASM_SYNTAX_INTEL,
+	RZ_ASM_SYNTAX_ATT,
+	RZ_ASM_SYNTAX_MASM,
+	RZ_ASM_SYNTAX_REGNUM, // alias for capstone's NOREGNAME
+	RZ_ASM_SYNTAX_JZ, // hack to use jz instead of je on x86
 };
 
 enum {
-	R_ASM_MOD_RAWVALUE = 'r',
-	R_ASM_MOD_VALUE = 'v',
-	R_ASM_MOD_DSTREG = 'd',
-	R_ASM_MOD_SRCREG0 = '0',
-	R_ASM_MOD_SRCREG1 = '1',
-	R_ASM_MOD_SRCREG2 = '2'
+	RZ_ASM_MOD_RAWVALUE = 'r',
+	RZ_ASM_MOD_VALUE = 'v',
+	RZ_ASM_MOD_DSTREG = 'd',
+	RZ_ASM_MOD_SRCREG0 = '0',
+	RZ_ASM_MOD_SRCREG1 = '1',
+	RZ_ASM_MOD_SRCREG2 = '2'
 };
 
 typedef struct rz_asm_op_t {

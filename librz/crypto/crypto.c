@@ -3,26 +3,26 @@
 #include "rz_crypto.h"
 #include "config.h"
 
-R_LIB_VERSION (rz_crypto);
+RZ_LIB_VERSION (rz_crypto);
 
 static const struct {
 	const char *name;
 	RzCryptoSelector bit;
 } crypto_name_bytes[] = {
 	{ "all", UT64_MAX },
-	{ "rc2", R_CRYPTO_RC2 },
-	{ "rc4", R_CRYPTO_RC4 },
-	{ "rc6", R_CRYPTO_RC6 },
-	{ "aes-ecb", R_CRYPTO_AES_ECB },
-	{ "aes-cbc", R_CRYPTO_AES_CBC },
-	{ "ror", R_CRYPTO_ROR },
-	{ "rol", R_CRYPTO_ROL },
-	{ "rot", R_CRYPTO_ROT },
-	{ "blowfish", R_CRYPTO_BLOWFISH },
-	{ "cps2", R_CRYPTO_CPS2 },
-	{ "des-ecb", R_CRYPTO_DES_ECB },
-	{ "xor", R_CRYPTO_XOR },
-	{ "serpent-ecb", R_CRYPTO_SERPENT },
+	{ "rc2", RZ_CRYPTO_RC2 },
+	{ "rc4", RZ_CRYPTO_RC4 },
+	{ "rc6", RZ_CRYPTO_RC6 },
+	{ "aes-ecb", RZ_CRYPTO_AES_ECB },
+	{ "aes-cbc", RZ_CRYPTO_AES_CBC },
+	{ "ror", RZ_CRYPTO_ROR },
+	{ "rol", RZ_CRYPTO_ROL },
+	{ "rot", RZ_CRYPTO_ROT },
+	{ "blowfish", RZ_CRYPTO_BLOWFISH },
+	{ "cps2", RZ_CRYPTO_CPS2 },
+	{ "des-ecb", RZ_CRYPTO_DES_ECB },
+	{ "xor", RZ_CRYPTO_XOR },
+	{ "serpent-ecb", RZ_CRYPTO_SERPENT },
 	{ NULL, 0 }
 };
 
@@ -31,9 +31,9 @@ static const struct {
 	RzCryptoSelector bit;
 } codec_name_bytes[] = {
 	{ "all", UT64_MAX },
-	{ "base64", R_CODEC_B64 },
-	{ "base91", R_CODEC_B91 },
-	{ "punycode", R_CODEC_PUNYCODE },
+	{ "base64", RZ_CODEC_B64 },
+	{ "base91", RZ_CODEC_B91 },
+	{ "punycode", RZ_CODEC_PUNYCODE },
 	{ NULL, 0 }
 };
 
@@ -58,7 +58,7 @@ RZ_API const char *rz_crypto_codec_name(const RzCryptoSelector bit) {
 }
 
 static RzCryptoPlugin *crypto_static_plugins[] = {
-	R_CRYPTO_STATIC_PLUGINS
+	RZ_CRYPTO_STATIC_PLUGINS
 };
 
 RZ_API RzCrypto *rz_crypto_init(RzCrypto *cry, int hard) {
@@ -73,7 +73,7 @@ RZ_API RzCrypto *rz_crypto_init(RzCrypto *cry, int hard) {
 			rz_crypto_get_output (cry, NULL);
 			cry->plugins = rz_list_newf (NULL);
 			for (i = 0; crypto_static_plugins[i]; i++) {
-				RzCryptoPlugin *p = R_NEW0 (RzCryptoPlugin);
+				RzCryptoPlugin *p = RZ_NEW0 (RzCryptoPlugin);
 				if (!p) {
 					free (cry);
 					return NULL;
@@ -98,12 +98,12 @@ RZ_API int rz_crypto_del(RzCrypto *cry, RzCryptoPlugin *h) {
 }
 
 RZ_API struct rz_crypto_t *rz_crypto_new(void) {
-	RzCrypto *cry = R_NEW0 (RzCrypto);
+	RzCrypto *cry = RZ_NEW0 (RzCrypto);
 	return rz_crypto_init (cry, true);
 }
 
 RZ_API struct rz_crypto_t *rz_crypto_as_new(struct rz_crypto_t *cry) {
-	RzCrypto *c = R_NEW0 (RzCrypto);
+	RzCrypto *c = RZ_NEW0 (RzCrypto);
 	if (c) {
 		rz_crypto_init (c, false); // soft init
 		memcpy (&c->plugins, &cry->plugins, sizeof (cry->plugins));

@@ -483,11 +483,11 @@ enum StabType {
 enum {
 	// Constant values for the rz_symbolnum field in an
 	// llvm::MachO::relocation_info structure when rz_extern is 0.
-	R_ABS = 0,
+	RZ_ABS = 0,
 
 	// Constant bits for the rz_address field in an
 	// llvm::MachO::relocation_info structure.
-	R_SCATTERED = 0x80000000
+	RZ_SCATTERED = 0x80000000
 };
 
 enum RelocationInfoType {

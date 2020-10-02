@@ -11,18 +11,18 @@ extern "C" {
 #endif
 
 // TODO: rename to rz_flag_XXX api
-R_LIB_VERSION_HEADER(rz_flag);
+RZ_LIB_VERSION_HEADER(rz_flag);
 
-#define R_FLAG_NAME_SIZE 512
+#define RZ_FLAG_NAME_SIZE 512
 
 /* zones.c */
 
-#define R_FLAG_ZONE_USE_SDB 0
+#define RZ_FLAG_ZONE_USE_SDB 0
 
 typedef struct rz_flag_zone_item_t {
 	ut64 from;
 	ut64 to;
-#if R_FLAG_ZONE_USE_SDB
+#if RZ_FLAG_ZONE_USE_SDB
 	const char *name;
 #else
 	char *name;
@@ -57,7 +57,7 @@ typedef struct rz_flag_t {
 	RzSkipList *by_off; /* flags sorted by offset, value=RzFlagsAtOffset */
 	HtPP *ht_name; /* hashmap key=item name, value=RzFlagItem * */
 	PrintfCallback cb_printf;
-#if R_FLAG_ZONE_USE_SDB
+#if RZ_FLAG_ZONE_USE_SDB
 	Sdb *zones;
 #else
 	RzList *zones;

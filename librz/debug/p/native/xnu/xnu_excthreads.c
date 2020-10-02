@@ -14,14 +14,14 @@
    or clear it (0).  */
 
 static bool modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
-	R_REG_T *state;
+	RZ_REG_T *state;
 	int ret;
 	ret = xnu_thread_get_gpr (dbg, th);
 	if (!ret) {
 		eprintf ("error to get gpr registers in trace bit intel\n");
 		return false;
 	}
-	state = (R_REG_T *)&th->gpr;
+	state = (RZ_REG_T *)&th->gpr;
 	if (state->tsh.flavor == x86_THREAD_STATE32) {
 		state->uts.ts32.__eflags = (state->uts.ts32.__eflags & \
 					~0x100UL) | (enable ? 0x100UL : 0);
@@ -48,17 +48,17 @@ static bool modify_trace_bit(RzDebug *dbg, void *th, int enable) {
 #if 0
 static bool modify_trace_bit(RzDebug *dbg, xnu_thread *th, int enable) {
 	return false;
-	R_REG_T state;
-	unsigned int state_count = R_REG_STATE_SZ;
+	RZ_REG_T state;
+	unsigned int state_count = RZ_REG_STATE_SZ;
 	kern_return_t kr;
-	kr = thread_get_state (th->tid, R_REG_STATE_T,
+	kr = thread_get_state (th->tid, RZ_REG_STATE_T,
 			(thread_state_t)&state, &state_count);
 	if (kr != KERN_SUCCESS) {
 		eprintf ("error modify_trace_bit\n");
 		return false;
 	}
 	state.srr1 = (state.srr1 & ~0x400UL) | (enable ? 0x400UL : 0);
-	kr = thread_set_state (th->tid, R_REG_STATE_T,
+	kr = thread_set_state (th->tid, RZ_REG_STATE_T,
 			(thread_state_t)&state, state_count);
 	if (kr != KERN_SUCCESS) {
 		eprintf ("Error to set thread state modificy_trace_bit ppc\n");
@@ -137,13 +137,13 @@ static int modify_trace_bit(RzDebug *dbg, xnu_thread_t *th, int enable) {
 #elif __arm || __arm__ || __armv7 || __armv7__
 	if (th->flavor == ARM_DEBUG_STATE) {
 		arm_debug_state_t *state = &th->debug.drx;
-		R_REG_T *regs;
+		RZ_REG_T *regs;
 		ret = xnu_thread_get_gpr (dbg, th);
 		if (!ret) {
 			eprintf ("error to get gpr register modificy_trace_bit arm\n");
 			return false;
 		}
-		regs = (R_REG_T*)&th->gpr;
+		regs = (RZ_REG_T*)&th->gpr;
 		if (enable) {
 			static ut64 chained_address = 0;
 			RzIOBind *bio = &dbg->iob;
@@ -318,12 +318,12 @@ static bool handle_dead_notify (RzDebug *dbg, exc_msg *msg) {
 }
 
 static int handle_exception_message (RzDebug *dbg, exc_msg *msg, int *ret_code) {
-	int ret = R_DEBUG_REASON_UNKNOWN;
+	int ret = RZ_DEBUG_REASON_UNKNOWN;
 	kern_return_t kr;
 	*ret_code = KERN_SUCCESS;
 	switch (msg->exception) {
 	case EXC_BAD_ACCESS:
-		ret = R_DEBUG_REASON_SEGFAULT;
+		ret = RZ_DEBUG_REASON_SEGFAULT;
 		*ret_code = KERN_FAILURE;
 		kr = task_suspend (msg->task.name);
 		if (kr != KERN_SUCCESS) {
@@ -332,7 +332,7 @@ static int handle_exception_message (RzDebug *dbg, exc_msg *msg, int *ret_code) 
 		eprintf ("EXC_BAD_ACCESS\n");
 		break;
 	case EXC_BAD_INSTRUCTION:
-		ret = R_DEBUG_REASON_ILLEGAL;
+		ret = RZ_DEBUG_REASON_ILLEGAL;
 		*ret_code = KERN_FAILURE;
 		kr = task_suspend (msg->task.name);
 		if (kr != KERN_SUCCESS) {
@@ -354,7 +354,7 @@ static int handle_exception_message (RzDebug *dbg, exc_msg *msg, int *ret_code) 
 		if (kr != KERN_SUCCESS) {
 			eprintf ("failed to suspend task breakpoint\n");
 		}
-		ret = R_DEBUG_REASON_BREAKPOINT;
+		ret = RZ_DEBUG_REASON_BREAKPOINT;
 		break;
 	default:
 		eprintf ("UNKNOWN\n");
@@ -375,7 +375,7 @@ static int handle_exception_message (RzDebug *dbg, exc_msg *msg, int *ret_code) 
 static int __xnu_wait (RzDebug *dbg, int pid) {
 	// here comes the important thing
 	kern_return_t kr;
-	int ret_code, reason = R_DEBUG_REASON_UNKNOWN;
+	int ret_code, reason = RZ_DEBUG_REASON_UNKNOWN;
 	mig_reply_error_t reply;
 	bool ret;
 	exc_msg msg;
@@ -391,7 +391,7 @@ static int __xnu_wait (RzDebug *dbg, int pid) {
 			sizeof (exc_msg), ex.exception_port,
 			MACH_MSG_TIMEOUT_NONE, MACH_PORT_NULL);
 		if (kr == MACH_RCV_INTERRUPTED) {
-			reason = R_DEBUG_REASON_MACH_RCV_INTERRUPTED;
+			reason = RZ_DEBUG_REASON_MACH_RCV_INTERRUPTED;
 			break;
 		} else if (kr != MACH_MSG_SUCCESS) {
 			eprintf ("message didn't succeeded\n");
@@ -401,7 +401,7 @@ static int __xnu_wait (RzDebug *dbg, int pid) {
 		if (!ret) {
 			ret = handle_dead_notify (dbg, &msg);
 			if (ret) {
-				reason = R_DEBUG_REASON_DEAD;
+				reason = RZ_DEBUG_REASON_DEAD;
 				break;
 			}
 		}

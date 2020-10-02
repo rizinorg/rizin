@@ -55,7 +55,7 @@ struct grub_jfs_sblock
   grub_uint8_t unused2[32];
   grub_uint8_t uuid[16];
 };
-R_PACKED (
+RZ_PACKED (
 struct grub_jfs_extent
 {
   /* The length of the extent in filesystem blocks.  */
@@ -67,7 +67,7 @@ struct grub_jfs_extent
   grub_uint32_t blk2;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_jfs_iag
 {
   grub_uint8_t unused[3072];
@@ -76,7 +76,7 @@ struct grub_jfs_iag
 
 
 /* The head of the tree used to find extents.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_jfs_treehead
 {
   grub_uint64_t next;
@@ -91,7 +91,7 @@ struct grub_jfs_treehead
 });
 
 /* A node in the extent tree.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_jfs_tree_extent
 {
   grub_uint8_t flags;
@@ -105,7 +105,7 @@ struct grub_jfs_tree_extent
 });
 
 /* The tree of directory entries.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_jfs_tree_dir
 {
   /* Pointers to the previous and next tree headers of other nodes on
@@ -127,7 +127,7 @@ struct grub_jfs_tree_dir
 });
 
 /* An internal node in the dirents tree.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_jfs_internal_dirent
 {
   struct grub_jfs_extent ex;
@@ -137,7 +137,7 @@ struct grub_jfs_internal_dirent
 });
 
 /* A leaf node in the dirents tree.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_jfs_leaf_dirent
 {
   /* The inode for this dirent.  */
@@ -153,7 +153,7 @@ struct grub_jfs_leaf_dirent
 /* A leaf in the dirents tree.  This one is used if the previously
    dirent was not big enough to store the name.  */
 
-R_PACKED (
+RZ_PACKED (
 struct grub_jfs_leaf_next_dirent
 {
   grub_uint8_t next;
@@ -161,7 +161,7 @@ struct grub_jfs_leaf_next_dirent
   grub_unaligned_uint16_t namepart[15];
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_jfs_inode
 {
   grub_uint32_t stamp;
@@ -173,17 +173,17 @@ struct grub_jfs_inode
   grub_uint32_t mode;
   grub_uint8_t unused3[72];
   grub_uint8_t unused4[96];
-  R_PACKED (
+  RZ_PACKED (
   union
   {
     /* The tree describing the extents of the file.  */
-	R_PACKED (
+	RZ_PACKED (
 	struct 
     {
       struct grub_jfs_treehead tree;
       struct grub_jfs_tree_extent extents[16];
     }) file;
-	R_PACKED (
+	RZ_PACKED (
 	union
     {
       /* The tree describing the dirents.  */
@@ -210,7 +210,7 @@ struct grub_jfs_inode
   });
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_jfs_data
 {
   struct grub_jfs_sblock sblock;
@@ -221,11 +221,11 @@ struct grub_jfs_data
   int linknest;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_jfs_diropen
 {
   int index;
-  R_PACKED (
+  RZ_PACKED (
   union
   {
     struct grub_jfs_tree_dir header;

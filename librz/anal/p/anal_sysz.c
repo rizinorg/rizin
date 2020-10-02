@@ -60,19 +60,19 @@ static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 		// capstone-next
 		int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 		if (n < 1) {
-			op->type = R_ANAL_OP_TYPE_ILL;
+			op->type = RZ_ANAL_OP_TYPE_ILL;
 		} else {
-			if (mask & R_ANAL_OP_MASK_OPEX) {
+			if (mask & RZ_ANAL_OP_MASK_OPEX) {
 				opex (&op->opex, handle, insn);
 			}
 			op->size = insn->size;
 			switch (insn->id) {
 			case SYSZ_INS_BRCL:
 			case SYSZ_INS_BRASL:
-				op->type = R_ANAL_OP_TYPE_CALL;
+				op->type = RZ_ANAL_OP_TYPE_CALL;
 				break;
 			case SYSZ_INS_BR:
-				op->type = R_ANAL_OP_TYPE_JMP;
+				op->type = RZ_ANAL_OP_TYPE_JMP;
 				break;
 			case SYSZ_INS_BRC:
 			case SYSZ_INS_BER:
@@ -93,7 +93,7 @@ static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 			case SYSZ_INS_BRAS:
 			case SYSZ_INS_BRCT:
 			case SYSZ_INS_BRCTG:
-				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->type = RZ_ANAL_OP_TYPE_CJMP;
 				break;
 			case SYSZ_INS_JE:
 			case SYSZ_INS_JGE:
@@ -124,12 +124,12 @@ static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 			case SYSZ_INS_JO:
 			case SYSZ_INS_JGO:
 			case SYSZ_INS_JG:
-				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->type = RZ_ANAL_OP_TYPE_CJMP;
 				op->jump = INSOP(0).imm;
 				op->fail = addr+op->size;
 				break;
 			case SYSZ_INS_J:
-				op->type = R_ANAL_OP_TYPE_JMP;
+				op->type = RZ_ANAL_OP_TYPE_JMP;
 				op->jump = INSOP(0).imm;
 				op->fail = UT64_MAX;
 				break;
@@ -182,11 +182,11 @@ static bool set_reg_profile(RzAnal *anal) {
 
 static int archinfo(RzAnal *anal, int q) {
 	switch (q) {
-	case R_ANAL_ARCHINFO_ALIGN:
+	case RZ_ANAL_ARCHINFO_ALIGN:
 		return 2;
-	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case RZ_ANAL_ARCHINFO_MAX_OP_SIZE:
 		return 4;
-	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case RZ_ANAL_ARCHINFO_MIN_OP_SIZE:
 		return 2;
 	}
 	return 2;
@@ -206,7 +206,7 @@ RzAnalPlugin rz_anal_plugin_sysz = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_sysz,
 	.version = RZ_VERSION
 };

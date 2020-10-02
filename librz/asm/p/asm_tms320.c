@@ -113,7 +113,7 @@ RzAsmPlugin rz_asm_plugin_tms320 = {
 #endif
 	.license = "LGPLv3",
 	.bits = 32,
-	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
+	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.init = tms320_init,
 	.fini = tms320_fini,
 	.disassemble = &tms320_disassemble,
@@ -121,7 +121,7 @@ RzAsmPlugin rz_asm_plugin_tms320 = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_tms320,
 	.version = RZ_VERSION
 };

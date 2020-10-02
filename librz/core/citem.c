@@ -3,29 +3,29 @@
 #include <rz_core.h>
 
 RZ_API RzCoreItem *rz_core_item_at (RzCore *core, ut64 addr) {
-	RzCoreItem *ci = R_NEW0 (RzCoreItem);
+	RzCoreItem *ci = RZ_NEW0 (RzCoreItem);
 	ci->addr = addr;
 	RzIOMap *map = rz_io_map_get (core->io, addr);
 	if (map) {
 		ci->perm = map->perm;
 		// TODO: honor section perms too?
-		if (map->perm & R_PERM_X) {
+		if (map->perm & RZ_PERM_X) {
 			// if theres a meta consider it data
 			ut64 size;
-			RzAnalMetaItem *item = rz_meta_get_at (core->anal, addr, R_META_TYPE_ANY, &size);
+			RzAnalMetaItem *item = rz_meta_get_at (core->anal, addr, RZ_META_TYPE_ANY, &size);
 			if (item) {
 				switch (item->type) {
-				case R_META_TYPE_DATA:
+				case RZ_META_TYPE_DATA:
 					ci->type = "data";
 					ci->size = size;
 					ci->data = rz_core_cmd_strf (core, "pdi 1 @e:asm.flags=0@e:asm.lines=0@e:scr.color=0@0x%08"PFMT64x, addr);
 					rz_str_trim (ci->data);
 					break;
-				case R_META_TYPE_FORMAT:
+				case RZ_META_TYPE_FORMAT:
 					ci->type = "format"; // struct :?
 					ci->size = size;
 					break;
-				case R_META_TYPE_STRING:
+				case RZ_META_TYPE_STRING:
 					ci->type = "string";
 					ci->size = size;
 					break;
@@ -50,7 +50,7 @@ RZ_API RzCoreItem *rz_core_item_at (RzCore *core, ut64 addr) {
 		ci->sectname = strdup (sec->name);
 	}
 	if (!ci->data) {
-		RzAnalOp* op = rz_core_anal_op (core, addr, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
+		RzAnalOp* op = rz_core_anal_op (core, addr, RZ_ANAL_OP_MASK_ESIL | RZ_ANAL_OP_MASK_HINT);
 		if (op) {
 			if (!ci->data) {
 				if (op->mnemonic) {

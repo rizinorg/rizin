@@ -104,9 +104,9 @@ static char *rzk__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 
 static RzIODesc *rzk__open(RzIO *io, const char *pathname, int rw, int mode) {
 	if (!strncmp (pathname, "rzk://", 6)) {
-		rw |= R_PERM_WX;
+		rw |= RZ_PERM_WX;
 #if __WINDOWS__
-		RzIOW32 *w32 = R_NEW0 (RzIOW32);
+		RzIOW32 *w32 = RZ_NEW0 (RzIOW32);
 		if (Init (&pathname[6]) == FALSE) {
 			eprintf ("rzk__open: Error cant init driver: %s\n", &pathname[6]);
 			free (w32);
@@ -148,7 +148,7 @@ RzIOPlugin rz_io_plugin_rzk = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_rzk,
 	.version = RZ_VERSION
 };

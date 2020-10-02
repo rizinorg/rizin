@@ -26,7 +26,7 @@
 #include <grub/fshelp.h>
 #include <rz_types.h>
 /* The common header for a block.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_sfs_bheader
 {
   grub_uint8_t magic[4];
@@ -35,7 +35,7 @@ struct grub_sfs_bheader
 });
 
 /* The sfs rootblock.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_sfs_rblock
 {
   struct grub_sfs_bheader header;
@@ -49,7 +49,7 @@ struct grub_sfs_rblock
 });
 
 /* A SFS object container.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_sfs_obj
 {
   grub_uint8_t unused1[4];
@@ -57,13 +57,13 @@ struct grub_sfs_obj
   grub_uint8_t unused2[4];
   union
   {
-	R_PACKED (
+	RZ_PACKED (
 	struct
     {
       grub_uint32_t first_block;
       grub_uint32_t size;
     }) file ;
-	R_PACKED (
+	RZ_PACKED (
 	struct
     {
       grub_uint32_t hashtable;
@@ -81,7 +81,7 @@ struct grub_sfs_obj
 #define	GRUB_SFS_TYPE_DIR	128
 
 /* A SFS object container.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_sfs_objc
 {
   struct grub_sfs_bheader header;
@@ -92,14 +92,14 @@ struct grub_sfs_objc
   struct grub_sfs_obj objects[1];
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_sfs_btree_node
 {
   grub_uint32_t key;
   grub_uint32_t data;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_sfs_btree_extent
 {
   grub_uint32_t key;
@@ -108,7 +108,7 @@ struct grub_sfs_btree_extent
   grub_uint16_t size;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_sfs_btree
 {
   struct grub_sfs_bheader header;

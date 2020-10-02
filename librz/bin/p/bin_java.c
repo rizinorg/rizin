@@ -118,7 +118,7 @@ static RzList *strings(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinJavaObj *jo = bf->o->bin_obj;
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = RZ_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -155,14 +155,14 @@ static bool check_buffer(RBuffer *b) {
 }
 
 static int retdemangle(const char *str) {
-	return R_BIN_NM_JAVA;
+	return RZ_BIN_NM_JAVA;
 }
 
 static RBinAddr *binsym(RBinFile *bf, int sym) {
 	return rz_bin_java_get_entrypoint (bf->o->bin_obj, sym);
 }
 
-static R_BORROW RzList *lines(RBinFile *bf) {
+static RZ_BORROW RzList *lines(RBinFile *bf) {
 	return NULL;
 #if 0
 	char *file = bf->file? strdup (bf->file): strdup ("");
@@ -173,7 +173,7 @@ static R_BORROW RzList *lines(RBinFile *bf) {
 	   int i;
 	   RBinJavaObj *b = bf->o->bin_obj;
 	   for (i=0; i<b->lines.count; i++) {
-	        RBinDwarfRow *row = R_NEW0(RBinDwarfRow);
+	        RBinDwarfRow *row = RZ_NEW0(RBinDwarfRow);
 	        rz_bin_dwarf_line_new (row, b->lines.addr[i], file, b->lines.line[i]);
 	        rz_list_append (list, row);
 	   }*/
@@ -226,7 +226,7 @@ RBinPlugin rz_bin_plugin_java = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_java,
 	.version = RZ_VERSION
 };

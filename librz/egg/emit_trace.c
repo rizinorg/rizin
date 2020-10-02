@@ -4,17 +4,17 @@
 #define attsyntax 0
 
 #define EMIT_NAME emit_trace
-#define R_ARCH "trace"
-#define R_SZ 8
-#define R_SP "sp"
-#define R_BP "bp"
-#define R_AX "a0"
-#define R_GP { "a0", "a1", "a2", "a3", "a4" }
-#define R_TMP "t0"
-#define R_NGP 5
+#define RZ_ARCH "trace"
+#define RZ_SZ 8
+#define RZ_SP "sp"
+#define RZ_BP "bp"
+#define RZ_AX "a0"
+#define RZ_GP { "a0", "a1", "a2", "a3", "a4" }
+#define RZ_TMP "t0"
+#define RZ_NGP 5
 
 // no attsyntax for arm
-static char *regs[] = R_GP;
+static char *regs[] = RZ_GP;
 
 static void emit_init (RzEgg *egg) {
 	/* TODO */
@@ -163,10 +163,10 @@ static void emit_mathop(RzEgg *egg, int ch, int vs, int type, const char *eq, co
 	default:  op = "mov"; break;
 	}
 	if (!eq) {
-		eq = R_AX;
+		eq = RZ_AX;
 	}
 	if (!p) {
-		p = R_AX;
+		p = RZ_AX;
 	}
 #if 0
 	// TODO:
@@ -182,13 +182,13 @@ static void emit_mathop(RzEgg *egg, int ch, int vs, int type, const char *eq, co
 }
 
 static const char* emit_regs(RzEgg *egg, int idx) {
-	return regs[idx%R_NGP];
+	return regs[idx%RZ_NGP];
 }
 
 RzEggEmit EMIT_NAME = {
 	.retvar = "a0",
-	.arch = R_ARCH,
-	.size = R_SZ,
+	.arch = RZ_ARCH,
+	.size = RZ_SZ,
 	.jmp = emit_jmp,
 	.call = emit_call,
 	.init = emit_init,

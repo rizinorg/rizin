@@ -37,7 +37,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = RZ_NEW0 (RBinInfo);
 	if (!ret || !bf || !bf->buf) {
 		free (ret);
 		return NULL;
@@ -112,7 +112,7 @@ RBinPlugin rz_bin_plugin_sms = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_sms,
 	.version = RZ_VERSION
 };

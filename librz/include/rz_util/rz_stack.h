@@ -1,5 +1,5 @@
-#ifndef R_STACK_H
-#define R_STACK_H
+#ifndef RZ_STACK_H
+#define RZ_STACK_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,4 +27,4 @@ RZ_API void *rz_stack_peek(RStack *s);
 }
 #endif
 
-#endif //  R_STACK_H
+#endif //  RZ_STACK_H

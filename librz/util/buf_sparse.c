@@ -35,7 +35,7 @@ static bool sparse_limits(RzList *l, ut64 *max) {
 
 static RBufferSparse *sparse_append(RzList *l, ut64 addr, const ut8 *data, ut64 len) {
 	if (l && data) {
-		RBufferSparse *s = R_NEW0 (RBufferSparse);
+		RBufferSparse *s = RZ_NEW0 (RBufferSparse);
 		if (s) {
 			s->data = calloc (1, len);
 			if (s->data) {
@@ -83,7 +83,7 @@ static inline struct buf_sparse_priv *get_priv_sparse(RBuffer *b) {
 }
 
 static bool buf_sparse_init(RBuffer *b, const void *user) {
-	struct buf_sparse_priv *priv = R_NEW0 (struct buf_sparse_priv);
+	struct buf_sparse_priv *priv = RZ_NEW0 (struct buf_sparse_priv);
 	if (!priv) {
 		return false;
 	}
@@ -96,7 +96,7 @@ static bool buf_sparse_init(RBuffer *b, const void *user) {
 static bool buf_sparse_fini(RBuffer *b) {
 	struct buf_sparse_priv *priv = get_priv_sparse (b);
 	rz_list_free (priv->sparse);
-	R_FREE (b->priv);
+	RZ_FREE (b->priv);
 	return true;
 }
 
@@ -109,7 +109,7 @@ static bool buf_sparse_resize(RBuffer *b, ut64 newsize) {
 		if (s->from >= newsize) {
 			rz_list_delete (priv->sparse, iter);
 		} else if (s->to >= newsize) {
-			RBufferSparse *ns = R_NEW (RBufferSparse);
+			RBufferSparse *ns = RZ_NEW (RBufferSparse);
 			ns->from = s->from;
 			ns->to = newsize;
 			ns->size = ns->to - ns->from;
@@ -154,10 +154,10 @@ static st64 buf_sparse_read(RBuffer *b, ut8 *buf, ut64 len) {
 		}
 		if (priv->offset < c->to && c->from < priv->offset + len) {
 			if (priv->offset < c->from) {
-				ut64 l = R_MIN (priv->offset + len - c->from, c->size);
+				ut64 l = RZ_MIN (priv->offset + len - c->from, c->size);
 				memcpy (buf + c->from - priv->offset, c->data, l);
 			} else {
-				ut64 l = R_MIN (c->to - priv->offset, len);
+				ut64 l = RZ_MIN (c->to - priv->offset, len);
 				memcpy (buf, c->data + priv->offset - c->from, l);
 			}
 		}
@@ -165,7 +165,7 @@ static st64 buf_sparse_read(RBuffer *b, ut8 *buf, ut64 len) {
 	if (priv->offset > max) {
 		return -1;
 	}
-	ut64 r = R_MIN (max - priv->offset, len);
+	ut64 r = RZ_MIN (max - priv->offset, len);
 	priv->offset += r;
 	return r;
 }
@@ -185,13 +185,13 @@ static st64 buf_sparse_seek(RBuffer *b, st64 addr, int whence) {
 	}
 
 	switch (whence) {
-	case R_BUF_CUR:
+	case RZ_BUF_CUR:
 		priv->offset += addr;
 		break;
-	case R_BUF_SET:
+	case RZ_BUF_SET:
 		priv->offset = addr;
 		break;
-	case R_BUF_END:
+	case RZ_BUF_END:
 		if (!sparse_limits (priv->sparse, &max)) {
 			max = 0;
 		}

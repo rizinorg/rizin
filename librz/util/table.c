@@ -52,7 +52,7 @@ static void __table_adjust(RTable *t) {
 			int itemLength = rz_str_len_utf8_ansi (item) + 1;
 			RTableColumn *c = rz_list_get_n (t->cols, ncol);
 			if (c) {
-				c->width = R_MAX (c->width, itemLength);
+				c->width = RZ_MAX (c->width, itemLength);
 			}
 			ncol ++;
 		}
@@ -72,7 +72,7 @@ RZ_API void rz_table_column_free(void *_col) {
 }
 
 RZ_API RTableColumn *rz_table_column_clone(RTableColumn *col) {
-	RTableColumn *c = R_NEW0 (RTableColumn);
+	RTableColumn *c = RZ_NEW0 (RTableColumn);
 	if (!c) {
 		return NULL;
 	}
@@ -82,7 +82,7 @@ RZ_API RTableColumn *rz_table_column_clone(RTableColumn *col) {
 }
 
 RZ_API RTable *rz_table_new(void) {
-	RTable *t = R_NEW0 (RTable);
+	RTable *t = RZ_NEW0 (RTable);
 	if (t) {
 		t->showHeader = true;
 		t->cols = rz_list_newf (rz_table_column_free);
@@ -102,7 +102,7 @@ RZ_API void rz_table_free(RTable *t) {
 }
 
 RZ_API void rz_table_add_column(RTable *t, RTableColumnType *type, const char *name, int maxWidth) {
-	RTableColumn *c = R_NEW0 (RTableColumn);
+	RTableColumn *c = RZ_NEW0 (RTableColumn);
 	if (c) {
 		c->name = strdup (name);
 		c->maxWidth = maxWidth;
@@ -115,7 +115,7 @@ RZ_API void rz_table_add_column(RTable *t, RTableColumnType *type, const char *n
 }
 
 RZ_API RTableRow *rz_table_row_new(RzList *items) {
-	RTableRow *row = R_NEW (RTableRow);
+	RTableRow *row = RZ_NEW (RTableRow);
 	row->items = items;
 	return row;
 }
@@ -124,7 +124,7 @@ static bool __addRow(RTable *t, RzList *items, const char *arg, int col) {
 	int itemLength = rz_str_len_utf8_ansi (arg) + 1;
 	RTableColumn *c = rz_list_get_n (t->cols, col);
 	if (c) {
-		c->width = R_MAX (c->width, itemLength);
+		c->width = RZ_MAX (c->width, itemLength);
 		rz_list_append (items, strdup (arg));
 		return true;
 	}
@@ -135,7 +135,7 @@ RZ_API void rz_table_add_row_list(RTable *t, RzList *items) {
 	RTableRow *row = rz_table_row_new (items);
 	rz_list_append (t->rows, row);
 	// throw warning if not enough columns defined in header
-	t->totalCols = R_MAX (t->totalCols, rz_list_length (items));
+	t->totalCols = RZ_MAX (t->totalCols, rz_list_length (items));
 }
 
 RZ_API void rz_table_set_columnsf(RTable *t, const char *fmt, ...) {
@@ -243,7 +243,7 @@ RZ_API void rz_table_add_row(RTable *t, const char *name, ...) {
 	RTableRow *row = rz_table_row_new (items);
 	rz_list_append (t->rows, row);
 	// throw warning if not enough columns defined in header
-	t->totalCols = R_MAX (t->totalCols, rz_list_length (items));
+	t->totalCols = RZ_MAX (t->totalCols, rz_list_length (items));
 }
 
 // import / export
@@ -253,13 +253,13 @@ static int __strbuf_append_col_aligned_fancy(RTable *t, RStrBuf *sb, RTableColum
 	const char *v_line = (cons && (cons->use_utf8 ||  cons->use_utf8_curvy)) ? RUNE_LINE_VERT : "|";
 	int ll = rz_strbuf_length (sb);
 	switch (col->align) {
-	case R_TABLE_ALIGN_LEFT:
+	case RZ_TABLE_ALIGN_LEFT:
 		rz_strbuf_appendf (sb, "%s %-*s ", v_line, col->width, str);
 		break;
-	case R_TABLE_ALIGN_RIGHT:
+	case RZ_TABLE_ALIGN_RIGHT:
 		rz_strbuf_appendf (sb, "%s %*s ", v_line, col->width, str);
 		break;
-	case R_TABLE_ALIGN_CENTER:
+	case RZ_TABLE_ALIGN_CENTER:
 		{
 			int len = rz_str_len_utf8 (str);
 			int pad = (col->width - len) / 2;
@@ -332,7 +332,7 @@ RZ_API char *rz_table_tofancystring(RTable *t) {
 			RTableColumn *col = rz_list_get_n (t->cols, c);
 			if (col) {
 				int l = __strbuf_append_col_aligned_fancy (t, sb, col, item);
-				len = R_MAX (len, l);
+				len = RZ_MAX (len, l);
 			}
 			c++;
 		}
@@ -346,7 +346,7 @@ RZ_API char *rz_table_tofancystring(RTable *t) {
 		rz_list_foreach (t->cols, iter, col) {
 			char *num = col->total == -1 ? "" : sdb_itoa (col->total, tmp, 10);
 			int l = __strbuf_append_col_aligned_fancy (t, sb, col, num);
-			len = R_MAX (len, l);
+			len = RZ_MAX (len, l);
 		}
 		rz_strbuf_appendf (sb, "%s\n", v_line);
 	}
@@ -370,17 +370,17 @@ static int __strbuf_append_col_aligned(RStrBuf *sb, RTableColumn *col, const cha
 			}
 		}
 		switch (col->align) {
-		case R_TABLE_ALIGN_LEFT:
+		case RZ_TABLE_ALIGN_LEFT:
 			pad = rz_str_repeat (" ", padlen);
 			rz_strbuf_appendf (sb, "%-*s%s", col->width, str, pad);
 			free (pad);
 			break;
-		case R_TABLE_ALIGN_RIGHT:
+		case RZ_TABLE_ALIGN_RIGHT:
 			pad = rz_str_repeat (" ", padlen);
 			rz_strbuf_appendf (sb, "%s%*s ", pad, col->width, str);
 			free (pad);
 			break;
-		case R_TABLE_ALIGN_CENTER:
+		case RZ_TABLE_ALIGN_CENTER:
 			{
 				int pad = (col->width - len2) / 2;
 				int left = col->width - (pad * 2 + len2);
@@ -422,10 +422,10 @@ RZ_API char *rz_table_tosimplestring(RTable *t) {
 		rz_list_foreach (t->cols, iter, col) {
 			bool nopad = !iter->n;
 			int ll = __strbuf_append_col_aligned (sb, col, col->name, nopad);
-			maxlen = R_MAX (maxlen, ll);
+			maxlen = RZ_MAX (maxlen, ll);
 		}
 		int len = rz_str_len_utf8_ansi (rz_strbuf_get (sb));
-		char *l = rz_str_repeat (h_line, R_MAX (maxlen, len));
+		char *l = rz_str_repeat (h_line, RZ_MAX (maxlen, len));
 		if (l) {
 			rz_strbuf_appendf (sb, "\n%s\n", l);
 			free (l);

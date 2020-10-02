@@ -1,5 +1,5 @@
-#ifndef R_STR_CONSTPOOL_H
-#define R_STR_CONSTPOOL_H
+#ifndef RZ_STR_CONSTPOOL_H
+#define RZ_STR_CONSTPOOL_H
 
 #include <rz_types.h>
 #include <sdbht.h>
@@ -27,4 +27,4 @@ RZ_API const char *rz_str_constpool_get(RStrConstPool *pool, const char *str);
 }
 #endif
 
-#endif //R_STR_CONSTPOOL_H
+#endif //RZ_STR_CONSTPOOL_H

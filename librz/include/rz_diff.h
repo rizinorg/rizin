@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(rz_diff);
+RZ_LIB_VERSION_HEADER(rz_diff);
 
 #define Color_INSERT Color_BGREEN
 #define Color_DELETE Color_BRED

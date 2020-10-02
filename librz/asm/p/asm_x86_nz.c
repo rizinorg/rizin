@@ -5195,13 +5195,13 @@ RzAsmPlugin rz_asm_plugin_x86_nz = {
 	.license = "LGPL3",
 	.arch = "x86",
 	.bits = 16 | 32 | 64,
-	.endian = R_SYS_ENDIAN_LITTLE,
+	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.assemble = &assemble
 };
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_x86_nz,
 	.version = RZ_VERSION
 };

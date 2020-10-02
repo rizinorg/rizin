@@ -41,14 +41,14 @@ RzAsmPlugin rz_asm_plugin_xap = {
 	.arch = "xap",
 	.license = "PD",
 	.bits = 16,
-	.endian = R_SYS_ENDIAN_LITTLE,
+	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.desc = "XAP4 RISC (CSR)",
 	.disassemble = &disassemble
 };
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_xap,
 	.version = RZ_VERSION
 };

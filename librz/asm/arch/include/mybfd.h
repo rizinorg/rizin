@@ -2154,7 +2154,7 @@ struct reloc_howto_struct
       external idea of what a reloc number is stored
       in this field.  For example, a PC relative word relocation
       in a coff environment has the type 023 - because that's
-      what the outside world calls a R_PCRWORD reloc.  */
+      what the outside world calls a RZ_PCRWORD reloc.  */
   unsigned int type;
 
   /*  The value the final relocation is shifted right by.  This drops
@@ -2911,9 +2911,9 @@ field in the instruction.  */
 
 /* Thumb 7-, 9-, 12-, 20-, 23-, and 25-bit pc-relative branches.
 The lowest bit must be zero and is not stored in the instruction.
-Note that the corresponding ELF R_ARM_THM_JUMPnn constant has an
+Note that the corresponding ELF RZ_ARM_THM_JUMPnn constant has an
 "nn" one smaller in all cases.  Note further that BRANCH23
-corresponds to R_ARM_THM_CALL.  */
+corresponds to RZ_ARM_THM_CALL.  */
   BFD_RELOC_THUMB_PCREL_BRANCH7,
   BFD_RELOC_THUMB_PCREL_BRANCH9,
   BFD_RELOC_THUMB_PCREL_BRANCH12,

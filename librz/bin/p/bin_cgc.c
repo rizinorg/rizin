@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2019 - ret2libc, pancake */
 
-#define R_BIN_CGC 1
+#define RZ_BIN_CGC 1
 #include "bin_elf.inc"
 
 extern struct rz_bin_dbginfo_t rz_bin_dbginfo_elf;

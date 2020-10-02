@@ -3,7 +3,7 @@
 #include "rz_util/rz_spaces.h"
 
 RZ_API RSpaces *rz_spaces_new(const char *name) {
-	RSpaces *sp = R_NEW0 (RSpaces);
+	RSpaces *sp = RZ_NEW0 (RSpaces);
 	if (!sp || !rz_spaces_init (sp, name)) {
 		free (sp);
 		return NULL;
@@ -62,7 +62,7 @@ RZ_API void rz_spaces_fini(RSpaces *sp) {
 	rz_event_free (sp->event);
 	sp->event = NULL;
 	sp->current = NULL;
-	R_FREE (sp->name);
+	RZ_FREE (sp->name);
 }
 
 RZ_API void rz_spaces_purge(RSpaces *sp) {
@@ -102,7 +102,7 @@ RZ_API RSpace *rz_spaces_add(RSpaces *sp, const char *name) {
 		return s;
 	}
 
-	s = R_NEW0 (RSpace);
+	s = RZ_NEW0 (RSpace);
 	if (!s) {
 		return NULL;
 	}
@@ -129,7 +129,7 @@ static inline bool spaces_unset_single(RSpaces *sp, const char *name) {
 	}
 
 	RSpaceEvent ev = { .data.unset.space = space };
-	rz_event_send (sp->event, R_SPACE_EVENT_UNSET, &ev);
+	rz_event_send (sp->event, RZ_SPACE_EVENT_UNSET, &ev);
 	if (sp->current == space) {
 		sp->current = NULL;
 	}
@@ -168,7 +168,7 @@ RZ_API int rz_spaces_count(RSpaces *sp, const char *name) {
 		return 0;
 	}
 	RSpaceEvent ev = { .data.count.space = s, .res = 0 };
-	rz_event_send (sp->event, R_SPACE_EVENT_COUNT, &ev);
+	rz_event_send (sp->event, RZ_SPACE_EVENT_COUNT, &ev);
 	return ev.res;
 }
 
@@ -216,7 +216,7 @@ RZ_API bool rz_spaces_rename(RSpaces *sp, const char *oname, const char *nname) 
 		.data.rename.newname = nname,
 		.data.rename.space = s
 	};
-	rz_event_send (sp->event, R_SPACE_EVENT_RENAME, &ev);
+	rz_event_send (sp->event, RZ_SPACE_EVENT_RENAME, &ev);
 
 	rz_rbtree_delete (&sp->spaces, (void *)s->name, name_space_cmp, NULL, NULL, NULL);
 	free (s->name);

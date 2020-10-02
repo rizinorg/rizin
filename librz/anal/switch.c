@@ -3,7 +3,7 @@
 #include <rz_anal.h>
 
 static RzAnalSwitchOp *__switch_op_new(void) {
-	RzAnalSwitchOp * swop = R_NEW0 (RzAnalSwitchOp);
+	RzAnalSwitchOp * swop = RZ_NEW0 (RzAnalSwitchOp);
 	if (swop) {
 		swop->cases = rz_list_new ();
 		if (!swop->cases) {
@@ -28,7 +28,7 @@ RZ_API RzAnalSwitchOp *rz_anal_switch_op_new(ut64 addr, ut64 min_val, ut64 max_v
 }
 
 RZ_API RzAnalCaseOp * rz_anal_case_op_new(ut64 addr, ut64 val, ut64 jump) {
-	RzAnalCaseOp *c = R_NEW0 (RzAnalCaseOp);
+	RzAnalCaseOp *c = RZ_NEW0 (RzAnalCaseOp);
 	if (c) {
 		c->addr = addr;
 		c->value = val;

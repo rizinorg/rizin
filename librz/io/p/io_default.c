@@ -28,9 +28,9 @@ static int __io_posix_open(const char *file, int perm, int mode) {
 	}
 #if __WINDOWS__
 	// probably unnecessary to have this ifdef nowadays windows is posix enough
-	if (perm & R_PERM_W) {
+	if (perm & RZ_PERM_W) {
 		fd = rz_sandbox_open (file, O_RDWR, 0);
-		if (fd == -1 && (perm & R_PERM_CREAT)) {
+		if (fd == -1 && (perm & RZ_PERM_CREAT)) {
 			rz_sandbox_creat (file, 0644);
 			fd = rz_sandbox_open (file, O_RDWR | O_CREAT, 0);
 		}
@@ -38,7 +38,7 @@ static int __io_posix_open(const char *file, int perm, int mode) {
 		fd = rz_sandbox_open (file, O_RDONLY | O_BINARY, 0);
 	}
 #else
-	const size_t posixFlags = (perm & R_PERM_W) ? (perm & R_PERM_CREAT)
+	const size_t posixFlags = (perm & RZ_PERM_W) ? (perm & RZ_PERM_CREAT)
 			? (O_RDWR | O_CREAT) : O_RDWR : O_RDONLY;
 	fd = rz_sandbox_open (file, posixFlags, mode);
 #endif
@@ -112,7 +112,7 @@ static void rz_io_def_mmap_free (RzIOMMapFileObj *mmo) {
 
 RzIOMMapFileObj *rz_io_def_mmap_create_new_file(RzIO  *io, const char *filename, int perm, int mode) {
 	rz_return_val_if_fail (io && filename, NULL);
-	RzIOMMapFileObj *mmo = R_NEW0 (RzIOMMapFileObj);
+	RzIOMMapFileObj *mmo = RZ_NEW0 (RzIOMMapFileObj);
 	if (!mmo) {
 		return NULL;
 	}
@@ -127,9 +127,9 @@ RzIOMMapFileObj *rz_io_def_mmap_create_new_file(RzIO  *io, const char *filename,
 	mmo->perm = perm;
 	mmo->mode = mode;
 	mmo->io_backref = io;
-	const int posixFlags = (perm & R_PERM_W)
+	const int posixFlags = (perm & RZ_PERM_W)
 			?(
-				(perm & R_PERM_CREAT)
+				(perm & RZ_PERM_CREAT)
 					? (O_RDWR | O_CREAT)
 					: O_RDWR
 			): O_RDONLY;
@@ -190,7 +190,7 @@ static int rz_io_def_mmap_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 	if (r < 0) {
 		return r;
 	}
-	rz_buf_seek (mmo->buf, r, R_BUF_CUR);
+	rz_buf_seek (mmo->buf, r, RZ_BUF_CUR);
 	io->off += r;
 	return r;
 }
@@ -210,7 +210,7 @@ static int rz_io_def_mmap_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int coun
 	}
 
 	if (mmo && mmo->buf) {
-		if (!(mmo->perm & R_PERM_W)) {
+		if (!(mmo->perm & RZ_PERM_W)) {
 			return -1;
 		}
 		if ( (count + addr > rz_buf_size (mmo->buf)) || rz_buf_size (mmo->buf) == 0) {
@@ -299,7 +299,7 @@ static int __close(RzIODesc *fd) {
 static bool __resize(RzIO *io, RzIODesc *fd, ut64 size) {
 	rz_return_val_if_fail (io && fd && fd->data, false);
 	RzIOMMapFileObj *mmo = fd->data;
-	if (!(mmo->perm & R_PERM_W)) {
+	if (!(mmo->perm & RZ_PERM_W)) {
 		return false;
 	}
 	return rz_io_def_mmap_truncate (mmo, size);
@@ -336,7 +336,7 @@ RzIOPlugin rz_io_plugin_default = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_default,
 	.version = RZ_VERSION
 };

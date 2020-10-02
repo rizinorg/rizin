@@ -11,7 +11,7 @@ extern "C" {
 
 #define FILE_NAME_LEN 256
 
-struct R_PDB7_ROOT_STREAM;
+struct RZ_PDB7_ROOT_STREAM;
 
 typedef struct rz_pdb_t {
 	bool (*pdb_parse)(struct rz_pdb_t *pdb);
@@ -19,7 +19,7 @@ typedef struct rz_pdb_t {
 	void (*print_types)(const struct rz_pdb_t *pdb, PJ *pj, int mode);
 //	FILE *fp;
 	PrintfCallback cb_printf;
-	struct R_PDB7_ROOT_STREAM *root_stream;
+	struct RZ_PDB7_ROOT_STREAM *root_stream;
 	void *stream_map;
 	RzList *pdb_streams;
 	RzList *pdb_streams2;

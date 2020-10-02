@@ -78,10 +78,10 @@ static bool rz_test_chdir(const char *argv0) {
 	char *rz_test_path = rz_file_path (argv0);
 	bool found = false;
 	if (readlink (rz_test_path, src_path, sizeof (src_path)) != -1) {
-		char *p = strstr (src_path, R_SYS_DIR "binrz"R_SYS_DIR"rz_test"R_SYS_DIR"rz_test");
+		char *p = strstr (src_path, RZ_SYS_DIR "binrz"RZ_SYS_DIR"rz_test"RZ_SYS_DIR"rz_test");
 		if (p) {
 			*p = 0;
-			strcat (src_path, R_SYS_DIR"test"R_SYS_DIR);
+			strcat (src_path, RZ_SYS_DIR"test"RZ_SYS_DIR);
 			if (rz_file_is_directory (src_path)) {
 				if (chdir (src_path) != -1) {
 					eprintf ("Running from %s\n", src_path);
@@ -109,7 +109,7 @@ static bool rz_test_chdir_fromtest(const char *test_path) {
 	}
 	char *abs_test_path = rz_file_abspath (test_path);
 	if (!rz_file_is_directory (abs_test_path)) {
-		char *last_slash = (char *)rz_str_lchr (abs_test_path, R_SYS_DIR[0]);
+		char *last_slash = (char *)rz_str_lchr (abs_test_path, RZ_SYS_DIR[0]);
 		if (last_slash) {
 			*last_slash = 0;
 		}
@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
 		HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
 		DWORD mode;
 		int i;
-		for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
+		for (i = 0; i < RZ_ARRAY_SIZE (streams); i++) {
 			GetConsoleMode (streams[i], &mode);
 			SetConsoleMode (streams[i],
 			                mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
@@ -358,7 +358,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	R_FREE (cwd);
+	RZ_FREE (cwd);
 	uint32_t loaded_tests = rz_pvector_len (&state.db->tests);
 	printf ("Loaded %u tests.\n", loaded_tests);
 	if (nothing) {
@@ -523,7 +523,7 @@ static RzThreadFunctionRet worker_th(RzThread *th) {
 		rz_th_cond_signal (state->cond);
 	}
 	rz_th_lock_leave (state->lock);
-	return R_TH_STOP;
+	return RZ_TH_STOP;
 }
 
 static void print_diff(const char *actual, const char *expected, bool diffchar) {
@@ -661,7 +661,7 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 		if (!name) {
 			continue;
 		}
-		printf ("\n"R_CONS_CURSOR_UP R_CONS_CLEAR_LINE);
+		printf ("\n"RZ_CONS_CURSOR_UP RZ_CONS_CLEAR_LINE);
 		switch (result->result) {
 		case R2R_TEST_RESULT_OK:
 			printf (Color_GREEN"[OK]"Color_RESET);
@@ -699,7 +699,7 @@ static void print_state(R2RState *state, ut64 prev_completed) {
 	print_new_results (state, prev_completed);
 
 	// [x/x] OK  42 BR  0 ...
-	printf (R_CONS_CLEAR_LINE);
+	printf (RZ_CONS_CLEAR_LINE);
 	int w = printf ("[%"PFMT64u"/%"PFMT64u"]", (ut64)rz_pvector_len (&state->results), (ut64)rz_pvector_len (&state->db->tests));
 	while (w >= 0 && w < 20) {
 		printf (" ");

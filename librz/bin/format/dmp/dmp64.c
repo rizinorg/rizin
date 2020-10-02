@@ -34,7 +34,7 @@ static int rz_bin_dmp64_init_memory_runs(struct rz_bin_dmp64_obj_t *obj) {
 	for (i = 0; i < num_runs; i++) {
 		dmp_p_memory_run *run = &(runs[i]);
 		for (j = 0; j < run->PageCount; j++) {
-			dmp_page_desc *page = R_NEW0 (dmp_page_desc);
+			dmp_page_desc *page = RZ_NEW0 (dmp_page_desc);
 			if (!page) {
 				free (runs);
 				return false;
@@ -54,8 +54,8 @@ static int rz_bin_dmp64_init_memory_runs(struct rz_bin_dmp64_obj_t *obj) {
 }
 
 static int rz_bin_dmp64_init_header(struct rz_bin_dmp64_obj_t *obj) {
-	if (!(obj->header = R_NEW0 (dmp64_header))) {
-		rz_sys_perror ("R_NEW0 (header)");
+	if (!(obj->header = RZ_NEW0 (dmp64_header))) {
+		rz_sys_perror ("RZ_NEW0 (header)");
 		return false;
 	}
 	if (rz_buf_read_at (obj->b, 0, (ut8*)obj->header, sizeof (dmp64_header)) < 0) {
@@ -86,7 +86,7 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 		if (!rz_bitmap_test(bitmap, i)) {
 			continue;
 		}
-		dmp_page_desc *page = R_NEW0 (dmp_page_desc);
+		dmp_page_desc *page = RZ_NEW0 (dmp_page_desc);
 		if (!page) {
 			return false;
 		}
@@ -105,8 +105,8 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 }
 
 static int rz_bin_dmp64_init_bmp_header(struct rz_bin_dmp64_obj_t *obj) {
-	if (!(obj->bmp_header = R_NEW0 (dmp_bmp_header))) {
-		rz_sys_perror ("R_NEW0 (dmp_bmp_header)");
+	if (!(obj->bmp_header = RZ_NEW0 (dmp_bmp_header))) {
+		rz_sys_perror ("RZ_NEW0 (dmp_bmp_header)");
 		return false;
 	}
 	if (rz_buf_read_at (obj->b, sizeof (dmp64_header), (ut8*)obj->bmp_header, sizeof (dmp_bmp_header) - sizeof (ut8*)) < 0) {
@@ -164,7 +164,7 @@ void rz_bin_dmp64_free(struct rz_bin_dmp64_obj_t *obj) {
 }
 
 struct rz_bin_dmp64_obj_t *rz_bin_dmp64_new_buf(RBuffer* buf) {
-	struct rz_bin_dmp64_obj_t *obj = R_NEW0 (struct rz_bin_dmp64_obj_t);
+	struct rz_bin_dmp64_obj_t *obj = RZ_NEW0 (struct rz_bin_dmp64_obj_t);
 	if (!obj) {
 		return NULL;
 	}

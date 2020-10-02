@@ -1,5 +1,5 @@
-#ifndef R_SANDBOX_H
-#define R_SANDBOX_H
+#ifndef RZ_SANDBOX_H
+#define RZ_SANDBOX_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,4 +46,4 @@ RZ_API int rz_sandbox_kill(int pid, int sig);
 }
 #endif
 
-#endif //  R_SANDBOX_H
+#endif //  RZ_SANDBOX_H

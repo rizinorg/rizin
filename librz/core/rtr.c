@@ -186,7 +186,7 @@ RZ_API int rz_core_rtr_http_stop(RzCore *u) {
 			core->config, "http.port");
 		sock = rz_socket_new (0);
 		(void)rz_socket_connect (sock, "localhost",
-			port, R_SOCKET_PROTO_TCP, timeout);
+			port, RZ_SOCKET_PROTO_TCP, timeout);
 		rz_socket_free (sock);
 	}
 	rz_socket_free (s);
@@ -363,9 +363,9 @@ static int rz_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 		// dbg->reason.signum and dbg->reason.tid are not correct for native
 		// debugger. This is a hack
 		switch (core->dbg->reason.type) {
-		case R_DEBUG_REASON_BREAKPOINT:
-		case R_DEBUG_REASON_STEP:
-		case R_DEBUG_REASON_TRAP:
+		case RZ_DEBUG_REASON_BREAKPOINT:
+		case RZ_DEBUG_REASON_STEP:
+		case RZ_DEBUG_REASON_TRAP:
 		default: // remove when possible
 			return snprintf (out_buf, max_len - 1, "T05thread:%x;",
 					 core->dbg->tid);
@@ -421,7 +421,7 @@ static int rz_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 			}
 			break;
 		case 'r': // dr
-			rz_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false);
+			rz_debug_reg_sync (core->dbg, RZ_REG_TYPE_ALL, false);
 			be = rz_config_get_i (core->config, "cfg.bigendian");
 			if (isspace ((ut8)cmd[2])) { // dr reg
 				const char *name, *val_ptr;
@@ -430,7 +430,7 @@ static int rz_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 				name = cmd + 3;
 				// Temporarily using new_cmd to store reg name
 				if ((val_ptr = strchr (name, '='))) {
-					strncpy (new_cmd, name, R_MIN (val_ptr - name, sizeof (new_cmd) - 1));
+					strncpy (new_cmd, name, RZ_MIN (val_ptr - name, sizeof (new_cmd) - 1));
 				} else {
 					strncpy (new_cmd, name, sizeof (new_cmd) - 1);
 				}
@@ -520,7 +520,7 @@ static int rz_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 				out_buf[0] = 'l';
 				return 0;
 			}
-			sz = R_MIN (max_len, len + 2);
+			sz = RZ_MIN (max_len, len + 2);
 			len = snprintf (out_buf, sz, "l%s", desc ? (desc->name + off) : "");
 			if (len >= sz) {
 				// There's more left
@@ -585,7 +585,7 @@ static int rz_core_rtr_gdb_run(RzCore *core, int launch, const char *path) {
 		args = "";
 	}
 
-	if (!rz_core_file_open (core, file, R_PERM_R, 0)) {
+	if (!rz_core_file_open (core, file, RZ_PERM_R, 0)) {
 		eprintf ("Cannot open file (%s)\n", file);
 		return -1;
 	}
@@ -600,7 +600,7 @@ static int rz_core_rtr_gdb_run(RzCore *core, int launch, const char *path) {
 		eprintf ("gdbserver: Cannot listen on port: %s\n", port);
 		return -1;
 	}
-	if (!(g = R_NEW0 (libgdbr_t))) {
+	if (!(g = RZ_NEW0 (libgdbr_t))) {
 		rz_socket_free (sock);
 		eprintf ("gdbserver: Cannot alloc libgdbr instance\n");
 		return -1;
@@ -892,7 +892,7 @@ RZ_API void rz_core_rtr_session(RzCore *core, const char *input) {
 
 static bool rz_core_rtr_rap_run(RzCore *core, const char *input) {
 	char *file = rz_str_newf ("rap://%s", input);
-	int flags = R_PERM_RW;
+	int flags = RZ_PERM_RW;
 	RzIODesc *fd = rz_io_open_nomap (core->io, file, flags, 0644);
 	if (fd) {
 		if (rz_io_is_listener (core->io)) {
@@ -918,7 +918,7 @@ static RzThreadFunctionRet rz_core_rtr_rap_thread(RzThread *th) {
 	if (!rt || !rt->core) {
 		return false;
 	}
-	return rz_core_rtr_rap_run (rt->core, rt->input) ? R_TH_REPEAT : R_TH_STOP;
+	return rz_core_rtr_rap_run (rt->core, rt->input) ? RZ_TH_REPEAT : RZ_TH_STOP;
 }
 
 RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
@@ -946,7 +946,7 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 			eprintf ("This is experimental and probably buggy. Use at your own risk\n");
 		} else {
 			// TODO: use tasks
-			RapThread *RT = R_NEW0 (RapThread);
+			RapThread *RT = RZ_NEW0 (RapThread);
 			if (RT) {
 				RT->core = core;
 				RT->input = strdup (input + 1);
@@ -986,7 +986,7 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 			return;
 		}
 		rz_socket_close (s);
-		if (!rz_socket_connect (s, rh->host, sdb_fmt ("%d", rh->port), R_SOCKET_PROTO_TCP, 0)) {
+		if (!rz_socket_connect (s, rh->host, sdb_fmt ("%d", rh->port), RZ_SOCKET_PROTO_TCP, 0)) {
 			eprintf ("Error: Cannot connect to '%s' (%d)\n", rh->host, rh->port);
 			rz_socket_free (s);
 			return;
@@ -1054,7 +1054,7 @@ RZ_API char *rz_core_rtr_cmds_query (RzCore *core, const char *host, const char 
 	ut8 buf[1024];
 
 	for (; retries > 0; rz_sys_usleep (10 * 1000)) {
-		if (rz_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, timeout)) {
+		if (rz_socket_connect (s, host, port, RZ_SOCKET_PROTO_TCP, timeout)) {
 			break;
 		}
 		retries--;
@@ -1166,7 +1166,7 @@ static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *bu
 		return;
 	}
 
-	uv_write_t *req = R_NEW (uv_write_t);
+	uv_write_t *req = RZ_NEW (uv_write_t);
 	if (req) {
 		req->data = client_context;
 		uv_buf_t wrbuf = uv_buf_init (client_context->res, (unsigned int) strlen (client_context->res));
@@ -1183,14 +1183,14 @@ static void rtr_cmds_new_connection(uv_stream_t *server, int status) {
 
 	rtr_cmds_context *context = server->loop->data;
 
-	uv_tcp_t *client = R_NEW (uv_tcp_t);
+	uv_tcp_t *client = RZ_NEW (uv_tcp_t);
 	if (!client) {
 		return;
 	}
 
 	uv_tcp_init (server->loop, client);
 	if (uv_accept (server, (uv_stream_t *)client) == 0) {
-		rtr_cmds_client_context *client_context = R_NEW (rtr_cmds_client_context);
+		rtr_cmds_client_context *client_context = RZ_NEW (rtr_cmds_client_context);
 		if (!client_context) {
 			uv_close ((uv_handle_t *)client, NULL);
 			return;
@@ -1235,7 +1235,7 @@ RZ_API int rz_core_rtr_cmds(RzCore *core, const char *port) {
 		return 0;
 	}
 
-	uv_loop_t *loop = R_NEW (uv_loop_t);
+	uv_loop_t *loop = RZ_NEW (uv_loop_t);
 	if (!loop) {
 		return 0;
 	}

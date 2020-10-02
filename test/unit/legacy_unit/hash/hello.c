@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
 
 	io = rz_io_new();
 
-	fd = rz_io_open_nomap (io, argv[1], R_IO_READ, 0);
+	fd = rz_io_open_nomap (io, argv[1], RZ_IO_READ, 0);
 	if (fd == NULL) {
 		eprintf ("Cannot open file\n");
 		return 1;
@@ -45,21 +45,21 @@ int main(int argc, char **argv) {
 		struct rz_hash_t *ctx;
 		const ut8 *c;
 		int i;
-		//rz_hash_init(&ctx, true, R_HASH_ALL);
-		ctx = rz_hash_new (true, R_HASH_ALL);
+		//rz_hash_init(&ctx, true, RZ_HASH_ALL);
+		ctx = rz_hash_new (true, RZ_HASH_ALL);
 		c = rz_hash_do_md5 (ctx, buf, size);
 		printf ("MD5: ");
-		for (i=0;i<R_HASH_SIZE_MD5;i++) { printf("%02x", c[i]); }
+		for (i=0;i<RZ_HASH_SIZE_MD5;i++) { printf("%02x", c[i]); }
 		printf ("\n");
 
 		c = rz_hash_do_sha1 (ctx, buf, size);
 		printf ("SHA1: ");
-		for (i=0;i<R_HASH_SIZE_SHA1;i++) { printf("%02x", c[i]); }
+		for (i=0;i<RZ_HASH_SIZE_SHA1;i++) { printf("%02x", c[i]); }
 		printf ("\n");
 
 		c = rz_hash_do_sha256 (ctx, buf, size);
 		printf ("SHA256: ");
-		for (i=0;i<R_HASH_SIZE_SHA256;i++) { printf("%02x", c[i]); }
+		for (i=0;i<RZ_HASH_SIZE_SHA256;i++) { printf("%02x", c[i]); }
 		printf ("\n");
 		rz_hash_free (ctx);
 	}

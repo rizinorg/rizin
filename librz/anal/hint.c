@@ -36,16 +36,16 @@ static void addr_hint_record_fini(void *element, void *user) {
 	(void)user;
 	RzAnalAddrHintRecord *record = element;
 	switch (record->type) {
-	case R_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET:
+	case RZ_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET:
 		free (record->type_offset);
 		break;
-	case R_ANAL_ADDR_HINT_TYPE_SYNTAX:
+	case RZ_ANAL_ADDR_HINT_TYPE_SYNTAX:
 		free (record->syntax);
 		break;
-	case R_ANAL_ADDR_HINT_TYPE_OPCODE:
+	case RZ_ANAL_ADDR_HINT_TYPE_OPCODE:
 		free (record->opcode);
 		break;
-	case R_ANAL_ADDR_HINT_TYPE_ESIL:
+	case RZ_ANAL_ADDR_HINT_TYPE_ESIL:
 		free (record->esil);
 		break;
 	default:
@@ -199,83 +199,83 @@ static RzAnalRangedHintRecordBase *ensure_ranged_hint_record(RBTree *tree, ut64 
 }
 
 RZ_API void rz_anal_hint_set_offset(RzAnal *a, ut64 addr, const char *typeoff) {
-	SET_HINT (R_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET,
+	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET,
 			  free (r->type_offset);
 		r->type_offset = strdup (typeoff);
 	);
 }
 
 RZ_API void rz_anal_hint_set_nword(RzAnal *a, ut64 addr, int nword) {
-	SET_HINT (R_ANAL_ADDR_HINT_TYPE_NWORD, r->nword = nword;);
+	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_NWORD, r->nword = nword;);
 }
 
 RZ_API void rz_anal_hint_set_jump(RzAnal *a, ut64 addr, ut64 jump) {
-	SET_HINT (R_ANAL_ADDR_HINT_TYPE_JUMP, r->jump = jump;);
+	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_JUMP, r->jump = jump;);
 }
 
 RZ_API void rz_anal_hint_set_fail(RzAnal *a, ut64 addr, ut64 fail) {
-	SET_HINT (R_ANAL_ADDR_HINT_TYPE_FAIL, r->fail = fail;);
+	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_FAIL, r->fail = fail;);
 }
 
 RZ_API void rz_anal_hint_set_newbits(RzAnal *a, ut64 addr, int bits) {
-	SET_HINT (R_ANAL_ADDR_HINT_TYPE_NEW_BITS, r->newbits = bits;);
+	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_NEW_BITS, r->newbits = bits;);
 }
 
 RZ_API void rz_anal_hint_set_high(RzAnal *a, ut64 addr) {
-	SET_HINT (R_ANAL_ADDR_HINT_TYPE_HIGH,);
+	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_HIGH,);
 }
 
 RZ_API void rz_anal_hint_set_immbase(RzAnal *a, ut64 addr, int base) {
 	if (base) {
-		SET_HINT (R_ANAL_ADDR_HINT_TYPE_IMMBASE, r->immbase = base;);
+		SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_IMMBASE, r->immbase = base;);
 	} else {
-		unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_IMMBASE, addr);
+		unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_IMMBASE, addr);
 	}
 }
 
 RZ_API void rz_anal_hint_set_pointer(RzAnal *a, ut64 addr, ut64 ptr) {
-	SET_HINT (R_ANAL_ADDR_HINT_TYPE_PTR, r->ptr = ptr;);
+	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_PTR, r->ptr = ptr;);
 }
 
 RZ_API void rz_anal_hint_set_ret(RzAnal *a, ut64 addr, ut64 val) {
-	SET_HINT (R_ANAL_ADDR_HINT_TYPE_RET, r->retval = val;);
+	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_RET, r->retval = val;);
 }
 
 RZ_API void rz_anal_hint_set_syntax(RzAnal *a, ut64 addr, const char *syn) {
-	SET_HINT (R_ANAL_ADDR_HINT_TYPE_SYNTAX,
+	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_SYNTAX,
 			  free (r->syntax);
 		r->syntax = strdup (syn);
 	);
 }
 
 RZ_API void rz_anal_hint_set_opcode(RzAnal *a, ut64 addr, const char *opcode) {
-	SET_HINT (R_ANAL_ADDR_HINT_TYPE_OPCODE,
+	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_OPCODE,
 			  free (r->opcode);
 		r->opcode = strdup (opcode);
 	);
 }
 
 RZ_API void rz_anal_hint_set_esil(RzAnal *a, ut64 addr, const char *esil) {
-	SET_HINT (R_ANAL_ADDR_HINT_TYPE_ESIL,
+	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_ESIL,
 			  free (r->esil);
 		r->esil = strdup (esil);
 	);
 }
 
 RZ_API void rz_anal_hint_set_type (RzAnal *a, ut64 addr, int type) {
-	SET_HINT (R_ANAL_ADDR_HINT_TYPE_OPTYPE, r->optype = type;);
+	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_OPTYPE, r->optype = type;);
 }
 
 RZ_API void rz_anal_hint_set_size(RzAnal *a, ut64 addr, ut64 size) {
-	SET_HINT (R_ANAL_ADDR_HINT_TYPE_SIZE, r->size = size;);
+	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_SIZE, r->size = size;);
 }
 
 RZ_API void rz_anal_hint_set_stackframe(RzAnal *a, ut64 addr, ut64 size) {
-	SET_HINT (R_ANAL_ADDR_HINT_TYPE_STACKFRAME, r->stackframe = size;);
+	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_STACKFRAME, r->stackframe = size;);
 }
 
 RZ_API void rz_anal_hint_set_val(RzAnal *a, ut64 addr, ut64 v) {
-	SET_HINT (R_ANAL_ADDR_HINT_TYPE_VAL, r->val = v;);
+	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_VAL, r->val = v;);
 }
 
 RZ_API void rz_anal_hint_set_arch(RzAnal *a, ut64 addr, const char *arch) {
@@ -299,67 +299,67 @@ RZ_API void rz_anal_hint_set_bits(RzAnal *a, ut64 addr, int bits) {
 }
 
 RZ_API void rz_anal_hint_unset_size(RzAnal *a, ut64 addr) {
-	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_SIZE, addr);
+	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_SIZE, addr);
 }
 
 RZ_API void rz_anal_hint_unset_esil(RzAnal *a, ut64 addr) {
-	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_ESIL, addr);
+	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_ESIL, addr);
 }
 
 RZ_API void rz_anal_hint_unset_opcode(RzAnal *a, ut64 addr) {
-	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_OPCODE, addr);
+	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_OPCODE, addr);
 }
 
 RZ_API void rz_anal_hint_unset_high(RzAnal *a, ut64 addr) {
-	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_HIGH, addr);
+	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_HIGH, addr);
 }
 
 RZ_API void rz_anal_hint_unset_immbase(RzAnal *a, ut64 addr) {
-	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_IMMBASE, addr);
+	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_IMMBASE, addr);
 }
 
 RZ_API void rz_anal_hint_unset_nword(RzAnal *a, ut64 addr) {
-	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_NWORD, addr);
+	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_NWORD, addr);
 }
 
 RZ_API void rz_anal_hint_unset_syntax(RzAnal *a, ut64 addr) {
-	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_SYNTAX, addr);
+	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_SYNTAX, addr);
 }
 
 RZ_API void rz_anal_hint_unset_pointer(RzAnal *a, ut64 addr) {
-	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_PTR, addr);
+	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_PTR, addr);
 }
 
 RZ_API void rz_anal_hint_unset_ret(RzAnal *a, ut64 addr) {
-	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_RET, addr);
+	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_RET, addr);
 }
 
 RZ_API void rz_anal_hint_unset_offset(RzAnal *a, ut64 addr) {
-	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET, addr);
+	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET, addr);
 }
 
 RZ_API void rz_anal_hint_unset_jump(RzAnal *a, ut64 addr) {
-	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_JUMP, addr);
+	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_JUMP, addr);
 }
 
 RZ_API void rz_anal_hint_unset_fail(RzAnal *a, ut64 addr) {
-	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_FAIL, addr);
+	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_FAIL, addr);
 }
 
 RZ_API void rz_anal_hint_unset_newbits(RzAnal *a, ut64 addr) {
-	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_NEW_BITS, addr);
+	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_NEW_BITS, addr);
 }
 
 RZ_API void rz_anal_hint_unset_val (RzAnal *a, ut64 addr) {
-	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_VAL, addr);
+	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_VAL, addr);
 }
 
 RZ_API void rz_anal_hint_unset_type (RzAnal *a, ut64 addr) {
-	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_OPTYPE, addr);
+	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_OPTYPE, addr);
 }
 
 RZ_API void rz_anal_hint_unset_stackframe(RzAnal *a, ut64 addr) {
-	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_STACKFRAME, addr);
+	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_STACKFRAME, addr);
 }
 
 RZ_API void rz_anal_hint_unset_arch(RzAnal *a, ut64 addr) {
@@ -381,7 +381,7 @@ RZ_API void rz_anal_hint_free(RzAnalHint *h) {
 	}
 }
 
-RZ_API R_NULLABLE R_BORROW const char *rz_anal_hint_arch_at(RzAnal *anal, ut64 addr, R_NULLABLE ut64 *hint_addr) {
+RZ_API RZ_NULLABLE RZ_BORROW const char *rz_anal_hint_arch_at(RzAnal *anal, ut64 addr, RZ_NULLABLE ut64 *hint_addr) {
 	RBNode *node = rz_rbtree_upper_bound (anal->arch_hints, &addr, ranged_hint_record_cmp, NULL);
 	if (!node) {
 		if (hint_addr) {
@@ -396,7 +396,7 @@ RZ_API R_NULLABLE R_BORROW const char *rz_anal_hint_arch_at(RzAnal *anal, ut64 a
 	return record->arch;
 }
 
-RZ_API int rz_anal_hint_bits_at(RzAnal *anal, ut64 addr, R_NULLABLE ut64 *hint_addr) {
+RZ_API int rz_anal_hint_bits_at(RzAnal *anal, ut64 addr, RZ_NULLABLE ut64 *hint_addr) {
 	RBNode *node = rz_rbtree_upper_bound (anal->bits_hints, &addr, ranged_hint_record_cmp, NULL);
 	if (!node) {
 		if (hint_addr) {
@@ -411,7 +411,7 @@ RZ_API int rz_anal_hint_bits_at(RzAnal *anal, ut64 addr, R_NULLABLE ut64 *hint_a
 	return record->bits;
 }
 
-RZ_API R_NULLABLE const RzVector/*<const RzAnalAddrHintRecord>*/ *rz_anal_addr_hints_at(RzAnal *anal, ut64 addr) {
+RZ_API RZ_NULLABLE const RzVector/*<const RzAnalAddrHintRecord>*/ *rz_anal_addr_hints_at(RzAnal *anal, ut64 addr) {
 	return ht_up_find (anal->addr_hints, addr, NULL);
 }
 
@@ -454,59 +454,59 @@ RZ_API void rz_anal_bits_hints_foreach(RzAnal *anal, RzAnalBitsHintCb cb, void *
 
 static void hint_merge(RzAnalHint *hint, RzAnalAddrHintRecord *record) {
 	switch (record->type) {
-	case R_ANAL_ADDR_HINT_TYPE_IMMBASE:
+	case RZ_ANAL_ADDR_HINT_TYPE_IMMBASE:
 		hint->immbase = record->immbase;
 		break;
-	case R_ANAL_ADDR_HINT_TYPE_JUMP:
+	case RZ_ANAL_ADDR_HINT_TYPE_JUMP:
 		hint->jump = record->jump;
 		break;
-	case R_ANAL_ADDR_HINT_TYPE_FAIL:
+	case RZ_ANAL_ADDR_HINT_TYPE_FAIL:
 		hint->fail = record->fail;
 		break;
-	case R_ANAL_ADDR_HINT_TYPE_STACKFRAME:
+	case RZ_ANAL_ADDR_HINT_TYPE_STACKFRAME:
 		hint->stackframe = record->stackframe;
 		break;
-	case R_ANAL_ADDR_HINT_TYPE_PTR:
+	case RZ_ANAL_ADDR_HINT_TYPE_PTR:
 		hint->ptr = record->ptr;
 		break;
-	case R_ANAL_ADDR_HINT_TYPE_NWORD:
+	case RZ_ANAL_ADDR_HINT_TYPE_NWORD:
 		hint->nword = record->nword;
 		break;
-	case R_ANAL_ADDR_HINT_TYPE_RET:
+	case RZ_ANAL_ADDR_HINT_TYPE_RET:
 		hint->ret = record->retval;
 		break;
-	case R_ANAL_ADDR_HINT_TYPE_NEW_BITS:
+	case RZ_ANAL_ADDR_HINT_TYPE_NEW_BITS:
 		hint->new_bits = record->newbits;
 		break;
-	case R_ANAL_ADDR_HINT_TYPE_SIZE:
+	case RZ_ANAL_ADDR_HINT_TYPE_SIZE:
 		hint->size = record->size;
 		break;
-	case R_ANAL_ADDR_HINT_TYPE_SYNTAX:
+	case RZ_ANAL_ADDR_HINT_TYPE_SYNTAX:
 		hint->syntax = record->syntax ? strdup (record->syntax) : NULL;
 		break;
-	case R_ANAL_ADDR_HINT_TYPE_OPTYPE:
+	case RZ_ANAL_ADDR_HINT_TYPE_OPTYPE:
 		hint->type = record->optype;
 		break;
-	case R_ANAL_ADDR_HINT_TYPE_OPCODE:
+	case RZ_ANAL_ADDR_HINT_TYPE_OPCODE:
 		hint->opcode = record->opcode ? strdup (record->opcode) : NULL;
 		break;
-	case R_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET:
+	case RZ_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET:
 		hint->offset = record->type_offset ? strdup (record->type_offset) : NULL;
 		break;
-	case R_ANAL_ADDR_HINT_TYPE_ESIL:
+	case RZ_ANAL_ADDR_HINT_TYPE_ESIL:
 		hint->esil = record->esil ? strdup (record->esil) : NULL;
 		break;
-	case R_ANAL_ADDR_HINT_TYPE_HIGH:
+	case RZ_ANAL_ADDR_HINT_TYPE_HIGH:
 		hint->high = true;
 		break;
-	case R_ANAL_ADDR_HINT_TYPE_VAL:
+	case RZ_ANAL_ADDR_HINT_TYPE_VAL:
 		hint->val = record->val;
 		break;
 	}
 }
 
 RZ_API RzAnalHint *rz_anal_hint_get(RzAnal *a, ut64 addr) {
-	RzAnalHint *hint = R_NEW0 (RzAnalHint);
+	RzAnalHint *hint = RZ_NEW0 (RzAnalHint);
 	if (!hint) {
 		return NULL;
 	}

@@ -105,7 +105,7 @@ int qnxr_init (libqnxr_t *g) {
 		return -1;
 	g->read_buff = (char *)calloc (DS_DATA_MAX_SIZE * 2, 1);
 	if (!g->read_buff) {
-		R_FREE (g->send_buff);
+		RZ_FREE (g->send_buff);
 		return -1;
 	}
 	g->registers = x86_32;
@@ -636,38 +636,38 @@ ptid_t nto_parse_notify (libqnxr_t *g) {
 
 	switch (g->recv.pkt.hdr.subcmd) {
 	case DSMSG_NOTIFY_PIDUNLOAD:
-		g->notify_type = R_DEBUG_REASON_DEAD;
+		g->notify_type = RZ_DEBUG_REASON_DEAD;
 		break;
 	case DSMSG_NOTIFY_BRK:
 		g->stop_flags = EXTRACT_UNSIGNED_INTEGER (&g->recv.pkt.notify.un.brk.flags, 4);
 		g->stop_pc = EXTRACT_UNSIGNED_INTEGER (&g->recv.pkt.notify.un.brk.ip, 4);
-		g->notify_type = R_DEBUG_REASON_BREAKPOINT;
+		g->notify_type = RZ_DEBUG_REASON_BREAKPOINT;
 		break;
 	case DSMSG_NOTIFY_STEP:
-		g->notify_type = R_DEBUG_REASON_STEP;
+		g->notify_type = RZ_DEBUG_REASON_STEP;
 		break;
 	case DSMSG_NOTIFY_SIGEV:
-		g->notify_type = R_DEBUG_REASON_SIGNAL;
+		g->notify_type = RZ_DEBUG_REASON_SIGNAL;
 		g->signal = host_signal_from_nto (EXTRACT_SIGNED_INTEGER (&g->recv.pkt.notify.un.sigev.signo, 4));
 		break;
 	case DSMSG_NOTIFY_PIDLOAD:
 		eprintf ("%s: notify type DSMSG_NOTIFY_PIDLOAD\n", __func__);
-		g->notify_type = R_DEBUG_REASON_UNKNOWN;
+		g->notify_type = RZ_DEBUG_REASON_UNKNOWN;
 		break;
 	case DSMSG_NOTIFY_DLLLOAD:
 	case DSMSG_NOTIFY_TIDLOAD:
 	case DSMSG_NOTIFY_TIDUNLOAD:
 	case DSMSG_NOTIFY_DLLUNLOAD:
 		eprintf ("%s: notify type DSMSG_NOTIFY_DLLTID\n", __func__);
-		g->notify_type = R_DEBUG_REASON_UNKNOWN;
+		g->notify_type = RZ_DEBUG_REASON_UNKNOWN;
 		break;
 	case DSMSG_NOTIFY_STOPPED:
-		g->notify_type = R_DEBUG_REASON_SWI;
+		g->notify_type = RZ_DEBUG_REASON_SWI;
 		break;
 	default:
 		eprintf ("%s: Unexpected notify type %d\n", __func__,
 			 g->recv.pkt.hdr.subcmd);
-		g->notify_type = R_DEBUG_REASON_UNKNOWN;
+		g->notify_type = RZ_DEBUG_REASON_UNKNOWN;
 	}
 
 	return ptid_build (pid, tid);

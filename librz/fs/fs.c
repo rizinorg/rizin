@@ -12,18 +12,18 @@
 # endif
 #endif
 
-R_LIB_VERSION (rz_fs);
+RZ_LIB_VERSION (rz_fs);
 
 static RzFSPlugin* fs_static_plugins[] = {
-	R_FS_STATIC_PLUGINS
+	RZ_FS_STATIC_PLUGINS
 };
 
 RZ_API RzFS* rz_fs_new(void) {
 	int i;
 	RzFSPlugin* static_plugin;
-	RzFS* fs = R_NEW0 (RzFS);
+	RzFS* fs = RZ_NEW0 (RzFS);
 	if (fs) {
-		fs->view = R_FS_VIEW_NORMAL;
+		fs->view = RZ_FS_VIEW_NORMAL;
 		fs->roots = rz_list_new ();
 		if (!fs->roots) {
 			rz_fs_free (fs);
@@ -38,7 +38,7 @@ RZ_API RzFS* rz_fs_new(void) {
 		fs->plugins->free = free;
 		// XXX fs->roots->free = rz_fs_plugin_free;
 		for (i = 0; fs_static_plugins[i]; i++) {
-			static_plugin = R_NEW (RzFSPlugin);
+			static_plugin = RZ_NEW (RzFSPlugin);
 			if (!static_plugin) {
 				continue;
 			}
@@ -81,7 +81,7 @@ RZ_API void rz_fs_add(RzFS* fs, RzFSPlugin* p) {
 	if (p && p->init) {
 		p->init ();
 	}
-	RzFSPlugin* sp = R_NEW0 (RzFSPlugin);
+	RzFSPlugin* sp = RZ_NEW0 (RzFSPlugin);
 	if (sp) {
 		if (p) {
 			memcpy (sp, p, sizeof (RzFSPlugin));
@@ -268,7 +268,7 @@ RZ_API RzFSFile* rz_fs_open(RzFS* fs, const char* p, bool create) {
 // NOTE: close doesnt free
 RZ_API void rz_fs_close(RzFS* fs, RzFSFile* file) {
 	if (fs && file) {
-		R_FREE (file->data);
+		RZ_FREE (file->data);
 		if (file->p && file->p->close) {
 			file->p->close (file);
 		}
@@ -376,14 +376,14 @@ RZ_API int rz_fs_dir_dump(RzFS* fs, const char* path, const char* name) {
 		strcat (npath, file->name);
 		switch (file->type) {
 		// DON'T FOLLOW MOUNTPOINTS
-		case R_FS_FILE_TYPE_DIRECTORY:
+		case RZ_FS_FILE_TYPE_DIRECTORY:
 			if (!rz_fs_dir_dump (fs, npath, str)) {
 				free (npath);
 				free (str);
 				return false;
 			}
 			break;
-		case R_FS_FILE_TYPE_REGULAR:
+		case RZ_FS_FILE_TYPE_REGULAR:
 			item = rz_fs_open (fs, npath, false);
 			if (item) {
 				rz_fs_read (fs, item, 0, item->size);
@@ -422,7 +422,7 @@ static void rz_fs_find_off_aux(RzFS* fs, const char* name, ut64 offset, RzList* 
 		strcat (found, "/");
 		strcat (found, item->name);
 
-		if (item->type == R_FS_FILE_TYPE_DIRECTORY) {
+		if (item->type == RZ_FS_FILE_TYPE_DIRECTORY) {
 			rz_fs_find_off_aux (fs, found, offset, list);
 		} else {
 			file = rz_fs_open (fs, found, false);
@@ -469,7 +469,7 @@ static void rz_fs_find_name_aux(RzFS* fs, const char* name, const char* glob, Rz
 		if (!strcmp (item->name, ".") || !strcmp (item->name, "..")) {
 			continue;
 		}
-		if (item->type == R_FS_FILE_TYPE_DIRECTORY) {
+		if (item->type == RZ_FS_FILE_TYPE_DIRECTORY) {
 			found = (char*) malloc (strlen (name) + strlen (item->name) + 2);
 			if (!found) {
 				break;
@@ -568,14 +568,14 @@ static RzFSPartitionType partitions[] = {
 };
 
 RZ_API const char* rz_fs_partition_type_get(int n) {
-	if (n < 0 || n >= R_FS_PARTITIONS_LENGTH) {
+	if (n < 0 || n >= RZ_FS_PARTITIONS_LENGTH) {
 		return NULL;
 	}
 	return partitions[n].name;
 }
 
 RZ_API int rz_fs_partition_get_size(void) {
-	return R_FS_PARTITIONS_LENGTH;
+	return RZ_FS_PARTITIONS_LENGTH;
 }
 
 RZ_API RzList* rz_fs_partitions(RzFS* fs, const char* ptype, ut64 delta) {
@@ -672,11 +672,11 @@ RZ_API char* rz_fs_name(RzFS* fs, ut64 offset) {
 
 	for (i = 0; fstypes[i].name; i++) {
 		RzFSType* f = &fstypes[i];
-		len = R_MIN (f->buflen, sizeof (buf) - 1);
+		len = RZ_MIN (f->buflen, sizeof (buf) - 1);
 		fs->iob.read_at (fs->iob.io, offset + f->bufoff, buf, len);
 		if (f->buflen > 0 && !memcmp (buf, f->buf, f->buflen)) {
 			ret = true;
-			len = R_MIN (f->bytelen, sizeof (buf));
+			len = RZ_MIN (f->bytelen, sizeof (buf));
 			fs->iob.read_at (fs->iob.io, offset + f->byteoff, buf, len);
 			// for (j = 0; j < f->bytelen; j++) {
 			for (j = 0; j < len; j++) {

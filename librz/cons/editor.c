@@ -88,7 +88,7 @@ RZ_API char *rz_cons_editor(const char *file, const char *str) {
 		bytes = (int)sz;
 		if (!lines) {
 			eprintf ("Failed to load '%s'.\n", file);
-			R_FREE (path);
+			RZ_FREE (path);
 			return NULL;
 		}
 		nlines = rz_str_split (lines, '\n');

@@ -5,7 +5,7 @@
 #include <rz_main.h>
 #include <rz_util.h>
 
-R_LIB_VERSION(rz_main);
+RZ_LIB_VERSION(rz_main);
 
 static RzMain foo[] = {
 	{ "r2", rz_main_rizin },
@@ -24,7 +24,7 @@ RZ_API RzMain *rz_main_new (const char *name) {
 	int i = 0;
 	while (foo[i].name) {
 		if (!strcmp (name, foo[i].name)) {
-			RzMain *m = R_NEW0 (RzMain);
+			RzMain *m = RZ_NEW0 (RzMain);
 			if (m) {
 				m->name = strdup (foo[i].name);
 				m->main = foo[i].main;

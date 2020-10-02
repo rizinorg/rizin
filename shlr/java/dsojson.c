@@ -203,7 +203,7 @@ DsoJsonObj * dso_json_str_new () {
 void dso_json_str_free (void *y) {
 	DsoJsonStr *x = (DsoJsonStr *)y;
 	if (x) {
-		R_FREE (x->data);
+		RZ_FREE (x->data);
 		free (x);
 	}
 }
@@ -424,7 +424,7 @@ DsoJsonObj * dso_json_list_new () {
 		if (x->val._list) {
 			x->val._list->json_list = rz_list_newf ((RzListFree)dso_json_obj_del);
 		} else {
-			R_FREE (x);
+			RZ_FREE (x);
 		}
 	}
 	return x;

@@ -23,13 +23,13 @@ static int __translate_perms(int flags) {
 	int perms = 0;
 	if (flags & IS_RX) {
 		if (flags & IS_DATA) {
-			perms = R_PERM_R;
+			perms = RZ_PERM_R;
 		} else {
-			perms = R_PERM_X;
+			perms = RZ_PERM_X;
 		}
 	}
 	if (!perms) {
-		perms = R_PERM_RWX;
+		perms = RZ_PERM_RWX;
 	}
 	return perms;
 }
@@ -49,7 +49,7 @@ static char *__read_nonnull_str_at(RBuffer *buf, ut64 offset) {
 }
 
 static char *__func_name_from_ord(char *module, ut16 ordinal) {
-	char *path = rz_str_newf (R_JOIN_4_PATHS ("%s", RZ_SDB_FORMAT, "dll", "%s.sdb"), rz_sys_prefix (NULL), module);
+	char *path = rz_str_newf (RZ_JOIN_4_PATHS ("%s", RZ_SDB_FORMAT, "dll", "%s.sdb"), rz_sys_prefix (NULL), module);
 	char *ord = rz_str_newf ("%d", ordinal);
 	char *name;
 	if (rz_file_exists (path)) {
@@ -75,14 +75,14 @@ RzList *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin) {
 	}
 	RzList *segments = rz_list_newf (free);
 	for (i = 0; i < bin->ne_header->SegCount; i++) {
-		RBinSection *bs = R_NEW0 (RBinSection);
+		RBinSection *bs = RZ_NEW0 (RBinSection);
 		NE_image_segment_entry *se = &bin->segment_entries[i];
 		if (!bs) {
 			return segments;
 		}
 		bs->size = se->length;
 		bs->vsize = se->minAllocSz ? se->minAllocSz : 64000;
-		bs->bits = R_SYS_BITS_16;
+		bs->bits = RZ_SYS_BITS_16;
 		bs->is_data = se->flags & IS_DATA;
 		bs->perm = __translate_perms (se->flags);
 		bs->paddr = (ut64)se->offset * bin->alignment;
@@ -130,13 +130,13 @@ RzList *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 		rz_buf_read_at (bin->buf, off, (ut8 *)name, sz);
 		name[sz] = '\0';
 		off += sz;
-		sym = R_NEW0 (RBinSymbol);
+		sym = RZ_NEW0 (RBinSymbol);
 		if (!sym) {
 			break;
 		}
 		sym->name = name;
 		if (!first) {
-			sym->bind = R_BIN_BIND_GLOBAL_STR;
+			sym->bind = RZ_BIN_BIND_GLOBAL_STR;
 		}
 		ut16 entry_off = rz_buf_read_le16_at (bin->buf, off);
 		off += 2;
@@ -155,13 +155,13 @@ RzList *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin) {
 	int i = 1;
 	rz_list_foreach (entries, it, en) {
 		if (!rz_list_find (symbols, &en->paddr, __find_symbol_by_paddr)) {
-			sym = R_NEW0 (RBinSymbol);
+			sym = RZ_NEW0 (RBinSymbol);
 			if (!sym) {
 				break;
 			}
 			sym->name = rz_str_newf ("entry%d", i - 1);
 			sym->paddr = en->paddr;
-			sym->bind = R_BIN_BIND_GLOBAL_STR;
+			sym->bind = RZ_BIN_BIND_GLOBAL_STR;
 			sym->ordinal = i;
 			rz_list_append (symbols, sym);
 		}
@@ -268,7 +268,7 @@ static bool __ne_get_resources(rz_bin_ne_obj_t *bin) {
 	ut32 off = resoff + 2;
 	while (true) {
 		NE_image_typeinfo_entry ti = {0};
-		rz_ne_resource *res = R_NEW0 (rz_ne_resource);
+		rz_ne_resource *res = RZ_NEW0 (rz_ne_resource);
 		if (!res) {
 			break;
 		}
@@ -289,7 +289,7 @@ static bool __ne_get_resources(rz_bin_ne_obj_t *bin) {
 		int i;
 		for (i = 0; i < ti.rtResourceCount; i++) {
 			NE_image_nameinfo_entry ni;
-			rz_ne_resource_entry *ren = R_NEW0 (rz_ne_resource_entry);
+			rz_ne_resource_entry *ren = RZ_NEW0 (rz_ne_resource_entry);
 			if (!ren) {
 				break;
 			}
@@ -318,7 +318,7 @@ RzList *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin) {
 	ut16 off = bin->ne_header->ImportNameTable + bin->header_offset + 1;
 	int i;
 	for (i = 0; i < bin->ne_header->ModRefs; i++) {
-		RBinImport *imp = R_NEW0 (RBinImport);
+		RBinImport *imp = RZ_NEW0 (RBinImport);
 		if (!imp) {
 			break;
 		}
@@ -355,7 +355,7 @@ RzList *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 		return NULL;
 	}
 	if (bin->ne_header->csEntryPoint) {
-		entry = R_NEW0 (RBinAddr);
+		entry = RZ_NEW0 (RBinAddr);
 		if (!entry) {
 			rz_list_free (entries);
 			return NULL;
@@ -376,7 +376,7 @@ RzList *rz_bin_ne_get_entrypoints(rz_bin_ne_obj_t *bin) {
 		off++;
 		int i;
 		for (i = 0; i < bundle_length; i++) {
-			entry = R_NEW0 (RBinAddr);
+			entry = RZ_NEW0 (RBinAddr);
 			if (!entry) {
 				rz_list_free (entries);
 				return NULL;
@@ -445,7 +445,7 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 		}
 		off += 2;
 		while (off < start + length * sizeof (NE_image_reloc_item)) {
-			RBinReloc *reloc = R_NEW0 (RBinReloc);
+			RBinReloc *reloc = RZ_NEW0 (RBinReloc);
 			if (!reloc) {
 				return NULL;
 			}
@@ -454,24 +454,24 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 			reloc->paddr = seg->paddr + rel.offset;
 			switch (rel.type) {
 			case LOBYTE:
-				reloc->type = R_BIN_RELOC_8;
+				reloc->type = RZ_BIN_RELOC_8;
 				break;
 			case SEL_16:
 			case OFF_16:
-				reloc->type = R_BIN_RELOC_16;
+				reloc->type = RZ_BIN_RELOC_16;
 				break;
 			case POI_32:
 			case OFF_32:
-				reloc->type = R_BIN_RELOC_32;
+				reloc->type = RZ_BIN_RELOC_32;
 				break;
 			case POI_48:
-				reloc->type = R_BIN_RELOC_64;
+				reloc->type = RZ_BIN_RELOC_64;
 				break;
 			}
 			
 			ut32 offset;
 			if (rel.flags & (IMPORTED_ORD | IMPORTED_NAME)) {
-				RBinImport *imp = R_NEW0 (RBinImport);
+				RBinImport *imp = RZ_NEW0 (RBinImport);
 				if (!imp) {
 					free (reloc);
 					break;
@@ -532,7 +532,7 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 					
 					offset = rz_buf_read_le16_at (bin->buf, reloc->paddr);
 					RBinReloc *tmp = reloc;
-					reloc = R_NEW0 (RBinReloc);
+					reloc = RZ_NEW0 (RBinReloc);
 					if (!reloc) {
 						break;
 					}
@@ -551,7 +551,7 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 
 void __init(RBuffer *buf, rz_bin_ne_obj_t *bin) {
 	bin->header_offset = rz_buf_read_le16_at (buf, 0x3c);
-	bin->ne_header = R_NEW0 (NE_image_header);
+	bin->ne_header = RZ_NEW0 (NE_image_header);
 	if (!bin->ne_header) {
 		return;
 	}
@@ -586,7 +586,7 @@ void rz_bin_ne_free(rz_bin_ne_obj_t *bin) {
 }
 
 rz_bin_ne_obj_t *rz_bin_ne_new_buf(RBuffer *buf, bool verbose) {
-	rz_bin_ne_obj_t *bin = R_NEW0 (rz_bin_ne_obj_t);
+	rz_bin_ne_obj_t *bin = RZ_NEW0 (rz_bin_ne_obj_t);
 	if (!bin) {
 		return NULL;
 	}

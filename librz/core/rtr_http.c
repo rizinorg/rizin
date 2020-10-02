@@ -3,7 +3,7 @@
 // return 1 on error
 static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char *path) {
 	RConfig *newcfg = NULL, *origcfg = NULL;
-	char headers[128] = R_EMPTY;
+	char headers[128] = RZ_EMPTY;
 	RzSocketHTTPRequest *rs;
 	char buf[32];
 	int ret = 0;
@@ -409,7 +409,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 						rz_socket_http_close (rs);
 						free (path);
 						free (res);
-						R_FREE (dir);
+						RZ_FREE (dir);
 						continue;
 					}
 				}
@@ -522,15 +522,15 @@ static RzThreadFunctionRet rz_core_rtr_http_thread (RzThread *th) {
 	}
 	eprintf ("WARNING: Background webserver requires http.sandbox=false to run properly\n");
 	int ret = rz_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path);
-	R_FREE (ht->path);
+	RZ_FREE (ht->path);
 	if (ret) {
 		int p = rz_config_get_i (ht->core->config, "http.port");
 		rz_config_set_i (ht->core->config, "http.port",  p + 1);
 		if (p >= rz_config_get_i (ht->core->config, "http.maxport")) {
-			return R_TH_STOP;
+			return RZ_TH_STOP;
 		}
 	}
-	return ret ? R_TH_REPEAT : R_TH_STOP;
+	return ret ? RZ_TH_REPEAT : RZ_TH_STOP;
 }
 #endif
 

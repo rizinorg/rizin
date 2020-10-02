@@ -393,7 +393,7 @@ static bool cb_analcpu(void *user, void *data) {
 	rz_anal_set_cpu (core->anal, node->value);
 	/* set pcalign */
 	{
-		int v = rz_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+		int v = rz_anal_archinfo (core->anal, RZ_ANAL_ARCHINFO_ALIGN);
 		rz_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
 	}
 	return true;
@@ -458,10 +458,10 @@ static bool cb_scrrainbow(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
-		core->print->flags |= R_PRINT_FLAGS_RAINBOW;
+		core->print->flags |= RZ_PRINT_FLAGS_RAINBOW;
 		rz_core_cmd0 (core, "ecr");
 	} else {
-		core->print->flags &= (~R_PRINT_FLAGS_RAINBOW);
+		core->print->flags &= (~RZ_PRINT_FLAGS_RAINBOW);
 		rz_core_cmd0 (core, "ecoo");
 	}
 	rz_print_set_flags (core->print, core->print->flags);
@@ -479,9 +479,9 @@ static bool cb_asmsubsec(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
-		core->print->flags |= R_PRINT_FLAGS_SECSUB;
+		core->print->flags |= RZ_PRINT_FLAGS_SECSUB;
 	} else {
-		core->print->flags &= (~R_PRINT_FLAGS_SECSUB);
+		core->print->flags &= (~RZ_PRINT_FLAGS_SECSUB);
 	}
 	rz_print_set_flags (core->print, core->print->flags);
 	return true;
@@ -563,7 +563,7 @@ static bool cb_asmarch(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	const char *asmos = NULL;
-	int bits = R_SYS_BITS;
+	int bits = RZ_SYS_BITS;
 	if (!*node->value || !core || !core->rasm) {
 		return false;
 	}
@@ -582,7 +582,7 @@ static bool cb_asmarch(void *user, void *data) {
 			return false;
 		}
 	}
-	rz_egg_setup (core->egg, node->value, bits, 0, R_SYS_OS);
+	rz_egg_setup (core->egg, node->value, bits, 0, RZ_SYS_OS);
 
 	if (!rz_asm_use (core->rasm, node->value)) {
 		eprintf ("asm.arch: cannot find (%s)\n", node->value);
@@ -672,7 +672,7 @@ static bool cb_asmarch(void *user, void *data) {
 		update_asmcpu_options (core, asmcpu);
 	}
 	{
-		int v = rz_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+		int v = rz_anal_archinfo (core->anal, RZ_ANAL_ARCHINFO_ALIGN);
 		if (v != -1) {
 			rz_config_set_i (core->config, "asm.pcalign", v);
 		} else {
@@ -748,9 +748,9 @@ static bool cb_asmbits(void *user, void *data) {
 // XXX. that should depend on the plugin, not the host os
 #if __WINDOWS__
 #if !defined(_WIN64)
-				core->dbg->bits = R_SYS_BITS_32;
+				core->dbg->bits = RZ_SYS_BITS_32;
 #else
-				core->dbg->bits = R_SYS_BITS_64;
+				core->dbg->bits = RZ_SYS_BITS_64;
 #endif
 #endif
 				char *rp = core->dbg->h->reg_profile (core->dbg);
@@ -777,7 +777,7 @@ static bool cb_asmbits(void *user, void *data) {
 			rz_config_set_i (core->config, "dbg.bpsize", rz_bp_size (core->dbg->bp));
 		}
 		/* set pcalign */
-		int v = rz_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+		int v = rz_anal_archinfo (core->anal, RZ_ANAL_ARCHINFO_ALIGN);
 		rz_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
 	}
 	return ret;
@@ -817,7 +817,7 @@ static bool cb_asmfeatures(void *user, void *data) {
 		print_node_options (node);
 		return 0;
 	}
-	R_FREE (core->rasm->features);
+	RZ_FREE (core->rasm->features);
 	if (node->value[0]) {
 		core->rasm->features = strdup (node->value);
 	}
@@ -893,7 +893,7 @@ static bool cb_asmos(void *user, void *data) {
 	}
 	if (!node->value[0]) {
 		free (node->value);
-		node->value = strdup (R_SYS_OS);
+		node->value = strdup (RZ_SYS_OS);
 	}
 	asmarch = rz_config_node_get (core->config, "asm.arch");
 	if (asmarch) {
@@ -941,7 +941,7 @@ static bool cb_binstrenc (void *user, void *data) {
 		return false;
 	}
 	rz_str_case (enc, false);
-	for (i = 0; i < R_ARRAY_SIZE (names); i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE (names); i++) {
 		const namealiases_pair *pair = &names[i];
 		if (!strcmp (pair->name, enc) || rz_str_cmp_list (pair->aliases, enc, ',')) {
 			free (node->value);
@@ -1166,15 +1166,15 @@ static bool cb_cfgdebug(void *user, void *data) {
 static bool cb_dirhome(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->value) {
-		rz_sys_setenv (R_SYS_HOME, node->value);
+		rz_sys_setenv (RZ_SYS_HOME, node->value);
 	}
 	return true;
 }
 
 static bool cb_dirtmp(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
-	char *value = R_STR_ISNOTEMPTY (node->value)? node->value: NULL;
-	rz_sys_setenv (R_SYS_TMP, value);
+	char *value = RZ_STR_ISNOTEMPTY (node->value)? node->value: NULL;
+	rz_sys_setenv (RZ_SYS_TMP, value);
 	return true;
 }
 
@@ -1266,7 +1266,7 @@ static bool cb_cmdpdc(void *user, void *data) {
 static bool cb_cmdlog(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	R_FREE (core->cmdlog);
+	RZ_FREE (core->cmdlog);
 	core->cmdlog = strdup (node->value);
 	return true;
 }
@@ -1296,9 +1296,9 @@ static bool cb_color(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
-		core->print->flags |= R_PRINT_FLAGS_COLOR;
+		core->print->flags |= RZ_PRINT_FLAGS_COLOR;
 	} else {
-		core->print->flags &= (~R_PRINT_FLAGS_COLOR);
+		core->print->flags &= (~RZ_PRINT_FLAGS_COLOR);
 	}
 	if (!strcmp (node->value, "true")) {
 		node->i_value = 1;
@@ -1328,9 +1328,9 @@ static bool cb_decoff(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
-		core->print->flags |= R_PRINT_FLAGS_ADDRDEC;
+		core->print->flags |= RZ_PRINT_FLAGS_ADDRDEC;
 	} else {
-		core->print->flags &= (~R_PRINT_FLAGS_ADDRDEC);
+		core->print->flags &= (~RZ_PRINT_FLAGS_ADDRDEC);
 	}
 	rz_print_set_flags (core->print, core->print->flags);
 	return true;
@@ -1580,9 +1580,9 @@ static bool cb_hexcompact(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
-		core->print->flags |= R_PRINT_FLAGS_COMPACT;
+		core->print->flags |= RZ_PRINT_FLAGS_COMPACT;
 	} else {
-		core->print->flags &= (~R_PRINT_FLAGS_COMPACT);
+		core->print->flags &= (~RZ_PRINT_FLAGS_COMPACT);
 	}
 	return true;
 }
@@ -1598,9 +1598,9 @@ static bool cb_hex_section(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
-		core->print->flags |= R_PRINT_FLAGS_SECTION;
+		core->print->flags |= RZ_PRINT_FLAGS_SECTION;
 	} else {
-		core->print->flags &= ~R_PRINT_FLAGS_SECTION;
+		core->print->flags &= ~RZ_PRINT_FLAGS_SECTION;
 	}
 	return true;
 }
@@ -1609,9 +1609,9 @@ static bool cb_hex_align(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
-		core->print->flags |= R_PRINT_FLAGS_ALIGN;
+		core->print->flags |= RZ_PRINT_FLAGS_ALIGN;
 	} else {
-		core->print->flags &= ~R_PRINT_FLAGS_ALIGN;
+		core->print->flags &= ~RZ_PRINT_FLAGS_ALIGN;
 	}
 	return true;
 }
@@ -1620,9 +1620,9 @@ static bool cb_io_unalloc(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
-		core->print->flags |= R_PRINT_FLAGS_UNALLOC;
+		core->print->flags |= RZ_PRINT_FLAGS_UNALLOC;
 	} else {
-		core->print->flags &= ~R_PRINT_FLAGS_UNALLOC;
+		core->print->flags &= ~RZ_PRINT_FLAGS_UNALLOC;
 	}
 	return true;
 }
@@ -1638,9 +1638,9 @@ static bool cb_hex_header(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
-		core->print->flags |= R_PRINT_FLAGS_HEADER;
+		core->print->flags |= RZ_PRINT_FLAGS_HEADER;
 	} else {
-		core->print->flags &= ~R_PRINT_FLAGS_HEADER;
+		core->print->flags &= ~RZ_PRINT_FLAGS_HEADER;
 	}
 	return true;
 }
@@ -1649,9 +1649,9 @@ static bool cb_hex_bytes(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
-		core->print->flags &= ~R_PRINT_FLAGS_NONHEX;
+		core->print->flags &= ~RZ_PRINT_FLAGS_NONHEX;
 	} else {
-		core->print->flags |= R_PRINT_FLAGS_NONHEX;
+		core->print->flags |= RZ_PRINT_FLAGS_NONHEX;
 	}
 	return true;
 }
@@ -1660,9 +1660,9 @@ static bool cb_hex_ascii(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
-		core->print->flags &= ~R_PRINT_FLAGS_NONASCII;
+		core->print->flags &= ~RZ_PRINT_FLAGS_NONASCII;
 	} else {
-		core->print->flags |= R_PRINT_FLAGS_NONASCII;
+		core->print->flags |= RZ_PRINT_FLAGS_NONASCII;
 	}
 	return true;
 }
@@ -1671,9 +1671,9 @@ static bool cb_hex_style(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
-		core->print->flags |= R_PRINT_FLAGS_STYLE;
+		core->print->flags |= RZ_PRINT_FLAGS_STYLE;
 	} else {
-		core->print->flags &= ~R_PRINT_FLAGS_STYLE;
+		core->print->flags &= ~RZ_PRINT_FLAGS_STYLE;
 	}
 	return true;
 }
@@ -1682,9 +1682,9 @@ static bool cb_hex_hdroff(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
-		core->print->flags |= R_PRINT_FLAGS_HDROFF;
+		core->print->flags |= RZ_PRINT_FLAGS_HDROFF;
 	} else {
-		core->print->flags &= ~R_PRINT_FLAGS_HDROFF;
+		core->print->flags &= ~RZ_PRINT_FLAGS_HDROFF;
 	}
 	return true;
 }
@@ -1700,9 +1700,9 @@ static bool cb_hexcomments(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
-		core->print->flags |= R_PRINT_FLAGS_COMMENT;
+		core->print->flags |= RZ_PRINT_FLAGS_COMMENT;
 	} else {
-		core->print->flags &= ~R_PRINT_FLAGS_COMMENT;
+		core->print->flags &= ~RZ_PRINT_FLAGS_COMMENT;
 	}
 	return true;
 }
@@ -1860,7 +1860,7 @@ static bool cb_cmd_esil_trap(void *user, void *data) {
 }
 
 static bool cb_fsview(void *user, void *data) {
-	int type = R_FS_VIEW_NORMAL;
+	int type = RZ_FS_VIEW_NORMAL;
 	RzCore *core = (RzCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value == '?') {
@@ -1868,13 +1868,13 @@ static bool cb_fsview(void *user, void *data) {
 		return false;
 	}
 	if (!strcmp (node->value, "all")) {
-		type = R_FS_VIEW_ALL;
+		type = RZ_FS_VIEW_ALL;
 	}
 	if (!strstr (node->value, "del")) {
-		type |= R_FS_VIEW_DELETED;
+		type |= RZ_FS_VIEW_DELETED;
 	}
 	if (!strstr (node->value, "spe")) {
-		type |= R_FS_VIEW_SPECIAL;
+		type |= RZ_FS_VIEW_SPECIAL;
 	}
 	rz_fs_view (core->fs, type);
 	return true;
@@ -1882,7 +1882,7 @@ static bool cb_fsview(void *user, void *data) {
 
 static bool cb_cmddepth(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
-	int c = R_MAX (((RConfigNode*)data)->i_value, 0);
+	int c = RZ_MAX (((RConfigNode*)data)->i_value, 0);
 	core->max_cmd_depth = c;
 	core->cons->context->cmd_depth = c;
 	return true;
@@ -1890,7 +1890,7 @@ static bool cb_cmddepth(void *user, void *data) {
 
 static bool cb_hexcols(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
-	int c = R_MIN (1024, R_MAX (((RConfigNode*)data)->i_value, 0));
+	int c = RZ_MIN (1024, RZ_MAX (((RConfigNode*)data)->i_value, 0));
 	core->print->cols = c; // & ~1;
 	core->dbg->regcols = c/4;
 	return true;
@@ -1924,9 +1924,9 @@ static bool cb_io_cache_read(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->i_value) {
-		core->io->cached |= R_PERM_R;
+		core->io->cached |= RZ_PERM_R;
 	} else {
-		core->io->cached &= ~R_PERM_R;
+		core->io->cached &= ~RZ_PERM_R;
 	}
 	return true;
 }
@@ -1935,9 +1935,9 @@ static bool cb_io_cache_write(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->i_value) {
-		core->io->cached |= R_PERM_W;
+		core->io->cached |= RZ_PERM_W;
 	} else {
-		core->io->cached &= ~R_PERM_W;
+		core->io->cached &= ~RZ_PERM_W;
 	}
 	return true;
 }
@@ -2142,13 +2142,13 @@ static bool scr_vtmode(void *user, void *data) {
 	HANDLE streams[] = { GetStdHandle (STD_OUTPUT_HANDLE), GetStdHandle (STD_ERROR_HANDLE) };
 	int i;
 	if (node->i_value > 0) {
-		for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
+		for (i = 0; i < RZ_ARRAY_SIZE (streams); i++) {
 			GetConsoleMode (streams[i], &mode);
 			SetConsoleMode (streams[i],
 				mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 		}
 	} else {
-		for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
+		for (i = 0; i < RZ_ARRAY_SIZE (streams); i++) {
 			GetConsoleMode (streams[i], &mode);
 			SetConsoleMode (streams[i],
 				mode & ~ENABLE_VIRTUAL_TERMINAL_PROCESSING & ~ENABLE_WRAP_AT_EOL_OUTPUT);
@@ -2238,9 +2238,9 @@ static bool cb_scr_bgfill(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
-		core->print->flags |= R_PRINT_FLAGS_BGFILL;
+		core->print->flags |= RZ_PRINT_FLAGS_BGFILL;
 	} else {
-		core->print->flags &= (~R_PRINT_FLAGS_BGFILL);
+		core->print->flags &= (~RZ_PRINT_FLAGS_BGFILL);
 	}
 	rz_print_set_flags (core->print, core->print->flags);
 	return true;
@@ -2305,9 +2305,9 @@ static bool cb_segoff(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
-		core->print->flags |= R_PRINT_FLAGS_SEGOFF;
+		core->print->flags |= RZ_PRINT_FLAGS_SEGOFF;
 	} else {
-		core->print->flags &= (((ut32)-1) & (~R_PRINT_FLAGS_SEGOFF));
+		core->print->flags &= (((ut32)-1) & (~RZ_PRINT_FLAGS_SEGOFF));
 	}
 	return true;
 }
@@ -2434,7 +2434,7 @@ static bool cb_debase64(void *user, void *data) {
 }
 
 static bool cb_binstrings(void *user, void *data) {
-	const ut32 req = R_BIN_REQ_STRINGS;
+	const ut32 req = RZ_BIN_REQ_STRINGS;
 	RzCore *core = (RzCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value) {
@@ -2711,10 +2711,10 @@ static bool cb_anal_cpp_abi(void *user, void *data) {
 
 	if (*node->value) {
 		if (strcmp (node->value, "itanium") == 0) {
-			core->anal->cpp_abi = R_ANAL_CPP_ABI_ITANIUM;
+			core->anal->cpp_abi = RZ_ANAL_CPP_ABI_ITANIUM;
 			return true;
 		} else if (strcmp (node->value, "msvc") == 0) {
-			core->anal->cpp_abi = R_ANAL_CPP_ABI_MSVC;
+			core->anal->cpp_abi = RZ_ANAL_CPP_ABI_MSVC;
 			return true;
 		}
 		eprintf ("anal.cpp.abi: cannot find '%s'\n", node->value);
@@ -2868,10 +2868,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	}
 #if __ANDROID__
 	{ // use dir.home and also adjust check for permissions in directory before choosing a home
-		char *h = rz_sys_getenv (R_SYS_HOME);
+		char *h = rz_sys_getenv (RZ_SYS_HOME);
 		if (h) {
 			if (!strcmp (h, "/")) {
-				rz_sys_setenv (R_SYS_HOME, "/data/local/tmp");
+				rz_sys_setenv (RZ_SYS_HOME, "/data/local/tmp");
 			}
 			free (h);
 		}
@@ -2884,7 +2884,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	{
 		char *pdb_path = rz_str_home (RZ_HOME_PDB);
 		SETPREF ("pdb.symstore", pdb_path, "Path to downstream symbol store");
-		R_FREE(pdb_path);
+		RZ_FREE(pdb_path);
 	}
 	SETI ("pdb.extract", 1, "Avoid extract of the pdb file, just download");
 	SETI ("pdb.autoload", false, "Automatically load the required pdb files for loaded DLLs");
@@ -2938,10 +2938,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("anal.norevisit", "false", &cb_analnorevisit, "Do not visit function analysis twice (EXPERIMENTAL)");
 	SETCB ("anal.nopskip", "true", &cb_analnopskip, "Skip nops at the beginning of functions");
 	SETCB ("anal.hpskip", "false", &cb_analhpskip, "Skip `mov reg, reg` and `lea reg, [reg] at the beginning of functions");
-	n = NODECB ("anal.arch", R_SYS_ARCH, &cb_analarch);
+	n = NODECB ("anal.arch", RZ_SYS_ARCH, &cb_analarch);
 	SETDESC (n, "Select the architecture to use");
 	update_analarch_options (core, n);
-	SETCB ("anal.cpu", R_SYS_ARCH, &cb_analcpu, "Specify the anal.cpu to use");
+	SETCB ("anal.cpu", RZ_SYS_ARCH, &cb_analcpu, "Specify the anal.cpu to use");
 	SETPREF ("anal.prelude", "", "Specify an hexpair to find preludes in code");
 	SETCB ("anal.recont", "false", &cb_analrecont, "End block after splitting a basic block instead of error"); // testing
 	SETCB ("anal.jmp.indir", "false", &cb_analijmp, "Follow the indirect jumps in function analysis"); // testing
@@ -3001,7 +3001,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI ("esil.timeout", 0, "A timeout (in seconds) for when we should give up emulating");
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it
-	n = NODECB ("asm.os", R_SYS_OS, &cb_asmos);
+	n = NODECB ("asm.os", RZ_SYS_OS, &cb_asmos);
 	SETDESC (n, "Select operating system (kernel)");
 	SETOPTIONS (n, "ios", "dos", "darwin", "linux", "freebsd", "openbsd", "netbsd", "windows", "s110", NULL);
 	SETI ("asm.xrefs.fold", 5,  "Maximum number of xrefs to be displayed as list (use columns above)");
@@ -3131,9 +3131,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI ("asm.symbol.col", 40, "Columns width to show asm.section");
 	SETCB ("asm.assembler", "", &cb_asmassembler, "Set the plugin name to use when assembling");
 	SETBPREF ("asm.minicols", "false", "Only show the instruction in the column disasm");
-	RConfigNode *asmcpu = NODECB ("asm.cpu", R_SYS_ARCH, &cb_asmcpu);
+	RConfigNode *asmcpu = NODECB ("asm.cpu", RZ_SYS_ARCH, &cb_asmcpu);
 	SETDESC (asmcpu, "Set the kind of asm.arch cpu");
-	RConfigNode *asmarch = NODECB ("asm.arch", R_SYS_ARCH, &cb_asmarch);
+	RConfigNode *asmarch = NODECB ("asm.arch", RZ_SYS_ARCH, &cb_asmarch);
 	SETDESC (asmarch, "Set the arch to be used by asm");
 	/* we need to have both asm.arch and asm.cpu defined before updating options */
 	update_asmarch_options (core, asmarch);
@@ -3150,7 +3150,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETOPTIONS (n, "att", "intel", "masm", "jz", "regnum", NULL);
 	SETI ("asm.nbytes", 6, "Number of bytes for each opcode at disassembly");
 	SETBPREF ("asm.bytes.space", "false", "Separate hexadecimal bytes with a whitespace");
-#if R_SYS_BITS == R_SYS_BITS_64
+#if RZ_SYS_BITS == RZ_SYS_BITS_64
 	SETICB ("asm.bits", 64, &cb_asmbits, "Word size in bits at assembler");
 #else
 	SETICB ("asm.bits", 32, &cb_asmbits, "Word size in bits at assembler");
@@ -3240,13 +3240,13 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* log */
 	// RZ_LOGLEVEL / log.level
 	p = rz_sys_getenv ("RZ_LOGLEVEL");
-	SETICB ("log.level", p? atoi(p): R_DEFAULT_LOGLVL, cb_log_config_level, "Target log level/severity"\
+	SETICB ("log.level", p? atoi(p): RZ_DEFAULT_LOGLVL, cb_log_config_level, "Target log level/severity"\
 	 " (0:SILLY, 1:DEBUG, 2:VERBOSE, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
 	);
 	free (p);
 	// RZ_LOGTRAP_LEVEL / log.traplevel
 	p = rz_sys_getenv ("RZ_LOGTRAPLEVEL");
-	SETICB ("log.traplevel", p ? atoi(p) : R_LOGLVL_FATAL, cb_log_config_traplevel, "Log level for trapping R2 when hit"\
+	SETICB ("log.traplevel", p ? atoi(p) : RZ_LOGLVL_FATAL, cb_log_config_traplevel, "Log level for trapping R2 when hit"\
 	 " (0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
 	);
 	free (p);
@@ -3276,7 +3276,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF ("zign.refs", "true", "Use references for matching");
 	SETBPREF ("zign.hash", "true", "Use Hash for matching");
 	SETBPREF ("zign.types", "true", "Use types for matching");
-	SETBPREF ("zign.autoload", "false", "Autoload all zignatures located in " R_JOIN_2_PATHS ("~", RZ_HOME_ZIGNS));
+	SETBPREF ("zign.autoload", "false", "Autoload all zignatures located in " RZ_JOIN_2_PATHS ("~", RZ_HOME_ZIGNS));
 	SETPREF ("zign.diff.bthresh", "1.0", "Threshold for diffing zign bytes [0, 1] (see zc?)");
 	SETPREF ("zign.diff.gthresh", "1.0", "Threshold for diffing zign graphs [0, 1] (see zc?)");
 	SETPREF ("zign.threshold", "0.0", "Minimum similarity required for inclusion in zb output");
@@ -3291,28 +3291,28 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* dir */
 	SETI ("dir.depth", 10,  "Maximum depth when searching recursively for files");
 	{
-		char *path = rz_str_newf (R_JOIN_2_PATHS ("%s", RZ_SDB_MAGIC), rz_config_get (core->config, "dir.prefix"));
+		char *path = rz_str_newf (RZ_JOIN_2_PATHS ("%s", RZ_SDB_MAGIC), rz_config_get (core->config, "dir.prefix"));
 		SETPREF ("dir.magic", path, "Path to rz_magic files");
 		free (path);
-		path = rz_str_newf (R_JOIN_2_PATHS ("%s", RZ_PLUGINS), rz_config_get (core->config, "dir.prefix"));
+		path = rz_str_newf (RZ_JOIN_2_PATHS ("%s", RZ_PLUGINS), rz_config_get (core->config, "dir.prefix"));
 		SETPREF ("dir.plugins", path, "Path to plugin files to be loaded at startup");
 		free (path);
 	}
 	SETCB ("dir.source", "", &cb_dirsrc, "Path to find source files");
 	SETPREF ("dir.types", "/usr/include", "Default path to look for cparse type files");
 	SETPREF ("dir.libs", "", "Specify path to find libraries to load when bin.libs=true");
-	p = rz_sys_getenv (R_SYS_HOME);
+	p = rz_sys_getenv (RZ_SYS_HOME);
 	SETCB ("dir.home", p? p: "/", &cb_dirhome, "Path for the home directory");
 	free (p);
-	p = rz_sys_getenv (R_SYS_TMP);
+	p = rz_sys_getenv (RZ_SYS_TMP);
 	SETCB ("dir.tmp", p? p: "", &cb_dirtmp, "Path of the tmp directory");
 	free (p);
 #if __ANDROID__
 	SETPREF ("dir.projects", "/data/data/org.radare.rizininstaller/rizin/projects", "Default path for projects");
 #else
-	SETPREF ("dir.projects", R_JOIN_2_PATHS ("~", RZ_HOME_PROJECTS), "Default path for projects");
+	SETPREF ("dir.projects", RZ_JOIN_2_PATHS ("~", RZ_HOME_PROJECTS), "Default path for projects");
 #endif
-	SETCB ("dir.zigns", R_JOIN_2_PATHS ("~", RZ_HOME_ZIGNS), &cb_dirzigns, "Default path for zignatures (see zo command)");
+	SETCB ("dir.zigns", RZ_JOIN_2_PATHS ("~", RZ_HOME_ZIGNS), &cb_dirzigns, "Default path for zignatures (see zo command)");
 	SETPREF ("stack.reg", "SP", "Which register to use as stack pointer in the visual debug");
 	SETBPREF ("stack.bytes", "true", "Show bytes instead of words in stack");
 	SETBPREF ("stack.anotated", "false", "Show anotated hexdump in visual debug");
@@ -3465,7 +3465,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI ("http.maxsize", 0, "Maximum file size for upload");
 	SETPREF ("http.index", "index.html", "Main html file to check in directory");
 	SETPREF ("http.bind", "localhost", "Server address");
-	SETPREF ("http.homeroot", R_JOIN_2_PATHS ("~", RZ_HOME_WWWROOT), "http home root directory");
+	SETPREF ("http.homeroot", RZ_JOIN_2_PATHS ("~", RZ_HOME_WWWROOT), "http home root directory");
 #if __WINDOWS__
 	{
 		char *wwwroot = rz_str_newf ("%s\\share\\www", rz_sys_prefix (NULL));
@@ -3604,7 +3604,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("scr.prompt", "true", &cb_scrprompt, "Show user prompt (used by r2 -q)");
 	SETCB ("scr.tee", "", &cb_teefile, "Pipe output to file of this name");
 	SETPREF ("scr.seek", "", "Seek to the specified address on startup");
-	SETICB ("scr.color", (core->print->flags&R_PRINT_FLAGS_COLOR)?COLOR_MODE_16:COLOR_MODE_DISABLED, &cb_color, "Enable colors (0: none, 1: ansi, 2: 256 colors, 3: truecolor)");
+	SETICB ("scr.color", (core->print->flags&RZ_PRINT_FLAGS_COLOR)?COLOR_MODE_16:COLOR_MODE_DISABLED, &cb_color, "Enable colors (0: none, 1: ansi, 2: 256 colors, 3: truecolor)");
 	rz_config_set_getter (cfg, "scr.color", (RConfigCallback)cb_color_getter);
 	SETCB ("scr.color.grep", "false", &cb_scr_color_grep, "Enable colors when using ~grep");
 	SETBPREF ("scr.color.pipe", "false", "Enable colors when using pipes");
@@ -3732,7 +3732,7 @@ RZ_API void rz_core_parse_rizinrc(RzCore *r) {
 	bool has_debug = rz_sys_getenv_asbool ("RZ_DEBUG");
 	char *rcfile = rz_sys_getenv ("RZ_RCFILE");
 	char *homerc = NULL;
-	if (!R_STR_ISEMPTY (rcfile)) {
+	if (!RZ_STR_ISEMPTY (rcfile)) {
 		homerc = rcfile;
 	} else {
 		free (rcfile);

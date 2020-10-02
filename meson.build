@@ -308,7 +308,7 @@ endif
 message('RZ_CHECKS_LEVEL: @0@'.format(checks_level))
 
 userconf = configuration_data()
-userconf.set('R_CHECKS_LEVEL', checks_level)
+userconf.set('RZ_CHECKS_LEVEL', checks_level)
 userconf.set10('HAVE_LIB_MAGIC', sys_magic.found())
 userconf.set10('USE_LIB_MAGIC', use_syslib_magic)
 userconf.set10('HAVE_LIB_XXHASH', sys_xxhash.found())

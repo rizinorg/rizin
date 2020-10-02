@@ -42,7 +42,7 @@ typedef struct rz_oflist_t {
 #endif
 
 #ifdef RZ_API
-// #define R_LIST_NEW(x,y) x = rz_list_new (); x->free = (RzListFree)y
+// #define RZ_LIST_NEW(x,y) x = rz_list_new (); x->free = (RzListFree)y
 #define rz_list_foreach(list, it, pos)\
 	if (list)\
 		for (it = list->head; it && (pos = it->data, 1); it = it->n)
@@ -115,7 +115,7 @@ RZ_API RzListIter *rz_list_contains(const RzList *list, const void *p);
 RZ_API RzListIter *rz_list_find(const RzList *list, const void *p, RzListComparator cmp);
 
 /* rlistflist */
-// TODO: rename to init or so.. #define rz_oflist_new() R_NEW(ROFList);memset
+// TODO: rename to init or so.. #define rz_oflist_new() RZ_NEW(ROFList);memset
 #define rz_oflist_length(x, y) rz_list_length (x, y)
 #define rz_oflist_destroy(x) rz_oflist_deserialize (x)
 #define rz_oflist_free(x) rz_oflist_deserialize (x), rz_list_free (x)

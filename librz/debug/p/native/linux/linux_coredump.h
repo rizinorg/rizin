@@ -57,7 +57,7 @@
 
 #define SIZE_PR_FNAME	16
 
-#define R_DEBUG_REG_T	struct user_regs_struct
+#define RZ_DEBUG_REG_T	struct user_regs_struct
 
 #define SIZE_NT_FILE_DESCSZ	sizeof(unsigned long) * 3   /* start_address * end_address * offset_address */
 /*
@@ -73,7 +73,7 @@ NT_FILE layout:
 
 #define	X_MEM	0x1
 #define	W_MEM	0x2
-#define	R_MEM	0x4
+#define	RZ_MEM	0x4
 #define	P_MEM	0x8
 #define	S_MEM	0x10
 #define	WRG_PERM	0x20

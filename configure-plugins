@@ -67,7 +67,7 @@ generate_configh () {
         uclib=$(echo $lib | tr '[a-z]' '[A-Z]')
       fi
       echo
-      echo "#define R_${uclib}_STATIC_PLUGINS \\"
+      echo "#define RZ_${uclib}_STATIC_PLUGINS \\"
       plugins="${plugins} __${uclib}"
     fi
     echo "     &rz_${lib}_plugin_${plg}, \\"
@@ -88,7 +88,7 @@ generate_configh () {
       if [ -z "`echo ${plugins} | grep __${uclib}`" ]; then
         plugins="${plugins} __${uclib}"
         echo
-        echo "#define R_${uclib}_STATIC_PLUGINS 0"
+        echo "#define RZ_${uclib}_STATIC_PLUGINS 0"
       fi
     fi
   done

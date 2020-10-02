@@ -16,164 +16,164 @@ typedef struct rz_bin_t RBin;
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER (rz_bin);
+RZ_LIB_VERSION_HEADER (rz_bin);
 
-#define R_BIN_DBG_STRIPPED 0x01
-#define R_BIN_DBG_STATIC   0x02
-#define R_BIN_DBG_LINENUMS 0x04
-#define R_BIN_DBG_SYMS     0x08
-#define R_BIN_DBG_RELOCS   0x10
+#define RZ_BIN_DBG_STRIPPED 0x01
+#define RZ_BIN_DBG_STATIC   0x02
+#define RZ_BIN_DBG_LINENUMS 0x04
+#define RZ_BIN_DBG_SYMS     0x08
+#define RZ_BIN_DBG_RELOCS   0x10
 
-#define R_BIN_ENTRY_TYPE_PROGRAM 0
-#define R_BIN_ENTRY_TYPE_MAIN    1
-#define R_BIN_ENTRY_TYPE_INIT    2
-#define R_BIN_ENTRY_TYPE_FINI    3
-#define R_BIN_ENTRY_TYPE_TLS     4
-#define R_BIN_ENTRY_TYPE_PREINIT 5
+#define RZ_BIN_ENTRY_TYPE_PROGRAM 0
+#define RZ_BIN_ENTRY_TYPE_MAIN    1
+#define RZ_BIN_ENTRY_TYPE_INIT    2
+#define RZ_BIN_ENTRY_TYPE_FINI    3
+#define RZ_BIN_ENTRY_TYPE_TLS     4
+#define RZ_BIN_ENTRY_TYPE_PREINIT 5
 
-#define R_BIN_SIZEOF_STRINGS 512
-#define R_BIN_MAX_ARCH 1024
+#define RZ_BIN_SIZEOF_STRINGS 512
+#define RZ_BIN_MAX_ARCH 1024
 
-#define R_BIN_REQ_ALL       UT64_MAX
-#define R_BIN_REQ_UNK       0x000000
-#define R_BIN_REQ_ENTRIES   0x000001
-#define R_BIN_REQ_IMPORTS   0x000002
-#define R_BIN_REQ_SYMBOLS   0x000004
-#define R_BIN_REQ_SECTIONS  0x000008
-#define R_BIN_REQ_INFO      0x000010
-#define R_BIN_REQ_OPERATION 0x000020
-#define R_BIN_REQ_HELP      0x000040
-#define R_BIN_REQ_STRINGS   0x000080
-#define R_BIN_REQ_FIELDS    0x000100
-#define R_BIN_REQ_LIBS      0x000200
-#define R_BIN_REQ_SRCLINE   0x000400
-#define R_BIN_REQ_MAIN      0x000800
-#define R_BIN_REQ_EXTRACT   0x001000
-#define R_BIN_REQ_RELOCS    0x002000
-#define R_BIN_REQ_LISTARCHS 0x004000
-#define R_BIN_REQ_CREATE    0x008000
-#define R_BIN_REQ_CLASSES   0x010000
-#define R_BIN_REQ_DWARF     0x020000
-#define R_BIN_REQ_SIZE      0x040000
-#define R_BIN_REQ_PDB       0x080000
-#define R_BIN_REQ_PDB_DWNLD 0x100000
-#define R_BIN_REQ_DLOPEN    0x200000
-#define R_BIN_REQ_EXPORTS   0x400000
-#define R_BIN_REQ_VERSIONINFO 0x800000
-#define R_BIN_REQ_PACKAGE   0x1000000
-#define R_BIN_REQ_HEADER    0x2000000
-#define R_BIN_REQ_LISTPLUGINS 0x4000000
-#define R_BIN_REQ_RESOURCES 0x8000000
-#define R_BIN_REQ_INITFINI  0x10000000
-#define R_BIN_REQ_SEGMENTS  0x20000000
-#define R_BIN_REQ_HASHES    0x40000000
-#define R_BIN_REQ_SIGNATURE 0x80000000
-#define R_BIN_REQ_TRYCATCH 0x100000000
-#define R_BIN_REQ_SECTIONS_MAPPING 0x200000000
+#define RZ_BIN_REQ_ALL       UT64_MAX
+#define RZ_BIN_REQ_UNK       0x000000
+#define RZ_BIN_REQ_ENTRIES   0x000001
+#define RZ_BIN_REQ_IMPORTS   0x000002
+#define RZ_BIN_REQ_SYMBOLS   0x000004
+#define RZ_BIN_REQ_SECTIONS  0x000008
+#define RZ_BIN_REQ_INFO      0x000010
+#define RZ_BIN_REQ_OPERATION 0x000020
+#define RZ_BIN_REQ_HELP      0x000040
+#define RZ_BIN_REQ_STRINGS   0x000080
+#define RZ_BIN_REQ_FIELDS    0x000100
+#define RZ_BIN_REQ_LIBS      0x000200
+#define RZ_BIN_REQ_SRCLINE   0x000400
+#define RZ_BIN_REQ_MAIN      0x000800
+#define RZ_BIN_REQ_EXTRACT   0x001000
+#define RZ_BIN_REQ_RELOCS    0x002000
+#define RZ_BIN_REQ_LISTARCHS 0x004000
+#define RZ_BIN_REQ_CREATE    0x008000
+#define RZ_BIN_REQ_CLASSES   0x010000
+#define RZ_BIN_REQ_DWARF     0x020000
+#define RZ_BIN_REQ_SIZE      0x040000
+#define RZ_BIN_REQ_PDB       0x080000
+#define RZ_BIN_REQ_PDB_DWNLD 0x100000
+#define RZ_BIN_REQ_DLOPEN    0x200000
+#define RZ_BIN_REQ_EXPORTS   0x400000
+#define RZ_BIN_REQ_VERSIONINFO 0x800000
+#define RZ_BIN_REQ_PACKAGE   0x1000000
+#define RZ_BIN_REQ_HEADER    0x2000000
+#define RZ_BIN_REQ_LISTPLUGINS 0x4000000
+#define RZ_BIN_REQ_RESOURCES 0x8000000
+#define RZ_BIN_REQ_INITFINI  0x10000000
+#define RZ_BIN_REQ_SEGMENTS  0x20000000
+#define RZ_BIN_REQ_HASHES    0x40000000
+#define RZ_BIN_REQ_SIGNATURE 0x80000000
+#define RZ_BIN_REQ_TRYCATCH 0x100000000
+#define RZ_BIN_REQ_SECTIONS_MAPPING 0x200000000
 
 /* RBinSymbol->method_flags : */
-#define R_BIN_METH_CLASS 0x0000000000000001L
-#define R_BIN_METH_STATIC 0x0000000000000002L
-#define R_BIN_METH_PUBLIC 0x0000000000000004L
-#define R_BIN_METH_PRIVATE 0x0000000000000008L
-#define R_BIN_METH_PROTECTED 0x0000000000000010L
-#define R_BIN_METH_INTERNAL 0x0000000000000020L
-#define R_BIN_METH_OPEN 0x0000000000000040L
-#define R_BIN_METH_FILEPRIVATE 0x0000000000000080L
-#define R_BIN_METH_FINAL 0x0000000000000100L
-#define R_BIN_METH_VIRTUAL 0x0000000000000200L
-#define R_BIN_METH_CONST 0x0000000000000400L
-#define R_BIN_METH_MUTATING 0x0000000000000800L
-#define R_BIN_METH_ABSTRACT 0x0000000000001000L
-#define R_BIN_METH_SYNCHRONIZED 0x0000000000002000L
-#define R_BIN_METH_NATIVE 0x0000000000004000L
-#define R_BIN_METH_BRIDGE 0x0000000000008000L
-#define R_BIN_METH_VARARGS 0x0000000000010000L
-#define R_BIN_METH_SYNTHETIC 0x0000000000020000L
-#define R_BIN_METH_STRICT 0x0000000000040000L
-#define R_BIN_METH_MIRANDA 0x0000000000080000L
-#define R_BIN_METH_CONSTRUCTOR 0x0000000000100000L
-#define R_BIN_METH_DECLARED_SYNCHRONIZED 0x0000000000200000L
+#define RZ_BIN_METH_CLASS 0x0000000000000001L
+#define RZ_BIN_METH_STATIC 0x0000000000000002L
+#define RZ_BIN_METH_PUBLIC 0x0000000000000004L
+#define RZ_BIN_METH_PRIVATE 0x0000000000000008L
+#define RZ_BIN_METH_PROTECTED 0x0000000000000010L
+#define RZ_BIN_METH_INTERNAL 0x0000000000000020L
+#define RZ_BIN_METH_OPEN 0x0000000000000040L
+#define RZ_BIN_METH_FILEPRIVATE 0x0000000000000080L
+#define RZ_BIN_METH_FINAL 0x0000000000000100L
+#define RZ_BIN_METH_VIRTUAL 0x0000000000000200L
+#define RZ_BIN_METH_CONST 0x0000000000000400L
+#define RZ_BIN_METH_MUTATING 0x0000000000000800L
+#define RZ_BIN_METH_ABSTRACT 0x0000000000001000L
+#define RZ_BIN_METH_SYNCHRONIZED 0x0000000000002000L
+#define RZ_BIN_METH_NATIVE 0x0000000000004000L
+#define RZ_BIN_METH_BRIDGE 0x0000000000008000L
+#define RZ_BIN_METH_VARARGS 0x0000000000010000L
+#define RZ_BIN_METH_SYNTHETIC 0x0000000000020000L
+#define RZ_BIN_METH_STRICT 0x0000000000040000L
+#define RZ_BIN_METH_MIRANDA 0x0000000000080000L
+#define RZ_BIN_METH_CONSTRUCTOR 0x0000000000100000L
+#define RZ_BIN_METH_DECLARED_SYNCHRONIZED 0x0000000000200000L
 
-#define R_BIN_BIND_LOCAL_STR "LOCAL"
-#define R_BIN_BIND_GLOBAL_STR "GLOBAL"
-#define R_BIN_BIND_WEAK_STR "WEAK"
-#define R_BIN_BIND_NUM_STR "NUM"
-#define R_BIN_BIND_LOOS_STR "LOOS"
-#define R_BIN_BIND_HIOS_STR "HIOS"
-#define R_BIN_BIND_LOPROC_STR "LOPROC"
-#define R_BIN_BIND_HIPROC_STR "HIPROC"
-#define R_BIN_BIND_UNKNOWN_STR "UNKNOWN"
+#define RZ_BIN_BIND_LOCAL_STR "LOCAL"
+#define RZ_BIN_BIND_GLOBAL_STR "GLOBAL"
+#define RZ_BIN_BIND_WEAK_STR "WEAK"
+#define RZ_BIN_BIND_NUM_STR "NUM"
+#define RZ_BIN_BIND_LOOS_STR "LOOS"
+#define RZ_BIN_BIND_HIOS_STR "HIOS"
+#define RZ_BIN_BIND_LOPROC_STR "LOPROC"
+#define RZ_BIN_BIND_HIPROC_STR "HIPROC"
+#define RZ_BIN_BIND_UNKNOWN_STR "UNKNOWN"
 
-#define R_BIN_TYPE_NOTYPE_STR "NOTYPE"
-#define R_BIN_TYPE_OBJECT_STR "OBJ"
-#define R_BIN_TYPE_FUNC_STR "FUNC"
-#define R_BIN_TYPE_METH_STR "METH"
-#define R_BIN_TYPE_STATIC_STR "STATIC"
-#define R_BIN_TYPE_SECTION_STR "SECT"
-#define R_BIN_TYPE_FILE_STR "FILE"
-#define R_BIN_TYPE_COMMON_STR "COMMON"
-#define R_BIN_TYPE_TLS_STR "TLS"
-#define R_BIN_TYPE_NUM_STR "NUM"
-#define R_BIN_TYPE_LOOS_STR "LOOS"
-#define R_BIN_TYPE_HIOS_STR "HIOS"
-#define R_BIN_TYPE_LOPROC_STR "LOPROC"
-#define R_BIN_TYPE_HIPROC_STR "HIPROC"
-#define R_BIN_TYPE_SPECIAL_SYM_STR "SPCL"
-#define R_BIN_TYPE_UNKNOWN_STR "UNK"
+#define RZ_BIN_TYPE_NOTYPE_STR "NOTYPE"
+#define RZ_BIN_TYPE_OBJECT_STR "OBJ"
+#define RZ_BIN_TYPE_FUNC_STR "FUNC"
+#define RZ_BIN_TYPE_METH_STR "METH"
+#define RZ_BIN_TYPE_STATIC_STR "STATIC"
+#define RZ_BIN_TYPE_SECTION_STR "SECT"
+#define RZ_BIN_TYPE_FILE_STR "FILE"
+#define RZ_BIN_TYPE_COMMON_STR "COMMON"
+#define RZ_BIN_TYPE_TLS_STR "TLS"
+#define RZ_BIN_TYPE_NUM_STR "NUM"
+#define RZ_BIN_TYPE_LOOS_STR "LOOS"
+#define RZ_BIN_TYPE_HIOS_STR "HIOS"
+#define RZ_BIN_TYPE_LOPROC_STR "LOPROC"
+#define RZ_BIN_TYPE_HIPROC_STR "HIPROC"
+#define RZ_BIN_TYPE_SPECIAL_SYM_STR "SPCL"
+#define RZ_BIN_TYPE_UNKNOWN_STR "UNK"
 
 enum {
-	R_BIN_SYM_ENTRY,
-	R_BIN_SYM_INIT,
-	R_BIN_SYM_MAIN,
-	R_BIN_SYM_FINI,
-	R_BIN_SYM_LAST
+	RZ_BIN_SYM_ENTRY,
+	RZ_BIN_SYM_INIT,
+	RZ_BIN_SYM_MAIN,
+	RZ_BIN_SYM_FINI,
+	RZ_BIN_SYM_LAST
 };
 
 // name mangling types
-// TODO: Rename to R_BIN_LANG_
+// TODO: Rename to RZ_BIN_LANG_
 enum {
-	R_BIN_NM_NONE = 0,
-	R_BIN_NM_JAVA = 1,
-	R_BIN_NM_C = 1<<1,
-	R_BIN_NM_GO = 1<<2,
-	R_BIN_NM_CXX = 1<<3,
-	R_BIN_NM_OBJC = 1<<4,
-	R_BIN_NM_SWIFT = 1<<5,
-	R_BIN_NM_DLANG = 1<<6,
-	R_BIN_NM_MSVC = 1<<7,
-	R_BIN_NM_RUST = 1<<8,
-	R_BIN_NM_KOTLIN = 1<<9,
-	R_BIN_NM_BLOCKS = 1<<31,
-	R_BIN_NM_ANY = -1,
+	RZ_BIN_NM_NONE = 0,
+	RZ_BIN_NM_JAVA = 1,
+	RZ_BIN_NM_C = 1<<1,
+	RZ_BIN_NM_GO = 1<<2,
+	RZ_BIN_NM_CXX = 1<<3,
+	RZ_BIN_NM_OBJC = 1<<4,
+	RZ_BIN_NM_SWIFT = 1<<5,
+	RZ_BIN_NM_DLANG = 1<<6,
+	RZ_BIN_NM_MSVC = 1<<7,
+	RZ_BIN_NM_RUST = 1<<8,
+	RZ_BIN_NM_KOTLIN = 1<<9,
+	RZ_BIN_NM_BLOCKS = 1<<31,
+	RZ_BIN_NM_ANY = -1,
 };
 
 enum {
-	R_STRING_TYPE_DETECT = '?',
-	R_STRING_TYPE_ASCII = 'a',
-	R_STRING_TYPE_UTF8 = 'u',
-	R_STRING_TYPE_WIDE = 'w', // utf16 / widechar string
-	R_STRING_TYPE_WIDE32 = 'W', // utf32
-	R_STRING_TYPE_BASE64 = 'b',
+	RZ_STRING_TYPE_DETECT = '?',
+	RZ_STRING_TYPE_ASCII = 'a',
+	RZ_STRING_TYPE_UTF8 = 'u',
+	RZ_STRING_TYPE_WIDE = 'w', // utf16 / widechar string
+	RZ_STRING_TYPE_WIDE32 = 'W', // utf32
+	RZ_STRING_TYPE_BASE64 = 'b',
 };
 
 enum {
-	R_BIN_CLASS_PRIVATE,
-	R_BIN_CLASS_PUBLIC,
-	R_BIN_CLASS_FRIENDLY,
-	R_BIN_CLASS_PROTECTED,
+	RZ_BIN_CLASS_PRIVATE,
+	RZ_BIN_CLASS_PUBLIC,
+	RZ_BIN_CLASS_FRIENDLY,
+	RZ_BIN_CLASS_PROTECTED,
 };
 
 enum {
-	R_BIN_RELOC_8 = 8,
-	R_BIN_RELOC_16 = 16,
-	R_BIN_RELOC_32 = 32,
-	R_BIN_RELOC_64 = 64
+	RZ_BIN_RELOC_8 = 8,
+	RZ_BIN_RELOC_16 = 16,
+	RZ_BIN_RELOC_32 = 32,
+	RZ_BIN_RELOC_64 = 64
 };
 
 enum {
-	R_BIN_TYPE_DEFAULT = 0,
-	R_BIN_TYPE_CORE = 1
+	RZ_BIN_TYPE_DEFAULT = 0,
+	RZ_BIN_TYPE_CORE = 1
 };
 
 typedef struct rz_bin_addr_t {
@@ -263,7 +263,7 @@ typedef struct rz_bin_object_t {
 	RzList/*<BinMap*/ *maps;
 	char *regstate;
 	RBinInfo *info;
-	RBinAddr *binsym[R_BIN_SYM_LAST];
+	RBinAddr *binsym[RZ_BIN_SYM_LAST];
 	struct rz_bin_plugin_t *plugin;
 	int lang;
 	Sdb *kv;
@@ -437,7 +437,7 @@ typedef struct rz_bin_plugin_t {
 	RBinAddr* (*binsym)(RBinFile *bf, int num);
 	RzList/*<RBinAddr>*/* (*entries)(RBinFile *bf);
 	RzList/*<RBinSection>*/* (*sections)(RBinFile *bf);
-	R_BORROW RzList/*<RBinDwarfRow>*/* (*lines)(RBinFile *bf);
+	RZ_BORROW RzList/*<RBinDwarfRow>*/* (*lines)(RBinFile *bf);
 	RzList/*<RBinSymbol>*/* (*symbols)(RBinFile *bf);
 	RzList/*<RBinImport>*/* (*imports)(RBinFile *bf);
 	RzList/*<RBinString>*/* (*strings)(RBinFile *bf);
@@ -529,14 +529,14 @@ typedef struct rz_bin_symbol_t {
 	/* only used by java */
 	const char *visibility_str;
 	// ----------------
-	//char descriptor[R_BIN_SIZEOF_STRINGS+1];
+	//char descriptor[RZ_BIN_SIZEOF_STRINGS+1];
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 size;
 	ut32 ordinal;
 	ut32 visibility;
 	int bits;
-	/* see R_BIN_METH_* constants */
+	/* see RZ_BIN_METH_* constants */
 	ut64 method_flags;
 	int dup_count;
 } RBinSymbol;
@@ -645,8 +645,8 @@ typedef struct rz_bin_bind_t {
 	ut32 visibility;
 } RBinBind;
 
-R_IPI RBinSection *rz_bin_section_new(const char *name);
-R_IPI void rz_bin_section_free(RBinSection *bs);
+RZ_IPI RBinSection *rz_bin_section_new(const char *name);
+RZ_IPI void rz_bin_section_free(RBinSection *bs);
 RZ_API void rz_bin_info_free(RBinInfo *rb);
 RZ_API void rz_bin_import_free(void *_imp);
 RZ_API void rz_bin_symbol_free(void *_sym);
@@ -746,7 +746,7 @@ RZ_API bool rz_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 b
 
 
 // RBinFile lifecycle
-// R_IPI RBinFile *rz_bin_file_new(RBin *bin, const char *file, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr);
+// RZ_IPI RBinFile *rz_bin_file_new(RBin *bin, const char *file, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr);
 RZ_API bool rz_bin_file_close(RBin *bin, int bd);
 RZ_API void rz_bin_file_free(void /*RBinFile*/ *bf_);
 // RBinFile.get

@@ -71,7 +71,7 @@ static int windbg_step_over(RzDebug *dbg) {
 	rz_return_val_if_fail (idbg && idbg->initialized, 0);
 	idbg->lastExecutionStatus = DEBUG_STATUS_STEP_OVER;
 	if (SUCCEEDED (ITHISCALL (dbgCtrl, SetExecutionStatus, DEBUG_STATUS_STEP_OVER))) {
-		return windbg_wait (dbg, dbg->pid) != R_DEBUG_REASON_ERROR;
+		return windbg_wait (dbg, dbg->pid) != RZ_DEBUG_REASON_ERROR;
 	}
 	return 0;
 }
@@ -102,9 +102,9 @@ static RzDebugReasonType exception_to_reason(DWORD ExceptionCode) {
 	switch (ExceptionCode) {
 	case EXCEPTION_ACCESS_VIOLATION:
 	case EXCEPTION_GUARD_PAGE:
-		return R_DEBUG_REASON_SEGFAULT;
+		return RZ_DEBUG_REASON_SEGFAULT;
 	case EXCEPTION_BREAKPOINT:
-		return R_DEBUG_REASON_BREAKPOINT;
+		return RZ_DEBUG_REASON_BREAKPOINT;
 	case EXCEPTION_FLT_DENORMAL_OPERAND:
 	case EXCEPTION_FLT_DIVIDE_BY_ZERO:
 	case EXCEPTION_FLT_INEXACT_RESULT:
@@ -112,15 +112,15 @@ static RzDebugReasonType exception_to_reason(DWORD ExceptionCode) {
 	case EXCEPTION_FLT_OVERFLOW:
 	case EXCEPTION_FLT_STACK_CHECK:
 	case EXCEPTION_FLT_UNDERFLOW:
-		return R_DEBUG_REASON_FPU;
+		return RZ_DEBUG_REASON_FPU;
 	case EXCEPTION_ILLEGAL_INSTRUCTION:
-		return R_DEBUG_REASON_ILLEGAL;
+		return RZ_DEBUG_REASON_ILLEGAL;
 	case EXCEPTION_INT_DIVIDE_BY_ZERO:
-		return R_DEBUG_REASON_DIVBYZERO;
+		return RZ_DEBUG_REASON_DIVBYZERO;
 	case EXCEPTION_SINGLE_STEP:
-		return R_DEBUG_REASON_STEP;
+		return RZ_DEBUG_REASON_STEP;
 	default:
-		return R_DEBUG_REASON_TRAP;
+		return RZ_DEBUG_REASON_TRAP;
 	}
 }
 
@@ -153,12 +153,12 @@ static int windbg_wait(RzDebug *dbg, int pid) {
 			ITHISCALL (dbgCtrl, SetExecutionStatus, DEBUG_STATUS_BREAK);
 			do_break = false;
 			rz_cons_break_pop ();
-			return R_DEBUG_REASON_USERSUSP;
+			return RZ_DEBUG_REASON_USERSUSP;
 		}
 	}
 	rz_cons_break_pop ();
 	if (FAILED (hr)) {
-		return R_DEBUG_REASON_DEAD;
+		return RZ_DEBUG_REASON_DEAD;
 	}
 	ITHISCALL (dbgCtrl, GetLastEventInformation, &Type, &ProcessId, &ThreadId, NULL, 0, NULL, NULL, 0, NULL);
 	if (!__is_target_kernel (idbg)) {
@@ -174,13 +174,13 @@ static int windbg_wait(RzDebug *dbg, int pid) {
 		// I dont really get why Type is zero here
 		if (idbg->lastExecutionStatus == DEBUG_STATUS_STEP_INTO
 			|| idbg->lastExecutionStatus == DEBUG_STATUS_STEP_OVER) {
-			ret = R_DEBUG_REASON_STEP;
+			ret = RZ_DEBUG_REASON_STEP;
 		} else {
-			ret = R_DEBUG_REASON_ERROR;
+			ret = RZ_DEBUG_REASON_ERROR;
 		}
 		break;
 	case DEBUG_EVENT_BREAKPOINT:
-		ret = R_DEBUG_REASON_BREAKPOINT;
+		ret = RZ_DEBUG_REASON_BREAKPOINT;
 		break;
 	case DEBUG_EVENT_EXCEPTION: {
 		EXCEPTION_RECORD64 exr;
@@ -193,13 +193,13 @@ static int windbg_wait(RzDebug *dbg, int pid) {
 		break;
 	}
 	case DEBUG_EVENT_EXIT_PROCESS:
-		ret = R_DEBUG_REASON_EXIT_PID;
+		ret = RZ_DEBUG_REASON_EXIT_PID;
 		break;
 	case DEBUG_EVENT_CREATE_PROCESS:
-		ret = R_DEBUG_REASON_NEW_PID;
+		ret = RZ_DEBUG_REASON_NEW_PID;
 		break;
 	default:
-		ret = R_DEBUG_REASON_ERROR;
+		ret = RZ_DEBUG_REASON_ERROR;
 		break;
 	}
 
@@ -229,16 +229,16 @@ static int windbg_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	flags = set ? flags | DEBUG_BREAKPOINT_ENABLED : flags & ~DEBUG_BREAKPOINT_ENABLED;
 	if (b->hw) {
 		ULONG access_type = 0;
-		if (b->perm & R_BP_PROT_EXEC) {
+		if (b->perm & RZ_BP_PROT_EXEC) {
 			access_type |= DEBUG_BREAK_EXECUTE;
 		}
-		if (b->perm & R_BP_PROT_READ) {
+		if (b->perm & RZ_BP_PROT_READ) {
 			access_type |= DEBUG_BREAK_READ;
 		}
-		if (b->perm & R_BP_PROT_WRITE) {
+		if (b->perm & RZ_BP_PROT_WRITE) {
 			access_type |= DEBUG_BREAK_WRITE;
 		}
-		if (b->perm & R_BP_PROT_ACCESS) {
+		if (b->perm & RZ_BP_PROT_ACCESS) {
 			access_type |= DEBUG_BREAK_READ;
 			access_type |= DEBUG_BREAK_WRITE;
 		}
@@ -254,7 +254,7 @@ static char *windbg_reg_profile(RzDebug *dbg) {
 	DbgEngContext *idbg = dbg->user;
 	ULONG type;
 	if (!idbg || !idbg->initialized || FAILED (ITHISCALL (dbgCtrl, GetActualProcessorType, &type))) {
-		if (dbg->bits & R_SYS_BITS_64) {
+		if (dbg->bits & RZ_SYS_BITS_64) {
 #include "native/reg/windows-x64.h"
 		} else {
 #include "native/reg/windows-x86.h"
@@ -310,7 +310,7 @@ static RzList *windbg_frames(RzDebug *dbg, ut64 at) {
 	DbgEngContext *idbg = dbg->user;
 	rz_return_val_if_fail (idbg && idbg->initialized, 0);
 	const size_t frame_cnt = 128;
-	PDEBUG_STACK_FRAME dbgframes = R_NEWS (DEBUG_STACK_FRAME, frame_cnt);
+	PDEBUG_STACK_FRAME dbgframes = RZ_NEWS (DEBUG_STACK_FRAME, frame_cnt);
 	if (!dbgframes) {
 		return NULL;
 	}
@@ -322,7 +322,7 @@ static RzList *windbg_frames(RzDebug *dbg, ut64 at) {
 	RzList *frames = rz_list_newf (free);
 	size_t i;
 	for (i = 0; i < frames_filled; i++) {
-		RzDebugFrame *f = R_NEW0 (RzDebugFrame);
+		RzDebugFrame *f = RZ_NEW0 (RzDebugFrame);
 		if (!f) {
 			break;
 		}
@@ -345,7 +345,7 @@ static RzList *windbg_modules_get(RzDebug *dbg) {
 	if (!mod_cnt) {
 		return NULL;
 	}
-	PDEBUG_MODULE_PARAMETERS params = R_NEWS (DEBUG_MODULE_PARAMETERS, mod_cnt);
+	PDEBUG_MODULE_PARAMETERS params = RZ_NEWS (DEBUG_MODULE_PARAMETERS, mod_cnt);
 	if (!params) {
 		return NULL;
 	}
@@ -395,8 +395,8 @@ static RzList *windbg_map_get(RzDebug *dbg) {
 	RzList *mod_list = windbg_modules_get (dbg);
 	RzList *map_list = rz_list_newf ((RzListFree)rz_debug_map_free);
 	const int mod_cnt = mod_list ? rz_list_length (mod_list) : 0;
-	PIMAGE_NT_HEADERS64 h = R_NEWS (IMAGE_NT_HEADERS64, mod_cnt);
-	PIMAGE_SECTION_HEADER *s = R_NEWS0 (PIMAGE_SECTION_HEADER, mod_cnt);
+	PIMAGE_NT_HEADERS64 h = RZ_NEWS (IMAGE_NT_HEADERS64, mod_cnt);
+	PIMAGE_SECTION_HEADER *s = RZ_NEWS0 (PIMAGE_SECTION_HEADER, mod_cnt);
 	RzListIter *it;
 	RzDebugMap *mod = NULL;
 	size_t i = 0;
@@ -422,11 +422,11 @@ static RzList *windbg_map_get(RzDebug *dbg) {
 	while (SUCCEEDED (ITHISCALL (dbgData, QueryVirtual, to, &mbi))) {
 		to = mbi.BaseAddress + mbi.RegionSize;
 		perm = 0;
-		perm |= mbi.Protect & PAGE_READONLY ? R_PERM_R : 0;
-		perm |= mbi.Protect & PAGE_READWRITE ? R_PERM_RW : 0;
-		perm |= mbi.Protect & PAGE_EXECUTE ? R_PERM_X : 0;
-		perm |= mbi.Protect & PAGE_EXECUTE_READ ? R_PERM_RX : 0;
-		perm |= mbi.Protect & PAGE_EXECUTE_READWRITE ? R_PERM_RWX : 0;
+		perm |= mbi.Protect & PAGE_READONLY ? RZ_PERM_R : 0;
+		perm |= mbi.Protect & PAGE_READWRITE ? RZ_PERM_RW : 0;
+		perm |= mbi.Protect & PAGE_EXECUTE ? RZ_PERM_X : 0;
+		perm |= mbi.Protect & PAGE_EXECUTE_READ ? RZ_PERM_RX : 0;
+		perm |= mbi.Protect & PAGE_EXECUTE_READWRITE ? RZ_PERM_RWX : 0;
 		perm = mbi.Protect & PAGE_NOACCESS ? 0 : perm;
 		if (!perm) {
 			continue;
@@ -518,8 +518,8 @@ static RzList *windbg_threads(RzDebug *dbg, int pid) {
 	if (!thread_cnt) {
 		return NULL;
 	}
-	PULONG threads_ids = R_NEWS (ULONG, thread_cnt);
-	PULONG threads_sysids = R_NEWS (ULONG, thread_cnt);
+	PULONG threads_ids = RZ_NEWS (ULONG, thread_cnt);
+	PULONG threads_sysids = RZ_NEWS (ULONG, thread_cnt);
 	RzList *list = rz_list_newf ((RzListFree)rz_debug_pid_free);
 	if (!list || !threads_ids || !threads_sysids) {
 		free (list);
@@ -547,7 +547,7 @@ static RzDebugInfo *windbg_info(RzDebug *dbg, const char *arg) {
 	char exeinfo[MAX_PATH];
 	char cmdline[MAX_PATH];
 	if (SUCCEEDED (ITHISCALL (dbgClient, GetRunningProcessDescription, idbg->server, dbg->pid, DEBUG_PROC_DESC_NO_SERVICES | DEBUG_PROC_DESC_NO_MTS_PACKAGES, exeinfo, MAX_PATH, NULL, cmdline, MAX_PATH, NULL))) {
-		RzDebugInfo *info = R_NEW0 (RzDebugInfo);
+		RzDebugInfo *info = RZ_NEW0 (RzDebugInfo);
 		if (!info) {
 			return NULL;
 		}
@@ -562,11 +562,11 @@ static RzDebugInfo *windbg_info(RzDebug *dbg, const char *arg) {
 static bool windbg_gcore(RzDebug *dbg, RBuffer *dest) {
 	DbgEngContext *idbg = dbg->user;
 	rz_return_val_if_fail (idbg && idbg->initialized, false);
-	char *path = rz_sys_getenv (R_SYS_TMP);
-	if (R_STR_ISEMPTY (path)) {
+	char *path = rz_sys_getenv (RZ_SYS_TMP);
+	if (RZ_STR_ISEMPTY (path)) {
 		free (path);
 		path = rz_sys_getdir ();
-		if (R_STR_ISEMPTY (path)) {
+		if (RZ_STR_ISEMPTY (path)) {
 			free (path);
 			return false;
 		}
@@ -602,7 +602,7 @@ RzList *windbg_pids(RzDebug *dbg, int pid) {
 RzDebugPlugin rz_debug_plugin_windbg = {
 	.name = "windbg",
 	.license = "LGPL3",
-	.bits = R_SYS_BITS_64,
+	.bits = RZ_SYS_BITS_64,
 	.arch = "x86,x64,arm,arm64",
 	.canstep = 1,
 	.init = windbg_init,
@@ -630,7 +630,7 @@ RzDebugPlugin rz_debug_plugin_windbg = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_DBG,
+	.type = RZ_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_windbg,
 	.version = RZ_VERSION
 };

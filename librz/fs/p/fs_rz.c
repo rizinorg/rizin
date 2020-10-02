@@ -314,7 +314,7 @@ RzFSPlugin rz_fs_plugin_rz = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-        .type = R_LIB_TYPE_FS,
+        .type = RZ_LIB_TYPE_FS,
         .data = &rz_fs_plugin_rz,
         .versr2n = RZ_VERSION
 };

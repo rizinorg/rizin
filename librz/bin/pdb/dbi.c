@@ -21,7 +21,7 @@ static void free_dbi_stream(void *stream) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void parse_dbi_header(SDBIHeader *dbi_header, R_STREAM_FILE *stream_file) {
+static void parse_dbi_header(SDBIHeader *dbi_header, RZ_STREAM_FILE *stream_file) {
 	stream_file_read (stream_file, sizeof (ut32), (char *)&dbi_header->magic);
 	stream_file_read (stream_file, sizeof (ut32), (char *)&dbi_header->version);
 	stream_file_read (stream_file, sizeof (ut32), (char *)&dbi_header->age);
@@ -96,7 +96,7 @@ static int parse_dbi_ex_header(char *data, int max_len, SDBIExHeader *dbi_ex_hea
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void parse_dbg_header(SDbiDbgHeader *dbg_header, R_STREAM_FILE *stream_file) {
+static void parse_dbg_header(SDbiDbgHeader *dbg_header, RZ_STREAM_FILE *stream_file) {
 	stream_file_read (stream_file, sizeof (short), (char *)&dbg_header->sn_fpo);
 	stream_file_read (stream_file, sizeof (short), (char *)&dbg_header->sn_exception);
 	stream_file_read (stream_file, sizeof (short), (char *)&dbg_header->sn_fixup);
@@ -116,7 +116,7 @@ void init_dbi_stream(SDbiStream *dbi_stream) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void parse_dbi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream_file) {
+void parse_dbi_stream(void *parsed_pdb_stream, RZ_STREAM_FILE *stream_file) {
 	SDbiStream *dbi_stream = (SDbiStream *) parsed_pdb_stream;
 	SDBIExHeader *dbi_ex_header = 0;
 	int pos = 0;

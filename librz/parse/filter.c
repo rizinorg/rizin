@@ -120,7 +120,7 @@ static void __replaceRegisters(RzReg *reg, char *s, bool x86) {
 	int i;
 	for (i = 0; i < 64; i++) {
 		const char *k = rz_reg_get_name (reg, i);
-		if (!k || i == R_REG_NAME_PC) {
+		if (!k || i == RZ_REG_NAME_PC) {
 			continue;
 		}
 		const char *v = rz_reg_get_role (i);
@@ -262,7 +262,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalHint *hint, char *dat
 						char *doublecolon = (char *)rz_str_rstr (flagname, "::");
 						char *token = NULL;
 						if (doublelower && doublecolon) {
-							token = R_MAX (doublelower, doublecolon);
+							token = RZ_MAX (doublelower, doublecolon);
 						} else {
 							token = doublelower? doublelower: doublecolon;
 						}
@@ -485,7 +485,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalHint *hint, char *dat
 				break;
 			case 10:
 				{
-					RzList *regs = rz_reg_get_list (p->analb.anal->reg, R_REG_TYPE_GPR);
+					RzList *regs = rz_reg_get_list (p->analb.anal->reg, RZ_REG_TYPE_GPR);
 					RzRegItem *reg;
 					RzListIter *iter;
 					bool imm32 = false;

@@ -1,5 +1,5 @@
-#ifndef R_STR_H
-#define R_STR_H
+#ifndef RZ_STR_H
+#define RZ_STR_H
 
 #include <wchar.h>
 #include "rz_str_util.h"
@@ -10,20 +10,20 @@ extern "C" {
 #endif
 
 typedef enum {
-	R_STRING_ENC_LATIN1 = 'a',
-	R_STRING_ENC_UTF8 = '8',
-	R_STRING_ENC_UTF16LE = 'u',
-	R_STRING_ENC_UTF32LE = 'U',
-	R_STRING_ENC_UTF16BE = 'b',
-	R_STRING_ENC_UTF32BE = 'B',
-	R_STRING_ENC_GUESS = 'g',
+	RZ_STRING_ENC_LATIN1 = 'a',
+	RZ_STRING_ENC_UTF8 = '8',
+	RZ_STRING_ENC_UTF16LE = 'u',
+	RZ_STRING_ENC_UTF32LE = 'U',
+	RZ_STRING_ENC_UTF16BE = 'b',
+	RZ_STRING_ENC_UTF32BE = 'B',
+	RZ_STRING_ENC_GUESS = 'g',
 } RStrEnc;
 
 typedef int (*RStrRangeCallback) (void *, int);
 
-#define R_STR_ISEMPTY(x) (!(x) || !*(x))
-#define R_STR_ISNOTEMPTY(x) ((x) && *(x))
-#define R_STR_DUP(x) ((x) ? strdup ((x)) : NULL)
+#define RZ_STR_ISEMPTY(x) (!(x) || !*(x))
+#define RZ_STR_ISNOTEMPTY(x) ((x) && *(x))
+#define RZ_STR_DUP(x) ((x) ? strdup ((x)) : NULL)
 #define rz_str_array(x,y) ((y>=0 && y<(sizeof(x)/sizeof(*x)))?x[y]:"")
 RZ_API char *rz_str_repeat(const char *ch, int sz);
 RZ_API const char *rz_str_pad(const char ch, int len);
@@ -75,7 +75,7 @@ RZ_API int rz_str_arg_unescape(char *arg);
 RZ_API char **rz_str_argv(const char *str, int *_argc);
 RZ_API void rz_str_argv_free(char **argv);
 RZ_API char *rz_str_new(const char *str);
-RZ_API int rz_snprintf (char *string, int len, const char *fmt, ...)R_PRINTF_CHECK(3, 4);
+RZ_API int rz_snprintf (char *string, int len, const char *fmt, ...)RZ_PRINTF_CHECK(3, 4);
 RZ_API bool rz_str_is_ascii(const char *str);
 RZ_API char *rz_str_nextword(char *s, char ch);
 RZ_API bool rz_str_is_printable(const char *str);
@@ -175,7 +175,7 @@ RZ_API char *rz_str_prepend(char *ptr, const char *string);
 RZ_API char *rz_str_prefix_all(const char *s, const char *pfx);
 RZ_API char *rz_str_append(char *ptr, const char *string);
 RZ_API char *rz_str_append_owned(char *ptr, char *string);
-RZ_API char *rz_str_appendf(char *ptr, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
+RZ_API char *rz_str_appendf(char *ptr, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API char *rz_str_appendch(char *x, char y);
 RZ_API void rz_str_case(char *str, bool up);
 RZ_API void rz_str_trim_path(char *s);
@@ -206,4 +206,4 @@ RZ_API char *rz_str_version(const char *program);
 }
 #endif
 
-#endif //  R_STR_H
+#endif //  RZ_STR_H

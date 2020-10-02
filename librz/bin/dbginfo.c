@@ -65,7 +65,7 @@ RZ_API char *rz_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 		free (file_line);
 		return out;
 	}
-	R_FREE (file_line);
+	RZ_FREE (file_line);
 	
 	file[0] = 0;
 	if (rz_bin_addr2line (bin, addr, file, sizeof (file), &line)) {

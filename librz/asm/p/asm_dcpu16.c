@@ -31,7 +31,7 @@ RzAsmPlugin rz_asm_plugin_dcpu16 = {
 	.name = "dcpu16",
 	.arch = "dpcu",
 	.bits = 16,
-	.endian = R_SYS_ENDIAN_LITTLE,
+	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.desc = "Mojang's DCPU-16",
 	.license = "PD",
 	.disassemble = &disassemble,
@@ -40,7 +40,7 @@ RzAsmPlugin rz_asm_plugin_dcpu16 = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_dcpu16,
 	.version = RZ_VERSION
 };

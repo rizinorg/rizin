@@ -94,7 +94,7 @@ static bool __resize(RzIO *io, RzIODesc *fd, ut64 count) {
 	if (!new_buf) {
 		return false;
 	}
-	memcpy (new_buf, _io_malloc_buf (fd), R_MIN (count, mallocsz));
+	memcpy (new_buf, _io_malloc_buf (fd), RZ_MIN (count, mallocsz));
 	if (count > mallocsz) {
 		memset (new_buf + mallocsz, 0, count - mallocsz);
 	}
@@ -126,8 +126,8 @@ static int __close(RzIODesc *fd) {
 		return -1;
 	}
 	riom = fd->data;
-	R_FREE (riom->buf);
-	R_FREE (fd->data);
+	RZ_FREE (riom->buf);
+	RZ_FREE (fd->data);
 	eprintf ("TODO: Writing changes into gzipped files is not yet supported\n");
 	return 0;
 }
@@ -159,7 +159,7 @@ static bool __plugin_open(RzIO *io, const char *pathname, bool many) {
 
 static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
-		RzIOGzip *mal = R_NEW0 (RzIOGzip);
+		RzIOGzip *mal = RZ_NEW0 (RzIOGzip);
 		if (!mal) {
 			return NULL;
 		}
@@ -193,7 +193,7 @@ RzIOPlugin rz_io_plugin_gzip = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_gzip,
 	.version = RZ_VERSION
 };

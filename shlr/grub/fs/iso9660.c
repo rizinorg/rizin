@@ -46,7 +46,7 @@
 #define GRUB_ISO9660_VOLDESC_END	255
 
 /* The head of a volume descriptor.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_iso9660_voldesc
 {
   grub_uint8_t type;
@@ -55,7 +55,7 @@ struct grub_iso9660_voldesc
 });
 
 /* A directory entry.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_iso9660_dir
 {
   grub_uint8_t len;
@@ -70,7 +70,7 @@ struct grub_iso9660_dir
   grub_uint8_t namelen;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_iso9660_date
 {
   grub_uint8_t year[4];
@@ -84,7 +84,7 @@ struct grub_iso9660_date
 });
 
 /* The primary volume descriptor.  Only little endian is used.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_iso9660_primary_voldesc
 {
   struct grub_iso9660_voldesc voldesc;
@@ -104,7 +104,7 @@ struct grub_iso9660_primary_voldesc
 });
 
 /* A single entry in the path table.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_iso9660_path
 {
   grub_uint8_t len;
@@ -115,7 +115,7 @@ struct grub_iso9660_path
 });
 
 /* An entry in the System Usage area of the directory entry.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_iso9660_susp_entry
 {
   grub_uint8_t sig[2];
@@ -123,12 +123,12 @@ struct grub_iso9660_susp_entry
   grub_uint8_t version;
   // grub_uint8_t data[0];
 });
-// wtf sizeof not working? R_PACKED is failing here?
+// wtf sizeof not working? RZ_PACKED is failing here?
 #define ENTRY_DATA(x) ((((grub_uint8_t*)(x)) + 4))
 
 /* The CE entry.  This is used to describe the next block where data
    can be found.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_iso9660_susp_ce
 {
   struct grub_iso9660_susp_entry entry;

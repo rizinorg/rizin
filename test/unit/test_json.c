@@ -12,56 +12,56 @@ typedef struct json_test_t {
 
 static int check_expected_0(RJson *j) {
 	RJson *child_0, *child_1, *child_2;
-	mu_assert_eq (j->type, R_JSON_OBJECT, "object type");
+	mu_assert_eq (j->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq (j->children.count, 16, "object size");
 	child_0 = j->children.first;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "some-int", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (child_0->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (child_0->num.u_value, 195, "integer value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "array1", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_ARRAY, "array type");
+	mu_assert_eq (child_0->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq (child_0->children.count, 7, "array size");
 	child_1 = child_0->children.first;
 	mu_assert_notnull (child_1, "array child");
 	mu_assert_null (child_1->key, "array child key");
-	mu_assert_eq (child_1->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (child_1->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (child_1->num.u_value, 3, "integer value");
 	child_1 = child_1->next;
 	mu_assert_notnull (child_1, "array child");
 	mu_assert_null (child_1->key, "array child key");
-	mu_assert_eq (child_1->type, R_JSON_DOUBLE, "double type");
+	mu_assert_eq (child_1->type, RZ_JSON_DOUBLE, "double type");
 	mu_assert ("double value",
 		child_1->num.dbl_value < (5.1 + 1.0e-13)
 		&& child_1->num.dbl_value > (5.1 - 1.0e-13));
 	child_1 = child_1->next;
 	mu_assert_notnull (child_1, "array child");
 	mu_assert_null (child_1->key, "array child key");
-	mu_assert_eq (child_1->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (child_1->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (child_1->num.u_value, -7, "integer value");
 	child_1 = child_1->next;
 	mu_assert_notnull (child_1, "array child");
 	mu_assert_null (child_1->key, "array child key");
-	mu_assert_eq (child_1->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_1->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_1->str_value, "nine", "string value");
 	child_1 = child_1->next;
 	mu_assert_notnull (child_1, "array child");
 	mu_assert_null (child_1->key, "array child key");
-	mu_assert_eq (child_1->type, R_JSON_BOOLEAN, "boolean type");
+	mu_assert_eq (child_1->type, RZ_JSON_BOOLEAN, "boolean type");
 	mu_assert_eq (child_1->num.u_value, 1, "boolean value");
 	child_1 = child_1->next;
 	mu_assert_notnull (child_1, "array child");
 	mu_assert_null (child_1->key, "array child key");
-	mu_assert_eq (child_1->type, R_JSON_BOOLEAN, "boolean type");
+	mu_assert_eq (child_1->type, RZ_JSON_BOOLEAN, "boolean type");
 	mu_assert_eq (child_1->num.u_value, 0, "boolean value");
 	child_1 = child_1->next;
 	mu_assert_notnull (child_1, "array child");
 	mu_assert_null (child_1->key, "array child key");
-	mu_assert_eq (child_1->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_1->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_1->str_value, "last", "string value");
 	child_1 = child_1->next;
 	mu_assert_null (child_1, "last child null");
@@ -69,17 +69,17 @@ static int check_expected_0(RJson *j) {
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "array2", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_ARRAY, "array type");
+	mu_assert_eq (child_0->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq (child_0->children.count, 2, "array size");
 	child_1 = child_0->children.first;
 	mu_assert_notnull (child_1, "array child");
 	mu_assert_null (child_1->key, "array child key");
-	mu_assert_eq (child_1->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_1->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_1->str_value, "/*", "string value");
 	child_1 = child_1->next;
 	mu_assert_notnull (child_1, "array child");
 	mu_assert_null (child_1->key, "array child key");
-	mu_assert_eq (child_1->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_1->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_1->str_value, "*/", "string value");
 	child_1 = child_1->next;
 	mu_assert_null (child_1, "last child null");
@@ -87,19 +87,19 @@ static int check_expected_0(RJson *j) {
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "some-bool", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_BOOLEAN, "boolean type");
+	mu_assert_eq (child_0->type, RZ_JSON_BOOLEAN, "boolean type");
 	mu_assert_eq (child_0->num.u_value, 1, "boolean value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "other-bool", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_BOOLEAN, "boolean type");
+	mu_assert_eq (child_0->type, RZ_JSON_BOOLEAN, "boolean type");
 	mu_assert_eq (child_0->num.u_value, 0, "boolean value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "some-dbl", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_DOUBLE, "double type");
+	mu_assert_eq (child_0->type, RZ_JSON_DOUBLE, "double type");
 	mu_assert ("double value",
 		child_0->num.dbl_value < (-1.0e-4 + 1.0e-13)
 		&& child_0->num.dbl_value > (-1.0e-4 - 1.0e-13));
@@ -107,78 +107,78 @@ static int check_expected_0(RJson *j) {
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "some-null", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_NULL, "null type");
+	mu_assert_eq (child_0->type, RZ_JSON_NULL, "null type");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "hello", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "world!", "string value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "str1", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "//", "string value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "str2", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "\\", "string value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "str3", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "text /*text*/ text", "string value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "str4", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "\\text\\", "string value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "str5", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "?text?", "string value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "str\t6\\", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "text\ntext\ttext", "string value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "str7", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "text\xe1\x88\xb4text\xe5\x99\xb8", "string value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "obj", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_OBJECT, "object type");
+	mu_assert_eq (child_0->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq (child_0->children.count, 2, "object size");
 	child_1 = child_0->children.first;
 	mu_assert_notnull (child_1, "object child");
 	mu_assert_notnull (child_1->key, "object child key not null");
 	mu_assert_streq (child_1->key, "KEY", "object child key");
-	mu_assert_eq (child_1->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_1->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_1->str_value, "VAL", "string value");
 	child_1 = child_1->next;
 	mu_assert_notnull (child_1, "object child");
 	mu_assert_notnull (child_1->key, "object child key not null");
 	mu_assert_streq (child_1->key, "obj", "object child key");
-	mu_assert_eq (child_1->type, R_JSON_OBJECT, "object type");
+	mu_assert_eq (child_1->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq (child_1->children.count, 1, "object size");
 	child_2 = child_1->children.first;
 	mu_assert_notnull (child_2, "object child");
 	mu_assert_notnull (child_2->key, "object child key not null");
 	mu_assert_streq (child_2->key, "KEY", "object child key");
-	mu_assert_eq (child_2->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_2->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_2->str_value, "VAL", "string value");
 	child_2 = child_2->next;
 	mu_assert_null (child_2, "last child null");
@@ -191,27 +191,27 @@ static int check_expected_0(RJson *j) {
 
 static int check_expected_4(RJson *j) {
 	RJson *child_0;
-	mu_assert_eq (j->type, R_JSON_ARRAY, "array type");
+	mu_assert_eq (j->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq (j->children.count, 4, "array size");
 	child_0 = j->children.first;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (child_0->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (child_0->num.u_value, 1, "integer value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (child_0->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (child_0->num.u_value, 2, "integer value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (child_0->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (child_0->num.u_value, 3, "integer value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "last", "string value");
 	child_0 = child_0->next;
 	mu_assert_null (child_0, "last child null");
@@ -219,19 +219,19 @@ static int check_expected_4(RJson *j) {
 }
 
 static int check_expected_5(RJson *j) {
-	mu_assert_eq (j->type, R_JSON_STRING, "string type");
+	mu_assert_eq (j->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (j->str_value, "string value", "string value");
 	return MU_PASSED;
 }
 
 static int check_expected_6(RJson *j) {
-	mu_assert_eq (j->type, R_JSON_BOOLEAN, "boolean type");
+	mu_assert_eq (j->type, RZ_JSON_BOOLEAN, "boolean type");
 	mu_assert_eq (j->num.u_value, 1, "boolean value");
 	return MU_PASSED;
 }
 
 static int check_expected_7(RJson *j) {
-	mu_assert_eq (j->type, R_JSON_DOUBLE, "double type");
+	mu_assert_eq (j->type, RZ_JSON_DOUBLE, "double type");
 	mu_assert ("double value",
 		j->num.dbl_value < (-1.0e-2 + 1.0e-13)
 		&& j->num.dbl_value > (-1.0e-2 - 1.0e-13));
@@ -239,106 +239,106 @@ static int check_expected_7(RJson *j) {
 }
 
 static int check_expected_8(RJson *j) {
-	mu_assert_eq (j->type, R_JSON_NULL, "null type");
+	mu_assert_eq (j->type, RZ_JSON_NULL, "null type");
 	return MU_PASSED;
 }
 
 static int check_expected_9(RJson *j) {
 	RJson *child_0, *child_1, *child_2, *child_3, *child_4, *child_5;
-	mu_assert_eq (j->type, R_JSON_OBJECT, "object type");
+	mu_assert_eq (j->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq (j->children.count, 1, "object size");
 	child_0 = j->children.first;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "glossary", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_OBJECT, "object type");
+	mu_assert_eq (child_0->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq (child_0->children.count, 2, "object size");
 	child_1 = child_0->children.first;
 	mu_assert_notnull (child_1, "object child");
 	mu_assert_notnull (child_1->key, "object child key not null");
 	mu_assert_streq (child_1->key, "title", "object child key");
-	mu_assert_eq (child_1->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_1->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_1->str_value, "example glossary", "string value");
 	child_1 = child_1->next;
 	mu_assert_notnull (child_1, "object child");
 	mu_assert_notnull (child_1->key, "object child key not null");
 	mu_assert_streq (child_1->key, "GlossDiv", "object child key");
-	mu_assert_eq (child_1->type, R_JSON_OBJECT, "object type");
+	mu_assert_eq (child_1->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq (child_1->children.count, 2, "object size");
 	child_2 = child_1->children.first;
 	mu_assert_notnull (child_2, "object child");
 	mu_assert_notnull (child_2->key, "object child key not null");
 	mu_assert_streq (child_2->key, "title", "object child key");
-	mu_assert_eq (child_2->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_2->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_2->str_value, "S", "string value");
 	child_2 = child_2->next;
 	mu_assert_notnull (child_2, "object child");
 	mu_assert_notnull (child_2->key, "object child key not null");
 	mu_assert_streq (child_2->key, "GlossList", "object child key");
-	mu_assert_eq (child_2->type, R_JSON_ARRAY, "array type");
+	mu_assert_eq (child_2->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq (child_2->children.count, 1, "array size");
 	child_3 = child_2->children.first;
 	mu_assert_notnull (child_3, "array child");
 	mu_assert_null (child_3->key, "array child key");
-	mu_assert_eq (child_3->type, R_JSON_OBJECT, "object type");
+	mu_assert_eq (child_3->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq (child_3->children.count, 7, "object size");
 	child_4 = child_3->children.first;
 	mu_assert_notnull (child_4, "object child");
 	mu_assert_notnull (child_4->key, "object child key not null");
 	mu_assert_streq (child_4->key, "ID", "object child key");
-	mu_assert_eq (child_4->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_4->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_4->str_value, "SGML", "string value");
 	child_4 = child_4->next;
 	mu_assert_notnull (child_4, "object child");
 	mu_assert_notnull (child_4->key, "object child key not null");
 	mu_assert_streq (child_4->key, "SortAs", "object child key");
-	mu_assert_eq (child_4->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_4->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_4->str_value, "SGML", "string value");
 	child_4 = child_4->next;
 	mu_assert_notnull (child_4, "object child");
 	mu_assert_notnull (child_4->key, "object child key not null");
 	mu_assert_streq (child_4->key, "GlossTerm", "object child key");
-	mu_assert_eq (child_4->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_4->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_4->str_value, "Standard Generalized Markup Language", "string value");
 	child_4 = child_4->next;
 	mu_assert_notnull (child_4, "object child");
 	mu_assert_notnull (child_4->key, "object child key not null");
 	mu_assert_streq (child_4->key, "Acronym", "object child key");
-	mu_assert_eq (child_4->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_4->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_4->str_value, "SGML", "string value");
 	child_4 = child_4->next;
 	mu_assert_notnull (child_4, "object child");
 	mu_assert_notnull (child_4->key, "object child key not null");
 	mu_assert_streq (child_4->key, "Abbrev", "object child key");
-	mu_assert_eq (child_4->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_4->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_4->str_value, "ISO 8879:1986", "string value");
 	child_4 = child_4->next;
 	mu_assert_notnull (child_4, "object child");
 	mu_assert_notnull (child_4->key, "object child key not null");
 	mu_assert_streq (child_4->key, "GlossDef", "object child key");
-	mu_assert_eq (child_4->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_4->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_4->str_value, "A meta-markup language, used to create markup languages such as DocBoo"
 		"k.", "string value");
 	child_4 = child_4->next;
 	mu_assert_notnull (child_4, "object child");
 	mu_assert_notnull (child_4->key, "object child key not null");
 	mu_assert_streq (child_4->key, "GlossSeeAlso", "object child key");
-	mu_assert_eq (child_4->type, R_JSON_ARRAY, "array type");
+	mu_assert_eq (child_4->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq (child_4->children.count, 3, "array size");
 	child_5 = child_4->children.first;
 	mu_assert_notnull (child_5, "array child");
 	mu_assert_null (child_5->key, "array child key");
-	mu_assert_eq (child_5->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_5->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_5->str_value, "GML", "string value");
 	child_5 = child_5->next;
 	mu_assert_notnull (child_5, "array child");
 	mu_assert_null (child_5->key, "array child key");
-	mu_assert_eq (child_5->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_5->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_5->str_value, "XML", "string value");
 	child_5 = child_5->next;
 	mu_assert_notnull (child_5, "array child");
 	mu_assert_null (child_5->key, "array child key");
-	mu_assert_eq (child_5->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_5->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_5->str_value, "markup", "string value");
 	child_5 = child_5->next;
 	mu_assert_null (child_5, "last child null");
@@ -357,25 +357,25 @@ static int check_expected_9(RJson *j) {
 
 static int check_expected_10(RJson *j) {
 	RJson *child_0;
-	mu_assert_eq (j->type, R_JSON_OBJECT, "object type");
+	mu_assert_eq (j->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq (j->children.count, 3, "object size");
 	child_0 = j->children.first;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "this", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "is", "string value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "really", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "simple", "string value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "json", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "right?", "string value");
 	child_0 = child_0->next;
 	mu_assert_null (child_0, "last child null");
@@ -383,20 +383,20 @@ static int check_expected_10(RJson *j) {
 }
 
 static int check_expected_11(RJson *j) {
-	mu_assert_eq (j->type, R_JSON_BOOLEAN, "boolean type");
+	mu_assert_eq (j->type, RZ_JSON_BOOLEAN, "boolean type");
 	mu_assert_eq (j->num.u_value, 0, "boolean value");
 	return MU_PASSED;
 }
 
 static int check_expected_13(RJson *j) {
-	mu_assert_eq (j->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (j->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (j->num.u_value, 1221, "integer value");
 	return MU_PASSED;
 }
 
 static int check_expected_14(RJson *j) {
 	RJson *child_0;
-	mu_assert_eq (j->type, R_JSON_OBJECT, "object type");
+	mu_assert_eq (j->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq (j->children.count, 0, "object size");
 	child_0 = j->children.first;
 	mu_assert_null (child_0, "last child null");
@@ -405,71 +405,71 @@ static int check_expected_14(RJson *j) {
 
 static int check_expected_19(RJson *j) {
 	RJson *child_0, *child_1, *child_2;
-	mu_assert_eq (j->type, R_JSON_ARRAY, "array type");
+	mu_assert_eq (j->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq (j->children.count, 9, "array size");
 	child_0 = j->children.first;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "foo", "string value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "bar", "string value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "baz", "string value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_BOOLEAN, "boolean type");
+	mu_assert_eq (child_0->type, RZ_JSON_BOOLEAN, "boolean type");
 	mu_assert_eq (child_0->num.u_value, 1, "boolean value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_BOOLEAN, "boolean type");
+	mu_assert_eq (child_0->type, RZ_JSON_BOOLEAN, "boolean type");
 	mu_assert_eq (child_0->num.u_value, 0, "boolean value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_NULL, "null type");
+	mu_assert_eq (child_0->type, RZ_JSON_NULL, "null type");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_OBJECT, "object type");
+	mu_assert_eq (child_0->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq (child_0->children.count, 1, "object size");
 	child_1 = child_0->children.first;
 	mu_assert_notnull (child_1, "object child");
 	mu_assert_notnull (child_1->key, "object child key not null");
 	mu_assert_streq (child_1->key, "key", "object child key");
-	mu_assert_eq (child_1->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_1->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_1->str_value, "value", "string value");
 	child_1 = child_1->next;
 	mu_assert_null (child_1, "last child null");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_ARRAY, "array type");
+	mu_assert_eq (child_0->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq (child_0->children.count, 4, "array size");
 	child_1 = child_0->children.first;
 	mu_assert_notnull (child_1, "array child");
 	mu_assert_null (child_1->key, "array child key");
-	mu_assert_eq (child_1->type, R_JSON_NULL, "null type");
+	mu_assert_eq (child_1->type, RZ_JSON_NULL, "null type");
 	child_1 = child_1->next;
 	mu_assert_notnull (child_1, "array child");
 	mu_assert_null (child_1->key, "array child key");
-	mu_assert_eq (child_1->type, R_JSON_NULL, "null type");
+	mu_assert_eq (child_1->type, RZ_JSON_NULL, "null type");
 	child_1 = child_1->next;
 	mu_assert_notnull (child_1, "array child");
 	mu_assert_null (child_1->key, "array child key");
-	mu_assert_eq (child_1->type, R_JSON_NULL, "null type");
+	mu_assert_eq (child_1->type, RZ_JSON_NULL, "null type");
 	child_1 = child_1->next;
 	mu_assert_notnull (child_1, "array child");
 	mu_assert_null (child_1->key, "array child key");
-	mu_assert_eq (child_1->type, R_JSON_ARRAY, "array type");
+	mu_assert_eq (child_1->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq (child_1->children.count, 0, "array size");
 	child_2 = child_1->children.first;
 	mu_assert_null (child_2, "last child null");
@@ -478,7 +478,7 @@ static int check_expected_19(RJson *j) {
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "\n\x0d\\", "string value");
 	child_0 = child_0->next;
 	mu_assert_null (child_0, "last child null");
@@ -486,107 +486,107 @@ static int check_expected_19(RJson *j) {
 }
 
 static int check_expected_22(RJson *j) {
-	mu_assert_eq (j->type, R_JSON_STRING, "string type");
+	mu_assert_eq (j->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (j->str_value, "\xf0\x90\x8c\x82M\xd0\xb0\xe4\xba\x8c\xf0\x90\x8c\x82", "string value");
 	return MU_PASSED;
 }
 
 static int check_expected_23(RJson *j) {
 	RJson *child_0, *child_1, *child_2, *child_3, *child_4, *child_5;
-	mu_assert_eq (j->type, R_JSON_OBJECT, "object type");
+	mu_assert_eq (j->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq (j->children.count, 1, "object size");
 	child_0 = j->children.first;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "glossary", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_OBJECT, "object type");
+	mu_assert_eq (child_0->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq (child_0->children.count, 2, "object size");
 	child_1 = child_0->children.first;
 	mu_assert_notnull (child_1, "object child");
 	mu_assert_notnull (child_1->key, "object child key not null");
 	mu_assert_streq (child_1->key, "title", "object child key");
-	mu_assert_eq (child_1->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_1->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_1->str_value, "example glossary", "string value");
 	child_1 = child_1->next;
 	mu_assert_notnull (child_1, "object child");
 	mu_assert_notnull (child_1->key, "object child key not null");
 	mu_assert_streq (child_1->key, "GlossDiv", "object child key");
-	mu_assert_eq (child_1->type, R_JSON_OBJECT, "object type");
+	mu_assert_eq (child_1->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq (child_1->children.count, 2, "object size");
 	child_2 = child_1->children.first;
 	mu_assert_notnull (child_2, "object child");
 	mu_assert_notnull (child_2->key, "object child key not null");
 	mu_assert_streq (child_2->key, "title", "object child key");
-	mu_assert_eq (child_2->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_2->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_2->str_value, "S", "string value");
 	child_2 = child_2->next;
 	mu_assert_notnull (child_2, "object child");
 	mu_assert_notnull (child_2->key, "object child key not null");
 	mu_assert_streq (child_2->key, "GlossList", "object child key");
-	mu_assert_eq (child_2->type, R_JSON_ARRAY, "array type");
+	mu_assert_eq (child_2->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq (child_2->children.count, 1, "array size");
 	child_3 = child_2->children.first;
 	mu_assert_notnull (child_3, "array child");
 	mu_assert_null (child_3->key, "array child key");
-	mu_assert_eq (child_3->type, R_JSON_OBJECT, "object type");
+	mu_assert_eq (child_3->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq (child_3->children.count, 7, "object size");
 	child_4 = child_3->children.first;
 	mu_assert_notnull (child_4, "object child");
 	mu_assert_notnull (child_4->key, "object child key not null");
 	mu_assert_streq (child_4->key, "ID", "object child key");
-	mu_assert_eq (child_4->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_4->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_4->str_value, "SGML", "string value");
 	child_4 = child_4->next;
 	mu_assert_notnull (child_4, "object child");
 	mu_assert_notnull (child_4->key, "object child key not null");
 	mu_assert_streq (child_4->key, "SortAs", "object child key");
-	mu_assert_eq (child_4->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_4->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_4->str_value, "SGML", "string value");
 	child_4 = child_4->next;
 	mu_assert_notnull (child_4, "object child");
 	mu_assert_notnull (child_4->key, "object child key not null");
 	mu_assert_streq (child_4->key, "GlossTerm", "object child key");
-	mu_assert_eq (child_4->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_4->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_4->str_value, "Standard Generalized Markup Language", "string value");
 	child_4 = child_4->next;
 	mu_assert_notnull (child_4, "object child");
 	mu_assert_notnull (child_4->key, "object child key not null");
 	mu_assert_streq (child_4->key, "Acronym", "object child key");
-	mu_assert_eq (child_4->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_4->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_4->str_value, "SGML", "string value");
 	child_4 = child_4->next;
 	mu_assert_notnull (child_4, "object child");
 	mu_assert_notnull (child_4->key, "object child key not null");
 	mu_assert_streq (child_4->key, "Abbrev", "object child key");
-	mu_assert_eq (child_4->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_4->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_4->str_value, "ISO 8879:1986", "string value");
 	child_4 = child_4->next;
 	mu_assert_notnull (child_4, "object child");
 	mu_assert_notnull (child_4->key, "object child key not null");
 	mu_assert_streq (child_4->key, "GlossDef", "object child key");
-	mu_assert_eq (child_4->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_4->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_4->str_value, "A meta-markup language, used to create markup languages such as DocBoo"
 		"k.", "string value");
 	child_4 = child_4->next;
 	mu_assert_notnull (child_4, "object child");
 	mu_assert_notnull (child_4->key, "object child key not null");
 	mu_assert_streq (child_4->key, "GlossSeeAlso", "object child key");
-	mu_assert_eq (child_4->type, R_JSON_ARRAY, "array type");
+	mu_assert_eq (child_4->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq (child_4->children.count, 3, "array size");
 	child_5 = child_4->children.first;
 	mu_assert_notnull (child_5, "array child");
 	mu_assert_null (child_5->key, "array child key");
-	mu_assert_eq (child_5->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_5->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_5->str_value, "GML", "string value");
 	child_5 = child_5->next;
 	mu_assert_notnull (child_5, "array child");
 	mu_assert_null (child_5->key, "array child key");
-	mu_assert_eq (child_5->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_5->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_5->str_value, "XML", "string value");
 	child_5 = child_5->next;
 	mu_assert_notnull (child_5, "array child");
 	mu_assert_null (child_5->key, "array child key");
-	mu_assert_eq (child_5->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_5->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_5->str_value, "markup", "string value");
 	child_5 = child_5->next;
 	mu_assert_null (child_5, "last child null");
@@ -605,40 +605,40 @@ static int check_expected_23(RJson *j) {
 
 static int check_expected_24(RJson *j) {
 	RJson *child_0;
-	mu_assert_eq (j->type, R_JSON_ARRAY, "array type");
+	mu_assert_eq (j->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq (j->children.count, 5, "array size");
 	child_0 = j->children.first;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_DOUBLE, "double type");
+	mu_assert_eq (child_0->type, RZ_JSON_DOUBLE, "double type");
 	mu_assert ("double value",
 		child_0->num.dbl_value < (1.1999999999999999e-4 + 1.0e-13)
 		&& child_0->num.dbl_value > (1.1999999999999999e-4 - 1.0e-13));
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_DOUBLE, "double type");
+	mu_assert_eq (child_0->type, RZ_JSON_DOUBLE, "double type");
 	mu_assert ("double value",
 		child_0->num.dbl_value < (6.0e-6 + 1.0e-13)
 		&& child_0->num.dbl_value > (6.0e-6 - 1.0e-13));
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_DOUBLE, "double type");
+	mu_assert_eq (child_0->type, RZ_JSON_DOUBLE, "double type");
 	mu_assert ("double value",
 		child_0->num.dbl_value < (6.0e-6 + 1.0e-13)
 		&& child_0->num.dbl_value > (6.0e-6 - 1.0e-13));
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_DOUBLE, "double type");
+	mu_assert_eq (child_0->type, RZ_JSON_DOUBLE, "double type");
 	mu_assert ("double value",
 		child_0->num.dbl_value < (1.0e-6 + 1.0e-13)
 		&& child_0->num.dbl_value > (1.0e-6 - 1.0e-13));
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_DOUBLE, "double type");
+	mu_assert_eq (child_0->type, RZ_JSON_DOUBLE, "double type");
 	mu_assert ("double value",
 		child_0->num.dbl_value < (1.0e-6 + 1.0e-13)
 		&& child_0->num.dbl_value > (1.0e-6 - 1.0e-13));
@@ -649,33 +649,33 @@ static int check_expected_24(RJson *j) {
 
 static int check_expected_25(RJson *j) {
 	RJson *child_0;
-	mu_assert_eq (j->type, R_JSON_ARRAY, "array type");
+	mu_assert_eq (j->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq (j->children.count, 4, "array size");
 	child_0 = j->children.first;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_DOUBLE, "double type");
+	mu_assert_eq (child_0->type, RZ_JSON_DOUBLE, "double type");
 	mu_assert ("double value",
 		child_0->num.dbl_value < (10.0 + 1.0e-13)
 		&& child_0->num.dbl_value > (10.0 - 1.0e-13));
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_DOUBLE, "double type");
+	mu_assert_eq (child_0->type, RZ_JSON_DOUBLE, "double type");
 	mu_assert ("double value",
 		child_0->num.dbl_value < (10.0 + 1.0e-13)
 		&& child_0->num.dbl_value > (10.0 - 1.0e-13));
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_DOUBLE, "double type");
+	mu_assert_eq (child_0->type, RZ_JSON_DOUBLE, "double type");
 	mu_assert ("double value",
 		child_0->num.dbl_value < (3.141569 + 1.0e-13)
 		&& child_0->num.dbl_value > (3.141569 - 1.0e-13));
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_DOUBLE, "double type");
+	mu_assert_eq (child_0->type, RZ_JSON_DOUBLE, "double type");
 	mu_assert ("double value",
 		child_0->num.dbl_value < (1000.0 + 1.0e-13)
 		&& child_0->num.dbl_value > (1000.0 - 1.0e-13));
@@ -685,41 +685,41 @@ static int check_expected_25(RJson *j) {
 }
 
 static int check_expected_26(RJson *j) {
-	mu_assert_eq (j->type, R_JSON_STRING, "string type");
+	mu_assert_eq (j->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (j->str_value, "", "string value");
 	return MU_PASSED;
 }
 
 static int check_expected_27(RJson *j) {
 	RJson *child_0, *child_1;
-	mu_assert_eq (j->type, R_JSON_OBJECT, "object type");
+	mu_assert_eq (j->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq (j->children.count, 2, "object size");
 	child_0 = j->children.first;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "some", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "utf-8", "string value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "strings", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_ARRAY, "array type");
+	mu_assert_eq (child_0->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq (child_0->children.count, 3, "array size");
 	child_1 = child_0->children.first;
 	mu_assert_notnull (child_1, "array child");
 	mu_assert_null (child_1->key, "array child key");
-	mu_assert_eq (child_1->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_1->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_1->str_value, "\xd0\xad\xd1\x82\xd0\xbe", "string value");
 	child_1 = child_1->next;
 	mu_assert_notnull (child_1, "array child");
 	mu_assert_null (child_1->key, "array child key");
-	mu_assert_eq (child_1->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_1->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_1->str_value, "\xd1\x80\xd1\x83\xd1\x81\xd1\x81\xd0\xba\xd0\xb8\xd0\xb9", "string value");
 	child_1 = child_1->next;
 	mu_assert_notnull (child_1, "array child");
 	mu_assert_null (child_1->key, "array child key");
-	mu_assert_eq (child_1->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_1->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_1->str_value, "\xd1\x82\xd0\xb5\xd0\xba\xd1\x81\xd1\x82", "string value");
 	child_1 = child_1->next;
 	mu_assert_null (child_1, "last child null");
@@ -729,20 +729,20 @@ static int check_expected_27(RJson *j) {
 }
 
 static int check_expected_28(RJson *j) {
-	mu_assert_eq (j->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (j->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (j->num.u_value, 2009, "integer value");
 	return MU_PASSED;
 }
 
 static int check_expected_29(RJson *j) {
 	RJson *child_0;
-	mu_assert_eq (j->type, R_JSON_OBJECT, "object type");
+	mu_assert_eq (j->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq (j->children.count, 1, "object size");
 	child_0 = j->children.first;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "U+10ABCD", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "\xf4\x8a\xaf\x8d", "string value");
 	child_0 = child_0->next;
 	mu_assert_null (child_0, "last child null");
@@ -751,62 +751,62 @@ static int check_expected_29(RJson *j) {
 
 static int check_expected_30(RJson *j) {
 	RJson *child_0;
-	mu_assert_eq (j->type, R_JSON_ARRAY, "array type");
+	mu_assert_eq (j->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq (j->children.count, 11, "array size");
 	child_0 = j->children.first;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (child_0->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (child_0->num.u_value, 1, "integer value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (child_0->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (child_0->num.u_value, 2, "integer value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (child_0->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (child_0->num.u_value, 3, "integer value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (child_0->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (child_0->num.u_value, 4, "integer value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (child_0->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (child_0->num.u_value, 5, "integer value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (child_0->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (child_0->num.u_value, 6, "integer value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (child_0->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (child_0->num.u_value, 7, "integer value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (child_0->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (child_0->num.u_value, 123456789, "integer value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (child_0->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (child_0->num.u_value, -123456789, "integer value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (child_0->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (child_0->num.u_value, 2147483647, "integer value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (child_0->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (child_0->num.u_value, -2147483647, "integer value");
 	child_0 = child_0->next;
 	mu_assert_null (child_0, "last child null");
@@ -815,12 +815,12 @@ static int check_expected_30(RJson *j) {
 
 static int check_expected_31(RJson *j) {
 	RJson *child_0;
-	mu_assert_eq (j->type, R_JSON_ARRAY, "array type");
+	mu_assert_eq (j->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq (j->children.count, 1, "array size");
 	child_0 = j->children.first;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "\xd0\x94\xd0\xb0 \xd0\x9c\xd1 \xd0\x95\xd0\xb1\xd0\xb0 \xd0\x9c\xd0\xb0\xd0\xb9\xd0\xba\xd0\xb0\xd1\x82\xd0\xb0", "string value");
 	child_0 = child_0->next;
 	mu_assert_null (child_0, "last child null");
@@ -829,13 +829,13 @@ static int check_expected_31(RJson *j) {
 
 static int check_expected_32(RJson *j) {
 	RJson *child_0;
-	mu_assert_eq (j->type, R_JSON_OBJECT, "object type");
+	mu_assert_eq (j->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq (j->children.count, 1, "object size");
 	child_0 = j->children.first;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "bad thing", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (child_0->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (child_0->num.u_value, 10, "integer value");
 	child_0 = child_0->next;
 	mu_assert_null (child_0, "last child null");
@@ -843,7 +843,7 @@ static int check_expected_32(RJson *j) {
 }
 
 static int check_expected_35(RJson *j) {
-	mu_assert_eq (j->type, R_JSON_DOUBLE, "double type");
+	mu_assert_eq (j->type, RZ_JSON_DOUBLE, "double type");
 	mu_assert ("double value",
 		j->num.dbl_value < (1000.0 + 1.0e-13)
 		&& j->num.dbl_value > (1000.0 - 1.0e-13));
@@ -851,7 +851,7 @@ static int check_expected_35(RJson *j) {
 }
 
 static int check_expected_36(RJson *j) {
-	mu_assert_eq (j->type, R_JSON_DOUBLE, "double type");
+	mu_assert_eq (j->type, RZ_JSON_DOUBLE, "double type");
 	mu_assert ("double value",
 		j->num.dbl_value < (10.0 + 1.0e-13)
 		&& j->num.dbl_value > (10.0 - 1.0e-13));
@@ -860,25 +860,25 @@ static int check_expected_36(RJson *j) {
 
 static int check_expected_37(RJson *j) {
 	RJson *child_0;
-	mu_assert_eq (j->type, R_JSON_OBJECT, "object type");
+	mu_assert_eq (j->type, RZ_JSON_OBJECT, "object type");
 	mu_assert_eq (j->children.count, 3, "object size");
 	child_0 = j->children.first;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "boolean, true", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_BOOLEAN, "boolean type");
+	mu_assert_eq (child_0->type, RZ_JSON_BOOLEAN, "boolean type");
 	mu_assert_eq (child_0->num.u_value, 1, "boolean value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "boolean, false", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_BOOLEAN, "boolean type");
+	mu_assert_eq (child_0->type, RZ_JSON_BOOLEAN, "boolean type");
 	mu_assert_eq (child_0->num.u_value, 0, "boolean value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "object child");
 	mu_assert_notnull (child_0->key, "object child key not null");
 	mu_assert_streq (child_0->key, "null", "object child key");
-	mu_assert_eq (child_0->type, R_JSON_NULL, "null type");
+	mu_assert_eq (child_0->type, RZ_JSON_NULL, "null type");
 	child_0 = child_0->next;
 	mu_assert_null (child_0, "last child null");
 	return MU_PASSED;
@@ -886,12 +886,12 @@ static int check_expected_37(RJson *j) {
 
 static int check_expected_38(RJson *j) {
 	RJson *child_0;
-	mu_assert_eq (j->type, R_JSON_ARRAY, "array type");
+	mu_assert_eq (j->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq (j->children.count, 1, "array size");
 	child_0 = j->children.first;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "\n foo / bar \x0d\x0c\\\xef\xbf\xbf\t\x08\"\\ and you can't escape thi"
 		"\\s", "string value");
 	child_0 = child_0->next;
@@ -901,22 +901,22 @@ static int check_expected_38(RJson *j) {
 
 static int check_expected_39(RJson *j) {
 	RJson *child_0;
-	mu_assert_eq (j->type, R_JSON_ARRAY, "array type");
+	mu_assert_eq (j->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq (j->children.count, 3, "array size");
 	child_0 = j->children.first;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "\n foo / bar \x0d\x0c\\\xef\xbf\xbf\t\x08\"\\", "string value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "\"and this string has an escape at the beginning", "string value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "and this string has no escapes", "string value");
 	child_0 = child_0->next;
 	mu_assert_null (child_0, "last child null");
@@ -924,40 +924,40 @@ static int check_expected_39(RJson *j) {
 }
 
 static int check_expected_40(RJson *j) {
-	mu_assert_eq (j->type, R_JSON_STRING, "string type");
+	mu_assert_eq (j->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (j->str_value, "la di dah.  this is a string, and I can do this, \n, but not this\n", "string value");
 	return MU_PASSED;
 }
 
 static int check_expected_43(RJson *j) {
-	mu_assert_eq (j->type, R_JSON_INTEGER, "integer type");
+	mu_assert_eq (j->type, RZ_JSON_INTEGER, "integer type");
 	mu_assert_eq (j->num.u_value, 123, "integer value");
 	return MU_PASSED;
 }
 
 static int check_expected_45(RJson *j) {
 	RJson *child_0;
-	mu_assert_eq (j->type, R_JSON_ARRAY, "array type");
+	mu_assert_eq (j->type, RZ_JSON_ARRAY, "array type");
 	mu_assert_eq (j->children.count, 4, "array size");
 	child_0 = j->children.first;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "\xd0\x94\xd0\xb0", "string value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "\xd0\x9c\xd1\x83", "string value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "\xd0\x95\xd0\xb1\xd0\xb0", "string value");
 	child_0 = child_0->next;
 	mu_assert_notnull (child_0, "array child");
 	mu_assert_null (child_0->key, "array child key");
-	mu_assert_eq (child_0->type, R_JSON_STRING, "string type");
+	mu_assert_eq (child_0->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (child_0->str_value, "\xd0\x9c\xd0\xb0\xd0\xb9\xd0\xba\xd0\xb0\xd1\x82\xd0\xb0", "string value");
 	child_0 = child_0->next;
 	mu_assert_null (child_0, "last child null");
@@ -965,13 +965,13 @@ static int check_expected_45(RJson *j) {
 }
 
 static int check_expected_46(RJson *j) {
-	mu_assert_eq (j->type, R_JSON_STRING, "string type");
+	mu_assert_eq (j->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (j->str_value, "foobar", "string value");
 	return MU_PASSED;
 }
 
 static int check_expected_48(RJson *j) {
-	mu_assert_eq (j->type, R_JSON_STRING, "string type");
+	mu_assert_eq (j->type, RZ_JSON_STRING, "string type");
 	mu_assert_streq (j->str_value, "\xd0\x9f\xd1\x80\xd0\xbe\xd0\xb2\xd0\xb5\xd1\x80\xd0\xba\xd0\xb0", "string value");
 	return MU_PASSED;
 }

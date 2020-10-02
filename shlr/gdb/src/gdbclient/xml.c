@@ -259,7 +259,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	}
 	// Difficult to parse these out from xml. So manually added from gdb's xml files
 	switch (g->target.arch) {
-	case R_SYS_ARCH_ARM:
+	case RZ_SYS_ARCH_ARM:
 		switch (g->target.bits) {
 		case 32:
 			if (!(profile = rz_str_prepend (profile,
@@ -292,7 +292,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			}
 		}
 		break;
-	case R_SYS_ARCH_X86:
+	case RZ_SYS_ARCH_X86:
 		switch (g->target.bits) {
 		case 32:
 			if (!(profile = rz_str_prepend (profile,
@@ -311,7 +311,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			}
 		}
 		break;
-	case R_SYS_ARCH_MIPS:
+	case RZ_SYS_ARCH_MIPS:
 		if (!(profile = rz_str_prepend (profile,
 						"=PC	pc\n"
 						"=SP	r29\n"))) {
@@ -327,7 +327,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		}
 	}
 	// Special case for MIPS, since profile doesn't separate 32/64 bit MIPS
-	if (g->target.arch == R_SYS_ARCH_MIPS) {
+	if (g->target.arch == RZ_SYS_ARCH_MIPS) {
 		if (arch_regs && arch_regs[0].size == 8) {
 			g->target.bits = 64;
 		}
@@ -427,7 +427,7 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 			}
 		} else {
 			eprintf ("Failed to open procfs file of pid (%d)\n", ipid);
-			if (!(pid_info = R_NEW0 (RzDebugPid)) || !(pid_info->path = strdup (cmdline))) {
+			if (!(pid_info = RZ_NEW0 (RzDebugPid)) || !(pid_info->path = strdup (cmdline))) {
 				ret = -1;
 				goto end;
 			}
@@ -435,7 +435,7 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 			pid_info->ppid = 0;
 			pid_info->uid = pid_info->gid = -1;
 			pid_info->runnable = true;
-			pid_info->status = R_DBG_PROC_STOP;
+			pid_info->status = RZ_DBG_PROC_STOP;
 		}
 		// Unless pid 0 is requested, only add the requested pid and it's child processes
 		if (0 == pid || ipid == pid || pid_info->ppid == pid) {
@@ -525,41 +525,41 @@ static void _write_flag_bits(char *buf, const gdbr_xml_flags_t *flags) {
 static int _resolve_arch(libgdbr_t *g, char *xml_data) {
 	char *arch;
 	// Find architecture
-	g->target.arch = R_SYS_ARCH_NONE;
+	g->target.arch = RZ_SYS_ARCH_NONE;
 	if ((arch = strstr (xml_data, "<architecture"))) {
 		if (!(arch = strchr (arch, '>'))) {
 			return -1;
 		}
 		arch++;
 		if (rz_str_startswith (arch, "i386")) {
-			g->target.arch = R_SYS_ARCH_X86;
+			g->target.arch = RZ_SYS_ARCH_X86;
 			g->target.bits = 32;
 			arch += 4;
 			if (rz_str_startswith (arch, ":x86-64")) {
 				g->target.bits = 64;
 			}
 		} else if (rz_str_startswith (arch, "aarch64")) {
-			g->target.arch = R_SYS_ARCH_ARM;
+			g->target.arch = RZ_SYS_ARCH_ARM;
 			g->target.bits = 64;
 		} else if (rz_str_startswith (arch, "arm")) {
-			g->target.arch = R_SYS_ARCH_ARM;
+			g->target.arch = RZ_SYS_ARCH_ARM;
 			g->target.bits = 32;
 		} else if (rz_str_startswith (arch, "mips")) {
-			g->target.arch = R_SYS_ARCH_MIPS;
+			g->target.arch = RZ_SYS_ARCH_MIPS;
 			g->target.bits = 32;
 		}
 		// TODO others
 	} else {
 		// apple's debugserver on ios9
 		if (strstr (xml_data, "com.apple.debugserver.arm64")) {
-			g->target.arch = R_SYS_ARCH_ARM;
+			g->target.arch = RZ_SYS_ARCH_ARM;
 			g->target.bits = 64;
 		} else if (strstr (xml_data, "org.gnu.gdb.mips")) {
 			// openocd mips?
-			g->target.arch = R_SYS_ARCH_MIPS;
+			g->target.arch = RZ_SYS_ARCH_MIPS;
 			g->target.bits = 32;
 		} else if (strstr(xml_data, "com.apple.debugserver.x86_64")) {
-			g->target.arch = R_SYS_ARCH_X86;
+			g->target.arch = RZ_SYS_ARCH_X86;
 			g->target.bits = 64;
 		} else {
 			eprintf ("Warning: Unknown architecture parsing XML (%s)\n", xml_data);
@@ -676,7 +676,7 @@ exit_err:
 }
 
 static RzDebugPid *_extract_pid_info(const char *info, const char *path, int tid) {
-	RzDebugPid *pid_info = R_NEW0 (RzDebugPid);
+	RzDebugPid *pid_info = RZ_NEW0 (RzDebugPid);
 	if (!pid_info) {
 		return NULL;
 	}
@@ -684,23 +684,23 @@ static RzDebugPid *_extract_pid_info(const char *info, const char *path, int tid
 	if (ptr) {
 		switch (*(ptr + 7)) {
 		case 'R':
-			pid_info->status = R_DBG_PROC_RUN;
+			pid_info->status = RZ_DBG_PROC_RUN;
 			break;
 		case 'S':
-			pid_info->status = R_DBG_PROC_SLEEP;
+			pid_info->status = RZ_DBG_PROC_SLEEP;
 			break;
 		case 'T':
 		case 't':
-			pid_info->status = R_DBG_PROC_STOP;
+			pid_info->status = RZ_DBG_PROC_STOP;
 			break;
 		case 'Z':
-			pid_info->status = R_DBG_PROC_ZOMBIE;
+			pid_info->status = RZ_DBG_PROC_ZOMBIE;
 			break;
 		case 'X':
-			pid_info->status = R_DBG_PROC_DEAD;
+			pid_info->status = RZ_DBG_PROC_DEAD;
 			break;
 		default:
-			pid_info->status = R_DBG_PROC_SLEEP;
+			pid_info->status = RZ_DBG_PROC_SLEEP;
 			break;
 		}
 	}

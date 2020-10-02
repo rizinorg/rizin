@@ -66,7 +66,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	ArtObj *ao = R_NEW0 (ArtObj);
+	ArtObj *ao = RZ_NEW0 (ArtObj);
 	if (ao) {
 		ao->kv = sdb_new0 ();
 		if (!ao->kv) {
@@ -99,7 +99,7 @@ static RzList *strings(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = RZ_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -135,7 +135,7 @@ static bool check_buffer(RBuffer *buf) {
 static RzList *entries(RBinFile *bf) {
 	RzList *ret = rz_list_newf (free);
 	if (ret) {
-		RBinAddr *ptr = R_NEW0 (RBinAddr);
+		RBinAddr *ptr = RZ_NEW0 (RBinAddr);
 		if (ptr) {
 			ptr->paddr = ptr->vaddr = 0;
 			rz_list_append (ret, ptr);
@@ -158,7 +158,7 @@ static RzList *sections(RBinFile *bf) {
 	}
 	ret->free = free;
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("load");
@@ -166,11 +166,11 @@ static RzList *sections(RBinFile *bf) {
 	ptr->vsize = art.image_size; // TODO: align?
 	ptr->paddr = 0;
 	ptr->vaddr = art.image_base;
-	ptr->perm = R_PERM_R; // r--
+	ptr->perm = RZ_PERM_R; // r--
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("bitmap");
@@ -178,11 +178,11 @@ static RzList *sections(RBinFile *bf) {
 	ptr->vsize = art.bitmap_size;
 	ptr->paddr = art.bitmap_offset;
 	ptr->vaddr = art.image_base + art.bitmap_offset;
-	ptr->perm = R_PERM_RX; // r-x
+	ptr->perm = RZ_PERM_RX; // r-x
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("oat");
@@ -190,11 +190,11 @@ static RzList *sections(RBinFile *bf) {
 	ptr->vaddr = art.oat_file_begin;
 	ptr->size = art.oat_file_end - art.oat_file_begin;
 	ptr->vsize = ptr->size;
-	ptr->perm = R_PERM_RX; // r-x
+	ptr->perm = RZ_PERM_RX; // r-x
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("oat_data");
@@ -202,7 +202,7 @@ static RzList *sections(RBinFile *bf) {
 	ptr->vaddr = art.oat_data_begin;
 	ptr->size = art.oat_data_end - art.oat_data_begin;
 	ptr->vsize = ptr->size;
-	ptr->perm = R_PERM_R; // r--
+	ptr->perm = RZ_PERM_R; // r--
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
@@ -226,7 +226,7 @@ RBinPlugin rz_bin_plugin_art = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_art,
 	.version = RZ_VERSION
 };

@@ -3,7 +3,7 @@
 #include <rz_debug.h>
 
 RZ_API RzDebugPid *rz_debug_pid_new(const char *path, int pid, int uid, char status, ut64 pc) {
-	RzDebugPid *p = R_NEW0 (RzDebugPid);
+	RzDebugPid *p = RZ_NEW0 (RzDebugPid);
 	if (!p) {
 		return NULL;
 	}
@@ -35,7 +35,7 @@ RZ_API int rz_debug_pid_list(RzDebug *dbg, int pid, char fmt) {
 	RzListIter *iter;
 	RzDebugPid *p;
 	if (dbg && dbg->h && dbg->h->pids) {
-		list = dbg->h->pids (dbg, R_MAX (0, pid));
+		list = dbg->h->pids (dbg, RZ_MAX (0, pid));
 		if (!list) {
 			return false;
 		}

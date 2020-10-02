@@ -143,7 +143,7 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 	}
 	switch (ch) {
 	case 0x1b:
-		ch = 'q'; // XXX: must be 0x1b (R_CONS_KEY_ESC)
+		ch = 'q'; // XXX: must be 0x1b (RZ_CONS_KEY_ESC)
 		break;
 	case 0x4f: // function keys from f1 to f4
 		ch = rz_cons_readchar ();
@@ -216,11 +216,11 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 		case '[':
 			ch = rz_cons_readchar ();
 			switch (ch) {
-			case '2': ch = R_CONS_KEY_F11; break;
-			case 'A': ch = R_CONS_KEY_F1; break;
-			case 'B': ch = R_CONS_KEY_F2; break;
-			case 'C': ch = R_CONS_KEY_F3; break;
-			case 'D': ch = R_CONS_KEY_F4; break;
+			case '2': ch = RZ_CONS_KEY_F11; break;
+			case 'A': ch = RZ_CONS_KEY_F1; break;
+			case 'B': ch = RZ_CONS_KEY_F2; break;
+			case 'C': ch = RZ_CONS_KEY_F3; break;
+			case 'D': ch = RZ_CONS_KEY_F4; break;
 			}
 			break;
 		case '9':
@@ -252,14 +252,14 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 			ch = rz_cons_readchar ();
 			switch (ch) {
 			case 0x7e:
-				ch = R_CONS_KEY_F12;
+				ch = RZ_CONS_KEY_F12;
 				break;
 			default:
 				rz_cons_readchar ();
 				switch (ch) {
-				case '0': ch = R_CONS_KEY_F9; break;
-				case '1': ch = R_CONS_KEY_F10; break;
-				case '3': ch = R_CONS_KEY_F11; break;
+				case '0': ch = RZ_CONS_KEY_F9; break;
+				case '1': ch = RZ_CONS_KEY_F10; break;
+				case '3': ch = RZ_CONS_KEY_F11; break;
 				}
 				break;
 			}
@@ -267,15 +267,15 @@ RZ_API int rz_cons_arrow_to_hjkl(int ch) {
 		case '1':
 			ch = rz_cons_readchar ();
 			switch (ch) {
-			case '1': ch = R_CONS_KEY_F1; break;
-			case '2': ch = R_CONS_KEY_F2; break;
-			case '3': ch = R_CONS_KEY_F3; break;
-			case '4': ch = R_CONS_KEY_F4; break;
-			case '5': ch = R_CONS_KEY_F5; break;
-			// case '6': ch = R_CONS_KEY_F5; break;
-			case '7': ch = R_CONS_KEY_F6; break;
-			case '8': ch = R_CONS_KEY_F7; break;
-			case '9': ch = R_CONS_KEY_F8; break;
+			case '1': ch = RZ_CONS_KEY_F1; break;
+			case '2': ch = RZ_CONS_KEY_F2; break;
+			case '3': ch = RZ_CONS_KEY_F3; break;
+			case '4': ch = RZ_CONS_KEY_F4; break;
+			case '5': ch = RZ_CONS_KEY_F5; break;
+			// case '6': ch = RZ_CONS_KEY_F5; break;
+			case '7': ch = RZ_CONS_KEY_F6; break;
+			case '8': ch = RZ_CONS_KEY_F7; break;
+			case '9': ch = RZ_CONS_KEY_F8; break;
 #if 0
 			case '5':
 				rz_cons_readchar ();
@@ -369,7 +369,7 @@ RZ_API int rz_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	*buf = '\0';
 	if (color) {
 		const char *p = cons->context->pal.input;
-		if (R_STR_ISNOTEMPTY (p)) {
+		if (RZ_STR_ISNOTEMPTY (p)) {
 			fwrite (p, strlen (p), 1, stdout);
 			fflush (stdout);
 		}
@@ -503,40 +503,40 @@ static int __cons_readchar_w32(ut32 usec) {
 							is_arrow = true;
 							break;
 						case VK_F1:
-							ch = R_CONS_KEY_F1;
+							ch = RZ_CONS_KEY_F1;
 							break;
 						case VK_F2:
-							ch = R_CONS_KEY_F2;
+							ch = RZ_CONS_KEY_F2;
 							break;
 						case VK_F3:
-							ch = R_CONS_KEY_F3;
+							ch = RZ_CONS_KEY_F3;
 							break;
 						case VK_F4:
-							ch = R_CONS_KEY_F4;
+							ch = RZ_CONS_KEY_F4;
 							break;
 						case VK_F5:
-							ch = bCtrl ? 0xcf5 : R_CONS_KEY_F5;
+							ch = bCtrl ? 0xcf5 : RZ_CONS_KEY_F5;
 							break;
 						case VK_F6:
-							ch = R_CONS_KEY_F6;
+							ch = RZ_CONS_KEY_F6;
 							break;
 						case VK_F7:
-							ch = R_CONS_KEY_F7;
+							ch = RZ_CONS_KEY_F7;
 							break;
 						case VK_F8:
-							ch = R_CONS_KEY_F8;
+							ch = RZ_CONS_KEY_F8;
 							break;
 						case VK_F9:
-							ch = R_CONS_KEY_F9;
+							ch = RZ_CONS_KEY_F9;
 							break;
 						case VK_F10:
-							ch = R_CONS_KEY_F10;
+							ch = RZ_CONS_KEY_F10;
 							break;
 						case VK_F11:
-							ch = R_CONS_KEY_F11;
+							ch = RZ_CONS_KEY_F11;
 							break;
 						case VK_F12:
-							ch = R_CONS_KEY_F12;
+							ch = RZ_CONS_KEY_F12;
 						case VK_SHIFT:
 							if (mouse_enabled) {
 								rz_cons_enable_mouse (false);
@@ -594,7 +594,7 @@ RZ_API bool rz_cons_readpush(const char *str, int len) {
 }
 
 RZ_API void rz_cons_readflush(void) {
-	R_FREE (readbuffer);
+	RZ_FREE (readbuffer);
 	readbuffer_length = 0;
 }
 

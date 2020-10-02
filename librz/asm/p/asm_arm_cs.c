@@ -156,7 +156,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			goto beach;
 		}
 	}
-	cs_option (cd, CS_OPT_SYNTAX, (a->syntax == R_ASM_SYNTAX_REGNUM)
+	cs_option (cd, CS_OPT_SYNTAX, (a->syntax == RZ_ASM_SYNTAX_REGNUM)
 			? CS_OPT_SYNTAX_NOREGNAME
 			: CS_OPT_SYNTAX_DEFAULT);
 	cs_option (cd, CS_OPT_DETAIL, (a->features && *a->features)
@@ -170,7 +170,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		return haa;
 	}
 
-	n = cs_disasm (cd, buf, R_MIN (4, len), a->pc, 1, &insn);
+	n = cs_disasm (cd, buf, RZ_MIN (4, len), a->pc, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		ret = -1;
 		goto beach;
@@ -297,7 +297,7 @@ RzAsmPlugin rz_asm_plugin_arm_cs = {
 	.license = "BSD",
 	.arch = "arm",
 	.bits = 16 | 32 | 64,
-	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
+	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
 	.mnemonics = mnemonics,
 	.assemble = &assemble,
@@ -315,7 +315,7 @@ RzAsmPlugin rz_asm_plugin_arm_cs = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_arm_cs,
 	.version = RZ_VERSION
 };

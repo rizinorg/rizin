@@ -5,7 +5,7 @@
 
 static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	char *ipath, *opath;
-	if (a->syntax != R_ASM_SYNTAX_INTEL) {
+	if (a->syntax != RZ_ASM_SYNTAX_INTEL) {
 		eprintf ("asm.x86.nasm does not support non-intel syntax\n");
 		return -1;
 	}
@@ -53,13 +53,13 @@ RzAsmPlugin rz_asm_plugin_x86_nasm = {
 	.arch = "x86",
 	// NOTE: 64bits is not supported on OSX's nasm :(
 	.bits = 16 | 32 | 64,
-	.endian = R_SYS_ENDIAN_LITTLE,
+	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.assemble = &assemble
 };
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_x86_nasm,
 	.version = RZ_VERSION
 };

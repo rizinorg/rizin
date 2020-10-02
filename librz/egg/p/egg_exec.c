@@ -67,10 +67,10 @@ static RBuffer *build (RzEgg *egg) {
 		suid = NULL;
 	}
 	switch (egg->os) {
-	case R_EGG_OS_OSX:
-	case R_EGG_OS_DARWIN:
+	case RZ_EGG_OS_OSX:
+	case RZ_EGG_OS_DARWIN:
 		switch (egg->arch) {
-		case R_SYS_ARCH_X86:
+		case RZ_SYS_ARCH_X86:
 			if (suid) {
 				sc = x86_osx_suid_binsh;
 				cd = 7+36;
@@ -78,18 +78,18 @@ static RBuffer *build (RzEgg *egg) {
 				sc = x86_osx_binsh;
 				cd = 36;
 			}
-		case R_SYS_ARCH_ARM:
+		case RZ_SYS_ARCH_ARM:
 			// TODO
 			break;
 		}
 		break;
-	case R_EGG_OS_LINUX:
+	case RZ_EGG_OS_LINUX:
 		if (suid) {
 			eprintf ("no suid for this platform\n");
 		}
 		suid = 0;
 		switch (egg->arch) {
-		case R_SYS_ARCH_X86:
+		case RZ_SYS_ARCH_X86:
 			switch (egg->bits) {
 			case 32:
 				sc = x86_linux_binsh;
@@ -122,7 +122,7 @@ static RBuffer *build (RzEgg *egg) {
 				eprintf ("Unsupported arch %d bits\n", egg->bits);
 			}
 			break;
-		case R_SYS_ARCH_ARM:
+		case RZ_SYS_ARCH_ARM:
 			switch (egg->bits) {
 			case 16:
 				sc = thumb_linux_binsh;
@@ -159,14 +159,14 @@ static RBuffer *build (RzEgg *egg) {
 //TODO: rename plugin to run
 RzEggPlugin rz_egg_plugin_exec = {
 	.name = "exec",
-	.type = R_EGG_PLUGIN_SHELLCODE,
+	.type = RZ_EGG_PLUGIN_SHELLCODE,
 	.desc = "execute cmd=/bin/sh suid=false",
 	.build = (void *)build
 };
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_EGG,
+	.type = RZ_LIB_TYPE_EGG,
 	.data = &rz_egg_plugin_exec,
 	.version = RZ_VERSION
 };

@@ -8,109 +8,109 @@
 #include "xxhash.h"
 #endif
 
-R_LIB_VERSION (rz_hash);
+RZ_LIB_VERSION (rz_hash);
 
 static const struct {
 	const char *name;
 	ut64 bit;
 } hash_name_bytes[] = {
 	{ "all", UT64_MAX },
-	{ "xor", R_HASH_XOR },
-	{ "xorpair", R_HASH_XORPAIR },
-	{ "md4", R_HASH_MD4 },
-	{ "md5", R_HASH_MD5 },
-	{ "sha1", R_HASH_SHA1 },
-	{ "sha256", R_HASH_SHA256 },
-	{ "sha384", R_HASH_SHA384 },
-	{ "sha512", R_HASH_SHA512 },
-	{ "adler32", R_HASH_ADLER32 },
-	{ "xxhash", R_HASH_XXHASH },
-	{ "parity", R_HASH_PARITY },
-	{ "entropy", R_HASH_ENTROPY },
-	{ "hamdist", R_HASH_HAMDIST },
-	{ "pcprint", R_HASH_PCPRINT },
-	{ "mod255", R_HASH_MOD255 },
-	// {"base64", R_HASH_BASE64},
-	// {"base91", R_HASH_BASE91},
-	// {"punycode", R_HASH_PUNYCODE},
-	{ "luhn", R_HASH_LUHN },
+	{ "xor", RZ_HASH_XOR },
+	{ "xorpair", RZ_HASH_XORPAIR },
+	{ "md4", RZ_HASH_MD4 },
+	{ "md5", RZ_HASH_MD5 },
+	{ "sha1", RZ_HASH_SHA1 },
+	{ "sha256", RZ_HASH_SHA256 },
+	{ "sha384", RZ_HASH_SHA384 },
+	{ "sha512", RZ_HASH_SHA512 },
+	{ "adler32", RZ_HASH_ADLER32 },
+	{ "xxhash", RZ_HASH_XXHASH },
+	{ "parity", RZ_HASH_PARITY },
+	{ "entropy", RZ_HASH_ENTROPY },
+	{ "hamdist", RZ_HASH_HAMDIST },
+	{ "pcprint", RZ_HASH_PCPRINT },
+	{ "mod255", RZ_HASH_MOD255 },
+	// {"base64", RZ_HASH_BASE64},
+	// {"base91", RZ_HASH_BASE91},
+	// {"punycode", RZ_HASH_PUNYCODE},
+	{ "luhn", RZ_HASH_LUHN },
 
-	{ "fletcher8", R_HASH_FLETCHER8 },
-	{ "fletcher16", R_HASH_FLETCHER16 },
-	{ "fletcher32", R_HASH_FLETCHER32 },
-	{ "fletcher64", R_HASH_FLETCHER64 },
+	{ "fletcher8", RZ_HASH_FLETCHER8 },
+	{ "fletcher16", RZ_HASH_FLETCHER16 },
+	{ "fletcher32", RZ_HASH_FLETCHER32 },
+	{ "fletcher64", RZ_HASH_FLETCHER64 },
 
-	{ "crc8smbus", R_HASH_CRC8_SMBUS },
-#if R_HAVE_CRC8_EXTRA
-	{ /* CRC-8/CDMA2000     */ "crc8cdma2000", R_HASH_CRC8_CDMA2000 },
-	{ /* CRC-8/DARC         */ "crc8darc", R_HASH_CRC8_DARC },
-	{ /* CRC-8/DVB-S2       */ "crc8dvbs2", R_HASH_CRC8_DVB_S2 },
-	{ /* CRC-8/EBU          */ "crc8ebu", R_HASH_CRC8_EBU },
-	{ /* CRC-8/I-CODE       */ "crc8icode", R_HASH_CRC8_ICODE },
-	{ /* CRC-8/ITU          */ "crc8itu", R_HASH_CRC8_ITU },
-	{ /* CRC-8/MAXIM        */ "crc8maxim", R_HASH_CRC8_MAXIM },
-	{ /* CRC-8/ROHC         */ "crc8rohc", R_HASH_CRC8_ROHC },
-	{ /* CRC-8/WCDMA        */ "crc8wcdma", R_HASH_CRC8_WCDMA },
-#endif /* #if R_HAVE_CRC8_EXTRA */
+	{ "crc8smbus", RZ_HASH_CRC8_SMBUS },
+#if RZ_HAVE_CRC8_EXTRA
+	{ /* CRC-8/CDMA2000     */ "crc8cdma2000", RZ_HASH_CRC8_CDMA2000 },
+	{ /* CRC-8/DARC         */ "crc8darc", RZ_HASH_CRC8_DARC },
+	{ /* CRC-8/DVB-S2       */ "crc8dvbs2", RZ_HASH_CRC8_DVB_S2 },
+	{ /* CRC-8/EBU          */ "crc8ebu", RZ_HASH_CRC8_EBU },
+	{ /* CRC-8/I-CODE       */ "crc8icode", RZ_HASH_CRC8_ICODE },
+	{ /* CRC-8/ITU          */ "crc8itu", RZ_HASH_CRC8_ITU },
+	{ /* CRC-8/MAXIM        */ "crc8maxim", RZ_HASH_CRC8_MAXIM },
+	{ /* CRC-8/ROHC         */ "crc8rohc", RZ_HASH_CRC8_ROHC },
+	{ /* CRC-8/WCDMA        */ "crc8wcdma", RZ_HASH_CRC8_WCDMA },
+#endif /* #if RZ_HAVE_CRC8_EXTRA */
 
-#if R_HAVE_CRC15_EXTRA
-	{ "crc15can", R_HASH_CRC15_CAN },
-#endif /* #if R_HAVE_CRC15_EXTRA */
+#if RZ_HAVE_CRC15_EXTRA
+	{ "crc15can", RZ_HASH_CRC15_CAN },
+#endif /* #if RZ_HAVE_CRC15_EXTRA */
 
-	{ "crc16", R_HASH_CRC16 },
-	{ "crc16hdlc", R_HASH_CRC16_HDLC },
-	{ /* CRC-16/USB         */ "crc16usb", R_HASH_CRC16_USB },
-	{ /* CRC-16/CCITT-FALSE */ "crc16citt", R_HASH_CRC16_CITT },
-#if R_HAVE_CRC16_EXTRA
-	{ /* CRC-16/AUG-CCITT   */ "crc16augccitt", R_HASH_CRC16_AUG_CCITT },
-	{ /* CRC-16/BUYPASS     */ "crc16buypass", R_HASH_CRC16_BUYPASS },
-	{ /* CRC-16/CDMA2000    */ "crc16cdma2000", R_HASH_CRC16_CDMA2000 },
-	{ /* CRC-16/DDS-110     */ "crc16dds110", R_HASH_CRC16_DDS110 },
-	{ /* CRC-16/RECT-R      */ "crc16dectr", R_HASH_CRC16_DECT_R },
-	{ /* CRC-16/RECT-X      */ "crc16dectx", R_HASH_CRC16_DECT_X },
-	{ /* CRC-16/DNP         */ "crc16dnp", R_HASH_CRC16_DNP },
-	{ /* CRC-16/EN-13757    */ "crc16en13757", R_HASH_CRC16_EN13757 },
-	{ /* CRC-16/GENIBUS     */ "crc16genibus", R_HASH_CRC16_GENIBUS },
-	{ /* CRC-16/MAXIM       */ "crc16maxim", R_HASH_CRC16_MAXIM },
-	{ /* CRC-16/MCRF4XX     */ "crc16mcrf4xx", R_HASH_CRC16_MCRF4XX },
-	{ /* CRC-16/RIELLO      */ "crc16riello", R_HASH_CRC16_RIELLO },
-	{ /* CRC-16/T10-DIF     */ "crc16t10dif", R_HASH_CRC16_T10_DIF },
-	{ /* CRC-16/TELEDISK    */ "crc16teledisk", R_HASH_CRC16_TELEDISK },
-	{ /* CRC-16/TMS37157    */ "crc16tms37157", R_HASH_CRC16_TMS37157 },
-	{ /* CRC-A              */ "crca", R_HASH_CRCA },
-	{ /* CRC-16/KERMIT      */ "crc16kermit", R_HASH_CRC16_KERMIT },
-	{ /* CRC-16/MODBUS      */ "crc16modbus", R_HASH_CRC16_MODBUS },
-	{ /* CRC-16/X-25        */ "crc16x25", R_HASH_CRC16_X25 },
-	{ /* CRC-16/XMODEM      */ "crc16xmodem", R_HASH_CRC16_XMODEM },
-#endif /* #if R_HAVE_CRC16_EXTRA */
+	{ "crc16", RZ_HASH_CRC16 },
+	{ "crc16hdlc", RZ_HASH_CRC16_HDLC },
+	{ /* CRC-16/USB         */ "crc16usb", RZ_HASH_CRC16_USB },
+	{ /* CRC-16/CCITT-FALSE */ "crc16citt", RZ_HASH_CRC16_CITT },
+#if RZ_HAVE_CRC16_EXTRA
+	{ /* CRC-16/AUG-CCITT   */ "crc16augccitt", RZ_HASH_CRC16_AUG_CCITT },
+	{ /* CRC-16/BUYPASS     */ "crc16buypass", RZ_HASH_CRC16_BUYPASS },
+	{ /* CRC-16/CDMA2000    */ "crc16cdma2000", RZ_HASH_CRC16_CDMA2000 },
+	{ /* CRC-16/DDS-110     */ "crc16dds110", RZ_HASH_CRC16_DDS110 },
+	{ /* CRC-16/RECT-R      */ "crc16dectr", RZ_HASH_CRC16_DECT_R },
+	{ /* CRC-16/RECT-X      */ "crc16dectx", RZ_HASH_CRC16_DECT_X },
+	{ /* CRC-16/DNP         */ "crc16dnp", RZ_HASH_CRC16_DNP },
+	{ /* CRC-16/EN-13757    */ "crc16en13757", RZ_HASH_CRC16_EN13757 },
+	{ /* CRC-16/GENIBUS     */ "crc16genibus", RZ_HASH_CRC16_GENIBUS },
+	{ /* CRC-16/MAXIM       */ "crc16maxim", RZ_HASH_CRC16_MAXIM },
+	{ /* CRC-16/MCRF4XX     */ "crc16mcrf4xx", RZ_HASH_CRC16_MCRF4XX },
+	{ /* CRC-16/RIELLO      */ "crc16riello", RZ_HASH_CRC16_RIELLO },
+	{ /* CRC-16/T10-DIF     */ "crc16t10dif", RZ_HASH_CRC16_T10_DIF },
+	{ /* CRC-16/TELEDISK    */ "crc16teledisk", RZ_HASH_CRC16_TELEDISK },
+	{ /* CRC-16/TMS37157    */ "crc16tms37157", RZ_HASH_CRC16_TMS37157 },
+	{ /* CRC-A              */ "crca", RZ_HASH_CRCA },
+	{ /* CRC-16/KERMIT      */ "crc16kermit", RZ_HASH_CRC16_KERMIT },
+	{ /* CRC-16/MODBUS      */ "crc16modbus", RZ_HASH_CRC16_MODBUS },
+	{ /* CRC-16/X-25        */ "crc16x25", RZ_HASH_CRC16_X25 },
+	{ /* CRC-16/XMODEM      */ "crc16xmodem", RZ_HASH_CRC16_XMODEM },
+#endif /* #if RZ_HAVE_CRC16_EXTRA */
 
-#if R_HAVE_CRC24
-	{ "crc24", R_HASH_CRC24 },
-#endif /* #if R_HAVE_CRC24 */
+#if RZ_HAVE_CRC24
+	{ "crc24", RZ_HASH_CRC24 },
+#endif /* #if RZ_HAVE_CRC24 */
 
-	{ "crc32", R_HASH_CRC32 },
-	{ "crc32c", R_HASH_CRC32C },
-	{ "crc32ecma267", R_HASH_CRC32_ECMA_267 },
-#if R_HAVE_CRC32_EXTRA
-	{ /* CRC-32/BZIP2       */ "crc32bzip2", R_HASH_CRC32_BZIP2 },
-	{ /* CRC-32D            */ "crc32d", R_HASH_CRC32D },
-	{ /* CRC-32/MPEG2       */ "crc32mpeg2", R_HASH_CRC32_MPEG2 },
-	{ /* CRC-32/POSIX       */ "crc32posix", R_HASH_CRC32_POSIX },
-	{ /* CRC-32Q            */ "crc32q", R_HASH_CRC32Q },
-	{ /* CRC-32/JAMCRC      */ "crc32jamcrc", R_HASH_CRC32_JAMCRC },
-	{ /* CRC-32/XFER        */ "crc32xfer", R_HASH_CRC32_XFER },
-#endif /* #if R_HAVE_CRC32_EXTRA */
+	{ "crc32", RZ_HASH_CRC32 },
+	{ "crc32c", RZ_HASH_CRC32C },
+	{ "crc32ecma267", RZ_HASH_CRC32_ECMA_267 },
+#if RZ_HAVE_CRC32_EXTRA
+	{ /* CRC-32/BZIP2       */ "crc32bzip2", RZ_HASH_CRC32_BZIP2 },
+	{ /* CRC-32D            */ "crc32d", RZ_HASH_CRC32D },
+	{ /* CRC-32/MPEG2       */ "crc32mpeg2", RZ_HASH_CRC32_MPEG2 },
+	{ /* CRC-32/POSIX       */ "crc32posix", RZ_HASH_CRC32_POSIX },
+	{ /* CRC-32Q            */ "crc32q", RZ_HASH_CRC32Q },
+	{ /* CRC-32/JAMCRC      */ "crc32jamcrc", RZ_HASH_CRC32_JAMCRC },
+	{ /* CRC-32/XFER        */ "crc32xfer", RZ_HASH_CRC32_XFER },
+#endif /* #if RZ_HAVE_CRC32_EXTRA */
 
-#if R_HAVE_CRC64
-	{ /* CRC-64             */ "crc64", R_HASH_CRC64 },
-#endif /* #if R_HAVE_CRC64 */
+#if RZ_HAVE_CRC64
+	{ /* CRC-64             */ "crc64", RZ_HASH_CRC64 },
+#endif /* #if RZ_HAVE_CRC64 */
 
-#if R_HAVE_CRC64_EXTRA
-	{ /* CRC-64/ECMA-182    */ "crc64ecma", R_HASH_CRC64_ECMA182 },
-	{ /* CRC-64/WE          */ "crc64we", R_HASH_CRC64_WE },
-	{ /* CRC-64/XZ          */ "crc64xz", R_HASH_CRC64_XZ },
-	{ /* CRC-64/ISO         */ "crc64iso", R_HASH_CRC64_ISO },
-#endif /* #if R_HAVE_CRC64_EXTRA */
+#if RZ_HAVE_CRC64_EXTRA
+	{ /* CRC-64/ECMA-182    */ "crc64ecma", RZ_HASH_CRC64_ECMA182 },
+	{ /* CRC-64/WE          */ "crc64we", RZ_HASH_CRC64_WE },
+	{ /* CRC-64/XZ          */ "crc64xz", RZ_HASH_CRC64_XZ },
+	{ /* CRC-64/ISO         */ "crc64iso", RZ_HASH_CRC64_ISO },
+#endif /* #if RZ_HAVE_CRC64_EXTRA */
 	{ NULL, 0 }
 };
 
@@ -174,7 +174,7 @@ RZ_API ut32 rz_hash_xxhash(const ut8 *buf, ut64 len) {
 RZ_API ut8 rz_hash_deviation(const ut8 *b, ut64 len) {
 	int i, c;
 	for (c = i = 0, len--; i < len; i++) {
-		c += R_ABS (b[i + 1] - b[i]);
+		c += RZ_ABS (b[i + 1] - b[i]);
 	}
 	return c;
 }
@@ -191,8 +191,8 @@ RZ_API const char *rz_hash_name(ut64 bit) {
 
 RZ_API int rz_hash_size(ut64 algo) {
 #define ALGOBIT(x)\
-	if (algo & R_HASH_##x) {\
-		return R_HASH_SIZE_##x;\
+	if (algo & RZ_HASH_##x) {\
+		return RZ_HASH_SIZE_##x;\
 	}
 	ALGOBIT (FLETCHER8);
 	ALGOBIT (FLETCHER16);
@@ -216,7 +216,7 @@ RZ_API int rz_hash_size(ut64 algo) {
 	ALGOBIT (LUHN);
 
 	ALGOBIT (CRC8_SMBUS);
-#if R_HAVE_CRC8_EXTRA
+#if RZ_HAVE_CRC8_EXTRA
 	ALGOBIT (CRC8_CDMA2000);
 	ALGOBIT (CRC8_DARC);
 	ALGOBIT (CRC8_DVB_S2);
@@ -226,17 +226,17 @@ RZ_API int rz_hash_size(ut64 algo) {
 	ALGOBIT (CRC8_MAXIM);
 	ALGOBIT (CRC8_ROHC);
 	ALGOBIT (CRC8_WCDMA);
-#endif /* #if R_HAVE_CRC8_EXTRA */
+#endif /* #if RZ_HAVE_CRC8_EXTRA */
 
-#if R_HAVE_CRC15_EXTRA
+#if RZ_HAVE_CRC15_EXTRA
 	ALGOBIT (CRC15_CAN);
-#endif /* #if R_HAVE_CRC15_EXTRA */
+#endif /* #if RZ_HAVE_CRC15_EXTRA */
 
 	ALGOBIT (CRC16);
 	ALGOBIT (CRC16_HDLC);
 	ALGOBIT (CRC16_USB);
 	ALGOBIT (CRC16_CITT);
-#if R_HAVE_CRC16_EXTRA
+#if RZ_HAVE_CRC16_EXTRA
 	ALGOBIT (CRC16_AUG_CCITT);
 	ALGOBIT (CRC16_BUYPASS)
 	ALGOBIT (CRC16_CDMA2000);
@@ -257,16 +257,16 @@ RZ_API int rz_hash_size(ut64 algo) {
 	ALGOBIT (CRC16_MODBUS);
 	ALGOBIT (CRC16_X25);
 	ALGOBIT (CRC16_XMODEM);
-#endif /* #if R_HAVE_CRC16_EXTRA */
+#endif /* #if RZ_HAVE_CRC16_EXTRA */
 
-#if R_HAVE_CRC24
+#if RZ_HAVE_CRC24
 	ALGOBIT (CRC24);
-#endif /* #if R_HAVE_CRC24 */
+#endif /* #if RZ_HAVE_CRC24 */
 
 	ALGOBIT (CRC32);
 	ALGOBIT (CRC32C);
 	ALGOBIT (CRC32_ECMA_267);
-#if R_HAVE_CRC32_EXTRA
+#if RZ_HAVE_CRC32_EXTRA
 	ALGOBIT (CRC32_BZIP2);
 	ALGOBIT (CRC32D);
 	ALGOBIT (CRC32_MPEG2);
@@ -274,18 +274,18 @@ RZ_API int rz_hash_size(ut64 algo) {
 	ALGOBIT (CRC32Q);
 	ALGOBIT (CRC32_JAMCRC);
 	ALGOBIT (CRC32_XFER);
-#endif /* #if R_HAVE_CRC32_EXTRA */
+#endif /* #if RZ_HAVE_CRC32_EXTRA */
 
-#if R_HAVE_CRC64
+#if RZ_HAVE_CRC64
 	ALGOBIT (CRC64);
-#endif /* #if R_HAVE_CRC64 */
+#endif /* #if RZ_HAVE_CRC64 */
 
-#if R_HAVE_CRC64_EXTRA
+#if RZ_HAVE_CRC64_EXTRA
 	ALGOBIT (CRC64_ECMA182);
 	ALGOBIT (CRC64_WE);
 	ALGOBIT (CRC64_XZ);
 	ALGOBIT (CRC64_ISO);
-#endif /* #if R_HAVE_CRC64_EXTRA */
+#endif /* #if RZ_HAVE_CRC64_EXTRA */
 	return 0;
 }
 

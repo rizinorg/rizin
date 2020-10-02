@@ -6,11 +6,11 @@ RZ_API RQueue *rz_queue_new (int n) {
 	if (n <= 0) {
 		return NULL;
 	}
-	RQueue *q = R_NEW0 (RQueue);
+	RQueue *q = RZ_NEW0 (RQueue);
 	if (!q) {
 		return NULL;
 	}
-	q->elems = R_NEWS0 (void *, n);
+	q->elems = RZ_NEWS0 (void *, n);
 	if (!q->elems){
 		free (q);
 		return NULL;
@@ -36,7 +36,7 @@ static int increase_capacity(RQueue *q) {
 	void **newelems;
 	int i, tmp_front;
 
-	newelems = R_NEWS0(void *, new_capacity);
+	newelems = RZ_NEWS0(void *, new_capacity);
 	if (!newelems) {
 		return false;
 	}

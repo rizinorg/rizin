@@ -17,10 +17,10 @@ static char *fsname(RBuffer *b) {
 			break;
 		}
 		if (f->buflen > 0) {
-			size_t min = R_MIN (f->buflen, sizeof (buf));
+			size_t min = RZ_MIN (f->buflen, sizeof (buf));
 			if (!memcmp (buf, f->buf, min)) {
 				bool ret = true;
-				min = R_MIN (f->bytelen, sizeof (buf));
+				min = RZ_MIN (f->bytelen, sizeof (buf));
 				if (rz_buf_read_at (b, f->byteoff, buf, min) != min) {
 					break;
 				}
@@ -69,7 +69,7 @@ static RBinInfo* info(RBinFile *bf) {
 	if (!bf) {
 		return NULL;
 	}
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 	ret->file = bf->file? strdup (bf->file): NULL;
@@ -103,7 +103,7 @@ RBinPlugin rz_bin_plugin_fs = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_fs,
 	.version = RZ_VERSION
 };

@@ -440,7 +440,7 @@ static int rz_cmd_java_handle_summary_info(RzCore *core, const char *cmd) {
 }
 
 static int _(rz_cmd_java_check_op_idx)(const ut8 *op_bytes, ut16 idx) {
-	return R_BIN_JAVA_USHORT (op_bytes, 0) == idx;
+	return RZ_BIN_JAVA_USHORT (op_bytes, 0) == idx;
 }
 
 /* Find stuff in the constant pool */
@@ -449,7 +449,7 @@ static RzList *cpfind_double(RBinJavaObj *obj, const char *cmd) {
 	if (value == 0.0 && !(cmd && cmd[0] == '0' && cmd[1] == '.' && cmd[2] == '0')) {
 		return rz_list_new ();
 	}
-	return rz_bin_java_find_cp_const_by_val (obj, (const ut8 *)&value, 8, R_BIN_JAVA_CP_DOUBLE);
+	return rz_bin_java_find_cp_const_by_val (obj, (const ut8 *)&value, 8, RZ_BIN_JAVA_CP_DOUBLE);
 }
 
 static RzList *cpfind_float(RBinJavaObj *obj, const char *cmd) {
@@ -457,7 +457,7 @@ static RzList *cpfind_float(RBinJavaObj *obj, const char *cmd) {
 	if (value == 0.0 && !(cmd && cmd[0] == '0' && cmd[1] == '.' && cmd[2] == '0')) {
 		return rz_list_new ();
 	}
-	return rz_bin_java_find_cp_const_by_val (obj, (const ut8 *)&value, 4, R_BIN_JAVA_CP_FLOAT);
+	return rz_bin_java_find_cp_const_by_val (obj, (const ut8 *)&value, 4, RZ_BIN_JAVA_CP_FLOAT);
 }
 
 static RzList *cpfind_long(RzCore *core, RBinJavaObj *obj, const char *cmd) {
@@ -465,7 +465,7 @@ static RzList *cpfind_long(RzCore *core, RBinJavaObj *obj, const char *cmd) {
 	if (!rz_cmd_java_is_valid_input_num_value (core, cmd)) {
 		return rz_list_new ();
 	}
-	return rz_bin_java_find_cp_const_by_val (obj, (const ut8 *)&value, 8, R_BIN_JAVA_CP_LONG);
+	return rz_bin_java_find_cp_const_by_val (obj, (const ut8 *)&value, 8, RZ_BIN_JAVA_CP_LONG);
 }
 
 static RzList *cpfind_int(RzCore *core, RBinJavaObj *obj, const char *cmd) {
@@ -473,7 +473,7 @@ static RzList *cpfind_int(RzCore *core, RBinJavaObj *obj, const char *cmd) {
 	if (!rz_cmd_java_is_valid_input_num_value (core, cmd)) {
 		return rz_list_new ();
 	}
-	return rz_bin_java_find_cp_const_by_val (obj, (const ut8 *)&value, 4, R_BIN_JAVA_CP_INTEGER);
+	return rz_bin_java_find_cp_const_by_val (obj, (const ut8 *)&value, 4, RZ_BIN_JAVA_CP_INTEGER);
 }
 
 static RzList *cpfind_str(RBinJavaObj *obj, const char *cmd) {
@@ -481,7 +481,7 @@ static RzList *cpfind_str(RBinJavaObj *obj, const char *cmd) {
 		return rz_list_new ();
 	}
 	IFDBG rz_cons_printf ("Looking for str: %s (%d)\n", cmd, strlen (cmd));
-	return rz_bin_java_find_cp_const_by_val (obj, (const ut8 *)cmd, strlen (cmd), R_BIN_JAVA_CP_UTF8);
+	return rz_bin_java_find_cp_const_by_val (obj, (const ut8 *)cmd, strlen (cmd), RZ_BIN_JAVA_CP_UTF8);
 }
 
 static int cpfind(RzCore *core, const char *cmd) {
@@ -578,7 +578,7 @@ static int rz_cmd_java_get_cp_bytes_and_write(RzCore *core, RBinJavaObj *obj, ut
 		return res;
 	}
 
-	R_FREE (bytes);
+	RZ_FREE (bytes);
 
 	if (res == true) {
 		ut64 n_file_sz = 0;
@@ -668,15 +668,15 @@ static int rz_cmd_java_handle_replace_cp_value(RzCore *core, const char *cmd) {
 		addr = rz_bin_java_resolve_cp_idx_address (obj, idx);
 		IFDBG rz_cons_printf ("Function call made: %s\n", p);
 		switch (cp_type) {
-		case R_BIN_JAVA_CP_UTF8: return rz_cmd_java_handle_replace_cp_value_str (
+		case RZ_BIN_JAVA_CP_UTF8: return rz_cmd_java_handle_replace_cp_value_str (
 			core, obj, rz_cmd_java_consumetok (p, ' ', -1), idx, addr);
-		case R_BIN_JAVA_CP_INTEGER: return rz_cmd_java_handle_replace_cp_value_int (
+		case RZ_BIN_JAVA_CP_INTEGER: return rz_cmd_java_handle_replace_cp_value_int (
 			core, obj, rz_cmd_java_consumetok (p, ' ', -1), idx, addr);
-		case R_BIN_JAVA_CP_LONG: return rz_cmd_java_handle_replace_cp_value_long (
+		case RZ_BIN_JAVA_CP_LONG: return rz_cmd_java_handle_replace_cp_value_long (
 			core, obj, rz_cmd_java_consumetok (p, ' ', -1), idx, addr);
-		case R_BIN_JAVA_CP_FLOAT: return rz_cmd_java_handle_replace_cp_value_float (
+		case RZ_BIN_JAVA_CP_FLOAT: return rz_cmd_java_handle_replace_cp_value_float (
 			core, obj, rz_cmd_java_consumetok (p, ' ', -1), idx, addr);
-		case R_BIN_JAVA_CP_DOUBLE: return rz_cmd_java_handle_replace_cp_value_double (
+		case RZ_BIN_JAVA_CP_DOUBLE: return rz_cmd_java_handle_replace_cp_value_double (
 			core, obj, rz_cmd_java_consumetok (p, ' ', -1), idx, addr);
 		default:
 			eprintf ("[-] rz_cmd_java: invalid java type to search for.\n");
@@ -846,7 +846,7 @@ static int rz_cmd_java_handle_replace_classname_value(RzCore *core, const char *
 		ut8 *buffer = NULL;
 		ut32 buffer_sz = 0;
 		ut16 len = 0;
-		if (cp_obj && cp_obj->tag == R_BIN_JAVA_CP_UTF8 &&
+		if (cp_obj && cp_obj->tag == RZ_BIN_JAVA_CP_UTF8 &&
 			cp_obj->info.cp_utf8.length && cp_obj->info.cp_utf8.length >= class_name_len - 1) {
 			ut32 num_occurrences = 0;
 			ut64 addr = cp_obj->file_offset + cp_obj->loadaddr;
@@ -855,7 +855,7 @@ static int rz_cmd_java_handle_replace_classname_value(RzCore *core, const char *
 			if (!buffer) {
 				continue;
 			}
-			len = R_BIN_JAVA_USHORT (buffer, 1);
+			len = RZ_BIN_JAVA_USHORT (buffer, 1);
 			name = malloc (len + 3);
 			memcpy (name, buffer + 3, len);
 			name[len] = 0;
@@ -974,16 +974,16 @@ static int rz_cmd_java_handle_find_cp_const(RzCore *core, const char *cmd) {
 			cp_res = NULL;
 			switch (op) {
 			case 0x12:
-				cp_res = (idx == (ut16)-1) || (bb->op_bytes[1] == idx)? R_NEW0 (RzCmdJavaCPResult): NULL;
+				cp_res = (idx == (ut16)-1) || (bb->op_bytes[1] == idx)? RZ_NEW0 (RzCmdJavaCPResult): NULL;
 				if (cp_res) {
 					cp_res->idx = bb->op_bytes[1];
 				}
 				break;
 			case 0x13:
 			case 0x14:
-				cp_res = (idx == (ut16)-1) || (R_BIN_JAVA_USHORT (bb->op_bytes, 1) == idx)? R_NEW0 (RzCmdJavaCPResult): NULL;
+				cp_res = (idx == (ut16)-1) || (RZ_BIN_JAVA_USHORT (bb->op_bytes, 1) == idx)? RZ_NEW0 (RzCmdJavaCPResult): NULL;
 				if (cp_res) {
-					cp_res->idx = R_BIN_JAVA_USHORT (bb->op_bytes, 1);
+					cp_res->idx = RZ_BIN_JAVA_USHORT (bb->op_bytes, 1);
 				}
 				break;
 			}
@@ -1345,7 +1345,7 @@ static int rz_cmd_java_handle_flags_str_at(RzCore *core, const char *cmd) {
 		if (cur_offset != core->offset) {
 			rz_core_seek (core, cur_offset - 2, true);
 		}
-		flag_value = R_BIN_JAVA_USHORT (((ut8 *)&flag_value), 0);
+		flag_value = RZ_BIN_JAVA_USHORT (((ut8 *)&flag_value), 0);
 	}
 
 	if (p && f_type) {
@@ -1710,7 +1710,7 @@ static int rz_cmd_java_set_acc_flags(RzCore *core, ut64 addr, ut16 num_acc_flag)
 	char cmd_buf[50];
 
 	int res = false;
-	num_acc_flag = R_BIN_JAVA_USHORT (((ut8 *)&num_acc_flag), 0);
+	num_acc_flag = RZ_BIN_JAVA_USHORT (((ut8 *)&num_acc_flag), 0);
 	res = rz_core_write_at (core, addr, (const ut8 *)&num_acc_flag, 2);
 	if (!res) {
 		eprintf ("[X] rz_cmd_java_set_acc_flags: Failed to write.\n");
@@ -1969,7 +1969,7 @@ RzCorePlugin rz_core_plugin_java = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_CORE,
+	.type = RZ_LIB_TYPE_CORE,
 	.data = &rz_core_plugin_java,
 	.version = RZ_VERSION
 };

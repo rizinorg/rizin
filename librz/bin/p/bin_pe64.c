@@ -1,5 +1,5 @@
 /* radare - LGPL - Copyright 2009-2019 - nibble, pancake */
-#define R_BIN_PE64 1
+#define RZ_BIN_PE64 1
 #include "bin_pe.inc"
 
 static bool check_buffer(RBuffer *b) {
@@ -472,7 +472,7 @@ RBinPlugin rz_bin_plugin_pe64 = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_pe64,
 	.version = RZ_VERSION
 };

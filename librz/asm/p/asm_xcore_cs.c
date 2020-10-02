@@ -46,13 +46,13 @@ RzAsmPlugin rz_asm_plugin_xcore_cs = {
 	.author = "pancake",
 	.arch = "xcore",
 	.bits = 32,
-	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
+	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
 };
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_xcore_cs,
 	.version = RZ_VERSION
 };

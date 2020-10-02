@@ -156,7 +156,7 @@ static char *http_get_w32(const char *url, int *code, int *rlen) {
 		}
 		char *tmp = realloc (ret, read_sz + w);
 		if (!tmp) {
-			R_FREE (ret);
+			RZ_FREE (ret);
 			goto exit;
 		}
 		ret = tmp;
@@ -168,10 +168,10 @@ static char *http_get_w32(const char *url, int *code, int *rlen) {
 			ret = tmp;
 			ret[w] = 0;
 		} else {
-			R_FREE (ret);
+			RZ_FREE (ret);
 		}
 	} else {
-		R_FREE (ret);
+		RZ_FREE (ret);
 	}
 
 exit:
@@ -195,7 +195,7 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 		*rlen = 0;
 	}
 	char *curl_env = rz_sys_getenv ("RZ_CURL");
-	if (!R_STR_ISEMPTY (curl_env) && atoi (curl_env)) {
+	if (!RZ_STR_ISEMPTY (curl_env) && atoi (curl_env)) {
 		int len;
 		char *escaped_url = rz_str_escape_sh (url);
 		char *command = rz_str_newf ("curl -sfL -o - \"%s\"", escaped_url);

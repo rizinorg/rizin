@@ -169,7 +169,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	ut32 env_pktsz = 0;
 	if ((env_pktsz_str = rz_sys_getenv ("RZ_GDB_PKTSZ"))) {
 		if ((env_pktsz = (ut32)strtoul (env_pktsz_str, NULL, 10))) {
-			g->stub_features.pkt_sz = R_MAX (env_pktsz, GDB_MAX_PKTSZ);
+			g->stub_features.pkt_sz = RZ_MAX (env_pktsz, GDB_MAX_PKTSZ);
 		}
 	}
 	// Use the default break handler for rz_socket_connect to send a signal
@@ -218,7 +218,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		goto end;
 	}
 	if (env_pktsz > 0) {
-		g->stub_features.pkt_sz = R_MAX (R_MIN (env_pktsz, g->stub_features.pkt_sz), GDB_MAX_PKTSZ);
+		g->stub_features.pkt_sz = RZ_MAX (RZ_MIN (env_pktsz, g->stub_features.pkt_sz), GDB_MAX_PKTSZ);
 	}
 	// If no-ack supported, enable no-ack mode (should speed up things)
 	if (g->stub_features.QStartNoAckMode) {
@@ -738,7 +738,7 @@ static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) 
 		goto end;
 	}
 
-	g->stub_features.pkt_sz = R_MAX (g->stub_features.pkt_sz, GDB_MAX_PKTSZ);
+	g->stub_features.pkt_sz = RZ_MAX (g->stub_features.pkt_sz, GDB_MAX_PKTSZ);
 	int data_sz = g->stub_features.pkt_sz / 2;
 	int num_pkts = len / data_sz;
 	last = len % data_sz;
@@ -769,7 +769,7 @@ static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) 
 			eprintf ("oops\n");
 			break;
 		}
-		int left = R_MIN (g->data_len, len - delta);
+		int left = RZ_MIN (g->data_len, len - delta);
 		if (left > 0) {
 			memcpy (buf + delta, g->data, left);
 			ret_len += g->data_len;
@@ -796,7 +796,7 @@ static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) 
 			goto end;
 		}
 		int delta = num_pkts * data_sz;
-		int left = R_MIN (g->data_len, len - delta);
+		int left = RZ_MIN (g->data_len, len - delta);
 		if (left > 0) {
 			memcpy (buf + delta, g->data, left);
 			ret_len += g->data_len;
@@ -863,7 +863,7 @@ int gdbr_write_memory(libgdbr_t *g, ut64 address, const uint8_t *data, ut64 len)
 	if (!g || !data) {
 		return -1;
 	}
-	g->stub_features.pkt_sz = R_MAX (g->stub_features.pkt_sz, GDB_MAX_PKTSZ);
+	g->stub_features.pkt_sz = RZ_MAX (g->stub_features.pkt_sz, GDB_MAX_PKTSZ);
 	data_sz = g->stub_features.pkt_sz / 2;
 	if (data_sz < 1) {
 		return -1;
@@ -1153,7 +1153,7 @@ int gdbr_write_registers(libgdbr_t *g, char *registers) {
 				for (x = 0; x < register_size; x++) {
 					g->data[offset + register_size - x - 1] = hex2char (&value[x * 2]);
 				}
-				R_FREE (value);
+				RZ_FREE (value);
 			}
 			i++;
 		}
@@ -1502,13 +1502,13 @@ int gdbr_read_file(libgdbr_t *g, ut8 *buf, ut64 max_len) {
 	if (!gdbr_lock_enter (g)) {
 		goto end;
 	}
-	g->stub_features.pkt_sz = R_MAX (g->stub_features.pkt_sz, GDB_MAX_PKTSZ);
+	g->stub_features.pkt_sz = RZ_MAX (g->stub_features.pkt_sz, GDB_MAX_PKTSZ);
 	data_sz = g->stub_features.pkt_sz / 2;
 	ret = 0;
 	while (ret < max_len) {
 		if ((ret1 = snprintf (command, sizeof (command) - 1,
 			    "vFile:pread:%x,%"PFMT64x",%"PFMT64x,
-			    (int)g->remote_file_fd, (ut64)R_MIN(data_sz, max_len - ret),
+			    (int)g->remote_file_fd, (ut64)RZ_MIN(data_sz, max_len - ret),
 			    (ut64)ret)) < 0) {
 			ret = -1;
 			goto end;
@@ -1788,7 +1788,7 @@ RzList* gdbr_pids_list(libgdbr_t *g, int pid) {
 					continue;
 				}
 			}
-			if (!(dpid = R_NEW0 (RzDebugPid)) || !(dpid->path = strdup (exec_file))) {
+			if (!(dpid = RZ_NEW0 (RzDebugPid)) || !(dpid->path = strdup (exec_file))) {
 				ret = -1;
 				goto end;
 			}
@@ -1799,7 +1799,7 @@ RzList* gdbr_pids_list(libgdbr_t *g, int pid) {
 			}
 			dpid->uid = dpid->gid = -1;
 			dpid->runnable = true;
-			dpid->status = R_DBG_PROC_STOP;
+			dpid->status = RZ_DBG_PROC_STOP;
 			rz_list_append (list, dpid);
 			ptr = ptr2;
 		}
@@ -1885,7 +1885,7 @@ RzList* gdbr_threads_list(libgdbr_t *g, int pid) {
 				ptr = ptr2;
 				continue;
 			}
-			if (!(dpid = R_NEW0 (RzDebugPid)) || !(dpid->path = strdup (exec_file))) {
+			if (!(dpid = RZ_NEW0 (RzDebugPid)) || !(dpid->path = strdup (exec_file))) {
 				ret = -1;
 				goto end;
 			}
@@ -1895,7 +1895,7 @@ RzList* gdbr_threads_list(libgdbr_t *g, int pid) {
 			// This is what linux native does as fallback, but
 			// probably not correct.
 			// TODO: Implement getting correct thread status from GDB
-			dpid->status = R_DBG_PROC_STOP;
+			dpid->status = RZ_DBG_PROC_STOP;
 			rz_list_append (list, dpid);
 			ptr = ptr2;
 		}
@@ -1912,7 +1912,7 @@ RzList* gdbr_threads_list(libgdbr_t *g, int pid) {
 	// This is the all I've been able to extract from gdb so far
 	rz_list_foreach (list, iter, dpid) {
 		if (gdbr_is_thread_dead (g, pid, dpid->pid)) {
-			dpid->status = R_DBG_PROC_DEAD;
+			dpid->status = RZ_DBG_PROC_DEAD;
 		}
 	}
 

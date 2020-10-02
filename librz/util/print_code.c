@@ -40,7 +40,7 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) 
 			inst_size = 1;
 		}
 		p->cb_printf (" ");
-		size_t limit = R_MIN (i + inst_size, len);
+		size_t limit = RZ_MIN (i + inst_size, len);
 		for (k = i; k < limit; k++) {
 			rz_print_cursor (p, k, 1, true);
 			p->cb_printf (fmtstr, rz_read_ble (buf++, p->big_endian, 8));
@@ -49,7 +49,7 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) 
 		}
 		size_t j = k - i;
 		int pad = orig_align - ((j - 1) * 6);
-		p->cb_printf ("%*s", R_MAX (pad, 0), "");
+		p->cb_printf ("%*s", RZ_MAX (pad, 0), "");
 
 		if (j == inst_size) {
 			char *instr = p->coreb.cmdstrf (p->coreb.core, "pi 1 @ 0x%08" PFMT64x, at);
@@ -67,7 +67,7 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) 
 static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, int w) {
 	size_t i;
 
-	ws = R_MAX (1, R_MIN (ws, 8));
+	ws = RZ_MAX (1, RZ_MIN (ws, 8));
 	int bits = ws * 8;
 	const char *fmtstr = bits_to_c_code_fmtstr (bits);
 	len /= ws;

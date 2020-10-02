@@ -11,7 +11,7 @@ static int parse_omap_entry(char *data, int data_size, int *read_bytes, SOmapEnt
 	return (*read_bytes - curr_read_bytes);
 }
 
-void parse_omap_stream(void *stream, R_STREAM_FILE *stream_file) {
+void parse_omap_stream(void *stream, RZ_STREAM_FILE *stream_file) {
 	int data_size;
 	char *data = NULL, *ptmp = NULL;
 	int curr_read_bytes = 0, read_bytes = 0;

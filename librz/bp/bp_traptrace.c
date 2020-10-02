@@ -58,7 +58,7 @@ RZ_API ut64 rz_bp_traptrace_next(RBreakpoint *bp, ut64 addr) {
 		if (addr>=trace->addr && addr<=trace->addr_end) {
 			delta = (int)(addr-trace->addr);
 			for (i=delta; i<trace->length; i++) {
-				if (R_BIT_CHK (trace->bits, i)) {
+				if (RZ_BIT_CHK (trace->bits, i)) {
 					return addr + i;
 				}
 			}
@@ -104,7 +104,7 @@ RZ_API int rz_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
 	memset (bits, 0x00, bitlen);
 	rz_bp_get_bytes (bp, trap, len, bp->endian, 0);
 
-	trace = R_NEW (RBreakpointTrace);
+	trace = RZ_NEW (RBreakpointTrace);
 	if (!trace) {
 		free (buf);
 		free (trap);
@@ -150,7 +150,7 @@ RZ_API void rz_bp_traptrace_list(RBreakpoint *bp) {
 	RBreakpointTrace *trace;
 	rz_list_foreach (bp->traces, iter, trace) {
 		for (i = 0; i < trace->bitlen; i++) {
-			if (R_BIT_CHK (trace->bits, i)) {
+			if (RZ_BIT_CHK (trace->bits, i)) {
 				eprintf ("  - 0x%08" PFMT64x "\n", trace->addr + (i << 4));
 			}
 		}
@@ -165,12 +165,12 @@ RZ_API int rz_bp_traptrace_at(RBreakpoint *bp, ut64 from, int len) {
 	// TODO: do we really need len?
 		if (from>=trace->addr && from+len<=trace->addr_end) {
 			delta = (int) (from-trace->addr);
-			if (R_BIT_CHK (trace->bits, delta)) {
+			if (RZ_BIT_CHK (trace->bits, delta)) {
 				if (trace->traps[delta] == 0x00) {
 					return false; // already traced..debugger should stop
 				}
 			}
-			R_BIT_SET (trace->bits, delta);
+			RZ_BIT_SET (trace->bits, delta);
 			return true;
 		}
 	}

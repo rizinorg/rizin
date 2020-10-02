@@ -427,7 +427,7 @@ typedef struct {
 
 static bool __tableItemCallback(RzFlagItem *flag, void *user) {
 	FlagTableData *ftd = user;
-	if (!R_STR_ISEMPTY (flag->name)) {
+	if (!RZ_STR_ISEMPTY (flag->name)) {
 		RTable *t = ftd->t;
 		const char *spaceName = (flag->space && flag->space->name)? flag->space->name: "";
 		const char *addr = sdb_fmt ("0x%08"PFMT64x, flag->offset);
@@ -813,7 +813,7 @@ rep:
 	case 'a':
 		if (input[1] == ' '){
 			RzFlagItem *fi;
-			R_FREE (str);
+			RZ_FREE (str);
 			str = strdup (input+2);
 			ptr = strchr (str, '=');
 			if (!ptr)
@@ -911,7 +911,7 @@ rep:
 			} else {
 				core->flags->base = rz_num_math (core->num, input+1);
 			}
-			R_FREE (str);
+			RZ_FREE (str);
 			break;
 		case '\0':
 			rz_cons_printf ("%"PFMT64d" 0x%"PFMT64x"\n",

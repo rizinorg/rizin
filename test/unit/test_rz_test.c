@@ -59,35 +59,35 @@ bool test_rz_test_fix(void) {
 
 	RPVector *results = rz_pvector_new ((RPVectorFree)rz_test_test_result_info_free);
 
-	R2RTestResultInfo *result0 = R_NEW0 (R2RTestResultInfo);
+	R2RTestResultInfo *result0 = RZ_NEW0 (R2RTestResultInfo);
 	rz_pvector_push (results, result0);
 	result0->test = rz_pvector_at (&db->tests, 0);
 	result0->result = R2R_TEST_RESULT_FAILED;
-	result0->proc_out = R_NEW0 (R2RProcessOutput);
+	result0->proc_out = RZ_NEW0 (R2RProcessOutput);
 	result0->proc_out->out = strdup ("fixed\nresult\nfor\n0\n");
 	result0->proc_out->err = strdup ("");
 
-	R2RTestResultInfo *result1 = R_NEW0 (R2RTestResultInfo);
+	R2RTestResultInfo *result1 = RZ_NEW0 (R2RTestResultInfo);
 	rz_pvector_push (results, result1);
 	result1->test = rz_pvector_at (&db->tests, 1);
 	result1->result = R2R_TEST_RESULT_FAILED;
-	result1->proc_out = R_NEW0 (R2RProcessOutput);
+	result1->proc_out = RZ_NEW0 (R2RProcessOutput);
 	result1->proc_out->out = strdup ("fixed\nresult\nfor\n1\n");
 	result1->proc_out->err = strdup ("");
 
-	R2RTestResultInfo *result2 = R_NEW0 (R2RTestResultInfo);
+	R2RTestResultInfo *result2 = RZ_NEW0 (R2RTestResultInfo);
 	rz_pvector_push (results, result2);
 	result2->test = rz_pvector_at (&db->tests, 2);
 	result2->result = R2R_TEST_RESULT_FAILED;
-	result2->proc_out = R_NEW0 (R2RProcessOutput);
+	result2->proc_out = RZ_NEW0 (R2RProcessOutput);
 	result2->proc_out->out = strdup ("fixed\nresult\nfor\n2\n");
 	result2->proc_out->err = strdup ("");
 
-	R2RTestResultInfo *result3 = R_NEW0 (R2RTestResultInfo);
+	R2RTestResultInfo *result3 = RZ_NEW0 (R2RTestResultInfo);
 	rz_pvector_push (results, result3);
 	result3->test = rz_pvector_at (&db->tests, 3);
 	result3->result = R2R_TEST_RESULT_FAILED;
-	result3->proc_out = R_NEW0 (R2RProcessOutput);
+	result3->proc_out = RZ_NEW0 (R2RProcessOutput);
 	result3->proc_out->out = strdup ("fixed\nresult\nfor\n3\n");
 	result3->proc_out->err = strdup ("");
 

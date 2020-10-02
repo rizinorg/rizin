@@ -23,7 +23,7 @@
 #define N_TEXT 7
 #define N_DATA 11
 
-R_PACKED (
+RZ_PACKED (
 typedef struct {
 	ut32 text_paddr[N_TEXT];
 	ut32 data_paddr[N_DATA];
@@ -56,7 +56,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	if (rz_buf_size (buf) < sizeof (DolHeader)) {
 		return false;
 	}
-	DolHeader *dol = R_NEW0 (DolHeader);
+	DolHeader *dol = RZ_NEW0 (DolHeader);
 	if (!dol) {
 		return false;
 	}
@@ -96,7 +96,7 @@ static RzList *sections(RBinFile *bf) {
 		if (!dol->text_paddr[i] || !dol->text_vaddr[i]) {
 			continue;
 		}
-		s = R_NEW0 (RBinSection);
+		s = RZ_NEW0 (RBinSection);
 		s->name = rz_str_newf ("text_%d", i);
 		s->paddr = dol->text_paddr[i];
 		s->vaddr = dol->text_vaddr[i];
@@ -111,7 +111,7 @@ static RzList *sections(RBinFile *bf) {
 		if (!dol->data_paddr[i] || !dol->data_vaddr[i]) {
 			continue;
 		}
-		s = R_NEW0 (RBinSection);
+		s = RZ_NEW0 (RBinSection);
 		s->name = rz_str_newf ("data_%d", i);
 		s->paddr = dol->data_paddr[i];
 		s->vaddr = dol->data_vaddr[i];
@@ -122,7 +122,7 @@ static RzList *sections(RBinFile *bf) {
 		rz_list_append (ret, s);
 	}
 	/* bss section */
-	s = R_NEW0 (RBinSection);
+	s = RZ_NEW0 (RBinSection);
 	s->name = strdup ("bss");
 	s->paddr = 0;
 	s->vaddr = dol->bss_addr;
@@ -138,7 +138,7 @@ static RzList *sections(RBinFile *bf) {
 static RzList *entries(RBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 	RzList *ret = rz_list_new ();
-	RBinAddr *addr = R_NEW0 (RBinAddr);
+	RBinAddr *addr = RZ_NEW0 (RBinAddr);
 	DolHeader *dol = bf->o->bin_obj;
 	addr->vaddr = (ut64) dol->entrypoint;
 	addr->paddr = addr->vaddr & 0xFFFF;
@@ -148,7 +148,7 @@ static RzList *entries(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->buf, NULL);
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = RZ_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -182,7 +182,7 @@ RBinPlugin rz_bin_plugin_dol = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_dol,
 	.version = RZ_VERSION
 };

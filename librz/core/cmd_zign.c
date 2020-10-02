@@ -144,15 +144,15 @@ static void addFcnZign(RzCore *core, RzAnalFunction *fcn, const char *name) {
 	// add sig types info to item
 	it->name = zigname; // will be free'd when item is free'd
 	it->space = rz_spaces_current (&core->anal->zign_spaces);
-	rz_sign_addto_item (core->anal, it, fcn, R_SIGN_GRAPH);
-	rz_sign_addto_item (core->anal, it, fcn, R_SIGN_BYTES);
-	rz_sign_addto_item (core->anal, it, fcn, R_SIGN_XREFS);
-	rz_sign_addto_item (core->anal, it, fcn, R_SIGN_REFS);
-	rz_sign_addto_item (core->anal, it, fcn, R_SIGN_VARS);
-	rz_sign_addto_item (core->anal, it, fcn, R_SIGN_TYPES);
-	rz_sign_addto_item (core->anal, it, fcn, R_SIGN_BBHASH);
-	rz_sign_addto_item (core->anal, it, fcn, R_SIGN_OFFSET);
-	rz_sign_addto_item (core->anal, it, fcn, R_SIGN_NAME);
+	rz_sign_addto_item (core->anal, it, fcn, RZ_SIGN_GRAPH);
+	rz_sign_addto_item (core->anal, it, fcn, RZ_SIGN_BYTES);
+	rz_sign_addto_item (core->anal, it, fcn, RZ_SIGN_XREFS);
+	rz_sign_addto_item (core->anal, it, fcn, RZ_SIGN_REFS);
+	rz_sign_addto_item (core->anal, it, fcn, RZ_SIGN_VARS);
+	rz_sign_addto_item (core->anal, it, fcn, RZ_SIGN_TYPES);
+	rz_sign_addto_item (core->anal, it, fcn, RZ_SIGN_BBHASH);
+	rz_sign_addto_item (core->anal, it, fcn, RZ_SIGN_OFFSET);
+	rz_sign_addto_item (core->anal, it, fcn, RZ_SIGN_NAME);
 
 	/* rz_sign_add_addr (core->anal, zigname, fcn->addr); */
 
@@ -270,10 +270,10 @@ static bool addBytesZign(RzCore *core, const char *name, int type, RzList *args)
 	}
 
 	switch (type) {
-	case R_SIGN_BYTES:
+	case RZ_SIGN_BYTES:
 		retval = rz_sign_add_bytes (core->anal, name, size, bytes, mask);
 		break;
-	case R_SIGN_ANAL:
+	case RZ_SIGN_ANAL:
 		retval = rz_sign_add_anal (core->anal, name, size, bytes, 0);
 		break;
 	}
@@ -300,26 +300,26 @@ static bool addOffsetZign(RzCore *core, const char *name, RzList *args) {
 
 static bool addZign(RzCore *core, const char *name, int type, RzList *args) {
 	switch (type) {
-	case R_SIGN_BYTES:
-	case R_SIGN_ANAL:
+	case RZ_SIGN_BYTES:
+	case RZ_SIGN_ANAL:
 		return addBytesZign (core, name, type, args);
-	case R_SIGN_GRAPH:
+	case RZ_SIGN_GRAPH:
 		return addGraphZign (core, name, args);
-	case R_SIGN_COMMENT:
+	case RZ_SIGN_COMMENT:
 		return addCommentZign (core, name, args);
-	case R_SIGN_NAME:
+	case RZ_SIGN_NAME:
 		return addNameZign (core, name, args);
-	case R_SIGN_OFFSET:
+	case RZ_SIGN_OFFSET:
 		return addOffsetZign (core, name, args);
-	case R_SIGN_REFS:
+	case RZ_SIGN_REFS:
 		return rz_sign_add_refs (core->anal, name, args);
-	case R_SIGN_XREFS:
+	case RZ_SIGN_XREFS:
 		return rz_sign_add_xrefs (core->anal, name, args);
-	case R_SIGN_VARS:
+	case RZ_SIGN_VARS:
 		return rz_sign_add_vars (core->anal, name, args);
-	case R_SIGN_TYPES:
+	case RZ_SIGN_TYPES:
 		return rz_sign_add_types (core->anal, name, args);
-	case R_SIGN_BBHASH:
+	case RZ_SIGN_BBHASH:
 		return addHashZign (core, name, type, args);
 	default:
 		eprintf ("error: unknown zignature type\n");
@@ -615,7 +615,7 @@ static void apply_name(RzCore *core, RzAnalFunction *fcn, RzSignItem *it, bool r
 		return;
 	}
 	RzFlagItem *flag = rz_flag_get (core->flags, fcn->name);
-	if (flag && flag->space && strcmp (flag->space->name, R_FLAGS_FS_FUNCTIONS)) {
+	if (flag && flag->space && strcmp (flag->space->name, RZ_FLAGS_FS_FUNCTIONS)) {
 		rz_flag_rename (core->flags, flag, name);
 	}
 	rz_anal_function_rename (fcn, name);
@@ -715,7 +715,7 @@ static bool searchRange(RzCore *core, ut64 from, ut64 to, bool rad, struct ctxSe
 			retval = false;
 			break;
 		}
-		rlen = R_MIN (core->blocksize, to - at);
+		rlen = RZ_MIN (core->blocksize, to - at);
 		if (!rz_io_is_valid_offset (core->io, at, 0)) {
 			retval = false;
 			break;
@@ -749,7 +749,7 @@ static bool searchRange2(RzCore *core, RzSignSearch *ss, ut64 from, ut64 to, boo
 			retval = false;
 			break;
 		}
-		rlen = R_MIN (core->blocksize, to - at);
+		rlen = RZ_MIN (core->blocksize, to - at);
 		if (!rz_io_is_valid_offset (core->io, at, 0)) {
 			retval = false;
 			break;
@@ -850,7 +850,7 @@ static bool search(RzCore *core, bool rad, bool only_func) {
 			if (useBytes && only_func) {
 				eprintf ("Matching func %d / %d (hits %d)\n", count, rz_list_length (core->anal->fcns), bytes_search_ctx.count);
 				int fcnlen = rz_anal_function_realsize (fcni);
-				int len = R_MIN (core->io->addrbytes * fcnlen, maxsz);
+				int len = RZ_MIN (core->io->addrbytes * fcnlen, maxsz);
 				retval &= searchRange2 (core, ss, fcni->addr, fcni->addr + len, rad, &bytes_search_ctx);
 			}
 			if (useTypes) {
@@ -995,7 +995,7 @@ static bool bestmatch_fcn(RzCore *core, const char *input) {
 static bool bestmatch_sig(RzCore *core, const char *input) {
 	rz_return_val_if_fail (input && core, false);
 	int count = 5;
-	if (!R_STR_ISEMPTY (input)) {
+	if (!RZ_STR_ISEMPTY (input)) {
 		count = atoi (input);
 		if (count <= 0) {
 			eprintf ("[!!] invalid number %s\n", input);
@@ -1015,7 +1015,7 @@ static bool bestmatch_sig(RzCore *core, const char *input) {
 	}
 
 	if (rz_config_get_i (core->config, "zign.bytes")) {
-		rz_sign_addto_item (core->anal, item, fcn, R_SIGN_BYTES);
+		rz_sign_addto_item (core->anal, item, fcn, RZ_SIGN_BYTES);
 		RzSignBytes *b = item->bytes;
 		int minsz = rz_config_get_i (core->config, "zign.minsz");
 		if (b && b->size < minsz) {
@@ -1025,7 +1025,7 @@ static bool bestmatch_sig(RzCore *core, const char *input) {
 		}
 	}
 	if (rz_config_get_i (core->config, "zign.graph")) {
-		rz_sign_addto_item (core->anal, item, fcn, R_SIGN_GRAPH);
+		rz_sign_addto_item (core->anal, item, fcn, RZ_SIGN_GRAPH);
 	}
 
 	double th = get_zb_threshold (core);
@@ -1244,7 +1244,7 @@ static int cmdInfo(void *data, const char *input) {
 		return false;
 	}
 	RzCore *core = (RzCore *) data;
-	rz_flag_space_push (core->flags, R_FLAGS_FS_SIGNS);
+	rz_flag_space_push (core->flags, RZ_FLAGS_FS_SIGNS);
 	rz_flag_list (core->flags, *input, input[0] ? input + 1: "");
 	rz_flag_space_pop (core->flags);
 	return true;

@@ -1,5 +1,5 @@
-#ifndef R_ASN1_H
-#define R_ASN1_H
+#ifndef RZ_ASN1_H
+#define RZ_ASN1_H
 
 #include <stdint.h>
 
@@ -108,5 +108,5 @@ RZ_API void asn1_setformat (int fmt);
 }
 #endif
 
-#endif /* R_ASN1_H */
+#endif /* RZ_ASN1_H */
 

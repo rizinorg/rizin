@@ -85,9 +85,9 @@ bool test_space_event(void) {
 	rz_spaces_add (sps, "secondspace");
 	RSpace *third = rz_spaces_add (sps, "thirdspace");
 
-	rz_event_hook (sps->event, R_SPACE_EVENT_COUNT, count_event, NULL);
-	rz_event_hook (sps->event, R_SPACE_EVENT_UNSET, test_event, NULL);
-	rz_event_hook (sps->event, R_SPACE_EVENT_RENAME, test_event, NULL);
+	rz_event_hook (sps->event, RZ_SPACE_EVENT_COUNT, count_event, NULL);
+	rz_event_hook (sps->event, RZ_SPACE_EVENT_UNSET, test_event, NULL);
+	rz_event_hook (sps->event, RZ_SPACE_EVENT_RENAME, test_event, NULL);
 
 	int c = rz_spaces_count (sps, "firstspace");
 	mu_assert_eq (c, 1, "first contain 1");

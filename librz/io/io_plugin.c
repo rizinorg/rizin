@@ -7,7 +7,7 @@
 static volatile RzIOPlugin *default_plugin = NULL;
 
 static RzIOPlugin *io_static_plugins[] = {
-	R_IO_STATIC_PLUGINS
+	RZ_IO_STATIC_PLUGINS
 };
 
 RZ_API bool rz_io_plugin_add(RzIO *io, RzIOPlugin *plugin) {
@@ -29,7 +29,7 @@ RZ_API bool rz_io_plugin_init(RzIO *io) {
 		if (!io_static_plugins[i]->name) {
 			continue;
 		}
-		static_plugin = R_NEW0 (RzIOPlugin);
+		static_plugin = RZ_NEW0 (RzIOPlugin);
 		if (!static_plugin) {
 			return false;
 		}
@@ -156,7 +156,7 @@ RZ_API int rz_io_plugin_list_json(RzIO *io) {
 }
 
 RZ_API int rz_io_plugin_read(RzIODesc *desc, ut8 *buf, int len) {
-	if (!buf || !desc || !desc->plugin || len < 1 || !(desc->perm & R_PERM_R)) {
+	if (!buf || !desc || !desc->plugin || len < 1 || !(desc->perm & RZ_PERM_R)) {
 		return 0;
 	}
 	if (!desc->plugin->read) {
@@ -166,7 +166,7 @@ RZ_API int rz_io_plugin_read(RzIODesc *desc, ut8 *buf, int len) {
 }
 
 RZ_API int rz_io_plugin_write(RzIODesc *desc, const ut8 *buf, int len) {
-	if (!buf || !desc || !desc->plugin || len < 1 || !(desc->perm & R_PERM_W)) {
+	if (!buf || !desc || !desc->plugin || len < 1 || !(desc->perm & RZ_PERM_W)) {
 		return 0;
 	}
 	if (!desc->plugin->write) {
@@ -176,14 +176,14 @@ RZ_API int rz_io_plugin_write(RzIODesc *desc, const ut8 *buf, int len) {
 }
 
 RZ_API int rz_io_plugin_read_at(RzIODesc *desc, ut64 addr, ut8 *buf, int len) {
-	if (rz_io_desc_is_chardevice (desc) || (rz_io_desc_seek (desc, addr, R_IO_SEEK_SET) == addr)) {
+	if (rz_io_desc_is_chardevice (desc) || (rz_io_desc_seek (desc, addr, RZ_IO_SEEK_SET) == addr)) {
 		return rz_io_plugin_read (desc, buf, len);
 	}
 	return 0;
 }
 
 RZ_API int rz_io_plugin_write_at(RzIODesc *desc, ut64 addr, const ut8 *buf, int len) {
-	if (rz_io_desc_is_chardevice (desc) || rz_io_desc_seek (desc, addr, R_IO_SEEK_SET)  == addr) {
+	if (rz_io_desc_is_chardevice (desc) || rz_io_desc_seek (desc, addr, RZ_IO_SEEK_SET)  == addr) {
 		return rz_io_plugin_write (desc, buf, len);
 	}
 	return 0;

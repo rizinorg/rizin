@@ -90,7 +90,7 @@ bool rz_x509_parse_name (RX509Name *name, RASN1Object *object) {
 		name->oids = (RASN1String **)calloc (name->length, sizeof (RASN1String *));
 		if (!name->oids) {
 			name->length = 0;
-			R_FREE (name->names);
+			RZ_FREE (name->names);
 			return false;
 		}
 		for (i = 0; i < object->list.length; i++) {
@@ -151,7 +151,7 @@ bool rz_x509_parse_extensions (RX509Extensions *ext, RASN1Object *object) {
 	}
 	ext->length = object->list.length;
 	for (i = 0; i < object->list.length; i++) {
-		ext->extensions[i] = R_NEW0 (RX509Extension);
+		ext->extensions[i] = RZ_NEW0 (RX509Extension);
 		if (!rz_x509_parse_extension (ext->extensions[i], object->list.objects[i])) {
 			rz_x509_free_extension (ext->extensions[i]);
 			ext->extensions[i] = NULL;
@@ -217,28 +217,28 @@ RX509Certificate *rz_x509_parse_certificate (RASN1Object *object) {
 	if (!object) {
 		return NULL;
 	}
-	RX509Certificate *cert = R_NEW0 (RX509Certificate);
+	RX509Certificate *cert = RZ_NEW0 (RX509Certificate);
 	if (!cert) {
 		goto fail;
 	}
 	if (object->klass != CLASS_UNIVERSAL || object->form != FORM_CONSTRUCTED || object->list.length != 3) {
-		R_FREE (cert);
+		RZ_FREE (cert);
 		goto fail;
 	}
 	RASN1Object *tmp = object->list.objects[2];
 	if (!tmp) {
-		R_FREE (cert);
+		RZ_FREE (cert);
 		goto fail;
 	}
 	if (tmp->klass != CLASS_UNIVERSAL || tmp->form != FORM_PRIMITIVE || tmp->tag != TAG_BITSTRING) {
-		R_FREE (cert);
+		RZ_FREE (cert);
 		goto fail;
 	}
 	cert->signature = rz_asn1_create_binary (object->list.objects[2]->sector, object->list.objects[2]->length);
 	rz_x509_parse_tbscertificate (&cert->tbsCertificate, object->list.objects[0]);
 
 	if (!rz_x509_parse_algorithmidentifier (&cert->algorithmIdentifier, object->list.objects[1])) {
-		R_FREE (cert);
+		RZ_FREE (cert);
 	}
 fail:
 	rz_asn1_free_object (object);
@@ -328,8 +328,8 @@ void rz_x509_free_name (RX509Name *name) {
 			rz_asn1_free_string (name->oids[i]);
 			rz_asn1_free_string (name->names[i]);
 		}
-		R_FREE (name->names);
-		R_FREE (name->oids);
+		RZ_FREE (name->names);
+		RZ_FREE (name->oids);
 	}
 	// not freeing name since it's not allocated dinamically
 }
@@ -412,7 +412,7 @@ void rz_x509_free_crl (RX509CertificateRevocationList *crl) {
 				rz_x509_free_crlentry (crl->revokedCertificates[i]);
 				crl->revokedCertificates[i] = NULL;
 			}
-			R_FREE (crl->revokedCertificates);
+			RZ_FREE (crl->revokedCertificates);
 		}
 		free (crl);
 	}

@@ -193,7 +193,7 @@ RzIOPlugin rz_io_plugin_rzpipe = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_rzpipe,
 	.version = RZ_VERSION
 };

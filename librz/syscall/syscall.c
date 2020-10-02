@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
-R_LIB_VERSION (rz_syscall);
+RZ_LIB_VERSION (rz_syscall);
 
 // TODO: now we use sdb
 extern RzSyscallPort sysport_x86[];
@@ -18,7 +18,7 @@ RZ_API RzSyscall* rz_syscall_ref(RzSyscall *sc) {
 }
 
 RZ_API RzSyscall* rz_syscall_new(void) {
-	RzSyscall *rs = R_NEW0 (RzSyscall);
+	RzSyscall *rs = RZ_NEW0 (RzSyscall);
 	if (rs) {
 		rs->sysport = sysport_x86;
 		rs->srdb = sdb_new0 (); // sysregs database
@@ -43,7 +43,7 @@ RZ_API void rz_syscall_free(RzSyscall *s) {
 }
 
 static Sdb *openDatabase(Sdb *db, const char *name) {
-	char *file = rz_str_newf ( R_JOIN_3_PATHS ("%s", RZ_SDB, "%s.sdb"),
+	char *file = rz_str_newf ( RZ_JOIN_3_PATHS ("%s", RZ_SDB, "%s.sdb"),
 		rz_sys_prefix (NULL), name);
 	if (rz_file_exists (file)) {
 		if (db) {
@@ -82,10 +82,10 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 	bool syscall_changed, sysregs_changed;
 
 	if (!os || !*os) {
-		os = R_SYS_OS;
+		os = RZ_SYS_OS;
 	}
 	if (!arch) {
-		arch = R_SYS_ARCH;
+		arch = RZ_SYS_ARCH;
 	}
 	if (!cpu) {
 		cpu = arch;
@@ -116,7 +116,7 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 	}
 
 	if (syscall_changed) {
-		char *dbName = rz_str_newf (R_JOIN_2_PATHS ("syscall", "%s-%s-%d"),
+		char *dbName = rz_str_newf (RZ_JOIN_2_PATHS ("syscall", "%s-%s-%d"),
 			os, arch, bits);
 		if (dbName) {
 			s->db = openDatabase (s->db, dbName);
@@ -125,7 +125,7 @@ RZ_API bool rz_syscall_setup(RzSyscall *s, const char *arch, int bits, const cha
 	}
 
 	if (sysregs_changed) {
-		char *dbName = rz_str_newf (R_JOIN_2_PATHS ("sysregs", "%s-%d-%s"),
+		char *dbName = rz_str_newf (RZ_JOIN_2_PATHS ("sysregs", "%s-%d-%s"),
 			arch, bits, cpu);
 		if (dbName) {
 			sdb_free (s->srdb);
@@ -153,7 +153,7 @@ RZ_API RzSyscallItem *rz_syscall_item_new_from_string(const char *name, const ch
 		return NULL;
 	}
 
-	si = R_NEW0 (RzSyscallItem);
+	si = RZ_NEW0 (RzSyscallItem);
 	if (!si) {
 		free (o);
 		return NULL;

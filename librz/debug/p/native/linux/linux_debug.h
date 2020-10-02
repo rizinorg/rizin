@@ -28,23 +28,23 @@ struct user_regs_struct_x86_32 {
 #if __ANDROID__
 
 #if __arm64__ || __aarch64__
-#define R_DEBUG_REG_T struct user_pt_regs
+#define RZ_DEBUG_REG_T struct user_pt_regs
 
 #ifndef NT_PRSTATUS
 #define NT_PRSTATUS 1
 #endif
 
 #else
-#define R_DEBUG_REG_T struct pt_regs
+#define RZ_DEBUG_REG_T struct pt_regs
 #endif
 
 #else
 
 #include <sys/user.h>
 #if __i386__ || __x86_64__
-#define R_DEBUG_REG_T struct user_regs_struct
+#define RZ_DEBUG_REG_T struct user_regs_struct
 #elif __s390x__ || __s390__
-#define R_DEBUG_REG_T struct _user_regs_struct
+#define RZ_DEBUG_REG_T struct _user_regs_struct
 #if 0
 // https://sourceware.org/git/?p=glibc.git;a=blob;f=sysdeps/unix/sysv/linux/s390/sys/user.h;hb=HEAD#l50
   50 struct _user_regs_struct
@@ -63,9 +63,9 @@ struct user_regs_struct_x86_32 {
 #ifndef NT_PRSTATUS
 #define NT_PRSTATUS 1
 #endif
-#define R_DEBUG_REG_T struct user_pt_regs
+#define RZ_DEBUG_REG_T struct user_pt_regs
 #elif __arm__
-#define R_DEBUG_REG_T struct user_regs
+#define RZ_DEBUG_REG_T struct user_regs
 #elif __POWERPC__
 struct powerpc_regs_t {
 	unsigned long gpr[32];
@@ -89,22 +89,22 @@ struct powerpc_regs_t {
 	unsigned long dsisr;		/* on 4xx/Book-E used for ESR */
 	unsigned long result;		/* Result of a system call */
 };
-#define R_DEBUG_REG_T struct powerpc_regs_t
+#define RZ_DEBUG_REG_T struct powerpc_regs_t
 #elif __riscv || __riscv__ || __riscv64__
 
 #include <sys/ucontext.h>
 #include <asm/ptrace.h>
 
 // typedef ut64 riscv64_regs_t [65];
-// #define R_DEBUG_REG_T riscv64_regs_t
-#define R_DEBUG_REG_T struct user_regs_struct
-// #define R_DEBUG_REG_T mcontext_t 77 784 in size (coz the fpu regs)
+// #define RZ_DEBUG_REG_T riscv64_regs_t
+#define RZ_DEBUG_REG_T struct user_regs_struct
+// #define RZ_DEBUG_REG_T mcontext_t 77 784 in size (coz the fpu regs)
 
 #elif __mips__
 
 #include <sys/ucontext.h>
 typedef ut64 mips64_regs_t [274];
-#define R_DEBUG_REG_T mips64_regs_t
+#define RZ_DEBUG_REG_T mips64_regs_t
 #endif
 #endif
 

@@ -96,20 +96,20 @@ RZ_API RzList *rz_anal_types_from_fcn(RzAnal *anal, RzAnalFunction *fcn) {
 	return uniq;
 }
 
-R_IPI void enum_type_case_free(void *e, void *user) {
+RZ_IPI void enum_type_case_free(void *e, void *user) {
 	(void)user;
 	RzAnalEnumCase *cas = e;
 	free ((char *)cas->name);
 }
 
-R_IPI void struct_type_member_free(void *e, void *user) {
+RZ_IPI void struct_type_member_free(void *e, void *user) {
 	(void)user;
 	RzAnalStructMember *member = e;
 	free ((char *)member->name);
 	free ((char *)member->type);
 }
 
-R_IPI void union_type_member_free(void *e, void *user) {
+RZ_IPI void union_type_member_free(void *e, void *user) {
 	(void)user;
 	RzAnalUnionMember *member = e;
 	free ((char *)member->name);
@@ -119,7 +119,7 @@ R_IPI void union_type_member_free(void *e, void *user) {
 static RzAnalBaseType *get_enum_type(RzAnal *anal, const char *sname) {
 	rz_return_val_if_fail (anal && sname, NULL);
 
-	RzAnalBaseType *base_type = rz_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ENUM);
+	RzAnalBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
 		return NULL;
 	}
@@ -169,7 +169,7 @@ error:
 static RzAnalBaseType *get_struct_type(RzAnal *anal, const char *sname) {
 	rz_return_val_if_fail (anal && sname, NULL);
 
-	RzAnalBaseType *base_type = rz_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_STRUCT);
+	RzAnalBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_STRUCT);
 	if (!base_type) {
 		return NULL;
 	}
@@ -231,7 +231,7 @@ error:
 static RzAnalBaseType *get_union_type(RzAnal *anal, const char *sname) {
 	rz_return_val_if_fail (anal && sname, NULL);
 
-	RzAnalBaseType *base_type = rz_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_UNION);
+	RzAnalBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_UNION);
 	if (!base_type) {
 		return NULL;
 	}
@@ -280,9 +280,9 @@ error:
 }
 
 static RzAnalBaseType *get_typedef_type(RzAnal *anal, const char *sname) {
-	rz_return_val_if_fail (anal && R_STR_ISNOTEMPTY (sname), NULL);
+	rz_return_val_if_fail (anal && RZ_STR_ISNOTEMPTY (sname), NULL);
 
-	RzAnalBaseType *base_type = rz_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_TYPEDEF);
+	RzAnalBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_TYPEDEF);
 	if (!base_type) {
 		return NULL;
 	}
@@ -299,9 +299,9 @@ error:
 }
 
 static RzAnalBaseType *get_atomic_type(RzAnal *anal, const char *sname) {
-	rz_return_val_if_fail (anal && R_STR_ISNOTEMPTY (sname), NULL);
+	rz_return_val_if_fail (anal && RZ_STR_ISNOTEMPTY (sname), NULL);
 
-	RzAnalBaseType *base_type = rz_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ATOMIC);
+	RzAnalBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ATOMIC);
 	if (!base_type) {
 		return NULL;
 	}
@@ -357,7 +357,7 @@ RZ_API RzAnalBaseType *rz_anal_get_base_type(RzAnal *anal, const char *name) {
 
 static void save_struct(const RzAnal *anal, const RzAnalBaseType *type) {
 	rz_return_if_fail (anal && type && type->name 
-		&& type->kind == R_ANAL_BASE_TYPE_KIND_STRUCT);
+		&& type->kind == RZ_ANAL_BASE_TYPE_KIND_STRUCT);
 	char *kind = "struct";
 	/*
 		C:
@@ -406,7 +406,7 @@ static void save_struct(const RzAnal *anal, const RzAnalBaseType *type) {
 
 static void save_union(const RzAnal *anal, const RzAnalBaseType *type) {
 	rz_return_if_fail (anal && type && type->name 
-		&& type->kind == R_ANAL_BASE_TYPE_KIND_UNION);
+		&& type->kind == RZ_ANAL_BASE_TYPE_KIND_UNION);
 	const char *kind = "union";
 	/*
 	C:
@@ -455,7 +455,7 @@ static void save_union(const RzAnal *anal, const RzAnalBaseType *type) {
 
 static void save_enum(const RzAnal *anal, const RzAnalBaseType *type) {
 	rz_return_if_fail (anal && type && type->name 
-		&& type->kind == R_ANAL_BASE_TYPE_KIND_ENUM);
+		&& type->kind == RZ_ANAL_BASE_TYPE_KIND_ENUM);
 	/*
 		C:
 			enum name {case1 = 1, case2 = 2, caseN = 3};
@@ -509,7 +509,7 @@ static void save_enum(const RzAnal *anal, const RzAnalBaseType *type) {
 
 static void save_atomic_type(const RzAnal *anal, const RzAnalBaseType *type) {
 	rz_return_if_fail (anal && type && type->name 
-		&& type->kind == R_ANAL_BASE_TYPE_KIND_ATOMIC);
+		&& type->kind == RZ_ANAL_BASE_TYPE_KIND_ATOMIC);
 	/*
 		C: (cannot define a custom atomic type)
 		Sdb:
@@ -539,7 +539,7 @@ static void save_atomic_type(const RzAnal *anal, const RzAnalBaseType *type) {
 	rz_strbuf_fini (&val);
 }
 static void save_typedef(const RzAnal *anal, const RzAnalBaseType *type) {
-	rz_return_if_fail (anal && type && type->name && type->kind == R_ANAL_BASE_TYPE_KIND_TYPEDEF);
+	rz_return_if_fail (anal && type && type->name && type->kind == RZ_ANAL_BASE_TYPE_KIND_TYPEDEF);
 	/*
 		C:
 		typedef char byte;
@@ -567,42 +567,42 @@ static void save_typedef(const RzAnal *anal, const RzAnalBaseType *type) {
 
 RZ_API void rz_anal_base_type_free(RzAnalBaseType *type) {
 	rz_return_if_fail (type);
-	R_FREE (type->name);
-	R_FREE (type->type);
+	RZ_FREE (type->name);
+	RZ_FREE (type->type);
 
 	switch (type->kind) {
-	case R_ANAL_BASE_TYPE_KIND_STRUCT:
+	case RZ_ANAL_BASE_TYPE_KIND_STRUCT:
 		rz_vector_fini (&type->struct_data.members);
 		break;
-	case R_ANAL_BASE_TYPE_KIND_UNION:
+	case RZ_ANAL_BASE_TYPE_KIND_UNION:
 		rz_vector_fini (&type->union_data.members);
 		break;
-	case R_ANAL_BASE_TYPE_KIND_ENUM:
+	case RZ_ANAL_BASE_TYPE_KIND_ENUM:
 		rz_vector_fini (&type->enum_data.cases);
 		break;
-	case R_ANAL_BASE_TYPE_KIND_TYPEDEF:
-	case R_ANAL_BASE_TYPE_KIND_ATOMIC:
+	case RZ_ANAL_BASE_TYPE_KIND_TYPEDEF:
+	case RZ_ANAL_BASE_TYPE_KIND_ATOMIC:
 		break;
 	default:
 		break;
 	}
-	R_FREE (type);
+	RZ_FREE (type);
 }
 
 RZ_API RzAnalBaseType *rz_anal_base_type_new(RzAnalBaseTypeKind kind) {
-	RzAnalBaseType *type = R_NEW0 (RzAnalBaseType);
+	RzAnalBaseType *type = RZ_NEW0 (RzAnalBaseType);
 	if (!type) {
 		return NULL;
 	}
 	type->kind = kind;
 	switch (type->kind) {
-	case R_ANAL_BASE_TYPE_KIND_STRUCT:
+	case RZ_ANAL_BASE_TYPE_KIND_STRUCT:
 		rz_vector_init (&type->struct_data.members, sizeof (RzAnalStructMember), struct_type_member_free, NULL);
 		break;
-	case R_ANAL_BASE_TYPE_KIND_ENUM:
+	case RZ_ANAL_BASE_TYPE_KIND_ENUM:
 		rz_vector_init (&type->enum_data.cases, sizeof (RzAnalEnumCase), enum_type_case_free, NULL);
 		break;
-	case R_ANAL_BASE_TYPE_KIND_UNION:
+	case RZ_ANAL_BASE_TYPE_KIND_UNION:
 		rz_vector_init (&type->union_data.members, sizeof (RzAnalUnionMember), union_type_member_free, NULL);
 		break;
 	default:
@@ -625,19 +625,19 @@ RZ_API void rz_anal_save_base_type(const RzAnal *anal, const RzAnalBaseType *typ
 	// TODO, solve collisions, if there are 2 types with the same name and kind
 
 	switch (type->kind) {
-	case R_ANAL_BASE_TYPE_KIND_STRUCT:
+	case RZ_ANAL_BASE_TYPE_KIND_STRUCT:
 		save_struct (anal, type);
 		break;
-	case R_ANAL_BASE_TYPE_KIND_ENUM:
+	case RZ_ANAL_BASE_TYPE_KIND_ENUM:
 		save_enum (anal, type);
 		break;
-	case R_ANAL_BASE_TYPE_KIND_UNION:
+	case RZ_ANAL_BASE_TYPE_KIND_UNION:
 		save_union (anal, type);
 		break;
-	case R_ANAL_BASE_TYPE_KIND_TYPEDEF:
+	case RZ_ANAL_BASE_TYPE_KIND_TYPEDEF:
 		save_typedef (anal, type);
 		break;
-	case R_ANAL_BASE_TYPE_KIND_ATOMIC:
+	case RZ_ANAL_BASE_TYPE_KIND_ATOMIC:
 		save_atomic_type (anal, type);
 		break;
 	default:

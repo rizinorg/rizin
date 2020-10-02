@@ -1,12 +1,12 @@
-#ifndef R_SYS_H
-#define R_SYS_H
+#ifndef RZ_SYS_H
+#define RZ_SYS_H
 
 #include <rz_list.h>
 
 #if __WINDOWS__
-#define R_SYS_DEVNULL "nul"
+#define RZ_SYS_DEVNULL "nul"
 #else
-#define R_SYS_DEVNULL "/dev/null"
+#define RZ_SYS_DEVNULL "/dev/null"
 #endif
 
 
@@ -15,10 +15,10 @@ extern "C" {
 #endif
 
 enum {
-	R_SYS_BITS_8 = 1,
-	R_SYS_BITS_16 = 2,
-	R_SYS_BITS_32 = 4,
-	R_SYS_BITS_64 = 8,
+	RZ_SYS_BITS_8 = 1,
+	RZ_SYS_BITS_16 = 2,
+	RZ_SYS_BITS_32 = 4,
+	RZ_SYS_BITS_64 = 8,
 };
 
 typedef struct {
@@ -96,9 +96,9 @@ RZ_API bool rz_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE 
 RZ_API int rz_sys_truncate(const char *file, int sz);
 RZ_API int rz_sys_cmd(const char *cmd);
 RZ_API int rz_sys_cmdbg(const char *cmd);
-RZ_API int rz_sys_cmdf(const char *fmt, ...) R_PRINTF_CHECK(1, 2);
+RZ_API int rz_sys_cmdf(const char *fmt, ...) RZ_PRINTF_CHECK(1, 2);
 RZ_API char *rz_sys_cmd_str(const char *cmd, const char *input, int *len);
-RZ_API char *rz_sys_cmd_strf(const char *cmd, ...) R_PRINTF_CHECK(1, 2);
+RZ_API char *rz_sys_cmd_strf(const char *cmd, ...) RZ_PRINTF_CHECK(1, 2);
 //#define rz_sys_cmd_str(cmd, input, len) rz_sys_cmd_str_full(cmd, input, len, 0)
 RZ_API void rz_sys_backtrace(void);
 RZ_API bool rz_sys_tts(const char *txt, bool bg);
@@ -147,4 +147,4 @@ RZ_API char *rz_syscmd_sort(const char *file);
 }
 #endif
 
-#endif //  R_SYS_H
+#endif //  RZ_SYS_H

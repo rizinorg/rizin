@@ -163,11 +163,11 @@ RzAsmPlugin rz_asm_plugin_or1k = {
 	.license = "LGPL3",
 	.arch = "or1k",
 	.bits = 32,
-	.endian = R_SYS_ENDIAN_BIG,
+	.endian = RZ_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
 };
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM, .data = &rz_asm_plugin_or1k, .version = RZ_VERSION};
+	.type = RZ_LIB_TYPE_ASM, .data = &rz_asm_plugin_or1k, .version = RZ_VERSION};
 #endif

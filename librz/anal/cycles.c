@@ -5,10 +5,10 @@
 #include <rz_types.h>
 
 RZ_API RzAnalCycleFrame *rz_anal_cycle_frame_new(void) {
-	RzAnalCycleFrame *cf = R_NEW0 (RzAnalCycleFrame);
+	RzAnalCycleFrame *cf = RZ_NEW0 (RzAnalCycleFrame);
 	if (cf) {
 		if (!(cf->hooks = rz_list_new ())) {
-			R_FREE (cf);
+			RZ_FREE (cf);
 		}
 	}
 	return cf;

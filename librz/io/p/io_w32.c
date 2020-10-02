@@ -27,7 +27,7 @@ static int w32__close(RzIODesc *fd) {
 	if (fd->data) {
 		// TODO: handle return value
 		CloseHandle (RzIOW32_HANDLE (fd));
-		R_FREE (fd->data);
+		RZ_FREE (fd->data);
 		return 0;
 	}
 	return -1;
@@ -45,7 +45,7 @@ static bool w32__plugin_open(RzIO *io, const char *pathname, bool many) {
 
 static RzIODesc *w32__open(RzIO *io, const char *pathname, int rw, int mode) {
 	if (!strncmp (pathname, "w32://", 6)) {
-		RzIOW32 *w32 = R_NEW0 (RzIOW32);
+		RzIOW32 *w32 = RZ_NEW0 (RzIOW32);
 		if (!w32) {
 			return NULL;
 		}
@@ -88,7 +88,7 @@ RzIOPlugin rz_io_plugin_w32 = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_w32,
 	.version = RZ_VERSION
 };

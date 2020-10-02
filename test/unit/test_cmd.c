@@ -79,7 +79,7 @@ bool test_parsed_args_newargs(void) {
 }
 
 static RzCmdStatus afl_argv_handler(RzCore *core, int argc, const char **argv) {
-	return R_CMD_STATUS_OK;
+	return RZ_CMD_STATUS_OK;
 }
 
 bool test_cmd_descriptor_argv(void) {
@@ -88,7 +88,7 @@ bool test_cmd_descriptor_argv(void) {
 	RzCmdDesc *cd = rz_cmd_desc_argv_new (cmd, root, "afl", afl_argv_handler, NULL);
 	mu_assert_notnull (cd, "cmddesc created");
 	mu_assert_streq (cd->name, "afl", "command descriptor name is afl");
-	mu_assert_eq (cd->type, R_CMD_DESC_TYPE_ARGV, "type of command descriptor is argv");
+	mu_assert_eq (cd->type, RZ_CMD_DESC_TYPE_ARGV, "type of command descriptor is argv");
 	mu_assert_ptreq (rz_cmd_desc_parent (cd), root, "root parent descriptor");
 	mu_assert_eq (root->n_children, 1, "root has 1 child");
 	mu_assert_eq (cd->n_children, 0, "no children");
@@ -118,7 +118,7 @@ bool test_cmd_descriptor_oldinput(void) {
 	RzCmdDesc *cd = rz_cmd_desc_oldinput_new (cmd, root, "a", a_oldinput_cb, NULL);
 	mu_assert_notnull (cd, "cmddesc created");
 	mu_assert_streq (cd->name, "a", "command descriptor name is a");
-	mu_assert_eq (cd->type, R_CMD_DESC_TYPE_OLDINPUT, "type of command descriptor is oldinput");
+	mu_assert_eq (cd->type, RZ_CMD_DESC_TYPE_OLDINPUT, "type of command descriptor is oldinput");
 	mu_assert_ptreq (rz_cmd_desc_parent (cd), root, "root parent descriptor");
 	mu_assert_eq (cd->n_children, 0, "no children");
 	rz_cmd_free (cmd);
@@ -126,11 +126,11 @@ bool test_cmd_descriptor_oldinput(void) {
 }
 
 static RzCmdStatus a_exec_cb(RzCore *core, int argc, const char **argv) {
-	return R_CMD_STATUS_OK;
+	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus ab_cb(RzCore *core, int argc, const char **argv) {
-	return R_CMD_STATUS_OK;
+	return RZ_CMD_STATUS_OK;
 }
 
 bool test_cmd_descriptor_group(void) {
@@ -144,7 +144,7 @@ bool test_cmd_descriptor_group(void) {
 	rz_cmd_desc_argv_new (cmd, cd, "ab", ab_cb, &ab_help);
 	mu_assert_notnull (cd, "cmddesc created");
 	mu_assert_streq (cd->name, "a", "command descriptor name is a");
-	mu_assert_eq (cd->type, R_CMD_DESC_TYPE_GROUP, "type of command descriptor is group");
+	mu_assert_eq (cd->type, RZ_CMD_DESC_TYPE_GROUP, "type of command descriptor is group");
 	mu_assert_ptreq (rz_cmd_desc_parent (cd), root, "root parent descriptor");
 	mu_assert_eq (cd->n_children, 2, "no children");
 	mu_assert_true (rz_cmd_desc_has_handler (cd), "a_exec_cb is the handler for this");
@@ -170,11 +170,11 @@ bool test_cmd_descriptor_group(void) {
 }
 
 static RzCmdStatus ap_handler(RzCore *core, int argc, const char **argv) {
-	return R_CMD_STATUS_OK;
+	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus aeir_handler(RzCore *core, int argc, const char **argv) {
-	return R_CMD_STATUS_OK;
+	return RZ_CMD_STATUS_OK;
 }
 
 static int ae_handler(void *user, const char *input) {
@@ -231,11 +231,11 @@ static RzCmdStatus pd_handler(RzCore *core, int argc, const char **argv) {
 	mu_assert_eq (argc, 2, "pd_handler called with 2 arguments (name and arg)");
 	mu_assert_streq (argv[0], "pd", "pd is argv[0]");
 	mu_assert_streq (argv[1], "10", "10 is argv[1]");
-	return R_CMD_STATUS_OK;
+	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus p_handler_argv(RzCore *core, int argc, const char **argv) {
-	return R_CMD_STATUS_OK;
+	return RZ_CMD_STATUS_OK;
 }
 
 static int p_handler(void *user, const char *input) {
@@ -273,19 +273,19 @@ bool test_cmd_call_desc(void) {
 	char *wv8_args[] = {"0xdeadbeef"};
 
 	RzCmdParsedArgs *a = rz_cmd_parsed_args_new ("pd", 1, pd_args);
-	mu_assert_eq(rz_cmd_call_parsed_args (cmd, a), R_CMD_STATUS_OK, "pd was called correctly");
+	mu_assert_eq(rz_cmd_call_parsed_args (cmd, a), RZ_CMD_STATUS_OK, "pd was called correctly");
 	rz_cmd_parsed_args_free (a);
 
 	a = rz_cmd_parsed_args_new ("px", 1, px_args);
-	mu_assert_eq(rz_cmd_call_parsed_args (cmd, a), R_CMD_STATUS_INVALID, "p was called correctly");
+	mu_assert_eq(rz_cmd_call_parsed_args (cmd, a), RZ_CMD_STATUS_INVALID, "p was called correctly");
 	rz_cmd_parsed_args_free (a);
 
 	a = rz_cmd_parsed_args_new ("wv8", 1, wv8_args);
-	mu_assert_eq(rz_cmd_call_parsed_args (cmd, a), R_CMD_STATUS_OK, "wv was called correctly");
+	mu_assert_eq(rz_cmd_call_parsed_args (cmd, a), RZ_CMD_STATUS_OK, "wv was called correctly");
 	rz_cmd_parsed_args_free (a);
 
 	a = rz_cmd_parsed_args_new ("quit", 0, NULL);
-	mu_assert_eq (rz_cmd_call_parsed_args (cmd, a), R_CMD_STATUS_EXIT, "quit is going to exit");
+	mu_assert_eq (rz_cmd_call_parsed_args (cmd, a), RZ_CMD_STATUS_EXIT, "quit is going to exit");
 	rz_cmd_parsed_args_free (a);
 
 	rz_cmd_free (cmd);

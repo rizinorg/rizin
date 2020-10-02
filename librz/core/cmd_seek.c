@@ -120,7 +120,7 @@ static void __seek_line_relative(RzCore *core, int numlines) {
 
 static void __clean_lines_cache(RzCore *core) {
 	core->print->lines_cache_sz = -1;
-	R_FREE (core->print->lines_cache);
+	RZ_FREE (core->print->lines_cache);
 }
 
 RZ_API int rz_core_lines_currline(RzCore *core) {  // make priv8 again
@@ -150,7 +150,7 @@ RZ_API int rz_core_lines_initcache(RzCore *core, ut64 start_addr, ut64 end_addr)
 	}
 
 	free (core->print->lines_cache);
-	core->print->lines_cache = R_NEWS0 (ut64, bsz);
+	core->print->lines_cache = RZ_NEWS0 (ut64, bsz);
 	if (!core->print->lines_cache) {
 		return -1;
 	}
@@ -184,7 +184,7 @@ RZ_API int rz_core_lines_initcache(RzCore *core, ut64 start_addr, ut64 end_addr)
 				if (tmp) {
 					core->print->lines_cache = tmp;
 				} else {
-					R_FREE (core->print->lines_cache);
+					RZ_FREE (core->print->lines_cache);
 					goto beach;
 				}
 			}
@@ -262,7 +262,7 @@ static int cmd_seek_opcode_backward(RzCore *core, int numinstr) {
 		ret = rz_core_asm_bwdis_len (core, &instr_len, &addr, numinstr);
 #endif
 		addr = core->offset;
-		const int mininstrsize = rz_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+		const int mininstrsize = rz_anal_archinfo (core->anal, RZ_ANAL_ARCHINFO_MIN_OP_SIZE);
 		for (i = 0; i < numinstr; i++) {
 			ut64 prev_addr = rz_core_prevop_addr_force (core, addr, 1);
 			if (prev_addr == UT64_MAX) {
@@ -292,7 +292,7 @@ static int cmd_seek_opcode_forward (RzCore *core, int n) {
 	for (val = i = 0; i < n; i++) {
 		RzAnalOp op;
 		ret = rz_anal_op (core->anal, &op, core->offset, core->block,
-			core->blocksize, R_ANAL_OP_MASK_BASIC);
+			core->blocksize, RZ_ANAL_OP_MASK_BASIC);
 		if (ret < 1) {
 			ret = 1;
 		}
@@ -385,7 +385,7 @@ static int cmd_seek(void *data, const char *input) {
 			RzAnalMetaItem *meta;
 			bool seeked = false;
 			rz_interval_tree_foreach (&core->anal->meta, it, meta) {
-				if (meta->type == R_META_TYPE_COMMENT && !strcmp (meta->str, input + 2)) {
+				if (meta->type == RZ_META_TYPE_COMMENT && !strcmp (meta->str, input + 2)) {
 					if (!silent) {
 						rz_io_sundo_push (core->io, core->offset, rz_print_get_cursor (core->print));
 					}

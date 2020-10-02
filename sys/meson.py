@@ -32,7 +32,7 @@ ROOT = None
 log = None
 
 def set_global_variables():
-    """[R_API] Set global variables"""
+    """[RZ_API] Set global variables"""
     global log
     global ROOT
     global MESON
@@ -66,7 +66,7 @@ def set_global_variables():
 
 def meson(command, rootdir=None, builddir=None, prefix=None, backend=None,
           release=False, shared=None, *, options=[]):
-    """[R_API] Invoke meson"""
+    """[RZ_API] Invoke meson"""
     cmd = MESON + [command]
     if rootdir:
         cmd.append(rootdir)
@@ -90,7 +90,7 @@ def meson(command, rootdir=None, builddir=None, prefix=None, backend=None,
         sys.exit(1)
 
 def ninja(folder, *targets):
-    """[R_API] Invoke ninja"""
+    """[RZ_API] Invoke ninja"""
     command = ['ninja', '-C', folder]
     if targets:
         command.extend(targets)
@@ -101,7 +101,7 @@ def ninja(folder, *targets):
         sys.exit(1)
 
 def msbuild(project, *params):
-    """[R_API] Invoke MSbuild"""
+    """[RZ_API] Invoke MSbuild"""
     command = ['msbuild', project]
     if params:
         command.extend(params)

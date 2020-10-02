@@ -1,5 +1,5 @@
-#ifndef R_MEM_H
-#define R_MEM_H
+#ifndef RZ_MEM_H
+#define RZ_MEM_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,4 +59,4 @@ RZ_API void *rz_mem_mmap_resize(RMmap *m, ut64 newsize);
 #ifdef __cplusplus
 }
 #endif
-#endif //  R_MEM_H
+#endif //  RZ_MEM_H

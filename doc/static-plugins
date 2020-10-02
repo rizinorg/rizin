@@ -6,6 +6,6 @@ STATIC_ASM_PLUGINS=p/java.mk p/mips.mk
 
 In librz/config.h define the list of struct plugins
 
-#define R_ASM_STATIC_PLUGINS \
+#define RZ_ASM_STATIC_PLUGINS \
 	&r_asm_plugin_java, 0
 

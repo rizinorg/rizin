@@ -9,7 +9,7 @@ enum {
 };
 
 static RGraphNode *rz_graph_node_new (void *data) {
-	RGraphNode *p = R_NEW0 (RGraphNode);
+	RGraphNode *p = RZ_NEW0 (RGraphNode);
 	if (p) {
 		p->data = data;
 		p->free = NULL;
@@ -46,7 +46,7 @@ static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[],
 	if (!s) {
 		return;
 	}
-	RGraphEdge *edg = R_NEW0 (RGraphEdge);
+	RGraphEdge *edg = RZ_NEW0 (RGraphEdge);
 	if (!edg) {
 		rz_stack_free (s);
 		return;
@@ -83,7 +83,7 @@ static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[],
 		}
 		color[cur->idx] = GRAY_COLOR;
 
-		edg = R_NEW0 (RGraphEdge);
+		edg = RZ_NEW0 (RGraphEdge);
 		if (!edg) {
 			break;
 		}
@@ -93,7 +93,7 @@ static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[],
 		i = 0;
 		const RzList *neighbours = direction ? cur->out_nodes : cur->in_nodes;
 		rz_list_foreach (neighbours, it, v) {
-			edg = R_NEW (RGraphEdge);
+			edg = RZ_NEW (RGraphEdge);
 			edg->from = cur;
 			edg->to = v;
 			edg->nth = i++;
@@ -104,7 +104,7 @@ static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[],
 }
 
 RZ_API RGraph *rz_graph_new(void) {
-	RGraph *t = R_NEW0 (RGraph);
+	RGraph *t = RZ_NEW0 (RGraph);
 	if (!t) {
 		return NULL;
 	}
@@ -269,7 +269,7 @@ RZ_API void rz_graph_dfs_node(RGraph *g, RGraphNode *n, RGraphVisitor *vis) {
 	if (!g || !n || !vis) {
 		return;
 	}
-	int *color = R_NEWS0 (int, g->last_index);
+	int *color = RZ_NEWS0 (int, g->last_index);
 	if (color) {
 		dfs_node (g, n, vis, color, true);
 		free (color);
@@ -280,7 +280,7 @@ RZ_API void rz_graph_dfs_node_reverse(RGraph *g, RGraphNode *n, RGraphVisitor *v
 	if (!g || !n || !vis) {
 		return;
 	}
-	int *color = R_NEWS0 (int, g->last_index);
+	int *color = RZ_NEWS0 (int, g->last_index);
 	if (color) {
 		dfs_node (g, n, vis, color, false);
 		free (color);
@@ -292,7 +292,7 @@ RZ_API void rz_graph_dfs(RGraph *g, RGraphVisitor *vis) {
 	RGraphNode *n;
 	RzListIter *it;
 
-	int *color = R_NEWS0 (int, g->last_index);
+	int *color = RZ_NEWS0 (int, g->last_index);
 	if (color) {
 		rz_list_foreach (g->nodes, it, n) {
 			if (color[n->idx] == WHITE_COLOR) {
@@ -311,7 +311,7 @@ RZ_API void rz_graph_free_node_info(void *ptr) {
 }
 
 RZ_API RGraphNodeInfo *rz_graph_create_node_info(char *title, char *body, ut64 offset) {
-	RGraphNodeInfo *data = R_NEW0 (RGraphNodeInfo);
+	RGraphNodeInfo *data = RZ_NEW0 (RGraphNodeInfo);
 	if (data) {
 		data->title = title;
 		data->body = body;

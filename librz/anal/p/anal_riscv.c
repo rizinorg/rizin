@@ -299,26 +299,26 @@ static int riscv_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 	int xlen = anal->bits;
 	op->size = 4;
 	op->addr = addr;
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->type = RZ_ANAL_OP_TYPE_UNK;
 
 	if (len >= sizeof (ut64)) {
 		word = rz_read_ble64 (data, anal->big_endian);
 	} else if (len >= sizeof (ut32)) {
 		word = rz_read_ble16 (data, anal->big_endian);
 	} else {
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = RZ_ANAL_OP_TYPE_ILL;
 		return -1;
 	}
 
 	struct riscv_opcode *o = get_opcode (word);
 	if (word == UT64_MAX) {
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = RZ_ANAL_OP_TYPE_ILL;
 		return -1;
 	}
 	if (!o || !o->name) {
 		return op->size;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (mask & RZ_ANAL_OP_MASK_DISASM) {
 		op->mnemonic = strdup (o->name);
 	}
 
@@ -355,7 +355,7 @@ static int riscv_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 		else if (!strncmp (name, "addi16sp", 8)) {
 			esilprintf (op, "%s,sp,+,%s,=", ARG (1), ARG (0));
 			if (!strcmp (ARG (0), riscv_gpr_names[X_SP])) {
-				op->stackop = R_ANAL_STACK_INC;
+				op->stackop = RZ_ANAL_STACK_INC;
 				op->stackptr = rz_num_math (NULL, ARG (1));
 			}
 		} else if (!strncmp (name, "addw", 4)) {
@@ -367,7 +367,7 @@ static int riscv_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 			esilprintf (op, "%s,%s,+,%s,=", ARG (2), ARG (1), ARG (0));
 			if (name[3] == 'i' && !strcmp (ARG (0), riscv_gpr_names[X_SP]) &&
 				!strcmp (ARG (1), riscv_gpr_names[X_SP])) {
-				op->stackop = R_ANAL_STACK_INC;
+				op->stackop = RZ_ANAL_STACK_INC;
 				op->stackptr = -(signed)rz_num_math (NULL, ARG (2));
 			}
 		} else if (!strncmp (name, "subw", 4)) {
@@ -379,7 +379,7 @@ static int riscv_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 			esilprintf (op, "%s,%s,-,%s,=", ARG (2), ARG (1), ARG (0));
 			if (name[3] == 'i' && !strcmp (ARG (0), riscv_gpr_names[X_SP]) &&
 				!strcmp (ARG (1), riscv_gpr_names[X_SP])) {
-				op->stackop = R_ANAL_STACK_INC;
+				op->stackop = RZ_ANAL_STACK_INC;
 				op->stackptr = rz_num_math (NULL, ARG (2));
 			}
 		} else if (!strncmp (name, "mulw", 4)) {
@@ -544,76 +544,76 @@ static int riscv_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 	if (is_any ("jal")) {
 		// decide whether it's jump or call
 		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
-		op->type = (rd == 0) ? R_ANAL_OP_TYPE_JMP: R_ANAL_OP_TYPE_CALL;
+		op->type = (rd == 0) ? RZ_ANAL_OP_TYPE_JMP: RZ_ANAL_OP_TYPE_CALL;
 		op->jump = EXTRACT_UJTYPE_IMM (word) + addr;
 		op->fail = addr + op->size;
 	} else if (is_any ("c.jal")) {
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = RZ_ANAL_OP_TYPE_CALL;
 		op->jump = EXTRACT_RVC_IMM (word) + addr;
 		op->fail = addr + op->size;
 	} else if (is_any ("jr")) {
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = RZ_ANAL_OP_TYPE_JMP;
 	} else if (is_any ("c.j", "jump")) {
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = RZ_ANAL_OP_TYPE_JMP;
 		op->jump = EXTRACT_RVC_J_IMM (word) + addr;
 	} else if (is_any ("jalr")) {
 		// decide whether it's ret or call
 		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
-		op->type = (rd == 0) ? R_ANAL_OP_TYPE_RET: R_ANAL_OP_TYPE_UCALL;
+		op->type = (rd == 0) ? RZ_ANAL_OP_TYPE_RET: RZ_ANAL_OP_TYPE_UCALL;
 	} else if (is_any ("c.jalr")) {
-		op->type = R_ANAL_OP_TYPE_UCALL;
+		op->type = RZ_ANAL_OP_TYPE_UCALL;
 	} else if (is_any ("c.jr")) {
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = RZ_ANAL_OP_TYPE_RET;
 	} else if (is_any ("beqz", "beq", "blez", "bgez", "ble",
 			   "bleu", "bge", "bgeu", "bltz", "bgtz", "blt", "bltu",
 			   "bgt", "bgtu", "bnez", "bne")) {
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = RZ_ANAL_OP_TYPE_CJMP;
 		op->jump = EXTRACT_SBTYPE_IMM (word) + addr;
 		op->fail = addr + op->size;
 	} else if (is_any ("c.beqz", "c.bnez")) {
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = RZ_ANAL_OP_TYPE_CJMP;
 		op->jump = EXTRACT_RVC_B_IMM (word) + addr;
 		op->fail = addr + op->size;
 // math
 	} else if (is_any ("addi", "addw", "addiw", "add", "auipc", "c.addi",
 			   "c.addw", "c.add", "c.addi4spn", "c.addi16sp")) {
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANAL_OP_TYPE_ADD;
 	} else if (is_any ("c.mv")) {
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANAL_OP_TYPE_MOV;
 	} else if (is_any ("subi", "subw", "sub", "c.sub")) {
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = RZ_ANAL_OP_TYPE_SUB;
 	} else if (is_any ("xori", "xor", "c.xor")) {
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = RZ_ANAL_OP_TYPE_XOR;
 	} else if (is_any ("andi", "and", "c.andi")) {
-		op->type = R_ANAL_OP_TYPE_AND;
+		op->type = RZ_ANAL_OP_TYPE_AND;
 	} else if (is_any ("ori", "or", "c.or")) {
-		op->type = R_ANAL_OP_TYPE_OR;
+		op->type = RZ_ANAL_OP_TYPE_OR;
 	} else if (is_any ("not")) {
-		op->type = R_ANAL_OP_TYPE_NOT;
+		op->type = RZ_ANAL_OP_TYPE_NOT;
 	} else if (is_any ("c.nop")) {
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = RZ_ANAL_OP_TYPE_NOP;
 	} else if (is_any ("mul", "mulh", "mulhu", "mulhsu", "mulw")) {
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = RZ_ANAL_OP_TYPE_MUL;
 	} else if (is_any ("div", "divu", "divw", "divuw")) {
-		op->type = R_ANAL_OP_TYPE_DIV;
+		op->type = RZ_ANAL_OP_TYPE_DIV;
 	} else if (is_any ("slli", "c.slli")) {
-		op->type = R_ANAL_OP_TYPE_SHL;
+		op->type = RZ_ANAL_OP_TYPE_SHL;
 	} else if (is_any ("srl", "c.srli")) {
-		op->type = R_ANAL_OP_TYPE_SHR;
+		op->type = RZ_ANAL_OP_TYPE_SHR;
 	} else if (is_any ("sra", "srai", "c.srai")) {
-		op->type = R_ANAL_OP_TYPE_SAR;
+		op->type = RZ_ANAL_OP_TYPE_SAR;
 // memory
 	} else if (is_any ("sd", "sb", "sh", "sw", "c.sd", "c.sw",
 			   "c.swsp")) {
-		op->type = R_ANAL_OP_TYPE_STORE;
+		op->type = RZ_ANAL_OP_TYPE_STORE;
 	} else if (is_any ("ld", "lw", "lwu", "lui", "li",
 			   "lb", "lbu", "lh", "lhu", "la", "lla", "c.ld",
 			   "c.lw", "c.lwsp", "c.li", "c.lui")) {
-		op->type = R_ANAL_OP_TYPE_LOAD;
+		op->type = RZ_ANAL_OP_TYPE_LOAD;
 	}
-	if (mask & R_ANAL_OP_MASK_VAL && args.num) {
+	if (mask & RZ_ANAL_OP_MASK_VAL && args.num) {
 		int i, j = 1;
-		op->dst = R_NEW0 (RzAnalValue);
+		op->dst = RZ_NEW0 (RzAnalValue);
 		char *argf = strdup (o->args);
 		char *comma = strtok (argf, ",");
 		if (comma && strchr (comma, '(')) {
@@ -626,7 +626,7 @@ static int riscv_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 			op->dst->reg = rz_reg_get (anal->reg, args.arg[0], -1);
 		}
 		for (i = 0; j < args.num; i++, j++) {
-			op->src[i] = R_NEW0 (RzAnalValue);
+			op->src[i] = RZ_NEW0 (RzAnalValue);
 			comma = strtok (NULL, ",");
 			if (comma && strchr (comma, '(')) {
 				op->src[i]->delta = (st64)rz_num_get (NULL, args.arg[j]);
@@ -831,7 +831,7 @@ RzAnalPlugin rz_anal_plugin_riscv = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_riscv,
 	.version = RZ_VERSION
 };

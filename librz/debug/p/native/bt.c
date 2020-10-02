@@ -12,10 +12,10 @@ static void prepend_current_pc (RzDebug *dbg, RzList *list) {
 	RzDebugFrame *frame;
 	const char *pcname;
 	if (list) {
-		pcname = rz_reg_get_name (dbg->reg, R_REG_NAME_PC);
+		pcname = rz_reg_get_name (dbg->reg, RZ_REG_NAME_PC);
 		if (pcname) {
 			ut64 addr = rz_reg_getv (dbg->reg, pcname);
-			frame = R_NEW0 (RzDebugFrame);
+			frame = RZ_NEW0 (RzDebugFrame);
 			frame->addr = addr;
 			frame->size = 0;
 			rz_list_prepend (list, frame);
@@ -46,7 +46,7 @@ static RzList *rz_debug_native_frames(RzDebug *dbg, ut64 at) {
 		if (!strcmp (dbg->btalgo, "fuzzy")) {
 			cb = backtrace_fuzzy;
 		} else if (!strcmp (dbg->btalgo, "anal")) {
-			if (dbg->bits == R_SYS_BITS_64) {
+			if (dbg->bits == RZ_SYS_BITS_64) {
 				cb = backtrace_x86_64_anal;
 			} else {
 				cb = backtrace_x86_32_anal;
@@ -54,7 +54,7 @@ static RzList *rz_debug_native_frames(RzDebug *dbg, ut64 at) {
 		}
 	}
 	if (!cb) {
-		if (dbg->bits == R_SYS_BITS_64) {
+		if (dbg->bits == RZ_SYS_BITS_64) {
 			cb = backtrace_x86_64;
 		} else {
 			cb = backtrace_x86_32;

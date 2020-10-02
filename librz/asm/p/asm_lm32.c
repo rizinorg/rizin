@@ -451,13 +451,13 @@ RzAsmPlugin rz_asm_plugin_lm32 = {
 	.author = "Felix Held",
 	.license = "BSD",
 	.bits = 32,
-	.endian = R_SYS_ENDIAN_BIG,
+	.endian = RZ_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
 };
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_lm32,
 	.version = RZ_VERSION
 };

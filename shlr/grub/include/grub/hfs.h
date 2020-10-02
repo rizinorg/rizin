@@ -41,7 +41,7 @@ typedef struct grub_hfs_extent grub_hfs_datarecord_t[3]
 
 /* The HFS superblock (The official name is `Master Directory
    Block').  */
-R_PACKED (
+RZ_PACKED (
 struct grub_hfs_sblock
 {
   grub_uint16_t magic;

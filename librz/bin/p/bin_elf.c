@@ -150,7 +150,7 @@ RBinPlugin rz_bin_plugin_elf = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_elf,
 	.version = RZ_VERSION
 };

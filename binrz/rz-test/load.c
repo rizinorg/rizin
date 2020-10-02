@@ -7,7 +7,7 @@
 #define LINEFMT "%s, line %"PFMT64u": "
 
 RZ_API R2RzCmdTest *rz_test_cmd_test_new(void) {
-	return R_NEW0 (R2RzCmdTest);
+	return RZ_NEW0 (R2RzCmdTest);
 }
 
 RZ_API void rz_test_cmd_test_free(R2RzCmdTest *test) {
@@ -255,7 +255,7 @@ fail:
 }
 
 RZ_API R2RzAsmTest *rz_test_asm_test_new(void) {
-	return R_NEW0 (R2RzAsmTest);
+	return RZ_NEW0 (R2RzAsmTest);
 }
 
 RZ_API void rz_test_asm_test_free(R2RzAsmTest *test) {
@@ -268,7 +268,7 @@ RZ_API void rz_test_asm_test_free(R2RzAsmTest *test) {
 }
 
 static bool parse_asm_path(const char *path, RStrConstPool *strpool, const char **arch_out, const char **cpuout, int *bitsout) {
-	RzList *file_tokens = rz_str_split_duplist (path, R_SYS_DIR, true);
+	RzList *file_tokens = rz_str_split_duplist (path, RZ_SYS_DIR, true);
 	if (!file_tokens || rz_list_empty (file_tokens)) {
 		rz_list_free (file_tokens);
 		return false;
@@ -438,7 +438,7 @@ fail:
 }
 
 RZ_API R2RJsonTest *rz_test_json_test_new(void) {
-	return R_NEW0 (R2RJsonTest);
+	return RZ_NEW0 (R2RJsonTest);
 }
 
 RZ_API void rz_test_json_test_free(R2RJsonTest *test) {
@@ -535,7 +535,7 @@ RZ_API void rz_test_test_free(R2RTest *test) {
 }
 
 RZ_API R2RTestDatabase *rz_test_test_database_new(void) {
-	R2RTestDatabase *db = R_NEW (R2RTestDatabase);
+	R2RTestDatabase *db = RZ_NEW (R2RTestDatabase);
 	if (!db) {
 		return NULL;
 	}
@@ -556,7 +556,7 @@ RZ_API void rz_test_test_database_free(R2RTestDatabase *db) {
 static R2RTestType test_type_for_path(const char *path, bool *load_plugins) {
 	R2RTestType ret = R2R_TEST_TYPE_CMD;
 	char *pathdup = strdup (path);
-	RzList *tokens = rz_str_split_list (pathdup, R_SYS_DIR, 0);
+	RzList *tokens = rz_str_split_list (pathdup, RZ_SYS_DIR, 0);
 	if (!tokens) {
 		return ret;
 	}
@@ -605,15 +605,15 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			}
 			if (!strcmp (subname, "extras")) {
 				// Only load "extras" dirs if explicitly specified
-				eprintf ("Skipping %s"R_SYS_DIR"%s because it requires additional dependencies.\n", path, subname);
+				eprintf ("Skipping %s"RZ_SYS_DIR"%s because it requires additional dependencies.\n", path, subname);
 				continue;
 			}
-			if ((!strcmp (path, "archos") || rz_str_endswith (path, R_SYS_DIR"archos"))
+			if ((!strcmp (path, "archos") || rz_str_endswith (path, RZ_SYS_DIR"archos"))
 				&& strcmp (subname, R2R_ARCH_OS)) {
-				eprintf ("Skipping %s"R_SYS_DIR"%s because it does not match the current platform.\n", path, subname);
+				eprintf ("Skipping %s"RZ_SYS_DIR"%s because it does not match the current platform.\n", path, subname);
 				continue;
 			}
-			rz_strbuf_setf (&subpath, "%s%s%s", path, R_SYS_DIR, subname);
+			rz_strbuf_setf (&subpath, "%s%s%s", path, RZ_SYS_DIR, subname);
 			if (!database_load (db, rz_strbuf_get (&subpath), depth - 1)) {
 				ret = false;
 				break;
@@ -641,7 +641,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		}
 		void **it;
 		rz_pvector_foreach (cmd_tests, it) {
-			R2RTest *test = R_NEW (R2RTest);
+			R2RTest *test = RZ_NEW (R2RTest);
 			if (!test) {
 				continue;
 			}
@@ -661,7 +661,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		}
 		void **it;
 		rz_pvector_foreach (asm_tests, it) {
-			R2RTest *test = R_NEW (R2RTest);
+			R2RTest *test = RZ_NEW (R2RTest);
 			if (!test) {
 				continue;
 			}
@@ -680,7 +680,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		}
 		void **it;
 		rz_pvector_foreach (json_tests, it) {
-			R2RTest *test = R_NEW (R2RTest);
+			R2RTest *test = RZ_NEW (R2RTest);
 			if (!test) {
 				continue;
 			}
@@ -706,7 +706,7 @@ RZ_API bool rz_test_test_database_load(R2RTestDatabase *db, const char *path) {
 }
 
 static void database_load_fuzz_file(R2RTestDatabase *db, const char *path, const char *file) {
-	R2RFuzzTest *fuzz_test = R_NEW (R2RFuzzTest);
+	R2RFuzzTest *fuzz_test = RZ_NEW (R2RFuzzTest);
 	if (!fuzz_test) {
 		return;
 	}
@@ -715,7 +715,7 @@ static void database_load_fuzz_file(R2RTestDatabase *db, const char *path, const
 		free (fuzz_test);
 		return;
 	}
-	R2RTest *test = R_NEW (R2RTest);
+	R2RTest *test = RZ_NEW (R2RTest);
 	if (!test) {
 		free (fuzz_test->file);
 		free (fuzz_test);
@@ -742,7 +742,7 @@ RZ_API bool rz_test_test_database_load_fuzz(R2RTestDatabase *db, const char *pat
 			if (*subname == '.') {
 				continue;
 			}
-			rz_strbuf_setf (&subpath, "%s%s%s", path, R_SYS_DIR, subname);
+			rz_strbuf_setf (&subpath, "%s%s%s", path, RZ_SYS_DIR, subname);
 			if (rz_file_is_directory (rz_strbuf_get (&subpath))) {
 				// only load 1 level deep
 				continue;

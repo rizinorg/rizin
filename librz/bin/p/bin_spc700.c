@@ -25,7 +25,7 @@ static RBinInfo* info(RBinFile *bf) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
@@ -51,7 +51,7 @@ static RzList* sections(RBinFile *bf) {
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -60,7 +60,7 @@ static RzList* sections(RBinFile *bf) {
 	ptr->size = RAM_SIZE;
 	ptr->vaddr = 0x0;
 	ptr->vsize = RAM_SIZE;
-	ptr->perm = R_PERM_R;
+	ptr->perm = RZ_PERM_R;
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 	return ret;
@@ -69,7 +69,7 @@ static RzList* sections(RBinFile *bf) {
 static RzList* entries(RBinFile *bf) {
 	RzList *ret = rz_list_newf (free);
 	if (ret) {
-		RBinAddr *ptr = R_NEW0 (RBinAddr);
+		RBinAddr *ptr = RZ_NEW0 (RBinAddr);
 		if (ptr) {
 			ptr->paddr = RAM_START_ADDRESS;
 			ptr->vaddr = 0;
@@ -92,7 +92,7 @@ RBinPlugin rz_bin_plugin_spc700 = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_spc700,
 	.version = RZ_VERSION
 };

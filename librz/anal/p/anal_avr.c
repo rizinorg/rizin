@@ -59,8 +59,8 @@ static OPCODE_DESC* avr_op_analyze(RzAnal *anal, RzAnalOp *op, ut64 addr, const 
 #define CPU_PC_SIZE(cpu)		((((cpu)->pc) >> 3) + ((((cpu)->pc) & 0x07) ? 1 : 0))
 
 #define INST_HANDLER(OPCODE_NAME)	static void _inst__ ## OPCODE_NAME (RzAnal *anal, RzAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu)
-#define INST_DECL(OP, M, SL, C, SZ, T)	{ #OP, (M), (SL), _inst__ ## OP, (C), (SZ), R_ANAL_OP_TYPE_ ## T }
-#define INST_LAST			{ "unknown", 0, 0, (void *) 0, 2, 1, R_ANAL_OP_TYPE_UNK }
+#define INST_DECL(OP, M, SL, C, SZ, T)	{ #OP, (M), (SL), _inst__ ## OP, (C), (SZ), RZ_ANAL_OP_TYPE_ ## T }
+#define INST_LAST			{ "unknown", 0, 0, (void *) 0, 2, 1, RZ_ANAL_OP_TYPE_UNK }
 
 #define INST_CALL(OPCODE_NAME)		_inst__ ## OPCODE_NAME (anal, op, buf, len, fail, cpu)
 #define INST_INVALID			{ *fail = 1; return; }
@@ -494,7 +494,7 @@ INST_HANDLER (cbi) {	// CBI A, b
 	int b = buf[0] & 0x07;
 	RStrBuf *io_port;
 
-	op->family = R_ANAL_OP_FAMILY_IO;
+	op->family = RZ_ANAL_OP_FAMILY_IO;
 	op->type2 = 1;
 	op->val = a;
 
@@ -608,7 +608,7 @@ INST_HANDLER (dec) {	// DEC Rd
 
 INST_HANDLER (des) {	// DES k
 	if (desctx.round < 16) {	//DES
-		op->type = R_ANAL_OP_TYPE_CRYPTO;
+		op->type = RZ_ANAL_OP_TYPE_CRYPTO;
 		op->cycles = 1;		//redo this
 		rz_strbuf_setf (&op->esil, "%d,des", desctx.round);
 	}
@@ -744,7 +744,7 @@ INST_HANDLER (in) {	// IN Rd, A
 	RStrBuf *io_src = __generic_io_dest (a, 0, cpu);
 	op->type2 = 0;
 	op->val = a;
-	op->family = R_ANAL_OP_FAMILY_IO;
+	op->family = RZ_ANAL_OP_FAMILY_IO;
 	ESIL_A ("%s,r%d,=,", rz_strbuf_get (io_src), r);
 	rz_strbuf_free (io_src);
 }
@@ -1092,7 +1092,7 @@ INST_HANDLER (out) {	// OUT A, Rr
 	RStrBuf *io_dst = __generic_io_dest (a, 1, cpu);
 	op->type2 = 1;
 	op->val = a;
-	op->family = R_ANAL_OP_FAMILY_IO;
+	op->family = RZ_ANAL_OP_FAMILY_IO;
 	ESIL_A ("r%d,%s,", r, rz_strbuf_get (io_dst));
 	rz_strbuf_free (io_dst);
 }
@@ -1160,7 +1160,7 @@ INST_HANDLER (ret) {	// RET
 
 INST_HANDLER (reti) {	// RETI
 	//XXX: There are not privileged instructions in ATMEL/AVR
-	op->family = R_ANAL_OP_FAMILY_PRIV;
+	op->family = RZ_ANAL_OP_FAMILY_PRIV;
 
 	// first perform a standard 'ret'
 	INST_CALL (ret);
@@ -1271,7 +1271,7 @@ INST_HANDLER (sbi) {	// SBI A, b
 
 	op->type2 = 1;
 	op->val = a;
-	op->family = R_ANAL_OP_FAMILY_IO;
+	op->family = RZ_ANAL_OP_FAMILY_IO;
 
 	// read port a and clear bit b
 	io_port = __generic_io_dest (a, 0, cpu);
@@ -1296,7 +1296,7 @@ INST_HANDLER (sbix) {	// SBIC A, b
 
 	op->type2 = 0;
 	op->val = a;
-	op->family = R_ANAL_OP_FAMILY_IO;
+	op->family = RZ_ANAL_OP_FAMILY_IO;
 
 	// calculate next instruction size (call recursively avr_op_analyze)
 	// and free next_op's esil string (we dont need it now)
@@ -1630,7 +1630,7 @@ static OPCODE_DESC* avr_op_analyze(RzAnal *anal, RzAnalOp *op, ut64 addr, const 
 				// eprintf ("opcode %s @%"PFMT64x" returned 0 cycles.\n", opcode_desc->name, op->addr);
 				opcode_desc->cycles = 2;
 			}
-			op->nopcode = (op->type == R_ANAL_OP_TYPE_UNK);
+			op->nopcode = (op->type == RZ_ANAL_OP_TYPE_UNK);
 
 			// remove trailing coma (COMETE LA COMA)
 			t = rz_strbuf_get (&op->esil);
@@ -1653,8 +1653,8 @@ static OPCODE_DESC* avr_op_analyze(RzAnal *anal, RzAnalOp *op, ut64 addr, const 
 INVALID_OP:
 	// An unknown or invalid option has appeared.
 	//  -- Throw pokeball!
-	op->family = R_ANAL_OP_FAMILY_UNKNOWN;
-	op->type = R_ANAL_OP_TYPE_UNK;
+	op->family = RZ_ANAL_OP_FAMILY_UNKNOWN;
+	op->type = RZ_ANAL_OP_TYPE_UNK;
 	op->addr = addr;
 	op->nopcode = 1;
 	op->cycles = 1;
@@ -1893,10 +1893,10 @@ static int esil_avr_init(RzAnalEsil *esil) {
 		return false;
 	}
 	desctx.round = 0;
-	rz_anal_esil_set_op (esil, "des", avr_custom_des, 0, 0, R_ANAL_ESIL_OP_TYPE_CUSTOM);		//better meta info plz
-	rz_anal_esil_set_op (esil, "SPM_PAGE_ERASE", avr_custom_spm_page_erase, 0, 0, R_ANAL_ESIL_OP_TYPE_CUSTOM);
-	rz_anal_esil_set_op (esil, "SPM_PAGE_FILL", avr_custom_spm_page_fill, 0, 0, R_ANAL_ESIL_OP_TYPE_CUSTOM);
-	rz_anal_esil_set_op (esil, "SPM_PAGE_WRITE", avr_custom_spm_page_write, 0, 0, R_ANAL_ESIL_OP_TYPE_CUSTOM);
+	rz_anal_esil_set_op (esil, "des", avr_custom_des, 0, 0, RZ_ANAL_ESIL_OP_TYPE_CUSTOM);		//better meta info plz
+	rz_anal_esil_set_op (esil, "SPM_PAGE_ERASE", avr_custom_spm_page_erase, 0, 0, RZ_ANAL_ESIL_OP_TYPE_CUSTOM);
+	rz_anal_esil_set_op (esil, "SPM_PAGE_FILL", avr_custom_spm_page_fill, 0, 0, RZ_ANAL_ESIL_OP_TYPE_CUSTOM);
+	rz_anal_esil_set_op (esil, "SPM_PAGE_WRITE", avr_custom_spm_page_write, 0, 0, RZ_ANAL_ESIL_OP_TYPE_CUSTOM);
 	esil->cb.hook_reg_write = esil_avr_hook_reg_write;
 
 	return true;
@@ -2033,13 +2033,13 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 }
 
 static int archinfo(RzAnal *anal, int q) {
-	if (q == R_ANAL_ARCHINFO_ALIGN) {
+	if (q == RZ_ANAL_ARCHINFO_ALIGN) {
 		return 2;
 	}
-	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE) {
+	if (q == RZ_ANAL_ARCHINFO_MAX_OP_SIZE) {
 		return 4;
 	}
-	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
+	if (q == RZ_ANAL_ARCHINFO_MIN_OP_SIZE) {
 		return 2;
 	}
 	return 2; // XXX
@@ -2109,7 +2109,7 @@ RzAnalPlugin rz_anal_plugin_avr = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_avr,
 	.version = RZ_VERSION
 };

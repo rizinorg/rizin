@@ -64,7 +64,7 @@
 #define	GRUB_PC_PARTITION_OPENBSD_TYPE_RAID	19
 #include <rz_types.h>
 /* The BSD partition entry.  */
-R_PACKED(
+RZ_PACKED(
 struct grub_partition_bsd_entry
 {
   grub_uint32_t size;
@@ -76,7 +76,7 @@ struct grub_partition_bsd_entry
 });
 
 /* The BSD disk label. Only define members useful for GRUB.  */
-R_PACKED(
+RZ_PACKED(
 struct grub_partition_bsd_disk_label
 {
   grub_uint32_t magic;

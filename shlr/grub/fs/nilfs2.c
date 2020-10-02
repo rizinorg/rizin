@@ -123,7 +123,7 @@ struct grub_nilfs2_super_block
   grub_uint32_t s_c_block_max;
   grub_uint32_t s_reserved[192];
 };
-R_PACKED (
+RZ_PACKED (
 struct grub_nilfs2_dir_entry
 {
   grub_uint64_t inode;

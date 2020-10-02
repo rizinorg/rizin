@@ -6,7 +6,7 @@
 #undef mach0_ut
 #undef rz_bin_plugin_mach
 
-#ifdef R_BIN_MACH064
+#ifdef RZ_BIN_MACH064
 #define mach0_ut ut64
 #define rz_bin_plugin_mach rz_bin_plugin_mach064
 #else

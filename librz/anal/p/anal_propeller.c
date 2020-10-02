@@ -31,31 +31,31 @@ static int propeller_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, i
 	case PROP_TJZ:
 	case PROP_CMPS:
 	case PROP_CMPSUB:
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = RZ_ANAL_OP_TYPE_CMP;
 		break;
 	case PROP_ADD:
 	case PROP_ADDX:
 	case PROP_ADDABS:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANAL_OP_TYPE_ADD;
 		break;
 	case PROP_OR:
-		op->type = R_ANAL_OP_TYPE_OR;
+		op->type = RZ_ANAL_OP_TYPE_OR;
 		break;
 	case PROP_RCL:
 	case PROP_ROL:
 	case PROP_SHL:
-		op->type = R_ANAL_OP_TYPE_ROL;
+		op->type = RZ_ANAL_OP_TYPE_ROL;
 		break;
 	case PROP_RCR:
 	case PROP_ROR:
 	case PROP_SHR:
-		op->type = R_ANAL_OP_TYPE_ROR;
+		op->type = RZ_ANAL_OP_TYPE_ROR;
 		break;
 	case PROP_NEG:
-		op->type = R_ANAL_OP_TYPE_AND;
+		op->type = RZ_ANAL_OP_TYPE_AND;
 		break;
 	case PROP_XOR:
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = RZ_ANAL_OP_TYPE_XOR;
 		break;
 	case PROP_ABS:
 	case PROP_MINS:
@@ -72,27 +72,27 @@ static int propeller_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, i
 	case PROP_WAITVID:
 	case PROP_MUXC:
 		if (cmd.opcode == PROP_MOV && cmd.dst == 0x44 && cmd.src == 0x3c) {
-			op->type = R_ANAL_OP_TYPE_RET;
+			op->type = RZ_ANAL_OP_TYPE_RET;
 		} else {
-			op->type = R_ANAL_OP_TYPE_MOV;
+			op->type = RZ_ANAL_OP_TYPE_MOV;
 		}
 		break;
 	case PROP_SUB:
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = RZ_ANAL_OP_TYPE_SUB;
 		break;
 	case PROP_JMP:
 	case PROP_DJNZ:
 		if (cmd.immed == 0) {
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = RZ_ANAL_OP_TYPE_CJMP;
 			op->jump = 0x20 + cmd.src;
 			op->fail = addr + 2;
 		} else {
-			op->type = R_ANAL_OP_TYPE_UJMP;
+			op->type = RZ_ANAL_OP_TYPE_UJMP;
 			op->fail = addr + 2;
 		}
 		break;
 	default:
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = RZ_ANAL_OP_TYPE_UNK;
 		break;
 	}
 

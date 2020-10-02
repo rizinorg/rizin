@@ -3,14 +3,14 @@
 void printmd5(const char *str, RzHash *h) {
 	int i;
 	printf ("(%d) %s: ", h->rst, str);
-	for (i=0; i<R_HASH_SIZE_MD5; i++) {
+	for (i=0; i<RZ_HASH_SIZE_MD5; i++) {
 		printf ("%02x", h->digest[i]);
 	}
 	printf ("\n");
 }
 
 main () {
-	int HASH = R_HASH_MD5;
+	int HASH = RZ_HASH_MD5;
 	RzHash *h = rz_hash_new (1, HASH);
 
 	rz_hash_do_begin (h, HASH);

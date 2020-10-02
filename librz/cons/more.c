@@ -56,7 +56,7 @@ RZ_API int rz_cons_more_str(const char *str, const char *exitkeys) {
 	h = 0;
 	while (ui) {
 		w = rz_cons_get_size (&h);
-		to = R_MIN (lines_count, from + h);
+		to = RZ_MIN (lines_count, from + h);
 		if (from + 3 > lines_count) {
 			from = lines_count - 3;
 		}
@@ -99,7 +99,7 @@ RZ_API int rz_cons_more_str(const char *str, const char *exitkeys) {
 			rz_cons_reset_colors ();
 			rz_line_set_prompt ("/");
 			sreg = rz_line_readline ();
-			from = R_MIN (lines_count - 1, from);
+			from = RZ_MIN (lines_count - 1, from);
 			/* repeat last search if empty string is provided */
 			if (sreg[0]) { /* prepare for a new search */
 				if (rx) {

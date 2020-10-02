@@ -248,15 +248,15 @@ bool Elf_(rz_bin_elf_section_perms)(RBinFile *bf, const char *name, int perms) {
 			ut8 newperms = (ut8)operms;
 			// SHF_EXECINSTR
 			if (perms & 1) {
-				R_BIT_SET (&newperms, 2);
+				RZ_BIT_SET (&newperms, 2);
 			} else {
-				R_BIT_UNSET (&newperms, 2);
+				RZ_BIT_UNSET (&newperms, 2);
 			}
 			// SHF_WRITE
 			if (perms & 2) {
-				R_BIT_SET (&newperms, 0);
+				RZ_BIT_SET (&newperms, 0);
 			} else {
-				R_BIT_UNSET (&newperms, 0);
+				RZ_BIT_UNSET (&newperms, 0);
 			}
 			patchoff = bin->ehdr.e_shoff;
 			patchoff += ((const ut8*)shdrp - (const ut8*)bin->shdr);
@@ -271,7 +271,7 @@ bool Elf_(rz_bin_elf_section_perms)(RBinFile *bf, const char *name, int perms) {
 
 bool Elf_(rz_bin_elf_entry_write)(RBinFile *bf, ut64 addr) {
 	const int patchoff = 0x18;
-#if R_BIN_ELF64
+#if RZ_BIN_ELF64
 	printf ("wv8 0x%"PFMT64x" @ 0x%x\n", addr, patchoff);
 	rz_buf_write_at (bf->buf, patchoff, (ut8*)&addr, sizeof (addr));
 #else

@@ -110,7 +110,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 					int index = ops[i].str[j] - '0';
 					if (index >= 0 && index < argc) {
 						const char *w = argv[index];
-						if (!R_STR_ISEMPTY (w)) {
+						if (!RZ_STR_ISEMPTY (w)) {
 							rz_str_cpy (newstr + k, w);
 							k += strlen (w) - 1;
 						}
@@ -141,7 +141,7 @@ static int parse(RzParse *p, const char *data, char *str) {
 	if (!strncmp (data, "|| ", 3)) {
 		data += 3;
 	}
-	if (R_STR_ISEMPTY (data)) {
+	if (RZ_STR_ISEMPTY (data)) {
 		*str = 0;
 		return false;
 	}
@@ -182,7 +182,7 @@ RzParsePlugin rz_parse_plugin_tms320_pseudo = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_PARSE,
+	.type = RZ_LIB_TYPE_PARSE,
 	.data = &rz_parse_plugin_tms320_pseudo,
 	.version = RZ_VERSION};
 #endif

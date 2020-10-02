@@ -7,7 +7,7 @@
 #include <rz_io.h>
 #include <rz_cons.h>
 #include "nxo/nxo.h"
-#ifdef R_MESON_VERSION
+#ifdef RZ_MESON_VERSION
 #include <lz4.h>
 #else
 #include "../../../shlr/lz4/lz4.c"
@@ -59,7 +59,7 @@ static bool check_buffer(RBuffer *b) {
 }
 
 static RBinNXOObj *nso_new(void) {
-	RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
+	RBinNXOObj *bin = RZ_NEW0 (RBinNXOObj);
 	if (bin) {
 		bin->methods_list = rz_list_newf ((RzListFree)free);
 		bin->imports_list = rz_list_newf ((RzListFree)free);
@@ -82,12 +82,12 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	ut64 ba = baddr (bf);
 	ut8 *tmp = NULL;
 
-	if (rbin->iob.io && !(rbin->iob.io->cached & R_PERM_W)) {
+	if (rbin->iob.io && !(rbin->iob.io->cached & RZ_PERM_W)) {
 		eprintf ("Please add \'-e io.cache=true\' option to r2 command. This is required to decompress the code.\n");
 		goto fail;
 	}
 	/* Decompress each sections */
-	tmp = R_NEWS (ut8, tsize);
+	tmp = RZ_NEWS (ut8, tsize);
 	if (!tmp) {
 		goto fail;
 	}
@@ -96,9 +96,9 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 		goto fail;
 	}
 	rz_buf_write_at (newbuf, 0, tmp, tsize);
-	R_FREE (tmp);
+	RZ_FREE (tmp);
 
-	tmp = R_NEWS (ut8, rosize);
+	tmp = RZ_NEWS (ut8, rosize);
 	if (!tmp) {
 		goto fail;
 	}
@@ -107,9 +107,9 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 		goto fail;
 	}
 	rz_buf_write_at (newbuf, tsize, tmp, rosize);
-	R_FREE (tmp);
+	RZ_FREE (tmp);
 
-	tmp = R_NEWS (ut8, dsize);
+	tmp = RZ_NEWS (ut8, dsize);
 	if (!tmp) {
 		goto fail;
 	}
@@ -118,7 +118,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 		goto fail;
 	}
 	rz_buf_write_at (newbuf, tsize + rosize, tmp, dsize);
-	R_FREE (tmp);
+	RZ_FREE (tmp);
 
 	/* Load unpacked binary */
 	const ut8 *tmpbuf = rz_buf_data (newbuf, &total_size);
@@ -157,7 +157,7 @@ static RzList *entries(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	if ((ptr = R_NEW0 (RBinAddr))) {
+	if ((ptr = RZ_NEW0 (RBinAddr))) {
 		ptr->paddr = rz_buf_read_le32_at (b, NSO_OFF (text_memoffset));
 		ptr->vaddr = rz_buf_read_le32_at (b, NSO_OFF (text_loc)) + baddr (bf);
 		rz_list_append (ret, ptr);
@@ -191,7 +191,7 @@ static RzList *sections(RBinFile *bf) {
 
 	ut64 ba = baddr (bf);
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("header");
@@ -199,12 +199,12 @@ static RzList *sections(RBinFile *bf) {
 	ptr->vsize = rz_buf_read_le32_at (b, NSO_OFF (text_memoffset));
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
-	ptr->perm = R_PERM_R;
+	ptr->perm = RZ_PERM_R;
 	ptr->add = false;
 	rz_list_append (ret, ptr);
 
 	// add text segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("text");
@@ -212,12 +212,12 @@ static RzList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = rz_buf_read_le32_at (b, NSO_OFF (text_memoffset));
 	ptr->vaddr = rz_buf_read_le32_at (b, NSO_OFF (text_loc)) + ba;
-	ptr->perm = R_PERM_RX;	// r-x
+	ptr->perm = RZ_PERM_RX;	// r-x
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
 	// add ro segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("ro");
@@ -225,12 +225,12 @@ static RzList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = rz_buf_read_le32_at (b, NSO_OFF (ro_memoffset));
 	ptr->vaddr = rz_buf_read_le32_at (b, NSO_OFF (ro_loc)) + ba;
-	ptr->perm = R_PERM_R;	// r--
+	ptr->perm = RZ_PERM_R;	// r--
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
 	// add data segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("data");
@@ -238,7 +238,7 @@ static RzList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = rz_buf_read_le32_at (b, NSO_OFF (data_memoffset));
 	ptr->vaddr = rz_buf_read_le32_at (b, NSO_OFF (data_loc)) + ba;
-	ptr->perm = R_PERM_RW;
+	ptr->perm = RZ_PERM_RW;
 	ptr->add = true;
 	eprintf ("BSS Size 0x%08"PFMT64x "\n", (ut64)
 		rz_buf_read_le32_at (bf->buf, NSO_OFF (bss_size)));
@@ -247,7 +247,7 @@ static RzList *sections(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = RZ_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -277,7 +277,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-#if !R_BIN_NSO
+#if !RZ_BIN_NSO
 
 RBinPlugin rz_bin_plugin_nso = {
 	.name = "nso",
@@ -295,7 +295,7 @@ RBinPlugin rz_bin_plugin_nso = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_nso,
 	.version = RZ_VERSION
 };

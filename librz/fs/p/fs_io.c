@@ -7,13 +7,13 @@
 static RzFSFile *fs_io_open(RzFSRoot *root, const char *path, bool create) {
 	char *cmd = rz_str_newf ("m %s", path);
 	char *res = root->iob.system (root->iob.io, cmd);
-	R_FREE (cmd);
+	RZ_FREE (cmd);
 	if (res) {
 		ut32 size = 0;
 		if (sscanf (res, "%u", &size) != 1) {
 			size = 0;
 		}
-		R_FREE (res);
+		RZ_FREE (res);
 		if (size == 0) {
 			return NULL;
 		}
@@ -36,30 +36,30 @@ static bool fs_io_read(RzFSFile *file, ut64 addr, int len) {
 		return false;
 	}
 	char *cmd = rz_str_newf ("mg %s", abs_path);
-	R_FREE (abs_path);
+	RZ_FREE (abs_path);
 	if (!cmd) {
 		return false;
 	}
 	char *res = root->iob.system (root->iob.io, cmd);
-	R_FREE (cmd);
+	RZ_FREE (cmd);
 	if (res) {
 		int encoded_size = strlen (res);
 		if (encoded_size != len * 2) {
 			eprintf ("Unexpected size (%d vs %d)\n", encoded_size, len*2);
-			R_FREE (res);
+			RZ_FREE (res);
 			return false;
 		}
 		file->data = (ut8 *) calloc (1, len);
 		if (!file->data) {
-			R_FREE (res);
+			RZ_FREE (res);
 			return false;
 		}
 		int ret = rz_hex_str2bin (res, file->data);
 		if (ret != len) {
 			eprintf ("Inconsistent read\n");
-			R_FREE (file->data);
+			RZ_FREE (file->data);
 		}
-		R_FREE (res);
+		RZ_FREE (res);
 	}
 	return false;
 }
@@ -102,11 +102,11 @@ static RzList *fs_io_dir(RzFSRoot *root, const char *path, int view /*ignored*/)
 				}
 				append_file (list, line, type, 0, 0);
 			}
-			R_FREE (res);
-			R_FREE (lines);
+			RZ_FREE (res);
+			RZ_FREE (lines);
 		}
 	}
-	R_FREE (cmd);
+	RZ_FREE (cmd);
 	return list;
 }
 
@@ -133,7 +133,7 @@ RzFSPlugin rz_fs_plugin_io = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_FS,
+	.type = RZ_LIB_TYPE_FS,
 	.data = &rz_fs_plugin_io,
 	.version = RZ_VERSION
 };

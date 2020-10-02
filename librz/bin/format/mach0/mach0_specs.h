@@ -13,14 +13,14 @@ typedef int integer_t;
 
 #undef MACH0_
 
-#if R_BIN_MACH064
+#if RZ_BIN_MACH064
 #define MACH0_(name) name##_64
 #else
 #define MACH0_(name) name
 #endif
 
-#define R_BIN_MACH0_SYMBOL_TYPE_EXT 0
-#define R_BIN_MACH0_SYMBOL_TYPE_LOCAL 1
+#define RZ_BIN_MACH0_SYMBOL_TYPE_EXT 0
+#define RZ_BIN_MACH0_SYMBOL_TYPE_LOCAL 1
 
 struct x86_thread_state32 {
 	ut32	eax;

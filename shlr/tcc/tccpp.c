@@ -1591,12 +1591,12 @@ include_trynext:
 			int filepath_len;
 			char *e = file->filename + strlen (file->filename);
 			while (e > file->filename) {
-				if (*e == R_SYS_DIR[0]) {
+				if (*e == RZ_SYS_DIR[0]) {
 					break;
 				}
 				e--;
 			}
-			filepath_len = R_MIN ((size_t) (e - file->filename) + 1, sizeof (filepath) - 1);
+			filepath_len = RZ_MIN ((size_t) (e - file->filename) + 1, sizeof (filepath) - 1);
 			memcpy (filepath, file->filename, filepath_len);
 			strcpy (filepath + filepath_len, buf);
 			if (tcc_open (s1, filepath) < 0) {

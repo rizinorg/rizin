@@ -1,5 +1,5 @@
-#ifndef R_CTYPES_H
-#define R_CTYPES_H
+#ifndef RZ_CTYPES_H
+#define RZ_CTYPES_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -11,11 +11,11 @@ typedef struct rz_type_enum {
 }RTypeEnum;
 
 enum RTypeKind {
-	R_TYPE_BASIC = 0,
-	R_TYPE_ENUM = 1,
-	R_TYPE_STRUCT = 2,
-	R_TYPE_UNION = 3,
-	R_TYPE_TYPEDEF = 4
+	RZ_TYPE_BASIC = 0,
+	RZ_TYPE_ENUM = 1,
+	RZ_TYPE_STRUCT = 2,
+	RZ_TYPE_UNION = 3,
+	RZ_TYPE_TYPEDEF = 4
 };
 
 RZ_API int rz_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val);
@@ -37,14 +37,14 @@ RZ_API char *rz_type_format(Sdb *TDB, const char *t);
 RZ_API int rz_type_func_exist(Sdb *TDB, const char *func_name);
 RZ_API const char *rz_type_func_cc(Sdb *TDB, const char *func_name);
 RZ_API const char *rz_type_func_ret(Sdb *TDB, const char *func_name);
-RZ_API int rz_type_func_args_count(Sdb *TDB, R_NONNULL const char *func_name);
-RZ_API R_OWN char *rz_type_func_args_type(Sdb *TDB, R_NONNULL const char *func_name, int i);
-RZ_API const char *rz_type_func_args_name(Sdb *TDB, R_NONNULL const char *func_name, int i);
-RZ_API R_OWN char *rz_type_func_guess(Sdb *TDB, R_NONNULL char *func_name);
+RZ_API int rz_type_func_args_count(Sdb *TDB, RZ_NONNULL const char *func_name);
+RZ_API RZ_OWN char *rz_type_func_args_type(Sdb *TDB, RZ_NONNULL const char *func_name, int i);
+RZ_API const char *rz_type_func_args_name(Sdb *TDB, RZ_NONNULL const char *func_name, int i);
+RZ_API RZ_OWN char *rz_type_func_guess(Sdb *TDB, RZ_NONNULL char *func_name);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif //  R_CTYPES_H
+#endif //  RZ_CTYPES_H
 

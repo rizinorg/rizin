@@ -8,7 +8,7 @@
 #include <config.h>
 #include "i/private.h"
 
-R_LIB_VERSION (rz_bin);
+RZ_LIB_VERSION (rz_bin);
 
 #define DB a->sdb;
 #define RBINLISTFREE(x)\
@@ -19,19 +19,19 @@ R_LIB_VERSION (rz_bin);
 
 #define ARCHS_KEY "archs"
 
-#if !defined(R_BIN_STATIC_PLUGINS)
-#define R_BIN_STATIC_PLUGINS 0
+#if !defined(RZ_BIN_STATIC_PLUGINS)
+#define RZ_BIN_STATIC_PLUGINS 0
 #endif
-#if !defined(R_BIN_XTR_STATIC_PLUGINS)
-#define R_BIN_XTR_STATIC_PLUGINS 0
+#if !defined(RZ_BIN_XTR_STATIC_PLUGINS)
+#define RZ_BIN_XTR_STATIC_PLUGINS 0
 #endif
-#if !defined(R_BIN_LDR_STATIC_PLUGINS)
-#define R_BIN_LDR_STATIC_PLUGINS 0
+#if !defined(RZ_BIN_LDR_STATIC_PLUGINS)
+#define RZ_BIN_LDR_STATIC_PLUGINS 0
 #endif
 
-static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS, NULL };
-static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS, NULL };
-static RBinLdrPlugin *bin_ldr_static_plugins[] = { R_BIN_LDR_STATIC_PLUGINS, NULL };
+static RBinPlugin *bin_static_plugins[] = { RZ_BIN_STATIC_PLUGINS, NULL };
+static RBinXtrPlugin *bin_xtr_static_plugins[] = { RZ_BIN_XTR_STATIC_PLUGINS, NULL };
+static RBinLdrPlugin *bin_ldr_static_plugins[] = { RZ_BIN_LDR_STATIC_PLUGINS, NULL };
 
 static int __getoffset(RBin *bin, int type, int idx) {
 	RBinFile *a = rz_bin_cur (bin);
@@ -57,7 +57,7 @@ static ut64 binobj_a2b(RBinObject *o, ut64 addr) {
 
 // TODO: move these two function do a different file
 RZ_API RBinXtrData *rz_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 file_count, RBinXtrMetadata *metadata) {
-	RBinXtrData *data = R_NEW0 (RBinXtrData);
+	RBinXtrData *data = RZ_NEW0 (RBinXtrData);
 	if (data) {
 		data->offset = offset;
 		data->size = size;
@@ -114,14 +114,14 @@ RZ_API void rz_bin_options_init(RBinOptions *opt, int fd, ut64 baseaddr, ut64 lo
 }
 
 RZ_API void rz_bin_arch_options_init(RBinArchOptions *opt, const char *arch, int bits) {
-	opt->arch = arch? arch: R_SYS_ARCH;
-	opt->bits = bits? bits: R_SYS_BITS;
+	opt->arch = arch? arch: RZ_SYS_ARCH;
+	opt->bits = bits? bits: RZ_SYS_BITS;
 }
 
 RZ_API void rz_bin_file_hash_free(RBinFileHash *fhash) {
 	if (fhash) {
-		R_FREE (fhash->type);
-		R_FREE (fhash->hex);
+		RZ_FREE (fhash->type);
+		RZ_FREE (fhash->hex);
 		free (fhash);
 	}
 }
@@ -157,9 +157,9 @@ RZ_API RBinImport *rz_bin_import_clone(RBinImport *o) {
 
 	RBinImport *res = rz_mem_dup (o, sizeof (*o));
 	if (res) {
-		res->name = R_STR_DUP (o->name);
-		res->classname = R_STR_DUP (o->classname);
-		res->descriptor = R_STR_DUP (o->descriptor);
+		res->name = RZ_STR_DUP (o->name);
+		res->classname = RZ_STR_DUP (o->classname);
+		res->descriptor = RZ_STR_DUP (o->descriptor);
 	}
 	return res;
 }
@@ -167,10 +167,10 @@ RZ_API RBinImport *rz_bin_import_clone(RBinImport *o) {
 RZ_API void rz_bin_import_free(void *_imp) {
 	RBinImport *imp = (RBinImport *)_imp;
 	if (imp) {
-		R_FREE (imp->name);
-		R_FREE (imp->libname);
-		R_FREE (imp->classname);
-		R_FREE (imp->descriptor);
+		RZ_FREE (imp->name);
+		RZ_FREE (imp->libname);
+		RZ_FREE (imp->classname);
+		RZ_FREE (imp->descriptor);
 		free (imp);
 	}
 }
@@ -183,7 +183,7 @@ RZ_API const char *rz_bin_symbol_name(RBinSymbol *s) {
 }
 
 RZ_API RBinSymbol *rz_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr) {
-	RBinSymbol *sym = R_NEW0 (RBinSymbol);
+	RBinSymbol *sym = RZ_NEW0 (RBinSymbol);
 	if (sym) {
 		sym->name = name? strdup (name): NULL;
 		sym->paddr = paddr;
@@ -220,7 +220,7 @@ RZ_API bool rz_bin_open(RBin *bin, const char *file, RBinOptions *opt) {
 
 	RzIOBind *iob = &(bin->iob);
 	if (!iob->desc_get (iob->io, opt->fd)) {
-		opt->fd = iob->fd_open (iob->io, file, R_PERM_R, 0644);
+		opt->fd = iob->fd_open (iob->io, file, RZ_PERM_R, 0644);
 	}
 	if (opt->fd < 0) {
 		eprintf ("Couldn't open bin for file '%s'\n", file);
@@ -348,7 +348,7 @@ RZ_API bool rz_bin_open_io(RBin *bin, RBinOptions *opt) {
 	return res;
 }
 
-R_IPI RBinPlugin *rz_bin_get_binplugin_by_name(RBin *bin, const char *name) {
+RZ_IPI RBinPlugin *rz_bin_get_binplugin_by_name(RBin *bin, const char *name) {
 	RBinPlugin *plugin;
 	RzListIter *it;
 
@@ -378,7 +378,7 @@ RZ_API RBinPlugin *rz_bin_get_binplugin_by_buffer(RBin *bin, RBuffer *buf) {
 	return NULL;
 }
 
-R_IPI RBinXtrPlugin *rz_bin_get_xtrplugin_by_name(RBin *bin, const char *name) {
+RZ_IPI RBinXtrPlugin *rz_bin_get_xtrplugin_by_name(RBin *bin, const char *name) {
 	RBinXtrPlugin *xtr;
 	RzListIter *it;
 
@@ -399,7 +399,7 @@ static void rz_bin_plugin_free(RBinPlugin *p) {
 	if (p && p->fini) {
 		p->fini (NULL);
 	}
-	R_FREE (p);
+	RZ_FREE (p);
 }
 
 // rename to rz_bin_plugin_add like the rest
@@ -417,7 +417,7 @@ RZ_API bool rz_bin_add(RBin *bin, RBinPlugin *foo) {
 			return false;
 		}
 	}
-	plugin = R_NEW0 (RBinPlugin);
+	plugin = RZ_NEW0 (RBinPlugin);
 	memcpy (plugin, foo, sizeof (RBinPlugin));
 	rz_list_append (bin->plugins, plugin);
 	return true;
@@ -653,7 +653,7 @@ RZ_API void rz_bin_set_baddr(RBin *bin, ut64 baddr) {
 RZ_API RBinAddr *rz_bin_get_sym(RBin *bin, int sym) {
 	rz_return_val_if_fail (bin, NULL);
 	RBinObject *o = rz_bin_cur_object (bin);
-	if (sym < 0 || sym >= R_BIN_SYM_LAST) {
+	if (sym < 0 || sym >= RZ_BIN_SYM_LAST) {
 		return NULL;
 	}
 	return o? o->binsym[sym]: NULL;
@@ -824,7 +824,7 @@ RZ_API int rz_bin_is_static(RBin *bin) {
 	rz_return_val_if_fail (bin, false);
 	RBinObject *o = rz_bin_cur_object (bin);
 	if (o && o->libs && rz_list_length (o->libs) > 0) {
-		return R_BIN_DBG_STATIC & o->info->dbg_info;
+		return RZ_BIN_DBG_STATIC & o->info->dbg_info;
 	}
 	return true;
 }
@@ -833,7 +833,7 @@ RZ_API RBin *rz_bin_new(void) {
 	int i;
 	RBinXtrPlugin *static_xtr_plugin;
 	RBinLdrPlugin *static_ldr_plugin;
-	RBin *bin = R_NEW0 (RBin);
+	RBin *bin = RZ_NEW0 (RBin);
 	if (!bin) {
 		return NULL;
 	}
@@ -861,7 +861,7 @@ RZ_API RBin *rz_bin_new(void) {
 	bin->binxtrs = rz_list_new ();
 	bin->binxtrs->free = free;
 	for (i = 0; bin_xtr_static_plugins[i]; i++) {
-		static_xtr_plugin = R_NEW0 (RBinXtrPlugin);
+		static_xtr_plugin = RZ_NEW0 (RBinXtrPlugin);
 		if (!static_xtr_plugin) {
 			goto trashbin_binxtrs;
 		}
@@ -872,7 +872,7 @@ RZ_API RBin *rz_bin_new(void) {
 	bin->binldrs = rz_list_new ();
 	bin->binldrs->free = free;
 	for (i = 0; bin_ldr_static_plugins[i]; i++) {
-		static_ldr_plugin = R_NEW0 (RBinLdrPlugin);
+		static_ldr_plugin = RZ_NEW0 (RBinLdrPlugin);
 		if (!static_ldr_plugin) {
 			goto trashbin_binldrs;
 		}
@@ -897,7 +897,7 @@ RZ_API bool rz_bin_use_arch(RBin *bin, const char *arch, int bits, const char *n
 
 	RBinFile *binfile = rz_bin_file_find_by_arch_bits (bin, arch, bits);
 	if (!binfile) {
-		R_LOG_WARN ("Cannot find binfile with arch/bits %s/%d\n", arch, bits);
+		RZ_LOG_WARN ("Cannot find binfile with arch/bits %s/%d\n", arch, bits);
 		return false;
 	}
 
@@ -1190,15 +1190,15 @@ RZ_API RBuffer *rz_bin_create(RBin *bin, const char *p,
 
 	RBinPlugin *plugin = rz_bin_get_binplugin_by_name (bin, p);
 	if (!plugin) {
-		R_LOG_WARN ("Cannot find RBin plugin named '%s'.\n", p);
+		RZ_LOG_WARN ("Cannot find RBin plugin named '%s'.\n", p);
 		return NULL;
 	}
 	if (!plugin->create) {
-		R_LOG_WARN ("RBin plugin '%s' does not implement \"create\" method.\n", p);
+		RZ_LOG_WARN ("RBin plugin '%s' does not implement \"create\" method.\n", p);
 		return NULL;
 	}
-	codelen = R_MAX (codelen, 0);
-	datalen = R_MAX (datalen, 0);
+	codelen = RZ_MAX (codelen, 0);
+	datalen = RZ_MAX (datalen, 0);
 	return plugin->create (bin, code, codelen, data, datalen, opt);
 }
 
@@ -1288,7 +1288,7 @@ RZ_API ut64 rz_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr) {
 		if (bin->cur->o->info->bits == 16) {
 			RBinSection *s = rz_bin_get_section_at (bin->cur->o, paddr, false);
 			// autodetect thumb
-			if (s && (s->perm & R_PERM_X) && strstr (s->name, "text")) {
+			if (s && (s->perm & RZ_PERM_X) && strstr (s->name, "text")) {
 				if (!strcmp (bin->cur->o->info->arch, "arm") && (vaddr & 1)) {
 					vaddr = (vaddr >> 1) << 1;
 				}
@@ -1329,17 +1329,17 @@ RZ_API void rz_bin_force_plugin(RBin *bin, const char *name) {
 
 RZ_API const char *rz_bin_entry_type_string(int etype) {
 	switch (etype) {
-	case R_BIN_ENTRY_TYPE_PROGRAM:
+	case RZ_BIN_ENTRY_TYPE_PROGRAM:
 		return "program";
-	case R_BIN_ENTRY_TYPE_MAIN:
+	case RZ_BIN_ENTRY_TYPE_MAIN:
 		return "main";
-	case R_BIN_ENTRY_TYPE_INIT:
+	case RZ_BIN_ENTRY_TYPE_INIT:
 		return "init";
-	case R_BIN_ENTRY_TYPE_FINI:
+	case RZ_BIN_ENTRY_TYPE_FINI:
 		return "fini";
-	case R_BIN_ENTRY_TYPE_TLS:
+	case RZ_BIN_ENTRY_TYPE_TLS:
 		return "tls";
-	case R_BIN_ENTRY_TYPE_PREINIT:
+	case RZ_BIN_ENTRY_TYPE_PREINIT:
 		return "preinit";
 	}
 	return NULL;
@@ -1351,7 +1351,7 @@ RZ_API void rz_bin_load_filter(RBin *bin, ut64 rules) {
 
 /* RBinField */
 RZ_API RBinField *rz_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format, bool format_named) {
-	RBinField *ptr = R_NEW0 (RBinField);
+	RBinField *ptr = RZ_NEW0 (RBinField);
 	if (ptr) {
 		ptr->name = strdup (name);
 		ptr->comment = (comment && *comment)? strdup (comment): NULL;
@@ -1380,64 +1380,64 @@ RZ_API void rz_bin_field_free(void *_field) {
 // RBin.methFlagToString(RBin.Method.CLASS)
 RZ_API const char *rz_bin_get_meth_flag_string(ut64 flag, bool compact) {
 	switch (flag) {
-	case R_BIN_METH_CLASS:
+	case RZ_BIN_METH_CLASS:
 		return compact ? "c" : "class";
-	case R_BIN_METH_STATIC:
+	case RZ_BIN_METH_STATIC:
 		return compact ? "s" : "static";
-	case R_BIN_METH_PUBLIC:
+	case RZ_BIN_METH_PUBLIC:
 		return compact ? "p" : "public";
-	case R_BIN_METH_PRIVATE:
+	case RZ_BIN_METH_PRIVATE:
 		return compact ? "P" : "private";
-	case R_BIN_METH_PROTECTED:
+	case RZ_BIN_METH_PROTECTED:
 		return compact ? "r" : "protected";
-	case R_BIN_METH_INTERNAL:
+	case RZ_BIN_METH_INTERNAL:
 		return compact ? "i" : "internal";
-	case R_BIN_METH_OPEN:
+	case RZ_BIN_METH_OPEN:
 		return compact ? "o" : "open";
-	case R_BIN_METH_FILEPRIVATE:
+	case RZ_BIN_METH_FILEPRIVATE:
 		return compact ? "e" : "fileprivate";
-	case R_BIN_METH_FINAL:
+	case RZ_BIN_METH_FINAL:
 		return compact ? "f" : "final";
-	case R_BIN_METH_VIRTUAL:
+	case RZ_BIN_METH_VIRTUAL:
 		return compact ? "v" : "virtual";
-	case R_BIN_METH_CONST:
+	case RZ_BIN_METH_CONST:
 		return compact ? "k" : "const";
-	case R_BIN_METH_MUTATING:
+	case RZ_BIN_METH_MUTATING:
 		return compact ? "m" : "mutating";
-	case R_BIN_METH_ABSTRACT:
+	case RZ_BIN_METH_ABSTRACT:
 		return compact ? "a" : "abstract";
-	case R_BIN_METH_SYNCHRONIZED:
+	case RZ_BIN_METH_SYNCHRONIZED:
 		return compact ? "y" : "synchronized";
-	case R_BIN_METH_NATIVE:
+	case RZ_BIN_METH_NATIVE:
 		return compact ? "n" : "native";
-	case R_BIN_METH_BRIDGE:
+	case RZ_BIN_METH_BRIDGE:
 		return compact ? "b" : "bridge";
-	case R_BIN_METH_VARARGS:
+	case RZ_BIN_METH_VARARGS:
 		return compact ? "g" : "varargs";
-	case R_BIN_METH_SYNTHETIC:
+	case RZ_BIN_METH_SYNTHETIC:
 		return compact ? "h" : "synthetic";
-	case R_BIN_METH_STRICT:
+	case RZ_BIN_METH_STRICT:
 		return compact ? "t" : "strict";
-	case R_BIN_METH_MIRANDA:
+	case RZ_BIN_METH_MIRANDA:
 		return compact ? "A" : "miranda";
-	case R_BIN_METH_CONSTRUCTOR:
+	case RZ_BIN_METH_CONSTRUCTOR:
 		return compact ? "C" : "constructor";
-	case R_BIN_METH_DECLARED_SYNCHRONIZED:
+	case RZ_BIN_METH_DECLARED_SYNCHRONIZED:
 		return compact ? "Y" : "declared_synchronized";
 	default:
 		return NULL;
 	}
 }
 
-R_IPI RBinSection *rz_bin_section_new(const char *name) {
-	RBinSection *s = R_NEW0 (RBinSection);
+RZ_IPI RBinSection *rz_bin_section_new(const char *name) {
+	RBinSection *s = RZ_NEW0 (RBinSection);
 	if (s) {
 		s->name = name? strdup (name): NULL;
 	}
 	return s;
 }
 
-R_IPI void rz_bin_section_free(RBinSection *bs) {
+RZ_IPI void rz_bin_section_free(RBinSection *bs) {
 	if (bs) {
 		free (bs->name);
 		free (bs->format);
@@ -1465,7 +1465,7 @@ RZ_API RBinFile *rz_bin_file_at(RBin *bin, ut64 at) {
 }
 
 RZ_API RBinTrycatch *rz_bin_trycatch_new(ut64 source, ut64 from, ut64 to, ut64 handler, ut64 filter) {
-	RBinTrycatch *tc = R_NEW0 (RBinTrycatch);
+	RBinTrycatch *tc = RZ_NEW0 (RBinTrycatch);
 	if (tc) {
 		tc->source = source;
 		tc->from = from;

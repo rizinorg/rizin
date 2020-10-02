@@ -67,7 +67,7 @@ enum grub_reiserfs_item_type
     GRUB_REISERzFS_ANY,
     GRUB_REISERzFS_UNKNOWN
   };
-R_PACKED (
+RZ_PACKED (
 struct grub_reiserfs_superblock
 {
   grub_uint32_t block_count;
@@ -96,7 +96,7 @@ struct grub_reiserfs_superblock
   grub_uint16_t uuid[8];
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_reiserfs_journal_header
 {
   grub_uint32_t last_flush_uid;
@@ -104,7 +104,7 @@ struct grub_reiserfs_journal_header
   grub_uint32_t mount_id;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_reiserfs_description_block
 {
   grub_uint32_t id;
@@ -113,7 +113,7 @@ struct grub_reiserfs_description_block
   grub_uint32_t real_blocks[0];
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_reiserfs_commit_block
 {
   grub_uint32_t id;
@@ -121,7 +121,7 @@ struct grub_reiserfs_commit_block
   grub_uint32_t real_blocks[0];
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_reiserfs_stat_item_v1
 {
   grub_uint16_t mode;
@@ -136,7 +136,7 @@ struct grub_reiserfs_stat_item_v1
   grub_uint32_t first_direct_byte;
 });
 
-R_PACKED(
+RZ_PACKED(
 struct grub_reiserfs_stat_item_v2
 {
   grub_uint16_t mode;
@@ -152,20 +152,20 @@ struct grub_reiserfs_stat_item_v2
   grub_uint32_t first_direct_byte;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_reiserfs_key
 {
   grub_uint32_t directory_id;
   grub_uint32_t object_id;
   union
   {
-	R_PACKED (
+	RZ_PACKED (
 	struct
     {
       grub_uint32_t offset;
       grub_uint32_t type;
 	}) v1;
-	R_PACKED (
+	RZ_PACKED (
 	struct
     {
       grub_uint64_t offset_type;
@@ -173,11 +173,11 @@ struct grub_reiserfs_key
   } u;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_reiserfs_item_header
 {
   struct grub_reiserfs_key key;
-  R_PACKED (
+  RZ_PACKED (
   union
   {
     grub_uint16_t free_space;
@@ -188,7 +188,7 @@ struct grub_reiserfs_item_header
   grub_uint16_t version;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_reiserfs_block_header
 {
   grub_uint16_t level;
@@ -198,7 +198,7 @@ struct grub_reiserfs_block_header
   struct grub_reiserfs_key block_right_delimiting_key;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_reiserfs_disk_child
 {
   grub_uint32_t block_number;
@@ -206,7 +206,7 @@ struct grub_reiserfs_disk_child
   grub_uint16_t reserved;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_reiserfs_directory_header
 {
   grub_uint32_t offset;

@@ -20,13 +20,13 @@ static bool check_buffer(RBuffer *b) {
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	rz_bin_xbe_obj_t *obj = R_NEW (rz_bin_xbe_obj_t);
+	rz_bin_xbe_obj_t *obj = RZ_NEW (rz_bin_xbe_obj_t);
 	if (!obj) {
 		return false;
 	}
 	st64 r = rz_buf_read_at (buf, 0, (ut8 *)&obj->header, sizeof (obj->header));
 	if (r != sizeof (obj->header)) {
-		R_FREE (obj);
+		RZ_FREE (obj);
 		return false;
 	}
 
@@ -48,15 +48,15 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static void destroy(RBinFile *bf) {
-	R_FREE (bf->o->bin_obj);
+	RZ_FREE (bf->o->bin_obj);
 }
 
 static RBinAddr *binsym(RBinFile *bf, int type) {
-	if (!bf || !bf->buf || type != R_BIN_SYM_MAIN) {
+	if (!bf || !bf->buf || type != RZ_BIN_SYM_MAIN) {
 		return NULL;
 	}
 	rz_bin_xbe_obj_t *obj = bf->o->bin_obj;
-	RBinAddr *ret = R_NEW0 (RBinAddr);
+	RBinAddr *ret = RZ_NEW0 (RBinAddr);
 	if (!ret) {
 		return NULL;
 	}
@@ -68,7 +68,7 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 static RzList *entries(RBinFile *bf) {
 	const rz_bin_xbe_obj_t *obj;
 	RzList *ret;
-	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	RBinAddr *ptr = RZ_NEW0 (RBinAddr);
 	if (!bf || !bf->buf || !bf->o->bin_obj || !ptr) {
 		free (ptr);
 		return NULL;
@@ -124,7 +124,7 @@ static RzList *sections(RBinFile *bf) {
 		goto out_error;
 	}
 	for (i = 0; i < h->sections; i++) {
-		RBinSection *item = R_NEW0 (RBinSection);
+		RBinSection *item = RZ_NEW0 (RBinSection);
 		addr = sect[i].name_addr - h->base;
 		tmp[0] = 0;
 		if (addr > bf->size || addr + sizeof (tmp) > bf->size) {
@@ -144,12 +144,12 @@ static RzList *sections(RBinFile *bf) {
 		item->vsize = sect[i].vsize;
 		item->add = true;
 
-		item->perm = R_PERM_R;
+		item->perm = RZ_PERM_R;
 		if (sect[i].flags & SECT_FLAG_X) {
-			item->perm |= R_PERM_X;
+			item->perm |= RZ_PERM_X;
 		}
 		if (sect[i].flags & SECT_FLAG_W) {
-			item->perm |= R_PERM_W;
+			item->perm |= RZ_PERM_W;
 		}
 		rz_list_append (ret, item);
 	}
@@ -291,7 +291,7 @@ static RzList *symbols(RBinFile *bf) {
 		goto out_error;
 	}
 	for (i = 0; i < XBE_MAX_THUNK && thunk_addr[i]; i++) {
-		RBinSymbol *sym = R_NEW0 (RBinSymbol);
+		RBinSymbol *sym = RZ_NEW0 (RBinSymbol);
 		if (!sym) {
 			goto out_error;
 		}
@@ -324,7 +324,7 @@ static RBinInfo *info(RBinFile *bf) {
 		return NULL;
 	}
 
-	ret = R_NEW0 (RBinInfo);
+	ret = RZ_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -372,7 +372,7 @@ RBinPlugin rz_bin_plugin_xbe = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_xbe,
 	.version = RZ_VERSION
 };

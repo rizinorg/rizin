@@ -303,7 +303,7 @@ static char *mount_oldstr(RzParse* p, const char *reg, st64 delta, bool ucase) {
 			if (delta < 0) {
 				sign = '-';
 			}
-			oldstr = rz_str_newf ("%s %c %d", reg, sign, R_ABS (delta));
+			oldstr = rz_str_newf ("%s %c %d", reg, sign, RZ_ABS (delta));
 		} else {
 			oldstr = rz_str_newf ("%s, %d", reg, delta);
 		}
@@ -391,7 +391,7 @@ static bool subvar(RzParse *p, RzAnalFunction *f, ut64 addr, int oplen, char *da
 			reg = p->get_reg_at (f, var->delta, addr);
 		}
 		if (!reg) {
-			reg = anal->reg->name[R_REG_NAME_BP];
+			reg = anal->reg->name[RZ_REG_NAME_BP];
 		}
 		oldstr = mount_oldstr (p, reg, delta, ucase);
 		if (strstr (tstr, oldstr)) {
@@ -415,7 +415,7 @@ static bool subvar(RzParse *p, RzAnalFunction *f, ut64 addr, int oplen, char *da
 			reg = p->get_reg_at (f, var->delta, addr);
 		}
 		if (!reg) {
-			reg = anal->reg->name[R_REG_NAME_SP];
+			reg = anal->reg->name[RZ_REG_NAME_SP];
 		}
 		oldstr = mount_oldstr (p, reg, delta, ucase);
 		if (strstr (tstr, oldstr)) {
@@ -447,7 +447,7 @@ RzParsePlugin rz_parse_plugin_arm_pseudo = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_PARSE,
+	.type = RZ_LIB_TYPE_PARSE,
 	.data = &rz_parse_plugin_arm_pseudo,
 	.version = RZ_VERSION
 };

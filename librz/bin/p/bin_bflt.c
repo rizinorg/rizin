@@ -56,7 +56,7 @@ static RzList *patch_relocs(RBin *b) {
 	if (!b || !b->iob.io || !b->iob.io->desc) {
 		return NULL;
 	}
-	if (!(b->iob.io->cached & R_PERM_W)) {
+	if (!(b->iob.io->cached & RZ_PERM_W)) {
 		eprintf (
 			"Warning: please run r2 with -e io.cache=true to patch "
 			"relocations\n");
@@ -77,15 +77,15 @@ static RzList *patch_relocs(RBin *b) {
 		for (i = 0; i < bin->n_got; i++) {
 			__patch_reloc (bin->b, got_table[i].addr_to_patch,
 				got_table[i].data_offset);
-			RBinReloc *reloc = R_NEW0 (RBinReloc);
+			RBinReloc *reloc = RZ_NEW0 (RBinReloc);
 			if (reloc) {
-				reloc->type = R_BIN_RELOC_32;
+				reloc->type = RZ_BIN_RELOC_32;
 				reloc->paddr = got_table[i].addr_to_patch;
 				reloc->vaddr = reloc->paddr;
 				rz_list_append (list, reloc);
 			}
 		}
-		R_FREE (bin->got_table);
+		RZ_FREE (bin->got_table);
 	}
 
 	if (bin->reloc_table) {
@@ -101,15 +101,15 @@ static RzList *patch_relocs(RBin *b) {
 				__patch_reloc (bin->b, reloc_table[i].addr_to_patch,
 					reloc_table[i].data_offset);
 			}
-			RBinReloc *reloc = R_NEW0 (RBinReloc);
+			RBinReloc *reloc = RZ_NEW0 (RBinReloc);
 			if (reloc) {
-				reloc->type = R_BIN_RELOC_32;
+				reloc->type = RZ_BIN_RELOC_32;
 				reloc->paddr = reloc_table[i].addr_to_patch;
 				reloc->vaddr = reloc->paddr;
 				rz_list_append (list, reloc);
 			}
 		}
-		R_FREE (bin->reloc_table);
+		RZ_FREE (bin->reloc_table);
 	}
 	ut64 tmpsz;
 	const ut8 *tmp = rz_buf_data (bin->b, &tmpsz);
@@ -235,9 +235,9 @@ static RzList *relocs(RBinFile *bf) {
 				reloc_table[i].addr_to_patch = reloc_offset;
 				reloc_table[i].data_offset = reloc_data_offset;
 
-				RBinReloc *reloc = R_NEW0 (RBinReloc);
+				RBinReloc *reloc = RZ_NEW0 (RBinReloc);
 				if (reloc) {
-					reloc->type = R_BIN_RELOC_32;
+					reloc->type = RZ_BIN_RELOC_32;
 					reloc->paddr = reloc_table[i].addr_to_patch;
 					reloc->vaddr = reloc->paddr;
 					rz_list_append (list, reloc);
@@ -260,7 +260,7 @@ static RBinInfo *info(RBinFile *bf) {
 		return NULL;
 	}
 	obj = (struct rz_bin_bflt_obj *) bf->o->bin_obj;
-	if (!(info = R_NEW0 (RBinInfo))) {
+	if (!(info = RZ_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 	info->file = bf->file? strdup (bf->file): NULL;
@@ -303,7 +303,7 @@ RBinPlugin rz_bin_plugin_bflt = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_bflt,
 	.version = RZ_VERSION
 };

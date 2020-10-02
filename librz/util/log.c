@@ -8,19 +8,19 @@
 
 // TODO: Use thread-local storage to make these variables thread-safe
 static RzList *log_cbs = NULL; // Functions to call when outputting log string
-static int cfg_loglvl = R_LOGLVL_ERROR; // Log level output
-static int cfg_logtraplvl = R_LOGLVL_FATAL; // Log trap level
+static int cfg_loglvl = RZ_LOGLVL_ERROR; // Log level output
+static int cfg_logtraplvl = RZ_LOGLVL_FATAL; // Log trap level
 static bool cfg_logsrcinfo = false; // Print out debug source info with the output
 static bool cfg_logcolors = false; // Output colored log text based on level
 static char cfg_logfile[LOG_CONFIGSTR_SIZE] = ""; // Output text to filename
 static const char *level_tags[] = { // Log level to tag string lookup array
-	[R_LOGLVL_SILLY]     = "SILLY",
-	[R_LOGLVL_VERBOSE]   = "VERBOSE",
-	[R_LOGLVL_DEBUG]     = "DEBUG",
-	[R_LOGLVL_INFO]      = "INFO",
-	[R_LOGLVL_WARN]      = "WARNING",
-	[R_LOGLVL_ERROR]     = "ERROR",
-	[R_LOGLVL_FATAL]     = "FATAL"
+	[RZ_LOGLVL_SILLY]     = "SILLY",
+	[RZ_LOGLVL_VERBOSE]   = "VERBOSE",
+	[RZ_LOGLVL_DEBUG]     = "DEBUG",
+	[RZ_LOGLVL_INFO]      = "INFO",
+	[RZ_LOGLVL_WARN]      = "WARNING",
+	[RZ_LOGLVL_ERROR]     = "ERROR",
+	[RZ_LOGLVL_FATAL]     = "FATAL"
 };
 
 // cconfig.c configuration callback functions below
@@ -85,7 +85,7 @@ RZ_API void rz_vlog(const char *funcname, const char *filename,
 	// Build output string with src info, and formatted output
 	char output_buf[LOG_OUTPUTBUF_SIZE] = ""; // Big buffer for building the output string
 	if (!tag) {
-		tag = R_BETWEEN (0, level, R_ARRAY_SIZE (level_tags) - 1)? level_tags[level]: "";
+		tag = RZ_BETWEEN (0, level, RZ_ARRAY_SIZE (level_tags) - 1)? level_tags[level]: "";
 	}
 	int offset = snprintf (output_buf, LOG_OUTPUTBUF_SIZE, "%s: ", tag);
 	if (cfg_logsrcinfo) {
@@ -120,7 +120,7 @@ RZ_API void rz_vlog(const char *funcname, const char *filename,
 		}
 	}
 
-	if (level >= cfg_logtraplvl && level != R_LOGLVL_NONE) {
+	if (level >= cfg_logtraplvl && level != RZ_LOGLVL_NONE) {
 		fflush (stdout); // We're about to exit HARD, flush buffers before dying
 		fflush (stderr);
 		// TODO: call rz_cons_flush if librz_cons is being used
@@ -136,7 +136,7 @@ RZ_API void rz_vlog(const char *funcname, const char *filename,
  * \param lvl Logging level for output
  * \param fmtstr A printf like string
 
-  This function is used by the R_LOG_* preprocessor macros for logging
+  This function is used by the RZ_LOG_* preprocessor macros for logging
 */
 RZ_API void rz_log(const char *funcname, const char *filename,
 	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) {

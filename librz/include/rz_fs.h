@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER (rz_fs);
+RZ_LIB_VERSION_HEADER (rz_fs);
 
 struct rz_fs_plugin_t;
 struct rz_fs_root_t;
@@ -88,12 +88,12 @@ typedef struct rz_fs_shell_t {
 	int (*hist_add)(const char *line);
 } RzFSShell;
 
-#define R_FS_FILE_TYPE_MOUNTPOINT 'm'
-#define R_FS_FILE_TYPE_DIRECTORY 'd'
-#define R_FS_FILE_TYPE_REGULAR 'r'
-#define R_FS_FILE_TYPE_DELETED 'x'
-#define R_FS_FILE_TYPE_SPECIAL 's'
-#define R_FS_FILE_TYPE_MOUNT 'm'
+#define RZ_FS_FILE_TYPE_MOUNTPOINT 'm'
+#define RZ_FS_FILE_TYPE_DIRECTORY 'd'
+#define RZ_FS_FILE_TYPE_REGULAR 'r'
+#define RZ_FS_FILE_TYPE_DELETED 'x'
+#define RZ_FS_FILE_TYPE_SPECIAL 's'
+#define RZ_FS_FILE_TYPE_MOUNT 'm'
 
 typedef int (*RzFSPartitionIterator)(void *disk, void *ptr, void *user);
 typedef struct rz_fs_partition_type_t {
@@ -102,13 +102,13 @@ typedef struct rz_fs_partition_type_t {
 	RzFSPartitionIterator iterate;
 	//RzFSPartitionIterator parhook;
 } RzFSPartitionType;
-#define R_FS_PARTITIONS_LENGTH (int)(sizeof (partitions)/sizeof(RzFSPartitionType)-1)
+#define RZ_FS_PARTITIONS_LENGTH (int)(sizeof (partitions)/sizeof(RzFSPartitionType)-1)
 
 enum {
-	R_FS_VIEW_NORMAL = 0,
-	R_FS_VIEW_DELETED = 1,
-	R_FS_VIEW_SPECIAL = 2,
-	R_FS_VIEW_ALL = 0xff,
+	RZ_FS_VIEW_NORMAL = 0,
+	RZ_FS_VIEW_DELETED = 1,
+	RZ_FS_VIEW_SPECIAL = 2,
+	RZ_FS_VIEW_ALL = 0xff,
 };
 
 #ifdef RZ_API

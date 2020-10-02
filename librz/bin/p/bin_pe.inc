@@ -41,12 +41,12 @@ static RBinAddr* binsym(RBinFile *bf, int type) {
 	RBinAddr *ret = NULL;
 	if (bf && bf->o && bf->o->bin_obj) {
 		switch (type) {
-		case R_BIN_SYM_MAIN:
+		case RZ_BIN_SYM_MAIN:
 				peaddr = PE_(rz_bin_pe_get_main_vaddr) (bf->o->bin_obj);
 				break;
 		}
 	}
-	if (peaddr && (ret = R_NEW0 (RBinAddr))) {
+	if (peaddr && (ret = RZ_NEW0 (RBinAddr))) {
 		ret->paddr = peaddr->paddr;
 		ret->vaddr = peaddr->vaddr;
 	}
@@ -79,11 +79,11 @@ static void add_tls_callbacks(RBinFile *bf, RzList* list) {
 		if (!haddr) {
 			break;
 		}
-		if ((ptr = R_NEW0 (RBinAddr))) {
+		if ((ptr = RZ_NEW0 (RBinAddr))) {
 			ptr->paddr  = paddr;
 			ptr->vaddr  = vaddr;
 			ptr->hpaddr = haddr;
-			ptr->type   = R_BIN_ENTRY_TYPE_TLS;
+			ptr->type   = RZ_BIN_ENTRY_TYPE_TLS;
 			rz_list_append (list, ptr);
 		}
 		count++;
@@ -101,11 +101,11 @@ static RzList* entries(RBinFile *bf) {
 	if (!(entry = PE_(rz_bin_pe_get_entrypoint) (bf->o->bin_obj))) {
 		return ret;
 	}
-	if ((ptr = R_NEW0 (RBinAddr))) {
+	if ((ptr = RZ_NEW0 (RBinAddr))) {
 		ptr->paddr  = entry->paddr;
 		ptr->vaddr  = entry->vaddr;
 		ptr->hpaddr = entry->haddr;
-		ptr->type   = R_BIN_ENTRY_TYPE_PROGRAM;
+		ptr->type   = RZ_BIN_ENTRY_TYPE_PROGRAM;
 		rz_list_append (ret, ptr);
 	}
 	free (entry);
@@ -131,7 +131,7 @@ static RzList* sections(RBinFile *bf) {
 	}
 	PE_(rz_bin_pe_check_sections) (bin, &sections);
 	for (i = 0; !sections[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RBinSection))) {
 			break;
 		}
 		if (sections[i].name[0]) {
@@ -156,21 +156,21 @@ static RzList* sections(RBinFile *bf) {
 		ptr->vaddr = sections[i].vaddr + ba;
 		ptr->add = true;
 		ptr->perm = 0;
-		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].perm)) {
-			ptr->perm |= R_PERM_X;
-			ptr->perm |= R_PERM_R; // implicit
+		if (RZ_BIN_PE_SCN_IS_EXECUTABLE (sections[i].perm)) {
+			ptr->perm |= RZ_PERM_X;
+			ptr->perm |= RZ_PERM_R; // implicit
 		}
-		if (R_BIN_PE_SCN_IS_WRITABLE (sections[i].perm)) {
-			ptr->perm |= R_PERM_W;
+		if (RZ_BIN_PE_SCN_IS_WRITABLE (sections[i].perm)) {
+			ptr->perm |= RZ_PERM_W;
 		}
-		if (R_BIN_PE_SCN_IS_READABLE (sections[i].perm)) {
-			ptr->perm |= R_PERM_R;
+		if (RZ_BIN_PE_SCN_IS_READABLE (sections[i].perm)) {
+			ptr->perm |= RZ_PERM_R;
 		}
 		// this is causing may tests to fail because rx != srx
-		if (R_BIN_PE_SCN_IS_SHAREABLE (sections[i].perm)) {
-			ptr->perm |= R_PERM_SHAR;
+		if (RZ_BIN_PE_SCN_IS_SHAREABLE (sections[i].perm)) {
+			ptr->perm |= RZ_PERM_SHAR;
 		}
-		if ((ptr->perm & R_PERM_RW) && !(ptr->perm & R_PERM_X) && ptr->size > 0) {
+		if ((ptr->perm & RZ_PERM_RW) && !(ptr->perm & RZ_PERM_X) && ptr->size > 0) {
 			if (!strcmp (ptr->name, ".rsrc") ||
 			  	!strcmp (ptr->name, ".data") ||
 				!strcmp (ptr->name, ".rdata")) {
@@ -203,15 +203,15 @@ static RzList* symbols(RBinFile *bf) {
 	}
 	if ((symbols = PE_(rz_bin_pe_get_exports)(bf->o->bin_obj))) {
 		for (i = 0; !symbols[i].last; i++) {
-			if (!(ptr = R_NEW0 (RBinSymbol))) {
+			if (!(ptr = RZ_NEW0 (RBinSymbol))) {
 				break;
 			}
 			ptr->name = strdup ((char *)symbols[i].name);
 			ptr->libname = *symbols[i].libname ? strdup ((char *)symbols[i].libname) : NULL;
 			ptr->forwarder = rz_str_constpool_get (&bf->rbin->constpool, (char *)symbols[i].forwarder);
-			//strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-			ptr->bind = R_BIN_BIND_GLOBAL_STR;
-			ptr->type = R_BIN_TYPE_FUNC_STR;
+			//strncpy (ptr->bind, "NONE", RZ_BIN_SIZEOF_STRINGS);
+			ptr->bind = RZ_BIN_BIND_GLOBAL_STR;
+			ptr->type = RZ_BIN_TYPE_FUNC_STR;
 			ptr->size = 0;
 			ptr->vaddr = symbols[i].vaddr;
 			ptr->paddr = symbols[i].paddr;
@@ -224,16 +224,16 @@ static RzList* symbols(RBinFile *bf) {
 
 	if ((imports = PE_(rz_bin_pe_get_imports)(bf->o->bin_obj))) {
 		for (i = 0; !imports[i].last; i++) {
-			if (!(ptr = R_NEW0 (RBinSymbol))) {
+			if (!(ptr = RZ_NEW0 (RBinSymbol))) {
 				break;
 			}
-			//strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
+			//strncpy (ptr->name, (char*)symbols[i].name, RZ_BIN_SIZEOF_STRINGS);
 			ptr->name = strdup ((const char *)imports[i].name);
 			ptr->libname = strdup ((const char *)imports[i].libname);
 			ptr->is_imported = true;
-			//strncpy (ptr->forwarder, (char*)imports[i].forwarder, R_BIN_SIZEOF_STRINGS);
+			//strncpy (ptr->forwarder, (char*)imports[i].forwarder, RZ_BIN_SIZEOF_STRINGS);
 			ptr->bind = "NONE";
-			ptr->type = R_BIN_TYPE_FUNC_STR;
+			ptr->type = RZ_BIN_TYPE_FUNC_STR;
 			ptr->size = 0;
 			ptr->vaddr = imports[i].vaddr;
 			ptr->paddr = imports[i].paddr;
@@ -285,7 +285,7 @@ static RzList* imports(RBinFile *bf) {
 		return ret;
 	}
 	for (i = 0; !imports[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinImport))) {
+		if (!(ptr = RZ_NEW0 (RBinImport))) {
 			break;
 		}
 		filter_import (imports[i].name);
@@ -299,13 +299,13 @@ static RzList* imports(RBinFile *bf) {
 		//ptr->hint = imports[i].hint;
 		rz_list_append (ret, ptr);
 
-		if (!(rel = R_NEW0 (RBinReloc))) {
+		if (!(rel = RZ_NEW0 (RBinReloc))) {
 			break;
 		}
-#ifdef R_BIN_PE64
-		rel->type = R_BIN_RELOC_64;
+#ifdef RZ_BIN_PE64
+		rel->type = RZ_BIN_RELOC_64;
 #else
-		rel->type = R_BIN_RELOC_32;
+		rel->type = RZ_BIN_RELOC_32;
 #endif
 		rel->additive = 0;
 		rel->import = ptr;
@@ -436,7 +436,7 @@ static int haschr(const RBinFile* bf, ut16 dllCharacteristic) {
 static RBinInfo* info(RBinFile *bf) {
 	struct PE_ (rz_bin_pe_obj_t) *bin;
 	SDebugInfo di = {{0}};
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = RZ_NEW0 (RBinInfo);
 	ut32 claimed_checksum, actual_checksum, pe_overlay;
 
 	if (!ret) {
@@ -498,23 +498,23 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->has_va = true;
 
 	if (PE_(rz_bin_pe_is_stripped_debug) (bf->o->bin_obj)) {
-		ret->dbg_info |= R_BIN_DBG_STRIPPED;
+		ret->dbg_info |= RZ_BIN_DBG_STRIPPED;
 	}
 	if (PE_(rz_bin_pe_is_stripped_line_nums) (bf->o->bin_obj)) {
-		ret->dbg_info |= R_BIN_DBG_LINENUMS;
+		ret->dbg_info |= RZ_BIN_DBG_LINENUMS;
 	}
 	if (PE_(rz_bin_pe_is_stripped_local_syms) (bf->o->bin_obj)) {
-		ret->dbg_info |= R_BIN_DBG_SYMS;
+		ret->dbg_info |= RZ_BIN_DBG_SYMS;
 	}
 	if (PE_(rz_bin_pe_is_stripped_relocs) (bf->o->bin_obj)) {
-		ret->dbg_info |= R_BIN_DBG_RELOCS;
+		ret->dbg_info |= RZ_BIN_DBG_RELOCS;
 	}
 	if (PE_(rz_bin_pe_get_debug_data)(bf->o->bin_obj, &di)) {
 		ret->guid = rz_str_ndup (di.guidstr, GUIDSTR_LEN);
 		if (ret->guid) {
 			ret->debug_file_name = rz_str_ndup (di.file_name, DBG_FILE_NAME_LEN);
 			if (!ret->debug_file_name) {
-				R_FREE (ret->guid);
+				RZ_FREE (ret->guid);
 			}
 		}
 	}
@@ -530,7 +530,7 @@ static RzList *compute_hashes(RBinFile *bf) {
 	RzList *file_hashes = rz_list_newf ((RzListFree) rz_bin_file_hash_free);
 	const char *authentihash = PE_(bin_pe_compute_authentihash) (bf->o->bin_obj);
 	if (authentihash) {
-		RBinFileHash *authhash = R_NEW0 (RBinFileHash);
+		RBinFileHash *authhash = RZ_NEW0 (RBinFileHash);
 		if (authhash) {
 			authhash->type = strdup ("authentihash");
 			authhash->hex = authentihash;

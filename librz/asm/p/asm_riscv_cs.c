@@ -21,7 +21,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		goto fin;
 	}
 #if 0
-	if (a->syntax == R_ASM_SYNTAX_REGNUM) {
+	if (a->syntax == RZ_ASM_SYNTAX_REGNUM) {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
 	} else {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
@@ -59,14 +59,14 @@ RzAsmPlugin rz_asm_plugin_riscv_cs = {
 	.arch = "riscv",
 	.cpus = "",
 	.bits = 32|64,
-	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
+	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
 	.mnemonics = mnemonics,
 };
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_riscv_cs,
 	.version = RZ_VERSION
 };
@@ -78,7 +78,7 @@ RzAsmPlugin rz_asm_plugin_riscv_cs = {
 };
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.version = RZ_VERSION
 };
 #endif

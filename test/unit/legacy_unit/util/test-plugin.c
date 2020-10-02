@@ -37,17 +37,17 @@ int main(int argc, char **argv) {
 	rz_lib_add_handler (lib, 2, "disassembler plugin handler", &cb_2, &cb_2_end, &ptr);
 	rz_lib_add_handler (lib, 3, "file headers parser plugin handler", &cb_2, &cb_2_end, &ptr);
 
-	ret = rz_lib_open (lib, "./plugin."R_LIB_EXT);
+	ret = rz_lib_open (lib, "./plugin."RZ_LIB_EXT);
 	if (ret == -1) eprintf ("Cannot open plugin\n");
 	else eprintf ("Plugin opened correctly\n");
 	rz_lib_list (lib);
 
-	printf ("  --- closing './plugin."R_LIB_EXT"' ---\n");
-	rz_lib_close (lib, "./plugin."R_LIB_EXT);
+	printf ("  --- closing './plugin."RZ_LIB_EXT"' ---\n");
+	rz_lib_close (lib, "./plugin."RZ_LIB_EXT);
 	rz_lib_list (lib);
 	printf ("  ---\n");
 
-	rz_lib_close (lib, "./plugin."R_LIB_EXT);
+	rz_lib_close (lib, "./plugin."RZ_LIB_EXT);
 	rz_lib_free (lib);
 
 	return 0;

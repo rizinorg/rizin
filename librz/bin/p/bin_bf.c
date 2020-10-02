@@ -23,7 +23,7 @@ static RzList *strings(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 	ret->lang = NULL;
@@ -99,7 +99,7 @@ static RzList *entries(RBinFile *bf) {
 	if (!(ret = rz_list_newf (free))) {
 		return NULL;
 	}
-	if (!(ptr = R_NEW0 (RBinAddr))) {
+	if (!(ptr = RZ_NEW0 (RBinAddr))) {
 		return ret;
 	}
 	ptr->paddr = ptr->vaddr = 0;
@@ -122,7 +122,7 @@ RBinPlugin rz_bin_plugin_bf = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_bf,
 	.version = RZ_VERSION
 };

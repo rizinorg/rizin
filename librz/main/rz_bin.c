@@ -423,7 +423,7 @@ static int rabin_do_operation(RBin *bin, const char *op, int rad, const char *ou
 			}
 		}
 		if (plg && plg->signature) {
-			char *sign = plg->signature (cur, rad == R_MODE_JSON);
+			char *sign = plg->signature (cur, rad == RZ_MODE_JSON);
 			if (sign) {
 				rz_cons_println (sign);
 				rz_cons_flush ();
@@ -514,12 +514,12 @@ static char *__demangleAs(RBin *bin, int type, const char *file) {
 	bool syscmd = bin? bin->demanglercmd: false;
 	char *res = NULL;
 	switch (type) {
-	case R_BIN_NM_CXX: res = rz_bin_demangle_cxx (NULL, file, 0); break;
-	case R_BIN_NM_JAVA: res = rz_bin_demangle_java (file); break;
-	case R_BIN_NM_OBJC: res = rz_bin_demangle_objc (NULL, file); break;
-	case R_BIN_NM_SWIFT: res = rz_bin_demangle_swift (file, syscmd); break;
-	case R_BIN_NM_MSVC: res = rz_bin_demangle_msvc (file); break;
-	case R_BIN_NM_RUST: res = rz_bin_demangle_rust (NULL, file, 0); break;
+	case RZ_BIN_NM_CXX: res = rz_bin_demangle_cxx (NULL, file, 0); break;
+	case RZ_BIN_NM_JAVA: res = rz_bin_demangle_java (file); break;
+	case RZ_BIN_NM_OBJC: res = rz_bin_demangle_objc (NULL, file); break;
+	case RZ_BIN_NM_SWIFT: res = rz_bin_demangle_swift (file, syscmd); break;
+	case RZ_BIN_NM_MSVC: res = rz_bin_demangle_msvc (file); break;
+	case RZ_BIN_NM_RUST: res = rz_bin_demangle_rust (NULL, file, 0); break;
 	default:
 		eprintf ("Unsupported demangler\n");
 		break;
@@ -528,7 +528,7 @@ static char *__demangleAs(RBin *bin, int type, const char *file) {
 }
 
 static void __listPlugins(RBin *bin, const char* plugin_name, int rad) {
-	int format = (rad == R_MODE_JSON) ? 'j': rad? 'q': 0;
+	int format = (rad == RZ_MODE_JSON) ? 'j': rad? 'q': 0;
 	bin->cb_printf = (PrintfCallback)printf;
 	if (plugin_name) {
 		rz_bin_list_plugin (bin, plugin_name, format);
@@ -550,7 +550,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	int c, bits = 0, actions_done = 0, actions = 0;
 	char* create = NULL;
 	bool va = true;
-	ut64 action = R_BIN_REQ_UNK;
+	ut64 action = RZ_BIN_REQ_UNK;
 	char *tmp, *ptr, *arch_name = NULL;
 	const char *arch = NULL;
 	const char *forcebin = NULL;
@@ -574,14 +574,14 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		char *extrasdir = rz_str_rz_prefix (RZ_EXTRAS);
 		char *bindingsdir = rz_str_rz_prefix (RZ_BINDINGS);
 		l = rz_lib_new (NULL, NULL);
-		rz_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
+		rz_lib_add_handler (l, RZ_LIB_TYPE_BIN, "bin plugins",
 			&__lib_bin_cb, &__lib_bin_dt, bin);
-		rz_lib_add_handler (l, R_LIB_TYPE_BIN_XTR, "bin xtr plugins",
+		rz_lib_add_handler (l, RZ_LIB_TYPE_BIN_XTR, "bin xtr plugins",
 			&__lib_bin_xtr_cb, &__lib_bin_xtr_dt, bin);
-		rz_lib_add_handler (l, R_LIB_TYPE_BIN_LDR, "bin ldr plugins",
+		rz_lib_add_handler (l, RZ_LIB_TYPE_BIN_LDR, "bin ldr plugins",
 			&__lib_bin_ldr_cb, &__lib_bin_ldr_dt, bin);
 		/* load plugins everywhere */
-		char *path = rz_sys_getenv (R_LIB_ENV);
+		char *path = rz_sys_getenv (RZ_LIB_ENV);
 		if (path && *path) {
 			rz_lib_opendir (l, path);
 		}
@@ -648,47 +648,47 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	while ((c = rz_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'g':
-			set_action (R_BIN_REQ_CLASSES);
-			set_action (R_BIN_REQ_IMPORTS);
-			set_action (R_BIN_REQ_SYMBOLS);
-			set_action (R_BIN_REQ_SECTIONS);
-			set_action (R_BIN_REQ_SEGMENTS);
-			set_action (R_BIN_REQ_SECTIONS_MAPPING);
-			set_action (R_BIN_REQ_STRINGS);
-			set_action (R_BIN_REQ_SIZE);
-			set_action (R_BIN_REQ_INFO);
-			set_action (R_BIN_REQ_FIELDS);
-			set_action (R_BIN_REQ_DWARF);
-			set_action (R_BIN_REQ_ENTRIES);
-			set_action (R_BIN_REQ_INITFINI);
-			set_action (R_BIN_REQ_MAIN);
-			set_action (R_BIN_REQ_LIBS);
-			set_action (R_BIN_REQ_RELOCS);
-			set_action (R_BIN_REQ_VERSIONINFO);
+			set_action (RZ_BIN_REQ_CLASSES);
+			set_action (RZ_BIN_REQ_IMPORTS);
+			set_action (RZ_BIN_REQ_SYMBOLS);
+			set_action (RZ_BIN_REQ_SECTIONS);
+			set_action (RZ_BIN_REQ_SEGMENTS);
+			set_action (RZ_BIN_REQ_SECTIONS_MAPPING);
+			set_action (RZ_BIN_REQ_STRINGS);
+			set_action (RZ_BIN_REQ_SIZE);
+			set_action (RZ_BIN_REQ_INFO);
+			set_action (RZ_BIN_REQ_FIELDS);
+			set_action (RZ_BIN_REQ_DWARF);
+			set_action (RZ_BIN_REQ_ENTRIES);
+			set_action (RZ_BIN_REQ_INITFINI);
+			set_action (RZ_BIN_REQ_MAIN);
+			set_action (RZ_BIN_REQ_LIBS);
+			set_action (RZ_BIN_REQ_RELOCS);
+			set_action (RZ_BIN_REQ_VERSIONINFO);
 			break;
-		case 'V': set_action (R_BIN_REQ_VERSIONINFO); break;
-		case 'T': set_action (R_BIN_REQ_SIGNATURE); break;
-		case 't': set_action (R_BIN_REQ_HASHES); break;
-		case 'w': set_action (R_BIN_REQ_TRYCATCH); break;
+		case 'V': set_action (RZ_BIN_REQ_VERSIONINFO); break;
+		case 'T': set_action (RZ_BIN_REQ_SIGNATURE); break;
+		case 't': set_action (RZ_BIN_REQ_HASHES); break;
+		case 'w': set_action (RZ_BIN_REQ_TRYCATCH); break;
 		case 'q':
-			rad = (rad & R_MODE_SIMPLE ?
-				R_MODE_SIMPLEST : R_MODE_SIMPLE);
+			rad = (rad & RZ_MODE_SIMPLE ?
+				RZ_MODE_SIMPLEST : RZ_MODE_SIMPLE);
 			break;
-		case 'j': rad = R_MODE_JSON; break;
-		case 'A': set_action (R_BIN_REQ_LISTARCHS); break;
+		case 'j': rad = RZ_MODE_JSON; break;
+		case 'A': set_action (RZ_BIN_REQ_LISTARCHS); break;
 		case 'a': arch = opt.arg; break;
 		case 'C':
-			set_action (R_BIN_REQ_CREATE);
+			set_action (RZ_BIN_REQ_CREATE);
 			create = strdup (opt.arg);
 			break;
 		case 'u': bin->filter = 0; break;
 		case 'k': query = opt.arg; break;
 		case 'K': chksum = opt.arg; break;
 		case 'c':
-			if (is_active (R_BIN_REQ_CLASSES)) {
-				rad = R_MODE_CLASSDUMP;
+			if (is_active (RZ_BIN_REQ_CLASSES)) {
+				rad = RZ_MODE_CLASSDUMP;
 			} else {
-			  	set_action (R_BIN_REQ_CLASSES);
+			  	set_action (RZ_BIN_REQ_CLASSES);
 			}
 			break;
 		case 'f': arch_name = strdup (opt.arg); break;
@@ -696,27 +696,27 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		case 'b': bits = rz_num_math (NULL, opt.arg); break;
 		case 'm':
 			at = rz_num_math (NULL, opt.arg);
-			set_action (R_BIN_REQ_SRCLINE);
+			set_action (RZ_BIN_REQ_SRCLINE);
 			break;
 		case 'i':
-			set_action (R_BIN_REQ_IMPORTS);
+			set_action (RZ_BIN_REQ_IMPORTS);
 			break;
 		case 's':
-			set_action (R_BIN_REQ_SYMBOLS);
+			set_action (RZ_BIN_REQ_SYMBOLS);
 			break;
 		case 'S':
-			if (is_active (R_BIN_REQ_SEGMENTS)) {
-				action &= ~R_BIN_REQ_SEGMENTS;
-				action |= R_BIN_REQ_SECTIONS_MAPPING;
-			} else if (is_active (R_BIN_REQ_SECTIONS)) {
-				action &= ~R_BIN_REQ_SECTIONS;
-				action |= R_BIN_REQ_SEGMENTS;
+			if (is_active (RZ_BIN_REQ_SEGMENTS)) {
+				action &= ~RZ_BIN_REQ_SEGMENTS;
+				action |= RZ_BIN_REQ_SECTIONS_MAPPING;
+			} else if (is_active (RZ_BIN_REQ_SECTIONS)) {
+				action &= ~RZ_BIN_REQ_SECTIONS;
+				action |= RZ_BIN_REQ_SEGMENTS;
 			} else {
-				set_action (R_BIN_REQ_SECTIONS);
+				set_action (RZ_BIN_REQ_SECTIONS);
 			}
 			break;
 		case 'z':
-			if (is_active (R_BIN_REQ_STRINGS)) {
+			if (is_active (RZ_BIN_REQ_STRINGS)) {
 				if (rawstr) {
 					/* rawstr mode 2 means that we are not going */
 					/* to store them just dump'm all to stdout */
@@ -725,20 +725,20 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 					rawstr = 1;
 				}
 			} else {
-				set_action (R_BIN_REQ_STRINGS);
+				set_action (RZ_BIN_REQ_STRINGS);
 			}
 			break;
-		case 'Z': set_action (R_BIN_REQ_SIZE); break;
-		case 'I': set_action (R_BIN_REQ_INFO); break;
+		case 'Z': set_action (RZ_BIN_REQ_SIZE); break;
+		case 'I': set_action (RZ_BIN_REQ_INFO); break;
 		case 'H':
-			set_action (R_BIN_REQ_FIELDS);
+			set_action (RZ_BIN_REQ_FIELDS);
 			break;
-		case 'd': set_action (R_BIN_REQ_DWARF); break;
+		case 'd': set_action (RZ_BIN_REQ_DWARF); break;
 		case 'P':
-			if (is_active (R_BIN_REQ_PDB)) {
-				set_action (R_BIN_REQ_PDB_DWNLD);
+			if (is_active (RZ_BIN_REQ_PDB)) {
+				set_action (RZ_BIN_REQ_PDB_DWNLD);
 			} else {
-				set_action (R_BIN_REQ_PDB);
+				set_action (RZ_BIN_REQ_PDB);
 			}
 			break;
 		case 'D':
@@ -752,24 +752,24 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			}
 			break;
 		case 'e':
-			if (action & R_BIN_REQ_ENTRIES) {
-				action &= ~R_BIN_REQ_ENTRIES;
-				action |= R_BIN_REQ_INITFINI;
+			if (action & RZ_BIN_REQ_ENTRIES) {
+				action &= ~RZ_BIN_REQ_ENTRIES;
+				action |= RZ_BIN_REQ_INITFINI;
 			} else {
-				set_action (R_BIN_REQ_ENTRIES);
+				set_action (RZ_BIN_REQ_ENTRIES);
 			}
 			break;
-		case 'E': set_action (R_BIN_REQ_EXPORTS); break;
-		case 'U': set_action (R_BIN_REQ_RESOURCES); break;
-		case 'Q': set_action (R_BIN_REQ_DLOPEN); break;
-		case 'M': set_action (R_BIN_REQ_MAIN); break;
-		case 'l': set_action (R_BIN_REQ_LIBS); break;
-		case 'R': set_action (R_BIN_REQ_RELOCS); break;
-		case 'x': set_action (R_BIN_REQ_EXTRACT); break;
-		case 'X': set_action (R_BIN_REQ_PACKAGE); break;
+		case 'E': set_action (RZ_BIN_REQ_EXPORTS); break;
+		case 'U': set_action (RZ_BIN_REQ_RESOURCES); break;
+		case 'Q': set_action (RZ_BIN_REQ_DLOPEN); break;
+		case 'M': set_action (RZ_BIN_REQ_MAIN); break;
+		case 'l': set_action (RZ_BIN_REQ_LIBS); break;
+		case 'R': set_action (RZ_BIN_REQ_RELOCS); break;
+		case 'x': set_action (RZ_BIN_REQ_EXTRACT); break;
+		case 'X': set_action (RZ_BIN_REQ_PACKAGE); break;
 		case 'O':
 			op = opt.arg;
-			set_action (R_BIN_REQ_OPERATION);
+			set_action (RZ_BIN_REQ_OPERATION);
 			if (*op == 'c') {
 				rz_sys_setenv ("RZ_BIN_CODESIGN_VERBOSE", "1");
 			}
@@ -800,7 +800,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			  rz_core_fini (&core);
 			  return rz_main_version_print ("rz_bin");
 		case 'L':
-			set_action (R_BIN_REQ_LISTPLUGINS);
+			set_action (RZ_BIN_REQ_LISTPLUGINS);
 			break;
 		case 'G':
 			laddr = rz_num_math (NULL, opt.arg);
@@ -831,12 +831,12 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			rz_core_fini (&core);
 			return rabin_show_help (1);
 		default:
-			action |= R_BIN_REQ_HELP;
+			action |= RZ_BIN_REQ_HELP;
 			break;
 		}
 	}
 
-	if (is_active (R_BIN_REQ_LISTPLUGINS)) {
+	if (is_active (RZ_BIN_REQ_LISTPLUGINS)) {
 		const char* plugin_name = NULL;
 		if (opt.ind < argc) {
 			plugin_name = argv[opt.ind];
@@ -872,8 +872,8 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 				} else if (file && *file) {
 					printf ("%s\n", file);
 				}
-				R_FREE (res);
-				R_FREE (file);
+				RZ_FREE (res);
+				RZ_FREE (file);
 			}
 			stdin_gets (true);
 		} else {
@@ -901,7 +901,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 
 	if (!query) {
-		if (action & R_BIN_REQ_HELP || action == R_BIN_REQ_UNK || !file) {
+		if (action & RZ_BIN_REQ_HELP || action == RZ_BIN_REQ_UNK || !file) {
 			rz_core_fini (&core);
 			return rabin_show_help (0);
 		}
@@ -913,7 +913,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			bits = rz_num_math (NULL, ptr+1);
 		}
 	}
-	if (action & R_BIN_REQ_CREATE) {
+	if (action & RZ_BIN_REQ_CREATE) {
 		// TODO: move in a function outside
 		RBuffer *b;
 		int datalen, codelen;
@@ -965,7 +965,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		return 0;
 	}
 	if (rawstr == 2) {
-		unset_action (R_BIN_REQ_STRINGS);
+		unset_action (RZ_BIN_REQ_STRINGS);
 	}
 	rz_config_set_i (core.config, "bin.rawstr", rawstr);
 
@@ -975,7 +975,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		return 1;
 	}
 
-	if (file && *file && action & R_BIN_REQ_DLOPEN) {
+	if (file && *file && action & RZ_BIN_REQ_DLOPEN) {
 #if __UNIX__
 		int child = rz_sys_fork ();
 		if (child == -1) {
@@ -997,7 +997,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		rz_core_fini (&core);
 		return 0;
 	}
-	if (action & R_BIN_REQ_PACKAGE) {
+	if (action & RZ_BIN_REQ_PACKAGE) {
 		RzList *files = rz_list_newf (NULL);
 		const char *format = argv[opt.ind];
 		const char *file = argv[opt.ind + 1];
@@ -1030,7 +1030,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 
 	if (file && *file) {
-		if ((fh = rz_core_file_open (&core, file, R_PERM_R, 0))) {
+		if ((fh = rz_core_file_open (&core, file, RZ_PERM_R, 0))) {
 			fd = rz_io_fd_get_current (core.io);
 			if (fd == -1) {
 				eprintf ("rz_core: Cannot open file '%s'\n", file);
@@ -1079,7 +1079,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 	if (query) {
 		if (rad) {
-			rz_core_bin_export_info (&core, R_MODE_RADARE);
+			rz_core_bin_export_info (&core, RZ_MODE_RADARE);
 			rz_cons_flush ();
 		} else {
 			if (!strcmp (query, "-")) {
@@ -1092,7 +1092,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		rz_core_fini (&core);
 		return 0;
 	}
-#define isradjson (rad==R_MODE_JSON&&actions>0)
+#define isradjson (rad==RZ_MODE_JSON&&actions>0)
 #define run_action(n,x,y) {\
 	if (action&(x)) {\
 		if (isradjson) rz_cons_printf ("%s\"%s\":",actions_done?",":"",n);\
@@ -1112,17 +1112,17 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		rz_cons_print ("{");
 	}
 	// List fatmach0 sub-binaries, etc
-	if (action & R_BIN_REQ_LISTARCHS || ((arch || bits || arch_name) &&
+	if (action & RZ_BIN_REQ_LISTARCHS || ((arch || bits || arch_name) &&
 		!rz_bin_select (bin, arch, bits, arch_name))) {
-		if (rad == R_MODE_SIMPLEST || rad == R_MODE_SIMPLE) {
+		if (rad == RZ_MODE_SIMPLEST || rad == RZ_MODE_SIMPLE) {
 			rz_bin_list_archs (bin, 'q');
 		} else {
-			rz_bin_list_archs (bin, (rad == R_MODE_JSON)? 'j': 1);
+			rz_bin_list_archs (bin, (rad == RZ_MODE_JSON)? 'j': 1);
 		}
 		actions_done++;
 		free (arch_name);
 	}
-	if (action & R_BIN_REQ_PDB_DWNLD) {
+	if (action & RZ_BIN_REQ_PDB_DWNLD) {
 		SPDBOptions pdbopts;
 		pdbopts.user_agent = (char*) rz_config_get (core.config, "pdb.useragent");
 		pdbopts.symbol_server = (char*) rz_config_get (core.config, "pdb.server");
@@ -1130,7 +1130,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 
 		if ((tmp = rz_sys_getenv ("RZ_BIN_SYMSTORE"))) {
 			rz_config_set (core.config, "pdb.symstore", tmp);
-			R_FREE (tmp);
+			RZ_FREE (tmp);
 		}
 		pdbopts.symbol_store_path = (char *)rz_config_get (core.config, "pdb.symstore");
 		int r = rz_bin_pdb_download (&core, isradjson, &actions_done, &pdbopts);
@@ -1144,33 +1144,33 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		free (tmp);
 	}
 
-	run_action ("sections", R_BIN_REQ_SECTIONS, R_CORE_BIN_ACC_SECTIONS);
-	run_action ("segments", R_BIN_REQ_SEGMENTS, R_CORE_BIN_ACC_SEGMENTS);
-	run_action ("entries", R_BIN_REQ_ENTRIES, R_CORE_BIN_ACC_ENTRIES);
-	run_action ("initfini", R_BIN_REQ_INITFINI, R_CORE_BIN_ACC_INITFINI);
-	run_action ("main", R_BIN_REQ_MAIN, R_CORE_BIN_ACC_MAIN);
-	run_action ("imports", R_BIN_REQ_IMPORTS, R_CORE_BIN_ACC_IMPORTS);
-	run_action ("classes", R_BIN_REQ_CLASSES, R_CORE_BIN_ACC_CLASSES);
-	run_action ("symbols", R_BIN_REQ_SYMBOLS, R_CORE_BIN_ACC_SYMBOLS);
-	run_action ("exports", R_BIN_REQ_EXPORTS, R_CORE_BIN_ACC_EXPORTS);
-	run_action ("resources", R_BIN_REQ_RESOURCES, R_CORE_BIN_ACC_RESOURCES);
-	run_action ("strings", R_BIN_REQ_STRINGS, R_CORE_BIN_ACC_STRINGS);
-	run_action ("info", R_BIN_REQ_INFO, R_CORE_BIN_ACC_INFO);
-	run_action ("fields", R_BIN_REQ_FIELDS, R_CORE_BIN_ACC_FIELDS);
-	run_action ("header", R_BIN_REQ_HEADER, R_CORE_BIN_ACC_HEADER);
-	run_action ("libs", R_BIN_REQ_LIBS, R_CORE_BIN_ACC_LIBS);
-	run_action ("relocs", R_BIN_REQ_RELOCS, R_CORE_BIN_ACC_RELOCS);
-	run_action ("dwarf", R_BIN_REQ_DWARF, R_CORE_BIN_ACC_DWARF);
-	run_action ("pdb", R_BIN_REQ_PDB, R_CORE_BIN_ACC_PDB);
-	run_action ("size", R_BIN_REQ_SIZE, R_CORE_BIN_ACC_SIZE);
-	run_action ("versioninfo", R_BIN_REQ_VERSIONINFO, R_CORE_BIN_ACC_VERSIONINFO);
-	run_action ("sections", R_BIN_REQ_SIGNATURE, R_CORE_BIN_ACC_SIGNATURE);
-	run_action ("hashes", R_BIN_REQ_HASHES, R_CORE_BIN_ACC_HASHES);
-	run_action ("sections mapping", R_BIN_REQ_SECTIONS_MAPPING, R_CORE_BIN_ACC_SECTIONS_MAPPING);
-	if (action & R_BIN_REQ_SRCLINE) {
+	run_action ("sections", RZ_BIN_REQ_SECTIONS, RZ_CORE_BIN_ACC_SECTIONS);
+	run_action ("segments", RZ_BIN_REQ_SEGMENTS, RZ_CORE_BIN_ACC_SEGMENTS);
+	run_action ("entries", RZ_BIN_REQ_ENTRIES, RZ_CORE_BIN_ACC_ENTRIES);
+	run_action ("initfini", RZ_BIN_REQ_INITFINI, RZ_CORE_BIN_ACC_INITFINI);
+	run_action ("main", RZ_BIN_REQ_MAIN, RZ_CORE_BIN_ACC_MAIN);
+	run_action ("imports", RZ_BIN_REQ_IMPORTS, RZ_CORE_BIN_ACC_IMPORTS);
+	run_action ("classes", RZ_BIN_REQ_CLASSES, RZ_CORE_BIN_ACC_CLASSES);
+	run_action ("symbols", RZ_BIN_REQ_SYMBOLS, RZ_CORE_BIN_ACC_SYMBOLS);
+	run_action ("exports", RZ_BIN_REQ_EXPORTS, RZ_CORE_BIN_ACC_EXPORTS);
+	run_action ("resources", RZ_BIN_REQ_RESOURCES, RZ_CORE_BIN_ACC_RESOURCES);
+	run_action ("strings", RZ_BIN_REQ_STRINGS, RZ_CORE_BIN_ACC_STRINGS);
+	run_action ("info", RZ_BIN_REQ_INFO, RZ_CORE_BIN_ACC_INFO);
+	run_action ("fields", RZ_BIN_REQ_FIELDS, RZ_CORE_BIN_ACC_FIELDS);
+	run_action ("header", RZ_BIN_REQ_HEADER, RZ_CORE_BIN_ACC_HEADER);
+	run_action ("libs", RZ_BIN_REQ_LIBS, RZ_CORE_BIN_ACC_LIBS);
+	run_action ("relocs", RZ_BIN_REQ_RELOCS, RZ_CORE_BIN_ACC_RELOCS);
+	run_action ("dwarf", RZ_BIN_REQ_DWARF, RZ_CORE_BIN_ACC_DWARF);
+	run_action ("pdb", RZ_BIN_REQ_PDB, RZ_CORE_BIN_ACC_PDB);
+	run_action ("size", RZ_BIN_REQ_SIZE, RZ_CORE_BIN_ACC_SIZE);
+	run_action ("versioninfo", RZ_BIN_REQ_VERSIONINFO, RZ_CORE_BIN_ACC_VERSIONINFO);
+	run_action ("sections", RZ_BIN_REQ_SIGNATURE, RZ_CORE_BIN_ACC_SIGNATURE);
+	run_action ("hashes", RZ_BIN_REQ_HASHES, RZ_CORE_BIN_ACC_HASHES);
+	run_action ("sections mapping", RZ_BIN_REQ_SECTIONS_MAPPING, RZ_CORE_BIN_ACC_SECTIONS_MAPPING);
+	if (action & RZ_BIN_REQ_SRCLINE) {
 		rabin_show_srcline (bin, at);
 	}
-	if (action & R_BIN_REQ_EXTRACT) {
+	if (action & RZ_BIN_REQ_EXTRACT) {
 		RBinFile *bf = rz_bin_cur (bin);
 		if (bf && bf->xtr_data) {
 			rabin_extract (bin, (!arch && !arch_name && !bits));
@@ -1180,7 +1180,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 				"plugins found!\n", bin->file);
 		}
 	}
-	if (op && action & R_BIN_REQ_OPERATION) {
+	if (op && action & RZ_BIN_REQ_OPERATION) {
 		rabin_do_operation (bin, op, rad, output, file);
 	}
 	if (isradjson) {

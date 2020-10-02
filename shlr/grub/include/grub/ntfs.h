@@ -94,7 +94,7 @@
 #define v16at(buf,ofs)	valueat(buf,ofs,grub_uint16_t)
 #define v32at(buf,ofs)	valueat(buf,ofs,grub_uint32_t)
 #define v64at(buf,ofs)	valueat(buf,ofs,grub_uint64_t)
-R_PACKED (
+RZ_PACKED (
 struct grub_ntfs_bpb
 {
   grub_uint8_t jmp_boot[3];

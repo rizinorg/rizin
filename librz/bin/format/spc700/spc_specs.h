@@ -23,7 +23,7 @@ typedef enum {
 	SNES9X,
 } emulator_used;
 
-R_PACKED(
+RZ_PACKED(
 typedef struct { //SNES9x
 	char	song_title [32];
 	char	game_title [32];
@@ -38,7 +38,7 @@ typedef struct { //SNES9x
 	ut8 reserved[1];
 }) id666_tag_text;
 
-R_PACKED (
+RZ_PACKED (
 typedef struct { //ZSNES
 	char	song_title [32];
 	char	game_title [32];
@@ -53,7 +53,7 @@ typedef struct { //ZSNES
 	ut8 reserved[1];
 }) id666_tag_binary;
 
-R_PACKED (
+RZ_PACKED (
 typedef struct 	{
 	char	signature [33];
 	ut8	 signature2 [2];
@@ -61,7 +61,7 @@ typedef struct 	{
 	ut8 version;
 }) spc_hdr;
 
-R_PACKED (
+RZ_PACKED (
 typedef struct {
 	ut8 pcl;
 	ut8 pch;
@@ -74,7 +74,7 @@ typedef struct {
 	ut8 reserved_2;
 }) spc_reg;
 
-R_PACKED (
+RZ_PACKED (
 typedef struct {
 	ut8 ram [0x10000];
 	ut8 dsp [128];

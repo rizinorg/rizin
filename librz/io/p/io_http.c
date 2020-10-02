@@ -49,8 +49,8 @@ static int __close(RzIODesc *fd) {
 		return -1;
 	}
 	riom = fd->data;
-	R_FREE (riom->buf);
-	R_FREE (fd->data);
+	RZ_FREE (riom->buf);
+	RZ_FREE (fd->data);
 	return 0;
 }
 
@@ -77,7 +77,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
 		out = rz_socket_http_get (pathname, &code, &rlen);
 		if (out) {
-			RzIOMalloc *mal = R_NEW0 (RzIOMalloc);
+			RzIOMalloc *mal = RZ_NEW0 (RzIOMalloc);
 			if (!mal) {
 				return NULL;
 			}
@@ -117,7 +117,7 @@ RzIOPlugin rz_io_plugin_http = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_http,
 	.version = RZ_VERSION
 };

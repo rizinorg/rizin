@@ -70,7 +70,7 @@ static RzList *sections(RBinFile *bf) {
 }
 
 static RBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
-	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	RBinAddr *ptr = RZ_NEW0 (RBinAddr);
 	if (ptr) {
 		ptr->paddr = paddr;
 		ptr->vaddr = paddr;
@@ -94,9 +94,9 @@ static void process_constructors(RBinFile *bf, RzList *ret, int bits) {
 	rz_list_foreach (secs, iter, sec) {
 		type = -1;
 		if (strstr (sec->name, "_mod_fini_func")) {
-			type  = R_BIN_ENTRY_TYPE_FINI;
+			type  = RZ_BIN_ENTRY_TYPE_FINI;
 		} else if (strstr (sec->name, "_mod_init_func")) {
-			type  = R_BIN_ENTRY_TYPE_INIT;
+			type  = RZ_BIN_ENTRY_TYPE_INIT;
 		}
 		if (type != -1) {
 			ut8 *buf = calloc (sec->size, 1);
@@ -146,7 +146,7 @@ static RzList *entries(RBinFile *bf) {
 	if (!(entry = MACH0_(get_entrypoint) (bf->o->bin_obj))) {
 		return ret;
 	}
-	if ((ptr = R_NEW0 (RBinAddr))) {
+	if ((ptr = RZ_NEW0 (RBinAddr))) {
 		ptr->paddr = entry->offset + bf->o->boffset;
 		ptr->vaddr = entry->addr;
 		ptr->hpaddr = entry->haddr;
@@ -215,7 +215,7 @@ static RzList *symbols(RBinFile *bf) {
 		if (syms[i].name == NULL || syms[i].name[0] == '\0' || syms[i].addr < 100) {
 			continue;
 		}
-		if (!(ptr = R_NEW0 (RBinSymbol))) {
+		if (!(ptr = RZ_NEW0 (RBinSymbol))) {
 			break;
 		}
 		ptr->name = strdup ((char*)syms[i].name);
@@ -240,8 +240,8 @@ static RzList *symbols(RBinFile *bf) {
 			}
 		}
 		ptr->forwarder = "NONE";
-		ptr->bind = (syms[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)? R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR;
-		ptr->type = R_BIN_TYPE_FUNC_STR;
+		ptr->bind = (syms[i].type == RZ_BIN_MACH0_SYMBOL_TYPE_LOCAL)? RZ_BIN_BIND_LOCAL_STR: RZ_BIN_BIND_GLOBAL_STR;
+		ptr->type = RZ_BIN_TYPE_FUNC_STR;
 		ptr->vaddr = syms[i].addr;
 		ptr->paddr = syms[i].offset + obj->boffset;
 		ptr->size = syms[i].size;
@@ -274,7 +274,7 @@ static RzList *symbols(RBinFile *bf) {
 		while (temp + 3 < temp_end && *temp) {
 			temp = rz_uleb128_decode (temp, NULL, &value);
 			address += value;
-			ptr = R_NEW0 (RBinSymbol);
+			ptr = RZ_NEW0 (RBinSymbol);
 			if (!ptr) {
 				break;
 			}
@@ -282,9 +282,9 @@ static RzList *symbols(RBinFile *bf) {
 			ptr->paddr = address;
 			ptr->size = 0;
 			ptr->name = rz_str_newf ("func.%08"PFMT64x, ptr->vaddr);
-			ptr->type = R_BIN_TYPE_FUNC_STR;
+			ptr->type = RZ_BIN_TYPE_FUNC_STR;
 			ptr->forwarder = "NONE";
-			ptr->bind = R_BIN_BIND_LOCAL_STR;
+			ptr->bind = RZ_BIN_BIND_LOCAL_STR;
 			ptr->ordinal = i++;
 			if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
 				_handle_arm_thumb (bin, &ptr);
@@ -307,7 +307,7 @@ static RzList *symbols(RBinFile *bf) {
 	bin->lang = lang;
 #endif
 	if (isStripped) {
-		bin->dbg_info |= R_BIN_DBG_STRIPPED;
+		bin->dbg_info |= RZ_BIN_DBG_STRIPPED;
 	}
 	sdb_free (symcache);
 	return ret;
@@ -324,7 +324,7 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imp
 	}
 
 	RBinImport *ptr = NULL;
-	if (!(ptr = R_NEW0 (RBinImport))) {
+	if (!(ptr = RZ_NEW0 (RBinImport))) {
 		return NULL;
 	}
 
@@ -426,7 +426,7 @@ static RzList *relocs(RBinFile *bf) {
 			continue;
 		}
 		RBinReloc *ptr = NULL;
-		if (!(ptr = R_NEW0 (RBinReloc))) {
+		if (!(ptr = RZ_NEW0 (RBinReloc))) {
 			break;
 		}
 		ptr->type = reloc->type;
@@ -478,7 +478,7 @@ static RBinInfo *info(RBinFile *bf) {
 	char *str;
 
 	rz_return_val_if_fail (bf && bf->o, NULL);
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = RZ_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -626,7 +626,7 @@ static RzList* patch_relocs(RBin *b) {
 	ut64 n_vaddr = g->itv.addr + g->itv.size;
 	ut64 size = num_ext_relocs * cdsz;
 	char *muri = rz_str_newf ("malloc://%" PFMT64u, size);
-	gotr2desc = b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr);
+	gotr2desc = b->iob.open_at (io, muri, RZ_PERM_R, 0664, n_vaddr);
 	free (muri);
 	if (!gotr2desc) {
 		goto beach;
@@ -658,14 +658,14 @@ static RzList* patch_relocs(RBin *b) {
 			continue;
 		}
 		RBinReloc *ptr = NULL;
-		if (!(ptr = R_NEW0 (RBinReloc))) {
+		if (!(ptr = RZ_NEW0 (RBinReloc))) {
 			goto beach;
 		}
 		ptr->type = reloc->type;
 		ptr->additive = 0;
 		RBinImport *imp;
 		if (!(imp = import_from_name (b, (char*) reloc->name, bin->imports_by_name))) {
-			R_FREE (ptr);
+			RZ_FREE (ptr);
 			goto beach;
 		}
 		ptr->vaddr = sym_addr;
@@ -736,10 +736,10 @@ static int rebasing_and_stripping_io_read(RzIO *io, RzIODesc *fd, ut8 *buf, int 
 	static int internal_buf_size = 0;
 	if (count > internal_buf_size) {
 		if (internal_buffer) {
-			R_FREE (internal_buffer);
+			RZ_FREE (internal_buffer);
 			internal_buffer = NULL;
 		}
-		internal_buf_size = R_MAX (count, 8);
+		internal_buf_size = RZ_MAX (count, 8);
 		internal_buffer = (ut8 *) malloc (internal_buf_size);
 	}
 	ut64 io_off = io->off;
@@ -766,8 +766,8 @@ static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RzIODesc *fd, ut8
 		ut64 start = obj->segs[i].fileoff;
 		ut64 end = start + obj->segs[i].filesize;
 		if (end >= off && start <= eob) {
-			ut64 page_idx = (R_MAX (start, off) - start) / page_size;
-			ut64 page_end_idx = (R_MIN (eob, end) - start) / page_size;
+			ut64 page_idx = (RZ_MAX (start, off) - start) / page_size;
+			ut64 page_end_idx = (RZ_MIN (eob, end) - start) / page_size;
 			for (; page_idx <= page_end_idx; page_idx++) {
 				if (page_idx >= obj->chained_starts[i]->page_count) {
 					break;
@@ -821,7 +821,7 @@ static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RzIODesc *fd, ut8
 	obj->rebasing_buffer = false;
 }
 
-#if !R_BIN_MACH064
+#if !RZ_BIN_MACH064
 
 static bool check_buffer(RBuffer *b) {
 	if (rz_buf_size (b) >= 4) {
@@ -852,7 +852,7 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 
 	bool is_arm = strstr (opt->arch, "arm");
 	RBuffer *buf = rz_buf_new ();
-#ifndef R_BIN_MACH064
+#ifndef RZ_BIN_MACH064
 	if (opt->bits == 64) {
 		eprintf ("TODO: Please use mach064 instead of mach0\n");
 		free (buf);
@@ -1105,9 +1105,9 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 	ut64 addr;
 	RBinAddr *ret = NULL;
 	switch (sym) {
-	case R_BIN_SYM_MAIN:
+	case RZ_BIN_SYM_MAIN:
 		addr = MACH0_(get_main) (bf->o->bin_obj);
-		if (addr == UT64_MAX || !(ret = R_NEW0 (RBinAddr))) {
+		if (addr == UT64_MAX || !(ret = RZ_NEW0 (RBinAddr))) {
 			return NULL;
 		}
 		//if (bf->o->info && bf->o->info->bits == 16) {
@@ -1166,7 +1166,7 @@ RBinPlugin rz_bin_plugin_mach0 = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_mach0,
 	.version = RZ_VERSION
 };

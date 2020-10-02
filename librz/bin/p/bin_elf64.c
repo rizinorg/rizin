@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
 
-#define R_BIN_ELF64 1
+#define RZ_BIN_ELF64 1
 #include "bin_elf.inc"
 
 
@@ -150,7 +150,7 @@ RBinPlugin rz_bin_plugin_elf64 = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_elf64,
 	.version = RZ_VERSION
 };

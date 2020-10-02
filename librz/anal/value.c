@@ -3,7 +3,7 @@
 #include <rz_anal.h>
 
 RZ_API RzAnalValue *rz_anal_value_new(void) { //macro for this ?
-	return R_NEW0 (RzAnalValue);
+	return RZ_NEW0 (RzAnalValue);
 }
 
 RZ_API RzAnalValue *rz_anal_value_new_from_string(const char *str) {
@@ -14,7 +14,7 @@ RZ_API RzAnalValue *rz_anal_value_new_from_string(const char *str) {
 RZ_API RzAnalValue *rz_anal_value_copy(RzAnalValue *ov) {
 	rz_return_val_if_fail (ov, NULL);
 
-	RzAnalValue *v = R_NEW0 (RzAnalValue);
+	RzAnalValue *v = RZ_NEW0 (RzAnalValue);
 	if (!v) {
 		return NULL;
 	}

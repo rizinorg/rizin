@@ -144,7 +144,7 @@ RZ_API int rz_io_cache_list(RzIO *io, int rad) {
 
 RZ_API bool rz_io_cache_write(RzIO *io, ut64 addr, const ut8 *buf, int len) {
 	RzIOCache *ch;
-	ch = R_NEW0 (RzIOCache);
+	ch = RZ_NEW0 (RzIOCache);
 	if (!ch) {
 		return false;
 	}
@@ -181,10 +181,10 @@ RZ_API bool rz_io_cache_read(RzIO *io, ut64 addr, ut8 *buf, int len) {
 		if (rz_itv_overlap (c->itv, range)) {
 			const ut64 begin = rz_itv_begin (c->itv);
 			if (addr < begin) {
-				int l = R_MIN (addr + len - begin, rz_itv_size (c->itv));
+				int l = RZ_MIN (addr + len - begin, rz_itv_size (c->itv));
 				memcpy (buf + begin - addr, c->data, l);
 			} else {
-				int l = R_MIN (rz_itv_end (c->itv) - addr, len);
+				int l = RZ_MIN (rz_itv_end (c->itv) - addr, len);
 				memcpy (buf, c->data + addr - begin, l);
 			}
 			covered = true;

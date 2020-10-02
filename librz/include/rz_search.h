@@ -10,26 +10,26 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(rz_search);
+RZ_LIB_VERSION_HEADER(rz_search);
 
 enum {
-	R_SEARCH_ESIL,
-	R_SEARCH_KEYWORD,
-	R_SEARCH_REGEXP,
-	R_SEARCH_PATTERN,
-	R_SEARCH_STRING,
-	R_SEARCH_XREFS,
-	R_SEARCH_AES,
-	R_SEARCH_PRIV_KEY,
-	R_SEARCH_DELTAKEY,
-	R_SEARCH_MAGIC,
-	R_SEARCH_LAST
+	RZ_SEARCH_ESIL,
+	RZ_SEARCH_KEYWORD,
+	RZ_SEARCH_REGEXP,
+	RZ_SEARCH_PATTERN,
+	RZ_SEARCH_STRING,
+	RZ_SEARCH_XREFS,
+	RZ_SEARCH_AES,
+	RZ_SEARCH_PRIV_KEY,
+	RZ_SEARCH_DELTAKEY,
+	RZ_SEARCH_MAGIC,
+	RZ_SEARCH_LAST
 };
 
-#define R_SEARCH_DISTANCE_MAX 10
+#define RZ_SEARCH_DISTANCE_MAX 10
 
-#define R_SEARCH_KEYWORD_TYPE_BINARY 'i'
-#define R_SEARCH_KEYWORD_TYPE_STRING 's'
+#define RZ_SEARCH_KEYWORD_TYPE_BINARY 'i'
+#define RZ_SEARCH_KEYWORD_TYPE_STRING 's'
 
 typedef struct rz_search_keyword_t {
 	ut8 *bin_keyword;
@@ -55,8 +55,8 @@ typedef struct rz_search_t {
 	int n_kws; // hit${n_kws}_${count}
 	int mode;
 	ut32 pattern_size;
-	ut32 string_min; // max length of strings for R_SEARCH_STRING
-	ut32 string_max; // min length of strings for R_SEARCH_STRING
+	ut32 string_min; // max length of strings for RZ_SEARCH_STRING
+	ut32 string_max; // min length of strings for RZ_SEARCH_STRING
 	void *data; // data used by search algorithm
 	void *user; // user data passed to callback
 	RzSearchCallback callback;
@@ -76,7 +76,7 @@ typedef struct rz_search_t {
 
 #ifdef RZ_API
 
-#define R_SEARCH_AES_BOX_SIZE 31
+#define RZ_SEARCH_AES_BOX_SIZE 31
 
 RZ_API RzSearch *rz_search_new(int mode);
 RZ_API int rz_search_set_mode(RzSearch *s, int mode);

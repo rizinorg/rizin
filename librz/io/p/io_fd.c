@@ -45,7 +45,7 @@ static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, int count) {
 }
 
 static int __close(RzIODesc *desc) {
-	R_FREE (desc->data);
+	RZ_FREE (desc->data);
 	return 0;
 }
 
@@ -69,7 +69,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 	if (!__check (io, pathname, 0)) {
 		return NULL;
 	}
-	RzIOFdata *fdd = R_NEW0 (RzIOFdata);
+	RzIOFdata *fdd = RZ_NEW0 (RzIOFdata);
 	if (fdd) {
 		fdd->fd = rz_num_math (NULL, pathname + strlen (FDURI));
 #if __WINDOWS__
@@ -81,7 +81,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 			return NULL;
 		}
 	}
-	return rz_io_desc_new (io, &rz_io_plugin_fd, pathname, R_PERM_RW | rw, mode, fdd);
+	return rz_io_desc_new (io, &rz_io_plugin_fd, pathname, RZ_PERM_RW | rw, mode, fdd);
 }
 
 RzIOPlugin rz_io_plugin_fd = {
@@ -105,7 +105,7 @@ RzIOPlugin rz_io_plugin_fd = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_fd,
 	.version = RZ_VERSION
 };

@@ -52,12 +52,12 @@ static inline int incpos(struct cdb_make *c, ut32 len) {
 	return 1;
 }
 
-#define R_ANEW(x) (x*)cdb_alloc(sizeof(x))
+#define RZ_ANEW(x) (x*)cdb_alloc(sizeof(x))
 int cdb_make_addend(struct cdb_make *c, ut32 keylen, ut32 datalen, ut32 h) {
 	ut32 u;
 	struct cdb_hplist *head = c->head;
 	if (!head || (head->num >= CDB_HPLIST)) {
-		if (!(head = R_ANEW (struct cdb_hplist))) {
+		if (!(head = RZ_ANEW (struct cdb_hplist))) {
 			return 0;
 		}
 		head->num = 0;

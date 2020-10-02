@@ -18,7 +18,7 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = RZ_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -41,7 +41,7 @@ static RzList *sections(RBinFile *bf) {
 	if (sz < 2) {
 		return ret;
 	}
-	RBinSection *section = R_NEW0 (RBinSection);
+	RBinSection *section = RZ_NEW0 (RBinSection);
 	if (!section) {
 		return ret;
 	}
@@ -50,7 +50,7 @@ static RzList *sections(RBinFile *bf) {
 	section->size = sz - 2;
 	section->vaddr = baddr (bf);
 	section->vsize = sz - 2;
-	section->perm = R_PERM_RWX;
+	section->perm = RZ_PERM_RWX;
 	section->add = true;
 	rz_list_append (ret, section);
 	return ret;
@@ -61,7 +61,7 @@ static RzList *entries(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	RBinAddr *binaddr = R_NEW0 (RBinAddr);
+	RBinAddr *binaddr = RZ_NEW0 (RBinAddr);
 	if (!binaddr) {
 		return ret;
 	}
@@ -85,7 +85,7 @@ RBinPlugin rz_bin_plugin_prg = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_prg,
 	.version = RZ_VERSION
 };

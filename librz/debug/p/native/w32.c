@@ -393,7 +393,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 	int tid, next_event = 0;
 	unsigned int code;
 	char *dllname = NULL;
-	int ret = R_DEBUG_REASON_UNKNOWN;
+	int ret = RZ_DEBUG_REASON_UNKNOWN;
 	static int exited_already = 0;
 	/* handle debug events */
 	do {
@@ -419,7 +419,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 				de.u.CreateProcessInfo.lpStartAddress);
 			rz_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
-			ret = R_DEBUG_REASON_NEW_PID;
+			ret = RZ_DEBUG_REASON_NEW_PID;
 			break;
 		case EXIT_PROCESS_DEBUG_EVENT:
 			//eprintf ("(%d) Process %d exited with exit code %d\n", (int)de.dwProcessId, (int)de.dwProcessId,
@@ -430,13 +430,13 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 			//debug_load();
 			next_event = 0;
 			exited_already = pid;
-			ret = R_DEBUG_REASON_EXIT_PID;
+			ret = RZ_DEBUG_REASON_EXIT_PID;
 			break;
 		case CREATE_THREAD_DEBUG_EVENT:
 			//eprintf ("(%d) Created thread %d (start @ %p)\n", pid, tid, de.u.CreateThread.lpStartAddress);
 			rz_debug_lstThreadAdd (pid, tid, de.u.CreateThread.hThread, de.u.CreateThread.lpThreadLocalBase, de.u.CreateThread.lpStartAddress, FALSE);
 			//rz_debug_native_continue (dbg, pid, tid, -1);
-			ret = R_DEBUG_REASON_NEW_TID;
+			ret = RZ_DEBUG_REASON_NEW_TID;
 			next_event = 0;
 			break;
 		case EXIT_THREAD_DEBUG_EVENT:
@@ -450,7 +450,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 			}
 			//rz_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 0;
-			ret = R_DEBUG_REASON_EXIT_TID;
+			ret = RZ_DEBUG_REASON_EXIT_TID;
 			break;
 		case LOAD_DLL_DEBUG_EVENT:
 			dllname = get_file_name_from_handle (de.u.LoadDll.hFile);
@@ -460,7 +460,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 				free (dllname);
 			}
 			next_event = 0;
-			ret = R_DEBUG_REASON_NEW_LIB;
+			ret = RZ_DEBUG_REASON_NEW_LIB;
 			break;
 		case UNLOAD_DLL_DEBUG_EVENT:
 			//eprintf ("(%d) Unloading library at %p\n", pid, de.u.UnloadDll.lpBaseOfDll);
@@ -473,7 +473,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 					free (dllname);
 			}
 			next_event = 0;
-			ret = R_DEBUG_REASON_EXIT_LIB;
+			ret = RZ_DEBUG_REASON_EXIT_LIB;
 			break;
 		case OUTPUT_DEBUG_STRING_EVENT:
 			//eprintf ("(%d) Debug string\n", pid);
@@ -489,7 +489,7 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 			rz_cons_flush ();
 			rz_debug_native_continue (dbg, pid, tid, -1);
 			next_event = 1;
-			// XXX unknown ret = R_DEBUG_REASON_TRAP;
+			// XXX unknown ret = RZ_DEBUG_REASON_TRAP;
 			break;
 		case EXCEPTION_DEBUG_EVENT:
 			switch (de.u.Exception.ExceptionRecord.ExceptionCode) {
@@ -497,19 +497,19 @@ int w32_dbg_wait(RzDebug *dbg, int pid) {
 			case 0x4000001f: /* STATUS_WX86_BREAKPOINT */
 #endif
 			case EXCEPTION_BREAKPOINT:
-				ret = R_DEBUG_REASON_BREAKPOINT;
+				ret = RZ_DEBUG_REASON_BREAKPOINT;
 				next_event = 0;
 				break;
 #if _WIN64
 			case 0x4000001e: /* STATUS_WX86_SINGLE_STEP */
 #endif
 			case EXCEPTION_SINGLE_STEP:
-				ret = R_DEBUG_REASON_STEP;
+				ret = RZ_DEBUG_REASON_STEP;
 				next_event = 0;
 				break;
 			default:
 				if (!debug_exception_event (&de)) {
-					ret = R_DEBUG_REASON_TRAP;
+					ret = RZ_DEBUG_REASON_TRAP;
 					next_event = 0;
 				}
 				else {
@@ -868,7 +868,7 @@ static int w32_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	ctx.ContextFlags = CONTEXT_ALL ;
 	if (GetThreadContext (hThread, &ctx) == TRUE) {
 		// on windows we dont need check type alway read/write full arena
-		//if (type == R_REG_TYPE_GPR) {
+		//if (type == RZ_REG_TYPE_GPR) {
 			if (size > sizeof (CONTEXT)) {
 				size = sizeof (CONTEXT);
 			}
@@ -899,7 +899,7 @@ static int w32_reg_write(RzDebug *dbg, int type, const ut8* buf, int size) {
 	ctx.ContextFlags = CONTEXT_ALL;
 	GetThreadContext (thread, &ctx);
 	// on windows we dont need check type alway read/write full arena
-	//if (type == R_REG_TYPE_GPR) {
+	//if (type == RZ_REG_TYPE_GPR) {
 		if (size > sizeof (CONTEXT)) {
 			size = sizeof (CONTEXT);
 		}
@@ -1007,8 +1007,8 @@ err_w32_info_exe:
 }
 
 RzDebugInfo *w32_info(RzDebug *dbg, const char *arg) {
-	RzDebugInfo *rdi = R_NEW0 (RzDebugInfo);
-	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
+	RzDebugInfo *rdi = RZ_NEW0 (RzDebugInfo);
+	rdi->status = RZ_DBG_PROC_SLEEP; // TODO: Fix this
 	rdi->pid = dbg->pid;
 	rdi->tid = dbg->tid;
 	rdi->lib = (void *) rz_debug_get_lib_item();

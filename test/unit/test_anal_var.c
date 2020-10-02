@@ -47,21 +47,21 @@ bool test_r_anal_var() {
 	rz_anal_use (anal, "x86");
 	rz_anal_set_bits (anal, 64);
 
-	RzAnalFunction *fcn = rz_anal_create_function (anal, "fcn", 0x100, R_ANAL_FCN_TYPE_FCN, NULL);
+	RzAnalFunction *fcn = rz_anal_create_function (anal, "fcn", 0x100, RZ_ANAL_FCN_TYPE_FCN, NULL);
 	assert_sane (anal);
 
 	// creating variables and renaming
 
-	RzAnalVar *a = rz_anal_function_set_var (fcn, -8, R_ANAL_VAR_KIND_BPV, "char *", 8, false, "random_name");
+	RzAnalVar *a = rz_anal_function_set_var (fcn, -8, RZ_ANAL_VAR_KIND_BPV, "char *", 8, false, "random_name");
 	mu_assert_notnull (a, "create a var");
 	mu_assert_streq (a->name, "random_name", "var name");
 	bool succ = rz_anal_var_rename (a, "var_a", false);
 	mu_assert ("rename success", succ);
 	mu_assert_streq (a->name, "var_a", "var name after rename");
 
-	RzAnalVar *b = rz_anal_function_set_var (fcn, -0x10, R_ANAL_VAR_KIND_SPV, "char *", 8, false, "var_a");
+	RzAnalVar *b = rz_anal_function_set_var (fcn, -0x10, RZ_ANAL_VAR_KIND_SPV, "char *", 8, false, "var_a");
 	mu_assert_null (b, "create a var with the same name");
-	b = rz_anal_function_set_var (fcn, -0x10, R_ANAL_VAR_KIND_SPV, "char *", 8, false, "new_var");
+	b = rz_anal_function_set_var (fcn, -0x10, RZ_ANAL_VAR_KIND_SPV, "char *", 8, false, "new_var");
 	mu_assert_notnull (b, "create a var with another name");
 	mu_assert_streq (b->name, "new_var", "var name");
 	succ = rz_anal_var_rename (b, "random_name", false);
@@ -74,18 +74,18 @@ bool test_r_anal_var() {
 	mu_assert ("rename success", succ);
 	mu_assert_streq (b->name, "var_b", "var name after rename");
 
-	RzAnalVar *c = rz_anal_function_set_var (fcn, 0x30, R_ANAL_VAR_KIND_REG, "int64_t", 8, true, "arg42");
+	RzAnalVar *c = rz_anal_function_set_var (fcn, 0x30, RZ_ANAL_VAR_KIND_REG, "int64_t", 8, true, "arg42");
 	mu_assert_notnull (c, "create a var");
 
 	// querying variables
 
-	RzAnalVar *v = rz_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, 0x41);
+	RzAnalVar *v = rz_anal_function_get_var (fcn, RZ_ANAL_VAR_KIND_REG, 0x41);
 	mu_assert_null (v, "get no var");
-	v = rz_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, 0x30);
+	v = rz_anal_function_get_var (fcn, RZ_ANAL_VAR_KIND_REG, 0x30);
 	mu_assert_ptreq (v, c, "get var (reg)");
-	v = rz_anal_function_get_var (fcn, R_ANAL_VAR_KIND_SPV, -0x10);
+	v = rz_anal_function_get_var (fcn, RZ_ANAL_VAR_KIND_SPV, -0x10);
 	mu_assert_ptreq (v, b, "get var (sp)");
-	v = rz_anal_function_get_var (fcn, R_ANAL_VAR_KIND_BPV, -8);
+	v = rz_anal_function_get_var (fcn, RZ_ANAL_VAR_KIND_BPV, -8);
 	mu_assert_ptreq (v, a, "get var (bp)");
 
 	v = rz_anal_function_get_var_byname (fcn, "random_name");
@@ -95,10 +95,10 @@ bool test_r_anal_var() {
 
 	// accesses
 
-	rz_anal_var_set_access (a, "rsp", 0x120, R_ANAL_VAR_ACCESS_TYPE_READ, 42);
-	rz_anal_var_set_access (a, "rbp", 0x130, R_ANAL_VAR_ACCESS_TYPE_WRITE, 13);
-	rz_anal_var_set_access (b, "rsp", 0x120, R_ANAL_VAR_ACCESS_TYPE_WRITE, 123);
-	rz_anal_var_set_access (b, "rbp", 0x10, R_ANAL_VAR_ACCESS_TYPE_WRITE, -100);
+	rz_anal_var_set_access (a, "rsp", 0x120, RZ_ANAL_VAR_ACCESS_TYPE_READ, 42);
+	rz_anal_var_set_access (a, "rbp", 0x130, RZ_ANAL_VAR_ACCESS_TYPE_WRITE, 13);
+	rz_anal_var_set_access (b, "rsp", 0x120, RZ_ANAL_VAR_ACCESS_TYPE_WRITE, 123);
+	rz_anal_var_set_access (b, "rbp", 0x10, RZ_ANAL_VAR_ACCESS_TYPE_WRITE, -100);
 
 	st64 stackptr = rz_anal_function_get_var_stackptr_at (fcn, -0x10, 0x12345);
 	mu_assert_eq (stackptr, ST64_MAX, "unset stackptr");
@@ -135,14 +135,14 @@ bool test_r_anal_var() {
 
 	used_vars = rz_anal_function_get_vars_used_at (fcn, 0xffffffffffff0130UL); // addresses should stay the same
 	mu_assert ("no used vars", !used_vars || rz_pvector_len (used_vars));
-	rz_anal_var_set_access (a, "rbp", 0xffffffffffff0130UL, R_ANAL_VAR_ACCESS_TYPE_READ, 42);
+	rz_anal_var_set_access (a, "rbp", 0xffffffffffff0130UL, RZ_ANAL_VAR_ACCESS_TYPE_READ, 42);
 	used_vars = rz_anal_function_get_vars_used_at (fcn, 0xffffffffffff0130UL);
 	mu_assert_eq (rz_pvector_len (used_vars), 1, "used vars count");
 	mu_assert ("used vars", rz_pvector_contains (used_vars, a));
 
 	used_vars = rz_anal_function_get_vars_used_at (fcn, 0x123);
 	mu_assert ("no used vars", !used_vars || rz_pvector_len (used_vars));
-	rz_anal_var_set_access (a, "rbp" , 0x123, R_ANAL_VAR_ACCESS_TYPE_READ, 42);
+	rz_anal_var_set_access (a, "rbp" , 0x123, RZ_ANAL_VAR_ACCESS_TYPE_READ, 42);
 	used_vars = rz_anal_function_get_vars_used_at (fcn, 0x123);
 	mu_assert_eq (rz_pvector_len (used_vars), 1, "used vars count");
 	mu_assert ("used vars", rz_pvector_contains (used_vars, a));
@@ -167,7 +167,7 @@ bool test_r_anal_var() {
 
 	used_vars = rz_anal_function_get_vars_used_at (fcn, 0x8000000000000100);
 	mu_assert ("no used vars", !used_vars || rz_pvector_len (used_vars));
-	rz_anal_var_set_access (a, "rbp", 0x8000000000000100, R_ANAL_VAR_ACCESS_TYPE_READ, 987321);
+	rz_anal_var_set_access (a, "rbp", 0x8000000000000100, RZ_ANAL_VAR_ACCESS_TYPE_READ, 987321);
 	used_vars = rz_anal_function_get_vars_used_at (fcn, 0x8000000000000100);
 	mu_assert_eq (rz_pvector_len (used_vars), 1, "used vars count");
 	mu_assert ("used vars", rz_pvector_contains (used_vars, a));
@@ -176,7 +176,7 @@ bool test_r_anal_var() {
 
 	used_vars = rz_anal_function_get_vars_used_at (fcn, 0x7ffffffffffffe00);
 	mu_assert ("no used vars", !used_vars || rz_pvector_len (used_vars));
-	rz_anal_var_set_access (a, "rbp", 0x7ffffffffffffe00, R_ANAL_VAR_ACCESS_TYPE_READ, 777);
+	rz_anal_var_set_access (a, "rbp", 0x7ffffffffffffe00, RZ_ANAL_VAR_ACCESS_TYPE_READ, 777);
 	used_vars = rz_anal_function_get_vars_used_at (fcn, 0x7ffffffffffffe00);
 	mu_assert_eq (rz_pvector_len (used_vars), 1, "used vars count");
 	mu_assert ("used vars", rz_pvector_contains (used_vars, a));

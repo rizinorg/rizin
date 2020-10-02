@@ -142,7 +142,7 @@ RzAsmPlugin rz_asm_plugin_bf = {
 	.arch = "bf",
 	.license = "LGPL3",
 	.bits = 16 | 32 | 64,
-	.endian = R_SYS_ENDIAN_NONE,
+	.endian = RZ_SYS_ENDIAN_NONE,
 	.desc = "Brainfuck",
 	.disassemble = &disassemble,
 	.assemble = &assemble
@@ -150,7 +150,7 @@ RzAsmPlugin rz_asm_plugin_bf = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_bf,
 	.version = RZ_VERSION
 };

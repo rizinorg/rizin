@@ -3,7 +3,7 @@
 #include "stream_file.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-void parse_pe_stream(void *stream, R_STREAM_FILE *stream_file)
+void parse_pe_stream(void *stream, RZ_STREAM_FILE *stream_file)
 {
 	int data_size = 0;
 	char *data = 0, *ptmp = 0;

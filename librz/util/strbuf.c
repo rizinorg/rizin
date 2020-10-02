@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 RZ_API RStrBuf *rz_strbuf_new(const char *str) {
-	RStrBuf *s = R_NEW0 (RStrBuf);
+	RStrBuf *s = RZ_NEW0 (RStrBuf);
 	if (str) {
 		rz_strbuf_set (s, str);
 	}
@@ -56,7 +56,7 @@ RZ_API bool rz_strbuf_copy(RStrBuf *dst, RStrBuf *src) {
 		dst->ptr = p;
 		dst->ptrlen = src->ptrlen;
 	} else {
-		R_FREE (dst->ptr);
+		RZ_FREE (dst->ptr);
 		memcpy (dst->buf, src->buf, sizeof (dst->buf));
 	}
 	dst->len = src->len;
@@ -90,14 +90,14 @@ RZ_API bool rz_strbuf_setbin(RStrBuf *sb, const ut8 *s, size_t l) {
 			if (!ptr) {
 				return false;
 			}
-			R_FREE (sb->ptr);
+			RZ_FREE (sb->ptr);
 			sb->ptrlen = l + 1;
 			sb->ptr = ptr;
 		}
 		memcpy (ptr, s, l);
 		ptr[l] = 0;
 	} else {
-		R_FREE (sb->ptr);
+		RZ_FREE (sb->ptr);
 		memcpy (sb->buf, s, l);
 		sb->buf[l] = 0;
 	}
@@ -233,7 +233,7 @@ RZ_API bool rz_strbuf_append_n(RStrBuf *sb, const char *s, size_t l) {
 	if ((sb->len + l + 1) <= sizeof (sb->buf)) {
 		memcpy (sb->buf + sb->len, s, l);
 		sb->buf[sb->len + l] = 0;
-		R_FREE (sb->ptr);
+		RZ_FREE (sb->ptr);
 	} else {
 		int newlen = sb->len + l + 128;
 		char *p = sb->ptr;
@@ -352,7 +352,7 @@ RZ_API void rz_strbuf_free(RStrBuf *sb) {
 
 RZ_API void rz_strbuf_fini(RStrBuf *sb) {
 	if (sb && !sb->weakref) {
-		R_FREE (sb->ptr);
+		RZ_FREE (sb->ptr);
 		sb->len = 0;
 		sb->buf[0] = '\0';
 	}

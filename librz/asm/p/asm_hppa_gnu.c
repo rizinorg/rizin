@@ -75,14 +75,14 @@ RzAsmPlugin rz_asm_plugin_hppa_gnu = {
 	.arch = "hppa",
 	.license = "GPL3",
 	.bits = 32,
-	.endian = R_SYS_ENDIAN_BIG,
+	.endian = RZ_SYS_ENDIAN_BIG,
 	.desc = "HP PA-RISC",
 	.disassemble = &disassemble
 };
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_hppa_gnu,
 	.version = RZ_VERSION
 };

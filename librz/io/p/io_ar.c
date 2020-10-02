@@ -48,17 +48,17 @@ static ut64 rz_io_ar_lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	case SEEK_SET:
 		seek_val = (rz_buf_size (b) < offset)? rz_buf_size (b) : offset;
 		io->off = seek_val;
-		rz_buf_seek (b, seek_val, R_BUF_SET);
+		rz_buf_seek (b, seek_val, RZ_BUF_SET);
 		return seek_val;
 	case SEEK_CUR:
 		seek_val = (rz_buf_size (b) < offset)? rz_buf_size (b) : offset;
 		io->off = seek_val;
-		rz_buf_seek (b, seek_val, R_BUF_SET);
+		rz_buf_seek (b, seek_val, RZ_BUF_SET);
 		return seek_val;
 	case SEEK_END:
 		seek_val = rz_buf_size (b);
 		io->off = seek_val;
-		rz_buf_seek (b, seek_val, R_BUF_SET);
+		rz_buf_seek (b, seek_val, RZ_BUF_SET);
 		return seek_val;
 	}
 	return seek_val;
@@ -106,7 +106,7 @@ RzIOPlugin rz_io_plugin_ar = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_ar,
 	.version = RZ_VERSION
 };

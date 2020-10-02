@@ -1,5 +1,5 @@
-#ifndef R_UTF16_H
-#define R_UTF16_H
+#ifndef RZ_UTF16_H
+#define RZ_UTF16_H
 
 /* For RRune definition */
 #include "rz_utf8.h"
@@ -9,4 +9,4 @@ RZ_API int rz_utf16le_decode(const ut8 *ptr, int ptrlen, RRune *ch);
 RZ_API int rz_utf16be_decode(const ut8 *ptr, int ptrlen, RRune *ch);
 RZ_API int rz_utf16le_encode(ut8 *ptr, RRune ch);
 
-#endif //  R_UTF16_H
+#endif //  RZ_UTF16_H

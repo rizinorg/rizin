@@ -26,7 +26,7 @@ static char *get_filetype(RBuffer *b) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = RZ_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -36,7 +36,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->has_pi = 0;
 	ret->has_canary = 0;
 	ret->has_retguard = -1;
-	if (R_SYS_BITS & R_SYS_BITS_64) {
+	if (RZ_SYS_BITS & RZ_SYS_BITS_64) {
 		ret->bits = 64;
 	} else {
 		ret->bits = 32;
@@ -75,7 +75,7 @@ RBinPlugin rz_bin_plugin_any = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_any,
 	.version = RZ_VERSION
 };

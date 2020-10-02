@@ -97,7 +97,7 @@ static void do_hash_print(RzHash *ctx, ut64 hash, int dlen, int rad, int ule) {
 			printf ("0x%08"PFMT64x "-0x%08"PFMT64x " %s: ",
 				from, to > 0? to - 1: 0, hname);
 		}
-		if (dlen == R_HASH_SIZE_ENTROPY) {
+		if (dlen == RZ_HASH_SIZE_ENTROPY) {
 			printf("%.8f\n", ctx->entropy);
 		} else {
 			do_hash_hexprint (c, dlen, ule, rad);
@@ -145,7 +145,7 @@ static int do_hash(const char *file, const char *algo, RzIO *io, int bsize, int 
 	int ret = 0;
 	ut64 i;
 	bool first = true;
-	if (algobit == R_HASH_NONE) {
+	if (algobit == RZ_HASH_NONE) {
 		eprintf ("rz-hash: Invalid hashing algorithm specified\n");
 		return 1;
 	}
@@ -181,7 +181,7 @@ static int do_hash(const char *file, const char *algo, RzIO *io, int bsize, int 
 		printf ("[");
 	}
 	if (incremental) {
-		for (i = 1; i < R_HASH_ALL; i <<= 1) {
+		for (i = 1; i < RZ_HASH_ALL; i <<= 1) {
 			if (algobit & i) {
 				ut64 hashbit = i & algobit;
 				int dlen = rz_hash_size (hashbit);
@@ -232,7 +232,7 @@ static int do_hash(const char *file, const char *algo, RzIO *io, int bsize, int 
 		if (s.buf) {
 			eprintf ("Warning: Seed ignored on per-block hashing.\n");
 		}
-		for (i = 1; i < R_HASH_ALL; i <<= 1) {
+		for (i = 1; i < RZ_HASH_ALL; i <<= 1) {
 			ut64 f, t, ofrom, oto;
 			if (algobit & i) {
 				ut64 hashbit = i & algobit;
@@ -298,7 +298,7 @@ static int do_help(int line) {
 static void algolist(void) {
 	ut64 bits;
 	ut64 i;
-	for (i = 0; i < R_HASH_NBITS; i++) {
+	for (i = 0; i < RZ_HASH_NBITS; i++) {
 		bits = 1ULL << i;
 		const char *name = rz_hash_name (bits);
 		if (name && *name) {
@@ -640,7 +640,7 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 				free (iv);
 				return 1;
 			}
-			for (i = 1; i < R_HASH_ALL; i <<= 1) {
+			for (i = 1; i < RZ_HASH_ALL; i <<= 1) {
 				if (algobit & i) {
 					ut64 hashbit = i & algobit;
 					ctx = rz_hash_new (true, hashbit);
@@ -702,7 +702,7 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 				ut8 *buf = (ut8 *) rz_stdin_slurp (&sz);
 				char *uri = rz_str_newf ("malloc://%d", sz);
 				if (sz > 0) {
-					desc = rz_io_open_nomap (io, uri, R_PERM_R, 0);
+					desc = rz_io_open_nomap (io, uri, RZ_PERM_R, 0);
 					if (!desc) {
 						eprintf ("rz-hash: Cannot open malloc://1024\n");
 						free (iv);
@@ -717,7 +717,7 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 					free (iv);
 					return 1;
 				}
-				desc = rz_io_open_nomap (io, argv[i], R_PERM_R, 0);
+				desc = rz_io_open_nomap (io, argv[i], RZ_PERM_R, 0);
 				if (!desc) {
 					eprintf ("rz-hash: Cannot open '%s'\n", argv[i]);
 					free (iv);

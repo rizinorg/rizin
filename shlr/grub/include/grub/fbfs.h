@@ -28,7 +28,7 @@
 #define FB_VER_MAJOR	1
 #define FB_VER_MINOR	6
 
-R_PACKED(
+RZ_PACKED(
 struct fb_mbr
 {
   grub_uint8_t jmp_code;
@@ -44,7 +44,7 @@ struct fb_mbr
   grub_uint16_t end_magic;	/* 0x1fe  */
 });
 
-R_PACKED (
+RZ_PACKED (
 struct fb_data
 {
   grub_uint16_t boot_size;	/* 0x200  */
@@ -57,7 +57,7 @@ struct fb_data
   grub_uint32_t ext_size;	/* 0x20c  */
 });
 
-R_PACKED (
+RZ_PACKED (
 struct fb_ar_data
 {
   grub_uint32_t ar_magic;	/* 0x200  */
@@ -69,7 +69,7 @@ struct fb_ar_data
   grub_uint32_t ext_size;	/* 0x20c  */
 });
 
-R_PACKED (
+RZ_PACKED (
 struct fbm_file
 {
   grub_uint8_t size;

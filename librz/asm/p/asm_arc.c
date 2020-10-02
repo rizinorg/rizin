@@ -29,7 +29,7 @@ static int arc_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned i
 	if ((delta + length) > sizeof (bytes)) {
 		return -1;
 	}
-	memcpy (myaddr, bytes + delta, R_MIN (buf_len - delta, length));
+	memcpy (myaddr, bytes + delta, RZ_MIN (buf_len - delta, length));
 	return 0;
 }
 
@@ -84,7 +84,7 @@ RzAsmPlugin rz_asm_plugin_arc = {
 	.name = "arc",
 	.arch = "arc",
 	.bits = 16 | 32,
-	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
+	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.desc = "Argonaut RISC Core",
 	.disassemble = &disassemble,
 	.license = "GPL3"
@@ -92,7 +92,7 @@ RzAsmPlugin rz_asm_plugin_arc = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_arc,
 	.version = RZ_VERSION
 };

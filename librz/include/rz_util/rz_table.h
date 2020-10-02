@@ -1,5 +1,5 @@
-#ifndef R_UTIL_TABLE_H
-#define R_UTIL_TABLE_H
+#ifndef RZ_UTIL_TABLE_H
+#define RZ_UTIL_TABLE_H
 
 #include <rz_util.h>
 
@@ -31,9 +31,9 @@ typedef struct {
 } RzListInfo;
 
 enum {
-	R_TABLE_ALIGN_LEFT,
-	R_TABLE_ALIGN_RIGHT,
-	R_TABLE_ALIGN_CENTER
+	RZ_TABLE_ALIGN_LEFT,
+	RZ_TABLE_ALIGN_RIGHT,
+	RZ_TABLE_ALIGN_CENTER
 };
 
 typedef struct {

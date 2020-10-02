@@ -24,12 +24,12 @@ char *strcat_dup(char *s1, char *s2, st32 n_free) {
 	}
 	res[len_s1 + len_s2] = '\0';
 	if (n_free == 1) {
-		R_FREE (s1);
+		RZ_FREE (s1);
 	} else if (n_free == 2) {
-		R_FREE (s2);
+		RZ_FREE (s2);
 	} else if (n_free == 3) {
-		R_FREE (s1);
-		R_FREE (s2);
+		RZ_FREE (s1);
+		RZ_FREE (s2);
 	}
 	return res;
 }

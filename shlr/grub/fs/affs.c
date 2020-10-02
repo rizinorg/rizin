@@ -26,7 +26,7 @@
 #include <grub/fshelp.h>
 #include "rz_types.h"
  /* The affs bootblock.  */
-R_PACKED(
+RZ_PACKED(
 struct grub_affs_bblock
 {
   grub_uint8_t type[3];
@@ -40,7 +40,7 @@ struct grub_affs_bblock
 #define GRUB_AFFS_FLAG_FFS	1
 
 /* The affs rootblock.  */
-R_PACKED(
+RZ_PACKED(
 struct grub_affs_rblock
 {
   grub_uint8_t type[4];
@@ -52,7 +52,7 @@ struct grub_affs_rblock
 });
 
 /* The second part of a file header block.  */
-R_PACKED(
+RZ_PACKED(
 struct grub_affs_file
 {
   grub_uint8_t unused1[12];

@@ -70,7 +70,7 @@ static int format_output(RNum *num, char mode, const char *s, int force_mode, ut
 	} break;
 	case 'f': printf ("%.01lf\n", num->fvalue); break;
 	case 'l':
-		R_STATIC_ASSERT (sizeof (float) == 4);
+		RZ_STATIC_ASSERT (sizeof (float) == 4);
 		float f = (float) num->fvalue;
 		ut8 *p = (ut8 *) &f;
 		printf ("Fx%02x%02x%02x%02x\n", p[3], p[2], p[1], p[0]);

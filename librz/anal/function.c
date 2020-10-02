@@ -52,7 +52,7 @@ static bool __fcn_exists(RzAnal *anal, const char *name, ut64 addr) {
 	return false;
 }
 
-R_IPI void rz_anal_var_free(RzAnalVar *av);
+RZ_IPI void rz_anal_var_free(RzAnalVar *av);
 
 static void inst_vars_kv_free(HtUPKv *kv) {
 	rz_pvector_free (kv->value);
@@ -68,7 +68,7 @@ static void label_addrs_kv_free(HtPPKv *kv) {
 }
 
 RZ_API RzAnalFunction *rz_anal_function_new(RzAnal *anal) {
-	RzAnalFunction *fcn = R_NEW0 (RzAnalFunction);
+	RzAnalFunction *fcn = RZ_NEW0 (RzAnalFunction);
 	if (!fcn) {
 		return NULL;
 	}
@@ -165,7 +165,7 @@ RZ_API RzAnalFunction *rz_anal_create_function(RzAnal *anal, const char *name, u
 	if (diff) {
 		fcn->diff->type = diff->type;
 		fcn->diff->addr = diff->addr;
-		R_FREE (fcn->diff->name);
+		RZ_FREE (fcn->diff->name);
 		if (diff->name) {
 			fcn->diff->name = strdup (diff->name);
 		}

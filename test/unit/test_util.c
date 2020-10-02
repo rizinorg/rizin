@@ -164,11 +164,11 @@ bool test_initial_underscore(void) {
 /* references */
 typedef struct {
 	const char *name;
-	R_REF_TYPE;
+	RZ_REF_TYPE;
 } TypeTest;
 
 static TypeTest *rz_type_test_new(const char *name) {
-	TypeTest *tt = R_NEW0 (TypeTest);
+	TypeTest *tt = RZ_NEW0 (TypeTest);
 	if (tt) {
 		rz_ref_init (tt);
 		tt->name = name;
@@ -180,7 +180,7 @@ static void rz_type_test_free(TypeTest *tt) {
 	tt->name = "";
 }
 
-R_REF_FUNCTIONS(TypeTest, rz_type_test);
+RZ_REF_FUNCTIONS(TypeTest, rz_type_test);
 
 bool test_references(void) {
 	TypeTest *tt = rz_type_test_new ("foo");

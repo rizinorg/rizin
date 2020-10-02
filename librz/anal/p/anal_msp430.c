@@ -15,8 +15,8 @@ static int msp430_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int 
 	//op->id = ???;
 	op->size = -1;
 	op->nopcode = 1;
-	op->type = R_ANAL_OP_TYPE_UNK;
-	op->family = R_ANAL_OP_FAMILY_CPU;
+	op->type = RZ_ANAL_OP_TYPE_UNK;
+	op->family = RZ_ANAL_OP_FAMILY_CPU;
 
 	ret = op->size = msp430_decode_command (buf, len, &cmd);
 
@@ -31,16 +31,16 @@ static int msp430_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int 
 		switch (cmd.opcode) {
 		case MSP430_RRA:
 		case MSP430_RRC:
-			op->type = R_ANAL_OP_TYPE_ROR; break;
+			op->type = RZ_ANAL_OP_TYPE_ROR; break;
 		case MSP430_PUSH:
-			op->type = R_ANAL_OP_TYPE_PUSH; break;
+			op->type = RZ_ANAL_OP_TYPE_PUSH; break;
 		case MSP430_CALL:
-			op->type = R_ANAL_OP_TYPE_CALL;
+			op->type = RZ_ANAL_OP_TYPE_CALL;
 			op->fail = addr + op->size;
 			op->jump = rz_read_at_le16 (buf, 2);
 			break;
 		case MSP430_RETI:
-			op->type = R_ANAL_OP_TYPE_RET; break;
+			op->type = RZ_ANAL_OP_TYPE_RET; break;
 		}
 		break;
 	case MSP430_TWOOP:
@@ -49,36 +49,36 @@ static int msp430_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int 
 		case MSP430_BIC:
 		case MSP430_BIS:
 		case MSP430_MOV:
-			op->type = R_ANAL_OP_TYPE_MOV;
+			op->type = RZ_ANAL_OP_TYPE_MOV;
 			if ((cmd.instr)[0] == 'b' && (cmd.instr)[1] == 'r') {
 				// Emulated branch instruction, moves source operand to PC register.
-				op->type = R_ANAL_OP_TYPE_UJMP;
+				op->type = RZ_ANAL_OP_TYPE_UJMP;
 			}
 			break;
 		case MSP430_DADD:
 		case MSP430_ADDC:
-		case MSP430_ADD: op->type = R_ANAL_OP_TYPE_ADD; break;
+		case MSP430_ADD: op->type = RZ_ANAL_OP_TYPE_ADD; break;
 		case MSP430_SUBC:
-		case MSP430_SUB: op->type = R_ANAL_OP_TYPE_SUB; break;
-		case MSP430_CMP: op->type = R_ANAL_OP_TYPE_CMP; break;
-		case MSP430_XOR: op->type = R_ANAL_OP_TYPE_XOR; break;
-		case MSP430_AND: op->type = R_ANAL_OP_TYPE_AND; break;
+		case MSP430_SUB: op->type = RZ_ANAL_OP_TYPE_SUB; break;
+		case MSP430_CMP: op->type = RZ_ANAL_OP_TYPE_CMP; break;
+		case MSP430_XOR: op->type = RZ_ANAL_OP_TYPE_XOR; break;
+		case MSP430_AND: op->type = RZ_ANAL_OP_TYPE_AND; break;
 		}
 		break;
 	case MSP430_JUMP:
 		if (cmd.jmp_cond == MSP430_JMP) {
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = RZ_ANAL_OP_TYPE_JMP;
 		} else {
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = RZ_ANAL_OP_TYPE_CJMP;
 		}
 		op->jump = addr + cmd.jmp_addr;
 		op->fail = addr + 2;
 		break;
 	case MSP430_INV:
-		op->type = R_ANAL_OP_TYPE_ILL;
+		op->type = RZ_ANAL_OP_TYPE_ILL;
 		break;
 	default:
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = RZ_ANAL_OP_TYPE_UNK;
 	}
 
 	return ret;

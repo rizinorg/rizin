@@ -240,7 +240,7 @@ bool test_r_list_mergesort_pint() {
 
 	RzList* list = rz_list_new();
 	size_t i;
-	for (i = 0; i < R_ARRAY_SIZE (data); i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE (data); i++) {
 		rz_list_append (list, (void *)&data[i]);
 	}
 
@@ -249,7 +249,7 @@ bool test_r_list_mergesort_pint() {
 
 	// assert the list is sorted as expected
 	RzListIter* iter;
-	for (i = 0, iter = list->head; i < R_ARRAY_SIZE (expected); i++, iter = iter->n) {
+	for (i = 0, iter = list->head; i < RZ_ARRAY_SIZE (expected); i++, iter = iter->n) {
 		mu_assert_eq (*(int *)iter->data, expected[i], "array content mismatch");
 	}
 
@@ -277,7 +277,7 @@ bool test_r_list_sort4(void) {
 	int i;
 
 	// Put in not sorted order.
-	for (i = 0; i < R_ARRAY_SIZE (ins_tests_odd); ++i) {
+	for (i = 0; i < RZ_ARRAY_SIZE (ins_tests_odd); ++i) {
 		rz_list_append (list, (void*)ins_tests_odd[i]);
 	}
 	// Sort.
@@ -285,7 +285,7 @@ bool test_r_list_sort4(void) {
 
 	// Check that the list (odd-length) is actually sorted.
 	RzListIter *next = list->head;
-	for (i = 0; i < R_ARRAY_SIZE (exp_tests_odd); ++i) {
+	for (i = 0; i < RZ_ARRAY_SIZE (exp_tests_odd); ++i) {
 		char buf[BUF_LENGTH];
 		snprintf(buf, BUF_LENGTH, "%d-th value in sorted list", i);
 		mu_assert_streq ((char*)next->data, exp_tests_odd[i], buf);
@@ -325,7 +325,7 @@ bool test_r_list_sort4(void) {
 
 	// Check that the list (even-length) is actually sorted.
 	next = list->head;
-	for (i = 0; i < R_ARRAY_SIZE (exp_tests_even); ++i) {
+	for (i = 0; i < RZ_ARRAY_SIZE (exp_tests_even); ++i) {
 		char buf[BUF_LENGTH];
 		snprintf(buf, BUF_LENGTH, "%d-th value in sorted list", i);
 		mu_assert_streq ((char*)next->data, exp_tests_even[i], buf);
@@ -360,7 +360,7 @@ bool test_r_list_append_prepend(void) {
 	int i;
 	//Check that the next sequence is correct
 	iter = list->head;
-	for (i = 0; i < R_ARRAY_SIZE (test); ++i) {
+	for (i = 0; i < RZ_ARRAY_SIZE (test); ++i) {
 		snprintf (buf, BUF_LENGTH, "%d-th value in list from head", i);
 		mu_assert_streq ((char *)iter->data, test[i], buf);
 		iter = iter->n;
@@ -368,7 +368,7 @@ bool test_r_list_append_prepend(void) {
 
 	//Check that the previous sequence is correct
 	iter = list->tail;
-	for (i = (R_ARRAY_SIZE (test)) - 1; i > 0; --i) {
+	for (i = (RZ_ARRAY_SIZE (test)) - 1; i > 0; --i) {
 		snprintf (buf, BUF_LENGTH, "%d-th value in list from tail", i);
 		mu_assert_streq ((char *)iter->data, test[i], buf);
 		iter = iter->p;
@@ -385,7 +385,7 @@ bool test_r_list_set_get(void) {
 	RzList *list = rz_list_new ();
 
 	int i;
-	for (i = 0; i < R_ARRAY_SIZE (test); ++i) {
+	for (i = 0; i < RZ_ARRAY_SIZE (test); ++i) {
 		rz_list_append (list, test[i]);
 	}
 
@@ -415,7 +415,7 @@ bool test_r_list_reverse(void) {
 	RzList *list = rz_list_new ();
 
 	int i;
-	for (i = 0; i < R_ARRAY_SIZE (test); ++i) {
+	for (i = 0; i < RZ_ARRAY_SIZE (test); ++i) {
 		rz_list_prepend (list, test[i]);
 	}
 
@@ -424,7 +424,7 @@ bool test_r_list_reverse(void) {
 	char buf[BUF_LENGTH];
 	//Check that the sequence is correct
 	RzListIter *iter = list->head;
-	for (i = 0; i < R_ARRAY_SIZE (test); ++i) {
+	for (i = 0; i < RZ_ARRAY_SIZE (test); ++i) {
 		snprintf (buf, BUF_LENGTH, "%d-th value in list after reverse", i);
 		mu_assert_streq ((char *)iter->data, test[i], buf);
 		iter = iter->n;
@@ -442,7 +442,7 @@ bool test_r_list_clone(void) {
 	RzList *list2;
 
 	int i;
-	for (i = 0; i < R_ARRAY_SIZE (test); ++i) {
+	for (i = 0; i < RZ_ARRAY_SIZE (test); ++i) {
 		rz_list_prepend (list1, test[i]);
 	}
 
@@ -451,7 +451,7 @@ bool test_r_list_clone(void) {
 	char buf[BUF_LENGTH];
 	RzListIter *iter1 = list1->head;
 	RzListIter *iter2 = list2->head;
-	for (i = 0; i < R_ARRAY_SIZE (test); ++i) {
+	for (i = 0; i < RZ_ARRAY_SIZE (test); ++i) {
 		snprintf (buf, BUF_LENGTH, "%d-th value after clone", i);
 		mu_assert_streq ((char *)iter2->data, (char *)iter1->data, buf);
 		iter1 = iter1->n;

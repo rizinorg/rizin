@@ -10,10 +10,10 @@ static void ds_update_stackptr(RDisasmState *ds, RzAnalOp *op) {
 	ds->ostackptr = ds->stackptr;
 	switch (op->stackop) {
 	
-	case R_ANAL_STACK_RESET:
+	case RZ_ANAL_STACK_RESET:
 		ds->stackptr = 0;
 		break;
-	case R_ANAL_STACK_INC:
+	case RZ_ANAL_STACK_INC:
 		ds->stackptr += op->stackptr;
 		break;
 	default:
@@ -22,7 +22,7 @@ static void ds_update_stackptr(RDisasmState *ds, RzAnalOp *op) {
 	}
 	/* XXX if we reset the stackptr 'ret 0x4' has not effect.
 	 * Use RzAnalFunction->RzAnalOp->stackptr? */
-	if (op->type == R_ANAL_OP_TYPE_RET) {
+	if (op->type == RZ_ANAL_OP_TYPE_RET) {
 		ds->stackptr = 0;
 	}
 }
@@ -36,10 +36,10 @@ static int _stackptr_range(RDisasmState *ds, ut64 addr, ut64 addr_end, int stack
 		if (op) {
 			*ostackptr = stackptr;
 			switch (op->stackop) {
-			case R_ANAL_STACK_RESET:
+			case RZ_ANAL_STACK_RESET:
 				stackptr = 0;
 				break;
-			case R_ANAL_STACK_INC:
+			case RZ_ANAL_STACK_INC:
 				stackptr += op->stackptr;
 				break;
 			default:
@@ -95,7 +95,7 @@ static int ds_ostackptr_at(RDisasmState *ds, int *ostackptr) {
 #if USE_BB_STACKPTR
 	// XXX doesnt works because bb->stackptr returns the maximum increment of the bb instead of the initial stackptr value
 	*ostackptr = ds->ostackptr;
-	RzAnalFunction *fcn = rz_anal_get_fcn_in (ds->core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+	RzAnalFunction *fcn = rz_anal_get_fcn_in (ds->core->anal, ds->at, RZ_ANAL_FCN_TYPE_NULL);
 	if (fcn) {
 		RzAnalBlock *bb = rz_anal_fcn_bbget_in (ds->core->anal, fcn, ds->at);
 		if (bb) {
@@ -118,8 +118,8 @@ static void ds_print_stackptr(RDisasmState *ds) {
 	int ostackptr, stackptr = ds_ostackptr_at (ds, &ostackptr);
 	if (ds->show_stackptr) {
 		rz_cons_printf ("%5d%s", stackptr,
-			ds->analop.type == R_ANAL_OP_TYPE_CALL?">":
-			ds->analop.stackop == R_ANAL_STACK_ALIGN? "=":
+			ds->analop.type == RZ_ANAL_OP_TYPE_CALL?">":
+			ds->analop.stackop == RZ_ANAL_STACK_ALIGN? "=":
 			stackptr > ostackptr? "+":
 			stackptr < ostackptr? "-": " ");
 		ds_update_stackptr (ds, &ds->analop);

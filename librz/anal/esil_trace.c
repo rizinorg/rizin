@@ -19,7 +19,7 @@ static void htup_vector_free(HtUPKv *kv) {
 RZ_API RzAnalEsilTrace *rz_anal_esil_trace_new(RzAnalEsil *esil) {
 	rz_return_val_if_fail (esil && esil->stack_addr && esil->stack_size, NULL);
 	size_t i;
-	RzAnalEsilTrace *trace = R_NEW0 (RzAnalEsilTrace);
+	RzAnalEsilTrace *trace = RZ_NEW0 (RzAnalEsilTrace);
 	if (!trace) {
 		return NULL;
 	}
@@ -45,7 +45,7 @@ RZ_API RzAnalEsilTrace *rz_anal_esil_trace_new(RzAnalEsil *esil) {
 	esil->anal->iob.read_at (esil->anal->iob.io, trace->stack_addr,
 		trace->stack_data, trace->stack_size);
 	// Save initial registers arenas
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		RzRegArena *a = esil->anal->reg->regset[i].arena;
 		RzRegArena *b = rz_reg_arena_new (a->size);
 		if (!b) {
@@ -66,12 +66,12 @@ RZ_API void rz_anal_esil_trace_free(RzAnalEsilTrace *trace) {
 	if (trace) {
 		ht_up_free (trace->registers);
 		ht_up_free (trace->memory);
-		for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 			rz_reg_arena_free (trace->arena[i]);
 		}
 		free (trace->stack_data);
 		sdb_free (trace->db);
-		R_FREE (trace);
+		RZ_FREE (trace);
 	}
 }
 
@@ -192,7 +192,7 @@ static int trace_hook_mem_write(RzAnalEsil *esil, ut64 addr, const ut8 *buf, int
 RZ_API void rz_anal_esil_trace_op(RzAnalEsil *esil, RzAnalOp *op) {
 	rz_return_if_fail (esil && op);
 	const char *expr = rz_strbuf_get (&op->esil);
-	if (R_STR_ISEMPTY (expr)) {
+	if (RZ_STR_ISEMPTY (expr)) {
 		// do nothing
 		return;
 	}
@@ -274,7 +274,7 @@ RZ_API void rz_anal_esil_trace_restore(RzAnalEsil *esil, int idx) {
 	// Restore initial state when going backward
 	if (idx < esil->trace->idx) {
 		// Restore initial registers value
-		for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 			RzRegArena *a = esil->anal->reg->regset[i].arena;
 			RzRegArena *b = trace->arena[i];
 			if (a && b) {

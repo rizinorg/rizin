@@ -22,7 +22,7 @@
 #include <grub/mm.h>
 #include <grub/partition.h>
 #include <rz_types.h>
-R_PACKED(
+RZ_PACKED(
 struct grub_amiga_rdsk
 {
   /* "RDSK".  */
@@ -39,7 +39,7 @@ struct grub_amiga_rdsk
   /* The other information is not important for us.  */
 });
 
-R_PACKED(
+RZ_PACKED(
 struct grub_amiga_partition
 {
   /* "PART".  */

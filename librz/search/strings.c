@@ -19,7 +19,7 @@ RZ_API int rz_search_get_encoding(const char *name) {
 	}
 	ut32 lename = strlen (name);
 	for (i = 0; encodings[i]; i++) {
-		ut32 sz = R_MIN (strlen (encodings[i]), lename);
+		ut32 sz = RZ_MIN (strlen (encodings[i]), lename);
 		if (!rz_str_ncasecmp (name, encodings[i], sz)) {
 			return i; 
 		}

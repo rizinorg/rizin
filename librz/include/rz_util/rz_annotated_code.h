@@ -1,6 +1,6 @@
 
-#ifndef R_ANNOTATEDCODE_H
-#define R_ANNOTATEDCODE_H
+#ifndef RZ_ANNOTATEDCODE_H
+#define RZ_ANNOTATEDCODE_H
 
 // #include <rz_core.h>
 #include <rz_types.h>
@@ -11,25 +11,25 @@ extern "C" {
 #endif
 
 typedef enum rz_syntax_highlight_type_t {
-	R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD,
-	R_SYNTAX_HIGHLIGHT_TYPE_COMMENT,
-	R_SYNTAX_HIGHLIGHT_TYPE_DATATYPE,
-	R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME,
-	R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_PARAMETER,
-	R_SYNTAX_HIGHLIGHT_TYPE_LOCAL_VARIABLE,
-	R_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE,
-	R_SYNTAX_HIGHLIGHT_TYPE_GLOBAL_VARIABLE,
+	RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD,
+	RZ_SYNTAX_HIGHLIGHT_TYPE_COMMENT,
+	RZ_SYNTAX_HIGHLIGHT_TYPE_DATATYPE,
+	RZ_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME,
+	RZ_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_PARAMETER,
+	RZ_SYNTAX_HIGHLIGHT_TYPE_LOCAL_VARIABLE,
+	RZ_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE,
+	RZ_SYNTAX_HIGHLIGHT_TYPE_GLOBAL_VARIABLE,
 } RSyntaxHighlightType;
 
 /** Represents the type of annnotation. */
 typedef enum rz_code_annotation_type_t {
-	R_CODE_ANNOTATION_TYPE_OFFSET, /*!< Gives the offset of the specified range in annotation. */
-	R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, /*!< Represents the kind of data the specified range represents for highlighting purposes. */
-	R_CODE_ANNOTATION_TYPE_FUNCTION_NAME, /*!< Specified range in annotation represents a function name. */
-	R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, /*!< Specified range in annotation represents a global variable. */
-	R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, /*!< Specified range in annotation represents a constant variable with an address. */
-	R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, /*!< Specified range in annotation represents a local variable. */
-	R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER, /*!< Specified range in annotation represents a function parameter. */
+	RZ_CODE_ANNOTATION_TYPE_OFFSET, /*!< Gives the offset of the specified range in annotation. */
+	RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, /*!< Represents the kind of data the specified range represents for highlighting purposes. */
+	RZ_CODE_ANNOTATION_TYPE_FUNCTION_NAME, /*!< Specified range in annotation represents a function name. */
+	RZ_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, /*!< Specified range in annotation represents a global variable. */
+	RZ_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, /*!< Specified range in annotation represents a constant variable with an address. */
+	RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, /*!< Specified range in annotation represents a local variable. */
+	RZ_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER, /*!< Specified range in annotation represents a function parameter. */
 	// ...
 } RCodeAnnotationType;
 
@@ -41,13 +41,13 @@ typedef struct rz_code_annotation_t {
 	size_t end; /**< End of the range in the annotation(exclusive). */
 	RCodeAnnotationType type;
 	union {
-		/** If the annotation is of type R_CODE_ANNOTATION_TYPE_OFFSET,
+		/** If the annotation is of type RZ_CODE_ANNOTATION_TYPE_OFFSET,
 		 * offset should be stored in the struct named offset in this union.
 		 */
 		struct {
 			ut64 offset;
 		} offset;
-		/** If the annotation is of type R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT,
+		/** If the annotation is of type RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT,
 		 * type of the syntax highlight will be stored in the struct named syntax_highlight
 		 * in this union.
 		 */
@@ -55,8 +55,8 @@ typedef struct rz_code_annotation_t {
 			RSyntaxHighlightType type;
 		} syntax_highlight;
 
-		/** Information in annotations of type R_CODE_ANNOTATION_TYPE_FUNCTION_NAME,
-		 * R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, and R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE
+		/** Information in annotations of type RZ_CODE_ANNOTATION_TYPE_FUNCTION_NAME,
+		 * RZ_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, and RZ_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE
 		 * will be stored in the struct named reference in this union.
 		 */
 		struct {
@@ -64,8 +64,8 @@ typedef struct rz_code_annotation_t {
 			ut64 offset;
 		} reference;
 
-		/** Information in annotations of type R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE
-		 * and R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER will be stored in the 
+		/** Information in annotations of type RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE
+		 * and RZ_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER will be stored in the 
 		 * struct named variable in this union.
 		 */
 		struct {
@@ -113,8 +113,8 @@ RZ_API void rz_annotation_free(void *e, void *user);
  * @brief Checks if the specified annotation is a reference.
  * 
  * This function recognizes the type of the specified annotation and returns true if its
- * type is any of the following three: R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE,
- * R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, R_CODE_ANNOTATION_TYPE_FUNCTION_NAME
+ * type is any of the following three: RZ_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE,
+ * RZ_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, RZ_CODE_ANNOTATION_TYPE_FUNCTION_NAME
  * 
  * @param annotation Pointer to an annotation.
  * @return Returns true if the specified annotation is a reference.
@@ -124,8 +124,8 @@ RZ_API bool rz_annotation_is_reference(RCodeAnnotation *annotation);
  * @brief Checks if the specified annotation is a function variable.
  * 
  * This function recognizes the type of the specified annotation and returns true if its
- * type is any of the following two: R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE,
- * R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER
+ * type is any of the following two: RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE,
+ * RZ_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER
  * 
  * @param annotation Pointer to an annotation.
  * @return Returns true if the specified annotation is a function variable.
@@ -177,4 +177,4 @@ RZ_API RzVector *rz_annotated_code_line_offsets(RAnnotatedCode *code);
 }
 #endif
 
-#endif //R_ANNOTATEDCODE_H
+#endif //RZ_ANNOTATEDCODE_H

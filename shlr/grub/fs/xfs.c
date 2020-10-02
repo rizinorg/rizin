@@ -32,7 +32,7 @@
 #define XFS_INODE_FORMAT_EXT	2
 #define XFS_INODE_FORMAT_BTREE	3
 
-R_PACKED(
+RZ_PACKED(
 struct grub_xfs_sblock
 {
   grub_uint8_t magic[4];
@@ -54,12 +54,12 @@ struct grub_xfs_sblock
   grub_uint8_t log2_dirblk;
 } );
 
-R_PACKED(
+RZ_PACKED(
 struct grub_xfs_dir_header
 {
   grub_uint8_t count;
   grub_uint8_t smallino;
-  R_PACKED(
+  RZ_PACKED(
   union
   {
     grub_uint32_t i4;
@@ -67,7 +67,7 @@ struct grub_xfs_dir_header
   }) parent;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_xfs_dir_entry
 {
   grub_uint8_t len;
@@ -76,7 +76,7 @@ struct grub_xfs_dir_entry
   /* Inode number follows, 32 bits.  */
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_xfs_dir2_entry
 {
   grub_uint64_t inode;
@@ -85,7 +85,7 @@ struct grub_xfs_dir2_entry
 
 typedef grub_unaligned_uint32_t grub_xfs_extent[4];
 
-R_PACKED (
+RZ_PACKED (
 struct grub_xfs_btree_node
 {
   grub_uint8_t magic[4];
@@ -96,7 +96,7 @@ struct grub_xfs_btree_node
   grub_uint64_t keys[1];
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_xfs_btree_root
 {
   grub_uint16_t level;
@@ -104,7 +104,7 @@ struct grub_xfs_btree_root
   grub_unaligned_uint64_t keys[1];
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_xfs_inode
 {
   grub_uint8_t magic[2];
@@ -117,7 +117,7 @@ struct grub_xfs_inode
   grub_uint32_t extsize;
   grub_uint32_t nextents;
   grub_uint8_t unused3[20];
-  R_PACKED (
+  RZ_PACKED (
   union
   {
     char raw[156];
@@ -131,7 +131,7 @@ struct grub_xfs_inode
   }) data;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_xfs_dirblock_tail
 {
   grub_uint32_t leaf_count;

@@ -22,7 +22,7 @@ static bool add_map_to_skyline(RzIO *io, RzIOMap *map) {
 	size_t slot;
 	RPVector *skyline = &io->map_skyline;
 
-	RzIOMapSkyline *new_part = R_NEW (RzIOMapSkyline);
+	RzIOMapSkyline *new_part = RZ_NEW (RzIOMapSkyline);
 	new_part->map = map;
 	new_part->itv = map->itv;
 	const ut64 new_part_end = rz_itv_end (new_part->itv);
@@ -35,7 +35,7 @@ static bool add_map_to_skyline(RzIO *io, RzIOMap *map) {
 		const ut64 prev_part_end = rz_itv_end (prev_part->itv);
 		if (prev_part_end > rz_itv_begin (new_part->itv)) {
 			if (prev_part_end > new_part_end) {
-				RzIOMapSkyline *tail = R_NEW (RzIOMapSkyline);
+				RzIOMapSkyline *tail = RZ_NEW (RzIOMapSkyline);
 				tail->map = prev_part->map;
 				tail->itv.addr = new_part_end;
 				tail->itv.size = prev_part_end - rz_itv_begin (tail->itv);
@@ -83,7 +83,7 @@ RzIOMap* io_map_new(RzIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size
 	if (!size || !io || !io->map_ids) {
 		return NULL;
 	}
-	RzIOMap* map = R_NEW0 (RzIOMap);
+	RzIOMap* map = RZ_NEW0 (RzIOMap);
 	if (!map || !io->map_ids || !rz_id_pool_grab_id (io->map_ids, &map->id)) {
 		free (map);
 		return NULL;
@@ -190,7 +190,7 @@ RzIOMap* io_map_add(RzIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size
 	RzIODesc* desc = rz_io_desc_get (io, fd);
 	if (desc) {
 		//a map cannot have higher permissions than the desc belonging to it
-		return io_map_new (io, fd, (perm & desc->perm) | (perm & R_PERM_X),
+		return io_map_new (io, fd, (perm & desc->perm) | (perm & RZ_PERM_X),
 				delta, addr, size);
 	}
 	return NULL;
@@ -392,7 +392,7 @@ RZ_API void rz_io_map_set_name(RzIOMap* map, const char* name) {
 
 RZ_API void rz_io_map_del_name(RzIOMap* map) {
 	if (map) {
-		R_FREE (map->name);
+		RZ_FREE (map->name);
 	}
 }
 
@@ -407,7 +407,7 @@ RZ_API ut64 rz_io_map_next_available(RzIO* io, ut64 addr, ut64 size, ut64 load_a
 	rz_pvector_foreach (&io->maps, it) {
 		RzIOMap *map = *it;
 		ut64 to = rz_itv_end (map->itv);
-		next_addr = R_MAX (next_addr, to + (load_align - (to % load_align)) % load_align);
+		next_addr = RZ_MAX (next_addr, to + (load_align - (to % load_align)) % load_align);
 		// XXX - This does not handle when file overflow 0xFFFFFFFF000 -> 0x00000FFF
 		// adding the check for the map's fd to see if this removes contention for
 		// memory mapping with multiple files. infinite loop ahead?

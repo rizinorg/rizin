@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-#define R_MALLOC_WRAPPER 0
-#define R_MALLOC_GLOBAL 0
+#define RZ_MALLOC_WRAPPER 0
+#define RZ_MALLOC_GLOBAL 0
 
 typedef void *(RMalloc)(size_t);
 typedef void *(RCalloc)(size_t, size_t);
@@ -16,11 +16,11 @@ typedef void (RFree)(void *);
 RZ_API void* rz_malloc_aligned(size_t size, size_t alignment);
 RZ_API void rz_free_aligned(void *p);
 
-#if R_MALLOC_WRAPPER
+#if RZ_MALLOC_WRAPPER
 
 RZ_API void rz_alloc_hooks(RMalloc m, RCalloc c, RRealloc r, RFree f);
 
-#if R_MALLOC_GLOBAL
+#if RZ_MALLOC_GLOBAL
 RZ_API RMalloc *rz_malloc;
 RZ_API RCalloc *rz_calloc;
 RZ_API RRealloc *rz_realloc;

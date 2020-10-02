@@ -5,7 +5,7 @@
 #include <rz_lib.h>
 #include <rz_bin.h>
 
-#define R_BIN_MACH064 1
+#define RZ_BIN_MACH064 1
 #include "../format/mach0/mach0.h"
 #include "../format/mach0/mach0_defines.h"
 
@@ -192,7 +192,7 @@ static RSepXtr64Ctx * sep64_xtr_ctx_new(RBuffer * buf) {
 		goto beach;
 	}
 
-	hdr = R_NEW0 (RSepHdr64);
+	hdr = RZ_NEW0 (RSepHdr64);
 	if (!hdr) {
 		goto beach;
 	}
@@ -205,7 +205,7 @@ static RSepXtr64Ctx * sep64_xtr_ctx_new(RBuffer * buf) {
 	}
 
 	ut64 apps_at = hdr_offset + sizeof (RSepHdr64);
-	apps = R_NEWS0 (RSepApp64, hdr->n_apps);
+	apps = RZ_NEWS0 (RSepApp64, hdr->n_apps);
 	if (!apps) {
 		goto beach;
 	}
@@ -213,7 +213,7 @@ static RSepXtr64Ctx * sep64_xtr_ctx_new(RBuffer * buf) {
 		goto beach;
 	}
 
-	ctx = R_NEW0 (RSepXtr64Ctx);
+	ctx = RZ_NEW0 (RSepXtr64Ctx);
 	if (!ctx) {
 		goto beach;
 	}
@@ -237,8 +237,8 @@ static void sep64_xtr_ctx_free(void * p) {
 
 	RSepXtr64Ctx * ctx = p;
 
-	R_FREE (ctx->hdr);
-	R_FREE (ctx->apps);
+	RZ_FREE (ctx->hdr);
+	RZ_FREE (ctx->apps);
 
 	free (ctx);
 }
@@ -296,7 +296,7 @@ static RSepSlice64 * sep64_xtr_ctx_get_slice(RSepXtr64Ctx * ctx, RBuffer * whole
 		goto beach;
 	}
 
-	meta = R_NEW0 (RBinXtrMetadata);
+	meta = RZ_NEW0 (RBinXtrMetadata);
 	if (!meta) {
 		goto beach;
 	}
@@ -313,7 +313,7 @@ static RSepSlice64 * sep64_xtr_ctx_get_slice(RSepXtr64Ctx * ctx, RBuffer * whole
 	meta->xtr_type = "SEP";
 	meta->libname = name;
 
-	slice = R_NEW0 (RSepSlice64);
+	slice = RZ_NEW0 (RSepSlice64);
 	if (!slice) {
 		goto beach;
 	}
@@ -387,7 +387,7 @@ static RSepMachoInfo * mach0_info_new(RBuffer * buf, ut64 at, ut64 max_size) {
 		goto beach;
 	}
 
-	result = R_NEW0 (RSepMachoInfo);
+	result = RZ_NEW0 (RSepMachoInfo);
 	if (!result) {
 		goto beach;
 	}
@@ -486,7 +486,7 @@ RBinXtrPlugin rz_bin_xtr_plugin_xtr_sep64 = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN_XTR,
+	.type = RZ_LIB_TYPE_BIN_XTR,
 	.data = &rz_bin_xtr_plugin_xtr_sep64,
 	.version = RZ_VERSION
 };

@@ -132,8 +132,8 @@ static void GH(jemalloc_get_chunks)(RzCore *core, const char *input) {
         case ' ':
         	{
 			GHT arena = GHT_MAX;
-			arena_t *ar = R_NEW0 (arena_t);
-			extent_node_t *node = R_NEW0 (extent_node_t), *head = R_NEW0 (extent_node_t);
+			arena_t *ar = RZ_NEW0 (arena_t);
+			extent_node_t *node = RZ_NEW0 (extent_node_t), *head = RZ_NEW0 (extent_node_t);
 			input += 1;
 			arena = rz_num_math (core->num, input);
 
@@ -169,9 +169,9 @@ static void GH(jemalloc_get_chunks)(RzCore *core, const char *input) {
 			int i = 0;
 			ut64 sym;
 			GHT arenas = GHT_MAX, arena = GHT_MAX;
-			arena_t *ar = R_NEW0 (arena_t);
-			extent_node_t *node = R_NEW0 (extent_node_t);
-			extent_node_t *head = R_NEW0 (extent_node_t);
+			arena_t *ar = RZ_NEW0 (arena_t);
+			extent_node_t *node = RZ_NEW0 (extent_node_t);
+			extent_node_t *head = RZ_NEW0 (extent_node_t);
 			
 			if (!node || !head) {
 				eprintf ("Error calling calloc\n");
@@ -227,11 +227,11 @@ static void GH(jemalloc_print_narenas)(RzCore *core, const char *input) {
 	ut64 symaddr;
 	ut64 arenas;
 	GHT arena = GHT_MAX;
-	arena_t *ar = R_NEW0 (arena_t);
+	arena_t *ar = RZ_NEW0 (arena_t);
 	if (!ar) {
 		return;
 	}
-	arena_stats_t *stats = R_NEW0 (arena_stats_t);
+	arena_stats_t *stats = RZ_NEW0 (arena_stats_t);
 	if (!stats) {
 		free (ar);
 		return;
@@ -332,17 +332,17 @@ static void GH(jemalloc_get_bins)(RzCore *core, const char *input) {
 
 	switch (input[0]) {
 	case ' ':
-		ar = R_NEW0 (arena_t);
+		ar = RZ_NEW0 (arena_t);
 		if (!ar) {
 			break;
 		}
-		b = R_NEW0 (arena_bin_info_t);
+		b = RZ_NEW0 (arena_bin_info_t);
 		if (!b) {
 			break;
 		}
 		if (!GH(rz_resolve_jemalloc)(core, "je_arena_bin_info", &bin_info)) {
 			eprintf ("Error resolving je_arena_bin_info\n");
-			R_FREE (b);
+			RZ_FREE (b);
 			break;
 		}
 		if (GH(rz_resolve_jemalloc)(core, "je_arenas", &arenas)) {
@@ -351,7 +351,7 @@ static void GH(jemalloc_get_bins)(RzCore *core, const char *input) {
 			for (;;) {
 				rz_io_read_at (core->io, arenas + i * sizeof (GHT), (ut8 *)&arena, sizeof (GHT));
 				if (!arena) {
-					R_FREE (b);
+					RZ_FREE (b);
 					break;
 				}
 				PRINTF_YA ("   arenas[%d]: ", i++);
@@ -404,7 +404,7 @@ static void GH(jemalloc_get_runs)(RzCore *core, const char *input) {
 		{
 			int pageind;
 			ut64 npages, chunksize_mask, map_bias, map_misc_offset, chunk, mapbits;;
-			arena_chunk_t *c = R_NEW0 (arena_chunk_t);
+			arena_chunk_t *c = RZ_NEW0 (arena_chunk_t);
 			
 			if (!c) {
 				eprintf ("Error calling calloc\n");
@@ -448,7 +448,7 @@ static void GH(jemalloc_get_runs)(RzCore *core, const char *input) {
 			rz_io_read_at (core->io, chunk + offset, (ut8*)dwords, sizeof (arena_chunk_map_bits_t) * npages);
 			eprintf ("map_bits @ 0x%08"PFMT64x"\n", (ut64)(chunk + offset));
 
-			arena_run_t *r = R_NEW0 (arena_run_t);
+			arena_run_t *r = RZ_NEW0 (arena_run_t);
 			if (!r) {
 				eprintf ("Error calling calloc\n");
 				return;
@@ -459,7 +459,7 @@ static void GH(jemalloc_get_runs)(RzCore *core, const char *input) {
 					// ut64 elm = ((arena_chunk_map_misc_t *)((uintptr_t)chunk + (uintptr_t)map_misc_offset) + pageind-map_bias);
 					ut64 elm = chunk + map_misc_offset + pageind-map_bias;
 					eprintf ("\nelm: 0x%"PFMT64x"\n", elm);
-					arena_chunk_map_misc_t *m = R_NEW0 (arena_chunk_map_misc_t);
+					arena_chunk_map_misc_t *m = RZ_NEW0 (arena_chunk_map_misc_t);
 					if (m) {
 						ut64 run = elm + rz_offsetof (arena_chunk_map_misc_t, run);
 						rz_io_read_at (core->io, elm, (ut8*)m, sizeof (arena_chunk_map_misc_t));

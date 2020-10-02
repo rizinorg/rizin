@@ -30,7 +30,7 @@
 #define GRUB_PARTMAP_SUN_MAX_PARTS 8
 #define GRUB_PARTMAP_SUN_WHOLE_DISK_ID 0x05
 
-R_PACKED (
+RZ_PACKED (
 struct grub_sun_partition_info
 {
   grub_uint8_t spare1;
@@ -39,14 +39,14 @@ struct grub_sun_partition_info
   grub_uint8_t flags;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_sun_partition_descriptor
 {
   grub_uint32_t start_cylinder;
   grub_uint32_t num_sectors;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_sun_block
 {
   grub_uint8_t  info[128];      /* Informative text string.  */

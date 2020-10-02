@@ -400,19 +400,19 @@ static const char *avatar_cybcat[] = {
 };
 
 enum {
-	R_AVATAR_ORANGG,
-	R_AVATAR_CYBCAT,
-	R_AVATAR_CLIPPY,
+	RZ_AVATAR_ORANGG,
+	RZ_AVATAR_CYBCAT,
+	RZ_AVATAR_CLIPPY,
 };
 
 RZ_API void rz_core_clippy(RzCore *core, const char *msg) {
-	int type = R_AVATAR_CLIPPY;
+	int type = RZ_AVATAR_CLIPPY;
 	if (*msg == '+' || *msg == '3') {
 		char *space = strchr (msg, ' ');
 		if (!space) {
 			return;
 		}
-		type = (*msg == '+')? R_AVATAR_ORANGG: R_AVATAR_CYBCAT;
+		type = (*msg == '+')? RZ_AVATAR_ORANGG: RZ_AVATAR_CYBCAT;
 		msg = space + 1;
 	}
 	const char *f;
@@ -420,18 +420,18 @@ RZ_API void rz_core_clippy(RzCore *core, const char *msg) {
 	char *s = strdup (rz_str_pad (' ', msglen));
 	char *l;
 
-	if (type == R_AVATAR_ORANGG) {
+	if (type == RZ_AVATAR_ORANGG) {
 		l = strdup (rz_str_pad ('-', msglen));
 		f = avatar_orangg[0];
-	} else if (type == R_AVATAR_CYBCAT) {
+	} else if (type == RZ_AVATAR_CYBCAT) {
 		l = strdup (rz_str_pad ('-', msglen));
-		f = avatar_cybcat[rz_num_rand (R_ARRAY_SIZE (avatar_cybcat))];
+		f = avatar_cybcat[rz_num_rand (RZ_ARRAY_SIZE (avatar_cybcat))];
 	} else if (rz_config_get_i (core->config, "scr.utf8")) {
 		l = (char *)rz_str_repeat ("─", msglen);
-		f = avatar_clippy_utf8[rz_num_rand (R_ARRAY_SIZE (avatar_clippy_utf8))];
+		f = avatar_clippy_utf8[rz_num_rand (RZ_ARRAY_SIZE (avatar_clippy_utf8))];
 	} else {
 		l = strdup (rz_str_pad ('-', msglen));
-		f = avatar_clippy[rz_num_rand (R_ARRAY_SIZE (avatar_clippy))];
+		f = avatar_clippy[rz_num_rand (RZ_ARRAY_SIZE (avatar_clippy))];
 	}
 
 	rz_cons_printf (f, l, s, msg, s, l);
@@ -445,7 +445,7 @@ static int cmd_help(void *data, const char *input) {
 	RzIOMap *map;
 	const char *k;
 	RzListIter *iter;
-	char *p, out[128] = R_EMPTY;
+	char *p, out[128] = RZ_EMPTY;
 	ut64 n;
 	int i;
 	RzList *tmp;
@@ -865,9 +865,9 @@ static int cmd_help(void *data, const char *input) {
 			{
 				PJ *pj = pj_new ();
 				pj_o (pj);
-				pj_ks (pj, "arch", R_SYS_ARCH);
-				pj_ks (pj, "os", R_SYS_OS);
-				pj_ki (pj, "bits", R_SYS_BITS);
+				pj_ks (pj, "arch", RZ_SYS_ARCH);
+				pj_ks (pj, "os", RZ_SYS_OS);
+				pj_ki (pj, "bits", RZ_SYS_BITS);
 				pj_ki (pj, "commit", RZ_VERSION_COMMIT);
 				pj_ks (pj, "tap", RZ_GITTAP);
 				pj_ki (pj, "major", RZ_VERSION_MAJOR);
@@ -1165,7 +1165,7 @@ static int cmd_help(void *data, const char *input) {
 				rz_line_set_prompt (foo);
 				rz_cons_fgets (foo, sizeof (foo), 0, NULL);
 				foo[sizeof (foo) - 1] = 0;
-				rz_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, foo, strlen (foo) + 1);
+				rz_core_yank_set_str (core, RZ_CORE_FOREIGN_ADDR, foo, strlen (foo) + 1);
 				core->num->value = rz_num_math (core->num, foo);
 				}
 				break;

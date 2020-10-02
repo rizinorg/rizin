@@ -1,5 +1,5 @@
-#ifndef R_X509_H
-#define R_X509_H
+#ifndef RZ_X509_H
+#define RZ_X509_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -122,5 +122,5 @@ RZ_API void rz_x509_certificate_dump(RX509Certificate* cert, const char* pad, RS
 }
 #endif
 
-#endif /* R_X509_H */
+#endif /* RZ_X509_H */
 

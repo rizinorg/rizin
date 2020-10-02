@@ -5,7 +5,7 @@
 
 #define DB f->zones
 
-#if !R_FLAG_ZONE_USE_SDB
+#if !RZ_FLAG_ZONE_USE_SDB
 
 static RzFlagZoneItem *rz_flag_zone_get (RzFlag *f, const char *name) {
 	RzListIter *iter;
@@ -23,7 +23,7 @@ static RzFlagZoneItem *rz_flag_zone_get_inrange (RzFlag *f, ut64 from, ut64 to) 
 	RzListIter *iter;
 	RzFlagZoneItem *zi;
 	rz_list_foreach (DB, iter, zi) {
-		if (R_BETWEEN (from, zi->from, to)) {
+		if (RZ_BETWEEN (from, zi->from, to)) {
 			return zi;
 		}
 	}
@@ -32,7 +32,7 @@ static RzFlagZoneItem *rz_flag_zone_get_inrange (RzFlag *f, ut64 from, ut64 to) 
 
 RZ_API bool rz_flag_zone_add(RzFlag *f, const char *name, ut64 addr) {
 	rz_return_val_if_fail (f && name && *name, false);
-#if R_FLAG_ZONE_USE_SDB
+#if RZ_FLAG_ZONE_USE_SDB
 	RzFlagZoneItem zi = { 0, 0, (const char *)name };
 	if (!DB) {
 		return false;
@@ -65,7 +65,7 @@ RZ_API bool rz_flag_zone_add(RzFlag *f, const char *name, ut64 addr) {
 		if (!DB) {
 			rz_flag_zone_reset (f);
 		}
-		zi = R_NEW0 (RzFlagZoneItem);
+		zi = RZ_NEW0 (RzFlagZoneItem);
 		zi->name = strdup (name);
 		zi->from = zi->to = addr;
 		rz_list_append (DB, zi);
@@ -75,7 +75,7 @@ RZ_API bool rz_flag_zone_add(RzFlag *f, const char *name, ut64 addr) {
 }
 
 RZ_API bool rz_flag_zone_reset(RzFlag *f) {
-#if R_FLAG_ZONE_USE_SDB
+#if RZ_FLAG_ZONE_USE_SDB
 	return sdb_reset (DB);
 #else
 	rz_list_free (f->zones);
@@ -85,7 +85,7 @@ RZ_API bool rz_flag_zone_reset(RzFlag *f) {
 }
 
 RZ_API bool rz_flag_zone_del(RzFlag *f, const char *name) {
-#if R_FLAG_ZONE_USE_SDB
+#if RZ_FLAG_ZONE_USE_SDB
 	return sdb_unset (DB, name, 0);
 #else
 	RzListIter *iter;
@@ -100,7 +100,7 @@ RZ_API bool rz_flag_zone_del(RzFlag *f, const char *name) {
 #endif
 }
 
-#if R_FLAG_ZONE_USE_SDB
+#if RZ_FLAG_ZONE_USE_SDB
 
 typedef struct rz_flag_zone_context_t {
 	RzFlag *f;

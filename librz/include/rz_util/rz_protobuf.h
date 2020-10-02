@@ -1,5 +1,5 @@
-#ifndef R_PROTOBUF_H
-#define R_PROTOBUF_H
+#ifndef RZ_PROTOBUF_H
+#define RZ_PROTOBUF_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -11,4 +11,4 @@ RZ_API char *rz_protobuf_decode(const ut8* buffer, const ut64 size, bool debug);
 }
 #endif
 
-#endif /* R_PROTOBUF_H */
+#endif /* RZ_PROTOBUF_H */

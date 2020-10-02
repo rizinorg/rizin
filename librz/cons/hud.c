@@ -202,7 +202,7 @@ RZ_API char *rz_cons_hud(RzList *list, const char *prompt) {
 	RzListIter *iter;
 
 	HtPP *ht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
-	RLineHud *hud = (RLineHud*) R_NEW (RLineHud);
+	RLineHud *hud = (RLineHud*) RZ_NEW (RLineHud);
 	hud->activate = 0;
 	hud->vi = 0;
 	I(line)->echo = false;
@@ -243,7 +243,7 @@ RZ_API char *rz_cons_hud(RzList *list, const char *prompt) {
 			rz_cons_printf ("%s\n", row);
 		}
 		if (!filtered_list->length) {				// hack to remove garbage value when list is empty
-			printf ("%s", R_CONS_CLEAR_LINE);
+			printf ("%s", RZ_CONS_CLEAR_LINE);
 		}
 #if !HUD_CACHE
 		rz_list_free (filtered_list);
@@ -256,7 +256,7 @@ RZ_API char *rz_cons_hud(RzList *list, const char *prompt) {
 			hud->top_entry_n = 0;
 			if (hud->current_entry_n >= 1 ) {
 				if (selected_entry) {
-					R_FREE (I(line)->hud);
+					RZ_FREE (I(line)->hud);
 					I(line)->echo = true;
 					rz_cons_enable_mouse (false);
 					rz_cons_show_cursor (true);
@@ -269,7 +269,7 @@ RZ_API char *rz_cons_hud(RzList *list, const char *prompt) {
 		}
 	}
 _beach:
-	R_FREE (I(line)->hud);
+	RZ_FREE (I(line)->hud);
 	I(line)->echo = true;
 	rz_cons_show_cursor (true);
 	rz_cons_enable_mouse (false);

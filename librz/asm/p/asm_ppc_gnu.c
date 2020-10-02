@@ -68,14 +68,14 @@ RzAsmPlugin rz_asm_plugin_ppc_gnu = {
 	.arch = "ppc",
 	.license = "GPL3",
 	.bits = 32 | 64,
-	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
+	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.desc = "PowerPC",
 	.disassemble = &disassemble
 };
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_ppc_gnu,
 	.version = RZ_VERSION
 };

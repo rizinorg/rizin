@@ -15,8 +15,8 @@
 
 #define W32DbgWInst_PID(x) (((W32DbgWInst*)x->data)->pi.dwProcessId)
 
-#undef R_IO_NFDS
-#define R_IO_NFDS 2
+#undef RZ_IO_NFDS
+#define RZ_IO_NFDS 2
 
 static ut64 __find_next_valid_addr(HANDLE h, ut64 from, ut64 to) {
 	// Align to next page and try to get to next valid addr
@@ -70,7 +70,7 @@ static int debug_os_read_at(W32DbgWInst *dbg, ut8 *buf, int len, ut64 addr) {
 			buf += ret;
 			addr += ret;
 			totRead += ret;
-			read_len = R_MIN (read_len, len - totRead);
+			read_len = RZ_MIN (read_len, len - totRead);
 		}
 	}
 	return len;
@@ -202,7 +202,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 			wrap->pi.hThread = OpenThread (THREAD_ALL_ACCESS, FALSE, wrap->pi.dwThreadId);
 		}
 		ret = rz_io_desc_new (io, &rz_io_plugin_w32dbg,
-				file, rw | R_PERM_X, mode, wrap);
+				file, rw | RZ_PERM_X, mode, wrap);
 		ret->name = rz_sys_pid_to_path (wrap->pi.dwProcessId);
 		return ret;
 	}
@@ -303,7 +303,7 @@ RzIOPlugin rz_io_plugin_w32dbg = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_w32dbg,
 	.version = RZ_VERSION
 };

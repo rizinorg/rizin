@@ -64,7 +64,7 @@ static void lang_pipe_run_win(RzLang *lang) {
 		memset (buf, 0, PIPE_BUF_SIZE);
 		ReadFile (hPipeInOut, buf, PIPE_BUF_SIZE, NULL, &oRead);
 		HANDLE hReadEvents[] = { hRead, hproc };
-		dwEvent = WaitForMultipleObjects (R_ARRAY_SIZE (hReadEvents), hReadEvents,
+		dwEvent = WaitForMultipleObjects (RZ_ARRAY_SIZE (hReadEvents), hReadEvents,
 		                                  FALSE, INFINITE);
 		if (dwEvent == WAIT_OBJECT_0 + 1) { // hproc
 			break;
@@ -91,7 +91,7 @@ static void lang_pipe_run_win(RzLang *lang) {
 					           writelen > PIPE_BUF_SIZE ? PIPE_BUF_SIZE : writelen,
 					           NULL, &oWrite);
 					HANDLE hWriteEvents[] = { hWritten, hproc };
-					dwEvent = WaitForMultipleObjects (R_ARRAY_SIZE (hWriteEvents), hWriteEvents,
+					dwEvent = WaitForMultipleObjects (RZ_ARRAY_SIZE (hWriteEvents), hWriteEvents,
 					                                  FALSE, INFINITE);
 					if (dwEvent == WAIT_OBJECT_0 + 1) { // hproc
 						break;
@@ -264,7 +264,7 @@ static int lang_pipe_run(RzLang *lang, const char *code, int len) {
 		if (!connected && err != ERROR_PIPE_CONNECTED) {
 			if (err == ERROR_IO_PENDING) {
 				HANDLE hEvents[] = { hConnected, hproc };
-				DWORD dwEvent = WaitForMultipleObjects (R_ARRAY_SIZE (hEvents), hEvents,
+				DWORD dwEvent = WaitForMultipleObjects (RZ_ARRAY_SIZE (hEvents), hEvents,
 				                                        FALSE, INFINITE);
 				if (dwEvent == WAIT_OBJECT_0 + 1) { // hproc
 					goto cleanup;

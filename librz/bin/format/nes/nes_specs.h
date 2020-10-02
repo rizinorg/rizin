@@ -64,7 +64,7 @@
 #define JOYPAD_PORT1                        0x4016
 #define JOYPAD_PORT2                        0x4017
 
-R_PACKED (
+RZ_PACKED (
 typedef struct  {
 	char id[0x4];					// NES\x1A
 	ut8 prg_page_count_16k;				 // number of PRG-ROM pages

@@ -18,7 +18,7 @@ static const char *help_msg_P[] = {
 	"PS", " [file]", "save script file",
 	"P-", " [file]", "delete project (alias for Pd)",
 	"NOTE:", "", "See 'e??prj.'",
-	"NOTE:", "", "project are stored in " R_JOIN_2_PATHS ("~", RZ_HOME_PROJECTS),
+	"NOTE:", "", "project are stored in " RZ_JOIN_2_PATHS ("~", RZ_HOME_PROJECTS),
 	NULL
 };
 
@@ -96,7 +96,7 @@ static int cmd_project(void *data, const char *input) {
 		break;
 	case 'S':
 		if (input[1] == ' ') {
-			rz_core_project_save_script (core, input + 2, R_CORE_PRJ_ALL);
+			rz_core_project_save_script (core, input + 2, RZ_CORE_PRJ_ALL);
 		} else {
 			eprintf ("Usage: PS [file]\n");
 		}

@@ -54,7 +54,7 @@
 #define GRUB_PC_PARTITION_TYPE_LINUX_RAID	0xfd
 
 /* The partition entry.  */
-R_PACKED(
+RZ_PACKED(
 struct grub_msdos_partition_entry
 {
   /* If active, 0x80, otherwise, 0x00.  */
@@ -87,7 +87,7 @@ struct grub_msdos_partition_entry
 });
 
 /* The structure of MBR.  */
-R_PACKED (
+RZ_PACKED (
 struct grub_msdos_partition_mbr
 {
   /* The code area (actually, including BPB).  */

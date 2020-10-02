@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(rz_debug);
+RZ_LIB_VERSION_HEADER(rz_debug);
 
 /* hack to fix compilation of debugger on BSD systems */
 /* This needs some testing (netbsd, freebsd, openbsd, kfreebsd) */
@@ -56,20 +56,20 @@ R_LIB_VERSION_HEADER(rz_debug);
  * states that a process can be in
  */
 typedef enum {
-	R_DBG_PROC_STOP = 's',
-	R_DBG_PROC_RUN = 'r',
-	R_DBG_PROC_SLEEP = 'S',
-	R_DBG_PROC_ZOMBIE = 'z',
-	R_DBG_PROC_DEAD = 'd',
-	R_DBG_PROC_RAISED = 'R' // has produced a signal, breakpoint, etc..
+	RZ_DBG_PROC_STOP = 's',
+	RZ_DBG_PROC_RUN = 'r',
+	RZ_DBG_PROC_SLEEP = 'S',
+	RZ_DBG_PROC_ZOMBIE = 'z',
+	RZ_DBG_PROC_DEAD = 'd',
+	RZ_DBG_PROC_RAISED = 'R' // has produced a signal, breakpoint, etc..
 } RzDebugPidState;
 
 
 // signal handling must support application and debugger level options
 typedef enum {
-	R_DBG_SIGNAL_IGNORE = 0, // ignore signal handler
-	R_DBG_SIGNAL_CONT = 1, // pass signal to chlidren and continue execution
-	R_DBG_SIGNAL_SKIP = 2, //
+	RZ_DBG_SIGNAL_IGNORE = 0, // ignore signal handler
+	RZ_DBG_SIGNAL_CONT = 1, // pass signal to chlidren and continue execution
+	RZ_DBG_SIGNAL_SKIP = 2, //
 	//..
 } RzDebugSignalMode;
 
@@ -79,41 +79,41 @@ typedef enum {
  * to proceed. these values indicate their intention.
  */
 typedef enum {
-	R_DBG_RECOIL_NONE = 0,
-	R_DBG_RECOIL_STEP,
-	R_DBG_RECOIL_CONTINUE
+	RZ_DBG_RECOIL_NONE = 0,
+	RZ_DBG_RECOIL_STEP,
+	RZ_DBG_RECOIL_CONTINUE
 } RzDebugRecoilMode;
 
 /*
  * List of reasons that an inferior might have stopped
  */
 typedef enum {
-	R_DEBUG_REASON_DEAD = -1,
-	R_DEBUG_REASON_NONE = 0,
-	R_DEBUG_REASON_SIGNAL,
-	R_DEBUG_REASON_SEGFAULT,
-	R_DEBUG_REASON_BREAKPOINT,
-	R_DEBUG_REASON_TRACEPOINT,
-	R_DEBUG_REASON_COND,
-	R_DEBUG_REASON_READERR,
-	R_DEBUG_REASON_STEP,
-	R_DEBUG_REASON_ABORT,
-	R_DEBUG_REASON_WRITERR,
-	R_DEBUG_REASON_DIVBYZERO,
-	R_DEBUG_REASON_ILLEGAL,
-	R_DEBUG_REASON_UNKNOWN,
-	R_DEBUG_REASON_ERROR,
-	R_DEBUG_REASON_NEW_PID,
-	R_DEBUG_REASON_NEW_TID,
-	R_DEBUG_REASON_NEW_LIB,
-	R_DEBUG_REASON_EXIT_PID,
-	R_DEBUG_REASON_EXIT_TID,
-	R_DEBUG_REASON_EXIT_LIB,
-	R_DEBUG_REASON_TRAP,
-	R_DEBUG_REASON_SWI,
-	R_DEBUG_REASON_INT,
-	R_DEBUG_REASON_FPU,
-	R_DEBUG_REASON_USERSUSP,
+	RZ_DEBUG_REASON_DEAD = -1,
+	RZ_DEBUG_REASON_NONE = 0,
+	RZ_DEBUG_REASON_SIGNAL,
+	RZ_DEBUG_REASON_SEGFAULT,
+	RZ_DEBUG_REASON_BREAKPOINT,
+	RZ_DEBUG_REASON_TRACEPOINT,
+	RZ_DEBUG_REASON_COND,
+	RZ_DEBUG_REASON_READERR,
+	RZ_DEBUG_REASON_STEP,
+	RZ_DEBUG_REASON_ABORT,
+	RZ_DEBUG_REASON_WRITERR,
+	RZ_DEBUG_REASON_DIVBYZERO,
+	RZ_DEBUG_REASON_ILLEGAL,
+	RZ_DEBUG_REASON_UNKNOWN,
+	RZ_DEBUG_REASON_ERROR,
+	RZ_DEBUG_REASON_NEW_PID,
+	RZ_DEBUG_REASON_NEW_TID,
+	RZ_DEBUG_REASON_NEW_LIB,
+	RZ_DEBUG_REASON_EXIT_PID,
+	RZ_DEBUG_REASON_EXIT_TID,
+	RZ_DEBUG_REASON_EXIT_LIB,
+	RZ_DEBUG_REASON_TRAP,
+	RZ_DEBUG_REASON_SWI,
+	RZ_DEBUG_REASON_INT,
+	RZ_DEBUG_REASON_FPU,
+	RZ_DEBUG_REASON_USERSUSP,
 } RzDebugReasonType;
 
 
@@ -184,7 +184,7 @@ typedef struct {
 
 typedef struct rz_debug_checkpoint_t {
 	int cnum;
-	RzRegArena *arena[R_REG_TYPE_LAST];
+	RzRegArena *arena[RZ_REG_TYPE_LAST];
 	RzList *snaps; // <RzDebugSnap>
 } RzDebugCheckpoint;
 

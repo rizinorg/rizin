@@ -68,7 +68,7 @@ int bsd_handle_signals(RzDebug *dbg) {
 	int ret = ptrace (PT_LWPINFO, dbg->pid, (char *)&linfo, sizeof (linfo));
 	if (ret == -1) {
 		if (errno == ESRCH) {
-			dbg->reason.type = R_DEBUG_REASON_DEAD;
+			dbg->reason.type = RZ_DEBUG_REASON_DEAD;
 			return 0;
 		}
 		rz_sys_perror ("ptrace PTRACE_LWPINFO");
@@ -77,20 +77,20 @@ int bsd_handle_signals(RzDebug *dbg) {
 
 	// Not stopped by the signal
 	if (linfo.pl_event == PL_EVENT_NONE) {
-		dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
+		dbg->reason.type = RZ_DEBUG_REASON_BREAKPOINT;
 		return 0;
 	}
 
 	siginfo = linfo.pl_siginfo;
-	dbg->reason.type = R_DEBUG_REASON_SIGNAL;
+	dbg->reason.type = RZ_DEBUG_REASON_SIGNAL;
 	dbg->reason.signum = siginfo.si_signo;
 
 	switch (dbg->reason.signum) {
 		case SIGABRT:
-			dbg->reason.type = R_DEBUG_REASON_ABORT;
+			dbg->reason.type = RZ_DEBUG_REASON_ABORT;
 			break;
 		case SIGSEGV:
-			dbg->reason.type = R_DEBUG_REASON_SEGFAULT;
+			dbg->reason.type = RZ_DEBUG_REASON_SEGFAULT;
 			break;
 	}
 
@@ -103,16 +103,16 @@ int bsd_handle_signals(RzDebug *dbg) {
 int bsd_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 	int r = -1;
 	switch (type) {
-		case R_REG_TYPE_GPR:
+		case RZ_REG_TYPE_GPR:
 			r = ptrace (PT_SETREGS, dbg->pid,
 				(caddr_t)buf, sizeof (struct reg));
 			break;
-		case R_REG_TYPE_DRX:
+		case RZ_REG_TYPE_DRX:
 #if __KFBSD__ || __NetBSD__
 			r = ptrace (PT_SETDBREGS, dbg->pid, (caddr_t)buf, sizeof (struct dbreg));
 #endif
 			break;
-		case R_REG_TYPE_FPU:
+		case RZ_REG_TYPE_FPU:
 			r = ptrace (PT_SETFPREGS, dbg->pid, (caddr_t)buf, sizeof (struct fpreg));
 			break;
 	}
@@ -123,7 +123,7 @@ int bsd_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 RzDebugInfo *bsd_info(RzDebug *dbg, const char *arg) {
 #if __KFBSD__
 	struct kinfo_proc *kp;
-	RzDebugInfo *rdi = R_NEW0 (RzDebugInfo);
+	RzDebugInfo *rdi = RZ_NEW0 (RzDebugInfo);
 	if (!rdi) {
 		return NULL;
 	}
@@ -141,22 +141,22 @@ RzDebugInfo *bsd_info(RzDebug *dbg, const char *arg) {
 
 	switch (kp->ki_stat) {
 		case SSLEEP:
-			rdi->status = R_DBG_PROC_SLEEP;
+			rdi->status = RZ_DBG_PROC_SLEEP;
 			break;
 		case SSTOP:
-			rdi->status = R_DBG_PROC_STOP;
+			rdi->status = RZ_DBG_PROC_STOP;
 			break;
 		case SZOMB:
-			rdi->status = R_DBG_PROC_ZOMBIE;
+			rdi->status = RZ_DBG_PROC_ZOMBIE;
 			break;
 		case SRUN:
 		case SIDL:
 		case SLOCK:
 		case SWAIT:
-			rdi->status = R_DBG_PROC_RUN;
+			rdi->status = RZ_DBG_PROC_RUN;
 			break;
 		default:
-			rdi->status = R_DBG_PROC_DEAD;
+			rdi->status = RZ_DBG_PROC_DEAD;
 	}
 
 	free (kp);
@@ -166,7 +166,7 @@ RzDebugInfo *bsd_info(RzDebug *dbg, const char *arg) {
 	struct kinfo_proc *kp;
 	char err[_POSIX2_LINE_MAX];
 	int rc;
-	RzDebugInfo *rdi = R_NEW0 (RzDebugInfo);
+	RzDebugInfo *rdi = RZ_NEW0 (RzDebugInfo);
 	if (!rdi) {
 		return NULL;
 	}
@@ -185,16 +185,16 @@ RzDebugInfo *bsd_info(RzDebug *dbg, const char *arg) {
 		rdi->gid = kp->p__pgid;
 		rdi->exe = strdup (kp->p_comm);
 
-		rdi->status = R_DBG_PROC_STOP;
+		rdi->status = RZ_DBG_PROC_STOP;
 
 		if (kp->p_psflags & PS_ZOMBIE) {
-				rdi->status = R_DBG_PROC_ZOMBIE;
+				rdi->status = RZ_DBG_PROC_ZOMBIE;
 		} else if (kp->p_psflags & PS_STOPPED){
-				rdi->status = R_DBG_PROC_STOP;
+				rdi->status = RZ_DBG_PROC_STOP;
 		} else if (kp->p_psflags & PS_PPWAIT) {
-				rdi->status = R_DBG_PROC_SLEEP;
+				rdi->status = RZ_DBG_PROC_SLEEP;
 		} else if ((kp->p_psflags & PS_EXEC) || (kp->p_psflags & PS_INEXEC)) {
-				rdi->status = R_DBG_PROC_RUN;
+				rdi->status = RZ_DBG_PROC_RUN;
 		}
 
 	}
@@ -206,7 +206,7 @@ RzDebugInfo *bsd_info(RzDebug *dbg, const char *arg) {
 	struct kinfo_proc2 *kp;
 	char err[_POSIX2_LINE_MAX];
 	int np;
-	RzDebugInfo *rdi = R_NEW0 (RzDebugInfo);
+	RzDebugInfo *rdi = RZ_NEW0 (RzDebugInfo);
 	if (!rdi) {
 		return NULL;
 	}
@@ -225,25 +225,25 @@ RzDebugInfo *bsd_info(RzDebug *dbg, const char *arg) {
 		rdi->gid = kp->p__pgid;
 		rdi->exe = strdup (kp->p_comm);
 
-		rdi->status = R_DBG_PROC_STOP;
+		rdi->status = RZ_DBG_PROC_STOP;
 
 		switch (kp->p_stat) {
 			case SDEAD:
-				rdi->status = R_DBG_PROC_DEAD;
+				rdi->status = RZ_DBG_PROC_DEAD;
 				break;
 			case SSTOP:
-				rdi->status = R_DBG_PROC_STOP;
+				rdi->status = RZ_DBG_PROC_STOP;
 				break;
 			case SZOMB:
-				rdi->status = R_DBG_PROC_ZOMBIE;
+				rdi->status = RZ_DBG_PROC_ZOMBIE;
 				break;
 			case SACTIVE:
 			case SIDL:
 			case SDYING:
-				rdi->status = R_DBG_PROC_RUN;
+				rdi->status = RZ_DBG_PROC_RUN;
 				break;
 			default:
-				rdi->status = R_DBG_PROC_SLEEP;
+				rdi->status = RZ_DBG_PROC_SLEEP;
 		}
 	}
 
@@ -504,8 +504,8 @@ RzList *bsd_desc_list(int pid) {
 		case KF_TYPE_UNKNOWN:
 		default: type = '-'; break;
 		}
-		perm = (kve->kf_flags & KF_FLAG_READ)? R_PERM_R: 0;
-		perm |= (kve->kf_flags & KF_FLAG_WRITE)? R_PERM_W: 0;
+		perm = (kve->kf_flags & KF_FLAG_READ)? RZ_PERM_R: 0;
+		perm |= (kve->kf_flags & KF_FLAG_WRITE)? RZ_PERM_W: 0;
 		desc = rz_debug_desc_new (kve->kf_fd, str, perm, type, kve->kf_offset);
 		if (!desc) {
 			break;
@@ -527,15 +527,15 @@ static int get_rz_status(int stat) {
 	case SIDL:
 	case SLOCK:
 	case SWAIT:
-		return R_DBG_PROC_RUN;
+		return RZ_DBG_PROC_RUN;
 	case SSTOP:
-		return R_DBG_PROC_STOP;
+		return RZ_DBG_PROC_STOP;
 	case SZOMB:
-		return R_DBG_PROC_ZOMBIE;
+		return RZ_DBG_PROC_ZOMBIE;
 	case SSLEEP:
-		return R_DBG_PROC_SLEEP;
+		return RZ_DBG_PROC_SLEEP;
 	default:
-		return R_DBG_PROC_DEAD;
+		return RZ_DBG_PROC_DEAD;
 	}
 }
 #endif

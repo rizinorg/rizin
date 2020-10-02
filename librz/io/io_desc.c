@@ -17,7 +17,7 @@ RZ_API RzIODesc* rz_io_desc_new(RzIO* io, RzIOPlugin* plugin, const char* uri, i
 			return NULL;
 		}
 	}
-	RzIODesc* desc = R_NEW0 (RzIODesc);
+	RzIODesc* desc = RZ_NEW0 (RzIODesc);
 	if (desc) {
 		desc->fd = fd32;
 		desc->io = io;
@@ -152,7 +152,7 @@ RZ_API int rz_io_desc_write(RzIODesc *desc, const ut8* buf, int len) {
 	//check pointers and pcache
 	if (desc->io && (desc->io->p_cache & 2)) {
 		return rz_io_desc_cache_write (desc,
-				rz_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR), buf, len);
+				rz_io_desc_seek (desc, 0LL, RZ_IO_SEEK_CUR), buf, len);
 	}
 	return rz_io_plugin_write (desc, buf, len);
 }
@@ -160,10 +160,10 @@ RZ_API int rz_io_desc_write(RzIODesc *desc, const ut8* buf, int len) {
 // returns length of read bytes
 RZ_API int rz_io_desc_read(RzIODesc *desc, ut8 *buf, int len) {
 	// check pointers and permissions
-	if (!buf || !desc || !desc->plugin || !(desc->perm & R_PERM_R)) {
+	if (!buf || !desc || !desc->plugin || !(desc->perm & RZ_PERM_R)) {
 		return -1;
 	}
-	ut64 seek = rz_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
+	ut64 seek = rz_io_desc_seek (desc, 0LL, RZ_IO_SEEK_CUR);
 	if (desc->io->cachemode) {
 		if (seek != UT64_MAX && rz_io_cache_at (desc->io, seek)) {
 			return rz_io_cache_read (desc->io, seek, buf, len);
@@ -189,10 +189,10 @@ RZ_API ut64 rz_io_desc_size(RzIODesc* desc) {
 	if (!desc || !desc->plugin || !desc->plugin->lseek) {
 		return 0LL;
 	}
-	ut64 off = rz_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
-	ut64 ret = rz_io_desc_seek (desc, 0LL, R_IO_SEEK_END);
+	ut64 off = rz_io_desc_seek (desc, 0LL, RZ_IO_SEEK_CUR);
+	ut64 ret = rz_io_desc_seek (desc, 0LL, RZ_IO_SEEK_END);
 	// what to do if that seek fails?
-	rz_io_desc_seek (desc, off, R_IO_SEEK_SET);
+	rz_io_desc_seek (desc, off, RZ_IO_SEEK_SET);
 	return ret;
 }
 
@@ -241,9 +241,9 @@ RZ_API bool rz_io_desc_exchange(RzIO* io, int fd, int fdx) {
 	rz_pvector_foreach (&io->maps, it) {
 		RzIOMap *map = *it;
 		if (map->fd == fdx) {
-			map->perm &= (desc->perm | R_PERM_X);
+			map->perm &= (desc->perm | RZ_PERM_X);
 		} else if (map->fd == fd) {
-			map->perm &= (descx->perm | R_PERM_X);
+			map->perm &= (descx->perm | RZ_PERM_X);
 		}
 	}
 	return true;
@@ -298,14 +298,14 @@ RZ_API bool rz_io_desc_get_base (RzIODesc *desc, ut64 *base) {
 }
 
 RZ_API int rz_io_desc_read_at(RzIODesc *desc, ut64 addr, ut8 *buf, int len) {
-	if (desc && buf && (rz_io_desc_seek (desc, addr, R_IO_SEEK_SET) == addr)) {
+	if (desc && buf && (rz_io_desc_seek (desc, addr, RZ_IO_SEEK_SET) == addr)) {
 		return rz_io_desc_read (desc, buf, len);
 	}
 	return 0;
 }
 
 RZ_API int rz_io_desc_write_at(RzIODesc *desc, ut64 addr, const ut8 *buf, int len) {
-	if (desc && buf && (rz_io_desc_seek (desc, addr, R_IO_SEEK_SET) == addr)) {
+	if (desc && buf && (rz_io_desc_seek (desc, addr, RZ_IO_SEEK_SET) == addr)) {
 		return rz_io_desc_write (desc, buf, len);
 	}
 	return 0;
@@ -321,7 +321,7 @@ RZ_API int rz_io_desc_extend(RzIODesc *desc, ut64 size) {
 /* lifecycle */
 
 // TODO: move into io.c : rz_io_init
-R_IPI bool rz_io_desc_init(RzIO* io) {
+RZ_IPI bool rz_io_desc_init(RzIO* io) {
 	rz_return_val_if_fail (io, false);
 	rz_io_desc_fini (io);
 	// TODO: it leaks if called twice
@@ -343,7 +343,7 @@ static bool desc_fini_cb(void* user, void* data, ut32 id) {
 }
 
 //closes all descs and frees all descs and io->files
-R_IPI bool rz_io_desc_fini(RzIO* io) {
+RZ_IPI bool rz_io_desc_fini(RzIO* io) {
 	rz_return_val_if_fail (io, NULL);
 	if (io->files) {
 		rz_id_storage_foreach (io->files, desc_fini_cb, io);

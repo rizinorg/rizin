@@ -7,12 +7,12 @@ RzDebugPlugin rz_debug_plugin_null = {
 	.name = "null",
 	.license = "MIT",
 	.arch = "any",
-	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
+	.bits = RZ_SYS_BITS_32 | RZ_SYS_BITS_64,
 };
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_DBG,
+	.type = RZ_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_null,
 	.version = RZ_VERSION
 };

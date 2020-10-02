@@ -44,7 +44,7 @@ RZ_API bool rz_config_hold_s(RConfigHold *h, ...) {
 		if (!val) {
 			continue;
 		}
-		RConfigHoldChar *hc = R_NEW0 (RConfigHoldChar);
+		RConfigHoldChar *hc = RZ_NEW0 (RConfigHoldChar);
 		if (hc) {
 			hc->key = strdup (key);
 			hc->value = strdup (val);
@@ -72,7 +72,7 @@ RZ_API bool rz_config_hold_i(RConfigHold *h, ...) {
 		if (rz_list_find (h->list_num, key, key_cmp_hold_i)) {
 			continue;
 		}
-		RConfigHoldNum *hc = R_NEW0 (RConfigHoldNum);
+		RConfigHoldNum *hc = RZ_NEW0 (RConfigHoldNum);
 		if (!hc) {
 			continue;
 		}
@@ -86,7 +86,7 @@ RZ_API bool rz_config_hold_i(RConfigHold *h, ...) {
 
 RZ_API RConfigHold* rz_config_hold_new(RConfig *cfg) {
 	if (cfg) {
-		RConfigHold *hold = R_NEW0 (RConfigHold);
+		RConfigHold *hold = RZ_NEW0 (RConfigHold);
 		if (hold) {
 			hold->cfg = cfg;
 			return hold;
@@ -114,6 +114,6 @@ RZ_API void rz_config_hold_free(RConfigHold *h) {
 	if (h) {
 		rz_list_free (h->list_num);
 		rz_list_free (h->list_char);
-		R_FREE (h);
+		RZ_FREE (h);
 	}
 }

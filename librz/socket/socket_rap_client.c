@@ -15,7 +15,7 @@ static ut8 *rz_rap_packet(ut8 type, ut32 len) {
 static void rz_rap_packet_fill(ut8 *buf, const ut8* src, int len) {
 	if (buf && src && len > 0) {
 		ut32 curlen = rz_read_be32 (buf + 1);
-		memcpy (buf + 5, src, R_MIN (curlen, len));
+		memcpy (buf + 5, src, RZ_MIN (curlen, len));
 	}
 }
 

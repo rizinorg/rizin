@@ -27,7 +27,7 @@ static bool is_simple_type(int idx) {
  */
 static STypeInfo parse_simple_type(ut32 idx) {
 	STypeInfo type = { 0 };
-	SLF_SIMPLE_TYPE *simple_type = R_NEW0 (SLF_SIMPLE_TYPE);
+	SLF_SIMPLE_TYPE *simple_type = RZ_NEW0 (SLF_SIMPLE_TYPE);
 	if (!simple_type) {
 		return type;
 	}
@@ -806,7 +806,7 @@ static int get_array_element_type(void *type, void **ret_type) {
 
 	if (is_simple_type (curr_idx)) {
 		STypeInfo base_type = parse_simple_type (curr_idx);
-		SType *base_ret_type = R_NEW0 (SType);
+		SType *base_ret_type = RZ_NEW0 (SType);
 		if (!base_ret_type) {
 			*ret_type = 0;
 			return false;
@@ -832,7 +832,7 @@ static int get_array_index_type(void *type, void **ret_type) {
 
 	if (is_simple_type (curr_idx)) {
 		STypeInfo base_type = parse_simple_type (curr_idx);
-		SType *base_ret_type = R_NEW0 (SType);
+		SType *base_ret_type = RZ_NEW0 (SType);
 		if (!base_ret_type) {
 			*ret_type = 0;
 			return false;
@@ -859,7 +859,7 @@ static int get_bitfield_base_type(void *type, void **ret_type) {
 
 	if (is_simple_type (curr_idx)) {
 		STypeInfo base_type = parse_simple_type (curr_idx);
-		SType *base_ret_type = R_NEW0 (SType);
+		SType *base_ret_type = RZ_NEW0 (SType);
 		if (!base_ret_type) {
 			*ret_type = 0;
 			return false;
@@ -915,7 +915,7 @@ static int get_mfunction_return_type(void *type, void **ret_type) {
 
 	if (is_simple_type (curr_idx)) {
 		STypeInfo base_type = parse_simple_type (curr_idx);
-		SType *base_ret_type = R_NEW0 (SType);
+		SType *base_ret_type = RZ_NEW0 (SType);
 		if (!base_ret_type) {
 			*ret_type = 0;
 			return false;
@@ -987,7 +987,7 @@ static int get_modifier_modified_type(void *type, void **ret_type) {
 
 	if (is_simple_type (curr_idx)) {
 		STypeInfo base_type = parse_simple_type (curr_idx);
-		SType *base_ret_type = R_NEW0 (SType);
+		SType *base_ret_type = RZ_NEW0 (SType);
 		if (!base_ret_type) {
 			*ret_type = 0;
 			return false;
@@ -1013,7 +1013,7 @@ static int get_pointer_utype(void *type, void **ret_type) {
 
 	if (is_simple_type (curr_idx)) {
 		STypeInfo base_type = parse_simple_type (curr_idx);
-		SType *base_ret_type = R_NEW0 (SType);
+		SType *base_ret_type = RZ_NEW0 (SType);
 		if (!base_ret_type) {
 			*ret_type = 0;
 			return false;
@@ -1038,7 +1038,7 @@ static int get_procedure_return_type(void *type, void **ret_type) {
 
 	if (is_simple_type (curr_idx)) {
 		STypeInfo base_type = parse_simple_type (curr_idx);
-		SType *base_ret_type = R_NEW0 (SType);
+		SType *base_ret_type = RZ_NEW0 (SType);
 		if (!base_ret_type) {
 			*ret_type = 0;
 			return false;
@@ -1063,7 +1063,7 @@ static int get_procedure_arglist(void *type, void **ret_type) {
 
 	if (is_simple_type (curr_idx)) {
 		STypeInfo base_type = parse_simple_type (curr_idx);
-		SType *base_ret_type = R_NEW0 (SType);
+		SType *base_ret_type = RZ_NEW0 (SType);
 		if (!base_ret_type) {
 			*ret_type = 0;
 			return false;
@@ -1088,7 +1088,7 @@ static int get_member_index(void *type, void **ret_type) {
 
 	if (is_simple_type (curr_idx)) {
 		STypeInfo base_type = parse_simple_type (curr_idx);
-		SType *base_ret_type = R_NEW0 (SType);
+		SType *base_ret_type = RZ_NEW0 (SType);
 		if (!base_ret_type) {
 			*ret_type = 0;
 			return false;
@@ -1113,7 +1113,7 @@ static int get_nesttype_index(void *type, void **ret_type) {
 
 	if (is_simple_type (curr_idx)) {
 		STypeInfo base_type = parse_simple_type (curr_idx);
-		SType *base_ret_type = R_NEW0 (SType);
+		SType *base_ret_type = RZ_NEW0 (SType);
 		if (!base_ret_type) {
 			*ret_type = 0;
 			return false;
@@ -1138,7 +1138,7 @@ static int get_onemethod_index(void *type, void **ret_type) {
 
 	if (is_simple_type (curr_idx)) {
 		STypeInfo base_type = parse_simple_type (curr_idx);
-		SType *base_ret_type = R_NEW0 (SType);
+		SType *base_ret_type = RZ_NEW0 (SType);
 		if (!base_ret_type) {
 			*ret_type = 0;
 			return false;
@@ -1163,7 +1163,7 @@ static int get_method_mlist(void *type, void **ret_type) {
 
 	if (is_simple_type (curr_idx)) {
 		STypeInfo base_type = parse_simple_type (curr_idx);
-		SType *base_ret_type = R_NEW0 (SType);
+		SType *base_ret_type = RZ_NEW0 (SType);
 		if (!base_ret_type) {
 			*ret_type = 0;
 			return false;
@@ -1188,7 +1188,7 @@ static int get_enum_utype(void *type, void **ret_type) {
 
 	if (is_simple_type (curr_idx)) {
 		STypeInfo base_type = parse_simple_type (curr_idx);
-		SType *base_ret_type = R_NEW0 (SType);
+		SType *base_ret_type = RZ_NEW0 (SType);
 		if (!base_ret_type) {
 			*ret_type = 0;
 			return false;
@@ -1500,48 +1500,48 @@ static void free_sval(SVal *val) {
 	if (val->value_or_type < eLF_CHAR) {
 		SCString *scstr;
 		scstr = (SCString *) val->name_or_val;
-		R_FREE(scstr->name);
-		R_FREE(val->name_or_val);
+		RZ_FREE(scstr->name);
+		RZ_FREE(val->name_or_val);
 	} else {
 		switch (val->value_or_type) {
 		case eLF_ULONG:
 		{
 			SVal_LF_ULONG *lf_ulong;
 			lf_ulong = (SVal_LF_ULONG *) val->name_or_val;
-			R_FREE(lf_ulong->name.name);
-			R_FREE(val->name_or_val);
+			RZ_FREE(lf_ulong->name.name);
+			RZ_FREE(val->name_or_val);
 			break;
 		}
 		case eLF_LONG:
 		{
 			SVal_LF_LONG *lf_long;
 			lf_long = (SVal_LF_LONG *) val->name_or_val;
-			R_FREE(lf_long->name.name);
-			R_FREE(val->name_or_val);
+			RZ_FREE(lf_long->name.name);
+			RZ_FREE(val->name_or_val);
 			break;
 		}
 		case eLF_SHORT:
 		{
 			SVal_LF_SHORT *lf_short;
 			lf_short = (SVal_LF_SHORT *) val->name_or_val;
-			R_FREE(lf_short->name.name);
-			R_FREE(val->name_or_val);
+			RZ_FREE(lf_short->name.name);
+			RZ_FREE(val->name_or_val);
 			break;
 		}
 		case eLF_USHORT:
 		{
 			SVal_LF_USHORT *lf_ushort;
 			lf_ushort = (SVal_LF_USHORT *) val->name_or_val;
-			R_FREE(lf_ushort->name.name);
-			R_FREE(val->name_or_val);
+			RZ_FREE(lf_ushort->name.name);
+			RZ_FREE(val->name_or_val);
 			break;
 		}
 		case eLF_CHAR:
 		{
 			SVal_LF_CHAR *lf_char;
 			lf_char = (SVal_LF_CHAR *) val->name_or_val;
-			R_FREE(lf_char->name.name);
-			R_FREE(val->name_or_val);
+			RZ_FREE(lf_char->name.name);
+			RZ_FREE(val->name_or_val);
 			break;
 		}
 		default:
@@ -1660,7 +1660,7 @@ static void free_tpi_stream(void *stream) {
 			type->type_data.free_ = 0;
 			type->type_data.type_info = 0;
 		}
-		R_FREE (type);
+		RZ_FREE (type);
 	}
 	rz_list_free (tpi_stream->types);
 }
@@ -1694,7 +1694,7 @@ static void get_array_print_type(void *type, char **name) {
 	*name = rz_strbuf_drain_nofree (&buff);
 	rz_strbuf_fini (&buff);
 	if (need_to_free) {
-		R_FREE (tmp_name);
+		RZ_FREE (tmp_name);
 	}
 }
 
@@ -2871,7 +2871,7 @@ static int parse_lf_vtshape(SLF_VTSHAPE *lf_vtshape, uint8_t *leaf_data, unsigne
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type) {
+static int parse_tpi_stypes(RZ_STREAM_FILE *stream, SType *type) {
 	uint8_t *leaf_data;
 	unsigned int read_bytes = 0;
 
@@ -2948,7 +2948,7 @@ static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type) {
 	return read_bytes;
 }
 
-int parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream) {
+int parse_tpi_stream(void *parsed_pdb_stream, RZ_STREAM_FILE *stream) {
 	int i;
 	SType *type = 0;
 	STpiStream *tpi_stream = (STpiStream *) parsed_pdb_stream;

@@ -1,5 +1,5 @@
-#ifndef R_BASE91_H
-#define R_BASE91_H
+#ifndef RZ_BASE91_H
+#define RZ_BASE91_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,4 +12,4 @@ RZ_API int rz_base91_decode(ut8 *bout, const char *bin, int len);
 }
 #endif
 
-#endif //  R_BASE91_H
+#endif //  RZ_BASE91_H

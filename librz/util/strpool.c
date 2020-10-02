@@ -3,7 +3,7 @@
 #include <rz_util.h>
 
 RZ_API RStrpool* rz_strpool_new (int sz) {
-	RStrpool *p = R_NEW (RStrpool);
+	RStrpool *p = RZ_NEW (RStrpool);
 	if (!p) {
 		eprintf ("Malloc failed!\n");
 		return NULL;
@@ -34,10 +34,10 @@ RZ_API char *rz_strpool_alloc (RStrpool *p, int l) {
 	char *ret = p->str + p->len;
 	if ((p->len + l) >= p->size) {
 		ut64 osize = p->size;
-		if (l >= R_STRPOOL_INC) {
-			p->size += l + R_STRPOOL_INC;
+		if (l >= RZ_STRPOOL_INC) {
+			p->size += l + RZ_STRPOOL_INC;
 		} else {
-			p->size += R_STRPOOL_INC;
+			p->size += RZ_STRPOOL_INC;
 		}
 		if (p->size < osize) {
 			eprintf ("Underflow!\n");

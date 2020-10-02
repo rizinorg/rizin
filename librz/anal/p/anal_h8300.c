@@ -49,15 +49,15 @@ static void h8300_anal_jmp(RzAnalOp *op, ut64 addr, const ut8 *buf) {
 
 	switch (buf[0]) {
 	case H8300_JMP_1:
-		op->type = R_ANAL_OP_TYPE_UJMP;
+		op->type = RZ_ANAL_OP_TYPE_UJMP;
 		break;
 	case H8300_JMP_2:
-		op->type = R_ANAL_OP_TYPE_JMP;
+		op->type = RZ_ANAL_OP_TYPE_JMP;
 		rz_mem_swapendian ((ut8*)&ad, buf + 2, sizeof (ut16));
 		op->jump = ad;
 		break;
 	case H8300_JMP_3:
-		op->type = R_ANAL_OP_TYPE_UJMP;
+		op->type = RZ_ANAL_OP_TYPE_UJMP;
 		op->jump = buf[1];
 		break;
 	}
@@ -68,16 +68,16 @@ static void h8300_anal_jsr(RzAnalOp *op, ut64 addr, const ut8 *buf) {
 
 	switch (buf[0]) {
 	case H8300_JSR_1:
-		op->type = R_ANAL_OP_TYPE_UCALL;
+		op->type = RZ_ANAL_OP_TYPE_UCALL;
 		break;
 	case H8300_JSR_2:
-		op->type = R_ANAL_OP_TYPE_CALL;
+		op->type = RZ_ANAL_OP_TYPE_CALL;
 		rz_mem_swapendian ((ut8*)&ad, buf + 2, sizeof (ut16));
 		op->jump = ad;
 		op->fail = addr + 4;
 		break;
 	case H8300_JSR_3:
-		op->type = R_ANAL_OP_TYPE_UCALL;
+		op->type = RZ_ANAL_OP_TYPE_UCALL;
 		op->jump = buf[1];
 		break;
 	}
@@ -558,30 +558,30 @@ static int h8300_op(RzAnal *anal, RzAnalOp *op, ut64 addr,
 	case H8300_MOV_4BIT_2:
 	case H8300_MOV_4BIT_3:
 	case H8300_MOV_4BIT:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANAL_OP_TYPE_MOV;
 		break;
 	case H8300_CMP_4BIT:
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = RZ_ANAL_OP_TYPE_CMP;
 		break;
 	case H8300_XOR_4BIT:
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = RZ_ANAL_OP_TYPE_XOR;
 		break;
 	case H8300_AND_4BIT:
-		op->type = R_ANAL_OP_TYPE_AND;
+		op->type = RZ_ANAL_OP_TYPE_AND;
 		break;
 	case H8300_ADD_4BIT:
 	case H8300_ADDX_4BIT:
-		op->type = R_ANAL_OP_TYPE_AND;
+		op->type = RZ_ANAL_OP_TYPE_AND;
 		break;
 	case H8300_SUBX_4BIT:
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = RZ_ANAL_OP_TYPE_SUB;
 		break;
 	default:
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = RZ_ANAL_OP_TYPE_UNK;
 		break;
 	};
 
-	if (op->type != R_ANAL_OP_TYPE_UNK) {
+	if (op->type != RZ_ANAL_OP_TYPE_UNK) {
 		analop_esil(anal, op, addr, buf);
 		return ret;
 	}
@@ -598,47 +598,47 @@ static int h8300_op(RzAnal *anal, RzAnalOp *op, ut64 addr,
 	case H8300_MOV_1:
 	case H8300_MOV_2:
 	case H8300_EEPMOV:
-		op->type = R_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANAL_OP_TYPE_MOV;
 		break;
 	case H8300_RTS:
-		op->type = R_ANAL_OP_TYPE_RET;
+		op->type = RZ_ANAL_OP_TYPE_RET;
 		break;
 	case H8300_CMP_1:
 	case H8300_CMP_2:
 	case H8300_BTST_R2R8:
 	case H8300_BTST:
-		op->type = R_ANAL_OP_TYPE_CMP;
+		op->type = RZ_ANAL_OP_TYPE_CMP;
 		break;
 	case H8300_SHL:
-		op->type = R_ANAL_OP_TYPE_SHL;
+		op->type = RZ_ANAL_OP_TYPE_SHL;
 		break;
 	case H8300_SHR:
-		op->type = R_ANAL_OP_TYPE_SHR;
+		op->type = RZ_ANAL_OP_TYPE_SHR;
 		break;
 	case H8300_XOR:
 	case H8300_XORC:
-		op->type = R_ANAL_OP_TYPE_XOR;
+		op->type = RZ_ANAL_OP_TYPE_XOR;
 		break;
 	case H8300_MULXU:
-		op->type = R_ANAL_OP_TYPE_MUL;
+		op->type = RZ_ANAL_OP_TYPE_MUL;
 		break;
 	case H8300_ANDC:
-		op->type = R_ANAL_OP_TYPE_AND;
+		op->type = RZ_ANAL_OP_TYPE_AND;
 		break;
 	case H8300_ADDB_DIRECT:
 	case H8300_ADDW_DIRECT:
 	case H8300_ADDS:
 	case H8300_ADDX:
-		op->type = R_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANAL_OP_TYPE_ADD;
 		break;
 	case H8300_SUB_1:
 	case H8300_SUBW:
 	case H8300_SUBS:
 	case H8300_SUBX:
-		op->type = R_ANAL_OP_TYPE_SUB;
+		op->type = RZ_ANAL_OP_TYPE_SUB;
 		break;
 	case H8300_NOP:
-		op->type = R_ANAL_OP_TYPE_NOP;
+		op->type = RZ_ANAL_OP_TYPE_NOP;
 		break;
 	case H8300_JSR_1:
 	case H8300_JSR_2:
@@ -666,15 +666,15 @@ static int h8300_op(RzAnal *anal, RzAnalOp *op, ut64 addr,
 	case H8300_BLT:
 	case H8300_BGT:
 	case H8300_BLE:
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = RZ_ANAL_OP_TYPE_CJMP;
 		op->jump = addr + 2 + (st8)(buf[1]);
 		op->fail = addr + 2;
 		break;
 	default:
-		op->type = R_ANAL_OP_TYPE_UNK;
+		op->type = RZ_ANAL_OP_TYPE_UNK;
 		break;
 	};
-	if (mask & R_ANAL_OP_MASK_ESIL) {
+	if (mask & RZ_ANAL_OP_MASK_ESIL) {
 		analop_esil(anal, op, addr, buf);
 	}
 	return ret;
@@ -734,7 +734,7 @@ RzAnalPlugin rz_anal_plugin_h8300 = {
 
 #ifndef RZ_PLUGIN_INCORE
 struct rz_lib_struct_t radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_h8300,
 	.version = RZ_VERSION
 };

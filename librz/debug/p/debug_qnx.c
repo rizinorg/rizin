@@ -6,7 +6,7 @@
 
 /* HACK_FOR_PLUGIN_LINKAGE */
 RZ_API RzDebugPid *__r_debug_pid_new(const char *path, int pid, char status, ut64 pc) {
-	RzDebugPid *p = R_NEW0 (RzDebugPid);
+	RzDebugPid *p = RZ_NEW0 (RzDebugPid);
 	if (!p) {
 		return NULL;
 	}
@@ -80,8 +80,8 @@ static int rz_debug_qnx_reg_read (RzDebug *dbg, int type, ut8 *buf, int size) {
 		eprintf ("rz_debug_qnx_reg_read: small buffer %d vs %d\n",
 			 (int)size, (int)len);
 	}
-	copy_size = R_MIN (len, size);
-	buflen = R_MAX (len, buflen);
+	copy_size = RZ_MIN (len, size);
+	buflen = RZ_MAX (len, buflen);
 	if (reg_buf) {
 		if (buf_size < copy_size) {
 			ut8 *new_buf = realloc (reg_buf, copy_size);
@@ -114,7 +114,7 @@ static RzList *rz_debug_qnx_map_get (RzDebug *dbg) {
 static int rz_debug_qnx_reg_write (RzDebug *dbg, int type, const ut8 *buf, int size) {
 	int buflen = 0;
 	int bits = dbg->anal->bits;
-	const char *pcname = rz_reg_get_name (dbg->anal->reg, R_REG_NAME_PC);
+	const char *pcname = rz_reg_get_name (dbg->anal->reg, RZ_REG_NAME_PC);
 	RzRegItem *reg = rz_reg_get (dbg->anal->reg, pcname, 0);
 	if (!reg_buf) {
 		// we cannot write registers before we once read them
@@ -189,7 +189,7 @@ static int rz_debug_qnx_attach (RzDebug *dbg, int pid) {
 			int bits = dbg->anal->bits;
 			if ((desc = &g->desc)) {
 				switch (arch) {
-				case R_SYS_ARCH_X86:
+				case RZ_SYS_ARCH_X86:
 					if (bits == 16 || bits == 32) {
 						qnxr_set_architecture (&g->desc, X86_32);
 					} else {
@@ -197,7 +197,7 @@ static int rz_debug_qnx_attach (RzDebug *dbg, int pid) {
 						return false;
 					}
 					break;
-				case R_SYS_ARCH_ARM:
+				case RZ_SYS_ARCH_ARM:
 					if (bits == 16 || bits == 32) {
 						qnxr_set_architecture (&g->desc, ARM_32);
 					} else {
@@ -230,7 +230,7 @@ static const char *rz_debug_qnx_reg_profile (RzDebug *dbg) {
 	int arch = rz_sys_arch_id (dbg->arch);
 	int bits = dbg->anal->bits;
 	switch (arch) {
-	case R_SYS_ARCH_X86:
+	case RZ_SYS_ARCH_X86:
 		return strdup (
 			"=PC	eip\n"
 			"=SP	esp\n"
@@ -258,7 +258,7 @@ static const char *rz_debug_qnx_reg_profile (RzDebug *dbg) {
 			"seg	gs	.32	60	0\n"
 #endif
 			);
-	case R_SYS_ARCH_ARM:
+	case RZ_SYS_ARCH_ARM:
 		if (bits == 32) {
 			return strdup (
 				"=PC	r15\n"
@@ -344,7 +344,7 @@ RzDebugPlugin rz_debug_plugin_qnx = {
 	.name = "qnx",
 	.license = "LGPL3",
 	.arch = "x86,arm",
-	.bits = R_SYS_BITS_32,
+	.bits = RZ_SYS_BITS_32,
 	.step = rz_debug_qnx_step,
 	.cont = rz_debug_qnx_continue,
 	.attach = &rz_debug_qnx_attach,
@@ -364,7 +364,7 @@ RzDebugPlugin rz_debug_plugin_qnx = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_DBG,
+	.type = RZ_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_qnx,
 	.version = RZ_VERSION};
 #endif

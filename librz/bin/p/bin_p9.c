@@ -34,7 +34,7 @@ static RzList *entries(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	if ((ptr = R_NEW0 (RBinAddr))) {
+	if ((ptr = RZ_NEW0 (RBinAddr))) {
 		ptr->paddr = 8 * 4;
 		ptr->vaddr = 8 * 4;// + baddr (bf);
 		rz_list_append (ret, ptr);
@@ -59,7 +59,7 @@ static RzList *sections(RBinFile *bf) {
 	}
 	// add text segment
 	textsize = rz_buf_read_le32_at (bf->buf, 4);
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -68,13 +68,13 @@ static RzList *sections(RBinFile *bf) {
 	ptr->vsize = textsize + (textsize % 4096);
 	ptr->paddr = 8 * 4;
 	ptr->vaddr = ptr->paddr;
-	ptr->perm = R_PERM_RX; // r-x
+	ptr->perm = RZ_PERM_RX; // r-x
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 	// add data segment
 	datasize = rz_buf_read_le32_at (bf->buf, 8);
 	if (datasize > 0) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RBinSection))) {
 			return ret;
 		}
 		ptr->name = strdup ("data");
@@ -82,7 +82,7 @@ static RzList *sections(RBinFile *bf) {
 		ptr->vsize = datasize + (datasize % 4096);
 		ptr->paddr = textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
-		ptr->perm = R_PERM_RW;
+		ptr->perm = RZ_PERM_RW;
 		ptr->add = true;
 		rz_list_append (ret, ptr);
 	}
@@ -90,7 +90,7 @@ static RzList *sections(RBinFile *bf) {
 	// add syms segment
 	symssize = rz_buf_read_le32_at (bf->buf, 16);
 	if (symssize) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RBinSection))) {
 			return ret;
 		}
 		ptr->name = strdup ("syms");
@@ -98,14 +98,14 @@ static RzList *sections(RBinFile *bf) {
 		ptr->vsize = symssize + (symssize % 4096);
 		ptr->paddr = datasize + textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
-		ptr->perm = R_PERM_R; // r--
+		ptr->perm = RZ_PERM_R; // r--
 		ptr->add = true;
 		rz_list_append (ret, ptr);
 	}
 	// add spsz segment
 	spszsize = rz_buf_read_le32_at (bf->buf, 24);
 	if (spszsize) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RBinSection))) {
 			return ret;
 		}
 		ptr->name = strdup ("spsz");
@@ -113,14 +113,14 @@ static RzList *sections(RBinFile *bf) {
 		ptr->vsize = spszsize + (spszsize % 4096);
 		ptr->paddr = symssize + datasize + textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
-		ptr->perm = R_PERM_R; // r--
+		ptr->perm = RZ_PERM_R; // r--
 		ptr->add = true;
 		rz_list_append (ret, ptr);
 	}
 	// add pcsz segment
 	pcszsize = rz_buf_read_le32_at (bf->buf, 24);
 	if (pcszsize) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RBinSection))) {
 			return ret;
 		}
 		ptr->name = strdup ("pcsz");
@@ -128,7 +128,7 @@ static RzList *sections(RBinFile *bf) {
 		ptr->vsize = pcszsize + (pcszsize % 4096);
 		ptr->paddr = spszsize + symssize + datasize + textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
-		ptr->perm = R_PERM_R; // r--
+		ptr->perm = RZ_PERM_R; // r--
 		ptr->add = true;
 		rz_list_append (ret, ptr);
 	}
@@ -155,7 +155,7 @@ static RBinInfo *info(RBinFile *bf) {
 	if (!(bina = rz_bin_p9_get_arch (bf->buf, &bits, &big_endian))) {
 		return NULL;
 	}
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
@@ -195,7 +195,7 @@ static ut64 size(RBinFile *bf) {
 	return text + data + syms + spsz + (6 * 4);
 }
 
-#if !R_BIN_P9
+#if !RZ_BIN_P9
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
 static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
@@ -238,7 +238,7 @@ RBinPlugin rz_bin_plugin_p9 = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_p9,
 	.version = RZ_VERSION
 };

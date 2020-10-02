@@ -112,21 +112,21 @@
 #define GRUB_UDF_PARTMAP_TYPE_1		1
 #define GRUB_UDF_PARTMAP_TYPE_2		2
 
-R_PACKED (
+RZ_PACKED (
 struct grub_udf_lb_addr
 {
   grub_uint32_t block_num;
   grub_uint16_t part_ref;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_udf_short_ad
 {
   grub_uint32_t length;
   grub_uint32_t position;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_udf_long_ad
 {
   grub_uint32_t length;
@@ -134,21 +134,21 @@ struct grub_udf_long_ad
   grub_uint8_t imp_use[6];
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_udf_extent_ad
 {
   grub_uint32_t length;
   grub_uint32_t start;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_udf_charspec
 {
   grub_uint8_t charset_type;
   grub_uint8_t charset_info[63];
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_udf_timestamp
 {
   grub_uint16_t type_and_timezone;
@@ -163,14 +163,14 @@ struct grub_udf_timestamp
   grub_uint8_t micro_seconds;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_udf_regid
 {
   grub_uint8_t flags;
   grub_uint8_t ident[23];
   grub_uint8_t ident_suffix[8];
 });
-R_PACKED (
+RZ_PACKED (
 struct grub_udf_tag
 {
   grub_uint16_t tag_ident;
@@ -183,7 +183,7 @@ struct grub_udf_tag
   grub_uint32_t tag_location;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_udf_fileset
 {
   struct grub_udf_tag tag;
@@ -206,7 +206,7 @@ struct grub_udf_fileset
   struct grub_udf_long_ad streamdir_icb;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_udf_icbtag
 {
   grub_uint32_t prior_recorded_num_direct_entries;
@@ -219,7 +219,7 @@ struct grub_udf_icbtag
   grub_uint16_t flags;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_udf_file_ident
 {
   struct grub_udf_tag tag;
@@ -230,7 +230,7 @@ struct grub_udf_file_ident
   grub_uint16_t imp_use_length;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_udf_file_entry
 {
   struct grub_udf_tag tag;
@@ -256,7 +256,7 @@ struct grub_udf_file_entry
   grub_uint8_t ext_attr[1872];
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_udf_extended_file_entry
 {
   struct grub_udf_tag tag;
@@ -286,7 +286,7 @@ struct grub_udf_extended_file_entry
   grub_uint8_t ext_attr[1832];
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_udf_vrs
 {
   grub_uint8_t type;
@@ -294,14 +294,14 @@ struct grub_udf_vrs
   grub_uint8_t version;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_udf_avdp
 {
   struct grub_udf_tag tag;
   struct grub_udf_extent_ad vds;
 });
 
-R_PACKED (
+RZ_PACKED (
 struct grub_udf_pd
 {
   struct grub_udf_tag tag;
@@ -334,7 +334,7 @@ struct grub_udf_partmap
   };
 };
 
-R_PACKED (
+RZ_PACKED (
 struct grub_udf_lvd
 {
   struct grub_udf_tag tag;

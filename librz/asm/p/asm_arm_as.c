@@ -111,13 +111,13 @@ RzAsmPlugin rz_asm_plugin_arm_as = {
 	.author = "pancake",
 	.license = "LGPL3",
 	.bits = 16|32|64,
-	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
+	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.assemble = &assemble,
 };
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_arm_as,
 	.version = RZ_VERSION
 };

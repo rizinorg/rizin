@@ -21,10 +21,10 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	}
 
 	switch (a->syntax) {
-	case R_ASM_SYNTAX_INTEL:
+	case RZ_ASM_SYNTAX_INTEL:
 		syntaxstr = ".intel_syntax noprefix\n";
 		break;
-	case R_ASM_SYNTAX_ATT:
+	case RZ_ASM_SYNTAX_ATT:
 		syntaxstr = ".att_syntax\n";
 		break;
 	}
@@ -51,7 +51,7 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	if (user_ass) {
 		x86as = user_ass;
 	}
-	if (R_STR_ISEMPTY (x86as)) {
+	if (RZ_STR_ISEMPTY (x86as)) {
 		eprintf ("Please set RZ_X86AS env to define an x86 assembler program");
 		return 1;
 	}
@@ -105,13 +105,13 @@ RzAsmPlugin rz_asm_plugin_x86_as = {
 	.license = "LGPL3",
 	// NOTE: 64bits is not supported on OSX's nasm :(
 	.bits = 16 | 32 | 64,
-	.endian = R_SYS_ENDIAN_LITTLE,
+	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.assemble = &assemble,
 };
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ASM,
+	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_x86_as,
 	.version = RZ_VERSION
 };

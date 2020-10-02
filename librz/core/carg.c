@@ -62,7 +62,7 @@ static void print_format_values(RzCore *core, const char *fmt, bool onstack, ut6
 	int i;
 	int endian = core->print->big_endian;
 	int width = (core->anal->bits == 64)? 8: 4;
-	int bsize = R_MIN (64, core->blocksize);
+	int bsize = RZ_MIN (64, core->blocksize);
 
 	ut8 *buf = malloc (bsize);
 	if (!buf) {
@@ -153,13 +153,13 @@ RZ_API void rz_core_print_func_args(RzCore *core) {
 	if (!core->anal->reg) {
 		return;
 	}
-	const char *pc = rz_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	const char *pc = rz_reg_get_name (core->anal->reg, RZ_REG_NAME_PC);
 	ut64 cur_addr = rz_reg_getv (core->anal->reg, pc);
-	RzAnalOp *op = rz_core_anal_op (core, cur_addr, R_ANAL_OP_MASK_BASIC);
+	RzAnalOp *op = rz_core_anal_op (core, cur_addr, RZ_ANAL_OP_MASK_BASIC);
 	if (!op) {
 		return;
 	}
-	if (op->type == R_ANAL_OP_TYPE_CALL) {
+	if (op->type == RZ_ANAL_OP_TYPE_CALL) {
 		RzAnalFunction *fcn;
 		RzAnalFuncArg *arg;
 		bool onstack = false;
@@ -195,7 +195,7 @@ RZ_API void rz_core_print_func_args(RzCore *core) {
 			//if (nargs > 0) {
 				int i;
 				for (i = 0; i < nargs; i++) {
-					ut64 v = rz_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
+					ut64 v = rz_debug_arg_get (core->dbg, RZ_ANAL_CC_TYPE_STDCALL, i);
 					print_arg_str (i, "", color);
 					rz_cons_printf ("0x%08" PFMT64x, v);
 					rz_cons_newline ();
@@ -227,7 +227,7 @@ RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) {
 	if (!key) {
 		return NULL;
 	}
-	const char *sp = rz_reg_get_name (core->anal->reg, R_REG_NAME_SP);
+	const char *sp = rz_reg_get_name (core->anal->reg, RZ_REG_NAME_SP);
 	int nargs = rz_type_func_args_count (TDB, key);
 	if (!rz_anal_cc_func (core->anal, key)){
 		return NULL;
@@ -244,7 +244,7 @@ RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) {
 	ut64 s_width = (core->anal->bits == 64)? 8: 4;
 	if (src && !strcmp (src, "stack_rev")) {
 		for (i = nargs - 1; i >= 0; i--) {
-			RzAnalFuncArg *arg = R_NEW0 (RzAnalFuncArg);
+			RzAnalFuncArg *arg = RZ_NEW0 (RzAnalFuncArg);
 			set_fcn_args_info (arg, core->anal, key, cc, i);
 			arg->src = spv;
 			spv += arg->size? arg->size : s_width;
@@ -252,7 +252,7 @@ RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) {
 		}
 	} else {
 		for (i = 0; i < nargs; i++) {
-			RzAnalFuncArg *arg = R_NEW0 (RzAnalFuncArg);
+			RzAnalFuncArg *arg = RZ_NEW0 (RzAnalFuncArg);
 			if (!arg) {
 				return NULL;
 			}

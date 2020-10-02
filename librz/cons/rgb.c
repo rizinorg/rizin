@@ -66,18 +66,18 @@ static ut32 __approximate_rgb(int r, int g, int b) {
 	R = R /256 * 216;
 	R /= 256 * 216;
 	R /= 256 * 216;
-	r = R = R_DIM (R / 16, 0, 16);
-	g = G = R_DIM (G / 16, 0, 16);
-	b = B = R_DIM (B / 16, 0, 16);
+	r = R = RZ_DIM (R / 16, 0, 16);
+	g = G = RZ_DIM (G / 16, 0, 16);
+	b = B = RZ_DIM (B / 16, 0, 16);
 	r &= 0xff;
 	g &= 0xff;
 	b &= 0xff;
 	return (ut32)((G * M * M)  + (g * M) + b) + 16;
 #else
 	const int k = (256.0 / 6);
-	r = R_DIM (r / k, 0, 6);
-	g = R_DIM (g / k, 0, 6);
-	b = R_DIM (b / k, 0, 6);
+	r = RZ_DIM (r / k, 0, 6);
+	g = RZ_DIM (g / k, 0, 6);
+	b = RZ_DIM (b / k, 0, 6);
 	return 16 + (r * 36) + (g * 6) + b;
 #endif
 }
@@ -228,11 +228,11 @@ static void rz_cons_rgb_gen(RzConsColorMode mode, char *outstr, size_t sz, ut8 a
 			return;
 		}
 		switch (attr & -attr) {
-		case R_CONS_ATTR_BOLD: outstr[i] = '1'; break;
-		case R_CONS_ATTR_DIM: outstr[i] = '2'; break;
-		case R_CONS_ATTR_ITALIC: outstr[i] = '3'; break;
-		case R_CONS_ATTR_UNDERLINE: outstr[i] = '4'; break;
-		case R_CONS_ATTR_BLINK: outstr[i] = '5'; break;
+		case RZ_CONS_ATTR_BOLD: outstr[i] = '1'; break;
+		case RZ_CONS_ATTR_DIM: outstr[i] = '2'; break;
+		case RZ_CONS_ATTR_ITALIC: outstr[i] = '3'; break;
+		case RZ_CONS_ATTR_UNDERLINE: outstr[i] = '4'; break;
+		case RZ_CONS_ATTR_BLINK: outstr[i] = '5'; break;
 		}
 		outstr[i + 1] = ';';
 		i += 2;

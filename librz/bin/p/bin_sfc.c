@@ -68,7 +68,7 @@ static RBinInfo* info(RBinFile *bf) {
 		}
 	}
 
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
@@ -82,7 +82,7 @@ static RBinInfo* info(RBinFile *bf) {
 }
 
 static void addrom(RzList *ret, const char *name, int i, ut64 paddr, ut64 vaddr, ut32 size) {
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RZ_NEW0 (RBinSection);
 	if (!ptr) {
 		return;
 	}
@@ -90,14 +90,14 @@ static void addrom(RzList *ret, const char *name, int i, ut64 paddr, ut64 vaddr,
 	ptr->paddr = paddr;
 	ptr->vaddr = vaddr;
 	ptr->size = ptr->vsize = size;
-	ptr->perm = R_PERM_RX;
+	ptr->perm = RZ_PERM_RX;
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 }
 
 #if 0
 static void addsym(RzList *ret, const char *name, ut64 addr, ut32 size) {
-	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
+	RBinSymbol *ptr = RZ_NEW0 (RBinSymbol);
 	if (!ptr) {
 		return;
 	}
@@ -180,7 +180,7 @@ static RzList *mem (RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	if (!(m = R_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RBinMem))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -190,7 +190,7 @@ static RzList *mem (RBinFile *bf) {
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
 
-	if (!(m = R_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RBinMem))) {
 		return ret;
 	}
 	m->mirrors = rz_list_new ();
@@ -200,7 +200,7 @@ static RzList *mem (RBinFile *bf) {
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (m->mirrors, m);
 	m_bak = m;
-	if (!(m = R_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RBinMem))) {
 		rz_list_free (m_bak->mirrors);
 		return ret;
 	}
@@ -209,7 +209,7 @@ static RzList *mem (RBinFile *bf) {
 	m->size = HIRAM_SIZE;
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
-	if (!(m = R_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RBinMem))) {
 		return ret;
 	}
 	m->name = strdup ("EXTRAM");
@@ -217,7 +217,7 @@ static RzList *mem (RBinFile *bf) {
 	m->size = EXTRAM_SIZE;
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
-	if (!(m = R_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RBinMem))) {
 		return ret;
 	}
 	m->name = strdup ("PPU1_REG");
@@ -225,7 +225,7 @@ static RzList *mem (RBinFile *bf) {
 	m->size = PPU1_REG_SIZE;
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
-	if (!(m = R_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RBinMem))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -234,7 +234,7 @@ static RzList *mem (RBinFile *bf) {
 	m->size = DSP_REG_SIZE;
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
-	if (!(m = R_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RBinMem))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -243,7 +243,7 @@ static RzList *mem (RBinFile *bf) {
 	m->size = OLDJOY_REG_SIZE;
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
-	if (!(m = R_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RBinMem))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -262,7 +262,7 @@ static RzList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RES
 	}
 	/*
 	RBinAddr *ptr = NULL;
-	if (!(ptr = R_NEW0 (RBinAddr))) {
+	if (!(ptr = RZ_NEW0 (RBinAddr))) {
 		return ret;
 	}
 	ptr->paddr = INES_HDR_SIZE;
@@ -287,7 +287,7 @@ RBinPlugin rz_bin_plugin_sfc = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_sfc,
 	.version = RZ_VERSION
 };

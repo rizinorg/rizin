@@ -14,7 +14,7 @@ typedef struct {
 	libgdbr_t desc;
 } RzIOGdb;
 
-#define R_GDB_MAGIC rz_str_hash ("gdb")
+#define RZ_GDB_MAGIC rz_str_hash ("gdb")
 
 static int __close(RzIODesc *fd);
 static libgdbr_t *desc = NULL;
@@ -66,7 +66,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		isdev = true;
 	}
 
-	rw |= R_PERM_W;
+	rw |= RZ_PERM_W;
 	if (isdev) {
 		port = strchr (host, '@');
 		if (port) {
@@ -105,14 +105,14 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		i_port = atoi (port);
 	}
 
-	if (!(riog = R_NEW0 (RzIOGdb))) {
+	if (!(riog = RZ_NEW0 (RzIOGdb))) {
 		return NULL;
 	}
 	gdbr_init (&riog->desc, false);
 
 	if (gdbr_connect (&riog->desc, host, i_port) == 0) {
 		__close (NULL);
-		// R_FREE (desc);
+		// RZ_FREE (desc);
 		desc = &riog->desc;
 		if (pid > 0) { // FIXME this is here for now because RzDebug's pid and libgdbr's aren't properly synced.
 			desc->pid = i_pid;
@@ -123,7 +123,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		} else if ((i_pid = desc->pid) < 0) {
 			i_pid = -1;
 		}
-		riogdb = rz_io_desc_new (io, &rz_io_plugin_gdb, file, R_PERM_RWX, mode, riog);
+		riogdb = rz_io_desc_new (io, &rz_io_plugin_gdb, file, RZ_PERM_RWX, mode, riog);
 	}
 	// Get name
 	if (riogdb) {
@@ -145,13 +145,13 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 
 static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
-	case R_IO_SEEK_SET:
+	case RZ_IO_SEEK_SET:
 		io->off = offset;
 		break;
-	case R_IO_SEEK_CUR:
+	case RZ_IO_SEEK_CUR:
 		io->off += offset;
 		break;
-	case R_IO_SEEK_END:
+	case RZ_IO_SEEK_END:
 		io->off = ST64_MAX;
 	}
 	return io->off;
@@ -171,11 +171,11 @@ static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 
 static int __close(RzIODesc *fd) {
 	if (fd) {
-		R_FREE (fd->name);
+		RZ_FREE (fd->name);
 	}
 	gdbr_disconnect (desc);
 	gdbr_cleanup (desc);
-	R_FREE (desc);
+	RZ_FREE (desc);
 	return -1;
 }
 
@@ -189,7 +189,7 @@ static int __getpid(RzIODesc *fd) {
 	}
 	RzIODescData *iodd = desc->data;
 	if (iodd) {
-		if (iodd->magic != R_GDB_MAGIC) {
+		if (iodd->magic != RZ_GDB_MAGIC) {
 			return -1;
 		}
 		return iodd->pid;
@@ -241,7 +241,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 			// pktsz = 0 doesn't make sense
 			return NULL;
 		}
-		desc->stub_features.pkt_sz = R_MAX (pktsz, 8); // min = 64
+		desc->stub_features.pkt_sz = RZ_MAX (pktsz, 8); // min = 64
 		return NULL;
 	}
 	if (rz_str_startswith (cmd, "detach")) {
@@ -425,7 +425,7 @@ RzIOPlugin rz_io_plugin_gdb = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_gdb,
 	.version = RZ_VERSION
 };

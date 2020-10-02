@@ -13,7 +13,7 @@ static void apply_case(RzAnal *anal, RzAnalBlock *block, ut64 switch_addr, ut64 
 	// eprintf ("** apply_case: 0x%"PFMT64x " from 0x%"PFMT64x "\n", case_addr, case_addr_loc);
 	rz_meta_set_data_at (anal, case_addr_loc, offset_sz);
 	rz_anal_hint_set_immbase (anal, case_addr_loc, 10);
-	rz_anal_xrefs_set (anal, switch_addr, case_addr, R_ANAL_REF_TYPE_CODE);
+	rz_anal_xrefs_set (anal, switch_addr, case_addr, RZ_ANAL_REF_TYPE_CODE);
 	if (block) {
 		rz_anal_block_add_switch_case (block, switch_addr, id, case_addr);
 	}
@@ -27,12 +27,12 @@ static void apply_case(RzAnal *anal, RzAnalBlock *block, ut64 switch_addr, ut64 
 static void apply_switch(RzAnal *anal, ut64 switch_addr, ut64 jmptbl_addr, ut64 cases_count, ut64 default_case_addr) {
 	char tmp[0x30];
 	snprintf (tmp, sizeof (tmp), "switch table (%"PFMT64u" cases) at 0x%"PFMT64x, cases_count, jmptbl_addr);
-	rz_meta_set_string (anal, R_META_TYPE_COMMENT, switch_addr, tmp);
+	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, switch_addr, tmp);
 	if (anal->flb.set) {
 		snprintf (tmp, sizeof (tmp), "switch.0x%08"PFMT64x, switch_addr);
 		anal->flb.set (anal->flb.f, tmp, switch_addr, 1);
 		if (default_case_addr != UT64_MAX) {
-			rz_anal_xrefs_set (anal, switch_addr, default_case_addr, R_ANAL_REF_TYPE_CODE);
+			rz_anal_xrefs_set (anal, switch_addr, default_case_addr, RZ_ANAL_REF_TYPE_CODE);
 			snprintf (tmp, sizeof (tmp), "case.default.0x%"PFMT64x, switch_addr);
 			anal->flb.set (anal->flb.f, tmp, default_case_addr, 1);
 		}
@@ -231,13 +231,13 @@ RZ_API bool try_get_delta_jmptbl_info(RzAnal *anal, RzAnalFunction *fcn, ut64 jm
 	anal->iob.read_at (anal->iob.io, lea_addr, (ut8 *)buf, search_sz);
 
 	for (i = 0; i + 8 < search_sz; i++) {
-		int len = rz_anal_op (anal, &tmp_aop, lea_addr + i, buf + i, search_sz - i, R_ANAL_OP_MASK_BASIC);
+		int len = rz_anal_op (anal, &tmp_aop, lea_addr + i, buf + i, search_sz - i, RZ_ANAL_OP_MASK_BASIC);
 		if (len < 1) {
 			len = 1;
 		}
 
 		if (foundCmp) {
-			if (tmp_aop.type != R_ANAL_OP_TYPE_CJMP) {
+			if (tmp_aop.type != RZ_ANAL_OP_TYPE_CJMP) {
 				continue;
 			}
 
@@ -245,8 +245,8 @@ RZ_API bool try_get_delta_jmptbl_info(RzAnal *anal, RzAnalFunction *fcn, ut64 jm
 			break;
 		}
 
-		ut32 type = tmp_aop.type & R_ANAL_OP_TYPE_MASK;
-		if (type != R_ANAL_OP_TYPE_CMP) {
+		ut32 type = tmp_aop.type & RZ_ANAL_OP_TYPE_MASK;
+		if (type != RZ_ANAL_OP_TYPE_CMP) {
 			continue;
 		}
 		// get the value of the cmp
@@ -382,9 +382,9 @@ RZ_API bool try_get_jmptbl_info(RzAnal *anal, RzAnalFunction *fcn, ut64 addr, Rz
 		int buflen = prev_bb->size - prev_pos;
 		int len = rz_anal_op (anal, &tmp_aop, op_addr,
 			bb_buf + prev_pos, buflen,
-			R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
-		ut32 type = tmp_aop.type & R_ANAL_OP_TYPE_MASK;
-		if (len < 1 || type != R_ANAL_OP_TYPE_CMP) {
+			RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_HINT);
+		ut32 type = tmp_aop.type & RZ_ANAL_OP_TYPE_MASK;
+		if (len < 1 || type != RZ_ANAL_OP_TYPE_CMP) {
 			rz_anal_op_fini (&tmp_aop);
 			continue;
 		}

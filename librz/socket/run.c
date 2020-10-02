@@ -84,7 +84,7 @@ static void dyn_init(void) {
 #endif
 
 RZ_API RRunProfile *rz_run_new(const char *str) {
-	RRunProfile *p = R_NEW0 (RRunProfile);
+	RRunProfile *p = RZ_NEW0 (RRunProfile);
 	if (p) {
 		rz_run_reset (p);
 		if (str) {
@@ -561,7 +561,7 @@ RZ_API bool rz_run_parseline(RRunProfile *p, const char *b) {
 		p->_timeout_sig = rz_signal_from_string (e);
 	} else if (!memcmp (b, "arg", 3)) {
 		int n = atoi (b + 3);
-		if (n >= 0 && n < R_RUN_PROFILE_NARGS) {
+		if (n >= 0 && n < RZ_RUN_PROFILE_NARGS) {
 			p->_args[n] = getstr (e);
 			p->_argc++;
 		} else {
@@ -1009,9 +1009,9 @@ RZ_API int rz_run_config_env(RRunProfile *p) {
 			eprintf ("WARNING: Only one library can be opened at a time\n");
 		}
 #ifdef __WINDOWS__
-		p->_preload = rz_str_rz_prefix (R_JOIN_2_PATHS (RZ_LIBDIR, "librz."R_LIB_EXT));
+		p->_preload = rz_str_rz_prefix (RZ_JOIN_2_PATHS (RZ_LIBDIR, "librz."RZ_LIB_EXT));
 #else
-		p->_preload = strdup (RZ_LIBDIR"/librz."R_LIB_EXT);
+		p->_preload = strdup (RZ_LIBDIR"/librz."RZ_LIB_EXT);
 #endif
 	}
 	if (p->_libpath) {

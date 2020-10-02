@@ -25,7 +25,7 @@ RzAnalPlugin rz_anal_plugin_null = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_null,
 	.version = RZ_VERSION
 };

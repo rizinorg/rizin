@@ -9,7 +9,7 @@ http://sourceforge.net/p/devkitpro/ndstool/ci/master/tree/source/header.h
 
 #include <rz_types_base.h>
 
-R_PACKED (
+RZ_PACKED (
 struct nds_hdr
 {
     st8 title[0xC];

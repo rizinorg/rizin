@@ -110,7 +110,7 @@
 #define	EQ(a, b)	(memcmp(a, b, m->g->nstates) == 0)
 #define	STATEVARS	long vn; char *space
 #define	STATESETUP(m, nv)	{ (m)->space = malloc((nv)*(m)->g->nstates); \
-				if (!(m)->space) return R_REGEX_ESPACE; \
+				if (!(m)->space) return RZ_REGEX_ESPACE; \
 				(m)->vn = 0; }
 #define	STATETEARDOWN(m)	{ free((m)->space); }
 #define	SETUP(v)	((v) = &m->space[m->vn++ * m->g->nstates])
@@ -139,7 +139,7 @@ RZ_API bool rz_regex_check(const RzRegex *rr, const char *str) {
  * when choosing which matcher to call.  Also, by this point the matchers
  * have been prototyped.
  */
-int				/* 0 success, R_REGEX_NOMATCH failure */
+int				/* 0 success, RZ_REGEX_NOMATCH failure */
 rz_regex_exec(const RzRegex *preg, const char *string, size_t nmatch,
 	RzRegexMatch pmatch[], int eflags)
 {
@@ -147,21 +147,21 @@ rz_regex_exec(const RzRegex *preg, const char *string, size_t nmatch,
 #ifdef REDEBUG
 #	define	GOODFLAGS(f)	(f)
 #else
-#	define	GOODFLAGS(f)	((f)&(R_REGEX_NOTBOL|R_REGEX_NOTEOL|R_REGEX_STARTEND))
+#	define	GOODFLAGS(f)	((f)&(RZ_REGEX_NOTBOL|RZ_REGEX_NOTEOL|RZ_REGEX_STARTEND))
 #endif
 	if (!preg || !string) {
-		return R_REGEX_ASSERT;
+		return RZ_REGEX_ASSERT;
 	}
 
 	g = preg->re_g;
 	if (preg->re_magic != MAGIC1 || g->magic != MAGIC2) {
-		return (R_REGEX_BADPAT);
+		return (RZ_REGEX_BADPAT);
 	}
 	if (g->iflags & BAD) { /* backstop for no-debug case */
-		return (R_REGEX_BADPAT);
+		return (RZ_REGEX_BADPAT);
 	}
 	eflags = GOODFLAGS(eflags);
-	if (g->nstates <= CHAR_BIT * sizeof (states1) && !(eflags & R_REGEX_LARGE)) {
+	if (g->nstates <= CHAR_BIT * sizeof (states1) && !(eflags & RZ_REGEX_LARGE)) {
 		return(smatcher(g, (char *)string, nmatch, pmatch, eflags));
 	} else {
 		return (lmatcher (g, (char *)string, nmatch, pmatch, eflags));

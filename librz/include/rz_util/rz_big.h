@@ -1,5 +1,5 @@
-#ifndef R_BIG_H
-#define R_BIG_H
+#ifndef RZ_BIG_H
+#define RZ_BIG_H
 
 #include "../rz_types.h"
 
@@ -14,19 +14,19 @@ extern "C" {
 #define RNumBig BIGNUM
 #else
 /* Use default impl */
-#define R_BIG_WORD_SIZE 4
+#define RZ_BIG_WORD_SIZE 4
 /* Let's support 4096-bit big number */
-#define R_BIG_ARRAY_SIZE (512 / R_BIG_WORD_SIZE)
-/* R_BIG_WORD_SIZE == 4, 32 bits long */
-#define R_BIG_DTYPE ut32
-#define R_BIG_DTYPE_TMP ut64
-#define R_BIG_SPRINTF_FORMAT_STR "%.08x"
-#define R_BIG_FORMAT_STR_LEN 9
-#define R_BIG_SSCANF_FORMAT_STR "%8x"
-#define R_BIG_MAX_VAL (R_BIG_DTYPE_TMP) UT32_MAX
+#define RZ_BIG_ARRAY_SIZE (512 / RZ_BIG_WORD_SIZE)
+/* RZ_BIG_WORD_SIZE == 4, 32 bits long */
+#define RZ_BIG_DTYPE ut32
+#define RZ_BIG_DTYPE_TMP ut64
+#define RZ_BIG_SPRINTF_FORMAT_STR "%.08x"
+#define RZ_BIG_FORMAT_STR_LEN 9
+#define RZ_BIG_SSCANF_FORMAT_STR "%8x"
+#define RZ_BIG_MAX_VAL (RZ_BIG_DTYPE_TMP) UT32_MAX
 
 typedef struct rz_num_big_t {
-	R_BIG_DTYPE array[R_BIG_ARRAY_SIZE];
+	RZ_BIG_DTYPE array[RZ_BIG_ARRAY_SIZE];
 	int sign;
 } RNumBig;
 #endif
@@ -70,4 +70,4 @@ RZ_API void rz_big_isqrt(RNumBig *c, RNumBig *a); /* Integer square root -- e.g.
 }
 #endif
 
-#endif //  R_BIG_H
+#endif //  RZ_BIG_H

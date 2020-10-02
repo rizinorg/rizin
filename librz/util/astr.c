@@ -9,7 +9,7 @@ RZ_API RASN1String *rz_asn1_create_string (const char *string, bool allocated, u
 	if (!string || !length) {
 		return NULL;
 	}
-	RASN1String *s = R_NEW0 (RASN1String);
+	RASN1String *s = RZ_NEW0 (RASN1String);
 	if (s) {
 		s->allocated = allocated;
 		s->length = length;

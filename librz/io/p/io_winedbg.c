@@ -9,7 +9,7 @@
 
 static RzSocket *gs = NULL;
 
-R_PACKED (struct winedbg_x86_32 {
+RZ_PACKED (struct winedbg_x86_32 {
 	ut16 cs;
 	ut16 ss;
 	ut16 ds;
@@ -144,13 +144,13 @@ static int __close(RzIODesc *fd) {
 
 static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
-	case R_IO_SEEK_SET:
+	case RZ_IO_SEEK_SET:
 		io->off = offset;
 		break;
-	case R_IO_SEEK_CUR:
+	case RZ_IO_SEEK_CUR:
 		io->off += offset;
 		break;
-	case R_IO_SEEK_END:
+	case RZ_IO_SEEK_END:
 		io->off = ST64_MAX;
 	}
 	io->off = offset;
@@ -379,7 +379,7 @@ RzIOPlugin rz_io_plugin_winedbg = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_winedbg,
 	.version = RZ_VERSION
 };

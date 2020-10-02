@@ -49,7 +49,7 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	RBufferSparse *rbs;
 	RzListIter *iter;
 
-	if (!fd || !fd->data || (fd->perm & R_PERM_W) == 0 || count <= 0) {
+	if (!fd || !fd->data || (fd->perm & RZ_PERM_W) == 0 || count <= 0) {
 		return -1;
 	}
 	rih = fd->data;
@@ -65,7 +65,7 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 		fclose (out);
 		return -1;
 	}
-	rz_buf_seek (rih->rbuf, count, R_BUF_CUR);
+	rz_buf_seek (rih->rbuf, count, RZ_BUF_CUR);
 
 	/* disk write : process each sparse chunk */
 	//TODO : sort addresses + check overlap?
@@ -192,7 +192,7 @@ static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 	memset (buf, io->Oxff, count);
 	int r = rz_buf_read_at (rih->rbuf, io->off, buf, count);
 	if (r >= 0) {
-		rz_buf_seek (rih->rbuf, r, R_BUF_CUR);
+		rz_buf_seek (rih->rbuf, r, RZ_BUF_CUR);
 	}
 	return r;
 }
@@ -396,7 +396,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 		if (!str) {
 			return NULL;
 		}
-		mal = R_NEW0 (Rihex);
+		mal = RZ_NEW0 (Rihex);
 		if (!mal) {
 			free (str);
 			return NULL;
@@ -448,7 +448,7 @@ RzIOPlugin rz_io_plugin_ihex = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_ihex,
 	.version = RZ_VERSION
 };

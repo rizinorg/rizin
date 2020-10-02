@@ -37,7 +37,7 @@ static int __get_pid (RzIODesc *desc);
 #define MACH_ERROR_STRING(ret) \
 	(mach_error_string (ret) ? mach_error_string (ret) : "(unknown)")
 
-#define R_MACH_MAGIC rz_str_hash ("mach")
+#define RZ_MACH_MAGIC rz_str_hash ("mach")
 
 typedef struct {
 	task_t task;
@@ -52,8 +52,8 @@ int RzIOMACH_TASK(RzIODescData *x) {
 	return -1;
 }
 
-#undef R_IO_NFDS
-#define R_IO_NFDS 2
+#undef RZ_IO_NFDS
+#define RZ_IO_NFDS 2
 extern int errno;
 
 static task_t task_for_pid_workaround(int pid) {
@@ -174,7 +174,7 @@ static ut64 getNextValid(RzIO *io, RzIODesc *fd, ut64 addr) {
 	size = osize = 4096;
 #endif
 	if (the_lower != UT64_MAX) {
-		return R_MAX (addr, the_lower);
+		return RZ_MAX (addr, the_lower);
 	}
 
 	for (;;) {
@@ -236,7 +236,7 @@ static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, int len) {
 		copied = 0;
 	}
 	while (copied < len) {
-		blen = R_MIN ((len - copied), blocksize);
+		blen = RZ_MIN ((len - copied), blocksize);
 		//blen = len;
 		err = vm_read_overwrite (task,
 			(ut64)io->off + copied, blen,
@@ -414,15 +414,15 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		}
 		return NULL;
 	}
-	RzIODescData *iodd = R_NEW0 (RzIODescData);
+	RzIODescData *iodd = RZ_NEW0 (RzIODescData);
 	if (iodd) {
 		iodd->pid = pid;
 		iodd->tid = pid;
 		iodd->data = NULL;
 	}
-	riom = R_NEW0 (RzIOMach);
+	riom = RZ_NEW0 (RzIOMach);
 	if (!riom) {
-		R_FREE (iodd);
+		RZ_FREE (iodd);
 		return NULL;
 	}
 	riom->task = task;
@@ -434,10 +434,10 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		: strdup ("kernel");
 	if (!strncmp (file, "smach://", 8)) {
 		ret = rz_io_desc_new (io, &rz_io_plugin_mach, &file[1],
-			       rw | R_PERM_X, mode, iodd);
+			       rw | RZ_PERM_X, mode, iodd);
 	} else {
 		ret = rz_io_desc_new (io, &rz_io_plugin_mach, file,
-			       rw | R_PERM_X, mode, iodd);
+			       rw | RZ_PERM_X, mode, iodd);
 	}
 	ret->name = pidpath;
 	return ret;
@@ -445,13 +445,13 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 
 static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	switch (whence) {
-	case R_IO_SEEK_SET:
+	case RZ_IO_SEEK_SET:
 		io->off = offset;
 		break;
-	case R_IO_SEEK_CUR:
+	case RZ_IO_SEEK_CUR:
 		io->off += offset;
 		break;
-	case R_IO_SEEK_END:
+	case RZ_IO_SEEK_END:
 		io->off = ST64_MAX;
 	}
 	return io->off;
@@ -466,7 +466,7 @@ static int __close(RzIODesc *fd) {
 	if (!iodd) {
 		return false;
 	}
-	if (iodd->magic != R_MACH_MAGIC) {
+	if (iodd->magic != RZ_MACH_MAGIC) {
 		return false;
 	}
 	task_t task = pid_to_task (fd, iodd->pid);
@@ -474,7 +474,7 @@ static int __close(RzIODesc *fd) {
 	if (kr != KERN_SUCCESS) {
 		perror ("__close io_mach");
 	}
-	R_FREE (fd->data);
+	RZ_FREE (fd->data);
 	return kr == KERN_SUCCESS;
 }
 
@@ -483,7 +483,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	RzIODescData *iodd = fd->data;
-	if (iodd->magic != R_MACH_MAGIC) {
+	if (iodd->magic != RZ_MACH_MAGIC) {
 		return NULL;
 	}
 
@@ -545,7 +545,7 @@ static int __get_pid (RzIODesc *desc) {
 	}
 	RzIODescData *iodd = desc->data;
 	if (iodd) {
-		if (iodd->magic != R_MACH_MAGIC) {
+		if (iodd->magic != RZ_MACH_MAGIC) {
 			return -1;
 		}
 		return iodd->pid;
@@ -581,7 +581,7 @@ RzIOPlugin rz_io_plugin_mach = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_IO,
+	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_mach,
 	.version = RZ_VERSION
 };

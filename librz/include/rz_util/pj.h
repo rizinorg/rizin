@@ -1,6 +1,6 @@
-#ifndef R_PJ_H
-#define R_PJ_H 1
-#define R_PRINT_JSON_DEPTH_LIMIT 128
+#ifndef RZ_PJ_H
+#define RZ_PJ_H 1
+#define RZ_PRINT_JSON_DEPTH_LIMIT 128
 
 #include <rz_util/rz_strbuf.h>
 
@@ -12,7 +12,7 @@ typedef struct pj_t {
 	RStrBuf sb;
 	bool is_first;
 	bool is_key;
-	char braces[R_PRINT_JSON_DEPTH_LIMIT];
+	char braces[RZ_PRINT_JSON_DEPTH_LIMIT];
 	int level;
 } PJ;
 

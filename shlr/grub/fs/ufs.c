@@ -125,7 +125,7 @@ struct grub_ufs_sblock
 
 #ifdef MODE_UFS2
 /* UFS inode.  */
-R_PACKED(
+RZ_PACKED(
 struct grub_ufs_inode
 {
   grub_uint16_t mode;
@@ -162,7 +162,7 @@ struct grub_ufs_inode
 });
 #else
 /* UFS inode.  */
-R_PACKED(
+RZ_PACKED(
 struct grub_ufs_inode
 {
   grub_uint16_t mode;
@@ -191,7 +191,7 @@ struct grub_ufs_inode
 #endif
 
 /* Directory entry.  */
-R_PACKED(
+RZ_PACKED(
 struct grub_ufs_dirent
 {
   grub_uint32_t ino;

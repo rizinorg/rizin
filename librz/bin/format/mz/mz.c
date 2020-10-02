@@ -27,7 +27,7 @@ RBinAddr *rz_bin_mz_get_entrypoint (const struct rz_bin_mz_obj_t *bin) {
 		eprintf ("Error: entry point outside load module\n");
 		return NULL;
 	}
-	entrypoint = R_NEW0 (RBinAddr);
+	entrypoint = RZ_NEW0 (RBinAddr);
 	if (entrypoint) {
 		entrypoint->vaddr = la;
 		entrypoint->paddr = rz_bin_mz_la_to_pa (bin, la);
@@ -49,7 +49,7 @@ static RBinSection *rz_bin_mz_init_section(const struct rz_bin_mz_obj_t *bin,
 					  ut64 laddr) {
 	RBinSection *section;
 
-	section = R_NEW0 (RBinSection);
+	section = RZ_NEW0 (RBinSection);
 	if (section) {
 		section->vaddr = laddr;
 	}
@@ -197,7 +197,7 @@ void *rz_bin_mz_free (struct rz_bin_mz_obj_t *bin) {
 static int rz_bin_mz_init_hdr(struct rz_bin_mz_obj_t *bin) {
 	int relocations_size, dos_file_size;
 	MZ_image_dos_header *mz;
-	if (!(mz = R_NEW0 (MZ_image_dos_header))) {
+	if (!(mz = RZ_NEW0 (MZ_image_dos_header))) {
 		rz_sys_perror ("malloc (MZ_image_dos_header)");
 		return false;
 	}
@@ -261,7 +261,7 @@ static int rz_bin_mz_init_hdr(struct rz_bin_mz_obj_t *bin) {
 		if (rz_buf_read_at (bin->b, bin->dos_header->reloc_table_offset,
 			    (ut8 *)bin->relocation_entries, relocations_size) == -1) {
 			eprintf ("Error: read (dos relocation entries)\n");
-			R_FREE (bin->relocation_entries);
+			RZ_FREE (bin->relocation_entries);
 			return false;
 		}
 	}
@@ -281,7 +281,7 @@ static bool rz_bin_mz_init(struct rz_bin_mz_obj_t *bin) {
 }
 
 struct rz_bin_mz_obj_t *rz_bin_mz_new (const char *file) {
-	struct rz_bin_mz_obj_t *bin = R_NEW0 (struct rz_bin_mz_obj_t);
+	struct rz_bin_mz_obj_t *bin = RZ_NEW0 (struct rz_bin_mz_obj_t);
 	if (!bin) {
 		return NULL;
 	}
@@ -305,7 +305,7 @@ struct rz_bin_mz_obj_t *rz_bin_mz_new (const char *file) {
 }
 
 struct rz_bin_mz_obj_t *rz_bin_mz_new_buf(RBuffer *buf) {
-	struct rz_bin_mz_obj_t *bin = R_NEW0 (struct rz_bin_mz_obj_t);
+	struct rz_bin_mz_obj_t *bin = RZ_NEW0 (struct rz_bin_mz_obj_t);
 	if (!bin) {
 		return NULL;
 	}
@@ -351,6 +351,6 @@ RBinAddr *rz_bin_mz_get_main_vaddr (struct rz_bin_mz_obj_t *bin) {
 		}
 	}
 
-	R_FREE (entry);
+	RZ_FREE (entry);
 	return NULL;
 }

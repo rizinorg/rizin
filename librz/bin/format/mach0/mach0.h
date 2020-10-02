@@ -8,7 +8,7 @@
 // 20% faster loading times for macho if enabled
 #define FEATURE_SYMLIST 0
 
-#define R_BIN_MACH0_STRING_LENGTH 256
+#define RZ_BIN_MACH0_STRING_LENGTH 256
 
 
 #define CSMAGIC_CODEDIRECTORY      0xfade0c02
@@ -44,7 +44,7 @@ struct section_t {
 	ut32 align;
 	ut32 flags;
 	int perm;
-	char name[R_BIN_MACH0_STRING_LENGTH];
+	char name[RZ_BIN_MACH0_STRING_LENGTH];
 	int last;
 };
 
@@ -60,7 +60,7 @@ struct symbol_t {
 };
 
 struct import_t {
-	char name[R_BIN_MACH0_STRING_LENGTH];
+	char name[RZ_BIN_MACH0_STRING_LENGTH];
 	int ord;
 	int last;
 };
@@ -86,7 +86,7 @@ struct addr_t {
 };
 
 struct lib_t {
-	char name[R_BIN_MACH0_STRING_LENGTH];
+	char name[RZ_BIN_MACH0_STRING_LENGTH];
 	int last;
 };
 
@@ -149,7 +149,7 @@ struct MACH0_(obj_t) {
 		struct arm_thread_state32 arm_32;
 		struct arm_thread_state64 arm_64;
 	} thread_state;
-	char (*libs)[R_BIN_MACH0_STRING_LENGTH];
+	char (*libs)[RZ_BIN_MACH0_STRING_LENGTH];
 	int nlibs;
 	int size;
 	ut64 baddr;

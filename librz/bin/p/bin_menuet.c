@@ -87,7 +87,7 @@ static RzList* entries(RBinFile *bf) {
 	RzList* ret;
 	ut8 buf[64] = {0};
 	RBinAddr *ptr = NULL;
-	const int buf_size = R_MIN (sizeof (buf), rz_buf_size (bf->buf));
+	const int buf_size = RZ_MIN (sizeof (buf), rz_buf_size (bf->buf));
 
 	rz_buf_read_at (bf->buf, 0, buf, buf_size);
 	ut64 entry = menuetEntry (buf, buf_size);
@@ -98,7 +98,7 @@ static RzList* entries(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	if ((ptr = R_NEW0 (RBinAddr))) {
+	if ((ptr = RZ_NEW0 (RBinAddr))) {
 		ptr->paddr = rz_read_ble32 (buf + 12, false);
 		ptr->vaddr = ptr->paddr + baddr (bf);
 		rz_list_append (ret, ptr);
@@ -110,7 +110,7 @@ static RzList* sections(RBinFile *bf) {
 	RzList *ret = NULL;
 	RBinSection *ptr = NULL;
 	ut8 buf[64] = {0};
-	const int buf_size = R_MIN (sizeof (buf), rz_buf_size (bf->buf));
+	const int buf_size = RZ_MIN (sizeof (buf), rz_buf_size (bf->buf));
 
 	rz_buf_read_at (bf->buf, 0, buf, buf_size);
 	if (!bf->o->info) {
@@ -121,7 +121,7 @@ static RzList* sections(RBinFile *bf) {
 		return NULL;
 	}
 	// add text segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("text");
@@ -129,13 +129,13 @@ static RzList* sections(RBinFile *bf) {
 	ptr->vsize = ptr->size + (ptr->size % 4096);
 	ptr->paddr = rz_read_ble32 (buf + 12, false);
 	ptr->vaddr = ptr->paddr + baddr (bf);
-	ptr->perm = R_PERM_RX; // r-x
+	ptr->perm = RZ_PERM_RX; // r-x
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
 	if (MENUET_VERSION(buf)) {
 		/* add data section */
-		if (!(ptr = R_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RBinSection))) {
 			return ret;
 		}
 		ptr->name = strdup ("idata");
@@ -145,7 +145,7 @@ static RzList* sections(RBinFile *bf) {
 		ptr->vsize = ptr->size + (ptr->size % 4096);
 		ptr->paddr = rz_read_ble32 (buf + 40, false);
 		ptr->vaddr = ptr->paddr + baddr (bf);
-		ptr->perm = R_PERM_R; // r--
+		ptr->perm = RZ_PERM_R; // r--
 		ptr->add = true;
 		rz_list_append (ret, ptr);
 	}
@@ -154,7 +154,7 @@ static RzList* sections(RBinFile *bf) {
 }
 
 static RBinInfo* info(RBinFile *bf) {
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	RBinInfo *ret = RZ_NEW0 (RBinInfo);
 	if (ret) {
 		ret->file = strdup (bf->file);
 		ret->bclass = strdup ("program");
@@ -185,7 +185,7 @@ static ut64 size(RBinFile *bf) {
 	return (ut64)rz_read_ble32 (buf, false);
 }
 
-#if !R_BIN_P9
+#if !RZ_BIN_P9
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
@@ -219,7 +219,7 @@ RBinPlugin rz_bin_plugin_menuet = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_BIN,
+	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_menuet,
 	.version = RZ_VERSION
 };

@@ -317,7 +317,7 @@ static int riscv_dis(RzAsm *a, RzAsmOp *rop, const ut8 *buf, ut64 len) {
 	if (len < 2) {
 		return -1;
 	}
-	memcpy (&insn, buf, R_MIN (sizeof (insn), len));
+	memcpy (&insn, buf, RZ_MIN (sizeof (insn), len));
 	int insn_len = riscv_insn_length(insn);
 	if (len < insn_len) {
 		return -1;
