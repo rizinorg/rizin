@@ -3,7 +3,7 @@
 
 //TODO test rz_str_chop_path
 
-bool test_r_str_replace_char_once(void) {
+bool test_rz_str_replace_char_once(void) {
 	char* str = strdup ("hello world");
 	(void) rz_str_replace_char_once (str, 'l', 'x');
 	mu_assert_streq (str, "hexlo world", "error, replace char once failed");
@@ -11,7 +11,7 @@ bool test_r_str_replace_char_once(void) {
 	mu_end;
 }
 
-bool test_r_str_replace(void) {
+bool test_rz_str_replace(void) {
 	// infinite loop test
 	char *str = rz_str_replace (strdup ("hello world"), "hell", "ihell", 0);
 	mu_assert_streq (str, "ihello world", "error, replace char multi failed");
@@ -38,7 +38,7 @@ bool test_r_str_replace(void) {
 	mu_end;
 }
 
-bool test_r_str_replace_char(void) {
+bool test_rz_str_replace_char(void) {
 	char* str = strdup ("hello world");
 	(void) rz_str_replace_char (str, 'l', 'x');
 	mu_assert_streq (str, "hexxo worxd", "error, replace char multi failed");
@@ -48,7 +48,7 @@ bool test_r_str_replace_char(void) {
 
 //TODO test rz_str_bits
 
-bool test_r_str_bits64(void) {
+bool test_rz_str_bits64(void) {
 	char buf[65];
 	(void)rz_str_bits64 (buf, 0);
 	mu_assert_streq (buf, "00000000", "binary of 0");
@@ -61,7 +61,7 @@ bool test_r_str_bits64(void) {
 
 //TODO test rz_str_bits_from_string
 
-bool test_r_str_rwx(void) {
+bool test_rz_str_rwx(void) {
 	int rwx = rz_str_rwx ("rwx");
 	int rw =  rz_str_rwx ("rw-");
 	int rx = rz_str_rwx ("rx");
@@ -81,7 +81,7 @@ bool test_r_str_rwx(void) {
 
 //TODO test rz_str_binstr2bin
 
-bool test_r_str_rwx_i(void) {
+bool test_rz_str_rwx_i(void) {
 	const char* rwx = rz_str_rwx_i (7);
 	const char* rw = rz_str_rwx_i (6);
 	const char* rx = rz_str_rwx_i (5);
@@ -95,7 +95,7 @@ bool test_r_str_rwx_i(void) {
 	mu_end;
 }
 
-bool test_r_str_trim(void) {
+bool test_rz_str_trim(void) {
 	//  1
 	const char* one = rz_str_trim_head_ro ("  hello  ");
 	mu_assert_streq (one, "hello  ", "one");
@@ -111,7 +111,7 @@ bool test_r_str_trim(void) {
 }
 //TODO find a way to test rz_str_home.
 
-bool test_r_str_bool(void) {
+bool test_rz_str_bool(void) {
 	const char* one = rz_str_bool(1);
 	const char* zero = rz_str_bool(0);
 	const char* fifty = rz_str_bool(50);
@@ -123,7 +123,7 @@ bool test_r_str_bool(void) {
 	mu_end;
 }
 
-bool test_r_str_case(void) {
+bool test_rz_str_case(void) {
 	char* str1_mixedcase = strdup ("mIxEdCaSe");
 	char* str2_mixedcase = strdup ("mIxEdCaSe");
 	rz_str_case (str1_mixedcase, true /*upcase*/);
@@ -146,7 +146,7 @@ bool test_r_str_case(void) {
 //TODO test rz_str_hash64, rz_str_hash
 //TODO test rz_str_delta (WTF!)
 
-bool test_r_str_split(void) {
+bool test_rz_str_split(void) {
 	char* hi = strdup ("hello world");
 	int r = rz_str_split (hi, ' ');
 	mu_assert_eq (r, 2, "split on space");
@@ -158,7 +158,7 @@ bool test_r_str_split(void) {
 	mu_end;
 }
 
-bool test_r_str_tokenize(void) {
+bool test_rz_str_tokenize(void) {
 	//XXX rz_str_word0 doesn't work on "hello      world" to
 	// tokenize into ["hello", "world"]
 	char* hi = strdup ("hello world");
@@ -172,18 +172,18 @@ bool test_r_str_tokenize(void) {
 	mu_end;
 }
 
-bool test_r_str_char_count(void) {
+bool test_rz_str_char_count(void) {
 	mu_assert_eq (rz_str_char_count ("poop", 'p'), 2, "number of p in poop");
 	mu_end;
 }
 
-bool test_r_str_word_count(void) {
+bool test_rz_str_word_count(void) {
 	mu_assert_eq (rz_str_word_count ("let's test\nrizin \t libraries!"), 4,
 				"words in a string");
 	mu_end;
 }
 
-bool test_r_str_ichr(void) {
+bool test_rz_str_ichr(void) {
 	char* test = "rrrrrrizin";
 	char* out = rz_str_ichr (test, 'r');
 	mu_assert_streq (out, "izin",
@@ -191,28 +191,28 @@ bool test_r_str_ichr(void) {
 	mu_end;
 }
 
-bool test_r_str_lchr(void) {
+bool test_rz_str_lchr(void) {
 	const char* test = "rizin";
 	const char* out = rz_str_lchr (test, 'i');
 	mu_assert_streq (out, "in", "pointer to last i in rizin");
 	mu_end;
 }
 
-bool test_r_sub_str_lchr(void) {
+bool test_rz_sub_str_lchr(void) {
 	const char* test = "raddddare2d";
 	const char* out = rz_sub_str_lchr (test, 1, 8, 'd');
 	mu_assert_streq (out, "dare2d", "pointer to last d in range in radddddare2d");
 	mu_end;
 }
 
-bool test_r_sub_str_rchr(void) {
+bool test_rz_sub_str_rchr(void) {
 	const char* test = "raddddare2d";
 	const char* out = rz_sub_str_rchr (test, 1, 8, 'd');
 	mu_assert_streq (out, "ddddare2d", "pointer to first d in range in radddddare2d");
 	mu_end;
 }
 
-bool test_r_str_rchr(void) {
+bool test_rz_str_rchr(void) {
 	const char* test = "raddddare2d";
 	const char* out = rz_str_rchr (test, NULL, '2');
 	mu_assert_streq (out, "2d", "pointer to last p in range in raddddare2d");
@@ -231,7 +231,7 @@ bool test_r_str_rchr(void) {
 	mu_end;
 }
 
-bool test_r_str_ansi_len(void) {
+bool test_rz_str_ansi_len(void) {
 	int len;
 
 	len = rz_str_ansi_len ("rizin");
@@ -258,7 +258,7 @@ bool test_r_str_ansi_len(void) {
 	mu_end;
 }
 
-bool test_r_str_len_utf8_ansi(void) {
+bool test_rz_str_len_utf8_ansi(void) {
 	int len;
 
 	len = rz_str_len_utf8_ansi ("rizin");
@@ -285,7 +285,7 @@ bool test_r_str_len_utf8_ansi(void) {
 	mu_end;
 }
 
-bool test_r_str_utf8_charsize(void) {
+bool test_rz_str_utf8_charsize(void) {
 	char s[16] = "\x61\xc3\xa1\xe6\x97\xa5\xf0\x9f\x91\x8c\xf0\x9f\x91\x8c\x8c"; // aá日👌
 	int sz;
 
@@ -307,7 +307,7 @@ bool test_r_str_utf8_charsize(void) {
 	mu_end;
 }
 
-bool test_r_str_utf8_charsize_prev(void) {
+bool test_rz_str_utf8_charsize_prev(void) {
 	char s[16] = "\x61\xc3\xa1\xe6\x97\xa5\xf0\x9f\x91\x8c\xf0\x9f\x91\x8c\x8c"; // aá日👌
 	int sz;
 
@@ -329,14 +329,14 @@ bool test_r_str_utf8_charsize_prev(void) {
 	mu_end;
 }
 
-bool test_r_str_sanitize_sdb_key(void) {
+bool test_rz_str_sanitize_sdb_key(void) {
 	char *s = rz_str_sanitize_sdb_key("rada.re2<is>::Cool");
 	mu_assert_streq (s, "rada_re2_is_::Cool", "sanitize");
 	free (s);
 	mu_end;
 }
 
-bool test_r_str_escape_sh(void) {
+bool test_rz_str_escape_sh(void) {
 	char *escaped = rz_str_escape_sh ("Hello, \"World\"");
 	mu_assert_streq (escaped, "Hello, \\\"World\\\"", "escaped \"double quotes\"");
 	free (escaped);
@@ -354,14 +354,14 @@ bool test_r_str_escape_sh(void) {
 	mu_end;
 }
 
-bool test_r_str_unescape(void) {
+bool test_rz_str_unescape(void) {
 	char buf[] = "Hello\\x31World\\n";
 	rz_str_unescape (buf);
 	mu_assert_streq (buf, "Hello1World\n", "unescaped");
 	mu_end;
 }
 
-bool test_r_str_newf(void) {
+bool test_rz_str_newf(void) {
 	char *a = rz_str_newf ("hello");
 	mu_assert_streq (a, "hello", "oops");
 	free (a);
@@ -378,7 +378,7 @@ bool test_r_str_newf(void) {
 	mu_end;
 }
 
-bool test_r_str_constpool(void) {
+bool test_rz_str_constpool(void) {
 	RStrConstPool pool;
 	bool s = rz_str_constpool_init (&pool);
 	mu_assert ("pool init success", s);
@@ -403,7 +403,7 @@ bool test_r_str_constpool(void) {
 	mu_end;
 }
 
-bool test_r_str_format_msvc_argv() {
+bool test_rz_str_format_msvc_argv() {
 	// Examples from http://daviddeley.com/autohotkey/parameters/parameters.htm#WINCRULES
 	const char *a = "CallMePancake";
 	char *str = rz_str_format_msvc_argv (1, &a);
@@ -448,7 +448,7 @@ bool test_r_str_format_msvc_argv() {
 	mu_end;
 }
 
-bool test_r_str_str_xy(void) {
+bool test_rz_str_str_xy(void) {
 	char *canvas = "Hello World\n"
 		"This World is World\n"
 		"World is Hello\n";
@@ -471,35 +471,35 @@ bool test_r_str_str_xy(void) {
 }
 
 bool all_tests () {
-	mu_run_test (test_r_str_newf);
-	mu_run_test (test_r_str_replace_char_once);
-	mu_run_test (test_r_str_replace_char);
-	mu_run_test (test_r_str_replace);
-	mu_run_test (test_r_str_bits64);
-	mu_run_test (test_r_str_rwx);
-	mu_run_test (test_r_str_rwx_i);
-	mu_run_test (test_r_str_bool);
-	mu_run_test (test_r_str_trim);
-	mu_run_test (test_r_str_case);
-	mu_run_test (test_r_str_split);
-	mu_run_test (test_r_str_tokenize);
-	mu_run_test (test_r_str_char_count);
-	mu_run_test (test_r_str_word_count);
-	mu_run_test (test_r_str_ichr);
-	mu_run_test (test_r_str_lchr);
-	mu_run_test (test_r_sub_str_lchr);
-	mu_run_test (test_r_sub_str_rchr);
-	mu_run_test (test_r_str_rchr);
-	mu_run_test (test_r_str_ansi_len);
-	mu_run_test (test_r_str_len_utf8_ansi);
-	mu_run_test (test_r_str_utf8_charsize);
-	mu_run_test (test_r_str_utf8_charsize_prev);
-	mu_run_test (test_r_str_sanitize_sdb_key);
-	mu_run_test (test_r_str_escape_sh);
-	mu_run_test (test_r_str_unescape);
-	mu_run_test (test_r_str_constpool);
-	mu_run_test (test_r_str_format_msvc_argv);
-	mu_run_test (test_r_str_str_xy);
+	mu_run_test (test_rz_str_newf);
+	mu_run_test (test_rz_str_replace_char_once);
+	mu_run_test (test_rz_str_replace_char);
+	mu_run_test (test_rz_str_replace);
+	mu_run_test (test_rz_str_bits64);
+	mu_run_test (test_rz_str_rwx);
+	mu_run_test (test_rz_str_rwx_i);
+	mu_run_test (test_rz_str_bool);
+	mu_run_test (test_rz_str_trim);
+	mu_run_test (test_rz_str_case);
+	mu_run_test (test_rz_str_split);
+	mu_run_test (test_rz_str_tokenize);
+	mu_run_test (test_rz_str_char_count);
+	mu_run_test (test_rz_str_word_count);
+	mu_run_test (test_rz_str_ichr);
+	mu_run_test (test_rz_str_lchr);
+	mu_run_test (test_rz_sub_str_lchr);
+	mu_run_test (test_rz_sub_str_rchr);
+	mu_run_test (test_rz_str_rchr);
+	mu_run_test (test_rz_str_ansi_len);
+	mu_run_test (test_rz_str_len_utf8_ansi);
+	mu_run_test (test_rz_str_utf8_charsize);
+	mu_run_test (test_rz_str_utf8_charsize_prev);
+	mu_run_test (test_rz_str_sanitize_sdb_key);
+	mu_run_test (test_rz_str_escape_sh);
+	mu_run_test (test_rz_str_unescape);
+	mu_run_test (test_rz_str_constpool);
+	mu_run_test (test_rz_str_format_msvc_argv);
+	mu_run_test (test_rz_str_str_xy);
 	return tests_passed != tests_run;
 }
 

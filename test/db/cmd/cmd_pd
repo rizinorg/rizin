@@ -674,7 +674,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=r_str_escape anal
+NAME=rz_str_escape anal
 FILE=bins/pe/a.exe
 CMDS=pd 1 @ 0x00401322
 EXPECT=<<EOF
@@ -682,7 +682,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=r_str_escape io + no 'u' prefix for single-char strings
+NAME=rz_str_escape io + no 'u' prefix for single-char strings
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
 pd 1 @ 0x140001034
@@ -694,7 +694,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=r_str_escape anal addr
+NAME=rz_str_escape anal addr
 FILE=bins/pe/cmd_adf_sample0.exe
 CMDS=pd 1 @ 0x0040116a
 EXPECT=<<EOF
