@@ -71,7 +71,6 @@ if get_option('enable_tests')
         rz_socket_dep,
         rz_core_dep,
         rz_io_dep,
-        rz_fs_dep,
         rz_bin_dep,
         rz_flag_dep,
         rz_cons_dep,

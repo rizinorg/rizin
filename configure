@@ -181,7 +181,7 @@ printf "\nOptional Features:
   --with-syscapstone     force to use system-wide capstone
   --with-syszip          force to use system's libzip and zlib
   --with-sysxxhash       force to use system's xxhash
-  --without-gpl          do not build GPL code (grub, cxx, ... )
+  --without-gpl          do not build GPL code (cxx, ... )
   --with-openssl         build with openssl if possible
   --without-libuv        disable libuv dependency
   --with-rpath           use rpath to build
@@ -704,7 +704,7 @@ for A in ${ENVWORDS} ; do
 	SEDFLAGS="${SEDFLAGS}s,@${A}@,${VAR},g;"
 done
 SEDFLAGS="${SEDFLAGS}'"
-for A in ./config-user.mk librz/include/rz_userconf.h pkgcfg/rz_io.pc pkgcfg/rz_magic.pc pkgcfg/rz_asm.pc pkgcfg/rz_bin.pc pkgcfg/rz_anal.pc pkgcfg/rz_hash.pc pkgcfg/rz_cons.pc pkgcfg/rz_core.pc pkgcfg/rz_lang.pc pkgcfg/rz_socket.pc pkgcfg/rz_debug.pc pkgcfg/rz_reg.pc pkgcfg/rz_config.pc pkgcfg/rz_flag.pc pkgcfg/rz_syscall.pc pkgcfg/rz_util.pc pkgcfg/rz_search.pc pkgcfg/rz_bp.pc pkgcfg/rz_parse.pc pkgcfg/rz_fs.pc pkgcfg/rz_egg.pc pkgcfg/rz_crypto.pc  ; do # SUBDIRS
+for A in ./config-user.mk librz/include/rz_userconf.h pkgcfg/rz_io.pc pkgcfg/rz_magic.pc pkgcfg/rz_asm.pc pkgcfg/rz_bin.pc pkgcfg/rz_anal.pc pkgcfg/rz_hash.pc pkgcfg/rz_cons.pc pkgcfg/rz_core.pc pkgcfg/rz_lang.pc pkgcfg/rz_socket.pc pkgcfg/rz_debug.pc pkgcfg/rz_reg.pc pkgcfg/rz_config.pc pkgcfg/rz_flag.pc pkgcfg/rz_syscall.pc pkgcfg/rz_util.pc pkgcfg/rz_search.pc pkgcfg/rz_bp.pc pkgcfg/rz_parse.pc pkgcfg/rz_egg.pc pkgcfg/rz_crypto.pc  ; do # SUBDIRS
 if [ -f "${VPATH}/${A}.acr" ]; then
   SD_TARGET=${A}
  else

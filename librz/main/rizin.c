@@ -45,7 +45,6 @@ static int rz_main_version_verify(int show) {
 		{ "rz_debug", rz_debug_version },
 		{ "rz_main", rz_main_version },
 		{ "rz_hash", rz_hash_version },
-		{ "rz_fs", rz_fs_version },
 		{ "rz_io", rz_io_version },
 #if !USE_LIB_MAGIC
 		{ "rz_magic", rz_magic_version },

@@ -40,7 +40,6 @@ LDFLAGS+=-L../../librz/anal -lrz_anal
 LDFLAGS+=-L../../librz/crypto -lrz_crypto
 LDFLAGS+=-L../../librz/flag -lrz_flag
 LDFLAGS+=-L../../librz/parse -lrz_parse
-LDFLAGS+=-L../../librz/fs -lrz_fs
 LDFLAGS+=-L../../librz/magic -lrz_magic
 LDFLAGS+=-L../../librz/syscall -lrz_syscall
 LDFLAGS+=-L../../librz/util -lrz_util
@@ -60,7 +59,6 @@ include ../../shlr/zip/deps.mk
 include ../../shlr/gdb/deps.mk
 include ../../shlr/java/deps.mk
 include ../../shlr/bochs/deps.mk
-include ../../shlr/grub/deps.mk
 include ../../shlr/qnx/deps.mk
 include ../../shlr/ar/deps.mk
 include ../../shlr/sdb.mk

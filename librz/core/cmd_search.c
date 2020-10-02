@@ -27,7 +27,6 @@ static const char *help_msg_slash_m[] = {
 	"/m", "", "search for known magic patterns",
 	"/m", " [file]", "same as above but using the given magic file",
 	"/me", " ", "like ?e similar to IRC's /me",
-	"/mm", " ", "search for known filesystems and mount them automatically",
 	"/mb", "", "search recognized RBin headers",
 	NULL
 };
@@ -3376,35 +3375,6 @@ reread:
 			// TODO : iter maps?
 			cmd_search_bin (core, search_itv);
 			rz_config_set_i (core->config, "bin.verbose", bin_verbose);
-		} else if (input[1] == 'm') { // "/mm"
-			ut64 addr = search_itv.addr;
-			RzListIter *iter;
-			RzIOMap *map;
-			int count = 0;
-			const int align = core->search->align;
-			rz_list_foreach (param.boundaries, iter, map) {
-				// eprintf ("-- %llx %llx\n", map->itv.addr, rz_itv_end (map->itv));
-				rz_cons_break_push (NULL, NULL);
-				for (addr = map->itv.addr; addr < rz_itv_end (map->itv); addr++) {
-					if (rz_cons_is_breaked ()) {
-						break;
-					}
-					if (align && (0 != (addr % align))) {
-						addr += (addr % align) - 1;
-						continue;
-					}
-					char *mp = rz_str_newf ("/mnt%d", count);
-					eprintf ("[*] Trying to mount at 0x%08"PFMT64x"\r[", addr);
-					if (rz_fs_mount (core->fs, NULL, mp, addr)) {
-						count ++;
-						eprintf ("Mounted %s at 0x%08"PFMT64x"\n", mp, addr);
-					}
-					free (mp);
-				}
-				rz_cons_clear_line (1);
-				rz_cons_break_pop ();
-			}
-			eprintf ("\n");
 		} else if (input[1] == 'e') { // "/me"
 			rz_cons_printf ("* r2 thinks%s\n", input + 2);
 		} else if (input[1] == ' ' || input[1] == '\0' || param.outmode == R_MODE_JSON) {
