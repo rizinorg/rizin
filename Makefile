@@ -437,7 +437,6 @@ meson-symstall: symstall-sdb
 	ln -fs $(PWD)/build/librz/asm/librz_asm.$(EXT_SO) ${L}/librz_asm.$(EXT_SO)
 	ln -fs $(PWD)/build/librz/anal/librz_anal.$(EXT_SO) ${L}/librz_anal.$(EXT_SO)
 	ln -fs $(PWD)/build/librz/egg/librz_egg.$(EXT_SO) ${L}/librz_egg.$(EXT_SO)
-	ln -fs $(PWD)/build/librz/fs/librz_fs.$(EXT_SO) ${L}/librz_fs.$(EXT_SO)
 	ln -fs $(PWD)/build/librz/debug/librz_debug.$(EXT_SO) ${L}/librz_debug.$(EXT_SO)
 	ln -fs $(PWD)/build/librz/core/librz_core.$(EXT_SO) ${L}/librz_core.$(EXT_SO)
 

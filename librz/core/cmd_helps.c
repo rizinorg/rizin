@@ -105,6 +105,10 @@ const RzCmdDescHelp l_help = {
 	.summary = "list files and directories",
 };
 
+const RzCmdDescHelp m_help = {
+	.summary = "make directories and move files",
+};
+
 const RzCmdDescHelp j_help = {
 	.summary = "join the contents of the two files",
 };
@@ -115,10 +119,6 @@ const RzCmdDescHelp h_help = {
 
 const RzCmdDescHelp L_help = {
 	.summary = "list, unload, load r2 plugins",
-};
-
-const RzCmdDescHelp m_help = {
-	.summary = "mountpoints commands",
 };
 
 const RzCmdDescHelp o_help = {

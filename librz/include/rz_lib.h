@@ -81,7 +81,6 @@ enum {
 	R_LIB_TYPE_CRYPTO,  /* cryptography */
 	R_LIB_TYPE_CORE,    /* RzCore commands */
 	R_LIB_TYPE_EGG,     /* rz_egg plugin */
-	R_LIB_TYPE_FS,      /* rz_fs plugin */
 	R_LIB_TYPE_LAST
 };
 

@@ -34,7 +34,6 @@ rz_main_deps = [
   rz_search_dep,
   rz_syscall_dep,
   rz_socket_dep,
-  rz_fs_dep,
   rz_magic_dep,
   rz_crypto_dep
 ]

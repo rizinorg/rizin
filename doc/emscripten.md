@@ -30,6 +30,6 @@ emcc -O2 rz_ax.o ../../librz/util/librz_util.a -o rz_ax.js
 
 binrz/rz_asm/rz_asm.js:
 
-emcc -O2  -L.. -o rz_asm.js   ../../shlr/sdb/src/libsdb.a ../../librz/fs/p/grub/libgrubfs.a -lm $A/util/librz_util.a $A/asm/librz_asm.a rz_asm.o ../../librz/util/librz_util.a  ../../librz/parse/librz_parse.a  ../../librz/db/libr_db.a ../../librz/syscall/librz_syscall.a  ../../librz/asm/librz_asm.a  ../../librz/lib/libr_lib.a ../../librz/db/libr_db.a ../../shlr/sdb/src/libsdb.a ../../librz/util/librz_util.a
+emcc -O2  -L.. -o rz_asm.js   ../../shlr/sdb/src/libsdb.a -lm $A/util/librz_util.a $A/asm/librz_asm.a rz_asm.o ../../librz/util/librz_util.a  ../../librz/parse/librz_parse.a  ../../librz/db/libr_db.a ../../librz/syscall/librz_syscall.a  ../../librz/asm/librz_asm.a  ../../librz/lib/libr_lib.a ../../librz/db/libr_db.a ../../shlr/sdb/src/libsdb.a ../../librz/util/librz_util.a
 
 -->

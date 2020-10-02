@@ -2151,11 +2151,6 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 		case '1':
 			rz_core_visual_bit_editor (core);
 			break;
-		case 'M':
-			if (!rz_list_empty (core->fs->roots)) {
-				rz_core_visual_mounts (core);
-			}
-			break;
 		case 'z': // "vbz"
 			if (rz_core_visual_view_zigns (core)) {
 				return;

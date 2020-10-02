@@ -9,7 +9,6 @@
 #include "rz_magic.h"
 #include "rz_agraph.h"
 #include "rz_io.h"
-#include "rz_fs.h"
 #include "rz_lib.h"
 #include "rz_diff.h"
 #include "rz_egg.h"
@@ -272,8 +271,6 @@ struct rz_core_t {
 	RzDebug *dbg;
 	RzFlag *flags;
 	RzSearch *search;
-	RzFS *fs;
-	RzFSShell *rfs;
 	RzEgg *egg;
 	RzCoreLog *log;
 	RzAGraph *graph;

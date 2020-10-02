@@ -8,7 +8,6 @@ executable('rz-gg', 'rz-gg.c',
     rz_core_dep,
     rz_hash_dep,
     rz_debug_dep,
-    rz_fs_dep,
     rz_config_dep,
     rz_bp_dep,
     rz_crypto_dep

@@ -138,7 +138,6 @@ bin_plugins = [
   'dyldcache',
   'elf',
   'elf64',
-  'fs',
   'java',
   'le',
   'mach0',
@@ -239,29 +238,6 @@ egg_plugins = [
   'xor'
 ]
 
-fs_plugins = [
-  'cpio',
-  'ext2',
-  'fat',
-  'fb',
-  'hfs',
-  'hfsplus',
-  'io',
-  'iso9660',
-  'jfs',
-  'minix',
-  'ntfs',
-  'posix',
-  'rz',
-  'reiserfs',
-  'sfs',
-  'tar',
-  'udf',
-  'ufs',
-  'ufs2',
-  'xfs'
-]
-
 io_plugins = [
   'ar',
   'fd',
@@ -359,7 +335,6 @@ include_files =[
   'include/rz_endian.h',
   'include/rz_flag.h',
   'include/rz_flist.h',
-  'include/rz_fs.h',
   'include/rz_hash.h',
   'include/rz_heap_glibc.h',
   'include/rz_heap_jemalloc.h',

@@ -1859,27 +1859,6 @@ static bool cb_cmd_esil_trap(void *user, void *data) {
 	return true;
 }
 
-static bool cb_fsview(void *user, void *data) {
-	int type = R_FS_VIEW_NORMAL;
-	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	if (*node->value == '?') {
-		print_node_options (node);
-		return false;
-	}
-	if (!strcmp (node->value, "all")) {
-		type = R_FS_VIEW_ALL;
-	}
-	if (!strstr (node->value, "del")) {
-		type |= R_FS_VIEW_DELETED;
-	}
-	if (!strstr (node->value, "spe")) {
-		type |= R_FS_VIEW_SPECIAL;
-	}
-	rz_fs_view (core->fs, type);
-	return true;
-}
-
 static bool cb_cmddepth(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	int c = R_MAX (((RConfigNode*)data)->i_value, 0);
@@ -3412,11 +3391,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("cmd.esil.trap", "", &cb_cmd_esil_trap, "Command to run when an esil trap happens");
 	SETCB ("cmd.esil.todo", "", &cb_cmd_esil_todo, "Command to run when the esil instruction contains TODO");
 	SETCB ("cmd.esil.ioer", "", &cb_cmd_esil_ioer, "Command to run when esil fails to IO (invalid read/write)");
-
-	/* filesystem */
-	n = NODECB ("fs.view", "normal", &cb_fsview);
-	SETDESC (n, "Set visibility options for filesystems");
-	SETOPTIONS (n, "all", "deleted", "special", NULL);
 
 	/* hexdump */
 	SETCB ("hex.header", "true", &cb_hex_header, "Show header in hexdump");

@@ -108,9 +108,6 @@ _libr.${EXT_AR}: .librz
 librz.${EXT_AR}: .librz
 	-${AR} -rs $@ .librz/*/*.o
 
-ifeq (1,$(WITH_GPL))
-E+=../shlr/grub/libgrubfs.${EXT_AR}
-endif
 E+=../shlr/yxml/libyxml.${EXT_AR}
 E+=../shlr/ar/librz_ar.${EXT_AR}
 E+=../shlr/winkd/librz_winkd.${EXT_AR}
@@ -235,7 +232,7 @@ install: install-includes install-pkgconfig
 	  ${INSTALL_LIB} "$$lib" "${DESTDIR}${LIBDIR}/$$lib"; \
 	fi
 	# object archives
-	@for FILE in `find * -type f -iname "*.${EXT_AR}" | grep -v fs/p` ; do \
+	@for FILE in `find * -type f -iname "*.${EXT_AR}"` ; do \
 	  echo " ${DESTDIR}${LIBDIR}/$$FILE"; ${INSTALL_DATA} $$FILE "${DESTDIR}${LIBDIR}" ; done || true
 	# plugins
 	@${INSTALL_DIR} "${DESTDIR}${LIBDIR}/rizin/${VERSION}"
