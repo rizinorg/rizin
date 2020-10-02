@@ -129,7 +129,7 @@ bool test_pdb_tpi_cpp(void) {
 			mu_assert_eq (type_info->leaf_type, eLF_UNION, "Incorrect data type");
 			char *name;
 			type_info->get_name (type_info, &name);
-			mu_assert_streq (name, "RZ_TEST_UNION", "wrong union name");
+			mu_assert_streq (name, "R2_TEST_UNION", "wrong union name");
 			RzList *members;
 			type_info->get_members (type_info, &members);
 			mu_assert_eq (members->length, 2, "wrong union member count");
@@ -203,7 +203,6 @@ bool test_pdb_tpi_cpp(void) {
 			mu_assert_eq (type_info->leaf_type, eLF_ARGLIST, "Incorrect data type");
 		} else if (type->tpi_idx == 0x101A) {
 			mu_assert_eq (type_info->leaf_type, eLF_STRUCTURE, "Incorrect data type");
-			SType *return_type;
 			char *name;
 			int is_forward_ref;
 			type_info->get_name (&type->type_data, &name);
@@ -465,15 +464,15 @@ bool test_pdb_type_save(void) {
 	RPdb pdb = RZ_EMPTY;
 	RzAnal *anal = rz_anal_new ();
 	mu_assert_true (pdb_info_save_types (anal, "bins/pdb/Project1.pdb", &pdb), "pdb parsing failed");
-	check_kv ("RZ_TEST_ENUM", "enum");
-	check_kv ("enum.RZ_TEST_ENUM", "eENUM1_R2,eENUM2_R2,eENUM_R2_MAX");
-	check_kv ("enum.RZ_TEST_ENUM.0x10", "eENUM1_R2");
-	check_kv ("enum.RZ_TEST_ENUM.eENUM1_R2", "0x10");
+	check_kv ("R2_TEST_ENUM", "enum");
+	check_kv ("enum.R2_TEST_ENUM", "eENUM1_R2,eENUM2_R2,eENUM_R2_MAX");
+	check_kv ("enum.R2_TEST_ENUM.0x10", "eENUM1_R2");
+	check_kv ("enum.R2_TEST_ENUM.eENUM1_R2", "0x10");
 
-	check_kv ("RZ_TEST_UNION", "union");
-	check_kv ("union.RZ_TEST_UNION", "r2_union_var_1,r2_union_var_2");
-	check_kv ("union.RZ_TEST_UNION.r2_union_var_1", "int32_t,0,0");
-	check_kv ("union.RZ_TEST_UNION.r2_union_var_2", "double,0,0");
+	check_kv ("R2_TEST_UNION", "union");
+	check_kv ("union.R2_TEST_UNION", "r2_union_var_1,r2_union_var_2");
+	check_kv ("union.R2_TEST_UNION.r2_union_var_1", "int32_t,0,0");
+	check_kv ("union.R2_TEST_UNION.r2_union_var_2", "double,0,0");
 
 	check_kv ("__m64", "union");
 	check_kv ("union.__m64", "m64_u64,m64_f32,m64_i8,m64_i16,m64_i32,m64_i64,m64_u8,m64_u16,m64_u32");
