@@ -6,7 +6,7 @@
 #include <rz_anal.h>
 
 #define REIL_TEMP_PREFIX "V"
-#define REIL_REG_PREFIX "RZ_"
+#define REIL_REG_PREFIX "R_"
 #define REGBUFSZ 32
 
 void reil_flag_spew_inst(RzAnalEsil *esil, const char *flag);

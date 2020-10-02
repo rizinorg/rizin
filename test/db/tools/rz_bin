@@ -1039,7 +1039,7 @@ RUN
 
 NAME=rz-bin -P
 FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${RZ_FILE} | grep -c RZ_TEST_UNION
+CMDS=!rz-bin -P ${RZ_FILE} | grep -c R2_TEST_UNION
 EXPECT=<<EOF
 1
 EOF
