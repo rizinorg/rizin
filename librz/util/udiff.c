@@ -688,77 +688,77 @@ RZ_API RzDiffChar *rz_diffchar_new(const ut8 *a, const ut8 *b) {
 }
 
 typedef enum {
-	R2R_ALIGN_MATCH, R2R_ALIGN_MISMATCH, R2R_ALIGN_TOP_GAP, R2R_ALIGN_BOTTOM_GAP
+	RZ_TEST_ALIGN_MATCH, RZ_TEST_ALIGN_MISMATCH, RZ_TEST_ALIGN_TOP_GAP, RZ_TEST_ALIGN_BOTTOM_GAP
 } R2RCharAlignment;
 
 typedef enum {
-	R2R_DIFF_MATCH, R2R_DIFF_DELETE, R2R_DIFF_INSERT
+	RZ_TEST_DIFF_MATCH, RZ_TEST_DIFF_DELETE, RZ_TEST_DIFF_INSERT
 } R2RPrintDiffMode;
 
 RZ_API void rz_diffchar_print(RzDiffChar *diffchar) {
 	rz_return_if_fail (diffchar);
-	R2RPrintDiffMode cur_mode = R2R_DIFF_MATCH;
+	R2RPrintDiffMode cur_mode = RZ_TEST_DIFF_MATCH;
 	R2RCharAlignment cur_align;
 	size_t idx_align = diffchar->start_align;
 	while (idx_align < 2 * diffchar->len_buf) {
 		const ut8 a_ch = diffchar->align_a[idx_align];
 		const ut8 b_ch = diffchar->align_b[idx_align];
 		if (a_ch && !b_ch) {
-			cur_align = R2R_ALIGN_BOTTOM_GAP;
+			cur_align = RZ_TEST_ALIGN_BOTTOM_GAP;
 		} else if (!a_ch && b_ch) {
-			cur_align = R2R_ALIGN_TOP_GAP;
+			cur_align = RZ_TEST_ALIGN_TOP_GAP;
 		} else if (a_ch != b_ch) {
 			eprintf ("Internal error: mismatch detected!\n");
-			cur_align = R2R_ALIGN_MISMATCH;
+			cur_align = RZ_TEST_ALIGN_MISMATCH;
 		} else {
-			cur_align = R2R_ALIGN_MATCH;
+			cur_align = RZ_TEST_ALIGN_MATCH;
 		}
-		if (cur_mode == R2R_DIFF_MATCH) {
-			if (cur_align == R2R_ALIGN_MATCH) {
+		if (cur_mode == RZ_TEST_DIFF_MATCH) {
+			if (cur_align == RZ_TEST_ALIGN_MATCH) {
 				if (a_ch) {
 					printf ("%c", a_ch);
 				}
-			} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
+			} else if (cur_align == RZ_TEST_ALIGN_BOTTOM_GAP) {
 				printf (a_ch == '\n' ?
 				        "%c"Color_HLDELETE :
 				        Color_HLDELETE"%c", a_ch);
-				cur_mode = R2R_DIFF_DELETE;
-			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
+				cur_mode = RZ_TEST_DIFF_DELETE;
+			} else if (cur_align == RZ_TEST_ALIGN_TOP_GAP) {
 				printf (b_ch == '\n' ?
 				        "%c"Color_HLINSERT :
 				        Color_HLINSERT"%c", b_ch);
-				cur_mode = R2R_DIFF_INSERT;
+				cur_mode = RZ_TEST_DIFF_INSERT;
 			}
-		} else if (cur_mode == R2R_DIFF_DELETE) {
-			if (cur_align == R2R_ALIGN_MATCH) {
+		} else if (cur_mode == RZ_TEST_DIFF_DELETE) {
+			if (cur_align == RZ_TEST_ALIGN_MATCH) {
 				printf (Color_RESET);
 				if (a_ch) {
 					printf ("%c", a_ch);
 				}
-				cur_mode = R2R_DIFF_MATCH;
-			} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
+				cur_mode = RZ_TEST_DIFF_MATCH;
+			} else if (cur_align == RZ_TEST_ALIGN_BOTTOM_GAP) {
 				printf (a_ch == '\n' ?
 				        Color_RESET"%c"Color_HLDELETE :
 				        "%c", a_ch);
-			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
+			} else if (cur_align == RZ_TEST_ALIGN_TOP_GAP) {
 				printf (b_ch == '\n' ?
 				        Color_RESET"%c"Color_HLINSERT :
 				        Color_HLINSERT"%c", b_ch);
-				cur_mode = R2R_DIFF_INSERT;
+				cur_mode = RZ_TEST_DIFF_INSERT;
 			}
-		} else if (cur_mode == R2R_DIFF_INSERT) {
-			if (cur_align == R2R_ALIGN_MATCH) {
+		} else if (cur_mode == RZ_TEST_DIFF_INSERT) {
+			if (cur_align == RZ_TEST_ALIGN_MATCH) {
 				printf (Color_RESET);
 				if (a_ch) {
 					printf ("%c", a_ch);
 				}
-				cur_mode = R2R_DIFF_MATCH;
-			} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
+				cur_mode = RZ_TEST_DIFF_MATCH;
+			} else if (cur_align == RZ_TEST_ALIGN_BOTTOM_GAP) {
 				printf (a_ch == '\n' ?
 				        Color_RESET"%c"Color_HLDELETE :
 				        Color_HLDELETE"%c", a_ch);
-				cur_mode = R2R_DIFF_DELETE;
-			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
+				cur_mode = RZ_TEST_DIFF_DELETE;
+			} else if (cur_align == RZ_TEST_ALIGN_TOP_GAP) {
 				printf (b_ch == '\n' ?
 				        Color_RESET"%c"Color_HLINSERT :
 				        "%c", b_ch);

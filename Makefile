@@ -7,7 +7,7 @@ B=$(DESTDIR)$(BINDIR)
 L=$(DESTDIR)$(LIBDIR)
 MESON?=meson
 PYTHON?=python
-R2R=test
+RZ_TEST=test
 R2BINS=$(shell cd binrz ; echo r*2 rz_agent rz-pm r2-indent rz_test)
 ifdef SOURCE_DATE_EPOCH
 BUILDSEC=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u "+__%H:%M:%S")
@@ -387,7 +387,7 @@ shot:
 		radare.org:/srv/http/rizinorg/get/shot
 
 tests:
-	$(MAKE) -C $(R2R)
+	$(MAKE) -C $(RZ_TEST)
 
 macos-sign:
 	$(MAKE) -C binrz/rizin macos-sign

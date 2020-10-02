@@ -1011,7 +1011,7 @@ RZ_API R2RzAsmTestOutput *rz_test_run_asm_test(R2RRunConfig *config, R2RzAsmTest
 		rz_pvector_push (&args, bits);
 	}
 
-	if (test->mode & R2R_ASM_TEST_MODE_BIG_ENDIAN) {
+	if (test->mode & RZ_ASM_TEST_MODE_BIG_ENDIAN) {
 		rz_pvector_push (&args, "-e");
 	}
 
@@ -1024,7 +1024,7 @@ RZ_API R2RzAsmTestOutput *rz_test_run_asm_test(R2RRunConfig *config, R2RzAsmTest
 
 	RStrBuf cmd_buf;
 	rz_strbuf_init (&cmd_buf);
-	if (test->mode & R2R_ASM_TEST_MODE_ASSEMBLE) {
+	if (test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) {
 		rz_pvector_push (&args, test->disasm);
 		R2RSubprocess *proc = rz_test_subprocess_start (config->rz_asm_cmd, args.v.a, rz_pvector_len (&args), NULL, NULL, 0);
 		if (!rz_test_subprocess_wait (proc, config->timeout_ms)) {
@@ -1052,7 +1052,7 @@ rip:
 		rz_pvector_pop (&args);
 		rz_test_subprocess_free (proc);
 	}
-	if (test->mode & R2R_ASM_TEST_MODE_DISASSEMBLE) {
+	if (test->mode & RZ_ASM_TEST_MODE_DISASSEMBLE) {
 		char *hex = rz_hex_bin2strdup (test->bytes, test->bytes_size);
 		if (!hex) {
 			goto beach;
@@ -1088,7 +1088,7 @@ RZ_API bool rz_test_check_asm_test(R2RzAsmTestOutput *out, R2RzAsmTest *test) {
 	if (!out) {
 		return false;
 	}
-	if (test->mode & R2R_ASM_TEST_MODE_ASSEMBLE) {
+	if (test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) {
 		if (!out->bytes || !test->bytes || out->bytes_size != test->bytes_size || out->as_timeout) {
 			return false;
 		}
@@ -1096,7 +1096,7 @@ RZ_API bool rz_test_check_asm_test(R2RzAsmTestOutput *out, R2RzAsmTest *test) {
 			return false;
 		}
 	}
-	if (test->mode & R2R_ASM_TEST_MODE_DISASSEMBLE) {
+	if (test->mode & RZ_ASM_TEST_MODE_DISASSEMBLE) {
 		if (!out->disasm || !test->disasm || out->as_timeout) {
 			return false;
 		}
@@ -1130,16 +1130,16 @@ RZ_API bool rz_test_check_fuzz_test(R2RProcessOutput *out) {
 
 RZ_API char *rz_test_test_name(R2RTest *test) {
 	switch (test->type) {
-	case R2R_TEST_TYPE_CMD:
+	case RZ_TEST_TYPE_CMD:
 		if (test->cmd_test->name.value) {
 			return strdup (test->cmd_test->name.value);
 		}
 		return strdup ("<unnamed>");
-	case R2R_TEST_TYPE_ASM:
+	case RZ_TEST_TYPE_ASM:
 		return rz_str_newf ("<asm> %s", test->asm_test->disasm ? test->asm_test->disasm : "");
-	case R2R_TEST_TYPE_JSON:
+	case RZ_TEST_TYPE_JSON:
 		return rz_str_newf ("<json> %s", test->json_test->cmd ? test->json_test->cmd: "");
-	case R2R_TEST_TYPE_FUZZ:
+	case RZ_TEST_TYPE_FUZZ:
 		return rz_str_newf ("<fuzz> %s", test->fuzz_test->file);
 	}
 	return NULL;
@@ -1147,13 +1147,13 @@ RZ_API char *rz_test_test_name(R2RTest *test) {
 
 RZ_API bool rz_test_test_broken(R2RTest *test) {
 	switch (test->type) {
-	case R2R_TEST_TYPE_CMD:
+	case RZ_TEST_TYPE_CMD:
 		return test->cmd_test->broken.value;
-	case R2R_TEST_TYPE_ASM:
-		return test->asm_test->mode & R2R_ASM_TEST_MODE_BROKEN ? true : false;
-	case R2R_TEST_TYPE_JSON:
+	case RZ_TEST_TYPE_ASM:
+		return test->asm_test->mode & RZ_ASM_TEST_MODE_BROKEN ? true : false;
+	case RZ_TEST_TYPE_JSON:
 		return test->json_test->broken;
-	case R2R_TEST_TYPE_FUZZ:
+	case RZ_TEST_TYPE_FUZZ:
 		return false;
 	}
 	return false;
@@ -1167,7 +1167,7 @@ RZ_API R2RTestResultInfo *rz_test_run_test(R2RRunConfig *config, R2RTest *test) 
 	ret->test = test;
 	bool success = false;
 	switch (test->type) {
-	case R2R_TEST_TYPE_CMD: {
+	case RZ_TEST_TYPE_CMD: {
 		R2RzCmdTest *cmd_test = test->cmd_test;
 		R2RProcessOutput *out = rz_test_run_cmd_test (config, cmd_test, subprocess_runner, NULL);
 		success = rz_test_check_cmd_test (out, cmd_test);
@@ -1176,7 +1176,7 @@ RZ_API R2RTestResultInfo *rz_test_run_test(R2RRunConfig *config, R2RTest *test) 
 		ret->run_failed = !out;
 		break;
 	}
-	case R2R_TEST_TYPE_ASM: {
+	case RZ_TEST_TYPE_ASM: {
 		R2RzAsmTest *asm_test = test->asm_test;
 		R2RzAsmTestOutput *out = rz_test_run_asm_test (config, asm_test);
 		success = rz_test_check_asm_test (out, asm_test);
@@ -1185,7 +1185,7 @@ RZ_API R2RTestResultInfo *rz_test_run_test(R2RRunConfig *config, R2RTest *test) 
 		ret->run_failed = !out;
 		break;
 	}
-	case R2R_TEST_TYPE_JSON: {
+	case RZ_TEST_TYPE_JSON: {
 		R2RJsonTest *json_test = test->json_test;
 		R2RProcessOutput *out = rz_test_run_json_test (config, json_test, subprocess_runner, NULL);
 		success = rz_test_check_json_test (out, json_test);
@@ -1194,7 +1194,7 @@ RZ_API R2RTestResultInfo *rz_test_run_test(R2RRunConfig *config, R2RTest *test) 
 		ret->run_failed = !out;
 		break;
 	}
-	case R2R_TEST_TYPE_FUZZ: {
+	case RZ_TEST_TYPE_FUZZ: {
 		R2RFuzzTest *fuzz_test = test->fuzz_test;
 		R2RProcessOutput *out = rz_test_run_fuzz_test (config, fuzz_test, subprocess_runner, NULL);
 		success = rz_test_check_fuzz_test (out);
@@ -1209,7 +1209,7 @@ RZ_API R2RTestResultInfo *rz_test_run_test(R2RRunConfig *config, R2RTest *test) 
 # error RZ_ASSERT_STDOUT undefined or 0
 # endif
 	R2RProcessOutput *out = ret->proc_out;
-	if (!success && test->type == R2R_TEST_TYPE_CMD && strstr (test->path, "/dbg")
+	if (!success && test->type == RZ_TEST_TYPE_CMD && strstr (test->path, "/dbg")
 	    && (!out->out ||
 	        (!strstr (out->out, "WARNING:") && !strstr (out->out, "ERROR:") && !strstr (out->out, "FATAL:")))
 	    && (!out->err ||
@@ -1218,9 +1218,9 @@ RZ_API R2RTestResultInfo *rz_test_run_test(R2RRunConfig *config, R2RTest *test) 
 	}
 #endif
 	if (!success) {
-		ret->result = broken ? R2R_TEST_RESULT_BROKEN : R2R_TEST_RESULT_FAILED;
+		ret->result = broken ? RZ_TEST_RESULT_BROKEN : RZ_TEST_RESULT_FAILED;
 	} else {
-		ret->result = broken ? R2R_TEST_RESULT_FIXED : R2R_TEST_RESULT_OK;
+		ret->result = broken ? RZ_TEST_RESULT_FIXED : RZ_TEST_RESULT_OK;
 	}
 	return ret;
 }
@@ -1231,12 +1231,12 @@ RZ_API void rz_test_test_result_info_free(R2RTestResultInfo *result) {
 	}
 	if (result->test) {
 		switch (result->test->type) {
-		case R2R_TEST_TYPE_CMD:
-		case R2R_TEST_TYPE_JSON:
-		case R2R_TEST_TYPE_FUZZ:
+		case RZ_TEST_TYPE_CMD:
+		case RZ_TEST_TYPE_JSON:
+		case RZ_TEST_TYPE_FUZZ:
 			rz_test_process_output_free (result->proc_out);
 			break;
-		case R2R_TEST_TYPE_ASM:
+		case RZ_TEST_TYPE_ASM:
 			rz_test_asm_test_output_free (result->asm_out);
 			break;
 		}

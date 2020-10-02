@@ -6,26 +6,26 @@
 #include <rz_util.h>
 
 #if defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
-#define R2R_OS "freebsd"
+#define RZ_TEST_OS "freebsd"
 #elif defined(__linux__)
-#define R2R_OS "linux"
+#define RZ_TEST_OS "linux"
 #elif defined(__APPLE__)
-#define R2R_OS "darwin"
+#define RZ_TEST_OS "darwin"
 #elif __WINDOWS__
-#define R2R_OS "windows"
+#define RZ_TEST_OS "windows"
 #else
-#define R2R_OS "unknown"
+#define RZ_TEST_OS "unknown"
 #endif
 
 #if __i386__
-#define R2R_ARCH "x86"
+#define RZ_TEST_ARCH "x86"
 #elif __x86_64__
-#define R2R_ARCH "x64"
+#define RZ_TEST_ARCH "x64"
 #else
-#define R2R_ARCH "unknown"
+#define RZ_TEST_ARCH "unknown"
 #endif
 
-#define R2R_ARCH_OS R2R_OS"-"R2R_ARCH
+#define RZ_TEST_ARCH_OS RZ_TEST_OS"-"RZ_TEST_ARCH
 
 typedef struct rz_test_cmd_test_string_record {
 	char *value;
@@ -59,8 +59,8 @@ typedef struct rz_test_cmd_test_t {
 	bool load_plugins;
 } R2RzCmdTest;
 
-#define R2R_CMD_TEST_FOREACH_RECORD_NOP(name, field)
-#define R2R_CMD_TEST_FOREACH_RECORD(macro_str, macro_bool, macro_int) \
+#define RZ_CMD_TEST_FOREACH_RECORD_NOP(name, field)
+#define RZ_CMD_TEST_FOREACH_RECORD(macro_str, macro_bool, macro_int) \
 	macro_str ("NAME", name) \
 	macro_str ("FILE", file) \
 	macro_str ("ARGS", args) \
@@ -72,10 +72,10 @@ typedef struct rz_test_cmd_test_t {
 	macro_bool ("BROKEN", broken)
 
 typedef enum rz_test_asm_test_mode_t {
-	R2R_ASM_TEST_MODE_ASSEMBLE = 1,
-	R2R_ASM_TEST_MODE_DISASSEMBLE = (1 << 1),
-	R2R_ASM_TEST_MODE_BIG_ENDIAN = (1 << 2),
-	R2R_ASM_TEST_MODE_BROKEN = (1 << 3)
+	RZ_ASM_TEST_MODE_ASSEMBLE = 1,
+	RZ_ASM_TEST_MODE_DISASSEMBLE = (1 << 1),
+	RZ_ASM_TEST_MODE_BIG_ENDIAN = (1 << 2),
+	RZ_ASM_TEST_MODE_BROKEN = (1 << 3)
 } R2RzAsmTestMode;
 
 typedef struct rz_test_asm_test_t {
@@ -102,10 +102,10 @@ typedef struct rz_test_fuzz_test_t {
 } R2RFuzzTest;
 
 typedef enum rz_test_test_type_t {
-	R2R_TEST_TYPE_CMD,
-	R2R_TEST_TYPE_ASM,
-	R2R_TEST_TYPE_JSON,
-	R2R_TEST_TYPE_FUZZ
+	RZ_TEST_TYPE_CMD,
+	RZ_TEST_TYPE_ASM,
+	RZ_TEST_TYPE_JSON,
+	RZ_TEST_TYPE_FUZZ
 } R2RTestType;
 
 typedef struct rz_test_test_t {
@@ -147,10 +147,10 @@ typedef struct rz_test_asm_test_output_t {
 } R2RzAsmTestOutput;
 
 typedef enum rz_test_test_result_t {
-	R2R_TEST_RESULT_OK,
-	R2R_TEST_RESULT_FAILED,
-	R2R_TEST_RESULT_BROKEN,
-	R2R_TEST_RESULT_FIXED
+	RZ_TEST_RESULT_OK,
+	RZ_TEST_RESULT_FAILED,
+	RZ_TEST_RESULT_BROKEN,
+	RZ_TEST_RESULT_FIXED
 } R2RTestResult;
 
 typedef struct rz_test_test_result_info_t {
@@ -159,8 +159,8 @@ typedef struct rz_test_test_result_info_t {
 	bool timeout;
 	bool run_failed; // something went seriously wrong (e.g. r2 not found)
 	union {
-		R2RProcessOutput *proc_out; // for test->type == R2R_TEST_TYPE_CMD, R2R_TEST_TYPE_JSON or R2R_TEST_TYPE_FUZZ
-		R2RzAsmTestOutput *asm_out;  // for test->type == R2R_TEST_TYPE_ASM
+		R2RProcessOutput *proc_out; // for test->type == RZ_TEST_TYPE_CMD, RZ_TEST_TYPE_JSON or RZ_TEST_TYPE_FUZZ
+		R2RzAsmTestOutput *asm_out;  // for test->type == RZ_TEST_TYPE_ASM
 	};
 } R2RTestResultInfo;
 
@@ -212,4 +212,4 @@ RZ_API bool rz_test_test_broken(R2RTest *test);
 RZ_API R2RTestResultInfo *rz_test_run_test(R2RRunConfig *config, R2RTest *test);
 RZ_API void rz_test_test_result_info_free(R2RTestResultInfo *result);
 
-#endif //RADARE2_R2R_H
+#endif // RIZIN_RZTEST_H

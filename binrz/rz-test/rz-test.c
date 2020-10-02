@@ -60,7 +60,7 @@ static int help(bool verbose) {
 		" -t [seconds] timeout per test (default is "TIMEOUT_DEFAULT_STR")\n"
 		"\n"
 		"Supported test types: @json @unit @fuzz @cmds\n"
-		"OS/Arch for archos tests: "R2R_ARCH_OS"\n");
+		"OS/Arch for archos tests: "RZ_TEST_ARCH_OS"\n");
 	}
 	return 1;
 }
@@ -371,7 +371,7 @@ int main(int argc, char **argv) {
 		size_t i;
 		for (i = 0; i < rz_pvector_len (&state.db->tests);) {
 			R2RTest *test = rz_pvector_at (&state.db->tests, i);
-			if (test->type == R2R_TEST_TYPE_JSON) {
+			if (test->type == RZ_TEST_TYPE_JSON) {
 				rz_test_test_free (test);
 				rz_pvector_remove_at (&state.db->tests, i);
 				continue;
@@ -498,16 +498,16 @@ static RzThreadFunctionRet worker_th(RzThread *th) {
 		rz_th_lock_enter (state->lock);
 		rz_pvector_push (&state->results, result);
 		switch (result->result) {
-		case R2R_TEST_RESULT_OK:
+		case RZ_TEST_RESULT_OK:
 			state->ok_count++;
 			break;
-		case R2R_TEST_RESULT_FAILED:
+		case RZ_TEST_RESULT_FAILED:
 			state->xx_count++;
 			break;
-		case R2R_TEST_RESULT_BROKEN:
+		case RZ_TEST_RESULT_BROKEN:
 			state->br_count++;
 			break;
-		case R2R_TEST_RESULT_FIXED:
+		case RZ_TEST_RESULT_FIXED:
 			state->fx_count++;
 			break;
 		}
@@ -614,7 +614,7 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 		return;
 	}
 	switch (result->test->type) {
-	case R2R_TEST_TYPE_CMD: {
+	case RZ_TEST_TYPE_CMD: {
 		rz_test_run_cmd_test (config, result->test->cmd_test, print_runner, NULL);
 		const char *expect = result->test->cmd_test->expect.value;
 		if (expect && strcmp (result->proc_out->out, expect)) {
@@ -634,12 +634,12 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 		}
 		break;
 	}
-	case R2R_TEST_TYPE_ASM:
+	case RZ_TEST_TYPE_ASM:
 		// TODO
 		break;
-	case R2R_TEST_TYPE_JSON:
+	case RZ_TEST_TYPE_JSON:
 		break;
-	case R2R_TEST_TYPE_FUZZ:
+	case RZ_TEST_TYPE_FUZZ:
 		rz_test_run_fuzz_test (config, result->test->fuzz_test, print_runner, NULL);
 		printf ("-- stdout\n%s\n", result->proc_out->out);
 		printf ("-- stderr\n%s\n", result->proc_out->err);
@@ -654,7 +654,7 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 	ut64 i;
 	for (i = prev_completed; i < completed; i++) {
 		R2RTestResultInfo *result = rz_pvector_at (&state->results, (size_t)i);
-		if (!state->verbose && (result->result == R2R_TEST_RESULT_OK || result->result == R2R_TEST_RESULT_FIXED || result->result == R2R_TEST_RESULT_BROKEN)) {
+		if (!state->verbose && (result->result == RZ_TEST_RESULT_OK || result->result == RZ_TEST_RESULT_FIXED || result->result == RZ_TEST_RESULT_BROKEN)) {
 			continue;
 		}
 		char *name = rz_test_test_name (result->test);
@@ -663,16 +663,16 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 		}
 		printf ("\n"RZ_CONS_CURSOR_UP RZ_CONS_CLEAR_LINE);
 		switch (result->result) {
-		case R2R_TEST_RESULT_OK:
+		case RZ_TEST_RESULT_OK:
 			printf (Color_GREEN"[OK]"Color_RESET);
 			break;
-		case R2R_TEST_RESULT_FAILED:
+		case RZ_TEST_RESULT_FAILED:
 			printf (Color_RED"[XX]"Color_RESET);
 			break;
-		case R2R_TEST_RESULT_BROKEN:
+		case RZ_TEST_RESULT_BROKEN:
 			printf (Color_BLUE"[BR]"Color_RESET);
 			break;
-		case R2R_TEST_RESULT_FIXED:
+		case RZ_TEST_RESULT_FIXED:
 			printf (Color_CYAN"[FX]"Color_RESET);
 			break;
 		}
@@ -680,7 +680,7 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 			printf (Color_CYAN" TIMEOUT"Color_RESET);
 		}
 		printf (" %s "Color_YELLOW"%s"Color_RESET"\n", result->test->path, name);
-		if (result->result == R2R_TEST_RESULT_FAILED || (state->verbose && result->result == R2R_TEST_RESULT_BROKEN)) {
+		if (result->result == RZ_TEST_RESULT_FAILED || (state->verbose && result->result == RZ_TEST_RESULT_BROKEN)) {
 			print_result_diff (&state->run_config, result);
 		}
 		free (name);
@@ -729,7 +729,7 @@ static void interact(R2RState *state) {
 	rz_pvector_init (&failed_results, NULL);
 	rz_pvector_foreach (&state->results, it) {
 		R2RTestResultInfo *result = *it;
-		if (result->result == R2R_TEST_RESULT_FAILED) {
+		if (result->result == RZ_TEST_RESULT_FAILED) {
 			rz_pvector_push (&failed_results, result);
 		}
 	}
@@ -747,7 +747,7 @@ static void interact(R2RState *state) {
 
 	rz_pvector_foreach (&failed_results, it) {
 		R2RTestResultInfo *result = *it;
-		if (result->test->type != R2R_TEST_TYPE_CMD) {
+		if (result->test->type != RZ_TEST_TYPE_CMD) {
 			// TODO: other types of tests
 			continue;
 		}
@@ -853,7 +853,7 @@ static void fixup_tests(RPVector *results, const char *edited_file, ut64 start_l
 	void **it;
 	rz_pvector_foreach (results, it) {
 		R2RTestResultInfo *result = *it;
-		if (result->test->type != R2R_TEST_TYPE_CMD) {
+		if (result->test->type != RZ_TEST_TYPE_CMD) {
 			continue;
 		}
 		if (result->test->path != edited_file) { // this works because all the paths come from the string pool
@@ -882,7 +882,7 @@ static void fixup_tests(RPVector *results, const char *edited_file, ut64 start_l
 			test->field.line += delta; \
 		}
 
-		R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, DO_KEY_BOOL, DO_KEY_NUM)
+		RZ_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, DO_KEY_BOOL, DO_KEY_NUM)
 #undef DO_KEY_STR
 #undef DO_KEY_BOOL
 #undef DO_KEY_NUM
@@ -931,7 +931,7 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 }
 
 static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results) {
-	assert (result->test->type == R2R_TEST_TYPE_CMD);
+	assert (result->test->type == RZ_TEST_TYPE_CMD);
 	R2RzCmdTest *test = result->test->cmd_test;
 	R2RProcessOutput *out = result->proc_out;
 	if (test->expect.value && out->out) {
@@ -943,7 +943,7 @@ static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results) {
 }
 
 static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results) {
-	assert (result->test->type == R2R_TEST_TYPE_CMD);
+	assert (result->test->type == RZ_TEST_TYPE_CMD);
 	R2RzCmdTest *test = result->test->cmd_test;
 	ut64 line_begin;
 	ut64 line_end;
@@ -957,7 +957,7 @@ static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results) {
 }
 
 static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results) {
-	assert (result->test->type == R2R_TEST_TYPE_CMD);
+	assert (result->test->type == RZ_TEST_TYPE_CMD);
 	R2RzCmdTest *test = result->test->cmd_test;
 	if (!test->cmds.value) {
 		return;
