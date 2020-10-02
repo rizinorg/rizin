@@ -13,7 +13,7 @@
 #define SETBPREF(x,y,z) SETDESC (NODECB (x,y,boolify_var_cb), z)
 
 static bool boolify_var_cb(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value || rz_str_is_false (node->value)) {
 		free (node->value);
 		node->value = strdup (rz_str_bool (node->i_value));
@@ -21,7 +21,7 @@ static bool boolify_var_cb(void *user, void *data) {
 	return true;
 }
 
-static void set_options(RConfigNode *node, ...) {
+static void set_options(RzConfigNode *node, ...) {
 	va_list argp;
 	char *option = NULL;
 	va_start (argp, node);
@@ -42,7 +42,7 @@ static bool isGdbPlugin(RzCore *core) {
 	return false;
 }
 
-static void print_node_options(RConfigNode *node) {
+static void print_node_options(RzConfigNode *node) {
 	RzListIter *iter;
 	char *option;
 	rz_list_foreach (node->options, iter, option) {
@@ -90,7 +90,7 @@ static int compareDist(const RzAnalFunction *a, const RzAnalFunction *b) {
 }
 
 static bool cb_diff_sort(void *_core, void *_node) {
-	RConfigNode *node = _node;
+	RzConfigNode *node = _node;
 	const char *column = node->value;
 	RzCore *core = _core;
 	if (column && strcmp (column, "?")) {
@@ -214,97 +214,97 @@ static void rz_asm_list(RzCore *core, const char *arch, int fmt) {
 	}
 }
 
-static inline void __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
+static inline void __setsegoff(RzConfig *cfg, const char *asmarch, int asmbits) {
 	int autoseg = (!strncmp (asmarch, "x86", 3) && asmbits == 16);
 	rz_config_set (cfg, "asm.segoff", rz_str_bool (autoseg));
 }
 
 static bool cb_debug_hitinfo(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->dbg->hitinfo = node->i_value;
 	return true;
 }
 
 static bool cb_anal_jmpretpoline(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.retpoline = node->i_value;
 	return true;
 }
 static bool cb_anal_jmptailcall(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.tailcall = node->i_value;
 	return true;
 }
 
 static bool cb_analarmthumb(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.armthumb = node->i_value;
 	return true;
 }
 
 static bool cb_analdepth(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.depth = node->i_value;
 	return true;
 }
 
 static bool cb_analgraphdepth(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
+	RzConfigNode *node = (RzConfigNode *)data;
 	core->anal->opt.graph_depth = node->i_value;
 	return true;
 }
 
 static bool cb_analafterjmp(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.afterjmp = node->i_value;
 	return true;
 }
 
 static bool cb_anal_delay(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.delay = node->i_value;
 	return true;
 }
 
 static bool cb_anal_endsize(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.endsize = node->i_value;
 	return true;
 }
 
 static bool cb_analvars(void *user, void *data) {
         RzCore *core = (RzCore*) user;
-        RConfigNode *node = (RConfigNode*) data;
+        RzConfigNode *node = (RzConfigNode*) data;
         core->anal->opt.vars = node->i_value;
         return true;
 }
 
 static bool cb_analvars_stackname(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
+	RzConfigNode *node = (RzConfigNode *)data;
 	core->anal->opt.varname_stack = node->i_value;
 	return true;
 }
 
 static bool cb_anal_nonull(void *user, void *data) {
         RzCore *core = (RzCore*) user;
-        RConfigNode *node = (RConfigNode*) data;
+        RzConfigNode *node = (RzConfigNode*) data;
         core->anal->opt.nonull = node->i_value;
         return true;
 }
 
 static bool cb_analstrings(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (node->i_value) {
 		rz_config_set (core->config, "bin.strings", "false");
 	}
@@ -313,47 +313,47 @@ static bool cb_analstrings(void *user, void *data) {
 
 static bool cb_anal_ignbithints(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.ignbithints = node->i_value;
 	return true;
 }
 
 static bool cb_analsleep(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->sleep = node->i_value;
 	return true;
 }
 
 static bool cb_analmaxrefs(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->maxreflines = node->i_value;
 	return true;
 }
 
 static bool cb_analnorevisit(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.norevisit = node->i_value;
 	return true;
 }
 
 static bool cb_analnopskip(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.nopskip = node->i_value;
 	return true;
 }
 
 static bool cb_analhpskip(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.hpskip = node->i_value;
 	return true;
 }
 
-static void update_analarch_options(RzCore *core, RConfigNode *node) {
+static void update_analarch_options(RzCore *core, RzConfigNode *node) {
 	RzAnalPlugin *h;
 	RzListIter *it;
 	if (core && core->anal && node) {
@@ -366,7 +366,7 @@ static void update_analarch_options(RzCore *core, RConfigNode *node) {
 
 static bool cb_analarch(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (*node->value == '?') {
 		update_analarch_options (core, node);
 		print_node_options (node);
@@ -389,7 +389,7 @@ static bool cb_analarch(void *user, void *data) {
 
 static bool cb_analcpu(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	rz_anal_set_cpu (core->anal, node->value);
 	/* set pcalign */
 	{
@@ -401,62 +401,62 @@ static bool cb_analcpu(void *user, void *data) {
 
 static bool cb_analrecont(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.recont = node->i_value;
 	return true;
 }
 
 static bool cb_analijmp(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.ijmp = node->i_value;
 	return true;
 }
 
 static bool cb_asmsubvarmin(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->parser->minval = node->i_value;
 	return true;
 }
 
 static bool cb_asmsubtail(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->parser->subtail = node->i_value;
 	return true;
 }
 
 static bool cb_scrlast(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	rz_cons_singleton ()->context->lastEnabled = node->i_value;
 	return true;
 }
 
 static bool cb_scr_vi(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->cons->line->enable_vi_mode = node->i_value;
 	return true;
 }
 
 static bool cb_scr_prompt_mode(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->cons->line->prompt_mode = node->i_value;
 	return true;
 }
 
 static bool cb_scr_wideoff(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->print->wide_offsets = node->i_value;
 	return true;
 }
 
 static bool cb_scrrainbow(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value) {
 		core->print->flags |= RZ_PRINT_FLAGS_RAINBOW;
 		rz_core_cmd0 (core, "ecr");
@@ -470,14 +470,14 @@ static bool cb_scrrainbow(void *user, void *data) {
 
 static bool cb_asmpseudo (void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->rasm->pseudo = node->i_value;
 	return true;
 }
 
 static bool cb_asmsubsec(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value) {
 		core->print->flags |= RZ_PRINT_FLAGS_SECSUB;
 	} else {
@@ -489,12 +489,12 @@ static bool cb_asmsubsec(void *user, void *data) {
 
 static bool cb_asmassembler(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	rz_asm_use_assembler (core->rasm, node->value);
 	return true;
 }
 
-static void update_cmdpdc_options(RzCore *core, RConfigNode *node) {
+static void update_cmdpdc_options(RzCore *core, RzConfigNode *node) {
 	rz_return_if_fail (core && core->rasm && node);
 	RzListIter *iter;
 	rz_list_purge (node->options);
@@ -509,7 +509,7 @@ static void update_cmdpdc_options(RzCore *core, RConfigNode *node) {
 	free (opts);
 }
 
-static void update_asmcpu_options(RzCore *core, RConfigNode *node) {
+static void update_asmcpu_options(RzCore *core, RzConfigNode *node) {
 	RzAsmPlugin *h;
 	RzListIter *iter;
 	rz_return_if_fail (core && core->rasm);
@@ -535,7 +535,7 @@ static void update_asmcpu_options(RzCore *core, RConfigNode *node) {
 
 static bool cb_asmcpu(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (*node->value == '?') {
 		update_asmcpu_options (core, node);
 		/* print verbose help instead of plain option listing */
@@ -547,7 +547,7 @@ static bool cb_asmcpu(void *user, void *data) {
 	return true;
 }
 
-static void update_asmarch_options(RzCore *core, RConfigNode *node) {
+static void update_asmarch_options(RzCore *core, RzConfigNode *node) {
 	RzAsmPlugin *h;
 	RzListIter *iter;
 	if (core && node && core->rasm) {
@@ -561,7 +561,7 @@ static void update_asmarch_options(RzCore *core, RConfigNode *node) {
 static bool cb_asmarch(void *user, void *data) {
 	char asmparser[32];
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	const char *asmos = NULL;
 	int bits = RZ_SYS_BITS;
 	if (!*node->value || !core || !core->rasm) {
@@ -667,7 +667,7 @@ static bool cb_asmarch(void *user, void *data) {
 
 	rz_asm_set_cpu (core->rasm, asm_cpu);
 	free (asm_cpu);
-	RConfigNode *asmcpu = rz_config_node_get (core->config, "asm.cpu");
+	RzConfigNode *asmcpu = rz_config_node_get (core->config, "asm.cpu");
 	if (asmcpu) {
 		update_asmcpu_options (core, asmcpu);
 	}
@@ -694,21 +694,21 @@ static bool cb_asmarch(void *user, void *data) {
 
 static bool cb_dbgbpsize(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->dbg->bpsize = node->i_value;
 	return true;
 }
 
 static bool cb_dbgbtdepth(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->dbg->btdepth = node->i_value;
 	return true;
 }
 
 static bool cb_asmbits(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	bool ret = false;
 	if (!core) {
 		eprintf ("user can't be NULL\n");
@@ -783,7 +783,7 @@ static bool cb_asmbits(void *user, void *data) {
 	return ret;
 }
 
-static void update_asmfeatures_options(RzCore *core, RConfigNode *node) {
+static void update_asmfeatures_options(RzCore *core, RzConfigNode *node) {
 	int i, argc;
 
 	if (core && core->rasm && core->rasm->cur) {
@@ -804,14 +804,14 @@ static void update_asmfeatures_options(RzCore *core, RConfigNode *node) {
 
 static bool cb_flag_realnames(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->flags->realnames = node->i_value;
 	return true;
 }
 
 static bool cb_asmfeatures(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (*node->value == '?') {
 		update_asmfeatures_options (core, node);
 		print_node_options (node);
@@ -826,14 +826,14 @@ static bool cb_asmfeatures(void *user, void *data) {
 
 static bool cb_asmlineswidth(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->anal->lineswidth = node->i_value;
 	return true;
 }
 
 static bool cb_emustr(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value) {
 		rz_config_set (core->config, "asm.emu", "true");
 	}
@@ -841,7 +841,7 @@ static bool cb_emustr(void *user, void *data) {
 }
 
 static bool cb_emuskip(void *user, void *data) {
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (*node->value == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			rz_cons_printf ("Concatenation of meta types encoded as characters:\n" \
@@ -858,21 +858,21 @@ static bool cb_emuskip(void *user, void *data) {
 
 static bool cb_asm_armimm(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->rasm->immdisp = node->i_value ? true : false;
 	return true;
 }
 
 static bool cb_asm_invhex(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->rasm->invhex = node->i_value;
 	return true;
 }
 
 static bool cb_asm_pcalign(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	int align = node->i_value;
 	if (align < 0) {
 		align = 0;
@@ -885,7 +885,7 @@ static bool cb_asm_pcalign(void *user, void *data) {
 static bool cb_asmos(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	int asmbits = rz_config_get_i (core->config, "asm.bits");
-	RConfigNode *asmarch, *node = (RConfigNode*) data;
+	RzConfigNode *asmarch, *node = (RzConfigNode*) data;
 
 	if (*node->value == '?') {
 		print_node_options (node);
@@ -908,7 +908,7 @@ static bool cb_asmos(void *user, void *data) {
 
 static bool cb_asmparser(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	return rz_parse_use (core->parser, node->value);
 }
 
@@ -919,7 +919,7 @@ typedef struct {
 
 static bool cb_binstrenc (void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode *)data;
+	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->value[0] == '?') {
 		print_node_options (node);
 		rz_cons_printf ("  -- if string's 2nd & 4th bytes are 0 then utf16le else "
@@ -962,7 +962,7 @@ static bool cb_binstrenc (void *user, void *data) {
 
 static bool cb_binfilter(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->bin->filter = node->i_value;
 	return true;
 }
@@ -970,35 +970,35 @@ static bool cb_binfilter(void *user, void *data) {
 /* BinDemangleCmd */
 static bool cb_bdc(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->bin->demanglercmd = node->i_value;
 	return true;
 }
 
 static bool cb_useldr(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->bin->use_ldr = node->i_value;
 	return true;
 }
 
 static bool cb_binat(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->binat = node->i_value;
 	return true;
 }
 
 static bool cb_usextr(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->bin->use_xtr = node->i_value;
 	return true;
 }
 
 static bool cb_strpurge(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (*node->value == '?') {
 		rz_cons_printf (
 		    "There can be multiple entries separated by commas. No whitespace before/after entries.\n"
@@ -1026,14 +1026,14 @@ static bool cb_strpurge(void *user, void *data) {
 }
 
 static bool cb_maxname (void *user, void *data) {
-	RConfigNode *node = (RConfigNode *)data;
+	RzConfigNode *node = (RzConfigNode *)data;
 	RzCore *core = (RzCore *) user;
 	core->parser->maxflagnamelen = node->i_value;
 	return true;
 }
 
 static bool cb_midflags (void *user, void *data) {
-	RConfigNode *node = (RConfigNode *)data;
+	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->value[0] == '?') {
 		print_node_options (node);
 		return false;
@@ -1043,7 +1043,7 @@ static bool cb_midflags (void *user, void *data) {
 
 static bool cb_strfilter(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (node->value[0] == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			rz_cons_printf ("Valid values for bin.str.filter:\n"
@@ -1067,14 +1067,14 @@ static bool cb_strfilter(void *user, void *data) {
 
 static bool cb_binforce(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	rz_bin_force_plugin (core->bin, node->value);
 	return true;
 }
 
 static bool cb_asmsyntax(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (*node->value == '?') {
 		print_node_options (node);
 		return false;
@@ -1090,7 +1090,7 @@ static bool cb_asmsyntax(void *user, void *data) {
 
 static bool cb_dirzigns(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	free (core->anal->zign_path);
 	core->anal->zign_path = strdup (node->value);
 	return true;
@@ -1098,7 +1098,7 @@ static bool cb_dirzigns(void *user, void *data) {
 
 static bool cb_bigendian(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	// Try to set endian based on preference, restrict by RzAsmPlugin
 	bool isbig = rz_asm_set_big_endian (core->rasm, node->i_value);
 	// Set anal endianness the same as asm
@@ -1114,28 +1114,28 @@ static bool cb_bigendian(void *user, void *data) {
 
 static bool cb_cfgdatefmt(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	snprintf (core->print->datefmt, 32, "%s", node->value);
 	return true;
 }
 
 static bool cb_timezone(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->print->datezone = node->i_value;
 	return true;
 }
 
 static bool cb_cfgcorelog(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->cfglog = node->i_value;
 	return true;
 }
 
 static bool cb_cfgdebug(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (!core) {
 		return false;
 	}
@@ -1164,7 +1164,7 @@ static bool cb_cfgdebug(void *user, void *data) {
 }
 
 static bool cb_dirhome(void *user, void *data) {
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (node->value) {
 		rz_sys_setenv (RZ_SYS_HOME, node->value);
 	}
@@ -1172,14 +1172,14 @@ static bool cb_dirhome(void *user, void *data) {
 }
 
 static bool cb_dirtmp(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *)data;
+	RzConfigNode *node = (RzConfigNode *)data;
 	char *value = RZ_STR_ISNOTEMPTY (node->value)? node->value: NULL;
 	rz_sys_setenv (RZ_SYS_TMP, value);
 	return true;
 }
 
 static bool cb_dirsrc(void *user, void *data) {
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	RzCore *core = (RzCore *)user;
 	free (core->bin->srcdir);
 	core->bin->srcdir = strdup (node->value);
@@ -1187,7 +1187,7 @@ static bool cb_dirsrc(void *user, void *data) {
 }
 
 static bool cb_cfgsanbox(void *user, void *data) {
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	int ret = rz_sandbox_enable (node->i_value);
 	if (node->i_value != ret) {
 		eprintf ("Cannot disable sandbox\n");
@@ -1197,21 +1197,21 @@ static bool cb_cfgsanbox(void *user, void *data) {
 
 static bool cb_str_escbslash(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->print->esc_bslash = node->i_value;
 	return true;
 }
 
 static bool cb_completion_maxtab (void *user, void *data) {
         RzCore *core = (RzCore*) user;
-        RConfigNode *node = (RConfigNode*) data;
+        RzConfigNode *node = (RzConfigNode*) data;
         core->cons->line->completion.args_limit = node->i_value;
         return true;
 }
 
 static bool cb_cfg_fortunes(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
+	RzConfigNode *node = (RzConfigNode *)data;
 	// TODO CN_BOOL option does not receive the right hand side of assignment as an argument
 	if (node->value[0] == '?') {
 		rz_core_fortune_list (core);
@@ -1221,7 +1221,7 @@ static bool cb_cfg_fortunes(void *user, void *data) {
 }
 
 static bool cb_cfg_fortunes_type(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *)data;
+	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->value[0] == '?') {
 		rz_core_fortune_list_types ();
 		return false;
@@ -1239,7 +1239,7 @@ static void check_decompiler(const char* name) {
 
 static bool cb_cmdpdc(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *)data;
+	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->value[0] == '?') {
 		rz_cons_printf ("pdc\n");
 		// spaguetti
@@ -1254,7 +1254,7 @@ static bool cb_cmdpdc(void *user, void *data) {
 		check_decompiler ("r2ghidra");
 		check_decompiler ("r2jadx");
 		check_decompiler ("r2snow");
-		RConfigNode *r2dec = rz_config_node_get (core->config, "r2dec.asm");
+		RzConfigNode *r2dec = rz_config_node_get (core->config, "r2dec.asm");
 		if (r2dec) {
 			rz_cons_printf ("pdd\n");
 		}
@@ -1265,7 +1265,7 @@ static bool cb_cmdpdc(void *user, void *data) {
 
 static bool cb_cmdlog(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	RZ_FREE (core->cmdlog);
 	core->cmdlog = strdup (node->value);
 	return true;
@@ -1273,28 +1273,28 @@ static bool cb_cmdlog(void *user, void *data) {
 
 static bool cb_cmdtimes(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->cmdtimes = node->value;
 	return true;
 }
 
 static bool cb_cmdrepeat(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->cmdrepeat = node->i_value;
 	return true;
 }
 
 static bool cb_scrnull(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->cons->null = node->i_value;
 	return true;
 }
 
 static bool cb_color(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value) {
 		core->print->flags |= RZ_PRINT_FLAGS_COLOR;
 	} else {
@@ -1312,7 +1312,7 @@ static bool cb_color(void *user, void *data) {
 	return true;
 }
 
-static bool cb_color_getter(void *user, RConfigNode *node) {
+static bool cb_color_getter(void *user, RzConfigNode *node) {
 	(void)user;
 	node->i_value = rz_cons_singleton ()->context->color_mode;
 	char buf[128];
@@ -1326,7 +1326,7 @@ static bool cb_color_getter(void *user, RConfigNode *node) {
 
 static bool cb_decoff(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value) {
 		core->print->flags |= RZ_PRINT_FLAGS_ADDRDEC;
 	} else {
@@ -1337,7 +1337,7 @@ static bool cb_decoff(void *user, void *data) {
 }
 
 static bool cb_dbgbep(void *user, void *data) {
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (*node->value == '?') {
 		print_node_options (node);
 		return false;
@@ -1347,7 +1347,7 @@ static bool cb_dbgbep(void *user, void *data) {
 
 static bool cb_dbg_btalgo(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (*node->value == '?') {
 		print_node_options (node);
 		return false;
@@ -1359,7 +1359,7 @@ static bool cb_dbg_btalgo(void *user, void *data) {
 
 static bool cb_dbg_libs(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	free (core->dbg->glob_libs);
 	core->dbg->glob_libs = strdup (node->value);
 	return true;
@@ -1367,7 +1367,7 @@ static bool cb_dbg_libs(void *user, void *data) {
 
 static bool cb_dbg_unlibs(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	free (core->dbg->glob_unlibs);
 	core->dbg->glob_unlibs = strdup (node->value);
 	return true;
@@ -1375,14 +1375,14 @@ static bool cb_dbg_unlibs(void *user, void *data) {
 
 static bool cb_dbg_bpinmaps(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->dbg->bp->bpinmaps = node->i_value;
 	return true;
 }
 
 static bool cb_dbg_forks(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->dbg->trace_forks = node->i_value;
 	if (core->bin->is_debugger) {
 		rz_debug_attach (core->dbg, core->dbg->pid);
@@ -1392,7 +1392,7 @@ static bool cb_dbg_forks(void *user, void *data) {
 
 static bool cb_dbg_gdb_page_size(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (node->i_value < 64) { // 64 is hardcoded min packet size
 		return false;
 	}
@@ -1406,7 +1406,7 @@ static bool cb_dbg_gdb_page_size(void *user, void *data) {
 
 static bool cb_dbg_gdb_retries(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (node->i_value <= 0) {
 		return false;
 	}
@@ -1419,7 +1419,7 @@ static bool cb_dbg_gdb_retries(void *user, void *data) {
 }
 
 static bool cb_dbg_execs(void *user, void *data) {
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 #if __linux__
 	RzCore *core = (RzCore*) user;
 	core->dbg->trace_execs = node->i_value;
@@ -1436,7 +1436,7 @@ static bool cb_dbg_execs(void *user, void *data) {
 
 static bool cb_dbg_clone(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->dbg->trace_clone = node->i_value;
 	if (core->bin->is_debugger) {
 		rz_debug_attach (core->dbg, core->dbg->pid);
@@ -1446,21 +1446,21 @@ static bool cb_dbg_clone(void *user, void *data) {
 
 static bool cb_dbg_follow_child(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->dbg->follow_child = node->i_value;
 	return true;
 }
 
 static bool cb_dbg_trace_continue(void *user, void *data) {
 	RzCore *core = (RzCore*)user;
-	RConfigNode *node = (RConfigNode*)data;
+	RzConfigNode *node = (RzConfigNode*)data;
 	core->dbg->trace_continue = node->i_value;
 	return true;
 }
 
 static bool cb_dbg_aftersc(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->dbg->trace_aftersyscall = node->i_value;
 	if (core->bin->is_debugger) {
 		rz_debug_attach (core->dbg, core->dbg->pid);
@@ -1470,7 +1470,7 @@ static bool cb_dbg_aftersc(void *user, void *data) {
 
 static bool cb_runprofile(void *user, void *data) {
 	RzCore *r = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	free ((void*)r->io->runprofile);
 	if (!node || !*(node->value)) {
 		r->io->runprofile = NULL;
@@ -1482,7 +1482,7 @@ static bool cb_runprofile(void *user, void *data) {
 
 static bool cb_dbg_args(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (!node || !*(node->value)) {
 		core->io->args = NULL;
 	} else {
@@ -1493,7 +1493,7 @@ static bool cb_dbg_args(void *user, void *data) {
 
 static bool cb_dbgstatus(void *user, void *data) {
 	RzCore *r = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (rz_config_get_i (r->config, "cfg.debug")) {
 		if (node->i_value) {
 			rz_config_set (r->config, "cmd.prompt",
@@ -1507,7 +1507,7 @@ static bool cb_dbgstatus(void *user, void *data) {
 
 static bool cb_dbgbackend(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (!strcmp (node->value, "?")) {
 		rz_debug_plugin_list (core->dbg, 'q');
 		return false;
@@ -1522,7 +1522,7 @@ static bool cb_dbgbackend(void *user, void *data) {
 
 static bool cb_gotolimit(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (rz_sandbox_enable (0)) {
 		eprintf ("Cannot change gotolimit\n");
 		return false;
@@ -1535,7 +1535,7 @@ static bool cb_gotolimit(void *user, void *data) {
 
 static bool cb_esilverbose (void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (core->anal->esil) {
 		core->anal->esil->verbose = node->i_value;
 	}
@@ -1543,7 +1543,7 @@ static bool cb_esilverbose (void *user, void *data) {
 }
 
 static bool cb_esilstackdepth (void *user, void *data) {
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (node->i_value < 3) {
 		eprintf ("esil.stack.depth must be greater than 2\n");
 		node->i_value = 32;
@@ -1552,33 +1552,33 @@ static bool cb_esilstackdepth (void *user, void *data) {
 }
 
 static bool cb_fixrows(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	rz_cons_singleton ()->fix_rows = (int)node->i_value;
 	return true;
 }
 
 static bool cb_fixcolumns(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	rz_cons_singleton ()->fix_columns = atoi (node->value);
 	return true;
 }
 
 static bool cb_rows(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	rz_cons_singleton ()->force_rows = node->i_value;
 	return true;
 }
 
 static bool cb_cmd_hexcursor(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->print->cfmt = node->value;
 	return true;
 }
 
 static bool cb_hexcompact(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value) {
 		core->print->flags |= RZ_PRINT_FLAGS_COMPACT;
 	} else {
@@ -1589,14 +1589,14 @@ static bool cb_hexcompact(void *user, void *data) {
 
 static bool cb_hex_pairs(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->print->pairs = node->i_value;
 	return true;
 }
 
 static bool cb_hex_section(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value) {
 		core->print->flags |= RZ_PRINT_FLAGS_SECTION;
 	} else {
@@ -1607,7 +1607,7 @@ static bool cb_hex_section(void *user, void *data) {
 
 static bool cb_hex_align(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value) {
 		core->print->flags |= RZ_PRINT_FLAGS_ALIGN;
 	} else {
@@ -1618,7 +1618,7 @@ static bool cb_hex_align(void *user, void *data) {
 
 static bool cb_io_unalloc(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value) {
 		core->print->flags |= RZ_PRINT_FLAGS_UNALLOC;
 	} else {
@@ -1629,14 +1629,14 @@ static bool cb_io_unalloc(void *user, void *data) {
 
 static bool cb_io_unalloc_ch(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->print->io_unalloc_ch = *node->value ? node->value[0] : ' ';
 	return true;
 }
 
 static bool cb_hex_header(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value) {
 		core->print->flags |= RZ_PRINT_FLAGS_HEADER;
 	} else {
@@ -1647,7 +1647,7 @@ static bool cb_hex_header(void *user, void *data) {
 
 static bool cb_hex_bytes(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value) {
 		core->print->flags &= ~RZ_PRINT_FLAGS_NONHEX;
 	} else {
@@ -1658,7 +1658,7 @@ static bool cb_hex_bytes(void *user, void *data) {
 
 static bool cb_hex_ascii(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value) {
 		core->print->flags &= ~RZ_PRINT_FLAGS_NONASCII;
 	} else {
@@ -1669,7 +1669,7 @@ static bool cb_hex_ascii(void *user, void *data) {
 
 static bool cb_hex_style(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value) {
 		core->print->flags |= RZ_PRINT_FLAGS_STYLE;
 	} else {
@@ -1680,7 +1680,7 @@ static bool cb_hex_style(void *user, void *data) {
 
 static bool cb_hex_hdroff(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value) {
 		core->print->flags |= RZ_PRINT_FLAGS_HDROFF;
 	} else {
@@ -1691,14 +1691,14 @@ static bool cb_hex_hdroff(void *user, void *data) {
 
 static bool cb_log_events (void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->log_events = node->i_value;
 	return true;
 }
 
 static bool cb_hexcomments(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value) {
 		core->print->flags |= RZ_PRINT_FLAGS_COMMENT;
 	} else {
@@ -1709,7 +1709,7 @@ static bool cb_hexcomments(void *user, void *data) {
 
 static bool cb_iopcache(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if ((bool)node->i_value) {
 		if (core) {
 			rz_config_set_i (core->config, "io.pcache.read", true);
@@ -1727,7 +1727,7 @@ static bool cb_iopcache(void *user, void *data) {
 
 static bool cb_iopcacheread(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if ((bool)node->i_value) {
 		if (core && core->io) {
 			core->io->p_cache |= 1;
@@ -1746,7 +1746,7 @@ static bool cb_iopcacheread(void *user, void *data) {
 
 static bool cb_iopcachewrite(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if ((bool)node->i_value) {
 		if (core && core->io) {
 			core->io->p_cache |= 2;
@@ -1774,7 +1774,7 @@ RZ_API bool rz_core_esil_cmd(RzAnalEsil *esil, const char *cmd, ut64 a1, ut64 a2
 
 static bool cb_cmd_esil_ioer(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = rz_core_esil_cmd;
 		free (core->anal->esil->cmd_ioer);
@@ -1785,7 +1785,7 @@ static bool cb_cmd_esil_ioer(void *user, void *data) {
 
 static bool cb_cmd_esil_todo(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = rz_core_esil_cmd;
 		free (core->anal->esil->cmd_todo);
@@ -1796,7 +1796,7 @@ static bool cb_cmd_esil_todo(void *user, void *data) {
 
 static bool cb_cmd_esil_intr(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = rz_core_esil_cmd;
 		free (core->anal->esil->cmd_intr);
@@ -1807,7 +1807,7 @@ static bool cb_cmd_esil_intr(void *user, void *data) {
 
 static bool cb_mdevrange(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = rz_core_esil_cmd;
 		free (core->anal->esil->mdev_range);
@@ -1818,7 +1818,7 @@ static bool cb_mdevrange(void *user, void *data) {
 
 static bool cb_cmd_esil_step(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = rz_core_esil_cmd;
 		free (core->anal->esil->cmd_step);
@@ -1829,7 +1829,7 @@ static bool cb_cmd_esil_step(void *user, void *data) {
 
 static bool cb_cmd_esil_step_out(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = rz_core_esil_cmd;
 		free (core->anal->esil->cmd_step_out);
@@ -1840,7 +1840,7 @@ static bool cb_cmd_esil_step_out(void *user, void *data) {
 
 static bool cb_cmd_esil_mdev(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = rz_core_esil_cmd;
 		free (core->anal->esil->cmd_mdev);
@@ -1851,7 +1851,7 @@ static bool cb_cmd_esil_mdev(void *user, void *data) {
 
 static bool cb_cmd_esil_trap(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (core && core->anal && core->anal->esil) {
 		core->anal->esil->cmd = rz_core_esil_cmd;
 		core->anal->esil->cmd_trap = strdup (node->value);
@@ -1861,7 +1861,7 @@ static bool cb_cmd_esil_trap(void *user, void *data) {
 
 static bool cb_cmddepth(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
-	int c = RZ_MAX (((RConfigNode*)data)->i_value, 0);
+	int c = RZ_MAX (((RzConfigNode*)data)->i_value, 0);
 	core->max_cmd_depth = c;
 	core->cons->context->cmd_depth = c;
 	return true;
@@ -1869,28 +1869,28 @@ static bool cb_cmddepth(void *user, void *data) {
 
 static bool cb_hexcols(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
-	int c = RZ_MIN (1024, RZ_MAX (((RConfigNode*)data)->i_value, 0));
+	int c = RZ_MIN (1024, RZ_MAX (((RzConfigNode*)data)->i_value, 0));
 	core->print->cols = c; // & ~1;
 	core->dbg->regcols = c/4;
 	return true;
 }
 
 static bool cb_hexstride(void *user, void *data) {
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	((RzCore *)user)->print->stride = node->i_value;
 	return true;
 }
 
 static bool cb_search_kwidx(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->search->n_kws = node->i_value;
 	return true;
 }
 
 static bool cb_io_cache_mode(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
+	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->i_value) {
 		core->io->cachemode = true;
 	} else {
@@ -1901,7 +1901,7 @@ static bool cb_io_cache_mode(void *user, void *data) {
 
 static bool cb_io_cache_read(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
+	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->i_value) {
 		core->io->cached |= RZ_PERM_R;
 	} else {
@@ -1912,7 +1912,7 @@ static bool cb_io_cache_read(void *user, void *data) {
 
 static bool cb_io_cache_write(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
+	RzConfigNode *node = (RzConfigNode *)data;
 	if (node->i_value) {
 		core->io->cached |= RZ_PERM_W;
 	} else {
@@ -1929,7 +1929,7 @@ static bool cb_io_cache(void *user, void *data) {
 
 static bool cb_ioaslr(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value != core->io->aslr) {
 		core->io->aslr = node->i_value;
 	}
@@ -1938,7 +1938,7 @@ static bool cb_ioaslr(void *user, void *data) {
 
 static bool cb_io_pava(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->print->pava = node->i_value;
 	if (node->i_value && core->io->va) {
 		eprintf ("WARNING: You may probably want to disable io.va too\n");
@@ -1948,7 +1948,7 @@ static bool cb_io_pava(void *user, void *data) {
 
 static bool cb_iova(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value != core->io->va) {
 		core->io->va = node->i_value;
 		/* ugly fix for r2 -d ... "r2 is going to die soon ..." */
@@ -1967,21 +1967,21 @@ static bool cb_iova(void *user, void *data) {
 
 static bool cb_ioff(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->io->ff = node->i_value;
 	return true;
 }
 
 static bool cb_io_oxff(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->io->Oxff = node->i_value;
 	return true;
 }
 
 static bool cb_filepath(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	char *pikaboo = strstr (node->value, "://");
 	if (pikaboo) {
 		if (pikaboo[3] == '/') {
@@ -1999,14 +1999,14 @@ static bool cb_filepath(void *user, void *data) {
 
 static bool cb_ioautofd(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->io->autofd = node->i_value;
 	return true;
 }
 
 static bool cb_scr_color_grep(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 
 	/* Let cons know we have a new pager. */
 	core->cons->grep_color = node->i_value;
@@ -2015,14 +2015,14 @@ static bool cb_scr_color_grep(void *user, void *data) {
 
 static bool cb_scr_color_grep_highlight(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->cons->grep_highlight = node->i_value;
 	return true;
 }
 
 static bool cb_pager(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (!strcmp (node->value, "?")) {
 		eprintf ("Usage: scr.pager must be '..' for internal less, or the path to a program in $PATH");
 		return false;
@@ -2034,26 +2034,26 @@ static bool cb_pager(void *user, void *data) {
 }
 
 static bool cb_breaklines(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	rz_cons_singleton ()->break_lines = node->i_value;
 	return true;
 }
 
 static bool cb_scr_gadgets(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->scr_gadgets = node->i_value;
 	return true;
 }
 
 static bool cb_fps(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	rz_cons_singleton ()->fps = node->i_value;
 	return true;
 }
 
 static bool cb_scrbreakword(void* user, void* data) {
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (*node->value) {
 		rz_cons_breakword (node->value);
 	} else {
@@ -2063,7 +2063,7 @@ static bool cb_scrbreakword(void* user, void* data) {
 }
 
 static bool cb_scrcolumns(void* user, void* data) {
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	RzCore *core = (RzCore*) user;
 	int n = atoi (node->value);
 	core->cons->force_columns = n;
@@ -2073,35 +2073,35 @@ static bool cb_scrcolumns(void* user, void* data) {
 
 static bool cb_scrfgets(void* user, void* data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->cons->user_fgets = node->i_value
 		? NULL : (void *)rz_core_fgets;
 	return true;
 }
 
 static bool cb_scrhtml(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	rz_cons_singleton ()->is_html = node->i_value;
 	// TODO: control error and restore old value (return false?) show errormsg?
 	return true;
 }
 
 static bool cb_newshell(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *)data;
+	RzConfigNode *node = (RzConfigNode *)data;
 	RzCore *core = (RzCore *)user;
 	core->use_tree_sitter_rzcmd = node->i_value;
 	return true;
 }
 
 static bool cb_scrhighlight(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	rz_cons_highlight (node->value);
 	return true;
 }
 
 #if __WINDOWS__
 static bool scr_vtmode(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (rz_str_is_true (node->value)) {
 		node->i_value = 1;
 	}
@@ -2138,32 +2138,32 @@ static bool scr_vtmode(void *user, void *data) {
 #endif
 
 static bool cb_screcho(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	rz_cons_singleton ()->echo = node->i_value;
 	return true;
 }
 
 static bool cb_scrlinesleep(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	rz_cons_singleton ()->linesleep = node->i_value;
 	return true;
 }
 
 static bool cb_scrpagesize(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	rz_cons_singleton ()->pagesize= node->i_value;
 	return true;
 }
 
 static bool cb_scrflush(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	rz_cons_singleton ()->flush = node->i_value;
 	return true;
 }
 
 static bool cb_scrstrconv(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (node->value[0] == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			rz_cons_printf ("Valid values for scr.strconv:\n"
@@ -2186,7 +2186,7 @@ static bool cb_scrstrconv(void *user, void *data) {
 }
 
 static bool cb_graphformat(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (!strcmp (node->value, "?")) {
 		rz_cons_printf ("png\njpg\npdf\nps\nsvg\njson\n");
 		return false;
@@ -2196,7 +2196,7 @@ static bool cb_graphformat(void *user, void *data) {
 
 
 static bool cb_exectrap(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	RzCore *core = (RzCore*) user;
 	if (core->anal && core->anal->esil) {
 		core->anal->esil->exectrap = node->i_value;
@@ -2205,7 +2205,7 @@ static bool cb_exectrap(void *user, void *data) {
 }
 
 static bool cb_iotrap(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	RzCore *core = (RzCore*) user;
 	if (core->anal && core->anal->esil) {
 		core->anal->esil->iotrap = node->i_value;
@@ -2215,7 +2215,7 @@ static bool cb_iotrap(void *user, void *data) {
 
 static bool cb_scr_bgfill(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value) {
 		core->print->flags |= RZ_PRINT_FLAGS_BGFILL;
 	} else {
@@ -2226,7 +2226,7 @@ static bool cb_scr_bgfill(void *user, void *data) {
 }
 
 static bool cb_scrint(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value && rz_sandbox_enable (0)) {
 		return false;
 	}
@@ -2235,7 +2235,7 @@ static bool cb_scrint(void *user, void *data) {
 }
 
 static bool cb_scrnkey(void *user, void *data) {
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (!strcmp (node->value, "help") || *node->value == '?') {
 		print_node_options (node);
 		return false;
@@ -2245,21 +2245,21 @@ static bool cb_scrnkey(void *user, void *data) {
 
 static bool cb_scr_histblock(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->print->histblock = node->i_value;
 	return true;
 }
 
 static bool cb_scrprompt(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->print->scr_prompt = node->i_value;
 	rz_line_singleton ()->echo = node->i_value;
 	return true;
 }
 
 static bool cb_scrrows(void* user, void* data) {
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	int n = atoi (node->value);
 	((RzCore *)user)->cons->force_rows = n;
 	return true;
@@ -2267,14 +2267,14 @@ static bool cb_scrrows(void* user, void* data) {
 
 static bool cb_contiguous(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->search->contiguous = node->i_value;
 	return true;
 }
 
 static bool cb_searchalign(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->search->align = node->i_value;
 	core->print->addrmod = node->i_value;
 	return true;
@@ -2282,7 +2282,7 @@ static bool cb_searchalign(void *user, void *data) {
 
 static bool cb_segoff(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value) {
 		core->print->flags |= RZ_PRINT_FLAGS_SEGOFF;
 	} else {
@@ -2293,7 +2293,7 @@ static bool cb_segoff(void *user, void *data) {
 
 static bool cb_seggrn(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->rasm->seggrn = node->i_value;
 	core->anal->seggrn = node->i_value;
 	core->print->seggrn = node->i_value;
@@ -2302,75 +2302,75 @@ static bool cb_seggrn(void *user, void *data) {
 
 static bool cb_stopthreads(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->dbg->stop_all_threads = node->i_value;
 	return true;
 }
 
 static bool cb_scr_prompt_popup(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->cons->show_autocomplete_widget = node->i_value;
 	return true;
 }
 
 static bool cb_swstep(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->dbg->swstep = node->i_value;
 	return true;
 }
 
 static bool cb_consbreak(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->dbg->consbreak = node->i_value;
 	return true;
 }
 
 static bool cb_teefile(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	rz_cons_singleton ()->teefile = node->value;
 	return true;
 }
 
 static bool cb_trace(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->dbg->trace->enabled = node->i_value;
 	return true;
 }
 
 static bool cb_tracetag(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->dbg->trace->tag = node->i_value;
 	return true;
 }
 
 static bool cb_utf8(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	rz_cons_set_utf8 ((bool)node->i_value);
 	return true;
 }
 
 static bool cb_utf8_curvy(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->cons->use_utf8_curvy = node->i_value;
 	return true;
 }
 
 static bool cb_dotted(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->cons->dotted_lines = node->i_value;
 	return true;
 }
 
 static bool cb_zoombyte(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	switch (*node->value) {
 	case 'p': case 'f': case 's': case '0':
 	case 'F': case 'e': case 'h':
@@ -2386,28 +2386,28 @@ static bool cb_zoombyte(void *user, void *data) {
 
 static bool cb_analverbose(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->anal->verbose = node->i_value;
 	return true;
 }
 
 static bool cb_binverbose(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->bin->verbose = node->i_value;
 	return true;
 }
 
 static bool cb_rawstr(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->bin->rawstr = node->i_value;
 	return true;
 }
 
 static bool cb_debase64(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	core->bin->debase64 = node->i_value;
 	return true;
 }
@@ -2415,7 +2415,7 @@ static bool cb_debase64(void *user, void *data) {
 static bool cb_binstrings(void *user, void *data) {
 	const ut32 req = RZ_BIN_REQ_STRINGS;
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value) {
 		core->bin->filter_rules |= req;
 	} else {
@@ -2426,7 +2426,7 @@ static bool cb_binstrings(void *user, void *data) {
 
 static bool cb_bindbginfo(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (!core || !core->bin) {
 		return false;
 	}
@@ -2436,7 +2436,7 @@ static bool cb_bindbginfo(void *user, void *data) {
 
 static bool cb_binprefix(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (!core || !core->bin) {
 		return false;
 	}
@@ -2461,7 +2461,7 @@ static bool cb_binprefix(void *user, void *data) {
 
 static bool cb_binmaxstrbuf(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (core->bin) {
 		int v = node->i_value;
 		ut64 old_v = core->bin->maxstrbuf;
@@ -2479,7 +2479,7 @@ static bool cb_binmaxstrbuf(void *user, void *data) {
 
 static bool cb_binmaxstr(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (core->bin) {
 		int v = node->i_value;
 		if (v < 1) {
@@ -2494,7 +2494,7 @@ static bool cb_binmaxstr(void *user, void *data) {
 
 static bool cb_binminstr(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
+	RzConfigNode *node = (RzConfigNode *) data;
 	if (core->bin) {
 		int v = node->i_value;
 		if (v < 1) {
@@ -2509,7 +2509,7 @@ static bool cb_binminstr(void *user, void *data) {
 
 static bool cb_searchin(void *user, void *data) {
 	RzCore *core = (RzCore*)user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	if (node->value[0] == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			rz_cons_printf ("Valid values for search.in (depends on .from/.to and io.va):\n"
@@ -2544,18 +2544,18 @@ static bool cb_searchin(void *user, void *data) {
 	return true;
 }
 
-static int __dbg_swstep_getter(void *user, RConfigNode *node) {
+static int __dbg_swstep_getter(void *user, RzConfigNode *node) {
 	RzCore *core = (RzCore*)user;
 	node->i_value = core->dbg->swstep;
 	return true;
 }
 
-static bool cb_dirpfx(RzCore *core, RConfigNode *node) {
+static bool cb_dirpfx(RzCore *core, RzConfigNode *node) {
 	rz_sys_prefix (node->value);
 	return true;
 }
 
-static bool cb_anal_roregs(RzCore *core, RConfigNode *node) {
+static bool cb_anal_roregs(RzCore *core, RzConfigNode *node) {
 	if (core && core->anal && core->anal->reg) {
 		rz_list_free (core->anal->reg->roregs);
 		core->anal->reg->roregs = rz_str_split_duplist (node->value, ",", true);
@@ -2563,12 +2563,12 @@ static bool cb_anal_roregs(RzCore *core, RConfigNode *node) {
 	return true;
 }
 
-static bool cb_anal_gp(RzCore *core, RConfigNode *node) {
+static bool cb_anal_gp(RzCore *core, RzConfigNode *node) {
 	core->anal->gp = node->i_value;
 	return true;
 }
 
-static bool cb_anal_from(RzCore *core, RConfigNode *node) {
+static bool cb_anal_from(RzCore *core, RzConfigNode *node) {
 	if (rz_config_get_i (core->config, "anal.limits")) {
 		rz_anal_set_limits (core->anal,
 				rz_config_get_i (core->config, "anal.from"),
@@ -2577,7 +2577,7 @@ static bool cb_anal_from(RzCore *core, RConfigNode *node) {
 	return true;
 }
 
-static bool cb_anal_limits(void *user, RConfigNode *node) {
+static bool cb_anal_limits(void *user, RzConfigNode *node) {
 	RzCore *core = (RzCore*)user;
 	if (node->i_value) {
 		rz_anal_set_limits (core->anal,
@@ -2589,7 +2589,7 @@ static bool cb_anal_limits(void *user, RConfigNode *node) {
 	return 1;
 }
 
-static bool cb_anal_rnr(void *user, RConfigNode *node) {
+static bool cb_anal_rnr(void *user, RzConfigNode *node) {
 	RzCore *core = (RzCore*)user;
 	core->anal->recursive_noreturn = node->i_value;
 	return 1;
@@ -2597,91 +2597,91 @@ static bool cb_anal_rnr(void *user, RConfigNode *node) {
 
 static bool cb_anal_jmptbl(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.jmptbl = node->i_value;
 	return true;
 }
 
 static bool cb_anal_cjmpref(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.cjmpref = node->i_value;
 	return true;
 }
 
 static bool cb_anal_jmpref(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.jmpref = node->i_value;
 	return true;
 }
 
 static bool cb_anal_jmpabove(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.jmpabove = node->i_value;
 	return true;
 }
 
 static bool cb_anal_loads(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.loads = node->i_value;
 	return true;
 }
 
 static bool cb_anal_followdatarefs(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.followdatarefs = node->i_value;
 	return true;
 }
 
 static bool cb_anal_jmpmid(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.jmpmid = node->i_value;
 	return true;
 }
 
 static bool cb_anal_searchstringrefs(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.searchstringrefs = node->i_value;
 	return true;
 }
 
 static bool cb_anal_pushret(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.pushret = node->i_value;
 	return true;
 }
 
 static bool cb_anal_brokenrefs(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.followbrokenfcnsrefs = node->i_value;
 	return true;
 }
 
 static bool cb_anal_trycatch(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.trycatch = node->i_value;
 	return true;
 }
 
 static bool cb_anal_bb_max_size(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->anal->opt.bb_max_size = node->i_value;
 	return true;
 }
 
 static bool cb_anal_cpp_abi(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 
 	if (*node->value == '?') {
 		print_node_options (node);
@@ -2703,7 +2703,7 @@ static bool cb_anal_cpp_abi(void *user, void *data) {
 
 static bool cb_linesto(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	ut64 from = (ut64)rz_config_get_i (core->config, "lines.from");
 	int io_sz = rz_io_size (core->io);
 	ut64 to = rz_num_math (core->num, node->value);
@@ -2727,7 +2727,7 @@ static bool cb_linesto(void *user, void *data) {
 
 static bool cb_linesabs(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
-	RConfigNode *node = (RConfigNode*) data;
+	RzConfigNode *node = (RzConfigNode*) data;
 	core->print->lines_abs = node->i_value;
 	if (core->print->lines_abs && core->print->lines_cache_sz <= 0) {
 		ut64 from = (ut64)rz_config_get_i (core->config, "lines.from");
@@ -2745,7 +2745,7 @@ static bool cb_linesabs(void *user, void *data) {
 
 static bool cb_malloc(void *user, void *data) {
  	RzCore *core = (RzCore*) user;
- 	RConfigNode *node = (RConfigNode*) data;
+ 	RzConfigNode *node = (RzConfigNode*) data;
 
  	if (node->value) {
  		if (!strcmp ("jemalloc", node->value) || !strcmp ("glibc", node->value)) {
@@ -2759,26 +2759,26 @@ static bool cb_malloc(void *user, void *data) {
 }
 
 static bool cb_log_config_level(void *coreptr, void *nodeptr) {
-	RConfigNode *node = (RConfigNode *)nodeptr;
+	RzConfigNode *node = (RzConfigNode *)nodeptr;
 	rz_log_set_level (node->i_value);
 	return true;
 }
 
 static bool cb_log_config_traplevel(void *coreptr, void *nodeptr) {
-	RConfigNode *node = (RConfigNode *)nodeptr;
+	RzConfigNode *node = (RzConfigNode *)nodeptr;
 	rz_log_set_traplevel (node->i_value);
 	return true;
 }
 
 static bool cb_log_config_file(void *coreptr, void *nodeptr) {
-	RConfigNode *node = (RConfigNode *)nodeptr;
+	RzConfigNode *node = (RzConfigNode *)nodeptr;
 	const char *value = node->value;
 	rz_log_set_file (value);
 	return true;
 }
 
 static bool cb_log_config_srcinfo(void *coreptr, void *nodeptr) {
-	RConfigNode *node = (RConfigNode *)nodeptr;
+	RzConfigNode *node = (RzConfigNode *)nodeptr;
 	const char *value = node->value;
 	switch (value[0]) {
 	case 't':
@@ -2792,7 +2792,7 @@ static bool cb_log_config_srcinfo(void *coreptr, void *nodeptr) {
 }
 
 static bool cb_log_config_colors(void *coreptr, void *nodeptr) {
-	RConfigNode *node = (RConfigNode *)nodeptr;
+	RzConfigNode *node = (RzConfigNode *)nodeptr;
 	const char *value = node->value;
 	switch (value[0]) {
 	case 't':
@@ -2807,7 +2807,7 @@ static bool cb_log_config_colors(void *coreptr, void *nodeptr) {
 
 static bool cb_dbg_verbose(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
+	RzConfigNode *node = (RzConfigNode *)data;
 	const char *value = node->value;
 	switch (value[0]) {
 	case 't':
@@ -2823,8 +2823,8 @@ static bool cb_dbg_verbose(void *user, void *data) {
 RZ_API int rz_core_config_init(RzCore *core) {
 	int i;
 	char buf[128], *p, *tmpdir;
-	RConfigNode *n;
-	RConfig *cfg = core->config = rz_config_new (core);
+	RzConfigNode *n;
+	RzConfig *cfg = core->config = rz_config_new (core);
 	if (!cfg) {
 		return 0;
 	}
@@ -2842,7 +2842,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		if (!pfx) {
 			pfx = strdup (RZ_PREFIX);
 		}
-		SETCB ("dir.prefix", pfx, (RConfigCallback)&cb_dirpfx, "Default prefix r2 was compiled for");
+		SETCB ("dir.prefix", pfx, (RzConfigCallback)&cb_dirpfx, "Default prefix r2 was compiled for");
 		free (pfx);
 	}
 #if __ANDROID__
@@ -2872,14 +2872,14 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF ("anal.fcnprefix", "fcn",  "Prefix new function names with this");
 	SETCB ("anal.verbose", "false", &cb_analverbose, "Show RzAnal warnings when analyzing code");
 	SETBPREF ("anal.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
-	SETCB ("anal.roregs", "gp,zero", (RConfigCallback)&cb_anal_roregs, "Comma separated list of register names to be readonly");
-	SETICB ("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "Set the value of the GP register (MIPS)");
+	SETCB ("anal.roregs", "gp,zero", (RzConfigCallback)&cb_anal_roregs, "Comma separated list of register names to be readonly");
+	SETICB ("anal.gp", 0, (RzConfigCallback)&cb_anal_gp, "Set the value of the GP register (MIPS)");
 	SETBPREF ("anal.gpfixed", "true", "Set gp register to anal.gp before emulating each instruction in aae");
-	SETCB ("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "Restrict analysis to address range [anal.from:anal.to]");
-	SETCB ("anal.rnr", "false", (RConfigCallback)&cb_anal_rnr, "Recursive no return checks (EXPERIMENTAL)");
-	SETCB ("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "Restrict analysis to address range [anal.from:anal.to]");
-	SETICB ("anal.from", -1, (RConfigCallback)&cb_anal_from, "Lower limit on the address range for analysis");
-	SETICB ("anal.to", -1, (RConfigCallback)&cb_anal_from, "Upper limit on the address range for analysis");
+	SETCB ("anal.limits", "false", (RzConfigCallback)&cb_anal_limits, "Restrict analysis to address range [anal.from:anal.to]");
+	SETCB ("anal.rnr", "false", (RzConfigCallback)&cb_anal_rnr, "Recursive no return checks (EXPERIMENTAL)");
+	SETCB ("anal.limits", "false", (RzConfigCallback)&cb_anal_limits, "Restrict analysis to address range [anal.from:anal.to]");
+	SETICB ("anal.from", -1, (RzConfigCallback)&cb_anal_from, "Lower limit on the address range for analysis");
+	SETICB ("anal.to", -1, (RzConfigCallback)&cb_anal_from, "Upper limit on the address range for analysis");
 	n = NODECB ("anal.in", "io.maps.x", &cb_searchin);
 	SETDESC (n, "Specify search boundaries for analysis");
 	SETOPTIONS (n, "range", "block",
@@ -3110,9 +3110,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI ("asm.symbol.col", 40, "Columns width to show asm.section");
 	SETCB ("asm.assembler", "", &cb_asmassembler, "Set the plugin name to use when assembling");
 	SETBPREF ("asm.minicols", "false", "Only show the instruction in the column disasm");
-	RConfigNode *asmcpu = NODECB ("asm.cpu", RZ_SYS_ARCH, &cb_asmcpu);
+	RzConfigNode *asmcpu = NODECB ("asm.cpu", RZ_SYS_ARCH, &cb_asmcpu);
 	SETDESC (asmcpu, "Set the kind of asm.arch cpu");
-	RConfigNode *asmarch = NODECB ("asm.arch", RZ_SYS_ARCH, &cb_asmarch);
+	RzConfigNode *asmarch = NODECB ("asm.arch", RZ_SYS_ARCH, &cb_asmarch);
 	SETDESC (asmarch, "Set the arch to be used by asm");
 	/* we need to have both asm.arch and asm.cpu defined before updating options */
 	update_asmarch_options (core, asmarch);
@@ -3345,7 +3345,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETICB ("dbg.gdb.retries", 10, &cb_dbg_gdb_retries, "Number of retries before gdb packet read times out");
 	SETCB ("dbg.consbreak", "false", &cb_consbreak, "SIGINT handle for attached processes");
 
-	rz_config_set_getter (cfg, "dbg.swstep", (RConfigCallback)__dbg_swstep_getter);
+	rz_config_set_getter (cfg, "dbg.swstep", (RzConfigCallback)__dbg_swstep_getter);
 
 // TODO: This should be specified at first by the debug backend when attaching
 #if __arm__ || __mips__
@@ -3372,7 +3372,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF ("cmd.hit", "", "Run when a search hit is found");
 	SETPREF ("cmd.open", "", "Run when file is opened");
 	SETPREF ("cmd.load", "", "Run when binary is loaded");
-	RConfigNode *cmdpdc = NODECB ("cmd.pdc", "", &cb_cmdpdc);
+	RzConfigNode *cmdpdc = NODECB ("cmd.pdc", "", &cb_cmdpdc);
 	SETDESC (cmdpdc, "Select pseudo-decompiler command to run after pdc");
 	update_cmdpdc_options (core, cmdpdc);
 	SETCB ("cmd.log", "", &cb_cmdlog, "Every time a new T log is added run this command");
@@ -3579,7 +3579,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("scr.tee", "", &cb_teefile, "Pipe output to file of this name");
 	SETPREF ("scr.seek", "", "Seek to the specified address on startup");
 	SETICB ("scr.color", (core->print->flags&RZ_PRINT_FLAGS_COLOR)?COLOR_MODE_16:COLOR_MODE_DISABLED, &cb_color, "Enable colors (0: none, 1: ansi, 2: 256 colors, 3: truecolor)");
-	rz_config_set_getter (cfg, "scr.color", (RConfigCallback)cb_color_getter);
+	rz_config_set_getter (cfg, "scr.color", (RzConfigCallback)cb_color_getter);
 	SETCB ("scr.color.grep", "false", &cb_scr_color_grep, "Enable colors when using ~grep");
 	SETBPREF ("scr.color.pipe", "false", "Enable colors when using pipes");
 	SETBPREF ("scr.color.ops", "true", "Colorize numbers and registers in opcodes");
@@ -3752,6 +3752,6 @@ RZ_API void rz_core_parse_rizinrc(RzCore *r) {
 }
 
 RZ_API void rz_core_config_update(RzCore *core) {
-	RConfigNode *cmdpdc = rz_config_node_get (core->config, "cmd.pdc");
+	RzConfigNode *cmdpdc = rz_config_node_get (core->config, "cmd.pdc");
 	update_cmdpdc_options (core, cmdpdc);
 }

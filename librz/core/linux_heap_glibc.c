@@ -1084,7 +1084,7 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 		return;
 	}
 
-	RConfigHold *hc = rz_config_hold_new (core->config);
+	RzConfigHold *hc = rz_config_hold_new (core->config);
 	if (!hc) {
 		free (cnk);
 		free (cnk_next);

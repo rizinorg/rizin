@@ -1199,7 +1199,7 @@ static void autocomplete_default(RZ_NULLABLE RzCore *core, RLineCompletion *comp
 
 static void autocomplete_evals(RzCore *core, RLineCompletion *completion, const char *str) {
 	rz_return_if_fail (str);
-	RConfigNode *bt;
+	RzConfigNode *bt;
 	RzListIter *iter;
 	char *tmp = strrchr (str, ' ');
 	if (tmp) {
@@ -1471,7 +1471,7 @@ static bool find_e_opts(RzCore *core, RLineCompletion *completion, RLineBuffer *
 		// if the name contains a space, just null
 		*sp = 0;
 	}
-	RConfigNode *node = rz_config_node_get (core->config, str);
+	RzConfigNode *node = rz_config_node_get (core->config, str);
 	if (sp) {
 		// if nulled, then restore.
 		*sp = ' ';
@@ -3370,7 +3370,7 @@ RZ_API RzCons *rz_core_get_cons (RzCore *core) {
 	return core->cons;
 }
 
-RZ_API RConfig *rz_core_get_config (RzCore *core) {
+RZ_API RzConfig *rz_core_get_config (RzCore *core) {
 	return core->config;
 }
 

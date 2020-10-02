@@ -239,7 +239,7 @@ typedef struct rz_core_tasks_t {
 
 struct rz_core_t {
 	RBin *bin;
-	RConfig *config;
+	RzConfig *config;
 	ut64 offset; // current seek
 	ut64 prompt_offset; // temporarily set to offset to have $$ in expressions always stay the same during temp seeks
 	ut32 blocksize;
@@ -379,7 +379,7 @@ RZ_API char *rz_core_get_theme(void);
 RZ_API const char *rz_core_get_section_name(RzCore *core, ut64 addr);
 RZ_API RzCons *rz_core_get_cons(RzCore *core);
 RZ_API RBin *rz_core_get_bin(RzCore *core);
-RZ_API RConfig *rz_core_get_config (RzCore *core);
+RZ_API RzConfig *rz_core_get_config (RzCore *core);
 RZ_API bool rz_core_init(RzCore *core);
 RZ_API void rz_core_bind_cons(RzCore *core); // to restore pointers in cons
 RZ_API RzCore *rz_core_new(void);

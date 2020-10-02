@@ -185,7 +185,7 @@ RZ_API int rz_core_pseudo_code(RzCore *core, const char *input) {
 	ut64 queuegoto = 0LL;
 	const char *blocktype = "else";
 	RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, RZ_ANAL_FCN_TYPE_NULL);
-	RConfigHold *hc = rz_config_hold_new (core->config);
+	RzConfigHold *hc = rz_config_hold_new (core->config);
 	if (!hc) {
 		return false;
 	}

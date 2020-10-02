@@ -2,7 +2,7 @@
 #include "minunit.h"
 
 static bool sanitize_instr_acc(void *user, const ut64 k, const void *v) {
-	RPVector *vec = (RPVector *)v;
+	RzPVector *vec = (RzPVector *)v;
 	void **it;
 	rz_pvector_foreach (vec, it) {
 		RzAnalVar *var = *it;
@@ -27,7 +27,7 @@ static bool sanitize(RzAnalFunction *fcn) {
 		RzAnalVar *var = *it;
 		RzAnalVarAccess *acc;
 		rz_vector_foreach (&var->accesses, acc) {
-			RPVector *iaccs = ht_up_find (fcn->inst_vars, acc->offset, NULL);
+			RzPVector *iaccs = ht_up_find (fcn->inst_vars, acc->offset, NULL);
 			mu_assert ("var refs instr but instr does not ref var", rz_pvector_contains (iaccs, var));
 		}
 	}
@@ -103,7 +103,7 @@ bool test_r_anal_var() {
 	st64 stackptr = rz_anal_function_get_var_stackptr_at (fcn, -0x10, 0x12345);
 	mu_assert_eq (stackptr, ST64_MAX, "unset stackptr");
 
-	RPVector *used_vars = rz_anal_function_get_vars_used_at (fcn, 0x123);
+	RzPVector *used_vars = rz_anal_function_get_vars_used_at (fcn, 0x123);
 	mu_assert ("no used vars", !used_vars || rz_pvector_len (used_vars));
 	used_vars = rz_anal_function_get_vars_used_at (fcn, 0x130);
 	mu_assert_eq (rz_pvector_len (used_vars), 1, "used vars count");

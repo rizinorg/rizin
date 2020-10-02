@@ -1681,7 +1681,7 @@ static int core_anal_graph_construct_nodes (RzCore *core, RzAnalFunction *fcn, i
                                         sdb_set (DB, "label", str, 0);
                                 } else if (!is_json) {
                                         nodes++;
-                                        RConfigHold *hc = rz_config_hold_new (core->config);
+                                        RzConfigHold *hc = rz_config_hold_new (core->config);
                                         rz_config_hold_i (hc, "scr.color", "scr.utf8", "asm.offset", "asm.lines",
                                                 "asm.cmt.right", "asm.lines.fcn", "asm.bytes", NULL);
                                         RzDiff *d = rz_diff_new ();
@@ -1697,7 +1697,7 @@ static int core_anal_graph_construct_nodes (RzCore *core, RzAnalFunction *fcn, i
 
                                         if (bbi->diff && bbi->diff->type != RZ_ANAL_DIFF_TYPE_MATCH && core->c2) {
                                                 RzCore *c = core->c2;
-                                                RConfig *oc = c->config;
+                                                RzConfig *oc = c->config;
                                                 char *str = rz_core_cmd_strf (core, "pdb @ 0x%08"PFMT64x, bbi->addr);
                                                 c->config = core->config;
                                                 // XXX. the bbi->addr doesnt needs to be in the same address in core2
@@ -2051,7 +2051,7 @@ RZ_API int rz_core_print_bb_custom(RzCore *core, RzAnalFunction *fcn) {
 		return false;
 	}
 
-	RConfigHold *hc = rz_config_hold_new (core->config);
+	RzConfigHold *hc = rz_config_hold_new (core->config);
 	rz_config_hold_i (hc, "scr.color", "scr.utf8", "asm.marks", "asm.offset", "asm.lines",
 	  "asm.cmt.right", "asm.cmt.col", "asm.lines.fcn", "asm.bytes", NULL);
 	/*rz_config_set_i (core->config, "scr.color", 0);*/
@@ -3368,7 +3368,7 @@ static RzList *recurse_bb(RzCore *core, ut64 addr, RzAnalBlock *dest) {
 
 typedef struct {
 	int count;
-	RPVector reg_set;
+	RzPVector reg_set;
 	bool argonly;
 	RzAnalFunction *fcn;
 	RzCore *core;
@@ -3587,7 +3587,7 @@ RZ_API int rz_core_anal_graph(RzCore *core, ut64 addr, int opts) {
 	int is_json_format_disasm = opts & RZ_CORE_ANAL_JSON_FORMAT_DISASM;
 	int is_keva = opts & RZ_CORE_ANAL_KEYVALUE;
 	int is_star = opts & RZ_CORE_ANAL_STAR;
-	RConfigHold *hc;
+	RzConfigHold *hc;
 	RzAnalFunction *fcni;
 	RzListIter *iter;
 	int nodes = 0;
@@ -4327,7 +4327,7 @@ RZ_API RzCoreAnalStats* rz_core_anal_get_stats(RzCore *core, ut64 from, ut64 to,
 		piece = (S->vaddr - from) / step;
 		as->block[piece].symbols++;
 	}
-	RPVector *metas = to > from ? rz_meta_get_all_intersect (core->anal, from, to - from, RZ_META_TYPE_ANY) : NULL;
+	RzPVector *metas = to > from ? rz_meta_get_all_intersect (core->anal, from, to - from, RZ_META_TYPE_ANY) : NULL;
 	if (metas) {
 		void **it;
 		rz_pvector_foreach (metas, it) {
@@ -5149,7 +5149,7 @@ RZ_API void rz_core_anal_esil(RzCore *core, const char *str, const char *target)
 			break;
 		}
 		{
-			RPVector *list = rz_meta_get_all_in (core->anal, cur, RZ_META_TYPE_ANY);
+			RzPVector *list = rz_meta_get_all_in (core->anal, cur, RZ_META_TYPE_ANY);
 			void **it;
 			rz_pvector_foreach (list, it) {
 				RIntervalNode *node = *it;

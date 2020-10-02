@@ -23,7 +23,7 @@ static bool _init_test_vector(RzVector *v, size_t len, size_t padding, RzVectorF
 
 // allocates a pvector of len pointers to ut32 values from 0 to len
 // with capacity len + padding
-static bool _init_test_pvector(RPVector *v, size_t len, size_t padding) {
+static bool _init_test_pvector(RzPVector *v, size_t len, size_t padding) {
 	rz_pvector_init (v, free);
 	rz_pvector_reserve (v, len + padding);
 
@@ -44,7 +44,7 @@ static bool _init_test_pvector(RPVector *v, size_t len, size_t padding) {
 
 // allocates a pvector of len pointers with values from 0 to len
 // with capacity len + padding
-static bool _init_test_pvector2(RPVector *v, size_t len, size_t padding) {
+static bool _init_test_pvector2(RzPVector *v, size_t len, size_t padding) {
 	rz_pvector_init (v, NULL);
 	rz_pvector_reserve (v, len + padding);
 
@@ -647,7 +647,7 @@ static bool test_vector_lower_bound(void) {
 }
 
 static bool test_pvector_init(void) {
-	RPVector v;
+	RzPVector v;
 	rz_pvector_init (&v, (void *)1337);
 	mu_assert_eq (v.v.elem_size, sizeof (void *), "elem_size");
 	mu_assert_eq (v.v.len, 0UL, "len");
@@ -658,7 +658,7 @@ static bool test_pvector_init(void) {
 }
 
 static bool test_pvector_new(void) {
-	RPVector *v = rz_pvector_new ((void *)1337);
+	RzPVector *v = rz_pvector_new ((void *)1337);
 	mu_assert_eq (v->v.elem_size, sizeof (void *), "elem_size");
 	mu_assert_eq (v->v.len, 0UL, "len");
 	mu_assert_null (v->v.a, "a");
@@ -670,7 +670,7 @@ static bool test_pvector_new(void) {
 
 static bool test_pvector_clear(void) {
 	// run with asan or valgrind
-	RPVector v;
+	RzPVector v;
 	init_test_pvector (&v, 5, 5);
 	mu_assert_eq (v.v.len, 5UL, "initial len");
 	mu_assert ("initial a", v.v.a);
@@ -684,7 +684,7 @@ static bool test_pvector_clear(void) {
 
 static bool test_pvector_free(void) {
 	// run with asan or valgrind
-	RPVector *v = RZ_NEW (RPVector);
+	RzPVector *v = RZ_NEW (RzPVector);
 	init_test_pvector (v, 5, 5);
 	mu_assert_eq (v->v.len, 5UL, "initial len");
 	mu_assert ("initial a", v->v.a);
@@ -694,7 +694,7 @@ static bool test_pvector_free(void) {
 }
 
 static bool test_pvector_at(void) {
-	RPVector v;
+	RzPVector v;
 	init_test_pvector (&v, 5, 0);
 	ut32 i;
 	for (i = 0; i < 5; i++) {
@@ -706,7 +706,7 @@ static bool test_pvector_at(void) {
 }
 
 static bool test_pvector_set(void) {
-	RPVector v;
+	RzPVector v;
 	init_test_pvector (&v, 5, 0);
 	free (((void **)v.v.a)[3]);
 	rz_pvector_set (&v, 3, (void *)1337);
@@ -718,7 +718,7 @@ static bool test_pvector_set(void) {
 }
 
 static bool test_pvector_contains(void) {
-	RPVector v;
+	RzPVector v;
 	init_test_pvector (&v, 5, 0);
 	void *e = ((void **)v.v.a)[3];
 	void **p = rz_pvector_contains (&v, e);
@@ -730,7 +730,7 @@ static bool test_pvector_contains(void) {
 }
 
 static bool test_pvector_remove_at(void) {
-	RPVector v;
+	RzPVector v;
 	init_test_pvector (&v, 5, 0);
 	ut32 *e = rz_pvector_remove_at (&v, 3);
 	mu_assert_eq (*e, 3, "remove_at ret");
@@ -745,7 +745,7 @@ static bool test_pvector_remove_at(void) {
 }
 
 static bool test_pvector_insert(void) {
-	RPVector v;
+	RzPVector v;
 
 	init_test_pvector2 (&v, 4, 2);
 	void *e = (void *)1337;
@@ -801,7 +801,7 @@ static bool test_pvector_insert(void) {
 }
 
 static bool test_pvector_insert_range(void) {
-	RPVector v;
+	RzPVector v;
 	void *range[] = { (void *)0xC0, (void *)0xFF, (void *)0xEE };
 
 	rz_pvector_init (&v, NULL);
@@ -853,7 +853,7 @@ static bool test_pvector_insert_range(void) {
 }
 
 static bool test_pvector_pop(void) {
-	RPVector v;
+	RzPVector v;
 	init_test_pvector2 (&v, 3, 0);
 
 	void *e = rz_pvector_pop (&v);
@@ -877,7 +877,7 @@ static bool test_pvector_pop(void) {
 }
 
 static bool test_pvector_pop_front(void) {
-	RPVector v;
+	RzPVector v;
 	init_test_pvector2 (&v, 3, 0);
 
 	void *e = rz_pvector_pop_front (&v);
@@ -901,7 +901,7 @@ static bool test_pvector_pop_front(void) {
 }
 
 static bool test_pvector_push(void) {
-	RPVector v;
+	RzPVector v;
 	rz_pvector_init (&v, NULL);
 
 	void *e = (void *)1337;
@@ -955,7 +955,7 @@ static bool test_pvector_push(void) {
 }
 
 static bool test_pvector_push_front(void) {
-	RPVector v;
+	RzPVector v;
 	rz_pvector_init (&v, NULL);
 
 	void *e = (void *)1337;
@@ -1009,14 +1009,14 @@ static bool test_pvector_push_front(void) {
 }
 
 static bool test_pvector_sort(void) {
-	RPVector v;
+	RzPVector v;
 	rz_pvector_init (&v, free);
 	rz_pvector_push (&v, strdup ("Charmander"));
 	rz_pvector_push (&v, strdup ("Squirtle"));
 	rz_pvector_push (&v, strdup ("Bulbasaur"));
 	rz_pvector_push (&v, strdup ("Meowth"));
 	rz_pvector_push (&v, strdup ("Caterpie"));
-	rz_pvector_sort (&v, (RPVectorComparator) strcmp);
+	rz_pvector_sort (&v, (RzPVectorComparator) strcmp);
 
 	mu_assert_eq (v.v.len, 5UL, "sort len");
 	mu_assert_streq ((const char *)((void **)v.v.a)[0], "Bulbasaur", "sorted strings");
@@ -1030,7 +1030,7 @@ static bool test_pvector_sort(void) {
 }
 
 static bool test_pvector_foreach(void) {
-	RPVector v;
+	RzPVector v;
 	init_test_pvector2 (&v, 5, 5);
 
 	int i = 1;
@@ -1054,7 +1054,7 @@ static bool test_pvector_foreach(void) {
 
 static bool test_pvector_lower_bound(void) {
 	void *a[] = {(void*)0, (void*)2, (void*)4, (void*)6, (void*)8};
-	RPVector s;
+	RzPVector s;
 	rz_pvector_init (&s, NULL);
 	s.v.a = malloc (sizeof (void *) * 5);
 	s.v.capacity = 5;

@@ -2076,7 +2076,7 @@ static void set_layout(RzAGraph *g) {
 
 static char *get_body(RzCore *core, ut64 addr, int size, int opts) {
 	char *body;
-	RConfigHold *hc = rz_config_hold_new (core->config);
+	RzConfigHold *hc = rz_config_hold_new (core->config);
 	if (!hc) {
 		return NULL;
 	}
@@ -4120,7 +4120,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalFunction *_fcn,
 	bool graph_allocated = false;
 	int movspeed;
 	int ret, invscroll;
-	RConfigHold *hc = rz_config_hold_new (core->config);
+	RzConfigHold *hc = rz_config_hold_new (core->config);
 	if (!hc) {
 		return false;
 	}

@@ -8610,7 +8610,7 @@ static void cmd_anal_graph(RzCore *core, const char *input) {
 			break;
 		case 'J': {// "agfJ"
 			// Honor asm.graph=false in json as well
-			RConfigHold *hc = rz_config_hold_new (core->config);
+			RzConfigHold *hc = rz_config_hold_new (core->config);
 			rz_config_hold_i (hc, "asm.offset", NULL);
 			const bool o_graph_offset = rz_config_get_i (core->config, "graph.offset");
 			rz_config_set_i (core->config, "asm.offset", o_graph_offset);

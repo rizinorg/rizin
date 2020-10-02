@@ -390,7 +390,7 @@ RZ_API bool rz_anal_block_successor_addrs_foreach(RzAnalBlock *block, RzAnalAddr
 
 typedef struct rz_anal_block_recurse_context_t {
 	RzAnal *anal;
-	RPVector/*<RzAnalBlock>*/ to_visit;
+	RzPVector/*<RzAnalBlock>*/ to_visit;
 	HtUP *visited;
 } RzAnalBlockRecurseContext;
 
@@ -577,7 +577,7 @@ typedef struct {
 	RzAnal *anal;
 	RzAnalBlock *cur_parent;
 	ut64 dst;
-	RPVector/*<RzAnalBlock>*/ *next_visit; // accumulate block of the next level in the tree
+	RzPVector/*<RzAnalBlock>*/ *next_visit; // accumulate block of the next level in the tree
 	HtUP/*<RzAnalBlock>*/ *visited; // maps addrs to their previous block (or NULL for entry)
 } PathContext;
 
@@ -603,12 +603,12 @@ RZ_API RZ_NULLABLE RzList/*<RzAnalBlock *>*/ *rz_anal_block_shortest_path(RzAnal
 	ctx.dst = dst;
 
 	// two vectors to swap cur_visit/next_visit
-	RPVector visit_a;
+	RzPVector visit_a;
 	rz_pvector_init (&visit_a, NULL);
-	RPVector visit_b;
+	RzPVector visit_b;
 	rz_pvector_init (&visit_b, NULL);
 	ctx.next_visit = &visit_a;
-	RPVector *cur_visit = &visit_b; // cur visit is the current level in the tree
+	RzPVector *cur_visit = &visit_b; // cur visit is the current level in the tree
 
 	ctx.visited = ht_up_new0 ();
 	if (!ctx.visited) {
@@ -626,7 +626,7 @@ RZ_API RZ_NULLABLE RzList/*<RzAnalBlock *>*/ *rz_anal_block_shortest_path(RzAnal
 			ctx.cur_parent = cur;
 			rz_anal_block_successor_addrs_foreach (cur, shortest_path_successor_cb, &ctx);
 		}
-		RPVector *tmp = cur_visit;
+		RzPVector *tmp = cur_visit;
 		cur_visit = ctx.next_visit;
 		ctx.next_visit = tmp;
 		rz_pvector_clear (ctx.next_visit);

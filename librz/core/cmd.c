@@ -5288,7 +5288,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_fromto_command) {
 	ut64 to_val = rz_num_math (core->num, to_str);
 	RZ_LOG_DEBUG ("tmp_fromto_command, changing fromto to (%" PFMT64x ", %" PFMT64x ")\n", from_val, to_val);
 
-	RConfigHold *hc = rz_config_hold_new (core->config);
+	RzConfigHold *hc = rz_config_hold_new (core->config);
 	int i;
 	for (i = 0; fromvars[i]; i++) {
 		rz_config_hold_i (hc, fromvars[i], NULL);
@@ -5411,7 +5411,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_eval_command) {
 	TSNode command = ts_node_named_child (node, 0);
 	TSNode args = ts_node_named_child (node, 1);
 
-	RConfigHold *hc = rz_config_hold_new (core->config);
+	RzConfigHold *hc = rz_config_hold_new (core->config);
 	uint32_t i, n_args = ts_node_named_child_count (args);
 	for (i = 0; i < n_args; i++) {
 		TSNode arg = ts_node_named_child (args, i);

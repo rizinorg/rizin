@@ -155,7 +155,7 @@ typedef struct rz_cmd_desc_t {
 	char *name;
 	struct rz_cmd_desc_t *parent;
 	int n_children;
-	RPVector children;
+	RzPVector children;
 	const RzCmdDescHelp *help;
 
 	union {

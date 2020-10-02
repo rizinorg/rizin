@@ -57,7 +57,7 @@ bool test_rz_test_fix(void) {
 	RzTestDatabase *db = rz_test_test_database_new ();
 	database_load (db, FILENAME, 1);
 
-	RPVector *results = rz_pvector_new ((RPVectorFree)rz_test_test_result_info_free);
+	RzPVector *results = rz_pvector_new ((RzPVectorFree)rz_test_test_result_info_free);
 
 	RzTestResultInfo *result0 = RZ_NEW0 (RzTestResultInfo);
 	rz_pvector_push (results, result0);

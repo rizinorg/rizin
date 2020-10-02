@@ -93,7 +93,7 @@ static RzCmdDesc *create_cmd_desc(RzCmd *cmd, RzCmdDesc *parent, RzCmdDescType t
 	}
 	res->n_children = 0;
 	res->help = help? help: &not_defined_help;
-	rz_pvector_init (&res->children, (RPVectorFree)cmd_desc_free);
+	rz_pvector_init (&res->children, (RzPVectorFree)cmd_desc_free);
 	if (ht_insert && !ht_pp_insert (cmd->ht_cmds, name, res)) {
 		goto err;
 	}

@@ -647,7 +647,7 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 		ut64 end = UT64_MAX;
 #define USE_SKYLINE 0
 #if USE_SKYLINE
-		const RPVector *skyline = &core->io->map_skyline;
+		const RzPVector *skyline = &core->io->map_skyline;
 		size_t i;
 		for (i = 0; i < rz_pvector_len (skyline); i++) {
 			const RzIOMapSkyline *part = rz_pvector_at (skyline, i);
@@ -705,7 +705,7 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 		int len = strlen ("io.sky.");
 		int mask = (mode[len - 1] == '.')? rz_str_rwx (mode + len): 0;
 		bool only = (bool)(size_t)strstr (mode, ".only");
-		const RPVector *skyline = &core->io->map_skyline;
+		const RzPVector *skyline = &core->io->map_skyline;
 		ut64 begin = UT64_MAX;
 		ut64 end = UT64_MAX;
 		size_t i;

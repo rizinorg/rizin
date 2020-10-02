@@ -297,8 +297,8 @@ typedef struct rz_anal_function_t {
 	ut64 addr;
 	HtUP/*<ut64, char *>*/ *labels;
 	HtPP/*<char *, ut64 *>*/ *label_addrs;
-	RPVector vars;
-	HtUP/*<st64, RPVector<RzAnalVar *>>*/ *inst_vars; // offset of instructions => the variables they access
+	RzPVector vars;
+	HtUP/*<st64, RzPVector<RzAnalVar *>>*/ *inst_vars; // offset of instructions => the variables they access
 	ut64 reg_save_area; // size of stack area pre-reserved for saving registers 
 	st64 bp_off; // offset of bp inside owned stack frame
 	st64 stack;  // stack frame size
@@ -313,7 +313,7 @@ typedef struct rz_anal_function_t {
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	size_t fingerprint_size;
 	RzAnalDiff *diff;
-	RzList *bbs; // TODO: should be RPVector
+	RzList *bbs; // TODO: should be RzPVector
 	RzAnalFcnMeta meta;
 	RzList *imports; // maybe bound to class?
 	struct rz_anal_t *anal; // this function is associated with this instance
@@ -1690,7 +1690,7 @@ RZ_API void rz_anal_function_delete_var(RzAnalFunction *fcn, RzAnalVar *var);
 RZ_API bool rz_anal_function_rebase_vars(RzAnal *a, RzAnalFunction *fcn);
 RZ_API st64 rz_anal_function_get_var_stackptr_at(RzAnalFunction *fcn, st64 delta, ut64 addr);
 RZ_API const char *rz_anal_function_get_var_reg_at(RzAnalFunction *fcn, st64 delta, ut64 addr);
-RZ_API RZ_BORROW RPVector *rz_anal_function_get_vars_used_at(RzAnalFunction *fcn, ut64 op_addr);
+RZ_API RZ_BORROW RzPVector *rz_anal_function_get_vars_used_at(RzAnalFunction *fcn, ut64 op_addr);
 
 // There could be multiple vars used in multiple functions. Use rz_anal_get_functions_in()+rz_anal_function_get_vars_used_at() instead.
 RZ_API RZ_DEPRECATE RzAnalVar *rz_anal_get_used_function_var(RzAnal *anal, ut64 addr);
@@ -1868,13 +1868,13 @@ RZ_API RzAnalMetaItem *rz_meta_get_at(RzAnal *a, ut64 addr, RzAnalMetaType type,
 RZ_API RIntervalNode *rz_meta_get_in(RzAnal *a, ut64 addr, RzAnalMetaType type);
 
 // Returns all nodes for items starting at the given address in the current space.
-RZ_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_at(RzAnal *a, ut64 at);
+RZ_API RzPVector/*<RIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_at(RzAnal *a, ut64 at);
 
 // Returns all nodes for items with the given type containing the given address in the current space.
-RZ_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_in(RzAnal *a, ut64 at, RzAnalMetaType type);
+RZ_API RzPVector/*<RIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_in(RzAnal *a, ut64 at, RzAnalMetaType type);
 
 // Returns all nodes for items with the given type intersecting the given interval in the current space.
-RZ_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_intersect(RzAnal *a, ut64 start, ut64 size, RzAnalMetaType type);
+RZ_API RzPVector/*<RIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_intersect(RzAnal *a, ut64 start, ut64 size, RzAnalMetaType type);
 
 // Delete all meta items in the given space
 RZ_API void rz_meta_space_unset_for(RzAnal *a, const RSpace *space);

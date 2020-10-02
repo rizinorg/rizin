@@ -216,7 +216,7 @@ static bool test_r_annotated_code_annotations_in(void) {
 		rz_annotated_code_add_annotation (code, annotation);
 	}
 
-	RPVector *out = rz_annotated_code_annotations_in (code, 11);
+	RzPVector *out = rz_annotated_code_annotations_in (code, 11);
 	//Expecting indices = 3, 4, 5
 	mu_assert_eq (out->v.len, 3, "Additional annotations found. Bad output.");
 	if (!test_equal (*rz_pvector_index_ptr (out, 0), rz_vector_index_ptr (test_annotations, 3))) {
@@ -245,7 +245,7 @@ static bool test_r_annotated_code_annotations_range(void) {
 		rz_annotated_code_add_annotation (code, annotation);
 	}
 
-	RPVector *out = rz_annotated_code_annotations_range (code, 7, 16);
+	RzPVector *out = rz_annotated_code_annotations_range (code, 7, 16);
 	// Expecting indices = 2, 3, 4, 5
 	mu_assert_eq (out->v.len, 4, "Additional annotations found. Bad output.");
 	if (!test_equal (*rz_pvector_index_ptr (out, 0), rz_vector_index_ptr (test_annotations, 2))) {

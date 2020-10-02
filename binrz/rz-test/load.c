@@ -101,14 +101,14 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 	return strdup (val);
 }
 
-RZ_API RPVector *rz_test_load_cmd_test_file(const char *file) {
+RZ_API RzPVector *rz_test_load_cmd_test_file(const char *file) {
 	char *contents = rz_file_slurp (file, NULL);
 	if (!contents) {
 		eprintf ("Failed to open file \"%s\"\n", file);
 		return NULL;
 	}
 
-	RPVector *ret = rz_pvector_new (NULL);
+	RzPVector *ret = rz_pvector_new (NULL);
 	if (!ret) {
 		free (contents);
 		return NULL;
@@ -307,7 +307,7 @@ static bool parse_asm_path(const char *path, RStrConstPool *strpool, const char 
 	return true;
 }
 
-RZ_API RPVector *rz_test_load_asm_test_file(RStrConstPool *strpool, const char *file) {
+RZ_API RzPVector *rz_test_load_asm_test_file(RStrConstPool *strpool, const char *file) {
 	const char *arch;
 	const char *cpu;
 	int bits;
@@ -322,7 +322,7 @@ RZ_API RPVector *rz_test_load_asm_test_file(RStrConstPool *strpool, const char *
 		return NULL;
 	}
 
-	RPVector *ret = rz_pvector_new (NULL);
+	RzPVector *ret = rz_pvector_new (NULL);
 	if (!ret) {
 		return NULL;
 	}
@@ -449,14 +449,14 @@ RZ_API void rz_test_json_test_free(RzJsonTest *test) {
 	free (test);
 }
 
-RZ_API RPVector *rz_test_load_json_test_file(const char *file) {
+RZ_API RzPVector *rz_test_load_json_test_file(const char *file) {
 	char *contents = rz_file_slurp (file, NULL);
 	if (!contents) {
 		eprintf ("Failed to open file \"%s\"\n", file);
 		return NULL;
 	}
 
-	RPVector *ret = rz_pvector_new (NULL);
+	RzPVector *ret = rz_pvector_new (NULL);
 	if (!ret) {
 		free (contents);
 		return NULL;
@@ -539,7 +539,7 @@ RZ_API RzTestDatabase *rz_test_test_database_new(void) {
 	if (!db) {
 		return NULL;
 	}
-	rz_pvector_init (&db->tests, (RPVectorFree)rz_test_test_free);
+	rz_pvector_init (&db->tests, (RzPVectorFree)rz_test_test_free);
 	rz_str_constpool_init (&db->strpool);
 	return db;
 }
@@ -635,7 +635,7 @@ static bool database_load(RzTestDatabase *db, const char *path, int depth) {
 	RzTestType test_type = test_type_for_path (path, &load_plugins);
 	switch (test_type) {
 	case RZ_TEST_TYPE_CMD: {
-		RPVector *cmd_tests = rz_test_load_cmd_test_file (path);
+		RzPVector *cmd_tests = rz_test_load_cmd_test_file (path);
 		if (!cmd_tests) {
 			return false;
 		}
@@ -655,7 +655,7 @@ static bool database_load(RzTestDatabase *db, const char *path, int depth) {
 		break;
 	}
 	case RZ_TEST_TYPE_ASM: {
-		RPVector *asm_tests = rz_test_load_asm_test_file (&db->strpool, path);
+		RzPVector *asm_tests = rz_test_load_asm_test_file (&db->strpool, path);
 		if (!asm_tests) {
 			return false;
 		}
@@ -674,7 +674,7 @@ static bool database_load(RzTestDatabase *db, const char *path, int depth) {
 		break;
 	}
 	case RZ_TEST_TYPE_JSON: {
-		RPVector *json_tests = rz_test_load_json_test_file (path);
+		RzPVector *json_tests = rz_test_load_json_test_file (path);
 		if (!json_tests) {
 			return false;
 		}

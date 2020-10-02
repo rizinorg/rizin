@@ -2,30 +2,30 @@
 
 #include <rz_config.h>
 
-static void rz_config_hold_char_free(RConfigHoldChar *hc) {
+static void rz_config_hold_char_free(RzConfigHoldChar *hc) {
 	free (hc->key);
 	free (hc->value);
 	free (hc);
 }
 
-static void rz_config_hold_num_free(RConfigHoldNum *hc) {
+static void rz_config_hold_num_free(RzConfigHoldNum *hc) {
 	free (hc->key);
 	free (hc);
 }
 
 static int key_cmp_hold_s(const void *a, const void *b) {
 	const char *a_s = (const char *)a;
-	const RConfigHoldChar *b_s = (const RConfigHoldChar *)b;
+	const RzConfigHoldChar *b_s = (const RzConfigHoldChar *)b;
 	return strcmp (a_s, b_s->key);
 }
 
 static int key_cmp_hold_i(const void *a, const void *b) {
 	const char *a_s = (const char *)a;
-	const RConfigHoldNum *b_s = (const RConfigHoldNum *)b;
+	const RzConfigHoldNum *b_s = (const RzConfigHoldNum *)b;
 	return strcmp (a_s, b_s->key);
 }
 
-RZ_API bool rz_config_hold_s(RConfigHold *h, ...) {
+RZ_API bool rz_config_hold_s(RzConfigHold *h, ...) {
 	va_list ap;
 	char *key;
 	va_start (ap, h);
@@ -44,7 +44,7 @@ RZ_API bool rz_config_hold_s(RConfigHold *h, ...) {
 		if (!val) {
 			continue;
 		}
-		RConfigHoldChar *hc = RZ_NEW0 (RConfigHoldChar);
+		RzConfigHoldChar *hc = RZ_NEW0 (RzConfigHoldChar);
 		if (hc) {
 			hc->key = strdup (key);
 			hc->value = strdup (val);
@@ -55,7 +55,7 @@ RZ_API bool rz_config_hold_s(RConfigHold *h, ...) {
 	return true;
 }
 
-RZ_API bool rz_config_hold_i(RConfigHold *h, ...) {
+RZ_API bool rz_config_hold_i(RzConfigHold *h, ...) {
 	va_list ap;
 	char *key;
 	if (!h) {
@@ -72,7 +72,7 @@ RZ_API bool rz_config_hold_i(RConfigHold *h, ...) {
 		if (rz_list_find (h->list_num, key, key_cmp_hold_i)) {
 			continue;
 		}
-		RConfigHoldNum *hc = RZ_NEW0 (RConfigHoldNum);
+		RzConfigHoldNum *hc = RZ_NEW0 (RzConfigHoldNum);
 		if (!hc) {
 			continue;
 		}
@@ -84,9 +84,9 @@ RZ_API bool rz_config_hold_i(RConfigHold *h, ...) {
 	return true;
 }
 
-RZ_API RConfigHold* rz_config_hold_new(RConfig *cfg) {
+RZ_API RzConfigHold* rz_config_hold_new(RzConfig *cfg) {
 	if (cfg) {
-		RConfigHold *hold = RZ_NEW0 (RConfigHold);
+		RzConfigHold *hold = RZ_NEW0 (RzConfigHold);
 		if (hold) {
 			hold->cfg = cfg;
 			return hold;
@@ -95,12 +95,12 @@ RZ_API RConfigHold* rz_config_hold_new(RConfig *cfg) {
 	return NULL;
 }
 
-RZ_API void rz_config_hold_restore(RConfigHold *h) {
+RZ_API void rz_config_hold_restore(RzConfigHold *h) {
 	RzListIter *iter;
-	RConfigHoldChar *hchar;
-	RConfigHoldNum *hnum;
+	RzConfigHoldChar *hchar;
+	RzConfigHoldNum *hnum;
 	if (h) {
-		RConfig *cfg = h->cfg;
+		RzConfig *cfg = h->cfg;
 		rz_list_foreach (h->list_num, iter, hnum) {
 			(void)rz_config_set_i (cfg, hnum->key, hnum->value);
 		}
@@ -110,7 +110,7 @@ RZ_API void rz_config_hold_restore(RConfigHold *h) {
 	}
 }
 
-RZ_API void rz_config_hold_free(RConfigHold *h) {
+RZ_API void rz_config_hold_free(RzConfigHold *h) {
 	if (h) {
 		rz_list_free (h->list_num);
 		rz_list_free (h->list_char);

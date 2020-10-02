@@ -20,7 +20,7 @@ typedef int (*cbOnIterMap)(RzIO *io, int fd, ut64 addr, ut8 *buf, int len, RzIOM
 // If prefix_mode is true, returns the number of bytes of operated prefix; returns < 0 on error.
 // If prefix_mode is false, operates in non-stop mode and returns true iff all IO operations on overlapped maps are complete.
 static st64 on_map_skyline(RzIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg, cbOnIterMap op, bool prefix_mode) {
-	const RPVector *skyline = &io->map_skyline;
+	const RzPVector *skyline = &io->map_skyline;
 	ut64 addr = vaddr;
 	size_t i;
 	bool ret = true, wrap = !prefix_mode && vaddr + len < vaddr;

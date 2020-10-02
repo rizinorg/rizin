@@ -216,16 +216,16 @@ RZ_API void *rz_vector_shrink(RzVector *vec) {
 
 static void pvector_free_elem(void *e, void *user) {
 	void *p = *((void **)e);
-	RPVectorFree elem_free = (RPVectorFree)user;
+	RzPVectorFree elem_free = (RzPVectorFree)user;
 	elem_free (p);
 }
 
-RZ_API void rz_pvector_init(RPVector *vec, RPVectorFree free) {
+RZ_API void rz_pvector_init(RzPVector *vec, RzPVectorFree free) {
 	rz_vector_init (&vec->v, sizeof (void *), free ? pvector_free_elem : NULL, free);
 }
 
-RZ_API RPVector *rz_pvector_new(RPVectorFree free) {
-	RPVector *v = RZ_NEW (RPVector);
+RZ_API RzPVector *rz_pvector_new(RzPVectorFree free) {
+	RzPVector *v = RZ_NEW (RzPVector);
 	if (!v) {
 		return NULL;
 	}
@@ -233,8 +233,8 @@ RZ_API RPVector *rz_pvector_new(RPVectorFree free) {
 	return v;
 }
 
-RZ_API RPVector *rz_pvector_new_with_len(RPVectorFree free, size_t length) {
-	RPVector *v = rz_pvector_new (free);
+RZ_API RzPVector *rz_pvector_new_with_len(RzPVectorFree free, size_t length) {
+	RzPVector *v = rz_pvector_new (free);
 	if (!v) {
 		return NULL;
 	}
@@ -248,17 +248,17 @@ RZ_API RPVector *rz_pvector_new_with_len(RPVectorFree free, size_t length) {
 	return v;
 }
 
-RZ_API void rz_pvector_clear(RPVector *vec) {
+RZ_API void rz_pvector_clear(RzPVector *vec) {
 	rz_return_if_fail (vec);
 	rz_vector_clear (&vec->v);
 }
 
-RZ_API void rz_pvector_fini(RPVector *vec) {
+RZ_API void rz_pvector_fini(RzPVector *vec) {
 	rz_return_if_fail (vec);
 	rz_vector_fini (&vec->v);
 }
 
-RZ_API void rz_pvector_free(RPVector *vec) {
+RZ_API void rz_pvector_free(RzPVector *vec) {
 	if (!vec) {
 		return;
 	}
@@ -266,7 +266,7 @@ RZ_API void rz_pvector_free(RPVector *vec) {
 	free (vec);
 }
 
-RZ_API void **rz_pvector_contains(RPVector *vec, void *x) {
+RZ_API void **rz_pvector_contains(RzPVector *vec, void *x) {
 	rz_return_val_if_fail (vec, NULL);
 	size_t i;
 	for (i = 0; i < vec->v.len; i++) {
@@ -277,14 +277,14 @@ RZ_API void **rz_pvector_contains(RPVector *vec, void *x) {
 	return NULL;
 }
 
-RZ_API void *rz_pvector_remove_at(RPVector *vec, size_t index) {
+RZ_API void *rz_pvector_remove_at(RzPVector *vec, size_t index) {
 	rz_return_val_if_fail (vec, NULL);
 	void *r = rz_pvector_at (vec, index);
 	rz_vector_remove_at (&vec->v, index, NULL);
 	return r;
 }
 
-RZ_API void rz_pvector_remove_data(RPVector *vec, void *x) {
+RZ_API void rz_pvector_remove_data(RzPVector *vec, void *x) {
 	void **el = rz_pvector_contains (vec, x);
 	if (!el) {
 		return;
@@ -294,14 +294,14 @@ RZ_API void rz_pvector_remove_data(RPVector *vec, void *x) {
 	rz_vector_remove_at (&vec->v, index, NULL);
 }
 
-RZ_API void *rz_pvector_pop(RPVector *vec) {
+RZ_API void *rz_pvector_pop(RzPVector *vec) {
 	rz_return_val_if_fail (vec, NULL);
 	void *r = rz_pvector_at (vec, vec->v.len - 1);
 	rz_vector_pop (&vec->v, NULL);
 	return r;
 }
 
-RZ_API void *rz_pvector_pop_front(RPVector *vec) {
+RZ_API void *rz_pvector_pop_front(RzPVector *vec) {
 	rz_return_val_if_fail (vec, NULL);
 	void *r = rz_pvector_at (vec, 0);
 	rz_vector_pop_front (&vec->v, NULL);
@@ -309,7 +309,7 @@ RZ_API void *rz_pvector_pop_front(RPVector *vec) {
 }
 
 // CLRS Quicksort. It is slow, but simple.
-static void quick_sort(void **a, size_t n, RPVectorComparator cmp) {
+static void quick_sort(void **a, size_t n, RzPVectorComparator cmp) {
 	if (n <= 1) {
 		return;
 	}
@@ -330,7 +330,7 @@ static void quick_sort(void **a, size_t n, RPVectorComparator cmp) {
 	quick_sort (a + j + 1, n - j - 1, cmp);
 }
 
-RZ_API void rz_pvector_sort(RPVector *vec, RPVectorComparator cmp) {
+RZ_API void rz_pvector_sort(RzPVector *vec, RzPVectorComparator cmp) {
 	rz_return_if_fail (vec && cmp);
 	quick_sort (vec->v.a, vec->v.len, cmp);
 }

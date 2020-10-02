@@ -281,7 +281,7 @@ RZ_API ut64 rz_anal_var_addr(RzAnalVar *var) {
 
 RZ_API st64 rz_anal_function_get_var_stackptr_at(RzAnalFunction *fcn, st64 delta, ut64 addr) {
 	st64 offset = (st64)addr - (st64)fcn->addr;
-	RPVector *inst_accesses = ht_up_find (fcn->inst_vars, offset, NULL);
+	RzPVector *inst_accesses = ht_up_find (fcn->inst_vars, offset, NULL);
 	if (!inst_accesses) {
 		return ST64_MAX;
 	}
@@ -311,7 +311,7 @@ RZ_API st64 rz_anal_function_get_var_stackptr_at(RzAnalFunction *fcn, st64 delta
 
 RZ_API const char *rz_anal_function_get_var_reg_at(RzAnalFunction *fcn, st64 delta, ut64 addr) {
 	st64 offset = (st64)addr - (st64)fcn->addr;
-	RPVector *inst_accesses = ht_up_find (fcn->inst_vars, offset, NULL);
+	RzPVector *inst_accesses = ht_up_find (fcn->inst_vars, offset, NULL);
 	if (!inst_accesses) {
 		return NULL;
 	}
@@ -388,7 +388,7 @@ RZ_API int rz_anal_var_get_argnum(RzAnalVar *var) {
 	return -1;
 }
 
-RZ_API RZ_BORROW RPVector *rz_anal_function_get_vars_used_at(RzAnalFunction *fcn, ut64 op_addr) {
+RZ_API RZ_BORROW RzPVector *rz_anal_function_get_vars_used_at(RzAnalFunction *fcn, ut64 op_addr) {
 	rz_return_val_if_fail (fcn, NULL);
 	return ht_up_find (fcn->inst_vars, (st64)op_addr - (st64)fcn->addr, NULL);
 }
@@ -402,7 +402,7 @@ RZ_API RZ_DEPRECATE RzAnalVar *rz_anal_get_used_function_var(RzAnal *anal, ut64 
 	RzListIter *it;
 	RzAnalFunction *fcn;
 	rz_list_foreach (fcns, it, fcn) {
-		RPVector *used_vars = rz_anal_function_get_vars_used_at (fcn, addr);
+		RzPVector *used_vars = rz_anal_function_get_vars_used_at (fcn, addr);
 		if (used_vars && !rz_pvector_empty (used_vars)) {
 			var = rz_pvector_at (used_vars, 0);
 			break;
@@ -420,7 +420,7 @@ RZ_API RzAnalVar *rz_anal_var_get_dst_var(RzAnalVar *var) {
 			continue;
 		}
 		ut64 addr = var->fcn->addr + acc->offset;
-		RPVector *used_vars = rz_anal_function_get_vars_used_at (var->fcn, addr);
+		RzPVector *used_vars = rz_anal_function_get_vars_used_at (var->fcn, addr);
 		void **it;
 		rz_pvector_foreach (used_vars, it) {
 			RzAnalVar *used_var = *it;
@@ -458,7 +458,7 @@ RZ_API void rz_anal_var_set_access(RzAnalVar *var, const char *reg, ut64 access_
 	acc->stackptr = stackptr;
 
 	// add the inverse reference from the instruction to the var
-	RPVector *inst_accesses = ht_up_find (var->fcn->inst_vars, (ut64)offset, NULL);
+	RzPVector *inst_accesses = ht_up_find (var->fcn->inst_vars, (ut64)offset, NULL);
 	if (!inst_accesses) {
 		inst_accesses = rz_pvector_new (NULL);
 		if (!inst_accesses) {
@@ -482,7 +482,7 @@ RZ_API void rz_anal_var_remove_access_at(RzAnalVar *var, ut64 address) {
 	RzAnalVarAccess *acc = rz_vector_index_ptr (&var->accesses, index);
 	if (acc->offset == offset) {
 		rz_vector_remove_at (&var->accesses, index, NULL);
-		RPVector *inst_accesses = ht_up_find (var->fcn->inst_vars, (ut64)offset, NULL);
+		RzPVector *inst_accesses = ht_up_find (var->fcn->inst_vars, (ut64)offset, NULL);
 		rz_pvector_remove_data (inst_accesses, var);
 	}
 }
@@ -494,7 +494,7 @@ RZ_API void rz_anal_var_clear_accesses(RzAnalVar *var) {
 		// remove all inverse references to the var's accesses
 		RzAnalVarAccess *acc;
 		rz_vector_foreach (&var->accesses, acc) {
-			RPVector *inst_accesses = ht_up_find (fcn->inst_vars, (ut64)acc->offset, NULL);
+			RzPVector *inst_accesses = ht_up_find (fcn->inst_vars, (ut64)acc->offset, NULL);
 			if (!inst_accesses) {
 				continue;
 			}

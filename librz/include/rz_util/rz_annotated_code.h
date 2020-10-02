@@ -141,26 +141,26 @@ RZ_API void rz_annotated_code_add_annotation(RAnnotatedCode *code, RCodeAnnotati
 /**
  * @brief Returns all annotations with range that contains the given offset.
  * 
- * Creates a @ref RPVector <RCodeAnnotation> and inserts the pointers to all annotations in which 
+ * Creates a @ref RzPVector <RCodeAnnotation> and inserts the pointers to all annotations in which 
  * annotation->start <= offset < annotation->end.
  * 
  * @param code Pointer to a RAnnotatedCode.
  * @param offset Offset.
- * @return Pointer to the @ref RPVector created.
+ * @return Pointer to the @ref RzPVector created.
  */
-RZ_API RPVector *rz_annotated_code_annotations_in(RAnnotatedCode *code, size_t offset);
+RZ_API RzPVector *rz_annotated_code_annotations_in(RAnnotatedCode *code, size_t offset);
 /**
  * @brief Returns all annotations with range that overlap with the specified range.
  * 
- * Creates an @ref RPVector <RCodeAnnotation> and inserts the pointers to all annotations whose 
+ * Creates an @ref RzPVector <RCodeAnnotation> and inserts the pointers to all annotations whose 
  * range overlap with range specified.
  * 
  * @param code Pointer to a RAnnotatedCode.
  * @param start Start of the range(inclusive).
  * @param end End of the range(exclusive).
- * @return Pointer to the @ref RPVector created.
+ * @return Pointer to the @ref RzPVector created.
  */
-RZ_API RPVector *rz_annotated_code_annotations_range(RAnnotatedCode *code, size_t start, size_t end);
+RZ_API RzPVector *rz_annotated_code_annotations_range(RAnnotatedCode *code, size_t start, size_t end);
 /**
  * @brief Returns the offset for every line of decompiled code in the specified RAnnotatedCode.
  * 

@@ -658,10 +658,10 @@ void recovery_type_descriptor_free(RecoveryTypeDescriptor *td) {
 
 typedef struct rtti_msvc_anal_context_t {
 	RVTableContext *vt_context;
-	RPVector vtables; // <RVTableInfo>
-	RPVector complete_object_locators; // <RecoveryCompleteObjectLocator>
+	RzPVector vtables; // <RVTableInfo>
+	RzPVector complete_object_locators; // <RecoveryCompleteObjectLocator>
 	HtUP *addr_col; // <ut64, RecoveryCompleteObjectLocator *>
-	RPVector type_descriptors; // <RecoveryTypeDescriptor>
+	RzPVector type_descriptors; // <RecoveryTypeDescriptor>
 	HtUP *addr_td; // <ut64, RecoveryTypeDescriptor *>
 	HtUP *col_td_classes; // <ut64, char *> contains already recovered classes for col (or td) addresses
 } RRTTIMSVCAnalContext;
@@ -944,11 +944,11 @@ void str_value_free(HtPPKv *kv) {
 RZ_API void rz_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RzList *vtables) {
 	RRTTIMSVCAnalContext context;
 	context.vt_context = vt_context;
-	rz_pvector_init (&context.vtables, (RPVectorFree)rz_anal_vtable_info_free);
+	rz_pvector_init (&context.vtables, (RzPVectorFree)rz_anal_vtable_info_free);
 
-	rz_pvector_init (&context.complete_object_locators, (RPVectorFree) recovery_complete_object_locator_free);
+	rz_pvector_init (&context.complete_object_locators, (RzPVectorFree) recovery_complete_object_locator_free);
 	context.addr_col = ht_up_new0 ();
-	rz_pvector_init (&context.type_descriptors, (RPVectorFree) recovery_type_descriptor_free);
+	rz_pvector_init (&context.type_descriptors, (RzPVectorFree) recovery_type_descriptor_free);
 	context.addr_td = ht_up_new0 ();
 
 	context.col_td_classes = ht_up_new (NULL, (HtUPKvFreeFunc)str_value_free, (HtUPCalcSizeV)strlen);

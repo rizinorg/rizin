@@ -44,8 +44,8 @@ RZ_API void rz_annotated_code_add_annotation(RAnnotatedCode *code, RCodeAnnotati
 	rz_vector_push (&code->annotations, annotation);
 }
 
-RZ_API RPVector *rz_annotated_code_annotations_in(RAnnotatedCode *code, size_t offset) {
-	RPVector *r = rz_pvector_new (NULL);
+RZ_API RzPVector *rz_annotated_code_annotations_in(RAnnotatedCode *code, size_t offset) {
+	RzPVector *r = rz_pvector_new (NULL);
 	if (!r) {
 		return NULL;
 	}
@@ -58,8 +58,8 @@ RZ_API RPVector *rz_annotated_code_annotations_in(RAnnotatedCode *code, size_t o
 	return r;
 }
 
-RZ_API RPVector *rz_annotated_code_annotations_range(RAnnotatedCode *code, size_t start, size_t end) {
-	RPVector *r = rz_pvector_new (NULL);
+RZ_API RzPVector *rz_annotated_code_annotations_range(RAnnotatedCode *code, size_t start, size_t end) {
+	RzPVector *r = rz_pvector_new (NULL);
 	if (!r) {
 		return NULL;
 	}
@@ -83,7 +83,7 @@ RZ_API RzVector *rz_annotated_code_line_offsets(RAnnotatedCode *code) {
 	do {
 		char *next = strchr (code->code + cur, '\n');
 		size_t next_i = next? (next - code->code) + 1: len;
-		RPVector *annotations = rz_annotated_code_annotations_range (code, cur, next_i);
+		RzPVector *annotations = rz_annotated_code_annotations_range (code, cur, next_i);
 		ut64 offset = UT64_MAX;
 		void **it;
 		rz_pvector_foreach (annotations, it) {

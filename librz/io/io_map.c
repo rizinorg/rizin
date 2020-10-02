@@ -20,7 +20,7 @@
 
 static bool add_map_to_skyline(RzIO *io, RzIOMap *map) {
 	size_t slot;
-	RPVector *skyline = &io->map_skyline;
+	RzPVector *skyline = &io->map_skyline;
 
 	RzIOMapSkyline *new_part = RZ_NEW (RzIOMapSkyline);
 	new_part->map = map;
@@ -223,7 +223,7 @@ RZ_API RzIOMap* rz_io_map_get_paddr(RzIO* io, ut64 paddr) {
 // gets first map where addr fits in
 RZ_API RzIOMap *rz_io_map_get(RzIO* io, ut64 addr) {
 	rz_return_val_if_fail (io, NULL);
-	const RPVector *skyline = &io->map_skyline;
+	const RzPVector *skyline = &io->map_skyline;
 	size_t i, len = rz_pvector_len (skyline);
 	rz_pvector_lower_bound (skyline, addr, i, CMP_END_GTE_PART);
 	if (i == len) {
@@ -323,7 +323,7 @@ RZ_API bool rz_io_map_priorize_for_fd(RzIO *io, int fd) {
 	rz_return_val_if_fail (io, false);
 	//we need a clean list for this, or this becomes a segfault-field
 	rz_io_map_cleanup (io);
-	RPVector temp;
+	RzPVector temp;
 	rz_pvector_init (&temp, NULL);
 	size_t i;
 	for (i = 0; i < rz_pvector_len (&io->maps);) {

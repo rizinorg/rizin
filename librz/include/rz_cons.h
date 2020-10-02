@@ -1047,7 +1047,7 @@ struct rz_line_comp_t {
 	bool opt;
 	size_t args_limit;
 	bool quit;
-	RPVector args; /* <char *> */
+	RzPVector args; /* <char *> */
 	RLineCompletionCb run;
 	void *run_user;
 };

@@ -323,7 +323,7 @@ static int cmd_eval(void *data, const char *input) {
 		if (input[1] == 'a') {
 			rz_cons_printf ("%s\n", (rz_num_rand (10) % 2)? "wen": "son");
 		} else if (input[1]==' ' && input[2]) {
-			RConfigNode *node = rz_config_node_get (core->config, input+2);
+			RzConfigNode *node = rz_config_node_get (core->config, input+2);
 			if (node) {
 				const char *type = rz_config_node_type (node);
 				if (type && *type) {

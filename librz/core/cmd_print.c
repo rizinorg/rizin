@@ -4940,7 +4940,7 @@ static int cmd_print(void *data, const char *input) {
 					if (!rz_list_empty (refs)) {
 
 						// store current configurations
-						RConfigHold *hc = rz_config_hold_new (core->config);
+						RzConfigHold *hc = rz_config_hold_new (core->config);
 						rz_config_hold_i (hc, "asm.offset", NULL);
 						rz_config_hold_i (hc, "asm.comments", NULL);
 						rz_config_hold_i (hc, "asm.tabs", NULL);

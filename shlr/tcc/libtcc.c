@@ -22,7 +22,7 @@
 
 /********************************************************/
 /* global variables */
-ST_DATA RPVector *tcc_typedefs;
+ST_DATA RzPVector *tcc_typedefs;
 
 /* use GNU C extensions */
 ST_DATA int gnu_ext = 1;
@@ -805,7 +805,7 @@ PUB_FUNC void tcc_appendf(const char *fmt, ...) {
 
 PUB_FUNC void tcc_typedef_appendf(const char *fmt, ...) {
 	if (!tcc_typedefs) {
-		tcc_typedefs = rz_pvector_new ((RPVectorFree) free);
+		tcc_typedefs = rz_pvector_new ((RzPVectorFree) free);
 	}
 	char typedefs_tail[1024];
 	va_list ap;

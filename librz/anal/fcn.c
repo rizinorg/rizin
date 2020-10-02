@@ -417,12 +417,12 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RzAnalBlock *block, vo
 		size_t i;
 		for (i = 0; i + 1 < block->ninstr; i++) {
 			const ut64 addr = rz_anal_bb_opaddr_i (block, i);
-			RPVector *vars_used = rz_anal_function_get_vars_used_at (other_fcn, addr);
+			RzPVector *vars_used = rz_anal_function_get_vars_used_at (other_fcn, addr);
 			if (!vars_used) {
 				continue;
 			}
 			// vars_used will get modified if rz_anal_var_remove_access_at gets called
-			RPVector *cloned_vars_used = (RPVector *)rz_vector_clone ((RzVector *)vars_used);
+			RzPVector *cloned_vars_used = (RzPVector *)rz_vector_clone ((RzVector *)vars_used);
 			void **it;
 			rz_pvector_foreach (cloned_vars_used, it) {
 				RzAnalVar *other_var = *it;
@@ -1432,7 +1432,7 @@ RZ_API void rz_anal_del_jmprefs(RzAnal *anal, RzAnalFunction *fcn) {
 
 /* Does NOT invalidate read-ahead cache. */
 RZ_API int rz_anal_fcn(RzAnal *anal, RzAnalFunction *fcn, ut64 addr, ut64 len, int reftype) {
-	RPVector *metas = rz_meta_get_all_in(anal, addr, RZ_META_TYPE_ANY);
+	RzPVector *metas = rz_meta_get_all_in(anal, addr, RZ_META_TYPE_ANY);
 	void **it;
 	rz_pvector_foreach (metas, it) {
 		RzAnalMetaItem *meta = ((RIntervalNode *)*it)->data;

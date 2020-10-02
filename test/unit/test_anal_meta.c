@@ -217,7 +217,7 @@ bool test_meta_get_all_at() {
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
 	rz_meta_set_with_subtype (anal, RZ_META_TYPE_STRING, RZ_STRING_ENC_UTF8, 0x200, 0x30, "true confessions");
 
-	RPVector *items = rz_meta_get_all_at (anal, 0x100);
+	RzPVector *items = rz_meta_get_all_at (anal, 0x100);
 	mu_assert_eq (rz_pvector_len (items), 2, "all count");
 	void **it;
 	bool found[2] = { 0 };
@@ -257,7 +257,7 @@ bool test_meta_get_all_in() {
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
 	rz_meta_set_with_subtype (anal, RZ_META_TYPE_STRING, RZ_STRING_ENC_UTF8, 0x200, 0x30, "true confessions");
 
-	RPVector *items = rz_meta_get_all_in (anal, 0x100, RZ_META_TYPE_ANY);
+	RzPVector *items = rz_meta_get_all_in (anal, 0x100, RZ_META_TYPE_ANY);
 	mu_assert_eq (rz_pvector_len (items), 2, "all count");
 	void **it;
 	bool found[2] = { 0 };
@@ -319,7 +319,7 @@ bool test_meta_get_all_intersect() {
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
 	rz_meta_set_with_subtype (anal, RZ_META_TYPE_STRING, RZ_STRING_ENC_UTF8, 0x200, 0x30, "true confessions");
 
-	RPVector *items = rz_meta_get_all_intersect (anal, 0x100, 1, RZ_META_TYPE_ANY);
+	RzPVector *items = rz_meta_get_all_intersect (anal, 0x100, 1, RZ_META_TYPE_ANY);
 	mu_assert_eq (rz_pvector_len (items), 2, "all count");
 	void **it;
 	bool found[2] = { 0 };
@@ -550,7 +550,7 @@ bool test_meta_spaces() {
 	node = rz_meta_get_in (anal, 0x100, RZ_META_TYPE_DATA);
 	mu_assert_null (node, "masked by space");
 
-	RPVector *nodes = rz_meta_get_all_at (anal, 0x100);
+	RzPVector *nodes = rz_meta_get_all_at (anal, 0x100);
 	mu_assert_eq (rz_pvector_len (nodes), 1, "all count");
 	mu_assert_ptreq (((RIntervalNode *)rz_pvector_at (nodes, 0))->data, reaper_item, "all masked");
 	rz_pvector_free (nodes);

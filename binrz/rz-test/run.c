@@ -385,7 +385,7 @@ struct rz_test_subprocess_t {
 	RStrBuf err;
 };
 
-static RPVector subprocs;
+static RzPVector subprocs;
 static RzThreadLock *subprocs_mutex;
 static int sigchld_pipe[2];
 static RzThread *sigchld_thread;
@@ -846,7 +846,7 @@ static char *convert_win_cmds(const char *cmds) {
 #endif
 
 static RzTestProcessOutput *run_rz_test(RzTestRunConfig *config, ut64 timeout_ms, const char *cmds, RzList *files, RzList *extra_args, bool load_plugins, RzTestCmdRunner runner, void *user) {
-	RPVector args;
+	RzPVector args;
 	rz_pvector_init (&args, NULL);
 	rz_pvector_push (&args, "-escr.utf8=0");
 	rz_pvector_push (&args, "-escr.color=0");
@@ -991,7 +991,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		return NULL;
 	}
 
-	RPVector args;
+	RzPVector args;
 	rz_pvector_init (&args, NULL);
 
 	if (test->arch) {

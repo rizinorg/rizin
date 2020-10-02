@@ -30,7 +30,7 @@ RZ_API void rz_binheap_clear(RBinHeap *h) {
 	rz_pvector_clear (&h->a);
 }
 
-RZ_API void rz_binheap_init(RBinHeap *h, RPVectorComparator cmp) {
+RZ_API void rz_binheap_init(RBinHeap *h, RzPVectorComparator cmp) {
 	rz_pvector_init (&h->a, NULL);
 	h->cmp = cmp;
 }
@@ -40,7 +40,7 @@ RZ_API void rz_binheap_free(RBinHeap *h) {
 	free (h);
 }
 
-RZ_API RBinHeap *rz_binheap_new(RPVectorComparator cmp) {
+RZ_API RBinHeap *rz_binheap_new(RzPVectorComparator cmp) {
 	RBinHeap *h = RZ_NEW (RBinHeap);
 	if (!h) {
 		return NULL;

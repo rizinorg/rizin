@@ -48,7 +48,7 @@ typedef struct {
 	RzAnalMetaType type;
 	const RSpace *space;
 
-	RPVector/*RIntervalNode*/ *result;
+	RzPVector/*RIntervalNode*/ *result;
 } CollectCtx;
 
 static bool collect_nodes_cb(RIntervalNode *node, void *user) {
@@ -59,7 +59,7 @@ static bool collect_nodes_cb(RIntervalNode *node, void *user) {
 	return true;
 }
 
-static RPVector *collect_nodes_at(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RSpace *space, ut64 addr) {
+static RzPVector *collect_nodes_at(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RSpace *space, ut64 addr) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -72,7 +72,7 @@ static RPVector *collect_nodes_at(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE
 	return ctx.result;
 }
 
-static RPVector *collect_nodes_in(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RSpace *space, ut64 addr) {
+static RzPVector *collect_nodes_in(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RSpace *space, ut64 addr) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -85,7 +85,7 @@ static RPVector *collect_nodes_in(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE
 	return ctx.result;
 }
 
-static RPVector *collect_nodes_intersect(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RSpace *space, ut64 start, ut64 end) {
+static RzPVector *collect_nodes_intersect(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RSpace *space, ut64 start, ut64 end) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -142,7 +142,7 @@ RZ_API const char *rz_meta_get_string(RzAnal *a, RzAnalMetaType type, ut64 addr)
 
 
 static void del(RzAnal *a, RzAnalMetaType type, const RSpace *space, ut64 addr, ut64 size) {
-	RPVector *victims = NULL;
+	RzPVector *victims = NULL;
 	if (size == UT64_MAX) {
 		// delete everything
 		victims = rz_pvector_new (NULL);
@@ -202,15 +202,15 @@ RZ_API RIntervalNode *rz_meta_get_in(RzAnal *a, ut64 addr, RzAnalMetaType type) 
 	return find_node_in (a, type, rz_spaces_current (&a->meta_spaces), addr);
 }
 
-RZ_API RPVector/*<RIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_at(RzAnal *a, ut64 at) {
+RZ_API RzPVector/*<RIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_at(RzAnal *a, ut64 at) {
 	return collect_nodes_at (a, RZ_META_TYPE_ANY, rz_spaces_current (&a->meta_spaces), at);
 }
 
-RZ_API RPVector *rz_meta_get_all_in(RzAnal *a, ut64 at, RzAnalMetaType type) {
+RZ_API RzPVector *rz_meta_get_all_in(RzAnal *a, ut64 at, RzAnalMetaType type) {
 	return collect_nodes_in (a, type, rz_spaces_current (&a->meta_spaces), at);
 }
 
-RZ_API RPVector *rz_meta_get_all_intersect(RzAnal *a, ut64 start, ut64 size, RzAnalMetaType type) {
+RZ_API RzPVector *rz_meta_get_all_intersect(RzAnal *a, ut64 start, ut64 size, RzAnalMetaType type) {
 	rz_return_val_if_fail (size, NULL);
 	ut64 end = start + size - 1;
 	if (end < start) {
@@ -474,7 +474,7 @@ RZ_API void rz_meta_print(RzAnal *a, RzAnalMetaItem *d, ut64 start, ut64 size, i
 }
 
 RZ_API void rz_meta_print_list_at(RzAnal *a, ut64 addr, int rad) {
-	RPVector *nodes = collect_nodes_at (a, RZ_META_TYPE_ANY, rz_spaces_current (&a->meta_spaces), addr);
+	RzPVector *nodes = collect_nodes_at (a, RZ_META_TYPE_ANY, rz_spaces_current (&a->meta_spaces), addr);
 	if (!nodes) {
 		return;
 	}

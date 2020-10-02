@@ -924,7 +924,7 @@ RZ_API bool rz_core_visual_hudstuff(RzCore *core) {
 
 static bool rz_core_visual_config_hud(RzCore *core) {
 	RzListIter *iter;
-	RConfigNode *bt;
+	RzConfigNode *bt;
 	RzList *list = rz_list_new ();
 	if (!list) {
 		return false;
@@ -2282,7 +2282,7 @@ static void config_visual_hit_i(RzCore *core, const char *name, int delta) {
 /* Visually activate the config variable */
 static void config_visual_hit(RzCore *core, const char *name, int editor) {
 	char buf[1024];
-	RConfigNode *node;
+	RzConfigNode *node;
 
 	if (!(node = rz_config_node_get (core->config, name))) {
 		return;
@@ -2316,7 +2316,7 @@ RZ_API void rz_core_visual_config(RzCore *core) {
 	int i, j, ch, hit, show;
 	int option, _option = 0;
 	RzListIter *iter;
-	RConfigNode *bt;
+	RzConfigNode *bt;
 	char old[1024];
 	int delta = 9;
 	int menu = 0;

@@ -22,22 +22,22 @@ typedef struct rz_test_state_t {
 	RzThreadCond *cond; // signaled from workers to main thread to update status
 	RzThreadLock *lock; // protects everything below
 	HtPP *path_left; // char * (path to test file) => ut64 * (count of remaining tests)
-	RPVector completed_paths;
+	RzPVector completed_paths;
 	ut64 ok_count;
 	ut64 xx_count;
 	ut64 br_count;
 	ut64 fx_count;
-	RPVector queue;
-	RPVector results;
+	RzPVector queue;
+	RzPVector results;
 } RzTestState;
 
 static RzThreadFunctionRet worker_th(RzThread *th);
 static void print_state(RzTestState *state, ut64 prev_completed);
 static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_completed);
 static void interact(RzTestState *state);
-static void interact_fix(RzTestResultInfo *result, RPVector *fixup_results);
-static void interact_break(RzTestResultInfo *result, RPVector *fixup_results);
-static void interact_commands(RzTestResultInfo *result, RPVector *fixup_results);
+static void interact_fix(RzTestResultInfo *result, RzPVector *fixup_results);
+static void interact_break(RzTestResultInfo *result, RzPVector *fixup_results);
+static void interact_commands(RzTestResultInfo *result, RzPVector *fixup_results);
 static void interact_diffchar(RzTestResultInfo *result);
 
 static int help(bool verbose) {
@@ -294,7 +294,7 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 	rz_pvector_init (&state.queue, NULL);
-	rz_pvector_init (&state.results, (RPVectorFree)rz_test_test_result_info_free);
+	rz_pvector_init (&state.results, (RzPVectorFree)rz_test_test_result_info_free);
 	rz_pvector_init (&state.completed_paths, NULL);
 	state.lock = rz_th_lock_new (false);
 	if (!state.lock) {
@@ -403,7 +403,7 @@ int main(int argc, char **argv) {
 
 	rz_th_lock_enter (state.lock);
 
-	RPVector workers;
+	RzPVector workers;
 	rz_pvector_init (&workers, NULL);
 	int i;
 	for (i = 0; i < workers_count; i++) {
@@ -725,7 +725,7 @@ static void print_log(RzTestState *state, ut64 prev_completed, ut64 prev_paths_c
 
 static void interact(RzTestState *state) {
 	void **it;
-	RPVector failed_results;
+	RzPVector failed_results;
 	rz_pvector_init (&failed_results, NULL);
 	rz_pvector_foreach (&state->results, it) {
 		RzTestResultInfo *result = *it;
@@ -849,7 +849,7 @@ static char *replace_lines(const char *src, size_t from, size_t to, const char *
 }
 
 // After editing a test, fix the line numbers previously saved for all the other tests
-static void fixup_tests(RPVector *results, const char *edited_file, ut64 start_line, st64 delta) {
+static void fixup_tests(RzPVector *results, const char *edited_file, ut64 start_line, st64 delta) {
 	void **it;
 	rz_pvector_foreach (results, it) {
 		RzTestResultInfo *result = *it;
@@ -889,7 +889,7 @@ static void fixup_tests(RPVector *results, const char *edited_file, ut64 start_l
 	}
 }
 
-static char *replace_cmd_kv(const char *path, const char *content, size_t line_begin, size_t line_end, const char *key, const char *value, RPVector *fixup_results) {
+static char *replace_cmd_kv(const char *path, const char *content, size_t line_begin, size_t line_end, const char *key, const char *value, RzPVector *fixup_results) {
 	char *kv = format_cmd_kv (key, value);
 	if (!kv) {
 		return NULL;
@@ -909,7 +909,7 @@ static char *replace_cmd_kv(const char *path, const char *content, size_t line_b
 	return newc;
 }
 
-static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end, const char *key, const char *value, RPVector *fixup_results) {
+static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end, const char *key, const char *value, RzPVector *fixup_results) {
 	char *content = rz_file_slurp (path, NULL);
 	if (!content) {
 		eprintf ("Failed to read file \"%s\"\n", path);
@@ -930,7 +930,7 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 	free (newc);
 }
 
-static void interact_fix(RzTestResultInfo *result, RPVector *fixup_results) {
+static void interact_fix(RzTestResultInfo *result, RzPVector *fixup_results) {
 	assert (result->test->type == RZ_TEST_TYPE_CMD);
 	RzCmdTest *test = result->test->cmd_test;
 	RzTestProcessOutput *out = result->proc_out;
@@ -942,7 +942,7 @@ static void interact_fix(RzTestResultInfo *result, RPVector *fixup_results) {
 	}
 }
 
-static void interact_break(RzTestResultInfo *result, RPVector *fixup_results) {
+static void interact_break(RzTestResultInfo *result, RzPVector *fixup_results) {
 	assert (result->test->type == RZ_TEST_TYPE_CMD);
 	RzCmdTest *test = result->test->cmd_test;
 	ut64 line_begin;
@@ -956,7 +956,7 @@ static void interact_break(RzTestResultInfo *result, RPVector *fixup_results) {
 	replace_cmd_kv_file (result->test->path, line_begin, line_end, "BROKEN", "1", fixup_results);
 }
 
-static void interact_commands(RzTestResultInfo *result, RPVector *fixup_results) {
+static void interact_commands(RzTestResultInfo *result, RzPVector *fixup_results) {
 	assert (result->test->type == RZ_TEST_TYPE_CMD);
 	RzCmdTest *test = result->test->cmd_test;
 	if (!test->cmds.value) {

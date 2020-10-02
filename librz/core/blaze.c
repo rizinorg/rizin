@@ -49,7 +49,7 @@ static int __isdata(RzCore *core, ut64 addr) {
 		return 1;
 	}
 
-	RPVector *list = rz_meta_get_all_in (core->anal, addr, RZ_META_TYPE_ANY);
+	RzPVector *list = rz_meta_get_all_in (core->anal, addr, RZ_META_TYPE_ANY);
 	void **it;
 	int result = 0;
 	rz_pvector_foreach (list, it) {

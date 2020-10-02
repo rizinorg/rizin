@@ -223,7 +223,7 @@ bool test_r_interval_tree_delete() {
 	rz_interval_tree_init (&tree, free_cb);
 	TestEntry entries[N];
 	random_entries (entries);
-	RPVector contained_entries;
+	RzPVector contained_entries;
 	rz_pvector_init (&contained_entries, NULL);
 	size_t i;
 	for (i = 0; i < N; i++) {

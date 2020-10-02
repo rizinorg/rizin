@@ -96,7 +96,7 @@ RZ_API void rz_core_visual_applyHexMode(RzCore *core, int hexMode) {
 }
 
 RZ_API void rz_core_visual_toggle_decompiler_disasm(RzCore *core, bool for_graph, bool reset) {
-	static RConfigHold *hold = NULL; // should be a tab-specific var
+	static RzConfigHold *hold = NULL; // should be a tab-specific var
 	if (hold) {
 		rz_config_hold_restore (hold);
 		rz_config_hold_free (hold);

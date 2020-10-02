@@ -2397,7 +2397,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	int ret;
 
 	// find the meta item at this offset if any
-	RPVector *metas = rz_meta_get_all_at (ds->core->anal, ds->at); // TODO: do in range
+	RzPVector *metas = rz_meta_get_all_at (ds->core->anal, ds->at); // TODO: do in range
 	RzAnalMetaItem *meta = NULL;
 	ut64 meta_size = UT64_MAX;
 	if (metas) {
@@ -2934,7 +2934,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 	snprintf (key, sizeof (key), "meta.0x%" PFMT64x, ds->at);
 	const char *infos = sdb_const_get (s, key, 0);
 #endif
-	RPVector *metas = rz_meta_get_all_in (core->anal, ds->at, RZ_META_TYPE_ANY);
+	RzPVector *metas = rz_meta_get_all_in (core->anal, ds->at, RZ_META_TYPE_ANY);
 	if (!metas) {
 		return false;
 	}
@@ -4590,7 +4590,7 @@ static bool can_emulate_metadata(RzCore *core, ut64 at) {
 	// check if there is a meta at the addr that is unemulateable
 	const char *emuskipmeta = rz_config_get (core->config, "emu.skip");
 	bool ret = true;
-	RPVector *metas = rz_meta_get_all_at (core->anal, at);
+	RzPVector *metas = rz_meta_get_all_at (core->anal, at);
 	void **it;
 	rz_pvector_foreach (metas, it) {
 		RzAnalMetaItem *item = ((RIntervalNode *)*it)->data;
@@ -4622,7 +4622,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	int (*hook_mem_write)(RzAnalEsil *esil, ut64 addr, const ut8 *buf, int len) = NULL;
 	int i, nargs;
 	ut64 at = rz_core_pava (core, ds->at);
-	RConfigHold *hc = rz_config_hold_new (core->config);
+	RzConfigHold *hc = rz_config_hold_new (core->config);
 	if (!hc) {
 		return;
 	}
@@ -6630,7 +6630,7 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 		rz_io_cache_init (core->io);
 	}
 	rz_reg_arena_push (reg);
-	RConfigHold *chold = rz_config_hold_new (core->config);
+	RzConfigHold *chold = rz_config_hold_new (core->config);
 	rz_config_hold_i (chold, "io.cache", "asm.lines", NULL);
 	rz_config_set_i (core->config, "io.cache", true);
 	rz_config_set_i (core->config, "asm.lines", false);

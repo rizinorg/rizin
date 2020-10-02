@@ -6,7 +6,7 @@
 #include <rz_core.h>
 #define LOOP_MAX 10
 
-static bool anal_emul_init(RzCore *core, RConfigHold *hc, RzDebugTrace **dt, RzAnalEsilTrace **et) {
+static bool anal_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt, RzAnalEsilTrace **et) {
 	if (!core->anal->esil) {
 		return false;
 	}
@@ -30,7 +30,7 @@ static bool anal_emul_init(RzCore *core, RConfigHold *hc, RzDebugTrace **dt, RzA
 	return (core->dbg->trace && core->anal->esil->trace);
 }
 
-static void anal_emul_restore(RzCore *core, RConfigHold *hc, RzDebugTrace *dt, RzAnalEsilTrace *et) {
+static void anal_emul_restore(RzCore *core, RzConfigHold *hc, RzDebugTrace *dt, RzAnalEsilTrace *et) {
 	rz_config_hold_restore (hc);
 	rz_config_hold_free (hc);
 	rz_debug_trace_free (core->dbg->trace);
@@ -467,7 +467,7 @@ RZ_API void rz_core_anal_type_match(RzCore *core, RzAnalFunction *fcn) {
 	const int mininstrsz = rz_anal_archinfo (anal, RZ_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = RZ_MAX (1, mininstrsz);
 	int cur_idx , prev_idx = 0;
-	RConfigHold *hc = rz_config_hold_new (core->config);
+	RzConfigHold *hc = rz_config_hold_new (core->config);
 	if (!hc) {
 		return;
 	}

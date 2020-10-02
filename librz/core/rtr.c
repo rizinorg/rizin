@@ -1082,7 +1082,7 @@ RZ_API char *rz_core_rtr_cmds_query (RzCore *core, const char *host, const char 
 
 typedef struct rtr_cmds_context_t {
 	uv_tcp_t server;
-	RPVector clients;
+	RzPVector clients;
 	void *bed;
 } rtr_cmds_context;
 

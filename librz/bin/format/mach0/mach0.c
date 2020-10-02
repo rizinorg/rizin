@@ -3176,7 +3176,7 @@ static bool is_valid_ordinal_table_size(ut64 size) {
 
 RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 	RzSkipList *relocs = NULL;
-	RPVector *threaded_binds = NULL;
+	RzPVector *threaded_binds = NULL;
 	size_t wordsize = get_word_size (bin);
 	if (bin->dyld_info) {
 		ut8 *opcodes, rel_type = 0;
@@ -3284,7 +3284,7 @@ RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 						if (threaded_binds) {
 							rz_pvector_free (threaded_binds);
 						}
-						threaded_binds = rz_pvector_new_with_len ((RPVectorFree) &free, table_size);
+						threaded_binds = rz_pvector_new_with_len ((RzPVectorFree) &free, table_size);
 						if (threaded_binds) {
 							sym_ord = 0;
 						}

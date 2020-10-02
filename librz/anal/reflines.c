@@ -122,7 +122,7 @@ RZ_API RzList *rz_anal_reflines_get(RzAnal *anal, ut64 addr, const ut8 *buf, ut6
 		}
 		addr += sz;
 		{
-			RPVector *metas = rz_meta_get_all_at (anal, addr);
+			RzPVector *metas = rz_meta_get_all_at (anal, addr);
 			if (metas) {
 				void **it;
 				ut64 skip = 0;

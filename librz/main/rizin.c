@@ -276,7 +276,7 @@ beach:
 	return false;
 }
 
-static bool mustSaveHistory(RConfig *c) {
+static bool mustSaveHistory(RzConfig *c) {
 	if (!rz_config_get_i (c, "scr.histsave")) {
 		return false;
 	}

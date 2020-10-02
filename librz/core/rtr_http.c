@@ -2,7 +2,7 @@
 
 // return 1 on error
 static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char *path) {
-	RConfig *newcfg = NULL, *origcfg = NULL;
+	RzConfig *newcfg = NULL, *origcfg = NULL;
 	char headers[128] = RZ_EMPTY;
 	RzSocketHTTPRequest *rs;
 	char buf[32];
