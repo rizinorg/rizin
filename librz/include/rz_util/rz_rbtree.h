@@ -1,5 +1,5 @@
-#ifndef R2_RBTREE_H
-#define R2_RBTREE_H
+#ifndef RZ_RBTREE_H
+#define RZ_RBTREE_H
 
 #include <limits.h>
 #include <stdbool.h>

@@ -56,7 +56,7 @@ static int lang_c_file(RzLang *lang, const char *file) {
 	char *libname_esc = rz_str_escape_sh (libname);
 	char *buf = rz_str_newf ("%s -fPIC -shared \"%s\" -o \"%s/lib%s." R_LIB_EXT "\""
 		" $(PKG_CONFIG_PATH=%s pkg-config --cflags --libs rz_core)",
-		cc, file_esc, libpath_esc, libname_esc, R2_LIBDIR "/pkgconfig");
+		cc, file_esc, libpath_esc, libname_esc, RZ_LIBDIR "/pkgconfig");
 	free (libname_esc);
 	free (libpath_esc);
 	free (file_esc);

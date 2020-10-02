@@ -106,10 +106,10 @@ RzAsmPlugin rz_asm_plugin_tricore = {
 	.disassemble = &disassemble,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_tricore,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

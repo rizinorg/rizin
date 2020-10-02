@@ -15,7 +15,7 @@ static char *get_filetype(RBuffer *b) {
 	}
 	const char *tmp = NULL;
 	// TODO: dir.magic not honored here
-	rz_magic_load (ck, R2_SDB_MAGIC);
+	rz_magic_load (ck, RZ_SDB_MAGIC);
 	rz_buf_read_at (b, 0, buf, sizeof (buf));
 	tmp = rz_magic_buffer (ck, buf, sizeof (buf));
 	if (tmp) {
@@ -73,10 +73,10 @@ RBinPlugin rz_bin_plugin_any = {
 	.minstrlen = 0,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_any,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

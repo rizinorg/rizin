@@ -133,7 +133,7 @@ exit:
 
 #if __WINDOWS__
 static char *http_get_w32(const char *url, int *code, int *rlen) {
-	HINTERNET hInternet = InternetOpenA ("rizin "R2_VERSION, INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
+	HINTERNET hInternet = InternetOpenA ("rizin "RZ_VERSION, INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
 	if (!hInternet) {
 		rz_sys_perror ("InternetOpenA");
 		return NULL;
@@ -194,7 +194,7 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 	if (rlen) {
 		*rlen = 0;
 	}
-	char *curl_env = rz_sys_getenv ("R2_CURL");
+	char *curl_env = rz_sys_getenv ("RZ_CURL");
 	if (!R_STR_ISEMPTY (curl_env) && atoi (curl_env)) {
 		int len;
 		char *escaped_url = rz_str_escape_sh (url);
@@ -224,7 +224,7 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 	bool ssl = rz_str_startswith (url, "https://");
 #if !HAVE_LIB_SSL
 	if (ssl) {
-		eprintf ("Tried to get '%s', but SSL support is disabled, set R2_CURL=1 to use curl\n", url);
+		eprintf ("Tried to get '%s', but SSL support is disabled, set RZ_CURL=1 to use curl\n", url);
 		return NULL;
 	}
 #endif
@@ -267,7 +267,7 @@ static char *socket_http_get_recursive(const char *url, int *code, int *rlen, ut
 	if (rz_socket_connect_tcp (s, host, port, 0)) {
 		rz_socket_printf (s,
 				"GET /%s HTTP/1.1\r\n"
-				"User-Agent: rizin "R2_VERSION"\r\n"
+				"User-Agent: rizin "RZ_VERSION"\r\n"
 				"Accept: */*\r\n"
 				"Host: %s:%s\r\n"
 				"\r\n", path, host, port);
@@ -327,7 +327,7 @@ RZ_API char *rz_socket_http_post(const char *url, const char *data, int *code, i
 	/* Send */
 	rz_socket_printf (s,
 			"POST /%s HTTP/1.0\r\n"
-			"User-Agent: rizin "R2_VERSION"\r\n"
+			"User-Agent: rizin "RZ_VERSION"\r\n"
 			"Accept: */*\r\n"
 			"Host: %s\r\n"
 			"Content-Length: %i\r\n"

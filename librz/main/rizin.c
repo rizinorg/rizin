@@ -27,7 +27,7 @@ static char* get_file_in_cur_dir(const char *filepath) {
 static int rz_main_version_verify(int show) {
 	int i, ret;
 	typedef const char* (*vc)();
-	const char *base = R2_GITTAP;
+	const char *base = RZ_GITTAP;
 	struct vcs_t {
 		const char *name;
 		vc callback;
@@ -140,32 +140,32 @@ static int main_help(int line) {
 		" -z, -zz      do not load strings or load them even in raw\n");
 	}
 	if (line == 2) {
-		char *datahome = rz_str_home (R2_HOME_DATADIR);
+		char *datahome = rz_str_home (RZ_HOME_DATADIR);
 		const char *dirPrefix = rz_sys_prefix (NULL);
 		printf (
 		"Scripts:\n"
-		" system       ${R2_PREFIX}/share/rizin/rizinrc\n"
-		" user         ~/.rizinrc " R_JOIN_2_PATHS ("~", R2_HOME_RC) " (and " R_JOIN_3_PATHS ("~", R2_HOME_RC_DIR,"") ")\n"
+		" system       ${RZ_PREFIX}/share/rizin/rizinrc\n"
+		" user         ~/.rizinrc " R_JOIN_2_PATHS ("~", RZ_HOME_RC) " (and " R_JOIN_3_PATHS ("~", RZ_HOME_RC_DIR,"") ")\n"
 		" file         ${filename}.rz\n"
 		"Plugins:\n"
-		" binrc        " R_JOIN_4_PATHS ("~", R2_HOME_BINRC, "bin-<format>",  "") " (elf, elf64, mach0, ..)\n"
-		" R2_USER_PLUGINS " R_JOIN_2_PATHS ("~", R2_HOME_PLUGINS) "\n"
-		" R2_LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
-		" R2_USER_ZIGNS " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS) "\n"
+		" binrc        " R_JOIN_4_PATHS ("~", RZ_HOME_BINRC, "bin-<format>",  "") " (elf, elf64, mach0, ..)\n"
+		" RZ_USER_PLUGINS " R_JOIN_2_PATHS ("~", RZ_HOME_PLUGINS) "\n"
+		" RZ_LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", RZ_PLUGINS) "\n"
+		" RZ_USER_ZIGNS " R_JOIN_2_PATHS ("~", RZ_HOME_ZIGNS) "\n"
 		"Environment:\n"
-		" R2_CFG_NEWSHELL sets cfg.newshell=true\n"
-		" R2_DEBUG      if defined, show error messages and crash signal\n"
-		" R2_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
-		" R2_MAGICPATH " R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC) "\n"
-		" R2_NOPLUGINS do not load r2 shared plugins\n"
-		" R2_RCFILE    ~/.rizinrc (user preferences, batch script)\n" // TOO GENERIC
-		" R2_RDATAHOME %s\n" // TODO: rename to RHOME R2HOME?
-		" R2_VERSION   contains the current version of r2\n" 
+		" RZ_CFG_NEWSHELL sets cfg.newshell=true\n"
+		" RZ_DEBUG      if defined, show error messages and crash signal\n"
+		" RZ_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
+		" RZ_MAGICPATH " R_JOIN_2_PATHS ("%s", RZ_SDB_MAGIC) "\n"
+		" RZ_NOPLUGINS do not load r2 shared plugins\n"
+		" RZ_RCFILE    ~/.rizinrc (user preferences, batch script)\n" // TOO GENERIC
+		" RZ_RDATAHOME %s\n" // TODO: rename to RHOME R2HOME?
+		" RZ_VERSION   contains the current version of r2\n" 
 		"Paths:\n"
-		" R2_PREFIX    "R2_PREFIX"\n"
-		" R2_INCDIR    "R2_INCDIR"\n"
-		" R2_LIBDIR    "R2_LIBDIR"\n"
-		" R2_LIBEXT    "R_LIB_EXT"\n"
+		" RZ_PREFIX    "RZ_PREFIX"\n"
+		" RZ_INCDIR    "RZ_INCDIR"\n"
+		" RZ_LIBDIR    "RZ_LIBDIR"\n"
+		" RZ_LIBEXT    "R_LIB_EXT"\n"
 		, dirPrefix, datahome, dirPrefix);
 		free (datahome);
 	}
@@ -175,39 +175,39 @@ static int main_help(int line) {
 static int main_print_var(const char *var_name) {
 	int i = 0;
 #ifdef __WINDOWS__
-	char *incdir = rz_str_rz_prefix (R2_INCDIR);
-	char *libdir = rz_str_rz_prefix (R2_LIBDIR);
+	char *incdir = rz_str_rz_prefix (RZ_INCDIR);
+	char *libdir = rz_str_rz_prefix (RZ_LIBDIR);
 #else
-	char *incdir = strdup (R2_INCDIR);
-	char *libdir = strdup (R2_LIBDIR);
+	char *incdir = strdup (RZ_INCDIR);
+	char *libdir = strdup (RZ_LIBDIR);
 #endif
-	char *confighome = rz_str_home (R2_HOME_CONFIGDIR);
-	char *datahome = rz_str_home (R2_HOME_DATADIR);
-	char *cachehome = rz_str_home (R2_HOME_CACHEDIR);
-	char *homeplugins = rz_str_home (R2_HOME_PLUGINS);
-	char *homezigns = rz_str_home (R2_HOME_ZIGNS);
-	char *plugins = rz_str_rz_prefix (R2_PLUGINS);
-	char *magicpath = rz_str_rz_prefix (R2_SDB_MAGIC);
+	char *confighome = rz_str_home (RZ_HOME_CONFIGDIR);
+	char *datahome = rz_str_home (RZ_HOME_DATADIR);
+	char *cachehome = rz_str_home (RZ_HOME_CACHEDIR);
+	char *homeplugins = rz_str_home (RZ_HOME_PLUGINS);
+	char *homezigns = rz_str_home (RZ_HOME_ZIGNS);
+	char *plugins = rz_str_rz_prefix (RZ_PLUGINS);
+	char *magicpath = rz_str_rz_prefix (RZ_SDB_MAGIC);
 	struct rizin_var_t {
 		const char *name;
 		const char *value;
 	} r2_vars[] = {
-		{ "R2_VERSION", R2_VERSION },
-		{ "R2_PREFIX", R2_PREFIX },
-		{ "R2_MAGICPATH", magicpath },
-		{ "R2_INCDIR", incdir },
-		{ "R2_LIBDIR", libdir },
-		{ "R2_LIBEXT", R_LIB_EXT },
-		{ "R2_RCONFIGHOME", confighome },
-		{ "R2_RDATAHOME", datahome },
-		{ "R2_RCACHEHOME", cachehome },
-		{ "R2_LIBR_PLUGINS", plugins },
-		{ "R2_USER_PLUGINS", homeplugins },
-		{ "R2_USER_ZIGNS", homezigns },
+		{ "RZ_VERSION", RZ_VERSION },
+		{ "RZ_PREFIX", RZ_PREFIX },
+		{ "RZ_MAGICPATH", magicpath },
+		{ "RZ_INCDIR", incdir },
+		{ "RZ_LIBDIR", libdir },
+		{ "RZ_LIBEXT", R_LIB_EXT },
+		{ "RZ_RCONFIGHOME", confighome },
+		{ "RZ_RDATAHOME", datahome },
+		{ "RZ_RCACHEHOME", cachehome },
+		{ "RZ_LIBR_PLUGINS", plugins },
+		{ "RZ_USER_PLUGINS", homeplugins },
+		{ "RZ_USER_ZIGNS", homezigns },
 		{ NULL, NULL }
 	};
 	int delta = 0;
-	if (var_name && strncmp (var_name, "R2_", 3)) {
+	if (var_name && strncmp (var_name, "RZ_", 3)) {
 		delta = 3;
 	}
 	if (var_name) {
@@ -389,8 +389,8 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	char **env = rz_sys_get_environ ();
 	char *envprofile = rz_run_get_environ_profile (env);
 
-	if (rz_sys_getenv_asbool ("R2_DEBUG")) {
-		char *sysdbg = rz_sys_getenv ("R2_DEBUG_TOOL");
+	if (rz_sys_getenv_asbool ("RZ_DEBUG")) {
+		char *sysdbg = rz_sys_getenv ("RZ_DEBUG_TOOL");
 		char *fmt = (sysdbg && *sysdbg)
 			? rz_str_newf ("%s %%d", sysdbg)
 #if __APPLE__
@@ -640,7 +640,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			break;
 		case 'v':
 			if (quiet) {
-				printf ("%s\n", R2_VERSION);
+				printf ("%s\n", RZ_VERSION);
 				LISTS_FREE ();
 				free (customRarunProfile);
 				return 0;
@@ -792,7 +792,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	}
 
 	tmp = NULL;
-	if (!load_l || (tmp = rz_sys_getenv ("R2_NOPLUGINS"))) {
+	if (!load_l || (tmp = rz_sys_getenv ("RZ_NOPLUGINS"))) {
 		rz_config_set_i (r->config, "cfg.plugins", 0);
 		free (tmp);
 	}
@@ -1318,7 +1318,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_core_block_read (r);
 	}
 	{
-		char *global_rc = rz_str_rz_prefix (R2_GLOBAL_RC);
+		char *global_rc = rz_str_rz_prefix (RZ_GLOBAL_RC);
 		if (rz_file_exists (global_rc)) {
 			(void)rz_core_run_script (r, global_rc);
 		}
@@ -1479,7 +1479,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	}
 
 	if (mustSaveHistory (r->config)) {
-		rz_line_hist_save (R2_HOME_HISTORY);
+		rz_line_hist_save (RZ_HOME_HISTORY);
 	}
 
 	/* capture return value */

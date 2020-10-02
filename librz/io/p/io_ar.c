@@ -104,10 +104,10 @@ RzIOPlugin rz_io_plugin_ar = {
 	.check = rz_io_ar_plugin_open
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &rz_io_plugin_ar,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

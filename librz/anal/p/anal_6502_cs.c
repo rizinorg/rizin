@@ -201,11 +201,11 @@ RzAnalPlugin rz_anal_plugin_6502_cs = {
 	.set_reg_profile = &set_reg_profile,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_6502_cs,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif
 #else
@@ -218,10 +218,10 @@ RzAnalPlugin rz_anal_plugin_6502_cs = {
 	.bits = 8,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif
 #endif

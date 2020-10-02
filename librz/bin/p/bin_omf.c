@@ -171,10 +171,10 @@ RBinPlugin rz_bin_plugin_omf = {
 	.get_vaddr = &get_vaddr,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_omf,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

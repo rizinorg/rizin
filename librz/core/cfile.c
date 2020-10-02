@@ -205,24 +205,24 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 
 RZ_API void rz_core_sysenv_end(RzCore *core, const char *cmd) {
 	// TODO: remove tmpfilez
-	if (strstr (cmd, "R2_BLOCK")) {
+	if (strstr (cmd, "RZ_BLOCK")) {
 		// remove temporary BLOCK file
-		char *f = rz_sys_getenv ("R2_BLOCK");
+		char *f = rz_sys_getenv ("RZ_BLOCK");
 		if (f) {
 			rz_file_rm (f);
-			rz_sys_setenv ("R2_BLOCK", NULL);
+			rz_sys_setenv ("RZ_BLOCK", NULL);
 			free (f);
 		}
 	}
-	rz_sys_setenv ("R2_FILE", NULL);
-	rz_sys_setenv ("R2_BYTES", NULL);
-	rz_sys_setenv ("R2_OFFSET", NULL);
+	rz_sys_setenv ("RZ_FILE", NULL);
+	rz_sys_setenv ("RZ_BYTES", NULL);
+	rz_sys_setenv ("RZ_OFFSET", NULL);
 
-	// remove temporary R2_CONFIG file
-	char *r2_config = rz_sys_getenv ("R2_CONFIG");
+	// remove temporary RZ_CONFIG file
+	char *r2_config = rz_sys_getenv ("RZ_CONFIG");
 	if (r2_config) {
 		rz_file_rm (r2_config);
-		rz_sys_setenv ("R2_CONFIG", NULL);
+		rz_sys_setenv ("RZ_CONFIG", NULL);
 		free (r2_config);
 	}
 }
@@ -236,29 +236,29 @@ VERBOSE cfg.verbose
 RZ_API char *rz_core_sysenv_begin(RzCore * core, const char *cmd) {
 	char *f, *ret = cmd? strdup (cmd): NULL;
 	RzIODesc *desc = core->file ? rz_io_desc_get (core->io, core->file->fd) : NULL;
-	if (cmd && strstr (cmd, "R2_BYTES")) {
+	if (cmd && strstr (cmd, "RZ_BYTES")) {
 		char *s = rz_hex_bin2strdup (core->block, core->blocksize);
-		rz_sys_setenv ("R2_BYTES", s);
+		rz_sys_setenv ("RZ_BYTES", s);
 		free (s);
 	}
 	rz_sys_setenv ("RZ_BIN_PDBSERVER", rz_config_get (core->config, "pdb.server"));
 	if (desc && desc->name) {
-		rz_sys_setenv ("R2_FILE", desc->name);
-		rz_sys_setenv ("R2_SIZE", sdb_fmt ("%"PFMT64d, rz_io_desc_size (desc)));
-		if (cmd && strstr (cmd, "R2_BLOCK")) {
+		rz_sys_setenv ("RZ_FILE", desc->name);
+		rz_sys_setenv ("RZ_SIZE", sdb_fmt ("%"PFMT64d, rz_io_desc_size (desc)));
+		if (cmd && strstr (cmd, "RZ_BLOCK")) {
 			// replace BLOCK in RET string
 			if ((f = rz_file_temp ("r2block"))) {
 				if (rz_file_dump (f, core->block, core->blocksize, 0)) {
-					rz_sys_setenv ("R2_BLOCK", f);
+					rz_sys_setenv ("RZ_BLOCK", f);
 				}
 				free (f);
 			}
 		}
 	}
-	rz_sys_setenv ("R2_OFFSET", sdb_fmt ("%"PFMT64d, core->offset));
-	rz_sys_setenv ("R2_XOFFSET", sdb_fmt ("0x%08"PFMT64x, core->offset));
-	rz_sys_setenv ("R2_ENDIAN", core->rasm->big_endian? "big": "little");
-	rz_sys_setenv ("R2_BSIZE", sdb_fmt ("%d", core->blocksize));
+	rz_sys_setenv ("RZ_OFFSET", sdb_fmt ("%"PFMT64d, core->offset));
+	rz_sys_setenv ("RZ_XOFFSET", sdb_fmt ("0x%08"PFMT64x, core->offset));
+	rz_sys_setenv ("RZ_ENDIAN", core->rasm->big_endian? "big": "little");
+	rz_sys_setenv ("RZ_BSIZE", sdb_fmt ("%d", core->blocksize));
 
 	// dump current config file so other r2 tools can use the same options
 	char *config_sdb_path = NULL;
@@ -271,15 +271,15 @@ RZ_API char *rz_core_sysenv_begin(RzCore * core, const char *cmd) {
 	rz_config_serialize (core->config, config_sdb);
 	sdb_sync (config_sdb);
 	sdb_free (config_sdb);
-	rz_sys_setenv ("R2_CONFIG", config_sdb_path);
+	rz_sys_setenv ("RZ_CONFIG", config_sdb_path);
 
 	rz_sys_setenv ("RZ_BIN_LANG", rz_config_get (core->config, "bin.lang"));
 	rz_sys_setenv ("RZ_BIN_DEMANGLE", rz_config_get (core->config, "bin.demangle"));
-	rz_sys_setenv ("R2_ARCH", rz_config_get (core->config, "asm.arch"));
-	rz_sys_setenv ("R2_BITS", sdb_fmt ("%d", rz_config_get_i (core->config, "asm.bits")));
-	rz_sys_setenv ("R2_COLOR", rz_config_get_i (core->config, "scr.color")? "1": "0");
-	rz_sys_setenv ("R2_DEBUG", rz_config_get_i (core->config, "cfg.debug")? "1": "0");
-	rz_sys_setenv ("R2_IOVA", rz_config_get_i (core->config, "io.va")? "1": "0");
+	rz_sys_setenv ("RZ_ARCH", rz_config_get (core->config, "asm.arch"));
+	rz_sys_setenv ("RZ_BITS", sdb_fmt ("%d", rz_config_get_i (core->config, "asm.bits")));
+	rz_sys_setenv ("RZ_COLOR", rz_config_get_i (core->config, "scr.color")? "1": "0");
+	rz_sys_setenv ("RZ_DEBUG", rz_config_get_i (core->config, "cfg.debug")? "1": "0");
+	rz_sys_setenv ("RZ_IOVA", rz_config_get_i (core->config, "io.va")? "1": "0");
 	free (config_sdb_path);
 	return ret;
 }
@@ -487,12 +487,12 @@ RZ_API bool rz_core_file_loadlib(RzCore *core, const char *lib, ut64 libaddr) {
 	const char *dirlibs = rz_config_get (core->config, "dir.libs");
 	bool free_libdir = true;
 #ifdef __WINDOWS__
-	char *libdir = rz_str_rz_prefix (R2_LIBDIR);
+	char *libdir = rz_str_rz_prefix (RZ_LIBDIR);
 #else
-	char *libdir = strdup (R2_LIBDIR);
+	char *libdir = strdup (RZ_LIBDIR);
 #endif
 	if (!libdir) {
-		libdir = R2_LIBDIR;
+		libdir = RZ_LIBDIR;
 		free_libdir = false;
 	}
 	if (!dirlibs || !*dirlibs) {
@@ -557,7 +557,7 @@ static void load_scripts_for(RzCore *core, const char *name) {
 	// TODO:
 	char *file;
 	RzListIter *iter;
-	char *hdir = rz_str_newf (R_JOIN_2_PATHS (R2_HOME_BINRC, "bin-%s"), name);
+	char *hdir = rz_str_newf (R_JOIN_2_PATHS (RZ_HOME_BINRC, "bin-%s"), name);
 	char *path = rz_str_home (hdir);
 	RzList *files = rz_sys_dir (path);
 	if (!rz_list_empty (files)) {

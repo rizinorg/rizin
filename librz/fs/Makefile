@@ -1,6 +1,6 @@
 NAME=rz_fs
 R2DEPS=rz_util rz_io rz_socket
-CFLAGS+=-DR2_PLUGIN_INCORE -Iarch/include -Iarch
+CFLAGS+=-DRZ_PLUGIN_INCORE -Iarch/include -Iarch
 
 SHLR=../../shlr/
 

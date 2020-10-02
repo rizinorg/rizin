@@ -1,5 +1,5 @@
-#ifndef R2_BIN_H
-#define R2_BIN_H
+#ifndef RZ_BIN_H
+#define RZ_BIN_H
 
 #include <rz_util.h>
 #include <rz_types.h>

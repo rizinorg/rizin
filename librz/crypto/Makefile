@@ -1,6 +1,6 @@
 NAME=rz_crypto
 R2DEPS=rz_hash rz_util
-CFLAGS+=-DR2_PLUGIN_INCORE
+CFLAGS+=-DRZ_PLUGIN_INCORE
 
 include ../config.mk
 

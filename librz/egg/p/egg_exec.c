@@ -164,10 +164,10 @@ RzEggPlugin rz_egg_plugin_exec = {
 	.build = (void *)build
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_EGG,
 	.data = &rz_egg_plugin_exec,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

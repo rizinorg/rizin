@@ -1,5 +1,5 @@
-#ifndef R2_FLAGS_H
-#define R2_FLAGS_H
+#ifndef RZ_FLAGS_H
+#define RZ_FLAGS_H
 
 #include <rz_types.h>
 #include <rz_util.h>

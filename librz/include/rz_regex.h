@@ -1,5 +1,5 @@
-#ifndef R2_REGEX_H
-#define	R2_REGEX_H
+#ifndef RZ_REGEX_H
+#define	RZ_REGEX_H
 
 #include <rz_types.h>
 #include <sys/types.h>

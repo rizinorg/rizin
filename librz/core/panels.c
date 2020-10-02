@@ -5621,7 +5621,7 @@ void __restore_panel_pos(RPanel* panel) {
 }
 
 char *__get_panels_config_dir_path(void) {
-	return rz_str_home (R_JOIN_2_PATHS (R2_HOME_DATADIR, ".r2panels"));
+	return rz_str_home (R_JOIN_2_PATHS (RZ_HOME_DATADIR, ".r2panels"));
 }
 
 char *__create_panels_config_path(const char *file) {

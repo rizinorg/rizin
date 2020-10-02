@@ -45,10 +45,10 @@ RzAnalPlugin rz_anal_plugin_malbolge = {
 	.op = &mal_anal,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_malbolge,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

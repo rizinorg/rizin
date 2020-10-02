@@ -597,20 +597,20 @@ RzAnalPlugin rz_anal_plugin_riscv_cs = {
 	.op = &analop,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_riscv_cs,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif
 
 #else
 RzAnalPlugin rz_anal_plugin_riscv_cs = {0};
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif
 #endif

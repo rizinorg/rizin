@@ -482,10 +482,10 @@ static inline void prevPrintFormat(RzCore *core) {
 
 RZ_API int rz_core_visual_hud(RzCore *core) {
 	const char *c = rz_config_get (core->config, "hud.path");
-	char *f = rz_str_newf (R_JOIN_3_PATHS ("%s", R2_HUD, "main"),
+	char *f = rz_str_newf (R_JOIN_3_PATHS ("%s", RZ_HUD, "main"),
 		rz_sys_prefix (NULL));
 	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	char *homehud = rz_str_home (R2_HOME_HUD);
+	char *homehud = rz_str_home (RZ_HOME_HUD);
 	char *res = NULL;
 	char *p = 0;
 	rz_cons_singleton ()->context->color_mode = use_color;

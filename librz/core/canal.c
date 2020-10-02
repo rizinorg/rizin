@@ -13,10 +13,10 @@ HEAPTYPE (ut64);
 
 // used to speedup strcmp with rconfig.get in loops
 enum {
-	R2_ARCH_THUMB,
-	R2_ARCH_ARM32,
-	R2_ARCH_ARM64,
-	R2_ARCH_MIPS
+	RZ_ARCH_THUMB,
+	RZ_ARCH_ARM32,
+	RZ_ARCH_ARM64,
+	RZ_ARCH_MIPS
 };
 // 128M
 #define MAX_SCAN_SIZE 0x7ffffff
@@ -3702,7 +3702,7 @@ static int core_anal_followptr(RzCore *core, int type, ut64 at, ut64 ptr, ut64 r
 
 static bool opiscall(RzCore *core, RzAnalOp *aop, ut64 addr, const ut8* buf, int len, int arch) {
 	switch (arch) {
-	case R2_ARCH_ARM64:
+	case RZ_ARCH_ARM64:
 		aop->size = 4;
 		//addr should be aligned by 4 in aarch64
 		if (addr % 4) {
@@ -3747,7 +3747,7 @@ RZ_API int rz_core_anal_search(RzCore *core, ut64 from, ut64 to, ut64 ref, int m
 	if (core->rasm->bits == 64) {
 		// speedup search
 		if (!strncmp (core->rasm->cur->name, "arm", 3)) {
-			arch = R2_ARCH_ARM64;
+			arch = RZ_ARCH_ARM64;
 		}
 	}
 	// TODO: get current section range here or gtfo
@@ -5118,9 +5118,9 @@ RZ_API void rz_core_anal_esil(RzCore *core, const char *str, const char *target)
 	int arch = -1;
 	if (!strcmp (core->anal->cur->arch, "arm")) {
 		switch (core->anal->cur->bits) {
-		case 64: arch = R2_ARCH_ARM64; break;
-		case 32: arch = R2_ARCH_ARM32; break;
-		case 16: arch = R2_ARCH_THUMB; break;
+		case 64: arch = RZ_ARCH_ARM64; break;
+		case 32: arch = RZ_ARCH_ARM32; break;
+		case 16: arch = RZ_ARCH_THUMB; break;
 		}
 		archIsArm = true;
 	}
@@ -5129,7 +5129,7 @@ RZ_API void rz_core_anal_esil(RzCore *core, const char *str, const char *target)
 	const char *gp_reg = NULL;
 	if (!strcmp (core->anal->cur->arch, "mips")) {
 		gp_reg = "gp";
-		arch = R2_ARCH_MIPS;
+		arch = RZ_ARCH_MIPS;
 	}
 
 	const char *sn = rz_reg_get_name (core->anal->reg, R_REG_NAME_SN);
@@ -5230,7 +5230,7 @@ RZ_API void rz_core_anal_esil(RzCore *core, const char *str, const char *target)
 		}
 		if (sn && op.type == R_ANAL_OP_TYPE_SWI) {
 			rz_flag_space_set (core->flags, R_FLAGS_FS_SYSCALLS);
-			int snv = (arch == R2_ARCH_THUMB)? op.val: (int)rz_reg_getv (core->anal->reg, sn);
+			int snv = (arch == RZ_ARCH_THUMB)? op.val: (int)rz_reg_getv (core->anal->reg, sn);
 			RzSyscallItem *si = rz_syscall_get (core->anal->syscall, snv, -1);
 			if (si) {
 			//	eprintf ("0x%08"PFMT64x" SYSCALL %-4d %s\n", cur, snv, si->name);
@@ -5260,7 +5260,7 @@ RZ_API void rz_core_anal_esil(RzCore *core, const char *str, const char *target)
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_LEA:
 			// arm64
-			if (core->anal->cur && arch == R2_ARCH_ARM64) {
+			if (core->anal->cur && arch == RZ_ARCH_ARM64) {
 				if (CHECKREF (ESIL->cur)) {
 					rz_anal_xrefs_set (core->anal, cur, ESIL->cur, R_ANAL_REF_TYPE_STRING);
 				}
@@ -5290,7 +5290,7 @@ RZ_API void rz_core_anal_esil(RzCore *core, const char *str, const char *target)
 				if (cfg_anal_strings) {
 					add_string_ref (core, op.addr, dst);
 				}
-			} else if ((core->anal->bits == 32 && core->anal->cur && arch == R2_ARCH_MIPS)) {
+			} else if ((core->anal->bits == 32 && core->anal->cur && arch == RZ_ARCH_MIPS)) {
 				ut64 dst = ESIL->cur;
 				if (!op.src[0] || !op.src[0]->reg || !op.src[0]->reg->name) {
 					break;

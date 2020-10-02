@@ -148,10 +148,10 @@ RBinPlugin rz_bin_plugin_elf64 = {
 	.maps = &maps,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_elf64,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

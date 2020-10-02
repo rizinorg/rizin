@@ -35,16 +35,16 @@ FROM debian:10
 LABEL r2docker latest
 
 # Radare version
-ARG R2_VERSION=master
+ARG RZ_VERSION=master
 # R2pipe python version
-ARG R2_PIPE_PY_VERSION=1.4.2
+ARG RZ_PIPE_PY_VERSION=1.4.2
 
-ENV R2_VERSION ${R2_VERSION}
-ENV R2_PIPE_PY_VERSION ${R2_PIPE_PY_VERSION}
+ENV RZ_VERSION ${RZ_VERSION}
+ENV RZ_PIPE_PY_VERSION ${RZ_PIPE_PY_VERSION}
 
 RUN echo -e "Building versions:\n\
-  R2_VERSION=$R2_VERSION\n\
-  R2_PIPE_PY_VERSION=${R2_PIPE_PY_VERSION}"
+  RZ_VERSION=$RZ_VERSION\n\
+  RZ_PIPE_PY_VERSION=${RZ_PIPE_PY_VERSION}"
 
 # Build rizin in a volume to minimize space used by build
 VOLUME ["/mnt"]
@@ -70,9 +70,9 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   libstdc++6:i386 \
   gnupg2 \
   python-pip && \
-  pip install rzpipe=="$R2_PIPE_PY_VERSION" && \
+  pip install rzpipe=="$RZ_PIPE_PY_VERSION" && \
   cd /mnt && \
-  git clone -b "$R2_VERSION" -q --depth 1 https://github.com/rizinorg/rizin.git && \
+  git clone -b "$RZ_VERSION" -q --depth 1 https://github.com/rizinorg/rizin.git && \
   cd rizin && \
   ./configure && \
   make && \

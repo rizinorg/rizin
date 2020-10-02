@@ -2275,7 +2275,7 @@ RZ_API const char *rz_core_anal_optype_colorfor(RzCore *core, ut64 addr, bool ve
 
 static void rz_core_setenv (RzCore *core) {
 	char *e = rz_sys_getenv ("PATH");
-	char *h = rz_str_home (R2_HOME_BIN);
+	char *h = rz_str_home (RZ_HOME_BIN);
 	char *n = rz_str_newf ("%s%s%s", h, R_SYS_ENVSEP, e);
 	rz_sys_setenv ("PATH", n);
 	free (n);
@@ -2610,7 +2610,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 		core->cons->user_fgets = (void *)rz_core_fgets;
 #endif
 		//rz_line_singleton ()->user = (void *)core;
-		rz_line_hist_load (R2_HOME_HISTORY);
+		rz_line_hist_load (RZ_HOME_HISTORY);
 	}
 	core->print->cons = core->cons;
 	rz_cons_bind (&core->print->consbind);
@@ -2728,7 +2728,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_bp_use (core->dbg->bp, R_SYS_ARCH, core->anal->bits);
 	update_sdb (core);
 	{
-		char *a = rz_str_rz_prefix (R2_FLAGS);
+		char *a = rz_str_rz_prefix (RZ_FLAGS);
 		if (a) {
 			char *file = rz_str_newf ("%s/tags.r2", a);
 			(void)rz_core_run_script (core, file);

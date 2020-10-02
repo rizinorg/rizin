@@ -1,7 +1,7 @@
 /* rizin - LGPL - Copyright 2017-2020 - condret, pancake, alvaro */
 
-#ifndef R2_IO_H
-#define R2_IO_H
+#ifndef RZ_IO_H
+#define RZ_IO_H
 
 #include "rz_list.h"
 #include <rz_util.h>

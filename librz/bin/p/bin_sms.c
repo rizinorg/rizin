@@ -110,10 +110,10 @@ RBinPlugin rz_bin_plugin_sms = {
 	.strfilter = 'U'
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_sms,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

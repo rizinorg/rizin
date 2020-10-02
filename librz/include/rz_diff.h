@@ -1,5 +1,5 @@
-#ifndef R2_DIFF_H
-#define R2_DIFF_H
+#ifndef RZ_DIFF_H
+#define RZ_DIFF_H
 
 #include <rz_types.h>
 #include <rz_util.h>

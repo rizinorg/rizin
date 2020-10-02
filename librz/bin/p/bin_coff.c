@@ -575,10 +575,10 @@ RBinPlugin rz_bin_plugin_coff = {
 	.patch_relocs = &patch_relocs
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_coff,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

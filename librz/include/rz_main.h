@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2008-2020 - pancake */
 
-#ifndef R2_MAIN_H
-#define R2_MAIN_H
+#ifndef RZ_MAIN_H
+#define RZ_MAIN_H
 
 #include <rz_types.h>
 #include <rz_getopt.h>

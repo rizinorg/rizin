@@ -1,5 +1,5 @@
-#ifndef R2_H8300_DISAS_H
-#define R2_H8300_DISAS_H
+#ifndef RZ_H8300_DISAS_H
+#define RZ_H8300_DISAS_H
 
 #include <stdint.h>
 

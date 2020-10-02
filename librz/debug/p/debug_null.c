@@ -10,10 +10,10 @@ RzDebugPlugin rz_debug_plugin_null = {
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_null,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

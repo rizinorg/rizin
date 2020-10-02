@@ -362,9 +362,9 @@ RzDebugPlugin rz_debug_plugin_qnx = {
 	.reg_profile = (void *)rz_debug_qnx_reg_profile,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_qnx,
-	.version = R2_VERSION};
+	.version = RZ_VERSION};
 #endif

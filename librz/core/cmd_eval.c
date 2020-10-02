@@ -48,7 +48,7 @@ static const char *help_msg_ec[] = {
 	"Vars:", "", "",
 	"colors:", "", "rgb:000, red, green, blue, #ff0000, ...",
 	"e scr.color", "=0", "use more colors (0: no color 1: ansi 16, 2: 256, 3: 16M)",
-	"$DATADIR/rizin/cons", "", R_JOIN_2_PATHS ("~", R2_HOME_THEMES) " ./",
+	"$DATADIR/rizin/cons", "", R_JOIN_2_PATHS ("~", RZ_HOME_THEMES) " ./",
 	NULL
 };
 
@@ -60,7 +60,7 @@ static const char *help_msg_eco[] = {
 	"ecoq", "", "list available themes without showing the current one",
 	"ecoj", "", "list available themes in JSON",
 	"Path:", "", "",
-	"$DATADIR/rizin/cons", "", R_JOIN_2_PATHS ("~", R2_HOME_THEMES) " ./",
+	"$DATADIR/rizin/cons", "", R_JOIN_2_PATHS ("~", RZ_HOME_THEMES) " ./",
 	NULL
 };
 
@@ -129,11 +129,11 @@ static bool cmd_load_theme(RzCore *core, const char *_arg) {
 	}
 	char *arg = strdup (_arg);
 
-	char *tmp = rz_str_newf (R_JOIN_2_PATHS (R2_HOME_THEMES, "%s"), arg);
+	char *tmp = rz_str_newf (R_JOIN_2_PATHS (RZ_HOME_THEMES, "%s"), arg);
 	char *home = tmp ? rz_str_home (tmp) : NULL;
 	free (tmp);
 
-	tmp = rz_str_newf (R_JOIN_2_PATHS (R2_THEMES, "%s"), arg);
+	tmp = rz_str_newf (R_JOIN_2_PATHS (RZ_THEMES, "%s"), arg);
 	path = tmp ? rz_str_rz_prefix (tmp) : NULL;
 	free (tmp);
 
@@ -178,13 +178,13 @@ RZ_API RzList *rz_core_list_themes(RzCore *core) {
 	getNext = false;
 	char *tmp = strdup ("default");
 	rz_list_append (list, tmp);
-	char *path = rz_str_home (R2_HOME_THEMES R_SYS_DIR);
+	char *path = rz_str_home (RZ_HOME_THEMES R_SYS_DIR);
 	if (path) {
 		list_themes_in_path (list, path);
 		R_FREE (path);
 	}
 
-	path = rz_str_rz_prefix (R2_THEMES R_SYS_DIR);
+	path = rz_str_rz_prefix (RZ_THEMES R_SYS_DIR);
 	if (path) {
 		list_themes_in_path (list, path);
 		R_FREE (path);
@@ -200,7 +200,7 @@ static void nextpal(RzCore *core, int mode) {
 	const char *fn;
 	char *path = NULL;
 	int ctr = 0;
-	char *home = rz_str_home (R2_HOME_THEMES R_SYS_DIR);
+	char *home = rz_str_home (RZ_HOME_THEMES R_SYS_DIR);
 
 	getNext = false;
 	if (mode == 'j') {
@@ -240,7 +240,7 @@ static void nextpal(RzCore *core, int mode) {
 		R_FREE (home);
 	}
 
-	path = rz_str_rz_prefix (R2_THEMES R_SYS_DIR);
+	path = rz_str_rz_prefix (RZ_THEMES R_SYS_DIR);
 	if (path) {
 		files = rz_sys_dir (path);
 		rz_list_foreach (files, iter, fn) {

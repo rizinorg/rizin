@@ -31,7 +31,7 @@ static int lang_rust_file(RzLang *lang, const char *file) {
 		libpath = ".";
 		libname = name;
 	}
-	rz_sys_setenv ("PKG_CONFIG_PATH", R2_LIBDIR"/pkgconfig");
+	rz_sys_setenv ("PKG_CONFIG_PATH", RZ_LIBDIR"/pkgconfig");
 	p = strstr (name, ".rs"); if (p) *p=0;
 	cc = rz_sys_getenv ("RUSTC");
 	if (cc && !*cc) {

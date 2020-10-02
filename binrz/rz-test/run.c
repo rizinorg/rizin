@@ -872,7 +872,7 @@ static R2RProcessOutput *run_rz_test(R2RRunConfig *config, ut64 timeout_ms, cons
 #if __WINDOWS__
 		"ANSICON",
 #endif
-		"R2_NOPLUGINS"
+		"RZ_NOPLUGINS"
 	};
 	const char *envvals[] = {
 #if __WINDOWS__
@@ -1205,8 +1205,8 @@ RZ_API R2RTestResultInfo *rz_test_run_test(R2RRunConfig *config, R2RTest *test) 
 	}
 	bool broken = rz_test_test_broken (test);
 #if ASAN
-# if !R2_ASSERT_STDOUT
-# error R2_ASSERT_STDOUT undefined or 0
+# if !RZ_ASSERT_STDOUT
+# error RZ_ASSERT_STDOUT undefined or 0
 # endif
 	R2RProcessOutput *out = ret->proc_out;
 	if (!success && test->type == R2R_TEST_TYPE_CMD && strstr (test->path, "/dbg")

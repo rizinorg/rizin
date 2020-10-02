@@ -1,5 +1,5 @@
-#ifndef R2_CMD_H
-#define R2_CMD_H
+#ifndef RZ_CMD_H
+#define RZ_CMD_H
 
 #include <rz_types.h>
 #include <rz_util.h>

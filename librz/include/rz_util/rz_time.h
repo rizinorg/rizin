@@ -1,5 +1,5 @@
-#ifndef R2_TIME_H
-#define R2_TIME_H
+#ifndef RZ_TIME_H
+#define RZ_TIME_H
 
 #include <rz_types.h>
 

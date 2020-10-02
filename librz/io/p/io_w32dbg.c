@@ -301,10 +301,10 @@ RzIOPlugin rz_io_plugin_w32dbg = {
 };
 #endif
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &rz_io_plugin_w32dbg,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

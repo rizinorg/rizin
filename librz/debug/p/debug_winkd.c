@@ -286,10 +286,10 @@ RzDebugPlugin rz_debug_plugin_winkd = {
 	.modules_get = &rz_debug_winkd_modules
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_winkd,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

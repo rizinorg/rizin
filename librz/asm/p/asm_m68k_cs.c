@@ -141,11 +141,11 @@ static bool check_features(RzAsm *a, cs_insn *insn) {
 	return true;
 }
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_m68k_cs,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif
 
@@ -160,11 +160,11 @@ RzAsmPlugin rz_asm_plugin_m68k_cs = {
 	.endian = R_SYS_ENDIAN_BIG,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_m68k_cs,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif
 

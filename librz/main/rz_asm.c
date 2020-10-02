@@ -519,14 +519,14 @@ static void __load_plugins(RzAsmState *as) {
 	}
 
 	// load plugins from the home directory
-	char *homeplugindir = rz_str_home (R2_HOME_PLUGINS);
+	char *homeplugindir = rz_str_home (RZ_HOME_PLUGINS);
 	rz_lib_opendir (as->l, homeplugindir);
 	free (homeplugindir);
 
 	// load plugins from the system directory
-	char *plugindir = rz_str_rz_prefix (R2_PLUGINS);
-	char *extrasdir = rz_str_rz_prefix (R2_EXTRAS);
-	char *bindingsdir = rz_str_rz_prefix (R2_BINDINGS);
+	char *plugindir = rz_str_rz_prefix (RZ_PLUGINS);
+	char *extrasdir = rz_str_rz_prefix (RZ_EXTRAS);
+	char *bindingsdir = rz_str_rz_prefix (RZ_BINDINGS);
 	rz_lib_opendir (as->l, plugindir);
 	rz_lib_opendir (as->l, extrasdir);
 	rz_lib_opendir (as->l, bindingsdir);
@@ -563,12 +563,12 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 	RzAsmState *as = __as_new ();
 
 	// TODO set addrbytes
-	char *r2arch = rz_sys_getenv ("R2_ARCH");
+	char *r2arch = rz_sys_getenv ("RZ_ARCH");
 	if (r2arch) {
 		arch = r2arch;
 	}
 
-	char *r2bits = rz_sys_getenv ("R2_BITS");
+	char *r2bits = rz_sys_getenv ("RZ_BITS");
 	if (r2bits) {
 		bits = rz_num_math (NULL, r2bits);
 		free (r2bits);
@@ -667,7 +667,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			break;
 		case 'v':
 			if (as->quiet) {
-				printf ("%s\n", R2_VERSION);
+				printf ("%s\n", RZ_VERSION);
 			} else {
 				ret = rz_main_version_print ("rz_asm");
 			}

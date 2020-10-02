@@ -86,7 +86,7 @@ jobs:
           #   os: ubuntu-20.04
           #   build_system: meson
           #   compiler: gcc
-          #   cflags: '-DR2_ASSERT_STDOUT=1'
+          #   cflags: '-DRZ_ASSERT_STDOUT=1'
           #   meson_options: -Db_sanitize=address,undefined -Duse_webui=true
           #   asan: true
           #   asan_options: 'detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1'
@@ -193,7 +193,7 @@ jobs:
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         if [ "$NEWSHELL" == "true" ]; then
-          export R2_CFG_NEWSHELL=1
+          export RZ_CFG_NEWSHELL=1
         fi
         if [ "$ASAN" == "true" ]; then
           export ASAN=1
@@ -215,7 +215,7 @@ jobs:
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         if [ "$NEWSHELL" == "true" ]; then
-          export R2_CFG_NEWSHELL=1
+          export RZ_CFG_NEWSHELL=1
         fi
         cd test
         make fuzz-tests

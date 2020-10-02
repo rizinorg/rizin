@@ -139,10 +139,10 @@ RBinPlugin rz_bin_plugin_pyc = {
 	.symbols = &symbols,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_pyc,
-	.version = R2_VERSION,
+	.version = RZ_VERSION,
 };
 #endif

@@ -49,7 +49,7 @@ static char *__read_nonnull_str_at(RBuffer *buf, ut64 offset) {
 }
 
 static char *__func_name_from_ord(char *module, ut16 ordinal) {
-	char *path = rz_str_newf (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"), rz_sys_prefix (NULL), module);
+	char *path = rz_str_newf (R_JOIN_4_PATHS ("%s", RZ_SDB_FORMAT, "dll", "%s.sdb"), rz_sys_prefix (NULL), module);
 	char *ord = rz_str_newf ("%d", ordinal);
 	char *name;
 	if (rz_file_exists (path)) {

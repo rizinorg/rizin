@@ -2231,7 +2231,7 @@ static int cmd_system(void *data, const char *input) {
 	case '-': //!-
 		if (input[1]) {
 			rz_line_hist_free();
-			rz_line_hist_save (R2_HOME_HISTORY);
+			rz_line_hist_save (RZ_HOME_HISTORY);
 		} else {
 			rz_line_hist_free();
 		}
@@ -2273,8 +2273,8 @@ static int cmd_system(void *data, const char *input) {
 					free (cmd);
 				} //else eprintf ("Error setting up system environment\n");
 			} else {
-				eprintf ("History saved to "R2_HOME_HISTORY"\n");
-				rz_line_hist_save (R2_HOME_HISTORY);
+				eprintf ("History saved to "RZ_HOME_HISTORY"\n");
+				rz_line_hist_save (RZ_HOME_HISTORY);
 			}
 		}
 		break;

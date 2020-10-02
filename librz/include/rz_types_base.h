@@ -1,5 +1,5 @@
-#ifndef R2_TYPES_BASE_H
-#define R2_TYPES_BASE_H
+#ifndef RZ_TYPES_BASE_H
+#define RZ_TYPES_BASE_H
 
 #include <ctype.h>
 #include <sys/types.h>
@@ -201,4 +201,4 @@ typedef struct _utX {
 		return m? *m = n, m: m; \
 	}
 
-#endif // R2_TYPES_BASE_H
+#endif // RZ_TYPES_BASE_H

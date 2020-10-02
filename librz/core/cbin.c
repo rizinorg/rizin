@@ -694,41 +694,41 @@ RZ_API void rz_core_anal_type_init(RzCore *core) {
 	const char *os = rz_config_get (core->config, "asm.os");
 	// spaguetti ahead
 
-	const char *dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types.sdb"), dir_prefix);
+	const char *dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", RZ_SDB_FCNSIGN, "types.sdb"), dir_prefix);
 	if (rz_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s.sdb"),
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", RZ_SDB_FCNSIGN, "types-%s.sdb"),
 		dir_prefix, anal_arch);
 	if (rz_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s.sdb"),
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", RZ_SDB_FCNSIGN, "types-%s.sdb"),
 		dir_prefix, os);
 	if (rz_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%d.sdb"),
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", RZ_SDB_FCNSIGN, "types-%d.sdb"),
 		dir_prefix, bits);
 	if (rz_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s-%d.sdb"),
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", RZ_SDB_FCNSIGN, "types-%s-%d.sdb"),
 		dir_prefix, os, bits);
 	if (rz_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s-%d.sdb"),
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", RZ_SDB_FCNSIGN, "types-%s-%d.sdb"),
 		dir_prefix, anal_arch, bits);
 	if (rz_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s-%s.sdb"),
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", RZ_SDB_FCNSIGN, "types-%s-%s.sdb"),
 		dir_prefix, anal_arch, os);
 	if (rz_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s-%s-%d.sdb"),
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", RZ_SDB_FCNSIGN, "types-%s-%s-%d.sdb"),
 		dir_prefix, anal_arch, os, bits);
 	if (rz_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
@@ -741,9 +741,9 @@ RZ_API void rz_core_anal_cc_init(RzCore *core) {
 	int bits = core->anal->bits;
 	Sdb *cc = core->anal->sdb_cc;
 
-	char *dbpath = rz_str_newf (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "cc-%s-%d.sdb"),
+	char *dbpath = rz_str_newf (R_JOIN_3_PATHS ("%s", RZ_SDB_FCNSIGN, "cc-%s-%d.sdb"),
 		dir_prefix, anal_arch, bits);
-	char *dbhomepath = rz_str_newf (R_JOIN_3_PATHS ("~", R2_HOME_SDB_FCNSIGN, "cc-%s-%d.sdb"),
+	char *dbhomepath = rz_str_newf (R_JOIN_3_PATHS ("~", RZ_HOME_SDB_FCNSIGN, "cc-%s-%d.sdb"),
 		anal_arch, bits);
 	// Avoid sdb reloading
 	if (cc->path && !strcmp (cc->path, dbpath) && !strcmp (cc->path, dbhomepath)) {
@@ -1032,7 +1032,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 		}
 	}
 	const char *dir_prefix = rz_config_get (r->config, "dir.prefix");
-	char *spath = sdb_fmt ("%s/"R2_SDB_FCNSIGN"/spec.sdb", dir_prefix);
+	char *spath = sdb_fmt ("%s/"RZ_SDB_FCNSIGN"/spec.sdb", dir_prefix);
 	if (rz_file_exists (spath)) {
 		sdb_concat_by_path (r->anal->sdb_fmts, spath);
 	}
@@ -1585,7 +1585,7 @@ static void set_bin_relocs(RzCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, cha
 					*db = sdb_new (NULL, filename, 0);
 				} else {
 					const char *dirPrefix = rz_sys_prefix (NULL);
-					filename = sdb_fmt (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"),
+					filename = sdb_fmt (R_JOIN_4_PATHS ("%s", RZ_SDB_FORMAT, "dll", "%s.sdb"),
 						dirPrefix, module);
 					if (rz_file_exists (filename)) {
 						*db = sdb_new (NULL, filename, 0);

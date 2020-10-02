@@ -157,7 +157,7 @@ err:
 RZ_API RzLib *rz_lib_new(const char *symname, const char *symnamefunc) {
 	RzLib *lib = R_NEW (RzLib);
 	if (lib) {
-		__has_debug = rz_sys_getenv_asbool ("R2_DEBUG");
+		__has_debug = rz_sys_getenv_asbool ("RZ_DEBUG");
 		lib->handlers = rz_list_newf (free);
 		lib->plugins = rz_list_newf (free);
 		lib->symname = strdup (symname? symname: R_LIB_SYMNAME);
@@ -312,13 +312,13 @@ RZ_API int rz_lib_open_ptr(RzLib *lib, const char *file, void *handler, RzLibStr
 	rz_return_val_if_fail (lib && file && stru, -1);
 	if (stru->version) {
 		char *mm0 = major_minor (stru->version);
-		char *mm1 = major_minor (R2_VERSION);
+		char *mm1 = major_minor (RZ_VERSION);
 		bool mismatch = strcmp (mm0, mm1);
 		free (mm0);
 		free (mm1);
 		if (mismatch) {
 			eprintf ("Module version mismatch %s (%s) vs (%s)\n",
-				file, stru->version, R2_VERSION);
+				file, stru->version, RZ_VERSION);
 			if (stru->pkgname) {
 				const char *dot = strchr (stru->version, '.');
 				int major = atoi (stru->version);
@@ -367,9 +367,9 @@ RZ_API bool rz_lib_opendir(RzLib *lib, const char *path) {
 	struct dirent *de;
 	DIR *dh;
 #endif
-#ifdef R2_LIBR_PLUGINS
+#ifdef RZ_LIBR_PLUGINS
 	if (!path) {
-		path = R2_LIBR_PLUGINS;
+		path = RZ_LIBR_PLUGINS;
 	}
 #endif
 	if (!path) {

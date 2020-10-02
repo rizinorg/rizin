@@ -1,7 +1,7 @@
 /* rizin - LGPL - Copyright 2009-2020 - nibble, pancake, xvilka */
 
-#ifndef R2_ANAL_H
-#define R2_ANAL_H
+#ifndef RZ_ANAL_H
+#define RZ_ANAL_H
 
 /* use old refs and function storage */
 // still required by core in lot of places

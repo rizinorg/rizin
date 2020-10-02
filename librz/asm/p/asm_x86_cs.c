@@ -198,13 +198,13 @@ static int check_features(RzAsm *a, cs_insn *insn) {
 	return 1;
 }
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct *radare_plugin_function(void) {
 	RzLibStruct *rp = R_NEW0 (RzLibStruct);
 	if (rp) {
 		rp->type = R_LIB_TYPE_ASM;
 		rp->data = &rz_asm_plugin_x86_cs;
-		rp->version = R2_VERSION;
+		rp->version = RZ_VERSION;
 	}
 	return rp;
 }

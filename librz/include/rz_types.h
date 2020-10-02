@@ -1,5 +1,5 @@
-#ifndef R2_TYPES_H
-#define R2_TYPES_H
+#ifndef RZ_TYPES_H
+#define RZ_TYPES_H
 
 #undef _FILE_OFFSET_BITS
 #define _FILE_OFFSET_BITS 64
@@ -301,7 +301,7 @@ typedef int (*PrintfCallback)(const char *str, ...);
 #define R_LIB_VERSION_HEADER(x) \
 RZ_API const char *x##_version(void)
 #define R_LIB_VERSION(x) \
-RZ_API const char *x##_version(void) { return "" R2_GITTAP; }
+RZ_API const char *x##_version(void) { return "" RZ_GITTAP; }
 
 #define BITS2BYTES(x) (((x)/8)+(((x)%8)?1:0))
 #define ZERO_FILL(x) memset (&x, 0, sizeof (x))
@@ -679,4 +679,4 @@ typedef int RRef;
 static inline void n##_ref(s *x) { x->R_REF_NAME++; } \
 static inline void n##_unref(s *x) { rz_unref (x, n##_free); }
 
-#endif // R2_TYPES_H
+#endif // RZ_TYPES_H

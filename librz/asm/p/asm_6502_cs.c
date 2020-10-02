@@ -80,10 +80,10 @@ RzAsmPlugin rz_asm_plugin_6502_cs = {
 };
 #endif
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_6502_cs,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

@@ -1664,13 +1664,13 @@ RzDebugPlugin rz_debug_plugin_native = {
 	.gcore = rz_debug_gcore,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_native,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
-#endif // R2_PLUGIN_INCORE
+#endif // RZ_PLUGIN_INCORE
 
 //#endif
 #else // DEBUGGER

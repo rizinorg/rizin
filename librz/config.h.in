@@ -6,7 +6,7 @@
 
 /* inlined APIs */
 #define R_INLINE 0
-#define R2_LOADLIBS 1
+#define RZ_LOADLIBS 1
 
 #define R_EGG_STATIC_PLUGINS @plugins_egg@
 #define R_BIN_STATIC_PLUGINS @plugins_bin@

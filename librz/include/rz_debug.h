@@ -1,5 +1,5 @@
-#ifndef R2_DEBUG_H
-#define R2_DEBUG_H
+#ifndef RZ_DEBUG_H
+#define RZ_DEBUG_H
 
 #include <rz_types.h>
 #include <rz_anal.h>

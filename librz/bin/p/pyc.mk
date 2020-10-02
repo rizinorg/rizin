@@ -10,5 +10,5 @@ CFLAGS+=-I../format/pyc/
 ALL_TARGETS+=${TARGET_PYC}
 
 ${TARGET_PYC}: ${OBJ_PYC}
-	${CC} ${CFLAGS} -o ${TARGET_PYC} ${OBJ_PYC} $(R2_CFLAGS) $(R2_LDFLAGS) -lrz_util
+	${CC} ${CFLAGS} -o ${TARGET_PYC} ${OBJ_PYC} $(RZ_CFLAGS) $(RZ_LDFLAGS) -lrz_util
 

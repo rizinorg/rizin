@@ -86,7 +86,7 @@ static int rabin_show_help(int v) {
 		" RZ_BIN_PDBSERVER: e pdb.server       # use alternative PDB server\n"
 		" RZ_BIN_SYMSTORE:  e pdb.symstore     # path to downstream symbol store\n"
 		" RZ_BIN_PREFIX:    e bin.prefix       # prefix symbols/sections/relocs with a specific string\n"
-		" R2_CONFIG:        # sdb config file\n");
+		" RZ_CONFIG:        # sdb config file\n");
 	}
 	return 1;
 }
@@ -569,10 +569,10 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	bin = core.bin;
 
 	if (!(tmp = rz_sys_getenv ("RZ_BIN_NOPLUGINS"))) {
-		char *homeplugindir = rz_str_home (R2_HOME_PLUGINS);
-		char *plugindir = rz_str_rz_prefix (R2_PLUGINS);
-		char *extrasdir = rz_str_rz_prefix (R2_EXTRAS);
-		char *bindingsdir = rz_str_rz_prefix (R2_BINDINGS);
+		char *homeplugindir = rz_str_home (RZ_HOME_PLUGINS);
+		char *plugindir = rz_str_rz_prefix (RZ_PLUGINS);
+		char *extrasdir = rz_str_rz_prefix (RZ_EXTRAS);
+		char *bindingsdir = rz_str_rz_prefix (RZ_BINDINGS);
 		l = rz_lib_new (NULL, NULL);
 		rz_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
 			&__lib_bin_cb, &__lib_bin_dt, bin);
@@ -597,13 +597,13 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 	free (tmp);
 
-	if ((tmp = rz_sys_getenv ("R2_CONFIG"))) {
+	if ((tmp = rz_sys_getenv ("RZ_CONFIG"))) {
 		Sdb *config_sdb = sdb_new (NULL, tmp, 0);
 		if (config_sdb) {
 			rz_config_unserialize (core.config, config_sdb, NULL);
 			sdb_free (config_sdb);
 		} else {
-			eprintf ("Cannot open file specified in R2_CONFIG\n");
+			eprintf ("Cannot open file specified in RZ_CONFIG\n");
 		}
 		free (tmp);
 	}

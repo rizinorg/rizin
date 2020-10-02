@@ -1,5 +1,5 @@
-#ifndef R2_FS_H
-#define R2_FS_H
+#ifndef RZ_FS_H
+#define RZ_FS_H
 
 #include <rz_types.h>
 #include <rz_list.h>

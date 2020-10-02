@@ -131,10 +131,10 @@ RzFSPlugin rz_fs_plugin_io = {
 	.umount = fs_io_umount,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_FS,
 	.data = &rz_fs_plugin_io,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

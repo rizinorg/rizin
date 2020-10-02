@@ -398,10 +398,10 @@ RzCorePlugin rz_core_plugin_a2f = {
 	.call = rz_cmd_anal_call,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CORE,
 	.data = &rz_core_plugin_a2f,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

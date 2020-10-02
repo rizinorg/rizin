@@ -2643,7 +2643,7 @@ RZ_API char *rz_sign_path(RzAnal *a, const char *file) {
 		}
 		free (abs);
 	} else {
-		char *home = rz_str_home (R2_HOME_ZIGNS);
+		char *home = rz_str_home (RZ_HOME_ZIGNS);
 		abs = rz_str_newf ("%s%s%s", home, R_SYS_DIR, file);
 		free (home);
 		if (rz_file_is_regular (abs)) {
@@ -2652,7 +2652,7 @@ RZ_API char *rz_sign_path(RzAnal *a, const char *file) {
 		free (abs);
 	}
 
-	abs = rz_str_newf (R_JOIN_3_PATHS ("%s", R2_ZIGNS, "%s"), rz_sys_prefix (NULL), file);
+	abs = rz_str_newf (R_JOIN_3_PATHS ("%s", RZ_ZIGNS, "%s"), rz_sys_prefix (NULL), file);
 	if (rz_file_is_regular (abs)) {
 		return abs;
 	}

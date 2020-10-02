@@ -1,5 +1,5 @@
-#ifndef R2_SEARCH_H
-#define R2_SEARCH_H
+#ifndef RZ_SEARCH_H
+#define RZ_SEARCH_H
 
 #include <rz_types.h>
 #include <rz_util.h>

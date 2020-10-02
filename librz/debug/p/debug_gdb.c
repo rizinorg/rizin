@@ -565,10 +565,10 @@ RzDebugPlugin rz_debug_plugin_gdb = {
 	//.bp_read = &rz_debug_gdb_bp_read,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_gdb,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

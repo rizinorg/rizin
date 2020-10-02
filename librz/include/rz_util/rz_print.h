@@ -1,5 +1,5 @@
-#ifndef R2_PRINT_H
-#define R2_PRINT_H
+#ifndef RZ_PRINT_H
+#define RZ_PRINT_H
 
 #include "rz_types.h"
 #include "rz_cons.h"

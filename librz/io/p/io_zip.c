@@ -638,10 +638,10 @@ RzIOPlugin rz_io_plugin_zip = {
 	.resize = rz_io_zip_resize,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &rz_io_plugin_zip,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

@@ -493,7 +493,7 @@ static int bin_pe_parse_imports(struct PE_(rz_bin_pe_obj_t)* bin,
 						db = sdb_new (NULL, filename, 0);
 					} else {
 						const char *dirPrefix = rz_sys_prefix (NULL);
-						filename = sdb_fmt (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"),
+						filename = sdb_fmt (R_JOIN_4_PATHS ("%s", RZ_SDB_FORMAT, "dll", "%s.sdb"),
 							dirPrefix, symdllname);
 						if (rz_file_exists (filename)) {
 							db = sdb_new (NULL, filename, 0);

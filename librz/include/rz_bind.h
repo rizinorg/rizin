@@ -1,7 +1,7 @@
 /* rizin - LGPL - Copyright 2015-2020 - pancake */
 
-#ifndef R2_BIND_H
-#define R2_BIND_H
+#ifndef RZ_BIND_H
+#define RZ_BIND_H
 
 // TODO: move riobind here too?
 // TODO: move rprint here too

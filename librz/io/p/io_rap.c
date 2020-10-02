@@ -289,10 +289,10 @@ RzIOPlugin rz_io_plugin_rap = {
 	.accept = __rap_accept,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &rz_io_plugin_rap,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

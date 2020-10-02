@@ -375,10 +375,10 @@ RzParsePlugin rz_parse_plugin_mips_pseudo = {
 	.subvar = subvar,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
 	.data = &rz_parse_plugin_mips_pseudo,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

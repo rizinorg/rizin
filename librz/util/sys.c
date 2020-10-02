@@ -1272,10 +1272,10 @@ RZ_API const char *rz_sys_prefix(const char *pfx) {
 #if __WINDOWS__
 		prefix = rz_sys_get_src_dir_w32 ();
 		if (!prefix) {
-			prefix = strdup (R2_PREFIX);
+			prefix = strdup (RZ_PREFIX);
 		}
 #else
-		prefix = strdup (R2_PREFIX);
+		prefix = strdup (RZ_PREFIX);
 #endif
 	}
 	if (pfx) {

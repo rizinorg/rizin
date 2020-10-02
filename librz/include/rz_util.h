@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2008-2016 - pancake */
 
-#ifndef R2_UTIL_H
-#define R2_UTIL_H
+#ifndef RZ_UTIL_H
+#define RZ_UTIL_H
 
 #include <rz_types.h>
 #include <rz_diff.h>

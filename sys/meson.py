@@ -14,17 +14,17 @@ BUILDDIR = 'build'
 BACKENDS = ['ninja', 'vs2015', 'vs2017', 'vs2019']
 
 PATH_FMT = {}
-R2_PATH = {
-    'R2_LIBDIR': r'lib',
-    'R2_INCDIR': r'include',
-    'R2_DATDIR': r'share',
-    'R2_WWWROOT': r'{R2_DATDIR}\www',
-    'R2_SDB': r'{R2_DATDIR}',
-    'R2_ZIGNS': r'{R2_DATDIR}\zigns',
-    'R2_THEMES': r'{R2_DATDIR}\cons',
-    'R2_FORTUNES': r'{R2_DATDIR}\doc',
-    'R2_FLAGS': r'{R2_DATDIR}\flag',
-    'R2_HUD': r'{R2_DATDIR}\hud'
+RZ_PATH = {
+    'RZ_LIBDIR': r'lib',
+    'RZ_INCDIR': r'include',
+    'RZ_DATDIR': r'share',
+    'RZ_WWWROOT': r'{RZ_DATDIR}\www',
+    'RZ_SDB': r'{RZ_DATDIR}',
+    'RZ_ZIGNS': r'{RZ_DATDIR}\zigns',
+    'RZ_THEMES': r'{RZ_DATDIR}\cons',
+    'RZ_FORTUNES': r'{RZ_DATDIR}\doc',
+    'RZ_FLAGS': r'{RZ_DATDIR}\flag',
+    'RZ_HUD': r'{RZ_DATDIR}\hud'
 }
 
 MESON = None
@@ -58,7 +58,7 @@ def set_global_variables():
         MESON = ['meson']
 
     PATH_FMT['ROOT'] = ROOT
-    PATH_FMT['R2_VERSION'] = version
+    PATH_FMT['RZ_VERSION'] = version
 
     log.debug('Root: %s', ROOT)
     log.debug('Meson: %s', MESON)
@@ -269,14 +269,14 @@ def main():
             sys.exit(1)
         key, value = option.split('=', 1)
         key = key.upper()
-        if key not in R2_PATH:
+        if key not in RZ_PATH:
             continue
         if os.path.isabs(value):
             log.error('Relative path is required: %s', option)
             sys.exit(1)
-        R2_PATH[key] = os.path.normpath(value)
+        RZ_PATH[key] = os.path.normpath(value)
 
-    PATH_FMT.update(R2_PATH)
+    PATH_FMT.update(RZ_PATH)
 
     sudo = 'sudo '
     if args.nosudo:

@@ -268,7 +268,7 @@ static void sdb_concat_by_path(Sdb *s, const char *path) {
 RZ_API bool rz_anal_set_os(RzAnal *anal, const char *os) {
 	Sdb *types = anal->sdb_types;
 	const char *dir_prefix = rz_sys_prefix (NULL);
-	const char *dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s.sdb"),
+	const char *dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", RZ_SDB_FCNSIGN, "types-%s.sdb"),
 		dir_prefix, os);
 	if (rz_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);

@@ -134,7 +134,7 @@ generate_configmk () {
 generate () {
   echo "configure-plugins: Generating librz/config.h .."
   cat librz/config.h.head > librz/config.h
-  echo "#define R2_LOADLIBS ${LOADLIBS}" >> librz/config.h
+  echo "#define RZ_LOADLIBS ${LOADLIBS}" >> librz/config.h
   generate_configh >> librz/config.h
   cat librz/config.h.tail >> librz/config.h
 

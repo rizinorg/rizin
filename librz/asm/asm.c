@@ -327,7 +327,7 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 	rz_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (h->name, name) && h->arch) {
 			if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
-				char *r2prefix = rz_str_rz_prefix (R2_SDB_OPCODES);
+				char *r2prefix = rz_str_rz_prefix (RZ_SDB_OPCODES);
 				char *file = rz_str_newf ("%s/%s.sdb", rz_str_get (r2prefix), h->arch);
 				if (file) {
 					rz_asm_set_cpu (a, NULL);

@@ -377,10 +377,10 @@ RzIOPlugin rz_io_plugin_winedbg = {
 	.isdbg = true
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &rz_io_plugin_winedbg,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

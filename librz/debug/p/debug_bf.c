@@ -222,10 +222,10 @@ RzDebugPlugin rz_debug_plugin_bf = {
 	.map_get = rz_debug_native_map_get,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_bf,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

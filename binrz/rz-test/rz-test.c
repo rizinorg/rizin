@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
 			break;
 		case 'v':
 			if (quiet) {
-				printf (R2_VERSION "\n");
+				printf (RZ_VERSION "\n");
 			} else {
 				char *s = rz_str_version ("rz_test");
 				printf ("%s\n", s);

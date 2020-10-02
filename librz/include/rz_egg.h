@@ -1,5 +1,5 @@
-#ifndef R2_EGG_H
-#define R2_EGG_H
+#ifndef RZ_EGG_H
+#define RZ_EGG_H
 
 #include <rz_asm.h>
 #include <rz_lib.h>
@@ -13,7 +13,7 @@ extern "C" {
 R_LIB_VERSION_HEADER(rz_egg);
 
 #define R_EGG_INCDIR_ENV "EGG_INCDIR"
-#define R_EGG_INCDIR_PATH "/lib/rizin/" R2_VERSION "/egg"
+#define R_EGG_INCDIR_PATH "/lib/rizin/" RZ_VERSION "/egg"
 
 // rename to RzEggShellcode
 #define R_EGG_PLUGIN_SHELLCODE 0

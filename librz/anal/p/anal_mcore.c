@@ -124,10 +124,10 @@ RzAnalPlugin rz_anal_plugin_mcore = {
 	.set_reg_profile = &set_reg_profile,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_mcore,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

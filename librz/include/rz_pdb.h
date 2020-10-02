@@ -1,5 +1,5 @@
-#ifndef R2_PDB_H
-#define R2_PDB_H
+#ifndef RZ_PDB_H
+#define RZ_PDB_H
 
 #define _R_LIST_C
 #include "rz_util.h"

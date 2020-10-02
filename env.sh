@@ -23,8 +23,8 @@ if [ -d "$pfx/usr/bin" ]; then
 fi
 
 new_env='
-R2_ENV_IS_SET=1
-R2_LIBR_PLUGINS=${pfx}/lib/rizin
+RZ_ENV_IS_SET=1
+RZ_LIBR_PLUGINS=${pfx}/lib/rizin
 PATH=$pfx/bin:${PATH}
 LD_LIBRARY_PATH=$pfx/lib:$LD_LIBRARY_PATH
 DYLD_LIBRARY_PATH=$pfx/lib:$DYLD_LIBRARY_PATH
@@ -32,7 +32,7 @@ PKG_CONFIG_PATH=$pfx/lib/pkgconfig:$PKG_CONFIG_PATH
 '
 
 shift
-if [ "$R2_ENV_IS_SET" = 1 ]; then
+if [ "$RZ_ENV_IS_SET" = 1 ]; then
 	echo "Nested call"
 	exec $*
 	exit $?

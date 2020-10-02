@@ -167,7 +167,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	g->stub_features.pkt_sz = 64;
 	char *env_pktsz_str;
 	ut32 env_pktsz = 0;
-	if ((env_pktsz_str = rz_sys_getenv ("R2_GDB_PKTSZ"))) {
+	if ((env_pktsz_str = rz_sys_getenv ("RZ_GDB_PKTSZ"))) {
 		if ((env_pktsz = (ut32)strtoul (env_pktsz_str, NULL, 10))) {
 			g->stub_features.pkt_sz = R_MAX (env_pktsz, GDB_MAX_PKTSZ);
 		}

@@ -1,6 +1,6 @@
 NAME=baddr ==
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=!rz-bin -qe ${R2_FILE};!rz-bin -B 0x400000 -qe ${R2_FILE}
+CMDS=!rz-bin -qe ${RZ_FILE};!rz-bin -B 0x400000 -qe ${RZ_FILE}
 EXPECT=<<EOF
 0x00400410
 0x00400410
@@ -9,7 +9,7 @@ RUN
 
 NAME=baddr > 0
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=!rz-bin -qe ${R2_FILE};!rz-bin -B 0x800000 -qe ${R2_FILE}
+CMDS=!rz-bin -qe ${RZ_FILE};!rz-bin -B 0x800000 -qe ${RZ_FILE}
 EXPECT=<<EOF
 0x00400410
 0x00800410
@@ -18,7 +18,7 @@ RUN
 
 NAME=baddr 0
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=!rz-bin -qe ${R2_FILE};!rz-bin -B 0 -qe ${R2_FILE}
+CMDS=!rz-bin -qe ${RZ_FILE};!rz-bin -B 0 -qe ${RZ_FILE}
 EXPECT=<<EOF
 0x00400410
 0x00000410
@@ -27,7 +27,7 @@ RUN
 
 NAME=laddr 0
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=!rz-bin -G 0 -e ${R2_FILE}
+CMDS=!rz-bin -G 0 -e ${RZ_FILE}
 EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x00400410 paddr=0x00000410 haddr=0x00000018 hvaddr=0x00400018 type=program
@@ -38,7 +38,7 @@ RUN
 
 NAME=laddr 0 && baddr 0
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=!rz-bin -G 0 -B 0 -e ${R2_FILE}
+CMDS=!rz-bin -G 0 -B 0 -e ${RZ_FILE}
 EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x00000410 paddr=0x00000410 haddr=0x00000018 hvaddr=0x00000018 type=program
@@ -49,7 +49,7 @@ RUN
 
 NAME=rabin -k file
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=!rz-bin -k ${R2_FILE}
+CMDS=!rz-bin -k ${RZ_FILE}
 EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
@@ -59,7 +59,7 @@ RUN
 
 NAME=rz-bin -K md5 -S file
 FILE=bins/pe/a.exe
-CMDS=!rz-bin -K md5 -S ${R2_FILE}
+CMDS=!rz-bin -K md5 -S ${RZ_FILE}
 EXPECT=<<EOF
 [Sections]
 
@@ -76,7 +76,7 @@ RUN
 
 NAME=rz-bin -s file pe
 FILE=bins/pe/a.exe
-CMDS=!rz-bin -s ${R2_FILE}|wc -l|awk "{print \$1}"
+CMDS=!rz-bin -s ${RZ_FILE}|wc -l|awk "{print \$1}"
 EXPECT=<<EOF
 24
 EOF
@@ -84,7 +84,7 @@ RUN
 
 NAME=rz-bin -s file elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!rz-bin -s ${R2_FILE}|wc -l|awk "{print \$1}"
+CMDS=!rz-bin -s ${RZ_FILE}|wc -l|awk "{print \$1}"
 EXPECT=<<EOF
 69
 EOF
@@ -93,10 +93,10 @@ RUN
 NAME=rz-bin -S, -SS, -rS and -rSS file elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
-!rz-bin -S ${R2_FILE}|wc -l|awk "{print \$1}"
-!rz-bin -SS ${R2_FILE}|wc -l|awk "{print \$1}"
-!env RZ_BIN_PREFIX=prixfixe rz-bin -S ${R2_FILE}
-!env RZ_BIN_PREFIX=prixfixe rz-bin -SS ${R2_FILE}
+!rz-bin -S ${RZ_FILE}|wc -l|awk "{print \$1}"
+!rz-bin -SS ${RZ_FILE}|wc -l|awk "{print \$1}"
+!env RZ_BIN_PREFIX=prixfixe rz-bin -S ${RZ_FILE}
+!env RZ_BIN_PREFIX=prixfixe rz-bin -SS ${RZ_FILE}
 EOF
 EXPECT=<<EOF
 35
@@ -155,7 +155,7 @@ RUN
 
 NAME=rz-bin -SSS
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!rz-bin -SSS ${R2_FILE}|wc -l|awk "{print \$1}"
+CMDS=!rz-bin -SSS ${RZ_FILE}|wc -l|awk "{print \$1}"
 EXPECT=<<EOF
 13
 EOF
@@ -163,7 +163,7 @@ RUN
 
 NAME=rz-bin -z pe
 FILE=bins/pe/a.exe
-CMDS=!rz-bin -z ${R2_FILE}|wc -l|awk "{print \$1}"
+CMDS=!rz-bin -z ${RZ_FILE}|wc -l|awk "{print \$1}"
 EXPECT=<<EOF
 7
 EOF
@@ -171,7 +171,7 @@ RUN
 
 NAME=rz-bin -zz pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zz ${R2_FILE} | grep "Password:"
+CMDS=!rz-bin -zz ${RZ_FILE} | grep "Password:"
 EXPECT=<<EOF
 86  0x00002619 0x00404019 10  11   .rdata  ascii   Password: 
 EOF
@@ -179,7 +179,7 @@ RUN
 
 NAME=rz-bin -zzz pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zzz ${R2_FILE} | grep "Password:"
+CMDS=!rz-bin -zzz ${RZ_FILE} | grep "Password:"
 EXPECT=<<EOF
 086 0x00002619 0x00404019  10  11 (.rdata) ascii Password: 
 EOF
@@ -187,7 +187,7 @@ RUN
 
 NAME=rz-bin -zzq pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zzq ${R2_FILE} | grep "Password:"
+CMDS=!rz-bin -zzq ${RZ_FILE} | grep "Password:"
 EXPECT=<<EOF
 0x404019 11 10 Password: 
 EOF
@@ -195,7 +195,7 @@ RUN
 
 NAME=rz-bin -zzzq pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zzzq ${R2_FILE} | grep "Password:"
+CMDS=!rz-bin -zzzq ${RZ_FILE} | grep "Password:"
 EXPECT=<<EOF
 0x00404019 Password: 
 EOF
@@ -203,7 +203,7 @@ RUN
 
 NAME=rz-bin -zzqq pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zzqq ${R2_FILE} | grep "Password:"
+CMDS=!rz-bin -zzqq ${RZ_FILE} | grep "Password:"
 EXPECT=<<EOF
 Password: 
 EOF
@@ -211,7 +211,7 @@ RUN
 
 NAME=rz-bin -zzzqq pe
 FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -zzzqq ${R2_FILE} | grep "Password:"
+CMDS=!rz-bin -zzzqq ${RZ_FILE} | grep "Password:"
 EXPECT=<<EOF
 Password: 
 EOF
@@ -219,7 +219,7 @@ RUN
 
 NAME=rz-bin -z elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!rz-bin -z ${R2_FILE}|wc -l|awk "{print \$1}"
+CMDS=!rz-bin -z ${RZ_FILE}|wc -l|awk "{print \$1}"
 EXPECT=<<EOF
 4
 EOF
@@ -227,7 +227,7 @@ RUN
 
 NAME=rz-bin -G 0x1000 -rs fatmach0
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -G 0x1000 -rs ${R2_FILE}|grep "f " | wc -l|awk "{print \$1}"
+CMDS=!rz-bin -G 0x1000 -rs ${RZ_FILE}|grep "f " | wc -l|awk "{print \$1}"
 EXPECT=<<EOF
 3
 EOF
@@ -235,7 +235,7 @@ RUN
 
 NAME=rz-bin -G 0x1300 -rs fatmach0
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -G 0x1300 -rs ${R2_FILE}|wc -l|awk "{print \$1}"
+CMDS=!rz-bin -G 0x1300 -rs ${RZ_FILE}|wc -l|awk "{print \$1}"
 EXPECT=<<EOF
 1
 EOF
@@ -243,7 +243,7 @@ RUN
 
 NAME=rz-bin -G 0x1000 -e fatmach0
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -G 0x1000 -e ${R2_FILE}
+CMDS=!rz-bin -G 0x1000 -e ${RZ_FILE}
 EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x100000ef8 paddr=0x00001ef8 haddr=0x00000570 type=program
@@ -255,7 +255,7 @@ RUN
 NAME=rz-bin -e fatmach0
 BROKEN=1
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -e ${R2_FILE}
+CMDS=!rz-bin -e ${RZ_FILE}
 EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x100000ef8 paddr=0x00001ef8 baddr=0x100000000 laddr=0x00001000 haddr=0x00000570 type=program
@@ -266,7 +266,7 @@ RUN
 
 NAME=rz-bin -G 0x5000 -e fatmach0
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -G 0x5000 -e ${R2_FILE}
+CMDS=!rz-bin -G 0x5000 -e ${RZ_FILE}
 EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x00001f44 paddr=0x00005f44 haddr=0x00000420 type=program
@@ -278,7 +278,7 @@ RUN
 NAME=rz-bin -a x86 -b 32 -e fatmach0
 BROKEN=1
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -a x86 -b 32 -e ${R2_FILE}
+CMDS=!rz-bin -a x86 -b 32 -e ${RZ_FILE}
 EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x00001f44 paddr=0x00005f44 baddr=0x00001000 laddr=0x00005000 haddr=0x00000420 type=program
@@ -289,7 +289,7 @@ RUN
 
 NAME=rz-bin -B 0x2000000 -G 0x1000 -e fatmach0
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -B 0x2000000 -G 0x1000 -e ${R2_FILE}
+CMDS=!rz-bin -B 0x2000000 -G 0x1000 -e ${RZ_FILE}
 EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x02000ef8 paddr=0x00001ef8 haddr=0x00000570 type=program
@@ -301,7 +301,7 @@ RUN
 NAME=TODO: test on pie fatmach0
 BROKEN=1
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -B 0x2000000 -G 0x1000 -e ${R2_FILE}
+CMDS=!rz-bin -B 0x2000000 -G 0x1000 -e ${RZ_FILE}
 EXPECT=<<EOF
 ???
 EOF
@@ -309,7 +309,7 @@ RUN
 
 NAME=rz-bin -B 0x2000000 -e arm64
 FILE=bins/mach0/hello-ios-arm64
-CMDS=!rz-bin -B 0x2000000 -e ${R2_FILE}
+CMDS=!rz-bin -B 0x2000000 -e ${RZ_FILE}
 EXPECT=<<EOF
 [Entrypoints]
 vaddr=0x02007f34 paddr=0x00007f34 haddr=0x00000468 type=program
@@ -320,7 +320,7 @@ RUN
 
 NAME=rz-bin -a x86 -b 32 -i fatmach0
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -a x86 -b 32 -i ${R2_FILE}
+CMDS=!rz-bin -a x86 -b 32 -i ${RZ_FILE}
 EXPECT=<<EOF
 [Imports]
 nth vaddr      bind type lib name
@@ -333,7 +333,7 @@ RUN
 
 NAME=rz-bin -G 0x5000 -i fatmach0
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -G 0x5000 -i ${R2_FILE}
+CMDS=!rz-bin -G 0x5000 -i ${RZ_FILE}
 EXPECT=<<EOF
 [Imports]
 nth vaddr      bind type lib name
@@ -346,7 +346,7 @@ RUN
 
 NAME=rz-bin -qqz
 FILE=bins/elf/analysis/hello-linux-x86_64
-CMDS=!rz-bin -qqz ${R2_FILE}
+CMDS=!rz-bin -qqz ${RZ_FILE}
 EXPECT=<<EOF
 Hello World
 EOF
@@ -355,8 +355,8 @@ RUN
 NAME=rz-bin -qqzz
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=<<EOF
-!!rz-bin -qqzz ${R2_FILE}~do_global_dtors_aux_fini_array_entry
-!!rz-bin -qqzz ${R2_FILE}~?
+!!rz-bin -qqzz ${RZ_FILE}~do_global_dtors_aux_fini_array_entry
+!!rz-bin -qqzz ${RZ_FILE}~?
 EOF
 EXPECT=<<EOF
 __do_global_dtors_aux_fini_array_entry
@@ -367,8 +367,8 @@ RUN
 NAME=rz-bin -qqzzz
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=<<EOF
-!!rz-bin -qqzzz ${R2_FILE}~do_global_dtors_aux_fini_array_entry
-!!rz-bin -qqzzz ${R2_FILE}~?
+!!rz-bin -qqzzz ${RZ_FILE}~do_global_dtors_aux_fini_array_entry
+!!rz-bin -qqzzz ${RZ_FILE}~?
 EOF
 EXPECT=<<EOF
 __do_global_dtors_aux_fini_array_entry
@@ -391,7 +391,7 @@ FILE=bins/pe/test.exe
 CMDS=<<EOF
 mkdir .tmp
 rm .tmp/rz-bintestpe1.exe
-!rz-bin -qOp/.data/rwx -o.tmp/rz-bintestpe1.exe ${R2_FILE}
+!rz-bin -qOp/.data/rwx -o.tmp/rz-bintestpe1.exe ${RZ_FILE}
 !rz-bin -S .tmp/rz-bintestpe1.exe
 rm .tmp/rz-bintestpe1.exe
 EOF
@@ -415,7 +415,7 @@ FILE=bins/pe/normal64.exe
 CMDS=<<EOF
 mkdir .tmp
 rm .tmp/rz-bintestpe2.exe
-!rz-bin -qOp//8 -o.tmp/rz-bintestpe2.exe ${R2_FILE}
+!rz-bin -qOp//8 -o.tmp/rz-bintestpe2.exe ${RZ_FILE}
 !rz-bin -S .tmp/rz-bintestpe2.exe
 rm .tmp/rz-bintestpe2.exe
 EOF
@@ -432,7 +432,7 @@ RUN
 
 NAME=rz-bin -ee -j
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!!rz-bin -ee -j ${R2_FILE}~{}
+CMDS=!!rz-bin -ee -j ${RZ_FILE}~{}
 EXPECT=<<EOF
 {
   "initfini": [
@@ -461,7 +461,7 @@ RUN
 
 NAME=-ee baddr 0
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!rz-bin -ee -B 0 ${R2_FILE}
+CMDS=!rz-bin -ee -B 0 ${RZ_FILE}
 EXPECT=<<EOF
 [Constructors]
 vaddr=0x000003d0 paddr=0x000003d0 hvaddr=0x0000159c hpaddr=0x0000059c type=init
@@ -473,7 +473,7 @@ RUN
 
 NAME=rz-bin -g
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!rz-bin -g ${R2_FILE}
+CMDS=!rz-bin -g ${RZ_FILE}
 EXPECT=<<EOF
 [Sections]
 
@@ -714,7 +714,7 @@ RUN
 
 NAME=rz-bin -I elf_cpp
 FILE=bins/elf/analysis/a.out.cpp
-CMDS=!rz-bin -I ${R2_FILE}
+CMDS=!rz-bin -I ${RZ_FILE}
 EXPECT=<<EOF
 arch     x86
 baddr    0x0
@@ -752,7 +752,7 @@ RUN
 
 NAME=rz-bin -I asan
 FILE=bins/elf/analysis/a.out.asan
-CMDS=!rz-bin -I ${R2_FILE}
+CMDS=!rz-bin -I ${RZ_FILE}
 EXPECT=<<EOF
 arch     x86
 baddr    0x400000
@@ -790,7 +790,7 @@ RUN
 
 NAME=rz-bin -I apple-blocks-ext
 FILE=bins/mach0/mach0-blocks-ext
-CMDS=!rz-bin -I ${R2_FILE}
+CMDS=!rz-bin -I ${RZ_FILE}
 EXPECT=<<EOF
 arch     x86
 baddr    0x100000000
@@ -825,7 +825,7 @@ RUN
 
 NAME=rz-bin -s right symbols
 FILE=bins/elf/libc.so.0
-CMDS=!rz-bin -s ${R2_FILE} | grep 0002edb0
+CMDS=!rz-bin -s ${RZ_FILE} | grep 0002edb0
 EXPECT=<<EOF
 149   0x0002edb0 0x0002edb0 GLOBAL FUNC   356      getc_unlocked
 402   0x0002edb0 0x0002edb0 GLOBAL FUNC   356      __fgetc_unlocked
@@ -835,7 +835,7 @@ RUN
 
 NAME=rz-bin -V
 FILE=bins/pe/version_cust.exe
-CMDS=!rz-bin -V ${R2_FILE}
+CMDS=!rz-bin -V ${RZ_FILE}
 EXPECT=<<EOF
 === VS_VERSIONINFO ===
 
@@ -858,7 +858,7 @@ RUN
 
 NAME=rz-bin -c
 FILE=bins/java/test.class
-CMDS=!rz-bin -c ${R2_FILE}
+CMDS=!rz-bin -c ${RZ_FILE}
 EXPECT=<<EOF
 0x00000000 [0x000008f9 - 0x00000b99]    672 class 0 test :: groovy/lang/Script
 0x000008f9 method 0      <init>
@@ -874,7 +874,7 @@ RUN
 
 NAME=rz-bin -cq
 FILE=bins/java/test.class
-CMDS=!rz-bin -cq ${R2_FILE}
+CMDS=!rz-bin -cq ${RZ_FILE}
 EXPECT=<<EOF
 0x00000000 [0x000008f9 - 0x00000b99] test groovy/lang/Script
 EOF
@@ -979,7 +979,7 @@ RUN
 
 NAME=rz-bin -U
 FILE=bins/pe/resource.exe
-CMDS=!rz-bin -U ${R2_FILE} | grep -c Resource
+CMDS=!rz-bin -U ${RZ_FILE} | grep -c Resource
 EXPECT=<<EOF
 1
 EOF
@@ -987,7 +987,7 @@ RUN
 
 NAME=rz-bin -E
 FILE=bins/pe/dll.dll
-CMDS=!rz-bin -E ${R2_FILE}
+CMDS=!rz-bin -E ${RZ_FILE}
 EXPECT=<<EOF
 [Exports]
 
@@ -999,7 +999,7 @@ RUN
 
 NAME=rz-bin -l
 FILE=bins/pe/ioli/w32/crackme0x00.exe
-CMDS=!rz-bin -l ${R2_FILE} | grep -c kernel32.dll
+CMDS=!rz-bin -l ${RZ_FILE} | grep -c kernel32.dll
 EXPECT=<<EOF
 1
 EOF
@@ -1007,7 +1007,7 @@ RUN
 
 NAME=rz-bin -R
 FILE=bins/pe/base.exe
-CMDS=!rz-bin -R ${R2_FILE} | grep -c msvcrt.dll___set_app_type
+CMDS=!rz-bin -R ${RZ_FILE} | grep -c msvcrt.dll___set_app_type
 EXPECT=<<EOF
 1
 EOF
@@ -1015,7 +1015,7 @@ RUN
 
 NAME=rz-bin -Z
 FILE=bins/pe/base.exe
-CMDS=!rz-bin -Z ${R2_FILE}
+CMDS=!rz-bin -Z ${RZ_FILE}
 EXPECT=<<EOF
 216569
 EOF
@@ -1023,7 +1023,7 @@ RUN
 
 NAME=rz-bin -H
 FILE=bins/pe/base.exe
-CMDS=!rz-bin -H ${R2_FILE} | grep -c "Machine : 0x14c"
+CMDS=!rz-bin -H ${RZ_FILE} | grep -c "Machine : 0x14c"
 EXPECT=<<EOF
 1
 EOF
@@ -1031,7 +1031,7 @@ RUN
 
 NAME=rz-bin -d
 FILE=bins/elf/analysis/dwarftest
-CMDS=!rz-bin -d ${R2_FILE} | grep -c "0x00400535	/tmp/r2-regressions/.//dwarftest.c"
+CMDS=!rz-bin -d ${RZ_FILE} | grep -c "0x00400535	/tmp/r2-regressions/.//dwarftest.c"
 EXPECT=<<EOF
 1
 EOF
@@ -1039,7 +1039,7 @@ RUN
 
 NAME=rz-bin -P
 FILE=bins/pdb/Project1.pdb
-CMDS=!rz-bin -P ${R2_FILE} | grep -c R2_TEST_UNION
+CMDS=!rz-bin -P ${RZ_FILE} | grep -c RZ_TEST_UNION
 EXPECT=<<EOF
 1
 EOF

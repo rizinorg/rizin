@@ -94,7 +94,7 @@ RUN
 
 NAME=rizin -hh
 FILE=-
-CMDS=!!rizin -hh~R2_USER_PLUGINS?
+CMDS=!!rizin -hh~RZ_USER_PLUGINS?
 EXPECT=<<EOF
 1
 EOF

@@ -1,5 +1,5 @@
-#ifndef R2_SIGN_H
-#define R2_SIGN_H
+#ifndef RZ_SIGN_H
+#define RZ_SIGN_H
 
 #include <rz_types.h>
 #include <rz_anal.h>

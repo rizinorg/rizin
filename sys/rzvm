@@ -1,10 +1,10 @@
 #!/bin/sh
 
-[ -z "${R2_MASTER}" ] && R2_MASTER="${PWD}/.."
+[ -z "${RZ_MASTER}" ] && RZ_MASTER="${PWD}/.."
 COPIES=~/prg/r2-v
 
-if ! test -d "${R2_MASTER}"; then
-	echo "Cannot find master copy of r2 at R2_MASTER=${R2_MASTER}"
+if ! test -d "${RZ_MASTER}"; then
+	echo "Cannot find master copy of r2 at RZ_MASTER=${RZ_MASTER}"
 	exit 1
 fi
 
@@ -14,7 +14,7 @@ if ! mkdir -p "${COPIES}"; then
 	exit 1
 fi
 
-echo "Using R2_MASTER ${R2_MASTER}"
+echo "Using RZ_MASTER ${RZ_MASTER}"
 echo "Using COPIES ${COPIES}"
 
 
@@ -24,17 +24,17 @@ Fail() {
 }
 
 Head() {
-	cd ${R2_MASTER}   || Fail "cannot chdir to ${R2_MASTER}"
+	cd ${RZ_MASTER}   || Fail "cannot chdir to ${RZ_MASTER}"
 	git rev-list HEAD |  head -n1
 }
 
 Next() {
-	cd ${R2_MASTER}   || Fail "cannot chdir to ${R2_MASTER}"
+	cd ${RZ_MASTER}   || Fail "cannot chdir to ${RZ_MASTER}"
 	git rev-list HEAD | grep -C 1 $1 |head -n1
 }
 
 Prev() {
-	cd ${R2_MASTER}   || Fail "cannot chdir to ${R2_MASTER}"
+	cd ${RZ_MASTER}   || Fail "cannot chdir to ${RZ_MASTER}"
 	git rev-list HEAD | grep -C 1 $1 |tail -n1
 }
 
@@ -62,7 +62,7 @@ Clone() {
 	cd ${COPIES} || exit 1
 	if [ ! -d ${COPIES}/rizin-${1} ]; then
 		echo "$1  git clone"
-		git clone ${R2_MASTER} rizin-${1} > /dev/null 2>&1
+		git clone ${RZ_MASTER} rizin-${1} > /dev/null 2>&1
 	fi
 	if [ ! -d ${COPIES}/rizin-${1} ]; then
 		echo "Cant clone"
@@ -87,7 +87,7 @@ init)
 	Clone `Head`
 	;;
 log)
-	cd ${R2_MASTER} || Fail "cannot chdir to ${R2_MASTER}"
+	cd ${RZ_MASTER} || Fail "cannot chdir to ${RZ_MASTER}"
 	cur=`Cur`
 	for a in `git rev-list HEAD` ; do
 		NOTE=`cat ${COPIES}/rizin-${a}.note 2>/dev/null`
@@ -146,7 +146,7 @@ note)
 	Note $2 $3
 	;;
 diff)
-	cd ${R2_MASTER} || Fail "cannot chdir to ${R2_MASTER}"
+	cd ${RZ_MASTER} || Fail "cannot chdir to ${RZ_MASTER}"
 	git diff `Cur`^..`Cur`
 	;;
 use)

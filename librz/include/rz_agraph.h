@@ -1,5 +1,5 @@
-#ifndef R2_AGRAPH_H
-#define R2_AGRAPH_H
+#ifndef RZ_AGRAPH_H
+#define RZ_AGRAPH_H
 
 #include <rz_types.h>
 #include <rz_cons.h>

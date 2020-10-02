@@ -78,7 +78,7 @@ struct rzk_proc_info {
 	size_t task;
 };
 
-#define R2_TYPE 0x69
+#define RZ_TYPE 0x69
 
 #define READ_KERNEL_MEMORY  0x1
 #define WRITE_KERNEL_MEMORY 0x2
@@ -102,15 +102,15 @@ struct rzk_proc_info {
 #define rzk_proc_info_size sizeof (struct rzk_proc_info)
 #endif
 
-#define IOCTL_READ_KERNEL_MEMORY  _IOR (R2_TYPE, READ_KERNEL_MEMORY, rzk_data_size)
-#define IOCTL_WRITE_KERNEL_MEMORY _IOR (R2_TYPE, WRITE_KERNEL_MEMORY, rzk_data_size)
-#define IOCTL_READ_PROCESS_ADDR   _IOR (R2_TYPE, READ_PROCESS_ADDR, rzk_data_size)
-#define IOCTL_WRITE_PROCESS_ADDR  _IOR (R2_TYPE, WRITE_PROCESS_ADDR, rzk_data_size)
-#define IOCTL_READ_PHYSICAL_ADDR  _IOR (R2_TYPE, READ_PHYSICAL_ADDR, rzk_data_size)
-#define IOCTL_WRITE_PHYSICAL_ADDR _IOR (R2_TYPE, WRITE_PHYSICAL_ADDR, rzk_data_size)
-#define IOCTL_GET_KERNEL_MAP      _IOR (R2_TYPE, GET_KERNEL_MAP, rzk_kernel_maps_size)
-#define IOCTL_READ_CONTROL_REG    _IOR (R2_TYPE, READ_CONTROL_REG, rzk_control_reg_size)
-#define IOCTL_PRINT_PROC_INFO     _IOR (R2_TYPE, PRINT_PROC_INFO, rzk_data_size) // Bad hack. Incorrect size, but since module does not use _IOC_SIZE, it won't matter if size parameter is wrong
+#define IOCTL_READ_KERNEL_MEMORY  _IOR (RZ_TYPE, READ_KERNEL_MEMORY, rzk_data_size)
+#define IOCTL_WRITE_KERNEL_MEMORY _IOR (RZ_TYPE, WRITE_KERNEL_MEMORY, rzk_data_size)
+#define IOCTL_READ_PROCESS_ADDR   _IOR (RZ_TYPE, READ_PROCESS_ADDR, rzk_data_size)
+#define IOCTL_WRITE_PROCESS_ADDR  _IOR (RZ_TYPE, WRITE_PROCESS_ADDR, rzk_data_size)
+#define IOCTL_READ_PHYSICAL_ADDR  _IOR (RZ_TYPE, READ_PHYSICAL_ADDR, rzk_data_size)
+#define IOCTL_WRITE_PHYSICAL_ADDR _IOR (RZ_TYPE, WRITE_PHYSICAL_ADDR, rzk_data_size)
+#define IOCTL_GET_KERNEL_MAP      _IOR (RZ_TYPE, GET_KERNEL_MAP, rzk_kernel_maps_size)
+#define IOCTL_READ_CONTROL_REG    _IOR (RZ_TYPE, READ_CONTROL_REG, rzk_control_reg_size)
+#define IOCTL_PRINT_PROC_INFO     _IOR (RZ_TYPE, PRINT_PROC_INFO, rzk_data_size) // Bad hack. Incorrect size, but since module does not use _IOC_SIZE, it won't matter if size parameter is wrong
 
 #define VM_READ 0x1
 #define VM_WRITE 0x2

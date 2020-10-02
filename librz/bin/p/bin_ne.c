@@ -124,10 +124,10 @@ RBinPlugin rz_bin_plugin_ne = {
 	.minstrlen = 4
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_ne,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

@@ -1044,10 +1044,10 @@ RzAnalPlugin rz_anal_plugin_8051 = {
 	.esil_fini = esil_i8051_fini
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_8051,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

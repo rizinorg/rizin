@@ -37,10 +37,10 @@ RzAsmPlugin rz_asm_plugin_malbolge = {
 	.disassemble = &__disassemble
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_malbolge,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

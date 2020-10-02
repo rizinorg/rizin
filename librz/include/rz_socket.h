@@ -1,5 +1,5 @@
-#ifndef R2_SOCKET_H
-#define R2_SOCKET_H
+#ifndef RZ_SOCKET_H
+#define RZ_SOCKET_H
 
 #include "rz_types.h"
 #include "rz_bind.h"

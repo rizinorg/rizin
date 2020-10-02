@@ -1,5 +1,5 @@
-#ifndef R2_CONS_H
-#define R2_CONS_H
+#ifndef RZ_CONS_H
+#define RZ_CONS_H
 
 #ifdef __cplusplus
 extern "C" {

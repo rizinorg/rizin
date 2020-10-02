@@ -64,11 +64,11 @@ RzAsmPlugin rz_asm_plugin_riscv_cs = {
 	.mnemonics = mnemonics,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_riscv_cs,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif
 
@@ -76,10 +76,10 @@ RZ_API RzLibStruct radare_plugin = {
 RzAsmPlugin rz_asm_plugin_riscv_cs = {
 	0
 };
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif
 

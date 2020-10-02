@@ -10,7 +10,7 @@ STATIC_OBJS=$(subst ..,p/..,$(subst io_,p/io_,$(STATIC_OBJ)))
 OBJS=${STATIC_OBJS}
 OBJS+=io.o io_plugin.o io_map.o io_desc.o io_cache.o p_cache.o undo.o ioutils.o io_fd.o
 
-CFLAGS+=-Wall -DR2_PLUGIN_INCORE
+CFLAGS+=-Wall -DRZ_PLUGIN_INCORE
 
 include ../socket/deps.mk
 include $(SHLR)/ar/deps.mk

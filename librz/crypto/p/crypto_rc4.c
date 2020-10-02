@@ -110,11 +110,11 @@ RzCryptoPlugin rz_crypto_plugin_rc4 = {
 	.final = final
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &rz_crypto_plugin_rc4,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif
 

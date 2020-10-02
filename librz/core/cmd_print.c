@@ -1418,15 +1418,15 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8* block,
 	case 'o': // "pfo"
 		if (_input[2] == '?') {
 			eprintf ("|Usage: pfo [format-file]\n"
-				" " R_JOIN_3_PATHS ("~", R2_HOME_SDB_FORMAT, "") "\n"
-				" " R_JOIN_3_PATHS ("%s", R2_SDB_FORMAT, "") "\n",
+				" " R_JOIN_3_PATHS ("~", RZ_HOME_SDB_FORMAT, "") "\n"
+				" " R_JOIN_3_PATHS ("%s", RZ_SDB_FORMAT, "") "\n",
 				rz_sys_prefix (NULL));
 		} else if (_input[2] == ' ') {
 			const char *fname = rz_str_trim_head_ro (_input + 3);
-			char *tmp = rz_str_newf (R_JOIN_2_PATHS (R2_HOME_SDB_FORMAT, "%s"), fname);
+			char *tmp = rz_str_newf (R_JOIN_2_PATHS (RZ_HOME_SDB_FORMAT, "%s"), fname);
 			char *home = rz_str_home (tmp);
 			free (tmp);
-			tmp = rz_str_newf (R_JOIN_2_PATHS (R2_SDB_FORMAT, "%s"), fname);
+			tmp = rz_str_newf (R_JOIN_2_PATHS (RZ_SDB_FORMAT, "%s"), fname);
 			char *path = rz_str_rz_prefix (tmp);
 			if (rz_str_endswith (_input, ".h")) {
 				char *error_msg = NULL;
@@ -1453,7 +1453,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8* block,
 			RzList *files;
 			RzListIter *iter;
 			const char *fn;
-			char *home = rz_str_home (R2_HOME_SDB_FORMAT R_SYS_DIR);
+			char *home = rz_str_home (RZ_HOME_SDB_FORMAT R_SYS_DIR);
 			if (home) {
 				files = rz_sys_dir (home);
 				rz_list_foreach (files, iter, fn) {
@@ -1464,7 +1464,7 @@ static void cmd_print_format(RzCore *core, const char *_input, const ut8* block,
 				rz_list_free (files);
 				free (home);
 			}
-			char *path = rz_str_rz_prefix (R2_SDB_FORMAT R_SYS_DIR);
+			char *path = rz_str_rz_prefix (RZ_SDB_FORMAT R_SYS_DIR);
 			if (path) {
 				files = rz_sys_dir (path);
 				rz_list_foreach (files, iter, fn) {
@@ -5713,7 +5713,7 @@ l = use_blocksize;
 				"|   foo@0x40   # use 'foo' magic file on address 0x40\n"
 				"|   @0x40      # use current magic file on address 0x40\n"
 				"|   \\n         # append newline\n"
-				"| e dir.magic  # defaults to " R_JOIN_2_PATHS ("{R2_PREFIX}", R2_SDB_MAGIC) "\n"
+				"| e dir.magic  # defaults to " R_JOIN_2_PATHS ("{RZ_PREFIX}", RZ_SDB_MAGIC) "\n"
 				"| /m           # search for magic signatures\n"
 				);
 		} else if (input[1] == 'j') { // "pmj"

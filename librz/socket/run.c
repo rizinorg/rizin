@@ -1009,9 +1009,9 @@ RZ_API int rz_run_config_env(RRunProfile *p) {
 			eprintf ("WARNING: Only one library can be opened at a time\n");
 		}
 #ifdef __WINDOWS__
-		p->_preload = rz_str_rz_prefix (R_JOIN_2_PATHS (R2_LIBDIR, "librz."R_LIB_EXT));
+		p->_preload = rz_str_rz_prefix (R_JOIN_2_PATHS (RZ_LIBDIR, "librz."R_LIB_EXT));
 #else
-		p->_preload = strdup (R2_LIBDIR"/librz."R_LIB_EXT);
+		p->_preload = strdup (RZ_LIBDIR"/librz."R_LIB_EXT);
 #endif
 	}
 	if (p->_libpath) {

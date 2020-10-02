@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2020 - pancake */
 
-#ifndef R2_CORE_H
-#define R2_CORE_H
+#ifndef RZ_CORE_H
+#define RZ_CORE_H
 
 #include <rz_main.h>
 #include "rz_socket.h"

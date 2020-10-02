@@ -449,10 +449,10 @@ RzAsmPlugin rz_asm_plugin_avr = {
 		"ATxmega128a4u"
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_avr,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

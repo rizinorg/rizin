@@ -9,7 +9,7 @@ Libraries can be compiled:
 
         ./configure-plugins --enable-shared --enable-dynamic
 
-R2_LIBR_PLUGINS environment variable is honored as another search path for plugins
+RZ_LIBR_PLUGINS environment variable is honored as another search path for plugins
 
 Plugins can be:
   - not compiled

@@ -18,7 +18,7 @@ foo:
 	librz_parse.${EXT_AR} plugins bins ; do \
 	    ${MAKE} $$TARGET ; done
 
-CFLAGS+=-DR2_PLUGIN_INCORE
+CFLAGS+=-DRZ_PLUGIN_INCORE
 -include ${STATIC_PARSE_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst parse_,p/parse_,$(STATIC_OBJ)))
 OBJS=parse.o filter.o code.o ctype.o ${STATIC_OBJS}

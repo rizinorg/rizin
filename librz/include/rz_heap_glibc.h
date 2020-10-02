@@ -1,5 +1,5 @@
-#ifndef R2_HEAP_GLIBC_H
-#define R2_HEAP_GLIBC_H
+#ifndef RZ_HEAP_GLIBC_H
+#define RZ_HEAP_GLIBC_H
 
 #ifdef __cplusplus
 extern "C" {

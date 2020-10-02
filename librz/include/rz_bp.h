@@ -1,5 +1,5 @@
-#ifndef R2_BP_H
-#define R2_BP_H
+#ifndef RZ_BP_H
+#define RZ_BP_H
 
 #include <rz_types.h>
 #include <rz_lib.h>

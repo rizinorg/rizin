@@ -43,7 +43,7 @@ RZ_API void rz_syscall_free(RzSyscall *s) {
 }
 
 static Sdb *openDatabase(Sdb *db, const char *name) {
-	char *file = rz_str_newf ( R_JOIN_3_PATHS ("%s", R2_SDB, "%s.sdb"),
+	char *file = rz_str_newf ( R_JOIN_3_PATHS ("%s", RZ_SDB, "%s.sdb"),
 		rz_sys_prefix (NULL), name);
 	if (rz_file_exists (file)) {
 		if (db) {

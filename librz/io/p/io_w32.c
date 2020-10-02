@@ -86,11 +86,11 @@ RzIOPlugin rz_io_plugin_w32 = {
 	.write = w32__write,
 };
 
-#ifndef R2_PLUGIN_INCORE
+#ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &rz_io_plugin_w32,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif
 

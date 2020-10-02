@@ -1,5 +1,5 @@
-#ifndef R2_LIB_H
-#define R2_LIB_H
+#ifndef RZ_LIB_H
+#define RZ_LIB_H
 
 #include "rz_types.h"
 #include "rz_list.h"
@@ -19,7 +19,7 @@ R_LIB_VERSION_HEADER (rz_lib);
 #define R_LIB_SYMNAME "radare_plugin"
 #define R_LIB_SYMFUNC "radare_plugin_function"
 
-#define R_LIB_ENV "R2_LIBR_PLUGINS"
+#define R_LIB_ENV "RZ_LIBR_PLUGINS"
 
 /* TODO: This must depend on HOST_OS, and maybe move into rz_types */
 #if __WINDOWS__

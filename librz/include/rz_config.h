@@ -1,5 +1,5 @@
-#ifndef R2_CONFIG_H
-#define R2_CONFIG_H
+#ifndef RZ_CONFIG_H
+#define RZ_CONFIG_H
 
 #include "rz_types.h"
 #include "rz_util.h"

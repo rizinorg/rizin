@@ -647,7 +647,7 @@ static bool cb_asmarch(void *user, void *data) {
 		const char *asmcpu = rz_config_get (core->config, "asm.cpu");
 		if (!rz_syscall_setup (core->anal->syscall, node->value, core->anal->bits, asmcpu, asmos)) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
-			//	node->value, asmos, R2_LIBDIR"/rizin/"R2_VERSION"/syscall");
+			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
 	}
 	//if (!strcmp (node->value, "bf"))
@@ -769,7 +769,7 @@ static bool cb_asmbits(void *user, void *data) {
 	if (core->anal) {
 		if (!rz_syscall_setup (core->anal->syscall, asmarch, bits, asmcpu, asmos)) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
-			//	node->value, asmos, R2_LIBDIR"/rizin/"R2_VERSION"/syscall");
+			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
 		__setsegoff (core->config, asmarch, core->anal->bits);
 		if (core->dbg) {
@@ -2853,7 +2853,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	cfg->num = core->num;
 	/* dir.prefix is used in other modules, set it first */
 	{
-		char *pfx = rz_sys_getenv("R2_PREFIX");
+		char *pfx = rz_sys_getenv("RZ_PREFIX");
 #if __WINDOWS__
 		const char *invoke_dir = rz_sys_prefix (NULL);
 		if (!pfx && invoke_dir) {
@@ -2861,7 +2861,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		}
 #endif
 		if (!pfx) {
-			pfx = strdup (R2_PREFIX);
+			pfx = strdup (RZ_PREFIX);
 		}
 		SETCB ("dir.prefix", pfx, (RConfigCallback)&cb_dirpfx, "Default prefix r2 was compiled for");
 		free (pfx);
@@ -2882,7 +2882,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF ("pdb.useragent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
 	SETPREF ("pdb.server", "https://msdl.microsoft.com/download/symbols", "Semi-colon separated list of base URLs for Microsoft symbol servers");
 	{
-		char *pdb_path = rz_str_home (R2_HOME_PDB);
+		char *pdb_path = rz_str_home (RZ_HOME_PDB);
 		SETPREF ("pdb.symstore", pdb_path, "Path to downstream symbol store");
 		R_FREE(pdb_path);
 	}
@@ -3232,34 +3232,34 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETBPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
-	p = rz_sys_getenv ("R2_CFG_NEWSHELL");
+	p = rz_sys_getenv ("RZ_CFG_NEWSHELL");
 	SETCB ("cfg.newshell", p? "true": "false", &cb_newshell, "Use new commands parser");
 	free (p);
 	SETI ("cfg.cpuaffinity", 0, "Run on cpuid");
 
 	/* log */
-	// R2_LOGLEVEL / log.level
-	p = rz_sys_getenv ("R2_LOGLEVEL");
+	// RZ_LOGLEVEL / log.level
+	p = rz_sys_getenv ("RZ_LOGLEVEL");
 	SETICB ("log.level", p? atoi(p): R_DEFAULT_LOGLVL, cb_log_config_level, "Target log level/severity"\
 	 " (0:SILLY, 1:DEBUG, 2:VERBOSE, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
 	);
 	free (p);
-	// R2_LOGTRAP_LEVEL / log.traplevel
-	p = rz_sys_getenv ("R2_LOGTRAPLEVEL");
+	// RZ_LOGTRAP_LEVEL / log.traplevel
+	p = rz_sys_getenv ("RZ_LOGTRAPLEVEL");
 	SETICB ("log.traplevel", p ? atoi(p) : R_LOGLVL_FATAL, cb_log_config_traplevel, "Log level for trapping R2 when hit"\
 	 " (0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
 	);
 	free (p);
-	// R2_LOGFILE / log.file
-	p = rz_sys_getenv ("R2_LOGFILE");
+	// RZ_LOGFILE / log.file
+	p = rz_sys_getenv ("RZ_LOGFILE");
 	SETCB ("log.file", p ? p : "", cb_log_config_file, "Logging output filename / path");
 	free (p);
-	// R2_LOGSRCINFO / log.srcinfo
-	p = rz_sys_getenv ("R2_LOGSRCINFO");
+	// RZ_LOGSRCINFO / log.srcinfo
+	p = rz_sys_getenv ("RZ_LOGSRCINFO");
 	SETCB ("log.srcinfo", p ? p : "false", cb_log_config_srcinfo, "Should the log output contain src info (filename:lineno)");
 	free (p);
-	// R2_LOGCOLORS / log.colors
-	p = rz_sys_getenv ("R2_LOGCOLORS");
+	// RZ_LOGCOLORS / log.colors
+	p = rz_sys_getenv ("RZ_LOGCOLORS");
 	SETCB ("log.colors", p ? p : "false", cb_log_config_colors, "Should the log output use colors (TODO)");
 	free (p);
 
@@ -3276,7 +3276,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF ("zign.refs", "true", "Use references for matching");
 	SETBPREF ("zign.hash", "true", "Use Hash for matching");
 	SETBPREF ("zign.types", "true", "Use types for matching");
-	SETBPREF ("zign.autoload", "false", "Autoload all zignatures located in " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS));
+	SETBPREF ("zign.autoload", "false", "Autoload all zignatures located in " R_JOIN_2_PATHS ("~", RZ_HOME_ZIGNS));
 	SETPREF ("zign.diff.bthresh", "1.0", "Threshold for diffing zign bytes [0, 1] (see zc?)");
 	SETPREF ("zign.diff.gthresh", "1.0", "Threshold for diffing zign graphs [0, 1] (see zc?)");
 	SETPREF ("zign.threshold", "0.0", "Minimum similarity required for inclusion in zb output");
@@ -3291,10 +3291,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* dir */
 	SETI ("dir.depth", 10,  "Maximum depth when searching recursively for files");
 	{
-		char *path = rz_str_newf (R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC), rz_config_get (core->config, "dir.prefix"));
+		char *path = rz_str_newf (R_JOIN_2_PATHS ("%s", RZ_SDB_MAGIC), rz_config_get (core->config, "dir.prefix"));
 		SETPREF ("dir.magic", path, "Path to rz_magic files");
 		free (path);
-		path = rz_str_newf (R_JOIN_2_PATHS ("%s", R2_PLUGINS), rz_config_get (core->config, "dir.prefix"));
+		path = rz_str_newf (R_JOIN_2_PATHS ("%s", RZ_PLUGINS), rz_config_get (core->config, "dir.prefix"));
 		SETPREF ("dir.plugins", path, "Path to plugin files to be loaded at startup");
 		free (path);
 	}
@@ -3310,9 +3310,9 @@ RZ_API int rz_core_config_init(RzCore *core) {
 #if __ANDROID__
 	SETPREF ("dir.projects", "/data/data/org.radare.rizininstaller/rizin/projects", "Default path for projects");
 #else
-	SETPREF ("dir.projects", R_JOIN_2_PATHS ("~", R2_HOME_PROJECTS), "Default path for projects");
+	SETPREF ("dir.projects", R_JOIN_2_PATHS ("~", RZ_HOME_PROJECTS), "Default path for projects");
 #endif
-	SETCB ("dir.zigns", R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS), &cb_dirzigns, "Default path for zignatures (see zo command)");
+	SETCB ("dir.zigns", R_JOIN_2_PATHS ("~", RZ_HOME_ZIGNS), &cb_dirzigns, "Default path for zignatures (see zo command)");
 	SETPREF ("stack.reg", "SP", "Which register to use as stack pointer in the visual debug");
 	SETBPREF ("stack.bytes", "true", "Show bytes instead of words in stack");
 	SETBPREF ("stack.anotated", "false", "Show anotated hexdump in visual debug");
@@ -3465,7 +3465,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI ("http.maxsize", 0, "Maximum file size for upload");
 	SETPREF ("http.index", "index.html", "Main html file to check in directory");
 	SETPREF ("http.bind", "localhost", "Server address");
-	SETPREF ("http.homeroot", R_JOIN_2_PATHS ("~", R2_HOME_WWWROOT), "http home root directory");
+	SETPREF ("http.homeroot", R_JOIN_2_PATHS ("~", RZ_HOME_WWWROOT), "http home root directory");
 #if __WINDOWS__
 	{
 		char *wwwroot = rz_str_newf ("%s\\share\\www", rz_sys_prefix (NULL));
@@ -3475,7 +3475,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 #elif __ANDROID__
 	SETPREF ("http.root", "/data/data/org.radare.rizininstaller/www", "http root directory");
 #else
-	SETPREF ("http.root", R2_WWWROOT, "http root directory");
+	SETPREF ("http.root", RZ_WWWROOT, "http root directory");
 #endif
 	SETPREF ("http.port", "9090", "HTTP server port");
 	SETPREF ("http.maxport", "9999", "Last HTTP server port");
@@ -3489,7 +3489,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF ("http.uri", "", "Address of HTTP proxy");
 	SETBPREF ("http.auth", "false", "Enable/Disable HTTP Authentification");
 	SETPREF ("http.authtok", "r2admin:r2admin", "HTTP Authentification user:password token");
-	p = rz_sys_getenv ("R2_HTTP_AUTHFILE");
+	p = rz_sys_getenv ("RZ_HTTP_AUTHFILE");
 	SETPREF ("http.authfile", p? p : "", "HTTP Authentification user file");
 	tmpdir = rz_file_tmpdir ();
 	rz_config_set (cfg, "http.uproot", tmpdir);
@@ -3729,8 +3729,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 }
 
 RZ_API void rz_core_parse_rizinrc(RzCore *r) {
-	bool has_debug = rz_sys_getenv_asbool ("R2_DEBUG");
-	char *rcfile = rz_sys_getenv ("R2_RCFILE");
+	bool has_debug = rz_sys_getenv_asbool ("RZ_DEBUG");
+	char *rcfile = rz_sys_getenv ("RZ_RCFILE");
 	char *homerc = NULL;
 	if (!R_STR_ISEMPTY (rcfile)) {
 		homerc = rcfile;
@@ -3745,7 +3745,7 @@ RZ_API void rz_core_parse_rizinrc(RzCore *r) {
 		rz_core_cmd_file (r, homerc);
 	}
 	free (homerc);
-	homerc = rz_str_home (R2_HOME_RC);
+	homerc = rz_str_home (RZ_HOME_RC);
 	if (homerc && rz_file_is_regular (homerc)) {
 		if (has_debug) {
 			eprintf ("USER CONFIG loaded from %s\n", homerc);
@@ -3753,7 +3753,7 @@ RZ_API void rz_core_parse_rizinrc(RzCore *r) {
 		rz_core_cmd_file (r, homerc);
 	}
 	free (homerc);
-	homerc = rz_str_home (R2_HOME_RC_DIR);
+	homerc = rz_str_home (RZ_HOME_RC_DIR);
 	if (homerc) {
 		if (rz_file_is_directory (homerc)) {
 			char *file;

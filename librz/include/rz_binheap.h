@@ -1,5 +1,5 @@
-#ifndef R2_BINHEAP_H
-#define R2_BINHEAP_H
+#ifndef RZ_BINHEAP_H
+#define RZ_BINHEAP_H
 
 #include "rz_vector.h"
 #ifdef __cplusplus

@@ -1,5 +1,5 @@
-#ifndef R2_HASH_H
-#define R2_HASH_H
+#ifndef RZ_HASH_H
+#define RZ_HASH_H
 
 #include "rz_types.h"
 #include "rz_util/rz_mem.h"
