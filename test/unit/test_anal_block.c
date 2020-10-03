@@ -17,17 +17,14 @@ static size_t blocks_count(RzAnal *anal) {
 }
 
 
-#define assert_invariants(anal) do { if (!check_invariants (anal)) { return false; } } while (0)
-#define assert_leaks(anal) do { if (!check_leaks (anal)) { return false; } } while (0)
-
 bool test_r_anal_block_create() {
 	RzAnal *anal = rz_anal_new ();
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	mu_assert_eq (blocks_count (anal), 0, "initial count");
 
 	RzAnalBlock *block = rz_anal_create_block (anal, 0x1337, 42);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert ("created block", block);
 	mu_assert_eq (block->addr, 0x1337, "created addr");
 	mu_assert_eq (block->size, 42, "created size");
@@ -35,7 +32,7 @@ bool test_r_anal_block_create() {
 	mu_assert_eq (blocks_count (anal), 1, "count after create");
 
 	RzAnalBlock *block2 = rz_anal_create_block (anal, 0x133f, 100);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert ("created block (overlap)", block2);
 	mu_assert_eq (block2->addr, 0x133f, "created addr");
 	mu_assert_eq (block2->size, 100, "created size");
@@ -43,14 +40,14 @@ bool test_r_anal_block_create() {
 	mu_assert_eq (blocks_count (anal), 2, "count after create");
 
 	RzAnalBlock *block3 = rz_anal_create_block (anal, 0x1337, 5);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert ("no double create on same start", !block3);
 	mu_assert_eq (blocks_count (anal), 2, "count after failed create");
 
 	rz_anal_block_unref (block);
 	rz_anal_block_unref (block2);
 
-	assert_leaks (anal);
+	assert_block_leaks (anal);
 	rz_anal_free (anal);
 	mu_end;
 }
@@ -69,10 +66,10 @@ bool test_r_anal_block_contains() {
 
 bool test_r_anal_block_split() {
 	RzAnal *anal = rz_anal_new ();
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	RzAnalBlock *block = rz_anal_create_block (anal, 0x1337, 42);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert_eq (blocks_count (anal), 1, "count after create");
 	block->jump = 0xdeadbeef;
 	block->fail = 0xc0ffee;
@@ -84,14 +81,14 @@ bool test_r_anal_block_split() {
 	rz_anal_bb_set_offset (block, 4, 30);
 
 	RzAnalBlock *second = rz_anal_block_split (block, 0x1337);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert_ptreq (second, block, "nop split on first addr");
 	mu_assert_eq (blocks_count (anal), 1, "count after nop split");
 	mu_assert_eq (block->ref, 2, "ref after nop split");
 	rz_anal_block_unref (block);
 
 	second = rz_anal_block_split (block, 0x1339);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert_ptrneq (second, block, "non-nop split");
 	mu_assert_eq (blocks_count (anal), 2, "count after non-nop split");
 
@@ -117,27 +114,27 @@ bool test_r_anal_block_split() {
 	rz_anal_block_unref (block);
 	rz_anal_block_unref (second);
 
-	assert_leaks (anal);
+	assert_block_leaks (anal);
 	rz_anal_free (anal);
 	mu_end;
 }
 
 bool test_r_anal_block_split_in_function() {
 	RzAnal *anal = rz_anal_new ();
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	RzAnalFunction *fcn = rz_anal_create_function (anal, "bbowner", 0x1337, 0, NULL);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	RzAnalBlock *block = rz_anal_create_block (anal, 0x1337, 42);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert_eq (blocks_count (anal), 1, "count after create");
 	rz_anal_function_add_block (fcn, block);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert_eq (block->ref, 2, "block refs after adding to function");
 
 	RzAnalBlock *second = rz_anal_block_split (block, 0x1339);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert_ptrneq (second, block, "non-nop split");
 	mu_assert_eq (blocks_count (anal), 2, "count after non-nop split");
 	mu_assert_eq (block->ref, 2, "first block refs after adding to function");
@@ -151,18 +148,18 @@ bool test_r_anal_block_split_in_function() {
 	rz_anal_block_unref (block);
 	rz_anal_block_unref (second);
 
-	assert_leaks (anal);
+	assert_block_leaks (anal);
 	rz_anal_free (anal);
 	mu_end;
 }
 
 bool test_r_anal_block_merge() {
 	RzAnal *anal = rz_anal_new ();
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	RzAnalBlock *first = rz_anal_create_block (anal, 0x1337, 42);
 	RzAnalBlock *second = rz_anal_create_block (anal, 0x1337 + 42, 624);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert_eq (blocks_count (anal), 2, "count after create");
 	second->jump = 0xdeadbeef;
 	second->fail = 0xc0ffee;
@@ -179,7 +176,7 @@ bool test_r_anal_block_merge() {
 	rz_anal_bb_set_offset (second, 3, 30);
 
 	bool success = rz_anal_block_merge (first, second);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert ("merge success", success);
 	mu_assert_eq (blocks_count (anal), 1, "count after merge");
 	mu_assert_eq (first->addr, 0x1337, "addr after merge");
@@ -199,29 +196,29 @@ bool test_r_anal_block_merge() {
 	rz_anal_block_unref (first);
 	// second must be already freed by the merge!
 
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	rz_anal_free (anal);
 	mu_end;
 }
 
 bool test_r_anal_block_merge_in_function() {
 	RzAnal *anal = rz_anal_new ();
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	RzAnalFunction *fcn = rz_anal_create_function (anal, "bbowner", 0x1337, 0, NULL);
 
 	RzAnalBlock *first = rz_anal_create_block (anal, 0x1337, 42);
 	RzAnalBlock *second = rz_anal_create_block (anal, 0x1337 + 42, 624);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert_eq (blocks_count (anal), 2, "count after create");
 
 	rz_anal_function_add_block (fcn, first);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	rz_anal_function_add_block (fcn, second);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	bool success = rz_anal_block_merge (first, second);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert ("merge success", success);
 	mu_assert_eq (blocks_count (anal), 1, "count after merge");
 	mu_assert_eq (rz_list_length (fcn->bbs), 1, "fcn bbs after merge");
@@ -232,29 +229,29 @@ bool test_r_anal_block_merge_in_function() {
 	rz_anal_block_unref (first);
 	// second must be already freed by the merge!
 
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	rz_anal_free (anal);
 	mu_end;
 }
 
 bool test_r_anal_block_delete() {
 	RzAnal *anal = rz_anal_new ();
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	RzAnalFunction *fcn = rz_anal_create_function (anal, "bbowner", 0x1337, 0, NULL);
 
 	RzAnalBlock *block = rz_anal_create_block (anal, 0x1337, 42);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert_eq (blocks_count (anal), 1, "count after create");
 
 	rz_anal_function_add_block (fcn, block);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert_eq (block->ref, 2, "refs after adding");
 	mu_assert_eq (rz_list_length (fcn->bbs), 1, "fcn bbs after add");
 	mu_assert_eq (rz_list_length (block->fcns), 1, "bb fcns after add");
 
 	rz_anal_delete_block (block);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert_eq (block->ref, 1, "refs after delete");
 	mu_assert_eq (rz_list_length (fcn->bbs), 0, "fcn bbs after delete");
 	mu_assert_eq (rz_list_length (block->fcns), 0, "bb fcns after delete");
@@ -267,38 +264,38 @@ bool test_r_anal_block_delete() {
 
 bool test_r_anal_block_set_size() {
 	RzAnal *anal = rz_anal_new ();
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	RzAnalFunction *fcn = rz_anal_create_function (anal, "bbowner", 0x1337, 0, NULL);
 
 	RzAnalBlock *block = rz_anal_create_block (anal, 0x1337, 42);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	rz_anal_function_add_block (fcn, block);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	rz_anal_block_set_size (block, 300);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert_eq (block->size, 300, "size after set_size");
 
 	RzAnalBlock *second = rz_anal_create_block (anal, 0x1337+300, 100);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	rz_anal_function_add_block (fcn, block);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	rz_anal_function_linear_size (fcn); // trigger lazy calculation of min/max cache
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	rz_anal_block_set_size (second, 500);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert_eq (second->size, 500, "size after set_size");
 
 	rz_anal_block_set_size (block, 80);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert_eq (block->size, 80, "size after set_size");
 
 	rz_anal_block_unref (block);
 	rz_anal_block_unref (second);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	rz_anal_free (anal);
 	mu_end;
@@ -306,64 +303,64 @@ bool test_r_anal_block_set_size() {
 
 bool test_r_anal_block_relocate() {
 	RzAnal *anal = rz_anal_new ();
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	RzAnalFunction *fcn = rz_anal_create_function (anal, "bbowner", 0x1337, 0, NULL);
 
 	RzAnalBlock *block = rz_anal_create_block (anal, 0x1337, 42);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	rz_anal_function_add_block (fcn, block);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	rz_anal_function_linear_size (fcn); // trigger lazy calculation of min/max cache
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	bool success = rz_anal_block_relocate (block, 0x200, 0x100);
 	mu_assert ("relocate success", success);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert_eq (block->addr, 0x200, "addr after relocate");
 	mu_assert_eq (block->size, 0x100, "size after relocate");
 
 	RzAnalBlock *second = rz_anal_create_block (anal, 0x1337+300, 100);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	rz_anal_function_add_block (fcn, second);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	success = rz_anal_block_relocate (second, 0x400, 0x123);
 	mu_assert ("relocate success", success);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert_eq (second->addr, 0x400, "addr after relocate");
 	mu_assert_eq (second->size, 0x123, "size after relocate");
 	rz_anal_function_linear_size (fcn); // trigger lazy calculation of min/max cache
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	success = rz_anal_block_relocate (block, 0x400, 0x333);
 	mu_assert ("relocate fail on same addr", !success);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert_eq (block->addr, 0x200, "addr after failed relocate");
 	mu_assert_eq (block->size, 0x100, "size after failed relocate");
 	rz_anal_function_linear_size (fcn); // trigger lazy calculation of min/max cache
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	// jump after the other block
 	success = rz_anal_block_relocate (block, 0x500, 0x333);
 	mu_assert ("relocate success", success);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert_eq (block->addr, 0x500, "addr after failed relocate");
 	mu_assert_eq (block->size, 0x333, "size after failed relocate");
 	rz_anal_function_linear_size (fcn); // trigger lazy calculation of min/max cache
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	// jump before the other block
 	success = rz_anal_block_relocate (block, 0x10, 0x333);
 	mu_assert ("relocate success", success);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 	mu_assert_eq (block->addr, 0x10, "addr after failed relocate");
 	mu_assert_eq (block->size, 0x333, "size after failed relocate");
 
 	rz_anal_block_unref (block);
 	rz_anal_block_unref (second);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	rz_anal_free (anal);
 	mu_end;
@@ -371,7 +368,7 @@ bool test_r_anal_block_relocate() {
 
 bool test_r_anal_block_query() {
 	RzAnal *anal = rz_anal_new ();
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 #define N 200
 #define MAXSIZE 0x300
@@ -382,7 +379,7 @@ bool test_r_anal_block_query() {
 	size_t i;
 	for (i = 0; i < N; i++) {
 		blocks[i] = rz_anal_create_block (anal, rand () % SPACE, rand () % MAXSIZE); // may return null on duplicates
-		assert_invariants (anal);
+		assert_block_invariants (anal);
 	}
 
 	// --
@@ -475,7 +472,7 @@ bool test_r_anal_block_query() {
 		rz_anal_block_unref (blocks[i]);
 	}
 
-	assert_leaks (anal);
+	assert_block_leaks (anal);
 	rz_anal_free (anal);
 	mu_end;
 }
@@ -488,7 +485,7 @@ bool addr_list_cb(ut64 addr, void *user) {
 
 bool test_r_anal_block_successors() {
 	RzAnal *anal = rz_anal_new ();
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	RzAnalBlock *blocks[10];
 	blocks[0] = rz_anal_create_block (anal, 0x10, 0x10);
@@ -501,7 +498,7 @@ bool test_r_anal_block_successors() {
 	blocks[7] = rz_anal_create_block (anal, 0x140, 0x10);
 	blocks[8] = rz_anal_create_block (anal, 0xa0, 0x10);
 	blocks[9] = rz_anal_create_block (anal, 0xc0, 0x10);
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	blocks[0]->jump = 0x30;
 	blocks[0]->fail = 0x50;
@@ -562,7 +559,7 @@ bool test_r_anal_block_successors() {
 		rz_anal_block_unref (blocks[i]);
 	}
 
-	assert_leaks (anal);
+	assert_block_leaks (anal);
 	rz_anal_free (anal);
 	mu_end;
 }
@@ -571,7 +568,7 @@ bool test_r_anal_block_automerge() {
 	size_t i;
 	for (i = 0; i < SAMPLES; i++) {
 		RzAnal *anal = rz_anal_new ();
-		assert_invariants (anal);
+		assert_block_invariants (anal);
 
 		RzAnalBlock *a = rz_anal_create_block (anal, 0x100, 0x10);
 
@@ -624,7 +621,7 @@ bool test_r_anal_block_automerge() {
 		rz_list_free (all_blocks);
 
 		rz_anal_block_automerge (shuffled_blocks);
-		assert_invariants (anal);
+		assert_block_invariants (anal);
 		//mu_assert_eq (rz_list_length (shuffled_blocks), 4, "length after automerge");
 		mu_assert ("remaining blocks a", rz_list_contains (shuffled_blocks, a));
 		mu_assert ("remaining blocks b", rz_list_contains (shuffled_blocks, b));
@@ -638,8 +635,8 @@ bool test_r_anal_block_automerge() {
 		}
 		rz_list_free (shuffled_blocks);
 
-		assert_invariants (anal);
-		assert_leaks (anal);
+		assert_block_invariants (anal);
+		assert_block_leaks (anal);
 		rz_anal_free (anal);
 	}
 	mu_end;
@@ -647,7 +644,7 @@ bool test_r_anal_block_automerge() {
 
 bool test_r_anal_block_chop_noreturn(void) {
 	RzAnal *anal = rz_anal_new ();
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	RzAnalBlock *a = rz_anal_create_block (anal, 0x100, 0x10);
 	RzAnalBlock *b = rz_anal_create_block (anal, 0x110, 0x10);
@@ -665,7 +662,7 @@ bool test_r_anal_block_chop_noreturn(void) {
 
 	rz_anal_block_chop_noreturn (b, 0x111);
 
-	assert_invariants (anal);
+	assert_block_invariants (anal);
 
 	mu_end;
 }

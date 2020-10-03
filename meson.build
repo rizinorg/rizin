@@ -469,6 +469,7 @@ sdb_files = [
   'shlr/sdb/src/query.c',
   'shlr/sdb/src/sdb.c',
   'shlr/sdb/src/sdbht.c',
+  'shlr/sdb/src/text.c',
   'shlr/sdb/src/util.c'
 ]
 

@@ -1224,11 +1224,11 @@ static void autocomplete_project(RzCore *core, RLineCompletion *completion, cons
 	int n = strlen (str);
 	if (projects_path) {
 		rz_list_foreach (list, iter, foo) {
-			if (rz_core_is_project (core, foo)) {
-				if (!strncmp (foo, str, n)) {
-					rz_line_completion_push (completion, foo);
-				}
-			}
+			// if (rz_core_is_project (core, foo)) {
+			// 	if (!strncmp (foo, str, n)) {
+			// 		rz_line_completion_push (completion, foo);
+			// 	}
+			// }
 		}
 		free (projects_path);
 		rz_list_free (list);

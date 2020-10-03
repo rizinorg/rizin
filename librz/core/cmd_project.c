@@ -65,7 +65,7 @@ static int cmd_project(void *data, const char *input) {
 	switch (input[0]) {
 	case 'c':
 		if (input[1] == ' ') {
-			rz_core_project_cat (core, input + 2);
+			// rz_core_project_cat (core, input + 2);
 		} else {
 			eprintf ("Usage: Pc [prjname]\n");
 		}
@@ -75,7 +75,7 @@ static int cmd_project(void *data, const char *input) {
 		if (input[1] == '&') {
 			rz_core_cmdf (core, "& Po %s", file);
 		} else if (input[1]) {
-			rz_core_project_open (core, file, false);
+			// rz_core_project_open (core, file, false);
 		} else {
 			if (file && *file) {
 				rz_cons_println (file);
@@ -84,19 +84,19 @@ static int cmd_project(void *data, const char *input) {
 		break;
 	case 'd':
 	case '-':
-		rz_core_project_delete (core, file);
+		// rz_core_project_delete (core, file);
 		break;
 	case 's':
 		if (!file || !file[0]) { /* if no argument specified use current project */
 			file = str;
 		}
-		if (rz_core_project_save (core, file)) {
+		/*if (rz_core_project_save (core, file)) {
 			rz_cons_println (file);
-		}
+		}*/
 		break;
 	case 'S':
 		if (input[1] == ' ') {
-			rz_core_project_save_script (core, input + 2, RZ_CORE_PRJ_ALL);
+			// rz_core_project_save_script (core, input + 2, RZ_CORE_PRJ_ALL);
 		} else {
 			eprintf ("Usage: PS [file]\n");
 		}
@@ -115,7 +115,7 @@ static int cmd_project(void *data, const char *input) {
 				if (!fd) {
 					eprintf ("Cannot open %s\n", str);
 				} else {
-					char *str = rz_core_project_notes_file (core, fileproject);
+					char *str = NULL; // rz_core_project_notes_file (core, fileproject);
 					char *data = rz_file_slurp (str, NULL);
 					int del = 0;
 					if (data) {
@@ -143,7 +143,7 @@ static int cmd_project(void *data, const char *input) {
 			break;
 			case ' ': // "Pn "
 				if (input[2] == '-') {
-					char *str = rz_core_project_notes_file (core, fileproject);
+					char *str = NULL; //rz_core_project_notes_file (core, fileproject);
 					// edit with cfg.editor
 					const char *editor = rz_config_get (core->config, "cfg.editor");
 					if (str && *str && editor && *editor) {
@@ -155,7 +155,7 @@ static int cmd_project(void *data, const char *input) {
 				} else {
 					// char *str = rz_core_project_notes_file (core, fileproject);
 					// append line to project notes
-					char *str = rz_core_project_notes_file (core, fileproject);
+					char *str = NULL; // rz_core_project_notes_file (core, fileproject);
 					char *data = rz_file_slurp (str, NULL);
 					FILE *fd = rz_sandbox_fopen (str, "a");
 					if (fd) {
@@ -168,7 +168,7 @@ static int cmd_project(void *data, const char *input) {
 				break;
 			case '+': // "Pn+"
 				{
-					char *str = rz_core_project_notes_file (core, fileproject);
+					char *str = NULL; // rz_core_project_notes_file (core, fileproject);
 					char *data = rz_file_slurp (str, NULL);
 					data = rz_str_append (data, input + 2);
 					data = rz_str_append (data, "\n");
@@ -181,7 +181,7 @@ static int cmd_project(void *data, const char *input) {
 				if (!input[2]) {
 					size_t len = 0;
 					/* get base64 string */
-					char *str = rz_core_project_notes_file (core, fileproject);
+					char *str = NULL; //rz_core_project_notes_file (core, fileproject);
 					if (str) {
 						char *data = rz_file_slurp (str, &len);
 						char *res = rz_base64_encode_dyn (data, (int)len);
@@ -196,7 +196,7 @@ static int cmd_project(void *data, const char *input) {
 					/* set base64 string */
 					ut8 *data = rz_base64_decode_dyn (input + 3, -1);
 					if (data) {
-						char *str = rz_core_project_notes_file (core, fileproject);
+						char *str = NULL; //rz_core_project_notes_file (core, fileproject);
 						if (str) {
 							rz_file_dump (str, data, strlen ((const char *) data), 0);
 							free (str);
@@ -208,11 +208,11 @@ static int cmd_project(void *data, const char *input) {
 				}
 				break;
 			case 'x': // "Pnx"
-				rz_core_project_execute_cmds (core, fileproject);
+				// rz_core_project_execute_cmds (core, fileproject);
 				break;
 			case 0: // "Pn"
 			{
-				char *str = rz_core_project_notes_file (core, fileproject);
+				char *str = NULL; //rz_core_project_notes_file (core, fileproject);
 				char *data = rz_file_slurp (str, NULL);
 				if (data) {
 					rz_cons_println (data);
@@ -226,14 +226,14 @@ static int cmd_project(void *data, const char *input) {
 		break;
 	case 'i':
 		if (file && *file) {
-			char *prjName = rz_core_project_info (core, file);
+			char *prjName = NULL; // rz_core_project_info (core, file);
 			rz_cons_println (prjName);
 			free (prjName);
 		}
 		break;
 	case 0:
 	case 'j':
-		rz_core_project_list (core, input[0]);
+		// rz_core_project_list (core, input[0]);
 		break;
 	default:
 		rz_core_cmd_help (core, help_msg_P);

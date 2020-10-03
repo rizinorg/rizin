@@ -423,7 +423,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	rz_core_task_sync_begin (&r->tasks);
 	if (argc == 2 && !strcmp (argv[1], "-p")) {
-		rz_core_project_list (r, 0);
+		// rz_core_project_list (r, 0);
 		rz_cons_flush ();
 		LISTS_FREE ();
 		return 0;
@@ -579,7 +579,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			break;
 		case 'p':
 			if (!strcmp (opt.arg, "?")) {
-				rz_core_project_list (r, 0);
+				// rz_core_project_list (r, 0);
 				rz_cons_flush ();
 				LISTS_FREE ();
 				return 0;
@@ -806,7 +806,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	prj = rz_config_get (r->config, "prj.name");
 	if (prj && *prj) {
-		rz_core_project_open (r, prj, false);
+		// rz_core_project_open (r, prj, false);
 		rz_config_set (r->config, "bin.strings", "false");
 	}
 
@@ -1120,7 +1120,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			} else {
 				const char *prj = rz_config_get (r->config, "prj.name");
 				if (prj && *prj) {
-					pfile = rz_core_project_info (r, prj);
+					pfile = NULL; //rz_core_project_info (r, prj);
 					if (pfile) {
 						if (!fh) {
 							fh = rz_core_file_open (r, pfile, perms, mapaddr);
@@ -1280,7 +1280,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (iod && !strstr (iod->uri, "://")) {
 			const char *npath;
 			char *path = strdup (rz_config_get (r->config, "file.path"));
-			has_project = rz_core_project_open (r, rz_config_get (r->config, "prj.name"), false);
+			has_project = NULL; //rz_core_project_open (r, rz_config_get (r->config, "prj.name"), false);
 			iod = r->io ? rz_io_desc_get (r->io, fh->fd) : NULL;
 			if (has_project) {
 				rz_config_set (r->config, "bin.strings", "false");
@@ -1451,12 +1451,12 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				prj = rz_config_get (r->config, "prj.name");
 				if (no_question_save) {
 					if (prj && *prj && y_save_project){
-						rz_core_project_save (r, prj);
+						//rz_core_project_save (r, prj);
 					}
 				} else {
 					question = rz_str_newf ("Do you want to save the '%s' project? (Y/n)", prj);
 					if (prj && *prj && rz_cons_yesno ('y', "%s", question)) {
-						rz_core_project_save (r, prj);
+						//rz_core_project_save (r, prj);
 					}
 					free (question);
 				}
