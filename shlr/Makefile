@@ -143,7 +143,7 @@ sdb-target:
 		CC="${CC}" AR="${AR}" ARCH=undefined CFLAGS='${CFLAGS}' LDFLAGS='${LDFLAGS}' libsdb.a
 	${RANLIB} sdb/src/libsdb.a
 
-.PHONY: sdb-sync sync-sdb sdbclean sdb-native sdb-target
+.PHONY: sdb-target
 SDB_F=README.md config.mk src Makefile meson.build
 SDB_SYNCFILES=$(addprefix sdb.vc/,${SDB_F})
 I=../librz/include
@@ -161,20 +161,6 @@ sdb-clean clean-sdb:
 	$(MAKE) -C sdb clean
 	rm -f sdb/sdb.exe
 	rm -f sdb/src/libsdb.${EXT_AR}
-
-sdb-sync sync-sdb:
-	rm -rf sdb sdb.vc
-	git clone --depth 1 ${SDB_URL} sdb.vc
-	mkdir -p sdb
-	cp -rf ${SDB_SYNCFILES} sdb
-	rm -rf sdb.vc
-	rm -f src/sdb_version.h
-	$(MAKE) -C sdb src/sdb_version.h
-	mkdir -p sdb/test sdb/memcache
-	sed -e 's,HAVE_VALA=,HAVE_VALA=#,' sdb/config.mk > .t
-	mv .t sdb/config.mk
-	echo all clean mrproper: | tee sdb/test/Makefile > sdb/memcache/Makefile
-	git add sdb
 
 .PHONY: ptrace-wrap ptrace-wrap-sync sync-ptrace-wrap ptrace-wrap-clean clean-ptrace-wrap
 PTRACE_WRAP_F=include src README.md COPYING
@@ -208,7 +194,6 @@ HFILES+=elf.h config.h i386-tok.h
 
 # TODO: use mob branch?
 
-.PHONY: sdb-sync sync-sdb sdbclean
 tcc-sync sync-tcc:
 	rm -rf _
 	$(GIT) clone --depth 1 git://repo.or.cz/tinycc.git _
