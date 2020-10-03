@@ -27,7 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         # name: [linux-acr-gcc-tests, linux-acr-clang-build, linux-acr-clang-tests, linux-meson-gcc-build, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-meson-clang-tests, linux-gcc-tests-asan, capstone-v3, capstone-v5]
-        name: [linux-acr-gcc-tests, linux-meson-gcc-newshell-tests, macos-meson-clang-tests]
+        name: [linux-acr-gcc-tests, linux-meson-gcc-newshell-tests]
         # ignore_error: [false]
         include:
           - name: linux-acr-gcc-tests
@@ -74,14 +74,14 @@ jobs:
             coverage: true
             enabled: true
             timeout: 50
-          - name: macos-meson-clang-tests
-            os: macos-latest
-            build_system: meson
-            compiler: clang
-            run_tests: true
-            meson_options: -Duse_webui=true
-            enabled: true
-            timeout: 60
+          # - name: macos-meson-clang-tests
+          #   os: macos-latest
+          #   build_system: meson
+          #   compiler: clang
+          #   run_tests: true
+          #   meson_options: -Duse_webui=true
+          #   enabled: true
+          #   timeout: 60
           # - name: linux-gcc-tests-asan
           #   os: ubuntu-20.04
           #   build_system: meson
