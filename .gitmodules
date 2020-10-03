@@ -1,3 +1,3 @@
 [submodule "shlr/sdb"]
 	path = shlr/sdb
-	url = https://github.com/rizinorg/sdb
+	url = git@github.com:rizinorg/sdb
