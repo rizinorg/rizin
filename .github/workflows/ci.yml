@@ -287,7 +287,7 @@ jobs:
         cd Python-3.6.11/
         ./configure
         make install
-    - name: Checkout r2
+    - name: Checkout rizin
       run: |
         git clone https://github.com/${{ github.repository }}
         cd rizin
@@ -468,10 +468,11 @@ jobs:
     - uses: actions/checkout@v2
       with:
         repository: rizinorg/rizin-win-installer
+        token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
         path: ./rizin-win-installer
     - name: Create installer
       shell: pwsh
-      run: iscc rizin-win-installer\rizin.iss /DRadare2Location=..\rizin-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=rizin.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
+      run: iscc rizin-win-installer\rizin.iss /DRizinLocation=..\rizin-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=rizin.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
     - uses: actions/upload-artifact@v2
       with:
         name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
@@ -649,7 +650,7 @@ jobs:
       with:
         name: rizin_installer-clang_cl-${{ steps.extract_version.outputs.branch }}
         path: ./
-    - name: Install radare.exe
+    - name: Install rizin.exe
       shell: pwsh
       run: Start-Process -Wait -FilePath .\rizin.exe -ArgumentList "/SP- /SILENT" -PassThru
     - name: Check that installed rizin runs
