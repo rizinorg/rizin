@@ -65,15 +65,22 @@ rz_core_sources = [
   'yank.c',
   'p/core_a2f.c',
   'p/core_java.c',
-  'cannotated_code.c'
+  'cannotated_code.c',
+  'serialize_anal.c',
+  'serialize_config.c',
+  'serialize_core.c',
+  'serialize_flag.c',
+  'serialize_io.c',
+  'serialize_spaces.c',
+  'sdb_archive.c'
 ]
 
 rz_core_inc = []
 if host_machine.system() != 'windows'
   rz_core_inc += ['../../shlr/heap/include']
 else
-	rz_core_sources += 'windows_heap.c'
-	rz_core_inc += ['../../shlr/heap/include/rz_windows']
+  rz_core_sources += 'windows_heap.c'
+  rz_core_inc += ['../../shlr/heap/include/rz_windows']
 endif
 rz_core_inc = [platform_inc, include_directories(rz_core_inc)]
 
