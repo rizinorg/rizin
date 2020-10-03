@@ -115,6 +115,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       if: matrix.enabled
+      with:
+          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
+          submodules: recursive
     - name: Install pkg-config with Homebrew
       if: matrix.os == 'macos-latest' && matrix.enabled
       run: brew install pkg-config
