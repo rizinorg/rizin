@@ -14,7 +14,6 @@ OBJS+=task.o panels.o pseudo.o vmarks.o anal_tp.o anal_objc.o blaze.o cundo.o
 OBJS+=cannotated_code.o serialize_anal.o serialize_config.o serialize_core.o
 OBJS+=serialize_flag.o serialize_io.o serialize_spaces.o
 
-
 CFLAGS+=-I../../shlr/heap/include
 CFLAGS+=-I../../shlr/tree-sitter/lib/include -I../../shlr/rizin-shell-parser/src/tree_parser
 CFLAGS+=-DRZ_PLUGIN_INCORE -I../../shlr
