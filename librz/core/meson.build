@@ -71,8 +71,7 @@ rz_core_sources = [
   'serialize_core.c',
   'serialize_flag.c',
   'serialize_io.c',
-  'serialize_spaces.c',
-  'sdb_archive.c'
+  'serialize_spaces.c'
 ]
 
 rz_core_inc = []

@@ -239,13 +239,15 @@ EXPECT=<<EOF
 0x0804a028 0 loc._end
 EOF
 CMDS=<<EOF
+e cfg.newshell=1
 f
-Ps tmp/flags.rzdb
+Ps .tmp_flags.rzdb
 ?e --
 o--
 f
 ?e --
-Po tmp/flags.rzdb
+Po .tmp_flags.rzdb
+rm .tmp_flags.rzdb
 f
 EOF
 RUN
@@ -266,13 +268,14 @@ true
 myfunctions
 EOF
 CMDS=<<EOF
+e cfg.newshell=1
 e asm.describe=1
 e asm.describe
 e asm.indentspace=8
 e asm.indentspace
 e anal.fcnprefix=myfunctions
 e anal.fcnprefix
-Ps tmp/config.rzdb
+Ps .tmp_config.rzdb
 ?e --
 e asm.describe=0
 e asm.describe
@@ -281,7 +284,8 @@ e asm.indentspace
 e anal.fcnprefix=fcn
 e anal.fcnprefix
 ?e --
-Po tmp/config.rzdb
+Po .tmp_config.rzdb
+rm .tmp_config.rzdb
 e asm.describe
 e asm.indentspace
 e anal.fcnprefix
@@ -295,12 +299,14 @@ EXPECT=<<EOF
 0x1337
 EOF
 CMDS=<<EOF
+e cfg.newshell=1
 s 0x1337
 s
-Ps tmp/seek.rzdb
+Ps .tmp_seek.rzdb
 o--
 s 0
-Po tmp/seek.rzdb
+Po .tmp_seek.rzdb
+rm .tmp_seek.rzdb
 s
 EOF
 RUN
@@ -312,12 +318,14 @@ EXPECT=<<EOF
 0x123
 EOF
 CMDS=<<EOF
+e cfg.newshell=1
 b 0x123
 b
-Ps tmp/blocksize.rzdb
+Ps .tmp_blocksize.rzdb
 o--
 b 0x100
-Po tmp/blocksize.rzdb
+Po .tmp_blocksize.rzdb
+rm .tmp_blocksize.rzdb
 b
 EOF
 RUN

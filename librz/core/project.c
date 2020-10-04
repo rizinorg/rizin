@@ -3,7 +3,6 @@
 #include <rz_project.h>
 #include <rz_serialize.h>
 
-#include <sdb_archive.h>
 #include "serialize_util.h"
 
 #define RZ_DB_KEY_TYPE        "type"
@@ -48,7 +47,7 @@ RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file) {
 		sdb_free (prj);
 		return err;
 	}
-	if (!sdb_archive_save (prj, file)) {
+	if (!sdb_text_save (prj, file, true)) {
 		err = RZ_PROJECT_ERR_FILE;
 	}
 	sdb_free (prj);
@@ -84,8 +83,11 @@ RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, RSerializeResu
 }
 
 RZ_API RzProjectErr rz_project_load_file(RzCore *core, const char *file, RSerializeResultInfo *res) {
-	RzProject *prj = sdb_archive_load (file);
+	RzProject *prj = sdb_new0 ();
 	if (!prj) {
+		return RZ_PROJECT_ERR_UNKNOWN;
+	}
+	if (!sdb_text_load (prj, file)) {
 		SERIALIZE_ERR ("failed to read database file");
 		return RZ_PROJECT_ERR_FILE;
 	}
