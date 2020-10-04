@@ -44,6 +44,8 @@ extern const RzCmdDescHelp m_help;
 extern const RzCmdDescHelp o_help;
 extern const RzCmdDescHelp p_help;
 extern const RzCmdDescHelp P_help;
+extern const RzCmdDescHelp Ps_help;
+extern const RzCmdDescHelp Po_help;
 extern const RzCmdDescHelp q_help;
 extern const RzCmdDescHelp Q_help;
 extern const RzCmdDescHelp colon_help;

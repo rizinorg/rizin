@@ -12,6 +12,24 @@
 #define R2DB_PROJECT_VERSION 1
 #define R2DB_PROJECT_TYPE    "radare2 r2db project"
 
+RZ_API RZ_NONNULL const char *rz_project_err_message(RProjectErr err) {
+	switch (err) {
+	case R_PROJECT_ERR_SUCCESS:
+		return "success";
+	case R_PROJECT_ERR_FILE:
+		return "file access error";
+	case R_PROJECT_ERR_INVALID_TYPE:
+		return "invalid file type";
+	case R_PROJECT_ERR_INVALID_VERSION:
+		return "invalid project version";
+	case R_PROJECT_ERR_NEWER_VERSION:
+		return "newer project version";
+	case R_PROJECT_ERR_INVALID_CONTENTS:
+		return "invalid content encountered";
+	default:
+		return "unknown error";
+	}
+}
 
 RZ_API RProjectErr rz_project_save(RzCore *core, RProject *prj) {
 	sdb_set (prj, R2DB_KEY_TYPE, R2DB_PROJECT_TYPE, 0);
@@ -25,10 +43,16 @@ RZ_API RProjectErr rz_project_save_file(RzCore *core, const char *file) {
 	if (!prj) {
 		return R_PROJECT_ERR_UNKNOWN;
 	}
-	rz_project_save (core, prj);
-	sdb_archive_save (prj, file);
+	RProjectErr err = rz_project_save (core, prj);
+	if (err != R_PROJECT_ERR_SUCCESS) {
+		sdb_free (prj);
+		return err;
+	}
+	if (!sdb_archive_save (prj, file)) {
+		err = R_PROJECT_ERR_FILE;
+	}
 	sdb_free (prj);
-	return R_PROJECT_ERR_SUCCESS;
+	return err;
 }
 
 RZ_API RProjectErr rz_project_load(RzCore *core, RProject *prj, RSerializeResultInfo *res) {
@@ -63,7 +87,7 @@ RZ_API RProjectErr rz_project_load_file(RzCore *core, const char *file, RSeriali
 	RProject *prj = sdb_archive_load (file);
 	if (!prj) {
 		SERIALIZE_ERR ("failed to read database file");
-		return R_PROJECT_ERR_UNKNOWN;
+		return R_PROJECT_ERR_FILE;
 	}
 	RProjectErr ret = rz_project_load (core, prj, res);
 	sdb_free (prj);

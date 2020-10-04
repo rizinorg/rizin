@@ -7159,7 +7159,7 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "L", "manage dynamically loaded plugins", cmd_plugins, NULL, &L_help },
 		{ "o", "open or map file", cmd_open, cmd_open_init, &o_help },
 		{ "p", "print current block", cmd_print, cmd_print_init, &p_help },
-		{ "P", "project", cmd_project, cmd_project_init, &P_help },
+		{ "P", "project", NULL, cmd_project_init, &P_help, NULL, RZ_CMD_DESC_TYPE_INNER},
 		{ "q", "exit program session", cmd_quit, cmd_quit_init, &q_help },
 		{ "Q", "alias for q!", cmd_Quit, NULL, &Q_help },
 		{ ":", "long commands starting with :", cmd_colon, NULL, &colon_help },

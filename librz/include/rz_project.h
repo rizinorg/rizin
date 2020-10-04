@@ -22,6 +22,7 @@ typedef enum rz_project_err {
 	R_PROJECT_ERR_UNKNOWN
 } RProjectErr;
 
+RZ_API RZ_NONNULL const char *rz_project_err_message(RProjectErr err);
 RZ_API RProjectErr rz_project_save(RzCore *core, RProject *prj);
 RZ_API RProjectErr rz_project_save_file(RzCore *core, const char *file);
 RZ_API RProjectErr rz_project_load(RzCore *core, RProject *prj, RSerializeResultInfo *res);
