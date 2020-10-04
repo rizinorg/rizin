@@ -1,0 +1,323 @@
+NAME=flags
+FILE=bins/elf/crackme0x05
+EXPECT=<<EOF
+0x00000000 0 section.
+0x00000000 441 section..comment
+0x00000000 219 section..shstrtab
+0x00000000 1120 section..symtab
+0x00000000 584 section..strtab
+0x00000000 0 segment.GNU_STACK
+0x00000000 0 segment.NONE
+0x00000000 0 sym..comment
+0x00000000 16 loc.imp.__gmon_start
+0x08048000 1724 segment.LOAD0
+0x08048000 52 segment.ehdr
+0x08048034 288 segment.PHDR
+0x08048154 19 section..interp
+0x08048154 19 segment.INTERP
+0x08048154 0 sym..interp
+0x08048168 32 section..note.ABI_tag
+0x08048168 32 segment.NOTE
+0x08048168 0 sym..note.ABI_tag
+0x08048188 56 section..hash
+0x08048188 0 sym..hash
+0x080481c0 32 section..gnu.hash
+0x080481c0 0 sym..gnu.hash
+0x080481e0 144 section..dynsym
+0x080481e0 0 sym..dynsym
+0x08048270 95 section..dynstr
+0x08048270 0 sym..dynstr
+0x080482d0 18 section..gnu.version
+0x080482d0 0 sym..gnu.version
+0x080482e4 32 section..gnu.version_r
+0x080482e4 0 sym..gnu.version_r
+0x08048304 8 section..rel.dyn
+0x08048304 0 sym..rel.dyn
+0x0804830c 48 section..rel.plt
+0x0804830c 0 sym..rel.plt
+0x0804833c 23 section..init
+0x0804833c 0 sym..init
+0x0804833c 0 sym._init
+0x08048354 112 section..plt
+0x08048354 0 sym..plt
+0x08048364 16 sym.imp.__libc_start_main
+0x08048374 16 sym.imp.scanf
+0x08048384 16 sym.imp.strlen
+0x08048394 16 sym.imp.printf
+0x080483a4 16 sym.imp.sscanf
+0x080483b4 16 sym.imp.exit
+0x080483d0 1 entry0
+0x080483d0 628 section..text
+0x080483d0 0 sym..text
+0x080483d0 0 sym._start
+0x08048420 0 sym.__do_global_dtors_aux
+0x08048450 0 sym.frame_dummy
+0x08048484 68 sym.parell
+0x080484c8 120 sym.check
+0x08048540 256 main
+0x08048540 92 sym.main
+0x080485a0 99 sym.__libc_csu_init
+0x08048610 5 sym.__libc_csu_fini
+0x08048615 0 sym.__i686.get_pc_thunk.bx
+0x08048620 0 sym.__do_global_ctors_aux
+0x08048644 26 section..fini
+0x08048644 0 sym..fini
+0x08048644 0 sym._fini
+0x08048660 85 section..rodata
+0x08048660 0 sym..rodata
+0x08048660 4 obj._fp_hw
+0x08048664 4 obj._IO_stdin_used
+0x0804866b 14 str.Password_OK
+0x08048679 21 str.Password_Incorrect
+0x0804868e 25 str.IOLI_Crackme_Level_0x05
+0x080486a7 11 str.Password:
+0x080486b8 4 section..eh_frame
+0x080486b8 0 sym..eh_frame
+0x080486b8 0 obj.__FRAME_END
+0x08049f0c 8 section..ctors
+0x08049f0c 284 segment.LOAD1
+0x08049f0c 244 segment.GNU_RELRO
+0x08049f0c 0 sym..ctors
+0x08049f0c 0 obj.__CTOR_LIST
+0x08049f0c 0 loc.__init_array_end
+0x08049f0c 0 loc.__init_array_start
+0x08049f10 0 obj.__CTOR_END
+0x08049f14 8 section..dtors
+0x08049f14 0 sym..dtors
+0x08049f14 0 obj.__DTOR_LIST
+0x08049f18 0 obj.__DTOR_END
+0x08049f1c 4 section..jcr
+0x08049f1c 0 sym..jcr
+0x08049f1c 0 obj.__JCR_LIST
+0x08049f1c 0 obj.__JCR_END
+0x08049f20 208 section..dynamic
+0x08049f20 208 segment.DYNAMIC
+0x08049f20 0 sym..dynamic
+0x08049f20 0 obj._DYNAMIC
+0x08049ff0 4 section..got
+0x08049ff0 4 reloc.__gmon_start
+0x08049ff0 0 sym..got
+0x08049ff4 36 section..got.plt
+0x08049ff4 0 sym..got.plt
+0x08049ff4 0 obj._GLOBAL_OFFSET_TABLE
+0x0804a000 4 reloc.__libc_start_main
+0x0804a004 4 reloc.scanf
+0x0804a008 4 reloc.strlen
+0x0804a00c 4 reloc.printf
+0x0804a010 4 reloc.sscanf
+0x0804a014 4 reloc.exit
+0x0804a018 12 section..data
+0x0804a018 0 sym..data
+0x0804a018 0 loc.data_start
+0x0804a018 0 loc.__data_start
+0x0804a01c 0 obj.__dso_handle
+0x0804a020 0 obj.p.0
+0x0804a024 4 section..bss
+0x0804a024 0 sym..bss
+0x0804a024 1 obj.completed.1
+0x0804a024 0 loc.__bss_start
+0x0804a024 0 loc._edata
+0x0804a028 0 loc._end
+--
+--
+0x00000000 0 segment.NONE
+0x00000000 219 section..shstrtab
+0x00000000 1120 section..symtab
+0x00000000 0 sym..comment
+0x00000000 441 section..comment
+0x00000000 16 loc.imp.__gmon_start
+0x00000000 0 segment.GNU_STACK
+0x00000000 0 section.
+0x00000000 584 section..strtab
+0x08048000 1724 segment.LOAD0
+0x08048000 52 segment.ehdr
+0x08048034 288 segment.PHDR
+0x08048154 19 segment.INTERP
+0x08048154 19 section..interp
+0x08048154 0 sym..interp
+0x08048168 32 section..note.ABI_tag
+0x08048168 0 sym..note.ABI_tag
+0x08048168 32 segment.NOTE
+0x08048188 56 section..hash
+0x08048188 0 sym..hash
+0x080481c0 32 section..gnu.hash
+0x080481c0 0 sym..gnu.hash
+0x080481e0 144 section..dynsym
+0x080481e0 0 sym..dynsym
+0x08048270 95 section..dynstr
+0x08048270 0 sym..dynstr
+0x080482d0 18 section..gnu.version
+0x080482d0 0 sym..gnu.version
+0x080482e4 32 section..gnu.version_r
+0x080482e4 0 sym..gnu.version_r
+0x08048304 0 sym..rel.dyn
+0x08048304 8 section..rel.dyn
+0x0804830c 48 section..rel.plt
+0x0804830c 0 sym..rel.plt
+0x0804833c 23 section..init
+0x0804833c 0 sym._init
+0x0804833c 0 sym..init
+0x08048354 112 section..plt
+0x08048354 0 sym..plt
+0x08048364 16 sym.imp.__libc_start_main
+0x08048374 16 sym.imp.scanf
+0x08048384 16 sym.imp.strlen
+0x08048394 16 sym.imp.printf
+0x080483a4 16 sym.imp.sscanf
+0x080483b4 16 sym.imp.exit
+0x080483d0 628 section..text
+0x080483d0 1 entry0
+0x080483d0 0 sym._start
+0x080483d0 0 sym..text
+0x08048420 0 sym.__do_global_dtors_aux
+0x08048450 0 sym.frame_dummy
+0x08048484 68 sym.parell
+0x080484c8 120 sym.check
+0x08048540 256 main
+0x08048540 92 sym.main
+0x080485a0 99 sym.__libc_csu_init
+0x08048610 5 sym.__libc_csu_fini
+0x08048615 0 sym.__i686.get_pc_thunk.bx
+0x08048620 0 sym.__do_global_ctors_aux
+0x08048644 26 section..fini
+0x08048644 0 sym._fini
+0x08048644 0 sym..fini
+0x08048660 85 section..rodata
+0x08048660 0 sym..rodata
+0x08048660 4 obj._fp_hw
+0x08048664 4 obj._IO_stdin_used
+0x0804866b 14 str.Password_OK
+0x08048679 21 str.Password_Incorrect
+0x0804868e 25 str.IOLI_Crackme_Level_0x05
+0x080486a7 11 str.Password:
+0x080486b8 4 section..eh_frame
+0x080486b8 0 sym..eh_frame
+0x080486b8 0 obj.__FRAME_END
+0x08049f0c 8 section..ctors
+0x08049f0c 0 obj.__CTOR_LIST
+0x08049f0c 0 loc.__init_array_start
+0x08049f0c 0 loc.__init_array_end
+0x08049f0c 284 segment.LOAD1
+0x08049f0c 244 segment.GNU_RELRO
+0x08049f0c 0 sym..ctors
+0x08049f10 0 obj.__CTOR_END
+0x08049f14 0 obj.__DTOR_LIST
+0x08049f14 8 section..dtors
+0x08049f14 0 sym..dtors
+0x08049f18 0 obj.__DTOR_END
+0x08049f1c 4 section..jcr
+0x08049f1c 0 obj.__JCR_LIST
+0x08049f1c 0 obj.__JCR_END
+0x08049f1c 0 sym..jcr
+0x08049f20 0 obj._DYNAMIC
+0x08049f20 208 section..dynamic
+0x08049f20 208 segment.DYNAMIC
+0x08049f20 0 sym..dynamic
+0x08049ff0 4 reloc.__gmon_start
+0x08049ff0 4 section..got
+0x08049ff0 0 sym..got
+0x08049ff4 0 sym..got.plt
+0x08049ff4 36 section..got.plt
+0x08049ff4 0 obj._GLOBAL_OFFSET_TABLE
+0x0804a000 4 reloc.__libc_start_main
+0x0804a004 4 reloc.scanf
+0x0804a008 4 reloc.strlen
+0x0804a00c 4 reloc.printf
+0x0804a010 4 reloc.sscanf
+0x0804a014 4 reloc.exit
+0x0804a018 0 loc.data_start
+0x0804a018 0 loc.__data_start
+0x0804a018 12 section..data
+0x0804a018 0 sym..data
+0x0804a01c 0 obj.__dso_handle
+0x0804a020 0 obj.p.0
+0x0804a024 0 sym..bss
+0x0804a024 4 section..bss
+0x0804a024 0 loc.__bss_start
+0x0804a024 1 obj.completed.1
+0x0804a024 0 loc._edata
+0x0804a028 0 loc._end
+EOF
+CMDS=<<EOF
+f
+Ps tmp/flags.rzdb
+?e --
+o--
+f
+?e --
+Po tmp/flags.rzdb
+f
+EOF
+RUN
+
+NAME=config
+FILE=-
+EXPECT=<<EOF
+true
+8
+myfunctions
+--
+false
+0
+fcn
+--
+true
+8
+myfunctions
+EOF
+CMDS=<<EOF
+e asm.describe=1
+e asm.describe
+e asm.indentspace=8
+e asm.indentspace
+e anal.fcnprefix=myfunctions
+e anal.fcnprefix
+Ps tmp/config.rzdb
+?e --
+e asm.describe=0
+e asm.describe
+e asm.indentspace=0
+e asm.indentspace
+e anal.fcnprefix=fcn
+e anal.fcnprefix
+?e --
+Po tmp/config.rzdb
+e asm.describe
+e asm.indentspace
+e anal.fcnprefix
+EOF
+RUN
+
+NAME=seek
+FILE=-
+EXPECT=<<EOF
+0x1337
+0x1337
+EOF
+CMDS=<<EOF
+s 0x1337
+s
+Ps tmp/seek.rzdb
+o--
+s 0
+Po tmp/seek.rzdb
+s
+EOF
+RUN
+
+NAME=blocksize
+FILE=-
+EXPECT=<<EOF
+0x123
+0x123
+EOF
+CMDS=<<EOF
+b 0x123
+b
+Ps tmp/blocksize.rzdb
+o--
+b 0x100
+Po tmp/blocksize.rzdb
+b
+EOF
+RUN
