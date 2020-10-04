@@ -6,90 +6,90 @@
 #include <sdb_archive.h>
 #include "serialize_util.h"
 
-#define R2DB_KEY_TYPE        "type"
-#define R2DB_KEY_VERSION     "version"
+#define RZ_DB_KEY_TYPE        "type"
+#define RZ_DB_KEY_VERSION     "version"
 
-#define R2DB_PROJECT_VERSION 1
-#define R2DB_PROJECT_TYPE    "radare2 r2db project"
+#define RZ_DB_PROJECT_VERSION 1
+#define RZ_DB_PROJECT_TYPE    "rizin rz-db project"
 
-RZ_API RZ_NONNULL const char *rz_project_err_message(RProjectErr err) {
+RZ_API RZ_NONNULL const char *rz_project_err_message(RzProjectErr err) {
 	switch (err) {
-	case R_PROJECT_ERR_SUCCESS:
+	case RZ_PROJECT_ERR_SUCCESS:
 		return "success";
-	case R_PROJECT_ERR_FILE:
+	case RZ_PROJECT_ERR_FILE:
 		return "file access error";
-	case R_PROJECT_ERR_INVALID_TYPE:
+	case RZ_PROJECT_ERR_INVALID_TYPE:
 		return "invalid file type";
-	case R_PROJECT_ERR_INVALID_VERSION:
+	case RZ_PROJECT_ERR_INVALID_VERSION:
 		return "invalid project version";
-	case R_PROJECT_ERR_NEWER_VERSION:
+	case RZ_PROJECT_ERR_NEWER_VERSION:
 		return "newer project version";
-	case R_PROJECT_ERR_INVALID_CONTENTS:
+	case RZ_PROJECT_ERR_INVALID_CONTENTS:
 		return "invalid content encountered";
 	default:
 		return "unknown error";
 	}
 }
 
-RZ_API RProjectErr rz_project_save(RzCore *core, RProject *prj) {
-	sdb_set (prj, R2DB_KEY_TYPE, R2DB_PROJECT_TYPE, 0);
-	sdb_set (prj, R2DB_KEY_VERSION, sdb_fmt ("%u", R2DB_PROJECT_VERSION), 0);
+RZ_API RzProjectErr rz_project_save(RzCore *core, RzProject *prj) {
+	sdb_set (prj, RZ_DB_KEY_TYPE, RZ_DB_PROJECT_TYPE, 0);
+	sdb_set (prj, RZ_DB_KEY_VERSION, sdb_fmt ("%u", RZ_DB_PROJECT_VERSION), 0);
 	rz_serialize_core_save (sdb_ns (prj, "core", true), core);
-	return R_PROJECT_ERR_SUCCESS;
+	return RZ_PROJECT_ERR_SUCCESS;
 }
 
-RZ_API RProjectErr rz_project_save_file(RzCore *core, const char *file) {
-	RProject *prj = sdb_new0 ();
+RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file) {
+	RzProject *prj = sdb_new0 ();
 	if (!prj) {
-		return R_PROJECT_ERR_UNKNOWN;
+		return RZ_PROJECT_ERR_UNKNOWN;
 	}
-	RProjectErr err = rz_project_save (core, prj);
-	if (err != R_PROJECT_ERR_SUCCESS) {
+	RzProjectErr err = rz_project_save (core, prj);
+	if (err != RZ_PROJECT_ERR_SUCCESS) {
 		sdb_free (prj);
 		return err;
 	}
 	if (!sdb_archive_save (prj, file)) {
-		err = R_PROJECT_ERR_FILE;
+		err = RZ_PROJECT_ERR_FILE;
 	}
 	sdb_free (prj);
 	return err;
 }
 
-RZ_API RProjectErr rz_project_load(RzCore *core, RProject *prj, RSerializeResultInfo *res) {
-	const char *type = sdb_const_get (prj, R2DB_KEY_TYPE, 0);
-	if (!type || strcmp (type, R2DB_PROJECT_TYPE) != 0) {
-		return R_PROJECT_ERR_INVALID_TYPE;
+RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, RSerializeResultInfo *res) {
+	const char *type = sdb_const_get (prj, RZ_DB_KEY_TYPE, 0);
+	if (!type || strcmp (type, RZ_DB_PROJECT_TYPE) != 0) {
+		return RZ_PROJECT_ERR_INVALID_TYPE;
 	}
-	const char *version_str = sdb_const_get (prj, R2DB_KEY_VERSION, 0);
+	const char *version_str = sdb_const_get (prj, RZ_DB_KEY_VERSION, 0);
 	if (!version_str) {
-		return R_PROJECT_ERR_INVALID_VERSION;
+		return RZ_PROJECT_ERR_INVALID_VERSION;
 	}
 	unsigned long version = strtoul (version_str, NULL, 0);
 	if (!version || version == ULONG_MAX) {
-		return R_PROJECT_ERR_INVALID_VERSION;
-	} else if (version > R2DB_PROJECT_VERSION) {
-		return R_PROJECT_ERR_NEWER_VERSION;
+		return RZ_PROJECT_ERR_INVALID_VERSION;
+	} else if (version > RZ_DB_PROJECT_VERSION) {
+		return RZ_PROJECT_ERR_NEWER_VERSION;
 	}
 
 	Sdb *core_db = sdb_ns (prj, "core", false);
 	if (!core_db) {
 		SERIALIZE_ERR ("missing core namespace");
-		return R_PROJECT_ERR_INVALID_CONTENTS;
+		return RZ_PROJECT_ERR_INVALID_CONTENTS;
 	}
 	if (!rz_serialize_core_load (core_db, core, res)) {
-		return R_PROJECT_ERR_INVALID_CONTENTS;
+		return RZ_PROJECT_ERR_INVALID_CONTENTS;
 	}
 
-	return R_PROJECT_ERR_SUCCESS;
+	return RZ_PROJECT_ERR_SUCCESS;
 }
 
-RZ_API RProjectErr rz_project_load_file(RzCore *core, const char *file, RSerializeResultInfo *res) {
-	RProject *prj = sdb_archive_load (file);
+RZ_API RzProjectErr rz_project_load_file(RzCore *core, const char *file, RSerializeResultInfo *res) {
+	RzProject *prj = sdb_archive_load (file);
 	if (!prj) {
 		SERIALIZE_ERR ("failed to read database file");
-		return R_PROJECT_ERR_FILE;
+		return RZ_PROJECT_ERR_FILE;
 	}
-	RProjectErr ret = rz_project_load (core, prj, res);
+	RzProjectErr ret = rz_project_load (core, prj, res);
 	sdb_free (prj);
 	return ret;
 }

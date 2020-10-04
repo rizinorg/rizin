@@ -6,8 +6,8 @@ static RzCmdStatus Ps_handler(RzCore *core, int argc, const char **argv) {
 	if (argc != 2) {
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
-	RProjectErr err = rz_project_save_file (core, argv[1]);
-	if (err != R_PROJECT_ERR_SUCCESS) {
+	RzProjectErr err = rz_project_save_file (core, argv[1]);
+	if (err != RZ_PROJECT_ERR_SUCCESS) {
 		eprintf ("Failed to save project: %s\n", rz_project_err_message (err));
 	}
 	return RZ_CMD_STATUS_OK;
@@ -18,8 +18,8 @@ static RzCmdStatus Po_handler(RzCore *core, int argc, const char **argv) {
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
 	RSerializeResultInfo *res = rz_serialize_result_info_new ();
-	RProjectErr err = rz_project_load_file (core, argv[1], res);
-	if (err != R_PROJECT_ERR_SUCCESS) {
+	RzProjectErr err = rz_project_load_file (core, argv[1], res);
+	if (err != RZ_PROJECT_ERR_SUCCESS) {
 		eprintf ("Failed to load project: %s\n", rz_project_err_message (err));
 		RzListIter *it;
 		char *s;
