@@ -59,7 +59,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
 	// always unsigned immediates (kernel addresses)
-	// maybe r2 should have an option for this too?
+	// maybe rizin should have an option for this too?
 #if CS_API_MAJOR >= 4
 	cs_option (cd, CS_OPT_UNSIGNED, CS_OPT_ON);
 #endif

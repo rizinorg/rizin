@@ -1842,7 +1842,7 @@ static RzList *entries(RBinFile *bf) {
 		}
 	}
 #if 0
-	// this is now done by r2 in a generic way
+	// this is now done by rizin in a generic way
 	// STEP 3. NOTHING FOUND POINT TO CODE_INIT
 	if (rz_list_empty (ret)) {
 		if (!already_entry (ret, bin->code_from)) {

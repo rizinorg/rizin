@@ -177,7 +177,7 @@ static int cb(RzDiff *d, void *user, RzDiffOp *op) {
 		break;
 	case 'r':
 		if (disasm) {
-			eprintf ("r2cmds (-r) + disasm (-D) not yet implemented\n");
+			eprintf ("rzcmds (-r) + disasm (-D) not yet implemented\n");
 		}
 		if (op->a_len == op->b_len) {
 			printf ("wx ");
@@ -439,7 +439,7 @@ static int show_help(int v) {
 			"  -D         show disasm instead of hexpairs\n"
 			"  -e [k=v]   set eval config var value for all RzCore instances\n"
 			"  -g [sym|off1,off2]   graph diff of given symbol, or between two offsets\n"
-			"  -G [cmd]   run an r2 command on every RzCore instance created\n"
+			"  -G [cmd]   run an rz command on every RzCore instance created\n"
 			"  -i         diff imports of target files (see -u, -U and -z)\n"
 			"  -j         output in json format\n"
 			"  -n         print bare addresses only (diff.bare=1)\n"
@@ -462,7 +462,7 @@ static int show_help(int v) {
 			"  -Z         diff code comparing zignatures\n\n"
                        "Graph Output formats: (-m [mode])\n"
 		        "  <blank/a>  Ascii art\n"
-	                "  s          r2 commands\n"
+	                "  s          rz commands\n"
 		        "  d          Graphviz dot\n"
 	                "  g          Graph Modelling Language (gml)\n"
 		        "  j          json\n"

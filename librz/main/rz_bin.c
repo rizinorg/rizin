@@ -79,7 +79,7 @@ static int rabin_show_help(int v) {
 		" RZ_BIN_NOPLUGINS: # do not load shared plugins (speedup loading)\n"
 		" RZ_BIN_DEMANGLE=0:e bin.demangle     # do not demangle symbols\n"
 		" RZ_BIN_MAXSTRBUF: e bin.maxstrbuf    # specify maximum buffer size\n"
-		" RZ_BIN_STRFILTER: e bin.str.filter   #  r2 -qc 'e bin.str.filter=?" "?' -\n"
+		" RZ_BIN_STRFILTER: e bin.str.filter   # rizin -qc 'e bin.str.filter=?" "?' -\n"
 		" RZ_BIN_STRPURGE:  e bin.str.purge    # try to purge false positives\n"
 		" RZ_BIN_DEBASE64:  e bin.debase64     # try to debase64 all strings\n"
 		" RZ_BIN_DMNGLRCMD: e bin.demanglercmd # try to purge false positives\n"

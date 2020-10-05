@@ -110,7 +110,7 @@ rules to make the git history more readable and consistent:
 * ##print    - printing data, structures, strings, tables, types ..
 * ##projects - saving/loading state
 * ##refactor - improve code quality
-* ##remote   - r2 over tcp, http, rap, serial .. including collaboration
+* ##remote   - rizin over tcp, http, rap, serial .. including collaboration
 * ##search   - rz_find, / command, ..
 * ##shell    - commandline, newshell, ..
 * ##signatures-searching/generating them

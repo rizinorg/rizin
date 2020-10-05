@@ -327,15 +327,15 @@ RZ_API bool rz_asm_use(RzAsm *a, const char *name) {
 	rz_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (h->name, name) && h->arch) {
 			if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
-				char *r2prefix = rz_str_rz_prefix (RZ_SDB_OPCODES);
-				char *file = rz_str_newf ("%s/%s.sdb", rz_str_get (r2prefix), h->arch);
+				char *rzprefix = rz_str_rz_prefix (RZ_SDB_OPCODES);
+				char *file = rz_str_newf ("%s/%s.sdb", rz_str_get (rzprefix), h->arch);
 				if (file) {
 					rz_asm_set_cpu (a, NULL);
 					sdb_free (a->pair);
 					a->pair = sdb_new (NULL, file, 0);
 					free (file);
 				}
-				free (r2prefix);
+				free (rzprefix);
 			}
 			a->cur = h;
 			return true;
@@ -963,7 +963,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 					ret = rz_asm_pseudo_org (a, ptr + 5);
 					off = a->pc;
 				} else if (rz_str_startswith (ptr, ".offset ")) {
-					eprintf ("Invalid use of the .offset directory. This directive is only supported in r2 -c 'waf'.\n");
+					eprintf ("Invalid use of the .offset directory. This directive is only supported in rizin -c 'waf'.\n");
 				} else if (!strncmp (ptr, ".text", 5)) {
 					acode->code_offset = a->pc;
 				} else if (!strncmp (ptr, ".data", 5)) {
@@ -1061,7 +1061,7 @@ RZ_API bool rz_asm_set_arch(RzAsm *a, const char *name, int bits) {
 	return rz_asm_use (a, name)? rz_asm_set_bits (a, bits): false;
 }
 
-/* to ease the use of the native bindings (not used in r2) */
+/* to ease the use of the native bindings (not used in rizin) */
 RZ_API char *rz_asm_to_string(RzAsm *a, ut64 addr, const ut8 *b, int l) {
 	rz_return_val_if_fail (a && b && l >= 0, NULL);
 	rz_asm_set_pc (a, addr);

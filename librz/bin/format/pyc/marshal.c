@@ -5,7 +5,7 @@
 #include "marshal.h"
 #include "pyc_magic.h"
 
-// avoiding using r2 internals asserts
+// avoiding using rizin internals asserts
 #define if_true_return(cond,ret) if(cond){return(ret);}
 
 static ut32 magic_int;

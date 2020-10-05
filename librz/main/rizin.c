@@ -156,10 +156,10 @@ static int main_help(int line) {
 		" RZ_DEBUG      if defined, show error messages and crash signal\n"
 		" RZ_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
 		" RZ_MAGICPATH " RZ_JOIN_2_PATHS ("%s", RZ_SDB_MAGIC) "\n"
-		" RZ_NOPLUGINS do not load r2 shared plugins\n"
+		" RZ_NOPLUGINS do not load rizin shared plugins\n"
 		" RZ_RCFILE    ~/.rizinrc (user preferences, batch script)\n" // TOO GENERIC
-		" RZ_RDATAHOME %s\n" // TODO: rename to RHOME R2HOME?
-		" RZ_VERSION   contains the current version of r2\n" 
+		" RZ_RDATAHOME %s\n" // TODO: rename to RHOME RZHOME?
+		" RZ_VERSION   contains the current version of rizin\n"
 		"Paths:\n"
 		" RZ_PREFIX    "RZ_PREFIX"\n"
 		" RZ_INCDIR    "RZ_INCDIR"\n"
@@ -190,7 +190,7 @@ static int main_print_var(const char *var_name) {
 	struct rizin_var_t {
 		const char *name;
 		const char *value;
-	} r2_vars[] = {
+	} rz_vars[] = {
 		{ "RZ_VERSION", RZ_VERSION },
 		{ "RZ_PREFIX", RZ_PREFIX },
 		{ "RZ_MAGICPATH", magicpath },
@@ -210,16 +210,16 @@ static int main_print_var(const char *var_name) {
 		delta = 3;
 	}
 	if (var_name) {
-		while (r2_vars[i].name) {
-			if (!strcmp (r2_vars[i].name + delta, var_name)) {
-				printf ("%s\n", r2_vars[i].value);
+		while (rz_vars[i].name) {
+			if (!strcmp (rz_vars[i].name + delta, var_name)) {
+				printf ("%s\n", rz_vars[i].value);
 				break;
 			}
 			i++;
 		}
 	} else {
-		while (r2_vars[i].name) {
-			printf ("%s=%s\n", r2_vars[i].name, r2_vars[i].value);
+		while (rz_vars[i].name) {
+			printf ("%s=%s\n", rz_vars[i].name, rz_vars[i].value);
 			i++;
 		}
 	}
@@ -428,7 +428,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		LISTS_FREE ();
 		return 0;
 	}
-	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
+	// HACK TO PERMIT '#!/usr/bin/rz - -i' hashbangs
 	if (argc > 2 && !strcmp (argv[1], "-") && !strcmp (argv[2], "-i")) {
 		argv[1] = argv[0];
 		argc--;
@@ -1100,7 +1100,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 							if (r->file && iod && (iod->fd == r->file->fd) && iod->name) {
 								filepath = iod->name;
 							}
-							/* Load rbin info from r2 dbg:// or r2 /bin/ls */
+							/* Load rbin info from rz dbg:// or rz /bin/ls */
 							/* the baddr should be set manually here */
 							(void)rz_core_bin_load (r, filepath, baddr);
 							// check if bin info is loaded and complain if -B was used
@@ -1143,7 +1143,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			if (mapaddr) {
 				if (rz_config_get_i (r->config, "file.info")) {
 					eprintf ("Warning: using oba to load the syminfo from different mapaddress.\n");
-					// load symbols when using r2 -m 0x1000 /bin/ls
+					// load symbols when using rz -m 0x1000 /bin/ls
 					rz_core_cmdf (r, "oba 0 0x%"PFMT64x, mapaddr);
 					rz_core_cmd0 (r, ".ies*");
 				}
@@ -1156,7 +1156,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			if (fh) {
 				rz_debug_use (r->dbg, is_gdb ? "gdb" : debugbackend);
 			}
-			/* load symbols when doing r2 -d ls */
+			/* load symbols when doing rz -d ls */
 			// NOTE: the baddr is redefined to support PIE/ASLR
 			baddr = rz_debug_get_baddr (r->dbg, pfile);
 
@@ -1299,7 +1299,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 		// no flagspace selected by default the beginning
 		rz_flag_space_set (r->flags, NULL);
-		/* load <file>.r2 */
+		/* load <file>.rz */
 		{
 			char* f = rz_str_newf ("%s.rz", pfile);
 			const char *uri_splitter = strstr (f, "://");

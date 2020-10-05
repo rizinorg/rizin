@@ -80,10 +80,10 @@ static int lang_rust_run(RzLang *lang, const char *code, int len) {
 "        pub fn free (ptr: *const u8);\n" \
 "}\n" \
 "\n" \
-"pub struct R2;\n" \
+"pub struct Rz;\n" \
 "\n" \
 "#[allow(dead_code)]\n" \
-"impl R2 {\n" \
+"impl Rz {\n" \
 "        fn cmdstr(&self, c: *const u8, str: &str) -> String {\n" \
 "                unsafe {\n" \
 "                        let ptr = rz_core_cmd_str(c, str.as_ptr()) as *const i8;\n" \
@@ -98,7 +98,7 @@ static int lang_rust_run(RzLang *lang, const char *code, int len) {
 "#[allow(unused_variables)]\n" \
 "#[allow(unused_unsafe)]\n" \
 "pub extern fn entry(core: *const u8) {\n" \
-"        let r2 = R2;\n" \
+"        let rz = Rz;\n" \
 "        unsafe { /* because core is external */\n";
 		const char *rust_footer = \
 "        }\n" \

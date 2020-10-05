@@ -256,7 +256,7 @@ static void op_fillval(RzAnal *anal, RzAnalOp *op, csh *handle, cs_insn *insn) {
 #if 0
 capstone bug
 ------------
-	$ r2 -a riscv -e cfg.bigendian=1 -c "wx 0083001b" -
+	$ rizin -a riscv -e cfg.bigendian=1 -c "wx 0083001b" -
 	// should be 3 regs, right?
 	[0x00000000]> aoj~{}
 	[

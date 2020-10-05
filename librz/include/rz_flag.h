@@ -37,7 +37,7 @@ typedef struct rz_flags_at_offset_t {
 } RzFlagsAtOffset;
 
 typedef struct rz_flag_item_t {
-	char *name;     /* unique name, escaped to avoid issues with r2 shell */
+	char *name;     /* unique name, escaped to avoid issues with rizin shell */
 	char *realname; /* real name, without any escaping */
 	bool demangled; /* real name from demangling? */
 	ut64 offset;    /* offset flagged by this item */
