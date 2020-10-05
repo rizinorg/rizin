@@ -383,7 +383,7 @@ const RzCmdDescHelp p_help = {
 	.summary = "print commands",
 };
 
-const RzCmdDescHelp P_help = {
+const RzCmdDescHelp P_group_help = {
 	.summary = "project management",
 };
 
