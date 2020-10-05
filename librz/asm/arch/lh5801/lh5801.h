@@ -92,7 +92,7 @@ struct lh5801_insn_class_desc {
 	char mnem[4];		/* Assembler mnemonic */
 	const char *desc;	/* Textual description (for ?d) */
 
-	/* TODO: r2 insn type? */
+	/* TODO: rizin insn type? */
 };
 
 const struct lh5801_insn_class_desc

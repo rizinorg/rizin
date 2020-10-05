@@ -94,7 +94,7 @@ static ut64 pa2va(RBinFile *bf, ut64 offset) {
 
 static void init_sdb_formats(struct MACH0_(obj_t) *bin) {
 	/*
-	 * These definitions are used by r2 -nn
+	 * These definitions are used by rz -nn
 	 * must be kept in sync with librz/bin/d/macho
 	 */
 	sdb_set (bin->kv, "mach0_build_platform.cparse",

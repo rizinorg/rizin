@@ -83,7 +83,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	ut8 *tmp = NULL;
 
 	if (rbin->iob.io && !(rbin->iob.io->cached & RZ_PERM_W)) {
-		eprintf ("Please add \'-e io.cache=true\' option to r2 command. This is required to decompress the code.\n");
+		eprintf ("Please add \'-e io.cache=true\' option to rz command. This is required to decompress the code.\n");
 		goto fail;
 	}
 	/* Decompress each sections */

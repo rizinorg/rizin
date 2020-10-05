@@ -569,7 +569,7 @@ static RzList* patch_relocs(RBin *b) {
 	struct MACH0_(obj_t) *bin = NULL;
 	RzIOMap *g = NULL;
 	HtUU *relocs_by_sym = NULL;
-	RzIODesc *gotr2desc = NULL;
+	RzIODesc *gotrzdesc = NULL;
 
 	rz_return_val_if_fail (b, NULL);
 
@@ -605,7 +605,7 @@ static RzList* patch_relocs(RBin *b) {
 	}
 
 	if (!io->cached) {
-		eprintf ("Warning: run r2 with -e io.cache=true to fix relocations in disassembly\n");
+		eprintf ("Warning: run rizin with -e io.cache=true to fix relocations in disassembly\n");
 		goto beach;
 	}
 
@@ -626,17 +626,17 @@ static RzList* patch_relocs(RBin *b) {
 	ut64 n_vaddr = g->itv.addr + g->itv.size;
 	ut64 size = num_ext_relocs * cdsz;
 	char *muri = rz_str_newf ("malloc://%" PFMT64u, size);
-	gotr2desc = b->iob.open_at (io, muri, RZ_PERM_R, 0664, n_vaddr);
+	gotrzdesc = b->iob.open_at (io, muri, RZ_PERM_R, 0664, n_vaddr);
 	free (muri);
-	if (!gotr2desc) {
+	if (!gotrzdesc) {
 		goto beach;
 	}
 
-	RzIOMap *gotr2map = b->iob.map_get (io, n_vaddr);
-	if (!gotr2map) {
+	RzIOMap *gotrzmap = b->iob.map_get (io, n_vaddr);
+	if (!gotrzmap) {
 		goto beach;
 	}
-	gotr2map->name = strdup (".got.r2");
+	gotrzmap->name = strdup (".got.rz");
 
 	if (!(ret = rz_list_newf ((RzListFree)free))) {
 		goto beach;
@@ -683,7 +683,7 @@ static RzList* patch_relocs(RBin *b) {
 beach:
 	rz_list_free (ext_relocs);
 	rz_skiplist_free (all_relocs);
-	rz_io_desc_free (gotr2desc);
+	rz_io_desc_free (gotrzdesc);
 	rz_list_free (ret);
 	ht_uu_free (relocs_by_sym);
 	return NULL;

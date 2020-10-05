@@ -145,7 +145,7 @@ static RBinInfo *info(RBinFile *bf) {
 
 RBinPlugin rz_bin_plugin_le = {
 	.name = "le",
-	.desc = "LE/LX format r2 plugin",
+	.desc = "LE/LX format plugin",
 	.author = "GustavoLCR",
 	.license = "LGPL3",
 	.check_buffer = &check_buffer,

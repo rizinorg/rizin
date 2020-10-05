@@ -1,4 +1,4 @@
-/* SPP-R2, a template programming language with r2 integration */
+/* SPP-RZ, a template programming language with rizin integration */
 
 #include <rz_util.h>
 
@@ -402,7 +402,7 @@ static SppTag spp_rz_tags[] = {
 	{ "endpipe", spp_rz_endpipe },
 	{ "include", spp_rz_include },
 	{ "system", spp_rz_system },
-	{ "r2", spp_rz_rz },
+	{ "rz", spp_rz_rz },
 	{ NULL, spp_rz_default },
 	{ NULL }
 };
@@ -431,7 +431,7 @@ static struct Arg spp_rz_args[] = {
 };
 
 DLL_LOCAL SppProc spp_rz_proc = {
-	.name = "sppr2",
+	.name = "spprz",
 	.tags = (struct Tag **)spp_rz_tags,
 	.args = (struct Arg **)spp_rz_args,
 	.token = " ",

@@ -58,7 +58,7 @@ static RzList *patch_relocs(RBin *b) {
 	}
 	if (!(b->iob.io->cached & RZ_PERM_W)) {
 		eprintf (
-			"Warning: please run r2 with -e io.cache=true to patch "
+			"Warning: please run rz with -e io.cache=true to patch "
 			"relocations\n");
 		return NULL;
 	}

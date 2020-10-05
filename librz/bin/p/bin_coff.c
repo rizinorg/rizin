@@ -414,7 +414,7 @@ static RzList *patch_relocs(RBin *b) {
 	}
 	if (!(io->cached & RZ_PERM_W)) {
 		eprintf (
-			"Warning: please run r2 with -e io.cache=true to patch "
+			"Warning: please run rizin with -e io.cache=true to patch "
 			"relocations\n");
 		return NULL;
 	}
@@ -442,7 +442,7 @@ static RzList *patch_relocs(RBin *b) {
 		if (!map) {
 			return NULL;
 		}
-		map->name = strdup (".imports.r2");
+		map->name = strdup (".imports.rz");
 	}
 
 	return _relocs_list (b, bin, true, m_vaddr);

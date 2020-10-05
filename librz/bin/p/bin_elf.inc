@@ -721,7 +721,7 @@ static RzList* relocs(RBinFile *bf) {
 		}
 	}
 	if (got_addr < 1 && bin->ehdr.e_type == ET_REL) {
-		got_addr = Elf_(rz_bin_elf_get_section_addr) (bin, ".got.r2");
+		got_addr = Elf_(rz_bin_elf_get_section_addr) (bin, ".got.rz");
 		if (got_addr == -1) {
 			got_addr = 0;
 		}
@@ -932,25 +932,25 @@ static RzList* patch_relocs(RBin *b) {
 		return NULL;
 	}
 	if (!io->cached) {
-		eprintf ("Warning: run r2 with -e io.cache=true to fix relocations in disassembly\n");
+		eprintf ("Warning: run rz with -e io.cache=true to fix relocations in disassembly\n");
 		return NULL;
 	}
 	ut64 n_vaddr = g->itv.addr + g->itv.size;
 	// reserve at least that space
 	size = bin->g_reloc_num * cdsz;
 	char *muri = rz_str_newf ("malloc://%" PFMT64u, size);
-	RzIODesc *gotr2desc = b->iob.open_at (io, muri, RZ_PERM_R, 0664, n_vaddr);
+	RzIODesc *gotrzdesc = b->iob.open_at (io, muri, RZ_PERM_R, 0664, n_vaddr);
 	free (muri);
-	if (!gotr2desc) {
+	if (!gotrzdesc) {
 		return NULL;
 	}
 
 
-	RzIOMap *gotr2map = b->iob.map_get (io, n_vaddr);
-	if (!gotr2map) {
+	RzIOMap *gotrzmap = b->iob.map_get (io, n_vaddr);
+	if (!gotrzmap) {
 		return NULL;
 	}
-	gotr2map->name = strdup (".got.r2");
+	gotrzmap->name = strdup (".got.rz");
 
 	if (!(relcs = Elf_(rz_bin_elf_get_relocs) (bin))) {
 		return NULL;

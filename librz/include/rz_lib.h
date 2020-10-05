@@ -57,7 +57,7 @@ typedef struct rz_lib_handler_t {
 typedef struct rz_lib_struct_t {
 	int type;
 	void *data; /* pointer to data handled by plugin handler */
-	const char *version; /* r2 version */
+	const char *version; /* rizin version */
 	void (*free)(void *data);
 	const char *pkgname; /* pkgname associated to this plugin */
 } RzLibStruct;

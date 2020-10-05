@@ -362,7 +362,7 @@ static char *gdb_to_rz_profile(const char *gdb) {
 			ptr = ptr1 + 1;
 			continue;
 		}
-		// TODO: More mappings between gdb and r2 reg groups. For now, either fpu or gpr
+		// TODO: More mappings between gdb and rizin reg groups. For now, either fpu or gpr
 		if (!(type_bits & sse) && !(type_bits & float_)) {
 			type_bits |= gpr;
 		}

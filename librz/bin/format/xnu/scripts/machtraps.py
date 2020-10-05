@@ -3,8 +3,8 @@
 
 """
 Example usage to regenerate traps.json:
-    - open the dyld cache in r2 like this:
-RZ_DYLDCACHE_FILTER=libsystem_kernel r2 -e bin.usextr=false ~/Library/Developer/Xcode/iOS\ DeviceSupport/12.1.2\ \(16C101\)\ arm64e/Symbols/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64e
+    - open the dyld cache in rizin like this:
+RZ_DYLDCACHE_FILTER=libsystem_kernel rizin -e bin.usextr=false ~/Library/Developer/Xcode/iOS\ DeviceSupport/12.1.2\ \(16C101\)\ arm64e/Symbols/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64e
 
     - run the script with this command:
         #!pipe python2 /path/to/this/script.py > traps.json

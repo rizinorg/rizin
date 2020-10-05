@@ -218,7 +218,7 @@ static RzList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RES
 }
 
 static ut64 baddr(RBinFile *bf) {
-	// having this we make r2 -B work, otherwise it doesnt works :??
+	// having this we make rz -B work, otherwise it doesnt works :??
 	return 0;
 }
 

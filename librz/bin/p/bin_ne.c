@@ -108,7 +108,7 @@ RzList *relocs(RBinFile *bf) {
 
 RBinPlugin rz_bin_plugin_ne = {
 	.name = "ne",
-	.desc = "NE format r2 plugin",
+	.desc = "NE format plugin",
 	.author = "GustavoLCR",
 	.license = "LGPL3",
 	.check_buffer = &check_buffer,
