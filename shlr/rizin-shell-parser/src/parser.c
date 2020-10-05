@@ -1917,7 +1917,7 @@ static const char *ts_field_names[] = {
   [field_string] = "string",
 };
 
-static const TSFieldMapSlice ts_field_map_slices[18] = {
+static const TSFieldMapSlice ts_field_map_slices[17] = {
   [1] = {.index = 0, .length = 1},
   [2] = {.index = 1, .length = 2},
   [4] = {.index = 3, .length = 2},
@@ -1929,7 +1929,7 @@ static const TSFieldMapSlice ts_field_map_slices[18] = {
   [10] = {.index = 12, .length = 1},
   [11] = {.index = 13, .length = 2},
   [12] = {.index = 15, .length = 3},
-  [16] = {.index = 18, .length = 2},
+  [15] = {.index = 18, .length = 2},
 };
 
 static const TSFieldMapEntry ts_field_map_entries[] = {
@@ -1966,7 +1966,7 @@ static const TSFieldMapEntry ts_field_map_entries[] = {
     {field_command, 3, .inherited = true},
 };
 
-static TSSymbol ts_alias_sequences[18][MAX_ALIAS_SEQUENCE_LENGTH] = {
+static TSSymbol ts_alias_sequences[17][MAX_ALIAS_SEQUENCE_LENGTH] = {
   [0] = {0},
   [3] = {
     [0] = sym_arg_identifier,
@@ -1985,10 +1985,7 @@ static TSSymbol ts_alias_sequences[18][MAX_ALIAS_SEQUENCE_LENGTH] = {
     [0] = sym_pf_arg_identifier,
     [2] = sym_pf_arg_identifier,
   },
-  [15] = {
-    [1] = sym_arg_identifier,
-  },
-  [17] = {
+  [16] = {
     [1] = sym_pf_arg_identifier,
   },
 };
@@ -35178,8 +35175,8 @@ static TSParseActionEntry ts_parse_actions[] = {
   [848] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym_foreach_flag_command, 3),
   [850] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_foreach_comment_command, 3),
   [852] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym_foreach_comment_command, 3),
-  [854] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_eq_sep_args, 3, .production_id = 15),
-  [856] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym_eq_sep_args, 3, .production_id = 15),
+  [854] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_eq_sep_args, 3),
+  [856] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym_eq_sep_args, 3),
   [858] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_macro_call_full_content, 2),
   [860] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym_macro_call_full_content, 2),
   [862] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_foreach_string_command, 2),
@@ -35196,8 +35193,8 @@ static TSParseActionEntry ts_parse_actions[] = {
   [884] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym_grep_command, 3, .production_id = 11),
   [886] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_foreach_section_command, 2),
   [888] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym_foreach_section_command, 2),
-  [890] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_iter_hit_command, 4, .production_id = 16),
-  [892] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym_iter_hit_command, 4, .production_id = 16),
+  [890] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_iter_hit_command, 4, .production_id = 15),
+  [892] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym_iter_hit_command, 4, .production_id = 15),
   [894] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_iter_functions_command, 4),
   [896] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym_iter_functions_command, 4),
   [898] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_foreach_iomap_command, 2),
@@ -35228,8 +35225,8 @@ static TSParseActionEntry ts_parse_actions[] = {
   [948] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym__interpret_command, 2, .production_id = 4),
   [950] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_macro_args, 2),
   [952] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym_macro_args, 2),
-  [954] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_pf_dot_cmd_args, 3, .production_id = 17),
-  [956] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym_pf_dot_cmd_args, 3, .production_id = 17),
+  [954] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_pf_dot_cmd_args, 3, .production_id = 16),
+  [956] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym_pf_dot_cmd_args, 3, .production_id = 16),
   [958] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_foreach_thread_command, 2),
   [960] = {.entry = {.count = 1, .reusable = false}}, REDUCE(sym_foreach_thread_command, 2),
   [962] = {.entry = {.count = 1, .reusable = true}}, REDUCE(sym_pf_dot_cmd, 3, .production_id = 9),

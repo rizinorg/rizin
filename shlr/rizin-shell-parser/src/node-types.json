@@ -334,10 +334,6 @@
           "named": true
         },
         {
-          "type": "arg_identifier",
-          "named": true
-        },
-        {
           "type": "args",
           "named": true
         },
@@ -13889,6 +13885,10 @@
   },
   {
     "type": ";",
+    "named": false
+  },
+  {
+    "type": "=",
     "named": false
   },
   {

@@ -55,7 +55,7 @@ const PF_ARG_IDENTIFIER_BASE = choice(
 );
 
 module.exports = grammar({
-    name: 'r2cmd',
+    name: 'rzcmd',
 
     extras: $ => [
 	$._comment,
@@ -508,7 +508,7 @@ module.exports = grammar({
 	eq_sep_args: $ => seq(
 	    alias($.eq_sep_key, $.args),
 	    optional(seq(
-		alias('=', $.arg_identifier),
+		'=',
 		alias($.eq_sep_val, $.args)
 	    )),
 	),
