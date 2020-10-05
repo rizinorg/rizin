@@ -586,6 +586,73 @@ static RzCmdStatus wv8_handler(RzCore *core, int argc, const char **argv) {
 	return common_wv_handler (core, argc, argv, 8);
 }
 
+static RzCmdStatus w6e_handler(RzCore *core, int argc, const char **argv) {
+	if (argc != 2) {
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+
+	int wseek = rz_config_get_i (core->config, "cfg.wseek");
+	const char *str = argv[1];
+	size_t str_len = strlen (str) + 1;
+	ut8 *bin_buf = malloc (str_len);
+	if (!bin_buf) {
+		eprintf ("Error: failed to malloc memory");
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	const int bin_len = rz_hex_str2bin (str, bin_buf);
+	if (bin_len <= 0) {
+		free (bin_buf);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	ut8 *buf = calloc (str_len + 1, 4);
+	int len = rz_base64_encode ((char *)buf, bin_buf, bin_len);
+	free (bin_buf);
+	if (len == 0) {
+		free (buf);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if (!rz_core_write_at (core, core->offset, buf, len)) {
+		cmd_write_fail (core);
+		free (buf);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	WSEEK (core, len);
+	rz_core_block_read (core);
+
+	free (buf);
+	return RZ_CMD_STATUS_OK;
+}
+
+static RzCmdStatus w6d_handler(RzCore *core, int argc, const char **argv) {
+	if (argc != 2) {
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+
+	int wseek = rz_config_get_i (core->config, "cfg.wseek");
+	const char *str = argv[1];
+	size_t str_len = strlen (str) + 1;
+	ut8 *buf = malloc (str_len);
+	int len = rz_base64_decode (buf, str, -1);
+	if (len < 0) {
+		free (buf);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	if (!rz_core_write_at (core, core->offset, buf, len)) {
+		cmd_write_fail (core);
+		free (buf);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	WSEEK (core, len);
+	rz_core_block_read (core);
+
+	free (buf);
+	return RZ_CMD_STATUS_OK;
+}
+
 static bool cmd_wff(RzCore *core, const char *input) {
 	ut8 *buf;
 	size_t size;
@@ -2100,7 +2167,10 @@ static void cmd_write_init(RzCore *core, RzCmdDesc *parent) {
 	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8+, w8_inc, w8_cd, w8_incdec_handler, &w8_inc_help);
 	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8-, w8_dec, w8_cd, w8_incdec_handler, &w8_dec_help);
 
-	DEFINE_CMD_OLDINPUT_DESC (core, w6, parent);
+	DEFINE_CMD_ARGV_GROUP (core, w6, parent);
+	DEFINE_CMD_ARGV_DESC (core, w6d, w6_cd);
+	DEFINE_CMD_ARGV_DESC (core, w6e, w6_cd);
+
 	DEFINE_CMD_OLDINPUT_DESC (core, wh, parent);
 	DEFINE_CMD_OLDINPUT_DESC (core, we, parent);
 	DEFINE_CMD_OLDINPUT_DESC (core, wp, parent);

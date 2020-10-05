@@ -67,9 +67,37 @@ static const char *help_msg_eco[] = {
 static char *curtheme = "default";
 static bool getNext = false;
 
+static RzCmdStatus env_handler(RzCore *core, int argc, const char **argv) {
+	char *p, **e;
+	switch (argc) {
+	case 1:
+		e = rz_sys_get_environ ();
+		while (!RZ_STR_ISEMPTY (e)) {
+			rz_cons_println (*e);
+			e++;
+		}
+		return RZ_CMD_STATUS_OK;
+	case 2:
+		p = rz_sys_getenv (argv[1]);
+		if (!p) {
+			return RZ_CMD_STATUS_ERROR;
+		}
+		rz_cons_println (p);
+		free (p);
+		return RZ_CMD_STATUS_OK;
+	case 3:
+		rz_sys_setenv (argv[1], argv[2]);
+		return RZ_CMD_STATUS_OK;
+	default:
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+}
+
 static void cmd_eval_init(RzCore *core, RzCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, e);
 	DEFINE_CMD_DESCRIPTOR (core, ec);
+
+	DEFINE_CMD_ARGV_DESC (core, env, parent);
 }
 
 static bool load_theme(RzCore *core, const char *path) {

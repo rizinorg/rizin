@@ -171,9 +171,14 @@ RZ_API RzCmdDesc *rz_cmd_get_desc(RzCmd *cmd, const char *cmd_identifier) {
 				if (!is_exact_match) {
 					break;
 				}
-				// fallthrough
+				res = cd;
+				goto out;
 			case RZ_CMD_DESC_TYPE_GROUP:
-				// fallthrough
+				if (!is_exact_match) {
+					break;
+				}
+				res = cd;
+				goto out;
 			case RZ_CMD_DESC_TYPE_OLDINPUT:
 				res = cd;
 				goto out;

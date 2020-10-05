@@ -150,6 +150,7 @@ bool test_cmd_descriptor_group(void) {
 	mu_assert_true (rz_cmd_desc_has_handler (cd), "a_exec_cb is the handler for this");
 
 	mu_assert_ptreq (rz_cmd_get_desc (cmd, "a"), cd, "cd is the desc for `a`");
+	mu_assert_null (rz_cmd_get_desc (cmd, "afjb"), "nothing should be found for non-existing cmd");
 
 	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd("a??");
 	char *h = rz_cmd_get_help (cmd, pa, false);

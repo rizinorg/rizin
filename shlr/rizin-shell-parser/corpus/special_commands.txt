@@ -15,12 +15,10 @@ Pointer type commands
   (arged_command (cmd_identifier)
     (args
       (args (arg (arg_identifier)))
-      (arg_identifier)
       (args (arg (arg_identifier)))))
   (arged_command (cmd_identifier)
     (args
       (args (arg (arg_identifier)))
-      (arg_identifier)
       (args (arg (arg_identifier))))))
 
 
@@ -44,7 +42,6 @@ Environment variable command
   (arged_command (cmd_identifier)
     (args
       (args (arg (arg_identifier)))
-      (arg_identifier)
       (args (arg (arg_identifier)))))
   (arged_command (cmd_identifier)
     (args
@@ -52,7 +49,6 @@ Environment variable command
   (arged_command (cmd_identifier)
     (args
       (args (arg (arg_identifier)))
-      (arg_identifier)
       (args (arg (arg_identifier))))))
 
 
@@ -259,7 +255,6 @@ Pointer type commands with substitution
 	(arg (cmd_substitution_arg
 	        (arged_command (cmd_identifier)
 		  (args (arg (arg_identifier)))))))
-      (arg_identifier)
       (args
         (arg (cmd_substitution_arg
 	        (arged_command (cmd_identifier)

@@ -12,7 +12,6 @@
 #define RZ_BIN_STATIC_PLUGINS @plugins_bin@
 #define RZ_BIN_LDR_STATIC_PLUGINS @plugins_bin_ldr@
 #define RZ_BIN_XTR_STATIC_PLUGINS @plugins_bin_xtr@
-#define RZ_FS_STATIC_PLUGINS @plugins_fs@
 #define RZ_IO_STATIC_PLUGINS @plugins_io@
 #define RZ_DEBUG_STATIC_PLUGINS @plugins_debug@
 #define RZ_BP_STATIC_PLUGINS @plugins_bp@

@@ -17,8 +17,24 @@ const RzCmdDescHelp alias_help = {
 	.summary = "Alias commands and strings",
 };
 
+const RzCmdDescExample env_help_examples[] = {
+	{ .example = "%", .comment = "list all environment variables" },
+	{ .example = "%SHELL", .comment = "print value of SHELL variable" },
+	{ .example = "%TMPDIR=/tmp", .comment = "set TMPDIR to \"/tmp\"" },
+	{ .example = "env SHELL", .comment = "same as `%SHELL`" },
+	{ 0 },
+};
+
 const RzCmdDescHelp env_help = {
-	.summary = "get/set environment variable",
+	.summary = "get/set environment variables",
+	.args_str = " [varname[=varvalue]]",
+	.examples = env_help_examples,
+};
+
+const RzCmdDescHelp percentage_help = {
+	.summary = "get/set environment variables",
+	.args_str = "[varname[=varvalue]]",
+	.examples = env_help_examples,
 };
 
 const RzCmdDescHelp tasks_help = {
@@ -29,8 +45,18 @@ const RzCmdDescHelp macro_help = {
 	.summary = "manage scripting macros",
 };
 
+const RzCmdDescExample pointer_help_examples[] = {
+	{ .example = "*entry0=cc", .comment = "write trap in entrypoint" },
+	{ .example = "*entry0+10=0x804800", .comment = "write 0x804800 as a 4-byte value at 10 bytes from the entrypoint" },
+	{ .example = "*entry0", .comment = "read the value contained at the entrypoint" },
+	{ 0 },
+};
+
 const RzCmdDescHelp pointer_help = {
-	.summary = "alias for 'env' command",
+	.summary = "pointer read/write data/values",
+	.args_str = "<addr>[=<0xvalue>|<hexstring>]",
+	.description = "Read or write values at a given address. When the value starts with `0x`, a 4-bytes value or 8-bytes value is written in the memory at address, depending on the size of the value. When value does not start with `0x` an hexstring with arbitrary length is expected and it is written starting from the specified address.",
+	.examples = pointer_help_examples,
 };
 
 const RzCmdDescHelp stdin_help = {
@@ -375,9 +401,30 @@ const RzCmdDescHelp wv8_help = {
 	.description = "Write the number passed as argument at the current offset as 8 - bytes, respecting the cfg.bigendian variable",
 };
 
-const RzCmdDescHelp w6_help = {
+const RzCmdDescExample w6_help_examples[] = {
+	{ .example = "w6d SGVsbG9Xb3JsZAo=", .comment = "Write the string \"HelloWorld\" (without quotes) at current offset." },
+	{ .example = "w6e 48656c6c6f576f726c64", .comment = "Write the string \"SGVsbG9Xb3JsZAo=\" (without quotes) at current offset." },
+	{ 0 },
+};
+
+const RzCmdDescHelp w6_group_help = {
 	.args_str = " <base64>|<hexstring>",
 	.summary = "write base64 [d]ecoded or [e]ncoded string",
+	.examples = w6_help_examples,
+};
+
+const RzCmdDescHelp w6d_help = {
+	.args_str = " <base64>",
+	.summary = "write the base64-decoded bytes",
+	.description = "Base64-Decode the string passed as argument and write it at the current offset.",
+	.examples = w6_help_examples,
+};
+
+const RzCmdDescHelp w6e_help = {
+	.args_str = " <hexstring>",
+	.summary = "write the base64-encoded bytes",
+	.description = "Base64-Encode the hex string passed as argument and write it at the current offset.",
+	.examples = w6_help_examples,
 };
 
 const RzCmdDescHelp wh_help = {

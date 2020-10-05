@@ -1,5 +1,5 @@
 {
-  "name": "r2cmd",
+  "name": "rzcmd",
   "rules": {
     "commands": {
       "type": "CHOICE",
@@ -2965,13 +2965,8 @@
               "type": "SEQ",
               "members": [
                 {
-                  "type": "ALIAS",
-                  "content": {
-                    "type": "STRING",
-                    "value": "="
-                  },
-                  "named": true,
-                  "value": "arg_identifier"
+                  "type": "STRING",
+                  "value": "="
                 },
                 {
                   "type": "ALIAS",
