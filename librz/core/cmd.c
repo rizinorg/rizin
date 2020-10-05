@@ -2063,6 +2063,32 @@ static int cmd_pointer(void *data, const char *input) {
 	return ret;
 }
 
+static RzCmdStatus env_handler(RzCore *core, int argc, const char **argv) {
+	char *p, **e;
+	switch (argc) {
+	case 1:
+		e = rz_sys_get_environ ();
+		while (!RZ_STR_ISEMPTY (e)) {
+			rz_cons_println (*e);
+			e++;
+		}
+		return RZ_CMD_STATUS_OK;
+	case 2:
+		p = rz_sys_getenv (argv[1]);
+		if (!p) {
+			return RZ_CMD_STATUS_ERROR;
+		}
+		rz_cons_println (p);
+		free (p);
+		return RZ_CMD_STATUS_OK;
+	case 3:
+		rz_sys_setenv (argv[1], argv[2]);
+		return RZ_CMD_STATUS_OK;
+	default:
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+}
+
 static int cmd_env(void *data, const char *input) {
 	RzCore *core = (RzCore*)data;
 	int ret = true;
@@ -7112,7 +7138,7 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{"_",        "print last output", cmd_last, NULL, &underscore_help},
 		{"#",        "calculate hash", cmd_hash, NULL, &hash_help},
 		{"$",        "alias", cmd_alias, NULL, &alias_help},
-		{"%",        "short version of 'env' command", cmd_env, NULL, &env_help},
+		{"%",        "short version of 'env' command", cmd_env, NULL, &env_help, NULL, RZ_CMD_DESC_TYPE_ARGV, env_handler},
 		{"&",        "tasks", cmd_tasks, NULL, &tasks_help},
 		{"(",        "macro", cmd_macro, cmd_macro_init, &macro_help},
 		{"*",        "pointer read/write", cmd_pointer, NULL, &pointer_help},

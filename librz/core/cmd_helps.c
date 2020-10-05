@@ -17,8 +17,18 @@ const RzCmdDescHelp alias_help = {
 	.summary = "Alias commands and strings",
 };
 
+const RzCmdDescExample env_help_examples[] = {
+	{ .example = "%", .comment = "list all environment variables" },
+	{ .example = "%SHELL", .comment = "print value of SHELL variable" },
+	{ .example = "%TMPDIR=/tmp", .comment = "set TMPDIR to \"/tmp\"" },
+	{ 0 },
+};
+
 const RzCmdDescHelp env_help = {
-	.summary = "get/set environment variable",
+	.summary = "get/set environment variables",
+	.args_str = "[varname[=varvalue]]",
+	.examples = env_help_examples,
+
 };
 
 const RzCmdDescHelp tasks_help = {
