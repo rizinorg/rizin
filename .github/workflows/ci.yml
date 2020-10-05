@@ -240,6 +240,8 @@ jobs:
         cd rizin
         git fetch origin ${{ github.ref }}
         git checkout -b local_branch FETCH_HEAD
+        git submodule init
+        git submodule update
     - name: Configure with ACR and build
       run: ./configure --prefix=/usr && make CS_RELEASE=1
       working-directory: rizin
@@ -293,6 +295,8 @@ jobs:
         cd rizin
         git fetch origin ${{ github.ref }}
         git checkout -b local_branch FETCH_HEAD
+        git submodule init
+        git submodule update
     - name: Checkout our Testsuite Binaries
       run: git clone https://github.com/rizinorg/rizin-testbins test/bins
     - name: Configure with ACR and build
@@ -318,6 +322,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
+      with:
+          submodules: recursive
     - name: Checkout our Testsuite Binaries
       uses: actions/checkout@v2
       with:
@@ -341,6 +347,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+          submodules: recursive
     - name: Extract rizin version
       shell: bash
       run: echo "##[set-output name=branch;]$(python sys/version.py)"
@@ -387,6 +395,8 @@ jobs:
         cd rizin
         git fetch origin ${{ github.ref }}
         git checkout -b local_branch FETCH_HEAD
+        git submodule init
+        git submodule update
     - name: Preparing the deb package
       run: |
         sys/debian.sh
@@ -411,6 +421,8 @@ jobs:
     needs: [build-and-test]
     steps:
     - uses: actions/checkout@v2
+      with:
+          submodules: recursive
     - name: Install pkg-config with Homebrew
       run: brew install pkg-config
     - name: Create OSX package
@@ -442,6 +454,8 @@ jobs:
             meson_options: --default-library=shared
     steps:
     - uses: actions/checkout@v2
+      with:
+          submodules: recursive
     - uses: actions/setup-python@v2
     - name: Install dependencies
       run: |
@@ -485,6 +499,8 @@ jobs:
     needs: [build-and-test]
     steps:
     - uses: actions/checkout@v2
+      with:
+          submodules: recursive
     - name: Extract rizin version
       shell: bash
       run: echo "##[set-output name=branch;]$(python sys/version.py)"
@@ -517,6 +533,8 @@ jobs:
         name: [x86_64, arm, aarch64]
     steps:
     - uses: actions/checkout@v2
+      with:
+          submodules: recursive
     - name: Install dependencies
       run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
     - name: Compile with meson
@@ -638,6 +656,8 @@ jobs:
     needs: [build-windows]
     steps:
     - uses: actions/checkout@v2
+      with:
+          submodules: recursive
     - uses: actions/setup-python@v2
     - name: Install pkg-config
       shell: pwsh
@@ -686,6 +706,8 @@ jobs:
     ]
     steps:
     - uses: actions/checkout@v2
+      with:
+          submodules: recursive
     - name: Extract rizin version
       shell: bash
       run: echo "##[set-output name=branch;]$(python sys/version.py)"
@@ -828,6 +850,8 @@ jobs:
     if: github.event_name == 'push'
     steps:
     - uses: actions/checkout@v2
+      with:
+          submodules: recursive
     - name: Publish to Registry
       uses: docker/build-push-action@v1
       with:
