@@ -932,7 +932,7 @@ static RzList* patch_relocs(RBin *b) {
 		return NULL;
 	}
 	if (!io->cached) {
-		eprintf ("Warning: run rz with -e io.cache=true to fix relocations in disassembly\n");
+		eprintf ("Warning: run rizin with -e io.cache=true to fix relocations in disassembly\n");
 		return NULL;
 	}
 	ut64 n_vaddr = g->itv.addr + g->itv.size;
