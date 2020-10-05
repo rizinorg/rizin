@@ -96,7 +96,8 @@ static int rz_debug_handle_signals(RzDebug *dbg) {
 #if __KFBSD__
 	return bsd_handle_signals (dbg);
 #else
-	return -1;
+	eprinf ("Warning: signal handling is not supported on this platform\n");
+	return 0;
 #endif
 }
 #endif
@@ -533,7 +534,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 #if __OpenBSD__ || __NetBSD__
 			reason = RZ_DEBUG_REASON_BREAKPOINT;
 #else
-			if (!rz_debug_handle_signals (dbg)) {
+			if (z_debug_handle_signals (dbg) != 0) {
 				return RZ_DEBUG_REASON_ERROR;
 			}
 			reason = dbg->reason.type;
