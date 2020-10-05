@@ -217,6 +217,9 @@ typedef struct rz_core_plugin_t {
 #define DEFINE_CMD_ARGV_GROUP_WITH_CHILD(core, name, parent)                                    \
 	RzCmdDesc *name##_cd = rz_cmd_desc_group_new (core->rcmd, parent, #name, name##_handler, &name##_help, &name##_group_help); \
 	rz_warn_if_fail (name##_cd)
+#define DEFINE_CMD_ARGV_GROUP(core, name, parent) \
+	RzCmdDesc *name##_cd = rz_cmd_desc_group_new (core->rcmd, parent, #name, NULL, NULL, &name##_group_help); \
+	rz_warn_if_fail (name##_cd)
 #define DEFINE_CMD_ARGV_DESC(core, name, parent) \
 	DEFINE_CMD_ARGV_DESC_SPECIAL (core, name, name, parent)
 #define DEFINE_CMD_OLDINPUT_DESC(core, name, parent) \
