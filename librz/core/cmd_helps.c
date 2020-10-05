@@ -25,8 +25,28 @@ const RzCmdDescDetailEntry env_help_examples[] = {
 	{ 0 },
 };
 
+const RzCmdDescDetailEntry env_help_environments[] = {
+	{ .text = "RZ_FILE", .comment = "currently opened file name" },
+	{ .text = "RZ_OFFSET", .comment = "10base offset 64bit value" },
+	{ .text = "RZ_BYTES", .comment = "TODO: variable with bytes in curblock" },
+	{ .text = "RZ_XOFFSET", .comment = "same as above, but in 16 base" },
+	{ .text = "RZ_BSIZE", .comment = "block size" },
+	{ .text = "RZ_ENDIAN", .comment = "'big' or 'little'" },
+	{ .text = "RZ_IOVA", .comment = "is io.va true? virtual addressing (1,0)" },
+	{ .text = "RZ_DEBUG", .comment = "debug mode enabled? (1,0)" },
+	{ .text = "RZ_BLOCK", .comment = "TODO: dump current block to tmp file" },
+	{ .text = "RZ_SIZE", .comment = "file size" },
+	{ .text = "RZ_ARCH", .comment = "value of asm.arch" },
+	{ .text = "RZ_BITS", .comment = "arch reg size (8, 16, 32, 64)" },
+	{ .text = "RZ_BIN_LANG", .comment = "assume this lang to demangle" },
+	{ .text = "RZ_BIN_DEMANGLE", .comment = "demangle or not" },
+	{ .text = "RZ_BIN_PDBSERVER", .comment = "e pdb.server" },
+	{ 0 },
+};
+
 const RzCmdDescDetail env_help_details[] = {
 	{ .name = "Examples", .entries = env_help_examples },
+	{ .name = "Environment", .entries = env_help_environments },
 	{ 0 },
 };
 
