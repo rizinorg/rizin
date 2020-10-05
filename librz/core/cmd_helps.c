@@ -375,9 +375,30 @@ const RzCmdDescHelp wv8_help = {
 	.description = "Write the number passed as argument at the current offset as 8 - bytes, respecting the cfg.bigendian variable",
 };
 
-const RzCmdDescHelp w6_help = {
+const RzCmdDescExample w6_help_examples[] = {
+	{ .example = "w6d SGVsbG9Xb3JsZAo=", .comment = "Write the string \"HelloWorld\" (without quotes) at current offset." },
+	{ .example = "w6e 48656c6c6f576f726c64", .comment = "Write the string \"SGVsbG9Xb3JsZAo=\" (without quotes) at current offset." },
+	{ 0 },
+};
+
+const RzCmdDescHelp w6_group_help = {
 	.args_str = " <base64>|<hexstring>",
 	.summary = "write base64 [d]ecoded or [e]ncoded string",
+	.examples = w6_help_examples,
+};
+
+const RzCmdDescHelp w6d_help = {
+	.args_str = " <base64>",
+	.summary = "write the base64-decoded bytes",
+	.description = "Base64-Decode the string passed as argument and write it at the current offset.",
+	.examples = w6_help_examples,
+};
+
+const RzCmdDescHelp w6e_help = {
+	.args_str = " <hexstring>",
+	.summary = "write the base64-encoded bytes",
+	.description = "Base64-Encode the hex string passed as argument and write it at the current offset.",
+	.examples = w6_help_examples,
 };
 
 const RzCmdDescHelp wh_help = {

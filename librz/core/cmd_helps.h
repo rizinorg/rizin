@@ -88,7 +88,9 @@ extern const RzCmdDescHelp wv2_help;
 extern const RzCmdDescHelp wv4_help;
 extern const RzCmdDescHelp wv8_help;
 
-extern const RzCmdDescHelp w6_help;
+extern const RzCmdDescHelp w6_group_help;
+extern const RzCmdDescHelp w6e_help;
+extern const RzCmdDescHelp w6d_help;
 extern const RzCmdDescHelp wh_help;
 extern const RzCmdDescHelp we_help;
 extern const RzCmdDescHelp wp_help;
