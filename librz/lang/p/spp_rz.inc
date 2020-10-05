@@ -403,6 +403,7 @@ static SppTag spp_rz_tags[] = {
 	{ "include", spp_rz_include },
 	{ "system", spp_rz_system },
 	{ "rz", spp_rz_rz },
+	{ "rizin", spp_rz_rz },
 	{ NULL, spp_rz_default },
 	{ NULL }
 };

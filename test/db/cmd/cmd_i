@@ -4503,7 +4503,7 @@ EXPECT=<<EOF
 0 entrypoints
 EOF
 EXPECT_ERR=<<EOF
-Warning: run r2 with -e io.cache=true to fix relocations in disassembly
+Warning: run rizin with -e io.cache=true to fix relocations in disassembly
 EOF
 RUN
 
