@@ -41,6 +41,9 @@
  *     /spaces
  *       see spaces.c
  *
+ *   /imports
+ *     <str>=i
+ *
  * RzAnalDiff JSON:
  * {type?:"m"|"u", addr:<ut64>, dist:<double>, name?:<str>, size:<ut32>}
  *
@@ -1969,49 +1972,20 @@ RZ_API bool rz_serialize_anal_sign_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *a
 }
 
 RZ_API void rz_serialize_anal_imports_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal) {
-	PJ *j = pj_new ();
-	if (!j) {
-		return;
-	}
-	pj_a (j);
 	RzListIter *it;
 	const char *imp;
 	rz_list_foreach (anal->imports, it, imp) {
-		pj_s (j, imp);
+		sdb_set (db, imp, "i", 0);
 	}
-	pj_end (j);
-	sdb_set (db, "imports", pj_string (j), 0);
-	pj_free (j);
+}
+
+static bool import_load_cb(void *user, const char *k, const char *v) {
+	rz_anal_add_import (user, k);
+	return true;
 }
 
 RZ_API bool rz_serialize_anal_imports_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RSerializeResultInfo *res) {
-	char *json_str = sdb_get (db, "imports", 0);
-	if (!json_str) {
-		SERIALIZE_ERR ("missing imports key");
-		return false;
-	}
-	RJson *j = rz_json_parse (json_str);
-	bool ret = false;
-	if (!j) {
-		SERIALIZE_ERR ("invalid imports json");
-		goto beach;
-	}
-	if (j->type != RZ_JSON_ARRAY) {
-		SERIALIZE_ERR ("imports is not an array");
-		goto beach;
-	}
-	RJson *child;
-	for (child = j->children.first; child; child = child->next) {
-		if (child->type != RZ_JSON_STRING) {
-			continue;
-		}
-		rz_anal_add_import (anal, child->str_value);
-	}
-	ret = true;
-beach:
-	rz_json_free (j);
-	free (json_str);
-	return ret;
+	return sdb_foreach (db, import_load_cb, anal);
 }
 
 RZ_API void rz_serialize_anal_pin_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal) {
@@ -2041,7 +2015,7 @@ RZ_API void rz_serialize_anal_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal) 
 	rz_serialize_anal_classes_save (sdb_ns (db, "classes", true), anal);
 	rz_serialize_anal_types_save (sdb_ns (db, "types", true), anal);
 	rz_serialize_anal_sign_save (sdb_ns (db, "zigns", true), anal);
-	rz_serialize_anal_imports_save (db, anal);
+	rz_serialize_anal_imports_save (sdb_ns (db, "imports", true), anal);
 	rz_serialize_anal_pin_save (sdb_ns (db, "pins", true), anal);
 	rz_serialize_anal_cc_save (sdb_ns (db, "cc", true), anal);
 }
@@ -2084,9 +2058,7 @@ RZ_API bool rz_serialize_anal_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, 
 	SUB ("classes", rz_serialize_anal_classes_load (subdb, anal, res));
 	SUB ("types", rz_serialize_anal_types_load (subdb, anal, res));
 	SUB ("zigns", rz_serialize_anal_sign_load (subdb, anal, res));
-	if (!rz_serialize_anal_imports_load (db, anal, res)) {
-		goto beach;
-	}
+	SUB ("imports", rz_serialize_anal_imports_load (subdb, anal, res));
 	SUB ("pins", rz_serialize_anal_pin_load (subdb, anal, res));
 	SUB ("cc", rz_serialize_anal_cc_load (subdb, anal, res));
 

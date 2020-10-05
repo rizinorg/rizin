@@ -1654,7 +1654,10 @@ Sdb *anal_ref_db() {
 	sdb_set (zign_spaces_spaces, "koridai", "s", 0);
 	sdb_set (zigns, "zign|koridai|sym.boring", "|c:gee it sure is boring around here", 0);
 
-	sdb_set (db, "imports", "[\"pigs\",\"dogs\",\"sheep\"]", 0);
+	Sdb *imports = sdb_ns (db, "imports", true);
+	sdb_set (imports, "pigs", "i", 0);
+	sdb_set (imports, "dogs", "i", 0);
+	sdb_set (imports, "sheep", "i", 0);
 
 	Sdb *pins = sdb_ns (db, "pins", true);
 	sdb_set (pins, "0x1337", "!sudo rm -rf /", 0);
@@ -1786,9 +1789,9 @@ bool test_anal_load() {
 	rz_sign_item_free (item);
 
 	mu_assert_eq (rz_list_length (anal->imports), 3, "imports count");
-	mu_assert_streq (rz_list_get_n (anal->imports, 0), "pigs", "import");
-	mu_assert_streq (rz_list_get_n (anal->imports, 1), "dogs", "import");
-	mu_assert_streq (rz_list_get_n (anal->imports, 2), "sheep", "import");
+	mu_assert_notnull (rz_list_find (anal->imports, "pigs", (RzListComparator)strcmp), "import");
+	mu_assert_notnull (rz_list_find (anal->imports, "dogs", (RzListComparator)strcmp), "import");
+	mu_assert_notnull (rz_list_find (anal->imports, "sheep", (RzListComparator)strcmp), "import");
 
 	size_t pin_count = sdb_count (anal->sdb_pins);
 	mu_assert_eq (pin_count, 2, "pins count");
