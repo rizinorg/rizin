@@ -222,9 +222,11 @@ typedef struct rz_core_plugin_t {
 	rz_warn_if_fail (name##_cd)
 #define DEFINE_CMD_ARGV_DESC(core, name, parent) \
 	DEFINE_CMD_ARGV_DESC_SPECIAL (core, name, name, parent)
-#define DEFINE_CMD_OLDINPUT_DESC(core, name, parent) \
-	RzCmdDesc *name##_cd = rz_cmd_desc_oldinput_new (core->rcmd, parent, #name, name##_handler_old, &name##_help); \
+#define DEFINE_CMD_OLDINPUT_DESC_SPECIAL(core, name, c_name, parent) \
+	RzCmdDesc *c_name##_cd = rz_cmd_desc_oldinput_new (core->rcmd, parent, #name, c_name##_handler_old, &c_name##_help); \
 	rz_warn_if_fail (name##_cd)
+#define DEFINE_CMD_OLDINPUT_DESC(core, name, parent) \
+	DEFINE_CMD_OLDINPUT_DESC_SPECIAL (core, name, name, parent)
 
 #ifdef RZ_API
 RZ_API int rz_core_plugin_init(RzCmd *cmd);
