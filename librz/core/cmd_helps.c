@@ -21,14 +21,20 @@ const RzCmdDescExample env_help_examples[] = {
 	{ .example = "%", .comment = "list all environment variables" },
 	{ .example = "%SHELL", .comment = "print value of SHELL variable" },
 	{ .example = "%TMPDIR=/tmp", .comment = "set TMPDIR to \"/tmp\"" },
+	{ .example = "env SHELL", .comment = "same as `%SHELL`" },
 	{ 0 },
 };
 
 const RzCmdDescHelp env_help = {
 	.summary = "get/set environment variables",
+	.args_str = " [varname[=varvalue]]",
+	.examples = env_help_examples,
+};
+
+const RzCmdDescHelp percentage_help = {
+	.summary = "get/set environment variables",
 	.args_str = "[varname[=varvalue]]",
 	.examples = env_help_examples,
-
 };
 
 const RzCmdDescHelp tasks_help = {
@@ -39,8 +45,18 @@ const RzCmdDescHelp macro_help = {
 	.summary = "manage scripting macros",
 };
 
+const RzCmdDescExample pointer_help_examples[] = {
+	{ .example = "*entry0=cc", .comment = "write trap in entrypoint" },
+	{ .example = "*entry0+10=0x804800", .comment = "write 0x804800 as a 4-byte value at 10 bytes from the entrypoint" },
+	{ .example = "*entry0", .comment = "read the value contained at the entrypoint" },
+	{ 0 },
+};
+
 const RzCmdDescHelp pointer_help = {
-	.summary = "alias for 'env' command",
+	.summary = "pointer read/write data/values",
+	.args_str = "<addr>[=<0xvalue>|<hexstring>]",
+	.description = "Read or write values at a given address. When the value starts with `0x`, a 4-bytes value or 8-bytes value is written in the memory at address, depending on the size of the value. When value does not start with `0x` an hexstring with arbitrary length is expected and it is written starting from the specified address.",
+	.examples = pointer_help_examples,
 };
 
 const RzCmdDescHelp stdin_help = {

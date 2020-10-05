@@ -2063,27 +2063,19 @@ static int cmd_pointer(void *data, const char *input) {
 	return ret;
 }
 
-static RzCmdStatus env_handler(RzCore *core, int argc, const char **argv) {
-	char *p, **e;
+static RzCmdStatus pointer_handler(RzCore *core, int argc, const char **argv) {
+	int ret;
 	switch (argc) {
-	case 1:
-		e = rz_sys_get_environ ();
-		while (!RZ_STR_ISEMPTY (e)) {
-			rz_cons_println (*e);
-			e++;
-		}
-		return RZ_CMD_STATUS_OK;
 	case 2:
-		p = rz_sys_getenv (argv[1]);
-		if (!p) {
-			return RZ_CMD_STATUS_ERROR;
-		}
-		rz_cons_println (p);
-		free (p);
-		return RZ_CMD_STATUS_OK;
+		ret = rz_core_cmdf (core, "?v [%s]", argv[1]);
+		return rz_cmd_int2status (ret);
 	case 3:
-		rz_sys_setenv (argv[1], argv[2]);
-		return RZ_CMD_STATUS_OK;
+		if (rz_str_startswith (argv[2], "0x")) {
+			ret = rz_core_cmdf (core, "wv %s @ %s", argv[2], argv[1]);
+		} else {
+			ret = rz_core_cmdf (core, "wx %s @ %s", argv[2], argv[1]);
+		}
+		return rz_cmd_int2status (ret);
 	default:
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
@@ -7138,10 +7130,10 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{"_",        "print last output", cmd_last, NULL, &underscore_help},
 		{"#",        "calculate hash", cmd_hash, NULL, &hash_help},
 		{"$",        "alias", cmd_alias, NULL, &alias_help},
-		{"%",        "short version of 'env' command", cmd_env, NULL, &env_help, NULL, RZ_CMD_DESC_TYPE_ARGV, env_handler},
+		{"%",        "short version of 'env' command", cmd_env, NULL, &percentage_help, NULL, RZ_CMD_DESC_TYPE_ARGV, env_handler},
 		{"&",        "tasks", cmd_tasks, NULL, &tasks_help},
 		{"(",        "macro", cmd_macro, cmd_macro_init, &macro_help},
-		{"*",        "pointer read/write", cmd_pointer, NULL, &pointer_help},
+		{"*",        "pointer read/write", cmd_pointer, NULL, &pointer_help, NULL, RZ_CMD_DESC_TYPE_ARGV, pointer_handler},
 		{"-",        "open cfg.editor and run script", cmd_stdin, NULL, &stdin_help},
 		{".",        "interpret", cmd_interpret, NULL, &interpret_help},
 		{"/",        "search kw, pattern aes", cmd_search, cmd_search_init, &search_help},

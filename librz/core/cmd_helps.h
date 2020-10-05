@@ -8,6 +8,7 @@ extern const RzCmdDescHelp underscore_help;
 extern const RzCmdDescHelp hash_help;
 extern const RzCmdDescHelp alias_help;
 extern const RzCmdDescHelp env_help;
+extern const RzCmdDescHelp percentage_help;
 extern const RzCmdDescHelp tasks_help;
 extern const RzCmdDescHelp macro_help;
 extern const RzCmdDescHelp pointer_help;
