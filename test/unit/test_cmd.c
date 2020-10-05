@@ -299,11 +299,16 @@ bool test_cmd_help(void) {
 		.usage = "p-usage",
 		.args_str = "",
 		.description = NULL,
-		.examples = NULL,
+		.details = NULL,
 	};
 
-	const RzCmdDescExample pd_help_examples[] = {
-		{ .example = "pd 10", .comment = "print 10 disassembled instructions" },
+	const RzCmdDescDetailEntry pd_help_examples[] = {
+		{ .text = "pd 10", .comment = "print 10 disassembled instructions" },
+		{ 0 },
+	};
+
+	const RzCmdDescDetail pd_help_details[] = {
+		{ .name = "Examples", .entries = pd_help_examples },
 		{ 0 },
 	};
 
@@ -312,7 +317,7 @@ bool test_cmd_help(void) {
 		.usage = NULL,
 		.args_str = " <num>",
 		.description = "pd long description",
-		.examples = pd_help_examples,
+		.details = pd_help_details,
 	};
 
 	const RzCmdDescHelp px_help = {
@@ -320,7 +325,7 @@ bool test_cmd_help(void) {
 		.usage = "px-usage",
 		.args_str = " <verylongarg_str_num>",
 		.description = "px long description",
-		.examples = NULL,
+		.details = NULL,
 	};
 
 	RzCmd *cmd = rz_cmd_new ();
@@ -370,7 +375,7 @@ bool test_cmd_group_help(void) {
 		.usage = "p-usage",
 		.args_str = "",
 		.description = NULL,
-		.examples = NULL,
+		.details = NULL,
 	};
 
 	const RzCmdDescHelp p_group_help = {
@@ -378,7 +383,7 @@ bool test_cmd_group_help(void) {
 		.summary = "p group-summary",
 		.args_str = NULL,
 		.description = NULL,
-		.examples = NULL,
+		.details = NULL,
 	};
 
 	const RzCmdDescHelp pd_help = {
@@ -386,7 +391,7 @@ bool test_cmd_group_help(void) {
 		.usage = NULL,
 		.args_str = " <num>",
 		.description = "pd long description",
-		.examples = NULL,
+		.details = NULL,
 	};
 
 	RzCmd *cmd = rz_cmd_new ();

@@ -583,13 +583,31 @@ static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *a, size_t
 		if (cd->help->description) {
 			rz_strbuf_appendf (sb, "\n%s\n", cd->help->description);
 		}
-		if (cd->help->examples) {
-			rz_strbuf_appendf (sb, "\n%sExamples:%s\n", pal_label_color, pal_reset);
-			const RzCmdDescExample *it = cd->help->examples;
-			while (it->example) {
-				rz_strbuf_appendf (sb, "| %s%s%s %s# %s%s\n", pal_input_color,
-					it->example, pal_reset, pal_help_color, it->comment, pal_reset);
-				it++;
+		if (cd->help->details) {
+			const RzCmdDescDetail *detail_it = cd->help->details;
+			while (detail_it->name) {
+				rz_strbuf_appendf (sb, "\n%s%s:%s\n", pal_label_color, detail_it->name, pal_reset);
+				const RzCmdDescDetailEntry *entry_it = detail_it->entries;
+				size_t max_len = 0;
+				while (entry_it->text) {
+					size_t len = strlen (entry_it->text);
+					if (max_len < len) {
+						max_len = len;
+					}
+					entry_it++;
+				}
+
+				entry_it = detail_it->entries;
+				while (entry_it->text) {
+					size_t len = strlen (entry_it->text);
+					size_t padding = len < max_len? max_len - len: 0;
+					rz_strbuf_appendf (sb, "| %s%s%s %*s%s# %s%s\n",
+						pal_input_color, entry_it->text, pal_reset,
+						padding, "",
+						pal_help_color, entry_it->comment, pal_reset);
+					entry_it++;
+				}
+				detail_it++;
 			}
 		}
 		return rz_strbuf_drain (sb);

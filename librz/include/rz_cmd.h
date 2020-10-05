@@ -75,10 +75,24 @@ typedef struct rz_cmd_alias_t {
 	int *remote;
 } RzCmdAlias;
 
-typedef struct rz_cmd_desc_example_t {
-	const char *example;
+typedef struct rz_cmd_desc_detail_entry_t {
+	const char *text;
 	const char *comment;
-} RzCmdDescExample;
+} RzCmdDescDetailEntry;
+
+/**
+ * A detail section used to better describe a command.
+ */
+typedef struct rz_cmd_desc_detail_t {
+	/**
+	 * Name of the section, displayed at the beginning of the section.
+	 */
+	const char *name;
+	/**
+	 * NULL-terminated array of entries, displayed one per line.
+	 */
+	const RzCmdDescDetailEntry *entries;
+} RzCmdDescDetail;
 
 /**
  * Define how the command looks like in the help.
@@ -124,12 +138,12 @@ typedef struct rz_cmd_desc_help_t {
 	 */
 	const char *options;
 	/**
-	 * List of examples used to better explain how to use the command. This
-	 * is shown together with the long description.
+	 * NULL-terminated array of details sections used to better explain how
+	 * to use the command. This is shown together with the long description.
 	 *
 	 * Optional.
 	 */
-	const RzCmdDescExample *examples;
+	const RzCmdDescDetail *details;
 } RzCmdDescHelp;
 
 typedef enum {

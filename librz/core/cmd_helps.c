@@ -17,24 +17,29 @@ const RzCmdDescHelp alias_help = {
 	.summary = "Alias commands and strings",
 };
 
-const RzCmdDescExample env_help_examples[] = {
-	{ .example = "%", .comment = "list all environment variables" },
-	{ .example = "%SHELL", .comment = "print value of SHELL variable" },
-	{ .example = "%TMPDIR=/tmp", .comment = "set TMPDIR to \"/tmp\"" },
-	{ .example = "env SHELL", .comment = "same as `%SHELL`" },
+const RzCmdDescDetailEntry env_help_examples[] = {
+	{ .text = "%", .comment = "list all environment variables" },
+	{ .text = "%SHELL", .comment = "print value of SHELL variable" },
+	{ .text = "%TMPDIR=/tmp", .comment = "set TMPDIR to \"/tmp\"" },
+	{ .text = "env SHELL", .comment = "same as `%SHELL`" },
+	{ 0 },
+};
+
+const RzCmdDescDetail env_help_details[] = {
+	{ .name = "Examples", .entries = env_help_examples },
 	{ 0 },
 };
 
 const RzCmdDescHelp env_help = {
 	.summary = "get/set environment variables",
 	.args_str = " [varname[=varvalue]]",
-	.examples = env_help_examples,
+	.details = env_help_details,
 };
 
 const RzCmdDescHelp percentage_help = {
 	.summary = "get/set environment variables",
 	.args_str = "[varname[=varvalue]]",
-	.examples = env_help_examples,
+	.details = env_help_details,
 };
 
 const RzCmdDescHelp tasks_help = {
@@ -45,10 +50,15 @@ const RzCmdDescHelp macro_help = {
 	.summary = "manage scripting macros",
 };
 
-const RzCmdDescExample pointer_help_examples[] = {
-	{ .example = "*entry0=cc", .comment = "write trap in entrypoint" },
-	{ .example = "*entry0+10=0x804800", .comment = "write 0x804800 as a 4-byte value at 10 bytes from the entrypoint" },
-	{ .example = "*entry0", .comment = "read the value contained at the entrypoint" },
+const RzCmdDescDetailEntry pointer_help_examples[] = {
+	{ .text = "*entry0=cc", .comment = "write trap in entrypoint" },
+	{ .text = "*entry0+10=0x804800", .comment = "write 0x804800 as a 4-byte value at 10 bytes from the entrypoint" },
+	{ .text = "*entry0", .comment = "read the value contained at the entrypoint" },
+	{ 0 },
+};
+
+const RzCmdDescDetail pointer_help_details[] = {
+	{ .name = "Examples", .entries = pointer_help_examples },
 	{ 0 },
 };
 
@@ -56,7 +66,7 @@ const RzCmdDescHelp pointer_help = {
 	.summary = "pointer read/write data/values",
 	.args_str = "<addr>[=<0xvalue>|<hexstring>]",
 	.description = "Read or write values at a given address. When the value starts with `0x`, a 4-bytes value or 8-bytes value is written in the memory at address, depending on the size of the value. When value does not start with `0x` an hexstring with arbitrary length is expected and it is written starting from the specified address.",
-	.examples = pointer_help_examples,
+	.details = pointer_help_details,
 };
 
 const RzCmdDescHelp stdin_help = {
@@ -234,11 +244,16 @@ const RzCmdDescHelp w0_help = {
 
 // w[1248][+-] helps
 
-const RzCmdDescExample w_incdec_help_examples[] = {
-	{ .example = "w1+", .comment = "Add 1 to the byte at the current offset." },
-	{ .example = "w2-", .comment = "Subtract 1 to the word at the current offset." },
-	{ .example = "w4+ 0xdeadbeef", .comment = "Add 0xdeadbeef to the dword at the current offset." },
-	{ .example = "w8- 10", .comment = "Subtract 10 to the qword at the current offset." },
+const RzCmdDescDetailEntry w_incdec_help_examples[] = {
+	{ .text = "w1+", .comment = "Add 1 to the byte at the current offset." },
+	{ .text = "w2-", .comment = "Subtract 1 to the word at the current offset." },
+	{ .text = "w4+ 0xdeadbeef", .comment = "Add 0xdeadbeef to the dword at the current offset." },
+	{ .text = "w8- 10", .comment = "Subtract 10 to the qword at the current offset." },
+	{ 0 },
+};
+
+const RzCmdDescDetail w_incdec_help_details[] = {
+	{ .name = "Examples", .entries = w_incdec_help_examples },
 	{ 0 },
 };
 
@@ -253,21 +268,21 @@ const RzCmdDescHelp w1_incdec_help = {
 	.options = "<+->",
 	.args_str = " [n]",
 	.description = "Increment/decrement a byte at the current offset by 1 or n, if specified",
-	.examples = w_incdec_help_examples,
+	.details = w_incdec_help_details,
 };
 
 const RzCmdDescHelp w1_inc_help = {
 	.summary = "Increment a byte",
 	.args_str = " [n]",
 	.description = "Increment a byte at the current offset by 1 or n, if specified",
-	.examples = w_incdec_help_examples,
+	.details = w_incdec_help_details,
 };
 
 const RzCmdDescHelp w1_dec_help = {
 	.summary = "Decrement a byte",
 	.args_str = " [n]",
 	.description = "Decrement a byte at the current offset by 1 or n, if specified",
-	.examples = w_incdec_help_examples,
+	.details = w_incdec_help_details,
 };
 
 const RzCmdDescHelp w2_incdec_help = {
@@ -275,21 +290,21 @@ const RzCmdDescHelp w2_incdec_help = {
 	.options = "<+->",
 	.args_str = " [n]",
 	.description = "Increment/decrement a word at the current offset by 1 or n, if specified",
-	.examples = w_incdec_help_examples,
+	.details = w_incdec_help_details,
 };
 
 const RzCmdDescHelp w2_inc_help = {
 	.summary = "Increment a word",
 	.args_str = " [n]",
 	.description = "Increment a word at the current offset by 1 or n, if specified",
-	.examples = w_incdec_help_examples,
+	.details = w_incdec_help_details,
 };
 
 const RzCmdDescHelp w2_dec_help = {
 	.summary = "Decrement a word",
 	.args_str = " [n]",
 	.description = "Decrement a word at the current offset by 1 or n, if specified",
-	.examples = w_incdec_help_examples,
+	.details = w_incdec_help_details,
 };
 
 const RzCmdDescHelp w4_incdec_help = {
@@ -297,21 +312,21 @@ const RzCmdDescHelp w4_incdec_help = {
 	.options = "<+->",
 	.args_str = " [n]",
 	.description = "Increment/decrement a dword at the current offset by 1 or n, if specified",
-	.examples = w_incdec_help_examples,
+	.details = w_incdec_help_details,
 };
 
 const RzCmdDescHelp w4_inc_help = {
 	.summary = "Increment a dword",
 	.args_str = " [n]",
 	.description = "Increment a dword at the current offset by 1 or n, if specified",
-	.examples = w_incdec_help_examples,
+	.details = w_incdec_help_details,
 };
 
 const RzCmdDescHelp w4_dec_help = {
 	.summary = "Decrement a dword",
 	.args_str = " [n]",
 	.description = "Decrement a dword at the current offset by 1 or n, if specified",
-	.examples = w_incdec_help_examples,
+	.details = w_incdec_help_details,
 };
 
 const RzCmdDescHelp w8_incdec_help = {
@@ -319,27 +334,32 @@ const RzCmdDescHelp w8_incdec_help = {
 	.options = "<+->",
 	.args_str = " [n]",
 	.description = "Increment/decrement a qword at the current offset by 1 or n, if specified",
-	.examples = w_incdec_help_examples,
+	.details = w_incdec_help_details,
 };
 
 const RzCmdDescHelp w8_inc_help = {
 	.summary = "Increment a qword",
 	.args_str = " [n]",
 	.description = "Increment a qword at the current offset by 1 or n, if specified",
-	.examples = w_incdec_help_examples,
+	.details = w_incdec_help_details,
 };
 
 const RzCmdDescHelp w8_dec_help = {
 	.summary = "Decrement a qword",
 	.args_str = " [n]",
 	.description = "Decrement a qword at the current offset by 1 or n, if specified",
-	.examples = w_incdec_help_examples,
+	.details = w_incdec_help_details,
 };
 
 // wB helps
 
-const RzCmdDescExample wB_help_examples[] = {
-	{ .example = "wB 0x20", .comment = "Sets the 5th bit at current offset, leaving all other bits intact." },
+const RzCmdDescDetailEntry wB_help_examples[] = {
+	{ .text = "wB 0x20", .comment = "Sets the 5th bit at current offset, leaving all other bits intact." },
+	{ 0 },
+};
+
+const RzCmdDescDetail wB_help_details[] = {
+	{ .name = "Examples", .entries = wB_help_examples },
 	{ 0 },
 };
 
@@ -352,7 +372,7 @@ const RzCmdDescHelp wB_help = {
 	.summary = "Set bits with given value",
 	.args_str = " [value]",
 	.description = "Set the bits that are set in the value passed as arguments. 0 bits in the value argument are ignored, while the others are set at the current offset",
-	.examples = wB_help_examples,
+	.details = wB_help_details,
 };
 
 const RzCmdDescHelp wB_minus_help = {
@@ -363,8 +383,13 @@ const RzCmdDescHelp wB_minus_help = {
 
 // wv helps
 
-const RzCmdDescExample wv_help_examples[] = {
-	{ .example = "wv 0xdeadbeef", .comment = "Write the value 0xdeadbeef at current offset" },
+const RzCmdDescDetailEntry wv_help_examples[] = {
+	{ .text = "wv 0xdeadbeef", .comment = "Write the value 0xdeadbeef at current offset" },
+	{ 0 },
+};
+
+const RzCmdDescDetail wv_help_details[] = {
+	{ .name = "Examples", .entries = wv_help_examples },
 	{ 0 },
 };
 
@@ -377,7 +402,7 @@ const RzCmdDescHelp wv_help = {
 	.summary = "Write value as 4 - bytes / 8 - bytes based on value",
 	.args_str = " [value]",
 	.description = "Write the number passed as argument at the current offset as a 4 - bytes value or 8 - bytes value if the input is bigger than UT32_MAX, respecting the cfg.bigendian variable",
-	.examples = wv_help_examples,
+	.details = wv_help_details,
 };
 
 const RzCmdDescHelp wv1_help = {
@@ -401,30 +426,35 @@ const RzCmdDescHelp wv8_help = {
 	.description = "Write the number passed as argument at the current offset as 8 - bytes, respecting the cfg.bigendian variable",
 };
 
-const RzCmdDescExample w6_help_examples[] = {
-	{ .example = "w6d SGVsbG9Xb3JsZAo=", .comment = "Write the string \"HelloWorld\" (without quotes) at current offset." },
-	{ .example = "w6e 48656c6c6f576f726c64", .comment = "Write the string \"SGVsbG9Xb3JsZAo=\" (without quotes) at current offset." },
+const RzCmdDescDetailEntry w6_help_examples[] = {
+	{ .text = "w6d SGVsbG9Xb3JsZAo=", .comment = "Write the string \"HelloWorld\" (without quotes) at current offset." },
+	{ .text = "w6e 48656c6c6f576f726c64", .comment = "Write the string \"SGVsbG9Xb3JsZAo=\" (without quotes) at current offset." },
+	{ 0 },
+};
+
+const RzCmdDescDetail w6_help_details[] = {
+	{ .name = "Examples", .entries = w6_help_examples },
 	{ 0 },
 };
 
 const RzCmdDescHelp w6_group_help = {
 	.args_str = " <base64>|<hexstring>",
 	.summary = "write base64 [d]ecoded or [e]ncoded string",
-	.examples = w6_help_examples,
+	.details = w6_help_details,
 };
 
 const RzCmdDescHelp w6d_help = {
 	.args_str = " <base64>",
 	.summary = "write the base64-decoded bytes",
 	.description = "Base64-Decode the string passed as argument and write it at the current offset.",
-	.examples = w6_help_examples,
+	.details = w6_help_details,
 };
 
 const RzCmdDescHelp w6e_help = {
 	.args_str = " <hexstring>",
 	.summary = "write the base64-encoded bytes",
 	.description = "Base64-Encode the hex string passed as argument and write it at the current offset.",
-	.examples = w6_help_examples,
+	.details = w6_help_details,
 };
 
 const RzCmdDescHelp wh_help = {
