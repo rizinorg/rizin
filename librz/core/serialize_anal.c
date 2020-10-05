@@ -503,12 +503,12 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 	if (errno || proto.size == UT64_MAX
 		|| (fingerprint_size != SIZE_MAX && fingerprint_size != proto.size)
 		|| (proto.op_pos && proto.op_pos_size != proto.ninstr - 1)) { // op_pos_size > ninstr - 1 is legal but we require the format to be like this.
-		goto resor;
+		goto error;
 	}
 
 	RzAnalBlock *block = rz_anal_create_block (ctx->anal, addr, proto.size);
 	if (!block) {
-		goto resor;
+		goto error;
 	}
 	block->jump = proto.jump;
 	block->fail = proto.fail;
@@ -530,7 +530,7 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 	block->cmpreg = proto.cmpreg;
 
 	return true;
-resor:
+error:
 	free (proto.fingerprint);
 	rz_anal_diff_free (proto.diff);
 	rz_anal_switch_op_free (proto.switch_op);
@@ -1293,11 +1293,11 @@ static bool xrefs_load_cb(void *user, const char *k, const char *v) {
 	const RJson *child;
 	for (child = json->children.first; child; child = child->next) {
 		if (child->type != RZ_JSON_OBJECT) {
-			goto resor;
+			goto error;
 		}
 		const RJson *baby = rz_json_get (child, "to");
 		if (!baby || baby->type != RZ_JSON_INTEGER) {
-			goto resor;
+			goto error;
 		}
 		ut64 to = baby->num.u_value;
 
@@ -1306,7 +1306,7 @@ static bool xrefs_load_cb(void *user, const char *k, const char *v) {
 		if (baby) {
 			// must be a 1-char string
 			if (baby->type != RZ_JSON_STRING || !baby->str_value[0] || baby->str_value[1]) {
-				goto resor;
+				goto error;
 			}
 			switch (baby->str_value[0]) {
 			case RZ_ANAL_REF_TYPE_CODE:
@@ -1316,7 +1316,7 @@ static bool xrefs_load_cb(void *user, const char *k, const char *v) {
 				type = baby->str_value[0];
 				break;
 			default:
-				goto resor;
+				goto error;
 			}
 		}
 
@@ -1327,7 +1327,7 @@ static bool xrefs_load_cb(void *user, const char *k, const char *v) {
 	free (json_str);
 
 	return true;
-resor:
+error:
 	rz_json_free (json);
 	free (json_str);
 	return false;
@@ -1452,7 +1452,7 @@ static bool meta_load_cb(void *user, const char *k, const char *v) {
 	const RJson *child;
 	for (child = json->children.first; child; child = child->next) {
 		if (child->type != RZ_JSON_OBJECT) {
-			goto resor;
+			goto error;
 		}
 
 		ut64 size = 1;
@@ -1556,7 +1556,7 @@ static bool meta_load_cb(void *user, const char *k, const char *v) {
 	free (json_str);
 
 	return true;
-resor:
+error:
 	rz_json_free (json);
 	free (json_str);
 	return false;
@@ -1771,7 +1771,6 @@ static bool hints_load_cb(void *user, const char *k, const char *v) {
 		return false;
 	}
 
-	const RJson *child;
 	KEY_PARSER_JSON (ctx->parser, json, child, {
 		case HINTS_FIELD_ARCH:
 			rz_anal_hint_set_arch (anal, addr, child->type == RZ_JSON_STRING ? child->str_value : NULL);
@@ -1883,7 +1882,7 @@ static bool hints_load_cb(void *user, const char *k, const char *v) {
 	free (json_str);
 
 	return true;
-resor:
+error:
 	rz_json_free (json);
 	free (json_str);
 	return false;
