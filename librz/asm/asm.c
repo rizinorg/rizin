@@ -963,7 +963,7 @@ RZ_API RzAsmCode *rz_asm_massemble(RzAsm *a, const char *assembly) {
 					ret = rz_asm_pseudo_org (a, ptr + 5);
 					off = a->pc;
 				} else if (rz_str_startswith (ptr, ".offset ")) {
-					eprintf ("Invalid use of the .offset directory. This directive is only supported in rz -c 'waf'.\n");
+					eprintf ("Invalid use of the .offset directory. This directive is only supported in rizin -c 'waf'.\n");
 				} else if (!strncmp (ptr, ".text", 5)) {
 					acode->code_offset = a->pc;
 				} else if (!strncmp (ptr, ".data", 5)) {
