@@ -10,6 +10,7 @@
 #endif
 
 #include <rz_core.h>
+#include <rz_project.h>
 
 static bool is_valid_gdb_file(RzCoreFile *fh) {
 	RzIODesc *d = fh && fh->core ? rz_io_desc_get (fh->core->io, fh->fd) : NULL;
@@ -121,7 +122,7 @@ static int main_help(int line) {
 		" -q           quiet mode (no prompt) and quit after -i\n"
 		" -qq          quit after running all -c and -i\n"
 		" -Q           quiet mode (no prompt) and quit faster (quickLeak=true)\n"
-		" -p [prj]     use project, list if no arg, load if no file\n"
+		" -p [p.rzdb]  load project file\n"
 		" -P [file]    apply rapatch file and quit\n"
 		" -r [rz_run]  specify rz_run profile to load (same as -e dbg.profile=X)\n"
 		" -R [rrz_testule] specify custom rz_run directive\n"
@@ -422,13 +423,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	r->io->envprofile = envprofile;
 
 	rz_core_task_sync_begin (&r->tasks);
-	if (argc == 2 && !strcmp (argv[1], "-p")) {
-		// rz_core_project_list (r, 0);
-		rz_cons_flush ();
-		LISTS_FREE ();
-		return 0;
-	}
-	// HACK TO PERMIT '#!/usr/bin/rz - -i' hashbangs
+	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
 	if (argc > 2 && !strcmp (argv[1], "-") && !strcmp (argv[2], "-i")) {
 		argv[1] = argv[0];
 		argc--;
@@ -578,13 +573,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			}
 			break;
 		case 'p':
-			if (!strcmp (opt.arg, "?")) {
-				// rz_core_project_list (r, 0);
-				rz_cons_flush ();
-				LISTS_FREE ();
-				return 0;
-			}
-			rz_config_set (r->config, "prj.name", opt.arg);
+			prj = *opt.arg ? opt.arg : NULL;
 			break;
 		case 'P':
 			if (RZ_STR_ISEMPTY (opt.arg)) {
@@ -804,10 +793,18 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	rz_bin_force_plugin (r->bin, forcebin);
 
-	prj = rz_config_get (r->config, "prj.name");
-	if (prj && *prj) {
-		// rz_core_project_open (r, prj, false);
-		rz_config_set (r->config, "bin.strings", "false");
+	if (prj) {
+		RSerializeResultInfo *res = rz_serialize_result_info_new ();
+		RzProjectErr err = rz_project_load_file (r, prj, res);
+		if (err != RZ_PROJECT_ERR_SUCCESS) {
+			eprintf ("Failed to load project: %s\n", rz_project_err_message (err));
+			RzListIter *it;
+			char *s;
+			rz_list_foreach (res, it, s) {
+				eprintf ("  %s\n", s);
+			}
+		}
+		rz_serialize_result_info_free (res);
 	}
 
 	if (do_connect) {
@@ -923,7 +920,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			LISTS_FREE ();
 			return 1;
 		}
-	} else if (strcmp (argv[opt.ind - 1], "--") && !(rz_config_get (r->config, "prj.name") && rz_config_get (r->config, "prj.name")[0]) ) {
+	} else if (strcmp (argv[opt.ind - 1], "--") && !prj) {
 		if (debug) {
 			if (asmbits) {
 				rz_config_set (r->config, "asm.bits", asmbits);
@@ -1118,6 +1115,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					}
 				}
 			} else {
+#if 0 // TODO: wtf is this for?
 				const char *prj = rz_config_get (r->config, "prj.name");
 				if (prj && *prj) {
 					pfile = NULL; //rz_core_project_info (r, prj);
@@ -1130,7 +1128,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					} else {
 						eprintf ("Cannot find project file\n");
 					}
-				} else {
+				} else
+#endif
+				{
 					if (fh) {
 						iod = r->io ? rz_io_desc_get (r->io, fh->fd) : NULL;
 						if (iod) {
@@ -1448,15 +1448,15 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					}
 				}
 
-				prj = rz_config_get (r->config, "prj.name");
+				prj = rz_config_get (r->config, "prj.file");
 				if (no_question_save) {
 					if (prj && *prj && y_save_project){
-						//rz_core_project_save (r, prj);
+						rz_project_save_file (r, prj); // TODO: check error
 					}
 				} else {
 					question = rz_str_newf ("Do you want to save the '%s' project? (Y/n)", prj);
 					if (prj && *prj && rz_cons_yesno ('y', "%s", question)) {
-						//rz_core_project_save (r, prj);
+						rz_project_save_file (r, prj); // TODO: check error
 					}
 					free (question);
 				}

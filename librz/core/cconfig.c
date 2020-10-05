@@ -3221,12 +3221,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("bin.verbose", "false", &cb_binverbose, "Show RzBin warnings when loading binaries");
 
 	/* prj */
-	SETPREF ("prj.name", "", "Name of current project");
-	SETBPREF ("prj.files", "false", "Save the target binary inside the project directory");
-	SETBPREF ("prj.git", "false", "Every project is a git repo and saving is committing");
-	SETBPREF ("prj.zip", "false", "Use ZIP format for project files");
-	SETBPREF ("prj.gpg", "false", "TODO: Encrypt project with GnuPGv2");
-	SETBPREF ("prj.simple", "false", "Use simple project saving style (functions, comments, options)");
+	SETPREF ("prj.file", "", "Path of the currently opened project");
 
 	/* cfg */
 	SETBPREF ("cfg.r2wars", "false", "Enable some tweaks for the r2wars game");
