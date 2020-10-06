@@ -223,8 +223,10 @@ typedef struct rz_core_plugin_t {
 } RzCorePlugin;
 
 #define DEFINE_CMD_ARGV_DESC_DETAIL(core, name, c_name, parent, handler, help) \
-	RzCmdDesc *c_name##_cd = rz_cmd_desc_argv_new (core->rcmd, parent, #name, handler, help); \
-	rz_warn_if_fail (c_name##_cd)
+	do { \
+		RzCmdDesc *c_name##_cd = rz_cmd_desc_argv_new (core->rcmd, parent, #name, handler, help); \
+		rz_warn_if_fail (c_name##_cd); \
+	} while (0)
 #define DEFINE_CMD_ARGV_DESC_SPECIAL(core, name, c_name, parent) \
 	DEFINE_CMD_ARGV_DESC_DETAIL (core, name, c_name, parent, c_name##_handler, &c_name##_help)
 #define DEFINE_CMD_ARGV_DESC_INNER(core, name, c_name, parent) \
@@ -233,7 +235,7 @@ typedef struct rz_core_plugin_t {
 #define DEFINE_CMD_ARGV_GROUP_DETAIL(core, name, c_name, parent, exec_handler, help, group_help) \
 	RzCmdDesc *c_name##_cd = rz_cmd_desc_group_new (core->rcmd, parent, #name, exec_handler, help, group_help); \
 	rz_warn_if_fail (c_name##_cd)
-#define DEFINE_CMD_ARGV_GROUP_WITH_CHILD(core, name, parent) \
+#define DEFINE_CMD_ARGV_GROUP_EXEC(core, name, parent) \
 	DEFINE_CMD_ARGV_GROUP_DETAIL (core, name, name, parent, name##_handler, &name##_help, &name##_group_help)
 #define DEFINE_CMD_ARGV_GROUP(core, name, parent) \
 	DEFINE_CMD_ARGV_GROUP_DETAIL (core, name, name, parent, NULL, NULL, &name##_group_help)
