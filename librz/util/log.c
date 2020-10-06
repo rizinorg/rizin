@@ -8,7 +8,7 @@
 
 // TODO: Use thread-local storage to make these variables thread-safe
 static RzList *log_cbs = NULL; // Functions to call when outputting log string
-static int cfg_loglvl = RZ_LOGLVL_ERROR; // Log level output
+static int cfg_loglvl = RZ_LOGLVL_WARN; // Log level output
 static int cfg_logtraplvl = RZ_LOGLVL_FATAL; // Log trap level
 static bool cfg_logsrcinfo = false; // Print out debug source info with the output
 static bool cfg_logcolors = false; // Output colored log text based on level

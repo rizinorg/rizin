@@ -107,9 +107,8 @@ typedef struct rz_cmd_desc_help_t {
 	const char *summary;
 	/**
 	 * Long description of what the command does. It can be as long as you
-	 * want and it should explain well how the command behaves.
-	 * This is shown, for example, when `??` is appended on command or `?`
-	 * is appended and the command has no children to show. In that case,
+	 * want and it should explain well how the command behaves. This is
+	 * shown, for example, when `??` is appended on a command. In that case,
 	 * the short summary is extended with this longer description.
 	 *
 	 * Optional.
@@ -147,21 +146,24 @@ typedef struct rz_cmd_desc_help_t {
 } RzCmdDescHelp;
 
 typedef enum {
-	// for old handlers that parse their own input and accept a single string
+	// for old handlers that parse their own input and accept a single string.
+	// Mainly used for legacy reasons with old command handlers.
 	RZ_CMD_DESC_TYPE_OLDINPUT = 0,
-	// for handlers that accept argc/argv
+	// for handlers that accept argc/argv. It cannot have children. Use
+	// RZ_CMD_DESC_TYPE_GROUP if you need a command that can be both
+	// executed and has sub-commands.
 	RZ_CMD_DESC_TYPE_ARGV,
+	// for cmd descriptors that are parent of other sub-commands, even if
+	// they may also have a sub-command with the same name. For example,
+	// `wc` is both the parent of `wci`, `wc*`, etc. but there is also `wc`
+	// as a sub-command.
+	RZ_CMD_DESC_TYPE_GROUP,
 	// for cmd descriptors that are just used to group together related
 	// sub-commands. Do not use this if the command can be used by itself or
 	// if it's necessary to show its help, because this descriptor is not
 	// stored in the hashtable and cannot be retrieved except by listing the
-	// children of its parent.
+	// children of its parent. Most of the time you want RZ_CMD_DESC_TYPE_GROUP.
 	RZ_CMD_DESC_TYPE_INNER,
-	// for cmd descriptors that are parent of other sub-commands but that
-	// may also have a sub-command with the same name. For example, `wc` is
-	// both the parent of `wci`, `wc*`, etc. but there is also `wc` as a
-	// sub-command.
-	RZ_CMD_DESC_TYPE_GROUP,
 } RzCmdDescType;
 
 typedef struct rz_cmd_desc_t {
@@ -228,12 +230,13 @@ typedef struct rz_core_plugin_t {
 #define DEFINE_CMD_ARGV_DESC_INNER(core, name, c_name, parent) \
 	RzCmdDesc *c_name##_cd = rz_cmd_desc_inner_new (core->rcmd, parent, #name, &c_name##_help); \
 	rz_warn_if_fail (c_name##_cd)
-#define DEFINE_CMD_ARGV_GROUP_WITH_CHILD(core, name, parent)                                    \
-	RzCmdDesc *name##_cd = rz_cmd_desc_group_new (core->rcmd, parent, #name, name##_handler, &name##_help, &name##_group_help); \
-	rz_warn_if_fail (name##_cd)
+#define DEFINE_CMD_ARGV_GROUP_DETAIL(core, name, c_name, parent, exec_handler, help, group_help) \
+	RzCmdDesc *c_name##_cd = rz_cmd_desc_group_new (core->rcmd, parent, #name, exec_handler, help, group_help); \
+	rz_warn_if_fail (c_name##_cd)
+#define DEFINE_CMD_ARGV_GROUP_WITH_CHILD(core, name, parent) \
+	DEFINE_CMD_ARGV_GROUP_DETAIL (core, name, name, parent, name##_handler, &name##_help, &name##_group_help)
 #define DEFINE_CMD_ARGV_GROUP(core, name, parent) \
-	RzCmdDesc *name##_cd = rz_cmd_desc_group_new (core->rcmd, parent, #name, NULL, NULL, &name##_group_help); \
-	rz_warn_if_fail (name##_cd)
+	DEFINE_CMD_ARGV_GROUP_DETAIL (core, name, name, parent, NULL, NULL, &name##_group_help)
 #define DEFINE_CMD_ARGV_DESC(core, name, parent) \
 	DEFINE_CMD_ARGV_DESC_SPECIAL (core, name, name, parent)
 #define DEFINE_CMD_OLDINPUT_DESC_SPECIAL(core, name, c_name, parent) \
