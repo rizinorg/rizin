@@ -27,7 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         # name: [linux-acr-gcc-tests, linux-acr-clang-build, linux-acr-clang-tests, linux-meson-gcc-build, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-meson-clang-tests, linux-gcc-tests-asan, capstone-v3, capstone-v5]
-        name: [linux-acr-gcc-tests, linux-meson-gcc-newshell-tests]
+        name: [linux-acr-gcc-tests, linux-meson-gcc-tests]
         # ignore_error: [false]
         include:
           - name: linux-acr-gcc-tests
@@ -64,11 +64,10 @@ jobs:
           #   compiler: gcc
           #   enabled: ${{ github.event_name == 'pull_request' }}
           #   timeout: 45
-          - name: linux-meson-gcc-newshell-tests
+          - name: linux-meson-gcc-tests
             os: ubuntu-latest
             build_system: meson
             compiler: gcc
-            newshell: true
             run_tests: true
             meson_options: -Db_coverage=true -Duse_webui=true
             coverage: true
@@ -195,17 +194,12 @@ jobs:
         export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
-        if [ "$NEWSHELL" == "true" ]; then
-          export RZ_CFG_NEWSHELL=1
-        fi
         if [ "$ASAN" == "true" ]; then
           export ASAN=1
         fi
         cd test
-        rizin -N -Qc 'e cfg.newshell' -
         make
       env:
-        NEWSHELL: ${{ matrix.newshell }}
         ASAN: ${{ matrix.asan }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
     - name: Upload coverage info
@@ -217,13 +211,9 @@ jobs:
         export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
-        if [ "$NEWSHELL" == "true" ]; then
-          export RZ_CFG_NEWSHELL=1
-        fi
         cd test
         make fuzz-tests
       env:
-        NEWSHELL: ${{ matrix.newshell }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
 
   build-centos6:

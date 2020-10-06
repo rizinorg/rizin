@@ -152,7 +152,7 @@ static int main_help(int line) {
 		" RZ_LIBR_PLUGINS " RZ_JOIN_2_PATHS ("%s", RZ_PLUGINS) "\n"
 		" RZ_USER_ZIGNS " RZ_JOIN_2_PATHS ("~", RZ_HOME_ZIGNS) "\n"
 		"Environment:\n"
-		" RZ_CFG_NEWSHELL sets cfg.newshell=true\n"
+		" RZ_CFG_OLDSHELL sets cfg.newshell=false\n"
 		" RZ_DEBUG      if defined, show error messages and crash signal\n"
 		" RZ_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
 		" RZ_MAGICPATH " RZ_JOIN_2_PATHS ("%s", RZ_SDB_MAGIC) "\n"

@@ -3211,8 +3211,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETBPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
-	p = rz_sys_getenv ("RZ_CFG_NEWSHELL");
-	SETCB ("cfg.newshell", p? "true": "false", &cb_newshell, "Use new commands parser");
+	p = rz_sys_getenv ("RZ_CFG_OLDSHELL");
+	SETCB ("cfg.newshell", p? "false": "true", &cb_newshell, "Use new commands parser");
 	free (p);
 	SETI ("cfg.cpuaffinity", 0, "Run on cpuid");
 
