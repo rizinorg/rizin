@@ -22,6 +22,7 @@ rz_util_sources = [
   'file.c',
   'flist.c',
   'graph.c',
+  'graph_drawable.c',
   'hex.c',
   'idpool.c',
   'json_parser.c',

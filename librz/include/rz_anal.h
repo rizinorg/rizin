@@ -1253,9 +1253,9 @@ typedef struct rz_anal_esil_basic_block_t {
 } RzAnalEsilBB;
 
 typedef struct rz_anal_esil_cfg_t {
-	RGraphNode *start;
-	RGraphNode *end;
-	RGraph *g;
+	RzGraphNode *start;
+	RzGraphNode *end;
+	RzGraph *g;
 } RzAnalEsilCFG;
 
 typedef enum {
@@ -1272,9 +1272,9 @@ typedef struct rz_anal_esil_dfg_t {
 	RContRBTree *reg_vars;	//vars represented in regs
 	RQueue *todo;		//todo-queue allocated in this struct for perf
 	void *insert;		//needed for setting regs in dfg
-	RGraph *flow;
-	RGraphNode *cur;
-	RGraphNode *old;
+	RzGraph *flow;
+	RzGraphNode *cur;
+	RzGraphNode *old;
 	bool malloc_failed;
 } RzAnalEsilDFG;
 
@@ -2100,7 +2100,7 @@ RZ_API void rz_anal_class_list(RzAnal *anal, int mode);
 RZ_API void rz_anal_class_list_bases(RzAnal *anal, const char *class_name);
 RZ_API void rz_anal_class_list_vtables(RzAnal *anal, const char *class_name);
 RZ_API void rz_anal_class_list_vtable_offset_functions(RzAnal *anal, const char *class_name, ut64 offset);
-RZ_API RGraph/*<RGraphNodeInfo>*/ *rz_anal_class_get_inheritance_graph(RzAnal *anal);
+RZ_API RzGraph/*<RzGraphNodeInfo>*/ *rz_anal_class_get_inheritance_graph(RzAnal *anal);
 
 RZ_API RzAnalEsilCFG *rz_anal_esil_cfg_expr(RzAnalEsilCFG *cfg, RzAnal *anal, const ut64 off, char *expr);
 RZ_API RzAnalEsilCFG *rz_anal_esil_cfg_op(RzAnalEsilCFG *cfg, RzAnal *anal, RzAnalOp *op);

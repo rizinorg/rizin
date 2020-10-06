@@ -15,7 +15,7 @@ bool test_graph_to_agraph() {
 	rz_core_cmd0 (core, "acb D B");
 	rz_core_cmd0 (core, "acb D C");
 
-	RGraph *graph = rz_anal_class_get_inheritance_graph (core->anal);
+	RzGraph *graph = rz_anal_class_get_inheritance_graph (core->anal);
 	mu_assert_notnull (graph, "Couldn't create the graph");
 	mu_assert_eq (graph->nodes->length, 4, "Wrong node count");
 
@@ -24,7 +24,7 @@ bool test_graph_to_agraph() {
 	mu_assert_eq (agraph->graph->nodes->length, 4, "Wrong node count");
 
 	RzListIter *iter;
-	RGraphNode *node;
+	RzGraphNode *node;
 	int i = 0;
 	ls_foreach (agraph->graph->nodes, iter, node) {
 		RzANode *info = node->data;
@@ -34,7 +34,7 @@ bool test_graph_to_agraph() {
 			mu_assert_eq (node->out_nodes->length, 2, "Wrong node out-nodes");
 			{
 				RzListIter *iter;
-				RGraphNode *out_node;
+				RzGraphNode *out_node;
 				int i = 0;
 				ls_foreach (node->out_nodes, iter, out_node) {
 					RzANode *info = out_node->data;
@@ -55,7 +55,7 @@ bool test_graph_to_agraph() {
 			mu_assert_eq (node->in_nodes->length, 1, "Wrong node in-nodes");
 			{
 				RzListIter *iter;
-				RGraphNode *out_node;
+				RzGraphNode *out_node;
 				int i = 0;
 				ls_foreach (node->out_nodes, iter, out_node) {
 					RzANode *info = out_node->data;
@@ -73,7 +73,7 @@ bool test_graph_to_agraph() {
 			mu_assert_eq (node->in_nodes->length, 1, "Wrong node in-nodes");
 			{
 				RzListIter *iter;
-				RGraphNode *out_node;
+				RzGraphNode *out_node;
 				int i = 0;
 				ls_foreach (node->out_nodes, iter, out_node) {
 					RzANode *info = out_node->data;

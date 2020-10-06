@@ -1,7 +1,7 @@
 #include <rz_util.h>
 #include "minunit.h"
 
-static void topo_sorting(RGraphNode *n, RGraphVisitor *vis) {
+static void topo_sorting(RzGraphNode *n, RzGraphVisitor *vis) {
 	RzList *order = (RzList *)vis->data;
 	rz_list_prepend (order, n);
 }
@@ -22,7 +22,7 @@ static void topo_sorting(RGraphNode *n, RGraphVisitor *vis) {
 } while (0)
 
 static bool test_legacy_graph(void) {
-	RGraph *g = rz_graph_new ();
+	RzGraph *g = rz_graph_new ();
 
 	mu_assert_eq (g->n_nodes, 0, "n_nodes.start");
 	rz_graph_add_node (g, (void *)1);
@@ -30,9 +30,9 @@ static bool test_legacy_graph(void) {
 	rz_graph_reset (g);
 	mu_assert_eq (g->n_nodes, 0, "n_nodes.reset");
 
-	RGraphNode *gn = rz_graph_add_node (g, (void *)1);
+	RzGraphNode *gn = rz_graph_add_node (g, (void *)1);
 	mu_assert_ptreq (rz_graph_get_node (g, gn->idx), gn, "get_node.1");
-	RGraphNode *gn2 = rz_graph_add_node (g, (void *)2);
+	RzGraphNode *gn2 = rz_graph_add_node (g, (void *)2);
 	mu_assert_ptreq (rz_graph_get_node (g, gn2->idx), gn2, "get_node.2");
 	rz_graph_add_edge (g, gn, gn2);
 	mu_assert_true (rz_graph_adjacent (g, gn, gn2), "is_adjacent.1");
@@ -40,19 +40,19 @@ static bool test_legacy_graph(void) {
 	rz_list_append (exp_gn_neigh, gn2);
 	check_list (rz_graph_get_neighbours (g, gn), exp_gn_neigh, "get_neighbours.1");
 
-	RGraphNode *gn3 = rz_graph_add_node (g, (void *)3);
+	RzGraphNode *gn3 = rz_graph_add_node (g, (void *)3);
 	rz_graph_add_edge (g, gn, gn3);
 	rz_list_append (exp_gn_neigh, gn3);
 	check_list (rz_graph_get_neighbours (g, gn), exp_gn_neigh, "get_neighbours.2");
 	rz_list_free (exp_gn_neigh);
 
-	RGraphNode *gn4 = rz_graph_add_node (g, (void *)4);
-	RGraphNode *gn5 = rz_graph_add_node (g, (void *)5);
-	RGraphNode *gn6 = rz_graph_add_node (g, (void *)6);
-	RGraphNode *gn7 = rz_graph_add_node (g, (void *)7);
-	RGraphNode *gn8 = rz_graph_add_node (g, (void *)8);
-	RGraphNode *gn9 = rz_graph_add_node (g, (void *)9);
-	RGraphNode *gn10 = rz_graph_add_node (g, (void *)10);
+	RzGraphNode *gn4 = rz_graph_add_node (g, (void *)4);
+	RzGraphNode *gn5 = rz_graph_add_node (g, (void *)5);
+	RzGraphNode *gn6 = rz_graph_add_node (g, (void *)6);
+	RzGraphNode *gn7 = rz_graph_add_node (g, (void *)7);
+	RzGraphNode *gn8 = rz_graph_add_node (g, (void *)8);
+	RzGraphNode *gn9 = rz_graph_add_node (g, (void *)9);
+	RzGraphNode *gn10 = rz_graph_add_node (g, (void *)10);
 	RzList *exp_nodes = rz_list_new ();
 	rz_list_append (exp_nodes, gn);
 	rz_list_append (exp_nodes, gn2);
@@ -97,9 +97,9 @@ static bool test_legacy_graph(void) {
 	mu_assert_eq (rz_graph_adjacent (g, gn9, gn8), false, "is_adjacent.1");
 	mu_assert_eq (rz_graph_adjacent (g, gn8, gn9), true, "is_adjacent.2");
 
-	RGraphVisitor vis = { 0 };
+	RzGraphVisitor vis = { 0 };
 	vis.data = rz_list_new ();
-	vis.finish_node = (RGraphNodeCallback)topo_sorting;
+	vis.finish_node = (RzGraphNodeCallback)topo_sorting;
 	rz_graph_dfs_node (g, gn, &vis);
 	RzList *exp_order = rz_list_new ();
 	rz_list_append (exp_order, gn);

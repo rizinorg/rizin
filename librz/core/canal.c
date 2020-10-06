@@ -6,6 +6,7 @@
 #include <rz_core.h>
 #include <rz_bin.h>
 #include <ht_uu.h>
+#include <rz_util/rz_graph_drawable.h>
 
 #include <string.h>
 
@@ -2280,43 +2281,64 @@ RZ_API void rz_core_anal_coderefs(RzCore *core, ut64 addr) {
 	}
 }
 
-RZ_API void rz_core_anal_importxrefs(RzCore *core) {
-	RBinInfo *info = rz_bin_get_info (core->bin);
-	RBinObject *obj = rz_bin_cur_object (core->bin);
-	bool lit = info ? info->has_lit: false;
-	bool va = core->io->va || core->bin->is_debugger;
-
-	RzListIter *iter;
-	RBinImport *imp;
-	if (!obj) {
-		return;
-	}
-	rz_list_foreach (obj->imports, iter, imp) {
-		ut64 addr = lit ? rz_core_bin_impaddr (core->bin, va, imp->name): 0;
-		if (addr) {
-			rz_core_anal_codexrefs (core, addr);
-		} else {
-			rz_cons_printf ("agn %s\n", imp->name);
-		}
-	}
-}
-
-RZ_API void rz_core_anal_codexrefs(RzCore *core, ut64 addr) {
+static void add_single_addr_xrefs(RzCore *core, ut64 addr, RzGraph *graph) {
+	rz_return_if_fail (graph);
 	RzFlagItem *f = rz_flag_get_at (core->flags, addr, false);
 	char *me = (f && f->offset == addr)
-		? rz_str_new (f->name) : rz_str_newf ("0x%"PFMT64x, addr);
-	rz_cons_printf ("agn %s\n", me);
+		? rz_str_new (f->name)
+		: rz_str_newf ("0x%" PFMT64x, addr);
+
+	RzGraphNode *curr_node = rz_graph_add_node_info (graph, me, NULL, addr);
+	RZ_FREE (me);
+	if (!curr_node) {
+		return;
+	}
 	RzListIter *iter;
 	RzAnalRef *ref;
 	RzList *list = rz_anal_xrefs_get (core->anal, addr);
 	rz_list_foreach (list, iter, ref) {
 		RzFlagItem *item = rz_flag_get_i (core->flags, ref->addr);
-		const char *src = item? item->name: sdb_fmt ("0x%08"PFMT64x, ref->addr);
-		rz_cons_printf ("agn %s\n", src);
-		rz_cons_printf ("age %s %s\n", src, me);
+		char *src = item? rz_str_new (item->name): rz_str_newf ("0x%08" PFMT64x, ref->addr);
+		RzGraphNode *reference_from = rz_graph_add_node_info (graph, src, NULL, ref->addr);
+		free (src);
+		rz_graph_add_edge (graph, reference_from, curr_node);
 	}
 	rz_list_free (list);
-	free (me);
+}
+
+RZ_API RzGraph *rz_core_anal_importxrefs(RzCore *core) {
+	RBinInfo *info = rz_bin_get_info (core->bin);
+	RBinObject *obj = rz_bin_cur_object (core->bin);
+	bool lit = info? info->has_lit: false;
+	bool va = core->io->va || core->bin->is_debugger;
+
+	RzListIter *iter;
+	RBinImport *imp;
+	if (!obj) {
+		return NULL;
+	}
+	RzGraph *graph = rz_graph_new ();
+	if (!graph) {
+		return NULL;
+	}
+	rz_list_foreach (obj->imports, iter, imp) {
+		ut64 addr = lit ? rz_core_bin_impaddr (core->bin, va, imp->name): 0;
+		if (addr) {
+			add_single_addr_xrefs (core, addr, graph);
+		} else {
+			rz_graph_add_node_info (graph, imp->name, NULL, 0);
+		}
+	}
+	return graph;
+}
+
+RZ_API RzGraph *rz_core_anal_codexrefs(RzCore *core, ut64 addr) {
+	RzGraph *graph = rz_graph_new ();
+	if (!graph) {
+		return NULL;
+	}
+	add_single_addr_xrefs (core, addr, graph);
+	return graph;
 }
 
 static int RzAnalRef_cmp(const RzAnalRef* ref1, const RzAnalRef* ref2) {
@@ -5930,7 +5952,7 @@ kontinue:
 RZ_API void rz_core_anal_esil_graph(RzCore *core, const char *expr) {
 	RzAnalEsilDFG * edf = rz_anal_esil_dfg_expr(core->anal, NULL, expr);
 	RzListIter *iter, *ator;
-	RGraphNode *node, *edon;
+	RzGraphNode *node, *edon;
 	RStrBuf *buf = rz_strbuf_new ("");
 	rz_cons_printf ("ag-\n");
 	rz_list_foreach (rz_graph_get_nodes (edf->flow), iter, node) {

@@ -2,6 +2,7 @@
 
 #include <rz_anal.h>
 #include <rz_vector.h>
+#include <rz_util/rz_graph_drawable.h>
 #include "../include/rz_anal.h"
 #include "../include/rz_util/rz_graph.h"
 
@@ -1233,15 +1234,15 @@ RZ_API void rz_anal_class_list_vtable_offset_functions(RzAnal *anal, const char 
 }
 
 /**
- * @brief Creates RGraph from class inheritance information where 
- *        each node has RGraphNodeInfo as generic data
+ * @brief Creates RzGraph from class inheritance information where 
+ *        each node has RzGraphNodeInfo as generic data
  * 
  * @param anal 
- * @return RGraph* NULL if failure
+ * @return RzGraph* NULL if failure
  */
-RZ_API RGraph *rz_anal_class_get_inheritance_graph(RzAnal *anal) {
+RZ_API RzGraph *rz_anal_class_get_inheritance_graph(RzAnal *anal) {
 	rz_return_val_if_fail (anal, NULL);
-	RGraph *class_graph = rz_graph_new ();
+	RzGraph *class_graph = rz_graph_new ();
 	if (!class_graph) {
 		return NULL;
 	}
@@ -1250,7 +1251,7 @@ RZ_API RGraph *rz_anal_class_get_inheritance_graph(RzAnal *anal) {
 		rz_graph_free (class_graph);
 		return NULL;
 	}
-	HtPP /*<char *name, RGraphNode *node>*/ *hashmap = ht_pp_new0 ();
+	HtPP /*<char *name, RzGraphNode *node>*/ *hashmap = ht_pp_new0 ();
 	if (!hashmap) {
 		rz_graph_free (class_graph);
 		ls_free (classes);
@@ -1262,17 +1263,12 @@ RZ_API RGraph *rz_anal_class_get_inheritance_graph(RzAnal *anal) {
 	ls_foreach (classes, iter, kv) {
 		const char *name = sdbkv_key (kv);
 		// create nodes
-		RGraphNode *curr_node = ht_pp_find (hashmap, name, NULL);
+		RzGraphNode *curr_node = ht_pp_find (hashmap, name, NULL);
 		if (!curr_node) {
-			RGraphNodeInfo *data = rz_graph_create_node_info (strdup (name), NULL, 0);
-			if (!data) {
-				goto failure;
-			}
-			curr_node = rz_graph_add_node (class_graph, data);
+			curr_node = rz_graph_add_node_info (class_graph, name, NULL, 0);
 			if (!curr_node) {
 				goto failure;
 			}
-			curr_node->free = rz_graph_free_node_info;
 			ht_pp_insert (hashmap, name, curr_node);
 		}
 		// create edges between node and it's parents
@@ -1280,18 +1276,13 @@ RZ_API RGraph *rz_anal_class_get_inheritance_graph(RzAnal *anal) {
 		RzAnalBaseClass *base;
 		rz_vector_foreach (bases, base) {
 			bool base_found = false;
-			RGraphNode *base_node = ht_pp_find (hashmap, base->class_name, &base_found);
+			RzGraphNode *base_node = ht_pp_find (hashmap, base->class_name, &base_found);
 			// If base isn't processed, do it now
 			if (!base_found) {
-				RGraphNodeInfo *data = rz_graph_create_node_info (strdup (base->class_name), NULL, 0);
-				if (!data) {
-					goto failure;
-				}
-				base_node = rz_graph_add_node (class_graph, data);
+				base_node = rz_graph_add_node_info (class_graph, base->class_name, NULL, 0);
 				if (!base_node) {
 					goto failure;
 				}
-				base_node->free = rz_graph_free_node_info;
 				ht_pp_insert (hashmap, base->class_name, base_node);
 			}
 			rz_graph_add_edge (class_graph, base_node, curr_node);
