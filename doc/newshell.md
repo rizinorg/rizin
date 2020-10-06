@@ -69,11 +69,10 @@ a command and potentially do many other things.
 
 As radare2/rizin commands mainly form a tree, `RzCmdDesc` are organized in a
 tree, with each descriptor having references to its parent and its children.
-Moreover, a descriptor has its help messages and its handler, that actually do
-the real job.
+Moreover, a descriptor has its help messages and its handler.
 
-Moreover, to make the retrieval of the right command easier, they are also
-stored in a hashtable, using their names as keys.
+To make the retrieval of the right command easier, they are also stored in a
+hashtable, using their names as keys.
 
 ## How to write a new command?
 
@@ -126,6 +125,10 @@ DEFINE_CMD_ARGV_DESC (core, skyp, sky_cd);
 - a `RzCmdDescHelp` structure named `sky_group_help` which is used to describe
   the `sky` command as a group. For example, the summary of the group could be
   `Commands to work with the sky, planets and stars`.
+  
+If we wanted to have a group named `sky` without an actual `sky` command, we
+would instead use `DEFINE_CMD_ARGV_GROUP` macro. In this case, the handler
+`sky_handler` is not expected/required.
 
 ## How to convert an oldinput command descriptor to argv?
 
@@ -133,21 +136,24 @@ If we want to convert a particular sub-command, just add the command we want
 to convert as explained in the previous section. `RzCmd` will automatically
 select the new handler if it can finds one.
 
-If we want to convert an entire sub-tree of the available commands (e.g. yowe
-want to convert all `y` sub-tree), we have to start by adapting
+If we want to convert an entire sub-tree of the available commands (e.g. we want
+to convert all `y` sub-tree), we have to start by adapting
 [`rz_core_cmd_init`](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/librz/core/cmd.c#L7176),
 by making sure to specify a `descriptor_init` if not available, help structures
 as required, the type of the command descriptor (very likely it will be a
-RZ_CMD_DESC_TYPE_GROUP), and the command handler, in case the name of the group
-is used to also identify a command.
+`RZ_CMD_DESC_TYPE_GROUP`), and the command handler, in case the name of the
+group is used to also identify a command.
 
 At this point we can either convert in one shot all existing subcommands to use
-`RZ_CMD_DESC_TYPE_ARGV`/`GROUP` as appropriate (this is where we want to be
-soon), or we could do the transition gradually and define the subcommands as
-`RZ_CMD_DESC_TYPE_OLDINPUT`.
+`RZ_CMD_DESC_TYPE_ARGV`/`GROUP` as appropriate (this is the state we want to be
+in, but it may require time to convert everything), or we could do the
+transition gradually and define the subcommands as `RZ_CMD_DESC_TYPE_OLDINPUT`.
 
 If we take the `RZ_CMD_DESC_TYPE_ARGV`/`GROUP` approach, we just have to
-create new commands like explained above.
+create new commands like explained above. If possible, try to refactor the code
+to share as much as possible with existing handlers and avoid duplication. If
+the command to implement is simple enough, don't waste too much time with this,
+as `cfg.newshell` is anyway the default.
 
 Otherwise, `RZ_CMD_DESC_TYPE_OLDINPUT` is used to describe command handlers that
 do the parsing themselves, like the existing ones, and handlers of this type
