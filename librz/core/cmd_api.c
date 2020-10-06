@@ -46,6 +46,17 @@ RZ_LIB_VERSION (rz_cmd);
 static bool cmd_desc_set_parent(RzCmdDesc *cd, RzCmdDesc *parent) {
 	rz_return_val_if_fail (cd && !cd->parent, false);
 	if (parent) {
+		switch (parent->type) {
+		case RZ_CMD_DESC_TYPE_OLDINPUT:
+		case RZ_CMD_DESC_TYPE_GROUP:
+		case RZ_CMD_DESC_TYPE_INNER:
+			break;
+		case RZ_CMD_DESC_TYPE_ARGV:
+			rz_warn_if_reached ();
+			return false;
+		}
+	}
+	if (parent) {
 		cd->parent = parent;
 		rz_pvector_push (&parent->children, cd);
 		parent->n_children++;
@@ -122,7 +133,7 @@ RZ_API RzCmd *rz_cmd_new(void) {
 	}
 	cmd->nullcallback = cmd->data = NULL;
 	cmd->ht_cmds = ht_pp_new0 ();
-	cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, RZ_CMD_DESC_TYPE_ARGV, "", &root_help, true);
+	cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, RZ_CMD_DESC_TYPE_GROUP, "", &root_help, true);
 	rz_core_plugin_init (cmd);
 	rz_cmd_macro_init (&cmd->macro);
 	rz_cmd_alias_init (cmd);
