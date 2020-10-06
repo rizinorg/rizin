@@ -314,6 +314,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
           submodules: recursive
+          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
     - name: Checkout our Testsuite Binaries
       uses: actions/checkout@v2
       with:
@@ -339,6 +340,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
           submodules: recursive
+          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
     - name: Extract rizin version
       shell: bash
       run: echo "##[set-output name=branch;]$(python sys/version.py)"
@@ -413,6 +415,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
           submodules: recursive
+          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
     - name: Install pkg-config with Homebrew
       run: brew install pkg-config
     - name: Create OSX package
@@ -445,6 +448,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
+          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
           submodules: recursive
     - uses: actions/setup-python@v2
     - name: Install dependencies
@@ -491,6 +495,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
           submodules: recursive
+          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
     - name: Extract rizin version
       shell: bash
       run: echo "##[set-output name=branch;]$(python sys/version.py)"
@@ -525,6 +530,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
           submodules: recursive
+          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
     - name: Install dependencies
       run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
     - name: Compile with meson
@@ -648,6 +654,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
           submodules: recursive
+          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
     - uses: actions/setup-python@v2
     - name: Install pkg-config
       shell: pwsh
@@ -698,6 +705,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
           submodules: recursive
+          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
     - name: Extract rizin version
       shell: bash
       run: echo "##[set-output name=branch;]$(python sys/version.py)"
@@ -842,6 +850,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
           submodules: recursive
+          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
     - name: Publish to Registry
       uses: docker/build-push-action@v1
       with:
