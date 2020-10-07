@@ -64,9 +64,11 @@ with it, like help messages, description, etc..
 The module
 [`RzCmd`](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/librz/include/rz_cmd.h)
 is the one in charge of dealing with commands. It provides API to register a new
-"command descriptor" (called `RzCmdDesc`), deregister it, call the right command
-descriptor handler based on a list of command name + arguments, get the help of
-a command and potentially do many other things.
+"command descriptor" (called
+[`RzCmdDesc`](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/librz/include/rz_cmd.h#L153)),
+deregister it, call the right command descriptor handler based on a list of
+command name + arguments, get the help of a command and potentially do many
+other things.
 
 As radare2/rizin commands mainly form a tree, `RzCmdDesc` are organized in a
 tree, with each descriptor having references to its parent and its children.
@@ -85,7 +87,8 @@ it would be the `s` branch, which does some additional initialization in
 `cmd_seek_init`. `cmd_seek_init` is defined
 [here](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/librz/core/cmd_seek.c#L65)
 and it gets called with `parent` being the command descriptor of the `s`
-command. We of course want our `sky` command to be a child of `s`.
+command. We of course want our `sky` command to be a child of `s` and be shown
+under `s?`.
 
 Now we need to choose what kind of `RzCmdDesc` we want to have. We can see the
 various types in the
@@ -101,11 +104,64 @@ expects some things in place:
   which gets argc/argv and does the actual job of the `sky` command. See
   [`RzCmdStatus`](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/librz/include/rz_cmd.h#L20-L26) enum for a list of possible status the command handler can
   return.
-- a `RzCmdDescHelp` structure named `sky_help`, which shall be defined/declared
-  together with all others in `cmd_helps.c`/`cmd_helps.h`. This structure
-  provides all the strings that are useful to understand what a command does and
-  they can be queried by using `<cmd>?` or `<cmd>??`.
+- a
+  [`RzCmdDescHelp`](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/librz/include/rz_cmd.h#L86-L133)
+  structure named `sky_help`, which shall be defined/declared together with all
+  others in `cmd_helps.c`/`cmd_helps.h`. This structure provides all the strings
+  that are useful to understand what a command does and they can be queried by
+  using `<cmd>?` or `<cmd>??`.
   
+Below you can see how the code for adding the `sky` command would look like:
+```C
+// cmd_helps.h
+extern const RzCmdDescHelp sky_help;
+```
+```C
+// cmd_helps.c
+const RzCmdDescDetailEntry sky_help_examples[] = {
+	{ .text = "sky", .comment = "Find the first occurence of the word \"sky\"" },
+	{ .text = "sky", .comment = "Find the first two occurrences of the word \"sky\"" },
+	{ 0 },
+};
+
+const RzCmdDescDetailEntry sky_help_env[] = {
+	{ .text = "RZ_SKY_ICASE", .comment = "If defined, `sky` command ignores the case while searching." },
+	{ 0 },
+};
+
+const RzCmdDescDetail sky_help_details[] = {
+	{ .name = "Examples", .entries = sky_help_examples },
+	{ .name = "Enviroment variables", .entries = sky_help_env },
+	{ 0 },
+};
+
+const RzCmdDescHelp sky_help = {
+	.args_str = " [limit]", // for the sake of the example we assume the `sky` command accepts one optional argument
+	.summary = "Find occurrences of word \"sky\"",
+	.description = "It prints the addresses, one per line, of each occurrence of the "sky" word in the currently opened file. If `limit` is provided, at most `limit` lines are printed. If RZ_SKY_ICASE environment variable is set, it ignore the case while searching.",
+	.details = sky_help_details,
+};
+```
+```C
+// cmd_seek.c (example, real place depends on the parent command)
+static RzCmdStatus sky_handler(RzCore *core, int argc, const char **argv) {
+	// argc/argv is like in main(), i.e. argv[0] always contains the command name
+	if (argc > 2) {
+		return RZ_CMD_STATUS_WRONG_ARGS;
+	}
+	int limit = -1;
+	if (argc > 1) {
+		limit = rz_num_math (core->num, argv[1]);
+	}
+	// ... add the logic of your command
+	return RZ_CMD_STATUS_OK;
+}
+
+static void cmd_seek_init(RzCore *core, RzCmdDesc *parent) {
+	DEFINE_CMD_ARGV_DESC (core, sky, parent);
+}
+```
+
 ### Grouped commands
 
 If at some point we want to make `sky` a group and add some sub-commands to it
@@ -121,15 +177,12 @@ DEFINE_CMD_ARGV_DESC (core, skyp, sky_cd);
 
 `DEFINE_CMD_ARGV_GROUP_EXEC (core, sky, parent)` expects:
 - a handler named `sky_handler`, as before
-- a `RzCmdDescHelp` structure named `sky_help`, as before. This is used to
-  describe details and help messages of the `sky` command itself and its arguments, as before. It should
-  explain how the `sky` command works, what are its arguments, etc.. For
-  example, its description could be something like `It prints the addresses, one per
-  line, of each occurrence of the "sky" word in the currently opened file.`,
-  while its summary `Finds occurrences of word "sky"`.
+- a `RzCmdDescHelp` structure named `sky_help`. This is used to describe details
+  and help messages of the `sky` command itself and its arguments, as before. It
+  should explain how the `sky` command works, what are its arguments, etc..
 - a `RzCmdDescHelp` structure named `sky_group_help` which is used to describe
-  the `sky` command as a group. For example, the summary of the group could be
-  `Commands to work with the sky, planets and stars`.
+  `sky` as a group. For example, the summary of the group could be `Commands to
+  work with the sky, planets and stars`.
   
 If we wanted to have a group named `sky` without an actual `sky` command, we
 would instead use `DEFINE_CMD_ARGV_GROUP` macro. In this case, the handler
@@ -147,7 +200,9 @@ to convert all `y` sub-tree), we have to start by adapting
 by making sure to specify a `descriptor_init` if not available, help structures
 as required, the type of the command descriptor (very likely it will be a
 `RZ_CMD_DESC_TYPE_GROUP`), and the command handler, in case the name of the
-group is used to also identify a command.
+group is used to also identify a command (see
+[cmd.c:7174](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/librz/core/cmd.c#L7174)
+for an example).
 
 At this point we can either convert in one shot all existing subcommands to use
 `RZ_CMD_DESC_TYPE_ARGV`/`GROUP` as appropriate (this is the state we want to be
@@ -168,7 +223,9 @@ and mostly re-use existing code. As an example, see [commit
 cde558e6e5788d0a6d544ab975b144ed59190676](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/librz/core/cmd_write.c#L2174).
 In that case, only some commands (`w0`, `w1+`, `w6`, `wB`, etc.) were converted
 to the newshell style, while `wh`, `we`, `wp`, etc. were still handled by the
-existing handlers.
+existing handlers. Existing code has been refactored so that the code could be
+easily shared (see [`cmd_write`
+function](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/librz/core/cmd_write.c#L2048)).
 
 To define the command descriptor as `RZ_CMD_DESC_TYPE_OLDINPUT`, we can use
 `DEFINE_CMD_OLDINPUT_DESC (core, yz, parent)`, which expects:
