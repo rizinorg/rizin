@@ -103,6 +103,8 @@ expects some things in place:
   provides all the strings that are useful to understand what a command does and
   they can be queried by using `<cmd>?` or `<cmd>??`.
   
+### Grouped commands
+
 If at some point we want to make `sky` a group and add some sub-commands to it
 (e.g. `sky`, `skyl`, `skyf`, `skyp`) we have to change its type to
 `RZ_CMD_DESC_TYPE_GROUP` by using `DEFINE_CMD_ARGV_GROUP_EXEC` instead of
