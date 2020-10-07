@@ -24,7 +24,7 @@ inconsistency coming from having many different places in the code doing mostly
 the same thing (e.g. checking if an argument is available or not), the
 inability to easily register/unregister new commands at runtime (e.g. a new Core
 plugin that wants to provide a new command) or the inconsistency between
-commands actually available and commands shown to users.
+commands actually available and commands shown to users in help messages.
 
 ## cfg.newshell
 
