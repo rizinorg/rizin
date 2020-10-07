@@ -185,6 +185,12 @@ typedef enum {
 	// stored in the hashtable and cannot be retrieved except by listing the
 	// children of its parent. Most of the time you want RZ_CMD_DESC_TYPE_GROUP.
 	RZ_CMD_DESC_TYPE_INNER,
+	// for entries that shall be shown in the help tree but that are not
+	// commands on their own. `|?`, `@?`, `>?` are example of this. It is
+	// useful to provide help entries for them in the tree, but there are no
+	// command handlers for these. The RzCmdDescDetail in the help can be
+	// used to show fake children of this descriptor.
+	RZ_CMD_DESC_TYPE_FAKE,
 } RzCmdDescType;
 
 typedef struct rz_cmd_desc_t {
@@ -314,6 +320,7 @@ RZ_API RzCmdDesc *rz_cmd_desc_argv_new(RzCmd *cmd, RzCmdDesc *parent, const char
 RZ_API RzCmdDesc *rz_cmd_desc_inner_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_group_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdArgvCb cb, const RzCmdDescHelp *help, const RzCmdDescHelp *group_help);
 RZ_API RzCmdDesc *rz_cmd_desc_oldinput_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdCb cb, const RzCmdDescHelp *help);
+RZ_API RzCmdDesc *rz_cmd_desc_fake_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_parent(RzCmdDesc *cd);
 RZ_API bool rz_cmd_desc_has_handler(RzCmdDesc *cd);
 RZ_API bool rz_cmd_desc_remove(RzCmd *cmd, RzCmdDesc *cd);
