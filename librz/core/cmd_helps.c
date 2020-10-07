@@ -19,9 +19,9 @@ const RzCmdDescHelp alias_help = {
 
 const RzCmdDescDetailEntry env_help_examples[] = {
 	{ .text = "%", .comment = "list all environment variables" },
-	{ .text = "%SHELL", .comment = "print value of SHELL variable" },
-	{ .text = "%TMPDIR=/tmp", .comment = "set TMPDIR to \"/tmp\"" },
-	{ .text = "env SHELL", .comment = "same as `%SHELL`" },
+	{ .text = "%", .arg_str = "SHELL", .comment = "print value of SHELL variable" },
+	{ .text = "%", .arg_str = "TMPDIR=/tmp", .comment = "set TMPDIR to \"/tmp\"" },
+	{ .text = "env", .arg_str = "SHELL", .comment = "same as `%SHELL`" },
 	{ 0 },
 };
 
@@ -71,9 +71,9 @@ const RzCmdDescHelp macro_help = {
 };
 
 const RzCmdDescDetailEntry pointer_help_examples[] = {
-	{ .text = "*entry0=cc", .comment = "write trap in entrypoint" },
-	{ .text = "*entry0+10=0x804800", .comment = "write 0x804800 as a 4-byte value at 10 bytes from the entrypoint" },
-	{ .text = "*entry0", .comment = "read the value contained at the entrypoint" },
+	{ .text = "*", .arg_str = "entry0=cc", .comment = "write trap in entrypoint" },
+	{ .text = "*", .arg_str = "entry0+10=0x804800", .comment = "write 0x804800 as a 4-byte value at 10 bytes from the entrypoint" },
+	{ .text = "*", .arg_str = "entry0", .comment = "read the value contained at the entrypoint" },
 	{ 0 },
 };
 
@@ -268,8 +268,8 @@ const RzCmdDescHelp w0_help = {
 const RzCmdDescDetailEntry w_incdec_help_examples[] = {
 	{ .text = "w1+", .comment = "Add 1 to the byte at the current offset." },
 	{ .text = "w2-", .comment = "Subtract 1 to the word at the current offset." },
-	{ .text = "w4+ 0xdeadbeef", .comment = "Add 0xdeadbeef to the dword at the current offset." },
-	{ .text = "w8- 10", .comment = "Subtract 10 to the qword at the current offset." },
+	{ .text = "w4+", .arg_str = " 0xdeadbeef", .comment = "Add 0xdeadbeef to the dword at the current offset." },
+	{ .text = "w8-", .arg_str = " 10", .comment = "Subtract 10 to the qword at the current offset." },
 	{ 0 },
 };
 
@@ -375,7 +375,7 @@ const RzCmdDescHelp w8_dec_help = {
 // wB helps
 
 const RzCmdDescDetailEntry wB_help_examples[] = {
-	{ .text = "wB 0x20", .comment = "Sets the 5th bit at current offset, leaving all other bits intact." },
+	{ .text = "wB", .arg_str = " 0x20", .comment = "Sets the 5th bit at current offset, leaving all other bits intact." },
 	{ 0 },
 };
 
@@ -405,7 +405,7 @@ const RzCmdDescHelp wB_minus_help = {
 // wv helps
 
 const RzCmdDescDetailEntry wv_help_examples[] = {
-	{ .text = "wv 0xdeadbeef", .comment = "Write the value 0xdeadbeef at current offset" },
+	{ .text = "wv", .arg_str = " 0xdeadbeef", .comment = "Write the value 0xdeadbeef at current offset" },
 	{ 0 },
 };
 
@@ -448,8 +448,8 @@ const RzCmdDescHelp wv8_help = {
 };
 
 const RzCmdDescDetailEntry w6_help_examples[] = {
-	{ .text = "w6d SGVsbG9Xb3JsZAo=", .comment = "Write the string \"HelloWorld\" (without quotes) at current offset." },
-	{ .text = "w6e 48656c6c6f576f726c64", .comment = "Write the string \"SGVsbG9Xb3JsZAo=\" (without quotes) at current offset." },
+	{ .text = "w6d", .arg_str = " SGVsbG9Xb3JsZAo=", .comment = "Write the string \"HelloWorld\" (without quotes) at current offset." },
+	{ .text = "w6e", .arg_str = " 48656c6c6f576f726c64", .comment = "Write the string \"SGVsbG9Xb3JsZAo=\" (without quotes) at current offset." },
 	{ 0 },
 };
 

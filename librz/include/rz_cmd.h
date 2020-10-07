@@ -75,9 +75,30 @@ typedef struct rz_cmd_alias_t {
 	int *remote;
 } RzCmdAlias;
 
+/**
+ * A detailed entry that can be used to show additional info about a command entry.
+ * It can contain whatever relevant information (e.g. examples, specific uses of
+ * a command, variables, etc.).
+ *
+ * Displayed as:
+ * | <text><arg_str> # <comment>
+ */
 typedef struct rz_cmd_desc_detail_entry_t {
+	/**
+	 * Main text of the detailed entry
+	 */
 	const char *text;
+	/**
+	 * Short explanation of the entry, shown with the comment color
+	 */
 	const char *comment;
+	/**
+	 * Text to show in a different color, after `text`, usually used to show
+	 * arguments for examples.
+	 *
+	 * Optional.
+	 */
+	const char *arg_str;
 } RzCmdDescDetailEntry;
 
 /**

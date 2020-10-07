@@ -589,6 +589,7 @@ static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *a, size_t
 	const char *pal_help_color = use_color? cons->context->pal.help: "",
 		   *pal_input_color = use_color? cons->context->pal.input: "",
 		   *pal_label_color = use_color? cons->context->pal.label: "",
+		   *pal_args_color = use_color? cons->context->pal.args: "",
 		   *pal_reset = use_color? cons->context->pal.reset: "";
 
 	RStrBuf *sb = rz_strbuf_new (NULL);
@@ -609,7 +610,7 @@ static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *a, size_t
 				const RzCmdDescDetailEntry *entry_it = detail_it->entries;
 				size_t max_len = 0;
 				while (entry_it->text) {
-					size_t len = strlen (entry_it->text);
+					size_t len = strlen (entry_it->text) + strlen0 (entry_it->arg_str);
 					if (max_len < len) {
 						max_len = len;
 					}
@@ -618,10 +619,12 @@ static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *a, size_t
 
 				entry_it = detail_it->entries;
 				while (entry_it->text) {
-					size_t len = strlen (entry_it->text);
+					size_t len = strlen (entry_it->text) + strlen0 (entry_it->arg_str);
 					size_t padding = len < max_len? max_len - len: 0;
-					rz_strbuf_appendf (sb, "| %s%s%s %*s%s# %s%s\n",
-						pal_input_color, entry_it->text, pal_reset,
+					const char *arg_str = entry_it->arg_str? entry_it->arg_str: "";
+					rz_strbuf_appendf (sb, "| %s%s%s%s %*s%s# %s%s\n",
+						pal_input_color, entry_it->text,
+						pal_args_color, arg_str,
 						padding, "",
 						pal_help_color, entry_it->comment, pal_reset);
 					entry_it++;
