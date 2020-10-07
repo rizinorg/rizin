@@ -96,7 +96,7 @@ expects some things in place:
 - a handler named `sky_handler` of the type
   [`RzCmdArgvCb`](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/librz/include/rz_cmd.h#L29),
   which gets argc/argv and does the actual job of the `sky` command. See
-  `RzCmdStatus` enum for a list of possible status the command handler can
+  [`RzCmdStatus`](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/librz/include/rz_cmd.h#L20-L26) enum for a list of possible status the command handler can
   return.
 - a `RzCmdDescHelp` structure named `sky_help`, which shall be defined/declared
   together with all others in `cmd_helps.c`/`cmd_helps.h`. This structure
