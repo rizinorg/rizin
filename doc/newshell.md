@@ -116,7 +116,7 @@ DEFINE_CMD_ARGV_DESC (core, skyf, sky_cd);
 DEFINE_CMD_ARGV_DESC (core, skyp, sky_cd);
 ```
 
-`DEFINE_CMD_ARGV_GORUP_EXEC (core, sky, parent)` expects:
+`DEFINE_CMD_ARGV_GROUP_EXEC (core, sky, parent)` expects:
 - a handler named `sky_handler`, as before
 - a `RzCmdDescHelp` structure named `sky_help`, as before. This is used to
   describe details and help messages of the `sky` command itself and its arguments, as before. It should
