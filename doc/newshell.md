@@ -87,7 +87,7 @@ and it gets called with `parent` being the command descriptor of the `s`
 command. We of course want our `sky` command to be a child of `s`.
 
 Now we need to choose what kind of `RzCmdDesc` we want to have. We can see the
-various types in the `RzCmdDescType` enum.
+various types in the [`RzCmdDescType`](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/librz/include/rz_cmd.h#L135-L151) enum.
 
 For now, suppose we simply want a regular `sky` command under `s`. It is enough
 to add a line with `DEFINE_CMD_ARGV_DESC (core, sky, parent);`. This macro
