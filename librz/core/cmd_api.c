@@ -459,16 +459,24 @@ static void fill_children_chars(RStrBuf *sb, RzCmdDesc *cd) {
 	rz_strbuf_init (&csb);
 
 	void **it;
+	bool has_other_commands = false;
 	rz_cmd_desc_children_foreach (cd, it) {
 		RzCmdDesc *child = *(RzCmdDesc **)it;
 		if (rz_str_startswith (child->name, cd->name) && strlen (child->name) == strlen (cd->name) + 1) {
 			rz_strbuf_appendf (&csb, "%c", child->name[strlen (cd->name)]);
+		} else if (strcmp (child->name, cd->name)){
+			has_other_commands = true;
 		}
 	}
 
 	if (rz_strbuf_is_empty (&csb) || rz_strbuf_length (&csb) >= MAX_CHILDREN_SHOW) {
 		rz_strbuf_fini (&csb);
 		rz_strbuf_set (&csb, "?");
+		has_other_commands = false;
+	}
+
+	if (has_other_commands) {
+		rz_strbuf_append (&csb, "?");
 	}
 
 	if (!cd->n_children || rz_cmd_desc_has_handler (cd)) {
