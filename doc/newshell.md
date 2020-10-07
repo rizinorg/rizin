@@ -8,11 +8,11 @@ a new way of registering and developing commands.
 ## A bit of history
 
 Rizin is a fork of radare2. Radare2 did not have, until recently, a generic
-parser for user inputs, but each command had to parse its arguments by
-itself. Moreover, there was no global register of commands available in the
-radare2 shell, instead the input was chopped by looking for specific characters
-and then it was analyzed char by char, using big switch-cases to recognize the
-right command.
+parser for user inputs, but each command had to parse its arguments by itself.
+Moreover, there was no global register of commands available in the radare2
+shell, instead the input was chopped by looking for specific characters and then
+it was analyzed char by char, using big switch-cases to recognize the right
+command.
 
 As an example, you can see
 [cmd_flag.c:1163](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/librz/core/cmd_flag.c#L1163),
@@ -21,24 +21,25 @@ argument was available or not.
 
 This approach, although simple at the beginning, has some drawbacks like the
 inconsistency coming from having many different places in the code doing mostly
-the same thing (e.g. checking if an argument is available or not), the
-inability to easily register/unregister new commands at runtime (e.g. a new Core
-plugin that wants to provide a new command) or the inconsistency between
-commands actually available and commands shown to users in help messages.
+the same thing (e.g. checking if an argument is available or not), the inability
+to easily register/unregister new commands at runtime (e.g. a new Core plugin
+that wants to provide a new command) or the inconsistency between commands
+actually available and commands shown to users in help messages.
 
 ## cfg.newshell
 
 Not long ago, radare2 introduced the variable `cfg.newshell` that, when enabled,
 allows you to use new features in the code. Rizin has chosen to enable this by
 default and it is going to transition most commands to the new way of writing
-commands, which will make it easier/faster to write commands and make
-the overall CLI experience more consistent and reliable.
+commands, which will make it easier/faster to write commands and make the
+overall CLI experience more consistent and reliable.
 
 Rizin uses a parser generated with
 [tree-sitter](https://tree-sitter.github.io/tree-sitter/), which allows you to
 write grammars in JavaScript. You can see our grammar
 [here](https://github.com/rizinorg/rizin/blob/dev/shlr/rizin-shell-parser/grammar.js).
-The parser recognizes the entire syntax of the rizin/radare2 shell language, like:
+The parser recognizes the entire syntax of the rizin/radare2 shell language,
+like:
 
 - [basic statements](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/shlr/rizin-shell-parser/grammar.js#L330): `<command-name> <arg1> <arg2> ... <argN>`
 - [temporary modifier statements](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/shlr/rizin-shell-parser/grammar.js#L124): `<statement> @ <address`, `<statement> @a:x86:32`, etc.
@@ -48,8 +49,8 @@ The parser recognizes the entire syntax of the rizin/radare2 shell language, lik
 - and many others
 
 These patterns deal with the structure of the rizin/radare2 shell language, but
-they don't parse the input of each specific command available in the rizin
-shell (e.g. `af`, `pd`, etc.). The parser just splits the input statement into a
+they don't parse the input of each specific command available in the rizin shell
+(e.g. `af`, `pd`, etc.). The parser just splits the input statement into a
 "command name" and a list of "arguments".
 
 ### Commands registry
@@ -61,7 +62,7 @@ where a command could be registered together with all the information associated
 with it, like help messages, description, etc..
 
 The module
-[RzCmd](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/librz/include/rz_cmd.h)
+[`RzCmd`](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/librz/include/rz_cmd.h)
 is the one in charge of dealing with commands. It provides API to register a new
 "command descriptor" (called `RzCmdDesc`), deregister it, call the right command
 descriptor handler based on a list of command name + arguments, get the help of
@@ -87,7 +88,9 @@ and it gets called with `parent` being the command descriptor of the `s`
 command. We of course want our `sky` command to be a child of `s`.
 
 Now we need to choose what kind of `RzCmdDesc` we want to have. We can see the
-various types in the [`RzCmdDescType`](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/librz/include/rz_cmd.h#L135-L151) enum.
+various types in the
+[`RzCmdDescType`](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/librz/include/rz_cmd.h#L135-L151)
+enum.
 
 For now, suppose we simply want a regular `sky` command under `s`. It is enough
 to add a line with `DEFINE_CMD_ARGV_DESC (core, sky, parent);`. This macro
@@ -134,9 +137,9 @@ would instead use `DEFINE_CMD_ARGV_GROUP` macro. In this case, the handler
 
 ## How to convert an oldinput command descriptor to argv?
 
-If we want to convert a particular sub-command, just add the command we want
-to convert as explained in the previous section. `RzCmd` will automatically
-select the new handler if it can finds one.
+If we want to convert a particular sub-command, just add the command we want to
+convert as explained in the previous section. `RzCmd` will automatically select
+the new handler if it can finds one.
 
 If we want to convert an entire sub-tree of the available commands (e.g. we want
 to convert all `y` sub-tree), we have to start by adapting
@@ -151,11 +154,11 @@ At this point we can either convert in one shot all existing subcommands to use
 in, but it may require time to convert everything), or we could do the
 transition gradually and define the subcommands as `RZ_CMD_DESC_TYPE_OLDINPUT`.
 
-If we take the `RZ_CMD_DESC_TYPE_ARGV`/`GROUP` approach, we just have to
-create new commands like explained above. If possible, try to refactor the code
-to share as much as possible with existing handlers and avoid duplication. If
-the command to implement is simple enough, don't waste too much time with this,
-as `cfg.newshell` is anyway the default.
+If we take the `RZ_CMD_DESC_TYPE_ARGV`/`GROUP` approach, we just have to create
+new commands like explained above. If possible, try to refactor the code to
+share as much as possible with existing handlers and avoid duplication. If the
+command to implement is simple enough, don't waste too much time with this, as
+`cfg.newshell` is anyway the default.
 
 Otherwise, `RZ_CMD_DESC_TYPE_OLDINPUT` is used to describe command handlers that
 do the parsing themselves, like the existing ones, and handlers of this type
