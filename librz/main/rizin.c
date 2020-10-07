@@ -338,7 +338,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	int zflag = 0;
 	bool do_connect = false;
 	bool fullfile = false;
-	int has_project;
 	bool zerosep = false;
 	int help = 0;
 	enum { LOAD_BIN_ALL, LOAD_BIN_NOTHING, LOAD_BIN_STRUCTURES_ONLY } load_bin = LOAD_BIN_ALL;
@@ -1115,28 +1114,11 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					}
 				}
 			} else {
-#if 0 // TODO: wtf is this for?
-				const char *prj = rz_config_get (r->config, "prj.name");
-				if (prj && *prj) {
-					pfile = NULL; //rz_core_project_info (r, prj);
-					if (pfile) {
-						if (!fh) {
-							fh = rz_core_file_open (r, pfile, perms, mapaddr);
-						}
-						// load_bin = LOAD_BIN_NOTHING;
-						load_bin = LOAD_BIN_STRUCTURES_ONLY;
-					} else {
-						eprintf ("Cannot find project file\n");
-					}
-				} else
-#endif
-				{
-					if (fh) {
-						iod = r->io ? rz_io_desc_get (r->io, fh->fd) : NULL;
-						if (iod) {
-							perms = iod->perm;
-							rz_io_map_new (r->io, iod->fd, perms, 0LL, 0LL, rz_io_desc_size (iod));
-						}
+				if (fh) {
+					iod = r->io ? rz_io_desc_get (r->io, fh->fd) : NULL;
+					if (iod) {
+						perms = iod->perm;
+						rz_io_map_new (r->io, iod->fd, perms, 0LL, 0LL, rz_io_desc_size (iod));
 					}
 				}
 			}
@@ -1280,11 +1262,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (iod && !strstr (iod->uri, "://")) {
 			const char *npath;
 			char *path = strdup (rz_config_get (r->config, "file.path"));
-			has_project = NULL; //rz_core_project_open (r, rz_config_get (r->config, "prj.name"), false);
 			iod = r->io ? rz_io_desc_get (r->io, fh->fd) : NULL;
-			if (has_project) {
-				rz_config_set (r->config, "bin.strings", "false");
-			}
 			npath = rz_config_get (r->config, "file.path");
 			if (!quiet && path && *path && npath && strcmp (path, npath)) {
 				eprintf ("WARNING: file.path change: %s => %s\n", path, npath);
