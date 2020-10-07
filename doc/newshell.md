@@ -8,7 +8,7 @@ a new way of registering and developing commands.
 ## A bit of history
 
 Rizin is a fork of radare2. Radare2 did not have, until recently, a generic
-parser to parse user inputs, but each command had to parse its arguments by
+parser for user inputs, but each command had to parse its arguments by
 itself. Moreover, there was no global register of commands available in the
 radare2 shell, instead the input was chopped by looking for specific characters
 and then it was analyzed char by char, using big switch-cases to recognize the
