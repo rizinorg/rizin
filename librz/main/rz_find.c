@@ -437,7 +437,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 		return show_help (argv[0], 1);
 	}
 	/* Enable quiet mode if searching just a single file */
-	if (opt.ind + 1 == argc && !rz_file_is_directory (argv[opt.ind])) {
+	if (opt.ind + 1 == argc && RZ_STR_ISNOTEMPTY (argv[opt.ind]) && !rz_file_is_directory (argv[opt.ind])) {
 		quiet = true;
 	}
 	if (json) {
@@ -446,7 +446,7 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	for (; opt.ind < argc; opt.ind++) {
 		file = argv[opt.ind];
 
-		if (file && !*file) {
+		if (RZ_STR_ISEMPTY(file)) {
 			eprintf ("Cannot open empty path\n");
 			return 1;
 		}
