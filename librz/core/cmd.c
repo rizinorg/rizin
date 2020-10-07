@@ -2117,7 +2117,6 @@ static struct autocomplete_flag_map_t {
 	{ "$flsp", "shows known flag-spaces hints", RZ_CORE_AUTOCMPLT_FLSP },
 	{ "$zign", "shows known zignatures hints", RZ_CORE_AUTOCMPLT_ZIGN },
 	{ "$eval", "shows known evals hints", RZ_CORE_AUTOCMPLT_EVAL },
-	{ "$prjt", "shows known projects hints", RZ_CORE_AUTOCMPLT_PRJT },
 	{ "$mins", NULL, RZ_CORE_AUTOCMPLT_MINS },
 	{ "$brkp", "shows known breakpoints hints", RZ_CORE_AUTOCMPLT_BRKP },
 	{ "$macro", NULL, RZ_CORE_AUTOCMPLT_MACR },

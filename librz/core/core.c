@@ -1216,25 +1216,6 @@ static void autocomplete_evals(RzCore *core, RLineCompletion *completion, const 
 	}
 }
 
-static void autocomplete_project(RzCore *core, RLineCompletion *completion, const char* str) {
-	rz_return_if_fail (str);
-	char *foo, *projects_path = rz_file_abspath (rz_config_get (core->config, "dir.projects"));
-	RzList *list = rz_sys_dir (projects_path);
-	RzListIter *iter;
-	int n = strlen (str);
-	if (projects_path) {
-		rz_list_foreach (list, iter, foo) {
-			// if (rz_core_is_project (core, foo)) {
-			// 	if (!strncmp (foo, str, n)) {
-			// 		rz_line_completion_push (completion, foo);
-			// 	}
-			// }
-		}
-		free (projects_path);
-		rz_list_free (list);
-	}
-}
-
 static void autocomplete_minus(RzCore *core, RLineCompletion *completion, const char *str) {
 	rz_return_if_fail (str);
 	int count;
@@ -1546,9 +1527,6 @@ static bool find_autocomplete(RzCore *core, RLineCompletion *completion, RLineBu
 		break;
 	case RZ_CORE_AUTOCMPLT_EVAL:
 		autocomplete_evals (core, completion, p);
-		break;
-	case RZ_CORE_AUTOCMPLT_PRJT:
-		autocomplete_project (core, completion, p);
 		break;
 	case RZ_CORE_AUTOCMPLT_MINS:
 		autocomplete_minus (core, completion, p);
@@ -2257,10 +2235,7 @@ static void __init_autocomplete_default (RzCore* core) {
 		"idp", "idpi", "L", "obf", "o+", "oc", "rz", "rz_bin", "rz_asm", "rz_hash", "rz_ax",
 		"rz_find", "cd", "ls", "on", "op", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
 		"/m", "zos", "zfd", "zfs", "zfz", "cat", "wta", "wtf", "wxf", "dml", "vi",
-		"less", "head", "tail", NULL
-	};
-	const char *projs[] = {
-		"Pc", "Pd", "Pi", "Po", "Ps", "P-", NULL
+		"less", "head", "tail", "Ps", "Pl", NULL
 	};
 	__foreach (core, flags, RZ_CORE_AUTOCMPLT_FLAG);
 	__foreach (core, seeks, RZ_CORE_AUTOCMPLT_SEEK);
@@ -2268,7 +2243,6 @@ static void __init_autocomplete_default (RzCore* core) {
 	__foreach (core, evals, RZ_CORE_AUTOCMPLT_EVAL);
 	__foreach (core, breaks, RZ_CORE_AUTOCMPLT_BRKP);
 	__foreach (core, files, RZ_CORE_AUTOCMPLT_FILE);
-	__foreach (core, projs, RZ_CORE_AUTOCMPLT_PRJT);
 
 	rz_core_autocomplete_add (core->autocomplete, "-", RZ_CORE_AUTOCMPLT_MINS, true);
 	rz_core_autocomplete_add (core->autocomplete, "zs", RZ_CORE_AUTOCMPLT_ZIGN, true);
