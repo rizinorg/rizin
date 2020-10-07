@@ -3205,6 +3205,14 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF ("cfg.user", rz_sys_whoami (buf), "Set current username/pid");
 	SETCB ("cfg.fortunes", "true", &cb_cfg_fortunes, "If enabled show tips at start");
 	SETCB ("cfg.fortunes.type", "tips,fun", &cb_cfg_fortunes_type, "Type of fortunes to show (tips, fun, nsfw, creepy)");
+	{
+		// Halloween easteregg
+		time_t ts = time (0);
+		struct tm t;
+		if (rz_localtime_r (&ts, &t) && t.tm_mday == 31 && t.tm_mon == 9) {
+			rz_config_set (cfg, "cfg.fortunes.type", "creepy");
+		}
+	}
 	SETBPREF ("cfg.fortunes.clippy", "false", "Use ?E instead of ?e");
 	SETBPREF ("cfg.fortunes.tts", "false", "Speak out the fortune");
 	SETPREF ("cfg.prefixdump", "dump", "Filename prefix for automated dumps");

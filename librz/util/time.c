@@ -198,6 +198,15 @@ RZ_API const char *rz_time_to_string (ut64 ts) {
 	return rz_time_stamp_to_str (l);
 }
 
+RZ_API struct tm *rz_localtime_r(const time_t *time, struct tm *res) {
+#if __WINDOWS__
+	errno_t err = localtime_s (res, time);
+	return err? NULL: res;
+#else
+	return localtime_r (time, res);
+#endif
+}
+
 RZ_API char *rz_asctime_r(const struct tm *tm, char *buf, size_t size) {
 #if __WINDOWS__
 	errno_t err = asctime_s (buf, size, tm);
