@@ -38,7 +38,7 @@ Rizin uses a parser generated with
 [tree-sitter](https://tree-sitter.github.io/tree-sitter/), which allows you to
 write grammars in JavaScript. You can see our grammar
 [here](https://github.com/rizinorg/rizin/blob/dev/shlr/rizin-shell-parser/grammar.js).
-The parser recognizes some basic statement of the rizin/radare2 shell language, like:
+The parser recognizes the entire syntax of the rizin/radare2 shell language, like:
 
 - [basic statements](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/shlr/rizin-shell-parser/grammar.js#L330): `<command-name> <arg1> <arg2> ... <argN>`
 - [temporary modifier statements](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/shlr/rizin-shell-parser/grammar.js#L124): `<statement> @ <address`, `<statement> @a:x86:32`, etc.
