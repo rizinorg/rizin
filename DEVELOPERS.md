@@ -15,8 +15,8 @@ See the [Doxygen Manual](http://www.doxygen.nl/manual/index.html)
 for more info. Example usage can be found [here](http://www.doxygen.nl/manual/docblocks.html)
 ```c
 /**
- * \brief Find the min and max addresses in an RList of maps.
- * \param maps RList of maps that will be searched through
+ * \brief Find the min and max addresses in an RzList of maps.
+ * \param maps RzList of maps that will be searched through
  * \param min Pointer to a ut64 that the min will be stored in
  * \param max Pointer to a ut64 that the max will be stored in
  * \param skip How many maps to skip at the start of an iteration
@@ -26,7 +26,7 @@ for more info. Example usage can be found [here](http://www.doxygen.nl/manual/do
  * Used to determine the min & max addresses of maps and
  * scale the ascii bar to the width of the terminal
  */
-static int findMinMax(RList *maps, ut64 *min, ut64 *max, int skip, int width);
+static int findMinMax(RzList *maps, ut64 *min, ut64 *max, int skip, int width);
 ```
 
 ## Code style
@@ -98,16 +98,16 @@ if (a == b) {
   example of a good name could be "out_buffer:" if the goto frees "buffer".
   Avoid using GW-BASIC names like "err1:" and "err2:".
 
-* Use `r_return_*` functions to check preconditions that are caused by
+* Use `rz_return_*` functions to check preconditions that are caused by
   programmers' errors. Please note the difference between conditions that should
-  never happen, and that are handled through `r_return_*` functions, and
+  never happen, and that are handled through `rz_return_*` functions, and
   conditions that can happen at runtime (e.g. malloc returns NULL, input coming
   from user, etc.), and should be handled in the usual way through if-else.
 
 ```c
 int check(RCore *c, int a, int b) {
-	r_return_val_if_fail (c, false);
-	r_return_val_if_fail (a >= 0, b >= 1, false);
+	rz_return_val_if_fail (c, false);
+	rz_return_val_if_fail (a >= 0, b >= 1, false);
 
 	if (a == 0) {
 		/* do something */
@@ -128,28 +128,28 @@ a = (b << 3) * 5;
 
 ```c
 - ret = over ?
--         r_debug_step_over (dbg, 1) :
--         r_debug_step (dbg, 1);
+-         rz_debug_step_over (dbg, 1) :
+-         rz_debug_step (dbg, 1);
 + ret = over
-+         ? r_debug_step_over (dbg, 1)
-+         : r_debug_step (dbg, 1);
++         ? rz_debug_step_over (dbg, 1)
++         : rz_debug_step (dbg, 1);
 ```
 
 * Split long conditional expressions into small `static inline` functions to make them more readable:
 
 ```c
-+static inline bool inRange(RBreakpointItem *b, ut64 addr) {
++static inline bool inRange(RzBreakpointItem *b, ut64 addr) {
 +       return (addr >= b->addr && addr < (b->addr + b->size));
 +}
 +
-+static inline bool matchProt(RBreakpointItem *b, int rwx) {
++static inline bool matchProt(RzBreakpointItem *b, int rwx) {
 +       return (!rwx || (rwx && b->rwx));
 +}
 +
- RZ_API RBreakpointItem *r_bp_get_in(RBreakpoint *bp, ut64 addr, int rwx) {
-        RBreakpointItem *b;
-        RListIter *iter;
-        r_list_foreach (bp->bps, iter, b) {
+ RZ_API RzBreakpointItem *rz_bp_get_in(RzBreakpoint *bp, ut64 addr, int rwx) {
+        RzBreakpointItem *b;
+        RzListIter *iter;
+        rz_list_foreach (bp->bps, iter, b) {
 -               if (addr >= b->addr && addr < (b->addr+b->size) && \
 -                       (!rwx || rwx&b->rwx))
 +               if (inRange (b, addr) && matchProt (b, rwx)) {
@@ -166,7 +166,7 @@ The structure of the C files in r2 must be like this:
 
 ```c
 /* Copyright ... */           ## copyright
-#include <r_core.h>           ## includes
+#include <rz_core.h>           ## includes
 static int globals            ## const, define, global variables
 static void helper(void) {}   ## static functions
 RZ_IPI void internal(void) {}  ## internal apis (used only inside the library)
@@ -180,10 +180,10 @@ RZ_API void public(void) {}    ## public apis starting with constructor/destruct
 The reason why many places in r2land functions return int instead of an enum type is because enums can't be OR'ed; otherwise, it breaks the usage within a switch statement and swig can't handle that stuff.
 
 ```
-r_core_wrap.cxx:28612:60: error: assigning to 'RRegisterType' from incompatible type 'long'
+rz_core_wrap.cxx:28612:60: error: assigning to 'RzRegisterType' from incompatible type 'long'
   arg2 = static_cast< long >(val2); if (arg1) (arg1)->type = arg2; resultobj = SWIG_Py_Void(); return resultobj; fail:
                                                            ^ ~~~~
-r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatible type 'int'
+rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompatible type 'int'
     arg2 = static_cast< int >(val2); if (arg1) (arg1)->type = arg2; resultobj = SWIG_Py_Void(); return resultobj; fail:
                                                             ^ ~~~~
 3 warnings and 2 errors generated.
@@ -191,7 +191,7 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
 
 * Do not leave trailing whitespaces at the end of line
 
-* Do not use assert.h, use r_util/r_assert.h instead.
+* Do not use assert.h, use rz_util/rz_assert.h instead.
 
 * You can use `export RZ_DEBUG_ASSERT=1` to set a breakpoint when hitting an assert.
 
@@ -285,9 +285,9 @@ Radare2 now uses helper functions to interpret all byte streams in a known endia
 
 Please use these at all times, eg:
 
-  	val32 = r_read_be32(buffer)		// reads 4 bytes from a stream in BE
-  	val32 = r_read_le32(buffer)		// reads 4 bytes from a stream in LE
-  	val32 = r_read_ble32(buffer, isbig)	// reads 4 bytes from a stream:
+  	val32 = rz_read_be32(buffer)		// reads 4 bytes from a stream in BE
+  	val32 = rz_read_le32(buffer)		// reads 4 bytes from a stream in LE
+  	val32 = rz_read_ble32(buffer, isbig)	// reads 4 bytes from a stream:
   						//   if isbig is true, reads in BE
   						//   otherwise reads in LE
 
