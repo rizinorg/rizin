@@ -107,6 +107,7 @@ const RzCmdDescHelp rap_help = {
 
 const RzCmdDescHelp help_help = {
 	.summary = "Help or evaluate math expression",
+	.options = "[??]",
 };
 
 const RzCmdDescHelp rap_run_help = {
