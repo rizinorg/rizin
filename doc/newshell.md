@@ -16,7 +16,7 @@ right command.
 
 As an example, you can see
 [cmd_flag.c:1163](https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/librz/core/cmd_flag.c#L1163),
-that identifies the `fsr` command and then parses its input to check if an
+which identifies the `fsr` command and then parses its input to check if an
 argument was available or not.
 
 This approach, although simple at the beginning, has some drawbacks like the
