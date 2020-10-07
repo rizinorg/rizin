@@ -6008,15 +6008,18 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		memset (&asmop, 0, sizeof (RzAsmOp));
 		ret = rz_asm_disassemble (core->rasm, &asmop, buf + i, nb_bytes - i);
 		if (ret < 1) {
+			char *hex = rz_asm_op_get_hex (&asmop);
 			pj_o (pj);
 			pj_kn (pj, "offset", at);
 			pj_ki (pj, "size", 1);
+			pj_ks (pj, "bytes", hex);
 			pj_ks (pj, "type", "invalid");
 			pj_end (pj);
 			i++;
 			k++;
 			j++;
 			result = true;
+			free (hex);
 			continue;
 		}
 
