@@ -28,7 +28,7 @@ commands actually available and commands shown to users in help messages.
 
 ## cfg.newshell
 
-Not long ago, radare2 introduced the variable `cfg.newshell`, that when enabled
+Not long ago, radare2 introduced the variable `cfg.newshell` that, when enabled,
 allows you to use new features in the code. Rizin has chosen to enable this by
 default and it is going to transition most commands to the new way of writing
 commands, which we think will make it easier/faster to write commands and make
