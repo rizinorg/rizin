@@ -92,7 +92,7 @@ enum {
 	DIFF_FIELD_SIZE
 };
 
-RZ_API RSerializeAnalDiffParser rz_serialize_anal_diff_parser_new() {
+RZ_API RSerializeAnalDiffParser rz_serialize_anal_diff_parser_new(void) {
 	RSerializeAnalDiffParser parser = key_parser_new ();
 	if (!parser) {
 		return NULL;
@@ -617,7 +617,7 @@ RZ_API void rz_serialize_anal_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalVar *v
 			if (acc->reg) {
 				pj_ks (j, "reg", acc->reg);
 			} else {
-				rz_warn_if_reached();
+				rz_warn_if_reached ();
 			}
 			pj_end (j);
 		}
@@ -647,7 +647,7 @@ enum {
 	VAR_FIELD_CONSTRS
 };
 
-RZ_API RSerializeAnalVarParser rz_serialize_anal_var_parser_new() {
+RZ_API RSerializeAnalVarParser rz_serialize_anal_var_parser_new(void) {
 	RSerializeAnalDiffParser parser = key_parser_new ();
 	if (!parser) {
 		return NULL;
@@ -1639,7 +1639,7 @@ static bool hints_acc_store_cb(void *user, const ut64 addr, const void *v) {
 		return false;
 	}
 	Sdb *db = user;
-	PJ *j = pj_new();
+	PJ *j = pj_new ();
 	if (!j) {
 		return false;
 	}

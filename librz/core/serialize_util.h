@@ -9,7 +9,7 @@
 // Hashtable-based key parser to prevent strcmp chains
 typedef HtPP KeyParser;
 
-static inline KeyParser *key_parser_new() {
+static inline KeyParser *key_parser_new(void) {
 	return ht_pp_new0 ();
 }
 
