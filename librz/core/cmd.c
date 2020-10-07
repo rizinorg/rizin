@@ -5191,18 +5191,12 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_command) {
 	// TODO: traverse command tree to print help
 	// FIXME: once we have a command tree, this special handling should be removed
 	size_t node_str_len = strlen (node_string);
-	if (!strcmp (node_string, "@?")) {
-		rz_core_cmd_help (state->core, help_msg_at);
-	} else if (!strcmp (node_string, "@@?")) {
+	if (!strcmp (node_string, "@@?")) {
 		rz_core_cmd_help (state->core, help_msg_at_at);
 	} else if (!strcmp (node_string, "@@@?")) {
 		rz_core_cmd_help (state->core, help_msg_at_at_at);
-	} else if (!strcmp (node_string, "|?")) {
-		rz_core_cmd_help (state->core, help_msg_vertical_bar);
 	} else if (!strcmp (node_string, "~?")) {
 		rz_cons_grep_help ();
-	} else if (!strcmp (node_string, ">?")) {
-		rz_core_cmd_help (state->core, help_msg_greater_sign);
 	} else if (node_str_len >= 2 && !strcmp (node_string + node_str_len - 2, "?*")) {
 		int detail = 0;
 		if (node_str_len > 3 && node_string[node_str_len - 3] == '?') {
@@ -7175,6 +7169,9 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{"x",        "alias for px", cmd_hexdump, NULL, &x_help},
 		{"y",     "yank bytes", cmd_yank, NULL, &y_help},
 		{"z",     "zignatures", cmd_zign, cmd_zign_init, &z_help},
+		{"@", "temporary modifiers", NULL, NULL, &tmp_modifier_help, NULL, RZ_CMD_DESC_TYPE_FAKE},
+		{">", "redirection", NULL, NULL, &redirection_help, NULL, RZ_CMD_DESC_TYPE_FAKE},
+		{"|", "pipe", NULL, NULL, &pipe_help, NULL, RZ_CMD_DESC_TYPE_FAKE},
 	};
 
 	core->rcmd = rz_cmd_new ();
@@ -7189,7 +7186,9 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 	RzCmdDesc *root = rz_cmd_get_root (core->rcmd);
 	size_t i;
 	for (i = 0; i < RZ_ARRAY_SIZE (cmds); i++) {
-		rz_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].cb);
+		if (cmds[i].cb) {
+			rz_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].cb);
+		}
 
 		RzCmdDesc *cd;
 		switch (cmds[i].type) {
@@ -7204,6 +7203,9 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 			break;
 		case RZ_CMD_DESC_TYPE_GROUP:
 			cd = rz_cmd_desc_group_new (core->rcmd, root, cmds[i].cmd, cmds[i].argv_cb, cmds[i].help, cmds[i].group_help);
+			break;
+		case RZ_CMD_DESC_TYPE_FAKE:
+			cd = rz_cmd_desc_fake_new (core->rcmd, root, cmds[i].cmd, cmds[i].help);
 			break;
 		}
 		if (cmds[i].descriptor_init) {

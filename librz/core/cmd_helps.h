@@ -3,6 +3,10 @@
 
 #include <rz_cmd.h>
 
+extern const RzCmdDescHelp tmp_modifier_help;
+extern const RzCmdDescHelp redirection_help;
+extern const RzCmdDescHelp pipe_help;
+
 extern const RzCmdDescHelp system_help;
 extern const RzCmdDescHelp underscore_help;
 extern const RzCmdDescHelp hash_help;

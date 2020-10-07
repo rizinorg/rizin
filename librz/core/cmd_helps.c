@@ -2,6 +2,79 @@
 
 // root helps
 
+const RzCmdDescDetailEntry tmp_modifier_detail_entries[] = {
+	{ .text = "<cmd> @", .arg_str = " <addr>", .comment = "temporary seek to <addr>" },
+	{ .text = "<cmd> @", .arg_str = " <addr>!<blocksize>", .comment = "temporary seek to <addr> and set blocksize to <blocksize>" },
+	{ .text = "<cmd> @..", .arg_str = "<addr>", .comment = "temporary partial address seek (see s..)" },
+	{ .text = "<cmd> @!", .arg_str = "<blocksize>", .comment = "temporary change the block size" },
+	{ .text = "<cmd> @{", .arg_str = "<from> <to>}", .comment = "temporary set from and to for commands supporting ranges" },
+	{ .text = "<cmd> @a:", .arg_str = "<arch>[:<bits>]", .comment = "temporary set arch and bits, if specified" },
+	{ .text = "<cmd> @b:", .arg_str = "<bits>", .comment = "temporary set asm.bits" },
+	{ .text = "<cmd> @B:", .arg_str = "<nth>", .comment = "temporary seek to nth instruction in current basic block (negative numbers too)" },
+	{ .text = "<cmd> @e:", .arg_str = "<k>=<v>[,<k>=<v>]", .comment = "temporary change eval vars (multiple vars separated by comma)" },
+	{ .text = "<cmd> @f:", .arg_str = "<file>", .comment = "temporary replace block with file contents" },
+	{ .text = "<cmd> @F:", .arg_str = "<flagspace>", .comment = "temporary change flag space" },
+	{ .text = "<cmd> @i:", .arg_str = "<nth.op>", .comment = "temporary seek to the Nth relative instruction" },
+	{ .text = "<cmd> @k:", .arg_str = "<key>", .comment = "temporary seek at value of sdb key `key`" },
+	{ .text = "<cmd> @o:", .arg_str = "<fd>", .comment = "temporary switch to another fd" },
+	{ .text = "<cmd> @r:", .arg_str = "<reg>", .comment = "temporary seek to register value" },
+	{ .text = "<cmd> @s:", .arg_str = "<string>", .comment = "temporary replace block with string" },
+	{ .text = "<cmd> @x:", .arg_str = "<hexstring>", .comment = "temporary replace block with hexstring" },
+	{ 0 },
+};
+
+const RzCmdDescDetail tmp_modifier_detail[] = {
+	{ .name = "", .entries = tmp_modifier_detail_entries },
+	{ 0 },
+};
+
+const RzCmdDescHelp tmp_modifier_help = {
+	.summary = "'@' help",
+	.options = "?",
+	.details = tmp_modifier_detail,
+	.usage = "<cmd> <@> <args>",
+};
+
+const RzCmdDescDetailEntry redirection_detail_entries[] = {
+	{ .text = "<cmd> >", .arg_str = " <file>|<$alias>", .comment = "redirect STDOUT of <cmd> to <file> or save it to an alias (see $?)" },
+	{ .text = "<cmd> 2>", .arg_str = " <file>|<$alias>", .comment = "redirect STDERR of <cmd> to <file> or save it to an alias (see $?)" },
+	{ .text = "<cmd> H>", .arg_str = " <file>|<$alias>", .comment = "redirect HTML output of <cmd> to <file> or save it to an alias (see $?)" },
+	{ 0 },
+};
+
+const RzCmdDescDetail redirection_detail[] = {
+	{ .name = "", .entries = redirection_detail_entries },
+	{ 0 },
+};
+
+const RzCmdDescHelp redirection_help = {
+	.summary = "redirection help ('>')",
+	.options = "?",
+	.details = redirection_detail,
+	.usage = "<cmd> > <arg>",
+};
+
+const RzCmdDescDetailEntry pipe_detail_entries[] = {
+	{ .text = "<cmd> |", .arg_str = NULL, .comment = "disable scr.html and scr.color" },
+	{ .text = "<cmd> |H", .arg_str = NULL, .comment = "enable scr.html, respect scr.color" },
+	{ .text = "<cmd> |T", .arg_str = NULL, .comment = "use scr.tts to speak out the stdout" },
+	{ .text = "<cmd> |", .arg_str = " <program>", .comment = "pipe output of command to program" },
+	{ .text = "<cmd> |.", .arg_str = NULL, .comment = "alias for .<cmd>" },
+	{ 0 },
+};
+
+const RzCmdDescDetail pipe_detail[] = {
+	{ .name = "", .entries = pipe_detail_entries },
+	{ 0 },
+};
+
+const RzCmdDescHelp pipe_help = {
+	.summary = "pipe help ('|')",
+	.options = "?",
+	.details = pipe_detail,
+	.usage = "<cmd> |[<program>|H|T|.|]",
+};
+
 const RzCmdDescHelp system_help = {
 	.summary = "run given command as in system(3)",
 };
