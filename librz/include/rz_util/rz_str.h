@@ -196,6 +196,7 @@ RZ_API char *rz_str_from_ut64(ut64 val);
 RZ_API void rz_str_stripLine(char *str, const char *key);
 RZ_API char *rz_str_list_join(RzList *str, const char *sep);
 RZ_API char *rz_str_array_join(const char **a, size_t n, const char *sep);
+RZ_API RzList *rz_str_wrap(char *str, size_t width);
 
 RZ_API const char *rz_str_sep(const char *base, const char *sep);
 RZ_API const char *rz_str_rsep(const char *base, const char *p, const char *sep);

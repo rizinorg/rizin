@@ -3582,6 +3582,55 @@ RZ_API const char *rz_str_str_xy(const char *s, const char *word, const char *pr
 	return d;
 }
 
+/**
+ * Wrap the input string according to the provided width, so that (if possible),
+ * each line fits in \p width characters. Words will not be split across
+ * multiple lines. Words are consecutive characters separated by one or more
+ * space. Spaces at the beginning of \p string will be maintained, trailing
+ * whitespaces at the end of each split line is removed.
+ *
+ * @param string a writable string, it will be modified by the function
+ * @param width the maximum size of each line. It will be respected only if
+ *              possible, as the function won't split words.
+ */
+RZ_API RzList *rz_str_wrap(char *str, size_t width) {
+	rz_return_val_if_fail (str, NULL);
+
+	RzList *res = rz_list_new ();
+	char *p, *start_line = str;
+	char *first_space = NULL, *last_space = NULL;
+
+	p = (char *)rz_str_trim_head_ro (str);
+	if (!*p) {
+		return res;
+	}
+
+	do{
+		p++;
+		if (!*p || isspace (*p)) {
+			if (p != last_space + 1) {
+				if (p - start_line > width && first_space) {
+					rz_list_append (res, start_line);
+					*first_space = '\0';
+					start_line = last_space ? last_space + 1 : p;
+				}
+				first_space = p;
+			}
+			last_space = p;
+		}
+	} while (*p);
+	p--;
+	while (p >= str && isspace (*p)) {
+		*p = '\0';
+		p--;
+	}
+	if (p > start_line) {
+		rz_list_append (res, start_line);
+	}
+
+	return res;
+}
+
 // version.c
 #include <rz_userconf.h>
 #include <rz_util.h>
