@@ -2,6 +2,203 @@
 
 // root helps
 
+const RzCmdDescDetailEntry tmp_modifier_detail_entries[] = {
+	{ .text = "<cmd> @", .arg_str = " <addr>", .comment = "temporary seek to <addr>" },
+	{ .text = "<cmd> @", .arg_str = " <addr>!<blocksize>", .comment = "temporary seek to <addr> and set blocksize to <blocksize>" },
+	{ .text = "<cmd> @..", .arg_str = "<addr>", .comment = "temporary partial address seek (see s..)" },
+	{ .text = "<cmd> @!", .arg_str = "<blocksize>", .comment = "temporary change the block size" },
+	{ .text = "<cmd> @{", .arg_str = "<from> <to>}", .comment = "temporary set from and to for commands supporting ranges" },
+	{ .text = "<cmd> @a:", .arg_str = "<arch>[:<bits>]", .comment = "temporary set arch and bits, if specified" },
+	{ .text = "<cmd> @b:", .arg_str = "<bits>", .comment = "temporary set asm.bits" },
+	{ .text = "<cmd> @B:", .arg_str = "<nth>", .comment = "temporary seek to nth instruction in current basic block (negative numbers too)" },
+	{ .text = "<cmd> @e:", .arg_str = "<k>=<v>[,<k>=<v>]", .comment = "temporary change eval vars (multiple vars separated by comma)" },
+	{ .text = "<cmd> @f:", .arg_str = "<file>", .comment = "temporary replace block with file contents" },
+	{ .text = "<cmd> @F:", .arg_str = "<flagspace>", .comment = "temporary change flag space" },
+	{ .text = "<cmd> @i:", .arg_str = "<nth.op>", .comment = "temporary seek to the Nth relative instruction" },
+	{ .text = "<cmd> @k:", .arg_str = "<key>", .comment = "temporary seek at value of sdb key `key`" },
+	{ .text = "<cmd> @o:", .arg_str = "<fd>", .comment = "temporary switch to another fd" },
+	{ .text = "<cmd> @r:", .arg_str = "<reg>", .comment = "temporary seek to register value" },
+	{ .text = "<cmd> @s:", .arg_str = "<string>", .comment = "temporary replace block with string" },
+	{ .text = "<cmd> @x:", .arg_str = "<hexstring>", .comment = "temporary replace block with hexstring" },
+	{ 0 },
+};
+
+const RzCmdDescDetail tmp_modifier_detail[] = {
+	{ .name = "", .entries = tmp_modifier_detail_entries },
+	{ 0 },
+};
+
+const RzCmdDescHelp tmp_modifier_help = {
+	.summary = "'@' help",
+	.options = "?",
+	.details = tmp_modifier_detail,
+	.usage = "<cmd> <@> <args>",
+};
+
+const RzCmdDescDetailEntry iterator_detail_entries[] = {
+	{ .text = "<cmd> @@", .arg_str = " <glob>", .comment = "run <cmd> over all flags matching <glob> in current flagspace. <glob> may contain `*` to indicate multiple chars" },
+	{ .text = "<cmd> @@dbt[abs]", .arg_str = "", .comment = "run <cmd> on every backtrace address, bp or sp" },
+	{ .text = "<cmd> @@.", .arg_str = "<file>", .comment = "run <cmd> over the offsets specified in <file>, one per line" },
+	{ .text = "<cmd> @@=", .arg_str = "<addr1> [<addr2> ...]", .comment = "run <cmd> over the listed addresses" },
+	{ .text = "<cmd> @@/", .arg_str = "<search-cmd>", .comment = "run <cmd> over the search results of /<search-cmd>" },
+	{ .text = "<cmd> @@k", .arg_str = " <sdbquery>", .comment = "run <cmd> over all offsets return by the sdb query <sdbquery>" },
+	{ .text = "<cmd> @@t", .arg_str = "", .comment = "run <cmd> over all threads" },
+	{ .text = "<cmd> @@b", .arg_str = "", .comment = "run <cmd> over all basic blocks of the current function" },
+	{ .text = "<cmd> @@i", .arg_str = "", .comment = "run <cmd> over all instructions of the current function" },
+	{ .text = "<cmd> @@iS", .arg_str = "", .comment = "run <cmd> over all sections" },
+	{ .text = "<cmd> @@f", .arg_str = "", .comment = "run <cmd> over all functions" },
+	{ .text = "<cmd> @@f:", .arg_str = "<glob>", .comment = "run <cmd> over all function matching <glob>. <glob> may contain `*` to indicate multiple chars" },
+	{ .text = "<cmd> @@s:", .arg_str = "<from> <to> <step>", .comment = "run <cmd> on all addresses starting from <from> and going up to <to> (included), with a step <step>." },
+	{ .text = "<cmd> @@c:", .arg_str = "<cmd2>", .comment = "run <cmd> on all addresses in the output of <cmd2>" },
+	{ 0 },
+};
+
+const RzCmdDescDetail iterator_detail[] = {
+	{ .name = "", .entries = iterator_detail_entries },
+	{ 0 },
+};
+
+const RzCmdDescHelp iterator_help = {
+	.summary = "'@@' help",
+	.options = "?",
+	.details = iterator_detail,
+	.usage = "<cmd> <@@> <args>",
+};
+
+const RzCmdDescDetailEntry foreach_detail_entries[] = {
+	{ .text = "<cmd> @@@=", .arg_str = "<addr> <size> (<addr> <size> ...)", .comment = "run <cmd> on each <addr> and set blocksize to <size>" },
+	{ .text = "<cmd> @@@b", .arg_str = "", .comment = "run <cmd> on each basic block of current function" },
+	{ .text = "<cmd> @@@c:", .arg_str = "<cmd2>", .comment = "same as <cmd>@@@=`<cmd2>`" },
+	{ .text = "<cmd> @@@C:", .arg_str = "<string>", .comment = "run <cmd> on each comment matching <string>" },
+	{ .text = "<cmd> @@@i", .arg_str = "", .comment = "run <cmd> on each import" },
+	{ .text = "<cmd> @@@r", .arg_str = "", .comment = "run <cmd> on each register" },
+	{ .text = "<cmd> @@@s", .arg_str = "", .comment = "run <cmd> on each symbol" },
+	{ .text = "<cmd> @@@st", .arg_str = "", .comment = "run <cmd> on each string" },
+	{ .text = "<cmd> @@@S", .arg_str = "", .comment = "run <cmd> on each section" },
+	{ .text = "<cmd> @@@m", .arg_str = "", .comment = "run <cmd> on each io.maps" },
+	{ .text = "<cmd> @@@M", .arg_str = "", .comment = "run <cmd> on each dbg.maps" },
+	{ .text = "<cmd> @@@f", .arg_str = "", .comment = "run <cmd> on each flag" },
+	{ .text = "<cmd> @@@f:", .arg_str = "<glob-string>", .comment = "run <cmd> on each flag matching <glob-string>. <glob-string> may contain `*` to indicate multiple chars" },
+	{ .text = "<cmd> @@@F", .arg_str = "", .comment = "run <cmd> on each function" },
+	{ .text = "<cmd> @@@F:", .arg_str = "<glob-string>", .comment = "run <cmd> on each function whose name matches <glob-string>. <glob-string> may contain `*` to indicate multiple chars" },
+	{ .text = "<cmd> @@@t", .arg_str = "", .comment = "run <cmd> on each thread" },
+	{ 0 },
+};
+
+const RzCmdDescDetail foreach_detail[] = {
+	{ .name = "", .entries = foreach_detail_entries },
+	{ 0 },
+};
+
+const RzCmdDescHelp foreach_help = {
+	.summary = "'@@@' help",
+	.options = "?",
+	.details = foreach_detail,
+	.usage = "<cmd> <@@@>",
+};
+
+const RzCmdDescDetailEntry redirection_detail_entries[] = {
+	{ .text = "<cmd> >", .arg_str = " <file>|<$alias>", .comment = "redirect STDOUT of <cmd> to <file> or save it to an alias (see $?)" },
+	{ .text = "<cmd> 2>", .arg_str = " <file>|<$alias>", .comment = "redirect STDERR of <cmd> to <file> or save it to an alias (see $?)" },
+	{ .text = "<cmd> H>", .arg_str = " <file>|<$alias>", .comment = "redirect HTML output of <cmd> to <file> or save it to an alias (see $?)" },
+	{ 0 },
+};
+
+const RzCmdDescDetail redirection_detail[] = {
+	{ .name = "", .entries = redirection_detail_entries },
+	{ 0 },
+};
+
+const RzCmdDescHelp redirection_help = {
+	.summary = "redirection help ('>')",
+	.options = "?",
+	.details = redirection_detail,
+	.usage = "<cmd> > <arg>",
+};
+
+const RzCmdDescDetailEntry pipe_detail_entries[] = {
+	{ .text = "<cmd> |", .arg_str = NULL, .comment = "disable scr.html and scr.color" },
+	{ .text = "<cmd> |H", .arg_str = NULL, .comment = "enable scr.html, respect scr.color" },
+	{ .text = "<cmd> |T", .arg_str = NULL, .comment = "use scr.tts to speak out the stdout" },
+	{ .text = "<cmd> |", .arg_str = " <program>", .comment = "pipe output of command to program" },
+	{ .text = "<cmd> |.", .arg_str = NULL, .comment = "alias for .<cmd>" },
+	{ 0 },
+};
+
+const RzCmdDescDetail pipe_detail[] = {
+	{ .name = "", .entries = pipe_detail_entries },
+	{ 0 },
+};
+
+const RzCmdDescHelp pipe_help = {
+	.summary = "pipe help ('|')",
+	.options = "?",
+	.details = pipe_detail,
+	.usage = "<cmd> |[<program>|H|T|.|]",
+};
+
+const RzCmdDescDetailEntry grep_modifiers[] = {
+	{ .text = "&", .arg_str = NULL, .comment = "all words must match to grep the line" },
+	{ .text = "$[n]", .arg_str = NULL, .comment = "sort numerically / alphabetically the Nth column" },
+	{ .text = "$!", .arg_str = NULL, .comment = "sort in inverse order" },
+	{ .text = ",", .arg_str = NULL, .comment = "token to define another keyword" },
+	{ .text = "+", .arg_str = NULL, .comment = "case insensitive grep (grep -i)" },
+	{ .text = "^", .arg_str = NULL, .comment = "words must be placed at the beginning of line" },
+	{ .text = "<", .arg_str = NULL, .comment = "perform zoom operation on the buffer" },
+	{ .text = "!", .arg_str = NULL, .comment = "negate grep" },
+	{ .text = "?", .arg_str = NULL, .comment = "count number of matching lines" },
+	{ .text = "?.", .arg_str = NULL, .comment = "count number chars" },
+	{ .text = ":s..e", .arg_str = NULL, .comment = "show lines s-e" },
+	{ .text = "..", .arg_str = NULL, .comment = "internal 'less'" },
+	{ .text = "...", .arg_str = NULL, .comment = "internal 'hud' (like V_)" },
+	{ .text = "{:", .arg_str = NULL, .comment = "human friendly indentation (yes, it's a smiley)" },
+	{ .text = "{:..", .arg_str = NULL, .comment = "less the output of {:" },
+	{ .text = "{:...", .arg_str = NULL, .comment = "hud the output of {:" },
+	{ .text = "{}", .arg_str = NULL, .comment = "json indentation" },
+	{ .text = "{}..", .arg_str = NULL, .comment = "less json indentation" },
+	{ .text = "{}...", .arg_str = NULL, .comment = "hud json indentation" },
+	{ .text = "{path}", .arg_str = NULL, .comment = "json path grep" },
+	{ 0 },
+};
+
+const RzCmdDescDetailEntry grep_endmodifiers[] = {
+	{ .text = "$", .arg_str = NULL, .comment = "words must be placed at the end of line" },
+	{ 0 },
+};
+
+const RzCmdDescDetailEntry grep_columns[] = {
+	{ .text = "[n]", .arg_str = NULL, .comment = "show only column n" },
+	{ .text = "[n-m]", .arg_str = NULL, .comment = "show column n to m" },
+	{ .text = "[n-]", .arg_str = NULL, .comment = "show all columns starting from column n" },
+	{ .text = "[i,j,k]", .arg_str = NULL, .comment = "show the columns i, j and k" },
+	{ 0 },
+};
+
+const RzCmdDescDetailEntry grep_examples[] = {
+	{ .text = "i", .arg_str = "~:0", .comment = "show first line of 'i' output" },
+	{ .text = "i", .arg_str = "~:-2", .comment = "show the second to last line of 'i' output" },
+	{ .text = "i", .arg_str = "~:0..3", .comment = "show first three lines of 'i' output" },
+	{ .text = "pd", .arg_str = "~mov", .comment = "disasm and grep for mov" },
+	{ .text = "pi", .arg_str = "~[0]", .comment = "show only opcode" },
+	{ .text = "i", .arg_str = "~0x400$", .comment = "show lines ending with 0x400" },
+	{ 0 },
+};
+
+const RzCmdDescDetail grep_detail[] = {
+	{ .name = "Modifiers", .entries = grep_modifiers },
+	{ .name = "EndModifiers", .entries = grep_endmodifiers },
+	{ .name = "Columns", .entries = grep_columns },
+	{ .name = "Examples", .entries = grep_examples },
+	{ 0 },
+};
+
+const RzCmdDescHelp grep_help = {
+	.summary = "grep help ('~')",
+	.options = "?",
+	.details = grep_detail,
+	.usage = "<command>~[modifier][word,word][endmodifier][[column]][:line]",
+};
+
 const RzCmdDescHelp system_help = {
 	.summary = "run given command as in system(3)",
 };
@@ -19,9 +216,9 @@ const RzCmdDescHelp alias_help = {
 
 const RzCmdDescDetailEntry env_help_examples[] = {
 	{ .text = "%", .comment = "list all environment variables" },
-	{ .text = "%SHELL", .comment = "print value of SHELL variable" },
-	{ .text = "%TMPDIR=/tmp", .comment = "set TMPDIR to \"/tmp\"" },
-	{ .text = "env SHELL", .comment = "same as `%SHELL`" },
+	{ .text = "%", .arg_str = "SHELL", .comment = "print value of SHELL variable" },
+	{ .text = "%", .arg_str = "TMPDIR=/tmp", .comment = "set TMPDIR to \"/tmp\"" },
+	{ .text = "env", .arg_str = "SHELL", .comment = "same as `%SHELL`" },
 	{ 0 },
 };
 
@@ -71,9 +268,9 @@ const RzCmdDescHelp macro_help = {
 };
 
 const RzCmdDescDetailEntry pointer_help_examples[] = {
-	{ .text = "*entry0=cc", .comment = "write trap in entrypoint" },
-	{ .text = "*entry0+10=0x804800", .comment = "write 0x804800 as a 4-byte value at 10 bytes from the entrypoint" },
-	{ .text = "*entry0", .comment = "read the value contained at the entrypoint" },
+	{ .text = "*", .arg_str = "entry0=cc", .comment = "write trap in entrypoint" },
+	{ .text = "*", .arg_str = "entry0+10=0x804800", .comment = "write 0x804800 as a 4-byte value at 10 bytes from the entrypoint" },
+	{ .text = "*", .arg_str = "entry0", .comment = "read the value contained at the entrypoint" },
 	{ 0 },
 };
 
@@ -107,6 +304,7 @@ const RzCmdDescHelp rap_help = {
 
 const RzCmdDescHelp help_help = {
 	.summary = "Help or evaluate math expression",
+	.options = "[??]",
 };
 
 const RzCmdDescHelp rap_run_help = {
@@ -267,8 +465,8 @@ const RzCmdDescHelp w0_help = {
 const RzCmdDescDetailEntry w_incdec_help_examples[] = {
 	{ .text = "w1+", .comment = "Add 1 to the byte at the current offset." },
 	{ .text = "w2-", .comment = "Subtract 1 to the word at the current offset." },
-	{ .text = "w4+ 0xdeadbeef", .comment = "Add 0xdeadbeef to the dword at the current offset." },
-	{ .text = "w8- 10", .comment = "Subtract 10 to the qword at the current offset." },
+	{ .text = "w4+", .arg_str = " 0xdeadbeef", .comment = "Add 0xdeadbeef to the dword at the current offset." },
+	{ .text = "w8-", .arg_str = " 10", .comment = "Subtract 10 to the qword at the current offset." },
 	{ 0 },
 };
 
@@ -374,7 +572,7 @@ const RzCmdDescHelp w8_dec_help = {
 // wB helps
 
 const RzCmdDescDetailEntry wB_help_examples[] = {
-	{ .text = "wB 0x20", .comment = "Sets the 5th bit at current offset, leaving all other bits intact." },
+	{ .text = "wB", .arg_str = " 0x20", .comment = "Sets the 5th bit at current offset, leaving all other bits intact." },
 	{ 0 },
 };
 
@@ -404,7 +602,7 @@ const RzCmdDescHelp wB_minus_help = {
 // wv helps
 
 const RzCmdDescDetailEntry wv_help_examples[] = {
-	{ .text = "wv 0xdeadbeef", .comment = "Write the value 0xdeadbeef at current offset" },
+	{ .text = "wv", .arg_str = " 0xdeadbeef", .comment = "Write the value 0xdeadbeef at current offset" },
 	{ 0 },
 };
 
@@ -447,8 +645,8 @@ const RzCmdDescHelp wv8_help = {
 };
 
 const RzCmdDescDetailEntry w6_help_examples[] = {
-	{ .text = "w6d SGVsbG9Xb3JsZAo=", .comment = "Write the string \"HelloWorld\" (without quotes) at current offset." },
-	{ .text = "w6e 48656c6c6f576f726c64", .comment = "Write the string \"SGVsbG9Xb3JsZAo=\" (without quotes) at current offset." },
+	{ .text = "w6d", .arg_str = " SGVsbG9Xb3JsZAo=", .comment = "Write the string \"HelloWorld\" (without quotes) at current offset." },
+	{ .text = "w6e", .arg_str = " 48656c6c6f576f726c64", .comment = "Write the string \"SGVsbG9Xb3JsZAo=\" (without quotes) at current offset." },
 	{ 0 },
 };
 

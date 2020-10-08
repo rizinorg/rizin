@@ -52,6 +52,7 @@ static bool cmd_desc_set_parent(RzCmdDesc *cd, RzCmdDesc *parent) {
 		case RZ_CMD_DESC_TYPE_INNER:
 			break;
 		case RZ_CMD_DESC_TYPE_ARGV:
+		case RZ_CMD_DESC_TYPE_FAKE:
 			rz_warn_if_reached ();
 			return false;
 		}
@@ -179,12 +180,8 @@ RZ_API RzCmdDesc *rz_cmd_get_desc(RzCmd *cmd, const char *cmd_identifier) {
 		if (cd) {
 			switch (cd->type) {
 			case RZ_CMD_DESC_TYPE_ARGV:
-				if (!is_exact_match) {
-					break;
-				}
-				res = cd;
-				goto out;
 			case RZ_CMD_DESC_TYPE_GROUP:
+			case RZ_CMD_DESC_TYPE_FAKE:
 				if (!is_exact_match) {
 					break;
 				}
@@ -459,16 +456,24 @@ static void fill_children_chars(RStrBuf *sb, RzCmdDesc *cd) {
 	rz_strbuf_init (&csb);
 
 	void **it;
+	bool has_other_commands = false;
 	rz_cmd_desc_children_foreach (cd, it) {
 		RzCmdDesc *child = *(RzCmdDesc **)it;
 		if (rz_str_startswith (child->name, cd->name) && strlen (child->name) == strlen (cd->name) + 1) {
 			rz_strbuf_appendf (&csb, "%c", child->name[strlen (cd->name)]);
+		} else if (strcmp (child->name, cd->name)){
+			has_other_commands = true;
 		}
 	}
 
 	if (rz_strbuf_is_empty (&csb) || rz_strbuf_length (&csb) >= MAX_CHILDREN_SHOW) {
 		rz_strbuf_fini (&csb);
 		rz_strbuf_set (&csb, "?");
+		has_other_commands = false;
+	}
+
+	if (has_other_commands) {
+		rz_strbuf_append (&csb, "?");
 	}
 
 	if (!cd->n_children || rz_cmd_desc_has_handler (cd)) {
@@ -576,13 +581,49 @@ static char *argv_group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 	return rz_strbuf_drain (sb);
 }
 
-static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *a, size_t detail, bool use_color) {
+static void fill_details(RzCmdDesc *cd, RStrBuf *sb, bool use_color) {
+	if (!cd->help->details) {
+		return;
+	}
 	RzCons *cons = rz_cons_singleton ();
 	const char *pal_help_color = use_color? cons->context->pal.help: "",
 		   *pal_input_color = use_color? cons->context->pal.input: "",
 		   *pal_label_color = use_color? cons->context->pal.label: "",
+		   *pal_args_color = use_color? cons->context->pal.args: "",
 		   *pal_reset = use_color? cons->context->pal.reset: "";
 
+	const RzCmdDescDetail *detail_it = cd->help->details;
+	while (detail_it->name) {
+		if (!RZ_STR_ISEMPTY(detail_it->name)) {
+			rz_strbuf_appendf (sb, "\n%s%s:%s\n", pal_label_color, detail_it->name, pal_reset);
+		}
+		const RzCmdDescDetailEntry *entry_it = detail_it->entries;
+		size_t max_len = 0;
+		while (entry_it->text) {
+			size_t len = strlen (entry_it->text) + strlen0 (entry_it->arg_str);
+			if (max_len < len) {
+				max_len = len;
+			}
+			entry_it++;
+		}
+
+		entry_it = detail_it->entries;
+		while (entry_it->text) {
+			size_t len = strlen (entry_it->text) + strlen0 (entry_it->arg_str);
+			size_t padding = len < max_len ? max_len - len : 0;
+			const char *arg_str = entry_it->arg_str ? entry_it->arg_str : "";
+			rz_strbuf_appendf (sb, "| %s%s%s%s %*s%s# %s%s\n",
+				pal_input_color, entry_it->text,
+				pal_args_color, arg_str,
+				padding, "",
+				pal_help_color, entry_it->comment, pal_reset);
+			entry_it++;
+		}
+		detail_it++;
+	}
+}
+
+static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, size_t detail, bool use_color) {
 	RStrBuf *sb = rz_strbuf_new (NULL);
 
 	fill_usage_strbuf (sb, cd, use_color);
@@ -594,38 +635,17 @@ static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *a, size_t
 		if (cd->help->description) {
 			rz_strbuf_appendf (sb, "\n%s\n", cd->help->description);
 		}
-		if (cd->help->details) {
-			const RzCmdDescDetail *detail_it = cd->help->details;
-			while (detail_it->name) {
-				rz_strbuf_appendf (sb, "\n%s%s:%s\n", pal_label_color, detail_it->name, pal_reset);
-				const RzCmdDescDetailEntry *entry_it = detail_it->entries;
-				size_t max_len = 0;
-				while (entry_it->text) {
-					size_t len = strlen (entry_it->text);
-					if (max_len < len) {
-						max_len = len;
-					}
-					entry_it++;
-				}
-
-				entry_it = detail_it->entries;
-				while (entry_it->text) {
-					size_t len = strlen (entry_it->text);
-					size_t padding = len < max_len? max_len - len: 0;
-					rz_strbuf_appendf (sb, "| %s%s%s %*s%s# %s%s\n",
-						pal_input_color, entry_it->text, pal_reset,
-						padding, "",
-						pal_help_color, entry_it->comment, pal_reset);
-					entry_it++;
-				}
-				detail_it++;
-			}
-		}
+		fill_details (cd, sb, use_color);
 		return rz_strbuf_drain (sb);
 	default:
 		rz_strbuf_free (sb);
 		return NULL;
 	}
+}
+
+static char *fake_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
+	// abuse detail=2 of the argv help as they show essentially the same info
+	return argv_get_help (cmd, cd, 2, use_color);
 }
 
 static char *oldinput_get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *a) {
@@ -676,7 +696,12 @@ RZ_API char *rz_cmd_get_help(RzCmd *cmd, RzCmdParsedArgs *args, bool use_color) 
 			}
 			return argv_group_get_help (cmd, cd, use_color);
 		}
-		return argv_get_help (cmd, cd, args, detail, use_color);
+		return argv_get_help (cmd, cd, detail, use_color);
+	case RZ_CMD_DESC_TYPE_FAKE:
+		if (detail != 1) {
+			return NULL;
+		}
+		return fake_get_help (cmd, cd, use_color);
 	case RZ_CMD_DESC_TYPE_OLDINPUT:
 		return oldinput_get_help (cmd, cd, args);
 	case RZ_CMD_DESC_TYPE_INNER:
@@ -1313,6 +1338,11 @@ RZ_API RzCmdDesc *rz_cmd_desc_oldinput_new(RzCmd *cmd, RzCmdDesc *parent, const 
 	return res;
 }
 
+RZ_API RzCmdDesc *rz_cmd_desc_fake_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, const RzCmdDescHelp *help) {
+	rz_return_val_if_fail (cmd && parent && name && help, NULL);
+	return create_cmd_desc (cmd, parent, RZ_CMD_DESC_TYPE_FAKE, name, help, true);
+}
+
 RZ_API RzCmdDesc *rz_cmd_desc_parent(RzCmdDesc *cd) {
 	rz_return_val_if_fail (cd, NULL);
 	return cd->parent;
@@ -1325,6 +1355,7 @@ RZ_API bool rz_cmd_desc_has_handler(RzCmdDesc *cd) {
 		return cd->d.argv_data.cb;
 	case RZ_CMD_DESC_TYPE_OLDINPUT:
 		return cd->d.oldinput_data.cb;
+	case RZ_CMD_DESC_TYPE_FAKE:
 	case RZ_CMD_DESC_TYPE_INNER:
 		return false;
 	case RZ_CMD_DESC_TYPE_GROUP:
