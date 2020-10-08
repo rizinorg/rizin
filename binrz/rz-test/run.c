@@ -895,7 +895,7 @@ static RzTestProcessOutput *run_rz_test(RzTestRunConfig *config, ut64 timeout_ms
 
 RZ_API RzTestProcessOutput *rz_test_run_cmd_test(RzTestRunConfig *config, RzCmdTest *test, RzTestCmdRunner runner, void *user) {
 	RzList *extra_args = test->args.value ? rz_str_split_duplist (test->args.value, " ", true) : NULL;
-	RzList *files = rz_str_split_duplist (test->file.value, "\n", true);
+	RzList *files = test->file.value? rz_str_split_duplist (test->file.value, "\n", true): NULL;
 	RzListIter *it;
 	RzListIter *tmpit;
 	char *token;

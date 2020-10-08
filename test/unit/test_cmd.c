@@ -99,7 +99,7 @@ bool test_cmd_descriptor_argv(void) {
 bool test_cmd_descriptor_argv_nested(void) {
 	RzCmd *cmd = rz_cmd_new ();
 	RzCmdDesc *root = rz_cmd_get_root (cmd);
-	RzCmdDesc *af_cd = rz_cmd_desc_argv_new (cmd, root, "af", NULL, NULL);
+	RzCmdDesc *af_cd = rz_cmd_desc_group_new (cmd, root, "af", NULL, NULL, NULL);
 	rz_cmd_desc_argv_new (cmd, root, "af2", NULL, NULL);
 	RzCmdDesc *cd = rz_cmd_desc_argv_new (cmd, af_cd, "afl", afl_argv_handler, NULL);
 	mu_assert_ptreq (rz_cmd_desc_parent (cd), af_cd, "parent of afl is af");
@@ -189,7 +189,7 @@ static int w_handler(void *user, const char *input) {
 bool test_cmd_descriptor_tree(void) {
 	RzCmd *cmd = rz_cmd_new ();
 	RzCmdDesc *root = rz_cmd_get_root (cmd);
-	RzCmdDesc *a_cd = rz_cmd_desc_argv_new (cmd, root, "a", NULL, NULL);
+	RzCmdDesc *a_cd = rz_cmd_desc_group_new (cmd, root, "a", NULL, NULL, NULL);
 	rz_cmd_desc_argv_new (cmd, a_cd, "ap", ap_handler, NULL);
 	rz_cmd_desc_oldinput_new (cmd, root, "w", w_handler, NULL);
 
@@ -206,8 +206,8 @@ bool test_cmd_descriptor_tree(void) {
 bool test_cmd_get_desc(void) {
 	RzCmd *cmd = rz_cmd_new ();
 	RzCmdDesc *root = rz_cmd_get_root (cmd);
-	RzCmdDesc *a_cd = rz_cmd_desc_argv_new (cmd, root, "a", NULL, NULL);
-	RzCmdDesc *ap_cd = rz_cmd_desc_argv_new (cmd, a_cd, "ap", ap_handler, NULL);
+	RzCmdDesc *a_cd = rz_cmd_desc_group_new (cmd, root, "a", NULL, NULL, NULL);
+	RzCmdDesc *ap_cd = rz_cmd_desc_group_new (cmd, a_cd, "ap", ap_handler, NULL, NULL);
 	RzCmdDesc *apd_cd = rz_cmd_desc_argv_new (cmd, ap_cd, "apd", ap_handler, NULL);
 	RzCmdDesc *ae_cd = rz_cmd_desc_oldinput_new (cmd, a_cd, "ae", ae_handler, NULL);
 	RzCmdDesc *aeir_cd = rz_cmd_desc_argv_new (cmd, ae_cd, "aeir", aeir_handler, NULL);
@@ -263,7 +263,7 @@ static int q_handler(void *user, const char *input) {
 bool test_cmd_call_desc(void) {
 	RzCmd *cmd = rz_cmd_new ();
 	RzCmdDesc *root = rz_cmd_get_root (cmd);
-	RzCmdDesc *p_cd = rz_cmd_desc_argv_new (cmd, root, "p", NULL, NULL);
+	RzCmdDesc *p_cd = rz_cmd_desc_group_new (cmd, root, "p", NULL, NULL, NULL);
 	rz_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler, NULL);
 	rz_cmd_desc_oldinput_new (cmd, p_cd, "p", p_handler, NULL);
 	rz_cmd_desc_oldinput_new (cmd, root, "wv", wv_handler, NULL);
@@ -294,7 +294,7 @@ bool test_cmd_call_desc(void) {
 }
 
 bool test_cmd_help(void) {
-	const RzCmdDescHelp p_help = {
+	const RzCmdDescHelp p_group_help = {
 		.summary = "p summary",
 		.usage = "p-usage",
 		.args_str = "",
@@ -330,7 +330,7 @@ bool test_cmd_help(void) {
 
 	RzCmd *cmd = rz_cmd_new ();
 	RzCmdDesc *root = rz_cmd_get_root (cmd);
-	RzCmdDesc *p_cd = rz_cmd_desc_argv_new (cmd, root, "p", NULL, &p_help);
+	RzCmdDesc *p_cd = rz_cmd_desc_group_new (cmd, root, "p", NULL, NULL, &p_group_help);
 	rz_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler, &pd_help);
 	rz_cmd_desc_oldinput_new (cmd, p_cd, "px", px_handler, &px_help);
 
@@ -418,7 +418,7 @@ bool test_cmd_oldinput_help(void) {
 
 	RzCmd *cmd = rz_cmd_new ();
 	RzCmdDesc *root = rz_cmd_get_root (cmd);
-	RzCmdDesc *p_cd = rz_cmd_desc_argv_new (cmd, root, "p", NULL, NULL);
+	RzCmdDesc *p_cd = rz_cmd_desc_group_new (cmd, root, "p", NULL, NULL, NULL);
 	rz_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler, NULL);
 	rz_cmd_desc_oldinput_new (cmd, p_cd, "px", px_handler, NULL);
 
@@ -439,7 +439,7 @@ bool test_remove_cmd(void) {
 	RzCmd *cmd = rz_cmd_new ();
 	RzCmdDesc *root = rz_cmd_get_root (cmd);
 	RzCmdDesc *x_cd = rz_cmd_desc_argv_new (cmd, root, "x", NULL, NULL);
-	RzCmdDesc *p_cd = rz_cmd_desc_argv_new (cmd, root, "p", NULL, NULL);
+	RzCmdDesc *p_cd = rz_cmd_desc_group_new (cmd, root, "p", NULL, NULL, NULL);
 	RzCmdDesc *pd_cd = rz_cmd_desc_argv_new (cmd, p_cd, "pd", pd_handler, NULL);
 	rz_cmd_desc_argv_new (cmd, p_cd, "px", pd_handler, NULL);
 
