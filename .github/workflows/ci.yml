@@ -621,8 +621,8 @@ jobs:
     - name: Check that libraries can be used
       shell: bash
       run: |
-        echo -e "#include <r_util.h>\nint main(int argc, char **argv) { return r_str_newf (\"%s\", argv[0]) != NULL? 0: 1; }" > test.c
-        gcc -o test test.c $(pkg-config --libs --cflags r_util)
+        echo -e "#include <rz_util.h>\nint main(int argc, char **argv) { return rz_str_newf (\"%s\", argv[0]) != NULL? 0: 1; }" > test.c
+        gcc -o test test.c $(pkg-config --libs --cflags rz_util)
         ./test
 
   test-osx-pkg:
@@ -642,8 +642,8 @@ jobs:
       run: rizin -qcq /bin/ls
     - name: Check that libraries can be used
       run: |
-        echo -e "#include <r_util.h>\nint main(int argc, char **argv) { return r_str_newf (\"%s\", argv[0]) != NULL? 0: 1; }" > test.c
-        clang -o test test.c $(pkg-config --libs --cflags r_util)
+        echo -e "#include <rz_util.h>\nint main(int argc, char **argv) { return rz_str_newf (\"%s\", argv[0]) != NULL? 0: 1; }" > test.c
+        clang -o test test.c $(pkg-config --libs --cflags rz_util)
         ./test
 
   test-windows-clang_cl:
@@ -681,8 +681,8 @@ jobs:
         $env:PKG_CONFIG_PATH = "C:$env:HOMEPATH\AppData\Local\Programs\rizin\lib\pkgconfig"
         $env:PKG_CONFIG_PATH
         pkg-config --list-all
-        echo "#include <r_util.h>`nint main(int argc, char **argv) { return r_str_newf (`"%s`", argv[0]) != NULL? 0: 1; }" > test.c
-        cl -IC:$env:HOMEPATH\AppData\Local\Programs\rizin\include\librz -IC:$env:HOMEPATH\AppData\Local\Programs\rizin\include\librz\sdb /Fetest.exe test.c /link /libpath:C:$env:HOMEPATH\AppData\Local\Programs\rizin\lib r_util.lib
+        echo "#include <rz_util.h>`nint main(int argc, char **argv) { return rz_str_newf (`"%s`", argv[0]) != NULL? 0: 1; }" > test.c
+        cl -IC:$env:HOMEPATH\AppData\Local\Programs\rizin\include\librz -IC:$env:HOMEPATH\AppData\Local\Programs\rizin\include\librz\sdb /Fetest.exe test.c /link /libpath:C:$env:HOMEPATH\AppData\Local\Programs\rizin\lib rz_util.lib
         .\test.exe
 
   create-release:
