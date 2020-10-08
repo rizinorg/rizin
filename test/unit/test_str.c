@@ -470,6 +470,87 @@ bool test_rz_str_str_xy(void) {
 	mu_end;
 }
 
+static bool test_rz_str_wrap(void) {
+	size_t i;
+	RzListIter *it;
+	const char *ts;
+	RStrBuf sb;
+	rz_strbuf_init (&sb);
+
+	char s1[] = "This is a very long string we would like to wrap at around X characters. It should not split words.";
+	RzList *l1 = rz_str_wrap (s1, 15);
+	mu_assert_eq (rz_list_length (l1), 7, "s1 should be split in 7");
+	const char *exp_s1[] = {
+		"This is a very",
+		"long string we",
+		"would like to",
+		"wrap at around",
+		"X characters.",
+		"It should not",
+		"split words.",
+	};
+	i = 0;
+	rz_list_foreach (l1, it, ts) {
+		rz_strbuf_setf (&sb, "%d-th string should be the same", i);
+		mu_assert_streq (ts, exp_s1[i++], rz_strbuf_get (&sb));
+	}
+	rz_list_free (l1);
+
+	char s2[] = "   This is a very long string we would     like to wrap at around X characters. It should not split words.   ";
+	RzList *l2 = rz_str_wrap (s2, 40);
+	mu_assert_eq (rz_list_length (l2), 3, "s2 should be split in 3");
+	const char *exp_s2[] = {
+		"   This is a very long string we would",
+		"like to wrap at around X characters. It",
+		"should not split words.",
+	};
+	i = 0;
+	rz_list_foreach (l2, it, ts) {
+		rz_strbuf_setf (&sb, "%d-th string should be the same", i);
+		mu_assert_streq (ts, exp_s2[i++], rz_strbuf_get (&sb));
+	}
+	rz_list_free (l2);
+
+	char s3[] = "    ";
+	RzList *l3 = rz_str_wrap (s3, 40);
+	mu_assert_eq (rz_list_length (l3), 0, "l3 should be empty");
+	rz_list_free (l3);
+
+	char s4[] = "  Hello  ";
+	RzList *l4 = rz_str_wrap (s4, 20);
+	mu_assert_eq (rz_list_length (l4), 1, "l4 should contained only one word");
+	mu_assert_streq (rz_list_get_n (l4, 0), "  Hello", "s4 Hello string is there");
+	rz_list_free (l4);
+
+	char s5[] = "Hello   World   Small   ";
+	RzList *l5 = rz_str_wrap (s5, 3);
+	mu_assert_eq (rz_list_length (l5), 3, "just three lines in s5, even if bigger");
+	mu_assert_streq (rz_list_get_n (l5, 0), "Hello", "s5 Hello string is there");
+	mu_assert_streq (rz_list_get_n (l5, 1), "World", "s5 World string is there");
+	mu_assert_streq (rz_list_get_n (l5, 2), "Small", "s5 World string is there");
+	rz_list_free (l5);
+
+	char s6[] = "Write value of given size";
+	RzList *l6 = rz_str_wrap (s6, 7);
+	mu_assert_eq (rz_list_length (l6), 5, "5 elements in s6");
+	const char *exp_s6[] = {
+		"Write",
+		"value",
+		"of",
+		"given",
+		"size",
+	};
+	i = 0;
+	rz_list_foreach (l6, it, ts) {
+		rz_strbuf_setf (&sb, "%d-th string should be the same", i);
+		mu_assert_streq (ts, exp_s6[i++], rz_strbuf_get (&sb));
+	}
+	rz_list_free (l6);
+
+	rz_strbuf_fini (&sb);
+	mu_end;
+}
+
 bool all_tests () {
 	mu_run_test (test_rz_str_newf);
 	mu_run_test (test_rz_str_replace_char_once);
@@ -500,6 +581,7 @@ bool all_tests () {
 	mu_run_test (test_rz_str_constpool);
 	mu_run_test (test_rz_str_format_msvc_argv);
 	mu_run_test (test_rz_str_str_xy);
+	mu_run_test (test_rz_str_wrap);
 	return tests_passed != tests_run;
 }
 
