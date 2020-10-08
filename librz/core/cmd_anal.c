@@ -8358,7 +8358,6 @@ end:
 }
 
 static bool convert_dotcmd_to_image(RzCore *core, char *r2_cmd, const char *save_path) {
-	char *cmd = NULL;
 	if (save_path && *save_path) {
 		rz_cons_printf ("Saving to file '%s'...\n", save_path);
 		rz_cons_flush ();
