@@ -501,7 +501,7 @@ static const char *help_msg_dL[] = {
 };
 
 struct dot_trace_ght {
-	RGraph *graph;
+	RzGraph *graph;
 	Sdb *graphnodes;
 };
 
@@ -637,12 +637,12 @@ static int showreg(RzCore *core, const char *str) {
 	return size;
 }
 
-static RGraphNode *get_graphtrace_node (RGraph *g, Sdb *nodes, struct trace_node *tn) {
-	RGraphNode *gn;
+static RzGraphNode *get_graphtrace_node (RzGraph *g, Sdb *nodes, struct trace_node *tn) {
+	RzGraphNode *gn;
 	char tn_key[TN_KEY_LEN];
 
 	snprintf (tn_key, TN_KEY_LEN, TN_KEY_FMT, tn->addr);
-	gn = (RGraphNode *)(size_t)sdb_num_get (nodes, tn_key, NULL);
+	gn = (RzGraphNode *)(size_t)sdb_num_get (nodes, tn_key, NULL);
 	if (!gn) {
 		gn = rz_graph_add_node (g, tn);
 		sdb_num_set (nodes, tn_key, (ut64)(size_t)gn, 0);
@@ -658,15 +658,15 @@ static void dot_trace_create_node (RTreeNode *n, RTreeVisitor *vis) {
 
 static void dot_trace_discover_child (RTreeNode *n, RTreeVisitor *vis) {
 	struct dot_trace_ght *data = (struct dot_trace_ght *)vis->data;
-	RGraph *g = data->graph;
+	RzGraph *g = data->graph;
 	Sdb *gnodes = data->graphnodes;
 	RTreeNode *parent = n->parent;
 	struct trace_node *tn = n->data;
 	struct trace_node *tn_parent = parent->data;
 
 	if (tn && tn_parent) {
-		RGraphNode *gn = get_graphtrace_node (g, gnodes, tn);
-		RGraphNode *gn_parent = get_graphtrace_node (g, gnodes, tn_parent);
+		RzGraphNode *gn = get_graphtrace_node (g, gnodes, tn);
+		RzGraphNode *gn_parent = get_graphtrace_node (g, gnodes, tn_parent);
 
 		if (!rz_graph_adjacent (g, gn_parent, gn))
 			rz_graph_add_edge (g, gn_parent, gn);
@@ -679,7 +679,7 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 	RTreeVisitor vis = { 0 };
 	const RzList *nodes;
 	RzListIter *iter;
-	RGraphNode *n;
+	RzGraphNode *n;
 
 	if (fmt == 'i') {
 		rz_core_cmd0 (core, "ag-;.dtg*;aggi");
@@ -706,7 +706,7 @@ static void dot_trace_traverse(RzCore *core, RTree *t, int fmt) {
 		struct trace_node *tn = (struct trace_node *)n->data;
 		const RzList *neighbours = rz_graph_get_neighbours (aux_data.graph, n);
 		RzListIter *it_n;
-		RGraphNode *w;
+		RzGraphNode *w;
 
 		if (!fmt && tn) {
 			rz_cons_printf ("\"0x%08"PFMT64x"\" [URL=\"0x%08"PFMT64x

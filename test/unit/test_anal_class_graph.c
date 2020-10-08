@@ -1,6 +1,7 @@
 #include <rz_core.h>
 #include <rz_anal.h>
 #include <rz_util.h>
+#include <rz_util/rz_graph_drawable.h>
 #include "minunit.h"
 
 bool test_inherit_graph_creation() {
@@ -13,25 +14,25 @@ bool test_inherit_graph_creation() {
 	rz_core_cmd0 (core, "acb C A");
 	rz_core_cmd0 (core, "acb D B");
 	rz_core_cmd0 (core, "acb D C");
-	RGraph *graph = rz_anal_class_get_inheritance_graph (core->anal);
+	RzGraph *graph = rz_anal_class_get_inheritance_graph (core->anal);
 	mu_assert_notnull (graph, "Couldn't create the graph");
 	mu_assert_eq (graph->nodes->length, 4, "Wrong node count");
 
 	RzListIter *iter;
-	RGraphNode *node;
+	RzGraphNode *node;
 	int i = 0;
 	ls_foreach (graph->nodes, iter, node) {
-		RGraphNodeInfo *info = node->data;
+		RzGraphNodeInfo *info = node->data;
 		switch (i++) {
 		case 0:
 			mu_assert_streq (info->title, "A", "Wrong node name");
 			mu_assert_eq (node->out_nodes->length, 2, "Wrong node out-nodes");
 			{
 				RzListIter *iter;
-				RGraphNode *out_node;
+				RzGraphNode *out_node;
 				int i = 0;
 				ls_foreach (node->out_nodes, iter, out_node) {
-					RGraphNodeInfo *info = out_node->data;
+					RzGraphNodeInfo *info = out_node->data;
 					switch (i++) {
 					case 0:
 						mu_assert_streq (info->title, "B", "Wrong node name");
@@ -49,10 +50,10 @@ bool test_inherit_graph_creation() {
 			mu_assert_eq (node->in_nodes->length, 1, "Wrong node in-nodes");
 			{
 				RzListIter *iter;
-				RGraphNode *out_node;
+				RzGraphNode *out_node;
 				int i = 0;
 				ls_foreach (node->out_nodes, iter, out_node) {
-					RGraphNodeInfo *info = out_node->data;
+					RzGraphNodeInfo *info = out_node->data;
 					switch (i++) {
 					case 0:
 						mu_assert_streq (info->title, "D", "Wrong node name");
@@ -67,10 +68,10 @@ bool test_inherit_graph_creation() {
 			mu_assert_eq (node->in_nodes->length, 1, "Wrong node in-nodes");
 			{
 				RzListIter *iter;
-				RGraphNode *out_node;
+				RzGraphNode *out_node;
 				int i = 0;
 				ls_foreach (node->out_nodes, iter, out_node) {
-					RGraphNodeInfo *info = out_node->data;
+					RzGraphNodeInfo *info = out_node->data;
 					switch (i++) {
 					case 0:
 						mu_assert_streq (info->title, "D", "Wrong node name");

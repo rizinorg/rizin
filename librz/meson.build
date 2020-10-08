@@ -379,6 +379,7 @@ rz_util_files = [
   'include/rz_util/rz_event.h',
   'include/rz_util/rz_file.h',
   'include/rz_util/rz_graph.h',
+  'include/rz_util/rz_graph_drawable.h',
   'include/rz_util/rz_hex.h',
   'include/rz_util/rz_idpool.h',
   'include/rz_util/rz_itv.h',
