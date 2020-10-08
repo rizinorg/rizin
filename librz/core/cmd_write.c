@@ -2154,18 +2154,18 @@ static void cmd_write_init(RzCore *core, RzCmdDesc *parent) {
 	DEFINE_CMD_ARGV_DESC (core, w0, parent);
 
 	DEFINE_CMD_ARGV_DESC_INNER (core, w, w_incdec, parent);
-	DEFINE_CMD_ARGV_GROUP_DETAIL (core, w1, w1, w_incdec_cd, NULL, NULL, &w1_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1+, w1_inc, w1_cd, w1_incdec_handler, &w1_inc_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1-, w1_dec, w1_cd, w1_incdec_handler, &w1_dec_help);
-	DEFINE_CMD_ARGV_GROUP_DETAIL (core, w2, w2, w_incdec_cd, NULL, NULL, &w2_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2+, w2_inc, w2_cd, w2_incdec_handler, &w2_inc_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2-, w2_dec, w2_cd, w2_incdec_handler, &w2_dec_help);
-	DEFINE_CMD_ARGV_GROUP_DETAIL (core, w4, w4, w_incdec_cd, NULL, NULL, &w4_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4+, w4_inc, w4_cd, w4_incdec_handler, &w4_inc_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4-, w4_dec, w4_cd, w4_incdec_handler, &w4_dec_help);
-	DEFINE_CMD_ARGV_GROUP_DETAIL (core, w8, w8, w_incdec_cd, NULL, NULL, &w8_incdec_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8+, w8_inc, w8_cd, w8_incdec_handler, &w8_inc_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8-, w8_dec, w8_cd, w8_incdec_handler, &w8_dec_help);
+	DEFINE_CMD_ARGV_GROUP_SPECIAL (core, w1, w1_incdec, w_incdec_cd);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1+, w1_inc, w1_incdec_cd, w1_incdec_handler, &w1_inc_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1-, w1_dec, w1_incdec_cd, w1_incdec_handler, &w1_dec_help);
+	DEFINE_CMD_ARGV_GROUP_SPECIAL (core, w2, w2_incdec, w_incdec_cd);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2+, w2_inc, w2_incdec_cd, w2_incdec_handler, &w2_inc_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2-, w2_dec, w2_incdec_cd, w2_incdec_handler, &w2_dec_help);
+	DEFINE_CMD_ARGV_GROUP_SPECIAL (core, w4, w4_incdec, w_incdec_cd);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4+, w4_inc, w4_incdec_cd, w4_incdec_handler, &w4_inc_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4-, w4_dec, w4_incdec_cd, w4_incdec_handler, &w4_dec_help);
+	DEFINE_CMD_ARGV_GROUP_SPECIAL (core, w8, w8_incdec, w_incdec_cd);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8+, w8_inc, w8_incdec_cd, w8_incdec_handler, &w8_inc_help);
+	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8-, w8_dec, w8_incdec_cd, w8_incdec_handler, &w8_dec_help);
 
 	DEFINE_CMD_ARGV_GROUP (core, w6, parent);
 	DEFINE_CMD_ARGV_DESC (core, w6d, w6_cd);

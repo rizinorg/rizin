@@ -562,7 +562,7 @@ static void print_child_help(RStrBuf *sb, RzCmdDesc *cd, size_t max_len, bool us
 	rz_strbuf_appendf (sb, " %*s%s# %s%s\n", padding, "", pal_help_color, cd_summary, pal_reset);
 }
 
-static char *argv_group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
+static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 	RStrBuf *sb = rz_strbuf_new (NULL);
 	fill_usage_strbuf (sb, cd, use_color);
 
@@ -661,6 +661,33 @@ static char *oldinput_get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *a) {
 	return res;
 }
 
+static char *get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args, bool use_color, size_t detail) {
+	switch (cd->type) {
+	case RZ_CMD_DESC_TYPE_GROUP:
+		if (detail > 1 && cd->d.group_data.exec_cd) {
+			return get_help (cmd, cd->d.group_data.exec_cd, args, use_color, detail);
+		}
+		if (detail == 1) {
+			// show the group help only when doing <cmd>?
+			return group_get_help (cmd, cd, use_color);
+		}
+		return argv_get_help (cmd, cd, detail, use_color);
+	case RZ_CMD_DESC_TYPE_ARGV:
+		return argv_get_help (cmd, cd, detail, use_color);
+	case RZ_CMD_DESC_TYPE_FAKE:
+		if (detail != 1) {
+			return NULL;
+		}
+		return fake_get_help (cmd, cd, use_color);
+	case RZ_CMD_DESC_TYPE_OLDINPUT:
+		return oldinput_get_help (cmd, cd, args);
+	case RZ_CMD_DESC_TYPE_INNER:
+		rz_warn_if_reached ();
+		return NULL;
+	}
+	return NULL;
+}
+
 RZ_API char *rz_cmd_get_help(RzCmd *cmd, RzCmdParsedArgs *args, bool use_color) {
 	char *cmdid = strdup (rz_cmd_parsed_args_cmd (args));
 	char *cmdid_p = cmdid + strlen (cmdid) - 1;
@@ -683,32 +710,7 @@ RZ_API char *rz_cmd_get_help(RzCmd *cmd, RzCmdParsedArgs *args, bool use_color) 
 		return NULL;
 	}
 
-	switch (cd->type) {
-	case RZ_CMD_DESC_TYPE_GROUP:
-		if (detail > 1 && cd->d.group_data.exec_cd) {
-			cd = cd->d.group_data.exec_cd;
-		}
-		// fallthrough
-	case RZ_CMD_DESC_TYPE_ARGV:
-		if (detail == 1 && !rz_pvector_empty (&cd->children)) {
-			if (args->argc > 1) {
-				return NULL;
-			}
-			return argv_group_get_help (cmd, cd, use_color);
-		}
-		return argv_get_help (cmd, cd, detail, use_color);
-	case RZ_CMD_DESC_TYPE_FAKE:
-		if (detail != 1) {
-			return NULL;
-		}
-		return fake_get_help (cmd, cd, use_color);
-	case RZ_CMD_DESC_TYPE_OLDINPUT:
-		return oldinput_get_help (cmd, cd, args);
-	case RZ_CMD_DESC_TYPE_INNER:
-		rz_warn_if_reached ();
-		return NULL;
-	}
-	return NULL;
+	return get_help (cmd, cd, args, use_color, detail);
 }
 
 /** macro.c **/

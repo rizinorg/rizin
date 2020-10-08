@@ -481,7 +481,7 @@ const RzCmdDescHelp w_incdec_help = {
 	.options = "<1248><+->",
 };
 
-const RzCmdDescHelp w1_incdec_help = {
+const RzCmdDescHelp w1_incdec_group_help = {
 	.summary = "Increment/decrement a byte",
 	.options = "<+->",
 	.args_str = " [n]",
@@ -503,7 +503,7 @@ const RzCmdDescHelp w1_dec_help = {
 	.details = w_incdec_help_details,
 };
 
-const RzCmdDescHelp w2_incdec_help = {
+const RzCmdDescHelp w2_incdec_group_help = {
 	.summary = "Increment/decrement a word",
 	.options = "<+->",
 	.args_str = " [n]",
@@ -525,7 +525,7 @@ const RzCmdDescHelp w2_dec_help = {
 	.details = w_incdec_help_details,
 };
 
-const RzCmdDescHelp w4_incdec_help = {
+const RzCmdDescHelp w4_incdec_group_help = {
 	.summary = "Increment/decrement a dword",
 	.options = "<+->",
 	.args_str = " [n]",
@@ -547,7 +547,7 @@ const RzCmdDescHelp w4_dec_help = {
 	.details = w_incdec_help_details,
 };
 
-const RzCmdDescHelp w8_incdec_help = {
+const RzCmdDescHelp w8_incdec_group_help = {
 	.summary = "Increment/decrement a qword",
 	.options = "<+->",
 	.args_str = " [n]",
