@@ -5188,16 +5188,9 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_command) {
 }
 
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_command) {
-	// TODO: traverse command tree to print help
-	// FIXME: once we have a command tree, this special handling should be removed
 	size_t node_str_len = strlen (node_string);
-	if (!strcmp (node_string, "@@?")) {
-		rz_core_cmd_help (state->core, help_msg_at_at);
-	} else if (!strcmp (node_string, "@@@?")) {
-		rz_core_cmd_help (state->core, help_msg_at_at_at);
-	} else if (!strcmp (node_string, "~?")) {
-		rz_cons_grep_help ();
-	} else if (node_str_len >= 2 && !strcmp (node_string + node_str_len - 2, "?*")) {
+	if (node_str_len >= 2 && !strcmp (node_string + node_str_len - 2, "?*")) {
+		// TODO: get recursive help from RzCmdDesc
 		int detail = 0;
 		if (node_str_len > 3 && node_string[node_str_len - 3] == '?') {
 			detail++;
@@ -7120,58 +7113,61 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		RzCmdDescType type;
 		RzCmdArgvCb argv_cb;
 	} cmds[] = {
-		{"!",        "run system command", cmd_system, NULL, &system_help},
-		{"_",        "print last output", cmd_last, NULL, &underscore_help},
-		{"#",        "calculate hash", cmd_hash, NULL, &hash_help},
-		{"$",        "alias", cmd_alias, NULL, &alias_help},
-		{"%",        "short version of 'env' command", cmd_env, NULL, &percentage_help, NULL, RZ_CMD_DESC_TYPE_ARGV, env_handler},
-		{"&",        "tasks", cmd_tasks, NULL, &tasks_help},
-		{"(",        "macro", cmd_macro, cmd_macro_init, &macro_help},
-		{"*",        "pointer read/write", cmd_pointer, NULL, &pointer_help, NULL, RZ_CMD_DESC_TYPE_ARGV, pointer_handler},
-		{"-",        "open cfg.editor and run script", cmd_stdin, NULL, &stdin_help},
-		{".",        "interpret", cmd_interpret, NULL, &interpret_help},
-		{"/",        "search kw, pattern aes", cmd_search, cmd_search_init, &search_help},
-		{"=",        "io pipe", cmd_rap, NULL, &rap_help},
-		{"?",        "help message", cmd_help, cmd_help_init, &help_help},
-		{"\\",       "alias for =!", cmd_rap_run, NULL, &rap_run_help},
-		{"'",        "alias for =!", cmd_rap_run, NULL, &rap_run_help},
-		{"0",       "alias for s 0x", cmd_ox, NULL, &zero_help},
-		{"a", "analysis", cmd_anal, cmd_anal_init, &anal_help},
-		{"b",    "change block size", cmd_bsize, NULL, &b_help},
-		{"c",      "compare memory", cmd_cmp, cmd_cmp_init, &c_help},
-		{"C",     "code metadata", cmd_meta, cmd_meta_init, &C_help},
-		{"d",    "debugger operations", cmd_debug, cmd_debug_init, &d_help},
-		{"e",     "evaluate configuration variable", cmd_eval, cmd_eval_init, &e_help},
-		{"f",     "get/set flags", cmd_flag, cmd_flag_init, &f_help},
-		{"g",        "egg manipulation", cmd_egg, cmd_egg_init, &g_help},
-		{"i",     "get file info", cmd_info, cmd_info_init, &i_help},
-		{"k",    "perform sdb query", cmd_kuery, NULL, &k_help},
-		{"l",       "list files and directories", cmd_ls, NULL, &l_help},
-		{"j",    "join the contents of the two files", cmd_join, NULL, &j_help},
-		{"m",    "make directory and move files", cmd_m, NULL, &m_help},
-		{"h",    "show the top n number of line in file", cmd_head, NULL, &h_help},
-		{"L",        "manage dynamically loaded plugins", cmd_plugins, NULL, &L_help},
-		{"o",     "open or map file", cmd_open, cmd_open_init, &o_help},
-		{"p",    "print current block", cmd_print, cmd_print_init, &p_help},
-		{"P",  "project", cmd_project, cmd_project_init, &P_help},
-		{"q",     "exit program session", cmd_quit, cmd_quit_init, &q_help},
-		{"Q",        "alias for q!", cmd_Quit, NULL, &Q_help},
-		{":",        "long commands starting with :", cmd_colon, NULL, &colon_help},
-		{"r",   "change file size", cmd_resize, NULL, &rz_help},
-		{"s",     "seek to an offset", cmd_seek, cmd_seek_init, &s_help},
-		{"t",        "type information (cparse)", cmd_type, cmd_type_init, &t_help},
-		{"T",     "Text log utility", cmd_log, cmd_log_init, &T_help},
-		{"u",        "uname/undo", cmd_undo, NULL, &u_help},
-		{"<",        "pipe into RzCons.readChar", cmd_pipein, NULL, &pipein_help},
-		{"V",   "enter visual mode", cmd_visual, NULL, &V_help},
-		{"v",   "enter visual mode", cmd_panels, NULL, &v_help},
-		{"w",    "write bytes", cmd_write, cmd_write_init, &w_help, &w_group_help, RZ_CMD_DESC_TYPE_GROUP, w_handler},
-		{"x",        "alias for px", cmd_hexdump, NULL, &x_help},
-		{"y",     "yank bytes", cmd_yank, NULL, &y_help},
-		{"z",     "zignatures", cmd_zign, cmd_zign_init, &z_help},
-		{"@", "temporary modifiers", NULL, NULL, &tmp_modifier_help, NULL, RZ_CMD_DESC_TYPE_FAKE},
-		{">", "redirection", NULL, NULL, &redirection_help, NULL, RZ_CMD_DESC_TYPE_FAKE},
-		{"|", "pipe", NULL, NULL, &pipe_help, NULL, RZ_CMD_DESC_TYPE_FAKE},
+		{ "!", "run system command", cmd_system, NULL, &system_help },
+		{ "_", "print last output", cmd_last, NULL, &underscore_help },
+		{ "#", "calculate hash", cmd_hash, NULL, &hash_help },
+		{ "$", "alias", cmd_alias, NULL, &alias_help },
+		{ "%", "short version of 'env' command", cmd_env, NULL, &percentage_help, NULL, RZ_CMD_DESC_TYPE_ARGV, env_handler },
+		{ "&", "tasks", cmd_tasks, NULL, &tasks_help },
+		{ "(", "macro", cmd_macro, cmd_macro_init, &macro_help },
+		{ "*", "pointer read/write", cmd_pointer, NULL, &pointer_help, NULL, RZ_CMD_DESC_TYPE_ARGV, pointer_handler },
+		{ "-", "open cfg.editor and run script", cmd_stdin, NULL, &stdin_help },
+		{ ".", "interpret", cmd_interpret, NULL, &interpret_help },
+		{ "/", "search kw, pattern aes", cmd_search, cmd_search_init, &search_help },
+		{ "=", "io pipe", cmd_rap, NULL, &rap_help },
+		{ "?", "help message", cmd_help, cmd_help_init, &help_help },
+		{ "\\", "alias for =!", cmd_rap_run, NULL, &rap_run_help },
+		{ "'", "alias for =!", cmd_rap_run, NULL, &rap_run_help },
+		{ "0", "alias for s 0x", cmd_ox, NULL, &zero_help },
+		{ "a", "analysis", cmd_anal, cmd_anal_init, &anal_help },
+		{ "b", "change block size", cmd_bsize, NULL, &b_help },
+		{ "c", "compare memory", cmd_cmp, cmd_cmp_init, &c_help },
+		{ "C", "code metadata", cmd_meta, cmd_meta_init, &C_help },
+		{ "d", "debugger operations", cmd_debug, cmd_debug_init, &d_help },
+		{ "e", "evaluate configuration variable", cmd_eval, cmd_eval_init, &e_help },
+		{ "f", "get/set flags", cmd_flag, cmd_flag_init, &f_help },
+		{ "g", "egg manipulation", cmd_egg, cmd_egg_init, &g_help },
+		{ "i", "get file info", cmd_info, cmd_info_init, &i_help },
+		{ "k", "perform sdb query", cmd_kuery, NULL, &k_help },
+		{ "l", "list files and directories", cmd_ls, NULL, &l_help },
+		{ "j", "join the contents of the two files", cmd_join, NULL, &j_help },
+		{ "m", "make directory and move files", cmd_m, NULL, &m_help },
+		{ "h", "show the top n number of line in file", cmd_head, NULL, &h_help },
+		{ "L", "manage dynamically loaded plugins", cmd_plugins, NULL, &L_help },
+		{ "o", "open or map file", cmd_open, cmd_open_init, &o_help },
+		{ "p", "print current block", cmd_print, cmd_print_init, &p_help },
+		{ "P", "project", cmd_project, cmd_project_init, &P_help },
+		{ "q", "exit program session", cmd_quit, cmd_quit_init, &q_help },
+		{ "Q", "alias for q!", cmd_Quit, NULL, &Q_help },
+		{ ":", "long commands starting with :", cmd_colon, NULL, &colon_help },
+		{ "r", "change file size", cmd_resize, NULL, &rz_help },
+		{ "s", "seek to an offset", cmd_seek, cmd_seek_init, &s_help },
+		{ "t", "type information (cparse)", cmd_type, cmd_type_init, &t_help },
+		{ "T", "Text log utility", cmd_log, cmd_log_init, &T_help },
+		{ "u", "uname/undo", cmd_undo, NULL, &u_help },
+		{ "<", "pipe into RzCons.readChar", cmd_pipein, NULL, &pipein_help },
+		{ "V", "enter visual mode", cmd_visual, NULL, &V_help },
+		{ "v", "enter visual mode", cmd_panels, NULL, &v_help },
+		{ "w", "write bytes", cmd_write, cmd_write_init, &w_help, &w_group_help, RZ_CMD_DESC_TYPE_GROUP, w_handler },
+		{ "x", "alias for px", cmd_hexdump, NULL, &x_help },
+		{ "y", "yank bytes", cmd_yank, NULL, &y_help },
+		{ "z", "zignatures", cmd_zign, cmd_zign_init, &z_help },
+		{ "@", "temporary modifiers", NULL, NULL, &tmp_modifier_help, NULL, RZ_CMD_DESC_TYPE_FAKE },
+		{ "@@", "iterators", NULL, NULL, &iterator_help, NULL, RZ_CMD_DESC_TYPE_FAKE },
+		{ "@@@", "foreach", NULL, NULL, &foreach_help, NULL, RZ_CMD_DESC_TYPE_FAKE },
+		{ ">", "redirection", NULL, NULL, &redirection_help, NULL, RZ_CMD_DESC_TYPE_FAKE },
+		{ "|", "pipe", NULL, NULL, &pipe_help, NULL, RZ_CMD_DESC_TYPE_FAKE },
+		{ "~", "grep", NULL, NULL, &grep_help, NULL, RZ_CMD_DESC_TYPE_FAKE },
 	};
 
 	core->rcmd = rz_cmd_new ();

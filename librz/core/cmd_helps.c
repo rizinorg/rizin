@@ -35,6 +35,68 @@ const RzCmdDescHelp tmp_modifier_help = {
 	.usage = "<cmd> <@> <args>",
 };
 
+const RzCmdDescDetailEntry iterator_detail_entries[] = {
+	{ .text = "<cmd> @@", .arg_str = " <glob>", .comment = "run <cmd> over all flags matching <glob> in current flagspace. <glob> may contain `*` to indicate multiple chars" },
+	{ .text = "<cmd> @@dbt[abs]", .arg_str = "", .comment = "run <cmd> on every backtrace address, bp or sp" },
+	{ .text = "<cmd> @@.", .arg_str = "<file>", .comment = "run <cmd> over the offsets specified in <file>, one per line" },
+	{ .text = "<cmd> @@=", .arg_str = "<addr1> [<addr2> ...]", .comment = "run <cmd> over the listed addresses" },
+	{ .text = "<cmd> @@/", .arg_str = "<search-cmd>", .comment = "run <cmd> over the search results of /<search-cmd>" },
+	{ .text = "<cmd> @@k", .arg_str = " <sdbquery>", .comment = "run <cmd> over all offsets return by the sdb query <sdbquery>" },
+	{ .text = "<cmd> @@t", .arg_str = "", .comment = "run <cmd> over all threads" },
+	{ .text = "<cmd> @@b", .arg_str = "", .comment = "run <cmd> over all basic blocks of the current function" },
+	{ .text = "<cmd> @@i", .arg_str = "", .comment = "run <cmd> over all instructions of the current function" },
+	{ .text = "<cmd> @@iS", .arg_str = "", .comment = "run <cmd> over all sections" },
+	{ .text = "<cmd> @@f", .arg_str = "", .comment = "run <cmd> over all functions" },
+	{ .text = "<cmd> @@f:", .arg_str = "<glob>", .comment = "run <cmd> over all function matching <glob>. <glob> may contain `*` to indicate multiple chars" },
+	{ .text = "<cmd> @@s:", .arg_str = "<from> <to> <step>", .comment = "run <cmd> on all addresses starting from <from> and going up to <to> (included), with a step <step>." },
+	{ .text = "<cmd> @@c:", .arg_str = "<cmd2>", .comment = "run <cmd> on all addresses in the output of <cmd2>" },
+	{ 0 },
+};
+
+const RzCmdDescDetail iterator_detail[] = {
+	{ .name = "", .entries = iterator_detail_entries },
+	{ 0 },
+};
+
+const RzCmdDescHelp iterator_help = {
+	.summary = "'@@' help",
+	.options = "?",
+	.details = iterator_detail,
+	.usage = "<cmd> <@@> <args>",
+};
+
+const RzCmdDescDetailEntry foreach_detail_entries[] = {
+	{ .text = "<cmd> @@@=", .arg_str = "<addr> <size> (<addr> <size> ...)", .comment = "run <cmd> on each <addr> and set blocksize to <size>" },
+	{ .text = "<cmd> @@@b", .arg_str = "", .comment = "run <cmd> on each basic block of current function" },
+	{ .text = "<cmd> @@@c:", .arg_str = "<cmd2>", .comment = "same as <cmd>@@@=`<cmd2>`" },
+	{ .text = "<cmd> @@@C:", .arg_str = "<string>", .comment = "run <cmd> on each comment matching <string>" },
+	{ .text = "<cmd> @@@i", .arg_str = "", .comment = "run <cmd> on each import" },
+	{ .text = "<cmd> @@@r", .arg_str = "", .comment = "run <cmd> on each register" },
+	{ .text = "<cmd> @@@s", .arg_str = "", .comment = "run <cmd> on each symbol" },
+	{ .text = "<cmd> @@@st", .arg_str = "", .comment = "run <cmd> on each string" },
+	{ .text = "<cmd> @@@S", .arg_str = "", .comment = "run <cmd> on each section" },
+	{ .text = "<cmd> @@@m", .arg_str = "", .comment = "run <cmd> on each io.maps" },
+	{ .text = "<cmd> @@@M", .arg_str = "", .comment = "run <cmd> on each dbg.maps" },
+	{ .text = "<cmd> @@@f", .arg_str = "", .comment = "run <cmd> on each flag" },
+	{ .text = "<cmd> @@@f:", .arg_str = "<glob-string>", .comment = "run <cmd> on each flag matching <glob-string>. <glob-string> may contain `*` to indicate multiple chars" },
+	{ .text = "<cmd> @@@F", .arg_str = "", .comment = "run <cmd> on each function" },
+	{ .text = "<cmd> @@@F:", .arg_str = "<glob-string>", .comment = "run <cmd> on each function whose name matches <glob-string>. <glob-string> may contain `*` to indicate multiple chars" },
+	{ .text = "<cmd> @@@t", .arg_str = "", .comment = "run <cmd> on each thread" },
+	{ 0 },
+};
+
+const RzCmdDescDetail foreach_detail[] = {
+	{ .name = "", .entries = foreach_detail_entries },
+	{ 0 },
+};
+
+const RzCmdDescHelp foreach_help = {
+	.summary = "'@@@' help",
+	.options = "?",
+	.details = foreach_detail,
+	.usage = "<cmd> <@@@>",
+};
+
 const RzCmdDescDetailEntry redirection_detail_entries[] = {
 	{ .text = "<cmd> >", .arg_str = " <file>|<$alias>", .comment = "redirect STDOUT of <cmd> to <file> or save it to an alias (see $?)" },
 	{ .text = "<cmd> 2>", .arg_str = " <file>|<$alias>", .comment = "redirect STDERR of <cmd> to <file> or save it to an alias (see $?)" },
@@ -73,6 +135,68 @@ const RzCmdDescHelp pipe_help = {
 	.options = "?",
 	.details = pipe_detail,
 	.usage = "<cmd> |[<program>|H|T|.|]",
+};
+
+const RzCmdDescDetailEntry grep_modifiers[] = {
+	{ .text = "&", .arg_str = NULL, .comment = "all words must match to grep the line" },
+	{ .text = "$[n]", .arg_str = NULL, .comment = "sort numerically / alphabetically the Nth column" },
+	{ .text = "$!", .arg_str = NULL, .comment = "sort in inverse order" },
+	{ .text = ",", .arg_str = NULL, .comment = "token to define another keyword" },
+	{ .text = "+", .arg_str = NULL, .comment = "case insensitive grep (grep -i)" },
+	{ .text = "^", .arg_str = NULL, .comment = "words must be placed at the beginning of line" },
+	{ .text = "<", .arg_str = NULL, .comment = "perform zoom operation on the buffer" },
+	{ .text = "!", .arg_str = NULL, .comment = "negate grep" },
+	{ .text = "?", .arg_str = NULL, .comment = "count number of matching lines" },
+	{ .text = "?.", .arg_str = NULL, .comment = "count number chars" },
+	{ .text = ":s..e", .arg_str = NULL, .comment = "show lines s-e" },
+	{ .text = "..", .arg_str = NULL, .comment = "internal 'less'" },
+	{ .text = "...", .arg_str = NULL, .comment = "internal 'hud' (like V_)" },
+	{ .text = "{:", .arg_str = NULL, .comment = "human friendly indentation (yes, it's a smiley)" },
+	{ .text = "{:..", .arg_str = NULL, .comment = "less the output of {:" },
+	{ .text = "{:...", .arg_str = NULL, .comment = "hud the output of {:" },
+	{ .text = "{}", .arg_str = NULL, .comment = "json indentation" },
+	{ .text = "{}..", .arg_str = NULL, .comment = "less json indentation" },
+	{ .text = "{}...", .arg_str = NULL, .comment = "hud json indentation" },
+	{ .text = "{path}", .arg_str = NULL, .comment = "json path grep" },
+	{ 0 },
+};
+
+const RzCmdDescDetailEntry grep_endmodifiers[] = {
+	{ .text = "$", .arg_str = NULL, .comment = "words must be placed at the end of line" },
+	{ 0 },
+};
+
+const RzCmdDescDetailEntry grep_columns[] = {
+	{ .text = "[n]", .arg_str = NULL, .comment = "show only column n" },
+	{ .text = "[n-m]", .arg_str = NULL, .comment = "show column n to m" },
+	{ .text = "[n-]", .arg_str = NULL, .comment = "show all columns starting from column n" },
+	{ .text = "[i,j,k]", .arg_str = NULL, .comment = "show the columns i, j and k" },
+	{ 0 },
+};
+
+const RzCmdDescDetailEntry grep_examples[] = {
+	{ .text = "i", .arg_str = "~:0", .comment = "show first line of 'i' output" },
+	{ .text = "i", .arg_str = "~:-2", .comment = "show the second to last line of 'i' output" },
+	{ .text = "i", .arg_str = "~:0..3", .comment = "show first three lines of 'i' output" },
+	{ .text = "pd", .arg_str = "~mov", .comment = "disasm and grep for mov" },
+	{ .text = "pi", .arg_str = "~[0]", .comment = "show only opcode" },
+	{ .text = "i", .arg_str = "~0x400$", .comment = "show lines ending with 0x400" },
+	{ 0 },
+};
+
+const RzCmdDescDetail grep_detail[] = {
+	{ .name = "Modifiers", .entries = grep_modifiers },
+	{ .name = "EndModifiers", .entries = grep_endmodifiers },
+	{ .name = "Columns", .entries = grep_columns },
+	{ .name = "Examples", .entries = grep_examples },
+	{ 0 },
+};
+
+const RzCmdDescHelp grep_help = {
+	.summary = "grep help ('~')",
+	.options = "?",
+	.details = grep_detail,
+	.usage = "<command>~[modifier][word,word][endmodifier][[column]][:line]",
 };
 
 const RzCmdDescHelp system_help = {
