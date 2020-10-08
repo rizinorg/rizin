@@ -22,8 +22,9 @@ RZ_API ut32 rz_time_dos_time_stamp_to_posix(ut32 timeStamp);
 RZ_API bool rz_time_stamp_is_dos_format(const ut32 certainPosixTimeStamp, const ut32 possiblePosixOrDosTimeStamp);
 RZ_API const char *rz_time_to_string(ut64 ts);
 
-// Cross platform asctime_r
+// Thread-safe cross platform wrappers
 RZ_API char *rz_asctime_r(const struct tm *tm, char *buf, size_t size);
+RZ_API struct tm *rz_localtime_r(const time_t *time, struct tm *res);
 
 #define RZ_TIME_PROFILE_ENABLED 0
 
