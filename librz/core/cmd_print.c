@@ -6088,24 +6088,45 @@ l = use_blocksize;
 				switch (input[2]) {
 				case '1':
 					// 1 byte signed words (byte)
-					rz_print_hexdump (core->print, core->offset,
-							core->block, len, -1, 4, 1);
+					if (input[3] == 'j') {
+						rz_print_jsondump (core->print, core->block,
+							len, 8);
+					} else {
+						rz_print_hexdump (core->print, core->offset,
+								 core->block, len, -1, 4, 1);
+					}
 					break;
 				case '2':
 					// 2 byte signed words (short)
-					rz_print_hexdump (core->print, core->offset,
-							core->block, len, -10, 2, 1);
+					if (input[3] == 'j') {
+						rz_print_jsondump (core->print, core->block,
+							len, 16);
+					} else {
+						rz_print_hexdump (core->print, core->offset,
+								 core->block, len, -10, 2, 1);
+					}
 					break;
 				case '8':
-					rz_print_hexdump (core->print, core->offset,
-							core->block, len, -8, 4, 1);
+					if (input[3] == 'j') {
+						rz_print_jsondump (core->print, core->block,
+							len, 64);
+					} else {
+						rz_print_hexdump (core->print, core->offset,
+								 core->block, len, -8, 4, 1);
+					}
 					break;
 				case '4':
 				case ' ':
+				case 'j':
 				case 0:
 					// 4 byte signed words
-					rz_print_hexdump (core->print, core->offset,
-						core->block, len, 10, 4, 1);
+					if (input[2] == 'j' || input[3] == 'j') {
+						rz_print_jsondump (core->print, core->block,
+							len, 32);
+					} else {
+						rz_print_hexdump (core->print, core->offset,
+								 core->block, len, 10, 4, 1);
+					}
 					break;
 				default:
 					rz_core_cmd_help (core, help_msg_pxd);
