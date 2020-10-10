@@ -1,16 +1,18 @@
 #include <rz_types.h>
 
-#define	SPC_OP		0
-#define	SPC_ARG8_1	1
-#define	SPC_ARG8_2	2
-#define	SPC_ARG16	3
+typedef enum {
+	SPC_OP,
+	SPC_ARG8_1,
+	SPC_ARG8_2,
+	SPC_ARG16
+} Spc700OpType;
 
-typedef struct spc_700_op_t {
+typedef struct spc700_op_t {
 	char *name;
-	ut8 type;
+	Spc700OpType type;
 } Spc700Op;
 
-static const Spc700Op spc_op_table[] = {
+static const Spc700Op spc700_op_table[] = {
 	{"nop", SPC_OP},
 	{"call [0xffde]", SPC_OP},
 	{"set1 0x%02x.0", SPC_ARG8_1},

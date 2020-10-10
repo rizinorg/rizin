@@ -6,7 +6,7 @@
 #include <string.h>
 #include "spc700_opcode_table.h"
 
-static int spc700OpLength(int spcoptype){
+static ut64 spc700_op_size(int spcoptype) {
 	switch(spcoptype) {
 	case SPC_OP:
 		return 1;
@@ -19,26 +19,31 @@ static int spc700OpLength(int spcoptype){
 	return 0;
 }
 
-static int spc700Disass(RzAsmOp *op, const ut8 *buf, int len) {
-	int foo = spc700OpLength (spc_op_table[buf[0]].type);
-	if (len < foo) {
+static size_t spc700_disas(RzAsmOp *op, const ut8 *buf, size_t bufsz) {
+	if (!bufsz) {
 		return 0;
 	}
-	const char *buf_asm = "invalid";
-	switch (spc_op_table[buf[0]].type) {
+	const Spc700Op *sop = &spc700_op_table[buf[0]];
+	ut64 opsz = spc700_op_size (sop->type);
+	if (bufsz < (ut64)opsz) {
+		return 0;
+	}
+	switch (sop->type) {
 	case SPC_OP:
-		buf_asm = spc_op_table[buf[0]].name;
+		rz_strbuf_set (&op->buf_asm, sop->name);
 		break;
 	case SPC_ARG8_1:
-		buf_asm = sdb_fmt (spc_op_table[buf[0]].name, buf[1]);
+		rz_strbuf_setf (&op->buf_asm, sop->name, (unsigned int)buf[1]);
 		break;
 	case SPC_ARG8_2:
-		buf_asm = sdb_fmt (spc_op_table[buf[0]].name, buf[1], buf[2]);
+		rz_strbuf_setf (&op->buf_asm, sop->name, (unsigned int)buf[1], (unsigned int)buf[2]);
 		break;
 	case SPC_ARG16:
-		buf_asm = sdb_fmt (spc_op_table[buf[0]].name, buf[1]+0x100*buf[2]);
+		rz_strbuf_setf (&op->buf_asm, sop->name, (unsigned int)buf[1] + ((unsigned int)buf[2] << 8));
+		break;
+	default:
+		rz_strbuf_set (&op->buf_asm, "invalid");
 		break;
 	}
-	rz_asm_op_set_asm (op, buf_asm);
-	return foo;
+	return opsz;
 }

@@ -10,12 +10,9 @@
 #include "../arch/spc700/spc700dis.c"
 
 static int disassemble(RzAsm *a, RzAsmOp *rz_op, const ut8 *buf, int len) {
-	int dlen = spc700Disass(rz_op, buf, len);
-	if (dlen < 0) {
-		dlen = 0;
-	}
+	size_t dlen = spc700_disas(rz_op, buf, len);
 	rz_op->size = dlen;
-	return dlen;
+	return (int)dlen;
 }
 
 RzAsmPlugin rz_asm_plugin_spc700 = {
@@ -24,7 +21,7 @@ RzAsmPlugin rz_asm_plugin_spc700 = {
 	.arch = "spc700",
 	.license = "LGPL3",
 	.bits = 16,
-	.endian = RZ_SYS_ENDIAN_NONE, // is this LE?
+	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.disassemble = &disassemble,
 };
 
