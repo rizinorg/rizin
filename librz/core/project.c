@@ -54,7 +54,7 @@ RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file) {
 	return err;
 }
 
-RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, RSerializeResultInfo *res) {
+RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, RZ_NULLABLE const char *file, RSerializeResultInfo *res) {
 	const char *type = sdb_const_get (prj, RZ_DB_KEY_TYPE, 0);
 	if (!type || strcmp (type, RZ_DB_PROJECT_TYPE) != 0) {
 		return RZ_PROJECT_ERR_INVALID_TYPE;
@@ -79,6 +79,8 @@ RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, RSerializeResu
 		return RZ_PROJECT_ERR_INVALID_CONTENTS;
 	}
 
+	rz_config_set (core->config, "prj.file", file);
+
 	return RZ_PROJECT_ERR_SUCCESS;
 }
 
@@ -91,7 +93,7 @@ RZ_API RzProjectErr rz_project_load_file(RzCore *core, const char *file, RSerial
 		SERIALIZE_ERR ("failed to read database file");
 		return RZ_PROJECT_ERR_FILE;
 	}
-	RzProjectErr ret = rz_project_load (core, prj, res);
+	RzProjectErr ret = rz_project_load (core, prj, file, res);
 	sdb_free (prj);
 	return ret;
 }
