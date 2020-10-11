@@ -36,7 +36,7 @@ static size_t spc700_disas(RzAsmOp *op, const ut8 *buf, size_t bufsz) {
 		rz_strbuf_setf (&op->buf_asm, sop->name, (unsigned int)buf[1]);
 		break;
 	case SPC_ARG8_2:
-		rz_strbuf_setf (&op->buf_asm, sop->name, (unsigned int)buf[1], (unsigned int)buf[2]);
+		rz_strbuf_setf (&op->buf_asm, sop->name, (unsigned int)buf[2], (unsigned int)buf[1]);
 		break;
 	case SPC_ARG16:
 		rz_strbuf_setf (&op->buf_asm, sop->name, (unsigned int)buf[1] + ((unsigned int)buf[2] << 8));
