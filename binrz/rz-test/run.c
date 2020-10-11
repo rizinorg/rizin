@@ -714,6 +714,8 @@ RZ_API bool rz_test_subprocess_wait(RzTestSubprocess *proc, ut64 timeout_ms) {
 	if (r < 0) {
 		perror ("select");
 	}
+	rz_test_subprocess_lock ();
+	rz_test_subprocess_unlock ();
 	return child_dead;
 }
 
