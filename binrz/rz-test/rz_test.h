@@ -185,6 +185,8 @@ typedef struct rz_test_subprocess_t RzTestSubprocess;
 
 RZ_API bool rz_test_subprocess_init(void);
 RZ_API void rz_test_subprocess_fini(void);
+RZ_API void rz_test_subprocess_lock(void);
+RZ_API void rz_test_subprocess_unlock(void);
 RZ_API RzTestSubprocess *rz_test_subprocess_start(
 		const char *file, const char *args[], size_t args_size,
 		const char *envvars[], const char *envvals[], size_t env_size);
