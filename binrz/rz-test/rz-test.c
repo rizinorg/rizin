@@ -638,7 +638,15 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 		break;
 	}
 	case RZ_TEST_TYPE_ASM:
-		// TODO
+		if (result->test->asm_test->mode & RZ_ASM_TEST_MODE_DISASSEMBLE) {
+			const char *expect = result->test->asm_test->disasm;
+			const char *actual = result->asm_out->disasm;
+			if (expect && actual && strcmp (actual, expect)) {
+				printf ("-- disassembly\n");
+				print_diff (actual, expect, false);
+			}
+		}
+		// TODO: assembly
 		break;
 	case RZ_TEST_TYPE_JSON:
 		break;
