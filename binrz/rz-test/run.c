@@ -417,7 +417,7 @@ static RzThreadFunctionRet sigchld_th(RzThread *th) {
 			if (pid <= 0)
 				break;
 
-			rz_th_lock_enter (subprocs_mutex);
+			rz_test_subprocess_lock ();
 			void **it;
 			RzTestSubprocess *proc = NULL;
 			rz_pvector_foreach (&subprocs, it) {
@@ -428,7 +428,7 @@ static RzThreadFunctionRet sigchld_th(RzThread *th) {
 				}
 			}
 			if (!proc) {
-				rz_th_lock_leave (subprocs_mutex);
+				rz_test_subprocess_unlock ();
 				continue;
 			}
 
@@ -439,7 +439,7 @@ static RzThreadFunctionRet sigchld_th(RzThread *th) {
 			}
 			ut8 r = 0;
 			write (proc->killpipe[1], &r, 1);
-			rz_th_lock_leave (subprocs_mutex);
+			rz_test_subprocess_unlock ();
 		}
 	}
 	return RZ_TH_STOP;
@@ -447,7 +447,7 @@ static RzThreadFunctionRet sigchld_th(RzThread *th) {
 
 RZ_API bool rz_test_subprocess_init(void) {
 	rz_pvector_init(&subprocs, NULL);
-	subprocs_mutex = rz_th_lock_new (false);
+	subprocs_mutex = rz_th_lock_new (true);
 	if (!subprocs_mutex) {
 		return false;
 	}
@@ -484,6 +484,14 @@ RZ_API void rz_test_subprocess_fini(void) {
 	rz_th_lock_free (subprocs_mutex);
 }
 
+RZ_API void rz_test_subprocess_lock(void) {
+	rz_th_lock_enter (subprocs_mutex);
+}
+
+RZ_API void rz_test_subprocess_unlock(void) {
+	rz_th_lock_leave (subprocs_mutex);
+}
+
 RZ_API RzTestSubprocess *rz_test_subprocess_start(
 		const char *file, const char *args[], size_t args_size,
 		const char *envvars[], const char *envvals[], size_t env_size) {
@@ -496,7 +504,7 @@ RZ_API RzTestSubprocess *rz_test_subprocess_start(
 		memcpy (argv + 1, args, sizeof (char *) * args_size);
 	}
 	// done by calloc: argv[args_size + 1] = NULL;
-	rz_th_lock_enter (subprocs_mutex);
+	rz_test_subprocess_lock ();
 	RzTestSubprocess *proc = RZ_NEW0 (RzTestSubprocess);
 	if (!proc) {
 		goto error;
@@ -581,7 +589,7 @@ RZ_API RzTestSubprocess *rz_test_subprocess_start(
 
 	rz_pvector_push (&subprocs, proc);
 
-	rz_th_lock_leave (subprocs_mutex);
+	rz_test_subprocess_unlock ();
 
 	return proc;
 error:
@@ -611,7 +619,7 @@ error:
 	if (stdin_pipe[1] == -1) {
 		close (stdin_pipe[1]);
 	}
-	rz_th_lock_leave (subprocs_mutex);
+	rz_test_subprocess_unlock ();
 	return NULL;
 }
 
@@ -720,7 +728,7 @@ RZ_API void rz_test_subprocess_stdin_write(RzTestSubprocess *proc, const ut8 *bu
 }
 
 RZ_API RzTestProcessOutput *rz_test_subprocess_drain(RzTestSubprocess *proc) {
-	rz_th_lock_enter (subprocs_mutex);
+	rz_test_subprocess_lock ();
 	RzTestProcessOutput *out = RZ_NEW (RzTestProcessOutput);
 	if (out) {
 		out->out = rz_strbuf_drain_nofree (&proc->out);
@@ -728,7 +736,7 @@ RZ_API RzTestProcessOutput *rz_test_subprocess_drain(RzTestSubprocess *proc) {
 		out->ret = proc->ret;
 		out->timeout = false;
 	}
-	rz_th_lock_leave (subprocs_mutex);
+	rz_test_subprocess_unlock ();
 	return out;
 }
 
@@ -736,9 +744,9 @@ RZ_API void rz_test_subprocess_free(RzTestSubprocess *proc) {
 	if (!proc) {
 		return;
 	}
-	rz_th_lock_enter (subprocs_mutex);
+	rz_test_subprocess_lock ();
 	rz_pvector_remove_data (&subprocs, proc);
-	rz_th_lock_leave (subprocs_mutex);
+	rz_test_subprocess_unlock ();
 	rz_strbuf_fini (&proc->out);
 	rz_strbuf_fini (&proc->err);
 	close (proc->killpipe[0]);

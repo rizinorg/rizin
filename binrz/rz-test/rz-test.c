@@ -534,14 +534,17 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 	if (diffchar) {
 		RzDiffChar *diff = rz_diffchar_new ((const ut8 *)expected, (const ut8 *)actual);
 		if (diff) {
+			rz_diff_free (d);
 			rz_diffchar_print (diff);
 			rz_diffchar_free (diff);
 			return;
 		}
 		d->diff_cmd = "git diff --no-index --word-diff=porcelain --word-diff-regex=.";
 	}
+	rz_test_subprocess_lock (); // diffing may fork(), potentially preventing pipes from other subprocs to be closed completely
 	char *uni = rz_diff_buffers_to_string (d, (const ut8 *)expected, (int)strlen (expected),
 	                                      (const ut8 *)actual, (int)strlen (actual));
+	rz_test_subprocess_unlock ();
 	rz_diff_free (d);
 
 	RzList *lines = rz_str_split_duplist (uni, "\n", false);
