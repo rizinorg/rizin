@@ -1882,10 +1882,6 @@ static bool hints_load_cb(void *user, const char *k, const char *v) {
 	free (json_str);
 
 	return true;
-error:
-	rz_json_free (json);
-	free (json_str);
-	return false;
 }
 
 RZ_API bool rz_serialize_anal_hints_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RSerializeResultInfo *res) {

@@ -105,5 +105,5 @@ RZ_API bool rz_serialize_io_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzIO *io, RZ_NUL
 #undef SUB
 	ret = true;
 beach:
-	return true;
+	return ret;
 }
