@@ -164,6 +164,7 @@ bool test_cmd_descriptor_group(void) {
 		"| a  # a exec help\n"
 		"| ab # ab help\n";
 	mu_assert_streq (h, exp_h, "regular help for a is a_group_help");
+	rz_cmd_parsed_args_free (pa);
 	free (h);
 
 	rz_cmd_free (cmd);
