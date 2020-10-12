@@ -6,39 +6,74 @@
 #include <string.h>
 #include "spc700_opcode_table.h"
 
-static int spc700OpLength(int spcoptype){
-	switch(spcoptype) {
-	case SPC_OP:
-		return 1;
-	case SPC_ARG8_1:
-		return 2;
-	case SPC_ARG8_2:
-	case SPC_ARG16:
+static ut64 spc700_op_size(Spc700ArgType arg) {
+	switch(arg) {
+	case SPC700_ARG_NONE:
+			return 1;
+	case SPC700_ARG_IMM8:
+	case SPC700_ARG_ABS8:
+	case SPC700_ARG_REL8:
+	case SPC700_ARG_UPPER8:
+			return 2;
+	case SPC700_ARG_ABS8_REL8:
+	case SPC700_ARG_ABS8_ABS8:
+	case SPC700_ARG_ABS16:
+	case SPC700_ARG_ABS13_BIT3:
+	case SPC700_ARG_IMM8_ABS8:
 		return 3;
 	}
 	return 0;
 }
 
-static int spc700Disass(RzAsmOp *op, const ut8 *buf, int len) {
-	int foo = spc700OpLength (spc_op_table[buf[0]].type);
-	if (len < foo) {
+static ut64 spc700_resolve_relative(ut64 pc, ut8 r) {
+	ut16 spc = (ut16)pc;
+	ut16 relpc = (ut16)(st16)(st8)r;
+	spc += relpc;
+	return (ut64)spc;
+}
+
+static size_t spc700_disas(RzAsmOp *op, ut64 pc, const ut8 *buf, size_t bufsz) {
+	if (!bufsz) {
 		return 0;
 	}
-	const char *buf_asm = "invalid";
-	switch (spc_op_table[buf[0]].type) {
-	case SPC_OP:
-		buf_asm = spc_op_table[buf[0]].name;
+	const Spc700Op *sop = &spc700_op_table[buf[0]];
+	ut64 opsz = spc700_op_size (sop->arg);
+	if (bufsz < (ut64)opsz) {
+		return 0;
+	}
+	switch (sop->arg) {
+	case SPC700_ARG_NONE:
+		rz_strbuf_set (&op->buf_asm, sop->name);
 		break;
-	case SPC_ARG8_1:
-		buf_asm = sdb_fmt (spc_op_table[buf[0]].name, buf[1]);
+	case SPC700_ARG_IMM8:
+	case SPC700_ARG_ABS8:
+	case SPC700_ARG_UPPER8:
+		rz_strbuf_setf (&op->buf_asm, sop->name, (unsigned int)buf[1]);
 		break;
-	case SPC_ARG8_2:
-		buf_asm = sdb_fmt (spc_op_table[buf[0]].name, buf[1], buf[2]);
+	case SPC700_ARG_ABS8_REL8:
+		rz_strbuf_setf (&op->buf_asm, sop->name,
+				(unsigned int)buf[1],
+				(unsigned int)spc700_resolve_relative (pc + 3, buf[2]));
 		break;
-	case SPC_ARG16:
-		buf_asm = sdb_fmt (spc_op_table[buf[0]].name, buf[1]+0x100*buf[2]);
+	case SPC700_ARG_ABS16:
+		rz_strbuf_setf (&op->buf_asm, sop->name, (unsigned int)buf[1] | ((unsigned int)buf[2] << 8));
+		break;
+	case SPC700_ARG_ABS13_BIT3:
+		rz_strbuf_setf (&op->buf_asm, sop->name,
+				(unsigned int)((ut16)buf[1] | ((ut16)(buf[2] & 0x1f) << 8)),
+				(unsigned int)(buf[2] >> 5));
+		break;
+	case SPC700_ARG_REL8:
+		rz_strbuf_setf (&op->buf_asm, sop->name,
+				(unsigned int)spc700_resolve_relative (pc + 2, buf[1]));
+		break;
+	case SPC700_ARG_IMM8_ABS8:
+	case SPC700_ARG_ABS8_ABS8:
+		rz_strbuf_setf (&op->buf_asm, sop->name, (unsigned int)buf[2], (unsigned int)buf[1]);
+		break;
+	default:
+		rz_strbuf_set (&op->buf_asm, "invalid");
 		break;
 	}
-	rz_asm_op_set_asm (op, buf_asm);
-	return foo;
+	return opsz;
 }
