@@ -44,6 +44,7 @@ bool test_spaces_save(void) {
 
 	sdb_free (db);
 	sdb_free (expected);
+	rz_spaces_free (spaces);
 	mu_end;
 }
 
