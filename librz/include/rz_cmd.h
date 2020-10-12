@@ -226,6 +226,12 @@ typedef struct rz_cmd_t {
 	HtUP *ts_symbols_ht;
 	RzCmdDesc *root_cmd_desc;
 	HtPP *ht_cmds;
+	/**
+	 * True if a rz_cons_instance exists. When used from RzCore this is
+	 * commonly true. However, it can be used in tests to avoid access to
+	 * non-initialized RzCons.
+	 */
+	bool has_cons;
 } RzCmd;
 
 // TODO: remove this once transitioned to RzCmdDesc
@@ -282,7 +288,7 @@ RZ_API int rz_core_plugin_add(RzCmd *cmd, RzCorePlugin *plugin);
 RZ_API int rz_core_plugin_check(RzCmd *cmd, const char *a0);
 RZ_API int rz_core_plugin_fini(RzCmd *cmd);
 
-RZ_API RzCmd *rz_cmd_new(void);
+RZ_API RzCmd *rz_cmd_new(bool has_cons);
 RZ_API RzCmd *rz_cmd_free(RzCmd *cmd);
 RZ_API int rz_cmd_set_data(RzCmd *cmd, void *data);
 RZ_API int rz_cmd_add(RzCmd *cmd, const char *command, RzCmdCb callback);

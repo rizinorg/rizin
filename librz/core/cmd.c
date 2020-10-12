@@ -7170,7 +7170,7 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "~", "grep", NULL, NULL, &grep_help, NULL, RZ_CMD_DESC_TYPE_FAKE },
 	};
 
-	core->rcmd = rz_cmd_new ();
+	core->rcmd = rz_cmd_new (!!core->cons);
 	core->rcmd->macro.user = core;
 	core->rcmd->macro.num = core->num;
 	core->rcmd->macro.cmd = core_cmd0_wrapper;
