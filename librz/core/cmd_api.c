@@ -28,7 +28,7 @@
 #define MAX_CHILDREN_SHOW 7
 
 #define MIN_SUMMARY_WIDTH 6
-#define MAX_RIGHT_ALIGHNMENT 15
+#define MAX_RIGHT_ALIGHNMENT 20
 
 static const RzCmdDescHelp not_defined_help = {
 	.usage = "Usage not defined",
