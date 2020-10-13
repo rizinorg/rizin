@@ -36,6 +36,8 @@ static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURIT
 
 RZ_API bool rz_test_subprocess_init(void) { return true; }
 RZ_API void rz_test_subprocess_fini(void) {}
+RZ_API void rz_test_subprocess_lock(void) {}
+RZ_API void rz_test_subprocess_unlock(void) {}
 
 // Create an env block that inherits the current vars but overrides the given ones
 static LPWCH override_env(const char *envvars[], const char *envvals[], size_t env_size) {
