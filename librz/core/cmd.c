@@ -338,6 +338,15 @@ static const char *help_msg_vertical_bar[] = {
 	NULL
 };
 
+static const char *help_msg_v[] = {
+	"Usage:", "v[*i]", "",
+	"v", "", "open visual panels",
+	"v", " test", "load saved layout with name test",
+	"v=", " test", "save current layout with name test",
+	"vi", " test", "open the file test in 'cfg.editor'",
+	NULL
+};
+
 RZ_API void rz_core_cmd_help(const RzCore *core, const char *help[]) {
 	rz_cons_cmd_help (help, core->print->flags & RZ_PRINT_FLAGS_COLOR);
 }
@@ -1899,10 +1908,7 @@ static int cmd_panels(void *data, const char *input) {
 		return false;
 	}
 	if (*input == '?') {
-		eprintf ("Usage: v[*i]\n");
-		eprintf ("v.test    # save current layout with name test\n");
-		eprintf ("v test    # load saved layout with name test\n");
-		eprintf ("vi ...    # launch 'cfg.editor'\n");
+		rz_core_cmd_help (core, help_msg_v);
 		return false;
 	}
 	if (!rz_cons_is_interactive ()) {
