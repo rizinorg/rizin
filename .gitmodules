@@ -1,3 +1,6 @@
 [submodule "shlr/sdb"]
 	path = shlr/sdb
 	url = git@github.com:rizinorg/sdb
+[submodule "shlr/tree-sitter"]
+	path = shlr/tree-sitter
+	url = https://github.com/tree-sitter/tree-sitter
