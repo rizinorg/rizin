@@ -194,37 +194,6 @@ if not tree_sitter_dep.found() or not get_option('use_sys_tree_sitter')
   message('Use bundled tree-sitter')
   tree_sitter_path = 'tree-sitter'
   tree_sitter_vc_path = 'tree-sitter.vc'
-  if get_option('tree-sitter-sync')
-    if not git_exe.found()
-      error('Cannot sync tree-sitter library. Either provide tree-sitter in ./shlr/tree-sitter or install git, so it can be downloaded')
-    endif
-
-    # NOTE: when you update TS_TIP or TS_BRA, also update them in shlr/Makefile
-    TS_TIP = '86a5dabbcbdac650c53a889183bf56d7e721e09e'
-    TS_BRA = 'master'
-
-    message('Deleting existing directories @0@ and @1@'.format(tree_sitter_vc_path, tree_sitter_path))
-    res = run_command('rm', '-rf @0@ @1@'.format(tree_sitter_vc_path, tree_sitter_path).split())
-    message('Cloning tree-sitter ' + TS_BRA + ' branch, commit ' + TS_TIP + ', into ' + tree_sitter_vc_path)
-    git_cmd = 'clone -b @0@ https://github.com/tree-sitter/tree-sitter.git @1@'.format(TS_BRA, tree_sitter_vc_path)
-    clone_cmd = run_command(git_exe, git_cmd.split())
-    if clone_cmd.returncode() != 0
-      error('Cannot execute git clone command')
-    endif
-
-    reset_cmd_str = '-C @0@ reset --hard @1@'.format(tree_sitter_vc_path, TS_TIP)
-    reset_cmd = run_command(git_exe, reset_cmd_str.split())
-    if reset_cmd.returncode() != 0
-      error('Cannot execute git reset command')
-    endif
-
-    message('Copying files from @0@ to @1@'.format(tree_sitter_vc_path, tree_sitter_path))
-    res = run_command('mkdir',  '-p @0@/lib'.format(tree_sitter_path).split())
-    res = run_command('cp',  '-r @0@/lib/src @1@/lib'.format(tree_sitter_vc_path, tree_sitter_path).split())
-    res = run_command('cp',  '-r @0@/lib/include @1@/lib'.format(tree_sitter_vc_path, tree_sitter_path).split())
-    message('Deleting @0@'.format(tree_sitter_vc_path))
-    res = run_command('rm', '-rf @0@'.format(tree_sitter_vc_path).split())
-  endif
 
   tree_sitter_files = [
     join_paths(tree_sitter_path, 'lib/src/lib.c'),
