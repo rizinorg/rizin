@@ -131,7 +131,7 @@ typedef struct {
 typedef struct rz_core_log_t {
 	int first;
 	int last;
-	RStrpool *sp;
+	RzStrpool *sp;
 } RzCoreLog;
 
 typedef struct rz_core_file_t {

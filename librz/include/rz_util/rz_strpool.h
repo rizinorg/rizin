@@ -11,21 +11,21 @@ typedef struct {
 	char *str;
 	int len;
 	int size;
-} RStrpool;
+} RzStrpool;
 
-RZ_API RStrpool* rz_strpool_new(int sz);
-RZ_API char *rz_strpool_alloc(RStrpool *p, int l);
-RZ_API int rz_strpool_memcat(RStrpool *p, const char *s, int len);
-RZ_API int rz_strpool_ansi_chop(RStrpool *p, int n);
-RZ_API int rz_strpool_append(RStrpool *p, const char *s);
-RZ_API void rz_strpool_free(RStrpool *p);
-RZ_API int rz_strpool_fit(RStrpool *p);
-RZ_API char *rz_strpool_get(RStrpool *p, int index);
-RZ_API char *rz_strpool_get_i(RStrpool *p, int index);
-RZ_API int rz_strpool_get_index(RStrpool *p, const char *s);
-RZ_API char *rz_strpool_next(RStrpool *p, int index);
-RZ_API char *rz_strpool_slice(RStrpool *p, int index);
-RZ_API char *rz_strpool_empty(RStrpool *p);
+RZ_API RzStrpool* rz_strpool_new(int sz);
+RZ_API char *rz_strpool_alloc(RzStrpool *p, int l);
+RZ_API int rz_strpool_memcat(RzStrpool *p, const char *s, int len);
+RZ_API int rz_strpool_ansi_chop(RzStrpool *p, int n);
+RZ_API int rz_strpool_append(RzStrpool *p, const char *s);
+RZ_API void rz_strpool_free(RzStrpool *p);
+RZ_API int rz_strpool_fit(RzStrpool *p);
+RZ_API char *rz_strpool_get(RzStrpool *p, int index);
+RZ_API char *rz_strpool_get_i(RzStrpool *p, int index);
+RZ_API int rz_strpool_get_index(RzStrpool *p, const char *s);
+RZ_API char *rz_strpool_next(RzStrpool *p, int index);
+RZ_API char *rz_strpool_slice(RzStrpool *p, int index);
+RZ_API char *rz_strpool_empty(RzStrpool *p);
 
 #ifdef __cplusplus
 }

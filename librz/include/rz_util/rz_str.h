@@ -17,9 +17,9 @@ typedef enum {
 	RZ_STRING_ENC_UTF16BE = 'b',
 	RZ_STRING_ENC_UTF32BE = 'B',
 	RZ_STRING_ENC_GUESS = 'g',
-} RStrEnc;
+} RzStrEnc;
 
-typedef int (*RStrRangeCallback) (void *, int);
+typedef int (*RzStrRangeCallback) (void *, int);
 
 #define RZ_STR_ISEMPTY(x) (!(x) || !*(x))
 #define RZ_STR_ISNOTEMPTY(x) ((x) && *(x))

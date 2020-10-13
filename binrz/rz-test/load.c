@@ -267,7 +267,7 @@ RZ_API void rz_test_asm_test_free(RzAsmTest *test) {
 	free (test);
 }
 
-static bool parse_asm_path(const char *path, RStrConstPool *strpool, const char **arch_out, const char **cpuout, int *bitsout) {
+static bool parse_asm_path(const char *path, RzStrConstPool *strpool, const char **arch_out, const char **cpuout, int *bitsout) {
 	RzList *file_tokens = rz_str_split_duplist (path, RZ_SYS_DIR, true);
 	if (!file_tokens || rz_list_empty (file_tokens)) {
 		rz_list_free (file_tokens);
@@ -307,7 +307,7 @@ static bool parse_asm_path(const char *path, RStrConstPool *strpool, const char 
 	return true;
 }
 
-RZ_API RzPVector *rz_test_load_asm_test_file(RStrConstPool *strpool, const char *file) {
+RZ_API RzPVector *rz_test_load_asm_test_file(RzStrConstPool *strpool, const char *file) {
 	const char *arch;
 	const char *cpu;
 	int bits;

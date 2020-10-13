@@ -5,7 +5,7 @@
 RZ_API int rz_core_log_list(RzCore *core, int n, int nth, char fmt) {
 	int printed = 0;
 	int count = 0, i, idx, id = core->log->first;
-	RStrpool *sp = core->log->sp;
+	RzStrpool *sp = core->log->sp;
 	char *str = sp->str;
 
 	if (fmt == 'j') {

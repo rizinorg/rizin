@@ -11,17 +11,17 @@ extern "C" {
 #endif
 
 /*
- * RStrConstPool is a pool of constant strings.
- * References to strings will be valid as long as the RStrConstPool is alive.
+ * RzStrConstPool is a pool of constant strings.
+ * References to strings will be valid as long as the RzStrConstPool is alive.
  */
 
 typedef struct rz_str_constpool_t {
 	HtPP *ht;
-} RStrConstPool;
+} RzStrConstPool;
 
-RZ_API bool rz_str_constpool_init(RStrConstPool *pool);
-RZ_API void rz_str_constpool_fini(RStrConstPool *pool);
-RZ_API const char *rz_str_constpool_get(RStrConstPool *pool, const char *str);
+RZ_API bool rz_str_constpool_init(RzStrConstPool *pool);
+RZ_API void rz_str_constpool_fini(RzStrConstPool *pool);
+RZ_API const char *rz_str_constpool_get(RzStrConstPool *pool, const char *str);
 
 #ifdef __cplusplus
 }

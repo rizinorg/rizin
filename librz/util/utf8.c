@@ -786,7 +786,7 @@ RZ_API int *rz_utf_block_list(const ut8 *str, int len, int **freq_list) {
 	return list;
 }
 
-RZ_API RStrEnc rz_utf_bom_encoding(const ut8 *ptr, int ptrlen) {
+RZ_API RzStrEnc rz_utf_bom_encoding(const ut8 *ptr, int ptrlen) {
 	if (ptrlen > 3) {
 		if (ptr[0] == 0xff && ptr[1] == 0xfe && !ptr[2] && !ptr[3]) {
 			return RZ_STRING_ENC_UTF32LE;

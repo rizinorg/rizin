@@ -6,16 +6,16 @@ static void kv_fini(HtPPKv *kv) {
 	free (kv->key);
 }
 
-RZ_API bool rz_str_constpool_init(RStrConstPool *pool) {
+RZ_API bool rz_str_constpool_init(RzStrConstPool *pool) {
 	pool->ht = ht_pp_new (NULL, kv_fini, NULL);
 	return pool->ht != NULL;
 }
 
-RZ_API void rz_str_constpool_fini(RStrConstPool *pool) {
+RZ_API void rz_str_constpool_fini(RzStrConstPool *pool) {
 	ht_pp_free (pool->ht);
 }
 
-RZ_API const char *rz_str_constpool_get(RStrConstPool *pool, const char *str) {
+RZ_API const char *rz_str_constpool_get(RzStrConstPool *pool, const char *str) {
 	if (!str) {
 		return NULL;
 	}

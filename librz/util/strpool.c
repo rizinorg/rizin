@@ -2,8 +2,8 @@
 
 #include <rz_util.h>
 
-RZ_API RStrpool* rz_strpool_new (int sz) {
-	RStrpool *p = RZ_NEW (RStrpool);
+RZ_API RzStrpool* rz_strpool_new (int sz) {
+	RzStrpool *p = RZ_NEW (RzStrpool);
 	if (!p) {
 		eprintf ("Malloc failed!\n");
 		return NULL;
@@ -23,14 +23,14 @@ RZ_API RStrpool* rz_strpool_new (int sz) {
 	return p;
 }
 
-RZ_API char *rz_strpool_empty (RStrpool *p) {
+RZ_API char *rz_strpool_empty (RzStrpool *p) {
 	p->len = 0;
 	p->str[0] = 0;
 	p->str[1] = 0;
 	return p->str;
 }
 
-RZ_API char *rz_strpool_alloc (RStrpool *p, int l) {
+RZ_API char *rz_strpool_alloc (RzStrpool *p, int l) {
 	char *ret = p->str + p->len;
 	if ((p->len + l) >= p->size) {
 		ut64 osize = p->size;
@@ -57,7 +57,7 @@ RZ_API char *rz_strpool_alloc (RStrpool *p, int l) {
 	return ret;
 }
 
-RZ_API int rz_strpool_memcat(RStrpool *p, const char *s, int len) {
+RZ_API int rz_strpool_memcat(RzStrpool *p, const char *s, int len) {
 	char *ptr = rz_strpool_alloc (p, len);
 	if (!ptr) {
 		return -1;
@@ -66,24 +66,24 @@ RZ_API int rz_strpool_memcat(RStrpool *p, const char *s, int len) {
 	return (size_t)(ptr - p->str);
 }
 
-RZ_API int rz_strpool_append(RStrpool *p, const char *s) {
+RZ_API int rz_strpool_append(RzStrpool *p, const char *s) {
 	int l = strlen (s) + 1;
 	return rz_strpool_memcat (p, s, l);
 }
 
-RZ_API int rz_strpool_ansi_chop(RStrpool *p, int n){
+RZ_API int rz_strpool_ansi_chop(RzStrpool *p, int n){
 	/* p->str need not be a c-string */
 	int i = rz_str_ansi_trim (p->str, p->len, n);
 	p->len = i;
 	return i;
 }
 
-RZ_API void rz_strpool_free (RStrpool *p) {
+RZ_API void rz_strpool_free (RzStrpool *p) {
 	free (p->str);
 	free (p);
 }
 
-RZ_API int rz_strpool_fit(RStrpool *p) {
+RZ_API int rz_strpool_fit(RzStrpool *p) {
 	char *s;
 	if (p->len == p->size) {
 		return false;
@@ -100,14 +100,14 @@ RZ_API int rz_strpool_fit(RStrpool *p) {
 	return true;
 }
 
-RZ_API char *rz_strpool_get(RStrpool *p, int index) {
+RZ_API char *rz_strpool_get(RzStrpool *p, int index) {
 	if (!p || !p->str || index < 0 || index >= p->len) {
 		return NULL;
 	}
 	return p->str + index;
 }
 
-RZ_API char *rz_strpool_get_i(RStrpool *p, int index) {
+RZ_API char *rz_strpool_get_i(RzStrpool *p, int index) {
 	int i, n = 0;
 	if (index < 0 || index >= p->len) {
 		return NULL;
@@ -119,12 +119,12 @@ RZ_API char *rz_strpool_get_i(RStrpool *p, int index) {
 	return p->str + n;
 }
 
-RZ_API int rz_strpool_get_index(RStrpool *p, const char *s) {
+RZ_API int rz_strpool_get_index(RzStrpool *p, const char *s) {
 	int ret = (size_t)(s - p->str);
 	return (ret > 0) ? ret : 0;
 }
 
-RZ_API char *rz_strpool_next(RStrpool *p, int index) {
+RZ_API char *rz_strpool_next(RzStrpool *p, int index) {
 	char *ptr = rz_strpool_get (p, index);
 	if (ptr) {
 		char *q = ptr + strlen (ptr) + 1;
@@ -139,7 +139,7 @@ RZ_API char *rz_strpool_next(RStrpool *p, int index) {
 	return ptr;
 }
 
-RZ_API char *rz_strpool_slice (RStrpool *p, int index) {
+RZ_API char *rz_strpool_slice (RzStrpool *p, int index) {
 	int idx, len;
 	char *o, *x = rz_strpool_get_i (p, index + 1);
 	if (!x || !*x) {
@@ -161,7 +161,7 @@ RZ_API char *rz_strpool_slice (RStrpool *p, int index) {
 
 #if TEST
 int main() {
-	RStrpool *p = rz_strpool_new (1024);
+	RzStrpool *p = rz_strpool_new (1024);
 	printf ("%d\n", rz_strpool_append (p, "Hello World"));
 	printf ("%d\n", rz_strpool_append (p, "Patata Barata"));
 	printf ("%s\n", rz_strpool_get (p, 12));

@@ -767,7 +767,7 @@ typedef struct rz_bin_java_obj_t {
 	Sdb *AllJavaBinObjs;
 	ut32 id;
 
-	RStrConstPool constpool;
+	RzStrConstPool constpool;
 } RzBinJavaObj;
 
 RZ_API RzList * U(rz_bin_java_get_interface_names)(RzBinJavaObj * bin);

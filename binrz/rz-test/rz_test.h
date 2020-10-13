@@ -121,7 +121,7 @@ typedef struct rz_test_test_t {
 
 typedef struct rz_test_test_database_t {
 	RzPVector tests;
-	RStrConstPool strpool;
+	RzStrConstPool strpool;
 } RzTestDatabase;
 
 typedef struct rz_test_run_config_t {
@@ -170,7 +170,7 @@ RZ_API RzPVector *rz_test_load_cmd_test_file(const char *file);
 
 RZ_API RzAsmTest *rz_test_asm_test_new(void);
 RZ_API void rz_test_asm_test_free(RzAsmTest *test);
-RZ_API RzPVector *rz_test_load_asm_test_file(RStrConstPool *strpool, const char *file);
+RZ_API RzPVector *rz_test_load_asm_test_file(RzStrConstPool *strpool, const char *file);
 
 RZ_API RzJsonTest *rz_test_json_test_new(void);
 RZ_API void rz_test_json_test_free(RzJsonTest *test);
