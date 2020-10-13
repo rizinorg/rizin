@@ -37,5 +37,3 @@ option('use_webui', type: 'boolean', value: false, description: 'install differe
 
 option('enable_tests', type: 'boolean', value: true, description: 'Build unit tests in test/unit')
 option('enable_rz_test', type: 'boolean', value: true, description: 'Build rz_test executable for regression testing')
-
-option('tree-sitter-sync', type: 'boolean', value: false, description: 'Force a sync of shlr/tree-sitter before building')
