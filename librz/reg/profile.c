@@ -277,6 +277,7 @@ static char *gdb_to_rz_profile(const char *gdb) {
 	// Every line is -
 	// Name Number Rel Offset Size Type Groups
 	const char *ptr = rz_str_trim_head_ro (gdb);
+	const char *ptr = rz_str_trim_head_ro (gdb);
 
 	// It's possible someone includes the heading line too. Skip it
 	if (rz_str_startswith (ptr, "Name")) {
