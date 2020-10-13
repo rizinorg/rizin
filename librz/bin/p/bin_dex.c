@@ -285,7 +285,7 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 		typeidx_bufsize = bin->size - params_off;
 		eprintf ("Warning: truncated typeidx buffer\n");
 	}
-	RStrBuf *sig = rz_strbuf_new ("(");
+	RzStrBuf *sig = rz_strbuf_new ("(");
 	if (typeidx_bufsize > 0) {
 		ut8 *typeidx_buf = malloc (typeidx_bufsize);
 		if (!typeidx_buf || !rz_buf_read_at (bin->b, params_off + 4, typeidx_buf, typeidx_bufsize)) {

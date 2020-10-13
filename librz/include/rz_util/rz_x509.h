@@ -115,7 +115,7 @@ RZ_API RX509Certificate *rz_x509_parse_certificate2(const ut8 *buffer, ut32 leng
 RZ_API void rz_x509_free_certificate(RX509Certificate* certificate);
 RZ_API char *rz_x509_certificate_to_string(RX509Certificate* certificate, const char* pad);
 RZ_API void rz_x509_certificate_json(PJ* pj, RX509Certificate *certificate);
-RZ_API void rz_x509_certificate_dump(RX509Certificate* cert, const char* pad, RStrBuf *sb);
+RZ_API void rz_x509_certificate_dump(RX509Certificate* cert, const char* pad, RzStrBuf *sb);
 
 
 #ifdef __cplusplus

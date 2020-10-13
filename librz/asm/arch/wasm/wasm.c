@@ -474,7 +474,7 @@ RZ_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len) {
 
 // disassemble an instruction from the given buffer.
 RZ_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
-	RStrBuf *sb = rz_strbuf_new ("");
+	RzStrBuf *sb = rz_strbuf_new ("");
 	int id = buf[0];
 	if (id < 0xc0) {
 		op->type = WASM_TYPE_OP_CORE;

@@ -663,7 +663,7 @@ static void xtensa_check_stack_op(xtensa_isa isa, xtensa_opcode opcode, xtensa_f
 	}
 }
 
-static void esil_push_signed_imm(RStrBuf * esil, st32 imm) {
+static void esil_push_signed_imm(RzStrBuf * esil, st32 imm) {
 	if (imm >= 0) {
 		rz_strbuf_appendf (esil, "0x%x" CM, imm);
 	} else {
@@ -677,7 +677,7 @@ static void esil_push_signed_imm(RStrBuf * esil, st32 imm) {
 	}
 }
 
-static void esil_sign_extend(RStrBuf *esil, ut8 bit) {
+static void esil_sign_extend(RzStrBuf *esil, ut8 bit) {
 	// check sign bit, and, if needed, apply or mask
 
 	ut32 bit_mask = 1 << bit;

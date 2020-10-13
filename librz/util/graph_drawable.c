@@ -38,7 +38,7 @@ RZ_API char *rz_graph_drawable_to_dot(RzGraph /*RzGraphNodeInfo*/ *graph, const 
 	RzList *nodes = graph->nodes;
 	RzListIter *it, *itt;
 	RzGraphNode *node = NULL, *target = NULL;
-	RStrBuf buf;
+	RzStrBuf buf;
 	rz_strbuf_init (&buf);
 	rz_strbuf_appendf (&buf,
 		"digraph code {\nrankdir=LR;\noutputorder=edgesfirst\ngraph [bgcolor=azure];\n"

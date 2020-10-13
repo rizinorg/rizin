@@ -30,14 +30,14 @@ bool test_r_rbtree_cont_insert() {
 
 static int strbuf_num_cmp0(void *incoming, void *in, void *user) {
 	ut64 v[2] = {
-		rz_num_get(NULL, rz_strbuf_get((RStrBuf *)incoming)),
-		rz_num_get(NULL, rz_strbuf_get((RStrBuf *)in))
+		rz_num_get(NULL, rz_strbuf_get((RzStrBuf *)incoming)),
+		rz_num_get(NULL, rz_strbuf_get((RzStrBuf *)in))
 	};
 	return (int)(v[0] - v[1]);
 }
 
 static int strbuf_num_cmp1(void *incoming, void *in, void *user) {
-	ut64 v[2] = { ((ut64 *)incoming)[0], rz_num_get(NULL, rz_strbuf_get((RStrBuf *)in)) };
+	ut64 v[2] = { ((ut64 *)incoming)[0], rz_num_get(NULL, rz_strbuf_get((RzStrBuf *)in)) };
 	return (int)(v[0] - v[1]);
 }
 
@@ -50,7 +50,7 @@ bool test_r_rbtree_cont_delete() {
 	rz_rbtree_cont_insert(tree, rz_strbuf_new("0x13373"), strbuf_num_cmp0, NULL);
 	ut64 del_me = 0x9090;
 	rz_rbtree_cont_delete(tree, &del_me, strbuf_num_cmp1, NULL);
-	RStrBuf *s;
+	RzStrBuf *s;
 	RBIter ator;
 	bool ret = true;
 	rz_rbtree_cont_foreach_prev(tree, ator, s) {

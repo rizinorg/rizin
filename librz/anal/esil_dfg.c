@@ -498,9 +498,9 @@ static RzGraphNode *_edf_var_get (RzAnalEsilDFG *dfg, const char *var) {
 static bool edf_consume_2_set_reg(RzAnalEsil *esil);
 static bool edf_consume_2_push_1(RzAnalEsil *esil);
 static bool edf_consume_1_push_1(RzAnalEsil *esil);
-typedef void (*AddConstraintStringUseNewCB) (RStrBuf *result, const char *new_node_str);
+typedef void (*AddConstraintStringUseNewCB) (RzStrBuf *result, const char *new_node_str);
 static bool edf_use_new_push_1(RzAnalEsil *esil, const char *op_string, AddConstraintStringUseNewCB cb);
-typedef void (*AddConstraintStringConsume1UseOldNewCB) (RStrBuf *result, const char *consume_str, const char *old_node_str, const char *new_node_str);
+typedef void (*AddConstraintStringConsume1UseOldNewCB) (RzStrBuf *result, const char *consume_str, const char *old_node_str, const char *new_node_str);
 static bool edf_consume_1_use_old_new_push_1(RzAnalEsil *esil, const char *op_string, AddConstraintStringConsume1UseOldNewCB cb);
 
 static bool edf_eq_weak(RzAnalEsil *esil) {
@@ -516,7 +516,7 @@ static bool edf_eq_weak(RzAnalEsil *esil) {
 	return true;
 }
 
-static void edf_zf_constraint(RStrBuf *result, const char *new_node_str) {
+static void edf_zf_constraint(RzStrBuf *result, const char *new_node_str) {
 	rz_strbuf_appendf (result, ":(%s==0)", new_node_str);
 }
 
@@ -524,7 +524,7 @@ static bool edf_zf(RzAnalEsil *esil) {
 	return edf_use_new_push_1 (esil, "$z", edf_zf_constraint);
 }
 
-static void edf_pf_constraint(RStrBuf *result, const char *new_node_str) {
+static void edf_pf_constraint(RzStrBuf *result, const char *new_node_str) {
 	rz_strbuf_appendf (result, ":parity_of(%s)", new_node_str);
 }
 
@@ -532,7 +532,7 @@ static bool edf_pf(RzAnalEsil *esil) {
 	return edf_use_new_push_1 (esil, "$p", edf_pf_constraint);
 }
 
-static void edf_cf_constraint(RStrBuf *result, const char *consume, const char *o, const char *n) {
+static void edf_cf_constraint(RzStrBuf *result, const char *consume, const char *o, const char *n) {
 	rz_strbuf_appendf (result, ":((%s&mask(%s&0x3f))<(%s&mask(%s&0x3f)))",
 		n, consume, o, consume);
 }
@@ -541,7 +541,7 @@ static bool edf_cf(RzAnalEsil *esil) {
 	return edf_consume_1_use_old_new_push_1 (esil, "$c", edf_cf_constraint);
 }
 
-static void edf_bf_constraint(RStrBuf *result, const char *consume, const char *o, const char *n) {
+static void edf_bf_constraint(RzStrBuf *result, const char *consume, const char *o, const char *n) {
 	rz_strbuf_appendf (result, ":((%s&mask((%s+0x3f)&0x3f))<(%s& mask((%s+0x3f)&0x3f)))",
 		o, consume, n, consume);
 }
@@ -1028,9 +1028,9 @@ static char *condrets_strtok(char *str, const char tok) {
 	return NULL;
 }
 
-static RStrBuf *get_resolved_expr(RzAnalEsilDFGFilter *filter, RzAnalEsilDFGNode *node) {
+static RzStrBuf *get_resolved_expr(RzAnalEsilDFGFilter *filter, RzAnalEsilDFGNode *node) {
 	char *expr = strdup (rz_strbuf_get (node->content));
-	RStrBuf *res = rz_strbuf_new ("");
+	RzStrBuf *res = rz_strbuf_new ("");
 	if (!expr) { //empty expressions. can this happen?
 		return res;
 	}
@@ -1041,7 +1041,7 @@ static RStrBuf *get_resolved_expr(RzAnalEsilDFGFilter *filter, RzAnalEsilDFGNode
 		if (!gn) {
 			rz_strbuf_appendf (res, ",%s,", p);
 		} else {
-			RStrBuf *r = get_resolved_expr (filter, (RzAnalEsilDFGNode *)gn->data);
+			RzStrBuf *r = get_resolved_expr (filter, (RzAnalEsilDFGNode *)gn->data);
 			rz_strbuf_appendf (res, ",%s,", rz_strbuf_get (r));
 			rz_strbuf_free (r);
 		}
@@ -1051,7 +1051,7 @@ static RStrBuf *get_resolved_expr(RzAnalEsilDFGFilter *filter, RzAnalEsilDFGNode
 	return res;
 }
 
-RZ_API RStrBuf *rz_anal_esil_dfg_filter(RzAnalEsilDFG *dfg, const char *reg) {
+RZ_API RzStrBuf *rz_anal_esil_dfg_filter(RzAnalEsilDFG *dfg, const char *reg) {
 	if (!dfg || !reg) {
 		return NULL;
 	}
@@ -1062,7 +1062,7 @@ RZ_API RStrBuf *rz_anal_esil_dfg_filter(RzAnalEsilDFG *dfg, const char *reg) {
 
 	// allocate stuff
 	RzAnalEsilDFGFilter filter = { dfg, rz_rbtree_cont_new (), sdb_new0 () };
-	RStrBuf *filtered = rz_strbuf_new ("");
+	RzStrBuf *filtered = rz_strbuf_new ("");
 	RzGraphVisitor vi = { _dfg_rev_dfs_cb, NULL, NULL, NULL, NULL, &filter };
 
 	// dfs the graph starting at node of esp-register
@@ -1072,7 +1072,7 @@ RZ_API RStrBuf *rz_anal_esil_dfg_filter(RzAnalEsilDFG *dfg, const char *reg) {
 	RzAnalEsilDFGNode *node;
 	rz_rbtree_cont_foreach (filter.tree, ator, node) {
 		// resolve results to opstr here
-		RStrBuf *resolved = get_resolved_expr (&filter, node);
+		RzStrBuf *resolved = get_resolved_expr (&filter, node);
 		rz_strbuf_append (filtered, rz_strbuf_get (resolved));
 		rz_strbuf_free (resolved);
 	}
@@ -1086,7 +1086,7 @@ RZ_API RStrBuf *rz_anal_esil_dfg_filter(RzAnalEsilDFG *dfg, const char *reg) {
 	return filtered;
 }
 
-RZ_API RStrBuf *rz_anal_esil_dfg_filter_expr(RzAnal *anal, const char *expr, const char *reg) {
+RZ_API RzStrBuf *rz_anal_esil_dfg_filter_expr(RzAnal *anal, const char *expr, const char *reg) {
 	if (!reg) {
 		return NULL;
 	}
@@ -1094,7 +1094,7 @@ RZ_API RStrBuf *rz_anal_esil_dfg_filter_expr(RzAnal *anal, const char *expr, con
 	if (!dfg) {
 		return NULL;
 	}
-	RStrBuf *filtered = rz_anal_esil_dfg_filter (dfg, reg);
+	RzStrBuf *filtered = rz_anal_esil_dfg_filter (dfg, reg);
 	rz_anal_esil_dfg_free (dfg);
 	return filtered;
 }

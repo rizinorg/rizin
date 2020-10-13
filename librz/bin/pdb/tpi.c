@@ -1685,7 +1685,7 @@ static void get_array_print_type(void *type, char **name) {
 	if (ti->get_val) {
 		ti->get_val (ti, &size);
 	}
-	RStrBuf buff;
+	RzStrBuf buff;
 	rz_strbuf_init (&buff);
 	if (tmp_name) {
 		rz_strbuf_append (&buff, tmp_name);
@@ -1715,7 +1715,7 @@ static void get_pointer_print_type(void *type, char **name) {
 		ti->get_print_type (ti, &tmp_name);
 	}
 
-	RStrBuf buff;
+	RzStrBuf buff;
 	rz_strbuf_init (&buff);
 	if (tmp_name) {
 		rz_strbuf_append (&buff, tmp_name);
@@ -1747,7 +1747,7 @@ static void get_modifier_print_type(void *type, char **name) {
 	}
 
 	SLF_MODIFIER *modifier = stype_info->type_info;
-	RStrBuf buff;
+	RzStrBuf buff;
 	rz_strbuf_init (&buff);
 	if (modifier->umodifier.bits.const_) {
 		rz_strbuf_append (&buff, "const ");
@@ -1852,7 +1852,7 @@ static void get_enum_print_type(void *type, char **name) {
 		ti->get_print_type (ti, &tmp_name);
 	}
 
-	RStrBuf buff;
+	RzStrBuf buff;
 	rz_strbuf_init (&buff);
 	rz_strbuf_append (&buff, "enum ");
 	if (tmp_name) {

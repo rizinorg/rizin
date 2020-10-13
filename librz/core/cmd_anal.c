@@ -865,7 +865,7 @@ static void __add_vars_sdb(RzCore *core, RzAnalFunction *fcn) {
 	rz_list_join (all_vars, cache.bvars);
 	rz_list_join (all_vars, cache.svars);
 
-	RStrBuf key, value;
+	RzStrBuf key, value;
 	rz_strbuf_init (&key);
 	rz_strbuf_init (&value);
 
@@ -2224,7 +2224,7 @@ static RzList *get_xrefs(RzAnalBlock *block) {
 static char *fcnjoin(RzList *list) {
 	RzAnalFunction *n;
 	RzListIter *iter;
-	RStrBuf buf;
+	RzStrBuf buf;
 	rz_strbuf_init (&buf);
 	rz_list_foreach (list, iter, n) {
 		rz_strbuf_appendf (&buf, " 0x%08" PFMT64x, n->addr);
@@ -2237,7 +2237,7 @@ static char *fcnjoin(RzList *list) {
 static char *ut64join(RzList *list) {
 	ut64 *n;
 	RzListIter *iter;
-	RStrBuf buf;
+	RzStrBuf buf;
 	rz_strbuf_init (&buf);
 	rz_list_foreach (list, iter, n) {
 		rz_strbuf_appendf (&buf, " 0x%08" PFMT64x, *n);
@@ -3869,7 +3869,7 @@ static int cmd_anal_fcn(RzCore *core, const char *input) {
 		}
 		case 'r': {	// "afcr"
 			int i;
-			RStrBuf *json_buf = rz_strbuf_new ("{");
+			RzStrBuf *json_buf = rz_strbuf_new ("{");
 			bool json = input[3] == 'j';
 
 			char *cmd = rz_str_newf ("cc.%s.ret", fcn->cc);
@@ -6834,7 +6834,7 @@ static void cmd_anal_opcode(RzCore *core, const char *input) {
 			if (ret > 0) {
 				const char *arg = input + 2;
 				const char *expr = RZ_STRBUF_SAFEGET (&aop.esil);
-				RStrBuf *b = rz_anal_esil_dfg_filter_expr (core->anal, expr, arg);
+				RzStrBuf *b = rz_anal_esil_dfg_filter_expr (core->anal, expr, arg);
 				if (b) {
 					char *s = rz_strbuf_drain (b);
 					rz_cons_printf ("%s\n", s);
@@ -10413,7 +10413,7 @@ static void cmd_anal_classes(RzCore *core, const char *input) {
 	}
 }
 
-static void show_reg_args(RzCore *core, int nargs, RStrBuf *sb) {
+static void show_reg_args(RzCore *core, int nargs, RzStrBuf *sb) {
 	int i;
 	char regname[8];
 	if (nargs < 0) {
@@ -10450,7 +10450,7 @@ static void cmd_anal_aC(RzCore *core, const char *input) {
 		eprintf ("Usage: aC[e] [addr-of-call] # analyze call args (aCe does esil emulation with abte)\n");
 		return;
 	}
-	RStrBuf *sb = rz_strbuf_new ("");
+	RzStrBuf *sb = rz_strbuf_new ("");
 	ut64 pcv = rz_num_math (core->num, iarg);
 	if (input[0] == 'e') { // "aCe"
 		is_aCer = (input[1] == '*');

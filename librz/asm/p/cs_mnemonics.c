@@ -8,7 +8,7 @@ static char *mnemonics(RzAsm *a, int id, bool json) {
 		}
 		return name? strdup (name): NULL;
 	}
-	RStrBuf *buf = rz_strbuf_new ("");
+	RzStrBuf *buf = rz_strbuf_new ("");
 	if (json) {
 		rz_strbuf_append (buf, "[");
 	}

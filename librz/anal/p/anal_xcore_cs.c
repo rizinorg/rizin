@@ -12,7 +12,7 @@
 #define esilprintf(op, fmt, ...) rz_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)
 #define INSOP(n) insn->detail->xcore.operands[n]
 
-static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
+static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	rz_strbuf_init (buf);
 	rz_strbuf_append (buf, "{");

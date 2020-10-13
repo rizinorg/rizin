@@ -853,7 +853,7 @@ static bool lastMatters(void) {
 }
 
 RZ_API void rz_cons_echo(const char *msg) {
-	static RStrBuf *echodata = NULL; // TODO: move into RzConsInstance? maybe nope
+	static RzStrBuf *echodata = NULL; // TODO: move into RzConsInstance? maybe nope
 	if (msg) {
 		if (echodata) {
 			rz_strbuf_append (echodata, msg);

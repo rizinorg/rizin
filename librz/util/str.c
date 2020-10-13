@@ -1634,7 +1634,7 @@ RZ_API char *rz_str_escape_utf8_for_json(const char *buf, int buf_size) {
 // http://daviddeley.com/autohotkey/parameters/parameters.htm#WINCRULES
 // https://docs.microsoft.com/en-us/cpp/cpp/main-function-command-line-args?redirectedfrom=MSDN&view=vs-2019#parsing-c-command-line-arguments
 RZ_API char *rz_str_format_msvc_argv(size_t argc, const char **argv) {
-	RStrBuf sb;
+	RzStrBuf sb;
 	rz_strbuf_init (&sb);
 
 	size_t i;
@@ -3021,7 +3021,7 @@ RZ_API char *rz_str_repeat(const char *ch, int sz) {
 	if (sz == 0) {
 		return strdup ("");
 	}
-	RStrBuf *buf = rz_strbuf_new (ch);
+	RzStrBuf *buf = rz_strbuf_new (ch);
 	for (i = 1; i < sz; i++) {
 		rz_strbuf_append (buf, ch);
 	}
@@ -3443,7 +3443,7 @@ RZ_API void rz_str_stripLine(char *str, const char *key) {
 }
 
 RZ_API char *rz_str_list_join(RzList *str, const char *sep) {
-	RStrBuf *sb = rz_strbuf_new ("");
+	RzStrBuf *sb = rz_strbuf_new ("");
 	const char *p;
 	while ((p = rz_list_pop_head (str))) {
 		if (rz_strbuf_length (sb) != 0) {
@@ -3455,7 +3455,7 @@ RZ_API char *rz_str_list_join(RzList *str, const char *sep) {
 }
 
 RZ_API char *rz_str_array_join(const char **a, size_t n, const char *sep) {
-	RStrBuf *sb = rz_strbuf_new ("");
+	RzStrBuf *sb = rz_strbuf_new ("");
 	size_t i;
 
 	if (n > 0) {

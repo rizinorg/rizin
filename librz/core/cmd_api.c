@@ -450,17 +450,17 @@ static size_t strlen0(const char *s) {
 	return s? strlen (s): 0;
 }
 
-static size_t strbuf_append_calc(RStrBuf *sb, const char *s) {
+static size_t strbuf_append_calc(RzStrBuf *sb, const char *s) {
 	rz_strbuf_append (sb, s);
 	return strlen (s);
 }
 
-static size_t fill_children_chars(RStrBuf *sb, RzCmdDesc *cd) {
+static size_t fill_children_chars(RzStrBuf *sb, RzCmdDesc *cd) {
 	if (cd->help->options) {
 		return strbuf_append_calc (sb, cd->help->options);
 	}
 
-	RStrBuf csb;
+	RzStrBuf csb;
 	rz_strbuf_init (&csb);
 
 	void **it;
@@ -502,7 +502,7 @@ static bool show_children_shortcut(RzCmdDesc *cd) {
 	return cd->n_children || cd->help->options || cd->type == RZ_CMD_DESC_TYPE_OLDINPUT;
 }
 
-static void fill_wrapped_comment(RzCmd *cmd, RStrBuf *sb, const char *comment, size_t columns) {
+static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, size_t columns) {
 	int rows, cols;
 	bool is_interactive = false;
 	if (cmd->has_cons) {
@@ -531,7 +531,7 @@ static void fill_wrapped_comment(RzCmd *cmd, RStrBuf *sb, const char *comment, s
 	}
 }
 
-static void fill_usage_strbuf(RzCmd *cmd, RStrBuf *sb, RzCmdDesc *cd, bool use_color) {
+static void fill_usage_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_color) {
 	const char *pal_label_color = "",
 		*pal_args_color = "",
 		*pal_input_color = "",
@@ -581,7 +581,7 @@ static size_t calc_padding_len(RzCmdDesc *cd) {
 	size_t args_len = 0;
 	size_t children_length = 0;
 	if (show_children_shortcut (cd)) {
-		RStrBuf sb;
+		RzStrBuf sb;
 		rz_strbuf_init (&sb);
 		fill_children_chars (&sb, cd);
 		children_length += rz_strbuf_length (&sb);
@@ -599,7 +599,7 @@ static void update_minmax_len(RzCmdDesc *cd, size_t *max_len, size_t *min_len) {
 	*min_len = val < *min_len? val: *min_len;
 }
 
-static void print_child_help(RzCmd *cmd, RStrBuf *sb, RzCmdDesc *cd, size_t max_len, bool use_color) {
+static void print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, size_t max_len, bool use_color) {
 	size_t str_len = calc_padding_len (cd);
 	size_t padding = str_len < max_len? max_len - str_len: 0;
 	const char *cd_summary = cd->help->summary? cd->help->summary: "";
@@ -639,7 +639,7 @@ static void print_child_help(RzCmd *cmd, RStrBuf *sb, RzCmdDesc *cd, size_t max_
 }
 
 static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
-	RStrBuf *sb = rz_strbuf_new (NULL);
+	RzStrBuf *sb = rz_strbuf_new (NULL);
 	fill_usage_strbuf (cmd, sb, cd, use_color);
 
 	void **it_cd;
@@ -660,7 +660,7 @@ static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 	return rz_strbuf_drain (sb);
 }
 
-static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RStrBuf *sb, bool use_color) {
+static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color) {
 	if (!cd->help->details) {
 		return;
 	}
@@ -720,7 +720,7 @@ static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RStrBuf *sb, bool use_color)
 }
 
 static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, size_t detail, bool use_color) {
-	RStrBuf *sb = rz_strbuf_new (NULL);
+	RzStrBuf *sb = rz_strbuf_new (NULL);
 
 	fill_usage_strbuf (cmd, sb, cd, use_color);
 
@@ -1356,7 +1356,7 @@ RZ_API bool rz_cmd_parsed_args_setcmd(RzCmdParsedArgs *a, const char *cmd) {
 	return true;
 }
 
-static void parsed_args_iterateargs(RzCmdParsedArgs *a, RStrBuf *sb) {
+static void parsed_args_iterateargs(RzCmdParsedArgs *a, RzStrBuf *sb) {
 	int i;
 	for (i = 1; i < a->argc; i++) {
 		if (i > 1) {
@@ -1368,14 +1368,14 @@ static void parsed_args_iterateargs(RzCmdParsedArgs *a, RStrBuf *sb) {
 
 RZ_API char *rz_cmd_parsed_args_argstr(RzCmdParsedArgs *a) {
 	rz_return_val_if_fail (a && a->argv && a->argv[0], NULL);
-	RStrBuf *sb = rz_strbuf_new ("");
+	RzStrBuf *sb = rz_strbuf_new ("");
 	parsed_args_iterateargs (a, sb);
 	return rz_strbuf_drain (sb);
 }
 
 RZ_API char *rz_cmd_parsed_args_execstr(RzCmdParsedArgs *a) {
 	rz_return_val_if_fail (a && a->argv && a->argv[0], NULL);
-	RStrBuf *sb = rz_strbuf_new (a->argv[0]);
+	RzStrBuf *sb = rz_strbuf_new (a->argv[0]);
 	if (a->argc > 1 && a->has_space_after_cmd) {
 		rz_strbuf_append (sb, " ");
 	}

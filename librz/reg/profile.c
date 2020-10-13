@@ -265,7 +265,7 @@ RZ_API bool rz_reg_set_profile(RzReg *reg, const char *profile) {
 
 static char *gdb_to_rz_profile(const char *gdb) {
 	rz_return_val_if_fail (gdb, NULL);
-	RStrBuf *sb = rz_strbuf_new ("");
+	RzStrBuf *sb = rz_strbuf_new ("");
 	if (!sb) {
 		return NULL;
 	}

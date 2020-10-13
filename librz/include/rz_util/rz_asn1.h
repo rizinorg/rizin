@@ -99,7 +99,7 @@ RZ_API RASN1String *rz_asn1_stringify_oid (const ut8* buffer, ut32 length);
 
 RZ_API void rz_asn1_free_object (RASN1Object *object);
 // RZ_API void rz_asn1_print_object (RASN1Object *object, ut32 depth);
-RZ_API char *rz_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb);
+RZ_API char *rz_asn1_to_string (RASN1Object *object, ut32 depth, RzStrBuf *sb);
 RZ_API void rz_asn1_free_string (RASN1String *string);
 RZ_API void rz_asn1_free_binary (RASN1Binary *string);
 RZ_API void asn1_setformat (int fmt);

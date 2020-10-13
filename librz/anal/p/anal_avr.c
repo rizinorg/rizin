@@ -234,8 +234,8 @@ static CPU_CONST *const_by_value(CPU_MODEL *cpu, int type, ut32 v) {
 	return NULL;
 }
 
-static RStrBuf *__generic_io_dest(ut8 port, int write, CPU_MODEL *cpu) {
-	RStrBuf *r = rz_strbuf_new ("");
+static RzStrBuf *__generic_io_dest(ut8 port, int write, CPU_MODEL *cpu) {
+	RzStrBuf *r = rz_strbuf_new ("");
 	CPU_CONST *c = const_by_value (cpu, CPU_CONST_REG, port);
 	if (c != NULL) {
 		rz_strbuf_set (r, c->key);
@@ -492,7 +492,7 @@ INST_HANDLER (cbi) {	// CBI A, b
 	}
 	int a = (buf[0] >> 3) & 0x1f;
 	int b = buf[0] & 0x07;
-	RStrBuf *io_port;
+	RzStrBuf *io_port;
 
 	op->family = RZ_ANAL_OP_FAMILY_IO;
 	op->type2 = 1;
@@ -741,7 +741,7 @@ INST_HANDLER (in) {	// IN Rd, A
 	}
 	int r = ((buf[0] >> 4) & 0x0f) | ((buf[1] & 0x01) << 4);
 	int a = (buf[0] & 0x0f) | ((buf[1] & 0x6) << 3);
-	RStrBuf *io_src = __generic_io_dest (a, 0, cpu);
+	RzStrBuf *io_src = __generic_io_dest (a, 0, cpu);
 	op->type2 = 0;
 	op->val = a;
 	op->family = RZ_ANAL_OP_FAMILY_IO;
@@ -1089,7 +1089,7 @@ INST_HANDLER (out) {	// OUT A, Rr
 	}
 	int r = ((buf[0] >> 4) & 0x0f) | ((buf[1] & 0x01) << 4);
 	int a = (buf[0] & 0x0f) | ((buf[1] & 0x6) << 3);
-	RStrBuf *io_dst = __generic_io_dest (a, 1, cpu);
+	RzStrBuf *io_dst = __generic_io_dest (a, 1, cpu);
 	op->type2 = 1;
 	op->val = a;
 	op->family = RZ_ANAL_OP_FAMILY_IO;
@@ -1267,7 +1267,7 @@ INST_HANDLER (sbi) {	// SBI A, b
 	}
 	int a = (buf[0] >> 3) & 0x1f;
 	int b = buf[0] & 0x07;
-	RStrBuf *io_port;
+	RzStrBuf *io_port;
 
 	op->type2 = 1;
 	op->val = a;
@@ -1292,7 +1292,7 @@ INST_HANDLER (sbix) {	// SBIC A, b
 	int a = (buf[0] >> 3) & 0x1f;
 	int b = buf[0] & 0x07;
 	RzAnalOp next_op = { 0 };
-	RStrBuf *io_port;
+	RzStrBuf *io_port;
 
 	op->type2 = 0;
 	op->val = a;

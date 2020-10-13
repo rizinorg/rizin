@@ -514,7 +514,7 @@ RZ_API void rz_type_del(Sdb *TDB, const char *name) {
 		sdb_unset (TDB, name, 0);
 		rz_list_free (list);
 	} else if (!strcmp (kind, "typedef")) {
-		RStrBuf buf;
+		RzStrBuf buf;
 		rz_strbuf_init (&buf);
 		rz_strbuf_setf (&buf, "typedef.%s", name);
 		sdb_unset (TDB, rz_strbuf_get (&buf), 0);

@@ -290,7 +290,7 @@ static int parse(RzParse *p, const char *data, char *str) {
 }
 
 static void parse_localvar (RzParse *p, char *newstr, size_t newstr_len, const char *var, const char *reg, char sign, char *ireg, bool att) {
-	RStrBuf *sb = rz_strbuf_new ("");
+	RzStrBuf *sb = rz_strbuf_new ("");
 	if (att) {
 		if (p->localvar_only) {
 			if (ireg) {
@@ -317,7 +317,7 @@ static void parse_localvar (RzParse *p, char *newstr, size_t newstr_len, const c
 }
 
 static inline void mk_reg_str(const char *regname, int delta, bool sign, bool att, char *ireg, char *dest, int len) {
-	RStrBuf *sb = rz_strbuf_new ("");
+	RzStrBuf *sb = rz_strbuf_new ("");
 	if (att) {
 		if (ireg) {
 			rz_strbuf_setf (sb, ", %%%s", ireg);

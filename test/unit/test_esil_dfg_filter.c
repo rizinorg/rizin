@@ -21,7 +21,7 @@ bool test_filter_regs(void) {
 	RzAnalEsilDFG *dfg = rz_anal_esil_dfg_expr (anal, NULL, "0x9090,ax,:=,0xff,ah,:=");
 
 	// filter for ax register
-	RStrBuf *filtered_expr = rz_anal_esil_dfg_filter (dfg, "ax");
+	RzStrBuf *filtered_expr = rz_anal_esil_dfg_filter (dfg, "ax");
 	rz_anal_esil_parse (esil, rz_strbuf_get (filtered_expr));
 	const ut64 filtered_ax = rz_reg_getv (anal->reg, "ax");
 	rz_strbuf_free (filtered_expr);

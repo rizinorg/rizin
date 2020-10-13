@@ -801,7 +801,7 @@ static int simple_type_to_format (const SLF_SIMPLE_TYPE *simple_type, char **mem
  * @param names buffer for the member names
  * @return int -1 if it can't build the format
  */
-static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *names) {
+static int build_member_format(STypeInfo *type_info, RzStrBuf *format, RzStrBuf *names) {
 	rz_return_val_if_fail (type_info && format && names && type_info->type_info, -1);
 	// THOUGHT: instead of not doing anything for unknown types I can just skip the bytes
 	// format is 2 chars tops + null terminator
@@ -1250,9 +1250,9 @@ static void print_types_format(const RPdb *pdb, const RzList *types) {
 			type_info->get_members (type_info, &members);
 		}
 		// pf.name <format chars> <member names>
-		RStrBuf format;
+		RzStrBuf format;
 		rz_strbuf_init (&format);
-		RStrBuf member_names;
+		RzStrBuf member_names;
 		rz_strbuf_init (&member_names);
 
 		if (type_info->leaf_type == eLF_UNION) {

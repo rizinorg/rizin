@@ -66,8 +66,8 @@ typedef struct rz_asm_op_t {
 	int bitsize; // instruction size in bits (or 0 if fits in 8bit bytes) // wtf why dupe this field? :D
 	int payload; // size of payload (opsize = (size-payload))
 	// But this is pretty slow..so maybe we should add some accessors
-	RStrBuf buf;
-	RStrBuf buf_asm;
+	RzStrBuf buf;
+	RzStrBuf buf_asm;
 	RBuffer *buf_inc; // must die
 } RzAsmOp;
 

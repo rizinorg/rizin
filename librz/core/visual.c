@@ -540,7 +540,7 @@ RZ_API void rz_core_visual_jump(RzCore *core, ut8 ch) {
 	}
 }
 
-RZ_API void rz_core_visual_append_help(RStrBuf *p, const char *title, const char **help) {
+RZ_API void rz_core_visual_append_help(RzStrBuf *p, const char *title, const char **help) {
 	int i, max_length = 0, padding = 0;
 	RzConsContext *cons_ctx = rz_cons_singleton ()->context;
 	const char *pal_args_color = cons_ctx->color_mode ? cons_ctx->pal.args : "",
@@ -562,7 +562,7 @@ RZ_API void rz_core_visual_append_help(RStrBuf *p, const char *title, const char
 
 static int visual_help(RzCore *core) {
 	int ret = 0;
-	RStrBuf *p, *q;
+	RzStrBuf *p, *q;
 repeat:
 	p = rz_strbuf_new (NULL);
 	q = rz_strbuf_new (NULL);

@@ -603,7 +603,7 @@ RZ_API RzList *rz_list_uniq(const RzList *list, RzListComparator cmp) {
 }
 RZ_API char *rz_list_to_str(RzList *list, char ch) {
 	RzListIter *iter;
-	RStrBuf *buf = rz_strbuf_new ("");
+	RzStrBuf *buf = rz_strbuf_new ("");
 	if (!buf) {
 		return NULL;
 	}

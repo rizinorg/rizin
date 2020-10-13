@@ -15,7 +15,7 @@
 #include "../arch/vax/vax.h"
 
 static unsigned long Offset = 0;
-static RStrBuf *buf_global = NULL;
+static RzStrBuf *buf_global = NULL;
 static const ut8 *bytes = NULL;
 static int bytes_size = 0;
 

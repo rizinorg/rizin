@@ -121,7 +121,7 @@ static inline void es_add_ck(RzAnalOp *op, const char *a1, const char *a2, const
 			ARG(1), REG(0));\
 	}
 
-static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
+static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	rz_strbuf_init (buf);
 	rz_strbuf_append (buf, "{");

@@ -393,7 +393,7 @@ bool _round_1_cb (void *user, void *data, ut32 id) {
 void _round_2_cb (RzGraphNode *n, RzGraphVisitor *vi) {
 	RzAnalEsilBB *bb = (RzAnalEsilBB *)n->data;
 	EsilCfgGen *gen = (EsilCfgGen *)vi->data;
-	RStrBuf *buf = rz_strbuf_new ((char *)rz_id_storage_get (gen->atoms, bb->first.idx));
+	RzStrBuf *buf = rz_strbuf_new ((char *)rz_id_storage_get (gen->atoms, bb->first.idx));
 	rz_strbuf_append (buf, ",");
 	ut32 id;
 	for (id = bb->first.idx + 1; id <= bb->last.idx; id++) {
@@ -409,7 +409,7 @@ void _round_2_cb (RzGraphNode *n, RzGraphVisitor *vi) {
 // concatinates to already existing graph.
 // Also expects RIDStorage atoms and RContRBTree to be allocate in prior of the call
 static RzAnalEsilCFG *esil_cfg_gen(RzAnalEsilCFG *cfg, RzAnal *anal, RIDStorage *atoms, RContRBTree *blocks, RStack *stack, ut64 off, char *expr) {
-	// consider expr as RStrBuf, so that we can sanitze broken esil
+	// consider expr as RzStrBuf, so that we can sanitze broken esil
 	// (ex: "b,a,+=,$z,zf,:=,7,$c,cf,:=,zf,?{,1,b,+=,cf,?{,3,a,-=" =>
 	// 	"b,a,+=,$z,zf,:=,7,$c,cf,:=,zf,?{,1,b,+=,cf,?{,3,a,-=,},}")
 
@@ -484,7 +484,7 @@ static RzAnalEsilCFG *esil_cfg_gen(RzAnalEsilCFG *cfg, RzAnal *anal, RIDStorage 
 
 	// next do dfs:
 	//  - remove each node from blocks-tree, that can be reached by a dfs path
-	//  - when removing a node from block-tree, synthesize node->bb->expr with RStrBuf
+	//  - when removing a node from block-tree, synthesize node->bb->expr with RzStrBuf
 	{
 		// dfs walk removes used atoms
 		RzGraphVisitor vi = { _round_2_cb, NULL, NULL, NULL, NULL, &gen };
@@ -580,7 +580,7 @@ RZ_API RzAnalEsilCFG *rz_anal_esil_cfg_op(RzAnalEsilCFG *cfg, RzAnal *anal, RzAn
 		eprintf ("Couldn't allocate glue_bb\n");
 		return NULL;
 	}
-	RStrBuf *glue = rz_strbuf_new ("");
+	RzStrBuf *glue = rz_strbuf_new ("");
 	if (!glue) {
 		free (glue_bb);
 		eprintf ("Couldn't allocate glue\n");
@@ -639,7 +639,7 @@ static void merge_2_blocks(RzAnalEsilCFG *cfg, RzGraphNode *node, RzGraphNode *b
 	} else {
 		node_bb->enter = RZ_ANAL_ESIL_BLOCK_ENTER_NORMAL;
 	}
-	RStrBuf *buf = rz_strbuf_new (block_bb->expr);
+	RzStrBuf *buf = rz_strbuf_new (block_bb->expr);
 	node_bb->first = block_bb->first;
 	rz_graph_del_node (cfg->g, block);
 	rz_strbuf_appendf (buf, "\n%s", node_bb->expr);

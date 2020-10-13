@@ -105,7 +105,7 @@ RZ_API char *rz_anal_data_to_string(RzAnalData *d, RzConsPrintablePalette *pal) 
 		return NULL;
 	}
 
-	RStrBuf *sb = rz_strbuf_new (NULL);
+	RzStrBuf *sb = rz_strbuf_new (NULL);
 	if (!sb || !rz_strbuf_reserve (sb, mallocsz)) {
 		eprintf ("Cannot allocate %d byte(s)\n", mallocsz);
 		return NULL;

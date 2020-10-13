@@ -474,7 +474,7 @@ static bool test_rz_str_wrap(void) {
 	size_t i;
 	RzListIter *it;
 	const char *ts;
-	RStrBuf sb;
+	RzStrBuf sb;
 	rz_strbuf_init (&sb);
 
 	char s1[] = "This is a very long string we would like to wrap at around X characters. It should not split words.";

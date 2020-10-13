@@ -44,7 +44,7 @@ RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen) {
 	if (!ptr) {
 		return NULL;
 	}
-	RStrBuf *res = rz_strbuf_new ("");
+	RzStrBuf *res = rz_strbuf_new ("");
 	if (!res) {
 		return NULL;
 	}

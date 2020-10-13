@@ -32,7 +32,7 @@ static const char* s_wire(const ut8 byte) {
 	}
 }
 
-static void pad(RStrBuf *sb, ut32 count) {
+static void pad(RzStrBuf *sb, ut32 count) {
 	ut32 i;
 	for (i = 0; i < count; i++) {
 		rz_strbuf_appendf (sb, "    ");
@@ -50,7 +50,7 @@ static bool is_string(const ut8* start, const ut8* end) {
 	return true;
 }
 
-static void decode_array(RStrBuf *sb, const ut8* start, const ut8* end) {
+static void decode_array(RzStrBuf *sb, const ut8* start, const ut8* end) {
 	while (start < end) {
 		rz_strbuf_appendf (sb, "%02x ", *start);
 		start++;
@@ -58,7 +58,7 @@ static void decode_array(RStrBuf *sb, const ut8* start, const ut8* end) {
 	rz_strbuf_appendf (sb, "\n");
 }
 
-static void decode_buffer(RStrBuf *sb, const ut8* start, const ut8* end, ut32 padcnt, bool debug) {
+static void decode_buffer(RzStrBuf *sb, const ut8* start, const ut8* end, ut32 padcnt, bool debug) {
 	size_t bytes_read = 0;
 	ut32 var32 = 0;
 	ut64 var64 = 0;
@@ -156,7 +156,7 @@ RZ_API char *rz_protobuf_decode(const ut8* start, const ut64 size, bool debug) {
 		return NULL;
 	}
 	const ut8* end = start + size;
-	RStrBuf *sb = rz_strbuf_new ("");
+	RzStrBuf *sb = rz_strbuf_new ("");
 	decode_buffer (sb, start, end, 0u, debug);
 	return rz_strbuf_drain (sb);
 }

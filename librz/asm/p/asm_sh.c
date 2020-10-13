@@ -10,7 +10,7 @@
 #include "disas-asm.h"
 
 static unsigned long Offset = 0;
-static RStrBuf *buf_global = NULL;
+static RzStrBuf *buf_global = NULL;
 static unsigned char bytes[4];
 
 static int sh_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {

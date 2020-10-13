@@ -17,7 +17,7 @@ int ARCompact_decodeInstr (bfd_vma address, disassemble_info * info);
 
 /* ugly globals */
 static ut32 Offset = 0;
-static RStrBuf *buf_global = NULL;
+static RzStrBuf *buf_global = NULL;
 static int buf_len = 0;
 static ut8 bytes[32] = {0};
 

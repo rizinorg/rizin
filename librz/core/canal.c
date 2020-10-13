@@ -5953,7 +5953,7 @@ RZ_API void rz_core_anal_esil_graph(RzCore *core, const char *expr) {
 	RzAnalEsilDFG * edf = rz_anal_esil_dfg_expr(core->anal, NULL, expr);
 	RzListIter *iter, *ator;
 	RzGraphNode *node, *edon;
-	RStrBuf *buf = rz_strbuf_new ("");
+	RzStrBuf *buf = rz_strbuf_new ("");
 	rz_cons_printf ("ag-\n");
 	rz_list_foreach (rz_graph_get_nodes (edf->flow), iter, node) {
 		const RzAnalEsilDFGNode *enode = (RzAnalEsilDFGNode *)node->data;

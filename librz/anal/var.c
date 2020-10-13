@@ -529,7 +529,7 @@ RZ_API char *rz_anal_var_get_constraints_readable(RzAnalVar *var) {
 		return NULL;
 	}
 	bool low = false, high = false;
-	RStrBuf sb;
+	RzStrBuf sb;
 	rz_strbuf_init (&sb);
 	size_t i;
 	for (i = 0; i < n; i += 1) {
@@ -1393,7 +1393,7 @@ RZ_API char *rz_anal_fcn_format_sig(RZ_NONNULL RzAnal *anal, RZ_NONNULL RzAnalFu
 		}
 	}
 
-	RStrBuf *buf = rz_strbuf_new (NULL);
+	RzStrBuf *buf = rz_strbuf_new (NULL);
 	if (!buf) {
 		return NULL;
 	}

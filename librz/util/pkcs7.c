@@ -7,7 +7,7 @@
 
 extern void rz_x509_name_json (PJ *pj, RX509Name *name);
 extern void rz_x509_free_crl (RX509CertificateRevocationList *crl);
-extern void rz_x509_crlentry_dump (RX509CRLEntry *crle, const char *pad, RStrBuf *sb);
+extern void rz_x509_crlentry_dump (RX509CRLEntry *crle, const char *pad, RzStrBuf *sb);
 static bool rz_pkcs7_parse_attributes(RPKCS7Attributes *attribute, RASN1Object *object);
 
 static bool rz_pkcs7_parse_contentinfo(RPKCS7ContentInfo *ci, RASN1Object *object) {
@@ -387,7 +387,7 @@ static bool rz_pkcs7_parse_attributes(RPKCS7Attributes *attributes, RASN1Object 
 
 #if 0
 // XXX: unused
-static void rz_pkcs7_signerinfos_dump(RX509CertificateRevocationList *crl, const char* pad, RStrBuf *sb) {
+static void rz_pkcs7_signerinfos_dump(RX509CertificateRevocationList *crl, const char* pad, RzStrBuf *sb) {
 	RASN1String *algo = NULL, *last = NULL, *next = NULL;
 	ut32 i;
 	char *pad2, *pad3;
@@ -416,7 +416,7 @@ static void rz_pkcs7_signerinfos_dump(RX509CertificateRevocationList *crl, const
 }
 #endif
 
-static void rz_x509_signedinfo_dump(RPKCS7SignerInfo *si, const char *pad, RStrBuf *sb) {
+static void rz_x509_signedinfo_dump(RPKCS7SignerInfo *si, const char *pad, RzStrBuf *sb) {
 	RASN1String *s = NULL;
 	RASN1Binary *o = NULL;
 	ut32 i;
@@ -480,7 +480,7 @@ RZ_API char *rz_pkcs7_cms_to_string(RCMS *container) {
 		return NULL;
 	}
 	RPKCS7SignedData *sd = &container->signedData;
-	RStrBuf *sb = rz_strbuf_new ("");
+	RzStrBuf *sb = rz_strbuf_new ("");
 	rz_strbuf_appendf (sb, "signedData\n  Version: v%u\n  Digest Algorithms:\n", sd->version);
 
 	if (container->signedData.digestAlgorithms.elements) {

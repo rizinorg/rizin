@@ -7,7 +7,7 @@
 
 RZ_API void rz_anal_cc_del(RzAnal *anal, const char *name) {
 	size_t i;
-	RStrBuf sb;
+	RzStrBuf sb;
 	sdb_unset (DB, rz_strbuf_initf (&sb, "%s", name), 0);
 	sdb_unset (DB, rz_strbuf_setf (&sb, "cc.%s.ret", name), 0);
 	sdb_unset (DB, rz_strbuf_setf (&sb, "cc.%s.argn", name), 0);
@@ -80,7 +80,7 @@ RZ_API char *rz_anal_cc_get(RzAnal *anal, const char *name) {
 		eprintf ("Cannot find return key\n");
 		return NULL;
 	}
-	RStrBuf *sb = rz_strbuf_new (NULL);
+	RzStrBuf *sb = rz_strbuf_new (NULL);
 	const char *self = rz_anal_cc_self (anal, name);
 	rz_strbuf_appendf (sb, "%s %s%s%s (", ret, self? self: "", self? ".": "", name);
 	bool isFirst = true;
@@ -141,7 +141,7 @@ RZ_API void rz_anal_cc_set_self(RzAnal *anal, const char *convention, const char
 	if (!rz_anal_cc_exist (anal, convention)) {
 		return;
 	}
-	RStrBuf sb;
+	RzStrBuf sb;
 	sdb_set (anal->sdb_cc, rz_strbuf_initf (&sb, "cc.%s.self", convention), self, 0);
 	rz_strbuf_fini (&sb);
 }
@@ -157,7 +157,7 @@ RZ_API void rz_anal_cc_set_error(RzAnal *anal, const char *convention, const cha
 	if (!rz_anal_cc_exist (anal, convention)) {
 		return;
 	}
-	RStrBuf sb;
+	RzStrBuf sb;
 	sdb_set (anal->sdb_cc, rz_strbuf_initf (&sb, "cc.%s.error", convention), error, 0);
 	rz_strbuf_fini (&sb);
 }

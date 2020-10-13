@@ -15,7 +15,7 @@ int mips_assemble(const char *str, ut64 pc, ut8 *out);
 
 static int mips_mode = 0;
 static unsigned long Offset = 0;
-static RStrBuf *buf_global = NULL;
+static RzStrBuf *buf_global = NULL;
 static unsigned char bytes[4];
 static char *pre_cpu = NULL;
 static char *pre_features = NULL;

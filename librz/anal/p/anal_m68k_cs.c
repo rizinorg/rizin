@@ -59,7 +59,7 @@ static inline void handle_jump_instruction(RzAnalOp *op, ut64 addr, cs_m68k *m68
 	op->fail = make_64bits_address (addr + op->size);
 }
 
-static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
+static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	rz_strbuf_init (buf);
 	rz_strbuf_append (buf, "{");
