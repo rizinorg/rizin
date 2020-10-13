@@ -1171,7 +1171,7 @@ typedef struct {
 } RPanelsSnow;
 
 typedef struct {
-	RStrBuf *data;
+	RzStrBuf *data;
 	RPanelPos pos;
 	int idx;
 	int offset;

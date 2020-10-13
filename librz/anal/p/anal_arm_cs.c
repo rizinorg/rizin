@@ -225,7 +225,7 @@ static const char *cc_name(arm_cc cc) {
 	}
 }
 
-static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
+static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	rz_strbuf_init (buf);
 	rz_strbuf_append (buf, "{");
@@ -507,7 +507,7 @@ static const char *vess_name(arm64_vess vess) {
 }
 #endif
 
-static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
+static void opex64(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	rz_strbuf_init (buf);
 	rz_strbuf_append (buf, "{");
@@ -873,7 +873,7 @@ static const char *arg(RzAnal *a, csh *handle, cs_insn *insn, char *buf, int n) 
 #define SHIFTED_REG64_APPEND(sb, n) shifted_reg64_append(sb, handle, insn, n)
 
 // do the sign extension here as well, but honestly this whole thing should maybe be redesigned
-static void shifted_reg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n) {
+static void shifted_reg64_append(RzStrBuf *sb, csh *handle, cs_insn *insn, int n) {
 	int signext = EXT64(n);
 	const char *rn;
 

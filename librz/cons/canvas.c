@@ -66,7 +66,7 @@ static const char *set_attr(RzConsCanvas *c, const char *s) {
 
 	const int slen = p - s;
 	if (slen > 0) {
-		RStrBuf tmp;
+		RzStrBuf tmp;
 		rz_strbuf_init (&tmp);
 		rz_strbuf_append_n (&tmp, s, slen);
 		c->attr = rz_str_constpool_get (&c->constpool, rz_strbuf_get (&tmp));
@@ -509,7 +509,7 @@ RZ_API void rz_cons_canvas_circle(RzConsCanvas *c, int x, int y, int w, int h, c
 RZ_API void rz_cons_canvas_box(RzConsCanvas *c, int x, int y, int w, int h, const char *color) {
 	const char *hline = useUtf8? RUNECODESTR_LINE_HORIZ : "-";
 	const char *vtmp = useUtf8? RUNECODESTR_LINE_VERT : "|";
-	RStrBuf *vline = rz_strbuf_new (NULL);
+	RzStrBuf *vline = rz_strbuf_new (NULL);
 	rz_strbuf_appendf (vline, Color_RESET"%s%s", color, vtmp);
 	const char *tl_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_TL : RUNECODESTR_CORNER_TL) : ".";
 	const char *tr_corner = useUtf8 ? (useUtf8Curvy ? RUNECODESTR_CURVE_CORNER_TR : RUNECODESTR_CORNER_TR) : ".";

@@ -161,7 +161,7 @@ static char *generic_array_obj_to_string(RzList *l) {
 	RzListIter *iter = NULL;
 	pyc_object *e = NULL;
 
-	RStrBuf *rbuf = rz_strbuf_new (NULL);
+	RzStrBuf *rbuf = rz_strbuf_new (NULL);
 
 	rz_list_foreach (l, iter, e) {
 		rz_strbuf_append (rbuf, e->data);

@@ -457,7 +457,7 @@ static void serialize(RzAnal *a, RzSignItem *it, char *k, char *v) {
 			types = rz_str_append (types, type);
 			i++;
 		}
-		RStrBuf *sb = rz_strbuf_new ("");
+		RzStrBuf *sb = rz_strbuf_new ("");
 		if (bytes) {
 			// TODO: do not hardcoded s,b,m here, use RzSignType enum
 			rz_strbuf_appendf (sb, "|s:%d|b:%s|m:%s", bytes->size, hexbytes, hexmask);

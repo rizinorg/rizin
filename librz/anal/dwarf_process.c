@@ -89,7 +89,7 @@ static RBinDwarfAttrValue *find_attr(const RBinDwarfDie *die, st32 attr_name) {
  * @param s 
  * @param c 
  */
-static bool strbuf_rev_prepend_char(RStrBuf *sb, const char *s, int c) {
+static bool strbuf_rev_prepend_char(RzStrBuf *sb, const char *s, int c) {
 	rz_return_val_if_fail (sb && s, false);
 	size_t l = strlen (s);
 	// fast path if no chars to append
@@ -123,7 +123,7 @@ static bool strbuf_rev_prepend_char(RStrBuf *sb, const char *s, int c) {
  * @param s 
  * @param needle 
  */
-static bool strbuf_rev_append_char(RStrBuf *sb, const char *s, const char *needle) {
+static bool strbuf_rev_append_char(RzStrBuf *sb, const char *s, const char *needle) {
 	rz_return_val_if_fail (sb && s, false);
 	size_t l = strlen (s);
 	// fast path if no chars to append
@@ -203,7 +203,7 @@ static ut64 get_die_size(const RBinDwarfDie *die) {
  * @param strbuf strbuf to store the type into
  * @return st32 -1 if error else 0
  */
-static st32 parse_array_type(Context *ctx, ut64 idx, RStrBuf *strbuf) {
+static st32 parse_array_type(Context *ctx, ut64 idx, RzStrBuf *strbuf) {
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
 
 	if (die->has_children) {
@@ -254,7 +254,7 @@ static st32 parse_array_type(Context *ctx, ut64 idx, RStrBuf *strbuf) {
  * TODO make cache for type entries, one type is usually referenced
  * multiple times which means it's parsed multiple times instead of once
  */
-static st32 parse_type (Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *size) {
+static st32 parse_type (Context *ctx, const ut64 offset, RzStrBuf *strbuf, ut64 *size) {
 	rz_return_val_if_fail (strbuf, -1);
 	RBinDwarfDie *die = ht_up_find (ctx->die_map, offset, NULL);
 	if (!die) {
@@ -377,7 +377,7 @@ static RzAnalStructMember *parse_struct_member (Context *ctx, ut64 idx, RzAnalSt
 	char *type = NULL;
 	ut64 offset = 0;
 	ut64 size = 0;
-	RStrBuf strbuf;
+	RzStrBuf strbuf;
 	rz_strbuf_init (&strbuf);
 	size_t i;
 	for (i = 0; i < die->count; i++) {
@@ -583,7 +583,7 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 
 	st32 type_attr_idx = find_attr_idx (die, DW_AT_type);
 	if (type_attr_idx != -1) {
-		RStrBuf strbuf;
+		RzStrBuf strbuf;
 		rz_strbuf_init (&strbuf);
 		parse_type (ctx, die->attr_values[type_attr_idx].reference, &strbuf, &base_type->size);
 		base_type->type = rz_strbuf_drain_nofree (&strbuf);
@@ -638,7 +638,7 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 	char *name = NULL;
 	char *type = NULL;
 	ut64 size = 0;
-	RStrBuf strbuf;
+	RzStrBuf strbuf;
 	rz_strbuf_init (&strbuf);
 	size_t i;
 
@@ -737,7 +737,7 @@ static const char *get_specification_die_name(const RBinDwarfDie *die) {
 	return NULL;
 }
 
-static void get_spec_die_type(Context *ctx, RBinDwarfDie *die, RStrBuf *ret_type) {
+static void get_spec_die_type(Context *ctx, RBinDwarfDie *die, RzStrBuf *ret_type) {
 	st32 attr_idx = find_attr_idx (die, DW_AT_type);
 	if (attr_idx != -1) {
 		ut64 size = 0;
@@ -756,7 +756,7 @@ static bool prefer_linkage_name(char *lang) {
 	return true;
 }
 
-static void parse_abstract_origin(Context *ctx, ut64 offset, RStrBuf *type, const char **name) {
+static void parse_abstract_origin(Context *ctx, ut64 offset, RzStrBuf *type, const char **name) {
 	RBinDwarfDie *die = ht_up_find (ctx->die_map, offset, NULL);
 	if (die) {
 		size_t i;
@@ -1141,7 +1141,7 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 	return location;
 }
 
-static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, RzList/*<Variable*>*/ *variables) {
+static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args, RzList/*<Variable*>*/ *variables) {
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
 
 	if (die->has_children) {
@@ -1154,7 +1154,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 		size_t j;
 		for (j = idx; child_depth > 0 && j < ctx->count; j++) {
 			child_die = &ctx->all_dies[j];
-			RStrBuf type;
+			RzStrBuf type;
 			rz_strbuf_init (&type);
 			const char *name = NULL;
 			if (child_die->tag == DW_TAG_formal_parameter || child_die->tag == DW_TAG_variable) {
@@ -1251,7 +1251,7 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RzList/*<Variable*>*/ *
 	sdb_set (sdb, signature_key, dwarf_fcn->signature, 0);
 	free (signature_key);
 
-	RStrBuf vars;
+	RzStrBuf vars;
 	rz_strbuf_init (&vars);
 	RzListIter *iter;
 	Variable *var;
@@ -1328,7 +1328,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 	Function fcn = { 0 };
 	bool has_linkage_name = false;
 	bool get_linkage_name = prefer_linkage_name (ctx->lang);
-	RStrBuf ret_type;
+	RzStrBuf ret_type;
 	rz_strbuf_init (&ret_type);
 	if (find_attr_idx (die, DW_AT_declaration) != -1) {
 		return; /* just declaration skip */
@@ -1393,7 +1393,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 	if (!fcn.name || !fcn.addr) { /* we need a name, faddr */
 		goto cleanup;
 	}
-	RStrBuf args;
+	RzStrBuf args;
 	rz_strbuf_init (&args);
 	/* TODO do the same for arguments in future so we can use their location */
 	RzList/*<Variable*>*/  *variables = rz_list_new ();

@@ -106,7 +106,7 @@ static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 	}
 }
 
-static void opex(RStrBuf *buf, cs_insn *insn, int mode) {
+static void opex(RzStrBuf *buf, cs_insn *insn, int mode) {
 	int i;
 	rz_strbuf_init (buf);
 	rz_strbuf_append (buf, "{");

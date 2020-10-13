@@ -1615,7 +1615,7 @@ RZ_API int rz_core_visual_view_rop(RzCore *core) {
 			(addr == UT64_MAX)? 0: addr + delta, cursearch);
 
 		// compute chain
-		RStrBuf *sb = rz_strbuf_new ("");
+		RzStrBuf *sb = rz_strbuf_new ("");
 		char *msg;
 		rz_list_foreach (core->ropchain, iter, msg) {
 			if (core->rasm->bits == 64) {
@@ -2744,7 +2744,7 @@ static const char *help_vv_actions_visual[] = {
 	NULL
 };
 
-static void rz_core_vmenu_append_help (RStrBuf *p, const char **help) {
+static void rz_core_vmenu_append_help (RzStrBuf *p, const char **help) {
 	int i;
 	RzConsContext *cons_ctx = rz_cons_singleton ()->context;
 	const char *pal_args_color = cons_ctx->color_mode ? cons_ctx->pal.args : "",
@@ -2763,7 +2763,7 @@ static ut64 rz_core_visual_anal_refresh (RzCore *core) {
 		return 0LL;
 	}
 	ut64 addr;
-	RStrBuf *buf;
+	RzStrBuf *buf;
 	char old[1024];
 	bool color = rz_config_get_i (core->config, "scr.color");
 	int h, cols = rz_cons_get_size (&h);
@@ -3011,7 +3011,7 @@ RZ_API void rz_core_visual_anal(RzCore *core, const char *input) {
 			break;
 		case '?':
 			rz_cons_clear00 ();
-			RStrBuf *buf = rz_strbuf_new ("");
+			RzStrBuf *buf = rz_strbuf_new ("");
 			rz_cons_println ("|Usage: vv");
 			rz_core_visual_append_help (buf, "Actions supported", help_vv_actions_visual);
 			rz_core_visual_append_help (buf, "Keys", help_vv_visual);

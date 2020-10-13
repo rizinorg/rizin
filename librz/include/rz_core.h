@@ -436,7 +436,7 @@ RZ_API void rz_core_visual_toggle_decompiler_disasm(RzCore *core, bool for_graph
 RZ_API void rz_core_visual_applyDisMode(RzCore *core, int disMode);
 RZ_API void rz_core_visual_applyHexMode(RzCore *core, int hexMode);
 RZ_API int rz_core_visual_refs(RzCore *core, bool xref, bool fcnInsteadOfAddr);
-RZ_API void rz_core_visual_append_help(RStrBuf *p, const char *title, const char **help);
+RZ_API void rz_core_visual_append_help(RzStrBuf *p, const char *title, const char **help);
 RZ_API bool rz_core_prevop_addr(RzCore* core, ut64 start_addr, int numinstrs, ut64* prev_addr);
 RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinstrs);
 RZ_API bool rz_core_visual_hudstuff(RzCore *core);

@@ -569,7 +569,7 @@ static void __delegate_show_all_decompiler_cb(void *user, RPanel *panel, const R
 static void __del_menu(RzCore *core);
 static void __clear_panels_menu(RzCore *core);
 static void __clear_panels_menuRec(RPanelsMenuItem *pmi);
-static RStrBuf *__draw_menu(RzCore *core, RPanelsMenuItem *item);
+static RzStrBuf *__draw_menu(RzCore *core, RPanelsMenuItem *item);
 static void __handle_menu(RzCore *core, const int key);
 static int cmpstr(const void *_a, const void *_b);
 static RzList *__sorted_list(RzCore *core, char *menu[], int count);
@@ -1079,8 +1079,8 @@ void __update_help_contents(RzCore *core, RPanel *panel) {
 
 void __update_help_title(RzCore *core, RPanel *panel) {
 	RzConsCanvas *can = core->panels->can;
-	RStrBuf *title = rz_strbuf_new (NULL);
-	RStrBuf *cache_title = rz_strbuf_new (NULL);
+	RzStrBuf *title = rz_strbuf_new (NULL);
+	RzStrBuf *cache_title = rz_strbuf_new (NULL);
 	if (__check_if_cur_panel (core, panel)) {
 		rz_strbuf_setf (title, "%s[X] %s"Color_RESET,
 				core->cons->context->pal.graph_box2, panel->model->title);
@@ -1147,8 +1147,8 @@ void __update_panel_contents(RzCore *core, RPanel *panel, const char *cmdstr) {
 
 void __update_panel_title(RzCore *core, RPanel *panel) {
 	RzConsCanvas *can = core->panels->can;
-	RStrBuf *title = rz_strbuf_new (NULL);
-	RStrBuf *cache_title = rz_strbuf_new (NULL);
+	RzStrBuf *title = rz_strbuf_new (NULL);
+	RzStrBuf *cache_title = rz_strbuf_new (NULL);
 	char *cmd_title  = __apply_filter_cmd (core, panel);
 	if (__check_if_cur_panel (core, panel)) {
 		if (!strcmp (panel->model->title, cmd_title)) {
@@ -1521,7 +1521,7 @@ ut64 __parse_string_on_cursor(RzCore *core, RPanel *panel, int idx) {
 	if (!panel->model->cmdStrCache) {
 		return UT64_MAX;
 	}
-	RStrBuf *buf = rz_strbuf_new (NULL);
+	RzStrBuf *buf = rz_strbuf_new (NULL);
 	char *s = panel->model->cmdStrCache;
 	int l = 0;
 	while (RZ_STR_ISNOTEMPTY (s) && l != idx) {
@@ -3408,7 +3408,7 @@ int __config_toggle_cb(void *user) {
 	RPanelsMenu *menu = core->panels->panels_menu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
-	RStrBuf *tmp = rz_strbuf_new (child->name);
+	RzStrBuf *tmp = rz_strbuf_new (child->name);
 	(void)rz_str_split (rz_strbuf_get (tmp), ':');
 	rz_config_toggle (core->config, rz_strbuf_get (tmp));
 	rz_strbuf_free (tmp);
@@ -3434,7 +3434,7 @@ int __config_value_cb(void *user) {
 	RPanelsMenu *menu = core->panels->panels_menu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
-	RStrBuf *tmp = rz_strbuf_new (child->name);
+	RzStrBuf *tmp = rz_strbuf_new (child->name);
 	(void)rz_str_split (rz_strbuf_get(tmp), ':');
 	const char *v = __show_status_input (core, "New value: ");
 	rz_config_set (core->config, rz_strbuf_get (tmp), v);
@@ -3537,7 +3537,7 @@ int __esil_step_to_cb(void *user) {
 }
 
 int __esil_step_range_cb(void *user) {
-	RStrBuf *rsb = rz_strbuf_new (NULL);
+	RzStrBuf *rsb = rz_strbuf_new (NULL);
 	RzCore *core = (RzCore *)user;
 	rz_strbuf_append (rsb, "start addr: ");
 	char *s = __show_status_input (core, rz_strbuf_get (rsb));
@@ -3647,7 +3647,7 @@ void __update_help(RzCore *core, RPanels *ps) {
 	for (i = 0; i < ps->n_panels; i++) {
 		RPanel *p = __get_panel (ps, i);
 		if (rz_str_endswith (p->model->cmd, "Help")) {
-			RStrBuf *rsb = rz_strbuf_new (NULL);
+			RzStrBuf *rsb = rz_strbuf_new (NULL);
 			const char *title, *cmd;
 			const char **msg;
 			switch (ps->mode) {
@@ -4348,7 +4348,7 @@ int __open_menu_cb (void *user) {
 		__set_pos (&child->p->view->pos, parent2->p->view->pos.x + parent2->p->view->pos.w - 1,
 				menu->depth == 2 ? parent2->p->view->pos.y + parent2->selectedIndex : parent2->p->view->pos.y);
 	}
-	RStrBuf *buf = __draw_menu (core, child);
+	RzStrBuf *buf = __draw_menu (core, child);
 	if (!buf) {
 		return 0;
 	}
@@ -4433,8 +4433,8 @@ void __del_menu(RzCore *core) {
 	menu->n_refresh = menu->depth - 1;
 }
 
-RStrBuf *__draw_menu(RzCore *core, RPanelsMenuItem *item) {
-	RStrBuf *buf = rz_strbuf_new (NULL);
+RzStrBuf *__draw_menu(RzCore *core, RPanelsMenuItem *item) {
+	RzStrBuf *buf = rz_strbuf_new (NULL);
 	if (!buf) {
 		return NULL;
 	}
@@ -4453,7 +4453,7 @@ RStrBuf *__draw_menu(RzCore *core, RPanelsMenuItem *item) {
 
 void __update_menu_contents(RzCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent) {
 	RPanel *p = parent->p;
-	RStrBuf *buf = __draw_menu (core, parent);
+	RzStrBuf *buf = __draw_menu (core, parent);
 	if (!buf) {
 		return;
 	}
@@ -4495,7 +4495,7 @@ void __init_menu_color_settings_layout (void *_core, const char *parent) {
 	RzList *list = __sorted_list (core, menus_Colors, COUNT (menus_Colors));
 	char *pos;
 	RzListIter* iter;
-	RStrBuf *buf = rz_strbuf_new (NULL);
+	RzStrBuf *buf = rz_strbuf_new (NULL);
 	rz_list_foreach (list, iter, pos) {
 		if (pos && !strcmp (now, pos)) {
 			rz_strbuf_setf (buf, "%s%s", color, pos);
@@ -4515,7 +4515,7 @@ void __init_menu_disasm_settings_layout (void *_core, const char *parent) {
 	RzList *list = __sorted_list (core, menus_settings_disassembly, COUNT (menus_settings_disassembly));
 	char *pos;
 	RzListIter* iter;
-	RStrBuf *rsb = rz_strbuf_new (NULL);
+	RzStrBuf *rsb = rz_strbuf_new (NULL);
 	rz_list_foreach (list, iter, pos) {
 		if (!strcmp (pos, "asm")) {
 			__add_menu (core, parent, pos, __open_menu_cb);
@@ -4537,7 +4537,7 @@ static void __init_menu_disasm_asm_settings_layout(void *_core, const char *pare
 	RzList *list = __sorted_list (core, menus_settings_disassembly_asm, COUNT (menus_settings_disassembly_asm));
 	char *pos;
 	RzListIter* iter;
-	RStrBuf *rsb = rz_strbuf_new (NULL);
+	RzStrBuf *rsb = rz_strbuf_new (NULL);
 	rz_list_foreach (list, iter, pos) {
 		rz_strbuf_set (rsb, pos);
 		rz_strbuf_append (rsb, ": ");
@@ -4557,7 +4557,7 @@ static void __init_menu_disasm_asm_settings_layout(void *_core, const char *pare
 
 static void __init_menu_screen_settings_layout(void *_core, const char *parent) {
 	RzCore *core = (RzCore *)_core;
-	RStrBuf *rsb = rz_strbuf_new (NULL);
+	RzStrBuf *rsb = rz_strbuf_new (NULL);
 	int i = 0;
 	while (menus_settings_screen[i]) {
 		const char *menu = menus_settings_screen[i];
@@ -4997,7 +4997,7 @@ void __panels_refresh(RzCore *core) {
 	if (!rz_cons_canvas_resize (can, w, h)) {
 		return;
 	}
-	RStrBuf *title = rz_strbuf_new (" ");
+	RzStrBuf *title = rz_strbuf_new (" ");
 	bool utf8 = rz_config_get_i (core->config, "scr.utf8");
 	if (firstRun) {
 		rz_config_set_i (core->config, "scr.utf8", 0);
@@ -5772,7 +5772,7 @@ RZ_API bool rz_load_panels_layout(RzCore *core, const char *_name) {
 		if (rz_str_endswith (cmd, "Help")) {
 			p->model->title = rz_str_dup (p->model->title, "Help");
 			p->model->cmd = rz_str_dup (p->model->cmd, "Help");
-			RStrBuf *rsb = rz_strbuf_new (NULL);
+			RzStrBuf *rsb = rz_strbuf_new (NULL);
 			rz_core_visual_append_help (rsb, "Visual Ascii Art Panels", help_msg_panels);
 			if (!rsb) {
 				return false;
@@ -6598,7 +6598,7 @@ void __panel_prompt(const char *prompt, char *buf, int len) {
 }
 
 char *get_word_from_canvas(RzCore *core, RPanels *panels, int x, int y) {
-	RStrBuf rsb;
+	RzStrBuf rsb;
 	rz_strbuf_init (&rsb);
 	char *cs = rz_cons_canvas_to_string (panels->can);
 	rz_strbuf_setf (&rsb, " %s", cs);

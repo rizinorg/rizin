@@ -22,7 +22,7 @@
 #define INSOP(n) insn->detail->tms320c64x.operands[n]
 #define INSCC insn->detail->tms320c64x.cc
 
-static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
+static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	rz_strbuf_init (buf);
 	rz_strbuf_append (buf, "{");

@@ -248,7 +248,7 @@ RZ_API void rz_table_add_row(RTable *t, const char *name, ...) {
 
 // import / export
 
-static int __strbuf_append_col_aligned_fancy(RTable *t, RStrBuf *sb, RTableColumn *col, char *str) {
+static int __strbuf_append_col_aligned_fancy(RTable *t, RzStrBuf *sb, RTableColumn *col, char *str) {
 	RzCons *cons = (RzCons *) t->cons;
 	const char *v_line = (cons && (cons->use_utf8 ||  cons->use_utf8_curvy)) ? RUNE_LINE_VERT : "|";
 	int ll = rz_strbuf_length (sb);
@@ -295,7 +295,7 @@ RZ_API char *rz_table_tofancystring(RTable *t) {
 	if (rz_list_length (t->cols) == 0) {
 		return strdup ("");
 	}
-	RStrBuf *sb = rz_strbuf_new ("");
+	RzStrBuf *sb = rz_strbuf_new ("");
 	RTableRow *row;
 	RTableColumn *col;
 	RzCons *cons = (RzCons *)t->cons;
@@ -355,7 +355,7 @@ RZ_API char *rz_table_tofancystring(RTable *t) {
 	return rz_strbuf_drain (sb);
 }
 
-static int __strbuf_append_col_aligned(RStrBuf *sb, RTableColumn *col, const char *str, bool nopad) {
+static int __strbuf_append_col_aligned(RzStrBuf *sb, RTableColumn *col, const char *str, bool nopad) {
 	int ll = rz_strbuf_length (sb);
 	if (nopad) {
 		rz_strbuf_appendf (sb, "%s", str);
@@ -410,7 +410,7 @@ RZ_API char *rz_table_tostring(RTable *t) {
 }
 
 RZ_API char *rz_table_tosimplestring(RTable *t) {
-	RStrBuf *sb = rz_strbuf_new ("");
+	RzStrBuf *sb = rz_strbuf_new ("");
 	RTableRow *row;
 	RTableColumn *col;
 	RzListIter *iter, *iter2;
@@ -463,7 +463,7 @@ RZ_API char *rz_table_tosimplestring(RTable *t) {
 }
 
 RZ_API char *rz_table_tocsv(RTable *t) {
-	RStrBuf *sb = rz_strbuf_new ("");
+	RzStrBuf *sb = rz_strbuf_new ("");
 	RTableRow *row;
 	RTableColumn *col;
 	RzListIter *iter, *iter2;
@@ -1089,7 +1089,7 @@ RZ_API void rz_table_visual_list(RTable *table, RzList *list, ut64 seek, ut64 le
 	if (min != -1 && mul > 0) {
 		i = 0;
 		rz_list_foreach (list, iter, info) {
-			RStrBuf *buf = rz_strbuf_new ("");
+			RzStrBuf *buf = rz_strbuf_new ("");
 			for (j = 0; j < width; j++) {
 				ut64 pos = min + j * mul;
 				ut64 npos = min + (j + 1) * mul;
@@ -1116,7 +1116,7 @@ RZ_API void rz_table_visual_list(RTable *table, RzList *list, ut64 seek, ut64 le
 			free (b);
 			i++;
 		}
-		RStrBuf *buf = rz_strbuf_new ("");
+		RzStrBuf *buf = rz_strbuf_new ("");
 		/* current seek */
 		if (i > 0 && len != 0) {
 			if (seek == UT64_MAX) {

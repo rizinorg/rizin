@@ -311,7 +311,7 @@ static RzAnalBaseType *get_atomic_type(RzAnal *anal, const char *sname) {
 		goto error;
 	}
 
-	RStrBuf key;
+	RzStrBuf key;
 	base_type->size = sdb_num_get (anal->sdb_types, rz_strbuf_initf (&key, "type.%s.size", sname), 0);
 	rz_strbuf_fini (&key);
 
@@ -373,9 +373,9 @@ static void save_struct(const RzAnal *anal, const RzAnalBaseType *type) {
 	// name=struct
 	sdb_set (anal->sdb_types, sname, kind, 0);
 
-	RStrBuf arglist;
-	RStrBuf param_key;
-	RStrBuf param_val;
+	RzStrBuf arglist;
+	RzStrBuf param_key;
+	RzStrBuf param_val;
 	rz_strbuf_init (&arglist);
 	rz_strbuf_init (&param_key);
 	rz_strbuf_init (&param_val);
@@ -422,9 +422,9 @@ static void save_union(const RzAnal *anal, const RzAnalBaseType *type) {
 	// name=union
 	sdb_set (anal->sdb_types, sname, kind, 0);
 
-	RStrBuf arglist;
-	RStrBuf param_key;
-	RStrBuf param_val;
+	RzStrBuf arglist;
+	RzStrBuf param_key;
+	RzStrBuf param_val;
 	rz_strbuf_init (&arglist);
 	rz_strbuf_init (&param_key);
 	rz_strbuf_init (&param_val);
@@ -472,9 +472,9 @@ static void save_enum(const RzAnal *anal, const RzAnalBaseType *type) {
 	char *sname = rz_str_sanitize_sdb_key (type->name);
 	sdb_set (anal->sdb_types, sname, "enum", 0);
 
-	RStrBuf arglist;
-	RStrBuf param_key;
-	RStrBuf param_val;
+	RzStrBuf arglist;
+	RzStrBuf param_key;
+	RzStrBuf param_val;
 	rz_strbuf_init (&arglist);
 	rz_strbuf_init (&param_key);
 	rz_strbuf_init (&param_val);
@@ -520,8 +520,8 @@ static void save_atomic_type(const RzAnal *anal, const RzAnalBaseType *type) {
 	char *sname = rz_str_sanitize_sdb_key (type->name);
 	sdb_set (anal->sdb_types, sname, "type", 0);
 
-	RStrBuf key;
-	RStrBuf val;
+	RzStrBuf key;
+	RzStrBuf val;
 	rz_strbuf_init (&key);
 	rz_strbuf_init (&val);
 
@@ -550,8 +550,8 @@ static void save_typedef(const RzAnal *anal, const RzAnalBaseType *type) {
 	char *sname = rz_str_sanitize_sdb_key (type->name);
 	sdb_set (anal->sdb_types, sname, "typedef", 0);
 
-	RStrBuf key;
-	RStrBuf val;
+	RzStrBuf key;
+	RzStrBuf val;
 	rz_strbuf_init (&key);
 	rz_strbuf_init (&val);
 

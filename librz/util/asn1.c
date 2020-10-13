@@ -190,7 +190,7 @@ RZ_API void rz_asn1_print_hex (RASN1Object *object, char* buffer, ut32 size, ut3
 }
 
 #if !ASN1_STD_FORMAT
-static void rz_asn1_print_padded(RStrBuf *sb, RASN1Object *object, int depth, const char *k, const char *v) {
+static void rz_asn1_print_padded(RzStrBuf *sb, RASN1Object *object, int depth, const char *k, const char *v) {
 	const char *pad = rz_str_pad (' ', (depth * 2) - 2);
 	if (object->form && !*v) {
 		return;
@@ -222,7 +222,7 @@ static RASN1String* rz_asn1_print_hexdump_padded (RASN1Object *object, ut32 dept
 	if (!object || !object->sector || object->length < 1) {
 		return NULL;
 	}
-	RStrBuf *sb = rz_strbuf_new ("");
+	RzStrBuf *sb = rz_strbuf_new ("");
 	if (ASN1_STD_FORMAT) {
 		pad = "                                        : ";
 	} else {
@@ -255,7 +255,7 @@ static RASN1String* rz_asn1_print_hexdump_padded (RASN1Object *object, ut32 dept
 	return asn1str;
 }
 
-RZ_API char *rz_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb) {
+RZ_API char *rz_asn1_to_string (RASN1Object *object, ut32 depth, RzStrBuf *sb) {
 	ut32 i;
 	bool root = false;
 	if (!object) {

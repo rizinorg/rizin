@@ -160,7 +160,7 @@ static const char* getspr(struct Getarg *gop, int n) {
 	return cspr;
 }
 
-static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
+static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	rz_strbuf_init (buf);
 	rz_strbuf_append (buf, "{");

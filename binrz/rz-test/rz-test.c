@@ -813,7 +813,7 @@ beach:
 }
 
 static char *format_cmd_kv(const char *key, const char *val) {
-	RStrBuf buf;
+	RzStrBuf buf;
 	rz_strbuf_init (&buf);
 	rz_strbuf_appendf (&buf, "%s=", key);
 	if (strchr (val, '\n')) {
@@ -849,7 +849,7 @@ static char *replace_lines(const char *src, size_t from, size_t to, const char *
 		line++;
 	}
 
-	RStrBuf buf;
+	RzStrBuf buf;
 	rz_strbuf_init (&buf);
 	rz_strbuf_append_n (&buf, src, begin - src);
 	rz_strbuf_append (&buf, news);

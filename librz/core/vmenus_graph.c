@@ -7,7 +7,7 @@
 // find a better name and move to rz_util or rz_cons?
 RZ_API char *rz_str_widget_list(void *user, RzList *list, int rows, int cur, PrintItemCallback cb) {
 	void *item;
-	RStrBuf *sb = rz_strbuf_new ("");
+	RzStrBuf *sb = rz_strbuf_new ("");
 	RzListIter *iter;
 	int count = 0;
 	int skip = 0;

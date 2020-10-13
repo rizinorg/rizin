@@ -887,8 +887,8 @@ typedef struct rz_anal_op_t {
 	RzAnalValue *src[3];
 	RzAnalValue *dst;
 	RzList *access; /* RzAnalValue access information */
-	RStrBuf esil;
-	RStrBuf opex;
+	RzStrBuf esil;
+	RzStrBuf opex;
 	const char *reg; /* destination register */
 	const char *ireg; /* register used for indirect memory computation*/
 	int scale;
@@ -1281,7 +1281,7 @@ typedef struct rz_anal_esil_dfg_t {
 typedef struct rz_anal_esil_dfg_node_t {
 	// add more info here
 	ut32 idx;
-	RStrBuf *content;
+	RzStrBuf *content;
 	RzAnalEsilDFGBlockType type;
 } RzAnalEsilDFGNode;
 
@@ -2111,8 +2111,8 @@ RZ_API RzAnalEsilDFGNode *rz_anal_esil_dfg_node_new (RzAnalEsilDFG *edf, const c
 RZ_API RzAnalEsilDFG *rz_anal_esil_dfg_new(RzReg *regs);
 RZ_API void rz_anal_esil_dfg_free(RzAnalEsilDFG *dfg);
 RZ_API RzAnalEsilDFG *rz_anal_esil_dfg_expr(RzAnal *anal, RzAnalEsilDFG *dfg, const char *expr);
-RZ_API RStrBuf *rz_anal_esil_dfg_filter(RzAnalEsilDFG *dfg, const char *reg);
-RZ_API RStrBuf *rz_anal_esil_dfg_filter_expr(RzAnal *anal, const char *expr, const char *reg);
+RZ_API RzStrBuf *rz_anal_esil_dfg_filter(RzAnalEsilDFG *dfg, const char *reg);
+RZ_API RzStrBuf *rz_anal_esil_dfg_filter_expr(RzAnal *anal, const char *expr, const char *reg);
 RZ_API RzList *rz_anal_types_from_fcn(RzAnal *anal, RzAnalFunction *fcn);
 
 RZ_API RzAnalBaseType *rz_anal_get_base_type(RzAnal *anal, const char *name);

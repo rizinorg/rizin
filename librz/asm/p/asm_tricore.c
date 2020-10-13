@@ -13,7 +13,7 @@
 
 
 static unsigned long Offset = 0;
-static RStrBuf *buf_global = NULL;
+static RzStrBuf *buf_global = NULL;
 static ut8 bytes[128];
 enum {
 	TRICORE_GENERIC = 0x00000000,

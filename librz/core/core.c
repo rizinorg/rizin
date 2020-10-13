@@ -1957,7 +1957,7 @@ static char *rz_core_anal_hasrefs_to_depth(RzCore *core, ut64 value, int depth) 
 	if (depth < 1 || value == UT64_MAX) {
 		return NULL;
 	}
-	RStrBuf *s = rz_strbuf_new (NULL);
+	RzStrBuf *s = rz_strbuf_new (NULL);
 	char *mapname = NULL;
 	RzFlagItem *fi = rz_flag_get_i (core->flags, value);
 	ut64 type = rz_core_anal_address (core, value);

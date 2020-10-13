@@ -1321,7 +1321,7 @@ RZ_API char *rz_run_get_environ_profile(char **env) {
 	if (!env) {
 		return NULL;
 	}
-	RStrBuf *sb = rz_strbuf_new (NULL);
+	RzStrBuf *sb = rz_strbuf_new (NULL);
 	while (*env) {
 		char *k = strdup (*env);
 		char *v = strchr (k, '=');

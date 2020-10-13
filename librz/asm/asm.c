@@ -19,7 +19,7 @@ static char *directives[] = {
 
 static RzAsmPlugin *asm_static_plugins[] = { RZ_ASM_STATIC_PLUGINS };
 
-static void parseHeap(RzParse *p, RStrBuf *s) {
+static void parseHeap(RzParse *p, RzStrBuf *s) {
 	char *op_buf_asm = rz_strbuf_get (s);
 	size_t len = rz_strbuf_length (s);
 	char *out = malloc (64 + (len * 2));
@@ -510,7 +510,7 @@ static Ase findAssembler(RzAsm *a, const char *kw) {
 }
 
 static char *replace_directives_for(char *str, char *token) {
-	RStrBuf *sb = rz_strbuf_new ("");
+	RzStrBuf *sb = rz_strbuf_new ("");
 	char *p = NULL;
 	char *q = str;
 	bool changes = false;
@@ -607,11 +607,11 @@ RZ_API int rz_asm_assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	return ret;
 }
 
-// TODO: Use RStrBuf api here pls
+// TODO: Use RzStrBuf api here pls
 RZ_API RzAsmCode* rz_asm_mdisassemble(RzAsm *a, const ut8 *buf, int len) {
 	rz_return_val_if_fail (a && buf && len >= 0, NULL);
 
-	RStrBuf *buf_asm;
+	RzStrBuf *buf_asm;
 	RzAsmCode *acode;
 	ut64 pc = a->pc;
 	RzAsmOp op;

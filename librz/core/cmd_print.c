@@ -1193,7 +1193,7 @@ static void cmd_print_fromage(RzCore *core, const char *input, const ut8* data, 
 		{
 			RX509Certificate* x509 = rz_x509_parse_certificate (rz_asn1_create_object (data, size, data));
 			if (x509) {
-				RStrBuf *sb = rz_strbuf_new ("");
+				RzStrBuf *sb = rz_strbuf_new ("");
 				rz_x509_certificate_dump (x509, NULL, sb);
 				char *res = rz_strbuf_drain (sb);
 				if (res) {
@@ -4411,7 +4411,7 @@ static void print_json_string(RzCore *core, const char* block, int len, const ch
 }
 
 static char *__op_refs(RzCore *core, RzAnalOp *op, int n) {
-	RStrBuf *sb = rz_strbuf_new ("");
+	RzStrBuf *sb = rz_strbuf_new ("");
 	if (n) {
 		// RzList *list = rz_anal_xrefs_get_from (core->anal, op->addr);
 		RzList *list = rz_anal_xrefs_get (core->anal, op->addr);

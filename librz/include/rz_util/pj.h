@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 typedef struct pj_t {
-	RStrBuf sb;
+	RzStrBuf sb;
 	bool is_first;
 	bool is_key;
 	char braces[RZ_PRINT_JSON_DEPTH_LIMIT];

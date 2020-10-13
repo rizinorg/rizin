@@ -4,15 +4,15 @@
 #include "rz_util.h"
 #include <stdio.h>
 
-RZ_API RStrBuf *rz_strbuf_new(const char *str) {
-	RStrBuf *s = RZ_NEW0 (RStrBuf);
+RZ_API RzStrBuf *rz_strbuf_new(const char *str) {
+	RzStrBuf *s = RZ_NEW0 (RzStrBuf);
 	if (str) {
 		rz_strbuf_set (s, str);
 	}
 	return s;
 }
 
-RZ_API bool rz_strbuf_equals(RStrBuf *sa, RStrBuf *sb) {
+RZ_API bool rz_strbuf_equals(RzStrBuf *sa, RzStrBuf *sb) {
 	rz_return_val_if_fail (sa && sb, false);
 	if (sa->len != sb->len) {
 		return false;
@@ -20,21 +20,21 @@ RZ_API bool rz_strbuf_equals(RStrBuf *sa, RStrBuf *sb) {
 	return strcmp (rz_strbuf_get (sa), rz_strbuf_get (sb)) == 0;
 }
 
-RZ_API bool rz_strbuf_is_empty(RStrBuf *sb) {
+RZ_API bool rz_strbuf_is_empty(RzStrBuf *sb) {
 	return sb->len == 0;
 }
 
-RZ_API int rz_strbuf_length(RStrBuf *sb) {
+RZ_API int rz_strbuf_length(RzStrBuf *sb) {
 	rz_return_val_if_fail (sb, 0);
 	return sb->len;
 }
 
-RZ_API void rz_strbuf_init(RStrBuf *sb) {
+RZ_API void rz_strbuf_init(RzStrBuf *sb) {
 	rz_return_if_fail (sb);
-	memset (sb, 0, sizeof (RStrBuf));
+	memset (sb, 0, sizeof (RzStrBuf));
 }
 
-RZ_API const char *rz_strbuf_initf(RStrBuf *sb, const char *fmt, ...) {
+RZ_API const char *rz_strbuf_initf(RzStrBuf *sb, const char *fmt, ...) {
 	rz_return_val_if_fail (sb && fmt, NULL);
 	rz_strbuf_init (sb);
 	va_list ap;
@@ -44,7 +44,7 @@ RZ_API const char *rz_strbuf_initf(RStrBuf *sb, const char *fmt, ...) {
 	return r;
 }
 
-RZ_API bool rz_strbuf_copy(RStrBuf *dst, RStrBuf *src) {
+RZ_API bool rz_strbuf_copy(RzStrBuf *dst, RzStrBuf *src) {
 	rz_return_val_if_fail (dst && src, false);
 	if (src->ptr) {
 		char *p = malloc (src->ptrlen);
@@ -63,7 +63,7 @@ RZ_API bool rz_strbuf_copy(RStrBuf *dst, RStrBuf *src) {
 	return true;
 }
 
-RZ_API bool rz_strbuf_reserve(RStrBuf *sb, size_t len) {
+RZ_API bool rz_strbuf_reserve(RzStrBuf *sb, size_t len) {
 	rz_return_val_if_fail (sb, false);
 
 	if ((sb->ptr && len < sb->ptrlen) || (!sb->ptr && len < sizeof (sb->buf))) {
@@ -81,7 +81,7 @@ RZ_API bool rz_strbuf_reserve(RStrBuf *sb, size_t len) {
 	return true;
 }
 
-RZ_API bool rz_strbuf_setbin(RStrBuf *sb, const ut8 *s, size_t l) {
+RZ_API bool rz_strbuf_setbin(RzStrBuf *sb, const ut8 *s, size_t l) {
 	rz_return_val_if_fail (sb && s, false);
 	if (l >= sizeof (sb->buf)) {
 		char *ptr = sb->ptr;
@@ -107,7 +107,7 @@ RZ_API bool rz_strbuf_setbin(RStrBuf *sb, const ut8 *s, size_t l) {
 }
 
 // TODO: there's room for optimizations here
-RZ_API bool rz_strbuf_slice(RStrBuf *sb, int from, int len) {
+RZ_API bool rz_strbuf_slice(RzStrBuf *sb, int from, int len) {
 	rz_return_val_if_fail (sb && from >= 0 && len >= 0, false);
 	if (from < 1 && len >= sb->len) {
 		return false;
@@ -128,7 +128,7 @@ RZ_API bool rz_strbuf_slice(RStrBuf *sb, int from, int len) {
 	return true;
 }
 
-RZ_API bool rz_strbuf_setptr(RStrBuf *sb, char *s, int len) {
+RZ_API bool rz_strbuf_setptr(RzStrBuf *sb, char *s, int len) {
 	rz_return_val_if_fail (sb, false);
 	if (len < 0) {
 		sb->len = strlen (s);
@@ -142,7 +142,7 @@ RZ_API bool rz_strbuf_setptr(RStrBuf *sb, char *s, int len) {
 	return true;
 }
 
-RZ_API const char *rz_strbuf_set(RStrBuf *sb, const char *s) {
+RZ_API const char *rz_strbuf_set(RzStrBuf *sb, const char *s) {
 	rz_return_val_if_fail (sb, NULL);
 	if (!s) {
 		rz_strbuf_init (sb);
@@ -156,7 +156,7 @@ RZ_API const char *rz_strbuf_set(RStrBuf *sb, const char *s) {
 	return rz_strbuf_get (sb);
 }
 
-RZ_API const char *rz_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
+RZ_API const char *rz_strbuf_setf(RzStrBuf *sb, const char *fmt, ...) {
 	rz_return_val_if_fail (sb && fmt, false);
 
 	va_list ap;
@@ -166,7 +166,7 @@ RZ_API const char *rz_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
 	return ret;
 }
 
-RZ_API const char *rz_strbuf_vsetf(RStrBuf *sb, const char *fmt, va_list ap) {
+RZ_API const char *rz_strbuf_vsetf(RzStrBuf *sb, const char *fmt, va_list ap) {
 	rz_return_val_if_fail (sb && fmt, false);
 
 	const char *ret = NULL;
@@ -190,7 +190,7 @@ done:
 	return ret;
 }
 
-RZ_API bool rz_strbuf_prepend(RStrBuf *sb, const char *s) {
+RZ_API bool rz_strbuf_prepend(RzStrBuf *sb, const char *s) {
 	rz_return_val_if_fail (sb && s, false);
 	int l = strlen (s);
 	// fast path if no chars to append
@@ -211,14 +211,14 @@ RZ_API bool rz_strbuf_prepend(RStrBuf *sb, const char *s) {
 	return ret;
 }
 
-RZ_API bool rz_strbuf_append(RStrBuf *sb, const char *s) {
+RZ_API bool rz_strbuf_append(RzStrBuf *sb, const char *s) {
 	rz_return_val_if_fail (sb && s, false);
 
 	int l = strlen (s);
 	return rz_strbuf_append_n (sb, s, l);
 }
 
-RZ_API bool rz_strbuf_append_n(RStrBuf *sb, const char *s, size_t l) {
+RZ_API bool rz_strbuf_append_n(RzStrBuf *sb, const char *s, size_t l) {
 	rz_return_val_if_fail (sb && s, false);
 
 	if (sb->weakref) {
@@ -264,7 +264,7 @@ RZ_API bool rz_strbuf_append_n(RStrBuf *sb, const char *s, size_t l) {
 	return true;
 }
 
-RZ_API bool rz_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) {
+RZ_API bool rz_strbuf_appendf(RzStrBuf *sb, const char *fmt, ...) {
 	va_list ap;
 
 	rz_return_val_if_fail (sb && fmt, -1);
@@ -275,7 +275,7 @@ RZ_API bool rz_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) {
 	return ret;
 }
 
-RZ_API bool rz_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap) {
+RZ_API bool rz_strbuf_vappendf(RzStrBuf *sb, const char *fmt, va_list ap) {
 	int ret;
 	va_list ap2;
 	char string[1024];
@@ -306,12 +306,12 @@ RZ_API bool rz_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap) {
 	return ret;
 }
 
-RZ_API char *rz_strbuf_get(RStrBuf *sb) {
+RZ_API char *rz_strbuf_get(RzStrBuf *sb) {
 	rz_return_val_if_fail (sb, NULL);
 	return sb->ptr ? sb->ptr : sb->buf;
 }
 
-RZ_API ut8 *rz_strbuf_getbin(RStrBuf *sb, int *len) {
+RZ_API ut8 *rz_strbuf_getbin(RzStrBuf *sb, int *len) {
 	rz_return_val_if_fail (sb, NULL);
 	if (len) {
 		*len = sb->len;
@@ -319,7 +319,7 @@ RZ_API ut8 *rz_strbuf_getbin(RStrBuf *sb, int *len) {
 	return (ut8 *)(sb->ptr ? sb->ptr : sb->buf);
 }
 
-static inline char *drain(RStrBuf *sb) {
+static inline char *drain(RzStrBuf *sb) {
 	return sb->ptr
 		? sb->weakref
 			? rz_mem_dup (sb->ptr, sb->ptrlen)
@@ -327,14 +327,14 @@ static inline char *drain(RStrBuf *sb) {
 		: strdup (sb->buf);
 }
 
-RZ_API char *rz_strbuf_drain(RStrBuf *sb) {
+RZ_API char *rz_strbuf_drain(RzStrBuf *sb) {
 	rz_return_val_if_fail (sb, NULL);
 	char *ret = drain (sb);
 	free (sb);
 	return ret;
 }
 
-RZ_API char *rz_strbuf_drain_nofree(RStrBuf *sb) {
+RZ_API char *rz_strbuf_drain_nofree(RzStrBuf *sb) {
 	rz_return_val_if_fail (sb, NULL);
 	char *ret = drain (sb);
 	sb->ptr = NULL;
@@ -343,14 +343,14 @@ RZ_API char *rz_strbuf_drain_nofree(RStrBuf *sb) {
 	return ret;
 }
 
-RZ_API void rz_strbuf_free(RStrBuf *sb) {
+RZ_API void rz_strbuf_free(RzStrBuf *sb) {
 	if (sb) {
 		rz_strbuf_fini (sb);
 		free (sb);
 	}
 }
 
-RZ_API void rz_strbuf_fini(RStrBuf *sb) {
+RZ_API void rz_strbuf_fini(RzStrBuf *sb) {
 	if (sb && !sb->weakref) {
 		RZ_FREE (sb->ptr);
 		sb->len = 0;

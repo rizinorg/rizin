@@ -76,7 +76,7 @@ RZ_API int rz_debug_thread_list(RzDebug *dbg, int pid, char fmt) {
 	RzDebugPid *p;
 	RzAnalFunction *fcn = NULL;
 	RzDebugMap *map = NULL;
-	RStrBuf *path = NULL;
+	RzStrBuf *path = NULL;
 	if (pid == -1) {
 		return false;
 	}

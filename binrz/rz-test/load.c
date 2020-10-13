@@ -70,7 +70,7 @@ static char *read_string_val(char **nextline, const char *val, ut64 *linenum) {
 			eprintf ("Error: End token must be \"EOF\", got \"%s\" instead.", endtoken);
 			return NULL;
 		}
-		RStrBuf *buf = rz_strbuf_new ("");
+		RzStrBuf *buf = rz_strbuf_new ("");
 		char *line = *nextline;
 		size_t linesz = 0;
 		do {
@@ -596,7 +596,7 @@ static bool database_load(RzTestDatabase *db, const char *path, int depth) {
 		}
 		RzListIter *it;
 		const char *subname;
-		RStrBuf subpath;
+		RzStrBuf subpath;
 		rz_strbuf_init (&subpath);
 		bool ret = true;
 		rz_list_foreach (dir, it, subname) {
@@ -735,7 +735,7 @@ RZ_API bool rz_test_test_database_load_fuzz(RzTestDatabase *db, const char *path
 		}
 		RzListIter *it;
 		const char *subname;
-		RStrBuf subpath;
+		RzStrBuf subpath;
 		rz_strbuf_init (&subpath);
 		bool ret = true;
 		rz_list_foreach (dir, it, subname) {

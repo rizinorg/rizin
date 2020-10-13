@@ -4881,7 +4881,7 @@ static char *do_handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg, 
 		return res;
 	} else if (is_ts_concatenation (arg)) {
 		uint32_t i, n_children = ts_node_named_child_count (arg);
-		RStrBuf *sb = rz_strbuf_new (NULL);
+		RzStrBuf *sb = rz_strbuf_new (NULL);
 		for (i = 0; i < n_children; i++) {
 			TSNode sub_arg = ts_node_named_child (arg, i);
 			char *s = do_handle_ts_unescape_arg (state, sub_arg, do_unwrap);
@@ -6472,7 +6472,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(grep_command) {
 	char *arg_str = ts_node_handle_arg (state, node, arg, 1);
 	RzCmdStatus res = handle_ts_command (state, command);
 	RZ_LOG_DEBUG ("grep_command specifier: '%s'\n", arg_str);
-	RStrBuf *sb = rz_strbuf_new (arg_str);
+	RzStrBuf *sb = rz_strbuf_new (arg_str);
 	rz_strbuf_prepend (sb, "~");
 	char *specifier_str = rz_cons_grep_strip (rz_strbuf_get (sb), "`");
 	rz_strbuf_free (sb);

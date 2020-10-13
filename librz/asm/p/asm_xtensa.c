@@ -14,7 +14,7 @@
 #define INSN_BUFFER_SIZE 4
 
 static ut64 offset = 0;
-static RStrBuf *buf_global = NULL;
+static RzStrBuf *buf_global = NULL;
 static ut8 bytes[INSN_BUFFER_SIZE];
 
 static int xtensa_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {

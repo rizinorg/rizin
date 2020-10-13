@@ -15,7 +15,7 @@
 int print_insn_big_nios2 (bfd_vma address, disassemble_info *info);
 int print_insn_little_nios2 (bfd_vma address, disassemble_info *info);
 static unsigned long Offset = 0;
-static RStrBuf *buf_global = NULL;
+static RzStrBuf *buf_global = NULL;
 static unsigned char bytes[4];
 
 static int nios2_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {

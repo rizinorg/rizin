@@ -2,7 +2,7 @@
 #include "minunit.h"
 
 bool test_r_strbuf_slice(void) {
-	RStrBuf *sa = rz_strbuf_new ("foo,bar,cow");
+	RzStrBuf *sa = rz_strbuf_new ("foo,bar,cow");
 	rz_strbuf_slice (sa, 2, 4); // should be from/to instead of from/len ?
 	char *a = rz_strbuf_drain (sa);
 	mu_assert_streq (a, "o,ba", "slicing fails");
@@ -12,7 +12,7 @@ bool test_r_strbuf_slice(void) {
 }
 
 bool test_r_strbuf_append(void) {
-	RStrBuf *sa = rz_strbuf_new ("foo");
+	RzStrBuf *sa = rz_strbuf_new ("foo");
 	rz_strbuf_append (sa, "bar");
 	rz_strbuf_prepend (sa, "pre");
 	char *a = rz_strbuf_drain (sa);
@@ -24,7 +24,7 @@ bool test_r_strbuf_append(void) {
 
 bool test_r_strbuf_strong_string(void) {
 	// small string
-	RStrBuf *sa = rz_strbuf_new ("");
+	RzStrBuf *sa = rz_strbuf_new ("");
 	rz_strbuf_set (sa, "food");
 	mu_assert_eq (rz_strbuf_length (sa), 4, "rz_strbuf_set:food");
 	mu_assert_eq (sa->len, 4, "len of string");
@@ -55,7 +55,7 @@ bool test_r_strbuf_strong_string(void) {
 }
 
 bool test_r_strbuf_strong_binary(void) {
-	RStrBuf *sa = rz_strbuf_new ("");
+	RzStrBuf *sa = rz_strbuf_new ("");
 	bool res = rz_strbuf_setbin (sa, (const ut8 *)"food", 4);
 	mu_assert ("setbin success", res);
 	mu_assert_memeq ((const ut8 *)rz_strbuf_get (sa), (const ut8 *)"food", 4, "small binary data");
@@ -88,7 +88,7 @@ bool test_r_strbuf_strong_binary(void) {
 bool test_r_strbuf_weak_string(void) {
 	// small string
 	char *myptr = "food";
-	RStrBuf *sa = rz_strbuf_new ("");
+	RzStrBuf *sa = rz_strbuf_new ("");
 	rz_strbuf_setptr (sa, myptr, -1);
 	mu_assert_eq (rz_strbuf_length (sa), 4, "length from api");
 	mu_assert_eq (sa->len, 4, "len of string");
@@ -123,7 +123,7 @@ bool test_r_strbuf_weak_string(void) {
 
 bool test_r_strbuf_weak_binary(void) {
 	char *myptr = "food";
-	RStrBuf *sa = rz_strbuf_new ("");
+	RzStrBuf *sa = rz_strbuf_new ("");
 	bool res = rz_strbuf_setptr (sa, myptr, 4);
 	mu_assert ("setbin success", res);
 	mu_assert_ptreq (rz_strbuf_get (sa), myptr, "weak ptr");
@@ -156,7 +156,7 @@ bool test_r_strbuf_weak_binary(void) {
 }
 
 bool test_r_strbuf_setbin(void) {
-	RStrBuf *sa = rz_strbuf_new ("");
+	RzStrBuf *sa = rz_strbuf_new ("");
 	rz_strbuf_setbin (sa, (const ut8 *)"inbuffffffff", 5);
 	mu_assert_streq (rz_strbuf_get (sa), "inbuf", "setbin str with size");
 	mu_assert_eq (rz_strbuf_length (sa), 5, "len from api");
@@ -185,7 +185,7 @@ bool test_r_strbuf_setbin(void) {
 }
 
 bool test_r_strbuf_set(void) {
-	RStrBuf sb;
+	RzStrBuf sb;
 	rz_strbuf_init (&sb);
 	const char *s = rz_strbuf_set (&sb, "I have packed only the essentials");
 	mu_assert_notnull (s, "set return notnull");
@@ -196,7 +196,7 @@ bool test_r_strbuf_set(void) {
 }
 
 bool test_r_strbuf_setf(void) {
-	RStrBuf sb;
+	RzStrBuf sb;
 	rz_strbuf_init (&sb);
 	const char *s = rz_strbuf_setf (&sb, "One %s for hydration", "water");
 	mu_assert_notnull (s, "setf return notnull");
@@ -207,7 +207,7 @@ bool test_r_strbuf_setf(void) {
 }
 
 bool test_r_strbuf_initf(void) {
-	RStrBuf sb;
+	RzStrBuf sb;
 	const char *s = rz_strbuf_initf (&sb, "hmmst, %s was that audial occurence? %d", "wat", 42);
 	mu_assert_notnull (s, "initf return notnull");
 	mu_assert_ptreq (s, rz_strbuf_get (&sb), "initf return");

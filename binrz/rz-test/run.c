@@ -9,8 +9,8 @@ struct rz_test_subprocess_t {
 	HANDLE stderr_read;
 	HANDLE proc;
 	int ret;
-	RStrBuf out;
-	RStrBuf err;
+	RzStrBuf out;
+	RzStrBuf err;
 };
 
 static volatile long pipe_id = 0;
@@ -381,8 +381,8 @@ struct rz_test_subprocess_t {
 	int stderr_fd;
 	int killpipe[2];
 	int ret;
-	RStrBuf out;
-	RStrBuf err;
+	RzStrBuf out;
+	RzStrBuf err;
 };
 
 static RzPVector subprocs;
@@ -1032,7 +1032,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		rz_pvector_push (&args, offset);
 	}
 
-	RStrBuf cmd_buf;
+	RzStrBuf cmd_buf;
 	rz_strbuf_init (&cmd_buf);
 	if (test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) {
 		rz_pvector_push (&args, test->disasm);

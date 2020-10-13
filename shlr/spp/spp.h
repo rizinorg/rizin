@@ -79,7 +79,7 @@ struct Proc *proc = &x##_proc;
 
 #if USE_R2
 #include <rz_util.h>
-#define SStrBuf RStrBuf
+#define SStrBuf RzStrBuf
 #else
 typedef struct s_strbuf_t {
 	int len;

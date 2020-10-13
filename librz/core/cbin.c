@@ -518,7 +518,7 @@ static void _print_strings(RzCore *r, RzList *list, int mode, int va) {
 				}
 			}
 
-			RStrBuf *buf = rz_strbuf_new (str);
+			RzStrBuf *buf = rz_strbuf_new (str);
 			switch (string->type) {
 			case RZ_STRING_TYPE_UTF8:
 			case RZ_STRING_TYPE_WIDE:
@@ -1523,7 +1523,7 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 
 // name can be optionally used to explicitly set the used base name (for example for demangling), otherwise the import name will be used.
 static char *construct_reloc_name(RZ_NONNULL RBinReloc *reloc, RZ_NULLABLE const char *name) {
-	RStrBuf *buf = rz_strbuf_new ("");
+	RzStrBuf *buf = rz_strbuf_new ("");
 
 	// (optional) libname_
 	if (reloc->import && reloc->import->libname) {
@@ -1809,7 +1809,7 @@ static int bin_relocs(RzCore *r, int mode, int va) {
 				}
 			}
 			char *reloc_name = construct_reloc_name (reloc, name);
-			RStrBuf *buf = rz_strbuf_new (reloc_name ? reloc_name : "");
+			RzStrBuf *buf = rz_strbuf_new (reloc_name ? reloc_name : "");
 			free (reloc_name);
 			RZ_FREE (name);
 			if (reloc->addend) {
@@ -4421,7 +4421,7 @@ RZ_API int rz_core_bin_list(RzCore *core, int mode) {
 RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode) {
 	int i, len = 0;
 
-	RStrBuf *buf = rz_strbuf_new ("");
+	RzStrBuf *buf = rz_strbuf_new ("");
 	if (IS_MODE_SET (mode) || IS_MODE_RAD (mode)) {
 		if (!flags) {
 			goto out;

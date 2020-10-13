@@ -20,7 +20,7 @@ RZ_API bool rz_x509_parse_tbscertificate(RX509TBSCertificate *tbsc, RASN1Object 
 RZ_API void rz_x509_free_tbscertificate(RX509TBSCertificate * tbsc);
 
 RZ_API RX509CRLEntry *rz_x509_parse_crlentry(RASN1Object *object);
-RZ_API void rz_x509_name_dump(RX509Name* name, const char* pad, RStrBuf *sb);
+RZ_API void rz_x509_name_dump(RX509Name* name, const char* pad, RzStrBuf *sb);
 
 #endif /* RZ_X509_INTERNAL_H */
 

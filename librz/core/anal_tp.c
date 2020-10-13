@@ -103,7 +103,7 @@ static void __var_retype(RzAnal *anal, RzAnalVar *var, const char *vname, const 
 		// except for "void *", since "void *" => "char *" is possible
 		return;
 	}
-	RStrBuf *sb = rz_strbuf_new ("");
+	RzStrBuf *sb = rz_strbuf_new ("");
 	if (pfx) {
 		if (is_default && strncmp (var->type, "signed", 6)) {
 			rz_strbuf_setf (sb, "%s %s", type, tmp);

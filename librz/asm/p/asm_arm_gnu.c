@@ -67,7 +67,7 @@ static const struct arm_arch_option_table arm_archs[] = {
 
 static int arm_mode = 0;
 static unsigned long Offset = 0;
-static RStrBuf *buf_global = NULL;
+static RzStrBuf *buf_global = NULL;
 static unsigned char bytes[8];
 
 static int arm_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr,

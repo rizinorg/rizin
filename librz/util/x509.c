@@ -418,7 +418,7 @@ void rz_x509_free_crl (RX509CertificateRevocationList *crl) {
 	}
 }
 
-static void rz_x509_validity_dump(RX509Validity *validity, const char *pad, RStrBuf *sb) {
+static void rz_x509_validity_dump(RX509Validity *validity, const char *pad, RzStrBuf *sb) {
 	if (!validity) {
 		return;
 	}
@@ -430,7 +430,7 @@ static void rz_x509_validity_dump(RX509Validity *validity, const char *pad, RStr
 	rz_strbuf_appendf (sb, "%sNot Before: %s\n%sNot After: %s\n", pad, b, pad, a);
 }
 
-void rz_x509_name_dump (RX509Name *name, const char *pad, RStrBuf *sb) {
+void rz_x509_name_dump (RX509Name *name, const char *pad, RzStrBuf *sb) {
 	ut32 i;
 	if (!name) {
 		return;
@@ -446,7 +446,7 @@ void rz_x509_name_dump (RX509Name *name, const char *pad, RStrBuf *sb) {
 	}
 }
 
-static void rz_x509_subjectpublickeyinfo_dump(RX509SubjectPublicKeyInfo *spki, const char *pad, RStrBuf *sb) {
+static void rz_x509_subjectpublickeyinfo_dump(RX509SubjectPublicKeyInfo *spki, const char *pad, RzStrBuf *sb) {
 	const char *a;
 	if (!spki) {
 		return;
@@ -468,7 +468,7 @@ static void rz_x509_subjectpublickeyinfo_dump(RX509SubjectPublicKeyInfo *spki, c
 	//	rz_asn1_free_string (e);
 }
 
-static void rz_x509_extensions_dump(RX509Extensions *exts, const char *pad, RStrBuf *sb) {
+static void rz_x509_extensions_dump(RX509Extensions *exts, const char *pad, RzStrBuf *sb) {
 	ut32 i;
 	if (!exts) {
 		return;
@@ -491,7 +491,7 @@ static void rz_x509_extensions_dump(RX509Extensions *exts, const char *pad, RStr
 	}
 }
 
-static void rz_x509_tbscertificate_dump(RX509TBSCertificate *tbsc, const char *pad, RStrBuf *sb) {
+static void rz_x509_tbscertificate_dump(RX509TBSCertificate *tbsc, const char *pad, RzStrBuf *sb) {
 	RASN1String *sid = NULL, *iid = NULL;
 	if (!tbsc) {
 		return;
@@ -542,7 +542,7 @@ static void rz_x509_tbscertificate_dump(RX509TBSCertificate *tbsc, const char *p
 	free (pad2);
 }
 
-void rz_x509_certificate_dump (RX509Certificate *cert, const char *pad, RStrBuf *sb) {
+void rz_x509_certificate_dump (RX509Certificate *cert, const char *pad, RzStrBuf *sb) {
 	RASN1String *algo = NULL;
 	char *pad2;
 	if (!cert) {
@@ -569,7 +569,7 @@ void rz_x509_certificate_dump (RX509Certificate *cert, const char *pad, RStrBuf 
 	//	rz_asn1_free_string (signature);
 }
 
-void rz_x509_crlentry_dump (RX509CRLEntry *crle, const char *pad, RStrBuf *sb) {
+void rz_x509_crlentry_dump (RX509CRLEntry *crle, const char *pad, RzStrBuf *sb) {
 	RASN1String *id = NULL, *utc = NULL;
 	if (!crle) {
 		return;
@@ -606,7 +606,7 @@ RZ_API char *rz_x509_crl_to_string(RX509CertificateRevocationList *crl, const ch
 	algo = crl->signature.algorithm;
 	last = crl->lastUpdate;
 	next = crl->nextUpdate;
-	RStrBuf *sb = rz_strbuf_new ("");
+	RzStrBuf *sb = rz_strbuf_new ("");
 	rz_strbuf_appendf (sb, "%sCRL:\n%sSignature:\n%s%s\n%sIssuer\n", pad, pad2, pad3,
 		algo ? algo->string : "", pad2);
 	rz_x509_name_dump (&crl->issuer, pad3, sb);

@@ -562,7 +562,7 @@ RZ_API void rz_cons_grepbuf(void) {
 		cons->context->buffer = malloc (cons->context->buffer_len);
 		cons->context->buffer[0] = 0;
 	}
-	RStrBuf *ob = rz_strbuf_new ("");
+	RzStrBuf *ob = rz_strbuf_new ("");
 	// if we modify cons->lines we should update I.context->buffer too
 	cons->lines = 0;
 	// used to count lines and change negative grep.line values
