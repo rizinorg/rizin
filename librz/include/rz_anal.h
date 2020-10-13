@@ -684,7 +684,7 @@ typedef struct rz_anal_t {
 	REvent *ev;
 	RzList/*<char *>*/ *imports; // global imports
 	SetU *visited;
-	RStrConstPool constpool;
+	RzStrConstPool constpool;
 	RzList *leaddrs;
 } RzAnal;
 

@@ -379,7 +379,7 @@ bool test_rz_str_newf(void) {
 }
 
 bool test_rz_str_constpool(void) {
-	RStrConstPool pool;
+	RzStrConstPool pool;
 	bool s = rz_str_constpool_init (&pool);
 	mu_assert ("pool init success", s);
 

@@ -167,7 +167,7 @@ typedef struct {
 	bool show_functions;
 	bool show_marks;
 	bool show_asciidot;
-	RStrEnc strenc;
+	RzStrEnc strenc;
 	int cursor;
 	int show_comment_right_default;
 	RSpace *flagspace_ports;
@@ -3749,7 +3749,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 	char *escstr = NULL;
 	const char *prefix = "";
 	bool esc_bslash = ds->core->print->esc_bslash;
-	RStrEnc strenc = ds->strenc;
+	RzStrEnc strenc = ds->strenc;
 	if (strenc == RZ_STRING_ENC_GUESS) {
 		strenc = rz_utf_bom_encoding ((ut8 *)str, len);
 	}
@@ -3783,7 +3783,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 			escstr = rz_str_escape_utf16le (str, len, ds->show_asciidot, esc_bslash);
 			prefix = "u";
 		} else if (str_len == 1 && len > 7 && !str[2] && !str[3] && str[4] && !str[5]) {
-			RStrEnc enc = RZ_STRING_ENC_UTF32LE;
+			RzStrEnc enc = RZ_STRING_ENC_UTF32LE;
 			RRune ch;
 			const char *ptr, *end;
 			end = (const char *)rz_mem_mem_aligned ((ut8 *)str, len, (ut8 *)"\0\0\0\0", 4, 4);
@@ -3803,7 +3803,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 				escstr = rz_str_escape_latin1 (str, ds->show_asciidot, esc_bslash, is_comment);
 			}
 		} else {
-			RStrEnc enc = RZ_STRING_ENC_LATIN1;
+			RzStrEnc enc = RZ_STRING_ENC_LATIN1;
 			const char *ptr = str, *end = str + str_len;
 			for (; ptr < end; ptr++) {
 				if (rz_utf8_decode ((ut8 *)ptr, end - ptr, NULL) > 1) {

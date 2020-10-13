@@ -1,7 +1,7 @@
 #ifndef RZ_UTF8_H
 #define RZ_UTF8_H
 
-/* For RStrEnc definition */
+/* For RzStrEnc definition */
 #include "rz_str.h"
 
 typedef struct { ut32 from, to; const char *name; } RUtfBlock;
@@ -19,7 +19,7 @@ RZ_API const char *rz_utf_block_name(int idx);
 RZ_API wchar_t *rz_utf8_to_utf16_l(const char *cstring, int len);
 RZ_API int rz_utf_block_idx (RRune ch);
 RZ_API int *rz_utf_block_list (const ut8 *str, int len, int **freq_list);
-RZ_API RStrEnc rz_utf_bom_encoding(const ut8 *ptr, int ptrlen);
+RZ_API RzStrEnc rz_utf_bom_encoding(const ut8 *ptr, int ptrlen);
 #define rz_utf16_to_utf8(wc) rz_utf16_to_utf8_l ((wchar_t *)wc, -1)
 #define rz_utf8_to_utf16(cstring) rz_utf8_to_utf16_l ((char *)cstring, -1)
 #if __WINDOWS__

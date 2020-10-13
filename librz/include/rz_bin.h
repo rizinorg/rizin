@@ -342,7 +342,7 @@ struct rz_bin_t {
 	bool verbose;
 	bool use_xtr; // use extract plugins when loading a file?
 	bool use_ldr; // use loader plugins when loading a file?
-	RStrConstPool constpool;
+	RzStrConstPool constpool;
 	bool is_reloc_patched; // used to indicate whether relocations were patched or not
 };
 

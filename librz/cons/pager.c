@@ -5,7 +5,7 @@
 #include <rz_cons.h>
 #include "pager_private.h"
 
-RZ_IPI void pager_color_line(const char *line, RStrpool *p, RzList *ml) {
+RZ_IPI void pager_color_line(const char *line, RzStrpool *p, RzList *ml) {
 	int m_len, offset = 0;
 	char *m_addr;
 	RzListIter *it;
@@ -53,7 +53,7 @@ RZ_IPI void pager_printpage(const char *line, int *index, RzList **mla, int from
 		return;
 	}
 
-	RStrpool *p = rz_strpool_new (0);
+	RzStrpool *p = rz_strpool_new (0);
 	if (!p) {
 		return;
 	}

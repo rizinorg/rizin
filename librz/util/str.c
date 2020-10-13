@@ -1390,7 +1390,7 @@ RZ_API char *rz_str_escape_latin1(const char *buf, bool show_asciidot, bool esc_
 	return rz_str_escape_ (buf, false, colors, !colors, show_asciidot, esc_bslash);
 }
 
-static char *rz_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool show_asciidot, bool esc_bslash, bool keep_printable) {
+static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool show_asciidot, bool esc_bslash, bool keep_printable) {
 	char *new_buf, *q;
 	const char *p, *end;
 	RRune ch;
@@ -2533,7 +2533,7 @@ RZ_API int rz_str_write(int fd, const char *b) {
 	return write (fd, b, strlen (b));
 }
 
-RZ_API void rz_str_range_foreach(const char *r, RStrRangeCallback cb, void *u) {
+RZ_API void rz_str_range_foreach(const char *r, RzStrRangeCallback cb, void *u) {
 	const char *p = r;
 	for (; *r; r++) {
 		if (*r == ',') {

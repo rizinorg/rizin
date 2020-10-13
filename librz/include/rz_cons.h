@@ -362,7 +362,7 @@ typedef struct rz_cons_canvas_t {
 	int *bsize;
 	const char *attr; //The current attr (inserted on each write)
 	HtUP *attrs; // all the different attributes <key: unsigned int loc, const char *attr>
-	RStrConstPool constpool; // Pool for non-compile-time attrs
+	RzStrConstPool constpool; // Pool for non-compile-time attrs
 	int sx; // scrollx
 	int sy; // scrolly
 	int color;
