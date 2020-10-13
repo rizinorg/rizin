@@ -1837,19 +1837,25 @@ static int autocomplete(RLineCompletion *completion, RLineBuffer *buf, RLineProm
 }
 
 RZ_API int rz_core_fgets(char *buf, int len) {
-	const char *ptr;
-	RLine *rli = rz_line_singleton ();
+	RzCons *cons = rz_cons_singleton ();
+	RLine *rzli = cons->line;
+	bool prompt = cons->context->is_interactive;
 	buf[0] = '\0';
-	rz_line_completion_set (&rli->completion, rizin_argc, rizin_argv);
- 	rli->completion.run = autocomplete;
- 	rli->completion.run_user = rli->user;
-	ptr = rz_line_readline ();
+	if (prompt) {
+		rz_line_completion_set (&rzli->completion, rizin_argc, rizin_argv);
+		rzli->completion.run = autocomplete;
+		rzli->completion.run_user = rzli->user;
+	} else {
+		rzli->history.data = NULL;
+		rz_line_completion_set (&rzli->completion, 0, NULL);
+		rzli->completion.run = NULL;
+		rzli->completion.run_user = NULL;
+	}
+	const char *ptr = rz_line_readline ();
 	if (!ptr) {
 		return -1;
 	}
-	strncpy (buf, ptr, len - 1);
-	buf[len - 1] = 0;
-	return strlen (buf);
+	return rz_str_ncpy (buf, ptr, len - 1);
 }
 
 static const char *rz_core_print_offname(void *p, ut64 addr) {

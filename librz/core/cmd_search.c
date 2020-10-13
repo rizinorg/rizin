@@ -2069,7 +2069,7 @@ static bool do_anal_search(RzCore *core, struct search_parameters *param, const 
 			}
 			at = from + i;
 			ut8 bufop[32];
-			rz_io_read_at (core->io, at, bufop, sizeof(bufop));
+			rz_io_read_at (core->io, at, bufop, sizeof (bufop));
 			ret = rz_anal_op (core->anal, &aop, at, bufop, sizeof(bufop), RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM);
 			if (ret) {
 				bool match = false;

@@ -45,7 +45,7 @@ RZ_API void rz_str_filter_zeroline(char *str, int len);
 RZ_API size_t rz_str_utf8_codepoint(const char *s, size_t left);
 RZ_API bool rz_str_char_fullwidth(const char *s, size_t left);
 RZ_API int rz_str_write(int fd, const char *b);
-RZ_API void rz_str_ncpy(char *dst, const char *src, size_t n);
+RZ_API size_t rz_str_ncpy(char *dst, const char *src, size_t n);
 RZ_API void rz_str_sanitize(char *c);
 RZ_API char *rz_str_sanitize_sdb_key(const char *s);
 RZ_API const char *rz_str_casestr(const char *a, const char *b);
