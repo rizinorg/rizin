@@ -28,7 +28,7 @@ rz_cons = library('rz_cons', rz_cons_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  soversion: r2_libversion
+  soversion: rizin_libversion
 )
 
 rz_cons_dep = declare_dependency(link_with: rz_cons,
@@ -36,7 +36,7 @@ rz_cons_dep = declare_dependency(link_with: rz_cons,
 
 pkgconfig_mod.generate(rz_cons,
   subdirs: 'librz',
-  version: r2_version,
+  version: rizin_version,
   name: 'rz_cons',
   filebase: 'rz_cons',
   libraries: pkgcfg_sanitize_libs,

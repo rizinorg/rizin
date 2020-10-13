@@ -112,7 +112,7 @@ static char *menus_View[] = {
 };
 
 static const char *menus_Tools[] = {
-	"Calculator", "R2 Shell", "System Shell",
+	"Calculator", "Rizin Shell", "System Shell",
 	NULL
 };
 
@@ -191,7 +191,7 @@ static const char *cache_white_list_cmds[] = {
 static const char *help_msg_panels[] = {
 	"|",        "split the current panel vertically",
 	"-",        "split the current panel horizontally",
-	":",        "run r2 command in prompt",
+	":",        "run rizin command in prompt",
 	";",        "add/remove comment",
 	"_",        "start the hud input mode",
 	"\\",       "show the user-friendly hud",
@@ -240,7 +240,7 @@ static const char *help_msg_panels[] = {
 };
 
 static const char *help_msg_panels_window[] = {
-	":",        "run r2 command in prompt",
+	":",        "run rizin command in prompt",
 	";",        "add/remove comment",
 	"\"",       "create a panel from the list and replace the current one",
 	"?",        "show this help",
@@ -261,7 +261,7 @@ static const char *help_msg_panels_window[] = {
 
 static const char *help_msg_panels_zoom[] = {
 	"?",        "show this help",
-	":",        "run r2 command in prompt",
+	":",        "run rizin command in prompt",
 	";",        "add/remove comment",
 	"\"",       "create a panel from the list and replace the current one",
 	"' '",      "(space) toggle graph / panels",
@@ -5621,7 +5621,7 @@ void __restore_panel_pos(RPanel* panel) {
 }
 
 char *__get_panels_config_dir_path(void) {
-	return rz_str_home (RZ_JOIN_2_PATHS (RZ_HOME_DATADIR, ".r2panels"));
+	return rz_str_home (RZ_JOIN_2_PATHS (RZ_HOME_DATADIR, ".rzpanels"));
 }
 
 char *__create_panels_config_path(const char *file) {

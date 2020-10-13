@@ -33,7 +33,7 @@ static const char *help_msg_e[] = {
 static const char *help_msg_ec[] = {
 	"Usage ec[s?] [key][[=| ]fg] [bg]", "", "",
 	"ec", " [key]", "list all/key color keys",
-	"ec*", "", "same as above, but using r2 commands",
+	"ec*", "", "same as above, but using rizin commands",
 	"ecd", "", "set default palette",
 	"ecr", "", "set random palette (see also scr.randpal)",
 	"ecs", "", "show a colorful palette",

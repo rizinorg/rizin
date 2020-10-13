@@ -8,7 +8,7 @@ static const char *help_msg_f[] = {
 	"Usage: f","[?] [flagname]", " # Manage offset-name flags",
 	"f","","list flags (will only list flags from selected flagspaces)",
 	"f?","flagname","check if flag exists or not, See ?? and ?!",
-	"f."," [*[*]]","list local per-function flags (*) as r2 commands",
+	"f."," [*[*]]","list local per-function flags (*) as rizin commands",
 	"f.","blah=$$+12","set local function label named 'blah'",
 	"f."," fname","list all local labels for the given function",
 	"f,","","table output for flags",
@@ -73,7 +73,7 @@ static const char *help_msg_fd[] = {
 static const char *help_msg_fs[] = {
 	"Usage: fs","[*] [+-][flagspace|addr]", " # Manage flagspaces",
 	"fs","","display flagspaces",
-	"fs*","","display flagspaces as r2 commands",
+	"fs*","","display flagspaces as rizin commands",
 	"fsj","","display flagspaces in JSON",
 	"fs"," *","select all flagspaces",
 	"fs"," flagspace","select flagspace or create if it doesn't exist",
@@ -85,7 +85,7 @@ static const char *help_msg_fs[] = {
 	"fsq","", "list flagspaces in quiet mode",
 	"fsm"," [addr]","move flags at given address to the current flagspace",
 	"fss","","display flagspaces stack",
-	"fss*","","display flagspaces stack in r2 commands",
+	"fss*","","display flagspaces stack in rizin commands",
 	"fssj","","display flagspaces stack in JSON",
 	"fsr"," newname","rename selected flagspace",
 	NULL
@@ -98,7 +98,7 @@ static const char *help_msg_fz[] = {
 	" fz-", "*", "remove all flagzones",
 	" fz.", "", "show around flagzone context",
 	" fz:", "", "show what's in scr.flagzone for visual",
-	" fz*", "", "dump into r2 commands, for projects",
+	" fz*", "", "dump into rizin commands, for projects",
 	NULL
 };
 
@@ -486,7 +486,7 @@ static void cmd_flag_tags(RzCore *core, const char *input) {
 		eprintf (" ftn tag                  # get matching flagnames fot given tag\n");
 		eprintf (" ftw                      # flag tags within this file\n");
 		eprintf (" ftj                      # list all flagtags in JSON format\n");
-		eprintf (" ft*                      # list all flagtags in r2 commands\n");
+		eprintf (" ft*                      # list all flagtags in rizin commands\n");
 		free (inp);
 		return;
 	}

@@ -1231,7 +1231,7 @@ static void rtr_cmds_break(uv_async_t *async) {
 
 RZ_API int rz_core_rtr_cmds(RzCore *core, const char *port) {
 	if (!port || port[0] == '?') {
-		rz_cons_printf ("Usage: .:[tcp-port]    run r2 commands for clients\n");
+		rz_cons_printf ("Usage: .:[tcp-port]    run rizin commands for clients\n");
 		return 0;
 	}
 
@@ -1285,7 +1285,7 @@ RZ_API int rz_core_rtr_cmds (RzCore *core, const char *port) {
 	char *str;
 
 	if (!port || port[0] == '?') {
-		rz_cons_printf ("Usage: .:[tcp-port]    run r2 commands for clients\n");
+		rz_cons_printf ("Usage: .:[tcp-port]    run rizin commands for clients\n");
 		return false;
 	}
 

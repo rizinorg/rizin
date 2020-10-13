@@ -3376,7 +3376,7 @@ reread:
 			cmd_search_bin (core, search_itv);
 			rz_config_set_i (core->config, "bin.verbose", bin_verbose);
 		} else if (input[1] == 'e') { // "/me"
-			rz_cons_printf ("* r2 thinks%s\n", input + 2);
+			rz_cons_printf ("* rizin thinks%s\n", input + 2);
 		} else if (input[1] == ' ' || input[1] == '\0' || param.outmode == RZ_MODE_JSON) {
 			int ret;
 			const char *file = input[param_offset - 1]? input + param_offset: NULL;

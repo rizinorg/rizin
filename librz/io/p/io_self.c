@@ -480,7 +480,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		eprintf ("| =!maps              show map regions\n");
 		eprintf ("| =!kill              commit suicide\n");
 #if !defined(__WINDOWS__)
-		eprintf ("| =!alarm [secs]      setup alarm signal to raise r2 prompt\n");
+		eprintf ("| =!alarm [secs]      setup alarm signal to raise rizin prompt\n");
 #endif
 		eprintf ("| =!dlsym [sym]       dlopen\n");
 		eprintf ("| =!call [sym] [...]  nativelly call a function\n");

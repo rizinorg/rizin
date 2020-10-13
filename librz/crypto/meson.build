@@ -28,7 +28,7 @@ rz_crypto = library('rz_crypto', rz_crypto_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  soversion: r2_libversion
+  soversion: rizin_libversion
 )
 
 rz_crypto_dep = declare_dependency(link_with: rz_crypto,
@@ -36,7 +36,7 @@ rz_crypto_dep = declare_dependency(link_with: rz_crypto,
 
 pkgconfig_mod.generate(rz_crypto,
   subdirs: 'librz',
-  version: r2_version,
+  version: rizin_version,
   name: 'rz_crypto',
   filebase: 'rz_crypto',
   libraries: pkgcfg_sanitize_libs,

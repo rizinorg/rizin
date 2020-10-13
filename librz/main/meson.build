@@ -45,7 +45,7 @@ rz_main = library('rz_main', rz_main_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  soversion: r2_libversion
+  soversion: rizin_libversion
 )
 
 rz_main_dep = declare_dependency(link_with: rz_main,
@@ -54,7 +54,7 @@ rz_main_dep = declare_dependency(link_with: rz_main,
 
 pkgconfig_mod.generate(rz_main,
   subdirs: 'librz',
-  version: r2_version,
+  version: rizin_version,
   name: 'rz_main',
   libraries: pkgcfg_sanitize_libs,
   filebase: 'rz_main',

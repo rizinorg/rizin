@@ -470,12 +470,12 @@ static const char *help_msg_aft[] = {
 
 static const char *help_msg_afv[] = {
 	"Usage:", "afv","[rbs]",
-	"afv*", "", "output r2 command to add args/locals to flagspace",
+	"afv*", "", "output rizin command to add args/locals to flagspace",
 	"afv-", "([name])", "remove all or given var",
 	"afv=", "", "list function variables and arguments with disasm refs",
 	"afva", "", "analyze function arguments/locals",
 	"afvb", "[?]", "manipulate bp based arguments/locals",
-	"afvd", " name", "output r2 command for displaying the value of args/locals in the debugger",
+	"afvd", " name", "output rizin command for displaying the value of args/locals in the debugger",
 	"afvf", "", "show BP relative stackframe variables",
 	"afvn", " [new_name] ([old_name])", "rename argument/local",
 	"afvr", "[?]", "manipulate register based arguments",
@@ -490,7 +490,7 @@ static const char *help_msg_afv[] = {
 static const char *help_msg_afvb[] = {
 	"Usage:", "afvb", " [idx] [name] ([type])",
 	"afvb", "", "list base pointer based arguments, locals",
-	"afvb*", "", "same as afvb but in r2 commands",
+	"afvb*", "", "same as afvb but in rizin commands",
 	"afvb", " [idx] [name] ([type])", "define base pointer based arguments, locals",
 	"afvbj", "", "return list of base pointer based arguments, locals in JSON format",
 	"afvb-", " [name]", "delete argument/locals at the given name",
@@ -502,7 +502,7 @@ static const char *help_msg_afvb[] = {
 static const char *help_msg_afvr[] = {
 	"Usage:", "afvr", " [reg] [type] [name]",
 	"afvr", "", "list register based arguments",
-	"afvr*", "", "same as afvr but in r2 commands",
+	"afvr*", "", "same as afvr but in rizin commands",
 	"afvr", " [reg] [name] ([type])", "define register arguments",
 	"afvrj", "", "return list of register arguments in JSON format",
 	"afvr-", " [name]", "delete register arguments at the given index",
@@ -514,7 +514,7 @@ static const char *help_msg_afvr[] = {
 static const char *help_msg_afvs[] = {
 	"Usage:", "afvs", " [idx] [type] [name]",
 	"afvs", "", "list stack based arguments and locals",
-	"afvs*", "", "same as afvs but in r2 commands",
+	"afvs*", "", "same as afvs but in rizin commands",
 	"afvs", " [idx] [name] [type]", "define stack based arguments,locals",
 	"afvsj", "", "return list of stack based arguments and locals in JSON format",
 	"afvs-", " [name]", "delete stack based argument or locals with the given name",
@@ -543,7 +543,7 @@ static const char *help_msg_ag[] = {
 	"","","",
 	"Output formats:", "", "",
 	"<blank>", "", "Ascii art",
-	"*", "", "r2 commands",
+	"*", "", "rizin commands",
 	"d", "", "Graphviz dot",
 	"g", "", "Graph Modelling Language (gml)",
 	"j", "", "json ('J' for formatted disassembly)",
@@ -648,7 +648,7 @@ static const char *help_msg_ao[] = {
 static const char *help_msg_ar[] = {
 	"Usage: ar", "", "# Analysis Registers",
 	"ar", "", "Show 'gpr' registers",
-	"ar.", ">$snapshot", "Show r2 commands to set register values to the current state",
+	"ar.", ">$snapshot", "Show rizin commands to set register values to the current state",
 	"ar,", "", "Show registers in table format (see dr,)",
 	".ar*", "", "Import register values as flags",
 	".ar-", "", "Unflag all registers",
@@ -709,7 +709,7 @@ static const char *help_msg_av[] = {
 	"Usage:", "av[?jr*]", " C++ vtables and RTTI",
 	"av", "", "search for vtables in data sections and show results",
 	"avj", "", "like av, but as json",
-	"av*", "", "like av, but as r2 commands",
+	"av*", "", "like av, but as rizin commands",
 	"avr", "[j@addr]", "try to parse RTTI at vtable addr (see anal.cpp.abi)",
 	"avra", "[j]", "search for vtables and try to parse RTTI at each of them",
 	"avrr", "", "recover class info from all findable RTTI (see ac)",
@@ -748,7 +748,7 @@ static const char *help_msg_axt[]= {
 	"axtj", " [addr]", "find data/code references to this address and print in json format",
 	"axtg", " [addr]", "display commands to generate graphs according to the xrefs",
 	"axtq", " [addr]", "find and list the data/code references in quiet mode",
-	"axt*", " [addr]", "same as axt, but prints as r2 commands",
+	"axt*", " [addr]", "same as axt, but prints as rizin commands",
 	NULL
 };
 
@@ -903,7 +903,7 @@ static bool cmd_anal_aaft(RzCore *core) {
 		return false;
 	}
 	if (!io_cache) {
-		// XXX. we shouldnt need this, but it breaks 'r2 -c aaa -w ls'
+		// XXX. we shouldnt need this, but it breaks 'rizin -c aaa -w ls'
 		rz_config_set_i (core->config, io_cache_key, true);
 	}
 	seek = core->offset;
@@ -7551,7 +7551,7 @@ static bool cmd_anal_refs(RzCore *core, const char *input) {
 		{
 			Sdb *db = sdb_new0 ();
 			if (input[1] == '*') {
-				anal_axg (core, input + 2, 0, db, RZ_CORE_ANAL_GRAPHBODY, NULL); // r2 commands
+				anal_axg (core, input + 2, 0, db, RZ_CORE_ANAL_GRAPHBODY, NULL); // rizin commands
 			} else if (input[1] == 'j') {
 				PJ *pj = pj_new ();
 				anal_axg (core, input + 2, 0, db, RZ_CORE_ANAL_JSON, pj);
@@ -9661,7 +9661,7 @@ static int cmd_anal_all(RzCore *core, const char *input) {
 			bool didAap = false;
 			char *dh_orig = NULL;
 			if (!strncmp (input, "aaaaa", 5)) {
-				eprintf ("An r2 developer is coming to your place to manually analyze this program. Please wait for it\n");
+				eprintf ("A rizin developer is coming to your place to manually analyze this program. Please wait for it\n");
 				if (rz_cons_is_interactive ()) {
 					rz_cons_any_key (NULL);
 				}
@@ -9675,7 +9675,7 @@ static int cmd_anal_all(RzCore *core, const char *input) {
 			rz_print_rowlog_done (core->print, oldstr);
 			rz_core_task_yield (&core->tasks);
 			// Run pending analysis immediately after analysis
-			// Usefull when running commands with ";" or via r2 -c,-i
+			// Usefull when running commands with ";" or via rizin -c,-i
 			dh_orig = core->dbg->h
 				? strdup (core->dbg->h->name)
 				: strdup ("esil");

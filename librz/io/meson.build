@@ -88,7 +88,7 @@ rz_io = library('rz_io', rz_io_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  soversion: r2_libversion
+  soversion: rizin_libversion
 )
 
 rz_io_dep = declare_dependency(link_with: rz_io,
@@ -96,7 +96,7 @@ rz_io_dep = declare_dependency(link_with: rz_io,
 
 pkgconfig_mod.generate(rz_io,
   subdirs: 'librz',
-  version: r2_version,
+  version: rizin_version,
   name: 'rz_io',
   filebase: 'rz_io',
   libraries: pkgcfg_sanitize_libs,

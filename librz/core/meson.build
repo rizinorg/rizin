@@ -116,7 +116,7 @@ rz_core = library('rz_core', rz_core_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  soversion: r2_libversion
+  soversion: rizin_libversion
 )
 
 rz_core_dep = declare_dependency(link_with: rz_core,
@@ -125,7 +125,7 @@ rz_core_dep = declare_dependency(link_with: rz_core,
 pkgconfig_mod.generate(
   rz_core,
   subdirs: 'librz',
-  version: r2_version,
+  version: rizin_version,
   name: 'rz_core',
   filebase: 'rz_core',
   libraries: pkgcfg_sanitize_libs,

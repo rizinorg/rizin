@@ -12,7 +12,7 @@ rz_syscall = library('rz_syscall', rz_syscall_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  soversion: r2_libversion
+  soversion: rizin_libversion
 )
 
 rz_syscall_dep = declare_dependency(link_with: rz_syscall,
@@ -20,7 +20,7 @@ rz_syscall_dep = declare_dependency(link_with: rz_syscall,
 
 pkgconfig_mod.generate(rz_syscall,
   subdirs: 'librz',
-  version: r2_version,
+  version: rizin_version,
   name: 'rz_syscall',
   filebase: 'rz_syscall',
   libraries: pkgcfg_sanitize_libs,

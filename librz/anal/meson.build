@@ -185,7 +185,7 @@ rz_anal = library('rz_anal', rz_anal_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  soversion: r2_libversion
+  soversion: rizin_libversion
 )
 
 rz_anal_dep = declare_dependency(link_with: rz_anal,
@@ -193,7 +193,7 @@ rz_anal_dep = declare_dependency(link_with: rz_anal,
 
 pkgconfig_mod.generate(rz_anal,
   subdirs: 'librz',
-  version: r2_version,
+  version: rizin_version,
   name: 'rz_anal',
   filebase: 'rz_anal',
   libraries: pkgcfg_sanitize_libs,

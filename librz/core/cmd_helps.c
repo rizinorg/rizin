@@ -291,7 +291,7 @@ const RzCmdDescHelp stdin_help = {
 };
 
 const RzCmdDescHelp interpret_help = {
-	.summary = "Define macro or load r2, cparse or rlang file",
+	.summary = "Define macro or load rizin, cparse or rlang file",
 };
 
 const RzCmdDescHelp search_help = {
@@ -299,7 +299,7 @@ const RzCmdDescHelp search_help = {
 };
 
 const RzCmdDescHelp rap_help = {
-	.summary = "connect with other instances of r2",
+	.summary = "connect with other instances of rizin",
 };
 
 const RzCmdDescHelp help_help = {
@@ -372,7 +372,7 @@ const RzCmdDescHelp h_help = {
 };
 
 const RzCmdDescHelp L_help = {
-	.summary = "list, unload, load r2 plugins",
+	.summary = "list, unload, load rizin plugins",
 };
 
 const RzCmdDescHelp o_help = {

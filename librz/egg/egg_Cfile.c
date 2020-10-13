@@ -82,10 +82,10 @@ static struct cEnv_t* rz_egg_Cfile_set_cEnv(const char *arch, const char *os, in
 
 	cEnv->SFLIBPATH = rz_sys_getenv ("SFLIBPATH");
 	if (!cEnv->SFLIBPATH) {
-		output = rz_sys_cmd_strf ("r2 -hh | grep INCDIR | awk '{print $2}'");
+		output = rz_sys_cmd_strf ("rizin -hh | grep INCDIR | awk '{print $2}'");
 		if (!output || (output[0] == '\0')) {
 			eprintf ("Cannot find SFLIBPATH env var.\n"
-		  		 "Please define it, or fix r2 installation.\n");
+		  		 "Please define it, or fix rizin installation.\n");
 			goto fail;
 		}
 

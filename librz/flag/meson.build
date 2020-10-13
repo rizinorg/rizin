@@ -13,7 +13,7 @@ rz_flag = library('rz_flag', rz_flag_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  soversion: r2_libversion
+  soversion: rizin_libversion
 )
 
 rz_flag_dep = declare_dependency(link_with: rz_flag,
@@ -21,7 +21,7 @@ rz_flag_dep = declare_dependency(link_with: rz_flag,
 
 pkgconfig_mod.generate(rz_flag,
   subdirs: 'librz',
-  version: r2_version,
+  version: rizin_version,
   name: 'rz_flag',
   filebase: 'rz_flag',
   libraries: pkgcfg_sanitize_libs,

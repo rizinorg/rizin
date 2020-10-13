@@ -43,7 +43,7 @@ extern int errno;
 #if 0
 procpidmem is buggy.. running this sometimes results in ffff
 
-	while : ; do r2 -qc 'oo;x' -d ls ; done
+	while : ; do rizin -qc 'oo;x' -d ls ; done
 #endif
 #define USE_PROC_PID_MEM 0
 
@@ -59,7 +59,7 @@ typedef int ptrace_word;   // int ptrace(int request, pid_t pid, caddr_t addr, i
 #else
 typedef size_t ptrace_word; // long ptrace(enum __ptrace_request request, pid_t pid, void *addr, void *data);
 // XXX. using int read fails on some addresses
-// XXX. using long here breaks 'w AAAABBBBCCCCDDDD' in r2 -d
+// XXX. using long here breaks 'w AAAABBBBCCCCDDDD' in rizin -d
 #endif
 
 static int debug_os_read_at(RzIO *io, int pid, ut32 *buf, int sz, ut64 addr) {

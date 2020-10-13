@@ -274,7 +274,7 @@ static void setASLR(RRunProfile *r, int enabled) {
 		: r->_args[0] ? r->_args[0]
 		: "/path/to/exec";
 	eprintf ("To disable aslr patch mach0.hdr.flags with:\n"
-		"r2 -qwnc 'wx 000000 @ 0x18' %s\n", argv0);
+		"rizin -qwnc 'wx 000000 @ 0x18' %s\n", argv0);
 	// f MH_PIE=0x00200000; wB-MH_PIE @ 24\n");
 	// for osxver>=10.7
 	// "unset the MH_PIE bit in an already linked executable" with --no-pie flag of the script
@@ -628,7 +628,7 @@ RZ_API const char *rz_run_help(void) {
 	"# arg5=:!rz_gg -p n50 -d 10:0x8048123\n"
 	"# arg6=@arg.txt\n"
 	"# arg7=@300@ABCD # 300 chars filled with ABCD pattern\n"
-	"# system=r2 -\n"
+	"# system=rizin -\n"
 	"# daemon=false\n"
 	"# aslr=no\n"
 	"setenv=FOO=BAR\n"

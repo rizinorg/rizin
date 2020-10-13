@@ -112,7 +112,7 @@ typedef struct rz_egg_t {
 
 /* XXX: this may fail in different arches */
 #if 0
-r2 -q - <<EOF
+rizin -q - <<EOF
 ?e #define RZ_EGG_OS_LINUX \`?h linux\`
 ?e #define RZ_EGG_OS_OSX \`?h osx\`
 ?e #define RZ_EGG_OS_DARWIN \`?h darwin\`

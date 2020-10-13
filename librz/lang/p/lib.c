@@ -45,7 +45,7 @@ static int lang_lib_file_run (RzLang *user, const char *file) {
 static RzLangPlugin rz_lang_plugin_lib = {
 	.name = "lib",
 	.ext = RZ_LIB_EXT,
-	.desc = "Load libs directly into r2",
+	.desc = "Load libs directly into rizin",
 	.license = "LGPL",
 	.init = lang_lib_init,
 	.run_file = lang_lib_file_run,

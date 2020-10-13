@@ -224,7 +224,7 @@ jobs:
     steps:
     - name: Install tools
       run: yum install -y patch unzip git gcc make
-    - name: Checkout r2
+    - name: Checkout rizin
       run: |
         git clone https://github.com/${{ github.repository }}
         cd rizin
@@ -555,7 +555,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TESTS: 'armthumb baleful bcl ba2 blackfin blessr2 keystone-lib keystone lang-duktape mc6809 microblaze msil pcap ppcdisasm psosvm swf unicorn-lib unicorn vc4 x86udis x86bea x86tab x86olly x86zyan z80-nc'
-      R2PIPE_TESTS: 'rzpipe-go rzpipe-js rzpipe-py'
+      RZPIPE_TESTS: 'rzpipe-go rzpipe-js rzpipe-py'
     steps:
     - uses: actions/download-artifact@v2
       with:
@@ -583,7 +583,7 @@ jobs:
     - name: Compile and install rzpipe
       run: |
         set -e
-        for p in $R2PIPE_TESTS ; do
+        for p in $RZPIPE_TESTS ; do
           echo $p
           rz-pm -i $p
         done

@@ -31,7 +31,7 @@ rz_hash = library('rz_hash', rz_hash_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  soversion: r2_libversion
+  soversion: rizin_libversion
 )
 
 rz_hash_dep = declare_dependency(link_with: rz_hash,
@@ -39,7 +39,7 @@ rz_hash_dep = declare_dependency(link_with: rz_hash,
 
 pkgconfig_mod.generate(rz_hash,
   subdirs: 'librz',
-  version: r2_version,
+  version: rizin_version,
   name: 'rz_hash',
   filebase: 'rz_hash',
   libraries: pkgcfg_sanitize_libs,

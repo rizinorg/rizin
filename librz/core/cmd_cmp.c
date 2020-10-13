@@ -5,7 +5,7 @@
 static const char *help_msg_c[] = {
 	"Usage:", "c[?dfx] [argument]", " # Compare",
 	"c", " [string]", "Compare a plain with escaped chars string",
-	"c*", " [string]", "Same as above, but printing r2 commands instead",
+	"c*", " [string]", "Same as above, but printing rizin commands instead",
 	"c1", " [addr]", "Compare 8 bits from current offset",
 	"c2", " [value]", "Compare a word from a math expression",
 	"c4", " [value]", "Compare a doubleword from a math expression",
@@ -27,7 +27,7 @@ static const char *help_msg_c[] = {
 	"cV", "[1248] [addr] @at", "Compare 1,2,4,8-byte address contents (silent, return in $?)",
 	"cw", "[?] [us?] [...]", "Compare memory watchers",
 	"cx", " [hexpair]", "Compare hexpair string (use '.' as nibble wildcard)",
-	"cx*", " [hexpair]", "Compare hexpair string (output r2 commands)",
+	"cx*", " [hexpair]", "Compare hexpair string (output rizin commands)",
 	"cX", " [addr]", "Like 'cc' but using hexdiff output",
 	NULL
 };
@@ -341,7 +341,7 @@ static void cmd_cmp_watcher(RzCore *core, const char *input) {
 			"cw", " addr", "List all compare watchers",
 			"cw", " addr sz cmd", "Add a memory watcher",
 			// "cws", " [addr]", "Show watchers",
-			"cw", "*", "List compare watchers in r2 cmds",
+			"cw", "*", "List compare watchers in rizin cmds",
 			"cwr", " [addr]", "Reset/revert watchers",
 			"cwu", " [addr]", "Update watchers",
 			NULL

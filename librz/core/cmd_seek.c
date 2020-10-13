@@ -20,7 +20,7 @@ static const char *help_msg_s[] = {
 	"s+", "", "Redo seek",
 	"s+", " n", "Seek n bytes forward",
 	"s++", "[n]", "Seek blocksize bytes forward (/=n)",
-	"s[j*=!]", "", "List undo seek history (JSON, =list, *r2, !=names, s==)",
+	"s[j*=!]", "", "List undo seek history (JSON, =list, *rz, !=names, s==)",
 	"s/", " DATA", "Search for next occurrence of 'DATA'",
 	"s/x", " 9091", "Search for next occurrence of \\x90\\x91",
 	"sa", " [[+-]a] [asz]", "Seek asz (or bsize) aligned to addr",

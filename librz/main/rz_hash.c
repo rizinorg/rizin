@@ -539,7 +539,7 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 		// TODO: support -f and -t
 		for (i = opt.ind; i < argc; i++) {
 			printf ("%s:\n", argv[i]);
-			rz_sys_cmdf ("r2 -qfnc \"p==%s 100\" \"%s\"", ptype, argv[i]);
+			rz_sys_cmdf ("rizin -qfnc \"p==%s 100\" \"%s\"", ptype, argv[i]);
 		}
 		return 0;
 	}

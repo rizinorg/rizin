@@ -49,7 +49,7 @@ RZ_API int __core_visual_view_zigns_update(RzCore *core, RzCoreVisualViewZigns *
 	RzList *col0 = __signs (status, status->addr, true);
 	char *col0str = rz_str_widget_list (core, col0, colh, status->cur, print_item);
 
-	char *title = rz_str_newf ("[r2-visual-signatures] 0x%08"PFMT64x" 0x%08"PFMT64x, status->addr, status->faddr);
+	char *title = rz_str_newf ("[rz-visual-signatures] 0x%08"PFMT64x" 0x%08"PFMT64x, status->addr, status->faddr);
 	if (title) {
 		rz_cons_strcat_at (title, 0, 0, w - 1, 2);
 		free (title);

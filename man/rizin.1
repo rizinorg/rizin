@@ -24,7 +24,7 @@
 .Sh DESCRIPTION
 rizin is a commandline hexadecimal editor.
 .Pp
-"r2" is the alias program name for rizin.
+"rz" is the alias program name for rizin.
 .Pp
 This manpage is not updated yet. Feel free to contribute.
 .Pp
@@ -33,7 +33,7 @@ The options are:
 .It Fl Fl
 Open rizin on an empty file
 .It Fl
-Equivalent of 'r2 malloc://512'
+Equivalent of 'rizin malloc://512'
 .It Fl 0
 Print \\x00 after initialization and after every command executed
 .It Fl 2
@@ -123,13 +123,13 @@ Type '?' for help
 .Sh VISUAL
 To enter visual mode use the 'V' command. Then press '?' for help
 .Sh DEBUGGER
-In r2 the debugger commands are implemented under the 'd' command. Type 'd?' for help
+In rizin the debugger commands are implemented under the 'd' command. Type 'd?' for help
 .Sh ENVIRONMENT
  RZ_CFG_OLDSHELL sets cfg.newshell=false
  RZ_DEBUG      if defined, show error messages and crash signal
  RZ_DEBUG_ASSERT=1 set a breakpoint when hitting an assert
  RZ_MAGICPATH /Users/pancake/.local/share/rizin/share/rizin/4.5.0-git/magic
- RZ_NOPLUGINS do not load r2 shared plugins
+ RZ_NOPLUGINS do not load rizin shared plugins
  RZ_RCFILE    ~/.rizinrc (user preferences, batch script)
  RZ_RDATAHOME /usr/local
 .Ar FILE

@@ -81,7 +81,7 @@ static int rz_main_rzpipe(int argc, const char **argv) {
 		}
         } else {
 		eprintf ("Error: R2PIPE_(IN|OUT) environment not set\n");
-		eprintf ("Usage: r2 -c '!*r2p x' # run commands via rzpipe\n");
+		eprintf ("Usage: rizin -c '!*rzp x' # run commands via rzpipe\n");
                 rc = 1;
 	}
 	free (_in);
@@ -90,7 +90,7 @@ static int rz_main_rzpipe(int argc, const char **argv) {
 }
 
 int main(int argc, const char **argv) {
-	if (argc > 0 && strstr (argv[0], "r2p")) {
+	if (argc > 0 && strstr (argv[0], "rzp")) {
 		return rz_main_rzpipe (argc, argv);
 	}
 	return rz_main_rizin (argc, argv);

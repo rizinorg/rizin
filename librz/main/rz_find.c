@@ -130,7 +130,7 @@ static int show_help(const char *argv0, int line) {
 	" -f [from]  start searching from address 'from'\n"
 	" -F [file]  read the contents of the file and use it as keyword\n"
 	" -h         show this help\n"
-	" -i         identify filetype (r2 -nqcpm file)\n"
+	" -i         identify filetype (rizin -nqcpm file)\n"
 	" -j         output in JSON\n"
 	" -m         magic search, file-type carver\n"
 	" -M [str]   set a binary mask to be applied on keywords\n"

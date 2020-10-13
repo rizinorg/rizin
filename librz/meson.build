@@ -360,7 +360,7 @@ include_files =[
   'include/rz_util.h',
   'include/rz_vector.h',
 ]
-install_headers(include_files, install_dir: r2_incdir)
+install_headers(include_files, install_dir: rizin_incdir)
 
 rz_util_files = [
   'include/rz_util/pj.h',
@@ -418,12 +418,12 @@ rz_util_files = [
   'include/rz_util/rz_x509.h',
   'include/rz_util/rz_annotated_code.h'
 ]
-install_headers(rz_util_files, install_dir: join_paths(r2_incdir, 'rz_util'))
+install_headers(rz_util_files, install_dir: join_paths(rizin_incdir, 'rz_util'))
 
 rz_crypto_files = [
   'include/rz_crypto/rz_des.h'
 ]
-install_headers(rz_crypto_files, install_dir: join_paths(r2_incdir, 'rz_crypto'))
+install_headers(rz_crypto_files, install_dir: join_paths(rizin_incdir, 'rz_crypto'))
 
 sflib_common_files = [
   'include/sflib/common/sftypes.h',
@@ -446,10 +446,10 @@ sflib_arch_files = [
   'sfsysnr.h'
 ]
 
-install_headers(sflib_common_files, install_dir: join_paths(r2_incdir, 'sflib/common'))
+install_headers(sflib_common_files, install_dir: join_paths(rizin_incdir, 'sflib/common'))
 foreach arch : sflib_arch
   foreach file : sflib_arch_files
-    install_headers(join_paths('include/sflib', arch, file), install_dir: join_paths(r2_incdir, 'sflib', arch))
+    install_headers(join_paths('include/sflib', arch, file), install_dir: join_paths(rizin_incdir, 'sflib', arch))
   endforeach
 endforeach
 

@@ -6,7 +6,7 @@
 .Sh SYNOPSIS
 .Nm rz-run
 .Op [directives]
-.Op [script.rr2]
+.Op [script.rrz]
 .Op [--] [program] [args]
 .Sh DESCRIPTION
 This program is used as a launcher for running programs with different environment, arguments, permissions, directories and overridden default filedescriptors.
@@ -18,7 +18,7 @@ The program just accepts a single argument which is the filename of the configur
 It is useful when you have to run a program using long arguments or pass long data to stdin or things like that usually required for exploiting crackmes :)
 .Sh DIRECTIVES
 .Pp
-The rr2 (rz-run) configuration file accepts the following directives, described as key=value entries and comments defined as lines starting with '#'.
+The rrz (rz-run) configuration file accepts the following directives, described as key=value entries and comments defined as lines starting with '#'.
 .Bl -tag -width Fl
 .It Ar arg[0-N]
 set value for argument N passed to the program
@@ -69,7 +69,7 @@ path to the library to be executed
 .It Ar runlib.fcn
 function name to call from runlib library
 .It Ar r2preload
-preload with librz, kill -USR1 to get an r2 shell or -USR2 to spawn a webserver in a thread
+preload with librz, kill -USR1 to get an rizin shell or -USR2 to spawn a webserver in a thread
 .It Ar r2preweb
 run the webserver in a thread just at starting the r2preload
 .It Ar setenv
@@ -119,7 +119,7 @@ Parses the input string and returns it as integer
 .Sh EXAMPLES
 Sample rz-run script
 .Pp
-  $ cat foo.rr2
+  $ cat foo.rrz
   #!/usr/bin/rz-run
   program=./pp400
   arg0=10
@@ -131,7 +131,7 @@ Sample rz-run script
   unsetenv=NOFUN
   # EGG will be the only env variable
   #chroot=.
-  ./foo.rr2
+  ./foo.rrz
 .Pp
 Connecting a program to a socket
 .Pp
@@ -143,13 +143,13 @@ Debugging a program redirecting io to another terminal
   ## open a new terminal and type 'tty' to get
   $ tty ; clear ; sleep 999999
   /dev/ttyS010
-  ## in another terminal run r2
-  $ r2 \-r foo.rr2 -d ls
-  $ cat foo.rr2
+  ## in another terminal run rizin
+  $ rizin \-r foo.rrz -d ls
+  $ cat foo.rrz
   #!/usr/bin/rz-run
   stdio=/dev/ttys010
   ## Or you can use -R to set a key=value
-  r2 \-R stdio=/dev/ttys010 -d ls
+  rizin \-R stdio=/dev/ttys010 -d ls
 .Pp
 You can also use the -- flag to specify program and arguments in a more natural way:
 .Pp

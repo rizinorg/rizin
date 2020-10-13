@@ -68,7 +68,7 @@ include ../../shlr/rizin-shell-parser-deps.mk
 all: symlinks
 
 symlinks: build
-	for FILE in r2 ${BINS} ; do \
+	for FILE in ${BINS} ; do \
 		ln -fs rizin $$FILE ; \
 	done
 
@@ -76,7 +76,6 @@ clean:
 	mv main.c main.k
 	rm -f *.[ch]
 	mv main.k main.c
-	rm -f ${BINS2} r2
 
 build:
 	mv main.c main.k
@@ -97,7 +96,7 @@ build:
 
 install:
 	mkdir -p "${DESTDIR}${BINDIR}"
-	for FILE in r2 ${BINS2} ; do \
+	for FILE in ${BINS2} ; do \
 		rm -f "${DESTDIR}${BINDIR}/$$FILE" ; \
 		cp -PRpf "$$FILE" "${DESTDIR}${BINDIR}/$$FILE" ; \
 	done

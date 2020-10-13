@@ -23,7 +23,7 @@ rz_socket = library('rz_socket', rz_socket_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  soversion: r2_libversion
+  soversion: rizin_libversion
 )
 
 rz_socket_dep = declare_dependency(link_with: rz_socket,
@@ -32,7 +32,7 @@ rz_socket_dep = declare_dependency(link_with: rz_socket,
 
 pkgconfig_mod.generate(rz_socket,
   subdirs: 'librz',
-  version: r2_version,
+  version: rizin_version,
   name: 'rz_socket',
   filebase: 'rz_socket',
   libraries: pkgcfg_sanitize_libs,

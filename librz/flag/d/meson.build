@@ -20,12 +20,12 @@ for fname in argv[1:]:
     print('ft %s %s' % (os.path.basename(fname), text))
 '''
 
-custom_target('tags.r2',
+custom_target('tags.rz',
   input: tags_rz_sources,
-  output: 'tags.r2',
+  output: 'tags.rz',
   command: [py3_exe, '-c', script, '@INPUT@'],
   capture: true,
   build_by_default: true,
   install: true,
-  install_dir: r2_flags
+  install_dir: rizin_flags
 )

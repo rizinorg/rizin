@@ -24,7 +24,7 @@ rz_magic = library('rz_magic', rz_magic_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  soversion: r2_libversion
+  soversion: rizin_libversion
 )
 
 rz_magic_dep = declare_dependency(
@@ -34,7 +34,7 @@ rz_magic_dep = declare_dependency(
 
 pkgconfig_mod.generate(rz_magic,
   subdirs: 'librz',
-  version: r2_version,
+  version: rizin_version,
   name: 'rz_magic',
   filebase: 'rz_magic',
   libraries: pkgcfg_sanitize_libs,

@@ -60,7 +60,7 @@ static const char *help_msg_i[] = {
 	"iX", "", "Display source files used (via dwarf)",
 	"iz|izj", "", "Strings in data sections (in JSON/Base64)",
 	"izz", "", "Search for Strings in the whole binary",
-	"izzz", "", "Dump Strings from whole binary to r2 shell (for huge files)",
+	"izzz", "", "Dump Strings from whole binary to rizin shell (for huge files)",
 	"iz-", " [addr]", "Purge string via bin.str.purge",
 	"iZ", "", "Guess size of binary program",
 	NULL
