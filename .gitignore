@@ -51,6 +51,7 @@ binrz/rz_ax/rz-ax
 binrz/rz_ax/rz-ax.exe
 binrz/*/_CodeSignature/*
 build
+build*
 build_sdb
 config-user.mk
 librz/bin/d/dll/dll
@@ -126,3 +127,4 @@ __pycache__
 .ccls-cache/
 vgcore.*
 librz/include/sdb
+peda-session-*
