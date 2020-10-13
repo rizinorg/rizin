@@ -11,10 +11,10 @@ static ut64 rz_bin_mz_la_to_pa(const struct rz_bin_mz_obj_t *bin, ut64 la) {
 	return la + (bin->dos_header->header_paragraphs << 4);
 }
 
-RBinAddr *rz_bin_mz_get_entrypoint (const struct rz_bin_mz_obj_t *bin) {
+RzBinAddr *rz_bin_mz_get_entrypoint (const struct rz_bin_mz_obj_t *bin) {
 	const MZ_image_dos_header *mz;
 	ut64 la;
-	RBinAddr *entrypoint;
+	RzBinAddr *entrypoint;
 
 	if (!bin || !bin->dos_header) {
 		return NULL;
@@ -27,7 +27,7 @@ RBinAddr *rz_bin_mz_get_entrypoint (const struct rz_bin_mz_obj_t *bin) {
 		eprintf ("Error: entry point outside load module\n");
 		return NULL;
 	}
-	entrypoint = RZ_NEW0 (RBinAddr);
+	entrypoint = RZ_NEW0 (RzBinAddr);
 	if (entrypoint) {
 		entrypoint->vaddr = la;
 		entrypoint->paddr = rz_bin_mz_la_to_pa (bin, la);
@@ -37,7 +37,7 @@ RBinAddr *rz_bin_mz_get_entrypoint (const struct rz_bin_mz_obj_t *bin) {
 }
 
 static int cmp_sections(const void *a, const void *b) {
-	const RBinSection *s_a, *s_b;
+	const RzBinSection *s_a, *s_b;
 
 	s_a = a;
 	s_b = b;
@@ -45,11 +45,11 @@ static int cmp_sections(const void *a, const void *b) {
 	return s_a->vaddr - s_b->vaddr;
 }
 
-static RBinSection *rz_bin_mz_init_section(const struct rz_bin_mz_obj_t *bin,
+static RzBinSection *rz_bin_mz_init_section(const struct rz_bin_mz_obj_t *bin,
 					  ut64 laddr) {
-	RBinSection *section;
+	RzBinSection *section;
 
-	section = RZ_NEW0 (RBinSection);
+	section = RZ_NEW0 (RzBinSection);
 	if (section) {
 		section->vaddr = laddr;
 	}
@@ -60,7 +60,7 @@ static RBinSection *rz_bin_mz_init_section(const struct rz_bin_mz_obj_t *bin,
 RzList *rz_bin_mz_get_segments (const struct rz_bin_mz_obj_t *bin) {
 	RzList *seg_list;
 	RzListIter *iter;
-	RBinSection *section;
+	RzBinSection *section;
 	MZ_image_relocation_entry *relocs;
 	int i, num_relocs, section_number;
 	ut16 ss;
@@ -86,7 +86,7 @@ RzList *rz_bin_mz_get_segments (const struct rz_bin_mz_obj_t *bin) {
 	relocs = bin->relocation_entries;
 	num_relocs = bin->dos_header->num_relocs;
 	for (i = 0; i < num_relocs; i++) {
-		RBinSection c;
+		RzBinSection c;
 		ut64 laddr, paddr, section_laddr;
 		ut16 curr_seg;
 
@@ -133,7 +133,7 @@ RzList *rz_bin_mz_get_segments (const struct rz_bin_mz_obj_t *bin) {
 	rz_list_foreach (seg_list, iter, section) {
 		section->name = rz_str_newf ("seg_%03d", section_number);
 		if (section_number) {
-			RBinSection *p_section = iter->p->data;
+			RzBinSection *p_section = iter->p->data;
 			p_section->size = section->vaddr - p_section->vaddr;
 			p_section->vsize = p_section->size;
 		}
@@ -150,7 +150,7 @@ RzList *rz_bin_mz_get_segments (const struct rz_bin_mz_obj_t *bin) {
 	return seg_list;
 
 err_out:
-	eprintf ("Error: alloc (RBinSection)\n");
+	eprintf ("Error: alloc (RzBinSection)\n");
 	rz_list_free (seg_list);
 
 	return NULL;
@@ -317,13 +317,13 @@ struct rz_bin_mz_obj_t *rz_bin_mz_new_buf(RBuffer *buf) {
 	return rz_bin_mz_init (bin)? bin: rz_bin_mz_free (bin);
 }
 
-RBinAddr *rz_bin_mz_get_main_vaddr (struct rz_bin_mz_obj_t *bin) {
+RzBinAddr *rz_bin_mz_get_main_vaddr (struct rz_bin_mz_obj_t *bin) {
 	int n;
 	ut8 b[512];
 	if (!bin || !bin->b) {
 		return NULL;
 	}
-	RBinAddr *entry = rz_bin_mz_get_entrypoint (bin);
+	RzBinAddr *entry = rz_bin_mz_get_entrypoint (bin);
 	if (!entry) {
 		return NULL;
 	}

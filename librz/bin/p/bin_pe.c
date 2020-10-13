@@ -30,7 +30,7 @@ static bool check_buffer(RBuffer *b) {
 }
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
-static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
+static RBuffer* create(RzBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
 	ut32 hdrsize, p_start, p_opthdr, p_sections, p_lsrlc, n;
 	ut32 baddr = 0x400000;
 	RBuffer *buf = rz_buf_new ();
@@ -103,7 +103,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-static char *signature (RBinFile *bf, bool json) {
+static char *signature (RzBinFile *bf, bool json) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
@@ -118,7 +118,7 @@ static char *signature (RBinFile *bf, bool json) {
 	return rz_pkcs7_cms_to_string (bin->cms);
 }
 
-static RzList *fields(RBinFile *bf) {
+static RzList *fields(RzBinFile *bf) {
 	RzList *ret  = rz_list_new ();
 	if (!ret) {
 		return NULL;
@@ -296,7 +296,7 @@ static RzList *fields(RBinFile *bf) {
 	return ret;
 }
 
-static void header(RBinFile *bf) {
+static void header(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) * bin = bf->o->bin_obj;
 	struct rz_bin_t *rbin = bf->rbin;
 	rbin->cb_printf ("PE file header:\n");
@@ -406,7 +406,7 @@ static void header(RBinFile *bf) {
 
 extern struct rz_bin_write_t rz_bin_write_pe;
 
-RBinPlugin rz_bin_plugin_pe = {
+RzBinPlugin rz_bin_plugin_pe = {
 	.name = "pe",
 	.desc = "PE bin plugin",
 	.license = "LGPL3",

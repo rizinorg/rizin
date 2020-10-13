@@ -7,15 +7,15 @@
 #include <rz_io.h>
 #include "bflt/bflt.h"
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	*bin_obj = rz_bin_bflt_new_buf (buf);
 	return *bin_obj;
 }
 
-static RzList *entries(RBinFile *bf) {
+static RzList *entries(RzBinFile *bf) {
 	struct rz_bin_bflt_obj *obj = (struct rz_bin_bflt_obj *) bf->o->bin_obj;
 	RzList *ret;
-	RBinAddr *ptr;
+	RzBinAddr *ptr;
 
 	if (!(ret = rz_list_newf (free))) {
 		return NULL;
@@ -48,10 +48,10 @@ static int search_old_relocation(struct reloc_struct_t *reloc_table,
 	return -1;
 }
 
-static RzList *patch_relocs(RBin *b) {
+static RzList *patch_relocs(RzBin *b) {
 	struct rz_bin_bflt_obj *bin = NULL;
 	RzList *list = NULL;
-	RBinObject *obj;
+	RzBinObject *obj;
 	int i = 0;
 	if (!b || !b->iob.io || !b->iob.io->desc) {
 		return NULL;
@@ -77,7 +77,7 @@ static RzList *patch_relocs(RBin *b) {
 		for (i = 0; i < bin->n_got; i++) {
 			__patch_reloc (bin->b, got_table[i].addr_to_patch,
 				got_table[i].data_offset);
-			RBinReloc *reloc = RZ_NEW0 (RBinReloc);
+			RzBinReloc *reloc = RZ_NEW0 (RzBinReloc);
 			if (reloc) {
 				reloc->type = RZ_BIN_RELOC_32;
 				reloc->paddr = got_table[i].addr_to_patch;
@@ -101,7 +101,7 @@ static RzList *patch_relocs(RBin *b) {
 				__patch_reloc (bin->b, reloc_table[i].addr_to_patch,
 					reloc_table[i].data_offset);
 			}
-			RBinReloc *reloc = RZ_NEW0 (RBinReloc);
+			RzBinReloc *reloc = RZ_NEW0 (RzBinReloc);
 			if (reloc) {
 				reloc->type = RZ_BIN_RELOC_32;
 				reloc->paddr = reloc_table[i].addr_to_patch;
@@ -141,7 +141,7 @@ static ut32 get_ngot_entries(struct rz_bin_bflt_obj *obj) {
 	return n_got;
 }
 
-static RzList *relocs(RBinFile *bf) {
+static RzList *relocs(RzBinFile *bf) {
 	struct rz_bin_bflt_obj *obj = (struct rz_bin_bflt_obj *) bf->o->bin_obj;
 	RzList *list = rz_list_newf ((RzListFree) free);
 	ut32 i, len, n_got, amount;
@@ -235,7 +235,7 @@ static RzList *relocs(RBinFile *bf) {
 				reloc_table[i].addr_to_patch = reloc_offset;
 				reloc_table[i].data_offset = reloc_data_offset;
 
-				RBinReloc *reloc = RZ_NEW0 (RBinReloc);
+				RzBinReloc *reloc = RZ_NEW0 (RzBinReloc);
 				if (reloc) {
 					reloc->type = RZ_BIN_RELOC_32;
 					reloc->paddr = reloc_table[i].addr_to_patch;
@@ -253,14 +253,14 @@ out_error:
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RzBinInfo *info(RzBinFile *bf) {
 	struct rz_bin_bflt_obj *obj = NULL;
-	RBinInfo *info = NULL;
+	RzBinInfo *info = NULL;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
 	obj = (struct rz_bin_bflt_obj *) bf->o->bin_obj;
-	if (!(info = RZ_NEW0 (RBinInfo))) {
+	if (!(info = RZ_NEW0 (RzBinInfo))) {
 		return NULL;
 	}
 	info->file = bf->file? strdup (bf->file): NULL;
@@ -284,11 +284,11 @@ static bool check_buffer(RBuffer *buf) {
 	return r == sizeof (tmp) && !memcmp (tmp, "bFLT", 4);
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	rz_bin_bflt_free (bf->o->bin_obj);
 }
 
-RBinPlugin rz_bin_plugin_bflt = {
+RzBinPlugin rz_bin_plugin_bflt = {
 	.name = "bflt",
 	.desc = "bFLT format rz_bin plugin",
 	.license = "LGPL3",

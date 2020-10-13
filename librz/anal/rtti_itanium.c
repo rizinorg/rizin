@@ -468,7 +468,7 @@ static RTypeInfoType rtti_itanium_type_info_type_from_flag(RVTableContext *conte
 }
 
 // used to check if vpointer or RTTI can be in the section
-static bool can_section_contain_rtti_vpointer(RBinSection *section) {
+static bool can_section_contain_rtti_vpointer(RzBinSection *section) {
 	if (!section) {
 		return false;
 	}
@@ -561,7 +561,7 @@ static class_type_info *raw_rtti_parse(RVTableContext *context, ut64 vtable_addr
 		if (!context->read_addr (context->anal, addr, &rtti_vptr)) {
 			return NULL;
 		}
-		RBinSection *rtti_section = context->anal->binb.get_vsect_at (context->anal->binb.bin, rtti_vptr);
+		RzBinSection *rtti_section = context->anal->binb.get_vsect_at (context->anal->binb.bin, rtti_vptr);
 		if (rtti_vptr && !can_section_contain_rtti_vpointer (rtti_section)) {
 			;;; // Right now ignore, seems that some binaries have some weird values inside there....
 		}
@@ -583,7 +583,7 @@ static class_type_info *raw_rtti_parse(RVTableContext *context, ut64 vtable_addr
 			return create_class_type (rtti_vptr, type_name, name_addr, name_unique, rtti_addr, vtable_addr);
 		}
 
-		RBinSection *base_type_rtti_section = context->anal->binb.get_vsect_at (context->anal->binb.bin, base_type_rtti);
+		RzBinSection *base_type_rtti_section = context->anal->binb.get_vsect_at (context->anal->binb.bin, base_type_rtti);
 		if (can_section_contain_rtti_vpointer (base_type_rtti_section)) {
 			return (class_type_info *)create_si_class_type (rtti_vptr, type_name, name_addr, name_unique, base_type_rtti, rtti_addr, vtable_addr);
 		}

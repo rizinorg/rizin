@@ -21,17 +21,17 @@
 
 ut64 METHOD_START = 0;
 
-static void java_update_anal_types (RzAnal *anal, RBinJavaObj *bin_obj);
+static void java_update_anal_types (RzAnal *anal, RzBinJavaObj *bin_obj);
 
 static int java_cmd_ext(RzAnal *anal, const char* input);
 
 static int java_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask);
 
-static RBinJavaObj * get_java_bin_obj(RzAnal *anal);
+static RzBinJavaObj * get_java_bin_obj(RzAnal *anal);
 
-static RBinJavaObj * get_java_bin_obj(RzAnal *anal) {
-	RBin *b = anal->binb.bin;
-	RBinPlugin *plugin = b->cur && b->cur->o ? b->cur->o->plugin : NULL;
+static RzBinJavaObj * get_java_bin_obj(RzAnal *anal) {
+	RzBin *b = anal->binb.bin;
+	RzBinPlugin *plugin = b->cur && b->cur->o ? b->cur->o->plugin : NULL;
 	ut8 is_java = (plugin && strcmp (plugin->name, "java") == 0) ? 1 : 0;
 	return is_java ? b->cur->o->bin_obj : NULL;
 }
@@ -286,7 +286,7 @@ static int java_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int l
 }
 
 
-static void java_update_anal_types (RzAnal *anal, RBinJavaObj *bin_obj) {
+static void java_update_anal_types (RzAnal *anal, RzBinJavaObj *bin_obj) {
 	Sdb *D = anal->sdb_types;
 	if (D && bin_obj) {
 		RzListIter *iter;
@@ -305,7 +305,7 @@ static void java_update_anal_types (RzAnal *anal, RBinJavaObj *bin_obj) {
 }
 
 static int java_cmd_ext(RzAnal *anal, const char* input) {
-	RBinJavaObj *obj = (RBinJavaObj *) get_java_bin_obj (anal);
+	RzBinJavaObj *obj = (RzBinJavaObj *) get_java_bin_obj (anal);
 
 	if (!obj) {
 		eprintf ("Execute \"af\" to set the current bin, and this will bind the current bin\n");

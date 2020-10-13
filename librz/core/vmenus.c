@@ -844,9 +844,9 @@ RZ_API int rz_core_visual_types(RzCore *core) {
 
 RZ_API bool rz_core_visual_hudclasses(RzCore *core) {
 	RzListIter *iter, *iter2;
-	RBinClass *c;
-	RBinField *f;
-	RBinSymbol *m;
+	RzBinClass *c;
+	RzBinField *f;
+	RzBinSymbol *m;
 	ut64 addr;
 	char *res;
 	RzList *list = rz_list_new ();
@@ -963,12 +963,12 @@ static bool rz_core_visual_config_hud(RzCore *core) {
 // TODO: wrap index when out of boundaries
 // TODO: Add support to show class fields too
 // Segfaults - stack overflow, because of recursion
-static void *show_class(RzCore *core, int mode, int *idx, RBinClass *_c, const char *grep, RzList *list) {
+static void *show_class(RzCore *core, int mode, int *idx, RzBinClass *_c, const char *grep, RzList *list) {
 	bool show_color = rz_config_get_i (core->config, "scr.color");
 	RzListIter *iter;
-	RBinClass *c, *cur = NULL;
-	RBinSymbol *m, *mur = NULL;
-	RBinField *f, *fur = NULL;
+	RzBinClass *c, *cur = NULL;
+	RzBinSymbol *m, *mur = NULL;
+	RzBinField *f, *fur = NULL;
 	int i = 0;
 	int skip = *idx - 10;
 	bool found = false;
@@ -1143,9 +1143,9 @@ RZ_API int rz_core_visual_classes(RzCore *core) {
 	int ch, index = 0;
 	char cmd[1024];
 	int mode = 'c';
-	RBinClass *cur = NULL;
-	RBinSymbol *mur = NULL;
-	RBinField *fur = NULL;
+	RzBinClass *cur = NULL;
+	RzBinSymbol *mur = NULL;
+	RzBinField *fur = NULL;
 	void *ptr;
 	int oldcur = 0;
 	char *grep = NULL;
@@ -1164,13 +1164,13 @@ RZ_API int rz_core_visual_classes(RzCore *core) {
 		ptr = show_class (core, mode, &index, cur, grep, list);
 		switch (mode) {
 		case 'f':
-			fur = (RBinField*)ptr;
+			fur = (RzBinField*)ptr;
 			break;
 		case 'm':
-			mur = (RBinSymbol*)ptr;
+			mur = (RzBinSymbol*)ptr;
 			break;
 		case 'c':
-			cur = (RBinClass*)ptr;
+			cur = (RzBinClass*)ptr;
 			break;
 		}
 

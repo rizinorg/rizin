@@ -174,7 +174,7 @@ int rz_bin_pdb_download(RzCore *core, int isradjson, int *actions_done, SPDBOpti
 	int ret;
 	SPDBDownloaderOpt opt;
 	SPDBDownloader pdb_downloader;
-	RBinInfo *info = rz_bin_get_info (core->bin);
+	RzBinInfo *info = rz_bin_get_info (core->bin);
 
 	if (!info || !info->debug_file_name) {
 		eprintf ("Can't find debug filename\n");

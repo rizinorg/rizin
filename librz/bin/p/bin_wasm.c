@@ -15,14 +15,14 @@ static bool check_buffer (RBuffer *rbuf) {
 	return rbuf && rz_buf_read_at (rbuf, 0, buf, 4) == 4 && !memcmp (buf, RZ_BIN_WASM_MAGIC_BYTES, 4);
 }
 
-static bool find_export (const ut32 *p, const RBinWasmExportEntry *q) {
+static bool find_export (const ut32 *p, const RzBinWasmExportEntry *q) {
 	if (q->kind != RZ_BIN_WASM_EXTERNALKIND_Function) {
 		return true;
 	}
 	return q->index != (*p);
 }
 
-static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	rz_return_val_if_fail (bf && buf && rz_buf_size (buf) != UT64_MAX, NULL);
 
 	if (check_buffer (buf)) {
@@ -32,25 +32,25 @@ static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadad
 	return false;
 }
 
-static void destroy (RBinFile *bf) {
+static void destroy (RzBinFile *bf) {
 	rz_bin_wasm_destroy (bf);
 }
 
-static ut64 baddr (RBinFile *bf) {
+static ut64 baddr (RzBinFile *bf) {
 	return 0;
 }
 
-static RBinAddr *binsym (RBinFile *bf, int type) {
+static RzBinAddr *binsym (RzBinFile *bf, int type) {
 	return NULL; // TODO
 }
 
-static RzList *sections (RBinFile *bf);
+static RzList *sections (RzBinFile *bf);
 
-static RzList *entries (RBinFile *bf) {
-	RBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
+static RzList *entries (RzBinFile *bf) {
+	RzBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
 	// TODO
 	RzList *ret = NULL;
-	RBinAddr *ptr = NULL;
+	RzBinAddr *ptr = NULL;
 	ut64 addr = 0x0;
 
 	if (!(ret = rz_list_newf ((RzListFree)free))) {
@@ -62,7 +62,7 @@ static RzList *entries (RBinFile *bf) {
 		RzList *codes = rz_bin_wasm_get_codes (bin);
 		if (codes) {
 			RzListIter *iter;
-			RBinWasmCodeEntry *func;
+			RzBinWasmCodeEntry *func;
 			rz_list_foreach (codes, iter, func) {
 				addr = func->code;
 				break;
@@ -73,7 +73,7 @@ static RzList *entries (RBinFile *bf) {
 			return NULL;
 		}
 	}
-	if ((ptr = RZ_NEW0 (RBinAddr))) {
+	if ((ptr = RZ_NEW0 (RzBinAddr))) {
 		ptr->paddr = addr;
 		ptr->vaddr = addr;
 		rz_list_append (ret, ptr);
@@ -81,12 +81,12 @@ static RzList *entries (RBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections (RBinFile *bf) {
-	RBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
+static RzList *sections (RzBinFile *bf) {
+	RzBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
 	RzList *ret = NULL;
 	RzList *secs = NULL;
-	RBinSection *ptr = NULL;
-	RBinWasmSection *sec;
+	RzBinSection *ptr = NULL;
+	RzBinWasmSection *sec;
 
 	if (!(ret = rz_list_newf ((RzListFree)free))) {
 		return NULL;
@@ -97,7 +97,7 @@ static RzList *sections (RBinFile *bf) {
 	}
 	RzListIter *iter;
 	rz_list_foreach (secs, iter, sec) {
-		if (!(ptr = RZ_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RzBinSection))) {
 			rz_list_free (secs);
 			rz_list_free (ret);
 			return NULL;
@@ -118,10 +118,10 @@ static RzList *sections (RBinFile *bf) {
 	return ret;
 }
 
-static RzList *symbols (RBinFile *bf) {
-	RBinWasmObj *bin = NULL;
+static RzList *symbols (RzBinFile *bf) {
+	RzBinWasmObj *bin = NULL;
 	RzList *ret = NULL, *codes = NULL, *imports = NULL, *exports = NULL;
-	RBinSymbol *ptr = NULL;
+	RzBinSymbol *ptr = NULL;
 
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
@@ -146,10 +146,10 @@ static RzList *symbols (RBinFile *bf) {
 	     global_idx = 0;
 
 	ut32 i = 0;
-	RBinWasmImportEntry *imp;
+	RzBinWasmImportEntry *imp;
 	RzListIter *iter;
 	rz_list_foreach (imports, iter, imp) {
-		if (!(ptr = RZ_NEW0 (RBinSymbol))) {
+		if (!(ptr = RZ_NEW0 (RzBinSymbol))) {
 			goto bad_alloc;
 		}
 		ptr->name = strdup (imp->field_str);
@@ -184,10 +184,10 @@ static RzList *symbols (RBinFile *bf) {
 	}
 
 	RzListIter *is_exp = NULL;
-	RBinWasmCodeEntry *func;
-	// RBinWasmExportEntry *export = NULL;
+	RzBinWasmCodeEntry *func;
+	// RzBinWasmExportEntry *export = NULL;
 	rz_list_foreach (codes, iter, func) {
-		if (!(ptr = RZ_NEW0 (RBinSymbol))) {
+		if (!(ptr = RZ_NEW0 (RzBinSymbol))) {
 			goto bad_alloc;
 		}
 
@@ -228,10 +228,10 @@ bad_alloc:
 	return NULL;
 }
 
-static RzList *imports (RBinFile *bf) {
-	RBinWasmObj *bin = NULL;
+static RzList *imports (RzBinFile *bf) {
+	RzBinWasmObj *bin = NULL;
 	RzList *imports = NULL;
-	RBinImport *ptr = NULL;
+	RzBinImport *ptr = NULL;
 	RzList *ret = NULL;
 
 	if (!bf || !bf->o || !bf->o->bin_obj) {
@@ -245,11 +245,11 @@ static RzList *imports (RBinFile *bf) {
 		goto bad_alloc;
 	}
 
-	RBinWasmImportEntry *import = NULL;
+	RzBinWasmImportEntry *import = NULL;
 	ut32 i = 0;
 	RzListIter *iter;
 	rz_list_foreach (imports, iter, import) {
-		if (!(ptr = RZ_NEW0 (RBinImport))) {
+		if (!(ptr = RZ_NEW0 (RzBinImport))) {
 			goto bad_alloc;
 		}
 		ptr->name = strdup (import->field_str);
@@ -279,14 +279,14 @@ bad_alloc:
 	return NULL;
 }
 
-static RzList *libs (RBinFile *bf) {
+static RzList *libs (RzBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo *info (RBinFile *bf) {
-	RBinInfo *ret = NULL;
+static RzBinInfo *info (RzBinFile *bf) {
+	RzBinInfo *ret = NULL;
 
-	if (!(ret = RZ_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RzBinInfo))) {
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
@@ -304,7 +304,7 @@ static RBinInfo *info (RBinFile *bf) {
 	return ret;
 }
 
-static ut64 size (RBinFile *bf) {
+static ut64 size (RzBinFile *bf) {
 	if (!bf || !bf->buf) {
 		return 0;
 	}
@@ -312,7 +312,7 @@ static ut64 size (RBinFile *bf) {
 }
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
-static RBuffer *create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
+static RBuffer *create (RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
 	RBuffer *buf = rz_buf_new ();
 #define B(x, y) rz_buf_append_bytes (buf, (const ut8 *)(x), y)
 #define D(x) rz_buf_append_ut32 (buf, x)
@@ -323,7 +323,7 @@ static RBuffer *create (RBin *bin, const ut8 *code, int codelen, const ut8 *data
 	return buf;
 }
 
-RBinPlugin rz_bin_plugin_wasm = {
+RzBinPlugin rz_bin_plugin_wasm = {
 	.name = "wasm",
 	.desc = "WebAssembly bin plugin",
 	.license = "MIT",

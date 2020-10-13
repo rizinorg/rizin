@@ -38,9 +38,9 @@ static const char *help_msg_i[] = {
 	"iHH", "", "Verbose Headers in raw text",
 	"ii", "", "Imports",
 	"iI", "", "Binary info",
-	"ik", " [query]", "Key-value database from RBinObject",
+	"ik", " [query]", "Key-value database from RzBinObject",
 	"il", "", "Libraries",
-	"iL ", "[plugin]", "List all RBin plugins loaded or plugin details",
+	"iL ", "[plugin]", "List all RzBin plugins loaded or plugin details",
 	"im", "", "Show info about predefined memory allocation",
 	"iM", "", "Show main address",
 	"io", " [file]", "Load info from file (or last opened) use bin.baddr",
@@ -210,11 +210,11 @@ static void rz_core_file_info(RzCore *core, int mode) {
 	const char *fn = NULL;
 	int dbg = rz_config_get_i (core->config, "cfg.debug");
 	bool io_cache = rz_config_get_i (core->config, "io.cache");
-	RBinInfo *info = rz_bin_get_info (core->bin);
-	RBinFile *binfile = rz_bin_cur (core->bin);
+	RzBinInfo *info = rz_bin_get_info (core->bin);
+	RzBinFile *binfile = rz_bin_cur (core->bin);
 	int fd = rz_io_fd_get_current (core->io);
 	RzIODesc *desc = rz_io_desc_get (core->io, fd);
-	RBinPlugin *plugin = rz_bin_file_cur_plugin (binfile);
+	RzBinPlugin *plugin = rz_bin_file_cur_plugin (binfile);
 	if (mode == RZ_MODE_JSON) {
 		rz_cons_printf ("{");
 	}
@@ -328,9 +328,9 @@ static void rz_core_file_info(RzCore *core, int mode) {
 	}
 }
 
-static int bin_is_executable(RBinObject *obj){
+static int bin_is_executable(RzBinObject *obj){
 	RzListIter *it;
-	RBinSection *sec;
+	RzBinSection *sec;
 	if (obj) {
 		if (obj->info && obj->info->arch) {
 			return true;
@@ -345,7 +345,7 @@ static int bin_is_executable(RBinObject *obj){
 }
 
 static void cmd_info_bin(RzCore *core, int va, int mode) {
-	RBinObject *obj = rz_bin_cur_object (core->bin);
+	RzBinObject *obj = rz_bin_cur_object (core->bin);
 	int array = 0;
 	if (core->file) {
 		if ((mode & RZ_MODE_JSON) && !(mode & RZ_MODE_ARRAY)) {
@@ -392,7 +392,7 @@ static bool is_equal_file_hashes(RzList *lfile_hashes, RzList *rfile_hashes, boo
 	rz_return_val_if_fail (equal, false);
 
 	*equal = true;
-	RBinFileHash *fh_l, *fh_r;
+	RzBinFileHash *fh_l, *fh_r;
 	RzListIter *hiter_l, *hiter_r;
 	rz_list_foreach (lfile_hashes, hiter_l, fh_l) {
 		rz_list_foreach (rfile_hashes, hiter_r, fh_r) {
@@ -412,7 +412,7 @@ static int __r_core_bin_reload(RzCore *r, const char *file, ut64 baseaddr) {
 	int result = 0;
 	RzCoreFile *cf = rz_core_file_cur (r);
 	if (cf) {
-		RBinFile *bf = rz_bin_file_find_by_fd (r->bin, cf->fd);
+		RzBinFile *bf = rz_bin_file_find_by_fd (r->bin, cf->fd);
 		if (bf) {
 			result = rz_bin_reload (r->bin, bf->id, baseaddr);
 		}
@@ -531,7 +531,7 @@ static int cmd_info(void *data, const char *input) {
 		break;
 		case 'k': // "ik"
 		{
-			RBinObject *o = rz_bin_cur_object (core->bin);
+			RzBinObject *o = rz_bin_cur_object (core->bin);
 			db = o? o->kv: NULL;
 			//:eprintf ("db = %p\n", db);
 			switch (input[1]) {
@@ -615,7 +615,7 @@ static int cmd_info(void *data, const char *input) {
 		case 't': // "it"
 			{
 				ut64 limit = rz_config_get_i (core->config, "bin.hashlimit");
-				RBinInfo *info = rz_bin_get_info (core->bin);
+				RzBinInfo *info = rz_bin_get_info (core->bin);
 				if (!info) {
 					eprintf ("rz_bin_get_info: Cannot get bin info\n");
 					return 0;
@@ -631,7 +631,7 @@ static int cmd_info(void *data, const char *input) {
 						return 0;
 					}
 				}
-				RBinFileHash *fh_old, *fh_new;
+				RzBinFileHash *fh_old, *fh_new;
 				RzListIter *hiter_old, *hiter_new;
 				const bool is_json = input[1] == 'j'; // "itj"
 				if (is_json) { // "itj"
@@ -662,8 +662,8 @@ static int cmd_info(void *data, const char *input) {
 						hiter_new = rz_list_iterator (new_hashes);
 						hiter_old = rz_list_iterator (old_hashes);
 						while (rz_list_iter_next (hiter_new) && rz_list_iter_next (hiter_old)) {
-							fh_new = (RBinFileHash *)rz_list_iter_get (hiter_new);
-							fh_old = (RBinFileHash *)rz_list_iter_get (hiter_old);
+							fh_new = (RzBinFileHash *)rz_list_iter_get (hiter_new);
+							fh_old = (RzBinFileHash *)rz_list_iter_get (hiter_old);
 							if (strcmp (fh_new->type, fh_old->type)) {
 								eprintf ("Wrong file hashes structure");
 							}
@@ -724,7 +724,7 @@ static int cmd_info(void *data, const char *input) {
 				} else if (input[1] == 'j' && input[2] == '.') {
 					mode = RZ_MODE_JSON;
 				}
-				RBinObject *obj = rz_bin_cur_object (core->bin);
+				RzBinObject *obj = rz_bin_cur_object (core->bin);
 				if (mode == RZ_MODE_RADARE || mode == RZ_MODE_JSON || mode == RZ_MODE_SIMPLE) {
 					if (input[param_shift + 1]) {
 						param_shift ++;
@@ -748,7 +748,7 @@ static int cmd_info(void *data, const char *input) {
 			RBININFO ("fields", RZ_CORE_BIN_ACC_FIELDS, NULL, 0);
 			break;
 		case 'l': { // "il"
-			RBinObject *obj = rz_bin_cur_object (core->bin);
+			RzBinObject *obj = rz_bin_cur_object (core->bin);
 			RBININFO ("libs", RZ_CORE_BIN_ACC_LIBS, NULL, (obj && obj->libs)? rz_list_length (obj->libs): 0);
 			break;
 		}
@@ -769,7 +769,7 @@ static int cmd_info(void *data, const char *input) {
 			goto done;
 		}
 		case 's': { // "is"
-			RBinObject *obj = rz_bin_cur_object (core->bin);
+			RzBinObject *obj = rz_bin_cur_object (core->bin);
 			// Case for isj.
 			if (input[1] == 'j' && input[2] == '.') {
 				mode = RZ_MODE_JSON;
@@ -804,7 +804,7 @@ static int cmd_info(void *data, const char *input) {
 		case 'd': // "id"
 			if (input[1] == 'p') { // "idp"
 				SPDBOptions pdbopts;
-				RBinInfo *info;
+				RzBinInfo *info;
 				bool file_found;
 				char *filename;
 
@@ -916,7 +916,7 @@ static int cmd_info(void *data, const char *input) {
 			}
 			break;
 		case 'i': { // "ii"
-			RBinObject *obj = rz_bin_cur_object (core->bin);
+			RzBinObject *obj = rz_bin_cur_object (core->bin);
 			RBININFO ("imports", RZ_CORE_BIN_ACC_IMPORTS, NULL,
 				(obj && obj->imports)? rz_list_length (obj->imports): 0);
 			break;
@@ -994,7 +994,7 @@ static int cmd_info(void *data, const char *input) {
 				}
 				input++;
 				if (rdump) {
-					RBinFile *bf = rz_bin_cur (core->bin);
+					RzBinFile *bf = rz_bin_cur (core->bin);
 					int min = rz_config_get_i (core->config, "bin.minstr");
 					if (bf) {
 						bf->strmode = mode;
@@ -1004,7 +1004,7 @@ static int cmd_info(void *data, const char *input) {
 				}
 				RBININFO ("strings", RZ_CORE_BIN_ACC_RAW_STRINGS, NULL, 0);
 			} else {
-				RBinObject *obj = rz_bin_cur_object (core->bin);
+				RzBinObject *obj = rz_bin_cur_object (core->bin);
 				if (input[1] == 'q') {
 					mode = (input[2] == 'q')
 					? RZ_MODE_SIMPLEST
@@ -1022,9 +1022,9 @@ static int cmd_info(void *data, const char *input) {
 			if (input[1] == '?') {
 				eprintf ("Usage: ic[gljqc**] [class-index or name]\n");
 			} else if (input[1] == 'g') {
-				RBinClass *cls;
+				RzBinClass *cls;
 				RzListIter *iter;
-				RBinObject *obj = rz_bin_cur_object (core->bin);
+				RzBinObject *obj = rz_bin_cur_object (core->bin);
 				if (!obj) {
 					break;
 				}
@@ -1050,10 +1050,10 @@ static int cmd_info(void *data, const char *input) {
 				}
 				goto done;
 			} else if (input[1] == ' ' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l' || input[1] == 'c' || input[1] == '*') {
-				RBinClass *cls;
-				RBinSymbol *sym;
+				RzBinClass *cls;
+				RzBinSymbol *sym;
 				RzListIter *iter, *iter2;
-				RBinObject *obj = rz_bin_cur_object (core->bin);
+				RzBinObject *obj = rz_bin_cur_object (core->bin);
 				if (!obj) {
 					break;
 				}
@@ -1172,7 +1172,7 @@ static int cmd_info(void *data, const char *input) {
 					goto done;
 				}
 			} else { // "ic"
-				RBinObject *obj = rz_bin_cur_object (core->bin);
+				RzBinObject *obj = rz_bin_cur_object (core->bin);
 				if (obj && obj->classes) {
 					int len = rz_list_length (obj->classes);
 					RBININFO ("classes", RZ_CORE_BIN_ACC_CLASSES, NULL, len);

@@ -82,7 +82,7 @@ static ut64 offset_to_vaddr(struct MACH0_(obj_t) *bin, ut64 offset) {
 	return 0;
 }
 
-static ut64 pa2va(RBinFile *bf, ut64 offset) {
+static ut64 pa2va(RzBinFile *bf, ut64 offset) {
 	rz_return_val_if_fail (bf && bf->rbin, offset);
 	RzIO *io = bf->rbin->iob.io;
 	if (!io || !io->va) {
@@ -2108,7 +2108,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	return NULL;
 }
 
-void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf) {
+void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RzBinFile *bf) {
 	rz_return_if_fail (options && bf && bf->rbin);
 	options->header_at = 0;
 	options->verbose = bf->rbin->verbose;
@@ -2195,7 +2195,7 @@ static int prot2perm(int x) {
 	return r;
 }
 
-static bool __isDataSection(RBinSection *sect) {
+static bool __isDataSection(RzBinSection *sect) {
 	if (strstr (sect->name, "_cstring")) {
 		return true;
 	}
@@ -2211,7 +2211,7 @@ static bool __isDataSection(RBinSection *sect) {
 	return false;
 }
 
-RzList *MACH0_(get_segments)(RBinFile *bf) {
+RzList *MACH0_(get_segments)(RzBinFile *bf) {
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	RzList *list = rz_list_newf ((RzListFree)rz_bin_section_free);
 	size_t i, j;
@@ -2224,7 +2224,7 @@ RzList *MACH0_(get_segments)(RBinFile *bf) {
 			if (!seg->initprot) {
 				continue;
 			}
-			RBinSection *s = rz_bin_section_new (NULL);
+			RzBinSection *s = rz_bin_section_new (NULL);
 			if (!s) {
 				break;
 			}
@@ -2245,7 +2245,7 @@ RzList *MACH0_(get_segments)(RBinFile *bf) {
 	if (bin->nsects > 0) {
 		int last_section = RZ_MIN (bin->nsects, 128); // maybe drop this limit?
 		for (i = 0; i < last_section; i++) {
-			RBinSection *s = RZ_NEW0 (RBinSection);
+			RzBinSection *s = RZ_NEW0 (RzBinSection);
 			if (!s) {
 				break;
 			}
@@ -2627,7 +2627,7 @@ beach:
 
 static void fill_exports_list(struct MACH0_(obj_t) *bin, const char *name, ut64 flags, ut64 offset, void * ctx) {
 	RzList *list = (RzList*) ctx;
-	RBinSymbol *sym = RZ_NEW0 (RBinSymbol);
+	RzBinSymbol *sym = RZ_NEW0 (RzBinSymbol);
 	if (!sym) {
 		return;
 	}
@@ -2639,7 +2639,7 @@ static void fill_exports_list(struct MACH0_(obj_t) *bin, const char *name, ut64 
 	rz_list_append (list, sym);
 }
 
-// TODO: Return RzList<RBinSymbol> // 2x speedup
+// TODO: Return RzList<RzBinSymbol> // 2x speedup
 const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 	static RzList * cache = NULL; // XXX DONT COMMIT WITH THIS
 	struct symbol_t *symbols;
@@ -2662,7 +2662,7 @@ const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 	walk_exports (bin, fill_exports_list, list);
 	if (rz_list_length (list)) {
 		RzListIter *it;
-		RBinSymbol *s;
+		RzBinSymbol *s;
 		rz_list_foreach (list, it, s) {
 			inSymtab (hash, s->name, s->vaddr);
 		}
@@ -2717,7 +2717,7 @@ const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			eprintf ("macho warning: Symbol table truncated\n");
 		}
 		for (i = from; i < to && j < symbols_count; i++, j++) {
-			RBinSymbol *sym = RZ_NEW0 (RBinSymbol);
+			RzBinSymbol *sym = RZ_NEW0 (RzBinSymbol);
 			sym->vaddr = bin->symtab[i].n_value;
 			sym->paddr = addr_to_offset (bin, sym->vaddr);
 			symbols[j].size = 0; /* TODO: Is it anywhere? */
@@ -2761,7 +2761,7 @@ const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 		}
 		if (parse_import_stub (bin, &symbol, i)) {
 			j++;
-			RBinSymbol *sym = RZ_NEW0 (RBinSymbol);
+			RzBinSymbol *sym = RZ_NEW0 (RzBinSymbol);
 			sym->vaddr = symbol.addr;
 			sym->paddr = symbol.offset;
 			sym->name = symbol.name;
@@ -2780,7 +2780,7 @@ const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 		// 2 is for func.eh (exception handlers?)
 		int section = st->n_sect;
 		if (section == 1 && j < symbols_count) { // text ??st->n_type == 1) maybe wrong
-			RBinSymbol *sym = RZ_NEW0(RBinSymbol);
+			RzBinSymbol *sym = RZ_NEW0(RzBinSymbol);
 			/* is symbol */
 			sym->vaddr = st->n_value;
 			sym->paddr = addr_to_offset (bin, symbols[j].addr);
@@ -3109,7 +3109,7 @@ struct import_t *MACH0_(get_imports)(struct MACH0_(obj_t) *bin) {
 	if (!bin->imports_by_ord_size) {
 		if (j > 0) {
 			bin->imports_by_ord_size = j;
-			bin->imports_by_ord = (RBinImport**)calloc (j, sizeof (RBinImport*));
+			bin->imports_by_ord = (RzBinImport**)calloc (j, sizeof (RzBinImport*));
 		} else {
 			bin->imports_by_ord_size = 0;
 			bin->imports_by_ord = NULL;
@@ -3992,7 +3992,7 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t) *bin) {
 	return bin->main_addr = addr;
 }
 
-void MACH0_(mach_headerfields)(RBinFile *bf) {
+void MACH0_(mach_headerfields)(RzBinFile *bf) {
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
 	if (!cb_printf) {
 		cb_printf = printf;
@@ -4214,7 +4214,7 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 	free (mh);
 }
 
-RzList *MACH0_(mach_fields)(RBinFile *bf) {
+RzList *MACH0_(mach_fields)(RzBinFile *bf) {
 	RBuffer *buf = bf->buf;
 	ut64 length = rz_buf_size (buf);
 	struct MACH0_(mach_header) *mh = MACH0_(get_hdr) (buf);
@@ -4285,7 +4285,7 @@ RzList *MACH0_(mach_fields)(RBinFile *bf) {
 			size_t i, j = 0;
 			for (i = 0; i < nsects && (addr + off) < length && off < lcSize; i++) {
 				const char *sname = is64? "mach0_section64": "mach0_section";
-				RBinField *f = rz_bin_field_new (addr + off, addr + off, 1,
+				RzBinField *f = rz_bin_field_new (addr + off, addr + off, 1,
 					sdb_fmt ("section_%zu", j++), sname, sname, true);
 				rz_list_append (ret, f);
 				off += is64? 80: 68;

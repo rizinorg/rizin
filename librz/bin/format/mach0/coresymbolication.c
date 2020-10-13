@@ -115,7 +115,7 @@ ut64 rz_coresym_cache_element_pa2va(RzCoreSymCacheElement *element, ut64 pa) {
 	return pa;
 }
 
-static void meta_add_fileline(RBinFile *bf, ut64 vaddr, ut32 size, RzCoreSymCacheElementFLC *flc) {
+static void meta_add_fileline(RzBinFile *bf, ut64 vaddr, ut32 size, RzCoreSymCacheElementFLC *flc) {
 	Sdb *s = bf->sdb_addrinfo;
 	if (!s) {
 		return;
@@ -157,7 +157,7 @@ static char *str_dup_safe_fixed(const ut8 *b, const ut8 *str, ut64 len, const ut
 	return NULL;
 }
 
-RzCoreSymCacheElement *rz_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut64 off, int bits) {
+RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RBuffer *buf, ut64 off, int bits) {
 	RzCoreSymCacheElement *result = NULL;
 	ut8 *b = NULL;
 	RzCoreSymCacheElementHdr *hdr = rz_coresym_cache_element_header_new (buf, off, bits);

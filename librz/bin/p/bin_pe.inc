@@ -7,8 +7,8 @@
 #include "../i/private.h"
 #include "pe/pe.h"
 
-static Sdb* get_sdb (RBinFile *bf) {
-	RBinObject *o = bf->o;
+static Sdb* get_sdb (RzBinFile *bf) {
+	RzBinObject *o = bf->o;
 	struct PE_(rz_bin_pe_obj_t) *bin;
 	if (!o || !o->bin_obj) {
 		return NULL;
@@ -17,7 +17,7 @@ static Sdb* get_sdb (RBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	rz_return_val_if_fail (bf && bin_obj && buf, false);
 	struct PE_(rz_bin_pe_obj_t) *res = PE_(rz_bin_pe_new_buf) (buf, bf->rbin->verbose);
 	if (res) {
@@ -28,17 +28,17 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return false;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	PE_(rz_bin_pe_free) ((struct PE_(rz_bin_pe_obj_t)*)bf->o->bin_obj);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return PE_(rz_bin_pe_get_image_base) (bf->o->bin_obj);
 }
 
-static RBinAddr* binsym(RBinFile *bf, int type) {
+static RzBinAddr* binsym(RzBinFile *bf, int type) {
 	struct rz_bin_pe_addr_t *peaddr = NULL;
-	RBinAddr *ret = NULL;
+	RzBinAddr *ret = NULL;
 	if (bf && bf->o && bf->o->bin_obj) {
 		switch (type) {
 		case RZ_BIN_SYM_MAIN:
@@ -46,7 +46,7 @@ static RBinAddr* binsym(RBinFile *bf, int type) {
 				break;
 		}
 	}
-	if (peaddr && (ret = RZ_NEW0 (RBinAddr))) {
+	if (peaddr && (ret = RZ_NEW0 (RzBinAddr))) {
 		ret->paddr = peaddr->paddr;
 		ret->vaddr = peaddr->vaddr;
 	}
@@ -54,10 +54,10 @@ static RBinAddr* binsym(RBinFile *bf, int type) {
 	return ret;
 }
 
-static void add_tls_callbacks(RBinFile *bf, RzList* list) {
+static void add_tls_callbacks(RzBinFile *bf, RzList* list) {
 	PE_DWord paddr, vaddr, haddr;
 	int count = 0;
-	RBinAddr *ptr = NULL;
+	RzBinAddr *ptr = NULL;
 	struct PE_(rz_bin_pe_obj_t) *bin = (struct PE_(rz_bin_pe_obj_t) *) (bf->o->bin_obj);
 	char *key;
 
@@ -79,7 +79,7 @@ static void add_tls_callbacks(RBinFile *bf, RzList* list) {
 		if (!haddr) {
 			break;
 		}
-		if ((ptr = RZ_NEW0 (RBinAddr))) {
+		if ((ptr = RZ_NEW0 (RzBinAddr))) {
 			ptr->paddr  = paddr;
 			ptr->vaddr  = vaddr;
 			ptr->hpaddr = haddr;
@@ -90,9 +90,9 @@ static void add_tls_callbacks(RBinFile *bf, RzList* list) {
 	} while (vaddr);
 }
 
-static RzList* entries(RBinFile *bf) {
+static RzList* entries(RzBinFile *bf) {
 	struct rz_bin_pe_addr_t *entry = NULL;
-	RBinAddr *ptr = NULL;
+	RzBinAddr *ptr = NULL;
 	RzList* ret;
 
 	if (!(ret = rz_list_newf (free))) {
@@ -101,7 +101,7 @@ static RzList* entries(RBinFile *bf) {
 	if (!(entry = PE_(rz_bin_pe_get_entrypoint) (bf->o->bin_obj))) {
 		return ret;
 	}
-	if ((ptr = RZ_NEW0 (RBinAddr))) {
+	if ((ptr = RZ_NEW0 (RzBinAddr))) {
 		ptr->paddr  = entry->paddr;
 		ptr->vaddr  = entry->vaddr;
 		ptr->hpaddr = entry->haddr;
@@ -115,9 +115,9 @@ static RzList* entries(RBinFile *bf) {
 	return ret;
 }
 
-static RzList* sections(RBinFile *bf) {
+static RzList* sections(RzBinFile *bf) {
 	RzList *ret = NULL;
-	RBinSection *ptr = NULL;
+	RzBinSection *ptr = NULL;
 	struct rz_bin_pe_section_t *sections = NULL;
 	struct PE_(rz_bin_pe_obj_t) *bin = (struct PE_(rz_bin_pe_obj_t)*)bf->o->bin_obj;
 	ut64 ba = baddr (bf);
@@ -131,7 +131,7 @@ static RzList* sections(RBinFile *bf) {
 	}
 	PE_(rz_bin_pe_check_sections) (bin, &sections);
 	for (i = 0; !sections[i].last; i++) {
-		if (!(ptr = RZ_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RzBinSection))) {
 			break;
 		}
 		if (sections[i].name[0]) {
@@ -182,7 +182,7 @@ static RzList* sections(RBinFile *bf) {
 	return ret;
 }
 
-static void find_pe_overlay(RBinFile *bf) {
+static void find_pe_overlay(RzBinFile *bf) {
 	ut64 pe_overlay_size;
 	ut64 pe_overlay_offset = PE_(bin_pe_get_overlay) (bf->o->bin_obj, &pe_overlay_size);
 	if (pe_overlay_offset) {
@@ -191,9 +191,9 @@ static void find_pe_overlay(RBinFile *bf) {
 	}
 }
 
-static RzList* symbols(RBinFile *bf) {
+static RzList* symbols(RzBinFile *bf) {
 	RzList *ret = NULL;
-	RBinSymbol *ptr = NULL;
+	RzBinSymbol *ptr = NULL;
 	struct rz_bin_pe_export_t *symbols = NULL;
 	struct rz_bin_pe_import_t *imports = NULL;
 	int i;
@@ -203,7 +203,7 @@ static RzList* symbols(RBinFile *bf) {
 	}
 	if ((symbols = PE_(rz_bin_pe_get_exports)(bf->o->bin_obj))) {
 		for (i = 0; !symbols[i].last; i++) {
-			if (!(ptr = RZ_NEW0 (RBinSymbol))) {
+			if (!(ptr = RZ_NEW0 (RzBinSymbol))) {
 				break;
 			}
 			ptr->name = strdup ((char *)symbols[i].name);
@@ -224,7 +224,7 @@ static RzList* symbols(RBinFile *bf) {
 
 	if ((imports = PE_(rz_bin_pe_get_imports)(bf->o->bin_obj))) {
 		for (i = 0; !imports[i].last; i++) {
-			if (!(ptr = RZ_NEW0 (RBinSymbol))) {
+			if (!(ptr = RZ_NEW0 (RzBinSymbol))) {
 				break;
 			}
 			//strncpy (ptr->name, (char*)symbols[i].name, RZ_BIN_SIZEOF_STRINGS);
@@ -256,10 +256,10 @@ static void filter_import(ut8 *n) {
 	}
 }
 
-static RzList* imports(RBinFile *bf) {
+static RzList* imports(RzBinFile *bf) {
 	RzList *ret = NULL, *relocs = NULL;
-	RBinImport *ptr = NULL;
-	RBinReloc *rel = NULL;
+	RzBinImport *ptr = NULL;
+	RzBinReloc *rel = NULL;
 	struct rz_bin_pe_import_t *imports = NULL;
 	int i;
 
@@ -285,7 +285,7 @@ static RzList* imports(RBinFile *bf) {
 		return ret;
 	}
 	for (i = 0; !imports[i].last; i++) {
-		if (!(ptr = RZ_NEW0 (RBinImport))) {
+		if (!(ptr = RZ_NEW0 (RzBinImport))) {
 			break;
 		}
 		filter_import (imports[i].name);
@@ -299,7 +299,7 @@ static RzList* imports(RBinFile *bf) {
 		//ptr->hint = imports[i].hint;
 		rz_list_append (ret, ptr);
 
-		if (!(rel = RZ_NEW0 (RBinReloc))) {
+		if (!(rel = RZ_NEW0 (RzBinReloc))) {
 			break;
 		}
 #ifdef RZ_BIN_PE64
@@ -323,7 +323,7 @@ static RzList* imports(RBinFile *bf) {
 	return ret;
 }
 
-static RzList* relocs(RBinFile *bf) {
+static RzList* relocs(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t)* obj= bf->o->bin_obj;
 	if (obj) {
 		return obj->relocs;
@@ -331,7 +331,7 @@ static RzList* relocs(RBinFile *bf) {
 	return NULL;
 }
 
-static RzList* libs(RBinFile *bf) {
+static RzList* libs(RzBinFile *bf) {
 	struct rz_bin_pe_lib_t *libs = NULL;
 	RzList *ret = NULL;
 	char *ptr = NULL;
@@ -352,7 +352,7 @@ static RzList* libs(RBinFile *bf) {
 	return ret;
 }
 
-static int is_dot_net(RBinFile *bf) {
+static int is_dot_net(RzBinFile *bf) {
 	struct rz_bin_pe_lib_t *libs = NULL;
 	int i;
 	if (!(libs = PE_(rz_bin_pe_get_libs)(bf->o->bin_obj))) {
@@ -368,7 +368,7 @@ static int is_dot_net(RBinFile *bf) {
 	return false;
 }
 
-static int is_vb6(RBinFile *bf) {
+static int is_vb6(RzBinFile *bf) {
 	struct rz_bin_pe_lib_t *libs = NULL;
 	int i;
 	if (!(libs = PE_(rz_bin_pe_get_libs)(bf->o->bin_obj))) {
@@ -384,14 +384,14 @@ static int is_vb6(RBinFile *bf) {
 	return false;
 }
 
-static int has_canary(RBinFile *bf) {
+static int has_canary(RzBinFile *bf) {
 	// XXX: We only need imports here but this causes leaks, we need to wait for the below. This is a horrible solution!
 	// TODO: use O(1) when imports sdbized
 	RzListIter *iter;
 	struct PE_ (rz_bin_pe_obj_t) *bin = bf->o->bin_obj;
 	if (bin) {
 		const RzList* relocs_list = bin->relocs;
-		RBinReloc *rel;
+		RzBinReloc *rel;
 		if (relocs_list) {
 			rz_list_foreach (relocs_list, iter, rel) {
 				if (!strcmp (rel->import->name, "__security_init_cookie")) {
@@ -401,7 +401,7 @@ static int has_canary(RBinFile *bf) {
 		}
 	} else {  // rz_bin needs this as it will not initialise bin
 		const RzList* imports_list = imports (bf);
-		RBinImport *imp;
+		RzBinImport *imp;
 		if (imports_list) {
 			rz_list_foreach (imports_list, iter, imp) {
 				if (!strcmp (imp->name, "__security_init_cookie")) {
@@ -413,7 +413,7 @@ static int has_canary(RBinFile *bf) {
 	return false;
 }
 
-static int haschr(const RBinFile* bf, ut16 dllCharacteristic) {
+static int haschr(const RzBinFile* bf, ut16 dllCharacteristic) {
 	const ut8 *buf;
 	unsigned int idx;
 	ut64 sz;
@@ -433,10 +433,10 @@ static int haschr(const RBinFile* bf, ut16 dllCharacteristic) {
 	return ((*(ut16*)(buf + idx + 0x5E)) & dllCharacteristic);
 }
 
-static RBinInfo* info(RBinFile *bf) {
+static RzBinInfo* info(RzBinFile *bf) {
 	struct PE_ (rz_bin_pe_obj_t) *bin;
 	SDebugInfo di = {{0}};
-	RBinInfo *ret = RZ_NEW0 (RBinInfo);
+	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
 	ut32 claimed_checksum, actual_checksum, pe_overlay;
 
 	if (!ret) {
@@ -522,15 +522,15 @@ static RBinInfo* info(RBinFile *bf) {
 	return ret;
 }
 
-static ut64 get_vaddr (RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
+static ut64 get_vaddr (RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return baddr + vaddr;
 }
 
-static RzList *compute_hashes(RBinFile *bf) {
+static RzList *compute_hashes(RzBinFile *bf) {
 	RzList *file_hashes = rz_list_newf ((RzListFree) rz_bin_file_hash_free);
 	const char *authentihash = PE_(bin_pe_compute_authentihash) (bf->o->bin_obj);
 	if (authentihash) {
-		RBinFileHash *authhash = RZ_NEW0 (RBinFileHash);
+		RzBinFileHash *authhash = RZ_NEW0 (RzBinFileHash);
 		if (authhash) {
 			authhash->type = strdup ("authentihash");
 			authhash->hex = authentihash;

@@ -16,7 +16,7 @@ static bool check_buffer(RBuffer *b) {
 	return (!memcmp (magic, "FIRM", 4));
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	if (rz_buf_read_at (b, 0, (ut8*)&loaded_header, sizeof (loaded_header)) == sizeof (loaded_header)) {
 		*bin_obj = &loaded_header;
 		return true;
@@ -24,9 +24,9 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 	return false;
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
-	RBinSection *sections[4] = {
+	RzBinSection *sections[4] = {
 		NULL, NULL, NULL, NULL
 	};
 	int i, corrupt = false;
@@ -39,7 +39,7 @@ static RzList *sections(RBinFile *bf) {
 	for (i = 0; i < 4; i++) {
 		/* Check if section is used */
 		if (loaded_header.sections[i].size) {
-			sections[i] = RZ_NEW0 (RBinSection);
+			sections[i] = RZ_NEW0 (RzBinSection);
 			/* Firmware Type ('0'=ARM9/'1'=ARM11) */
 			if (loaded_header.sections[i].type == 0x0) {
 				sections[i]->name = strdup ("arm9");
@@ -76,20 +76,20 @@ static RzList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *entries(RBinFile *bf) {
+static RzList *entries(RzBinFile *bf) {
 	RzList *ret = rz_list_new ();
-	RBinAddr *ptr9 = NULL, *ptr11 = NULL;
+	RzBinAddr *ptr9 = NULL, *ptr11 = NULL;
 
 	if (bf && bf->buf) {
 		if (!ret) {
 			return NULL;
 		}
 		ret->free = free;
-		if (!(ptr9 = RZ_NEW0 (RBinAddr))) {
+		if (!(ptr9 = RZ_NEW0 (RzBinAddr))) {
 			rz_list_free (ret);
 			return NULL;
 		}
-		if (!(ptr11 = RZ_NEW0 (RBinAddr))) {
+		if (!(ptr11 = RZ_NEW0 (RzBinAddr))) {
 			rz_list_free (ret);
 			free (ptr9);
 			return NULL;
@@ -106,8 +106,8 @@ static RzList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = RZ_NEW0 (RBinInfo);
+static RzBinInfo *info(RzBinFile *bf) {
+	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -127,7 +127,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-RBinPlugin rz_bin_plugin_nin3ds = {
+RzBinPlugin rz_bin_plugin_nin3ds = {
 	.name = "nin3ds",
 	.desc = "Nintendo 3DS FIRM format rz_bin plugin",
 	.license = "LGPL3",

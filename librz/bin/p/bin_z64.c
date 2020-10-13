@@ -65,7 +65,7 @@ typedef struct {
 
 static N64Header n64_header;
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return (ut64) rz_read_be32(&n64_header.BootAddress);
 }
 
@@ -78,7 +78,7 @@ static bool check_buffer(RBuffer *b) {
 	return !memcmp (magic, "\x80\x37\x12\x40", 4);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	if (check_buffer (b)) {
 		ut8 buf[sizeof (N64Header)] = {0};
 		rz_buf_read_at (b, 0, buf, sizeof (buf));
@@ -88,12 +88,12 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 	return false;
 }
 
-static RzList *entries(RBinFile *bf) {
-	RzList /*<RBinAddr>*/ *ret = rz_list_newf (free);
+static RzList *entries(RzBinFile *bf) {
+	RzList /*<RzBinAddr>*/ *ret = rz_list_newf (free);
 	if (!ret) {
 		return NULL;
 	}
-	RBinAddr *ptr = RZ_NEW0 (RBinAddr);
+	RzBinAddr *ptr = RZ_NEW0 (RzBinAddr);
 	if (ptr) {
 		ptr->paddr = N64_ROM_START;
 		ptr->vaddr = baddr (bf);
@@ -102,12 +102,12 @@ static RzList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RBinFile *bf) {
-	RzList /*<RBinSection>*/ *ret = rz_list_new ();
+static RzList *sections(RzBinFile *bf) {
+	RzList /*<RzBinSection>*/ *ret = rz_list_new ();
 	if (!ret) {
 		return NULL;
 	}
-	RBinSection *text = RZ_NEW0 (RBinSection);
+	RzBinSection *text = RZ_NEW0 (RzBinSection);
 	if (!text) {
 		rz_list_free (ret);
 		return NULL;
@@ -123,13 +123,13 @@ static RzList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static ut64 boffset(RBinFile *bf) {
+static ut64 boffset(RzBinFile *bf) {
 	return 0LL;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RzBinInfo *info(RzBinFile *bf) {
 	char GameName[21] = {0};
-	RBinInfo *ret = RZ_NEW0 (RBinInfo);
+	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -147,7 +147,7 @@ static RBinInfo *info(RBinFile *bf) {
 
 #if !RZ_BIN_Z64
 
-RBinPlugin rz_bin_plugin_z64 = {
+RzBinPlugin rz_bin_plugin_z64 = {
 	.name = "z64",
 	.desc = "Nintendo 64 binaries big endian rz_bin plugin",
 	.license = "LGPL3",

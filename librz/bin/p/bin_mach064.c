@@ -20,7 +20,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
+static RBuffer* create(RzBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
 	const bool use_pagezero = true;
 	const bool use_main = true;
 	const bool use_dylinker = true;
@@ -264,13 +264,13 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-static RBinAddr* binsym(RBinFile *bf, int sym) {
+static RzBinAddr* binsym(RzBinFile *bf, int sym) {
 	ut64 addr;
-	RBinAddr *ret = NULL;
+	RzBinAddr *ret = NULL;
 	switch (sym) {
 	case RZ_BIN_SYM_MAIN:
 		addr = MACH0_(get_main) (bf->o->bin_obj);
-		if (!addr || !(ret = RZ_NEW0 (RBinAddr))) {
+		if (!addr || !(ret = RZ_NEW0 (RzBinAddr))) {
 			return NULL;
 		}
 		ret->paddr = ret->vaddr = addr;
@@ -279,7 +279,7 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 	return ret;
 }
 
-RBinPlugin rz_bin_plugin_mach064 = {
+RzBinPlugin rz_bin_plugin_mach064 = {
 	.name = "mach064",
 	.desc = "mach064 bin plugin",
 	.license = "LGPL3",

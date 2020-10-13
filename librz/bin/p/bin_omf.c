@@ -6,7 +6,7 @@
 #include <rz_bin.h>
 #include "omf/omf.h"
 
-static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	ut64 size;
 	const ut8 *buf = rz_buf_data (b, &size);
 	rz_return_val_if_fail (buf, false);
@@ -14,7 +14,7 @@ static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr
 	return *bin_obj != NULL;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	rz_bin_free_all_omf_obj (bf->o->bin_obj);
 	bf->o->bin_obj = NULL;
 }
@@ -54,18 +54,18 @@ static bool check_buffer(RBuffer *b) {
 	return rz_bin_checksum_omf_ok (buf, length);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return OMF_BASE_ADDR;
 }
 
-static RzList *entries(RBinFile *bf) {
+static RzList *entries(RzBinFile *bf) {
 	RzList *ret;
-	RBinAddr *addr;
+	RzBinAddr *addr;
 
 	if (!(ret = rz_list_newf (free))) {
 		return NULL;
 	}
-	if (!(addr = RZ_NEW0 (RBinAddr))) {
+	if (!(addr = RZ_NEW0 (RzBinAddr))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -77,7 +77,7 @@ static RzList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	RzList *ret;
 	ut32 ct_omf_sect = 0;
 
@@ -99,9 +99,9 @@ static RzList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *symbols(RBinFile *bf) {
+static RzList *symbols(RzBinFile *bf) {
 	RzList *ret;
-	RBinSymbol *sym;
+	RzBinSymbol *sym;
 	OMF_symbol *sym_omf;
 	int ct_sym = 0;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
@@ -114,7 +114,7 @@ static RzList *symbols(RBinFile *bf) {
 	ret->free = free;
 
 	while (ct_sym < ((rz_bin_omf_obj *) bf->o->bin_obj)->nb_symbol) {
-		if (!(sym = RZ_NEW0 (RBinSymbol))) {
+		if (!(sym = RZ_NEW0 (RzBinSymbol))) {
 			return ret;
 		}
 		sym_omf = ((rz_bin_omf_obj *) bf->o->bin_obj)->symbols[ct_sym++];
@@ -129,10 +129,10 @@ static RzList *symbols(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret;
+static RzBinInfo *info(RzBinFile *bf) {
+	RzBinInfo *ret;
 
-	if (!(ret = RZ_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RzBinInfo))) {
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
@@ -152,11 +152,11 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static ut64 get_vaddr(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
+static ut64 get_vaddr(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return vaddr;
 }
 
-RBinPlugin rz_bin_plugin_omf = {
+RzBinPlugin rz_bin_plugin_omf = {
 	.name = "omf",
 	.desc = "omf bin plugin",
 	.license = "LGPL3",

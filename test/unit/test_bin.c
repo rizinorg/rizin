@@ -5,11 +5,11 @@
 //TODO test rz_str_chop_path
 
 bool test_r_bin(void) {
-	RBin *bin = rz_bin_new ();
+	RzBin *bin = rz_bin_new ();
 	RzIO *io = rz_io_new ();
 	rz_io_bind (io, &bin->iob);
 
-	RBinOptions opt = {0};
+	RzBinOptions opt = {0};
 	bool res = rz_bin_open (bin, "bins/elf/ioli/crackme0x00", &opt);
 	mu_assert ("crackme0x00 binary could not be opened", res);
 

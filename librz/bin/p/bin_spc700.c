@@ -12,12 +12,12 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
 	return check_buffer (b);
 }
 
-static RBinInfo* info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
+static RzBinInfo* info(RzBinFile *bf) {
+	RzBinInfo *ret = NULL;
 	spc_hdr spchdr;
 	memset (&spchdr, 0, SPC_HDR_SIZE);
 	int reat = rz_buf_read_at (bf->buf, 0, (ut8*)&spchdr, SPC_HDR_SIZE);
@@ -25,7 +25,7 @@ static RBinInfo* info(RBinFile *bf) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
-	if (!(ret = RZ_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RzBinInfo))) {
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
@@ -38,9 +38,9 @@ static RBinInfo* info(RBinFile *bf) {
 	return ret;
 }
 
-static RzList* sections(RBinFile *bf) {
+static RzList* sections(RzBinFile *bf) {
 	RzList *ret = NULL;
-	RBinSection *ptr = NULL;
+	RzBinSection *ptr = NULL;
 	spc_hdr spchdr;
 	memset (&spchdr, 0, SPC_HDR_SIZE);
 	int reat = rz_buf_read_at (bf->buf, 0, (ut8*)&spchdr, SPC_HDR_SIZE);
@@ -51,7 +51,7 @@ static RzList* sections(RBinFile *bf) {
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -66,10 +66,10 @@ static RzList* sections(RBinFile *bf) {
 	return ret;
 }
 
-static RzList* entries(RBinFile *bf) {
+static RzList* entries(RzBinFile *bf) {
 	RzList *ret = rz_list_newf (free);
 	if (ret) {
-		RBinAddr *ptr = RZ_NEW0 (RBinAddr);
+		RzBinAddr *ptr = RZ_NEW0 (RzBinAddr);
 		if (ptr) {
 			ptr->paddr = RAM_START_ADDRESS;
 			ptr->vaddr = 0;
@@ -79,7 +79,7 @@ static RzList* entries(RBinFile *bf) {
 	return ret;
 }
 
-RBinPlugin rz_bin_plugin_spc700 = {
+RzBinPlugin rz_bin_plugin_spc700 = {
 	.name = "spc700",
 	.desc = "SNES-SPC700 Sound File Data",
 	.license = "LGPL3",

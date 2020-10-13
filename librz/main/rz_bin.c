@@ -140,7 +140,7 @@ static bool isBinopHelp(const char *op) {
 	return false;
 }
 
-static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
+static bool extract_binobj(const RzBinFile *bf, RzBinXtrData *data, int idx) {
 	ut64 bin_size = data? data->size: 0;
 	ut8 *bytes;
 	const char *xtr_type = "";
@@ -209,10 +209,10 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	return res;
 }
 
-static int rabin_extract(RBin *bin, int all) {
-	RBinXtrData *data = NULL;
+static int rabin_extract(RzBin *bin, int all) {
+	RzBinXtrData *data = NULL;
 	int res = false;
-	RBinFile *bf = rz_bin_cur (bin);
+	RzBinFile *bf = rz_bin_cur (bin);
 
 	if (!bf) {
 		return res;
@@ -236,14 +236,14 @@ static int rabin_extract(RBin *bin, int all) {
 	return res;
 }
 
-static int rabin_dump_symbols(RBin *bin, int len) {
+static int rabin_dump_symbols(RzBin *bin, int len) {
 	RzList *symbols = rz_bin_get_symbols (bin);
 	if (!symbols) {
 		return false;
 	}
 
 	RzListIter *iter;
-	RBinSymbol *symbol;
+	RzBinSymbol *symbol;
 	int olen = len;
 	rz_list_foreach (symbols, iter, symbol) {
 		if (symbol->size && (olen > symbol->size || !olen)) {
@@ -274,10 +274,10 @@ static int rabin_dump_symbols(RBin *bin, int len) {
 	return true;
 }
 
-static bool __dumpSections(RBin *bin, const char *scnname, const char *output, const char *file) {
+static bool __dumpSections(RzBin *bin, const char *scnname, const char *output, const char *file) {
 	RzList *sections;
 	RzListIter *iter;
-	RBinSection *section;
+	RzBinSection *section;
 	ut8 *buf;
 	char *ret;
 	int r;
@@ -327,7 +327,7 @@ static bool __dumpSections(RBin *bin, const char *scnname, const char *output, c
 	return true;
 }
 
-static int rabin_do_operation(RBin *bin, const char *op, int rad, const char *output, const char *file) {
+static int rabin_do_operation(RzBin *bin, const char *op, int rad, const char *output, const char *file) {
 	char *arg = NULL, *ptr = NULL, *ptr2 = NULL;
 	bool rc = true;
 
@@ -345,7 +345,7 @@ static int rabin_do_operation(RBin *bin, const char *op, int rad, const char *ou
 	if (!output) {
 		output = file;
 	}
-	RBinFile *bf = rz_bin_cur (bin);
+	RzBinFile *bf = rz_bin_cur (bin);
 	if (bf) {
 		RBuffer *nb = rz_buf_new_with_buf (bf->buf);
 		rz_buf_free (bf->buf);
@@ -405,13 +405,13 @@ static int rabin_do_operation(RBin *bin, const char *op, int rad, const char *ou
 		break;
 	case 'C':
 		{
-		RBinFile *cur = rz_bin_cur (bin);
-		RBinPlugin *plg = rz_bin_file_cur_plugin (cur);
+		RzBinFile *cur = rz_bin_cur (bin);
+		RzBinPlugin *plg = rz_bin_file_cur_plugin (cur);
 		if (!plg && cur) {
 			// are we in xtr?
 			if (cur->xtr_data) {
 				// load the first one
-				RBinXtrData *xtr_data = rz_list_get_n (cur->xtr_data, 0);
+				RzBinXtrData *xtr_data = rz_list_get_n (cur->xtr_data, 0);
 				if (xtr_data && !xtr_data->loaded && !rz_bin_file_object_new_from_xtr_data (bin, cur,
 					UT64_MAX, rz_bin_get_laddr (bin), xtr_data)) {
 					break;
@@ -461,7 +461,7 @@ error:
 	return false;
 }
 
-static int rabin_show_srcline(RBin *bin, ut64 at) {
+static int rabin_show_srcline(RzBin *bin, ut64 at) {
 	char *srcline;
 	if (at != UT64_MAX && (srcline = rz_bin_addr2text (bin, at, true))) {
 		printf ("%s\n", srcline);
@@ -474,7 +474,7 @@ static int rabin_show_srcline(RBin *bin, ut64 at) {
 /* bin callback */
 static int __lib_bin_cb(RzLibPlugin *pl, void *user, void *data) {
 	struct rz_bin_plugin_t *hand = (struct rz_bin_plugin_t *)data;
-	RBin *bin = user;
+	RzBin *bin = user;
 	//printf(" * Added (dis)assembly plugin\n");
 	rz_bin_add (bin, hand);
 	return true;
@@ -487,7 +487,7 @@ static int __lib_bin_dt(RzLibPlugin *pl, void *p, void *u) {
 /* binxtr callback */
 static int __lib_bin_xtr_cb(RzLibPlugin *pl, void *user, void *data) {
 	struct rz_bin_xtr_plugin_t *hand = (struct rz_bin_xtr_plugin_t *)data;
-	RBin *bin = user;
+	RzBin *bin = user;
 	//printf(" * Added (dis)assembly plugin\n");
 	rz_bin_xtr_add (bin, hand);
 	return true;
@@ -500,7 +500,7 @@ static int __lib_bin_xtr_dt(RzLibPlugin *pl, void *p, void *u) {
 /* binldr callback */
 static int __lib_bin_ldr_cb(RzLibPlugin *pl, void *user, void *data) {
 	struct rz_bin_ldr_plugin_t *hand = (struct rz_bin_ldr_plugin_t *)data;
-	RBin *bin = user;
+	RzBin *bin = user;
 	//printf(" * Added (dis)assembly plugin\n");
 	rz_bin_ldr_add (bin, hand);
 	return true;
@@ -510,7 +510,7 @@ static int __lib_bin_ldr_dt(RzLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 
-static char *__demangleAs(RBin *bin, int type, const char *file) {
+static char *__demangleAs(RzBin *bin, int type, const char *file) {
 	bool syscmd = bin? bin->demanglercmd: false;
 	char *res = NULL;
 	switch (type) {
@@ -527,7 +527,7 @@ static char *__demangleAs(RBin *bin, int type, const char *file) {
 	return res;
 }
 
-static void __listPlugins(RBin *bin, const char* plugin_name, int rad) {
+static void __listPlugins(RzBin *bin, const char* plugin_name, int rad) {
 	int format = (rad == RZ_MODE_JSON) ? 'j': rad? 'q': 0;
 	bin->cb_printf = (PrintfCallback)printf;
 	if (plugin_name) {
@@ -538,7 +538,7 @@ static void __listPlugins(RBin *bin, const char* plugin_name, int rad) {
 }
 
 RZ_API int rz_main_rz_bin(int argc, const char **argv) {
-	RBin *bin = NULL;
+	RzBin *bin = NULL;
 	const char *name = NULL;
 	const char *file = NULL;
 	const char *output = NULL;
@@ -944,7 +944,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			return 1;
 		}
 		codelen = rz_hex_str2bin (p, code);
-		RBinArchOptions opts;
+		RzBinArchOptions opts;
 		rz_bin_arch_options_init (&opts, arch, bits);
 		b = rz_bin_create (bin, create, code, codelen, data, datalen, &opts);
 		if (b) {
@@ -1050,7 +1050,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	rz_bin_force_plugin (bin, forcebin);
 	rz_bin_load_filter (bin, action);
 
-	RBinOptions bo;
+	RzBinOptions bo;
 	rz_bin_options_init (&bo, fd, baddr, laddr, rawstr);
 	bo.xtr_idx = xtr_idx;
 
@@ -1071,7 +1071,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		rz_bin_set_baddr (bin, baddr);
 	}
 	if (rawstr == 2) {
-		RBinFile *bf = rz_bin_cur (core.bin);
+		RzBinFile *bf = rz_bin_cur (core.bin);
 		if (bf) {
 			bf->strmode = rad;
 			rz_bin_dump_strings (bf, bin->minstrlen, bf->rawstr);
@@ -1171,7 +1171,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		rabin_show_srcline (bin, at);
 	}
 	if (action & RZ_BIN_REQ_EXTRACT) {
-		RBinFile *bf = rz_bin_cur (bin);
+		RzBinFile *bf = rz_bin_cur (bin);
 		if (bf && bf->xtr_data) {
 			rabin_extract (bin, (!arch && !arch_name && !bits));
 		} else {

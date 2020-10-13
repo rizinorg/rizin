@@ -4,9 +4,9 @@
 #include "i/private.h"
 #include <cxx/demangle.h>
 
-RZ_API void rz_bin_demangle_list(RBin *bin) {
+RZ_API void rz_bin_demangle_list(RzBin *bin) {
 	const char *langs[] = { "c++", "java", "objc", "swift", "dlang", "msvc", "rust", NULL };
-	RBinPlugin *plugin;
+	RzBinPlugin *plugin;
 	RzListIter *it;
 	int i;
 	if (!bin) {
@@ -22,8 +22,8 @@ RZ_API void rz_bin_demangle_list(RBin *bin) {
 	}
 }
 
-RZ_API char *rz_bin_demangle_plugin(RBin *bin, const char *name, const char *str) {
-	RBinPlugin *plugin;
+RZ_API char *rz_bin_demangle_plugin(RzBin *bin, const char *name, const char *str) {
+	RzBinPlugin *plugin;
 	RzListIter *it;
 	if (bin && name && str) {
 		rz_list_foreach (bin->plugins, it, plugin) {
@@ -62,13 +62,13 @@ RZ_API int rz_bin_demangle_type(const char *str) {
 	return RZ_BIN_NM_NONE;
 }
 
-RZ_API char *rz_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs) {
+RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs) {
 	int type = -1;
 	if (!str || !*str) {
 		return NULL;
 	}
-	RBin *bin = bf? bf->rbin: NULL;
-	RBinObject *o = bf? bf->o: NULL;
+	RzBin *bin = bf? bf->rbin: NULL;
+	RzBinObject *o = bf? bf->o: NULL;
 	RzListIter *iter;
 	const char *lib = NULL;
 	if (!strncmp (str, "reloc.", 6)) {

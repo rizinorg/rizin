@@ -11,11 +11,11 @@
 #include "elf/elf.h"
 #include <ht_uu.h>
 
-static RBinInfo* info(RBinFile *bf);
+static RzBinInfo* info(RzBinFile *bf);
 
 //TODO: implement rz_bin_symbol_dup() and rz_bin_symbol_free ?
 
-static int get_file_type(RBinFile *bf) {
+static int get_file_type(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = bf->o->bin_obj;
 	char *type = Elf_(rz_bin_elf_get_file_type (obj));
 	int res = type? ((!strncmp (type, "CORE", 4)) ? RZ_BIN_TYPE_CORE : RZ_BIN_TYPE_DEFAULT) : -1;
@@ -23,12 +23,12 @@ static int get_file_type(RBinFile *bf) {
 	return res;
 }
 
-static RzList *maps(RBinFile *bf) {
+static RzList *maps(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o, NULL);
 	return Elf_(rz_bin_elf_get_maps)(bf->o->bin_obj);
 }
 
-static char* regstate(RBinFile *bf) {
+static char* regstate(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t) *obj = bf->o->bin_obj;
 	if (obj->ehdr.e_machine != EM_AARCH64 &&
 		obj->ehdr.e_machine != EM_ARM &&
@@ -47,7 +47,7 @@ static char* regstate(RBinFile *bf) {
 	return hexregs;
 }
 
-static void setimpord(ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
+static void setimpord(ELFOBJ* eobj, ut32 ord, RzBinImport *ptr) {
 	if (!eobj->imports_by_ord || ord >= eobj->imports_by_ord_size) {
 		return;
 	}
@@ -72,8 +72,8 @@ static char *setphname(ut16 mach, Elf_(Word) ptyp) {
 	return strdup ("UNKNOWN");
 }
 
-static Sdb* get_sdb(RBinFile *bf) {
-	RBinObject *o = bf->o;
+static Sdb* get_sdb(RzBinFile *bf) {
+	RzBinObject *o = bf->o;
 	if (o && o->bin_obj) {
 		struct Elf_(rz_bin_elf_obj_t) *bin = (struct Elf_(rz_bin_elf_obj_t) *) o->bin_obj;
 		return bin->kv;
@@ -81,7 +81,7 @@ static Sdb* get_sdb(RBinFile *bf) {
 	return NULL;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	struct Elf_(rz_bin_elf_obj_t) *res = Elf_(rz_bin_elf_new_buf) (buf, bf->rbin->verbose);
 	if (res) {
 	//	sdb_ns_set (sdb, "info", res->kv);
@@ -91,12 +91,12 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return false;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	int i;
 	ELFOBJ* eobj = bf->o->bin_obj;
 	if (eobj && eobj->imports_by_ord) {
 		for (i = 0; i < eobj->imports_by_ord_size; i++) {
-			RBinImport *imp = eobj->imports_by_ord[i];
+			RzBinImport *imp = eobj->imports_by_ord[i];
 			if (imp) {
 				free (imp->name);
 				free (imp);
@@ -108,17 +108,17 @@ static void destroy(RBinFile *bf) {
 	Elf_(rz_bin_elf_free) ((struct Elf_(rz_bin_elf_obj_t)*)bf->o->bin_obj);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return Elf_(rz_bin_elf_get_baddr) (bf->o->bin_obj);
 }
 
-static ut64 boffset(RBinFile *bf) {
+static ut64 boffset(RzBinFile *bf) {
 	return Elf_(rz_bin_elf_get_boffset) (bf->o->bin_obj);
 }
 
-static RBinAddr* binsym(RBinFile *bf, int sym) {
+static RzBinAddr* binsym(RzBinFile *bf, int sym) {
 	struct Elf_(rz_bin_elf_obj_t)* obj = bf->o->bin_obj;
-	RBinAddr *ret = NULL;
+	RzBinAddr *ret = NULL;
 	ut64 addr = 0LL;
 
 	switch (sym) {
@@ -135,7 +135,7 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 		addr = Elf_(rz_bin_elf_get_fini_offset) (bf->o->bin_obj);
 		break;
 	}
-	if (addr && addr != UT64_MAX && (ret = RZ_NEW0 (RBinAddr))) {
+	if (addr && addr != UT64_MAX && (ret = RZ_NEW0 (RzBinAddr))) {
 		struct Elf_(rz_bin_elf_obj_t) *bin = bf->o->bin_obj;
 		bool is_arm = bin->ehdr.e_machine == EM_ARM;
 		ret->paddr = addr;
@@ -171,12 +171,12 @@ static bool is_wordable_section(const char *name) {
 	return false;
 }
 
-static RzList* sections(RBinFile *bf) {
+static RzList* sections(RzBinFile *bf) {
 	struct Elf_(rz_bin_elf_obj_t)* obj = (bf && bf->o)? bf->o->bin_obj : NULL;
 	struct rz_bin_elf_section_t *section = NULL;
 	int i, num, found_load = 0;
 	Elf_(Phdr)* phdr = NULL;
-	RBinSection *ptr = NULL;
+	RzBinSection *ptr = NULL;
 	RzList *ret = NULL;
 
 	if (!obj || !(ret = rz_list_newf ((RzListFree)rz_bin_section_free))) {
@@ -187,7 +187,7 @@ static RzList* sections(RBinFile *bf) {
 	//and freed within Elf_(rz_bin_elf_free)
 	if ((section = Elf_(rz_bin_elf_get_sections) (obj))) {
 		for (i = 0; !section[i].last; i++) {
-			if (!(ptr = RZ_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RzBinSection))) {
 				break;
 			}
 			ptr->name = strdup ((char*)section[i].name);
@@ -226,7 +226,7 @@ static RzList* sections(RBinFile *bf) {
 	if (phdr) {
 		int n = 0;
 		for (i = 0; i < num; i++) {
-			if (!(ptr = RZ_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RzBinSection))) {
 				return ret;
 			}
 			ptr->add = false;
@@ -294,7 +294,7 @@ static RzList* sections(RBinFile *bf) {
 			bf->size = bin? bin->size: 0x9999;
 		}
 		if (found_load == 0) {
-			if (!(ptr = RZ_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RzBinSection))) {
 				return ret;
 			}
 			ptr->name = strdup ("uphdr");
@@ -308,7 +308,7 @@ static RzList* sections(RBinFile *bf) {
 		}
 	}
 	// add entry for ehdr
-	ptr = RZ_NEW0 (RBinSection);
+	ptr = RZ_NEW0 (RzBinSection);
 	if (ptr) {
 		ut64 ehdr_size = sizeof (obj->ehdr);
 		if (bf->size < ehdr_size) {
@@ -330,11 +330,11 @@ static RzList* sections(RBinFile *bf) {
 	return ret;
 }
 
-static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, int type, int bits) {
+static RzBinAddr* newEntry(RzBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, int type, int bits) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 
 	struct Elf_(rz_bin_elf_obj_t)* obj = bf->o->bin_obj;
-	RBinAddr *ptr = RZ_NEW0 (RBinAddr);
+	RzBinAddr *ptr = RZ_NEW0 (RzBinAddr);
 	if (ptr) {
 		ptr->paddr = Elf_(rz_bin_elf_v2p) (obj, vaddr);
 		ptr->vaddr = vaddr;
@@ -351,10 +351,10 @@ static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, in
 	return ptr;
 }
 
-static void process_constructors(RBinFile *bf, RzList *ret, int bits) {
+static void process_constructors(RzBinFile *bf, RzList *ret, int bits) {
 	RzList *secs = sections (bf);
 	RzListIter *iter;
-	RBinSection *sec;
+	RzBinSection *sec;
 	int i, type;
 	rz_list_foreach (secs, iter, sec) {
 		type = -1;
@@ -375,7 +375,7 @@ static void process_constructors(RBinFile *bf, RzList *ret, int bits) {
 				for (i = 0; (i + 3) < sec->size; i += 4) {
 					ut32 addr32 = rz_read_le32 (buf + i);
 					if (addr32) {
-						RBinAddr *ba = newEntry (bf, sec->paddr + i, sec->vaddr + i,
+						RzBinAddr *ba = newEntry (bf, sec->paddr + i, sec->vaddr + i,
 						                         (ut64)addr32, type, bits);
 						rz_list_append (ret, ba);
 					}
@@ -384,7 +384,7 @@ static void process_constructors(RBinFile *bf, RzList *ret, int bits) {
 				for (i = 0; (i + 7) < sec->size; i += 8) {
 					ut64 addr64 = rz_read_le64 (buf + i);
 					if (addr64) {
-						RBinAddr *ba = newEntry (bf, sec->paddr + i, sec->vaddr + i,
+						RzBinAddr *ba = newEntry (bf, sec->paddr + i, sec->vaddr + i,
 						                         addr64, type, bits);
 						rz_list_append (ret, ba);
 					}
@@ -396,10 +396,10 @@ static void process_constructors(RBinFile *bf, RzList *ret, int bits) {
 	rz_list_free (secs);
 }
 
-static RzList* entries(RBinFile *bf) {
+static RzList* entries(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 
-	RBinAddr *ptr = NULL;
+	RzBinAddr *ptr = NULL;
 	struct rz_bin_elf_symbol_t *symbol;
 	int i;
 
@@ -410,7 +410,7 @@ static RzList* entries(RBinFile *bf) {
 	}
 	ut64 pa = Elf_(rz_bin_elf_get_entry_offset) (obj);
 	if (pa != UT64_MAX) {
-		if (!(ptr = RZ_NEW0 (RBinAddr))) {
+		if (!(ptr = RZ_NEW0 (RzBinAddr))) {
 			return ret;
 		}
 		ptr->paddr = pa;
@@ -424,7 +424,7 @@ static RzList* entries(RBinFile *bf) {
 
 		if (bf->o->sections) {
 			RzListIter *iter;
-			RBinSection *section;
+			RzBinSection *section;
 			rz_list_foreach_prev (bf->o->sections, iter, section) {
 				if (!strcmp (section->name, "ehdr")) {
 					ptr->hvaddr = section->vaddr + ptr->hpaddr;
@@ -461,7 +461,7 @@ static RzList* entries(RBinFile *bf) {
 	for (i = 0; !symbol[i].last; i++) {
 		if (!strncmp (symbol[i].name, "Java", 4)) {
 			if (rz_str_endswith (symbol[i].name, "_init")) {
-				if (!(ptr = RZ_NEW0 (RBinAddr))) {
+				if (!(ptr = RZ_NEW0 (RzBinAddr))) {
 					return ret;
 				}
 				ptr->paddr = symbol[i].offset;
@@ -478,7 +478,7 @@ static RzList* entries(RBinFile *bf) {
 	return ret;
 }
 
-static void insert_symbol(struct Elf_(rz_bin_elf_obj_t) *bin, RBinSymbol *ptr, bool is_sht_null, RzList *ret) {
+static void insert_symbol(struct Elf_(rz_bin_elf_obj_t) *bin, RzBinSymbol *ptr, bool is_sht_null, RzList *ret) {
 	// add it to the list of symbols only if it doesn't point to SHT_NULL
 	if (is_sht_null) {
 		rz_bin_symbol_free (ptr);
@@ -487,9 +487,9 @@ static void insert_symbol(struct Elf_(rz_bin_elf_obj_t) *bin, RBinSymbol *ptr, b
 	}
 }
 
-static RzList* symbols(RBinFile *bf) {
+static RzList* symbols(RzBinFile *bf) {
 	struct rz_bin_elf_symbol_t *symbol = NULL;
-	RBinSymbol *ptr = NULL;
+	RzBinSymbol *ptr = NULL;
 	int i;
 
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
@@ -535,9 +535,9 @@ static RzList* symbols(RBinFile *bf) {
 	return ret;
 }
 
-static RzList* imports(RBinFile *bf) {
-	RBinElfSymbol *import = NULL;
-	RBinImport *ptr = NULL;
+static RzList* imports(RzBinFile *bf) {
+	RzBinElfSymbol *import = NULL;
+	RzBinImport *ptr = NULL;
 	RzList *ret = NULL;
 	int i;
 
@@ -551,7 +551,7 @@ static RzList* imports(RBinFile *bf) {
 		return NULL;
 	}
 	for (i = 0; !import[i].last; i++) {
-		if (!(ptr = RZ_NEW0 (RBinImport))) {
+		if (!(ptr = RZ_NEW0 (RzBinImport))) {
 			break;
 		}
 		ptr->name = strdup (import[i].name);
@@ -564,7 +564,7 @@ static RzList* imports(RBinFile *bf) {
 	return ret;
 }
 
-static RzList* libs(RBinFile *bf) {
+static RzList* libs(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 
 	RzList *ret = rz_list_newf (free);
@@ -583,12 +583,12 @@ static RzList* libs(RBinFile *bf) {
 	return ret;
 }
 
-static RBinReloc *reloc_convert(struct Elf_(rz_bin_elf_obj_t) *bin, RBinElfReloc *rel, ut64 GOT) {
+static RzBinReloc *reloc_convert(struct Elf_(rz_bin_elf_obj_t) *bin, RzBinElfReloc *rel, ut64 GOT) {
 	rz_return_val_if_fail (bin && rel, NULL);
 
 	ut64 B = bin->baddr;
 	ut64 P = rel->rva; // rva has taken baddr into account
-	RBinReloc *r = RZ_NEW0 (RBinReloc);
+	RzBinReloc *r = RZ_NEW0 (RzBinReloc);
 	if (!r) {
 		return NULL;
 	}
@@ -701,11 +701,11 @@ static RBinReloc *reloc_convert(struct Elf_(rz_bin_elf_obj_t) *bin, RBinElfReloc
 	return NULL;
 }
 
-static RzList* relocs(RBinFile *bf) {
+static RzList* relocs(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 	RzList *ret = NULL;
-	RBinReloc *ptr = NULL;
-	RBinElfReloc *relocs = NULL;
+	RzBinReloc *ptr = NULL;
+	RzBinElfReloc *relocs = NULL;
 	struct Elf_(rz_bin_elf_obj_t) *bin = bf->o->bin_obj;
 	if (!(ret = rz_list_newf (free))) {
 		return NULL;
@@ -741,7 +741,7 @@ static RzList* relocs(RBinFile *bf) {
 	return ret;
 }
 
-static void _patch_reloc(ut16 e_machine, RzIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
+static void _patch_reloc(ut16 e_machine, RzIOBind *iob, RzBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
 	ut64 val;
 	ut64 A = rel->addend, P = rel->rva;
 	ut8 buf[8];
@@ -891,21 +891,21 @@ static void _patch_reloc(ut16 e_machine, RzIOBind *iob, RBinElfReloc *rel, ut64 
 	}
 }
 
-static RzList* patch_relocs(RBin *b) {
+static RzList* patch_relocs(RzBin *b) {
 	rz_return_val_if_fail (b, NULL);
 	RzList *ret = NULL;
-	RBinReloc *ptr = NULL;
+	RzBinReloc *ptr = NULL;
 	RzIOMap *g = NULL;
 	HtUU *relocs_by_sym;
-	RBinElfReloc *relcs = NULL;
-	RBinInfo *info;
+	RzBinElfReloc *relcs = NULL;
+	RzBinInfo *info;
 	ut64 size, offset = 0;
 
 	RzIO *io = b->iob.io;
 	if (!io || !io->desc) {
 		return NULL;
 	}
-	RBinObject *obj = rz_bin_cur_object (b);
+	RzBinObject *obj = rz_bin_cur_object (b);
 	if (!obj) {
 	   	return NULL;
 	}
@@ -1000,10 +1000,10 @@ static RzList* patch_relocs(RBin *b) {
 	return ret;
 }
 
-static void lookup_symbols(RBinFile *bf, RBinInfo *ret) {
+static void lookup_symbols(RzBinFile *bf, RzBinInfo *ret) {
 	RzList* symbols_list = symbols (bf);
 	RzListIter *iter;
-	RBinSymbol *symbol;
+	RzBinSymbol *symbol;
 	bool is_rust = false;
 	if (symbols_list) {
 		rz_list_foreach (symbols_list, iter, symbol) {
@@ -1028,10 +1028,10 @@ static void lookup_symbols(RBinFile *bf, RBinInfo *ret) {
 	}
 }
 
-static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
+static void lookup_sections(RzBinFile *bf, RzBinInfo *ret) {
 	RzList* sections_list = sections (bf);
 	RzListIter *iter;
-	RBinSection *section;
+	RzBinSection *section;
 	bool is_go = false;
 	ret->has_retguard = -1;
 	rz_list_foreach (sections_list, iter, section) {
@@ -1054,11 +1054,11 @@ static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
 	rz_list_free (sections_list);
 }
 
-static bool has_sanitizers(RBinFile *bf) {
+static bool has_sanitizers(RzBinFile *bf) {
 	bool ret = false;
 	RzList* imports_list = imports (bf);
 	RzListIter *iter;
-	RBinImport *import;
+	RzBinImport *import;
 	rz_list_foreach (imports_list, iter, import) {
 		if (strstr (import->name, "__sanitizer") ||
 		    strstr (import->name, "__ubsan")) {
@@ -1070,11 +1070,11 @@ static bool has_sanitizers(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo* info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
+static RzBinInfo* info(RzBinFile *bf) {
+	RzBinInfo *ret = NULL;
 	char *str;
 
-	if (!(ret = RZ_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RzBinInfo))) {
 		return NULL;
 	}
 	ret->file = bf->file
@@ -1157,7 +1157,7 @@ static RBinInfo* info(RBinFile *bf) {
 	return ret;
 }
 
-static RzList* fields(RBinFile *bf) {
+static RzList* fields(RzBinFile *bf) {
 	RzList *ret = rz_list_newf ((RzListFree)free);
 	if (!ret) {
 		return NULL;
@@ -1194,12 +1194,12 @@ static RzList* fields(RBinFile *bf) {
 	return ret;
 }
 
-static ut64 size(RBinFile *bf) {
+static ut64 size(RzBinFile *bf) {
 	ut64 off = 0;
 	ut64 len = 0;
 	if (!bf->o->sections) {
 		RzListIter *iter;
-		RBinSection *section;
+		RzBinSection *section;
 		bf->o->sections = sections (bf);
 		rz_list_foreach (bf->o->sections, iter, section) {
 			if (section->paddr > off) {

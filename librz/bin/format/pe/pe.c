@@ -377,8 +377,8 @@ struct rz_bin_pe_addr_t *PE_(rz_bin_pe_get_main_vaddr)(struct PE_(rz_bin_pe_obj_
 	return winmain;
 }
 
-#define RBinPEObj struct PE_(rz_bin_pe_obj_t)
-static PE_DWord bin_pe_rva_to_paddr(RBinPEObj* bin, PE_DWord rva) {
+#define RzBinPEObj struct PE_(rz_bin_pe_obj_t)
+static PE_DWord bin_pe_rva_to_paddr(RzBinPEObj* bin, PE_DWord rva) {
 	PE_DWord section_base;
 	int i, section_size;
 	for (i = 0; i < bin->num_sections; i++) {
@@ -406,11 +406,11 @@ ut64 PE_(rz_bin_pe_get_image_base)(struct PE_(rz_bin_pe_obj_t)* bin) {
 	return imageBase;
 }
 
-static PE_DWord bin_pe_rva_to_va(RBinPEObj* bin, PE_DWord rva) {
+static PE_DWord bin_pe_rva_to_va(RzBinPEObj* bin, PE_DWord rva) {
 	return PE_(rz_bin_pe_get_image_base) (bin) + rva;
 }
 
-static PE_DWord bin_pe_va_to_rva(RBinPEObj* bin, PE_DWord va) {
+static PE_DWord bin_pe_va_to_rva(RzBinPEObj* bin, PE_DWord va) {
 	ut64 imageBase = PE_(rz_bin_pe_get_image_base) (bin);
 	if (va < imageBase) {
 		return va;

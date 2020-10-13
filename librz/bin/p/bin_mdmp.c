@@ -8,17 +8,17 @@
 
 #include "mdmp/mdmp.h"
 
-static Sdb *get_sdb(RBinFile *bf) {
+static Sdb *get_sdb(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o, NULL);
 	struct rz_bin_mdmp_obj *obj = (struct rz_bin_mdmp_obj *)bf->o->bin_obj;
 	return (obj && obj->kv) ? obj->kv: NULL;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	rz_bin_mdmp_free ((struct rz_bin_mdmp_obj*)bf->o->bin_obj);
 }
 
-static RzList* entries(RBinFile *bf) {
+static RzList* entries(RzBinFile *bf) {
 	struct rz_bin_mdmp_obj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
@@ -45,11 +45,11 @@ static RzList* entries(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RzBinInfo *info(RzBinFile *bf) {
 	struct rz_bin_mdmp_obj *obj;
-	RBinInfo *ret;
+	RzBinInfo *ret;
 
-	if (!(ret = RZ_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RzBinInfo))) {
 		return NULL;
 	}
 
@@ -122,7 +122,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RzList* libs(RBinFile *bf) {
+static RzList* libs(RzBinFile *bf) {
 	char *ptr = NULL;
 	int i;
 	struct rz_bin_mdmp_obj *obj;
@@ -166,7 +166,7 @@ static RzList* libs(RBinFile *bf) {
 	return ret;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	rz_return_val_if_fail (buf, false);
 	struct rz_bin_mdmp_obj *res = rz_bin_mdmp_new_buf (buf);
 	if (res) {
@@ -177,7 +177,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return false;
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	struct minidump_memory_descriptor *memory;
 	struct minidump_memory_descriptor64 *memory64;
 	struct minidump_module *module;
@@ -187,7 +187,7 @@ static RzList *sections(RBinFile *bf) {
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
 	RzList *ret, *pe_secs;
 	RzListIter *it, *it0;
-	RBinSection *ptr;
+	RzBinSection *ptr;
 	ut64 index;
 
 	obj = (struct rz_bin_mdmp_obj *)bf->o->bin_obj;
@@ -200,7 +200,7 @@ static RzList *sections(RBinFile *bf) {
 	** implemented correctly, currently it is never called!?!? Is it a
 	** relic? */
 	rz_list_foreach (obj->streams.memories, it, memory) {
-		if (!(ptr = RZ_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RzBinSection))) {
 			return ret;
 		}
 
@@ -219,7 +219,7 @@ static RzList *sections(RBinFile *bf) {
 
 	index = obj->streams.memories64.base_rva;
 	rz_list_foreach (obj->streams.memories64.memories, it, memory64) {
-		if (!(ptr = RZ_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RzBinSection))) {
 			return ret;
 		}
 
@@ -242,7 +242,7 @@ static RzList *sections(RBinFile *bf) {
 	rz_list_foreach (obj->streams.modules, it, module) {
 		ut8 b[512];
 
-		if (!(ptr = RZ_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RzBinSection))) {
 			return ret;
 		}
 		if (module->module_name_rva + sizeof (struct minidump_string) >= rz_buf_size (obj->b)) {
@@ -302,7 +302,7 @@ static RzList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *mem(RBinFile *bf) {
+static RzList *mem(RzBinFile *bf) {
 	struct minidump_location_descriptor *location = NULL;
 	struct minidump_memory_descriptor *module;
 	struct minidump_memory_descriptor64 *module64;
@@ -310,7 +310,7 @@ static RzList *mem(RBinFile *bf) {
 	struct rz_bin_mdmp_obj *obj;
 	RzList *ret;
 	RzListIter *it;
-	RBinMem *ptr;
+	RzBinMem *ptr;
 	ut64 index;
 	ut64 state, type, a_protect;
 
@@ -323,7 +323,7 @@ static RzList *mem(RBinFile *bf) {
 	/* [1] As there isnt a better place to put this info at the moment we will
 	** mash it into the name field, but without enumeration for now  */
 	rz_list_foreach (obj->streams.memories, it, module) {
-		if (!(ptr = RZ_NEW0 (RBinMem))) {
+		if (!(ptr = RZ_NEW0 (RzBinMem))) {
 			return ret;
 		}
 		ptr->addr = module->start_of_memory_range;
@@ -347,7 +347,7 @@ static RzList *mem(RBinFile *bf) {
 
 	index = obj->streams.memories64.base_rva;
 	rz_list_foreach (obj->streams.memories64.memories, it, module64) {
-		if (!(ptr = RZ_NEW0 (RBinMem))) {
+		if (!(ptr = RZ_NEW0 (RzBinMem))) {
 			return ret;
 		}
 		ptr->addr = module64->start_of_memory_range;
@@ -373,7 +373,7 @@ static RzList *mem(RBinFile *bf) {
 	return ret;
 }
 
-static RzList* relocs(RBinFile *bf) {
+static RzList* relocs(RzBinFile *bf) {
 	struct rz_bin_mdmp_obj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
@@ -400,7 +400,7 @@ static RzList* relocs(RBinFile *bf) {
 	return ret;
 }
 
-static RzList* imports(RBinFile *bf) {
+static RzList* imports(RzBinFile *bf) {
 	struct rz_bin_mdmp_obj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
@@ -430,7 +430,7 @@ static RzList* imports(RBinFile *bf) {
 	return ret;
 }
 
-static RzList* symbols(RBinFile *bf) {
+static RzList* symbols(RzBinFile *bf) {
 	struct rz_bin_mdmp_obj *obj;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin;
@@ -464,7 +464,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-RBinPlugin rz_bin_plugin_mdmp = {
+RzBinPlugin rz_bin_plugin_mdmp = {
 	.name = "mdmp",
 	.desc = "Minidump format rz_bin plugin",
 	.license = "LGPL3",

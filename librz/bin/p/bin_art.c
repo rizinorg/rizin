@@ -56,8 +56,8 @@ static int art_header_load(ArtObj *ao, Sdb *db) {
 	return true;
 }
 
-static Sdb *get_sdb(RBinFile *bf) {
-	RBinObject *o = bf->o;
+static Sdb *get_sdb(RzBinFile *bf) {
+	RzBinObject *o = bf->o;
 	if (!o) {
 		return NULL;
 	}
@@ -65,7 +65,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return ao? ao->kv: NULL;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	ArtObj *ao = RZ_NEW0 (ArtObj);
 	if (ao) {
 		ao->kv = sdb_new0 ();
@@ -82,24 +82,24 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return false;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	ArtObj *obj = bf->o->bin_obj;
 	rz_buf_free (obj->buf);
 	free (obj);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	ArtObj *ao = bf->o->bin_obj;
 	return ao? ao->art.image_base: 0;
 }
 
-static RzList *strings(RBinFile *bf) {
+static RzList *strings(RzBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RzBinInfo *info(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
-	RBinInfo *ret = RZ_NEW0 (RBinInfo);
+	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -132,10 +132,10 @@ static bool check_buffer(RBuffer *buf) {
 	return r == 4 && !strncmp (tmp, "art\n", 4);
 }
 
-static RzList *entries(RBinFile *bf) {
+static RzList *entries(RzBinFile *bf) {
 	RzList *ret = rz_list_newf (free);
 	if (ret) {
-		RBinAddr *ptr = RZ_NEW0 (RBinAddr);
+		RzBinAddr *ptr = RZ_NEW0 (RzBinAddr);
 		if (ptr) {
 			ptr->paddr = ptr->vaddr = 0;
 			rz_list_append (ret, ptr);
@@ -144,21 +144,21 @@ static RzList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	ArtObj *ao = bf->o->bin_obj;
 	if (!ao) {
 		return NULL;
 	}
 	ARTHeader art = ao->art;
 	RzList *ret = NULL;
-	RBinSection *ptr = NULL;
+	RzBinSection *ptr = NULL;
 
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
 	ret->free = free;
 
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("load");
@@ -170,7 +170,7 @@ static RzList *sections(RBinFile *bf) {
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("bitmap");
@@ -182,7 +182,7 @@ static RzList *sections(RBinFile *bf) {
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("oat");
@@ -194,7 +194,7 @@ static RzList *sections(RBinFile *bf) {
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("oat_data");
@@ -209,7 +209,7 @@ static RzList *sections(RBinFile *bf) {
 	return ret;
 }
 
-RBinPlugin rz_bin_plugin_art = {
+RzBinPlugin rz_bin_plugin_art = {
 	.name = "art",
 	.desc = "Android Runtime",
 	.license = "LGPL3",

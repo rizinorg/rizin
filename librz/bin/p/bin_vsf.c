@@ -24,7 +24,7 @@ static const struct {
 };
 static const int MACHINES_MAX = sizeof(_machines) / sizeof(_machines[0]);
 
-static Sdb* get_sdb (RBinFile *bf) {
+static Sdb* get_sdb (RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 	struct rz_bin_vsf_obj* bin = (struct rz_bin_vsf_obj*) bf->o->bin_obj;
 	return bin->kv;
@@ -39,7 +39,7 @@ static bool check_buffer(RBuffer *b) {
 }
 
 // XXX b vs bf->buf
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	ut64 offset = 0;
 	struct rz_bin_vsf_obj* res = NULL;
 	if (check_buffer (bf->buf)) {
@@ -113,19 +113,19 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 	return true;
 }
 
-static RzList *mem(RBinFile *bf) {
+static RzList *mem(RzBinFile *bf) {
 	// FIXME: What does Mem do? Should I remove it ?
 	struct rz_bin_vsf_obj* vsf_obj = (struct rz_bin_vsf_obj*) bf->o->bin_obj;
 	if (!vsf_obj) {
 		return NULL;
 	}
 	RzList *ret;
-	RBinMem *m;
+	RzBinMem *m;
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
 	ret->free = free;
-	if (!(m = RZ_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RzBinMem))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -137,14 +137,14 @@ static RzList *mem(RBinFile *bf) {
 	return ret;
 }
 
-static RzList* sections(RBinFile* bf) {
+static RzList* sections(RzBinFile* bf) {
 	struct rz_bin_vsf_obj* vsf_obj = (struct rz_bin_vsf_obj*) bf->o->bin_obj;
 	if (!vsf_obj) {
 		return NULL;
 	}
 
 	RzList *ret = NULL;
-	RBinSection *ptr = NULL;
+	RzBinSection *ptr = NULL;
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
@@ -157,7 +157,7 @@ static RzList* sections(RBinFile* bf) {
 		if (!vsf_obj->machine_idx) {
 			// Commodore 64 ROMS
 			// BASIC (0xa000 - 0xbfff)
-			if (!(ptr = RZ_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RzBinSection))) {
 				return ret;
 			}
 			ptr->name = strdup ("BASIC");
@@ -170,7 +170,7 @@ static RzList* sections(RBinFile* bf) {
 			rz_list_append (ret, ptr);
 
 			// KERNAL (0xe000 - 0xffff)
-			if (!(ptr = RZ_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RzBinSection))) {
 				return ret;
 			}
 			ptr->name = strdup ("KERNAL");
@@ -186,7 +186,7 @@ static RzList* sections(RBinFile* bf) {
 		} else {
 			// Commodore 128 ROMS
 			// BASIC (0x4000 - 0xafff)
-			if (!(ptr = RZ_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RzBinSection))) {
 				return ret;
 			}
 			ptr->name = strdup ("BASIC");
@@ -199,7 +199,7 @@ static RzList* sections(RBinFile* bf) {
 			rz_list_append (ret, ptr);
 
 			// MONITOR (0xb000 - 0xbfff)
-			if (!(ptr = RZ_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RzBinSection))) {
 				return ret;
 			}
 			ptr->name = strdup ("MONITOR");
@@ -213,7 +213,7 @@ static RzList* sections(RBinFile* bf) {
 			rz_list_append (ret, ptr);
 
 			// EDITOR (0xc000 - 0xcfff)
-			if (!(ptr = RZ_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RzBinSection))) {
 				return ret;
 			}
 			ptr->name = strdup ("EDITOR");
@@ -226,7 +226,7 @@ static RzList* sections(RBinFile* bf) {
 			rz_list_append (ret, ptr);
 
 			// KERNAL (0xe000 - 0xffff)
-			if (!(ptr = RZ_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RzBinSection))) {
 				return ret;
 			}
 			ptr->name = strdup ("KERNAL");
@@ -247,7 +247,7 @@ static RzList* sections(RBinFile* bf) {
 		if (!vsf_obj->machine_idx) {
 			// RAM C64 (0x0000 - 0xffff)
 			int size = _machines[m_idx].ram_size;
-			if (!(ptr = RZ_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RzBinSection))) {
 				return ret;
 			}
 			ptr->name = strdup ("RAM");
@@ -264,7 +264,7 @@ static RzList* sections(RBinFile* bf) {
 
 			// size of each bank: 64k
 			int size = 1024 * 64;
-			if (!(ptr = RZ_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RzBinSection))) {
 				return ret;
 			}
 			ptr->name = strdup ("RAM BANK 0");
@@ -276,7 +276,7 @@ static RzList* sections(RBinFile* bf) {
 			ptr->add = true;
 			rz_list_append (ret, ptr);
 
-			if (!(ptr = RZ_NEW0 (RBinSection))) {
+			if (!(ptr = RZ_NEW0 (RzBinSection))) {
 				return ret;
 			}
 			ptr->name = strdup ("RAM BANK 1");
@@ -293,7 +293,7 @@ static RzList* sections(RBinFile* bf) {
 	return ret;
 }
 
-static RBinInfo* info(RBinFile *bf) {
+static RzBinInfo* info(RzBinFile *bf) {
 
 	struct rz_bin_vsf_obj* vsf_obj = (struct rz_bin_vsf_obj*) bf->o->bin_obj;
 	if (!vsf_obj) {
@@ -302,7 +302,7 @@ static RBinInfo* info(RBinFile *bf) {
 
 	const int m_idx = vsf_obj->machine_idx;
 
-	RBinInfo *ret = NULL;
+	RzBinInfo *ret = NULL;
 	struct vsf_hdr hdr;
 	memset (&hdr, 0, sizeof(hdr));
 	int read = rz_buf_read_at (bf->buf, 0, (ut8*)&hdr, sizeof(hdr));
@@ -310,7 +310,7 @@ static RBinInfo* info(RBinFile *bf) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
-	if (!(ret = RZ_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RzBinInfo))) {
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
@@ -337,7 +337,7 @@ static RBinInfo* info(RBinFile *bf) {
 	return ret;
 }
 
-static RzList* symbols(RBinFile *bf) {
+static RzList* symbols(RzBinFile *bf) {
 
 	static const struct {
 		const ut16 address;
@@ -479,7 +479,7 @@ static RzList* symbols(RBinFile *bf) {
 	const int m_idx = vsf_obj->machine_idx;
 	int offset = _machines[m_idx].offset_mem;
 	RzList *ret = NULL;
-	RBinSymbol *ptr;
+	RzBinSymbol *ptr;
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
@@ -488,7 +488,7 @@ static RzList* symbols(RBinFile *bf) {
 	int i;
 	for (i = 0; i < SYMBOLS_MAX; i++)
 	{
-		if (!(ptr = RZ_NEW0 (RBinSymbol))) {
+		if (!(ptr = RZ_NEW0 (RzBinSymbol))) {
 			return ret;
 		}
 		if (!ptr->name) {
@@ -505,13 +505,13 @@ static RzList* symbols(RBinFile *bf) {
 	return ret;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	struct rz_bin_vsf_obj *obj = (struct rz_bin_vsf_obj *)bf->o->bin_obj;
 	free (obj->maincpu);
 	free (obj);
 }
 
-static RzList* entries(RBinFile *bf) {
+static RzList* entries(RzBinFile *bf) {
 	struct rz_bin_vsf_obj* vsf_obj = (struct rz_bin_vsf_obj*) bf->o->bin_obj;
 	if (!vsf_obj) {
 		return NULL;
@@ -519,13 +519,13 @@ static RzList* entries(RBinFile *bf) {
 	const int m_idx = vsf_obj->machine_idx;
 
 	RzList *ret;
-	RBinAddr *ptr = NULL;
+	RzBinAddr *ptr = NULL;
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
 	int offset = _machines[m_idx].offset_mem;
 	// PC
-	if (!(ptr = RZ_NEW0 (RBinAddr))) {
+	if (!(ptr = RZ_NEW0 (RzBinAddr))) {
 		return ret;
 	}
 	ptr->paddr = vsf_obj->mem + offset;
@@ -533,7 +533,7 @@ static RzList* entries(RBinFile *bf) {
 	rz_list_append (ret, ptr);
 
 	// IRQ: 0xFFFE or 0x0314 ?
-//	if (!(ptr = RZ_NEW0 (RBinAddr)))
+//	if (!(ptr = RZ_NEW0 (RzBinAddr)))
 //		return ret;
 //	ptr->paddr = (vsf_obj->mem + offset) - (void*) bf->buf->buf;
 //	ptr->vaddr = 0x314; // or 0xfffe ?
@@ -542,7 +542,7 @@ static RzList* entries(RBinFile *bf) {
 	return ret;
 }
 
-RBinPlugin rz_bin_plugin_vsf = {
+RzBinPlugin rz_bin_plugin_vsf = {
 	.name = "vsf",
 	.desc = "VICE Snapshot File",
 	.license = "LGPL3",

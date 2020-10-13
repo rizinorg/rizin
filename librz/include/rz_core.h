@@ -137,7 +137,7 @@ typedef struct rz_core_log_t {
 typedef struct rz_core_file_t {
 	int dbg;
 	int fd;
-	RBinBind binb;
+	RzBinBind binb;
 	const struct rz_core_t *core;
 	ut8 alive;
 } RzCoreFile;
@@ -238,7 +238,7 @@ typedef struct rz_core_tasks_t {
 } RzCoreTaskScheduler;
 
 struct rz_core_t {
-	RBin *bin;
+	RzBin *bin;
 	RzConfig *config;
 	ut64 offset; // current seek
 	ut64 prompt_offset; // temporarily set to offset to have $$ in expressions always stay the same during temp seeks
@@ -378,7 +378,7 @@ RZ_API RzList *rz_core_list_themes(RzCore *core);
 RZ_API char *rz_core_get_theme(void);
 RZ_API const char *rz_core_get_section_name(RzCore *core, ut64 addr);
 RZ_API RzCons *rz_core_get_cons(RzCore *core);
-RZ_API RBin *rz_core_get_bin(RzCore *core);
+RZ_API RzBin *rz_core_get_bin(RzCore *core);
 RZ_API RzConfig *rz_core_get_config (RzCore *core);
 RZ_API bool rz_core_init(RzCore *core);
 RZ_API void rz_core_bind_cons(RzCore *core); // to restore pointers in cons
@@ -459,7 +459,7 @@ RZ_API int rz_core_visual_hud(RzCore *core);
 RZ_API void rz_core_visual_jump(RzCore *core, ut8 ch);
 RZ_API void rz_core_visual_disasm_up(RzCore *core, int *cols);
 RZ_API void rz_core_visual_disasm_down(RzCore *core, RzAsmOp *op, int *cols);
-RZ_API RBinReloc *rz_core_getreloc(RzCore *core, ut64 addr, int size);
+RZ_API RzBinReloc *rz_core_getreloc(RzCore *core, ut64 addr, int size);
 RZ_API ut64 rz_core_get_asmqjmps(RzCore *core, const char *str);
 RZ_API void rz_core_set_asmqjmps(RzCore *core, char *str, size_t len, int i);
 RZ_API char* rz_core_add_asmqjmp(RzCore *core, ut64 addr);
@@ -512,7 +512,7 @@ RZ_API bool rz_core_write_at(RzCore *core, ut64 addr, const ut8 *buf, int size);
 RZ_API int rz_core_write_op(RzCore *core, const char *arg, char op);
 RZ_API ut8* rz_core_transform_op(RzCore *core, const char *arg, char op);
 RZ_API int rz_core_set_file_by_fd (RzCore * core, ut64 bin_fd);
-RZ_API int rz_core_set_file_by_name (RBin * bin, const char * name);
+RZ_API int rz_core_set_file_by_name (RzBin * bin, const char * name);
 RZ_API ut32 rz_core_file_cur_fd (RzCore *core);
 
 RZ_API void rz_core_debug_rr (RzCore *core, RzReg *reg, int mode);
@@ -654,7 +654,7 @@ RZ_API int rz_core_bb_starts_in_middle(RzCore *core, ut64 at, int oplen);
 
 RZ_API bool rz_core_bin_raise (RzCore *core, ut32 bfid);
 
-RZ_API int rz_core_bin_set_env (RzCore *r, RBinFile *binfile);
+RZ_API int rz_core_bin_set_env (RzCore *r, RzBinFile *binfile);
 RZ_API int rz_core_bin_set_by_fd (RzCore *core, ut64 bin_fd);
 RZ_API int rz_core_bin_set_by_name (RzCore *core, const char *name);
 RZ_API int rz_core_bin_reload(RzCore *core, const char *file, ut64 baseaddr);
@@ -663,7 +663,7 @@ RZ_API int rz_core_bin_rebase(RzCore *core, ut64 baddr);
 RZ_API void rz_core_bin_export_info(RzCore *core, int mode);
 RZ_API int rz_core_bin_list(RzCore *core, int mode);
 RZ_API bool rz_core_bin_delete (RzCore *core, ut32 binfile_idx);
-RZ_API ut64 rz_core_bin_impaddr(RBin *bin, int va, const char *name);
+RZ_API ut64 rz_core_bin_impaddr(RzBin *bin, int va, const char *name);
 
 // XXX - this is kinda hacky, maybe there should be a way to
 // refresh the bin environment without specific calls?

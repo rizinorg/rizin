@@ -19,7 +19,7 @@ static bool replace_seq (const char **in, char **out, const char *seq, char valu
 	return true;
 }
 
-RZ_API char *rz_bin_demangle_rust (RBinFile *binfile, const char *sym, ut64 vaddr) {
+RZ_API char *rz_bin_demangle_rust (RzBinFile *binfile, const char *sym, ut64 vaddr) {
 	int len;
 	char *str, *out, *in;
 

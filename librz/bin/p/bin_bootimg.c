@@ -74,8 +74,8 @@ static int bootimg_header_load(BootImageObj *obj, Sdb *db) {
 	return true;
 }
 
-static Sdb *get_sdb(RBinFile *bf) {
-	RBinObject *o = bf->o;
+static Sdb *get_sdb(RzBinFile *bf) {
+	RzBinObject *o = bf->o;
 	BootImageObj *ao;
 	if (!o) {
 		return NULL;
@@ -84,7 +84,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return ao? ao->kv: NULL;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	BootImageObj *bio = RZ_NEW0 (BootImageObj);
 	if (!bio) {
 		return false;
@@ -104,27 +104,27 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return true;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	BootImageObj *bio = bf->o->bin_obj;
 	rz_buf_free (bio->buf);
 	RZ_FREE (bf->o->bin_obj);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	BootImageObj *bio = bf->o->bin_obj;
 	return bio? bio->bi.kernel_addr: 0;
 }
 
-static RzList *strings(RBinFile *bf) {
+static RzList *strings(RzBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret;
+static RzBinInfo *info(RzBinFile *bf) {
+	RzBinInfo *ret;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	ret = RZ_NEW0 (RBinInfo);
+	ret = RZ_NEW0 (RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -151,9 +151,9 @@ static bool check_buffer(RBuffer *buf) {
 	return r > 12 && !strncmp ((const char *)tmp, "ANDROID!", 8);
 }
 
-static RzList *entries(RBinFile *bf) {
+static RzList *entries(RzBinFile *bf) {
 	BootImageObj *bio = bf->o->bin_obj;
-	RBinAddr *ptr = NULL;
+	RzBinAddr *ptr = NULL;
 	if (!bio) {
 		return NULL;
 	}
@@ -163,7 +163,7 @@ static RzList *entries(RBinFile *bf) {
 	if (!(ret = rz_list_newf (free))) {
 		return NULL;
 	}
-	if (!(ptr = RZ_NEW0 (RBinAddr))) {
+	if (!(ptr = RZ_NEW0 (RzBinAddr))) {
 		return ret;
 	}
 	ptr->paddr = bi->page_size;
@@ -172,21 +172,21 @@ static RzList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	BootImageObj *bio = bf->o->bin_obj;
 	if (!bio) {
 		return NULL;
 	}
 	BootImage *bi = &bio->bi;
 	RzList *ret = NULL;
-	RBinSection *ptr = NULL;
+	RzBinSection *ptr = NULL;
 
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
 	ret->free = free;
 
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("header");
@@ -198,7 +198,7 @@ static RzList *sections(RBinFile *bf) {
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("kernel");
@@ -212,7 +212,7 @@ static RzList *sections(RBinFile *bf) {
 
 	if (bi->ramdisk_size > 0) {
 		ut64 base = bi->kernel_size + 2 * bi->page_size - 1;
-		if (!(ptr = RZ_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RzBinSection))) {
 			return ret;
 		}
 		ptr->name = strdup ("ramdisk");
@@ -227,7 +227,7 @@ static RzList *sections(RBinFile *bf) {
 
 	if (bi->second_size > 0) {
 		ut64 base = bi->kernel_size + bi->ramdisk_size + 2 * bi->page_size - 1;
-		if (!(ptr = RZ_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RzBinSection))) {
 			return ret;
 		}
 		ptr->name = strdup ("second");
@@ -243,7 +243,7 @@ static RzList *sections(RBinFile *bf) {
 	return ret;
 }
 
-RBinPlugin rz_bin_plugin_bootimg = {
+RzBinPlugin rz_bin_plugin_bootimg = {
 	.name = "bootimg",
 	.desc = "Android Boot Image",
 	.license = "LGPL3",

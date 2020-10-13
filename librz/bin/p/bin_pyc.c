@@ -21,7 +21,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (buf);
 }
 
@@ -43,8 +43,8 @@ static ut64 get_entrypoint(RBuffer *buf) {
 	return 0;
 }
 
-static RBinInfo *info(RBinFile *arch) {
-	RBinInfo *ret = RZ_NEW0 (RBinInfo);
+static RzBinInfo *info(RzBinFile *arch) {
+	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -61,16 +61,16 @@ static RBinInfo *info(RBinFile *arch) {
 	return ret;
 }
 
-static RzList *sections(RBinFile *arch) {
+static RzList *sections(RzBinFile *arch) {
 	return sections_cache;
 }
 
-static RzList *entries(RBinFile *arch) {
+static RzList *entries(RzBinFile *arch) {
 	RzList *entries = rz_list_newf ((RzListFree)free);
 	if (!entries) {
 		return NULL;
 	}
-	RBinAddr *addr = RZ_NEW0 (RBinAddr);
+	RzBinAddr *addr = RZ_NEW0 (RzBinAddr);
 	if (!addr) {
 		rz_list_free (entries);
 		return NULL;
@@ -83,11 +83,11 @@ static RzList *entries(RBinFile *arch) {
 	return entries;
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return 0;
 }
 
-static RzList *symbols(RBinFile *arch) {
+static RzList *symbols(RzBinFile *arch) {
 	RzList *shared = rz_list_newf ((RzListFree)rz_list_free);
 	if (!shared) {
 		return NULL;
@@ -126,7 +126,7 @@ static RzList *symbols(RBinFile *arch) {
 	return symbols;
 }
 
-RBinPlugin rz_bin_plugin_pyc = {
+RzBinPlugin rz_bin_plugin_pyc = {
 	.name = "pyc",
 	.desc = "Python byte-compiled file plugin",
 	.license = "LGPL3",

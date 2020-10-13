@@ -27,7 +27,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static RzList *fields(RBinFile *bf) {
+static RzList *fields(RzBinFile *bf) {
 	RzList *ret  = rz_list_new ();
 	if (!ret) {
 		return NULL;
@@ -204,7 +204,7 @@ static RzList *fields(RBinFile *bf) {
 	return ret;
 }
 
-static void header(RBinFile *bf) {
+static void header(RzBinFile *bf) {
 	struct PE_(rz_bin_pe_obj_t) * bin = bf->o->bin_obj;
 	struct rz_bin_t *rbin = bf->rbin;
 	rbin->cb_printf ("PE file header:\n");
@@ -313,7 +313,7 @@ static void header(RBinFile *bf) {
 
 extern struct rz_bin_write_t rz_bin_write_pe64;
 
-static RzList *trycatch(RBinFile *bf) {
+static RzList *trycatch(RzBinFile *bf) {
 	RzIO *io = bf->rbin->iob.io;
 	ut64 baseAddr = bf->o->baddr;
 	int i;
@@ -430,7 +430,7 @@ static RzList *trycatch(RBinFile *bf) {
 				continue;
 			}
 			ut64 handlerAddr = scope.HandlerAddress == 1 ? 0 : scope.HandlerAddress + baseAddr;
-			RBinTrycatch *tc = rz_bin_trycatch_new (
+			RzBinTrycatch *tc = rz_bin_trycatch_new (
 				rfcn.BeginAddress + baseAddr,
 				scope.BeginAddress + baseAddr,
 				scope.EndAddress + baseAddr,
@@ -445,7 +445,7 @@ static RzList *trycatch(RBinFile *bf) {
 	return tclist;
 }
 
-RBinPlugin rz_bin_plugin_pe64 = {
+RzBinPlugin rz_bin_plugin_pe64 = {
 	.name = "pe64",
 	.desc = "PE64 (PE32+) bin plugin",
 	.license = "LGPL3",

@@ -103,19 +103,19 @@ struct MACH0_(SCategory) {
 	mach0_ut properties;
 };
 
-static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf);
-static void copy_sym_name_with_namespace(char *class_name, char *read_name, RBinSymbol *sym);
-static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass);
-static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass);
-static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinClass *klass, bool is_static);
-static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass);
-static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinClass *klass);
-static RzList *MACH0_(parse_categories)(RBinFile *bf, RzSkipList *relocs);
-static bool read_ptr_pa(RBinFile *bf, ut64 paddr, mach0_ut *out);
-static bool read_ptr_va(RBinFile *bf, ut64 vaddr, mach0_ut *out);
-static char *read_str(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left);
-static char *get_class_name(mach0_ut p, RBinFile *bf);
-static bool is_thumb(RBinFile *bf) {
+static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RzBinFile *bf);
+static void copy_sym_name_with_namespace(char *class_name, char *read_name, RzBinSymbol *sym);
+static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBinClass *klass);
+static void get_objc_property_list(mach0_ut p, RzBinFile *bf, RzBinClass *klass);
+static void get_method_list_t(mach0_ut p, RzBinFile *bf, char *class_name, RzBinClass *klass, bool is_static);
+static void get_protocol_list_t(mach0_ut p, RzBinFile *bf, RzBinClass *klass);
+static void get_class_ro_t(mach0_ut p, RzBinFile *bf, ut32 *is_meta_class, RzBinClass *klass);
+static RzList *MACH0_(parse_categories)(RzBinFile *bf, RzSkipList *relocs);
+static bool read_ptr_pa(RzBinFile *bf, ut64 paddr, mach0_ut *out);
+static bool read_ptr_va(RzBinFile *bf, ut64 vaddr, mach0_ut *out);
+static char *read_str(RzBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left);
+static char *get_class_name(mach0_ut p, RzBinFile *bf);
+static bool is_thumb(RzBinFile *bf) {
 	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)bf->o->bin_obj;
 	if (bin->hdr.cputype == 12) {
 		if (bin->hdr.cpusubtype == 9) {
@@ -125,7 +125,7 @@ static bool is_thumb(RBinFile *bf) {
 	return false;
 }
 
-static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
+static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, 0);
 
 	mach0_ut r;
@@ -133,8 +133,8 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 
 	static RzList *sctns = NULL;
 	RzListIter *iter = NULL;
-	RBinSection *s = NULL;
-	RBinObject *obj = bf->o;
+	RzBinSection *s = NULL;
+	RzBinObject *obj = bf->o;
 
 	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t)*) obj->bin_obj;
 	if (bin->va2pa) {
@@ -174,7 +174,7 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 	return 0;
 }
 
-static void copy_sym_name_with_namespace(char *class_name, char *read_name, RBinSymbol *sym) {
+static void copy_sym_name_with_namespace(char *class_name, char *read_name, RzBinSymbol *sym) {
 	if (!class_name) {
 		class_name = "";
 	}
@@ -183,12 +183,12 @@ static void copy_sym_name_with_namespace(char *class_name, char *read_name, RBin
 }
 
 static int sort_by_offset(const void *_a , const void *_b) {
-	RBinField *a = (RBinField*)_a;
-	RBinField *b = (RBinField*)_b;
+	RzBinField *a = (RzBinField*)_a;
+	RzBinField *b = (RzBinField*)_b;
 	return a->offset - b->offset;
 }
 
-static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
+static void get_ivar_list_t(mach0_ut p, RzBinFile *bf, RzBinClass *klass) {
 	struct MACH0_(SIVarList) il = {0};
 	struct MACH0_(SIVar) i;
 	mach0_ut r;
@@ -197,13 +197,13 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 	int len;
 	bool bigendian;
 	mach0_ut ivar_offset;
-	RBinField *field = NULL;
+	RzBinField *field = NULL;
 	ut8 sivarlist[sizeof (struct MACH0_(SIVarList))] = {0};
 	ut8 sivar[sizeof (struct MACH0_(SIVar))] = {0};
 	ut8 offs[sizeof (mach0_ut)] = {0};
 
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
-		eprintf ("uncorrect RBinFile pointer\n");
+		eprintf ("uncorrect RzBinFile pointer\n");
 		return;
 	}
 	bigendian = bf->o->info->big_endian;
@@ -239,7 +239,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 		if (!r) {
 			return;
 		}
-		field = RZ_NEW0 (RBinField);
+		field = RZ_NEW0 (RzBinField);
 		memset (&i, '\0', sizeof (struct MACH0_(SIVar)));
 		if (r + left < r || r + sizeof (struct MACH0_(SIVar)) < r) {
 			goto error;
@@ -358,7 +358,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 	if (!rz_list_empty (klass->fields)) {
 		rz_list_sort (klass->fields, sort_by_offset);
 	}
-	RBinField *isa_field = RZ_NEW0 (RBinField);
+	RzBinField *isa_field = RZ_NEW0 (RzBinField);
 	isa_field->name = strdup ("isa");
 	isa_field->size = sizeof (mach0_ut);
 	isa_field->type = strdup ("struct objc_class *");
@@ -371,7 +371,7 @@ error:
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass) {
+static void get_objc_property_list(mach0_ut p, RzBinFile *bf, RzBinClass *klass) {
 	struct MACH0_(SObjcPropertyList) opl;
 	struct MACH0_(SObjcProperty) op;
 	mach0_ut r;
@@ -379,12 +379,12 @@ static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 	char *name = NULL;
 	int len;
 	bool bigendian;
-	RBinField *property = NULL;
+	RzBinField *property = NULL;
 	ut8 sopl[sizeof (struct MACH0_(SObjcPropertyList))] = {0};
 	ut8 sop[sizeof (struct MACH0_(SObjcProperty))] = {0};
 
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
-		eprintf ("uncorrect RBinFile pointer\n");
+		eprintf ("uncorrect RzBinFile pointer\n");
 		return;
 	}
 	bigendian = bf->o->info->big_endian;
@@ -424,9 +424,9 @@ static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 			return;
 		}
 
-		if (!(property = RZ_NEW0 (RBinField))) {
+		if (!(property = RZ_NEW0 (RzBinField))) {
 			// retain just for debug
-			// eprintf("RBinClass allocation error\n");
+			// eprintf("RzBinClass allocation error\n");
 			return;
 		}
 
@@ -514,7 +514,7 @@ error:
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinClass *klass, bool is_static) {
+static void get_method_list_t(mach0_ut p, RzBinFile *bf, char *class_name, RzBinClass *klass, bool is_static) {
 	struct MACH0_(SMethodList) ml;
 	mach0_ut r;
 	ut32 offset, left, i;
@@ -525,9 +525,9 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 	ut8 sml[sizeof (struct MACH0_(SMethodList))] = {0};
 	ut8 sm[sizeof (struct MACH0_(SMethod))] = {0};
 
-	RBinSymbol *method = NULL;
+	RzBinSymbol *method = NULL;
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
-		eprintf ("incorrect RBinFile pointer\n");
+		eprintf ("incorrect RzBinFile pointer\n");
 		return;
 	}
 	bigendian = bf->o->info->big_endian;
@@ -574,9 +574,9 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 			return;
 		}
 
-		if (!(method = RZ_NEW0 (RBinSymbol))) {
+		if (!(method = RZ_NEW0 (RzBinSymbol))) {
 			// retain just for debug
-			// eprintf ("RBinClass allocation error\n");
+			// eprintf ("RzBinClass allocation error\n");
 			return;
 		}
 		struct MACH0_(SMethod) m;
@@ -708,7 +708,7 @@ error:
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
+static void get_protocol_list_t(mach0_ut p, RzBinFile *bf, RzBinClass *klass) {
 	struct MACH0_(SProtocolList) pl = { 0 };
 	struct MACH0_(SProtocol) pc;
 	char *class_name = NULL;
@@ -721,7 +721,7 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 	ut8 sptr[sizeof (mach0_ut)] = {0};
 
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
-		eprintf ("get_protocol_list_t: Invalid RBinFile pointer\n");
+		eprintf ("get_protocol_list_t: Invalid RzBinFile pointer\n");
 		return;
 	}
 	bigendian = bf->o->info->big_endian;
@@ -902,7 +902,7 @@ static char *demangle_classname(const char *s) {
 	return ret;
 }
 
-static char *get_class_name(mach0_ut p, RBinFile *bf) {
+static char *get_class_name(mach0_ut p, RzBinFile *bf) {
 	struct MACH0_(obj_t) *bin;
 	ut32 offset, left;
 	ut64 r;
@@ -912,7 +912,7 @@ static char *get_class_name(mach0_ut p, RBinFile *bf) {
 	const ut32 ptr_size = sizeof (mach0_ut);
 
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
-		eprintf ("Invalid RBinFile pointer\n");
+		eprintf ("Invalid RzBinFile pointer\n");
 		return NULL;
 	}
 	if (!p) {
@@ -997,7 +997,7 @@ static char *get_class_name(mach0_ut p, RBinFile *bf) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinClass *klass) {
+static void get_class_ro_t(mach0_ut p, RzBinFile *bf, ut32 *is_meta_class, RzBinClass *klass) {
 	struct MACH0_(obj_t) *bin;
 	struct MACH0_(SClassRoT) cro = { 0 };
 	ut32 offset, left, i;
@@ -1007,7 +1007,7 @@ static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinCl
 	ut8 scro[sizeof (struct MACH0_(SClassRoT))] = {0};
 
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
-		eprintf ("Invalid RBinFile pointer\n");
+		eprintf ("Invalid RzBinFile pointer\n");
 		return;
 	}
 	bigendian = bf->o->info->big_endian;
@@ -1120,7 +1120,7 @@ static mach0_ut get_isa_value(void) {
 	return 0;
 }
 
-void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, RzSkipList *relocs) {
+void MACH0_(get_class_t)(mach0_ut p, RzBinFile *bf, RzBinClass *klass, bool dupe, RzSkipList *relocs) {
 	struct MACH0_(SClass) c = { 0 };
 	const int size = sizeof (struct MACH0_(SClass));
 	mach0_ut r = 0;
@@ -1200,11 +1200,11 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, 
 }
 
 #if 0
-static RzList *parse_swift_classes(RBinFile *bf) {
+static RzList *parse_swift_classes(RzBinFile *bf) {
 	bool is_swift = false;
-	RBinString *str;
+	RzBinString *str;
 	RzListIter *iter;
-	RBinClass *cls;
+	RzBinClass *cls;
 	RzList *ret;
 	char *lib;
 
@@ -1223,7 +1223,7 @@ static RzList *parse_swift_classes(RBinFile *bf) {
 	rz_list_foreach (bf->o->strings, iter, str) {
 		if (!strncmp (str->string, "_TtC", 4)) {
 			char *msg = strdup (str->string + 4);
-			cls = RZ_NEW0 (RBinClass);
+			cls = RZ_NEW0 (RzBinClass);
 			cls->name = strdup (msg);
 			cls->super = strdup (msg);
 			cls->index = idx++;
@@ -1235,10 +1235,10 @@ static RzList *parse_swift_classes(RBinFile *bf) {
 }
 #endif
 
-RzList *MACH0_(parse_classes)(RBinFile *bf) {
-	RzList /*<RBinClass>*/ *ret = NULL;
+RzList *MACH0_(parse_classes)(RzBinFile *bf) {
+	RzList /*<RzBinClass>*/ *ret = NULL;
 	ut64 num_of_unnamed_class = 0;
-	RBinClass *klass = NULL;
+	RzBinClass *klass = NULL;
 	ut32 i = 0, size = 0;
 	RzList *sctns = NULL;
 	bool is_found = false;
@@ -1291,7 +1291,7 @@ RzList *MACH0_(parse_classes)(RBinFile *bf) {
 
 	if (!ret && !(ret = rz_list_newf ((RzListFree)rz_bin_class_free))) {
 		// retain just for debug
-		// eprintf ("RzList<RBinClass> allocation error\n");
+		// eprintf ("RzList<RzBinClass> allocation error\n");
 		goto get_classes_error;
 	}
 	// start of getting information about each class in file
@@ -1301,19 +1301,19 @@ RzList *MACH0_(parse_classes)(RBinFile *bf) {
 			eprintf ("Chopped classlist data\n");
 			break;
 		}
-		if (!(klass = RZ_NEW0 (RBinClass))) {
+		if (!(klass = RZ_NEW0 (RzBinClass))) {
 			// retain just for debug
-			// eprintf ("RBinClass allocation error\n");
+			// eprintf ("RzBinClass allocation error\n");
 			goto get_classes_error;
 		}
 		if (!(klass->methods = rz_list_new ())) {
 			// retain just for debug
-			// eprintf ("RzList<RBinField> allocation error\n");
+			// eprintf ("RzList<RzBinField> allocation error\n");
 			goto get_classes_error;
 		}
 		if (!(klass->fields = rz_list_new ())) {
 			// retain just for debug
-			// eprintf ("RzList<RBinSymbol> allocation error\n");
+			// eprintf ("RzList<RzBinSymbol> allocation error\n");
 			goto get_classes_error;
 		}
 		size = sizeof (mach0_ut);
@@ -1347,11 +1347,11 @@ get_classes_error:
 	return NULL;
 }
 
-static RzList *MACH0_(parse_categories)(RBinFile *bf, RzSkipList *relocs) {
+static RzList *MACH0_(parse_categories)(RzBinFile *bf, RzSkipList *relocs) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj && bf->o->info, NULL);
 
-	RzList /*<RBinClass>*/ *ret = NULL;
-	RBinObject *obj = bf->o;
+	RzList /*<RzBinClass>*/ *ret = NULL;
+	RzBinObject *obj = bf->o;
 	const ut32 ptr_size = sizeof (mach0_ut);
 	bool is_found = false;
 	ut64 paddr;
@@ -1387,14 +1387,14 @@ static RzList *MACH0_(parse_categories)(RBinFile *bf, RzSkipList *relocs) {
 	}
 
 	for (i = 0; i < s_size; i += ptr_size) {
-		RBinClass *klass;
+		RzBinClass *klass;
 		mach0_ut p;
 
 		if ((s_size - i) < ptr_size) {
 			eprintf ("Chopped catlist data\n");
 			break;
 		}
-		if (!(klass = RZ_NEW0 (RBinClass))) {
+		if (!(klass = RZ_NEW0 (RzBinClass))) {
 			goto error;
 		}
 		if (!(klass->methods = rz_list_new ())) {
@@ -1423,7 +1423,7 @@ error:
 	return NULL;
 }
 
-void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, RzSkipList *relocs) {
+void MACH0_(get_category_t)(mach0_ut p, RzBinFile *bf, RzBinClass *klass, RzSkipList *relocs) {
 	rz_return_if_fail (bf && bf->o && bf->o->info);
 
 	struct MACH0_(SCategory) c = { 0 };
@@ -1548,7 +1548,7 @@ void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, RzSkipLi
 	}
 }
 
-static bool read_ptr_pa(RBinFile *bf, ut64 paddr, mach0_ut *out) {
+static bool read_ptr_pa(RzBinFile *bf, ut64 paddr, mach0_ut *out) {
 	rz_return_val_if_fail (out, false);
 	rz_return_val_if_fail (bf && bf->o && bf->o->info, false);
 
@@ -1566,7 +1566,7 @@ static bool read_ptr_pa(RBinFile *bf, ut64 paddr, mach0_ut *out) {
 	return true;
 }
 
-static bool read_ptr_va(RBinFile *bf, ut64 vaddr, mach0_ut *out) {
+static bool read_ptr_va(RzBinFile *bf, ut64 vaddr, mach0_ut *out) {
 	rz_return_val_if_fail (bf, false);
 	ut32 offset = 0, left = 0;
 	mach0_ut paddr = va2pa (vaddr, &offset, &left, bf);
@@ -1576,7 +1576,7 @@ static bool read_ptr_va(RBinFile *bf, ut64 vaddr, mach0_ut *out) {
 	return read_ptr_pa (bf, paddr, out);
 }
 
-static char *read_str(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left) {
+static char *read_str(RzBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left) {
 	rz_return_val_if_fail (bf && offset && left, NULL);
 
 	mach0_ut paddr = va2pa (p, offset, left, bf);

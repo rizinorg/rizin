@@ -5,25 +5,25 @@
 #include <rz_lib.h>
 #include <rz_bin.h>
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return true;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	rz_buf_free (bf->o->bin_obj);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return 0;
 }
 
-static RzList *strings(RBinFile *bf) {
+static RzList *strings(RzBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
-	if (!(ret = RZ_NEW0 (RBinInfo))) {
+static RzBinInfo *info(RzBinFile *bf) {
+	RzBinInfo *ret = NULL;
+	if (!(ret = RZ_NEW0 (RzBinInfo))) {
 		return NULL;
 	}
 	ret->lang = NULL;
@@ -92,14 +92,14 @@ static bool check_buffer(RBuffer *buf) {
 	return true;
 }
 
-static RzList *entries(RBinFile *bf) {
+static RzList *entries(RzBinFile *bf) {
 	RzList *ret;
-	RBinAddr *ptr = NULL;
+	RzBinAddr *ptr = NULL;
 
 	if (!(ret = rz_list_newf (free))) {
 		return NULL;
 	}
-	if (!(ptr = RZ_NEW0 (RBinAddr))) {
+	if (!(ptr = RZ_NEW0 (RzBinAddr))) {
 		return ret;
 	}
 	ptr->paddr = ptr->vaddr = 0;
@@ -107,7 +107,7 @@ static RzList *entries(RBinFile *bf) {
 	return ret;
 }
 
-RBinPlugin rz_bin_plugin_bf = {
+RzBinPlugin rz_bin_plugin_bf = {
 	.name = "bf",
 	.desc = "brainfuck",
 	.license = "LGPL3",

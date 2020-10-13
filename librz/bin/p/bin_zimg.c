@@ -6,18 +6,18 @@
 #include <rz_bin.h>
 #include "zimg/zimg.h"
 
-static Sdb *get_sdb(RBinFile *bf) {
+static Sdb *get_sdb(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o, false);
 	struct rz_bin_zimg_obj_t *bin = (struct rz_bin_zimg_obj_t *) bf->o->bin_obj;
 	return bin? bin->kv: NULL;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
 	*bin_obj = rz_bin_zimg_new_buf (b);
 	return *bin_obj != NULL;
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return 0;
 }
 
@@ -32,8 +32,8 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = RZ_NEW0 (RBinInfo);
+static RzBinInfo *info(RzBinFile *bf) {
+	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -53,7 +53,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-RBinPlugin rz_bin_plugin_zimg = {
+RzBinPlugin rz_bin_plugin_zimg = {
 	.name = "zimg",
 	.desc = "zimg format bin plugin",
 	.license = "LGPL3",

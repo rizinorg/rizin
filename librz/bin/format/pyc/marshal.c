@@ -1135,8 +1135,8 @@ static pyc_object *get_object(RBuffer *buffer) {
 
 static bool extract_sections_symbols(pyc_object *obj, RzList *sections, RzList *symbols, RzList *cobjs, char *prefix) {
 	pyc_code_object *cobj = NULL;
-	RBinSection *section = NULL;
-	RBinSymbol *symbol = NULL;
+	RzBinSection *section = NULL;
+	RzBinSymbol *symbol = NULL;
 	RzListIter *i = NULL;
 
 	//each code object is a section
@@ -1153,8 +1153,8 @@ static bool extract_sections_symbols(pyc_object *obj, RzList *sections, RzList *
 	if (!rz_list_append (cobjs, cobj)) {
 		goto fail;
 	}
-	section = RZ_NEW0 (RBinSection);
-	symbol = RZ_NEW0 (RBinSymbol);
+	section = RZ_NEW0 (RzBinSection);
+	symbol = RZ_NEW0 (RzBinSymbol);
 	prefix = rz_str_newf ("%s%s%s", prefix? prefix: "",
 		prefix? ".": "", (const char *)cobj->name->data);
 	if (!prefix || !section || !symbol) {

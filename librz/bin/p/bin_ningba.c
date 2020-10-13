@@ -14,19 +14,19 @@ static bool check_buffer(RBuffer *b) {
 	return !memcmp (lict, lic_gba, 156);
 }
 
-static bool load_buffer(RBinFile * bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile * bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (buf);
 }
 
-static RzList *entries(RBinFile *bf) {
+static RzList *entries(RzBinFile *bf) {
 	RzList *ret = rz_list_newf (free);
-	RBinAddr *ptr = NULL;
+	RzBinAddr *ptr = NULL;
 
 	if (bf && bf->buf) {
 		if (!ret) {
 			return NULL;
 		}
-		if (!(ptr = RZ_NEW0 (RBinAddr))) {
+		if (!(ptr = RZ_NEW0 (RzBinAddr))) {
 			return ret;
 		}
 		ptr->paddr = ptr->vaddr = 0x8000000;
@@ -35,9 +35,9 @@ static RzList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RzBinInfo *info(RzBinFile *bf) {
 	ut8 rom_info[16];
-	RBinInfo *ret = RZ_NEW0 (RBinInfo);
+	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
 
 	if (!ret) {
 		return NULL;
@@ -62,9 +62,9 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
-	RBinSection *s = RZ_NEW0 (RBinSection);
+	RzBinSection *s = RZ_NEW0 (RzBinSection);
 	ut64 sz = rz_buf_size (bf->buf);
 	if (!(ret = rz_list_new ())) {
 		free (s);
@@ -82,7 +82,7 @@ static RzList *sections(RBinFile *bf) {
 	return ret;
 }
 
-RBinPlugin rz_bin_plugin_ningba = {
+RzBinPlugin rz_bin_plugin_ningba = {
 	.name = "ningba",
 	.desc = "Game Boy Advance format rz_bin plugin",
 	.license = "LGPL3",

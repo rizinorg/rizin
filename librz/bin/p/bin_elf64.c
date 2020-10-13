@@ -18,13 +18,13 @@ static bool check_buffer(RBuffer *b) {
 extern struct rz_bin_dbginfo_t rz_bin_dbginfo_elf64;
 extern struct rz_bin_write_t rz_bin_write_elf64;
 
-static ut64 get_elf_vaddr64 (RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
+static ut64 get_elf_vaddr64 (RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	//NOTE(aaSSfxxx): since RVA is vaddr - "official" image base, we just need to add imagebase to vaddr
 	struct Elf_(rz_bin_elf_obj_t)* obj = bf->o->bin_obj;
 	return obj->baddr - obj->boffset + vaddr;
 }
 
-static void headers64(RBinFile *bf) {
+static void headers64(RzBinFile *bf) {
 #define p bf->rbin->cb_printf
 	p ("0x00000000  ELF64       0x%08x\n", rz_buf_read_le32_at (bf->buf, 0));
 	p ("0x00000010  Type        0x%04x\n", rz_buf_read_le16_at (bf->buf, 0x10));
@@ -35,7 +35,7 @@ static void headers64(RBinFile *bf) {
 	p ("0x00000028  ShOff       0x%08"PFMT64x"\n", rz_buf_read_le64_at (bf->buf, 0x28));
 }
 
-static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
+static RBuffer* create(RzBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
 	ut32 p_start, p_phoff, p_phdr;
 	ut32 p_vaddr, p_paddr, p_fs, p_fs2;
 	ut32 p_ehdrsz, p_phdrsz;
@@ -116,7 +116,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-RBinPlugin rz_bin_plugin_elf64 = {
+RzBinPlugin rz_bin_plugin_elf64 = {
 	.name = "elf64",
 	.desc = "elf64 bin plugin",
 	.license = "LGPL3",

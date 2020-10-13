@@ -2,7 +2,7 @@
 
 #include "bin_elf.inc"
 
-static void headers32(RBinFile *bf) {
+static void headers32(RzBinFile *bf) {
 #define p bf->rbin->cb_printf
 	p ("0x00000000  ELF MAGIC   0x%08x\n", rz_buf_read_le32_at (bf->buf, 0));
 	p ("0x00000010  Type        0x%04x\n", rz_buf_read_le16_at (bf->buf, 0x10));
@@ -22,7 +22,7 @@ static bool check_buffer(RBuffer *buf) {
 extern struct rz_bin_dbginfo_t rz_bin_dbginfo_elf;
 extern struct rz_bin_write_t rz_bin_write_elf;
 
-static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
+static RBuffer* create(RzBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
 	rz_return_val_if_fail (bin && opt && opt->arch, NULL);
 
 	ut32 filesize, code_va, code_pa, phoff;
@@ -117,7 +117,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-RBinPlugin rz_bin_plugin_elf = {
+RzBinPlugin rz_bin_plugin_elf = {
 	.name = "elf",
 	.desc = "ELF format plugin",
 	.license = "LGPL3",

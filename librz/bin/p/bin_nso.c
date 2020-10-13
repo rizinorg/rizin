@@ -43,7 +43,7 @@ static uint32_t decompress(const ut8 *cbuf, ut8 *obuf, int32_t csize, int32_t us
 	return LZ4_decompress_safe ((const char*)cbuf, (char*)obuf, (uint32_t) csize, (uint32_t) usize);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return 0x8000000;
 }
 
@@ -58,8 +58,8 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static RBinNXOObj *nso_new(void) {
-	RBinNXOObj *bin = RZ_NEW0 (RBinNXOObj);
+static RzBinNXOObj *nso_new(void) {
+	RzBinNXOObj *bin = RZ_NEW0 (RzBinNXOObj);
 	if (bin) {
 		bin->methods_list = rz_list_newf ((RzListFree)free);
 		bin->imports_list = rz_list_newf ((RzListFree)free);
@@ -68,9 +68,9 @@ static RBinNXOObj *nso_new(void) {
 	return bin;
 }
 
-static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes(RzBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	eprintf ("load_bytes in bin.nso must die\n");
-	RBin *rbin = bf->rbin;
+	RzBin *rbin = bf->rbin;
 	ut32 toff = rz_buf_read_le32_at (bf->buf, NSO_OFF (text_memoffset));
 	ut32 tsize = rz_buf_read_le32_at (bf->buf, NSO_OFF (text_size));
 	ut32 rooff = rz_buf_read_le32_at (bf->buf, NSO_OFF (ro_memoffset));
@@ -124,7 +124,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 	const ut8 *tmpbuf = rz_buf_data (newbuf, &total_size);
 	rz_io_write_at (rbin->iob.io, ba, tmpbuf, total_size);
 	ut32 modoff = rz_buf_read_le32_at (newbuf, NSO_OFFSET_MODMEMOFF);
-	RBinNXOObj *bin = nso_new ();
+	RzBinNXOObj *bin = nso_new ();
 	eprintf ("MOD Offset = 0x%"PFMT64x"\n", (ut64)modoff);
 	parseMod (newbuf, bin, modoff, ba);
 	rz_buf_free (newbuf);
@@ -137,7 +137,7 @@ fail:
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	rz_return_val_if_fail (bf && buf, NULL);
 	const ut64 la = bf->loadaddr;
 	ut64 sz = 0;
@@ -145,19 +145,19 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return load_bytes (bf, bin_obj, bytes, sz, la, bf->sdb);
 }
 
-static RBinAddr *binsym(RBinFile *bf, int type) {
+static RzBinAddr *binsym(RzBinFile *bf, int type) {
 	return NULL; // TODO
 }
 
-static RzList *entries(RBinFile *bf) {
+static RzList *entries(RzBinFile *bf) {
 	RzList *ret;
-	RBinAddr *ptr = NULL;
+	RzBinAddr *ptr = NULL;
 	RBuffer *b = bf->buf;
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
 	ret->free = free;
-	if ((ptr = RZ_NEW0 (RBinAddr))) {
+	if ((ptr = RZ_NEW0 (RzBinAddr))) {
 		ptr->paddr = rz_buf_read_le32_at (b, NSO_OFF (text_memoffset));
 		ptr->vaddr = rz_buf_read_le32_at (b, NSO_OFF (text_loc)) + baddr (bf);
 		rz_list_append (ret, ptr);
@@ -165,7 +165,7 @@ static RzList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static Sdb *get_sdb(RBinFile *bf) {
+static Sdb *get_sdb(RzBinFile *bf) {
 	Sdb *kv = sdb_new0 ();
 	sdb_num_set (kv, "nso_start.offset", 0, 0);
 	sdb_num_set (kv, "nso_start.size", 16, 0);
@@ -177,9 +177,9 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return kv;
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
-	RBinSection *ptr = NULL;
+	RzBinSection *ptr = NULL;
 	RBuffer *b = bf->buf;
 	if (!bf->o->info) {
 		return NULL;
@@ -191,7 +191,7 @@ static RzList *sections(RBinFile *bf) {
 
 	ut64 ba = baddr (bf);
 
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("header");
@@ -204,7 +204,7 @@ static RzList *sections(RBinFile *bf) {
 	rz_list_append (ret, ptr);
 
 	// add text segment
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("text");
@@ -217,7 +217,7 @@ static RzList *sections(RBinFile *bf) {
 	rz_list_append (ret, ptr);
 
 	// add ro segment
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("ro");
@@ -230,7 +230,7 @@ static RzList *sections(RBinFile *bf) {
 	rz_list_append (ret, ptr);
 
 	// add data segment
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("data");
@@ -246,8 +246,8 @@ static RzList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = RZ_NEW0 (RBinInfo);
+static RzBinInfo *info(RzBinFile *bf) {
+	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -279,7 +279,7 @@ static RBinInfo *info(RBinFile *bf) {
 
 #if !RZ_BIN_NSO
 
-RBinPlugin rz_bin_plugin_nso = {
+RzBinPlugin rz_bin_plugin_nso = {
 	.name = "nso",
 	.desc = "Nintendo Switch NSO0 binaries",
 	.license = "MIT",

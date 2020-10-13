@@ -326,8 +326,8 @@ RZ_API int rz_core_write_op(RzCore *core, const char *arg, char op) {
 RZ_API void rz_core_arch_bits_at(RzCore *core, ut64 addr, RZ_OUT RZ_NULLABLE int *bits, RZ_OUT RZ_BORROW RZ_NULLABLE const char **arch) {
 	int bitsval = 0;
 	const char *archval = NULL;
-	RBinObject *o = rz_bin_cur_object (core->bin);
-	RBinSection *s = o ? rz_bin_get_section_at (o, addr, core->io->va) : NULL;
+	RzBinObject *o = rz_bin_cur_object (core->bin);
+	RzBinSection *s = o ? rz_bin_get_section_at (o, addr, core->io->va) : NULL;
 	if (s) {
 		if (!core->fixedarch) {
 			archval = s->arch;
@@ -376,7 +376,7 @@ RZ_API bool rz_core_seek(RzCore *core, ut64 addr, bool rb) {
 		rz_core_block_read (core);
 	}
 	if (core->binat) {
-		RBinFile *bf = rz_bin_file_at (core->bin, core->offset);
+		RzBinFile *bf = rz_bin_file_at (core->bin, core->offset);
 		if (bf) {
 			core->bin->cur = bf;
 			rz_bin_select_bfid (core->bin, bf->id);

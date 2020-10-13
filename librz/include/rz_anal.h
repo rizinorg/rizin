@@ -29,9 +29,9 @@ RZ_LIB_VERSION_HEADER(rz_anal);
 
 /* dwarf processing context */
 typedef struct rz_anal_dwarf_context {
-	const RBinDwarfDebugInfo *info;
-	HtUP/*<offset, RBinDwarfLocList*>*/  *loc;
-	// const RBinDwarfCfa *cfa; TODO
+	const RzBinDwarfDebugInfo *info;
+	HtUP/*<offset, RzBinDwarfLocList*>*/  *loc;
+	// const RzBinDwarfCfa *cfa; TODO
 } RzAnalDwarfContext;
 
 // TODO: save memory2 : fingerprints must be pointers to a buffer
@@ -640,7 +640,7 @@ typedef struct rz_anal_t {
 	RzFlagSet flg_class_set;
 	RzFlagGet flg_class_get;
 	RzFlagSet flg_fcn_set;
-	RBinBind binb; // Set only from core when an analysis plugin is called.
+	RzBinBind binb; // Set only from core when an analysis plugin is called.
 	RzCoreBind coreb;
 	int maxreflines; // asm.lines.maxref
 	int esil_goto_limit; // esil.gotolimit

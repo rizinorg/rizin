@@ -51,7 +51,7 @@ char *rz_coff_symbol_name(struct rz_bin_coff_obj *obj, void *ptr) {
 	return strdup (n);
 }
 
-static int rz_coff_rebase_sym(struct rz_bin_coff_obj *obj, RBinAddr *addr, struct coff_symbol *sym) {
+static int rz_coff_rebase_sym(struct rz_bin_coff_obj *obj, RzBinAddr *addr, struct coff_symbol *sym) {
 	if (sym->n_scnum < 1 || sym->n_scnum > obj->hdr.f_nscns) {
 		return 0;
 	}
@@ -61,8 +61,8 @@ static int rz_coff_rebase_sym(struct rz_bin_coff_obj *obj, RBinAddr *addr, struc
 
 /* Try to get a valid entrypoint using the methods outlined in 
  * http://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
-RBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
-	RBinAddr *addr = RZ_NEW0 (RBinAddr);
+RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj) {
+	RzBinAddr *addr = RZ_NEW0 (RzBinAddr);
 	int i;
 	if (!addr) {
 		return NULL;

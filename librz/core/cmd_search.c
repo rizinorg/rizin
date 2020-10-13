@@ -27,7 +27,7 @@ static const char *help_msg_slash_m[] = {
 	"/m", "", "search for known magic patterns",
 	"/m", " [file]", "same as above but using the given magic file",
 	"/me", " ", "like ?e similar to IRC's /me",
-	"/mb", "", "search recognized RBin headers",
+	"/mb", "", "search recognized RzBin headers",
 	NULL
 };
 
@@ -263,11 +263,11 @@ static void cmd_search_bin(RzCore *core, RInterval itv) {
 			break;
 		}
 		RBuffer *ref = rz_buf_new_slice (b, from, to);
-		RBinPlugin *plug = rz_bin_get_binplugin_by_buffer (core->bin, ref);
+		RzBinPlugin *plug = rz_bin_get_binplugin_by_buffer (core->bin, ref);
 		if (plug) {
 			rz_cons_printf ("0x%08" PFMT64x "  %s\n", from, plug->name);
 			if (plug->size) {
-				RBinOptions opt = {
+				RzBinOptions opt = {
 					.pluginname = plug->name,
 					.baseaddr = 0,
 					.loadaddr = 0,
@@ -741,9 +741,9 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 		int len = strlen ("bin.segments.");
 		int mask = (mode[len - 1] == '.')? rz_str_rwx (mode + len): 0;
 		bool only = (bool)(size_t)strstr (mode, ".only");
-		RBinObject *obj = rz_bin_cur_object (core->bin);
+		RzBinObject *obj = rz_bin_cur_object (core->bin);
 		if (obj) {
-			RBinSection *s;
+			RzBinSection *s;
 			RzListIter *iter;
 			rz_list_foreach (obj->sections, iter, s) {
 				if (!s->is_segment) {
@@ -758,11 +758,11 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 			}
 		}
 	} else if (rz_str_startswith (mode, "code")) {
-		RBinObject *obj = rz_bin_cur_object (core->bin);
+		RzBinObject *obj = rz_bin_cur_object (core->bin);
 		if (obj) {
 			ut64 from = UT64_MAX;
 			ut64 to = 0;
-			RBinSection *s;
+			RzBinSection *s;
 			RzListIter *iter;
 			rz_list_foreach (obj->sections, iter, s) {
 				if (s->is_segment) {
@@ -796,9 +796,9 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 		int len = strlen ("bin.sections.");
 		int mask = (mode[len - 1] == '.')? rz_str_rwx (mode + len): 0;
 		bool only = (bool)(size_t)strstr (mode, ".only");
-		RBinObject *obj = rz_bin_cur_object (core->bin);
+		RzBinObject *obj = rz_bin_cur_object (core->bin);
 		if (obj) {
-			RBinSection *s;
+			RzBinSection *s;
 			RzListIter *iter;
 			rz_list_foreach (obj->sections, iter, s) {
 				if (s->is_segment) {
@@ -813,9 +813,9 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 			}
 		}
 	} else if (!strcmp (mode, "bin.segment")) {
-		RBinObject *obj = rz_bin_cur_object (core->bin);
+		RzBinObject *obj = rz_bin_cur_object (core->bin);
 		if (obj) {
-			RBinSection *s;
+			RzBinSection *s;
 			RzListIter *iter;
 			rz_list_foreach (obj->sections, iter, s) {
 				if (!s->is_segment) {
@@ -829,9 +829,9 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 			}
 		}
 	} else if (!strcmp (mode, "bin.section")) {
-		RBinObject *obj = rz_bin_cur_object (core->bin);
+		RzBinObject *obj = rz_bin_cur_object (core->bin);
 		if (obj) {
-			RBinSection *s;
+			RzBinSection *s;
 			RzListIter *iter;
 			rz_list_foreach (obj->sections, iter, s) {
 				if (s->is_segment) {

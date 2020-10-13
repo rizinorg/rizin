@@ -21,28 +21,28 @@
 typedef struct found_idx_t {
 	ut16 idx;
 	ut64 addr;
-	const RBinJavaCPTypeObj *obj;
+	const RzBinJavaCPTypeObj *obj;
 } RzCmdJavaCPResult;
 
 typedef int (*RCMDJavaCmdHandler) (RzCore *core, const char *cmd);
 
 static const char * rz_cmd_java_strtok (const char *str1, const char b, size_t len);
 static const char * rz_cmd_java_consumetok (const char *str1, const char b, size_t len);
-static int rz_cmd_java_reload_bin_from_buf (RzCore *core, RBinJavaObj *obj, ut8* buffer, ut64 len);
+static int rz_cmd_java_reload_bin_from_buf (RzCore *core, RzBinJavaObj *obj, ut8* buffer, ut64 len);
 
-static int rz_cmd_java_print_json_definitions( RBinJavaObj *obj  );
+static int rz_cmd_java_print_json_definitions( RzBinJavaObj *obj  );
 static int rz_cmd_java_print_all_definitions( RzAnal *anal );
-static int rz_cmd_java_print_class_definitions( RBinJavaObj *obj );
-static int rz_cmd_java_print_field_definitions( RBinJavaObj *obj );
-static int rz_cmd_java_print_method_definitions( RBinJavaObj *obj );
-static int rz_cmd_java_print_import_definitions( RBinJavaObj *obj );
+static int rz_cmd_java_print_class_definitions( RzBinJavaObj *obj );
+static int rz_cmd_java_print_field_definitions( RzBinJavaObj *obj );
+static int rz_cmd_java_print_method_definitions( RzBinJavaObj *obj );
+static int rz_cmd_java_print_import_definitions( RzBinJavaObj *obj );
 
-static int rz_cmd_java_resolve_cp_idx (RBinJavaObj *obj, ut16 idx);
-static int rz_cmd_java_resolve_cp_type (RBinJavaObj *obj, ut16 idx);
-static int rz_cmd_java_resolve_cp_idx_b64 (RBinJavaObj *obj, ut16 idx);
-static int rz_cmd_java_resolve_cp_address (RBinJavaObj *obj, ut16 idx);
-static int rz_cmd_java_resolve_cp_to_key (RBinJavaObj *obj, ut16 idx);
-static int rz_cmd_java_resolve_cp_summary (RBinJavaObj *obj, ut16 idx);
+static int rz_cmd_java_resolve_cp_idx (RzBinJavaObj *obj, ut16 idx);
+static int rz_cmd_java_resolve_cp_type (RzBinJavaObj *obj, ut16 idx);
+static int rz_cmd_java_resolve_cp_idx_b64 (RzBinJavaObj *obj, ut16 idx);
+static int rz_cmd_java_resolve_cp_address (RzBinJavaObj *obj, ut16 idx);
+static int rz_cmd_java_resolve_cp_to_key (RzBinJavaObj *obj, ut16 idx);
+static int rz_cmd_java_resolve_cp_summary (RzBinJavaObj *obj, ut16 idx);
 
 static int rz_cmd_java_print_class_access_flags_value( const char * flags );
 static int rz_cmd_java_print_field_access_flags_value( const char * flags );
@@ -52,16 +52,16 @@ static int rz_cmd_java_get_all_access_flags_value (const char *cmd);
 static int rz_cmd_java_set_acc_flags (RzCore *core, ut64 addr, ut16 num_acc_flag);
 
 #define _(x) UNUSED_FUNCTION(x)
-static int rz_cmd_java_print_field_summary (RBinJavaObj *obj, ut16 idx);
-static int _(rz_cmd_java_print_field_count) (RBinJavaObj *obj);
-static int rz_cmd_java_print_field_name (RBinJavaObj *obj, ut16 idx);
-static int rz_cmd_java_print_field_num_name (RBinJavaObj *obj);
-static int rz_cmd_java_print_method_summary (RBinJavaObj *obj, ut16 idx);
-static int _(rz_cmd_java_print_method_count) (RBinJavaObj *obj);
-static int rz_cmd_java_print_method_name (RBinJavaObj *obj, ut16 idx);
-static int rz_cmd_java_print_method_num_name (RBinJavaObj *obj);
+static int rz_cmd_java_print_field_summary (RzBinJavaObj *obj, ut16 idx);
+static int _(rz_cmd_java_print_field_count) (RzBinJavaObj *obj);
+static int rz_cmd_java_print_field_name (RzBinJavaObj *obj, ut16 idx);
+static int rz_cmd_java_print_field_num_name (RzBinJavaObj *obj);
+static int rz_cmd_java_print_method_summary (RzBinJavaObj *obj, ut16 idx);
+static int _(rz_cmd_java_print_method_count) (RzBinJavaObj *obj);
+static int rz_cmd_java_print_method_name (RzBinJavaObj *obj, ut16 idx);
+static int rz_cmd_java_print_method_num_name (RzBinJavaObj *obj);
 
-static RBinJavaObj * rz_cmd_java_get_bin_obj(RzAnal *anal);
+static RzBinJavaObj * rz_cmd_java_get_bin_obj(RzAnal *anal);
 static RzList * rz_cmd_java_get_bin_obj_list(RzAnal *anal);
 static ut64 rz_cmd_java_get_input_num_value(RzCore *core, const char *input_value);
 static int rz_cmd_java_is_valid_input_num_value(RzCore *core, const char *input_value);
@@ -80,20 +80,20 @@ static int rz_cmd_java_handle_method_info(RzCore *core, const char *cmd);
 
 static int rz_cmd_java_handle_find_cp_const(RzCore *core, const char *cmd);
 
-static RzList *cpfind_float(RBinJavaObj *obj, const char *cmd);
-static RzList *cpfind_double(RBinJavaObj *obj, const char *cmd);
-static RzList *cpfind_long(RzCore *core, RBinJavaObj *obj, const char *cmd);
-static RzList *cpfind_int(RzCore *core, RBinJavaObj *obj, const char *cmd);
-static RzList *cpfind_str(RBinJavaObj *obj, const char *cmd);
+static RzList *cpfind_float(RzBinJavaObj *obj, const char *cmd);
+static RzList *cpfind_double(RzBinJavaObj *obj, const char *cmd);
+static RzList *cpfind_long(RzCore *core, RzBinJavaObj *obj, const char *cmd);
+static RzList *cpfind_int(RzCore *core, RzBinJavaObj *obj, const char *cmd);
+static RzList *cpfind_str(RzBinJavaObj *obj, const char *cmd);
 
 static int cpfind(RzCore *core, const char *cmd);
 
-static int rz_cmd_java_get_cp_bytes_and_write(RzCore *core, RBinJavaObj *obj, ut16 idx, ut64 addr, const ut8 *buf, const ut64 len);
-static int rz_cmd_java_handle_replace_cp_value_float(RzCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr);
-static int rz_cmd_java_handle_replace_cp_value_double(RzCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr);
-static int rz_cmd_java_handle_replace_cp_value_long(RzCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr);
-static int rz_cmd_java_handle_replace_cp_value_int(RzCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr);
-static int rz_cmd_java_handle_replace_cp_value_str(RzCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr);
+static int rz_cmd_java_get_cp_bytes_and_write(RzCore *core, RzBinJavaObj *obj, ut16 idx, ut64 addr, const ut8 *buf, const ut64 len);
+static int rz_cmd_java_handle_replace_cp_value_float(RzCore *core, RzBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr);
+static int rz_cmd_java_handle_replace_cp_value_double(RzCore *core, RzBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr);
+static int rz_cmd_java_handle_replace_cp_value_long(RzCore *core, RzBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr);
+static int rz_cmd_java_handle_replace_cp_value_int(RzCore *core, RzBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr);
+static int rz_cmd_java_handle_replace_cp_value_str(RzCore *core, RzBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr);
 static int rz_cmd_java_handle_replace_cp_value(RzCore *core, const char *cmd);
 
 static int rz_cmd_java_handle_replace_classname_value(RzCore *core, const char *cmd);
@@ -399,7 +399,7 @@ static int rz_cmd_java_handle_help(RzCore *core, const char *input) {
 
 static int rz_cmd_java_handle_prototypes(RzCore *core, const char *cmd) {
 	RzAnal *anal = get_anal (core);
-	RBinJavaObj *obj = (RBinJavaObj *)rz_cmd_java_get_bin_obj (anal);
+	RzBinJavaObj *obj = (RzBinJavaObj *)rz_cmd_java_get_bin_obj (anal);
 	IFDBG rz_cons_printf ("Function call made: %s\n", cmd);
 
 	if (!obj) {
@@ -420,7 +420,7 @@ static int rz_cmd_java_handle_prototypes(RzCore *core, const char *cmd) {
 
 static int rz_cmd_java_handle_summary_info(RzCore *core, const char *cmd) {
 	RzAnal *anal = get_anal (core);
-	RBinJavaObj *obj = (RBinJavaObj *)rz_cmd_java_get_bin_obj (anal);
+	RzBinJavaObj *obj = (RzBinJavaObj *)rz_cmd_java_get_bin_obj (anal);
 	IFDBG rz_cons_printf ("Function call made: %s\n", cmd);
 
 	if (!obj) {
@@ -444,7 +444,7 @@ static int _(rz_cmd_java_check_op_idx)(const ut8 *op_bytes, ut16 idx) {
 }
 
 /* Find stuff in the constant pool */
-static RzList *cpfind_double(RBinJavaObj *obj, const char *cmd) {
+static RzList *cpfind_double(RzBinJavaObj *obj, const char *cmd) {
 	double value = cmd && *cmd? strtod (cmd, NULL): 0.0;
 	if (value == 0.0 && !(cmd && cmd[0] == '0' && cmd[1] == '.' && cmd[2] == '0')) {
 		return rz_list_new ();
@@ -452,7 +452,7 @@ static RzList *cpfind_double(RBinJavaObj *obj, const char *cmd) {
 	return rz_bin_java_find_cp_const_by_val (obj, (const ut8 *)&value, 8, RZ_BIN_JAVA_CP_DOUBLE);
 }
 
-static RzList *cpfind_float(RBinJavaObj *obj, const char *cmd) {
+static RzList *cpfind_float(RzBinJavaObj *obj, const char *cmd) {
 	float value = cmd && *cmd? atof (cmd): 0.0;
 	if (value == 0.0 && !(cmd && cmd[0] == '0' && cmd[1] == '.' && cmd[2] == '0')) {
 		return rz_list_new ();
@@ -460,7 +460,7 @@ static RzList *cpfind_float(RBinJavaObj *obj, const char *cmd) {
 	return rz_bin_java_find_cp_const_by_val (obj, (const ut8 *)&value, 4, RZ_BIN_JAVA_CP_FLOAT);
 }
 
-static RzList *cpfind_long(RzCore *core, RBinJavaObj *obj, const char *cmd) {
+static RzList *cpfind_long(RzCore *core, RzBinJavaObj *obj, const char *cmd) {
 	ut64 value = rz_cmd_java_get_input_num_value (core, cmd);
 	if (!rz_cmd_java_is_valid_input_num_value (core, cmd)) {
 		return rz_list_new ();
@@ -468,7 +468,7 @@ static RzList *cpfind_long(RzCore *core, RBinJavaObj *obj, const char *cmd) {
 	return rz_bin_java_find_cp_const_by_val (obj, (const ut8 *)&value, 8, RZ_BIN_JAVA_CP_LONG);
 }
 
-static RzList *cpfind_int(RzCore *core, RBinJavaObj *obj, const char *cmd) {
+static RzList *cpfind_int(RzCore *core, RzBinJavaObj *obj, const char *cmd) {
 	ut32 value = (ut32)rz_cmd_java_get_input_num_value (core, cmd);
 	if (!rz_cmd_java_is_valid_input_num_value (core, cmd)) {
 		return rz_list_new ();
@@ -476,7 +476,7 @@ static RzList *cpfind_int(RzCore *core, RBinJavaObj *obj, const char *cmd) {
 	return rz_bin_java_find_cp_const_by_val (obj, (const ut8 *)&value, 4, RZ_BIN_JAVA_CP_INTEGER);
 }
 
-static RzList *cpfind_str(RBinJavaObj *obj, const char *cmd) {
+static RzList *cpfind_str(RzBinJavaObj *obj, const char *cmd) {
 	if (!cmd) {
 		return rz_list_new ();
 	}
@@ -485,7 +485,7 @@ static RzList *cpfind_str(RBinJavaObj *obj, const char *cmd) {
 }
 
 static int cpfind(RzCore *core, const char *cmd) {
-	RBinJavaObj *obj = (RBinJavaObj *)rz_cmd_java_get_bin_obj (get_anal (core));
+	RzBinJavaObj *obj = (RzBinJavaObj *)rz_cmd_java_get_bin_obj (get_anal (core));
 	const char *p = cmd;
 	char f_type = 0;
 	RzList *find_list = NULL;
@@ -522,15 +522,15 @@ static int cpfind(RzCore *core, const char *cmd) {
 	return true;
 }
 
-static int rz_cmd_java_reload_bin_from_buf(RzCore *core, RBinJavaObj *obj, ut8 *buffer, ut64 len) {
+static int rz_cmd_java_reload_bin_from_buf(RzCore *core, RzBinJavaObj *obj, ut8 *buffer, ut64 len) {
 	if (!buffer || len < 10) {
 		return false;
 	}
 	int res = rz_bin_java_load_bin (obj, buffer, len);
 
 	if (res == true) {
-		//RBinPlugin *cp = NULL;
-		RBinPlugin *tmp;
+		//RzBinPlugin *cp = NULL;
+		RzBinPlugin *tmp;
 		RzListIter *iter;
 		rz_list_foreach (core->bin->plugins, iter, tmp) {
 			if (!strncmp ("java", tmp->name, 4)) {
@@ -546,9 +546,9 @@ static int rz_cmd_java_reload_bin_from_buf(RzCore *core, RBinJavaObj *obj, ut8 *
 	return res;
 }
 
-static int rz_cmd_java_get_cp_bytes_and_write(RzCore *core, RBinJavaObj *obj, ut16 idx, ut64 addr, const ut8 *buf, const ut64 len) {
+static int rz_cmd_java_get_cp_bytes_and_write(RzCore *core, RzBinJavaObj *obj, ut16 idx, ut64 addr, const ut8 *buf, const ut64 len) {
 	int res = false;
-	RBinJavaCPTypeObj *cp_obj = rz_bin_java_get_item_from_bin_cp_list (obj, idx);
+	RzBinJavaCPTypeObj *cp_obj = rz_bin_java_get_item_from_bin_cp_list (obj, idx);
 	ut64 c_file_sz = rz_io_size (core->io);
 	ut32 n_sz = 0, c_sz = obj? rz_bin_java_cp_get_size (obj, idx): (ut32)-1;
 	ut8 *bytes = NULL;
@@ -601,35 +601,35 @@ static int rz_cmd_java_get_cp_bytes_and_write(RzCore *core, RBinJavaObj *obj, ut
 	return res;
 }
 
-static int rz_cmd_java_handle_replace_cp_value_float(RzCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
+static int rz_cmd_java_handle_replace_cp_value_float(RzCore *core, RzBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
 	float value = cmd && *cmd? atof (cmd): 0.0;
 	int res = false;
 	res = rz_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr, (ut8 *)&value, 4);
 	return res;
 }
 
-static int rz_cmd_java_handle_replace_cp_value_double(RzCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
+static int rz_cmd_java_handle_replace_cp_value_double(RzCore *core, RzBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
 	double value = cmd && *cmd? strtod (cmd, NULL): 0.0;
 	int res = false;
 	res = rz_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr, (ut8 *)&value, 8);
 	return res;
 }
 
-static int rz_cmd_java_handle_replace_cp_value_long(RzCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
+static int rz_cmd_java_handle_replace_cp_value_long(RzCore *core, RzBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
 	ut64 value = rz_cmd_java_get_input_num_value (core, cmd);
 	int res = false;
 	res = rz_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr, (ut8 *)&value, 8);
 	return res;
 }
 
-static int rz_cmd_java_handle_replace_cp_value_int(RzCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
+static int rz_cmd_java_handle_replace_cp_value_int(RzCore *core, RzBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
 	ut32 value = (ut32)rz_cmd_java_get_input_num_value (core, cmd);
 	int res = false;
 	res = rz_cmd_java_get_cp_bytes_and_write (core, obj, idx, addr, (ut8 *)&value, 4);
 	return res;
 }
 
-static int rz_cmd_java_handle_replace_cp_value_str(RzCore *core, RBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
+static int rz_cmd_java_handle_replace_cp_value_str(RzCore *core, RzBinJavaObj *obj, const char *cmd, ut16 idx, ut64 addr) {
 	int res = false;
 	ut32 len = cmd && *cmd? strlen (cmd): 0;
 	if (len > 0 && cmd && *cmd == '"') {
@@ -643,7 +643,7 @@ static int rz_cmd_java_handle_replace_cp_value_str(RzCore *core, RBinJavaObj *ob
 }
 
 static int rz_cmd_java_handle_replace_cp_value(RzCore *core, const char *cmd) {
-	RBinJavaObj *obj = (RBinJavaObj *)rz_cmd_java_get_bin_obj (get_anal (core));
+	RzBinJavaObj *obj = (RzBinJavaObj *)rz_cmd_java_get_bin_obj (get_anal (core));
 	ut16 idx = -1;
 	ut64 addr = 0;
 	const char *p = cmd;
@@ -814,7 +814,7 @@ static int rz_cmd_java_get_class_names_from_input(const char *input, char **clas
 }
 
 static int rz_cmd_java_handle_replace_classname_value(RzCore *core, const char *cmd) {
-	RBinJavaObj *obj;
+	RzBinJavaObj *obj;
 	char *class_name = NULL, *new_class_name = NULL;
 	ut32 class_name_len = 0, new_class_name_len = 0;
 	RzAnal *anal = get_anal (core);
@@ -826,7 +826,7 @@ static int rz_cmd_java_handle_replace_classname_value(RzCore *core, const char *
 		return false;
 	}
 	IFDBG rz_cons_printf ("Function call made: %s\n", p);
-	obj = (RBinJavaObj *)rz_cmd_java_get_bin_obj (anal);
+	obj = (RzBinJavaObj *)rz_cmd_java_get_bin_obj (anal);
 	if (!obj) {
 		eprintf ("The current binary is not a Java Bin Object.\n");
 		return true;
@@ -841,7 +841,7 @@ static int rz_cmd_java_handle_replace_classname_value(RzCore *core, const char *
 		return true;
 	}
 	for (idx = 1; idx <= obj->cp_count; idx++) {
-		RBinJavaCPTypeObj *cp_obj = rz_bin_java_get_item_from_bin_cp_list (obj, idx);
+		RzBinJavaCPTypeObj *cp_obj = rz_bin_java_get_item_from_bin_cp_list (obj, idx);
 		char *name = NULL;
 		ut8 *buffer = NULL;
 		ut32 buffer_sz = 0;
@@ -897,7 +897,7 @@ static int rz_cmd_java_handle_replace_classname_value(RzCore *core, const char *
 
 static int rz_cmd_java_handle_reload_bin(RzCore *core, const char *cmd) {
 	RzAnal *anal = get_anal (core);
-	RBinJavaObj *obj = (RBinJavaObj *)rz_cmd_java_get_bin_obj (anal);
+	RzBinJavaObj *obj = (RzBinJavaObj *)rz_cmd_java_get_bin_obj (anal);
 	const char *p = cmd;
 	ut64 addr = 0LL; //cur_offset = core->offset, addr = 0;
 	ut64 buf_size = 0;
@@ -936,7 +936,7 @@ static int rz_cmd_java_handle_reload_bin(RzCore *core, const char *cmd) {
 
 static int rz_cmd_java_handle_find_cp_const(RzCore *core, const char *cmd) {
 	const char *p = (cmd && *cmd == ' ')? rz_cmd_java_consumetok (cmd, ' ', -1): NULL;
-	RBinJavaObj *obj = (RBinJavaObj *)rz_cmd_java_get_bin_obj (get_anal (core));
+	RzBinJavaObj *obj = (RzBinJavaObj *)rz_cmd_java_get_bin_obj (get_anal (core));
 	RzAnalFunction *fcn = NULL;
 	RzAnalBlock *bb = NULL;
 	RzListIter *bb_iter, *fn_iter, *iter;
@@ -996,7 +996,7 @@ static int rz_cmd_java_handle_find_cp_const(RzCore *core, const char *cmd) {
 	}
 	if (idx == (ut16)-1) {
 		rz_list_foreach (find_list, iter, cp_res) {
-			const char *t = ((RBinJavaCPTypeMetas *)cp_res->obj->metas->type_info)->name;
+			const char *t = ((RzBinJavaCPTypeMetas *)cp_res->obj->metas->type_info)->name;
 			rz_cons_printf ("@0x%" PFMT64x " idx = %d Type = %s\n", cp_res->addr, cp_res->idx, t);
 		}
 
@@ -1011,7 +1011,7 @@ static int rz_cmd_java_handle_find_cp_const(RzCore *core, const char *cmd) {
 
 static int rz_cmd_java_handle_field_info(RzCore *core, const char *cmd) {
 	RzAnal *anal = get_anal (core);
-	RBinJavaObj *obj = (RBinJavaObj *)rz_cmd_java_get_bin_obj (anal);
+	RzBinJavaObj *obj = (RzBinJavaObj *)rz_cmd_java_get_bin_obj (anal);
 	IFDBG rz_cons_printf ("Function call made: %s\n", cmd);
 	ut16 idx = -1;
 
@@ -1041,7 +1041,7 @@ static int rz_cmd_java_handle_field_info(RzCore *core, const char *cmd) {
 
 static int rz_cmd_java_handle_method_info(RzCore *core, const char *cmd) {
 	RzAnal *anal = get_anal (core);
-	RBinJavaObj *obj = (RBinJavaObj *)rz_cmd_java_get_bin_obj (anal);
+	RzBinJavaObj *obj = (RzBinJavaObj *)rz_cmd_java_get_bin_obj (anal);
 	IFDBG rz_cons_printf ("Command is (%s)\n", cmd);
 	ut16 idx = -1;
 
@@ -1183,10 +1183,10 @@ static int rz_cmd_java_handle_isvalid(RzCore *core, const char *cmd) {
 static int rz_cmd_java_handle_resolve_cp(RzCore *core, const char *cmd) {
 	RzAnal *anal = get_anal (core);
 	char c_type = cmd && *cmd? *cmd: 0;
-	RBinJavaObj *obj = rz_cmd_java_get_bin_obj (anal);
+	RzBinJavaObj *obj = rz_cmd_java_get_bin_obj (anal);
 	ut32 idx = rz_cmd_java_get_input_num_value (core, cmd + 2);
 	IFDBG rz_cons_printf ("Function call made: %s\n", cmd);
-	IFDBG rz_cons_printf ("Ctype: %d (%c) RBinJavaObj points to: %p and the idx is (%s): %d\n", c_type, c_type, obj, cmd + 2, idx);
+	IFDBG rz_cons_printf ("Ctype: %d (%c) RzBinJavaObj points to: %p and the idx is (%s): %d\n", c_type, c_type, obj, cmd + 2, idx);
 	int res = false;
 	if (idx > 0 && obj) {
 		switch (c_type) {
@@ -1482,7 +1482,7 @@ static int rz_cmd_java_call(void *user, const char *input) {
 	return true;
 }
 
-static int rz_cmd_java_print_method_definitions(RBinJavaObj *obj) {
+static int rz_cmd_java_print_method_definitions(RzBinJavaObj *obj) {
 	RzList *the_list = rz_bin_java_get_method_definitions (obj),
 	      *off_list = rz_bin_java_get_method_offsets (obj);
 	char *str = NULL;
@@ -1500,7 +1500,7 @@ static int rz_cmd_java_print_method_definitions(RBinJavaObj *obj) {
 	return true;
 }
 
-static int rz_cmd_java_print_field_definitions(RBinJavaObj *obj) {
+static int rz_cmd_java_print_field_definitions(RzBinJavaObj *obj) {
 	RzList *the_list = rz_bin_java_get_field_definitions (obj),
 	      *off_list = rz_bin_java_get_field_offsets (obj);
 	char *str = NULL;
@@ -1518,7 +1518,7 @@ static int rz_cmd_java_print_field_definitions(RBinJavaObj *obj) {
 	return true;
 }
 
-static int rz_cmd_java_print_import_definitions(RBinJavaObj *obj) {
+static int rz_cmd_java_print_import_definitions(RzBinJavaObj *obj) {
 	RzList *the_list = rz_bin_java_get_import_definitions (obj);
 	char *str = NULL;
 	RzListIter *iter;
@@ -1532,7 +1532,7 @@ static int rz_cmd_java_print_import_definitions(RBinJavaObj *obj) {
 static int rz_cmd_java_print_all_definitions(RzAnal *anal) {
 	RzList *obj_list = rz_cmd_java_get_bin_obj_list (anal);
 	RzListIter *iter;
-	RBinJavaObj *obj;
+	RzBinJavaObj *obj;
 
 	if (!obj_list) {
 		return 1;
@@ -1543,7 +1543,7 @@ static int rz_cmd_java_print_all_definitions(RzAnal *anal) {
 	return true;
 }
 
-static int rz_cmd_java_print_json_definitions(RBinJavaObj *obj) {
+static int rz_cmd_java_print_json_definitions(RzBinJavaObj *obj) {
 	DsoJsonObj *json_obj = rz_bin_java_get_bin_obj_json (obj);
 	char *str = dso_json_obj_to_str (json_obj);
 	dso_json_obj_del (json_obj); // XXX memleak
@@ -1551,7 +1551,7 @@ static int rz_cmd_java_print_json_definitions(RBinJavaObj *obj) {
 	return true;
 }
 
-static int rz_cmd_java_print_class_definitions(RBinJavaObj *obj) {
+static int rz_cmd_java_print_class_definitions(RzBinJavaObj *obj) {
 	RzList *the_fields = rz_bin_java_get_field_definitions (obj),
 	      *the_methods = rz_bin_java_get_method_definitions (obj),
 	      *the_imports = rz_bin_java_get_import_definitions (obj),
@@ -1600,7 +1600,7 @@ static int rz_cmd_java_print_class_definitions(RBinJavaObj *obj) {
 }
 
 static RzList *rz_cmd_java_get_bin_obj_list(RzAnal *anal) {
-	RBinJavaObj *bin_obj = (RBinJavaObj *)rz_cmd_java_get_bin_obj (anal);
+	RzBinJavaObj *bin_obj = (RzBinJavaObj *)rz_cmd_java_get_bin_obj (anal);
 	// See librz/bin/p/bin_java.c to see what is happening here.  The original intention
 	// was to use a shared global db variable from shlr/java/class.c, but the
 	// BIN_OBJS_ADDRS variable kept getting corrupted on Mac, so I (deeso) switched the
@@ -1610,10 +1610,10 @@ static RzList *rz_cmd_java_get_bin_obj_list(RzAnal *anal) {
 	return rz_bin_java_get_bin_obj_list_thru_obj (bin_obj);
 }
 
-static RBinJavaObj *rz_cmd_java_get_bin_obj(RzAnal *anal) {
-	RBin *b;
+static RzBinJavaObj *rz_cmd_java_get_bin_obj(RzAnal *anal) {
+	RzBin *b;
 	int is_java;
-	RBinPlugin *plugin;
+	RzBinPlugin *plugin;
 	if (!anal || !anal->binb.bin) {
 		return NULL;
 	}
@@ -1626,7 +1626,7 @@ static RBinJavaObj *rz_cmd_java_get_bin_obj(RzAnal *anal) {
 	return is_java? b->cur->o->bin_obj: NULL;
 }
 
-static int rz_cmd_java_resolve_cp_idx(RBinJavaObj *obj, ut16 idx) {
+static int rz_cmd_java_resolve_cp_idx(RzBinJavaObj *obj, ut16 idx) {
 	if (obj && idx) {
 		char *str = rz_bin_java_resolve_without_space (obj, idx);
 		rz_cons_println (str);
@@ -1635,7 +1635,7 @@ static int rz_cmd_java_resolve_cp_idx(RBinJavaObj *obj, ut16 idx) {
 	return true;
 }
 
-static int rz_cmd_java_resolve_cp_type(RBinJavaObj *obj, ut16 idx) {
+static int rz_cmd_java_resolve_cp_type(RzBinJavaObj *obj, ut16 idx) {
 	if (obj && idx) {
 		char *str = rz_bin_java_resolve_cp_idx_type (obj, idx);
 		rz_cons_println (str);
@@ -1644,7 +1644,7 @@ static int rz_cmd_java_resolve_cp_type(RBinJavaObj *obj, ut16 idx) {
 	return true;
 }
 
-static int rz_cmd_java_resolve_cp_idx_b64(RBinJavaObj *obj, ut16 idx) {
+static int rz_cmd_java_resolve_cp_idx_b64(RzBinJavaObj *obj, ut16 idx) {
 	if (obj && idx) {
 		char *str = rz_bin_java_resolve_b64_encode (obj, idx);
 		rz_cons_println (str);
@@ -1653,7 +1653,7 @@ static int rz_cmd_java_resolve_cp_idx_b64(RBinJavaObj *obj, ut16 idx) {
 	return true;
 }
 
-static int rz_cmd_java_resolve_cp_address(RBinJavaObj *obj, ut16 idx) {
+static int rz_cmd_java_resolve_cp_address(RzBinJavaObj *obj, ut16 idx) {
 	if (obj && idx) {
 		ut64 addr = rz_bin_java_resolve_cp_idx_address (obj, idx);
 		if (addr == (ut64)-1) {
@@ -1665,7 +1665,7 @@ static int rz_cmd_java_resolve_cp_address(RBinJavaObj *obj, ut16 idx) {
 	return true;
 }
 
-static int rz_cmd_java_resolve_cp_to_key(RBinJavaObj *obj, ut16 idx) {
+static int rz_cmd_java_resolve_cp_to_key(RzBinJavaObj *obj, ut16 idx) {
 	if (obj && idx) {
 		char *str = rz_bin_java_resolve_cp_idx_to_string (obj, idx);
 		rz_cons_println (str);
@@ -1673,7 +1673,7 @@ static int rz_cmd_java_resolve_cp_to_key(RBinJavaObj *obj, ut16 idx) {
 	}
 	return true;
 }
-static int rz_cmd_java_resolve_cp_summary(RBinJavaObj *obj, ut16 idx) {
+static int rz_cmd_java_resolve_cp_summary(RzBinJavaObj *obj, ut16 idx) {
 	if (obj && idx) {
 		rz_bin_java_resolve_cp_idx_print_summary (obj, idx);
 	}
@@ -1720,7 +1720,7 @@ static int rz_cmd_java_set_acc_flags(RzCore *core, ut64 addr, ut16 num_acc_flag)
 	IFDBG rz_cons_printf ("Executed cmd: %s == %d\n", cmd_buf, res);
 	return res;
 }
-static int rz_cmd_java_print_field_num_name(RBinJavaObj *obj) {
+static int rz_cmd_java_print_field_num_name(RzBinJavaObj *obj) {
 	RzList *the_list = rz_bin_java_get_field_num_name (obj);
 	char *str;
 	RzListIter *iter = NULL;
@@ -1731,7 +1731,7 @@ static int rz_cmd_java_print_field_num_name(RBinJavaObj *obj) {
 	return true;
 }
 
-static int rz_cmd_java_print_method_num_name(RBinJavaObj *obj) {
+static int rz_cmd_java_print_method_num_name(RzBinJavaObj *obj) {
 	RzList *the_list = rz_bin_java_get_method_num_name (obj);
 	char *str;
 	RzListIter *iter = NULL;
@@ -1742,55 +1742,55 @@ static int rz_cmd_java_print_method_num_name(RBinJavaObj *obj) {
 	return true;
 }
 
-static int rz_cmd_java_print_field_summary(RBinJavaObj *obj, ut16 idx) {
+static int rz_cmd_java_print_field_summary(RzBinJavaObj *obj, ut16 idx) {
 	int res = rz_bin_java_print_field_idx_summary (obj, idx);
 	if (res == false) {
-		eprintf ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.\n", idx);
+		eprintf ("Error: Field or Method @ index (%d) not found in the RzBinJavaObj.\n", idx);
 		res = true;
 	}
 	return res;
 }
 
-static int UNUSED_FUNCTION(rz_cmd_java_print_field_count)(RBinJavaObj *obj) {
+static int UNUSED_FUNCTION(rz_cmd_java_print_field_count)(RzBinJavaObj *obj) {
 	ut32 res = rz_bin_java_get_field_count (obj);
 	rz_cons_printf ("%d\n", res);
 	rz_cons_flush ();
 	return true;
 }
 
-static int rz_cmd_java_print_field_name(RBinJavaObj *obj, ut16 idx) {
+static int rz_cmd_java_print_field_name(RzBinJavaObj *obj, ut16 idx) {
 	char *res = rz_bin_java_get_field_name (obj, idx);
 	if (res) {
 		rz_cons_println (res);
 	} else {
-		eprintf ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.\n", idx);
+		eprintf ("Error: Field or Method @ index (%d) not found in the RzBinJavaObj.\n", idx);
 	}
 	free (res);
 	return true;
 }
 
-static int rz_cmd_java_print_method_summary(RBinJavaObj *obj, ut16 idx) {
+static int rz_cmd_java_print_method_summary(RzBinJavaObj *obj, ut16 idx) {
 	int res = rz_bin_java_print_method_idx_summary (obj, idx);
 	if (res == false) {
-		eprintf ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.\n", idx);
+		eprintf ("Error: Field or Method @ index (%d) not found in the RzBinJavaObj.\n", idx);
 		res = true;
 	}
 	return res;
 }
 
-static int _(rz_cmd_java_print_method_count)(RBinJavaObj *obj) {
+static int _(rz_cmd_java_print_method_count)(RzBinJavaObj *obj) {
 	ut32 res = rz_bin_java_get_method_count (obj);
 	rz_cons_printf ("%d\n", res);
 	rz_cons_flush ();
 	return true;
 }
 
-static int rz_cmd_java_print_method_name(RBinJavaObj *obj, ut16 idx) {
+static int rz_cmd_java_print_method_name(RzBinJavaObj *obj, ut16 idx) {
 	char *res = rz_bin_java_get_method_name (obj, idx);
 	if (res) {
 		rz_cons_println (res);
 	} else {
-		eprintf ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.\n", idx);
+		eprintf ("Error: Field or Method @ index (%d) not found in the RzBinJavaObj.\n", idx);
 	}
 	free (res);
 	return true;
@@ -1798,7 +1798,7 @@ static int rz_cmd_java_print_method_name(RBinJavaObj *obj, ut16 idx) {
 
 static int rz_cmd_java_handle_yara_code_extraction_refs(RzCore *core, const char *input) {
 	RzAnal *anal = get_anal (core);
-	RBinJavaObj *bin = anal? (RBinJavaObj *)rz_cmd_java_get_bin_obj (anal): NULL;
+	RzBinJavaObj *bin = anal? (RzBinJavaObj *)rz_cmd_java_get_bin_obj (anal): NULL;
 	const char *p = input? rz_cmd_java_consumetok (input, ' ', -1): NULL, *n = NULL;
 	char *name = NULL;
 	ut64 addr = -1, count = -1;
@@ -1850,7 +1850,7 @@ static int rz_cmd_java_handle_yara_code_extraction_refs(RzCore *core, const char
 
 static int rz_cmd_java_handle_insert_method_ref(RzCore *core, const char *input) {
 	RzAnal *anal = get_anal (core);
-	RBinJavaObj *bin = anal? (RBinJavaObj *)rz_cmd_java_get_bin_obj (anal): NULL;
+	RzBinJavaObj *bin = anal? (RzBinJavaObj *)rz_cmd_java_get_bin_obj (anal): NULL;
 	const char *p = input? rz_cmd_java_consumetok (input, ' ', -1): NULL, *n = NULL;
 	char *classname = NULL, *name = NULL, *descriptor = NULL;
 	ut32 cn_sz = 0, n_sz = 0, d_sz = 0;
@@ -1912,11 +1912,11 @@ static int rz_cmd_java_handle_insert_method_ref(RzCore *core, const char *input)
 
 static int rz_cmd_java_handle_print_exceptions(RzCore *core, const char *input) {
 	RzAnal *anal = get_anal (core);
-	RBinJavaObj *bin = (RBinJavaObj *) rz_cmd_java_get_bin_obj (anal);
+	RzBinJavaObj *bin = (RzBinJavaObj *) rz_cmd_java_get_bin_obj (anal);
 	RzListIter *exc_iter = NULL, *methods_iter=NULL;
-	RBinJavaField *method;
+	RzBinJavaField *method;
 	ut64 func_addr = -1;
-	RBinJavaExceptionEntry *exc_entry;
+	RzBinJavaExceptionEntry *exc_entry;
 
 	const char *p = input? rz_cmd_java_consumetok (input, ' ', -1): NULL;
 	func_addr = p && *p && rz_cmd_java_is_valid_input_num_value (core, p)? rz_cmd_java_get_input_num_value (core, p): -1;

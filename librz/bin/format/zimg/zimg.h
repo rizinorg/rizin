@@ -27,7 +27,7 @@ typedef struct rz_bin_zimg_obj_t {
 	ut64 code_from;
 	ut64 code_to;
 	Sdb *kv;
-} RBinZimgObj;
+} RzBinZimgObj;
 
 struct rz_bin_zimg_str_t {
 	char str[RZ_BIN_ZIMG_MAXSTR];

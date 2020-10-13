@@ -25,7 +25,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	rz_return_val_if_fail (bf && bin_obj && buf, false);
 	rz_bin_le_obj_t *res = rz_bin_le_new_buf (buf);
 	if (res) {
@@ -35,13 +35,13 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return false;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	rz_bin_le_free (bf->o->bin_obj);
 }
 
-static void header(RBinFile *bf) {
+static void header(RzBinFile *bf) {
 	rz_return_if_fail (bf && bf->rbin && bf->o && bf->o->bin_obj);
-	RBin *rbin = bf->rbin;
+	RzBin *rbin = bf->rbin;
 	rz_bin_le_obj_t *bin = bf->o->bin_obj;
 	LE_image_header *h = bin->header;
 	PrintfCallback p = rbin->cb_printf;
@@ -101,32 +101,32 @@ static void header(RBinFile *bf) {
 	p ("Stack Size: 0x%04x\n", h->stacksize);
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	return rz_bin_le_get_sections (bf->o->bin_obj);
 }
 
-static RzList *entries(RBinFile *bf) {
+static RzList *entries(RzBinFile *bf) {
 	return rz_bin_le_get_entrypoints (bf->o->bin_obj);
 }
 
-static RzList *symbols(RBinFile *bf) {
+static RzList *symbols(RzBinFile *bf) {
 	return rz_bin_le_get_symbols (bf->o->bin_obj);
 }
 
-static RzList *imports(RBinFile *bf) {
+static RzList *imports(RzBinFile *bf) {
 	return rz_bin_le_get_imports (bf->o->bin_obj);
 }
 
-static RzList *libs(RBinFile *bf) {
+static RzList *libs(RzBinFile *bf) {
 	return rz_bin_le_get_libs (bf->o->bin_obj);
 }
 
-static RzList *relocs(RBinFile *bf) {
+static RzList *relocs(RzBinFile *bf) {
 	return rz_bin_le_get_relocs (bf->o->bin_obj);
 }
 
-static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *info = RZ_NEW0 (RBinInfo);
+static RzBinInfo *info(RzBinFile *bf) {
+	RzBinInfo *info = RZ_NEW0 (RzBinInfo);
 	if (info) {
 		rz_bin_le_obj_t *bin = bf->o->bin_obj;
 		LE_image_header *h = bin->header;
@@ -143,7 +143,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return info;
 }
 
-RBinPlugin rz_bin_plugin_le = {
+RzBinPlugin rz_bin_plugin_le = {
 	.name = "le",
 	.desc = "LE/LX format plugin",
 	.author = "GustavoLCR",

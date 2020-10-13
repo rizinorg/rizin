@@ -440,8 +440,8 @@ RZ_API const char *rz_core_get_section_name(RzCore *core, ut64 addr) {
 	if (oaddr == addr) {
 		return section;
 	}
-	RBinObject *bo = rz_bin_cur_object (core->bin);
-	RBinSection *s = bo? rz_bin_get_section_at (bo, addr, core->io->va): NULL;
+	RzBinObject *bo = rz_bin_cur_object (core->bin);
+	RzBinSection *s = bo? rz_bin_get_section_at (bo, addr, core->io->va): NULL;
 	if (s && s->name && *s->name) {
 		snprintf (section, sizeof (section) - 1, "%10s ", s->name);
 	} else {
@@ -3298,7 +3298,7 @@ static bool ds_print_labels(RDisasmState *ds, RzAnalFunction *f) {
 #if 0
 static void ds_print_import_name(RDisasmState *ds) {
 	RzListIter *iter = NULL;
-	RBinReloc *rel = NULL;
+	RzBinReloc *rel = NULL;
 	RzCore * core = ds->core;
 
 	switch (ds->analop.type) {
@@ -4011,8 +4011,8 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					{
 						const char *refptrstr = "";
 						if (core->print->flags & RZ_PRINT_FLAGS_SECSUB) {
-							RBinObject *bo = rz_bin_cur_object (core->bin);
-							RBinSection *s = bo? rz_bin_get_section_at (bo, n, core->io->va): NULL;
+							RzBinObject *bo = rz_bin_cur_object (core->bin);
+							RzBinSection *s = bo? rz_bin_get_section_at (bo, n, core->io->va): NULL;
 							if (s) {
 								refptrstr = s->name;
 							}
@@ -4202,7 +4202,7 @@ static void ds_print_relocs(RDisasmState *ds) {
 	const char *lang = rz_config_get (core->config, "bin.lang");
 	bool demangle = rz_config_get_i (core->config, "asm.demangle");
 	bool keep_lib = rz_config_get_i (core->config, "bin.demangle.libs");
-	RBinReloc *rel = rz_core_getreloc (core, ds->at, ds->analop.size);
+	RzBinReloc *rel = rz_core_getreloc (core, ds->at, ds->analop.size);
 	if (rel) {
 		int cstrlen = 0;
 		char *ll = rz_cons_lastline (&cstrlen);
@@ -5067,7 +5067,7 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 			name = fcn->name;
 		}
 	} else if (f) {
-		RBinReloc *rel = NULL;
+		RzBinReloc *rel = NULL;
 		if (!ds->core->bin->is_reloc_patched) {
 			rel = rz_core_getreloc (ds->core, ds->analop.addr, ds->analop.size);
 		}
@@ -6106,7 +6106,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		pj_ks (pj, "family", rz_anal_op_family_to_string (ds->analop.family));
 		pj_ks (pj, "type", rz_anal_optype_to_string (ds->analop.type));
 		// indicate a relocated address
-		RBinReloc *rel = rz_core_getreloc (core, ds->at, ds->analop.size);
+		RzBinReloc *rel = rz_core_getreloc (core, ds->at, ds->analop.size);
 		// reloc is true if address in reloc table
 		pj_kb (pj, "reloc", rel);
 		// wanted the numerical values of the type information

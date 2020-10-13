@@ -61,9 +61,9 @@ typedef struct {
 	RzList *methods_list;
 	RzList *imports_list;
 	RzList *classes_list;
-} RBinNXOObj;
+} RzBinNXOObj;
 
-void parseMod(RBuffer *buf, RBinNXOObj *bin, ut32 mod0, ut64 baddr);
+void parseMod(RBuffer *buf, RzBinNXOObj *bin, ut32 mod0, ut64 baddr);
 const char *fileType(const ut8 *buf);
 
 #endif

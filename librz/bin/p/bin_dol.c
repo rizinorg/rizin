@@ -52,7 +52,7 @@ static bool check_buffer(RBuffer *buf) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	if (rz_buf_size (buf) < sizeof (DolHeader)) {
 		return false;
 	}
@@ -81,11 +81,11 @@ dol_err:
 	return false;
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 	int i;
 	RzList *ret;
-	RBinSection *s;
+	RzBinSection *s;
 	DolHeader *dol = bf->o->bin_obj;
 	if (!(ret = rz_list_new ())) {
 		return NULL;
@@ -96,7 +96,7 @@ static RzList *sections(RBinFile *bf) {
 		if (!dol->text_paddr[i] || !dol->text_vaddr[i]) {
 			continue;
 		}
-		s = RZ_NEW0 (RBinSection);
+		s = RZ_NEW0 (RzBinSection);
 		s->name = rz_str_newf ("text_%d", i);
 		s->paddr = dol->text_paddr[i];
 		s->vaddr = dol->text_vaddr[i];
@@ -111,7 +111,7 @@ static RzList *sections(RBinFile *bf) {
 		if (!dol->data_paddr[i] || !dol->data_vaddr[i]) {
 			continue;
 		}
-		s = RZ_NEW0 (RBinSection);
+		s = RZ_NEW0 (RzBinSection);
 		s->name = rz_str_newf ("data_%d", i);
 		s->paddr = dol->data_paddr[i];
 		s->vaddr = dol->data_vaddr[i];
@@ -122,7 +122,7 @@ static RzList *sections(RBinFile *bf) {
 		rz_list_append (ret, s);
 	}
 	/* bss section */
-	s = RZ_NEW0 (RBinSection);
+	s = RZ_NEW0 (RzBinSection);
 	s->name = strdup ("bss");
 	s->paddr = 0;
 	s->vaddr = dol->bss_addr;
@@ -135,10 +135,10 @@ static RzList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *entries(RBinFile *bf) {
+static RzList *entries(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 	RzList *ret = rz_list_new ();
-	RBinAddr *addr = RZ_NEW0 (RBinAddr);
+	RzBinAddr *addr = RZ_NEW0 (RzBinAddr);
 	DolHeader *dol = bf->o->bin_obj;
 	addr->vaddr = (ut64) dol->entrypoint;
 	addr->paddr = addr->vaddr & 0xFFFF;
@@ -146,9 +146,9 @@ static RzList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RzBinInfo *info(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->buf, NULL);
-	RBinInfo *ret = RZ_NEW0 (RBinInfo);
+	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -164,11 +164,11 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return 0x80b00000; // XXX
 }
 
-RBinPlugin rz_bin_plugin_dol = {
+RzBinPlugin rz_bin_plugin_dol = {
 	.name = "dol",
 	.desc = "Nintendo Dolphin binary format",
 	.license = "BSD",

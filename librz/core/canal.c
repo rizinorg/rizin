@@ -91,7 +91,7 @@ static int cmpaddr (const void *_a, const void *_b) {
 
 
 static char *getFunctionName(RzCore *core, ut64 addr) {
-	RBinFile *bf = rz_bin_cur (core->bin);
+	RzBinFile *bf = rz_bin_cur (core->bin);
 	if (bf && bf->o) {
 		Sdb *kv = bf->o->addrzklassmethod;
 		char *at = sdb_fmt ("0x%08"PFMT64x, addr);
@@ -502,7 +502,7 @@ RZ_API void rz_core_anal_autoname_all_golang_fcns(RzCore *core) {
 	RzList* section_list = rz_bin_get_sections (core->bin);
 	RzListIter *iter;
 	const char* oldstr = NULL;
-	RBinSection *section;
+	RzBinSection *section;
 	ut64 gopclntab = 0;
 	rz_list_foreach (section_list, iter, section) {
 		if (strstr (section->name, ".gopclntab")) {
@@ -826,7 +826,7 @@ static int __core_anal_fcn(RzCore *core, ut64 at, ut64 from, int reftype, int de
 				char *new_name = strdup (f->name);
 				if (is_entry_flag (f)) {
 					RzListIter *iter;
-					RBinSymbol *sym;
+					RzBinSymbol *sym;
 					const RzList *syms = rz_bin_get_symbols (core->bin);
 					ut64 baddr = rz_config_get_i (core->config, "bin.baddr");
 					rz_list_foreach (syms, iter, sym) {
@@ -2242,8 +2242,8 @@ RZ_API void rz_core_anal_datarefs(RzCore *core, ut64 addr) {
 		RzAnalRef *ref;
 		RzList *refs = rz_anal_function_get_refs (fcn);
 		rz_list_foreach (refs, iter, ref) {
-			RBinObject *obj = rz_bin_cur_object (core->bin);
-			RBinSection *binsec = rz_bin_get_section_at (obj, ref->addr, true);
+			RzBinObject *obj = rz_bin_cur_object (core->bin);
+			RzBinSection *binsec = rz_bin_get_section_at (obj, ref->addr, true);
 			if (binsec && binsec->is_data) {
 				if (!found) {
 					rz_cons_printf ("agn %s\n", me);
@@ -2307,13 +2307,13 @@ static void add_single_addr_xrefs(RzCore *core, ut64 addr, RzGraph *graph) {
 }
 
 RZ_API RzGraph *rz_core_anal_importxrefs(RzCore *core) {
-	RBinInfo *info = rz_bin_get_info (core->bin);
-	RBinObject *obj = rz_bin_cur_object (core->bin);
+	RzBinInfo *info = rz_bin_get_info (core->bin);
+	RzBinObject *obj = rz_bin_cur_object (core->bin);
 	bool lit = info? info->has_lit: false;
 	bool va = core->io->va || core->bin->is_debugger;
 
 	RzListIter *iter;
-	RBinImport *imp;
+	RzBinImport *imp;
 	if (!obj) {
 		return NULL;
 	}
@@ -4107,7 +4107,7 @@ RZ_API int rz_core_anal_search_xrefs(RzCore *core, ut64 from, ut64 to, int rad) 
 	return count;
 }
 
-static bool isValidSymbol(RBinSymbol *symbol) {
+static bool isValidSymbol(RzBinSymbol *symbol) {
 	if (symbol && symbol->type) {
 		const char *type = symbol->type;
 		return (symbol->paddr != UT64_MAX) && (!strcmp (type, RZ_BIN_TYPE_FUNC_STR) || !strcmp (type, RZ_BIN_TYPE_HIOS_STR) || !strcmp (type, RZ_BIN_TYPE_LOOS_STR) || !strcmp (type, RZ_BIN_TYPE_METH_STR) || !strcmp (type , RZ_BIN_TYPE_STATIC_STR));
@@ -4115,7 +4115,7 @@ static bool isValidSymbol(RBinSymbol *symbol) {
 	return false;
 }
 
-static bool isSkippable(RBinSymbol *s) {
+static bool isSkippable(RzBinSymbol *s) {
 	if (s && s->name && s->bind) {
 		if (rz_str_startswith (s->name, "radr://")) {
 			return true;
@@ -4137,9 +4137,9 @@ RZ_API int rz_core_anal_all(RzCore *core) {
 	RzListIter *iter;
 	RzFlagItem *item;
 	RzAnalFunction *fcni;
-	RBinAddr *binmain;
-	RBinAddr *entry;
-	RBinSymbol *symbol;
+	RzBinAddr *binmain;
+	RzBinAddr *entry;
+	RzBinSymbol *symbol;
 	int depth = core->anal->opt.depth;
 	bool anal_vars = rz_config_get_i (core->config, "anal.vars");
 
@@ -4288,7 +4288,7 @@ static bool block_flags_stat(RzFlagItem *fi, void *user) {
 RZ_API RzCoreAnalStats* rz_core_anal_get_stats(RzCore *core, ut64 from, ut64 to, ut64 step) {
 	RzAnalFunction *F;
 	RzAnalBlock  *B;
-	RBinSymbol *S;
+	RzBinSymbol *S;
 	RzListIter *iter, *iter2;
 	RzCoreAnalStats *as = NULL;
 	int piece, as_size, blocks;

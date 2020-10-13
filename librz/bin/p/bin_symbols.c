@@ -132,11 +132,11 @@ static void printSymbolsHeader(SymbolsHeader sh) {
 	// eprintf ("0x%08x  slotsize %d\n", 0x2e, sh.slotsize); // rz_read_le16 (b+ 0x2e));
 }
 
-static RBinSection *bin_section_from_section(RzCoreSymCacheElementSection *sect) {
+static RzBinSection *bin_section_from_section(RzCoreSymCacheElementSection *sect) {
 	if (!sect->name) {
 		return NULL;
 	}
-	RBinSection *s = RZ_NEW0 (RBinSection);
+	RzBinSection *s = RZ_NEW0 (RzBinSection);
 	if (!s) {
 		return NULL;
 	}
@@ -151,11 +151,11 @@ static RBinSection *bin_section_from_section(RzCoreSymCacheElementSection *sect)
 	return s;
 }
 
-static RBinSection *bin_section_from_segment(RzCoreSymCacheElementSegment *seg) {
+static RzBinSection *bin_section_from_segment(RzCoreSymCacheElementSegment *seg) {
 	if (!seg->name) {
 		return NULL;
 	}
-	RBinSection *s = RZ_NEW0 (RBinSection);
+	RzBinSection *s = RZ_NEW0 (RzBinSection);
 	if (!s) {
 		return NULL;
 	}
@@ -170,11 +170,11 @@ static RBinSection *bin_section_from_segment(RzCoreSymCacheElementSegment *seg) 
 	return s;
 }
 
-static RBinSymbol *bin_symbol_from_symbol(RzCoreSymCacheElement *element, RzCoreSymCacheElementSymbol *s) {
+static RzBinSymbol *bin_symbol_from_symbol(RzCoreSymCacheElement *element, RzCoreSymCacheElementSymbol *s) {
 	if (!s->name && !s->mangled_name) {
 		return NULL;
 	}
-	RBinSymbol *sym = RZ_NEW0 (RBinSymbol);
+	RzBinSymbol *sym = RZ_NEW0 (RzBinSymbol);
 	if (sym) {
 		if (s->name && s->mangled_name) {
 			sym->dname = strdup (s->name);
@@ -193,7 +193,7 @@ static RBinSymbol *bin_symbol_from_symbol(RzCoreSymCacheElement *element, RzCore
 	return sym;
 }
 
-static RzCoreSymCacheElement *parseDragons(RBinFile *bf, RBuffer *buf, int off, int bits) {
+static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RBuffer *buf, int off, int bits) {
 	D eprintf ("Dragons at 0x%x\n", off);
 	ut64 size = rz_buf_size (buf);
 	if (off >= size) {
@@ -264,7 +264,7 @@ static RzCoreSymCacheElement *parseDragons(RBinFile *bf, RBuffer *buf, int off, 
 	return rz_coresym_cache_element_new (bf, buf, off + 16, bits);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 #if 0
 	SYMBOLS HEADER
 
@@ -299,21 +299,21 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return false;
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	RzList *res = rz_list_newf ((RzListFree)rz_bin_section_free);
 	rz_return_val_if_fail (res && bf->o && bf->o->bin_obj, res);
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
 	size_t i;
 	for (i = 0; i < element->hdr->n_segments; i++) {
 		RzCoreSymCacheElementSegment *seg = &element->segments[i];
-		RBinSection *s = bin_section_from_segment (seg);
+		RzBinSection *s = bin_section_from_segment (seg);
 		if (s) {
 			rz_list_append (res, s);
 		}
 	}
 	for (i = 0; i < element->hdr->n_sections; i++) {
 		RzCoreSymCacheElementSection *sect = &element->sections[i];
-		RBinSection *s = bin_section_from_section (sect);
+		RzBinSection *s = bin_section_from_section (sect);
 		if (s) {
 			rz_list_append (res, s);
 		}
@@ -321,13 +321,13 @@ static RzList *sections(RBinFile *bf) {
 	return res;
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return 0LL;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RzBinInfo *info(RzBinFile *bf) {
 	SymbolsMetadata sm = parseMetadata (bf->buf, 0x40);
-	RBinInfo *ret = RZ_NEW0 (RBinInfo);
+	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -349,7 +349,7 @@ static bool check_buffer(RBuffer *b) {
 	return !memcmp (buf, "\x02\xff\x01\xff", 4);
 }
 
-static RzList *symbols(RBinFile *bf) {
+static RzList *symbols(RzBinFile *bf) {
 	RzList *res = rz_list_newf ((RzListFree)rz_bin_symbol_free);
 	rz_return_val_if_fail (res && bf->o && bf->o->bin_obj, res);
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
@@ -365,7 +365,7 @@ static RzList *symbols(RBinFile *bf) {
 		if (found) {
 			continue;
 		}
-		RBinSymbol *s = bin_symbol_from_symbol (element, sym);
+		RzBinSymbol *s = bin_symbol_from_symbol (element, sym);
 		if (s) {
 			rz_list_append (res, s);
 			ht_uu_insert (hash, sym->paddr, 1);
@@ -377,7 +377,7 @@ static RzList *symbols(RBinFile *bf) {
 		if (found) {
 			continue;
 		}
-		RBinSymbol *s = bin_symbol_from_symbol (element, sym);
+		RzBinSymbol *s = bin_symbol_from_symbol (element, sym);
 		if (s) {
 			rz_list_append (res, s);
 		}
@@ -386,15 +386,15 @@ static RzList *symbols(RBinFile *bf) {
 	return res;
 }
 
-static ut64 size(RBinFile *bf) {
+static ut64 size(RzBinFile *bf) {
 	return UT64_MAX;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	rz_coresym_cache_element_free (bf->o->bin_obj);
 }
 
-static void header(RBinFile *bf) {
+static void header(RzBinFile *bf) {
 	rz_return_if_fail (bf && bf->o);
 
 	RzCoreSymCacheElement *element = bf->o->bin_obj;
@@ -402,7 +402,7 @@ static void header(RBinFile *bf) {
 		return;
 	}
 
-	RBin *bin = bf->rbin;
+	RzBin *bin = bf->rbin;
 	PrintfCallback p = bin->cb_printf;
 	PJ *pj = pj_new ();
 	if (!pj) {
@@ -432,7 +432,7 @@ static void header(RBinFile *bf) {
 	pj_free (pj);
 }
 
-RBinPlugin rz_bin_plugin_symbols = {
+RzBinPlugin rz_bin_plugin_symbols = {
 	.name = "symbols",
 	.desc = "Apple Symbols file",
 	.license = "MIT",

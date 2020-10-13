@@ -635,7 +635,7 @@ typedef struct {
 	ut32 oplentable[12];
 	const char **incdirs;
 	const char *file[128];
-} RBinDwarfInfoHeader;
+} RzBinDwarfInfoHeader;
 #define RZ_BIN_DWARF_INFO_HEADER_FILE_LENGTH(x) (sizeof (x->file)/sizeof(*(x->file)))
 
 typedef struct {
@@ -646,14 +646,14 @@ typedef struct {
 	int is_stmt;
 	int basic_block;
 	int end_sequence;
-} RBinDwarfState;
+} RzBinDwarfState;
 
 typedef struct {
 	ut64 address;
 	char *file;
 	unsigned int line;
 	unsigned int column;
-} RBinDwarfRow;
+} RzBinDwarfRow;
 
 #define DWARF_INIT_LEN_64	0xffffffff
 typedef union {
@@ -668,7 +668,7 @@ typedef struct {
 	ut8 address_size;
 	ut64 type_signature;
 	section_offset type_offset;
-} RBinDwarfTypeUnitHeader;
+} RzBinDwarfTypeUnitHeader;
 
 typedef struct {
 	ut64 unit_length;
@@ -676,18 +676,18 @@ typedef struct {
 	section_offset debug_info_offset;
 	ut8 address_size;
 	ut8 segment_size;
-} RBinDwarfAddressRangeTable;
+} RzBinDwarfAddressRangeTable;
 
 typedef struct {
 	ut64	attr_name;
 	ut64	attr_form;
 	st64	special; // Used for values coded directly into abbrev
-} RBinDwarfAttrDef;
+} RzBinDwarfAttrDef;
 
 typedef struct {
 	ut64 length;
 	ut8 *data;
-} RBinDwarfBlock;
+} RzBinDwarfBlock;
 
 // http://www.dwarfstd.org/doc/DWARF4.pdf#page=29&zoom=100,0,0
 typedef enum {
@@ -702,18 +702,18 @@ typedef enum {
 	DW_AT_KIND_RANGELISTPTR,
 	DW_AT_KIND_REFERENCE,
 	DW_AT_KIND_STRING,
-} RBinDwarfAttrKind;
+} RzBinDwarfAttrKind;
 
 typedef struct dwarf_attr_kind {
 	ut64 attr_name;
 	ut64 attr_form;
-	RBinDwarfAttrKind kind;
+	RzBinDwarfAttrKind kind;
 	/* This is subideal, as dw_form_data can be anything 
 	   we could lose information example: encoding signed 
 	   2 byte int into ut64 and then interpreting it as st64 TODO*/
 	union { 
 		ut64 address;
-		RBinDwarfBlock block;
+		RzBinDwarfBlock block;
 		ut64 uconstant;
 		st64 sconstant;
 		ut8 flag;
@@ -723,7 +723,7 @@ typedef struct dwarf_attr_kind {
 			ut64 offset;
 		} string;
 	};
-} RBinDwarfAttrValue;
+} RzBinDwarfAttrValue;
 
 typedef struct {
 	// A 4-byte (or 8 byte for 64bit dwarf) unsigned length of the .debug_info contribution
@@ -742,7 +742,7 @@ typedef struct {
 	ut64 header_size; // excluding length field
 	ut64 unit_offset;
 	bool is_64bit;
-} RBinDwarfCompUnitHdr;
+} RzBinDwarfCompUnitHdr;
 
 typedef struct {
 	ut64	tag;
@@ -751,25 +751,25 @@ typedef struct {
 	size_t	capacity;
 	ut64	offset; // important for parsing types
 	bool	has_children; // important for parsing types
-	RBinDwarfAttrValue *attr_values;
-} RBinDwarfDie;
+	RzBinDwarfAttrValue *attr_values;
+} RzBinDwarfDie;
 
 typedef struct {
-	RBinDwarfCompUnitHdr hdr;
+	RzBinDwarfCompUnitHdr hdr;
 	ut64	offset;
 	size_t	count;
 	size_t	capacity;
-	RBinDwarfDie *dies;
-} RBinDwarfCompUnit;
+	RzBinDwarfDie *dies;
+} RzBinDwarfCompUnit;
 
 #define COMP_UNIT_CAPACITY	8
 #define DEBUG_INFO_CAPACITY	8
 typedef struct {
 	size_t count;
 	size_t capacity;
-	RBinDwarfCompUnit *comp_units;
+	RzBinDwarfCompUnit *comp_units;
 	HtUP/*<ut64 offset, DwarfDie *die>*/ *lookup_table;
-} RBinDwarfDebugInfo;
+} RzBinDwarfDebugInfo;
 
 #define	ABBREV_DECL_CAP		8
 
@@ -780,16 +780,16 @@ typedef struct {
 	ut8 has_children;
 	size_t count;
 	size_t capacity;
-	RBinDwarfAttrDef *defs;
-} RBinDwarfAbbrevDecl;
+	RzBinDwarfAttrDef *defs;
+} RzBinDwarfAbbrevDecl;
 
 #define DEBUG_ABBREV_CAP	32
 
 typedef struct {
 	size_t count;
 	size_t capacity;
-	RBinDwarfAbbrevDecl *decls;
-} RBinDwarfDebugAbbrev;
+	RzBinDwarfAbbrevDecl *decls;
+} RzBinDwarfDebugAbbrev;
 
 #define		DWARF_FALSE	0
 #define		DWARF_TRUE	1
@@ -807,7 +807,7 @@ typedef struct {
 	ut8 epilogue_begin;
 	ut64 isa;
 	ut64 discriminator;
-} RBinDwarfSMRegisters;
+} RzBinDwarfSMRegisters;
 
 typedef struct {
 	char *name;
@@ -832,30 +832,30 @@ typedef struct {
 	char **include_directories;
 	file_entry *file_names;
 	size_t file_names_count;
-} RBinDwarfLineHeader;
+} RzBinDwarfLineHeader;
 
 typedef struct rz_bin_dwarf_loc_entry_t {
 	ut64 start;
 	ut64 end;
-	RBinDwarfBlock *expression;
-} RBinDwarfLocRange;
+	RzBinDwarfBlock *expression;
+} RzBinDwarfLocRange;
 
 typedef struct rz_bin_dwarf_loc_list_t {
-	RzList/*<RBinDwarfLocRange>*/  *list;
+	RzList/*<RzBinDwarfLocRange>*/  *list;
 	ut64 offset;
-} RBinDwarfLocList;
+} RzBinDwarfLocList;
 
 #define rz_bin_dwarf_line_new(o,a,f,l) o->address=a, o->file = strdup (f?f:""), o->line = l, o->column =0,o
 
-RZ_API RzList *rz_bin_dwarf_parse_aranges(RBin *a, int mode);
-RZ_API RzList *rz_bin_dwarf_parse_line(RBin *a, int mode);
-RZ_API RBinDwarfDebugAbbrev *rz_bin_dwarf_parse_abbrev(RBin *a, int mode);
-RZ_API RBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode);
-RZ_API HtUP/*<offset, RBinDwarfLocList*>*/  *rz_bin_dwarf_parse_loc(RBin *bin, int addr_size);
-RZ_API void rz_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*>*/  *loc_table, int addr_size, PrintfCallback print);
-RZ_API void rz_bin_dwarf_free_loc(HtUP /*<offset, RBinDwarfLocList*>*/  *loc_table);
-RZ_API void rz_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf);
-RZ_API void rz_bin_dwarf_free_debug_abbrev(RBinDwarfDebugAbbrev *da);
+RZ_API RzList *rz_bin_dwarf_parse_aranges(RzBin *a, int mode);
+RZ_API RzList *rz_bin_dwarf_parse_line(RzBin *a, int mode);
+RZ_API RzBinDwarfDebugAbbrev *rz_bin_dwarf_parse_abbrev(RzBin *a, int mode);
+RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RzBinDwarfDebugAbbrev *da, RzBin *a, int mode);
+RZ_API HtUP/*<offset, RzBinDwarfLocList*>*/  *rz_bin_dwarf_parse_loc(RzBin *bin, int addr_size);
+RZ_API void rz_bin_dwarf_print_loc(HtUP /*<offset, RzBinDwarfLocList*>*/  *loc_table, int addr_size, PrintfCallback print);
+RZ_API void rz_bin_dwarf_free_loc(HtUP /*<offset, RzBinDwarfLocList*>*/  *loc_table);
+RZ_API void rz_bin_dwarf_free_debug_info(RzBinDwarfDebugInfo *inf);
+RZ_API void rz_bin_dwarf_free_debug_abbrev(RzBinDwarfDebugAbbrev *da);
 
 #ifdef __cplusplus
 }

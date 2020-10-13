@@ -115,7 +115,7 @@ static int main_help(int line) {
 		" -L           list supported IO plugins\n"
 		" -m [addr]    map file at given address (loadaddr)\n"
 		" -M           do not demangle symbol names\n"
-		" -n, -nn      do not load RBin info (-nn only load bin structures)\n"
+		" -n, -nn      do not load RzBin info (-nn only load bin structures)\n"
 		" -N           do not load user settings and scripts\n"
 		" -NN          do not load any script or plugin\n"
 		" -q           quiet mode (no prompt) and quit after -i\n"
@@ -1104,7 +1104,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 							/* the baddr should be set manually here */
 							(void)rz_core_bin_load (r, filepath, baddr);
 							// check if bin info is loaded and complain if -B was used
-							RBinFile *bi = rz_bin_cur (r->bin);
+							RzBinFile *bi = rz_bin_cur (r->bin);
 							bool haveBinInfo = bi && bi->o && bi->o->info && bi->o->info->type;
 							if (!haveBinInfo && baddr != UT64_MAX) {
 								eprintf ("Warning: Don't use -B on unknown files. Consider using -m.\n");
@@ -1168,7 +1168,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 					eprintf ("Using 0x%" PFMT64x "\n", baddr);
 				}
 				if (rz_core_bin_load (r, pfile, baddr)) {
-					RBinObject *obj = rz_bin_cur_object (r->bin);
+					RzBinObject *obj = rz_bin_cur_object (r->bin);
 					if (obj && obj->info) {
 						if (r->dbg->verbose) {
 							eprintf ("asm.bits %d\n", obj->info->bits);
@@ -1238,7 +1238,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			rz_core_setup_debugger (r, debugbackend, baddr == UT64_MAX);
 		}
 		RZ_FREE (debugbackend);
-		RBinObject *o = rz_bin_cur_object (r->bin);
+		RzBinObject *o = rz_bin_cur_object (r->bin);
 		if (!debug && o && !o->regstate) {
 			RzFlagItem *fi = rz_flag_get (r->flags, "entry0");
 			if (fi) {
@@ -1247,7 +1247,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				if (o) {
 					RzList *sections = rz_bin_get_sections (r->bin);
 					RzListIter *iter;
-					RBinSection *s;
+					RzBinSection *s;
 					rz_list_foreach (sections, iter, s) {
 						if (s->perm & RZ_PERM_X) {
 							ut64 addr = s->vaddr? s->vaddr: s->paddr;

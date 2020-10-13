@@ -7,8 +7,8 @@
 #include "te/te_specs.h"
 #include "te/te.h"
 
-static Sdb *get_sdb(RBinFile *bf) {
-	RBinObject *o = bf->o;
+static Sdb *get_sdb(RzBinFile *bf) {
+	RzBinObject *o = bf->o;
 	if (!o) {
 		return NULL;
 	}
@@ -16,7 +16,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	rz_return_val_if_fail (bf && bin_obj && b, false);
 	ut64 sz = rz_buf_size (b);
 	if (sz == 0 || sz == UT64_MAX) {
@@ -30,19 +30,19 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 	return true;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	rz_bin_te_free ((struct rz_bin_te_obj_t *) bf->o->bin_obj);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return rz_bin_te_get_image_base (bf->o->bin_obj);
 }
 
-static RBinAddr *binsym(RBinFile *bf, int type) {
-	RBinAddr *ret = NULL;
+static RzBinAddr *binsym(RzBinFile *bf, int type) {
+	RzBinAddr *ret = NULL;
 	switch (type) {
 	case RZ_BIN_SYM_MAIN:
-		if (!(ret = RZ_NEW (RBinAddr))) {
+		if (!(ret = RZ_NEW (RzBinAddr))) {
 			return NULL;
 		}
 		ret->paddr = ret->vaddr = rz_bin_te_get_main_paddr (bf->o->bin_obj);
@@ -51,12 +51,12 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 	return ret;
 }
 
-static RzList *entries(RBinFile *bf) {
+static RzList *entries(RzBinFile *bf) {
 	RzList *ret = rz_list_newf (free);
 	if (ret) {
-		RBinAddr *entry = rz_bin_te_get_entrypoint (bf->o->bin_obj);
+		RzBinAddr *entry = rz_bin_te_get_entrypoint (bf->o->bin_obj);
 		if (entry) {
-			RBinAddr *ptr = RZ_NEW0 (RBinAddr);
+			RzBinAddr *ptr = RZ_NEW0 (RzBinAddr);
 			if (ptr) {
 				ptr->paddr = entry->paddr;
 				ptr->vaddr = entry->vaddr;
@@ -68,9 +68,9 @@ static RzList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
-	RBinSection *ptr = NULL;
+	RzBinSection *ptr = NULL;
 	struct rz_bin_te_section_t *sections = NULL;
 	int i;
 
@@ -83,7 +83,7 @@ static RzList *sections(RBinFile *bf) {
 		return NULL;
 	}
 	for (i = 0; !sections[i].last; i++) {
-		if (!(ptr = RZ_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RzBinSection))) {
 			break;
 		}
 		ptr->name = strdup ((char*)sections[i].name);
@@ -116,8 +116,8 @@ static RzList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = RZ_NEW0 (RBinInfo);
+static RzBinInfo *info(RzBinFile *bf) {
+	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -147,7 +147,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-RBinPlugin rz_bin_plugin_te = {
+RzBinPlugin rz_bin_plugin_te = {
 	.name = "te",
 	.desc = "TE bin plugin", // Terse Executable format
 	.license = "LGPL3",

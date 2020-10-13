@@ -26,7 +26,7 @@ typedef struct {
 	ut32 unknown3;
 } NROHeader;
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return bf? rz_buf_read_le32_at (bf->buf, NRO_OFFSET_MODMEMOFF): 0;
 }
 
@@ -38,9 +38,9 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	// XX bf->buf vs b :D this load_b
-	RBinNXOObj *bin = RZ_NEW0 (RBinNXOObj);
+	RzBinNXOObj *bin = RZ_NEW0 (RzBinNXOObj);
 	if (bin) {
 		ut64 ba = baddr (bf);
 		bin->methods_list = rz_list_newf ((RzListFree)free);
@@ -53,18 +53,18 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 	return true;
 }
 
-static RBinAddr *binsym(RBinFile *bf, int type) {
+static RzBinAddr *binsym(RzBinFile *bf, int type) {
 	return NULL; // TODO
 }
 
-static RzList *entries(RBinFile *bf) {
+static RzList *entries(RzBinFile *bf) {
 	RzList *ret;
-	RBinAddr *ptr = NULL;
+	RzBinAddr *ptr = NULL;
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
 	ret->free = free;
-	if ((ptr = RZ_NEW0 (RBinAddr))) {
+	if ((ptr = RZ_NEW0 (RzBinAddr))) {
 		ptr->paddr = 0x80;
 		ptr->vaddr = ptr->paddr + baddr (bf);
 		rz_list_append (ret, ptr);
@@ -72,7 +72,7 @@ static RzList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static Sdb *get_sdb(RBinFile *bf) {
+static Sdb *get_sdb(RzBinFile *bf) {
 	Sdb *kv = sdb_new0 ();
 	sdb_num_set (kv, "nro_start.offset", 0, 0);
 	sdb_num_set (kv, "nro_start.size", 16, 0);
@@ -84,9 +84,9 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return kv;
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
-	RBinSection *ptr = NULL;
+	RzBinSection *ptr = NULL;
 	RBuffer *b = bf->buf;
 	if (!bf->o->info) {
 		return NULL;
@@ -98,7 +98,7 @@ static RzList *sections(RBinFile *bf) {
 
 	ut64 ba = baddr (bf);
 
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("header");
@@ -114,7 +114,7 @@ static RzList *sections(RBinFile *bf) {
 
 	ut32 mod0 = rz_buf_read_le32_at (bf->buf, NRO_OFFSET_MODMEMOFF);
 	if (mod0 && mod0 + 8 < bufsz) {
-		if (!(ptr = RZ_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RzBinSection))) {
 			return ret;
 		}
 		ut32 mod0sz = rz_buf_read_le32_at (bf->buf, mod0 + 4);
@@ -132,7 +132,7 @@ static RzList *sections(RBinFile *bf) {
 
 	ut32 sig0 = rz_buf_read_le32_at (bf->buf, 0x18);
 	if (sig0 && sig0 + 8 < bufsz) {
-		if (!(ptr = RZ_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RzBinSection))) {
 			return ret;
 		}
 		ut32 sig0sz = rz_buf_read_le32_at (bf->buf, sig0 + 4);
@@ -149,7 +149,7 @@ static RzList *sections(RBinFile *bf) {
 	}
 
 	// add text segment
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("text");
@@ -162,7 +162,7 @@ static RzList *sections(RBinFile *bf) {
 	rz_list_append (ret, ptr);
 
 	// add ro segment
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("ro");
@@ -175,7 +175,7 @@ static RzList *sections(RBinFile *bf) {
 	rz_list_append (ret, ptr);
 
 	// add data segment
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("data");
@@ -192,30 +192,30 @@ static RzList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *symbols(RBinFile *bf) {
-	RBinNXOObj *bin;
+static RzList *symbols(RzBinFile *bf) {
+	RzBinNXOObj *bin;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	bin = (RBinNXOObj*) bf->o->bin_obj;
+	bin = (RzBinNXOObj*) bf->o->bin_obj;
 	return bin->methods_list;
 }
 
-static RzList *imports(RBinFile *bf) {
-	RBinNXOObj *bin;
+static RzList *imports(RzBinFile *bf) {
+	RzBinNXOObj *bin;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	bin = (RBinNXOObj*) bf->o->bin_obj;
+	bin = (RzBinNXOObj*) bf->o->bin_obj;
 	return bin->imports_list;
 }
 
-static RzList *libs(RBinFile *bf) {
+static RzList *libs(RzBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = RZ_NEW0 (RBinInfo);
+static RzBinInfo *info(RzBinFile *bf) {
+	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -252,7 +252,7 @@ static RBinInfo *info(RBinFile *bf) {
 
 #if !RZ_BIN_NRO
 
-RBinPlugin rz_bin_plugin_nro = {
+RzBinPlugin rz_bin_plugin_nro = {
 	.name = "nro",
 	.desc = "Nintendo Switch NRO0 binaries",
 	.license = "MIT",

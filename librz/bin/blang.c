@@ -11,11 +11,11 @@ typedef struct {
 	bool msvc;
 } Langs;
 
-static inline bool check_rust(RBinSymbol *sym) {
+static inline bool check_rust(RzBinSymbol *sym) {
 	return sym->name && strstr (sym->name, "_$LT$");
 }
 
-static inline bool check_objc(RBinSymbol *sym) {
+static inline bool check_objc(RzBinSymbol *sym) {
 	if (sym->name && !strncmp (sym->name, "_OBJC_", 6)) {
 		// free (rz_bin_demangle_objc (binfile, sym->name));
 		return true;
@@ -23,7 +23,7 @@ static inline bool check_objc(RBinSymbol *sym) {
 	return false;
 }
 
-static bool check_dlang(RBinSymbol *sym) {
+static bool check_dlang(RzBinSymbol *sym) {
 	if (!strncmp (sym->name, "_D2", 3)) {
 		return true;
 	}
@@ -33,14 +33,14 @@ static bool check_dlang(RBinSymbol *sym) {
 	return false;
 }
 
-static bool check_swift(RBinSymbol *sym) {
+static bool check_swift(RzBinSymbol *sym) {
 	if (sym->name && strstr (sym->name, "swift_once")) {
 		return true;
 	}
 	return false;
 }
 
-static bool check_golang(RBinSymbol *sym) {
+static bool check_golang(RzBinSymbol *sym) {
 	return !strncmp (sym->name, "go.", 3);
 }
 
@@ -55,22 +55,22 @@ static inline bool is_cxx_symbol (const char *name) {
 	return false;
 }
 
-static bool check_cxx(RBinSymbol *sym) {
+static bool check_cxx(RzBinSymbol *sym) {
 	return is_cxx_symbol (sym->name);
 }
 
-static bool check_msvc(RBinSymbol *sym) {
+static bool check_msvc(RzBinSymbol *sym) {
 	return *sym->name == '?';
 }
 
 /* This is about 10% of the loading time, optimize if possible */
-RZ_API int rz_bin_load_languages(RBinFile *binfile) {
+RZ_API int rz_bin_load_languages(RzBinFile *binfile) {
 	rz_return_val_if_fail (binfile, RZ_BIN_NM_NONE);
 	rz_return_val_if_fail (binfile->o, RZ_BIN_NM_NONE);
 	rz_return_val_if_fail (binfile->o->info, RZ_BIN_NM_NONE);
-	RBinObject *o = binfile->o;
-	RBinInfo *info = o->info;
-	RBinSymbol *sym;
+	RzBinObject *o = binfile->o;
+	RzBinInfo *info = o->info;
+	RzBinSymbol *sym;
 	RzListIter *iter, *iter2;
 	Langs cantbe = {0};
 	bool phobosIsChecked = false;
@@ -191,9 +191,9 @@ RZ_API int rz_bin_load_languages(RBinFile *binfile) {
 	return RZ_BIN_NM_C | (isBlocks?RZ_BIN_NM_BLOCKS:0);
 }
 
-RZ_IPI int rz_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
+RZ_IPI int rz_bin_lang_type(RzBinFile *binfile, const char *def, const char *sym) {
 	int type = 0;
-	RBinPlugin *plugin;
+	RzBinPlugin *plugin;
 	if (sym && sym[0] == sym[1] && sym[0] == '_') {
 		type = RZ_BIN_NM_CXX;
 	}

@@ -65,7 +65,7 @@ static int rz_bin_te_init_hdr(struct rz_bin_te_obj_t *bin) {
 }
 
 ut64 rz_bin_te_get_main_paddr(struct rz_bin_te_obj_t *bin) {
-	RBinAddr *entry = rz_bin_te_get_entrypoint (bin);
+	RzBinAddr *entry = rz_bin_te_get_entrypoint (bin);
 	ut64 addr = 0LL;
 	ut8 buf[512];
 	if (!bin) {
@@ -174,13 +174,13 @@ int rz_bin_te_get_bits(struct rz_bin_te_obj_t* bin) {
 }
 
 
-RBinAddr* rz_bin_te_get_entrypoint(struct rz_bin_te_obj_t* bin) {
-	RBinAddr *entry = NULL;
+RzBinAddr* rz_bin_te_get_entrypoint(struct rz_bin_te_obj_t* bin) {
+	RzBinAddr *entry = NULL;
 
 	if (!bin || !bin->header) {
 		return NULL;
 	}
-	if (!(entry = malloc (sizeof (RBinAddr)))) {
+	if (!(entry = malloc (sizeof (RzBinAddr)))) {
 		perror("malloc (entrypoint)");
 		return NULL;
 	}

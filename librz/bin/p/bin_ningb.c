@@ -15,18 +15,18 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (buf);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return 0LL;
 }
 
-static RBinAddr* binsym(RBinFile *bf, int type) {
+static RzBinAddr* binsym(RzBinFile *bf, int type) {
 	if (type == RZ_BIN_SYM_MAIN && bf && bf->buf) {
 		ut8 init_jmp[4];
-		RBinAddr *ret = RZ_NEW0 (RBinAddr);
+		RzBinAddr *ret = RZ_NEW0 (RzBinAddr);
 		if (!ret) {
 			return NULL;
 		}
@@ -40,16 +40,16 @@ static RBinAddr* binsym(RBinFile *bf, int type) {
 	return NULL;
 }
 
-static RzList* entries(RBinFile *bf) {
+static RzList* entries(RzBinFile *bf) {
 	RzList *ret = rz_list_new ();
-	RBinAddr *ptr = NULL;
+	RzBinAddr *ptr = NULL;
 
 	if (bf && bf->buf != NULL) {
 		if (!ret) {
 			return NULL;
 		}
 		ret->free = free;
-		if (!(ptr = RZ_NEW0 (RBinAddr))) {
+		if (!(ptr = RZ_NEW0 (RzBinAddr))) {
 			return ret;
 		}
 		ptr->paddr = ptr->vaddr = ptr->hpaddr = 0x100;
@@ -58,7 +58,7 @@ static RzList* entries(RBinFile *bf) {
 	return ret;
 }
 
-static RzList* sections(RBinFile *bf){
+static RzList* sections(RzBinFile *bf){
 	ut8 bank;
 	int i;
 	RzList *ret;
@@ -75,9 +75,9 @@ static RzList* sections(RBinFile *bf){
 	rz_buf_read_at (bf->buf, 0x148, &bank, 1);
 	bank = gb_get_rombanks(bank);
 #ifdef _MSC_VER
-	RBinSection **rombank = (RBinSection**) malloc (sizeof (RBinSection*) * bank);
+	RzBinSection **rombank = (RzBinSection**) malloc (sizeof (RzBinSection*) * bank);
 #else
-	RBinSection *rombank[bank];
+	RzBinSection *rombank[bank];
 #endif
 
 	if (!bf->buf) {
@@ -90,7 +90,7 @@ static RzList* sections(RBinFile *bf){
 
 	ret->free = free;
 
-	rombank[0] = RZ_NEW0 (RBinSection);
+	rombank[0] = RZ_NEW0 (RzBinSection);
 	rombank[0]->name = strdup ("rombank00");
 	rombank[0]->paddr = 0;
 	rombank[0]->size = 0x4000;
@@ -102,7 +102,7 @@ static RzList* sections(RBinFile *bf){
 	rz_list_append (ret, rombank[0]);
 
 	for (i = 1; i < bank; i++) {
-		rombank[i] = RZ_NEW0 (RBinSection);
+		rombank[i] = RZ_NEW0 (RzBinSection);
 		rombank[i]->name = rz_str_newf ("rombank%02x", i);
 		rombank[i]->paddr = i*0x4000;
 		rombank[i]->vaddr = i*0x10000-0xc000;			//spaaaaaaaaaaaaaaaace!!!
@@ -117,9 +117,9 @@ static RzList* sections(RBinFile *bf){
 	return ret;
 }
 
-static RzList* symbols(RBinFile *bf) {
+static RzList* symbols(RzBinFile *bf) {
 	RzList *ret = NULL;
-	RBinSymbol *ptr[13];
+	RzBinSymbol *ptr[13];
 	int i;
 	if (!(ret = rz_list_new ())) {
 		return NULL;
@@ -127,7 +127,7 @@ static RzList* symbols(RBinFile *bf) {
 	ret->free = free;
 
 	for (i = 0; i < 8; i++) {
-		if (!(ptr[i] = RZ_NEW0 (RBinSymbol))) {
+		if (!(ptr[i] = RZ_NEW0 (RzBinSymbol))) {
 			ret->free (ret);
 			return NULL;
 		}
@@ -138,7 +138,7 @@ static RzList* symbols(RBinFile *bf) {
 		rz_list_append (ret, ptr[i]);
 	}
 
-	if (!(ptr[8] = RZ_NEW0 (RBinSymbol))) {
+	if (!(ptr[8] = RZ_NEW0 (RzBinSymbol))) {
 		return ret;
 	}
 
@@ -148,7 +148,7 @@ static RzList* symbols(RBinFile *bf) {
 	ptr[8]->ordinal = 8;
 	rz_list_append (ret, ptr[8]);
 
-	if (!(ptr[9] = RZ_NEW0 (RBinSymbol))) {
+	if (!(ptr[9] = RZ_NEW0 (RzBinSymbol))) {
 		return ret;
 	}
 
@@ -158,7 +158,7 @@ static RzList* symbols(RBinFile *bf) {
 	ptr[9]->ordinal = 9;
 	rz_list_append (ret, ptr[9]);
 
-	if (!(ptr[10] = RZ_NEW0 (RBinSymbol))) {
+	if (!(ptr[10] = RZ_NEW0 (RzBinSymbol))) {
 		return ret;
 	}
 
@@ -168,7 +168,7 @@ static RzList* symbols(RBinFile *bf) {
 	ptr[10]->ordinal = 10;
 	rz_list_append (ret, ptr[10]);
 
-	if (!(ptr[11] = RZ_NEW0 (RBinSymbol))) {
+	if (!(ptr[11] = RZ_NEW0 (RzBinSymbol))) {
 		return ret;
 	}
 
@@ -178,7 +178,7 @@ static RzList* symbols(RBinFile *bf) {
 	ptr[11]->ordinal = 11;
 	rz_list_append (ret, ptr[11]);
 
-	if (!(ptr[12] = RZ_NEW0 (RBinSymbol))) {
+	if (!(ptr[12] = RZ_NEW0 (RzBinSymbol))) {
 		return ret;
 	}
 
@@ -191,9 +191,9 @@ static RzList* symbols(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo* info(RBinFile *bf) {
+static RzBinInfo* info(RzBinFile *bf) {
 	ut8 rom_header[76];
-	RBinInfo *ret = RZ_NEW0 (RBinInfo);
+	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
 	if (!ret || !bf || !bf->buf) {
 		free (ret);
 		return NULL;
@@ -214,14 +214,14 @@ static RBinInfo* info(RBinFile *bf) {
 	return ret;
 }
 
-RzList *mem (RBinFile *bf) {
+RzList *mem (RzBinFile *bf) {
 	RzList *ret;
-	RBinMem *m, *n;
+	RzBinMem *m, *n;
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
 	ret->free = free;
-	if (!(m = RZ_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RzBinMem))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -231,7 +231,7 @@ RzList *mem (RBinFile *bf) {
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
 
-	if (!(m = RZ_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RzBinMem))) {
 		return ret;
 	}
 	m->name = strdup ("ioports");
@@ -240,7 +240,7 @@ RzList *mem (RBinFile *bf) {
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
 
-	if (!(m = RZ_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RzBinMem))) {
 		return ret;
 	}
 	m->name = strdup ("oam");
@@ -249,7 +249,7 @@ RzList *mem (RBinFile *bf) {
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
 
-	if (!(m = RZ_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RzBinMem))) {
 		return ret;
 	}
 	m->name = strdup ("videoram");
@@ -258,7 +258,7 @@ RzList *mem (RBinFile *bf) {
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
 
-	if (!(m = RZ_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RzBinMem))) {
 		return ret;
 	}
 	m->name = strdup ("iram");
@@ -269,7 +269,7 @@ RzList *mem (RBinFile *bf) {
 	if (!(m->mirrors = rz_list_new ())) {
 		return ret;
 	}
-	if (!(n = RZ_NEW0 (RBinMem))) {
+	if (!(n = RZ_NEW0 (RzBinMem))) {
 		rz_list_free (m->mirrors);
 		m->mirrors = NULL;
 		return ret;
@@ -283,7 +283,7 @@ RzList *mem (RBinFile *bf) {
 	return ret;
 }
 
-RBinPlugin rz_bin_plugin_ningb = {
+RzBinPlugin rz_bin_plugin_ningb = {
 	.name = "ningb",
 	.desc = "Gameboy format rz_bin plugin",
 	.license = "LGPL3",

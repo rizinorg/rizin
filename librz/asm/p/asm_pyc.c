@@ -12,10 +12,10 @@ static pyc_opcodes *opcodes_cache = NULL;
 static int disassemble(RzAsm *a, RzAsmOp *opstruct, const ut8 *buf, int len) {
 	RzList *shared = NULL;
 
-	RBin *bin = a->binb.bin;
+	RzBin *bin = a->binb.bin;
 	ut64 pc = a->pc;
 
-	RBinPlugin *plugin = bin && bin->cur && bin->cur->o? bin->cur->o->plugin: NULL;
+	RzBinPlugin *plugin = bin && bin->cur && bin->cur->o? bin->cur->o->plugin: NULL;
 
 	if (plugin) {
 		if (!strcmp (plugin->name, "pyc")) {

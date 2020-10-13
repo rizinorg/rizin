@@ -97,7 +97,7 @@ struct getreloc_t {
 
 static int getreloc_tree(const void *user, const RBNode *n, void *user2) {
         struct getreloc_t *gr = (struct getreloc_t *)user;
-        const RBinReloc *r = container_of (n, const RBinReloc, vrb);
+        const RzBinReloc *r = container_of (n, const RzBinReloc, vrb);
         if ((r->vaddr >= gr->vaddr) && (r->vaddr < (gr->vaddr + gr->size))) {
                 return 0;
         }
@@ -110,7 +110,7 @@ static int getreloc_tree(const void *user, const RBNode *n, void *user2) {
         return 0;
 }
 
-RZ_API RBinReloc *rz_core_getreloc(RzCore *core, ut64 addr, int size) {
+RZ_API RzBinReloc *rz_core_getreloc(RzCore *core, ut64 addr, int size) {
         if (size < 1 || addr == UT64_MAX) {
                 return NULL;
         }
@@ -120,7 +120,7 @@ RZ_API RBinReloc *rz_core_getreloc(RzCore *core, ut64 addr, int size) {
         }
         struct getreloc_t gr = { .vaddr = addr, .size = size };
         RBNode *res = rz_rbtree_find (relocs, &gr, getreloc_tree, NULL);
-        return res? container_of (res, RBinReloc, vrb): NULL;
+        return res? container_of (res, RzBinReloc, vrb): NULL;
 }
 
 /* returns the address of a jmp/call given a shortcut by the user or UT64_MAX
@@ -444,7 +444,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RzAnalFunction *fcn;
 	char *ptr, *bptr, *out = NULL;
 	RzFlagItem *flag;
-	RBinSection *s;
+	RzBinSection *s;
 	RzAnalOp op;
 	ut64 ret = 0;
 
@@ -701,7 +701,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return rz_config_get_i (core->config, "asm.bits") / 8;
 		case 'S': // $S section offset
 			{
-				RBinObject *bo = rz_bin_cur_object (core->bin);
+				RzBinObject *bo = rz_bin_cur_object (core->bin);
 				if (bo && (s = rz_bin_get_section_at (bo, core->offset, true))) {
 					return (str[2] == 'S'? s->size: s->vaddr);
 				}
@@ -727,7 +727,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case '$': // $$ offset
 			return str[2] == '$' ? core->prompt_offset : core->offset;
 		case 'o': { // $o
-			RBinSection *s = rz_bin_get_section_at (rz_bin_cur_object (core->bin), core->offset, true);
+			RzBinSection *s = rz_bin_get_section_at (rz_bin_cur_object (core->bin), core->offset, true);
 			return s ? core->offset - s->vaddr + s->paddr : core->offset;
 			break;
 		}
@@ -1880,7 +1880,7 @@ static int __disasm(void *_core, ut64 addr) {
 
 static void update_sdb(RzCore *core) {
 	Sdb *d;
-	RBinObject *o;
+	RzBinObject *o;
 	if (!core) {
 		return;
 	}
@@ -2001,7 +2001,7 @@ static char *rz_core_anal_hasrefs_to_depth(RzCore *core, ut64 value, int depth) 
 		}
 		break;
 	}
-	RBinSection *sect = value? rz_bin_get_section_at (rz_bin_cur_object (core->bin), value, true): NULL;
+	RzBinSection *sect = value? rz_bin_get_section_at (rz_bin_cur_object (core->bin), value, true): NULL;
 	if(! ((type&RZ_ANAL_ADDR_TYPE_HEAP)||(type&RZ_ANAL_ADDR_TYPE_STACK)) ) {
 		// Do not repeat "stack" or "heap" words unnecessarily.
 		if (sect && sect->name[0]) {
@@ -2742,7 +2742,7 @@ static int prompt_flag (RzCore *r, char *s, size_t maxlen) {
 }
 
 static void prompt_sec(RzCore *r, char *s, size_t maxlen) {
-	const RBinSection *sec = rz_bin_get_section_at (rz_bin_cur_object (r->bin), r->offset, true);
+	const RzBinSection *sec = rz_bin_get_section_at (rz_bin_cur_object (r->bin), r->offset, true);
 	if (!sec) {
 		return;
 	}
@@ -3374,7 +3374,7 @@ RZ_API RzConfig *rz_core_get_config (RzCore *core) {
 	return core->config;
 }
 
-RZ_API RBin *rz_core_get_bin (RzCore *core) {
+RZ_API RzBin *rz_core_get_bin (RzCore *core) {
 	return core->bin;
 }
 

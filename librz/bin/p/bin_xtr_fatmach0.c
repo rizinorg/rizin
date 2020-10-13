@@ -7,7 +7,7 @@
 #include "mach0/fatmach0.h"
 #include "mach0/mach0.h"
 
-static RBinXtrData * extract(RBin *bin, int idx);
+static RzBinXtrData * extract(RzBin *bin, int idx);
 
 static bool checkHeader(RBuffer *b) {
 	ut8 buf[4];
@@ -39,20 +39,20 @@ static void free_xtr (void *xtr_obj) {
 	rz_bin_fatmach0_free ((struct rz_bin_fatmach0_obj_t*)xtr_obj);
 }
 
-static void destroy(RBin *bin) {
+static void destroy(RzBin *bin) {
 	free_xtr (bin->cur->xtr_obj);
 }
 
-static bool load(RBin *bin) {
+static bool load(RzBin *bin) {
 	return ((bin->cur->xtr_obj = rz_bin_fatmach0_new (bin->file)) != NULL);
 }
 
-static int size(RBin *bin) {
+static int size(RzBin *bin) {
 	// TODO
 	return 0;
 }
 
-static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MACH0_(mach_header) *hdr) {
+static inline void fill_metadata_info_from_hdr(RzBinXtrMetadata *meta, struct MACH0_(mach_header) *hdr) {
 	meta->arch = strdup (MACH0_(get_cputype_from_hdr) (hdr));
 	meta->bits = MACH0_(get_bits_from_hdr) (hdr);
 	meta->machine = MACH0_(get_cpusubtype_from_hdr) (hdr);
@@ -62,14 +62,14 @@ static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MAC
 }
 
 // XXX deprecate
-static RBinXtrData *extract(RBin* bin, int idx) {
+static RzBinXtrData *extract(RzBin* bin, int idx) {
 	int narch;
 	struct rz_bin_fatmach0_obj_t *fb = bin->cur->xtr_obj;
 	struct rz_bin_fatmach0_arch_t *arch = rz_bin_fatmach0_extract (fb, idx, &narch);
 	if (!arch) {
 		return NULL;
 	}
-	RBinXtrMetadata *metadata = RZ_NEW0 (RBinXtrMetadata);
+	RzBinXtrMetadata *metadata = RZ_NEW0 (RzBinXtrMetadata);
 	if (!metadata) {
 		rz_buf_free (arch->b);
 		free (arch);
@@ -83,14 +83,14 @@ static RBinXtrData *extract(RBin* bin, int idx) {
 		return NULL;
 	}
 	fill_metadata_info_from_hdr (metadata, hdr);
-	RBinXtrData * res = rz_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata);
+	RzBinXtrData * res = rz_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata);
 	rz_buf_free (arch->b);
 	free (arch);
 	free (hdr);
 	return res;
 }
 
-static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
+static RzBinXtrData *oneshot_buffer(RzBin *bin, RBuffer *b, int idx) {
 	rz_return_val_if_fail (bin && bin->cur, NULL);
 
 	if (!bin->cur->xtr_obj) {
@@ -100,12 +100,12 @@ static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
 	struct rz_bin_fatmach0_obj_t *fb = bin->cur->xtr_obj;
 	struct rz_bin_fatmach0_arch_t *arch = rz_bin_fatmach0_extract (fb, idx, &narch);
 	if (arch) {
-		RBinXtrMetadata *metadata = RZ_NEW0 (RBinXtrMetadata);
+		RzBinXtrMetadata *metadata = RZ_NEW0 (RzBinXtrMetadata);
 		if (metadata) {
 			struct MACH0_(mach_header) *hdr = MACH0_(get_hdr) (arch->b);
 			if (hdr) {
 				fill_metadata_info_from_hdr (metadata, hdr);
-				RBinXtrData *res = rz_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata);
+				RzBinXtrData *res = rz_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata);
 				rz_buf_free (arch->b);
 				free (arch);
 				free (hdr);
@@ -118,8 +118,8 @@ static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
 	return NULL;
 }
 
-static RzList * oneshotall_buffer(RBin *bin, RBuffer *b) {
-	RBinXtrData *data = oneshot_buffer (bin, b, 0);
+static RzList * oneshotall_buffer(RzBin *bin, RBuffer *b) {
+	RzBinXtrData *data = oneshot_buffer (bin, b, 0);
 	if (data) {
 		// XXX - how do we validate a valid narch?
 		int  narch = data->file_count;
@@ -141,7 +141,7 @@ static RzList * oneshotall_buffer(RBin *bin, RBuffer *b) {
 	return NULL;
 }
 
-RBinXtrPlugin rz_bin_xtr_plugin_xtr_fatmach0 = {
+RzBinXtrPlugin rz_bin_xtr_plugin_xtr_fatmach0 = {
 	.name = "xtr.fatmach0",
 	.desc = "fat mach0 bin extractor plugin",
 	.license = "LGPL3",

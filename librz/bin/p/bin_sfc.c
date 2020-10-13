@@ -31,13 +31,13 @@ static bool check_buffer(RBuffer *b) {
 	return (cksum1 == (ut16)~cksum2);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
 	return check_buffer (b);
 }
 
-static RBinInfo* info(RBinFile *bf) {
+static RzBinInfo* info(RzBinFile *bf) {
 	sfc_int_hdr sfchdr = {{0}};
-	RBinInfo *ret = NULL;
+	RzBinInfo *ret = NULL;
 	int hdroffset = 0;
 #if THIS_IS_ALWAYS_FALSE_WTF
 	if ((bf->size & 0x8000) == 0x200) {
@@ -68,7 +68,7 @@ static RBinInfo* info(RBinFile *bf) {
 		}
 	}
 
-	if (!(ret = RZ_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RzBinInfo))) {
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
@@ -82,7 +82,7 @@ static RBinInfo* info(RBinFile *bf) {
 }
 
 static void addrom(RzList *ret, const char *name, int i, ut64 paddr, ut64 vaddr, ut32 size) {
-	RBinSection *ptr = RZ_NEW0 (RBinSection);
+	RzBinSection *ptr = RZ_NEW0 (RzBinSection);
 	if (!ptr) {
 		return;
 	}
@@ -97,7 +97,7 @@ static void addrom(RzList *ret, const char *name, int i, ut64 paddr, ut64 vaddr,
 
 #if 0
 static void addsym(RzList *ret, const char *name, ut64 addr, ut32 size) {
-	RBinSymbol *ptr = RZ_NEW0 (RBinSymbol);
+	RzBinSymbol *ptr = RZ_NEW0 (RzBinSymbol);
 	if (!ptr) {
 		return;
 	}
@@ -109,13 +109,13 @@ static void addsym(RzList *ret, const char *name, ut64 addr, ut32 size) {
 }
 #endif
 
-static RzList* symbols(RBinFile *bf) {
+static RzList* symbols(RzBinFile *bf) {
 	return NULL;
 }
 
-static RzList* sections(RBinFile *bf) {
+static RzList* sections(RzBinFile *bf) {
 	RzList *ret = NULL;
-	// RBinSection *ptr = NULL;
+	// RzBinSection *ptr = NULL;
 	int hdroffset = 0;
 	bool is_hirom = false;
 	int i = 0; //0x8000-long bank number for loops
@@ -172,15 +172,15 @@ static RzList* sections(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *mem (RBinFile *bf) {
+static RzList *mem (RzBinFile *bf) {
 	RzList *ret;
-	RBinMem *m;
-	RBinMem *m_bak;
+	RzBinMem *m;
+	RzBinMem *m_bak;
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
 	ret->free = free;
-	if (!(m = RZ_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RzBinMem))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -190,7 +190,7 @@ static RzList *mem (RBinFile *bf) {
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
 
-	if (!(m = RZ_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RzBinMem))) {
 		return ret;
 	}
 	m->mirrors = rz_list_new ();
@@ -200,7 +200,7 @@ static RzList *mem (RBinFile *bf) {
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (m->mirrors, m);
 	m_bak = m;
-	if (!(m = RZ_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RzBinMem))) {
 		rz_list_free (m_bak->mirrors);
 		return ret;
 	}
@@ -209,7 +209,7 @@ static RzList *mem (RBinFile *bf) {
 	m->size = HIRAM_SIZE;
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
-	if (!(m = RZ_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RzBinMem))) {
 		return ret;
 	}
 	m->name = strdup ("EXTRAM");
@@ -217,7 +217,7 @@ static RzList *mem (RBinFile *bf) {
 	m->size = EXTRAM_SIZE;
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
-	if (!(m = RZ_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RzBinMem))) {
 		return ret;
 	}
 	m->name = strdup ("PPU1_REG");
@@ -225,7 +225,7 @@ static RzList *mem (RBinFile *bf) {
 	m->size = PPU1_REG_SIZE;
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
-	if (!(m = RZ_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RzBinMem))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -234,7 +234,7 @@ static RzList *mem (RBinFile *bf) {
 	m->size = DSP_REG_SIZE;
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
-	if (!(m = RZ_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RzBinMem))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -243,7 +243,7 @@ static RzList *mem (RBinFile *bf) {
 	m->size = OLDJOY_REG_SIZE;
 	m->perms = rz_str_rwx ("rwx");
 	rz_list_append (ret, m);
-	if (!(m = RZ_NEW0 (RBinMem))) {
+	if (!(m = RZ_NEW0 (RzBinMem))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -255,14 +255,14 @@ static RzList *mem (RBinFile *bf) {
 	return ret;
 }
 
-static RzList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
+static RzList* entries(RzBinFile *bf) { //Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
 	RzList *ret;
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
 	/*
-	RBinAddr *ptr = NULL;
-	if (!(ptr = RZ_NEW0 (RBinAddr))) {
+	RzBinAddr *ptr = NULL;
+	if (!(ptr = RZ_NEW0 (RzBinAddr))) {
 		return ret;
 	}
 	ptr->paddr = INES_HDR_SIZE;
@@ -272,7 +272,7 @@ static RzList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RES
 	return ret;
 }
 
-RBinPlugin rz_bin_plugin_sfc = {
+RzBinPlugin rz_bin_plugin_sfc = {
 	.name = "sfc",
 	.desc = "Super NES / Super Famicom ROM file",
 	.license = "LGPL3",

@@ -44,8 +44,8 @@ RZ_API RzCoreItem *rz_core_item_at (RzCore *core, ut64 addr) {
 	if (fcn) {
 		ci->fcnname = strdup (fcn->name);
 	}
-	RBinObject *o = rz_bin_cur_object (core->bin);
-	RBinSection *sec = rz_bin_get_section_at (o, addr, core->io->va);
+	RzBinObject *o = rz_bin_cur_object (core->bin);
+	RzBinSection *sec = rz_bin_get_section_at (o, addr, core->io->va);
 	if (sec) {
 		ci->sectname = strdup (sec->name);
 	}

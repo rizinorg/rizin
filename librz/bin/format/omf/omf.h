@@ -59,7 +59,7 @@ typedef struct {
 bool rz_bin_checksum_omf_ok(const ut8 *buf, ut64 buf_size);
 rz_bin_omf_obj *rz_bin_internal_omf_load(const ut8 *buf, ut64 size);
 void rz_bin_free_all_omf_obj(rz_bin_omf_obj *obj);
-bool rz_bin_omf_get_entry(rz_bin_omf_obj *obj, RBinAddr *addr);
+bool rz_bin_omf_get_entry(rz_bin_omf_obj *obj, RzBinAddr *addr);
 int rz_bin_omf_get_bits(rz_bin_omf_obj *obj);
 int rz_bin_omf_send_sections(RzList *list, OMF_segment *section, rz_bin_omf_obj *obj);
 ut64 rz_bin_omf_get_paddr_sym(rz_bin_omf_obj *obj, OMF_symbol *sym);

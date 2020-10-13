@@ -12,7 +12,7 @@ typedef struct machoPointers_t {
 	size_t lastcmd_off;
 } MachoPointers;
 
-static MachoPointers findLastCommand(RBinFile *bf) {
+static MachoPointers findLastCommand(RzBinFile *bf) {
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	int i = 0;
 	ut64 off;
@@ -47,7 +47,7 @@ static const uint8_t sample_dylib[56] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-static bool MACH0_(write_addlib)(RBinFile *bf, const char *lib) {
+static bool MACH0_(write_addlib)(RzBinFile *bf, const char *lib) {
 	MachoPointers mp = findLastCommand (bf);
 	size_t size_of_lib = 56;
 
@@ -71,12 +71,12 @@ static bool MACH0_(write_addlib)(RBinFile *bf, const char *lib) {
 	return true;
 }
 
-static bool addlib(RBinFile *bf, const char *lib) {
+static bool addlib(RzBinFile *bf, const char *lib) {
 	return MACH0_(write_addlib) (bf, lib);
 }
 
 #if !RZ_BIN_MACH064
-RBinWrite rz_bin_write_mach0 = {
+RzBinWrite rz_bin_write_mach0 = {
 #if 0
 	.scn_resize = &scn_resize,
 	.scn_perms = &scn_perms,
