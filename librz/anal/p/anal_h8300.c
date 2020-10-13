@@ -138,8 +138,7 @@ static int analop_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf) {
 		setZ;
 		return 0;
 	case H8300_ADDX_4BIT:
-		rz_strbuf_appendf(&op->esil, "0x%02x,C,+,r%u%c,+= ", imm,
-				rdB(0), rdB(0));
+		rz_strbuf_appendf(&op->esil, "0x%02x,C,+,r%u%c,+= ", imm, rdB(0));
 		//setZ
 		setV("%o");
 		setN;
@@ -240,7 +239,7 @@ static int analop_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf) {
 	case H8300_ADDX:
 		//Rd + (Rs) + C → Rd
 		rz_strbuf_appendf (&op->esil, "r%u%c,C,+,r%u%c,+=",
-				rsB(), rdB(1), rdB(1));
+				rsB(), rdB(1));
 		//setZ
 		setV("%o");
 		setN;

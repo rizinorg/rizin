@@ -303,9 +303,9 @@ static char *mount_oldstr(RzParse* p, const char *reg, st64 delta, bool ucase) {
 			if (delta < 0) {
 				sign = '-';
 			}
-			oldstr = rz_str_newf ("%s %c %d", reg, sign, RZ_ABS (delta));
+			oldstr = rz_str_newf ("%s %c %" PFMT64d, reg, sign, RZ_ABS (delta));
 		} else {
-			oldstr = rz_str_newf ("%s, %d", reg, delta);
+			oldstr = rz_str_newf ("%s, %" PFMT64d, reg, delta);
 		}
 	} else if (delta > 0) {
 		tmplt = p->pseudo ? "%s + 0x%x" : (ucase ? "%s, 0x%X" : "%s, 0x%x");

@@ -32,7 +32,7 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case SYSZ_OP_IMM:
 			rz_strbuf_append (buf, "\"type\":\"imm\"");
-			rz_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			rz_strbuf_appendf (buf, ",\"value\":%" PFMT64d, (st64)op->imm);
 			break;
 		case SYSZ_OP_MEM:
 			rz_strbuf_append (buf, "\"type\":\"mem\"");

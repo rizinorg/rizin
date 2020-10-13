@@ -187,7 +187,7 @@ static void _6502_anal_esil_ccall(RzAnalOp *op, ut8 data0) {
 		flag = "unk";
 		break;
 	}
-	rz_strbuf_setf (&op->esil, "%s,?{,0x%04x,pc,=,}", flag, (op->jump & 0xffff));
+	rz_strbuf_setf (&op->esil, "%s,?{,0x%04x,pc,=,}", flag, (ut32)(op->jump & 0xffff));
 }
 
 // inc register
@@ -743,14 +743,14 @@ static int _6502_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 		// JSR pushes the address-1 of the next operation on to the stack before transferring program
 		// control to the following address
 		// stack is on page one and sp is an 8-bit reg: operations must be done like: sp + 0x100
-		rz_strbuf_setf (&op->esil, "1,pc,-,0xff,sp,+,=[2],0x%04x,pc,=,2,sp,-=", op->jump);
+		rz_strbuf_setf (&op->esil, "1,pc,-,0xff,sp,+,=[2],0x%04" PFMT64x ",pc,=,2,sp,-=", op->jump);
 		break;
 	// JMP
 	case 0x4c: // jmp $ffff
 		op->cycles = 3;
 		op->type = RZ_ANAL_OP_TYPE_JMP;
 		op->jump = (len > 2)? data[1] | data[2] << 8: 0;
-		rz_strbuf_setf (&op->esil, "0x%04x,pc,=", op->jump);
+		rz_strbuf_setf (&op->esil, "0x%04" PFMT64x ",pc,=", op->jump);
 		break;
 	case 0x6c: // jmp ($ffff)
 		op->cycles = 5;

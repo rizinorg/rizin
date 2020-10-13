@@ -31,14 +31,14 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case XCORE_OP_IMM:
 			rz_strbuf_append (buf, "\"type\":\"imm\"");
-			rz_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			rz_strbuf_appendf (buf, ",\"value\":%"PFMT64d, (st64)op->imm);
 			break;
 		case XCORE_OP_MEM:
 			rz_strbuf_append (buf, "\"type\":\"mem\"");
 			if (op->mem.base != XCORE_REG_INVALID) {
 				rz_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
 			}
-			rz_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", op->mem.disp);
+			rz_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", (st64)op->mem.disp);
 			break;
 		default:
 			rz_strbuf_append (buf, "\"type\":\"invalid\"");

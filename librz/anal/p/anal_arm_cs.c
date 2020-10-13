@@ -308,7 +308,7 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 			case ARM_SFT_ROR_REG:
 			case ARM_SFT_RRX_REG:
 				rz_strbuf_appendf (buf, "\"type\":\"%s\"", shift_type_name (op->shift.type));
-				rz_strbuf_appendf (buf, ",\"value\":\"%d\"", cs_reg_name (handle, op->shift.value));
+				rz_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->shift.value));
 				break;
 			default:
 				break;
@@ -534,7 +534,7 @@ static void opex64(RzStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case ARM64_OP_IMM:
 			rz_strbuf_append (buf, "\"type\":\"imm\"");
-			rz_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			rz_strbuf_appendf (buf, ",\"value\":%" PFMT64d, op->imm);
 			break;
 		case ARM64_OP_MEM:
 			rz_strbuf_append (buf, "\"type\":\"mem\"");
@@ -552,7 +552,7 @@ static void opex64(RzStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case ARM64_OP_CIMM:
 			rz_strbuf_append (buf, "\"type\":\"cimm\"");
-			rz_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			rz_strbuf_appendf (buf, ",\"value\":%" PFMT64d, op->imm);
 			break;
 		case ARM64_OP_PSTATE:
 			rz_strbuf_append (buf, "\"type\":\"pstate\"");
@@ -920,7 +920,7 @@ static void shifted_reg64_append(RzStrBuf *sb, csh *handle, cs_insn *insn, int n
 #define OPCALL(opchar) arm64math(a, op, addr, buf, len, handle, insn, opchar, 0)
 #define OPCALL_NEG(opchar) arm64math(a, op, addr, buf, len, handle, insn, opchar, 1)
 
-// got rid of the opchar= pattern here because it caused missing operators to fail silently 
+// got rid of the opchar= pattern here because it caused missing operators to fail silently
 // and makes things more complicated with very little benefit
 static void arm64math(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, const char *opchar, int negate) {
 	const char *r0 = REG64(0);
@@ -948,7 +948,7 @@ static void arm64math(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int le
 		} else {
 			rz_strbuf_setf (&op->esil, "%"PFMT64d",%s,%s,%s,=", i2, r1, opchar, r0);
 		}
-		
+
 	}
 }
 
@@ -1175,7 +1175,7 @@ static int analop64_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int
 		int size = 8*REGSIZE64(0);
 
 		// expression is much more concise with GOTO, but GOTOs should be minimized
-		// rz_strbuf_setf (&op->esil, "%s,%s,=,0,DUP,%d,1,<<,%s,&,%d,>,&,?{,%s,=,}{,1,%s,<<=,1,+,4,GOTO,}", 
+		// rz_strbuf_setf (&op->esil, "%s,%s,=,0,DUP,%d,1,<<,%s,&,%d,>,&,?{,%s,=,}{,1,%s,<<=,1,+,4,GOTO,}",
 		//	REG64 (1), REG64 (0), size*8 - 1, REG64 (0), REG64 (0), REG64 (0));
 
 		/*
@@ -1195,7 +1195,7 @@ static int analop64_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int
 		const char *r1 = REG64 (1);
 
 		if (size == 32) {
-			rz_strbuf_setf (&op->esil, 
+			rz_strbuf_setf (&op->esil,
 			"%s,tmp,=,0,"
 			"tmp,0xffff0000,&,!,?{,16,tmp,<<=,16,+,},"
 			"tmp,0xff000000,&,!,?{,8,tmp,<<=,8,+,},"
@@ -1206,7 +1206,7 @@ static int analop64_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int
 			r1, r1, r0, r0);
 		}
 		else {
-			rz_strbuf_setf (&op->esil, 
+			rz_strbuf_setf (&op->esil,
 			"%s,tmp,=,0,"
 			"tmp,0xffffffff00000000,&,!,?{,32,tmp,<<=,32,+,},"
 			"tmp,0xffff000000000000,&,!,?{,16,tmp,<<=,16,+,},"
@@ -1279,13 +1279,13 @@ static int analop64_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int
 							MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1), size, REG64(0));
 				} else if ((int)MEMDISP64(1) < 0){
 					rz_strbuf_appendf (&op->esil, "%"PFMT64d",%s,-,DUP,tmp,=,[%d],%s,=",
-							-(int)MEMDISP64(1), MEMBASE64(1), size, REG64(0));
+							-(st64)MEMDISP64(1), MEMBASE64(1), size, REG64(0));
 				} else {
 					rz_strbuf_appendf (&op->esil, "%"PFMT64d",%s,+,DUP,tmp,=,[%d],%s,=",
 							MEMDISP64(1), MEMBASE64(1), size, REG64(0));
 				}
 
-				// I assume the DUPs here previously were to handle preindexing 
+				// I assume the DUPs here previously were to handle preindexing
 				// but it was never finished?
 				if (ISPREINDEX32()) {
 					rz_strbuf_appendf (&op->esil, ",tmp,%s,=", REG64(1));
@@ -1368,13 +1368,13 @@ static int analop64_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int
 							size*8, MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1), size, REG64(0));
 				} else if ((int)MEMDISP64(1) < 0){
 					rz_strbuf_appendf (&op->esil, "%d,%"PFMT64d",%s,-,DUP,tmp,=,[%d],~,%s,=",
-							size*8, -(int)MEMDISP64(1), MEMBASE64(1), size, REG64(0));
+							size*8, -(st64)MEMDISP64(1), MEMBASE64(1), size, REG64(0));
 				} else {
 					rz_strbuf_appendf (&op->esil, "%d,%"PFMT64d",%s,+,DUP,tmp,=,[%d],~,%s,=",
 							size*8, MEMDISP64(1), MEMBASE64(1), size, REG64(0));
 				}
 
-				// I assume the DUPs here previously were to handle preindexing 
+				// I assume the DUPs here previously were to handle preindexing
 				// but it was never finished?
 				if (ISPREINDEX32()) {
 					rz_strbuf_appendf (&op->esil, ",tmp,%s,=", REG64(1));
@@ -1493,13 +1493,13 @@ static int analop64_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int
 							REG64(0), MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1), size);
 				} else if ((int)MEMDISP64(1) < 0){
 					rz_strbuf_appendf (&op->esil, "%s,%"PFMT64d",%s,-,DUP,tmp,=,=[%d]",
-							REG64(0), -(int)MEMDISP64(1), MEMBASE64(1), size);
+							REG64(0), -(st64)MEMDISP64(1), MEMBASE64(1), size);
 				} else {
 					rz_strbuf_appendf (&op->esil, "%s,%"PFMT64d",%s,+,DUP,tmp,=,=[%d]",
 							REG64(0), MEMDISP64(1), MEMBASE64(1), size);
 				}
 
-				// I assume the DUPs here previously were to handle preindexing 
+				// I assume the DUPs here previously were to handle preindexing
 				// but it was never finished?
 				if (ISPREINDEX32()) {
 					rz_strbuf_appendf (&op->esil, ",tmp,%s,=", REG64(1));
@@ -1566,13 +1566,13 @@ static int analop64_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int
 	case ARM64_INS_TBZ:
 		// tbnz x0, 4, label
 		// if ((1<<4) & x0) goto label;
-		rz_strbuf_setf (&op->esil, "%d,1,<<,%s,&,!,?{,%"PFMT64d",pc,=,}",
+		rz_strbuf_setf (&op->esil, "%" PFMT64d ",1,<<,%s,&,!,?{,%"PFMT64d",pc,=,}",
 			IMM64(1), REG64(0), IMM64(2));
 		break;
 	case ARM64_INS_TBNZ:
 		// tbnz x0, 4, label
 		// if ((1<<4) & x0) goto label;
-		rz_strbuf_setf (&op->esil, "%d,1,<<,%s,&,?{,%"PFMT64d",pc,=,}",
+		rz_strbuf_setf (&op->esil, "%" PFMT64d ",1,<<,%s,&,?{,%"PFMT64d",pc,=,}",
 			IMM64(1), REG64(0), IMM64(2));
 		break;
 	case ARM64_INS_STNP:
@@ -1599,7 +1599,7 @@ static int analop64_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int
 			// "stp x4, x5, [x8], 0x10"
 			// "x4,x8,=[],x5,x8,8,+,=[],16,x8,+="
 			rz_strbuf_setf(&op->esil,
-					"%s,%s,=[%d],%s,%s,%d,+,=[%d],%d,%s,%c=",
+					"%s,%s,=[%d],%s,%s,%d,+,=[%d],%" PFMT64d ",%s,%c=",
 					REG64(0), MEMBASE64(2), size,
 					REG64(1), MEMBASE64(2), size, size,
 					abs, MEMBASE64(2), sign);
@@ -1641,7 +1641,7 @@ static int analop64_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int
 			rz_strbuf_setf (&op->esil,
 					"%s,[%d],%s,=,"
 					"%s,%d,+,[%d],%s,=,"
-					"%d,%s,%c=",
+					"%" PFMT64d ",%s,%c=",
 					MEMBASE64(2), size, REG64(0),
 					MEMBASE64(2), size, size, REG64(1),
 					abs, MEMBASE64(2), sign);
@@ -1675,13 +1675,13 @@ static int analop64_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int
 			05 | t3 = Or64(t5,t4)
 			06 | PUT(x4) = t3
 		*/
-		rz_strbuf_setf (&op->esil, "%d,%s,>>,%d,%s,<<,|,%s,=", 
+		rz_strbuf_setf (&op->esil, "%" PFMT64d ",%s,>>,%" PFMT64d ",%s,<<,|,%s,=",
 			IMM64(3), REG64(2), IMM64(3), REG64(1), REG64(0));
 		break;
 	case ARM64_INS_RBIT:
-		// this expression reverses the bits. it does. do not scroll right. 
-		// Derived from VEX 
-		rz_strbuf_setf (&op->esil, "0xffffffff00000000,0x20,0xffff0000ffff0000,0x10,0xff00ff00ff00ff00,0x8,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,<<,&,0x8,0xff00ff00ff00ff00,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,&,>>,|,<<,&,0x10,0xffff0000ffff0000,0xff00ff00ff00ff00,0x8,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,<<,&,0x8,0xff00ff00ff00ff00,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,&,>>,|,&,>>,|,<<,&,0x20,0xffffffff00000000,0xffff0000ffff0000,0x10,0xff00ff00ff00ff00,0x8,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,<<,&,0x8,0xff00ff00ff00ff00,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,&,>>,|,<<,&,0x10,0xffff0000ffff0000,0xff00ff00ff00ff00,0x8,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,<<,&,0x8,0xff00ff00ff00ff00,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,&,>>,|,&,>>,|,&,>>,|,%2$s,=", 
+		// this expression reverses the bits. it does. do not scroll right.
+		// Derived from VEX
+		rz_strbuf_setf (&op->esil, "0xffffffff00000000,0x20,0xffff0000ffff0000,0x10,0xff00ff00ff00ff00,0x8,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,<<,&,0x8,0xff00ff00ff00ff00,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,&,>>,|,<<,&,0x10,0xffff0000ffff0000,0xff00ff00ff00ff00,0x8,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,<<,&,0x8,0xff00ff00ff00ff00,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,&,>>,|,&,>>,|,<<,&,0x20,0xffffffff00000000,0xffff0000ffff0000,0x10,0xff00ff00ff00ff00,0x8,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,<<,&,0x8,0xff00ff00ff00ff00,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,&,>>,|,<<,&,0x10,0xffff0000ffff0000,0xff00ff00ff00ff00,0x8,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,<<,&,0x8,0xff00ff00ff00ff00,0xf0f0f0f0f0f0f0f0,0x4,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,<<,&,0x4,0xf0f0f0f0f0f0f0f0,0xcccccccccccccccc,0x2,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,<<,&,0x2,0xcccccccccccccccc,0xaaaaaaaaaaaaaaaa,0x1,%1$s,<<,&,0x1,0xaaaaaaaaaaaaaaaa,%1$s,&,>>,|,&,>>,|,&,>>,|,&,>>,|,&,>>,|,&,>>,|,%2$s,=",
 			REG64(1), REG64(0));
 		break;
 	case ARM64_INS_MVN:
@@ -1750,15 +1750,15 @@ static int analop64_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int
 	case ARM64_INS_SXTH: /* halfword */
 		if (arm64_reg_width(REGID64(0)) == 32) {
 			rz_strbuf_setf (&op->esil, "0xffffffff,16,0xffff,%s,&,~,&,%s,=",
-				REG64(1), REG64(0));	
+				REG64(1), REG64(0));
 		} else {
 			rz_strbuf_setf (&op->esil, "16,0xffff,%s,&,~,%s,=",
-				REG64(1), REG64(0));	
+				REG64(1), REG64(0));
 		}
 		break;
 	case ARM64_INS_SXTW: /* word */
 		rz_strbuf_setf (&op->esil, "32,0xffffffff,%s,&,~,%s,=",
-				REG64(1), REG64(0));	
+				REG64(1), REG64(0));
 		break;
 	case ARM64_INS_UXTB:
 		rz_strbuf_setf (&op->esil, "%s,0xff,&,%s,=", REG64(1), REG64(0));
@@ -1790,25 +1790,25 @@ static int analop64_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int
 	}
 	case ARM64_INS_SBFIZ:
 		if (IMM64 (3) > 0 && IMM64 (3) <= 64 - IMM64 (2)) {
-			rz_strbuf_appendf (&op->esil, "%d,%d,%s,%"PFMT64u",&,~,<<,%s,=",
+			rz_strbuf_appendf (&op->esil, "%" PFMT64d ",%" PFMT64d ",%s,%"PFMT64u",&,~,<<,%s,=",
 					IMM64 (2), IMM64 (3), REG64(1), (ut64)bitmask_by_width[IMM64 (3) - 1], REG64(0));
 		}
 		break;
 	case ARM64_INS_UBFIZ:
 		if (IMM64 (3) > 0 && IMM64 (3) <= 64 - IMM64 (2)) {
-			rz_strbuf_appendf (&op->esil, "%d,%s,%"PFMT64u",&,<<,%s,=",
+			rz_strbuf_appendf (&op->esil, "%" PFMT64d ",%s,%"PFMT64u",&,<<,%s,=",
 					IMM64 (2), REG64(1), (ut64)bitmask_by_width[IMM64 (3) - 1], REG64(0));
 		}
 		break;
 	case ARM64_INS_SBFX:
 		if (IMM64 (3) > 0 && IMM64 (3) <= 64 - IMM64 (2)) {
-			rz_strbuf_appendf (&op->esil, "%d,%d,%s,%d,%"PFMT64u",<<,&,>>,~,%s,=",
+			rz_strbuf_appendf (&op->esil, "%" PFMT64d ",%" PFMT64d ",%s,%" PFMT64d ",%"PFMT64u",<<,&,>>,~,%s,=",
 				IMM64 (3), IMM64 (2), REG64 (1), IMM64 (2) , (ut64)bitmask_by_width[IMM64 (3) - 1], REG64 (0));
 		}
 		break;
 	case ARM64_INS_UBFX:
 		if (IMM64 (3) > 0 && IMM64 (3) <= 64 - IMM64 (2)) {
-			rz_strbuf_appendf (&op->esil, "%d,%s,%d,%"PFMT64u",<<,&,>>,%s,=",
+			rz_strbuf_appendf (&op->esil, "%" PFMT64d ",%s,%" PFMT64d ",%"PFMT64u",<<,&,>>,%s,=",
 				IMM64 (2), REG64 (1), IMM64 (2) , (ut64)bitmask_by_width[IMM64 (3) - 1], REG64 (0));
 		}
 		break;
@@ -1824,7 +1824,7 @@ static int analop64_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int
 		rz_strbuf_appendf (&op->esil, ",0,-,%s,=", REG64 (0));
 		break;
 	case ARM64_INS_SVC:
-		rz_strbuf_setf (&op->esil, "%u,$", IMM64 (0));
+		rz_strbuf_setf (&op->esil, "%" PFMT64u ",$", IMM64 (0));
 		break;
 	}
 
@@ -2033,7 +2033,7 @@ PUSH { r4, r5, r6, r7, lr }
 			insn->detail->arm.op_count);
 		break;
 	case ARM_INS_STM:
-		rz_strbuf_setf (&op->esil, "");
+		rz_strbuf_setf (&op->esil, "%s", "");
 		for (i = 1; i < insn->detail->arm.op_count; i++) {
 			rz_strbuf_appendf (&op->esil, "%s,%s,%d,%c,=[4],",
 				REG (i), ARG (0), RZ_ABS ((i - 1) * 4), i > 0? '+': '-');
@@ -2447,7 +2447,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		break;
 	case ARM_INS_MSR:
 		msr_flags = insn->detail->arm.operands[0].reg >> 4;
-		rz_strbuf_appendf (&op->esil, "0,", REG(1));
+		rz_strbuf_appendf (&op->esil, "0,");
 		if (msr_flags & 1) {
 			rz_strbuf_appendf (&op->esil, "0xFF,|,");
 		}

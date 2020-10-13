@@ -148,7 +148,7 @@ static RzList* libs(RzBinFile *bf) {
 			return ret;
 		}
 		for (i = 0; !libs[i].last; i++) {
-			ptr = rz_str_newf ("[0x%.08x] - %s", pe32_bin->vaddr, libs[i].name);
+			ptr = rz_str_newf ("[0x%.08" PFMT64x "] - %s", pe32_bin->vaddr, libs[i].name);
 			rz_list_append (ret, ptr);
 		}
 		free (libs);
