@@ -1951,7 +1951,7 @@ static bool cb_iova(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *) data;
 	if (node->i_value != core->io->va) {
 		core->io->va = node->i_value;
-		/* ugly fix for r2 -d ... "r2 is going to die soon ..." */
+		/* ugly fix for rizin -d ... "rizin is going to die soon ..." */
 		if (core->io->desc) {
 			rz_core_block_read (core);
 		}
@@ -2842,7 +2842,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		if (!pfx) {
 			pfx = strdup (RZ_PREFIX);
 		}
-		SETCB ("dir.prefix", pfx, (RzConfigCallback)&cb_dirpfx, "Default prefix r2 was compiled for");
+		SETCB ("dir.prefix", pfx, (RzConfigCallback)&cb_dirpfx, "Default prefix rizin was compiled for");
 		free (pfx);
 	}
 #if __ANDROID__
@@ -3233,7 +3233,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	free (p);
 	// RZ_LOGTRAP_LEVEL / log.traplevel
 	p = rz_sys_getenv ("RZ_LOGTRAPLEVEL");
-	SETICB ("log.traplevel", p ? atoi(p) : RZ_LOGLVL_FATAL, cb_log_config_traplevel, "Log level for trapping R2 when hit"\
+	SETICB ("log.traplevel", p ? atoi(p) : RZ_LOGLVL_FATAL, cb_log_config_traplevel, "Log level for trapping rizin when hit"\
 	 " (0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
 	);
 	free (p);
@@ -3578,12 +3578,12 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI ("scr.scrollbar", 0, "Show flagzone (fz) scrollbar in visual mode (0=no,1=right,2=top,3=bottom)");
 	SETBPREF ("scr.randpal", "false", "Random color palete or just get the next one from 'eco'");
 	SETCB ("scr.highlight.grep", "false", &cb_scr_color_grep_highlight, "Highlight (INVERT) the grepped words");
-	SETBPREF ("scr.prompt.file", "false", "Show user prompt file (used by r2 -q)");
+	SETBPREF ("scr.prompt.file", "false", "Show user prompt file (used by rizin -q)");
 	SETBPREF ("scr.prompt.flag", "false", "Show flag name in the prompt");
 	SETBPREF ("scr.prompt.sect", "false", "Show section name in the prompt");
 	SETBPREF ("scr.tts", "false", "Use tts if available by a command (see ic)");
 	SETCB ("scr.hist.block", "true", &cb_scr_histblock, "Use blocks for histogram");
-	SETCB ("scr.prompt", "true", &cb_scrprompt, "Show user prompt (used by r2 -q)");
+	SETCB ("scr.prompt", "true", &cb_scrprompt, "Show user prompt (used by rizin -q)");
 	SETCB ("scr.tee", "", &cb_teefile, "Pipe output to file of this name");
 	SETPREF ("scr.seek", "", "Seek to the specified address on startup");
 	SETICB ("scr.color", (core->print->flags&RZ_PRINT_FLAGS_COLOR)?COLOR_MODE_16:COLOR_MODE_DISABLED, &cb_color, "Enable colors (0: none, 1: ansi, 2: 256 colors, 3: truecolor)");
@@ -3647,7 +3647,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("io.pcache.write", "false", &cb_iopcachewrite, "Enable write-cache");
 	SETCB ("io.pcache.read", "false", &cb_iopcacheread, "Enable read-cache");
 	SETCB ("io.ff", "true", &cb_ioff, "Fill invalid buffers with 0xff instead of returning error");
-	SETBPREF ("io.exec", "true", "See !!r2 -h~-x");
+	SETBPREF ("io.exec", "true", "See !!rizin -h~-x");
 	SETICB ("io.0xff", 0xff, &cb_io_oxff, "Use this value instead of 0xff to fill unallocated areas");
 	SETCB ("io.aslr", "false", &cb_ioaslr, "Disable ASLR for spawn and such");
 	SETCB ("io.va", "true", &cb_iova, "Use virtual address layout");

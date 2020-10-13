@@ -162,7 +162,7 @@ a = (b << 3) * 5;
 
 * Structure in the C files
 
-The structure of the C files in r2 must be like this:
+The structure of the C files in rizin must be like this:
 
 ```c
 /* Copyright ... */           ## copyright
@@ -177,7 +177,7 @@ RZ_API void public(void) {}    ## public apis starting with constructor/destruct
 
 * Why return int vs enum
 
-The reason why many places in r2land functions return int instead of an enum type is because enums can't be OR'ed; otherwise, it breaks the usage within a switch statement and swig can't handle that stuff.
+The reason why many places in rizin-land functions return int instead of an enum type is because enums can't be OR'ed; otherwise, it breaks the usage within a switch statement and swig can't handle that stuff.
 
 ```
 rz_core_wrap.cxx:28612:60: error: assigning to 'RzRegisterType' from incompatible type 'long'
@@ -226,7 +226,7 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 
 * See .clang-format for work-in-progress support for automated indentation
 
-* Use the r2 types instead of the ones in stdint, which are known to cause some
+* Use the rizin types instead of the ones in stdint, which are known to cause some
   portability issues. So, instead of uint8_t, use ut8, etc..
 
 * Never ever use %lld or %llx. This is not portable. Always use the PFMT64x
@@ -391,7 +391,7 @@ a C compiler, a GNU make and a unix-like system.
 
 ## Cross compilation
 
-The instructions to crosscompile r2 to Windows are in doc/windows.
+The instructions to crosscompile rizin to Windows are in doc/windows.
 
 You may find other documents in doc/ explaining how to build it on iOS,
 linux-arm and others, but the procedure is like this:
@@ -494,7 +494,7 @@ to contribute.
 
 ## HOW TO RELEASE
 
- - Set `RELEASE=1` in global.mk and r2-bindings/config.mk.acr.
+ - Set `RELEASE=1` in global.mk and rizin-bindings/config.mk.acr.
  - Use `bsdtar` from libarchive package. GNU tar is broken.
 
   RIZIN
@@ -503,7 +503,7 @@ to contribute.
    - `./configure`
    - `make dist`
 
-  R2-BINDINGS
+  RIZIN-BINDINGS
   ---
    - `./configure --enable-devel`
    - `make`

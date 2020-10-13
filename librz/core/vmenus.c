@@ -151,7 +151,7 @@ RZ_API bool rz_core_visual_esil(RzCore *core) {
 		analop.type = -1;
 		(void)rz_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), RZ_ANAL_OP_MASK_ESIL);
 		analopType = analop.type & RZ_ANAL_OP_TYPE_MASK;
-		rz_cons_printf ("r2's esil debugger:\n\n");
+		rz_cons_printf ("rizin's esil debugger:\n\n");
 		rz_cons_printf ("pos: %d\n", x);
 		{
 			char *op_hex = rz_asm_op_get_hex (&asmop);
@@ -297,7 +297,7 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 		analop.type = -1;
 		(void)rz_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), RZ_ANAL_OP_MASK_ESIL);
 		analopType = analop.type & RZ_ANAL_OP_TYPE_MASK;
-		rz_cons_printf ("r2's bit editor:\n\n");
+		rz_cons_printf ("rizin's bit editor:\n\n");
 		rz_cons_printf ("offset: 0x%08"PFMT64x"\n"Color_RESET, core->offset + cur);
 		{
 			char *op_hex = rz_asm_op_get_hex (&asmop);
@@ -1611,7 +1611,7 @@ RZ_API int rz_core_visual_view_rop(RzCore *core) {
 	char *cursearch = strdup (line);
 	while (true) {
 		rz_cons_clear00 ();
-		rz_cons_printf ("[0x%08"PFMT64x"]-[visual-r2rop] %s (see pdp command)\n",
+		rz_cons_printf ("[0x%08"PFMT64x"]-[visual-rzrop] %s (see pdp command)\n",
 			(addr == UT64_MAX)? 0: addr + delta, cursearch);
 
 		// compute chain
@@ -1684,13 +1684,13 @@ RZ_API int rz_core_visual_view_rop(RzCore *core) {
 			break;
 		case '?':
 			rz_cons_clear00 ();
-			rz_cons_printf ("[r2rop-visual] Help\n"
+			rz_cons_printf ("[rzrop-visual] Help\n"
 					" jk - select next/prev rop gadget\n"
 					" JK - scroll next/prev page from list\n"
 					" hl - increase/decrease delta offset in disasm\n"
 					" \\n - enter key or dot will add the current offset into the chain\n"
 					" i  - enter a number to be pushed into the chain\n"
-					" :  - run r2 command\n"
+					" :  - run rizin command\n"
 					" ;  - add comment in current offset\n"
 					" <- - backspace - delete last gadget from the chain\n"
 					" /  - highlight given word\n"
@@ -2732,7 +2732,7 @@ static const char *help_vv_visual[] = {
 	"tab", "toggle disasm column selection (to scroll in code)",
 	"!", "run 'afls' to sort all functions by address",
 	".", "seek to current function address",
-	":", "run r2 commands",
+	":", "run rizin commands",
 	"_", "hud mode. same as: s $(afl~...)",
 	"enter", "enter function view (variables), xrefs",
 	NULL

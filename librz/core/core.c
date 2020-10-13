@@ -2604,7 +2604,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	{
 		char *a = rz_str_rz_prefix (RZ_FLAGS);
 		if (a) {
-			char *file = rz_str_newf ("%s/tags.r2", a);
+			char *file = rz_str_newf ("%s/tags.rz", a);
 			(void)rz_core_run_script (core, file);
 			free (file);
 			free (a);

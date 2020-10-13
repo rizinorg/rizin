@@ -193,7 +193,7 @@ static const char *help_msg_des[] = {
 static const char *help_msg_di[] = {
 	"Usage: di", "", "Debugger target information",
 	"di", "", "Show debugger target information",
-	"di*", "", "Same as above, but in r2 commands",
+	"di*", "", "Same as above, but in rizin commands",
 	"diq", "", "Same as above, but in one line",
 	"dij", "", "Same as above, but in JSON format",
 	"dif", " [$a] [$b]", "Compare two files (or $alias files)",
@@ -261,7 +261,7 @@ static const char *help_msg_dmi[] = {
 static const char *help_msg_dmm[] = {
 	"Usage:", "dmm", " # Module memory maps commands",
 	"dmm", "", "List modules of target process",
-	"dmm*", "", "List modules of target process (r2 commands)",
+	"dmm*", "", "List modules of target process (rizin commands)",
 	"dmm.", "", "List memory map of current module",
 	"dmmj", "", "List modules of target process (JSON)",
 	NULL
@@ -315,7 +315,7 @@ static const char *help_msg_dr[] = {
 	"Usage: dr", "", "Registers commands",
 	"dr", "", "Show 'gpr' registers",
 	"dr", " <register>=<val>", "Set register value",
-	"dr.", " >$snapshot", "Capture current register values in r2 alias file",
+	"dr.", " >$snapshot", "Capture current register values in rizin alias file",
 	"dr,", " [table-query]", "Enumerate registers in table format",
 	"dr8", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
 	"dr=", "", "Show registers in columns",
@@ -349,7 +349,7 @@ static const char *help_msg_drp[] = {
 	"Usage:", "drp", " # Register profile commands",
 	"drp", "", "Show the current register profile",
 	"drp", " [regprofile-file]", "Set the current register profile",
-	"drp", " [gdb] [regprofile-file]", "Parse gdb register profile and dump an r2 profile string",
+	"drp", " [gdb] [regprofile-file]", "Parse gdb register profile and dump an rizin profile string",
 	"drpc", "", "Show register profile comments",
 	"drpi", "", "Show internal representation of the register profile",
 	"drp.", "", "Show the current fake size",

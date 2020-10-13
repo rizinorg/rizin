@@ -11,7 +11,7 @@ static const char *help_msg_t[] = {
 	"t", "", "List all loaded types",
 	"tj", "", "List all loaded types as json",
 	"t", " <type>", "Show type in 'pf' syntax",
-	"t*", "", "List types info in r2 commands",
+	"t*", "", "List types info in rizin commands",
 	"t-", " <name>", "Delete types by its name",
 	"t-*", "", "Remove all types",
 	"tail", " [filename]", "Output the last part of files",
@@ -46,7 +46,7 @@ static const char *help_msg_tcc[] = {
 	"tcck", "", "List calling conventions in k=v",
 	"tccl", "", "List the cc signatures",
 	"tccj", "", "List them in JSON",
-	"tcc*", "", "List them as r2 commands",
+	"tcc*", "", "List them as rizin commands",
 	NULL
 };
 

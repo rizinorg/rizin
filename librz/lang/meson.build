@@ -20,7 +20,7 @@ rz_lang = library('rz_lang', rz_lang_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  soversion: r2_libversion
+  soversion: rizin_libversion
 )
 
 rz_lang_dep = declare_dependency(link_with: rz_lang,
@@ -28,7 +28,7 @@ rz_lang_dep = declare_dependency(link_with: rz_lang,
 
 pkgconfig_mod.generate(rz_lang,
   subdirs: 'librz',
-  version: r2_version,
+  version: rizin_version,
   name: 'rz_lang',
   filebase: 'rz_lang',
   libraries: pkgcfg_sanitize_libs,

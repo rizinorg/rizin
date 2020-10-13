@@ -25,7 +25,7 @@ static const char *help_msg_w[] = {
 	"wd"," [off] [n]","duplicate N bytes from offset at current seek (memcpy) (see y?)",
 	"we","[?] [nNsxX] [arg]","extend write operations (insert instead of replace)",
 	"wf","[fs] -|file","write contents of file at current offset",
-	"wh"," r2","whereis/which shell command",
+	"wh"," rizin","whereis/which shell command",
 	"wm"," f0ff","set binary mask hexpair to be used as cyclic write mask",
 	"wo","[?] hex","write in block with operation. 'wo?' fmi",
 	"wp","[?] -|file","apply radare patch file. See wp? fmi",
@@ -124,7 +124,7 @@ static const char *help_msg_wop[] = {
 
 // TODO
 static const char *help_msg_wp[] = {
-	"Usage:", "wp", "[-|r2patch-file]",
+	"Usage:", "wp", "[-|rzpatch-file]",
 	"^#", "", "comments",
 	".", "", "execute command",
 	"!", "", "execute command",

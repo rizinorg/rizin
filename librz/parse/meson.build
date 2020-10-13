@@ -35,7 +35,7 @@ rz_parse = library('rz_parse', rz_parse_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  soversion: r2_libversion
+  soversion: rizin_libversion
 )
 
 rz_parse_dep = declare_dependency(link_with: rz_parse,
@@ -43,7 +43,7 @@ rz_parse_dep = declare_dependency(link_with: rz_parse,
 
 pkgconfig_mod.generate(rz_parse,
   subdirs: 'librz',
-  version: r2_version,
+  version: rizin_version,
   name: 'rz_parse',
   filebase: 'rz_parse',
   libraries: pkgcfg_sanitize_libs,

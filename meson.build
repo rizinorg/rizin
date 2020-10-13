@@ -4,22 +4,22 @@ py3_exe = import('python').find_installation('python3')
 git_exe = find_program('git', required: false)
 pkgconfig_mod = import('pkgconfig')
 
-# Get r2 version
-r2_version = 'unknown-error'
-r2_version_major = 0
-r2_version_minor = 0
-r2_version_patch = 0
-r2_version_number = 0
+# Get rizin version
+rizin_version = 'unknown-error'
+rizin_version_major = 0
+rizin_version_minor = 0
+rizin_version_patch = 0
+rizin_version_number = 0
 r = run_command(py3_exe, 'sys/version.py', '--full-version')
 if r.returncode() == 0
   vers = r.stdout().strip().split('\n')
-  r2_version = vers[0]
-  r2_version_major = vers[1]
-  r2_version_minor = vers[2]
-  r2_version_patch = vers[3]
-  r2_version_number = vers[4]
+  rizin_version = vers[0]
+  rizin_version_major = vers[1]
+  rizin_version_minor = vers[2]
+  rizin_version_patch = vers[3]
+  rizin_version_number = vers[4]
   if host_machine.system() == 'darwin'
-    r2_version = r2_version.split('-')[0]
+    rizin_version = rizin_version.split('-')[0]
   endif
 else
   message('Cannot find project version with sys/version.py')
@@ -33,7 +33,7 @@ if meson.is_subproject()
     py_cmd = run_command(py3_exe, '-c', py_cmd)
     if py_cmd.returncode() == 0
       repo = py_cmd.stdout().strip()
-      message('r2 real path: ' + repo)
+      message('rizin real path: ' + repo)
     endif
   endif
 endif
@@ -64,37 +64,37 @@ if git_exe.found()
   endif
 endif
 
-if get_option('r2_version_commit') != ''
-  version_commit = get_option('r2_version_commit')
+if get_option('rizin_version_commit') != ''
+  version_commit = get_option('rizin_version_commit')
 endif
 
-if get_option('r2_gittap') != ''
-  gittap = get_option('r2_gittap')
+if get_option('rizin_gittap') != ''
+  gittap = get_option('rizin_gittap')
 endif
 # gittap is used for the version of each rz_ library
 # in case it has not been set (e.g. a release tarball) set it
 if gittap == ''
-  gittap = r2_version
+  gittap = rizin_version
 endif
 
-if get_option('r2_gittip') != ''
-  gittip = get_option('r2_gittip')
+if get_option('rizin_gittip') != ''
+  gittip = get_option('rizin_gittip')
 endif
 
 # Get current date
 if host_machine.system() == 'windows'
-  r2birth = run_command('cmd', '/c', 'echo %date%__%time%')
+  rizinbirth = run_command('cmd', '/c', 'echo %date%__%time%')
 else
-  r2birth = run_command('date', '+%Y-%m-%d__%H:%M:%S')
+  rizinbirth = run_command('date', '+%Y-%m-%d__%H:%M:%S')
 endif
-if r2birth.returncode() != 0
-  r2birth = ''
+if rizinbirth.returncode() != 0
+  rizinbirth = ''
 else
-  r2birth = r2birth.stdout().strip()
+  rizinbirth = rizinbirth.stdout().strip()
 endif
 
-r2_libversion = host_machine.system() == 'windows' ? '' : r2_version
-message('r2 lib version: ' + r2_libversion)
+rizin_libversion = host_machine.system() == 'windows' ? '' : rizin_version
+message('rizin lib version: ' + rizin_libversion)
 
 # system dependencies
 cc = meson.get_compiler('c')
@@ -138,15 +138,15 @@ endif
 library_cflags = ['-DRZ_PLUGIN_INCORE=1']
 
 if host_machine.system() == 'windows'
-  r2_prefix = '.'
-  r2_libdir = 'lib'
-  r2_incdir = join_paths('include', 'librz')
-  r2_datdir = 'share'
+  rizin_prefix = '.'
+  rizin_libdir = 'lib'
+  rizin_incdir = join_paths('include', 'librz')
+  rizin_datdir = 'share'
 
   opts1 = [
-    'r2_libdir',
-    'r2_incdir',
-    'r2_datdir'
+    'rizin_libdir',
+    'rizin_incdir',
+    'rizin_datdir'
   ]
   foreach opt : opts1
     val = get_option(opt)
@@ -155,22 +155,22 @@ if host_machine.system() == 'windows'
     endif
   endforeach
 
-  r2_wwwroot = join_paths(r2_datdir, 'www')
-  r2_sdb = join_paths(r2_datdir)
-  r2_zigns = join_paths(r2_datdir, 'zigns')
-  r2_themes = join_paths(r2_datdir, 'cons')
-  r2_fortunes = join_paths(r2_datdir, 'doc')
-  r2_flags = join_paths(r2_datdir, 'flag')
-  r2_hud = join_paths(r2_datdir, 'hud')
+  rizin_wwwroot = join_paths(rizin_datdir, 'www')
+  rizin_sdb = join_paths(rizin_datdir)
+  rizin_zigns = join_paths(rizin_datdir, 'zigns')
+  rizin_themes = join_paths(rizin_datdir, 'cons')
+  rizin_fortunes = join_paths(rizin_datdir, 'doc')
+  rizin_flags = join_paths(rizin_datdir, 'flag')
+  rizin_hud = join_paths(rizin_datdir, 'hud')
 
   opts2 = [
-    'r2_wwwroot',
-    'r2_sdb',
-    'r2_zigns',
-    'r2_themes',
-    'r2_fortunes',
-    'r2_flags',
-    'r2_hud'
+    'rizin_wwwroot',
+    'rizin_sdb',
+    'rizin_zigns',
+    'rizin_themes',
+    'rizin_fortunes',
+    'rizin_flags',
+    'rizin_hud'
   ]
   foreach opt : opts2
     val = get_option(opt)
@@ -180,13 +180,13 @@ if host_machine.system() == 'windows'
   endforeach
 
   opts3 = [
-    'r2_plugins',
-    'r2_extras',
-    'r2_bindings'
+    'rizin_plugins',
+    'rizin_extras',
+    'rizin_bindings'
   ]
-  r2_plugins = join_paths(r2_libdir, 'plugins')
-  r2_extras = join_paths(r2_libdir, 'extras')
-  r2_bindings = join_paths(r2_libdir, 'bindings')
+  rizin_plugins = join_paths(rizin_libdir, 'plugins')
+  rizin_extras = join_paths(rizin_libdir, 'extras')
+  rizin_bindings = join_paths(rizin_libdir, 'bindings')
 
   foreach opt : opts1 + opts2 + opts3
     val = get_variable(opt)
@@ -194,24 +194,24 @@ if host_machine.system() == 'windows'
     set_variable(opt, val)
   endforeach
 else
-  r2_prefix = get_option('prefix')
-  r2_libdir = get_option('libdir')
-  r2_incdir = join_paths(get_option('includedir'), 'librz')
-  r2_datdir = get_option('datadir')
-  r2_datdir_rz = join_paths(r2_datdir, 'rizin')
-  r2_wwwroot = join_paths(r2_datdir_rz, r2_version, 'www')
-  r2_sdb = join_paths(r2_datdir_rz, r2_version)
-  r2_zigns = join_paths(r2_datdir_rz, r2_version, 'zigns')
-  r2_themes = join_paths(r2_datdir_rz, r2_version, 'cons')
-  r2_fortunes = join_paths(r2_datdir, 'doc', 'rizin')
-  r2_flags = join_paths(r2_datdir_rz, r2_version, 'flag')
-  r2_hud = join_paths(r2_datdir_rz, r2_version, 'hud')
-  r2_plugins = join_paths(r2_libdir, 'rizin', r2_version)
-  r2_extras = join_paths(r2_libdir, 'rizin-extras', r2_version)
-  r2_bindings = join_paths(r2_libdir, 'rizin-bindings', r2_version)
+  rizin_prefix = get_option('prefix')
+  rizin_libdir = get_option('libdir')
+  rizin_incdir = join_paths(get_option('includedir'), 'librz')
+  rizin_datdir = get_option('datadir')
+  rizin_datdir_rz = join_paths(rizin_datdir, 'rizin')
+  rizin_wwwroot = join_paths(rizin_datdir_rz, rizin_version, 'www')
+  rizin_sdb = join_paths(rizin_datdir_rz, rizin_version)
+  rizin_zigns = join_paths(rizin_datdir_rz, rizin_version, 'zigns')
+  rizin_themes = join_paths(rizin_datdir_rz, rizin_version, 'cons')
+  rizin_fortunes = join_paths(rizin_datdir, 'doc', 'rizin')
+  rizin_flags = join_paths(rizin_datdir_rz, rizin_version, 'flag')
+  rizin_hud = join_paths(rizin_datdir_rz, rizin_version, 'hud')
+  rizin_plugins = join_paths(rizin_libdir, 'rizin', rizin_version)
+  rizin_extras = join_paths(rizin_libdir, 'rizin-extras', rizin_version)
+  rizin_bindings = join_paths(rizin_libdir, 'rizin-bindings', rizin_version)
 endif
 
-r2_zsh_compdir = join_paths(r2_datdir, 'zsh', 'site-functions')
+rizin_zsh_compdir = join_paths(rizin_datdir, 'zsh', 'site-functions')
 
 # load plugin configuration
 subdir('librz')
@@ -313,29 +313,29 @@ userconf.set10('USE_LIB_MAGIC', use_syslib_magic)
 userconf.set10('HAVE_LIB_XXHASH', sys_xxhash.found())
 userconf.set10('USE_LIB_XXHASH', use_sys_xxhash)
 userconf.set10('DEBUGGER', has_debugger)
-userconf.set('PREFIX', r2_prefix)
+userconf.set('PREFIX', rizin_prefix)
 if host_machine.system() == 'windows'
-  userconf.set('LIBDIR', r2_libdir)
-  userconf.set('INCLUDEDIR', r2_incdir)
-  userconf.set('DATADIR_R2', r2_datdir)
+  userconf.set('LIBDIR', rizin_libdir)
+  userconf.set('INCLUDEDIR', rizin_incdir)
+  userconf.set('DATADIR_R2', rizin_datdir)
   userconf.set10('HAVE_JEMALLOC', false)
 else
-  userconf.set('LIBDIR', join_paths(r2_prefix, r2_libdir))
-  userconf.set('INCLUDEDIR', join_paths(r2_prefix, r2_incdir))
-  userconf.set('DATADIR_R2', r2_datdir_rz)
+  userconf.set('LIBDIR', join_paths(rizin_prefix, rizin_libdir))
+  userconf.set('INCLUDEDIR', join_paths(rizin_prefix, rizin_incdir))
+  userconf.set('DATADIR_R2', rizin_datdir_rz)
   userconf.set10('HAVE_JEMALLOC', true)
 endif
-userconf.set('DATADIR', join_paths(r2_prefix, r2_datdir))
-userconf.set('WWWROOT', join_paths(r2_prefix, r2_wwwroot))
-userconf.set('SDB', r2_sdb)
-userconf.set('ZIGNS', r2_zigns)
-userconf.set('THEMES', r2_themes)
-userconf.set('FORTUNES', r2_fortunes)
-userconf.set('FLAGS', r2_flags)
-userconf.set('HUD', r2_hud)
-userconf.set('PLUGINS', r2_plugins)
-userconf.set('EXTRAS', r2_extras)
-userconf.set('BINDINGS', r2_bindings)
+userconf.set('DATADIR', join_paths(rizin_prefix, rizin_datdir))
+userconf.set('WWWROOT', join_paths(rizin_prefix, rizin_wwwroot))
+userconf.set('SDB', rizin_sdb)
+userconf.set('ZIGNS', rizin_zigns)
+userconf.set('THEMES', rizin_themes)
+userconf.set('FORTUNES', rizin_fortunes)
+userconf.set('FLAGS', rizin_flags)
+userconf.set('HUD', rizin_hud)
+userconf.set('PLUGINS', rizin_plugins)
+userconf.set('EXTRAS', rizin_extras)
+userconf.set('BINDINGS', rizin_bindings)
 userconf.set10('HAVE_OPENSSL', use_sys_openssl)
 userconf.set10('HAVE_LIBUV', use_libuv)
 userconf.set10('HAVE_FORK', true)
@@ -368,25 +368,25 @@ rz_userconf_h = configure_file(
   input: 'librz/include/rz_userconf.h.acr',
   output: 'rz_userconf.h',
   configuration: userconf,
-  install_dir: join_paths(r2_incdir)
+  install_dir: join_paths(rizin_incdir)
 )
 
 versionconf = configuration_data()
 versionconf.set('MESON_VERSION', meson.version())
 versionconf.set('VERSIONCOMMIT', version_commit)
-versionconf.set('RZ_VERSION_MAJOR', r2_version_major)
-versionconf.set('RZ_VERSION_MINOR', r2_version_minor)
-versionconf.set('RZ_VERSION_PATCH', r2_version_patch)
-versionconf.set('RZ_VERSION_NUMBER', r2_version_number)
-versionconf.set('RZ_VERSION', r2_version)
+versionconf.set('RZ_VERSION_MAJOR', rizin_version_major)
+versionconf.set('RZ_VERSION_MINOR', rizin_version_minor)
+versionconf.set('RZ_VERSION_PATCH', rizin_version_patch)
+versionconf.set('RZ_VERSION_NUMBER', rizin_version_number)
+versionconf.set('RZ_VERSION', rizin_version)
 versionconf.set('RZ_GITTAP', gittap)
 versionconf.set('RZ_GITTIP', gittip)
-versionconf.set('RZ_BIRTH', r2birth)
+versionconf.set('RZ_BIRTH', rizinbirth)
 rz_version_h = configure_file(
   input: 'librz/include/rz_version.h.in',
   output: 'rz_version.h',
   configuration: versionconf,
-  install_dir: join_paths(r2_incdir)
+  install_dir: join_paths(rizin_incdir)
 )
 
 # Copy missing header
@@ -395,7 +395,7 @@ run_command(py3_exe, '-c', '__import__("shutil").copyfile("shlr/spp/config.def.h
 pcconf = configuration_data()
 pcconf.set('PREFIX', get_option('prefix'))
 pcconf.set('LIBDIR', join_paths(get_option('prefix'), get_option('libdir')))
-pcconf.set('VERSION', r2_version)
+pcconf.set('VERSION', rizin_version)
 libr_pc = configure_file(
   input: 'librz/librz.pc.acr',
   output: 'librz.pc',
@@ -428,7 +428,7 @@ if not zlib_dep.found() or not get_option('use_sys_zlib')
 
   zlib_inc = [platform_inc, include_directories('shlr/zip/zlib')]
 
-  librzzlib = static_library('r2zlib', zlib_files,
+  librzzlib = static_library('rzzlib', zlib_files,
     include_directories: zlib_inc,
     implicit_include_directories: false
   )
@@ -500,9 +500,9 @@ sdb_inc_files = [
   'shlr/sdb/src/sdb_version.h',
   'shlr/sdb/src/types.h'
 ]
-install_headers(sdb_inc_files, install_dir: join_paths(r2_incdir, 'sdb'))
+install_headers(sdb_inc_files, install_dir: join_paths(rizin_incdir, 'sdb'))
 
-librzsdb = static_library('r2sdb', sdb_files,
+librzsdb = static_library('rzsdb', sdb_files,
   include_directories: sdb_inc,
   implicit_include_directories: false,
   c_args: host_machine.system() == 'windows' ? '-DSDB_API=__declspec(dllexport)' : [],
@@ -535,7 +535,7 @@ spp_files = [
 
 spp_inc = [platform_inc, include_directories('shlr/spp')]
 
-librzspp = static_library('r2spp', spp_files,
+librzspp = static_library('rzspp', spp_files,
   dependencies: sdb_dep,
   include_directories: spp_inc,
   c_args: ['-DHAVE_R_UTIL', '-DUSE_R2=1'],
@@ -649,13 +649,13 @@ if meson.is_subproject()
       rz_util_dep
     ],
     include_directories: include_directories('.', 'librz/include'),
-    version: r2_version
+    version: rizin_version
   )
 endif
 
 if get_option('use_webui')
   install_subdir('shlr/www',
-    install_dir: r2_wwwroot,
+    install_dir: rizin_wwwroot,
     strip_directory: true
   )
 endif
@@ -667,7 +667,7 @@ install_data(
   'doc/fortunes.fun',
   'doc/fortunes.nsfw',
   'doc/fortunes.tips',
-  install_dir: r2_fortunes
+  install_dir: rizin_fortunes
 )
 
 if cli_enabled
@@ -688,7 +688,7 @@ if cli_enabled
   )
 
   install_data('doc/hud',
-    install_dir: r2_hud,
+    install_dir: rizin_hud,
     rename: 'main'
   )
 
@@ -701,6 +701,6 @@ if cli_enabled
     'doc/zsh/_rz_hash',
     'doc/zsh/_rz_asm',
     'doc/zsh/_rz_ax',
-    install_dir: r2_zsh_compdir
+    install_dir: rizin_zsh_compdir
   )
 endif

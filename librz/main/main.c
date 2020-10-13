@@ -8,14 +8,14 @@
 RZ_LIB_VERSION(rz_main);
 
 static RzMain foo[] = {
-	{ "r2", rz_main_rizin },
-	{ "rz_ax", rz_main_rz_ax },
-	{ "rz_diff", rz_main_rz_diff },
-	{ "rz_find", rz_main_rz_find },
-	{ "rz_run", rz_main_rz_run },
-	{ "rz_asm", rz_main_rz_asm },
-	{ "rz_gg", rz_main_rz_gg },
-	{ "rz_bin", rz_main_rz_bin },
+	{ "rz", rz_main_rizin },
+	{ "rz-ax", rz_main_rz_ax },
+	{ "rz-diff", rz_main_rz_diff },
+	{ "rz-find", rz_main_rz_find },
+	{ "rz-run", rz_main_rz_run },
+	{ "rz-asm", rz_main_rz_asm },
+	{ "rz-gg", rz_main_rz_gg },
+	{ "rz-bin", rz_main_rz_bin },
 	{ "rizin", rz_main_rizin },
 	{ NULL, NULL }
 };

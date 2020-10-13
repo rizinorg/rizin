@@ -12,13 +12,13 @@ jobs:
     steps:
     - name: Install tools
       run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config xz-utils wget file python
-    - name: Checkout r2
+    - name: Checkout rizin
       run: |
         git clone https://github.com/${{ github.repository }}
         cd rizin
         git fetch origin ${{ github.ref }}
         git checkout -b local_branch FETCH_HEAD
-    - name: Extract r2 version
+    - name: Extract rizin version
       shell: bash
       run: echo "##[set-output name=branch;]$(python sys/version.py)"
       id: extract_version
@@ -44,7 +44,7 @@ jobs:
     needs: [build-continuous-deb]
     steps:
     - uses: actions/checkout@v2
-    - name: Extract r2 version
+    - name: Extract rizin version
       shell: bash
       run: echo "##[set-output name=branch;]$(python sys/version.py)"
       id: extract_version

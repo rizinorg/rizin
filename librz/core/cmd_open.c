@@ -13,17 +13,17 @@ static const char *help_msg_o[] = {
 	"o"," [file]","open [file] file in read-only",
 	"o","","list opened files",
 	"o","-1","close file descriptor 1",
-	"o*","","list opened files in r2 commands",
+	"o*","","list opened files in rizin commands",
 	"o+"," [file]","open file in read-write mode",
 	"o-","!*","close all opened files",
-	"o--","","close all files, analysis, binfiles, flags, same as !r2 --",
+	"o--","","close all files, analysis, binfiles, flags, same as !rizin --",
 	"o.","","show current filename (or o.q/oq to get the fd)",
 	"o:"," [len]","open a malloc://[len] copying the bytes from current offset",
 	"o=","","list opened files (ascii-art bars)",
 	"oL","","list all IO plugins registered",
 	"oa","[-] [A] [B] [filename]","Specify arch and bits for given file",
 	"ob","[?] [lbdos] [...]","list opened binary files backed by fd",
-	"oc"," [file]","open core file, like relaunching r2",
+	"oc"," [file]","open core file, like relaunching rizin",
 	"of"," [file]","open file and map it at addr 0 as read-only",
 	"oi","[-|idx]","alias for o, but using index instead of fd",
 	"oj","[?]	","list opened files in JSON format",
@@ -45,8 +45,8 @@ static const char *help_msg_o_[] = {
 };
 
 static const char *help_msg_o_star[] = {
-	"Usage:", "o* [> files.r2]", "",
-	"o*", "", "list opened files in r2 commands", NULL
+	"Usage:", "o* [> files.rz]", "",
+	"o*", "", "list opened files in rizin commands", NULL
 };
 
 static const char *help_msg_oa[] = {
@@ -61,7 +61,7 @@ static const char *help_msg_ob[] = {
 	"Usage:", "ob", " # List open binary files backed by fd",
 	"ob", " [bfid]", "Switch to open given objid",
 	"ob", "", "List opened binary files and objid",
-	"ob*", "", "List opened binary files and objid (r2 commands)",
+	"ob*", "", "List opened binary files and objid (rizin commands)",
 	"ob-", "*", "Delete all binfiles",
 	"ob-", "[objid]", "Delete binfile by binobjid",
 	"ob.", " ([addr])", "Show bfid at current address",
@@ -70,7 +70,7 @@ static const char *help_msg_ob[] = {
 	"oba", " [addr] [baddr]", "Open file and load bin info at given address",
 	"oba", " [addr] [filename]", "Open file and load bin info at given address",
 	"oba", " [addr]", "Open bin info from the given address",
-	"obf", " ([file])", "Load bininfo for current file (useful for r2 -n)",
+	"obf", " ([file])", "Load bininfo for current file (useful for rizin -n)",
 	"obj", "", "List opened binary files and objid (JSON format)",
 	"obn", " [name]", "Select binfile by name",
 	"obo", " [fd]", "Switch to open binfile by fd number",
@@ -88,7 +88,7 @@ static const char *help_msg_om[] = {
 	"om", " [fd]", "list all defined IO maps for a specific fd",
 	"om", " fd vaddr [size] [paddr] [rwx] [name]", "create new io map",
 	"om", "", "list all defined IO maps",
-	"om*", "", "list all maps in r2 commands format",
+	"om*", "", "list all maps in rizin commands format",
 	"om-", "mapid", "remove the map with corresponding id",
 	"om-*", "", "remove all maps",
 	"om-..", "", "hud view of all the maps to select the one to remove",

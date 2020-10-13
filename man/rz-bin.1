@@ -61,9 +61,9 @@ Load address . offset to header
 .It Fl h
 Show usage help message.
 .It Fl H
-Show header fields (see ih command in r2)
+Show header fields (see ih command in rizin)
 .It Fl I
-Show binary info (iI in r2)
+Show binary info (iI in rizin)
 .It Fl i
 Show imports (symbols imported from libraries) (ii)
 .It Fl j
@@ -139,17 +139,17 @@ Dump raw strings to stdout (for huge files)
 .El
 .Sh ENVIRONMENT
 .Pp
-RZ_BIN_LANG same as r2 -e bin.lang for rz-bin
+RZ_BIN_LANG same as rizin -e bin.lang for rz-bin
 .Pp
 RZ_BIN_DEMANGLE demangle symbols
 .Pp
-RZ_BIN_MAXSTRBUF same as r2 -e bin.maxstrbuf for rz-bin
+RZ_BIN_MAXSTRBUF same as rizin -e bin.maxstrbuf for rz-bin
 .Pp
 RZ_BIN_DEBASE64 try to decode all strings as base64 if possible
 .Pp
-RZ_BIN_STRFILTER same as r2 -e bin.str.filter for rz-bin
+RZ_BIN_STRFILTER same as rizin -e bin.str.filter for rz-bin
 .Pp
-RZ_BIN_STRPURGE same as r2 -e bin.str.purge for rz-bin
+RZ_BIN_STRPURGE same as rizin -e bin.str.purge for rz-bin
 .Sh EXAMPLES
 .Pp
 List symbols of a program
@@ -166,7 +166,7 @@ Get entrypoint
 .Pp
 Load symbols and imports from rizin
 .Pp
-  $ r2 -n /bin/ls
+  $ rizin -n /bin/ls
   [0x00000000]> .!rz-bin \-prsi $FILE
 .Sh SEE ALSO
 .Pp

@@ -14,7 +14,7 @@ rz_reg = library('rz_reg', rz_reg_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  soversion: r2_libversion
+  soversion: rizin_libversion
 )
 
 rz_reg_dep = declare_dependency(link_with: rz_reg,
@@ -22,7 +22,7 @@ rz_reg_dep = declare_dependency(link_with: rz_reg,
 
 pkgconfig_mod.generate(rz_reg,
   subdirs: 'librz',
-  version: r2_version,
+  version: rizin_version,
   name: 'rz_reg',
   filebase: 'rz_reg',
   libraries: pkgcfg_sanitize_libs,

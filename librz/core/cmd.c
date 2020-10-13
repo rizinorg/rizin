@@ -125,7 +125,7 @@ static void cmd_debug_reg(RzCore *core, const char *str);
 static const char *help_msg_dollar[] = {
 	"Usage:", "$alias[=cmd] [args...]", "Alias commands and strings (See ?$? for help on $variables)",
 	"$", "", "list all defined aliases",
-	"$*", "", "list all the aliases as r2 commands in base64",
+	"$*", "", "list all the aliases as rizin commands in base64",
 	"$**", "", "same as above, but using plain text",
 	"$", "foo:=123", "alias for 'f foo=123'",
 	"$", "foo-=4", "alias for 'f foo-=4'",
@@ -153,15 +153,15 @@ static const char *help_msg_star[] = {
 };
 
 static const char *help_msg_dot[] = {
-	"Usage:", ".[r2cmd] | [file] | [!command] | [(macro)]", "# define macro or interpret r2, rz_lang,\n"
+	"Usage:", ".[rizincmd] | [file] | [!command] | [(macro)]", "# define macro or interpret rizin, rz_lang,\n"
 	"    cparse, d, es6, exe, go, js, lsp, pl, py, rb, sh, vala or zig file",
 	".", "", "repeat last command backward",
-	".", "r2cmd", "interpret the output of the command as r2 commands",
-	"..", " [file]", "run the output of the execution of a script as r2 commands",
+	".", "rizincmd", "interpret the output of the command as rizin commands",
+	"..", " [file]", "run the output of the execution of a script as rizin commands",
 	"...", "", "repeat last command forward (same as \\n)",
 	".:", "8080", "listen for commands on given tcp port",
 	".--", "", "terminate tcp server for remote commands",
-	".", " foo.r2", "interpret script",
+	".", " foo.rz", "interpret script",
 	".-", "", "open cfg.editor and interpret tmp file",
 	".*", " file ...", "same as #!pipe open cfg.editor and interpret tmp file",
 	".!", "rabin -ri $FILE", "interpret output of command",
@@ -171,7 +171,7 @@ static const char *help_msg_dot[] = {
 };
 
 static const char *help_msg_equal[] = {
-	"Usage:", " =[:!+-=ghH] [...]", " # connect with other instances of r2",
+	"Usage:", " =[:!+-=ghH] [...]", " # connect with other instances of rizin",
 	"\nremote commands:", "", "",
 	"=", "", "list all open connections",
 	"=<", "[fd] cmd", "send output of local command to remote fd", // XXX may not be a special char
@@ -192,10 +192,10 @@ static const char *help_msg_equal[] = {
 	"=&", ":port", "start rap server in background (same as '&_=h')",
 	"=", ":host:port cmd", "run 'cmd' command on remote server",
 	"\nexamples:","","",
-	"=+", "tcp://localhost:9090/", "connect to: r2 -c.:9090 ./bin",
-	// "=+", "udp://localhost:9090/", "connect to: r2 -c.:9090 ./bin",
-	"=+", "rap://localhost:9090/", "connect to: r2 rap://:9090",
-	"=+", "http://localhost:9090/cmd/", "connect to: r2 -c'=h 9090' bin",
+	"=+", "tcp://localhost:9090/", "connect to: rizin -c.:9090 ./bin",
+	// "=+", "udp://localhost:9090/", "connect to: rizin -c.:9090 ./bin",
+	"=+", "rap://localhost:9090/", "connect to: rizin rap://:9090",
+	"=+", "http://localhost:9090/cmd/", "connect to: rizin -c'=h 9090' bin",
 	"o ", "rap://:9090/", "start the rap server on tcp port 9090",
 	NULL
 };
@@ -203,7 +203,7 @@ static const char *help_msg_equal[] = {
 #if 0
 static const char *help_msg_equalh[] = {
 	"Usage:",  "=h[---*&] [port]", " # manage http connections",
-	"=h", " port", "listen for http connections (r2 -qc=H /bin/ls)",
+	"=h", " port", "listen for http connections (rizin -qc=H /bin/ls)",
 	"=h-", "", "stop background webserver",
 	"=h--", "", "stop foreground webserver",
 	"=h*", "", "restart current webserver",
@@ -215,7 +215,7 @@ static const char *help_msg_equalh[] = {
 static const char *help_msg_equalh[] = {
 	"Usage:", " =[hH] [...]", " # http server",
 	"http server:", "", "",
-	"=h", " port", "listen for http connections (r2 -qc=H /bin/ls)",
+	"=h", " port", "listen for http connections (rizin -qc=H /bin/ls)",
 	"=h-", "", "stop background webserver",
 	"=h--", "", "stop foreground webserver",
 	"=h*", "", "restart current webserver",
@@ -240,7 +240,7 @@ static const char *help_msg_b[] = {
 	"b", "", "display current block size",
 	"b", "+3", "increase blocksize by 3",
 	"b", "-16", "decrease blocksize by 16",
-	"b*", "", "display current block size in r2 command",
+	"b*", "", "display current block size in rizin command",
 	"bf", " foo", "set block size to flag size",
 	"bj", "", "display block size information in JSON",
 	"bm", " 1M", "set max block size",
@@ -274,7 +274,7 @@ static const char *help_msg_r[] = {
 	"rb", "oldbase @ newbase", "rebase all flags, bin.info, breakpoints and analysis",
 	"rm" ," [file]", "remove file",
 	"rh" ,"", "show size in human format",
-	"r2" ," [file]", "launch r2 (same for rz_ax, rz_asm, ...)",
+	"rz" ," [file]", "launch rizin (same for rz-ax, rz-asm, ...)",
 	"reset" ,"", "reset console settings (clear --hard)",
 	NULL
 };
@@ -297,7 +297,7 @@ static const char *help_msg_y[] = {
 	"y", " 16 @ 0x200", "copy 16 bytes into clipboard from 0x200",
 	"y", " 16", "copy 16 bytes into clipboard",
 	"y", "", "show yank buffer information (srcoff len bytes)",
-	"y*", "", "print in r2 commands what's been yanked",
+	"y*", "", "print in rizin commands what's been yanked",
 	"yf", " 64 0x200", "copy file 64 bytes from 0x200 from file",
 	"yfa", " file copy", "copy all bytes from file (opens w/ io)",
 	"yfx", " 10203040", "yank from hexpairs (same as ywx)",
@@ -1725,7 +1725,7 @@ static bool cmd_rzcmd(RzCore *core, const char *_input) {
 	int rc = 0;
 	if (rz_str_startswith (input, "rz_ax")) {
 		rc = __runMain (core->rz_main_rz_ax, input);
-	} else if (rz_str_startswith (input, "r2")) {
+	} else if (rz_str_startswith (input, "rz")) {
 		rz_sys_cmdf ("%s", input);
 		// rc = __runMain (core->rz_main_rizin, input);
 	} else if (rz_str_startswith (input, "rizin")) {
@@ -1746,12 +1746,12 @@ static bool cmd_rzcmd(RzCore *core, const char *_input) {
 	} else if (rz_str_startswith (input, "rz_diff")) {
 		rc = __runMain (core->rz_main_rz_diff, input);
 	} else {
-		const char *r2cmds[] = {
-			"rz_ax", "rz_pm", "rz_asm", "rz_bin", "rz_hash", "rz_find", "rz_run", "rz_gg", "rizin", "r2", NULL
+		const char *rzcmds[] = {
+			"rz-ax", "rz-pm", "rz-asm", "rz-bin", "rz-hash", "rz-find", "rz-run", "rz-gg", "rizin", "rz", NULL
 		};
 		int i;
-		for (i = 0; r2cmds[i]; i++) {
-			if (rz_str_startswith (input, r2cmds[i])) {
+		for (i = 0; rzcmds[i]; i++) {
+			if (rz_str_startswith (input, rzcmds[i])) {
 				free (input);
 				return true;
 			}
@@ -1803,10 +1803,10 @@ static int cmd_resize(void *data, const char *input) {
 		return true;
 	case 'b': // "rb" rebase
 		return cmd_rebase (core, input + 1);
-	case '2': // "r2" // XXX should be handled already in cmd_rzcmd()
+	case 'z': // "rz" // XXX should be handled already in cmd_rzcmd()
 		// TODO: use argv[0] instead of 'rizin'
-		// TODO: { char **argv = { "r2", NULL }; rz_main_rizin (1, argv); }
-		rz_sys_cmdf ("radare%s", input);
+		// TODO: { char **argv = { "rz", NULL }; rz_main_rizin (1, argv); }
+		rz_sys_cmdf ("rizin%s", input);
 		return true;
 	case 'm': // "rm"
 		if (input[1] == ' ') {

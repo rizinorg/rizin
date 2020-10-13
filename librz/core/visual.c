@@ -1544,7 +1544,7 @@ repeat:
 		" jk  - select next or previous item (use arrows)\n"
 		" JK  - step 10 rows\n"
 		" pP  - rotate between various print modes\n"
-		" :   - run r2 command\n"
+		" :   - run rizin command\n"
 		" /   - highlight given word\n"
 		" ?   - show this help message\n"
 		" <>  - '<' for xrefs and '>' for refs\n"

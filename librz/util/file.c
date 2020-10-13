@@ -1060,7 +1060,7 @@ RZ_API int rz_file_mkstemp(RZ_NULLABLE const char *prefix, char **oname) {
 	int h = -1;
 	char *path = rz_file_tmpdir ();
 	if (!prefix) {
-		prefix = "r2";
+		prefix = "rz";
 	}
 #if __WINDOWS__
 	LPTSTR name = NULL;
@@ -1101,7 +1101,7 @@ err_r_file_mkstemp:
 		suffix = "";
 	}
 
-	char *name = rz_str_newf ("%s/r2.%s.XXXXXX%s", path, prefix, suffix);
+	char *name = rz_str_newf ("%s/rz.%s.XXXXXX%s", path, prefix, suffix);
 	mode_t mask = umask (S_IWGRP | S_IWOTH);
 	if (suffix && *suffix) {
 #if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && 2 <= __GLIBC__ && 19 <= __GLIBC__MINOR__

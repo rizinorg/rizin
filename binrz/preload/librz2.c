@@ -39,7 +39,7 @@ static void _libwrap_init(void) {
 	char *web;
 	rz_sys_signal (SIGUSR1, sigusr1);
 	rz_sys_signal (SIGUSR2, sigusr2);
-	printf ("librz initialized. send SIGUSR1 to %d in order to reach the r2 prompt\n", getpid ());
+	printf ("librz initialized. send SIGUSR1 to %d in order to reach the rizin prompt\n", getpid ());
 	printf ("kill -USR1 %d\n", getpid ());
 	fflush (stdout);
 	web = rz_sys_getenv ("RZ_RUN_WEB");

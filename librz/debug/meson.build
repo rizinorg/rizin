@@ -106,7 +106,7 @@ rz_debug = library('rz_debug', rz_debug_sources,
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,
-  soversion: r2_libversion
+  soversion: rizin_libversion
 )
 
 rz_debug_dep = declare_dependency(link_with: rz_debug,
@@ -114,7 +114,7 @@ rz_debug_dep = declare_dependency(link_with: rz_debug,
 
 pkgconfig_mod.generate(rz_debug,
   subdirs: 'librz',
-  version: r2_version,
+  version: rizin_version,
   name: 'rz_debug',
   filebase: 'rz_debug',
   libraries: pkgcfg_sanitize_libs,

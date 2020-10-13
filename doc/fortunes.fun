@@ -17,17 +17,17 @@ rizin is like windows 7 but even better.
 We are surrounded by the enemy. - Excellent, we can attack in any direction!
 rizin-built farm beats the facebook one.
 Thank you for using rizin. Have a nice night!
-Your r2 was built 20h ago. TOO OLD!
+Your rizin was built 20h ago. TOO OLD!
 Use rizin! Lemons included!
 rz_ax -s 20e296b20ae296b220e296b20a
-Connection lost with the license server, your r2 session will terminate in 30 minutes.
+Connection lost with the license server, your rizin session will terminate in 30 minutes.
 This is amazing ...
 I love gradients.
 Wait a moment ...
 Don't do this.
 No such file or directory.
 Default scripting languages are NodeJS and Python.
--bash: r2: command not found
+-bash: rizin: command not found
 Press any key to continue ...
 Ilo ni li pona li pali e lipu. mi wile e ni: sina kama jo e musi
 rizin for FideOS, now with extra potato
@@ -54,7 +54,7 @@ I am Pentium of Borg. Division is futile. You will be approximated.
 Don't look at the code. Don't look.
 Dissasemble? No dissasemble, no dissassemble!!!!!
 Warning, your trial license is about to expire.
-Please register your copy of r2 today! Only £29.90!
+Please register your copy of rizin today! Only £29.90!
 Welcome to IDA 10.0.
 It's not you, it's me.
 This software comes with no brain included. Please use your own.
@@ -104,7 +104,7 @@ I accidentally radared my filesystem today.
 No fix, no sleep
 You see it, you fix it!
 V is for Visual
-r2-goverity: found corruption - please eliminate!
+rizin-goverity: found corruption - please eliminate!
 Stop debugging me!
 THIS IS NOT A BUG
 Polish reversers blame git
@@ -112,11 +112,11 @@ vm is like a small cow in ascii
 Do you want to print 333.5K chars? (y/N)
 Now with more better English!
 :(){ :|:& };:
-All your base are belong to r2
-Ask not what r2 can do for you - ask what you can do for r2
+All your base are belong to rizin
+Ask not what rizin can do for you - ask what you can do for rizin
 Try with ASAN, and be amazed
 bash: r3: command not found
-R2 loves everyone, even Java coders, but less than others
+rizin loves everyone, even Java coders, but less than others
 It's not a bug, it's a work in progress
 Stop swearing!
 I didn't say that it was working, I said that it's implemented
@@ -125,8 +125,8 @@ Remember that word: C H A I R
 what happens in #radare, stays in #radare
 For a full list of commands see `strings /dev/urandom`
 Good morning, pal *<:-)
-Of course r2 runs FreeBSD
-Reverser by Birth, r2 by Choice
+Of course rizin runs FreeBSD
+Reverser by Birth, rizin by Choice
 Radare2, what else?
 This incident will be reported
 command not found: calc.exe
@@ -157,7 +157,7 @@ Hello Mr. Anderson
 Try pressing the pigeon-shaped button
 What has been executed cannot be unexecuted
 What about taking a break? Here, have this nice 0xCC.
-r2 is meant to be read by machines.
+rizin is meant to be read by machines.
 Prove you are a robot to continue ...
 This is fine.
 Using rizin to generate intelligence ...
@@ -166,38 +166,38 @@ It's the year of desktop on rizin
 💺
 It's the year of rizin on the desktop
 SSAbotage from ISIL
-"a collection of garbage" -- an r2 pro user
+"a collection of garbage" -- an rizin pro user
 A git pull a day keeps the segfault away
 Are you a wizard?
 Learn pancake as if you were radare!
-r2 is a great OS, but a terrible hex editor
+rizin is a great OS, but a terrible hex editor
 THE CAKE IS A PIE
 rizin 0.9.7 is so old, my grandfarther was using it with his enigma in WWII
 Have you seen the latest rizin TV spot?
 scp ~/.idapro/ida.key radare.org:/var/www/radare.org/pub/losers/
-Too bad there is no gif support in r2. Yet. -- @r2gif
+Too bad there is no gif support in rizin. Yet. -- @rizingif
 Almost 5am, maybe you should go to bed.
 Jingle sploits, jingle sploits, ropchain all the way.
 Mind that the 'g' in radare is silent
 256 colors ought to be enough for anybody
 Hang in there, Baby!
 Run a command with unspecified long sequence of 'a', pancake will be summoned and do the analysis for you.
-In r2land usability is treated as a bug
+In rizinland usability is treated as a bug
 rizin is WYSIWYF - what you see is what you fix
 Your endian swaps
 *(ut64*)buffer ought to be illegal
 How about Global Thermonuclear War?
 There is no F5 key in rizin yet
-Did you know that r2 is 10 years old?
+Did you know that rizin is 10 years old?
 Beer in mind.
-r2 -- leading options since 2006
+rizin -- leading options since 2006
 Don’t feed the bugs! (except delicious stacktraces)!
 Feed the bugs!
 You haxor! Me jane?
-r2 talks to you. tries to make you feel well.
+rizin talks to you. tries to make you feel well.
 Now i'm like an evil engineer. MUAHAHAH
 We only have bugs, features are an unintended side-effect
-There are 5 minutes from WTF to FIX in r2land
+There are 5 minutes from WTF to FIX in rizinland
 Quantum dissasemble: it's there as long as you don't observe it
 Ceci n'est pas une rzpipe
 Buy a mac
@@ -210,7 +210,7 @@ Disassemble?! No Disassemble Johnny No. 5!!!
 You crackme up!
 Welcome, "reenigne"
 Search returned no hits. Did you mean 'Misassemble'?
-º|<|<|  -( glu glu glu, im the r2 fish )
+º|<|<|  -( glu glu glu, im the rizin fish )
 Everybody hates warnings. Mr. Pancake, tear down this -Wall
 TIRED OF WAITING
 We fix bugs while you sleep.
@@ -227,7 +227,7 @@ Mind the tab
 Buy a Mac
 You have been designated for disassembly
 Helping siol merge? No way, that would be like.. way too much not lazy. - vifino
-What is the most complex r2 command? q - then you have to deal with real life /o\
+What is the most complex rizin command? q - then you have to deal with real life /o\
 If you're having fun using rizin, odds are that you're doing something wrong.
 Don't trust what can't be compiled
 Coffee time!
@@ -241,7 +241,7 @@ git checkout hamster
 Noot noot
 This is an unregistered copy.
 10 reasons you want to bt on all threads - you will be shocked by number 3!
-Place a cat on your keyboard while running r2, you'll not believe what will happen next
+Place a cat on your keyboard while running rizin, you'll not believe what will happen next
 This binary may contain traces of human
 Help subcommand will be eventually removed.
 Carpe noctum.
@@ -249,11 +249,11 @@ Your mouse has moved. Radare2 NT must be restarted for the change to take effect
 There is only one binary, and we are all just reversing pieces of it.
 Radare2 is like violence. If it doesn't solve your problem, you aren't using enough.
 Order pizza for $12.48? [Y/n]
-r2OS r2pad 0.1 SMP GENERIC r2_64 GNU/r2OS
+rizinOS rizinpad 0.1 SMP GENERIC rizin_64 GNU/rizinOS
 AHHHHH!!!! ASSEMBLY CODE!!!!!! HOLD ME I'M SCARED!!!!!!!!!!
 In radare we trust
 We don't make mistakes... just happy little segfaults.
-r2 is for the people
+rizin is for the people
 Use headphones for best experience.
 Starting bitcoin miner in background...
 Downloading and verifying the blockchain...
@@ -263,7 +263,7 @@ This software is sold for home use only and all other rights are expressly rever
 Any commercial use or duplication of this copylefted material without prior licensing is forbidden.
 Violators will be prosecuted.
 This shell has been seized by the Internet's Police.
-OpenBSD might pledge r2 but r2 unveils OpenBSD.
+OpenBSD might pledge rizin but rizin unveils OpenBSD.
 Error: There's a missing space before the opening parenthesis '('
 WARNING: r_list_length: assertion 'list' failed (line 55)
 This accessory is not supported by this version of rizin.
@@ -286,7 +286,7 @@ You will soon have an out of memory experience.
 This binary no good. Try another.
 BSOD!
 Mind the trap.
-For a full documentation see `r2 -qc iz /lib/librz_core.so`
+For a full documentation see `rizin -qc iz /lib/librz_core.so`
 99 bugs, take one down pass it around. 100 bugs...
 I like my binary stripped.
 Now 8-bit clean with better ＡＳＣＩＩ!
