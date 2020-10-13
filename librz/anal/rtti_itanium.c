@@ -364,7 +364,7 @@ static void rtti_itanium_print_vmi_class_type_info(vmi_class_type_info *vmi_cti,
 	int i;
 	for (i = 0; i < vmi_cti->vmi_base_count; i++) {
 		rz_cons_printf ("%s    Base class type descriptor address: 0x%08" PFMT64x "\n"
-			       "%s    Base class flags: 0x%x"
+			       "%s    Base class flags: 0x%" PFMT64x
 			       "\n",
 			prefix, vmi_cti->vmi_bases[i].base_class_addr,
 			prefix, vmi_cti->vmi_bases[i].flags);
@@ -767,7 +767,7 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 		RzAnalMethod meth;
 		meth.addr = vmeth->addr;
 		meth.vtable_offset = vmeth->vtable_offset;
-		meth.name = rz_str_newf ("virtual_%d", meth.vtable_offset);
+		meth.name = rz_str_newf ("virtual_%" PFMT64d, meth.vtable_offset);
 		rz_anal_class_method_set (context->anal, class_name, &meth);
 		rz_anal_class_method_fini (&meth);
 	}

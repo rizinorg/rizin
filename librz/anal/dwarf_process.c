@@ -221,7 +221,7 @@ static st32 parse_array_type(Context *ctx, ut64 idx, RzStrBuf *strbuf) {
 					switch (value->attr_name) {
 					case DW_AT_upper_bound:
 					case DW_AT_count:
-						rz_strbuf_appendf (strbuf, "[%d]", value->uconstant + 1);
+						rz_strbuf_appendf (strbuf, "[%" PFMT64d "]", value->uconstant + 1);
 						break;
 
 					default:

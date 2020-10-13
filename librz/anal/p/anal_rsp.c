@@ -201,7 +201,7 @@ static int rsp_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *b, int len, 
 		op->dst = rz_anal_value_new ();
 		op->dst->reg = rz_reg_get (anal->reg, "PC", RZ_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
-		rz_strbuf_setf (&op->esil, "%s,PC,=,0x%08x,RA,=", parsed_operands[0].esil, op->fail);
+		rz_strbuf_setf (&op->esil, "%s,PC,=,0x%08" PFMT64x ",RA,=", parsed_operands[0].esil, op->fail);
 		break;
 	case RSP_OP_JR:
 		/* if register is RA, this is a return */

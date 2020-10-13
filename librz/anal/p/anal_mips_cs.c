@@ -140,14 +140,14 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case MIPS_OP_IMM:
 			rz_strbuf_append (buf, "\"type\":\"imm\"");
-			rz_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+			rz_strbuf_appendf (buf, ",\"value\":%" PFMT64d, (st64)op->imm);
 			break;
 		case MIPS_OP_MEM:
 			rz_strbuf_append (buf, "\"type\":\"mem\"");
 			if (op->mem.base != MIPS_REG_INVALID) {
 				rz_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
 			}
-			rz_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", op->mem.disp);
+			rz_strbuf_appendf (buf, ",\"disp\":%" PFMT64d, (st64)op->mem.disp);
 			break;
 		default:
 			rz_strbuf_append (buf, "\"type\":\"invalid\"");
@@ -218,7 +218,7 @@ static int analop_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int l
 			rz_strbuf_setf (&op->esil, ",");
 			break;
 		case MIPS_INS_BREAK:
-			rz_strbuf_setf (&op->esil, "%d,%d,TRAP", IMM (0), IMM (0));
+			rz_strbuf_setf (&op->esil, "%"PFMT64d",%" PFMT64d ",TRAP", (st64)IMM (0), (st64)IMM (0));
 			break;
 		case MIPS_INS_SD:
 			rz_strbuf_appendf (&op->esil, "%s,%s,=[8]",
@@ -298,7 +298,7 @@ static int analop_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int l
 			break;
 		case MIPS_INS_JRADDIUSP:
 			// increment stackpointer in X and jump to %ra
-			rz_strbuf_appendf (&op->esil, ES_TRAP_DS () "%d,sp,+=," ES_J ("ra"), ARG (0));
+			rz_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,sp,+=," ES_J ("ra"), ARG (0));
 			break;
 		case MIPS_INS_JR:
 		case MIPS_INS_JRC:
@@ -453,10 +453,10 @@ static int analop_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int l
 		break;
 	case MIPS_INS_LI:
 	case MIPS_INS_LDI:
-		rz_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,=", IMM(1), ARG(0));
+		rz_strbuf_appendf (&op->esil, "0x%" PFMT64x ",%s,=", (ut64)IMM(1), ARG(0));
 		break;
 	case MIPS_INS_LUI:
-		rz_strbuf_appendf (&op->esil, "0x%"PFMT64x"0000,%s,=", IMM(1), ARG(0));
+		rz_strbuf_appendf (&op->esil, "0x%" PFMT64x "0000,%s,=", (ut64)IMM(1), ARG(0));
 		break;
 	case MIPS_INS_LB:
 		op->sign = true;

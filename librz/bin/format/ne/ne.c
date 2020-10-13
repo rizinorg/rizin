@@ -86,7 +86,7 @@ RzList *rz_bin_ne_get_segments(rz_bin_ne_obj_t *bin) {
 		bs->is_data = se->flags & IS_DATA;
 		bs->perm = __translate_perms (se->flags);
 		bs->paddr = (ut64)se->offset * bin->alignment;
-		bs->name = rz_str_newf ("%s.%d", se->flags & IS_MOVEABLE ? "MOVEABLE" : "FIXED", bs->paddr);
+		bs->name = rz_str_newf ("%s.%" PFMT64d, se->flags & IS_MOVEABLE ? "MOVEABLE" : "FIXED", bs->paddr);
 		bs->is_segment = true;
 		rz_list_append (segments, bs);
 	}

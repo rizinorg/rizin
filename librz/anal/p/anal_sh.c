@@ -344,7 +344,7 @@ static int first_nibble_is_0(RzAnal* anal, RzAnalOp* op, ut16 code) { //STOP
 		rz_strbuf_setf (&op->esil, "r%d,r%d,*,macl,=", GET_TARGET_REG (code), GET_SOURCE_REG (code));
 	} else if (IS_SLEEP (code)) {
 		op->type = RZ_ANAL_OP_TYPE_UNK;
-		rz_strbuf_setf (&op->esil, "sleep_called,TRAP", GET_TARGET_REG (code));
+		rz_strbuf_setf (&op->esil, "sleep_called,TRAP");
 	} else if (IS_STSMACH (code)) {	//0000nnnn0000101_ sts MAC*,<REG_N>
 		op->type = RZ_ANAL_OP_TYPE_MOV;
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
@@ -372,7 +372,7 @@ static int first_nibble_is_0(RzAnal* anal, RzAnalOp* op, ut16 code) { //STOP
 			rz_strbuf_setf (&op->esil, "vbr,r%d,=", GET_TARGET_REG (code));
 			break;
 		default:
-			rz_strbuf_setf (&op->esil, "");
+			rz_strbuf_setf (&op->esil, "%s", "");
 			break;
 
 		}
@@ -729,7 +729,7 @@ static int first_nibble_is_4(RzAnal* anal, RzAnalOp* op, ut16 code) {
 		rz_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,[1],!,?{,0x80,r%d,=[1],1,sr,|=,}", GET_TARGET_REG (code), GET_TARGET_REG (code));
 		op->type = RZ_ANAL_OP_TYPE_UNK;
 	} else if (IS_DT (code)) {
-		rz_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,1,r%d,-=,$z,sr,|,sr,:=", GET_TARGET_REG (code), GET_TARGET_REG (code));
+		rz_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,1,r%d,-=,$z,sr,|,sr,:=", GET_TARGET_REG (code));
 		op->type = RZ_ANAL_OP_TYPE_UNK;
 	} else if (IS_MACW(code)){
 		rz_strbuf_setf (&op->esil,
@@ -879,15 +879,15 @@ static int first_nibble_is_8(RzAnal* anal, RzAnalOp* op, ut16 code) {
 		op->fail = op->addr + 2 ;
 		op->eob = true;
 		if (IS_BT (code)) {
-			rz_strbuf_setf (&op->esil, "sr,1,&,?{,0x%x,pc,=,}", op->jump);
+			rz_strbuf_setf (&op->esil, "sr,1,&,?{,0x%" PFMT64x ",pc,=,}", op->jump);
 		} else if (IS_BTS (code)) {
-			rz_strbuf_setf (&op->esil, "1,SETD,sr,1,&,?{,0x%x,pc,=,}", op->jump);
+			rz_strbuf_setf (&op->esil, "1,SETD,sr,1,&,?{,0x%" PFMT64x ",pc,=,}", op->jump);
 			op->delay = 1; //Only /S versions have a delay slot
 		} else if (IS_BFS (code)) {
-			rz_strbuf_setf (&op->esil, "1,SETD,sr,1,&,!,?{,0x%x,pc,=,}",op->jump);
+			rz_strbuf_setf (&op->esil, "1,SETD,sr,1,&,!,?{,0x%" PFMT64x ",pc,=,}",op->jump);
 			op->delay = 1; //Only /S versions have a delay slot
 		} else if (IS_BF (code)) {
-			rz_strbuf_setf (&op->esil, "sr,1,&,!,?{,0x%x,pc,=,}", op->jump);
+			rz_strbuf_setf (&op->esil, "sr,1,&,!,?{,0x%" PFMT64x ",pc,=,}", op->jump);
 		}
 	} else if (IS_MOVB_REGDISP_R0 (code)) {
 		// 10000100mmmmi4*1 mov.b @(<disp>,<REG_M>),R0
@@ -927,7 +927,7 @@ static int movw_pcdisp_reg(RzAnal* anal, RzAnalOp* op, ut16 code) {
 	op->src[0] = rz_anal_value_new ();
 	op->src[0]->base = (code & 0xFF) * 2+op->addr + 4;
 	op->src[0]->memref=1;
-	rz_strbuf_setf (&op->esil, "0x%x,[2],r%d,=,r%d,0x8000,&,?{,0xFFFF0000,r%d,|=,}", op->src[0]->base, GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
+	rz_strbuf_setf (&op->esil, "0x%" PFMT64x ",[2],r%d,=,r%d,0x8000,&,?{,0xFFFF0000,r%d,|=,}", op->src[0]->base, GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
 	return op->size;
 }
 
@@ -938,7 +938,7 @@ static int bra(RzAnal* anal, RzAnalOp* op, ut16 code) {
 	op->delay = 1;
 	op->jump = disarm_12bit_offset (op, GET_BRA_OFFSET (code));
 	op->eob = true;
-	rz_strbuf_setf (&op->esil, "1,SETD,0x%x,pc,=", op->jump);
+	rz_strbuf_setf (&op->esil, "1,SETD,0x%" PFMT64x ",pc,=", op->jump);
 	return op->size;
 }
 
@@ -948,7 +948,7 @@ static int bsr(RzAnal* anal, RzAnalOp* op, ut16 code) {
 	op->type = RZ_ANAL_OP_TYPE_CALL;
 	op->jump = disarm_12bit_offset (op, GET_BRA_OFFSET (code));
 	op->delay = 1;
-	rz_strbuf_setf (&op->esil, "1,SETD,pc,2,+,pr,=,0x%x,pc,=", op->jump);
+	rz_strbuf_setf (&op->esil, "1,SETD,pc,2,+,pr,=,0x%" PFMT64x ",pc,=", op->jump);
 	return op->size;
 }
 
@@ -1044,7 +1044,7 @@ static int movl_pcdisp_reg(RzAnal* anal, RzAnalOp* op, ut16 code) {
 	//TODO: check it
 	op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	//rz_strbuf_setf (&op->esil, "0x%x,[4],r%d,=", (code & 0xFF) * 4 + (op->addr & 0xfffffff3) + 4, GET_TARGET_REG (code));
-	rz_strbuf_setf (&op->esil, "0x%x,[4],r%d,=", (code & 0xFF) * 4 + ((op->addr >> 2)<<2) + 4, GET_TARGET_REG (code));
+	rz_strbuf_setf (&op->esil, "0x%" PFMT64x ",[4],r%d,=", (code & 0xFF) * 4 + ((op->addr >> 2)<<2) + 4, GET_TARGET_REG (code));
 	return op->size;
 }
 

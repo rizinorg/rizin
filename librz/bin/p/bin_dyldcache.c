@@ -1851,7 +1851,7 @@ static RzList *classes(RzBinFile *bf) {
 				bf->buf = orig_buf;
 
 				if (!klass->name) {
-					klass->name = rz_str_newf ("UnnamedClass%" PFMT64d, num_of_unnamed_class);
+					klass->name = rz_str_newf ("UnnamedClass%u", num_of_unnamed_class);
 					if (!klass->name) {
 						RZ_FREE (klass);
 						RZ_FREE (pointers);

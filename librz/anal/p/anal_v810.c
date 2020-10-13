@@ -110,7 +110,7 @@ static int v810_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case V810_DIV:
 	case V810_DIVU:
 		op->type = RZ_ANAL_OP_TYPE_DIV;
-		rz_strbuf_appendf (&op->esil, "r%u,r%u,/=,r%u,r%u,%,r30,=",
+		rz_strbuf_appendf (&op->esil, "r%u,r%u,/=,r%u,r%u,%%,r30,=",
 						 REG1(word1), REG2(word1),
 						 REG1(word1), REG2(word1));
 		update_flags (op, V810_FLAG_OV | V810_FLAG_S | V810_FLAG_Z);
@@ -313,7 +313,7 @@ static int v810_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int le
 
 		if (opcode == V810_JAL) {
 			op->type = RZ_ANAL_OP_TYPE_CALL;
-			rz_strbuf_appendf (&op->esil, "$$,4,+,r31,=,", jumpdisp);
+			rz_strbuf_appendf (&op->esil, "$$,4,+,r31,=,");
 		} else {
 			op->type = RZ_ANAL_OP_TYPE_JMP;
 		}
