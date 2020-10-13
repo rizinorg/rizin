@@ -4,7 +4,7 @@
 #include "../i/private.h"
 #include "./cxx/demangle.h"
 
-RZ_API char *rz_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
+RZ_API char *rz_bin_demangle_cxx(RzBinFile *bf, const char *str, ut64 vaddr) {
 	// DMGL_TYPES | DMGL_PARAMS | DMGL_ANSI | DMGL_VERBOSE
 	// | DMGL_RET_POSTFIX | DMGL_TYPES;
 	int i;
@@ -67,7 +67,7 @@ RZ_API char *rz_bin_demangle_cxx(RBinFile *bf, const char *str, ut64 vaddr) {
 			if (nerd && *nerd) {
 				*nerd = 0;
 				if (bf) {
-					RBinSymbol *sym = rz_bin_file_add_method (bf, out, nerd + 2, 0);
+					RzBinSymbol *sym = rz_bin_file_add_method (bf, out, nerd + 2, 0);
 					if (sym) {
 						if (sym->vaddr != 0 && sym->vaddr != vaddr) {
 							if (bf && bf->rbin && bf->rbin->verbose) {

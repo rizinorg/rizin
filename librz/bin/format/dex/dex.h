@@ -77,7 +77,7 @@ typedef struct dex_method_t {
 	ut16 class_id;
 	ut16 proto_id;
 	ut32 name_id;
-}) RBinDexMethod;
+}) RzBinDexMethod;
 
 RZ_PACKED(
 typedef struct dex_class_t {
@@ -90,7 +90,7 @@ typedef struct dex_class_t {
 	ut32 class_data_offset;
 	ut32 static_values_offset;
 	struct dex_class_data_item_t *class_data;
-}) RBinDexClass;
+}) RzBinDexClass;
 
 RZ_PACKED(
 typedef struct dex_class_data_item_t {
@@ -98,7 +98,7 @@ typedef struct dex_class_data_item_t {
 	ut64 instance_fields_size;
 	ut64 direct_methods_size;
 	ut64 virtual_methods_size;
-}) RBinDexClassData;
+}) RzBinDexClassData;
 
 typedef struct rz_bin_dex_obj_t {
 	int size;
@@ -121,7 +121,7 @@ typedef struct rz_bin_dex_obj_t {
 	char *version;
 	Sdb *kv;
 	char **cal_strings;
-} RBinDexObj;
+} RzBinDexObj;
 
 struct rz_bin_dex_str_t {
 	char str[RZ_BIN_DEX_MAXSTR];

@@ -4,7 +4,7 @@
 #include <rz_util.h>
 #include "dex.h"
 
-char* rz_bin_dex_get_version(RBinDexObj *bin) {
+char* rz_bin_dex_get_version(RzBinDexObj *bin) {
 	rz_return_val_if_fail (bin, NULL);
 	char* version = calloc (1, 8);
 	if (version) {
@@ -14,7 +14,7 @@ char* rz_bin_dex_get_version(RBinDexObj *bin) {
 	return NULL;
 }
 
-void rz_bin_dex_free(RBinDexObj *dex) {
+void rz_bin_dex_free(RzBinDexObj *dex) {
 	struct dex_header_t *dexhdr = &dex->header;
 	if (dex->cal_strings) {
 		size_t i;
@@ -26,9 +26,9 @@ void rz_bin_dex_free(RBinDexObj *dex) {
 	free (dex);
 }
 
-RBinDexObj *rz_bin_dex_new_buf(RBuffer *buf) {
+RzBinDexObj *rz_bin_dex_new_buf(RBuffer *buf) {
 	rz_return_val_if_fail (buf, NULL);
-	RBinDexObj *bin = RZ_NEW0 (RBinDexObj);
+	RzBinDexObj *bin = RZ_NEW0 (RzBinDexObj);
 	int i;
 	struct dex_header_t *dexhdr;
 	if (!bin) {

@@ -326,7 +326,7 @@ RZ_API bool try_get_jmptbl_info(RzAnal *anal, RzAnalFunction *fcn, ut64 addr, Rz
 	}
 
 	/* if UJMP is in .plt section just skip it */
-	RBinSection *s = anal->binb.get_vsect_at (anal->binb.bin, addr);
+	RzBinSection *s = anal->binb.get_vsect_at (anal->binb.bin, addr);
 	if (s && s->name[0]) {
 		bool in_plt = strstr (s->name, ".plt") != NULL;
 		if (!in_plt && strstr (s->name, "_stubs") != NULL) {

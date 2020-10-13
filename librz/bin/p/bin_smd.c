@@ -91,7 +91,7 @@ typedef struct gen_vect {
 	};
 } SMD_Vectors;
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return 0;
 }
 
@@ -104,13 +104,13 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
 	return check_buffer (b);
 }
 
-static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
-	if (!(ret = RZ_NEW0 (RBinInfo))) {
+static RzBinInfo *info(RzBinFile *bf) {
+	RzBinInfo *ret = NULL;
+	if (!(ret = RZ_NEW0 (RzBinInfo))) {
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
@@ -128,7 +128,7 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static void addsym(RzList *ret, const char *name, ut64 addr) {
-	RBinSymbol *ptr = RZ_NEW0 (RBinSymbol);
+	RzBinSymbol *ptr = RZ_NEW0 (RzBinSymbol);
 	if (!ptr) {
 		return;
 	}
@@ -145,7 +145,7 @@ static void showstr(const char *str, const ut8 *s, int len) {
 	free (msg);
 }
 
-static RzList *symbols(RBinFile *bf) {
+static RzList *symbols(RzBinFile *bf) {
 	RzList *ret = NULL;
 	const char *name = NULL;
 	int i;
@@ -251,13 +251,13 @@ static RzList *symbols(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
-	RBinSection *ptr;
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	RzBinSection *ptr;
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("vtable");
@@ -267,7 +267,7 @@ static RzList *sections(RBinFile *bf) {
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("header");
@@ -277,7 +277,7 @@ static RzList *sections(RBinFile *bf) {
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("text");
@@ -295,13 +295,13 @@ static RzList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *entries(RBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
+static RzList *entries(RzBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
 	RzList *ret;
-	RBinAddr *ptr = NULL;
+	RzBinAddr *ptr = NULL;
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
-	if (!(ptr = RZ_NEW0 (RBinAddr))) {
+	if (!(ptr = RZ_NEW0 (RzBinAddr))) {
 		return ret;
 	}
 	if (bf->size < sizeof (SMD_Vectors)) {
@@ -317,7 +317,7 @@ static RzList *entries(RBinFile *bf) { // Should be 3 offsets pointed by NMI, RE
 	return ret;
 }
 
-RBinPlugin rz_bin_plugin_smd = {
+RzBinPlugin rz_bin_plugin_smd = {
 	.name = "smd",
 	.desc = "SEGA Genesis/Megadrive",
 	.license = "LGPL3",

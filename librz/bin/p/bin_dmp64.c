@@ -8,17 +8,17 @@
 
 #include "dmp/dmp64.h"
 
-static Sdb *get_sdb(RBinFile *bf) {
+static Sdb *get_sdb(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o, NULL);
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
 	return (obj && obj->kv) ? obj->kv: NULL;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	rz_bin_dmp64_free ((struct rz_bin_dmp64_obj_t*)bf->o->bin_obj);
 }
 
-static void header(RBinFile *bf) {
+static void header(RzBinFile *bf) {
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
 	struct rz_bin_t *rbin = bf->rbin;
 	rbin->cb_printf ("DUMP_HEADER64:\n");
@@ -48,9 +48,9 @@ static void header(RBinFile *bf) {
 	}
 }
 
-static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret;
-	if (!(ret = RZ_NEW0 (RBinInfo))) {
+static RzBinInfo *info(RzBinFile *bf) {
+	RzBinInfo *ret;
+	if (!(ret = RZ_NEW0 (RzBinInfo))) {
 		return NULL;
 	}
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
@@ -85,11 +85,11 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	dmp_page_desc *page;
 	RzList *ret;
 	RzListIter *it;
-	RBinSection *ptr;
+	RzBinSection *ptr;
 	struct rz_bin_dmp64_obj_t *obj = (struct rz_bin_dmp64_obj_t *)bf->o->bin_obj;
 
 	if (!(ret = rz_list_newf (free))) {
@@ -97,7 +97,7 @@ static RzList *sections(RBinFile *bf) {
 	}
 
 	rz_list_foreach (obj->pages, it, page) {
-		if (!(ptr = RZ_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RzBinSection))) {
 			return ret;
 		}
 
@@ -114,7 +114,7 @@ static RzList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	rz_return_val_if_fail (buf, false);
 	struct rz_bin_dmp64_obj_t *res = rz_bin_dmp64_new_buf (buf);
 	if (res) {
@@ -133,7 +133,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-RBinPlugin rz_bin_plugin_dmp64 = {
+RzBinPlugin rz_bin_plugin_dmp64 = {
 	.name = "dmp64",
 	.desc = "Windows Crash Dump x64 rz_bin plugin",
 	.license = "LGPL3",

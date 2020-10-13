@@ -6,14 +6,14 @@
 #include <rz_bin.h>
 #include "pe/pemixed.h"
 
-static RzList * oneshotall(RBin *bin, const ut8 *buf, ut64 size);
-static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int subbin_type);
+static RzList * oneshotall(RzBin *bin, const ut8 *buf, ut64 size);
+static RzBinXtrData * oneshot(RzBin *bin, const ut8 *buf, ut64 size, int subbin_type);
 
 static void free_xtr (void *xtr_obj) {
 	rz_bin_pemixed_free ((struct rz_bin_pemixed_obj_t*) xtr_obj);
 }
 
-static void destroy(RBin *bin) {
+static void destroy(RzBin *bin) {
 	free_xtr (bin->cur->xtr_obj);
 }
 
@@ -47,9 +47,9 @@ static bool check_buffer(RBuffer *b) {
 }
 
 // TODO RBufferify
-static RzList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
+static RzList * oneshotall(RzBin *bin, const ut8 *buf, ut64 size) {
 	//extract dos componenent first
-	RBinXtrData *data = oneshot (bin, buf, size, SUB_BIN_DOS);
+	RzBinXtrData *data = oneshot (bin, buf, size, SUB_BIN_DOS);
 
 	if (!data) {
 		return NULL;
@@ -70,7 +70,7 @@ static RzList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 }
 
 //implement this later
-static void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, void *foo) {// struct Pe_32_rz_bin_pemixed_obj_t* pe_bin){
+static void fill_metadata_info_from_hdr(RzBinXtrMetadata *meta, void *foo) {// struct Pe_32_rz_bin_pemixed_obj_t* pe_bin){
 	meta->arch = NULL;
 	meta->bits = 0;
 	meta->machine = NULL;
@@ -81,7 +81,7 @@ static void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, void *foo) {// st
 }
 
 // XXX: ut8* should be RBuffer *
-static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int sub_bin_type) {
+static RzBinXtrData * oneshot(RzBin *bin, const ut8 *buf, ut64 size, int sub_bin_type) {
 	rz_return_val_if_fail (bin && bin->cur && buf, false);
 
 	if (!bin->cur->xtr_obj) {
@@ -94,7 +94,7 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int sub_bin_t
 	if (!pe) {
 		return NULL;
 	}
-	RBinXtrMetadata *metadata = RZ_NEW0 (RBinXtrMetadata);
+	RzBinXtrMetadata *metadata = RZ_NEW0 (RzBinXtrMetadata);
 	if (!metadata) {
 		return NULL;
 	}
@@ -102,7 +102,7 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int sub_bin_t
 	return rz_bin_xtrdata_new (pe->b, 0, pe->size, 3, metadata);
 }
 
-RBinXtrPlugin rz_bin_xtr_plugin_xtr_pemixed = {
+RzBinXtrPlugin rz_bin_xtr_plugin_xtr_pemixed = {
 	.name = "xtr.pemixed",
 	.desc = "Extract sub-binaries in PE files",
 	.load = NULL, 		//not yet implemented

@@ -33,7 +33,7 @@ static bool check_buffer(RBuffer *buf) {
 	return bep == 0xea || bep == 0xe9;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	if (!check_buffer (buf)) {
 		return false;
 	}
@@ -41,22 +41,22 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return true;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	rz_buf_free (bf->o->bin_obj);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return 0;
 }
 
 /* accelerate binary load */
-static RzList *strings(RBinFile *bf) {
+static RzList *strings(RzBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
-	if (!(ret = RZ_NEW0 (RBinInfo))) {
+static RzBinInfo *info(RzBinFile *bf) {
+	RzBinInfo *ret = NULL;
+	if (!(ret = RZ_NEW0 (RzBinInfo))) {
 		return NULL;
 	}
 	ret->lang = NULL;
@@ -75,16 +75,16 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
-	RBinSection *ptr = NULL;
+	RzBinSection *ptr = NULL;
 	RBuffer *obj = bf->o->bin_obj;
 
 	if (!(ret = rz_list_newf ((RzListFree) rz_bin_section_free))) {
 		return NULL;
 	}
 	// program headers is another section
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("bootblk"); // Maps to 0xF000:0000 segment
@@ -96,7 +96,7 @@ static RzList *sections(RBinFile *bf) {
 	rz_list_append (ret, ptr);
 	// If image bigger than 128K - add one more section
 	if (bf->size >= 0x20000) {
-		if (!(ptr = RZ_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RzBinSection))) {
 			return ret;
 		}
 		ptr->name = strdup ("_e000"); // Maps to 0xE000:0000 segment
@@ -110,14 +110,14 @@ static RzList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *entries(RBinFile *bf) {
+static RzList *entries(RzBinFile *bf) {
 	RzList *ret;
-	RBinAddr *ptr = NULL;
+	RzBinAddr *ptr = NULL;
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
 	ret->free = free;
-	if (!(ptr = RZ_NEW0 (RBinAddr))) {
+	if (!(ptr = RZ_NEW0 (RzBinAddr))) {
 		return ret;
 	}
 	ptr->paddr = 0; // 0x70000;
@@ -126,7 +126,7 @@ static RzList *entries(RBinFile *bf) {
 	return ret;
 }
 
-RBinPlugin rz_bin_plugin_bios = {
+RzBinPlugin rz_bin_plugin_bios = {
 	.name = "bios",
 	.desc = "BIOS bin plugin",
 	.license = "LGPL",

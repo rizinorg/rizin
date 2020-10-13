@@ -67,16 +67,16 @@ static ut64 get_method_flags(ut64 MA) {
 	return flags;
 }
 
-static ut64 offset_of_method_idx(RBinFile *bf, struct rz_bin_dex_obj_t *dex, int idx) {
+static ut64 offset_of_method_idx(RzBinFile *bf, struct rz_bin_dex_obj_t *dex, int idx) {
 	// ut64 off = dex->header.method_offset + idx;
 	return sdb_num_get (mdb, sdb_fmt ("method.%d", idx), 0);
 }
 
-static ut64 dex_field_offset(RBinDexObj *bin, int fid) {
+static ut64 dex_field_offset(RzBinDexObj *bin, int fid) {
 	return bin->header.fields_offset + (fid * 8); // (sizeof (DexField) * fid);
 }
 
-static const char *getstr(RBinDexObj *dex, int idx) {
+static const char *getstr(RzBinDexObj *dex, int idx) {
 	ut8 buf[LEB_MAX_SIZE];
 	if (idx < 0 || idx >= dex->header.strings_size || !dex->strings) {
 		return NULL;
@@ -237,21 +237,21 @@ static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 	return str;
 }
 
-static const char *dex_type_descriptor(RBinDexObj *bin, int type_idx) {
+static const char *dex_type_descriptor(RzBinDexObj *bin, int type_idx) {
 	if (type_idx < 0 || type_idx >= bin->header.types_size) {
 		return NULL;
 	}
 	return getstr (bin, bin->types[type_idx].descriptor_id);
 }
 
-static ut16 type_desc(RBinDexObj *bin, ut16 type_idx) {
+static ut16 type_desc(RzBinDexObj *bin, ut16 type_idx) {
 	if (type_idx >= bin->header.types_size || type_idx >= bin->size) {
 		return UT16_MAX;
 	}
 	return bin->types[type_idx].descriptor_id;
 }
 
-static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
+static char *dex_get_proto(RzBinDexObj *bin, int proto_id) {
 	if (proto_id >= bin->header.prototypes_size) {
 		return NULL;
 	}
@@ -309,7 +309,7 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	return rz_strbuf_drain (sig);
 }
 
-static char *dex_method_signature(RBinDexObj *bin, int method_idx) {
+static char *dex_method_signature(RzBinDexObj *bin, int method_idx) {
 	if (method_idx < 0 || method_idx >= bin->header.method_size) {
 		return NULL;
 	}
@@ -328,7 +328,7 @@ static ut16 read16(RBuffer* b, ut64 addr) {
 	return rz_read_le16 (&n);
 }
 
-static RzList *dex_method_signature2(RBinDexObj *bin, int method_idx) {
+static RzList *dex_method_signature2(RzBinDexObj *bin, int method_idx) {
 	ut32 proto_id, params_off, list_size;
 	ut16 type_idx;
 	size_t i;
@@ -377,9 +377,9 @@ out_error:
 // XXX. this is using binfile->buf directly :(
 // https://github.com/android/platform_dalvik/blob/0641c2b4836fae3ee8daf6c0af45c316c84d5aeb/libdex/DexDebugInfo.cpp#L312
 // https://github.com/android/platform_dalvik/blob/0641c2b4836fae3ee8daf6c0af45c316c84d5aeb/libdex/DexDebugInfo.cpp#L141
-static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, int paddr, int ins_size, int insns_size, char *class_name, int regsz, int debug_info_off) {
-	RBin *rbin = bf->rbin;
-	RBinDexObj *dex = bf->o->bin_obj; //  bin .. unnecessary arg
+static void dex_parse_debug_item(RzBinFile *bf, RzBinDexClass *c, int MI, int MA, int paddr, int ins_size, int insns_size, char *class_name, int regsz, int debug_info_off) {
+	RzBin *rbin = bf->rbin;
+	RzBinDexObj *dex = bf->o->bin_obj; //  bin .. unnecessary arg
 	// runtime error: pointer index expression with base 0x000000004402 overflowed to 0xffffffffff0043fc
 	if (debug_info_off >= rz_buf_size (bf->buf)) {
 		return;
@@ -650,7 +650,7 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 		sdb_set (bf->sdb_addrinfo, fileline, offset_ptr, 0);
 		free (fileline);
 
-		RBinDwarfRow *rbindwardrow = RZ_NEW0 (RBinDwarfRow);
+		RzBinDwarfRow *rbindwardrow = RZ_NEW0 (RzBinDwarfRow);
 		if (!rbindwardrow) {
 			dexdump = false;
 			break;
@@ -724,20 +724,20 @@ beach:
 	free (debug_locals);
 }
 
-static Sdb *get_sdb(RBinFile *bf) {
+static Sdb *get_sdb(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o, NULL);
-	RBinObject *o = bf->o;
+	RzBinObject *o = bf->o;
 	rz_return_val_if_fail (o && o->bin_obj, NULL);
 	struct rz_bin_dex_obj_t *bin = (struct rz_bin_dex_obj_t *) o->bin_obj;
 	return bin->kv;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	*bin_obj = rz_bin_dex_new_buf (buf);
 	return *bin_obj != NULL;
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return 0;
 }
 
@@ -774,9 +774,9 @@ static bool check_buffer(RBuffer *buf) {
 	return false;
 }
 
-static RBinInfo *info(RBinFile *bf) {
-	RBinHash *h;
-	RBinInfo *ret = RZ_NEW0 (RBinInfo);
+static RzBinInfo *info(RzBinFile *bf) {
+	RzBinHash *h;
+	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -808,7 +808,7 @@ static RBinInfo *info(RBinFile *bf) {
 	rz_buf_read_at (bf->buf, 8, h->buf, 4);
 	// this is slow but computed once, so we can use rz_buf_data or just do rz_buf_read()
 	// not sure if we want to expose the computed checksum everytime we open the file
-	// also the checksum is computed by other methods in RBin, so maybe good to generalize
+	// also the checksum is computed by other methods in RzBin, so maybe good to generalize
 	{
 		ut32 fc = rz_buf_read_le32_at (bf->buf, 8);
 		ut64 tmpsz;
@@ -827,9 +827,9 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *strings(RBinFile *bf) {
+static RzList *strings(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o, NULL);
-	RBinString *ptr = NULL;
+	RzBinString *ptr = NULL;
 	RzList *ret = NULL;
 	int i;
 	ut64 len;
@@ -847,7 +847,7 @@ static RzList *strings(RBinFile *bf) {
 		return NULL;
 	}
 	for (i = 0; i < bin->header.strings_size; i++) {
-		if (!(ptr = RZ_NEW0 (RBinString))) {
+		if (!(ptr = RZ_NEW0 (RzBinString))) {
 			break;
 		}
 		if (bin->strings[i] > bin->size || bin->strings[i] + 6 > bin->size) {
@@ -889,7 +889,7 @@ out_error:
 	return NULL;
 }
 
-static const char *dex_method_name(RBinDexObj *bin, int idx) {
+static const char *dex_method_name(RzBinDexObj *bin, int idx) {
 	if (idx < 0 || idx >= bin->header.method_size) {
 		return NULL;
 	}
@@ -913,7 +913,7 @@ static char *simplify(char *s) {
 	return s;
 }
 
-static char *dex_class_name_byid(RBinDexObj *bin, int cid) {
+static char *dex_class_name_byid(RzBinDexObj *bin, int cid) {
 	rz_return_val_if_fail (bin && bin->types, NULL);
 	if (cid < 0 || cid >= bin->header.types_size) {
 		return NULL;
@@ -930,7 +930,7 @@ static char *dex_class_name_byid(RBinDexObj *bin, int cid) {
 	return NULL;
 }
 
-static char *dex_class_name(RBinDexObj *bin, RBinDexClass *c) {
+static char *dex_class_name(RzBinDexObj *bin, RzBinDexClass *c) {
 	char *s = dex_class_name_byid (bin, c->class_id);
 	if (simplifiedDemangling) {
 		simplify (s);
@@ -941,7 +941,7 @@ static char *dex_class_name(RBinDexObj *bin, RBinDexClass *c) {
 	return s;
 }
 
-static char *dex_field_name(RBinDexObj *bin, int fid) {
+static char *dex_field_name(RzBinDexObj *bin, int fid) {
 	int tid;
 	ut16 cid, type_id;
 	rz_return_val_if_fail (bin && bin->fields, NULL);
@@ -982,7 +982,7 @@ static char *dex_field_name(RBinDexObj *bin, int fid) {
 		: rz_str_newf ("%d->%d %d", bin->types[cid].descriptor_id, tid, bin->types[type_id].descriptor_id);
 }
 
-static char *dex_method_fullname(RBinDexObj *bin, int method_idx) {
+static char *dex_method_fullname(RzBinDexObj *bin, int method_idx) {
 	rz_return_val_if_fail (bin && bin->types, NULL);
 	if (method_idx < 0 || method_idx >= bin->header.method_size) {
 		return NULL;
@@ -1025,8 +1025,8 @@ static char *dex_method_fullname(RBinDexObj *bin, int method_idx) {
 	return flagname;
 }
 
-static ut64 dex_get_type_offset(RBinFile *bf, int type_idx) {
-	RBinDexObj *bin = (RBinDexObj*) bf->o->bin_obj;
+static ut64 dex_get_type_offset(RzBinFile *bf, int type_idx) {
+	RzBinDexObj *bin = (RzBinDexObj*) bf->o->bin_obj;
 	if (!bin || !bin->types) {
 		return 0;
 	}
@@ -1036,7 +1036,7 @@ static ut64 dex_get_type_offset(RBinFile *bf, int type_idx) {
 	return bin->header.types_offset + type_idx * 0x04; //&bin->types[type_idx];
 }
 
-static const char *dex_class_super_name(RBinDexObj *bin, RBinDexClass *c) {
+static const char *dex_class_super_name(RzBinDexObj *bin, RzBinDexClass *c) {
 	rz_return_val_if_fail (bin && bin->types && c, NULL);
 
 	int cid = c->super_class;
@@ -1060,10 +1060,10 @@ static ut64 peek_uleb(RBuffer *b, bool *err, size_t *nn) {
 	return n;
 }
 
-static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls,
+static void parse_dex_class_fields(RzBinFile *bf, RzBinDexClass *c, RzBinClass *cls,
 		int *sym_count, ut64 fields_count, bool is_sfield) {
-	RBinDexObj *dex = bf->o->bin_obj;
-	RBin *bin = bf->rbin;
+	RzBinDexObj *dex = bf->o->bin_obj;
+	RzBin *bin = bf->rbin;
 	ut64 lastIndex = 0;
 	ut8 ff[sizeof (DexField)] = {0};
 	int total, tid;
@@ -1094,7 +1094,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		}
 		tid = dex->types[field.type_id].descriptor_id;
 		const char *type_str = getstr (dex, tid);
-		RBinSymbol *sym = RZ_NEW0 (RBinSymbol);
+		RzBinSymbol *sym = RZ_NEW0 (RzBinSymbol);
 		if (!sym) {
 			break;
 		}
@@ -1122,7 +1122,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		}
 		rz_list_append (dex->methods_list, sym);
 
-		RBinField *field = RZ_NEW0 (RBinField);
+		RzBinField *field = RZ_NEW0 (RzBinField);
 		if (field) {
 			field->vaddr = field->paddr = sym->paddr;
 			field->name = strdup (sym->name);
@@ -1135,10 +1135,10 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 
 // TODO: refactor this method
 // XXX it needs a lot of love!!!
-static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls,
+static void parse_dex_class_method(RzBinFile *bf, RzBinDexClass *c, RzBinClass *cls,
 		int *sym_count, ut64 DM, int *methods, bool is_direct) {
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
-	RBinDexObj *dex = bf->o->bin_obj;
+	RzBinDexObj *dex = bf->o->bin_obj;
 	bool bin_dbginfo = bf->rbin->want_dbginfo;
 	int i;
 	ut64 omi = 0;
@@ -1292,7 +1292,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 					if (dexdump) {
 						cb_printf ("        0x%04x - 0x%04x\n", start_addr, (start_addr + insn_count));
 					}
-					RBinTrycatch *tc = rz_bin_trycatch_new (method_offset, try_from, try_to, try_catch, 0);
+					RzBinTrycatch *tc = rz_bin_trycatch_new (method_offset, try_from, try_to, try_catch, 0);
 					rz_list_append (dex->trycatch_list, tc);
 
 					//XXX tries_size is tainted and oob here
@@ -1366,7 +1366,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			}
 		}
 		if (*flag_name) {
-			RBinSymbol *sym = RZ_NEW0 (RBinSymbol);
+			RzBinSymbol *sym = RZ_NEW0 (RzBinSymbol);
 			if (!sym) {
 				RZ_FREE (flag_name);
 				break;
@@ -1460,13 +1460,13 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 	}
 }
 
-static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *methods, int *sym_count) {
+static void parse_class(RzBinFile *bf, RzBinDexClass *c, int class_index, int *methods, int *sym_count) {
 	rz_return_if_fail (bf && bf->o && c);
 
-	RBinDexObj *dex = bf->o->bin_obj;
-	RBin *rbin = bf->rbin;
+	RzBinDexObj *dex = bf->o->bin_obj;
+	RzBin *rbin = bf->rbin;
 	int z;
-	RBinClass *cls = RZ_NEW0 (RBinClass);
+	RzBinClass *cls = RZ_NEW0 (RzBinClass);
 	if (!cls) {
 		goto beach;
 	}
@@ -1541,7 +1541,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 			goto beach;
 		}
 
-		RBinDexClassData *dc = RZ_NEW0 (RBinDexClassData);
+		RzBinDexClassData *dc = RZ_NEW0 (RzBinDexClassData);
 		if (!dc) {
 			goto beach;
 		}
@@ -1590,7 +1590,7 @@ beach:
 	return;
 }
 
-static bool is_class_idx_in_code_classes(RBinDexObj *bin, int class_idx) {
+static bool is_class_idx_in_code_classes(RzBinDexObj *bin, int class_idx) {
 	int i;
 	for (i = 0; i < bin->header.class_size; i++) {
 		if (class_idx == bin->classes[i].class_id) {
@@ -1600,11 +1600,11 @@ static bool is_class_idx_in_code_classes(RBinDexObj *bin, int class_idx) {
 	return false;
 }
 
-static bool dex_loadcode(RBinFile *bf) {
+static bool dex_loadcode(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, false);
 
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
-	RBinDexObj *bin = bf->o->bin_obj;
+	RzBinDexObj *bin = bf->o->bin_obj;
 	size_t i;
 	int *methods = NULL;
 	int sym_count = 0;
@@ -1710,7 +1710,7 @@ static bool dex_loadcode(RBinFile *bf) {
 			const char *method_name = dex_method_name (bin, i);
 			char *signature = dex_method_signature (bin, i);
 			if (!RZ_STR_ISEMPTY (method_name)) {
-				RBinImport *imp = RZ_NEW0 (RBinImport);
+				RzBinImport *imp = RZ_NEW0 (RzBinImport);
 				if (!imp) {
 					free (methods);
 					free (signature);
@@ -1723,7 +1723,7 @@ static bool dex_loadcode(RBinFile *bf) {
 				imp->ordinal = import_count++;
 				rz_list_append (bin->imports_list, imp);
 
-				RBinSymbol *sym = RZ_NEW0 (RBinSymbol);
+				RzBinSymbol *sym = RZ_NEW0 (RzBinSymbol);
 				if (!sym) {
 					free (methods);
 					free (signature);
@@ -1750,36 +1750,36 @@ static bool dex_loadcode(RBinFile *bf) {
 	return true;
 }
 
-static RzList* imports(RBinFile *bf) {
+static RzList* imports(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
-	RBinDexObj *bin = (RBinDexObj*) bf->o->bin_obj;
+	RzBinDexObj *bin = (RzBinDexObj*) bf->o->bin_obj;
 	if (!bin->imports_list) {
 		dex_loadcode (bf);
 	}
 	return bin->imports_list;
 }
 
-static RzList *trycatch(RBinFile *bf) {
+static RzList *trycatch(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
-	RBinDexObj *bin = (RBinDexObj*) bf->o->bin_obj;
+	RzBinDexObj *bin = (RzBinDexObj*) bf->o->bin_obj;
 	if (!bin->trycatch_list) {
 		dex_loadcode (bf);
 	}
 	return bin->trycatch_list;
 }
 
-static RzList *methods(RBinFile *bf) {
+static RzList *methods(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
-	RBinDexObj *bin = (RBinDexObj*) bf->o->bin_obj;
+	RzBinDexObj *bin = (RzBinDexObj*) bf->o->bin_obj;
 	if (!bin->methods_list) {
 		dex_loadcode (bf);
 	}
 	return bin->methods_list;
 }
 
-static RzList *classes(RBinFile *bf) {
+static RzList *classes(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
-	RBinDexObj *bin = (RBinDexObj*) bf->o->bin_obj;
+	RzBinDexObj *bin = (RzBinDexObj*) bf->o->bin_obj;
 	if (!bin->classes_list) {
 		dex_loadcode (bf);
 	}
@@ -1787,7 +1787,7 @@ static RzList *classes(RBinFile *bf) {
 }
 
 static bool already_entry(RzList *entries, ut64 vaddr) {
-	RBinAddr *e;
+	RzBinAddr *e;
 	RzListIter *iter;
 	rz_list_foreach (entries, iter, e) {
 		if (e->vaddr == vaddr) {
@@ -1797,14 +1797,14 @@ static bool already_entry(RzList *entries, ut64 vaddr) {
 	return false;
 }
 
-static RzList *entries(RBinFile *bf) {
+static RzList *entries(RzBinFile *bf) {
 	RzListIter *iter;
-	RBinSymbol *m;
-	RBinAddr *ptr;
+	RzBinSymbol *m;
+	RzBinAddr *ptr;
 
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 
-	RBinDexObj *bin = (RBinDexObj*) bf->o->bin_obj;
+	RzBinDexObj *bin = (RzBinDexObj*) bf->o->bin_obj;
 	RzList *ret = rz_list_newf ((RzListFree)free);
 
 	if (!bin->methods_list) {
@@ -1818,7 +1818,7 @@ static RzList *entries(RBinFile *bf) {
 		    !strcmp (m->name + strlen (m->name) - 31,
 			     ".onCreate(Landroid/os/Bundle;)V")) {
 			if (!already_entry (ret, m->paddr)) {
-				if ((ptr = RZ_NEW0 (RBinAddr))) {
+				if ((ptr = RZ_NEW0 (RzBinAddr))) {
 					ptr->paddr = ptr->vaddr = m->paddr;
 					rz_list_append (ret, ptr);
 				}
@@ -1833,7 +1833,7 @@ static RzList *entries(RBinFile *bf) {
 			    !strcmp (m->name + strlen (m->name) - 27,
 				     ".main([Ljava/lang/String;)V")) {
 				if (!already_entry (ret, m->paddr)) {
-					if ((ptr = RZ_NEW0 (RBinAddr))) {
+					if ((ptr = RZ_NEW0 (RzBinAddr))) {
 						ptr->paddr = ptr->vaddr = m->paddr;
 						rz_list_append (ret, ptr);
 					}
@@ -1846,7 +1846,7 @@ static RzList *entries(RBinFile *bf) {
 	// STEP 3. NOTHING FOUND POINT TO CODE_INIT
 	if (rz_list_empty (ret)) {
 		if (!already_entry (ret, bin->code_from)) {
-			ptr = RZ_NEW0 (RBinAddr);
+			ptr = RZ_NEW0 (RzBinAddr);
 			if (ptr) {
 				ptr->paddr = ptr->vaddr = bin->code_from;
 				rz_list_append (ret, ptr);
@@ -1857,7 +1857,7 @@ static RzList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static int getoffset(RBinFile *bf, int type, int idx) {
+static int getoffset(RzBinFile *bf, int type, int idx) {
 	struct rz_bin_dex_obj_t *dex = bf->o->bin_obj;
 	switch (type) {
 	case 'm': // methods
@@ -1883,7 +1883,7 @@ static int getoffset(RBinFile *bf, int type, int idx) {
 	return -1;
 }
 
-static char *getname(RBinFile *bf, int type, int idx, bool sd) {
+static char *getname(RzBinFile *bf, int type, int idx, bool sd) {
 	simplifiedDemangling = sd; // XXX kill globals
 	struct rz_bin_dex_obj_t *dex = bf->o->bin_obj;
 	switch (type) {
@@ -1904,11 +1904,11 @@ typedef struct {
 	ut64 size;
 } Section;
 
-static RBinSection *add_section(RzList *ret, const char *name, Section s, int perm, char *format) {
+static RzBinSection *add_section(RzList *ret, const char *name, Section s, int perm, char *format) {
 	rz_return_val_if_fail (ret && name, NULL);
 	rz_return_val_if_fail (s.addr < UT32_MAX, NULL);
 	rz_return_val_if_fail (s.size > 0 && s.size < UT32_MAX, NULL);
-	RBinSection *ptr = RZ_NEW0 (RBinSection);
+	RzBinSection *ptr = RZ_NEW0 (RzBinSection);
 	if (ptr) {
 		ptr->name = strdup (name);
 		ptr->paddr = ptr->vaddr = s.addr;
@@ -1924,7 +1924,7 @@ static RBinSection *add_section(RzList *ret, const char *name, Section s, int pe
 }
 
 static void add_segment(RzList *ret, const char *name, Section s, int perm) {
-	RBinSection *bs = add_section (ret, name, s, perm, NULL);
+	RzBinSection *bs = add_section (ret, name, s, perm, NULL);
 	if (bs) {
 		bs->is_segment = true;
 		bs->add = true;
@@ -1961,13 +1961,13 @@ static bool validate_section(const char *name, Section *pre, Section *cur, Secti
 	return cur->size > 0;
 }
 
-static void fast_code_size(RBinFile *bf) {
+static void fast_code_size(RzBinFile *bf) {
 	const size_t bs = rz_buf_size (bf->buf);
 	ut64 ns;
 	ut64 fsym = 0LL;
 	ut64 fsymsz = 0LL;
 	RzListIter *iter;
-	RBinSymbol *m;
+	RzBinSymbol *m;
 	RzList *ml = methods (bf);
 	rz_list_foreach (ml, iter, m) {
 		if (!fsym || m->paddr < fsym) {
@@ -1986,7 +1986,7 @@ static void fast_code_size(RBinFile *bf) {
 	bin->code_to = fsymsz;
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	struct rz_bin_dex_obj_t *bin = bf->o->bin_obj;
 	RzList *ret = NULL;
 
@@ -2031,8 +2031,8 @@ static RzList *sections(RBinFile *bf) {
 }
 
 // iH
-static void dex_header(RBinFile *bf) {
-	RBinDexObj *dex = bf->o->bin_obj;
+static void dex_header(RzBinFile *bf) {
+	RzBinDexObj *dex = bf->o->bin_obj;
 	DexHeader *hdr = &dex->header;
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
 
@@ -2062,12 +2062,12 @@ static void dex_header(RBinFile *bf) {
 
 	// TODO: print information stored in the RBIN not this ugly fix
 	dex->methods_list = NULL;
-	dexdump = true; /// XXX convert this global into an argument or field in RBinFile or so
+	dexdump = true; /// XXX convert this global into an argument or field in RzBinFile or so
 	dex_loadcode (bf);
 	dexdump = false;
 }
 
-static ut64 size(RBinFile *bf) {
+static ut64 size(RzBinFile *bf) {
 	ut8 u32s[sizeof (ut32)] = {0};
 
 	int ret = rz_buf_read_at (bf->buf, 108, u32s, 4);
@@ -2082,13 +2082,13 @@ static ut64 size(RBinFile *bf) {
 	return off + rz_read_le32 (u32s);
 }
 
-static RZ_BORROW RzList *lines(RBinFile *bf) {
+static RZ_BORROW RzList *lines(RzBinFile *bf) {
 	struct rz_bin_dex_obj_t *dex = bf->o->bin_obj;
 	return dex->lines_list;
 }
 
 // iH*
-static RzList *dex_fields(RBinFile *bf) {
+static RzList *dex_fields(RzBinFile *bf) {
 	RzList *ret = rz_list_new ();
 	if (!ret) {
 		return NULL;
@@ -2135,7 +2135,7 @@ static bool is_classes_dex(const char *filename) {
 		&& rz_str_endswith (filename, ".dex");
 }
 
-static RzList* libs(RBinFile *bf) {
+static RzList* libs(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 	char *path = rz_file_dirname (bf->file);
 	if (rz_str_startswith (path, "./")) {
@@ -2172,13 +2172,13 @@ static RzList* libs(RBinFile *bf) {
 	return ret;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	rz_return_if_fail (bf && bf->o);
-	RBinDexObj *obj = bf->o->bin_obj;
+	RzBinDexObj *obj = bf->o->bin_obj;
 	rz_bin_dex_free (obj);
 }
 
-RBinPlugin rz_bin_plugin_dex = {
+RzBinPlugin rz_bin_plugin_dex = {
 	.name = "dex",
 	.desc = "dex format bin plugin",
 	.license = "LGPL3",

@@ -293,7 +293,7 @@ static void rz_dyld_locsym_entries_by_offset(RDyldCache *cache, RzList *symbols,
 				continue;
 			}
 			char *symstr = &locsym->strings[nlist->n_strx];
-			RBinSymbol *sym = RZ_NEW0 (RBinSymbol);
+			RzBinSymbol *sym = RZ_NEW0 (RzBinSymbol);
 			if (!sym) {
 				return;
 			}
@@ -369,7 +369,7 @@ static ut64 va2pa(uint64_t addr, cache_hdr_t *hdr, cache_map_t *maps, RBuffer *c
 	return res;
 }
 
-static ut64 bin_obj_va2pa(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf) {
+static ut64 bin_obj_va2pa(ut64 p, ut32 *offset, ut32 *left, RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return 0;
 	}
@@ -387,7 +387,7 @@ static ut64 bin_obj_va2pa(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf) {
 	return res;
 }
 
-static struct MACH0_(obj_t) *bin_to_mach0(RBinFile *bf, RDyldBinImage *bin) {
+static struct MACH0_(obj_t) *bin_to_mach0(RzBinFile *bf, RDyldBinImage *bin) {
 	if (!bin || !bf) {
 		return NULL;
 	}
@@ -441,7 +441,7 @@ static ut32 dumb_ctzll(ut64 x) {
 	return result;
 }
 
-static ut64 estimate_slide(RBinFile *bf, RDyldCache *cache, ut64 value_mask) {
+static ut64 estimate_slide(RzBinFile *bf, RDyldCache *cache, ut64 value_mask) {
 	ut64 slide = 0;
 	ut64 *classlist = malloc (64);
 	if (!classlist) {
@@ -525,7 +525,7 @@ beach:
 	return slide;
 }
 
-static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache, ut64 slideInfoOffset, ut64 slideInfoSize, ut64 start_of_data, ut64 slide) {
+static RDyldRebaseInfo *get_rebase_info(RzBinFile *bf, RDyldCache *cache, ut64 slideInfoOffset, ut64 slideInfoSize, ut64 start_of_data, ut64 slide) {
 	ut8 *tmp_buf_1 = NULL;
 	ut8 *tmp_buf_2 = NULL;
 	ut8 *one_page_buf = NULL;
@@ -752,7 +752,7 @@ beach:
 	return NULL;
 }
 
-static RDyldRebaseInfos *get_rebase_infos(RBinFile *bf, RDyldCache *cache) {
+static RDyldRebaseInfos *get_rebase_infos(RzBinFile *bf, RDyldCache *cache) {
 	RBuffer *cache_buf = cache->buf;
 
 	RDyldRebaseInfos *result = RZ_NEW0 (RDyldRebaseInfos);
@@ -977,7 +977,7 @@ beach:
 	free (cmds);
 }
 
-static RzList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *hdr, cache_map_t *maps, cache_accel_t *accel) {
+static RzList *create_cache_bins(RzBinFile *bf, RBuffer *cache_buf, cache_hdr_t *hdr, cache_map_t *maps, cache_accel_t *accel) {
 	RzList *bins = rz_list_newf ((RzListFree)free_bin);
 	if (!bins) {
 		return NULL;
@@ -1316,7 +1316,7 @@ static int dyldcache_io_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 
 	RDyldCache *cache = NULL;
 	RzListIter *iter;
-	RBinFile *bf;
+	RzBinFile *bf;
 	rz_list_foreach (core->bin->binfiles, iter, bf) {
 		if (bf->fd == fd->fd ) {
 			if (!strncmp ((char*) bf->o->bin_obj, "dyldcac", 7)) {
@@ -1484,7 +1484,7 @@ static cache_accel_t *read_cache_accel(RBuffer *cache_buf, cache_hdr_t *hdr, cac
 	return accel;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	RDyldCache *cache = RZ_NEW0 (RDyldCache);
 	memcpy (cache->magic, "dyldcac", 7);
 	cache->buf = rz_buf_ref (buf);
@@ -1527,20 +1527,20 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return true;
 }
 
-static RzList *entries(RBinFile *bf) {
-	RBinAddr *ptr = NULL;
+static RzList *entries(RzBinFile *bf) {
+	RzBinAddr *ptr = NULL;
 	RzList *ret = rz_list_newf (free);
 	if (!ret) {
 		return NULL;
 	}
-	if ((ptr = RZ_NEW0 (RBinAddr))) {
+	if ((ptr = RZ_NEW0 (RzBinAddr))) {
 		rz_list_append (ret, ptr);
 	}
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
+static RzBinInfo *info(RzBinFile *bf) {
+	RzBinInfo *ret = NULL;
 
 	if (!bf || !bf->o) {
 		return NULL;
@@ -1552,7 +1552,7 @@ static RBinInfo *info(RBinFile *bf) {
 	}
 
 	bool big_endian = 0;
-	if (!(ret = RZ_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RzBinInfo))) {
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
@@ -1572,17 +1572,17 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 #if 0
-static void parse_mach0 (RzList *ret, ut64 paddr, RBinFile *bf) {
+static void parse_mach0 (RzList *ret, ut64 paddr, RzBinFile *bf) {
 	// TODO
 }
 #endif
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	// XXX hardcoded
 	return 0x180000000;
 }
 
-void symbols_from_bin(RzList *ret, RBinFile *bf, RDyldBinImage *bin, HtPP *hash) {
+void symbols_from_bin(RzList *ret, RzBinFile *bf, RDyldBinImage *bin, HtPP *hash) {
 	struct MACH0_(obj_t) *mach0 = bin_to_mach0 (bf, bin);
 	if (!mach0) {
 		return;
@@ -1601,7 +1601,7 @@ void symbols_from_bin(RzList *ret, RBinFile *bf, RDyldBinImage *bin, HtPP *hash)
 		if (strstr (symbols[i].name, "<redacted>")) {
 			continue;
 		}
-		RBinSymbol *sym = RZ_NEW0 (RBinSymbol);
+		RzBinSymbol *sym = RZ_NEW0 (RzBinSymbol);
 		if (!sym) {
 			break;
 		}
@@ -1640,7 +1640,7 @@ static bool __is_data_section(const char *name) {
 	return false;
 }
 
-static void sections_from_bin(RzList *ret, RBinFile *bf, RDyldBinImage *bin) {
+static void sections_from_bin(RzList *ret, RzBinFile *bf, RDyldBinImage *bin) {
 	struct MACH0_(obj_t) *mach0 = bin_to_mach0 (bf, bin);
 	if (!mach0) {
 		return;
@@ -1653,7 +1653,7 @@ static void sections_from_bin(RzList *ret, RBinFile *bf, RDyldBinImage *bin) {
 
 	int i;
 	for (i = 0; !sections[i].last; i++) {
-		RBinSection *ptr = RZ_NEW0 (RBinSection);
+		RzBinSection *ptr = RZ_NEW0 (RzBinSection);
 		if (!ptr) {
 			break;
 		}
@@ -1681,7 +1681,7 @@ static void sections_from_bin(RzList *ret, RBinFile *bf, RDyldBinImage *bin) {
 	MACH0_(mach0_free) (mach0);
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
@@ -1698,10 +1698,10 @@ static RzList *sections(RBinFile *bf) {
 		sections_from_bin (ret, bf, bin);
 	}
 
-	RBinSection *ptr = NULL;
+	RzBinSection *ptr = NULL;
 	int i;
 	for (i = 0; i < cache->hdr->mappingCount; i++) {
-		if (!(ptr = RZ_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RzBinSection))) {
 			return NULL;
 		}
 		ptr->name = rz_str_newf ("cache_map.%d", i);
@@ -1717,7 +1717,7 @@ static RzList *sections(RBinFile *bf) {
 
 	ut64 slide = rebase_infos_get_slide (cache);
 	if (slide) {
-		RBinSection *section;
+		RzBinSection *section;
 		rz_list_foreach (ret, iter, section) {
 			section->vaddr += slide;
 		}
@@ -1726,7 +1726,7 @@ static RzList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *symbols(RBinFile *bf) {
+static RzList *symbols(RzBinFile *bf) {
 	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
@@ -1752,7 +1752,7 @@ static RzList *symbols(RBinFile *bf) {
 
 	ut64 slide = rebase_infos_get_slide (cache);
 	if (slide) {
-		RBinSymbol *sym;
+		RzBinSymbol *sym;
 		rz_list_foreach (ret, iter, sym) {
 			sym->vaddr += slide;
 		}
@@ -1771,13 +1771,13 @@ static RzList *symbols(RBinFile *bf) {
 	cache->original_io_read = NULL;
 } */
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
 	// unswizzle_io_read (cache, bf->rbin->iob.io); // XXX io may be dead here
 	rz_dyldcache_free (cache);
 }
 
-static RzList *classes(RBinFile *bf) {
+static RzList *classes(RzBinFile *bf) {
 	RDyldCache *cache = (RDyldCache*) bf->o->bin_obj;
 	if (!cache) {
 		return NULL;
@@ -1829,8 +1829,8 @@ static RzList *classes(RBinFile *bf) {
 			for (; cursor < pointers_end; cursor += 8) {
 				ut64 pointer_to_class = rz_read_le64 (cursor);
 
-				RBinClass *klass;
-				if (!(klass = RZ_NEW0 (RBinClass)) ||
+				RzBinClass *klass;
+				if (!(klass = RZ_NEW0 (RzBinClass)) ||
 					!(klass->methods = rz_list_new ()) ||
 					!(klass->fields = rz_list_new ())) {
 					RZ_FREE (klass);
@@ -1878,7 +1878,7 @@ beach:
 	return NULL;
 }
 
-static void header(RBinFile *bf) {
+static void header(RzBinFile *bf) {
 	if (!bf || !bf->o) {
 		return;
 	}
@@ -1888,7 +1888,7 @@ static void header(RBinFile *bf) {
 		return;
 	}
 
-	RBin *bin = bf->rbin;
+	RzBin *bin = bf->rbin;
 	ut64 slide = rebase_infos_get_slide (cache);
 	PrintfCallback p = bin->cb_printf;
 
@@ -2029,7 +2029,7 @@ beach:
 	pj_free (pj);
 }
 
-RBinPlugin rz_bin_plugin_dyldcache = {
+RzBinPlugin rz_bin_plugin_dyldcache = {
 	.name = "dyldcache",
 	.desc = "dyldcache bin plugin",
 	.license = "LGPL3",

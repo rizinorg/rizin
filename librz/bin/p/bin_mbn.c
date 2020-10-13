@@ -74,18 +74,18 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
 	return check_buffer (b);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return sb.vaddr; // XXX
 }
 
-static RzList* entries(RBinFile *bf) {
+static RzList* entries(RzBinFile *bf) {
 	RzList* ret = rz_list_newf (free);;
 	if (ret) {
-		RBinAddr *ptr = RZ_NEW0 (RBinAddr);
+		RzBinAddr *ptr = RZ_NEW0 (RzBinAddr);
 		if (ptr) {
 			ptr->paddr = 40 + sb.code_pa;
 			ptr->vaddr = 40 + sb.code_pa + sb.vaddr;
@@ -95,8 +95,8 @@ static RzList* entries(RBinFile *bf) {
 	return ret;
 }
 
-static RzList* sections(RBinFile *bf) {
-	RBinSection *ptr = NULL;
+static RzList* sections(RzBinFile *bf) {
+	RzBinSection *ptr = NULL;
 	RzList *ret = NULL;
 	int rc;
 
@@ -111,7 +111,7 @@ static RzList* sections(RBinFile *bf) {
 	}
 
 	// add text segment
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("text");
@@ -124,7 +124,7 @@ static RzList* sections(RBinFile *bf) {
 	ptr->has_strings = true;
 	rz_list_append (ret, ptr);
 
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("sign");
@@ -138,7 +138,7 @@ static RzList* sections(RBinFile *bf) {
 	rz_list_append (ret, ptr);
 
 	if (sb.cert_sz && sb.cert_va > sb.vaddr) {
-		if (!(ptr = RZ_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RzBinSection))) {
 			return ret;
 		}
 		ptr->name = strdup ("cert");
@@ -154,10 +154,10 @@ static RzList* sections(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo* info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
+static RzBinInfo* info(RzBinFile *bf) {
+	RzBinInfo *ret = NULL;
 	const int bits = 16;
-	if (!(ret = RZ_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RzBinInfo))) {
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
@@ -178,11 +178,11 @@ static RBinInfo* info(RBinFile *bf) {
 	return ret;
 }
 
-static ut64 size(RBinFile *bf) {
+static ut64 size(RzBinFile *bf) {
 	return sizeof (SblHeader) + sb.psize;
 }
 
-RBinPlugin rz_bin_plugin_mbn = {
+RzBinPlugin rz_bin_plugin_mbn = {
 	.name = "mbn",
 	.desc = "MBN/SBL bootloader things",
 	.license = "LGPL3",

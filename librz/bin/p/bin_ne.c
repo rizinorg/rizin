@@ -23,7 +23,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	rz_return_val_if_fail (bf && bin_obj && buf, false);
 	rz_bin_ne_obj_t *res = rz_bin_ne_new_buf (buf, bf->rbin->verbose);
 	if (res) {
@@ -33,11 +33,11 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return false;
 }
 
-static void destroy (RBinFile *bf) {
+static void destroy (RzBinFile *bf) {
 	rz_bin_ne_free (bf->o->bin_obj);
 }
 
-static void header(RBinFile *bf) {
+static void header(RzBinFile *bf) {
 	struct rz_bin_t *rbin = bf->rbin;
 	rz_bin_ne_obj_t *ne = bf->o->bin_obj;
 	rbin->cb_printf ("Signature: NE\n");
@@ -74,9 +74,9 @@ static void header(RBinFile *bf) {
 	rbin->cb_printf ("winver: %d.%d\n", ne->ne_header->expctwinver[1], ne->ne_header->expctwinver[0]);
 }
 
-RBinInfo *info(RBinFile *bf) {
+RzBinInfo *info(RzBinFile *bf) {
 	rz_bin_ne_obj_t *ne = bf->o->bin_obj;
-	RBinInfo *i = RZ_NEW0 (RBinInfo);
+	RzBinInfo *i = RZ_NEW0 (RzBinInfo);
 	if (i) {
 		i->bits = 16;
 		i->arch = strdup ("x86");
@@ -86,27 +86,27 @@ RBinInfo *info(RBinFile *bf) {
 	return i;
 }
 
-RzList *entries(RBinFile *bf) {
+RzList *entries(RzBinFile *bf) {
 	return rz_bin_ne_get_entrypoints (bf->o->bin_obj);
 }
 
-RzList *symbols(RBinFile *bf) {
+RzList *symbols(RzBinFile *bf) {
 	return rz_bin_ne_get_symbols (bf->o->bin_obj);
 }
 
-RzList *imports(RBinFile *bf) {
+RzList *imports(RzBinFile *bf) {
 	return rz_bin_ne_get_imports (bf->o->bin_obj);
 }
 
-RzList *sections(RBinFile *bf) {
+RzList *sections(RzBinFile *bf) {
 	return rz_bin_ne_get_segments (bf->o->bin_obj);
 }
 
-RzList *relocs(RBinFile *bf) {
+RzList *relocs(RzBinFile *bf) {
 	return rz_bin_ne_get_relocs (bf->o->bin_obj);
 }
 
-RBinPlugin rz_bin_plugin_ne = {
+RzBinPlugin rz_bin_plugin_ne = {
 	.name = "ne",
 	.desc = "NE format plugin",
 	.author = "GustavoLCR",

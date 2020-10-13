@@ -65,7 +65,7 @@ typedef struct _RSepMachoInfo {
 
 typedef struct _RSepSlice64 {
 	RBuffer * buf;
-	RBinXtrMetadata * meta;
+	RzBinXtrMetadata * meta;
 	ut64 nominal_offset;
 	ut64 total_size;
 } RSepSlice64;
@@ -85,7 +85,7 @@ static void mach0_info_free(RSepMachoInfo * info);
 static ut32 read_arm64_ins(RBuffer *b, int idx);
 static char * get_proper_name (const char * app_name);
 static RBuffer * extract_slice(RBuffer * whole, RSepMachoInfo * info);
-static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MACH0_(mach_header) *hdr);
+static inline void fill_metadata_info_from_hdr(RzBinXtrMetadata *meta, struct MACH0_(mach_header) *hdr);
 
 #define BTW(val, min, max) ((val) > min && (val) < max)
 
@@ -133,20 +133,20 @@ static bool check_buffer(RBuffer *b) {
 	return true;
 }
 
-static bool load(RBin *bin) {
+static bool load(RzBin *bin) {
 	return ((bin->cur->xtr_obj = sep64_xtr_ctx_new (bin->cur->buf)) != NULL);
 }
 
-static void destroy(RBin *bin) {
+static void destroy(RzBin *bin) {
 	sep64_xtr_ctx_free (bin->cur->xtr_obj);
 }
 
-static int size(RBin *bin) {
+static int size(RzBin *bin) {
 	// TODO
 	return 0;
 }
 
-static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
+static RzBinXtrData *oneshot_buffer(RzBin *bin, RBuffer *b, int idx) {
 	rz_return_val_if_fail (bin && bin->cur, NULL);
 
 	if (!bin->cur->xtr_obj) {
@@ -155,15 +155,15 @@ static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
 	RSepXtr64Ctx * ctx = bin->cur->xtr_obj;
 
 	RSepSlice64 * slice = sep64_xtr_ctx_get_slice (ctx, b, idx);
-	RBinXtrData * res = rz_bin_xtrdata_new (slice->buf, slice->nominal_offset, slice->total_size, 3 + ctx->hdr->n_apps, slice->meta);
+	RzBinXtrData * res = rz_bin_xtrdata_new (slice->buf, slice->nominal_offset, slice->total_size, 3 + ctx->hdr->n_apps, slice->meta);
 
 	rz_buf_free (slice->buf);
 	free (slice);
 	return res;
 }
 
-static RzList * oneshotall_buffer(RBin *bin, RBuffer *b) {
-	RBinXtrData *data = oneshot_buffer (bin, b, 0);
+static RzList * oneshotall_buffer(RzBin *bin, RBuffer *b) {
+	RzBinXtrData *data = oneshot_buffer (bin, b, 0);
 	if (data) {
 		int narch = data->file_count;
 		RzList *res = rz_list_newf (rz_bin_xtrdata_free);
@@ -253,7 +253,7 @@ static RSepSlice64 * sep64_xtr_ctx_get_slice(RSepXtr64Ctx * ctx, RBuffer * whole
 	char * name = NULL;
 	RSepSlice64 * slice = NULL;
 	RSepMachoInfo * info = NULL;
-	RBinXtrMetadata * meta = NULL;
+	RzBinXtrMetadata * meta = NULL;
 	ut64 nominal_offset = 0;
 	ut64 total_size = 0;
 
@@ -296,7 +296,7 @@ static RSepSlice64 * sep64_xtr_ctx_get_slice(RSepXtr64Ctx * ctx, RBuffer * whole
 		goto beach;
 	}
 
-	meta = RZ_NEW0 (RBinXtrMetadata);
+	meta = RZ_NEW0 (RzBinXtrMetadata);
 	if (!meta) {
 		goto beach;
 	}
@@ -442,7 +442,7 @@ beach:
 	return NULL;
 }
 
-static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MACH0_(mach_header) *hdr) {
+static inline void fill_metadata_info_from_hdr(RzBinXtrMetadata *meta, struct MACH0_(mach_header) *hdr) {
 	meta->arch = strdup (MACH0_(get_cputype_from_hdr) (hdr));
 	meta->bits = MACH0_(get_bits_from_hdr) (hdr);
 	meta->machine = MACH0_(get_cpusubtype_from_hdr) (hdr);
@@ -471,7 +471,7 @@ static ut32 read_arm64_ins(RBuffer *b, int idx) {
 	return rz_buf_read_le32_at (b, idx * 4);
 }
 
-RBinXtrPlugin rz_bin_xtr_plugin_xtr_sep64 = {
+RzBinXtrPlugin rz_bin_xtr_plugin_xtr_sep64 = {
 	.name = "xtr.sep64",
 	.desc = "64-bit SEP bin extractor plugin",
 	.license = "LGPL3",

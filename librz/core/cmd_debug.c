@@ -1441,11 +1441,11 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, int mode
 	if ((fd = rz_io_fd_open (core->io, file, RZ_PERM_R, 0)) == -1) {
 		return false;
 	}
-	RBinOptions opt = { 0 };
+	RzBinOptions opt = { 0 };
 	opt.fd = fd;
 	opt.sz = rz_io_fd_size (core->io, fd);
 	opt.baseaddr = baseaddr;
-	RBinFile *obf = rz_bin_cur (core->bin);
+	RzBinFile *obf = rz_bin_cur (core->bin);
 	if (!rz_bin_open_io (core->bin, &opt)) {
 		rz_io_fd_close (core->io, fd);
 		return false;
@@ -1457,7 +1457,7 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, int mode
 		action &= ~RZ_CORE_BIN_ACC_ENTRIES & ~RZ_CORE_BIN_ACC_MAIN;
 	}
 	rz_core_bin_info (core, action, mode, 1, filter, NULL);
-	RBinFile *bf = rz_bin_cur (core->bin);
+	RzBinFile *bf = rz_bin_cur (core->bin);
 	rz_bin_file_delete (core->bin, bf->id);
 	rz_bin_file_set_cur_binfile (core->bin, obf);
 	rz_io_fd_close (core->io, fd);
@@ -1667,7 +1667,7 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 				if (map) {
 					ut64 closest_addr = UT64_MAX;
 					RzList *symbols = rz_bin_get_symbols (core->bin);
-					RBinSymbol *symbol, *closest_symbol = NULL;
+					RzBinSymbol *symbol, *closest_symbol = NULL;
 
 					rz_list_foreach (symbols, iter, symbol) {
 						if (symbol->vaddr > addr) {
@@ -1741,7 +1741,7 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 					const char *file = map->file? map->file: map->name;
 					char *name = rz_str_escape ((char *)rz_file_basename (file));
 					char *filesc = rz_str_escape (file);
-					/* TODO: do not spawn. use RBin API */
+					/* TODO: do not spawn. use RzBin API */
 					if (sectname) {
 						char *sect = rz_str_escape (sectname);
 						res  = rz_sys_cmd_strf ("env RZ_BIN_PREFIX=\"%s\" rz_bin %s-B 0x%08"
@@ -3383,7 +3383,7 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 	case 'f':
 		{
 		RzList *symbols = rz_bin_get_symbols (core->bin);
-		RBinSymbol *symbol;
+		RzBinSymbol *symbol;
 		rz_list_foreach (symbols, iter, symbol) {
 			if (symbol->type && !strcmp (symbol->type, RZ_BIN_TYPE_FUNC_STR)) {
 				if (rz_anal_noreturn_at (core->anal, symbol->vaddr)) {
@@ -4572,8 +4572,8 @@ static int cmd_debug_step (RzCore *core, const char *input) {
 			rz_io_read_at (core->io, addr, buf, sizeof (buf));
 			rz_anal_op (core->anal, &aop, addr, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC);
 			if (aop.type == RZ_ANAL_OP_TYPE_CALL) {
-				RBinObject *o = rz_bin_cur_object (core->bin);
-				RBinSection *s = rz_bin_get_section_at (o, aop.jump, true);
+				RzBinObject *o = rz_bin_cur_object (core->bin);
+				RzBinSection *s = rz_bin_get_section_at (o, aop.jump, true);
 				if (!s) {
 					rz_debug_step_over (core->dbg, times);
 					continue;

@@ -36,10 +36,10 @@ const char *fileType(const ut8 *buf) {
 	return NULL;
 }
 
-static void walkSymbols (RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab, ut64 strtab_size, ut64 relplt, ut64 baddr) {
+static void walkSymbols (RBuffer *buf, RzBinNXOObj *bin, ut64 symtab, ut64 strtab, ut64 strtab_size, ut64 relplt, ut64 baddr) {
 	int i, import = 0;
-	RBinSymbol *sym;
-	RBinImport *imp;
+	RzBinSymbol *sym;
+	RzBinImport *imp;
 	for (i = 8; i < 99999; i++) {
 		ut64 addr = rz_buf_read_le64_at (buf, symtab + i);
 		ut64 size = rz_buf_read_le64_at (buf, symtab + i + 8);
@@ -50,7 +50,7 @@ static void walkSymbols (RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab
 		if (!symName) {
 			break;
 		}
-		sym = RZ_NEW0 (RBinSymbol);
+		sym = RZ_NEW0 (RzBinSymbol);
 		if (!sym) {
 			free (symName);
 			break;
@@ -62,7 +62,7 @@ static void walkSymbols (RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab
 		if (addr == 0) {
 			import ++;
 			ut64 pltSym = rz_buf_read_le64_at (buf, relplt + (import * 24));
-			imp = RZ_NEW0 (RBinImport);
+			imp = RZ_NEW0 (RzBinImport);
 			if (!imp) {
 				RZ_FREE (sym);
 				free (symName);
@@ -111,7 +111,7 @@ out_walk_symbol:
 	return;
 }
 
-void parseMod(RBuffer *buf, RBinNXOObj *bin, ut32 mod0, ut64 baddr) {
+void parseMod(RBuffer *buf, RzBinNXOObj *bin, ut32 mod0, ut64 baddr) {
 	ut32 ptr = rz_buf_read_le32_at (buf, mod0);
 	eprintf ("magic %x at 0x%x\n", ptr, mod0);
 	if (ptr == 0x30444f4d) { // MOD0

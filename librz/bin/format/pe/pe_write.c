@@ -5,7 +5,7 @@
 #include "pe.h"
 
 // bool PE_(rz_bin_pe_section_perms)(struct PE_(rz_bin_pe_obj_t) *bin, const char *name, int perms) {
-bool PE_(rz_bin_pe_section_perms)(RBinFile *bf, const char *name, int perms) {
+bool PE_(rz_bin_pe_section_perms)(RzBinFile *bf, const char *name, int perms) {
 	struct PE_(rz_bin_pe_obj_t) *pe = bf->o->bin_obj;
 	PE_(image_section_header) *shdr = pe->section_header;
 	int i;

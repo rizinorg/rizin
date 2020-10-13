@@ -29,7 +29,7 @@ static char *__hashify(char *s, ut64 vaddr) {
 }
 
 // - name should be allocated on the heap
-RZ_API char *rz_bin_filter_name(RBinFile *bf, Sdb *db, ut64 vaddr, char *name) {
+RZ_API char *rz_bin_filter_name(RzBinFile *bf, Sdb *db, ut64 vaddr, char *name) {
 	rz_return_val_if_fail (db && name, NULL);
 
 	char *resname = name;
@@ -61,7 +61,7 @@ RZ_API char *rz_bin_filter_name(RBinFile *bf, Sdb *db, ut64 vaddr, char *name) {
 	return resname;
 }
 
-RZ_API void rz_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym) {
+RZ_API void rz_bin_filter_sym(RzBinFile *bf, HtPP *ht, ut64 vaddr, RzBinSymbol *sym) {
 	rz_return_if_fail (ht && sym && sym->name);
 	const char *name = sym->name;
 	// if (!strncmp (sym->name, "imp.", 4)) {
@@ -99,7 +99,7 @@ RZ_API void rz_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sy
 	sym->dup_count = 0;
 
 	const char *oname = sdb_fmt ("o.0.%c.%s", sym->is_imported ? 'i' : 's', name);
-	RBinSymbol *prev_sym = ht_pp_find (ht, oname, NULL);
+	RzBinSymbol *prev_sym = ht_pp_find (ht, oname, NULL);
 	if (!prev_sym) {
 		if (!ht_pp_insert (ht, oname, sym)) {
 			RZ_LOG_WARN ("Failed to insert dup_count in ht");
@@ -111,14 +111,14 @@ RZ_API void rz_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sy
 	}
 }
 
-RZ_API void rz_bin_filter_symbols(RBinFile *bf, RzList *list) {
+RZ_API void rz_bin_filter_symbols(RzBinFile *bf, RzList *list) {
 	HtPP *ht = ht_pp_new0 ();
 	if (!ht) {
 		return;
 	}
 
 	RzListIter *iter;
-	RBinSymbol *sym;
+	RzBinSymbol *sym;
 	rz_list_foreach (list, iter, sym) {
 		if (sym && sym->name && *sym->name) {
 			rz_bin_filter_sym (bf, ht, sym->vaddr, sym);
@@ -127,8 +127,8 @@ RZ_API void rz_bin_filter_symbols(RBinFile *bf, RzList *list) {
 	ht_pp_free (ht);
 }
 
-RZ_API void rz_bin_filter_sections(RBinFile *bf, RzList *list) {
-	RBinSection *sec;
+RZ_API void rz_bin_filter_sections(RzBinFile *bf, RzList *list) {
+	RzBinSection *sec;
 	Sdb *db = sdb_new0 ();
 	RzListIter *iter;
 	rz_list_foreach (list, iter, sec) {
@@ -191,7 +191,7 @@ static bool false_positive(const char *str) {
 	return false;
 }
 
-RZ_API bool rz_bin_strpurge(RBin *bin, const char *str, ut64 refaddr) {
+RZ_API bool rz_bin_strpurge(RzBin *bin, const char *str, ut64 refaddr) {
 	bool purge = false;
 	if (bin->strpurge) {
 		char *addrs = strdup (bin->strpurge);
@@ -251,7 +251,7 @@ static int get_char_ratio(char ch, const char *str) {
 	return i ? ch_count * 100 / i : 0;
 }
 
-static bool bin_strfilter(RBin *bin, const char *str) {
+static bool bin_strfilter(RzBin *bin, const char *str) {
 	int i;
 	bool got_uppercase, in_esc_seq;
 	switch (bin->strfilter) {
@@ -364,7 +364,7 @@ loop_end:
 	return true;
 }
 
-RZ_API bool rz_bin_string_filter(RBin *bin, const char *str, ut64 addr) {
+RZ_API bool rz_bin_string_filter(RzBin *bin, const char *str, ut64 addr) {
 	if (rz_bin_strpurge (bin, str, addr) || !bin_strfilter (bin, str)) {
 		return false;
 	}

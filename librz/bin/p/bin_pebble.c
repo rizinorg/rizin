@@ -43,21 +43,21 @@ static bool check_buffer(RBuffer *b) {
 	return !memcmp (magic, "PBLAPP\x00\x00", 8);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
 	return check_buffer (b);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return 0LL;
 }
 
 /* accelerate binary load */
-static RzList *strings(RBinFile *bf) {
+static RzList *strings(RzBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo* info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
+static RzBinInfo* info(RzBinFile *bf) {
+	RzBinInfo *ret = NULL;
 	PebbleAppInfo pai;
 	memset (&pai, 0, sizeof (pai));
 	int reat = rz_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof (pai));
@@ -65,7 +65,7 @@ static RBinInfo* info(RBinFile *bf) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
-	if (!(ret = RZ_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RzBinInfo))) {
 		return NULL;
 	}
 	ret->lang = NULL;
@@ -84,10 +84,10 @@ static RBinInfo* info(RBinFile *bf) {
 	return ret;
 }
 
-static RzList* sections(RBinFile *bf) {
+static RzList* sections(RzBinFile *bf) {
 	ut64 textsize = UT64_MAX;
 	RzList *ret = NULL;
-	RBinSection *ptr = NULL;
+	RzBinSection *ptr = NULL;
 	PebbleAppInfo pai = {{0}};
 	if (!rz_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof(pai))) {
 		eprintf ("Truncated Header\n");
@@ -98,7 +98,7 @@ static RzList* sections(RBinFile *bf) {
 	}
 	ret->free = free;
 	// TODO: load all relocs
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("relocs");
@@ -112,7 +112,7 @@ static RzList* sections(RBinFile *bf) {
 	}
 
 	// imho this must be a symbol
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("symtab");
@@ -125,7 +125,7 @@ static RzList* sections(RBinFile *bf) {
 		textsize = ptr->vaddr;
 	}
 
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("text");
@@ -135,7 +135,7 @@ static RzList* sections(RBinFile *bf) {
 	ptr->add = true;
 	rz_list_append (ret, ptr);
 
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("header");
@@ -149,9 +149,9 @@ static RzList* sections(RBinFile *bf) {
 }
 
 #if 0
-static RzList* relocs(RBinFile *bf) {
+static RzList* relocs(RzBinFile *bf) {
 	RzList *ret = NULL;
-	RBinReloc *ptr = NULL;
+	RzBinReloc *ptr = NULL;
 	ut64 got_addr;
 	int i;
 
@@ -162,8 +162,8 @@ static RzList* relocs(RBinFile *bf) {
 }
 #endif
 
-static RzList* entries(RBinFile *bf) {
-	RBinAddr *ptr = NULL;
+static RzList* entries(RzBinFile *bf) {
+	RzBinAddr *ptr = NULL;
 	RzList *ret;
 	PebbleAppInfo pai;
 	if (!rz_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof(pai))) {
@@ -174,7 +174,7 @@ static RzList* entries(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	if (!(ptr = RZ_NEW0 (RBinAddr))) {
+	if (!(ptr = RZ_NEW0 (RzBinAddr))) {
 		return ret;
 	}
 	ptr->paddr = pai.offset;
@@ -183,7 +183,7 @@ static RzList* entries(RBinFile *bf) {
 	return ret;
 }
 
-RBinPlugin rz_bin_plugin_pebble = {
+RzBinPlugin rz_bin_plugin_pebble = {
 	.name = "pebble",
 	.desc = "Pebble Watch App",
 	.license = "LGPL",

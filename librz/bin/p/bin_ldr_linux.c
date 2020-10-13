@@ -5,7 +5,7 @@
 #include <rz_lib.h>
 #include <rz_bin.h>
 
-static bool load(RBin *bin) {
+static bool load(RzBin *bin) {
 	if (!bin || !bin->cur) {
 	    return false;
 	}
@@ -16,9 +16,9 @@ static bool load(RBin *bin) {
 }
 
 
-RBinLdrPlugin rz_bin_ldr_plugin_ldr_linux = {
+RzBinLdrPlugin rz_bin_ldr_plugin_ldr_linux = {
 	.name = "ldr.linux",
-	.desc = "Linux loader plugin for RBin",
+	.desc = "Linux loader plugin for RzBin",
 	.license = "MIT",
 	.load = &load,
 };

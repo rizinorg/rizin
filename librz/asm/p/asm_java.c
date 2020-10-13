@@ -10,9 +10,9 @@
 #include "../../shlr/java/class.h"
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	RBinJavaObj *obj = NULL;
-	RBin *bin = a->binb.bin;
-	RBinPlugin *plugin = bin && bin->cur && bin->cur->o ?
+	RzBinJavaObj *obj = NULL;
+	RzBin *bin = a->binb.bin;
+	RzBinPlugin *plugin = bin && bin->cur && bin->cur->o ?
 		bin->cur->o->plugin : NULL;
 	if (plugin && plugin->name) {
 		if (!strcmp (plugin->name, "java")) { // XXX slow

@@ -311,7 +311,7 @@ static int cmd_meta_lineinfo(RzCore *core, const char *input) {
 			}
 			sp = pheap = (char *)o;
 		}
-		RBinFile *bf = rz_bin_cur (core->bin);
+		RzBinFile *bf = rz_bin_cur (core->bin);
 		ret = 0;
 		if (bf && bf->sdb_addrinfo) {
 			ret = cmd_meta_add_fileline (bf->sdb_addrinfo, sp, offset);
@@ -327,7 +327,7 @@ static int cmd_meta_lineinfo(RzCore *core, const char *input) {
 	if (remove) {
 		remove_meta_offset (core, offset);
 	} else {
-		// taken from r2 // TODO: we should move this addrinfo sdb logic into RBin.. use HT
+		// taken from r2 // TODO: we should move this addrinfo sdb logic into RzBin.. use HT
 		filter_offset = offset;
 		filter_count = 0;
 		sdb_foreach (core->bin->cur->sdb_addrinfo, print_addrinfo, NULL);

@@ -3,11 +3,11 @@
 #include <rz_types.h>
 #include <rz_bin.h>
 
-RZ_API bool rz_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line) {
+RZ_API bool rz_bin_addr2line(RzBin *bin, ut64 addr, char *file, int len, int *line) {
 	rz_return_val_if_fail (bin, false);
-	RBinFile *binfile = rz_bin_cur (bin);
-	RBinObject *o = rz_bin_cur_object (bin);
-	RBinPlugin *cp = rz_bin_file_cur_plugin (binfile);
+	RzBinFile *binfile = rz_bin_cur (bin);
+	RzBinObject *o = rz_bin_cur_object (bin);
+	RzBinPlugin *cp = rz_bin_file_cur_plugin (binfile);
 	ut64 baddr = rz_bin_get_baddr (bin);
 	if (cp && cp->dbginfo) {
 		if (o && addr >= baddr && addr < baddr + bin->cur->o->size) {
@@ -20,7 +20,7 @@ RZ_API bool rz_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *lin
 	return false;
 }
 
-RZ_API char *rz_bin_addr2text(RBin *bin, ut64 addr, int origin) {
+RZ_API char *rz_bin_addr2text(RzBin *bin, ut64 addr, int origin) {
 	rz_return_val_if_fail (bin, NULL);
 	char file[4096];
 	int line;
@@ -107,7 +107,7 @@ RZ_API char *rz_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 	return out2;
 }
 
-RZ_API char *rz_bin_addr2fileline(RBin *bin, ut64 addr) {
+RZ_API char *rz_bin_addr2fileline(RzBin *bin, ut64 addr) {
 	rz_return_val_if_fail (bin, NULL);
 	char file[1024];
 	int line = 0;

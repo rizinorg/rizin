@@ -132,9 +132,9 @@ static void pair_str(const char *key, const char *val, int mode, int last) {
 }
 
 #define STR(x) (x)? (x): ""
-RZ_API int rz_core_bin_set_cur(RzCore *core, RBinFile *binfile);
+RZ_API int rz_core_bin_set_cur(RzCore *core, RzBinFile *binfile);
 
-static ut64 rva(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
+static ut64 rva(RzBin *bin, ut64 paddr, ut64 vaddr, int va) {
 	if (va == VA_TRUE) {
 		if (paddr != UT64_MAX) {
 			return rz_bin_get_vaddr (bin, paddr, vaddr);
@@ -156,7 +156,7 @@ RZ_API int rz_core_bin_set_by_fd(RzCore *core, ut64 bin_fd) {
 
 RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 	char *flagname = NULL, *offset = NULL;
-	RBinFile *bf = rz_bin_cur (core->bin);
+	RzBinFile *bf = rz_bin_cur (core->bin);
 	if (!bf) {
 		return;
 	}
@@ -300,9 +300,9 @@ RZ_API bool rz_core_bin_load_structs(RzCore *core, const char *file) {
 		eprintf ("Invalid char found in filename\n");
 		return false;
 	}
-	RBinOptions opt = { 0 };
+	RzBinOptions opt = { 0 };
 	rz_bin_open (core->bin, file, &opt);
-	RBinFile *bf = rz_bin_cur (core->bin);
+	RzBinFile *bf = rz_bin_cur (core->bin);
 	if (bf) {
 		rz_core_bin_export_info (core, RZ_MODE_SET);
 		rz_bin_file_delete (core->bin, bf->id);
@@ -320,11 +320,11 @@ RZ_API int rz_core_bin_set_by_name(RzCore *core, const char * name) {
 	return false;
 }
 
-RZ_API int rz_core_bin_set_env(RzCore *r, RBinFile *binfile) {
+RZ_API int rz_core_bin_set_env(RzCore *r, RzBinFile *binfile) {
 	rz_return_val_if_fail (r, false);
 
-	RBinObject *binobj = binfile? binfile->o: NULL;
-	RBinInfo *info = binobj? binobj->info: NULL;
+	RzBinObject *binobj = binfile? binfile->o: NULL;
+	RzBinInfo *info = binobj? binobj->info: NULL;
 	if (info) {
 		int va = info->has_va;
 		const char *arch = info->arch;
@@ -349,7 +349,7 @@ RZ_API int rz_core_bin_set_env(RzCore *r, RBinFile *binfile) {
 	return false;
 }
 
-RZ_API int rz_core_bin_set_cur(RzCore *core, RBinFile *binfile) {
+RZ_API int rz_core_bin_set_cur(RzCore *core, RzBinFile *binfile) {
 	if (!core->bin) {
 		return false;
 	}
@@ -373,11 +373,11 @@ static void _print_strings(RzCore *r, RzList *list, int mode, int va) {
 	int maxstr = rz_config_get_i (r->config, "bin.maxstr");
 	RTable *table = rz_core_table (r);
 	rz_return_if_fail (table);
-	RBin *bin = r->bin;
-	RBinObject *obj = rz_bin_cur_object (bin);
+	RzBin *bin = r->bin;
+	RzBinObject *obj = rz_bin_cur_object (bin);
 	RzListIter *iter;
-	RBinString *string;
-	RBinSection *section;
+	RzBinString *string;
+	RzBinSection *section;
 	PJ *pj = NULL;
 
 	bin->minstrlen = minstr;
@@ -394,7 +394,7 @@ static void _print_strings(RzCore *r, RzList *list, int mode, int va) {
 		rz_cons_printf ("[Strings]\n");
 		rz_table_set_columnsf (table, "nXXnnsss", "nth", "paddr", "vaddr", "len", "size", "section", "type", "string");
 	}
-	RBinString b64 = { 0 };
+	RzBinString b64 = { 0 };
 	rz_list_foreach (list, iter, string) {
 		const char *section_name, *type_string;
 		ut64 paddr, vaddr;
@@ -574,7 +574,7 @@ static void _print_strings(RzCore *r, RzList *list, int mode, int va) {
 }
 
 static bool bin_raw_strings(RzCore *r, int mode, int va) {
-	RBinFile *bf = rz_bin_cur (r->bin);
+	RzBinFile *bf = rz_bin_cur (r->bin);
 	bool new_bf = false;
 	if (bf && strstr (bf->file, "malloc://")) {
 		//sync bf->buf to search string on it
@@ -594,7 +594,7 @@ static bool bin_raw_strings(RzCore *r, int mode, int va) {
 		return false;
 	}
 	if (!bf) {
-		bf = RZ_NEW0 (RBinFile);
+		bf = RZ_NEW0 (RzBinFile);
 		if (!bf) {
 			return false;
 		}
@@ -629,8 +629,8 @@ static bool bin_raw_strings(RzCore *r, int mode, int va) {
 
 static bool bin_strings(RzCore *r, int mode, int va) {
 	RzList *list;
-	RBinFile *binfile = rz_bin_cur (r->bin);
-	RBinPlugin *plugin = rz_bin_file_cur_plugin (binfile);
+	RzBinFile *binfile = rz_bin_cur (r->bin);
+	RzBinPlugin *plugin = rz_bin_file_cur_plugin (binfile);
 	int rawstr = rz_config_get_i (r->config, "bin.rawstr");
 	if (!binfile || !plugin) {
 		return false;
@@ -661,9 +661,9 @@ static const char* get_compile_time(Sdb *binFileSdb) {
 	return timeDateStamp_string;
 }
 
-static bool is_executable(RBinObject *obj) {
+static bool is_executable(RzBinObject *obj) {
 	RzListIter *it;
-	RBinSection* sec;
+	RzBinSection* sec;
 	rz_return_val_if_fail (obj, false);
 	if (obj->info && obj->info->arch) {
 		return true;
@@ -777,15 +777,15 @@ RZ_API void rz_core_anal_cc_init(RzCore *core) {
 static int bin_info(RzCore *r, int mode, ut64 laddr) {
 	int i, j, v;
 	char str[RZ_FLAG_NAME_SIZE];
-	RBinInfo *info = rz_bin_get_info (r->bin);
-	RBinFile *bf = rz_bin_cur (r->bin);
+	RzBinInfo *info = rz_bin_get_info (r->bin);
+	RzBinFile *bf = rz_bin_cur (r->bin);
 	if (!bf) {
 		if (IS_MODE_JSON (mode)) {
 			rz_cons_printf ("{}\n");
 		}
 		return false;
 	}
-	RBinObject *obj = bf->o;
+	RzBinObject *obj = bf->o;
 	const char *compiled = NULL;
 	bool havecode;
 
@@ -982,7 +982,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 		if (IS_MODE_JSON (mode)) {
 			rz_cons_printf (",\"checksums\":{");
 			for (i = 0; info->sum[i].type; i++) {
-				RBinHash *h = &info->sum[i];
+				RzBinHash *h = &info->sum[i];
 				ut64 hash = rz_hash_name_to_bits (h->type);
 				RzHash *rh = rz_hash_new (true, hash);
 				ut8 *tmp = RZ_NEWS (ut8, h->to);
@@ -1006,7 +1006,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 			rz_cons_printf ("}");
 		} else {
 			for (i = 0; info->sum[i].type; i++) {
-				RBinHash *h = &info->sum[i];
+				RzBinHash *h = &info->sum[i];
 				ut64 hash = rz_hash_name_to_bits (h->type);
 				RzHash *rh = rz_hash_new (true, hash);
 				ut8 *tmp = RZ_NEWS (ut8, h->to);
@@ -1075,13 +1075,13 @@ static void file_lines_free_kv(HtPPKv *kv) {
 }
 
 static int bin_dwarf(RzCore *core, int mode) {
-	RBinDwarfRow *row;
+	RzBinDwarfRow *row;
 	RzListIter *iter;
 	if (!rz_config_get_i (core->config, "bin.dbginfo")) {
 		return false;
 	}
-	RBinFile *binfile = rz_bin_cur (core->bin);
-	RBinPlugin * plugin = rz_bin_file_cur_plugin (binfile);
+	RzBinFile *binfile = rz_bin_cur (core->bin);
+	RzBinPlugin * plugin = rz_bin_file_cur_plugin (binfile);
 	if (!binfile) {
 		return false;
 	}
@@ -1092,9 +1092,9 @@ static int bin_dwarf(RzCore *core, int mode) {
 		list = plugin->lines (binfile);
 	} else if (core->bin) {
 		// TODO: complete and speed-up support for dwarf
-		RBinDwarfDebugAbbrev *da = NULL;
+		RzBinDwarfDebugAbbrev *da = NULL;
 		da = rz_bin_dwarf_parse_abbrev (core->bin, mode);
-		RBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info (da, core->bin, mode);
+		RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info (da, core->bin, mode);
 		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc (core->bin, core->anal->bits / 8);
 		// I suppose there is no reason the parse it for a printing purposes
 		if (info && mode != RZ_MODE_PRINT) {
@@ -1283,7 +1283,7 @@ static int srclineCmp(const void *a, const void *b) {
 
 static int bin_source(RzCore *r, int mode) {
 	RzList *final_list = rz_list_new ();
-	RBinFile * binfile = r->bin->cur;
+	RzBinFile * binfile = r->bin->cur;
 
 	if (!binfile) {
 		bprintf ("[Error bin file]\n");
@@ -1318,7 +1318,7 @@ static int bin_source(RzCore *r, int mode) {
 }
 
 static int bin_main(RzCore *r, int mode, int va) {
-	RBinAddr *binmain = rz_bin_get_sym (r->bin, RZ_BIN_SYM_MAIN);
+	RzBinAddr *binmain = rz_bin_get_sym (r->bin, RZ_BIN_SYM_MAIN);
 	ut64 addr;
 	if (!binmain) {
 		return false;
@@ -1344,7 +1344,7 @@ static int bin_main(RzCore *r, int mode, int va) {
 	return true;
 }
 
-static inline bool is_initfini(RBinAddr *entry) {
+static inline bool is_initfini(RzBinAddr *entry) {
 	switch (entry->type) {
 	case RZ_BIN_ENTRY_TYPE_INIT:
 	case RZ_BIN_ENTRY_TYPE_FINI:
@@ -1360,7 +1360,7 @@ static int bin_entry(RzCore *r, int mode, ut64 laddr, int va, bool inifin) {
 	RzList *entries = rz_bin_get_entries (r->bin);
 	RzListIter *iter;
 	RzListIter *last_processed = NULL;
-	RBinAddr *entry = NULL;
+	RzBinAddr *entry = NULL;
 	int i = 0, init_i = 0, fini_i = 0, preinit_i = 0;
 	ut64 baddr = rz_bin_get_baddr (r->bin);
 
@@ -1491,7 +1491,7 @@ static int bin_entry(RzCore *r, int mode, ut64 laddr, int va, bool inifin) {
 	return true;
 }
 
-static const char *bin_reloc_type_name(RBinReloc *reloc) {
+static const char *bin_reloc_type_name(RzBinReloc *reloc) {
 #define CASE(T) case RZ_BIN_RELOC_ ## T: return reloc->additive ? "ADD_" #T : "SET_" #T
 	switch (reloc->type) {
 	CASE(8);
@@ -1503,7 +1503,7 @@ static const char *bin_reloc_type_name(RBinReloc *reloc) {
 #undef CASE
 }
 
-static ut8 bin_reloc_size(RBinReloc *reloc) {
+static ut8 bin_reloc_size(RzBinReloc *reloc) {
 #define CASE(T) case RZ_BIN_RELOC_ ## T: return (T) / 8
 	switch (reloc->type) {
 	CASE(8);
@@ -1522,7 +1522,7 @@ static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 }
 
 // name can be optionally used to explicitly set the used base name (for example for demangling), otherwise the import name will be used.
-static char *construct_reloc_name(RZ_NONNULL RBinReloc *reloc, RZ_NULLABLE const char *name) {
+static char *construct_reloc_name(RZ_NONNULL RzBinReloc *reloc, RZ_NULLABLE const char *name) {
 	RzStrBuf *buf = rz_strbuf_new ("");
 
 	// (optional) libname_
@@ -1550,7 +1550,7 @@ static char *construct_reloc_name(RZ_NONNULL RBinReloc *reloc, RZ_NULLABLE const
 	return rz_strbuf_drain (buf);
 }
 
-static void set_bin_relocs(RzCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char **sdb_module) {
+static void set_bin_relocs(RzCore *r, RzBinReloc *reloc, ut64 addr, Sdb **db, char **sdb_module) {
 	int bin_demangle = rz_config_get_i (r->config, "bin.demangle");
 	bool keep_lib = rz_config_get_i (r->config, "bin.demangle.libs");
 	const char *lang = rz_config_get (r->config, "bin.lang");
@@ -1644,10 +1644,10 @@ static void set_bin_relocs(RzCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, cha
 }
 
 /* Define new data at relocation address if it's not in an executable section */
-static void add_metadata(RzCore *r, RBinReloc *reloc, ut64 addr, int mode) {
-	RBinFile * binfile = r->bin->cur;
-	RBinObject *binobj = binfile ? binfile->o: NULL;
-	RBinInfo *info = binobj ? binobj->info: NULL;
+static void add_metadata(RzCore *r, RzBinReloc *reloc, ut64 addr, int mode) {
+	RzBinFile * binfile = r->bin->cur;
+	RzBinObject *binobj = binfile ? binfile->o: NULL;
+	RzBinInfo *info = binobj ? binobj->info: NULL;
 
 	int cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
 	if (cdsz == 0) {
@@ -1665,7 +1665,7 @@ static void add_metadata(RzCore *r, RBinReloc *reloc, ut64 addr, int mode) {
 	}
 }
 
-static bool is_section_symbol(RBinSymbol *s) {
+static bool is_section_symbol(RzBinSymbol *s) {
 	/* workaround for some bin plugs (e.g. ELF) */
 	if (!s || *s->name) {
 		return false;
@@ -1673,20 +1673,20 @@ static bool is_section_symbol(RBinSymbol *s) {
 	return (s->type && !strcmp (s->type, RZ_BIN_TYPE_SECTION_STR));
 }
 
-static bool is_special_symbol(RBinSymbol *s) {
+static bool is_special_symbol(RzBinSymbol *s) {
 	return s->type && !strcmp (s->type, RZ_BIN_TYPE_SPECIAL_SYM_STR);
 }
 
-static bool is_section_reloc(RBinReloc *r) {
+static bool is_section_reloc(RzBinReloc *r) {
 	return is_section_symbol (r->symbol);
 }
 
-static bool is_file_symbol(RBinSymbol *s) {
+static bool is_file_symbol(RzBinSymbol *s) {
 	/* workaround for some bin plugs (e.g. ELF) */
 	return (s && s->type && !strcmp (s->type, RZ_BIN_TYPE_FILE_STR));
 }
 
-static bool is_file_reloc(RBinReloc *r) {
+static bool is_file_reloc(RzBinReloc *r) {
 	return is_file_symbol (r->symbol);
 }
 
@@ -1697,7 +1697,7 @@ static int bin_relocs(RzCore *r, int mode, int va) {
 	RTable *table = rz_core_table (r);
 	rz_return_val_if_fail (table, false);
 	RBIter iter;
-	RBinReloc *reloc = NULL;
+	RzBinReloc *reloc = NULL;
 	Sdb *db = NULL;
 	PJ *pj = NULL;
 	char *sdb_module = NULL;
@@ -1727,7 +1727,7 @@ static int bin_relocs(RzCore *r, int mode, int va) {
 		rz_flag_space_set (r->flags, RZ_FLAGS_FS_RELOCS);
 	}
 
-	rz_rbtree_foreach (relocs, iter, reloc, RBinReloc, vrb) {
+	rz_rbtree_foreach (relocs, iter, reloc, RzBinReloc, vrb) {
 		ut64 addr = rva (r->bin, reloc->paddr, reloc->vaddr, va);
 		if (IS_MODE_SET (mode) && (is_section_reloc (reloc) || is_file_reloc (reloc))) {
 			/*
@@ -1870,8 +1870,8 @@ static int bin_relocs(RzCore *r, int mode, int va) {
 RZ_DEPRECATE static Sdb *mydb = NULL;
 RZ_DEPRECATE static RzList *osymbols = NULL;
 
-RZ_DEPRECATE static RBinSymbol *get_import(RBin *bin, RzList *symbols, const char *name, ut64 addr) {
-	RBinSymbol *symbol, *res = NULL;
+RZ_DEPRECATE static RzBinSymbol *get_import(RzBin *bin, RzList *symbols, const char *name, ut64 addr) {
+	RzBinSymbol *symbol, *res = NULL;
 	RzListIter *iter;
 	if (mydb && symbols && symbols != osymbols) {
 		sdb_free (mydb);
@@ -1880,10 +1880,10 @@ RZ_DEPRECATE static RBinSymbol *get_import(RBin *bin, RzList *symbols, const cha
 	}
 	if (mydb) {
 		if (name) {
-			res = (RBinSymbol*)(void*)(size_t)
+			res = (RzBinSymbol*)(void*)(size_t)
 				sdb_num_get (mydb, sdb_fmt ("%x", sdb_hash (name)), NULL);
 		} else {
-			res = (RBinSymbol*)(void*)(size_t)
+			res = (RzBinSymbol*)(void*)(size_t)
 				sdb_num_get (mydb, sdb_fmt ("0x%08"PFMT64x, addr), NULL);
 		}
 	} else {
@@ -1916,8 +1916,8 @@ RZ_DEPRECATE static RBinSymbol *get_import(RBin *bin, RzList *symbols, const cha
 }
 #else
 static RzList *osymbols = NULL;
-static RBinSymbol *get_symbol(RBin *bin, RzList *symbols, const char *name, ut64 addr) {
-	RBinSymbol *symbol;
+static RzBinSymbol *get_symbol(RzBin *bin, RzList *symbols, const char *name, ut64 addr) {
+	RzBinSymbol *symbol;
 	RzListIter *iter;
 	// XXX this is slow, we should use a hashtable here
 	rz_list_foreach (symbols, iter, symbol) {
@@ -1935,7 +1935,7 @@ static RBinSymbol *get_symbol(RBin *bin, RzList *symbols, const char *name, ut64
 #endif
 
 /* XXX: This is a hack to get PLT references in rz_bin -i */
-RZ_API ut64 rz_core_bin_impaddr(RBin *bin, int va, const char *name) {
+RZ_API ut64 rz_core_bin_impaddr(RzBin *bin, int va, const char *name) {
 	RzList *symbols;
 
 	if (!name || !*name) {
@@ -1944,7 +1944,7 @@ RZ_API ut64 rz_core_bin_impaddr(RBin *bin, int va, const char *name) {
 	if (!(symbols = rz_bin_get_symbols (bin))) {
 		return false;
 	}
-	RBinSymbol *s = get_import (bin, symbols, name, 0LL);
+	RzBinSymbol *s = get_import (bin, symbols, name, 0LL);
 	// maybe ut64_MAX to indicate import not found?
 	ut64 addr = 0LL;
 	if (s) {
@@ -1962,12 +1962,12 @@ RZ_API ut64 rz_core_bin_impaddr(RBin *bin, int va, const char *name) {
 }
 
 static int bin_imports(RzCore *r, int mode, int va, const char *name) {
-	RBinInfo *info = rz_bin_get_info (r->bin);
+	RzBinInfo *info = rz_bin_get_info (r->bin);
 	int bin_demangle = rz_config_get_i (r->config, "bin.demangle");
 	bool keep_lib = rz_config_get_i (r->config, "bin.demangle.libs");
 	RTable *table = rz_core_table (r);
 	rz_return_val_if_fail (table, false);
-	RBinImport *import;
+	RzBinImport *import;
 	RzListIter *iter;
 	bool lit = info ? info->has_lit: false;
 	char *str;
@@ -2092,7 +2092,7 @@ static int bin_imports(RzCore *r, int mode, int va, const char *name) {
 	rz_table_free (table);
 #if MYDB
 	// NOTE: if we comment out this, it will leak.. but it will be faster
-	// because it will keep the cache across multiple RBin calls
+	// because it will keep the cache across multiple RzBin calls
 	osymbols = NULL;
 	sdb_free (mydb);
 	mydb = NULL;
@@ -2100,7 +2100,7 @@ static int bin_imports(RzCore *r, int mode, int va, const char *name) {
 	return true;
 }
 
-static const char *getPrefixFor(RBinSymbol *sym) {
+static const char *getPrefixFor(RzBinSymbol *sym) {
 	if (sym) {
 		// workaround for ELF
 		if (sym->type) {
@@ -2142,7 +2142,7 @@ typedef struct {
 	char *methflag;  // methods flag sym.[class].[method]
 } SymName;
 
-static void snInit(RzCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
+static void snInit(RzCore *r, SymName *sn, RzBinSymbol *sym, const char *lang) {
 	int bin_demangle = lang != NULL;
 	bool keep_lib = rz_config_get_i (r->config, "bin.demangle.libs");
 	if (!r || !sym || !sym->name) {
@@ -2188,7 +2188,7 @@ static void snFini(SymName *sn) {
 	RZ_FREE (sn->methflag);
 }
 
-static bool isAnExport(RBinSymbol *s) {
+static bool isAnExport(RzBinSymbol *s) {
 	/* workaround for some bin plugs */
 	if (s->is_imported) {
 		return false;
@@ -2196,11 +2196,11 @@ static bool isAnExport(RBinSymbol *s) {
 	return (s->bind && !strcmp (s->bind, RZ_BIN_BIND_GLOBAL_STR));
 }
 
-static ut64 compute_addr(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
+static ut64 compute_addr(RzBin *bin, ut64 paddr, ut64 vaddr, int va) {
 	return paddr == UT64_MAX? vaddr: rva (bin, paddr, vaddr, va);
 }
 
-static void handle_arm_special_symbol(RzCore *core, RBinSymbol *symbol, int va) {
+static void handle_arm_special_symbol(RzCore *core, RzBinSymbol *symbol, int va) {
 	ut64 addr = compute_addr (core->bin, symbol->paddr, symbol->vaddr, va);
 	if (!strcmp (symbol->name, "$a")) {
 		rz_anal_hint_set_bits (core->anal, addr, 32);
@@ -2219,7 +2219,7 @@ static void handle_arm_special_symbol(RzCore *core, RBinSymbol *symbol, int va) 
 	}
 }
 
-static void handle_arm_hint(RzCore *core, RBinInfo *info, ut64 paddr, ut64 vaddr, int bits, int va) {
+static void handle_arm_hint(RzCore *core, RzBinInfo *info, ut64 paddr, ut64 vaddr, int bits, int va) {
 	if (info->bits > 32) { // we look at 16 or 32 bit only
 		return;
 	}
@@ -2238,15 +2238,15 @@ static void handle_arm_hint(RzCore *core, RBinInfo *info, ut64 paddr, ut64 vaddr
 	}
 }
 
-static void handle_arm_symbol(RzCore *core, RBinSymbol *symbol, RBinInfo *info, int va) {
+static void handle_arm_symbol(RzCore *core, RzBinSymbol *symbol, RzBinInfo *info, int va) {
 	return handle_arm_hint (core, info, symbol->paddr, symbol->vaddr, symbol->bits, va);
 }
 
-static void handle_arm_entry(RzCore *core, RBinAddr *entry, RBinInfo *info, int va) {
+static void handle_arm_entry(RzCore *core, RzBinAddr *entry, RzBinInfo *info, int va) {
 	return handle_arm_hint (core, info, entry->paddr, entry->vaddr, entry->bits, va);
 }
 
-static void select_flag_space(RzCore *core, RBinSymbol *symbol) {
+static void select_flag_space(RzCore *core, RzBinSymbol *symbol) {
 	if (symbol->is_imported) {
 		rz_flag_space_push (core->flags, RZ_FLAGS_FS_IMPORTS);
 	} else if (symbol->type && !strcmp (symbol->type, RZ_BIN_TYPE_SECTION_STR)) {
@@ -2257,10 +2257,10 @@ static void select_flag_space(RzCore *core, RBinSymbol *symbol) {
 }
 
 static int bin_symbols(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args) {
-	RBinInfo *info = rz_bin_get_info (r->bin);
+	RzBinInfo *info = rz_bin_get_info (r->bin);
 	RzList *entries = rz_bin_get_entries (r->bin);
-	RBinSymbol *symbol;
-	RBinAddr *entry;
+	RzBinSymbol *symbol;
+	RzBinAddr *entry;
 	RzListIter *iter;
 	bool firstexp = true;
 	bool printHere = (args && *args == '.');
@@ -2339,7 +2339,7 @@ static int bin_symbols(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				handle_arm_special_symbol (r, symbol, va);
 			}
 		} else if (IS_MODE_SET (mode)) {
-			// TODO: provide separate API in RBinPlugin to let plugins handle anal hints/metadata
+			// TODO: provide separate API in RzBinPlugin to let plugins handle anal hints/metadata
 			if (is_arm) {
 				handle_arm_symbol (r, symbol, info, va);
 			}
@@ -2423,8 +2423,8 @@ static int bin_symbols(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			if (is_special_symbol (symbol)) {
 				goto next;
 			}
-			RBinFile *binfile;
-			RBinPlugin *plugin;
+			RzBinFile *binfile;
+			RzBinPlugin *plugin;
 			const char *name = sn.demname? sn.demname: rz_symbol_name;
 			if (!name) {
 				goto next;
@@ -2606,7 +2606,7 @@ static RzIODesc *findReusableFile(RzIO *io, const char *uri, int perm) {
 	return arg.desc;
 }
 
-static bool io_create_mem_map(RzIO *io, RBinSection *sec, ut64 at) {
+static bool io_create_mem_map(RzIO *io, RzBinSection *sec, ut64 at) {
 	rz_return_val_if_fail (io && sec, false);
 
 	bool reused = false;
@@ -2642,7 +2642,7 @@ static bool io_create_mem_map(RzIO *io, RBinSection *sec, ut64 at) {
 	return true;
 }
 
-static void add_section(RzCore *core, RBinSection *sec, ut64 addr, int fd) {
+static void add_section(RzCore *core, RzBinSection *sec, ut64 addr, int fd) {
 	if (!rz_io_desc_get (core->io, fd) || UT64_ADD_OVFCHK (sec->size, sec->paddr) ||
 	    UT64_ADD_OVFCHK (sec->size, addr) || !sec->vsize) {
 		return;
@@ -2681,15 +2681,15 @@ static void add_section(RzCore *core, RBinSection *sec, ut64 addr, int fd) {
 }
 
 struct io_bin_section_info_t {
-	RBinSection *sec;
+	RzBinSection *sec;
 	ut64 addr;
 	int fd;
 };
 
 /* Map Sections to Segments https://github.com/rizinorg/rizin/issues/14647 */
-static int bin_map_sections_to_segments (RBin *bin, int mode) {
+static int bin_map_sections_to_segments (RzBin *bin, int mode) {
 	RzListIter *iter, *iter2;
-	RBinSection *section = NULL, *segment = NULL;
+	RzBinSection *section = NULL, *segment = NULL;
 	RzList *sections = rz_list_new ();
 	RzList *segments = rz_list_new ();
 	RzList *tmp = rz_bin_get_sections (bin);
@@ -2741,8 +2741,8 @@ static int bin_map_sections_to_segments (RBin *bin, int mode) {
 
 static int bin_sections(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments) {
 	char *str = NULL;
-	RBinSection *section;
-	RBinInfo *info = NULL;
+	RzBinSection *section;
+	RzBinInfo *info = NULL;
 	RzList *sections;
 	RzListIter *iter;
 	RzListIter *last_processed = NULL;
@@ -2777,7 +2777,7 @@ static int bin_sections(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const 
 			free (hashtypes);
 			return false;
 		}
-		RBinSection *s;
+		RzBinSection *s;
 		rz_list_foreach (sections, iter, s) {
 			char humansz[8];
 			if (print_segments != s->is_segment) {
@@ -3098,9 +3098,9 @@ out:
 static int bin_fields(RzCore *r, int mode, int va) {
 	RzList *fields;
 	RzListIter *iter;
-	RBinField *field;
+	RzBinField *field;
 	int i = 0;
-	RBin *bin = r->bin;
+	RzBin *bin = r->bin;
 
 	if (!(fields = rz_bin_get_fields (bin))) {
 		return false;
@@ -3232,9 +3232,9 @@ static char *get_rp(const char *rtype) {
 }
 
 static int bin_trycatch(RzCore *core, int mode) {
-	RBinFile *bf = rz_bin_cur (core->bin);
+	RzBinFile *bf = rz_bin_cur (core->bin);
 	RzListIter *iter;
-	RBinTrycatch *tc;
+	RzBinTrycatch *tc;
 	RzList *trycatch = rz_bin_file_get_trycatch (bf);
 	int idx = 0;
 	rz_list_foreach (trycatch, iter, tc) {
@@ -3303,10 +3303,10 @@ static char *objc_name_toc(const char *objc_name) {
 	return s;
 }
 
-static void classdump_c(RzCore *r, RBinClass *c) {
+static void classdump_c(RzCore *r, RzBinClass *c) {
 	rz_cons_printf ("typedef struct class_%s {\n", c->name);
 	RzListIter *iter2;
-	RBinField *f;
+	RzBinField *f;
 	rz_list_foreach (c->fields, iter2, f) {
 		if (f->type && f->name) {
 			char *n = objc_name_toc (f->name);
@@ -3319,15 +3319,15 @@ static void classdump_c(RzCore *r, RBinClass *c) {
 	rz_cons_printf ("} %s;\n", c->name);
 }
 
-static void classdump_objc(RzCore *r, RBinClass *c) {
+static void classdump_objc(RzCore *r, RzBinClass *c) {
 	if (c->super) {
 		rz_cons_printf ("@interface %s : %s\n{\n", c->name, c->super);
 	} else {
 		rz_cons_printf ("@interface %s\n{\n", c->name);
 	}
 	RzListIter *iter2, *iter3;
-	RBinField *f;
-	RBinSymbol *sym;
+	RzBinField *f;
+	RzBinSymbol *sym;
 	rz_list_foreach (c->fields, iter2, f) {
 		if (f->name && rz_regex_match ("ivar","e", f->name)) {
 			rz_cons_printf ("  %s %s\n", f->type, f->name);
@@ -3350,10 +3350,10 @@ static void classdump_objc(RzCore *r, RBinClass *c) {
 	rz_cons_printf ("@end\n");
 }
 
-static void classdump_java(RzCore *r, RBinClass *c) {
-	RBinField *f;
+static void classdump_java(RzCore *r, RzBinClass *c) {
+	RzBinField *f;
 	RzListIter *iter2, *iter3;
-	RBinSymbol *sym;
+	RzBinSymbol *sym;
 	char *pn = strdup (c->name);
 	char *cn = (char *)rz_str_rchr (pn, NULL, '/');
 	if (cn) {
@@ -3382,9 +3382,9 @@ static void classdump_java(RzCore *r, RBinClass *c) {
 
 static int bin_classes(RzCore *r, int mode) {
 	RzListIter *iter, *iter2, *iter3;
-	RBinSymbol *sym;
-	RBinClass *c;
-	RBinField *f;
+	RzBinSymbol *sym;
+	RzBinClass *c;
+	RzBinField *f;
 	char *name;
 	RzList *cs = rz_bin_get_classes (r->bin);
 	if (!cs) {
@@ -3457,7 +3457,7 @@ static int bin_classes(RzCore *r, int mode) {
 				c->super ? c->super : "");
 		} else if (IS_MODE_CLASSDUMP (mode)) {
 			if (c) {
-				RBinFile *bf = rz_bin_cur (r->bin);
+				RzBinFile *bf = rz_bin_cur (r->bin);
 				if (bf && bf->o) {
 					if (IS_MODE_RAD (mode)) {
 						classdump_c (r, c);
@@ -3646,7 +3646,7 @@ static int bin_libs(RzCore *r, int mode) {
 }
 
 static void bin_mem_print(RzList *mems, int perms, int depth, int mode) {
-	RBinMem *mem;
+	RzBinMem *mem;
 	RzListIter *iter;
 	if (!mems) {
 		return;
@@ -4100,7 +4100,7 @@ static void bin_no_resources(RzCore *r, int mode) {
 }
 
 static int bin_resources(RzCore *r, int mode) {
-	const RBinInfo *info = rz_bin_get_info (r->bin);
+	const RzBinInfo *info = rz_bin_get_info (r->bin);
 	if (!info || !info->rclass) {
 		return false;
 	}
@@ -4113,7 +4113,7 @@ static int bin_resources(RzCore *r, int mode) {
 }
 
 static int bin_versioninfo(RzCore *r, int mode) {
-	const RBinInfo *info = rz_bin_get_info (r->bin);
+	const RzBinInfo *info = rz_bin_get_info (r->bin);
 	if (!info || !info->rclass) {
 		return false;
 	}
@@ -4131,8 +4131,8 @@ static int bin_versioninfo(RzCore *r, int mode) {
 }
 
 static int bin_signature(RzCore *r, int mode) {
-	RBinFile *cur = rz_bin_cur (r->bin);
-	RBinPlugin *plg = rz_bin_file_cur_plugin (cur);
+	RzBinFile *cur = rz_bin_cur (r->bin);
+	RzBinPlugin *plg = rz_bin_file_cur_plugin (cur);
 	if (plg && plg->signature) {
 		const char *signature = plg->signature (cur, IS_MODE_JSON (mode));
 		if (IS_MODE_JSON (mode)) {
@@ -4147,8 +4147,8 @@ static int bin_signature(RzCore *r, int mode) {
 }
 
 static int bin_header(RzCore *r, int mode) {
-	RBinFile *cur = rz_bin_cur (r->bin);
-	RBinPlugin *plg = rz_bin_file_cur_plugin (cur);
+	RzBinFile *cur = rz_bin_cur (r->bin);
+	RzBinPlugin *plg = rz_bin_file_cur_plugin (cur);
 	if (plg && plg->header) {
 		plg->header (cur);
 		return true;
@@ -4269,7 +4269,7 @@ RZ_API int rz_core_bin_info(RzCore *core, int action, int mode, int va, RzCoreBi
 RZ_API int rz_core_bin_set_arch_bits(RzCore *r, const char *name, const char * arch, ut16 bits) {
 	int fd = rz_io_fd_get_current (r->io);
 	RzIODesc *desc = rz_io_desc_get (r->io, fd);
-	RBinFile *curfile, *binfile = NULL;
+	RzBinFile *curfile, *binfile = NULL;
 	if (!name) {
 		if (!desc || !desc->name) {
 			return false;
@@ -4298,7 +4298,7 @@ RZ_API int rz_core_bin_set_arch_bits(RzCore *r, const char *name, const char * a
 }
 
 RZ_API int rz_core_bin_update_arch_bits(RzCore *r) {
-	RBinFile *binfile = NULL;
+	RzBinFile *binfile = NULL;
 	const char *name = NULL, *arch = NULL;
 	ut16 bits = 0;
 	if (!r) {
@@ -4322,7 +4322,7 @@ RZ_API bool rz_core_bin_raise(RzCore *core, ut32 bfid) {
 	if (!rz_bin_select_bfid (core->bin, bfid)) {
 		return false;
 	}
-	RBinFile *bf = rz_bin_cur (core->bin);
+	RzBinFile *bf = rz_bin_cur (core->bin);
 	if (bf) {
 		rz_io_use_fd (core->io, bf->fd);
 	}
@@ -4336,7 +4336,7 @@ RZ_API bool rz_core_bin_delete(RzCore *core, ut32 bf_id) {
 		return false;
 	}
 	rz_bin_file_delete (core->bin, bf_id);
-	RBinFile *bf = rz_bin_file_at (core->bin, core->offset);
+	RzBinFile *bf = rz_bin_file_at (core->bin, core->offset);
 	if (bf) {
 		rz_io_use_fd (core->io, bf->fd);
 	}
@@ -4344,7 +4344,7 @@ RZ_API bool rz_core_bin_delete(RzCore *core, ut32 bf_id) {
 	return bf && rz_core_bin_set_env (core, bf) && rz_core_block_read (core);
 }
 
-static bool rz_core_bin_file_print(RzCore *core, RBinFile *bf, int mode) {
+static bool rz_core_bin_file_print(RzCore *core, RzBinFile *bf, int mode) {
 	rz_return_val_if_fail (core && bf && bf->o, NULL);
 	const char *name = bf ? bf->file : NULL;
 	(void)rz_bin_get_info (core->bin); // XXX is this necssary for proper iniitialization
@@ -4368,8 +4368,8 @@ static bool rz_core_bin_file_print(RzCore *core, RBinFile *bf, int mode) {
 		rz_cons_printf ("{\"name\":\"%s\",\"iofd\":%d,\"bfid\":%d,\"size\":%d,\"objs\":[",
 			name? name: "", bf->fd, bf->id, bin_sz);
 		{
-			RBinObject *obj = bf->o;
-			RBinInfo *info = obj->info;
+			RzBinObject *obj = bf->o;
+			RzBinInfo *info = obj->info;
 			ut8 bits = info ? info->bits : 0;
 			const char *asmarch = rz_config_get (core->config, "asm.arch");
 			const char *arch = info ? info->arch ? info->arch: asmarch : "unknown";
@@ -4381,7 +4381,7 @@ static bool rz_core_bin_file_print(RzCore *core, RBinFile *bf, int mode) {
 		break;
 	default:
 		{
-			RBinInfo *info = bf->o->info;
+			RzBinInfo *info = bf->o->info;
 			ut8 bits = info ? info->bits : 0;
 			const char *asmarch = rz_config_get (core->config, "asm.arch");
 			const char *arch = info ? info->arch ? info->arch: asmarch: "unknown";
@@ -4397,8 +4397,8 @@ RZ_API int rz_core_bin_list(RzCore *core, int mode) {
 	// list all binfiles and there objects and there archs
 	int count = 0;
 	RzListIter *iter;
-	RBinFile *binfile = NULL; //, *cur_bf = rz_bin_cur (core->bin) ;
-	RBin *bin = core->bin;
+	RzBinFile *binfile = NULL; //, *cur_bf = rz_bin_cur (core->bin) ;
+	RzBin *bin = core->bin;
 	const RzList *binfiles = bin ? bin->binfiles: NULL;
 	if (!binfiles) {
 		return false;

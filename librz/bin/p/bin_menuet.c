@@ -66,11 +66,11 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer (RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
 	return check_buffer (b);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return 0; // 0x800000;
 }
 
@@ -83,10 +83,10 @@ static ut64 menuetEntry(const ut8 *buf, int buf_size) {
 	return UT64_MAX;
 }
 
-static RzList* entries(RBinFile *bf) {
+static RzList* entries(RzBinFile *bf) {
 	RzList* ret;
 	ut8 buf[64] = {0};
-	RBinAddr *ptr = NULL;
+	RzBinAddr *ptr = NULL;
 	const int buf_size = RZ_MIN (sizeof (buf), rz_buf_size (bf->buf));
 
 	rz_buf_read_at (bf->buf, 0, buf, buf_size);
@@ -98,7 +98,7 @@ static RzList* entries(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	if ((ptr = RZ_NEW0 (RBinAddr))) {
+	if ((ptr = RZ_NEW0 (RzBinAddr))) {
 		ptr->paddr = rz_read_ble32 (buf + 12, false);
 		ptr->vaddr = ptr->paddr + baddr (bf);
 		rz_list_append (ret, ptr);
@@ -106,9 +106,9 @@ static RzList* entries(RBinFile *bf) {
 	return ret;
 }
 
-static RzList* sections(RBinFile *bf) {
+static RzList* sections(RzBinFile *bf) {
 	RzList *ret = NULL;
-	RBinSection *ptr = NULL;
+	RzBinSection *ptr = NULL;
 	ut8 buf[64] = {0};
 	const int buf_size = RZ_MIN (sizeof (buf), rz_buf_size (bf->buf));
 
@@ -121,7 +121,7 @@ static RzList* sections(RBinFile *bf) {
 		return NULL;
 	}
 	// add text segment
-	if (!(ptr = RZ_NEW0 (RBinSection))) {
+	if (!(ptr = RZ_NEW0 (RzBinSection))) {
 		return ret;
 	}
 	ptr->name = strdup ("text");
@@ -135,7 +135,7 @@ static RzList* sections(RBinFile *bf) {
 
 	if (MENUET_VERSION(buf)) {
 		/* add data section */
-		if (!(ptr = RZ_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RzBinSection))) {
 			return ret;
 		}
 		ptr->name = strdup ("idata");
@@ -153,8 +153,8 @@ static RzList* sections(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo* info(RBinFile *bf) {
-	RBinInfo *ret = RZ_NEW0 (RBinInfo);
+static RzBinInfo* info(RzBinFile *bf) {
+	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
 	if (ret) {
 		ret->file = strdup (bf->file);
 		ret->bclass = strdup ("program");
@@ -173,7 +173,7 @@ static RBinInfo* info(RBinFile *bf) {
 	return ret;
 }
 
-static ut64 size(RBinFile *bf) {
+static ut64 size(RzBinFile *bf) {
 	ut8 buf[4] = {0};
 	if (!bf->o->info) {
 		bf->o->info = info (bf);
@@ -188,7 +188,7 @@ static ut64 size(RBinFile *bf) {
 #if !RZ_BIN_P9
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
-static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
+static RBuffer* create(RzBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
 	RBuffer *buf = rz_buf_new ();
 #define B(x,y) rz_buf_append_bytes(buf,(const ut8*)(x),y)
 #define D(x) rz_buf_append_ut32(buf,x)
@@ -203,7 +203,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-RBinPlugin rz_bin_plugin_menuet = {
+RzBinPlugin rz_bin_plugin_menuet = {
 	.name = "menuet",
 	.desc = "Menuet/KolibriOS bin plugin",
 	.license = "LGPL3",

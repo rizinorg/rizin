@@ -8,17 +8,17 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return true;
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	ut16 base = rz_buf_read_le16_at (bf->buf, 0);
 	return base != UT16_MAX ? base : 0;
 }
 
-static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = RZ_NEW0 (RBinInfo);
+static RzBinInfo *info(RzBinFile *bf) {
+	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -32,7 +32,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	RzList *ret = rz_list_newf ((RzListFree)rz_bin_section_free);
 	if (!ret) {
 		return NULL;
@@ -41,7 +41,7 @@ static RzList *sections(RBinFile *bf) {
 	if (sz < 2) {
 		return ret;
 	}
-	RBinSection *section = RZ_NEW0 (RBinSection);
+	RzBinSection *section = RZ_NEW0 (RzBinSection);
 	if (!section) {
 		return ret;
 	}
@@ -56,12 +56,12 @@ static RzList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *entries(RBinFile *bf) {
+static RzList *entries(RzBinFile *bf) {
 	RzList *ret = rz_list_newf (free);
 	if (!ret) {
 		return NULL;
 	}
-	RBinAddr *binaddr = RZ_NEW0 (RBinAddr);
+	RzBinAddr *binaddr = RZ_NEW0 (RzBinAddr);
 	if (!binaddr) {
 		return ret;
 	}
@@ -71,7 +71,7 @@ static RzList *entries(RBinFile *bf) {
 	return ret;
 }
 
-RBinPlugin rz_bin_plugin_prg = {
+RzBinPlugin rz_bin_plugin_prg = {
 	.name = "prg",
 	.desc = "C64 PRG",
 	.license = "LGPL3",

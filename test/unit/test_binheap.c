@@ -8,7 +8,7 @@ int basic_cmp(const void *a, const void *b) {
 }
 
 bool test_basic(void) {
-	RBinHeap *bh = rz_binheap_new (basic_cmp);
+	RzBinHeap *bh = rz_binheap_new (basic_cmp);
 	mu_assert_notnull (bh, "binheap is created");
 	mu_assert_true (rz_binheap_empty (bh), "binheap is empty");
 	rz_binheap_push (bh, (void *)(size_t)10);
@@ -20,7 +20,7 @@ bool test_basic(void) {
 }
 
 bool test_pushpop(void) {
-	RBinHeap *bh = rz_binheap_new (basic_cmp);
+	RzBinHeap *bh = rz_binheap_new (basic_cmp);
 	rz_binheap_push (bh, (void *)(size_t)10);
 	mu_assert_eq ((size_t)rz_binheap_top (bh), (size_t)10, "10 is the top");
 	mu_assert_eq ((size_t)rz_binheap_pop (bh), (size_t)10, "10 is popped");

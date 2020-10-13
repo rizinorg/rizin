@@ -3385,8 +3385,8 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				} else {
 					ut64 entry = rz_num_get (core->num, "entry0");
 					if (!entry || entry == UT64_MAX) {
-						RBinObject *o = rz_bin_cur_object (core->bin);
-						RBinSection *s = o?  rz_bin_get_section_at (o, addr, core->io->va): NULL;
+						RzBinObject *o = rz_bin_cur_object (core->bin);
+						RzBinSection *s = o?  rz_bin_get_section_at (o, addr, core->io->va): NULL;
 						if (s) {
 							entry = s->vaddr;
 						} else {

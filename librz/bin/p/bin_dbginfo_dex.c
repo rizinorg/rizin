@@ -3,7 +3,7 @@
 #include <rz_types.h>
 #include <rz_bin.h>
 
-static bool get_line(RBinFile *bf, ut64 addr, char *file, int len, int *line) {
+static bool get_line(RzBinFile *bf, ut64 addr, char *file, int len, int *line) {
 	if (bf->sdb_addrinfo) {
 		char offset[64];
 		char *offset_ptr = sdb_itoa (addr, offset, 16);
@@ -21,6 +21,6 @@ static bool get_line(RBinFile *bf, ut64 addr, char *file, int len, int *line) {
 	return false;
 }
 
-RBinDbgInfo rz_bin_dbginfo_dex = {
+RzBinDbgInfo rz_bin_dbginfo_dex = {
 	.get_line = &get_line,
 };

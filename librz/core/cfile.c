@@ -34,7 +34,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 	ut64 laddr = rz_config_get_i (core->config, "bin.laddr");
 	RzCoreFile *file = NULL;
 	RzCoreFile *ofile = core->file;
-	RBinFile *bf = ofile ? rz_bin_file_find_by_fd (core->bin, ofile->fd)
+	RzBinFile *bf = ofile ? rz_bin_file_find_by_fd (core->bin, ofile->fd)
 		: NULL;
 	RzIODesc *odesc = (core->io && ofile) ? rz_io_desc_get (core->io, ofile->fd) : NULL;
 	char *ofilepath = NULL, *obinfilepath = (bf && bf->file)? strdup (bf->file): NULL;
@@ -345,8 +345,8 @@ static bool setbpint(RzCore *r, const char *mode, const char *sym) {
 static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *filenameuri) {
 	RzCoreFile *cf = rz_core_file_cur (r);
 	RzIODesc *desc = cf ? rz_io_desc_get (r->io, cf->fd) : NULL;
-	RBinFile *binfile = NULL;
-	RBinPlugin *plugin;
+	RzBinFile *binfile = NULL;
+	RzBinPlugin *plugin;
 	int xtr_idx = 0; // if 0, load all if xtr is used
 
 	// TODO : Honor file.path eval var too?
@@ -369,11 +369,11 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 	}
 #endif
 	int fd = cf? cf->fd: -1;
-	RBinOptions opt;
+	RzBinOptions opt;
 	rz_bin_options_init (&opt, fd, baseaddr, UT64_MAX, false);
 	opt.xtr_idx = xtr_idx;
 	if (!rz_bin_open (r->bin, filenameuri, &opt)) {
-		eprintf ("RBinLoad: Cannot open %s\n", filenameuri);
+		eprintf ("RzBinLoad: Cannot open %s\n", filenameuri);
 		if (rz_config_get_i (r->config, "bin.rawstr")) {
 			rz_bin_options_init (&opt, fd, baseaddr, UT64_MAX, true);
 			opt.xtr_idx = xtr_idx;
@@ -405,8 +405,8 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 		r->bin->minstrlen = rz_config_get_i (r->config, "bin.minstr");
 		r->bin->maxstrbuf = rz_config_get_i (r->config, "bin.maxstrbuf");
 	} else if (binfile) {
-		RBinObject *obj = rz_bin_cur_object (r->bin);
-		RBinInfo *info = obj? obj->info: NULL;
+		RzBinObject *obj = rz_bin_cur_object (r->bin);
+		RzBinInfo *info = obj? obj->info: NULL;
 		if (plugin && strcmp (plugin->name, "any") && info) {
 			rz_core_bin_set_arch_bits (r, binfile->file, info->arch, info->bits);
 		}
@@ -422,15 +422,15 @@ static int rz_core_file_do_load_for_debug(RzCore *r, ut64 baseaddr, const char *
 static int rz_core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loadaddr) {
 	RzCoreFile *cf = rz_core_file_cur (r);
 	int fd = cf ? cf->fd : -1;
-	RBinFile *binfile = NULL;
+	RzBinFile *binfile = NULL;
 	int xtr_idx = 0; // if 0, load all if xtr is used
-	RBinPlugin *plugin;
+	RzBinPlugin *plugin;
 
 	if (fd < 0) {
 		return false;
 	}
 	rz_io_use_fd (r->io, fd);
-	RBinOptions opt;
+	RzBinOptions opt;
 	rz_bin_options_init (&opt, fd, baseaddr, loadaddr, r->bin->rawstr);
 	opt.xtr_idx = xtr_idx;
 	if (!rz_bin_open_io (r->bin, &opt)) {
@@ -445,8 +445,8 @@ static int rz_core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loa
 	}
 	plugin = rz_bin_file_cur_plugin (binfile);
 	if (plugin && !strcmp (plugin->name, "any")) {
-		RBinObject *obj = rz_bin_cur_object (r->bin);
-		RBinInfo *info = obj? obj->info: NULL;
+		RzBinObject *obj = rz_bin_cur_object (r->bin);
+		RzBinInfo *info = obj? obj->info: NULL;
 		if (!info) {
 			return false;
 		}
@@ -458,8 +458,8 @@ static int rz_core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loa
 		r->bin->minstrlen = rz_config_get_i (r->config, "bin.minstr");
 		r->bin->maxstrbuf = rz_config_get_i (r->config, "bin.maxstrbuf");
 	} else if (binfile) {
-		RBinObject *obj = rz_bin_cur_object (r->bin);
-		RBinInfo *info = obj? obj->info: NULL;
+		RzBinObject *obj = rz_bin_cur_object (r->bin);
+		RzBinInfo *info = obj? obj->info: NULL;
 		if (!info) {
 			return false;
 		}
@@ -546,7 +546,7 @@ RZ_API int rz_core_bin_rebase(RzCore *core, ut64 baddr) {
 	if (baddr == UT64_MAX) {
 		return 0;
 	}
-	RBinFile *bf = core->bin->cur;
+	RzBinFile *bf = core->bin->cur;
 	bf->o->baddr = baddr;
 	bf->o->loadaddr = baddr;
 	rz_bin_object_set_items (bf, bf->o);
@@ -591,17 +591,17 @@ static bool filecb(void *user, void *data, ut32 id) {
 typedef struct {
 	const char *name;
 	ut64 addr;
-	RBin *bin;
+	RzBin *bin;
 } RzCoreLinkData;
 
 static bool linkcb(void *user, void *data, ut32 id) {
 	RzCoreLinkData *ld = user;
 	RzIODesc *desc = (RzIODesc *)data;
 
-	RBinFile *bf = rz_bin_file_find_by_fd (ld->bin, desc->fd);
+	RzBinFile *bf = rz_bin_file_find_by_fd (ld->bin, desc->fd);
 	if (bf) {
 		RzListIter *iter;
-		RBinSymbol *sym;
+		RzBinSymbol *sym;
 		RzList *symbols = rz_bin_file_get_symbols (bf);
 		rz_list_foreach (symbols, iter, sym) {
 			if (!strcmp (sym->name, ld->name)) {
@@ -618,8 +618,8 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 	RzCoreFile *cf = rz_core_file_cur (r);
 	RzIODesc *desc = cf ? rz_io_desc_get (r->io, cf->fd) : NULL;
 	ut64 laddr = rz_config_get_i (r->config, "bin.laddr");
-	RBinFile *binfile = NULL;
-	RBinPlugin *plugin = NULL;
+	RzBinFile *binfile = NULL;
+	RzBinPlugin *plugin = NULL;
 	bool is_io_load;
 	const char *cmd_load;
 	if (!cf) {
@@ -687,7 +687,7 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 			r->bin->minstrlen = rz_config_get_i (r->config, "bin.minstr");
 			r->bin->maxstrbuf = rz_config_get_i (r->config, "bin.maxstrbuf");
 		} else if (binfile) {
-			RBinObject *obj = rz_bin_cur_object (r->bin);
+			RzBinObject *obj = rz_bin_cur_object (r->bin);
 			if (obj) {
 				bool va = obj->info ? obj->info->has_va : 0;
 				if (!va) {
@@ -697,7 +697,7 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 				if (rz_io_desc_is_dbg (desc) || (!obj->sections || !va)) {
 					rz_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, rz_io_desc_size (desc));
 				}
-				RBinInfo *info = obj->info;
+				RzBinInfo *info = obj->info;
 				if (info) {
 					rz_core_bin_set_arch_bits (r, binfile->file, info->arch, info->bits);
 				} else {
@@ -747,7 +747,7 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 		rz_core_cmd0 (r, "obb 0;s entry0");
 		rz_config_set_i (r->config, "bin.at", true);
 		eprintf ("[bin.libs] Linking imports...\n");
-		RBinImport *imp;
+		RzBinImport *imp;
 		RzList *imports = rz_bin_get_imports (r->bin);
 		rz_list_foreach (imports, iter, imp) {
 			// PLT finding
@@ -779,7 +779,7 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 
 		// Setting the right arch and bits, so regstate will be shown correctly
 		if (plugin->info) {
-			RBinInfo *inf = plugin->info (binfile);
+			RzBinInfo *inf = plugin->info (binfile);
 			eprintf ("Setting up coredump arch-bits to: %s-%d\n", inf->arch, inf->bits);
 			rz_config_set (r->config, "asm.arch", inf->arch);
 			rz_config_set_i (r->config, "asm.bits", inf->bits);
@@ -809,12 +809,12 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 			}
 		}
 
-		RBinObject *o = binfile->o;
+		RzBinObject *o = binfile->o;
 		int map = 0;
 		if (o && o->maps) {
 			RzList *maps = o->maps;
 			RzListIter *iter;
-			RBinMap *mapcore;
+			RzBinMap *mapcore;
 
 			rz_list_foreach (maps, iter, mapcore) {
 				RzIOMap *iomap = rz_io_map_get (r->io, mapcore->addr);
@@ -980,8 +980,8 @@ RZ_API void rz_core_file_free(RzCoreFile *cf) {
 		// double free librz/io/io.c:70 performs free
 		RzIO *io = cf->core->io;
 		if (io) {
-			RBin *bin = cf->binb.bin;
-			RBinFile *bf = rz_bin_cur (bin);
+			RzBin *bin = cf->binb.bin;
+			RzBinFile *bf = rz_bin_cur (bin);
 			if (bf) {
 				rz_bin_file_deref (bin, bf);
 			}
@@ -998,7 +998,7 @@ RZ_API int rz_core_file_close(RzCore *r, RzCoreFile *fh) {
 
 	// TODO: This is not correctly done. because map and iodesc are
 	// still referenced // we need to fully clear all RZ_IO structs
-	// related to a file as well as the ones needed for RBin.
+	// related to a file as well as the ones needed for RzBin.
 	//
 	// XXX -these checks are intended to *try* and catch
 	// stale objects.  Unfortunately, if the file handle
@@ -1059,7 +1059,7 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 	RzIODesc *desc;
 	ut64 from;
 	RzListIter *it;
-	RBinFile *bf;
+	RzBinFile *bf;
 	RzListIter *iter;
 	if (mode == 'j') {
 		rz_cons_printf ("[");
@@ -1152,8 +1152,8 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 
 // XXX - needs to account for binfile index and bin object index
 RZ_API bool rz_core_file_bin_raise(RzCore *core, ut32 bfid) {
-	RBin *bin = core->bin;
-	RBinFile *bf = rz_list_get_n (bin->binfiles, bfid);
+	RzBin *bin = core->bin;
+	RzBinFile *bf = rz_list_get_n (bin->binfiles, bfid);
 	bool res = false;
 	if (bf) {
 		res = rz_bin_file_set_cur_binfile (bin, bf);
@@ -1172,9 +1172,9 @@ RZ_API int rz_core_file_binlist(RzCore *core) {
 	int count = 0;
 	RzListIter *iter;
 	RzCoreFile *cur_cf = core->file, *cf = NULL;
-	RBinFile *binfile = NULL;
+	RzBinFile *binfile = NULL;
 	RzIODesc *desc;
-	RBin *bin = core->bin;
+	RzBin *bin = core->bin;
 	const RzList *binfiles = bin? bin->binfiles: NULL;
 
 	if (!binfiles) {

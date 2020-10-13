@@ -69,17 +69,17 @@ static bool check_buffer(RBuffer *buf) {
 	return check_buffer_rjmp (buf);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (buf);
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	rz_buf_free (bf->o->bin_obj);
 }
 
-static RBinInfo* info(RBinFile *bf) {
+static RzBinInfo* info(RzBinFile *bf) {
 	rz_return_val_if_fail (bf, NULL);
-	RBinInfo *bi = RZ_NEW0 (RBinInfo);
+	RzBinInfo *bi = RZ_NEW0 (RzBinInfo);
 	if (bi) {
 		bi->file = strdup (bf->file);
 		bi->type = strdup ("ROM");
@@ -93,9 +93,9 @@ static RBinInfo* info(RBinFile *bf) {
 	return bi;
 }
 
-static RzList* entries(RBinFile *bf) {
+static RzList* entries(RzBinFile *bf) {
 	RzList *ret;
-	RBinAddr *ptr = NULL;
+	RzBinAddr *ptr = NULL;
 	if (tmp_entry == UT64_MAX) {
 		return false;
 	}
@@ -103,7 +103,7 @@ static RzList* entries(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	if ((ptr = RZ_NEW0 (RBinAddr))) {
+	if ((ptr = RZ_NEW0 (RzBinAddr))) {
 		ut64 addr = tmp_entry;
 		ptr->vaddr = ptr->paddr = addr;
 		rz_list_append (ret, ptr);
@@ -112,7 +112,7 @@ static RzList* entries(RBinFile *bf) {
 }
 
 static void addsym(RzList *ret, const char *name, ut64 addr) {
-	RBinSymbol *ptr = RZ_NEW0 (RBinSymbol);
+	RzBinSymbol *ptr = RZ_NEW0 (RzBinSymbol);
 	if (ptr) {
 		ptr->name = strdup (name? name: "");
 		ptr->paddr = ptr->vaddr = addr;
@@ -130,7 +130,7 @@ static void addptr(RzList *ret, const char *name, ut64 addr, RBuffer *b) {
 	}
 }
 
-static RzList *symbols(RBinFile *bf) {
+static RzList *symbols(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RBuffer *obj = bf->o->bin_obj;
 
@@ -147,12 +147,12 @@ static RzList *symbols(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *strings(RBinFile *bf) {
+static RzList *strings(RzBinFile *bf) {
 	// we dont want to find strings in avr bins because there are lot of false positives
 	return NULL;
 }
 
-RBinPlugin rz_bin_plugin_avr = {
+RzBinPlugin rz_bin_plugin_avr = {
 	.name = "avr",
 	.desc = "ATmel AVR MCUs",
 	.license = "LGPL3",

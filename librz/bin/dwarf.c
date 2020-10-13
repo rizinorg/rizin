@@ -340,8 +340,8 @@ static const char *dwarf_unit_types[] = {
 };
 
 static int abbrev_cmp(const void *a, const void *b) {
-	const RBinDwarfAbbrevDecl *first = a;
-	const RBinDwarfAbbrevDecl *second = b;
+	const RzBinDwarfAbbrevDecl *first = a;
+	const RzBinDwarfAbbrevDecl *second = b;
 
 	if (first->offset > second->offset) {
 		return 1;
@@ -414,7 +414,7 @@ static int add_sdb_include_dir(Sdb *s, const char *incl, int idx) {
 	return sdb_array_set (s, "includedirs", idx, incl, 0);
 }
 
-static void line_header_fini(RBinDwarfLineHeader *hdr) {
+static void line_header_fini(RzBinDwarfLineHeader *hdr) {
 	if (hdr) {
 		size_t i;
 
@@ -428,8 +428,8 @@ static void line_header_fini(RBinDwarfLineHeader *hdr) {
 }
 
 // Parses source file header of DWARF version <= 4
-static const ut8 *parse_line_header_source(RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
-	RBinDwarfLineHeader *hdr, Sdb *sdb, int mode, PrintfCallback print) {
+static const ut8 *parse_line_header_source(RzBinFile *bf, const ut8 *buf, const ut8 *buf_end,
+	RzBinDwarfLineHeader *hdr, Sdb *sdb, int mode, PrintfCallback print) {
 	int i = 0;
 	size_t count;
 	const ut8 *tmp_buf = NULL;
@@ -554,8 +554,8 @@ beach:
 // Because this function needs ability to parse a lot of FORMS just like debug info
 // I'll complete this function after completing debug_info parsing and merging
 // for the meanwhile I am skipping the space.
-static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
-	RBinDwarfLineHeader *hdr, Sdb *sdb, int mode) {
+static const ut8 *parse_line_header_source_dwarf5(RzBinFile *bf, const ut8 *buf, const ut8 *buf_end,
+	RzBinDwarfLineHeader *hdr, Sdb *sdb, int mode) {
 // 	int i = 0;
 // 	size_t count;
 // 	const ut8 *tmp_buf = NULL;
@@ -578,8 +578,8 @@ static const ut8 *parse_line_header_source_dwarf5(RBinFile *bf, const ut8 *buf, 
 }
 
 static const ut8 *parse_line_header (
-	RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
-	RBinDwarfLineHeader *hdr, int mode, PrintfCallback print) {
+	RzBinFile *bf, const ut8 *buf, const ut8 *buf_end,
+	RzBinDwarfLineHeader *hdr, int mode, PrintfCallback print) {
 	
 	rz_return_val_if_fail(hdr && bf && buf, NULL);
 
@@ -710,9 +710,9 @@ static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 li
 	free (fileline);
 }
 
-static const ut8 *parse_ext_opcode(const RBin *bin, const ut8 *obuf,
-	size_t len, const RBinDwarfLineHeader *hdr,
-	RBinDwarfSMRegisters *regs, int mode) {
+static const ut8 *parse_ext_opcode(const RzBin *bin, const ut8 *obuf,
+	size_t len, const RzBinDwarfLineHeader *hdr,
+	RzBinDwarfSMRegisters *regs, int mode) {
 
 	rz_return_val_if_fail (bin && bin->cur && obuf && hdr && regs, NULL);
 
@@ -723,8 +723,8 @@ static const ut8 *parse_ext_opcode(const RBin *bin, const ut8 *obuf,
 	ut64 addr;
 	buf = obuf;
 	st64 op_len;
-	RBinFile *binfile = bin->cur;
-	RBinObject *o = binfile->o;
+	RzBinFile *binfile = bin->cur;
+	RzBinObject *o = binfile->o;
 	ut32 addr_size = o && o->info && o->info->bits ? o->info->bits / 8 : 4;
 	const char *filename;
 
@@ -807,15 +807,15 @@ static const ut8 *parse_ext_opcode(const RBin *bin, const ut8 *obuf,
 }
 
 static const ut8 *parse_spec_opcode(
-	const RBin *bin, const ut8 *obuf, size_t len,
-	const RBinDwarfLineHeader *hdr,
-	RBinDwarfSMRegisters *regs,
+	const RzBin *bin, const ut8 *obuf, size_t len,
+	const RzBinDwarfLineHeader *hdr,
+	RzBinDwarfSMRegisters *regs,
 	ut8 opcode, int mode) {
 
 	rz_return_val_if_fail (bin && obuf && hdr && regs, NULL);
 
 	PrintfCallback print = bin->cb_printf;
-	RBinFile *binfile = bin->cur;
+	RzBinFile *binfile = bin->cur;
 	const ut8 *buf = obuf;
 	ut8 adj_opcode = 0;
 	ut64 advance_adr;
@@ -851,14 +851,14 @@ static const ut8 *parse_spec_opcode(
 }
 
 static const ut8 *parse_std_opcode(
-	const RBin *bin, const ut8 *obuf, size_t len,
-	const RBinDwarfLineHeader *hdr, RBinDwarfSMRegisters *regs,
+	const RzBin *bin, const ut8 *obuf, size_t len,
+	const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs,
 	ut8 opcode, int mode) {
 
 	rz_return_val_if_fail (bin && bin->cur && obuf && hdr && regs, NULL);
 
 	PrintfCallback print = bin->cb_printf;
-	RBinFile *binfile = bin->cur;
+	RzBinFile *binfile = bin->cur;
 	const ut8* buf = obuf;
 	const ut8* buf_end = obuf + len;
 	ut64 addr = 0LL;
@@ -975,7 +975,7 @@ static const ut8 *parse_std_opcode(
 	return buf;
 }
 
-static void set_regs_default(const RBinDwarfLineHeader *hdr, RBinDwarfSMRegisters *regs) {
+static void set_regs_default(const RzBinDwarfLineHeader *hdr, RzBinDwarfSMRegisters *regs) {
 	regs->address = 0;
 	regs->file = 1;
 	regs->line = 1;
@@ -989,9 +989,9 @@ static void set_regs_default(const RBinDwarfLineHeader *hdr, RBinDwarfSMRegister
 }
 
 // Passing bin should be unnecessary (after we stop printing inside bin_dwarf)
-static size_t parse_opcodes(const RBin *bin, const ut8 *obuf,
-		size_t len, const RBinDwarfLineHeader *hdr,
-		RBinDwarfSMRegisters *regs, int mode) {
+static size_t parse_opcodes(const RzBin *bin, const ut8 *obuf,
+		size_t len, const RzBinDwarfLineHeader *hdr,
+		RzBinDwarfSMRegisters *regs, int mode) {
 	const ut8 *buf, *buf_end;
 	ut8 opcode, ext_opcode;
 
@@ -1027,10 +1027,10 @@ static size_t parse_opcodes(const RBin *bin, const ut8 *obuf,
 	return (size_t) (buf - obuf); // number of bytes we've moved by
 }
 
-static int parse_line_raw(const RBin *a, const ut8 *obuf,
+static int parse_line_raw(const RzBin *a, const ut8 *obuf,
 				       ut64 len, int mode) {
 
-	RBinFile *binfile = a ? a->cur : NULL;
+	RzBinFile *binfile = a ? a->cur : NULL;
 	rz_return_val_if_fail(binfile && obuf, false);
 	PrintfCallback print = a->cb_printf;
 
@@ -1041,7 +1041,7 @@ static int parse_line_raw(const RBin *a, const ut8 *obuf,
 	const ut8 *buf_end = obuf + len;
 	const ut8 *tmpbuf = NULL;
 
-	RBinDwarfLineHeader hdr = { 0 };
+	RzBinDwarfLineHeader hdr = { 0 };
 	ut64 buf_size;
 
 	// each iteration we read one header AKA comp. unit
@@ -1063,7 +1063,7 @@ static int parse_line_raw(const RBin *a, const ut8 *obuf,
 		}
 		bytes_read = buf - tmpbuf;
 
-		RBinDwarfSMRegisters regs;
+		RzBinDwarfSMRegisters regs;
 		set_regs_default (&hdr, &regs);
 
 		// If there is more bytes in the buffer than size of the header
@@ -1179,11 +1179,11 @@ static int parse_aranges_raw(const ut8 *obuf, int len, int mode, PrintfCallback 
 	return 0;
 }
 
-static int init_debug_info(RBinDwarfDebugInfo *inf) {
+static int init_debug_info(RzBinDwarfDebugInfo *inf) {
 	if (!inf) {
 		return -1;
 	}
-	inf->comp_units = calloc (sizeof (RBinDwarfCompUnit), DEBUG_INFO_CAPACITY);
+	inf->comp_units = calloc (sizeof (RzBinDwarfCompUnit), DEBUG_INFO_CAPACITY);
 
 	inf->lookup_table = ht_up_new0 ();
 
@@ -1196,11 +1196,11 @@ static int init_debug_info(RBinDwarfDebugInfo *inf) {
 	return true;
 }
 
-static int init_die(RBinDwarfDie *die, ut64 abbr_code, ut64 attr_count) {
+static int init_die(RzBinDwarfDie *die, ut64 abbr_code, ut64 attr_count) {
 	if (!die) {
 		return -1;
 	}
-	die->attr_values = calloc (sizeof (RBinDwarfAttrValue), attr_count);
+	die->attr_values = calloc (sizeof (RzBinDwarfAttrValue), attr_count);
 	if (!die->attr_values) {
 		return -1;
 	}
@@ -1210,11 +1210,11 @@ static int init_die(RBinDwarfDie *die, ut64 abbr_code, ut64 attr_count) {
 	return 0;
 }
 
-static int init_comp_unit(RBinDwarfCompUnit *cu) {
+static int init_comp_unit(RzBinDwarfCompUnit *cu) {
 	if (!cu) {
 		return -EINVAL;
 	}
-	cu->dies = calloc (sizeof (RBinDwarfDie), COMP_UNIT_CAPACITY);
+	cu->dies = calloc (sizeof (RzBinDwarfDie), COMP_UNIT_CAPACITY);
 	if (!cu->dies) {
 		return -ENOMEM;
 	}
@@ -1223,32 +1223,32 @@ static int init_comp_unit(RBinDwarfCompUnit *cu) {
 	return 0;
 }
 
-static int expand_cu(RBinDwarfCompUnit *cu) {
-	RBinDwarfDie *tmp;
+static int expand_cu(RzBinDwarfCompUnit *cu) {
+	RzBinDwarfDie *tmp;
 
 	if (!cu || cu->capacity == 0 || cu->capacity != cu->count) {
 		return -EINVAL;
 	}
 
-	tmp = (RBinDwarfDie *)realloc (cu->dies,
-		cu->capacity * 2 * sizeof (RBinDwarfDie));
+	tmp = (RzBinDwarfDie *)realloc (cu->dies,
+		cu->capacity * 2 * sizeof (RzBinDwarfDie));
 	if (!tmp) {
 		return -ENOMEM;
 	}
 
-	memset ((ut8 *)tmp + cu->capacity * sizeof (RBinDwarfDie),
-		0, cu->capacity * sizeof (RBinDwarfDie));
+	memset ((ut8 *)tmp + cu->capacity * sizeof (RzBinDwarfDie),
+		0, cu->capacity * sizeof (RzBinDwarfDie));
 	cu->dies = tmp;
 	cu->capacity *= 2;
 
 	return 0;
 }
 
-static int init_abbrev_decl(RBinDwarfAbbrevDecl *ad) {
+static int init_abbrev_decl(RzBinDwarfAbbrevDecl *ad) {
 	if (!ad) {
 		return -EINVAL;
 	}
-	ad->defs = calloc (sizeof (RBinDwarfAttrDef), ABBREV_DECL_CAP);
+	ad->defs = calloc (sizeof (RzBinDwarfAttrDef), ABBREV_DECL_CAP);
 
 	if (!ad->defs) {
 		return -ENOMEM;
@@ -1260,34 +1260,34 @@ static int init_abbrev_decl(RBinDwarfAbbrevDecl *ad) {
 	return 0;
 }
 
-static int expand_abbrev_decl(RBinDwarfAbbrevDecl *ad) {
-	RBinDwarfAttrDef *tmp;
+static int expand_abbrev_decl(RzBinDwarfAbbrevDecl *ad) {
+	RzBinDwarfAttrDef *tmp;
 
 	if (!ad || !ad->capacity || ad->capacity != ad->count) {
 		return -EINVAL;
 	}
 
-	tmp = (RBinDwarfAttrDef *)realloc (ad->defs,
-		ad->capacity * 2 * sizeof (RBinDwarfAttrDef));
+	tmp = (RzBinDwarfAttrDef *)realloc (ad->defs,
+		ad->capacity * 2 * sizeof (RzBinDwarfAttrDef));
 
 	if (!tmp) {
 		return -ENOMEM;
 	}
 
 	// Set the area in the buffer past the length to 0
-	memset ((ut8 *)tmp + ad->capacity * sizeof (RBinDwarfAttrDef),
-		0, ad->capacity * sizeof (RBinDwarfAttrDef));
+	memset ((ut8 *)tmp + ad->capacity * sizeof (RzBinDwarfAttrDef),
+		0, ad->capacity * sizeof (RzBinDwarfAttrDef));
 	ad->defs = tmp;
 	ad->capacity *= 2;
 
 	return 0;
 }
 
-static int init_debug_abbrev(RBinDwarfDebugAbbrev *da) {
+static int init_debug_abbrev(RzBinDwarfDebugAbbrev *da) {
 	if (!da) {
 		return -EINVAL;
 	}
-	da->decls = calloc (sizeof (RBinDwarfAbbrevDecl), DEBUG_ABBREV_CAP);
+	da->decls = calloc (sizeof (RzBinDwarfAbbrevDecl), DEBUG_ABBREV_CAP);
 	if (!da->decls) {
 		return -ENOMEM;
 	}
@@ -1297,21 +1297,21 @@ static int init_debug_abbrev(RBinDwarfDebugAbbrev *da) {
 	return 0;
 }
 
-static int expand_debug_abbrev(RBinDwarfDebugAbbrev *da) {
-	RBinDwarfAbbrevDecl *tmp;
+static int expand_debug_abbrev(RzBinDwarfDebugAbbrev *da) {
+	RzBinDwarfAbbrevDecl *tmp;
 
 	if (!da || da->capacity == 0 || da->capacity != da->count) {
 		return -EINVAL;
 	}
 
-	tmp = (RBinDwarfAbbrevDecl *)realloc (da->decls,
-		da->capacity * 2 * sizeof (RBinDwarfAbbrevDecl));
+	tmp = (RzBinDwarfAbbrevDecl *)realloc (da->decls,
+		da->capacity * 2 * sizeof (RzBinDwarfAbbrevDecl));
 
 	if (!tmp) {
 		return -ENOMEM;
 	}
-	memset ((ut8 *)tmp + da->capacity * sizeof (RBinDwarfAbbrevDecl),
-		0, da->capacity * sizeof (RBinDwarfAbbrevDecl));
+	memset ((ut8 *)tmp + da->capacity * sizeof (RzBinDwarfAbbrevDecl),
+		0, da->capacity * sizeof (RzBinDwarfAbbrevDecl));
 
 	da->decls = tmp;
 	da->capacity *= 2;
@@ -1319,7 +1319,7 @@ static int expand_debug_abbrev(RBinDwarfDebugAbbrev *da) {
 	return 0;
 }
 
-static void print_abbrev_section(RBinDwarfDebugAbbrev *da, PrintfCallback print) {
+static void print_abbrev_section(RzBinDwarfDebugAbbrev *da, PrintfCallback print) {
 	size_t i, j;
 	ut64 attr_name, attr_form;
 
@@ -1350,7 +1350,7 @@ static void print_abbrev_section(RBinDwarfDebugAbbrev *da, PrintfCallback print)
 	}
 }
 
-RZ_API void rz_bin_dwarf_free_debug_abbrev(RBinDwarfDebugAbbrev *da) {
+RZ_API void rz_bin_dwarf_free_debug_abbrev(RzBinDwarfDebugAbbrev *da) {
 	size_t i;
 	if (!da) {
 		return;
@@ -1362,7 +1362,7 @@ RZ_API void rz_bin_dwarf_free_debug_abbrev(RBinDwarfDebugAbbrev *da) {
 	free (da);
 }
 
-static void free_attr_value(RBinDwarfAttrValue *val) {
+static void free_attr_value(RzBinDwarfAttrValue *val) {
 	// TODO adjust to new forms, now we're leaking
 	if (!val) {
 		return;
@@ -1384,7 +1384,7 @@ static void free_attr_value(RBinDwarfAttrValue *val) {
 	};
 }
 
-static void free_die(RBinDwarfDie *die) {
+static void free_die(RzBinDwarfDie *die) {
 	size_t i;
 	if (!die) {
 		return;
@@ -1395,7 +1395,7 @@ static void free_die(RBinDwarfDie *die) {
 	RZ_FREE (die->attr_values);
 }
 
-static void free_comp_unit(RBinDwarfCompUnit *cu) {
+static void free_comp_unit(RzBinDwarfCompUnit *cu) {
 	size_t i;
 	if (!cu) {
 		return;
@@ -1408,7 +1408,7 @@ static void free_comp_unit(RBinDwarfCompUnit *cu) {
 	RZ_FREE (cu->dies);
 }
 
-RZ_API void rz_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf) {
+RZ_API void rz_bin_dwarf_free_debug_info(RzBinDwarfDebugInfo *inf) {
 	size_t i;
 	if (!inf) {
 		return;
@@ -1421,7 +1421,7 @@ RZ_API void rz_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf) {
 	free(inf);
 }
 
-static void print_attr_value(const RBinDwarfAttrValue *val, PrintfCallback print) {
+static void print_attr_value(const RzBinDwarfAttrValue *val, PrintfCallback print) {
 	size_t i;
 	rz_return_if_fail(val);
 
@@ -1507,10 +1507,10 @@ static void print_attr_value(const RBinDwarfAttrValue *val, PrintfCallback print
 	};
 }
 
-static void print_debug_info(const RBinDwarfDebugInfo *inf, PrintfCallback print) {
+static void print_debug_info(const RzBinDwarfDebugInfo *inf, PrintfCallback print) {
 	size_t i, j, k;
-	RBinDwarfDie *dies;
-	RBinDwarfAttrValue *values;
+	RzBinDwarfDie *dies;
+	RzBinDwarfAttrValue *values;
 
 	rz_return_if_fail(inf);
 
@@ -1558,7 +1558,7 @@ static void print_debug_info(const RBinDwarfDebugInfo *inf, PrintfCallback print
 	}
 }
 
-static const ut8 *fill_block_data(const ut8 *buf, const ut8 *buf_end, RBinDwarfBlock *block) {
+static const ut8 *fill_block_data(const ut8 *buf, const ut8 *buf_end, RzBinDwarfBlock *block) {
 	block->data = calloc (sizeof (ut8), block->length);
 	if (!block->data) {
 		return NULL;
@@ -1589,8 +1589,8 @@ static const ut8 *fill_block_data(const ut8 *buf, const ut8 *buf_end, RBinDwarfB
  * @return const ut8* Updated buffer
  */
 static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
-		RBinDwarfAttrDef *def, RBinDwarfAttrValue *value,
-		const RBinDwarfCompUnitHdr *hdr,
+		RzBinDwarfAttrDef *def, RzBinDwarfAttrValue *value,
+		const RzBinDwarfCompUnitHdr *hdr,
 		const ut8 *debug_str, size_t debug_str_len) {
 
 	const ut8 *buf = obuf;
@@ -1861,8 +1861,8 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
  * @param sdb 
  * @return const ut8* Updated buffer
  */
-static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevDecl *abbrev, 
-		RBinDwarfCompUnitHdr *hdr, RBinDwarfDie *die, const ut8 *debug_str, size_t debug_str_len, Sdb *sdb) {
+static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RzBinDwarfAbbrevDecl *abbrev, 
+		RzBinDwarfCompUnitHdr *hdr, RzBinDwarfDie *die, const ut8 *debug_str, size_t debug_str_len, Sdb *sdb) {
 	size_t i;
 	for (i = 0; i < abbrev->count - 1; i++) {
 		memset (&die->attr_values[i], 0, sizeof (die->attr_values[i]));
@@ -1870,7 +1870,7 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevD
 		buf = parse_attr_value (buf, buf_end - buf, &abbrev->defs[i],
 			&die->attr_values[i], hdr, debug_str, debug_str_len);
 
-		RBinDwarfAttrValue *attribute = &die->attr_values[i];
+		RzBinDwarfAttrValue *attribute = &die->attr_values[i];
 
 		bool is_valid_string_form = (attribute->attr_form == DW_FORM_strp ||
 			attribute->attr_form == DW_FORM_string) &&
@@ -1901,8 +1901,8 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevD
  * 
  * @return const ut8* Update buffer
  */
-static const ut8 *parse_comp_unit(RBinDwarfDebugInfo *info, Sdb *sdb, const ut8 *buf_start,
-		RBinDwarfCompUnit *unit, const RBinDwarfDebugAbbrev *abbrevs,
+static const ut8 *parse_comp_unit(RzBinDwarfDebugInfo *info, Sdb *sdb, const ut8 *buf_start,
+		RzBinDwarfCompUnit *unit, const RzBinDwarfDebugAbbrev *abbrevs,
 		size_t first_abbr_idx, const ut8 *debug_str, size_t debug_str_len) {
 
 	const ut8 *buf = buf_start;
@@ -1912,7 +1912,7 @@ static const ut8 *parse_comp_unit(RBinDwarfDebugInfo *info, Sdb *sdb, const ut8 
 		if (unit->count && unit->capacity == unit->count) {
 			expand_cu (unit);
 		}
-		RBinDwarfDie *die = &unit->dies[unit->count];
+		RzBinDwarfDie *die = &unit->dies[unit->count];
 		// add header size to the offset;
 		die->offset = buf - buf_start + unit->hdr.header_size + unit->offset;
 		die->offset += unit->hdr.is_64bit ? 12 : 4;
@@ -1939,7 +1939,7 @@ static const ut8 *parse_comp_unit(RBinDwarfDebugInfo *info, Sdb *sdb, const ut8 
 		if (abbrevs->count < abbr_idx) {
 			return NULL;
 		}
-		RBinDwarfAbbrevDecl *abbrev = &abbrevs->decls[abbr_idx - 1];
+		RzBinDwarfAbbrevDecl *abbrev = &abbrevs->decls[abbr_idx - 1];
 
 		if (init_die (die, abbr_code, abbrev->count)) {
 			return NULL; // error
@@ -1965,7 +1965,7 @@ static const ut8 *parse_comp_unit(RBinDwarfDebugInfo *info, Sdb *sdb, const ut8 
  * @param unit Unit to read information into
  * @return ut8* Advanced position in a buffer
  */
-static const ut8 *info_comp_unit_read_hdr(const ut8 *buf, const ut8 *buf_end, RBinDwarfCompUnitHdr *hdr) {
+static const ut8 *info_comp_unit_read_hdr(const ut8 *buf, const ut8 *buf_end, RzBinDwarfCompUnitHdr *hdr) {
 	// 32-bit vs 64-bit dwarf formats
 	// http://www.dwarfstd.org/doc/Dwarf3.pdf section 7.4
 	hdr->length = READ32 (buf);
@@ -1993,17 +1993,17 @@ static const ut8 *info_comp_unit_read_hdr(const ut8 *buf, const ut8 *buf_end, RB
 	hdr->header_size = buf - tmp; // header size excluding length field
 	return buf;
 }
-static int expand_info(RBinDwarfDebugInfo *info) {
+static int expand_info(RzBinDwarfDebugInfo *info) {
 	rz_return_val_if_fail (info && info->capacity == info->count, -1);
 
-	RBinDwarfCompUnit *tmp = realloc (info->comp_units,
-		info->capacity * 2 * sizeof (RBinDwarfCompUnit));
+	RzBinDwarfCompUnit *tmp = realloc (info->comp_units,
+		info->capacity * 2 * sizeof (RzBinDwarfCompUnit));
 	if (!tmp) {
 		return -1;
 	}
 
-	memset ((ut8 *)tmp + info->capacity * sizeof (RBinDwarfCompUnit),
-		0, info->capacity * sizeof (RBinDwarfCompUnit));
+	memset ((ut8 *)tmp + info->capacity * sizeof (RzBinDwarfCompUnit),
+		0, info->capacity * sizeof (RzBinDwarfCompUnit));
 
 	info->comp_units = tmp;
 	info->capacity *= 2;
@@ -2023,7 +2023,7 @@ static int expand_info(RBinDwarfDebugInfo *info) {
  * @param mode 
  * @return RZ_API* parse_info_raw Parsed information
  */
-static RBinDwarfDebugInfo *parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
+static RzBinDwarfDebugInfo *parse_info_raw(Sdb *sdb, RzBinDwarfDebugAbbrev *da,
 		const ut8 *obuf, size_t len,
 		const ut8 *debug_str, size_t debug_str_len) {
 
@@ -2032,7 +2032,7 @@ static RBinDwarfDebugInfo *parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + len;
 
-	RBinDwarfDebugInfo *info = RZ_NEW0 (RBinDwarfDebugInfo);
+	RzBinDwarfDebugInfo *info = RZ_NEW0 (RzBinDwarfDebugInfo);
 	if (!info) {
 		return NULL;
 	}
@@ -2048,7 +2048,7 @@ static RBinDwarfDebugInfo *parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 			}
 		}
 
-		RBinDwarfCompUnit *unit = &info->comp_units[unit_idx];
+		RzBinDwarfCompUnit *unit = &info->comp_units[unit_idx];
 		if (init_comp_unit (unit) < 0) {
 			unit_idx--;
 			goto cleanup;
@@ -2073,8 +2073,8 @@ static RBinDwarfDebugInfo *parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 		// find abbrev start for current comp unit
 		// we could also do naive, ((char *)da->decls) + abbrev_offset, 
 		// but this is more bulletproof to invalid DWARF
-		RBinDwarfAbbrevDecl key = { .offset = unit->hdr.abbrev_offset };
-		RBinDwarfAbbrevDecl *abbrev_start = bsearch (&key, da->decls, da->count, sizeof (key), abbrev_cmp);
+		RzBinDwarfAbbrevDecl key = { .offset = unit->hdr.abbrev_offset };
+		RzBinDwarfAbbrevDecl *abbrev_start = bsearch (&key, da->decls, da->count, sizeof (key), abbrev_cmp);
 		if (!abbrev_start) {
 			goto cleanup;
 		}
@@ -2097,18 +2097,18 @@ cleanup:
 	return NULL;
 }
 
-static RBinDwarfDebugAbbrev *parse_abbrev_raw(const ut8 *obuf, size_t len) {
+static RzBinDwarfDebugAbbrev *parse_abbrev_raw(const ut8 *obuf, size_t len) {
 	const ut8 *buf = obuf, *buf_end = obuf + len;
 	ut64 tmp, attr_code, attr_form, offset;
 	st64 special;
 	ut8 has_children;
-	RBinDwarfAbbrevDecl *tmpdecl;
+	RzBinDwarfAbbrevDecl *tmpdecl;
 
 	// XXX - Set a suitable value here.
 	if (!obuf || len < 3) {
 		return NULL;
 	}
-	RBinDwarfDebugAbbrev *da = RZ_NEW0 (RBinDwarfDebugAbbrev);
+	RzBinDwarfDebugAbbrev *da = RZ_NEW0 (RzBinDwarfDebugAbbrev);
 
 	init_debug_abbrev (da);
 
@@ -2158,11 +2158,11 @@ static RBinDwarfDebugAbbrev *parse_abbrev_raw(const ut8 *obuf, size_t len) {
 	return da;
 }
 
-RBinSection *getsection(RBin *a, const char *sn) {
+RzBinSection *getsection(RzBin *a, const char *sn) {
 	RzListIter *iter;
-	RBinSection *section = NULL;
-	RBinFile *binfile = a ? a->cur: NULL;
-	RBinObject *o = binfile ? binfile->o : NULL;
+	RzBinSection *section = NULL;
+	RzBinFile *binfile = a ? a->cur: NULL;
+	RzBinObject *o = binfile ? binfile->o : NULL;
 
 	if ( o && o->sections) {
 		rz_list_foreach (o->sections, iter, section) {
@@ -2174,9 +2174,9 @@ RBinSection *getsection(RBin *a, const char *sn) {
 	return NULL;
 }
 
-static ut8 *get_section_bytes(RBin *bin, const char *sect_name, size_t *len) {
-	RBinSection *section = getsection (bin, sect_name);
-	RBinFile *binfile = bin ? bin->cur: NULL;
+static ut8 *get_section_bytes(RzBin *bin, const char *sect_name, size_t *len) {
+	RzBinSection *section = getsection (bin, sect_name);
+	RzBinFile *binfile = bin ? bin->cur: NULL;
 	if (!section || !binfile) {
 		return NULL;
 	}
@@ -2195,13 +2195,13 @@ static ut8 *get_section_bytes(RBin *bin, const char *sect_name, size_t *len) {
  * @param da Parsed abbreviations
  * @param bin
  * @param mode RZ_MODE_PRINT to print
- * @return RBinDwarfDebugInfo* Parsed information, NULL if error
+ * @return RzBinDwarfDebugInfo* Parsed information, NULL if error
  */
-RZ_API RBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *bin, int mode) {
-	RBinDwarfDebugInfo *info = NULL;
-	RBinSection *debug_str;
-	RBinSection *section = getsection (bin, "debug_info");
-	RBinFile *binfile = bin ? bin->cur : NULL;
+RZ_API RzBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RzBinDwarfDebugAbbrev *da, RzBin *bin, int mode) {
+	RzBinDwarfDebugInfo *info = NULL;
+	RzBinSection *debug_str;
+	RzBinSection *section = getsection (bin, "debug_info");
+	RzBinFile *binfile = bin ? bin->cur : NULL;
 
 	ut64 debug_str_len = 0;
 	ut8 *debug_str_buf = NULL;
@@ -2246,9 +2246,9 @@ RZ_API RBinDwarfDebugInfo *rz_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBi
 		if (info) {
 			size_t i, j;
 			for (i = 0; i < info->count; i++) {
-				RBinDwarfCompUnit *unit = &info->comp_units[i];
+				RzBinDwarfCompUnit *unit = &info->comp_units[i];
 				for (j = 0; j < unit->count; j++) {
-					RBinDwarfDie *die = &unit->dies[j];
+					RzBinDwarfDie *die = &unit->dies[j];
 					ht_up_insert (info->lookup_table, die->offset, die); // optimization for further processing}
 				}
 			}
@@ -2262,8 +2262,8 @@ cleanup:
 	return NULL;
 }
 
-static RBinDwarfRow *row_new(ut64 addr, const char *file, int line, int col) {
-	RBinDwarfRow *row = RZ_NEW0 (RBinDwarfRow);
+static RzBinDwarfRow *row_new(ut64 addr, const char *file, int line, int col) {
+	RzBinDwarfRow *row = RZ_NEW0 (RzBinDwarfRow);
 	if (!row) {
 		return NULL;
 	}
@@ -2275,17 +2275,17 @@ static RBinDwarfRow *row_new(ut64 addr, const char *file, int line, int col) {
 }
 
 static void row_free(void *p) {
-	RBinDwarfRow *row = (RBinDwarfRow*)p;
+	RzBinDwarfRow *row = (RzBinDwarfRow*)p;
 	free (row->file);
 	free (row);
 }
 
-RZ_API RzList *rz_bin_dwarf_parse_line(RBin *bin, int mode) {
+RZ_API RzList *rz_bin_dwarf_parse_line(RzBin *bin, int mode) {
 	ut8 *buf;
 	RzList *list = NULL;
 	int len, ret;
-	RBinSection *section = getsection (bin, "debug_line");
-	RBinFile *binfile = bin ? bin->cur: NULL;
+	RzBinSection *section = getsection (bin, "debug_line");
+	RzBinFile *binfile = bin ? bin->cur: NULL;
 	if (binfile && section) {
 		len = section->size;
 		if (len < 1) {
@@ -2317,7 +2317,7 @@ RZ_API RzList *rz_bin_dwarf_parse_line(RBin *bin, int mode) {
 		ls_foreach (ls, iter, kv) {
 			if (!strncmp (sdbkv_key (kv), "0x", 2)) {
 				ut64 addr;
-				RBinDwarfRow *row;
+				RzBinDwarfRow *row;
 				int line;
 				char *file = strdup (sdbkv_value (kv));
 				if (!file) {
@@ -2343,12 +2343,12 @@ RZ_API RzList *rz_bin_dwarf_parse_line(RBin *bin, int mode) {
 	return list;
 }
 
-RZ_API RzList *rz_bin_dwarf_parse_aranges(RBin *bin, int mode) {
+RZ_API RzList *rz_bin_dwarf_parse_aranges(RzBin *bin, int mode) {
 	ut8 *buf;
 	int ret;
 	size_t len;
-	RBinSection *section = getsection (bin, "debug_aranges");
-	RBinFile *binfile = bin ? bin->cur: NULL;
+	RzBinSection *section = getsection (bin, "debug_aranges");
+	RzBinFile *binfile = bin ? bin->cur: NULL;
 
 	if (binfile && section) {
 		len = section->size;
@@ -2370,13 +2370,13 @@ RZ_API RzList *rz_bin_dwarf_parse_aranges(RBin *bin, int mode) {
 	return NULL;
 }
 
-RZ_API RBinDwarfDebugAbbrev *rz_bin_dwarf_parse_abbrev(RBin *bin, int mode) {
+RZ_API RzBinDwarfDebugAbbrev *rz_bin_dwarf_parse_abbrev(RzBin *bin, int mode) {
 	size_t len = 0;
 	ut8 *buf = get_section_bytes (bin, "debug_abbrev", &len);
 	if (!buf) {
 		return NULL;
 	}
-	RBinDwarfDebugAbbrev *abbrevs = parse_abbrev_raw (buf, len);
+	RzBinDwarfDebugAbbrev *abbrevs = parse_abbrev_raw (buf, len);
 
 	if (mode == RZ_MODE_PRINT && abbrevs) {
 		print_abbrev_section (abbrevs, bin->cb_printf);
@@ -2397,8 +2397,8 @@ static inline ut64 get_max_offset(size_t addr_size) {
 	return 0;
 }
 
-static inline RBinDwarfLocList *create_loc_list(ut64 offset) {
-	RBinDwarfLocList *list = RZ_NEW0 (RBinDwarfLocList);
+static inline RzBinDwarfLocList *create_loc_list(ut64 offset) {
+	RzBinDwarfLocList *list = RZ_NEW0 (RzBinDwarfLocList);
 	if (list) {
 		list->list = rz_list_new ();
 		list->offset = offset;
@@ -2406,8 +2406,8 @@ static inline RBinDwarfLocList *create_loc_list(ut64 offset) {
 	return list;
 }
 
-static inline RBinDwarfLocRange *create_loc_range(ut64 start, ut64 end, RBinDwarfBlock *block) {
-	RBinDwarfLocRange *range = RZ_NEW0 (RBinDwarfLocRange);
+static inline RzBinDwarfLocRange *create_loc_range(ut64 start, ut64 end, RzBinDwarfBlock *block) {
+	RzBinDwarfLocRange *range = RZ_NEW0 (RzBinDwarfLocRange);
 	if (range) {
 		range->start = start;
 		range->end = end;
@@ -2416,9 +2416,9 @@ static inline RBinDwarfLocRange *create_loc_range(ut64 start, ut64 end, RBinDwar
 	return range;
 }
 
-static void free_loc_table_list(RBinDwarfLocList *loc_list) {
+static void free_loc_table_list(RzBinDwarfLocList *loc_list) {
 	RzListIter *iter;
-	RBinDwarfLocRange *range;
+	RzBinDwarfLocRange *range;
 	rz_list_foreach (loc_list->list, iter, range) {
 		free (range->expression->data);
 		free (range->expression);
@@ -2438,8 +2438,8 @@ static HtUP *parse_loc_raw(HtUP/*<offset, List *<LocListEntry>*/ *loc_table, con
 	ut64 address_base = 0; /* remember base of the loclist */
 	ut64 list_offset = 0;
 
-	RBinDwarfLocList *loc_list = NULL;
-	RBinDwarfLocRange *range = NULL;
+	RzBinDwarfLocList *loc_list = NULL;
+	RzBinDwarfLocRange *range = NULL;
 	while (buf && buf < buf_end) {
 		ut64 start_addr = dwarf_read_address (addr_size, &buf, buf_end);
 		ut64 end_addr = dwarf_read_address (addr_size, &buf, buf_end);
@@ -2461,7 +2461,7 @@ static HtUP *parse_loc_raw(HtUP/*<offset, List *<LocListEntry>*/ *loc_table, con
 				loc_list = create_loc_list (list_offset);
 			}
 			/* TODO in future parse expressions to better structure in dwarf.c and not in dwarf_process.c */
-			RBinDwarfBlock *block = RZ_NEW0 (RBinDwarfBlock);
+			RzBinDwarfBlock *block = RZ_NEW0 (RzBinDwarfBlock);
 			block->length = READ16 (buf);
 			buf = fill_block_data (buf, buf_end, block);
 			range = create_loc_range (start_addr + address_base, end_addr + address_base, block);
@@ -2484,7 +2484,7 @@ static HtUP *parse_loc_raw(HtUP/*<offset, List *<LocListEntry>*/ *loc_table, con
  * @param addr_size machine address size used in executable (necessary for parsing)
  * @return RZ_API* 
  */
-RZ_API HtUP/*<offset, RBinDwarfLocList*/ *rz_bin_dwarf_parse_loc(RBin *bin, int addr_size) {
+RZ_API HtUP/*<offset, RzBinDwarfLocList*/ *rz_bin_dwarf_parse_loc(RzBin *bin, int addr_size) {
 	rz_return_val_if_fail  (bin, NULL);
 	/* The standarparse_loc_raw_frame, not sure why is that */
 	size_t len = 0;
@@ -2494,7 +2494,7 @@ RZ_API HtUP/*<offset, RBinDwarfLocList*/ *rz_bin_dwarf_parse_loc(RBin *bin, int 
 	}
 	/* set the endianity global [HOTFIX] */
 	big_end = rz_bin_is_big_endian (bin);
-	HtUP /*<offset, RBinDwarfLocList*/ *loc_table = ht_up_new0 ();
+	HtUP /*<offset, RzBinDwarfLocList*/ *loc_table = ht_up_new0 ();
 	if (!loc_table) {
 		free (buf);
 		return NULL;
@@ -2505,8 +2505,8 @@ RZ_API HtUP/*<offset, RBinDwarfLocList*/ *rz_bin_dwarf_parse_loc(RBin *bin, int 
 }
 
 static int offset_comp(const void *a, const void *b) {
-	const RBinDwarfLocList *f = a;
-	const RBinDwarfLocList *s = b;
+	const RzBinDwarfLocList *f = a;
+	const RzBinDwarfLocList *s = b;
 	ut64 first = f->offset;
 	ut64 second = s->offset;
 	if (first < second) {
@@ -2519,24 +2519,24 @@ static int offset_comp(const void *a, const void *b) {
 }
 
 static bool sort_loclists(void *user, const ut64 key, const void *value) {
-	RBinDwarfLocList *loc_list = (RBinDwarfLocList *)value;
+	RzBinDwarfLocList *loc_list = (RzBinDwarfLocList *)value;
 	RzList *sort_list = user;
 	rz_list_add_sorted (sort_list, loc_list, offset_comp);
 	return true;
 }
 
-RZ_API void rz_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*/ *loc_table, int addr_size, PrintfCallback print) {
+RZ_API void rz_bin_dwarf_print_loc(HtUP /*<offset, RzBinDwarfLocList*/ *loc_table, int addr_size, PrintfCallback print) {
 	rz_return_if_fail (loc_table && print);
 	print ("\nContents of the .debug_loc section:\n");
-	RzList /*<RBinDwarfLocList *>*/ *sort_list = rz_list_new ();
+	RzList /*<RzBinDwarfLocList *>*/ *sort_list = rz_list_new ();
 	/* sort the table contents by offset and print sorted 
 	   a bit ugly, but I wanted to decouple the parsing and printing */
 	ht_up_foreach (loc_table, sort_loclists, sort_list);
 	RzListIter *i;
-	RBinDwarfLocList *loc_list;
+	RzBinDwarfLocList *loc_list;
 	rz_list_foreach (sort_list, i, loc_list) {
 		RzListIter *j;
-		RBinDwarfLocRange *range;
+		RzBinDwarfLocRange *range;
 		ut64 base_offset = loc_list->offset;
 		rz_list_foreach (loc_list->list, j, range) {
 			print ("0x%" PFMT64x " 0x%" PFMT64x " 0x%" PFMT64x "\n", base_offset, range->start, range->end);
@@ -2557,7 +2557,7 @@ static void free_loc_table_entry(HtUPKv *kv) {
 	}
 }
 
-RZ_API void rz_bin_dwarf_free_loc(HtUP /*<offset, RBinDwarfLocList*>*/ *loc_table) {
+RZ_API void rz_bin_dwarf_free_loc(HtUP /*<offset, RzBinDwarfLocList*>*/ *loc_table) {
 	rz_return_if_fail (loc_table);
 	loc_table->opt.freefn = free_loc_table_entry;
 	ht_up_free (loc_table);

@@ -13,10 +13,10 @@ typedef struct {
 	RzCore *core;
 	HtUP *up;
 	size_t word_size;
-	RBinSection *_selrefs;
-	RBinSection *_msgrefs;
-	RBinSection *_const;
-	RBinSection *_data;
+	RzBinSection *_selrefs;
+	RzBinSection *_msgrefs;
+	RzBinSection *_const;
+	RzBinSection *_data;
 } RzCoreObjc;
 
 
@@ -55,7 +55,7 @@ static inline bool isInvalid(ut64 addr) {
 	return !isValid (addr);
 }
 
-static inline bool inBetween(RBinSection *s, ut64 addr) {
+static inline bool inBetween(RzBinSection *s, ut64 addr) {
 	if (!s || isInvalid (addr)) {
 		return false;
 	}
@@ -180,7 +180,7 @@ static RzCoreObjc *core_objc_new(RzCore *core) {
 		eprintf ("Warning: aao experimental on 32bit binaries\n");
 	}
 
-	RBinSection *s;
+	RzBinSection *s;
 	RzListIter *iter;
 	rz_list_foreach (sections, iter, s) {
 		const char *name = s->name;

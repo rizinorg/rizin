@@ -2,10 +2,10 @@
 
 #include <rz_bin.h>
 
-RZ_IPI bool rz_bin_lang_swift(RBinFile *binfile) {
-	RBinObject *o = binfile? binfile->o: NULL;
-	RBinInfo *info = o? o->info: NULL;
-	RBinSymbol *sym;
+RZ_IPI bool rz_bin_lang_swift(RzBinFile *binfile) {
+	RzBinObject *o = binfile? binfile->o: NULL;
+	RzBinInfo *info = o? o->info: NULL;
+	RzBinSymbol *sym;
 	RzListIter *iter;
 	if (info) {
 		rz_list_foreach (o->symbols, iter, sym) {

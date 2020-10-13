@@ -7,8 +7,8 @@
 
 #define READ(x, i) rz_read_be32 ((x) + (i)); (i) += 4;
 
-RBinAddr *rz_bflt_get_entry(struct rz_bin_bflt_obj *bin) {
-        RBinAddr *addr = RZ_NEW0 (RBinAddr);
+RzBinAddr *rz_bflt_get_entry(struct rz_bin_bflt_obj *bin) {
+        RzBinAddr *addr = RZ_NEW0 (RzBinAddr);
         if (addr && bin && bin->hdr) {
         	addr->paddr = bin->hdr->entry;
         }

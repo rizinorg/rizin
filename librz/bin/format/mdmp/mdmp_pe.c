@@ -9,7 +9,7 @@ static void PE_(add_tls_callbacks)(struct PE_(rz_bin_pe_obj_t) * bin, RzList *li
 	char *key;
 	int count = 0;
 	PE_DWord haddr, paddr, vaddr;
-	RBinAddr *ptr = NULL;
+	RzBinAddr *ptr = NULL;
 
 	do {
 		key = sdb_fmt ("pe.tls_callback%d_paddr", count);
@@ -29,7 +29,7 @@ static void PE_(add_tls_callbacks)(struct PE_(rz_bin_pe_obj_t) * bin, RzList *li
 		if (!haddr) {
 			break;
 		}
-		if ((ptr = RZ_NEW0 (RBinAddr))) {
+		if ((ptr = RZ_NEW0 (RzBinAddr))) {
 			ptr->paddr = paddr;
 			ptr->vaddr = vaddr;
 			ptr->hpaddr = haddr;
@@ -43,7 +43,7 @@ static void PE_(add_tls_callbacks)(struct PE_(rz_bin_pe_obj_t) * bin, RzList *li
 RzList *PE_(rz_bin_mdmp_pe_get_entrypoint) (struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
 	ut64 offset;
 	struct rz_bin_pe_addr_t *entry = NULL;
-	RBinAddr *ptr = NULL;
+	RzBinAddr *ptr = NULL;
 	RzList *ret;
 
 	if (!(entry = PE_(rz_bin_pe_get_entrypoint) (pe_bin->bin))) {
@@ -53,7 +53,7 @@ RzList *PE_(rz_bin_mdmp_pe_get_entrypoint) (struct PE_(rz_bin_mdmp_pe_bin) * pe_
 		return NULL;
 	}
 
-	if ((ptr = RZ_NEW0 (RBinAddr))) {
+	if ((ptr = RZ_NEW0 (RzBinAddr))) {
 		offset = entry->vaddr;
 		if (offset > pe_bin->vaddr) {
 			offset -= pe_bin->vaddr;
@@ -88,8 +88,8 @@ RzList *PE_(rz_bin_mdmp_pe_get_imports) (struct PE_(rz_bin_mdmp_pe_bin) * pe_bin
 	int i;
 	ut64 offset;
 	struct rz_bin_pe_import_t *imports = NULL;
-	RBinImport *ptr = NULL;
-	RBinReloc *rel;
+	RzBinImport *ptr = NULL;
+	RzBinReloc *rel;
 	RzList *ret, *relocs;
 
 	imports = PE_(rz_bin_pe_get_imports) (pe_bin->bin);
@@ -105,7 +105,7 @@ RzList *PE_(rz_bin_mdmp_pe_get_imports) (struct PE_(rz_bin_mdmp_pe_bin) * pe_bin
 
 	pe_bin->bin->relocs = relocs;
 	for (i = 0; !imports[i].last; i++) {
-		if (!(ptr = RZ_NEW0 (RBinImport))) {
+		if (!(ptr = RZ_NEW0 (RzBinImport))) {
 			break;
 		}
 		filter_import (imports[i].name);
@@ -116,7 +116,7 @@ RzList *PE_(rz_bin_mdmp_pe_get_imports) (struct PE_(rz_bin_mdmp_pe_bin) * pe_bin
 		ptr->ordinal = imports[i].ordinal;
 		rz_list_append (ret, ptr);
 
-		if (!(rel = RZ_NEW0 (RBinReloc))) {
+		if (!(rel = RZ_NEW0 (RzBinReloc))) {
 			break;
 		}
 #ifdef RZ_BIN_PE64
@@ -145,7 +145,7 @@ RzList *PE_(rz_bin_mdmp_pe_get_sections) (struct PE_(rz_bin_mdmp_pe_bin) * pe_bi
 	int i;
 	ut64 ba = pe_bin->vaddr; //baddr (arch);
 	struct rz_bin_pe_section_t *sections = NULL;
-	RBinSection *ptr;
+	RzBinSection *ptr;
 	RzList *ret;
 
 	if (!(ret = rz_list_new ())) {
@@ -158,7 +158,7 @@ RzList *PE_(rz_bin_mdmp_pe_get_sections) (struct PE_(rz_bin_mdmp_pe_bin) * pe_bi
 	PE_(rz_bin_pe_check_sections)
 	(pe_bin->bin, &sections);
 	for (i = 0; !sections[i].last; i++) {
-		if (!(ptr = RZ_NEW0 (RBinSection))) {
+		if (!(ptr = RZ_NEW0 (RzBinSection))) {
 			break;
 		}
 		if (sections[i].name[0]) {
@@ -207,12 +207,12 @@ RzList *PE_(rz_bin_mdmp_pe_get_sections) (struct PE_(rz_bin_mdmp_pe_bin) * pe_bi
 	return ret;
 }
 
-RzList *PE_(rz_bin_mdmp_pe_get_symbols) (RBin *rbin, struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
+RzList *PE_(rz_bin_mdmp_pe_get_symbols) (RzBin *rbin, struct PE_(rz_bin_mdmp_pe_bin) * pe_bin) {
 	int i;
 	ut64 offset;
 	struct rz_bin_pe_export_t *symbols = NULL;
 	struct rz_bin_pe_import_t *imports = NULL;
-	RBinSymbol *ptr = NULL;
+	RzBinSymbol *ptr = NULL;
 	RzList *ret;
 
 	if (!(ret = rz_list_new ())) {
@@ -222,7 +222,7 @@ RzList *PE_(rz_bin_mdmp_pe_get_symbols) (RBin *rbin, struct PE_(rz_bin_mdmp_pe_b
 	/* TODO: Load symbol table from pdb file */
 	if ((symbols = PE_(rz_bin_pe_get_exports) (pe_bin->bin))) {
 		for (i = 0; !symbols[i].last; i++) {
-			if (!(ptr = RZ_NEW0 (RBinSymbol))) {
+			if (!(ptr = RZ_NEW0 (RzBinSymbol))) {
 				break;
 			}
 			offset = symbols[i].vaddr;
@@ -246,7 +246,7 @@ RzList *PE_(rz_bin_mdmp_pe_get_symbols) (RBin *rbin, struct PE_(rz_bin_mdmp_pe_b
 	/* Calling imports is unstable at the moment, I think this is an issue in pe.c */
 	if ((imports = PE_(rz_bin_pe_get_imports) (pe_bin->bin))) {
 		for (i = 0; !imports[i].last; i++) {
-			if (!(ptr = RZ_NEW0 (RBinSymbol))) {
+			if (!(ptr = RZ_NEW0 (RzBinSymbol))) {
 				break;
 			}
 			offset = imports[i].vaddr;

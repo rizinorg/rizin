@@ -15,12 +15,12 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (b);
 }
 
-static RBinInfo* info(RBinFile* bf) {
-	RBinInfo* ret = NULL;
+static RzBinInfo* info(RzBinFile* bf) {
+	RzBinInfo* ret = NULL;
 	psxexe_header psxheader;
 
 	if (rz_buf_read_at (bf->buf, 0, (ut8*)&psxheader, sizeof(psxexe_header)) < sizeof(psxexe_header)) {
@@ -28,7 +28,7 @@ static RBinInfo* info(RBinFile* bf) {
 		return NULL;
 	}
 
-	if (!(ret = RZ_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RzBinInfo))) {
 		return NULL;
 	}
 
@@ -42,9 +42,9 @@ static RBinInfo* info(RBinFile* bf) {
 	return ret;
 }
 
-static RzList* sections(RBinFile* bf) {
+static RzList* sections(RzBinFile* bf) {
 	RzList* ret = NULL;
-	RBinSection* sect = NULL;
+	RzBinSection* sect = NULL;
 	psxexe_header psxheader;
 	ut64 sz = 0;
 
@@ -52,7 +52,7 @@ static RzList* sections(RBinFile* bf) {
 		return NULL;
 	}
 
-	if (!(sect = RZ_NEW0 (RBinSection))) {
+	if (!(sect = RZ_NEW0 (RzBinSection))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -79,16 +79,16 @@ static RzList* sections(RBinFile* bf) {
 	return ret;
 }
 
-static RzList* entries(RBinFile* bf) {
+static RzList* entries(RzBinFile* bf) {
 	RzList* ret = NULL;
-	RBinAddr* addr = NULL;
+	RzBinAddr* addr = NULL;
 	psxexe_header psxheader;
 
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
 
-	if (!(addr = RZ_NEW0 (RBinAddr))) {
+	if (!(addr = RZ_NEW0 (RzBinAddr))) {
 		rz_list_free (ret);
 		return NULL;
 	}
@@ -107,12 +107,12 @@ static RzList* entries(RBinFile* bf) {
 	return ret;
 }
 
-static RzList* strings(RBinFile* bf) {
+static RzList* strings(RzBinFile* bf) {
 	// hardcode minstrlen = 20
 	return rz_bin_file_get_strings (bf, 20, 0, 2);
 }
 
-RBinPlugin rz_bin_plugin_psxexe = {
+RzBinPlugin rz_bin_plugin_psxexe = {
 	.name = "psxexe",
 	.desc = "Sony PlayStation 1 Executable",
 	.license = "LGPL3",

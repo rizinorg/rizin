@@ -884,7 +884,7 @@ static void cmd_pCd(RzCore *core, const char *input) {
 }
 
 static void findMethodBounds(RzList *methods, ut64 *min, ut64 *max) {
-	RBinSymbol *sym;
+	RzBinSymbol *sym;
 	RzListIter *iter;
 	ut64 at_min = UT64_MAX;
 	ut64 at_max = 0LL;
@@ -906,7 +906,7 @@ static void findMethodBounds(RzList *methods, ut64 *min, ut64 *max) {
 static ut64 findClassBounds(RzCore *core, const char *input, int *len) {
 	ut64 min = 0, max = 0;
 	RzListIter *iter;
-	RBinClass *c;
+	RzBinClass *c;
 	RzList *cs = rz_bin_get_classes (core->bin);
 	rz_list_foreach (cs, iter, c) {
 		if (!c || !c->name || !c->name[0]) {
@@ -4963,7 +4963,7 @@ static int cmd_print(void *data, const char *input) {
 								char *dst = rz_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
 								char *dst2 = NULL;
 								RzAnalOp *op = rz_core_anal_op (core, refi->addr, RZ_ANAL_OP_MASK_BASIC);
-								RBinReloc *rel = rz_core_getreloc (core, refi->addr, op->size);
+								RzBinReloc *rel = rz_core_getreloc (core, refi->addr, op->size);
 								if (rel) {
 									if (rel && rel->import && rel->import->name) {
 										dst2 = rel->import->name;

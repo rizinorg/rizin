@@ -4857,10 +4857,10 @@ static ut64 initializeEsil(RzCore *core) {
 	}
 	esil->exectrap = exectrap;
 	RzList *entries = rz_bin_get_entries (core->bin);
-	RBinAddr *entry = NULL;
-	RBinInfo *info = NULL;
+	RzBinAddr *entry = NULL;
+	RzBinInfo *info = NULL;
 	if (entries && !rz_list_empty (entries)) {
-		entry = (RBinAddr *)rz_list_pop_head (entries);
+		entry = (RzBinAddr *)rz_list_pop_head (entries);
 		info = rz_bin_get_info (core->bin);
 		addr = info->has_va? entry->vaddr: entry->paddr;
 		rz_list_push (entries, entry);
@@ -6867,7 +6867,7 @@ static void cmd_anal_aftertraps(RzCore *core, const char *input) {
 		eprintf ("Too big\n");
 		return;
 	}
-	RBinFile *bf = rz_bin_cur (core->bin);
+	RzBinFile *bf = rz_bin_cur (core->bin);
 	if (!bf) {
 		return;
 	}
@@ -7048,7 +7048,7 @@ static void _anal_calls(RzCore *core, ut64 addr, ut64 addr_end, bool printComman
 						isValidCall = false;
 					}
 				}
-				RBinReloc *rel = rz_core_getreloc (core, addr, op.size);
+				RzBinReloc *rel = rz_core_getreloc (core, addr, op.size);
 				if (rel && (rel->import || rel->symbol)) {
 					isValidCall = false;
 				}
@@ -7104,7 +7104,7 @@ static void cmd_anal_calls(RzCore *core, const char *input, bool printCommands, 
 		eprintf ("Too big\n");
 		return;
 	}
-	RBinFile *binfile = rz_bin_cur (core->bin);
+	RzBinFile *binfile = rz_bin_cur (core->bin);
 	addr = core->offset;
 	if (binfile) {
 		if (len) {
@@ -9534,7 +9534,7 @@ static bool is_apple_target(RzCore *core) {
 	if (!strstr (arch, "ppc") && !strstr (arch, "arm") && !strstr (arch, "x86")) {
 		return false;
 	}
-	RBinObject *bo = rz_bin_cur_object (core->bin);
+	RzBinObject *bo = rz_bin_cur_object (core->bin);
 	rz_return_val_if_fail (!bo || (bo->plugin && bo->plugin->name), false);
 	return bo? strstr (bo->plugin->name, "mach"): false;
 }

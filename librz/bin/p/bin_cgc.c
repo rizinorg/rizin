@@ -12,7 +12,7 @@ static bool check_buffer(RBuffer *buf) {
 	return r > SCGCMAG && !memcmp (tmp, CGCMAG, SCGCMAG) && tmp[4] != 2;
 }
 
-static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
+static RBuffer* create(RzBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
 	ut32 filesize, code_va, code_pa, phoff;
 	ut32 p_start, p_phoff, p_phdr;
 	ut32 p_ehdrsz, p_phdrsz;
@@ -93,7 +93,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-RBinPlugin rz_bin_plugin_cgc = {
+RzBinPlugin rz_bin_plugin_cgc = {
 	.name = "cgc",
 	.desc = "CGC format rz_bin plugin",
 	.license = "LGPL3",

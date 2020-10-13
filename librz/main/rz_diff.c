@@ -738,13 +738,13 @@ static ut8 *slurp(RzCore **c, const char *file, size_t *sz) {
 	return (ut8 *) rz_file_slurp (file, sz);
 }
 
-static int import_cmp(const RBinImport *a, const RBinImport *b) {
+static int import_cmp(const RzBinImport *a, const RzBinImport *b) {
 	return strcmp (a->name, b->name);
 }
 
 static ut8 *get_imports(RzCore *c, int *len) {
 	RzListIter *iter;
-	RBinImport *str, *old = NULL;
+	RzBinImport *str, *old = NULL;
 	ut8 *buf, *ptr;
 
 	if (!c || !len) {
@@ -785,7 +785,7 @@ static ut8 *get_imports(RzCore *c, int *len) {
 	return buf;
 }
 
-static int bs_cmp(const RBinString *a, const RBinString *b) {
+static int bs_cmp(const RzBinString *a, const RzBinString *b) {
 	int diff = a->length - b->length;
 	return diff == 0? strncmp (a->string, b->string, a->length): diff;
 }
@@ -793,7 +793,7 @@ static int bs_cmp(const RBinString *a, const RBinString *b) {
 static ut8 *get_strings(RzCore *c, int *len) {
 	RzList *list = rz_bin_get_strings (c->bin);
 	RzListIter *iter;
-	RBinString *str, *old = NULL;
+	RzBinString *str, *old = NULL;
 	ut8 *buf, *ptr;
 
 	rz_list_sort (list, (RzListComparator) bs_cmp);

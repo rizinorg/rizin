@@ -69,8 +69,8 @@ static char *__read_nonnull_str_at(RBuffer *buf, ut64 *offset) {
 	return str;
 }
 
-static RBinSymbol *__get_symbol(rz_bin_le_obj_t *bin, ut64 *offset) {
-	RBinSymbol *sym = RZ_NEW0 (RBinSymbol);
+static RzBinSymbol *__get_symbol(rz_bin_le_obj_t *bin, ut64 *offset) {
+	RzBinSymbol *sym = RZ_NEW0 (RzBinSymbol);
 	if (!sym) {
 		return NULL;
 	}
@@ -155,7 +155,7 @@ RzList *__get_entries(rz_bin_le_obj_t *bin) {
 
 static void __get_symbols_at(rz_bin_le_obj_t *bin, RzList *syml, RzList *entl, ut64 offset, ut64 end) {
 	while (offset < end) {
-		RBinSymbol *sym = __get_symbol (bin, &offset);
+		RzBinSymbol *sym = __get_symbol (bin, &offset);
 		if (!sym) {
 			break;
 		}
@@ -196,7 +196,7 @@ RzList *rz_bin_le_get_imports(rz_bin_le_obj_t *bin) {
 	ut64 offset = (ut64)h->impproc + bin->headerOff + 1; // First entry is a null string
 	ut64 end = (ut64)h->fixupsize + h->fpagetab + bin->headerOff;
 	while (offset < end) {
-		RBinImport *imp = RZ_NEW0 (RBinImport);
+		RzBinImport *imp = RZ_NEW0 (RzBinImport);
 		if (!imp) {
 			break;
 		}
@@ -217,7 +217,7 @@ RzList *rz_bin_le_get_entrypoints(rz_bin_le_obj_t *bin) {
 	if (!l) {
 		return NULL;
 	}
-	RBinAddr *entry = RZ_NEW0 (RBinAddr);
+	RzBinAddr *entry = RZ_NEW0 (RzBinAddr);
 	if (entry) {
 		if ((bin->header->startobj - 1) < bin->header->objcnt){
 			entry->vaddr = (ut64)bin->objtbl[bin->header->startobj - 1].reloc_base_addr + bin->header->eip;
@@ -251,7 +251,7 @@ RzList *rz_bin_le_get_libs(rz_bin_le_obj_t *bin) {
 *	page->size is the total size of iter records that describe the page
 *	TODO: Don't do this
 */
-static void __create_iter_sections(RzList *l, rz_bin_le_obj_t *bin, RBinSection *sec, LE_object_page_entry *page, ut64 vaddr, int cur_page) {
+static void __create_iter_sections(RzList *l, rz_bin_le_obj_t *bin, RzBinSection *sec, LE_object_page_entry *page, ut64 vaddr, int cur_page) {
 	rz_return_if_fail (l && bin && sec && page);
 	LE_image_header *h = bin->header;
 	ut32 offset = (h->itermap + (page->offset << (bin->is_le ? 0 : h->pageshift)));
@@ -268,7 +268,7 @@ static void __create_iter_sections(RzList *l, rz_bin_le_obj_t *bin, RBinSection 
 	while (iter_n && bytes_left > 0) {
 		int i;
 		for (i = 0; i < iter_n; i++) {
-			RBinSection *s = RZ_NEW0 (RBinSection);
+			RzBinSection *s = RZ_NEW0 (RzBinSection);
 			if (!s) {
 				break;
 			}
@@ -294,7 +294,7 @@ static void __create_iter_sections(RzList *l, rz_bin_le_obj_t *bin, RBinSection 
 		offset += sizeof (ut16);
 	}
 	if (tot_size < h->pagesize) {
-		RBinSection *s = RZ_NEW0 (RBinSection);
+		RzBinSection *s = RZ_NEW0 (RzBinSection);
 		if (!s) {
 			return;
 		}
@@ -318,7 +318,7 @@ RzList *rz_bin_le_get_sections(rz_bin_le_obj_t *bin) {
 	ut32 pages_start_off = h->datapage;
 	int i;
 	for (i = 0; i < h->objcnt; i++) {
-		RBinSection *sec = RZ_NEW0 (RBinSection);
+		RzBinSection *sec = RZ_NEW0 (RzBinSection);
 		if (!sec) {
 			return l;
 		}
@@ -356,7 +356,7 @@ RzList *rz_bin_le_get_sections(rz_bin_le_obj_t *bin) {
 		ut64 objpageentrysz =  bin->is_le ? sizeof (ut32) : sizeof (LE_object_page_entry);
 		for (j = 0; j < entry->page_tbl_entries; j++) {
 			LE_object_page_entry page;
-			RBinSection *s = RZ_NEW0 (RBinSection);
+			RzBinSection *s = RZ_NEW0 (RzBinSection);
 			if (!s) {
 				rz_bin_section_free (sec);
 				return l;
@@ -429,10 +429,10 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 	const ut64 fix_rec_tbl_off = (ut64)h->frectab + bin->headerOff;
 	ut64 offset = fix_rec_tbl_off + rz_buf_read_ble32_at (bin->buf, (ut64)h->fpagetab + bin->headerOff + cur_page * sizeof (ut32), h->worder);
 	ut64 end = fix_rec_tbl_off + rz_buf_read_ble32_at (bin->buf, (ut64)h->fpagetab + bin->headerOff + (cur_page + 1) * sizeof (ut32), h->worder);
-	const RBinSection *cur_section = (RBinSection *)rz_list_get_n (sections, cur_page);
+	const RzBinSection *cur_section = (RzBinSection *)rz_list_get_n (sections, cur_page);
 	ut64 cur_page_offset = cur_section ? cur_section->vaddr : 0;
 	while (cur_page < h->mpages) {
-		RBinReloc *rel = RZ_NEW0 (RBinReloc);
+		RzBinReloc *rel = RZ_NEW0 (RzBinReloc);
 		bool rel_appended = false; // whether rel has been appended to l and must not be freed
 		if (!rel) {
 			break;
@@ -495,7 +495,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 			break;
 		case IMPORTORD:
 		{
-			RBinImport *imp = RZ_NEW0 (RBinImport);
+			RzBinImport *imp = RZ_NEW0 (RzBinImport);
 			if (!imp) {
 				break;
 			}
@@ -523,7 +523,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 		}
 		case IMPORTNAME:
 		{
-			RBinImport *imp = RZ_NEW0 (RBinImport);
+			RzBinImport *imp = RZ_NEW0 (RzBinImport);
 			if (!imp) {
 				break;
 			}
@@ -569,7 +569,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 			ut64 base_target_address = rel->addend - (fixupinfo & 0xFFFFF);
 			do {
 				fixupinfo = rz_buf_read_ble32_at (bin->buf, cur_page_offset + source, h->worder);
-				RBinReloc *new = RZ_NEW0 (RBinReloc);
+				RzBinReloc *new = RZ_NEW0 (RzBinReloc);
 				*new = *rel;
 				new->addend = base_target_address + (fixupinfo & 0xFFFFF);
 				rz_list_append (l, new);
@@ -581,7 +581,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 			ut16 off =  rz_buf_read_ble16_at (bin->buf, offset, h->worder);
 			rel->vaddr = cur_page_offset + off;
 			rel->paddr = cur_section ? cur_section->paddr + off : 0;
-			RBinReloc *new = RZ_NEW0 (RBinReloc);
+			RzBinReloc *new = RZ_NEW0 (RzBinReloc);
 			*new = *rel;
 			rz_list_append (l, new);
 			offset += sizeof (ut16);
@@ -598,7 +598,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 			offset = fix_rec_tbl_off + w0;
 			end = fix_rec_tbl_off + w1;
 			if (offset < end) {
-				cur_section = (RBinSection *)rz_list_get_n (sections, cur_page);
+				cur_section = (RzBinSection *)rz_list_get_n (sections, cur_page);
 				cur_page_offset = cur_section ? cur_section->vaddr : 0;
 			}
 		}

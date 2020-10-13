@@ -32,12 +32,12 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (buf);
 }
 
-static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = RZ_NEW0 (RBinInfo);
+static RzBinInfo *info(RzBinFile *bf) {
+	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
 	if (!ret || !bf || !bf->buf) {
 		free (ret);
 		return NULL;
@@ -99,7 +99,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-RBinPlugin rz_bin_plugin_sms = {
+RzBinPlugin rz_bin_plugin_sms = {
 	.name = "sms",
 	.desc = "SEGA MasterSystem/GameGear",
 	.license = "LGPL3",

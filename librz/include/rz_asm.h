@@ -102,7 +102,7 @@ typedef struct rz_asm_t {
 	_RzAsmPlugin *cur;
 	_RzAsmPlugin *acur;
 	RzList *plugins;
-	RBinBind binb;
+	RzBinBind binb;
 	RzParse *ifilter;
 	RzParse *ofilter;
 	Sdb *pair;

@@ -25,32 +25,32 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	rz_buf_read_at (b, 0, (ut8*)&loaded_header, sizeof (loaded_header));
 	*bin_obj = &loaded_header;
 	return (*bin_obj != NULL);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return (ut64) loaded_header.arm9_ram_address;
 }
 
-static ut64 boffset(RBinFile *bf) {
+static ut64 boffset(RzBinFile *bf) {
 	return 0LL;
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
-	RBinSection *ptr9 = NULL, *ptr7 = NULL;
+	RzBinSection *ptr9 = NULL, *ptr7 = NULL;
 
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
-	if (!(ptr9 = RZ_NEW0 (RBinSection))) {
+	if (!(ptr9 = RZ_NEW0 (RzBinSection))) {
 		rz_list_free (ret);
 		return NULL;
 	}
-	if (!(ptr7 = RZ_NEW0 (RBinSection))) {
+	if (!(ptr7 = RZ_NEW0 (RzBinSection))) {
 		rz_list_free (ret);
 		free (ptr9);
 		return NULL;
@@ -77,20 +77,20 @@ static RzList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *entries(RBinFile *bf) {
+static RzList *entries(RzBinFile *bf) {
 	RzList *ret = rz_list_new ();
-	RBinAddr *ptr9 = NULL, *ptr7 = NULL;
+	RzBinAddr *ptr9 = NULL, *ptr7 = NULL;
 
 	if (bf && bf->buf) {
 		if (!ret) {
 			return NULL;
 		}
 		ret->free = free;
-		if (!(ptr9 = RZ_NEW0 (RBinAddr))) {
+		if (!(ptr9 = RZ_NEW0 (RzBinAddr))) {
 			rz_list_free (ret);
 			return NULL;
 		}
-		if (!(ptr7 = RZ_NEW0 (RBinAddr))) {
+		if (!(ptr7 = RZ_NEW0 (RzBinAddr))) {
 			rz_list_free (ret);
 			free (ptr9);
 			return NULL;
@@ -109,9 +109,9 @@ static RzList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RzBinInfo *info(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->buf, NULL);
-	RBinInfo *ret = RZ_NEW0 (RBinInfo);
+	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
 	if (ret) {
 		char *filepath = rz_str_newf ("%.12s - %.4s",
 			loaded_header.title, loaded_header.gamecode);
@@ -126,7 +126,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-RBinPlugin rz_bin_plugin_ninds = {
+RzBinPlugin rz_bin_plugin_ninds = {
 	.name = "ninds",
 	.desc = "Nintendo DS format rz_bin plugin",
 	.license = "LGPL3",

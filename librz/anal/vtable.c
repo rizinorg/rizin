@@ -64,7 +64,7 @@ RZ_API bool rz_anal_vtable_begin(RzAnal *anal, RVTableContext *context) {
 
 static bool vtable_addr_in_text_section(RVTableContext *context, ut64 curAddress) {
 	//section of the curAddress
-	RBinSection *value = context->anal->binb.get_vsect_at (context->anal->binb.bin, curAddress);
+	RzBinSection *value = context->anal->binb.get_vsect_at (context->anal->binb.bin, curAddress);
 	//If the pointed value lies in .text section
 	return value && strstr (value->name, "text") && (value->perm & 1) != 0;
 }
@@ -83,7 +83,7 @@ static bool vtable_is_value_in_text_section(RVTableContext *context, ut64 curAdd
 	return ret;
 }
 
-static bool vtable_section_can_contain_vtables(RBinSection *section) {
+static bool vtable_section_can_contain_vtables(RzBinSection *section) {
 	if (section->is_segment) {
 		return false;
 	}
@@ -94,7 +94,7 @@ static bool vtable_section_can_contain_vtables(RBinSection *section) {
 		rz_str_endswith (section->name, "__const");
 }
 
-static bool section_can_contain_rtti(RBinSection *section) {
+static bool section_can_contain_rtti(RzBinSection *section) {
 	if (!section) {
 		return false;
 	}
@@ -106,7 +106,7 @@ static bool section_can_contain_rtti(RBinSection *section) {
 		rz_str_endswith (section->name, "__const");
 }
 
-static bool vtable_is_addr_vtable_start_itanium(RVTableContext *context, RBinSection *section, ut64 curAddress) {
+static bool vtable_is_addr_vtable_start_itanium(RVTableContext *context, RzBinSection *section, ut64 curAddress) {
 	ut64 value;
 	if (!curAddress || curAddress == UT64_MAX) {
 		return false;
@@ -117,7 +117,7 @@ static bool vtable_is_addr_vtable_start_itanium(RVTableContext *context, RBinSec
 	if (!context->read_addr (context->anal, curAddress - context->word_size, &value)) { // get the RTTI pointer
 		return false;
 	}
-	RBinSection *rtti_section = context->anal->binb.get_vsect_at (context->anal->binb.bin, value);
+	RzBinSection *rtti_section = context->anal->binb.get_vsect_at (context->anal->binb.bin, value);
 	if (value && !section_can_contain_rtti (rtti_section)) { // RTTI ptr must point somewhere in the data section
 		return false;
 	}
@@ -169,7 +169,7 @@ static bool vtable_is_addr_vtable_start_msvc(RVTableContext *context, ut64 curAd
 	return false;
 }
 
-static bool vtable_is_addr_vtable_start(RVTableContext *context, RBinSection *section, ut64 curAddress) {
+static bool vtable_is_addr_vtable_start(RVTableContext *context, RzBinSection *section, ut64 curAddress) {
 	if (context->abi == RZ_ANAL_CPP_ABI_MSVC) {
 		return vtable_is_addr_vtable_start_msvc (context, curAddress);
 	}
@@ -234,7 +234,7 @@ RZ_API RzList *rz_anal_vtable_search(RVTableContext *context) {
 	rz_cons_break_push (NULL, NULL);
 
 	RzListIter *iter;
-	RBinSection *section;
+	RzBinSection *section;
 	rz_list_foreach (sections, iter, section) {
 		if (rz_cons_is_breaked ()) {
 			break;

@@ -203,7 +203,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 					at = core->offset;
 				}
 			}
-			RBinFile *bf = rz_bin_file_at (core->bin, at);
+			RzBinFile *bf = rz_bin_file_at (core->bin, at);
 			if (bf) {
 				rz_cons_printf ("%d\n", bf->id);
 			}
@@ -223,7 +223,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 				if (desc) {
 					*filename = 0;
 					ut64 addr = rz_num_math (core->num, arg);
-					RBinOptions opt;
+					RzBinOptions opt;
 					rz_bin_options_init (&opt, desc->fd, addr, 0, core->bin->rawstr);
 					rz_bin_open_io (core->bin, &opt);
 					rz_io_desc_close (desc);
@@ -238,7 +238,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 				int fd = rz_io_fd_get_current (core->io);
 				RzIODesc *desc = rz_io_desc_get (core->io, fd);
 				if (desc) {
-					RBinOptions opt;
+					RzBinOptions opt;
 					opt.baseaddr = baddr;
 					opt.loadaddr = addr;
 					opt.sz = 1024*1024*1;
@@ -253,7 +253,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 				int fd = rz_io_fd_get_current (core->io);
 				RzIODesc *desc = rz_io_desc_get (core->io, fd);
 				if (desc) {
-					RBinOptions opt;
+					RzBinOptions opt;
 					opt.baseaddr = addr;
 					opt.loadaddr = addr;
 					opt.sz = 1024 * 1024 * 1;
@@ -277,7 +277,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 			void *_fd;
 			rz_list_foreach (files, iter, _fd) {
 				int fd = (size_t)_fd;
-				RBinOptions opt;
+				RzBinOptions opt;
 				rz_bin_options_init (&opt, fd, core->offset, 0, core->bin->rawstr);
 				rz_bin_open_io (core->bin, &opt);
 				rz_core_cmd0 (core, ".ies*");
@@ -330,9 +330,9 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 	case 'o': // "obo"
 		if (input[2] == ' ') {
 			ut32 fd = rz_num_math (core->num, input + 3);
-			RBinFile *bf = rz_bin_file_find_by_fd (core->bin, fd);
+			RzBinFile *bf = rz_bin_file_find_by_fd (core->bin, fd);
 			if (!bf || !rz_core_bin_raise (core, bf->id)) {
-				eprintf ("Invalid RBinFile.id number.\n");
+				eprintf ("Invalid RzBinFile.id number.\n");
 			}
 		} else {
 			eprintf ("Usage: obb [bfid]\n");
@@ -350,13 +350,13 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 			}
 			id = (*value && rz_is_valid_input_num_value (core->num, value)) ?
 					rz_get_input_num_value (core->num, value) : UT32_MAX;
-			RBinFile *bf = rz_bin_file_find_by_id (core->bin, id);
+			RzBinFile *bf = rz_bin_file_find_by_id (core->bin, id);
 			if (!bf) {
 				eprintf ("Invalid binid\n");
 				break;
 			}
 			if (!rz_core_bin_delete (core, bf->id)) {
-				eprintf ("Cannot find an RBinFile associated with that id.\n");
+				eprintf ("Cannot find an RzBinFile associated with that id.\n");
 			}
 		}
 		break;
@@ -364,8 +364,8 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 		{
 			RzListIter *iter;
 			RzList *list = rz_list_newf ((RzListFree) rz_listinfo_free);
-			RBinFile *bf = NULL;
-			RBin *bin = core->bin;
+			RzBinFile *bf = NULL;
+			RzBin *bin = core->bin;
 			if (!bin) {
 				return;
 			}
@@ -900,7 +900,7 @@ RZ_API void rz_core_file_reopen_in_malloc(RzCore *core) {
 static RzList *__save_old_sections(RzCore *core) {
 	RzList *sections = rz_bin_get_sections (core->bin);
 	RzListIter *it;
-	RBinSection *sec;
+	RzBinSection *sec;
 	RzList *old_sections = rz_list_new ();
 
 	// Return an empty list
@@ -911,7 +911,7 @@ static RzList *__save_old_sections(RzCore *core) {
 
 	old_sections->free = sections->free;
 	rz_list_foreach (sections, it, sec) {
-		RBinSection *old_sec = RZ_NEW0 (RBinSection);
+		RzBinSection *old_sec = RZ_NEW0 (RzBinSection);
 		if (!old_sec) {
 			break;
 		}
@@ -938,7 +938,7 @@ static bool __rebase_flags(RzFlagItem *flag, void *user) {
 	struct __rebase_struct *reb = user;
 	ut64 old_base = reb->old_base;
 	RzListIter *it;
-	RBinSection *sec;
+	RzBinSection *sec;
 	// Only rebase flags that were in the rebased sections, otherwise it will take too long
 	rz_list_foreach (reb->old_sections, it, sec) {
 		if (__is_inside_section (flag->offset, sec)) {
@@ -972,7 +972,7 @@ static void __rebase_everything(RzCore *core, RzList *old_sections, ut64 old_bas
 	RzListIter *it, *itit, *ititit;
 	RzAnalFunction *fcn;
 	ut64 new_base = core->bin->cur->o->baddr_shift;
-	RBinSection *old_section;
+	RzBinSection *old_section;
 	ut64 diff = new_base - old_base;
 	if (!diff) {
 		return;
@@ -1097,7 +1097,7 @@ RZ_API void rz_core_file_reopen_debug(RzCore *core, const char *args) {
 		desc = rz_io_desc_get (core->io, ofile->fd);
 	}
 
-	RBinFile *bf = rz_bin_file_find_by_fd (core->bin, ofile->fd);
+	RzBinFile *bf = rz_bin_file_find_by_fd (core->bin, ofile->fd);
 	char *binpath = (bf && bf->file) ? strdup (bf->file) : NULL;
 	if (!binpath) {
 		if (rz_file_exists (desc->name)) {
@@ -1227,7 +1227,7 @@ static int cmd_open(void *data, const char *input) {
 		case '*': // "oa*"
 			{
 				RzListIter *iter;
-				RBinFile *bf = NULL;
+				RzBinFile *bf = NULL;
 				rz_list_foreach (core->bin->binfiles, iter, bf) {
 					if (bf && bf->o && bf->o->info) {
 						eprintf ("oa %s %d %s\n", bf->o->info->arch, bf->o->info->bits, bf->file);
@@ -1255,7 +1255,7 @@ static int cmd_open(void *data, const char *input) {
 				bits = rz_num_math (core->num, rz_str_word_get0 (ptr, 1));
 				arch = rz_str_word_get0 (ptr, 0);
 				rz_core_bin_set_arch_bits (core, filename, arch, bits);
-				RBinFile *file = rz_bin_file_find_by_name (core->bin, filename);
+				RzBinFile *file = rz_bin_file_find_by_name (core->bin, filename);
 				if (!file) {
 					eprintf ("Cannot find file %s\n", filename);
 					free (ptr);
@@ -1376,7 +1376,7 @@ static int cmd_open(void *data, const char *input) {
 					core->io->desc = desc; // XXX we should use fd here, not *pointer
 					rz_core_block_read (core);
 				} else {
-					eprintf ("Cannot find RBinFile associated with fd %d\n", fd);
+					eprintf ("Cannot find RzBinFile associated with fd %d\n", fd);
 				}
 			} else {
 				eprintf ("Invalid fd number\n");
@@ -1549,7 +1549,7 @@ static int cmd_open(void *data, const char *input) {
 			}
 		}
 		rz_io_use_fd (core->io, num);
-		RBinFile *bf = rz_bin_file_find_by_fd (core->bin, num);
+		RzBinFile *bf = rz_bin_file_find_by_fd (core->bin, num);
 		if (bf) {
 			rz_core_bin_raise (core, bf->id);
 			rz_core_block_read (core);
@@ -1748,7 +1748,7 @@ static int cmd_open(void *data, const char *input) {
 					fd = core->io->desc->fd;
 				}
 				if (rz_config_get_i (core->config, "cfg.debug")) {
-					RBinFile *bf = rz_bin_cur (core->bin);
+					RzBinFile *bf = rz_bin_cur (core->bin);
 					if (bf && rz_file_exists (bf->file)) {
 						// Escape spaces so that o's argv parse will detect the path properly
 						char *file = rz_str_path_escape (bf->file);

@@ -12,9 +12,9 @@
 
 // wip settings
 
-extern RBinWrite rz_bin_write_mach0;
+extern RzBinWrite rz_bin_write_mach0;
 
-static RBinInfo *info(RBinFile *bf);
+static RzBinInfo *info(RzBinFile *bf);
 
 static void swizzle_io_read(struct MACH0_(obj_t) *obj, RzIO *io);
 static int rebasing_and_stripping_io_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count);
@@ -23,8 +23,8 @@ static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RzIODesc *fd, ut8
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
-static Sdb *get_sdb (RBinFile *bf) {
-	RBinObject *o = bf->o;
+static Sdb *get_sdb (RzBinFile *bf) {
+	RzBinObject *o = bf->o;
 	if (!o) {
 		return NULL;
 	}
@@ -32,13 +32,13 @@ static Sdb *get_sdb (RBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
-static char *entitlements(RBinFile *bf, bool json) {
+static char *entitlements(RzBinFile *bf, bool json) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	return rz_str_dup (NULL, (const char*)bin->signature);
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb){
 	rz_return_val_if_fail (bf && bin_obj && buf, false);
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default) (&opts, bf);
@@ -55,22 +55,22 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return false;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	MACH0_(mach0_free) (bf->o->bin_obj);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, UT64_MAX);
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	return MACH0_(get_baddr)(bin);
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	return MACH0_(get_segments) (bf);
 }
 
-static RBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
-	RBinAddr *ptr = RZ_NEW0 (RBinAddr);
+static RzBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
+	RzBinAddr *ptr = RZ_NEW0 (RzBinAddr);
 	if (ptr) {
 		ptr->paddr = paddr;
 		ptr->vaddr = paddr;
@@ -86,10 +86,10 @@ static RBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
 	return ptr;
 }
 
-static void process_constructors(RBinFile *bf, RzList *ret, int bits) {
+static void process_constructors(RzBinFile *bf, RzList *ret, int bits) {
 	RzList *secs = sections (bf);
 	RzListIter *iter;
-	RBinSection *sec;
+	RzBinSection *sec;
 	int i, type;
 	rz_list_foreach (secs, iter, sec) {
 		type = -1;
@@ -111,7 +111,7 @@ static void process_constructors(RBinFile *bf, RzList *ret, int bits) {
 			if (bits == 32) {
 				for (i = 0; i + 3 < sec->size; i += 4) {
 					ut32 addr32 = rz_read_le32 (buf + i);
-					RBinAddr *ba = newEntry (sec->paddr + i, (ut64)addr32, type, bits);
+					RzBinAddr *ba = newEntry (sec->paddr + i, (ut64)addr32, type, bits);
 					if (ba) {
 						rz_list_append (ret, ba);
 					}
@@ -119,7 +119,7 @@ static void process_constructors(RBinFile *bf, RzList *ret, int bits) {
 			} else {
 				for (i = 0; i + 7 < sec->size; i += 8) {
 					ut64 addr64 = rz_read_le64 (buf + i);
-					RBinAddr *ba = newEntry (sec->paddr + i, addr64, type, bits);
+					RzBinAddr *ba = newEntry (sec->paddr + i, addr64, type, bits);
 					if (ba) {
 						rz_list_append (ret, ba);
 					}
@@ -131,10 +131,10 @@ static void process_constructors(RBinFile *bf, RzList *ret, int bits) {
 	rz_list_free (secs);
 }
 
-static RzList *entries(RBinFile *bf) {
+static RzList *entries(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o, NULL);
 
-	RBinAddr *ptr = NULL;
+	RzBinAddr *ptr = NULL;
 	struct addr_t *entry = NULL;
 
 	RzList *ret = rz_list_newf (free);
@@ -146,7 +146,7 @@ static RzList *entries(RBinFile *bf) {
 	if (!(entry = MACH0_(get_entrypoint) (bf->o->bin_obj))) {
 		return ret;
 	}
-	if ((ptr = RZ_NEW0 (RBinAddr))) {
+	if ((ptr = RZ_NEW0 (RzBinAddr))) {
 		ptr->paddr = entry->offset + bf->o->boffset;
 		ptr->vaddr = entry->addr;
 		ptr->hpaddr = entry->haddr;
@@ -167,8 +167,8 @@ static RzList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static void _handle_arm_thumb(struct MACH0_(obj_t) *bin, RBinSymbol **p) {
-	RBinSymbol *ptr = *p;
+static void _handle_arm_thumb(struct MACH0_(obj_t) *bin, RzBinSymbol **p) {
+	RzBinSymbol *ptr = *p;
 	if (bin) {
 		if (ptr->paddr & 1) {
 			ptr->paddr--;
@@ -179,17 +179,17 @@ static void _handle_arm_thumb(struct MACH0_(obj_t) *bin, RBinSymbol **p) {
 }
 
 #if FEATURE_SYMLIST
-static RzList *symbols(RBinFile *bf) {
-	RBinObject *obj = bf? bf->o: NULL;
+static RzList *symbols(RzBinFile *bf) {
+	RzBinObject *obj = bf? bf->o: NULL;
 	return (RzList *)MACH0_(get_symbols_list) (obj->bin_obj);
 }
 #else
-static RzList *symbols(RBinFile *bf) {
+static RzList *symbols(RzBinFile *bf) {
 	struct MACH0_(obj_t) *bin;
 	int i;
 	const struct symbol_t *syms = NULL;
-	RBinSymbol *ptr = NULL;
-	RBinObject *obj = bf? bf->o: NULL;
+	RzBinSymbol *ptr = NULL;
+	RzBinObject *obj = bf? bf->o: NULL;
 	RzList *ret = rz_list_newf (free);
 #if 0
 	const char *lang = "c"; // XXX deprecate this
@@ -215,7 +215,7 @@ static RzList *symbols(RBinFile *bf) {
 		if (syms[i].name == NULL || syms[i].name[0] == '\0' || syms[i].addr < 100) {
 			continue;
 		}
-		if (!(ptr = RZ_NEW0 (RBinSymbol))) {
+		if (!(ptr = RZ_NEW0 (RzBinSymbol))) {
 			break;
 		}
 		ptr->name = strdup ((char*)syms[i].name);
@@ -274,7 +274,7 @@ static RzList *symbols(RBinFile *bf) {
 		while (temp + 3 < temp_end && *temp) {
 			temp = rz_uleb128_decode (temp, NULL, &value);
 			address += value;
-			ptr = RZ_NEW0 (RBinSymbol);
+			ptr = RZ_NEW0 (RzBinSymbol);
 			if (!ptr) {
 				break;
 			}
@@ -314,17 +314,17 @@ static RzList *symbols(RBinFile *bf) {
 }
 #endif // FEATURE_SYMLIST
 
-static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imports_by_name) {
+static RzBinImport *import_from_name(RzBin *rbin, const char *orig_name, HtPP *imports_by_name) {
 	if (imports_by_name) {
 		bool found = false;
-		RBinImport *ptr = ht_pp_find (imports_by_name, orig_name, &found);
+		RzBinImport *ptr = ht_pp_find (imports_by_name, orig_name, &found);
 		if (found) {
 			return ptr;
 		}
 	}
 
-	RBinImport *ptr = NULL;
-	if (!(ptr = RZ_NEW0 (RBinImport))) {
+	RzBinImport *ptr = NULL;
+	if (!(ptr = RZ_NEW0 (RzBinImport))) {
 		return NULL;
 	}
 
@@ -358,12 +358,12 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imp
 	return ptr;
 }
 
-static RzList *imports(RBinFile *bf) {
-	RBinObject *obj = bf ? bf->o : NULL;
+static RzList *imports(RzBinFile *bf) {
+	RzBinObject *obj = bf ? bf->o : NULL;
 	struct MACH0_(obj_t) *bin = bf ? bf->o->bin_obj : NULL;
 	struct import_t *imports = NULL;
 	const char *name;
-	RBinImport *ptr = NULL;
+	RzBinImport *ptr = NULL;
 	RzList *ret = NULL;
 	int i;
 
@@ -402,10 +402,10 @@ static RzList *imports(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *relocs(RBinFile *bf) {
+static RzList *relocs(RzBinFile *bf) {
 	RzList *ret = NULL;
 	struct MACH0_(obj_t) *bin = NULL;
-	RBinObject *obj = bf ? bf->o : NULL;
+	RzBinObject *obj = bf ? bf->o : NULL;
 	if (bf && bf->o) {
 		bin = bf->o->bin_obj;
 	}
@@ -425,14 +425,14 @@ static RzList *relocs(RBinFile *bf) {
 		if (reloc->external) {
 			continue;
 		}
-		RBinReloc *ptr = NULL;
-		if (!(ptr = RZ_NEW0 (RBinReloc))) {
+		RzBinReloc *ptr = NULL;
+		if (!(ptr = RZ_NEW0 (RzBinReloc))) {
 			break;
 		}
 		ptr->type = reloc->type;
 		ptr->additive = 0;
 		if (reloc->name[0]) {
-			RBinImport *imp;
+			RzBinImport *imp;
 			if (!(imp = import_from_name (bf->rbin, (char*) reloc->name, bin->imports_by_name))) {
 				break;
 			}
@@ -453,12 +453,12 @@ static RzList *relocs(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *libs(RBinFile *bf) {
+static RzList *libs(RzBinFile *bf) {
 	int i;
 	char *ptr = NULL;
 	struct lib_t *libs;
 	RzList *ret = NULL;
-	RBinObject *obj = bf ? bf->o : NULL;
+	RzBinObject *obj = bf ? bf->o : NULL;
 
 	if (!obj || !obj->bin_obj || !(ret = rz_list_newf (free))) {
 		return NULL;
@@ -473,12 +473,12 @@ static RzList *libs(RBinFile *bf) {
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RzBinInfo *info(RzBinFile *bf) {
 	struct MACH0_(obj_t) *bin = NULL;
 	char *str;
 
 	rz_return_val_if_fail (bf && bf->o, NULL);
-	RBinInfo *ret = RZ_NEW0 (RBinInfo);
+	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -562,10 +562,10 @@ static bool _patch_reloc(struct MACH0_(obj_t) *bin, RzIOBind *iob, struct reloc_
 	return true;
 }
 
-static RzList* patch_relocs(RBin *b) {
+static RzList* patch_relocs(RzBin *b) {
 	RzList *ret = NULL;
 	RzIO *io = NULL;
-	RBinObject *obj = NULL;
+	RzBinObject *obj = NULL;
 	struct MACH0_(obj_t) *bin = NULL;
 	RzIOMap *g = NULL;
 	HtUU *relocs_by_sym = NULL;
@@ -657,13 +657,13 @@ static RzList* patch_relocs(RBin *b) {
 		if (!_patch_reloc (bin, &b->iob, reloc, sym_addr)) {
 			continue;
 		}
-		RBinReloc *ptr = NULL;
-		if (!(ptr = RZ_NEW0 (RBinReloc))) {
+		RzBinReloc *ptr = NULL;
+		if (!(ptr = RZ_NEW0 (RzBinReloc))) {
 			goto beach;
 		}
 		ptr->type = reloc->type;
 		ptr->additive = 0;
-		RBinImport *imp;
+		RzBinImport *imp;
 		if (!(imp = import_from_name (b, (char*) reloc->name, bin->imports_by_name))) {
 			RZ_FREE (ptr);
 			goto beach;
@@ -704,7 +704,7 @@ static int rebasing_and_stripping_io_read(RzIO *io, RzIODesc *fd, ut8 *buf, int 
 	}
 	struct MACH0_(obj_t) *obj = NULL;
 	RzListIter *iter;
-	RBinFile *bf;
+	RzBinFile *bf;
 	rz_list_foreach (core->bin->binfiles, iter, bf) {
 		if (bf->fd == fd->fd ) {
 			/* The first field of MACH0_(obj_t) is
@@ -835,7 +835,7 @@ static bool check_buffer(RBuffer *b) {
 	}
 	return false;
 }
-static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, int dlen, RBinArchOptions *opt) {
+static RBuffer *create(RzBin *bin, const ut8 *code, int clen, const ut8 *data, int dlen, RzBinArchOptions *opt) {
 	const bool use_pagezero = true;
 	const bool use_main = true;
 	const bool use_dylinker = true;
@@ -1101,13 +1101,13 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 	return buf;
 }
 
-static RBinAddr *binsym(RBinFile *bf, int sym) {
+static RzBinAddr *binsym(RzBinFile *bf, int sym) {
 	ut64 addr;
-	RBinAddr *ret = NULL;
+	RzBinAddr *ret = NULL;
 	switch (sym) {
 	case RZ_BIN_SYM_MAIN:
 		addr = MACH0_(get_main) (bf->o->bin_obj);
-		if (addr == UT64_MAX || !(ret = RZ_NEW0 (RBinAddr))) {
+		if (addr == UT64_MAX || !(ret = RZ_NEW0 (RzBinAddr))) {
 			return NULL;
 		}
 		//if (bf->o->info && bf->o->info->bits == 16) {
@@ -1120,12 +1120,12 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 	return ret;
 }
 
-static ut64 size(RBinFile *bf) {
+static ut64 size(RzBinFile *bf) {
 	ut64 off = 0;
 	ut64 len = 0;
 	if (!bf->o->sections) {
 		RzListIter *iter;
-		RBinSection *section;
+		RzBinSection *section;
 		bf->o->sections = sections (bf);
 		rz_list_foreach (bf->o->sections, iter, section) {
 			if (section->paddr > off) {
@@ -1137,7 +1137,7 @@ static ut64 size(RBinFile *bf) {
 	return off + len;
 }
 
-RBinPlugin rz_bin_plugin_mach0 = {
+RzBinPlugin rz_bin_plugin_mach0 = {
 	.name = "mach0",
 	.desc = "mach0 bin plugin",
 	.license = "LGPL3",

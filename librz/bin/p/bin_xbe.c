@@ -19,7 +19,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	rz_bin_xbe_obj_t *obj = RZ_NEW (rz_bin_xbe_obj_t);
 	if (!obj) {
 		return false;
@@ -47,16 +47,16 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return true;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	RZ_FREE (bf->o->bin_obj);
 }
 
-static RBinAddr *binsym(RBinFile *bf, int type) {
+static RzBinAddr *binsym(RzBinFile *bf, int type) {
 	if (!bf || !bf->buf || type != RZ_BIN_SYM_MAIN) {
 		return NULL;
 	}
 	rz_bin_xbe_obj_t *obj = bf->o->bin_obj;
-	RBinAddr *ret = RZ_NEW0 (RBinAddr);
+	RzBinAddr *ret = RZ_NEW0 (RzBinAddr);
 	if (!ret) {
 		return NULL;
 	}
@@ -65,10 +65,10 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 	return ret;
 }
 
-static RzList *entries(RBinFile *bf) {
+static RzList *entries(RzBinFile *bf) {
 	const rz_bin_xbe_obj_t *obj;
 	RzList *ret;
-	RBinAddr *ptr = RZ_NEW0 (RBinAddr);
+	RzBinAddr *ptr = RZ_NEW0 (RzBinAddr);
 	if (!bf || !bf->buf || !bf->o->bin_obj || !ptr) {
 		free (ptr);
 		return NULL;
@@ -86,7 +86,7 @@ static RzList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	xbe_section *sect = NULL;
 	rz_bin_xbe_obj_t *obj = NULL;
 	xbe_header *h = NULL;
@@ -124,7 +124,7 @@ static RzList *sections(RBinFile *bf) {
 		goto out_error;
 	}
 	for (i = 0; i < h->sections; i++) {
-		RBinSection *item = RZ_NEW0 (RBinSection);
+		RzBinSection *item = RZ_NEW0 (RzBinSection);
 		addr = sect[i].name_addr - h->base;
 		tmp[0] = 0;
 		if (addr > bf->size || addr + sizeof (tmp) > bf->size) {
@@ -161,7 +161,7 @@ out_error:
 	return NULL;
 }
 
-static RzList *libs(RBinFile *bf) {
+static RzList *libs(RzBinFile *bf) {
 	rz_bin_xbe_obj_t *obj;
 	xbe_header *h = NULL;
 	int i, off, libs, r;
@@ -242,7 +242,7 @@ out_error:
 	return NULL;
 }
 
-static RzList *symbols(RBinFile *bf) {
+static RzList *symbols(RzBinFile *bf) {
 	rz_bin_xbe_obj_t *obj;
 	xbe_header *h;
 	RzList *ret;
@@ -291,7 +291,7 @@ static RzList *symbols(RBinFile *bf) {
 		goto out_error;
 	}
 	for (i = 0; i < XBE_MAX_THUNK && thunk_addr[i]; i++) {
-		RBinSymbol *sym = RZ_NEW0 (RBinSymbol);
+		RzBinSymbol *sym = RZ_NEW0 (RzBinSymbol);
 		if (!sym) {
 			goto out_error;
 		}
@@ -315,16 +315,16 @@ out_error:
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *bf) {
+static RzBinInfo *info(RzBinFile *bf) {
 	rz_bin_xbe_obj_t *obj;
-	RBinInfo *ret;
+	RzBinInfo *ret;
 	ut8 dbg_name[256];
 
 	if (!bf || !bf->buf) {
 		return NULL;
 	}
 
-	ret = RZ_NEW0 (RBinInfo);
+	ret = RZ_NEW0 (RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -349,12 +349,12 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	rz_bin_xbe_obj_t *obj = bf->o->bin_obj;
 	return obj->header.base;
 }
 
-RBinPlugin rz_bin_plugin_xbe = {
+RzBinPlugin rz_bin_plugin_xbe = {
 	.name = "xbe",
 	.desc = "Microsoft Xbox xbe format rz_bin plugin",
 	.license = "LGPL3",

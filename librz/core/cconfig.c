@@ -3151,7 +3151,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("bin.useldr", "true", &cb_useldr, "Use loader plugins when loading files");
 	SETCB ("bin.str.purge", "", &cb_strpurge, "Purge strings (e bin.str.purge=? provides more detail)");
 	SETBPREF ("bin.b64str", "false", "Try to debase64 the strings");
-	SETCB ("bin.at", "false", &cb_binat, "RBin.cur depends on RzCore.offset");
+	SETCB ("bin.at", "false", &cb_binat, "RzBin.cur depends on RzCore.offset");
 	SETBPREF ("bin.libs", "false", "Try to load libraries after loading main binary");
 	n = NODECB ("bin.str.filter", "", &cb_strfilter);
 	SETDESC (n, "Filter strings");
@@ -3159,7 +3159,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("bin.filter", "true", &cb_binfilter, "Filter symbol names to fix dupped names");
 	SETCB ("bin.force", "", &cb_binforce, "Force that rbin plugin");
 	SETPREF ("bin.lang", "", "Language for bin.demangle");
-	SETBPREF ("bin.demangle", "true", "Import demangled symbols from RBin");
+	SETBPREF ("bin.demangle", "true", "Import demangled symbols from RzBin");
 	SETBPREF ("bin.demangle.libs", "false", "Show library name on demangled symbols names");
 	SETI ("bin.baddr", -1, "Base address of the binary");
 	SETI ("bin.laddr", 0, "Base address for loading library ('*.so')");
@@ -3176,7 +3176,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("bin.strings", "true", &cb_binstrings, "Load strings from rbin on startup");
 	SETCB ("bin.debase64", "false", &cb_debase64, "Try to debase64 all strings");
 	SETBPREF ("bin.classes", "true", "Load classes from rbin on startup");
-	SETCB ("bin.verbose", "false", &cb_binverbose, "Show RBin warnings when loading binaries");
+	SETCB ("bin.verbose", "false", &cb_binverbose, "Show RzBin warnings when loading binaries");
 
 	/* prj */
 	SETPREF ("prj.name", "", "Name of current project");
@@ -3659,7 +3659,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* file */
 	SETPREF ("file.desc", "", "User defined file description (used by projects)");
 	SETPREF ("file.md5", "", "MD5 sum of current file");
-	SETBPREF ("file.info", "true", "RBin info loaded");
+	SETBPREF ("file.info", "true", "RzBin info loaded");
 	SETPREF ("file.offset", "", "Offset where the file will be mapped at");
 	SETCB ("file.path", "", &cb_filepath, "Path of current file");
 	SETPREF ("file.lastpath", "", "Path of current file");

@@ -13,10 +13,10 @@ typedef struct java_op {
 
 #define JAVA_OPS_COUNT 297
 extern struct java_op JAVA_OPS[JAVA_OPS_COUNT];
-RZ_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, int len, char *output, int outlen);
-RZ_API int rz_java_disasm(RBinJavaObj *obj, ut64 addr, const ut8 *bytes, int len, char *output, int outlen);
+RZ_API int java_print_opcode(RzBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, int len, char *output, int outlen);
+RZ_API int rz_java_disasm(RzBinJavaObj *obj, ut64 addr, const ut8 *bytes, int len, char *output, int outlen);
 RZ_API int rz_java_assemble(ut64 addr, ut8 *bytes, const char *string);
-//RZ_API void rz_java_set_obj(RBinJavaObj *obj);
+//RZ_API void rz_java_set_obj(RzBinJavaObj *obj);
 RZ_API void rz_java_new_method(void);
 
 #endif

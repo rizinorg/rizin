@@ -3,7 +3,7 @@
 #include <rz_bin.h>
 #include "../i/private.h"
 
-RZ_API char *rz_bin_demangle_objc(RBinFile *bf, const char *sym) {
+RZ_API char *rz_bin_demangle_objc(RzBinFile *bf, const char *sym) {
 	rz_return_val_if_fail ((!bf || (bf && bf->o && bf->o->classes)) && sym, NULL);
 	char *ret = NULL;
 	char *clas = NULL;

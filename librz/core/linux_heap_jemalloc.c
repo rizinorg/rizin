@@ -27,7 +27,7 @@
 // this is, provide a programmatic api for the slow dmi command
 static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 	RzListIter *iter;
-	RBinSymbol *s;
+	RzBinSymbol *s;
 	RzCore *core = rz_core_new ();
 	GHT vaddr = 0LL;
 
@@ -35,7 +35,7 @@ static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 		return GHT_MAX;
 	}
 
-	RBinOptions opt;
+	RzBinOptions opt;
 	rz_bin_options_init (&opt, -1, 0, 0, false);
 	if (rz_bin_open (core->bin, path, &opt)) {
 		RzList *syms = rz_bin_get_symbols (core->bin);

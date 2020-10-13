@@ -39,7 +39,7 @@ typedef struct current_table_switch_t {
 
 static CurrentTableSwitch SWITCH_OP;
 static ut64 BYTES_CONSUMED = 0LL;
-//static RBinJavaObj *BIN_OBJ = NULL;
+//static RzBinJavaObj *BIN_OBJ = NULL;
 
 static void init_switch_op (void) {
 	memset (&SWITCH_OP, 0, sizeof (SWITCH_OP));
@@ -107,7 +107,7 @@ static int handle_switch_op (ut64 addr, const ut8 * bytes, char *output, int out
 	return update_bytes_consumed (sz);
 }
 
-RZ_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, int len, char *output, int outlen) {
+RZ_API int java_print_opcode(RzBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, int len, char *output, int outlen) {
 	char *arg = NULL; //(char *) malloc (1024);
 	int sz = 0;
 	ut32 val_one = 0;
@@ -263,12 +263,12 @@ RZ_API void rz_java_new_method (void) {
 	BYTES_CONSUMED = 0;
 }
 
-RZ_API void U(rz_java_set_obj)(RBinJavaObj *obj) {
+RZ_API void U(rz_java_set_obj)(RzBinJavaObj *obj) {
 	// eprintf ("SET CP (%p) %d\n", cp, n);
 	//BIN_OBJ = obj;
 }
 
-RZ_API int rz_java_disasm(RBinJavaObj *obj, ut64 addr, const ut8 *bytes, int len, char *output, int outlen) {
+RZ_API int rz_java_disasm(RzBinJavaObj *obj, ut64 addr, const ut8 *bytes, int len, char *output, int outlen) {
 	//rz_cons_printf ("rz_java_disasm (allowed %d): 0x%02x, 0x%0x.\n", outlen, bytes[0], addr);
 	return java_print_opcode (obj, addr, bytes[0], bytes, len, output, outlen);
 }

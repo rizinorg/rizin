@@ -694,7 +694,7 @@ rz_bin_omf_obj *rz_bin_internal_omf_load(const ut8 *buf, ut64 size) {
 	return ret;
 }
 
-bool rz_bin_omf_get_entry(rz_bin_omf_obj *obj, RBinAddr *addr) {
+bool rz_bin_omf_get_entry(rz_bin_omf_obj *obj, RzBinAddr *addr) {
 	ut32 ct_sym = 0;
 	OMF_data *data;
 	ut32 offset = 0;
@@ -740,12 +740,12 @@ int rz_bin_omf_get_bits(rz_bin_omf_obj *obj) {
 }
 
 int rz_bin_omf_send_sections(RzList *list, OMF_segment *section, rz_bin_omf_obj *obj) {
-	RBinSection *new;
+	RzBinSection *new;
 	OMF_data *data = section->data;
 	ut32 ct_name = 1;
 
 	while (data) {
-		if (!(new = RZ_NEW0 (RBinSection))) {
+		if (!(new = RZ_NEW0 (RzBinSection))) {
 			return false;
 		}
 

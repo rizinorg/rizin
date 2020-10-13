@@ -37,8 +37,8 @@ static char *get_reg_profile(RzAnal *anal) {
 }
 
 static RzList *get_pyc_code_obj(RzAnal *anal) {
-	RBin *b = anal->binb.bin;
-	RBinPlugin *plugin = b->cur && b->cur->o? b->cur->o->plugin: NULL;
+	RzBin *b = anal->binb.bin;
+	RzBinPlugin *plugin = b->cur && b->cur->o? b->cur->o->plugin: NULL;
 	bool is_pyc = (plugin && strcmp (plugin->name, "pyc") == 0);
 	return is_pyc? b->cur->o->bin_obj: NULL;
 }

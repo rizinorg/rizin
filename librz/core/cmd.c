@@ -4024,7 +4024,7 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 		break;
 	case 'i': // @@@i
 		{
-			RBinImport *imp;
+			RzBinImport *imp;
 			ut64 offorig = core->offset;
 			list = rz_bin_get_imports (core->bin);
 			RzList *lost = rz_list_newf (free);
@@ -4050,11 +4050,11 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 		break;
 	case 'S': // "@@@S"
 		{
-			RBinObject *obj = rz_bin_cur_object (core->bin);
+			RzBinObject *obj = rz_bin_cur_object (core->bin);
 			if (obj) {
 				ut64 offorig = core->offset;
 				ut64 bszorig = core->blocksize;
-				RBinSection *sec;
+				RzBinSection *sec;
 				RzListIter *iter;
 				rz_list_foreach (obj->sections, iter, sec) {
 					rz_core_seek (core, sec->vaddr, true);
@@ -4068,8 +4068,8 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 #if ATTIC
 		if (each[1] == 'S') {
 			RzListIter *it;
-			RBinSection *sec;
-			RBinObject *obj = rz_bin_cur_object (core->bin);
+			RzBinSection *sec;
+			RzBinObject *obj = rz_bin_cur_object (core->bin);
 			int cbsz = core->blocksize;
 			rz_list_foreach (obj->sections, it, sec){
 				ut64 addr = sec->vaddr;
@@ -4091,10 +4091,10 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 			if (list) {
 				ut64 offorig = core->offset;
 				ut64 obs = core->blocksize;
-				RBinString *s;
+				RzBinString *s;
 				RzList *lost = rz_list_newf (free);
 				rz_list_foreach (list, iter, s) {
-					RBinString *bs = rz_mem_dup (s, sizeof (RBinString));
+					RzBinString *bs = rz_mem_dup (s, sizeof (RzBinString));
 					rz_list_append (lost, bs);
 				}
 				rz_list_foreach (lost, iter, s) {
@@ -4108,14 +4108,14 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 			}
 		} else {
 			// symbols
-			RBinSymbol *sym;
+			RzBinSymbol *sym;
 			ut64 offorig = core->offset;
 			ut64 obs = core->blocksize;
 			list = rz_bin_get_symbols (core->bin);
 			rz_cons_break_push (NULL, NULL);
 			RzList *lost = rz_list_newf (free);
 			rz_list_foreach (list, iter, sym) {
-				RBinSymbol *bs = rz_mem_dup (sym, sizeof (RBinSymbol));
+				RzBinSymbol *bs = rz_mem_dup (sym, sizeof (RzBinSymbol));
 				rz_list_append (lost, bs);
 			}
 			rz_list_foreach (lost, iter, sym) {
@@ -6166,7 +6166,7 @@ err:
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_import_command) {
 	RzCore *core = state->core;
 	TSNode command = ts_node_named_child (node, 0);
-	RBinImport *imp;
+	RzBinImport *imp;
 	ut64 offorig = core->offset;
 	RzList *list = rz_bin_get_imports (core->bin);
 	if (!list) {
@@ -6241,7 +6241,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_register_command) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_symbol_command) {
 	RzCore *core = state->core;
 	TSNode command = ts_node_named_child (node, 0);
-	RBinSymbol *sym;
+	RzBinSymbol *sym;
 	ut64 offorig = core->offset;
 	ut64 obs = core->blocksize;
 	RzList *list = rz_bin_get_symbols (core->bin);
@@ -6249,7 +6249,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_symbol_command) {
 	rz_cons_break_push (NULL, NULL);
 	RzList *lost = rz_list_newf (free);
 	rz_list_foreach (list, iter, sym) {
-		RBinSymbol *bs = rz_mem_dup (sym, sizeof (RBinSymbol));
+		RzBinSymbol *bs = rz_mem_dup (sym, sizeof (RzBinSymbol));
 		rz_list_append (lost, bs);
 	}
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
@@ -6278,11 +6278,11 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_string_command) {
 	if (list) {
 		ut64 offorig = core->offset;
 		ut64 obs = core->blocksize;
-		RBinString *s;
+		RzBinString *s;
 		RzList *lost = rz_list_newf (free);
 		RzListIter *iter;
 		rz_list_foreach (list, iter, s) {
-			RBinString *bs = rz_mem_dup (s, sizeof (RBinString));
+			RzBinString *bs = rz_mem_dup (s, sizeof (RzBinString));
 			rz_list_append (lost, bs);
 		}
 		rz_list_foreach (lost, iter, s) {
@@ -6302,14 +6302,14 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_string_command) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_section_command) {
 	RzCore *core = state->core;
 	TSNode command = ts_node_named_child (node, 0);
-	RBinObject *obj = rz_bin_cur_object (core->bin);
+	RzBinObject *obj = rz_bin_cur_object (core->bin);
 	if (!obj) {
 		return false;
 	}
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	ut64 offorig = core->offset;
 	ut64 bszorig = core->blocksize;
-	RBinSection *sec;
+	RzBinSection *sec;
 	RzListIter *iter;
 	rz_list_foreach (obj->sections, iter, sec) {
 		rz_core_seek (core, sec->vaddr, true);

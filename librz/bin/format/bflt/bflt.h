@@ -51,7 +51,7 @@ struct rz_bin_bflt_obj {
 #define BFLT_HDR_SIZE		sizeof (struct bflt_hdr)
 #define VALID_GOT_ENTRY(x)	(x != 0xFFFFFFFF)
 
-RBinAddr *rz_bflt_get_entry(struct rz_bin_bflt_obj *bin);
+RzBinAddr *rz_bflt_get_entry(struct rz_bin_bflt_obj *bin);
 struct rz_bin_bflt_obj *rz_bin_bflt_new_buf(RBuffer *buf);
 void rz_bin_bflt_free (struct rz_bin_bflt_obj *obj);
 

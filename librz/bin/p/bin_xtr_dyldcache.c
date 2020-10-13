@@ -7,10 +7,10 @@
 #include "mach0/dyldcache.h"
 #include "mach0/mach0.h"
 
-static RBinXtrData * extract(RBin *bin, int idx);
-static RzList * extractall(RBin *bin);
-static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx);
-static RzList * oneshotall(RBin *bin, const ut8 *buf, ut64 size);
+static RzBinXtrData * extract(RzBin *bin, int idx);
+static RzList * extractall(RzBin *bin);
+static RzBinXtrData * oneshot(RzBin *bin, const ut8 *buf, ut64 size, int idx);
+static RzList * oneshotall(RzBin *bin, const ut8 *buf, ut64 size);
 
 static bool check_buffer(RBuffer *buf) {
 	ut8 b[4] = {0};
@@ -22,11 +22,11 @@ static void free_xtr(void *xtr_obj) {
 	rz_bin_dyldcache_free ((struct rz_bin_dyldcache_obj_t*)xtr_obj);
 }
 
-static void destroy(RBin *bin) {
+static void destroy(RzBin *bin) {
 	free_xtr (bin->cur->xtr_obj);
 }
 
-static bool load(RBin *bin) {
+static bool load(RzBin *bin) {
 	if (!bin || !bin->cur) {
 	    return false;
 	}
@@ -39,10 +39,10 @@ static bool load(RBin *bin) {
 	return bin->cur->xtr_obj? true : false;
 }
 
-static RzList * extractall(RBin *bin) {
+static RzList * extractall(RzBin *bin) {
 	RzList *result = NULL;
 	int nlib, i = 0;
-	RBinXtrData *data = extract (bin, i);
+	RzBinXtrData *data = extract (bin, i);
 	if (!data) {
 		return result;
 	}
@@ -61,23 +61,23 @@ static RzList * extractall(RBin *bin) {
 	return result;
 }
 
-static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MACH0_ (mach_header) *hdr) {
+static inline void fill_metadata_info_from_hdr(RzBinXtrMetadata *meta, struct MACH0_ (mach_header) *hdr) {
 	meta->arch = strdup (MACH0_(get_cputype_from_hdr) (hdr));
 	meta->bits = MACH0_(get_bits_from_hdr) (hdr);
 	meta->machine = MACH0_(get_cpusubtype_from_hdr) (hdr);
 	meta->type = MACH0_(get_filetype_from_hdr) (hdr);
 }
 
-static RBinXtrData *extract(RBin *bin, int idx) {
+static RzBinXtrData *extract(RzBin *bin, int idx) {
 	int nlib = 0;
-	RBinXtrData *res = NULL;
+	RzBinXtrData *res = NULL;
 	char *libname;
 	struct MACH0_(mach_header) *hdr;
 	struct rz_bin_dyldcache_lib_t *lib = rz_bin_dyldcache_extract (
 		(struct rz_bin_dyldcache_obj_t*)bin->cur->xtr_obj, idx, &nlib);
 
 	if (lib) {
-		RBinXtrMetadata *metadata = RZ_NEW0(RBinXtrMetadata);
+		RzBinXtrMetadata *metadata = RZ_NEW0(RzBinXtrMetadata);
 		if (!metadata) {
 			free (lib);
 			return NULL;
@@ -101,8 +101,8 @@ static RBinXtrData *extract(RBin *bin, int idx) {
 	return res;
 }
 
-static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
-	RBinXtrData *res = NULL;
+static RzBinXtrData *oneshot(RzBin *bin, const ut8* buf, ut64 size, int idx) {
+	RzBinXtrData *res = NULL;
 	struct rz_bin_dyldcache_obj_t *xtr_obj;
 	struct rz_bin_dyldcache_lib_t *lib;
 	int nlib = 0;
@@ -120,7 +120,7 @@ static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
 		bin->cur->xtr_obj = NULL;
 		return NULL;
 	}
-	RBinXtrMetadata *metadata = RZ_NEW0 (RBinXtrMetadata);
+	RzBinXtrMetadata *metadata = RZ_NEW0 (RzBinXtrMetadata);
 	if (!metadata) {
 		free (lib);
 		return NULL;
@@ -142,8 +142,8 @@ static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
 	return res;
 }
 
-static RzList * oneshotall(RBin *bin, const ut8* buf, ut64 size) {
-	RBinXtrData *data = NULL;
+static RzList * oneshotall(RzBin *bin, const ut8* buf, ut64 size) {
+	RzBinXtrData *data = NULL;
 	RzList *res = NULL;
 	int nlib, i = 0;
 	if (!bin->file) {
@@ -170,7 +170,7 @@ static RzList * oneshotall(RBin *bin, const ut8* buf, ut64 size) {
 	return res;
 }
 
-RBinXtrPlugin rz_bin_xtr_plugin_xtr_dyldcache = {
+RzBinXtrPlugin rz_bin_xtr_plugin_xtr_dyldcache = {
 	.name = "xtr.dyldcache",
 	.desc = "dyld cache bin extractor plugin",
 	.license = "LGPL3",

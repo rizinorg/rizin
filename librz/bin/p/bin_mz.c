@@ -9,7 +9,7 @@
 /* half-magic */
 #define HM(x) (int)((int)(x[0]<<8)|(int)(x[1]))
 
-static Sdb *get_sdb(RBinFile *bf) {
+static Sdb *get_sdb(RzBinFile *bf) {
 	const struct rz_bin_mz_obj_t *bin;
 	if (bf && bf->o && bf->o->bin_obj) {
 		bin = (struct rz_bin_mz_obj_t *)bf->o->bin_obj;
@@ -103,7 +103,7 @@ static bool check_buffer(RBuffer *b) {
 	return true;
 }
 
-static bool load(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	struct rz_bin_mz_obj_t *mz_obj = rz_bin_mz_new_buf (buf);
 	if (mz_obj) {
 		sdb_ns_set (sdb, "info", mz_obj->kv);
@@ -113,12 +113,12 @@ static bool load(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb 
 	return false;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	rz_bin_mz_free ((struct rz_bin_mz_obj_t *)bf->o->bin_obj);
 }
 
-static RBinAddr *binsym(RBinFile *bf, int type) {
-	RBinAddr *mzaddr = NULL;
+static RzBinAddr *binsym(RzBinFile *bf, int type) {
+	RzBinAddr *mzaddr = NULL;
 	if (bf && bf->o && bf->o->bin_obj) {
 		switch (type) {
 		case RZ_BIN_SYM_MAIN:
@@ -129,8 +129,8 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 	return mzaddr;
 }
 
-static RzList *entries(RBinFile *bf) {
-	RBinAddr *ptr = NULL;
+static RzList *entries(RzBinFile *bf) {
+	RzBinAddr *ptr = NULL;
 	RzList *res = NULL;
 	if (!(res = rz_list_newf (free))) {
 		return NULL;
@@ -142,12 +142,12 @@ static RzList *entries(RBinFile *bf) {
 	return res;
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	return rz_bin_mz_get_segments (bf->o->bin_obj);
 }
 
-static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *const ret = RZ_NEW0 (RBinInfo);
+static RzBinInfo *info(RzBinFile *bf) {
+	RzBinInfo *const ret = RZ_NEW0 (RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -171,7 +171,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static void header(RBinFile *bf) {
+static void header(RzBinFile *bf) {
 	const struct rz_bin_mz_obj_t *mz = (struct rz_bin_mz_obj_t *)bf->o->bin_obj;
 	eprintf ("[0000:0000]  Signature           %c%c\n",
 		mz->dos_header->signature & 0xFF,
@@ -204,9 +204,9 @@ static void header(RBinFile *bf) {
 		mz->dos_header->overlay_number);
 }
 
-static RzList *relocs(RBinFile *bf) {
+static RzList *relocs(RzBinFile *bf) {
 	RzList *ret = NULL;
-	RBinReloc *rel = NULL;
+	RzBinReloc *rel = NULL;
 	const struct rz_bin_mz_reloc_t *relocs = NULL;
 	int i;
 
@@ -220,7 +220,7 @@ static RzList *relocs(RBinFile *bf) {
 		return ret;
 	}
 	for (i = 0; !relocs[i].last; i++) {
-		if (!(rel = RZ_NEW0 (RBinReloc))) {
+		if (!(rel = RZ_NEW0 (RzBinReloc))) {
 			free ((void *)relocs);
 			rz_list_free (ret);
 			return NULL;
@@ -234,7 +234,7 @@ static RzList *relocs(RBinFile *bf) {
 	return ret;
 }
 
-RBinPlugin rz_bin_plugin_mz = {
+RzBinPlugin rz_bin_plugin_mz = {
 	.name = "mz",
 	.desc = "MZ bin plugin",
 	.license = "MIT",

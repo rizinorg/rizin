@@ -11,8 +11,8 @@
 #define IFDBG_BIN_JAVA if (0)
 
 static Sdb *DB = NULL;
-static void add_bin_obj_to_sdb(RBinJavaObj *bin);
-static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj);
+static void add_bin_obj_to_sdb(RzBinJavaObj *bin);
+static int add_sdb_bin_obj(const char *key, RzBinJavaObj *bin_obj);
 
 static int init(void *user) {
 	IFDBG_BIN_JAVA eprintf("Calling plugin init = %d.\n", DB? 1: 0);
@@ -37,7 +37,7 @@ static int fini(void *user) {
 	return 0;
 }
 
-static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
+static int add_sdb_bin_obj(const char *key, RzBinJavaObj *bin_obj) {
 	int result = false;
 	char *addr, value[1024] = {
 		0
@@ -51,7 +51,7 @@ static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
 	return result;
 }
 
-static void add_bin_obj_to_sdb(RBinJavaObj *bin) {
+static void add_bin_obj_to_sdb(RzBinJavaObj *bin) {
 	if (!bin) {
 		return;
 	}
@@ -61,8 +61,8 @@ static void add_bin_obj_to_sdb(RBinJavaObj *bin) {
 	free (jvcname);
 }
 
-static Sdb *get_sdb(RBinFile *bf) {
-	RBinObject *o = bf->o;
+static Sdb *get_sdb(RzBinFile *bf) {
+	RzBinObject *o = bf->o;
 	struct rz_bin_java_obj_t *bin;
 	if (!o) {
 		return NULL;
@@ -74,7 +74,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return NULL;
 }
 
-static bool load_buffer(RBinFile * bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile * bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	struct rz_bin_java_obj_t *tmp_bin_obj = NULL;
 	RBuffer *tbuf = rz_buf_ref (buf);
 	tmp_bin_obj = rz_bin_java_new_buf (tbuf, loadaddr, sdb);
@@ -90,35 +90,35 @@ static bool load_buffer(RBinFile * bf, void **bin_obj, RBuffer *buf, ut64 loadad
 	return true;
 }
 
-static void destroy(RBinFile *bf) {
+static void destroy(RzBinFile *bf) {
 	rz_bin_java_free ((struct rz_bin_java_obj_t *) bf->o->bin_obj);
 	sdb_free (DB);
 	DB = NULL;
 }
 
-static RzList *entries(RBinFile *bf) {
+static RzList *entries(RzBinFile *bf) {
 	return rz_bin_java_get_entrypoints (bf->o->bin_obj);
 }
 
-static ut64 baddr(RBinFile *bf) {
+static ut64 baddr(RzBinFile *bf) {
 	return 0;
 }
 
-static RzList *classes(RBinFile *bf) {
+static RzList *classes(RzBinFile *bf) {
 	return rz_bin_java_get_classes ((struct rz_bin_java_obj_t *) bf->o->bin_obj);
 }
 
-static RzList *symbols(RBinFile *bf) {
+static RzList *symbols(RzBinFile *bf) {
 	return rz_bin_java_get_symbols ((struct rz_bin_java_obj_t *) bf->o->bin_obj);
 }
 
-static RzList *strings(RBinFile *bf) {
+static RzList *strings(RzBinFile *bf) {
 	return rz_bin_java_get_strings ((struct rz_bin_java_obj_t *) bf->o->bin_obj);
 }
 
-static RBinInfo *info(RBinFile *bf) {
-	RBinJavaObj *jo = bf->o->bin_obj;
-	RBinInfo *ret = RZ_NEW0 (RBinInfo);
+static RzBinInfo *info(RzBinFile *bf) {
+	RzBinJavaObj *jo = bf->o->bin_obj;
+	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
@@ -158,11 +158,11 @@ static int retdemangle(const char *str) {
 	return RZ_BIN_NM_JAVA;
 }
 
-static RBinAddr *binsym(RBinFile *bf, int sym) {
+static RzBinAddr *binsym(RzBinFile *bf, int sym) {
 	return rz_bin_java_get_entrypoint (bf->o->bin_obj, sym);
 }
 
-static RZ_BORROW RzList *lines(RBinFile *bf) {
+static RZ_BORROW RzList *lines(RzBinFile *bf) {
 	return NULL;
 #if 0
 	char *file = bf->file? strdup (bf->file): strdup ("");
@@ -171,9 +171,9 @@ static RZ_BORROW RzList *lines(RBinFile *bf) {
 	file = rz_str_replace (file, ".class", ".java", 0);
 	/*
 	   int i;
-	   RBinJavaObj *b = bf->o->bin_obj;
+	   RzBinJavaObj *b = bf->o->bin_obj;
 	   for (i=0; i<b->lines.count; i++) {
-	        RBinDwarfRow *row = RZ_NEW0(RBinDwarfRow);
+	        RzBinDwarfRow *row = RZ_NEW0(RzBinDwarfRow);
 	        rz_bin_dwarf_line_new (row, b->lines.addr[i], file, b->lines.line[i]);
 	        rz_list_append (list, row);
 	   }*/
@@ -182,23 +182,23 @@ static RZ_BORROW RzList *lines(RBinFile *bf) {
 #endif
 }
 
-static RzList *sections(RBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	return rz_bin_java_get_sections (bf->o->bin_obj);
 }
 
-static RzList *imports(RBinFile *bf) {
+static RzList *imports(RzBinFile *bf) {
 	return rz_bin_java_get_imports (bf->o->bin_obj);
 }
 
-static RzList *fields(RBinFile *bf) {
+static RzList *fields(RzBinFile *bf) {
 	return NULL;// rz_bin_java_get_fields (bf->o->bin_obj);
 }
 
-static RzList *libs(RBinFile *bf) {
+static RzList *libs(RzBinFile *bf) {
 	return rz_bin_java_get_lib_names (bf->o->bin_obj);
 }
 
-RBinPlugin rz_bin_plugin_java = {
+RzBinPlugin rz_bin_plugin_java = {
 	.name = "java",
 	.desc = "java bin plugin",
 	.license = "LGPL3",

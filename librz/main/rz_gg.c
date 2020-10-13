@@ -67,8 +67,8 @@ static void list(RzEgg *egg) {
 }
 
 static int create(const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
-	RBin *bin = rz_bin_new ();
-	RBinArchOptions opts;
+	RzBin *bin = rz_bin_new ();
+	RzBinArchOptions opts;
 	RBuffer *b;
 	rz_bin_arch_options_init (&opts, arch, bits);
 	b = rz_bin_create (bin, format, code, codelen, NULL, 0, &opts);

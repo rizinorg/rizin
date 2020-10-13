@@ -128,7 +128,7 @@ struct MACH0_(obj_t) {
 	ut32 *indirectsyms;
 	int nindirectsyms;
 
-	RBinImport **imports_by_ord;
+	RzBinImport **imports_by_ord;
 	size_t imports_by_ord_size;
 	HtPP *imports_by_name;
 
@@ -171,23 +171,23 @@ struct MACH0_(obj_t) {
 	bool verbose;
 	ut64 header_at;
 	void *user;
-	ut64 (*va2pa)(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf);
+	ut64 (*va2pa)(ut64 p, ut32 *offset, ut32 *left, RzBinFile *bf);
 	struct symbol_t *symbols;
 	ut64 main_addr;
 	int (*original_io_read)(RzIO *io, RzIODesc *fd, ut8 *buf, int count);
 	bool rebasing_buffer;
 };
 
-void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf);
+void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RzBinFile *bf);
 struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) *options);
 struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *options);
 void *MACH0_(mach0_free)(struct MACH0_(obj_t) *bin);
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin);
 //RzList *MACH0_(get_segments)(struct MACH0_(obj_t) *bin);
-RzList *MACH0_(get_segments)(RBinFile *bf); // struct MACH0_(obj_t) *bin);
+RzList *MACH0_(get_segments)(RzBinFile *bf); // struct MACH0_(obj_t) *bin);
 const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin);
 const RzList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin);
-void MACH0_(pull_symbols)(struct MACH0_(obj_t) *mo, RBinSymbolCallback cb, void *user);
+void MACH0_(pull_symbols)(struct MACH0_(obj_t) *mo, RzBinSymbolCallback cb, void *user);
 struct import_t *MACH0_(get_imports)(struct MACH0_(obj_t) *bin);
 RzSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin);
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin);
@@ -209,6 +209,6 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t) *bin);
 const char *MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr);
 int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header) *hdr);
 struct MACH0_(mach_header) *MACH0_(get_hdr)(RBuffer *buf);
-void MACH0_(mach_headerfields)(RBinFile *bf);
-RzList *MACH0_(mach_fields)(RBinFile *bf);
+void MACH0_(mach_headerfields)(RzBinFile *bf);
+RzList *MACH0_(mach_fields)(RzBinFile *bf);
 #endif

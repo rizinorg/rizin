@@ -3,7 +3,7 @@
 #define RZ_BIN_MACH064 1
 #include "bin_write_mach0.c"
 
-RBinWrite rz_bin_write_mach064 = {
+RzBinWrite rz_bin_write_mach064 = {
 #if 0
 	.scn_resize = &scn_resize,
 	.scn_perms = &scn_perms,
