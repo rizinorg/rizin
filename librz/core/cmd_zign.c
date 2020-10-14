@@ -91,14 +91,14 @@ static const char *help_msg_zc[] = {
 };
 
 static void cmd_zign_init(RzCore *core, RzCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, z);
-	DEFINE_CMD_DESCRIPTOR (core, zb);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, z/, z_slash);
-	DEFINE_CMD_DESCRIPTOR (core, za);
-	DEFINE_CMD_DESCRIPTOR (core, zf);
-	DEFINE_CMD_DESCRIPTOR (core, zo);
-	DEFINE_CMD_DESCRIPTOR (core, zs);
-	DEFINE_CMD_DESCRIPTOR (core, zc);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, z);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, zb);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, z/, z_slash);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, za);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, zf);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, zo);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, zs);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, zc);
 }
 
 #if 0

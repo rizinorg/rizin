@@ -103,11 +103,11 @@ static const char *help_msg_fz[] = {
 };
 
 static void cmd_flag_init(RzCore *core, RzCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, f);
-	DEFINE_CMD_DESCRIPTOR (core, fc);
-	DEFINE_CMD_DESCRIPTOR (core, fd);
-	DEFINE_CMD_DESCRIPTOR (core, fs);
-	DEFINE_CMD_DESCRIPTOR (core, fz);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, f);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, fc);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, fd);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, fs);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, fz);
 }
 
 static bool listFlag(RzFlagItem *flag, void *user) {

@@ -23,7 +23,7 @@ static const char *help_msg_g[] = {
 };
 
 static void cmd_egg_init(RzCore *core, RzCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, g);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, g);
 }
 
 static void cmd_egg_option(RzEgg *egg, const char *key, const char *input) {

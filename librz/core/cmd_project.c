@@ -36,8 +36,8 @@ static const char *help_msg_Pn[] = {
 };
 
 static void cmd_project_init(RzCore *core, RzCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, P);
-	DEFINE_CMD_DESCRIPTOR (core, Pn);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, P);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, Pn);
 }
 
 static int cmd_project(void *data, const char *input) {

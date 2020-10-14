@@ -52,7 +52,7 @@ static RzCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
 	return d;
 }
 
-#define DEFINE_CMD_DESCRIPTOR(core, cmd_) \
+#define DEPRECATED_DEFINE_CMD_DESCRIPTOR(core, cmd_) \
 	{ \
 		RzCmdDescriptor *d = cmd_descriptor (#cmd_, help_msg_##cmd_); \
 		if (d) { \
@@ -60,7 +60,7 @@ static RzCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
 		} \
 	}
 
-#define DEFINE_CMD_DESCRIPTOR_WITH_DETAIL(core, cmd_) \
+#define DEPRECATED_DEFINE_CMD_DESCRIPTOR_WITH_DETAIL(core, cmd_) \
 	{ \
 		RzCmdDescriptor *d = cmd_descriptor (#cmd_, help_msg##cmd_); \
 		if (d) { \
@@ -69,7 +69,7 @@ static RzCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
 		} \
 	}
 
-#define DEFINE_CMD_DESCRIPTOR_WITH_DETAIL2(core, cmd_) \
+#define DEPRECATED_DEFINE_CMD_DESCRIPTOR_WITH_DETAIL2(core, cmd_) \
 	{ \
 		RzCmdDescriptor *d = cmd_descriptor (#cmd_, help_msg_##cmd_); \
 		if (d) { \
@@ -79,7 +79,7 @@ static RzCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
 		} \
 	}
 
-#define DEFINE_CMD_DESCRIPTOR_SPECIAL(core, cmd_, named_cmd) \
+#define DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL(core, cmd_, named_cmd) \
 	{ \
 		RzCmdDescriptor *d = RZ_NEW0 (RzCmdDescriptor); \
 		if (d) { \
@@ -7221,16 +7221,16 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 			cmds[i].descriptor_init (core, cd);
 		}
 	}
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, $, dollar);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, %, percent);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, *, star);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ., dot);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, =, equal);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, $, dollar);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, %, percent);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, *, star);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ., dot);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, =, equal);
 
-	DEFINE_CMD_DESCRIPTOR (core, b);
-	DEFINE_CMD_DESCRIPTOR (core, k);
-	DEFINE_CMD_DESCRIPTOR (core, r);
-	DEFINE_CMD_DESCRIPTOR (core, u);
-	DEFINE_CMD_DESCRIPTOR (core, y);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, b);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, k);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, r);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, u);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, y);
 	cmd_descriptor_init (core);
 }

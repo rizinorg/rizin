@@ -78,8 +78,8 @@ static const char *help_msg_id[] = {
 };
 
 static void cmd_info_init(RzCore *core, RzCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, i);
-	DEFINE_CMD_DESCRIPTOR (core, id);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, i);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, id);
 }
 
 #define PAIR_WIDTH 9

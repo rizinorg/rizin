@@ -63,10 +63,10 @@ static const char *help_msg_ss[] = {
 };
 
 static void cmd_seek_init(RzCore *core, RzCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, s);
-	DEFINE_CMD_DESCRIPTOR (core, sC);
-	DEFINE_CMD_DESCRIPTOR (core, sl);
-	DEFINE_CMD_DESCRIPTOR (core, ss);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, s);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, sC);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, sl);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, ss);
 }
 
 static void __init_seek_line(RzCore *core) {

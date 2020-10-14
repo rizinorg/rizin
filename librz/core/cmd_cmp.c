@@ -33,7 +33,7 @@ static const char *help_msg_c[] = {
 };
 
 static void cmd_cmp_init(RzCore *core, RzCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, c);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, c);
 }
 
 RZ_API void rz_core_cmpwatch_free(RzCoreCmpWatcher *w) {

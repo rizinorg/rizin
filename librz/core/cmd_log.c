@@ -46,8 +46,8 @@ static const char *help_msg_T[] = {
 
 // TODO #7967 help refactor: move L to another place
 static void cmd_log_init(RzCore *core, RzCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, L);
-	DEFINE_CMD_DESCRIPTOR (core, T);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, L);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, T);
 }
 
 static void screenlock(RzCore *core) {

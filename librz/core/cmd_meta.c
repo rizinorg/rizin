@@ -135,13 +135,13 @@ static const char *help_msg_Cvs[] = {
 };
 
 static void cmd_meta_init(RzCore *core, RzCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, C);
-	DEFINE_CMD_DESCRIPTOR (core, CC);
-	DEFINE_CMD_DESCRIPTOR (core, CS);
-	DEFINE_CMD_DESCRIPTOR (core, Cs);
-	DEFINE_CMD_DESCRIPTOR (core, Cvb);
-	DEFINE_CMD_DESCRIPTOR (core, Cvr);
-	DEFINE_CMD_DESCRIPTOR (core, Cvs);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, C);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, CC);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, CS);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, Cs);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, Cvb);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, Cvr);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, Cvs);
 }
 
 static int remove_meta_offset(RzCore *core, ut64 offset) {

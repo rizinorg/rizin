@@ -94,8 +94,8 @@ static RzCmdStatus env_handler(RzCore *core, int argc, const char **argv) {
 }
 
 static void cmd_eval_init(RzCore *core, RzCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, e);
-	DEFINE_CMD_DESCRIPTOR (core, ec);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, e);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, ec);
 
 	DEFINE_CMD_ARGV_DESC (core, env, parent);
 }

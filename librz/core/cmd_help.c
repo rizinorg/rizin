@@ -279,9 +279,9 @@ static void cmd_help_percent(RzCore *core) {
 }
 
 static void cmd_help_init(RzCore *core, RzCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?, question);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?v, question_v);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?V, question_V);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?, question);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?v, question_v);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?V, question_V);
 }
 
 static const char* findBreakChar(const char *s) {

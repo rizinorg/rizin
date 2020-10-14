@@ -16,7 +16,7 @@ static const char *help_msg_q[] = {
 };
 
 static void cmd_quit_init(RzCore *core, RzCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, q);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, q);
 }
 
 static int cmd_Quit(void *data, const char *input) {

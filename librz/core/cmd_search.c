@@ -172,13 +172,13 @@ struct endlist_pair {
 };
 
 static void cmd_search_init(RzCore *core, RzCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /, slash);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /a, slash_a);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /c, slash_c);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /r, slash_r);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /R, slash_R);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /Rk, slash_Rk);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /x, slash_x);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /, slash);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /a, slash_a);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /c, slash_c);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /r, slash_r);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /R, slash_R);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /Rk, slash_Rk);
+	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /x, slash_x);
 }
 
 static int search_hash(RzCore *core, const char *hashname, const char *hashstr, ut32 minlen, ut32 maxlen, struct search_parameters *param) {
