@@ -313,7 +313,7 @@ static void block_store(RZ_NONNULL Sdb *db, const char *key, RzAnalBlock *block)
 RZ_API void rz_serialize_anal_blocks_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal) {
 	RBIter iter;
 	RzAnalBlock *block;
-	RStrBuf key = { 0 };
+	RzStrBuf key = { 0 };
 	rz_rbtree_foreach (anal->bb_tree, iter, block, RzAnalBlock, _rb) {
 		rz_strbuf_setf (&key, "0x%"PFMT64x, block->addr);
 		block_store (db, rz_strbuf_get (&key), block);
@@ -948,7 +948,7 @@ static void function_store(RZ_NONNULL Sdb *db, const char *key, RzAnalFunction *
 RZ_API void rz_serialize_anal_functions_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal) {
 	RzListIter *it;
 	RzAnalFunction *function;
-	RStrBuf key;
+	RzStrBuf key;
 	rz_strbuf_init (&key);
 	rz_list_foreach (anal->fcns, it, function) {
 		rz_strbuf_setf (&key, "0x%"PFMT64x, function->addr);
