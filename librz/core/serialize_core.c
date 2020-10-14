@@ -52,7 +52,8 @@ RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 		SERIALIZE_ERR ("missing blocksize in core");
 		return false;
 	}
-	core->blocksize = strtoull (str, NULL, 0);
+	ut64 bs = strtoull (str, NULL, 0);
+	rz_core_block_size (core, (int)bs);
 
 	// handled by config already:
 	// cfglog, cmdrepeat, cmdtimes
