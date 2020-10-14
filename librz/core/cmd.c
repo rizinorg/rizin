@@ -1964,6 +1964,13 @@ static int cmd_pipein(void *user, const char *input) {
 	return 0;
 }
 
+static RzCmdStatus pipein_handler(RzCore *core, int argc, const char **argv) {
+	char *input = rz_str_array_join (argv + 1, argc - 1, " ");
+	RzCmdStatus res = rz_cmd_int2status (cmd_pipein (core, input));
+	free (input);
+	return res;
+}
+
 static int cmd_tasks(void *data, const char *input) {
 	RzCore *core = (RzCore*) data;
 	switch (input[0]) {
@@ -7161,7 +7168,7 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "t", "type information (cparse)", cmd_type, cmd_type_init, &t_help },
 		{ "T", "Text log utility", cmd_log, cmd_log_init, &T_help },
 		{ "u", "uname/undo", cmd_undo, NULL, &u_help },
-		{ "<", "pipe into RzCons.readChar", cmd_pipein, NULL, &pipein_help },
+		{ "<", "pipe into RzCons.readChar", cmd_pipein, NULL, &pipein_help, NULL, RZ_CMD_DESC_TYPE_ARGV, pipein_handler },
 		{ "V", "enter visual mode", cmd_visual, NULL, &V_help },
 		{ "v", "enter visual mode", cmd_panels, NULL, &v_help },
 		{ "w", "write bytes", cmd_write, cmd_write_init, &w_help, &w_group_help, RZ_CMD_DESC_TYPE_GROUP, w_handler },

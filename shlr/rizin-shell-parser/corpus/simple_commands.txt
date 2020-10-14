@@ -299,3 +299,18 @@ md /root/
     (args (arg (arg_identifier))))
   (arged_command (cmd_identifier)
     (args (arg (arg_identifier)))))
+
+
+=========
+< command
+=========
+
+<hello
+<?
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (help_command (cmd_identifier)))

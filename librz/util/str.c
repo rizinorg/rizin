@@ -1127,11 +1127,13 @@ RZ_API int rz_str_unescape(char *buf) {
 		}
 		int esc_seq_len = 2;
 		switch (buf[i + 1]) {
+		case '\\':
+		case '?':
+		case '$':
+			buf[i] = buf[i + 1];
+			break;
 		case 'e':
 			buf[i] = 0x1b;
-			break;
-		case '\\':
-			buf[i] = '\\';
 			break;
 		case 'r':
 			buf[i] = 0x0d;
@@ -1168,9 +1170,6 @@ RZ_API int rz_str_unescape(char *buf) {
 			}
 			buf[i] = (ch << 4) + ch2;
 			esc_seq_len = 4;
-			break;
-		case '$':
-			buf[i] = '$';
 			break;
 		default:
 			if (IS_OCTAL (buf[i + 1])) {
