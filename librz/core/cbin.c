@@ -486,8 +486,8 @@ static void _print_strings(RzCore *r, RzList *list, int mode, int va) {
 			char *str = (r->bin->prefix)
 				? rz_str_newf ("%s.str.%s", r->bin->prefix, f_name)
 				: rz_str_newf ("str.%s", f_name);
-			rz_cons_printf ("f %s %"PFMT64d" 0x%08"PFMT64x"\n"
-				"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
+			rz_cons_printf ("f %s %u 0x%08"PFMT64x"\n"
+				"Cs %u @ 0x%08"PFMT64x"\n",
 				str, string->size, vaddr,
 				string->size, vaddr);
 			free (str);
@@ -1020,7 +1020,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 					eprintf ("Invalid wtf\n");
 				}
 				rz_hash_free (rh);
-				rz_cons_printf ("%s  %d-%dc  ", h->type, h->from, h->to+h->from);
+				rz_cons_printf ("%s  %" PFMT64u "-%" PFMT64u "c  ", h->type, h->from, h->to+h->from);
 				for (j = 0; j < h->len; j++) {
 					rz_cons_printf ("%02x", h->buf[j]);
 				}
@@ -3653,7 +3653,7 @@ static void bin_mem_print(RzList *mems, int perms, int depth, int mode) {
 	}
 	rz_list_foreach (mems, iter, mem) {
 		if (IS_MODE_JSON (mode)) {
-			rz_cons_printf ("{\"name\":\"%s\",\"size\":%d,\"address\":%d,"
+			rz_cons_printf ("{\"name\":\"%s\",\"size\":%d,\"address\":%" PFMT64u ","
 					"\"flags\":\"%s\"}", mem->name, mem->size,
 					mem->addr, rz_str_rwx_i (mem->perms & perms));
 		} else if (IS_MODE_SIMPLE (mode)) {
@@ -4054,7 +4054,7 @@ static void bin_pe_resources(RzCore *r, int mode) {
 			const char *name = sdb_fmt ("resource.%d", index);
 			rz_flag_set (r->flags, name, vaddr, size);
 		} else if (IS_MODE_RAD (mode)) {
-			rz_cons_printf ("f resource.%d %d 0x%08"PFMT32x"\n", index, size, vaddr);
+			rz_cons_printf ("f resource.%d %d 0x%08"PFMT64x"\n", index, size, vaddr);
 		} else if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
 			pj_ks (pj, "name", name);

@@ -854,7 +854,7 @@ static int build_member_format(STypeInfo *type_info, RzStrBuf *format, RzStrBuf 
 		}
 		snprintf (tmp_format, 5, "p%d", size);
 		member_format = tmp_format;
-		rz_strbuf_appendf (names, name);
+		rz_strbuf_append (names, name);
 	} break;
 	case eLF_CLASS:
 	case eLF_UNION:
@@ -901,7 +901,7 @@ static int build_member_format(STypeInfo *type_info, RzStrBuf *format, RzStrBuf 
 		rz_warn_if_reached (); // Unhandled type format
 		goto error;
 	}
-	rz_strbuf_appendf (format, "%s", member_format);
+	rz_strbuf_append (format, member_format);
 skip: // shortcut for unknown types where we only skip the bytes
 	free (name);
 	return 0;

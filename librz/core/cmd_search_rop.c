@@ -701,7 +701,7 @@ static void rop_classify (RzCore *core, Sdb *db, RzList *ropList, const char *ke
 	ct = rop_classify_constant (core, ropList);
 	arithm = rop_classify_arithmetic (core, ropList);
 	arithm_ct = rop_classify_arithmetic_const (core, ropList);
-	str = rz_str_newf ("0x%"PFMT64x, size);
+	str = rz_str_newf ("0x%u", size);
 
 	if (nop == 1) {
 		char *str_nop = rz_str_newf ("%s NOP", str);

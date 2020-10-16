@@ -129,7 +129,7 @@ RZ_API RzList *rz_sign_fcn_xrefs(RzAnal *a, RzAnalFunction *fcn) {
 		if (refi->type == RZ_ANAL_REF_TYPE_CODE || refi->type == RZ_ANAL_REF_TYPE_CALL) {
 			const char *flag = getRealRef (core, refi->addr);
 			if (flag) {
-				rz_list_append (ret, rz_str_newf (flag));
+				rz_list_append (ret, rz_str_new (flag));
 			}
 		}
 	}
@@ -155,7 +155,7 @@ RZ_API RzList *rz_sign_fcn_refs(RzAnal *a, RzAnalFunction *fcn) {
 		if (refi->type == RZ_ANAL_REF_TYPE_CODE || refi->type == RZ_ANAL_REF_TYPE_CALL) {
 			const char *flag = getRealRef (core, refi->addr);
 			if (flag) {
-				rz_list_append (ret, rz_str_newf (flag));
+				rz_list_append (ret, rz_str_new (flag));
 			}
 		}
 	}
