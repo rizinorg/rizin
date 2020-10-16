@@ -1539,7 +1539,7 @@ static int core_anal_graph_construct_edges (RzCore *core, RzAnalFunction *fcn, i
                                         if (is_star) {
                                                 char *from = get_title (bbi->addr);
                                                 char *to = get_title (bbi->fail);
-                                                rz_cons_printf ("%age %s %s\n", from, to);
+                                                rz_cons_printf ("age %s %s\n", from, to);
                                                 free(from);
                                                 free(to);
                                         } else {
@@ -2450,12 +2450,12 @@ repeat:
 		case RZ_GRAPH_FORMAT_JSON:
 			if (usenames) {
 				rz_cons_printf ("%s{\"name\":\"%s\", "
-						"\"size\":%d,\"imports\":[",
+						"\"size\":%" PFMT64u ",\"imports\":[",
 						first ? "," : "", fcni->name,
 						rz_anal_function_linear_size (fcni));
 			} else {
 				rz_cons_printf ("%s{\"name\":\"0x%08" PFMT64x
-						"\", \"size\":%d,\"imports\":[",
+						"\", \"size\":%" PFMT64u ",\"imports\":[",
 						first ? "," : "", fcni->addr,
 						rz_anal_function_linear_size (fcni));
 			}
@@ -2512,7 +2512,7 @@ repeat:
 					rz_cons_printf ("%s\"%s\"", first2?",":"", fcnr_name);
 				}
 				else {
-					rz_cons_printf ("%s\"0x%08"PFMT64x"\"", first2?",":"", fcnr_name);
+					rz_cons_printf ("%s\"0x%08"PFMT64x"\"", first2?",":"", fcnr->addr);
 				}
 				break;
 			default:
@@ -2561,7 +2561,7 @@ static void fcn_list_bbs(RzAnalFunction *fcn) {
 	RzListIter *iter;
 
 	rz_list_foreach (fcn->bbs, iter, bbi) {
-		rz_cons_printf ("afb+ 0x%08" PFMT64x " 0x%08" PFMT64x " %d ",
+		rz_cons_printf ("afb+ 0x%08" PFMT64x " 0x%08" PFMT64x " %" PFMT64u " ",
 				   fcn->addr, bbi->addr, bbi->size);
 		rz_cons_printf ("0x%08"PFMT64x" ", bbi->jump);
 		rz_cons_printf ("0x%08"PFMT64x, bbi->fail);
@@ -3062,7 +3062,7 @@ static int fcn_print_detail(RzCore *core, RzAnalFunction *fcn) {
 	}
 	rz_list_free (refs);
 	/*Saving Function stack frame*/
-	rz_cons_printf ("afS %"PFMT64d" @ 0x%"PFMT64x"\n", fcn->maxstack, fcn->addr);
+	rz_cons_printf ("afS %d @ 0x%"PFMT64x"\n", fcn->maxstack, fcn->addr);
 	free (name);
 	return 0;
 }
@@ -3093,7 +3093,7 @@ static int fcn_print_legacy(RzCore *core, RzAnalFunction *fcn) {
 	rz_cons_printf ("#\noffset: 0x%08"PFMT64x"\nname: %s\nsize: %"PFMT64u,
 			fcn->addr, name, rz_anal_function_linear_size (fcn));
 	rz_cons_printf ("\nis-pure: %s", rz_str_bool (rz_anal_function_purity (fcn)));
-	rz_cons_printf ("\nrealsz: %d", rz_anal_function_realsize (fcn));
+	rz_cons_printf ("\nrealsz: %" PFMT64d, rz_anal_function_realsize (fcn));
 	rz_cons_printf ("\nstackframe: %d", fcn->maxstack);
 	if (fcn->cc) {
 		rz_cons_printf ("\ncall-convention: %s", fcn->cc);

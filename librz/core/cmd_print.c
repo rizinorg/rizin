@@ -2227,7 +2227,7 @@ static int cmd_print_pxA(RzCore *core, int len, const char *input) {
 	for (oi = i = c = 0; i < len; c++) {
 		if (i && (cols != 0) && !(c % cols)) {
 			show_offset = true;
-			rz_cons_printf ("  %d\n", i - oi);
+			rz_cons_printf ("  %" PFMT64u "\n", i - oi);
 			oi = i;
 		}
 		if (show_offset && hex_offset) {

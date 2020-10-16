@@ -534,7 +534,7 @@ static void opex64(RzStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case ARM64_OP_IMM:
 			rz_strbuf_append (buf, "\"type\":\"imm\"");
-			rz_strbuf_appendf (buf, ",\"value\":%" PFMT64d, op->imm);
+			rz_strbuf_appendf (buf, ",\"value\":%" PFMT64d, (st64)op->imm);
 			break;
 		case ARM64_OP_MEM:
 			rz_strbuf_append (buf, "\"type\":\"mem\"");
@@ -552,7 +552,7 @@ static void opex64(RzStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case ARM64_OP_CIMM:
 			rz_strbuf_append (buf, "\"type\":\"cimm\"");
-			rz_strbuf_appendf (buf, ",\"value\":%" PFMT64d, op->imm);
+			rz_strbuf_appendf (buf, ",\"value\":%" PFMT64d, (st64)op->imm);
 			break;
 		case ARM64_OP_PSTATE:
 			rz_strbuf_append (buf, "\"type\":\"pstate\"");
@@ -2044,7 +2044,7 @@ PUSH { r4, r5, r6, r7, lr }
 		}
 		break;
 	case ARM_INS_VSTMIA:
-		rz_strbuf_setf (&op->esil, "");
+		rz_strbuf_set (&op->esil, "");
 		width = 0;
 		for (i = 1; i < insn->detail->arm.op_count; i++) {
 			rz_strbuf_appendf (&op->esil, "%s,%d,%s,+,=[%d],",
@@ -2057,7 +2057,7 @@ PUSH { r4, r5, r6, r7, lr }
 		}
 		break;
 	case ARM_INS_VSTMDB:
-		rz_strbuf_setf (&op->esil, "");
+		rz_strbuf_set (&op->esil, "");
 		width = 0;
 		for (i = insn->detail->arm.op_count - 1; i > 0; i--) {
 			width += REGSIZE32(i);
@@ -2068,7 +2068,7 @@ PUSH { r4, r5, r6, r7, lr }
 		rz_strbuf_appendf (&op->esil, "%d,%s,-=,", width, ARG (0));
 		break;
 	case ARM_INS_VLDMIA:
-		rz_strbuf_setf (&op->esil, "");
+		rz_strbuf_set (&op->esil, "");
 		width = 0;
 		for (i = 1; i < insn->detail->arm.op_count; i++) {
 			rz_strbuf_appendf (&op->esil, "%d,%s,+,[%d],%s,=,",
@@ -2081,7 +2081,7 @@ PUSH { r4, r5, r6, r7, lr }
 		}
 		break;
 	case ARM_INS_VLDMDB:
-		rz_strbuf_setf (&op->esil, "");
+		rz_strbuf_set (&op->esil, "");
 		width = 0;
 		for (i = insn->detail->arm.op_count - 1; i > 0; i--) {
 			width += REGSIZE32(i);
