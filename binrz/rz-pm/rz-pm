@@ -5,9 +5,9 @@
 [ -z "${SUDO}" ] && SUDO=sudo
 [ -z "${WGET}" ] && WGET=wget
 
-r2 -qv > /dev/null 2>&1
+rizin -qv > /dev/null 2>&1
 if [ $? != 0 ]; then
-	echo "Cannot find r2 in PATH"
+	echo "Cannot find rizin in PATH"
 	exit 1
 fi
 
@@ -22,7 +22,7 @@ export RZPM_JOBS=4
 export RZPMCACHE="$HOME/.rz-pm.cache"
 
 # Set RZ_* Vars
-eval $(r2 -H)
+eval $(rizin -H)
 export RZ_VERSION
 
 RZPM=$0
@@ -31,10 +31,10 @@ if [ -f ~/.rz-pm.cache ]; then
 	. ~/.rz-pm.cache
 	export LIBEXT="$LIBEXT"
 	LIBDIR="$LIBDIR"
-	export R2CONFIGHOME="$R2CONFIGHOME"
-	export R2DATAHOME="$R2DATAHOME"
+	export RZCONFIGHOME="$RZCONFIGHOME"
+	export RZDATAHOME="$RZDATAHOME"
 	PREFIX="$PREFIX"
-	if [ -z "${LIBEXT}" -o -z "${LIBDIR}" -o -z "${R2CONFIGHOME}" -o -z "${R2DATAHOME}" -o -z "${PREFIX}" ]; then
+	if [ -z "${LIBEXT}" -o -z "${LIBDIR}" -o -z "${RZCONFIGHOME}" -o -z "${RZDATAHOME}" -o -z "${PREFIX}" ]; then
 		echo "[rz-pm] corrupted cache, please run rz-pm cache"
 	else
 		RZPMCACHE_LOADED=1
@@ -43,8 +43,8 @@ fi
 if [ "${RZPMCACHE_LOADED}" != 1 ]; then
 	export LIBEXT="$RZ_LIBEXT"
 	LIBDIR="$RZ_LIBDIR"
-	export R2CONFIGHOME="$RZ_RCONFIGHOME"
-	export R2DATAHOME="$RZ_RDATAHOME"
+	export RZCONFIGHOME="$RZ_RCONFIGHOME"
+	export RZDATAHOME="$RZ_RDATAHOME"
 	PREFIX="$RZ_PREFIX"
 fi
 BINDIR="${PREFIX}/bin/"
@@ -52,7 +52,7 @@ WRKDIR="$PWD"
 
 # prefix
 export RZPM_SYSPREFIX="${PREFIX}"
-export RZPM_HOMEPREFIX="${R2DATAHOME}/prefix"
+export RZPM_HOMEPREFIX="${RZDATAHOME}/prefix"
 export RZPM_PREFIX="${RZPM_HOMEPREFIX}"
 
 # bindir
@@ -69,11 +69,11 @@ export RZPM_SYSLIBDIR="${LIBDIR}"
 export RZPM_SYSPLUGIN_DIR="$RZ_LIBR_PLUGINS"
 export RZPM_USRPLUGIN_DIR="$RZ_USER_PLUGINS"
 [ -z "${RZPM_PLUGDIR}" ] && RZPM_PLUGDIR="${RZPM_USRPLUGIN_DIR}"
-[ -z "${RZPM_PLUGDIR}" ] && RZPM_PLUGDIR="${R2DATAHOME}/plugins"
+[ -z "${RZPM_PLUGDIR}" ] && RZPM_PLUGDIR="${RZDATAHOME}/plugins"
 
 # www
-export RZPM_SYSWWWROOT="`r2 -qc 'e http.root' --`"
-export RZPM_HOMEWWWROOT="${R2DATAHOME}/www/"
+export RZPM_SYSWWWROOT="`rizin -qc 'e http.root' --`"
+export RZPM_HOMEWWWROOT="${RZDATAHOME}/www/"
 export RZPM_WWWROOT="${RZPM_HOMEWWWROOT}"
 
 # pkgconfig
@@ -92,20 +92,23 @@ else
 	export DYLD_LIBRARY_PATH="${RZPM_HOMEPREFIX}/lib"
 fi
 
+# Anything defined here will cause master not to be checked out or pulled
+export RZPM_GITSKIP="${RZPM_GITSKIP}"
+
 # Global Vars
 TRAVIS_TYPE=XX
 TRAVIS_JOB=86948888
 IS_SYSPKG=0
-[ -z "$RZPM_USRDIR" ] && RZPM_USRDIR="${R2DATAHOME}/rz-pm"
-RZPM_ETCD="${R2CONFIGHOME}/rizinrc.d"
+[ -z "$RZPM_USRDIR" ] && RZPM_USRDIR="${RZDATAHOME}/rz-pm"
+RZPM_ETCD="${RZCONFIGHOME}/rizinrc.d"
 
 # TODO. support system plugin installs RZPM_PLUGDIR="${RZPM_SYSLIBDIR}/rizin/last"
 if [ -z "${RZPM_GITDIR}" ]; then
 	RZPM_GITDIR="${RZPM_USRDIR}/git"
 fi
 if [ -z "${RZPM_DBDIR}" ]; then
-	if [ -d "${R2DATAHOME}/rz-pm/db" ]; then
-		RZPM_DBDIR="${R2DATAHOME}/rz-pm/db"
+	if [ -d "${RZDATAHOME}/rz-pm/db" ]; then
+		RZPM_DBDIR="${RZDATAHOME}/rz-pm/db"
 	fi
 fi
 if [ -z "${RZPM_DBDIR}" ]; then
@@ -126,9 +129,9 @@ confirm() {
 	return 1
 }
 
-purgeR2() {
+purgeRZ() {
 	P="$1"
-	BINS="r2 rizin rz_bin rz_find rz-pm "
+	BINS="rizin rz_bin rz_find rz-pm "
 	cd "$P/bin" && rm -f ${BINS}
 	cd "$P/lib" && rm -f libr_*
 	cd "$P/lib" && rm -rf rizin
@@ -152,7 +155,7 @@ countDown() {
 }
 
 commitSuicide() {
-	confirm "Do you wanna purge r2 completely from your system and home?"
+	confirm "Do you wanna purge rizin completely from your system and home?"
 	if [ $? != 0 ]; then
 		echo "Aborted." > /dev/stderr
 		exit 1
@@ -161,12 +164,12 @@ commitSuicide() {
 	confirm "> Delete $RHOMEDIR" && (
 		rm -rf "$RHOMEDIR"
 	)
-	R2PATHS="${PREFIX}:/usr:/usr/local:/opt/rizin:${RHOMEDIR}/prefix:/"
+	RZPATHS="${PREFIX}:/usr:/usr/local:/opt/rizin:${RHOMEDIR}/prefix:/"
 	IFS=:
-	for a in $R2PATHS ; do
+	for a in $RZPATHS ; do
 		if [ -x "${a}/bin/rizin" ]; then
-			confirm "> Delete r2 from ${a}" && (
-				purgeR2 "$a"
+			confirm "> Delete rizin from ${a}" && (
+				purgeRZ "$a"
 			)
 		fi
 	done
@@ -330,15 +333,19 @@ RZPM_GIT() {
 	cd "${RZPM_GITDIR}"
 	if [ -d "${DIR}" ]; then
 		cd "${DIR}"
-		git checkout master
-		git pull
+		if [ -z "${RZPM_GITSKIP}" ]; then
+			git checkout master
+			git pull
+		fi
 	else
 		git clone --depth 1 --recursive "${URL}" "${DIR}" || RZPM_FAIL "Oops"
 		cd "${DIR}" || RZPM_FAIL "Oops"
 	fi
-	r2 -qv | grep -q git || { # r2 >= 4.5
-		git checkout "r2-${RZ_VERSION}"
-		git pull
+	rizin -qv | grep -q git || { # rizin >= 4.5
+		if [ -z "${RZPM_GITSKIP}" ]; then
+			git checkout "rz-${RZ_VERSION}"
+			git pull
+		fi
 	}
 }
 
@@ -602,7 +609,7 @@ case "$1" in
 			rm -rf "${RZPM_GITDIR}"
 			mkdir -p "${RZPM_GITDIR}"
 		else
-			echo "r2 is installed with rz-pm, do not clean the cache to avoid autodestruction"
+			echo "rizin is installed with rz-pm, do not clean the cache to avoid autodestruction"
 			echo "do not disassemble do not disassemble do not disassemble do not disassemble"
 			exit 1
 		fi
@@ -640,10 +647,10 @@ ls)
 cache)
 	echo "export LIBEXT=\"${LIBEXT}\"" > "${RZPMCACHE}"
 	echo "export LIBDIR=\"${LIBDIR}\"" >> "${RZPMCACHE}"
-	echo "export R2CONFIGHOME=\"${R2CONFIGHOME}\"" >> "${RZPMCACHE}"
-	echo "export R2DATAHOME=\"${R2DATAHOME}\"" >> "${RZPMCACHE}"
+	echo "export RZCONFIGHOME=\"${RZCONFIGHOME}\"" >> "${RZPMCACHE}"
+	echo "export RZDATAHOME=\"${RZDATAHOME}\"" >> "${RZPMCACHE}"
 	echo "export PREFIX=\"${PREFIX}\"" >> "${RZPMCACHE}"
-	echo "[rz-pm] r2 environment cached in ${RZPMCACHE}"
+	echo "[rz-pm] rizin environment cached in ${RZPMCACHE}"
 	;;
 -a|add)
 	if [ "$2" = "help" ]; then
@@ -729,14 +736,15 @@ Commands:
  init | update ..            initialize/update database
  cd [git/dir]                cd into given git (see 'rz-pm ls')
  ls                          ls all cloned git repos in GITDIR
- suicide                     self remove all (home + system) installations of r2
- cache                       cache contents of r2 -H to make rz-pm r2-independent
+ suicide                     self remove all (home + system) installations of rizin
+ cache                       cache contents of rizin -H to make rz-pm rizin-independent
 Environment:
  SUDO=sudo                    use this tool as sudo
  RZPM_PLUGDIR=${RZPM_PLUGDIR}
  RZPM_BINDIR=${RZPM_BINDIR}
  RZPM_DBDIR=${RZPM_DBDIR}
  RZPM_GITDIR=${RZPM_GITDIR}
+ RZPM_GITSKIP=${RZPM_GITSKIP}
 HELP
 	;;
 esac
