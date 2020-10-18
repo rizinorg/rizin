@@ -52,7 +52,7 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 		x86as = user_ass;
 	}
 	if (RZ_STR_ISEMPTY (x86as)) {
-		eprintf ("Please set RZ_X86AS env to define an x86 assembler program");
+		eprintf ("Please set RZ_X86AS env to define an x86 assembler program\n");
 		return 1;
 	}
 	bool res = rz_sys_cmdf ("%s %s -o %s", x86as, ipath, opath);
