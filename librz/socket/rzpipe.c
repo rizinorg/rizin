@@ -271,7 +271,7 @@ RZ_API R2Pipe *rzpipe_open(const char *cmd) {
 	env ("RZ_PIPE_OUT", r2p->output[1]);
 
 	if (r2p->child) {
-		char ch = -1;
+		signed char ch = -1;
 		// eprintf ("[+] rzpipeipe child is %d\n", rzpipe->child);
 		if (read (r2p->output[0], &ch, 1) != 1) {
 			eprintf ("Failed to read 1 byte\n");
