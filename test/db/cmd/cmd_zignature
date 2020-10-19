@@ -11,7 +11,7 @@ zs test3
 za foo3 b aabbccdd
 za bar3 b aabbccdd
 zs *
-zs-test2
+zs- test2
 z~foo1
 z~bar1
 z~foo2
@@ -133,16 +133,16 @@ zs test2
 za foo b aa
 za bar b bb
 zs *
-z-foo
+z- foo
 z
 zs test2
-z-foo
+z- foo
 z
 zs *
 z
-zs-test
+zs- test
 z
-z-foo
+z- foo
 z
 EOF
 EXPECT=<<EOF
@@ -189,7 +189,7 @@ zs test3
 za foo3 b aabbccdd
 za bar3 b aabbccdd
 zs test2
-z-*
+z- *
 zs *
 z~foo2
 z~bar2
@@ -1749,7 +1749,7 @@ za main g cc=147 nbbs=226 edges=355 ebbs=8 bbsum=4859
 za main o 0x000040a0
 za main r sym._obstack_begin sym._obstack_begin sym._obstack_begin
 za main v s-64 s-88 s-116 s-96 s-80 s-67 s-65 s-66 s-86 r110 r114
-za main t func.main.ret=int func.main.args=3 func.main.arg.0="int,argc" func.main.arg.1="char,**,argv" func.main.arg.2="char,**,envp"
+za main t func.main.ret=int func.main.args=3 func.main.arg.0=\"int,argc\" func.main.arg.1=\"char,**,argv\" func.main.arg.2=\"char,**,envp\"
 za main h c82a35182e4217e7d7a4662c066be72bff254100ad71e29492350dba46fad184
 z*
 EOF
@@ -1770,7 +1770,7 @@ FILE=bins/elf/ls
 CMDS=<<EOF
 zs *
 za main o 0x00004070
-za main t func.sym.new_function_name.ret=int func.sym.new_function_name.args=2 func.sym.new_function_name.arg.0="int,NEWARGC" func.sym.new_function_name.arg.1="char **,NEWARGV"
+za main t func.sym.new_function_name.ret=int func.sym.new_function_name.args=2 func.sym.new_function_name.arg.0=\"int,NEWARGC\" func.sym.new_function_name.arg.1=\"char **,NEWARGV\"
 za main n sym.new_function_name
 s main
 af
