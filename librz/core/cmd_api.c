@@ -526,7 +526,7 @@ static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, 
 		}
 		rz_list_free (wrapped_text);
 		free (text);
-	} else {
+	} else if (!RZ_STR_ISEMPTY (comment)) {
 		rz_strbuf_appendf (sb, "# %s", comment);
 	}
 }
