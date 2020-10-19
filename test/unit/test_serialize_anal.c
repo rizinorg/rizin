@@ -275,7 +275,7 @@ Sdb *functions_ref_db() {
 	Sdb *db = sdb_new0 ();
 	sdb_set (db, "0x4d2", "{\"name\":\"effekt\",\"type\":1,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"pure\":true,\"diff\":{},\"bbs\":[1337]}", 0);
 	sdb_set (db, "0xbeef", "{\"name\":\"eskapist\",\"bits\":32,\"type\":16,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"diff\":{},\"bbs\":[]}", 0);
-	sdb_set (db, "0x539", "{\"name\":\"hirsch\",\"bits\":16,\"type\":0,\"cc\":\"fancycall\",\"stack\":42,\"maxstack\":123,\"ninstr\":13,\"folded\":true,\"bp_frame\":true,\"fingerprint\":\"AAECAwQFBgcICQoLDA0ODw==\",\"diff\":{\"addr\":4321},\"bbs\":[1337,1234],\"imports\":[\"earth\",\"rise\"],\"labels\":{\"beach\":1400,\"another\":1450,\"year\":1440}}", 0);
+	sdb_set (db, "0x539", "{\"name\":\"hirsch\",\"bits\":16,\"type\":0,\"cc\":\"fancycall\",\"stack\":42,\"maxstack\":123,\"ninstr\":13,\"folded\":true,\"bp_frame\":true,\"bp_off\":4,\"fingerprint\":\"AAECAwQFBgcICQoLDA0ODw==\",\"diff\":{\"addr\":4321},\"bbs\":[1337,1234],\"imports\":[\"earth\",\"rise\"],\"labels\":{\"beach\":1400,\"another\":1450,\"year\":1440}}", 0);
 	sdb_set (db, "0xdead", "{\"name\":\"agnosie\",\"bits\":32,\"type\":8,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"diff\":{},\"bbs\":[]}", 0);
 	sdb_set (db, "0xc0ffee", "{\"name\":\"lifnej\",\"bits\":32,\"type\":32,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"diff\":{},\"bbs\":[]}", 0);
 	sdb_set (db, "0x1092", "{\"name\":\"hiberno\",\"bits\":32,\"type\":2,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"diff\":{},\"bbs\":[]}", 0);
@@ -297,6 +297,7 @@ bool test_anal_function_save() {
 	f->cc = rz_str_constpool_get (&anal->constpool, "fancycall");
 	f->stack = 42;
 	f->maxstack = 123;
+	f->bp_off = 4;
 	f->ninstr = 13;
 	f->folded = true;
 	f->fingerprint_size = 0x10;
@@ -378,6 +379,7 @@ bool test_anal_function_load() {
 	mu_assert ("pure", !f->is_pure);
 	mu_assert ("noreturn", !f->is_noreturn);
 	mu_assert ("bp_frame", f->bp_frame);
+	mu_assert_eq (f->bp_off, 4, "bp off");
 	mu_assert_eq (f->fingerprint_size, 0x10, "fingerprint size");
 	mu_assert_memeq (f->fingerprint, (const ut8 *)"\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f", 0x10, "fingerprint");
 	mu_assert_notnull (f->diff, "diff");
@@ -406,6 +408,7 @@ bool test_anal_function_load() {
 	mu_assert ("pure", f->is_pure);
 	mu_assert ("noreturn", !f->is_noreturn);
 	mu_assert ("bp_frame", f->bp_frame);
+	mu_assert_eq (f->bp_off, 0, "bp off");
 	mu_assert_null (f->fingerprint, "fingerprint");
 	mu_assert_notnull (f->diff, "diff");
 	mu_assert_null (f->imports, "imports");
