@@ -61,6 +61,58 @@ extern const RzCmdDescHelp x_help;
 extern const RzCmdDescHelp y_help;
 extern const RzCmdDescHelp z_help;
 
+// z helps
+
+extern const RzCmdDescHelp z_group_help;
+extern const RzCmdDescHelp z_help;
+extern const RzCmdDescHelp z_point_group_help;
+extern const RzCmdDescHelp z_point_help;
+extern const RzCmdDescHelp z_point_star_help;
+extern const RzCmdDescHelp zb_group_help;
+extern const RzCmdDescHelp zb_help;
+extern const RzCmdDescHelp zbr_help;
+extern const RzCmdDescHelp z_star_help;
+extern const RzCmdDescHelp zq_help;
+extern const RzCmdDescHelp zj_help;
+extern const RzCmdDescHelp zk_help;
+extern const RzCmdDescHelp z_minus_help;
+extern const RzCmdDescHelp za_group_help;
+extern const RzCmdDescHelp za_help;
+extern const RzCmdDescHelp zaf_help;
+extern const RzCmdDescHelp zaF_help;
+extern const RzCmdDescHelp zg_help;
+extern const RzCmdDescHelp zo_group_help;
+extern const RzCmdDescHelp zo_help;
+extern const RzCmdDescHelp zoz_help;
+extern const RzCmdDescHelp zos_help;
+extern const RzCmdDescHelp zf_group_help;
+extern const RzCmdDescHelp zfd_help;
+extern const RzCmdDescHelp zfs_help;
+extern const RzCmdDescHelp z_slash_group_help;
+extern const RzCmdDescHelp z_slash_help;
+extern const RzCmdDescHelp z_slash_star_help;
+extern const RzCmdDescHelp z_slash_f_group_help;
+extern const RzCmdDescHelp z_slash_f_help;
+extern const RzCmdDescHelp z_slash_f_star_help;
+extern const RzCmdDescHelp zc_group_help;
+extern const RzCmdDescHelp zc_help;
+extern const RzCmdDescHelp zcn_group_help;
+extern const RzCmdDescHelp zcn_help;
+extern const RzCmdDescHelp zcn_esclamation_help;
+extern const RzCmdDescHelp zs_group_help;
+extern const RzCmdDescHelp zs_help;
+extern const RzCmdDescHelp zsj_help;
+extern const RzCmdDescHelp zs_star_help;
+extern const RzCmdDescHelp zs_minus_help;
+extern const RzCmdDescHelp zs_plus_help;
+extern const RzCmdDescHelp zsr_help;
+extern const RzCmdDescHelp zi_group_help;
+extern const RzCmdDescHelp zi_help;
+extern const RzCmdDescHelp ziq_help;
+extern const RzCmdDescHelp zij_help;
+extern const RzCmdDescHelp zi_star_help;
+extern const RzCmdDescHelp zii_help;
+
 // w0 helps
 
 extern const RzCmdDescHelp w0_help;

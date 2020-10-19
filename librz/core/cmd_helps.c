@@ -448,8 +448,259 @@ const RzCmdDescHelp y_help = {
 	.summary = "Yank/paste bytes from/to memory",
 };
 
-const RzCmdDescHelp z_help = {
+const RzCmdDescHelp z_group_help = {
 	.summary = "zignatures management",
+};
+
+const RzCmdDescHelp z_help = {
+	.summary = "show signatures",
+};
+
+const RzCmdDescHelp z_point_group_help = {
+	.summary = "find matching zignatures in current offset",
+};
+
+const RzCmdDescHelp z_point_help = {
+	.summary = "find matching zignatures in current offset",
+};
+
+const RzCmdDescHelp z_point_star_help = {
+	.summary = "find matching zignatures in current offset (output in rizin commands)",
+};
+
+const RzCmdDescHelp zb_group_help = {
+	.summary = "search for best match",
+};
+
+const RzCmdDescHelp zb_help = {
+	.summary = "find n closest matching zignatures to function at current offset",
+	.args_str = " [n]",
+};
+
+const RzCmdDescHelp zbr_help = {
+	.summary = "search for n most similar functions to zigname",
+	.args_str = " <zigname> [n]",
+};
+
+const RzCmdDescHelp z_star_help = {
+	.summary = "show zignatures in rizin format",
+};
+
+const RzCmdDescHelp zq_help = {
+	.summary = "show zignatures in quiet mode",
+};
+
+const RzCmdDescHelp zj_help = {
+	.summary = "show zignatures in json format",
+};
+
+const RzCmdDescHelp zk_help = {
+	.summary = "show zignatures in sdb format",
+};
+
+const RzCmdDescHelp z_minus_help = {
+	.summary = "delete zignature",
+	.args_str = " <zigname|*>",
+};
+
+const RzCmdDescDetailEntry za_types[] = {
+	{ .text = "a", .comment = "bytes pattern (anal mask)" },
+	{ .text = "b", .comment = "bytes pattern" },
+	{ .text = "c", .comment = "base64 comment" },
+	{ .text = "n", .comment = "real function name" },
+	{ .text = "g", .comment = "graph metrics" },
+	{ .text = "o", .comment = "original offset" },
+	{ .text = "r", .comment = "references" },
+	{ .text = "x", .comment = "cross references" },
+	{ .text = "h", .comment = "bbhash (hashing of function basic blocks)" },
+	{ .text = "v", .comment = "vars (and args)" },
+	{ 0 },
+};
+
+const RzCmdDescDetailEntry za_patterns[] = {
+	{ .text = "", .comment = "bytes can contain '..' (dots) to specify a binary mask" },
+	{ 0 },
+};
+
+const RzCmdDescDetailEntry za_graph_metrics[] = {
+	{ .text = "cc", .comment = "cyclomatic complexity" },
+	{ .text = "edges", .comment = "number of edges" },
+	{ .text = "nbbs", .comment = "number of basic blocks" },
+	{ .text = "ebbs", .comment = "number of end basic blocks" },
+	{ 0 },
+};
+
+const RzCmdDescDetailEntry za_examples[] = {
+	{ .text = "za", .arg_str = " foo b 558bec..e8........", .comment = "" },
+	{ .text = "za", .arg_str = " foo a e811223344", .comment = "" },
+	{ .text = "za", .arg_str = " foo g cc=2 nbbs=3 edges=3 ebbs=1", .comment = "" },
+	{ .text = "za", .arg_str = " foo g nbbs=3 edges=3", .comment = "" },
+	{ .text = "za", .arg_str = " foo v b-32 b-48 b-64", .comment = "" },
+	{ .text = "za", .arg_str = " foo o 0x08048123", .comment = "" },
+	{ .text = "za", .arg_str = " foo c this is a comment (base64?)", .comment = "" },
+	{ .text = "za", .arg_str = " foo r sym.imp.strcpy sym.imp.sprintf sym.imp.strlen", .comment = "" },
+	{ .text = "za", .arg_str = " foo h 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae", .comment = "" },
+	{ 0 },
+};
+
+const RzCmdDescDetail za_details[] = {
+	{ .name = "Zignature types", .entries = za_types },
+	{ .name = "Bytes patterns", .entries = za_patterns },
+	{ .name = "Graph metrics", .entries = za_graph_metrics },
+	{ .name = "Examples", .entries = za_examples },
+	{ 0 },
+};
+
+const RzCmdDescHelp za_group_help = {
+	.summary = "add zignature",
+};
+
+const RzCmdDescHelp za_help = {
+	.summary = "add zignature",
+	.args_str = " <zigname> <type> <param0> [<param1> ...]",
+	.details = za_details,
+};
+
+const RzCmdDescHelp zaf_help = {
+	.summary = "create zignature for function",
+	.args_str = " [<fcnname> [zigname]]",
+};
+
+const RzCmdDescHelp zaF_help = {
+	.summary = "generate zignatures for all functions",
+};
+
+const RzCmdDescHelp zg_help = {
+	.summary = "generate zignatures (alias for zaF)",
+};
+
+const RzCmdDescHelp zo_group_help = {
+	.summary = "manage zignature files",
+};
+
+const RzCmdDescHelp zo_help = {
+	.summary = "load zinatures from sdb file",
+};
+
+const RzCmdDescHelp zoz_help = {
+	.summary = "load zinatures from gzipped sdb file",
+};
+
+const RzCmdDescHelp zos_help = {
+	.summary = "save zignatures to sdb file (merge if file exists)",
+};
+
+const RzCmdDescHelp zf_group_help = {
+	.summary = "manage FLIRT signatures",
+};
+
+const RzCmdDescHelp zfd_help = {
+	.summary = "open FLIRT file and dump",
+};
+
+const RzCmdDescHelp zfs_help = {
+	.summary = "open FLIRT file and scan",
+};
+
+const RzCmdDescHelp z_slash_group_help = {
+	.summary = "search zignatures",
+};
+
+const RzCmdDescHelp z_slash_help = {
+	.summary = "search zignatures on range and flag matches",
+};
+
+const RzCmdDescHelp z_slash_star_help = {
+	.summary = "search zignatures on range and output rizin commands",
+};
+
+const RzCmdDescHelp z_slash_f_group_help = {
+	.summary = "search only function zignatures",
+};
+
+const RzCmdDescHelp z_slash_f_help = {
+	.summary = "search only function zignatures",
+};
+
+const RzCmdDescHelp z_slash_f_star_help = {
+	.summary = "search only function zignatures and output rizin commands",
+};
+
+const RzCmdDescHelp zc_group_help = {
+	.summary = "compare current zignspace zignatures with another one",
+};
+
+const RzCmdDescHelp zc_help = {
+	.summary = "compare all current space with other_space",
+};
+
+const RzCmdDescHelp zcn_group_help = {
+	.summary = "compare current space with zigns with same name on other_space",
+};
+
+const RzCmdDescHelp zcn_help = {
+	.summary = "compare current space with zigns with same name on other_space",
+};
+
+const RzCmdDescHelp zcn_esclamation_help = {
+	.summary = "compare current space with zigns with different name on other_space",
+};
+
+const RzCmdDescHelp zs_group_help = {
+	.summary = "manage zignspaces",
+};
+
+const RzCmdDescHelp zs_help = {
+	.summary = "display/select zignspaces",
+	.args_str = " [zignspace|*]",
+};
+
+const RzCmdDescHelp zsj_help = {
+	.summary = "display zignspaces (in json)",
+};
+
+const RzCmdDescHelp zs_star_help = {
+	.summary = "display zignspaces (in rizin commands)",
+};
+
+const RzCmdDescHelp zs_minus_help = {
+	.summary = "delete zignspace or pop to the previous zignspace",
+	.args_str = " [zignspace|*]",
+};
+
+const RzCmdDescHelp zs_plus_help = {
+	.summary = "push previous zignspace and set",
+	.args_str = " <zignspace>",
+};
+
+const RzCmdDescHelp zsr_help = {
+	.summary = "rename selected zignspace",
+};
+
+const RzCmdDescHelp zi_group_help = {
+	.summary = "show zignatures matching information",
+};
+
+const RzCmdDescHelp zi_help = {
+	.summary = "show zignatures matching information",
+};
+
+const RzCmdDescHelp ziq_help = {
+	.summary = "show zignatures matching information (quiet mode)",
+};
+
+const RzCmdDescHelp zij_help = {
+	.summary = "show zignatures matching information (JSON mode)",
+};
+
+const RzCmdDescHelp zi_star_help = {
+	.summary = "show zignatures matching information (in rizin commands)",
+	.args_str = " [comment]",
+};
+
+const RzCmdDescHelp zii_help = {
+	.summary = "show zignatures matching information in range",
+	.args_str = " <from> <to>",
 };
 
 // w0 helps
@@ -686,7 +937,7 @@ const RzCmdDescHelp we_help = {
 
 const RzCmdDescHelp wp_help = {
 	.args_str = " -|<file>",
-	.summary = "apply radare patch file. See wp? fmi",
+	.summary = "apply rizin patch file. See wp? fmi",
 };
 
 const RzCmdDescHelp wu_help = {

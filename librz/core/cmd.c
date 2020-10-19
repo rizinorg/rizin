@@ -7174,7 +7174,7 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "w", "write bytes", cmd_write, cmd_write_init, &w_help, &w_group_help, RZ_CMD_DESC_TYPE_GROUP, w_handler },
 		{ "x", "alias for px", cmd_hexdump, NULL, &x_help },
 		{ "y", "yank bytes", cmd_yank, NULL, &y_help },
-		{ "z", "zignatures", cmd_zign, cmd_zign_init, &z_help },
+		{ "z", "zignatures", cmd_zign, cmd_zign_init, &z_help, &z_group_help, RZ_CMD_DESC_TYPE_GROUP, z_handler },
 		{ "@", "temporary modifiers", NULL, NULL, &tmp_modifier_help, NULL, RZ_CMD_DESC_TYPE_FAKE },
 		{ "@@", "iterators", NULL, NULL, &iterator_help, NULL, RZ_CMD_DESC_TYPE_FAKE },
 		{ "@@@", "foreach", NULL, NULL, &foreach_help, NULL, RZ_CMD_DESC_TYPE_FAKE },
