@@ -147,6 +147,7 @@ RZ_API int rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, cons
 		switch (bits) {
 		case 16:
 		case 32:
+		case 64:
 			rz_syscall_setup (egg->syscall, arch, bits, asmcpu, os);
 			egg->remit = &emit_arm;
 			egg->bits = bits;
