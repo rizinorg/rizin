@@ -182,6 +182,18 @@ RZ_API RzList *rz_list_newf(RzListFree f) {
 	return l;
 }
 
+RZ_API RzList *rz_list_new_from_array(const void **arr, size_t arr_size) {
+	RzList *l = rz_list_new ();
+	if (!l) {
+		return NULL;
+	}
+	size_t i;
+	for (i = 0; i < arr_size; i++) {
+		rz_list_append (l, (void *)arr[i]);
+	}
+	return l;
+}
+
 RZ_API RzListIter *rz_list_item_new(void *data) {
 	RzListIter *item = RZ_NEW0 (RzListIter);
 	if (item) {

@@ -76,6 +76,7 @@ typedef struct rz_oflist_t {
 #endif
 RZ_API RzList *rz_list_new(void);
 RZ_API RzList *rz_list_newf(RzListFree f);
+RZ_API RzList *rz_list_new_from_array(const void **arr, size_t arr_size);
 RZ_API RzListIter *rz_list_iter_get_next(RzListIter *list);
 RZ_API int rz_list_set_n(RzList *list, int n, void *p);
 RZ_API void *rz_list_iter_get_data(RzListIter *list);
