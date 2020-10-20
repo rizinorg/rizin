@@ -1,7 +1,0 @@
-#!/bin/sh
-R2=https://github.com/rizinorg/rizin
-IRED=https://github.com/radare/ired
-EXTRAS=https://github.com/rizinorg/rizin-extras
-CAPSTONE=https://github.com/radare/rizin-capstone
-BINDINGS=https://github.com/rizinorg/rizin-bindings
-[ -z "$1" ] && grep -h $0 | grep -v grep || eval echo \$$1
