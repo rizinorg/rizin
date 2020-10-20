@@ -524,10 +524,6 @@ static RzCmdStatus common_wv_handler(RzCore *core, int argc, const char **argv, 
 	bool be = rz_config_get_i (core->config, "cfg.bigendian");
 
 	core->num->value = 0;
-	if (argc != 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	off = rz_num_math (core->num, argv[1]);
 	if (core->file) {
 		rz_io_use_fd (core->io, core->file->fd);
@@ -587,10 +583,6 @@ static RzCmdStatus wv8_handler(RzCore *core, int argc, const char **argv) {
 }
 
 static RzCmdStatus w6e_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	int wseek = rz_config_get_i (core->config, "cfg.wseek");
 	const char *str = argv[1];
 	size_t str_len = strlen (str) + 1;
@@ -627,10 +619,6 @@ static RzCmdStatus w6e_handler(RzCore *core, int argc, const char **argv) {
 }
 
 static RzCmdStatus w6d_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	int wseek = rz_config_get_i (core->config, "cfg.wseek");
 	const char *str = argv[1];
 	size_t str_len = strlen (str) + 1;
@@ -932,17 +920,11 @@ static int wB_handler_old(void *data, const char *input) {
 }
 
 static RzCmdStatus wB_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	cmd_write_bits (core, 1, rz_num_math (core->num, argv[1]));
 	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus wB_minus_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	cmd_write_bits (core, 0, rz_num_math (core->num, argv[1]));
 	return RZ_CMD_STATUS_OK;
 }
@@ -973,9 +955,6 @@ static int w0_handler_old(void *data, const char *input) {
 }
 
 static RzCmdStatus w0_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	ut64 len = rz_num_math (core->num, argv[1]);
 	return rz_cmd_int2status (w0_handler_common (core, len));
 }
@@ -1000,9 +979,6 @@ static int w_incdec_handler_old(void *data, const char *input, int inc) {
 }
 
 static RzCmdStatus w_incdec_handler(RzCore *core, int argc, const char **argv, int inc_size) {
-	if (argc > 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	st64 num = argc > 1? rz_num_math (core->num, argv[1]): 1;
 	const char *command = argv[0];
 	if (command[strlen (command) - 1] == '-') {
@@ -1485,9 +1461,6 @@ static int w_handler_old(void *data, const char *input) {
 }
 
 static RzCmdStatus w_handler(RzCore *core, int argc, const char **argv) {
-	if (argc < 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	char *s = rz_str_array_join (argv + 1, argc - 1, " ");
 	w_handler_common (core, s);
 	free (s);

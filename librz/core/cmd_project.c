@@ -3,9 +3,6 @@
 #include <rz_project.h>
 
 static RzCmdStatus Ps_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	RzProjectErr err = rz_project_save_file (core, argv[1]);
 	if (err != RZ_PROJECT_ERR_SUCCESS) {
 		eprintf ("Failed to save project: %s\n", rz_project_err_message (err));
@@ -14,9 +11,6 @@ static RzCmdStatus Ps_handler(RzCore *core, int argc, const char **argv) {
 }
 
 static RzCmdStatus Po_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	RzSerializeResultInfo *res = rz_serialize_result_info_new ();
 	RzProjectErr err = rz_project_load_file (core, argv[1], res);
 	if (err != RZ_PROJECT_ERR_SUCCESS) {

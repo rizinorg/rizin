@@ -394,6 +394,35 @@ static RzCmdStatus int2cmdstatus(int v) {
 	}
 }
 
+static void get_minmax_argc(RzCmdDesc *cd, int *min_argc, int *max_argc) {
+	*min_argc = 1;
+	*max_argc = 1;
+	const RzCmdDescArg *arg = cd->help->args;
+	while (arg && arg->name && !arg->optional) {
+		(*min_argc)++;
+		(*max_argc)++;
+		switch (arg->type) {
+		case RZ_CMD_ARG_TYPE_ARRAY_STRING:
+			*max_argc = INT_MAX;
+			return;
+		default:
+			break;
+		}
+		arg++;
+	}
+	while (arg && arg->name) {
+		(*max_argc)++;
+		switch (arg->type) {
+		case RZ_CMD_ARG_TYPE_ARRAY_STRING:
+			*max_argc = INT_MAX;
+			return;
+		default:
+			break;
+		}
+		arg++;
+	}
+}
+
 RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args) {
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
 
@@ -430,7 +459,13 @@ RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args) {
 		// fallthrough
 	case RZ_CMD_DESC_TYPE_ARGV:
 		if (cd->d.argv_data.cb) {
-			res = cd->d.argv_data.cb (cmd->data, args->argc, (const char **)args->argv);
+			int min_argc, max_argc;
+			get_minmax_argc (cd, &min_argc, &max_argc);
+			if (args->argc >= min_argc && args->argc <= max_argc) {
+				res = cd->d.argv_data.cb (cmd->data, args->argc, (const char **)args->argv);
+			} else {
+				res = RZ_CMD_STATUS_WRONG_ARGS;
+			}
 		}
 		break;
 	case RZ_CMD_DESC_TYPE_OLDINPUT:
@@ -531,6 +566,48 @@ static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, 
 	}
 }
 
+static size_t fill_args(RzStrBuf *sb, RzCmdDesc *cd) {
+	const RzCmdDescArg *arg;
+	size_t n_optionals = 0;
+	size_t len = 0;
+	bool has_array = false;
+	for (arg = cd->help->args; arg && arg->name; arg++) {
+		if (has_array) {
+			rz_warn_if_reached ();
+			break;
+		}
+		rz_strbuf_append (sb, " ");
+		len++;
+		if (arg->optional) {
+			rz_strbuf_append (sb, "[");
+			len++;
+			n_optionals++;
+		}
+		switch (arg->type) {
+		case RZ_CMD_ARG_TYPE_ARRAY_STRING:
+			has_array = true;
+			rz_strbuf_appendf (sb, "<%s0>", arg->name);
+			len += strlen (arg->name) + 3;
+			rz_strbuf_appendf (sb, " [<%s1> ...]", arg->name);
+			len += strlen (arg->name) + 10;
+			break;
+		default:
+			rz_strbuf_appendf (sb, "<%s>", arg->name);
+			len += strlen (arg->name) + 2;
+			if (arg->default_value) {
+				rz_strbuf_appendf (sb, "=%s", arg->default_value);
+				len += strlen (arg->default_value) + 1;
+			}
+			break;
+		}
+	}
+	for (; n_optionals > 0; n_optionals--) {
+		rz_strbuf_append (sb, "]");
+		len++;
+	}
+	return len;
+}
+
 static void fill_usage_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_color) {
 	const char *pal_label_color = "",
 		*pal_args_color = "",
@@ -561,11 +638,13 @@ static void fill_usage_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_
 			rz_strbuf_append (sb, pal_reset);
 			columns += fill_children_chars (sb, cd);
 		}
+		rz_strbuf_append (sb, pal_args_color);
 		if (RZ_STR_ISNOTEMPTY (cd->help->args_str)) {
-			rz_strbuf_append (sb, pal_args_color);
 			columns += strbuf_append_calc (sb, cd->help->args_str);
-			rz_strbuf_append (sb, pal_reset);
+		} else {
+			columns += fill_args (sb, cd);
 		}
+		rz_strbuf_append (sb, pal_reset);
 	}
 	if (cd->help->summary) {
 		columns += strbuf_append_calc (sb, "   ");
@@ -589,6 +668,12 @@ static size_t calc_padding_len(RzCmdDesc *cd) {
 	}
 	if (RZ_STR_ISNOTEMPTY (cd->help->args_str)) {
 		args_len = strlen0 (cd->help->args_str);
+	} else {
+		RzStrBuf sb;
+		rz_strbuf_init (&sb);
+		fill_args (&sb, cd);
+		args_len = rz_strbuf_length (&sb);
+		rz_strbuf_fini (&sb);
 	}
 	return name_len + args_len + children_length;
 }
@@ -626,9 +711,11 @@ static void print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, size_t max
 		rz_strbuf_append (sb, pal_opt_color);
 		columns += fill_children_chars (sb, cd);
 	}
+	rz_strbuf_append (sb, pal_args_color);
 	if (RZ_STR_ISNOTEMPTY (cd->help->args_str)) {
-		rz_strbuf_append (sb, pal_args_color);
 		columns += strbuf_append_calc (sb, cd->help->args_str);
+	} else {
+		columns += fill_args (sb, cd);
 	}
 	rz_strbuf_appendf (sb, " %*s", padding, "");
 	columns += padding + 1;
@@ -1401,17 +1488,17 @@ static RzCmdDesc *argv_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCm
 }
 
 RZ_API RzCmdDesc *rz_cmd_desc_argv_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdArgvCb cb, const RzCmdDescHelp *help) {
-	rz_return_val_if_fail (cmd && parent && name, NULL);
+	rz_return_val_if_fail (cmd && parent && name && help && help->args, NULL);
 	return argv_new (cmd, parent, name, cb, help, true);
 }
 
 RZ_API RzCmdDesc *rz_cmd_desc_inner_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, const RzCmdDescHelp *help) {
-	rz_return_val_if_fail (cmd && parent && name, NULL);
+	rz_return_val_if_fail (cmd && parent && name && help, NULL);
 	return create_cmd_desc (cmd, parent, RZ_CMD_DESC_TYPE_INNER, name, help, false);
 }
 
 RZ_API RzCmdDesc *rz_cmd_desc_group_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdArgvCb cb, const RzCmdDescHelp *help, const RzCmdDescHelp *group_help) {
-	rz_return_val_if_fail (cmd && parent && name, NULL);
+	rz_return_val_if_fail (cmd && parent && name && group_help, NULL);
 	RzCmdDesc *res = create_cmd_desc (cmd, parent, RZ_CMD_DESC_TYPE_GROUP, name, group_help, true);
 	if (!res) {
 		return NULL;
@@ -1419,6 +1506,7 @@ RZ_API RzCmdDesc *rz_cmd_desc_group_new(RzCmd *cmd, RzCmdDesc *parent, const cha
 
 	RzCmdDesc *exec_cd = NULL;
 	if (cb && help) {
+		rz_return_val_if_fail (help->args, NULL);
 		exec_cd = argv_new (cmd, res, name, cb, help, false);
 		if (!exec_cd) {
 			rz_cmd_desc_remove (cmd, res);
