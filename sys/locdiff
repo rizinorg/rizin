@@ -1,6 +1,0 @@
-#!/bin/sh
-#A=`hg diff $@ | grep -v '+++' | grep ^+ |wc -l`
-#B=`hg diff $@ | grep -v -- '---' | grep ^- |wc -l`
-A="$(git diff "$@" | grep -v '+++' | grep -c ^+)"
-B="$(git diff "$@" | grep -v -- '---' | grep -c ^-)"
-echo "$((A-B))"
