@@ -422,7 +422,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	r->io->envprofile = envprofile;
 
 	rz_core_task_sync_begin (&r->tasks);
-	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
+	// HACK TO PERMIT '#!/usr/bin/rz - -i' hashbangs
 	if (argc > 2 && !strcmp (argv[1], "-") && !strcmp (argv[2], "-i")) {
 		argv[1] = argv[0];
 		argc--;
