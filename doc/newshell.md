@@ -246,3 +246,26 @@ https://github.com/rizinorg/rizin/blob/cde558e6e5788d0a6d544ab975b144ed59190676/
 In such a case, we are expected to do a bit of refactoring and extract pieces of
 code in a separate function, named `yz_handler_old`, and use it in the
 switch-case code.
+
+## Where is the help/handler of command `x`?
+
+If you are looking for the help of command `x`, there are some conventions we
+are trying to use to make it easier to locate its info. Help descriptions of `x`
+can be found in `cmd_helps.c`/`cmd_helps.h` with the name `x_help` (or
+`x_group_help` if `x` represents also a group of sub-commands). The handler of
+`x` instead can be in one of the various `cmd_*.c` files, depending on what it
+does, but it should be named `x_handler`.
+
+Some examples:
+- command: `wv`, handler: `cmd_write.c:wv_handler()`, help: `cmd_helps.c:wv_help`, group help: `cmd_helps.c:wv_group_help`;
+- command: `w6d`, handler: `cmd_write.c:w6d_handler()`, help: `cmd_helps.c:w6d_help`.
+
+When a command `x` contains special characters that cannot be used as
+variable/function names in C, we convert them to reasonable strings. `*` becomes
+`_star_`, `.` becomes `_dot_`, `%` becomes `_percentage_`, etc.
+
+Some examples:
+- command: `wB-`, handler: `cmd_write.c:wB_minus_handler()`, help: `cmd_helps.c:wB_minus_help`
+- command: `z*`, handler: `cmd_zign.c:z_star_handler()`, help: `cmd_helps.c:z_star_help`.
+
+The above rules should help you find the relevant part in the code for each command.
