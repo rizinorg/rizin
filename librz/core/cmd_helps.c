@@ -580,14 +580,17 @@ const RzCmdDescHelp zo_group_help = {
 
 const RzCmdDescHelp zo_help = {
 	.summary = "load zinatures from sdb file",
+	.args_str = " <filename>",
 };
 
 const RzCmdDescHelp zoz_help = {
 	.summary = "load zinatures from gzipped sdb file",
+	.args_str = " <filename>",
 };
 
 const RzCmdDescHelp zos_help = {
 	.summary = "save zignatures to sdb file (merge if file exists)",
+	.args_str = " <filename>",
 };
 
 const RzCmdDescHelp zf_group_help = {
@@ -596,10 +599,12 @@ const RzCmdDescHelp zf_group_help = {
 
 const RzCmdDescHelp zfd_help = {
 	.summary = "open FLIRT file and dump",
+	.args_str = " <filename>",
 };
 
 const RzCmdDescHelp zfs_help = {
 	.summary = "open FLIRT file and scan",
+	.args_str = " <filename>",
 };
 
 const RzCmdDescHelp z_slash_group_help = {
@@ -632,18 +637,22 @@ const RzCmdDescHelp zc_group_help = {
 
 const RzCmdDescHelp zc_help = {
 	.summary = "compare all current space with other_space",
+	.args_str = " <other_space>",
 };
 
 const RzCmdDescHelp zcn_group_help = {
 	.summary = "compare current space with zigns with same name on other_space",
+	.args_str = " <other_space>",
 };
 
 const RzCmdDescHelp zcn_help = {
 	.summary = "compare current space with zigns with same name on other_space",
+	.args_str = " <other_space>",
 };
 
 const RzCmdDescHelp zcn_esclamation_help = {
 	.summary = "compare current space with zigns with different name on other_space",
+	.args_str = " <other_space>",
 };
 
 const RzCmdDescHelp zs_group_help = {
@@ -675,6 +684,7 @@ const RzCmdDescHelp zs_plus_help = {
 
 const RzCmdDescHelp zsr_help = {
 	.summary = "rename selected zignspace",
+	.args_str = " <newname>",
 };
 
 const RzCmdDescHelp zi_group_help = {
