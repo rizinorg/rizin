@@ -206,7 +206,7 @@ static int windbg_wait(RzDebug *dbg, int pid) {
 	return ret;
 }
 
-static int windbg_step_over(RDebug *dbg) {
+static int windbg_step_over(RzDebug *dbg) {
 	DbgEngContext *idbg = dbg->user;
 	r_return_val_if_fail (idbg && idbg->initialized, 0);
 	idbg->lastExecutionStatus = DEBUG_STATUS_STEP_OVER;
