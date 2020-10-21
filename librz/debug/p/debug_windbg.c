@@ -66,16 +66,6 @@ static int windbg_step(RzDebug *dbg) {
 	return SUCCEEDED (ITHISCALL (dbgCtrl, SetExecutionStatus, DEBUG_STATUS_STEP_INTO));
 }
 
-static int windbg_step_over(RzDebug *dbg) {
-	DbgEngContext *idbg = dbg->user;
-	rz_return_val_if_fail (idbg && idbg->initialized, 0);
-	idbg->lastExecutionStatus = DEBUG_STATUS_STEP_OVER;
-	if (SUCCEEDED (ITHISCALL (dbgCtrl, SetExecutionStatus, DEBUG_STATUS_STEP_OVER))) {
-		return windbg_wait (dbg, dbg->pid) != RZ_DEBUG_REASON_ERROR;
-	}
-	return 0;
-}
-
 static int windbg_select(RzDebug *dbg, int pid, int tid) {
 	DbgEngContext *idbg = dbg->user;
 	rz_return_val_if_fail (idbg && idbg->initialized, 0);
@@ -208,10 +198,10 @@ static int windbg_wait(RzDebug *dbg, int pid) {
 
 static int windbg_step_over(RzDebug *dbg) {
 	DbgEngContext *idbg = dbg->user;
-	r_return_val_if_fail (idbg && idbg->initialized, 0);
+	rz_return_val_if_fail (idbg && idbg->initialized, 0);
 	idbg->lastExecutionStatus = DEBUG_STATUS_STEP_OVER;
 	if (SUCCEEDED (ITHISCALL (dbgCtrl, SetExecutionStatus, DEBUG_STATUS_STEP_OVER))) {
-		return windbg_wait (dbg, dbg->pid) != R_DEBUG_REASON_ERROR;
+		return windbg_wait (dbg, dbg->pid) != RZ_DEBUG_REASON_ERROR;
 	}
 	return 0;
 }
