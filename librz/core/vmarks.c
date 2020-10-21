@@ -20,9 +20,9 @@ RZ_API bool rz_core_visual_mark_dump(RzCore *core) {
 	for (i = 0; i < UT8_MAX; i++) {
 		if (core->marks[i] != UT64_MAX) {
 			if (i > ASCII_MAX) {
-				rz_cons_printf ("fV %d 0x%"PFMT64x"\n", i - ASCII_MAX - 1, core->marks[i]);
+				rz_cons_printf ("fV %zu 0x%"PFMT64x"\n", i - ASCII_MAX - 1, core->marks[i]);
 			} else {
-				rz_cons_printf ("fV %c 0x%"PFMT64x"\n", i, core->marks[i]);
+				rz_cons_printf ("fV %c 0x%"PFMT64x"\n", (char)i, core->marks[i]);
 			}
 			res = true;
 		}

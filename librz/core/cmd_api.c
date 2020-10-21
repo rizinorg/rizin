@@ -601,7 +601,7 @@ static void update_minmax_len(RzCmdDesc *cd, size_t *max_len, size_t *min_len) {
 
 static void print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, size_t max_len, bool use_color) {
 	size_t str_len = calc_padding_len (cd);
-	size_t padding = str_len < max_len? max_len - str_len: 0;
+	int padding = str_len < max_len? max_len - str_len: 0;
 	const char *cd_summary = cd->help->summary? cd->help->summary: "";
 	const char *pal_args_color = "",
 		*pal_opt_color = "",

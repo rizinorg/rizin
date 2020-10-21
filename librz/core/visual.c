@@ -1446,7 +1446,7 @@ repeat:
 				} else {
 					RzFlagItem *f = rz_flag_get_at (core->flags, refi->addr, true);
 					if (f) {
-						name = rz_str_newf ("%s + %d", f->name, refi->addr - f->offset);
+						name = rz_str_newf ("%s + %" PFMT64d, f->name, refi->addr - f->offset);
 					} else {
 						name = strdup ("unk");
 					}

@@ -1771,7 +1771,7 @@ static void annotated_hexdump(RzCore *core, const char *str, int len) {
 			// collect comments
 			const char *comment = rz_meta_get_string (core->anal, RZ_META_TYPE_COMMENT, addr + j);
 			if (comment) {
-				note[j] = rz_str_newf (";", comment);
+				note[j] = rz_str_newf (";%s", comment);
 				marks = true;
 			}
 

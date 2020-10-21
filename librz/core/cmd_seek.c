@@ -443,7 +443,7 @@ static int cmd_seek(void *data, const char *input) {
 			rz_config_set_i (core->config, "search.from", core->offset + 1);
 			rz_config_set_i (core->config, "search.maxhits", 1);
 			rz_core_cmdf (core, "s+1; %s; s-1; s %s%d_0; f-%s%d_0",
-				input, pfx, kwidx, pfx, kwidx, pfx, kwidx);
+				input, pfx, kwidx, pfx, kwidx);
 			rz_config_set_i (core->config, "search.from", saved_from);
 			rz_config_set_i (core->config, "search.maxhits", saved_maxhits);
 			break;

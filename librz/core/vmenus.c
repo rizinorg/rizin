@@ -581,8 +581,8 @@ static bool sdbforcb (void *p, const char *k, const char *v) {
 						pre = ">";
 					}
 					if (use_color && *pre=='>') {
-						rz_cons_printf ("%s %s %s  %s\n", color_sel,
-							Color_RESET, pre, k, v);
+						rz_cons_printf ("%s"Color_RESET" %s %s  %s\n", color_sel,
+							pre, k, v);
 					} else {
 						rz_cons_printf (" %s %s  %s\n",
 							pre, k, v);
@@ -2563,13 +2563,13 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 			if (show) {
 				char *tmp;
 				if (color) {
-					var_functions = rz_str_newf ("%c%c %s0x%08"PFMT64x"" Color_RESET" %4d %s%s"Color_RESET"",
+					var_functions = rz_str_newf ("%c%c %s0x%08"PFMT64x"" Color_RESET" %4"PFMT64d" %s%s"Color_RESET"",
 							(seek == fcn->addr)?'>':' ',
 							(idx==i)?'*':' ',
 							color_addr, fcn->addr, rz_anal_function_realsize (fcn),
 							color_fcn, fcn->name);
 				} else {
-					var_functions = rz_str_newf ("%c%c 0x%08"PFMT64x" %4d %s",
+					var_functions = rz_str_newf ("%c%c 0x%08"PFMT64x" %4"PFMT64d" %s",
 							(seek == fcn->addr)?'>':' ',
 							(idx==i)?'*':' ',
 							fcn->addr, rz_anal_function_realsize (fcn), fcn->name);
@@ -3671,7 +3671,7 @@ onemoretime:
 			RzFlagItem *item = rz_flag_get_i (core->flags, off);
 			if (item) {
 				char cmd[128];
-				rz_cons_printf ("Current flag size is: %d\n", item->size);
+				rz_cons_printf ("Current flag size is: %" PFMT64d "\n", item->size);
 				rz_cons_show_cursor (true);
 				rz_cons_flush ();
 				rz_line_set_prompt ("new size: ");
@@ -3977,7 +3977,7 @@ RZ_API void rz_core_visual_colors(RzCore *core) {
 		rz_cons_printf ("# Selected colorscheme : %s  - Use 'hl' or left/right arrow keys to change colorscheme\n", curtheme ? curtheme : "default");
 		rz_cons_printf ("# Selected element: %s  - Use 'jk' or up/down arrow keys to change element\n", k);
 		rz_cons_printf ("# ec %s %s # %d (\\x1b%.*s)",
-			k, color, atoi (cstr+7), esc ? esc - cstr - 1 : strlen (cstr + 1), cstr+1);
+			k, color, atoi (cstr+7), esc ? (int)(esc - cstr - 1) : (int)strlen (cstr + 1), cstr+1);
 		if (esc) {
 			rz_cons_printf (" (\\x1b%s)", esc + 1);
 		}

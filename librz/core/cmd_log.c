@@ -71,7 +71,7 @@ static void screenlock(RzCore *core) {
 	rz_cons_clear_buffer ();
 	ut64 begin = rz_time_now ();
 	ut64 last = UT64_MAX;
-	ut64 tries = 0;
+	int tries = 0;
 	do {
 		rz_cons_clear00 ();
 		rz_cons_printf ("Retries: %d\n", tries);
