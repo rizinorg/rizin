@@ -919,7 +919,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			LISTS_FREE ();
 			return 1;
 		}
-	} else if (strcmp (argv[opt.ind - 1], "--") && !prj) {
+	} else if (strcmp (argv[opt.ind - 1], "--")) {
 		if (debug) {
 			if (asmbits) {
 				rz_config_set (r->config, "asm.bits", asmbits);
