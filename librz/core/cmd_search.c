@@ -527,7 +527,7 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 				rz_cons_printf (",");
 			}
 			rz_cons_printf ("{\"offset\": %"PFMT64d ",\"len\":%d}",
-				base_addr + addr, kw->kwidx, keyword_len);
+				base_addr + addr, keyword_len);
 		} else {
 			if (searchflags) {
 				rz_cons_printf ("%s%d_%d\n", searchprefix, kw->kwidx, kw->count);
@@ -2226,7 +2226,7 @@ static void do_section_search(RzCore *core, struct search_parameters *param, con
 		if (r2mode) {
 			rz_cons_printf ("f entropy_section_%d 0x%08"PFMT64x" 0x%08"PFMT64x"\n", index, end - begin, begin);
 		} else {
-			rz_cons_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" ~ %lf .. last\n", begin, end, 0);
+			rz_cons_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" ~ %d .. last\n", begin, end, 0);
 		}
 		index++;
 	}

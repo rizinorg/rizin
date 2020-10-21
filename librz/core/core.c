@@ -2042,7 +2042,7 @@ static char *rz_core_anal_hasrefs_to_depth(RzCore *core, ut64 value, int depth) 
 			rz_strbuf_appendf (s, " %slibrary%s", c, cend);
 		}
 		if (type & RZ_ANAL_ADDR_TYPE_ASCII) {
-			rz_strbuf_appendf (s, " %sascii%s ('%c')", c, cend, value);
+			rz_strbuf_appendf (s, " %sascii%s ('%c')", c, cend, (char)value);
 		}
 		if (type & RZ_ANAL_ADDR_TYPE_SEQUENCE) {
 			rz_strbuf_appendf (s, " %ssequence%s", c, cend);

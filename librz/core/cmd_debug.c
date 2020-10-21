@@ -3074,7 +3074,7 @@ static void asciiart_backtrace(RzCore *core, RzList *frames) {
 		ut64 s = f->sp ? f->sp : dsp;
 		ut64 b = f->bp ? f->bp : dbp;
 		char *str = rz_str_newf ("[frame %d]", n);
-		rz_cons_printf ("0x%016"PFMT64x"  |%4s    %10s      | ; size %d\n", s, sp, str, s - b);
+		rz_cons_printf ("0x%016"PFMT64x"  |%4s    %10s      | ; size %" PFMTDPTR "\n", s, sp, str, (ptrdiff_t)(s - b));
 		free (str);
 		rz_cons_printf ("                    |            ...         |\n");
 		rz_cons_printf ("0x%016"PFMT64x"  |%4s 0x%016"PFMT64x" | %s\n", b, bp, f->addr, "; return address");

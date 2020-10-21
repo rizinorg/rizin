@@ -1599,7 +1599,7 @@ static void print_trampolines(RzCore *core, ut64 a, ut64 b, size_t element_size)
 			if (element_size == 4) {
 				rz_cons_printf ("f trampoline.%x @ 0x%" PFMT64x "\n", n, core->offset + i);
 			} else {
-				rz_cons_printf ("f trampoline.%" PFMT64x " @ 0x%" PFMT64x "\n", n, core->offset + i);
+				rz_cons_printf ("f trampoline.%" PFMT32x " @ 0x%" PFMT64x "\n", n, core->offset + i);
 			}
 			rz_cons_printf ("Cd %zu @ 0x%" PFMT64x ":%zu\n", element_size, core->offset + i, element_size);
 			// TODO: add data xrefs
@@ -7835,7 +7835,7 @@ static bool cmd_anal_refs(RzCore *core, const char *input) {
 					// TODO: implement multi-line comments
 					rz_list_foreach (list, iter, ref) {
 						rz_cons_printf ("CCa 0x%" PFMT64x " \"XREF from 0x%u \n",
-								ref->at, ref->type, rz_asm_op_get_asm (&asmop), iter->n? ",": "");
+								ref->at, ref->type);
 					}
 				} else { // "axf"
 					char str[512];
