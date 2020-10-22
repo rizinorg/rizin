@@ -25,9 +25,10 @@ RZ_API RZ_NONNULL const char *rz_project_err_message(RzProjectErr err) {
 		return "newer project version";
 	case RZ_PROJECT_ERR_INVALID_CONTENTS:
 		return "invalid content encountered";
-	default:
-		return "unknown error";
+	case RZ_PROJECT_ERR_UNKNOWN:
+		break;
 	}
+	return "unknown error";
 }
 
 RZ_API RzProjectErr rz_project_save(RzCore *core, RzProject *prj) {
