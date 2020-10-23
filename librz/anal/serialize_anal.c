@@ -541,7 +541,7 @@ error:
 	return false;
 }
 
-RZ_API bool rz_serialize_anal_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RSerializeAnalDiffParser diff_parser, RZ_NULLABLE RSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res) {
 	BlockLoadCtx ctx = { anal, key_parser_new (), diff_parser };
 	if (!ctx.parser) {
 		SERIALIZE_ERR ("parser init failed");
@@ -1211,7 +1211,7 @@ beach:
 	return ret;
 }
 
-RZ_API bool rz_serialize_anal_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RSerializeAnalDiffParser diff_parser, RZ_NULLABLE RSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res) {
 	FunctionLoadCtx ctx = {
 		.anal = anal,
 		.parser = key_parser_new (),
@@ -1348,7 +1348,7 @@ error:
 	return false;
 }
 
-RZ_API bool rz_serialize_anal_xrefs_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_xrefs_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	bool ret = sdb_foreach (db, xrefs_load_cb, anal);
 	if (!ret) {
 		SERIALIZE_ERR ("xrefs parsing failed");
@@ -1577,7 +1577,7 @@ error:
 	return false;
 }
 
-RZ_API bool rz_serialize_anal_meta_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_meta_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	Sdb *spaces_db = sdb_ns (db, "spaces", false);
 	if (!spaces_db) {
 		SERIALIZE_ERR ("missing meta spaces namespace");
@@ -1899,7 +1899,7 @@ static bool hints_load_cb(void *user, const char *k, const char *v) {
 	return true;
 }
 
-RZ_API bool rz_serialize_anal_hints_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_hints_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	HintsLoadCtx ctx = {
 		.anal = anal,
 		.parser = key_parser_new (),
@@ -1941,7 +1941,7 @@ RZ_API void rz_serialize_anal_classes_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal
 	sdb_copy (anal->sdb_classes, db);
 }
 
-RZ_API bool rz_serialize_anal_classes_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_classes_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	if (!sdb_ns (db, "attrs", false)) {
 		SERIALIZE_ERR ("missing attrs namespace");
 		return false;
@@ -1956,7 +1956,7 @@ RZ_API void rz_serialize_anal_types_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *
 	sdb_copy (anal->sdb_types, db);
 }
 
-RZ_API bool rz_serialize_anal_types_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_types_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	sdb_reset (anal->sdb_types);
 	sdb_copy (db, anal->sdb_types);
 	return true;
@@ -1967,7 +1967,7 @@ RZ_API void rz_serialize_anal_sign_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *a
 	rz_serialize_spaces_save (sdb_ns (db, "spaces", true), &anal->zign_spaces);
 }
 
-RZ_API bool rz_serialize_anal_sign_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_sign_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	sdb_reset (anal->sdb_zigns);
 	sdb_copy (db, anal->sdb_zigns);
 	Sdb *spaces_db = sdb_ns (db, "spaces", false);
@@ -1994,7 +1994,7 @@ static bool import_load_cb(void *user, const char *k, const char *v) {
 	return true;
 }
 
-RZ_API bool rz_serialize_anal_imports_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_imports_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	return sdb_foreach (db, import_load_cb, anal);
 }
 
@@ -2002,7 +2002,7 @@ RZ_API void rz_serialize_anal_pin_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *an
 	sdb_copy (anal->sdb_pins, db);
 }
 
-RZ_API bool rz_serialize_anal_pin_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_pin_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	sdb_copy (db, anal->sdb_pins);
 	return true;
 }
@@ -2011,7 +2011,7 @@ RZ_API void rz_serialize_anal_cc_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *ana
 	sdb_copy (anal->sdb_cc, db);
 }
 
-RZ_API bool rz_serialize_anal_cc_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_cc_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	sdb_copy (db, anal->sdb_cc);
 	return true;
 }
@@ -2030,7 +2030,7 @@ RZ_API void rz_serialize_anal_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal) 
 	rz_serialize_anal_cc_save (sdb_ns (db, "cc", true), anal);
 }
 
-RZ_API bool rz_serialize_anal_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	bool ret = false;
 	RSerializeAnalDiffParser diff_parser = rz_serialize_anal_diff_parser_new ();
 	if (!diff_parser) {

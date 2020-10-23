@@ -54,7 +54,7 @@ RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file) {
 	return err;
 }
 
-RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, RZ_NULLABLE const char *file, RSerializeResultInfo *res) {
+RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, RZ_NULLABLE const char *file, RzSerializeResultInfo *res) {
 	const char *type = sdb_const_get (prj, RZ_DB_KEY_TYPE, 0);
 	if (!type || strcmp (type, RZ_DB_PROJECT_TYPE) != 0) {
 		return RZ_PROJECT_ERR_INVALID_TYPE;
@@ -84,7 +84,7 @@ RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, RZ_NULLABLE co
 	return RZ_PROJECT_ERR_SUCCESS;
 }
 
-RZ_API RzProjectErr rz_project_load_file(RzCore *core, const char *file, RSerializeResultInfo *res) {
+RZ_API RzProjectErr rz_project_load_file(RzCore *core, const char *file, RzSerializeResultInfo *res) {
 	RzProject *prj = sdb_new0 ();
 	if (!prj) {
 		return RZ_PROJECT_ERR_UNKNOWN;

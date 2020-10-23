@@ -84,7 +84,7 @@ beach:
 	return true;
 }
 
-RZ_API bool rz_serialize_flag_zones_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzList/*<RzFlagZoneItem *>*/ *zones, RZ_NULLABLE RSerializeResultInfo *res) {
+RZ_API bool rz_serialize_flag_zones_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzList/*<RzFlagZoneItem *>*/ *zones, RZ_NULLABLE RzSerializeResultInfo *res) {
 	rz_return_val_if_fail (zones, false);
 	rz_list_purge (zones);
 	bool r = sdb_foreach (db, zone_load_cb, zones);
@@ -280,7 +280,7 @@ static bool load_flags(RZ_NONNULL Sdb *flags_db, RZ_NONNULL RzFlag *flag) {
 	return r;
 }
 
-RZ_API bool rz_serialize_flag_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzFlag *flag, RZ_NULLABLE RSerializeResultInfo *res) {
+RZ_API bool rz_serialize_flag_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzFlag *flag, RZ_NULLABLE RzSerializeResultInfo *res) {
 	rz_flag_unset_all (flag);
 
 	const char *str = sdb_const_get (db, "base", NULL);

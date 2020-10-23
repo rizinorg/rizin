@@ -51,7 +51,7 @@ static bool foreach_space_cb(void *user, const char *k, const char *v) {
 	return true;
 }
 
-RZ_API bool rz_serialize_spaces_load(RZ_NONNULL Sdb *db, RZ_NONNULL RSpaces *spaces, bool load_name, RZ_NULLABLE RSerializeResultInfo *res) {
+RZ_API bool rz_serialize_spaces_load(RZ_NONNULL Sdb *db, RZ_NONNULL RSpaces *spaces, bool load_name, RZ_NULLABLE RzSerializeResultInfo *res) {
 	if (load_name) {
 		char *old_name = (char *)spaces->name;
 		spaces->name = sdb_get (db, KEY_NAME, NULL);

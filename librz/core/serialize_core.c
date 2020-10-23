@@ -33,7 +33,7 @@ RZ_API void rz_serialize_core_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core) 
 	sdb_set (db, "blocksize", buf, 0);
 }
 
-RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE RSerializeResultInfo *res) {
+RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE RzSerializeResultInfo *res) {
 	Sdb *subdb;
 
 #define SUB(ns, call) SUB_DO(ns, call, return false;)

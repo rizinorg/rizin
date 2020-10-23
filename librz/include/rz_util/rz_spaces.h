@@ -110,7 +110,7 @@ RZ_API void rz_serialize_spaces_save(RZ_NONNULL Sdb *db, RZ_NONNULL RSpaces *spa
 /**
  * @param load_name whether to overwrite the name in spaces with the value from db
  */
-RZ_API bool rz_serialize_spaces_load(RZ_NONNULL Sdb *db, RZ_NONNULL RSpaces *spaces, bool load_name, RZ_NULLABLE RSerializeResultInfo *res);
+RZ_API bool rz_serialize_spaces_load(RZ_NONNULL Sdb *db, RZ_NONNULL RSpaces *spaces, bool load_name, RZ_NULLABLE RzSerializeResultInfo *res);
 
 #ifdef __cplusplus
 }

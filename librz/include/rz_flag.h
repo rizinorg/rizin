@@ -200,9 +200,9 @@ RZ_API RzList *rz_flag_zone_barlist(RzFlag *f, ut64 from, ut64 bsize, int rows);
 /* serialize */
 
 RZ_API void rz_serialize_flag_zones_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzList/*<RzFlagZoneItem *>*/ *zones);
-RZ_API bool rz_serialize_flag_zones_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzList/*<RzFlagZoneItem *>*/ *zones, RZ_NULLABLE RSerializeResultInfo *res);
+RZ_API bool rz_serialize_flag_zones_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzList/*<RzFlagZoneItem *>*/ *zones, RZ_NULLABLE RzSerializeResultInfo *res);
 RZ_API void rz_serialize_flag_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzFlag *flag);
-RZ_API bool rz_serialize_flag_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzFlag *flag, RZ_NULLABLE RSerializeResultInfo *res);
+RZ_API bool rz_serialize_flag_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzFlag *flag, RZ_NULLABLE RzSerializeResultInfo *res);
 
 #endif
 

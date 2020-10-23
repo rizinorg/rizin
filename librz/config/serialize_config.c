@@ -33,7 +33,7 @@ static bool load_config_cb(void *user, const char *k, const char *v) {
 	return 1;
 }
 
-RZ_API bool rz_serialize_config_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzConfig *config, RZ_NULLABLE RSerializeResultInfo *res) {
+RZ_API bool rz_serialize_config_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzConfig *config, RZ_NULLABLE RzSerializeResultInfo *res) {
 	sdb_foreach (db, load_config_cb, config);
 	return true;
 }

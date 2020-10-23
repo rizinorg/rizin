@@ -91,7 +91,7 @@ RZ_API void rz_serialize_io_files_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzIO *io) 
 	rz_id_storage_foreach (io->files, file_save_cb, db);
 }
 
-RZ_API bool rz_serialize_io_files_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzIO *io, RZ_NULLABLE RSerializeResultInfo *res) {
+RZ_API bool rz_serialize_io_files_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzIO *io, RZ_NULLABLE RzSerializeResultInfo *res) {
 	return true;
 }
 
@@ -99,7 +99,7 @@ RZ_API void rz_serialize_io_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzIO *io) {
 	rz_serialize_io_files_save (sdb_ns (db, "files", true), io);
 }
 
-RZ_API bool rz_serialize_io_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzIO *io, RZ_NULLABLE RSerializeResultInfo *res) {
+RZ_API bool rz_serialize_io_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzIO *io, RZ_NULLABLE RzSerializeResultInfo *res) {
 	// TODO: purge RzIO?
 	bool ret = false;
 	Sdb *subdb;

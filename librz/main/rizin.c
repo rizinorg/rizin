@@ -793,7 +793,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	rz_bin_force_plugin (r->bin, forcebin);
 
 	if (prj) {
-		RSerializeResultInfo *res = rz_serialize_result_info_new ();
+		RzSerializeResultInfo *res = rz_serialize_result_info_new ();
 		RzProjectErr err = rz_project_load_file (r, prj, res);
 		if (err != RZ_PROJECT_ERR_SUCCESS) {
 			eprintf ("Failed to load project: %s\n", rz_project_err_message (err));
