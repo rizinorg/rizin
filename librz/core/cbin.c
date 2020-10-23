@@ -2239,11 +2239,11 @@ static void handle_arm_hint(RzCore *core, RzBinInfo *info, ut64 paddr, ut64 vadd
 }
 
 static void handle_arm_symbol(RzCore *core, RzBinSymbol *symbol, RzBinInfo *info, int va) {
-	return handle_arm_hint (core, info, symbol->paddr, symbol->vaddr, symbol->bits, va);
+	handle_arm_hint (core, info, symbol->paddr, symbol->vaddr, symbol->bits, va);
 }
 
 static void handle_arm_entry(RzCore *core, RzBinAddr *entry, RzBinInfo *info, int va) {
-	return handle_arm_hint (core, info, entry->paddr, entry->vaddr, entry->bits, va);
+	handle_arm_hint (core, info, entry->paddr, entry->vaddr, entry->bits, va);
 }
 
 static void select_flag_space(RzCore *core, RzBinSymbol *symbol) {
