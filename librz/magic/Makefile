@@ -2,7 +2,7 @@ include ../../global.mk
 include $(LTOP)/config.mk
 
 NAME=rz_magic
-R2DEPS=rz_util
+RZ_DEPS=rz_util
 PCLIBS=@LIBMAGIC@
 CFLAGS+=-I.
 OBJS=apprentice.o ascmagic.o fsmagic.o funcs.o is_tar.o magic.o softmagic.o

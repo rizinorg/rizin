@@ -5,7 +5,7 @@ EXTRA_CLEAN=doclean
 CFLAGS+=-I..
 
 NAME=rz_anal
-R2DEPS=rz_util rz_reg rz_syscall rz_search rz_cons rz_flag rz_hash rz_crypto rz_parse
+RZ_DEPS=rz_util rz_reg rz_syscall rz_search rz_cons rz_flag rz_hash rz_crypto rz_parse
 CFLAGS+=-DRZ_PLUGIN_INCORE -Iarch -I$(TOP)/shlr
 CFLAGS+=-I$(LTOP)/asm/arch/include
 

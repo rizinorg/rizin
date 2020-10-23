@@ -1,7 +1,7 @@
 include ../config.mk
 
 NAME=rz_bp
-R2DEPS+=rz_util
+RZ_DEPS+=rz_util
 
 CFLAGS+=-DRZ_PLUGIN_INCORE
 

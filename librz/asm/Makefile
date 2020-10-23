@@ -1,8 +1,8 @@
 include ../../global.mk
 
 NAME=rz_asm
-R2DEPS=rz_syscall rz_lang rz_util rz_parse
-R2DEPS+=rz_flag rz_cons rz_reg
+RZ_DEPS=rz_syscall rz_lang rz_util rz_parse
+RZ_DEPS+=rz_flag rz_cons rz_reg
 CFLAGS+=-DRZ_PLUGIN_INCORE -Iarch/include -Iarch -I../../shlr
 CURDIR=p/
 

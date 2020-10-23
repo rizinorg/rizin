@@ -8,7 +8,7 @@ OBJS+=socket_http_server.o
 OBJS+=socket_rap_server.o
 OBJS+=socket_rap_client.o
 OBJS+=run.o rzpipe.o socket_serial.o
-R2DEPS=rz_util
+RZ_DEPS=rz_util
 
 include deps.mk
 include ../rules.mk

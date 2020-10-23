@@ -17,7 +17,7 @@ fi
 STATIC_BINS=1
 CLEAN_BUILD=1
 
-R2BINS="rizin rz_bin rz_asm rz_pm rz_agent rz_diff rz_find rz_gg rz_hash rz_run rz_asm rz_ax"
+RZ_BINS="rizin rz_bin rz_asm rz_pm rz_agent rz_diff rz_find rz_gg rz_hash rz_run rz_asm rz_ax"
 CAPSTONE_ARCHS="arm aarch64"
 #export CAPSTONE_MAKEFLAGS="CAPSTONE_ARCHS=\"arm aarch64\""
 # Build all archs for capstone, not just ARM/ARM64
@@ -98,7 +98,7 @@ if [ $? = 0 ]; then
 		export D=rizin-ios-${CPU}
 		rm -rf $D
 		mkdir -p $D/bin
-		for a in ${R2BINS} ; do
+		for a in ${RZ_BINS} ; do
 			cp -f binrz/$a/$a "$D/bin"
 		done
 		mkdir -p "$D/include"
