@@ -1,7 +1,10 @@
-/* radare - LGPL - Copyright 2020 - thestr4ng3r */
+/* rizin - LGPL - Copyright 2020 - thestr4ng3r */
 
-#include <rz_serialize.h>
-#include "serialize_util.h"
+#include <rz_util/rz_serialize.h>
+#include <rz_io.h>
+
+#include "../util/serialize_helper.h"
+
 #include <errno.h>
 
 /*

@@ -1,8 +1,9 @@
 /* radare - LGPL - Copyright 2019 - thestr4ng3r */
 
-#include <rz_serialize.h>
+#include <rz_util/rz_serialize.h>
+#include <rz_flag.h>
 
-#include "serialize_util.h"
+#include "../util/serialize_helper.h"
 
 #if R_FLAG_ZONE_USE_SDB
 #error "R_FLAG_ZONE_USE_SDB not supported by rz_serialize"

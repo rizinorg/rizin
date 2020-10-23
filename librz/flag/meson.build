@@ -1,7 +1,8 @@
 rz_flag_sources = [
   'flag.c',
   'tags.c',
-  'zones.c'
+  'zones.c',
+  'serialize_flag.c'
 ]
 
 rz_flag = library('rz_flag', rz_flag_sources,

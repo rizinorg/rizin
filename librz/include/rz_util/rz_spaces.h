@@ -4,6 +4,7 @@
 #define RZ_SPACES_MAX 512
 
 #include "rz_util.h"
+#include "rz_serialize.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -102,6 +103,14 @@ static inline bool rz_spaces_is_empty(RSpaces *sp) {
 typedef RBIter RSpaceIter;
 #define rz_spaces_foreach(sp, it, s) \
 	rz_rbtree_foreach ((sp)->spaces, (it), (s), RSpace, rb)
+
+/* serialize */
+
+RZ_API void rz_serialize_spaces_save(RZ_NONNULL Sdb *db, RZ_NONNULL RSpaces *spaces);
+/**
+ * @param load_name whether to overwrite the name in spaces with the value from db
+ */
+RZ_API bool rz_serialize_spaces_load(RZ_NONNULL Sdb *db, RZ_NONNULL RSpaces *spaces, bool load_name, RZ_NULLABLE RSerializeResultInfo *res);
 
 #ifdef __cplusplus
 }

@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2019 - thestr4ng3r */
 
-#include <rz_serialize.h>
+#include <rz_util/rz_serialize.h>
+#include <rz_config.h>
 
 /*
  *

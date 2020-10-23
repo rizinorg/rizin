@@ -36,6 +36,7 @@ OBJLIBS+=esil_sources.o esil_interrupt.o esil_cfg.o
 OBJLIBS+=esil_stats.o esil_trace.o flirt.o labels.o
 OBJLIBS+=esil2reil.o pin.o vtable.o rtti.o
 OBJLIBS+=rtti_msvc.o rtti_itanium.o jmptbl.o function.o
+OBJLIBS+=serialize_anal.o
 ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/xtensa-modules.o
 ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/xtensa-isa.o
 ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/elf32-xtensa.o

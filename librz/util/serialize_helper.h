@@ -1,6 +1,6 @@
 
-#ifndef R2DB_SERIALIZE_UTIL_H
-#define R2DB_SERIALIZE_UTIL_H
+#ifndef RZ_SERIALIZE_UTIL_H
+#define RZ_SERIALIZE_UTIL_H
 
 #include <rz_util/rz_str.h>
 
@@ -48,4 +48,4 @@ static inline void key_parser_add(KeyParser *parser, const char *key, int val) {
 		rip \
 	} \
 
-#endif //R2DB_SERIALIZE_UTIL_H
+#endif //RZ_SERIALIZE_UTIL_H

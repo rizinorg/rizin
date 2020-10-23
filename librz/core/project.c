@@ -1,9 +1,8 @@
-/* radare - LGPL - Copyright 2019 - thestr4ng3r */
+/* rizin - LGPL - Copyright 2020 - thestr4ng3r */
 
 #include <rz_project.h>
-#include <rz_serialize.h>
 
-#include "serialize_util.h"
+#include "../util/serialize_helper.h"
 
 #define RZ_DB_KEY_TYPE        "type"
 #define RZ_DB_KEY_VERSION     "version"

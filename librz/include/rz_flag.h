@@ -5,6 +5,7 @@
 #include <rz_util.h>
 #include <rz_list.h>
 #include <rz_skiplist.h>
+#include <rz_util/rz_serialize.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -195,6 +196,13 @@ RZ_API bool rz_flag_zone_around(RzFlag *fz, ut64 addr, const char **prev, const 
 RZ_API bool rz_flag_zone_list(RzFlag *fz, int mode);
 RZ_API bool rz_flag_zone_reset(RzFlag *f);
 RZ_API RzList *rz_flag_zone_barlist(RzFlag *f, ut64 from, ut64 bsize, int rows);
+
+/* serialize */
+
+RZ_API void rz_serialize_flag_zones_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzList/*<RzFlagZoneItem *>*/ *zones);
+RZ_API bool rz_serialize_flag_zones_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzList/*<RzFlagZoneItem *>*/ *zones, RZ_NULLABLE RSerializeResultInfo *res);
+RZ_API void rz_serialize_flag_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzFlag *flag);
+RZ_API bool rz_serialize_flag_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzFlag *flag, RZ_NULLABLE RSerializeResultInfo *res);
 
 #endif
 

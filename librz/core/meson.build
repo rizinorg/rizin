@@ -66,12 +66,7 @@ rz_core_sources = [
   'p/core_a2f.c',
   'p/core_java.c',
   'cannotated_code.c',
-  'serialize_anal.c',
-  'serialize_config.c',
-  'serialize_core.c',
-  'serialize_flag.c',
-  'serialize_io.c',
-  'serialize_spaces.c'
+  'serialize_core.c'
 ]
 
 rz_core_inc = []

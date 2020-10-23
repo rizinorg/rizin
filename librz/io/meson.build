@@ -8,6 +8,7 @@ rz_io_sources = [
   'ioutils.c',
   'undo.c',
   'p_cache.c',
+  'serialize_io.c',
   'p/io_ar.c',
   'p/io_fd.c',
   'p/io_bfdbg.c',

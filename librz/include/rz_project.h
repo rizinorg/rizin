@@ -2,7 +2,7 @@
 #ifndef R2_PROJECT_H
 #define R2_PROJECT_H
 
-#include <rz_serialize.h>
+#include <rz_util/rz_serialize.h>
 #include <rz_core.h>
 #include <sdb.h>
 

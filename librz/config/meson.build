@@ -2,6 +2,7 @@ rz_config_sources = [
   'callback.c',
   'config.c',
   'hold.c',
+  'serialize_config.c'
 ]
 
 rz_config = library('rz_config', rz_config_sources,

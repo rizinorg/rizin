@@ -1,5 +1,6 @@
 
-#include <rz_serialize.h>
+#include <rz_anal.h>
+#include <rz_sign.h>
 #include "minunit.h"
 #include "test_sdb.h"
 

@@ -1,7 +1,9 @@
 /* radare - LGPL - Copyright 2019 - thestr4ng3r */
 
-#include <rz_serialize.h>
-#include "serialize_util.h"
+#include <rz_util/rz_serialize.h>
+#include <rz_core.h>
+
+#include "../util/serialize_helper.h"
 
 /*
  * SDB Format:

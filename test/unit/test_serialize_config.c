@@ -1,5 +1,5 @@
 
-#include <rz_serialize.h>
+#include <rz_config.h>
 #include "minunit.h"
 #include "test_sdb.h"
 
