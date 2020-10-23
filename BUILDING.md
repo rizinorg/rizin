@@ -1,8 +1,7 @@
 # Clone the rizin project and keep it updated
 
-rizin uses submodules to get external code provided by other projects, so make
-sure to clone them as well when getting rizin code base. The first time you
-download rizin you can use:
+rizin uses submodules, so make sure to clone them as well when getting rizin
+code base. The first time you download rizin you can use:
 ```
 $ git clone --recurse-submodules https://github.com/rizinorg/rizin
 ```
@@ -15,13 +14,15 @@ $ git submodule update
 ```
 
 After that, use `git pull --recurse-submodules` to update both the rizin
-codebase and submodules.
+codebase and submodules, or `git submodule update` to just update the
+submodules.
 
 # Build
 
-rizin uses `meson` to build. As not all systems have a version of `meson` that
-is recent enough, we suggest to install it directly from `pip` with `pip install
-meson`. If necessary, also install `ninja` with `pip install ninja`.
+rizin uses [`meson`](https://mesonbuild.com/) to build. As not all systems have
+a version of `meson` that is recent enough, we suggest to install it directly
+from `pip` with `pip install meson`. If necessary, also install `ninja` with
+`pip install ninja`.
 
 ## *NIX systems
 
@@ -33,15 +34,15 @@ distribution in `/usr`.
 
 ```
 $ meson build
-$ meson compile -C build
-$ sudo meson install -C build
+$ ninja -C build # or `meson compile -C build`
+$ sudo ninja -C build install # or `meson install -C build`
 ```
 
 As not all systems look for libraries in `/usr/local` subdirectories, you may
-have to add to set `LD_LIBRARY_PATH` to the proper path (e.g. `/usr/local/lib64`
-or `/usr/local/lib`). Otherwise, if you don't want to change your
-`LD_LIBRARY_PATH` you can use `meson -Dlocal=true build` in the first step to
-use `RPATH` and make sure the rizin binary can find its libraries by itself.
+have to set `LD_LIBRARY_PATH` to the proper path (e.g. `/usr/local/lib64` or
+`/usr/local/lib`). Otherwise, if you don't want to change your `LD_LIBRARY_PATH`
+you can use `meson -Dlocal=true build` in the first step to use `RPATH` and make
+sure the rizin binary can find its libraries by itself.
 
 ### Build system-wide, in `/usr`
 
@@ -52,8 +53,8 @@ with all other binaries on your system, you can also install it system-wide in
 
 ```
 $ meson --prefix=/usr build
-$ meson compile -C build
-$ sudo meson install -C build
+$ ninja -C build
+$ sudo ninja -C build install
 ```
 
 This kind of installation usually does not require any change to
@@ -68,8 +69,8 @@ the machine (or if you don't trust our build scripts enough).
 
 ```
 $ meson --prefix=~/.local build
-$ meson compile -C build
-$ meson install -C build
+$ ninja -C build
+$ ninja -C build install
 ```
 
 The `install` step will install rizin in `~/.local/bin`, so make sure to add it
@@ -88,8 +89,8 @@ binaries.
 
 ```
 $ meson --prefix=$PWD\rizin-install --default-library=static -Dstatic_runtime=true build
-$ meson compile -C build
-$ meson install -C build
+$ ninja -C build
+$ ninja -C build install
 ```
 
 You can run rizin from `$PWD\rizin-install\bin`.

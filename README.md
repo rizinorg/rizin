@@ -1,14 +1,14 @@
 # Introduction
 
-rizin is a fork of radare2 with a focus on usability, working features and code
-cleanliness.
+rizin is a fork of the radare2 reverse engineering framework with a focus on
+usability, working features and code cleanliness.
 
 rizin is portable and it can be used to analyze binaries, disassemble code,
-debugging programs, as a forensics tool, as a scriptable command-line
-hexadecimal editor able to open disk files, and much more!
+debug programs, as a forensics tool, as a scriptable command-line hexadecimal
+editor able to open disk files, and much more!
 
-To learn more on rizin you may want to read the [official rizin
-book](https://book.rizin.re).
+To learn more on rizin you may want to read the
+[official rizin book](https://book.rizin.re).
 
 # How to install
 
@@ -88,7 +88,7 @@ although not currently supported could be easily added.
 
 # Community
 
-Website: [https://www.rizin.org/](https://www.rizin.org/)
+Website: [https://www.rizin.re/](https://www.rizin.re/)
 
 IRC: irc.freenode.net #rizin
 

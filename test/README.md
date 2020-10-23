@@ -12,16 +12,35 @@ Rizin uses both regression and unit tests.
 
 # Requirements
 
- * rizin installed and in `$PATH` (you can also use a rizin non in `$PATH`, but
+ * rizin installed and in `$PATH` (you can also use a rizin not in `$PATH`, but
    other files like calling convention files, format files, etc. must have been
    installed).
- * rz-test compiled and/or installed
+ * rz-test compiled and/or installed, which is done by default automatically
+   when building rizin.
 
 # Usage
 
- * To run regressions tests use: `rz-test` from within the `test` directory.
- * To run unit tests, just use `meson test -C build` from the top directory
-   (replace `build` with the name of the directory you used to build rizin).
+## Regression tests
+To run regressions tests use `rz-test` from within the `test` directory.
+By default it will run all tests under the `db` subdirectory, however you can
+also specify which tests you want to run, by providing its name as argument to
+`rz-test`.
+
+For example, to run only the asm tests for x86_64, you can do `rz-test
+db/asm/x86_64`. `rz-test` provides other interesting options that you can check
+out by doing `rz-test -h`.
+
+An option that you may find interesting, in particular when doing changes that
+may affect the output of multiple tests, is the `-i` option, which enables
+interactive mode. When running tests in this mode, `rz-test` will warn you for
+each failed test and it will ask for your input on how to treat the issue. It
+can automatically fix the test so that it matches the new output (if that is the
+right behaviour!) or it can mark it as broken for you.
+
+## Unit tests
+To run unit tests, just use `ninja -C build test` (or `meson test -C build`)
+from the top directory (replace `build` with the name of the directory you used
+to build rizin).
 
 # Failure Levels
 
@@ -122,7 +141,7 @@ The basic structure of a unit test is the following:
 #include <rz_XXXXX.h>
 
 static bool test_my_feature(void) {
-    // code to test the behaviour
+	// code to test the behaviour
 	mu_end;
 }
 
@@ -147,6 +166,9 @@ the expected one. For example:
 - `mu_assert_streq(actual, expected, message)`
 - `mu_assert_memeq(actual, expected, len, message)`
 - etc.
+
+If you add a unit test file, be sure to also add it to `unit/meson.build`, so it
+is compiled when you compile rizin.
 
 # License
 
