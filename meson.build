@@ -270,7 +270,7 @@ endif
 
 # handle libuv library
 if get_option('use_libuv')
-  libuv_dep = dependency('libuv', version: '>=1.0.0', required: false)
+  libuv_dep = dependency('libuv', version: '>=1.0.0', required: false, static: get_option('default_library') == 'static')
   use_libuv = libuv_dep.found()
   if not libuv_dep.found()
     warning('use_libuv option was set to true, but libuv was not found.')
