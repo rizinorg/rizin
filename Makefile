@@ -8,7 +8,7 @@ L=$(DESTDIR)$(LIBDIR)
 MESON?=meson
 PYTHON?=python
 RZ_TEST=test
-R2BINS=$(shell cd binrz ; echo r*2 rz_agent rz-pm r2-indent rz_test)
+RZ_BINS=$(shell cd binrz ; echo rizin rz-*)
 ifdef SOURCE_DATE_EPOCH
 BUILDSEC=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u "+__%H:%M:%S")
 else
@@ -18,10 +18,10 @@ DATADIRS=librz/cons/d librz/flag/d librz/bin/d librz/asm/d librz/syscall/d librz
 USE_ZIP=YES
 ZIP=zip
 
-R2VC=$(shell git rev-list --all --count 2>/dev/null)
-ifeq ($(R2VC),)
+RZ_VC=$(shell git rev-list --all --count 2>/dev/null)
+ifeq ($(RZ_VC),)
 # release
-R2VC=0
+RZ_VC=0
 endif
 
 STRIP?=strip
@@ -75,7 +75,7 @@ librz/include/rz_version.h:
 	@echo Generating rz_version.h file
 	@echo $(Q)#ifndef RZ_VERSION_H$(Q) > $@.tmp
 	@echo $(Q)#define RZ_VERSION_H 1$(Q) >> $@.tmp
-	@echo $(Q)#define RZ_VERSION_COMMIT $(R2VC)$(Q) >> $@.tmp
+	@echo $(Q)#define RZ_VERSION_COMMIT $(RZ_VC)$(Q) >> $@.tmp
 	@echo $(Q)#define RZ_VERSION $(ESC)"$(RZ_VERSION)$(ESC)"$(Q) >> $@.tmp
 	@echo $(Q)#define RZ_VERSION_MAJOR $(RZ_VERSION_MAJOR)$(Q) >> $@.tmp
 	@echo $(Q)#define RZ_VERSION_MINOR $(RZ_VERSION_MINOR)$(Q) >> $@.tmp
@@ -309,11 +309,11 @@ user-wrap=echo "\#!/bin/sh" > ~/bin/"$1" \
 
 user-install:
 	mkdir -p ~/bin
-	$(foreach mod,$(R2BINS),$(call user-wrap,$(mod)))
+	$(foreach mod,$(RZ_BINS),$(call user-wrap,$(mod)))
 	cd ~/bin ;
 
 user-uninstall:
-	$(foreach mod,$(R2BINS),rm -f ~/bin/"$(mod)")
+	$(foreach mod,$(RZ_BINS),rm -f ~/bin/"$(mod)")
 	-rmdir ~/bin
 
 purge-dev:
@@ -326,7 +326,7 @@ purge-dev:
 include librz/config.mk
 
 strip:
-	#-for FILE in ${R2BINS} ; do ${STRIP} -s "${DESTDIR}${BINDIR}/$$FILE" 2> /dev/null ; done
+	#-for FILE in ${RZ_BINS} ; do ${STRIP} -s "${DESTDIR}${BINDIR}/$$FILE" 2> /dev/null ; done
 ifeq ($(HOST_OS),darwin)
 	-${STRIP} -STxX "${DESTDIR}${LIBDIR}/librz_"*".${EXT_SO}"
 else
@@ -334,7 +334,7 @@ else
 endif
 
 purge: purge-doc purge-dev user-uninstall
-	for FILE in ${R2BINS} ; do rm -f "${DESTDIR}${BINDIR}/$$FILE" ; done
+	for FILE in ${RZ_BINS} ; do rm -f "${DESTDIR}${BINDIR}/$$FILE" ; done
 	rm -f "${DESTDIR}${BINDIR}/rz_gg-cc"
 	rm -f "${DESTDIR}${LIBDIR}/librz_"*
 	rm -f "${DESTDIR}${LIBDIR}/librz"*".${EXT_SO}"
@@ -345,21 +345,21 @@ purge: purge-doc purge-dev user-uninstall
 system-purge: purge
 	sys/purge.sh
 
-R2V=rizin-${VERSION}
+RZ_V=rizin-${VERSION}
 
 v ver version:
 	@echo CURRENT=${VERSION}
 	@echo PREVIOUS=${PREVIOUS_RELEASE}
 
 dist:
-	rm -rf $(R2V)
-	git clone . $(R2V)
-	-cd $(R2V) && [ ! -f config-user.mk -o configure -nt config-user.mk ] && ./configure "--prefix=${PREFIX}"
-	cd $(R2V) ; git log $$(git show-ref | grep ${PREVIOUS_RELEASE} | awk '{print $$1}')..HEAD > ChangeLog
-	$(MAKE) -C $(R2V)/shlr capstone-sync
-	FILES=`cd $(R2V); git ls-files | sed -e "s,^,$(R2V)/,"` ; \
-	CS_FILES=`cd $(R2V)/shlr/capstone ; git ls-files | grep -v pdf | grep -v xcode | grep -v msvc | grep -v suite | grep -v bindings | grep -v tests | sed -e "s,^,$(R2V)/shlr/capstone/,"` ; \
-	${TAR} "rizin-${VERSION}.tar" $${FILES} $${CS_FILES} "$(R2V)/ChangeLog" ; \
+	rm -rf $(RZ_V)
+	git clone . $(RZ_V)
+	-cd $(RZ_V) && [ ! -f config-user.mk -o configure -nt config-user.mk ] && ./configure "--prefix=${PREFIX}"
+	cd $(RZ_V) ; git log $$(git show-ref | grep ${PREVIOUS_RELEASE} | awk '{print $$1}')..HEAD > ChangeLog
+	$(MAKE) -C $(RZ_V)/shlr capstone-sync
+	FILES=`cd $(RZ_V); git ls-files | sed -e "s,^,$(RZ_V)/,"` ; \
+	CS_FILES=`cd $(RZ_V)/shlr/capstone ; git ls-files | grep -v pdf | grep -v xcode | grep -v msvc | grep -v suite | grep -v bindings | grep -v tests | sed -e "s,^,$(RZ_V)/shlr/capstone/,"` ; \
+	${TAR} "rizin-${VERSION}.tar" $${FILES} $${CS_FILES} "$(RZ_V)/ChangeLog" ; \
 	${CZ} "rizin-${VERSION}.tar"
 
 olddist:

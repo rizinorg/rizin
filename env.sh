@@ -47,7 +47,7 @@ if [ -z "$*" ]; then
 	   | sed -e 's,^,  ,g' \
 	   | sed -e 's,$, \\,'
 	echo
-	export PS1="r2env.sh$ "
+	export PS1="rz-env.sh$ "
 	eval $new_env $SHELL
 	echo
 	echo "==> Back to system shell..."

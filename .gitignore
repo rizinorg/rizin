@@ -104,7 +104,7 @@ infer-out/
 cscope.out
 r2-static/*
 compile_commands.json
-librz/flag/d/tags.r2
+librz/flag/d/tags.rz
 # CLion
 .idea/
 # VSCode
