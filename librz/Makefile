@@ -165,7 +165,7 @@ $(LIBS):
 
 pkgcfg:
 	@for lib in ${LIBS}; do $(MAKE) -C $${lib} pkgcfg; done
-	$(MAKE) -C asm pkgcfg NAME=librz R2DEPS="rz_`echo ${LIBS}|sed -e 's, , rz_,g'`"
+	$(MAKE) -C asm pkgcfg NAME=librz RZ_DEPS="rz_`echo ${LIBS}|sed -e 's, , rz_,g'`"
 	# TODO: Magically generate librz.pc.acr here using LIBS and so :)
 
 install-pkgconfig:

@@ -2,9 +2,9 @@ include ../config.mk
 
 NAME=rz_core
 
-R2DEPS=rz_config rz_cons rz_io rz_util rz_flag rz_asm
-R2DEPS+=rz_debug rz_hash rz_bin rz_lang rz_io rz_anal rz_parse rz_bp rz_egg
-R2DEPS+=rz_reg rz_search rz_syscall rz_socket rz_magic rz_crypto
+RZ_DEPS=rz_config rz_cons rz_io rz_util rz_flag rz_asm
+RZ_DEPS+=rz_debug rz_hash rz_bin rz_lang rz_io rz_anal rz_parse rz_bp rz_egg
+RZ_DEPS+=rz_reg rz_search rz_syscall rz_socket rz_magic rz_crypto
 
 OBJS=core.o cmd.o cmd_helps.o cfile.o cconfig.o visual.o cio.o yank.o libs.o agraph.o
 OBJS+=fortune.o hack.o vasm.o patch.o cbin.o corelog.o rtr.o cmd_api.o

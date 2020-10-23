@@ -1,8 +1,8 @@
 include ../config.mk
 
 NAME=rz_egg
-R2DEPS=rz_asm rz_syscall rz_util rz_parse rz_reg rz_lang
-R2DEPS+=rz_flag rz_cons
+RZ_DEPS=rz_asm rz_syscall rz_util rz_parse rz_reg rz_lang
+RZ_DEPS+=rz_flag rz_cons
 
 OBJS=egg.o egg_lang.o
 OBJS+=emit_x86.o

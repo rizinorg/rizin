@@ -1,9 +1,9 @@
 include ../config.mk
 
 NAME=rz_parse
-R2DEPS=rz_flag rz_util rz_syscall rz_reg
+RZ_DEPS=rz_flag rz_util rz_syscall rz_reg
 # indirect dependencies
-R2DEPS+=rz_cons
+RZ_DEPS+=rz_cons
 
 LINK+=$(STOP)/tcc/librz_tcc.a
 CFLAGS+=-I$(STOP)/tcc/

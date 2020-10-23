@@ -1,11 +1,11 @@
 include ../config.mk
 
 NAME=rz_io
-R2DEPS+=rz_util
-R2DEPS+=rz_socket
-R2DEPS+=rz_hash
-R2DEPS+=rz_cons
-R2DEPS+=rz_crypto
+RZ_DEPS+=rz_util
+RZ_DEPS+=rz_socket
+RZ_DEPS+=rz_hash
+RZ_DEPS+=rz_cons
+RZ_DEPS+=rz_crypto
 STATIC_OBJS=$(subst ..,p/..,$(subst io_,p/io_,$(STATIC_OBJ)))
 OBJS=${STATIC_OBJS}
 OBJS+=io.o io_plugin.o io_map.o io_desc.o io_cache.o p_cache.o undo.o ioutils.o io_fd.o

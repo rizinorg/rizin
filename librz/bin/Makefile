@@ -2,7 +2,7 @@ include ../config.mk
 include ../../global.mk
 
 NAME=rz_bin
-R2DEPS=rz_util rz_io rz_socket rz_magic rz_hash rz_syscall rz_cons
+RZ_DEPS=rz_util rz_io rz_socket rz_magic rz_hash rz_syscall rz_cons
 
 .PHONY: pre
 
