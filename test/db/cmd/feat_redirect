@@ -30,7 +30,7 @@ CMDS=<<EOF
 echo Hello > .rz-append-to-file.test
 echo World >> .rz-append-to-file.test
 cat .rz-append-to-file.test
-rm -f .rz-append-to-file.test
+rm .rz-append-to-file.test
 EOF
 EXPECT=<<EOF
 Hello
