@@ -166,7 +166,7 @@ static int dalvik_disassemble (RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 			strasm = rz_str_append (strasm, str);
 			break;
 		case fmtoppAA:
-			vA = (char) buf[1];
+			vA = (signed char) buf[1];
 			//snprintf (str, sizeof (str), " %i", vA*2); // vA : word -> byte
 			snprintf (str, sizeof (str), " 0x%08"PFMT64x, a->pc + (vA * 2)); // vA : word -> byte
 			strasm = rz_str_append (strasm, str);
