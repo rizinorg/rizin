@@ -4108,8 +4108,11 @@ static void nextword(RzCore *core, RzAGraph *g, const char *word) {
 }
 
 RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalFunction *_fcn, int is_interactive) {
+	if (is_interactive && !rz_cons_is_interactive ()) {
+		eprintf ("Interactive graph mode requires scr.interactive=true.\n");
+		return 0;
+	}
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
-	int o_scrinteractive = rz_cons_is_interactive ();
 	int o_vmode = core->vmode;
 	int exit_graph = false, is_error = false;
 	int update_seek = false;
@@ -4166,7 +4169,6 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalFunction *_fcn,
 	} else {
 		o_can = g->can;
 	}
-	rz_config_set_i (core->config, "scr.interactive", false);
 	g->can = can;
 	g->movspeed = rz_config_get_i (core->config, "graph.scroll");
 	g->show_node_titles = rz_config_get_i (core->config, "graph.ntitles");
@@ -4611,8 +4613,6 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalFunction *_fcn,
 		case 'd':
 			{
 				showcursor (core, true);
-				// WTF?
-				rz_config_set_i (core->config, "scr.interactive", true);
 				rz_core_visual_define (core, "", 0);
 				get_bbupdate (g, core, fcn);
 				showcursor (core, false);
@@ -4780,9 +4780,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalFunction *_fcn,
 			break;
 		case '/':
 			showcursor (core, true);
-			rz_config_set_i (core->config, "scr.interactive", true);
 			rz_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
-			rz_config_set_i (core->config, "scr.interactive", false);
 			showcursor (core, false);
 			break;
 		case ':':
@@ -4911,7 +4909,6 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalFunction *_fcn,
 	free (grd);
 	if (graph_allocated) {
 		rz_agraph_free (g);
-		rz_config_set_i (core->config, "scr.interactive", o_scrinteractive);
 	} else {
 		g->can = o_can;
 	}

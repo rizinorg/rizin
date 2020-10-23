@@ -8777,7 +8777,7 @@ static void cmd_anal_graph(RzCore *core, const char *input) {
 			break;
 		}
 		case 'v': // "agfv"
-			eprintf ("\rRendering graph...");
+			eprintf ("\rRendering graph...\n");
 			RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, RZ_ANAL_FCN_TYPE_ROOT);
 			if (fcn) {
 				rz_core_visual_graph (core, NULL, fcn, 1);
