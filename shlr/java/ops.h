@@ -1,4 +1,5 @@
-/* radare - Apache 2.0 - Copyright 2013 - Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
+// SPDX-License-Identifier: Apache-2.0
+
 #include <rz_anal.h>
 
 #ifndef RZ_JAVA_OPS_H
