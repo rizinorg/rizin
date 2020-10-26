@@ -1,7 +1,6 @@
 # DEVELOPERS
 
-This file aims to describe an introduction for developers to work
-on the code base of rizin project.
+This file is aimed at developers who want to work on the Rizin code base.
 
 ## Documentation
 There is support for Doxygen document generation in this repo.
@@ -36,14 +35,6 @@ static int findMinMax(RzList *maps, ut64 *min, ut64 *max, int skip, int width);
 In order to contribute with patches or plugins, we encourage you to
 use the same coding style as the rest of the code base.
 
-Please use `./sys/clang-format-diff.py` before submitting a PR to be sure you
-are following the coding style. If you find a bug in this script, please create
-an issue on GitHub. You can also install the pre-commit hook
-`./sys/pre-commit-indent.sh` by copying it in `.git/hooks/pre-commit` which
-will check the coding style of the modified lines before committing them.
-
-You may find some additional notes on this topic in doc/vim.
-
 * Tabs are used for indentation. In a switch statement, the
   cases are indented at the switch level.
 
@@ -57,7 +48,9 @@ default:
 }
 ```
 
-* Lines should be at most 78 chars. A tab is considered as 8 chars.
+* Lines should be at most 100 chars. A tab is considered as 8 chars. If it makes
+  things more readable, you can use more than 100 characters, but this should be
+  the exception, not the rule.
 
 * Braces open on the same line as the for/while/if/else/function/etc. Closing
   braces are put on a line of their own, except in the else of an if statement
@@ -162,7 +155,7 @@ a = (b << 3) * 5;
 
 * Structure in the C files
 
-The structure of the C files in rizin must be like this:
+The structure of the C files in Rizin must be like this:
 
 ```c
 /* Copyright ... */           ## copyright
@@ -177,7 +170,7 @@ RZ_API void public(void) {}    ## public apis starting with constructor/destruct
 
 * Why return int vs enum
 
-The reason why many places in rizin-land functions return int instead of an enum type is because enums can't be OR'ed; otherwise, it breaks the usage within a switch statement and swig can't handle that stuff.
+The reason why many places in Rizin-land functions return int instead of an enum type is because enums can't be OR'ed; otherwise, it breaks the usage within a switch statement and swig can't handle that stuff.
 
 ```
 rz_core_wrap.cxx:28612:60: error: assigning to 'RzRegisterType' from incompatible type 'long'
@@ -199,10 +192,6 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
     - This way we reduce the number of local variables per function
     and it's easier to find which variables are used, where and so on.
 
-* Always put a space before every parenthesis (function calls, conditionals,
-  fors, etc, ...) except when defining the function signature. This is
-  useful for grepping.
-
 * Function names should be explicit enough to not require a comment
   explaining what it does when seen elsewhere in code.
 
@@ -210,26 +199,18 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 
 * The rest of functions must be static, to avoid polluting the global space.
 
-* Avoid using global variables, they are evil. Only use them for singletons
-  and WIP code, placing a comment explaining the reason for them to stay there.
-
-* If you *really* need to comment out some code, use #if 0 (...) #endif. In
-  general, don't comment out code because it makes the code less readable.
+* Avoid using global variables, they are evil.
 
 * Do not write ultra-large functions: split them into multiple or simplify
   the algorithm, only external-copy-pasted-not-going-to-be-maintained code
   can be accepted in this way (gnu code, external disassemblers, etc..)
 
-* See sys/indent.sh for indenting your code automatically
+* See .clang-format for automated indentation
 
-* See doc/vim for vimrc
-
-* See .clang-format for work-in-progress support for automated indentation
-
-* Use the rizin types instead of the ones in stdint, which are known to cause some
+* Use the Rizin types instead of the ones in stdint, which are known to cause some
   portability issues. So, instead of uint8_t, use ut8, etc..
 
-* Never ever use %lld or %llx. This is not portable. Always use the PFMT64x
+* Never ever use `%lld` or `%llx`. This is not portable. Always use the PFMT64x
   macros. Those are similar to the ones in GLIB.
 
 ### Shell Scripts
@@ -281,7 +262,7 @@ within the integer value, REGARDLESS of the host endian of the machine.
 
 ## Endian helper functions
 
-Radare2 now uses helper functions to interpret all byte streams in a known endian.
+Rizin now uses helper functions to interpret all byte streams in a known endian.
 
 Please use these at all times, eg:
 
@@ -296,44 +277,9 @@ There are a number of helper functions for 64, 32, 16, and 8 bit reads and write
 (Note that 8 bit reads are equivalent to casting a single byte of the buffer
 to a ut8 value, ie endian is irrelevant).
 
-### Editor configuration
-
-Vim/Neovim:
-
-```vim
-setl cindent
-setl tabstop=4
-setl noexpandtab
-setl cino=:0,+0,(2,J0,{1,}0,>4,)1,m2
-```
-
-Emacs:
-
-```elisp
-(c-add-style "rizin"
-             '((c-basic-offset . 4)
-               (tab-width . 4)
-               (indent-tabs-mode . t)
-               ;;;; You would need (put 'c-auto-align-backslashes 'safe-local-variable 'booleanp) to enable this
-               ;; (c-auto-align-backslashes . nil)
-               (c-offsets-alist
-                (arglist-intro . ++)
-                (arglist-cont . ++)
-                (arglist-cont-nonempty . ++)
-                (statement-cont . ++)
-                )))
-```
-
-You may use directory-local variables by putting
-```elisp
-((c-mode .  ((c-file-style . "rizin"))))
-```
-
-into `.dir-locals.el`.
-
 ## Packed structures
 
-Due to the various differences between platforms and compilers rizin
+Due to the various differences between platforms and compilers Rizin
 has a special helper macro - `RZ_PACKED()`. Instead of non-portable
 `#pragma pack` or `__attribute__((packed))` it is advised to use this macro
 instead. To wrap the code inside of it you just need to write:
@@ -353,162 +299,6 @@ RZ_PACKED (typedef structmystruct {
 
 ## Modules
 
-The rizin code base is modularized into different libraries that are
-found in librz/ directory. The binrz/ directory contains the programs
+The Rizin code base is modularized into different libraries that are
+found in `librz/` directory. The `binrz/` directory contains the programs
 which use the libraries.
-
-It is possible to generate PIC/nonPIC builds of the libraries and also
-to create a single static library so you can use a single library
-archive (.a) to link your programs and get your programs using radare
-framework libraries without depending on them. See doc/static for more info.
-
-The following presentation gives a good overview of the libraries:
-
-   http://radare.org/get/lacon-radare-2009/
-
-## API
-
-As mentioned in README.md, the API itself is maintained in a different
-repository. The API function definitions in C header files are derived
-from and documented in the rizin-bindings repository, found at:
-```sh
-   git clone git://github.com/rizinorg/rizin-bindings
-```
-
-Currently the process of updating the header files from changed API
-bindings requires human intervention, to ensure that proper review
-occurs.  Incorrect definitions in the C header files will trigger
-a build failure in the bindings repository.
-
-If you are able to write a plugin for various IDE that can associate
-the bindings with the header files, such a contribution would be
-very welcome.
-
-## Dependencies
-
-rizin can be built without any special dependency. It just requires
-a C compiler, a GNU make and a unix-like system.
-
-## Cross compilation
-
-The instructions to crosscompile rizin to Windows are in doc/windows.
-
-You may find other documents in doc/ explaining how to build it on iOS,
-linux-arm and others, but the procedure is like this:
-
- - define `CC`
- - use a different compiler profile with `--with-compiler`
- - use a different OS with `--with-ostype`
- - type `make`
- - install in `DESTDIR`
-
-## Source repository
-
-The source of rizin can be found in the following GitHub repository.
-```sh
-   git clone git://github.com/rizinorg/rizin
-```
-Other packages rizin depends on, such as Capstone, are pulled from
-their git repository as required.
-
-To get an up-to-date copy of the repository, you should perform the
-following steps:
-```sh
-   git pull
-```
-
-If you have conflicts in your local copy, it's because you have modified
-files which are conflicting with the incoming patchsets. To get a clean
-source directory, type the following command:
-```sh
-   git clean -xdf
-   git reset --hard
-```
-
-## Compilation
-
-Inter-module rebuild dependencies are not handled automatically and
-require human interaction to recompile the affected modules.
-
-This is a common issue and can end up having outdated libraries trying
-to use deprecated structures which may result into segfaults.
-
-You have to make clean on the affected modules. If you are not
-sure enough that everything is OK, just make clean the whole project.
-
-If you want to accelerate the build process after full make cleans,
-you should use ccache in this way:
-```
-  export CC="ccache gcc"
-```
-
-## Installation
-
-Developers use to modify the code, type make and then try.
-
-rizin has a specific makefile target that allows you to install
-system wide but using symlinks instead of hard copies.
-```sh
-sudo make symstall
-```
-This kind of installation is really helpful if you do lot of changes
-in the code for various reasons.
-
-  - only one install is required across multiple builds
-  - installation time is much faster
-
-## Regression testing
-
-The source of the rizin regression test suite can be found in the
- `test/` directory, while binaries for this test are located in the
- following GitHub repository.
-```sh
-   git clone git://github.com/rizinorg/rizin-testbins
-```
-
-See the `README.md` file in that repository for further information.
-
-The existing test coverage can always do with improvement. So if you can
-contribute additional tests, that would be gratefully accepted.
-
-## Reporting bugs
-
-If you notice any misfeature, issue, error, problem or you just
-don't know how to do something which is supposed to be covered
-by this framework.
-
-You should report it into the GitHub issues page.
-   https://github.com/rizinorg/rizin/issues
-
-Otherwise, if you are looking for some more feedback, I will
-encourage you to send an email to any of the emails enumerated
-in the AUTHORS file.
-
-Anyway, if you want to get even more feedback and discuss this
-in a public place: join the #radare channel on irc.freenode.net.
-
-The issues page of GitHub contains a list of all the bugs that
-have been reported classified with labels by difficulty, type,
-milestone, etc. It is a good place to start if you are looking
-to contribute.
-
-## HOW TO RELEASE
-
- - Set `RELEASE=1` in global.mk and rizin-bindings/config.mk.acr.
- - Use `bsdtar` from libarchive package. GNU tar is broken.
-
-  RIZIN
-  ---
-   - bump revision
-   - `./configure`
-   - `make dist`
-
-  RIZIN-BINDINGS
-  ---
-   - `./configure --enable-devel`
-   - `make`
-   - `make dist`
-
-  - Update the [paths on the website](https://github.com/rizinorg/rizinorg/blob/master/source/download_paths.rst)
-
---pancake

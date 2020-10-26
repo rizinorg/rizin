@@ -1,32 +1,48 @@
-Radare2 Regression Test Suite
+Rizin tests
 =============================
 
-A set of regression tests for Radare2 (http://radare.org).
+Rizin uses both regression and unit tests.
 
-Originally based on work by and now in collaboration with pancake.
+# Directory Hierarchy
 
-Directory Hierarchy
--------------------
-
- * db/:          The tests sources
+ * db/:          The regressions tests sources
  * unit/:        Unit tests (written in C, using minunit).
  * fuzz/:        Fuzzing helper scripts
  * bins/:        Sample binaries (fetched from the [external repository](https://github.com/rizinorg/rizin-testbins))
 
-Requirements
-------------
+# Requirements
 
- * Radare2 installed (and in `$PATH` or set the R2 environment).
- * Valgrind (optional).
+ * rizin installed and in `$PATH` (you can also use a rizin not in `$PATH`, but
+   other files like calling convention files, format files, etc. must have been
+   installed).
+ * rz-test compiled and/or installed, which is done by default automatically
+   when building Rizin.
 
-Usage
------
+# Usage
 
- * To run *all* tests, use `make -k all`.
- * To execute only the unit tests use `make -k unit_tests`.
+## Regression tests
+To run regressions tests use `rz-test` from within the `test` directory.
+By default it will run all tests under the `db` subdirectory, however you can
+also specify which tests you want to run, by providing its name as argument to
+`rz-test`.
 
-Failure Levels
---------------
+For example, to run only the asm tests for x86_64, you can do `rz-test
+db/asm/x86_64`. `rz-test` provides other interesting options that you can check
+out by doing `rz-test -h`.
+
+An option that you may find interesting, in particular when doing changes that
+may affect the output of multiple tests, is the `-i` option, which enables
+interactive mode. When running tests in this mode, `rz-test` will warn you for
+each failed test and it will ask for your input on how to treat the issue. It
+can automatically fix the test so that it matches the new output (if that is the
+right behaviour!) or it can mark it as broken for you.
+
+## Unit tests
+To run unit tests, just use `ninja -C build test` (or `meson test -C build`)
+from the top directory (replace `build` with the name of the directory you used
+to build Rizin).
+
+# Failure Levels
 
 A test can have one of the following results:
 * success: The test passed, and that was expected.
@@ -34,16 +50,7 @@ A test can have one of the following results:
 * broken: Failure was expected, and happened.
 * failed: The test failed unexpectedly. This is a regression.
 
-Reporting Radare2 Bugs
-----------------------
-
-Please do not post Radare2 bugs on the r2-regressions github tracker. Instead
-use the official r2 tracker:
-
-https://github.com/rizinorg/rizin/issues?state=open
-
-Writing Assembly tests
-----------------------
+# Writing Assembly tests
 
 Example tests for `db/asm/*`:
 
@@ -85,46 +92,84 @@ Example tests for `db/asm/*`:
         arm_v7_64 means what it means
 
 
-Writing JSON tests
-----------
+# Writing JSON tests
 
 The JSON tests `db/json` are executed on 3 standard files (1 ELF, 1 MachO, 1 PE). The tests need to be working on the 3 files to pass.
 
 # Commands tests
-----------------
 
 Example commands tests for the other `db/` folders:
 
 	NAME=test_db
 	FILE=bins/elf/ls
-	CMDS=<<EXPECT
+	CMDS=<<EOF
 	pd 4
-	EXPECT=<<RUN
+	EOF
+	EXPECT=<<EOF
             ;-- main:
             ;-- entry0:
             ;-- func.100001174:
             0x100001174      55             Push rbp
             0x100001175      4889e5         Mov  rbp, rsp
             0x100001178      4157           Push r15
+	EOF
 	RUN
 
 * **NAME** is the name of the test, it must be unique
 * **FILE** is the path of the file used for the test
-* **ARGS** (optional) are the command line argument passed to r2 (e.g -b 16)
+* **ARGS** (optional) are the command line argument passed to rizin (e.g -b 16)
 * **CMDS** are the commands to be executed by the test
 * **EXPECT** is the expected output of the test
-* **BROKEN** (optional) is 1 if the tests is expected to be fail, 0 otherwise
+* **BROKEN** (optional) is 1 if the tests is expected to be fail, 0 or unspecified otherwise
 * **TIMEOUT** (optional) is the number of seconds to wait before considering the test timeout
 
 You must end the test by adding RUN keyword
 
-Advices
--------
+## Advices
 
-* For portability reasons Do not use shell pipes, use `~`
+* For portability reasons do not use shell pipes, use `~`
 * dont use `pd` if not necessary, use `pi`
 
-License
--------
+# Unit tests
+
+Assembly, JSON and commands tests are useful to test the overall behaviour of
+Rizin, but to test new API or new code we suggest to write small unit tests.
+
+The basic structure of a unit test is the following:
+```C
+#include "minunit.h"
+#include <rz_XXXXX.h>
+
+static bool test_my_feature(void) {
+	// code to test the behaviour
+	mu_end;
+}
+
+static bool all_tests() {
+	mu_run_test(test_my_feature);
+	return tests_passed != tests_run;
+}
+
+int main(int argc, char **argv) {
+	return all_tests();
+}
+```
+
+Minunit provides various functions to check the actual output of a function with
+the expected one. For example:
+
+- `mu_assert_true(actual, message)` checks that `actual` evaluates to true, otherwise it prints `message` on stderr.
+- `mu_assert_false(actual, message)` checks that `actual` evaluates to false, otherwise it prints `message` on stderr.
+- `mu_assert_eq(actual, expected, message)` checks that the integer (ut64 at most) `actual` is equal to the integer `expected`, otherwise it prints `message` on stderr.
+- `mu_assert_ptreq(actual, expected, message)` checks that the pointer `actual` is equal to `expected`.
+- `mu_assert_null(actual, message)`
+- `mu_assert_streq(actual, expected, message)`
+- `mu_assert_memeq(actual, expected, len, message)`
+- etc.
+
+If you add a unit test file, be sure to also add it to `unit/meson.build`, so it
+is compiled when you compile Rizin.
+
+# License
 
 The test files are licensed under GPL 3 (or later).
