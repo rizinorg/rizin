@@ -9766,10 +9766,6 @@ static int cmd_anal_all(RzCore *core, const char *input) {
 					rz_core_cmd0 (core, "aaef");
 					rz_print_rowlog_done (core->print, oldstr);
 					rz_core_task_yield (&core->tasks);
-					if (!ioCache) {
-						rz_core_cmd0 (core, "wc-*");
-						rz_core_task_yield (&core->tasks);
-					}
 					rz_config_set_i (core->config, "io.pcache", ioCache);
 					if (rz_cons_is_breaked ()) {
 						goto jacuzzi;
