@@ -52,7 +52,7 @@ static bool zone_load_cb(void *user, const char *k, const char *v) {
 	RJson *json  = rz_json_parse (json_str);
 	if (!json) {
 		free (json_str);
-		return false;
+		return true;
 	}
 	if (json->type != RZ_JSON_OBJECT) {
 		goto beach;
@@ -167,7 +167,7 @@ static bool flag_load_cb(void *user, const char *k, const char *v) {
 		return false;
 	}
 
-	RzFlagItem proto = {0 };
+	RzFlagItem proto = { 0 };
 	bool offset_set = false;
 	bool size_set = false;
 
