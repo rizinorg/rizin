@@ -178,9 +178,10 @@ static bool is_delta_pointer_table(RzAnal *anal, RzAnalFunction *fcn, ut64 addr,
 	/* check if current instruction is followed by an ujmp */
 	ut8 buf[JMPTBL_LEA_SEARCH_SZ];
 	RzAnalOp *aop = jmp_aop;
-	RzAnalOp omov_aop, mov_aop = { 0 };
+	RzAnalOp omov_aop = {0};
+	RzAnalOp mov_aop = {0};
 	RzAnalOp add_aop = {0};
-	RzRegItem *reg_src, *o_reg_dst = NULL;
+	RzRegItem *reg_src = NULL, *o_reg_dst = NULL;
 	RzAnalValue cur_scr, cur_dst = { 0 };
 	read_ahead (anal, addr, (ut8*)buf, sizeof (buf));
 	bool isValid = false;
