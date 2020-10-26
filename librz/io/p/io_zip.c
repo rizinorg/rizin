@@ -1,8 +1,4 @@
 // SPDX-License-Identifier: LGPL-3.0-only
-   io_zip.c rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
- */
-
-// TODO: wrap with rz_sandbox api
 
 #include <rz_io.h>
 #include <rz_lib.h>

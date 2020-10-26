@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: LGPL-3.0-only
-				2013 - condret		*/
 
 #include <string.h>
 #include <rz_types.h>

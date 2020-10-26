@@ -1,7 +1,4 @@
 // SPDX-License-Identifier: LGPL-3.0-only
-	2014 - condret					*/
-
-// fork of asm_z80.c
 
 #include <rz_types.h>
 #include <rz_util.h>

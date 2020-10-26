@@ -1,6 +1,4 @@
 // SPDX-License-Identifier: LGPL-3.0-only
-                   Copyright 2016      - unlogic
-*/
 
 #include <rz_asm.h>
 #include <rz_types.h>
