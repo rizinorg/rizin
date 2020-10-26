@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2020 - condret, riq */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 /* 6502 info taken from http://unusedino.de/ec64/technical/aay/c64/bchrt651.htm
  *

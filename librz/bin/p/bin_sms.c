@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2018 - shengdi */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_bin.h>
 

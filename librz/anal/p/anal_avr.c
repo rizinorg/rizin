@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2019 - pancake, Roc Valles, condret, killabyte */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #if 0
 http://www.atmel.com/images/atmel-0856-avr-instruction-set-manual.pdf

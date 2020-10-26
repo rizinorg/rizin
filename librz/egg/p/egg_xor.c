@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2016 - pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 /* based on @santitox patch */
 #include <rz_egg.h>

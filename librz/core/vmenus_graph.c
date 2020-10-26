@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019 - pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
 #define SORT_ADDRESS 0

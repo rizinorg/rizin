@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2020 - inisider, pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "../../i/private.h"
 #include "mach0_classes.h"

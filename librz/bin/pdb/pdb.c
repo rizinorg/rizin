@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - inisider */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_pdb.h>
 #include <rz_bin.h>

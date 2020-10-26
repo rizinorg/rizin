@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2020 - condret */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_anal.h>
 #include <rz_list.h>

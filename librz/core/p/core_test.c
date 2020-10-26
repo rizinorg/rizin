@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 #if 0
 gcc -o core_test.so -fPIC `pkg-config --cflags --libs rz_core` core_test.c -shared
 mkdir -p ~/.config/rizin/plugins

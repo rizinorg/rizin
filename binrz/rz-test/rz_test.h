@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020 - thestr4ng3r */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RIZIN_RZTEST_H
 #define RIZIN_RZTEST_H

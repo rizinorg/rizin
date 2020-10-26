@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "bin_write_elf.inc"
 

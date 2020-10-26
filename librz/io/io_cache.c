@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2018 - pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 // TODO: implement a more intelligent way to store cached memory
 

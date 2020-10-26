@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020 - thestr4ng3r */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_serialize.h>
 #include <rz_anal.h>

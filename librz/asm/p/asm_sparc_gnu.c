@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - nibble */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
 #include <stdarg.h>

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake, jduck, TheLemonMan, saucec0de */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_debug.h>
 #include <rz_drx.h>

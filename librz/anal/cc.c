@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2020 - pancake, Oddcoder */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 /* Universal calling convention implementation based on sdb */
 

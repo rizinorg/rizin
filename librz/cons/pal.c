@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2020 - pancake, sghctoma, xarkes */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_cons.h>
 

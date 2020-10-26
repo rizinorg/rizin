@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2017 - bobby.smiles32@gmail.com */
+// SPDX-License-Identifier: LGPL-3.0-only
 /*
  * TODO: finish esil support of the non vector instructions
  * TODO: implement vector instruction using custom esil commands

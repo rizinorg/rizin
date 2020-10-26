@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018 - Dirk Eibach, Guntermann & Drunck GmbH */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_io.h>
 #include <rz_lib.h>

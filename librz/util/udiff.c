@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake, nikolai */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_diff.h>
 

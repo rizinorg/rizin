@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020 - GustavoLCR */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #define INITGUID
 #include <rz_core.h>

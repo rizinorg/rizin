@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020 - thestr4ng3r, Yaroslav Stavnichiy */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_JSON_H
 #define RZ_JSON_H

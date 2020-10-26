@@ -1,4 +1,4 @@
-/* radare - Copyright 2014-2018 pancake, defragger */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
 #include <rz_core.h>

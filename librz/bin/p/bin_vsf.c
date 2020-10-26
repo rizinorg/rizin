@@ -1,4 +1,4 @@
-/* radare - LGPL3 - 2015-2019 - riq */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 /* VICE Snapshot File loader: http://vice-emu.sourceforge.net/ */
 

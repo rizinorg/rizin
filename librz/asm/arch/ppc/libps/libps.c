@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017 - wargio */
+// SPDX-License-Identifier: LGPL-3.0-only
 #include "libps.h"
 #include "libps_internal.h"
 

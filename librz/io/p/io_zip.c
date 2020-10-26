@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2016 - pancake
+// SPDX-License-Identifier: LGPL-3.0-only
    io_zip.c rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
  */
 

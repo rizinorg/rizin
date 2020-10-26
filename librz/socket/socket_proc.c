@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2012 - pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 /* XXX : move to rz_util??? rename method names.. to long? */
 /* proc IO is not related to socket io.. this is shitty!! */

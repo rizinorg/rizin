@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2014 - pancake
+// SPDX-License-Identifier: LGPL-3.0-only
 	2014 - condret					*/
 
 // fork of asm_z80.c

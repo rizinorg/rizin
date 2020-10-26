@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2020 - pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 /*
 Usage Example:
 

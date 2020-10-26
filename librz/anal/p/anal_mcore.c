@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2018 - deroad */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_anal.h>
 #include <rz_types.h>

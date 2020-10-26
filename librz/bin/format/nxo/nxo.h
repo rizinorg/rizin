@@ -1,4 +1,4 @@
-/* radare - LGPL - 2018 - rkx1209 */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef _NXO_H
 #define _NXO_H

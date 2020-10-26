@@ -1,4 +1,4 @@
-/* radare - LGPL - 2019 - deepakchethan */ 
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef _QNX_H
 #define _QNX_H

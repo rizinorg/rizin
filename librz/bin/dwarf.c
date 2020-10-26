@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2018 - pancake, Fedor Sakharov */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #define D0 if(1)
 #define D1 if(1)

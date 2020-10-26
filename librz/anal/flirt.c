@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2016 - jfrankowski */
+// SPDX-License-Identifier: LGPL-3.0-only
 /* credits to IDA for the flirt tech */
 /* original cpp code from Rheax <rheaxmascot@gmail.com> */
 /* thanks LemonBoy for the improved research on rheax original work */

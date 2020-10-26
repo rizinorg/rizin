@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016 - pancake, esanfelix, pof */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 /* XXX this must be specified by the user/rom? */
 #define UPPER_LIMIT 0x400000

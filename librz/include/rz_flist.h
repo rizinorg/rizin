@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010 nibble <.ds@gmail.com> */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_FLIST_H
 #define RZ_FLIST_H

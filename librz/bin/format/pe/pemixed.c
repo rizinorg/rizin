@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018 - JohnPeng47 */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
 #include "pemixed.h"

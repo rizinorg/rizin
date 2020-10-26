@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 Fedor Sakharov <fedor.sakharov@gmail.com> */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef COFF_H
 #define COFF_H

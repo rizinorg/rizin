@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - crowell */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_DEBRUIJN_H
 #define RZ_DEBRUIJN_H

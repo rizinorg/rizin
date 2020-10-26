@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2019 - pancake, alvarofe */
+// SPDX-License-Identifier: LGPL-3.0-only
 // TODO: RRef - reference counting
 
 #include <stdio.h>

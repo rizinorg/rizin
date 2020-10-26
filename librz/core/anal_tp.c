@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2020 - oddcoder, sivaramaaa */
+// SPDX-License-Identifier: LGPL-3.0-only
 /* type matching - type propagation */
 
 #include <rz_anal.h>

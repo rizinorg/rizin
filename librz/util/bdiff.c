@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+// SPDX-License-Identifier: LGPL-3.0-only
 /* Adapted code from:
 
  bdiff.c - efficient binary diff extension for Mercurial

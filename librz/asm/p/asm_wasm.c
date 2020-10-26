@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017-2018 - pancake, cgvwzq */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 // http://webassembly.org/docs/binary-encoding/#module-structure
 

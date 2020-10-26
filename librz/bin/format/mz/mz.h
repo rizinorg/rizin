@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 nodepad */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef MZ_H
 #define MZ_H

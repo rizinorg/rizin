@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2020 - pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 /* this helper api is here because it depends on rz_util and rz_socket */
 /* we should find a better place for it. rz_io? */

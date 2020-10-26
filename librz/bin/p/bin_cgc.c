@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - ret2libc, pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #define RZ_BIN_CGC 1
 #include "bin_elf.inc"

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake, defragger, madprogrammer */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
 #include <rz_debug.h>

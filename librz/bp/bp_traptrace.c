@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010 pancake<nopcode.org> */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 // TODO: use rz_range here??
 #include <rz_bp.h>

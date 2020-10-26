@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2015 - condret
+// SPDX-License-Identifier: LGPL-3.0-only
                    Copyright 2016      - unlogic
 */
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2016 - condret */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef Z80_TAB_H
 #define Z80_TAB_H

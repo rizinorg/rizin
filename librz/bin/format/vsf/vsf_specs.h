@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 riq */
+// SPDX-License-Identifier: LGPL-3.0-only
 #ifndef VSF_SPECS_H
 #define VSF_SPECS_H
 

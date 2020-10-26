@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020 - GustavoLCR */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_debug.h>
 #include <DbgEng.h>

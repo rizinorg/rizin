@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008 nibble */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #undef PE_
 #undef ILT_MASK1

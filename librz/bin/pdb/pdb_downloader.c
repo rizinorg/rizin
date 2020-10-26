@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2020 - inisider */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <string.h>
 #include <rz_util.h>

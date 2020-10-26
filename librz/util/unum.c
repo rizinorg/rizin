@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2019 - pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #if __WINDOWS__
 #include <stdlib.h>

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2013 nibble, xvilka */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #undef TE_
 #undef TE_Word
