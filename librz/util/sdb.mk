@@ -28,6 +28,7 @@ SDB_OBJS+=num.o
 SDB_OBJS+=util.o
 SDB_OBJS+=journal.o
 SDB_OBJS+=diff.o
+SDB_OBJS+=text.o
 
 SDBOBJS=$(addprefix ${SDBPATH},${SDB_OBJS})
 

@@ -68,3 +68,6 @@ static bool block_check_leaks(RzAnal *anal) {
 	}
 	return true;
 }
+
+#define assert_block_invariants(anal) do { if (!block_check_invariants (anal)) { return false; } } while (0)
+#define assert_block_leaks(anal) do { if (!block_check_leaks (anal)) { return false; } } while (0)

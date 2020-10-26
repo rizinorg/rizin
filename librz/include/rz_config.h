@@ -3,6 +3,7 @@
 
 #include "rz_types.h"
 #include "rz_util.h"
+#include "rz_util/rz_serialize.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -113,6 +114,11 @@ static inline bool rz_config_node_is_ro(RzConfigNode *node) {
 static inline bool rz_config_node_is_str(RzConfigNode *node) {
 	return node->flags & CN_STR;
 }
+
+/* serialize */
+
+RZ_API void rz_serialize_config_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzConfig *config);
+RZ_API bool rz_serialize_config_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzConfig *config, RZ_NULLABLE RzSerializeResultInfo *res);
 #endif
 
 #ifdef __cplusplus

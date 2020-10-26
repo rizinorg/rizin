@@ -1,0 +1,115 @@
+NAME=flags
+FILE=bins/elf/crackme0x05
+CMDS=<<EOF
+e cfg.newshell=1
+fr sym.main sym.renamedmain
+f~?
+f~main
+Ps .tmp_flags.rzdb
+?e --
+o--
+f
+?e --
+Po .tmp_flags.rzdb
+rm .tmp_flags.rzdb
+f~?
+f~main
+EOF
+EXPECT=<<EOF
+117
+0x08048364 16 sym.imp.__libc_start_main
+0x08048540 256 main
+0x08048540 92 sym.renamedmain
+0x0804a000 4 reloc.__libc_start_main
+--
+--
+117
+0x08048364 16 sym.imp.__libc_start_main
+0x08048540 92 sym.renamedmain
+0x08048540 256 main
+0x0804a000 4 reloc.__libc_start_main
+EOF
+RUN
+
+NAME=config
+FILE=-
+CMDS=<<EOF
+e cfg.newshell=1
+e asm.describe=1
+e asm.describe
+e asm.indentspace=8
+e asm.indentspace
+e anal.fcnprefix=myfunctions
+e anal.fcnprefix
+Ps .tmp_config.rzdb
+?e --
+e asm.describe=0
+e asm.describe
+e asm.indentspace=0
+e asm.indentspace
+e anal.fcnprefix=fcn
+e anal.fcnprefix
+?e --
+Po .tmp_config.rzdb
+rm .tmp_config.rzdb
+e asm.describe
+e asm.indentspace
+e anal.fcnprefix
+EOF
+EXPECT=<<EOF
+true
+8
+myfunctions
+--
+false
+0
+fcn
+--
+true
+8
+myfunctions
+EOF
+RUN
+
+NAME=seek
+FILE=-
+CMDS=<<EOF
+e cfg.newshell=1
+s 0x1337
+s
+Ps .tmp_seek.rzdb
+o--
+s 0
+Po .tmp_seek.rzdb
+rm .tmp_seek.rzdb
+s
+EOF
+EXPECT=<<EOF
+0x1337
+0x1337
+EOF
+RUN
+
+NAME=anal
+FILE=-
+CMDS=<<EOF
+e cfg.newshell=1
+af+ 0x100 windowpane
+afb+ windowpane 0x100 0x30
+afl
+Ps .tmp_anal.rzdb
+?e --
+o--
+afl
+?e --
+Po .tmp_anal.rzdb
+rm .tmp_anal.rzdb
+afl
+EOF
+EXPECT=<<EOF
+0x00000100    1 48           windowpane
+--
+--
+0x00000100    1 48           windowpane
+EOF
+RUN

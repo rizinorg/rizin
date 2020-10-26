@@ -2122,6 +2122,54 @@ RZ_API void rz_anal_base_type_free(RzAnalBaseType *type);
 RZ_API RzAnalBaseType *rz_anal_base_type_new(RzAnalBaseTypeKind kind);
 RZ_API void rz_anal_dwarf_process_info(const RzAnal *anal, RzAnalDwarfContext *ctx);
 RZ_API void rz_anal_dwarf_integrate_functions(RzAnal *anal, RzFlag *flags, Sdb *dwarf_sdb);
+
+/* serialize */
+RZ_API void rz_serialize_anal_case_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalCaseOp *op);
+RZ_API void rz_serialize_anal_switch_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalSwitchOp *op);
+RZ_API RzAnalSwitchOp *rz_serialize_anal_switch_op_load(RZ_NONNULL const RJson *json);
+
+typedef void *RSerializeAnalDiffParser;
+RZ_API RSerializeAnalDiffParser rz_serialize_anal_diff_parser_new(void);
+RZ_API void rz_serialize_anal_diff_parser_free(RSerializeAnalDiffParser parser);
+RZ_API RZ_NULLABLE RzAnalDiff *rz_serialize_anal_diff_load(RZ_NONNULL RSerializeAnalDiffParser parser, RZ_NONNULL const RJson *json);
+RZ_API void rz_serialize_anal_diff_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalDiff *diff);
+RZ_API void rz_serialize_anal_blocks_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal);
+
+/**
+ * RzAnal must not contain any blocks when calling this function!
+ * All loaded blocks will have a ref of 1 after this function and should be unrefd once after loading functions.
+ */
+RZ_API bool rz_serialize_anal_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res);
+
+typedef void *RSerializeAnalVarParser;
+RZ_API RSerializeAnalVarParser rz_serialize_anal_var_parser_new(void);
+RZ_API void rz_serialize_anal_var_parser_free(RSerializeAnalVarParser parser);
+RZ_API RZ_NULLABLE RzAnalVar *rz_serialize_anal_var_load(RZ_NONNULL RzAnalFunction *fcn, RZ_NONNULL RSerializeAnalVarParser parser, RZ_NONNULL const RJson *json);
+
+RZ_API void rz_serialize_anal_functions_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal);
+RZ_API bool rz_serialize_anal_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res);
+RZ_API void rz_serialize_anal_xrefs_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal);
+RZ_API bool rz_serialize_anal_xrefs_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res);
+RZ_API void rz_serialize_anal_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal);
+RZ_API bool rz_serialize_anal_meta_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res);
+RZ_API void rz_serialize_anal_hints_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal);
+RZ_API bool rz_serialize_anal_hints_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res);
+RZ_API void rz_serialize_anal_classes_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal);
+RZ_API bool rz_serialize_anal_classes_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res);
+RZ_API void rz_serialize_anal_types_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal);
+RZ_API bool rz_serialize_anal_types_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res);
+RZ_API void rz_serialize_anal_sign_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal);
+RZ_API bool rz_serialize_anal_sign_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res);
+RZ_API void rz_serialize_anal_imports_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal);
+RZ_API bool rz_serialize_anal_imports_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res);
+RZ_API void rz_serialize_anal_pin_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal);
+RZ_API bool rz_serialize_anal_pin_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res);
+RZ_API void rz_serialize_anal_cc_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal);
+RZ_API bool rz_serialize_anal_cc_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res);
+
+RZ_API void rz_serialize_anal_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal);
+RZ_API bool rz_serialize_anal_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res);
+
 /* plugin pointers */
 extern RzAnalPlugin rz_anal_plugin_null;
 extern RzAnalPlugin rz_anal_plugin_6502;

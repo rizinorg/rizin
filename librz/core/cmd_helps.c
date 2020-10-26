@@ -383,8 +383,18 @@ const RzCmdDescHelp p_help = {
 	.summary = "print commands",
 };
 
-const RzCmdDescHelp P_help = {
-	.summary = "project management utilities",
+const RzCmdDescHelp P_group_help = {
+	.summary = "project management",
+};
+
+const RzCmdDescHelp Ps_help = {
+	.summary = "save a project",
+	.args_str = " [project.rzdb]"
+};
+
+const RzCmdDescHelp Po_help = {
+	.summary = "load a project",
+	.args_str = " [project.rzdb]"
 };
 
 const RzCmdDescHelp q_help = {

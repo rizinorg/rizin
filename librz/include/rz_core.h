@@ -162,7 +162,6 @@ typedef enum rz_core_autocomplete_types_t {
 	RZ_CORE_AUTOCMPLT_FCN,
 	RZ_CORE_AUTOCMPLT_ZIGN,
 	RZ_CORE_AUTOCMPLT_EVAL,
-	RZ_CORE_AUTOCMPLT_PRJT,
 	RZ_CORE_AUTOCMPLT_MINS,
 	RZ_CORE_AUTOCMPLT_BRKP,
 	RZ_CORE_AUTOCMPLT_MACR,
@@ -522,11 +521,6 @@ RZ_API void rz_core_fortune_list_types(void);
 RZ_API void rz_core_fortune_list(RzCore *core);
 RZ_API void rz_core_fortune_print_random(RzCore *core);
 
-/* project */
-RZ_API bool rz_core_project_load(RzCore *core, const char *prjfile, const char *rcfile);
-RZ_API RzThread *rz_core_project_load_bg(RzCore *core, const char *prjfile, const char *rcfile);
-RZ_API void rz_core_project_execute_cmds(RzCore *core, const char *prjfile);
-
 #define RZ_CORE_FOREIGN_ADDR -1
 RZ_API int rz_core_yank(RzCore *core, ut64 addr, int len);
 RZ_API int rz_core_yank_string(RzCore *core, ut64 addr, int maxlen);
@@ -673,15 +667,6 @@ RZ_API int rz_core_pseudo_code (RzCore *core, const char *input);
 RZ_API int rz_core_zdiff(RzCore *c, RzCore *c2);
 RZ_API int rz_core_gdiff(RzCore *core1, RzCore *core2);
 RZ_API int rz_core_gdiff_fcn(RzCore *c, ut64 addr, ut64 addr2);
-
-RZ_API bool rz_core_project_open(RzCore *core, const char *file, bool thready);
-RZ_API int rz_core_project_cat(RzCore *core, const char *name);
-RZ_API int rz_core_project_delete(RzCore *core, const char *prjfile);
-RZ_API int rz_core_project_list(RzCore *core, int mode);
-RZ_API bool rz_core_project_save_script(RzCore *core, const char *file, int opts);
-RZ_API bool rz_core_project_save(RzCore *core, const char *file);
-RZ_API char *rz_core_project_info(RzCore *core, const char *file);
-RZ_API char *rz_core_project_notes_file (RzCore *core, const char *file);
 
 RZ_API char *rz_core_sysenv_begin(RzCore *core, const char *cmd);
 RZ_API void rz_core_sysenv_end(RzCore *core, const char *cmd);
@@ -958,6 +943,11 @@ RZ_API void rz_core_annotated_code_print(RAnnotatedCode *code, RzVector *line_of
  * @param code Pointer to a RAnnotatedCode.
  */
 RZ_API void rz_core_annotated_code_print_comment_cmds(RAnnotatedCode *code);
+
+/* serialize */
+
+RZ_API void rz_serialize_core_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core);
+RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE RzSerializeResultInfo *res);
 
 #endif
 
