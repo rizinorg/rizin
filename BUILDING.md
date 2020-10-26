@@ -1,7 +1,7 @@
 # Clone the rizin project and keep it updated
 
-rizin uses submodules, so make sure to clone them as well when getting rizin
-code base. The first time you download rizin you can use:
+rizin uses submodules, so make sure to clone them as well. The first time you
+download rizin you can use:
 ```
 $ git clone --recurse-submodules https://github.com/rizinorg/rizin
 ```
