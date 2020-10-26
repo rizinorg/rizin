@@ -1,0 +1,5 @@
+SECTION=user/editors
+PRIORITY=optional
+ARCH?=amd64
+
+include ../../../config-user.mk
