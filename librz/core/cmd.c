@@ -7024,7 +7024,7 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 			rz_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].cb);
 		}
 
-		RzCmdDesc *cd;
+		RzCmdDesc *cd = NULL;
 		switch (cmds[i].type) {
 		case RZ_CMD_DESC_TYPE_OLDINPUT:
 			cd = rz_cmd_desc_oldinput_new (core->rcmd, root, cmds[i].cmd, cmds[i].cb, cmds[i].help);
