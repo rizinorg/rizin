@@ -151,7 +151,7 @@ typedef enum {
 
 typedef struct {
 	RzFlag *flag;
-	HtPP *fields;
+	KeyParser *parser;
 } FlagLoadCtx;
 
 static bool flag_load_cb(void *user, const char *k, const char *v) {
@@ -171,14 +171,7 @@ static bool flag_load_cb(void *user, const char *k, const char *v) {
 	bool offset_set = false;
 	bool size_set = false;
 
-	const RJson *child;
-	for (child = json->children.first; child; child = child->next) {
-		bool found;
-		FlagField field = (FlagField)ht_pp_find (ctx->fields, child->key, &found);
-		if (!found) {
-			continue;
-		}
-		switch (field) {
+	KEY_PARSER_JSON (ctx->parser, json, child, {
 		case FLAG_FIELD_REALNAME:
 			if (child->type != RZ_JSON_STRING) {
 				break;
@@ -231,8 +224,7 @@ static bool flag_load_cb(void *user, const char *k, const char *v) {
 			break;
 		default:
 			break;
-		}
-	}
+	});
 
 	bool res = true;
 	if (!offset_set || !size_set) {
@@ -263,20 +255,20 @@ beach:
 }
 
 static bool load_flags(RZ_NONNULL Sdb *flags_db, RZ_NONNULL RzFlag *flag) {
-	FlagLoadCtx ctx = { flag, ht_pp_new0 () };
-	if (!ctx.fields) {
+	FlagLoadCtx ctx = { flag, key_parser_new () };
+	if (!ctx.parser) {
 		return false;
 	}
-	ht_pp_insert (ctx.fields, "realname", (void *)FLAG_FIELD_REALNAME);
-	ht_pp_insert (ctx.fields, "demangled", (void *)FLAG_FIELD_DEMANGLED);
-	ht_pp_insert (ctx.fields, "offset", (void *)FLAG_FIELD_OFFSET);
-	ht_pp_insert (ctx.fields, "size", (void *)FLAG_FIELD_SIZE);
-	ht_pp_insert (ctx.fields, "space", (void *)FLAG_FIELD_SPACE);
-	ht_pp_insert (ctx.fields, "color", (void *)FLAG_FIELD_COLOR);
-	ht_pp_insert (ctx.fields, "comment", (void *)FLAG_FIELD_COMMENT);
-	ht_pp_insert (ctx.fields, "alias", (void *)FLAG_FIELD_ALIAS);
+	key_parser_add (ctx.parser, "realname", FLAG_FIELD_REALNAME);
+	key_parser_add (ctx.parser, "demangled", FLAG_FIELD_DEMANGLED);
+	key_parser_add (ctx.parser, "offset", FLAG_FIELD_OFFSET);
+	key_parser_add (ctx.parser, "size", FLAG_FIELD_SIZE);
+	key_parser_add (ctx.parser, "space", FLAG_FIELD_SPACE);
+	key_parser_add (ctx.parser, "color", FLAG_FIELD_COLOR);
+	key_parser_add (ctx.parser, "comment", FLAG_FIELD_COMMENT);
+	key_parser_add (ctx.parser, "alias", FLAG_FIELD_ALIAS);
 	bool r = sdb_foreach (flags_db, flag_load_cb, &ctx);
-	ht_pp_free (ctx.fields);
+	key_parser_free (ctx.parser);
 	return r;
 }
 
