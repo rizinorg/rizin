@@ -180,7 +180,9 @@ static bool test_load(Sdb *db, RzFlag *ref) {
 		return false;
 	}
 
-	mu_assert_eq (rz_list_length (flag->zones), rz_list_length (ref->zones), "zones count");
+	size_t zones_length_actual = flag->zones ? rz_list_length (flag->zones) : 0;
+	size_t zones_length_expect = ref->zones ? rz_list_length (ref->zones) : 0;
+	mu_assert_eq (zones_length_actual, zones_length_expect, "zones count");
 	RzListIter *actual_iter;
 	RzFlagZoneItem *actual_zone;
 	rz_list_foreach (flag->zones, actual_iter, actual_zone) {
