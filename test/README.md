@@ -1,4 +1,4 @@
-rizin tests
+Rizin tests
 =============================
 
 Rizin uses both regression and unit tests.
@@ -16,7 +16,7 @@ Rizin uses both regression and unit tests.
    other files like calling convention files, format files, etc. must have been
    installed).
  * rz-test compiled and/or installed, which is done by default automatically
-   when building rizin.
+   when building Rizin.
 
 # Usage
 
@@ -40,7 +40,7 @@ right behaviour!) or it can mark it as broken for you.
 ## Unit tests
 To run unit tests, just use `ninja -C build test` (or `meson test -C build`)
 from the top directory (replace `build` with the name of the directory you used
-to build rizin).
+to build Rizin).
 
 # Failure Levels
 
@@ -133,7 +133,7 @@ You must end the test by adding RUN keyword
 # Unit tests
 
 Assembly, JSON and commands tests are useful to test the overall behaviour of
-rizin, but to test new API or new code we suggest to write small unit tests.
+Rizin, but to test new API or new code we suggest to write small unit tests.
 
 The basic structure of a unit test is the following:
 ```C
@@ -168,7 +168,7 @@ the expected one. For example:
 - etc.
 
 If you add a unit test file, be sure to also add it to `unit/meson.build`, so it
-is compiled when you compile rizin.
+is compiled when you compile Rizin.
 
 # License
 

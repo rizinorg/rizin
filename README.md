@@ -1,25 +1,25 @@
 # Introduction
 
-rizin is a fork of the radare2 reverse engineering framework with a focus on
+Rizin is a fork of the radare2 reverse engineering framework with a focus on
 usability, working features and code cleanliness.
 
-rizin is portable and it can be used to analyze binaries, disassemble code,
+Rizin is portable and it can be used to analyze binaries, disassemble code,
 debug programs, as a forensics tool, as a scriptable command-line hexadecimal
 editor able to open disk files, and much more!
 
-To learn more on rizin you may want to read the
-[official rizin book](https://book.rizin.re).
+To learn more on Rizin you may want to read the
+[official Rizin book](https://book.rizin.re).
 
 # How to install
 
 You can find the latest release binaries for Android, Debian, Ubuntu, MacOS,
 Windows [here](https://github.com/radareorg/radare2/releases/latest). If we
-don't provide a released binary for your system, you can still build rizin
+don't provide a released binary for your system, you can still build Rizin
 yourself.
 
 # How to build
 
-Use `meson` to compile and install rizin. Please make sure to get an updated
+Use `meson` to compile and install Rizin. Please make sure to get an updated
 `meson` (e.g. get it with `pip install meson` if your system does not provide
 one that is at least version 0.50.1).
 
@@ -42,7 +42,7 @@ NOTE: You may have to add `LD_LIBRARY_PATH=/usr/local/lib64` or
 `LD_LIBRARY_PATH=/usr/local/lib` based on your system to make sure rizin will
 find the installed libraries.
 
-Please have a look at [BUILDING.md][] for more information about building rizin.
+Please have a look at [BUILDING.md][] for more information about building Rizin.
 
 # Contributing
 
@@ -82,7 +82,7 @@ Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems
 
 ## Scripting
 
-We provide a way to interact with rizin from Python/Haskell/OCaml languages
+We provide a way to interact with Rizin from Python/Haskell/OCaml languages
 through [rzpipe](https://github.com/rizinorg/rizin-rzpipe). Other languages
 although not currently supported could be easily added.
 

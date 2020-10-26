@@ -1,6 +1,6 @@
 # DEVELOPERS
 
-This file is aimed at developers who want to work on the rizin code base.
+This file is aimed at developers who want to work on the Rizin code base.
 
 ## Documentation
 There is support for Doxygen document generation in this repo.
@@ -155,7 +155,7 @@ a = (b << 3) * 5;
 
 * Structure in the C files
 
-The structure of the C files in rizin must be like this:
+The structure of the C files in Rizin must be like this:
 
 ```c
 /* Copyright ... */           ## copyright
@@ -170,7 +170,7 @@ RZ_API void public(void) {}    ## public apis starting with constructor/destruct
 
 * Why return int vs enum
 
-The reason why many places in rizin-land functions return int instead of an enum type is because enums can't be OR'ed; otherwise, it breaks the usage within a switch statement and swig can't handle that stuff.
+The reason why many places in Rizin-land functions return int instead of an enum type is because enums can't be OR'ed; otherwise, it breaks the usage within a switch statement and swig can't handle that stuff.
 
 ```
 rz_core_wrap.cxx:28612:60: error: assigning to 'RzRegisterType' from incompatible type 'long'
@@ -207,7 +207,7 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 
 * See .clang-format for automated indentation
 
-* Use the rizin types instead of the ones in stdint, which are known to cause some
+* Use the Rizin types instead of the ones in stdint, which are known to cause some
   portability issues. So, instead of uint8_t, use ut8, etc..
 
 * Never ever use `%lld` or `%llx`. This is not portable. Always use the PFMT64x
@@ -262,7 +262,7 @@ within the integer value, REGARDLESS of the host endian of the machine.
 
 ## Endian helper functions
 
-rizin now uses helper functions to interpret all byte streams in a known endian.
+Rizin now uses helper functions to interpret all byte streams in a known endian.
 
 Please use these at all times, eg:
 
@@ -279,7 +279,7 @@ to a ut8 value, ie endian is irrelevant).
 
 ## Packed structures
 
-Due to the various differences between platforms and compilers rizin
+Due to the various differences between platforms and compilers Rizin
 has a special helper macro - `RZ_PACKED()`. Instead of non-portable
 `#pragma pack` or `__attribute__((packed))` it is advised to use this macro
 instead. To wrap the code inside of it you just need to write:
@@ -299,6 +299,6 @@ RZ_PACKED (typedef structmystruct {
 
 ## Modules
 
-The rizin code base is modularized into different libraries that are
+The Rizin code base is modularized into different libraries that are
 found in `librz/` directory. The `binrz/` directory contains the programs
 which use the libraries.

@@ -1,7 +1,7 @@
 # How to report issues
 
 Before reporting an issue with GitHub, be sure that:
-* you are using the latest released version of rizin or the latest git version
+* you are using the latest released version of Rizin or the latest git version
 * you are using a clean installation
 * the issue was not already reported
 

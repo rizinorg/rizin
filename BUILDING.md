@@ -1,7 +1,7 @@
-# Clone the rizin project and keep it updated
+# Clone the Rizin project and keep it updated
 
-rizin uses submodules, so make sure to clone them as well. The first time you
-download rizin you can use:
+Rizin uses submodules, so make sure to clone them as well. The first time you
+download Rizin you can use:
 ```
 $ git clone --recurse-submodules https://github.com/rizinorg/rizin
 ```
@@ -13,13 +13,13 @@ $ git submodule init
 $ git submodule update
 ```
 
-After that, use `git pull --recurse-submodules` to update both the rizin
+After that, use `git pull --recurse-submodules` to update both the Rizin
 codebase and submodules, or `git submodule update` to just update the
 submodules.
 
 # Build
 
-rizin uses [`meson`](https://mesonbuild.com/) to build. As not all systems have
+Rizin uses [`meson`](https://mesonbuild.com/) to build. As not all systems have
 a version of `meson` that is recent enough, we suggest to install it directly
 from `pip` with `pip install meson`. If necessary, also install `ninja` with
 `pip install ninja`.
@@ -28,8 +28,8 @@ from `pip` with `pip install meson`. If necessary, also install `ninja` with
 
 ### Build system-wide, in `/usr/local`
 
-This is the default configuration and it allows you to install your built rizin
-version while keeping, if provided, the rizin version shipped by your
+This is the default configuration and it allows you to install your built Rizin
+version while keeping, if provided, the Rizin version shipped by your
 distribution in `/usr`.
 
 ```
@@ -47,7 +47,7 @@ sure the rizin binary can find its libraries by itself.
 ### Build system-wide, in `/usr`
 
 If your system does not already provide rizin in `/usr/bin`, you want to package
-rizin on your preferred distribution or you just prefer to have rizin together
+Rizin on your preferred distribution or you just prefer to have Rizin together
 with all other binaries on your system, you can also install it system-wide in
 `/usr`.
 
@@ -63,7 +63,7 @@ This kind of installation usually does not require any change to
 
 ### Build user-wide, in `~/.local`
 
-You are not forced to install rizin in your system, you can just make it
+You are not forced to install Rizin in your system, you can just make it
 available for your current user, without requiring you to have `sudo` access to
 the machine (or if you don't trust our build scripts enough).
 
@@ -84,7 +84,7 @@ instead of just `meson --prefix=~/.local build`.
 The building steps on Windows are the same as on *NIX systems, however you will
 have to run the following commands from the Visual Studio Developer shell
 [FIXME: proper name, I don't remember right now]. We also suggest to compile
-rizin statically, to avoid dealing with libraries when running the rizin
+Rizin statically, to avoid dealing with libraries when running the Rizin
 binaries.
 
 ```
@@ -105,7 +105,7 @@ $ meson -Db_sanitize=address,undefined build
 
 ## Build fully-static binaries
 
-It may be useful to run rizin just by using a single file, which can be copied
+It may be useful to run Rizin just by using a single file, which can be copied
 on other systems if necessary.
 
 ```
@@ -114,7 +114,7 @@ $ CFLAGS="-static" meson --default-library=static build
 
 # Build with acr/Makefile (deprecated)
 
-rizin also support compilation with configure+make, however this is not
+Rizin also support compilation with configure+make, however this is not
 suggested and it is going to be removed in future releases.
 
 To compile use:
