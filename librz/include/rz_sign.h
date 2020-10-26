@@ -70,11 +70,19 @@ typedef struct rz_sign_item_t {
 
 typedef int (*RzSignForeachCallback)(RzSignItem *it, void *user);
 typedef int (*RzSignSearchCallback)(RzSignItem *it, RzSearchKeyword *kw, ut64 addr, void *user);
-typedef int (*RzSignGraphMatchCallback)(RzSignItem *it, RzAnalFunction *fcn, void *user);
-typedef int (*RzSignOffsetMatchCallback)(RzSignItem *it, RzAnalFunction *fcn, void *user);
-typedef int (*RzSignHashMatchCallback)(RzSignItem *it, RzAnalFunction *fcn, void *user);
-typedef int (*RzSignRefsMatchCallback)(RzSignItem *it, RzAnalFunction *fcn, void *user);
-typedef int (*RzSignVarsMatchCallback)(RzSignItem *it, RzAnalFunction *fcn, void *user);
+typedef int (*RzSignMatchCallback)(RzSignItem *it, RzAnalFunction *fcn, RzSignType type, bool seen, void *user);
+
+typedef struct rz_sign_search_met {
+	/* types is an 0 terminated array of RzSignTypes that are going to be
+	 * searched for. Valid types are: graph, offset, refs, bbhash, types, vars
+	 */
+	RzSignType types[7];
+	int mincc; // min complexity for graph search
+	RzAnal *anal;
+	void *user; // user data for callback function
+	RzSignMatchCallback cb;
+	RzAnalFunction *fcn;
+} RzSignSearchMetrics;
 
 typedef struct rz_sign_search_t {
 	RzSearch *search;
@@ -123,12 +131,7 @@ RZ_API RzSignSearch *rz_sign_search_new(void);
 RZ_API void rz_sign_search_free(RzSignSearch *ss);
 RZ_API void rz_sign_search_init(RzAnal *a, RzSignSearch *ss, int minsz, RzSignSearchCallback cb, void *user);
 RZ_API int rz_sign_search_update(RzAnal *a, RzSignSearch *ss, ut64 *at, const ut8 *buf, int len);
-RZ_API bool rz_sign_match_graph(RzAnal *a, RzAnalFunction *fcn, int mincc, RzSignGraphMatchCallback cb, void *user);
-RZ_API bool rz_sign_match_addr(RzAnal *a, RzAnalFunction *fcn, RzSignOffsetMatchCallback cb, void *user);
-RZ_API bool rz_sign_match_hash(RzAnal *a, RzAnalFunction *fcn, RzSignHashMatchCallback cb, void *user);
-RZ_API bool rz_sign_match_refs(RzAnal *a, RzAnalFunction *fcn, RzSignRefsMatchCallback cb, void *user);
-RZ_API bool rz_sign_match_vars(RzAnal *a, RzAnalFunction *fcn, RzSignRefsMatchCallback cb, void *user);
-RZ_API bool rz_sign_match_types(RzAnal *a, RzAnalFunction *fcn, RzSignRefsMatchCallback cb, void *user);
+RZ_API int rz_sign_fcn_match_metrics(RzSignSearchMetrics *sm);
 
 RZ_API bool rz_sign_load(RzAnal *a, const char *file);
 RZ_API bool rz_sign_load_gz(RzAnal *a, const char *filename);
