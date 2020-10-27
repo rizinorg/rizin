@@ -327,6 +327,7 @@ RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd) {
 	bnd->numGet = (RzCoreNumGet)numget;
 	bnd->isMapped = (RzCoreIsMapped)__isMapped;
 	bnd->syncDebugMaps = (RzCoreDebugMapsSync)__syncDebugMaps;
+	bnd->pjWithEncoding = (RzCorePJWithEncoding)rz_core_pj_new;
 	return true;
 }
 
@@ -3459,4 +3460,30 @@ RZ_API RTable *rz_core_table(RzCore *core) {
 		table->cons = core->cons;
 	}
 	return table;
+}
+
+/* Config helper function for PJ json encodings */
+RZ_API PJ *rz_core_pj_new(RzCore *core) {
+	const char *config_string_encoding = rz_config_get (core->config, "cfg.json.str");
+	const char *config_num_encoding = rz_config_get (core->config, "cfg.json.num");
+	PJEncodingNum number_encoding = PJ_ENCODING_NUM_DEFAULT;
+	PJEncodingStr string_encoding = PJ_ENCODING_STR_DEFAULT;
+
+	if (!strcmp ("string", config_num_encoding)) {
+		number_encoding = PJ_ENCODING_NUM_STR;
+	} else if (!strcmp ("hex", config_num_encoding)) {
+		number_encoding = PJ_ENCODING_NUM_HEX;
+	}
+
+	if (!strcmp ("base64", config_string_encoding)) {
+		string_encoding = PJ_ENCODING_STR_BASE64;
+	} else if (!strcmp ("hex", config_string_encoding)) {
+		string_encoding = PJ_ENCODING_STR_HEX;
+	} else if (!strcmp ("array", config_string_encoding)) {
+		string_encoding = PJ_ENCODING_STR_ARRAY;
+	} else if (!strcmp ("strip", config_string_encoding)) {
+		string_encoding = PJ_ENCODING_STR_STRIP;
+	}
+
+	return pj_new_with_encoding (string_encoding, number_encoding);
 }

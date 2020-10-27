@@ -1704,8 +1704,8 @@ RZ_API int rz_anal_function_complexity(RzAnalFunction *fcn) {
 
 // tfj and afsj call this function
 RZ_API char *rz_anal_function_get_json(RzAnalFunction *function) {
-	PJ *pj = pj_new ();
 	RzAnal *a = function->anal;
+	PJ *pj = a->coreb.pjWithEncoding (a->coreb.core);
 	char *args = strdup ("");
 	char *sdb_ret = rz_str_newf ("func.%s.ret", function->name);
 	char *sdb_args = rz_str_newf ("func.%s.args", function->name);

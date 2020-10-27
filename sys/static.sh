@@ -69,18 +69,18 @@ for a in ${BINS} ; do
 )
 done
 
-rm -rf r2-static
-mkdir r2-static || exit 1
-${MAKE} install DESTDIR="${PWD}/r2-static" || exit 1
+rm -rf rizin-static
+mkdir rizin-static || exit 1
+${MAKE} install DESTDIR="${PWD}/rizin-static" || exit 1
 
 echo "Using PREFIX ${PREFIX}"
 
 # testing installation
 cat > .test.c <<EOF
-#include <r_core.h>
+#include <rz_core.h>
 int main() {
-	RCore *core = r_core_new ();
-	r_core_free (core);
+	RzCore *core = rz_core_new ();
+	rz_core_free (core);
 }
 EOF
 cat .test.c
@@ -91,15 +91,15 @@ fi
 # static pkg-config linking test
 echo "[*] Static building with pkg-config..."
 PKG_CONFIG_FLAGS=`
-PKG_CONFIG_PATH="${PWD}/r2-static/usr/lib/pkgconfig" \
+PKG_CONFIG_PATH="${PWD}/rizin-static/usr/lib/pkgconfig" \
 pkg-config \
-  --define-variable="libdir=${PWD}/r2-static/usr/lib" \
-  --define-variable="prefix=${PWD}/r2-static/usr" \
-  --static --cflags --libs r_core
+  --define-variable="libdir=${PWD}/rizin-static/usr/lib" \
+  --define-variable="prefix=${PWD}/rizin-static/usr" \
+  --static --cflags --libs rz_core
 `
 
 set -x
-${CC} .test.c ${PKG_CONFIG_FLAGS} -o r2-pkgcfg-static
+${CC} .test.c ${PKG_CONFIG_FLAGS} -o rizin-pkgcfg-static
 res=$?
 set +x
 if [ $res = 0 ]; then
@@ -113,9 +113,9 @@ echo "[*] Static building with librz.a..."
 set -x
 ${CC} .test.c \
 	${CFLAGS} \
-	-I ${PWD}/r2-static/usr/include/librz \
-	-I ${PWD}/r2-static/usr/include/librz/sdb \
-	r2-static/usr/lib/librz.a ${LDFLAGS}
+	-I ${PWD}/rizin-static/usr/include/librz \
+	-I ${PWD}/rizin-static/usr/include/librz/sdb \
+	rizin-static/usr/lib/librz.a ${LDFLAGS}
 res=$?
 set +x
 if [ $res = 0 ]; then

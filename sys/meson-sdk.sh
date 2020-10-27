@@ -28,10 +28,10 @@ rm -f $D.zip
 zip -r $D.zip $D > /dev/null
 
 cat > .test.c <<EOF
-#include <r_core.h>
+#include <rz_core.h>
 int main() {
-	RCore *core = r_core_new ();
-	r_core_free (core);
+	RzCore *core = rz_core_new ();
+	rz_core_free (core);
 }
 EOF
 gcc .test.c -I $D/include $D/lib/librz.a

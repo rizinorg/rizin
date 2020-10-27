@@ -765,6 +765,7 @@ RZ_API int rz_core_cmpwatch_revert (RzCore *core, ut64 addr);
 // TODO MOVE SOMEWHERE ELSE
 typedef char *(*PrintItemCallback)(void *user, void *p, bool selected);
 RZ_API char *rz_str_widget_list(void *user, RzList *list, int rows, int cur, PrintItemCallback cb);
+RZ_API PJ *rz_core_pj_new(RzCore *core);
 /* help */
 RZ_API void rz_core_cmd_help(const RzCore *core, const char * help[]);
 
