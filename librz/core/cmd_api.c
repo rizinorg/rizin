@@ -1655,6 +1655,17 @@ RZ_API RzCmdDesc *rz_cmd_desc_inner_new(RzCmd *cmd, RzCmdDesc *parent, const cha
 	return create_cmd_desc (cmd, parent, RZ_CMD_DESC_TYPE_INNER, name, help, false);
 }
 
+/**
+ * \brief Create a new command descriptor for a name that is used both
+ * as a group but that has a sub-command with the same name as well.
+ *
+ * \param cmd reference to the RzCmd
+ * \param parent Parent command descriptor of the command being added
+ * \param name Base name of the group/sub-command.
+ * \param cb Callback that actually executes the command
+ * \param help Help structure used to describe the command when using `?` and `??`
+ * \param group_help Help structure used to describe the group
+ */
 RZ_API RzCmdDesc *rz_cmd_desc_group_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdArgvCb cb, const RzCmdDescHelp *help, const RzCmdDescHelp *group_help) {
 	rz_return_val_if_fail (cmd && parent && name && group_help, NULL);
 	RzCmdDesc *res = create_cmd_desc (cmd, parent, RZ_CMD_DESC_TYPE_GROUP, name, group_help, true);
@@ -1676,6 +1687,20 @@ RZ_API RzCmdDesc *rz_cmd_desc_group_new(RzCmd *cmd, RzCmdDesc *parent, const cha
 	return res;
 }
 
+/**
+ * \brief Create a new command descriptor for a name that is used both
+ * as a group but that has a sub-command with the same name as well. The
+ * sub-command supports multiple output modes (e.g. rizin commands, json, csv,
+ * etc.).
+ *
+ * \param cmd reference to the RzCmd
+ * \param parent Parent command descriptor of the command being added
+ * \param name Base name of the group/sub-command. New commands will be created with the proper suffix based on the supported \p modes
+ * \param modes Modes supported by the handler (see RzOutputMode). They can be put in OR to support multiple modes
+ * \param cb Callback that actually executes the command
+ * \param help Help structure used to describe the command when using `?` and `??`
+ * \param group_help Help structure used to describe the group
+ */
 RZ_API RzCmdDesc *rz_cmd_desc_group_modes_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, int modes, RzCmdArgvModesCb cb, const RzCmdDescHelp *help, const RzCmdDescHelp *group_help) {
 	rz_return_val_if_fail (cmd && parent && name && group_help && modes && cb && help && help->args, NULL);
 	RzCmdDesc *res = create_cmd_desc (cmd, parent, RZ_CMD_DESC_TYPE_GROUP, name, group_help, true);
