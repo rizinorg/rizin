@@ -1285,34 +1285,32 @@ static int cmd_zign(void *data, const char *input) {
 	return true;
 }
 
-static RzCmdStatus z_handler(RzCore *core, int argc, const char **argv) {
-	rz_sign_list (core->anal, '\0');
-	return RZ_CMD_STATUS_OK;
-}
-
-static RzCmdStatus zq_handler(RzCore *core, int argc, const char **argv) {
-	rz_sign_list (core->anal, 'q');
-	return RZ_CMD_STATUS_OK;
-}
-
-static RzCmdStatus zj_handler(RzCore *core, int argc, const char **argv) {
-	rz_sign_list (core->anal, 'j');
-	return RZ_CMD_STATUS_OK;
-}
-
-static RzCmdStatus z_star_handler(RzCore *core, int argc, const char **argv) {
-	rz_sign_list (core->anal, '*');
-	return RZ_CMD_STATUS_OK;
-}
-
-static RzCmdStatus zk_handler(RzCore *core, int argc, const char **argv) {
-	char *out = sdb_querys (core->sdb, NULL, 0, "anal/zigns/*");
-	if (!out) {
+static RzCmdStatus z_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	char *out;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_sign_list (core->anal, '\0');
+		return RZ_CMD_STATUS_OK;
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_sign_list (core->anal, 'q');
+		return RZ_CMD_STATUS_OK;
+	case RZ_OUTPUT_MODE_JSON:
+		rz_sign_list (core->anal, 'j');
+		return RZ_CMD_STATUS_OK;
+	case RZ_OUTPUT_MODE_RIZIN:
+		rz_sign_list (core->anal, '*');
+		return RZ_CMD_STATUS_OK;
+	case RZ_OUTPUT_MODE_SDB:
+		out = sdb_querys (core->sdb, NULL, 0, "anal/zigns/*");
+		if (!out) {
+			return RZ_CMD_STATUS_ERROR;
+		}
+		rz_cons_print (out);
+		free (out);
+		return RZ_CMD_STATUS_OK;
+	default:
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_cons_print (out);
-	free (out);
-	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus z_point_handler(RzCore *core, int argc, const char **argv) {
@@ -1560,10 +1558,6 @@ static void cmd_zign_init(RzCore *core, RzCmdDesc *parent) {
 	DEFINE_CMD_ARGV_DESC_SPECIAL (core, z.*, z_point_star, z_point_cd);
 	DEFINE_CMD_ARGV_GROUP_EXEC (core, zb, parent);
 	DEFINE_CMD_ARGV_DESC (core, zbr, zb_cd);
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, z*, z_star, parent);
-	DEFINE_CMD_ARGV_DESC (core, zq, parent);
-	DEFINE_CMD_ARGV_DESC (core, zj, parent);
-	DEFINE_CMD_ARGV_DESC (core, zk, parent);
 	DEFINE_CMD_ARGV_DESC_SPECIAL (core, z-, z_minus, parent);
 	DEFINE_CMD_ARGV_GROUP_EXEC (core, za, parent);
 	DEFINE_CMD_ARGV_DESC (core, zaf, za_cd);

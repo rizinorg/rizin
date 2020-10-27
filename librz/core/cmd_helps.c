@@ -541,26 +541,6 @@ const RzCmdDescHelp zbr_help = {
 	.args = zbr_args,
 };
 
-const RzCmdDescHelp z_star_help = {
-	.summary = "show zignatures in rizin format",
-	.args = empty_args,
-};
-
-const RzCmdDescHelp zq_help = {
-	.summary = "show zignatures in quiet mode",
-	.args = empty_args,
-};
-
-const RzCmdDescHelp zj_help = {
-	.summary = "show zignatures in json format",
-	.args = empty_args,
-};
-
-const RzCmdDescHelp zk_help = {
-	.summary = "show zignatures in sdb format",
-	.args = empty_args,
-};
-
 const RzCmdDescArg z_minus_args[] = {
 	{ .name = "zigname|*", .type = RZ_CMD_ARG_TYPE_ZIGN },
 	{ 0 },

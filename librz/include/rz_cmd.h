@@ -38,6 +38,7 @@ typedef enum rz_cmd_arg_type_t {
 
 typedef int (*RzCmdCb) (void *user, const char *input);
 typedef RzCmdStatus (*RzCmdArgvCb) (RzCore *core, int argc, const char **argv);
+typedef RzCmdStatus (*RzCmdArgvModesCb) (RzCore *core, int argc, const char **argv, RzOutputMode mode);
 typedef int (*RzCmdNullCb) (void *user);
 
 typedef struct rz_cmd_parsed_args_t {
@@ -255,6 +256,11 @@ typedef enum {
 	// command handlers for these. The RzCmdDescDetail in the help can be
 	// used to show fake children of this descriptor.
 	RZ_CMD_DESC_TYPE_FAKE,
+	// for handlers that accept argc/argv and that provides multiple output
+	// modes (e.g. rizin commands, quiet output, json, long). It cannot have
+	// children. Use RZ_CMD_DESC_TYPE_GROUP if you need a command that can
+	// be both executed and has sub-commands.
+	RZ_CMD_DESC_TYPE_ARGV_MODES,
 } RzCmdDescType;
 
 typedef struct rz_cmd_desc_t {
@@ -275,6 +281,10 @@ typedef struct rz_cmd_desc_t {
 		struct {
 			struct rz_cmd_desc_t *exec_cd;
 		} group_data;
+		struct {
+			RzCmdArgvModesCb cb;
+			int modes;
+		} argv_modes_data;
 	} d;
 } RzCmdDesc;
 
@@ -391,8 +401,10 @@ static inline int rz_cmd_status2int(RzCmdStatus s) {
 
 /* RzCmdDescriptor */
 RZ_API RzCmdDesc *rz_cmd_desc_argv_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdArgvCb cb, const RzCmdDescHelp *help);
+RZ_API RzCmdDesc *rz_cmd_desc_argv_modes_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, int modes, RzCmdArgvModesCb cb, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_inner_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_group_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdArgvCb cb, const RzCmdDescHelp *help, const RzCmdDescHelp *group_help);
+RZ_API RzCmdDesc *rz_cmd_desc_group_modes_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, int modes, RzCmdArgvModesCb cb, const RzCmdDescHelp *help, const RzCmdDescHelp *group_help);
 RZ_API RzCmdDesc *rz_cmd_desc_oldinput_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdCb cb, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_fake_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_parent(RzCmdDesc *cd);
