@@ -1202,14 +1202,11 @@ static void autocomplete_evals(RzCore *core, RLineCompletion *completion, const 
 	rz_return_if_fail (str);
 	RzConfigNode *bt;
 	RzListIter *iter;
-	char *tmp = strrchr (str, ' ');
+	const char *tmp = strrchr (str, ' ');
 	if (tmp) {
 		str = tmp + 1;
 	}
-	int n = strlen (str);
-	if (n < 1) {
-		return;
-	}
+	size_t n = strlen (str);
 	rz_list_foreach (core->config->nodes, iter, bt) {
 		if (!strncmp (bt->name, str, n)) {
 			rz_line_completion_push (completion, bt->name);
