@@ -25,6 +25,17 @@ typedef enum rz_cmd_status_t {
 	RZ_CMD_STATUS_EXIT, // command handler asks to exit the prompt loop
 } RzCmdStatus;
 
+typedef enum rz_cmd_arg_type_t {
+	RZ_CMD_ARG_TYPE_NUM, //< Argument that can be interpreted by RzNum (numbers, flags, operations, etc.)
+	RZ_CMD_ARG_TYPE_STRING, //< Argument that can be an arbitrary string
+	RZ_CMD_ARG_TYPE_ENV, //< Argument can be the name of an existing rizin variable
+	RZ_CMD_ARG_TYPE_ZIGN, //< Argument can be the name of an existing zignature
+	RZ_CMD_ARG_TYPE_CHOICES, //< Argument can be one of the provided choices
+	RZ_CMD_ARG_TYPE_ARRAY_STRING, //< Argument is an array of arbitrary strings (if present, must be last in the list)
+	RZ_CMD_ARG_TYPE_FCN, //< Argument can be the name of an existing function
+	RZ_CMD_ARG_TYPE_FILE, //< Argument is a filename
+} RzCmdArgType;
+
 typedef int (*RzCmdCb) (void *user, const char *input);
 typedef RzCmdStatus (*RzCmdArgvCb) (RzCore *core, int argc, const char **argv);
 typedef int (*RzCmdNullCb) (void *user);
@@ -116,6 +127,55 @@ typedef struct rz_cmd_desc_detail_t {
 } RzCmdDescDetail;
 
 /**
+ * A description of an argument of a RzCmdDesc.
+ */
+typedef struct rz_cmd_desc_arg_t {
+	/**
+	 * The name of the argument, shown also in its help.
+	 */
+	const char *name;
+	/**
+	 * True if the argument is optional. If argument X is optional, then all
+	 * arguments after X can only be specified if X was provided as well and
+	 * they don't need to be set as optional.
+	 *
+	 * Example:
+	 * CMDNAME <mandatory-arg0> [<optional-arg1> <optional-arg2> [<optional-arg3> [optional-arg4]]]
+	 * <mandatory-arg0> has optional=false
+	 * <optional-arg1> has optional=true
+	 * <optional-arg2> has optional=false (it can be specified only if arg1
+	 *                 was specified as well, so it doesn't need to be optional)
+	 * <optional-arg3> has optional=true
+	 * <optional-arg4> has optional=true
+	 * Given the above:
+	 * - `CMDNAME a0` is a valid command
+	 * - `CMDNAME a0 a1 a2` is a valid command
+	 * - `CMDNAME a0 a1` is not a valid command, because if a1 is specified, also a2 has to be
+	 * - `CMDNAME a0 a1 a2 a3` is a valid command
+	 * - `CMDNAME a0 a1 a2 a3 a4` is a valid command
+	 */
+	bool optional;
+	/**
+	 * Type of the argument.
+	 */
+	RzCmdArgType type;
+	/**
+	 * Default value for the argument, if it is not specified. This field
+	 * shall be used only when /p optional is true.
+	 */
+	const char *default_value;
+	/**
+	 * Additional data which is type specific.
+	 */
+	union {
+		/**
+		 * List of possible values in case /p type is RZ_CMD_ARG_TYPE_CHOICES.
+		 */
+		const char **choices;
+	};
+} RzCmdDescArg;
+
+/**
  * Define how the command looks like in the help.
  */
 typedef struct rz_cmd_desc_help_t {
@@ -164,6 +224,10 @@ typedef struct rz_cmd_desc_help_t {
 	 * Optional.
 	 */
 	const RzCmdDescDetail *details;
+	/**
+	 * Description of the arguments accepted by this command.
+	 */
+	const RzCmdDescArg *args;
 } RzCmdDescHelp;
 
 typedef enum {

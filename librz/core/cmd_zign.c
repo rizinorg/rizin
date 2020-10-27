@@ -1286,46 +1286,26 @@ static int cmd_zign(void *data, const char *input) {
 }
 
 static RzCmdStatus z_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 1) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	rz_sign_list (core->anal, '\0');
 	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus zq_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 1) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	rz_sign_list (core->anal, 'q');
 	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus zj_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 1) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	rz_sign_list (core->anal, 'j');
 	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus z_star_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 1) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	rz_sign_list (core->anal, '*');
 	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus zk_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 1) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	char *out = sdb_querys (core->sdb, NULL, 0, "anal/zigns/*");
 	if (!out) {
 		return RZ_CMD_STATUS_ERROR;
@@ -1336,26 +1316,14 @@ static RzCmdStatus zk_handler(RzCore *core, int argc, const char **argv) {
 }
 
 static RzCmdStatus z_point_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 1) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	return cmdCheck (core, "")? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
 }
 
 static RzCmdStatus z_point_star_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 1) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	return cmdCheck (core, "*") ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 static RzCmdStatus zb_handler(RzCore *core, int argc, const char **argv) {
-	if (argc > 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	int count = ZB_DEFAULT_N;
 	if (argc > 1) {
 		count = rz_num_math (core->num, argv[1]);
@@ -1364,10 +1332,6 @@ static RzCmdStatus zb_handler(RzCore *core, int argc, const char **argv) {
 }
 
 static RzCmdStatus zbr_handler(RzCore *core, int argc, const char **argv) {
-	if (argc > 3 || argc < 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	const char *zigname = argv[1];
 	int count = ZB_DEFAULT_N;
 	if (argc > 2) {
@@ -1377,19 +1341,11 @@ static RzCmdStatus zbr_handler(RzCore *core, int argc, const char **argv) {
 }
 
 static RzCmdStatus z_minus_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	rz_sign_delete (core->anal, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus za_handler(RzCore *core, int argc, const char **argv) {
-	if (argc < 4) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	const char *zigname = argv[1];
 	if (strlen (argv[2]) != 1) {
 		return RZ_CMD_STATUS_WRONG_ARGS;
@@ -1402,9 +1358,6 @@ static RzCmdStatus za_handler(RzCore *core, int argc, const char **argv) {
 }
 
 static RzCmdStatus zaf_handler(RzCore *core, int argc, const char **argv) {
-	if (argc > 3) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	RzAnalFunction *fcni = NULL;
 	RzListIter *iter = NULL;
 	const char *fcnname = argc > 1? argv[1]: NULL;
@@ -1425,9 +1378,6 @@ static RzCmdStatus zaf_handler(RzCore *core, int argc, const char **argv) {
 }
 
 static RzCmdStatus zaF_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 1) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	RzAnalFunction *fcni = NULL;
 	RzListIter *iter = NULL;
 	int count = 0;
@@ -1449,43 +1399,23 @@ static RzCmdStatus zg_handler(RzCore *core, int argc, const char **argv) {
 }
 
 static RzCmdStatus zo_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	return rz_sign_load (core->anal, argv[1])? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
 }
 
 static RzCmdStatus zoz_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	return rz_sign_load_gz (core->anal, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 static RzCmdStatus zos_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	return rz_sign_save (core->anal, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 static RzCmdStatus zfd_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	rz_sign_flirt_dump (core->anal, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus zfs_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
-
 	int depth = rz_config_get_i (core->config, "dir.depth");
 	char *file;
 	RzListIter *iter;
@@ -1498,37 +1428,22 @@ static RzCmdStatus zfs_handler(RzCore *core, int argc, const char **argv) {
 }
 
 static RzCmdStatus z_slash_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 1) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	return search (core, false, false)? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
 }
 
 static RzCmdStatus z_slash_star_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 1) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	return search (core, true, false)? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
 }
 
 static RzCmdStatus z_slash_f_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 1) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	return search (core, false, true)? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
 }
 
 static RzCmdStatus z_slash_f_star_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 1) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	return search (core, true, true)? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
 }
 
 static RzCmdStatus zc_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	const char *raw_bytes_thresh = rz_config_get (core->config, "zign.diff.bthresh");
 	const char *raw_graph_thresh = rz_config_get (core->config, "zign.diff.gthresh");
 	RzSignOptions *options = rz_sign_options_new (raw_bytes_thresh, raw_graph_thresh);
@@ -1538,9 +1453,6 @@ static RzCmdStatus zc_handler(RzCore *core, int argc, const char **argv) {
 }
 
 static RzCmdStatus zcn_handler_common(RzCore *core, int argc, const char **argv, bool negative_match) {
-	if (argc != 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	const char *raw_bytes_thresh = rz_config_get (core->config, "zign.diff.bthresh");
 	const char *raw_graph_thresh = rz_config_get (core->config, "zign.diff.gthresh");
 	RzSignOptions *options = rz_sign_options_new (raw_bytes_thresh, raw_graph_thresh);
@@ -1558,9 +1470,6 @@ static RzCmdStatus zcn_esclamation_handler(RzCore *core, int argc, const char **
 }
 
 static RzCmdStatus zs_handler(RzCore *core, int argc, const char **argv) {
-	if (argc > 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	if (argc == 1) {
 		spaces_list (&core->anal->zign_spaces, '\0');
 	} else {
@@ -1570,17 +1479,11 @@ static RzCmdStatus zs_handler(RzCore *core, int argc, const char **argv) {
 }
 
 static RzCmdStatus zsj_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 1) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	spaces_list (&core->anal->zign_spaces, 'j');
 	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus zs_star_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 1) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	spaces_list (&core->anal->zign_spaces, '*');
 	return RZ_CMD_STATUS_OK;
 }
@@ -1589,9 +1492,6 @@ static RzCmdStatus zs_minus_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 1) {
 		rz_spaces_pop (&core->anal->zign_spaces);
 		return RZ_CMD_STATUS_OK;
-	}
-	if (argc > 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
 	if (!strcmp (argv[1], "*")) {
 		rz_spaces_unset (&core->anal->zign_spaces, NULL);
@@ -1602,17 +1502,11 @@ static RzCmdStatus zs_minus_handler(RzCore *core, int argc, const char **argv) {
 }
 
 static RzCmdStatus zs_plus_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	rz_spaces_push (&core->anal->zign_spaces, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
 static RzCmdStatus zsr_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	rz_spaces_rename (&core->anal->zign_spaces, NULL, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
@@ -1625,30 +1519,18 @@ static RzCmdStatus zi_handler_common(RzCore *core, int mode, const char *pfx) {
 }
 
 static RzCmdStatus zi_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 1) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	return zi_handler_common (core, '\0', "");
 }
 
 static RzCmdStatus ziq_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 1) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	return zi_handler_common (core, 'q', "");
 }
 
 static RzCmdStatus zij_handler(RzCore *core, int argc, const char **argv) {
-	if (argc != 1) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	return zi_handler_common (core, 'j', "");
 }
 
 static RzCmdStatus zi_star_handler(RzCore *core, int argc, const char **argv) {
-	if (argc > 2) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	char *pfx = argc > 1? rz_str_newf (" %s", argv[1]): rz_str_new ("");
 	RzCmdStatus res = zi_handler_common (core, '*', pfx);
 	free (pfx);
@@ -1656,11 +1538,11 @@ static RzCmdStatus zi_star_handler(RzCore *core, int argc, const char **argv) {
 }
 
 static RzCmdStatus zii_handler(RzCore *core, int argc, const char **argv) {
-	if (argc < 3) {
-		return RZ_CMD_STATUS_WRONG_ARGS;
-	}
 	char *pfx = rz_str_array_join (argv + 1, argc - 1, " ");
-	return zi_handler_common (core, 'i', pfx);
+	pfx = rz_str_prepend (pfx, " ");
+	RzCmdStatus res = zi_handler_common (core, 'i', pfx);
+	free (pfx);
+	return res;
 }
 
 static void cmd_zign_init(RzCore *core, RzCmdDesc *parent) {

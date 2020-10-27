@@ -2,6 +2,10 @@
 
 // root helps
 
+const RzCmdDescArg empty_args[] = {
+	{ 0 },
+};
+
 const RzCmdDescDetailEntry tmp_modifier_detail_entries[] = {
 	{ .text = "<cmd> @", .arg_str = " <addr>", .comment = "temporary seek to <addr>" },
 	{ .text = "<cmd> @", .arg_str = " <addr>!<blocksize>", .comment = "temporary seek to <addr> and set blocksize to <blocksize>" },
@@ -247,16 +251,24 @@ const RzCmdDescDetail env_help_details[] = {
 	{ 0 },
 };
 
+const RzCmdDescArg env_args[] = {
+	{ .name = "varname", .optional = true, .type = RZ_CMD_ARG_TYPE_ENV },
+	{ .name = "varvalue", .optional = true, .type = RZ_CMD_ARG_TYPE_STRING },
+	{ 0 },
+};
+
 const RzCmdDescHelp env_help = {
 	.summary = "get/set environment variables",
 	.args_str = " [varname[=varvalue]]",
 	.details = env_help_details,
+	.args = env_args,
 };
 
 const RzCmdDescHelp percentage_help = {
 	.summary = "get/set environment variables",
 	.args_str = "[varname[=varvalue]]",
 	.details = env_help_details,
+	.args = env_args,
 };
 
 const RzCmdDescHelp tasks_help = {
@@ -279,11 +291,18 @@ const RzCmdDescDetail pointer_help_details[] = {
 	{ 0 },
 };
 
+const RzCmdDescArg pointer_args[] = {
+	{ .name = "addr", .type = RZ_CMD_ARG_TYPE_NUM },
+	{ .name = "0xvalue|hexstring", .optional = true, .type = RZ_CMD_ARG_TYPE_STRING },
+	{ 0 },
+};
+
 const RzCmdDescHelp pointer_help = {
 	.summary = "pointer read/write data/values",
 	.args_str = "<addr>[=<0xvalue>|<hexstring>]",
 	.description = "Read or write values at a given address. When the value starts with `0x`, a 4-bytes value or 8-bytes value is written in the memory at address, depending on the size of the value. When value does not start with `0x` an hexstring with arbitrary length is expected and it is written starting from the specified address.",
 	.details = pointer_help_details,
+	.args = pointer_args,
 };
 
 const RzCmdDescHelp stdin_help = {
@@ -383,18 +402,23 @@ const RzCmdDescHelp p_help = {
 	.summary = "print commands",
 };
 
+const RzCmdDescArg P_args[] = {
+	{ .name = "project.rzdb", .type = RZ_CMD_ARG_TYPE_FILE },
+	{ 0 },
+};
+
 const RzCmdDescHelp P_group_help = {
 	.summary = "project management",
 };
 
 const RzCmdDescHelp Ps_help = {
 	.summary = "save a project",
-	.args_str = " [project.rzdb]"
+	.args = P_args,
 };
 
 const RzCmdDescHelp Po_help = {
 	.summary = "load a project",
-	.args_str = " [project.rzdb]"
+	.args = P_args,
 };
 
 const RzCmdDescHelp q_help = {
@@ -429,8 +453,14 @@ const RzCmdDescHelp u_help = {
 	.summary = "uname/undo seek/write",
 };
 
+const RzCmdDescArg pipein_args[] = {
+	{ .name = "characters", .type = RZ_CMD_ARG_TYPE_STRING },
+	{ 0 },
+};
+
 const RzCmdDescHelp pipein_help = {
 	.summary = "push escaped string into the RzCons.readChar buffer",
+	.args = pipein_args,
 };
 
 const RzCmdDescHelp V_help = {
@@ -445,9 +475,14 @@ const RzCmdDescHelp w_group_help = {
 	.summary = "write commands",
 };
 
+const RzCmdDescArg w_args[] = {
+	{ .name = "string", .type = RZ_CMD_ARG_TYPE_ARRAY_STRING },
+	{ 0 },
+};
+
 const RzCmdDescHelp w_help = {
-	.args_str = " <string>",
 	.summary = "write string",
+	.args = w_args,
 };
 
 const RzCmdDescHelp x_help = {
@@ -464,6 +499,7 @@ const RzCmdDescHelp z_group_help = {
 
 const RzCmdDescHelp z_help = {
 	.summary = "show signatures",
+	.args = empty_args,
 };
 
 const RzCmdDescHelp z_point_group_help = {
@@ -472,45 +508,67 @@ const RzCmdDescHelp z_point_group_help = {
 
 const RzCmdDescHelp z_point_help = {
 	.summary = "find matching zignatures in current offset",
+	.args = empty_args,
 };
 
 const RzCmdDescHelp z_point_star_help = {
 	.summary = "find matching zignatures in current offset (output in rizin commands)",
+	.args = empty_args,
 };
 
 const RzCmdDescHelp zb_group_help = {
 	.summary = "search for best match",
 };
 
+const RzCmdDescArg zb_args[] = {
+	{ .name = "n", .optional = true, .type = RZ_CMD_ARG_TYPE_NUM, .default_value = "5" },
+	{ 0 },
+};
+
 const RzCmdDescHelp zb_help = {
 	.summary = "find n closest matching zignatures to function at current offset",
-	.args_str = " [n]",
+	.args = zb_args,
+};
+
+const RzCmdDescArg zbr_args[] = {
+	{ .name = "zigname", .type = RZ_CMD_ARG_TYPE_ZIGN },
+	{ .name = "n", .optional = true, .type = RZ_CMD_ARG_TYPE_NUM, .default_value = "5" },
+	{ 0 },
 };
 
 const RzCmdDescHelp zbr_help = {
 	.summary = "search for n most similar functions to zigname",
-	.args_str = " <zigname> [n]",
+	.args = zbr_args,
 };
 
 const RzCmdDescHelp z_star_help = {
 	.summary = "show zignatures in rizin format",
+	.args = empty_args,
 };
 
 const RzCmdDescHelp zq_help = {
 	.summary = "show zignatures in quiet mode",
+	.args = empty_args,
 };
 
 const RzCmdDescHelp zj_help = {
 	.summary = "show zignatures in json format",
+	.args = empty_args,
 };
 
 const RzCmdDescHelp zk_help = {
 	.summary = "show zignatures in sdb format",
+	.args = empty_args,
+};
+
+const RzCmdDescArg z_minus_args[] = {
+	{ .name = "zigname|*", .type = RZ_CMD_ARG_TYPE_ZIGN },
+	{ 0 },
 };
 
 const RzCmdDescHelp z_minus_help = {
 	.summary = "delete zignature",
-	.args_str = " <zigname|*>",
+	.args = z_minus_args,
 };
 
 const RzCmdDescDetailEntry za_types[] = {
@@ -526,6 +584,8 @@ const RzCmdDescDetailEntry za_types[] = {
 	{ .text = "v", .comment = "vars (and args)" },
 	{ 0 },
 };
+
+const char *za_type_choices[] = { "a", "b", "c", "n", "g", "o", "r", "x", "h", "v" };
 
 const RzCmdDescDetailEntry za_patterns[] = {
 	{ .text = "", .comment = "bytes can contain '..' (dots) to specify a binary mask" },
@@ -565,56 +625,81 @@ const RzCmdDescHelp za_group_help = {
 	.summary = "add zignature",
 };
 
+const RzCmdDescArg za_args[] = {
+	{ .name = "zigname", .type = RZ_CMD_ARG_TYPE_STRING },
+	{ .name = "type", .type = RZ_CMD_ARG_TYPE_CHOICES, .choices = za_type_choices },
+	{ .name = "params", .type = RZ_CMD_ARG_TYPE_ARRAY_STRING },
+	{ 0 },
+};
+
 const RzCmdDescHelp za_help = {
 	.summary = "add zignature",
-	.args_str = " <zigname> <type> <param0> [<param1> ...]",
 	.details = za_details,
+	.args = za_args,
+};
+
+const RzCmdDescArg zaf_args[] = {
+	{ .name = "fcnname", .optional = true, .type = RZ_CMD_ARG_TYPE_FCN },
+	{ .name = "zigname", .optional = true, .type = RZ_CMD_ARG_TYPE_STRING },
+	{ 0 },
 };
 
 const RzCmdDescHelp zaf_help = {
 	.summary = "create zignature for function",
-	.args_str = " [<fcnname> [zigname]]",
+	.args = zaf_args,
 };
 
 const RzCmdDescHelp zaF_help = {
 	.summary = "generate zignatures for all functions",
+	.args = empty_args,
 };
 
 const RzCmdDescHelp zg_help = {
 	.summary = "generate zignatures (alias for zaF)",
+	.args = empty_args,
 };
 
 const RzCmdDescHelp zo_group_help = {
 	.summary = "manage zignature files",
 };
 
+const RzCmdDescArg zo_args[] = {
+	{ .name = "filename", .type = RZ_CMD_ARG_TYPE_FILE },
+	{ 0 },
+};
+
 const RzCmdDescHelp zo_help = {
 	.summary = "load zinatures from sdb file",
-	.args_str = " <filename>",
+	.args = zo_args,
 };
 
 const RzCmdDescHelp zoz_help = {
 	.summary = "load zinatures from gzipped sdb file",
-	.args_str = " <filename>",
+	.args = zo_args,
 };
 
 const RzCmdDescHelp zos_help = {
 	.summary = "save zignatures to sdb file (merge if file exists)",
-	.args_str = " <filename>",
+	.args = zo_args,
 };
 
 const RzCmdDescHelp zf_group_help = {
 	.summary = "manage FLIRT signatures",
 };
 
+const RzCmdDescArg zf_args[] = {
+	{ .name = "filename", .type = RZ_CMD_ARG_TYPE_FILE },
+	{ 0 },
+};
+
 const RzCmdDescHelp zfd_help = {
 	.summary = "open FLIRT file and dump",
-	.args_str = " <filename>",
+	.args = zf_args,
 };
 
 const RzCmdDescHelp zfs_help = {
 	.summary = "open FLIRT file and scan",
-	.args_str = " <filename>",
+	.args = zf_args,
 };
 
 const RzCmdDescHelp z_slash_group_help = {
@@ -623,10 +708,12 @@ const RzCmdDescHelp z_slash_group_help = {
 
 const RzCmdDescHelp z_slash_help = {
 	.summary = "search zignatures on range and flag matches",
+	.args = empty_args,
 };
 
 const RzCmdDescHelp z_slash_star_help = {
 	.summary = "search zignatures on range and output rizin commands",
+	.args = empty_args,
 };
 
 const RzCmdDescHelp z_slash_f_group_help = {
@@ -635,66 +722,90 @@ const RzCmdDescHelp z_slash_f_group_help = {
 
 const RzCmdDescHelp z_slash_f_help = {
 	.summary = "search only function zignatures",
+	.args = empty_args,
 };
 
 const RzCmdDescHelp z_slash_f_star_help = {
 	.summary = "search only function zignatures and output rizin commands",
+	.args = empty_args,
 };
 
 const RzCmdDescHelp zc_group_help = {
 	.summary = "compare current zignspace zignatures with another one",
 };
 
+const RzCmdDescArg zc_args[] = {
+	{ .name = "zignspace", .type = RZ_CMD_ARG_TYPE_ZIGN },
+	{ 0 },
+};
+
 const RzCmdDescHelp zc_help = {
 	.summary = "compare all current space with other_space",
-	.args_str = " <other_space>",
+	.args = zc_args,
 };
 
 const RzCmdDescHelp zcn_group_help = {
 	.summary = "compare current space with zigns with same name on other_space",
-	.args_str = " <other_space>",
+	.args = zc_args,
 };
 
 const RzCmdDescHelp zcn_help = {
 	.summary = "compare current space with zigns with same name on other_space",
-	.args_str = " <other_space>",
+	.args = zc_args,
 };
 
 const RzCmdDescHelp zcn_esclamation_help = {
 	.summary = "compare current space with zigns with different name on other_space",
-	.args_str = " <other_space>",
+	.args = zc_args,
 };
 
 const RzCmdDescHelp zs_group_help = {
 	.summary = "manage zignspaces",
 };
 
+const RzCmdDescArg zs_args[] = {
+	{ .name = "zignspace", .optional = true, .type = RZ_CMD_ARG_TYPE_ZIGN },
+	{ 0 },
+};
+
 const RzCmdDescHelp zs_help = {
 	.summary = "display/select zignspaces",
-	.args_str = " [zignspace|*]",
+	.args = zs_args,
 };
 
 const RzCmdDescHelp zsj_help = {
 	.summary = "display zignspaces (in json)",
+	.args = empty_args,
 };
 
 const RzCmdDescHelp zs_star_help = {
 	.summary = "display zignspaces (in rizin commands)",
+	.args = empty_args,
 };
 
 const RzCmdDescHelp zs_minus_help = {
 	.summary = "delete zignspace or pop to the previous zignspace",
-	.args_str = " [zignspace|*]",
+	.args = zs_args,
+};
+
+const RzCmdDescArg zs_plus_args[] = {
+	{ .name = "zignspace", .type = RZ_CMD_ARG_TYPE_ZIGN },
+	{ 0 },
 };
 
 const RzCmdDescHelp zs_plus_help = {
 	.summary = "push previous zignspace and set",
-	.args_str = " <zignspace>",
+	.args = zs_plus_args,
+};
+
+const RzCmdDescArg zsr_args[] = {
+	{ .name = "newname", .type = RZ_CMD_ARG_TYPE_STRING },
+	{ 0 },
 };
 
 const RzCmdDescHelp zsr_help = {
 	.summary = "rename selected zignspace",
-	.args_str = " <newname>",
+	.args = zsr_args,
 };
 
 const RzCmdDescHelp zi_group_help = {
@@ -703,32 +814,51 @@ const RzCmdDescHelp zi_group_help = {
 
 const RzCmdDescHelp zi_help = {
 	.summary = "show zignatures matching information",
+	.args = empty_args,
 };
 
 const RzCmdDescHelp ziq_help = {
 	.summary = "show zignatures matching information (quiet mode)",
+	.args = empty_args,
 };
 
 const RzCmdDescHelp zij_help = {
 	.summary = "show zignatures matching information (JSON mode)",
+	.args = empty_args,
+};
+
+const RzCmdDescArg zi_star_args[] = {
+	{ .name = "comment", .optional = true, .type = RZ_CMD_ARG_TYPE_STRING },
+	{ 0 },
 };
 
 const RzCmdDescHelp zi_star_help = {
 	.summary = "show zignatures matching information (in rizin commands)",
-	.args_str = " [comment]",
+	.args = zi_star_args,
+};
+
+const RzCmdDescArg zii_args[] = {
+	{ .name = "from", .type = RZ_CMD_ARG_TYPE_NUM },
+	{ .name = "to", .type = RZ_CMD_ARG_TYPE_NUM },
+	{ 0 },
 };
 
 const RzCmdDescHelp zii_help = {
 	.summary = "show zignatures matching information in range",
-	.args_str = " <from> <to>",
+	.args = zii_args,
 };
 
 // w0 helps
 
+const RzCmdDescArg w0_args[] = {
+	{ .name = "len", .type = RZ_CMD_ARG_TYPE_NUM },
+	{ 0 },
+};
+
 const RzCmdDescHelp w0_help = {
 	.summary = "Write 'len' bytes with value 0x00",
-	.args_str = " [len]",
 	.description = "Fill len bytes starting from the current offset with the value 0.",
+	.args = w0_args,
 };
 
 // w[1248][+-] helps
@@ -743,6 +873,11 @@ const RzCmdDescDetailEntry w_incdec_help_examples[] = {
 
 const RzCmdDescDetail w_incdec_help_details[] = {
 	{ .name = "Examples", .entries = w_incdec_help_examples },
+	{ 0 },
+};
+
+const RzCmdDescArg w_incdec_args[] = {
+	{ .name = "n", .optional = true, .type = RZ_CMD_ARG_TYPE_NUM },
 	{ 0 },
 };
 
@@ -762,16 +897,16 @@ const RzCmdDescHelp w1_incdec_group_help = {
 
 const RzCmdDescHelp w1_inc_help = {
 	.summary = "Increment a byte",
-	.args_str = " [n]",
 	.description = "Increment a byte at the current offset by 1 or n, if specified",
 	.details = w_incdec_help_details,
+	.args = w_incdec_args,
 };
 
 const RzCmdDescHelp w1_dec_help = {
 	.summary = "Decrement a byte",
-	.args_str = " [n]",
 	.description = "Decrement a byte at the current offset by 1 or n, if specified",
 	.details = w_incdec_help_details,
+	.args = w_incdec_args,
 };
 
 const RzCmdDescHelp w2_incdec_group_help = {
@@ -784,16 +919,16 @@ const RzCmdDescHelp w2_incdec_group_help = {
 
 const RzCmdDescHelp w2_inc_help = {
 	.summary = "Increment a word",
-	.args_str = " [n]",
 	.description = "Increment a word at the current offset by 1 or n, if specified",
 	.details = w_incdec_help_details,
+	.args = w_incdec_args,
 };
 
 const RzCmdDescHelp w2_dec_help = {
 	.summary = "Decrement a word",
-	.args_str = " [n]",
 	.description = "Decrement a word at the current offset by 1 or n, if specified",
 	.details = w_incdec_help_details,
+	.args = w_incdec_args,
 };
 
 const RzCmdDescHelp w4_incdec_group_help = {
@@ -806,16 +941,16 @@ const RzCmdDescHelp w4_incdec_group_help = {
 
 const RzCmdDescHelp w4_inc_help = {
 	.summary = "Increment a dword",
-	.args_str = " [n]",
 	.description = "Increment a dword at the current offset by 1 or n, if specified",
 	.details = w_incdec_help_details,
+	.args = w_incdec_args,
 };
 
 const RzCmdDescHelp w4_dec_help = {
 	.summary = "Decrement a dword",
-	.args_str = " [n]",
 	.description = "Decrement a dword at the current offset by 1 or n, if specified",
 	.details = w_incdec_help_details,
+	.args = w_incdec_args,
 };
 
 const RzCmdDescHelp w8_incdec_group_help = {
@@ -828,16 +963,16 @@ const RzCmdDescHelp w8_incdec_group_help = {
 
 const RzCmdDescHelp w8_inc_help = {
 	.summary = "Increment a qword",
-	.args_str = " [n]",
 	.description = "Increment a qword at the current offset by 1 or n, if specified",
 	.details = w_incdec_help_details,
+	.args = w_incdec_args,
 };
 
 const RzCmdDescHelp w8_dec_help = {
 	.summary = "Decrement a qword",
-	.args_str = " [n]",
 	.description = "Decrement a qword at the current offset by 1 or n, if specified",
 	.details = w_incdec_help_details,
+	.args = w_incdec_args,
 };
 
 // wB helps
@@ -853,21 +988,26 @@ const RzCmdDescDetail wB_help_details[] = {
 };
 
 const RzCmdDescHelp wB_group_help = {
-	.args_str = " [value]",
+	.args_str = " <value>",
 	.summary = "Set or unset bits with given value",
+};
+
+const RzCmdDescArg wB_args[] = {
+	{ .name = "value", .type = RZ_CMD_ARG_TYPE_NUM },
+	{ 0 },
 };
 
 const RzCmdDescHelp wB_help = {
 	.summary = "Set bits with given value",
-	.args_str = " [value]",
 	.description = "Set the bits that are set in the value passed as arguments. 0 bits in the value argument are ignored, while the others are set at the current offset",
 	.details = wB_help_details,
+	.args = wB_args,
 };
 
 const RzCmdDescHelp wB_minus_help = {
 	.summary = "Unset bits with given value",
-	.args_str = " [value]",
-	.description = "Unset the bits that are set in the value passed as arguments. 0 bits in the value argument are ignored, while the others are unset at the current offset"
+	.description = "Unset the bits that are set in the value passed as arguments. 0 bits in the value argument are ignored, while the others are unset at the current offset",
+	.args = wB_args,
 };
 
 // wv helps
@@ -883,36 +1023,41 @@ const RzCmdDescDetail wv_help_details[] = {
 };
 
 const RzCmdDescHelp wv_group_help = {
-	.args_str = " [value]",
+	.args_str = " <value>",
 	.summary = "Write value of given size",
+};
+
+const RzCmdDescArg wv_args[] = {
+	{ .name = "value", .type = RZ_CMD_ARG_TYPE_NUM },
+	{ 0 },
 };
 
 const RzCmdDescHelp wv_help = {
 	.summary = "Write value as 4 - bytes / 8 - bytes based on value",
-	.args_str = " [value]",
 	.description = "Write the number passed as argument at the current offset as a 4 - bytes value or 8 - bytes value if the input is bigger than UT32_MAX, respecting the cfg.bigendian variable",
 	.details = wv_help_details,
+	.args = wv_args,
 };
 
 const RzCmdDescHelp wv1_help = {
 	.summary = "Write value of 1 byte",
-	.args_str = " [value]",
 	.description = "Write the number passed as argument at the current offset as 1 - byte, respecting the cfg.bigendian variable",
+	.args = wv_args,
 };
 const RzCmdDescHelp wv2_help = {
 	.summary = "Write value of 2 bytes",
-	.args_str = " [value]",
 	.description = "Write the number passed as argument at the current offset as 2 - bytes, respecting the cfg.bigendian variable",
+	.args = wv_args,
 };
 const RzCmdDescHelp wv4_help = {
 	.summary = "Write value of 4 bytes",
-	.args_str = " [value]",
 	.description = "Write the number passed as argument at the current offset as 4 - bytes, respecting the cfg.bigendian variable",
+	.args = wv_args,
 };
 const RzCmdDescHelp wv8_help = {
 	.summary = "Write value of 8 byte",
-	.args_str = " [value]",
 	.description = "Write the number passed as argument at the current offset as 8 - bytes, respecting the cfg.bigendian variable",
+	.args = wv_args,
 };
 
 const RzCmdDescDetailEntry w6_help_examples[] = {
@@ -932,18 +1077,28 @@ const RzCmdDescHelp w6_group_help = {
 	.details = w6_help_details,
 };
 
+const RzCmdDescArg w6d_args[] = {
+	{ .name = "base64", .type = RZ_CMD_ARG_TYPE_STRING },
+	{ 0 },
+};
+
 const RzCmdDescHelp w6d_help = {
-	.args_str = " <base64>",
 	.summary = "write the base64-decoded bytes",
 	.description = "Base64-Decode the string passed as argument and write it at the current offset.",
 	.details = w6_help_details,
+	.args = w6d_args,
+};
+
+const RzCmdDescArg w6e_args[] = {
+	{ .name = "hexstring", .type = RZ_CMD_ARG_TYPE_STRING },
+	{ 0 },
 };
 
 const RzCmdDescHelp w6e_help = {
-	.args_str = " <hexstring>",
 	.summary = "write the base64-encoded bytes",
 	.description = "Base64-Encode the hex string passed as argument and write it at the current offset.",
 	.details = w6_help_details,
+	.args = w6e_args,
 };
 
 const RzCmdDescHelp wh_help = {
