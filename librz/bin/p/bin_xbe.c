@@ -1,4 +1,4 @@
-/* radare - LGPL - 2014-2019 - thatlemon@gmail.com, pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
 #include <rz_util.h>

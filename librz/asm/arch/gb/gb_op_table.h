@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013 - 2014 - condret@runas-racer.com */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #define GB_8BIT		1
 #define	GB_16BIT	2

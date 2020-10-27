@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2017-2018 - maijin */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
 #include <rz_lib.h>

@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2012 - pancake<nopcode.org>
-			     2019 - condret
+// SPDX-License-Identifier: LGPL-3.0-only
 
-	this file was based on anal_i8080.c */
+// this file was based on anal_i8080.c
 
 #include <string.h>
 #include <rz_types.h>

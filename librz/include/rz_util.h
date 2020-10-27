@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2016 - pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef RZ_UTIL_H
 #define RZ_UTIL_H

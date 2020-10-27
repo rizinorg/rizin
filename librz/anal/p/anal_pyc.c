@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2016-2020 - FXTi */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
 #include <rz_lib.h>

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #define RZ_BIN_ELF64 1
 #include "bin_elf.inc"

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016 pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #define RZ_BIN_MACH064 1
 #include "bin_write_mach0.c"

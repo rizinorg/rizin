@@ -1,4 +1,4 @@
-/* radare - LGPL - 2015 - maijin */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef _SPC_H
 #define _SPC_H

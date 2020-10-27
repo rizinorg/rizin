@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2016 - inisider */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "microsoft_demangle.h"
 #include <ctype.h>

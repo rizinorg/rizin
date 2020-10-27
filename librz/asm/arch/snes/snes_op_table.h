@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013 - condret@runas-racer.com */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef SNES_OP_TABLE_H
 #define SNES_OP_TABLE_H

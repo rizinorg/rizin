@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2020 - pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 // XXX: should use the same code as librz/io/cache.c
 // one malloc per write

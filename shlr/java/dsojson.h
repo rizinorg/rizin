@@ -1,4 +1,4 @@
-/* radare - Apache - Copyright 2014 dso <adam.pridgen@thecoverofnight.com | dso@rice.edu> */
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef _INCLUDE_DOSJSON_H_
 #define _INCLUDE_DOSJSON_H_

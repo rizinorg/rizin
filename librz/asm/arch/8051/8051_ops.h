@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2016 - pancake, condret, riq, qnix */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef _8051_OPS_H
 #define _8051_OPS_H

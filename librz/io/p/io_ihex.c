@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2017 - pancake, fenugrec */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 /*
 *** .hex format description : every line follows this pattern

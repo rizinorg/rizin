@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2013 eloi<limited-entropy.com> */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <string.h>
 #include <rz_types.h>

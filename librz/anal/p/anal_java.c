@@ -1,5 +1,4 @@
-/* radare - Apache 2.0 - Copyright 2010-2019 - pancake and
- Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
+// SPDX-License-Identifier: Apache-2.0
 
 #include <string.h>
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - nibble, pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 #if 0
 * Use RzList
 * Support callback for null command (why?)

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2020 - houndthe */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "base_types.h"
 #include <sdb.h>

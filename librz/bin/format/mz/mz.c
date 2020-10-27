@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2018 nodepad, pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "mz.h"
 #include <rz_list.h>

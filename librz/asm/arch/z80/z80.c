@@ -1,6 +1,4 @@
-/* radare - LGPL - Copyright 2014-2015 - condret
-                   Copyright 2016      - unlogic
-*/
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_asm.h>
 #include <rz_types.h>

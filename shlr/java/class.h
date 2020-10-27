@@ -1,6 +1,4 @@
-/* radare - Apache 2.0 - Copyright 2007-2017 - pancake
-   class.h rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
- */
+// SPDX-License-Identifier: Apache-2.0
 
 #ifndef _INCLUDE_JAVA_CLASS_H_
 #define _INCLUDE_JAVA_CLASS_H_

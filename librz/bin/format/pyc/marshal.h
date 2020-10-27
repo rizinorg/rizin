@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2016 - Matthieu (c0riolis) Tardy */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef MARSHAL_H
 #define MARSHAL_H

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - earada */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef DALVIK_OPCODE_H
 #define DALVIK_OPCODE_H

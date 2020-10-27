@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2020 - pancake, xarkes */
+// SPDX-License-Identifier: LGPL-3.0-only
 /* ansi 256 color extension for rz_cons */
 /* https://en.wikipedia.org/wiki/ANSI_color */
 

@@ -1,4 +1,4 @@
-/* radare - MIT - Copyright 2011-2020 - pancake */
+// SPDX-License-Identifier: MIT
 
 #include <rz_io.h>
 #include <rz_lib.h>

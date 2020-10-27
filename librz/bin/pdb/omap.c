@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2016 - iniside, pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "types.h"
 #include "omap.h"

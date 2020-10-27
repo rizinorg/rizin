@@ -1,4 +1,4 @@
-/* radare - LGPL - 2013-2015 - Fedor Sakharov <fedor.sakharov@gmail.com> */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "ebc_disas.h"
 #include <rz_types.h>

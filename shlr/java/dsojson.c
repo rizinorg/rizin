@@ -1,4 +1,4 @@
-/* radare - Apache - Copyright 2014,2015 dso, pancake */
+// SPDX-License-Identifier: Apache-2.0
 
 #include "dsojson.h"
 #include "class.h"

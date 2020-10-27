@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016 - Oscar Salvador */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef BFLT_H
 #define BFLT_H

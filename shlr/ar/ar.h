@@ -1,4 +1,4 @@
-/* radare - LGPLv3 - Copyright 2017 - xarkes */
+// SPDX-License-Identifier: LGPL-3.0-only
 #ifndef _AR_H
 #define _AR_H
 

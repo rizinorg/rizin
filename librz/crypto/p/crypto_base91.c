@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2017 - rakholiyajenish.07 */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_lib.h>
 #include <rz_crypto.h>

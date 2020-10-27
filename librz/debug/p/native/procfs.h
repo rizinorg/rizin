@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef PROCFS_H
 #define PROCFS_H

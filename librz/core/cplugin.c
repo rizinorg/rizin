@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2018 - pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 /* covardly copied from rz_cmd */
 

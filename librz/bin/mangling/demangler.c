@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - inisider */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "demangler.h"
 #include <stdlib.h>

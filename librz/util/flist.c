@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2013 - pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 // XXX. this is dupped inside the rz_flist.h for optimizations
 
 int rz_flist_iterator(void **x) {

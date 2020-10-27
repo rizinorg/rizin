@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2020 - nibble, pancake */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
 #include <rz_types.h>

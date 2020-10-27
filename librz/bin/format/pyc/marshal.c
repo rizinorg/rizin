@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2016-2020 - Matthieu (c0riolis) Tardy - l0stb1t*/
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_io.h>
 #include <rz_bin.h>

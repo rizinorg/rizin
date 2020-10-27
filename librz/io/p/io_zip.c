@@ -1,8 +1,4 @@
-/* radare - LGPL - Copyright 2012-2016 - pancake
-   io_zip.c rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
- */
-
-// TODO: wrap with rz_sandbox api
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_io.h>
 #include <rz_lib.h>

@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2016-2020 - c0riolis, x0urc3 */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "pyc_magic.h"
 #include <stdlib.h>

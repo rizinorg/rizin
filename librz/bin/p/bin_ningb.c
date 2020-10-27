@@ -1,4 +1,4 @@
-/* radare - LGPL - 2013 - 2017 - condret@runas-racer.com */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_types.h>
 #include <rz_util.h>

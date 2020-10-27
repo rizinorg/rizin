@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016 - bobby.smiles32@gmail.com */
+// SPDX-License-Identifier: LGPL-3.0-only
 // TODO: add assembler
 
 #include <rz_types.h>

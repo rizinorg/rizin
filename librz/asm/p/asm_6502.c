@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2018 - pancake, condret */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 // copypasta from asm_gb.c
 #include <rz_types.h>

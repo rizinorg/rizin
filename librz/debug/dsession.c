@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017 - rkx1209 */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_debug.h>
 #include <rz_util/rz_json.h>

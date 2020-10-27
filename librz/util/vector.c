@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017-2020 - maskray, thestr4ng3r */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_vector.h"
 

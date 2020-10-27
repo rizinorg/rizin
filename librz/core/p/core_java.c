@@ -1,4 +1,4 @@
-/* radare - Apache - Copyright 2014-2019 - dso, pancake */
+// SPDX-License-Identifier: Apache-2.0
 
 #include <rz_types.h>
 #include <rz_lib.h>

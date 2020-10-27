@@ -1,4 +1,4 @@
-/* radare - BSD 3 Clause License - Copyright 2017 - MaskRay */
+// SPDX-License-Identifier: BSD-3-Clause
 
 #include <stdio.h>
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2014 - pancake, TheLemonMan */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_search.h"
 #include <rz_regex.h>

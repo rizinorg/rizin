@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019 - pancake, ret2libc */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "rz_util/rz_spaces.h"
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2015 - fedor.sakharov */
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include <stdio.h>
 #include <string.h>
