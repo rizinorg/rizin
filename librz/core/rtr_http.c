@@ -374,7 +374,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 			} else {
 				const char *root = rz_config_get (core->config, "http.root");
 				const char *homeroot = rz_config_get (core->config, "http.homeroot");
-				char *path;
+				char *path = NULL;
 				if (!strcmp (rs->path, "/")) {
 					free (rs->path);
 					if (*index == '/') {
