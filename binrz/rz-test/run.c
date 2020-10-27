@@ -1129,9 +1129,15 @@ RZ_API void rz_test_asm_test_output_free(RzAsmTestOutput *out) {
 }
 
 RZ_API RzTestProcessOutput *rz_test_run_fuzz_test(RzTestRunConfig *config, RzFuzzTest *test, RzTestCmdRunner runner, void *user) {
+	const char *cmd = "aaa";
 	RzList *files = rz_list_new ();
 	rz_list_push (files, test->file);
-	RzTestProcessOutput *ret = run_rz_test (config, config->timeout_ms, "aaa", files, NULL, false, runner, user);
+#if ASAN
+	if (rz_str_endswith (test->file, "/swift_read")) {
+		cmd = "?F";
+	}
+#endif
+	RzTestProcessOutput *ret = run_rz_test (config, config->timeout_ms, cmd, files, NULL, false, runner, user);
 	rz_list_free (files);
 	return ret;
 }
