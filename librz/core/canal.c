@@ -382,7 +382,7 @@ static char *anal_fcn_autoname(RzCore *core, RzAnalFunction *fcn, int dump, int 
 	RzList *refs = rz_anal_function_get_refs (fcn);
 	if (mode == 'j') {
 		// start a new JSON object
-		pj = pj_new ();
+		pj = rz_core_pj_new (core);
 		pj_a (pj);
 	}
 	if (refs) {
@@ -2786,7 +2786,7 @@ static int fcn_print_makestyle(RzCore *core, RzList *fcns, char mode) {
 	PJ *pj = NULL;
 
 	if (mode == 'j') {
-		pj = pj_new ();
+		pj = rz_core_pj_new (core);
 		pj_a (pj);
 	}
 
@@ -2985,7 +2985,7 @@ static int fcn_print_json(RzCore *core, RzAnalFunction *fcn, PJ *pj) {
 static int fcn_list_json(RzCore *core, RzList *fcns, bool quiet) {
 	RzListIter *iter;
 	RzAnalFunction *fcn;
-	PJ *pj = pj_new ();
+	PJ *pj = rz_core_pj_new (core);
 	if (!pj) {
 		return -1;
 	}
@@ -3653,7 +3653,7 @@ RZ_API int rz_core_anal_graph(RzCore *core, ut64 addr, int opts) {
 			"\tedge [%s];\n", font, gv_spline, gv_node, gv_edge);
 	}
 	if (is_json) {
-		pj = pj_new ();
+		pj = rz_core_pj_new (core);
 		if (!pj) {
 			rz_config_hold_restore (hc);
 			rz_config_hold_free (hc);
@@ -5708,7 +5708,7 @@ RZ_API void rz_core_anal_paths(RzCore *core, ut64 from, ut64 to, bool followCall
 
 	// Initialize a PJ object for json mode
 	if (is_json) {
-		pj = pj_new ();
+		pj = rz_core_pj_new (core);
 		pj_a (pj);
 	}
 

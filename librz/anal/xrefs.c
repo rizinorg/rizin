@@ -210,7 +210,7 @@ RZ_API void rz_anal_xrefs_list(RzAnal *anal, int rad) {
 	listxrefs (anal->dict_refs, UT64_MAX, list);
 	sortxrefs (list);
 	if (rad == 'j') {
-		pj = pj_new ();
+		pj = anal->coreb.pjWithEncoding (anal->coreb.core);
 		if (!pj) {
 			return;
 		}

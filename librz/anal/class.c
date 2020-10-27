@@ -1101,7 +1101,7 @@ static bool rz_anal_class_list_json_cb(void *user, const char *k, const char *v)
 }
 
 static void rz_anal_class_list_json(RzAnal *anal) {
-	PJ *j = pj_new ();
+	PJ *j = anal->coreb.pjWithEncoding (anal->coreb.core);
 	if (!j) {
 		return;
 	}

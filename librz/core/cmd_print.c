@@ -4487,11 +4487,11 @@ static void rz_core_disasm_table(RzCore * core, int l, const char *input) {
 
 static void cmd_pxr(RzCore *core, int len, int mode, int wordsize, const char *arg) {
 	PJ *pj = NULL;
-	RzTable *t = NULL;
+	RTable *t = NULL;
 	if (mode == ',') {
 		t = rz_table_new ();
-		RzTableColumnType *n = rz_table_type ("number");
-		RzTableColumnType *s = rz_table_type ("string");
+		RTableColumnType *n = rz_table_type ("number");
+		RTableColumnType *s = rz_table_type ("string");
 		rz_table_add_column (t, n, "addr", 0);
 		rz_table_add_column (t, n, "value", 0);
 		rz_table_add_column (t, s, "refs", 0);
