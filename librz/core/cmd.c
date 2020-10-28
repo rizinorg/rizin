@@ -731,17 +731,6 @@ static int cmd_rap(void *data, const char *input) {
 	return 0;
 }
 
-static int cmd_rap_run(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	char *res = rz_io_system (core->io, input);
-	if (res) {
-		int ret = atoi (res);
-		free (res);
-		return ret;
-	}
-	return false;
-}
-
 static int cmd_yank(void *data, const char *input) {
 	ut64 n;
 	RzCore *core = (RzCore *)data;
@@ -6975,7 +6964,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "/", "search kw, pattern aes", cmd_search, cmd_search_init, &search_help },
 		{ "=", "io pipe", cmd_rap, NULL, &rap_help },
 		{ "?", "help message", cmd_help, cmd_help_init, &help_help },
-		{ "\\", "alias for =!", cmd_rap_run, NULL, &rap_run_help },
 		{ "<", "pipe into RzCons.readChar", cmd_pipein, NULL, &pipein_help, NULL, RZ_CMD_DESC_TYPE_ARGV, pipein_handler },
 		{ "0", "alias for s 0x", cmd_ox, NULL, &zero_help },
 		{ "a", "analysis", cmd_anal, cmd_anal_init, &anal_help },

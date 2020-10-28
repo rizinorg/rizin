@@ -326,10 +326,6 @@ const RzCmdDescHelp help_help = {
 	.options = "[??]",
 };
 
-const RzCmdDescHelp rap_run_help = {
-	.summary = "alias for =!",
-};
-
 const RzCmdDescHelp zero_help = {
 	.summary = "alias for `s 0x...`",
 };

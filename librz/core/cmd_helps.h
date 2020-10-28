@@ -24,7 +24,6 @@ extern const RzCmdDescHelp interpret_help;
 extern const RzCmdDescHelp search_help;
 extern const RzCmdDescHelp rap_help;
 extern const RzCmdDescHelp help_help;
-extern const RzCmdDescHelp rap_run_help;
 extern const RzCmdDescHelp zero_help;
 extern const RzCmdDescHelp anal_help;
 extern const RzCmdDescHelp b_help;
