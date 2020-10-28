@@ -103,9 +103,9 @@ static RzList *sections(RzBinFile *bf) {
 
 		ptr->name = strdup ("Memory_Section");
 		ptr->paddr = page->file_offset;
-		ptr->size = PAGE_SIZE;
+		ptr->size = DMP_PAGE_SIZE;
 		ptr->vaddr = page->start;
-		ptr->vsize = PAGE_SIZE;
+		ptr->vsize = DMP_PAGE_SIZE;
 		ptr->add = true;
 		ptr->perm = RZ_PERM_R;
 
