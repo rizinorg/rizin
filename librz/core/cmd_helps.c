@@ -371,7 +371,7 @@ const RzCmdDescHelp k_help = {
 };
 
 const RzCmdDescArg ls_args[] = {
-	{ .name = "path", .optional = true, .type = RZ_CMD_ARG_TYPE_FILE },
+	{ .name = "arg", .optional = true, .type = RZ_CMD_ARG_TYPE_ARRAY_STRING },
 	{ 0 },
 };
 

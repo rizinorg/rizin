@@ -1085,13 +1085,14 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 }
 
 static RzCmdStatus ls_handler(RzCore *core, int argc, const char **argv) {
-	const char *arg = argc > 1? argv[1]: "";
+	char *arg = rz_str_array_join (argv + 1, argc - 1, " ");
 	char *res = rz_syscmd_ls (arg);
 	if (!res) {
 		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_cons_print (res);
 	free (res);
+	free (arg);
 	return RZ_CMD_STATUS_OK;
 }
 
