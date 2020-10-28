@@ -92,10 +92,8 @@ extern const RzCmdDescHelp zfd_help;
 extern const RzCmdDescHelp zfs_help;
 extern const RzCmdDescHelp z_slash_group_help;
 extern const RzCmdDescHelp z_slash_help;
-extern const RzCmdDescHelp z_slash_star_help;
 extern const RzCmdDescHelp z_slash_f_group_help;
 extern const RzCmdDescHelp z_slash_f_help;
-extern const RzCmdDescHelp z_slash_f_star_help;
 extern const RzCmdDescHelp zc_group_help;
 extern const RzCmdDescHelp zc_help;
 extern const RzCmdDescHelp zcn_group_help;
@@ -103,16 +101,11 @@ extern const RzCmdDescHelp zcn_help;
 extern const RzCmdDescHelp zcn_esclamation_help;
 extern const RzCmdDescHelp zs_group_help;
 extern const RzCmdDescHelp zs_help;
-extern const RzCmdDescHelp zsj_help;
-extern const RzCmdDescHelp zs_star_help;
 extern const RzCmdDescHelp zs_minus_help;
 extern const RzCmdDescHelp zs_plus_help;
 extern const RzCmdDescHelp zsr_help;
 extern const RzCmdDescHelp zi_group_help;
 extern const RzCmdDescHelp zi_help;
-extern const RzCmdDescHelp ziq_help;
-extern const RzCmdDescHelp zij_help;
-extern const RzCmdDescHelp zi_star_help;
 extern const RzCmdDescHelp zii_help;
 
 // w0 helps

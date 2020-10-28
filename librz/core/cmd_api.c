@@ -41,6 +41,20 @@ static const RzCmdDescHelp root_help = {
 	.description = "",
 };
 
+static const struct argv_modes_t {
+	const char *suffix;
+	const char *summary_suffix;
+	RzOutputMode mode;
+} argv_modes[] = {
+	{ "", "", RZ_OUTPUT_MODE_STANDARD },
+	{ "j", " (JSON mode)", RZ_OUTPUT_MODE_JSON },
+	{ "*", " (rizin mode)", RZ_OUTPUT_MODE_RIZIN },
+	{ "q", " (quiet mode)", RZ_OUTPUT_MODE_QUIET },
+	{ "k", " (sdb mode)", RZ_OUTPUT_MODE_SDB },
+	{ "l", " (verbose mode)", RZ_OUTPUT_MODE_LONG },
+	{ "t", " (table mode)", RZ_OUTPUT_MODE_TABLE },
+};
+
 static int value = 0;
 
 #define NCMDS (sizeof (cmd->cmds)/sizeof(*cmd->cmds))
@@ -55,6 +69,7 @@ static bool cmd_desc_set_parent(RzCmdDesc *cd, RzCmdDesc *parent) {
 		case RZ_CMD_DESC_TYPE_INNER:
 			break;
 		case RZ_CMD_DESC_TYPE_ARGV:
+		case RZ_CMD_DESC_TYPE_ARGV_MODES:
 		case RZ_CMD_DESC_TYPE_FAKE:
 			rz_warn_if_reached ();
 			return false;
@@ -172,12 +187,43 @@ RZ_API RzCmdDesc *rz_cmd_get_root(RzCmd *cmd) {
 	return cmd->root_cmd_desc;
 }
 
+static RzOutputMode suffix2mode(const char *suffix) {
+	size_t i;
+	for (i = 0; i < RZ_ARRAY_SIZE (argv_modes); i++) {
+		if (!strcmp (suffix, argv_modes[i].suffix)) {
+			return argv_modes[i].mode;
+		}
+	}
+	return 0;
+}
+
+static bool is_valid_argv_modes(RzCmdDesc *cd, char last_letter) {
+	if (!cd || cd->type != RZ_CMD_DESC_TYPE_ARGV_MODES || last_letter == '\0') {
+		return false;
+	}
+	char suffix[] = {last_letter, '\0'};
+	return cd->d.argv_modes_data.modes & suffix2mode (suffix);
+}
+
+static RzCmdDesc *get_exec_cd(RzCmdDesc *cd) {
+	if (!cd) {
+		return NULL;
+	}
+	switch (cd->type) {
+	case RZ_CMD_DESC_TYPE_GROUP:
+		return cd->d.group_data.exec_cd;
+	default:
+		return cd;
+	}
+}
+
 RZ_API RzCmdDesc *rz_cmd_get_desc(RzCmd *cmd, const char *cmd_identifier) {
 	rz_return_val_if_fail (cmd && cmd_identifier, NULL);
 	char *cmdid = strdup (cmd_identifier);
 	char *end_cmdid = cmdid + strlen (cmdid);
 	RzCmdDesc *res = NULL;
 	bool is_exact_match = true;
+	char last_letter = '\0', o_last_letter = end_cmdid > cmdid? *(end_cmdid - 1): '\0';
 	// match longer commands first
 	while (*cmdid) {
 		RzCmdDesc *cd = ht_pp_find (cmd->ht_cmds, cmdid, NULL);
@@ -186,7 +232,8 @@ RZ_API RzCmdDesc *rz_cmd_get_desc(RzCmd *cmd, const char *cmd_identifier) {
 			case RZ_CMD_DESC_TYPE_ARGV:
 			case RZ_CMD_DESC_TYPE_GROUP:
 			case RZ_CMD_DESC_TYPE_FAKE:
-				if (!is_exact_match) {
+			case RZ_CMD_DESC_TYPE_ARGV_MODES:
+				if (!is_exact_match && !is_valid_argv_modes (get_exec_cd (cd), last_letter)) {
 					break;
 				}
 				res = cd;
@@ -198,6 +245,10 @@ RZ_API RzCmdDesc *rz_cmd_get_desc(RzCmd *cmd, const char *cmd_identifier) {
 				break;
 			}
 		}
+		// only the last letter is considered, then we zero last_letter
+		last_letter = o_last_letter;
+		o_last_letter = '\0';
+
 		is_exact_match = false;
 		*(--end_cmdid) = '\0';
 	}
@@ -423,6 +474,61 @@ static void get_minmax_argc(RzCmdDesc *cd, int *min_argc, int *max_argc) {
 	}
 }
 
+static RzOutputMode cd_suffix2mode(RzCmdDesc *cd, const char *cmdid) {
+	if (cd->type != RZ_CMD_DESC_TYPE_ARGV_MODES) {
+		return 0;
+	}
+	return suffix2mode (cmdid + strlen (cd->name));
+}
+
+static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args, RzOutputMode mode) {
+	switch (cd->type) {
+	case RZ_CMD_DESC_TYPE_ARGV:
+		return cd->d.argv_data.cb (cmd->data, args->argc, (const char **)args->argv);
+	case RZ_CMD_DESC_TYPE_ARGV_MODES:
+		if (!mode) {
+			return RZ_CMD_STATUS_INVALID;
+		}
+		return cd->d.argv_modes_data.cb (cmd->data, args->argc, (const char **)args->argv, mode);
+	default:
+		return RZ_CMD_STATUS_INVALID;
+	}
+}
+
+static RzCmdStatus call_cd(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args) {
+	char *exec_string;
+	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
+
+	switch (cd->type) {
+	case RZ_CMD_DESC_TYPE_GROUP:
+		if (!cd->d.group_data.exec_cd) {
+			return RZ_CMD_STATUS_INVALID;
+		}
+		return call_cd (cmd, cd->d.group_data.exec_cd, args);
+	case RZ_CMD_DESC_TYPE_ARGV:
+	case RZ_CMD_DESC_TYPE_ARGV_MODES:
+		if (rz_cmd_desc_has_handler (cd)) {
+			RzOutputMode mode = cd_suffix2mode (cd, rz_cmd_parsed_args_cmd (args));
+			int min_argc, max_argc;
+			get_minmax_argc (cd, &min_argc, &max_argc);
+			if (args->argc >= min_argc && args->argc <= max_argc) {
+				return argv_call_cb (cmd, cd, args, mode);
+			} else {
+				return RZ_CMD_STATUS_WRONG_ARGS;
+			}
+		}
+		return RZ_CMD_STATUS_INVALID;
+	case RZ_CMD_DESC_TYPE_OLDINPUT:
+		exec_string = rz_cmd_parsed_args_execstr (args);
+		res = int2cmdstatus (cd->d.oldinput_data.cb (cmd->data, exec_string + strlen (cd->name)));
+		RZ_FREE (exec_string);
+		return res;
+	default:
+		RZ_LOG_ERROR ("RzCmdDesc type not handled\n");
+		return RZ_CMD_STATUS_INVALID;
+	}
+}
+
 RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args) {
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
 
@@ -449,36 +555,7 @@ RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args) {
 		return RZ_CMD_STATUS_INVALID;
 	}
 
-	res = RZ_CMD_STATUS_INVALID;
-	switch (cd->type) {
-	case RZ_CMD_DESC_TYPE_GROUP:
-		if (!cd->d.group_data.exec_cd) {
-			break;
-		}
-		cd = cd->d.group_data.exec_cd;
-		// fallthrough
-	case RZ_CMD_DESC_TYPE_ARGV:
-		if (cd->d.argv_data.cb) {
-			int min_argc, max_argc;
-			get_minmax_argc (cd, &min_argc, &max_argc);
-			if (args->argc >= min_argc && args->argc <= max_argc) {
-				res = cd->d.argv_data.cb (cmd->data, args->argc, (const char **)args->argv);
-			} else {
-				res = RZ_CMD_STATUS_WRONG_ARGS;
-			}
-		}
-		break;
-	case RZ_CMD_DESC_TYPE_OLDINPUT:
-		exec_string = rz_cmd_parsed_args_execstr (args);
-		res = int2cmdstatus (cd->d.oldinput_data.cb (cmd->data, exec_string + strlen (cd->name)));
-		RZ_FREE (exec_string);
-		break;
-	default:
-		res = RZ_CMD_STATUS_INVALID;
-		RZ_LOG_ERROR ("RzCmdDesc type not handled\n");
-		break;
-	}
-	return res;
+	return call_cd (cmd, cd, args);
 }
 
 static size_t strlen0(const char *s) {
@@ -488,6 +565,17 @@ static size_t strlen0(const char *s) {
 static size_t strbuf_append_calc(RzStrBuf *sb, const char *s) {
 	rz_strbuf_append (sb, s);
 	return strlen (s);
+}
+
+static void fill_modes_children_chars(RzStrBuf *sb, RzCmdDesc *cd) {
+	// RZ_CMD_DESC_TYPE_ARGV_MODES does not have actual children for
+	// the output modes, so we consider it separately
+	size_t i;
+	for (i = 0; i < RZ_ARRAY_SIZE (argv_modes); i++) {
+		if (cd->d.argv_modes_data.modes & argv_modes[i].mode) {
+			rz_strbuf_append (sb, argv_modes[i].suffix);
+		}
+	}
 }
 
 static size_t fill_children_chars(RzStrBuf *sb, RzCmdDesc *cd) {
@@ -500,11 +588,21 @@ static size_t fill_children_chars(RzStrBuf *sb, RzCmdDesc *cd) {
 
 	void **it;
 	bool has_other_commands = false;
+	RzCmdDesc *exec_cd = get_exec_cd (cd);
+	if (exec_cd) {
+		switch (exec_cd->type) {
+		case RZ_CMD_DESC_TYPE_ARGV_MODES:
+			fill_modes_children_chars (&csb, exec_cd);
+			break;
+		default:
+			break;
+		}
+	}
 	rz_cmd_desc_children_foreach (cd, it) {
 		RzCmdDesc *child = *(RzCmdDesc **)it;
 		if (rz_str_startswith (child->name, cd->name) && strlen (child->name) == strlen (cd->name) + 1) {
 			rz_strbuf_appendf (&csb, "%c", child->name[strlen (cd->name)]);
-		} else if (strcmp (child->name, cd->name)){
+		} else if (strcmp (child->name, cd->name)) {
 			has_other_commands = true;
 		}
 	}
@@ -534,7 +632,7 @@ static size_t fill_children_chars(RzStrBuf *sb, RzCmdDesc *cd) {
 }
 
 static bool show_children_shortcut(RzCmdDesc *cd) {
-	return cd->n_children || cd->help->options || cd->type == RZ_CMD_DESC_TYPE_OLDINPUT;
+	return cd->n_children || cd->help->options || cd->type == RZ_CMD_DESC_TYPE_OLDINPUT || cd->type == RZ_CMD_DESC_TYPE_ARGV_MODES;
 }
 
 static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, size_t columns) {
@@ -655,8 +753,8 @@ static void fill_usage_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_
 	rz_strbuf_append (sb, "\n");
 }
 
-static size_t calc_padding_len(RzCmdDesc *cd) {
-	size_t name_len = strlen (cd->name);
+static size_t calc_padding_len(RzCmdDesc *cd, const char *name) {
+	size_t name_len = strlen (name);
 	size_t args_len = 0;
 	size_t children_length = 0;
 	if (show_children_shortcut (cd)) {
@@ -679,15 +777,14 @@ static size_t calc_padding_len(RzCmdDesc *cd) {
 }
 
 static void update_minmax_len(RzCmdDesc *cd, size_t *max_len, size_t *min_len) {
-	size_t val = calc_padding_len (cd);
+	size_t val = calc_padding_len (cd, cd->name);
 	*max_len = val > *max_len? val: *max_len;
 	*min_len = val < *min_len? val: *min_len;
 }
 
-static void print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, size_t max_len, bool use_color) {
-	size_t str_len = calc_padding_len (cd);
+static void do_print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, const char *name, const char *summary, bool show_children, size_t max_len, bool use_color) {
+	size_t str_len = calc_padding_len (cd, name);
 	int padding = str_len < max_len? max_len - str_len: 0;
-	const char *cd_summary = cd->help->summary? cd->help->summary: "";
 	const char *pal_args_color = "",
 		*pal_opt_color = "",
 		*pal_help_color = "",
@@ -706,8 +803,8 @@ static void print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, size_t max
 	size_t columns = 0;
 	columns += strbuf_append_calc (sb, "| ");
 	rz_strbuf_append (sb, pal_input_color);
-	columns += strbuf_append_calc (sb, cd->name);
-	if (show_children_shortcut (cd)) {
+	columns += strbuf_append_calc (sb, name);
+	if (show_children && show_children_shortcut (cd)) {
 		rz_strbuf_append (sb, pal_opt_color);
 		columns += fill_children_chars (sb, cd);
 	}
@@ -721,8 +818,12 @@ static void print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, size_t max
 	columns += padding + 1;
 	rz_strbuf_append (sb, pal_help_color);
 
-	fill_wrapped_comment (cmd, sb, cd_summary, columns);
+	fill_wrapped_comment (cmd, sb, summary, columns);
 	rz_strbuf_appendf (sb, "%s\n", pal_reset);
+}
+
+static void print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, size_t max_len, bool use_color) {
+	do_print_child_help (cmd, sb, cd, cd->name, cd->help->summary? cd->help->summary: "", true, max_len, use_color);
 }
 
 static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
@@ -744,6 +845,31 @@ static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 		RzCmdDesc *child = *(RzCmdDesc **)it_cd;
 		print_child_help (cmd, sb, child, max_len, use_color);
 	}
+	return rz_strbuf_drain (sb);
+}
+
+static char *argv_modes_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
+	RzStrBuf *sb = rz_strbuf_new (NULL);
+	fill_usage_strbuf (cmd, sb, cd, use_color);
+
+	size_t max_len = 0, min_len = SIZE_MAX;
+	update_minmax_len (cd, &max_len, &min_len);
+	max_len++; // consider the suffix letter
+	if (max_len - min_len > MAX_RIGHT_ALIGHNMENT) {
+		max_len = min_len + MAX_RIGHT_ALIGHNMENT;
+	}
+
+	size_t i;
+	for (i = 0; i < RZ_ARRAY_SIZE (argv_modes); i++) {
+		if (cd->d.argv_modes_data.modes & argv_modes[i].mode) {
+			char *name = rz_str_newf ("%s%s", cd->name, argv_modes[i].suffix);
+			char *summary = rz_str_newf ("%s%s", cd->help->summary, argv_modes[i].summary_suffix);
+			do_print_child_help (cmd, sb, cd, name, summary, false, max_len, use_color);
+			free (name);
+			free (summary);
+		}
+	}
+
 	return rz_strbuf_drain (sb);
 }
 
@@ -852,7 +978,7 @@ static char *get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args, bool use
 	switch (cd->type) {
 	case RZ_CMD_DESC_TYPE_GROUP:
 		if (detail > 1 && cd->d.group_data.exec_cd) {
-			return get_help (cmd, cd->d.group_data.exec_cd, args, use_color, detail);
+			return get_help (cmd, cd->d.group_data.exec_cd, args, use_color, detail - 1);
 		}
 		if (detail == 1) {
 			// show the group help only when doing <cmd>?
@@ -860,6 +986,11 @@ static char *get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args, bool use
 		}
 		return argv_get_help (cmd, cd, detail, use_color);
 	case RZ_CMD_DESC_TYPE_ARGV:
+		return argv_get_help (cmd, cd, detail, use_color);
+	case RZ_CMD_DESC_TYPE_ARGV_MODES:
+		if (detail == 1) {
+			return argv_modes_get_help (cmd, cd, use_color);
+		}
 		return argv_get_help (cmd, cd, detail, use_color);
 	case RZ_CMD_DESC_TYPE_FAKE:
 		if (detail != 1) {
@@ -1492,11 +1623,49 @@ RZ_API RzCmdDesc *rz_cmd_desc_argv_new(RzCmd *cmd, RzCmdDesc *parent, const char
 	return argv_new (cmd, parent, name, cb, help, true);
 }
 
+static RzCmdDesc *argv_modes_new(RzCmd* cmd, RzCmdDesc *parent, const char *name, int modes, RzCmdArgvModesCb cb, const RzCmdDescHelp *help, bool ht_insert) {
+	RzCmdDesc *res = create_cmd_desc (cmd, parent, RZ_CMD_DESC_TYPE_ARGV_MODES, name, help, ht_insert);
+	if (!res) {
+		return NULL;
+	}
+
+	res->d.argv_modes_data.cb = cb;
+	res->d.argv_modes_data.modes = modes;
+	return res;
+}
+
+/**
+ * \brief Create a new command descriptor for a command that supports multiple output
+ * modes (e.g. rizin commands, json, csv, etc.).
+ *
+ * \param cmd reference to the RzCmd
+ * \param parent Parent command descriptor of the command being added
+ * \param name Base name of the command. New commands will be created with the proper suffix based on the supported \p modes
+ * \param modes Modes supported by the handler (see RzOutputMode). They can be put in OR to support multiple modes
+ * \param cb Callback that actually executes the command
+ * \param help Help structure used to describe the command when using `?` and `??`
+ */
+RZ_API RzCmdDesc *rz_cmd_desc_argv_modes_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, int modes, RzCmdArgvModesCb cb, const RzCmdDescHelp *help) {
+	rz_return_val_if_fail (cmd && parent && name && help && help->args && modes, NULL);
+	return argv_modes_new (cmd, parent, name, modes, cb, help, true);
+}
+
 RZ_API RzCmdDesc *rz_cmd_desc_inner_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, const RzCmdDescHelp *help) {
 	rz_return_val_if_fail (cmd && parent && name && help, NULL);
 	return create_cmd_desc (cmd, parent, RZ_CMD_DESC_TYPE_INNER, name, help, false);
 }
 
+/**
+ * \brief Create a new command descriptor for a name that is used both
+ * as a group but that has a sub-command with the same name as well.
+ *
+ * \param cmd reference to the RzCmd
+ * \param parent Parent command descriptor of the command being added
+ * \param name Base name of the group/sub-command.
+ * \param cb Callback that actually executes the command
+ * \param help Help structure used to describe the command when using `?` and `??`
+ * \param group_help Help structure used to describe the group
+ */
 RZ_API RzCmdDesc *rz_cmd_desc_group_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdArgvCb cb, const RzCmdDescHelp *help, const RzCmdDescHelp *group_help) {
 	rz_return_val_if_fail (cmd && parent && name && group_help, NULL);
 	RzCmdDesc *res = create_cmd_desc (cmd, parent, RZ_CMD_DESC_TYPE_GROUP, name, group_help, true);
@@ -1512,6 +1681,37 @@ RZ_API RzCmdDesc *rz_cmd_desc_group_new(RzCmd *cmd, RzCmdDesc *parent, const cha
 			rz_cmd_desc_remove (cmd, res);
 			return NULL;
 		}
+	}
+
+	res->d.group_data.exec_cd = exec_cd;
+	return res;
+}
+
+/**
+ * \brief Create a new command descriptor for a name that is used both
+ * as a group but that has a sub-command with the same name as well. The
+ * sub-command supports multiple output modes (e.g. rizin commands, json, csv,
+ * etc.).
+ *
+ * \param cmd reference to the RzCmd
+ * \param parent Parent command descriptor of the command being added
+ * \param name Base name of the group/sub-command. New commands will be created with the proper suffix based on the supported \p modes
+ * \param modes Modes supported by the handler (see RzOutputMode). They can be put in OR to support multiple modes
+ * \param cb Callback that actually executes the command
+ * \param help Help structure used to describe the command when using `?` and `??`
+ * \param group_help Help structure used to describe the group
+ */
+RZ_API RzCmdDesc *rz_cmd_desc_group_modes_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, int modes, RzCmdArgvModesCb cb, const RzCmdDescHelp *help, const RzCmdDescHelp *group_help) {
+	rz_return_val_if_fail (cmd && parent && name && group_help && modes && cb && help && help->args, NULL);
+	RzCmdDesc *res = create_cmd_desc (cmd, parent, RZ_CMD_DESC_TYPE_GROUP, name, group_help, true);
+	if (!res) {
+		return NULL;
+	}
+
+	RzCmdDesc *exec_cd = argv_modes_new (cmd, res, name, modes, cb, help, false);
+	if (!exec_cd) {
+		rz_cmd_desc_remove (cmd, res);
+		return NULL;
 	}
 
 	res->d.group_data.exec_cd = exec_cd;
@@ -1543,6 +1743,8 @@ RZ_API bool rz_cmd_desc_has_handler(RzCmdDesc *cd) {
 	switch (cd->type) {
 	case RZ_CMD_DESC_TYPE_ARGV:
 		return cd->d.argv_data.cb;
+	case RZ_CMD_DESC_TYPE_ARGV_MODES:
+		return cd->d.argv_modes_data.cb;
 	case RZ_CMD_DESC_TYPE_OLDINPUT:
 		return cd->d.oldinput_data.cb;
 	case RZ_CMD_DESC_TYPE_FAKE:

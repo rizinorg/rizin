@@ -541,26 +541,6 @@ const RzCmdDescHelp zbr_help = {
 	.args = zbr_args,
 };
 
-const RzCmdDescHelp z_star_help = {
-	.summary = "show zignatures in rizin format",
-	.args = empty_args,
-};
-
-const RzCmdDescHelp zq_help = {
-	.summary = "show zignatures in quiet mode",
-	.args = empty_args,
-};
-
-const RzCmdDescHelp zj_help = {
-	.summary = "show zignatures in json format",
-	.args = empty_args,
-};
-
-const RzCmdDescHelp zk_help = {
-	.summary = "show zignatures in sdb format",
-	.args = empty_args,
-};
-
 const RzCmdDescArg z_minus_args[] = {
 	{ .name = "zigname|*", .type = RZ_CMD_ARG_TYPE_ZIGN },
 	{ 0 },
@@ -711,22 +691,12 @@ const RzCmdDescHelp z_slash_help = {
 	.args = empty_args,
 };
 
-const RzCmdDescHelp z_slash_star_help = {
-	.summary = "search zignatures on range and output rizin commands",
-	.args = empty_args,
-};
-
 const RzCmdDescHelp z_slash_f_group_help = {
 	.summary = "search only function zignatures",
 };
 
 const RzCmdDescHelp z_slash_f_help = {
 	.summary = "search only function zignatures",
-	.args = empty_args,
-};
-
-const RzCmdDescHelp z_slash_f_star_help = {
-	.summary = "search only function zignatures and output rizin commands",
 	.args = empty_args,
 };
 
@@ -773,16 +743,6 @@ const RzCmdDescHelp zs_help = {
 	.args = zs_args,
 };
 
-const RzCmdDescHelp zsj_help = {
-	.summary = "display zignspaces (in json)",
-	.args = empty_args,
-};
-
-const RzCmdDescHelp zs_star_help = {
-	.summary = "display zignspaces (in rizin commands)",
-	.args = empty_args,
-};
-
 const RzCmdDescHelp zs_minus_help = {
 	.summary = "delete zignspace or pop to the previous zignspace",
 	.args = zs_args,
@@ -812,28 +772,13 @@ const RzCmdDescHelp zi_group_help = {
 	.summary = "show zignatures matching information",
 };
 
-const RzCmdDescHelp zi_help = {
-	.summary = "show zignatures matching information",
-	.args = empty_args,
-};
-
-const RzCmdDescHelp ziq_help = {
-	.summary = "show zignatures matching information (quiet mode)",
-	.args = empty_args,
-};
-
-const RzCmdDescHelp zij_help = {
-	.summary = "show zignatures matching information (JSON mode)",
-	.args = empty_args,
-};
-
 const RzCmdDescArg zi_star_args[] = {
 	{ .name = "comment", .optional = true, .type = RZ_CMD_ARG_TYPE_STRING },
 	{ 0 },
 };
 
-const RzCmdDescHelp zi_star_help = {
-	.summary = "show zignatures matching information (in rizin commands)",
+const RzCmdDescHelp zi_help = {
+	.summary = "show zignatures matching information",
 	.args = zi_star_args,
 };
 

@@ -27,6 +27,19 @@
 #define RZ_MODE_CLASSDUMP 0x040
 #define RZ_MODE_EQUAL 0x080
 
+/**
+ * \brief Enum to describe the way data are printed
+ */
+typedef enum {
+	RZ_OUTPUT_MODE_STANDARD = 1 << 0,
+	RZ_OUTPUT_MODE_JSON = 1 << 1,
+	RZ_OUTPUT_MODE_RIZIN = 1 << 2,
+	RZ_OUTPUT_MODE_QUIET = 1 << 3,
+	RZ_OUTPUT_MODE_SDB = 1 << 4,
+	RZ_OUTPUT_MODE_LONG = 1 << 5,
+	RZ_OUTPUT_MODE_TABLE = 1 << 6,
+} RzOutputMode;
+
 #define RZ_IN /* do not use, implicit */
 #define RZ_OUT /* parameter is written, not read */
 #define RZ_INOUT /* parameter is read and written */

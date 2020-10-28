@@ -480,7 +480,6 @@ bool test_remove_cmd(void) {
 	}
 
 	rz_cmd_free (cmd);
-	rz_cons_free ();
 	mu_end;
 }
 
@@ -509,7 +508,87 @@ bool test_cmd_args(void) {
 	rz_cmd_parsed_args_free (pa);
 
 	rz_cmd_free (cmd);
-	rz_cons_free ();
+	mu_end;
+}
+
+static RzCmdStatus z_modes_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return RZ_CMD_STATUS_OK;
+}
+
+bool test_cmd_argv_modes(void) {
+	RzCmdDescArg z_args[] = {{ 0 }};
+	RzCmdDescHelp z_help = { 0 };
+	z_help.summary = "z summary";
+	z_help.args = z_args;
+
+	RzCmd *cmd = rz_cmd_new (false);
+	RzCmdDesc *root = rz_cmd_get_root (cmd);
+	RzCmdDesc *z_cd = rz_cmd_desc_argv_modes_new (cmd, root, "z", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, z_modes_handler, &z_help);
+
+	mu_assert_ptreq (rz_cmd_get_desc (cmd, "z"), z_cd, "z is found");
+	mu_assert_ptreq (rz_cmd_get_desc (cmd, "zj"), z_cd, "zj is handled by z");
+	mu_assert_ptreq (rz_cmd_get_desc (cmd, "zq"), z_cd, "zq is handled by z");
+	mu_assert_null (rz_cmd_get_desc (cmd, "z*"), "z* was not defined");
+
+	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd ("?");
+	char *h = rz_cmd_get_help (cmd, pa, false);
+	char *exp_h = "Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...\n"
+		"| z[jq] # z summary\n";
+	mu_assert_streq (h, exp_h, "zj and zq are considered in the help");
+	rz_cmd_parsed_args_free (pa);
+
+	pa = rz_cmd_parsed_args_newcmd ("z?");
+	h = rz_cmd_get_help (cmd, pa, false);
+	exp_h = "Usage: z[jq]   # z summary\n"
+		"| z  # z summary\n"
+		"| zj # z summary (JSON mode)\n"
+		"| zq # z summary (quiet mode)\n";
+	mu_assert_streq (h, exp_h, "zj and zq are considered in the sub help");
+	rz_cmd_parsed_args_free (pa);
+
+	rz_cmd_free (cmd);
+	mu_end;
+}
+
+static RzCmdStatus zd_handler(RzCore *core, int argc, const char **argv) {
+	return RZ_CMD_STATUS_OK;
+}
+
+bool test_cmd_group_argv_modes(void) {
+	RzCmdDescArg z_args[] = {{ 0 }};
+	RzCmdDescHelp z_help = { 0 };
+	z_help.summary = "z summary";
+	z_help.args = z_args;
+	RzCmdDescHelp z_group_help = { 0 };
+	z_group_help.summary = "z group summary";
+
+	RzCmd *cmd = rz_cmd_new (false);
+	RzCmdDesc *root = rz_cmd_get_root (cmd);
+	RzCmdDesc *z_cd = rz_cmd_desc_group_modes_new (cmd, root, "z", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, z_modes_handler, &z_help, &z_group_help);
+	RzCmdDesc *zd_cd = rz_cmd_desc_argv_new (cmd, z_cd, "zd", zd_handler, &fake_help);
+
+	mu_assert_ptreq (rz_cmd_get_desc (cmd, "z"), z_cd, "z is found");
+	mu_assert_ptreq (rz_cmd_get_desc (cmd, "zj"), z_cd, "zj is handled by z");
+	mu_assert_ptreq (rz_cmd_get_desc (cmd, "zq"), z_cd, "zq is handled by z");
+	mu_assert_null (rz_cmd_get_desc (cmd, "z*"), "z* was not defined");
+	mu_assert_ptreq (rz_cmd_get_desc (cmd, "zd"), zd_cd, "zd is handled by zd");
+
+	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd ("?");
+	char *h = rz_cmd_get_help (cmd, pa, false);
+	char *exp_h = "Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...\n"
+		"| z[jqd] # z group summary\n";
+	mu_assert_streq (h, exp_h, "zd is considered in the help");
+	rz_cmd_parsed_args_free (pa);
+
+	pa = rz_cmd_parsed_args_newcmd ("z?");
+	h = rz_cmd_get_help (cmd, pa, false);
+	exp_h = "Usage: z[jqd]   # z group summary\n"
+		"| z[jq] # z summary\n"
+		"| zd    # fake help\n";
+	mu_assert_streq (h, exp_h, "zj/zq and zd are considered in the sub help");
+	rz_cmd_parsed_args_free (pa);
+
+	rz_cmd_free (cmd);
 	mu_end;
 }
 
@@ -532,6 +611,8 @@ int all_tests() {
 	mu_run_test (test_cmd_oldinput_help);
 	mu_run_test (test_remove_cmd);
 	mu_run_test (test_cmd_args);
+	mu_run_test (test_cmd_argv_modes);
+	mu_run_test (test_cmd_group_argv_modes);
 	return tests_passed != tests_run;
 }
 

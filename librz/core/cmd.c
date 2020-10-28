@@ -7124,6 +7124,8 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		const RzCmdDescHelp *group_help;
 		RzCmdDescType type;
 		RzCmdArgvCb argv_cb;
+		int modes;
+		RzCmdArgvModesCb argv_modes_cb;
 	} cmds[] = {
 		{ "!", "run system command", cmd_system, NULL, &system_help },
 		{ "_", "print last output", cmd_last, NULL, &underscore_help },
@@ -7173,7 +7175,7 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "w", "write bytes", cmd_write, cmd_write_init, &w_help, &w_group_help, RZ_CMD_DESC_TYPE_GROUP, w_handler },
 		{ "x", "alias for px", cmd_hexdump, NULL, &x_help },
 		{ "y", "yank bytes", cmd_yank, NULL, &y_help },
-		{ "z", "zignatures", cmd_zign, cmd_zign_init, &z_help, &z_group_help, RZ_CMD_DESC_TYPE_GROUP, z_handler },
+		{ "z", "zignatures", cmd_zign, cmd_zign_init, &z_help, &z_group_help, RZ_CMD_DESC_TYPE_GROUP, NULL, RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_SDB, z_handler },
 		{ "@", "temporary modifiers", NULL, NULL, &tmp_modifier_help, NULL, RZ_CMD_DESC_TYPE_FAKE },
 		{ "@@", "iterators", NULL, NULL, &iterator_help, NULL, RZ_CMD_DESC_TYPE_FAKE },
 		{ "@@@", "foreach", NULL, NULL, &foreach_help, NULL, RZ_CMD_DESC_TYPE_FAKE },
@@ -7206,17 +7208,24 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		case RZ_CMD_DESC_TYPE_ARGV:
 			cd = rz_cmd_desc_argv_new (core->rcmd, root, cmds[i].cmd, cmds[i].argv_cb, cmds[i].help);
 			break;
+		case RZ_CMD_DESC_TYPE_ARGV_MODES:
+			cd = rz_cmd_desc_argv_modes_new (core->rcmd, root, cmds[i].cmd, cmds[i].modes, cmds[i].argv_modes_cb, cmds[i].help);
+			break;
 		case RZ_CMD_DESC_TYPE_INNER:
 			cd = rz_cmd_desc_inner_new (core->rcmd, root, cmds[i].cmd, cmds[i].help);
 			break;
 		case RZ_CMD_DESC_TYPE_GROUP:
-			cd = rz_cmd_desc_group_new (core->rcmd, root, cmds[i].cmd, cmds[i].argv_cb, cmds[i].help, cmds[i].group_help);
+			if (cmds[i].modes) {
+				cd = rz_cmd_desc_group_modes_new (core->rcmd, root, cmds[i].cmd, cmds[i].modes, cmds[i].argv_modes_cb, cmds[i].help, cmds[i].group_help);
+			} else {
+				cd = rz_cmd_desc_group_new (core->rcmd, root, cmds[i].cmd, cmds[i].argv_cb, cmds[i].help, cmds[i].group_help);
+			}
 			break;
 		case RZ_CMD_DESC_TYPE_FAKE:
 			cd = rz_cmd_desc_fake_new (core->rcmd, root, cmds[i].cmd, cmds[i].help);
 			break;
 		}
-		if (cmds[i].descriptor_init) {
+		if (cd && cmds[i].descriptor_init) {
 			cmds[i].descriptor_init (core, cd);
 		}
 	}
