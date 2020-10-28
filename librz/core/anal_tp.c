@@ -471,8 +471,8 @@ RZ_API void rz_core_anal_type_match(RzCore *core, RzAnalFunction *fcn) {
 	if (!hc) {
 		return;
 	}
-	RzDebugTrace *dt;
-	RzAnalEsilTrace *et;
+	RzDebugTrace *dt = NULL;
+	RzAnalEsilTrace *et = NULL;
 	if (!anal_emul_init (core, hc, &dt, &et) || !fcn) {
 		anal_emul_restore (core, hc, dt, et);
 		return;
