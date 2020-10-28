@@ -7,7 +7,7 @@ skip_tags: true
 # Branches to clone
 branches:
   only:
-    - master
+    - dev
 
 # Environment variables
 environment:
@@ -64,6 +64,11 @@ init:
 
 # Required software for building
 install:
+  - ps: $fileContent = "-----BEGIN RSA PRIVATE KEY-----`n"
+  - ps: $fileContent += $env:priv_key.Replace(' ', "`n")
+  - ps: $fileContent += "`n-----END RSA PRIVATE KEY-----`n"
+  - ps: Set-Content $env:userprofile\.ssh\id_rsa $fileContent
+  - git submodule update --init --recursive
   # Update environment variables
   - ps: $env:RZ_VERSION = ( python sys\\version.py )
   - ps: $env:DIST_FOLDER = "rizin-$env:builder-$env:RZ_VERSION"
@@ -97,7 +102,7 @@ for:
       - where rizin
       - rizin -v
       - copy C:\Python38-x64\python.exe C:\Python38-x64\python3.exe
-      - python3 -m pip install "git+https://github.com/rizinorg/rizin-rzpipe#egg=rzpipe&subdirectory=python"
+      - python3 -m pip install "git+ssh://git@github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python"
       - cd test
       - git clone -q --depth 1 https://github.com/rizinorg/rizin-testbins bins
       - rz-test -L db
