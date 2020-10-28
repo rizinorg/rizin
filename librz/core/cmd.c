@@ -1224,51 +1224,6 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 	return 0;
 }
 
-static int cmd_join(void *data, const char *input) { // "join"
-	char *tmp = strdup (input);
-	const char *arg1 = strchr (tmp, ' ');
-	if (!arg1) {
-		goto beach;
-	}
-	arg1 = rz_str_trim_head_ro (arg1);
-	if (!arg1) {
-		goto beach;
-	}
-	char *end = strchr (arg1, ' ');
-	if (!end) {
-		goto beach;
-	}
-	*end = '\0';
-	const char *arg2 = end+1;
-	if (!arg2) {
-		goto beach;
-	}
-	arg2 = rz_str_trim_head_ro (arg2);
-	switch (*input) {
-	case '?': // "join?"
-		goto beach;
-	default: // "join"
-		if (!arg1) {
-			arg1 = "";
-		}
-		if (!arg2) {
-			arg2 = "";
-		}
-		char *res = rz_syscmd_join (arg1, arg2);
-		if (res) {
-			rz_cons_print (res);
-			free (res);
-		}
-		break;
-	}
-	free (tmp);
-	return 0;
-beach:
-	eprintf ("Usage: join [file1] [file2] # join the contents of the two files\n");
-	free (tmp);
-	return 0;
-}
-
 static int cmd_stdin(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	if (input[0] == '?') {
@@ -7152,7 +7107,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "i", "get file info", cmd_info, cmd_info_init, &i_help },
 		{ "k", "perform sdb query", cmd_kuery, NULL, &k_help },
 		{ "l", "list files and directories", cmd_ls, NULL, &l_help },
-		{ "j", "join the contents of the two files", cmd_join, NULL, &j_help },
 		{ "m", "make directory and move files", cmd_m, NULL, &m_help },
 		{ "h", "show the top n number of line in file", cmd_head, NULL, &h_help },
 		{ "L", "manage dynamically loaded plugins", cmd_plugins, NULL, &L_help },

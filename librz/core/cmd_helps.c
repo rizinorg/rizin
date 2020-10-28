@@ -382,10 +382,6 @@ const RzCmdDescHelp m_help = {
 	.summary = "make directories and move files",
 };
 
-const RzCmdDescHelp j_help = {
-	.summary = "join the contents of the two files",
-};
-
 const RzCmdDescHelp h_help = {
 	.summary = "show the top n number of line in file",
 };
