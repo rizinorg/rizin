@@ -154,7 +154,6 @@ TODO:
 			case 'K': free (rtrcmd (T, "s-32")); break;
 			case 'H': free (rtrcmd (T, "s-2")); break;
 			case 'L': free (rtrcmd (T, "s+2")); break;
-			case 'T': rtr_textlog_chat (core, T); break;
 			case '+': free (rtrcmd (T, "b+1")); break;
 			case '*': free (rtrcmd (T, "b+16")); break;
 			case '-': free (rtrcmd (T, "b-1")); break;
@@ -231,8 +230,6 @@ static void __rtr_shell(RzCore *core, int nth) {
 			} else {
 				rtr_visual (core, T, NULL);
 			}
-		} else if (!strcmp (res, "TT")) {
-			rtr_textlog_chat (core, T);
 		} else {
 			char *cmdline = rz_str_newf ("%d %s", nth, res);
 			rz_core_rtr_cmd (core, cmdline);

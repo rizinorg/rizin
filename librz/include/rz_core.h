@@ -128,12 +128,6 @@ typedef struct {
 	ut64 minstamp;
 } RzCoreUndoCondition;
 
-typedef struct rz_core_log_t {
-	int first;
-	int last;
-	RzStrpool *sp;
-} RzCoreLog;
-
 typedef struct rz_core_file_t {
 	int dbg;
 	int fd;
@@ -271,14 +265,12 @@ struct rz_core_t {
 	RzFlag *flags;
 	RzSearch *search;
 	RzEgg *egg;
-	RzCoreLog *log;
 	RzAGraph *graph;
 	RPanelsRoot *panels_root;
 	RPanels* panels;
 	char *cmdqueue;
 	char *lastcmd;
 	char *cmdlog;
-	bool cfglog; // cfg.corelog
 	int cmdrepeat; // cmd.repeat
 	const char *cmdtimes; // cmd.times
 	RZ_DEPRECATE bool cmd_in_backticks; // whether currently executing a cmd out of backticks
@@ -784,17 +776,6 @@ RZ_API void rz_core_undo_print(RzCore *core, int mode, RzCoreUndoCondition *cond
 RZ_API void rz_core_undo_free(RzCoreUndo *cu);
 RZ_API void rz_core_undo_push(RzCore *core, RzCoreUndo *cu);
 RZ_API void rz_core_undo_pop(RzCore *core);
-
-/* logs */
-typedef int (*RzCoreLogCallback)(RzCore *core, int count, const char *message);
-RZ_API void rz_core_log_free(RzCoreLog *log);
-RZ_API void rz_core_log_init (RzCoreLog *log);
-RZ_API char *rz_core_log_get(RzCore *core, int index);
-RZ_API RzCoreLog *rz_core_log_new (void);
-RZ_API bool rz_core_log_run(RzCore *core, const char *buf, RzCoreLogCallback cb);
-RZ_API int rz_core_log_list(RzCore *core, int n, int count, char fmt);
-RZ_API void rz_core_log_add(RzCore *core, const char *msg);
-RZ_API void rz_core_log_del(RzCore *core, int n);
 
 // TODO MOVE SOMEWHERE ELSE
 typedef char *(*PrintItemCallback)(void *user, void *p, bool selected);

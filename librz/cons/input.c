@@ -686,44 +686,6 @@ RZ_API bool rz_cons_yesno(int def, const char *fmt, ...) {
 	return false;
 }
 
-RZ_API char *rz_cons_password(const char *msg) {
-	int i = 0;
-	char buf[256] = {0};
-	printf ("\r%s", msg);
-	fflush (stdout);
-	rz_cons_set_raw (1);
-#if __UNIX__
-	RzCons *a = rz_cons_singleton ();
-	a->term_raw.c_lflag &= ~(ECHO | ECHONL);
-	// //  required to make therm/iterm show the key
-	// // cannot read when enabled in this way
-	// a->term_raw.c_lflag |= ICANON;
-	tcsetattr (0, TCSADRAIN, &a->term_raw);
-	rz_sys_signal (SIGTSTP, SIG_IGN);
-#endif
-	while (i < sizeof (buf) - 1) {
-		int ch = rz_cons_readchar ();
-		if (ch == 127) { // backspace
-			if (i < 1) {
-				break;
-			}
-			i--;
-			continue;
-		}
-		if (ch == '\r' || ch == '\n') {
-			break;
-		}
-		buf[i++] = ch;
-	}
-	buf[i] = 0;
-	rz_cons_set_raw (0);
-	printf ("\n");
-#if __UNIX__
-	rz_sys_signal (SIGTSTP, SIG_DFL);
-#endif
-	return strdup (buf);
-}
-
 RZ_API char *rz_cons_input(const char *msg) {
 	char *oprompt = rz_line_get_prompt ();
 	if (!oprompt) {

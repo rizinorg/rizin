@@ -101,7 +101,7 @@ static void cmd_debug_reg(RzCore *core, const char *str);
 #include "cmd_quit.c"
 #include "cmd_hash.c"
 #include "cmd_debug.c"
-#include "cmd_log.c"
+#include "cmd_plugins.c"
 #include "cmd_flag.c"
 #include "cmd_zign.c"
 #include "cmd_project.c"
@@ -7087,7 +7087,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "r", "change file size", cmd_resize, NULL, &rz_help },
 		{ "s", "seek to an offset", cmd_seek, cmd_seek_init, &s_help },
 		{ "t", "type information (cparse)", cmd_type, cmd_type_init, &t_help },
-		{ "T", "Text log utility", cmd_log, cmd_log_init, &T_help },
 		{ "u", "uname/undo", cmd_undo, NULL, &u_help },
 		{ "<", "pipe into RzCons.readChar", cmd_pipein, NULL, &pipein_help, NULL, RZ_CMD_DESC_TYPE_ARGV, pipein_handler },
 		{ "V", "enter visual mode", cmd_visual, NULL, &V_help },

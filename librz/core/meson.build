@@ -46,7 +46,6 @@ rz_core_sources = [
   'hack.c',
   'libs.c',
   #'linux_heap_glibc.c',
-  'corelog.c',
   'panels.c',
   'patch.c',
   'cplugin.c',

@@ -1164,13 +1164,6 @@ static bool cb_timezone(void *user, void *data) {
 	return true;
 }
 
-static bool cb_cfgcorelog(void *user, void *data) {
-	RzCore *core = (RzCore *) user;
-	RzConfigNode *node = (RzConfigNode *) data;
-	core->cfglog = node->i_value;
-	return true;
-}
-
 static bool cb_cfgdebug(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
@@ -3228,7 +3221,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF ("cfg.plugins", "true", "Load plugins at startup");
 	SETCB ("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
 	SETICB ("time.zone", 0, &cb_timezone, "Time zone, in hours relative to GMT: +2, -1,..");
-	SETCB ("cfg.corelog", "false", &cb_cfgcorelog, "Log changes using the T api needed for realtime syncing");
 	SETBPREF ("cfg.newtab", "false", "Show descriptions in command completion");
 	SETCB ("cfg.debug", "false", &cb_cfgdebug, "Debugger mode");
 	p = rz_sys_getenv ("EDITOR");

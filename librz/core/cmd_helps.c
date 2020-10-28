@@ -443,10 +443,6 @@ const RzCmdDescHelp t_help = {
 	.summary = "types, noreturn, signatures, C parser and more",
 };
 
-const RzCmdDescHelp T_help = {
-	.summary = "Text log utility (used to chat, sync, log, ...)",
-};
-
 const RzCmdDescHelp u_help = {
 	.summary = "uname/undo seek/write",
 };
