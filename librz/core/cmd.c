@@ -6466,6 +6466,10 @@ DEFINE_HANDLE_TS_FCN(commands) {
 			free (command_str);
 			res = cmd_res;
 			goto err;
+		} else if (cmd_res == RZ_CMD_STATUS_ERROR) {
+			// make the whole script return ERROR, but continue to
+			// execute the other commands
+			res = cmd_res;
 		} else if (cmd_res != RZ_CMD_STATUS_OK) {
 			res = cmd_res;
 			goto err;
