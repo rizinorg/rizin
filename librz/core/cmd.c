@@ -6976,7 +6976,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "=", "io pipe", cmd_rap, NULL, &rap_help },
 		{ "?", "help message", cmd_help, cmd_help_init, &help_help },
 		{ "\\", "alias for =!", cmd_rap_run, NULL, &rap_run_help },
-		{ "'", "alias for =!", cmd_rap_run, NULL, &rap_run_help },
 		{ "<", "pipe into RzCons.readChar", cmd_pipein, NULL, &pipein_help, NULL, RZ_CMD_DESC_TYPE_ARGV, pipein_handler },
 		{ "0", "alias for s 0x", cmd_ox, NULL, &zero_help },
 		{ "a", "analysis", cmd_anal, cmd_anal_init, &anal_help },
