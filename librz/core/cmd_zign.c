@@ -1425,20 +1425,12 @@ static RzCmdStatus zfs_handler(RzCore *core, int argc, const char **argv) {
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus z_slash_handler(RzCore *core, int argc, const char **argv) {
-	return search (core, false, false)? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
+static RzCmdStatus z_slash_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return search (core, mode == RZ_OUTPUT_MODE_RIZIN, false)? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
 }
 
-static RzCmdStatus z_slash_star_handler(RzCore *core, int argc, const char **argv) {
-	return search (core, true, false)? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
-}
-
-static RzCmdStatus z_slash_f_handler(RzCore *core, int argc, const char **argv) {
-	return search (core, false, true)? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
-}
-
-static RzCmdStatus z_slash_f_star_handler(RzCore *core, int argc, const char **argv) {
-	return search (core, true, true)? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
+static RzCmdStatus z_slash_f_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return search (core, mode == RZ_OUTPUT_MODE_RIZIN, true)? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
 }
 
 static RzCmdStatus zc_handler(RzCore *core, int argc, const char **argv) {
@@ -1467,22 +1459,24 @@ static RzCmdStatus zcn_esclamation_handler(RzCore *core, int argc, const char **
 	return zcn_handler_common (core, argc, argv, true);
 }
 
-static RzCmdStatus zs_handler(RzCore *core, int argc, const char **argv) {
+static RzCmdStatus zs_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (argc == 1) {
-		spaces_list (&core->anal->zign_spaces, '\0');
+		switch (mode) {
+		case RZ_OUTPUT_MODE_STANDARD:
+			spaces_list (&core->anal->zign_spaces, '\0');
+			break;
+		case RZ_OUTPUT_MODE_JSON:
+			spaces_list (&core->anal->zign_spaces, 'j');
+			break;
+		case RZ_OUTPUT_MODE_RIZIN:
+			spaces_list (&core->anal->zign_spaces, '*');
+			break;
+		default:
+			return RZ_CMD_STATUS_ERROR;
+		}
 	} else {
 		rz_spaces_set (&core->anal->zign_spaces, argv[1]);
 	}
-	return RZ_CMD_STATUS_OK;
-}
-
-static RzCmdStatus zsj_handler(RzCore *core, int argc, const char **argv) {
-	spaces_list (&core->anal->zign_spaces, 'j');
-	return RZ_CMD_STATUS_OK;
-}
-
-static RzCmdStatus zs_star_handler(RzCore *core, int argc, const char **argv) {
-	spaces_list (&core->anal->zign_spaces, '*');
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1516,23 +1510,24 @@ static RzCmdStatus zi_handler_common(RzCore *core, int mode, const char *pfx) {
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus zi_handler(RzCore *core, int argc, const char **argv) {
-	return zi_handler_common (core, '\0', "");
-}
-
-static RzCmdStatus ziq_handler(RzCore *core, int argc, const char **argv) {
-	return zi_handler_common (core, 'q', "");
-}
-
-static RzCmdStatus zij_handler(RzCore *core, int argc, const char **argv) {
-	return zi_handler_common (core, 'j', "");
-}
-
-static RzCmdStatus zi_star_handler(RzCore *core, int argc, const char **argv) {
-	char *pfx = argc > 1? rz_str_newf (" %s", argv[1]): rz_str_new ("");
-	RzCmdStatus res = zi_handler_common (core, '*', pfx);
-	free (pfx);
-	return res;
+static RzCmdStatus zi_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	char *pfx;
+	RzCmdStatus res = RZ_CMD_STATUS_OK;
+	switch (mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		return zi_handler_common (core, '\0', "");
+	case RZ_OUTPUT_MODE_JSON:
+		return zi_handler_common (core, 'j', "");
+	case RZ_OUTPUT_MODE_QUIET:
+		return zi_handler_common (core, 'q', "");
+	case RZ_OUTPUT_MODE_RIZIN:
+		pfx = argc > 1 ? rz_str_newf (" %s", argv[1]) : rz_str_new ("");
+		res = zi_handler_common (core, '\0', pfx);
+		free (pfx);
+		return res;
+	default:
+		return RZ_CMD_STATUS_ERROR;
+	}
 }
 
 static RzCmdStatus zii_handler(RzCore *core, int argc, const char **argv) {
@@ -1569,24 +1564,15 @@ static void cmd_zign_init(RzCore *core, RzCmdDesc *parent) {
 	DEFINE_CMD_ARGV_GROUP (core, zf, parent);
 	DEFINE_CMD_ARGV_DESC (core, zfd, zf_cd);
 	DEFINE_CMD_ARGV_DESC (core, zfs, zf_cd);
-	DEFINE_CMD_ARGV_GROUP_EXEC_SPECIAL (core, z/, z_slash, parent);
-	// cannot use DEFINE_CMD_ARGV_* because `/*` would be interpreted as the start of a comment
-	RzCmdDesc *z_slash_star_cd = rz_cmd_desc_argv_new (core->rcmd, z_slash_cd, "z/*", z_slash_star_handler, &z_slash_star_help);
-	rz_warn_if_fail (z_slash_star_cd);
-	DEFINE_CMD_ARGV_GROUP_EXEC_SPECIAL (core, z/f, z_slash_f, z_slash_cd);
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, z/f*, z_slash_f_star, z_slash_f_cd);
+	DEFINE_CMD_ARGV_GROUP_MODES_EXEC_SPECIAL (core, z/, z_slash, parent, RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN);
+	DEFINE_CMD_ARGV_MODES_SPECIAL (core, z/f, z_slash_f, z_slash_cd, RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN);
 	DEFINE_CMD_ARGV_GROUP_EXEC (core, zc, parent);
 	DEFINE_CMD_ARGV_GROUP_EXEC (core, zcn, zc_cd);
 	DEFINE_CMD_ARGV_DESC_SPECIAL (core, zcn!, zcn_esclamation, zcn_cd);
-	DEFINE_CMD_ARGV_GROUP_EXEC (core, zs, parent);
-	DEFINE_CMD_ARGV_DESC (core, zsj, zs_cd);
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, zs*, zs_star, zs_cd);
+	DEFINE_CMD_ARGV_GROUP_MODES_EXEC (core, zs, parent, RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN);
 	DEFINE_CMD_ARGV_DESC_SPECIAL (core, zs-, zs_minus, zs_cd);
 	DEFINE_CMD_ARGV_DESC_SPECIAL (core, zs+, zs_plus, zs_cd);
 	DEFINE_CMD_ARGV_DESC (core, zsr, zs_cd);
-	DEFINE_CMD_ARGV_GROUP_EXEC (core, zi, parent);
-	DEFINE_CMD_ARGV_DESC (core, ziq, zi_cd);
-	DEFINE_CMD_ARGV_DESC (core, zij, zi_cd);
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, zi*, zi_star, zi_cd);
+	DEFINE_CMD_ARGV_GROUP_MODES_EXEC (core, zi, parent, RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN);
 	DEFINE_CMD_ARGV_DESC (core, zii, zi_cd);
 }

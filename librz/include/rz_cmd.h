@@ -350,6 +350,16 @@ typedef struct rz_core_plugin_t {
 	DEFINE_CMD_ARGV_GROUP_DETAIL (core, name, c_name, parent, NULL, NULL, &c_name##_group_help)
 #define DEFINE_CMD_ARGV_GROUP(core, name, parent) \
 	DEFINE_CMD_ARGV_GROUP_DETAIL (core, name, name, parent, NULL, NULL, &name##_group_help)
+#define DEFINE_CMD_ARGV_GROUP_MODES_EXEC_SPECIAL(core, name, c_name, parent, modes) \
+	RzCmdDesc *c_name##_cd = rz_cmd_desc_group_modes_new (core->rcmd, parent, #name, modes, c_name##_handler, &c_name##_help, &c_name##_group_help); \
+	rz_warn_if_fail (c_name##_cd)
+#define DEFINE_CMD_ARGV_GROUP_MODES_EXEC(core, name, parent, modes) \
+	DEFINE_CMD_ARGV_GROUP_MODES_EXEC_SPECIAL (core, name, name, parent, modes)
+#define DEFINE_CMD_ARGV_MODES_SPECIAL(core, name, c_name, parent, modes) \
+	RzCmdDesc *c_name##_cd = rz_cmd_desc_argv_modes_new (core->rcmd, parent, #name, modes, c_name##_handler, &c_name##_help); \
+	rz_warn_if_fail (c_name##_cd)
+#define DEFINE_CMD_ARGV_MODES(core, name, parent, modes) \
+	DEFINE_CMD_ARGV_MODES_SPECIAL (core, name, name, parent, modes)
 #define DEFINE_CMD_ARGV_DESC(core, name, parent) \
 	DEFINE_CMD_ARGV_DESC_SPECIAL (core, name, name, parent)
 #define DEFINE_CMD_OLDINPUT_DESC_SPECIAL(core, name, c_name, parent) \
