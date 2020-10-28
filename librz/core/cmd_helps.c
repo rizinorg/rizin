@@ -423,10 +423,6 @@ const RzCmdDescHelp q_help = {
 	.summary = "quit program with a return value",
 };
 
-const RzCmdDescHelp colon_help = {
-	.summary = "long commands (experimental)",
-};
-
 const RzCmdDescHelp rz_help = {
 	.summary = "resize file",
 };

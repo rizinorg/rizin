@@ -120,7 +120,6 @@ static void cmd_debug_reg(RzCore *core, const char *str);
 #include "cmd_search.c" // defines incDigitBuffer... used by cmd_print
 #include "cmd_print.c"
 #include "cmd_help.c"
-#include "cmd_colon.c"
 
 static const char *help_msg_dollar[] = {
 	"Usage:", "$alias[=cmd] [args...]", "Alias commands and strings (See ?$? for help on $variables)",
@@ -6997,7 +6996,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "p", "print current block", cmd_print, cmd_print_init, &p_help },
 		{ "P", "project", NULL, cmd_project_init, NULL, &P_group_help, RZ_CMD_DESC_TYPE_GROUP },
 		{ "q", "exit program session", cmd_quit, cmd_quit_init, &q_help },
-		{ ":", "long commands starting with :", cmd_colon, NULL, &colon_help },
 		{ "r", "change file size", cmd_resize, NULL, &rz_help },
 		{ "s", "seek to an offset", cmd_seek, cmd_seek_init, &s_help },
 		{ "t", "type information (cparse)", cmd_type, cmd_type_init, &t_help },
