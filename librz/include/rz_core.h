@@ -110,13 +110,6 @@ typedef struct rz_core_rtr_host_t {
 	RzSocket *fd;
 } RzCoreRtrHost;
 
-typedef struct rz_core_undo_t {
-	char *action;
-	char *revert;
-	ut64 tstamp;
-	ut64 offset;
-} RzCoreUndo;
-
 typedef enum {
 	AUTOCOMPLETE_DEFAULT,
 	AUTOCOMPLETE_MS
@@ -301,7 +294,6 @@ struct rz_core_t {
 	char *lastsearch;
 	char *cmdfilter;
 	bool break_loop;
-	RzList *undos;
 	bool binat;
 	bool fixedbits; // will be true when using @b:
 	bool fixedarch; // will be true when using @a:
@@ -769,13 +761,6 @@ RZ_API int rz_core_cmpwatch_del (RzCore *core, ut64 addr);
 RZ_API int rz_core_cmpwatch_update (RzCore *core, ut64 addr);
 RZ_API int rz_core_cmpwatch_show (RzCore *core, ut64 addr, int mode);
 RZ_API int rz_core_cmpwatch_revert (RzCore *core, ut64 addr);
-
-/* undo */
-RZ_API RzCoreUndo *rz_core_undo_new(ut64 offset, const char *action, const char *revert);
-RZ_API void rz_core_undo_print(RzCore *core, int mode, RzCoreUndoCondition *cond);
-RZ_API void rz_core_undo_free(RzCoreUndo *cu);
-RZ_API void rz_core_undo_push(RzCore *core, RzCoreUndo *cu);
-RZ_API void rz_core_undo_pop(RzCore *core);
 
 // TODO MOVE SOMEWHERE ELSE
 typedef char *(*PrintItemCallback)(void *user, void *p, bool selected);

@@ -36,7 +36,6 @@ rz_core_sources = [
   #'cmd_write.c',
   #'cmd_zign.c',
   'core.c',
-  'cundo.c',
   'disasm.c',
   'cfile.c',
   'fortune.c',

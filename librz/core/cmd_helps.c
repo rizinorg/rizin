@@ -423,10 +423,6 @@ const RzCmdDescHelp q_help = {
 	.summary = "quit program with a return value",
 };
 
-const RzCmdDescHelp Q_help = {
-	.summary = "quick quit",
-};
-
 const RzCmdDescHelp colon_help = {
 	.summary = "long commands (experimental)",
 };
@@ -443,10 +439,6 @@ const RzCmdDescHelp t_help = {
 	.summary = "types, noreturn, signatures, C parser and more",
 };
 
-const RzCmdDescHelp u_help = {
-	.summary = "uname/undo seek/write",
-};
-
 const RzCmdDescArg pipein_args[] = {
 	{ .name = "characters", .type = RZ_CMD_ARG_TYPE_STRING },
 	{ 0 },
@@ -455,6 +447,26 @@ const RzCmdDescArg pipein_args[] = {
 const RzCmdDescHelp pipein_help = {
 	.summary = "push escaped string into the RzCons.readChar buffer",
 	.args = pipein_args,
+};
+
+const RzCmdDescArg uniq_args[] = {
+	{ .name = "file", .type = RZ_CMD_ARG_TYPE_FILE },
+	{ 0 },
+};
+
+const RzCmdDescHelp uniq_help = {
+	.summary = "list uniq strings in file",
+	.args = uniq_args,
+};
+
+const RzCmdDescArg uname_args[] = {
+	{ .name = "r", .optional = true, .type = RZ_CMD_ARG_TYPE_OPTION },
+	{ 0 },
+};
+
+const RzCmdDescHelp uname_help = {
+	.summary = "provide system info",
+	.args = uname_args,
 };
 
 const RzCmdDescHelp V_help = {

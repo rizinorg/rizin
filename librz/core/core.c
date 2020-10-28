@@ -2393,7 +2393,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->egg = rz_egg_new ();
 	rz_egg_setup (core->egg, RZ_SYS_ARCH, RZ_SYS_BITS, 0, RZ_SYS_OS);
 
-	core->undos = rz_list_newf ((RzListFree)rz_core_undo_free);
 	core->fixedarch = false;
 	core->fixedbits = false;
 
@@ -2582,7 +2581,6 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_core_autocomplete_free (c->autocomplete);
 
 	rz_list_free (c->gadgets);
-	rz_list_free (c->undos);
 	rz_num_free (c->num);
 	// TODO: sync or not? sdb_sync (c->sdb);
 	// TODO: sync all dbs?
