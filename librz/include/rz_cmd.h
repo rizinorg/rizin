@@ -34,6 +34,7 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_ARRAY_STRING, //< Argument is an array of arbitrary strings (if present, must be last in the list)
 	RZ_CMD_ARG_TYPE_FCN, //< Argument can be the name of an existing function
 	RZ_CMD_ARG_TYPE_FILE, //< Argument is a filename
+	RZ_CMD_ARG_TYPE_OPTION, //< Argument is an option, prefixed with `-`. It is present or not.
 } RzCmdArgType;
 
 typedef int (*RzCmdCb) (void *user, const char *input);

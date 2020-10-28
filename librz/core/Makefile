@@ -7,10 +7,10 @@ RZ_DEPS+=rz_debug rz_hash rz_bin rz_lang rz_io rz_anal rz_parse rz_bp rz_egg
 RZ_DEPS+=rz_reg rz_search rz_syscall rz_socket rz_magic rz_crypto
 
 OBJS=core.o cmd.o cmd_helps.o cfile.o cconfig.o visual.o cio.o yank.o libs.o agraph.o
-OBJS+=fortune.o hack.o vasm.o patch.o cbin.o corelog.o rtr.o cmd_api.o
+OBJS+=fortune.o hack.o vasm.o patch.o cbin.o rtr.o cmd_api.o
 OBJS+=carg.o canal.o project.o gdiff.o casm.o disasm.o cplugin.o
 OBJS+=vmenus.o vmenus_graph.o vmenus_zigns.o zdiff.o citem.o
-OBJS+=task.o panels.o pseudo.o vmarks.o anal_tp.o anal_objc.o blaze.o cundo.o
+OBJS+=task.o panels.o pseudo.o vmarks.o anal_tp.o anal_objc.o blaze.o
 OBJS+=cannotated_code.o serialize_core.o
 
 CFLAGS+=-I../../shlr/heap/include
@@ -45,7 +45,7 @@ include $(LTOP)/rules.mk
 
 cmd.o: cmd_hash.c cmd_debug.c cmd_zign.c cmd_project.c \
 	cmd_open.c cmd_meta.c cmd_macro.c cmd_magic.c cmd_eval.c \
-	cmd_seek.c cmd_print.c cmd_help.c cmd_anal.c cmd_search.c cmd_log.c \
+	cmd_seek.c cmd_print.c cmd_help.c cmd_anal.c cmd_search.c cmd_plugins.c \
 	cmd_cmp.c cmd_write.c cmd_egg.c cmd_info.c cmd_type.c cmd_flag.c \
 	cmd_search_rop.c
 

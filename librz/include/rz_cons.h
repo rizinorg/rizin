@@ -982,7 +982,6 @@ RZ_API RColor rz_cons_color_random(ut8 alpha);
 RZ_API void rz_cons_invert(int set, int color);
 RZ_API bool rz_cons_yesno(int def, const char *fmt, ...);
 RZ_API char *rz_cons_input(const char *msg);
-RZ_API char *rz_cons_password(const char *msg);
 RZ_API bool rz_cons_set_cup(bool enable);
 RZ_API void rz_cons_column(int c);
 RZ_API int rz_cons_get_column(void);

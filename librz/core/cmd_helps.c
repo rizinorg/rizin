@@ -326,10 +326,6 @@ const RzCmdDescHelp help_help = {
 	.options = "[??]",
 };
 
-const RzCmdDescHelp rap_run_help = {
-	.summary = "alias for =!",
-};
-
 const RzCmdDescHelp zero_help = {
 	.summary = "alias for `s 0x...`",
 };
@@ -374,20 +370,18 @@ const RzCmdDescHelp k_help = {
 	.summary = "run sdb-query",
 };
 
-const RzCmdDescHelp l_help = {
+const RzCmdDescArg ls_args[] = {
+	{ .name = "arg", .optional = true, .type = RZ_CMD_ARG_TYPE_ARRAY_STRING },
+	{ 0 },
+};
+
+const RzCmdDescHelp ls_help = {
 	.summary = "list files and directories",
+	.args = ls_args,
 };
 
 const RzCmdDescHelp m_help = {
 	.summary = "make directories and move files",
-};
-
-const RzCmdDescHelp j_help = {
-	.summary = "join the contents of the two files",
-};
-
-const RzCmdDescHelp h_help = {
-	.summary = "show the top n number of line in file",
 };
 
 const RzCmdDescHelp L_help = {
@@ -425,14 +419,6 @@ const RzCmdDescHelp q_help = {
 	.summary = "quit program with a return value",
 };
 
-const RzCmdDescHelp Q_help = {
-	.summary = "quick quit",
-};
-
-const RzCmdDescHelp colon_help = {
-	.summary = "long commands (experimental)",
-};
-
 const RzCmdDescHelp rz_help = {
 	.summary = "resize file",
 };
@@ -445,14 +431,6 @@ const RzCmdDescHelp t_help = {
 	.summary = "types, noreturn, signatures, C parser and more",
 };
 
-const RzCmdDescHelp T_help = {
-	.summary = "Text log utility (used to chat, sync, log, ...)",
-};
-
-const RzCmdDescHelp u_help = {
-	.summary = "uname/undo seek/write",
-};
-
 const RzCmdDescArg pipein_args[] = {
 	{ .name = "characters", .type = RZ_CMD_ARG_TYPE_STRING },
 	{ 0 },
@@ -461,6 +439,26 @@ const RzCmdDescArg pipein_args[] = {
 const RzCmdDescHelp pipein_help = {
 	.summary = "push escaped string into the RzCons.readChar buffer",
 	.args = pipein_args,
+};
+
+const RzCmdDescArg uniq_args[] = {
+	{ .name = "file", .type = RZ_CMD_ARG_TYPE_FILE },
+	{ 0 },
+};
+
+const RzCmdDescHelp uniq_help = {
+	.summary = "list uniq strings in file",
+	.args = uniq_args,
+};
+
+const RzCmdDescArg uname_args[] = {
+	{ .name = "r", .optional = true, .type = RZ_CMD_ARG_TYPE_OPTION },
+	{ 0 },
+};
+
+const RzCmdDescHelp uname_help = {
+	.summary = "provide system info",
+	.args = uname_args,
 };
 
 const RzCmdDescHelp V_help = {

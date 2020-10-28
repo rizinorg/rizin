@@ -689,6 +689,10 @@ static size_t fill_args(RzStrBuf *sb, RzCmdDesc *cd) {
 			rz_strbuf_appendf (sb, " [<%s1> ...]", arg->name);
 			len += strlen (arg->name) + 10;
 			break;
+		case RZ_CMD_ARG_TYPE_OPTION:
+			rz_strbuf_appendf (sb, "-%s", arg->name);
+			len += strlen (arg->name) + 1;
+			break;
 		default:
 			rz_strbuf_appendf (sb, "<%s>", arg->name);
 			len += strlen (arg->name) + 2;

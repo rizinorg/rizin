@@ -2173,14 +2173,6 @@ static bool exists_var(RPrint *print, ut64 func_addr, char *str) {
 	return !!rz_anal_function_get_var_byname (fcn, str);
 }
 
-static bool rz_core_anal_log(struct rz_anal_t *anal, const char *msg) {
-	RzCore *core = anal->user;
-	if (core->cfglog) {
-		rz_core_log_add (core, msg);
-	}
-	return true;
-}
-
 static bool rz_core_anal_read_at(struct rz_anal_t *anal, ut64 addr, ut8 *buf, int len) {
 	return rz_io_read_at (anal->iob.io, addr, buf, len);
 }
@@ -2287,50 +2279,6 @@ static char *get_comments_cb(void *user, ut64 addr) {
 	return rz_core_anal_get_comments ((RzCore *)user, addr);
 }
 
-static void cb_event_handler(REvent *ev, int event_type, void *user, void *data) {
-	RzCore *core = (RzCore *)ev->user;
-	if (!core->log_events) {
-		return;
-	}
-	REventMeta *rems = data;
-	char *str = rz_base64_encode_dyn (rems->string, -1);
-	switch (event_type) {
-	case RZ_EVENT_META_SET:
-		switch (rems->type) {
-		case 'C':
-			rz_core_log_add (ev->user, sdb_fmt (":add-comment 0x%08"PFMT64x" %s\n", rems->addr, str? str: ""));
-			break;
-		default:
-			break;
-		}
-		break;
-	case RZ_EVENT_META_DEL:
-		switch (rems->type) {
-		case 'C':
-			rz_core_log_add (ev->user, sdb_fmt (":del-comment 0x%08"PFMT64x, rems->addr));
-			break;
-		default:
-			rz_core_log_add (ev->user, sdb_fmt (":del-comment 0x%08"PFMT64x, rems->addr));
-			break;
-		}
-		break;
-	case RZ_EVENT_META_CLEAR:
-		switch (rems->type) {
-		case 'C':
-			rz_core_log_add (ev->user, sdb_fmt (":clear-comments 0x%08"PFMT64x, rems->addr));
-			break;
-		default:
-			rz_core_log_add (ev->user, sdb_fmt (":clear-comments 0x%08"PFMT64x, rems->addr));
-			break;
-		}
-		break;
-	default:
-		// TODO
-		break;
-	}
-	free (str);
-}
-
 static RzFlagItem *core_flg_class_set(RzFlag *f, const char *name, ut64 addr, ut32 size) {
 	rz_flag_space_push (f, RZ_FLAGS_FS_CLASSES);
 	RzFlagItem *res = rz_flag_set (f, name, addr, size);
@@ -2394,8 +2342,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 		return false;
 	}
 	rz_core_setenv (core);
-	core->ev = rz_event_new (core);
-	rz_event_hook (core->ev, RZ_EVENT_ALL, cb_event_handler, NULL);
 	core->max_cmd_depth = RZ_CONS_CMD_DEPTH + 1;
 	core->sdb = sdb_new (NULL, "rzkv.sdb", 0); // XXX: path must be in home?
 	core->lastsearch = NULL;
@@ -2434,7 +2380,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->watchers->free = (RzListFree)rz_core_cmpwatch_free;
 	core->scriptstack = rz_list_new ();
 	core->scriptstack->free = (RzListFree)free;
-	core->log = rz_core_log_new ();
 	core->times = RZ_NEW0 (RzCoreTimes);
 	core->vmode = false;
 	core->printidx = 0;
@@ -2448,7 +2393,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->egg = rz_egg_new ();
 	rz_egg_setup (core->egg, RZ_SYS_ARCH, RZ_SYS_BITS, 0, RZ_SYS_OS);
 
-	core->undos = rz_list_newf ((RzListFree)rz_core_undo_free);
 	core->fixedarch = false;
 	core->fixedbits = false;
 
@@ -2486,8 +2430,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_asm_set_user_ptr (core->rasm, core);
 	core->anal = rz_anal_new ();
 	core->gadgets = rz_list_newf ((RzListFree)rz_core_gadget_free);
-	core->anal->ev = core->ev;
-	core->anal->log = rz_core_anal_log;
 	core->anal->read_at = rz_core_anal_read_at;
 	core->anal->flag_get = rz_core_flag_get_by_spaces;
 	core->anal->cb.on_fcn_new = on_fcn_new;
@@ -2561,7 +2503,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->io->cb_printf = rz_cons_printf;
 	core->dbg->cb_printf = rz_cons_printf;
 	core->dbg->bp->cb_printf = rz_cons_printf;
-	core->dbg->ev = core->ev;
 	// initialize config before any corebind
 	rz_core_config_init (core);
 
@@ -2640,7 +2581,6 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_core_autocomplete_free (c->autocomplete);
 
 	rz_list_free (c->gadgets);
-	rz_list_free (c->undos);
 	rz_num_free (c->num);
 	// TODO: sync or not? sdb_sync (c->sdb);
 	// TODO: sync all dbs?
@@ -2675,7 +2615,6 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_agraph_free (c->graph);
 	free (c->asmqjmps);
 	sdb_free (c->sdb);
-	rz_core_log_free (c->log);
 	rz_parse_free (c->parser);
 	free (c->times);
 }

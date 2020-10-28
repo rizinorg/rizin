@@ -101,7 +101,7 @@ static void cmd_debug_reg(RzCore *core, const char *str);
 #include "cmd_quit.c"
 #include "cmd_hash.c"
 #include "cmd_debug.c"
-#include "cmd_log.c"
+#include "cmd_plugins.c"
 #include "cmd_flag.c"
 #include "cmd_zign.c"
 #include "cmd_project.c"
@@ -120,7 +120,6 @@ static void cmd_debug_reg(RzCore *core, const char *str);
 #include "cmd_search.c" // defines incDigitBuffer... used by cmd_print
 #include "cmd_print.c"
 #include "cmd_help.c"
-#include "cmd_colon.c"
 
 static const char *help_msg_dollar[] = {
 	"Usage:", "$alias[=cmd] [args...]", "Alias commands and strings (See ?$? for help on $variables)",
@@ -459,148 +458,28 @@ static int rz_core_cmd_nullcallback(void *data) {
 	return 1;
 }
 
-static int cmd_uname(void *data, const char *input) { // "uniq"
-	RSysInfo *si = rz_sys_info();
-	if (si) {
-		rz_cons_printf ("%s", si->sysname);
-		if (strstr (input, "-r")) {
-			rz_cons_printf (" %s", si->release);
-		}
-		rz_cons_newline ();
-		rz_sys_info_free (si);
+static RzCmdStatus uniq_handler(RzCore *core, int argc, const char **argv) {
+	char *res = rz_syscmd_uniq (argv[1]);
+	if (!res) {
+		return RZ_CMD_STATUS_ERROR;
 	}
-	return 0;
+	rz_cons_print (res);
+	free (res);
+	return RZ_CMD_STATUS_OK;
 }
 
-static int cmd_uniq(void *data, const char *input) { // "uniq"
-	const char *arg = strchr (input, ' ');
-	if (arg) {
-		arg = rz_str_trim_head_ro (arg + 1);
+static RzCmdStatus uname_handler(RzCore *core, int argc, const char **argv) {
+	RSysInfo *si = rz_sys_info ();
+	if (!si) {
+		return RZ_CMD_STATUS_ERROR;
 	}
-	switch (*input) {
-	case '?': // "uniq?"
-		eprintf ("Usage: uniq # uniq to list unique strings in file\n");
-		break;
-	default: // "uniq"
-		if (!arg) {
-			arg = "";
-		}
-		char *res = rz_syscmd_uniq (arg);
-		if (res) {
-			rz_cons_print (res);
-			free (res);
-		}
-		break;
+	rz_cons_printf ("%s", si->sysname);
+	if (argc > 1 && strcmp (argv[1], "-r") == 0) {
+		rz_cons_printf (" %s", si->release);
 	}
-	return 0;
-}
-
-static int cmd_head(void *data, const char *_input) { // "head"
-	int lines = 5;
-	char *input = strdup (_input);
-	char *arg = strchr (input, ' ');
-	char *tmp, *count;
-	if (arg) {
-		arg = (char *)rz_str_trim_head_ro (arg + 1); 	// contains "count filename"
-		count = strchr (arg, ' ');
-		if (count) {
-			*count = 0;	// split the count and file name
-			tmp = (char *)rz_str_trim_head_ro (count + 1);
-			lines = atoi (arg);
-			arg = tmp;
-		}
-	}
-	switch (*input) {
-	case '?': // "head?"
-		eprintf ("Usage: head [file] # to list first n lines in file\n");
-		break;
-	default: // "head"
-		if (!arg) {
-			arg = "";
-		}
-		char *res = rz_syscmd_head (arg, lines);
-		if (res) {
-			rz_cons_print (res);
-			free (res);
-		}
-		break;
-	}
-	free (input);
-	return 0;
-}
-
-static int cmd_undo(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	switch (input[0]) {
-	case '?': // "u?"
-		rz_core_cmd_help (data, help_msg_u);
-		return 1;
-	case 'c': // "uc"
-		switch (input[1]) {
-		case ' ': {
-			char *cmd = strdup (input + 2);
-			char *rcmd = strchr (cmd, ',');
-			if (rcmd) {
-				*rcmd++ = 0;
-				RzCoreUndo *undo = rz_core_undo_new (core->offset, cmd, rcmd);
-				rz_core_undo_push (core, undo);
-			} else {
-				eprintf ("Usage: uc [cmd] [revert-cmd]");
-			}
-			free (cmd);
-			}
-			break;
-		case '?':
-			eprintf ("Usage: uc [cmd],[revert-cmd]\n");
-			eprintf (" uc. - list all reverts in current\n");
-			eprintf (" uc* - list all core undos\n");
-			eprintf (" uc  - list all core undos\n");
-			eprintf (" uc- - undo last action\n");
-			break;
-		case '.': {
-			RzCoreUndoCondition cond = {
-				.addr = core->offset,
-				.minstamp = 0,
-				.glob = NULL
-			};
-			rz_core_undo_print (core, 1, &cond);
-			} break;
-		case '*':
-			rz_core_undo_print (core, 1, NULL);
-			break;
-		case '-': // "uc-"
-			rz_core_undo_pop (core);
-			break;
-		default:
-			rz_core_undo_print (core, 0, NULL);
-			break;
-		}
-		return 1;
-	case 's': // "us"
-		rz_core_cmdf (data, "s-%s", input + 1);
-		return 1;
-	case 'w': // "uw"
-		rz_core_cmdf (data, "wc%s", input + 1);
-		return 1;
-	case 'n': // "un"
-		if (input[1] == 'a') { // "uname"
-			(void)cmd_uname (core, input);
-		} else if (input[1] == 'i' && input[2] == 'q') {
-			(void)cmd_uniq (core, input);
-		}
-		return 1;
-	}
-#if __UNIX__
-	struct utsname un;
-	uname (&un);
-	rz_cons_printf ("%s %s %s %s\n", un.sysname,
-		un.nodename, un.release, un.machine);
-#elif __WINDOWS__
-	rz_cons_printf ("windows\n");
-#else
-	rz_cons_printf ("unknown\n");
-#endif
-	return 0;
+	rz_cons_newline ();
+	rz_sys_info_free (si);
+	return RZ_CMD_STATUS_OK;
 }
 
 static int cmd_alias(void *data, const char *input) {
@@ -850,17 +729,6 @@ static int cmd_rap(void *data, const char *input) {
 		break;
 	}
 	return 0;
-}
-
-static int cmd_rap_run(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	char *res = rz_io_system (core->io, input);
-	if (res) {
-		int ret = atoi (res);
-		free (res);
-		return ret;
-	}
-	return false;
 }
 
 static int cmd_yank(void *data, const char *input) {
@@ -1194,21 +1062,13 @@ static int cmd_m(void *data, const char *input) {
 }
 
 static int cmd_ls(void *data, const char *input) { // "ls"
-	RzCore *core = (RzCore *)data;
 	const char *arg = strchr (input, ' ');
 	if (arg) {
 		arg = rz_str_trim_head_ro (arg + 1);
 	}
 	switch (*input) {
 	case '?': // "l?"
-		eprintf ("Usage: l[es] # ls to list files, le[ss] to less a file\n");
-		break;
-	case 'e': // "le"
-		if (arg) {
-			rz_core_cmdf (core, "cat %s~..", arg);
-		} else {
-			eprintf ("Usage: less [file]\n");
-		}
+		eprintf ("Usage: ls [path] # ls to list files\n");
 		break;
 	default: // "ls"
 		if (!arg) {
@@ -1224,49 +1084,16 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 	return 0;
 }
 
-static int cmd_join(void *data, const char *input) { // "join"
-	char *tmp = strdup (input);
-	const char *arg1 = strchr (tmp, ' ');
-	if (!arg1) {
-		goto beach;
+static RzCmdStatus ls_handler(RzCore *core, int argc, const char **argv) {
+	char *arg = rz_str_array_join (argv + 1, argc - 1, " ");
+	char *res = rz_syscmd_ls (arg);
+	if (!res) {
+		return RZ_CMD_STATUS_ERROR;
 	}
-	arg1 = rz_str_trim_head_ro (arg1);
-	if (!arg1) {
-		goto beach;
-	}
-	char *end = strchr (arg1, ' ');
-	if (!end) {
-		goto beach;
-	}
-	*end = '\0';
-	const char *arg2 = end+1;
-	if (!arg2) {
-		goto beach;
-	}
-	arg2 = rz_str_trim_head_ro (arg2);
-	switch (*input) {
-	case '?': // "join?"
-		goto beach;
-	default: // "join"
-		if (!arg1) {
-			arg1 = "";
-		}
-		if (!arg2) {
-			arg2 = "";
-		}
-		char *res = rz_syscmd_join (arg1, arg2);
-		if (res) {
-			rz_cons_print (res);
-			free (res);
-		}
-		break;
-	}
-	free (tmp);
-	return 0;
-beach:
-	eprintf ("Usage: join [file1] [file2] # join the contents of the two files\n");
-	free (tmp);
-	return 0;
+	rz_cons_print (res);
+	free (res);
+	free (arg);
+	return RZ_CMD_STATUS_OK;
 }
 
 static int cmd_stdin(void *data, const char *input) {
@@ -6639,6 +6466,10 @@ DEFINE_HANDLE_TS_FCN(commands) {
 			free (command_str);
 			res = cmd_res;
 			goto err;
+		} else if (cmd_res == RZ_CMD_STATUS_ERROR) {
+			// make the whole script return ERROR, but continue to
+			// execute the other commands
+			res = cmd_res;
 		} else if (cmd_res != RZ_CMD_STATUS_OK) {
 			res = cmd_res;
 			goto err;
@@ -7140,8 +6971,7 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "/", "search kw, pattern aes", cmd_search, cmd_search_init, &search_help },
 		{ "=", "io pipe", cmd_rap, NULL, &rap_help },
 		{ "?", "help message", cmd_help, cmd_help_init, &help_help },
-		{ "\\", "alias for =!", cmd_rap_run, NULL, &rap_run_help },
-		{ "'", "alias for =!", cmd_rap_run, NULL, &rap_run_help },
+		{ "<", "pipe into RzCons.readChar", cmd_pipein, NULL, &pipein_help, NULL, RZ_CMD_DESC_TYPE_ARGV, pipein_handler },
 		{ "0", "alias for s 0x", cmd_ox, NULL, &zero_help },
 		{ "a", "analysis", cmd_anal, cmd_anal_init, &anal_help },
 		{ "b", "change block size", cmd_bsize, NULL, &b_help },
@@ -7153,23 +6983,18 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "g", "egg manipulation", cmd_egg, cmd_egg_init, &g_help },
 		{ "i", "get file info", cmd_info, cmd_info_init, &i_help },
 		{ "k", "perform sdb query", cmd_kuery, NULL, &k_help },
-		{ "l", "list files and directories", cmd_ls, NULL, &l_help },
-		{ "j", "join the contents of the two files", cmd_join, NULL, &j_help },
+		{ "ls", "list files and directories", cmd_ls, NULL, &ls_help, NULL, RZ_CMD_DESC_TYPE_ARGV, ls_handler },
 		{ "m", "make directory and move files", cmd_m, NULL, &m_help },
-		{ "h", "show the top n number of line in file", cmd_head, NULL, &h_help },
 		{ "L", "manage dynamically loaded plugins", cmd_plugins, NULL, &L_help },
 		{ "o", "open or map file", cmd_open, cmd_open_init, &o_help },
 		{ "p", "print current block", cmd_print, cmd_print_init, &p_help },
-		{ "P", "project", NULL, cmd_project_init, NULL, &P_group_help, RZ_CMD_DESC_TYPE_GROUP},
+		{ "P", "project", NULL, cmd_project_init, NULL, &P_group_help, RZ_CMD_DESC_TYPE_GROUP },
 		{ "q", "exit program session", cmd_quit, cmd_quit_init, &q_help },
-		{ "Q", "alias for q!", cmd_Quit, NULL, &Q_help },
-		{ ":", "long commands starting with :", cmd_colon, NULL, &colon_help },
 		{ "r", "change file size", cmd_resize, NULL, &rz_help },
 		{ "s", "seek to an offset", cmd_seek, cmd_seek_init, &s_help },
 		{ "t", "type information (cparse)", cmd_type, cmd_type_init, &t_help },
-		{ "T", "Text log utility", cmd_log, cmd_log_init, &T_help },
-		{ "u", "uname/undo", cmd_undo, NULL, &u_help },
-		{ "<", "pipe into RzCons.readChar", cmd_pipein, NULL, &pipein_help, NULL, RZ_CMD_DESC_TYPE_ARGV, pipein_handler },
+		{ "uniq", "", NULL, NULL, &uniq_help, NULL, RZ_CMD_DESC_TYPE_ARGV, uniq_handler },
+		{ "uname", "", NULL, NULL, &uname_help, NULL, RZ_CMD_DESC_TYPE_ARGV, uname_handler },
 		{ "V", "enter visual mode", cmd_visual, NULL, &V_help },
 		{ "v", "enter visual mode", cmd_panels, NULL, &v_help },
 		{ "w", "write bytes", cmd_write, cmd_write_init, &w_help, &w_group_help, RZ_CMD_DESC_TYPE_GROUP, w_handler },

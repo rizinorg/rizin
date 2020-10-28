@@ -110,13 +110,6 @@ typedef struct rz_core_rtr_host_t {
 	RzSocket *fd;
 } RzCoreRtrHost;
 
-typedef struct rz_core_undo_t {
-	char *action;
-	char *revert;
-	ut64 tstamp;
-	ut64 offset;
-} RzCoreUndo;
-
 typedef enum {
 	AUTOCOMPLETE_DEFAULT,
 	AUTOCOMPLETE_MS
@@ -127,12 +120,6 @@ typedef struct {
 	const char *glob;
 	ut64 minstamp;
 } RzCoreUndoCondition;
-
-typedef struct rz_core_log_t {
-	int first;
-	int last;
-	RzStrpool *sp;
-} RzCoreLog;
 
 typedef struct rz_core_file_t {
 	int dbg;
@@ -271,14 +258,12 @@ struct rz_core_t {
 	RzFlag *flags;
 	RzSearch *search;
 	RzEgg *egg;
-	RzCoreLog *log;
 	RzAGraph *graph;
 	RPanelsRoot *panels_root;
 	RPanels* panels;
 	char *cmdqueue;
 	char *lastcmd;
 	char *cmdlog;
-	bool cfglog; // cfg.corelog
 	int cmdrepeat; // cmd.repeat
 	const char *cmdtimes; // cmd.times
 	RZ_DEPRECATE bool cmd_in_backticks; // whether currently executing a cmd out of backticks
@@ -309,7 +294,6 @@ struct rz_core_t {
 	char *lastsearch;
 	char *cmdfilter;
 	bool break_loop;
-	RzList *undos;
 	bool binat;
 	bool fixedbits; // will be true when using @b:
 	bool fixedarch; // will be true when using @a:
@@ -777,24 +761,6 @@ RZ_API int rz_core_cmpwatch_del (RzCore *core, ut64 addr);
 RZ_API int rz_core_cmpwatch_update (RzCore *core, ut64 addr);
 RZ_API int rz_core_cmpwatch_show (RzCore *core, ut64 addr, int mode);
 RZ_API int rz_core_cmpwatch_revert (RzCore *core, ut64 addr);
-
-/* undo */
-RZ_API RzCoreUndo *rz_core_undo_new(ut64 offset, const char *action, const char *revert);
-RZ_API void rz_core_undo_print(RzCore *core, int mode, RzCoreUndoCondition *cond);
-RZ_API void rz_core_undo_free(RzCoreUndo *cu);
-RZ_API void rz_core_undo_push(RzCore *core, RzCoreUndo *cu);
-RZ_API void rz_core_undo_pop(RzCore *core);
-
-/* logs */
-typedef int (*RzCoreLogCallback)(RzCore *core, int count, const char *message);
-RZ_API void rz_core_log_free(RzCoreLog *log);
-RZ_API void rz_core_log_init (RzCoreLog *log);
-RZ_API char *rz_core_log_get(RzCore *core, int index);
-RZ_API RzCoreLog *rz_core_log_new (void);
-RZ_API bool rz_core_log_run(RzCore *core, const char *buf, RzCoreLogCallback cb);
-RZ_API int rz_core_log_list(RzCore *core, int n, int count, char fmt);
-RZ_API void rz_core_log_add(RzCore *core, const char *msg);
-RZ_API void rz_core_log_del(RzCore *core, int n);
 
 // TODO MOVE SOMEWHERE ELSE
 typedef char *(*PrintItemCallback)(void *user, void *p, bool selected);
