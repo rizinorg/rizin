@@ -36,7 +36,7 @@ extern const RzCmdDescHelp f_help;
 extern const RzCmdDescHelp g_help;
 extern const RzCmdDescHelp i_help;
 extern const RzCmdDescHelp k_help;
-extern const RzCmdDescHelp l_help;
+extern const RzCmdDescHelp ls_help;
 extern const RzCmdDescHelp j_help;
 extern const RzCmdDescHelp h_help;
 extern const RzCmdDescHelp L_help;

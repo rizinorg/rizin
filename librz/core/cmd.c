@@ -1160,21 +1160,13 @@ static int cmd_m(void *data, const char *input) {
 }
 
 static int cmd_ls(void *data, const char *input) { // "ls"
-	RzCore *core = (RzCore *)data;
 	const char *arg = strchr (input, ' ');
 	if (arg) {
 		arg = rz_str_trim_head_ro (arg + 1);
 	}
 	switch (*input) {
 	case '?': // "l?"
-		eprintf ("Usage: l[es] # ls to list files, le[ss] to less a file\n");
-		break;
-	case 'e': // "le"
-		if (arg) {
-			rz_core_cmdf (core, "cat %s~..", arg);
-		} else {
-			eprintf ("Usage: less [file]\n");
-		}
+		eprintf ("Usage: ls [path] # ls to list files\n");
 		break;
 	default: // "ls"
 		if (!arg) {
@@ -1188,6 +1180,17 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 		break;
 	}
 	return 0;
+}
+
+static RzCmdStatus ls_handler(RzCore *core, int argc, const char **argv) {
+	const char *arg = argc > 1? argv[1]: "";
+	char *res = rz_syscmd_ls (arg);
+	if (!res) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_print (res);
+	free (res);
+	return RZ_CMD_STATUS_OK;
 }
 
 static int cmd_stdin(void *data, const char *input) {
@@ -7072,7 +7075,7 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "g", "egg manipulation", cmd_egg, cmd_egg_init, &g_help },
 		{ "i", "get file info", cmd_info, cmd_info_init, &i_help },
 		{ "k", "perform sdb query", cmd_kuery, NULL, &k_help },
-		{ "l", "list files and directories", cmd_ls, NULL, &l_help },
+		{ "ls", "list files and directories", cmd_ls, NULL, &ls_help, NULL, RZ_CMD_DESC_TYPE_ARGV, ls_handler },
 		{ "m", "make directory and move files", cmd_m, NULL, &m_help },
 		{ "L", "manage dynamically loaded plugins", cmd_plugins, NULL, &L_help },
 		{ "o", "open or map file", cmd_open, cmd_open_init, &o_help },

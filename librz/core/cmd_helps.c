@@ -374,8 +374,14 @@ const RzCmdDescHelp k_help = {
 	.summary = "run sdb-query",
 };
 
-const RzCmdDescHelp l_help = {
+const RzCmdDescArg ls_args[] = {
+	{ .name = "path", .optional = true, .type = RZ_CMD_ARG_TYPE_FILE },
+	{ 0 },
+};
+
+const RzCmdDescHelp ls_help = {
 	.summary = "list files and directories",
+	.args = ls_args,
 };
 
 const RzCmdDescHelp m_help = {
