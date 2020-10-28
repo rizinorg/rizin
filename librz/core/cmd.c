@@ -495,40 +495,6 @@ static int cmd_uniq(void *data, const char *input) { // "uniq"
 	return 0;
 }
 
-static int cmd_head(void *data, const char *_input) { // "head"
-	int lines = 5;
-	char *input = strdup (_input);
-	char *arg = strchr (input, ' ');
-	char *tmp, *count;
-	if (arg) {
-		arg = (char *)rz_str_trim_head_ro (arg + 1); 	// contains "count filename"
-		count = strchr (arg, ' ');
-		if (count) {
-			*count = 0;	// split the count and file name
-			tmp = (char *)rz_str_trim_head_ro (count + 1);
-			lines = atoi (arg);
-			arg = tmp;
-		}
-	}
-	switch (*input) {
-	case '?': // "head?"
-		eprintf ("Usage: head [file] # to list first n lines in file\n");
-		break;
-	default: // "head"
-		if (!arg) {
-			arg = "";
-		}
-		char *res = rz_syscmd_head (arg, lines);
-		if (res) {
-			rz_cons_print (res);
-			free (res);
-		}
-		break;
-	}
-	free (input);
-	return 0;
-}
-
 static int cmd_undo(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	switch (input[0]) {
@@ -7108,7 +7074,6 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "k", "perform sdb query", cmd_kuery, NULL, &k_help },
 		{ "l", "list files and directories", cmd_ls, NULL, &l_help },
 		{ "m", "make directory and move files", cmd_m, NULL, &m_help },
-		{ "h", "show the top n number of line in file", cmd_head, NULL, &h_help },
 		{ "L", "manage dynamically loaded plugins", cmd_plugins, NULL, &L_help },
 		{ "o", "open or map file", cmd_open, cmd_open_init, &o_help },
 		{ "p", "print current block", cmd_print, cmd_print_init, &p_help },
