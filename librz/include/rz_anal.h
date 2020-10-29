@@ -1640,7 +1640,8 @@ RZ_API bool rz_anal_check_fcn(RzAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut6
 RZ_API void rz_anal_fcn_invalidate_read_ahead_cache(void);
 
 RZ_API void rz_anal_function_check_bp_use(RzAnalFunction *fcn);
-
+RZ_API void rz_anal_update_analysis_range(RzAnal *anal, ut64 addr, int size);
+RZ_API void rz_anal_function_update_analysis(RzAnalFunction *fcn);
 
 #define RZ_ANAL_FCN_VARKIND_LOCAL 'v'
 

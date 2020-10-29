@@ -2331,6 +2331,14 @@ static int win_eprintf(const char *format, ...) {
 }
 #endif
 
+static void ev_iowrite_cb(REvent *ev, int type, void *user, void *data) {
+	RzCore *core = user;
+	REventIOWrite *iow = data;
+	if (rz_config_get_i (core->config, "anal.detectwrites")) {
+		rz_anal_update_analysis_range (core->anal, iow->addr, iow->len);
+	}
+}
+
 RZ_API bool rz_core_init(RzCore *core) {
 	core->blocksize = RZ_CORE_BLOCKSIZE;
 	core->block = (ut8 *)calloc (RZ_CORE_BLOCKSIZE + 1, 1);
@@ -2448,6 +2456,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->bin->cb_printf = (PrintfCallback) rz_cons_printf;
 	rz_bin_set_user_ptr (core->bin, core);
 	core->io = rz_io_new ();
+	rz_event_hook (core->io->event, RZ_EVENT_IO_WRITE, ev_iowrite_cb, core);
 	core->io->ff = 1;
 	core->search = rz_search_new (RZ_SEARCH_KEYWORD);
 	rz_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
