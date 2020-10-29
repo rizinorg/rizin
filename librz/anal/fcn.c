@@ -2054,3 +2054,212 @@ RZ_API void rz_anal_function_check_bp_use(RzAnalFunction *fcn) {
 	rz_return_if_fail (fcn);
 	__anal_fcn_check_bp_use (fcn->anal, fcn);
 }
+
+typedef struct {
+	RzAnalFunction *fcn;
+	HtUP *visited;
+} BlockRecurseCtx;
+
+static bool mark_as_visited(RzAnalBlock *bb, void *user) {
+	BlockRecurseCtx *ctx = user;
+	ht_up_insert (ctx->visited, bb->addr, NULL);
+	return true;
+}
+
+static bool analize_addr_cb(ut64 addr, void *user) {
+	BlockRecurseCtx *ctx = user;
+	RzAnal *anal = ctx->fcn->anal;
+	RzAnalBlock *existing_bb = rz_anal_get_block_at (anal, addr);
+	if (!existing_bb || !rz_list_contains (ctx->fcn->bbs, existing_bb)) {
+		int old_len = rz_list_length (ctx->fcn->bbs);
+		rz_anal_fcn_bb (ctx->fcn->anal, ctx->fcn, addr, anal->opt.depth);
+		if (old_len != rz_list_length (ctx->fcn->bbs)) {
+			rz_anal_block_recurse (rz_anal_get_block_at (anal, addr), mark_as_visited, user);
+		}
+	}
+	ht_up_insert (ctx->visited, addr, NULL);
+	return true;
+}
+
+static bool analize_descendents(RzAnalBlock *bb, void *user) {
+	return rz_anal_block_successor_addrs_foreach (bb, analize_addr_cb, user);
+}
+
+static void free_ht_up(HtUPKv *kv) {
+	ht_up_free ((HtUP *)kv->value);
+}
+
+static void update_varz_analysis(RzAnalFunction *fcn, int align, ut64 from, ut64 to) {
+	RzAnal *anal = fcn->anal;
+	ut64 cur_addr;
+	int opsz;
+	from = align ? from - (from % align) : from;
+	to = align ? RZ_ROUND (to, align) : to;
+	if (UT64_SUB_OVFCHK (to, from)) {
+		return;
+	}
+	ut64 len = to - from;
+	ut8 *buf = malloc (len);
+	if (!buf) {
+		return;
+	}
+	if (anal->iob.read_at (anal->iob.io, from, buf, len) < len) {
+		return;
+	}
+	for (cur_addr = from; cur_addr < to; cur_addr += opsz, len -= opsz) {
+		RzAnalOp op;
+		int ret = rz_anal_op (anal->coreb.core, &op, cur_addr, buf, len, RZ_ANAL_OP_MASK_ESIL | RZ_ANAL_OP_MASK_VAL);
+		if (ret < 1 || op.size < 1) {
+			rz_anal_op_fini (&op);
+			break;
+		}
+		opsz = op.size;
+		rz_anal_extract_vars (anal, fcn, &op);
+		rz_anal_op_fini (&op);
+	}
+	free (buf);
+}
+
+// Clear function variable acesses inside in a block
+static void clear_bb_vars(RzAnalFunction *fcn, RzAnalBlock *bb, ut64 from, ut64 to) {
+	int i;
+	if (rz_pvector_empty (&fcn->vars)) {
+		return;
+	}
+	for (i = 0; i < bb->ninstr; i++) {
+		const ut64 addr = rz_anal_bb_opaddr_i (bb, i);
+		if (addr < from) {
+			continue;
+		}
+		if (addr >= to || addr == UT64_MAX) {
+			break;
+		}
+		RzPVector *vars = rz_anal_function_get_vars_used_at (fcn, addr);
+		if (vars) {
+			RzPVector *vars_clone = (RzPVector *)rz_vector_clone ((RzVector *)vars);
+			void **v;
+			rz_pvector_foreach (vars_clone, v) {
+				rz_anal_var_remove_access_at ((RzAnalVar *)*v, addr);
+			}
+			rz_pvector_clear (vars_clone);
+		}
+	}
+}
+
+static void update_analysis(RzAnal *anal, RzList *fcns, HtUP *reachable) {
+	RzListIter *it, *it2, *tmp;
+	RzAnalFunction *fcn;
+	bool old_jmpmid = anal->opt.jmpmid;
+	anal->opt.jmpmid = true;
+	rz_anal_fcn_invalidate_read_ahead_cache ();
+	rz_list_foreach (fcns, it, fcn) {
+		// Recurse through blocks of function, mark reachable,
+		// analyze edges that don't have a block
+		RzAnalBlock *bb = rz_anal_get_block_at (anal, fcn->addr);
+		if (!bb) {
+			rz_anal_fcn_bb (anal, fcn, fcn->addr, anal->opt.depth);
+			bb = rz_anal_get_block_at (anal, fcn->addr);
+			if (!bb) {
+				continue;
+			}
+		}
+		HtUP *ht = ht_up_new0 ();
+		ht_up_insert (ht, bb->addr, NULL);
+		BlockRecurseCtx ctx = { fcn, ht };
+		rz_anal_block_recurse (bb, analize_descendents, &ctx);
+
+		// Remove non-reachable blocks
+		rz_list_foreach_safe (fcn->bbs, it2, tmp, bb) {
+			if (ht_up_find_kv (ht, bb->addr, NULL)) {
+				continue;
+			}
+			HtUP *o_visited = ht_up_find (reachable, fcn->addr, NULL);
+			if (!ht_up_find_kv (o_visited, bb->addr, NULL)) {
+				// Avoid removing blocks that were already not reachable
+				continue;
+			}
+			fcn->ninstr -= bb->ninstr;
+			rz_anal_function_remove_block (fcn, bb);
+		}
+
+		RzList *bbs = rz_list_clone (fcn->bbs);
+		rz_anal_block_automerge (bbs);
+		rz_anal_function_delete_unused_vars (fcn);
+		rz_list_free (bbs);
+	}
+	anal->opt.jmpmid = old_jmpmid;
+}
+
+static void calc_reachable_and_remove_block(RzList *fcns, RzAnalFunction *fcn, RzAnalBlock *bb, HtUP *reachable) {
+	clear_bb_vars (fcn, bb, bb->addr, bb->addr + bb->size);
+	if (!rz_list_contains (fcns, fcn)) {
+		rz_list_append (fcns, fcn);
+
+		// Calculate reachable blocks from the start of function
+		HtUP *ht = ht_up_new0 ();
+		BlockRecurseCtx ctx = { fcn, ht };
+		rz_anal_block_recurse (rz_anal_get_block_at (fcn->anal, fcn->addr), mark_as_visited, &ctx);
+		ht_up_insert (reachable, fcn->addr, ht);
+	}
+	fcn->ninstr -= bb->ninstr;
+	rz_anal_function_remove_block (fcn, bb);
+}
+
+RZ_API void rz_anal_update_analysis_range(RzAnal *anal, ut64 addr, int size) {
+	rz_return_if_fail (anal);
+	RzListIter *it, *it2, *tmp;
+	RzAnalBlock *bb;
+	RzAnalFunction *fcn;
+	RzList *blocks = rz_anal_get_blocks_intersect (anal, addr, size);
+	if (rz_list_empty (blocks)) {
+		rz_list_free (blocks);
+		return;
+	}
+	RzList *fcns = rz_list_new ();
+	HtUP *reachable = ht_up_new (NULL, free_ht_up, NULL);
+	const int align = rz_anal_archinfo (anal, RZ_ANAL_ARCHINFO_ALIGN);
+	const ut64 end_write = addr + size;
+
+	rz_list_foreach (blocks, it, bb) {
+		if (!rz_anal_block_was_modified (bb)) {
+			continue;
+		}
+		rz_list_foreach_safe (bb->fcns, it2, tmp, fcn) {
+			if (align > 1) {
+				if ((end_write < rz_anal_bb_opaddr_i (bb, bb->ninstr - 1))
+					&& (!bb->switch_op || end_write < bb->switch_op->addr)) {
+					// Special case when instructions are aligned and we don't
+					// need to worry about a write messing with the jump instructions
+					clear_bb_vars (fcn, bb, addr > bb->addr ? addr : bb->addr, end_write);
+					update_varz_analysis (fcn, align, addr > bb->addr ? addr : bb->addr, end_write);
+					rz_anal_function_delete_unused_vars (fcn);
+					continue;
+				}
+			}
+			calc_reachable_and_remove_block (fcns, fcn, bb, reachable);
+		}
+	}
+	rz_list_free (blocks); // This will call rz_anal_block_unref to actually remove blocks from RzAnal
+	update_analysis (anal, fcns, reachable);
+	ht_up_free (reachable);
+	rz_list_free (fcns);
+}
+
+RZ_API void rz_anal_function_update_analysis(RzAnalFunction *fcn) {
+	rz_return_if_fail (fcn);
+	RzListIter *it, *it2, *tmp, *tmp2;
+	RzAnalBlock *bb;
+	RzAnalFunction *f;
+	RzList *fcns = rz_list_new ();
+	HtUP *reachable = ht_up_new (NULL, free_ht_up, NULL);
+	rz_list_foreach_safe (fcn->bbs, it, tmp, bb) {
+		if (rz_anal_block_was_modified (bb)) {
+			rz_list_foreach_safe (bb->fcns, it2, tmp2, f) {
+				calc_reachable_and_remove_block (fcns, f, bb, reachable);
+			}
+		}
+	}
+	update_analysis (fcn->anal, fcns, reachable);
+	ht_up_free (reachable);
+	rz_list_free (fcns);
+}
