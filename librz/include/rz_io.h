@@ -107,6 +107,7 @@ typedef struct rz_io_t {
 	struct w32dbg_wrap_instance_t *w32dbg_wrap;
 #endif
 	char *args;
+	REvent *event;
 	PrintfCallback cb_printf;
 	RzCoreBind corebind;
 } RzIO;

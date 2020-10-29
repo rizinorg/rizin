@@ -169,6 +169,8 @@ RZ_API bool rz_io_cache_write(RzIO *io, ut64 addr, const ut8 *buf, int len) {
 	}
 	memcpy (ch->data, buf, len);
 	rz_list_append (io->cache, ch);
+	REventIOWrite iow = { addr, buf, len };
+	rz_event_send (io->event, RZ_EVENT_IO_WRITE, &iow);
 	return true;
 }
 
