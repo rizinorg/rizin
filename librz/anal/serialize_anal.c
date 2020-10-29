@@ -95,8 +95,8 @@ enum {
 	DIFF_FIELD_SIZE
 };
 
-RZ_API RSerializeAnalDiffParser rz_serialize_anal_diff_parser_new(void) {
-	RSerializeAnalDiffParser parser = key_parser_new ();
+RZ_API RzSerializeAnalDiffParser rz_serialize_anal_diff_parser_new(void) {
+	RzSerializeAnalDiffParser parser = key_parser_new ();
 	if (!parser) {
 		return NULL;
 	}
@@ -108,11 +108,11 @@ RZ_API RSerializeAnalDiffParser rz_serialize_anal_diff_parser_new(void) {
 	return parser;
 }
 
-RZ_API void rz_serialize_anal_diff_parser_free(RSerializeAnalDiffParser parser) {
+RZ_API void rz_serialize_anal_diff_parser_free(RzSerializeAnalDiffParser parser) {
 	key_parser_free (parser);
 }
 
-RZ_API RZ_NULLABLE RzAnalDiff *rz_serialize_anal_diff_load(RZ_NONNULL RSerializeAnalDiffParser parser, RZ_NONNULL const RJson *json) {
+RZ_API RZ_NULLABLE RzAnalDiff *rz_serialize_anal_diff_load(RZ_NONNULL RzSerializeAnalDiffParser parser, RZ_NONNULL const RJson *json) {
 	if (json->type != RZ_JSON_OBJECT) {
 		return NULL;
 	}
@@ -345,7 +345,7 @@ enum {
 typedef struct {
 	RzAnal *anal;
 	KeyParser *parser;
-	RSerializeAnalDiffParser diff_parser;
+	RzSerializeAnalDiffParser diff_parser;
 } BlockLoadCtx;
 
 static bool block_load_cb(void *user, const char *k, const char *v) {
@@ -541,7 +541,7 @@ error:
 	return false;
 }
 
-RZ_API bool rz_serialize_anal_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RzSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res) {
 	BlockLoadCtx ctx = { anal, key_parser_new (), diff_parser };
 	if (!ctx.parser) {
 		SERIALIZE_ERR ("parser init failed");
@@ -650,8 +650,8 @@ enum {
 	VAR_FIELD_CONSTRS
 };
 
-RZ_API RSerializeAnalVarParser rz_serialize_anal_var_parser_new(void) {
-	RSerializeAnalDiffParser parser = key_parser_new ();
+RZ_API RzSerializeAnalVarParser rz_serialize_anal_var_parser_new(void) {
+	RzSerializeAnalDiffParser parser = key_parser_new ();
 	if (!parser) {
 		return NULL;
 	}
@@ -667,11 +667,11 @@ RZ_API RSerializeAnalVarParser rz_serialize_anal_var_parser_new(void) {
 	return parser;
 }
 
-RZ_API void rz_serialize_anal_var_parser_free(RSerializeAnalVarParser parser) {
+RZ_API void rz_serialize_anal_var_parser_free(RzSerializeAnalVarParser parser) {
 	key_parser_free (parser);
 }
 
-RZ_API RZ_NULLABLE RzAnalVar *rz_serialize_anal_var_load(RZ_NONNULL RzAnalFunction *fcn, RZ_NONNULL RSerializeAnalVarParser parser, RZ_NONNULL const RJson *json) {
+RZ_API RZ_NULLABLE RzAnalVar *rz_serialize_anal_var_load(RZ_NONNULL RzAnalFunction *fcn, RZ_NONNULL RzSerializeAnalVarParser parser, RZ_NONNULL const RJson *json) {
 	if (json->type != RZ_JSON_OBJECT) {
 		return NULL;
 	}
@@ -987,8 +987,8 @@ enum {
 typedef struct {
 	RzAnal *anal;
 	KeyParser *parser;
-	RSerializeAnalDiffParser diff_parser;
-	RSerializeAnalVarParser var_parser;
+	RzSerializeAnalDiffParser diff_parser;
+	RzSerializeAnalVarParser var_parser;
 } FunctionLoadCtx;
 
 static bool function_load_cb(void *user, const char *k, const char *v) {
@@ -1211,7 +1211,7 @@ beach:
 	return ret;
 }
 
-RZ_API bool rz_serialize_anal_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RzSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res) {
 	FunctionLoadCtx ctx = {
 		.anal = anal,
 		.parser = key_parser_new (),
@@ -2032,7 +2032,7 @@ RZ_API void rz_serialize_anal_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal) 
 
 RZ_API bool rz_serialize_anal_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	bool ret = false;
-	RSerializeAnalDiffParser diff_parser = rz_serialize_anal_diff_parser_new ();
+	RzSerializeAnalDiffParser diff_parser = rz_serialize_anal_diff_parser_new ();
 	if (!diff_parser) {
 		goto beach;
 	}

@@ -2128,10 +2128,10 @@ RZ_API void rz_serialize_anal_case_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalCa
 RZ_API void rz_serialize_anal_switch_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalSwitchOp *op);
 RZ_API RzAnalSwitchOp *rz_serialize_anal_switch_op_load(RZ_NONNULL const RJson *json);
 
-typedef void *RSerializeAnalDiffParser;
-RZ_API RSerializeAnalDiffParser rz_serialize_anal_diff_parser_new(void);
-RZ_API void rz_serialize_anal_diff_parser_free(RSerializeAnalDiffParser parser);
-RZ_API RZ_NULLABLE RzAnalDiff *rz_serialize_anal_diff_load(RZ_NONNULL RSerializeAnalDiffParser parser, RZ_NONNULL const RJson *json);
+typedef void *RzSerializeAnalDiffParser;
+RZ_API RzSerializeAnalDiffParser rz_serialize_anal_diff_parser_new(void);
+RZ_API void rz_serialize_anal_diff_parser_free(RzSerializeAnalDiffParser parser);
+RZ_API RZ_NULLABLE RzAnalDiff *rz_serialize_anal_diff_load(RZ_NONNULL RzSerializeAnalDiffParser parser, RZ_NONNULL const RJson *json);
 RZ_API void rz_serialize_anal_diff_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalDiff *diff);
 RZ_API void rz_serialize_anal_blocks_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal);
 
@@ -2139,15 +2139,15 @@ RZ_API void rz_serialize_anal_blocks_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal 
  * RzAnal must not contain any blocks when calling this function!
  * All loaded blocks will have a ref of 1 after this function and should be unrefd once after loading functions.
  */
-RZ_API bool rz_serialize_anal_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res);
+RZ_API bool rz_serialize_anal_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RzSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res);
 
-typedef void *RSerializeAnalVarParser;
-RZ_API RSerializeAnalVarParser rz_serialize_anal_var_parser_new(void);
-RZ_API void rz_serialize_anal_var_parser_free(RSerializeAnalVarParser parser);
-RZ_API RZ_NULLABLE RzAnalVar *rz_serialize_anal_var_load(RZ_NONNULL RzAnalFunction *fcn, RZ_NONNULL RSerializeAnalVarParser parser, RZ_NONNULL const RJson *json);
+typedef void *RzSerializeAnalVarParser;
+RZ_API RzSerializeAnalVarParser rz_serialize_anal_var_parser_new(void);
+RZ_API void rz_serialize_anal_var_parser_free(RzSerializeAnalVarParser parser);
+RZ_API RZ_NULLABLE RzAnalVar *rz_serialize_anal_var_load(RZ_NONNULL RzAnalFunction *fcn, RZ_NONNULL RzSerializeAnalVarParser parser, RZ_NONNULL const RJson *json);
 
 RZ_API void rz_serialize_anal_functions_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal);
-RZ_API bool rz_serialize_anal_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res);
+RZ_API bool rz_serialize_anal_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RzSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res);
 RZ_API void rz_serialize_anal_xrefs_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal);
 RZ_API bool rz_serialize_anal_xrefs_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res);
 RZ_API void rz_serialize_anal_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal);

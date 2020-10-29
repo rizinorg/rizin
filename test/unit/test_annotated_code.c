@@ -6,9 +6,9 @@
 
 #include "minunit.h"
 
-static RCodeAnnotation make_code_annotation(int st, int en, RCodeAnnotationType typec,
+static RzCodeAnnotation make_code_annotation(int st, int en, RzCodeAnnotationType typec,
 	ut64 offset, RSyntaxHighlightType types) {
-	RCodeAnnotation annotation = { 0 };
+	RzCodeAnnotation annotation = { 0 };
 	annotation.start = st;
 	annotation.end = en;
 	annotation.type = typec;
@@ -21,9 +21,9 @@ static RCodeAnnotation make_code_annotation(int st, int en, RCodeAnnotationType 
 	return annotation;
 }
 
-static RCodeAnnotation make_variable_annotation(int st, int en, RCodeAnnotationType typec,
+static RzCodeAnnotation make_variable_annotation(int st, int en, RzCodeAnnotationType typec,
 	const char *name) {
-	RCodeAnnotation annotation = { 0 };
+	RzCodeAnnotation annotation = { 0 };
 	annotation.start = st;
 	annotation.end = en;
 	annotation.type = typec;
@@ -31,9 +31,9 @@ static RCodeAnnotation make_variable_annotation(int st, int en, RCodeAnnotationT
 	return annotation;
 }
 
-static RCodeAnnotation make_reference_annotation(int st, int en, RCodeAnnotationType typec,
+static RzCodeAnnotation make_reference_annotation(int st, int en, RzCodeAnnotationType typec,
 	ut64 offset, const char *name) {
-	RCodeAnnotation annotation = { 0 };
+	RzCodeAnnotation annotation = { 0 };
 	annotation.start = st;
 	annotation.end = en;
 	annotation.type = typec;
@@ -47,9 +47,9 @@ static RCodeAnnotation make_reference_annotation(int st, int en, RCodeAnnotation
 }
 
 static RzVector *get_some_code_annotation_for_add(void) {
-	RzVector *test_annotations = rz_vector_new (sizeof (RCodeAnnotation), NULL, NULL);
-	RCodeAnnotation annotation;
-	rz_vector_init (test_annotations, sizeof (RCodeAnnotation), NULL, NULL);
+	RzVector *test_annotations = rz_vector_new (sizeof (RzCodeAnnotation), NULL, NULL);
+	RzCodeAnnotation annotation;
+	rz_vector_init (test_annotations, sizeof (RzCodeAnnotation), NULL, NULL);
 	annotation = make_code_annotation (1, 2, RZ_CODE_ANNOTATION_TYPE_OFFSET, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	rz_vector_push (test_annotations, &annotation);
 	annotation = make_code_annotation (1, 5, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
@@ -58,8 +58,8 @@ static RzVector *get_some_code_annotation_for_add(void) {
 }
 
 static RzVector *get_some_annotations_for_in(void) {
-	RzVector *test_annotations = rz_vector_new (sizeof (RCodeAnnotation), NULL, NULL);
-	RCodeAnnotation annotation;
+	RzVector *test_annotations = rz_vector_new (sizeof (RzCodeAnnotation), NULL, NULL);
+	RzCodeAnnotation annotation;
 	annotation = make_code_annotation (1, 2, RZ_CODE_ANNOTATION_TYPE_OFFSET, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	rz_vector_push (test_annotations, &annotation);
 	annotation = make_code_annotation (1, 7, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
@@ -81,9 +81,9 @@ static RzVector *get_some_annotations_for_in(void) {
 }
 
 static RzVector *get_annotations_for_hello_world(void) {
-	RzVector *test_annotations = rz_vector_new (sizeof (RCodeAnnotation), NULL, NULL);
-	RCodeAnnotation annotation;
-	// rz_vector_init (&test_annotations, sizeof (RCodeAnnotation), NULL, NULL);
+	RzVector *test_annotations = rz_vector_new (sizeof (RzCodeAnnotation), NULL, NULL);
+	RzCodeAnnotation annotation;
+	// rz_vector_init (&test_annotations, sizeof (RzCodeAnnotation), NULL, NULL);
 	//Code Annotations for a hello world program
 	annotation = make_code_annotation (1, 5, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_DATATYPE);
 	rz_vector_push (test_annotations, &annotation); //1
@@ -107,13 +107,13 @@ static RzVector *get_annotations_for_hello_world(void) {
 	return test_annotations;
 }
 
-static RAnnotatedCode *get_hello_world(void) {
+static RzAnnotatedCode *get_hello_world(void) {
 	char *test_string = strdup ("\nvoid main(void)\n{\n    sym.imp.puts(\"Hello, World!\");\n    return;\n}\n");
-	RAnnotatedCode *code = rz_annotated_code_new (test_string);
+	RzAnnotatedCode *code = rz_annotated_code_new (test_string);
 
-	RzVector /*<RCodeAnnotation>*/ *test_annotations;
+	RzVector /*<RzCodeAnnotation>*/ *test_annotations;
 	test_annotations = get_annotations_for_hello_world ();
-	RCodeAnnotation *annotation;
+	RzCodeAnnotation *annotation;
 	rz_vector_foreach (test_annotations, annotation) {
 		rz_annotated_code_add_annotation (code, annotation);
 	}
@@ -122,14 +122,14 @@ static RAnnotatedCode *get_hello_world(void) {
 	return code;
 }
 
-static RAnnotatedCode *get_all_context_annotated_code(void) {
+static RzAnnotatedCode *get_all_context_annotated_code(void) {
 	char *test_string = strdup ("\nfunc-name\nconst-var\n   global-var(\"Hello, local-var\");\n    function-param\n}\n");
-	RAnnotatedCode *code = rz_annotated_code_new (test_string);
-	RCodeAnnotation function_name = make_reference_annotation (1, 10, RZ_CODE_ANNOTATION_TYPE_FUNCTION_NAME, 1234, "func-name");
-	RCodeAnnotation constant_variable = make_reference_annotation (10, 19, RZ_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, 12345, NULL);
-	RCodeAnnotation global_variable = make_reference_annotation (23, 33, RZ_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, 123456, NULL);
-	RCodeAnnotation local_variable = make_variable_annotation (42, 51, RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "local-var");
-	RCodeAnnotation function_parameter = make_variable_annotation (59, 73, RZ_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER, "function-param");
+	RzAnnotatedCode *code = rz_annotated_code_new (test_string);
+	RzCodeAnnotation function_name = make_reference_annotation (1, 10, RZ_CODE_ANNOTATION_TYPE_FUNCTION_NAME, 1234, "func-name");
+	RzCodeAnnotation constant_variable = make_reference_annotation (10, 19, RZ_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, 12345, NULL);
+	RzCodeAnnotation global_variable = make_reference_annotation (23, 33, RZ_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, 123456, NULL);
+	RzCodeAnnotation local_variable = make_variable_annotation (42, 51, RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "local-var");
+	RzCodeAnnotation function_parameter = make_variable_annotation (59, 73, RZ_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER, "function-param");
 	rz_annotated_code_add_annotation (code, &function_name);
 	rz_annotated_code_add_annotation (code, &constant_variable);
 	rz_annotated_code_add_annotation (code, &global_variable);
@@ -141,11 +141,11 @@ static RAnnotatedCode *get_all_context_annotated_code(void) {
 static bool test_r_annotated_code_new(void) {
 	//Testing RAnnoatedCode->code
 	char *test_string = strdup ("How are you?");
-	RAnnotatedCode *code = rz_annotated_code_new (test_string);
-	mu_assert_streq (code->code, test_string, "Code in RAnnotatedCode is not set as expected");
+	RzAnnotatedCode *code = rz_annotated_code_new (test_string);
+	mu_assert_streq (code->code, test_string, "Code in RzAnnotatedCode is not set as expected");
 
 	// Testing RAnnoatedCode->annotations
-	mu_assert_eq (code->annotations.elem_size, sizeof (RCodeAnnotation), "Code Annotations are initialized is not properly");
+	mu_assert_eq (code->annotations.elem_size, sizeof (RzCodeAnnotation), "Code Annotations are initialized is not properly");
 
 	rz_annotated_code_free (code);
 	mu_end;
@@ -153,9 +153,9 @@ static bool test_r_annotated_code_new(void) {
 
 static bool test_r_annotated_code_free(void) {
 	char *test_string = strdup ("How are you?");
-	RAnnotatedCode *code = rz_annotated_code_new (test_string);
+	RzAnnotatedCode *code = rz_annotated_code_new (test_string);
 
-	RCodeAnnotation test_annotation1, test_annotation2;
+	RzCodeAnnotation test_annotation1, test_annotation2;
 	test_annotation1 = make_code_annotation (1, 2, RZ_CODE_ANNOTATION_TYPE_OFFSET, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	rz_vector_push (&code->annotations, &test_annotation1);
 	test_annotation2 = make_code_annotation (1, 5, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
@@ -167,7 +167,7 @@ static bool test_r_annotated_code_free(void) {
 	mu_end;
 }
 
-static bool test_equal(RCodeAnnotation *first, RCodeAnnotation *second) { // First - Got, Second - Expected
+static bool test_equal(RzCodeAnnotation *first, RzCodeAnnotation *second) { // First - Got, Second - Expected
 	mu_assert_eq (first->start, second->start, "start of annotations doesn't match");
 	mu_assert_eq (first->end, second->end, "end of annotations doesn't match");
 	mu_assert_eq (first->type, second->type, "type of annotation doesn't match");
@@ -184,10 +184,10 @@ static bool test_equal(RCodeAnnotation *first, RCodeAnnotation *second) { // Fir
 
 static bool test_r_annotated_code_add_annotation(void) {
 	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-	RAnnotatedCode *code = rz_annotated_code_new (test_string);
-	RzVector /*<RCodeAnnotation>*/ *test_annotations;
+	RzAnnotatedCode *code = rz_annotated_code_new (test_string);
+	RzVector /*<RzCodeAnnotation>*/ *test_annotations;
 	test_annotations = get_some_code_annotation_for_add ();
-	RCodeAnnotation *annotation;
+	RzCodeAnnotation *annotation;
 	rz_vector_foreach (test_annotations, annotation) {
 		rz_annotated_code_add_annotation (code, annotation);
 	}
@@ -207,11 +207,11 @@ static bool test_r_annotated_code_add_annotation(void) {
 
 static bool test_r_annotated_code_annotations_in(void) {
 	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-	RAnnotatedCode *code = rz_annotated_code_new (test_string);
-	RzVector /*<RCodeAnnotation>*/ *test_annotations;
+	RzAnnotatedCode *code = rz_annotated_code_new (test_string);
+	RzVector /*<RzCodeAnnotation>*/ *test_annotations;
 	test_annotations = get_some_annotations_for_in ();
 
-	RCodeAnnotation *annotation;
+	RzCodeAnnotation *annotation;
 	rz_vector_foreach (test_annotations, annotation) {
 		rz_annotated_code_add_annotation (code, annotation);
 	}
@@ -237,10 +237,10 @@ static bool test_r_annotated_code_annotations_in(void) {
 
 static bool test_r_annotated_code_annotations_range(void) {
 	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-	RAnnotatedCode *code = rz_annotated_code_new (test_string);
-	RzVector /*<RCodeAnnotation>*/ *test_annotations;
+	RzAnnotatedCode *code = rz_annotated_code_new (test_string);
+	RzVector /*<RzCodeAnnotation>*/ *test_annotations;
 	test_annotations = get_some_annotations_for_in ();
-	RCodeAnnotation *annotation;
+	RzCodeAnnotation *annotation;
 	rz_vector_foreach (test_annotations, annotation) {
 		rz_annotated_code_add_annotation (code, annotation);
 	}
@@ -269,7 +269,7 @@ static bool test_r_annotated_code_annotations_range(void) {
 
 static bool test_r_annotated_code_line_offsets(void) {
 
-	RAnnotatedCode *code = get_hello_world ();
+	RzAnnotatedCode *code = get_hello_world ();
 	RzVector *offsets = rz_annotated_code_line_offsets (code);
 	mu_assert_eq (offsets->len, 6, "Number of offsets not expected");
 
@@ -292,7 +292,7 @@ static bool test_r_annotated_code_line_offsets(void) {
 }
 
 static bool test_r_core_annotated_code_print_json(void) {
-	RAnnotatedCode *code = get_hello_world ();
+	RzAnnotatedCode *code = get_hello_world ();
 	char *actual;
 	char *expected = "{\"code\":\"\\nvoid main(void)\\n{\\n    sym.imp.puts(\\\"Hello, World!\\\");\\n    return;\\n}\\n\",\"annotations\":[{\"start\":1,\"end\":5,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"datatype\"},{\"start\":6,\"end\":10,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"function_name\"},{\"start\":11,\"end\":15,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"keyword\"},{\"start\":23,\"end\":35,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"function_name\"},{\"start\":36,\"end\":51,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"constant_variable\"},{\"start\":23,\"end\":52,\"type\":\"offset\",\"offset\":4440},{\"start\":58,\"end\":64,\"type\":\"offset\",\"offset\":4447},{\"start\":58,\"end\":64,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"keyword\"},{\"start\":58,\"end\":64,\"type\":\"offset\",\"offset\":4447}]}\n";
 	rz_cons_new ();
@@ -312,7 +312,7 @@ static bool test_r_core_annotated_code_print_json(void) {
  * @brief Tests JSON output for all context related annotations
  */
 static bool test_r_core_annotated_code_print_json_context_annotations(void) {
-	RAnnotatedCode *code = get_all_context_annotated_code ();
+	RzAnnotatedCode *code = get_all_context_annotated_code ();
 	char *expected = "{\"code\":\"\\nfunc-name\\nconst-var\\n   global-var(\\\"Hello, local-var\\\");\\n    function-param\\n}\\n\",\"annotations\":[{\"start\":1,\"end\":10,\"type\":\"function_name\",\"name\":\"func-name\",\"offset\":1234},{\"start\":10,\"end\":19,\"type\":\"constant_variable\",\"offset\":12345},{\"start\":23,\"end\":33,\"type\":\"global_variable\",\"offset\":123456},{\"start\":42,\"end\":51,\"type\":\"local_variable\",\"name\":\"local-var\"},{\"start\":59,\"end\":73,\"type\":\"function_parameter\",\"name\":\"function-param\"}]}\n";
 	rz_cons_new ();
 	rz_cons_push ();
@@ -326,7 +326,7 @@ static bool test_r_core_annotated_code_print_json_context_annotations(void) {
 }
 
 static bool test_r_core_annotated_code_print(void) {
-	RAnnotatedCode *code = get_hello_world ();
+	RzAnnotatedCode *code = get_hello_world ();
 	char *actual;
 	//Checking without line offset
 	char *expected_first = "\n"
@@ -366,7 +366,7 @@ static bool test_r_core_annotated_code_print(void) {
 }
 
 static bool test_r_core_annotated_code_print_comment_cmds(void) {
-	RAnnotatedCode *code = get_hello_world ();
+	RzAnnotatedCode *code = get_hello_world ();
 	char *actual;
 	char *expected = "CCu base64:c3ltLmltcC5wdXRzKCJIZWxsbywgV29ybGQhIik= @ 0x1158\n"
 			 "CCu base64:cmV0dXJu @ 0x115f\n";
@@ -388,13 +388,13 @@ static bool test_r_core_annotated_code_print_comment_cmds(void) {
  */
 static bool test_r_annotation_free_and_is_annotation_type_functions(void) {
 	// Making all types of annotations
-	RCodeAnnotation offset = make_code_annotation (58, 64, RZ_CODE_ANNOTATION_TYPE_OFFSET, 4447, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
-	RCodeAnnotation syntax_highlight = make_code_annotation (1, 5, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_DATATYPE);
-	RCodeAnnotation local_variable = make_variable_annotation (1, 2, RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "RADARE2");
-	RCodeAnnotation function_parameter = make_variable_annotation (4, 10, RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "Cutter");
-	RCodeAnnotation function_name = make_reference_annotation (10, 12, RZ_CODE_ANNOTATION_TYPE_FUNCTION_NAME, 123513, "test_function");
-	RCodeAnnotation global_variable = make_reference_annotation (10, 12, RZ_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, 1234234, NULL);
-	RCodeAnnotation constant_variable = make_reference_annotation (21, 200, RZ_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, 12342314, NULL);
+	RzCodeAnnotation offset = make_code_annotation (58, 64, RZ_CODE_ANNOTATION_TYPE_OFFSET, 4447, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
+	RzCodeAnnotation syntax_highlight = make_code_annotation (1, 5, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_DATATYPE);
+	RzCodeAnnotation local_variable = make_variable_annotation (1, 2, RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "RADARE2");
+	RzCodeAnnotation function_parameter = make_variable_annotation (4, 10, RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "Cutter");
+	RzCodeAnnotation function_name = make_reference_annotation (10, 12, RZ_CODE_ANNOTATION_TYPE_FUNCTION_NAME, 123513, "test_function");
+	RzCodeAnnotation global_variable = make_reference_annotation (10, 12, RZ_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, 1234234, NULL);
+	RzCodeAnnotation constant_variable = make_reference_annotation (21, 200, RZ_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE, 12342314, NULL);
 	// Test rz_annotation_is_variable()
 	char *error_message = "rz_annotation_is_variable() result doesn't match with the expected output";
 	mu_assert_true (rz_annotation_is_variable (&local_variable), error_message);
