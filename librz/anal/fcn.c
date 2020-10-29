@@ -2002,6 +2002,7 @@ static void __anal_fcn_check_bp_use(RzAnal *anal, RzAnalFunction *fcn) {
 				&& strcmp (op.src[0]->reg->name, anal->reg->name[RZ_REG_NAME_SP])) {
 					fcn->bp_frame = false;
 					rz_anal_op_fini (&op);
+					free (buf);
 					return;
 				}
 				break;
@@ -2023,6 +2024,7 @@ static void __anal_fcn_check_bp_use(RzAnal *anal, RzAnalFunction *fcn) {
 				if (pos && pos - op.opex.ptr < 60) {
 					fcn->bp_frame = false;
 					rz_anal_op_fini (&op);
+					free (buf);
 					return;
 				}
 				break;
@@ -2030,8 +2032,9 @@ static void __anal_fcn_check_bp_use(RzAnal *anal, RzAnalFunction *fcn) {
 				if (op.opex.ptr && strstr (op.opex.ptr, str_to_find)) {
 					fcn->bp_frame = false;
 					rz_anal_op_fini (&op);
+					free (buf);
 					return;
-    			}
+				}
 				break;
 			case RZ_ANAL_OP_TYPE_POP:
 				break;
