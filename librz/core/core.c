@@ -2336,6 +2336,10 @@ static void ev_iowrite_cb(REvent *ev, int type, void *user, void *data) {
 	REventIOWrite *iow = data;
 	if (rz_config_get_i (core->config, "anal.detectwrites")) {
 		rz_anal_update_analysis_range (core->anal, iow->addr, iow->len);
+		if (core->cons->event_resize && core->cons->event_data) {
+			// Force a reload of the graph
+			core->cons->event_resize (core->cons->event_data);
+		}
 	}
 }
 

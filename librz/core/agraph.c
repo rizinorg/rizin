@@ -3488,6 +3488,15 @@ static int agraph_print(RzAGraph *g, int is_interactive, RzCore *core, RzAnalFun
 	return true;
 }
 
+static void check_function_modified(RzCore *core, RzAnalFunction *fcn) {
+	if (rz_anal_function_was_modified (fcn)) {
+		if (rz_config_get_i (core->config, "anal.detectwrites")
+			|| rz_cons_yesno ('y', "Function was modified. Reanalyze? (Y/n)")) {
+			rz_anal_function_update_analysis (fcn);
+		}
+	}
+}
+
 static int agraph_refresh(struct agraph_refresh_data *grd) {
 	if (!grd) {
 		return 0;
@@ -3534,6 +3543,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 			}
 			if (f && fcn && f != *fcn) {
 				*fcn = f;
+				check_function_modified (core, *fcn);
 				g->need_reload_nodes = true;
 				g->force_update_seek = true;
 			}
@@ -3555,6 +3565,10 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 
 static void agraph_refresh_oneshot(struct agraph_refresh_data *grd) {
 	rz_core_task_enqueue_oneshot (&grd->core->tasks, (RzCoreTaskOneShot) agraph_refresh, grd);
+}
+
+static void agraph_set_need_reload_nodes(struct agraph_refresh_data *grd) {
+	grd->g->need_reload_nodes = true;
 }
 
 static void agraph_toggle_speed(RzAGraph *g, RzCore *core) {
@@ -4155,6 +4169,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalFunction *_fcn,
 			rz_cons_canvas_free (can);
 			return false;
 		}
+		check_function_modified (core, fcn);
 		g = rz_agraph_new (can);
 		if (!g) {
 			rz_cons_canvas_free (can);
@@ -4784,7 +4799,9 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalFunction *_fcn,
 			showcursor (core, false);
 			break;
 		case ':':
+			core->cons->event_resize = (RzConsEvent)agraph_set_need_reload_nodes;
 			rz_core_visual_prompt_input (core);
+			core->cons->event_resize = (RzConsEvent)agraph_refresh_oneshot;
 			if (!g) {
 				g->need_reload_nodes = true; // maybe too slow and unnecessary sometimes? better be safe and reload
 				get_bbupdate (g, core, fcn);
