@@ -3,8 +3,8 @@
 #include <rz_core.h>
 #include <rz_util.h>
 
-RZ_API RAnnotatedCode *rz_annotated_code_new(char *code) {
-	RAnnotatedCode *r = RZ_NEW0 (RAnnotatedCode);
+RZ_API RzAnnotatedCode *rz_annotated_code_new(char *code) {
+	RzAnnotatedCode *r = RZ_NEW0 (RzAnnotatedCode);
 	if (!r) {
 		return NULL;
 	}
@@ -31,7 +31,7 @@ RZ_API bool rz_annotation_is_variable(RCodeAnnotation *annotation) {
 	return (annotation->type == RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE || annotation->type == RZ_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER);
 }
 
-RZ_API void rz_annotated_code_free(RAnnotatedCode *code) {
+RZ_API void rz_annotated_code_free(RzAnnotatedCode *code) {
 	if (!code) {
 		return;
 	}
@@ -40,11 +40,11 @@ RZ_API void rz_annotated_code_free(RAnnotatedCode *code) {
 	rz_free (code);
 }
 
-RZ_API void rz_annotated_code_add_annotation(RAnnotatedCode *code, RCodeAnnotation *annotation) {
+RZ_API void rz_annotated_code_add_annotation(RzAnnotatedCode *code, RCodeAnnotation *annotation) {
 	rz_vector_push (&code->annotations, annotation);
 }
 
-RZ_API RzPVector *rz_annotated_code_annotations_in(RAnnotatedCode *code, size_t offset) {
+RZ_API RzPVector *rz_annotated_code_annotations_in(RzAnnotatedCode *code, size_t offset) {
 	RzPVector *r = rz_pvector_new (NULL);
 	if (!r) {
 		return NULL;
@@ -58,7 +58,7 @@ RZ_API RzPVector *rz_annotated_code_annotations_in(RAnnotatedCode *code, size_t 
 	return r;
 }
 
-RZ_API RzPVector *rz_annotated_code_annotations_range(RAnnotatedCode *code, size_t start, size_t end) {
+RZ_API RzPVector *rz_annotated_code_annotations_range(RzAnnotatedCode *code, size_t start, size_t end) {
 	RzPVector *r = rz_pvector_new (NULL);
 	if (!r) {
 		return NULL;
@@ -73,7 +73,7 @@ RZ_API RzPVector *rz_annotated_code_annotations_range(RAnnotatedCode *code, size
 	return r;
 }
 
-RZ_API RzVector *rz_annotated_code_line_offsets(RAnnotatedCode *code) {
+RZ_API RzVector *rz_annotated_code_line_offsets(RzAnnotatedCode *code) {
 	RzVector *r = rz_vector_new (sizeof (ut64), NULL, NULL);
 	if (!r) {
 		return NULL;

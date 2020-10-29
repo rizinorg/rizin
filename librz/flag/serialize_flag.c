@@ -5,8 +5,8 @@
 
 #include "../util/serialize_helper.h"
 
-#if R_FLAG_ZONE_USE_SDB
-#error "R_FLAG_ZONE_USE_SDB not supported by rz_serialize"
+#if RZ_FLAG_ZONE_USE_SDB
+#error "RZ_FLAG_ZONE_USE_SDB not supported by rz_serialize"
 #endif
 
 /*

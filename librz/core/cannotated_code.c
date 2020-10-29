@@ -5,7 +5,7 @@
 #include <rz_types.h>
 #include <rz_vector.h>
 
-RZ_API void rz_core_annotated_code_print_json(RAnnotatedCode *code) {
+RZ_API void rz_core_annotated_code_print_json(RzAnnotatedCode *code) {
 	PJ *pj = pj_new ();
 	if (!pj) {
 		return;
@@ -100,7 +100,7 @@ RZ_API void rz_core_annotated_code_print_json(RAnnotatedCode *code) {
 /**
  * @param width maximum nibbles per address
  */
-static void print_offset_in_binary_line_bar(RAnnotatedCode *code, ut64 offset, size_t width) {
+static void print_offset_in_binary_line_bar(RzAnnotatedCode *code, ut64 offset, size_t width) {
 	static const char *fmt[9] = {
 		"0x%08" PFMT64x,
 		"0x%09" PFMT64x,
@@ -137,7 +137,7 @@ static void print_offset_in_binary_line_bar(RAnnotatedCode *code, ut64 offset, s
 	rz_cons_printf ("    |");
 }
 
-RZ_API void rz_core_annotated_code_print(RAnnotatedCode *code, RzVector *line_offsets) {
+RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector *line_offsets) {
 	if (code->annotations.len == 0) {
 		rz_cons_printf ("%s\n", code->code);
 		return;
@@ -254,7 +254,7 @@ RZ_API void rz_core_annotated_code_print(RAnnotatedCode *code, RzVector *line_of
 }
 
 static bool foreach_offset_annotation(void *user, const ut64 offset, const void *val) {
-	RAnnotatedCode *code = user;
+	RzAnnotatedCode *code = user;
 	const RCodeAnnotation *annotation = val;
 	char *b64statement = rz_base64_encode_dyn (code->code + annotation->start, annotation->end - annotation->start);
 	rz_cons_printf ("CCu base64:%s @ 0x%" PFMT64x "\n", b64statement, annotation->offset.offset);
@@ -262,7 +262,7 @@ static bool foreach_offset_annotation(void *user, const ut64 offset, const void 
 	return true;
 }
 
-RZ_API void rz_core_annotated_code_print_comment_cmds(RAnnotatedCode *code) {
+RZ_API void rz_core_annotated_code_print_comment_cmds(RzAnnotatedCode *code) {
 	RCodeAnnotation *annotation;
 	HtUP *ht = ht_up_new0 ();
 	rz_vector_foreach (&code->annotations, annotation) {

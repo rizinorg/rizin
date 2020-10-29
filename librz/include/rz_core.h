@@ -880,15 +880,15 @@ extern RzCorePlugin rz_core_plugin_a2f;
 
 /* DECOMPILER PRINTING FUNCTIONS */
 /**
- * @brief Prints the data contained in the specified RAnnotatedCode in JSON format.
+ * @brief Prints the data contained in the specified RzAnnotatedCode in JSON format.
  * 
  * The function will print the output in console using the function rz_cons_printf();
  * 
- * @param code Pointer to a RAnnotatedCode.
+ * @param code Pointer to a RzAnnotatedCode.
  */
-RZ_API void rz_core_annotated_code_print_json(RAnnotatedCode *code);
+RZ_API void rz_core_annotated_code_print_json(RzAnnotatedCode *code);
 /**
- * @brief Prints the decompiled code from the specified RAnnotatedCode.
+ * @brief Prints the decompiled code from the specified RzAnnotatedCode.
  * 
  * This function is used for printing the output of commands pdg and pdgo.
  * It can print the decompiled code with or without offsets. If line_offsets is a null pointer,
@@ -896,19 +896,19 @@ RZ_API void rz_core_annotated_code_print_json(RAnnotatedCode *code);
  * printed with offsets.
  * This function will print the output in console using the function rz_cons_printf();
  * 
- * @param code Pointer to a RAnnotatedCode.
+ * @param code Pointer to a RzAnnotatedCode.
  * @param line_offsets Pointer to a @ref RzVector that contains offsets for the decompiled code.
  */
-RZ_API void rz_core_annotated_code_print(RAnnotatedCode *code, RzVector *line_offsets);
+RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector *line_offsets);
 /**
  * @brief  Prints the decompiled code as comments
  * 
  * This function is used for the output of command pdg*
  * Output will be printed in console using the function rz_cons_printf();
  * 
- * @param code Pointer to a RAnnotatedCode.
+ * @param code Pointer to a RzAnnotatedCode.
  */
-RZ_API void rz_core_annotated_code_print_comment_cmds(RAnnotatedCode *code);
+RZ_API void rz_core_annotated_code_print_comment_cmds(RzAnnotatedCode *code);
 
 /* serialize */
 
