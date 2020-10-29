@@ -132,6 +132,8 @@ RZ_API int rz_io_desc_cache_write(RzIODesc *desc, ut64 paddr, const ut8 *buf, in
 		caddr++;
 		cbaddr = 0;
 	}
+	REventIOWrite iow = { paddr, buf, len };
+	rz_event_send (desc->io->event, RZ_EVENT_IO_WRITE, &iow);
 	return written;
 }
 
@@ -153,7 +155,7 @@ RZ_API int rz_io_desc_cache_read(RzIODesc *desc, ut64 paddr, ut8 *buf, int len) 
 	cbaddr = paddr % RZ_IO_DESC_CACHE_SIZE;
 	while (amount < len) {
 		// get an existing desc-cache, if it exists
-		if (!(cache = (RzIODescCache *)ht_up_find (desc->cache, caddr, NULL))) {	
+		if (!(cache = (RzIODescCache *)ht_up_find (desc->cache, caddr, NULL))) {
 			amount += (RZ_IO_DESC_CACHE_SIZE - cbaddr);
 			ptr += (RZ_IO_DESC_CACHE_SIZE - cbaddr);
 			goto beach;
@@ -330,7 +332,7 @@ static bool __desc_cache_cleanup_cb(void *user, const ut64 k, const void *v) {
 	}
 	if (size <= (blockaddr + RZ_IO_DESC_CACHE_SIZE - 1)) {
 		//this looks scary, but it isn't
-		byteaddr = (int)(size - blockaddr) - 1;		
+		byteaddr = (int)(size - blockaddr) - 1;
 		cache->cached &= cleanup_masks[byteaddr];
 	}
 	return true;

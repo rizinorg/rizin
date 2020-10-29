@@ -111,6 +111,7 @@ RZ_API RzIO* rz_io_init(RzIO* io) {
 	rz_io_cache_init (io);
 	rz_io_plugin_init (io);
 	rz_io_undo_init (io);
+	io->event = rz_event_new (io);
 	return io;
 }
 
@@ -670,6 +671,7 @@ RZ_API int rz_io_fini(RzIO* io) {
 	if (io->runprofile) {
 		RZ_FREE (io->runprofile);
 	}
+	rz_event_free (io->event);
 #if RZ_IO_USE_PTRACE_WRAP
 	if (io->ptrace_wrap) {
 		ptrace_wrap_instance_stop (io->ptrace_wrap);

@@ -172,7 +172,11 @@ RZ_API int rz_io_plugin_write(RzIODesc *desc, const ut8 *buf, int len) {
 	if (!desc->plugin->write) {
 		return -1;
 	}
-	return desc->plugin->write (desc->io, desc, buf, len);
+	const ut64 cur_addr = rz_io_desc_seek (desc, 0LL, RZ_IO_SEEK_CUR);
+	int ret = desc->plugin->write (desc->io, desc, buf, len);
+	REventIOWrite iow = { cur_addr, buf, len };
+	rz_event_send (desc->io->event, RZ_EVENT_IO_WRITE, &iow);
+	return ret;
 }
 
 RZ_API int rz_io_plugin_read_at(RzIODesc *desc, ut64 addr, ut8 *buf, int len) {
