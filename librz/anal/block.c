@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_anal.h>
+#include <rz_anal.h>
+#include <rz_hash.h>
 #include <ht_uu.h>
 
 #include <assert.h>
@@ -59,6 +61,9 @@ static RzAnalBlock *block_new(RzAnal *a, ut64 addr, ut64 size) {
 	block->parent_stackptr = INT_MAX;
 	block->cmpval = UT64_MAX;
 	block->fcns = rz_list_new ();
+	if (size) {
+		rz_anal_block_update_hash (block);
+	}
 	return block;
 }
 
@@ -241,6 +246,7 @@ RZ_API bool rz_anal_block_relocate(RzAnalBlock *block, ut64 addr, ut64 size) {
 	rz_rbtree_aug_delete (&block->anal->bb_tree, &block->addr, __bb_addr_cmp, NULL, NULL, NULL, __max_end);
 	block->addr = addr;
 	block->size = size;
+	rz_anal_block_update_hash (block);
 	rz_rbtree_aug_insert (&block->anal->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max_end);
 	return true;
 }
@@ -271,6 +277,7 @@ RZ_API RzAnalBlock *rz_anal_block_split(RzAnalBlock *bbi, ut64 addr) {
 	rz_anal_block_set_size (bbi, addr - bbi->addr);
 	bbi->jump = addr;
 	bbi->fail = UT64_MAX;
+	rz_anal_block_update_hash (bbi);
 
 	// insert the second block into the tree
 	rz_rbtree_aug_insert (&anal->bb_tree, &bb->addr, &bb->_rb, __bb_addr_cmp, NULL, __max_end);
@@ -338,6 +345,7 @@ RZ_API bool rz_anal_block_merge(RzAnalBlock *a, RzAnalBlock *b) {
 	a->size += b->size;
 	a->jump = b->jump;
 	a->fail = b->fail;
+	rz_anal_block_update_hash (a);
 
 	// kill b completely
 	rz_rbtree_aug_delete (&a->anal->bb_tree, &b->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
@@ -652,6 +660,41 @@ beach:
 	rz_pvector_clear (&visit_a);
 	rz_pvector_clear (&visit_b);
 	return ret;
+}
+
+RZ_API bool rz_anal_block_was_modified(RzAnalBlock *block) {
+	rz_return_val_if_fail (block, false);
+	if (!block->anal->iob.read_at) {
+		return false;
+	}
+	ut8 *buf = malloc (block->size);
+	if (!buf) {
+		return false;
+	}
+	if (!block->anal->iob.read_at (block->anal->iob.io, block->addr, buf, block->size)) {
+		free (buf);
+		return false;
+	}
+	ut32 cur_hash = rz_hash_xxhash (buf, block->size);
+	free (buf);
+	return block->bbhash != cur_hash;
+}
+
+RZ_API void rz_anal_block_update_hash(RzAnalBlock *block) {
+	rz_return_if_fail (block);
+	if (!block->anal->iob.read_at) {
+		return;
+	}
+	ut8 *buf = malloc (block->size);
+	if (!buf) {
+		return;
+	}
+	if (!block->anal->iob.read_at (block->anal->iob.io, block->addr, buf, block->size)) {
+		free (buf);
+		return;
+	}
+	block->bbhash = rz_hash_xxhash (buf, block->size);
+	free (buf);
 }
 
 typedef struct {
