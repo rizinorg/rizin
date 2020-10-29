@@ -236,6 +236,18 @@ RZ_API void rz_anal_function_delete_all_vars(RzAnalFunction *fcn) {
 	rz_pvector_clear (&fcn->vars);
 }
 
+RZ_API void rz_anal_function_delete_unused_vars(RzAnalFunction *fcn) {
+	void **v;
+	RzPVector *vars_clone = (RzPVector *)rz_vector_clone ((RzVector *)&fcn->vars);
+	rz_pvector_foreach (vars_clone, v) {
+		RzAnalVar *var = *v;
+		if (rz_vector_empty (&var->accesses)) {
+			rz_anal_function_delete_var (fcn, var);
+		}
+	}
+	rz_pvector_free (vars_clone);
+}
+
 RZ_API void rz_anal_function_delete_var(RzAnalFunction *fcn, RzAnalVar *var) {
 	rz_return_if_fail (fcn && var);
 	rz_pvector_remove_data (&fcn->vars, var);
