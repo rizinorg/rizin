@@ -31,7 +31,7 @@ typedef enum rz_code_annotation_type_t {
 	RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, /*!< Specified range in annotation represents a local variable. */
 	RZ_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER, /*!< Specified range in annotation represents a function parameter. */
 	// ...
-} RCodeAnnotationType;
+} RzCodeAnnotationType;
 
 /**
  * \brief Annotations for the decompiled code are represented using this structure.
@@ -39,7 +39,7 @@ typedef enum rz_code_annotation_type_t {
 typedef struct rz_code_annotation_t {
 	size_t start; /**< Start of the range in the annotation(inclusive). */
 	size_t end; /**< End of the range in the annotation(exclusive). */
-	RCodeAnnotationType type;
+	RzCodeAnnotationType type;
 	union {
 		/** If the annotation is of type RZ_CODE_ANNOTATION_TYPE_OFFSET,
 		 * offset should be stored in the struct named offset in this union.
@@ -72,13 +72,13 @@ typedef struct rz_code_annotation_t {
 			char *name;
 		} variable;
 	};
-} RCodeAnnotation;
+} RzCodeAnnotation;
 /**
  * \brief This structure contains the decompiled code and all the annotations for the decompiled code.
  */
 typedef struct rz_annotated_code_t {
 	char *code; /**< Decompiled code. RzAnnotatedCode owns this string and it must free it. */
-	RzVector annotations; /**< @ref RzVector <RCodeAnnotation> contains the list of annotations for the decompiled code. */
+	RzVector annotations; /**< @ref RzVector <RzCodeAnnotation> contains the list of annotations for the decompiled code. */
 } RzAnnotatedCode;
 
 /**
@@ -87,7 +87,7 @@ typedef struct rz_annotated_code_t {
  * This function creates and initializes a new RzAnnotatedCode
  * structure with the specified decompiled code that's passed
  * as an argument. Here, the argument code must be a string that can be deallocated.
- * This will initialize @ref RzVector <RCodeAnnotation> annotations as well.
+ * This will initialize @ref RzVector <RzCodeAnnotation> annotations as well.
  * 
  * @param code A deallocatable character array.
  * @return Pointer to the new RzAnnotatedCode structure created.
@@ -119,7 +119,7 @@ RZ_API void rz_annotation_free(void *e, void *user);
  * @param annotation Pointer to an annotation.
  * @return Returns true if the specified annotation is a reference.
  */
-RZ_API bool rz_annotation_is_reference(RCodeAnnotation *annotation);
+RZ_API bool rz_annotation_is_reference(RzCodeAnnotation *annotation);
 /**
  * @brief Checks if the specified annotation is a function variable.
  * 
@@ -130,18 +130,18 @@ RZ_API bool rz_annotation_is_reference(RCodeAnnotation *annotation);
  * @param annotation Pointer to an annotation.
  * @return Returns true if the specified annotation is a function variable.
  */
-RZ_API bool rz_annotation_is_variable(RCodeAnnotation *annotation);
+RZ_API bool rz_annotation_is_variable(RzCodeAnnotation *annotation);
 /**
  * @brief Inserts the specified annotation into the list of annotations in the specified RzAnnotatedCode.
  * 
  * @param code Pointer to a RzAnnotatedCode.
  * @param annotation Pointer to an annotation.
  */
-RZ_API void rz_annotated_code_add_annotation(RzAnnotatedCode *code, RCodeAnnotation *annotation);
+RZ_API void rz_annotated_code_add_annotation(RzAnnotatedCode *code, RzCodeAnnotation *annotation);
 /**
  * @brief Returns all annotations with range that contains the given offset.
  * 
- * Creates a @ref RzPVector <RCodeAnnotation> and inserts the pointers to all annotations in which 
+ * Creates a @ref RzPVector <RzCodeAnnotation> and inserts the pointers to all annotations in which 
  * annotation->start <= offset < annotation->end.
  * 
  * @param code Pointer to a RzAnnotatedCode.
@@ -152,7 +152,7 @@ RZ_API RzPVector *rz_annotated_code_annotations_in(RzAnnotatedCode *code, size_t
 /**
  * @brief Returns all annotations with range that overlap with the specified range.
  * 
- * Creates an @ref RzPVector <RCodeAnnotation> and inserts the pointers to all annotations whose 
+ * Creates an @ref RzPVector <RzCodeAnnotation> and inserts the pointers to all annotations whose 
  * range overlap with range specified.
  * 
  * @param code Pointer to a RzAnnotatedCode.

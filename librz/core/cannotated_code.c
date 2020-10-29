@@ -18,7 +18,7 @@ RZ_API void rz_core_annotated_code_print_json(RzAnnotatedCode *code) {
 	pj_a (pj);
 
 	char *type_str;
-	RCodeAnnotation *annotation;
+	RzCodeAnnotation *annotation;
 	rz_vector_foreach (&code->annotations, annotation) {
 		pj_o (pj);
 		pj_kn (pj, "start", (ut64)annotation->start);
@@ -166,7 +166,7 @@ RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector *line_o
 	}
 
 	RzCons *cons = rz_cons_singleton ();
-	RCodeAnnotation *annotation;
+	RzCodeAnnotation *annotation;
 	rz_vector_foreach (&code->annotations, annotation) {
 		if (annotation->type != RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT) {
 			continue;
@@ -255,7 +255,7 @@ RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector *line_o
 
 static bool foreach_offset_annotation(void *user, const ut64 offset, const void *val) {
 	RzAnnotatedCode *code = user;
-	const RCodeAnnotation *annotation = val;
+	const RzCodeAnnotation *annotation = val;
 	char *b64statement = rz_base64_encode_dyn (code->code + annotation->start, annotation->end - annotation->start);
 	rz_cons_printf ("CCu base64:%s @ 0x%" PFMT64x "\n", b64statement, annotation->offset.offset);
 	free (b64statement);
@@ -263,14 +263,14 @@ static bool foreach_offset_annotation(void *user, const ut64 offset, const void 
 }
 
 RZ_API void rz_core_annotated_code_print_comment_cmds(RzAnnotatedCode *code) {
-	RCodeAnnotation *annotation;
+	RzCodeAnnotation *annotation;
 	HtUP *ht = ht_up_new0 ();
 	rz_vector_foreach (&code->annotations, annotation) {
 		if (annotation->type != RZ_CODE_ANNOTATION_TYPE_OFFSET) {
 			continue;
 		}
 		// choose the "best" annotation at a single offset
-		RCodeAnnotation *prev_annot = ht_up_find (ht, annotation->offset.offset, NULL);
+		RzCodeAnnotation *prev_annot = ht_up_find (ht, annotation->offset.offset, NULL);
 		if (prev_annot) {
 			if (annotation->end - annotation->start < prev_annot->end - prev_annot->start) {
 				continue;
