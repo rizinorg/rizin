@@ -363,3 +363,15 @@ RZ_API bool rz_anal_function_contains(RzAnalFunction *fcn, ut64 addr) {
 	// fcn_in_cb breaks with false if it finds the fcn
 	return !rz_anal_blocks_foreach_in (fcn->anal, addr, fcn_in_cb, fcn);
 }
+
+RZ_API bool rz_anal_function_was_modified(RzAnalFunction *fcn) {
+	rz_return_val_if_fail (fcn, false);
+	RzListIter *it;
+	RzAnalBlock *bb;
+	rz_list_foreach (fcn->bbs, it, bb) {
+		if (rz_anal_block_was_modified (bb)) {
+			return true;
+		}
+	}
+	return false;
+}

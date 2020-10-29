@@ -929,6 +929,7 @@ typedef struct rz_anal_bb_t {
 	int parent_stackptr;
 	ut64 cmpval;
 	const char *cmpreg;
+	ut32 bbhash; // calculated with xxhash
 
 	RzList *fcns;
 	RzAnal *anal;
@@ -1460,6 +1461,12 @@ RZ_API void rz_anal_block_automerge(RzList *blocks);
 // return true iff an instruction in the given basic block starts at the given address
 RZ_API bool rz_anal_block_op_starts_at(RzAnalBlock *block, ut64 addr);
 
+// Updates bbhash based on current bytes inside the block
+RZ_API void rz_anal_block_update_hash(RzAnalBlock *block);
+
+// returns true if a byte in the given basic block was modified
+RZ_API bool rz_anal_block_was_modified(RzAnalBlock *block);
+
 // ---------------------------------------
 
 /* function.c */
@@ -1513,6 +1520,9 @@ RZ_API ut64 rz_anal_function_realsize(const RzAnalFunction *fcn);
 // returns whether the function contains a basic block that contains addr
 // This is completely independent of fcn->addr, which is only the entrypoint!
 RZ_API bool rz_anal_function_contains(RzAnalFunction *fcn, ut64 addr);
+
+// returns true if function bytes were modified
+RZ_API bool rz_anal_function_was_modified(RzAnalFunction *fcn);
 
 /* anal.c */
 RZ_API RzAnal *rz_anal_new(void);
