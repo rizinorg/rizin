@@ -35,7 +35,7 @@ bool test_anal_diff_save() {
 }
 
 bool test_anal_diff_load() {
-	RSerializeAnalDiffParser parser = rz_serialize_anal_diff_parser_new ();
+	RzSerializeAnalDiffParser parser = rz_serialize_anal_diff_parser_new ();
 
 	char *str = strdup ("{}");
 	RJson *json = rz_json_parse (str);
@@ -187,7 +187,7 @@ bool test_anal_block_load() {
 	RzAnal *anal = rz_anal_new ();
 
 	Sdb *db = blocks_ref_db ();
-	RSerializeAnalDiffParser diff_parser = rz_serialize_anal_diff_parser_new ();
+	RzSerializeAnalDiffParser diff_parser = rz_serialize_anal_diff_parser_new ();
 	bool succ = rz_serialize_anal_blocks_load (db, anal, diff_parser, NULL);
 	mu_assert ("load success", succ);
 
@@ -349,7 +349,7 @@ bool test_anal_function_load() {
 	RzAnal *anal = rz_anal_new ();
 
 	Sdb *db = functions_ref_db ();
-	RSerializeAnalDiffParser diff_parser = rz_serialize_anal_diff_parser_new ();
+	RzSerializeAnalDiffParser diff_parser = rz_serialize_anal_diff_parser_new ();
 
 	RzAnalBlock *ba = rz_anal_create_block (anal, 1337, 42);
 	RzAnalBlock *bb = rz_anal_create_block (anal, 1234, 32);
@@ -545,7 +545,7 @@ bool test_anal_var_load() {
 	rz_anal_set_bits (anal, 64);
 
 	Sdb *db = vars_ref_db ();
-	RSerializeAnalDiffParser diff_parser = rz_serialize_anal_diff_parser_new ();
+	RzSerializeAnalDiffParser diff_parser = rz_serialize_anal_diff_parser_new ();
 
 	bool succ = rz_serialize_anal_functions_load (db, anal, diff_parser, NULL);
 	mu_assert ("load success", succ);
