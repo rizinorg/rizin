@@ -1696,6 +1696,7 @@ RZ_API RZ_BORROW RzAnalVar *rz_anal_function_get_var(RzAnalFunction *fcn, char k
 RZ_API RZ_BORROW RzAnalVar *rz_anal_function_get_var_byname(RzAnalFunction *fcn, const char *name);
 RZ_API void rz_anal_function_delete_vars_by_kind(RzAnalFunction *fcn, RzAnalVarKind kind);
 RZ_API void rz_anal_function_delete_all_vars(RzAnalFunction *fcn);
+RZ_API void rz_anal_function_delete_unused_vars(RzAnalFunction *fcn);
 RZ_API void rz_anal_function_delete_var(RzAnalFunction *fcn, RzAnalVar *var);
 RZ_API bool rz_anal_function_rebase_vars(RzAnal *a, RzAnalFunction *fcn);
 RZ_API st64 rz_anal_function_get_var_stackptr_at(RzAnalFunction *fcn, st64 delta, ut64 addr);
