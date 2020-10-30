@@ -323,7 +323,7 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 			const ut8 *byte = buf + i;
 			char ch = IS_PRINTABLE (*byte)? *byte: '?';
 			if (i == 4) {
-				rz_cons_printf (" |");
+				rz_cons_print (" |");
 			}
 			if (use_color) {
 				rz_cons_printf (" %5s'%s%c"Color_RESET"'", " ", core->cons->context->pal.btext, ch);
@@ -335,7 +335,7 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 		for (i = 0; i < 8; i++) {
 			const ut8 *byte = buf + i;
 			if (i == 4) {
-				rz_cons_printf (" |");
+				rz_cons_print (" |");
 			}
 			rz_cons_printf (" %8d", *byte);
 		}
@@ -343,7 +343,7 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 		for (i = 0; i < 8; i++) {
 			const ut8 *byte = buf + i;
 			if (i == 4) {
-				rz_cons_printf (" |");
+				rz_cons_print (" |");
 			}
 			rz_cons_printf ("     0x%02x", *byte);
 		}
@@ -352,7 +352,7 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 			for (i = 0; i < 8; i++) {
 				ut8 *byte = buf + i;
 				if (i == 4) {
-					rz_cons_printf ("| ");
+					rz_cons_print ("| ");
 				}
 				if (colorBits && i >= asmop.size) {
 					rz_cons_print (Color_RESET);
@@ -372,7 +372,7 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 				for (i = 0; i < 8; i++) {
 					ut8 *byte = buf + i;
 					if (i == 4) {
-						rz_cons_printf ("| ");
+						rz_cons_print ("| ");
 					}
 					if (colorBits && i >= asmop.size) {
 						rz_cons_print (Color_RESET);
@@ -381,11 +381,11 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 					for (j = 0; j < 8; j++) {
 						bool bit = RZ_BIT_CHK (byte, 7 - j);
 						if (set && bit) {
-							rz_cons_printf ("1");
+							rz_cons_print ("1");
 						} else if (!set && !bit) {
-							rz_cons_printf ("0");
+							rz_cons_print ("0");
 						} else {
-							rz_cons_printf (ws);
+							rz_cons_print (ws);
 						}
 					}
 					rz_cons_print (" ");

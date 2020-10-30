@@ -2632,7 +2632,7 @@ RZ_API char *rz_core_anal_fcn_name(RzCore *core, RzAnalFunction *fcn) {
 	return name;
 }
 
-#define FCN_LIST_VERBOSE_ENTRY "%s0x%0*"PFMT64x" %4d %5d %5d %5d %4d 0x%0*"PFMT64x" %5d 0x%0*"PFMT64x" %5d %4d %6d %4d %5d %s%s\n"
+#define FCN_LIST_VERBOSE_ENTRY "%s0x%0*"PFMT64x" %4"PFMT64d" %5d %5d %5d %4d 0x%0*"PFMT64x" %5"PFMT64d" 0x%0*"PFMT64x" %5d %4d %6d %4d %5d %s%s\n"
 static int fcn_print_verbose(RzCore *core, RzAnalFunction *fcn, bool use_color) {
 	char *name = rz_core_anal_fcn_name (core, fcn);
 	int ebbs = 0;

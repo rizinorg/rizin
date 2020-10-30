@@ -2077,7 +2077,7 @@ static void core_anal_bytes(RzCore *core, const ut8 *buf, int len, int nops, int
 				printline ("opex", "%s\n", opexstr);
 			}
 #endif
-			printline ("bytes", NULL, 0);
+			printline ("bytes", "%s", "");
 			int minsz = RZ_MIN (len, size);
 			minsz = RZ_MAX (minsz, 0);
 			for (j = 0; j < minsz; j++) {
@@ -8284,7 +8284,7 @@ static void agraph_print_node(RzANode *n, void *user) {
 	}
 	encbody = rz_base64_encode_dyn (n->body, len);
 	cmd = rz_str_newf ("agn \"%s\" base64:%s\n", n->title, encbody);
-	rz_cons_printf (cmd);
+	rz_cons_print (cmd);
 	free (cmd);
 	free (encbody);
 }
