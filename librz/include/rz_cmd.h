@@ -17,24 +17,31 @@ typedef struct rz_core_t RzCore;
 #define MACRO_LABELS 20
 #define RZ_CMD_MAXLEN 4096
 
+/**
+ * Value returned by a command handler.
+ */
 typedef enum rz_cmd_status_t {
-	RZ_CMD_STATUS_OK = 0, // command handler exited in the right way
-	RZ_CMD_STATUS_WRONG_ARGS, // command handler could not handle the arguments passed to it
-	RZ_CMD_STATUS_ERROR, // command handler had issues while running (e.g. allocation error, etc.)
-	RZ_CMD_STATUS_INVALID, // command could not be executed (e.g. shell level error, not existing command, bad expression, etc.)
-	RZ_CMD_STATUS_EXIT, // command handler asks to exit the prompt loop
+	RZ_CMD_STATUS_OK = 0, ///< command handler exited in the right way
+	RZ_CMD_STATUS_WRONG_ARGS, ///< command handler could not handle the arguments passed to it
+	RZ_CMD_STATUS_ERROR, ///< command handler had issues while running (e.g. allocation error, etc.)
+	RZ_CMD_STATUS_INVALID, ///< command could not be executed (e.g. shell level error, not existing command, bad expression, etc.)
+	RZ_CMD_STATUS_EXIT, ///< command handler asks to exit the prompt loop
 } RzCmdStatus;
 
+/**
+ * Type of argument a command handler can have. This is used for visualization
+ * in help messages and for autocompletion as well.
+ */
 typedef enum rz_cmd_arg_type_t {
-	RZ_CMD_ARG_TYPE_NUM, //< Argument that can be interpreted by RzNum (numbers, flags, operations, etc.)
-	RZ_CMD_ARG_TYPE_STRING, //< Argument that can be an arbitrary string
-	RZ_CMD_ARG_TYPE_ENV, //< Argument can be the name of an existing rizin variable
-	RZ_CMD_ARG_TYPE_ZIGN, //< Argument can be the name of an existing zignature
-	RZ_CMD_ARG_TYPE_CHOICES, //< Argument can be one of the provided choices
-	RZ_CMD_ARG_TYPE_ARRAY_STRING, //< Argument is an array of arbitrary strings (if present, must be last in the list)
-	RZ_CMD_ARG_TYPE_FCN, //< Argument can be the name of an existing function
-	RZ_CMD_ARG_TYPE_FILE, //< Argument is a filename
-	RZ_CMD_ARG_TYPE_OPTION, //< Argument is an option, prefixed with `-`. It is present or not.
+	RZ_CMD_ARG_TYPE_NUM, ///< Argument that can be interpreted by RzNum (numbers, flags, operations, etc.)
+	RZ_CMD_ARG_TYPE_STRING, ///< Argument that can be an arbitrary string
+	RZ_CMD_ARG_TYPE_ENV, ///< Argument can be the name of an existing rizin variable
+	RZ_CMD_ARG_TYPE_ZIGN, ///< Argument can be the name of an existing zignature
+	RZ_CMD_ARG_TYPE_CHOICES, ///< Argument can be one of the provided choices
+	RZ_CMD_ARG_TYPE_ARRAY_STRING, ///< Argument is an array of arbitrary strings (if present, must be last in the list)
+	RZ_CMD_ARG_TYPE_FCN, ///< Argument can be the name of an existing function
+	RZ_CMD_ARG_TYPE_FILE, ///< Argument is a filename
+	RZ_CMD_ARG_TYPE_OPTION, ///< Argument is an option, prefixed with `-`. It is present or not. No argument.
 } RzCmdArgType;
 
 typedef int (*RzCmdCb) (void *user, const char *input);
@@ -42,6 +49,9 @@ typedef RzCmdStatus (*RzCmdArgvCb) (RzCore *core, int argc, const char **argv);
 typedef RzCmdStatus (*RzCmdArgvModesCb) (RzCore *core, int argc, const char **argv, RzOutputMode mode);
 typedef int (*RzCmdNullCb) (void *user);
 
+/**
+ * argc/argv data created from parsing the input command string.
+ */
 typedef struct rz_cmd_parsed_args_t {
 	int argc;
 	char **argv;
@@ -89,7 +99,8 @@ typedef struct rz_cmd_alias_t {
 } RzCmdAlias;
 
 /**
- * A detailed entry that can be used to show additional info about a command entry.
+ * \brief A detailed entry that can be used to show additional info about a command entry.
+ *
  * It can contain whatever relevant information (e.g. examples, specific uses of
  * a command, variables, etc.).
  *
@@ -232,35 +243,47 @@ typedef struct rz_cmd_desc_help_t {
 	const RzCmdDescArg *args;
 } RzCmdDescHelp;
 
-typedef enum {
-	// for old handlers that parse their own input and accept a single string.
-	// Mainly used for legacy reasons with old command handlers.
+typedef enum rz_cmd_desc_type_t {
+	/**
+	 * For old handlers that parse their own input and accept a single string.
+	 * Mainly used for legacy reasons with old command handlers.
+	 */
 	RZ_CMD_DESC_TYPE_OLDINPUT = 0,
-	// for handlers that accept argc/argv. It cannot have children. Use
-	// RZ_CMD_DESC_TYPE_GROUP if you need a command that can be both
-	// executed and has sub-commands.
+	/**
+	 * For handlers that accept argc/argv. It cannot have children. Use
+	 * RZ_CMD_DESC_TYPE_GROUP if you need a command that can be both
+	 * executed and has sub-commands.
+	 */
 	RZ_CMD_DESC_TYPE_ARGV,
-	// for cmd descriptors that are parent of other sub-commands, even if
-	// they may also have a sub-command with the same name. For example,
-	// `wc` is both the parent of `wci`, `wc*`, etc. but there is also `wc`
-	// as a sub-command.
+	/**
+	 * For cmd descriptors that are parent of other sub-commands, even if
+	 * they may also have a sub-command with the same name. For example,
+	 * `wc` is both the parent of `wci`, `wc*`, etc. but there is also `wc`
+	 * as a sub-command.
+	 */
 	RZ_CMD_DESC_TYPE_GROUP,
-	// for cmd descriptors that are just used to group together related
-	// sub-commands. Do not use this if the command can be used by itself or
-	// if it's necessary to show its help, because this descriptor is not
-	// stored in the hashtable and cannot be retrieved except by listing the
-	// children of its parent. Most of the time you want RZ_CMD_DESC_TYPE_GROUP.
+	/**
+	 * For cmd descriptors that are just used to group together related
+	 * sub-commands. Do not use this if the command can be used by itself or
+	 * if it's necessary to show its help, because this descriptor is not
+	 * stored in the hashtable and cannot be retrieved except by listing the
+	 * children of its parent. Most of the time you want RZ_CMD_DESC_TYPE_GROUP.
+	 */
 	RZ_CMD_DESC_TYPE_INNER,
-	// for entries that shall be shown in the help tree but that are not
-	// commands on their own. `|?`, `@?`, `>?` are example of this. It is
-	// useful to provide help entries for them in the tree, but there are no
-	// command handlers for these. The RzCmdDescDetail in the help can be
-	// used to show fake children of this descriptor.
+	/**
+	 * For entries that shall be shown in the help tree but that are not
+	 * commands on their own. `|?`, `@?`, `>?` are example of this. It is
+	 * useful to provide help entries for them in the tree, but there are no
+	 * command handlers for these. The RzCmdDescDetail in the help can be
+	 * used to show fake children of this descriptor.
+	 */
 	RZ_CMD_DESC_TYPE_FAKE,
-	// for handlers that accept argc/argv and that provides multiple output
-	// modes (e.g. rizin commands, quiet output, json, long). It cannot have
-	// children. Use RZ_CMD_DESC_TYPE_GROUP if you need a command that can
-	// be both executed and has sub-commands.
+	/**
+	 * For handlers that accept argc/argv and that provides multiple output
+	 * modes (e.g. rizin commands, quiet output, json, long). It cannot have
+	 * children. Use RZ_CMD_DESC_TYPE_GROUP if you need a command that can
+	 * be both executed and has sub-commands.
+	 */
 	RZ_CMD_DESC_TYPE_ARGV_MODES,
 } RzCmdDescType;
 
