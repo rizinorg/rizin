@@ -1,5 +1,4 @@
 rz_cons_sources = [
-  '2048.c',
   'canvas.c',
   'canvas_line.c',
   'cons.c',
@@ -10,7 +9,6 @@ rz_cons_sources = [
   'hud.c',
   'input.c',
   'less.c',
-  'stiv.c',
   'line.c',
   'more.c',
   'output.c',

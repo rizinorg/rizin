@@ -798,7 +798,6 @@ typedef struct rz_cons_canvas_line_style_t {
 
 
 #ifdef RZ_API
-RZ_API void rz_cons_image(const ut8 *buf, int bufsz, int width, int mode);
 RZ_API RzConsCanvas* rz_cons_canvas_new(int w, int h);
 RZ_API void rz_cons_canvas_free(RzConsCanvas *c);
 RZ_API void rz_cons_canvas_clear(RzConsCanvas *c);
@@ -910,7 +909,6 @@ RZ_API void rz_cons_print_fps (int col);
 RZ_API void rz_cons_last(void);
 RZ_API int rz_cons_less_str(const char *str, const char *exitkeys);
 RZ_API void rz_cons_less(void);
-RZ_API void rz_cons_2048(bool color);
 RZ_API void rz_cons_memset(char ch, int len);
 RZ_API void rz_cons_visual_flush(void);
 RZ_API void rz_cons_visual_write(char *buffer);
