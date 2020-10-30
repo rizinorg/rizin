@@ -1218,8 +1218,8 @@ static int rz_debug_native_init (RzDebug *dbg) {
 #endif
 }
 
-static void sync_drx_regs (RzDebug *dbg, drxt *regs, size_t num_regs) {
 #if __i386__ || __x86_64__
+static void sync_drx_regs (RzDebug *dbg, drxt *regs, size_t num_regs) {
 	/* sanity check, we rely on this assumption */
 	if (num_regs != NUM_DRX_REGISTERS) {
 		eprintf ("drx: Unsupported number of registers for get_debug_regs\n");
@@ -1239,13 +1239,11 @@ static void sync_drx_regs (RzDebug *dbg, drxt *regs, size_t num_regs) {
 */
 	regs[6] = rz_reg_getv (R, "dr6");
 	regs[7] = rz_reg_getv (R, "dr7");
-#else
-	eprintf ("drx sync_drx_regs: Unsupported platform\n");
-#endif
 }
+#endif
 
-static void set_drx_regs (RzDebug *dbg, drxt *regs, size_t num_regs) {
 #if __i386__ || __x86_64__
+static void set_drx_regs (RzDebug *dbg, drxt *regs, size_t num_regs) {
 	/* sanity check, we rely on this assumption */
 	if (num_regs != NUM_DRX_REGISTERS){
 		eprintf ("drx: Unsupported number of registers for get_debug_regs\n");
@@ -1259,10 +1257,8 @@ static void set_drx_regs (RzDebug *dbg, drxt *regs, size_t num_regs) {
 	rz_reg_setv (R, "dr3", regs[3]);
 	rz_reg_setv (R, "dr6", regs[6]);
 	rz_reg_setv (R, "dr7", regs[7]);
-#else
-	eprintf ("drx set_drx_regs: Unsupported platform\n");
-#endif
 }
+#endif
 
 static int rz_debug_native_drx (RzDebug *dbg, int n, ut64 addr, int sz, int rwx, int g, int api_type) {
 #if __i386__ || __x86_64__
@@ -1340,18 +1336,6 @@ static bool arm32_hwbp_add (RzDebug *dbg, RBreakpoint* bp, RBreakpointItem *b) {
 
 static bool arm32_hwbp_del (RzDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
 	return false; // TODO: hwbp.del not yetimplemented
-}
-#else
-static bool ll_arm32_hwbp_set(pid_t pid, ut64 addr, int size, int wp, int type) {
-	return false;
-}
-
-static bool arm32_hwbp_add (RzDebug *dbg, RBreakpoint* bp, RBreakpointItem *b) {
-	return false;
-}
-
-static bool arm32_hwbp_del (RzDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
-	return false;
 }
 #endif // PTRACE_GETHWBPREGS
 #endif // __arm
