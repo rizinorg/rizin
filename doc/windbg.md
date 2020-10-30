@@ -1,7 +1,7 @@
 WinDBG
 ======
 
-The WinDBG support for r2 allows you to attach to VM running Windows
+The WinDBG support for rizin allows you to attach to VM running Windows
 using a named socket file (will support more IOs in the future) to
 debug a windows box using the KD interface over serial port.
 
@@ -43,11 +43,11 @@ Or just spawn the VM with qemu like this:
            -serial chardev:serial0 -hda Windows7-VM.vdi
 
 
-Radare2 will use the 'winkd' io plugin to connect to a socket file
+Rizin will use the 'winkd' io plugin to connect to a socket file
 created by virtualbox or qemu. Also, the 'winkd' debugger plugin and
 we should specify the x86-32 too. (32 and 64 bit debugging is supported)
 
-    $ r2 -a x86 -b 32 -D winkd winkd:///tmp/winkd.pipe
+    $ rizin -a x86 -b 32 -D winkd winkd:///tmp/winkd.pipe
 
 On Windows you should run the following line:
 
@@ -71,7 +71,7 @@ In order to skip that trap we will need to change eip and run 'dc' twice:
     dr eip=eip+1
     dc
 
-Now the Windows VM will be interactive again. We will need to kill r2 and
+Now the Windows VM will be interactive again. We will need to kill rizin and
 attach again to get back to control the kernel.
 
 In addition, the `dp` command can be used to list all processes, and

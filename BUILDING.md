@@ -114,6 +114,34 @@ on other systems if necessary.
 $ CFLAGS="-static" meson --default-library=static build
 ```
 
+## Cross-compilation for Android
+
+You can cross-compile rizin from your main machine to target your Android
+device. First download and install the Android NDK from
+[https://developer.android.com/ndk](https://developer.android.com/ndk).
+
+Then you can use meson to cross-compile, however you have to provide a
+configuration file that specifies all the necessary information meson needs to
+know to correctly cross-compile.
+
+You can find an
+[example](https://github.com/rizinorg/rizin/blob/dev/.github/meson-android-aarch64.ini)
+of such a file in our codebase, but you should adjust it to match your system.
+
+To make the deployment and usage of the rizin tools easier from within your
+Android device, we suggest to compile statically and by using the *blob*
+feature, which will produce just one executable and link all the other tools to
+that only tool, similar to how busybox works.
+
+```
+$ CFLAGS="-static" LDFLAGS="-static" meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dblob=true build --cross-file ./cross-compile-conf.ini
+$ ninja -C build
+$ ninja -C build install
+```
+
+At this point you can find everything under `/tmp/android-dir` and you can copy
+files to your Android device.
+
 # Build with acr/Makefile (deprecated)
 
 Rizin also support compilation with configure+make, however this is not

@@ -1,9 +1,9 @@
-# Radare Debugger Internals
+# Rizin Debugger Internals
 
 The debugger is designed using a multi-tiered plug-in architecture that allows
 overriding functionality for architecture or platform-specific reasons.
 
-The bulk of the debugger functionality within radare core is split between the
+The bulk of the debugger functionality within Rizin core is split between the
 "io", "reg", "bp", and "debug". More information on the specific files within
 the tree follows.
 
@@ -17,7 +17,7 @@ defined in here.
 
 ## librz/io/p/io_debug.c
 
-In order to interface with radare IO, a plug-in is provided. This handles, for
+In order to interface with Rizin IO, a plug-in is provided. This handles, for
 example, spawning processes under a debugger.
 
 
@@ -33,7 +33,7 @@ The functionality lives in the following files:
     librz/reg/cond.c         // condition registers
     librz/reg/double.c       // support for double-precision floating point numbers
     librz/reg/profile.c      // ?? used by anal and debugger
-    librz/reg/reg.c          // top-level register specific code (all of r2)
+    librz/reg/reg.c          // top-level register specific code (all of rizin)
     librz/reg/value.c        // dealing with register values
     librz/reg/t/p.c          // test code for printing general-purpose registers
     librz/reg/t/regdiff.c    // ?? test code for?
@@ -42,11 +42,11 @@ The functionality lives in the following files:
 
 ## librz/bp
 
-The "bp" subsystem of radare implements all the necessary details for dealing
+The "bp" subsystem of Rizin implements all the necessary details for dealing
 with breakpoints on any given architecture. It handles managing the list of
 breakpoints and more.
 
-Radare supports a multitude of different types of breakpoints.
+Rizin supports a multitude of different types of breakpoints.
 (`??` is there a list? sw, hw, and trace? anything else??)
 
     librz/bp/bp.c            // main breakpoint management code
@@ -59,7 +59,7 @@ Radare supports a multitude of different types of breakpoints.
 
 For architecture specific-handling, "bp" delegates various functionality to
 plugins. The interface for these plugins is much simpler than other plugins
-used in the radare debugger -- they only define which byte sequences represent
+used in the Rizin debugger -- they only define which byte sequences represent
 valid breakpoints for a given architecture.
 
     librz/bp/p/bp_arm.c      // ARM64, ARM, Thumb, Thumb-2 (big/little endians)
@@ -73,7 +73,7 @@ valid breakpoints for a given architecture.
 ## librz/debug/debug.c
 
 The main top-level debugger functionality lives here. It aims to abstract away
-the common code flow and integration into radare while delegating more nuanced
+the common code flow and integration into Rizin while delegating more nuanced
 system interactions to plug-ins.
 
     librz/debug/arg.c        // used by the anal engine (??)
@@ -92,7 +92,7 @@ system interactions to plug-ins.
 
 Most of the time a debugger is used by a human to try to understand subtle
 problems with software and/or hardware. That task would be very difficult
-without a user interface of some kind. The CLI commands exposed to radare are
+without a user interface of some kind. The CLI commands exposed to Rizin are
 implemented in here. To get more information about this interface, consult the
 user manual or try "d?" to get a crash course.
 
@@ -119,12 +119,12 @@ A debugger plug-in that utilizes bochs emulator to control execution.
 
 ### librz/debug/p/debug_esil.c
 
-This debugger plug-in enables debugging and tracing radare own intermediate
+This debugger plug-in enables debugging and tracing Rizin own intermediate
 language, Evaluable Strings Intermediate Language (ESIL).
 
 ### librz/debug/p/debug_gdb.c
 
-A radare debugger plug-in that uses a remote GDB server/stub as its backend.
+A Rizin debugger plug-in that uses a remote GDB server/stub as its backend.
 The protocol parsing itself is located at shlr/gdb. And corresponding IO plugin is
 located in librz/io/p/io_gdb.c
 

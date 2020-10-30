@@ -1,4 +1,4 @@
-Brainfuck support for r2
+Brainfuck support for rizin
 ========================
 
 Plugins for brainfuck:
@@ -9,7 +9,7 @@ Plugins for brainfuck:
 
 To debug a brainfuck program:
 
-    r2 -D bf bfdbg:///tmp/bf
+    rizin -D bf bfdbg:///tmp/bf
 
     > dc    # continue
     > x@scr # show screen buffer contents

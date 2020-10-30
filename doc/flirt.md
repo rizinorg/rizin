@@ -1,13 +1,13 @@
 FLIRT
 =====
 
-At the  moment of  writing r2  supports  loading  and finding  FLIRT
+At the  moment of  writing Rizin  supports  loading  and finding  FLIRT
 patterns, those files can be generated with the FLIRT tools from IDA.
-R2 doesn't  yet supports creating  those files.  But it supports its
+Rizin doesn't  yet supports creating  those files.  But it supports its
 own signature format  which can be used  to generate signatures  and
 find them.
 
-This document will focus on FLIRT, not the native r2 'Zignatures'.
+This document will focus on FLIRT, not the native Rizin 'Zignatures'.
 
 You need the flair tools/ida utilities. Those tools are closed source
 and privative, so you should not distribute them. It is probable that
@@ -33,12 +33,12 @@ There's little chance libc.sig will  be compatible across systems and
 libc versions. If libc.exc exists, you need to resolve some functions
 conflicts.  Prepend a '+' on the lines  you're sure you  want to keep
 (see end of flair/sigmake.txt).  Then redo the  sigmake command.  The
-.sig is now ready to be used with r2.
+.sig is now ready to be used with Rizin.
 
-Using it with r2:
+Using it with rizin:
 -----------------
 
-    r2 -c 'zF libc.sig' staticbin
+    rizin -c 'zF libc.sig' staticbin
 
 refs:
 

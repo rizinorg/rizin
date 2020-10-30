@@ -211,8 +211,6 @@ else
   rizin_bindings = join_paths(rizin_libdir, 'rizin-bindings', rizin_version)
 endif
 
-rizin_zsh_compdir = join_paths(rizin_datdir, 'zsh', 'site-functions')
-
 # load plugin configuration
 subdir('librz')
 
@@ -691,17 +689,5 @@ if cli_enabled
   install_data('doc/hud',
     install_dir: rizin_hud,
     rename: 'main'
-  )
-
-  install_data(
-    'doc/zsh/_rz',
-    'doc/zsh/_rz_bin',
-    'doc/zsh/_rz_diff',
-    'doc/zsh/_rz_find',
-    'doc/zsh/_rz_gg',
-    'doc/zsh/_rz_hash',
-    'doc/zsh/_rz_asm',
-    'doc/zsh/_rz_ax',
-    install_dir: rizin_zsh_compdir
   )
 endif

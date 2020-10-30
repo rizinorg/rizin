@@ -234,7 +234,7 @@ Disassembly example:
     │ │││   0x100001147    48394a38     rdx,56,+,[8],rcx,==,cz,?=
 ```
 
-Radare anal ESIL code example
+Rizin anal ESIL code example
 ==============================
 
 As an example implementation of ESIL analysis for the AVR family of
@@ -256,7 +256,7 @@ are used later on by ESIL string formatting function like for instance:
 
 Which in this case corresponds to the LDI (LoaD with immediate) instruction in
 AVR. As an example, the above ESIL string template will translate into the
-following when reversing in radare:
+following when reversing in Rizin:
 
     0x00000080      30e0           0x0,r19,=                   ; LDI Rd,K. load immediate
 
@@ -266,7 +266,7 @@ Or in non-ESIL format:
 
 
 Looking at other architectures which already have mature ESIL support such as
-x86 can help in understanding the syntax and conventions of radare's ESIL.
+x86 can help in understanding the syntax and conventions of Rizin's ESIL.
 
 
 Introspection

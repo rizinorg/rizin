@@ -62,7 +62,7 @@ Setup dbg.fpregs to true to visualize the fpu registers in the debugger view.
 To debug a program, you can call rizin with 'dbg://<path-to-program>' or '-d <path..>'
 Use 'e' and 't' in Visual mode to edit configuration and track flags.
 Use 'rz_bin -ris' to get the import/export symbols of any binary.
-Remember to maintain your ~/.radare_history
+Remember to maintain your ~/.rizin_history
 Enable the PAGER with 'e scr.pager=less -R'
 Use 'e asm.offset=true' to show offsets in 16bit segment addressing mode.
 The '?' command can be used to evaluate math expressions. Like this: '? (0x34+22)*4'
