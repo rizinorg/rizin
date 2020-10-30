@@ -183,7 +183,7 @@ static int cmd_egg(void *data, const char *input) {
 				rz_egg_option_set (egg, "egg.padding", input + 2);
 			}
 		} else {
-			eprintf ("Usage: gp [padding]\n");	
+			eprintf ("Usage: gp [padding]\n");
 		}
 		break;
 	case 'e': // "ge"
@@ -201,14 +201,14 @@ static int cmd_egg(void *data, const char *input) {
 				rz_egg_option_set (egg, "key", p + 1);
 				rz_egg_option_set (egg, "egg.encoder", oa);
 			} else {
-				eprintf ("Usage: ge [encoder] [key]\n");	
+				eprintf ("Usage: ge [encoder] [key]\n");
 			}
 			free (oa);
 		} else {
 			eprintf ("Usage: ge [encoder] [key]\n");
 		}
 		break;
-	case 'i': // "gi" 
+	case 'i': // "gi"
 		if (input[1] == ' ') {
 			if (input[0] && input[2]) {
 				rz_egg_option_set (egg, "egg.shellcode", input + 2);
@@ -274,7 +274,7 @@ static int cmd_egg(void *data, const char *input) {
 			} else {
 				char *o = rz_egg_option_get (egg, oa);
 				if (o) {
-					rz_cons_printf (o);
+					rz_cons_print (o);
 					free (o);
 				}
 			}

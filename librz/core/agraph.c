@@ -3932,8 +3932,8 @@ static void goto_asmqjmps(RzAGraph *g, RzCore *core) {
 	rz_cons_get_size (&rows);
 	rz_cons_gotoxy (0, rows);
 	rz_cons_clear_line (0);
-	rz_cons_printf (Color_RESET);
-	rz_cons_printf (h);
+	rz_cons_print (Color_RESET);
+	rz_cons_print (h);
 	rz_cons_flush ();
 
 	do {

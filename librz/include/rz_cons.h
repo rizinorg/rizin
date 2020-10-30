@@ -893,7 +893,7 @@ RZ_API void rz_cons_set_utf8(bool b);
 RZ_API void rz_cons_grep(const char *grep);
 
 /* output */
-RZ_API int rz_cons_printf(const char *format, ...); RZ_PRINTF_CHECK(1, 2);
+RZ_API int rz_cons_printf(const char *format, ...) RZ_PRINTF_CHECK(1, 2);
 RZ_API void rz_cons_printf_list(const char *format, va_list ap);
 RZ_API void rz_cons_strcat(const char *str);
 RZ_API void rz_cons_strcat_at(const char *str, int x, char y, int w, int h);

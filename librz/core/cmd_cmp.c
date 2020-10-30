@@ -406,14 +406,14 @@ static int cmd_cmp_disasm(RzCore *core, const char *input, int mode) {
 				colpad[pos] = 0;
 			}
 			if (hascolor) {
-				rz_cons_printf (iseq? pal->graph_true: pal->graph_false);
+				rz_cons_print (iseq? pal->graph_true: pal->graph_false);
 			}
 			rz_cons_printf (" 0x%08"PFMT64x "  %s %s",
 				core->offset + i, rz_strbuf_get (&op.buf_asm), colpad);
 			rz_cons_printf ("%c 0x%08"PFMT64x "  %s\n",
 				iseq? '=': '!', off + j, rz_strbuf_get (&op2.buf_asm));
 			if (hascolor) {
-				rz_cons_printf (Color_RESET);
+				rz_cons_print (Color_RESET);
 			}
 			if (op.size < 1) {
 				op.size = 1;
@@ -444,17 +444,17 @@ static int cmd_cmp_disasm(RzCore *core, const char *input, int mode) {
 					core->offset + i, rz_strbuf_get (&op.buf_asm));
 			} else {
 				if (hascolor) {
-					rz_cons_printf (pal->graph_false);
+					rz_cons_print (pal->graph_false);
 				}
 				rz_cons_printf ("-0x%08"PFMT64x "  %s\n",
 					core->offset + i, rz_strbuf_get (&op.buf_asm));
 				if (hascolor) {
-					rz_cons_printf (pal->graph_true);
+					rz_cons_print (pal->graph_true);
 				}
 				rz_cons_printf ("+0x%08"PFMT64x "  %s\n",
 					off + j, rz_strbuf_get (&op2.buf_asm));
 				if (hascolor) {
-					rz_cons_printf (Color_RESET);
+					rz_cons_print (Color_RESET);
 				}
 			}
 			if (op.size < 1) {
