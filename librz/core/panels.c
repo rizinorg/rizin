@@ -159,7 +159,7 @@ static const char *menus_settings_screen[] = {
 static const char *menus_Help[] = {
 	"Toggle Help",
 	"License", "Version",
-	"Fortune", "2048",
+	"Fortune",
 	NULL
 };
 
@@ -196,7 +196,6 @@ static const char *help_msg_panels[] = {
 	"_",        "start the hud input mode",
 	"\\",       "show the user-friendly hud",
 	"?",        "show this help",
-	"!",        "run r2048 game",
 	".",        "seek to PC or entrypoint",
 	"*",        "show decompiler in the current panel",
 	"\"",       "create a panel from the list and replace the current one",
@@ -515,7 +514,6 @@ static int __watch_points_cb(void *user);
 static int __references_cb(void *user);
 static int __help_cb(void *user);
 static int __fortune_cb(void *user);
-static int __game_cb(void *user);
 static int __license_cb(void *user);
 static int __version_cb(void *user);
 static int __quit_cb(void *user);
@@ -3761,12 +3759,6 @@ int __fortune_cb(void *user) {
 	return 0;
 }
 
-int __game_cb(void *user) {
-	RzCore *core = (RzCore *)user;
-	rz_cons_2048 (core->panels->can->color);
-	return 0;
-}
-
 int __help_cb(void *user) {
 	RzCore *core = (RzCore *)user;
 	__toggle_help (core);
@@ -4762,8 +4754,6 @@ bool __init_panels_menu(RzCore *core) {
 			__add_menu (core, parent, menus_Help[i], __version_cb);
 		} else if (!strcmp (menus_Help[i], "Fortune")) {
 			__add_menu (core, parent, menus_Help[i], __fortune_cb);
-		} else if (!strcmp (menus_Help[i], "2048")) {
-			__add_menu (core, parent, menus_Help[i], __game_cb);
 		} else {
 			__add_menu (core, parent, menus_Help[i], __help_cb);
 		}

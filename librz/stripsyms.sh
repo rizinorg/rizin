@@ -10,7 +10,7 @@ FILE=$1
 PFX=$2
 LIST=$1.list
 
-if [ "${PFX}" = "r_util" ]; then
+if [ "${PFX}" = "rz_util" ]; then
 	echo "=> No stripping any symbol in librz_util O:)"
 	exit 0
 	PFX="r_"
