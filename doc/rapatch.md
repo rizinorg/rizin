@@ -21,7 +21,7 @@ OFFSET : assembly
 
 Example scripts
 ---------------
-This script will run the `?e ..` command in r2 and then write the string 'Hello' at 0x200 offset
+This script will run the `?e ..` command in rizin and then write the string 'Hello' at 0x200 offset
 ```
 # rapatch example
 :?e hello world
@@ -31,8 +31,8 @@ This script will run the `?e ..` command in r2 and then write the string 'Hello'
 Running rapatches
 -----------------
 
-	$ r2 -P rapatch.txt target-program.txt
+	$ rizin -P rapatch.txt target-program.txt
 
 Or for scripted patching like `patch(1)`:
 
-	$ r2 -w -q -P rapatch.txt target-program.txt
+	$ rizin -w -q -P rapatch.txt target-program.txt

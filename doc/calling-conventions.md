@@ -1,7 +1,7 @@
 Calling Conventions profiles
 ============================
 
-Radare2 uses calling conventions to help in identifying function formal arguments and return types. It is used also as guide for basic function prototype (WIP at the time of writing this wiki).
+Rizin uses calling conventions to help in identifying function formal arguments and return types. It is used also as guide for basic function prototype (WIP at the time of writing this wiki).
 
 Profile grammar
 ===============
@@ -30,7 +30,7 @@ Note that you will substitute `x` for the calling convention name you will use.
 File Path
 =========
 
-In order to integrate the calling convention profile you created with the r2 source, few set of conventions should be followed:
+In order to integrate the calling convention profile you created with the rizin source, few set of conventions should be followed:
 
 - Store the unparsed sdb file in `path-to-rizin-source/librz/anal/d`.
 - If you want the sdb to be loaded for specific architecture the file name should follow this convention `cc-arch-bits`, for example to create profile that loads automatically for x86 arch with 16 bits call the file `cc-x86-16`

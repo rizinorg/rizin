@@ -1,4 +1,4 @@
-Connecting r2 with gdb
+Connecting rizin with gdb
 ======================
 
 Running gdbserver
@@ -7,15 +7,15 @@ Running gdbserver
     $ gdbserver :2345 /bin/ls
     (gdb) target remote localhost:2345
 
-Connecting from r2
+Connecting from rizin
 ------------------
 
-    $ r2 -D gdb gdb://127.0.0.1:2345
+    $ rizin -D gdb gdb://127.0.0.1:2345
 
 
 Supported implementations
 =========================
-r2 have support for connecting to remote GDB instances:
+rizin have support for connecting to remote GDB instances:
 
                 x86-32   x86-64   arm    arm64   sh
     winedbg       x        x       -      -      -
@@ -59,7 +59,7 @@ Supported Packets:
 TODO
 ----
 
-- Implement GDBserver to allow other apps use r2 debugger 
+- Implement GDBserver to allow other apps use rizin debugger 
 - Fix that usese the gdb internal stepping version
 - Fix softstep, that it finally recoils correct (it just have to reset the eip/rip)
 - Add Breakpoints (should be an easy add of the function, because its already implemented in the gdb lib)

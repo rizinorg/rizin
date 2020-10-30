@@ -6,13 +6,13 @@ Code signing on iOS is simpler, because the Jailbreak simplifies the process (Co
 Compilation
 -----------
 
-There are different ways to build r2 for iOS, use the sys/ script you need:
+There are different ways to build rizin for iOS, use the sys/ script you need:
 
 * `sys/ios-cydia.sh`
 * `sys/ios-static.sh`
 * `sys/ios-simulator.sh`
 
-It is also possible to build r2 natively on your iDevice by following the standard `./configure ; make ; make install` steps. But if you own a Mac is better to use the XCode toolchain to get better build times.
+It is also possible to build rizin natively on your iDevice by following the standard `./configure ; make ; make install` steps. But if you own a Mac is better to use the XCode toolchain to get better build times.
 
 For incremental compilations or daily development you should:
 
@@ -34,23 +34,3 @@ Packaging
 If you have used `sys/ios-cydia.sh` you should get already two Cydia packages, one with bins and another with libs for `-dev`, if not, just run this command:
 
 	$ make -C sys/cydia
-
-Installation
-------------
-
-The Cydia packages can be installed by copying the binary:
-
-	$ ssh root@192.168.0.13
-	# rm -f rizin
-	$ scp binrz/rizin root@192.168.0.13:.
-
-Note that it is important to remove the previous executable from the filesystem because `ldone` signing is associated with the filesystem inode, and it will fail to run if you overwrite the contents of the executable without removing it first.
-
-Installing the `cydia.radare.org` repository.
-
-	# apt-get update
-	# apt-install rizin
-
-Or just doing it from the command line:
-
-	# dpkg -i rizin-*.deb

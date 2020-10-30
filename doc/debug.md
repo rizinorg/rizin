@@ -1,13 +1,11 @@
- Conditional breakpoints
-=========================
+# Conditional breakpoints
 conditional breakpoints are implemented in the following way:
 
 - when a breakpoint is hit, the condition is run as a normal command
 - if the command returns a value different from zero, execution continue,
 - otherwise, execution is stopped at the breakpoint
 
- Examples of conditional breakpoints
-======================================
+# Examples of conditional breakpoints
 
 1. ignore breakpoint at address `0x4000ce` for five times:
 

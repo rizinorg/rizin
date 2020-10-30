@@ -52,7 +52,7 @@ Setup for Turbo186 processor core:
 - e asm.bits=16
 - e asm.seggrn=8
 
-Now enjoy all the great stuff that r2 offers, like:
+Now enjoy all the great stuff that rizin offers, like:
 - run grobe commands with =!?
 - dump memory with px
 - Visual mode with V, including cursor mode and insert hexpairs

@@ -11,7 +11,7 @@ If you send the program you are debugging to 15 friends in 143 minutes and then 
 To remove this message, put `dbxenv suppress_startup_message 7.5' in your .dbxrc
 Heisenbug: A bug that disappears or alters its behavior when one attempts to probe or isolate it.
 rizin is for lulzhats
-Microloft Visual Radare.NET 2008. Now OOXML Powered!
+Microloft Visual Rizin.NET 2008. Now OOXML Powered!
 A C program is like a fast dance on a newly waxed dance floor by people carrying razors - Waldi Ravens
 rizin is like windows 7 but even better.
 We are surrounded by the enemy. - Excellent, we can attack in any direction!
@@ -122,12 +122,12 @@ Stop swearing!
 I didn't say that it was working, I said that it's implemented
 Wrong argument
 Remember that word: C H A I R
-what happens in #radare, stays in #radare
+what happens in #rizin, stays in #rizin
 For a full list of commands see `strings /dev/urandom`
 Good morning, pal *<:-)
 Of course rizin runs FreeBSD
 Reverser by Birth, rizin by Choice
-Radare2, what else?
+rizin, what else?
 This incident will be reported
 command not found: calc.exe
 See you at the defcon CTF
@@ -169,16 +169,15 @@ SSAbotage from ISIL
 "a collection of garbage" -- an rizin pro user
 A git pull a day keeps the segfault away
 Are you a wizard?
-Learn pancake as if you were radare!
 rizin is a great OS, but a terrible hex editor
 THE CAKE IS A PIE
 rizin 0.9.7 is so old, my grandfarther was using it with his enigma in WWII
 Have you seen the latest rizin TV spot?
-scp ~/.idapro/ida.key radare.org:/var/www/radare.org/pub/losers/
+scp ~/.idapro/ida.key rizin.org:/var/www/rizin.org/pub/losers/
 Too bad there is no gif support in rizin. Yet. -- @rizingif
 Almost 5am, maybe you should go to bed.
 Jingle sploits, jingle sploits, ropchain all the way.
-Mind that the 'g' in radare is silent
+Mind that the 'g' in rizin is silent
 256 colors ought to be enough for anybody
 Hang in there, Baby!
 Run a command with unspecified long sequence of 'a', pancake will be summoned and do the analysis for you.
@@ -245,13 +244,12 @@ Place a cat on your keyboard while running rizin, you'll not believe what will h
 This binary may contain traces of human
 Help subcommand will be eventually removed.
 Carpe noctum.
-Your mouse has moved. Radare2 NT must be restarted for the change to take effect. Reboot now? [ OK ]
+Your mouse has moved. rizin NT must be restarted for the change to take effect. Reboot now? [ OK ]
 There is only one binary, and we are all just reversing pieces of it.
-Radare2 is like violence. If it doesn't solve your problem, you aren't using enough.
 Order pizza for $12.48? [Y/n]
 rizinOS rizinpad 0.1 SMP GENERIC rizin_64 GNU/rizinOS
 AHHHHH!!!! ASSEMBLY CODE!!!!!! HOLD ME I'M SCARED!!!!!!!!!!
-In radare we trust
+In Rizin we trust
 We don't make mistakes... just happy little segfaults.
 rizin is for the people
 Use headphones for best experience.
@@ -273,7 +271,7 @@ Sorry, rizin has experienced an internal error.
 Segmentation fault (core dumped)
 Use rz_bin to discover the real TRUTH
 ==1337== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
-**** COMMODORE 64 RADARE V2 ****  64K RAM SYSTEM  38911 DISASM BYTES FREE  READY.
+**** COMMODORE 64 RIZIN V2 ****  64K RAM SYSTEM  38911 DISASM BYTES FREE  READY.
 Most likely your core dump fell into a blackhole, can't see it.
 Long time no C
 rizin is power, France is pancake.

@@ -1,32 +1,54 @@
 Capstone
 ========
 
-Capstone Engine is the disassembler engine used by rizin by default for 
+Capstone Engine is the disassembler engine used by Rizin by default for 
 some architectures.
 
-R2 supports capstone 3, 4 and 5.
+Rizin supports capstone 3, 4 and 5.
 
 * capstone3: legacy support (only for Debian probably)
 * capstone4: stable release at the moment of writing this
 * capstone5: next branch, still under development
 
-By default r2 will build statically against capstone4 (unless you specify --with-capstone5)
+By default Rizin will build statically against a bundled version of capstone4
+(with some custom patches applied). Please be aware that by default Rizin will
+download Capstone in the source directory `shlr/capstone`.
 
 Using system capstone
 ---------------------
 
-You can link capstone dynamically (by using --with-syscapstone), this will skip all the
-download and build steps of capstone inside `shlr/capstone`.and just link against the version
-of capstone found in the system. That's what distros usually want.
+You can build Rizin against the system version of capstone, by specifying the
+`use_sys_capstone` meson option and then compile as usual.
 
-NOTE: that building against capstone-master is cursedd, because cs-master reports v5, but code
-is from v4, so it fails to compile because of missing enums and archs.
+```
+$ meson -Duse_sys_capstone=true build
+```
 
-v5
---
+Using another version of capstone
+---------------------
 
-To build r2 against capstone5 use the following oneliner:
+Although by default Rizin uses capstone4, it is possible to compile it with
+version 3 or the next version, by using `use_capstone_version` meson option.
 
-	git clean -xdf
-	rm -rf shlr/capstone
-	sys/install.sh --with-capstone5
+```
+$ meson -Duse_capstone_version=v3 build-capstonev3
+```
+or
+```
+$ meson -Duse_capstone_version=v5 build-capstonev5
+```
+
+Test different capstone versions
+----------------------
+
+As mentioned before, by default Rizin downloads capstone code in the source
+directory `shlr/capstone`, so if you want to test the same set of changes on
+multiple Capstone versions, you have to specify the `capstone_in_builddir`
+option.
+
+```
+$ meson -Dcapstone_in_builddir=true -Duse_capstone_version=v3 build-capstonev3
+```
+
+The above command, for example, will download the Capstone code in the *build*
+directory `build-capstonev3/shlr/capstone` instead of the *source* one.
