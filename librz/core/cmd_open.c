@@ -30,7 +30,7 @@ static const char *help_msg_o[] = {
 	"om","[?]","create, list, remove IO maps",
 	"on"," [file] 0x4000","map raw file at 0x4000 (no rz_bin involved)",
 	"oo","[?+bcdnm]","reopen current file (see oo?) (reload in rw or debugger)",
-	"op"," [fd]", "select the given fd as current file (see also ob)",
+	"op","[r|n|p|fd]", "select priorized file by fd (see ob), opn/opp/opr = next/previous/rotate",
 	"oq","","list all open files",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
 	NULL
@@ -41,6 +41,15 @@ static const char *help_msg_o_[] = {
 	"o-*","","close all opened files",
 	"o-!","","close all files except the current one",
 	"o-3","","close fd=3",
+	NULL
+};
+
+static const char *help_msg_op[] = {
+	"Usage:", "op[rnp] [fd]", "",
+	"opr", "", "open next file rotating",
+	"opn", "", "open next file",
+	"opp", "", "open previous file",
+	"op", " [fd]", "open priorizing fd",
 	NULL
 };
 
@@ -1209,6 +1218,37 @@ static bool desc_list_json_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
+static bool cmd_op(RzCore *core, char mode, int fd) {
+	int cur_fd = rz_io_fd_get_current (core->io);
+	int next_fd = cur_fd;
+	switch (mode) {
+	case 0:
+		next_fd = fd;
+		break;
+	case 'n':
+		next_fd = rz_io_fd_get_next (core->io, cur_fd);
+		break;
+	case 'p':
+		next_fd = rz_io_fd_get_prev (core->io, cur_fd);
+		break;
+	case 'r':
+		next_fd = rz_io_fd_get_next (core->io, cur_fd);
+		if (next_fd == -1) {
+			next_fd = rz_io_fd_get_lowest (core->io);
+		}
+		break;
+	}
+	if (next_fd >= 0 && next_fd != cur_fd && rz_io_use_fd (core->io, next_fd)) {
+		RzBinFile *bf = rz_bin_file_find_by_fd (core->bin, next_fd);
+		if (bf && rz_core_bin_raise (core, bf->id)) {
+			rz_core_block_read (core);
+			return true;
+		}
+		eprintf ("Invalid RzBinFile.id number.\n");
+	}
+	return false;
+}
+
 static int cmd_open(void *data, const char *input) {
 	RzCore *core = (RzCore*)data;
 	int perms = RZ_PERM_R;
@@ -1366,20 +1406,27 @@ static int cmd_open(void *data, const char *input) {
 	case 'p': // "op"
 		/* handle prioritize */
 		if (input[1]) {
-			int fd = rz_num_math (core->num, input + 1);
-			if (fd >= 0 || input[1] == '0') {
-				RzIODesc *desc = rz_io_desc_get (core->io, fd);
-				if (desc) {
-					// only useful for io.va=0
-					// load bininfo for given fd
-					rz_core_cmdf (core, "obo %d", fd);
-					core->io->desc = desc; // XXX we should use fd here, not *pointer
-					rz_core_block_read (core);
-				} else {
-					eprintf ("Cannot find RzBinFile associated with fd %d\n", fd);
+			switch (input[1]) {
+			case 'r': // "opr" - open next file + rotate if not found
+			case 'n': // "opn" - open next file
+			case 'p': // "opp" - open previous file
+				if (!cmd_op (core, input[1], -1)) {
+					eprintf ("Cannot find file\n");
 				}
-			} else {
-				eprintf ("Invalid fd number\n");
+				break;
+			case ' ':
+				{
+					int fd = rz_num_math (core->num, input + 1);
+					if (fd >= 0 || input[1] == '0') {
+						cmd_op (core, 0, fd);
+					} else {
+						eprintf ("Invalid fd number\n");
+					}
+				}
+				break;
+			default:
+				rz_core_cmd_help (core, help_msg_op);
+				break;
 			}
 		} else {
 			if (core->io && core->io->desc) {
