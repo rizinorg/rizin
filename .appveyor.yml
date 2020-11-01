@@ -104,12 +104,12 @@ for:
       - copy C:\Python38-x64\python.exe C:\Python38-x64\python3.exe
       - python3 -m pip install "git+ssh://git@github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python"
       - cd test
-      - git clone -q --depth 1 https://github.com/rizinorg/rizin-testbins bins
+      - git clone -q --depth 1 git@github.com/rizinorg/rizin-testbins bins
       - rz-test -L db
       - cd ..
 
     after_test:
-      - git clone --depth 1 https://github.com/radare/rizin-win-installer
+      - git clone --depth 1 git@github.com/rizinorg/rizin-win-installer
       - set PATH=%PATH%;%INNO_SETUP%
       - iscc rizin-win-installer/rizin.iss /DRadare2Location=..\%DIST_FOLDER%\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=rizin.ico /DMyAppVersion=%RZ_VERSION%
       - move rizin-win-installer\Output\rizin.exe rizin_installer-%builder%.exe
