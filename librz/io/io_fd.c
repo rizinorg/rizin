@@ -1,4 +1,4 @@
-/* rizin - LGPL - Copyright 2017 - condret */
+/* rizin - LGPL - Copyright 2017-2020 - condret */
 
 #include <rz_io.h>
 
@@ -125,4 +125,40 @@ RZ_API int rz_io_fd_get_current(RzIO *io) {
 		return io->desc->fd;
 	}
 	return -1;
+}
+
+RZ_API int rz_io_fd_get_next(RzIO *io, int fd) {
+	rz_return_val_if_fail (io, -1);
+	int ret = fd;
+	if (!rz_id_storage_get_next (io->files, (ut32 *)&ret)) {
+		return -1;
+	}
+	return ret;
+}
+
+RZ_API int rz_io_fd_get_prev(RzIO *io, int fd) {
+	rz_return_val_if_fail (io, -1);
+	int ret = fd;
+	if (!rz_id_storage_get_prev (io->files, (ut32 *)&ret)) {
+		return -1;
+	}
+	return ret;
+}
+
+RZ_API int rz_io_fd_get_highest(RzIO *io) {
+	rz_return_val_if_fail (io, -1);
+	int fd = -1;
+	if (!rz_id_storage_get_highest (io->files, (ut32 *)&fd)) {
+		return -1;
+	}
+	return fd;
+}
+
+RZ_API int rz_io_fd_get_lowest(RzIO *io) {
+	rz_return_val_if_fail (io, -1);
+	int fd = -1;
+	if (!rz_id_storage_get_lowest (io->files, (ut32 *)&fd)) {
+		return -1;
+	}
+	return fd;
 }

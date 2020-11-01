@@ -455,6 +455,10 @@ RZ_API int rz_io_fd_get_tid (RzIO *io, int fd);
 RZ_API bool rz_io_fd_get_base (RzIO *io, int fd, ut64 *base);
 RZ_API const char *rz_io_fd_get_name (RzIO *io, int fd);
 RZ_API int rz_io_fd_get_current(RzIO *io);
+RZ_API int rz_io_fd_get_next(RzIO *io, int fd);
+RZ_API int rz_io_fd_get_prev(RzIO *io, int fd);
+RZ_API int rz_io_fd_get_highest(RzIO *io);
+RZ_API int rz_io_fd_get_lowest(RzIO *io);
 RZ_API bool rz_io_use_fd (RzIO *io, int fd);
 
 
