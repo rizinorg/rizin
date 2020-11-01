@@ -1,11 +1,10 @@
-/* rizin - LGPL - Copyright 2017-2019 - condret, pancake, alvaro */
+/* rizin - LGPL - Copyright 2017-2020 - condret, pancake, alvaro */
 
 #include <rz_io.h>
 #include <sdb.h>
 #include <string.h>
 
-//shall be used by plugins for creating descs
-//XXX kill mode
+// shall be used by plugins for creating descs
 RZ_API RzIODesc* rz_io_desc_new(RzIO* io, RzIOPlugin* plugin, const char* uri, int perm, int mode, void* data) {
 	ut32 fd32 = 0;
 	// this is required for emscripten builds to work, but should assert

@@ -835,17 +835,17 @@ rep:
 		}
 		break;
 	case 'V': // visual marks
-		switch(input[1]) {
+		switch (input[1]) {
 		case '-':
 			rz_core_visual_mark_reset (core);
 			break;
 		case ' ':
 			{
-				const int n = atoi (input + 1);
-				if (n + ST8_MAX + 1 < UT8_MAX) {
+				int n = atoi (input + 1);
+				if (n + ASCII_MAX + 1 < UT8_MAX) {
 					const char *arg = strchr (input + 2, ' ');
 					ut64 addr = arg? rz_num_math (core->num, arg): core->offset;
-					rz_core_visual_mark_set (core, n + ST8_MAX + 1, addr);
+					rz_core_visual_mark_set (core, n + ASCII_MAX + 1, addr);
 				}
 			}
 			break;
