@@ -72,6 +72,40 @@ RZ_API RzIODesc* rz_io_desc_get(RzIO* io, int fd) {
 	return (RzIODesc*) rz_id_storage_get (io->files, fd);
 }
 
+RZ_API RzIODesc *rz_io_desc_get_next(RzIO *io, RzIODesc *desc) {
+	rz_return_val_if_fail (desc && io && io->files, NULL);
+	const int next_fd = rz_io_fd_get_next (io, desc->fd);
+	if (next_fd == -1) {
+		return NULL;
+	}
+	return (RzIODesc*) rz_id_storage_get (io->files, next_fd);
+}
+
+RZ_API RzIODesc *rz_io_desc_get_prev(RzIO *io, RzIODesc *desc) {
+	rz_return_val_if_fail (desc && io && io->files, NULL);
+	const int prev_fd = rz_io_fd_get_prev (io, desc->fd);
+	if (prev_fd == -1) {
+		return NULL;
+	}
+	return (RzIODesc*) rz_id_storage_get (io->files, prev_fd);
+}
+
+RZ_API RzIODesc *rz_io_desc_get_highest(RzIO *io) {
+	int fd = rz_io_fd_get_highest (io);
+	if (fd == -1) {
+		return NULL;
+	}
+	return rz_io_desc_get (io, fd);
+}
+
+RZ_API RzIODesc *rz_io_desc_get_lowest(RzIO *io) {
+	int fd = rz_io_fd_get_lowest (io);
+	if (fd == -1) {
+		return NULL;
+	}
+	return rz_io_desc_get (io, fd);
+}
+
 RZ_API RzIODesc *rz_io_desc_open(RzIO *io, const char *uri, int perm, int mode) {
 	rz_return_val_if_fail (io && uri, NULL);
 	RzIOPlugin *plugin = rz_io_plugin_resolve (io, uri, 0);
