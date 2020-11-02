@@ -224,12 +224,12 @@ static int rz_bin_coff_init(struct rz_bin_coff_obj *obj, RBuffer *buf, bool verb
 		bprintf ("Warning: failed to init section header\n");
 		return false;
 	}
-	if (!rz_bin_coff_init_symtable (obj)) {
-		bprintf ("Warning: failed to init symtable\n");
-		return false;
-	}
 	if (!rz_bin_coff_init_scn_va (obj)) {
 		bprintf ("Warning: failed to init section VA table\n");
+		return false;
+	}
+	if (!rz_bin_coff_init_symtable (obj)) {
+		bprintf ("Warning: failed to init symtable\n");
 		return false;
 	}
 	return true;
