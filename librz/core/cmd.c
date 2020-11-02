@@ -97,6 +97,7 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 }
 
 static void cmd_debug_reg(RzCore *core, const char *str);
+static bool lastcmd_repeat(RzCore *core, int next);
 
 #include "cmd_quit.c"
 #include "cmd_hash.c"
@@ -108,6 +109,7 @@ static void cmd_debug_reg(RzCore *core, const char *str);
 #include "cmd_write.c"
 #include "cmd_cmp.c"
 #include "cmd_eval.c"
+#include "cmd_interpret.c"
 #include "cmd_anal.c"
 #include "cmd_open.c"
 #include "cmd_meta.c"
@@ -443,6 +445,7 @@ static bool lastcmd_repeat(RzCore *core, int next) {
 		res = rz_core_cmd0 (core, core->lastcmd);
 		break;
 	}
+	core->is_lastcmd = true;
 	return res != -1;
 }
 
@@ -6289,22 +6292,6 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_thread_command) {
 	return res;
 }
 
-DEFINE_HANDLE_TS_FCN_AND_SYMBOL(last_command) {
-	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
-	char *command_str = ts_node_sub_string (command, state->input);
-	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
-	state->is_last_cmd = true;
-	if (!strcmp (command_str, ".")) {
-		res = lastcmd_repeat (state->core, 0);
-	} else if (!strcmp (command_str, "...")) {
-		res = lastcmd_repeat (state->core, 1);
-	} else {
-		rz_warn_if_reached ();
-	}
-	free (command_str);
-	return res;
-}
-
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(grep_command) {
 	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
 	TSNode arg = ts_node_child_by_field_name (node, "specifier", strlen ("specifier"));
@@ -6378,12 +6365,6 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(scr_tts_command) {
 	return res;
 }
 
-DEFINE_HANDLE_TS_FCN_AND_SYMBOL(task_command) {
-	// TODO: this should be handled differently, if the argument is a command.
-	//       For now we just treat everything as an arged_command
-	return handle_ts_arged_command (state, node);
-}
-
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(number_command) {
 	ut64 addr = rz_num_math (state->core->num, node_string);
 	rz_core_seek (state->core, addr, true);
@@ -6397,16 +6378,18 @@ static RzCmdStatus handle_ts_command(struct tsr2cmd_state *state, TSNode node) {
 	TSSymbol node_symbol = ts_node_symbol (node);
 	ts_handler handler = ht_up_find (cmd->ts_symbols_ht, node_symbol, NULL);
 
-	state->is_last_cmd = false;
+	bool is_lastcmd = state->core->is_lastcmd;
+	state->core->is_lastcmd = false;
 	if (handler) {
 		ret = handler (state, node);
 	} else {
 		RZ_LOG_WARN ("No handler for this kind of command `%s`\n", ts_node_type (node));
 	}
-	if (state->log && !state->is_last_cmd) {
+	if (state->log && !state->core->is_lastcmd) {
 		free (state->core->lastcmd);
 		state->core->lastcmd = ts_node_sub_string (node, state->input);
 	}
+	state->core->is_lastcmd = is_lastcmd;
 	return ret;
 }
 
@@ -6967,7 +6950,7 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "(", "macro", cmd_macro, cmd_macro_init, &macro_help },
 		{ "*", "pointer read/write", cmd_pointer, NULL, &pointer_help, NULL, RZ_CMD_DESC_TYPE_ARGV, pointer_handler },
 		{ "-", "open cfg.editor and run script", cmd_stdin, NULL, &stdin_help },
-		{ ".", "interpret", cmd_interpret, NULL, &interpret_help },
+		{ ".", "interpret", cmd_interpret, cmd_interpret_init, &point_help, &point_group_help, RZ_CMD_DESC_TYPE_GROUP, point_handler },
 		{ "/", "search kw, pattern aes", cmd_search, cmd_search_init, &search_help },
 		{ "=", "io pipe", cmd_rap, NULL, &rap_help },
 		{ "?", "help message", cmd_help, cmd_help_init, &help_help },

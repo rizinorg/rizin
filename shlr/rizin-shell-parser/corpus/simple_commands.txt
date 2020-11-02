@@ -218,16 +218,16 @@ Tasks command
 ---
 
 (commands
-  (task_command (cmd_identifier)
+  (arged_command (cmd_identifier)
     (arged_command (cmd_identifier)
       (args (arg (arg_identifier)))))
-  (task_command (cmd_identifier)
+  (arged_command (cmd_identifier)
     (arged_command (cmd_identifier)
       (args (arg (arg_identifier)))))
-  (task_command (cmd_identifier)
+  (arged_command (cmd_identifier)
     (args (arg (arg_identifier))))
-  (task_command (cmd_identifier))
-  (task_command (cmd_identifier)))
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier)))
 
 
 ==============

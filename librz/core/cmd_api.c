@@ -450,6 +450,9 @@ static void get_minmax_argc(RzCmdDesc *cd, int *min_argc, int *max_argc) {
 	*max_argc = 1;
 	const RzCmdDescArg *arg = cd->help->args;
 	while (arg && arg->name && !arg->optional) {
+		if (arg->type == RZ_CMD_ARG_TYPE_FAKE) {
+			continue;
+		}
 		(*min_argc)++;
 		(*max_argc)++;
 		switch (arg->type) {
@@ -462,6 +465,9 @@ static void get_minmax_argc(RzCmdDesc *cd, int *min_argc, int *max_argc) {
 		arg++;
 	}
 	while (arg && arg->name) {
+		if (arg->type == RZ_CMD_ARG_TYPE_FAKE) {
+			continue;
+		}
 		(*max_argc)++;
 		switch (arg->type) {
 		case RZ_CMD_ARG_TYPE_ARRAY_STRING:
@@ -670,12 +676,20 @@ static size_t fill_args(RzStrBuf *sb, RzCmdDesc *cd) {
 	size_t len = 0;
 	bool has_array = false;
 	for (arg = cd->help->args; arg && arg->name; arg++) {
+		if (arg->type == RZ_CMD_ARG_TYPE_FAKE) {
+			rz_strbuf_append (sb, arg->name);
+			len += strlen (arg->name);
+			continue;
+		}
+
 		if (has_array) {
 			rz_warn_if_reached ();
 			break;
 		}
-		rz_strbuf_append (sb, " ");
-		len++;
+		if (!arg->no_space) {
+			rz_strbuf_append (sb, " ");
+			len++;
+		}
 		if (arg->optional) {
 			rz_strbuf_append (sb, "[");
 			len++;

@@ -168,10 +168,6 @@
         },
         {
           "type": "SYMBOL",
-          "name": "task_command"
-        },
-        {
-          "type": "SYMBOL",
           "name": "_tmp_command"
         },
         {
@@ -189,10 +185,6 @@
         {
           "type": "SYMBOL",
           "name": "grep_command"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "last_command"
         },
         {
           "type": "SYMBOL",
@@ -1586,7 +1578,7 @@
         ]
       }
     },
-    "task_command": {
+    "_task_command": {
       "type": "PREC_LEFT",
       "value": 1,
       "content": {
@@ -1779,6 +1771,14 @@
         {
           "type": "SYMBOL",
           "name": "_pf_arged_command"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_last_command"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_task_command"
         }
       ]
     },
@@ -2852,7 +2852,7 @@
         }
       ]
     },
-    "last_command": {
+    "_last_command": {
       "type": "SEQ",
       "members": [
         {
@@ -3875,7 +3875,7 @@
               },
               {
                 "type": "PATTERN",
-                "value": "[^*]*\\*+([^/*][^*]*\\*+)*"
+                "value": "[^*]*\\*+([^\\/*][^*]*\\*+)*"
               },
               {
                 "type": "STRING",

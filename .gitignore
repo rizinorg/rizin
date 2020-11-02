@@ -128,3 +128,4 @@ __pycache__
 vgcore.*
 librz/include/sdb
 peda-session-*
+/.vs
