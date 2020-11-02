@@ -306,6 +306,7 @@ parse_plugins = [
   'mips_pseudo',
   'ppc_pseudo',
   'sh_pseudo',
+  'riscv_pseudo',
   'v850_pseudo',
   'wasm_pseudo',
   'x86_pseudo',

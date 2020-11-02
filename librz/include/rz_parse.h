@@ -132,6 +132,7 @@ extern RzParsePlugin rz_parse_plugin_mips_pseudo;
 extern RzParsePlugin rz_parse_plugin_ppc_pseudo;
 extern RzParsePlugin rz_parse_plugin_sh_pseudo;
 extern RzParsePlugin rz_parse_plugin_wasm_pseudo;
+extern RzParsePlugin rz_parse_plugin_riscv_pseudo;
 extern RzParsePlugin rz_parse_plugin_x86_pseudo;
 extern RzParsePlugin rz_parse_plugin_z80_pseudo;
 extern RzParsePlugin rz_parse_plugin_tms320_pseudo;
