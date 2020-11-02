@@ -3281,7 +3281,9 @@ RZ_API char *rz_core_editor(const RzCore *core, const char *file, const char *st
 		cons->cb_editor = tmp;
 	} else {
 		if (editor && name) {
-			rz_sys_cmdf ("%s '%s'", editor, name);
+			char *escaped_name = rz_str_escape_sh (name);
+			rz_sys_cmdf ("%s \"%s\"", editor, escaped_name);
+			free (escaped_name);
 		}
 	}
 	size_t len = 0;

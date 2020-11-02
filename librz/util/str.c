@@ -885,7 +885,7 @@ RZ_API char *rz_str_append(char *ptr, const char *string) {
 	if (string && !ptr) {
 		return strdup (string);
 	}
-	if (!string) {
+	if (RZ_STR_ISEMPTY (string)) {
 		return ptr;
 	}
 	int plen = strlen (ptr);
