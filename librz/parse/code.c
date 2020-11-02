@@ -3,7 +3,9 @@
 #include "rz_util.h"
 #include "rz_types.h"
 #include "rz_parse.h"
-#include "librz_tcc.h"
+#include "tcc.h"
+
+extern int tcc_sym_push(char *typename, int typesize, int meta);
 
 /* parse C code and return it in key-value form */
 
