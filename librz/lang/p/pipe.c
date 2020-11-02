@@ -238,7 +238,7 @@ static int lang_pipe_run(RzLang *lang, const char *code, int len) {
 	char *rzpipe_paz = rz_str_newf ("\\\\.\\pipe\\%s", rzpipe_var);
 	LPTSTR rzpipe_paz_ = rz_sys_conv_utf8_to_win (rzpipe_paz);
 
-	SetEnvironmentVariable (TEXT ("R2PIPE_PATH"), rzpipe_paz_);
+	SetEnvironmentVariable (TEXT ("RZ_PIPE_PATH"), rzpipe_paz_);
 	hPipeInOut = CreateNamedPipe (rzpipe_paz_,
 			PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
 			PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, PIPE_UNLIMITED_INSTANCES,
