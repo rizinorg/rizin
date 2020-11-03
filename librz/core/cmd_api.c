@@ -650,7 +650,7 @@ static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, 
 		bool first = true;
 		rz_list_foreach (wrapped_text, it, line) {
 			if (!first) {
-				rz_strbuf_appendf (sb, "\n%*s", columns + 2, "");
+				rz_strbuf_appendf (sb, "\n%*s", (int)(columns + 2), "");
 			} else {
 				rz_strbuf_append (sb, "# ");
 				first = false;
@@ -919,7 +919,7 @@ static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color
 		entry_it = detail_it->entries;
 		while (entry_it->text) {
 			size_t len = strlen (entry_it->text) + strlen0 (entry_it->arg_str);
-			size_t padding = len < max_len ? max_len - len : 0;
+			int padding = len < max_len ? max_len - len : 0;
 			const char *arg_str = entry_it->arg_str ? entry_it->arg_str : "";
 			rz_strbuf_appendf (sb, "| %s%s%s%s %*s%s",
 				pal_input_color, entry_it->text,

@@ -356,7 +356,7 @@ RZ_API RzAnalBaseType *rz_anal_get_base_type(RzAnal *anal, const char *name) {
 }
 
 static void save_struct(const RzAnal *anal, const RzAnalBaseType *type) {
-	rz_return_if_fail (anal && type && type->name 
+	rz_return_if_fail (anal && type && type->name
 		&& type->kind == RZ_ANAL_BASE_TYPE_KIND_STRUCT);
 	char *kind = "struct";
 	/*
@@ -387,7 +387,7 @@ static void save_struct(const RzAnal *anal, const RzAnalBaseType *type) {
 		char *member_sname = rz_str_sanitize_sdb_key (member->name);
 		sdb_set (anal->sdb_types,
 			rz_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname),
-			rz_strbuf_setf (&param_val, "%s,%zu,%" PFMT64u "", member->type, member->offset, 0), 0ULL);
+			rz_strbuf_setf (&param_val, "%s,%zu,%u", member->type, member->offset, 0), 0ULL);
 		free (member_sname);
 
 		rz_strbuf_appendf (&arglist, (i++ == 0) ? "%s" : ",%s", member->name);
@@ -405,7 +405,7 @@ static void save_struct(const RzAnal *anal, const RzAnalBaseType *type) {
 }
 
 static void save_union(const RzAnal *anal, const RzAnalBaseType *type) {
-	rz_return_if_fail (anal && type && type->name 
+	rz_return_if_fail (anal && type && type->name
 		&& type->kind == RZ_ANAL_BASE_TYPE_KIND_UNION);
 	const char *kind = "union";
 	/*
@@ -436,7 +436,7 @@ static void save_union(const RzAnal *anal, const RzAnalBaseType *type) {
 		char *member_sname = rz_str_sanitize_sdb_key (member->name);
 		sdb_set (anal->sdb_types,
 				rz_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname),
-				rz_strbuf_setf (&param_val, "%s,%zu,%" PFMT64u "", member->type, member->offset, 0), 0ULL);
+				rz_strbuf_setf (&param_val, "%s,%zu,%u", member->type, member->offset, 0), 0ULL);
 		free (member_sname);
 
 		rz_strbuf_appendf (&arglist, (i++ == 0) ? "%s" : ",%s", member->name);
@@ -454,7 +454,7 @@ static void save_union(const RzAnal *anal, const RzAnalBaseType *type) {
 }
 
 static void save_enum(const RzAnal *anal, const RzAnalBaseType *type) {
-	rz_return_if_fail (anal && type && type->name 
+	rz_return_if_fail (anal && type && type->name
 		&& type->kind == RZ_ANAL_BASE_TYPE_KIND_ENUM);
 	/*
 		C:
@@ -508,7 +508,7 @@ static void save_enum(const RzAnal *anal, const RzAnalBaseType *type) {
 }
 
 static void save_atomic_type(const RzAnal *anal, const RzAnalBaseType *type) {
-	rz_return_if_fail (anal && type && type->name 
+	rz_return_if_fail (anal && type && type->name
 		&& type->kind == RZ_ANAL_BASE_TYPE_KIND_ATOMIC);
 	/*
 		C: (cannot define a custom atomic type)
@@ -614,8 +614,8 @@ RZ_API RzAnalBaseType *rz_anal_base_type_new(RzAnalBaseTypeKind kind) {
 
 /**
  * @brief Saves RzAnalBaseType into the SDB
- * 
- * @param anal 
+ *
+ * @param anal
  * @param type RzAnalBaseType to save
  * @param name Name of the type
  */

@@ -335,7 +335,7 @@ static inline void gb_anal_or_set (RzAnal *anal, RzAnalOp *op, const ut8 data) {
 	op->dst->memref = ((data & 7) == 6);
 	op->dst->reg = rz_reg_get (anal->reg, regs_x[data & 7], RZ_REG_TYPE_GPR);
 	if (op->dst->memref) {
-		rz_strbuf_setf (&op->esil, "0x%02" PFMT64x ",%s,[1],|,%s,=[1]", op->src[0]->imm, regs_x[data & 7], regs_x[data & 7], op->src[0]->imm);
+		rz_strbuf_setf (&op->esil, "0x%02" PFMT64x ",%s,[1],|,%s,=[1]", op->src[0]->imm, regs_x[data & 7], regs_x[data & 7]);
 	} else {
 		rz_strbuf_setf (&op->esil, "0x%02" PFMT64x ",%s,|=", op->src[0]->imm, regs_x[data & 7]);
 	}
