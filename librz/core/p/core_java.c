@@ -429,7 +429,7 @@ static int rz_cmd_java_handle_summary_info(RzCore *core, const char *cmd) {
 	}
 
 	rz_cons_printf ("Summary for %s:\n", obj->file);
-	rz_cons_printf ("  Size 0x%" PFMT64x ":\n", obj->size);
+	rz_cons_printf ("  Size 0x%d:\n", obj->size);
 	rz_cons_printf ("  Constants  size: 0x%x count: %d:\n", obj->cp_size, obj->cp_count);
 	rz_cons_printf ("  Methods    size: 0x%x count: %d:\n", obj->methods_size, obj->methods_count);
 	rz_cons_printf ("  Fields     size: 0x%x count: %d:\n", obj->fields_size, obj->fields_count);

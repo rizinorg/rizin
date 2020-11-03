@@ -491,7 +491,7 @@ static bool test_rz_str_wrap(void) {
 	};
 	i = 0;
 	rz_list_foreach (l1, it, ts) {
-		rz_strbuf_setf (&sb, "%d-th string should be the same", i);
+		rz_strbuf_setf (&sb, "%zu-th string should be the same", i);
 		mu_assert_streq (ts, exp_s1[i++], rz_strbuf_get (&sb));
 	}
 	rz_list_free (l1);
@@ -506,7 +506,7 @@ static bool test_rz_str_wrap(void) {
 	};
 	i = 0;
 	rz_list_foreach (l2, it, ts) {
-		rz_strbuf_setf (&sb, "%d-th string should be the same", i);
+		rz_strbuf_setf (&sb, "%zu-th string should be the same", i);
 		mu_assert_streq (ts, exp_s2[i++], rz_strbuf_get (&sb));
 	}
 	rz_list_free (l2);
@@ -542,7 +542,7 @@ static bool test_rz_str_wrap(void) {
 	};
 	i = 0;
 	rz_list_foreach (l6, it, ts) {
-		rz_strbuf_setf (&sb, "%d-th string should be the same", i);
+		rz_strbuf_setf (&sb, "%zu-th string should be the same", i);
 		mu_assert_streq (ts, exp_s6[i++], rz_strbuf_get (&sb));
 	}
 	rz_list_free (l6);
