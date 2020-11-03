@@ -820,7 +820,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			argv[opt.ind] = rz_str_newf ("http://%s/cmd/", argv[opt.ind]);
 			rz_core_cmdf (r, "=+ %s", argv[opt.ind]);
 		}
-		rz_core_cmd0 (r, "=!=0");
+		rz_core_cmd0 (r, "=!=");
 		argv[opt.ind] = "-";
 	}
 

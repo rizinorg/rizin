@@ -324,7 +324,7 @@ const RzCmdDescHelp point_help = {
 };
 
 const RzCmdDescHelp point_last_command_help = {
-	.summary = "repeat last executed_command backward",
+	.summary = "repeat last executed command backward",
 	.args = empty_args,
 };
 
@@ -404,8 +404,127 @@ const RzCmdDescHelp search_help = {
 	.summary = "search for bytes, regexps, patterns, ..",
 };
 
-const RzCmdDescHelp rap_help = {
+const RzCmdDescHelp equal_group_help = {
 	.summary = "connect with other instances of rizin",
+};
+
+const RzCmdDescArg equal_args[] = {
+	{ .name = "fd", .optional = true, .type = RZ_CMD_ARG_TYPE_NUM },
+	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD },
+	{ 0 },
+};
+
+const RzCmdDescHelp equal_help = {
+	.summary = "list all open connections",
+	.args = equal_args,
+	// NOTE: the fd version of the command is shown as a separate entry in equal_fd_help
+	.args_str = "",
+};
+
+const RzCmdDescHelp equal_minor_help = {
+	.summary = "send output of local command to remote fd",
+	.args = equal_args,
+	.args_str = " [<fd>] <cmd>",
+};
+
+const RzCmdDescHelp equal_fd_help = {
+	.summary = "exec cmd at remote 'fd' (last open is default one)",
+	.args = equal_args,
+	.args_str = " [<fd>] <cmd>",
+};
+
+const RzCmdDescArg equal_esclamation_args[] = {
+	{ .name = "cmd", .optional = true, .type = RZ_CMD_ARG_TYPE_CMD },
+	{ 0 },
+};
+
+const RzCmdDescHelp equal_esclamation_help = {
+	.summary = "run command via rz_io_system",
+	.args = equal_esclamation_args,
+};
+
+const RzCmdDescArg equal_plus_args[] = {
+	{ .name = "[proto://]host:port", .type = RZ_CMD_ARG_TYPE_STRING },
+	{ 0 },
+};
+
+const RzCmdDescHelp equal_plus_help = {
+	.summary = "connect to remote host:port (*rap://, raps://, tcp://, udp://, http://)",
+	.args = equal_plus_args,
+};
+
+const RzCmdDescArg equal_minus_args[] = {
+	{ .name = "fd", .type = RZ_CMD_ARG_TYPE_NUM },
+	{ 0 },
+};
+
+const RzCmdDescHelp equal_minus_help = {
+	.summary = "remove all hosts or host 'fd'",
+	.args = equal_minus_args,
+};
+
+const RzCmdDescArg equal_equal_args[] = {
+	{ .name = "fd", .type = RZ_CMD_ARG_TYPE_NUM },
+	{ 0 },
+};
+
+const RzCmdDescHelp equal_equal_help = {
+	.summary = "open remote session with host 'fd', 'q' to quit",
+	.args = equal_equal_args,
+};
+
+const RzCmdDescHelp equal_esclamation_equal_help = {
+	.summary = "enable remote cmd mode",
+	.args = empty_args,
+};
+
+const RzCmdDescHelp esclamation_equal_esclamation_help = {
+	.summary = "disable remote cmd mode",
+	.args = empty_args,
+};
+
+const RzCmdDescArg equal_colon_args[] = {
+	{ .name = "[host:]port", .type = RZ_CMD_ARG_TYPE_STRING },
+	{ .name = "cmd", .optional = true, .type = RZ_CMD_ARG_TYPE_CMD },
+	{ 0 },
+};
+
+const RzCmdDescHelp equal_colon_help = {
+	.summary = "start the rap server (o rap://9999)",
+	.args = equal_colon_args,
+};
+
+const RzCmdDescHelp equal_g_help = {
+	.summary = "start the gdbserver",
+};
+
+const RzCmdDescHelp equal_h_help = {
+	.summary = "start the http webserver",
+};
+
+const RzCmdDescHelp equal_H_help = {
+	.summary = "start the http webserver (and launch the web browser)",
+};
+
+const RzCmdDescArg equal_t_args[] = {
+	{ .name = "[host:]port", .type = RZ_CMD_ARG_TYPE_STRING },
+	{ .name = "cmd", .optional = true, .type = RZ_CMD_ARG_TYPE_CMD },
+	{ 0 },
+};
+
+const RzCmdDescHelp equal_t_help = {
+	.summary = "start the tcp server (echo x|nc ::1 9090 or curl ::1:9090/cmd/x)",
+	.args = equal_t_args,
+};
+
+const RzCmdDescArg equal_and_colon_args[] = {
+	{ .name = "port", .type = RZ_CMD_ARG_TYPE_NUM },
+	{ 0 },
+};
+
+const RzCmdDescHelp equal_and_colon_help = {
+	.summary = "start rap server in background (same as '&_=h')",
+	.args = equal_and_colon_args,
 };
 
 const RzCmdDescHelp help_help = {

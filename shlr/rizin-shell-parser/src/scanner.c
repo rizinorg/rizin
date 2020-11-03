@@ -41,13 +41,18 @@ static bool is_at_cmd(const char *s) {
 	return s[0] == '@';
 }
 
+static bool is_equal_cmd(const char *s) {
+	return s[0] == '=';
+}
+
 static bool is_comment(const char *s) {
 	return !strncmp (s, "/*", 2) || !strcmp (s, "#");
 }
 
 static bool is_special_start(const int32_t ch) {
 	return ch == '*' || ch == '(' || ch == '@' || ch == '|' || ch == '>' ||
-		ch == '.' || ch == '|' || ch == '%' || ch == '~' || ch == '&';
+		ch == '.' || ch == '|' || ch == '%' || ch == '~' || ch == '&' ||
+		ch == '!';
 }
 
 static bool is_start_of_command(const int32_t ch) {
@@ -67,7 +72,8 @@ static bool is_mid_command(const char *res, int len, const int32_t ch) {
 	}
 	return isalnum (ch) || ch == '$' || ch == '?' || ch == '.' || ch == '!' ||
 		ch == ':' || ch == '+' || ch == '=' || ch == '/' || ch == '*' ||
-		ch == '-' || ch == ',' || ch == '&' || (is_at_cmd (res) && ch == '@');
+		ch == '-' || ch == ',' || ch == '&' ||
+		(is_equal_cmd (res) && ch == '<') || (is_at_cmd (res) && ch == '@');
 }
 
 static bool is_concat(const int32_t ch) {
@@ -165,7 +171,7 @@ bool tree_sitter_rzcmd_external_scanner_scan(void *payload, TSLexer *lexer, cons
 			}
 			lexer->result_symbol = HELP_COMMAND;
 		} else {
-			if (is_special_start (res[0]) || is_pf_cmd (res) || is_env_cmd (res) || is_at_cmd (res) || !valid_symbols[CMD_IDENTIFIER]) {
+			if ((is_special_start (res[0]) && strcmp (res, "!=!")) || is_pf_cmd (res) || is_env_cmd (res) || is_at_cmd (res) || !valid_symbols[CMD_IDENTIFIER]) {
 				return false;
 			}
 			lexer->result_symbol = CMD_IDENTIFIER;

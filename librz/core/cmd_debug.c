@@ -1117,7 +1117,7 @@ static void cmd_debug_pid(RzCore *core, const char *input) {
 		rz_debug_select (core->dbg, core->dbg->pid, core->dbg->tid);
 		rz_config_set_i (core->config, "dbg.swstep",
 				(core->dbg->h && !core->dbg->h->canstep));
-		rz_core_cmdf (core, "=!pid %d", core->dbg->pid);
+		rz_core_cmdf (core, "=! \"pid %d\"", core->dbg->pid);
 		break;
 	case 'f': // "dpf"
 		if (core->file && core->io) {

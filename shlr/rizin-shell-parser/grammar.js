@@ -322,9 +322,9 @@ module.exports = grammar({
 	    $._system_command,
 	    $._interpret_command,
 	    $._env_command,
-		$._pf_arged_command,
-		$._last_command,
-		$._task_command,
+	    $._pf_arged_command,
+	    $._last_command,
+	    $._task_command,
 	),
 
 	_simple_arged_command: $ => prec.left(1, seq(
