@@ -140,7 +140,6 @@ System commands
 !ls
 !!
 !!ls
-!=!
 
 ---
 
@@ -150,8 +149,7 @@ System commands
     (args (arg (arg_identifier))))
   (arged_command (system_identifier))
   (arged_command (system_identifier)
-    (args (arg (arg_identifier))))
-  (arged_command (system_identifier)))
+    (args (arg (arg_identifier)))))
 
 
 ===================
@@ -213,8 +211,8 @@ Last cmd
 ---
 
 (commands
-  (last_command (cmd_identifier))
-  (last_command (cmd_identifier)))
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier)))
 
 ===================
 Interpreter commands
@@ -281,3 +279,51 @@ editor -
 
 (commands
   (arged_command (cmd_identifier)))
+
+
+==============
+equal commands
+==============
+
+=
+=<
+= 3 cmd
+=! cmd
+=+ http://host:3000
+=- 3
+== 3
+=!=
+!=!
+=: host:3000 cmd
+=&: 3000
+
+---
+
+(commands
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier)
+    (args
+      (arg (arg_identifier))
+      (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args
+      (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args
+      (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args
+      (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args
+      (arg (arg_identifier))))
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier)
+    (args
+      (arg (arg_identifier))
+      (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args
+      (arg (arg_identifier)))))

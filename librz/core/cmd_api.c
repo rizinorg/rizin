@@ -409,7 +409,7 @@ RZ_API int rz_cmd_call(RzCmd *cmd, const char *input) {
 				rz_cons_strcat (ji + 1);
 				return true;
 			} else {
-				nstr = rz_str_newf ("=!%s", input);
+				nstr = rz_str_newf ("=! %s", input);
 				input = nstr;
 			}
 		}
@@ -450,6 +450,9 @@ static void get_minmax_argc(RzCmdDesc *cd, int *min_argc, int *max_argc) {
 	*max_argc = 1;
 	const RzCmdDescArg *arg = cd->help->args;
 	while (arg && arg->name && !arg->optional) {
+		if (arg->type == RZ_CMD_ARG_TYPE_FAKE) {
+			continue;
+		}
 		(*min_argc)++;
 		(*max_argc)++;
 		switch (arg->type) {
@@ -462,6 +465,9 @@ static void get_minmax_argc(RzCmdDesc *cd, int *min_argc, int *max_argc) {
 		arg++;
 	}
 	while (arg && arg->name) {
+		if (arg->type == RZ_CMD_ARG_TYPE_FAKE) {
+			continue;
+		}
 		(*max_argc)++;
 		switch (arg->type) {
 		case RZ_CMD_ARG_TYPE_ARRAY_STRING:
@@ -670,12 +676,20 @@ static size_t fill_args(RzStrBuf *sb, RzCmdDesc *cd) {
 	size_t len = 0;
 	bool has_array = false;
 	for (arg = cd->help->args; arg && arg->name; arg++) {
+		if (arg->type == RZ_CMD_ARG_TYPE_FAKE) {
+			rz_strbuf_append (sb, arg->name);
+			len += strlen (arg->name);
+			continue;
+		}
+
 		if (has_array) {
 			rz_warn_if_reached ();
 			break;
 		}
-		rz_strbuf_append (sb, " ");
-		len++;
+		if (!arg->no_space) {
+			rz_strbuf_append (sb, " ");
+			len++;
+		}
 		if (arg->optional) {
 			rz_strbuf_append (sb, "[");
 			len++;
@@ -741,7 +755,7 @@ static void fill_usage_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_
 			columns += fill_children_chars (sb, cd);
 		}
 		rz_strbuf_append (sb, pal_args_color);
-		if (RZ_STR_ISNOTEMPTY (cd->help->args_str)) {
+		if (cd->help->args_str) {
 			columns += strbuf_append_calc (sb, cd->help->args_str);
 		} else {
 			columns += fill_args (sb, cd);
@@ -768,7 +782,7 @@ static size_t calc_padding_len(RzCmdDesc *cd, const char *name) {
 		children_length += rz_strbuf_length (&sb);
 		rz_strbuf_fini (&sb);
 	}
-	if (RZ_STR_ISNOTEMPTY (cd->help->args_str)) {
+	if (cd->help->args_str) {
 		args_len = strlen0 (cd->help->args_str);
 	} else {
 		RzStrBuf sb;
@@ -813,7 +827,7 @@ static void do_print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, const c
 		columns += fill_children_chars (sb, cd);
 	}
 	rz_strbuf_append (sb, pal_args_color);
-	if (RZ_STR_ISNOTEMPTY (cd->help->args_str)) {
+	if (cd->help->args_str) {
 		columns += strbuf_append_calc (sb, cd->help->args_str);
 	} else {
 		columns += fill_args (sb, cd);

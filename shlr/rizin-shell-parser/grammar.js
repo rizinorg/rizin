@@ -110,13 +110,11 @@ module.exports = grammar({
 	    $.repeat_command,
 	    $.arged_command,
 	    $.number_command,
-	    $.task_command,
 	    $._tmp_command,
 	    $._iter_command,
 	    $._foreach_command,
 	    $._pipe_command,
 	    $.grep_command,
-	    $.last_command,
 	    $.legacy_quoted_command,
 	    $._pf_commands,
 	),
@@ -294,7 +292,7 @@ module.exports = grammar({
 	tmp_hex_command: $ => prec.right(1, seq($._simple_command, '@x:', $.arg)),
 
 	// basic commands
-	task_command: $ => prec.left(1, choice(
+	_task_command: $ => prec.left(1, choice(
 	    seq(
 		field('command', alias(choice('&', '&t'), $.cmd_identifier)),
 		field('args', optional($._simple_command)),
@@ -325,6 +323,8 @@ module.exports = grammar({
 	    $._interpret_command,
 	    $._env_command,
 	    $._pf_arged_command,
+	    $._last_command,
+	    $._task_command,
 	),
 
 	_simple_arged_command: $ => prec.left(1, seq(
@@ -486,7 +486,7 @@ module.exports = grammar({
 	    field('args', optional(alias($.eq_sep_args, $.args))),
 	)),
 	_env_command_identifier: $ => choice('%', 'env'),
-	last_command: $ => seq(
+	_last_command: $ => seq(
 	    field('command', alias($.last_command_identifier, $.cmd_identifier)),
 	),
 

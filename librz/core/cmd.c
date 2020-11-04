@@ -97,6 +97,7 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 }
 
 static void cmd_debug_reg(RzCore *core, const char *str);
+static bool lastcmd_repeat(RzCore *core, int next);
 
 #include "cmd_quit.c"
 #include "cmd_hash.c"
@@ -108,6 +109,7 @@ static void cmd_debug_reg(RzCore *core, const char *str);
 #include "cmd_write.c"
 #include "cmd_cmp.c"
 #include "cmd_eval.c"
+#include "cmd_interpret.c"
 #include "cmd_anal.c"
 #include "cmd_open.c"
 #include "cmd_meta.c"
@@ -120,6 +122,7 @@ static void cmd_debug_reg(RzCore *core, const char *str);
 #include "cmd_search.c" // defines incDigitBuffer... used by cmd_print
 #include "cmd_print.c"
 #include "cmd_help.c"
+#include "cmd_remote.c"
 
 static const char *help_msg_dollar[] = {
 	"Usage:", "$alias[=cmd] [args...]", "Alias commands and strings (See ?$? for help on $variables)",
@@ -167,69 +170,6 @@ static const char *help_msg_dot[] = {
 	".!", "rabin -ri $FILE", "interpret output of command",
 	".", "(foo 1 2 3)", "run macro 'foo' with args 1, 2, 3",
 	"./", " ELF", "interpret output of command /m ELF as r. commands",
-	NULL
-};
-
-static const char *help_msg_equal[] = {
-	"Usage:", " =[:!+-=ghH] [...]", " # connect with other instances of rizin",
-	"\nremote commands:", "", "",
-	"=", "", "list all open connections",
-	"=<", "[fd] cmd", "send output of local command to remote fd", // XXX may not be a special char
-	"=", "[fd] cmd", "exec cmd at remote 'fd' (last open is default one)",
-	"=!", " cmd", "run command via rz_io_system",
-	"=+", " [proto://]host:port", "connect to remote host:port (*rap://, raps://, tcp://, udp://, http://)",
-	"=-", "[fd]", "remove all hosts or host 'fd'",
-	"==", "[fd]", "open remote session with host 'fd', 'q' to quit",
-	"=!=", "", "disable remote cmd mode",
-	"!=!", "", "enable remote cmd mode",
-	"\nservers:","","",
-	".:", "9000", "start the tcp server (echo x|nc ::1 9090 or curl ::1:9090/cmd/x)",
-	"=:", "port", "start the rap server (o rap://9999)",
-	"=g", "[?]", "start the gdbserver",
-	"=h", "[?]", "start the http webserver",
-	"=H", "[?]", "start the http webserver (and launch the web browser)",
-	"\nother:","","",
-	"=&", ":port", "start rap server in background (same as '&_=h')",
-	"=", ":host:port cmd", "run 'cmd' command on remote server",
-	"\nexamples:","","",
-	"=+", "tcp://localhost:9090/", "connect to: rizin -c.:9090 ./bin",
-	// "=+", "udp://localhost:9090/", "connect to: rizin -c.:9090 ./bin",
-	"=+", "rap://localhost:9090/", "connect to: rizin rap://:9090",
-	"=+", "http://localhost:9090/cmd/", "connect to: rizin -c'=h 9090' bin",
-	"o ", "rap://:9090/", "start the rap server on tcp port 9090",
-	NULL
-};
-
-#if 0
-static const char *help_msg_equalh[] = {
-	"Usage:",  "=h[---*&] [port]", " # manage http connections",
-	"=h", " port", "listen for http connections (rizin -qc=H /bin/ls)",
-	"=h-", "", "stop background webserver",
-	"=h--", "", "stop foreground webserver",
-	"=h*", "", "restart current webserver",
-	"=h&", " port", "start http server in background",
-	NULL
-};
-#endif
-
-static const char *help_msg_equalh[] = {
-	"Usage:", " =[hH] [...]", " # http server",
-	"http server:", "", "",
-	"=h", " port", "listen for http connections (rizin -qc=H /bin/ls)",
-	"=h-", "", "stop background webserver",
-	"=h--", "", "stop foreground webserver",
-	"=h*", "", "restart current webserver",
-	"=h&", " port", "start http server in background",
-	"=H", " port", "launch browser and listen for http",
-	"=H&", " port", "launch browser and listen for http in background",
-	NULL
-};
-
-static const char *help_msg_equalg[] = {
-	"Usage:", " =[g] [...]", " # gdb server",
-	"gdbserver:", "", "",
-	"=g", " port file [args]", "listen on 'port' debugging 'file' using gdbserver",
-	"=g!", " port file [args]", "same as above, but debug protocol messages (like gdbserver --remote-debug)",
 	NULL
 };
 
@@ -443,6 +383,7 @@ static bool lastcmd_repeat(RzCore *core, int next) {
 		res = rz_core_cmd0 (core, core->lastcmd);
 		break;
 	}
+	core->is_lastcmd = true;
 	return res != -1;
 }
 
@@ -623,112 +564,6 @@ static int cmd_alias(void *data, const char *input) {
 		}
 	}
 	free (buf);
-	return 0;
-}
-
-static int getArg(char ch, int def) {
-	switch (ch) {
-	case '&':
-	case '-':
-		return ch;
-	}
-	return def;
-}
-
-// wtf dupe for local vs remote?
-static void aliascmd(RzCore *core, const char *str) {
-	switch (str[0]) {
-	case '\0': // "=$"
-		rz_core_cmd0 (core, "$");
-		break;
-	case '-': // "=$-"
-		if (str[1]) {
-			rz_cmd_alias_del (core->rcmd, str + 2);
-		} else {
-			rz_cmd_alias_del (core->rcmd, NULL);
-		//	rz_cmd_alias_reset (core->rcmd);
-		}
-		break;
-	case '?': // "=$?"
-		eprintf ("Usage: =$[-][remotecmd]  # remote command alias\n");
-		eprintf (" =$dr   # makes 'dr' alias for =!dr\n");
-		eprintf (" =$-dr  # unset 'dr' alias\n");
-		break;
-	default:
-		rz_cmd_alias_set (core->rcmd, str, "", 1);
-		break;
-	}
-}
-
-static int cmd_rap(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	switch (*input) {
-	case '\0': // "="
-		rz_core_rtr_list (core);
-		break;
-	case 'j': // "=j"
-		eprintf ("TODO: list connections in json\n");
-		break;
-	case '!': // "=!"
-		if (input[1] == 'q') {
-			RZ_FREE (core->cmdremote);
-		} else if (input[1] == '=') { // =!=0 or =!= for iosystem
-			RZ_FREE (core->cmdremote);
-			core->cmdremote = rz_str_trim_dup (input + 2);
-		} else {
-			char *res = rz_io_system (core->io, input + 1);
-			if (res) {
-				rz_cons_printf ("%s\n", res);
-				free (res);
-			}
-		}
-		break;
-	case '$': // "=$"
-		// XXX deprecate?
-		aliascmd (core, input + 1);
-		break;
-	case '+': // "=+"
-		rz_core_rtr_add (core, input + 1);
-		break;
-	case '-': // "=-"
-		rz_core_rtr_remove (core, input + 1);
-		break;
-	//case ':': rz_core_rtr_cmds (core, input + 1); break;
-	case '<': // "=<"
-		rz_core_rtr_pushout (core, input + 1);
-		break;
-	case '=': // "=="
-		rz_core_rtr_session (core, input + 1);
-		break;
-	case 'g': // "=g"
-		if (input[1] == '?') {
-			rz_core_cmd_help (core, help_msg_equalg);
-		} else {
-			rz_core_rtr_gdb (core, getArg (input[1], 'g'), input + 1);
-		}
-		break;
-	case 'h': // "=h"
-		if (input[1] == '?') {
-			rz_core_cmd_help (core, help_msg_equalh);
-		} else {
-			rz_core_rtr_http (core, getArg (input[1], 'h'), 'h', input + 1);
-		}
-		break;
-	case 'H': // "=H"
-		if (input[1] == '?') {
-			rz_core_cmd_help (core, help_msg_equalh);
-		} else {
-			const char *arg = rz_str_trim_head_ro (input + 1);
-			rz_core_rtr_http (core, getArg (input[1], 'H'), 'H', arg);
-		}
-		break;
-	case '?': // "=?"
-		rz_core_cmd_help (core, help_msg_equal);
-		break;
-	default:
-		rz_core_rtr_cmd (core, input);
-		break;
-	}
 	return 0;
 }
 
@@ -6289,22 +6124,6 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_thread_command) {
 	return res;
 }
 
-DEFINE_HANDLE_TS_FCN_AND_SYMBOL(last_command) {
-	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
-	char *command_str = ts_node_sub_string (command, state->input);
-	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
-	state->is_last_cmd = true;
-	if (!strcmp (command_str, ".")) {
-		res = lastcmd_repeat (state->core, 0);
-	} else if (!strcmp (command_str, "...")) {
-		res = lastcmd_repeat (state->core, 1);
-	} else {
-		rz_warn_if_reached ();
-	}
-	free (command_str);
-	return res;
-}
-
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(grep_command) {
 	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
 	TSNode arg = ts_node_child_by_field_name (node, "specifier", strlen ("specifier"));
@@ -6378,12 +6197,6 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(scr_tts_command) {
 	return res;
 }
 
-DEFINE_HANDLE_TS_FCN_AND_SYMBOL(task_command) {
-	// TODO: this should be handled differently, if the argument is a command.
-	//       For now we just treat everything as an arged_command
-	return handle_ts_arged_command (state, node);
-}
-
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(number_command) {
 	ut64 addr = rz_num_math (state->core->num, node_string);
 	rz_core_seek (state->core, addr, true);
@@ -6397,16 +6210,18 @@ static RzCmdStatus handle_ts_command(struct tsr2cmd_state *state, TSNode node) {
 	TSSymbol node_symbol = ts_node_symbol (node);
 	ts_handler handler = ht_up_find (cmd->ts_symbols_ht, node_symbol, NULL);
 
-	state->is_last_cmd = false;
+	bool is_lastcmd = state->core->is_lastcmd;
+	state->core->is_lastcmd = false;
 	if (handler) {
 		ret = handler (state, node);
 	} else {
 		RZ_LOG_WARN ("No handler for this kind of command `%s`\n", ts_node_type (node));
 	}
-	if (state->log && !state->is_last_cmd) {
+	if (state->log && !state->core->is_lastcmd) {
 		free (state->core->lastcmd);
 		state->core->lastcmd = ts_node_sub_string (node, state->input);
 	}
+	state->core->is_lastcmd = is_lastcmd;
 	return ret;
 }
 
@@ -6967,9 +6782,9 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "(", "macro", cmd_macro, cmd_macro_init, &macro_help },
 		{ "*", "pointer read/write", cmd_pointer, NULL, &pointer_help, NULL, RZ_CMD_DESC_TYPE_ARGV, pointer_handler },
 		{ "-", "open cfg.editor and run script", cmd_stdin, NULL, &stdin_help },
-		{ ".", "interpret", cmd_interpret, NULL, &interpret_help },
+		{ ".", "interpret", cmd_interpret, cmd_interpret_init, &point_help, &point_group_help, RZ_CMD_DESC_TYPE_GROUP, point_handler },
 		{ "/", "search kw, pattern aes", cmd_search, cmd_search_init, &search_help },
-		{ "=", "io pipe", cmd_rap, NULL, &rap_help },
+		{ "=", "io pipe", cmd_remote, cmd_remote_init, &equal_help, &equal_group_help, RZ_CMD_DESC_TYPE_GROUP, equal_handler },
 		{ "?", "help message", cmd_help, cmd_help_init, &help_help },
 		{ "<", "pipe into RzCons.readChar", cmd_pipein, NULL, &pipein_help, NULL, RZ_CMD_DESC_TYPE_ARGV, pipein_handler },
 		{ "0", "alias for s 0x", cmd_ox, NULL, &zero_help },

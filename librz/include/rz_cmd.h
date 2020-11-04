@@ -33,6 +33,7 @@ typedef enum rz_cmd_status_t {
  * in help messages and for autocompletion as well.
  */
 typedef enum rz_cmd_arg_type_t {
+	RZ_CMD_ARG_TYPE_FAKE, ///< This is not considered a real argument, just used to show something in the help. Name of arg is shown as-is and it is not counted.
 	RZ_CMD_ARG_TYPE_NUM, ///< Argument that can be interpreted by RzNum (numbers, flags, operations, etc.)
 	RZ_CMD_ARG_TYPE_STRING, ///< Argument that can be an arbitrary string
 	RZ_CMD_ARG_TYPE_ENV, ///< Argument can be the name of an existing rizin variable
@@ -42,6 +43,8 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_FCN, ///< Argument can be the name of an existing function
 	RZ_CMD_ARG_TYPE_FILE, ///< Argument is a filename
 	RZ_CMD_ARG_TYPE_OPTION, ///< Argument is an option, prefixed with `-`. It is present or not. No argument.
+	RZ_CMD_ARG_TYPE_CMD, ///< Argument is an rizin command
+	RZ_CMD_ARG_TYPE_MACRO, ///< Argument is the name of a pre-defined macro
 } RzCmdArgType;
 
 typedef int (*RzCmdCb) (void *user, const char *input);
@@ -168,6 +171,11 @@ typedef struct rz_cmd_desc_arg_t {
 	 * - `CMDNAME a0 a1 a2 a3 a4` is a valid command
 	 */
 	bool optional;
+	/**
+	 * True if no space should be displayed before this argument in the help. By default it is
+	 * false and a space is displayed before this argument.
+	 */
+	bool no_space;
 	/**
 	 * Type of the argument.
 	 */
@@ -388,9 +396,12 @@ typedef struct rz_core_plugin_t {
 	DEFINE_CMD_ARGV_DESC_SPECIAL (core, name, name, parent)
 #define DEFINE_CMD_OLDINPUT_DESC_SPECIAL(core, name, c_name, parent) \
 	RzCmdDesc *c_name##_cd = rz_cmd_desc_oldinput_new (core->rcmd, parent, #name, c_name##_handler_old, &c_name##_help); \
-	rz_warn_if_fail (name##_cd)
+	rz_warn_if_fail (c_name##_cd)
 #define DEFINE_CMD_OLDINPUT_DESC(core, name, parent) \
 	DEFINE_CMD_OLDINPUT_DESC_SPECIAL (core, name, name, parent)
+#define DEFINE_CMD_FAKE_SPECIAL(core, name, c_name, parent) \
+	RzCmdDesc *c_name##_cd = rz_cmd_desc_fake_new (core->rcmd, parent, #name, &c_name##_help); \
+	rz_warn_if_fail (c_name##_cd)
 
 #ifdef RZ_API
 RZ_API int rz_core_plugin_init(RzCmd *cmd);
