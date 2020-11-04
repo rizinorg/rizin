@@ -41,6 +41,6 @@ pkgconfig_mod.generate(rz_magic,
   requires: [
     'rz_util'
   ],
-  description: 'radare foundation libraries'
+  description: 'rizin foundation libraries'
 )
 pkgconfig_magic_requires = ['rz_magic']

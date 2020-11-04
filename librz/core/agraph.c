@@ -4421,7 +4421,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalFunction *_fcn,
 				" , (comma)    - toggle graph.few\n"
 				" ^            - seek to the first bb of the function\n"
 				" =            - toggle graph.layout\n"
-				" :cmd         - run radare command\n"
+				" :cmd         - run rizin command\n"
 				" '            - toggle graph.comments\n"
 				" \"            - toggle graph.refs\n"
 				" #            - toggle graph.hints\n"

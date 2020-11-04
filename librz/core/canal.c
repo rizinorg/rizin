@@ -3960,7 +3960,7 @@ static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalRefType type, 
 		rz_cons_printf ("\"0x%"PFMT64x"\":\"0x%"PFMT64x"\"", xref_to, at);
 	} else {
 		int len = 0;
-		// Display in radare commands format
+		// Display in rizin commands format
 		char *cmd;
 		switch (type) {
 		case RZ_ANAL_REF_TYPE_CODE: cmd = "axc"; break;

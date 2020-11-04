@@ -196,7 +196,7 @@ typedef struct rz_debug_session_t {
 	HtUP *memory; /* RzVector<RzDebugChangeMem> */
 	HtUP *registers; /* RzVector<RzDebugChangeReg> */
 	int reasontype /*RzDebugReasonType*/;
-	RBreakpointItem *bp;
+	RzBreakpointItem *bp;
 } RzDebugSession;
 
 /* Session file format */
@@ -288,7 +288,7 @@ typedef struct rz_debug_t {
 	RzReg *reg;
 	RzList *q_regs;
 	const char *creg; // current register value
-	RBreakpoint *bp;
+	RzBreakpoint *bp;
 	void *user; // XXX(jjd): unused?? meant for caller's use??
 	char *snap_path;
 
@@ -302,7 +302,7 @@ typedef struct rz_debug_t {
 	bool pc_at_bp; /* after a breakpoint, is the pc at the bp? */
 	bool pc_at_bp_set; /* is the pc_at_bp variable set already? */
 
-	REvent *ev;
+	RzEvent *ev;
 
 	RzAnal *anal;
 	RzList *maps; // <RzDebugMap>
@@ -386,7 +386,7 @@ typedef struct rz_debug_plugin_t {
 	RzList* (*kill_list)(RzDebug *dbg);
 	int (*contsc)(RzDebug *dbg, int pid, int sc);
 	RzList* (*frames)(RzDebug *dbg, ut64 at);
-	RBreakpointCallback breakpoint;
+	RzBreakpointCallback breakpoint;
 // XXX: specify, pid, tid, or RzDebug ?
 	int (*reg_read)(RzDebug *dbg, int type, ut8 *buf, int size);
 	int (*reg_write)(RzDebug *dbg, int type, const ut8 *buf, int size); //XXX struct rz_regset_t regs);
@@ -437,7 +437,7 @@ RZ_API RzDebugReasonType rz_debug_stop_reason(RzDebug *dbg);
 RZ_API const char *rz_debug_reason_to_string(int type);
 
 /* wait for another event */
-RZ_API RzDebugReasonType rz_debug_wait(RzDebug *dbg, RBreakpointItem **bp);
+RZ_API RzDebugReasonType rz_debug_wait(RzDebug *dbg, RzBreakpointItem **bp);
 
 /* continuations */
 RZ_API int rz_debug_step(RzDebug *dbg, int steps);
@@ -538,7 +538,7 @@ RZ_API ut64 rz_debug_arg_get(RzDebug *dbg, int fast, int num);
 RZ_API bool rz_debug_arg_set(RzDebug *dbg, int fast, int num, ut64 value);
 
 /* breakpoints (most in rz_bp, this calls those) */
-RZ_API RBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool watch, int rw, char *module, st64 m_delta);
+RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool watch, int rw, char *module, st64 m_delta);
 RZ_API void rz_debug_bp_rebase(RzDebug *dbg, ut64 old_base, ut64 new_base);
 RZ_API void rz_debug_bp_update(RzDebug *dbg);
 

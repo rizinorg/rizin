@@ -84,7 +84,7 @@ static const char *help_msg_ai[] = {
 static const char *help_msg_aar[] = {
 	"Usage:", "aar", "[j*] [sz] # search and analyze xrefs",
 	"aar", " [sz]", "analyze xrefs in current section or sz bytes of code",
-	"aar*", " [sz]", "list found xrefs in radare commands format",
+	"aar*", " [sz]", "list found xrefs in rizin commands format",
 	"aarj", " [sz]", "list found xrefs in JSON format",
 	NULL
 };
@@ -583,7 +583,7 @@ static const char *help_msg_ah[] = {
 	"ah.", "", "list hints in human-readable format from current offset",
 	"ah-", "", "remove all hints",
 	"ah-", " offset [size]", "remove hints at given offset",
-	"ah*", " offset", "list hints in radare commands format",
+	"ah*", " offset", "list hints in rizin commands format",
 	"aha", " ppc @ 0x42", "force arch ppc for all addrs >= 0x42 or until the next hint",
 	"aha", " 0 @ 0x84", "disable the effect of arch hints for all addrs >= 0x84 or until the next hint",
 	"ahb", " 16 @ 0x42", "force 16bit for all addrs >= 0x42 or until the next hint",
@@ -720,7 +720,7 @@ static const char *help_msg_av[] = {
 static const char *help_msg_ax[] = {
 	"Usage:", "ax[?d-l*]", " # see also 'afx?'",
 	"ax", "", "list refs",
-	"ax*", "", "output radare commands",
+	"ax*", "", "output rizin commands",
 	"ax", " addr [at]", "add code ref pointing to addr (from curseek)",
 	"ax-", " [at]", "clean all refs/refs from addr",
 	"ax-*", "", "clean all refs/refs",

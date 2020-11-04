@@ -517,7 +517,7 @@ case "$1" in
 	if [ -n "$3" ]; then
 		TRAVIS_JOB="$3"
 	else
-		TRAVIS_JOB=`${CURL} -s https://api.travis-ci.com/repos?slug=radare%2Frizin| jq .[0].last_build_id`
+		TRAVIS_JOB=`${CURL} -s https://api.travis-ci.com/repos?slug=rizin%2Frizin| jq .[0].last_build_id`
 		TRAVIS_JOB=$(($TRAVIS_JOB+1))
 	fi
 	echo $TRAVIS_JOB >&2

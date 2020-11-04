@@ -4,7 +4,7 @@ libdir=@LIBDIR@
 includedir=${prefix}/include
 
 Name: rz_syscall
-Description: radare foundation libraries
+Description: rizin foundation libraries
 Version: @VERSION@
 Requires: rz_util
 Libs: -L${libdir} -lrz_syscall  

@@ -602,7 +602,7 @@ RzAnalPlugin rz_anal_plugin_riscv_cs = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_riscv_cs,
 	.version = RZ_VERSION
@@ -612,7 +612,7 @@ RZ_API RzLibStruct radare_plugin = {
 #else
 RzAnalPlugin rz_anal_plugin_riscv_cs = {0};
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ANAL,
 	.version = RZ_VERSION
 };

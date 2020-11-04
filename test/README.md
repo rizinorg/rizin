@@ -82,7 +82,7 @@ Example tests for `db/asm/*`:
 	aB "nop" 90
 	dB "nop" 90
 
-        The filename is very important. It is used to tell radare which architecture to use.
+        The filename is very important. It is used to tell rizin which architecture to use.
 
         Format:
         arch[[_cpu]_bits]

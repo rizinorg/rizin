@@ -7,9 +7,9 @@
 #include <rz_diff.h>
 #include <rz_regex.h>
 #include <rz_getopt.h>
-#include <rz_list.h> // radare linked list
+#include <rz_list.h> // rizin linked list
 #include <rz_skiplist.h> // skiplist
-#include <rz_flist.h> // radare fixed pointer array iterators
+#include <rz_flist.h> // rizin fixed pointer array iterators
 #include <rz_binheap.h>
 #include <rz_th.h>
 #if !__WINDOWS__

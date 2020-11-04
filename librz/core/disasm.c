@@ -1581,7 +1581,7 @@ static void ds_print_show_cursor(RDisasmState *ds) {
 	int q = core->print->cur_enabled &&
 		ds->cursor >= ds->index &&
 		ds->cursor < (ds->index + ds->asmop.size);
-	RBreakpointItem *p = rz_bp_get_at (core->dbg->bp, ds->at);
+	RzBreakpointItem *p = rz_bp_get_at (core->dbg->bp, ds->at);
 	if (ds->midflags) {
 		(void)handleMidFlags (core, ds, false);
 	}
@@ -3783,7 +3783,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 			prefix = "u";
 		} else if (str_len == 1 && len > 7 && !str[2] && !str[3] && str[4] && !str[5]) {
 			RzStrEnc enc = RZ_STRING_ENC_UTF32LE;
-			RRune ch;
+			RzRune ch;
 			const char *ptr, *end;
 			end = (const char *)rz_mem_mem_aligned ((ut8 *)str, len, (ut8 *)"\0\0\0\0", 4, 4);
 			if (!end) {

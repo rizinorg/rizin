@@ -1933,7 +1933,7 @@ static bool listCB(void *user, const char *k, const char *v) {
 		pj_o (ctx->pj);
 	}
 
-	// Zignspace and name (except for radare format)
+	// Zignspace and name (except for rizin format)
 	if (ctx->format == '*') {
 		if (it->space) {
 			a->cb_printf ("zs %s\n", it->space->name);

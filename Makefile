@@ -384,7 +384,7 @@ shot:
 	${CZ} "rizin-$${DATE}.tar" ;\
 	mv "rizin-$${DATE}" rizin && \
 	scp "rizin-$${DATE}.${TAREXT}" \
-		radare.org:/srv/http/rizinorg/get/shot
+		rizin.org:/srv/http/rizinorg/get/shot
 
 tests:
 	$(MAKE) -C $(RZ_TEST)

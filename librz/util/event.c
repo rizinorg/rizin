@@ -4,17 +4,17 @@
 #include <rz_vector.h>
 
 typedef struct rz_event_callback_hook_t {
-	REventCallback cb;
+	RzEventCallback cb;
 	void *user;
 	int handle;
-} REventCallbackHook;
+} RzEventCallbackHook;
 
 static void ht_callback_free(HtUPKv *kv) {
 	rz_vector_free ((RzVector *)kv->value);
 }
 
-RZ_API REvent *rz_event_new(void *user) {
-	REvent *ev = RZ_NEW0 (REvent);
+RZ_API RzEvent *rz_event_new(void *user) {
+	RzEvent *ev = RZ_NEW0 (RzEvent);
 	if (!ev) {
 		return NULL;
 	}
@@ -25,14 +25,14 @@ RZ_API REvent *rz_event_new(void *user) {
 	if (!ev->callbacks) {
 		goto err;
 	}
-	rz_vector_init (&ev->all_callbacks, sizeof (REventCallbackHook), NULL, NULL);
+	rz_vector_init (&ev->all_callbacks, sizeof (RzEventCallbackHook), NULL, NULL);
 	return ev;
 err:
 	rz_event_free (ev);
 	return NULL;
 }
 
-RZ_API void rz_event_free(REvent *ev) {
+RZ_API void rz_event_free(RzEvent *ev) {
 	if (!ev) {
 		return;
 	}
@@ -41,10 +41,10 @@ RZ_API void rz_event_free(REvent *ev) {
 	free (ev);
 }
 
-static RzVector *get_cbs(REvent *ev, int type) {
+static RzVector *get_cbs(RzEvent *ev, int type) {
 	RzVector *cbs = ht_up_find (ev->callbacks, (ut64)type, NULL);
 	if (!cbs) {
-		cbs = rz_vector_new (sizeof (REventCallbackHook), NULL, NULL);
+		cbs = rz_vector_new (sizeof (RzEventCallbackHook), NULL, NULL);
 		if (cbs) {
 			ht_up_insert (ev->callbacks, (ut64)type, cbs);
 		}
@@ -52,9 +52,9 @@ static RzVector *get_cbs(REvent *ev, int type) {
 	return cbs;
 }
 
-RZ_API REventCallbackHandle rz_event_hook(REvent *ev, int type, REventCallback cb, void *user) {
-	REventCallbackHandle handle = { 0 };
-	REventCallbackHook hook;
+RZ_API RzEventCallbackHandle rz_event_hook(RzEvent *ev, int type, RzEventCallback cb, void *user) {
+	RzEventCallbackHandle handle = { 0 };
+	RzEventCallbackHook hook;
 
 	rz_return_val_if_fail (ev, handle);
 	hook.cb = cb;
@@ -77,7 +77,7 @@ RZ_API REventCallbackHandle rz_event_hook(REvent *ev, int type, REventCallback c
 static bool del_hook(void *user, const ut64 k, const void *v) {
 	int handle = *(int *)user;
 	RzVector *cbs = (RzVector *)v;
-	REventCallbackHook *hook;
+	RzEventCallbackHook *hook;
 	size_t i;
 	rz_return_val_if_fail (cbs, false);
 	rz_vector_enumerate (cbs, hook, i) {
@@ -89,7 +89,7 @@ static bool del_hook(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
-RZ_API void rz_event_unhook(REvent *ev, REventCallbackHandle handle) {
+RZ_API void rz_event_unhook(RzEvent *ev, RzEventCallbackHandle handle) {
 	rz_return_if_fail (ev);
 	if (handle.type == RZ_EVENT_ALL) {
 		// try to delete it both from each list of callbacks and from
@@ -103,8 +103,8 @@ RZ_API void rz_event_unhook(REvent *ev, REventCallbackHandle handle) {
 	}
 }
 
-RZ_API void rz_event_send(REvent *ev, int type, void *data) {
-	REventCallbackHook *hook;
+RZ_API void rz_event_send(RzEvent *ev, int type, void *data) {
+	RzEventCallbackHook *hook;
 	rz_return_if_fail (ev && !ev->incall);
 
 	// send to both the per-type callbacks and to the all_callbacks

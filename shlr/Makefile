@@ -78,7 +78,7 @@ MODS+=ptrace-wrap
 endif
 SDB_URL=git://github.com/rizinorg/sdb
 #SDB_URL=/Users/pancake/prg/sdb
-SPP_URL=git://github.com/radare/spp
+SPP_URL=git://github.com/rizin/spp
 PTRACE_WRAP_URL=git://github.com/thestr4ng3r/ptrace-wrap
 PWD=$(shell pwd)
 SDB_CONFIG=${PWD}/sdb-config.mk

@@ -33,30 +33,30 @@ DEFAULT_CAP="--cap-drop=ALL"
 
 case "$1" in
 -p)
-	docker pull radare/rizin:latest
+	docker pull rizin/rizin:latest
 	# Tag image to preserve old reference
-	docker tag radare/rizin:latest rizin:latest
+	docker tag rizin/rizin:latest rizin:latest
 	;;
 -r)
 	# Delete all rizin containers
 	docker rm -f $(docker ps -a | grep rizin | awk '{print $1}') 2> /dev/null
 	# Delete tag to preserve old reference
 	docker rmi rizin:latest 2> /dev/null
-	docker rmi radare/rizin:latest 2> /dev/null
+	docker rmi rizin/rizin:latest 2> /dev/null
 	;;
 -d)
 	R2FLAGS=-d $0 $2
 	;;
 -u)
-	docker build -t radare/rizin:latest .
+	docker build -t rizin/rizin:latest .
 	# Tag image to preserve old reference
-	docker tag radare/rizin:latest rizin:latest
+	docker tag rizin/rizin:latest rizin:latest
 	;;
 -l)
 	docker images | grep rizin
 	;;
 shell|sh|-s)
-	docker run ${ALLOW_DEBUG} ${DEFAULT_CAP} -v $PWD/dockervol:/mnt -ti radare/rizin:latest || echo "run rz-docker -u to update the docker image"
+	docker run ${ALLOW_DEBUG} ${DEFAULT_CAP} -v $PWD/dockervol:/mnt -ti rizin/rizin:latest || echo "run rz-docker -u to update the docker image"
 	;;
 -h|'')
 	showHelp
@@ -69,10 +69,10 @@ shell|sh|-s)
 		rm -rf dockervol
 		mkdir -p dockervol
 		cp -f "$1" "dockervol/$F"
-		docker run ${ALLOW_DEBUG} ${DEFAULT_CAP} -v $PWD/dockervol:/mnt -p 9090:9090 -ti radare/rizin:latest r2 ${R2FLAGS} /mnt/$F
+		docker run ${ALLOW_DEBUG} ${DEFAULT_CAP} -v $PWD/dockervol:/mnt -p 9090:9090 -ti rizin/rizin:latest r2 ${R2FLAGS} /mnt/$F
 		rm -rf dockervol
 	else
-		docker run ${ALLOW_DEBUG} ${DEFAULT_CAP} -v $PWD/dockervol:/mnt -p 9090:9090 -ti radare/rizin:latest r2 ${R2FLAGS} $1
+		docker run ${ALLOW_DEBUG} ${DEFAULT_CAP} -v $PWD/dockervol:/mnt -p 9090:9090 -ti rizin/rizin:latest r2 ${R2FLAGS} $1
 	fi
 	;;
 esac

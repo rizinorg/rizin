@@ -164,7 +164,7 @@ static const char *help_msg_dd[] = {
 	"dd", "", "List file descriptors",
 	"dd", " <file>", "Open and map that file into the UI",
 	"dd-", "<fd>", "Close stdout fd",
-	"dd*", "", "List file descriptors (in radare commands)",
+	"dd*", "", "List file descriptors (in rizin commands)",
 	"dds", " <fd> <off>", "Seek given fd)",
 	"ddd", " <fd1> <fd2>", "Dup2 from fd1 to fd2",
 	"ddr", " <fd> <size>", "Read N bytes from fd",
@@ -226,12 +226,12 @@ static const char *help_msg_dm[] = {
 	"dm", " address size", "Allocate <size> bytes at <address> (anywhere if address is -1) in child process",
 	"dm=", "", "List memory maps of target process (ascii-art bars)",
 	"dm.", "", "Show map name of current address",
-	"dm*", "", "List memmaps in radare commands",
+	"dm*", "", "List memmaps in rizin commands",
 	"dm-", " address", "Deallocate memory map of <address>",
 	"dmd", "[a] [file]", "Dump current (all) debug map region to a file (from-to.dmp) (see Sd)",
 	"dmh", "[?]", "Show map of heap",
 	"dmi", " [addr|libname] [symname]", "List symbols of target lib",
-	"dmi*", " [addr|libname] [symname]", "List symbols of target lib in radare commands",
+	"dmi*", " [addr|libname] [symname]", "List symbols of target lib in rizin commands",
 	"dmi.", "", "List closest symbol to the current address",
 	"dmiv", "", "Show address of given symbol for given lib",
 	"dmj", "", "List memmaps in JSON format",
@@ -241,7 +241,7 @@ static const char *help_msg_dm[] = {
 	"dms", "[?] <id> <mapaddr>", "Take memory snapshot",
 	"dms-", " <id> <mapaddr>", "Restore memory snapshot",
 	"dmS", " [addr|libname] [sectname]", "List sections of target lib",
-	"dmS*", " [addr|libname] [sectname]", "List sections of target lib in radare commands",
+	"dmS*", " [addr|libname] [sectname]", "List sections of target lib in rizin commands",
 	"dmL", " address size", "Allocate <size> bytes at <address> and promote to huge page",
 	//"dm, " rw- esp 9K", "set 9KB of the stack as read+write (no exec)",
 	"TODO:", "", "map files in process memory. (dmf file @ [addr])",
@@ -252,7 +252,7 @@ static const char *help_msg_dmi[] = {
 	"Usage: dmi", "", " # List/Load Symbols",
 	"dmi", "[j|q|*] [libname] [symname]", "List symbols of target lib",
 	"dmia", "[j|q|*] [libname]", "List all info of target lib",
-	"dmi*", "", "List symbols of target lib in radare commands",
+	"dmi*", "", "List symbols of target lib in rizin commands",
 	"dmi.", "", "List closest symbol to the current address",
 	"dmiv", "", "Show address of given symbol for given lib",
 	NULL
@@ -3163,7 +3163,7 @@ static void static_debug_stop(void *u) {
 static void core_cmd_dbi(RzCore *core, const char *input, const ut64 idx) {
 	int i;
 	char *p;
-	RBreakpointItem *bpi;
+	RzBreakpointItem *bpi;
 	switch (input[2]) {
 	case ' ': // "dbi."
 		{
@@ -3208,7 +3208,7 @@ static void core_cmd_dbi(RzCore *core, const char *input, const ut64 idx) {
 			rz_cons_printf ("%d\n", (int)idx);
 		} else {
 			for (i = 0; i < core->dbg->bp->bps_idx_count; i++) {
-				RBreakpointItem *bp = core->dbg->bp->bps_idx[i];
+				RzBreakpointItem *bp = core->dbg->bp->bps_idx[i];
 				if (bp) {
 					rz_cons_printf ("%d 0x%08"PFMT64x" %s\n", i, bp->addr, bp->expr);
 				}
@@ -3288,7 +3288,7 @@ static void core_cmd_dbi(RzCore *core, const char *input, const ut64 idx) {
 
 #define DB_ARG(x) rz_str_word_get0(str, x)
 static void add_breakpoint(RzCore *core, const char *input, bool hwbp, bool watch) {
-	RBreakpointItem *bpi;
+	RzBreakpointItem *bpi;
 	ut64 addr;
 	int i = 0;
 
@@ -3345,7 +3345,7 @@ static void add_breakpoint(RzCore *core, const char *input, bool hwbp, bool watc
 }
 
 static void rz_core_cmd_bp(RzCore *core, const char *input) {
-	RBreakpointItem *bpi;
+	RzBreakpointItem *bpi;
 	int i, hwbp = rz_config_get_i (core->config, "dbg.hwbp");
 	RzDebugFrame *frame;
 	RzListIter *iter;
@@ -3411,7 +3411,7 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 				bpi->expr = strdup (input + 3);
 			}
 		} else {
-			RBreakpointItem *bp;
+			RzBreakpointItem *bp;
 			rz_list_foreach (core->dbg->bp->bps, iter, bp) {
 				rz_cons_printf ("0x%08"PFMT64x" %s\n", bp->addr, rz_str_get2 (bp->expr));
 			}
@@ -3927,7 +3927,7 @@ static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_ad
 }
 
 static void debug_trace_calls(RzCore *core, const char *input) {
-	RBreakpointItem *bp_final = NULL;
+	RzBreakpointItem *bp_final = NULL;
 	int t = core->dbg->trace->enabled;
 	ut64 from = 0, to = UT64_MAX, final_addr = UT64_MAX;
 
@@ -4586,7 +4586,7 @@ static int cmd_debug_step (RzCore *core, const char *input) {
 		{
 			char delb[128] = RZ_EMPTY;
 			addr = rz_debug_reg_get (core->dbg, "PC");
-			RBreakpointItem *bpi = rz_bp_get_at (core->dbg->bp, addr);
+			RzBreakpointItem *bpi = rz_bp_get_at (core->dbg->bp, addr);
 			sprintf(delb, "db 0x%"PFMT64x"", addr);
 			rz_reg_arena_swap (core->dbg->reg, true);
 			for (i = 0; i < times; i++) {
@@ -4617,7 +4617,7 @@ static int cmd_debug_step (RzCore *core, const char *input) {
 			if (rz_config_get_i (core->config, "cfg.debug")) {
 				char delb[128] = RZ_EMPTY;
 				addr = rz_debug_reg_get (core->dbg, "PC");
-				RBreakpointItem *bpi = rz_bp_get_at (core->dbg->bp, addr);
+				RzBreakpointItem *bpi = rz_bp_get_at (core->dbg->bp, addr);
 				sprintf(delb, "db 0x%"PFMT64x"", addr);
 				rz_bp_del (core->dbg->bp, addr);
 				rz_reg_arena_swap (core->dbg->reg, true);

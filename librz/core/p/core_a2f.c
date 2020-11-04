@@ -399,7 +399,7 @@ RzCorePlugin rz_core_plugin_a2f = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_CORE,
 	.data = &rz_core_plugin_a2f,
 	.version = RZ_VERSION

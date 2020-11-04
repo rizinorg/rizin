@@ -10,7 +10,7 @@
 static const char *help_msg_i[] = {
 	"Usage: i", "", "Get info from opened file (see rz_bin's manpage)",
 	"Output mode:", "", "",
-	"'*'", "", "Output in radare commands",
+	"'*'", "", "Output in rizin commands",
 	"'j'", "", "Output in json",
 	"'q'", "", "Simple quiet output",
 	"Actions:", "", "",

@@ -1,7 +1,7 @@
 RAP protocol
 ============
 
-RAP stands for the Remote Access Protocol of Radare2, it is compatible with radare1
+RAP stands for the Remote Access Protocol of Radare2, it is compatible with rizin1
 and it simply defines a communication between a client and a server to simulate IO
 operations.
 

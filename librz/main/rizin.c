@@ -100,7 +100,7 @@ static int main_help(int line) {
 		" -A           run 'aaa' command to analyze all referenced code\n"
 		" -b [bits]    set asm.bits\n"
 		" -B [baddr]   set base address for PIE binaries\n"
-		" -c 'cmd..'   execute radare command\n"
+		" -c 'cmd..'   execute rizin command\n"
 		" -C           file is host:port (alias for -c+=http://%%s/cmd/)\n"
 		" -d           debug the executable 'file' or running process 'pid'\n"
 		" -D [backend] enable debug mode (e cfg.debug=true)\n"

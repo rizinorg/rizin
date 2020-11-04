@@ -43,5 +43,5 @@ pkgconfig_mod.generate(rz_crypto,
   requires: [
     'rz_util'
   ],
-  description: 'radare foundation libraries'
+  description: 'rizin foundation libraries'
 )

@@ -1,4 +1,4 @@
-/* RAR-VM assembler/disassembler by pancake for radare with love */
+/* RAR-VM assembler/disassembler by pancake for rizin with love */
 /* this implementation is licensed under LGPLv3 - 2012 */
 
 #include <stdio.h>

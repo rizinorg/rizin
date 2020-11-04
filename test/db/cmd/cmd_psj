@@ -1,11 +1,11 @@
 NAME=psj ascii
 FILE=malloc://128
 CMDS=<<EOF
-wx 72616461726520697320636f6f6c
-psj 14
+wx 72697a696e20697320636f6f6c
+psj 13
 EOF
 EXPECT=<<EOF
-{"string":"radare is cool","offset":0,"section":"unknown","length":14,"type":"ascii"}
+{"string":"rizin is cool","offset":0,"section":"unknown","length":13,"type":"ascii"}
 EOF
 RUN
 

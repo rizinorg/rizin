@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Auto-generate radare syscall profile for OpenBSD from syscall.h
+# Auto-generate rizin syscall profile for OpenBSD from syscall.h
 # (c) Edd Barrett 2011
 
 import sys

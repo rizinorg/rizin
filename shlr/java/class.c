@@ -1302,7 +1302,7 @@ RZ_API ut64 rz_bin_java_raw_to_long(const ut8 *raw, ut64 offset) {
 	return RZ_BIN_JAVA_LONG (raw, offset);
 }
 // yanked from careercup, because i am lazy:
-// 1) dont want to figure out how make radare use math library
+// 1) dont want to figure out how make rizin use math library
 // 2) dont feel like figuring it out when google does it in O(1).
 RZ_API double my_pow(ut64 base, int exp) {
 	ut8 flag = 0;

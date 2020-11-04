@@ -1169,7 +1169,7 @@ RZ_API char *rz_file_tmpdir(void) {
 	}
 	if (!path) {
 #if __ANDROID__
-		path = strdup ("/data/data/org.radare.rizininstaller/rizin/tmp");
+		path = strdup ("/data/data/org.rizin.rizininstaller/rizin/tmp");
 #else
 		path = strdup ("/tmp");
 #endif

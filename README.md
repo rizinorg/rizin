@@ -13,7 +13,7 @@ To learn more on Rizin you may want to read the
 # How to install
 
 You can find the latest release binaries for Android, Debian, Ubuntu, MacOS,
-Windows [here](https://github.com/radareorg/radare2/releases/latest). If we
+Windows [here](https://github.com/rizinorg/rizin/releases/latest). If we
 don't provide a released binary for your system, you can still build Rizin
 yourself.
 

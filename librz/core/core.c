@@ -61,7 +61,7 @@ static int on_fcn_rename(RzAnal *_anal, void* _user, RzAnalFunction *fcn, const 
 	return 0;
 }
 
-static void rz_core_debug_breakpoint_hit(RzCore *core, RBreakpointItem *bpi) {
+static void rz_core_debug_breakpoint_hit(RzCore *core, RzBreakpointItem *bpi) {
 	const char *cmdbp = rz_config_get (core->config, "cmd.bp");
 	const bool cmdbp_exists = (cmdbp && *cmdbp);
 	const bool bpcmd_exists = (bpi->data && bpi->data[0]);
@@ -1233,8 +1233,8 @@ static void autocomplete_minus(RzCore *core, RLineCompletion *completion, const 
 static void autocomplete_breakpoints(RzCore *core, RLineCompletion *completion, const char *str) {
 	rz_return_if_fail (str);
 	RzListIter *iter;
-	RBreakpoint *bp = core->dbg->bp;
-	RBreakpointItem *b;
+	RzBreakpoint *bp = core->dbg->bp;
+	RzBreakpointItem *b;
 	int n = strlen (str);
 	rz_list_foreach (bp->bps, iter, b) {
 		char *addr = rz_str_newf ("0x%"PFMT64x"", b->addr);
@@ -2073,7 +2073,7 @@ static char *rz_core_anal_hasrefs_to_depth(RzCore *core, ut64 value, int depth) 
 				rz_strbuf_appendf (s, " (%s%s%s)", c, buf, cend);
 				break;
 			case 2:
-				r = rz_utf8_encode_str ((const RRune *)buf, widebuf,
+				r = rz_utf8_encode_str ((const RzRune *)buf, widebuf,
 						       sizeof (widebuf) - 1);
 				if (r == -1) {
 					eprintf ("Something was wrong with refs\n");
@@ -2331,9 +2331,9 @@ static int win_eprintf(const char *format, ...) {
 }
 #endif
 
-static void ev_iowrite_cb(REvent *ev, int type, void *user, void *data) {
+static void ev_iowrite_cb(RzEvent *ev, int type, void *user, void *data) {
 	RzCore *core = user;
-	REventIOWrite *iow = data;
+	RzEventIOWrite *iow = data;
 	if (rz_config_get_i (core->config, "anal.detectwrites")) {
 		rz_anal_update_analysis_range (core->anal, iow->addr, iow->len);
 		if (core->cons->event_resize && core->cons->event_data) {

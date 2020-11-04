@@ -81,7 +81,7 @@ RzAsmPlugin rz_asm_plugin_hppa_gnu = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_hppa_gnu,
 	.version = RZ_VERSION

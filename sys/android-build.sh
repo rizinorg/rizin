@@ -2,7 +2,7 @@
 
 BUILD=1
 FLAGS=""
-PREFIX="/data/data/org.radare.rizininstaller/rizin"
+PREFIX="/data/data/org.rizin.rizininstaller/rizin"
 MAKE=make
 gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
@@ -179,9 +179,9 @@ rm -f ${HERE}/${D}/${LIBDIR}/*.a
 rm -rf ${HERE}/${D}/${DATADIR}/rizin/*/www/*/node_modules
 rm -rf ${HERE}/${D}/${PREFIX}/include
 eval `grep ^VERSION= ${HERE}/config-user.mk`
-WWWROOT="/data/data/org.radare.rizininstaller/rizin/share/rizin/${VERSION}/www"
-WWWWOOT="${HERE}/${D}/data/data/org.radare.rizininstaller/www"
-WWWSOOT="${HERE}/${D}/data/data/org.radare.rizininstaller/rizin/share/rizin/${VERSION}/www"
+WWWROOT="/data/data/org.rizin.rizininstaller/rizin/share/rizin/${VERSION}/www"
+WWWWOOT="${HERE}/${D}/data/data/org.rizin.rizininstaller/www"
+WWWSOOT="${HERE}/${D}/data/data/org.rizin.rizininstaller/rizin/share/rizin/${VERSION}/www"
 echo WWWROOT="${WWWROOT}"
 echo WWWROOT="${WWWWOOT}"
 echo WWWROOT="${WWWSOOT}"

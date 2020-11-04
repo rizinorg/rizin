@@ -2165,7 +2165,7 @@ void __jmp_to_cursor_addr(RzCore *core, RPanel *panel) {
 
 void __cursor_del_breakpoints(RzCore *core, RPanel *panel) {
 	RzListIter *iter;
-	RBreakpointItem *b;
+	RzBreakpointItem *b;
 	int i = 0;
 	rz_list_foreach (core->dbg->bp->bps, iter, b) {
 		if (panel->view->curpos == i++) {

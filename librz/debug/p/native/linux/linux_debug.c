@@ -101,7 +101,7 @@ int linux_handle_signals(RzDebug *dbg, int tid) {
 		{
 			if (dbg->glob_libs || dbg->glob_unlibs) {
 				ut64 pc_addr = rz_debug_reg_get (dbg, "PC");
-				RBreakpointItem *b = rz_bp_get_at (dbg->bp, pc_addr - dbg->bpsize);
+				RzBreakpointItem *b = rz_bp_get_at (dbg->bp, pc_addr - dbg->bpsize);
 				if (b && b->internal) {
 					char *p = strstr (b->data, "dbg.");
 					if (p) {
@@ -171,7 +171,7 @@ int linux_handle_signals(RzDebug *dbg, int tid) {
 // will die upon hitting a breakpoint while not being traced
 static void linux_remove_fork_bps(RzDebug *dbg) {
 	RzListIter *iter;
-	RBreakpointItem *b;
+	RzBreakpointItem *b;
 	int prev_pid = dbg->pid;
 	int prev_tid = dbg->tid;
 

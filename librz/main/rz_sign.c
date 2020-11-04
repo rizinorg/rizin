@@ -10,7 +10,7 @@ static void rasign_show_help(void) {
 		" -j               show signatures in json\n"
 		" -o sigs.sdb      add signatures to file, create if it does not exist\n"
 		" -q               quiet mode\n"
-		" -r               show output in radare commands\n"
+		" -r               show output in rizin commands\n"
 		" -s signspace     save all signatures under this signspace\n"
 		" -v               show version information\n"
 		"Examples:\n"

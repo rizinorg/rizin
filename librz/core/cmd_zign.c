@@ -14,7 +14,7 @@ static const char *help_msg_z[] = {
 	"z", "", "show zignatures",
 	"z.", "", "find matching zignatures in current offset",
 	"zb", "[?][n=5]", "search for best match",
-	"z*", "", "show zignatures in radare format",
+	"z*", "", "show zignatures in rizin format",
 	"zq", "", "show zignatures in quiet mode",
 	"zj", "", "show zignatures in json format",
 	"zk", "", "show zignatures in sdb format",
@@ -41,7 +41,7 @@ static const char *help_msg_zb[] = {
 static const char *help_msg_z_slash[] = {
 	"Usage:", "z/[*] ", "# Search signatures (see 'e?search' for options)",
 	"z/ ", "", "search zignatures on range and flag matches",
-	"z/* ", "", "search zignatures on range and output radare commands",
+	"z/* ", "", "search zignatures on range and output rizin commands",
 	NULL
 };
 

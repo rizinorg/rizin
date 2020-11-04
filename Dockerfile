@@ -4,12 +4,12 @@
 # Requires 1GB of free disk space
 #
 # Build docker image with:
-# $ docker build -t r2docker:latest .
+# $ docker build -t rizin:latest .
 #
 # Run the docker image:
 # $ docker images
-# $ export DOCKER_IMAGE_ID=$(docker images --format '{{.ID}}' -f 'label=r2docker')
-# $ docker run -ti --cap-drop=ALL r2docker:latest
+# $ export DOCKER_IMAGE_ID=$(docker images --format '{{.ID}}' -f 'label=rizin')
+# $ docker run -ti --cap-drop=ALL rizin:latest
 #
 # Once you quit the bash session get the container id with:
 # $ docker ps -a | grep bash
@@ -24,19 +24,19 @@
 #
 # If you willing to debug a program within Docker, you should run it with CAP_SYS_PTRACE:
 #
-# $ docker run -it --cap-drop=ALL --cap-add=SYS_PTRACE r2docker:latest
-# $ r2 -d /bin/true
+# $ docker run -it --cap-drop=ALL --cap-add=SYS_PTRACE rizin:latest
+# $ rizin -d /bin/true
 #
 
 # Using debian 10 as base image.
 FROM debian:10
 
 # Label base
-LABEL r2docker latest
+LABEL rizin latest
 
 # Radare version
 ARG RZ_VERSION=master
-# R2pipe python version
+# rz-pipe python version
 ARG RZ_PIPE_PY_VERSION=1.4.2
 
 ENV RZ_VERSION ${RZ_VERSION}
@@ -86,19 +86,19 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Create non-root user
-RUN useradd -m r2 && \
-  adduser r2 sudo && \
-  echo "r2:r2" | chpasswd
+RUN useradd -m rizin && \
+  adduser rizin sudo && \
+  echo "rizin:rizin" | chpasswd
 
 # Initilise base user
-USER r2
-WORKDIR /home/r2
-ENV HOME /home/r2
+USER rizin
+WORKDIR /home/rizin
+ENV HOME /home/rizin
 
 # Setup rz-pm
 RUN rz-pm init && \
   rz-pm update && \
-  chown -R r2:r2 /home/r2/.config
+  chown -R rizin:rizin /home/rizin/.config
 
 # Base command for container
 CMD ["/bin/bash"]

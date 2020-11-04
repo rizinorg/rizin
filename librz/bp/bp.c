@@ -8,7 +8,7 @@ RZ_LIB_VERSION (rz_bp);
 static struct rz_bp_plugin_t *bp_static_plugins[] =
 	{ RZ_BP_STATIC_PLUGINS };
 
-static void rz_bp_item_free (RBreakpointItem *b) {
+static void rz_bp_item_free (RzBreakpointItem *b) {
 	free (b->name);
 	free (b->bbytes);
 	free (b->obytes);
@@ -18,15 +18,15 @@ static void rz_bp_item_free (RBreakpointItem *b) {
 	free (b);
 }
 
-RZ_API RBreakpoint *rz_bp_new(void) {
+RZ_API RzBreakpoint *rz_bp_new(void) {
 	int i;
-	RBreakpointPlugin *static_plugin;
-	RBreakpoint *bp = RZ_NEW0 (RBreakpoint);
+	RzBreakpointPlugin *static_plugin;
+	RzBreakpoint *bp = RZ_NEW0 (RzBreakpoint);
 	if (!bp) {
 		return NULL;
 	}
 	bp->bps_idx_count = 16;
-	bp->bps_idx = RZ_NEWS0 (RBreakpointItem*, bp->bps_idx_count);
+	bp->bps_idx = RZ_NEWS0 (RzBreakpointItem*, bp->bps_idx_count);
 	bp->stepcont = RZ_BP_CONT_NORMAL;
 	bp->traces = rz_bp_traptrace_new ();
 	bp->cb_printf = (PrintfCallback)printf;
@@ -34,16 +34,16 @@ RZ_API RBreakpoint *rz_bp_new(void) {
 	bp->plugins = rz_list_newf ((RzListFree)free);
 	bp->nhwbps = 0;
 	for (i = 0; bp_static_plugins[i]; i++) {
-		static_plugin = RZ_NEW (RBreakpointPlugin);
+		static_plugin = RZ_NEW (RzBreakpointPlugin);
 		memcpy (static_plugin, bp_static_plugins[i],
-			sizeof (RBreakpointPlugin));
+			sizeof (RzBreakpointPlugin));
 		rz_bp_plugin_add (bp, static_plugin);
 	}
 	memset (&bp->iob, 0, sizeof (bp->iob));
 	return bp;
 }
 
-RZ_API RBreakpoint *rz_bp_free(RBreakpoint *bp) {
+RZ_API RzBreakpoint *rz_bp_free(RzBreakpoint *bp) {
 	rz_list_free (bp->bps);
 	rz_list_free (bp->plugins);
 	rz_list_free (bp->traces);
@@ -52,7 +52,7 @@ RZ_API RBreakpoint *rz_bp_free(RBreakpoint *bp) {
 	return NULL;
 }
 
-RZ_API int rz_bp_get_bytes(RBreakpoint *bp, ut8 *buf, int len, int endian, int idx) {
+RZ_API int rz_bp_get_bytes(RzBreakpoint *bp, ut8 *buf, int len, int endian, int idx) {
 	int i;
 	struct rz_bp_arch_t *b;
 	if (bp->cur) {
@@ -88,9 +88,9 @@ repeat:
 	return 0;
 }
 
-RZ_API RBreakpointItem *rz_bp_get_at(RBreakpoint *bp, ut64 addr) {
+RZ_API RzBreakpointItem *rz_bp_get_at(RzBreakpoint *bp, ut64 addr) {
 	RzListIter *iter;
-	RBreakpointItem *b;
+	RzBreakpointItem *b;
 	rz_list_foreach(bp->bps, iter, b) {
 		if (b->addr == addr) {
 			return b;
@@ -99,16 +99,16 @@ RZ_API RBreakpointItem *rz_bp_get_at(RBreakpoint *bp, ut64 addr) {
 	return NULL;
 }
 
-static inline bool inRange(RBreakpointItem *b, ut64 addr) {
+static inline bool inRange(RzBreakpointItem *b, ut64 addr) {
 	return (addr >= b->addr && addr < (b->addr + b->size));
 }
 
-static inline bool matchProt(RBreakpointItem *b, int perm) {
+static inline bool matchProt(RzBreakpointItem *b, int perm) {
 	return (!perm || (perm && b->perm));
 }
 
-RZ_API RBreakpointItem *rz_bp_get_in(RBreakpoint *bp, ut64 addr, int perm) {
-	RBreakpointItem *b;
+RZ_API RzBreakpointItem *rz_bp_get_in(RzBreakpoint *bp, ut64 addr, int perm) {
+	RzBreakpointItem *b;
 	RzListIter *iter;
 	rz_list_foreach (bp->bps, iter, b) {
 		// eprintf ("---ataddr--- 0x%08"PFMT64x" %d %d %x\n", b->addr, b->size, b->recoil, b->perm);
@@ -120,8 +120,8 @@ RZ_API RBreakpointItem *rz_bp_get_in(RBreakpoint *bp, ut64 addr, int perm) {
 	return NULL;
 }
 
-RZ_API RBreakpointItem *rz_bp_enable(RBreakpoint *bp, ut64 addr, int set, int count) {
-	RBreakpointItem *b = rz_bp_get_in (bp, addr, 0);
+RZ_API RzBreakpointItem *rz_bp_enable(RzBreakpoint *bp, ut64 addr, int set, int count) {
+	RzBreakpointItem *b = rz_bp_get_in (bp, addr, 0);
 	if (b) {
 		b->enabled = set;
 		b->togglehits = count;
@@ -130,21 +130,21 @@ RZ_API RBreakpointItem *rz_bp_enable(RBreakpoint *bp, ut64 addr, int set, int co
 	return NULL;
 }
 
-RZ_API int rz_bp_enable_all(RBreakpoint *bp, int set) {
+RZ_API int rz_bp_enable_all(RzBreakpoint *bp, int set) {
 	RzListIter *iter;
-	RBreakpointItem *b;
+	RzBreakpointItem *b;
 	rz_list_foreach (bp->bps, iter, b) {
 		b->enabled = set;
 	}
 	return true;
 }
 
-RZ_API int rz_bp_stepy_continuation(RBreakpoint *bp) {
+RZ_API int rz_bp_stepy_continuation(RzBreakpoint *bp) {
 	// TODO: implement
 	return bp->stepcont;
 }
 
-static void unlinkBreakpoint(RBreakpoint *bp, RBreakpointItem *b) {
+static void unlinkBreakpoint(RzBreakpoint *bp, RzBreakpointItem *b) {
 	int i;
 	for (i = 0; i < bp->bps_idx_count; i++) {
 		if (bp->bps_idx[i] == b) {
@@ -155,9 +155,9 @@ static void unlinkBreakpoint(RBreakpoint *bp, RBreakpointItem *b) {
 }
 
 /* TODO: detect overlapping of breakpoints */
-static RBreakpointItem *rz_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, int size, int hw, int perm) {
+static RzBreakpointItem *rz_bp_add(RzBreakpoint *bp, const ut8 *obytes, ut64 addr, int size, int hw, int perm) {
 	int ret;
-	RBreakpointItem *b;
+	RzBreakpointItem *b;
 	if (addr == UT64_MAX || size < 1) {
 		return NULL;
 	}
@@ -208,13 +208,13 @@ static RBreakpointItem *rz_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr,
 	return b;
 }
 
-RZ_API int rz_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int perm) {
+RZ_API int rz_bp_add_fault(RzBreakpoint *bp, ut64 addr, int size, int perm) {
 	// TODO
 	return false;
 }
 
-RZ_API RBreakpointItem* rz_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int perm) {
-	RBreakpointItem *item;
+RZ_API RzBreakpointItem* rz_bp_add_sw(RzBreakpoint *bp, ut64 addr, int size, int perm) {
+	RzBreakpointItem *item;
 	ut8 *bytes;
 	if (size < 1) {
 		size = 1;
@@ -231,11 +231,11 @@ RZ_API RBreakpointItem* rz_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int p
 	return item;
 }
 
-RZ_API RBreakpointItem* rz_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int perm) {
+RZ_API RzBreakpointItem* rz_bp_add_hw(RzBreakpoint *bp, ut64 addr, int size, int perm) {
 	return rz_bp_add (bp, NULL, addr, size, RZ_BP_TYPE_HW, perm);
 }
 
-RZ_API int rz_bp_del_all(RBreakpoint *bp) {
+RZ_API int rz_bp_del_all(RzBreakpoint *bp) {
 	int i;
 	if (!rz_list_empty (bp->bps)) {
 		rz_list_purge (bp->bps);
@@ -247,9 +247,9 @@ RZ_API int rz_bp_del_all(RBreakpoint *bp) {
 	return false;
 }
 
-RZ_API int rz_bp_del(RBreakpoint *bp, ut64 addr) {
+RZ_API int rz_bp_del(RzBreakpoint *bp, ut64 addr) {
 	RzListIter *iter;
-	RBreakpointItem *b;
+	RzBreakpointItem *b;
 	/* No _safe loop necessary because we return immediately after the delete. */
 	rz_list_foreach (bp->bps, iter, b) {
 		if (b->addr == addr) {
@@ -261,8 +261,8 @@ RZ_API int rz_bp_del(RBreakpoint *bp, ut64 addr) {
 	return false;
 }
 
-RZ_API int rz_bp_set_trace(RBreakpoint *bp, ut64 addr, int set) {
-	RBreakpointItem *b = rz_bp_get_in (bp, addr, 0);
+RZ_API int rz_bp_set_trace(RzBreakpoint *bp, ut64 addr, int set) {
+	RzBreakpointItem *b = rz_bp_get_in (bp, addr, 0);
 	if (b) {
 		b->trace = set;
 		return true;
@@ -270,9 +270,9 @@ RZ_API int rz_bp_set_trace(RBreakpoint *bp, ut64 addr, int set) {
 	return false;
 }
 
-RZ_API int rz_bp_set_trace_all(RBreakpoint *bp, int set) {
+RZ_API int rz_bp_set_trace_all(RzBreakpoint *bp, int set) {
 	RzListIter *iter;
-	RBreakpointItem *b;
+	RzBreakpointItem *b;
 	rz_list_foreach (bp->bps, iter, b) {
 		b->trace = set;
 	}
@@ -280,9 +280,9 @@ RZ_API int rz_bp_set_trace_all(RBreakpoint *bp, int set) {
 }
 
 // TODO: deprecate
-RZ_API int rz_bp_list(RBreakpoint *bp, int rad) {
+RZ_API int rz_bp_list(RzBreakpoint *bp, int rad) {
 	int n = 0;
-	RBreakpointItem *b;
+	RzBreakpointItem *b;
 	RzListIter *iter;
 	if (rad == 'j') {
 		bp->cb_printf ("[");
@@ -348,7 +348,7 @@ RZ_API int rz_bp_list(RBreakpoint *bp, int rad) {
 	return n;
 }
 
-RZ_API RBreakpointItem *rz_bp_item_new (RBreakpoint *bp) {
+RZ_API RzBreakpointItem *rz_bp_item_new (RzBreakpoint *bp) {
 	int i, j;
 	/* find empty slot */
 	for (i = 0; i < bp->bps_idx_count; i++) {
@@ -358,7 +358,7 @@ RZ_API RBreakpointItem *rz_bp_item_new (RBreakpoint *bp) {
 	}
 	/* allocate new slot */
 	bp->bps_idx_count += 16; // allocate space for 16 more bps
-	RBreakpointItem **newbps = realloc (bp->bps_idx, bp->bps_idx_count * sizeof (RBreakpointItem*));
+	RzBreakpointItem **newbps = realloc (bp->bps_idx, bp->bps_idx_count * sizeof (RzBreakpointItem*));
 	if (newbps) {
 		bp->bps_idx = newbps;
 	} else {
@@ -369,17 +369,17 @@ RZ_API RBreakpointItem *rz_bp_item_new (RBreakpoint *bp) {
 	}
 return_slot:
 	/* empty slot */
-	return (bp->bps_idx[i] = RZ_NEW0 (RBreakpointItem));
+	return (bp->bps_idx[i] = RZ_NEW0 (RzBreakpointItem));
 }
 
-RZ_API RBreakpointItem *rz_bp_get_index(RBreakpoint *bp, int idx) {
+RZ_API RzBreakpointItem *rz_bp_get_index(RzBreakpoint *bp, int idx) {
 	if (idx >= 0 && idx < bp->bps_idx_count) {
 		return bp->bps_idx[idx];
 	}
 	return NULL;
 }
 
-RZ_API int rz_bp_get_index_at (RBreakpoint *bp, ut64 addr) {
+RZ_API int rz_bp_get_index_at (RzBreakpoint *bp, ut64 addr) {
 	int i;
 	for (i = 0; i< bp->bps_idx_count; i++) {
 		if (bp->bps_idx[i] && bp->bps_idx[i]->addr == addr) {
@@ -389,7 +389,7 @@ RZ_API int rz_bp_get_index_at (RBreakpoint *bp, ut64 addr) {
 	return -1;
 }
 
-RZ_API int rz_bp_del_index(RBreakpoint *bp, int idx) {
+RZ_API int rz_bp_del_index(RzBreakpoint *bp, int idx) {
 	if (idx >= 0 && idx < bp->bps_idx_count) {
 		rz_list_delete_data (bp->bps, bp->bps_idx[idx]);
 		bp->bps_idx[idx] = 0;
@@ -398,8 +398,8 @@ RZ_API int rz_bp_del_index(RBreakpoint *bp, int idx) {
 	return false;
 }
 
-RZ_API int rz_bp_size(RBreakpoint *bp) {
-	RBreakpointArch *bpa;
+RZ_API int rz_bp_size(RzBreakpoint *bp) {
+	RzBreakpointArch *bpa;
 	int i, bpsize = 8;
 	if (!bp || !bp->cur) {
 		return 0;
@@ -417,7 +417,7 @@ RZ_API int rz_bp_size(RBreakpoint *bp) {
 }
 
 // Check if the breakpoint is in a valid map
-RZ_API bool rz_bp_is_valid(RBreakpoint *bp, RBreakpointItem *b) {
+RZ_API bool rz_bp_is_valid(RzBreakpoint *bp, RzBreakpointItem *b) {
 	if (!bp->bpinmaps) {
 		return true;
 	}

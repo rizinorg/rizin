@@ -596,7 +596,7 @@ RzIOPlugin rz_io_plugin_debug = {
 #endif
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_debug,
 	.version = RZ_VERSION

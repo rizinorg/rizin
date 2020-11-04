@@ -18,7 +18,7 @@ extern "C" {
  * You can have groups of "meta" (e.g. bin meta, format meta, etc.), groups of
  * zign info, groups of flags, etc.
  *
- * It is possible to hook into the RSpaces functions by using REvent.
+ * It is possible to hook into the RSpaces functions by using RzEvent.
  * RZ_SPACE_EVENT_COUNT: called when you need to count how many elements there are in a given RSpace
  * RZ_SPACE_EVENT_RENAME: called when renaming a RSpace with an oldname to a newname
  * RZ_SPACE_EVENT_UNSET: called when deleting a RSpace with a given name
@@ -57,7 +57,7 @@ typedef struct rz_spaces_t {
 	RSpace *current;
 	RBTree spaces;
 	RzList *spacestack;
-	REvent *event;
+	RzEvent *event;
 } RSpaces;
 
 // Create a new RSpaces with the given name

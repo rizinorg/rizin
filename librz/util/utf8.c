@@ -485,8 +485,8 @@ RZ_API const char *rz_utf_block_name(int idx) {
 
 #define rz_utf_blocks_count (sizeof (rz_utf_blocks) / sizeof (rz_utf_blocks[0]))
 
-/* Convert an UTF-8 buf into a unicode RRune */
-RZ_API int rz_utf8_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
+/* Convert an UTF-8 buf into a unicode RzRune */
+RZ_API int rz_utf8_decode(const ut8 *ptr, int ptrlen, RzRune *ch) {
 	if (ptrlen < 1) {
 		return 0;
 	}
@@ -514,8 +514,8 @@ RZ_API int rz_utf8_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
 	return 0;
 }
 
-/* Convert a unicode RRune into an UTF-8 buf */
-RZ_API int rz_utf8_encode(ut8 *ptr, const RRune ch) {
+/* Convert a unicode RzRune into an UTF-8 buf */
+RZ_API int rz_utf8_encode(ut8 *ptr, const RzRune ch) {
 	if (ch < 0x80) {
 		ptr[0] = (ut8)ch;
 		return 1;
@@ -541,8 +541,8 @@ RZ_API int rz_utf8_encode(ut8 *ptr, const RRune ch) {
 	return 0;
 }
 
-/* Convert a unicode RRune string into an utf-8 one */
-RZ_API int rz_utf8_encode_str(const RRune *str, ut8 *dst, const int dst_length) {
+/* Convert a unicode RzRune string into an utf-8 one */
+RZ_API int rz_utf8_encode_str(const RzRune *str, ut8 *dst, const int dst_length) {
 	int i, pos = 0;
 
 	if (!str || !dst) {
@@ -584,8 +584,8 @@ RZ_API int rz_utf8_strlen(const ut8 *str) {
 	return len;
 }
 
-RZ_API int rz_isprint(const RRune c) {
-	// RRunes are most commonly single byte... We can early out with this common case.
+RZ_API int rz_isprint(const RzRune c) {
+	// RzRunes are most commonly single byte... We can early out with this common case.
 	if (c < 0x34F) {
 		/*
 		manually copied from top, please update if this ever changes
@@ -707,7 +707,7 @@ RZ_API char *rz_acp_to_utf8_l(const char *str, int len) {
 
 #endif // __WINDOWS__
 
-RZ_API int rz_utf_block_idx(RRune ch) {
+RZ_API int rz_utf_block_idx(RzRune ch) {
 	const int last = rz_utf_blocks_count;
 	int low, hi, mid;
 
@@ -755,7 +755,7 @@ RZ_API int *rz_utf_block_list(const ut8 *str, int len, int **freq_list) {
 	int *list_ptr = list;
 	const ut8 *str_ptr = str;
 	const ut8 *str_end = str + len;
-	RRune ch;
+	RzRune ch;
 	while (str_ptr < str_end) {
 		int block_idx;
 		int ch_bytes = rz_utf8_decode (str_ptr, str_end - str_ptr, &ch);

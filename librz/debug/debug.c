@@ -33,7 +33,7 @@ RZ_API void rz_debug_info_free(RzDebugInfo *rdi) {
 
 RZ_API void rz_debug_bp_update(RzDebug *dbg) {
 	/* update all bp->addr if they are named bps */
-	RBreakpointItem *bp;
+	RzBreakpointItem *bp;
 	RzListIter *iter;
 	rz_list_foreach (dbg->bp->bps, iter, bp) {
 		if (bp->expr) {
@@ -58,8 +58,8 @@ static int rz_debug_drx_at(RzDebug *dbg, ut64 addr) {
  * rz_debug_bp_hit handles stage 1.
  * rz_debug_recoil handles stage 2.
  */
-static int rz_debug_bp_hit(RzDebug *dbg, RzRegItem *pc_ri, ut64 pc, RBreakpointItem **pb) {
-	RBreakpointItem *b;
+static int rz_debug_bp_hit(RzDebug *dbg, RzRegItem *pc_ri, ut64 pc, RzBreakpointItem **pb) {
+	RzBreakpointItem *b;
 
 	if (!pb) {
 		eprintf ("BreakpointItem is NULL!\n");
@@ -261,9 +261,9 @@ static int rz_debug_recoil(RzDebug *dbg, RzDebugRecoilMode rc_mode) {
 }
 
 /* add a breakpoint with some typical values */
-RZ_API RBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool watch, int rw, char *module, st64 m_delta) {
+RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool watch, int rw, char *module, st64 m_delta) {
 	int bpsz = rz_bp_size(dbg->bp);
-	RBreakpointItem *bpi;
+	RzBreakpointItem *bpi;
 	const char *module_name = module;
 	RzListIter *iter;
 	RzDebugMap *map;
@@ -682,7 +682,7 @@ RZ_API RzDebugReasonType rz_debug_stop_reason(RzDebug *dbg) {
  *
  * Returns  RZ_DEBUG_REASON_*
  */
-RZ_API RzDebugReasonType rz_debug_wait(RzDebug *dbg, RBreakpointItem **bp) {
+RZ_API RzDebugReasonType rz_debug_wait(RzDebug *dbg, RzBreakpointItem **bp) {
 	RzDebugReasonType reason = RZ_DEBUG_REASON_ERROR;
 	if (!dbg) {
 		return reason;
@@ -702,7 +702,7 @@ RZ_API RzDebugReasonType rz_debug_wait(RzDebug *dbg, RBreakpointItem **bp) {
 		reason = dbg->h->wait (dbg, dbg->pid);
 		if (reason == RZ_DEBUG_REASON_DEAD) {
 			eprintf ("\n==> Process finished\n\n");
-			REventDebugProcessFinished event = {
+			RzEventDebugProcessFinished event = {
 				.pid = dbg->pid
 			};
 			rz_event_send (dbg->ev, RZ_EVENT_DEBUG_PROCESS_FINISHED, &event);
@@ -736,7 +736,7 @@ RZ_API RzDebugReasonType rz_debug_wait(RzDebug *dbg, RBreakpointItem **bp) {
 			reason == RZ_DEBUG_REASON_STEP ||
 			(libs_bp && ((reason == RZ_DEBUG_REASON_NEW_LIB) || (reason == RZ_DEBUG_REASON_EXIT_LIB)))) {
 			RzRegItem *pc_ri;
-			RBreakpointItem *b = NULL;
+			RzBreakpointItem *b = NULL;
 			ut64 pc;
 
 			/* get the program coounter */
@@ -877,7 +877,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 	}
 
 	for (i = 0; i < br; i++) {
-		RBreakpointItem *bpi = rz_bp_add_sw (dbg->bp, next[i], dbg->bpsize, RZ_BP_PROT_EXEC);
+		RzBreakpointItem *bpi = rz_bp_add_sw (dbg->bp, next[i], dbg->bpsize, RZ_BP_PROT_EXEC);
 		if (bpi) {
 			bpi->swstep = true;
 		}
@@ -892,7 +892,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 	return ret;
 }
 
-RZ_API int rz_debug_step_hard(RzDebug *dbg, RBreakpointItem **pb) {
+RZ_API int rz_debug_step_hard(RzDebug *dbg, RzBreakpointItem **pb) {
 	RzDebugReasonType reason;
 
 	dbg->reason.type = RZ_DEBUG_REASON_STEP;
@@ -946,7 +946,7 @@ RZ_API int rz_debug_step_hard(RzDebug *dbg, RBreakpointItem **pb) {
 }
 
 RZ_API int rz_debug_step(RzDebug *dbg, int steps) {
-	RBreakpointItem *bp = NULL;
+	RzBreakpointItem *bp = NULL;
 	int ret, steps_taken = 0;
 
 	/* who calls this without giving a positive number? */
@@ -1127,7 +1127,7 @@ RZ_API int rz_debug_step_cnum(RzDebug *dbg, int steps) {
 RZ_API int rz_debug_continue_kill(RzDebug *dbg, int sig) {
 	RzDebugReasonType reason = RZ_DEBUG_REASON_NONE;
 	int ret = 0;
-	RBreakpointItem *bp = NULL;
+	RzBreakpointItem *bp = NULL;
 
 	if (!dbg) {
 		return 0;
@@ -1719,7 +1719,7 @@ RZ_API ut64 rz_debug_get_baddr(RzDebug *dbg, const char *file) {
 }
 
 RZ_API void rz_debug_bp_rebase(RzDebug *dbg, ut64 old_base, ut64 new_base) {
-	RBreakpointItem *bp;
+	RzBreakpointItem *bp;
 	RzListIter *iter;
 	ut64 diff = new_base - old_base;
 	// update bp->baddr

@@ -18,7 +18,7 @@ struct rz_bp_plugin_t rz_bp_plugin_ppc = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_BP,
 	.data = &rz_bp_plugin_ppc,
 	.version = RZ_VERSION

@@ -681,7 +681,7 @@ typedef struct rz_anal_t {
 	bool verbose;
 	int seggrn;
 	RzFlagGetAtAddr flag_get;
-	REvent *ev;
+	RzEvent *ev;
 	RzList/*<char *>*/ *imports; // global imports
 	SetU *visited;
 	RzStrConstPool constpool;

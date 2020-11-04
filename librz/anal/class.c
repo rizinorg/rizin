@@ -62,7 +62,7 @@ RZ_API void rz_anal_class_create(RzAnal *anal, const char *name) {
 		sdb_set (anal->sdb_classes, key, "c", 0);
 	}
 
-	REventClass event = { .name = name_sanitized };
+	RzEventClass event = { .name = name_sanitized };
 	rz_event_send (anal->ev, RZ_EVENT_CLASS_NEW, &event);
 
 	free (name_sanitized);
@@ -109,7 +109,7 @@ RZ_API void rz_anal_class_delete(RzAnal *anal, const char *name) {
 
 	sdb_remove (anal->sdb_classes_attrs, key_attr_types (class_name_sanitized), 0);
 
-	REventClass event = { .name = class_name_sanitized };
+	RzEventClass event = { .name = class_name_sanitized };
 	rz_event_send (anal->ev, RZ_EVENT_CLASS_DEL, &event);
 
 	free (class_name_sanitized);
@@ -195,7 +195,7 @@ RZ_API RzAnalClassErr rz_anal_class_rename(RzAnal *anal, const char *old_name, c
 
 	rename_key (anal->sdb_classes_attrs, key_attr_types (old_name_sanitized), key_attr_types (new_name_sanitized));
 
-	REventClassRename event = {
+	RzEventClassRename event = {
 		.name_old = old_name_sanitized,
 		.name_new = new_name_sanitized
 	};
@@ -249,7 +249,7 @@ static RzAnalClassErr rz_anal_class_set_attr_raw(RzAnal *anal, const char *class
 	sdb_array_add (anal->sdb_classes_attrs, key_attr_type_attrs (class_name, attr_type_str), attr_id, 0);
 	sdb_set (anal->sdb_classes_attrs, key_attr_content (class_name, attr_type_str, attr_id), content, 0);
 
-	REventClassAttrSet event = {
+	RzEventClassAttrSet event = {
 		.attr = {
 			.class_name = class_name,
 			.attr_type = attr_type,
@@ -297,7 +297,7 @@ static RzAnalClassErr rz_anal_class_delete_attr_raw(RzAnal *anal, const char *cl
 		sdb_array_remove (anal->sdb_classes_attrs, key_attr_types (class_name), attr_type_str, 0);
 	}
 
-	REventClassAttr event = {
+	RzEventClassAttr event = {
 		.class_name = class_name,
 		.attr_type = attr_type,
 		.attr_id = attr_id
@@ -358,7 +358,7 @@ static RzAnalClassErr rz_anal_class_rename_attr_raw(RzAnal *anal, const char *cl
 		free (content);
 	}
 
-	REventClassAttrRename event = {
+	RzEventClassAttrRename event = {
 		.attr = {
 			.class_name = class_name,
 			.attr_type = attr_type,

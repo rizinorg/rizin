@@ -5,7 +5,7 @@
 #include <rz_list.h>
 
 RZ_API void rz_bp_traptrace_free(void *ptr) {
-	RBreakpointTrace *trace = ptr;
+	RzBreakpointTrace *trace = ptr;
 	free (trace->buffer);
 	free (trace->traps);
 	free (trace->bits);
@@ -21,18 +21,18 @@ RZ_API RzList *rz_bp_traptrace_new(void) {
 	return list;
 }
 
-RZ_API void rz_bp_traptrace_enable(RBreakpoint *bp, int enable) {
+RZ_API void rz_bp_traptrace_enable(RzBreakpoint *bp, int enable) {
 	RzListIter *iter;
-	RBreakpointTrace *trace;
+	RzBreakpointTrace *trace;
 	rz_list_foreach (bp->traces, iter, trace) {
 		ut8 *buf = (enable)?trace->traps:trace->buffer;
 		bp->iob.write_at (bp->iob.io, trace->addr, buf, trace->length);
 	}
 }
 
-RZ_API void rz_bp_traptrace_reset(RBreakpoint *bp, int hard) {
+RZ_API void rz_bp_traptrace_reset(RzBreakpoint *bp, int hard) {
 	RzListIter *iter;
-	RBreakpointTrace *trace;
+	RzBreakpointTrace *trace;
 	rz_list_foreach (bp->traces, iter, trace) {
 		if (hard) {
 			rz_bp_traptrace_free (trace);
@@ -50,10 +50,10 @@ RZ_API void rz_bp_traptrace_reset(RBreakpoint *bp, int hard) {
 }
 
 // FIX: efficiency
-RZ_API ut64 rz_bp_traptrace_next(RBreakpoint *bp, ut64 addr) {
+RZ_API ut64 rz_bp_traptrace_next(RzBreakpoint *bp, ut64 addr) {
 	int i, delta;
 	RzListIter *iter;
-	RBreakpointTrace *trace;
+	RzBreakpointTrace *trace;
 	rz_list_foreach (bp->traces, iter, trace) {
 		if (addr>=trace->addr && addr<=trace->addr_end) {
 			delta = (int)(addr-trace->addr);
@@ -67,8 +67,8 @@ RZ_API ut64 rz_bp_traptrace_next(RBreakpoint *bp, ut64 addr) {
 	return 0LL;
 }
 
-RZ_API int rz_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
-	RBreakpointTrace *trace;
+RZ_API int rz_bp_traptrace_add(RzBreakpoint *bp, ut64 from, ut64 to) {
+	RzBreakpointTrace *trace;
 	ut8 *buf, *trap, *bits;
 	ut64 len;
 	int bitlen;
@@ -104,7 +104,7 @@ RZ_API int rz_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
 	memset (bits, 0x00, bitlen);
 	rz_bp_get_bytes (bp, trap, len, bp->endian, 0);
 
-	trace = RZ_NEW (RBreakpointTrace);
+	trace = RZ_NEW (RzBreakpointTrace);
 	if (!trace) {
 		free (buf);
 		free (trap);
@@ -128,10 +128,10 @@ RZ_API int rz_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
 	return true;
 }
 
-RZ_API int rz_bp_traptrace_free_at(RBreakpoint *bp, ut64 from) {
+RZ_API int rz_bp_traptrace_free_at(RzBreakpoint *bp, ut64 from) {
 	int ret = false;
 	RzListIter *iter, *iter_tmp;
-	RBreakpointTrace *trace;
+	RzBreakpointTrace *trace;
 	rz_list_foreach_safe (bp->traces, iter, iter_tmp, trace) {
 		if (from>=trace->addr && from<=trace->addr_end) {
 			bp->iob.write_at (bp->iob.io, trace->addr,
@@ -144,10 +144,10 @@ RZ_API int rz_bp_traptrace_free_at(RBreakpoint *bp, ut64 from) {
 	return ret;
 }
 
-RZ_API void rz_bp_traptrace_list(RBreakpoint *bp) {
+RZ_API void rz_bp_traptrace_list(RzBreakpoint *bp) {
 	int i;
 	RzListIter *iter;
-	RBreakpointTrace *trace;
+	RzBreakpointTrace *trace;
 	rz_list_foreach (bp->traces, iter, trace) {
 		for (i = 0; i < trace->bitlen; i++) {
 			if (RZ_BIT_CHK (trace->bits, i)) {
@@ -157,10 +157,10 @@ RZ_API void rz_bp_traptrace_list(RBreakpoint *bp) {
 	}
 }
 
-RZ_API int rz_bp_traptrace_at(RBreakpoint *bp, ut64 from, int len) {
+RZ_API int rz_bp_traptrace_at(RzBreakpoint *bp, ut64 from, int len) {
 	int delta;
 	RzListIter *iter;
-	RBreakpointTrace *trace;
+	RzBreakpointTrace *trace;
 	rz_list_foreach (bp->traces, iter, trace) {
 	// TODO: do we really need len?
 		if (from>=trace->addr && from+len<=trace->addr_end) {

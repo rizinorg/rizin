@@ -29,7 +29,7 @@
 </plist>
 
 <!--
-  This file must be used to 'sign' the 'radare' binary
+  This file must be used to 'sign' the 'rizin' binary
   after compiling to permit debugging on the iphone-os
     $ ldid -Srizin.xml rizin
 -->

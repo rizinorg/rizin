@@ -107,7 +107,7 @@ RzAsmPlugin rz_asm_plugin_tricore = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_tricore,
 	.version = RZ_VERSION

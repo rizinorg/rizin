@@ -4,7 +4,7 @@ libdir=@LIBDIR@
 includedir=${prefix}/include
 
 Name: rz_util
-Description: radare foundation libraries
+Description: rizin foundation libraries
 Version: @VERSION@
 Requires: 
 Libs: -L${libdir} -lrz_util  @LIBZIP@ @DL_LIBS@

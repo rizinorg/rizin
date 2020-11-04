@@ -602,7 +602,7 @@ RZ_API void rz_core_rtr_pushout(RzCore *core, const char *input) {
 	}
 
 	if (!(str = rz_core_cmd_str (core, cmd))) {
-		eprintf ("Error: radare_cmd_str returned NULL\n");
+		eprintf ("Error: rizin_cmd_str returned NULL\n");
 		return;
 	}
 

@@ -296,7 +296,7 @@ static int rasm_show_help(int v) {
 			" -O [file]    Output file name (rz_asm -Bf a.asm -O a)\n"
 			" -p           Run SPP over input for assembly\n"
 			" -q           quiet mode\n"
-			" -r           output in radare commands\n"
+			" -r           output in rizin commands\n"
 			" -s [syntax]  Select syntax (intel, att)\n"
 			" -v           Show version information\n"
 			" -x           Use hex dwords instead of hex pairs when assembling.\n"

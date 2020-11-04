@@ -61,7 +61,7 @@ bool test_space_stack(void) {
 	mu_end;
 }
 
-static void count_event(REvent *ev, int type, void *user, void *data) {
+static void count_event(RzEvent *ev, int type, void *user, void *data) {
 	RSpaceEvent *spev = (RSpaceEvent *)data;
 
 	if (!strcmp (spev->data.count.space->name, "firstspace")) {
@@ -75,7 +75,7 @@ static void count_event(REvent *ev, int type, void *user, void *data) {
 
 static bool test_event_called = false;
 
-static void test_event(REvent *ev, int type, void *user, void *data) {
+static void test_event(RzEvent *ev, int type, void *user, void *data) {
 	test_event_called = true;
 }
 

@@ -132,7 +132,7 @@ RZ_API int rz_io_desc_cache_write(RzIODesc *desc, ut64 paddr, const ut8 *buf, in
 		caddr++;
 		cbaddr = 0;
 	}
-	REventIOWrite iow = { paddr, buf, len };
+	RzEventIOWrite iow = { paddr, buf, len };
 	rz_event_send (desc->io->event, RZ_EVENT_IO_WRITE, &iow);
 	return written;
 }

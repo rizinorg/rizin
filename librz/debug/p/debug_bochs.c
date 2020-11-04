@@ -28,7 +28,7 @@ static bool isBochs(RzDebug *dbg) {
 	return false;
 }
 
-static int rz_debug_bochs_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static int rz_debug_bochs_breakpoint (RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 	char cmd[64];
 	char num[4];
 	char addr[19];
@@ -563,7 +563,7 @@ RzDebugPlugin rz_debug_plugin_bochs = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_bochs,
 	.version = RZ_VERSION

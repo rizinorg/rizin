@@ -287,7 +287,7 @@ static int do_help(int line) {
 		" -k          show hash using the openssh's randomkey algorithm\n"
 		" -q          run in quiet mode (-qq to show only the hash)\n"
 		" -L          list all available algorithms (see -a)\n"
-		" -r          output radare commands\n"
+		" -r          output rizin commands\n"
 		" -s string   hash this string instead of files\n"
 		" -t to       stop hashing at given address\n"
 		" -x hexstr   hash this hexpair string instead of files\n"

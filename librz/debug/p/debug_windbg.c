@@ -206,7 +206,7 @@ static int windbg_step_over(RzDebug *dbg) {
 	return 0;
 }
 
-static int windbg_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static int windbg_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 	static volatile LONG bp_idx = 0;
 	RzDebug *dbg = bp->user;
 	rz_return_val_if_fail (dbg, 0);
@@ -630,7 +630,7 @@ RzDebugPlugin rz_debug_plugin_windbg = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_windbg,
 	.version = RZ_VERSION

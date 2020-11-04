@@ -135,7 +135,7 @@ static int show_help(const char *argv0, int line) {
 	" -m         magic search, file-type carver\n"
 	" -M [str]   set a binary mask to be applied on keywords\n"
 	" -n         do not stop on read errors\n"
-	" -r         print using radare commands\n"
+	" -r         print using rizin commands\n"
 	" -s [str]   search for a specific string (can be used multiple times)\n"
 	" -S [str]   search for a specific wide string (can be used multiple times). Assumes str is UTF-8.\n"
 	" -t [to]    stop search at address 'to'\n"

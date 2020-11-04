@@ -161,7 +161,7 @@ RzBinPlugin rz_bin_plugin_z64 = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_BIN,
 	.data = &rz_bin_plugin_z64,
 	.version = RZ_VERSION

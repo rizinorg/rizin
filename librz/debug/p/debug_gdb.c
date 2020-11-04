@@ -426,7 +426,7 @@ static int rz_debug_gdb_set_reg_profile(const char *str) {
 	return false;
 }
 
-static int rz_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static int rz_debug_gdb_breakpoint (RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 	int ret = 0, bpsize;
 	if (!b) {
 		return false;
@@ -566,7 +566,7 @@ RzDebugPlugin rz_debug_plugin_gdb = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_gdb,
 	.version = RZ_VERSION

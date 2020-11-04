@@ -4,7 +4,7 @@ libdir=@LIBDIR@
 includedir=${prefix}/include
 
 Name: rz_asm
-Description: radare foundation libraries
+Description: rizin foundation libraries
 Version: @VERSION@
 Requires: rz_syscall rz_lang rz_util rz_parse rz_flag rz_cons rz_reg
 Libs: -L${libdir} -lrz_asm  

@@ -38,7 +38,7 @@ typedef struct _exception_info {
 } xnu_exception_info;
 
 
-//XXX use radare types
+//XXX use rizin types
 typedef struct _xnu_thread {
 	thread_t port; //mach_port // XXX bad naming here
 	char *name; //name of thread
