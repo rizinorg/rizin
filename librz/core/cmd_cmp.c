@@ -152,7 +152,7 @@ RZ_API int rz_core_cmpwatch_revert(RzCore *core, ut64 addr) {
 	return ret;
 }
 
-static int radare_compare_words(RzCore *core, ut64 of, ut64 od, int len, int ws) {
+static int rizin_compare_words(RzCore *core, ut64 of, ut64 od, int len, int ws) {
 	int i;
 	bool useColor = rz_config_get_i (core->config, "scr.color") != 0;
 	utAny v0, v1;
@@ -201,7 +201,7 @@ static int radare_compare_words(RzCore *core, ut64 of, ut64 od, int len, int ws)
 	return 0;
 }
 
-static int radare_compare_unified(RzCore *core, ut64 of, ut64 od, int len) {
+static int rizin_compare_unified(RzCore *core, ut64 of, ut64 od, int len) {
 	int i, min, inc = 16;
 	ut8 *f, *d;
 	if (len < 1) {
@@ -240,7 +240,7 @@ static int radare_compare_unified(RzCore *core, ut64 of, ut64 od, int len) {
 	return true;
 }
 
-static int radare_compare(RzCore *core, const ut8 *f, const ut8 *d, int len, int mode) {
+static int rizin_compare(RzCore *core, const ut8 *f, const ut8 *d, int len, int mode) {
 	int i, eq = 0;
 	PJ *pj = NULL;
 	if (len < 1) {
@@ -584,14 +584,14 @@ static int cmd_cmp(void *data, const char *input) {
 			return 0;
 		}
 
-		val = radare_compare (core, block, (ut8 *) input + 2,
+		val = rizin_compare (core, block, (ut8 *) input + 2,
 			strlen (input + 2) + 1, '*');
 		break;
 	case ' ':
 	{
 		char *str = strdup (input + 1);
 		int len = rz_str_unescape (str);
-		val = radare_compare (core, block, (ut8 *) str, len, 0);
+		val = rizin_compare (core, block, (ut8 *) str, len, 0);
 		free (str);
 	}
 	break;
@@ -602,7 +602,7 @@ static int cmd_cmp(void *data, const char *input) {
 		} else {
 			char *str = strdup (input + 2);
 			int len = rz_str_unescape (str);
-			val = radare_compare (core, block, (ut8 *) str, len, 'j');
+			val = rizin_compare (core, block, (ut8 *) str, len, 'j');
 			free (str);
 		}
 	}
@@ -644,7 +644,7 @@ static int cmd_cmp(void *data, const char *input) {
 		if (ret < 1) {
 			eprintf ("Cannot parse hexpair\n");
 		} else {
-			val = radare_compare (core, block, buf, ret, mode);
+			val = rizin_compare (core, block, buf, ret, mode);
 		}
 		free (buf);
 		free (filled);
@@ -656,7 +656,7 @@ static int cmd_cmp(void *data, const char *input) {
 					    input + 1), buf, core->blocksize)) {
 				eprintf ("Cannot read hexdump\n");
 			} else {
-				val = radare_compare (core, block, buf, ret, mode);
+				val = rizin_compare (core, block, buf, ret, mode);
 			}
 			free (buf);
 		}
@@ -677,7 +677,7 @@ static int cmd_cmp(void *data, const char *input) {
 			if (fread (buf, 1, core->blocksize, fd) < 1) {
 				eprintf ("Cannot read file %s\n", input + 2);
 			} else {
-				val = radare_compare (core, block, buf, core->blocksize, 0);
+				val = rizin_compare (core, block, buf, core->blocksize, 0);
 			}
 			fclose (fd);
 			free (buf);
@@ -737,15 +737,15 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 	case '2': // "c2"
 		v16 = (ut16) rz_num_math (core->num, input + 1);
-		val = radare_compare (core, block, (ut8 *) &v16, sizeof (v16), 0);
+		val = rizin_compare (core, block, (ut8 *) &v16, sizeof (v16), 0);
 		break;
 	case '4': // "c4"
 		v32 = (ut32) rz_num_math (core->num, input + 1);
-		val = radare_compare (core, block, (ut8 *) &v32, sizeof (v32), 0);
+		val = rizin_compare (core, block, (ut8 *) &v32, sizeof (v32), 0);
 		break;
 	case '8': // "c8"
 		v64 = (ut64) rz_num_math (core->num, input + 1);
-		val = radare_compare (core, block, (ut8 *) &v64, sizeof (v64), 0);
+		val = rizin_compare (core, block, (ut8 *) &v64, sizeof (v64), 0);
 		break;
 	case 'c': // "cc"
 		if (input[1] == '?') { // "cc?"
@@ -848,7 +848,7 @@ static int cmd_cmp(void *data, const char *input) {
 		switch (input[1]) {
 		case '.':
 		case ' ':
-			radare_compare_unified (core, core->offset,
+			rizin_compare_unified (core, core->offset,
 				rz_num_math (core->num, input + 2),
 				core->blocksize);
 			break;
@@ -856,7 +856,7 @@ static int cmd_cmp(void *data, const char *input) {
 		case '2':
 		case '4':
 		case '8':
-			radare_compare_words (core, core->offset,
+			rizin_compare_words (core, core->offset,
 				rz_num_math (core->num, input + 2),
 				core->blocksize, input[1] - '0');
 			break;

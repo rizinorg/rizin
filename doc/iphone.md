@@ -99,9 +99,9 @@ Make a fake install in a temporary directory:
 	cd /tmp/r2
 	tar czvpf ../r2.tgz *
 
-Clone the cydia repo from radare's github
+Clone the cydia repo from rizin's github
 
-	git clone https://github.com/radare/cydia
+	git clone https://github.com/rizin/cydia
 	cd cydia/rizin*
 	mkdir root
 	tar xzvf r2.tgz -C root

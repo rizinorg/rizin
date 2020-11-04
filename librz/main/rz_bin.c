@@ -52,7 +52,7 @@ static int rabin_show_help(int v) {
 		" -q              be quiet, just show fewer data\n"
 		" -qq             show less info (no offset/size for -z for ex.)\n"
 		" -Q              show load address used by dlopen (non-aslr libs)\n"
-		" -r              radare output\n"
+		" -r              rizin output\n"
 		" -R              relocations\n"
 		" -s              symbols\n"
 		" -S              sections\n"

@@ -59,7 +59,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
       'sstream-null.patch'
     ]
 
-    message('Patching capstone with radare\'s patches')
+    message('Patching capstone with rizin\'s patches')
     foreach file : patches_files
       patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', file)
       patch_cmd_str = '-C @0@ apply -p1 @1@'.format(capstone_path, patch_path)

@@ -164,7 +164,7 @@ RzIOPlugin rz_io_plugin_qnx = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_IO,
 	.data = &rz_io_plugin_qnx,
 	.version = RZ_VERSION

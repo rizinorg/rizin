@@ -4,7 +4,7 @@
 
 typedef int integer_t;
 
-// NOTE(eddyb) the following have been slightly modified to work under radare.
+// NOTE(eddyb) the following have been slightly modified to work under rizin.
 
 #include "mach0_defines.h"
 

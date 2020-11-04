@@ -223,7 +223,7 @@ RzParsePlugin rz_parse_plugin_avr_pseudo = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_PARSE,
 	.data = &rz_parse_plugin_avr_pseudo,
 	.version = RZ_VERSION

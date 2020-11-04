@@ -72,7 +72,7 @@ RzCryptoPlugin rz_crypto_plugin_ror = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_CRYPTO,
 	.data = &rz_crypto_plugin_ror,
 	.version = RZ_VERSION

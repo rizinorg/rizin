@@ -142,7 +142,7 @@ static bool check_features(RzAsm *a, cs_insn *insn) {
 }
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_m68k_cs,
 	.version = RZ_VERSION
@@ -161,7 +161,7 @@ RzAsmPlugin rz_asm_plugin_m68k_cs = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_m68k_cs,
 	.version = RZ_VERSION

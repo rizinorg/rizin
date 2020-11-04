@@ -2201,7 +2201,7 @@ static char *unescape_special_chars(const char *s, const char *special_chars) {
 		close (fd_out);        \
 		fd_out = -1;
 
-static void rz_w32_cmd_pipe(RzCore *core, char *radare_cmd, char *shell_cmd) {
+static void rz_w32_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd) {
 	STARTUPINFO si = {0};
 	PROCESS_INFORMATION pi = {0};
 	SECURITY_ATTRIBUTES sa;
@@ -2265,8 +2265,8 @@ static void rz_w32_cmd_pipe(RzCore *core, char *radare_cmd, char *shell_cmd) {
 	}
 	cons_out = dup (1);
 	dup2 (fd_out, 1);
-	// exec radare command
-	rz_core_cmd (core, radare_cmd, 0);
+	// exec rizin command
+	rz_core_cmd (core, rizin_cmd, 0);
 
 	HANDLE th = CreateThread (NULL, 0,(LPTHREAD_START_ROUTINE) rz_cons_flush, NULL, 0, NULL);
 	if (!th) {
@@ -2318,7 +2318,7 @@ err_r_w32_cmd_pipe:
 #undef __CLOSE_DUPPED_PIPES
 #endif
 
-RZ_API int rz_core_cmd_pipe(RzCore *core, char *radare_cmd, char *shell_cmd) {
+RZ_API int rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd) {
 #if __UNIX__
 	int stdout_fd, fds[2];
 	int child;
@@ -2341,7 +2341,7 @@ RZ_API int rz_core_cmd_pipe(RzCore *core, char *radare_cmd, char *shell_cmd) {
 		olen = 0;
 		out = NULL;
 		// TODO: implement foo
-		str = rz_core_cmd_str (core, radare_cmd);
+		str = rz_core_cmd_str (core, rizin_cmd);
 		rz_sys_cmd_str_full (shell_cmd + 1, str, &out, &olen, NULL);
 		free (str);
 		rz_cons_memcat (out, olen);
@@ -2349,7 +2349,7 @@ RZ_API int rz_core_cmd_pipe(RzCore *core, char *radare_cmd, char *shell_cmd) {
 		ret = 0;
 	}
 #if __UNIX__
-	rz_str_trim_head (radare_cmd);
+	rz_str_trim_head (rizin_cmd);
 	rz_str_trim_head (shell_cmd);
 
 	rz_sys_signal (SIGPIPE, SIG_IGN);
@@ -2364,7 +2364,7 @@ RZ_API int rz_core_cmd_pipe(RzCore *core, char *radare_cmd, char *shell_cmd) {
 				dup2 (fds[1], 1);
 				close (fds[1]);
 				close (fds[0]);
-				rz_core_cmd (core, radare_cmd, 0);
+				rz_core_cmd (core, rizin_cmd, 0);
 				rz_cons_flush ();
 				close (1);
 				wait (&ret);
@@ -2382,7 +2382,7 @@ RZ_API int rz_core_cmd_pipe(RzCore *core, char *radare_cmd, char *shell_cmd) {
 		}
 	}
 #elif __WINDOWS__
-	rz_w32_cmd_pipe (core, radare_cmd, shell_cmd);
+	rz_w32_cmd_pipe (core, rizin_cmd, shell_cmd);
 #else
 #ifdef _MSC_VER
 #pragma message ("rz_core_cmd_pipe UNIMPLEMENTED FOR THIS PLATFORM")

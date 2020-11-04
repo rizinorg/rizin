@@ -451,7 +451,7 @@ static PDEBUG_BUFFER InitHeapInfo(RzDebug *dbg, DWORD mask) {
 	}
 	if (!params->fin) {
 		// why after it fails the first time it blocks on the second? That's annoying
-		// It stops blocking if i pause radare in the debugger. is it a race?
+		// It stops blocking if i pause rizin in the debugger. is it a race?
 		// why it fails with 1000000 allocs? also with processes with segment heap enabled?
 		params->hanged = true;
 		eprintf ("RtlQueryProcessDebugInformation hanged\n");

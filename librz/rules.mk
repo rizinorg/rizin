@@ -112,7 +112,7 @@ pkgcfg:
 	@echo 'includedir=$${prefix}/include' >> ../../pkgcfg/${NAME}.pc.acr
 	@echo >> ../../pkgcfg/${NAME}.pc.acr
 	@echo 'Name: ${NAME}' >> ../../pkgcfg/${NAME}.pc.acr
-	@echo 'Description: radare foundation libraries' >> ../../pkgcfg/${NAME}.pc.acr
+	@echo 'Description: rizin foundation libraries' >> ../../pkgcfg/${NAME}.pc.acr
 	@echo 'Version: @VERSION@' >> ../../pkgcfg/${NAME}.pc.acr
 	@echo 'Requires: $(filter rz_%,${RZ_DEPS})' >> ../../pkgcfg/${NAME}.pc.acr
 	@if [ "${NAME}" = "librz" ]; then NAME=''; else NAME=${NAME}; fi ;\

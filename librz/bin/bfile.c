@@ -185,7 +185,7 @@ static int string_scan_range(RzList *list, RzBinFile *bf, int min,
 
 		/* Eat a whole C string */
 		for (i = 0; i < sizeof (tmp) - 4 && needle < to; i += rc) {
-			RRune r = {0};
+			RzRune r = {0};
 
 			if (str_type == RZ_STRING_TYPE_WIDE32) {
 				rc = rz_utf32le_decode (buf + needle - from, to - needle, &r);

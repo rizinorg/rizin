@@ -111,7 +111,7 @@ static char *__esil_reg_profile(RzDebug *dbg) {
 	return rz_anal_get_reg_profile (dbg->anal);
 }
 
-static int __esil_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static int __esil_breakpoint (RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 	//rz_io_system (dbg->iob.io, "db");
 	return false;
 }
@@ -156,7 +156,7 @@ RzDebugPlugin rz_debug_plugin_esil = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_esil,
 	.version = RZ_VERSION

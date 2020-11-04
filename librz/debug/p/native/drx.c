@@ -204,7 +204,7 @@ void drx_enable(drxt *r, int n, int enabled) {
 	}
 }
 
-bool drx_add(RzDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
+bool drx_add(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {
 	if (bp->nhwbps < 4) {
 		rz_debug_reg_sync (dbg, RZ_REG_TYPE_DRX, false);
 		rz_debug_drx_set (dbg, bp->nhwbps, b->addr, b->size, b->perm, 0);
@@ -215,7 +215,7 @@ bool drx_add(RzDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
 	return false;
 }
 
-bool drx_del(RzDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
+bool drx_del(RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {
 	if (bp->nhwbps > 0) {
 		rz_debug_reg_sync (dbg, RZ_REG_TYPE_DRX, false);
 		rz_debug_drx_unset (dbg, bp->nhwbps - 1);

@@ -321,7 +321,7 @@ static ut64 get_base_from_maps(RzCore *core, const char *file) {
 
 #if __linux__ || __APPLE__
 static bool setbpint(RzCore *r, const char *mode, const char *sym) {
-	RBreakpointItem *bp;
+	RzBreakpointItem *bp;
 	RzFlagItem *fi = rz_flag_get (r->flags, sym);
 	if (!fi) {
 		return false;

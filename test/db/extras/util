@@ -5,7 +5,7 @@ EXPECT=<<EOF
 0 one
 1 one
 3 eleven
-4 radare
+4 rizin
 9 great
 five
 five
@@ -26,7 +26,7 @@ EXPECT=<<EOF
 1 one
 five
 3 eleven
-4 radare
+4 rizin
 9 great
 0 one
 EOF
@@ -44,8 +44,8 @@ FILE=-
 CMDS=join bins/other/test_file bins/other/test_file2
 EXPECT=<<EOF
 1 one great
-3 eleven radare
-4 radare awesome
+3 eleven rizin
+4 rizin awesome
 9 great dodoco
 EOF
 RUN

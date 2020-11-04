@@ -1040,7 +1040,7 @@ static char get_string_type(const ut8 *buf, ut64 len) {
 			str_type = 'a';
 		}
 		for (rc = i = 0; needle < len; i += rc) {
-			RRune r;
+			RzRune r;
 			if (str_type == 'w') {
 				if (needle + 1 < len) {
 					r = buf[needle + 1] << 8 | buf[needle];

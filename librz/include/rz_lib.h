@@ -16,8 +16,8 @@ RZ_LIB_VERSION_HEADER (rz_lib);
 
 // rename to '.' ??
 #define RZ_LIB_SEPARATOR "."
-#define RZ_LIB_SYMNAME "radare_plugin"
-#define RZ_LIB_SYMFUNC "radare_plugin_function"
+#define RZ_LIB_SYMNAME "rizin_plugin"
+#define RZ_LIB_SYMFUNC "rizin_plugin_function"
 
 #define RZ_LIB_ENV "RZ_LIBR_PLUGINS"
 
@@ -52,7 +52,7 @@ typedef struct rz_lib_handler_t {
 	int (*destructor)(RzLibPlugin *, void *user, void *data);
 } RzLibHandler;
 
-/* this structure should be pointed by the 'radare_plugin' symbol
+/* this structure should be pointed by the 'rizin_plugin' symbol
    found in the loaded .so */
 typedef struct rz_lib_struct_t {
 	int type;

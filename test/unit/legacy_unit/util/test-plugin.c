@@ -32,7 +32,7 @@ int ptr() {
 
 int main(int argc, char **argv) {
 	int ret;
-	RzLib *lib = rz_lib_new ("radare_plugin");
+	RzLib *lib = rz_lib_new ("rizin_plugin");
 	rz_lib_add_handler (lib, 1, "example plugin handler", &cb_1, &cb_1_end, &ptr);
 	rz_lib_add_handler (lib, 2, "disassembler plugin handler", &cb_2, &cb_2_end, &ptr);
 	rz_lib_add_handler (lib, 3, "file headers parser plugin handler", &cb_2, &cb_2_end, &ptr);

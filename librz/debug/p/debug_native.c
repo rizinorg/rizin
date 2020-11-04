@@ -785,7 +785,7 @@ static int linux_map_thp (RzDebug *dbg, ut64 addr, int size) {
 		"x64", "x86.as",
 		NULL
 	};
-	// In architectures where radare is supported, arm and x86, it is 2MB
+	// In architectures where rizin is supported, arm and x86, it is 2MB
 	const size_t thpsize = 1<<21;
 
 	if ((size%thpsize)) {
@@ -1330,11 +1330,11 @@ static bool ll_arm32_hwbp_set(pid_t pid, ut64 addr, int size, int wp, int type) 
 	return ptrace (PTRACE_SETHBPREGS, pid, -2, &control) != -1;
 }
 
-static bool arm32_hwbp_add (RzDebug *dbg, RBreakpoint* bp, RBreakpointItem *b) {
+static bool arm32_hwbp_add (RzDebug *dbg, RzBreakpoint* bp, RzBreakpointItem *b) {
 	return ll_arm32_hwbp_set (dbg->pid, b->addr, b->size, 0, 1 | 2 | 4);
 }
 
-static bool arm32_hwbp_del (RzDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
+static bool arm32_hwbp_del (RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {
 	return false; // TODO: hwbp.del not yetimplemented
 }
 #endif // PTRACE_GETHWBPREGS
@@ -1400,11 +1400,11 @@ static bool ll_arm64_hwbp_del(pid_t pid, ut64 _addr, int size, int wp, ut32 type
 	return false;
 }
 
-static bool arm64_hwbp_add (RzDebug *dbg, RBreakpoint* bp, RBreakpointItem *b) {
+static bool arm64_hwbp_add (RzDebug *dbg, RzBreakpoint* bp, RzBreakpointItem *b) {
 	return ll_arm64_hwbp_set (dbg->pid, b->addr, b->size, 0, 1 | 2 | 4);
 }
 
-static bool arm64_hwbp_del (RzDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
+static bool arm64_hwbp_del (RzDebug *dbg, RzBreakpoint *bp, RzBreakpointItem *b) {
 	return ll_arm64_hwbp_del (dbg->pid, b->addr, b->size, 0, 1 | 2 | 4);
 }
 
@@ -1417,7 +1417,7 @@ static bool arm64_hwbp_del (RzDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
  * we only handle the case for hardware breakpoints here. otherwise,
  * we let the caller handle the work.
  */
-static int rz_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static int rz_debug_native_bp(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 	RzDebug *dbg = bp->user;
 	if (b && b->hw) {
 #if __i386__ || __x86_64__
@@ -1650,7 +1650,7 @@ RzDebugPlugin rz_debug_plugin_native = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_DBG,
 	.data = &rz_debug_plugin_native,
 	.version = RZ_VERSION

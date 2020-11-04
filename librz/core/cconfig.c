@@ -3359,7 +3359,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("dir.tmp", p? p: "", &cb_dirtmp, "Path of the tmp directory");
 	free (p);
 #if __ANDROID__
-	SETPREF ("dir.projects", "/data/data/org.radare.rizininstaller/rizin/projects", "Default path for projects");
+	SETPREF ("dir.projects", "/data/data/org.rizin.rizininstaller/rizin/projects", "Default path for projects");
 #else
 	SETPREF ("dir.projects", RZ_JOIN_2_PATHS ("~", RZ_HOME_PROJECTS), "Default path for projects");
 #endif
@@ -3519,7 +3519,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		free (wwwroot);
 	}
 #elif __ANDROID__
-	SETPREF ("http.root", "/data/data/org.radare.rizininstaller/www", "http root directory");
+	SETPREF ("http.root", "/data/data/org.rizin.rizininstaller/www", "http root directory");
 #else
 	SETPREF ("http.root", RZ_WWWROOT, "http root directory");
 #endif

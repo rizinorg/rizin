@@ -66,7 +66,7 @@ static int sex(int bits, int imm) {
 #define SEX_S21(imm) sex (21, imm);
 #define SEX_S25(imm) sex (25, imm);
 
-static int map_cond2radare(ut8 cond) {
+static int map_cond2rizin(ut8 cond) {
 	switch (cond) {
 	case 0: return RZ_ANAL_COND_AL;
 	case 1: return RZ_ANAL_COND_EQ;
@@ -83,7 +83,7 @@ static int map_cond2radare(ut8 cond) {
 	case 0xe: return RZ_ANAL_COND_LS;
 #if 0
 	/* TODO: */
-	/* - radare defines RZ_ANAL_COND_LO as carry clear and _HS as carry set */
+	/* - rizin defines RZ_ANAL_COND_LO as carry clear and _HS as carry set */
 	/*   which appears different to the ARC definitions. */
 	/*   Need to do some math and double check the details */
 	case 5: return RZ_ANAL_COND_?? - CS,C,LO - Carry set & LO
@@ -103,7 +103,7 @@ static void arcompact_jump(RzAnalOp *op, ut64 addr, ut64 jump, ut8 delay) {
 
 static void arcompact_jump_cond(RzAnalOp *op, ut64 addr, ut64 jump, ut8 delay, ut8 cond) {
 	arcompact_jump (op, addr, jump, delay);
-	op->cond = map_cond2radare (cond);
+	op->cond = map_cond2rizin (cond);
 }
 
 static void arcompact_branch(RzAnalOp *op, ut64 addr, st64 offset, ut8 delay) {
@@ -181,12 +181,12 @@ static int arcompact_genops_jmp(RzAnalOp *op, ut64 addr, arc_fields *f, ut64 bas
 				/* ilink1, ilink2, blink */
 				/* Note: not valid for basic_type == CALL */
 				op->type = RZ_ANAL_OP_TYPE_CRET;
-				op->cond = map_cond2radare (f->cond);
+				op->cond = map_cond2rizin (f->cond);
 				op->delay = f->mode_n;
 				return op->size;
 			}
 
-			op->cond = map_cond2radare (f->cond);
+			op->cond = map_cond2rizin (f->cond);
 			op->type = type_ucjmp;
 			return op->size;
 		}
@@ -279,7 +279,7 @@ static int arcompact_genops(RzAnalOp *op, ut64 addr, ut32 words[2]) {
 			op->val = SEX_S12 (fields.a << 6 | fields.c);
 		} else if (fields.format == 3) {
 			fields.cond = fields.a & 0x1f;
-			op->cond = map_cond2radare (fields.cond);
+			op->cond = map_cond2rizin (fields.cond);
 			op->type = RZ_ANAL_OP_TYPE_CMOV;
 			if ((fields.a & 0x20)) {
 				/* its a move from imm u6 */
@@ -337,7 +337,7 @@ static int arcompact_genops(RzAnalOp *op, ut64 addr, ut32 words[2]) {
 		break;
 	case 0x28: /* loop (16-bit aligned target address) */
 		/* this is essentially a COME FROM instruction!! */
-		/* TODO: describe it to radare better? */
+		/* TODO: describe it to rizin better? */
 		switch (fields.format) {
 		case 2: /* Loop Set Up (Unconditional) */
 			fields.imm = SEX_S13 ((fields.c | (fields.a << 6)) << 1);
@@ -348,7 +348,7 @@ static int arcompact_genops(RzAnalOp *op, ut64 addr, ut32 words[2]) {
 		case 3: /* Loop Set Up (Conditional) */
 			fields.imm = fields.c << 1;
 			fields.cond = fields.a & 0x1f;
-			op->cond = map_cond2radare (fields.a & 0x1f);
+			op->cond = map_cond2rizin (fields.a & 0x1f);
 			op->jump = (addr & ~3) + fields.imm;
 			op->type = RZ_ANAL_OP_TYPE_CJMP;
 			op->fail = addr + op->size;
@@ -498,7 +498,7 @@ static int arcompact_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, 
 			/* Branch Conditionally 0x00 [0x0] */
 			fields.limm = SEX_S21 (fields.limm);
 			fields.cond = (words[0] & 0x1f);
-			op->cond = map_cond2radare (fields.cond);
+			op->cond = map_cond2rizin (fields.cond);
 			op->type = RZ_ANAL_OP_TYPE_CJMP;
 		} else {
 			/* Branch Unconditional Far 0x00 [0x1] */
@@ -545,7 +545,7 @@ static int arcompact_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, 
 				/* Branch and Link Conditionally, 0x01, [0x0, 0x0] */
 				fields.imm = SEX_S21 (fields.imm);
 				fields.cond = (words[0] & 0x1f);
-				op->cond = map_cond2radare (fields.cond);
+				op->cond = map_cond2rizin (fields.cond);
 				op->type = RZ_ANAL_OP_TYPE_CCALL;
 			} else {
 				/* Branch and Link Unconditional Far, 0x01, [0x0, 0x1] */
@@ -840,7 +840,7 @@ static int arcompact_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, 
 			op->type = RZ_ANAL_OP_TYPE_TRAP;
 			/* TODO: the description sounds more like a */
 			/* RZ_ANAL_OP_TYPE_SWI, but I don't know what */
-			/* difference that would make to radare */
+			/* difference that would make to rizin */
 			break;
 		case 0x1f:
 			op->type = RZ_ANAL_OP_TYPE_TRAP;
@@ -1149,7 +1149,7 @@ RzAnalPlugin rz_anal_plugin_arc = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_arc,
 	.version = RZ_VERSION,

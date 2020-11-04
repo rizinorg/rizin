@@ -8,7 +8,7 @@ typedef struct {
 	void *last_data;
 } EventTestAcc;
 
-static void callback_test(REvent *ev, int type, void *user, void *data) {
+static void callback_test(RzEvent *ev, int type, void *user, void *data) {
 	EventTestAcc *acc = user;
 	acc->count++;
 	acc->last_type = type;
@@ -16,15 +16,15 @@ static void callback_test(REvent *ev, int type, void *user, void *data) {
 }
 
 bool test_r_event(void) {
-	REvent *ev = rz_event_new ((void *)0x1337);
+	RzEvent *ev = rz_event_new ((void *)0x1337);
 	mu_assert_notnull (ev, "rz_event_new ()");
 	mu_assert_ptreq (ev->user, (void *)0x1337, "ev->user");
 
 	EventTestAcc acc_all = { 0 };
 	EventTestAcc acc_specific = { 0 };
 
-	REventCallbackHandle handle_all = rz_event_hook (ev, RZ_EVENT_ALL, callback_test, &acc_all);
-	REventCallbackHandle handle_specific = rz_event_hook (ev, RZ_EVENT_META_SET, callback_test, &acc_specific);
+	RzEventCallbackHandle handle_all = rz_event_hook (ev, RZ_EVENT_ALL, callback_test, &acc_all);
+	RzEventCallbackHandle handle_specific = rz_event_hook (ev, RZ_EVENT_META_SET, callback_test, &acc_specific);
 
 	rz_event_send (ev, RZ_EVENT_META_DEL, (void *)0x4242);
 

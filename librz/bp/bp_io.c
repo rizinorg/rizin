@@ -3,7 +3,7 @@
 #include <rz_bp.h>
 #include <config.h>
 
-RZ_API void rz_bp_restore_one(RBreakpoint *bp, RBreakpointItem *b, bool set) {
+RZ_API void rz_bp_restore_one(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 	if (set) {
 		//eprintf ("Setting bp at 0x%08"PFMT64x"\n", b->addr);
 		if (b->hw || !b->bbytes) {
@@ -24,7 +24,7 @@ RZ_API void rz_bp_restore_one(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 /**
  * reflect all rz_bp stuff in the process using dbg->bp_write or ->breakpoint
  */
-RZ_API int rz_bp_restore(RBreakpoint *bp, bool set) {
+RZ_API int rz_bp_restore(RzBreakpoint *bp, bool set) {
 	return rz_bp_restore_except (bp, set, UT64_MAX);
 }
 
@@ -33,10 +33,10 @@ RZ_API int rz_bp_restore(RBreakpoint *bp, bool set) {
  *
  * except the specified breakpoint...
  */
-RZ_API bool rz_bp_restore_except(RBreakpoint *bp, bool set, ut64 addr) {
+RZ_API bool rz_bp_restore_except(RzBreakpoint *bp, bool set, ut64 addr) {
 	bool rc = true;
 	RzListIter *iter;
-	RBreakpointItem *b;
+	RzBreakpointItem *b;
 
 	if (set && bp->bpinmaps) {
 		bp->corebind.syncDebugMaps (bp->corebind.core);

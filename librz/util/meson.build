@@ -119,5 +119,5 @@ pkgconfig_mod.generate(rz_util,
   libraries: pkgcfg_sanitize_libs,
   name: 'rz_util',
   filebase: 'rz_util',
-  description: 'radare foundation libraries'
+  description: 'rizin foundation libraries'
 )

@@ -468,7 +468,7 @@ static bool set_reg_profile(RzAnal *anal) {
 	/* As far as I can see, sparc v9 register and instruction set
 	   don't depened  on bits of the running application.
 	   But: They depend on the bits of the consuming application,
-	   that is the bits radare had been compiled with.
+	   that is the bits rizin had been compiled with.
 	   See sys/procfs_isa.h on a Solaris10 Sparc machine and
 	   'man 4 core' for reference.
 	 */
@@ -619,7 +619,7 @@ RzAnalPlugin rz_anal_plugin_sparc_gnu = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_sparc_gnu,
 	.version = RZ_VERSION

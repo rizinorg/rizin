@@ -4,7 +4,7 @@ libdir=@LIBDIR@
 includedir=${prefix}/include
 
 Name: rz_lang
-Description: radare foundation libraries
+Description: rizin foundation libraries
 Version: @VERSION@
 Requires: rz_util rz_cons
 Libs: -L${libdir} -lrz_lang  

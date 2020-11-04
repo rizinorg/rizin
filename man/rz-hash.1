@@ -22,7 +22,7 @@
 .Op Fl c Ar hash
 .Op [file] ...
 .Sh DESCRIPTION
-This program is part of the radare project.
+This program is part of the rizin project.
 .Pp
 Rahash2 allows you to calculate, check and show the hash values of each block of a target file. The block size is 32768 bytes by default. It's allowed to hash from stdin using '-' as a target file. You can compare against a known hash and get the result in the exit status.
 .Pp
@@ -30,7 +30,7 @@ You can hash big files by hashing each block and later determine what part of it
 .Pp
 This command can be used to calculate hashes of a certain part of a file or a command line passed string.
 .Pp
-This is the command used by the 'ph' command of radare.
+This is the command used by the 'ph' command of rizin.
 .Bl -tag -width Fl
 .It Fl a Ar algo
 Select an algorithm for the hashing. Valid values are listed in: rz-hash -L
@@ -69,7 +69,7 @@ Show vertical entropy/statistical entropy graphs
 .It Fl q
 Quiet mode (-qq for even quieter!)
 .It Fl r
-Show output in radare commands
+Show output in rizin commands
 .It Fl x Ar hexstr
 Hash the given hexpair string instead of using the 'source' and 'hash-file' arguments.
 .It Fl v

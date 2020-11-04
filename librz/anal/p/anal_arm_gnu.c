@@ -283,7 +283,7 @@ static int arm_op32(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 			// var_add_access(addr, -b[0], 1, 0); // TODO: set/get (the last 0)
 		} else {
 			// ut32 oaddr = addr+8+b[0];
-			// XXX TODO ret = radare_read_at(oaddr, (ut8*)&ptr, 4);
+			// XXX TODO ret = rizin_read_at(oaddr, (ut8*)&ptr, 4);
 			if (anal->bits == 32) {
 				b = (ut8 *) &ptr;
 				op->ptr = b[0] + (b[1] << 8) + (b[2] << 16) + (b[3] << 24);
@@ -474,7 +474,7 @@ RzAnalPlugin rz_anal_plugin_arm_gnu = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_arm_gnu,
 	.version = RZ_VERSION

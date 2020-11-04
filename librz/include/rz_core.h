@@ -304,7 +304,7 @@ struct rz_core_t {
 	RzCoreAutocomplete *autocomplete;
 	int autocomplete_type;
 	int maxtab;
-	REvent *ev;
+	RzEvent *ev;
 	RzList *gadgets;
 	bool scr_gadgets;
 	bool log_events; // core.c:cb_event_handler : log actions from events if cfg.log.events is set
@@ -390,7 +390,7 @@ RZ_API int rz_core_cmdf(RzCore *core, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3
 RZ_API int rz_core_flush(RzCore *core, const char *cmd);
 RZ_API int rz_core_cmd0(RzCore *core, const char *cmd);
 RZ_API void rz_core_cmd_init(RzCore *core);
-RZ_API int rz_core_cmd_pipe(RzCore *core, char *radare_cmd, char *shell_cmd);
+RZ_API int rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd);
 RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd);
 RZ_API char *rz_core_cmd_strf(RzCore *core, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd);

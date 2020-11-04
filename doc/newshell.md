@@ -70,7 +70,7 @@ deregister it, call the right command descriptor handler based on a list of
 command name + arguments, get the help of a command and potentially do many
 other things.
 
-As radare2/rizin commands mainly form a tree, `RzCmdDesc` are organized in a
+As rizin/radare2 commands mainly form a tree, `RzCmdDesc` are organized in a
 tree, with each descriptor having references to its parent and its children.
 Moreover, a descriptor has its help messages and its handler.
 

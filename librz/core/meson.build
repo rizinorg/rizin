@@ -149,5 +149,5 @@ pkgconfig_mod.generate(
     'rz_asm',
     'rz_bp'
   ],
-  description: 'radare foundation libraries'
+  description: 'rizin foundation libraries'
 )

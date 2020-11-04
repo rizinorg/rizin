@@ -447,7 +447,7 @@ static int show_help(int v) {
 			"  -O         code diffing with opcode bytes only\n"
 			"  -p         use physical addressing (io.va=0)\n"
 			"  -q         quiet mode (disable colors, reduce output)\n"
-			"  -r         output in radare commands\n"
+			"  -r         output in rizin commands\n"
 			"  -s         compute edit distance (no substitution, Eugene W. Myers' O(ND) diff algorithm)\n"
 			"  -ss        compute Levenshtein edit distance (substitution is allowed, O(N^2))\n"
 			"  -S [name]  sort code diff (name, namelen, addr, size, type, dist) (only for -C or -g)\n"

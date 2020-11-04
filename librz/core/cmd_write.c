@@ -28,7 +28,7 @@ static const char *help_msg_w[] = {
 	"wh"," rizin","whereis/which shell command",
 	"wm"," f0ff","set binary mask hexpair to be used as cyclic write mask",
 	"wo","[?] hex","write in block with operation. 'wo?' fmi",
-	"wp","[?] -|file","apply radare patch file. See wp? fmi",
+	"wp","[?] -|file","apply rizin patch file. See wp? fmi",
 	"wr"," 10","write 10 random bytes",
 	"ws"," pstring","write 1 byte for length and then the string",
 	"wt[f]","[?] file [sz]","write to file (from current seek, blocksize or sz bytes)",
@@ -71,11 +71,11 @@ static const char *help_msg_wc[] = {
 	"wcj","","list all write changes in JSON",
 	"wc-"," [from] [to]","remove write op at curseek or given addr",
 	"wc+"," [from] [to]","commit change from cache to io",
-	"wc*","","\"\" in radare commands",
+	"wc*","","\"\" in rizin commands",
 	"wcr","","reset all write changes in cache",
 	"wci","","commit write cache",
 	"wcp"," [fd]", "list all cached write-operations on p-layer for specified fd or current fd",
-	"wcp*"," [fd]","list all cached write-operations on p-layer in radare commands",
+	"wcp*"," [fd]","list all cached write-operations on p-layer in rizin commands",
 	"wcpi"," [fd]", "commit and invalidate pcache for specified fd or current fd",
 	NULL
 };

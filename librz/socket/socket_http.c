@@ -338,10 +338,3 @@ RZ_API char *rz_socket_http_post(const char *url, const char *data, int *code, i
 	return socket_http_answer (s, code, rlen, 0);
 }
 
-#if TEST
-void main () {
-	int ret;
-	char *p = rz_socket_http_post ("http://www.radare.org/y/index.php", "a=b", &ret);
-	printf ("%s\n", p);
-}
-#endif

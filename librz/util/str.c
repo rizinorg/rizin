@@ -1394,7 +1394,7 @@ RZ_API char *rz_str_escape_latin1(const char *buf, bool show_asciidot, bool esc_
 static char *rz_str_escape_utf(const char *buf, int buf_size, RzStrEnc enc, bool show_asciidot, bool esc_bslash, bool keep_printable) {
 	char *new_buf, *q;
 	const char *p, *end;
-	RRune ch;
+	RzRune ch;
 	int i, len, ch_bytes;
 
 	if (!buf) {
@@ -1554,7 +1554,7 @@ RZ_API char *rz_str_encoded_json(const char *buf, int buf_size, int encoding) {
 RZ_API char *rz_str_escape_utf8_for_json_strip(const char *buf, int buf_size) {
 	char *new_buf, *q;
 	const char *p, *end;
-	RRune ch;
+	RzRune ch;
 	int i, len, ch_bytes;
 
 	if (!buf) {
@@ -1613,7 +1613,7 @@ RZ_API char *rz_str_escape_utf8_for_json_strip(const char *buf, int buf_size) {
 					*q++ = *(p + i);
 				}
 			} else {
-				RRune high, low;
+				RzRune high, low;
 				ch -= 0x10000;
 				high = 0xd800 + (ch >> 10 & 0x3ff);
 				low = 0xdc00 + (ch & 0x3ff);
@@ -1656,7 +1656,7 @@ RZ_API char *rz_str_escape_utf8_for_json_strip(const char *buf, int buf_size) {
 RZ_API char *rz_str_escape_utf8_for_json(const char *buf, int buf_size) {
 	char *new_buf, *q;
 	const char *p, *end;
-	RRune ch;
+	RzRune ch;
 	int i, len, ch_bytes;
 
 	if (!buf) {
@@ -1722,7 +1722,7 @@ RZ_API char *rz_str_escape_utf8_for_json(const char *buf, int buf_size) {
 					*q++ = *(p + i);
 				}
 			} else {
-				RRune high, low;
+				RzRune high, low;
 				ch -= 0x10000;
 				high = 0xd800 + (ch >> 10 & 0x3ff);
 				low = 0xdc00 + (ch & 0x3ff);

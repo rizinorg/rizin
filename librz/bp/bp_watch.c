@@ -2,14 +2,14 @@
 
 #include <rz_bp.h>
 
-static void rz_bp_watch_add_hw(RBreakpoint *bp, RBreakpointItem *b) {
+static void rz_bp_watch_add_hw(RzBreakpoint *bp, RzBreakpointItem *b) {
 	if (bp->breakpoint) {
 		bp->breakpoint (bp, b, true);
 	}
 }
 
-RZ_API RBreakpointItem* rz_bp_watch_add(RBreakpoint *bp, ut64 addr, int size, int hw, int perm) {
-	RBreakpointItem *b;
+RZ_API RzBreakpointItem* rz_bp_watch_add(RzBreakpoint *bp, ut64 addr, int size, int hw, int perm) {
+	RzBreakpointItem *b;
 	if (addr == UT64_MAX || size < 1) {
 		return NULL;
 	}

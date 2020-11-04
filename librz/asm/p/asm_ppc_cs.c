@@ -123,7 +123,7 @@ RzAsmPlugin rz_asm_plugin_ppc_cs = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_ppc_cs,
 	.version = RZ_VERSION

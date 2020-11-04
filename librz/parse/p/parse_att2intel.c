@@ -181,7 +181,7 @@ RzParsePlugin rz_parse_plugin_att2intel = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_PARSE,
 	.data = &rz_parse_plugin_att2intel,
 	.version = RZ_VERSION

@@ -4,7 +4,7 @@
 # http://blog.coolaj86.com/articles/how-to-unpackage-and-repackage-pkg-osx.html
 
 # to uninstall:
-# sudo pkgutil --forget org.radare.rizin
+# sudo pkgutil --forget org.rizin.rizin
 
 SRC=/tmp/r2osx
 PREFIX=/usr/local

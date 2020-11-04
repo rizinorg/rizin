@@ -39,7 +39,7 @@ typedef struct _specialregs specialregs;
 
 #define REGS_TABLE 9
 
-// radare tolower instruction in rasm, so we use 'x' instead of 'X' etc.
+// rizin tolower instruction in rasm, so we use 'x' instead of 'X' etc.
 specialregs RegsTable[REGS_TABLE] = {
 	{"-x", OPERAND_XP}, {"x", OPERAND_X}, {"x+", OPERAND_XP},
 	{"-y", OPERAND_YP}, {"y", OPERAND_Y}, {"y+", OPERAND_YP},
@@ -57,7 +57,7 @@ static int parse_specialreg(const char *reg) {
 				break;
 			}
 		}
-		/* radare tolower instruction in rasm, so we use 'y' instead of 'Y'
+		/* rizin tolower instruction in rasm, so we use 'y' instead of 'Y'
 		and so on for other registers */
 		if (found == -1 && reg[1] == '+') {
 			if (reg[0] == 'y' && len > 2) {
@@ -417,7 +417,7 @@ static int assemble(RzAsm *a, RzAsmOp *ao, const char *str) {
 		}
 	}
 
-	// copying result to radare struct
+	// copying result to rizin struct
 	if (len > 0) {
 		rz_strbuf_setbin (&ao->buf, (const ut8*)&coded, len);
 	}
@@ -450,7 +450,7 @@ RzAsmPlugin rz_asm_plugin_avr = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ASM,
 	.data = &rz_asm_plugin_avr,
 	.version = RZ_VERSION

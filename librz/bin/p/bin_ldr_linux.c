@@ -24,7 +24,7 @@ RzBinLdrPlugin rz_bin_ldr_plugin_ldr_linux = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_BIN_LDR,
 	.data = &rz_bin_ldr_plugin_ldr_linux,
 	.version = RZ_VERSION

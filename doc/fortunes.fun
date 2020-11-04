@@ -100,7 +100,7 @@ Experts agree, security holes suck, and we fixed some of them!
 This is just an existentialist experiment.
 Nothing to see here. Move along.
 Select your character: RBin Wizard, Master Anal Paladin, or Assembly Warrior
-I accidentally radared my filesystem today.
+I accidentally rizind my filesystem today.
 No fix, no sleep
 You see it, you fix it!
 V is for Visual

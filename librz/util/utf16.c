@@ -3,8 +3,8 @@
 #include <rz_types.h>
 #include <rz_util.h>
 
-/* Convert an UTF-16 buf into a unicode RRune */
-RZ_API int rz_utf16_decode(const ut8 *ptr, int ptrlen, RRune *ch, bool bigendian) {
+/* Convert an UTF-16 buf into a unicode RzRune */
+RZ_API int rz_utf16_decode(const ut8 *ptr, int ptrlen, RzRune *ch, bool bigendian) {
 	if (ptrlen < 1) {
 		return 0;
 	}
@@ -32,25 +32,25 @@ RZ_API int rz_utf16_decode(const ut8 *ptr, int ptrlen, RRune *ch, bool bigendian
 	return 0;
 }
 
-/* Convert an UTF-16LE buf into a unicode RRune */
-RZ_API int rz_utf16le_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
+/* Convert an UTF-16LE buf into a unicode RzRune */
+RZ_API int rz_utf16le_decode(const ut8 *ptr, int ptrlen, RzRune *ch) {
 	return rz_utf16_decode (ptr, ptrlen, ch, false);
 }
 
-/* Convert an UTF-16BE buf into a unicode RRune */
-RZ_API int rz_utf16be_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
+/* Convert an UTF-16BE buf into a unicode RzRune */
+RZ_API int rz_utf16be_decode(const ut8 *ptr, int ptrlen, RzRune *ch) {
 	return rz_utf16_decode (ptr, ptrlen, ch, true);
 }
 
-/* Convert a unicode RRune into a UTF-16LE buf */
-RZ_API int rz_utf16le_encode(ut8 *ptr, RRune ch) {
+/* Convert a unicode RzRune into a UTF-16LE buf */
+RZ_API int rz_utf16le_encode(ut8 *ptr, RzRune ch) {
 	if (ch < 0x10000) {
 		ptr[0] = ch & 0xff;
 		ptr[1] = ch >> 8 & 0xff;
 		return 2;
 	}
 	if (ch < 0x110000) {
-		RRune high, low;
+		RzRune high, low;
 		ch -= 0x10000;
 		high = 0xd800 + (ch >> 10 & 0x3ff);
 		low = 0xdc00 + (ch & 0x3ff);

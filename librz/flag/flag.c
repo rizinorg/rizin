@@ -195,14 +195,14 @@ static bool unset_flags_space(RzFlagItem *fi, void *user) {
 	return true;
 }
 
-static void count_flags_in_space(REvent *ev, int type, void *user, void *data) {
+static void count_flags_in_space(RzEvent *ev, int type, void *user, void *data) {
 	RSpaces *sp = (RSpaces *)ev->user;
 	RzFlag *f = container_of (sp, RzFlag, spaces);
 	RSpaceEvent *spe = (RSpaceEvent *)data;
 	rz_flag_foreach_space (f, spe->data.count.space, count_flags, &spe->res);
 }
 
-static void unset_flagspace(REvent *ev, int type, void *user, void *data) {
+static void unset_flagspace(RzEvent *ev, int type, void *user, void *data) {
 	RSpaces *sp = (RSpaces *)ev->user;
 	RzFlag *f = container_of (sp, RzFlag, spaces);
 	const RSpaceEvent *spe = (const RSpaceEvent *)data;

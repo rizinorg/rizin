@@ -733,7 +733,7 @@ RzAnalPlugin rz_anal_plugin_h8300 = {
 };
 
 #ifndef RZ_PLUGIN_INCORE
-struct rz_lib_struct_t radare_plugin = {
+struct rz_lib_struct_t rizin_plugin = {
 	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_h8300,
 	.version = RZ_VERSION

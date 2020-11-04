@@ -199,7 +199,7 @@ static int check_features(RzAsm *a, cs_insn *insn) {
 }
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct *radare_plugin_function(void) {
+RZ_API RzLibStruct *rizin_plugin_function(void) {
 	RzLibStruct *rp = RZ_NEW0 (RzLibStruct);
 	if (rp) {
 		rp->type = RZ_LIB_TYPE_ASM;

@@ -549,7 +549,7 @@ RzAnalPlugin rz_anal_plugin_m680x_cs = {
 #endif
 
 #ifndef RZ_PLUGIN_INCORE
-RZ_API RzLibStruct radare_plugin = {
+RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ANAL,
 	.data = &rz_anal_plugin_m680x_cs,
 	.version = RZ_VERSION

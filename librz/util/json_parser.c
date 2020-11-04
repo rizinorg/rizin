@@ -95,7 +95,7 @@ static char *unescape_string(char *s, char **end) {
 					RZ_JSON_REPORT_ERROR ("invalid unicode escape", p - 1);
 					return NULL;
 				}
-				RRune codepoint = (RRune)high << 8 | (RRune)low;
+				RzRune codepoint = (RzRune)high << 8 | (RzRune)low;
 				if ((codepoint & 0xfc00) == 0xd800) { // high surrogate; need one more unicode to succeed
 					p += 6;
 					high = low = 0;
@@ -105,7 +105,7 @@ static char *unescape_string(char *s, char **end) {
 						RZ_JSON_REPORT_ERROR ("invalid unicode surrogate", ps);
 						return NULL;
 					}
-					RRune codepoint2 = (RRune)high << 8 | (RRune)low;
+					RzRune codepoint2 = (RzRune)high << 8 | (RzRune)low;
 					if ((codepoint2 & 0xfc00) != 0xdc00) {
 						RZ_JSON_REPORT_ERROR ("invalid unicode surrogate", ps);
 						return NULL;

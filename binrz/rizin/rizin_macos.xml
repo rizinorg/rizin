@@ -10,6 +10,6 @@
 </plist>
 
 <!--
-  This file must be used to 'sign' the 'radare' binary
+  This file must be used to 'sign' the 'rizin' binary
   after compiling to permit debugging with user perivilage on the macOS
 -->

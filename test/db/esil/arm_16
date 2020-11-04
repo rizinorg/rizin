@@ -6,7 +6,7 @@ e asm.bits=16
 e asm.arch=arm
 s 0x0008735c
 wx 30a1
-w radare_emulation\x00 @ 0x87420
+w rizin_emulation\x00 @ 0x87420
 aei
 aeim
 aeip
@@ -14,7 +14,7 @@ aes
 ps @ r1
 EOF
 EXPECT=<<EOF
-radare_emulation
+rizin_emulation
 EOF
 RUN
 

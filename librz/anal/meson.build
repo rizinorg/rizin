@@ -209,5 +209,5 @@ pkgconfig_mod.generate(rz_anal,
     'rz_cons',
     'rz_flag'
   ],
-  description: 'radare foundation libraries'
+  description: 'rizin foundation libraries'
 )

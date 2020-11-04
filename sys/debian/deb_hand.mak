@@ -134,4 +134,4 @@ clobber::
 		${PACKAGE_DIR}/data ${PACKAGE_DIR}/build
 
 push:
-	scp *.deb radare.org:/srv/http/rizinorg/cydia/debs
+	scp *.deb rizin.org:/srv/http/rizinorg/cydia/debs

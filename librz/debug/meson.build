@@ -133,5 +133,5 @@ pkgconfig_mod.generate(rz_debug,
     'rz_egg',
     'rz_socket'
   ],
-  description: 'radare foundation libraries'
+  description: 'rizin foundation libraries'
 )

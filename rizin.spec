@@ -1,4 +1,4 @@
-%global         gituser         radare
+%global         gituser         rizin
 %global         gitname         rizin
 #global         commit          a093958b6d24015d82782eb20a2e10d8f4afcd85
 %global         commit          5a3dab0a86e1452c0bb0c13d869f95b41f50b9a9
@@ -10,9 +10,9 @@ Release:        1%{?dist}
 Summary:        The %{name} reverse engineering framework
 Group:          Applications/Engineering
 License:        LGPLv3
-URL:            http://radare.org/
-#Source0:        http://radare.org/get/%{name}-%{version}.tar.gz
-#Source0:        http://radare.org/get/%{name}-%{version}.tar.xz
+URL:            http://rizin.org/
+#Source0:        http://rizin.org/get/%{name}-%{version}.tar.gz
+#Source0:        http://rizin.org/get/%{name}-%{version}.tar.xz
 Source0:        https://github.com/%{gituser}/%{gitname}/archive/%{commit}/%{name}-%{version}-%{shortcommit}.tar.gz
 
 

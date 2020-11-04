@@ -1,7 +1,7 @@
 r_egg
 ===== --pancake
 
-This is a rewrite of rarc2, a relocatable code compiler for radare.
+This is a rewrite of rarc2, a relocatable code compiler for rizin.
 
 Syntax of the language
 ======================
