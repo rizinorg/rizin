@@ -20,9 +20,9 @@ Usage Example:
 #include <rz_lib.h>
 #include <rz_socket.h>
 
-#define R2P_PID(x) (((R2Pipe*)(x)->data)->pid)
-#define R2P_INPUT(x) (((R2Pipe*)(x)->data)->input[0])
-#define R2P_OUTPUT(x) (((R2Pipe*)(x)->data)->output[1])
+#define RZP_PID(x) (((RzPipe*)(x)->data)->pid)
+#define RZP_INPUT(x) (((RzPipe*)(x)->data)->input[0])
+#define RZP_OUTPUT(x) (((RzPipe*)(x)->data)->output[1])
 
 #if !__WINDOWS__
 static void env(const char *s, int f) {
@@ -32,7 +32,7 @@ static void env(const char *s, int f) {
 }
 #endif
 
-RZ_API int rzpipe_write(R2Pipe *rzpipe, const char *str) {
+RZ_API int rzpipe_write(RzPipe *rzpipe, const char *str) {
 	char *cmd;
 	int ret, len;
 	if (!rzpipe || !str) {
@@ -57,7 +57,7 @@ RZ_API int rzpipe_write(R2Pipe *rzpipe, const char *str) {
 }
 
 /* TODO: add timeout here ? */
-RZ_API char *rzpipe_read(R2Pipe *rzpipe) {
+RZ_API char *rzpipe_read(RzPipe *rzpipe) {
 	int bufsz = 0;
 	char *buf = NULL;
 	if (!rzpipe) {
@@ -106,7 +106,7 @@ RZ_API char *rzpipe_read(R2Pipe *rzpipe) {
 	return buf;
 }
 
-RZ_API int rzpipe_close(R2Pipe *rzpipe) {
+RZ_API int rzpipe_close(RzPipe *rzpipe) {
 	if (!rzpipe) {
 		return 0;
 	}
@@ -151,7 +151,7 @@ RZ_API int rzpipe_close(R2Pipe *rzpipe) {
 }
 
 #if __WINDOWS__
-static int w32_createPipe(R2Pipe *rzpipe, const char *cmd) {
+static int w32_createPipe(RzPipe *rzpipe, const char *cmd) {
 	CHAR buf[1024];
 	rzpipe->pipe = CreateNamedPipe (TEXT ("\\\\.\\pipe\\RZ_PIPE_IN"),
 		PIPE_ACCESS_DUPLEX,PIPE_TYPE_MESSAGE | \
@@ -167,8 +167,8 @@ static int w32_createPipe(R2Pipe *rzpipe, const char *cmd) {
 }
 #endif
 
-static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
-	rz_return_val_if_fail (r2p, NULL);
+static RzPipe* rzp_open_spawn(RzPipe* rzp, const char *cmd) {
+	rz_return_val_if_fail (rzp, NULL);
 #if __UNIX__ || defined(__CYGWIN__)
 	char *out = rz_sys_getenv ("RZ_PIPE_IN");
 	char *in = rz_sys_getenv ("RZ_PIPE_OUT");
@@ -177,26 +177,26 @@ static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
 		int i_in = atoi (in);
 		int i_out = atoi (out);
 		if (i_in >= 0 && i_out >= 0) {
-			r2p->input[0] = r2p->input[1] = i_in;
-			r2p->output[0] = r2p->output[1] = i_out;
+			rzp->input[0] = rzp->input[1] = i_in;
+			rzp->output[0] = rzp->output[1] = i_out;
 			done = true;
 		}
 	}
 	if (!done) {
 		eprintf ("Cannot find RZ_PIPE_IN or RZ_PIPE_OUT environment\n");
-		RZ_FREE (r2p);
+		RZ_FREE (rzp);
 	}
 	free (in);
 	free (out);
-	return r2p;
+	return rzp;
 #else
 	eprintf ("rzpipe_open(NULL) not supported on windows\n");
 	return NULL;
 #endif
 }
 
-static R2Pipe *rzpipe_new(void) {
-	R2Pipe *rzpipe = RZ_NEW0 (R2Pipe);
+static RzPipe *rzpipe_new(void) {
+	RzPipe *rzpipe = RZ_NEW0 (RzPipe);
 	if (rzpipe) {
 #if __UNIX__
 		rzpipe->input[0] = rzpipe->input[1] = -1;
@@ -207,21 +207,21 @@ static R2Pipe *rzpipe_new(void) {
 	return rzpipe;
 }
 
-RZ_API R2Pipe *rzpipe_open_corebind(RzCoreBind *coreb) {
-	R2Pipe *rzpipe = rzpipe_new ();
+RZ_API RzPipe *rzpipe_open_corebind(RzCoreBind *coreb) {
+	RzPipe *rzpipe = rzpipe_new ();
 	if (rzpipe) {
 		memcpy (&rzpipe->coreb, coreb, sizeof (RzCoreBind));
 	}
 	return rzpipe;
 }
 
-RZ_API R2Pipe *rzpipe_open_dl(const char *libr_path) {
+RZ_API RzPipe *rzpipe_open_dl(const char *libr_path) {
 	void *librz = rz_lib_dl_open (libr_path);
 	void* (*rnew)() = rz_lib_dl_sym (librz, "rz_core_new");
 	char* (*rcmd)(void *c, const char *cmd) = rz_lib_dl_sym (librz, "rz_core_cmd_str");
 
 	if (rnew && rcmd) {
-		R2Pipe *rzpipe = rzpipe_new ();
+		RzPipe *rzpipe = rzpipe_new ();
 		if (rzpipe) {
 			rzpipe->coreb.core = rnew ();
 			rzpipe->coreb.cmdstr = rcmd;
@@ -233,101 +233,101 @@ RZ_API R2Pipe *rzpipe_open_dl(const char *libr_path) {
 	return NULL;
 }
 
-RZ_API R2Pipe *rzpipe_open(const char *cmd) {
-	R2Pipe *r2p = rzpipe_new ();
-	if (!r2p) {
+RZ_API RzPipe *rzpipe_open(const char *cmd) {
+	RzPipe *rzp = rzpipe_new ();
+	if (!rzp) {
 		return NULL;
 	}
 	if (RZ_STR_ISEMPTY (cmd)) {
-		r2p->child = -1;
-		return r2p_open_spawn (r2p, cmd);
+		rzp->child = -1;
+		return rzp_open_spawn (rzp, cmd);
 	}
 #if __WINDOWS__
-	w32_createPipe (r2p, cmd);
-	r2p->child = (int)(r2p->pipe);
+	w32_createPipe (rzp, cmd);
+	rzp->child = (int)(rzp->pipe);
 #else
-	int r = pipe (r2p->input);
+	int r = pipe (rzp->input);
 	if (r != 0) {
 		eprintf ("pipe failed on input\n");
-		rzpipe_close (r2p);
+		rzpipe_close (rzp);
 		return NULL;
 	}
-	r = pipe (r2p->output);
+	r = pipe (rzp->output);
 	if (r != 0) {
 		eprintf ("pipe failed on output\n");
-		rzpipe_close (r2p);
+		rzpipe_close (rzp);
 		return NULL;
 	}
 #if LIBC_HAVE_FORK
-	r2p->child = fork ();
+	rzp->child = fork ();
 #else
-	r2p->child = -1;
+	rzp->child = -1;
 #endif
-	if (r2p->child == -1) {
-		rzpipe_close (r2p);
+	if (rzp->child == -1) {
+		rzpipe_close (rzp);
 		return NULL;
 	}
-	env ("RZ_PIPE_IN", r2p->input[0]);
-	env ("RZ_PIPE_OUT", r2p->output[1]);
+	env ("RZ_PIPE_IN", rzp->input[0]);
+	env ("RZ_PIPE_OUT", rzp->output[1]);
 
-	if (r2p->child) {
+	if (rzp->child) {
 		signed char ch = -1;
 		// eprintf ("[+] rzpipeipe child is %d\n", rzpipe->child);
-		if (read (r2p->output[0], &ch, 1) != 1) {
+		if (read (rzp->output[0], &ch, 1) != 1) {
 			eprintf ("Failed to read 1 byte\n");
-			rzpipe_close (r2p);
+			rzpipe_close (rzp);
 			return NULL;
 		}
 		if (ch == -1) {
 			eprintf ("[+] rzpipe link error.\n");
-			rzpipe_close (r2p);
+			rzpipe_close (rzp);
 			return NULL;
 		}
 		// Close parent's end of pipes
-		close (r2p->input[0]);
-		close (r2p->output[1]);
-		r2p->input[0] = -1;
-		r2p->output[1] = -1;
+		close (rzp->input[0]);
+		close (rzp->output[1]);
+		rzp->input[0] = -1;
+		rzp->output[1] = -1;
 	} else {
 		int rc = 0;
 		if (cmd && *cmd) {
 			close (0);
 			close (1);
-			dup2 (r2p->input[0], 0);
-			dup2 (r2p->output[1], 1);
-			close (r2p->input[1]);
-			close (r2p->output[0]);
-			r2p->input[1] = -1;
-			r2p->output[0] = -1;
+			dup2 (rzp->input[0], 0);
+			dup2 (rzp->output[1], 1);
+			close (rzp->input[1]);
+			close (rzp->output[0]);
+			rzp->input[1] = -1;
+			rzp->output[0] = -1;
 			rc = rz_sandbox_system (cmd, 1);
 			if (rc != 0) {
 				eprintf ("return code %d for %s\n", rc, cmd);
 			}
 			// trigger the blocking read
 			write (1, "\xff", 1);
-			close (r2p->output[1]);
+			close (rzp->output[1]);
 			close (0);
 			close (1);
 		}
-		r2p->child = -1;
-		rzpipe_close (r2p);
+		rzp->child = -1;
+		rzpipe_close (rzp);
 		exit (rc);
 		return NULL;
 	}
 #endif
-	return r2p;
+	return rzp;
 }
 
-RZ_API char *rzpipe_cmd(R2Pipe *r2p, const char *str) {
-	rz_return_val_if_fail (r2p && str, NULL);
-	if (!*str || !rzpipe_write (r2p, str)) {
+RZ_API char *rzpipe_cmd(RzPipe *rzp, const char *str) {
+	rz_return_val_if_fail (rzp && str, NULL);
+	if (!*str || !rzpipe_write (rzp, str)) {
 		perror ("rzpipe_write");
 		return NULL;
 	}
-	return rzpipe_read (r2p);
+	return rzpipe_read (rzp);
 }
 
-RZ_API char *rzpipe_cmdf(R2Pipe *r2p, const char *fmt, ...) {
+RZ_API char *rzpipe_cmdf(RzPipe *rzp, const char *fmt, ...) {
 	int ret, ret2;
 	char *p, string[1024];
 	va_list ap, ap2;
@@ -348,10 +348,10 @@ RZ_API char *rzpipe_cmdf(R2Pipe *r2p, const char *fmt, ...) {
 			va_end (ap);
 			return NULL;
 		}
-		fmt = rzpipe_cmd (r2p, p);
+		fmt = rzpipe_cmd (rzp, p);
 		free (p);
 	} else {
-		fmt = rzpipe_cmd (r2p, string);
+		fmt = rzpipe_cmd (rzp, string);
 	}
 	va_end (ap2);
 	va_end (ap);

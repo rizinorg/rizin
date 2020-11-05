@@ -55,7 +55,7 @@ typedef struct {
 	int output[2];
 #endif
 	RzCoreBind coreb;
-} R2Pipe;
+} RzPipe;
 
 typedef struct rz_socket_t {
 #ifdef _MSC_VER
@@ -261,24 +261,24 @@ RZ_API bool rz_run_parsefile(RRunProfile *p, const char *b);
 RZ_API char *rz_run_get_environ_profile(char **env);
 
 /* rapipe */
-RZ_API R2Pipe *rap_open(const char *cmd);
-RZ_API R2Pipe *rap_open_corebind(RzCoreBind *coreb);
-RZ_API int rap_close(R2Pipe *rap);
+RZ_API RzPipe *rap_open(const char *cmd);
+RZ_API RzPipe *rap_open_corebind(RzCoreBind *coreb);
+RZ_API int rap_close(RzPipe *rap);
 
-RZ_API char *rap_cmd(R2Pipe *rap, const char *str);
-RZ_API char *rap_cmdf(R2Pipe *rap, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
+RZ_API char *rap_cmd(RzPipe *rap, const char *str);
+RZ_API char *rap_cmdf(RzPipe *rap, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 
-RZ_API int rap_write(R2Pipe *rap, const char *str);
-RZ_API char *rap_read(R2Pipe *rap);
+RZ_API int rap_write(RzPipe *rap, const char *str);
+RZ_API char *rap_read(RzPipe *rap);
 
-RZ_API int rzpipe_write(R2Pipe *rzpipe, const char *str);
-RZ_API char *rzpipe_read(R2Pipe *rzpipe);
-RZ_API int rzpipe_close(R2Pipe *rzpipe);
-RZ_API R2Pipe *rzpipe_open_corebind(RzCoreBind *coreb);
-RZ_API R2Pipe *rzpipe_open(const char *cmd);
-RZ_API R2Pipe *rzpipe_open_dl(const char *file);
-RZ_API char *rzpipe_cmd(R2Pipe *rzpipe, const char *str);
-RZ_API char *rzpipe_cmdf(R2Pipe *rzpipe, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
+RZ_API int rzpipe_write(RzPipe *rzpipe, const char *str);
+RZ_API char *rzpipe_read(RzPipe *rzpipe);
+RZ_API int rzpipe_close(RzPipe *rzpipe);
+RZ_API RzPipe *rzpipe_open_corebind(RzCoreBind *coreb);
+RZ_API RzPipe *rzpipe_open(const char *cmd);
+RZ_API RzPipe *rzpipe_open_dl(const char *file);
+RZ_API char *rzpipe_cmd(RzPipe *rzpipe, const char *str);
+RZ_API char *rzpipe_cmdf(RzPipe *rzpipe, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 #endif
 
 #ifdef __cplusplus

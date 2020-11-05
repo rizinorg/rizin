@@ -162,27 +162,27 @@ def xp_compat(builddir):
 def build(args):
     """ Build rizin """
     log.info('Building rizin')
-    r2_builddir = os.path.join(ROOT, args.dir)
+    rz_builddir = os.path.join(ROOT, args.dir)
     options = ['-D%s' % x for x in args.options]
     if args.webui:
         options.append('-Duse_webui=true')
     if args.local:
         options.append('-Dlocal=true')
-    if not os.path.exists(r2_builddir):
-        meson('setup', builddir=r2_builddir, prefix=args.prefix, backend=args.backend,
+    if not os.path.exists(rz_builddir):
+        meson('setup', builddir=rz_builddir, prefix=args.prefix, backend=args.backend,
               release=args.release, shared=args.shared, options=options)
     if args.backend != 'ninja':
         # XP support was dropped in Visual Studio 2019 v142 platform
         if args.backend == 'vs2017' and args.xp:
-            xp_compat(r2_builddir)
+            xp_compat(rz_builddir)
         if not args.project:
-            project = os.path.join(r2_builddir, 'rizin.sln')
+            project = os.path.join(rz_builddir, 'rizin.sln')
             params = ['/m', '/clp:Summary;Verbosity=minimal']
             if args.backend == 'vs2017' and args.xp:
                 params.append('/p:XPDeprecationWarning=false')
             msbuild(project, *params)
     else:
-        ninja(r2_builddir)
+        ninja(rz_builddir)
 
 def install(args):
     """ Install rizin """

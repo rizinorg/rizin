@@ -85,7 +85,7 @@ static int lang_zig_run(RzLang *lang, const char *code, int len) {
 "export fn entry(core: &u8) void {\n";
 		const char *zig_footer = \
 "\n}\n" \
-"pub fn r2cmd(core: &u8, cmd: u8) &u8 {\n" \
+"pub fn rzcmd(core: &u8, cmd: u8) &u8 {\n" \
 "  return rz_core_cmd_str(core, cmd);\n" \
 "}\n";
 		fputs (zig_header, fd);

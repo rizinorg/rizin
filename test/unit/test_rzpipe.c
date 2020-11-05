@@ -3,7 +3,7 @@
 #include "minunit.h"
 
 static bool test_rzpipe(void) {
-	R2Pipe *r = rzpipe_open ("rizin -q0 -");
+	RzPipe *r = rzpipe_open ("rizin -q0 -");
 	mu_assert ("rzpipe can spawn", r);
 	char *hello = rzpipe_cmd (r, "?e hello world");
 	mu_assert_streq (hello, "hello world\n", "rzpipe hello world");
@@ -13,7 +13,7 @@ static bool test_rzpipe(void) {
 }
 
 static bool test_rzpipe_404(void) {
-	R2Pipe *r = rzpipe_open ("rodoro2 -q0 -");
+	RzPipe *r = rzpipe_open ("ricin -q0 -");
 	mu_assert ("rzpipe can spawn", !r);
 	mu_end;
 }

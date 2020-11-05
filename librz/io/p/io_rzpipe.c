@@ -8,7 +8,7 @@
 #include <sys/types.h>
 
 /* --------------------------------------------------------- */
-#define R2P(x) ((R2Pipe*)(x)->data)
+#define RZP(x) ((RzPipe*)(x)->data)
 
 // TODO: add rzpipe_assert
 
@@ -34,12 +34,12 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 		eprintf ("rzpipe_write: error, fmt string has been truncated\n");
 		return -1;
 	}
-	rv = rzpipe_write (R2P (fd), fmt);
+	rv = rzpipe_write (RZP (fd), fmt);
 	if (rv < 1) {
 		eprintf ("rzpipe_write: error\n");
 		return -1;
 	}
-	res = rzpipe_read (R2P (fd));
+	res = rzpipe_read (RZP (fd));
 	/* TODO: parse json back */
 	r = strstr (res, "result");
 	if (r) {
@@ -63,12 +63,12 @@ static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 	snprintf (fmt, sizeof (fmt),
 		"{\"op\":\"read\",\"address\":%"PFMT64d",\"count\":%d}",
 		io->off, count);
-	rv = rzpipe_write (R2P (fd), fmt);
+	rv = rzpipe_write (RZP (fd), fmt);
 	if (rv < 1) {
 		eprintf ("rzpipe_write: error\n");
 		return -1;
 	}
-	res = rzpipe_read (R2P (fd));
+	res = rzpipe_read (RZP (fd));
 
 	/* TODO: parse json back */
 	r = strstr (res, "result");
@@ -143,12 +143,12 @@ static bool __check(RzIO *io, const char *pathname, bool many) {
 }
 
 static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
-	R2Pipe *r2p = NULL;
+	RzPipe *rzp = NULL;
 	if (__check (io, pathname, 0)) {
-		r2p = rzpipe_open (pathname + 9);
+		rzp = rzpipe_open (pathname + 9);
 	}
-	return r2p? rz_io_desc_new (io, &rz_io_plugin_rzpipe,
-		pathname, rw, mode, r2p): NULL;
+	return rzp? rz_io_desc_new (io, &rz_io_plugin_rzpipe,
+		pathname, rw, mode, rzp): NULL;
 }
 
 static char *__system(RzIO *io, RzIODesc *fd, const char *msg) {
@@ -159,13 +159,13 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *msg) {
 	pj_ks (pj, "cmd", msg);
 	pj_end (pj);
 	const char *fmt = pj_string (pj);
-	int rv = rzpipe_write (R2P (fd), fmt);
+	int rv = rzpipe_write (RZP (fd), fmt);
 	pj_free (pj);
 	if (rv < 1) {
 		eprintf ("rzpipe_write: error\n");
 		return NULL;
 	}
-	char *res = rzpipe_read (R2P (fd));
+	char *res = rzpipe_read (RZP (fd));
 	//eprintf ("%s\n", res);
 	/* TODO: parse json back */
 	char *r = strstr (res, "result");

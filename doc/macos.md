@@ -14,14 +14,10 @@ By default it is installed in /usr/local, you can specify a different prefix lik
 
 	$ sys/install.sh /custom/prefix
 
-To install bindings you will need to install r2, valac, valabind and swig. The whole process can be automated by using scripts under sys/
-
-	$ rz_pm -s python
-
 Code Signing
 ------------
 
-After Mac OS X 10.6, binaries that need permissions to debug require to be signed and include a .plist describing them. The aforementioned `install.sh` script will install a new code signing certificate into the system keychain and sign r2 with it. Alternatively, you can manually create a code signing certificate by following the following steps:
+After Mac OS X 10.6, binaries that need permissions to debug require to be signed and include a .plist describing them. The aforementioned `install.sh` script will install a new code signing certificate into the system keychain and sign rizin with it. Alternatively, you can manually create a code signing certificate by following the following steps:
 
 (Based on https://llvm.org/svn/llvm-project/lldb/trunk/docs/code-signing.txt)
 
@@ -52,11 +48,11 @@ As said before, the signing process can also be done manually following the next
 
 	$ make -C binrz/rizin macossign
 
-But this is not enough. As long as r2 code is split into several libraries, you should sign every single dependency (librz*).
+But this is not enough. As long as rizin code is split into several libraries, you should sign every single dependency (librz*).
 
 	$ make -C binrz/rizin macos-sign-libs
 
-Another alternative is to build a static version of r2 and just sign it.
+Another alternative is to build a static version of rizin and just sign it.
 
 	$ sys/static.sh
 	$ make -C binrz/rizin macossign
@@ -71,7 +67,7 @@ Additionally, you can run the following command to add the non-privileged user (
 
 After doing it you should be able to debug on macOS without root permissions!
 
-	$ r2 -d mybin
+	$ rizin -d mybin
 
 Note: Apple-signed binaries cannot be debugged, since Apple's SIP (System Integrity Protection) prevents attaching to an Apple-signed binary. If you want to debug an Apple-signed binary, either remove its certificate (https://github.com/steakknife/unsign; WARNING: this cannot be reversed!) or disable SIP (`csrutil enable --without debug`).
 
@@ -87,7 +83,7 @@ To create a macOS .pkg just run the following command:
 Uninstall
 ---------
 
-To uninstall the .pkg downloaded from the r2 website or the one you have generated with `sys/osx-pkg.sh`, run the following as root:
+To uninstall the .pkg downloaded from the rizin website or the one you have generated with `sys/osx-pkg.sh`, run the following as root:
 
 	$ pkgutil --only-files --files org.rizin.rizin | sed 's/^/\//' | tr '\n' '\0' | xargs -o -n 1 -0 rm -i
 

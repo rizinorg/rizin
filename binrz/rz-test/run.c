@@ -897,7 +897,7 @@ static RzTestProcessOutput *run_rz_test(RzTestRunConfig *config, ut64 timeout_ms
 #else
 	size_t env_size = load_plugins ? 0 : 1;
 #endif
-	RzTestProcessOutput *out = runner (config->r2_cmd, args.v.a, rz_pvector_len (&args), envvars, envvals, env_size, timeout_ms, user);
+	RzTestProcessOutput *out = runner (config->rz_cmd, args.v.a, rz_pvector_len (&args), envvars, envvals, env_size, timeout_ms, user);
 	rz_pvector_clear (&args);
 #if __WINDOWS__
 	free (wcmds);
