@@ -662,7 +662,6 @@ module.exports = grammar({
 	_dec_number: $ => choice(/[1-9][0-9]*/, /[0-9][0-9]+/),
 	_comment: $ => token(choice(
 	    /#[^\r\n]*/,
-	    seq('/*', /[^*]*\*+([^/*][^*]*\*+)*/, '/')
 	)),
 
 	cmd_delimiter: $ => choice(
