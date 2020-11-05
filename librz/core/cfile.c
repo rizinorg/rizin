@@ -219,11 +219,11 @@ RZ_API void rz_core_sysenv_end(RzCore *core, const char *cmd) {
 	rz_sys_setenv ("RZ_OFFSET", NULL);
 
 	// remove temporary RZ_CONFIG file
-	char *r2_config = rz_sys_getenv ("RZ_CONFIG");
-	if (r2_config) {
-		rz_file_rm (r2_config);
+	char *rz_config = rz_sys_getenv ("RZ_CONFIG");
+	if (rz_config) {
+		rz_file_rm (rz_config);
 		rz_sys_setenv ("RZ_CONFIG", NULL);
-		free (r2_config);
+		free (rz_config);
 	}
 }
 

@@ -125,7 +125,7 @@ typedef struct rz_test_test_database_t {
 } RzTestDatabase;
 
 typedef struct rz_test_run_config_t {
-	const char *r2_cmd;
+	const char *rz_cmd;
 	const char *rz_asm_cmd;
 	const char *json_test_file;
 	ut64 timeout_ms;

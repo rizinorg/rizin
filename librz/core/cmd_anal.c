@@ -8359,12 +8359,12 @@ end:
 	return result;
 }
 
-static bool convert_dotcmd_to_image(RzCore *core, char *r2_cmd, const char *save_path) {
+static bool convert_dotcmd_to_image(RzCore *core, char *rz_cmd, const char *save_path) {
 	if (save_path && *save_path) {
 		rz_cons_printf ("Saving to file '%s'...\n", save_path);
 		rz_cons_flush ();
 	}
-	rz_core_cmdf (core, "%s > a.dot", r2_cmd); // TODO: check error here
+	rz_core_cmdf (core, "%s > a.dot", rz_cmd); // TODO: check error here
 	return convert_dot_to_image (core, "a.dot", save_path);
 }
 

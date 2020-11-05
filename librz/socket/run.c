@@ -544,9 +544,9 @@ RZ_API bool rz_run_parseline(RRunProfile *p, const char *b) {
 		p->_libpath = strdup (e);
 	} else if (!strcmp (b, "preload")) {
 		p->_preload = strdup (e);
-	} else if (!strcmp (b, "r2preload")) {
+	} else if (!strcmp (b, "rzpreload")) {
 		p->_rzpreload = parseBool (e);
-	} else if (!strcmp (b, "r2preweb")) {
+	} else if (!strcmp (b, "rzpreweb")) {
 		rz_sys_setenv ("RZ_RUN_WEB", "yes");
 	} else if (!strcmp (b, "setuid")) {
 		p->_setuid = strdup (e);
@@ -661,7 +661,7 @@ RZ_API const char *rz_run_help(void) {
 	"# chdir=/\n"
 	"# chroot=/mnt/chroot\n"
 	"# libpath=$PWD:/tmp/lib\n"
-	"# r2preload=yes\n"
+	"# rzpreload=yes\n"
 	"# preload=/lib/libfoo.so\n"
 	"# setuid=2000\n"
 	"# seteuid=2000\n"

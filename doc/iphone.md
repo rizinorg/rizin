@@ -9,7 +9,7 @@ Crosscompiling from OSX:
   export IOSVER=7.1
   ./configure --prefix=/usr --with-ostype=darwin --with-compiler=ios-sdk --target=arm-unknown-darwin
   make -j4
-  make install DESTDIR=/tmp/r2ios
+  make install DESTDIR=/tmp/rzios
 
 
 Natively compiling on iOS
@@ -43,7 +43,7 @@ Setup SDK for ARMv6
 
 5) Get the varinclude tarball
 
-      wget lolcathost.org/b/varinclude.tar.gz 
+      wget lolcathost.org/b/varinclude.tar.gz
       tar xzvf varinclude.tar.gz -C /
 
 Compilation
@@ -57,30 +57,30 @@ Compilation
 
 Usage
 -----
-	export R2DIR=/private/var/rizin
-	export PATH=${R2DIR}/bin:$PATH
-	export DYLD_LIBRARY_PATH=${R2DIR}/lib
-	r2 ...
+	export RZDIR=/private/var/rizin
+	export PATH=${RZDIR}/bin:$PATH
+	export DYLD_LIBRARY_PATH=${RZDIR}/lib
+	rizin ...
 
 Building with the ARMv7 SDK
 ---------------------------
 From coolstar repo we get the ios toolchain
 
 	apt-get coreutils install wget inetutils
-	apt-get install basename git make expat 
+	apt-get install basename git make expat
 	apt-get install org.coolstar.iostoolchain
 
 * Copy crt1.o and dylib1.o from your iOS SDK into /usr/lib
 
 	/Applications//Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS7.0.sdk/
 
-* Current r2 build requires 'gcc' as native compiler to
+* Current rizin build requires 'gcc' as native compiler to
   build a standalone 'sdb' to precompile some files. This
   dependency will be probably
 
 	cd /usr/bin
 	ln -fs clang gcc
- 
+
 Build
 -----
 	export CC=clang
@@ -94,17 +94,17 @@ Packaging
 ---------
 Make a fake install in a temporary directory:
 
-	rm -rf /tmp/r2
-	make install DESTDIR=/tmp/r2
-	cd /tmp/r2
-	tar czvpf ../r2.tgz *
+	rm -rf /tmp/rizin
+	make install DESTDIR=/tmp/rizin
+	cd /tmp/rizin
+	tar czvpf ../rizin.tgz *
 
 Clone the cydia repo from rizin's github
 
 	git clone https://github.com/rizin/cydia
 	cd cydia/rizin*
 	mkdir root
-	tar xzvf r2.tgz -C root
+	tar xzvf rizin.tgz -C root
 	vim CONFIG # bump version
 	make
 

@@ -284,7 +284,7 @@ int main(int argc, char **argv) {
 
 	ut64 time_start = rz_time_now_mono ();
 	RzTestState state = {{0}};
-	state.run_config.r2_cmd = rizin_cmd ? rizin_cmd : RIZIN_CMD_DEFAULT;
+	state.run_config.rz_cmd = rizin_cmd ? rizin_cmd : RIZIN_CMD_DEFAULT;
 	state.run_config.rz_asm_cmd = rz_asm_cmd ? rz_asm_cmd : RZ_ASM_CMD_DEFAULT;
 	state.run_config.json_test_file = json_test_file ? json_test_file : JSON_TEST_FILE_DEFAULT;
 	state.run_config.timeout_ms = timeout_sec > UT64_MAX / 1000 ? UT64_MAX : timeout_sec * 1000;

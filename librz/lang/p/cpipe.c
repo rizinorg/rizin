@@ -80,7 +80,7 @@ static int lang_cpipe_run(RzLang *lang, const char *code, int len) {
 	fputs ("#include <rz_socket.h>\n\n"
 		"#define R2P(x,y...) rzpipe_cmdf(r2p,x,##y)\n"
 		"int main() {\n"
-		"  R2Pipe *r2p = rzpipe_open(NULL);", fd);
+		"  RzPipe *r2p = rzpipe_open(NULL);", fd);
 	fputs (code, fd);
 	fputs ("\n}\n", fd);
 	fclose (fd);

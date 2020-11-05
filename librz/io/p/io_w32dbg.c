@@ -96,7 +96,7 @@ static bool __plugin_open(RzIO *io, const char *file, bool many) {
 }
 
 // mingw32 toolchain doesnt have this symbol
-static HANDLE (WINAPI *r2_OpenThread)(
+static HANDLE (WINAPI *rz_OpenThread)(
 	DWORD dwDesiredAccess,
 	BOOL  bInheritHandle,
 	DWORD dwThreadId
@@ -119,9 +119,9 @@ static int __w32_first_thread(int pid) {
 	do {
 		/* get all threads of process */
 		if (te32.th32OwnerProcessID == pid) {
-			r2_OpenThread = OpenThread;
-			thid = r2_OpenThread
-			? r2_OpenThread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID) : NULL;
+			rz_OpenThread = OpenThread;
+			thid = rz_OpenThread
+			? rz_OpenThread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID) : NULL;
 			if (!thid) {
 				rz_sys_perror ("__w32_first_thread/OpenThread");
 				goto err_first_th;
@@ -152,7 +152,7 @@ static int __open_proc(RzIO *io, int pid, bool attach) {
 	W32DbgWInst *wrap = (W32DbgWInst *)io->w32dbg_wrap;
 	wrap->pi.dwProcessId = pid;
 	if (attach) {
-		/* Attach to the process */	
+		/* Attach to the process */
 		wrap->params.type = W32_ATTACH;
 		w32dbg_wrap_wait_ret (wrap);
 		if (!w32dbgw_ret (wrap)) {

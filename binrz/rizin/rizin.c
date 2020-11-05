@@ -7,15 +7,15 @@
 #include <emscripten.h>
 static RzCore *core = NULL;
 
-void *r2_asmjs_new(const char *cmd) {
+void *rz_asmjs_new(const char *cmd) {
 	return rz_core_new ();
 }
 
-void r2_asmjs_free(void *core) {
+void rz_asmjs_free(void *core) {
 	rz_core_free (core);
 }
 
-char *r2_asmjs_cmd(void *kore, const char *cmd) {
+char *rz_asmjs_cmd(void *kore, const char *cmd) {
 	if (kore) {
 		if (!cmd) {
 			rz_core_free (kore);
@@ -34,7 +34,7 @@ static void wget_cb(const char *f) {
 	rz_core_cmdf (core, "o %s", f);
 }
 
-void r2_asmjs_openurl(void *kore, const char *url) {
+void rz_asmjs_openurl(void *kore, const char *url) {
 	const char *file = rz_str_lchr (url, '/');
 	if (kore) {
 		core = kore;
