@@ -17,7 +17,7 @@ sys/meson.py --options use_libuv=false use_sys_magic=false || exit 1
 		${AR} rs ../librz.a */*.o
 	)
 )
-D=r2sdk
+D=rizin-sdk
 rm -rf $D
 mkdir -p $D/lib || exit 1
 cp -rf librz/include $D

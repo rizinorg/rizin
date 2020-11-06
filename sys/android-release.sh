@@ -1,8 +1,8 @@
 #!/bin/sh
 # path to rizin-bin repo
-R2B="${PWD}/../rizin-bin"
-# source of r2, where rizin tarballs live
-R2T="${PWD}"
+RZB="${PWD}/../rizin-bin"
+# source of rizin, where rizin tarballs live
+RZT="${PWD}"
 ARCHS="arm mips aarch64 x86"
 
 countdown() {
@@ -21,9 +21,9 @@ msg() {
 }
 
 echo
-echo "Building r2 tarballs for the Android App"
+echo "Building rizin tarballs for the Android App"
 echo "========================================"
-echo " This script will build r2 tarballs for all Android targets"
+echo " This script will build rizin tarballs for all Android targets"
 echo " and commit them into the rizin-bin repository which are"
 echo " used by the Android app."
 echo
@@ -48,32 +48,32 @@ makeReadme() {
 	echo "Version: $v"
 }
 
-if [ ! -d "${R2B}" ]; then
-	mkdir -p "${R2B}"
-	cd "${R2B}/.."
+if [ ! -d "${RZB}" ]; then
+	mkdir -p "${RZB}"
+	cd "${RZB}/.."
 	git clone https://github.com/rizinorg/rizin-bin
 fi
 
-cd "$R2B"
+cd "$RZB"
 for a in ${ARCHS} ; do 
 	echo "Releasing $a ..."
 	git checkout android-${a} || exit 1
-	if [ -f "${R2T}/rizin-${v}-android-${a}.tar.gz" ]; then
+	if [ -f "${RZT}/rizin-${v}-android-${a}.tar.gz" ]; then
 		msg "[*] Dist tarball already built for ${a}."
 	else
 		msg "[>] Building Android dist for ${a}..."
 		(
-		cd "${R2T}"
+		cd "${RZT}"
 		sys/android-build.sh ${a} > rizin-${v}-android-${a}.log
 		)
 	fi
-	if [ ! -f "${R2T}/rizin-${v}-android-${a}.tar.gz" ]; then
+	if [ ! -f "${RZT}/rizin-${v}-android-${a}.tar.gz" ]; then
 		msg "[X] Build for $a has failed"
 		exit 1
 	fi
 	msg "[>] Committing $a into rizin-bin..."
-	# cp -f "${R2T}/rizin-${v}-android-${a}.tar.gz" . || exit 1
-	cp -f "${R2T}/rizin-${v}-android-${a}.tar.gz" . # || exit 1
+	# cp -f "${RZT}/rizin-${v}-android-${a}.tar.gz" . || exit 1
+	cp -f "${RZT}/rizin-${v}-android-${a}.tar.gz" . # || exit 1
 	rm -f README.md
 	makeReadme $a > README.md
 	cat README.md

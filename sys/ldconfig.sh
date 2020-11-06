@@ -7,7 +7,7 @@ if test -w $LD ; then
 		D="$(dirname "$P")"
 		if [ /usr != "$D" ]; then
 			echo "$P" > "$LD/rizin.conf"
-			# do not update symlinks to avoid r2 install issues
+			# do not update symlinks to avoid rizin install issues
 			ldconfig -X
 		fi
 	fi

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 WRKDIR=/tmp
-SDKDIR=${WRKDIR}/r2-sdk
+SDKDIR=${WRKDIR}/rizin-sdk
 if [ -n "$1" ]; then
 	if [ -f "$1" ]; then
 		echo "Target directory exists. Cant build the SDK in there"
@@ -31,13 +31,13 @@ FILES=`find librz shlr -iname '*.a'`
 cp -f ${FILES} "${SDKDIR}"/lib
 OS=`uname`
 AR=`uname -m`
-SF=r2sdk-${OS}-${AR}
+SF=rizin-sdk-${OS}-${AR}
 
 (
 cd "${WRKDIR}"
-mv r2-sdk "${SF}"
+mv rizin-sdk "${SF}"
 zip -r "${SF}".zip "${SF}"
 )
 mv "${WRKDIR}/${SF}" .
 mv "${WRKDIR}/${SF}".zip .
-ln -fs "${SF}" r2sdk
+ln -fs "${SF}" rizin-sdk

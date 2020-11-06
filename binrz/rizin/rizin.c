@@ -44,7 +44,7 @@ void rz_asmjs_openurl(void *kore, const char *url) {
 	}
 }
 #else
-static void r2cmd(int in, int out, const char *cmd) {
+static void rz_cmd(int in, int out, const char *cmd) {
         write (out, cmd, strlen (cmd) + 1);
         write (out, "\n", 1);
         int bufsz = (1024 * 64);
@@ -77,10 +77,10 @@ static int rz_main_rzpipe(int argc, const char **argv) {
 		int in = atoi (_in);
 		int out = atoi (_out);
 		for (i = 1; i < argc; i++) {
-			r2cmd (in, out, argv[i]);
+			rz_cmd (in, out, argv[i]);
 		}
         } else {
-		eprintf ("Error: R2PIPE_(IN|OUT) environment not set\n");
+		eprintf ("Error: RZ_PIPE_(IN|OUT) environment not set\n");
 		eprintf ("Usage: rizin -c '!*rzp x' # run commands via rzpipe\n");
                 rc = 1;
 	}

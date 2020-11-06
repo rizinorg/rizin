@@ -6,7 +6,7 @@
 # to uninstall:
 # sudo pkgutil --forget org.rizin.rizin
 
-SRC=/tmp/r2osx
+SRC=/tmp/rzosx
 PREFIX=/usr/local
 DST="$(pwd)/sys/osx-pkg/rizin.unpkg"
 if [ -n "$1" ]; then

@@ -41,7 +41,7 @@ def set_global_variables():
 
     logging.basicConfig(format='[%(name)s][%(levelname)s]: %(message)s',
                         level=logging.DEBUG)
-    log = logging.getLogger('r2-meson')
+    log = logging.getLogger('rz-meson')
 
     with open(os.path.join(ROOT, 'configure.acr')) as f:
         f.readline()

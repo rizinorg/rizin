@@ -39,20 +39,20 @@ fi
 
 makeDeb() {
 	make -C binrz ios-sdk-sign
-	rm -rf /tmp/r2ios
-	make install DESTDIR=/tmp/r2ios
-	rm -rf /tmp/r2ios/${PREFIX}/share/rizin/*/www/enyo/node_modules
-	( cd /tmp/r2ios && tar czvf ../r2ios-${CPU}.tar.gz ./* )
+	rm -rf /tmp/rzios
+	make install DESTDIR=/tmp/rzios
+	rm -rf /tmp/rzios/${PREFIX}/share/rizin/*/www/enyo/node_modules
+	( cd /tmp/rzios && tar czvf ../rzios-${CPU}.tar.gz ./* )
 	rm -rf sys/cydia/rizin/root
 	mkdir -p sys/cydia/rizin/root
-	sudo tar xpzvf /tmp/r2ios-${CPU}.tar.gz -C sys/cydia/rizin/root
+	sudo tar xpzvf /tmp/rzios-${CPU}.tar.gz -C sys/cydia/rizin/root
 	rm -f sys/cydia/rizin/root/${PREFIX}/lib/*.{a,dylib,dSYM}
 	if [ "$static" = 1 ]; then
 	(
 		rm -f sys/cydia/rizin/root/${PREFIX}/bin/*
 		cp -f binrz/blob/rizin sys/cydia/rizin/root/${PREFIX}/bin
 		cd sys/cydia/rizin/root/${PREFIX}/bin
-		for a in r2 rz_bin rz_run rz_asm rz_gg rz_hash rz_ax rz_find rz_diff ; do ln -fs rizin $a ; done
+		for a in rizin rz_bin rz_run rz_asm rz_gg rz_hash rz_ax rz_find rz_diff ; do ln -fs rizin $a ; done
 	)
 		echo "Signing rizin"
 		ldid2 -Sbinr/rizin/rizin_ios.xml sys/cydia/rizin/root/usr/bin/rizin
@@ -111,7 +111,7 @@ else
 			ls -l librz/flag/librz_flag.a || exit 1
 			rm -f librz/*/*.dylib
 			(
-			cd binrz ; make clean ; 
+			cd binrz ; make clean ;
 			cd blob ; make USE_LTO=1
 			xcrun --sdk iphoneos strip rizin
 			)

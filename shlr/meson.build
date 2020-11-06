@@ -150,7 +150,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     capstone_includes += [include_directories('capstone/include/capstone')]
   endif
 
-  librzcapstone = static_library('r2capstone', cs_files,
+  librzcapstone = static_library('rzcapstone', cs_files,
     c_args: [
       '-DCAPSTONE_X86_ATT_DISABLE_NO',
       '-DCAPSTONE_X86_REDUCE_NO',
@@ -246,7 +246,7 @@ bochs_files = [
 
 bochs_inc = [platform_inc, include_directories('bochs/include')]
 
-librzbochs = static_library('r2bochs', bochs_files,
+librzbochs = static_library('rzbochs', bochs_files,
   dependencies: [rz_util_dep],
   include_directories: bochs_inc,
   implicit_include_directories: false
@@ -269,7 +269,7 @@ java_files = [
 
 java_inc = [platform_inc, include_directories('java')]
 
-librzjava = static_library('r2java', java_files,
+librzjava = static_library('rzjava', java_files,
   dependencies: [rz_util_dep],
   include_directories: java_inc,
   implicit_include_directories: false
@@ -292,7 +292,7 @@ qnx_files = [
 
 qnx_inc = [platform_inc, include_directories('qnx/include')]
 
-librzqnx = static_library('r2qnx', qnx_files,
+librzqnx = static_library('rzqnx', qnx_files,
   dependencies: [rz_socket_dep],
   include_directories: qnx_inc,
   implicit_include_directories: false
@@ -313,7 +313,7 @@ tcc_files = [
 
 tcc_inc = [platform_inc, include_directories('tcc')]
 
-librztcc = static_library('r2tcc', tcc_files,
+librztcc = static_library('rztcc', tcc_files,
   dependencies: [rz_util_dep],
   include_directories: tcc_inc,
   implicit_include_directories: false
@@ -335,7 +335,7 @@ if not lz4_dep.found() or not get_option('use_sys_lz4')
 
   lz4_inc = [platform_inc, include_directories('lz4')]
 
-  librzlz4 = static_library('r2lz4', lz4_files,
+  librzlz4 = static_library('rzlz4', lz4_files,
     include_directories: lz4_inc,
     implicit_include_directories: false
   )
@@ -441,7 +441,7 @@ if not zip_dep.found() or not get_option('use_sys_zip')
 
   zip_inc = [platform_inc, include_directories('zip/include')]
 
-  librzzip = static_library('r2zip', zip_files,
+  librzzip = static_library('rzzip', zip_files,
     include_directories: zip_inc,
     implicit_include_directories: false,
     dependencies: zlib_dep
@@ -466,7 +466,7 @@ winkd_files = [
 
 winkd_inc = [platform_inc, include_directories('winkd')]
 
-librzwinkd = static_library('r2winkd', winkd_files,
+librzwinkd = static_library('rzwinkd', winkd_files,
   dependencies: [rz_hash_dep, rz_crypto_dep, rz_socket_dep, rz_util_dep],
   include_directories: winkd_inc,
   implicit_include_directories: false
@@ -485,7 +485,7 @@ ar_files = [
 
 ar_inc = [platform_inc, include_directories(['ar'])]
 
-librzar = static_library('r2ar', ar_files,
+librzar = static_library('rzar', ar_files,
   dependencies: [rz_util_dep],
   include_directories: ar_inc,
   implicit_include_directories: false
@@ -513,7 +513,7 @@ mpc_files = [
 
 mpc_inc = [platform_inc, include_directories(['mpc'])]
 
-libmpc = static_library('r2mpc', mpc_files,
+libmpc = static_library('rzmpc', mpc_files,
   include_directories: mpc_inc,
   implicit_include_directories: false
 )
@@ -530,7 +530,7 @@ yxml_files = [
 
 yxml_inc = [platform_inc, include_directories(['yxml'])]
 
-libyxml = static_library('r2yxml', yxml_files,
+libyxml = static_library('rzyxml', yxml_files,
   include_directories: yxml_inc,
   implicit_include_directories: false
 )
