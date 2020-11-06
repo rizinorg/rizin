@@ -85,13 +85,13 @@ if [ $? = 0 ]; then
 		)
 		fi
 		( cd binrz/rizin ; ${MAKE} ios_sdk_sign )
-		rm -rf /tmp/r2ios
-		${MAKE} install DESTDIR=/tmp/r2ios
-		rm -rf /tmp/r2ios/usr/share/rizin/*/www/enyo/node_modules
-		( cd /tmp/r2ios && tar czvf ../r2ios-static-${CPU}.tar.gz ./* )
+		rm -rf /tmp/rzios
+		${MAKE} install DESTDIR=/tmp/rzios
+		rm -rf /tmp/rzios/usr/share/rizin/*/www/enyo/node_modules
+		( cd /tmp/rzios && tar czvf ../rzios-static-${CPU}.tar.gz ./* )
 		rm -rf sys/cydia/rizin/root
 		mkdir -p sys/cydia/rizin/root
-		sudo tar xpzvf /tmp/r2ios-static-${CPU}.tar.gz -C sys/cydia/rizin/root
+		sudo tar xpzvf /tmp/rzios-static-${CPU}.tar.gz -C sys/cydia/rizin/root
 #		( cd sys/cydia/rizin ; sudo ${MAKE} clean ; sudo ${MAKE} )
 
 		# Creating tarball

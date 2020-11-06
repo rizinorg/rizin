@@ -69,10 +69,10 @@ shell|sh|-s)
 		rm -rf dockervol
 		mkdir -p dockervol
 		cp -f "$1" "dockervol/$F"
-		docker run ${ALLOW_DEBUG} ${DEFAULT_CAP} -v $PWD/dockervol:/mnt -p 9090:9090 -ti rizin/rizin:latest r2 ${R2FLAGS} /mnt/$F
+		docker run ${ALLOW_DEBUG} ${DEFAULT_CAP} -v $PWD/dockervol:/mnt -p 9090:9090 -ti rizin/rizin:latest rizin ${RZFLAGS} /mnt/$F
 		rm -rf dockervol
 	else
-		docker run ${ALLOW_DEBUG} ${DEFAULT_CAP} -v $PWD/dockervol:/mnt -p 9090:9090 -ti rizin/rizin:latest r2 ${R2FLAGS} $1
+		docker run ${ALLOW_DEBUG} ${DEFAULT_CAP} -v $PWD/dockervol:/mnt -p 9090:9090 -ti rizin/rizin:latest rizin ${RZFLAGS} $1
 	fi
 	;;
 esac

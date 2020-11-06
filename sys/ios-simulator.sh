@@ -81,13 +81,13 @@ if [ $? = 0 ]; then
 	( cd librz ; make librz.dylib )
 	if [ $? = 0 ]; then
 		( cd binrz/rizin ; make ios_sdk_sign )
-		rm -rf /tmp/r2ios
-		make install DESTDIR=/tmp/r2ios
-		rm -rf /tmp/r2ios/usr/share/rizin/*/www/enyo/node_modules
-		( cd /tmp/r2ios && tar czvf ../r2ios-${CPU}.tar.gz ./* )
+		rm -rf /tmp/rzios
+		make install DESTDIR=/tmp/rzios
+		rm -rf /tmp/rzios/usr/share/rizin/*/www/enyo/node_modules
+		( cd /tmp/rzios && tar czvf ../rzios-${CPU}.tar.gz ./* )
 		rm -rf sys/cydia/rizin/root
 		mkdir -p sys/cydia/rizin/root
-		sudo tar xpzvf /tmp/r2ios-${CPU}.tar.gz -C sys/cydia/rizin/root
+		sudo tar xpzvf /tmp/rzios-${CPU}.tar.gz -C sys/cydia/rizin/root
 		( cd sys/cydia/rizin ; sudo make clean ; sudo make )
 	fi
 fi

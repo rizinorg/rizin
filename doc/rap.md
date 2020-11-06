@@ -12,11 +12,11 @@ Usage example
 
 Start in one terminal the following command to wait for incoming connections:
 
-	r2 rap://:9999
+	rizin rap://:9999
 
 In another machine or terminal connect it:
 
-	r2 rap://localhost:9999//bin/ls
+	rizin rap://localhost:9999//bin/ls
 
 As you see, the path of the remote file to load must be specified, and this handled
 by the open() packet.

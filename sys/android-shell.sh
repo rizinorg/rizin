@@ -55,9 +55,9 @@ OS=`uname|tr 'A-Z' 'a-z'`
 if [ ! -x /work ]; then
 	echo "Building android locally with NDK instead of dockcross..."
 	# TODO: autodetect or gtfo
-	if [ -f ~/.r2androidrc ]; then
-		. ~/.r2androidrc
-		echo "Using data from ${HOME}/.r2androidrc.."
+	if [ -f ~/.rzandroidrc ]; then
+		. ~/.rzandroidrc
+		echo "Using data from ${HOME}/.rzandroidrc.."
 	else
 		#[ -z "${SDK}" ] && SDK="${HOME}/Downloads/android-sdk-${OS}"
 		if [ -z "${NDK}" ]; then
@@ -98,7 +98,7 @@ ln -fs clang++ ndk-g++
 if [ "${BUILD}" != 0 ]; then
 	if [ ! -d "${NDK}" ]; then
 		echo "Cannot find Android NDK ${NDK}" >&2
-		echo "echo NDK=/path/to/ndk  > ~/.r2androidrc" >&2
+		echo "echo NDK=/path/to/ndk  > ~/.rzandroidrc" >&2
 		exit 1
 	fi
 	PATH=/tmp/ndk/bin:$PATH
@@ -110,7 +110,7 @@ if [ "${BUILD}" != 0 ]; then
 	SHELL=sh
 	CC=ndk-gcc
 	CXX=ndk-g++
-	PS1="[r2-android-${NDK_ARCH}]> "
+	PS1="[rizin-android-${NDK_ARCH}]> "
 	export CC
 	export CXX
 	export PS1
