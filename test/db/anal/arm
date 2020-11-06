@@ -604,7 +604,7 @@ RUN
 NAME=ELF ARM: function names 4
 FILE=bins/elf/analysis/arm_32_flags0
 CMDS=<<EOF
-af @@ sym*
+af @@f:sym*
 afl~weak
 EOF
 EXPECT=<<EOF

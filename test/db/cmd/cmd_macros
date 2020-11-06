@@ -104,13 +104,13 @@ b
 EOF
 RUN
 
-NAME=?v $$ @@ foo*
+NAME=?v $$ @@f:foo*
 FILE=-
 CMDS=<<EOF
 f foo.one = 1
 f foo.bar = 2
 f foo.cow = 3
-?v $$ @@ foo*
+?v $$ @@f:foo*
 EOF
 EXPECT=<<EOF
 0x1
@@ -125,7 +125,7 @@ CMDS=<<EOF
 f foo.one = 1
 f foo.bar = 2
 f foo.cow = 3
-(_;?v $$)() @@ foo*
+(_;?v $$)() @@f:foo*
 EOF
 EXPECT=<<EOF
 0x1
