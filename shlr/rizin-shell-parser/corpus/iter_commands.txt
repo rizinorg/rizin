@@ -1,16 +1,115 @@
-============
-Iter flags
-============
+===============
+Iter file lines
+===============
 
-p8 4 @@ sym.*
+p8 @@.file
 
 ---
 
 (commands
-  (iter_flags_command
-    (arged_command (cmd_identifier)
-      (args (arg (arg_identifier))))
+  (iter_file_lines_command
+    (arged_command (cmd_identifier))
     (arg (arg_identifier))))
+
+
+============
+Iter offsets
+============
+
+p8 @@=off1 off2
+
+---
+
+(commands
+  (iter_offsets_command
+    (arged_command (cmd_identifier))
+    (args
+      (arg (arg_identifier))
+      (arg (arg_identifier)))))
+
+
+=================
+Iter offsetssizes
+=================
+
+p8 @@@=off1 sz1 off2 sz2
+
+---
+
+(commands
+  (iter_offsetssizes_command
+    (arged_command (cmd_identifier))
+    (args
+      (arg (arg_identifier))
+      (arg (arg_identifier))
+      (arg (arg_identifier))
+      (arg (arg_identifier)))))
+
+
+========
+Iter hit
+========
+
+p8 @@/x 9090
+
+---
+
+(commands
+  (iter_hit_command
+    (arged_command (cmd_identifier))
+    (arged_command (cmd_identifier)
+      (args
+        (arg (arg_identifier))))))
+
+
+==================
+Iter interpret cmd
+==================
+
+p8 @@c:?e hello
+
+---
+
+(commands
+  (iter_interpret_command
+    (arged_command (cmd_identifier))
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier))))))
+
+
+===============================
+Iter interpret offsetssizes cmd
+===============================
+
+p8 @@@c:?e hello 10
+
+---
+
+(commands
+  (iter_interpret_offsetssizes_command
+    (arged_command (cmd_identifier))
+    (arged_command (cmd_identifier)
+      (args
+        (arg (arg_identifier))
+        (arg (arg_identifier))))))
+
+
+=============
+Iter comments
+=============
+
+pd @@C
+pd @@C:mycomm*
+
+---
+
+(commands
+  (iter_comment_command
+    (arged_command (cmd_identifier)))
+  (iter_comment_command
+    (arged_command (cmd_identifier))
+    (arg (arg_identifier))))
+
 
 ========
 Iter dbt
@@ -36,46 +135,6 @@ p8 4 @@dbts
   (iter_dbts_command
     (arged_command (cmd_identifier)
       (args (arg (arg_identifier))))))
-
-===============
-Iter file lines
-===============
-
-p8 @@.file
-
----
-
-(commands
-  (iter_file_lines_command
-    (arged_command (cmd_identifier))
-    (arg (arg_identifier))))
-
-===============
-Iter offsets
-===============
-
-p8 @@=off1 off2
-
----
-
-(commands
-  (iter_offsets_command
-    (arged_command (cmd_identifier))
-    (args (arg (arg_identifier)) (arg (arg_identifier)))))
-
-
-===============
-Iter sdbquery
-===============
-
-p8 @@k sdbquery
-
----
-
-(commands
-  (iter_sdbquery_command
-    (arged_command (cmd_identifier))
-    (arg (arg_identifier))))
 
 
 ===============
@@ -118,6 +177,19 @@ p8 @@i
 
 
 ===============
+Iter imports
+===============
+
+p8 @@ii
+
+---
+
+(commands
+  (iter_import_command
+    (arged_command (cmd_identifier))))
+
+
+===============
 Iter sections
 ===============
 
@@ -131,30 +203,117 @@ p8 @@iS
 
 
 ===============
-Iter functions
+Iter segments
 ===============
 
-p8 @@f
+p8 @@iSS
 
 ---
 
 (commands
-  (iter_functions_command
+  (iter_segments_command
     (arged_command (cmd_identifier))))
 
 
 ===============
-Iter function matching
+Iter symbols
 ===============
 
-p8 @@f:write
+p8 @@is
 
 ---
 
 (commands
-  (iter_functions_command
+  (iter_symbol_command
+    (arged_command (cmd_identifier))))
+
+
+===============
+Iter strings
+===============
+
+p8 @@iz
+
+---
+
+(commands
+  (iter_string_command
+    (arged_command (cmd_identifier))))
+
+
+============
+Iter flags
+============
+
+p8 4 @@f
+p8 4 @@f:sym.*
+
+---
+
+(commands
+  (iter_flags_command
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier)))))
+  (iter_flags_command
+    (arged_command (cmd_identifier)
+      (args (arg (arg_identifier))))
+    (arg (arg_identifier))))
+
+
+===============
+Iter functions
+===============
+
+p8 @@F
+p8 @@F:lib*
+
+---
+
+(commands
+  (iter_function_command
+    (arged_command (cmd_identifier)))
+  (iter_function_command
     (arged_command (cmd_identifier))
     (arg (arg_identifier))))
+
+
+==========
+Iter iomap
+==========
+
+pd @@om
+
+---
+
+(commands
+  (iter_iomap_command
+    (arged_command (cmd_identifier))))
+
+
+==========
+Iter dbgmap
+==========
+
+pd @@dm
+
+---
+
+(commands
+  (iter_dbgmap_command
+    (arged_command (cmd_identifier))))
+
+
+=============
+Iter register
+=============
+
+pd @@r
+
+---
+
+(commands
+  (iter_register_command
+    (arged_command (cmd_identifier))))
 
 
 ===============
@@ -172,34 +331,4 @@ p8 @@s:0xd000 0xe000 0x100
     (arg (arg_identifier))
     (arg (arg_identifier))))
 
-
-===============
-Iter command
-===============
-
-p8 @@c:/x 9090
-
----
-
-(commands
-  (iter_interpret_command
-    (arged_command (cmd_identifier))
-    (arged_command (cmd_identifier)
-      (args (arg (arg_identifier))))))
-
-
-================
-Iter search hits
-================
-
-pd 2 @@/x 9090
-
----
-
-(commands
-  (iter_hit_command
-    (arged_command (cmd_identifier)
-      (args (arg (arg_identifier))))
-    (arged_command (cmd_identifier)
-      (args (arg (arg_identifier))))))
 

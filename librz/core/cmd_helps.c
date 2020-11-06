@@ -40,20 +40,27 @@ const RzCmdDescHelp tmp_modifier_help = {
 };
 
 const RzCmdDescDetailEntry iterator_detail_entries[] = {
-	{ .text = "<cmd> @@", .arg_str = " <glob>", .comment = "run <cmd> over all flags matching <glob> in current flagspace. <glob> may contain `*` to indicate multiple chars" },
-	{ .text = "<cmd> @@dbt[abs]", .arg_str = "", .comment = "run <cmd> on every backtrace address, bp or sp" },
-	{ .text = "<cmd> @@.", .arg_str = "<file>", .comment = "run <cmd> over the offsets specified in <file>, one per line" },
+	{ .text = "<cmd> @@.", .arg_str = " <file>", .comment = "run <cmd> over the offsets specified in <file>, one per line" },
 	{ .text = "<cmd> @@=", .arg_str = "<addr1> [<addr2> ...]", .comment = "run <cmd> over the listed addresses" },
+	{ .text = "<cmd> @@@=", .arg_str = "<addr1> <blksz1> [<addr2> <blksz2> ...]", .comment = "run <cmd> over the listed addresses and set the proper block size" },
 	{ .text = "<cmd> @@/", .arg_str = "<search-cmd>", .comment = "run <cmd> over the search results of /<search-cmd>" },
-	{ .text = "<cmd> @@k", .arg_str = " <sdbquery>", .comment = "run <cmd> over all offsets return by the sdb query <sdbquery>" },
+	{ .text = "<cmd> @@c:", .arg_str = "<cmd2>", .comment = "run <cmd> on all addresses in the output of <cmd2>" },
+	{ .text = "<cmd> @@@c:", .arg_str = "<cmd2>", .comment = "run <cmd> on all addresses/blocksizes in the output of <cmd2>, similar to @@@=" },
+	{ .text = "<cmd> @@C", .arg_str = "[:<glob>]", .comment = "run <cmd> over all comments matching <glob>. <glob> may contain `*` to indicate multiple chars. If not specified all comments are considered." },
+	{ .text = "<cmd> @@dbt[abs]", .arg_str = "", .comment = "run <cmd> on every backtrace address, bp or sp" },
 	{ .text = "<cmd> @@t", .arg_str = "", .comment = "run <cmd> over all threads" },
 	{ .text = "<cmd> @@b", .arg_str = "", .comment = "run <cmd> over all basic blocks of the current function" },
-	{ .text = "<cmd> @@i", .arg_str = "", .comment = "run <cmd> over all instructions of the current function" },
+	{ .text = "<cmd> @@i", .arg_str = "", .comment = "run <cmd> over all instructions of the current basic block" },
 	{ .text = "<cmd> @@iS", .arg_str = "", .comment = "run <cmd> over all sections" },
-	{ .text = "<cmd> @@f", .arg_str = "", .comment = "run <cmd> over all functions" },
-	{ .text = "<cmd> @@f:", .arg_str = "<glob>", .comment = "run <cmd> over all function matching <glob>. <glob> may contain `*` to indicate multiple chars" },
-	{ .text = "<cmd> @@s:", .arg_str = "<from> <to> <step>", .comment = "run <cmd> on all addresses starting from <from> and going up to <to> (included), with a step <step>." },
-	{ .text = "<cmd> @@c:", .arg_str = "<cmd2>", .comment = "run <cmd> on all addresses in the output of <cmd2>" },
+	{ .text = "<cmd> @@iSS", .arg_str = "", .comment = "run <cmd> over all segments" },
+	{ .text = "<cmd> @@is", .arg_str = "", .comment = "run <cmd> over all symbols" },
+	{ .text = "<cmd> @@iz", .arg_str = "", .comment = "run <cmd> over all strings" },
+	{ .text = "<cmd> @@f", .arg_str = "[:<glob>]", .comment = "run <cmd> over all flags matching <glob>. <glob> may contain `*` to indicate multiple chars. If not specified all flags are considered." },
+	{ .text = "<cmd> @@F", .arg_str = "[:<glob>]", .comment = "run <cmd> over all functions matching <glob>. <glob> may contain `*` to indicate multiple chars. If not specified all functions are considered." },
+	{ .text = "<cmd> @@om", .arg_str = "", .comment = "run <cmd> over all iomap (see `om`)" },
+	{ .text = "<cmd> @@dm", .arg_str = "", .comment = "run <cmd> over all debug maps (see `dm`)" },
+	{ .text = "<cmd> @@r", .arg_str = "", .comment = "run <cmd> over all registers" },
+	{ .text = "<cmd> @@s:", .arg_str = "<from> <to> <step>", .comment = "run <cmd> on all addresses starting from <from> and going up to <to> (excluded), with a step <step>." },
 	{ 0 },
 };
 
@@ -67,38 +74,6 @@ const RzCmdDescHelp iterator_help = {
 	.options = "?",
 	.details = iterator_detail,
 	.usage = "<cmd> <@@> <args>",
-};
-
-const RzCmdDescDetailEntry foreach_detail_entries[] = {
-	{ .text = "<cmd> @@@=", .arg_str = "<addr> <size> (<addr> <size> ...)", .comment = "run <cmd> on each <addr> and set blocksize to <size>" },
-	{ .text = "<cmd> @@@b", .arg_str = "", .comment = "run <cmd> on each basic block of current function" },
-	{ .text = "<cmd> @@@c:", .arg_str = "<cmd2>", .comment = "same as <cmd>@@@=`<cmd2>`" },
-	{ .text = "<cmd> @@@C:", .arg_str = "<string>", .comment = "run <cmd> on each comment matching <string>" },
-	{ .text = "<cmd> @@@i", .arg_str = "", .comment = "run <cmd> on each import" },
-	{ .text = "<cmd> @@@r", .arg_str = "", .comment = "run <cmd> on each register" },
-	{ .text = "<cmd> @@@s", .arg_str = "", .comment = "run <cmd> on each symbol" },
-	{ .text = "<cmd> @@@st", .arg_str = "", .comment = "run <cmd> on each string" },
-	{ .text = "<cmd> @@@S", .arg_str = "", .comment = "run <cmd> on each section" },
-	{ .text = "<cmd> @@@m", .arg_str = "", .comment = "run <cmd> on each io.maps" },
-	{ .text = "<cmd> @@@M", .arg_str = "", .comment = "run <cmd> on each dbg.maps" },
-	{ .text = "<cmd> @@@f", .arg_str = "", .comment = "run <cmd> on each flag" },
-	{ .text = "<cmd> @@@f:", .arg_str = "<glob-string>", .comment = "run <cmd> on each flag matching <glob-string>. <glob-string> may contain `*` to indicate multiple chars" },
-	{ .text = "<cmd> @@@F", .arg_str = "", .comment = "run <cmd> on each function" },
-	{ .text = "<cmd> @@@F:", .arg_str = "<glob-string>", .comment = "run <cmd> on each function whose name matches <glob-string>. <glob-string> may contain `*` to indicate multiple chars" },
-	{ .text = "<cmd> @@@t", .arg_str = "", .comment = "run <cmd> on each thread" },
-	{ 0 },
-};
-
-const RzCmdDescDetail foreach_detail[] = {
-	{ .name = "", .entries = foreach_detail_entries },
-	{ 0 },
-};
-
-const RzCmdDescHelp foreach_help = {
-	.summary = "'@@@' help",
-	.options = "?",
-	.details = foreach_detail,
-	.usage = "<cmd> <@@@>",
 };
 
 const RzCmdDescDetailEntry redirection_detail_entries[] = {
