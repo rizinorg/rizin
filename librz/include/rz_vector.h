@@ -82,6 +82,12 @@ static inline void *rz_vector_index_ptr(RzVector *vec, size_t index) {
 	return (char *)vec->a + vec->elem_size * index;
 }
 
+// returns the number of elements in the vector
+static inline size_t rz_vector_len(RzVector *vec) {
+	rz_return_val_if_fail (vec, 0);
+	return vec->len;
+}
+
 // helper function to assign an element of size vec->elem_size from elem to p.
 // elem is a pointer to the actual data to assign!
 RZ_API void rz_vector_assign(RzVector *vec, void *p, void *elem);

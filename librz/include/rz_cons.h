@@ -493,7 +493,8 @@ typedef struct rz_cons_t {
 	FILE *fdin; // FILE? and then int ??
 	int fdout; // only used in pipe.c :?? remove?
 	const char *teefile;
-	int (*user_fgets)(char *buf, int len);
+	int (*user_fgets)(char *buf, int len, void *user);
+	void *user_fgets_user;
 	RzConsEvent event_resize;
 	void *event_data;
 	int mouse_event;
@@ -1049,12 +1050,43 @@ struct rz_line_comp_t {
 	void *run_user;
 };
 
+typedef struct rz_line_ns_completion_t RzLineNSCompletion;
+
+/**
+ * Result returned by a completion callback function. It includes all the
+ * information required to provide meaningful autocompletion suggestion to the
+ * user.
+ */
+typedef struct rz_line_ns_completion_result_t {
+	RzPVector options; ///< Vector of options that can be used for autocompletion
+	size_t start; ///< First byte that was considered for autocompletion. Everything before this will be left intact.
+	size_t end; ///< Last byte that was considered for autocompletion. Everything after this will be left intact.
+} RzLineNSCompletionResult;
+
+/**
+ * Callback that analyze the current user input and provides options for autocompletion.
+ *
+ * \param buf RLineBuffer pointer, containing all the info about the current user input
+ * \param prompt_type Type of prompt used
+ * \param user User data that was previously setup in \p RzLineNSCompletion
+ */
+typedef RzLineNSCompletionResult *(*RzLineNSCompletionCb)(RzLineBuffer *buf, RzLinePromptType prompt_type, void *user);
+
+/**
+ * Autocompletion callback data.
+ */
+struct rz_line_ns_completion_t {
+	RzLineNSCompletionCb run; ///< Callback function that is called when autocompletion is required. (e.g. TAB is pressed)
+	void *run_user; ///< User data that can be passed to the callback
+};
+
 typedef char* (*RzLineEditorCb)(void *core, const char *str);
 typedef int (*RzLineHistoryUpCb)(RzLine* line);
 typedef int (*RzLineHistoryDownCb)(RzLine* line);
 
 struct rz_line_t {
 	RzLineCompletion completion;
+	RzLineNSCompletion ns_completion;
 	RzLineBuffer buffer;
 	RzLineHistory history;
 	RzSelWidget *sel_widget;
@@ -1099,6 +1131,7 @@ RZ_API void rz_line_set_prompt(const char *prompt);
 RZ_API int rz_line_dietline_init(void);
 RZ_API void rz_line_clipboard_push (const char *str);
 RZ_API void rz_line_hist_free(void);
+RZ_API void rz_line_autocomplete(void);
 
 typedef int (RzLineReadCallback)(void *user, const char *line);
 RZ_API const char *rz_line_readline(void);
@@ -1121,6 +1154,10 @@ RZ_API void rz_line_completion_fini(RzLineCompletion *completion);
 RZ_API void rz_line_completion_push(RzLineCompletion *completion, const char *str);
 RZ_API void rz_line_completion_set(RzLineCompletion *completion, int argc, const char **argv);
 RZ_API void rz_line_completion_clear(RzLineCompletion *completion);
+
+RZ_API RzLineNSCompletionResult *rz_line_ns_completion_result_new(size_t start, size_t end);
+RZ_API void rz_line_ns_completion_result_free(RzLineNSCompletionResult *res);
+RZ_API void rz_line_ns_completion_result_add(RzLineNSCompletionResult *res, const char *option);
 
 #define RZ_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
 

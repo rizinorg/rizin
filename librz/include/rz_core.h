@@ -311,6 +311,7 @@ struct rz_core_t {
 	bool log_events; // core.c:cb_event_handler : log actions from events if cfg.log.events is set
 	RzList *ropchain;
 	bool use_tree_sitter_rzcmd;
+	bool use_newshell_autocompletion;
 
 	bool marks_init;
 	ut64 marks[UT8_MAX + 1];
@@ -385,7 +386,7 @@ RZ_API ut64 rz_core_pava(RzCore *core, ut64 addr);
 RZ_API int rz_core_cmd(RzCore *core, const char *cmd, int log);
 RZ_API int rz_core_cmd_task_sync(RzCore *core, const char *cmd, bool log);
 RZ_API char *rz_core_editor(const RzCore *core, const char *file, const char *str);
-RZ_API int rz_core_fgets(char *buf, int len);
+RZ_API int rz_core_fgets(char *buf, int len, void *user);
 RZ_API RzFlagItem *rz_core_flag_get_by_spaces(RzFlag *f, ut64 off);
 RZ_API int rz_core_cmdf(RzCore *core, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API int rz_core_flush(RzCore *core, const char *cmd);

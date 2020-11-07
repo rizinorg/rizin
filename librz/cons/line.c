@@ -6,6 +6,11 @@
 static RzLine rz_line_instance;
 #define I rz_line_instance
 
+static void rz_line_nscompletion_init(RzLineNSCompletion *c) {
+	c->run = NULL;
+	c->run_user = NULL;
+}
+
 RZ_API RzLine *rz_line_singleton(void) {
 	return &rz_line_instance;
 }
@@ -28,6 +33,7 @@ RZ_API RzLine *rz_line_new(void) {
 		eprintf ("error: rz_line_dietline_init\n");
 	}
 	rz_line_completion_init (&I.completion, 4096);
+	rz_line_nscompletion_init (&I.ns_completion);
 	return &I;
 }
 
@@ -102,6 +108,38 @@ RZ_API void rz_line_completion_clear(RzLineCompletion *completion) {
 	rz_return_if_fail (completion);
 	completion->quit = false;
 	rz_pvector_clear (&completion->args);
+}
+
+/**
+ * Create an empty completion result with no available options.
+ *
+ * \param start Value for \p RzLineNSCompletionResult.start
+ * \param end Value for \p RzLineNSCompletionResult.end
+ */
+RZ_API RzLineNSCompletionResult *rz_line_ns_completion_result_new(size_t start, size_t end) {
+	RzLineNSCompletionResult *res = RZ_NEW0 (RzLineNSCompletionResult);
+	if (!res) {
+		return NULL;
+	}
+	rz_pvector_init (&res->options, (RzPVectorFree)free);
+	res->start = start;
+	res->end = end;
+	return res;
+}
+
+/**
+ * Free a previously allocated RzLineNSCompletionResult
+ */
+RZ_API void rz_line_ns_completion_result_free(RzLineNSCompletionResult *res) {
+	rz_pvector_fini (&res->options);
+	free (res);
+}
+
+/**
+ * Add a new option to the list of possible autocomplete-able values.
+ */
+RZ_API void rz_line_ns_completion_result_add(RzLineNSCompletionResult *res, const char *option) {
+	rz_pvector_push (&res->options, strdup (option));
 }
 
 #include "dietline.c"
