@@ -2352,6 +2352,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 		return false;
 	}
 	rz_core_setenv (core);
+	core->ev = rz_event_new (core);
 	core->max_cmd_depth = RZ_CONS_CMD_DEPTH + 1;
 	core->sdb = sdb_new (NULL, "rzkv.sdb", 0); // XXX: path must be in home?
 	core->lastsearch = NULL;
@@ -2440,6 +2441,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_asm_set_user_ptr (core->rasm, core);
 	core->anal = rz_anal_new ();
 	core->gadgets = rz_list_newf ((RzListFree)rz_core_gadget_free);
+	core->anal->ev = core->ev;
 	core->anal->read_at = rz_core_anal_read_at;
 	core->anal->flag_get = rz_core_flag_get_by_spaces;
 	core->anal->cb.on_fcn_new = on_fcn_new;
@@ -2514,6 +2516,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->io->cb_printf = rz_cons_printf;
 	core->dbg->cb_printf = rz_cons_printf;
 	core->dbg->bp->cb_printf = rz_cons_printf;
+	core->dbg->ev = core->ev;
 	// initialize config before any corebind
 	rz_core_config_init (core);
 
