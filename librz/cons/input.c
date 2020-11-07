@@ -362,7 +362,7 @@ RZ_API int rz_cons_fgets(char *buf, int len, int argc, const char **argv) {
 #endif
 	errno = 0;
 	if (cons->user_fgets) {
-		RETURN (cons->user_fgets (buf, len));
+		RETURN (cons->user_fgets (buf, len, cons->user_fgets_user));
 	}
 	printf ("%s", cons->line->prompt);
 	fflush (stdout);

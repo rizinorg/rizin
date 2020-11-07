@@ -692,13 +692,112 @@ static void selection_widget_update(void) {
 	return;
 }
 
+static bool is_valid_buffer_limits(RzLineBuffer *buf, size_t start, size_t end, size_t s_len) {
+	if (start > end || s_len < end - start) {
+		return false;
+	}
+	if (start > buf->length || start + s_len >= RZ_LINE_BUFSIZE - 1) {
+		return false;
+	}
+	if (end > buf->length || end + s_len >= RZ_LINE_BUFSIZE - 1) {
+		return false;
+	}
+	return true;
+}
+
+static void replace_buffer_text(RzLineBuffer *buf, size_t start, size_t end, const char *s) {
+	size_t s_len = strlen (s);
+	if (!is_valid_buffer_limits (buf, start, end, s_len)) {
+		return;
+	}
+
+	size_t diff = end - start;
+	memmove (buf->data + start + s_len, buf->data + end, buf->length - end);
+	memmove (buf->data + start, s, s_len);
+	buf->length += s_len - diff;
+	buf->index += s_len - diff;
+	buf->data[buf->length] = '\0';
+}
+
+static char *get_max_common_pfx(RzPVector *options) {
+	const char *ref = rz_pvector_at (options, 0);
+	size_t min_common_len = strlen (ref);
+	void **it;
+	bool first = true;
+	rz_pvector_foreach (options, it) {
+		if (first) {
+			first = false;
+			continue;
+		}
+		char *s = *(char **)it;
+		size_t j;
+		for (j = 0; s[j] && ref[j] && s[j] == ref[j]; j++);
+		if (j < min_common_len) {
+			min_common_len = j;
+		}
+	}
+	return rz_str_ndup (ref, min_common_len);
+}
+
+static void print_options(int argc, const char **argv) {
+	int cols = (int)(rz_cons_get_size (NULL) * 0.82);
+	size_t i, len;
+	const int sep = 3;
+	int slen, col = 10;
+
+	for (i = 0; i < argc && argv[i]; i++) {
+		int l = strlen (argv[i]);
+		if (sep + l > col) {
+			col = sep + l;
+		}
+		if (col > (cols >> 1)) {
+			col = (cols >> 1);
+			break;
+		}
+	}
+	for (len = i = 0; i < argc && argv[i]; i++) {
+		if (len + col > cols) {
+			rz_cons_printf ("\n");
+			len = 0;
+		}
+		rz_cons_printf ("%-*s   ", col - sep, argv[i]);
+		slen = strlen (argv[i]);
+		len += (slen > col) ? (slen + sep) : (col + sep);
+	}
+	rz_cons_printf ("\n");
+}
+
 RZ_API void rz_line_autocomplete(void) {
 	char *p;
 	const char **argv = NULL;
-	int argc = 0, i, j, plen, len = 0;
+	int argc = 0, i, j, plen;
 	bool opt = false;
-	int cols = (int)(rz_cons_get_size (NULL) * 0.82);
 	RzCons *cons = rz_cons_singleton ();
+
+	if (I.ns_completion.run) {
+		RzLineNSCompletionResult *res = I.ns_completion.run (&I.buffer, I.prompt_type, I.ns_completion.run_user);
+		if (!res || rz_pvector_empty (&res->options)) {
+			// do nothing
+		} else if (rz_pvector_len (&res->options) == 1) {
+			// if there is just one option, just use it
+			bool add_space = I.buffer.length == I.buffer.index;
+			replace_buffer_text (&I.buffer, res->start, res->end, rz_pvector_at (&res->options, 0));
+			if (add_space) {
+				replace_buffer_text (&I.buffer, I.buffer.length, I.buffer.length, " ");
+			}
+		} else {
+			// otherwise find maxcommonprefix, print it, and then print options
+			char *max_common_pfx = get_max_common_pfx (&res->options);
+			replace_buffer_text (&I.buffer, res->start, res->end, max_common_pfx);
+			free (max_common_pfx);
+
+			rz_cons_printf ("%s%s\n", I.prompt, I.buffer.data);
+			print_options (rz_pvector_len (&res->options), (const char **)rz_pvector_data (&res->options));
+		}
+
+		rz_line_ns_completion_result_free (res);
+		return;
+	}
 
 	/* prepare argc and argv */
 	if (I.completion.run) {
@@ -801,35 +900,9 @@ RZ_API void rz_line_autocomplete(void) {
 
 	/* show options */
 	if (argc > 1 && I.echo) {
-		const int sep = 3;
-		int slen, col = 10;
-#ifdef __WINDOWS__
-		rz_cons_win_printf (false, "%s%s\n", I.prompt, I.buffer.data);
-#else
-		printf ("%s%s\n", I.prompt, I.buffer.data);
-#endif
-		for (i = 0; i < argc && argv[i]; i++) {
-			int l = strlen (argv[i]);
-			if (sep + l > col) {
-				col = sep + l;
-			}
-			if (col > (cols >> 1)) {
-				col = (cols >> 1);
-				break;
-			}
-		}
-		for (len = i = 0; i < argc && argv[i]; i++) {
-			if (len + col > cols) {
-				printf ("\n");
-				len = 0;
-			}
-			printf ("%-*s   ", col - sep, argv[i]);
-			slen = strlen (argv[i]);
-			len += (slen > col)? (slen + sep): (col + sep);
-		}
-		printf ("\n");
+		rz_cons_printf ("%s%s\n", I.prompt, I.buffer.data);
+		print_options (argc, argv);
 	}
-	fflush (stdout);
 }
 
 RZ_API const char *rz_line_readline(void) {
@@ -1803,6 +1876,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 				}
 			} else {
 				rz_line_autocomplete ();
+				rz_cons_flush ();
 			}
 			break;
 		case 13: // enter
@@ -1880,6 +1954,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 		if (I.sel_widget && I.buffer.length != prev_buflen) {
 			prev_buflen = I.buffer.length;
 			rz_line_autocomplete ();
+			rz_cons_flush ();
 		}
 		prev = buf[0];
 		if (I.echo) {

@@ -2141,6 +2141,7 @@ static bool cb_scrfgets(void* user, void* data) {
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->cons->user_fgets = node->i_value
 		? NULL : (void *)rz_core_fgets;
+	core->cons->user_fgets_user = core;
 	return true;
 }
 
@@ -2155,6 +2156,13 @@ static bool cb_newshell(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *)data;
 	RzCore *core = (RzCore *)user;
 	core->use_tree_sitter_rzcmd = node->i_value;
+	return true;
+}
+
+static bool cb_newshell_autocompletion(void *user, void *data) {
+	RzConfigNode *node = (RzConfigNode *)data;
+	RzCore *core = (RzCore *)user;
+	core->use_newshell_autocompletion = node->i_value;
 	return true;
 }
 
@@ -3286,6 +3294,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	p = rz_sys_getenv ("RZ_CFG_OLDSHELL");
 	SETCB ("cfg.newshell", p? "false": "true", &cb_newshell, "Use new commands parser");
 	free (p);
+	SETCB ("cfg.newshell.autocompletion", "false", &cb_newshell_autocompletion, "Use autocompletion based on newshell data");
 	SETI ("cfg.cpuaffinity", 0, "Run on cpuid");
 
 	/* log */
