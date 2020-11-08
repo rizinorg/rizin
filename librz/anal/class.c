@@ -556,7 +556,7 @@ RZ_API RzVector/*<RzAnalMethod>*/ *rz_anal_class_method_get_all(RzAnal *anal, co
 }
 
 RZ_API RzAnalClassErr rz_anal_class_method_set(RzAnal *anal, const char *class_name, RzAnalMethod *meth) {
-	char *content = sdb_fmt ("%"PFMT64u"%c%d", meth->addr, SDB_RS, meth->vtable_offset);
+	char *content = sdb_fmt ("%"PFMT64u"%c%"PFMT64d, meth->addr, SDB_RS, meth->vtable_offset);
 	RzAnalClassErr err = rz_anal_class_set_attr (anal, class_name, RZ_ANAL_CLASS_ATTR_TYPE_METHOD, meth->name, content);
 	if (err != RZ_ANAL_CLASS_ERR_SUCCESS) {
 		return err;
