@@ -62,7 +62,7 @@ RZ_API int rz_debug_pid_list(RzDebug *dbg, int pid, char fmt) {
 		}
 		pj_end (j);
 		if (fmt == 'j') {
-			dbg->cb_printf (pj_string (j));
+			dbg->cb_printf ("%s", pj_string (j));
 		}
 		pj_free (j);
 		rz_list_free (list);
@@ -121,7 +121,7 @@ RZ_API int rz_debug_thread_list(RzDebug *dbg, int pid, char fmt) {
 		}
 		pj_end (j);
 		if (fmt == 'j') {
-			dbg->cb_printf (pj_string (j));
+			dbg->cb_printf ("%s", pj_string (j));
 		}
 		pj_free (j);
 		rz_list_free (list);
