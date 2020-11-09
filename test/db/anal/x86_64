@@ -1491,7 +1491,7 @@ FILE=bins/pe/msvcfindmain.exe
 CMDS=<<EOF
 afc=pascal
 aaa
-afi @@@F~?pascal
+afi @@F~?pascal
 EOF
 EXPECT=<<EOF
 65

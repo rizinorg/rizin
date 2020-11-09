@@ -2,11 +2,9 @@ NAME=repeat-help
 FILE=-
 CMDS=<<EOF
 @@?~?
-@@@?~?
 EOF
 EXPECT=<<EOF
-15
-17
+22
 EOF
 RUN
 
@@ -15,7 +13,7 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-?e @@@r~xmm0
+?e @@r~xmm0
 EOF
 EXPECT=<<EOF
 xmm0h: 
@@ -29,7 +27,7 @@ CMDS=<<EOF
 CC aero@0x42
 CC pause@0x43
 CC plus@0x1337
-s@@@C:p*
+s@@C:p*
 EOF
 EXPECT=<<EOF
 0x43

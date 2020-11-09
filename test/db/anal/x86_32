@@ -1002,7 +1002,7 @@ NAME=ls_amd64 all switches
 FILE=bins/jmptbl/ls_amd64
 CMDS=<<EOF
 aaa
-CC. @@ switch
+CC. @@f:switch
 EOF
 EXPECT=<<EOF
 switch table (275 cases) at 0x4140b0

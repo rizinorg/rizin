@@ -557,7 +557,7 @@ FILE=bins/elf/analysis/zigs_stripped
 CMDS=<<EOF
 aa
 za sym.print b 5548....48......48......48......48....bf........b8........e8........90c9c3
-z. @@ fcn*
+z. @@f:fcn*
 ?v sign.bytes.sym.print_0
 EOF
 EXPECT=<<EOF
@@ -571,7 +571,7 @@ CMDS=<<EOF
 aa
 za sym.print g cc=1 nbbs=1 edges=0 ebbs=1
 e zign.mincc = 0
-z. @@ fcn*
+z. @@f:fcn*
 ?v sign.graph.sym.print_0
 EOF
 EXPECT=<<EOF
@@ -585,11 +585,11 @@ CMDS=<<EOF
 aa
 za sym.print g cc=1 nbbs=1 edges=0 ebbs=1
 e zign.mincc = 0
-z. @@ fcn*
+z. @@f:fcn*
 ?v sign.graph.sym.print_0
 f-*
 e zign.mincc = 10
-z. @@ fcn*
+z. @@f:fcn*
 ?v sign.graph.sym.print_0
 EOF
 EXPECT=<<EOF

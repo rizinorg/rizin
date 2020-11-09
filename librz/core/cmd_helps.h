@@ -5,7 +5,6 @@
 
 extern const RzCmdDescHelp tmp_modifier_help;
 extern const RzCmdDescHelp iterator_help;
-extern const RzCmdDescHelp foreach_help;
 extern const RzCmdDescHelp redirection_help;
 extern const RzCmdDescHelp pipe_help;
 extern const RzCmdDescHelp grep_help;

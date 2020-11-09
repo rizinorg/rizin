@@ -40,38 +40,6 @@ p8 10# third comment
   (arged_command (cmd_identifier)
     (args (arg (arg_identifier)))))
 
-
-===========================
-Multiline comment on a line
-===========================
-
-p8 /* inline comment */ 3
-afl
-
----
-
-(commands
-  (arged_command (cmd_identifier)
-    (args (arg (arg_identifier))))
-  (arged_command (cmd_identifier)))
-
-
-=====================================
-Multiline comment on multiple lines
-=====================================
-
-p8 /* multiline
-comment */ 3
-afl
-
----
-
-(commands
-  (arged_command (cmd_identifier)
-    (args (arg (arg_identifier))))
-  (arged_command (cmd_identifier)))
-
-
 ==================================
 Comment with # in the middle line
 ==================================
