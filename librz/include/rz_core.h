@@ -414,6 +414,7 @@ RZ_API int rz_core_seek_size(RzCore *core, ut64 addr, int bsize);
 RZ_API int rz_core_is_valid_offset (RzCore *core, ut64 offset);
 RZ_API int rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist);
 RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type);
+RZ_API RzLineNSCompletionResult *rz_core_autocomplete_newshell(RzCore *core, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API void rz_core_print_scrollbar(RzCore *core);
 RZ_API void rz_core_print_scrollbar_bottom(RzCore *core);
 RZ_API void rz_core_visual_prompt_input (RzCore *core);

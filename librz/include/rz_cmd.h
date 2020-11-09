@@ -362,6 +362,8 @@ typedef struct rz_core_plugin_t {
 	RzCmdCb fini;
 } RzCorePlugin;
 
+typedef bool (*RzCmdForeachNameCb) (RzCmd *cmd, const char *name, void *user);
+
 #ifdef RZ_API
 RZ_API int rz_core_plugin_init(RzCmd *cmd);
 RZ_API int rz_core_plugin_add(RzCmd *cmd, RzCorePlugin *plugin);
@@ -412,8 +414,10 @@ RZ_API RzCmdDesc *rz_cmd_desc_group_modes_new(RzCmd *cmd, RzCmdDesc *parent, con
 RZ_API RzCmdDesc *rz_cmd_desc_oldinput_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdCb cb, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_fake_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, const RzCmdDescHelp *help);
 RZ_API RzCmdDesc *rz_cmd_desc_parent(RzCmdDesc *cd);
+RZ_API RzCmdDesc *rz_cmd_desc_get_exec(RzCmdDesc *cd);
 RZ_API bool rz_cmd_desc_has_handler(RzCmdDesc *cd);
 RZ_API bool rz_cmd_desc_remove(RzCmd *cmd, RzCmdDesc *cd);
+RZ_API void rz_cmd_foreach_cmdname(RzCmd *cmd, RzCmdForeachNameCb cb, void *user);
 
 #define rz_cmd_desc_children_foreach(root, it_cd) rz_pvector_foreach (&root->children, it_cd)
 

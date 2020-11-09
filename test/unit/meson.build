@@ -12,6 +12,7 @@ if get_option('enable_tests')
     'anal_xrefs',
     'anal_class_graph',
     'annotated_code',
+    'autocmplt',
     'base64',
     'bin',
     'binheap',

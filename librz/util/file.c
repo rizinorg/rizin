@@ -102,6 +102,9 @@ RZ_API char *rz_file_dirname(const char *path) {
 	char *newpath = strdup (path);
 	char *ptr = (char*)rz_str_rchr (newpath, NULL, '/');
 	if (ptr) {
+		if (ptr == newpath) {
+			ptr++;
+		}
 		*ptr = 0;
 	} else {
 		ptr = (char*)rz_str_rchr (newpath, NULL, '\\');
@@ -1279,4 +1282,10 @@ RZ_API RzList* rz_file_globsearch (const char *_globbed_path, int maxdepth) {
 	}
 	free (globbed_path);
 	return files;
+}
+
+RZ_API char *rz_file_path_join(const char *s1, const char *s2) {
+	bool ends_with_dir = s1[strlen (s1) - 1] == RZ_SYS_DIR[0];
+	const char *sep = ends_with_dir? "": RZ_SYS_DIR;
+	return rz_str_newf ("%s%s%s", s1, sep, s2);
 }

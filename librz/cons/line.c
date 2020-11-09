@@ -115,8 +115,9 @@ RZ_API void rz_line_completion_clear(RzLineCompletion *completion) {
  *
  * \param start Value for \p RzLineNSCompletionResult.start
  * \param end Value for \p RzLineNSCompletionResult.end
+ * \param end_string Text that should be inserted after the only option available is autocompleted. When NULL, it defaults to " " (without quotes)
  */
-RZ_API RzLineNSCompletionResult *rz_line_ns_completion_result_new(size_t start, size_t end) {
+RZ_API RzLineNSCompletionResult *rz_line_ns_completion_result_new(size_t start, size_t end, const char *end_string) {
 	RzLineNSCompletionResult *res = RZ_NEW0 (RzLineNSCompletionResult);
 	if (!res) {
 		return NULL;
@@ -124,6 +125,10 @@ RZ_API RzLineNSCompletionResult *rz_line_ns_completion_result_new(size_t start, 
 	rz_pvector_init (&res->options, (RzPVectorFree)free);
 	res->start = start;
 	res->end = end;
+	if (!end_string) {
+		end_string = " ";
+	}
+	res->end_string = end_string;
 	return res;
 }
 
@@ -131,8 +136,10 @@ RZ_API RzLineNSCompletionResult *rz_line_ns_completion_result_new(size_t start, 
  * Free a previously allocated RzLineNSCompletionResult
  */
 RZ_API void rz_line_ns_completion_result_free(RzLineNSCompletionResult *res) {
-	rz_pvector_fini (&res->options);
-	free (res);
+	if (res) {
+		rz_pvector_fini (&res->options);
+		free (res);
+	}
 }
 
 /**

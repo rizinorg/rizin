@@ -1919,8 +1919,46 @@
                 "content": {
                   "type": "ALIAS",
                   "content": {
-                    "type": "SYMBOL",
-                    "name": "_interpret_identifier"
+                    "type": "PATTERN",
+                    "value": "\\.[\\.:\\-*]+"
+                  },
+                  "named": true,
+                  "value": "cmd_identifier"
+                }
+              },
+              {
+                "type": "PATTERN",
+                "value": "[ ]+"
+              },
+              {
+                "type": "FIELD",
+                "name": "args",
+                "content": {
+                  "type": "CHOICE",
+                  "members": [
+                    {
+                      "type": "SYMBOL",
+                      "name": "args"
+                    },
+                    {
+                      "type": "BLANK"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "FIELD",
+                "name": "command",
+                "content": {
+                  "type": "ALIAS",
+                  "content": {
+                    "type": "PATTERN",
+                    "value": "\\.[ ]+"
                   },
                   "named": true,
                   "value": "cmd_identifier"
@@ -2772,23 +2810,6 @@
         }
       ]
     },
-    "_interpret_identifier": {
-      "type": "PREC",
-      "value": 1,
-      "content": {
-        "type": "CHOICE",
-        "members": [
-          {
-            "type": "PATTERN",
-            "value": "\\.[\\.:\\-*]+[ ]*"
-          },
-          {
-            "type": "PATTERN",
-            "value": "\\.[ ]+"
-          }
-        ]
-      }
-    },
     "interpret_arg": {
       "type": "SYMBOL",
       "name": "_any_command"
@@ -2842,10 +2863,10 @@
           "type": "ALIAS",
           "content": {
             "type": "SYMBOL",
-            "name": "eq_sep_key"
+            "name": "_eq_sep_key"
           },
           "named": true,
-          "value": "args"
+          "value": "arg"
         },
         {
           "type": "CHOICE",
@@ -2861,10 +2882,10 @@
                   "type": "ALIAS",
                   "content": {
                     "type": "SYMBOL",
-                    "name": "eq_sep_val"
+                    "name": "_eq_sep_val"
                   },
                   "named": true,
-                  "value": "args"
+                  "value": "arg"
                 }
               ]
             },
@@ -3348,23 +3369,18 @@
         }
       ]
     },
-    "eq_sep_key": {
+    "_eq_sep_key_concatenation": {
       "type": "PREC_LEFT",
       "value": 0,
       "content": {
         "type": "SEQ",
         "members": [
           {
-            "type": "ALIAS",
-            "content": {
-              "type": "SYMBOL",
-              "name": "_eq_sep_key_single"
-            },
-            "named": true,
-            "value": "arg"
+            "type": "SYMBOL",
+            "name": "_eq_sep_key_single"
           },
           {
-            "type": "REPEAT",
+            "type": "REPEAT1",
             "content": {
               "type": "SEQ",
               "members": [
@@ -3373,19 +3389,32 @@
                   "name": "_eq_sep_concat"
                 },
                 {
-                  "type": "ALIAS",
-                  "content": {
-                    "type": "SYMBOL",
-                    "name": "_eq_sep_key_single"
-                  },
-                  "named": true,
-                  "value": "arg"
+                  "type": "SYMBOL",
+                  "name": "_eq_sep_key_single"
                 }
               ]
             }
           }
         ]
       }
+    },
+    "_eq_sep_key": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "_eq_sep_key_single"
+        },
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_eq_sep_key_concatenation"
+          },
+          "named": true,
+          "value": "concatenation"
+        }
+      ]
     },
     "_eq_sep_key_identifier": {
       "type": "TOKEN",
@@ -3417,9 +3446,9 @@
         }
       }
     },
-    "eq_sep_val": {
+    "_eq_sep_val_concatenation": {
       "type": "PREC_LEFT",
-      "value": 0,
+      "value": 1,
       "content": {
         "type": "SEQ",
         "members": [
@@ -3428,7 +3457,7 @@
             "name": "arg"
           },
           {
-            "type": "REPEAT",
+            "type": "REPEAT1",
             "content": {
               "type": "SEQ",
               "members": [
@@ -3445,6 +3474,24 @@
           }
         ]
       }
+    },
+    "_eq_sep_val": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "_arg"
+        },
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_eq_sep_val_concatenation"
+          },
+          "named": true,
+          "value": "concatenation"
+        }
+      ]
     },
     "_any_command": {
       "type": "PATTERN",
