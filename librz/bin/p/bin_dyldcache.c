@@ -2023,7 +2023,7 @@ static void header(RzBinFile *bf) {
 	}
 
 	pj_end (pj);
-	p (pj_string (pj));
+	p ("%s", pj_string (pj));
 
 beach:
 	pj_free (pj);

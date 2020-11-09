@@ -150,7 +150,7 @@ RZ_API int rz_io_plugin_list_json(RzIO *io) {
 	}
 	pj_end (pj);
 	pj_end (pj);
-	io->cb_printf (pj_string (pj));
+	io->cb_printf ("%s", pj_string (pj));
 	pj_free (pj);
 	return n;
 }

@@ -183,7 +183,7 @@ static void header(RzBinFile *bf) {
 	rbin->cb_printf ("stack_index : 0x%xH\n", bin->lmfh.stack_index);
 	rbin->cb_printf ("heap_index : 0x%xH\n", bin->lmfh.heap_index);
 	rbin->cb_printf ("argv_index : 0x%xH\n", bin->lmfh.argv_index);
-	rbin->cb_printf ("spare2[4] : 0x0H\n", bin->lmfh.spare2);
+	rbin->cb_printf ("spare2[4] : 0x0H\n");
 	rbin->cb_printf ("code_offset : 0x%xH\n", bin->lmfh.code_offset);
 	rbin->cb_printf ("stack_nbytes : 0x%xH\n", bin->lmfh.stack_nbytes);
 	rbin->cb_printf ("heap_nbytes : 0x%xH\n", bin->lmfh.heap_nbytes);
@@ -193,23 +193,23 @@ static void header(RzBinFile *bf) {
 
 /*
  * No mention of symbols in the doc
- */ 
+ */
 static RzList* symbols(RzBinFile *bf) {
 	return NULL;
 }
 
-// Returns the sections 
+// Returns the sections
 static RzList* sections(RzBinFile *bf) {
 	rz_return_val_if_fail (bf && bf->o, NULL);
 	QnxObj *qo = bf->o->bin_obj;
 	return rz_list_clone (qo->sections);
 }
 
-/* 
+/*
  * Returns the sdb
  * @param RzBinFile
  * @return sdb of the bin_obj
- */ 
+ */
 static Sdb *get_sdb(RzBinFile *bf) {
 	RzBinObject *o = bf->o;
 	if (!o) {
@@ -219,21 +219,21 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return qo? qo->kv: NULL;
 }
 
-/* 
+/*
  * Returns the base address of the image from the binary header
  * @param RzBinFile
  * @return image_base address
- */ 
+ */
 static ut64 baddr(RzBinFile *bf) {
 	QnxObj *qo = bf->o->bin_obj;
 	return qo? qo->lmfh.image_base: 0;
 }
 
-/* 
+/*
  * Currently both physical and virtual address are set to 0
  * The memory map has different values for entry
  */
-static RzList* entries(RzBinFile *bf) { 
+static RzList* entries(RzBinFile *bf) {
 	RzList *ret;
 	RzBinAddr *ptr = NULL;
 	QnxObj *qo = bf->o->bin_obj;
@@ -250,19 +250,19 @@ static RzList* entries(RzBinFile *bf) {
 	return ret;
 }
 
-/* 
+/*
  * @param RzBinFile
  * @return signature of the binary
- */ 
+ */
 static char *signature(RzBinFile *bf, bool json) {
  	char buf[64];
  	QnxObj *qo = bf->o->bin_obj;
-	return qo? rz_str_dup (NULL, sdb_itoa (qo->rwend.signature, buf, 10)): NULL;	
+	return qo? rz_str_dup (NULL, sdb_itoa (qo->rwend.signature, buf, 10)): NULL;
 }
 
-/* 
+/*
  * @return: returns the vaddr
- */ 
+ */
 static ut64 get_vaddr(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return vaddr;
 }

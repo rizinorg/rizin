@@ -111,7 +111,7 @@ RZ_API int rz_io_cache_list(RzIO *io, int rad) {
 			}
 			io->cb_printf ("\n");
 		} else if (rad == 2) {
-			io->cb_printf ("{\"idx\":%"PFMT64d",\"addr\":%"PFMT64d",\"size\":%d,",
+			io->cb_printf ("{\"idx\":%d,\"addr\":%"PFMT64d",\"size\":%d,",
 				j, rz_itv_begin (c->itv), dataSize);
 			io->cb_printf ("\"before\":\"");
 		  	for (i = 0; i < dataSize; i++) {
