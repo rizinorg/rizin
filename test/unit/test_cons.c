@@ -165,7 +165,7 @@ bool test_cons_to_html() {
 }
 
 static RzLineNSCompletionResult *nocompletion_run(RzLineBuffer *buf, RzLinePromptType prompt_type, void *user) {
-	return rz_line_ns_completion_result_new (0, 0);
+	return rz_line_ns_completion_result_new (0, 0, NULL);
 }
 
 bool test_line_nocompletion(void) {
@@ -185,7 +185,7 @@ bool test_line_nocompletion(void) {
 }
 
 static RzLineNSCompletionResult *onecompletion_run(RzLineBuffer *buf, RzLinePromptType prompt_type, void *user) {
-	RzLineNSCompletionResult *res = rz_line_ns_completion_result_new (0, 2);
+	RzLineNSCompletionResult *res = rz_line_ns_completion_result_new (0, 2, NULL);
 	rz_line_ns_completion_result_add (res, "pdf");
 	return res;
 }
@@ -217,7 +217,7 @@ bool test_line_onecompletion(void) {
 }
 
 static RzLineNSCompletionResult *multicompletion_run(RzLineBuffer *buf, RzLinePromptType prompt_type, void *user) {
-	RzLineNSCompletionResult *res = rz_line_ns_completion_result_new (0, 2);
+	RzLineNSCompletionResult *res = rz_line_ns_completion_result_new (0, 2, NULL);
 	rz_line_ns_completion_result_add (res, "pdf");
 	rz_line_ns_completion_result_add (res, "pdF");
 	rz_line_ns_completion_result_add (res, "pdb");
@@ -226,7 +226,7 @@ static RzLineNSCompletionResult *multicompletion_run(RzLineBuffer *buf, RzLinePr
 }
 
 static RzLineNSCompletionResult *multicompletion_run2(RzLineBuffer *buf, RzLinePromptType prompt_type, void *user) {
-	RzLineNSCompletionResult *res = rz_line_ns_completion_result_new (0, 1);
+	RzLineNSCompletionResult *res = rz_line_ns_completion_result_new (0, 1, NULL);
 	rz_line_ns_completion_result_add (res, "pdf");
 	rz_line_ns_completion_result_add (res, "pdF");
 	rz_line_ns_completion_result_add (res, "pdb");

@@ -205,7 +205,7 @@ static bool is_valid_argv_modes(RzCmdDesc *cd, char last_letter) {
 	return cd->d.argv_modes_data.modes & suffix2mode (suffix);
 }
 
-static RzCmdDesc *get_exec_cd(RzCmdDesc *cd) {
+RZ_API RzCmdDesc *rz_cmd_desc_get_exec(RzCmdDesc *cd) {
 	if (!cd) {
 		return NULL;
 	}
@@ -233,7 +233,7 @@ RZ_API RzCmdDesc *rz_cmd_get_desc(RzCmd *cmd, const char *cmd_identifier) {
 			case RZ_CMD_DESC_TYPE_GROUP:
 			case RZ_CMD_DESC_TYPE_FAKE:
 			case RZ_CMD_DESC_TYPE_ARGV_MODES:
-				if (!is_exact_match && !is_valid_argv_modes (get_exec_cd (cd), last_letter)) {
+				if (!is_exact_match && !is_valid_argv_modes (rz_cmd_desc_get_exec (cd), last_letter)) {
 					break;
 				}
 				res = cd;
@@ -594,7 +594,7 @@ static size_t fill_children_chars(RzStrBuf *sb, RzCmdDesc *cd) {
 
 	void **it;
 	bool has_other_commands = false;
-	RzCmdDesc *exec_cd = get_exec_cd (cd);
+	RzCmdDesc *exec_cd = rz_cmd_desc_get_exec (cd);
 	if (exec_cd) {
 		switch (exec_cd->type) {
 		case RZ_CMD_DESC_TYPE_ARGV_MODES:
@@ -1782,4 +1782,59 @@ RZ_API bool rz_cmd_desc_remove(RzCmd *cmd, RzCmdDesc *cd) {
 	cmd_desc_remove_from_ht_cmds (cmd, cd);
 	cmd_desc_free (cd);
 	return true;
+}
+
+static void cmd_foreach_cmdname(RzCmd *cmd, RzCmdDesc *cd, RzCmdForeachNameCb cb, void *user) {
+	if (!cd) {
+		return;
+	}
+
+	void **it_cd;
+	size_t i;
+
+	switch (cd->type) {
+	case RZ_CMD_DESC_TYPE_ARGV:
+		if (rz_cmd_desc_has_handler (cd)) {
+			cb (cmd, cd->name, user);
+		}
+		break;
+	case RZ_CMD_DESC_TYPE_ARGV_MODES:
+		for (i = 0; i < RZ_ARRAY_SIZE (argv_modes); i++) {
+			if (cd->d.argv_modes_data.modes & argv_modes[i].mode) {
+				char *name = rz_str_newf ("%s%s", cd->name, argv_modes[i].suffix);
+				cb (cmd, name, user);
+				free (name);
+			}
+		}
+		break;
+	case RZ_CMD_DESC_TYPE_FAKE:
+		break;
+	case RZ_CMD_DESC_TYPE_OLDINPUT:
+		if (rz_cmd_desc_has_handler (cd)) {
+			cb (cmd, cd->name, user);
+		}
+		// fallthrough
+	case RZ_CMD_DESC_TYPE_INNER:
+	case RZ_CMD_DESC_TYPE_GROUP:
+		rz_cmd_desc_children_foreach (cd, it_cd) {
+			RzCmdDesc *child = *it_cd;
+			cmd_foreach_cmdname (cmd, child, cb, user);
+		}
+		break;
+	}
+}
+
+/**
+ * /brief Execute a callback function on each possible command the user can execute.
+ *
+ * Only command names that can actually execute something are iterated. Help
+ * commands (e.g. ?, h?, etc.) are ignored.
+ *
+ * /param cmd Reference to RzCmd
+ * /param cb Callback function that is called for each command name.
+ * /param user Additional user data that is passed to the callback \p cb.
+ */
+RZ_API void rz_cmd_foreach_cmdname(RzCmd *cmd, RzCmdForeachNameCb cb, void *user) {
+	RzCmdDesc *cd = rz_cmd_get_root (cmd);
+	cmd_foreach_cmdname (cmd, cd, cb, user);
 }

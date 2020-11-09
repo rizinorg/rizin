@@ -712,6 +712,7 @@ static void replace_buffer_text(RzLineBuffer *buf, size_t start, size_t end, con
 	}
 
 	size_t diff = end - start;
+	// FIXME: escape s
 	memmove (buf->data + start + s_len, buf->data + end, buf->length - end);
 	memmove (buf->data + start, s, s_len);
 	buf->length += s_len - diff;
@@ -780,10 +781,10 @@ RZ_API void rz_line_autocomplete(void) {
 			// do nothing
 		} else if (rz_pvector_len (&res->options) == 1) {
 			// if there is just one option, just use it
-			bool add_space = I.buffer.length == I.buffer.index;
+			bool is_at_end = I.buffer.length == I.buffer.index;
 			replace_buffer_text (&I.buffer, res->start, res->end, rz_pvector_at (&res->options, 0));
-			if (add_space) {
-				replace_buffer_text (&I.buffer, I.buffer.length, I.buffer.length, " ");
+			if (is_at_end && res->end_string) {
+				replace_buffer_text (&I.buffer, I.buffer.length, I.buffer.length, res->end_string);
 			}
 		} else {
 			// otherwise find maxcommonprefix, print it, and then print options

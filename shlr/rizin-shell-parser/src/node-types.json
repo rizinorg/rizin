@@ -306,10 +306,6 @@
           "named": true
         },
         {
-          "type": "args",
-          "named": true
-        },
-        {
           "type": "pf_args",
           "named": true
         }
@@ -751,6 +747,10 @@
       "multiple": true,
       "required": true,
       "types": [
+        {
+          "type": "arg",
+          "named": true
+        },
         {
           "type": "arg_identifier",
           "named": true

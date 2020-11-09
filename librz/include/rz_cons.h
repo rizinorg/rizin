@@ -1061,6 +1061,7 @@ typedef struct rz_line_ns_completion_result_t {
 	RzPVector options; ///< Vector of options that can be used for autocompletion
 	size_t start; ///< First byte that was considered for autocompletion. Everything before this will be left intact.
 	size_t end; ///< Last byte that was considered for autocompletion. Everything after this will be left intact.
+	const char *end_string; ///< String to place after the only option available is autocompleted. By default a space is used.
 } RzLineNSCompletionResult;
 
 /**
@@ -1155,7 +1156,7 @@ RZ_API void rz_line_completion_push(RzLineCompletion *completion, const char *st
 RZ_API void rz_line_completion_set(RzLineCompletion *completion, int argc, const char **argv);
 RZ_API void rz_line_completion_clear(RzLineCompletion *completion);
 
-RZ_API RzLineNSCompletionResult *rz_line_ns_completion_result_new(size_t start, size_t end);
+RZ_API RzLineNSCompletionResult *rz_line_ns_completion_result_new(size_t start, size_t end, const char *end_string);
 RZ_API void rz_line_ns_completion_result_free(RzLineNSCompletionResult *res);
 RZ_API void rz_line_ns_completion_result_add(RzLineNSCompletionResult *res, const char *option);
 

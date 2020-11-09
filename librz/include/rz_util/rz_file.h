@@ -23,6 +23,7 @@ RZ_API void rz_file_mmap_free(RMmap *m);
 RZ_API bool rz_file_chmod(const char *file, const char *mod, int recursive);
 RZ_API char *rz_file_temp(const char *prefix);
 RZ_API char *rz_file_path(const char *bin);
+RZ_API char *rz_file_path_join(const char *s1, const char *s2);
 RZ_API const char *rz_file_basename(const char *path);
 RZ_API char *rz_file_dirname(const char *path);
 RZ_API char *rz_file_abspath_rel(const char *cwd, const char *file);
