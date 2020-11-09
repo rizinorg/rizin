@@ -509,7 +509,7 @@ RZ_API RzAnalClassErr rz_anal_class_method_get(RzAnal *anal, const char *class_n
 	}
 	sdb_anext (cur, NULL);
 
-	meth->vtable_offset = atoi (cur);
+	meth->vtable_offset = atoll (cur);
 
 	free (content);
 
