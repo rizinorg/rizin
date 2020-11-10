@@ -276,7 +276,7 @@ RZ_API char *rz_core_sysenv_begin(RzCore * core, const char *cmd) {
 	rz_sys_setenv ("RZ_BIN_LANG", rz_config_get (core->config, "bin.lang"));
 	rz_sys_setenv ("RZ_BIN_DEMANGLE", rz_config_get (core->config, "bin.demangle"));
 	rz_sys_setenv ("RZ_ARCH", rz_config_get (core->config, "asm.arch"));
-	rz_sys_setenv ("RZ_BITS", sdb_fmt ("%d", rz_config_get_i (core->config, "asm.bits")));
+	rz_sys_setenv ("RZ_BITS", sdb_fmt ("%"PFMT64u, rz_config_get_i (core->config, "asm.bits")));
 	rz_sys_setenv ("RZ_COLOR", rz_config_get_i (core->config, "scr.color")? "1": "0");
 	rz_sys_setenv ("RZ_DEBUG", rz_config_get_i (core->config, "cfg.debug")? "1": "0");
 	rz_sys_setenv ("RZ_IOVA", rz_config_get_i (core->config, "io.va")? "1": "0");

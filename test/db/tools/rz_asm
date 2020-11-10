@@ -499,9 +499,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-asm -a x86 -r push ebp
+NAME=rz-asm -a x86 -b 64 -r push ebp
 FILE=-
-CMDS=!rz-asm -a x86 -r push ebp
+CMDS=!rz-asm -a x86 -b 64 -r push ebp
 EXPECT=<<EOF
 e asm.arch=x86
 e asm.bits=64
