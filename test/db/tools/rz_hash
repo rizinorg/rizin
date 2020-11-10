@@ -932,6 +932,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rz-hash -E serpent-ecb zero padding
+FILE=-
+CMDS=!rz-hash -E serpent-ecb -S "1032547698badcfe1032547698badcfe1032547698badcfe1032547698badcfe" -x "101231" | rz-ax -S
+EXPECT=<<EOF
+417dfc518e8146ea81b089731b56fefa
+EOF
+RUN
+
 NAME=rz-hash -a fletcher8 -s hello-world
 FILE=-
 CMDS=!rz-hash -a fletcher8 -s hello-world
