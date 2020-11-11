@@ -15,6 +15,7 @@ rz_core_sources = [
   'citem.c',
   'canal.c',
   'carg.c',
+  'cautocmpl.c',
   'cbin.c',
   'cconfig.c',
   'cio.c',
