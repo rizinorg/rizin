@@ -20,7 +20,7 @@ static RzIODesc *rz_io_ar_open(RzIO *io, const char *file, int rw, int mode) {
 		filename += 2;
 	}
 
-	RBuffer *b = ar_open_file (arname, filename);
+	RzBuffer *b = ar_open_file (arname, filename);
 	if (b) {
 		res = rz_io_desc_new (io, &rz_io_plugin_ar, filename, rw, mode, b);
 	}
@@ -34,7 +34,7 @@ static RzList *rz_io_ar_open_many(RzIO *io, const char *file, int rw, int mode) 
 }
 
 static ut64 rz_io_ar_lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
-	RBuffer *b;
+	RzBuffer *b;
 	ut64 seek_val = 0;
 
 	if (!fd || !fd->data) {
@@ -65,7 +65,7 @@ static ut64 rz_io_ar_lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 }
 
 static int rz_io_ar_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
-	RBuffer *b;
+	RzBuffer *b;
 	if (!fd || !fd->data || !buf) {
 		return -1;
 	}
@@ -74,7 +74,7 @@ static int rz_io_ar_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 }
 
 static int rz_io_ar_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
-	RBuffer *b = NULL;
+	RzBuffer *b = NULL;
 	if (!fd || !fd->data || !buf) {
 		return -1;
 	}
@@ -82,7 +82,7 @@ static int rz_io_ar_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 }
 
 static int rz_io_ar_close(RzIODesc *fd) {
-	RBuffer *b = NULL;
+	RzBuffer *b = NULL;
 	if (!fd || !fd->data) {
 		return -1;
 	}

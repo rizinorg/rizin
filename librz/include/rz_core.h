@@ -231,7 +231,7 @@ struct rz_core_t {
 	ut32 blocksize;
 	ut32 blocksize_max;
 	ut8 *block;
-	RBuffer *yank_buf;
+	RzBuffer *yank_buf;
 	ut64 yank_addr;
 	bool tmpseek;
 	bool vmode;
@@ -252,15 +252,15 @@ struct rz_core_t {
 	/* ^^ */
 	RzCoreTimes *times;
 	RzParse *parser;
-	RPrint *print;
+	RzPrint *print;
 	RzLang *lang;
 	RzDebug *dbg;
 	RzFlag *flags;
 	RzSearch *search;
 	RzEgg *egg;
 	RzAGraph *graph;
-	RPanelsRoot *panels_root;
-	RPanels* panels;
+	RzPanelsRoot *panels_root;
+	RzPanels* panels;
 	char *cmdqueue;
 	char *lastcmd;
 	bool is_lastcmd;
@@ -412,7 +412,7 @@ RZ_API int rz_core_block_size(RzCore *core, int bsize);
 RZ_API int rz_core_seek_size(RzCore *core, ut64 addr, int bsize);
 RZ_API int rz_core_is_valid_offset (RzCore *core, ut64 offset);
 RZ_API int rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist);
-RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type);
+RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type);
 RZ_API void rz_core_print_scrollbar(RzCore *core);
 RZ_API void rz_core_print_scrollbar_bottom(RzCore *core);
 RZ_API void rz_core_visual_prompt_input (RzCore *core);
@@ -429,7 +429,7 @@ RZ_API int rz_core_visual_anal_classes(RzCore *core);
 RZ_API int rz_core_visual_types(RzCore *core);
 RZ_API int rz_core_visual(RzCore *core, const char *input);
 RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalFunction *_fcn, int is_interactive);
-RZ_API bool rz_core_visual_panels_root(RzCore *core, RPanelsRoot *panels_root);
+RZ_API bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root);
 RZ_API void rz_core_visual_browse(RzCore *core, const char *arg);
 RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg);
 RZ_API void rz_core_visual_seek_animation (RzCore *core, ut64 addr);
@@ -457,7 +457,7 @@ RZ_API void rz_core_anal_paths(RzCore *core, ut64 from, ut64 to, bool followCall
 RZ_API void rz_core_anal_esil_graph(RzCore *core, const char *expr);
 
 RZ_API void rz_core_list_io(RzCore *core);
-RZ_API RzListInfo *rz_listinfo_new (const char *name, RInterval pitv, RInterval vitv, int perm, const char *extra);
+RZ_API RzListInfo *rz_listinfo_new (const char *name, RzInterval pitv, RzInterval vitv, int perm, const char *extra);
 RZ_API void rz_listinfo_free (RzListInfo *info);
 /* visual marks */
 RZ_API void rz_core_visual_mark_seek(RzCore *core, ut8 ch);
@@ -606,8 +606,8 @@ typedef struct rz_core_asm_hit {
 	ut8 valid;
 } RzCoreAsmHit;
 
-RZ_API RBuffer *rz_core_syscall (RzCore *core, const char *name, const char *args);
-RZ_API RBuffer *rz_core_syscallf (RzCore *core, const char *name, const char *fmt, ...) RZ_PRINTF_CHECK(3, 4);
+RZ_API RzBuffer *rz_core_syscall (RzCore *core, const char *name, const char *args);
+RZ_API RzBuffer *rz_core_syscallf (RzCore *core, const char *name, const char *fmt, ...) RZ_PRINTF_CHECK(3, 4);
 RZ_API RzCoreAsmHit *rz_core_asm_hit_new(void);
 RZ_API RzList *rz_core_asm_hit_list_new(void);
 RZ_API void rz_core_asm_hit_free(void *_hit);
@@ -618,7 +618,7 @@ RZ_API RzList *rz_core_asm_bwdisassemble (RzCore *core, ut64 addr, int n, int le
 RZ_API RzList *rz_core_asm_back_disassemble_instr (RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 RZ_API RzList *rz_core_asm_back_disassemble_byte (RzCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 RZ_API ut32 rz_core_asm_bwdis_len (RzCore* core, int* len, ut64* start_addr, ut32 l);
-RZ_API int rz_core_print_disasm(RPrint *p, RzCore *core, ut64 addr, ut8 *buf, int len, int lines, int invbreak, int nbytes, bool json, PJ *pj, RzAnalFunction *pdf);
+RZ_API int rz_core_print_disasm(RzPrint *p, RzCore *core, ut64 addr, ut8 *buf, int len, int lines, int invbreak, int nbytes, bool json, PJ *pj, RzAnalFunction *pdf);
 RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int len, int lines, PJ *pj);
 RZ_API int rz_core_print_disasm_instructions_with_buf(RzCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes);
 RZ_API int rz_core_print_disasm_instructions(RzCore *core, int nb_bytes, int nb_opcodes);
@@ -626,7 +626,7 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 RZ_API int rz_core_disasm_pdi_with_buf(RzCore *core, ut64 address, ut8 *buf, ut32 nb_opcodes, ut32 nb_bytes, int fmt);
 RZ_API int rz_core_disasm_pdi(RzCore *core, int nb_opcodes, int nb_bytes, int fmt);
 RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode);
-RZ_API int rz_core_print_fcn_disasm(RPrint *p, RzCore *core, ut64 addr, int l, int invbreak, int cbytes);
+RZ_API int rz_core_print_fcn_disasm(RzPrint *p, RzCore *core, ut64 addr, int l, int invbreak, int cbytes);
 RZ_API int rz_core_get_prc_cols(RzCore *core);
 RZ_API int rz_core_flag_in_middle(RzCore *core, ut64 at, int oplen, int *midflags);
 RZ_API int rz_core_bb_starts_in_middle(RzCore *core, ut64 at, int oplen);
@@ -798,8 +798,8 @@ RZ_API void rz_core_syscmd_ls(const char *input);
 RZ_API void rz_core_syscmd_cat(const char *file);
 RZ_API void rz_core_syscmd_mkdir(const char *dir);
 
-RZ_API int rz_line_hist_offset_up(RLine *line);
-RZ_API int rz_line_hist_offset_down(RLine *line);
+RZ_API int rz_line_hist_offset_up(RzLine *line);
+RZ_API int rz_line_hist_offset_down(RzLine *line);
 
 // TODO : move into debug or syscall++
 RZ_API char *cmd_syscall_dostr(RzCore *core, st64 num, ut64 addr);
@@ -866,7 +866,7 @@ RZ_API RzCoreTask *rz_core_task_self(RzCoreTaskScheduler *scheduler);
 RZ_API void rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCoreTask *current, int id);
 typedef void (*inRangeCb) (RzCore *core, ut64 from, ut64 to, int vsize,
 		int count, void *cb_user);
-RZ_API int rz_core_search_value_in_range (RzCore *core, RInterval search_itv,
+RZ_API int rz_core_search_value_in_range (RzCore *core, RzInterval search_itv,
 		ut64 vmin, ut64 vmax, int vsize, inRangeCb cb, void *cb_user);
 
 RZ_API RzCoreAutocomplete *rz_core_autocomplete_add(RzCoreAutocomplete *parent, const char* cmd, int type, bool lock);

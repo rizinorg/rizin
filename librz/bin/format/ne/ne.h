@@ -24,7 +24,7 @@ typedef struct {
 	NE_image_segment_entry *segment_entries;
 	ut8 *entry_table;
 	ut8 *resident_name_table;
-	RBuffer *buf;
+	RzBuffer *buf;
 	RzList *segments;
 	RzList *entries;
 	RzList *resources;
@@ -34,7 +34,7 @@ typedef struct {
 } rz_bin_ne_obj_t;
 
 void rz_bin_ne_free(rz_bin_ne_obj_t *bin);
-rz_bin_ne_obj_t *rz_bin_ne_new_buf(RBuffer *buf, bool verbose);
+rz_bin_ne_obj_t *rz_bin_ne_new_buf(RzBuffer *buf, bool verbose);
 RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin);
 RzList *rz_bin_ne_get_imports(rz_bin_ne_obj_t *bin);
 RzList *rz_bin_ne_get_symbols(rz_bin_ne_obj_t *bin);

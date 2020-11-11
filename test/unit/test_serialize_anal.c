@@ -783,7 +783,7 @@ bool test_anal_meta_load() {
 
 	size_t count = 0;
 	RzAnalMetaItem *meta;
-	RIntervalTreeIter it;
+	RzIntervalTreeIter it;
 	rz_interval_tree_foreach (&anal->meta, it, meta) {
 		(void)meta;
 		count++;

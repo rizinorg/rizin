@@ -452,7 +452,7 @@ RZ_IPI RzBinFile *rz_bin_file_new(RzBin *bin, const char *file, ut64 file_sz, in
 	return bf;
 }
 
-static RzBinPlugin *get_plugin_from_buffer(RzBin *bin, const char *pluginname, RBuffer *buf) {
+static RzBinPlugin *get_plugin_from_buffer(RzBin *bin, const char *pluginname, RzBuffer *buf) {
 	RzBinPlugin *plugin = bin->force? rz_bin_get_binplugin_by_name (bin, bin->force): NULL;
 	if (plugin) {
 		return plugin;
@@ -513,7 +513,7 @@ static bool xtr_metadata_match(RzBinXtrData *xtr_data, const char *arch, int bit
 	return bits == iter_bits && !strcmp (iter_arch, arch) && !xtr_data->loaded;
 }
 
-RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RBuffer *buf, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname) {
+RZ_IPI RzBinFile *rz_bin_file_new_from_buffer(RzBin *bin, const char *file, RzBuffer *buf, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname) {
 	rz_return_val_if_fail (bin && file && buf, NULL);
 
 	RzBinFile *bf = rz_bin_file_new (bin, file, rz_buf_size (buf), rawstr, fd, pluginname, NULL, false);
@@ -736,7 +736,7 @@ RZ_API void rz_bin_file_free(void /*RzBinFile*/ *_bf) {
 	free (bf);
 }
 
-RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, const char *filename, RBuffer *buf, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
+RZ_IPI RzBinFile *rz_bin_file_xtr_load_buffer(RzBin *bin, RzBinXtrPlugin *xtr, const char *filename, RzBuffer *buf, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr) {
 	rz_return_val_if_fail (bin && xtr && buf, NULL);
 
 	RzBinFile *bf = rz_bin_file_find_by_name (bin, filename);

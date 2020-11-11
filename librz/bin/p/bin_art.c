@@ -31,7 +31,7 @@ typedef struct __packed art_header_t {
 typedef struct {
 	Sdb *kv;
 	ARTHeader art;
-	RBuffer *buf;
+	RzBuffer *buf;
 } ArtObj;
 
 static int art_header_load(ArtObj *ao, Sdb *db) {
@@ -65,7 +65,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return ao? ao->kv: NULL;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	ArtObj *ao = RZ_NEW0 (ArtObj);
 	if (ao) {
 		ao->kv = sdb_new0 ();
@@ -126,7 +126,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RzBuffer *buf) {
 	char tmp[4];
 	int r = rz_buf_read_at (buf, 0, (ut8 *)tmp, sizeof (tmp));
 	return r == 4 && !strncmp (tmp, "art\n", 4);

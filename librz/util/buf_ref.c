@@ -3,25 +3,25 @@
 #include <rz_util.h>
 
 struct buf_ref_user {
-	RBuffer *parent;
+	RzBuffer *parent;
 	ut64 offset;
 	ut64 size;
 };
 
 struct buf_ref_priv {
-	RBuffer *parent;
+	RzBuffer *parent;
 	ut64 cur;
 	ut64 base;
 	ut64 size;
 };
 
-static inline struct buf_ref_priv *get_priv_ref(RBuffer *b) {
+static inline struct buf_ref_priv *get_priv_ref(RzBuffer *b) {
 	struct buf_ref_priv *priv = (struct buf_ref_priv *)b->priv;
 	rz_warn_if_fail (priv);
 	return priv;
 }
 
-static bool buf_ref_init(RBuffer *b, const void *user) {
+static bool buf_ref_init(RzBuffer *b, const void *user) {
 	const struct buf_ref_user *u = (const struct buf_ref_user *)user;
 	struct buf_ref_priv *priv = RZ_NEW0 (struct buf_ref_priv);
 	if (!priv) {
@@ -40,21 +40,21 @@ static bool buf_ref_init(RBuffer *b, const void *user) {
 	return true;
 }
 
-static bool buf_ref_fini(RBuffer *b) {
+static bool buf_ref_fini(RzBuffer *b) {
 	struct buf_ref_priv *priv = get_priv_ref (b);
 	rz_buf_free (priv->parent);
 	RZ_FREE (b->priv);
 	return true;
 }
 
-static bool buf_ref_resize(RBuffer *b, ut64 newsize) {
+static bool buf_ref_resize(RzBuffer *b, ut64 newsize) {
 	struct buf_ref_priv *priv = get_priv_ref (b);
 	ut64 parent_sz = rz_buf_size (priv->parent);
 	priv->size = RZ_MIN (parent_sz - priv->base, newsize);
 	return true;
 }
 
-static st64 buf_ref_read(RBuffer *b, ut8 *buf, ut64 len) {
+static st64 buf_ref_read(RzBuffer *b, ut8 *buf, ut64 len) {
 	struct buf_ref_priv *priv = get_priv_ref (b);
 	if (priv->size < priv->cur) {
 		return -1;
@@ -68,12 +68,12 @@ static st64 buf_ref_read(RBuffer *b, ut8 *buf, ut64 len) {
 	return r;
 }
 
-static ut64 buf_ref_get_size(RBuffer *b) {
+static ut64 buf_ref_get_size(RzBuffer *b) {
 	struct buf_ref_priv *priv = get_priv_ref (b);
 	return priv->size;
 }
 
-static st64 buf_ref_seek(RBuffer *b, st64 addr, int whence) {
+static st64 buf_ref_seek(RzBuffer *b, st64 addr, int whence) {
 	struct buf_ref_priv *priv = get_priv_ref (b);
 	switch (whence) {
 	case RZ_BUF_CUR:
@@ -92,7 +92,7 @@ static st64 buf_ref_seek(RBuffer *b, st64 addr, int whence) {
 	return priv->cur;
 }
 
-static const RBufferMethods buffer_ref_methods = {
+static const RzBufferMethods buffer_ref_methods = {
 	.init = buf_ref_init,
 	.fini = buf_ref_fini,
 	.read = buf_ref_read,

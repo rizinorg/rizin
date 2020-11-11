@@ -68,7 +68,7 @@ typedef struct rz_asm_op_t {
 	// But this is pretty slow..so maybe we should add some accessors
 	RzStrBuf buf;
 	RzStrBuf buf_asm;
-	RBuffer *buf_inc; // must die
+	RzBuffer *buf_inc; // must die
 } RzAsmOp;
 
 typedef struct rz_asm_code_t {

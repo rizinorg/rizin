@@ -23,14 +23,14 @@ typedef struct rz_pdb_t {
 	void *stream_map;
 	RzList *pdb_streams;
 	RzList *pdb_streams2;
-	RBuffer *buf; // mmap of file
+	RzBuffer *buf; // mmap of file
 //	int curr;
 
 	void (*print_gvars)(struct rz_pdb_t *pdb, ut64 img_base, PJ *pj, int format);
-} RPdb;
+} RzPdb;
 
-RZ_API bool init_pdb_parser(RPdb *pdb, const char *filename);
-RZ_API bool init_pdb_parser_with_buf(RPdb *pdb, RBuffer *buf);
+RZ_API bool init_pdb_parser(RzPdb *pdb, const char *filename);
+RZ_API bool init_pdb_parser_with_buf(RzPdb *pdb, RzBuffer *buf);
 
 #ifdef __cplusplus
 }

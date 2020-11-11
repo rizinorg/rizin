@@ -2488,7 +2488,7 @@ static bool anal_fcn_list_bb(RzCore *core, const char *input, bool one) {
 			return false;
 		}
 		ls_foreach (fcn->bbs, iter, b) {
-			RInterval inter = (RInterval) {b->addr, b->size};
+			RzInterval inter = (RzInterval) {b->addr, b->size};
 			RzListInfo *info = rz_listinfo_new (NULL, inter, inter, -1, NULL);
 			if (!info) {
 				break;

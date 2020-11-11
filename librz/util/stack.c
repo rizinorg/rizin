@@ -2,8 +2,8 @@
 
 #include <rz_util.h>
 
-RZ_API RStack *rz_stack_new(ut32 n) {
-	RStack *s = RZ_NEW0 (RStack);
+RZ_API RzStack *rz_stack_new(ut32 n) {
+	RzStack *s = RZ_NEW0 (RzStack);
 	if (!s) {
 		return NULL;
 	}
@@ -17,15 +17,15 @@ RZ_API RStack *rz_stack_new(ut32 n) {
 	return s;
 }
 
-RZ_API RStack *rz_stack_newf(ut32 n, RStackFree f) {
-	RStack *s = rz_stack_new (n);
+RZ_API RzStack *rz_stack_newf(ut32 n, RzStackFree f) {
+	RzStack *s = rz_stack_new (n);
 	if (s) {
 		s->free = f;
 	}
 	return s;
 }
 
-RZ_API void rz_stack_free(RStack *s) {
+RZ_API void rz_stack_free(RzStack *s) {
 	if (s) {
 		if (s->free) {
 			int i;
@@ -38,7 +38,7 @@ RZ_API void rz_stack_free(RStack *s) {
 	}
 }
 
-RZ_API bool rz_stack_push(RStack *s, void *el) {
+RZ_API bool rz_stack_push(RzStack *s, void *el) {
 	if (s->top == s->n_elems - 1) {
 		/* reallocate the stack */
 		s->n_elems *= 2;
@@ -55,7 +55,7 @@ RZ_API bool rz_stack_push(RStack *s, void *el) {
 }
 
 //the caller should be take care of the object returned
-RZ_API void *rz_stack_pop(RStack *s) {
+RZ_API void *rz_stack_pop(RzStack *s) {
 	if (s->top == -1) {
 		return NULL;
 	}
@@ -64,14 +64,14 @@ RZ_API void *rz_stack_pop(RStack *s) {
 	return res;
 }
 
-RZ_API bool rz_stack_is_empty(RStack *s) {
+RZ_API bool rz_stack_is_empty(RzStack *s) {
 	return s->top == -1;
 }
 
-RZ_API size_t rz_stack_size(RStack *s) {
+RZ_API size_t rz_stack_size(RzStack *s) {
 	return (size_t)(s->top + 1);
 }
 
-RZ_API void *rz_stack_peek(RStack *s) {
+RZ_API void *rz_stack_peek(RzStack *s) {
 	return rz_stack_is_empty (s)? NULL: s->elems[s->top];
 }

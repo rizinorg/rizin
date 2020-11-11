@@ -1006,7 +1006,7 @@ void rz_comment_vars(RzCore *core, const char *input) {
 static int cmd_meta(void *data, const char *input) {
 	RzCore *core = (RzCore*)data;
 	RzAnalFunction *f;
-	RSpaces *ms;
+	RzSpaces *ms;
 	int i;
 
 	switch (*input) {

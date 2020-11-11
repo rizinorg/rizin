@@ -95,7 +95,7 @@ static int bbAdd(Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
 	return 0;
 }
 
-void addTarget(RzCore *core, RStack *stack, Sdb *db, ut64 addr) {
+void addTarget(RzCore *core, RzStack *stack, Sdb *db, ut64 addr) {
 	if (!sdb_num_get (db, Fhandled(addr), NULL)) {
 		ut64* value = (ut64*) malloc (1 * sizeof (ut64));
 		if (!value) {
@@ -124,7 +124,7 @@ static ut64 analyzeStackBased(RzCore *core, Sdb *db, ut64 addr, RzList *delayed_
 	RzAnalOp *op;
 	int cur = 0;
 	bool block_end = false;
-	RStack *stack = rz_stack_newf (10, free);
+	RzStack *stack = rz_stack_newf (10, free);
 	addTarget (core, stack, db, addr);
 	const ut64 maxfcnsize = 4096;
 

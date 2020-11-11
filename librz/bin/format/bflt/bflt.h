@@ -42,7 +42,7 @@ struct rz_bin_bflt_obj {
 	struct bflt_hdr *hdr;
 	struct reloc_struct_t *reloc_table;
 	struct reloc_struct_t *got_table;
-	RBuffer *b;
+	RzBuffer *b;
 	ut8 endian;
 	size_t size;
 	uint32_t n_got;
@@ -52,7 +52,7 @@ struct rz_bin_bflt_obj {
 #define VALID_GOT_ENTRY(x)	(x != 0xFFFFFFFF)
 
 RzBinAddr *rz_bflt_get_entry(struct rz_bin_bflt_obj *bin);
-struct rz_bin_bflt_obj *rz_bin_bflt_new_buf(RBuffer *buf);
+struct rz_bin_bflt_obj *rz_bin_bflt_new_buf(RzBuffer *buf);
 void rz_bin_bflt_free (struct rz_bin_bflt_obj *obj);
 
 #endif

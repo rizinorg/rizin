@@ -56,7 +56,7 @@ const char *__get_arch(rz_bin_le_obj_t *bin) {
 	}
 }
 
-static char *__read_nonnull_str_at(RBuffer *buf, ut64 *offset) {
+static char *__read_nonnull_str_at(RzBuffer *buf, ut64 *offset) {
 	ut8 size = rz_buf_read8_at (buf, *offset);
 	size &= 0x7F; // Max is 127
 	if (!size) {
@@ -611,7 +611,7 @@ RzList *rz_bin_le_get_relocs(rz_bin_le_obj_t *bin) {
 	return l;
 }
 
-static bool __init_header(rz_bin_le_obj_t *bin, RBuffer *buf) {
+static bool __init_header(rz_bin_le_obj_t *bin, RzBuffer *buf) {
 	ut8 magic[2];
 	rz_buf_read_at (buf, 0, magic, sizeof (magic));
 	if (!memcmp (&magic, "MZ", 2)) {
@@ -637,7 +637,7 @@ void rz_bin_le_free(rz_bin_le_obj_t *bin) {
 	free (bin);
 }
 
-rz_bin_le_obj_t *rz_bin_le_new_buf(RBuffer *buf) {
+rz_bin_le_obj_t *rz_bin_le_new_buf(RzBuffer *buf) {
 	rz_bin_le_obj_t *bin = RZ_NEW0 (rz_bin_le_obj_t);
 	if (!bin) {
 		return NULL;

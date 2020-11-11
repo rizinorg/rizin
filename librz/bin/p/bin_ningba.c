@@ -7,14 +7,14 @@
 #include <string.h>
 #include "../format/nin/gba.h"
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	ut8 lict[156];
 	rz_return_val_if_fail (b, false);
 	rz_buf_read_at (b, 4, (ut8*)lict, sizeof (lict));
 	return !memcmp (lict, lic_gba, 156);
 }
 
-static bool load_buffer(RzBinFile * bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile * bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (buf);
 }
 

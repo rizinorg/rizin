@@ -74,9 +74,9 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return NULL;
 }
 
-static bool load_buffer(RzBinFile * bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile * bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	struct rz_bin_java_obj_t *tmp_bin_obj = NULL;
-	RBuffer *tbuf = rz_buf_ref (buf);
+	RzBuffer *tbuf = rz_buf_ref (buf);
 	tmp_bin_obj = rz_bin_java_new_buf (tbuf, loadaddr, sdb);
 	if (!tmp_bin_obj) {
 		return false;
@@ -139,7 +139,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	if (rz_buf_size (b) > 32) {
 		ut8 buf[4];
 		rz_buf_read_at (b, 0, buf, sizeof (buf));

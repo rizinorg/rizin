@@ -22,7 +22,7 @@ static void rz_run_tty(void) {
 #endif
 
 RZ_API int rz_main_rz_run(int argc, const char **argv) {
-	RRunProfile *p;
+	RzRunProfile *p;
 	int i, ret;
 	if (argc == 1 || !strcmp (argv[1], "-h")) {
 		printf ("Usage: rz-run -v|-t|script.rr2 [directive ..]\n");

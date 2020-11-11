@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "minunit.h"
 
-bool test_buf(RBuffer *b) {
+bool test_buf(RzBuffer *b) {
 	ut8 buffer[1024] = { 0 };
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
@@ -81,7 +81,7 @@ bool test_buf(RBuffer *b) {
 	mu_assert_memeq (buffer + 0x10, (ut8 *)"mydata", 6, "then there is mydata");
 
 	rz_buf_set_bytes (b, (ut8 *)"Hello", 5);
-	RBuffer *sec_buf = rz_buf_new_with_bytes ((ut8 *)" second", 7);
+	RzBuffer *sec_buf = rz_buf_new_with_bytes ((ut8 *)" second", 7);
 	res = rz_buf_append_buf (b, sec_buf);
 	mu_assert ("append buf should succeed", res);
 	char *st3 = rz_buf_to_string (b);
@@ -101,7 +101,7 @@ bool test_buf(RBuffer *b) {
 }
 
 bool test_r_buf_file(void) {
-	RBuffer *b;
+	RzBuffer *b;
 	char *filename = "r2-XXXXXX";
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
@@ -126,7 +126,7 @@ bool test_r_buf_file(void) {
 }
 
 bool test_r_buf_bytes(void) {
-	RBuffer *b;
+	RzBuffer *b;
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
 
@@ -143,7 +143,7 @@ bool test_r_buf_bytes(void) {
 }
 
 bool test_r_buf_mmap(void) {
-	RBuffer *b;
+	RzBuffer *b;
 	char *filename = "r2-XXXXXX";
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
@@ -169,7 +169,7 @@ bool test_r_buf_mmap(void) {
 }
 
 bool test_r_buf_io(void) {
-	RBuffer *b;
+	RzBuffer *b;
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
 
@@ -198,7 +198,7 @@ bool test_r_buf_io(void) {
 }
 
 bool test_r_buf_sparse(void) {
-	RBuffer *b;
+	RzBuffer *b;
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
 
@@ -218,7 +218,7 @@ bool test_r_buf_sparse(void) {
 }
 
 bool test_r_buf_sparse2(void) {
-	RBuffer *b = rz_buf_new_sparse (0xff);
+	RzBuffer *b = rz_buf_new_sparse (0xff);
 	rz_buf_write (b, (ut8 *)"aaaa", 4);
 	rz_buf_write (b, (ut8 *)"bbbbb", 5);
 	rz_buf_write (b, (ut8 *)"cccccc", 6);
@@ -264,7 +264,7 @@ bool test_r_buf_sparse2(void) {
 }
 
 bool test_r_buf_bytes_steal(void) {
-	RBuffer *b;
+	RzBuffer *b;
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
 
@@ -280,7 +280,7 @@ bool test_r_buf_bytes_steal(void) {
 }
 
 bool test_r_buf_format(void) {
-	RBuffer *b = rz_buf_new ();
+	RzBuffer *b = rz_buf_new ();
 	uint16_t a[] = {0xdead, 0xbeef, 0xcafe, 0xbabe};
 	ut8 buf[4 * sizeof (uint16_t)];
 
@@ -301,9 +301,9 @@ bool test_r_buf_format(void) {
 bool test_r_buf_with_buf(void) {
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
-	RBuffer *buf = rz_buf_new_with_bytes ((ut8 *)content, length);
+	RzBuffer *buf = rz_buf_new_with_bytes ((ut8 *)content, length);
 
-	RBuffer *b = rz_buf_new_with_buf (buf);
+	RzBuffer *b = rz_buf_new_with_buf (buf);
 	mu_assert_notnull (b, "rz_buf_new_with_buf failed");
 	rz_buf_free (buf);
 
@@ -319,10 +319,10 @@ bool test_r_buf_with_buf(void) {
 bool test_r_buf_slice(void) {
 	const char *content = "AAAAAAAAAASomething To\nSay Here..BBBBBBBBBB";
 	const int length = strlen (content);
-	RBuffer *buf = rz_buf_new_with_bytes ((ut8 *)content, length);
+	RzBuffer *buf = rz_buf_new_with_bytes ((ut8 *)content, length);
 	ut8 buffer[1024];
 
-	RBuffer *b = rz_buf_new_slice (buf, 10, 23);
+	RzBuffer *b = rz_buf_new_slice (buf, 10, 23);
 	mu_assert_notnull (b, "rz_buf_new_slice failed");
 
 	ut64 buf_sz = rz_buf_size (b);
@@ -355,7 +355,7 @@ bool test_r_buf_get_string(void) {
 	ut8 *ch = malloc (128);
 	memset (ch, 'A', 127);
 	ch[127] = '\0';
-	RBuffer *b = rz_buf_new_with_bytes (ch, 128);
+	RzBuffer *b = rz_buf_new_with_bytes (ch, 128);
 	char *s = rz_buf_get_string (b, 100);
 	mu_assert_streq (s, (char *)ch + 100, "the string is the same");
 	free (s);
@@ -371,7 +371,7 @@ bool test_r_buf_get_string(void) {
 }
 
 bool test_r_buf_get_string_nothing(void) {
-	RBuffer *b = rz_buf_new_with_bytes ((ut8 *)"\x33\x22", 2);
+	RzBuffer *b = rz_buf_new_with_bytes ((ut8 *)"\x33\x22", 2);
 	char *s = rz_buf_get_string (b, 0);
 	mu_assert_null (s, "there is no string in the buffer (no null terminator)");
 	rz_buf_append_bytes (b, (ut8 *)"\x00", 1);
@@ -383,8 +383,8 @@ bool test_r_buf_get_string_nothing(void) {
 }
 
 bool test_r_buf_slice_too_big(void) {
-	RBuffer *buf = rz_buf_new_with_bytes ((ut8 *)"AAAA", 4);
-	RBuffer *sl = rz_buf_new_slice (buf, 1, 5);
+	RzBuffer *buf = rz_buf_new_with_bytes ((ut8 *)"AAAA", 4);
+	RzBuffer *sl = rz_buf_new_slice (buf, 1, 5);
 	ut64 sz = rz_buf_size (sl);
 	mu_assert_eq (sz, 3, "the size cannot be more than the original buffer");
 	rz_buf_resize (sl, 1);

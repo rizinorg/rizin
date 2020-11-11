@@ -376,7 +376,7 @@ static int cmd_seek(void *data, const char *input) {
 		if (input[1] == '*') { // "sC*"
 			rz_core_cmd0 (core, "C*~^\"CC");
 		} else if (input[1] == ' ') {
-			RIntervalTreeIter it;
+			RzIntervalTreeIter it;
 			RzAnalMetaItem *meta;
 			bool seeked = false;
 			rz_interval_tree_foreach (&core->anal->meta, it, meta) {

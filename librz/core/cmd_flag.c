@@ -270,10 +270,10 @@ static void __flag_graph (RzCore *core, const char *input, int mode) {
 	rz_list_free (flags);
 }
 
-static void spaces_list(RSpaces *sp, int mode) {
-	RSpaceIter it;
-	RSpace *s;
-	const RSpace *cur = rz_spaces_current (sp);
+static void spaces_list(RzSpaces *sp, int mode) {
+	RzSpaceIter it;
+	RzSpace *s;
+	const RzSpace *cur = rz_spaces_current (sp);
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = pj_new ();
@@ -449,7 +449,7 @@ static void cmd_flag_table(RzCore *core, const char *input) {
 	rz_table_add_column (t, typeString, "space", 0);
 	rz_table_add_column (t, typeString, "name", 0);
 
-	RSpace *curSpace = rz_flag_space_cur (core->flags);
+	RzSpace *curSpace = rz_flag_space_cur (core->flags);
 	rz_flag_foreach_space (core->flags, curSpace, __tableItemCallback, &ftd);
 	if (rz_table_query (t, q)) {
 		char *s = (fmt == 'j')
@@ -1179,7 +1179,7 @@ rep:
 				rz_flag_space_unset (core->flags, NULL);
 				break;
 			case '.': {
-				const RSpace *sp = rz_flag_space_cur (core->flags);
+				const RzSpace *sp = rz_flag_space_cur (core->flags);
 				if (sp) {
 					rz_flag_space_unset (core->flags, sp->name);
 				}

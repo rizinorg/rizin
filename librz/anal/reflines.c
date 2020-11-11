@@ -127,7 +127,7 @@ RZ_API RzList *rz_anal_reflines_get(RzAnal *anal, ut64 addr, const ut8 *buf, ut6
 				void **it;
 				ut64 skip = 0;
 				rz_pvector_foreach (metas, it) {
-					RIntervalNode *node = *it;
+					RzIntervalNode *node = *it;
 					RzAnalMetaItem *meta = node->data;
 					switch (meta->type) {
 					case RZ_META_TYPE_DATA:
@@ -293,7 +293,7 @@ static const char* get_corner_char(RzAnalRefline *ref, ut64 addr, bool is_middle
 	return "";
 }
 
-static void add_spaces(RBuffer *b, int level, int pos, bool wide) {
+static void add_spaces(RzBuffer *b, int level, int pos, bool wide) {
 	if (pos != -1) {
 		if (wide) {
 			pos *= 2;
@@ -306,7 +306,7 @@ static void add_spaces(RBuffer *b, int level, int pos, bool wide) {
 	}
 }
 
-static void fill_level(RBuffer *b, int pos, char ch, RzAnalRefline *r, bool wide) {
+static void fill_level(RzBuffer *b, int pos, char ch, RzAnalRefline *r, bool wide) {
 	int sz = r->level;
 	if (wide) {
 		sz *= 2;
@@ -343,8 +343,8 @@ RZ_API RzAnalRefStr *rz_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	RzCore *core = _core;
 	RzCons *cons = core->cons;
 	RzAnal *anal = core->anal;
-	RBuffer *b;
-	RBuffer *c;
+	RzBuffer *b;
+	RzBuffer *c;
 	RzListIter *iter;
 	RzAnalRefline *ref;
 	int l;

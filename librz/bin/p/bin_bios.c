@@ -6,7 +6,7 @@
 #include <rz_bin.h>
 #include "../i/private.h"
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RzBuffer *buf) {
 	rz_return_val_if_fail (buf, false);
 
 	ut64 sz = rz_buf_size (buf);
@@ -33,7 +33,7 @@ static bool check_buffer(RBuffer *buf) {
 	return bep == 0xea || bep == 0xe9;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	if (!check_buffer (buf)) {
 		return false;
 	}
@@ -78,7 +78,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *ptr = NULL;
-	RBuffer *obj = bf->o->bin_obj;
+	RzBuffer *obj = bf->o->bin_obj;
 
 	if (!(ret = rz_list_newf ((RzListFree) rz_bin_section_free))) {
 		return NULL;

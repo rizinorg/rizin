@@ -576,7 +576,7 @@ static int cmd_eval(void *data, const char *input) {
 					 }
 				 } else {
 					 char color[32];
-					 RColor rcolor = rz_cons_pal_get (p);
+					 RzColor rcolor = rz_cons_pal_get (p);
 					 rz_cons_rgb_str (color, sizeof (color), &rcolor);
 					 eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, color);
 				 }

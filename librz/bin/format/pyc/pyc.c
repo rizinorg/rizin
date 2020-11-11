@@ -3,7 +3,7 @@
 #include "pyc.h"
 #include "marshal.h"
 
-bool pyc_get_sections_symbols(RzList *sections, RzList *symbols, RzList *cobjs, RBuffer *buf, ut32 magic) {
+bool pyc_get_sections_symbols(RzList *sections, RzList *symbols, RzList *cobjs, RzBuffer *buf, ut32 magic) {
 	return get_sections_symbols_from_code_objects (buf, sections, symbols, cobjs, magic);
 }
 

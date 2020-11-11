@@ -32,7 +32,7 @@ struct PE_(rz_bin_pe_obj_t)* rz_bin_pemixed_init_dos(struct PE_(rz_bin_pe_obj_t)
 	ut64 pe_hdr_off = pe_bin->dos_header->e_lfanew;
 
 	//idk if this is the most efficient way but could not find a function to read
-	//RBuffer into another RBuffer
+	//RzBuffer into another RzBuffer
 	if (!(tmp_buf = malloc (pe_hdr_off))) {
 		return NULL;
 	}

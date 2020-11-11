@@ -14,13 +14,13 @@ struct buf_mmap_priv {
 	RMmap *mmap;
 };
 
-static inline struct buf_mmap_priv *get_priv_mmap(RBuffer *b) {
+static inline struct buf_mmap_priv *get_priv_mmap(RzBuffer *b) {
 	struct buf_mmap_priv *priv = (struct buf_mmap_priv *)b->priv;
 	rz_warn_if_fail (priv);
 	return priv;
 }
 
-static bool buf_mmap_init(RBuffer *b, const void *user) {
+static bool buf_mmap_init(RzBuffer *b, const void *user) {
 	const struct buf_mmap_user *u = (const struct buf_mmap_user *)user;
 	struct buf_mmap_priv *priv = RZ_NEW0 (struct buf_mmap_priv);
 	if (!priv) {
@@ -39,14 +39,14 @@ static bool buf_mmap_init(RBuffer *b, const void *user) {
 	return true;
 }
 
-static bool buf_mmap_fini(RBuffer *b) {
+static bool buf_mmap_fini(RzBuffer *b) {
 	struct buf_mmap_priv *priv = get_priv_mmap (b);
 	rz_file_mmap_free (priv->mmap);
 	RZ_FREE (b->priv);
 	return true;
 }
 
-static bool buf_mmap_resize(RBuffer *b, ut64 newsize) {
+static bool buf_mmap_resize(RzBuffer *b, ut64 newsize) {
 	struct buf_mmap_priv *priv = get_priv_mmap (b);
 	if (newsize > priv->mmap->len) {
 		ut8 *t = rz_mem_mmap_resize (priv->mmap, newsize);
@@ -59,7 +59,7 @@ static bool buf_mmap_resize(RBuffer *b, ut64 newsize) {
 	return true;
 }
 
-static const RBufferMethods buffer_mmap_methods = {
+static const RzBufferMethods buffer_mmap_methods = {
 	.init = buf_mmap_init,
 	.fini = buf_mmap_fini,
 	.read = buf_bytes_read,

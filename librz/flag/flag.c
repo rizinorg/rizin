@@ -196,16 +196,16 @@ static bool unset_flags_space(RzFlagItem *fi, void *user) {
 }
 
 static void count_flags_in_space(RzEvent *ev, int type, void *user, void *data) {
-	RSpaces *sp = (RSpaces *)ev->user;
+	RzSpaces *sp = (RzSpaces *)ev->user;
 	RzFlag *f = container_of (sp, RzFlag, spaces);
-	RSpaceEvent *spe = (RSpaceEvent *)data;
+	RzSpaceEvent *spe = (RzSpaceEvent *)data;
 	rz_flag_foreach_space (f, spe->data.count.space, count_flags, &spe->res);
 }
 
 static void unset_flagspace(RzEvent *ev, int type, void *user, void *data) {
-	RSpaces *sp = (RSpaces *)ev->user;
+	RzSpaces *sp = (RzSpaces *)ev->user;
 	RzFlag *f = container_of (sp, RzFlag, spaces);
-	const RSpaceEvent *spe = (const RSpaceEvent *)data;
+	const RzSpaceEvent *spe = (const RzSpaceEvent *)data;
 	rz_flag_foreach_space (f, spe->data.unset.space, unset_flags_space, NULL);
 }
 
@@ -299,7 +299,7 @@ struct print_flag_t {
 	bool in_range;
 	ut64 range_from;
 	ut64 range_to;
-	RSpace *fs;
+	RzSpace *fs;
 	bool real;
 	const char *pfx;
 };
@@ -521,7 +521,7 @@ RZ_API RzFlagItem *rz_flag_get_by_spaces(RzFlag *f, ut64 off, ...) {
 	const RzList *list = rz_flag_get_list (f, off);
 	RzFlagItem *ret = NULL;
 	const char *spacename;
-	RSpace **spaces;
+	RzSpace **spaces;
 	RzListIter *iter;
 	RzFlagItem *flg;
 	va_list ap, aq;
@@ -546,12 +546,12 @@ RZ_API RzFlagItem *rz_flag_get_by_spaces(RzFlag *f, ut64 off, ...) {
 	}
 	va_end (aq);
 
-	// get RSpaces from the names
+	// get RzSpaces from the names
 	i = 0;
-	spaces = RZ_NEWS (RSpace *, n_spaces);
+	spaces = RZ_NEWS (RzSpace *, n_spaces);
 	spacename = va_arg (ap, const char *);
 	while (spacename) {
-		RSpace *space = rz_flag_space_get (f, spacename);
+		RzSpace *space = rz_flag_space_get (f, spacename);
 		if (space) {
 			spaces[i++] = space;
 		}
@@ -662,7 +662,7 @@ RZ_API RzList *rz_flag_all_list(RzFlag *f, bool by_space) {
 		return NULL;
 	}
 
-	RSpace *cur = by_space? rz_flag_space_cur (f): NULL;
+	RzSpace *cur = by_space? rz_flag_space_cur (f): NULL;
 	rz_flag_foreach_space (f, cur, append_to_list, ret);
 	return ret;
 }
@@ -962,10 +962,10 @@ RZ_API void rz_flag_foreach_glob(RzFlag *f, const char *glob, RzFlagItemCb cb, v
 	FOREACH_BODY (!glob || rz_str_glob (fi->name, glob));
 }
 
-RZ_API void rz_flag_foreach_space_glob(RzFlag *f, const char *glob, const RSpace *space, RzFlagItemCb cb, void *user) {
+RZ_API void rz_flag_foreach_space_glob(RzFlag *f, const char *glob, const RzSpace *space, RzFlagItemCb cb, void *user) {
         FOREACH_BODY (IS_FI_IN_SPACE (fi, space) && (!glob || rz_str_glob (fi->name, glob)));
 }
 
-RZ_API void rz_flag_foreach_space(RzFlag *f, const RSpace *space, RzFlagItemCb cb, void *user) {
+RZ_API void rz_flag_foreach_space(RzFlag *f, const RzSpace *space, RzFlagItemCb cb, void *user) {
 	FOREACH_BODY (IS_FI_IN_SPACE (fi, space));
 }

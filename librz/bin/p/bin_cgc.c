@@ -6,20 +6,20 @@
 extern struct rz_bin_dbginfo_t rz_bin_dbginfo_elf;
 extern struct rz_bin_write_t rz_bin_write_elf;
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RzBuffer *buf) {
 	ut8 tmp[SCGCMAG + 1];
 	int r = rz_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	return r > SCGCMAG && !memcmp (tmp, CGCMAG, SCGCMAG) && tmp[4] != 2;
 }
 
-static RBuffer* create(RzBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
+static RzBuffer* create(RzBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
 	ut32 filesize, code_va, code_pa, phoff;
 	ut32 p_start, p_phoff, p_phdr;
 	ut32 p_ehdrsz, p_phdrsz;
 	ut16 ehdrsz, phdrsz;
 	ut32 p_vaddr, p_paddr, p_fs, p_fs2;
 	ut32 baddr = 0x8048000;
-	RBuffer *buf = rz_buf_new ();
+	RzBuffer *buf = rz_buf_new ();
 
 #define B(x,y) rz_buf_append_bytes(buf,(const ut8*)(x),y)
 #define D(x) rz_buf_append_ut32(buf,x)

@@ -3,7 +3,7 @@
 
 bool test_r_id_storage_add0(void) {
 	char *str = "lol";
-	RIDStorage *ids = rz_id_storage_new (5, 23);
+	RzIDStorage *ids = rz_id_storage_new (5, 23);
 	ut32 id;
 	bool success = rz_id_storage_add (ids, str, &id);
 	void *ptr = rz_id_storage_get (ids, id);
@@ -14,7 +14,7 @@ bool test_r_id_storage_add0(void) {
 
 bool test_r_id_storage_add1(void) {
 	char *str = "lol";
-	RIDStorage *ids = rz_id_storage_new (0, 4);
+	RzIDStorage *ids = rz_id_storage_new (0, 4);
 	ut32 id;
 	rz_id_storage_add (ids, str, &id);
 	rz_id_storage_add (ids, str, &id);
@@ -28,7 +28,7 @@ bool test_r_id_storage_add1(void) {
 
 bool test_r_id_storage_set(void) {
 	char *str = "lol";
-	RIDStorage *ids = rz_id_storage_new (5, 23);
+	RzIDStorage *ids = rz_id_storage_new (5, 23);
 	rz_id_storage_set (ids, str, 1);
 	void *ptr = rz_id_storage_get (ids, 1);
 	rz_id_storage_free (ids);
@@ -37,7 +37,7 @@ bool test_r_id_storage_set(void) {
 }
 
 bool test_r_id_storage_delete(void) {
-	RIDStorage *ids = rz_id_storage_new (5, 23);
+	RzIDStorage *ids = rz_id_storage_new (5, 23);
 	ut32 id;
 	rz_id_storage_add (ids, "lol", &id);
 	rz_id_storage_delete (ids, id);
@@ -49,7 +49,7 @@ bool test_r_id_storage_delete(void) {
 
 bool test_r_id_storage_take0(void) {
 	char *str = "lol";
-	RIDStorage *ids = rz_id_storage_new (5, 23);
+	RzIDStorage *ids = rz_id_storage_new (5, 23);
 	ut32 id;
 	rz_id_storage_add (ids, str, &id);
 	void *ptr = rz_id_storage_take (ids, id);
@@ -60,7 +60,7 @@ bool test_r_id_storage_take0(void) {
 
 bool test_r_id_storage_take1(void) {
 	char *str = "lol";
-	RIDStorage *ids = rz_id_storage_new (5, 23);
+	RzIDStorage *ids = rz_id_storage_new (5, 23);
 	ut32 id;
 	rz_id_storage_add (ids, str, &id);
 	rz_id_storage_take (ids, id);

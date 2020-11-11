@@ -87,11 +87,11 @@ typedef struct rz_io_t {
 	int cached;
 	bool cachemode; // write in cache all the read operations (EXPERIMENTAL)
 	int p_cache;
-	RIDPool *map_ids;
+	RzIDPool *map_ids;
 	RzPVector maps; //from tail backwards maps with higher priority are found
 	RzPVector map_skyline; // map parts that are not covered by others
-	RIDStorage *files;
-	RCache *buffer;
+	RzIDStorage *files;
+	RzCache *buffer;
 	RzList *cache;	//sdblist?
 	RBNode cacheTree;
 	ut8 *write_mask;
@@ -174,18 +174,18 @@ typedef struct rz_io_map_t {
 	int fd;
 	int perm;
 	ut32 id;
-	RInterval itv;
+	RzInterval itv;
 	ut64 delta; // paddr = itv.addr + delta
 	char *name;
 } RzIOMap;
 
 typedef struct rz_io_map_skyline_t {
 	RzIOMap *map;
-	RInterval itv;
+	RzInterval itv;
 } RzIOMapSkyline;
 
 typedef struct rz_io_cache_t {
-	RInterval itv;
+	RzInterval itv;
 	ut8 *data;
 	ut8 *odata;
 	int written;
@@ -318,7 +318,7 @@ RZ_API RzIODesc *rz_io_open_nomap (RzIO *io, const char *uri, int flags, int mod
 RZ_API RzIODesc *rz_io_open (RzIO *io, const char *uri, int flags, int mode);
 RZ_API RzIODesc *rz_io_open_at (RzIO *io, const char *uri, int flags, int mode, ut64 at);
 RZ_API RzList *rz_io_open_many (RzIO *io, const char *uri, int flags, int mode);
-RZ_API RzIODesc* rz_io_open_buffer (RzIO *io, RBuffer *b, int flags, int mode);
+RZ_API RzIODesc* rz_io_open_buffer (RzIO *io, RzBuffer *b, int flags, int mode);
 RZ_API bool rz_io_close (RzIO *io);
 RZ_API bool rz_io_reopen (RzIO *io, int fd, int flags, int mode);
 RZ_API int rz_io_close_all (RzIO *io);

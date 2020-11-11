@@ -56,7 +56,7 @@ typedef struct rz_sign_item_t {
 	char *name;
 	char *realname;
 	char *comment;
-	const RSpace *space;
+	const RzSpace *space;
 
 	RzSignBytes *bytes;
 	RzSignGraph *graph;
@@ -148,7 +148,7 @@ RZ_API RzList *rz_sign_fcn_xrefs(RzAnal *a, RzAnalFunction *fcn);
 RZ_API RzList *rz_sign_fcn_vars(RzAnal *a, RzAnalFunction *fcn);
 RZ_API RzList *rz_sign_fcn_types(RzAnal *a, RzAnalFunction *fcn);
 
-RZ_API int rz_sign_is_flirt(RBuffer *buf);
+RZ_API int rz_sign_is_flirt(RzBuffer *buf);
 RZ_API void rz_sign_flirt_dump(const RzAnal *anal, const char *flirt_file);
 RZ_API void rz_sign_flirt_scan(RzAnal *anal, const char *flirt_file);
 

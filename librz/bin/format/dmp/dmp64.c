@@ -163,7 +163,7 @@ void rz_bin_dmp64_free(struct rz_bin_dmp64_obj_t *obj) {
 	free (obj);
 }
 
-struct rz_bin_dmp64_obj_t *rz_bin_dmp64_new_buf(RBuffer* buf) {
+struct rz_bin_dmp64_obj_t *rz_bin_dmp64_new_buf(RzBuffer* buf) {
 	struct rz_bin_dmp64_obj_t *obj = RZ_NEW0 (struct rz_bin_dmp64_obj_t);
 	if (!obj) {
 		return NULL;

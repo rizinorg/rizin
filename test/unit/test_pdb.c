@@ -14,7 +14,7 @@
 	} while (0)
 
 // copy from cbin.c modified to get pdb back
-int pdb_info(const char *file, RPdb *pdb) {
+int pdb_info(const char *file, RzPdb *pdb) {
 	pdb->cb_printf = rz_cons_printf;
 	if (!init_pdb_parser (pdb, file)) {
 		return false;
@@ -27,7 +27,7 @@ int pdb_info(const char *file, RPdb *pdb) {
 	return true;
 }
 
-int pdb_info_save_types(RzAnal *anal, const char *file, RPdb *pdb) {
+int pdb_info_save_types(RzAnal *anal, const char *file, RzPdb *pdb) {
 	pdb->cb_printf = rz_cons_printf;
 	if (!init_pdb_parser (pdb, file)) {
 		return false;
@@ -43,7 +43,7 @@ int pdb_info_save_types(RzAnal *anal, const char *file, RPdb *pdb) {
 }
 
 bool test_pdb_tpi_cpp(void) {
-	RPdb pdb = RZ_EMPTY;
+	RzPdb pdb = RZ_EMPTY;
 	mu_assert_true (pdb_info ("bins/pdb/Project1.pdb", &pdb), "pdb parsing failed");
 
 	RzList *plist = pdb.pdb_streams;
@@ -252,7 +252,7 @@ bool test_pdb_tpi_cpp(void) {
 }
 
 bool test_pdb_tpi_rust(void) {
-	RPdb pdb = RZ_EMPTY;
+	RzPdb pdb = RZ_EMPTY;
 	mu_assert_true (pdb_info ("bins/pdb/ghidra_rust_pdb_bug.pdb", &pdb), "pdb parsing failed");
 
 	RzList *plist = pdb.pdb_streams;
@@ -461,7 +461,7 @@ bool test_pdb_tpi_rust(void) {
 }
 
 bool test_pdb_type_save(void) {
-	RPdb pdb = RZ_EMPTY;
+	RzPdb pdb = RZ_EMPTY;
 	RzAnal *anal = rz_anal_new ();
 	mu_assert_true (pdb_info_save_types (anal, "bins/pdb/Project1.pdb", &pdb), "pdb parsing failed");
 	check_kv ("R2_TEST_ENUM", "enum");

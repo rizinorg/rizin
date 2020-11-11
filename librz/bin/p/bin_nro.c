@@ -30,7 +30,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return bf? rz_buf_read_le32_at (bf->buf, NRO_OFFSET_MODMEMOFF): 0;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	ut8 magic[4];
 	if (rz_buf_read_at (b, NRO_OFF (magic), magic, sizeof (magic)) == 4) {
 		return fileType (magic) != NULL;
@@ -38,7 +38,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	// XX bf->buf vs b :D this load_b
 	RzBinNXOObj *bin = RZ_NEW0 (RzBinNXOObj);
 	if (bin) {
@@ -87,7 +87,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *ptr = NULL;
-	RBuffer *b = bf->buf;
+	RzBuffer *b = bf->buf;
 	if (!bf->o->info) {
 		return NULL;
 	}

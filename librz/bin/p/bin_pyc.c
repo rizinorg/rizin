@@ -11,7 +11,7 @@ static struct pyc_version version;
 RzList *interned_table = NULL;
 static RzList *sections_cache = NULL;
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	if (rz_buf_size (b) > 4) {
 		ut32 buf;
 		rz_buf_read_at (b, 0, (ut8 *)&buf, sizeof (buf));
@@ -21,11 +21,11 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (buf);
 }
 
-static ut64 get_entrypoint(RBuffer *buf) {
+static ut64 get_entrypoint(RzBuffer *buf) {
 	ut8 b;
 	ut64 result;
 	int addr;
@@ -119,7 +119,7 @@ static RzList *symbols(RzBinFile *arch) {
 		rz_list_free (sections);
 		return NULL;
 	}
-	RBuffer *buffer = arch->buf;
+	RzBuffer *buffer = arch->buf;
 	rz_buf_seek (buffer, code_start_offset, RZ_BUF_SET);
 	pyc_get_sections_symbols (sections, symbols, cobjs, buffer, version.magic);
 	sections_cache = sections;

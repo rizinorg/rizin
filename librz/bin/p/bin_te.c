@@ -16,7 +16,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	rz_return_val_if_fail (bf && bin_obj && b, false);
 	ut64 sz = rz_buf_size (b);
 	if (sz == 0 || sz == UT64_MAX) {
@@ -139,7 +139,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	ut8 buf[2];
 	if (rz_buf_read_at (b, 0, buf, 2) == 2) {
 		return !memcmp (buf, "\x56\x5a", 2);

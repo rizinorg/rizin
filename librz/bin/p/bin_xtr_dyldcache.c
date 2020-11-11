@@ -12,7 +12,7 @@ static RzList * extractall(RzBin *bin);
 static RzBinXtrData * oneshot(RzBin *bin, const ut8 *buf, ut64 size, int idx);
 static RzList * oneshotall(RzBin *bin, const ut8 *buf, ut64 size);
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RzBuffer *buf) {
 	ut8 b[4] = {0};
 	rz_buf_read_at (buf, 0, b, sizeof (b));
 	return !memcmp (buf, "dyld", 4);

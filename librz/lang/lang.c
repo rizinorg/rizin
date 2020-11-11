@@ -246,11 +246,11 @@ RZ_API int rz_lang_prompt(RzLang *lang) {
 		}
 	}
 	/* init line */
-	RLine *line = rz_line_singleton ();
-	RLineHistory hist = line->history;
-	RLineHistory histnull = {0};
-	RLineCompletion oc = line->completion;
-	RLineCompletion ocnull = {0};
+	RzLine *line = rz_line_singleton ();
+	RzLineHistory hist = line->history;
+	RzLineHistory histnull = {0};
+	RzLineCompletion oc = line->completion;
+	RzLineCompletion ocnull = {0};
 	char *prompt = strdup (line->prompt);
 	line->completion = ocnull;
 	line->history = histnull;

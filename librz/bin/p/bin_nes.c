@@ -5,7 +5,7 @@
 #include "nes/nes_specs.h"
 
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	if (rz_buf_size (b) > 4) {
 		ut8 buf[4];
 		rz_buf_read_at (b, 0, buf, sizeof (buf));
@@ -14,7 +14,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (buf);
 }
 

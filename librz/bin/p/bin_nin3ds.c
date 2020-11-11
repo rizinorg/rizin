@@ -10,13 +10,13 @@
 
 static struct n3ds_firm_hdr loaded_header;
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	ut8 magic[4];
 	rz_buf_read_at (b, 0, magic, sizeof (magic));
 	return (!memcmp (magic, "FIRM", 4));
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	if (rz_buf_read_at (b, 0, (ut8*)&loaded_header, sizeof (loaded_header)) == sizeof (loaded_header)) {
 		*bin_obj = &loaded_header;
 		return true;

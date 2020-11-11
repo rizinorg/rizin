@@ -397,7 +397,7 @@ RZ_API int rz_str_word_set0(char *str) {
 RZ_API int rz_str_word_set0_stack(char *str) {
 	int i;
 	char *p, *q;
-	RStack *s;
+	RzStack *s;
 	void *pop;
 	if (!str || !*str) {
 		return 0;

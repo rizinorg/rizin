@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_core.h> // just to get the RPrint instance
+#include <rz_core.h> // just to get the RzPrint instance
 #include <rz_debug.h>
 #include <rz_cons.h>
 #include <rz_reg.h>
@@ -87,7 +87,7 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 RZ_API bool rz_debug_reg_list(RzDebug *dbg, int type, int size, int rad, const char *use_color) {
 	int delta, cols, n = 0;
 	const char *fmt, *fmt2, *kwhites;
-	RPrint *pr = NULL;
+	RzPrint *pr = NULL;
 	int colwidth = 20;
 	RzListIter *iter;
 	RzRegItem *item;

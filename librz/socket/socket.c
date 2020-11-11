@@ -218,7 +218,7 @@ RZ_API bool rz_socket_spawn(RzSocket *s, const char *cmd, unsigned int timeout) 
 		char *profile = rz_str_newf (
 				"system=%s\n"
 				"listen=%d\n", cmd, port);
-		RRunProfile *rp = rz_run_new (profile);
+		RzRunProfile *rp = rz_run_new (profile);
 		rz_run_start (rp);
 		rz_run_free (rp);
 		free (profile);

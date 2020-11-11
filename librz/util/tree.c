@@ -3,7 +3,7 @@
 #include <rz_util.h>
 
 static void tree_dfs_node (RTreeNode *r, RTreeVisitor *vis) {
-	RStack *s;
+	RzStack *s;
 	RzListIter *it;
 	RTreeNode *n;
 

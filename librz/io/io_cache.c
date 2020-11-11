@@ -5,7 +5,7 @@
 #include "rz_io.h"
 
 #if 0
-#define CACHE_CONTAINER(x) container_of ((RBNode*)x, RCache, rb)
+#define CACHE_CONTAINER(x) container_of ((RBNode*)x, RzCache, rb)
 
 static void _fcn_tree_calc_max_addr(RBNode *node) {
 	RzIOCache *c = CACHE_CONTAINER (node);
@@ -49,7 +49,7 @@ RZ_API void rz_io_cache_fini (RzIO *io) {
 RZ_API void rz_io_cache_commit(RzIO *io, ut64 from, ut64 to) {
 	RzListIter *iter;
 	RzIOCache *c;
-	RInterval range = (RInterval){from, to - from};
+	RzInterval range = (RzInterval){from, to - from};
 	rz_list_foreach (io->cache, iter, c) {
 		// if (from <= c->to - 1 && c->from <= to - 1) {
 		if (rz_itv_overlap (c->itv, range)) {
@@ -75,7 +75,7 @@ RZ_API int rz_io_cache_invalidate(RzIO *io, ut64 from, ut64 to) {
 	int invalidated = 0;
 	RzListIter *iter, *tmp;
 	RzIOCache *c;
-	RInterval range = (RInterval){from, to - from};
+	RzInterval range = (RzInterval){from, to - from};
 	rz_list_foreach_prev_safe (io->cache, iter, tmp, c) {
 		if (rz_itv_overlap (c->itv, range)) {
 			int cached = io->cached;
@@ -148,7 +148,7 @@ RZ_API bool rz_io_cache_write(RzIO *io, ut64 addr, const ut8 *buf, int len) {
 	if (!ch) {
 		return false;
 	}
-	ch->itv = (RInterval){addr, len};
+	ch->itv = (RzInterval){addr, len};
 	ch->odata = (ut8*)calloc (1, len + 1);
 	if (!ch->odata) {
 		free (ch);
@@ -178,7 +178,7 @@ RZ_API bool rz_io_cache_read(RzIO *io, ut64 addr, ut8 *buf, int len) {
 	bool covered = false;
 	RzListIter *iter;
 	RzIOCache *c;
-	RInterval range = (RInterval){ addr, len };
+	RzInterval range = (RzInterval){ addr, len };
 	rz_list_foreach (io->cache, iter, c) {
 		if (rz_itv_overlap (c->itv, range)) {
 			const ut64 begin = rz_itv_begin (c->itv);

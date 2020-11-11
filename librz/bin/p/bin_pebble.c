@@ -35,7 +35,7 @@ typedef struct  {
 	ut8 uuid[16];
 }) PebbleAppInfo;
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	ut8 magic[8];
 	if (rz_buf_read_at (b, 0, magic, sizeof (magic)) != sizeof (magic)) {
 		return false;
@@ -43,7 +43,7 @@ static bool check_buffer(RBuffer *b) {
 	return !memcmp (magic, "PBLAPP\x00\x00", 8);
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb){
 	return check_buffer (b);
 }
 

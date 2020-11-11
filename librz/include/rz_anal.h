@@ -355,7 +355,7 @@ typedef struct rz_anal_meta_item_t {
 	RzAnalMetaType type;
 	int subtype;
 	char *str;
-	const RSpace *space;
+	const RzSpace *space;
 } RzAnalMetaItem;
 
 // anal
@@ -655,7 +655,7 @@ typedef struct rz_anal_t {
 	HtUP *dict_refs;
 	HtUP *dict_xrefs;
 	bool recursive_noreturn; // anal.rnr
-	RSpaces zign_spaces;
+	RzSpaces zign_spaces;
 	char *zign_path; // dir.zigns
 	PrintfCallback cb_printf;
 	//moved from RzAnalFcn
@@ -665,8 +665,8 @@ typedef struct rz_anal_t {
 	RBTree/*<RzAnalArchHintRecord>*/ arch_hints;
 	RBTree/*<RzAnalArchBitsRecord>*/ bits_hints;
 	RHintCb hint_cbs;
-	RIntervalTree meta;
-	RSpaces meta_spaces;
+	RzIntervalTree meta;
+	RzSpaces meta_spaces;
 	Sdb *sdb_cc; // calling conventions
 	Sdb *sdb_classes;
 	Sdb *sdb_classes_attrs;
@@ -1185,7 +1185,7 @@ typedef struct rz_anal_esil_t {
 	/* native ops and custom ops */
 	HtPP *ops;
 	char *current_opstr;
-	RIDStorage *sources;
+	RzIDStorage *sources;
 	SdbMini *interrupts;
 	//this is a disgusting workaround, because we have no ht-like storage without magic keys, that you cannot use, with int-keys
 	RzAnalEsilInterrupt *intr0;
@@ -1840,7 +1840,7 @@ RZ_API char *rz_anal_data_to_string(RzAnalData *d, RzConsPrintablePalette *pal);
  * A meta item from 0x42 to 0x42 has a size of 1. Items with size 0 do not exist.
  * Meta items are allowed to overlap and the internal data structure allows for multiple meta items
  * starting at the same address.
- * Meta items are saved in an RIntervalTree. To access the interval of an item, use the members of RIntervalNode.
+ * Meta items are saved in an RzIntervalTree. To access the interval of an item, use the members of RzIntervalNode.
  */
 
 static inline ut64 rz_meta_item_size(ut64 start, ut64 end) {
@@ -1848,7 +1848,7 @@ static inline ut64 rz_meta_item_size(ut64 start, ut64 end) {
 	return end - start + 1;
 }
 
-static inline ut64 rz_meta_node_size(RIntervalNode *node) {
+static inline ut64 rz_meta_node_size(RzIntervalNode *node) {
 	return rz_meta_item_size (node->start, node->end);
 }
 
@@ -1877,22 +1877,22 @@ RZ_API RzAnalMetaItem *rz_meta_get_at(RzAnal *a, ut64 addr, RzAnalMetaType type,
 
 // Returns the node for one meta item with the given type that contains addr in the current space or NULL.
 // To get all the nodes, use rz_meta_get_all_in().
-RZ_API RIntervalNode *rz_meta_get_in(RzAnal *a, ut64 addr, RzAnalMetaType type);
+RZ_API RzIntervalNode *rz_meta_get_in(RzAnal *a, ut64 addr, RzAnalMetaType type);
 
 // Returns all nodes for items starting at the given address in the current space.
-RZ_API RzPVector/*<RIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_at(RzAnal *a, ut64 at);
+RZ_API RzPVector/*<RzIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_at(RzAnal *a, ut64 at);
 
 // Returns all nodes for items with the given type containing the given address in the current space.
-RZ_API RzPVector/*<RIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_in(RzAnal *a, ut64 at, RzAnalMetaType type);
+RZ_API RzPVector/*<RzIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_in(RzAnal *a, ut64 at, RzAnalMetaType type);
 
 // Returns all nodes for items with the given type intersecting the given interval in the current space.
-RZ_API RzPVector/*<RIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_intersect(RzAnal *a, ut64 start, ut64 size, RzAnalMetaType type);
+RZ_API RzPVector/*<RzIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_intersect(RzAnal *a, ut64 start, ut64 size, RzAnalMetaType type);
 
 // Delete all meta items in the given space
-RZ_API void rz_meta_space_unset_for(RzAnal *a, const RSpace *space);
+RZ_API void rz_meta_space_unset_for(RzAnal *a, const RzSpace *space);
 
 // Returns the number of meta items in the given space
-RZ_API int rz_meta_space_count_for(RzAnal *a, const RSpace *space);
+RZ_API int rz_meta_space_count_for(RzAnal *a, const RzSpace *space);
 
 // Shift all meta items by the given delta, for rebasing between different memory layouts.
 RZ_API void rz_meta_rebase(RzAnal *anal, ut64 diff);
@@ -1997,9 +1997,9 @@ RZ_API bool rz_anal_noreturn_drop(RzAnal *anal, const char *expr);
 RZ_API bool rz_anal_noreturn_at_addr(RzAnal *anal, ut64 addr);
 
 /* zign spaces */
-RZ_API int rz_sign_space_count_for(RzAnal *a, const RSpace *space);
-RZ_API void rz_sign_space_unset_for(RzAnal *a, const RSpace *space);
-RZ_API void rz_sign_space_rename_for(RzAnal *a, const RSpace *space, const char *oname, const char *nname);
+RZ_API int rz_sign_space_count_for(RzAnal *a, const RzSpace *space);
+RZ_API void rz_sign_space_unset_for(RzAnal *a, const RzSpace *space);
+RZ_API void rz_sign_space_rename_for(RzAnal *a, const RzSpace *space, const char *oname, const char *nname);
 
 /* vtables */
 typedef struct {
@@ -2128,7 +2128,7 @@ RZ_API RzStrBuf *rz_anal_esil_dfg_filter_expr(RzAnal *anal, const char *expr, co
 RZ_API RzList *rz_anal_types_from_fcn(RzAnal *anal, RzAnalFunction *fcn);
 
 RZ_API RzAnalBaseType *rz_anal_get_base_type(RzAnal *anal, const char *name);
-RZ_API void rz_parse_pdb_types(const RzAnal *anal, const RPdb *pdb);
+RZ_API void rz_parse_pdb_types(const RzAnal *anal, const RzPdb *pdb);
 RZ_API void rz_anal_save_base_type(const RzAnal *anal, const RzAnalBaseType *type);
 RZ_API void rz_anal_base_type_free(RzAnalBaseType *type);
 RZ_API RzAnalBaseType *rz_anal_base_type_new(RzAnalBaseTypeKind kind);

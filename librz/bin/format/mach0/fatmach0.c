@@ -109,7 +109,7 @@ struct rz_bin_fatmach0_obj_t* rz_bin_fatmach0_new(const char* file) {
 	return bin;
 }
 
-struct rz_bin_fatmach0_obj_t* rz_bin_fatmach0_from_buffer_new(RBuffer *b) {
+struct rz_bin_fatmach0_obj_t* rz_bin_fatmach0_from_buffer_new(RzBuffer *b) {
 	rz_return_val_if_fail (b, NULL);
 	struct rz_bin_fatmach0_obj_t *bo = RZ_NEW0 (struct rz_bin_fatmach0_obj_t);
 	if (bo) {

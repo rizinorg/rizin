@@ -7,7 +7,7 @@
 #include "../i/private.h"
 #include "psxexe/psxexe.h"
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	ut8 magic[PSXEXE_ID_LEN];
 	if (rz_buf_read_at (b, 0, magic, sizeof (magic)) == PSXEXE_ID_LEN) {
 		return !memcmp (magic, PSXEXE_ID, PSXEXE_ID_LEN);
@@ -15,7 +15,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	return check_buffer (b);
 }
 

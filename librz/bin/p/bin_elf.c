@@ -13,7 +13,7 @@ static void headers32(RzBinFile *bf) {
 	p ("0x00000020  ShOff       0x%08x\n", rz_buf_read_le32_at (bf->buf, 0x20));
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RzBuffer *buf) {
 	ut8 b[5] = {0};
 	rz_buf_read_at (buf, 0, b, sizeof (b));
 	return !memcmp (b, ELFMAG, SELFMAG) && b[4] != 2;
@@ -22,7 +22,7 @@ static bool check_buffer(RBuffer *buf) {
 extern struct rz_bin_dbginfo_t rz_bin_dbginfo_elf;
 extern struct rz_bin_write_t rz_bin_write_elf;
 
-static RBuffer* create(RzBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
+static RzBuffer* create(RzBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
 	rz_return_val_if_fail (bin && opt && opt->arch, NULL);
 
 	ut32 filesize, code_va, code_pa, phoff;
@@ -31,7 +31,7 @@ static RBuffer* create(RzBin* bin, const ut8 *code, int codelen, const ut8 *data
 	ut16 ehdrsz, phdrsz;
 	ut32 p_vaddr, p_paddr, p_fs, p_fs2;
 	ut32 baddr;
-	RBuffer *buf = rz_buf_new ();
+	RzBuffer *buf = rz_buf_new ();
 
 	bool is_arm = !strcmp (opt->arch, "arm");
 	// XXX: hardcoded

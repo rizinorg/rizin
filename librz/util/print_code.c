@@ -15,14 +15,14 @@ static const char* bits_to_c_code_fmtstr(int bits) {
 	return "0x%02x";
 }
 
-static int get_instruction_size(RPrint *p, ut64 at) {
+static int get_instruction_size(RzPrint *p, ut64 at) {
 	char *is = p->coreb.cmdstrf (p->coreb.core, "ao @ 0x%08" PFMT64x "~^size[1]", at);
 	int res = atoi (is);
 	free (is);
 	return res;
 }
 
-static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) {
+static void print_c_instructions(RzPrint *p, ut64 addr, const ut8 *buf, int len) {
 	const char *fmtstr = bits_to_c_code_fmtstr (8);
 
 	p->cb_printf ("#define _BUFFER_SIZE %d\n", len);
@@ -64,7 +64,7 @@ static void print_c_instructions(RPrint *p, ut64 addr, const ut8 *buf, int len) 
 	p->cb_printf ("};\n");
 }
 
-static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, int w) {
+static void print_c_code(RzPrint *p, ut64 addr, const ut8 *buf, int len, int ws, int w) {
 	size_t i;
 
 	ws = RZ_MAX (1, RZ_MIN (ws, 8));
@@ -94,7 +94,7 @@ static void print_c_code(RPrint *p, ut64 addr, const ut8 *buf, int len, int ws, 
 	p->cb_printf ("\n};\n");
 }
 
-RZ_API void rz_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang) {
+RZ_API void rz_print_code(RzPrint *p, ut64 addr, const ut8 *buf, int len, char lang) {
 	int i, w = (int)(p->cols * 0.7);
 	if (w < 1) {
 		w = 1;

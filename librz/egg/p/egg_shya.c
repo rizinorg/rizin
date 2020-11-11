@@ -11,8 +11,8 @@
  - virtual machine
 */
 
-static RBuffer *build (RzEgg *egg) {
-	RBuffer *buf = rz_buf_new ();
+static RzBuffer *build (RzEgg *egg) {
+	RzBuffer *buf = rz_buf_new ();
 	char *key = rz_egg_option_get (egg, "key");
 	char *seed = rz_egg_option_get (egg, "seed");
 	eprintf ("TODO: shoorisu yagana shellcode encoder\n");

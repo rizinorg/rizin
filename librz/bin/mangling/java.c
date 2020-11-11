@@ -9,7 +9,7 @@ RZ_API char *rz_bin_demangle_java(const char *str) {
 	const char *ptr;
 	int is_ret = 0;
 	int wlen = 0;
-	RBuffer *buf;
+	RzBuffer *buf;
 	int n = 0;
 	char *ret;
 

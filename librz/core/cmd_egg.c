@@ -41,7 +41,7 @@ static void cmd_egg_option(RzEgg *egg, const char *key, const char *input) {
 	}
 }
 
-static void showBuffer(RBuffer *b) {
+static void showBuffer(RzBuffer *b) {
 	int i;
 	if (b && rz_buf_size (b) > 0) {
 		rz_buf_seek (b, 0, RZ_BUF_SET);
@@ -55,7 +55,7 @@ static void showBuffer(RBuffer *b) {
 #if 0
 static int compileShellcode(RzEgg *egg, const char *input){
 	int i = 0;
-	RBuffer *b;
+	RzBuffer *b;
 	if (!rz_egg_shellcode (egg, input)) {
 		eprintf ("Unknown shellcode '%s'\n", input);
 		return 1;
@@ -84,7 +84,7 @@ static int compileShellcode(RzEgg *egg, const char *input){
 #endif
 
 static int cmd_egg_compile(RzEgg *egg) {
-	RBuffer *b;
+	RzBuffer *b;
 	int ret = false;
 	char *p = rz_egg_option_get (egg, "egg.shellcode");
 	if (p && *p) {
@@ -142,7 +142,7 @@ static int cmd_egg(void *data, const char *input) {
 	case 's': // "gs"
 		// TODO: pass args to rz_core_syscall without vararg
 		if (input[1] == ' ') {
-			RBuffer *buf = NULL;
+			RzBuffer *buf = NULL;
 			const char *ooaa = input + 2;
 			while (IS_WHITESPACE (*ooaa) && *ooaa) ooaa++;
 			oa = strdup (ooaa);

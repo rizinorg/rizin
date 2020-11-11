@@ -19,7 +19,7 @@
 #define KEY_SPACESTACK "spacestack"
 #define KEY_SPACES "spaces"
 
-RZ_API void rz_serialize_spaces_save(RZ_NONNULL Sdb *db, RZ_NONNULL RSpaces *spaces) {
+RZ_API void rz_serialize_spaces_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzSpaces *spaces) {
 	sdb_set (db, KEY_NAME, spaces->name, 0);
 
 	PJ *j = pj_new ();
@@ -39,19 +39,19 @@ RZ_API void rz_serialize_spaces_save(RZ_NONNULL Sdb *db, RZ_NONNULL RSpaces *spa
 
 	Sdb *db_spaces = sdb_ns (db, KEY_SPACES, true);
 	RBIter rbiter;
-	RSpace *space;
-	rz_rbtree_foreach (spaces->spaces, rbiter, space, RSpace, rb) {
+	RzSpace *space;
+	rz_rbtree_foreach (spaces->spaces, rbiter, space, RzSpace, rb) {
 		sdb_set (db_spaces, space->name, "s", 0);
 	}
 }
 
 static bool foreach_space_cb(void *user, const char *k, const char *v) {
-	RSpaces *spaces = user;
+	RzSpaces *spaces = user;
 	rz_spaces_add (spaces, k);
 	return true;
 }
 
-RZ_API bool rz_serialize_spaces_load(RZ_NONNULL Sdb *db, RZ_NONNULL RSpaces *spaces, bool load_name, RZ_NULLABLE RzSerializeResultInfo *res) {
+RZ_API bool rz_serialize_spaces_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzSpaces *spaces, bool load_name, RZ_NULLABLE RzSerializeResultInfo *res) {
 	if (load_name) {
 		char *old_name = (char *)spaces->name;
 		spaces->name = sdb_get (db, KEY_NAME, NULL);
@@ -97,7 +97,7 @@ RZ_API bool rz_serialize_spaces_load(RZ_NONNULL Sdb *db, RZ_NONNULL RSpaces *spa
 			ret = false;
 			goto beach;
 		}
-		RSpace *space = rz_spaces_get (spaces, stack_element->str_value);
+		RzSpace *space = rz_spaces_get (spaces, stack_element->str_value);
 		rz_list_append (spaces->spacestack, space ? space->name : "*");
 	}
 

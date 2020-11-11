@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
 	const char *arch = "x86";
 	int bits = 32;
 	int c, i;
-	RBuffer *b;
+	RzBuffer *b;
 	RzEgg *egg = rz_egg_new ();
 
         while ((c = getopt (argc, argv, "ha:b:")) != -1) {

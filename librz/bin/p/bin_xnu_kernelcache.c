@@ -17,7 +17,7 @@
 typedef bool (*ROnRebaseFunc) (ut64 offset, ut64 decorated_addr, void *user_data);
 
 typedef struct _RKernelCacheObj {
-	RBuffer *cache_buf;
+	RzBuffer *cache_buf;
 	RCFValueDict *prelink_info;
 	ut64 pa2va_exec;
 	ut64 pa2va_data;
@@ -126,10 +126,10 @@ typedef struct _RKmodInfo {
 static ut64 p_ptr (ut64 decorated_addr, RKernelCacheObj *obj);
 static ut64 rz_ptr (ut8 *buf, RKernelCacheObj *obj);
 
-static RRebaseInfo *rz_rebase_info_new_from_mach0(RBuffer *cache_buf, struct MACH0_(obj_t) *mach0);
+static RRebaseInfo *rz_rebase_info_new_from_mach0(RzBuffer *cache_buf, struct MACH0_(obj_t) *mach0);
 static void rz_rebase_info_free(RRebaseInfo *info);
 static void rz_rebase_info_populate(RRebaseInfo *info, RKernelCacheObj *obj);
-static ut64 iterate_rebase_list(RBuffer *cache_buf, ut64 multiplier, ut64 start_offset, ROnRebaseFunc func, void *user_data);
+static ut64 iterate_rebase_list(RzBuffer *cache_buf, ut64 multiplier, ut64 start_offset, ROnRebaseFunc func, void *user_data);
 static ut64 rz_rebase_offset_to_paddr (RKernelCacheObj *obj, struct section_t *sections, ut64 offset);
 static void swizzle_io_read(RKernelCacheObj *obj, RzIO *io);
 static int kernelcache_io_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count);
@@ -176,8 +176,8 @@ static void rz_kernel_cache_free(RKernelCacheObj *obj);
 
 static RzList * pending_bin_files = NULL;
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	RBuffer *fbuf = rz_buf_ref (buf);
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	RzBuffer *fbuf = rz_buf_ref (buf);
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default) (&opts, bf);
 	struct MACH0_(obj_t) *main_mach0 = MACH0_(new_buf) (fbuf, &opts);
@@ -786,7 +786,7 @@ static RKext *rz_kext_index_vget(RKextIndex *index, ut64 vaddr) {
 }
 
 static struct MACH0_(obj_t) *create_kext_mach0(RKernelCacheObj *obj, RKext *kext) {
-	RBuffer *buf = rz_buf_new_slice (obj->cache_buf, kext->range.offset, rz_buf_size (obj->cache_buf) - kext->range.offset);
+	RzBuffer *buf = rz_buf_new_slice (obj->cache_buf, kext->range.offset, rz_buf_size (obj->cache_buf) - kext->range.offset);
 	struct MACH0_(opts_t) opts;
 	opts.verbose = true;
 	opts.header_at = 0;
@@ -796,7 +796,7 @@ static struct MACH0_(obj_t) *create_kext_mach0(RKernelCacheObj *obj, RKext *kext
 }
 
 static struct MACH0_(obj_t) *create_kext_shared_mach0(RKernelCacheObj *obj, RKext *kext) {
-	RBuffer *buf = rz_buf_ref (obj->cache_buf);
+	RzBuffer *buf = rz_buf_ref (obj->cache_buf);
 	struct MACH0_(opts_t) opts;
 	opts.verbose = false;
 	opts.header_at = kext->range.offset;
@@ -1004,7 +1004,7 @@ static RzBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type) {
 	return ptr;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	if (rz_buf_size (b) > 4) {
 		ut8 buf[4];
 		rz_buf_read_at (b, 0, buf, sizeof (buf));
@@ -1803,7 +1803,7 @@ static void rz_kernel_cache_free(RKernelCacheObj *obj) {
 	RZ_FREE (obj);
 }
 
-static RRebaseInfo *rz_rebase_info_new_from_mach0(RBuffer *cache_buf, struct MACH0_(obj_t) *mach0) {
+static RRebaseInfo *rz_rebase_info_new_from_mach0(RzBuffer *cache_buf, struct MACH0_(obj_t) *mach0) {
 	RFileRange *rebase_ranges = NULL;
 	struct section_t *sections = NULL;
 	if (!(sections = MACH0_(get_sections) (mach0))) {
@@ -1937,7 +1937,7 @@ static ut64 rz_rebase_offset_to_paddr (RKernelCacheObj *obj, struct section_t *s
 	return offset;
 }
 
-static ut64 iterate_rebase_list(RBuffer *cache_buf, ut64 multiplier, ut64 start_offset, ROnRebaseFunc func, void *user_data) {
+static ut64 iterate_rebase_list(RzBuffer *cache_buf, ut64 multiplier, ut64 start_offset, ROnRebaseFunc func, void *user_data) {
 	ut8 bytes[8];
 	ut64 cursor = start_offset;
 

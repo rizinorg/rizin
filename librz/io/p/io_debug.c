@@ -240,10 +240,10 @@ static void handle_posix_error(int err) {
 }
 #endif
 
-static RRunProfile* _get_run_profile(RzIO *io, int bits, char **argv) {
+static RzRunProfile* _get_run_profile(RzIO *io, int bits, char **argv) {
 	char *expr = NULL;
 	int i;
-	RRunProfile *rp = rz_run_new (NULL);
+	RzRunProfile *rp = rz_run_new (NULL);
 	if (!rp) {
 		return NULL;
 	}
@@ -290,7 +290,7 @@ static RRunProfile* _get_run_profile(RzIO *io, int bits, char **argv) {
 
 #if __APPLE__ && !__POWERPC__
 
-static void handle_posix_redirection(RRunProfile *rp, posix_spawn_file_actions_t *fileActions) {
+static void handle_posix_redirection(RzRunProfile *rp, posix_spawn_file_actions_t *fileActions) {
 	const int mode = S_IRUSR | S_IWUSR;
 	if (rp->_stdin) {
 		posix_spawn_file_actions_addopen (fileActions, STDIN_FILENO, rp->_stdin, O_RDONLY, mode);
@@ -335,7 +335,7 @@ static int fork_and_ptraceme_for_mac(RzIO *io, int bits, const char *cmd) {
 		posix_spawn_file_actions_destroy (&fileActions);
 		return -1;
 	}
-	RRunProfile *rp = _get_run_profile (io, bits, argv);
+	RzRunProfile *rp = _get_run_profile (io, bits, argv);
 	if (!rp) {
 		rz_str_argv_free (argv);
 		posix_spawn_file_actions_destroy (&fileActions);
@@ -377,7 +377,7 @@ static void fork_child_callback(void *user) {
 		exit (1);
 	}
 	rz_sys_clearenv ();
-	RRunProfile *rp = _get_run_profile (data->io, data->bits, argv);
+	RzRunProfile *rp = _get_run_profile (data->io, data->bits, argv);
 	if (!rp) {
 		rz_str_argv_free (argv);
 		exit (1);

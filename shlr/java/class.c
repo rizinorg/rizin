@@ -3142,7 +3142,7 @@ RZ_API void *rz_bin_java_free(RzBinJavaObj *bin) {
 	return NULL;
 }
 
-RZ_API RzBinJavaObj *rz_bin_java_new_buf(RBuffer *buf, ut64 loadaddr, Sdb *kv) {
+RZ_API RzBinJavaObj *rz_bin_java_new_buf(RzBuffer *buf, ut64 loadaddr, Sdb *kv) {
 	RzBinJavaObj *bin = RZ_NEW0 (RzBinJavaObj);
 	if (!bin) {
 		return NULL;

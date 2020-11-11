@@ -185,14 +185,14 @@ typedef struct rz_bin_wasm_data_t {
 
 typedef struct rz_bin_wasm_custom_name_function_names_t {
 	ut32 count;
-	RIDStorage *names;
+	RzIDStorage *names;
 } RzBinWasmCustomNameFunctionNames;
 
 typedef struct rz_bin_wasm_custom_name_local_name_t {
 	ut32 index; // function index
 
 	ut32 names_count;
-	RIDStorage *names; // local names
+	RzIDStorage *names; // local names
 } RzBinWasmCustomNameLocalName;
 
 typedef struct rz_bin_wasm_custom_name_local_names_t {
@@ -215,7 +215,7 @@ typedef struct rz_bin_wasm_custom_name_entry_t {
 
 typedef struct rz_bin_wasm_obj_t {
 
-	RBuffer *buf;
+	RzBuffer *buf;
 	size_t size;
 
 	ut32 entrypoint;
@@ -238,7 +238,7 @@ typedef struct rz_bin_wasm_obj_t {
 
 } RzBinWasmObj;
 
-RzBinWasmObj *rz_bin_wasm_init (RzBinFile *bf, RBuffer *buf);
+RzBinWasmObj *rz_bin_wasm_init (RzBinFile *bf, RzBuffer *buf);
 void rz_bin_wasm_destroy (RzBinFile *bf);
 RzList *rz_bin_wasm_get_sections (RzBinWasmObj *bin);
 RzList *rz_bin_wasm_get_types (RzBinWasmObj *bin);

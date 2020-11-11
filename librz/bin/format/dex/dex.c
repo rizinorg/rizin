@@ -26,7 +26,7 @@ void rz_bin_dex_free(RzBinDexObj *dex) {
 	free (dex);
 }
 
-RzBinDexObj *rz_bin_dex_new_buf(RBuffer *buf) {
+RzBinDexObj *rz_bin_dex_new_buf(RzBuffer *buf) {
 	rz_return_val_if_fail (buf, NULL);
 	RzBinDexObj *bin = RZ_NEW0 (RzBinDexObj);
 	int i;

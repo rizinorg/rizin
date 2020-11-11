@@ -280,7 +280,7 @@ typedef struct rz_bin_file_t {
 	int rawstr;
 	int strmode;
 	ut32 id;
-	RBuffer *buf;
+	RzBuffer *buf;
 	ut64 offset;
 	RzBinObject *o;
 	void *xtr_obj;
@@ -319,7 +319,7 @@ struct rz_bin_t {
 	ut64 maxstrbuf;
 	int rawstr;
 	Sdb *sdb;
-	RIDStorage *ids;
+	RzIDStorage *ids;
 	RzList/*<RzBinPlugin>*/ *plugins;
 	RzList/*<RzBinXtrPlugin>*/ *binxtrs;
 	RzList/*<RzBinLdrPlugin>*/ *binldrs;
@@ -358,7 +358,7 @@ typedef struct rz_bin_xtr_metadata_t {
 typedef int (*FREE_XTR)(void *xtr_obj);
 typedef struct rz_bin_xtr_extract_t {
 	char *file;
-	RBuffer *buf;
+	RzBuffer *buf;
 	ut64 size;
 	ut64 offset;
 	ut64 baddr;
@@ -368,7 +368,7 @@ typedef struct rz_bin_xtr_extract_t {
 	RzBinXtrMetadata *metadata;
 } RzBinXtrData;
 
-RZ_API RzBinXtrData *rz_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 file_count, RzBinXtrMetadata *metadata);
+RZ_API RzBinXtrData *rz_bin_xtrdata_new(RzBuffer *buf, ut64 offset, ut64 size, ut32 file_count, RzBinXtrMetadata *metadata);
 RZ_API void rz_bin_xtrdata_free(void /*RzBinXtrData*/ *data);
 
 typedef struct rz_bin_xtr_plugin_t {
@@ -377,12 +377,12 @@ typedef struct rz_bin_xtr_plugin_t {
 	char *license;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-	bool (*check_buffer)(RBuffer *b);
+	bool (*check_buffer)(RzBuffer *b);
 
 	RzBinXtrData *(*extract_from_bytes)(RzBin *bin, const ut8 *buf, ut64 size, int idx);
-	RzBinXtrData *(*extract_from_buffer)(RzBin *bin, RBuffer *buf, int idx);
+	RzBinXtrData *(*extract_from_buffer)(RzBin *bin, RzBuffer *buf, int idx);
 	RzList *(*extractall_from_bytes)(RzBin *bin, const ut8 *buf, ut64 size);
-	RzList *(*extractall_from_buffer)(RzBin *bin, RBuffer *buf);
+	RzList *(*extractall_from_buffer)(RzBin *bin, RzBuffer *buf);
 	RzBinXtrData *(*extract)(RzBin *bin, int idx);
 	RzList *(*extractall)(RzBin *bin);
 
@@ -427,11 +427,11 @@ typedef struct rz_bin_plugin_t {
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	Sdb * (*get_sdb)(RzBinFile *obj);
-	bool (*load_buffer)(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb);
+	bool (*load_buffer)(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb);
 	ut64 (*size)(RzBinFile *bin); // return ut64 maybe? meh
 	void (*destroy)(RzBinFile *bf);
 	bool (*check_bytes)(const ut8 *buf, ut64 length);
-	bool (*check_buffer)(RBuffer *buf);
+	bool (*check_buffer)(RzBuffer *buf);
 	ut64 (*baddr)(RzBinFile *bf);
 	ut64 (*boffset)(RzBinFile *bf);
 	RzBinAddr* (*binsym)(RzBinFile *bf, int num);
@@ -459,7 +459,7 @@ typedef struct rz_bin_plugin_t {
 	int (*get_offset)(RzBinFile *bf, int type, int idx);
 	char* (*get_name)(RzBinFile *bf, int type, int idx, bool simplified);
 	ut64 (*get_vaddr)(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr);
-	RBuffer* (*create)(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt);
+	RzBuffer* (*create)(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt);
 	char* (*demangle)(const char *str);
 	char* (*regstate)(RzBinFile *bf);
 	int (*file_type)(RzBinFile *bf);
@@ -679,7 +679,7 @@ RZ_API RzBin *rz_bin_new(void);
 RZ_API void rz_bin_free(RzBin *bin);
 RZ_API bool rz_bin_open(RzBin *bin, const char *file, RzBinOptions *opt);
 RZ_API bool rz_bin_open_io(RzBin *bin, RzBinOptions *opt);
-RZ_API bool rz_bin_open_buf(RzBin *bin, RBuffer *buf, RzBinOptions *opt);
+RZ_API bool rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt);
 RZ_API bool rz_bin_reload(RzBin *bin, ut32 bf_id, ut64 baseaddr);
 
 // plugins/bind functions
@@ -690,7 +690,7 @@ RZ_API bool rz_bin_ldr_add(RzBin *bin, RzBinLdrPlugin *foo);
 RZ_API void rz_bin_list(RzBin *bin, int format);
 RZ_API bool rz_bin_list_plugin(RzBin *bin, const char *name, int json);
 RZ_API RzBinPlugin *rz_bin_get_binplugin_by_bytes(RzBin *bin, const ut8 *bytes, ut64 sz);
-RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RBuffer *buf);
+RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf);
 RZ_API void rz_bin_force_plugin(RzBin *bin, const char *pname);
 
 // get/set various bin information
@@ -736,8 +736,8 @@ RZ_API bool rz_bin_select(RzBin *bin, const char *arch, int bits, const char *na
 RZ_API bool rz_bin_select_bfid(RzBin *bin, ut32 bf_id);
 RZ_API bool rz_bin_use_arch(RzBin *bin, const char *arch, int bits, const char *name);
 RZ_API void rz_bin_list_archs(RzBin *bin, int mode);
-RZ_API RBuffer *rz_bin_create(RzBin *bin, const char *plugin_name, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt);
-RZ_API RBuffer *rz_bin_package(RzBin *bin, const char *type, const char *file, RzList *files);
+RZ_API RzBuffer *rz_bin_create(RzBin *bin, const char *plugin_name, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt);
+RZ_API RzBuffer *rz_bin_package(RzBin *bin, const char *type, const char *file, RzList *files);
 
 RZ_API const char *rz_bin_string_type(int type);
 RZ_API const char *rz_bin_entry_type_string(int etype);

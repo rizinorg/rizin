@@ -10,7 +10,7 @@
 #define END_OF_MAP_IDS UT32_MAX
 
 #define CMP_END_GTE(addr, itv) \
-	(((addr) < rz_itv_end (*(RInterval *)(itv))) ? -1 : 1)
+	(((addr) < rz_itv_end (*(RzInterval *)(itv))) ? -1 : 1)
 
 #define CMP_END_GTE_PART(addr, part) \
 	(((addr) < (rz_itv_end (((RzIOMapSkyline *)(part))->itv)) || !rz_itv_end (((RzIOMapSkyline *)(part))->itv)) ? -1 : 1)
@@ -96,7 +96,7 @@ RzIOMap* io_map_new(RzIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size
 		size = -(st64)addr;
 	}
 	// RzIOMap describes an interval of addresses (map->from; map->to)
-	map->itv = (RInterval){ addr, size };
+	map->itv = (RzInterval){ addr, size };
 	map->perm = perm;
 	map->delta = delta;
 	// new map lives on the top, being top the list's tail

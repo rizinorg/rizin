@@ -64,7 +64,7 @@ typedef struct _RSepMachoInfo {
 } RSepMachoInfo;
 
 typedef struct _RSepSlice64 {
-	RBuffer * buf;
+	RzBuffer * buf;
 	RzBinXtrMetadata * meta;
 	ut64 nominal_offset;
 	ut64 total_size;
@@ -75,21 +75,21 @@ typedef struct _RSepXtr64Ctx {
 	RSepApp64 * apps;
 } RSepXtr64Ctx;
 
-static RSepXtr64Ctx * sep64_xtr_ctx_new(RBuffer * buf);
+static RSepXtr64Ctx * sep64_xtr_ctx_new(RzBuffer * buf);
 static void sep64_xtr_ctx_free(void * p);
-static RSepSlice64 * sep64_xtr_ctx_get_slice(RSepXtr64Ctx * ctx, RBuffer * whole, int idx);
+static RSepSlice64 * sep64_xtr_ctx_get_slice(RSepXtr64Ctx * ctx, RzBuffer * whole, int idx);
 
-static RSepMachoInfo * mach0_info_new(RBuffer * buf, ut64 at, ut64 max_size);
+static RSepMachoInfo * mach0_info_new(RzBuffer * buf, ut64 at, ut64 max_size);
 static void mach0_info_free(RSepMachoInfo * info);
 
-static ut32 read_arm64_ins(RBuffer *b, int idx);
+static ut32 read_arm64_ins(RzBuffer *b, int idx);
 static char * get_proper_name (const char * app_name);
-static RBuffer * extract_slice(RBuffer * whole, RSepMachoInfo * info);
+static RzBuffer * extract_slice(RzBuffer * whole, RSepMachoInfo * info);
 static inline void fill_metadata_info_from_hdr(RzBinXtrMetadata *meta, struct MACH0_(mach_header) *hdr);
 
 #define BTW(val, min, max) ((val) > min && (val) < max)
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	rz_return_val_if_fail (b, false);
 
 	const ut64 sz = rz_buf_size (b);
@@ -146,7 +146,7 @@ static int size(RzBin *bin) {
 	return 0;
 }
 
-static RzBinXtrData *oneshot_buffer(RzBin *bin, RBuffer *b, int idx) {
+static RzBinXtrData *oneshot_buffer(RzBin *bin, RzBuffer *b, int idx) {
 	rz_return_val_if_fail (bin && bin->cur, NULL);
 
 	if (!bin->cur->xtr_obj) {
@@ -162,7 +162,7 @@ static RzBinXtrData *oneshot_buffer(RzBin *bin, RBuffer *b, int idx) {
 	return res;
 }
 
-static RzList * oneshotall_buffer(RzBin *bin, RBuffer *b) {
+static RzList * oneshotall_buffer(RzBin *bin, RzBuffer *b) {
 	RzBinXtrData *data = oneshot_buffer (bin, b, 0);
 	if (data) {
 		int narch = data->file_count;
@@ -182,7 +182,7 @@ static RzList * oneshotall_buffer(RzBin *bin, RBuffer *b) {
 	return NULL;
 }
 
-static RSepXtr64Ctx * sep64_xtr_ctx_new(RBuffer * buf) {
+static RSepXtr64Ctx * sep64_xtr_ctx_new(RzBuffer * buf) {
 	RSepHdr64 * hdr = NULL;
 	RSepApp64 * apps = NULL;
 	RSepXtr64Ctx * ctx = NULL;
@@ -243,13 +243,13 @@ static void sep64_xtr_ctx_free(void * p) {
 	free (ctx);
 }
 
-static RSepSlice64 * sep64_xtr_ctx_get_slice(RSepXtr64Ctx * ctx, RBuffer * whole, int idx) {
+static RSepSlice64 * sep64_xtr_ctx_get_slice(RSepXtr64Ctx * ctx, RzBuffer * whole, int idx) {
 	if (idx >= ctx->hdr->n_apps + 3) {
 		return NULL;
 	}
 
 	ut64 whole_size = rz_buf_size (whole);
-	RBuffer * slice_buf = NULL;
+	RzBuffer * slice_buf = NULL;
 	char * name = NULL;
 	RSepSlice64 * slice = NULL;
 	RSepMachoInfo * info = NULL;
@@ -335,7 +335,7 @@ beach:
 	return NULL;
 }
 
-static RSepMachoInfo * mach0_info_new(RBuffer * buf, ut64 at, ut64 max_size) {
+static RSepMachoInfo * mach0_info_new(RzBuffer * buf, ut64 at, ut64 max_size) {
 	rz_return_val_if_fail (max_size >= 1024, NULL);
 
 	RSepMachoInfo * result = NULL;
@@ -420,7 +420,7 @@ static void mach0_info_free(RSepMachoInfo * info) {
 	free (info);
 }
 
-static RBuffer * extract_slice(RBuffer * whole, RSepMachoInfo * info) {
+static RzBuffer * extract_slice(RzBuffer * whole, RSepMachoInfo * info) {
 	ut8 * content = NULL;
 
 	content = (ut8 *) malloc (info->total_size);
@@ -467,7 +467,7 @@ static char * get_proper_name (const char * app_name) {
 	return proper_name;
 }
 
-static ut32 read_arm64_ins(RBuffer *b, int idx) {
+static ut32 read_arm64_ins(RzBuffer *b, int idx) {
 	return rz_buf_read_le32_at (b, idx * 4);
 }
 

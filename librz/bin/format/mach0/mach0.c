@@ -670,7 +670,7 @@ static char *readString (ut8 *p, int off, int len) {
 	return rz_str_ndup ((const char *)p + off, len - off);
 }
 
-static void parseCodeDirectory (RBuffer *b, int offset, int datasize) {
+static void parseCodeDirectory (RzBuffer *b, int offset, int datasize) {
 	typedef struct __CodeDirectory {
 		uint32_t magic;		/* magic number (CSMAGIC_CODEDIRECTORY) */
 		uint32_t length;	/* total length of CodeDirectory blob */
@@ -2160,7 +2160,7 @@ struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) 
 	return bin;
 }
 
-struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *options) {
+struct MACH0_(obj_t) *MACH0_(new_buf)(RzBuffer *buf, struct MACH0_(opts_t) *options) {
 	rz_return_val_if_fail (buf, NULL);
 	struct MACH0_(obj_t) *bin = RZ_NEW0 (struct MACH0_(obj_t));
 	if (bin) {
@@ -3991,7 +3991,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 	if (!cb_printf) {
 		cb_printf = printf;
 	}
-	RBuffer *buf = bf->buf;
+	RzBuffer *buf = bf->buf;
 	ut64 length = rz_buf_size (buf);
 	int n = 0;
 	struct MACH0_(mach_header) *mh = MACH0_(get_hdr)(buf);
@@ -4209,7 +4209,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 }
 
 RzList *MACH0_(mach_fields)(RzBinFile *bf) {
-	RBuffer *buf = bf->buf;
+	RzBuffer *buf = bf->buf;
 	ut64 length = rz_buf_size (buf);
 	struct MACH0_(mach_header) *mh = MACH0_(get_hdr) (buf);
 	if (!mh) {
@@ -4297,7 +4297,7 @@ RzList *MACH0_(mach_fields)(RzBinFile *bf) {
 	return ret;
 }
 
-struct MACH0_(mach_header) *MACH0_(get_hdr)(RBuffer *buf) {
+struct MACH0_(mach_header) *MACH0_(get_hdr)(RzBuffer *buf) {
 	ut8 magicbytes[sizeof (ut32)] = {0};
 	ut8 machohdrbytes[sizeof (struct MACH0_(mach_header))] = {0};
 	int len;

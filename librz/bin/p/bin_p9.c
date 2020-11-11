@@ -6,11 +6,11 @@
 #include <rz_bin.h>
 #include "../format/p9/p9bin.h"
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RzBuffer *buf) {
 	return rz_bin_p9_get_arch (buf, NULL, NULL);
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb){
 	return check_buffer (b);
 }
 
@@ -198,8 +198,8 @@ static ut64 size(RzBinFile *bf) {
 #if !RZ_BIN_P9
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
-static RBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
-	RBuffer *buf = rz_buf_new ();
+static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
+	RzBuffer *buf = rz_buf_new ();
 #define B(x, y) rz_buf_append_bytes (buf, (const ut8 *) (x), y)
 #define D(x) rz_buf_append_ut32 (buf, x)
 	D (I_MAGIC); // i386 only atm

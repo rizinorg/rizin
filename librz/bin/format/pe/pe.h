@@ -125,7 +125,7 @@ struct PE_(rz_bin_pe_obj_t) {
 	RzList* relocs;
 	RzList* resources; //RzList of rz_pe_resources
 	const char* file;
-	RBuffer* b;
+	RzBuffer* b;
 	Sdb *kv;
 	RCMS* cms;
 	SpcIndirectDataContent *spcinfo;
@@ -159,7 +159,7 @@ int PE_(rz_bin_pe_is_stripped_local_syms)(struct PE_(rz_bin_pe_obj_t)* bin);
 int PE_(rz_bin_pe_is_stripped_debug)(struct PE_(rz_bin_pe_obj_t)* bin);
 void* PE_(rz_bin_pe_free)(struct PE_(rz_bin_pe_obj_t)* bin);
 struct PE_(rz_bin_pe_obj_t)* PE_(rz_bin_pe_new)(const char* file, bool verbose);
-struct PE_(rz_bin_pe_obj_t)* PE_(rz_bin_pe_new_buf)(RBuffer* buf, bool verbose);
+struct PE_(rz_bin_pe_obj_t)* PE_(rz_bin_pe_new_buf)(RzBuffer* buf, bool verbose);
 int PE_(rz_bin_pe_get_debug_data)(struct PE_(rz_bin_pe_obj_t)* bin, struct SDebugInfo* res);
 int PE_(bin_pe_get_claimed_checksum)(struct PE_(rz_bin_pe_obj_t)* bin);
 int PE_(bin_pe_get_actual_checksum)(struct PE_(rz_bin_pe_obj_t)* bin);

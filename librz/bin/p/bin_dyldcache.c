@@ -85,7 +85,7 @@ typedef struct {
 typedef struct _r_dyldcache {
 	ut8 magic[8];
 	RzList *bins;
-	RBuffer *buf;
+	RzBuffer *buf;
 	int (*original_io_read)(RzIO *io, RzIODesc *fd, ut8 *buf, int count);
 	RDyldRebaseInfos *rebase_infos;
 	cache_hdr_t *hdr;
@@ -101,7 +101,7 @@ typedef struct _r_bin_image {
 
 static RzList * pending_bin_files = NULL;
 
-static ut64 va2pa(uint64_t addr, cache_hdr_t *hdr, cache_map_t *maps, RBuffer *cache_buf, ut64 slide, ut32 *offset, ut32 *left);
+static ut64 va2pa(uint64_t addr, cache_hdr_t *hdr, cache_map_t *maps, RzBuffer *cache_buf, ut64 slide, ut32 *offset, ut32 *left);
 
 static void free_bin(RDyldBinImage *bin) {
 	if (!bin) {
@@ -161,7 +161,7 @@ static void rebase_info_free(RDyldRebaseInfo *rebase_info) {
 	}
 }
 
-static RDyldLocSym *rz_dyld_locsym_new(RBuffer *cache_buf, cache_hdr_t *hdr) {
+static RDyldLocSym *rz_dyld_locsym_new(RzBuffer *cache_buf, cache_hdr_t *hdr) {
 	if (!cache_buf || !hdr || !hdr->localSymbolsSize || !hdr->localSymbolsOffset) {
 		return NULL;
 	}
@@ -347,7 +347,7 @@ static void rz_dyldcache_free(RDyldCache *cache) {
 	RZ_FREE (cache);
 }
 
-static ut64 va2pa(uint64_t addr, cache_hdr_t *hdr, cache_map_t *maps, RBuffer *cache_buf, ut64 slide, ut32 *offset, ut32 *left) {
+static ut64 va2pa(uint64_t addr, cache_hdr_t *hdr, cache_map_t *maps, RzBuffer *cache_buf, ut64 slide, ut32 *offset, ut32 *left) {
 	ut64 res = UT64_MAX;
 	uint32_t i;
 
@@ -529,7 +529,7 @@ static RDyldRebaseInfo *get_rebase_info(RzBinFile *bf, RDyldCache *cache, ut64 s
 	ut8 *tmp_buf_1 = NULL;
 	ut8 *tmp_buf_2 = NULL;
 	ut8 *one_page_buf = NULL;
-	RBuffer *cache_buf = cache->buf;
+	RzBuffer *cache_buf = cache->buf;
 
 	ut64 offset = slideInfoOffset;
 	ut32 slide_info_version = 0;
@@ -753,7 +753,7 @@ beach:
 }
 
 static RDyldRebaseInfos *get_rebase_infos(RzBinFile *bf, RDyldCache *cache) {
-	RBuffer *cache_buf = cache->buf;
+	RzBuffer *cache_buf = cache->buf;
 
 	RDyldRebaseInfos *result = RZ_NEW0 (RDyldRebaseInfos);
 	if (!result) {
@@ -837,7 +837,7 @@ beach:
 	return NULL;
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RzBuffer *buf) {
 	if (rz_buf_size (buf) < 32) {
 		return false;
 	}
@@ -855,7 +855,7 @@ static bool check_buffer(RBuffer *buf) {
 	return true;
 }
 
-static cache_img_t *read_cache_images(RBuffer *cache_buf, cache_hdr_t *hdr) {
+static cache_img_t *read_cache_images(RzBuffer *cache_buf, cache_hdr_t *hdr) {
 	if (!cache_buf || !hdr || !hdr->imagesCount || !hdr->imagesOffset) {
 		return NULL;
 	}
@@ -874,7 +874,7 @@ static cache_img_t *read_cache_images(RBuffer *cache_buf, cache_hdr_t *hdr) {
 	return images;
 }
 
-static cache_imgxtr_t *read_cache_imgextra(RBuffer *cache_buf, cache_hdr_t *hdr, cache_accel_t *accel) {
+static cache_imgxtr_t *read_cache_imgextra(RzBuffer *cache_buf, cache_hdr_t *hdr, cache_accel_t *accel) {
 	if (!cache_buf || !hdr || !hdr->imagesCount || !accel || !accel->imageExtrasCount || !accel->imagesExtrasOffset) {
 		return NULL;
 	}
@@ -893,7 +893,7 @@ static cache_imgxtr_t *read_cache_imgextra(RBuffer *cache_buf, cache_hdr_t *hdr,
 	return images;
 }
 
-static char *get_lib_name(RBuffer *cache_buf, cache_img_t *img) {
+static char *get_lib_name(RzBuffer *cache_buf, cache_img_t *img) {
 	char file[256];
 	char *lib_name = file;
 	if (rz_buf_read_at (cache_buf, img->pathFileOffset, (ut8*) &file, sizeof (file)) == sizeof (file)) {
@@ -911,7 +911,7 @@ static int string_contains(const void *a, const void *b) {
 	return !strstr ((const char*) a, (const char*) b);
 }
 
-static HtPP * create_path_to_index(RBuffer *cache_buf, cache_img_t *img, cache_hdr_t *hdr) {
+static HtPP * create_path_to_index(RzBuffer *cache_buf, cache_img_t *img, cache_hdr_t *hdr) {
 	HtPP *path_to_idx = ht_pp_new0 ();
 	if (!path_to_idx) {
 		return NULL;
@@ -930,7 +930,7 @@ static HtPP * create_path_to_index(RBuffer *cache_buf, cache_img_t *img, cache_h
 	return path_to_idx;
 }
 
-static void carve_deps_at_address(RBuffer *cache_buf, cache_img_t *img, cache_hdr_t *hdr, cache_map_t *maps, HtPP *path_to_idx, ut64 address, int *deps) {
+static void carve_deps_at_address(RzBuffer *cache_buf, cache_img_t *img, cache_hdr_t *hdr, cache_map_t *maps, HtPP *path_to_idx, ut64 address, int *deps) {
 	ut64 pa = va2pa (address, hdr, maps, cache_buf, 0, NULL, NULL);
 	if (pa == UT64_MAX) {
 		return;
@@ -977,7 +977,7 @@ beach:
 	free (cmds);
 }
 
-static RzList *create_cache_bins(RzBinFile *bf, RBuffer *cache_buf, cache_hdr_t *hdr, cache_map_t *maps, cache_accel_t *accel) {
+static RzList *create_cache_bins(RzBinFile *bf, RzBuffer *cache_buf, cache_hdr_t *hdr, cache_map_t *maps, cache_accel_t *accel) {
 	RzList *bins = rz_list_newf ((RzListFree)free_bin);
 	if (!bins) {
 		return NULL;
@@ -1413,7 +1413,7 @@ static void swizzle_io_read(RDyldCache *cache, RzIO *io) {
 	plugin->read = &dyldcache_io_read;
 }
 
-static cache_hdr_t *read_cache_header(RBuffer *cache_buf) {
+static cache_hdr_t *read_cache_header(RzBuffer *cache_buf) {
 	if (!cache_buf) {
 		return NULL;
 	}
@@ -1432,7 +1432,7 @@ static cache_hdr_t *read_cache_header(RBuffer *cache_buf) {
 	return hdr;
 }
 
-static cache_map_t *read_cache_maps(RBuffer *cache_buf, cache_hdr_t *hdr) {
+static cache_map_t *read_cache_maps(RzBuffer *cache_buf, cache_hdr_t *hdr) {
 	if (!cache_buf || !hdr || !hdr->mappingCount || !hdr->mappingOffset) {
 		return NULL;
 	}
@@ -1451,7 +1451,7 @@ static cache_map_t *read_cache_maps(RBuffer *cache_buf, cache_hdr_t *hdr) {
 	return maps;
 }
 
-static cache_accel_t *read_cache_accel(RBuffer *cache_buf, cache_hdr_t *hdr, cache_map_t *maps) {
+static cache_accel_t *read_cache_accel(RzBuffer *cache_buf, cache_hdr_t *hdr, cache_map_t *maps) {
 	if (!cache_buf || !hdr || !hdr->accelerateInfoSize || !hdr->accelerateInfoAddr) {
 		return NULL;
 	}
@@ -1484,7 +1484,7 @@ static cache_accel_t *read_cache_accel(RBuffer *cache_buf, cache_hdr_t *hdr, cac
 	return accel;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	RDyldCache *cache = RZ_NEW0 (RDyldCache);
 	memcpy (cache->magic, "dyldcac", 7);
 	cache->buf = rz_buf_ref (buf);
@@ -1791,7 +1791,7 @@ static RzList *classes(RzBinFile *bf) {
 	RzListIter *iter;
 	RDyldBinImage *bin;
 
-	RBuffer *orig_buf = bf->buf;
+	RzBuffer *orig_buf = bf->buf;
 	ut32 num_of_unnamed_class = 0;
 	rz_list_foreach (cache->bins, iter, bin) {
 		struct MACH0_(obj_t) *mach0 = bin_to_mach0 (bf, bin);

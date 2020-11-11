@@ -12,7 +12,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb){
 	*bin_obj = rz_bin_zimg_new_buf (b);
 	return *bin_obj != NULL;
 }
@@ -21,7 +21,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	ut8 zimghdr[8];
 	if (rz_buf_read_at (b, 0, zimghdr, sizeof (zimghdr))) {
 		// Checking ARM zImage kernel

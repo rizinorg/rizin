@@ -66,7 +66,7 @@ static char *create_type_name_from_offset(ut64 offset) {
 /// size - default value = -1
 /// page_size - default value = 0x1000
 ///////////////////////////////////////////////////////////////////////////////
-static int init_r_pdb_stream(RZ_PDB_STREAM *pdb_stream, RBuffer *buf /*FILE *fp*/, int *pages,
+static int init_r_pdb_stream(RZ_PDB_STREAM *pdb_stream, RzBuffer *buf /*FILE *fp*/, int *pages,
 			     int pages_amount, int index, int size, int page_size) {
 	pdb_stream->buf = buf;
 	pdb_stream->pages = pages;
@@ -85,7 +85,7 @@ static int init_r_pdb_stream(RZ_PDB_STREAM *pdb_stream, RBuffer *buf /*FILE *fp*
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int read_int_var(char *var_name, int *var, RPdb *pdb) {
+static int read_int_var(char *var_name, int *var, RzPdb *pdb) {
 	if (var) {
 		*var = 0;
 	}
@@ -110,7 +110,7 @@ static int count_pages(int length, int page_size) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amount,
+static int init_pdb7_root_stream(RzPdb *pdb, int *root_page_list, int pages_amount,
 				 EStream indx, int root_size, int page_size) {
 	RZ_PDB_STREAM *pdb_stream = 0;
 	int tmp_data_max_size = 0;
@@ -333,7 +333,7 @@ static void find_indx_in_list(RzList *l, int index, SStreamParseFunc **res) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int pdb_read_root(RPdb *pdb) {
+static int pdb_read_root(RzPdb *pdb) {
 	int i = 0;
 	RzList *pList = pdb->pdb_streams;
 	RZ_PDB7_ROOT_STREAM *root_stream = pdb->root_stream;
@@ -420,7 +420,7 @@ static int pdb_read_root(RPdb *pdb) {
 	return 1;
 }
 
-static bool pdb7_parse(RPdb *pdb) {
+static bool pdb7_parse(RzPdb *pdb) {
 	char signature[PDB7_SIGNATURE_LEN + 1];
 	int num_root_index_pages = 0;
 	int *root_index_pages = 0;
@@ -528,7 +528,7 @@ error:
 	return false;
 }
 
-static void finish_pdb_parse(RPdb *pdb) {
+static void finish_pdb_parse(RzPdb *pdb) {
 	RZ_PDB7_ROOT_STREAM *p = pdb->root_stream;
 	RzListIter *it;
 	SPage *page = 0;
@@ -1039,7 +1039,7 @@ static void print_enum(const char *name, const char *type, const RzList *members
  * @param pdb pdb structure for printing function
  * @param types List of types
  */
-static void print_types_regular(const RPdb *pdb, const RzList *types) {
+static void print_types_regular(const RzPdb *pdb, const RzList *types) {
 	rz_return_if_fail (pdb && types);
 	RzListIter *it = rz_list_iterator (types);
 
@@ -1096,7 +1096,7 @@ static void print_types_regular(const RPdb *pdb, const RzList *types) {
  * @param pdb pdb structure for printing function
  * @param types List of types
  */
-static void print_types_json(const RPdb *pdb, PJ *pj, const RzList *types) {
+static void print_types_json(const RzPdb *pdb, PJ *pj, const RzList *types) {
 	rz_return_if_fail (pdb && types && pj);
 
 	RzListIter *it = rz_list_iterator (types);
@@ -1214,7 +1214,7 @@ static void print_types_json(const RPdb *pdb, PJ *pj, const RzList *types) {
  * @param pdb pdb structure for printing function
  * @param types List of types
  */
-static void print_types_format(const RPdb *pdb, const RzList *types) {
+static void print_types_format(const RzPdb *pdb, const RzList *types) {
 	rz_return_if_fail (pdb && types);
 	RzListIter *it = rz_list_iterator (types);
 	bool to_free_name = false;
@@ -1303,7 +1303,7 @@ static void print_types_format(const RPdb *pdb, const RzList *types) {
  * @param pdb PDB information
  * @param mode printing mode
  */
-static void print_types(const RPdb *pdb, PJ *pj, const int mode) {
+static void print_types(const RzPdb *pdb, PJ *pj, const int mode) {
 	RzList *plist = pdb->pdb_streams;
 	STpiStream *tpi_stream = rz_list_get_n (plist, ePDB_STREAM_TPI);
 
@@ -1319,7 +1319,7 @@ static void print_types(const RPdb *pdb, PJ *pj, const int mode) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void print_gvars(RPdb *pdb, ut64 img_base, PJ *pj, int format) {
+static void print_gvars(RzPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	SStreamParseFunc *omap = 0, *sctns = 0, *sctns_orig = 0, *gsym = 0, *tmp = 0;
 	SIMAGE_SECTION_HEADER *sctn_header = 0;
 	SGDATAStream *gsym_data_stream = 0;
@@ -1418,7 +1418,7 @@ static void print_gvars(RPdb *pdb, ut64 img_base, PJ *pj, int format) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-RZ_API bool init_pdb_parser_with_buf(RPdb *pdb, RBuffer* buf) {
+RZ_API bool init_pdb_parser_with_buf(RzPdb *pdb, RzBuffer* buf) {
 	char *signature = NULL;
 	int bytes_read = 0;
 
@@ -1468,8 +1468,8 @@ error:
 	return false;
 }
 
-RZ_API bool init_pdb_parser(RPdb *pdb, const char *filename) {
-	RBuffer *buf = rz_buf_new_slurp (filename);
+RZ_API bool init_pdb_parser(RzPdb *pdb, const char *filename) {
+	RzBuffer *buf = rz_buf_new_slurp (filename);
 	if (!buf) {
 		eprintf ("%s: Error reading file \"%s\"\n", __func__, filename);
 		return false;

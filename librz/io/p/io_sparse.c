@@ -9,7 +9,7 @@
 
 typedef struct {
 	int fd;
-	RBuffer *buf;
+	RzBuffer *buf;
 	ut64 offset;
 } RzIOSparse;
 
@@ -19,7 +19,7 @@ typedef struct {
 
 static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	ut64 o;
-	RBuffer *b;
+	RzBuffer *b;
 	if (!fd || !fd->data) {
 		return -1;
 	}
@@ -34,7 +34,7 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 
 static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 	ut64 o;
-	RBuffer *b;
+	RzBuffer *b;
 	if (!fd || !fd->data) {
 		return -1;
 	}
@@ -59,7 +59,7 @@ static int __close(RzIODesc *fd) {
 }
 
 static ut64 __lseek(RzIO* io, RzIODesc *fd, ut64 offset, int whence) {
-	RBuffer *b;
+	RzBuffer *b;
 	ut64 rz_offset = offset;
 	if (!fd->data) {
 		return offset;

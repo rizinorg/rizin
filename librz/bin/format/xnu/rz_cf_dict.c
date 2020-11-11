@@ -62,7 +62,7 @@ static void rz_cf_value_bool_print(RCFValueBool *bool_value);
 
 static void rz_cf_value_free(RCFValue *value);
 
-RCFValueDict *rz_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, int options) {
+RCFValueDict *rz_cf_value_dict_parse (RzBuffer *file_buf, ut64 offset, ut64 size, int options) {
 	RCFValueDict *result = NULL;
 	yxml_t x;
 	int i, depth = 0;

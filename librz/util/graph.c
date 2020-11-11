@@ -42,7 +42,7 @@ static void dfs_node (RzGraph *g, RzGraphNode *n, RzGraphVisitor *vis, int color
 	if (!n) {
 		return;
 	}
-	RStack *s = rz_stack_new (2 * g->n_edges + 1);
+	RzStack *s = rz_stack_new (2 * g->n_edges + 1);
 	if (!s) {
 		return;
 	}

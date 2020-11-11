@@ -898,7 +898,7 @@ RZ_API bool rz_core_visual_hudstuff(RzCore *core) {
 	}
 	list->free = free;
 	rz_flag_foreach (core->flags, hudstuff_append, list);
-	RIntervalTreeIter it;
+	RzIntervalTreeIter it;
 	RzAnalMetaItem *mi;
 	rz_interval_tree_foreach (&core->anal->meta, it, mi) {
 		if (mi->type == RZ_META_TYPE_COMMENT) {
@@ -1923,8 +1923,8 @@ RZ_API int rz_core_visual_trackflags(RzCore *core) {
 		} else {
 			rz_cons_printf ("Flag spaces:\n\n");
 			hit = 0;
-			RSpaceIter it;
-			const RSpace *s, *cur = rz_flag_space_cur (core->flags);
+			RzSpaceIter it;
+			const RzSpace *s, *cur = rz_flag_space_cur (core->flags);
 			int i = 0;
 			rz_flag_space_foreach (core->flags, it, s) {
 				if (option == i) {
@@ -2161,7 +2161,7 @@ RZ_API int rz_core_visual_comments (RzCore *core) {
 	for (;;) {
 		rz_cons_clear00 ();
 		rz_cons_strcat ("Comments:\n");
-		RIntervalTreeIter it;
+		RzIntervalTreeIter it;
 		RzAnalMetaItem *item;
 		i = 0;
 		rz_interval_tree_foreach (&core->anal->meta, it, item) {
@@ -3930,7 +3930,7 @@ RZ_API void rz_core_visual_colors(RzCore *core) {
 	bool truecolor = rz_cons_singleton ()->context->color_mode == COLOR_MODE_16M;
 	char *rgb_xxx_fmt = truecolor ? "rgb:%2.2x%2.2x%2.2x ":"rgb:%x%x%x ";
 	const char *k;
-	RColor rcolor;
+	RzColor rcolor;
 
 	rz_cons_show_cursor (false);
 	rcolor = rz_cons_pal_get_i (opt);

@@ -34,13 +34,13 @@ extern "C" {
 #define RZ_PRINT_FLAGS_BGFILL   0x00100000
 #define RZ_PRINT_FLAGS_SECTION  0x00200000
 
-typedef int (*RPrintZoomCallback)(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
-typedef const char *(*RPrintNameCallback)(void *user, ut64 addr);
-typedef int (*RPrintSizeCallback)(void *user, ut64 addr);
-typedef char *(*RPrintCommentCallback)(void *user, ut64 addr);
-typedef const char *(*RPrintSectionGet)(void *user, ut64 addr);
-typedef const char *(*RPrintColorFor)(void *user, ut64 addr, bool verbose);
-typedef char *(*RPrintHasRefs)(void *user, ut64 addr, bool verbose);
+typedef int (*RzPrintZoomCallback)(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
+typedef const char *(*RzPrintNameCallback)(void *user, ut64 addr);
+typedef int (*RzPrintSizeCallback)(void *user, ut64 addr);
+typedef char *(*RzPrintCommentCallback)(void *user, ut64 addr);
+typedef const char *(*RzPrintSectionGet)(void *user, ut64 addr);
+typedef const char *(*RzPrintColorFor)(void *user, ut64 addr, bool verbose);
+typedef char *(*RzPrintHasRefs)(void *user, ut64 addr, bool verbose);
 
 typedef struct rz_print_zoom_t {
 	ut8 *buf;
@@ -48,7 +48,7 @@ typedef struct rz_print_zoom_t {
 	ut64 to;
 	int size;
 	int mode;
-} RPrintZoom;
+} RzPrintZoom;
 
 typedef struct rz_print_t {
 	void *user;
@@ -87,13 +87,13 @@ typedef struct rz_print_t {
 	int bytespace;
 	int pairs;
 	bool resetbg;
-	RPrintZoom *zoom;
-	RPrintNameCallback offname;
-	RPrintSizeCallback offsize;
-	RPrintColorFor colorfor;
-	RPrintHasRefs hasrefs;
-	RPrintCommentCallback get_comments;
-	RPrintSectionGet get_section_name;
+	RzPrintZoom *zoom;
+	RzPrintNameCallback offname;
+	RzPrintSizeCallback offsize;
+	RzPrintColorFor colorfor;
+	RzPrintHasRefs hasrefs;
+	RzPrintCommentCallback get_comments;
+	RzPrintSectionGet get_section_name;
 	Sdb *formats;
 	Sdb *sdb_types;
 	RzCons *cons;
@@ -125,46 +125,46 @@ typedef struct rz_print_t {
 	// represents the first not-visible offset on the screen
 	// (only when in visual disasm mode)
 	ut64 screen_bounds;
-} RPrint;
+} RzPrint;
 
 #ifdef RZ_API
 
 /* RzConsBreak handlers */
-typedef bool (*RPrintIsInterruptedCallback)();
+typedef bool (*RzPrintIsInterruptedCallback)();
 
 RZ_API bool rz_print_is_interrupted(void);
-RZ_API void rz_print_set_is_interrupted_cb(RPrintIsInterruptedCallback cb);
+RZ_API void rz_print_set_is_interrupted_cb(RzPrintIsInterruptedCallback cb);
 
 /* ... */
-RZ_API char *rz_print_hexpair(RPrint *p, const char *str, int idx);
-RZ_API void rz_print_hex_from_bin(RPrint *p, char *bin_str);
-RZ_API RPrint *rz_print_new(void);
-RZ_API RPrint *rz_print_free(RPrint *p);
-RZ_API bool rz_print_mute(RPrint *p, int x);
-RZ_API void rz_print_set_flags(RPrint *p, int _flags);
-RZ_API void rz_print_unset_flags(RPrint *p, int flags);
-RZ_API void rz_print_addr(RPrint *p, ut64 addr);
-RZ_API void rz_print_section(RPrint *p, ut64 at);
-RZ_API void rz_print_columns(RPrint *p, const ut8 *buf, int len, int height);
-RZ_API void rz_print_hexii(RPrint *p, ut64 addr, const ut8 *buf, int len, int step);
-RZ_API void rz_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz);
+RZ_API char *rz_print_hexpair(RzPrint *p, const char *str, int idx);
+RZ_API void rz_print_hex_from_bin(RzPrint *p, char *bin_str);
+RZ_API RzPrint *rz_print_new(void);
+RZ_API RzPrint *rz_print_free(RzPrint *p);
+RZ_API bool rz_print_mute(RzPrint *p, int x);
+RZ_API void rz_print_set_flags(RzPrint *p, int _flags);
+RZ_API void rz_print_unset_flags(RzPrint *p, int flags);
+RZ_API void rz_print_addr(RzPrint *p, ut64 addr);
+RZ_API void rz_print_section(RzPrint *p, ut64 at);
+RZ_API void rz_print_columns(RzPrint *p, const ut8 *buf, int len, int height);
+RZ_API void rz_print_hexii(RzPrint *p, ut64 addr, const ut8 *buf, int len, int step);
+RZ_API void rz_print_hexdump(RzPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz);
 RZ_API void rz_print_hexdump_simple(const ut8 *buf, int len);
-RZ_API int rz_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize);
-RZ_API void rz_print_hexpairs(RPrint *p, ut64 addr, const ut8 *buf, int len);
-RZ_API void rz_print_hexdiff(RPrint *p, ut64 aa, const ut8* a, ut64 ba, const ut8 *b, int len, int scndcol);
-RZ_API void rz_print_bytes(RPrint *p, const ut8* buf, int len, const char *fmt);
-RZ_API void rz_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step);
-RZ_API void rz_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch);
-RZ_API const char *rz_print_byte_color(RPrint *p, int ch);
-RZ_API void rz_print_c(RPrint *p, const ut8 *str, int len);
-RZ_API void rz_print_raw(RPrint *p, ut64 addr, const ut8* buf, int len, int offlines);
-RZ_API bool rz_print_have_cursor(RPrint *p, int cur, int len);
-RZ_API bool rz_print_cursor_pointer(RPrint *p, int cur, int len);
-RZ_API void rz_print_cursor(RPrint *p, int cur, int len, int set);
-RZ_API void rz_print_cursor_range(RPrint *p, int cur, int to, int set);
-RZ_API int rz_print_get_cursor(RPrint *p);
-RZ_API void rz_print_set_cursor(RPrint *p, int curset, int ocursor, int cursor);
-RZ_API void rz_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang);
+RZ_API int rz_print_jsondump(RzPrint *p, const ut8 *buf, int len, int wordsize);
+RZ_API void rz_print_hexpairs(RzPrint *p, ut64 addr, const ut8 *buf, int len);
+RZ_API void rz_print_hexdiff(RzPrint *p, ut64 aa, const ut8* a, ut64 ba, const ut8 *b, int len, int scndcol);
+RZ_API void rz_print_bytes(RzPrint *p, const ut8* buf, int len, const char *fmt);
+RZ_API void rz_print_fill(RzPrint *p, const ut8 *arr, int size, ut64 addr, int step);
+RZ_API void rz_print_byte(RzPrint *p, const char *fmt, int idx, ut8 ch);
+RZ_API const char *rz_print_byte_color(RzPrint *p, int ch);
+RZ_API void rz_print_c(RzPrint *p, const ut8 *str, int len);
+RZ_API void rz_print_raw(RzPrint *p, ut64 addr, const ut8* buf, int len, int offlines);
+RZ_API bool rz_print_have_cursor(RzPrint *p, int cur, int len);
+RZ_API bool rz_print_cursor_pointer(RzPrint *p, int cur, int len);
+RZ_API void rz_print_cursor(RzPrint *p, int cur, int len, int set);
+RZ_API void rz_print_cursor_range(RzPrint *p, int cur, int to, int set);
+RZ_API int rz_print_get_cursor(RzPrint *p);
+RZ_API void rz_print_set_cursor(RzPrint *p, int curset, int ocursor, int cursor);
+RZ_API void rz_print_code(RzPrint *p, ut64 addr, const ut8 *buf, int len, char lang);
 #define SEEFLAG -2
 #define JSONOUTPUT -3
 
@@ -179,50 +179,50 @@ RZ_API void rz_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char la
 #define RZ_PRINT_DOT       (1 << 7)
 #define RZ_PRINT_QUIET     (1 << 8)
 #define RZ_PRINT_STRUCT    (1 << 9)
-RZ_API int rz_print_format_struct_size(RPrint *p, const char *format, int mode, int n);
-RZ_API int rz_print_format(RPrint *p, ut64 seek, const ut8* buf, const int len, const char *fmt, int elem, const char *setval, char *field);
-RZ_API const char *rz_print_format_byname(RPrint *p, const char *name);
-RZ_API void rz_print_offset(RPrint *p, ut64 off, int invert, int opt, int dec, int delta, const char *label);
-RZ_API void rz_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label);
+RZ_API int rz_print_format_struct_size(RzPrint *p, const char *format, int mode, int n);
+RZ_API int rz_print_format(RzPrint *p, ut64 seek, const ut8* buf, const int len, const char *fmt, int elem, const char *setval, char *field);
+RZ_API const char *rz_print_format_byname(RzPrint *p, const char *name);
+RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int opt, int dec, int delta, const char *label);
+RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label);
 #define RZ_PRINT_STRING_WIDE 1
 #define RZ_PRINT_STRING_ZEROEND 2
 #define RZ_PRINT_STRING_URLENCODE 4
 #define RZ_PRINT_STRING_WRAP 8
 #define RZ_PRINT_STRING_WIDE32 16
 #define RZ_PRINT_STRING_ESC_NL 32
-RZ_API int rz_print_string(RPrint *p, ut64 seek, const ut8 *str, int len, int options);
-RZ_API int rz_print_date_dos(RPrint *p, const ut8 *buf, int len);
-RZ_API int rz_print_date_hfs(RPrint *p, const ut8 *buf, int len);
-RZ_API int rz_print_date_w32(RPrint *p, const ut8 *buf, int len);
-RZ_API int rz_print_date_unix(RPrint *p, const ut8 *buf, int len);
-RZ_API int rz_print_date_get_now(RPrint *p, char *str);
-RZ_API void rz_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen);
-RZ_API void rz_print_zoom_buf(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen);
-RZ_API void rz_print_progressbar(RPrint *pr, int pc, int _cols);
-RZ_API void rz_print_portionbar(RPrint *p, const ut64 *portions, int n_portions);
-RZ_API void rz_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols);
+RZ_API int rz_print_string(RzPrint *p, ut64 seek, const ut8 *str, int len, int options);
+RZ_API int rz_print_date_dos(RzPrint *p, const ut8 *buf, int len);
+RZ_API int rz_print_date_hfs(RzPrint *p, const ut8 *buf, int len);
+RZ_API int rz_print_date_w32(RzPrint *p, const ut8 *buf, int len);
+RZ_API int rz_print_date_unix(RzPrint *p, const ut8 *buf, int len);
+RZ_API int rz_print_date_get_now(RzPrint *p, char *str);
+RZ_API void rz_print_zoom(RzPrint *p, void *user, RzPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen);
+RZ_API void rz_print_zoom_buf(RzPrint *p, void *user, RzPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen);
+RZ_API void rz_print_progressbar(RzPrint *pr, int pc, int _cols);
+RZ_API void rz_print_portionbar(RzPrint *p, const ut64 *portions, int n_portions);
+RZ_API void rz_print_rangebar(RzPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols);
 RZ_API char * rz_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr);
-RZ_API void rz_print_2bpp_row(RPrint *p, ut8 *buf);
-RZ_API void rz_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles);
-RZ_API char * rz_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr);
-RZ_API const char * rz_print_color_op_type(RPrint *p, ut32 anal_type);
+RZ_API void rz_print_2bpp_row(RzPrint *p, ut8 *buf);
+RZ_API void rz_print_2bpp_tiles(RzPrint *p, ut8 *buf, ut32 tiles);
+RZ_API char * rz_print_colorize_opcode(RzPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr);
+RZ_API const char * rz_print_color_op_type(RzPrint *p, ut32 anal_type);
 RZ_API void rz_print_set_interrupted(int i);
-RZ_API void rz_print_init_rowoffsets(RPrint *p);
-RZ_API ut32 rz_print_rowoff(RPrint *p, int i);
-RZ_API void rz_print_set_rowoff(RPrint *p, int i, ut32 offset, bool overwrite);
-RZ_API int rz_print_row_at_off(RPrint *p, ut32 offset);
-RZ_API int rz_print_pie(RPrint *p, ut64 *values, int nvalues, int size);
+RZ_API void rz_print_init_rowoffsets(RzPrint *p);
+RZ_API ut32 rz_print_rowoff(RzPrint *p, int i);
+RZ_API void rz_print_set_rowoff(RzPrint *p, int i, ut32 offset, bool overwrite);
+RZ_API int rz_print_row_at_off(RzPrint *p, ut32 offset);
+RZ_API int rz_print_pie(RzPrint *p, ut64 *values, int nvalues, int size);
 
-RZ_API const char* rz_print_rowlog(RPrint *print, const char *str);
-RZ_API void rz_print_rowlog_done(RPrint *print, const char *str);
+RZ_API const char* rz_print_rowlog(RzPrint *print, const char *str);
+RZ_API void rz_print_rowlog_done(RzPrint *print, const char *str);
 
 // WIP
 RZ_API int rz_print_unpack7bit(const char *src, char *dest);
 RZ_API int rz_print_pack7bit(const char *src, char *dest);
 RZ_API char *rz_print_stereogram_bytes(const ut8 *buf, int len);
 RZ_API char *rz_print_stereogram(const char *bump, int w, int h);
-RZ_API void rz_print_stereogram_print(RPrint *p, const char *buf);
-RZ_API void rz_print_set_screenbounds(RPrint *p, ut64 addr);
+RZ_API void rz_print_stereogram_print(RzPrint *p, const char *buf);
+RZ_API void rz_print_set_screenbounds(RzPrint *p, ut64 addr);
 RZ_API int rz_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off);
 RZ_API char* rz_print_json_indent(const char* s, bool color, const char *tab, const char **colors);
 RZ_API char* rz_print_json_human(const char* s);

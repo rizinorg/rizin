@@ -20,7 +20,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return NULL;
 }
 
-static bool knownHeaderBuffer(RBuffer *b, ut16 offset) {
+static bool knownHeaderBuffer(RzBuffer *b, ut16 offset) {
 	ut8 h[2];
 	if (rz_buf_read_at (b, offset, h, sizeof (h)) != sizeof (h)) {
 		return false;
@@ -45,7 +45,7 @@ static bool knownHeaderBuffer(RBuffer *b, ut16 offset) {
 	return false;
 }
 
-static bool checkEntrypointBuffer(RBuffer *b) {
+static bool checkEntrypointBuffer(RzBuffer *b) {
 	st16 cs = rz_buf_read_le16_at (b, 0x16);
 	ut16 ip = rz_buf_read_le16_at (b, 0x14);
 	ut32 pa = ((rz_buf_read_le16_at (b, 0x08) + cs) << 4) + ip;
@@ -72,7 +72,7 @@ static bool checkEntrypointBuffer(RBuffer *b) {
 	return false;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	rz_return_val_if_fail (b, false);
 	ut64 b_size = rz_buf_size (b);
 	if (b_size <= 0x3d) {
@@ -103,7 +103,7 @@ static bool check_buffer(RBuffer *b) {
 	return true;
 }
 
-static bool load(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	struct rz_bin_mz_obj_t *mz_obj = rz_bin_mz_new_buf (buf);
 	if (mz_obj) {
 		sdb_ns_set (sdb, "info", mz_obj->kv);

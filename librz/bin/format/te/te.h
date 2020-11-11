@@ -39,7 +39,7 @@ struct rz_bin_te_obj_t {
 	int size;
 	int endian;
 	const char* file;
-	RBuffer* b;
+	RzBuffer* b;
 	Sdb *kv;
 };
 
@@ -55,6 +55,6 @@ struct rz_bin_te_section_t* rz_bin_te_get_sections(struct rz_bin_te_obj_t* bin);
 char* rz_bin_te_get_subsystem(struct rz_bin_te_obj_t* bin);
 void* rz_bin_te_free(struct rz_bin_te_obj_t* bin);
 struct rz_bin_te_obj_t* rz_bin_te_new(const char* file);
-struct rz_bin_te_obj_t* rz_bin_te_new_buf(RBuffer *buf);
+struct rz_bin_te_obj_t* rz_bin_te_new_buf(RzBuffer *buf);
 
 #endif

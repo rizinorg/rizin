@@ -1437,7 +1437,7 @@ RZ_API int rz_anal_fcn(RzAnal *anal, RzAnalFunction *fcn, ut64 addr, ut64 len, i
 	RzPVector *metas = rz_meta_get_all_in(anal, addr, RZ_META_TYPE_ANY);
 	void **it;
 	rz_pvector_foreach (metas, it) {
-		RzAnalMetaItem *meta = ((RIntervalNode *)*it)->data;
+		RzAnalMetaItem *meta = ((RzIntervalNode *)*it)->data;
 		switch (meta->type) {
 		case RZ_META_TYPE_DATA:
 		case RZ_META_TYPE_STRING:

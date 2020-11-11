@@ -36,7 +36,7 @@ KK = 0 - (sum of all bytes)
 //struct Rihex : holds sparse buffer + its own fd, for internal management
 typedef struct {
 	int fd;
-	RBuffer *rbuf;
+	RzBuffer *rbuf;
 } Rihex;
 
 static int fw04b(FILE *fd, ut16 eaddr);
@@ -46,7 +46,7 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	const char *pathname;
 	FILE *out;
 	Rihex *rih;
-	RBufferSparse *rbs;
+	RzBufferSparse *rbs;
 	RzListIter *iter;
 
 	if (!fd || !fd->data || (fd->perm & RZ_PERM_W) == 0 || count <= 0) {
@@ -225,7 +225,7 @@ static bool __plugin_open(RzIO *io, const char *pathname, bool many) {
 //ihex_parse : parse ihex file loaded at *str, fill sparse buffer "rbuf"
 //supported rec types : 00, 01, 02, 04
 //ret 0 if ok
-static bool ihex_parse(RBuffer *rbuf, char *str) {
+static bool ihex_parse(RzBuffer *rbuf, char *str) {
 	ut8 *sec_tmp;
 	ut32 sec_start = 0;	//addr for next section write
 	ut32 segreg = 0;	//basis for addr fields

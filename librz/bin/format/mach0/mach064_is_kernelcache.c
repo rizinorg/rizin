@@ -1,6 +1,6 @@
 #include "mach0_defines.h"
 
-static bool is_kernelcache_buffer(RBuffer *b) {
+static bool is_kernelcache_buffer(RzBuffer *b) {
 	ut64 length = rz_buf_size (b);
 	if (length < sizeof (struct MACH0_(mach_header))) {
 		return false;

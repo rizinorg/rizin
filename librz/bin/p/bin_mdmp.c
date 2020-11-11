@@ -166,7 +166,7 @@ static RzList* libs(RzBinFile *bf) {
 	return ret;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	rz_return_val_if_fail (buf, false);
 	struct rz_bin_mdmp_obj *res = rz_bin_mdmp_new_buf (buf);
 	if (res) {
@@ -456,7 +456,7 @@ static RzList* symbols(RzBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	ut8 magic[6];
 	if (rz_buf_read_at (b, 0, magic, sizeof (magic)) == 6) {
 		return !memcmp (magic, MDMP_MAGIC, 6);

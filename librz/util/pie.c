@@ -24,7 +24,7 @@ static void drawSectorLine(char *out, int size, int percent) {
 	}
 }
 
-RZ_API int rz_print_pie(RPrint *p, ut64 *values, int nvalues, int size) {
+RZ_API int rz_print_pie(RzPrint *p, ut64 *values, int nvalues, int size) {
 	ut8 *nv = calloc (nvalues, sizeof (ut8));
 	char *out = calloc (size, size);
 	int i, x, y;

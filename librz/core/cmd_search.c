@@ -252,18 +252,18 @@ hell:
 	return -1;
 }
 
-static void cmd_search_bin(RzCore *core, RInterval itv) {
+static void cmd_search_bin(RzCore *core, RzInterval itv) {
 	ut64 from = itv.addr, to = rz_itv_end (itv);
 	int size; // , sz = sizeof (buf);
 
 	int fd = core->file->fd;
-	RBuffer *b = rz_buf_new_with_io (&core->anal->iob, fd);
+	RzBuffer *b = rz_buf_new_with_io (&core->anal->iob, fd);
 	rz_cons_break_push (NULL, NULL);
 	while (from < to) {
 		if (rz_cons_is_breaked ()) {
 			break;
 		}
-		RBuffer *ref = rz_buf_new_slice (b, from, to);
+		RzBuffer *ref = rz_buf_new_slice (b, from, to);
 		RzBinPlugin *plug = rz_bin_get_binplugin_by_buffer (core->bin, ref);
 		if (plug) {
 			rz_cons_printf ("0x%08" PFMT64x "  %s\n", from, plug->name);
@@ -566,7 +566,7 @@ static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_
 	}
 }
 
-static void append_bound(RzList *list, RzIO *io, RInterval search_itv, ut64 from, ut64 size, int perms) {
+static void append_bound(RzList *list, RzIO *io, RzInterval search_itv, ut64 from, ut64 size, int perms) {
 	RzIOMap *map = RZ_NEW0 (RzIOMap);
 	if (!map) {
 		return;
@@ -576,7 +576,7 @@ static void append_bound(RzList *list, RzIO *io, RInterval search_itv, ut64 from
 	}
 
 	map->perm = perms;
-	RInterval itv = {from, size};
+	RzInterval itv = {from, size};
 	if (size == -1) {
 		eprintf ("Warning: Invalid range. Use different search.in=? or anal.in=dbg.maps.x\n");
 		free (map);
@@ -608,7 +608,7 @@ static bool maskMatches(int perm, int mask, bool only) {
 	return false;
 }
 
-// TODO(maskray) returns RzList<RInterval>
+// TODO(maskray) returns RzList<RzInterval>
 RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *mode, const char *prefix) {
 	rz_return_val_if_fail (core, NULL);
 
@@ -625,7 +625,7 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 	snprintf (bound_to, sizeof (bound_to), "%s.%s", prefix, "to");
 	const ut64 search_from = rz_config_get_i (core->config, bound_from),
 	      search_to = rz_config_get_i (core->config, bound_to);
-	const RInterval search_itv = {search_from, search_to - search_from};
+	const RzInterval search_itv = {search_from, search_to - search_from};
 	if (!mode) {
 		mode = rz_config_get (core->config, bound_in);
 	}
@@ -1314,7 +1314,7 @@ static void print_rop(RzCore *core, RzList *hitlist, char mode, bool *json_first
 	rz_list_free (ropList);
 }
 
-static int rz_core_search_rop(RzCore *core, RInterval search_itv, int opt, const char *grep, int regexp, struct search_parameters *param) {
+static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, const char *grep, int regexp, struct search_parameters *param) {
 	const ut8 crop = rz_config_get_i (core->config, "rop.conditional");      // decide if cjmp, cret, and ccall should be used too for the gadget-search
 	const ut8 subchain = rz_config_get_i (core->config, "rop.subchains");
 	const ut8 max_instr = rz_config_get_i (core->config, "rop.len");
@@ -1409,7 +1409,7 @@ static int rz_core_search_rop(RzCore *core, RInterval search_itv, int opt, const
 		if (!rz_itv_overlap (search_itv, map->itv)) {
 			continue;
 		}
-		RInterval itv = rz_itv_intersect (search_itv, map->itv);
+		RzInterval itv = rz_itv_intersect (search_itv, map->itv);
 		ut64 from = itv.addr, to = rz_itv_end (itv);
 		if (rz_cons_is_breaked ()) {
 			break;
@@ -2235,7 +2235,7 @@ static void do_section_search(RzCore *core, struct search_parameters *param, con
 	free (buf);
 }
 
-static void do_asm_search(RzCore *core, struct search_parameters *param, const char *input, int mode, RInterval search_itv) {
+static void do_asm_search(RzCore *core, struct search_parameters *param, const char *input, int mode, RzInterval search_itv) {
 	RzCoreAsmHit *hit;
 	RzListIter *iter, *itermap;
 	int count = 0, maxhits = 0, filter = 0;
@@ -2339,7 +2339,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 	rz_cons_break_pop ();
 }
 
-static void do_string_search(RzCore *core, RInterval search_itv, struct search_parameters *param) {
+static void do_string_search(RzCore *core, RzInterval search_itv, struct search_parameters *param) {
 	ut64 at;
 	ut8 *buf;
 	RzSearch *search = core->search;
@@ -2377,7 +2377,7 @@ static void do_string_search(RzCore *core, RInterval search_itv, struct search_p
 				continue;
 			}
 			const ut64 saved_nhits = search->nhits;
-			RInterval itv = rz_itv_intersect (search_itv, map->itv);
+			RzInterval itv = rz_itv_intersect (search_itv, map->itv);
 			if (rz_cons_is_breaked ()) {
 				break;
 			}
@@ -2969,7 +2969,7 @@ static int cmd_search(void *data, const char *input) {
 		goto beach;
 	}
 	// {.addr = UT64_MAX, .size = 0} means search range is unspecified
-	RInterval search_itv = {search_from, search_to - search_from};
+	RzInterval search_itv = {search_from, search_to - search_from};
 	bool empty_search_itv = search_from == search_to && search_from != UT64_MAX;
 	if (empty_search_itv) {
 		eprintf ("WARNING from == to?\n");
@@ -3026,7 +3026,7 @@ reread:
 		}
 		search->bckwrds = true;
 		if (core->offset) {
-			RInterval itv = {0, core->offset};
+			RzInterval itv = {0, core->offset};
 			if (!rz_itv_overlap (search_itv, itv)) {
 				ret = false;
 				goto beach;
@@ -3708,7 +3708,7 @@ reread:
 	break;
 	case 'f': // "/f" forward search
 		if (core->offset) {
-			RInterval itv = {core->offset, -core->offset};
+			RzInterval itv = {core->offset, -core->offset};
 			if (!rz_itv_overlap (search_itv, itv)) {
 				ret = false;
 				goto beach;

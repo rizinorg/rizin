@@ -347,7 +347,7 @@ static int rabin_do_operation(RzBin *bin, const char *op, int rad, const char *o
 	}
 	RzBinFile *bf = rz_bin_cur (bin);
 	if (bf) {
-		RBuffer *nb = rz_buf_new_with_buf (bf->buf);
+		RzBuffer *nb = rz_buf_new_with_buf (bf->buf);
 		rz_buf_free (bf->buf);
 		bf->buf = nb;
 	}
@@ -915,7 +915,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 	if (action & RZ_BIN_REQ_CREATE) {
 		// TODO: move in a function outside
-		RBuffer *b;
+		RzBuffer *b;
 		int datalen, codelen;
 		ut8 *data = NULL, *code = NULL;
 		char *p2, *p = strchr (create, ':');
@@ -1015,7 +1015,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			eprintf ("ADD %s\n", argv[i]);
 			rz_list_append (files, (void*)argv[i]);
 		}
-		RBuffer *buf = rz_bin_package (core.bin, format, file, files);
+		RzBuffer *buf = rz_bin_package (core.bin, format, file, files);
 		/* TODO: return bool or something to catch errors\n") */
 		if (buf) {
 			bool ret = rz_buf_dump (buf, file);

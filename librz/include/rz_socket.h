@@ -247,17 +247,17 @@ typedef struct rz_run_profile_t {
 	int _timeout;
 	int _timeout_sig;
 	int _nice;
-} RRunProfile;
+} RzRunProfile;
 
-RZ_API RRunProfile *rz_run_new(const char *str);
-RZ_API bool rz_run_parse(RRunProfile *pf, const char *profile);
-RZ_API void rz_run_free(RRunProfile *r);
-RZ_API bool rz_run_parseline(RRunProfile *p, const char *b);
+RZ_API RzRunProfile *rz_run_new(const char *str);
+RZ_API bool rz_run_parse(RzRunProfile *pf, const char *profile);
+RZ_API void rz_run_free(RzRunProfile *r);
+RZ_API bool rz_run_parseline(RzRunProfile *p, const char *b);
 RZ_API const char *rz_run_help(void);
-RZ_API int rz_run_config_env(RRunProfile *p);
-RZ_API int rz_run_start(RRunProfile *p);
-RZ_API void rz_run_reset(RRunProfile *p);
-RZ_API bool rz_run_parsefile(RRunProfile *p, const char *b);
+RZ_API int rz_run_config_env(RzRunProfile *p);
+RZ_API int rz_run_start(RzRunProfile *p);
+RZ_API void rz_run_reset(RzRunProfile *p);
+RZ_API bool rz_run_parsefile(RzRunProfile *p, const char *b);
 RZ_API char *rz_run_get_environ_profile(char **env);
 
 /* rapipe */

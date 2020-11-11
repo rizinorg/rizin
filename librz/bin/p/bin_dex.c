@@ -316,13 +316,13 @@ static char *dex_method_signature(RzBinDexObj *bin, int method_idx) {
 	return dex_get_proto (bin, bin->methods[method_idx].proto_id);
 }
 
-static ut32 read32(RBuffer* b, ut64 addr) {
+static ut32 read32(RzBuffer* b, ut64 addr) {
 	ut32 n = 0;
 	rz_buf_read_at (b, addr, (ut8*)&n, sizeof (n));
 	return rz_read_le32 (&n);
 }
 
-static ut16 read16(RBuffer* b, ut64 addr) {
+static ut16 read16(RzBuffer* b, ut64 addr) {
 	ut16 n = 0;
 	rz_buf_read_at (b, addr, (ut8*)&n, sizeof (n));
 	return rz_read_le16 (&n);
@@ -732,7 +732,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return bin->kv;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	*bin_obj = rz_bin_dex_new_buf (buf);
 	return *bin_obj != NULL;
 }
@@ -741,7 +741,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0;
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RzBuffer *buf) {
 	ut8 tmp[8];
 	int r = rz_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	if (r < sizeof (tmp)) {
@@ -1047,7 +1047,7 @@ static const char *dex_class_super_name(RzBinDexObj *bin, RzBinDexClass *c) {
 	return getstr (bin, tid);
 }
 
-static ut64 peek_uleb(RBuffer *b, bool *err, size_t *nn) {
+static ut64 peek_uleb(RzBuffer *b, bool *err, size_t *nn) {
 	ut64 n = UT64_MAX;
 	int len = rz_buf_uleb128 (b, &n);
 	if (len < 1) {

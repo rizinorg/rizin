@@ -15,10 +15,10 @@ static int index_filename = -2;
 /**
  * Open an ar/lib file. If filename is NULL, list archive files
  */
-RZ_API RBuffer *ar_open_file(const char *arname, const char *filename) {
+RZ_API RzBuffer *ar_open_file(const char *arname, const char *filename) {
 	int r;
 	RzList *files = NULL;
-	RBuffer *b = rz_buf_new_file (arname, O_RDWR, 0);
+	RzBuffer *b = rz_buf_new_file (arname, O_RDWR, 0);
 	if (!b) {
 		rz_sys_perror (__FUNCTION__);
 		return NULL;
@@ -66,20 +66,20 @@ fail:
 	return NULL;
 }
 
-RZ_API int ar_close(RBuffer *b) {
+RZ_API int ar_close(RzBuffer *b) {
 	rz_buf_free (b);
 	return 0;
 }
 
-RZ_API int ar_read_at(RBuffer *b, ut64 off, void *buf, int count) {
+RZ_API int ar_read_at(RzBuffer *b, ut64 off, void *buf, int count) {
 	return rz_buf_read_at (b, off, buf, count);
 }
 
-RZ_API int ar_write_at(RBuffer *b, ut64 off, void *buf, int count) {
+RZ_API int ar_write_at(RzBuffer *b, ut64 off, void *buf, int count) {
 	return rz_buf_write_at (b, off, buf, count);
 }
 
-int ar_read(RBuffer *b, void *dest, int len) {
+int ar_read(RzBuffer *b, void *dest, int len) {
 	int r = rz_buf_read (b, dest, len);
 	if (!r) {
 		return 0;
@@ -88,7 +88,7 @@ int ar_read(RBuffer *b, void *dest, int len) {
 	return r;
 }
 
-int ar_read_until_slash(RBuffer *b, char *buffer, int limit) {
+int ar_read_until_slash(RzBuffer *b, char *buffer, int limit) {
 	ut32 i = 0;
 	ut32 lim = (limit && limit < BUF_SIZE)? limit: BUF_SIZE;
 	while (i < lim) {
@@ -102,7 +102,7 @@ int ar_read_until_slash(RBuffer *b, char *buffer, int limit) {
 	return i;
 }
 
-int ar_read_header(RBuffer *b, char *buffer) {
+int ar_read_header(RzBuffer *b, char *buffer) {
 	int r = ar_read (b, buffer, 8);
 	if (!r) {
 		return 0;
@@ -114,7 +114,7 @@ int ar_read_header(RBuffer *b, char *buffer) {
 	return r;
 }
 
-int ar_read_file(RBuffer *b, char *buffer, bool lookup, RzList *files, const char *filename) {
+int ar_read_file(RzBuffer *b, char *buffer, bool lookup, RzList *files, const char *filename) {
 	ut64 filesize = 0;
 	char *tmp = NULL;
 	char *curfile = NULL;
@@ -207,7 +207,7 @@ fail:
 	return 0;
 }
 
-int ar_read_filename_table(RBuffer *b, char *buffer, RzList *files, const char *filename) {
+int ar_read_filename_table(RzBuffer *b, char *buffer, RzList *files, const char *filename) {
 	int r = ar_read (b, buffer, AR_FILENAME_LEN);
 	if (r != AR_FILENAME_LEN) {
 		return 0;

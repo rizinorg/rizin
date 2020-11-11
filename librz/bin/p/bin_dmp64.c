@@ -114,7 +114,7 @@ static RzList *sections(RzBinFile *bf) {
 	return ret;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	rz_return_val_if_fail (buf, false);
 	struct rz_bin_dmp64_obj_t *res = rz_bin_dmp64_new_buf (buf);
 	if (res) {
@@ -125,7 +125,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadad
 	return false;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	ut8 magic[8];
 	if (rz_buf_read_at (b, 0, magic, sizeof (magic)) == 8) {
 		return !memcmp (magic, DMP64_MAGIC, 8);

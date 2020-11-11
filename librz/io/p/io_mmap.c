@@ -11,7 +11,7 @@ typedef struct rz_io_mmo_t {
 	int fd;
 	int opened;
 	ut8 modified;
-	RBuffer *buf;
+	RzBuffer *buf;
 	RzIO * io_backref;
 } RzIOMMapFileObj;
 

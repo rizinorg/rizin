@@ -40,7 +40,7 @@ typedef struct symbols_metadata_t { // 0x40
 } SymbolsMetadata;
 
 // header starts at offset 0 and ends at offset 0x40
-static SymbolsHeader parseHeader(RBuffer *buf) {
+static SymbolsHeader parseHeader(RzBuffer *buf) {
 	ut8 b[64];
 	SymbolsHeader sh = { 0 };
 	(void)rz_buf_read_at (buf, 0, b, sizeof (b));
@@ -83,7 +83,7 @@ static const char *subtypeString(int n) {
 }
 
 // metadata section starts at offset 0x40 and ends around 0xb0 depending on filenamelength
-static SymbolsMetadata parseMetadata(RBuffer *buf, int off) {
+static SymbolsMetadata parseMetadata(RzBuffer *buf, int off) {
 	SymbolsMetadata sm = { 0 };
 	ut8 b[0x100] = { 0 };
 	(void)rz_buf_read_at (buf, off, b, sizeof (b));
@@ -193,7 +193,7 @@ static RzBinSymbol *bin_symbol_from_symbol(RzCoreSymCacheElement *element, RzCor
 	return sym;
 }
 
-static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RBuffer *buf, int off, int bits) {
+static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RzBuffer *buf, int off, int bits) {
 	D eprintf ("Dragons at 0x%x\n", off);
 	ut64 size = rz_buf_size (buf);
 	if (off >= size) {
@@ -264,7 +264,7 @@ static RzCoreSymCacheElement *parseDragons(RzBinFile *bf, RBuffer *buf, int off,
 	return rz_coresym_cache_element_new (bf, buf, off + 16, bits);
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 #if 0
 	SYMBOLS HEADER
 
@@ -343,7 +343,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	ut8 buf[4];
 	rz_buf_read_at (b, 0, buf, sizeof (buf));
 	return !memcmp (buf, "\x02\xff\x01\xff", 4);

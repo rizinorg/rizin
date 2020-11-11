@@ -437,7 +437,7 @@ struct rz_bin_te_obj_t* rz_bin_te_new(const char* file) {
 	return bin;
 }
 
-struct rz_bin_te_obj_t* rz_bin_te_new_buf(RBuffer *buf) {
+struct rz_bin_te_obj_t* rz_bin_te_new_buf(RzBuffer *buf) {
 	struct rz_bin_te_obj_t *bin = RZ_NEW0 (struct rz_bin_te_obj_t);
 	if (!bin) {
 		return NULL;

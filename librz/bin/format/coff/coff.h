@@ -22,7 +22,7 @@ struct rz_bin_coff_obj {
 
 	ut16 target_id; /* TI COFF specific */
 
-	RBuffer *b;
+	RzBuffer *b;
 	size_t size;
 	ut8 endian;
 	Sdb *kv;
@@ -33,7 +33,7 @@ struct rz_bin_coff_obj {
 };
 
 bool rz_coff_supported_arch(const ut8 *buf); /* Reads two bytes from buf. */
-struct rz_bin_coff_obj* rz_bin_coff_new_buf(RBuffer *buf, bool verbose);
+struct rz_bin_coff_obj* rz_bin_coff_new_buf(RzBuffer *buf, bool verbose);
 void rz_bin_coff_free(struct rz_bin_coff_obj *obj);
 RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj);
 char *rz_coff_symbol_name (struct rz_bin_coff_obj *obj, void *ptr);

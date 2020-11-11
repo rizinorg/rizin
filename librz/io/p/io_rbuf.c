@@ -11,23 +11,23 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	if (!fd || !buf || count < 0 || !fd->data) {
 		return -1;
 	}
-	RBuffer *b = fd->data;
+	RzBuffer *b = fd->data;
 	return rz_buf_write (b, buf, count);
 }
 
 static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
-	RBuffer *b = fd->data;
+	RzBuffer *b = fd->data;
 	return rz_buf_read (b, buf, count);
 }
 
 static int __close(RzIODesc *fd) {
-	RBuffer *b = fd->data;
+	RzBuffer *b = fd->data;
 	rz_buf_free (b);
 	return 0;
 }
 
 static ut64 __lseek(RzIO* io, RzIODesc *fd, ut64 offset, int whence) {
-	RBuffer *buf = fd->data;
+	RzBuffer *buf = fd->data;
 	return rz_buf_seek (buf, offset, whence);
 }
 
@@ -37,7 +37,7 @@ static bool __check(RzIO *io, const char *pathname, bool many) {
 
 static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 	RzIODesc *desc;
-	RBuffer *buf = rz_buf_new ();
+	RzBuffer *buf = rz_buf_new ();
 	if (buf && (desc = rz_io_desc_new (io, &rz_io_plugin_rbuf, pathname, 7, 0, buf))) {
 		return desc;
 	}
@@ -47,7 +47,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 
 RzIOPlugin rz_io_plugin_rbuf = {
 	.name = "rbuf",
-	.desc = "RBuffer IO plugin",
+	.desc = "RzBuffer IO plugin",
 	.uris = "rbuf://",
 	.license = "LGPL",
 	.open = __open,

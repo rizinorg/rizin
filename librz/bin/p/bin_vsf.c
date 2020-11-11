@@ -30,7 +30,7 @@ static Sdb* get_sdb (RzBinFile *bf) {
 	return bin->kv;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	ut8 magic[VICE_MAGIC_LEN];
 	if (rz_buf_read_at (b, 0, magic, VICE_MAGIC_LEN) == VICE_MAGIC_LEN) {
 		return !memcmp (magic, VICE_MAGIC, VICE_MAGIC_LEN);
@@ -39,7 +39,7 @@ static bool check_buffer(RBuffer *b) {
 }
 
 // XXX b vs bf->buf
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	ut64 offset = 0;
 	struct rz_bin_vsf_obj* res = NULL;
 	if (check_buffer (bf->buf)) {

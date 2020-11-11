@@ -55,7 +55,7 @@ static inline int is_arm(struct PE_(rz_bin_pe_obj_t)* bin) {
 	return 0;
 }
 
-static inline bool read_and_follow_jump(struct rz_bin_pe_addr_t *entry, RBuffer *buf, ut8 *b, int len, bool big_endian) {
+static inline bool read_and_follow_jump(struct rz_bin_pe_addr_t *entry, RzBuffer *buf, ut8 *b, int len, bool big_endian) {
 	if (!rz_buf_read_at (buf, entry->paddr, b, len)) {
 		return false;
 	}
@@ -68,7 +68,7 @@ static inline bool read_and_follow_jump(struct rz_bin_pe_addr_t *entry, RBuffer 
 	return rz_buf_read_at (buf, entry->paddr, b, len) > 0;
 }
 
-static inline bool follow_offset(struct rz_bin_pe_addr_t *entry, RBuffer *buf, ut8 *b, int len, bool big_endian, size_t instr_off) {
+static inline bool follow_offset(struct rz_bin_pe_addr_t *entry, RzBuffer *buf, ut8 *b, int len, bool big_endian, size_t instr_off) {
 	const st32 dst_offset = rz_read_ble32 (b + instr_off + 1, big_endian) + instr_off + 5;
 	entry->paddr += dst_offset;
 	entry->vaddr += dst_offset;
@@ -944,7 +944,7 @@ const char* PE_(bin_pe_compute_authentihash)(struct PE_(rz_bin_pe_obj_t)* bin) {
 	PE_DWord security_dir_offset = data_dir_security->VirtualAddress;
 	ut32 security_dir_size = data_dir_security->Size;
 
-	RBuffer *buf = rz_buf_new ();
+	RzBuffer *buf = rz_buf_new ();
 	rz_buf_append_buf_slice (buf, bin->b, 0, checksum_paddr);
 	rz_buf_append_buf_slice (buf, bin->b,
 		checksum_paddr + 4,
@@ -1040,7 +1040,7 @@ int PE_(bin_pe_get_overlay)(struct PE_(rz_bin_pe_obj_t)* bin, ut64* size) {
 	return 0;
 }
 
-static int bin_pe_read_metadata_string(char* to, RBuffer *frombuf, int fromoff) {
+static int bin_pe_read_metadata_string(char* to, RzBuffer *frombuf, int fromoff) {
 	int covered = 0;
 	while (covered < MAX_METADATA_STRING_LENGTH) {
 		char covch = rz_buf_read8_at (frombuf, covered);
@@ -4126,7 +4126,7 @@ struct PE_(rz_bin_pe_obj_t)* PE_(rz_bin_pe_new)(const char* file, bool verbose) 
 	return bin;
 }
 
-struct PE_(rz_bin_pe_obj_t)* PE_(rz_bin_pe_new_buf)(RBuffer *buf, bool verbose) {
+struct PE_(rz_bin_pe_obj_t)* PE_(rz_bin_pe_new_buf)(RzBuffer *buf, bool verbose) {
 	struct PE_(rz_bin_pe_obj_t)* bin = RZ_NEW0 (struct PE_(rz_bin_pe_obj_t));
 	if (!bin) {
 		return NULL;
