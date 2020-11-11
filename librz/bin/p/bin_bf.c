@@ -5,7 +5,7 @@
 #include <rz_lib.h>
 #include <rz_bin.h>
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return true;
 }
 
@@ -60,7 +60,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RzBuffer *buf) {
 	rz_return_val_if_fail (buf, false);
 
 	ut8 tmp[16];

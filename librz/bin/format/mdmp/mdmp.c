@@ -863,7 +863,7 @@ static bool rz_bin_mdmp_init_directory(struct rz_bin_mdmp_obj *obj) {
 	return true;
 }
 
-static bool rz_bin_mdmp_patch_pe_headers(RBuffer *pe_buf) {
+static bool rz_bin_mdmp_patch_pe_headers(RzBuffer *pe_buf) {
 	int i;
 	Pe64_image_dos_header dos_hdr;
 	Pe64_image_nt_headers nt_hdr;
@@ -883,7 +883,7 @@ static bool rz_bin_mdmp_patch_pe_headers(RBuffer *pe_buf) {
 	return true;
 }
 
-static int check_pe32_buf(RBuffer *buf, ut64 length) {
+static int check_pe32_buf(RzBuffer *buf, ut64 length) {
 	unsigned int idx;
 	if (!buf || length <= 0x3d) {
 		return false;
@@ -901,7 +901,7 @@ static int check_pe32_buf(RBuffer *buf, ut64 length) {
 	return false;
 }
 
-static int check_pe64_buf(RBuffer *buf, ut64 length) {
+static int check_pe64_buf(RzBuffer *buf, ut64 length) {
 	int idx, ret = false;
 	if (!buf || length <= 0x3d) {
 		return false;
@@ -925,7 +925,7 @@ static bool rz_bin_mdmp_init_pe_bins(struct rz_bin_mdmp_obj *obj) {
 	struct minidump_module *module;
 	struct Pe32_rz_bin_mdmp_pe_bin *pe32_bin, *pe32_dup;
 	struct Pe64_rz_bin_mdmp_pe_bin *pe64_bin, *pe64_dup;
-	RBuffer *buf;
+	RzBuffer *buf;
 	RzListIter *it, *it_dup;
 
 	rz_list_foreach (obj->streams.modules, it, module) {
@@ -1006,7 +1006,7 @@ static int rz_bin_mdmp_init(struct rz_bin_mdmp_obj *obj) {
 	return true;
 }
 
-struct rz_bin_mdmp_obj *rz_bin_mdmp_new_buf(RBuffer *buf) {
+struct rz_bin_mdmp_obj *rz_bin_mdmp_new_buf(RzBuffer *buf) {
 	bool fail = false;
 	struct rz_bin_mdmp_obj *obj = RZ_NEW0 (struct rz_bin_mdmp_obj);
 	if (!obj) {

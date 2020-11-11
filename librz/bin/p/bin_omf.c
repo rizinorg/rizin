@@ -6,7 +6,7 @@
 #include <rz_bin.h>
 #include "omf/omf.h"
 
-static bool load_buffer (RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	ut64 size;
 	const ut8 *buf = rz_buf_data (b, &size);
 	rz_return_val_if_fail (buf, false);
@@ -19,7 +19,7 @@ static void destroy(RzBinFile *bf) {
 	bf->o->bin_obj = NULL;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	int i;
 	ut8 ch;
 	if (rz_buf_read_at (b, 0, &ch, 1) != 1) {

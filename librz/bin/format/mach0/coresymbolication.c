@@ -13,7 +13,7 @@
 #define RZ_CS_EL_SIZE_LSYM 0x24
 #define RZ_CS_EL_SIZE_LINFO 0x14
 
-static RzCoreSymCacheElementHdr *rz_coresym_cache_element_header_new(RBuffer *buf, size_t off, int bits) {
+static RzCoreSymCacheElementHdr *rz_coresym_cache_element_header_new(RzBuffer *buf, size_t off, int bits) {
 	RzCoreSymCacheElementHdr *hdr = RZ_NEW0 (RzCoreSymCacheElementHdr);
 	if (hdr && rz_buf_fread_at (buf, off, (ut8 *)hdr, "13i16c5i", 1) == sizeof (RzCoreSymCacheElementHdr)) {
 		return hdr;
@@ -157,7 +157,7 @@ static char *str_dup_safe_fixed(const ut8 *b, const ut8 *str, ut64 len, const ut
 	return NULL;
 }
 
-RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RBuffer *buf, ut64 off, int bits) {
+RzCoreSymCacheElement *rz_coresym_cache_element_new(RzBinFile *bf, RzBuffer *buf, ut64 off, int bits) {
 	RzCoreSymCacheElement *result = NULL;
 	ut8 *b = NULL;
 	RzCoreSymCacheElementHdr *hdr = rz_coresym_cache_element_header_new (buf, off, bits);

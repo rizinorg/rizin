@@ -4662,7 +4662,7 @@ static ut8*getFileData(RzCore *core, const char *arg) {
 	return (ut8*)rz_file_slurp (arg, NULL);
 }
 
-static void consumeBuffer(RBuffer *buf, const char *cmd, const char *errmsg) {
+static void consumeBuffer(RzBuffer *buf, const char *cmd, const char *errmsg) {
 	if (!buf) {
 		if (errmsg) {
 			rz_cons_printf ("%s\n", errmsg);
@@ -4956,7 +4956,7 @@ static int cmd_debug(void *data, const char *input) {
 				char *str = strchr (input + 2, ' ');
 				if (str) off = rz_num_math (core->num, str+1);
 				if (off == UT64_MAX || !rz_debug_desc_seek (core->dbg, fd, off)) {
-					RBuffer *buf = rz_core_syscallf (core, "lseek", "%d, 0x%"PFMT64x", %d", fd, off, 0);
+					RzBuffer *buf = rz_core_syscallf (core, "lseek", "%d, 0x%"PFMT64x", %d", fd, off, 0);
 					consumeBuffer (buf, "dx ", "Cannot seek");
 				}
 			}
@@ -4971,7 +4971,7 @@ static int cmd_debug(void *data, const char *input) {
 				char *str = strchr (input + 3, ' ');
 				if (str) newfd = rz_num_math (core->num, str+1);
 				if (newfd == UT64_MAX || !rz_debug_desc_dup (core->dbg, fd, newfd)) {
-					RBuffer *buf = rz_core_syscallf (core, "dup2", "%d, %d", fd, (int)newfd);
+					RzBuffer *buf = rz_core_syscallf (core, "dup2", "%d, %d", fd, (int)newfd);
 					if (buf) {
 						consumeBuffer (buf, "dx ", NULL);
 					} else {
@@ -5007,7 +5007,7 @@ static int cmd_debug(void *data, const char *input) {
 				if (str) len = rz_num_math (core->num, str+1);
 				if (len == UT64_MAX || off == UT64_MAX || \
 						!rz_debug_desc_write (core->dbg, fd, off, len)) {
-					RBuffer *buf = rz_core_syscallf (core, "write", "%d, 0x%"PFMT64x", %d", fd, off, (int)len);
+					RzBuffer *buf = rz_core_syscallf (core, "write", "%d, 0x%"PFMT64x", %d", fd, off, (int)len);
 					consumeBuffer (buf, "dx ", "Cannot write");
 				}
 			}
@@ -5018,14 +5018,14 @@ static int cmd_debug(void *data, const char *input) {
 			{
 				int fd = atoi (input + 2);
 				//rz_core_cmdf (core, "dxs close %d", (int)rz_num_math ( core->num, input + 2));
-				RBuffer *buf = rz_core_syscallf (core, "close", "%d", fd);
+				RzBuffer *buf = rz_core_syscallf (core, "close", "%d", fd);
 				consumeBuffer (buf, "dx ", "Cannot close");
 			}
 			break;
 		case ' ': // "dd"
 			// TODO: handle read, readwrite, append
 			{
-				RBuffer *buf = rz_core_syscallf (core, "open", "%s, %d, %d", input + 2, 2, 0644);
+				RzBuffer *buf = rz_core_syscallf (core, "open", "%s, %d, %d", input + 2, 2, 0644);
 				consumeBuffer (buf, "dx ", "Cannot open");
 			}
 			// open file
@@ -5243,7 +5243,7 @@ static int cmd_debug(void *data, const char *input) {
 			char *corefile = get_corefile_name (input + 1, core->dbg->pid);
 			eprintf ("Writing to file '%s'\n", corefile);
 			rz_file_rm (corefile);
-			RBuffer *dst = rz_buf_new_file (corefile, O_RDWR | O_CREAT, 0644);
+			RzBuffer *dst = rz_buf_new_file (corefile, O_RDWR | O_CREAT, 0644);
 			if (dst) {
 				if (!core->dbg->h->gcore (core->dbg, dst)) {
 					eprintf ("dg: coredump failed\n");
@@ -5381,7 +5381,7 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		case 'e': { // "dxe"
 			RzEgg *egg = core->egg;
-			RBuffer *b;
+			RzBuffer *b;
 			const char *asm_arch = rz_config_get (core->config, "asm.arch");
 			int asm_bits = rz_config_get_i (core->config, "asm.bits");
 			const char *asm_os = rz_config_get (core->config, "asm.os");

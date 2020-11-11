@@ -226,7 +226,7 @@ RZ_API void rz_debug_trace_list (RzDebug *dbg, int mode, ut64 offset) {
 				if (!info) {
 					return;
 				}
-				info->pitv = (RInterval) {trace->addr, trace->size};
+				info->pitv = (RzInterval) {trace->addr, trace->size};
 				info->vitv = info->pitv;
 				info->perm = -1;
 				info->name = rz_str_newf ("%d", trace->times);

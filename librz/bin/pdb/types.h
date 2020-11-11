@@ -92,7 +92,7 @@
 
 typedef struct RZ_STREAM_FILE_{
 //	FILE *fp;
-	RBuffer *buf;
+	RzBuffer *buf;
 	int *pages;
 	int page_size;
 	int pages_amount;
@@ -708,7 +708,7 @@ typedef struct {
 
 typedef struct {
 //	FILE *fp;
-	RBuffer *buf;
+	RzBuffer *buf;
 	int *pages;
 	int pages_amount;
 	int indx;

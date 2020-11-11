@@ -170,7 +170,7 @@ typedef struct {
 	RzStrEnc strenc;
 	int cursor;
 	int show_comment_right_default;
-	RSpace *flagspace_ports;
+	RzSpace *flagspace_ports;
 	bool show_flag_in_bytes;
 	int lbytes;
 	int show_comment_right;
@@ -234,7 +234,7 @@ typedef struct {
 
 	RzFlagItem *lastflag;
 	RzAnalHint *hint;
-	RPrint *print;
+	RzPrint *print;
 
 	ut64 esil_old_pc;
 	ut8* esil_regstate;
@@ -1060,8 +1060,8 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		ds->opstr = strdup (ds->hint->opcode);
 	}
 	if (ds->subnames) {
-		RSpace *ofs = core->parser->flagspace;
-		RSpace *fs = ds->flagspace_ports;
+		RzSpace *ofs = core->parser->flagspace;
+		RzSpace *fs = ds->flagspace_ports;
 		if (ds->analop.type == RZ_ANAL_OP_TYPE_IO) {
 			core->parser->notin_flagspace = NULL;
 			core->parser->flagspace = fs;
@@ -2402,7 +2402,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	if (metas) {
 		void **it;
 		rz_pvector_foreach (metas, it) {
-			RIntervalNode *node = *it;
+			RzIntervalNode *node = *it;
 			RzAnalMetaItem *mi = node->data;
 			switch (mi->type) {
 			case RZ_META_TYPE_DATA:
@@ -2941,7 +2941,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 	fmi = NULL;
 	void **it;
 	rz_pvector_foreach (metas, it) {
-		RIntervalNode *node = *it;
+		RzIntervalNode *node = *it;
 		RzAnalMetaItem *mi = node->data;
 		switch (mi->type) {
 		case RZ_META_TYPE_DATA:
@@ -2964,7 +2964,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 		}
 	}
 	rz_pvector_foreach (metas, it) {
-		RIntervalNode *node = *it;
+		RzIntervalNode *node = *it;
 		RzAnalMetaItem *mi = node->data;
 		ut64 mi_size = rz_meta_node_size (node);
 		char *out = NULL;
@@ -4592,7 +4592,7 @@ static bool can_emulate_metadata(RzCore *core, ut64 at) {
 	RzPVector *metas = rz_meta_get_all_at (core->anal, at);
 	void **it;
 	rz_pvector_foreach (metas, it) {
-		RzAnalMetaItem *item = ((RIntervalNode *)*it)->data;
+		RzAnalMetaItem *item = ((RzIntervalNode *)*it)->data;
 		if (strchr (emuskipmeta, (char)item->type)) {
 			ret = false;
 			break;
@@ -5137,7 +5137,7 @@ static void ds_end_line_highlight(RDisasmState *ds) {
 }
 
 // int l is for lines
-RZ_API int rz_core_print_disasm(RPrint *p, RzCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes, bool json, PJ *pj, RzAnalFunction *pdf) {
+RZ_API int rz_core_print_disasm(RzPrint *p, RzCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes, bool json, PJ *pj, RzAnalFunction *pdf) {
 	int continueoninvbreak = (len == l) && invbreak;
 	RzAnalFunction *of = NULL;
 	RzAnalFunction *f = NULL;
@@ -5771,8 +5771,8 @@ toro:
 				}
 			} else if (ds->subnames) {
 				char *asm_str;
-				RSpace *ofs = core->parser->flagspace;
-				RSpace *fs = ds->flagspace_ports;
+				RzSpace *ofs = core->parser->flagspace;
+				RzSpace *fs = ds->flagspace_ports;
 				if (ds->analop.type == RZ_ANAL_OP_TYPE_IO) {
 					core->parser->notin_flagspace = NULL;
 					core->parser->flagspace = fs;
@@ -6619,11 +6619,11 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 	}
 	RzAnalEsil *esil = core->anal->esil;
 	RzList *ocache = core->io->cache;
-	RCache *ocacheb = core->io->buffer;
+	RzCache *ocacheb = core->io->buffer;
 	const int ocached = core->io->cached;
 	if (ocache) {
 		if (ocacheb && ocacheb->len) {
-			RCache *c = rz_cache_new ();
+			RzCache *c = rz_cache_new ();
 			rz_cache_set (c, ocacheb->base, ocacheb->buf, ocacheb->len);
 			core->io->buffer = c;
 		}

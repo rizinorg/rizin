@@ -81,7 +81,7 @@ static Sdb* get_sdb(RzBinFile *bf) {
 	return NULL;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	struct Elf_(rz_bin_elf_obj_t) *res = Elf_(rz_bin_elf_new_buf) (buf, bf->rbin->verbose);
 	if (res) {
 	//	sdb_ns_set (sdb, "info", res->kv);

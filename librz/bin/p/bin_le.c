@@ -3,7 +3,7 @@
 #include <rz_bin.h>
 #include "../format/le/le.h"
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	ut64 length = rz_buf_size (b);
 	if (length < 2) {
 		return false;
@@ -25,7 +25,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	rz_return_val_if_fail (bf && bin_obj && buf, false);
 	rz_bin_le_obj_t *res = rz_bin_le_new_buf (buf);
 	if (res) {

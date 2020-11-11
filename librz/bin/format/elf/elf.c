@@ -3809,7 +3809,7 @@ void Elf_(rz_bin_elf_free)(ELFOBJ* bin) {
 	free (bin);
 }
 
-ELFOBJ* Elf_(rz_bin_elf_new_buf)(RBuffer *buf, bool verbose) {
+ELFOBJ* Elf_(rz_bin_elf_new_buf)(RzBuffer *buf, bool verbose) {
 	ELFOBJ *bin = RZ_NEW0 (ELFOBJ);
 	if (bin) {
 		bin->kv = sdb_new0 ();

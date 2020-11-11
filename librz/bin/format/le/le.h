@@ -13,10 +13,10 @@ typedef struct rz_bin_le_obj_s {
 	const char *arch;
 	ut32 headerOff; /* File offset to start of LE/LX header */
 	LE_object_entry *objtbl;
-	void *buf; /* Pointer to RBuffer of file */
+	void *buf; /* Pointer to RzBuffer of file */
 } rz_bin_le_obj_t;
 
-rz_bin_le_obj_t *rz_bin_le_new_buf(RBuffer *buf);
+rz_bin_le_obj_t *rz_bin_le_new_buf(RzBuffer *buf);
 void rz_bin_le_free(rz_bin_le_obj_t *bin);
 RzList *rz_bin_le_get_entrypoints(rz_bin_le_obj_t *bin);
 RzList *rz_bin_le_get_sections(rz_bin_le_obj_t *bin);

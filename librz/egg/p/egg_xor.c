@@ -5,8 +5,8 @@
 
 #define DEFAULT_XOR_KEY "0xFF"
 
-static RBuffer *build (RzEgg *egg) {
-	RBuffer *buf, *sc;
+static RzBuffer *build (RzEgg *egg) {
+	RzBuffer *buf, *sc;
 	ut8 aux[32], nkey;
 	const char *default_key = DEFAULT_XOR_KEY;
 	char *key = rz_egg_option_get (egg, "key");

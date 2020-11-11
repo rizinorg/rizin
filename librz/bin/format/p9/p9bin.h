@@ -51,6 +51,6 @@ struct plan9_exec {
 #define p9bin_close(x) fclose(x)
 
 /* Reads four bytes from b. */
-int rz_bin_p9_get_arch(RBuffer *b, int *bits, int *big_endian);
+int rz_bin_p9_get_arch(RzBuffer *b, int *bits, int *big_endian);
 
 #endif

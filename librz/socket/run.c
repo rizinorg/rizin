@@ -83,8 +83,8 @@ static void dyn_init(void) {
 
 #endif
 
-RZ_API RRunProfile *rz_run_new(const char *str) {
-	RRunProfile *p = RZ_NEW0 (RRunProfile);
+RZ_API RzRunProfile *rz_run_new(const char *str) {
+	RzRunProfile *p = RZ_NEW0 (RzRunProfile);
 	if (p) {
 		rz_run_reset (p);
 		if (str) {
@@ -94,13 +94,13 @@ RZ_API RRunProfile *rz_run_new(const char *str) {
 	return p;
 }
 
-RZ_API void rz_run_reset(RRunProfile *p) {
+RZ_API void rz_run_reset(RzRunProfile *p) {
 	rz_return_if_fail (p);
-	memset (p, 0, sizeof (RRunProfile));
+	memset (p, 0, sizeof (RzRunProfile));
 	p->_aslr = -1;
 }
 
-RZ_API bool rz_run_parse(RRunProfile *pf, const char *profile) {
+RZ_API bool rz_run_parse(RzRunProfile *pf, const char *profile) {
 	rz_return_val_if_fail (pf && profile, false);
 	char *p, *o, *str = strdup (profile);
 	if (!str) {
@@ -119,7 +119,7 @@ RZ_API bool rz_run_parse(RRunProfile *pf, const char *profile) {
 	return true;
 }
 
-RZ_API void rz_run_free(RRunProfile *r) {
+RZ_API void rz_run_free(RzRunProfile *r) {
 	if (r) {
 		free (r->_system);
 		free (r->_program);
@@ -256,7 +256,7 @@ static int parseBool(const char *e) {
 }
 
 // TODO: move into rz_util? rz_run_... ? with the rest of funcs?
-static void setASLR(RRunProfile *r, int enabled) {
+static void setASLR(RzRunProfile *r, int enabled) {
 #if __linux__
 	rz_sys_aslr (enabled);
 #if HAVE_DECL_ADDR_NO_RANDOMIZE && !__ANDROID__
@@ -459,7 +459,7 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 #endif
 }
 
-RZ_API bool rz_run_parsefile(RRunProfile *p, const char *b) {
+RZ_API bool rz_run_parsefile(RzRunProfile *p, const char *b) {
 	rz_return_val_if_fail (p && b, false);
 	char *s = rz_file_slurp (b, NULL);
 	if (s) {
@@ -470,7 +470,7 @@ RZ_API bool rz_run_parsefile(RRunProfile *p, const char *b) {
 	return 0;
 }
 
-RZ_API bool rz_run_parseline(RRunProfile *p, const char *b) {
+RZ_API bool rz_run_parseline(RzRunProfile *p, const char *b) {
 	int must_free = false;
 	char *e = strchr (b, '=');
 	if (!e || *b == '#') {
@@ -798,7 +798,7 @@ static int redirect_socket_to_pty(RzSocket *sock) {
 #endif
 }
 
-RZ_API int rz_run_config_env(RRunProfile *p) {
+RZ_API int rz_run_config_env(RzRunProfile *p) {
 	int ret;
 
 #if HAVE_PTY
@@ -1068,7 +1068,7 @@ RZ_API int rz_run_config_env(RRunProfile *p) {
 }
 
 // NOTE: return value is like in unix return code (0 = ok, 1 = not ok)
-RZ_API int rz_run_start(RRunProfile *p) {
+RZ_API int rz_run_start(RzRunProfile *p) {
 #if LIBC_HAVE_FORK
 	if (p->_execve) {
 		exit (execv (p->_program, (char* const*)p->_args));

@@ -15,7 +15,7 @@ static RzEggPlugin *egg_static_plugins[] =
 	{ RZ_EGG_STATIC_PLUGINS };
 
 struct egg_patch_t {
-	RBuffer *b;
+	RzBuffer *b;
 	int off;
 };
 
@@ -362,7 +362,7 @@ RZ_API int rz_egg_compile(RzEgg *egg) {
 	return true;
 }
 
-RZ_API RBuffer *rz_egg_get_bin(RzEgg *egg) {
+RZ_API RzBuffer *rz_egg_get_bin(RzEgg *egg) {
 	// TODO increment reference
 	return egg->bin;
 }
@@ -478,7 +478,7 @@ RZ_API char *rz_egg_option_get(RzEgg *egg, const char *key) {
 RZ_API int rz_egg_shellcode(RzEgg *egg, const char *name) {
 	RzEggPlugin *p;
 	RzListIter *iter;
-	RBuffer *b;
+	RzBuffer *b;
 	rz_list_foreach (egg->plugins, iter, p) {
 		if (p->type == RZ_EGG_PLUGIN_SHELLCODE && !strcmp (name, p->name)) {
 			b = p->build (egg);
@@ -498,7 +498,7 @@ RZ_API int rz_egg_shellcode(RzEgg *egg, const char *name) {
 RZ_API int rz_egg_encode(RzEgg *egg, const char *name) {
 	RzEggPlugin *p;
 	RzListIter *iter;
-	RBuffer *b;
+	RzBuffer *b;
 	rz_list_foreach (egg->plugins, iter, p) {
 		if (p->type == RZ_EGG_PLUGIN_ENCODER && !strcmp (name, p->name)) {
 			b = p->build (egg);

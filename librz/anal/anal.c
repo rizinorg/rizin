@@ -26,37 +26,37 @@ RZ_API void rz_anal_unset_limits(RzAnal *anal) {
 }
 
 static void meta_unset_for(RzEvent *ev, int type, void *user, void *data) {
-	RSpaces *s = (RSpaces *)ev->user;
+	RzSpaces *s = (RzSpaces *)ev->user;
 	RzAnal *anal = container_of (s, RzAnal, meta_spaces);
-	RSpaceEvent *se = (RSpaceEvent *)data;
+	RzSpaceEvent *se = (RzSpaceEvent *)data;
 	rz_meta_space_unset_for (anal, se->data.unset.space);
 }
 
 static void meta_count_for(RzEvent *ev, int type, void *user, void *data) {
-	RSpaces *s = (RSpaces *)ev->user;
+	RzSpaces *s = (RzSpaces *)ev->user;
 	RzAnal *anal = container_of (s, RzAnal, meta_spaces);
-	RSpaceEvent *se = (RSpaceEvent *)data;
+	RzSpaceEvent *se = (RzSpaceEvent *)data;
 	se->res = rz_meta_space_count_for (anal, se->data.count.space);
 }
 
 static void zign_unset_for(RzEvent *ev, int type, void *user, void *data) {
-	RSpaces *s = (RSpaces *)ev->user;
+	RzSpaces *s = (RzSpaces *)ev->user;
 	RzAnal *anal = container_of (s, RzAnal, zign_spaces);
-	RSpaceEvent *se = (RSpaceEvent *)data;
+	RzSpaceEvent *se = (RzSpaceEvent *)data;
 	rz_sign_space_unset_for (anal, se->data.unset.space);
 }
 
 static void zign_count_for(RzEvent *ev, int type, void *user, void *data) {
-	RSpaces *s = (RSpaces *)ev->user;
+	RzSpaces *s = (RzSpaces *)ev->user;
 	RzAnal *anal = container_of (s, RzAnal, zign_spaces);
-	RSpaceEvent *se = (RSpaceEvent *)data;
+	RzSpaceEvent *se = (RzSpaceEvent *)data;
 	se->res = rz_sign_space_count_for (anal, se->data.count.space);
 }
 
 static void zign_rename_for(RzEvent *ev, int type, void *user, void *data) {
-	RSpaces *s = (RSpaces *)ev->user;
+	RzSpaces *s = (RzSpaces *)ev->user;
 	RzAnal *anal = container_of (s, RzAnal, zign_spaces);
-	RSpaceEvent *se = (RSpaceEvent *)data;
+	RzSpaceEvent *se = (RzSpaceEvent *)data;
 	rz_sign_space_rename_for (anal, se->data.rename.space,
 		se->data.rename.oldname, se->data.rename.newname);
 }

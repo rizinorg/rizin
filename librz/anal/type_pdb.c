@@ -253,7 +253,7 @@ static void parse_type (const RzAnal *anal, SType *type, RzList *types) {
  * @param anal
  * @param pdb PDB information
  */
-RZ_API void rz_parse_pdb_types(const RzAnal *anal, const RPdb *pdb) {
+RZ_API void rz_parse_pdb_types(const RzAnal *anal, const RzPdb *pdb) {
 	rz_return_if_fail (anal && pdb);
 	RzList *plist = pdb->pdb_streams;
 	// getting the TPI stream from the streams list

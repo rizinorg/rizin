@@ -1236,7 +1236,7 @@ RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, int mode) {
 		eprintf ("Warning: Cannot find base address, flags will probably be misplaced\n");
 	}
 
-	RPdb pdb = RZ_EMPTY;
+	RzPdb pdb = RZ_EMPTY;
 
 	pdb.cb_printf = rz_cons_printf;
 	if (!init_pdb_parser (&pdb, file)) {
@@ -2707,10 +2707,10 @@ static int bin_map_sections_to_segments (RzBin *bin, int mode) {
 	}
 
 	rz_list_foreach (segments, iter, segment) {
-		RInterval segment_itv = (RInterval){segment->vaddr, segment->size};
+		RzInterval segment_itv = (RzInterval){segment->vaddr, segment->size};
 		char *tmp2 = rz_str_new ("");
 		rz_list_foreach (sections, iter2, section) {
-			RInterval section_itv = (RInterval){section->vaddr, section->size};
+			RzInterval section_itv = (RzInterval){section->vaddr, section->size};
 			if (rz_itv_begin (section_itv) >= rz_itv_begin (segment_itv) && rz_itv_end (section_itv) <= rz_itv_end (segment_itv) && section->name[0]) {
 				tmp2 = rz_str_appendf (tmp2, "%s ", section->name);
 			}
@@ -2784,8 +2784,8 @@ static int bin_sections(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const 
 			if (print_segments != s->is_segment) {
 				continue;
 			}
-			RInterval pitv = (RInterval){s->paddr, s->size};
-			RInterval vitv = (RInterval){s->vaddr, s->vsize};
+			RzInterval pitv = (RzInterval){s->paddr, s->size};
+			RzInterval vitv = (RzInterval){s->vaddr, s->vsize};
 			rz_num_units (humansz, sizeof (humansz), s->size);
 			RzListInfo *info = rz_listinfo_new (s->name, pitv, vitv, s->perm, strdup (humansz));
 			rz_list_append (list, info);

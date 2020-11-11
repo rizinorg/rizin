@@ -402,7 +402,7 @@ dotherax:
 			gmt = (const char*) rz_list_head (split)->n->data + 2;
 		}
 		ut32 n = rz_num_math (num, ts);
-		RPrint *p = rz_print_new ();
+		RzPrint *p = rz_print_new ();
 		if (gmt) {
 			p->datezone = rz_num_math (num, gmt);
 		}

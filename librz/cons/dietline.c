@@ -334,7 +334,7 @@ do_it_again:
 
 #endif
 
-RZ_API int rz_line_set_hist_callback(RLine *line, RLineHistoryUpCb up, RLineHistoryDownCb down) {
+RZ_API int rz_line_set_hist_callback(RzLine *line, RzLineHistoryUpCb up, RzLineHistoryDownCb down) {
 	line->cb_history_up = up;
 	line->cb_history_down = down;
 	line->offset_hist_index = 0;
@@ -343,7 +343,7 @@ RZ_API int rz_line_set_hist_callback(RLine *line, RLineHistoryUpCb up, RLineHist
 	return 1;
 }
 
-RZ_API int rz_line_hist_cmd_up(RLine *line) {
+RZ_API int rz_line_hist_cmd_up(RzLine *line) {
 	if (line->hist_up) {
 		return line->hist_up (line->user);
 	}
@@ -358,7 +358,7 @@ RZ_API int rz_line_hist_cmd_up(RLine *line) {
 	return false;
 }
 
-RZ_API int rz_line_hist_cmd_down(RLine *line) {
+RZ_API int rz_line_hist_cmd_down(RzLine *line) {
 	if (line->hist_down) {
 		return line->hist_down (line->user);
 	}
@@ -529,7 +529,7 @@ RZ_API int rz_line_hist_chop(const char *file, int limit) {
 
 static void selection_widget_draw(void) {
 	RzCons *cons = rz_cons_singleton ();
-	RSelWidget *sel_widget = I.sel_widget;
+	RzSelWidget *sel_widget = I.sel_widget;
 	int y, pos_y, pos_x = rz_str_ansi_len (I.prompt);
 	sel_widget->h = RZ_MIN (sel_widget->h, RZ_SELWIDGET_MAXH);
 	for (y = 0; y < sel_widget->options_len; y++) {
@@ -578,7 +578,7 @@ static void selection_widget_draw(void) {
 }
 
 static void selection_widget_up(int steps) {
-	RSelWidget *sel_widget = I.sel_widget;
+	RzSelWidget *sel_widget = I.sel_widget;
 	if (sel_widget) {
 		if (sel_widget->direction == RZ_SELWIDGET_DIR_UP) {
 			int height = RZ_MIN (sel_widget->h, RZ_SELWIDGET_MAXH - 1);
@@ -600,7 +600,7 @@ static void selection_widget_up(int steps) {
 }
 
 static void selection_widget_down(int steps) {
-	RSelWidget *sel_widget = I.sel_widget;
+	RzSelWidget *sel_widget = I.sel_widget;
 	if (sel_widget) {
 		if (sel_widget->direction == RZ_SELWIDGET_DIR_UP) {
 			sel_widget->selection = RZ_MAX (sel_widget->selection - steps, 0);
@@ -628,7 +628,7 @@ static void print_rline_task(void *core) {
 }
 
 static void selection_widget_erase(void) {
-	RSelWidget *sel_widget = I.sel_widget;
+	RzSelWidget *sel_widget = I.sel_widget;
 	if (sel_widget) {
 		sel_widget->options_len = 0;
 		sel_widget->selection = -1;
@@ -647,7 +647,7 @@ static void selection_widget_erase(void) {
 }
 
 static void selection_widget_select(void) {
-	RSelWidget *sel_widget = I.sel_widget;
+	RzSelWidget *sel_widget = I.sel_widget;
 	if (sel_widget && sel_widget->selection < sel_widget->options_len) {
 		char *sp = strchr (I.buffer.data, ' ');
 		if (sp) {
@@ -673,7 +673,7 @@ static void selection_widget_update(void) {
 		return;
 	}
 	if (!I.sel_widget) {
-		RSelWidget *sel_widget = RZ_NEW0 (RSelWidget);
+		RzSelWidget *sel_widget = RZ_NEW0 (RzSelWidget);
 		I.sel_widget = sel_widget;
 	}
 	I.sel_widget->scroll = 0;
@@ -1238,7 +1238,7 @@ static void __vi_mode(void) {
 	}
 }
 
-RZ_API const char *rz_line_readline_cb(RLineReadCallback cb, void *user) {
+RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 	int rows;
 	const char *gcomp_line = "";
 	static int gcomp_idx = 0;

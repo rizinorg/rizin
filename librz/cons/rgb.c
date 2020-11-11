@@ -199,7 +199,7 @@ RZ_API int rz_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 }
 
 RZ_API char *rz_cons_rgb_str_off(char *outstr, size_t sz, ut64 off) {
-	RColor rc = RColor_BLACK;
+	RzColor rc = RzColor_BLACK;
 	rc.id16 = -1;
 	rc.r = (off >> 2) & 0xff;
 	rc.g = (off >> 6) & 0xff;
@@ -280,7 +280,7 @@ static void rz_cons_rgb_gen(RzConsColorMode mode, char *outstr, size_t sz, ut8 a
 }
 
 /* Return the computed color string for the specified color in the specified mode */
-RZ_API char *rz_cons_rgb_str_mode(RzConsColorMode mode, char *outstr, size_t sz, RColor *rcolor) {
+RZ_API char *rz_cons_rgb_str_mode(RzConsColorMode mode, char *outstr, size_t sz, RzColor *rcolor) {
 	if (!rcolor) {
 		return NULL;
 	}
@@ -306,7 +306,7 @@ RZ_API char *rz_cons_rgb_str_mode(RzConsColorMode mode, char *outstr, size_t sz,
 }
 
 /* Return the computed color string for the specified color */
-RZ_API char *rz_cons_rgb_str(char *outstr, size_t sz, RColor *rcolor) {
+RZ_API char *rz_cons_rgb_str(char *outstr, size_t sz, RzColor *rcolor) {
 	return rz_cons_rgb_str_mode (rz_cons_singleton ()->context->color_mode, outstr, sz, rcolor);
 }
 

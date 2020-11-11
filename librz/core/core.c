@@ -1024,7 +1024,7 @@ static const char *rizin_argv[] = {
 	NULL
 };
 
-static void autocomplete_process_path(RLineCompletion *completion, const char *str, const char *path) {
+static void autocomplete_process_path(RzLineCompletion *completion, const char *str, const char *path) {
 	char *lpath = NULL, *dirname = NULL , *basename = NULL;
 	char *home = NULL, *filename = NULL, *p = NULL;
 	int n = 0;
@@ -1105,7 +1105,7 @@ out:
 	free (basename);
 }
 
-static void autocompleteFilename(RLineCompletion *completion, RLineBuffer *buf, char **extra_paths, int narg) {
+static void autocompleteFilename(RzLineCompletion *completion, RzLineBuffer *buf, char **extra_paths, int narg) {
 	char *args = NULL, *input = NULL;
 	int n = 0, i = 0;
 	char *pipe = strchr (buf->data, '>');
@@ -1149,7 +1149,7 @@ out:
 }
 
 //TODO: make it recursive to handle nested struct
-static int autocomplete_pfele (RzCore *core, RLineCompletion *completion, char *key, char *pfx, int idx, char *ptr) {
+static int autocomplete_pfele (RzCore *core, RzLineCompletion *completion, char *key, char *pfx, int idx, char *ptr) {
 	int i, ret = 0;
 	int len = strlen (ptr);
 	char* fmt = sdb_get (core->print->formats, key, NULL);
@@ -1179,7 +1179,7 @@ static int autocomplete_pfele (RzCore *core, RLineCompletion *completion, char *
 
 #define ADDARG(x) if (!strncmp (buf->data+chr, x, strlen (buf->data+chr))) { rz_line_completion_push (completion, x); }
 
-static void autocomplete_default(RZ_NULLABLE RzCore *core, RLineCompletion *completion, RLineBuffer *buf) {
+static void autocomplete_default(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf) {
 	RzCoreAutocomplete *a = core ? core->autocomplete : NULL;
 	int i;
 	if (a) {
@@ -1198,7 +1198,7 @@ static void autocomplete_default(RZ_NULLABLE RzCore *core, RLineCompletion *comp
 	}
 }
 
-static void autocomplete_evals(RzCore *core, RLineCompletion *completion, const char *str) {
+static void autocomplete_evals(RzCore *core, RzLineCompletion *completion, const char *str) {
 	rz_return_if_fail (str);
 	RzConfigNode *bt;
 	RzListIter *iter;
@@ -1214,7 +1214,7 @@ static void autocomplete_evals(RzCore *core, RLineCompletion *completion, const 
 	}
 }
 
-static void autocomplete_minus(RzCore *core, RLineCompletion *completion, const char *str) {
+static void autocomplete_minus(RzCore *core, RzLineCompletion *completion, const char *str) {
 	rz_return_if_fail (str);
 	int count;
 	int length = strlen (str);
@@ -1230,7 +1230,7 @@ static void autocomplete_minus(RzCore *core, RLineCompletion *completion, const 
 	}
 }
 
-static void autocomplete_breakpoints(RzCore *core, RLineCompletion *completion, const char *str) {
+static void autocomplete_breakpoints(RzCore *core, RzLineCompletion *completion, const char *str) {
 	rz_return_if_fail (str);
 	RzListIter *iter;
 	RzBreakpoint *bp = core->dbg->bp;
@@ -1246,19 +1246,19 @@ static void autocomplete_breakpoints(RzCore *core, RLineCompletion *completion, 
 }
 
 static bool add_argv(RzFlagItem *fi, void *user) {
-	RLineCompletion *completion = user;
+	RzLineCompletion *completion = user;
 	rz_line_completion_push (completion, fi->name);
 	return true;
 }
 
-static void autocomplete_flags(RzCore *core, RLineCompletion *completion, const char* str) {
+static void autocomplete_flags(RzCore *core, RzLineCompletion *completion, const char* str) {
 	rz_return_if_fail (str);
 	int n = strlen (str);
 	rz_flag_foreach_prefix (core->flags, str, n, add_argv, completion);
 }
 
 // TODO: Should be refactored
-static void autocomplete_sdb (RzCore *core, RLineCompletion *completion, const char *str) {
+static void autocomplete_sdb (RzCore *core, RzLineCompletion *completion, const char *str) {
 	rz_return_if_fail (core && completion && str);
 	char *pipe = strchr (str, '>');
 	Sdb *sdb = core->sdb;
@@ -1330,12 +1330,12 @@ static void autocomplete_sdb (RzCore *core, RLineCompletion *completion, const c
 	}
 }
 
-static void autocomplete_zignatures(RzCore *core, RLineCompletion *completion, const char* msg) {
+static void autocomplete_zignatures(RzCore *core, RzLineCompletion *completion, const char* msg) {
 	rz_return_if_fail (msg);
 	int length = strlen (msg);
-	RSpaces *zs = &core->anal->zign_spaces;
-	RSpace *s;
-	RSpaceIter it;
+	RzSpaces *zs = &core->anal->zign_spaces;
+	RzSpace *s;
+	RzSpaceIter it;
 
 	rz_spaces_foreach (zs, it, s) {
 		if (!strncmp (msg, s->name, length)) {
@@ -1348,12 +1348,12 @@ static void autocomplete_zignatures(RzCore *core, RLineCompletion *completion, c
 	}
 }
 
-static void autocomplete_flagspaces(RzCore *core, RLineCompletion *completion, const char* msg) {
+static void autocomplete_flagspaces(RzCore *core, RzLineCompletion *completion, const char* msg) {
 	rz_return_if_fail (msg);
 	int length = strlen (msg);
 	RzFlag *flag = core->flags;
-	RSpaceIter it;
-	RSpace *s;
+	RzSpaceIter it;
+	RzSpace *s;
 	rz_flag_space_foreach (flag, it, s) {
 		if (!strncmp (msg, s->name, length)) {
 			rz_line_completion_push (completion, s->name);
@@ -1365,7 +1365,7 @@ static void autocomplete_flagspaces(RzCore *core, RLineCompletion *completion, c
 	}
 }
 
-static void autocomplete_functions (RzCore *core, RLineCompletion *completion, const char* str) {
+static void autocomplete_functions (RzCore *core, RzLineCompletion *completion, const char* str) {
 	rz_return_if_fail (str);
 	RzListIter *iter;
 	RzAnalFunction *fcn;
@@ -1379,7 +1379,7 @@ static void autocomplete_functions (RzCore *core, RLineCompletion *completion, c
 	}
 }
 
-static void autocomplete_macro(RzCore *core, RLineCompletion *completion, const char *str) {
+static void autocomplete_macro(RzCore *core, RzLineCompletion *completion, const char *str) {
 	rz_return_if_fail (core && core->rcmd && completion && str);
 	RzCmdMacroItem *item;
 	RzListIter *iter;
@@ -1396,7 +1396,7 @@ static void autocomplete_macro(RzCore *core, RLineCompletion *completion, const 
 	}
 }
 
-static void autocomplete_file(RLineCompletion *completion, const char *str) {
+static void autocomplete_file(RzLineCompletion *completion, const char *str) {
 	rz_return_if_fail (str);
 	char *pipe = strchr (str, '>');
 
@@ -1411,7 +1411,7 @@ static void autocomplete_file(RLineCompletion *completion, const char *str) {
 
 }
 
-static void autocomplete_theme(RzCore *core, RLineCompletion *completion, const char *str) {
+static void autocomplete_theme(RzCore *core, RzLineCompletion *completion, const char *str) {
 	rz_return_if_fail (str);
 	int len = strlen (str);
 	char *theme;
@@ -1425,7 +1425,7 @@ static void autocomplete_theme(RzCore *core, RLineCompletion *completion, const 
 	rz_list_free (themes);
 }
 
-static bool find_e_opts(RzCore *core, RLineCompletion *completion, RLineBuffer *buf) {
+static bool find_e_opts(RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf) {
 	const char *pattern = "e (.*)=";
 	RzRegex *rx = rz_regex_new (pattern, "e");
 	const size_t nmatch = 2;
@@ -1476,7 +1476,7 @@ static bool find_e_opts(RzCore *core, RLineCompletion *completion, RLineBuffer *
 	return ret;
 }
 
-static bool find_autocomplete(RzCore *core, RLineCompletion *completion, RLineBuffer *buf) {
+static bool find_autocomplete(RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf) {
 	RzCoreAutocomplete* child = NULL;
 	RzCoreAutocomplete* parent = core->autocomplete;
 	const char* p = buf->data;
@@ -1572,7 +1572,7 @@ static bool find_autocomplete(RzCore *core, RLineCompletion *completion, RLineBu
 	return true;
 }
 
-RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type) {
+RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type) {
 	if (!core) {
 		autocomplete_default (core, completion, buf);
 		return;
@@ -1806,7 +1806,7 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RLineCompletion *comp
 	}
 }
 
-static int autocomplete(RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type, void *user) {
+static int autocomplete(RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type, void *user) {
 	RzCore *core = user;
 	rz_core_autocomplete (core, completion, buf, prompt_type);
 	return true;
@@ -1814,7 +1814,7 @@ static int autocomplete(RLineCompletion *completion, RLineBuffer *buf, RLineProm
 
 RZ_API int rz_core_fgets(char *buf, int len) {
 	RzCons *cons = rz_cons_singleton ();
-	RLine *rzli = cons->line;
+	RzLine *rzli = cons->line;
 	bool prompt = cons->context->is_interactive;
 	buf[0] = '\0';
 	if (prompt) {
@@ -2162,7 +2162,7 @@ static int mywrite(const ut8 *buf, int len) {
 	return rz_cons_memcat ((const char *)buf, len);
 }
 
-static bool exists_var(RPrint *print, ut64 func_addr, char *str) {
+static bool exists_var(RzPrint *print, ut64 func_addr, char *str) {
 	RzAnal *anal = ((RzCore*)(print->user))->anal;
 	RzAnalFunction *fcn = rz_anal_get_function_at (anal, func_addr);
 	if (!fcn) {
@@ -2414,7 +2414,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 		if (core->cons->line) {
 			core->cons->line->user = core;
 			core->cons->line->cb_editor = \
-				(RLineEditorCb)&rz_core_editor;
+				(RzLineEditorCb)&rz_core_editor;
 			core->cons->line->cb_fkey = core->cons->cb_fkey;
 		}
 #if __EMSCRIPTEN__
@@ -3313,9 +3313,9 @@ RZ_API RzBin *rz_core_get_bin (RzCore *core) {
 	return core->bin;
 }
 
-RZ_API RBuffer *rz_core_syscallf (RzCore *core, const char *name, const char *fmt, ...) {
+RZ_API RzBuffer *rz_core_syscallf (RzCore *core, const char *name, const char *fmt, ...) {
 	char str[1024];
-	RBuffer *buf;
+	RzBuffer *buf;
 	va_list ap;
 	va_start (ap, fmt);
 
@@ -3326,8 +3326,8 @@ RZ_API RBuffer *rz_core_syscallf (RzCore *core, const char *name, const char *fm
 	return buf;
 }
 
-RZ_API RBuffer *rz_core_syscall (RzCore *core, const char *name, const char *args) {
-	RBuffer *b = NULL;
+RZ_API RzBuffer *rz_core_syscall (RzCore *core, const char *name, const char *args) {
+	RzBuffer *b = NULL;
 	char code[1024];
 	int num;
 

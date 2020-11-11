@@ -52,7 +52,7 @@ RZ_API int bfvm_init(BfvmCPU *c, ut32 size, int circular) {
 	c->circular = circular;
 	c->size = size;
 
-	// TODO: use RBuffer or so here.. this is spagueti
+	// TODO: use RzBuffer or so here.. this is spagueti
 	/* screen */
 	c->screen = BFVM_SCREEN_ADDR;
 	c->screen_size = BFVM_SCREEN_SIZE;

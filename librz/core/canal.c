@@ -1445,7 +1445,7 @@ static char *palColorFor(const char *k) {
 	if (!rz_cons_singleton ()) {
 		return NULL;
 	}
-	RColor rcolor = rz_cons_pal_get (k);
+	RzColor rcolor = rz_cons_pal_get (k);
 	return rz_cons_rgb_tostring (rcolor.r, rcolor.g, rcolor.b);
 }
 
@@ -3299,7 +3299,7 @@ RZ_API int rz_core_anal_fcn_list(RzCore *core, const char *input, const char *ra
 			return -1;
 		}
 		ls_foreach (fcns, iter, fcn) {
-			RInterval inter = {rz_anal_function_min_addr (fcn), rz_anal_function_linear_size (fcn) };
+			RzInterval inter = {rz_anal_function_min_addr (fcn), rz_anal_function_linear_size (fcn) };
 			RzListInfo *info = rz_listinfo_new (rz_core_anal_fcn_name (core, fcn), inter, inter, -1, sdb_itoa (fcn->bits, temp, 10));
 			if (!info) {
 				break;
@@ -4353,7 +4353,7 @@ RZ_API RzCoreAnalStats* rz_core_anal_get_stats(RzCore *core, ut64 from, ut64 to,
 	if (metas) {
 		void **it;
 		rz_pvector_foreach (metas, it) {
-			RIntervalNode *node = *it;
+			RzIntervalNode *node = *it;
 			RzAnalMetaItem *mi = node->data;
 			if (node->start < from || node->end > to) {
 				continue;
@@ -5174,7 +5174,7 @@ RZ_API void rz_core_anal_esil(RzCore *core, const char *str, const char *target)
 			RzPVector *list = rz_meta_get_all_in (core->anal, cur, RZ_META_TYPE_ANY);
 			void **it;
 			rz_pvector_foreach (list, it) {
-				RIntervalNode *node = *it;
+				RzIntervalNode *node = *it;
 				RzAnalMetaItem *meta = node->data;
 				switch (meta->type) {
 				case RZ_META_TYPE_DATA:
@@ -5470,7 +5470,7 @@ static bool stringAt(RzCore *core, ut64 addr) {
 	return is_string (buf + 1, 31, NULL);
 }
 
-RZ_API int rz_core_search_value_in_range(RzCore *core, RInterval search_itv, ut64 vmin,
+RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut64 vmin,
 					 ut64 vmax, int vsize, inRangeCb cb, void *cb_user) {
 	int i, align = core->search->align, hitctr = 0;
 	bool vinfun = rz_config_get_i (core->config, "anal.vinfun");

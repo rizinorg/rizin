@@ -3,7 +3,7 @@
 
 // Test that popping from an empty stack works.
 bool test_r_stack_pop_empty(void) {
-	RStack *stack = rz_stack_new (10);
+	RzStack *stack = rz_stack_new (10);
 	void *elem = rz_stack_pop (stack);
 	mu_assert_eq ((int)(intptr_t)elem, 0, "pop empty stack");
 	rz_stack_free (stack);
@@ -12,7 +12,7 @@ bool test_r_stack_pop_empty(void) {
 
 // Test that we can retrieve an item pushed onto a stack.
 bool test_r_stack_push_pop(void) {
-	RStack *stack = rz_stack_new (10);
+	RzStack *stack = rz_stack_new (10);
 	rz_stack_push (stack, (void*)(intptr_t)0x1337);
 	void *elem = rz_stack_pop (stack);
 	mu_assert_eq ((int)(intptr_t)elem, 0x1337, "push pop stack");
@@ -22,7 +22,7 @@ bool test_r_stack_push_pop(void) {
 
 // Test that the FIFO behavior is done.
 bool test_r_stack_push_pop_multi(void) {
-	RStack *stack = rz_stack_new (10);
+	RzStack *stack = rz_stack_new (10);
 	rz_stack_push (stack, (void*)(intptr_t)0x1337);
 	rz_stack_push (stack, (void*)(intptr_t)0x8888);
 	void *elem = rz_stack_pop (stack);
@@ -35,7 +35,7 @@ bool test_r_stack_push_pop_multi(void) {
 
 // Test that stack size grows when more than the allowable number are pushed on.
 bool test_r_stack_grow(void) {
-	RStack *stack = rz_stack_new (2);
+	RzStack *stack = rz_stack_new (2);
 	mu_assert_eq (stack->n_elems, 2, "normal stack size");
 	rz_stack_push (stack, (void*)(intptr_t)0x1337);
 	rz_stack_push (stack, (void*)(intptr_t)0x8888);

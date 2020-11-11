@@ -380,7 +380,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 			}
 			rz_list_foreach (bin->binfiles, iter, bf) {
 				char temp[4];
-				RInterval inter = (RInterval) {bf->o->baddr, bf->o->size};
+				RzInterval inter = (RzInterval) {bf->o->baddr, bf->o->size};
 				RzListInfo *info = rz_listinfo_new (bf->file, inter, inter, -1,  sdb_itoa (bf->fd, temp, 10));
 				if (!info) {
 					break;
@@ -403,7 +403,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 }
 
 // TODO: discuss the output format
-static void map_list(RzIO *io, int mode, RPrint *print, int fd) {
+static void map_list(RzIO *io, int mode, RzPrint *print, int fd) {
 	if (!io || !print || !print->cb_printf) {
 		return;
 	}
@@ -1152,7 +1152,7 @@ static bool init_desc_list_visual_cb(void *user, void *data, ut32 id) {
 }
 
 static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
-	RPrint *p = (RPrint *)user;
+	RzPrint *p = (RzPrint *)user;
 	RzIODesc *desc = (RzIODesc *)data;
 	ut64 sz = rz_io_desc_size (desc);
 	rz_cons_printf ("%2d %c %s 0x%08"PFMT64x" ", desc->fd,
@@ -1180,21 +1180,21 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 }
 
 static bool desc_list_quiet2_cb(void *user, void *data, ut32 id) {
-	RPrint *p = (RPrint *)user;
+	RzPrint *p = (RzPrint *)user;
 	RzIODesc *desc = (RzIODesc *)data;
 	p->cb_printf ("%d\n", desc->fd);
 	return false;
 }
 
 static bool desc_list_quiet_cb(void *user, void *data, ut32 id) {
-	RPrint *p = (RPrint *)user;
+	RzPrint *p = (RzPrint *)user;
 	RzIODesc *desc = (RzIODesc *)data;
 	p->cb_printf ("%d\n", desc->fd);
 	return true;
 }
 
 static bool desc_list_cb(void *user, void *data, ut32 id) {
-	RPrint *p = (RPrint *)user;
+	RzPrint *p = (RzPrint *)user;
 	RzIODesc *desc = (RzIODesc *)data;
 	p->cb_printf ("%2d %c %s 0x%08"PFMT64x" %s\n", desc->fd,
 			(desc->io && (desc->io->desc == desc)) ? '*' : '-',

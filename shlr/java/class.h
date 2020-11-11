@@ -783,7 +783,7 @@ RZ_API RzList* rz_bin_java_get_symbols(RzBinJavaObj* bin);
 RZ_API RzList* rz_bin_java_get_strings(RzBinJavaObj* bin);
 RZ_API void* rz_bin_java_free(RzBinJavaObj* bin);
 RZ_API RzBinJavaObj* rz_bin_java_new(const char* file, ut64 baddr, Sdb * kv);
-RZ_API RzBinJavaObj* rz_bin_java_new_buf(RBuffer* buf, ut64 baddr, Sdb * kv);
+RZ_API RzBinJavaObj* rz_bin_java_new_buf(RzBuffer* buf, ut64 baddr, Sdb * kv);
 RZ_API int rz_bin_java_valid_class(const ut8 *buf, ut64 buf_sz);
 
 // Stuff used to manage Java Class File Constant Information

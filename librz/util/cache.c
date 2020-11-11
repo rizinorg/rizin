@@ -3,10 +3,10 @@
 // XXX: should use the same code as librz/io/cache.c
 // one malloc per write
 #include <rz_util.h>
-// TODO: optimize reallocs.. store RBuffer info.. wait. extend rz_buf_ for that?
+// TODO: optimize reallocs.. store RzBuffer info.. wait. extend rz_buf_ for that?
 
-RZ_API RCache *rz_cache_new(void) {
-	RCache *c = RZ_NEW0 (RCache);
+RZ_API RzCache *rz_cache_new(void) {
+	RzCache *c = RZ_NEW0 (RzCache);
 	if (!c) {
 		return NULL;
 	}
@@ -16,14 +16,14 @@ RZ_API RCache *rz_cache_new(void) {
 	return c;
 }
 
-RZ_API void rz_cache_free(RCache *c) {
+RZ_API void rz_cache_free(RzCache *c) {
 	if (c) {
 		free (c->buf);
 	}
 	free (c);
 }
 
-RZ_API const ut8 *rz_cache_get(RCache *c, ut64 addr, int *len) {
+RZ_API const ut8 *rz_cache_get(RzCache *c, ut64 addr, int *len) {
 	if (!c->buf) {
 		return NULL;
 	}
@@ -43,7 +43,7 @@ RZ_API const ut8 *rz_cache_get(RCache *c, ut64 addr, int *len) {
 	return c->buf + (addr - c->base);
 }
 
-RZ_API int rz_cache_set(RCache *c, ut64 addr, const ut8 *buf, int len) {
+RZ_API int rz_cache_set(RzCache *c, ut64 addr, const ut8 *buf, int len) {
 	if (!c) {
 		return 0;
 	}
@@ -88,7 +88,7 @@ RZ_API int rz_cache_set(RCache *c, ut64 addr, const ut8 *buf, int len) {
 	return c->len;
 }
 
-RZ_API void rz_cache_flush(RCache *c) {
+RZ_API void rz_cache_flush(RzCache *c) {
 	if (c) {
 		c->base = 0;
 		c->len = 0;

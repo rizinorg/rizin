@@ -4,7 +4,7 @@
 #include <rz_lib.h>
 #include "../format/spc700/spc_specs.h"
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	ut8 buf[27];
 	if (rz_buf_read_at (b, 0, buf, sizeof (buf)) == 27) {
 		return !memcmp (buf, SPC_MAGIC, 27);
@@ -12,7 +12,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb){
 	return check_buffer (b);
 }
 

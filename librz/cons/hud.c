@@ -202,7 +202,7 @@ RZ_API char *rz_cons_hud(RzList *list, const char *prompt) {
 	RzListIter *iter;
 
 	HtPP *ht = ht_pp_new (NULL, (HtPPKvFreeFunc)mht_free_kv, (HtPPCalcSizeV)strlen);
-	RLineHud *hud = (RLineHud*) RZ_NEW (RLineHud);
+	RzLineHud *hud = (RzLineHud*) RZ_NEW (RzLineHud);
 	hud->activate = 0;
 	hud->vi = 0;
 	I(line)->echo = false;

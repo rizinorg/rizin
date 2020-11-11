@@ -1087,7 +1087,7 @@ static bool callback_foreach_kv(void *user, const char *k, const char *v) {
 	return true;
 }
 
-RZ_API int rz_line_hist_sdb_up(RLine *line) {
+RZ_API int rz_line_hist_sdb_up(RzLine *line) {
 	if (!line->sdbshell_hist_iter || !line->sdbshell_hist_iter->n) {
 		return false;
 	}
@@ -1097,7 +1097,7 @@ RZ_API int rz_line_hist_sdb_up(RLine *line) {
 	return true;
 }
 
-RZ_API int rz_line_hist_sdb_down(RLine *line) {
+RZ_API int rz_line_hist_sdb_down(RzLine *line) {
 	if (!line->sdbshell_hist_iter || !line->sdbshell_hist_iter->p) {
 		return false;
 	}
@@ -1210,7 +1210,7 @@ static int cmd_kuery(void *data, const char *input) {
 		if (!s) {
 			s = core->sdb;
 		}
-		RLine *line = core->cons->line;
+		RzLine *line = core->cons->line;
 		if (!line->sdbshell_hist) {
 			line->sdbshell_hist = rz_list_newf (free);
 			rz_list_append (line->sdbshell_hist, rz_str_new ("\0"));
@@ -3132,7 +3132,7 @@ repeat_arroba:
 				f = rz_file_slurp (ptr + 2, &sz);
 				if (f) {
 					{
-						RBuffer *b = rz_buf_new_with_bytes ((const ut8*)f, (ut64)sz);
+						RzBuffer *b = rz_buf_new_with_bytes ((const ut8*)f, (ut64)sz);
 						RzIODesc *d = rz_io_open_buffer (core->io, b, RZ_PERM_RWX, 0);
 						if (d) {
 							if (tmpdesc) {
@@ -3207,7 +3207,7 @@ repeat_arroba:
 						len = 4;
 					}
 					rz_core_block_size (core, RZ_ABS (len));
-					RBuffer *b = rz_buf_new_with_bytes (buf, len);
+					RzBuffer *b = rz_buf_new_with_bytes (buf, len);
 					RzIODesc *d = rz_io_open_buffer (core->io, b, RZ_PERM_RWX, 0);
 					if (d) {
 						if (tmpdesc) {
@@ -3232,7 +3232,7 @@ repeat_arroba:
 						len = rz_hex_str2bin (ptr + 2, buf);
 						rz_core_block_size (core, RZ_ABS (len));
 						if (len > 0) {
-							RBuffer *b = rz_buf_new_with_bytes (buf, len);
+							RzBuffer *b = rz_buf_new_with_bytes (buf, len);
 							RzIODesc *d = rz_io_open_buffer (core->io, b, RZ_PERM_RWX, 0);
 							if (d) {
 								if (tmpdesc) {
@@ -3293,7 +3293,7 @@ repeat_arroba:
 					const ut8 *buf = (const ut8*)rz_str_trim_head_ro (ptr + 2);
 
 					if (len > 0) {
-						RBuffer *b = rz_buf_new_with_bytes (buf, len);
+						RzBuffer *b = rz_buf_new_with_bytes (buf, len);
 						RzIODesc *d = rz_io_open_buffer (core->io, b, RZ_PERM_RWX, 0);
 						if (!core->io->va) {
 							rz_config_set_i (core->config, "io.va", 1);
@@ -3605,7 +3605,7 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 		break;
 	case 'C': {
 		char *glob = filter ? rz_str_trim_dup (filter): NULL;
-		RIntervalTreeIter it;
+		RzIntervalTreeIter it;
 		RzAnalMetaItem *meta;
 		rz_interval_tree_foreach (&core->anal->meta, it, meta) {
 			if (meta->type != RZ_META_TYPE_COMMENT) {
@@ -4223,7 +4223,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 			}
 			str[i] = ch;
 			{
-				const RSpace *flagspace = rz_flag_space_cur (core->flags);
+				const RzSpace *flagspace = rz_flag_space_cur (core->flags);
 				RzList *match_flag_items = rz_list_newf ((RzListFree)rz_flag_item_free);
 				if (!match_flag_items) {
 					break;
@@ -5191,7 +5191,7 @@ static bool handle_tmp_desc(struct tsr2cmd_state *state, TSNode command, const u
 	RzCore *core = state->core;
 	int pamode = !core->io->va;
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID, o_fixedblock = core->fixedblock;
-	RBuffer *b = rz_buf_new_with_bytes (buf, sz);
+	RzBuffer *b = rz_buf_new_with_bytes (buf, sz);
 	RzIODesc *d = rz_io_open_buffer (core->io, b, RZ_PERM_RWX, 0);
 	if (!d) {
 		eprintf ("Cannot open io buffer\n");
@@ -5279,7 +5279,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_flags_command) {
 	if (!ts_node_is_null (arg)) {
 		arg_str = ts_node_handle_arg (state, node, arg, 1);
 	}
-	const RSpace *flagspace = rz_flag_space_cur (core->flags);
+	const RzSpace *flagspace = rz_flag_space_cur (core->flags);
 	RzFlagItem *flag;
 	RzListIter *iter;
 	RzCmdStatus ret = RZ_CMD_STATUS_OK;
@@ -5655,7 +5655,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_comment_command) {
 			: NULL;
 	ut64 off = core->offset;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
-	RIntervalTreeIter it;
+	RzIntervalTreeIter it;
 	RzAnalMetaItem *meta;
 	rz_interval_tree_foreach (&core->anal->meta, it, meta) {
 		if (meta->type != RZ_META_TYPE_COMMENT) {

@@ -209,7 +209,7 @@ static bool rz_bin_coff_init_scn_va(struct rz_bin_coff_obj *obj) {
 	return true;
 }
 
-static int rz_bin_coff_init(struct rz_bin_coff_obj *obj, RBuffer *buf, bool verbose) {
+static int rz_bin_coff_init(struct rz_bin_coff_obj *obj, RzBuffer *buf, bool verbose) {
 	obj->b = rz_buf_ref (buf);
 	obj->size = rz_buf_size (buf);
 	obj->verbose = verbose;
@@ -245,7 +245,7 @@ void rz_bin_coff_free(struct rz_bin_coff_obj *obj) {
 	free (obj);
 }
 
-struct rz_bin_coff_obj* rz_bin_coff_new_buf(RBuffer *buf, bool verbose) {
+struct rz_bin_coff_obj* rz_bin_coff_new_buf(RzBuffer *buf, bool verbose) {
 	struct rz_bin_coff_obj* bin = RZ_NEW0 (struct rz_bin_coff_obj);
 	rz_bin_coff_init (bin, buf, verbose);
 	return bin;

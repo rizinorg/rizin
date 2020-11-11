@@ -2,10 +2,10 @@
 #include "minunit.h"
 
 bool test_space_basic(void) {
-	RSpaces *sps = rz_spaces_new ("spacename");
+	RzSpaces *sps = rz_spaces_new ("spacename");
 	mu_assert_streq (sps->name, "spacename", "spacename should be the name");
 
-	RSpace *sp = rz_spaces_get (sps, "notexisting");
+	RzSpace *sp = rz_spaces_get (sps, "notexisting");
 	mu_assert_null (sp, "NULL should be returned if not existing");
 	sp = rz_spaces_current (sps);
 	mu_assert_null (sp, "the current flagspace should not exist");
@@ -27,18 +27,18 @@ bool test_space_basic(void) {
 }
 
 bool test_space_stack(void) {
-	RSpaces *sps = rz_spaces_new ("spacename");
+	RzSpaces *sps = rz_spaces_new ("spacename");
 
-	RSpace *first = rz_spaces_set (sps, "firstspace");
+	RzSpace *first = rz_spaces_set (sps, "firstspace");
 	rz_spaces_set (sps, "secondspace");
-	RSpace *third = rz_spaces_set (sps, "thirdspace");
+	RzSpace *third = rz_spaces_set (sps, "thirdspace");
 	rz_spaces_set (sps, NULL);
 
 	rz_spaces_push (sps, "firstspace");
 	rz_spaces_push (sps, "*");
 	rz_spaces_push (sps, "thirdspace");
 
-	RSpace *s = rz_spaces_current (sps);
+	RzSpace *s = rz_spaces_current (sps);
 	mu_assert_ptreq (s, third, "third now set");
 	rz_spaces_pop (sps);
 	s = rz_spaces_current (sps);
@@ -62,7 +62,7 @@ bool test_space_stack(void) {
 }
 
 static void count_event(RzEvent *ev, int type, void *user, void *data) {
-	RSpaceEvent *spev = (RSpaceEvent *)data;
+	RzSpaceEvent *spev = (RzSpaceEvent *)data;
 
 	if (!strcmp (spev->data.count.space->name, "firstspace")) {
 		spev->res = 1;
@@ -80,10 +80,10 @@ static void test_event(RzEvent *ev, int type, void *user, void *data) {
 }
 
 bool test_space_event(void) {
-	RSpaces *sps = rz_spaces_new ("spacename");
+	RzSpaces *sps = rz_spaces_new ("spacename");
 	rz_spaces_add (sps, "firstspace");
 	rz_spaces_add (sps, "secondspace");
-	RSpace *third = rz_spaces_add (sps, "thirdspace");
+	RzSpace *third = rz_spaces_add (sps, "thirdspace");
 
 	rz_event_hook (sps->event, RZ_SPACE_EVENT_COUNT, count_event, NULL);
 	rz_event_hook (sps->event, RZ_SPACE_EVENT_UNSET, test_event, NULL);
@@ -98,7 +98,7 @@ bool test_space_event(void) {
 	rz_spaces_rename (sps, "thirdspace", "mynewname");
 	mu_assert ("rename_event has been called", test_event_called);
 
-	RSpace *s = rz_spaces_get (sps, "thirdspace");
+	RzSpace *s = rz_spaces_get (sps, "thirdspace");
 	mu_assert_null (s, "thirdspace should not exist anymore");
 	s = rz_spaces_get (sps, "mynewname");
 	mu_assert_notnull (s, "mynewname should exist now");

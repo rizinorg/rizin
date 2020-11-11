@@ -1752,7 +1752,7 @@ static void annotated_hexdump(RzCore *core, const char *str, int len) {
 			RZ_FREE (note[j]);
 
 			// TODO: in pava mode we should read addr or ea? // imho ea. but wat about hdrs and such
-			RIntervalNode *meta_node = rz_meta_get_in (core->anal, ea + j, RZ_META_TYPE_FORMAT);
+			RzIntervalNode *meta_node = rz_meta_get_in (core->anal, ea + j, RZ_META_TYPE_FORMAT);
 			RzAnalMetaItem *meta = meta_node ? meta_node->data : NULL;
 			if (meta && meta->type == RZ_META_TYPE_FORMAT && meta_node->start == addr + j) {
 				rz_cons_printf (".format %s ; size=", meta->str);
@@ -2060,7 +2060,7 @@ RZ_API void rz_core_print_examine(RzCore *core, const char *str) {
 }
 
 struct count_pz_t {
-	RSpace *flagspace;
+	RzSpace *flagspace;
 	ut64 addr;
 	ut64 size;
 	int *ret;
@@ -6248,7 +6248,7 @@ l = use_blocksize;
 				for (i = 0; i < len; i += 4) {
 					const char *a, *b;
 					char *fn;
-					RPrint *p = core->print;
+					RzPrint *p = core->print;
 					RzFlagItem *f;
 					ut32 v = rz_read_ble32 (core->block + i, core->print->big_endian);
 					if (p && p->colorfor) {
@@ -6328,7 +6328,7 @@ l = use_blocksize;
 				for (i = 0; i < len; i += 2) {
 					const char *a, *b;
 					char *fn;
-					RPrint *p = core->print;
+					RzPrint *p = core->print;
 					RzFlagItem *f;
 					ut64 v = (ut64) rz_read_ble16 (core->block + i, p->big_endian);
 					if (p && p->colorfor) {
@@ -6376,7 +6376,7 @@ l = use_blocksize;
 				for (i = 0; i < len; i += 8) {
 					const char *a, *b;
 					char *fn;
-					RPrint *p = core->print;
+					RzPrint *p = core->print;
 					RzFlagItem *f;
 					ut64 v = rz_read_ble64 (core->block + i, p->big_endian);
 					if (p && p->colorfor) {
@@ -6843,7 +6843,7 @@ static int lenof(ut64 off, int two) {
 	return strlen (buf);
 }
 
-RZ_API void rz_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label) {
+RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label) {
 	char space[32] = {
 		0
 	};
@@ -6946,6 +6946,6 @@ RZ_API void rz_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int 
 
 // TODO : move to rz_util? .. depends on rz_cons...
 // XXX: dupe of rz_print_addr
-RZ_API void rz_print_offset(RPrint *p, ut64 off, int invert, int offseg, int offdec, int delta, const char *label) {
+RZ_API void rz_print_offset(RzPrint *p, ut64 off, int invert, int offseg, int offdec, int delta, const char *label) {
 	rz_print_offset_sg(p, off, invert, offseg, 4, offdec, delta, label);
 }

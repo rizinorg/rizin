@@ -379,7 +379,7 @@ out:
 }
 #undef DBL_VAL_FAIL
 
-static void serializeKey(RzAnal *a, const RSpace *space, const char* name, char *k) {
+static void serializeKey(RzAnal *a, const RzSpace *space, const char* name, char *k) {
 	snprintf (k, RZ_SIGN_KEY_MAXSZ, "zign|%s|%s", space? space->name: "*", name);
 }
 
@@ -510,7 +510,7 @@ static void serialize(RzAnal *a, RzSignItem *it, char *k, char *v) {
 	}
 }
 
-static RzList *deserialize_sign_space(RzAnal *a, RSpace *space) {
+static RzList *deserialize_sign_space(RzAnal *a, RzSpace *space) {
 	rz_return_val_if_fail (a && space, NULL);
 
 	char k[RZ_SIGN_KEY_MAXSZ];
@@ -1440,11 +1440,11 @@ RZ_API RzList *rz_sign_find_closest_fcn(RzAnal *a, RzSignItem *it, int count, do
 RZ_API bool rz_sign_diff(RzAnal *a, RzSignOptions *options, const char *other_space_name) {
 	rz_return_val_if_fail (a && other_space_name, false);
 
-	RSpace *current_space = rz_spaces_current (&a->zign_spaces);
+	RzSpace *current_space = rz_spaces_current (&a->zign_spaces);
 	if (!current_space) {
 		return false;
 	}
-	RSpace *other_space = rz_spaces_get (&a->zign_spaces, other_space_name);
+	RzSpace *other_space = rz_spaces_get (&a->zign_spaces, other_space_name);
 	if (!other_space) {
 		return false;
 	}
@@ -1498,11 +1498,11 @@ RZ_API bool rz_sign_diff(RzAnal *a, RzSignOptions *options, const char *other_sp
 RZ_API bool rz_sign_diff_by_name(RzAnal *a, RzSignOptions *options, const char *other_space_name, bool not_matching) {
 	rz_return_val_if_fail (a && other_space_name, false);
 
-	RSpace *current_space = rz_spaces_current (&a->zign_spaces);
+	RzSpace *current_space = rz_spaces_current (&a->zign_spaces);
 	if (!current_space) {
 		return false;
 	}
-	RSpace *other_space = rz_spaces_get (&a->zign_spaces, other_space_name);
+	RzSpace *other_space = rz_spaces_get (&a->zign_spaces, other_space_name);
 	if (!other_space) {
 		return false;
 	}
@@ -1923,7 +1923,7 @@ static bool listCB(void *user, const char *k, const char *v) {
 		goto out;
 	}
 
-	RSpace *cur = rz_spaces_current (&a->zign_spaces);
+	RzSpace *cur = rz_spaces_current (&a->zign_spaces);
 	if (cur != it->space && cur) {
 		goto out;
 	}
@@ -2113,7 +2113,7 @@ beach:
 
 struct ctxCountForCB {
 	RzAnal *anal;
-	const RSpace *space;
+	const RzSpace *space;
 	int count;
 };
 
@@ -2133,7 +2133,7 @@ static bool countForCB(void *user, const char *k, const char *v) {
 	return true;
 }
 
-RZ_API int rz_sign_space_count_for(RzAnal *a, const RSpace *space) {
+RZ_API int rz_sign_space_count_for(RzAnal *a, const RzSpace *space) {
 	struct ctxCountForCB ctx = { a, space, 0 };
 	rz_return_val_if_fail (a, 0);
 	sdb_foreach (a->sdb_zigns, countForCB, &ctx);
@@ -2142,7 +2142,7 @@ RZ_API int rz_sign_space_count_for(RzAnal *a, const RSpace *space) {
 
 struct ctxUnsetForCB {
 	RzAnal *anal;
-	const RSpace *space;
+	const RzSpace *space;
 };
 
 static bool unsetForCB(void *user, const char *k, const char *v) {
@@ -2164,7 +2164,7 @@ static bool unsetForCB(void *user, const char *k, const char *v) {
 	return true;
 }
 
-RZ_API void rz_sign_space_unset_for(RzAnal *a, const RSpace *space) {
+RZ_API void rz_sign_space_unset_for(RzAnal *a, const RzSpace *space) {
 	rz_return_if_fail (a);
 	struct ctxUnsetForCB ctx = { a, space };
 	sdb_foreach (a->sdb_zigns, unsetForCB, &ctx);
@@ -2192,7 +2192,7 @@ static bool renameForCB(void *user, const char *k, const char *v) {
 	return true;
 }
 
-RZ_API void rz_sign_space_rename_for(RzAnal *a, const RSpace *space, const char *oname, const char *nname) {
+RZ_API void rz_sign_space_rename_for(RzAnal *a, const RzSpace *space, const char *oname, const char *nname) {
 	rz_return_if_fail (a && space && oname && nname);
 	struct ctxRenameForCB ctx = {.anal = a};
 	serializeKeySpaceStr (a, oname, "", ctx.oprefix);
@@ -2213,7 +2213,7 @@ static bool foreachCB(void *user, const char *k, const char *v) {
 	RzAnal *a = ctx->anal;
 
 	if (rz_sign_deserialize (a, it, k, v)) {
-		RSpace *cur = rz_spaces_current (&a->zign_spaces);
+		RzSpace *cur = rz_spaces_current (&a->zign_spaces);
 		if (ctx->cb && cur == it->space) {
 			ctx->cb (it, ctx->user);
 		}

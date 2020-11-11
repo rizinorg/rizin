@@ -165,8 +165,8 @@ static inline void __cons_write(const char *obuf, int olen) {
 	}
 }
 
-RZ_API RColor rz_cons_color_random(ut8 alpha) {
-	RColor rcolor = {0};
+RZ_API RzColor rz_cons_color_random(ut8 alpha) {
+	RzColor rcolor = {0};
 	if (I.context->color_mode > COLOR_MODE_16) {
 		rcolor.r = rz_num_rand (0xff);
 		rcolor.g = rz_num_rand (0xff);
@@ -176,14 +176,14 @@ RZ_API RColor rz_cons_color_random(ut8 alpha) {
 	}
 	int r = rz_num_rand (16);
 	switch (r) {
-	case 0: case 1: rcolor = (RColor) RColor_RED; break;
-	case 2: case 3: rcolor = (RColor) RColor_WHITE; break;
-	case 4: case 5: rcolor = (RColor) RColor_GREEN; break;
-	case 6: case 7: rcolor = (RColor) RColor_MAGENTA; break;
-	case 8: case 9: rcolor = (RColor) RColor_YELLOW; break;
-	case 10: case 11: rcolor = (RColor) RColor_CYAN; break;
-	case 12: case 13: rcolor = (RColor) RColor_BLUE; break;
-	case 14: case 15: rcolor = (RColor) RColor_GRAY; break;
+	case 0: case 1: rcolor = (RzColor) RzColor_RED; break;
+	case 2: case 3: rcolor = (RzColor) RzColor_WHITE; break;
+	case 4: case 5: rcolor = (RzColor) RzColor_GREEN; break;
+	case 6: case 7: rcolor = (RzColor) RzColor_MAGENTA; break;
+	case 8: case 9: rcolor = (RzColor) RzColor_YELLOW; break;
+	case 10: case 11: rcolor = (RzColor) RzColor_CYAN; break;
+	case 12: case 13: rcolor = (RzColor) RzColor_BLUE; break;
+	case 14: case 15: rcolor = (RzColor) RzColor_GRAY; break;
 	}
 	if (r & 1) {
 		rcolor.attr = RZ_CONS_ATTR_BOLD;

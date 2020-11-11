@@ -59,7 +59,7 @@ fail:
 	return false;
 }
 
-static int rz_bin_bflt_init(struct rz_bin_bflt_obj *obj, RBuffer *buf) {
+static int rz_bin_bflt_init(struct rz_bin_bflt_obj *obj, RzBuffer *buf) {
 	obj->b = rz_buf_ref (buf);
 	obj->size = rz_buf_size (buf);
 	obj->endian = false;
@@ -73,7 +73,7 @@ static int rz_bin_bflt_init(struct rz_bin_bflt_obj *obj, RBuffer *buf) {
 	return true;
 }
 
-struct rz_bin_bflt_obj *rz_bin_bflt_new_buf(RBuffer *buf) {
+struct rz_bin_bflt_obj *rz_bin_bflt_new_buf(RzBuffer *buf) {
 	struct rz_bin_bflt_obj *bin = RZ_NEW0 (struct rz_bin_bflt_obj);
 	if (bin && rz_bin_bflt_init (bin, buf)) {
 		return bin;

@@ -2,7 +2,7 @@
 #include <rz_util.h>
 #include "minunit.h"
 
-bool check_invariants(RIntervalNode *node) {
+bool check_invariants(RzIntervalNode *node) {
 	if (!node) {
 		return true;
 	}
@@ -12,7 +12,7 @@ bool check_invariants(RIntervalNode *node) {
 		if (!node->node.child[i]) {
 			continue;
 		}
-		RIntervalNode *child = container_of (node->node.child[i], RIntervalNode, node);
+		RzIntervalNode *child = container_of (node->node.child[i], RzIntervalNode, node);
 		if (child->max_end > max) {
 			max = child->max_end;
 		}
@@ -32,7 +32,7 @@ bool check_invariants(RIntervalNode *node) {
 }
 
 bool test_r_interval_tree_insert_at() {
-	RIntervalTree tree;
+	RzIntervalTree tree;
 	rz_interval_tree_init (&tree, NULL);
 
 	rz_interval_tree_insert (&tree, 1, 10, NULL);
@@ -48,7 +48,7 @@ bool test_r_interval_tree_insert_at() {
 		return false;
 	}
 
-	RIntervalNode *node = rz_interval_tree_node_at (&tree, 3);
+	RzIntervalNode *node = rz_interval_tree_node_at (&tree, 3);
 	mu_assert_notnull (node, "at not null");
 	mu_assert_ptreq (node->data, (void *)0x1337, "at node data");
 	mu_assert_eq_fmt (node->start, (ut64)3, "at node start", "0x%"PFMT64x);
@@ -86,7 +86,7 @@ static void random_entries(TestEntry entries[N]) {
 	}
 }
 
-static bool probe_cb(RIntervalNode *node, void *user) {
+static bool probe_cb(RzIntervalNode *node, void *user) {
 	TestEntry *entry = node->data;
 	entry->counter++;
 	if (entry->start != node->start || entry->end != node->end) {
@@ -101,7 +101,7 @@ static void free_cb(void *data) {
 }
 
 bool test_r_interval_tree_in(bool end_inclusive, bool intervals) {
-	RIntervalTree tree;
+	RzIntervalTree tree;
 	rz_interval_tree_init (&tree, NULL);
 
 	TestEntry entries[N];
@@ -161,7 +161,7 @@ TEST_IN (test_r_interval_tree_in_end_exclusive_interval, false, true)
 TEST_IN (test_r_interval_tree_in_end_inclusive_interval, true, true)
 
 bool test_r_interval_tree_all_at() {
-	RIntervalTree tree;
+	RzIntervalTree tree;
 	rz_interval_tree_init (&tree, NULL);
 	TestEntry entries[N];
 	random_entries (entries);
@@ -197,7 +197,7 @@ bool test_r_interval_tree_all_at() {
 }
 
 bool test_r_interval_tree_node_at_data() {
-	RIntervalTree tree;
+	RzIntervalTree tree;
 	rz_interval_tree_init (&tree, NULL);
 	TestEntry entries[N];
 	random_entries (entries);
@@ -210,7 +210,7 @@ bool test_r_interval_tree_node_at_data() {
 	}
 	for (i = 0; i < N; i++) {
 		TestEntry *entry = entries + i;
-		RIntervalNode *node = rz_interval_tree_node_at_data (&tree, entry->start, entry);
+		RzIntervalNode *node = rz_interval_tree_node_at_data (&tree, entry->start, entry);
 		mu_assert_notnull (node, "node not null");
 		mu_assert_ptreq (node->data, entry, "node at data contains correct data");
 	}
@@ -219,7 +219,7 @@ bool test_r_interval_tree_node_at_data() {
 }
 
 bool test_r_interval_tree_delete() {
-	RIntervalTree tree;
+	RzIntervalTree tree;
 	rz_interval_tree_init (&tree, free_cb);
 	TestEntry entries[N];
 	random_entries (entries);
@@ -236,7 +236,7 @@ bool test_r_interval_tree_delete() {
 
 	while (!rz_pvector_empty (&contained_entries)) {
 		TestEntry *entry = rz_pvector_remove_at (&contained_entries, rand () % rz_pvector_len (&contained_entries));
-		RIntervalNode *node = rz_interval_tree_node_at_data (&tree, entry->start, entry);
+		RzIntervalNode *node = rz_interval_tree_node_at_data (&tree, entry->start, entry);
 		mu_assert_notnull (node, "node not null");
 
 		mu_assert_eq (entry->freed, 0, "entry not freed before delete");
@@ -244,7 +244,7 @@ bool test_r_interval_tree_delete() {
 		mu_assert ("delete success", s);
 		mu_assert_eq (entry->freed, 1, "entry not freed after delete");
 
-		RIntervalTreeIter it;
+		RzIntervalTreeIter it;
 		rz_interval_tree_foreach (&tree, it, entry) {
 			entry->counter++;
 		}
@@ -265,7 +265,7 @@ bool test_r_interval_tree_delete() {
 }
 
 bool test_r_interval_tree_resize(bool end_only) {
-	RIntervalTree tree;
+	RzIntervalTree tree;
 	rz_interval_tree_init (&tree, free_cb);
 	TestEntry entries[N];
 	random_entries (entries);
@@ -279,7 +279,7 @@ bool test_r_interval_tree_resize(bool end_only) {
 
 	for (i = 0; i < SAMPLES; i++) {
 		TestEntry *entry = entries + (rand () % N);
-		RIntervalNode *node = rz_interval_tree_node_at_data (&tree, entry->start, entry);
+		RzIntervalNode *node = rz_interval_tree_node_at_data (&tree, entry->start, entry);
 		if (!end_only) {
 			entry->start = rand () % MAXVAL;
 		}
@@ -292,8 +292,8 @@ bool test_r_interval_tree_resize(bool end_only) {
 			return false;
 		}
 		RBIter it;
-		RIntervalNode *intervalnode;
-		rz_rbtree_foreach (&tree.root->node, it, intervalnode, RIntervalNode, node) {
+		RzIntervalNode *intervalnode;
+		rz_rbtree_foreach (&tree.root->node, it, intervalnode, RzIntervalNode, node) {
 			entry = (TestEntry *)intervalnode->data;
 			entry->counter++;
 			mu_assert_eq_fmt (intervalnode->start, entry->start, "correct start", "%"PFMT64u);

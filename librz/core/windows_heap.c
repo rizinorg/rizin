@@ -618,7 +618,7 @@ static bool GetSegmentHeapBlocks(RzDebug *dbg, HANDLE h_proc, PVOID heapBase, PH
 	// Large Blocks
 	if (segheapHeader.LargeAllocMetadata.Root) {
 		PRTL_BALANCED_NODE node = malloc (sizeof (RTL_BALANCED_NODE));
-		RStack *s = rz_stack_new (segheapHeader.LargeReservedPages);
+		RzStack *s = rz_stack_new (segheapHeader.LargeReservedPages);
 		PRTL_BALANCED_NODE curr = segheapHeader.LargeAllocMetadata.Root;
 		do { // while (!rz_stack_is_empty(s));
 			GROW_PBLOCKS ();

@@ -17,7 +17,7 @@ bool test_uleb128_small(void) {
 	mu_assert_eq (val, 0xbeef, "uleb128 decoded");
 	free (data);
 
-	RBuffer *b = rz_buf_new_with_bytes ((ut8 *)"\xef\xfd\x02", 3);
+	RzBuffer *b = rz_buf_new_with_bytes ((ut8 *)"\xef\xfd\x02", 3);
 	int r = rz_buf_uleb128 (b, &val);
 	mu_assert_eq (r, 3, "buf_uleb128 decode worked");
 	mu_assert_eq (val, 0xbeef, "buf_uleb128 right val");
@@ -31,7 +31,7 @@ bool test_sleb128_small(void) {
 	val = rz_sleb128 (&data, data + 3);
 	mu_assert_eq (val, -0xdead, "sleb128 decoded");
 
-	RBuffer *b = rz_buf_new_with_bytes ((ut8 *)"\xd3\xc2\x7c", 3);
+	RzBuffer *b = rz_buf_new_with_bytes ((ut8 *)"\xd3\xc2\x7c", 3);
 	int r = rz_buf_sleb128 (b, &val);
 	mu_assert_eq (r, 3, "buf_sleb128 decode worked");
 	mu_assert_eq (val, -0xdead, "buf_sleb128 right val");
@@ -54,7 +54,7 @@ bool test_uleb128_big(void) {
 	mu_assert_eq (val, 9019283812387, "uleb128 decoded");
 	free (data);
 
-	RBuffer *b = rz_buf_new_with_bytes ((ut8 *)"\xa3\xe0\xd4\xb9\xbf\x86\x02", 7);
+	RzBuffer *b = rz_buf_new_with_bytes ((ut8 *)"\xa3\xe0\xd4\xb9\xbf\x86\x02", 7);
 	int r = rz_buf_uleb128 (b, &val);
 	mu_assert_eq (r, 7, "buf_uleb128 decode worked");
 	mu_assert_eq (val, 9019283812387, "buf_uleb128 right val");
@@ -68,7 +68,7 @@ bool test_sleb128_big(void) {
 	val = rz_sleb128 (&data, data + 7);
 	mu_assert_eq (val, -9019283812387, "sleb128 decoded");
 
-	RBuffer *b = rz_buf_new_with_bytes ((ut8 *)"\xdd\x9f\xab\xc6\xc0\xf9\x7d", 7);
+	RzBuffer *b = rz_buf_new_with_bytes ((ut8 *)"\xdd\x9f\xab\xc6\xc0\xf9\x7d", 7);
 	int r = rz_buf_sleb128 (b, &val);
 	mu_assert_eq (r, 7, "buf_sleb128 decode worked");
 	mu_assert_eq (val, -9019283812387, "buf_sleb128 right val");

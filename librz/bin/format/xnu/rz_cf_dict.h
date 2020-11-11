@@ -47,7 +47,7 @@ typedef struct _CFValueInteger {
 
 typedef struct _CFValueData {
 	RCFValueType type;
-	RBuffer * value;
+	RzBuffer * value;
 } RCFValueData;
 
 typedef struct _CFValueBool {
@@ -58,7 +58,7 @@ typedef struct _CFValueNULL {
 	RCFValueType type;
 } RCFValueNULL;
 
-RZ_API RCFValueDict * rz_cf_value_dict_parse(RBuffer * file_buf, ut64 offset, ut64 size, int options);
+RZ_API RCFValueDict * rz_cf_value_dict_parse(RzBuffer * file_buf, ut64 offset, ut64 size, int options);
 RZ_API void rz_cf_value_dict_free(RCFValueDict * dict);
 RZ_API void rz_cf_value_print(RCFValue * value);
 

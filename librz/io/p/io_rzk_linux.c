@@ -438,7 +438,7 @@ int run_old_command(RzIO *io, RzIODesc *iodesc, const char *buf) {
 		break;
 	case 'r':
 		{
-			RPrint *print = rz_print_new ();
+			RzPrint *print = rz_print_new ();
 			switch (buf[1]) {
 			case 'l':
 				//read linear address

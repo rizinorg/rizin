@@ -27,7 +27,7 @@ static ut8 *buf = NULL;
 static ut64 bsize = 4096;
 static ut64 from = 0LL, to = -1;
 static ut64 cur = 0;
-static RPrint *pr = NULL;
+static RzPrint *pr = NULL;
 static RzList *keywords;
 static const char *mask = NULL;
 static const char *curfile = NULL;

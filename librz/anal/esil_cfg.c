@@ -7,8 +7,8 @@
 typedef struct esil_cfg_generator_t {
 	RzAnalEsil *esil;
 	union {
-		RStack *ifelse;
-		RStack *vals;
+		RzStack *ifelse;
+		RzStack *vals;
 	};
 	// union for semantic purposes
 	RContRBTree *blocks;
@@ -22,7 +22,7 @@ typedef struct esil_cfg_generator_t {
 	RzAnalEsilCFG *cfg;
 	RzGraphNode *cur;
 	// current graph-node, so that I don't have to abuse cfg->start
-	RIDStorage *atoms;
+	RzIDStorage *atoms;
 	// is this needed
 	ut64 off;
 	// is this needed
@@ -76,7 +76,7 @@ RzAnalEsilOp *esil_get_op (RzAnalEsil *esil, const char *op) {
 }
 
 // this little thot atomizes an esil expressions by splitting it on ','
-static void esil_expr_atomize(RIDStorage *atoms, char *expr) {
+static void esil_expr_atomize(RzIDStorage *atoms, char *expr) {
 	ut32 forget_me;
 	for (
 		; !!expr && rz_id_storage_add (atoms, expr, &forget_me);
@@ -407,8 +407,8 @@ void _round_2_cb (RzGraphNode *n, RzGraphVisitor *vi) {
 
 // this function takes a cfg, an offset and an esil expression
 // concatinates to already existing graph.
-// Also expects RIDStorage atoms and RContRBTree to be allocate in prior of the call
-static RzAnalEsilCFG *esil_cfg_gen(RzAnalEsilCFG *cfg, RzAnal *anal, RIDStorage *atoms, RContRBTree *blocks, RStack *stack, ut64 off, char *expr) {
+// Also expects RzIDStorage atoms and RContRBTree to be allocate in prior of the call
+static RzAnalEsilCFG *esil_cfg_gen(RzAnalEsilCFG *cfg, RzAnal *anal, RzIDStorage *atoms, RContRBTree *blocks, RzStack *stack, ut64 off, char *expr) {
 	// consider expr as RzStrBuf, so that we can sanitze broken esil
 	// (ex: "b,a,+=,$z,zf,:=,7,$c,cf,:=,zf,?{,1,b,+=,cf,?{,3,a,-=" =>
 	// 	"b,a,+=,$z,zf,:=,7,$c,cf,:=,zf,?{,1,b,+=,cf,?{,3,a,-=,},}")
@@ -542,7 +542,7 @@ RZ_API RzAnalEsilCFG *rz_anal_esil_cfg_expr(RzAnalEsilCFG *cfg, RzAnal *anal, co
 	if (!anal || !anal->esil) {
 		return NULL;
 	}
-	RStack *stack = rz_stack_new (4);
+	RzStack *stack = rz_stack_new (4);
 	if (!stack) {
 		return NULL;
 	}
@@ -551,7 +551,7 @@ RZ_API RzAnalEsilCFG *rz_anal_esil_cfg_expr(RzAnalEsilCFG *cfg, RzAnal *anal, co
 		rz_stack_free (stack);
 		return NULL;
 	}
-	RIDStorage *atoms = rz_id_storage_new (0, 0xfffe);
+	RzIDStorage *atoms = rz_id_storage_new (0, 0xfffe);
 	if (!atoms) {
 		rz_stack_free (stack);
 		rz_rbtree_cont_free (blocks);

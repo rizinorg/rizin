@@ -5,7 +5,7 @@
 #include "sfc/sfc_specs.h"
 #include <rz_endian.h>
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	ut16 cksum1, cksum2;
 	ut64 length = rz_buf_size (b);
 	// FIXME: this was commented out because it always evaluates to false.
@@ -31,7 +31,7 @@ static bool check_buffer(RBuffer *b) {
 	return (cksum1 == (ut16)~cksum2);
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb){
 	return check_buffer (b);
 }
 

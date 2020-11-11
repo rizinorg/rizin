@@ -777,7 +777,7 @@ static int io_perms_to_prot (int io_perms) {
 
 static int linux_map_thp (RzDebug *dbg, ut64 addr, int size) {
 #if !defined(__ANDROID__) && defined(MADV_HUGEPAGE)
-	RBuffer *buf = NULL;
+	RzBuffer *buf = NULL;
 	char code[1024];
 	int ret = true;
 	char *asm_list[] = {
@@ -835,7 +835,7 @@ err_linux_map_thp:
 }
 
 static RzDebugMap* linux_map_alloc (RzDebug *dbg, ut64 addr, int size, bool thp) {
-	RBuffer *buf = NULL;
+	RzBuffer *buf = NULL;
 	RzDebugMap* map = NULL;
 	char code[1024], *sc_name;
 	int num;
@@ -898,7 +898,7 @@ err_linux_map_alloc:
 }
 
 static int linux_map_dealloc(RzDebug *dbg, ut64 addr, int size) {
-	RBuffer *buf = NULL;
+	RzBuffer *buf = NULL;
 	char code[1024];
 	int ret = 0;
 	char *asm_list[] = {
@@ -1501,7 +1501,7 @@ static int rz_debug_native_map_protect (RzDebug *dbg, ut64 addr, int size, int p
 #elif __APPLE__
 	return xnu_map_protect (dbg, addr, size, perms);
 #elif __linux__
-	RBuffer *buf = NULL;
+	RzBuffer *buf = NULL;
 	char code[1024];
 	int num;
 
@@ -1558,7 +1558,7 @@ static int rz_debug_setup_ownership (int fd, RzDebug *dbg) {
 }
 #endif
 
-static bool rz_debug_gcore (RzDebug *dbg, RBuffer *dest) {
+static bool rz_debug_gcore (RzDebug *dbg, RzBuffer *dest) {
 #if __APPLE__
 	return xnu_generate_corefile (dbg, dest);
 #elif __linux__ && (__x86_64__ || __i386__ || __arm__ || __arm64__)

@@ -2763,7 +2763,7 @@ struct tmpbackedgeinfo {
 	int edgectr;
 	int fromlayer;
 	int tolayer;
-	RCanvasLineStyle style;
+	RzCanvasLineStyle style;
 };
 
 int tmplayercmp (const void *a, const void *b) {
@@ -2771,7 +2771,7 @@ int tmplayercmp (const void *a, const void *b) {
 }
 
 static void agraph_print_edges_simple(RzAGraph *g) {
-	RCanvasLineStyle style = {0};
+	RzCanvasLineStyle style = {0};
 	RzANode *n, *n2;
 	RzGraphNode *gn, *gn2;
 	RzListIter *iter, *iter2;
@@ -2831,7 +2831,7 @@ static void agraph_print_edges(RzAGraph *g) {
 	}
 	int out_nth, in_nth, bendpoint;
 	RzListIter *itn, *itm, *ito;
-	RCanvasLineStyle style = {0};
+	RzCanvasLineStyle style = {0};
 	const RzList *nodes = rz_graph_get_nodes (g->graph);
 	RzGraphNode *ga;
 	RzANode *a;

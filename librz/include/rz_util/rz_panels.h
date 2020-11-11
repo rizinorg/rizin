@@ -9,36 +9,36 @@ typedef enum {
 	VERTICAL,
 	HORIZONTAL,
 	NONE
-} RPanelLayout;
+} RzPanelLayout;
 
 typedef enum {
 	PANEL_TYPE_DEFAULT = 0,
 	PANEL_TYPE_MENU = 1
-} RPanelType;
+} RzPanelType;
 
 typedef enum {
 	PANEL_EDGE_NONE = 0,
 	PANEL_EDGE_BOTTOM,
 	PANEL_EDGE_RIGHT
-} RPanelEdge;
+} RzPanelEdge;
 
-typedef void (*RPanelMenuUpdateCallback)(void *user, const char *parent);
-typedef void (*RPanelDirectionCallback)(void *user, int direction);
-typedef void (*RPanelRotateCallback)(void *user, bool rev);
-typedef void (*RPanelPrintCallback)(void *user, void *p);
+typedef void (*RzPanelMenuUpdateCallback)(void *user, const char *parent);
+typedef void (*RzPanelDirectionCallback)(void *user, int direction);
+typedef void (*RzPanelRotateCallback)(void *user, bool rev);
+typedef void (*RzPanelPrintCallback)(void *user, void *p);
 
 typedef struct rz_panel_pos_t {
 	int x;
 	int y;
 	int w;
 	int h;
-} RPanelPos;
+} RzPanelPos;
 
 typedef struct rz_panel_model_t {
-	RPanelDirectionCallback directionCb;
-	RPanelRotateCallback rotateCb;
-	RPanelPrintCallback print_cb;
-	RPanelType type;
+	RzPanelDirectionCallback directionCb;
+	RzPanelRotateCallback rotateCb;
+	RzPanelPrintCallback print_cb;
+	RzPanelType type;
 	char *cmd;
 	char *title;
 	ut64 baseAddr;
@@ -50,24 +50,24 @@ typedef struct rz_panel_model_t {
 	char **filter;
 	int n_filter;
 	int rotate;
-} RPanelModel;
+} RzPanelModel;
 
 typedef struct rz_panel_view_t {
-	RPanelPos pos;
-	RPanelPos prevPos;
+	RzPanelPos pos;
+	RzPanelPos prevPos;
 	int sx;
 	int sy;
 	int curpos;
 	bool refresh;
 	int edge;
-} RPanelView;
+} RzPanelView;
 
 typedef struct rz_panel_t {
-    RPanelModel *model;
-    RPanelView *view;
-} RPanel;
+    RzPanelModel *model;
+    RzPanelView *view;
+} RzPanel;
 
-typedef void (*RPanelAlmightyCallback)(void *user, RPanel *panel, const RPanelLayout dir, RZ_NULLABLE const char *title);
+typedef void (*RzPanelAlmightyCallback)(void *user, RzPanel *panel, const RzPanelLayout dir, RZ_NULLABLE const char *title);
 
 #ifdef __cplusplus
 }

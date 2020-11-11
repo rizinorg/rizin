@@ -50,13 +50,13 @@ struct rz_bin_mdmp_obj {
 	RzList *pe32_bins;
 	RzList *pe64_bins;
 
-	RBuffer *b;
+	RzBuffer *b;
 	size_t size;
 	ut8 endian;
 	Sdb *kv;
 };
 
-struct rz_bin_mdmp_obj *rz_bin_mdmp_new_buf(RBuffer *buf);
+struct rz_bin_mdmp_obj *rz_bin_mdmp_new_buf(RzBuffer *buf);
 void rz_bin_mdmp_free(struct rz_bin_mdmp_obj *obj);
 ut64 rz_bin_mdmp_get_paddr(struct rz_bin_mdmp_obj *obj, ut64 vaddr);
 ut32 rz_bin_mdmp_get_perm(struct rz_bin_mdmp_obj *obj, ut64 vaddr);

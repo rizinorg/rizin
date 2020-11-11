@@ -8,7 +8,7 @@
 
 #define I rz_cons_singleton ()
 
-// TODO: Support binary, use RBuffer and remove globals
+// TODO: Support binary, use RzBuffer and remove globals
 static char *readbuffer = NULL;
 static int readbuffer_length = 0;
 static bool bufactive = true;

@@ -658,7 +658,7 @@ static int get_info_mappings(linux_map_entry_t *me_head, size_t *maps_size) {
 	return n_entries;
 }
 
-static bool dump_elf_header(RBuffer *dest, elf_hdr_t *hdr) {
+static bool dump_elf_header(RzBuffer *dest, elf_hdr_t *hdr) {
 	return rz_buf_append_bytes (dest, (const ut8*)hdr, hdr->e_ehsize);
 }
 
@@ -700,7 +700,7 @@ static void *get_ntfile_data(linux_map_entry_t *head) {
 	return maps_data;
 }
 
-static bool dump_elf_pheaders(RBuffer *dest, linux_map_entry_t *maps, elf_offset_t *offset, size_t note_section_size) {
+static bool dump_elf_pheaders(RzBuffer *dest, linux_map_entry_t *maps, elf_offset_t *offset, size_t note_section_size) {
 	linux_map_entry_t *me_p;
 	elf_offset_t offset_to_next;
 	elf_phdr_t phdr;
@@ -747,11 +747,11 @@ static bool dump_elf_pheaders(RBuffer *dest, linux_map_entry_t *maps, elf_offset
 	return true;
 }
 
-static bool dump_elf_note(RBuffer *dest, void *note_data, size_t note_section_size) {
+static bool dump_elf_note(RzBuffer *dest, void *note_data, size_t note_section_size) {
 	return rz_buf_append_bytes (dest, (const ut8*)note_data, note_section_size);
 }
 
-static bool dump_elf_map_content(RzDebug *dbg, RBuffer *dest, linux_map_entry_t *head, pid_t pid) {
+static bool dump_elf_map_content(RzDebug *dbg, RzBuffer *dest, linux_map_entry_t *head, pid_t pid) {
 	linux_map_entry_t *p;
 	ut8 *map_content;
 	size_t size;
@@ -902,7 +902,7 @@ static elf_shdr_t *get_extra_sectionhdr(elf_hdr_t *elf_hdr, st64 offset, int n_s
 	return shdr;
 }
 
-static bool dump_elf_sheader_pxnum(RBuffer *dest, elf_shdr_t *shdr) {
+static bool dump_elf_sheader_pxnum(RzBuffer *dest, elf_shdr_t *shdr) {
 	return rz_buf_append_bytes (dest, (const ut8 *)shdr, sizeof (*shdr));
 }
 
@@ -1456,7 +1456,7 @@ static void init_note_info_structure(RzDebug *dbg, int pid, size_t auxv_size) {
 #endif
 }
 
-bool linux_generate_corefile (RzDebug *dbg, RBuffer *dest) {
+bool linux_generate_corefile (RzDebug *dbg, RzBuffer *dest) {
 	proc_content_t *proc_data = NULL;
 	elf_proc_note_t *elf_proc_note = NULL;
 	elf_shdr_t *shdr_pxnum = NULL;

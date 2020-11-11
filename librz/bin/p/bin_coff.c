@@ -25,7 +25,7 @@ static bool rz_coff_is_stripped(struct rz_bin_coff_obj *obj) {
 		COFF_FLAGS_TI_F_LNNO | COFF_FLAGS_TI_F_LSYMS));
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	*bin_obj = rz_bin_coff_new_buf (buf, bf->rbin->verbose);
 	return *bin_obj != NULL;
 }
@@ -608,7 +608,7 @@ static ut64 size(RzBinFile *bf) {
 	return 0;
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RzBuffer *buf) {
 #if 0
 TODO: do more checks here to avoid false positives
 

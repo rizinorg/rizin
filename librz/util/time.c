@@ -108,7 +108,7 @@ RZ_API bool rz_time_stamp_is_dos_format(const ut32 certainPosixTimeStamp, const 
 }
 
 
-RZ_API int rz_print_date_dos(RPrint *p, const ut8 *buf, int len) {
+RZ_API int rz_print_date_dos(RzPrint *p, const ut8 *buf, int len) {
 	if(len < 4) {
 		return 0;
 	}
@@ -123,7 +123,7 @@ RZ_API int rz_print_date_dos(RPrint *p, const ut8 *buf, int len) {
 	return 4;
 }
 
-RZ_API int rz_print_date_hfs(RPrint *p, const ut8 *buf, int len) {
+RZ_API int rz_print_date_hfs(RzPrint *p, const ut8 *buf, int len) {
 	const int hfs_unix_delta = 2082844800;
 	time_t t = 0;
 	int ret = 0;
@@ -141,7 +141,7 @@ RZ_API int rz_print_date_hfs(RPrint *p, const ut8 *buf, int len) {
 	return ret;
 }
 
-RZ_API int rz_print_date_unix(RPrint *p, const ut8 *buf, int len) {
+RZ_API int rz_print_date_unix(RzPrint *p, const ut8 *buf, int len) {
 	time_t t = 0;
 	int ret = 0;
 
@@ -160,7 +160,7 @@ RZ_API int rz_print_date_unix(RPrint *p, const ut8 *buf, int len) {
 	return ret;
 }
 
-RZ_API int rz_print_date_get_now(RPrint *p, char *str) {
+RZ_API int rz_print_date_get_now(RzPrint *p, char *str) {
 	int ret = 0;
         time_t l;
 
@@ -173,7 +173,7 @@ RZ_API int rz_print_date_get_now(RPrint *p, char *str) {
 	return ret;
 }
 
-RZ_API int rz_print_date_w32(RPrint *p, const ut8 *buf, int len) {
+RZ_API int rz_print_date_w32(RzPrint *p, const ut8 *buf, int len) {
 	ut64 l, L = 0x2b6109100LL;
 	time_t t;
 	int ret = 0;

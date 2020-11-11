@@ -4,7 +4,7 @@
 static bool test_rz_id_storage_toomany(void) {
 	bool r;
 	ut32 id0, id1, id2;
-	RIDStorage *ids = rz_id_storage_new (20, 22);
+	RzIDStorage *ids = rz_id_storage_new (20, 22);
 	r = rz_id_storage_add (ids, "aaa", &id0);
 	mu_assert_true (r, "id0");
 	r = rz_id_storage_add (ids, "bbb", &id1);
@@ -17,7 +17,7 @@ static bool test_rz_id_storage_toomany(void) {
 static bool test_rz_id_storage_wrong(void) {
 	bool r;
 	ut32 id0, id1;
-	RIDStorage *ids = rz_id_storage_new (20, 10);
+	RzIDStorage *ids = rz_id_storage_new (20, 10);
 	r = rz_id_storage_add (ids, "aaa", &id0);
 	mu_assert_false (r, "id0");
 	mu_end;
@@ -27,7 +27,7 @@ static bool test_rz_id_storage_prev_next_eq_0(void) {
 	// test if next reverts prev
 	bool r;
 	ut32 id0, id1, id2;
-	RIDStorage *ids = rz_id_storage_new (1, 15);
+	RzIDStorage *ids = rz_id_storage_new (1, 15);
 	r = rz_id_storage_add (ids, "aaa", &id0);
 	mu_assert_true (r, "id0");
 	mu_assert_eq (id0, 1, "id0");
@@ -50,7 +50,7 @@ static bool test_rz_id_storage_prev_next_eq_1(void) {
 	// test if next reverts prev (modulo wrap 1)
 	bool r;
 	ut32 id, id0, id1, id2;
-	RIDStorage *ids = rz_id_storage_new (0, 15);
+	RzIDStorage *ids = rz_id_storage_new (0, 15);
 	rz_id_storage_add (ids, "bbb", &id0);
 	rz_id_storage_add (ids, "aaa", &id1);
 	rz_id_storage_add (ids, "ccc", &id2);
@@ -73,7 +73,7 @@ static bool test_rz_id_storage_prev_next_min(void) {
 	// test if next reverts prev (modulo wrap 1)
 	bool r;
 	ut32 id, id0, id1, id2;
-	RIDStorage *ids = rz_id_storage_new (3, 15);
+	RzIDStorage *ids = rz_id_storage_new (3, 15);
 	rz_id_storage_add (ids, "bbb", &id0);
 	rz_id_storage_add (ids, "aaa", &id1);
 	rz_id_storage_add (ids, "ccc", &id2);
@@ -94,7 +94,7 @@ static bool test_rz_id_storage_prev_next_min(void) {
 static bool test_rz_id_storage_empty(void) {
 	// test if next reverts prev (modulo wrap 2)
 	ut32 id, _id = 0;
-	RIDStorage *ids = rz_id_storage_new (0, 15);
+	RzIDStorage *ids = rz_id_storage_new (0, 15);
 	bool r = rz_id_storage_get_prev (ids, &_id);
 	mu_assert_false (r, "get prev from none");
 	r = rz_id_storage_get_next (ids, &_id);
@@ -111,7 +111,7 @@ static bool test_rz_id_storage_empty(void) {
 static bool test_rz_id_storage_prev_next_eq_2(void) {
 	// test if next reverts prev (modulo wrap 2)
 	ut32 id, _id;
-	RIDStorage *ids = rz_id_storage_new (0, 15);
+	RzIDStorage *ids = rz_id_storage_new (0, 15);
 	rz_id_storage_add (ids, "aaa", &_id);
 	rz_id_storage_add (ids, "ccc", &_id);
 	rz_id_storage_add (ids, "bbb", &id);
@@ -125,7 +125,7 @@ static bool test_rz_id_storage_prev_next_eq_2(void) {
 }
 
 static bool test_prevnext(void) {
-	RIDStorage *ids = rz_id_storage_new (5, 10);
+	RzIDStorage *ids = rz_id_storage_new (5, 10);
 	ut32 id[3];
 	rz_id_storage_add (ids, "a", &id[0]);
 	rz_id_storage_add (ids, "b", &id[1]);

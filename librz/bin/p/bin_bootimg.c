@@ -44,7 +44,7 @@ struct boot_img_hdr {
 typedef struct {
 	Sdb *kv;
 	BootImage bi;
-	RBuffer *buf;
+	RzBuffer *buf;
 } BootImageObj;
 
 static int bootimg_header_load(BootImageObj *obj, Sdb *db) {
@@ -84,7 +84,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 	return ao? ao->kv: NULL;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	BootImageObj *bio = RZ_NEW0 (BootImageObj);
 	if (!bio) {
 		return false;
@@ -145,7 +145,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RzBuffer *buf) {
 	ut8 tmp[13];
 	int r = rz_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	return r > 12 && !strncmp ((const char *)tmp, "ANDROID!", 8);

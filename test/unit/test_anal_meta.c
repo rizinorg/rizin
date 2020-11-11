@@ -12,11 +12,11 @@ bool test_meta_set() {
 
 	bool found[3] = { 0 };
 	size_t count = 0;
-	RIntervalTreeIter it;
+	RzIntervalTreeIter it;
 	RzAnalMetaItem *item;
 	rz_interval_tree_foreach (&anal->meta, it, item) {
 		count++;
-		RIntervalNode *node = rz_interval_tree_iter_get (&it);
+		RzIntervalNode *node = rz_interval_tree_iter_get (&it);
 		switch (item->type) {
 		case RZ_META_TYPE_DATA:
 			mu_assert_eq (node->start, 0x100, "node start");
@@ -55,7 +55,7 @@ bool test_meta_set() {
 	found[0] = found[1] = found[2] = false;
 	rz_interval_tree_foreach (&anal->meta, it, item) {
 		count++;
-		RIntervalNode *node = rz_interval_tree_iter_get (&it);
+		RzIntervalNode *node = rz_interval_tree_iter_get (&it);
 		switch (item->type) {
 		case RZ_META_TYPE_DATA:
 			mu_assert_eq (node->start, 0x100, "node start");
@@ -95,7 +95,7 @@ bool test_meta_set() {
 	found[0] = found[1] = found[2] = false;
 	rz_interval_tree_foreach (&anal->meta, it, item) {
 		count++;
-		RIntervalNode *node = rz_interval_tree_iter_get (&it);
+		RzIntervalNode *node = rz_interval_tree_iter_get (&it);
 		switch (item->type) {
 		case RZ_META_TYPE_DATA:
 			mu_assert_eq (node->start, 0x100, "node start");
@@ -175,7 +175,7 @@ bool test_meta_get_in() {
 	rz_meta_set (anal, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
 
-	RIntervalNode *node = rz_meta_get_in (anal, 0x100, RZ_META_TYPE_COMMENT);
+	RzIntervalNode *node = rz_meta_get_in (anal, 0x100, RZ_META_TYPE_COMMENT);
 	mu_assert_notnull (node, "get item");
 	RzAnalMetaItem *item = node->data;
 	mu_assert_streq (item->str, "vera gemini", "get contents");
@@ -222,7 +222,7 @@ bool test_meta_get_all_at() {
 	void **it;
 	bool found[2] = { 0 };
 	rz_pvector_foreach (items, it) {
-		RzAnalMetaItem *item = ((RIntervalNode *)*it)->data;
+		RzAnalMetaItem *item = ((RzIntervalNode *)*it)->data;
 		switch (item->type) {
 		case RZ_META_TYPE_DATA:
 			found[0] = true;
@@ -262,7 +262,7 @@ bool test_meta_get_all_in() {
 	void **it;
 	bool found[2] = { 0 };
 	rz_pvector_foreach (items, it) {
-		RzAnalMetaItem *item = ((RIntervalNode *)*it)->data;
+		RzAnalMetaItem *item = ((RzIntervalNode *)*it)->data;
 		switch (item->type) {
 		case RZ_META_TYPE_DATA:
 			found[0] = true;
@@ -280,13 +280,13 @@ bool test_meta_get_all_in() {
 
 	items = rz_meta_get_all_in (anal, 0x100, RZ_META_TYPE_COMMENT);
 	mu_assert_eq (rz_pvector_len (items), 1, "all count");
-	RzAnalMetaItem *item = ((RIntervalNode *)rz_pvector_at (items, 0))->data;
+	RzAnalMetaItem *item = ((RzIntervalNode *)rz_pvector_at (items, 0))->data;
 	mu_assert_streq (item->str, "vera gemini", "contents");
 	rz_pvector_free (items);
 
 	items = rz_meta_get_all_in (anal, 0x100, RZ_META_TYPE_DATA);
 	mu_assert_eq (rz_pvector_len (items), 1, "all count");
-	item = ((RIntervalNode *)rz_pvector_at (items, 0))->data;
+	item = ((RzIntervalNode *)rz_pvector_at (items, 0))->data;
 	mu_assert_eq (item->type, RZ_META_TYPE_DATA, "contents");
 	rz_pvector_free (items);
 
@@ -300,7 +300,7 @@ bool test_meta_get_all_in() {
 
 	items = rz_meta_get_all_in (anal, 0x103, RZ_META_TYPE_DATA);
 	mu_assert_eq (rz_pvector_len (items), 1, "all count");
-	item = ((RIntervalNode *)rz_pvector_at (items, 0))->data;
+	item = ((RzIntervalNode *)rz_pvector_at (items, 0))->data;
 	mu_assert_eq (item->type, RZ_META_TYPE_DATA, "contents");
 	rz_pvector_free (items);
 
@@ -324,7 +324,7 @@ bool test_meta_get_all_intersect() {
 	void **it;
 	bool found[2] = { 0 };
 	rz_pvector_foreach (items, it) {
-		RzAnalMetaItem *item = ((RIntervalNode *)*it)->data;
+		RzAnalMetaItem *item = ((RzIntervalNode *)*it)->data;
 		switch (item->type) {
 		case RZ_META_TYPE_DATA:
 			found[0] = true;
@@ -342,19 +342,19 @@ bool test_meta_get_all_intersect() {
 
 	items = rz_meta_get_all_intersect (anal, 0x100, 1, RZ_META_TYPE_DATA);
 	mu_assert_eq (rz_pvector_len (items), 1, "all count");
-	RzAnalMetaItem *item = ((RIntervalNode *)rz_pvector_at (items, 0))->data;
+	RzAnalMetaItem *item = ((RzIntervalNode *)rz_pvector_at (items, 0))->data;
 	mu_assert_eq (item->type, RZ_META_TYPE_DATA, "contents");
 	rz_pvector_free (items);
 
 	items = rz_meta_get_all_intersect (anal, 0x100, 0x300, RZ_META_TYPE_DATA);
 	mu_assert_eq (rz_pvector_len (items), 1, "all count");
-	item = ((RIntervalNode *)rz_pvector_at (items, 0))->data;
+	item = ((RzIntervalNode *)rz_pvector_at (items, 0))->data;
 	mu_assert_eq (item->type, RZ_META_TYPE_DATA, "contents");
 	rz_pvector_free (items);
 
 	items = rz_meta_get_all_intersect (anal, 0x0, 0x300, RZ_META_TYPE_DATA);
 	mu_assert_eq (rz_pvector_len (items), 1, "all count");
-	item = ((RIntervalNode *)rz_pvector_at (items, 0))->data;
+	item = ((RzIntervalNode *)rz_pvector_at (items, 0))->data;
 	mu_assert_eq (item->type, RZ_META_TYPE_DATA, "contents");
 	rz_pvector_free (items);
 
@@ -364,7 +364,7 @@ bool test_meta_get_all_intersect() {
 
 	items = rz_meta_get_all_intersect (anal, 0x103, 0x300, RZ_META_TYPE_DATA);
 	mu_assert_eq (rz_pvector_len (items), 1, "all count");
-	item = ((RIntervalNode *)rz_pvector_at (items, 0))->data;
+	item = ((RzIntervalNode *)rz_pvector_at (items, 0))->data;
 	mu_assert_eq (item->type, RZ_META_TYPE_DATA, "contents");
 	rz_pvector_free (items);
 
@@ -451,11 +451,11 @@ bool test_meta_rebase() {
 
 	bool found[3] = { 0 };
 	size_t count = 0;
-	RIntervalTreeIter it;
+	RzIntervalTreeIter it;
 	RzAnalMetaItem *item;
 	rz_interval_tree_foreach (&anal->meta, it, item) {
 		count++;
-		RIntervalNode *node = rz_interval_tree_iter_get (&it);
+		RzIntervalNode *node = rz_interval_tree_iter_get (&it);
 		switch (item->type) {
 		case RZ_META_TYPE_DATA:
 			mu_assert_eq (node->start, 0x100, "node start");
@@ -504,7 +504,7 @@ bool test_meta_spaces() {
 
 	bool found[4] = { 0 };
 	size_t count = 0;
-	RIntervalTreeIter it;
+	RzIntervalTreeIter it;
 	RzAnalMetaItem *item;
 	rz_interval_tree_foreach (&anal->meta, it, item) {
 		count++;
@@ -544,7 +544,7 @@ bool test_meta_spaces() {
 	item = rz_meta_get_at (anal, 0x100, RZ_META_TYPE_DATA, NULL);
 	mu_assert_null (item, "masked by space");
 
-	RIntervalNode *node = rz_meta_get_in (anal, 0x100, RZ_META_TYPE_COMMENT);
+	RzIntervalNode *node = rz_meta_get_in (anal, 0x100, RZ_META_TYPE_COMMENT);
 	mu_assert_notnull (node, "get item");
 	mu_assert_ptreq (node->data, reaper_item, "masked by space");
 	node = rz_meta_get_in (anal, 0x100, RZ_META_TYPE_DATA);
@@ -552,17 +552,17 @@ bool test_meta_spaces() {
 
 	RzPVector *nodes = rz_meta_get_all_at (anal, 0x100);
 	mu_assert_eq (rz_pvector_len (nodes), 1, "all count");
-	mu_assert_ptreq (((RIntervalNode *)rz_pvector_at (nodes, 0))->data, reaper_item, "all masked");
+	mu_assert_ptreq (((RzIntervalNode *)rz_pvector_at (nodes, 0))->data, reaper_item, "all masked");
 	rz_pvector_free (nodes);
 
 	nodes = rz_meta_get_all_in (anal, 0x100, RZ_META_TYPE_ANY);
 	mu_assert_eq (rz_pvector_len (nodes), 1, "all count");
-	mu_assert_ptreq (((RIntervalNode *)rz_pvector_at (nodes, 0))->data, reaper_item, "all masked");
+	mu_assert_ptreq (((RzIntervalNode *)rz_pvector_at (nodes, 0))->data, reaper_item, "all masked");
 	rz_pvector_free (nodes);
 
 	nodes = rz_meta_get_all_intersect (anal, 0x0, 0x500, RZ_META_TYPE_ANY);
 	mu_assert_eq (rz_pvector_len (nodes), 1, "all count");
-	mu_assert_ptreq (((RIntervalNode *)rz_pvector_at (nodes, 0))->data, reaper_item, "all masked");
+	mu_assert_ptreq (((RzIntervalNode *)rz_pvector_at (nodes, 0))->data, reaper_item, "all masked");
 	rz_pvector_free (nodes);
 
 	// delete

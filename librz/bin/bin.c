@@ -56,7 +56,7 @@ static ut64 binobj_a2b(RzBinObject *o, ut64 addr) {
 }
 
 // TODO: move these two function do a different file
-RZ_API RzBinXtrData *rz_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 file_count, RzBinXtrMetadata *metadata) {
+RZ_API RzBinXtrData *rz_bin_xtrdata_new(RzBuffer *buf, ut64 offset, ut64 size, ut32 file_count, RzBinXtrMetadata *metadata) {
 	RzBinXtrData *data = RZ_NEW0 (RzBinXtrData);
 	if (data) {
 		data->offset = offset;
@@ -248,7 +248,7 @@ RZ_API bool rz_bin_reload(RzBin *bin, ut32 bf_id, ut64 baseaddr) {
 	return res;
 }
 
-RZ_API bool rz_bin_open_buf(RzBin *bin, RBuffer *buf, RzBinOptions *opt) {
+RZ_API bool rz_bin_open_buf(RzBin *bin, RzBuffer *buf, RzBinOptions *opt) {
 	rz_return_val_if_fail (bin && opt, false);
 
 	RzListIter *it;
@@ -282,7 +282,7 @@ RZ_API bool rz_bin_open_buf(RzBin *bin, RBuffer *buf, RzBinOptions *opt) {
 	}
 	if (!bf) {
 		// Uncomment for this speedup: 20s vs 22s
-		// RBuffer *buf = rz_buf_new_slurp (bin->file);
+		// RzBuffer *buf = rz_buf_new_slurp (bin->file);
 		bf = rz_bin_file_new_from_buffer (bin, bin->file, buf, bin->rawstr,
 			opt->baseaddr, opt->loadaddr, opt->fd, opt->pluginname);
 		if (!bf) {
@@ -309,12 +309,12 @@ RZ_API bool rz_bin_open_io(RzBin *bin, RzBinOptions *opt) {
 		opt->loadaddr = 0;
 	}
 
-	// Create RBuffer from the opened file
+	// Create RzBuffer from the opened file
 	// When debugging something, we want to open the backed file because
 	// not all binary info are mapped in the virtual space. If that is not
 	// possible (e.g. remote file) just try to load bin info from the
 	// debugee process.
-	RBuffer *buf = NULL;
+	RzBuffer *buf = NULL;
 	if (is_debugger) {
 		buf = rz_buf_new_file (fname, O_RDONLY, 0);
 		is_debugger = false;
@@ -331,7 +331,7 @@ RZ_API bool rz_bin_open_io(RzBin *bin, RzBinOptions *opt) {
 	}
 
 	// Slice buffer if necessary
-	RBuffer *slice = buf;
+	RzBuffer *slice = buf;
 	if (!is_debugger && (opt->loadaddr != 0 || opt->sz != rz_buf_size (buf))) {
 		slice = rz_buf_new_slice (buf, opt->loadaddr, opt->sz);
 	} else if (is_debugger && opt->baseaddr != UT64_MAX && opt->baseaddr != 0) {
@@ -362,7 +362,7 @@ RZ_IPI RzBinPlugin *rz_bin_get_binplugin_by_name(RzBin *bin, const char *name) {
 	return NULL;
 }
 
-RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RBuffer *buf) {
+RZ_API RzBinPlugin *rz_bin_get_binplugin_by_buffer(RzBin *bin, RzBuffer *buf) {
 	RzBinPlugin *plugin;
 	RzListIter *it;
 
@@ -1181,7 +1181,7 @@ RZ_API void rz_bin_bind(RzBin *bin, RzBinBind *b) {
 	}
 }
 
-RZ_API RBuffer *rz_bin_create(RzBin *bin, const char *p,
+RZ_API RzBuffer *rz_bin_create(RzBin *bin, const char *p,
 	const ut8 *code, int codelen,
 	const ut8 *data, int datalen,
 	RzBinArchOptions *opt) {
@@ -1202,7 +1202,7 @@ RZ_API RBuffer *rz_bin_create(RzBin *bin, const char *p,
 	return plugin->create (bin, code, codelen, data, datalen, opt);
 }
 
-RZ_API RBuffer *rz_bin_package(RzBin *bin, const char *type, const char *file, RzList *files) {
+RZ_API RzBuffer *rz_bin_package(RzBin *bin, const char *type, const char *file, RzList *files) {
 	if (!strcmp (type, "zip")) {
 		// XXX: implement me
 		rz_warn_if_reached ();
@@ -1213,7 +1213,7 @@ RZ_API RBuffer *rz_bin_package(RzBin *bin, const char *type, const char *file, R
 		RzListIter *iter;
 		ut32 num;
 		ut8 *num8 = (ut8*)&num;
-		RBuffer *buf = rz_buf_new_file (file, O_RDWR | O_CREAT, 0644);
+		RzBuffer *buf = rz_buf_new_file (file, O_RDWR | O_CREAT, 0644);
 		if (!buf) {
 			eprintf ("Cannot open file %s - Permission Denied.\n", file);
 			return NULL;

@@ -53,7 +53,7 @@ static int __isdata(RzCore *core, ut64 addr) {
 	void **it;
 	int result = 0;
 	rz_pvector_foreach (list, it) {
-		RIntervalNode *node = *it;
+		RzIntervalNode *node = *it;
 		RzAnalMetaItem *meta = node->data;
 		switch (meta->type) {
 		case RZ_META_TYPE_DATA:
@@ -456,7 +456,7 @@ RZ_API bool core_anal_bbs(RzCore *core, const char* input) {
 		}
 		if (block && (block->reached == 0 || block->called >= 1)) {
 			fcn_t* current_function = fcnNew (block);
-			RStack *stack = rz_stack_new (100);
+			RzStack *stack = rz_stack_new (100);
 			bb_t *jump = NULL;
 			bb_t *fail = NULL;
 			bb_t *cur = NULL;
@@ -744,7 +744,7 @@ RZ_API bool core_anal_bbs_range (RzCore *core, const char* input) {
 		}
 		if (block && (block->reached == 0)) {
 			fcn_t* current_function = fcnNew (block);
-			RStack *stack = rz_stack_new (100);
+			RzStack *stack = rz_stack_new (100);
 			bb_t *jump = NULL;
 			bb_t *fail = NULL;
 			bb_t *cur = NULL;

@@ -2,7 +2,7 @@
 
 #include <rz_cons.h>
 
-#define RCOLOR_AT(i) (RColor *) (((ut8 *) &(rz_cons_singleton ()->context->cpal)) + keys[i].coff)
+#define RCOLOR_AT(i) (RzColor *) (((ut8 *) &(rz_cons_singleton ()->context->cpal)) + keys[i].coff)
 #define COLOR_AT(i) (char **) (((ut8 *) &(rz_cons_singleton ()->context->pal)) + keys[i].off)
 
 static struct {
@@ -92,29 +92,29 @@ static const int keys_len = sizeof (keys) / sizeof (keys[0]) - 1;
 
 struct {
 	const char *name;
-	RColor rcolor;
+	RzColor rcolor;
 	const char *code;
 	const char *bgcode;
 } colors[] = {
-	{ "black",    RColor_BLACK,    Color_BLACK,    Color_BGBLACK },
-	{ "red",      RColor_RED,      Color_RED,      Color_BGRED },
-	{ "white",    RColor_WHITE,    Color_WHITE,    Color_BGWHITE },
-	{ "green",    RColor_GREEN,    Color_GREEN,    Color_BGGREEN },
-	{ "magenta",  RColor_MAGENTA,  Color_MAGENTA,  Color_BGMAGENTA },
-	{ "yellow",   RColor_YELLOW,   Color_YELLOW,   Color_BGYELLOW },
-	{ "cyan",     RColor_CYAN,     Color_CYAN,     Color_BGCYAN },
-	{ "blue",     RColor_BLUE,     Color_BLUE,     Color_BGBLUE },
-	{ "gray",     RColor_GRAY,     Color_GRAY,     Color_BGGRAY },
-	{ "bblack",   RColor_BBLACK,   Color_BBLACK,   Color_BBGBLACK },
-	{ "bred",     RColor_BRED,     Color_BRED,     Color_BBGRED },
-	{ "bwhite",   RColor_BWHITE,   Color_BWHITE,   Color_BBGWHITE },
-	{ "bgreen",   RColor_BGREEN,   Color_BGREEN,   Color_BBGGREEN },
-	{ "bmagenta", RColor_BMAGENTA, Color_BMAGENTA, Color_BBGMAGENTA },
-	{ "byellow",  RColor_BYELLOW,  Color_BYELLOW,  Color_BBGYELLOW },
-	{ "bcyan",    RColor_BCYAN,    Color_BCYAN,    Color_BBGCYAN },
-	{ "bblue",    RColor_BBLUE,    Color_BBLUE,    Color_BBGBLUE },
-	{ "none",     RColor_NULL,     Color_RESET,    Color_RESET },
-	{ NULL, RColor_NULL, NULL, NULL }
+	{ "black",    RzColor_BLACK,    Color_BLACK,    Color_BGBLACK },
+	{ "red",      RzColor_RED,      Color_RED,      Color_BGRED },
+	{ "white",    RzColor_WHITE,    Color_WHITE,    Color_BGWHITE },
+	{ "green",    RzColor_GREEN,    Color_GREEN,    Color_BGGREEN },
+	{ "magenta",  RzColor_MAGENTA,  Color_MAGENTA,  Color_BGMAGENTA },
+	{ "yellow",   RzColor_YELLOW,   Color_YELLOW,   Color_BGYELLOW },
+	{ "cyan",     RzColor_CYAN,     Color_CYAN,     Color_BGCYAN },
+	{ "blue",     RzColor_BLUE,     Color_BLUE,     Color_BGBLUE },
+	{ "gray",     RzColor_GRAY,     Color_GRAY,     Color_BGGRAY },
+	{ "bblack",   RzColor_BBLACK,   Color_BBLACK,   Color_BBGBLACK },
+	{ "bred",     RzColor_BRED,     Color_BRED,     Color_BBGRED },
+	{ "bwhite",   RzColor_BWHITE,   Color_BWHITE,   Color_BBGWHITE },
+	{ "bgreen",   RzColor_BGREEN,   Color_BGREEN,   Color_BBGGREEN },
+	{ "bmagenta", RzColor_BMAGENTA, Color_BMAGENTA, Color_BBGMAGENTA },
+	{ "byellow",  RzColor_BYELLOW,  Color_BYELLOW,  Color_BBGYELLOW },
+	{ "bcyan",    RzColor_BCYAN,    Color_BCYAN,    Color_BBGCYAN },
+	{ "bblue",    RzColor_BBLUE,    Color_BBLUE,    Color_BBGBLUE },
+	{ "none",     RzColor_NULL,     Color_RESET,    Color_RESET },
+	{ NULL, RzColor_NULL, NULL, NULL }
 };
 
 static inline ut8 rgbnum(const char ch1, const char ch2) {
@@ -129,7 +129,7 @@ static void __cons_pal_update_event(RzConsContext *ctx) {
 	int i, n = 0;
 	/* Compute cons->pal values */
 	for (i = 0; keys[i].name; i++) {
-		RColor *rcolor = (RColor *) (((ut8 *) &(ctx->cpal)) + keys[i].coff);
+		RzColor *rcolor = (RzColor *) (((ut8 *) &(ctx->cpal)) + keys[i].coff);
 		char **color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
 		// Color is dynamically allocated, needs to be freed
 		RZ_FREE (*color);
@@ -153,89 +153,89 @@ static void __cons_pal_update_event(RzConsContext *ctx) {
 RZ_API void rz_cons_pal_init(RzConsContext *ctx) {
 	memset (&ctx->cpal, 0, sizeof (ctx->cpal));
 
-	ctx->cpal.b0x00              = (RColor) RColor_GREEN;
-	ctx->cpal.b0x7f              = (RColor) RColor_CYAN;
-	ctx->cpal.b0xff              = (RColor) RColor_RED;
-	ctx->cpal.args               = (RColor) RColor_YELLOW;
-	ctx->cpal.bin                = (RColor) RColor_CYAN;
-	ctx->cpal.btext              = (RColor) RColor_YELLOW;
-	ctx->cpal.call               = (RColor) RColor_BGREEN;
+	ctx->cpal.b0x00              = (RzColor) RzColor_GREEN;
+	ctx->cpal.b0x7f              = (RzColor) RzColor_CYAN;
+	ctx->cpal.b0xff              = (RzColor) RzColor_RED;
+	ctx->cpal.args               = (RzColor) RzColor_YELLOW;
+	ctx->cpal.bin                = (RzColor) RzColor_CYAN;
+	ctx->cpal.btext              = (RzColor) RzColor_YELLOW;
+	ctx->cpal.call               = (RzColor) RzColor_BGREEN;
 	ctx->cpal.call.attr          = RZ_CONS_ATTR_BOLD;
-	ctx->cpal.ucall              = (RColor) RColor_GREEN;
-	ctx->cpal.ujmp               = (RColor) RColor_GREEN;
-	ctx->cpal.cjmp               = (RColor) RColor_GREEN;
-	ctx->cpal.cmp                = (RColor) RColor_CYAN;
-	ctx->cpal.comment            = (RColor) RColor_RED;
-	ctx->cpal.usercomment        = (RColor) RColor_WHITE;
-	ctx->cpal.creg               = (RColor) RColor_CYAN;
-	ctx->cpal.flag               = (RColor) RColor_CYAN;
-	ctx->cpal.fline              = (RColor) RColor_CYAN;
-	ctx->cpal.floc               = (RColor) RColor_CYAN;
-	ctx->cpal.flow               = (RColor) RColor_CYAN;
-	ctx->cpal.flow2              = (RColor) RColor_BLUE;
-	ctx->cpal.fname              = (RColor) RColor_RED;
-	ctx->cpal.help               = (RColor) RColor_GREEN;
-	ctx->cpal.input              = (RColor) RColor_WHITE;
-	ctx->cpal.invalid            = (RColor) RColor_BRED;
+	ctx->cpal.ucall              = (RzColor) RzColor_GREEN;
+	ctx->cpal.ujmp               = (RzColor) RzColor_GREEN;
+	ctx->cpal.cjmp               = (RzColor) RzColor_GREEN;
+	ctx->cpal.cmp                = (RzColor) RzColor_CYAN;
+	ctx->cpal.comment            = (RzColor) RzColor_RED;
+	ctx->cpal.usercomment        = (RzColor) RzColor_WHITE;
+	ctx->cpal.creg               = (RzColor) RzColor_CYAN;
+	ctx->cpal.flag               = (RzColor) RzColor_CYAN;
+	ctx->cpal.fline              = (RzColor) RzColor_CYAN;
+	ctx->cpal.floc               = (RzColor) RzColor_CYAN;
+	ctx->cpal.flow               = (RzColor) RzColor_CYAN;
+	ctx->cpal.flow2              = (RzColor) RzColor_BLUE;
+	ctx->cpal.fname              = (RzColor) RzColor_RED;
+	ctx->cpal.help               = (RzColor) RzColor_GREEN;
+	ctx->cpal.input              = (RzColor) RzColor_WHITE;
+	ctx->cpal.invalid            = (RzColor) RzColor_BRED;
 	ctx->cpal.invalid.attr       = RZ_CONS_ATTR_BOLD;
-	ctx->cpal.jmp                = (RColor) RColor_GREEN;
-	ctx->cpal.label              = (RColor) RColor_CYAN;
-	ctx->cpal.math               = (RColor) RColor_YELLOW;
-	ctx->cpal.mov                = (RColor) RColor_WHITE;
-	ctx->cpal.nop                = (RColor) RColor_BLUE;
-	ctx->cpal.num                = (RColor) RColor_YELLOW;
-	ctx->cpal.offset             = (RColor) RColor_GREEN;
-	ctx->cpal.other              = (RColor) RColor_WHITE;
-	ctx->cpal.pop                = (RColor) RColor_BMAGENTA;
+	ctx->cpal.jmp                = (RzColor) RzColor_GREEN;
+	ctx->cpal.label              = (RzColor) RzColor_CYAN;
+	ctx->cpal.math               = (RzColor) RzColor_YELLOW;
+	ctx->cpal.mov                = (RzColor) RzColor_WHITE;
+	ctx->cpal.nop                = (RzColor) RzColor_BLUE;
+	ctx->cpal.num                = (RzColor) RzColor_YELLOW;
+	ctx->cpal.offset             = (RzColor) RzColor_GREEN;
+	ctx->cpal.other              = (RzColor) RzColor_WHITE;
+	ctx->cpal.pop                = (RzColor) RzColor_BMAGENTA;
 	ctx->cpal.pop.attr           = RZ_CONS_ATTR_BOLD;
-	ctx->cpal.prompt             = (RColor) RColor_YELLOW;
-	ctx->cpal.push               = (RColor) RColor_MAGENTA;
-	ctx->cpal.crypto             = (RColor) RColor_BGBLUE;
-	ctx->cpal.reg                = (RColor) RColor_CYAN;
-	ctx->cpal.ret                = (RColor) RColor_RED;
-	ctx->cpal.swi                = (RColor) RColor_MAGENTA;
-	ctx->cpal.trap               = (RColor) RColor_BRED;
+	ctx->cpal.prompt             = (RzColor) RzColor_YELLOW;
+	ctx->cpal.push               = (RzColor) RzColor_MAGENTA;
+	ctx->cpal.crypto             = (RzColor) RzColor_BGBLUE;
+	ctx->cpal.reg                = (RzColor) RzColor_CYAN;
+	ctx->cpal.ret                = (RzColor) RzColor_RED;
+	ctx->cpal.swi                = (RzColor) RzColor_MAGENTA;
+	ctx->cpal.trap               = (RzColor) RzColor_BRED;
 	ctx->cpal.trap.attr          = RZ_CONS_ATTR_BOLD;
 
-	ctx->cpal.ai_read            = (RColor) RColor_GREEN;
-	ctx->cpal.ai_write           = (RColor) RColor_BLUE;
-	ctx->cpal.ai_exec            = (RColor) RColor_RED;
-	ctx->cpal.ai_seq             = (RColor) RColor_MAGENTA;
-	ctx->cpal.ai_ascii           = (RColor) RColor_YELLOW;
+	ctx->cpal.ai_read            = (RzColor) RzColor_GREEN;
+	ctx->cpal.ai_write           = (RzColor) RzColor_BLUE;
+	ctx->cpal.ai_exec            = (RzColor) RzColor_RED;
+	ctx->cpal.ai_seq             = (RzColor) RzColor_MAGENTA;
+	ctx->cpal.ai_ascii           = (RzColor) RzColor_YELLOW;
 
-	ctx->cpal.gui_cflow          = (RColor) RColor_YELLOW;
-	ctx->cpal.gui_dataoffset     = (RColor) RColor_YELLOW;
-	ctx->cpal.gui_background     = (RColor) RColor_BLACK;
-	ctx->cpal.gui_alt_background = (RColor) RColor_WHITE;
-	ctx->cpal.gui_border         = (RColor) RColor_BLACK;
-	ctx->cpal.wordhl             = (RColor) RColor_BGRED;
+	ctx->cpal.gui_cflow          = (RzColor) RzColor_YELLOW;
+	ctx->cpal.gui_dataoffset     = (RzColor) RzColor_YELLOW;
+	ctx->cpal.gui_background     = (RzColor) RzColor_BLACK;
+	ctx->cpal.gui_alt_background = (RzColor) RzColor_WHITE;
+	ctx->cpal.gui_border         = (RzColor) RzColor_BLACK;
+	ctx->cpal.wordhl             = (RzColor) RzColor_BGRED;
 	// No good choice for fallback ansi16 color
 #if __WINDOWS__
-	ctx->cpal.linehl             = (RColor) RCOLOR (ALPHA_BG, 0x00, 0x00, 0x50, 0x00, 0x00, 0x00, 4);
+	ctx->cpal.linehl             = (RzColor) RCOLOR (ALPHA_BG, 0x00, 0x00, 0x50, 0x00, 0x00, 0x00, 4);
 #else
-	ctx->cpal.linehl             = (RColor) RCOLOR (ALPHA_BG, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 4);
+	ctx->cpal.linehl             = (RzColor) RCOLOR (ALPHA_BG, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 4);
 #endif
 
-	ctx->cpal.func_var           = (RColor) RColor_WHITE;
-	ctx->cpal.func_var_type      = (RColor) RColor_BLUE;
-	ctx->cpal.func_var_addr      = (RColor) RColor_CYAN;
+	ctx->cpal.func_var           = (RzColor) RzColor_WHITE;
+	ctx->cpal.func_var_type      = (RzColor) RzColor_BLUE;
+	ctx->cpal.func_var_addr      = (RzColor) RzColor_CYAN;
 
-	ctx->cpal.widget_bg          = (RColor) RCOLOR (ALPHA_BG, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00, 0);
-	ctx->cpal.widget_sel         = (RColor) RColor_BGRED;
+	ctx->cpal.widget_bg          = (RzColor) RCOLOR (ALPHA_BG, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00, 0);
+	ctx->cpal.widget_sel         = (RzColor) RzColor_BGRED;
 
-	ctx->cpal.graph_box          = (RColor) RColor_NULL;
-	ctx->cpal.graph_box2         = (RColor) RColor_BLUE;
-	ctx->cpal.graph_box3         = (RColor) RColor_MAGENTA;
-	ctx->cpal.graph_box4         = (RColor) RColor_GRAY;
-	ctx->cpal.graph_true         = (RColor) RColor_GREEN;
-	ctx->cpal.graph_false        = (RColor) RColor_RED;
-	ctx->cpal.graph_trufae       = (RColor) RColor_BLUE; // single jump
-	ctx->cpal.graph_traced       = (RColor) RColor_YELLOW;
-	ctx->cpal.graph_current      = (RColor) RColor_BLUE;
-	ctx->cpal.graph_diff_unknown = (RColor) RColor_MAGENTA;
-	ctx->cpal.graph_diff_new     =  (RColor) RColor_RED;
-	ctx->cpal.graph_diff_match   =  (RColor) RColor_GRAY;
-	ctx->cpal.graph_diff_unmatch =  (RColor) RColor_YELLOW;
+	ctx->cpal.graph_box          = (RzColor) RzColor_NULL;
+	ctx->cpal.graph_box2         = (RzColor) RzColor_BLUE;
+	ctx->cpal.graph_box3         = (RzColor) RzColor_MAGENTA;
+	ctx->cpal.graph_box4         = (RzColor) RzColor_GRAY;
+	ctx->cpal.graph_true         = (RzColor) RzColor_GREEN;
+	ctx->cpal.graph_false        = (RzColor) RzColor_RED;
+	ctx->cpal.graph_trufae       = (RzColor) RzColor_BLUE; // single jump
+	ctx->cpal.graph_traced       = (RzColor) RzColor_YELLOW;
+	ctx->cpal.graph_current      = (RzColor) RzColor_BLUE;
+	ctx->cpal.graph_diff_unknown = (RzColor) RzColor_MAGENTA;
+	ctx->cpal.graph_diff_new     =  (RzColor) RzColor_RED;
+	ctx->cpal.graph_diff_match   =  (RzColor) RzColor_GRAY;
+	ctx->cpal.graph_diff_unmatch =  (RzColor) RzColor_YELLOW;
 
 
 	rz_cons_pal_free (ctx);
@@ -268,7 +268,7 @@ RZ_API void rz_cons_pal_copy(RzConsContext *dst, RzConsContext *src) {
 
 RZ_API void rz_cons_pal_random(void) {
 	int i;
-	RColor *rcolor;
+	RzColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
 		rcolor = RCOLOR_AT (i);
 		*rcolor = rz_cons_color_random (ALPHA_FG);
@@ -277,9 +277,9 @@ RZ_API void rz_cons_pal_random(void) {
 }
 
 /* Return NULL if outcol is given */
-RZ_API char *rz_cons_pal_parse(const char *str, RColor *outcol) {
+RZ_API char *rz_cons_pal_parse(const char *str, RzColor *outcol) {
 	int i;
-	RColor rcolor = (RColor) RColor_BLACK;
+	RzColor rcolor = (RzColor) RzColor_BLACK;
 	rcolor.id16 = -1;
 	char *fgcolor;
 	char *bgcolor;
@@ -420,7 +420,7 @@ RZ_API char *rz_cons_pal_parse(const char *str, RColor *outcol) {
 static void rz_cons_pal_show_gs(void) {
 	int i, n;
 	rz_cons_print ("\nGreyscale:\n");
-	RColor rcolor = RColor_BLACK;
+	RzColor rcolor = RzColor_BLACK;
 	for (i = 0x08, n = 0;  i <= 0xee; i += 0xa) {
 		char fg[32], bg[32];
 		rcolor.r = i;
@@ -443,7 +443,7 @@ static void rz_cons_pal_show_gs(void) {
 }
 
 static void rz_cons_pal_show_256(void) {
-	RColor rc = RColor_BLACK;
+	RzColor rc = RzColor_BLACK;
 	rz_cons_print ("\n\nXTerm colors:\n");
 	int r = 0;
 	int g = 0;
@@ -477,7 +477,7 @@ static void rz_cons_pal_show_256(void) {
 static void rz_cons_pal_show_rgb(void) {
 	const int inc = 3;
 	int i, j, k, n = 0;
-	RColor rc = RColor_BLACK;
+	RzColor rc = RzColor_BLACK;
 	rz_cons_print ("\n\nRGB:\n");
 	for (i = n = 0; i <= 0xf; i += inc) {
 		for (k = 0; k <= 0xf; k += inc) {
@@ -535,7 +535,7 @@ RZ_API void rz_cons_pal_list(int rad, const char *arg) {
 		rz_cons_print ("{");
 	}
 	for (i = 0; keys[i].name; i++) {
-		RColor *rcolor = RCOLOR_AT (i);
+		RzColor *rcolor = RCOLOR_AT (i);
 		color = COLOR_AT (i);
 		switch (rad) {
 		case 'j':
@@ -613,7 +613,7 @@ RZ_API void rz_cons_pal_list(int rad, const char *arg) {
  * so the changes take effect. */
 RZ_API int rz_cons_pal_set(const char *key, const char *val) {
 	int i;
-	RColor *rcolor;
+	RzColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
 			rcolor = RCOLOR_AT (i);
@@ -625,21 +625,21 @@ RZ_API int rz_cons_pal_set(const char *key, const char *val) {
 	return false;
 }
 
-/* Get the named RColor */
-RZ_API RColor rz_cons_pal_get(const char *key) {
+/* Get the named RzColor */
+RZ_API RzColor rz_cons_pal_get(const char *key) {
 	int i;
-	RColor *rcolor;
+	RzColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
 			rcolor = RCOLOR_AT (i);
-			return rcolor? *rcolor: (RColor) RColor_NULL;
+			return rcolor? *rcolor: (RzColor) RzColor_NULL;
 		}
 	}
-	return (RColor) RColor_NULL;
+	return (RzColor) RzColor_NULL;
 }
 
-/* Get the RColor at specified index */
-RZ_API RColor rz_cons_pal_get_i(int index) {
+/* Get the RzColor at specified index */
+RZ_API RzColor rz_cons_pal_get_i(int index) {
 	return *(RCOLOR_AT (index));
 }
 

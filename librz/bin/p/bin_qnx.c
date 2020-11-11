@@ -3,7 +3,7 @@
 #include "qnx/qnx.h"
 #include "../i/private.h"
 
-static int lmf_header_load(lmf_header *lmfh, RBuffer *buf, Sdb *db) {
+static int lmf_header_load(lmf_header *lmfh, RzBuffer *buf, Sdb *db) {
 	if (rz_buf_size (buf) < sizeof (lmf_header)) {
 		return false;
 	}
@@ -25,7 +25,7 @@ static int lmf_header_load(lmf_header *lmfh, RBuffer *buf, Sdb *db) {
 	return true;
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RzBuffer *buf) {
 	ut8 tmp[6];
 	int r = rz_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	return r == sizeof (tmp) && !memcmp (tmp, QNX_MAGIC, sizeof (tmp));
@@ -40,7 +40,7 @@ static void destroy(RzBinFile *bf) {
 	free (qo);
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	QnxObj *qo = RZ_NEW0 (QnxObj);
 	if (!qo) {
 		return false;

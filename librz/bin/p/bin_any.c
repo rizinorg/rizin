@@ -6,7 +6,7 @@
 #include <rz_bin.h>
 #include <rz_magic.h>
 
-static char *get_filetype(RBuffer *b) {
+static char *get_filetype(RzBuffer *b) {
 	ut8 buf[4096] = { 0 };
 	char *res = NULL;
 	RzMagic *ck = rz_magic_new (0);
@@ -50,7 +50,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return ret;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return true;
 }
 

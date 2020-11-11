@@ -3,19 +3,19 @@
 #include <rz_anal.h>
 #include <rz_core.h>
 
-static bool item_matches_filter(RzAnalMetaItem *item, RzAnalMetaType type, RZ_NULLABLE const RSpace *space) {
+static bool item_matches_filter(RzAnalMetaItem *item, RzAnalMetaType type, RZ_NULLABLE const RzSpace *space) {
 	return (type == RZ_META_TYPE_ANY || item->type == type)
 		   && (!space || item->space == space);
 }
 
 typedef struct {
 	RzAnalMetaType type;
-	const RSpace *space;
+	const RzSpace *space;
 
-	RIntervalNode *node;
+	RzIntervalNode *node;
 } FindCtx;
 
-static bool find_node_cb(RIntervalNode *node, void *user) {
+static bool find_node_cb(RzIntervalNode *node, void *user) {
 	FindCtx *ctx = user;
 	if (item_matches_filter (node->data, ctx->type, ctx->space)) {
 		ctx->node = node;
@@ -24,7 +24,7 @@ static bool find_node_cb(RIntervalNode *node, void *user) {
 	return true;
 }
 
-static RIntervalNode *find_node_at(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RSpace *space, ut64 addr) {
+static RzIntervalNode *find_node_at(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
 	FindCtx ctx = {
 		.type = type,
 		.space = space,
@@ -34,7 +34,7 @@ static RIntervalNode *find_node_at(RzAnal *anal, RzAnalMetaType type, RZ_NULLABL
 	return ctx.node;
 }
 
-static RIntervalNode *find_node_in(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RSpace *space, ut64 addr) {
+static RzIntervalNode *find_node_in(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
 	FindCtx ctx = {
 		.type = type,
 		.space = space,
@@ -46,12 +46,12 @@ static RIntervalNode *find_node_in(RzAnal *anal, RzAnalMetaType type, RZ_NULLABL
 
 typedef struct {
 	RzAnalMetaType type;
-	const RSpace *space;
+	const RzSpace *space;
 
-	RzPVector/*RIntervalNode*/ *result;
+	RzPVector/*RzIntervalNode*/ *result;
 } CollectCtx;
 
-static bool collect_nodes_cb(RIntervalNode *node, void *user) {
+static bool collect_nodes_cb(RzIntervalNode *node, void *user) {
 	CollectCtx *ctx = user;
 	if (item_matches_filter (node->data, ctx->type, ctx->space)) {
 		rz_pvector_push (ctx->result, node);
@@ -59,7 +59,7 @@ static bool collect_nodes_cb(RIntervalNode *node, void *user) {
 	return true;
 }
 
-static RzPVector *collect_nodes_at(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RSpace *space, ut64 addr) {
+static RzPVector *collect_nodes_at(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -72,7 +72,7 @@ static RzPVector *collect_nodes_at(RzAnal *anal, RzAnalMetaType type, RZ_NULLABL
 	return ctx.result;
 }
 
-static RzPVector *collect_nodes_in(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RSpace *space, ut64 addr) {
+static RzPVector *collect_nodes_in(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -85,7 +85,7 @@ static RzPVector *collect_nodes_in(RzAnal *anal, RzAnalMetaType type, RZ_NULLABL
 	return ctx.result;
 }
 
-static RzPVector *collect_nodes_intersect(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RSpace *space, ut64 start, ut64 end) {
+static RzPVector *collect_nodes_intersect(RzAnal *anal, RzAnalMetaType type, RZ_NULLABLE const RzSpace *space, ut64 start, ut64 end) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -102,8 +102,8 @@ static bool meta_set(RzAnal *a, RzAnalMetaType type, int subtype, ut64 from, ut6
 	if (to < from) {
 		return false;
 	}
-	RSpace *space = rz_spaces_current (&a->meta_spaces);
-	RIntervalNode *node = find_node_at (a, type, space, from);
+	RzSpace *space = rz_spaces_current (&a->meta_spaces);
+	RzIntervalNode *node = find_node_at (a, type, space, from);
 	RzAnalMetaItem *item = node ? node->data : RZ_NEW0 (RzAnalMetaItem);
 	if (!item) {
 		return false;
@@ -132,7 +132,7 @@ RZ_API bool rz_meta_set_string(RzAnal *a, RzAnalMetaType type, ut64 addr, const 
 }
 
 RZ_API const char *rz_meta_get_string(RzAnal *a, RzAnalMetaType type, ut64 addr) {
-	RIntervalNode *node = find_node_at (a, type, rz_spaces_current (&a->meta_spaces), addr);
+	RzIntervalNode *node = find_node_at (a, type, rz_spaces_current (&a->meta_spaces), addr);
 	if (!node) {
 		return NULL;
 	}
@@ -141,7 +141,7 @@ RZ_API const char *rz_meta_get_string(RzAnal *a, RzAnalMetaType type, ut64 addr)
 }
 
 
-static void del(RzAnal *a, RzAnalMetaType type, const RSpace *space, ut64 addr, ut64 size) {
+static void del(RzAnal *a, RzAnalMetaType type, const RzSpace *space, ut64 addr, ut64 size) {
 	RzPVector *victims = NULL;
 	if (size == UT64_MAX) {
 		// delete everything
@@ -149,7 +149,7 @@ static void del(RzAnal *a, RzAnalMetaType type, const RSpace *space, ut64 addr, 
 		if (!victims) {
 			return;
 		}
-		RIntervalTreeIter it;
+		RzIntervalTreeIter it;
 		RzAnalMetaItem *item;
 		rz_interval_tree_foreach (&a->meta, it, item) {
 			if (item_matches_filter (item, type, space)) {
@@ -191,18 +191,18 @@ RZ_API bool rz_meta_set_with_subtype(RzAnal *m, RzAnalMetaType type, int subtype
 }
 
 RZ_API RzAnalMetaItem *rz_meta_get_at(RzAnal *a, ut64 addr, RzAnalMetaType type, RZ_OUT RZ_NULLABLE ut64 *size) {
-	RIntervalNode *node = find_node_at (a, type, rz_spaces_current (&a->meta_spaces), addr);
+	RzIntervalNode *node = find_node_at (a, type, rz_spaces_current (&a->meta_spaces), addr);
 	if (node && size) {
 		*size = rz_meta_item_size (node->start, node->end);
 	}
 	return node ? node->data : NULL;
 }
 
-RZ_API RIntervalNode *rz_meta_get_in(RzAnal *a, ut64 addr, RzAnalMetaType type) {
+RZ_API RzIntervalNode *rz_meta_get_in(RzAnal *a, ut64 addr, RzAnalMetaType type) {
 	return find_node_in (a, type, rz_spaces_current (&a->meta_spaces), addr);
 }
 
-RZ_API RzPVector/*<RIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_at(RzAnal *a, ut64 at) {
+RZ_API RzPVector/*<RzIntervalNode<RMetaItem> *>*/ *rz_meta_get_all_at(RzAnal *a, ut64 at) {
 	return collect_nodes_at (a, RZ_META_TYPE_ANY, rz_spaces_current (&a->meta_spaces), at);
 }
 
@@ -480,7 +480,7 @@ RZ_API void rz_meta_print_list_at(RzAnal *a, ut64 addr, int rad) {
 	}
 	void **it;
 	rz_pvector_foreach (nodes, it) {
-		RIntervalNode *node = *it;
+		RzIntervalNode *node = *it;
 		rz_meta_print (a, node->data, node->start, rz_meta_node_size (node), rad, NULL, true);
 	}
 	rz_pvector_free (nodes);
@@ -504,10 +504,10 @@ static void print_meta_list(RzAnal *a, int type, int rad, ut64 addr) {
 		}
 	}
 
-	RIntervalTreeIter it;
+	RzIntervalTreeIter it;
 	RzAnalMetaItem *item;
 	rz_interval_tree_foreach (&a->meta, it, item) {
-		RIntervalNode *node = rz_interval_tree_iter_get (&it);
+		RzIntervalNode *node = rz_interval_tree_iter_get (&it);
 		if (type != RZ_META_TYPE_ANY && item->type != type) {
 			continue;
 		}
@@ -537,12 +537,12 @@ RZ_API void rz_meta_rebase(RzAnal *anal, ut64 diff) {
 	if (!diff) {
 		return;
 	}
-	RIntervalTree old = anal->meta;
+	RzIntervalTree old = anal->meta;
 	rz_interval_tree_init (&anal->meta, old.free);
-	RIntervalTreeIter it;
+	RzIntervalTreeIter it;
 	RzAnalMetaItem *item;
 	rz_interval_tree_foreach (&old, it, item) {
-		RIntervalNode *node = rz_interval_tree_iter_get (&it);
+		RzIntervalNode *node = rz_interval_tree_iter_get (&it);
 		ut64 newstart = node->start + diff;
 		ut64 newend = node->end + diff;
 		if (newend < newstart) {
@@ -556,17 +556,17 @@ RZ_API void rz_meta_rebase(RzAnal *anal, ut64 diff) {
 	rz_interval_tree_fini (&old);
 }
 
-RZ_API void rz_meta_space_unset_for(RzAnal *a, const RSpace *space) {
+RZ_API void rz_meta_space_unset_for(RzAnal *a, const RzSpace *space) {
 	del (a, RZ_META_TYPE_ANY, space, 0, UT64_MAX);
 }
 
 RZ_API ut64 rz_meta_get_size(RzAnal *a, RzAnalMetaType type) {
 	ut64 sum = 0;
-	RIntervalTreeIter it;
+	RzIntervalTreeIter it;
 	RzAnalMetaItem *item;
-	RIntervalNode *prev = NULL;
+	RzIntervalNode *prev = NULL;
 	rz_interval_tree_foreach (&a->meta, it, item) {
-		RIntervalNode *node = rz_interval_tree_iter_get (&it);
+		RzIntervalNode *node = rz_interval_tree_iter_get (&it);
 		if (type != RZ_META_TYPE_ANY && item->type != type) {
 			continue;
 		}
@@ -577,9 +577,9 @@ RZ_API ut64 rz_meta_get_size(RzAnal *a, RzAnalMetaType type) {
 	return sum;
 }
 
-RZ_API int rz_meta_space_count_for(RzAnal *a, const RSpace *space) {
+RZ_API int rz_meta_space_count_for(RzAnal *a, const RzSpace *space) {
 	int r = 0;
-	RIntervalTreeIter it;
+	RzIntervalTreeIter it;
 	RzAnalMetaItem *item;
 	rz_interval_tree_foreach (&a->meta, it, item) {
 		if (item->space == space) {

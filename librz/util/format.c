@@ -67,7 +67,7 @@ static int rz_get_size(RNum *num, ut8 *buf, int endian, const char *s) {
 	return size = rz_num_math (num, s);
 }
 
-static void rz_print_format_u128(const RPrint* p, int endian, int mode,
+static void rz_print_format_u128(const RzPrint* p, int endian, int mode,
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 low = rz_read_ble64 (buf, endian);
 	ut64 hig = rz_read_ble64 (buf + 8, endian);
@@ -89,7 +89,7 @@ static void rz_print_format_u128(const RPrint* p, int endian, int mode,
 	}
 }
 
-static void rz_print_format_quadword(const RPrint* p, int endian, int mode,
+static void rz_print_format_quadword(const RzPrint* p, int endian, int mode,
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr64;
 	int elem = -1;
@@ -164,7 +164,7 @@ static void rz_print_format_quadword(const RPrint* p, int endian, int mode,
 	}
 }
 
-static void rz_print_format_byte(const RPrint* p, int endian, int mode,
+static void rz_print_format_byte(const RzPrint* p, int endian, int mode,
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
@@ -230,7 +230,7 @@ static void rz_print_format_byte(const RPrint* p, int endian, int mode,
 }
 
 // Return number of consumed bytes
-static int rz_print_format_uleb(const RPrint* p, int endian, int mode,
+static int rz_print_format_uleb(const RzPrint* p, int endian, int mode,
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	int elem = -1;
 	int s = 0, offset = 0;
@@ -316,7 +316,7 @@ static int rz_print_format_uleb(const RPrint* p, int endian, int mode,
 	return offset;
 }
 
-static void rz_print_format_char(const RPrint* p, int endian, int mode,
+static void rz_print_format_char(const RzPrint* p, int endian, int mode,
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
@@ -382,7 +382,7 @@ static void rz_print_format_char(const RPrint* p, int endian, int mode,
 	}
 }
 
-static void rz_print_format_decchar(const RPrint* p, int endian, int mode,
+static void rz_print_format_decchar(const RzPrint* p, int endian, int mode,
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
@@ -448,7 +448,7 @@ static void rz_print_format_decchar(const RPrint* p, int endian, int mode,
 	}
 }
 
-static int rz_print_format_string(const RPrint* p, ut64 seeki, ut64 addr64, ut64 addr, int is64, int mode) {
+static int rz_print_format_string(const RzPrint* p, ut64 seeki, ut64 addr64, ut64 addr, int is64, int mode) {
 	ut8 buffer[255];
 	buffer[0] = 0;
 	if (!p->iob.read_at) {
@@ -493,7 +493,7 @@ static int rz_print_format_string(const RPrint* p, ut64 seeki, ut64 addr64, ut64
 	return 0;
 }
 
-static void rz_print_format_time(const RPrint* p, int endian, int mode,
+static void rz_print_format_time(const RzPrint* p, int endian, int mode,
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr;
 	struct tm timestruct;
@@ -583,7 +583,7 @@ static void rz_print_format_time(const RPrint* p, int endian, int mode,
 }
 
 // TODO: support unsigned int?
-static void rz_print_format_hex(const RPrint* p, int endian, int mode,
+static void rz_print_format_hex(const RzPrint* p, int endian, int mode,
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr;
 	int elem = -1;
@@ -665,7 +665,7 @@ static void rz_print_format_hex(const RPrint* p, int endian, int mode,
 	}
 }
 
-static void rz_print_format_int(const RPrint* p, int endian, int mode,
+static void rz_print_format_int(const RzPrint* p, int endian, int mode,
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr;
 	int elem = -1;
@@ -735,7 +735,7 @@ static void rz_print_format_int(const RPrint* p, int endian, int mode,
 	}
 }
 
-static int rz_print_format_disasm(const RPrint* p, ut64 seeki, int size) {
+static int rz_print_format_disasm(const RzPrint* p, ut64 seeki, int size) {
 	ut64 prevseeki = seeki;
 
 	if (!p->disasm || !p->user) {
@@ -751,7 +751,7 @@ static int rz_print_format_disasm(const RPrint* p, ut64 seeki, int size) {
 	return seeki - prevseeki;
 }
 
-static void rz_print_format_octal(const RPrint* p, int endian, int mode,
+static void rz_print_format_octal(const RzPrint* p, int endian, int mode,
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr;
 	int elem = -1;
@@ -824,7 +824,7 @@ static void rz_print_format_octal(const RPrint* p, int endian, int mode,
 	}
 }
 
-static void rz_print_format_hexflag(const RPrint* p, int endian, int mode,
+static void rz_print_format_hexflag(const RzPrint* p, int endian, int mode,
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr = 0;
 	int elem = -1;
@@ -899,7 +899,7 @@ static void rz_print_format_hexflag(const RPrint* p, int endian, int mode,
 	}
 }
 
-static int rz_print_format_10bytes(const RPrint* p, int mode, const char *setval,
+static int rz_print_format_10bytes(const RzPrint* p, int mode, const char *setval,
 		ut64 seeki, ut64 addr, ut8* buf) {
 	ut8 buffer[255];
 	int j;
@@ -954,7 +954,7 @@ static int rz_print_format_10bytes(const RPrint* p, int mode, const char *setval
 	return 0;
 }
 
-static int rz_print_format_hexpairs(const RPrint* p, int endian, int mode,
+static int rz_print_format_hexpairs(const RzPrint* p, int endian, int mode,
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	int j;
 	size = (size == -1) ? 1 : size;
@@ -1001,7 +1001,7 @@ static int rz_print_format_hexpairs(const RPrint* p, int endian, int mode,
 	return size;
 }
 
-static void rz_print_format_float(const RPrint* p, int endian, int mode,
+static void rz_print_format_float(const RzPrint* p, int endian, int mode,
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	float val_f = 0.0f;
 	ut64 addr = 0;
@@ -1056,7 +1056,7 @@ static void rz_print_format_float(const RPrint* p, int endian, int mode,
 }
 
 
-static void rz_print_format_double(const RPrint* p, int endian, int mode,
+static void rz_print_format_double(const RzPrint* p, int endian, int mode,
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	double val_f = 0.0;
 	ut64 addr = 0;
@@ -1113,7 +1113,7 @@ static void rz_print_format_double(const RPrint* p, int endian, int mode,
 	}
 }
 
-static void rz_print_format_word(const RPrint* p, int endian, int mode,
+static void rz_print_format_word(const RzPrint* p, int endian, int mode,
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	ut64 addr;
 	int elem = -1;
@@ -1209,12 +1209,12 @@ static void rz_print_format_word(const RPrint* p, int endian, int mode,
 	}
 }
 
-static void rz_print_byte_escape(const RPrint* p, const char *src, char **dst, int dot_nl) {
+static void rz_print_byte_escape(const RzPrint* p, const char *src, char **dst, int dot_nl) {
 	rz_return_if_fail (p->strconv_mode);
 	rz_str_byte_escape (src, dst, dot_nl, !strcmp (p->strconv_mode, "asciidot"), p->esc_bslash);
 }
 
-static void rz_print_format_nulltermstring(const RPrint* p, int len, int endian, int mode,
+static void rz_print_format_nulltermstring(const RzPrint* p, int len, int endian, int mode,
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	if (!p->iob.is_valid_offset (p->iob.io, seeki, 1)) {
 		ut8 ch = 0xff;
@@ -1318,7 +1318,7 @@ static void rz_print_format_nulltermstring(const RPrint* p, int len, int endian,
 	}
 }
 
-static void rz_print_format_nulltermwidestring(const RPrint* p, const int len, int endian, int mode,
+static void rz_print_format_nulltermwidestring(const RzPrint* p, const int len, int endian, int mode,
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	if (MUSTSET) {
 		int vallen = strlen(setval);
@@ -1361,7 +1361,7 @@ static void rz_print_format_nulltermwidestring(const RPrint* p, const int len, i
 	}
 }
 
-static void rz_print_format_bitfield(const RPrint* p, ut64 seeki, char *fmtname,
+static void rz_print_format_bitfield(const RzPrint* p, ut64 seeki, char *fmtname,
 		char *fieldname, ut64 addr, int mode, int size) {
 	char *bitfield = NULL;
 	addr &= (1ULL << (size * 8)) - 1;
@@ -1386,7 +1386,7 @@ static void rz_print_format_bitfield(const RPrint* p, ut64 seeki, char *fmtname,
 	free (bitfield);
 }
 
-static void rz_print_format_enum(const RPrint* p, ut64 seeki, char *fmtname,
+static void rz_print_format_enum(const RzPrint* p, ut64 seeki, char *fmtname,
 		char *fieldname, ut64 addr, int mode, int size) {
 	char *enumvalue = NULL;
 	addr &= (1ULL << (size * 8)) - 1;
@@ -1417,7 +1417,7 @@ static void rz_print_format_enum(const RPrint* p, ut64 seeki, char *fmtname,
 	free (enumvalue);
 }
 
-static void rz_print_format_register(const RPrint* p, int mode,
+static void rz_print_format_register(const RzPrint* p, int mode,
 		const char *name, const char *setval) {
 	if (!p || !p->get_register || !p->reg) {
 		return;
@@ -1440,7 +1440,7 @@ static void rz_print_format_register(const RPrint* p, int mode,
 	}
 }
 
-static void rz_print_format_num_specifier(const RPrint *p, ut64 addr, int bytes, int sign) {
+static void rz_print_format_num_specifier(const RzPrint *p, ut64 addr, int bytes, int sign) {
 #define EXT(T) (sign ? (signed T)(addr) : (unsigned T)(addr) )
 	const char *fs64 = sign ? "%"PFMT64d : "%"PFMT64u;
 	const char *fs = sign ? "%d" : "%u";
@@ -1456,7 +1456,7 @@ static void rz_print_format_num_specifier(const RPrint *p, ut64 addr, int bytes,
 #undef EXT
 }
 
-static void rz_print_format_num(const RPrint *p, int endian, int mode, const char *setval, ut64 seeki, ut8 *buf, int i, int bytes, int sign, int size) {
+static void rz_print_format_num(const RzPrint *p, int endian, int mode, const char *setval, ut64 seeki, ut8 *buf, int i, int bytes, int sign, int size) {
 	ut64 addr = 0LL;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
@@ -1537,12 +1537,12 @@ static void rz_print_format_num(const RPrint *p, int endian, int mode, const cha
 	}
 }
 
-RZ_API const char *rz_print_format_byname(RPrint *p, const char *name) {
+RZ_API const char *rz_print_format_byname(RzPrint *p, const char *name) {
 	return sdb_const_get (p->formats, name, NULL);
 }
 
 // XXX: this is somewhat incomplete. must be updated to handle all format chars
-RZ_API int rz_print_format_struct_size(RPrint *p, const char *f, int mode, int n) {
+RZ_API int rz_print_format_struct_size(RzPrint *p, const char *f, int mode, int n) {
 	char *end, *args, *fmt;
 	int size = 0, tabsize = 0, i, idx = 0, biggest = 0, fmt_len = 0, times = 1;
 	bool tabsize_set = false;
@@ -1801,7 +1801,7 @@ RZ_API int rz_print_format_struct_size(RPrint *p, const char *f, int mode, int n
 	return (mode & RZ_PRINT_UNIONMODE)? biggest : size;
 }
 
-static int rz_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, const char *name,
+static int rz_print_format_struct(RzPrint* p, ut64 seek, const ut8* b, int len, const char *name,
 		int slide, int mode, const char *setval, char *field, int anon) {
 	const char *fmt;
 	char namefmt[128];
@@ -1919,7 +1919,7 @@ static char *get_format_type(const char fmt, const char arg) {
 
 #define MINUSONE ((void*)(size_t)-1)
 #define ISSTRUCT (tmp == '?' || (tmp == '*' && *(arg+1) == '?'))
-RZ_API int rz_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
+RZ_API int rz_print_format(RzPrint *p, ut64 seek, const ut8* b, const int len,
 		const char *formatname, int mode, const char *setval, char *ofield) {
 	int nargs, i, j, invalid, nexti, idx, times, otimes, endian, isptr = 0;
 	const int old_bits = p->bits;

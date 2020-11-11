@@ -24,8 +24,8 @@ typedef struct {
 
 typedef struct {
 	char *name;
-	RInterval pitv;
-	RInterval vitv;
+	RzInterval pitv;
+	RzInterval vitv;
 	int perm;
 	char *extra;
 } RzListInfo;

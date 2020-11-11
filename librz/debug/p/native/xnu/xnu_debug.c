@@ -741,12 +741,12 @@ static int xnu_dealloc_threads (RzList *threads) {
 	return kr;
 }
 
-/* XXX This is temporal. Later it will write in a RBuffer. */
+/* XXX This is temporal. Later it will write in a RzBuffer. */
 /* XXX Apart from writing to the file, it also creates the commands, */
 /* XXX which follow the header. */
 /* XXX Maybe this function needs refactoring, but I haven't come up with */
 /* XXX a better way to do it yet. */
-static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RzList *mem_maps, int start_offset,
+static int xnu_write_mem_maps_to_buffer (RzBuffer *buffer, RzList *mem_maps, int start_offset,
 	vm_offset_t header, int header_end, int segment_command_sz, int *hoffset_out) {
 	RzListIter *iter, *iter2;
 	RzDebugMap *curr_map;
@@ -905,7 +905,7 @@ static uid_t uidFromPid(pid_t pid) {
 	return uid;
 }
 
-bool xnu_generate_corefile (RzDebug *dbg, RBuffer *dest) {
+bool xnu_generate_corefile (RzDebug *dbg, RzBuffer *dest) {
 	int error = 0, i;
 	int tstate_size;
 	int segment_count;
@@ -916,7 +916,7 @@ bool xnu_generate_corefile (RzDebug *dbg, RBuffer *dest) {
 	size_t padding_sz;
 	int hoffset;
 
-	RBuffer *mem_maps_buffer;
+	RzBuffer *mem_maps_buffer;
 	vm_offset_t header;
 	ut8 *padding = NULL;
 	RzListIter *iter, *iter2;

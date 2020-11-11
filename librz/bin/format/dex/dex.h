@@ -103,7 +103,7 @@ typedef struct dex_class_data_item_t {
 typedef struct rz_bin_dex_obj_t {
 	int size;
 	const char *file;
-	RBuffer *b;
+	RzBuffer *b;
 	struct dex_header_t header;
 	ut32 *strings;
 	struct dex_type_t *types;
@@ -160,7 +160,7 @@ struct dex_debug_local_t {
 
 char* rz_bin_dex_get_version(struct rz_bin_dex_obj_t* bin);
 void rz_bin_dex_free(struct rz_bin_dex_obj_t *bin);
-struct rz_bin_dex_obj_t *rz_bin_dex_new_buf(RBuffer *buf);
+struct rz_bin_dex_obj_t *rz_bin_dex_new_buf(RzBuffer *buf);
 struct rz_bin_dex_str_t *rz_bin_dex_get_strings(struct rz_bin_dex_obj_t *bin);
 
 #endif

@@ -253,7 +253,7 @@ static bool __core_visual_gogo(RzCore *core, int ch) {
 			map = rz_pvector_at (&core->io->maps, 0);
 		}
 		if (map) {
-			RPrint *p = core->print;
+			RzPrint *p = core->print;
 			int scr_rows;
 			if (!p->consbind.get_size) {
 				break;
@@ -687,7 +687,7 @@ static void prompt_read(const char *p, char *buf, int buflen) {
 	rz_core_visual_showcursor (NULL, false);
 }
 
-static void reset_print_cur(RPrint *p) {
+static void reset_print_cur(RzPrint *p) {
 	p->cur = 0;
 	p->ocur = -1;
 }
@@ -1247,7 +1247,7 @@ RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinst
 	return start_addr;
 }
 
-RZ_API int rz_line_hist_offset_up(RLine *line) {
+RZ_API int rz_line_hist_offset_up(RzLine *line) {
 	RzCore *core = line->user;
 	RzIOUndo *undo = &core->io->undo;
 	if (line->offset_hist_index <= -undo->undos) {
@@ -1268,7 +1268,7 @@ RZ_API int rz_line_hist_offset_up(RLine *line) {
 	return true;
 }
 
-RZ_API int rz_line_hist_offset_down(RLine *line) {
+RZ_API int rz_line_hist_offset_down(RzLine *line) {
 	RzCore *core = line->user;
 	RzIOUndo *undo = &core->io->undo;
 	if (line->offset_hist_index >= undo->redos) {
@@ -1709,7 +1709,7 @@ static bool isDisasmPrint(int mode) {
 }
 
 static void cursor_ocur(RzCore *core, bool use_ocur) {
-	RPrint *p = core->print;
+	RzPrint *p = core->print;
 	if (use_ocur && p->ocur == -1) {
 		p->ocur = p->cur;
 	} else if (!use_ocur) {
@@ -1719,7 +1719,7 @@ static void cursor_ocur(RzCore *core, bool use_ocur) {
 
 static void nextOpcode(RzCore *core) {
 	RzAnalOp *aop = rz_core_anal_op (core, core->offset + core->print->cur, RZ_ANAL_OP_MASK_BASIC);
-	RPrint *p = core->print;
+	RzPrint *p = core->print;
 	if (aop) {
 		p->cur += aop->size;
 		rz_anal_op_free (aop);
@@ -1729,7 +1729,7 @@ static void nextOpcode(RzCore *core) {
 }
 
 static void prevOpcode(RzCore *core) {
-	RPrint *p = core->print;
+	RzPrint *p = core->print;
 	ut64 addr, oaddr = core->offset + core->print->cur;
 	if (rz_core_prevop_addr (core, oaddr, 1, &addr)) {
 		const int delta = oaddr - addr;
@@ -1740,7 +1740,7 @@ static void prevOpcode(RzCore *core) {
 }
 
 static void cursor_nextrow(RzCore *core, bool use_ocur) {
-	RPrint *p = core->print;
+	RzPrint *p = core->print;
 	ut32 roff, next_roff;
 	int row, sz, delta;
 	RzAsmOp op;
@@ -1820,7 +1820,7 @@ static void cursor_nextrow(RzCore *core, bool use_ocur) {
 }
 
 static void cursor_prevrow(RzCore *core, bool use_ocur) {
-	RPrint *p = core->print;
+	RzPrint *p = core->print;
 	ut32 roff, prev_roff;
 	int row;
 
@@ -1935,7 +1935,7 @@ static void cursor_right(RzCore *core, bool use_ocur) {
 }
 
 static bool fix_cursor(RzCore *core) {
-	RPrint *p = core->print;
+	RzPrint *p = core->print;
 	int offscreen = (core->cons->rows - 3) * p->cols;
 	bool res = false;
 
@@ -4338,7 +4338,7 @@ dodo:
 	return 0;
 }
 
-RZ_API RzListInfo *rz_listinfo_new(const char *name, RInterval pitv, RInterval vitv, int perm, const char *extra) {
+RZ_API RzListInfo *rz_listinfo_new(const char *name, RzInterval pitv, RzInterval vitv, int perm, const char *extra) {
 	RzListInfo *info = RZ_NEW (RzListInfo);
 	if (info) {
 		info->name = name ? strdup (name) : NULL;

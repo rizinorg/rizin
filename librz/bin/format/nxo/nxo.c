@@ -10,7 +10,7 @@
 #include <rz_bin.h>
 #include "nxo.h"
 
-static char *readString(RBuffer *buf, int off) {
+static char *readString(RzBuffer *buf, int off) {
 	char symbol[128]; // assume 128 as max symbol name length
 	int left = rz_buf_read_at (buf, off, (ut8*)symbol, sizeof (symbol));
 	if (left < 1) {
@@ -36,7 +36,7 @@ const char *fileType(const ut8 *buf) {
 	return NULL;
 }
 
-static void walkSymbols (RBuffer *buf, RzBinNXOObj *bin, ut64 symtab, ut64 strtab, ut64 strtab_size, ut64 relplt, ut64 baddr) {
+static void walkSymbols (RzBuffer *buf, RzBinNXOObj *bin, ut64 symtab, ut64 strtab, ut64 strtab_size, ut64 relplt, ut64 baddr) {
 	int i, import = 0;
 	RzBinSymbol *sym;
 	RzBinImport *imp;
@@ -111,7 +111,7 @@ out_walk_symbol:
 	return;
 }
 
-void parseMod(RBuffer *buf, RzBinNXOObj *bin, ut32 mod0, ut64 baddr) {
+void parseMod(RzBuffer *buf, RzBinNXOObj *bin, ut32 mod0, ut64 baddr) {
 	ut32 ptr = rz_buf_read_le32_at (buf, mod0);
 	eprintf ("magic %x at 0x%x\n", ptr, mod0);
 	if (ptr == 0x30444f4d) { // MOD0

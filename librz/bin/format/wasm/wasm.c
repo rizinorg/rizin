@@ -8,10 +8,10 @@
 #include "wasm.h"
 
 typedef size_t (*ConsumeFcn) (const ut8 *p, const ut8 *max, ut32 *out_value);
-typedef void *(*ParseEntryFcn) (RBuffer *b, ut64 max);
+typedef void *(*ParseEntryFcn) (RzBuffer *b, ut64 max);
 
-// RBuffer consume functions
-static ut32 consume_r (RBuffer *b, ut64 max, size_t *n_out, ConsumeFcn consume_fcn) {
+// RzBuffer consume functions
+static ut32 consume_r (RzBuffer *b, ut64 max, size_t *n_out, ConsumeFcn consume_fcn) {
 	rz_return_val_if_fail (b && n_out && consume_fcn, 0);
 
 	size_t n;
@@ -36,7 +36,7 @@ static ut32 consume_r (RBuffer *b, ut64 max, size_t *n_out, ConsumeFcn consume_f
 	return tmp;
 }
 
-static size_t consume_u32_r (RBuffer *b, ut64 max, ut32 *out) {
+static size_t consume_u32_r (RzBuffer *b, ut64 max, ut32 *out) {
 	size_t n = 0;
 	ut32 tmp = consume_r (b, max, &n, read_u32_leb128);
 	if (out) {
@@ -45,7 +45,7 @@ static size_t consume_u32_r (RBuffer *b, ut64 max, ut32 *out) {
 	return n;
 }
 
-static size_t consume_u7_r (RBuffer *b, ut64 max, ut8 *out) {
+static size_t consume_u7_r (RzBuffer *b, ut64 max, ut8 *out) {
 	size_t n;
 	ut32 tmp = consume_r (b, max, &n, read_u32_leb128);
 	if (out) {
@@ -54,7 +54,7 @@ static size_t consume_u7_r (RBuffer *b, ut64 max, ut8 *out) {
 	return n;
 }
 
-static size_t consume_s7_r (RBuffer *b, ut64 max, st8 *out) {
+static size_t consume_s7_r (RzBuffer *b, ut64 max, st8 *out) {
 	size_t n;
 	ut32 tmp = consume_r (b, max, &n, (ConsumeFcn)read_i32_leb128);
 	if (out) {
@@ -63,7 +63,7 @@ static size_t consume_s7_r (RBuffer *b, ut64 max, st8 *out) {
 	return n;
 }
 
-static size_t consume_u1_r (RBuffer *b, ut64 max, ut8 *out) {
+static size_t consume_u1_r (RzBuffer *b, ut64 max, ut8 *out) {
 	size_t n;
 	ut32 tmp = consume_r (b, max, &n, read_u32_leb128);
 	if (out) {
@@ -72,7 +72,7 @@ static size_t consume_u1_r (RBuffer *b, ut64 max, ut8 *out) {
 	return n;
 }
 
-static size_t consume_str_r (RBuffer *b, ut64 max, size_t sz, char *out) {
+static size_t consume_str_r (RzBuffer *b, ut64 max, size_t sz, char *out) {
 	ut64 cur = rz_buf_tell (b);
 	if (!b || max >= rz_buf_size (b) || cur > max) {
 		return 0;
@@ -88,7 +88,7 @@ static size_t consume_str_r (RBuffer *b, ut64 max, size_t sz, char *out) {
 	return sz;
 }
 
-static size_t consume_init_expr_r (RBuffer *b, ut64 max, ut8 eoc, void *out) {
+static size_t consume_init_expr_r (RzBuffer *b, ut64 max, ut8 eoc, void *out) {
 	if (!b || max >= rz_buf_size (b) || rz_buf_tell (b) > max) {
 		return 0;
 	}
@@ -104,7 +104,7 @@ static size_t consume_init_expr_r (RBuffer *b, ut64 max, ut8 eoc, void *out) {
 	return res + 1;
 }
 
-static size_t consume_locals_r (RBuffer *b, ut64 max, RzBinWasmCodeEntry *out) {
+static size_t consume_locals_r (RzBuffer *b, ut64 max, RzBinWasmCodeEntry *out) {
 	ut64 cur = rz_buf_tell (b);
 	if (!b || max >= rz_buf_size (b) || cur > max) {
 		return 0;
@@ -134,7 +134,7 @@ beach:
 	return 0;
 }
 
-static size_t consume_limits_r (RBuffer *b, ut64 max, struct rz_bin_wasm_resizable_limits_t *out) {
+static size_t consume_limits_r (RzBuffer *b, ut64 max, struct rz_bin_wasm_resizable_limits_t *out) {
 	if (!b || max >= rz_buf_size (b) || rz_buf_tell (b) > max || !out) {
 		return 0;
 	}
@@ -233,7 +233,7 @@ static RzList *get_entries_from_section (RzBinWasmObj *bin, RzBinWasmSection *se
 	if (!ret) {
 		return NULL;
 	}
-	RBuffer *b = bin->buf;
+	RzBuffer *b = bin->buf;
 	rz_buf_seek (b, sec->payload_data, RZ_BUF_SET);
 	ut32 r = 0;
 	ut64 max = rz_buf_tell (b) + sec->payload_len - 1;
@@ -258,7 +258,7 @@ beach:
 	return ret;
 }
 
-static void *parse_type_entry (RBuffer *b, ut64 max) {
+static void *parse_type_entry (RzBuffer *b, ut64 max) {
 	RzBinWasmTypeEntry *ptr = RZ_NEW0 (RzBinWasmTypeEntry);
 	if (!ptr) {
 		return NULL;
@@ -302,7 +302,7 @@ beach:
 	rz_bin_wasm_free_types (ptr);
 	return NULL;
 }
-static void *parse_import_entry (RBuffer *b, ut64 max) {
+static void *parse_import_entry (RzBuffer *b, ut64 max) {
 	RzBinWasmImportEntry *ptr = RZ_NEW0 (RzBinWasmImportEntry);
 	if (!ptr) {
 		return NULL;
@@ -359,7 +359,7 @@ beach:
 	return NULL;
 }
 
-static void *parse_export_entry (RBuffer *b, ut64 max) {
+static void *parse_export_entry (RzBuffer *b, ut64 max) {
 	RzBinWasmExportEntry *ptr = RZ_NEW0 (RzBinWasmExportEntry);
 	if (!ptr) {
 		return NULL;
@@ -382,7 +382,7 @@ beach:
 	return NULL;
 }
 
-static void *parse_code_entry (RBuffer *b, ut64 max) {
+static void *parse_code_entry (RzBuffer *b, ut64 max) {
 	RzBinWasmCodeEntry *ptr = RZ_NEW0 (RzBinWasmCodeEntry);
 	if (!ptr) {
 		return NULL;
@@ -414,7 +414,7 @@ beach:
 	return NULL;
 }
 
-static void *parse_data_entry (RBuffer *b, ut64 max) {
+static void *parse_data_entry (RzBuffer *b, ut64 max) {
 	RzBinWasmDataEntry *ptr = RZ_NEW0 (RzBinWasmDataEntry);
 	if (!ptr) {
 		return NULL;
@@ -437,7 +437,7 @@ beach:
 	return NULL;
 }
 
-static bool parse_namemap (RBuffer *b, ut64 max, RIDStorage *map, ut32 *count) {
+static bool parse_namemap (RzBuffer *b, ut64 max, RzIDStorage *map, ut32 *count) {
 	size_t i;
 	if (!(consume_u32_r (b, max, count))) {
 		return false;
@@ -475,7 +475,7 @@ static bool parse_namemap (RBuffer *b, ut64 max, RIDStorage *map, ut32 *count) {
 	return true;
 }
 
-static void *parse_custom_name_entry (RBuffer *b, ut64 max) {
+static void *parse_custom_name_entry (RzBuffer *b, ut64 max) {
 	RzBinWasmCustomNameEntry *ptr = NULL;
 	size_t i;
 	if (!(ptr = RZ_NEW0 (RzBinWasmCustomNameEntry))) {
@@ -579,7 +579,7 @@ beach:
 	return NULL;
 }
 
-static void *parse_memory_entry (RBuffer *b, ut64 max) {
+static void *parse_memory_entry (RzBuffer *b, ut64 max) {
 	RzBinWasmMemoryEntry *ptr = RZ_NEW0 (RzBinWasmMemoryEntry);
 	if (!ptr) {
 		return NULL;
@@ -594,7 +594,7 @@ beach:
 	return NULL;
 }
 
-static void *parse_table_entry (RBuffer *b, ut64 max) {
+static void *parse_table_entry (RzBuffer *b, ut64 max) {
 	RzBinWasmTableEntry *ptr = RZ_NEW0 (RzBinWasmTableEntry);
 	if (!ptr) {
 		return NULL;
@@ -612,7 +612,7 @@ beach:
 	return NULL;
 }
 
-static void *parse_global_entry (RBuffer *b, ut64 max) {
+static void *parse_global_entry (RzBuffer *b, ut64 max) {
 	RzBinWasmGlobalEntry *ptr = RZ_NEW0 (RzBinWasmGlobalEntry);
 	if (!ptr) {
 		return NULL;
@@ -633,7 +633,7 @@ beach:
 	return NULL;
 }
 
-static void *parse_element_entry (RBuffer *b, ut64 max) {
+static void *parse_element_entry (RzBuffer *b, ut64 max) {
 	RzBinWasmElementEntry *ptr = RZ_NEW0 (RzBinWasmElementEntry);
 	if (!ptr) {
 		return NULL;
@@ -688,7 +688,7 @@ static RzBinWasmStartEntry *rz_bin_wasm_get_start (RzBinWasmObj *bin, RzBinWasmS
 		return NULL;
 	}
 
-	RBuffer *b = bin->buf;
+	RzBuffer *b = bin->buf;
 	rz_buf_seek (b, sec->payload_data, RZ_BUF_SET);
 	ut64 max = rz_buf_tell (b) + sec->payload_len - 1;
 	if (!(max < rz_buf_size (b))) {
@@ -723,7 +723,7 @@ static RzList *rz_bin_wasm_get_element_entries (RzBinWasmObj *bin, RzBinWasmSect
 static RzList *rz_bin_wasm_get_custom_name_entries (RzBinWasmObj *bin, RzBinWasmSection *sec) {
 	RzList *ret = rz_list_new ();
 
-	RBuffer *buf = bin->buf;
+	RzBuffer *buf = bin->buf;
 
 	rz_buf_seek (buf, sec->payload_data, RZ_BUF_SET);
 	ut64 max = sec->payload_data + sec->payload_len - 1;
@@ -751,7 +751,7 @@ beach:
 }
 
 // Public functions
-RzBinWasmObj *rz_bin_wasm_init (RzBinFile *bf, RBuffer *buf) {
+RzBinWasmObj *rz_bin_wasm_init (RzBinFile *bf, RzBuffer *buf) {
 	RzBinWasmObj *bin = RZ_NEW0 (RzBinWasmObj);
 	if (!bin) {
 		return NULL;
@@ -849,7 +849,7 @@ RzList *rz_bin_wasm_get_sections (RzBinWasmObj *bin) {
 	if (!(ret = rz_list_newf ((RzListFree)free))) {
 		return NULL;
 	}
-	RBuffer *b = bin->buf;
+	RzBuffer *b = bin->buf;
 	ut64 max = rz_buf_size (b) - 1;
 	rz_buf_seek (b, 8, RZ_BUF_SET);
 	while (rz_buf_tell (b) <= max) {

@@ -7,7 +7,7 @@
 #include <rz_io.h>
 #include "bflt/bflt.h"
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	*bin_obj = rz_bin_bflt_new_buf (buf);
 	return *bin_obj;
 }
@@ -29,7 +29,7 @@ static RzList *entries(RzBinFile *bf) {
 	return ret;
 }
 
-static void __patch_reloc(RBuffer *buf, ut32 addr_to_patch, ut32 data_offset) {
+static void __patch_reloc(RzBuffer *buf, ut32 addr_to_patch, ut32 data_offset) {
 	ut8 val[4] = {
 		0
 	};
@@ -278,7 +278,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	return info;
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RzBuffer *buf) {
 	ut8 tmp[4];
 	int r = rz_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	return r == sizeof (tmp) && !memcmp (tmp, "bFLT", 4);

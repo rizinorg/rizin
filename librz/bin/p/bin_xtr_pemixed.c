@@ -17,7 +17,7 @@ static void destroy(RzBin *bin) {
 	free_xtr (bin->cur->xtr_obj);
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	return false;
 #if 0
 	if (!bytes) {
@@ -46,7 +46,7 @@ static bool check_buffer(RBuffer *b) {
 #endif
 }
 
-// TODO RBufferify
+// TODO RzBufferify
 static RzList * oneshotall(RzBin *bin, const ut8 *buf, ut64 size) {
 	//extract dos componenent first
 	RzBinXtrData *data = oneshot (bin, buf, size, SUB_BIN_DOS);
@@ -80,7 +80,7 @@ static void fill_metadata_info_from_hdr(RzBinXtrMetadata *meta, void *foo) {// s
 	//strcpy (meta->xtr_type, "net");
 }
 
-// XXX: ut8* should be RBuffer *
+// XXX: ut8* should be RzBuffer *
 static RzBinXtrData * oneshot(RzBin *bin, const ut8 *buf, ut64 size, int sub_bin_type) {
 	rz_return_val_if_fail (bin && bin->cur && buf, false);
 

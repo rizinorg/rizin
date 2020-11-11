@@ -96,7 +96,7 @@ static bool test_save(RzFlag *flag, Sdb *ref) {
 	return true;
 }
 
-static bool space_eq(RSpace *actual, RSpace *expected) {
+static bool space_eq(RzSpace *actual, RzSpace *expected) {
 	mu_assert ("space null", (!actual) == (!expected));
 	if (expected != NULL) {
 		mu_assert_streq (actual->name, expected->name, "space name");
@@ -104,14 +104,14 @@ static bool space_eq(RSpace *actual, RSpace *expected) {
 	return true;
 }
 
-static bool spaces_eq(RSpaces *actual, RSpaces *expected) {
+static bool spaces_eq(RzSpaces *actual, RzSpaces *expected) {
 	assert_streq_null (actual->name, expected->name, "spaces name");
 
 	RBIter actual_iter = rz_rbtree_first (actual->spaces);
 	RBIter expected_iter = rz_rbtree_first (expected->spaces);
 	while (rz_rbtree_iter_has (&actual_iter) && rz_rbtree_iter_has (&expected_iter)) {
-		RSpace *actual_space = rz_rbtree_iter_get (&actual_iter, RSpace, rb);
-		RSpace *expected_space = rz_rbtree_iter_get (&expected_iter, RSpace, rb);
+		RzSpace *actual_space = rz_rbtree_iter_get (&actual_iter, RzSpace, rb);
+		RzSpace *expected_space = rz_rbtree_iter_get (&expected_iter, RzSpace, rb);
 		if (!space_eq (actual_space, expected_space)) {
 			return false;
 		}
@@ -127,8 +127,8 @@ static bool spaces_eq(RSpaces *actual, RSpaces *expected) {
 	RzListIter *actual_stack_iter = rz_list_iterator (actual->spacestack);
 	RzListIter *expected_stack_iter = rz_list_iterator (expected->spacestack);
 	while (actual_stack_iter && expected_stack_iter) {
-		RSpace *actual_space = rz_list_iter_get (actual_stack_iter);
-		RSpace *expected_space = rz_list_iter_get (expected_stack_iter);
+		RzSpace *actual_space = rz_list_iter_get (actual_stack_iter);
+		RzSpace *expected_space = rz_list_iter_get (expected_stack_iter);
 		if (!space_eq (actual_space, expected_space)) {
 			return false;
 		}

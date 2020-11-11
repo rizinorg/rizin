@@ -43,14 +43,14 @@ typedef struct rz_flag_item_t {
 	bool demangled; /* real name from demangling? */
 	ut64 offset;    /* offset flagged by this item */
 	ut64 size;      /* size of the flag item */
-	RSpace *space;  /* flag space this item belongs to */
+	RzSpace *space;  /* flag space this item belongs to */
 	char *color;    /* item color */
 	char *comment;  /* item comment */
 	char *alias;    /* used to define a flag based on a math expression (e.g. foo + 3) */
 } RzFlagItem;
 
 typedef struct rz_flag_t {
-	RSpaces spaces;   /* handle flag spaces */
+	RzSpaces spaces;   /* handle flag spaces */
 	st64 base;         /* base address for all flag items */
 	bool realnames;
 	Sdb *tags;
@@ -76,7 +76,7 @@ typedef RzFlagItem* (*RzFlagSet)(RzFlag *f, const char *name, ut64 addr, ut32 si
 typedef bool (*RzFlagUnset)(RzFlag *f, RzFlagItem *item);
 typedef bool (*RzFlagUnsetName)(RzFlag *f, const char *name);
 typedef bool (*RzFlagUnsetOff)(RzFlag *f, ut64 addr);
-typedef RSpace *(*RzFlagSetSpace)(RzFlag *f, const char *name);
+typedef RzSpace *(*RzFlagSetSpace)(RzFlag *f, const char *name);
 typedef bool (*RzFlagPopSpace)(RzFlag *f);
 typedef bool (*RzFlagPushSpace)(RzFlag *f, const char *name);
 
@@ -135,15 +135,15 @@ RZ_API void rz_flag_foreach(RzFlag *f, RzFlagItemCb cb, void *user);
 RZ_API void rz_flag_foreach_prefix(RzFlag *f, const char *pfx, int pfx_len, RzFlagItemCb cb, void *user);
 RZ_API void rz_flag_foreach_range(RzFlag *f, ut64 from, ut64 to, RzFlagItemCb cb, void *user);
 RZ_API void rz_flag_foreach_glob(RzFlag *f, const char *glob, RzFlagItemCb cb, void *user);
-RZ_API void rz_flag_foreach_space(RzFlag *f, const RSpace *space, RzFlagItemCb cb, void *user);
-RZ_API void rz_flag_foreach_space_glob(RzFlag *f, const char *glob, const RSpace *space, RzFlagItemCb cb, void *user);
+RZ_API void rz_flag_foreach_space(RzFlag *f, const RzSpace *space, RzFlagItemCb cb, void *user);
+RZ_API void rz_flag_foreach_space_glob(RzFlag *f, const char *glob, const RzSpace *space, RzFlagItemCb cb, void *user);
 
 /* spaces */
-static inline RSpace *rz_flag_space_get(RzFlag *f, const char *name) {
+static inline RzSpace *rz_flag_space_get(RzFlag *f, const char *name) {
 	return rz_spaces_get (&f->spaces, name);
 }
 
-static inline RSpace *rz_flag_space_cur(RzFlag *f) {
+static inline RzSpace *rz_flag_space_cur(RzFlag *f) {
 	return rz_spaces_current (&f->spaces);
 }
 
@@ -151,7 +151,7 @@ static inline const char *rz_flag_space_cur_name(RzFlag *f) {
 	return rz_spaces_current_name (&f->spaces);
 }
 
-static inline RSpace *rz_flag_space_set(RzFlag *f, const char *name) {
+static inline RzSpace *rz_flag_space_set(RzFlag *f, const char *name) {
 	return rz_spaces_set (&f->spaces, name);
 }
 

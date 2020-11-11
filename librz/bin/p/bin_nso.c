@@ -47,7 +47,7 @@ static ut64 baddr(RzBinFile *bf) {
 	return 0x8000000;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	if (rz_buf_size (b) >= 0x20) {
 		ut8 magic[4];
 		if (rz_buf_read_at (b, 0, magic, sizeof (magic)) != 4) {
@@ -78,7 +78,7 @@ static bool load_bytes(RzBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, u
 	ut32 doff = rz_buf_read_le32_at (bf->buf, NSO_OFF (data_memoffset));
 	ut32 dsize = rz_buf_read_le32_at (bf->buf, NSO_OFF (data_size));
 	ut64 total_size = tsize + rosize + dsize;
-	RBuffer *newbuf = rz_buf_new_empty (total_size);
+	RzBuffer *newbuf = rz_buf_new_empty (total_size);
 	ut64 ba = baddr (bf);
 	ut8 *tmp = NULL;
 
@@ -137,7 +137,7 @@ fail:
 	return false;
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	rz_return_val_if_fail (bf && buf, NULL);
 	const ut64 la = bf->loadaddr;
 	ut64 sz = 0;
@@ -152,7 +152,7 @@ static RzBinAddr *binsym(RzBinFile *bf, int type) {
 static RzList *entries(RzBinFile *bf) {
 	RzList *ret;
 	RzBinAddr *ptr = NULL;
-	RBuffer *b = bf->buf;
+	RzBuffer *b = bf->buf;
 	if (!(ret = rz_list_new ())) {
 		return NULL;
 	}
@@ -180,7 +180,7 @@ static Sdb *get_sdb(RzBinFile *bf) {
 static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *ptr = NULL;
-	RBuffer *b = bf->buf;
+	RzBuffer *b = bf->buf;
 	if (!bf->o->info) {
 		return NULL;
 	}

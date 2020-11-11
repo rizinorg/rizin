@@ -152,7 +152,7 @@ struct Elf_(rz_bin_elf_obj_t) {
 	int endian;
 	bool verbose;
 	const char* file;
-	RBuffer *b;
+	RzBuffer *b;
 	Sdb *kv;
 	/*cache purpose*/
 	RzBinElfSection *g_sections;
@@ -202,7 +202,7 @@ struct rz_bin_elf_field_t* Elf_(rz_bin_elf_get_fields)(struct Elf_(rz_bin_elf_ob
 char *Elf_(rz_bin_elf_get_rpath)(struct Elf_(rz_bin_elf_obj_t) *bin);
 
 struct Elf_(rz_bin_elf_obj_t)* Elf_(rz_bin_elf_new)(const char* file, bool verbose);
-struct Elf_(rz_bin_elf_obj_t)* Elf_(rz_bin_elf_new_buf)(RBuffer *buf, bool verbose);
+struct Elf_(rz_bin_elf_obj_t)* Elf_(rz_bin_elf_new_buf)(RzBuffer *buf, bool verbose);
 void Elf_(rz_bin_elf_free)(struct Elf_(rz_bin_elf_obj_t)* bin);
 
 ut64 Elf_(rz_bin_elf_resize_section)(RzBinFile *bf, const char *name, ut64 size);

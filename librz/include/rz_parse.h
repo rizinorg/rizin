@@ -17,8 +17,8 @@ typedef RzList* (*RzAnalVarList)(RzAnalFunction *fcn, int kind);
 
 typedef struct rz_parse_t {
 	void *user;
-	RSpace *flagspace;
-	RSpace *notin_flagspace;
+	RzSpace *flagspace;
+	RzSpace *notin_flagspace;
 	bool pseudo;
 	bool subreg; // replace registers with their respective alias/role name (rdi=A0, ...)
 	bool subrel; // replace rip relative expressions in instruction

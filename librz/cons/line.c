@@ -3,14 +3,14 @@
 #include <rz_util.h>
 #include <rz_cons.h>
 
-static RLine rz_line_instance;
+static RzLine rz_line_instance;
 #define I rz_line_instance
 
-RZ_API RLine *rz_line_singleton(void) {
+RZ_API RzLine *rz_line_singleton(void) {
 	return &rz_line_instance;
 }
 
-RZ_API RLine *rz_line_new(void) {
+RZ_API RzLine *rz_line_new(void) {
 	I.hist_up = NULL;
 	I.hist_down = NULL;
 	I.prompt = strdup ("> ");
@@ -57,18 +57,18 @@ RZ_API char *rz_line_get_prompt(void) {
 	return strdup (I.prompt);
 }
 
-RZ_API void rz_line_completion_init(RLineCompletion *completion, size_t args_limit) {
+RZ_API void rz_line_completion_init(RzLineCompletion *completion, size_t args_limit) {
 	completion->run = NULL;
 	completion->run_user = NULL;
 	completion->args_limit = args_limit;
 	rz_pvector_init (&completion->args, free);
 }
 
-RZ_API void rz_line_completion_fini(RLineCompletion *completion) {
+RZ_API void rz_line_completion_fini(RzLineCompletion *completion) {
 	rz_line_completion_clear (completion);
 }
 
-RZ_API void rz_line_completion_push(RLineCompletion *completion, const char *str) {
+RZ_API void rz_line_completion_push(RzLineCompletion *completion, const char *str) {
 	rz_return_if_fail (completion && str);
 	if (completion->quit) {
 	        return;
@@ -84,7 +84,7 @@ RZ_API void rz_line_completion_push(RLineCompletion *completion, const char *str
 	}
 }
 
-RZ_API void rz_line_completion_set(RLineCompletion *completion, int argc, const char **argv) {
+RZ_API void rz_line_completion_set(RzLineCompletion *completion, int argc, const char **argv) {
 	rz_return_if_fail (completion && (argc >= 0));
 	rz_line_completion_clear (completion);
 	if (argc > completion->args_limit) {
@@ -98,7 +98,7 @@ RZ_API void rz_line_completion_set(RLineCompletion *completion, int argc, const 
 	}
 }
 
-RZ_API void rz_line_completion_clear(RLineCompletion *completion) {
+RZ_API void rz_line_completion_clear(RzLineCompletion *completion) {
 	rz_return_if_fail (completion);
 	completion->quit = false;
 	rz_pvector_clear (&completion->args);

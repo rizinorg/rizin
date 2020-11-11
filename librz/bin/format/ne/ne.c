@@ -34,7 +34,7 @@ static int __translate_perms(int flags) {
 	return perms;
 }
 
-static char *__read_nonnull_str_at(RBuffer *buf, ut64 offset) {
+static char *__read_nonnull_str_at(RzBuffer *buf, ut64 offset) {
 	ut8 sz = rz_buf_read8_at (buf, offset);
 	if (!sz) {
 		return NULL;
@@ -549,7 +549,7 @@ RzList *rz_bin_ne_get_relocs(rz_bin_ne_obj_t *bin) {
 	return relocs;
 }
 
-void __init(RBuffer *buf, rz_bin_ne_obj_t *bin) {
+void __init(RzBuffer *buf, rz_bin_ne_obj_t *bin) {
 	bin->header_offset = rz_buf_read_le16_at (buf, 0x3c);
 	bin->ne_header = RZ_NEW0 (NE_image_header);
 	if (!bin->ne_header) {
@@ -585,7 +585,7 @@ void rz_bin_ne_free(rz_bin_ne_obj_t *bin) {
 	free (bin->segment_entries);
 }
 
-rz_bin_ne_obj_t *rz_bin_ne_new_buf(RBuffer *buf, bool verbose) {
+rz_bin_ne_obj_t *rz_bin_ne_new_buf(RzBuffer *buf, bool verbose) {
 	rz_bin_ne_obj_t *bin = RZ_NEW0 (rz_bin_ne_obj_t);
 	if (!bin) {
 		return NULL;

@@ -211,7 +211,7 @@ extern ssize_t process_vm_readv(pid_t pid, const struct iovec *local_iov,
 	unsigned long liovcnt, const struct iovec *remote_iov,
 	unsigned long riovcnt, unsigned long flags);
 
-bool linux_generate_corefile (RzDebug *dbg, RBuffer *dest);
+bool linux_generate_corefile (RzDebug *dbg, RzBuffer *dest);
 int linux_reg_read (RzDebug *dbg, int type, ut8 *buf, int size);
 
 #endif

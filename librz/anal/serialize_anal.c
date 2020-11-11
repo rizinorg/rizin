@@ -1364,7 +1364,7 @@ RZ_API void rz_serialize_anal_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *a
 		return;
 	}
 	char key[0x20];
-	RIntervalTreeIter it;
+	RzIntervalTreeIter it;
 	RzAnalMetaItem *meta;
 	ut64 addr = 0;
 	size_t count = 0;
@@ -1373,7 +1373,7 @@ RZ_API void rz_serialize_anal_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *a
 			sdb_set (db, key, pj_string (j), 0); \
 		}
 	rz_interval_tree_foreach (&anal->meta, it, meta) {
-		RIntervalNode *node = rz_interval_tree_iter_get (&it);
+		RzIntervalNode *node = rz_interval_tree_iter_get (&it);
 		if (count && node->start != addr) {
 			// new address
 			FLUSH

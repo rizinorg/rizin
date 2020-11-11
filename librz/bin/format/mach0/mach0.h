@@ -156,7 +156,7 @@ struct MACH0_(obj_t) {
 	ut64 entry;
 	bool big_endian;
 	const char *file;
-	RBuffer *b;
+	RzBuffer *b;
 	int os;
 	Sdb *kv;
 	int has_crypto;
@@ -180,7 +180,7 @@ struct MACH0_(obj_t) {
 
 void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RzBinFile *bf);
 struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) *options);
-struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *options);
+struct MACH0_(obj_t) *MACH0_(new_buf)(RzBuffer *buf, struct MACH0_(opts_t) *options);
 void *MACH0_(mach0_free)(struct MACH0_(obj_t) *bin);
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin);
 //RzList *MACH0_(get_segments)(struct MACH0_(obj_t) *bin);
@@ -208,7 +208,7 @@ char *MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) *hdr);
 ut64 MACH0_(get_main)(struct MACH0_(obj_t) *bin);
 const char *MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr);
 int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header) *hdr);
-struct MACH0_(mach_header) *MACH0_(get_hdr)(RBuffer *buf);
+struct MACH0_(mach_header) *MACH0_(get_hdr)(RzBuffer *buf);
 void MACH0_(mach_headerfields)(RzBinFile *bf);
 RzList *MACH0_(mach_fields)(RzBinFile *bf);
 #endif

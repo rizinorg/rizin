@@ -38,7 +38,7 @@ static char *entitlements(RzBinFile *bf, bool json) {
 	return rz_str_dup (NULL, (const char*)bin->signature);
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb){
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb){
 	rz_return_val_if_fail (bf && bin_obj && buf, false);
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default) (&opts, bf);
@@ -823,7 +823,7 @@ static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RzIODesc *fd, ut8
 
 #if !RZ_BIN_MACH064
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	if (rz_buf_size (b) >= 4) {
 		ut8 buf[4] = {0};
 		if (rz_buf_read_at (b, 0, buf, 4)) {
@@ -835,7 +835,7 @@ static bool check_buffer(RBuffer *b) {
 	}
 	return false;
 }
-static RBuffer *create(RzBin *bin, const ut8 *code, int clen, const ut8 *data, int dlen, RzBinArchOptions *opt) {
+static RzBuffer *create(RzBin *bin, const ut8 *code, int clen, const ut8 *data, int dlen, RzBinArchOptions *opt) {
 	const bool use_pagezero = true;
 	const bool use_main = true;
 	const bool use_dylinker = true;
@@ -851,7 +851,7 @@ static RBuffer *create(RzBin *bin, const ut8 *code, int clen, const ut8 *data, i
 	rz_return_val_if_fail (bin && opt, NULL);
 
 	bool is_arm = strstr (opt->arch, "arm");
-	RBuffer *buf = rz_buf_new ();
+	RzBuffer *buf = rz_buf_new ();
 #ifndef RZ_BIN_MACH064
 	if (opt->bits == 64) {
 		eprintf ("TODO: Please use mach064 instead of mach0\n");

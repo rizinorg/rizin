@@ -47,7 +47,7 @@ typedef struct rz_io_zfo_t {
 	ut64 entry;
 	int perm;
 	ut8 modified;
-	RBuffer *b;
+	RzBuffer *b;
 	char *password;
 	ut8 encryption_value;
 	RzIO * io_backref;

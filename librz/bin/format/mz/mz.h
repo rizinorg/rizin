@@ -33,7 +33,7 @@ struct rz_bin_mz_obj_t {
 	int dos_file_size; /* Size of dos file from dos executable header */
 	int load_module_size; /* Size of load module: dos_file_size - header size */
 	const char *file;
-	RBuffer *b;
+	RzBuffer *b;
 	Sdb *kv;
 };
 
@@ -42,7 +42,7 @@ RzList *rz_bin_mz_get_segments (const struct rz_bin_mz_obj_t *bin);
 struct rz_bin_mz_reloc_t *rz_bin_mz_get_relocs (const struct rz_bin_mz_obj_t *bin);
 void *rz_bin_mz_free (struct rz_bin_mz_obj_t *bin);
 struct rz_bin_mz_obj_t *rz_bin_mz_new (const char *file);
-struct rz_bin_mz_obj_t *rz_bin_mz_new_buf(RBuffer *buf);
+struct rz_bin_mz_obj_t *rz_bin_mz_new_buf(RzBuffer *buf);
 RzBinAddr *rz_bin_mz_get_main_vaddr (struct rz_bin_mz_obj_t *bin);
 
 #endif

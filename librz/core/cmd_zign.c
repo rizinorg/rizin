@@ -96,7 +96,7 @@ static void addFcnZign(RzCore *core, RzAnalFunction *fcn, const char *name) {
 	char *ptr = NULL;
 	char *zignspace = NULL;
 	char *zigname = NULL;
-	const RSpace *curspace = rz_spaces_current (&core->anal->zign_spaces);
+	const RzSpace *curspace = rz_spaces_current (&core->anal->zign_spaces);
 	int len = 0;
 
 	if (name) {
@@ -486,7 +486,7 @@ static int cmdOpen(void *data, const char *input) {
 
 static int cmdSpace(void *data, const char *input) {
 	RzCore *core = (RzCore *) data;
-	RSpaces *zs = &core->anal->zign_spaces;
+	RzSpaces *zs = &core->anal->zign_spaces;
 
 	switch (*input) {
 	case '+':
@@ -908,7 +908,7 @@ static void print_possible_matches(RzList *list) {
 
 static RzSignItem *item_frm_signame(RzAnal *a, const char *signame) {
 	// example zign|*|sym.unlink_blk
-	const RSpace *space = rz_spaces_current (&a->zign_spaces);
+	const RzSpace *space = rz_spaces_current (&a->zign_spaces);
 	char *k = rz_str_newf ("zign|%s|%s", space? space->name: "*", signame);
 	char *value = sdb_querys (a->sdb_zigns, NULL, 0, k);
 	if (!value) {

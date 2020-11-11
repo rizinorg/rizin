@@ -4,7 +4,7 @@
 #include "bin_elf.inc"
 
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	ut8 buf[5] = {0};
 	if (rz_buf_size (b) > 4) {
 		rz_buf_read_at (b, 0, buf, sizeof (buf));
@@ -35,14 +35,14 @@ static void headers64(RzBinFile *bf) {
 	p ("0x00000028  ShOff       0x%08"PFMT64x"\n", rz_buf_read_le64_at (bf->buf, 0x28));
 }
 
-static RBuffer* create(RzBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
+static RzBuffer* create(RzBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
 	ut32 p_start, p_phoff, p_phdr;
 	ut32 p_vaddr, p_paddr, p_fs, p_fs2;
 	ut32 p_ehdrsz, p_phdrsz;
 	ut64 filesize, code_va, code_pa, phoff;
 	ut16 ehdrsz, phdrsz;
 	ut64 baddr = 0x400000LL;
-	RBuffer *buf = rz_buf_new ();
+	RzBuffer *buf = rz_buf_new ();
 
 #define B(x,y) rz_buf_append_bytes(buf,(const ut8*)(x),y)
 #define Q(x) rz_buf_append_ut64(buf,x)

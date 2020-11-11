@@ -69,7 +69,7 @@ static void list(RzEgg *egg) {
 static int create(const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
 	RzBin *bin = rz_bin_new ();
 	RzBinArchOptions opts;
-	RBuffer *b;
+	RzBuffer *b;
 	rz_bin_arch_options_init (&opts, arch, bits);
 	b = rz_bin_create (bin, format, code, codelen, NULL, 0, &opts);
 	if (b) {
@@ -138,7 +138,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 	int fmt = 0;
 	const char *ofile = NULL;
 	int ofileauto = 0;
-	RBuffer *b;
+	RzBuffer *b;
 	int c, i, fd = -1;
 	RzEgg *egg = rz_egg_new ();
 
@@ -568,7 +568,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 				eprintf ("No format specified wtf\n");
 				goto fail;
 			}
-			RPrint *p = rz_print_new ();
+			RzPrint *p = rz_print_new ();
 			ut64 tmpsz;
 			const ut8 *tmp = rz_buf_data (b, &tmpsz);
 			switch (*format) {

@@ -123,7 +123,7 @@ RZ_API void rz_io_free(RzIO *io) {
 	}
 }
 
-RZ_API RzIODesc *rz_io_open_buffer(RzIO *io, RBuffer *b, int perm, int mode) {
+RZ_API RzIODesc *rz_io_open_buffer(RzIO *io, RzBuffer *b, int perm, int mode) {
 	ut64 bufSize = rz_buf_size (b);
 	char *uri = rz_str_newf ("malloc://%" PFMT64d, bufSize);
 	RzIODesc *desc = rz_io_open_nomap (io, uri, perm, mode);

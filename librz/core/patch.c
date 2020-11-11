@@ -50,7 +50,7 @@ RZ_API int rz_core_patch_line(RzCore *core, char *str) {
 static int __core_patch_bracket(RzCore *core, const char *str, ut64 *noff) {
 	char tmp[128];
 	char *s, *p, *q, *off;
-	RBuffer *b = rz_buf_new ();
+	RzBuffer *b = rz_buf_new ();
 	if (!b) {
 		return 0;
 	}

@@ -10,7 +10,7 @@
 #include "wasm/wasm.h"
 #include "../format/wasm/wasm.h"
 
-static bool check_buffer (RBuffer *rbuf) {
+static bool check_buffer (RzBuffer *rbuf) {
 	ut8 buf[4] = { 0 };
 	return rbuf && rz_buf_read_at (rbuf, 0, buf, 4) == 4 && !memcmp (buf, RZ_BIN_WASM_MAGIC_BYTES, 4);
 }
@@ -22,7 +22,7 @@ static bool find_export (const ut32 *p, const RzBinWasmExportEntry *q) {
 	return q->index != (*p);
 }
 
-static bool load_buffer (RzBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer (RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	rz_return_val_if_fail (bf && buf && rz_buf_size (buf) != UT64_MAX, NULL);
 
 	if (check_buffer (buf)) {
@@ -312,8 +312,8 @@ static ut64 size (RzBinFile *bf) {
 }
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
-static RBuffer *create (RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
-	RBuffer *buf = rz_buf_new ();
+static RzBuffer *create (RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
+	RzBuffer *buf = rz_buf_new ();
 #define B(x, y) rz_buf_append_bytes (buf, (const ut8 *)(x), y)
 #define D(x) rz_buf_append_ut32 (buf, x)
 	B ("\x00"

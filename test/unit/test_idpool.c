@@ -8,7 +8,7 @@ static bool test_r_id_pool_broken_parameters(void) {
 }
 
 static bool test_r_id_pool_start_id(void) {
-	RIDPool *pool = rz_id_pool_new (3, 42);
+	RzIDPool *pool = rz_id_pool_new (3, 42);
 	ut32 grabbed;
 	rz_id_pool_grab_id (pool, &grabbed);
 	rz_id_pool_free (pool);
@@ -17,7 +17,7 @@ static bool test_r_id_pool_start_id(void) {
 }
 
 static bool test_r_id_pool_id_reuse0(void) {
-	RIDPool *pool = rz_id_pool_new (3, 42);
+	RzIDPool *pool = rz_id_pool_new (3, 42);
 	ut32 grabbed[3];
 	rz_id_pool_grab_id (pool, &grabbed[0]);
 	rz_id_pool_grab_id (pool, &grabbed[1]);
@@ -29,7 +29,7 @@ static bool test_r_id_pool_id_reuse0(void) {
 }
 
 static bool test_r_id_pool_id_reuse1(void) {
-	RIDPool *pool = rz_id_pool_new (3, 42);
+	RzIDPool *pool = rz_id_pool_new (3, 42);
 	ut32 grabbed[3];
 	rz_id_pool_grab_id (pool, &grabbed[0]);
 	rz_id_pool_grab_id (pool, &grabbed[1]);
@@ -41,7 +41,7 @@ static bool test_r_id_pool_id_reuse1(void) {
 }
 
 static bool test_r_id_pool_id_unique(void) {
-	RIDPool *pool = rz_id_pool_new (3, 42);
+	RzIDPool *pool = rz_id_pool_new (3, 42);
 	ut32 grabbed[2];
 	rz_id_pool_grab_id (pool, &grabbed[0]);
 	rz_id_pool_grab_id (pool, &grabbed[1]);
@@ -51,7 +51,7 @@ static bool test_r_id_pool_id_unique(void) {
 }
 
 static bool test_r_id_pool_id_end_of_pool(void) {
-	RIDPool *pool = rz_id_pool_new (0, 1);
+	RzIDPool *pool = rz_id_pool_new (0, 1);
 	ut32 grabbed;
 	rz_id_pool_grab_id (pool, &grabbed);
 	rz_id_pool_grab_id (pool, &grabbed);
@@ -62,7 +62,7 @@ static bool test_r_id_pool_id_end_of_pool(void) {
 }
 
 static bool test_r_id_pool_initial_pattern(void) {
-	RIDPool *pool = rz_id_pool_new (3, 42);
+	RzIDPool *pool = rz_id_pool_new (3, 42);
 	ut32 grabbed[3];
 	rz_id_pool_grab_id (pool, &grabbed[0]);
 	rz_id_pool_grab_id (pool, &grabbed[1]);

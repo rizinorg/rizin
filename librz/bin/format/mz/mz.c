@@ -304,7 +304,7 @@ struct rz_bin_mz_obj_t *rz_bin_mz_new (const char *file) {
 	return bin;
 }
 
-struct rz_bin_mz_obj_t *rz_bin_mz_new_buf(RBuffer *buf) {
+struct rz_bin_mz_obj_t *rz_bin_mz_new_buf(RzBuffer *buf) {
 	struct rz_bin_mz_obj_t *bin = RZ_NEW0 (struct rz_bin_mz_obj_t);
 	if (!bin) {
 		return NULL;

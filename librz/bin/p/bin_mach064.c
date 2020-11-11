@@ -6,7 +6,7 @@
 #include "objc/mach064_classes.h"
 #include "../format/mach0/mach064_is_kernelcache.c"
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RzBuffer *b) {
 	ut8 buf[4] = {0};
 	if (rz_buf_size (b) > 4) {
 		rz_buf_read_at (b, 0, buf, sizeof (buf));
@@ -20,7 +20,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static RBuffer* create(RzBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
+static RzBuffer* create(RzBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
 	const bool use_pagezero = true;
 	const bool use_main = true;
 	const bool use_dylinker = true;
@@ -33,7 +33,7 @@ static RBuffer* create(RzBin* bin, const ut8 *code, int codelen, const ut8 *data
 	ut64 p_cmdsize=0, p_entry=0, p_tmp=0;
 	ut64 baddr = 0x100001000LL;
 // TODO: baddr must be overriden with -b
-	RBuffer *buf = rz_buf_new ();
+	RzBuffer *buf = rz_buf_new ();
 
 #define B(x,y) rz_buf_append_bytes(buf,(const ut8*)(x),y)
 #define D(x) rz_buf_append_ut32(buf,x)

@@ -10,7 +10,7 @@
 #define SOCKET_HTTP_MAX_HEADER_LENGTH 0x2000
 #define SOCKET_HTTP_MAX_REDIRECTS 5
 
-static size_t socket_slurp(RzSocket *s, RBuffer *buf) {
+static size_t socket_slurp(RzSocket *s, RzBuffer *buf) {
 	size_t i;
 	if (rz_socket_ready (s, 1, 0) != 1) {
 		return 0;
@@ -35,7 +35,7 @@ static char *socket_http_answer(RzSocket *s, int *code, int *rlen, ut32 redirect
 	const char *p;
 	int ret, len = 0, delta = 0;
 	char *dn = NULL;
-	RBuffer *b = rz_buf_new ();
+	RzBuffer *b = rz_buf_new ();
 	if (!b) {
 		return NULL;
 	}

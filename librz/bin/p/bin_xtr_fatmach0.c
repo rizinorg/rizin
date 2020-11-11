@@ -9,7 +9,7 @@
 
 static RzBinXtrData * extract(RzBin *bin, int idx);
 
-static bool checkHeader(RBuffer *b) {
+static bool checkHeader(RzBuffer *b) {
 	ut8 buf[4];
 	const ut64 sz = rz_buf_size (b);
 	rz_buf_read_at (b, 0, buf, 4);
@@ -30,7 +30,7 @@ static bool checkHeader(RBuffer *b) {
 	return false;
 }
 
-static bool check_buffer (RBuffer *buf) {
+static bool check_buffer (RzBuffer *buf) {
 	rz_return_val_if_fail (buf, false);
 	return checkHeader (buf);
 }
@@ -90,7 +90,7 @@ static RzBinXtrData *extract(RzBin* bin, int idx) {
 	return res;
 }
 
-static RzBinXtrData *oneshot_buffer(RzBin *bin, RBuffer *b, int idx) {
+static RzBinXtrData *oneshot_buffer(RzBin *bin, RzBuffer *b, int idx) {
 	rz_return_val_if_fail (bin && bin->cur, NULL);
 
 	if (!bin->cur->xtr_obj) {
@@ -118,7 +118,7 @@ static RzBinXtrData *oneshot_buffer(RzBin *bin, RBuffer *b, int idx) {
 	return NULL;
 }
 
-static RzList * oneshotall_buffer(RzBin *bin, RBuffer *b) {
+static RzList * oneshotall_buffer(RzBin *bin, RzBuffer *b) {
 	RzBinXtrData *data = oneshot_buffer (bin, b, 0);
 	if (data) {
 		// XXX - how do we validate a valid narch?
