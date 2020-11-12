@@ -75,14 +75,14 @@ jobs:
             enabled: true
             timeout: 60
             cflags: '-Werror -Wno-cpp'
-          # - name: macos-meson-clang-tests
-          #   os: macos-latest
-          #   build_system: meson
-          #   compiler: clang
-          #   run_tests: true
-          #   meson_options: -Duse_webui=true
-          #   enabled: true
-          #   timeout: 60
+          - name: macos-meson-clang-tests
+            os: self-hosted-mac
+            build_system: meson
+            compiler: clang
+            run_tests: true
+            meson_options: -Duse_webui=true
+            enabled: true
+            timeout: 60
           # - name: linux-gcc-tests-asan
           #   os: ubuntu-20.04
           #   build_system: meson
