@@ -435,7 +435,8 @@ jobs:
 
   build-windows:
     name: Build Windows zip/installer ${{ matrix.name }}
-    runs-on: windows-latest
+    #runs-on: windows-latest
+    runs-on: self-hosted-win
     # if: contains(github.head_ref, 'windows') || (github.event_name == 'push' && contains(github.ref, 'release-'))
     if: contains(github.head_ref, 'windows') || (github.event_name == 'push' && contains(github.ref, 'dev'))
     needs: [build-and-test]
