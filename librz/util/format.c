@@ -4,9 +4,7 @@
 #include "rz_util.h"
 #include "rz_util/rz_print.h"
 #include "rz_reg.h"
-#ifdef _MSC_VER
-#include <time.h>
-#endif
+
 #define NOPTR 0
 #define PTRSEEK 1
 #define PTRBACK 2
@@ -510,7 +508,7 @@ static void rz_print_format_time(const RzPrint* p, int endian, int mode,
 		if (!timestr) {
 			return;
 		}
-		rz_asctime_r (gmtime_r ((time_t*)&addr, &timestruct), timestr, ASCTIME_BUF_MINLEN);
+		rz_asctime_r (gmtime_r ((time_t*)&addr, &timestruct), timestr);
 		*(timestr+24) = '\0';
 		if (!SEEVALUE && !ISQUIET) {
 			p->cb_printf ("0x%08" PFMT64x " = ", seeki + ((elem >= 0) ? elem * 4 : 0));
@@ -523,7 +521,7 @@ static void rz_print_format_time(const RzPrint* p, int endian, int mode,
 			}
 			while (size--) {
 				updateAddr (buf + i, size - i, endian, &addr, NULL);
-				rz_asctime_r (gmtime_r ((time_t*)&addr, &timestruct), timestr, ASCTIME_BUF_MINLEN);
+				rz_asctime_r (gmtime_r ((time_t*)&addr, &timestruct), timestr);
 				*(timestr+24) = '\0';
 				if (elem == -1 || elem == 0) {
 					p->cb_printf ("%s", timestr);
@@ -549,7 +547,7 @@ static void rz_print_format_time(const RzPrint* p, int endian, int mode,
 		if (!timestr) {
 			return;
 		}
-		rz_asctime_r (gmtime_r ((time_t*)&addr, &timestruct), timestr, ASCTIME_BUF_MINLEN);
+		rz_asctime_r (gmtime_r ((time_t*)&addr, &timestruct), timestr);
 		*(timestr+24) = '\0';
 		if (size==-1) {
 			p->cb_printf ("\"%s\"", timestr);
@@ -557,7 +555,7 @@ static void rz_print_format_time(const RzPrint* p, int endian, int mode,
 			p->cb_printf ("[ ");
 			while (size--) {
 				updateAddr (buf + i, size - i, endian, &addr, NULL);
-				rz_asctime_r (gmtime_r ((time_t*)&addr, &timestruct), timestr, ASCTIME_BUF_MINLEN);
+				rz_asctime_r (gmtime_r ((time_t*)&addr, &timestruct), timestr);
 				*(timestr+24) = '\0';
 				if (elem == -1 || elem == 0) {
 					p->cb_printf ("\"%s\"", timestr);
