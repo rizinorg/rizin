@@ -27,7 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         # name: [linux-acr-gcc-tests, linux-acr-clang-build, linux-acr-clang-tests, linux-meson-gcc-build, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-meson-clang-tests, linux-gcc-tests-asan, capstone-v3, capstone-v5]
-        name: [linux-acr-gcc-tests, linux-meson-gcc-tests]
+        name: [linux-acr-gcc-tests, linux-meson-gcc-tests, macos-meson-clang-tests]
         # ignore_error: [false]
         include:
           - name: linux-acr-gcc-tests
@@ -75,14 +75,15 @@ jobs:
             enabled: true
             timeout: 60
             cflags: '-Werror -Wno-cpp'
-          # - name: macos-meson-clang-tests
-          #   os: macos-latest
-          #   build_system: meson
-          #   compiler: clang
-          #   run_tests: true
-          #   meson_options: -Duse_webui=true
-          #   enabled: true
-          #   timeout: 60
+          - name: macos-meson-clang-tests
+          # os: macos-latest
+            os: self-hosted-mac
+            build_system: meson
+            compiler: clang
+            run_tests: true
+            meson_options: -Duse_webui=true
+            enabled: true
+            timeout: 60
           # - name: linux-gcc-tests-asan
           #   os: ubuntu-20.04
           #   build_system: meson
@@ -122,10 +123,10 @@ jobs:
           token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
           submodules: recursive
     - name: Install pkg-config with Homebrew
-      if: matrix.os == 'macos-latest' && matrix.enabled
+      if: (matrix.os == 'macos-latest' || matrix.os == 'self-hosted-mac') && matrix.enabled
       run: brew install pkg-config
     - name: Install python
-      if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-latest' && matrix.enabled
+      if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-latest' && matrix.os != 'self-hosted-mac' && matrix.enabled
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools
     - name: Install meson and ninja
       if: matrix.build_system == 'meson' && matrix.enabled
@@ -166,7 +167,7 @@ jobs:
     - name: Build with Meson
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
-        export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/.local/bin:${PATH}
+        export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
         if [ "$ASAN" == "true" ]; then
           export CFLAGS="-DASAN=1 ${CFLAGS}"
         fi
@@ -187,7 +188,7 @@ jobs:
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
         # Install the rizin
-        export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/.local/bin:${PATH}
+        export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         ninja -C build install
@@ -412,7 +413,8 @@ jobs:
 
   build-osx-pkg:
     name: Build OSX package
-    runs-on: macos-latest
+    # runs-on: macos-latest
+    runs-on: self-hosted-mac
     if: contains(github.head_ref, 'osx') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
@@ -434,7 +436,8 @@ jobs:
 
   build-windows:
     name: Build Windows zip/installer ${{ matrix.name }}
-    runs-on: windows-latest
+    #runs-on: windows-latest
+    runs-on: self-hosted-win
     # if: contains(github.head_ref, 'windows') || (github.event_name == 'push' && contains(github.ref, 'release-'))
     if: contains(github.head_ref, 'windows') || (github.event_name == 'push' && contains(github.ref, 'dev'))
     needs: [build-and-test]
@@ -492,7 +495,8 @@ jobs:
 
   build-ios-cydia:
     name: Build iOS Cydia packages
-    runs-on: macos-latest
+    #runs-on: macos-latest
+    runs-on: self-hosted-mac
     if: contains(github.head_ref, 'ios') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
