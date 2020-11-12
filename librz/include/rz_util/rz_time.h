@@ -2,6 +2,7 @@
 #define RZ_TIME_H
 
 #include <rz_types.h>
+#include <time.h>
 
 #define RZ_NSEC_PER_SEC  1000000000
 #define RZ_NSEC_PER_MSEC 1000000
@@ -23,7 +24,8 @@ RZ_API bool rz_time_stamp_is_dos_format(const ut32 certainPosixTimeStamp, const 
 RZ_API const char *rz_time_to_string(ut64 ts);
 
 // Thread-safe cross platform wrappers
-RZ_API char *rz_asctime_r(const struct tm *tm, char *buf, size_t size);
+RZ_API char *rz_asctime_r(const struct tm *tm, char *buf);
+RZ_API char *rz_ctime_r(const time_t *timer, char *buf);
 RZ_API struct tm *rz_localtime_r(const time_t *time, struct tm *res);
 
 #define RZ_TIME_PROFILE_ENABLED 0
