@@ -76,6 +76,7 @@ jobs:
             timeout: 60
             cflags: '-Werror -Wno-cpp'
           - name: macos-meson-clang-tests
+          # os: macos-latest
             os: self-hosted-mac
             build_system: meson
             compiler: clang
