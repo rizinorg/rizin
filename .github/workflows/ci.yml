@@ -27,7 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         # name: [linux-acr-gcc-tests, linux-acr-clang-build, linux-acr-clang-tests, linux-meson-gcc-build, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-meson-clang-tests, linux-gcc-tests-asan, capstone-v3, capstone-v5]
-        name: [linux-acr-gcc-tests, linux-meson-gcc-tests]
+        name: [linux-acr-gcc-tests, linux-meson-gcc-tests, macos-meson-clang-tests]
         # ignore_error: [false]
         include:
           - name: linux-acr-gcc-tests
@@ -123,10 +123,10 @@ jobs:
           token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
           submodules: recursive
     - name: Install pkg-config with Homebrew
-      if: matrix.os == 'macos-latest' && matrix.enabled
+      if: (matrix.os == 'macos-latest' || matrix.os == 'self-hosted-mac') && matrix.enabled
       run: brew install pkg-config
     - name: Install python
-      if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-latest' && matrix.enabled
+      if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-latest' && matrix.os != 'self-hosted-mac' && matrix.enabled
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools
     - name: Install meson and ninja
       if: matrix.build_system == 'meson' && matrix.enabled
@@ -413,7 +413,8 @@ jobs:
 
   build-osx-pkg:
     name: Build OSX package
-    runs-on: macos-latest
+    # runs-on: macos-latest
+    runs-on: self-hosted-mac
     if: contains(github.head_ref, 'osx') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
