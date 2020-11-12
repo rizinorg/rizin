@@ -167,7 +167,7 @@ jobs:
     - name: Build with Meson
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
-        export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/.local/bin:${PATH}
+        export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
         if [ "$ASAN" == "true" ]; then
           export CFLAGS="-DASAN=1 ${CFLAGS}"
         fi
