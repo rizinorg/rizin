@@ -463,11 +463,11 @@ RZ_API void rz_anal_var_set_access(RzAnalVar *var, const char *reg, ut64 access_
 		acc = rz_vector_insert (&var->accesses, index, NULL);
 		acc->offset = offset;
 		acc->type = 0;
-		acc->reg = rz_str_constpool_get (&var->fcn->anal->constpool, reg);
 	}
 
 	acc->type |= (ut8)access_type;
 	acc->stackptr = stackptr;
+	acc->reg = rz_str_constpool_get (&var->fcn->anal->constpool, reg);
 
 	// add the inverse reference from the instruction to the var
 	RzPVector *inst_accesses = ht_up_find (var->fcn->inst_vars, (ut64)offset, NULL);
