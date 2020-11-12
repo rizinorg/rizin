@@ -247,7 +247,7 @@ RZ_API int rz_core_pseudo_code(RzCore *core, const char *input) {
 		rz_cons_push ();
 		bool html = rz_config_get_i (core->config, "scr.html");
 		rz_config_set_i (core->config, "scr.html", 0);
-		char *code = rz_core_cmd_str (core, sdb_fmt ("pD %d @ 0x%08"PFMT64x"\n", bb->size, bb->addr));
+		char *code = rz_core_cmd_str (core, sdb_fmt ("pD %"PFMT64d" @ 0x%08"PFMT64x"\n", bb->size, bb->addr));
 		rz_cons_pop ();
 		rz_config_set_i (core->config, "scr.html", html);
 		if (indent * I_TAB + 2 >= sizeof (indentstr)) {

@@ -1118,21 +1118,21 @@ static RzBinInfo* info(RzBinFile *bf) {
 	if (!(str = Elf_(rz_bin_elf_get_head_flag) (obj))) {
 		free (ret);
 		return NULL;
-	}    
+	}
 	ret->head_flag = str;
 	if (!(str = Elf_(rz_bin_elf_get_arch) (obj))) {
 		free (ret);
 		return NULL;
 	}
 	ret->arch = str;
-	
+
 	if ((str = Elf_(rz_bin_elf_get_cpu) (obj))) {
-		ret->cpu = str;         
+		ret->cpu = str;
 	}
 	if ((str = Elf_(rz_bin_elf_get_abi) (obj))) {
 		ret->features = str;
 	}
-	
+
 	ret->rclass = strdup ("elf");
 	ret->bits = Elf_(rz_bin_elf_get_bits) (obj);
 	if (!strcmp (ret->arch, "avr")) {
@@ -1164,7 +1164,7 @@ static RzList* fields(RzBinFile *bf) {
 	}
 
 	#define ROW(nam, siz, val, fmt) \
-		rz_list_append (ret, rz_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt, false));
+		rz_list_append (ret, rz_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08"PFMT64x, (ut64)val), fmt, false));
 	if (rz_buf_size (bf->buf) < sizeof (Elf_ (Ehdr))) {
 		return ret;
 	}

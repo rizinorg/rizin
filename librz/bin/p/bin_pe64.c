@@ -34,7 +34,8 @@ static RzList *fields(RzBinFile *bf) {
 	}
 
 	#define ROWL(nam,siz,val,fmt) \
-	rz_list_append (ret, rz_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt, false));
+		rz_list_append (ret, rz_bin_field_new (addr, addr, siz, nam, \
+				sdb_fmt ("0x%08"PFMT64x, (ut64)val), fmt, false));
 
 	struct PE_(rz_bin_pe_obj_t) * bin = bf->o->bin_obj;
 	ut64 addr = bin->rich_header_offset ? bin->rich_header_offset : 128;
