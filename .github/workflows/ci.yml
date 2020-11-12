@@ -495,7 +495,8 @@ jobs:
 
   build-ios-cydia:
     name: Build iOS Cydia packages
-    runs-on: macos-latest
+    #runs-on: macos-latest
+    runs-on: self-hosted-mac
     if: contains(github.head_ref, 'ios') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
