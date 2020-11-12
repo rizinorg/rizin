@@ -176,19 +176,6 @@ static const char *help_msg_tu[] = {
 	NULL
 };
 
-static void cmd_type_init(RzCore *core, RzCmdDesc *parent) {
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, t);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, t-, t_minus);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, tc);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, td);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, te);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, tl);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, tn);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, ts);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, tu);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, tt);
-}
-
 static void show_help(RzCore *core) {
 	rz_core_cmd_help (core, help_msg_t);
 }
@@ -999,7 +986,7 @@ beach:
 	free (buf);
 }
 
-static int cmd_type(void *data, const char *input) {
+RZ_IPI int rz_cmd_type(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	Sdb *TDB = core->anal->sdb_types;
 	char *res;

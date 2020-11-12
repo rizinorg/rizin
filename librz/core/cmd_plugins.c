@@ -24,7 +24,7 @@ static const char *help_msg_L[] = {
 	NULL
 };
 
-static int cmd_plugins(void *data, const char *input) {
+RZ_IPI int rz_cmd_plugins(void *data, const char *input) {
 	RzCore *core = (RzCore *) data;
 	switch (input[0]) {
 	case 0:

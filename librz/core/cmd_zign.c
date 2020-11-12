@@ -1244,7 +1244,7 @@ static int cmdInfo(void *data, const char *input) {
 	return true;
 }
 
-static int cmd_zign(void *data, const char *input) {
+RZ_IPI int rz_cmd_zign(void *data, const char *input) {
 	RzCore *core = (RzCore *) data;
 	const char *arg = input + 1;
 
@@ -1292,7 +1292,7 @@ static int cmd_zign(void *data, const char *input) {
 	return true;
 }
 
-static RzCmdStatus z_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_zign_show_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	char *out;
 	switch (mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
@@ -1320,15 +1320,11 @@ static RzCmdStatus z_handler(RzCore *core, int argc, const char **argv, RzOutput
 	}
 }
 
-static RzCmdStatus z_point_handler(RzCore *core, int argc, const char **argv) {
-	return cmdCheck (core, "")? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
+RZ_IPI RzCmdStatus rz_zign_find_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	return cmdCheck (core, mode == RZ_OUTPUT_MODE_RIZIN? "*": "")? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
 }
 
-static RzCmdStatus z_point_star_handler(RzCore *core, int argc, const char **argv) {
-	return cmdCheck (core, "*") ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
-}
-
-static RzCmdStatus zb_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_zign_best_handler(RzCore *core, int argc, const char **argv) {
 	int count = ZB_DEFAULT_N;
 	if (argc > 1) {
 		count = rz_num_math (core->num, argv[1]);
@@ -1336,7 +1332,7 @@ static RzCmdStatus zb_handler(RzCore *core, int argc, const char **argv) {
 	return do_bestmatch_sig (core, count)? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
 }
 
-static RzCmdStatus zbr_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_zign_best_name_handler(RzCore *core, int argc, const char **argv) {
 	const char *zigname = argv[1];
 	int count = ZB_DEFAULT_N;
 	if (argc > 2) {
@@ -1345,12 +1341,12 @@ static RzCmdStatus zbr_handler(RzCore *core, int argc, const char **argv) {
 	return do_bestmatch_fcn (core, zigname, count) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
-static RzCmdStatus z_minus_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_zign_delete_handler(RzCore *core, int argc, const char **argv) {
 	rz_sign_delete (core->anal, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus za_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_zign_add_handler(RzCore *core, int argc, const char **argv) {
 	const char *zigname = argv[1];
 	if (strlen (argv[2]) != 1) {
 		return RZ_CMD_STATUS_WRONG_ARGS;
@@ -1362,7 +1358,7 @@ static RzCmdStatus za_handler(RzCore *core, int argc, const char **argv) {
 	return res? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
 }
 
-static RzCmdStatus zaf_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_zign_add_fcn_handler(RzCore *core, int argc, const char **argv) {
 	RzAnalFunction *fcni = NULL;
 	RzListIter *iter = NULL;
 	const char *fcnname = argc > 1? argv[1]: NULL;
@@ -1382,7 +1378,7 @@ static RzCmdStatus zaf_handler(RzCore *core, int argc, const char **argv) {
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus zaF_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_zign_add_all_fcns_handler(RzCore *core, int argc, const char **argv) {
 	RzAnalFunction *fcni = NULL;
 	RzListIter *iter = NULL;
 	int count = 0;
@@ -1399,28 +1395,28 @@ static RzCmdStatus zaF_handler(RzCore *core, int argc, const char **argv) {
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus zg_handler(RzCore *core, int argc, const char **argv) {
-	return zaF_handler (core, argc, argv);
+RZ_IPI RzCmdStatus rz_zign_generate_handler(RzCore *core, int argc, const char **argv) {
+	return rz_zign_add_all_fcns_handler (core, argc, argv);
 }
 
-static RzCmdStatus zo_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_zign_load_sdb_handler(RzCore *core, int argc, const char **argv) {
 	return rz_sign_load (core->anal, argv[1])? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
 }
 
-static RzCmdStatus zoz_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_zign_load_gzip_sdb_handler(RzCore *core, int argc, const char **argv) {
 	return rz_sign_load_gz (core->anal, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
-static RzCmdStatus zos_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_zign_save_sdb_handler(RzCore *core, int argc, const char **argv) {
 	return rz_sign_save (core->anal, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
-static RzCmdStatus zfd_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_zign_flirt_dump_handler(RzCore *core, int argc, const char **argv) {
 	rz_sign_flirt_dump (core->anal, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus zfs_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_zign_flirt_scan_handler(RzCore *core, int argc, const char **argv) {
 	int depth = rz_config_get_i (core->config, "dir.depth");
 	char *file;
 	RzListIter *iter;
@@ -1432,15 +1428,15 @@ static RzCmdStatus zfs_handler(RzCore *core, int argc, const char **argv) {
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus z_slash_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_zign_search_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	return search (core, mode == RZ_OUTPUT_MODE_RIZIN, false)? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
 }
 
-static RzCmdStatus z_slash_f_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_zign_search_fcn_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	return search (core, mode == RZ_OUTPUT_MODE_RIZIN, true)? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
 }
 
-static RzCmdStatus zc_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_zign_cmp_handler(RzCore *core, int argc, const char **argv) {
 	const char *raw_bytes_thresh = rz_config_get (core->config, "zign.diff.bthresh");
 	const char *raw_graph_thresh = rz_config_get (core->config, "zign.diff.gthresh");
 	RzSignOptions *options = rz_sign_options_new (raw_bytes_thresh, raw_graph_thresh);
@@ -1458,15 +1454,15 @@ static RzCmdStatus zcn_handler_common(RzCore *core, int argc, const char **argv,
 	return res;
 }
 
-static RzCmdStatus zcn_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_zign_cmp_name_handler(RzCore *core, int argc, const char **argv) {
 	return zcn_handler_common (core, argc, argv, false);
 }
 
-static RzCmdStatus zcn_esclamation_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_zign_cmp_diff_name_handler(RzCore *core, int argc, const char **argv) {
 	return zcn_handler_common (core, argc, argv, true);
 }
 
-static RzCmdStatus zs_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_zign_space_select_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	if (argc == 1) {
 		switch (mode) {
 		case RZ_OUTPUT_MODE_STANDARD:
@@ -1487,7 +1483,7 @@ static RzCmdStatus zs_handler(RzCore *core, int argc, const char **argv, RzOutpu
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus zs_minus_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_zign_space_delete_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 1) {
 		rz_spaces_pop (&core->anal->zign_spaces);
 		return RZ_CMD_STATUS_OK;
@@ -1500,12 +1496,12 @@ static RzCmdStatus zs_minus_handler(RzCore *core, int argc, const char **argv) {
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus zs_plus_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_zign_space_add_handler(RzCore *core, int argc, const char **argv) {
 	rz_spaces_push (&core->anal->zign_spaces, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus zsr_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_zign_space_rename_handler(RzCore *core, int argc, const char **argv) {
 	rz_spaces_rename (&core->anal->zign_spaces, NULL, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
@@ -1517,7 +1513,7 @@ static RzCmdStatus zi_handler_common(RzCore *core, int mode, const char *pfx) {
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus zi_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+RZ_IPI RzCmdStatus rz_zign_info_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
 	char *pfx;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	switch (mode) {
@@ -1537,49 +1533,10 @@ static RzCmdStatus zi_handler(RzCore *core, int argc, const char **argv, RzOutpu
 	}
 }
 
-static RzCmdStatus zii_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_zign_info_range_handler(RzCore *core, int argc, const char **argv) {
 	char *pfx = rz_str_array_join (argv + 1, argc - 1, " ");
 	pfx = rz_str_prepend (pfx, " ");
 	RzCmdStatus res = zi_handler_common (core, 'i', pfx);
 	free (pfx);
 	return res;
-}
-
-static void cmd_zign_init(RzCore *core, RzCmdDesc *parent) {
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, z);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, zb);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, z /, z_slash);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, za);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, zf);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, zo);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, zs);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, zc);
-
-
-	DEFINE_CMD_ARGV_GROUP_EXEC_SPECIAL (core, z., z_point, parent);
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, z.*, z_point_star, z_point_cd);
-	DEFINE_CMD_ARGV_GROUP_EXEC (core, zb, parent);
-	DEFINE_CMD_ARGV_DESC (core, zbr, zb_cd);
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, z-, z_minus, parent);
-	DEFINE_CMD_ARGV_GROUP_EXEC (core, za, parent);
-	DEFINE_CMD_ARGV_DESC (core, zaf, za_cd);
-	DEFINE_CMD_ARGV_DESC (core, zaF, za_cd);
-	DEFINE_CMD_ARGV_DESC (core, zg, parent);
-	DEFINE_CMD_ARGV_GROUP_EXEC (core, zo, parent);
-	DEFINE_CMD_ARGV_DESC (core, zoz, zo_cd);
-	DEFINE_CMD_ARGV_DESC (core, zos, zo_cd);
-	DEFINE_CMD_ARGV_GROUP (core, zf, parent);
-	DEFINE_CMD_ARGV_DESC (core, zfd, zf_cd);
-	DEFINE_CMD_ARGV_DESC (core, zfs, zf_cd);
-	DEFINE_CMD_ARGV_GROUP_MODES_EXEC_SPECIAL (core, z/, z_slash, parent, RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN);
-	DEFINE_CMD_ARGV_MODES_SPECIAL (core, z/f, z_slash_f, z_slash_cd, RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN);
-	DEFINE_CMD_ARGV_GROUP_EXEC (core, zc, parent);
-	DEFINE_CMD_ARGV_GROUP_EXEC (core, zcn, zc_cd);
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, zcn!, zcn_esclamation, zcn_cd);
-	DEFINE_CMD_ARGV_GROUP_MODES_EXEC (core, zs, parent, RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN);
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, zs-, zs_minus, zs_cd);
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, zs+, zs_plus, zs_cd);
-	DEFINE_CMD_ARGV_DESC (core, zsr, zs_cd);
-	DEFINE_CMD_ARGV_GROUP_MODES_EXEC (core, zi, parent, RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN);
-	DEFINE_CMD_ARGV_DESC (core, zii, zi_cd);
 }

@@ -214,24 +214,12 @@ trits   0t2
 EOF
 RUN
 
-NAME="?*"
-FILE=--
-CMDS=<<EOF
-?*~?display zignspace
-?*~?List all loaded types as json
-EOF
-EXPECT=<<EOF
-1
-1
-EOF
-RUN
-
 NAME="base help"
 FILE=-
 CMDS=<<EOF
-?~print~?
+?~+print?
 EOF
 EXPECT=<<EOF
-2
+3
 EOF
 RUN

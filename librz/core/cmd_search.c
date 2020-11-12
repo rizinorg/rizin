@@ -7,7 +7,6 @@
 #include "rz_list.h"
 #include "rz_types_base.h"
 #include "cmd_search_rop.c"
-static int cmd_search(void *data, const char *input);
 
 #define USE_EMULATION 0
 
@@ -171,16 +170,6 @@ struct endlist_pair {
 	int instr_offset;
 	int delay_size;
 };
-
-static void cmd_search_init(RzCore *core, RzCmdDesc *parent) {
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /, slash);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /a, slash_a);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /c, slash_c);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /r, slash_r);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /R, slash_R);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /Rk, slash_Rk);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /x, slash_x);
-}
 
 static int search_hash(RzCore *core, const char *hashname, const char *hashstr, ut32 minlen, ut32 maxlen, struct search_parameters *param) {
 	RzIOMap *map;
@@ -2920,7 +2909,7 @@ static void __core_cmd_search_asm_byteswap (RzCore *core, int nth) {
 	}
 }
 
-static int cmd_search(void *data, const char *input) {
+RZ_IPI int rz_cmd_search(void *data, const char *input) {
 	bool dosearch = false;
 	int ret = true;
 	RzCore *core = (RzCore *) data;

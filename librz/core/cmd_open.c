@@ -172,21 +172,6 @@ static const char *help_msg_oonn[] = {
 	NULL
 };
 
-static void cmd_open_init(RzCore *core, RzCmdDesc *parent) {
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, o);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, o*, o_star);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, oa);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, ob);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, oj);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, om);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, oo);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, oo+, oo_plus);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, oob);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, ood);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, oon);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, oonn);
-}
-
 // HONOR bin.at
 static void cmd_open_bin(RzCore *core, const char *input) {
 	const char *value = NULL;
@@ -1249,7 +1234,7 @@ static bool cmd_op(RzCore *core, char mode, int fd) {
 	return false;
 }
 
-static int cmd_open(void *data, const char *input) {
+RZ_IPI int rz_cmd_open(void *data, const char *input) {
 	RzCore *core = (RzCore*)data;
 	int perms = RZ_PERM_R;
 	ut64 baddr = rz_config_get_i (core->config, "bin.baddr");

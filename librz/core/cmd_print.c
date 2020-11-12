@@ -590,24 +590,6 @@ static const ut32 colormap[256] = {
 	0x4c0032, 0x560039, 0x640042, 0x75004e, 0x87005a, 0x9b0067, 0xb00075, 0xc60084, 0xdd0093, 0xf500a3, 0xff0faf, 0xff28b7, 0xff43c0, 0xff5ec9, 0xff79d2, 0xffffff,
 };
 
-static void cmd_print_init(RzCore *core, RzCmdDesc *parent) {
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, &, amper);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, @, at);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, @@, at_at);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, p);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, p=, p_equal);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, p-, p_minus);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, pc);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, pd);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_WITH_DETAIL2 (core, pf);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, pi);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, ps);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, pt);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, pv);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, px);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, pz);
-}
-
 static void __cmd_pad(RzCore *core, const char *arg) {
 	if (*arg == '?') {
 		eprintf ("Usage: pad [hexpairs] # disassembly given bytes\n");
@@ -4595,7 +4577,7 @@ static void cmd_pxr(RzCore *core, int len, int mode, int wordsize, const char *a
 	}
 }
 
-static int cmd_print(void *data, const char *input) {
+RZ_IPI int rz_cmd_print(void *data, const char *input) {
 	RzCore *core = (RzCore *) data;
 	st64 l;
 	int i, len, ret;
@@ -5172,9 +5154,9 @@ static int cmd_print(void *data, const char *input) {
 						fmt = rz_str_newf ("d %s", input + 2);
 					}
 					if (fmt) {
-						cmd_print (core, fmt);
+						rz_cmd_print (core, fmt);
 						strcpy (fmt + 2, input + 3);
-						cmd_print (core, fmt);
+						rz_cmd_print (core, fmt);
 						free (fmt);
 					}
 					free (offs);
@@ -6828,8 +6810,8 @@ beach:
 	return ret;
 }
 
-static int cmd_hexdump(void *data, const char *input) {
-	return cmd_print (data, input - 1);
+RZ_IPI int rz_cmd_hexdump(void *data, const char *input) {
+	return rz_cmd_print (data, input - 1);
 }
 
 static int lenof(ut64 off, int two) {

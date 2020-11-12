@@ -278,12 +278,6 @@ static void cmd_help_percent(RzCore *core) {
 	rz_core_cmd_help (core, help_msg_env);
 }
 
-static void cmd_help_init(RzCore *core, RzCmdDesc *parent) {
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?, question);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?v, question_v);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?V, question_V);
-}
-
 static const char* findBreakChar(const char *s) {
 	while (*s) {
 		if (!rz_name_validate_char (*s)) {
@@ -455,7 +449,7 @@ RZ_API void rz_core_clippy(RzCore *core, const char *msg) {
 }
 
 
-static int cmd_help(void *data, const char *input) {
+RZ_IPI int rz_cmd_help(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	RzIOMap *map;
 	const char *k;

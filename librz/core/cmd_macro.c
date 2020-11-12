@@ -19,16 +19,7 @@ static const char *help_msg_lparen[] = {
 	NULL
 };
 
-static void cmd_macro_init(RzCore *core, RzCmdDesc *parent) {
-	RzCmdDescriptor *d = RZ_NEW0 (RzCmdDescriptor);
-	if (d) {
-		d->cmd = "(";
-		d->help_msg = help_msg_lparen;
-		rz_list_append (core->cmd_descriptors, d);
-	}
-}
-
-static int cmd_macro(void *data, const char *input) {
+RZ_IPI int rz_cmd_macro(void *data, const char *input) {
 	char *buf = NULL;
 	RzCore *core = (RzCore*)data;
 
