@@ -771,6 +771,7 @@ typedef enum {
 #define ARGPREFIX "arg"
 
 typedef enum {
+	RZ_ANAL_VAR_ACCESS_TYPE_PTR = 0,
 	RZ_ANAL_VAR_ACCESS_TYPE_READ = (1 << 0),
 	RZ_ANAL_VAR_ACCESS_TYPE_WRITE = (1 << 1)
 } RzAnalVarAccessType;
