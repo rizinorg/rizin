@@ -27,11 +27,12 @@ RUN
 NAME=rizin remote webserver two
 FILE=--
 CMDS=<<EOF
+e cfg.newshell=true
 & !rz-run timeout=3 daemon=1 system="rizin -e http.root=/404 -e http.port=9292 -c=h -qcq -"
 sleep 1
 =+ http://127.0.0.1:9292/cmd/
 =
-=0 ?e hello remote world
+= 0 "?e hello remote world"
 EOF
 EXPECT=<<EOF
 0 fd:-1 http://127.0.0.1:9292/cmd/
