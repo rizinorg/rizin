@@ -575,7 +575,7 @@ remote_client:
 
 static int windbg_close(RzIODesc *fd) {
 	DbgEngContext *idbg = fd->data;
-	RCore *core = fd->io->corebind.core;
+	RzCore *core = fd->io->corebind.core;
 	if (idbg->server) {
 		ITHISCALL (dbgClient, EndSession, DEBUG_END_DISCONNECT);
 		ITHISCALL (dbgClient, DisconnectProcessServer, idbg->server);
