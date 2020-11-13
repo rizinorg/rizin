@@ -81,13 +81,13 @@ install:
 build_script:
   - appveyor AddMessage "Compiling rizin %RZ_VERSION% (%builder%)"
 
-  - cmd: if %builder% == vs2017_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2017%" x64 && meson --buildtype=release --prefix="$PWD\%DIST_FOLDER%" --default-library=static -Dstatic_runtime=true -Duse_webui=true install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - pwsh: if %builder% == vs2017_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2017%" x64 && meson --buildtype=release --prefix="$PWD\%DIST_FOLDER%" --default-library=static -Dstatic_runtime=true -Duse_webui=true install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
-  - cmd: if %builder% == vs2019_64 ( choco install mingw && refreshenv && set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2019%" x64 && meson --buildtype=release --prefix="$PWD\%DIST_FOLDER%" --default-library=static -Dstatic_runtime=true -Duse_webui=true install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - pwsh: if %builder% == vs2019_64 ( choco install mingw && refreshenv && set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2019%" x64 && meson --buildtype=release --prefix="$PWD\%DIST_FOLDER%" --default-library=static -Dstatic_runtime=true -Duse_webui=true install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
-  - cmd: if %builder% == vs2017_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2017%" x64 && meson --buildtype=release --prefix="$PWD\%DIST_FOLDER%" -Duse_webui=true && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - pwsh: if %builder% == vs2017_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2017%" x64 && meson --buildtype=release --prefix="$PWD\%DIST_FOLDER%" -Duse_webui=true && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
-  - cmd: if %builder% == clang_cl_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2019%" x64 && set CC=clang-cl && meson --buildtype=release --prefix="$PWD\%DIST_FOLDER%" -Duse_webui=true && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - pwsh: if %builder% == clang_cl_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2019%" x64 && set CC=clang-cl && meson --buildtype=release --prefix="$PWD\%DIST_FOLDER%" -Duse_webui=true && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
 # Run tests only conditionally
 for:
