@@ -31,7 +31,7 @@ CMDS=<<EOF
 sleep 1
 =+ http://127.0.0.1:9292/cmd/
 =
-=0 ?e hello remote world
+= 0 "?e hello remote world"
 EOF
 EXPECT=<<EOF
 0 fd:-1 http://127.0.0.1:9292/cmd/
