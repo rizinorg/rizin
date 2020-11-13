@@ -49,6 +49,10 @@ static bool is_comment(const char *s) {
 	return !strncmp (s, "/*", 2) || !strcmp (s, "#");
 }
 
+static bool is_interpret_cmd(const char *s) {
+	return s[0] == '.';
+}
+
 static bool is_special_start(const int32_t ch) {
 	return ch == '*' || ch == '(' || ch == '@' || ch == '|' || ch == '>' ||
 		ch == '.' || ch == '|' || ch == '%' || ch == '~' || ch == '&' ||
@@ -73,6 +77,7 @@ static bool is_mid_command(const char *res, int len, const int32_t ch) {
 	return isalnum (ch) || ch == '$' || ch == '?' || ch == '.' || ch == '!' ||
 		ch == ':' || ch == '+' || ch == '=' || ch == '/' || ch == '*' ||
 		ch == '-' || ch == ',' || ch == '&' ||
+		(is_interpret_cmd (res) && ch == '(') ||
 		(is_equal_cmd (res) && ch == '<') || (is_at_cmd (res) && ch == '@');
 }
 
