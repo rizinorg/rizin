@@ -84,9 +84,9 @@ build_script:
 
   - cmd: if %builder% == vs2019_64 ( choco install mingw && refreshenv && set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2019%" x64 && C:\Python38-x64\Scripts\meson --buildtype=release --prefix="%CD%\%DIST_FOLDER%" --default-library=static -Dstatic_runtime=true -Duse_webui=true build && C:\Python38-x64\Scripts\ninja -C build install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
-  - cmd: if %builder% == vs2017_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2017%" x64 && C:\Python37-x64\Scripts\meson --buildtype=release --prefix="%CD%\%DIST_FOLDER%" -Duse_webui=true build && C:\Python37-x64\Scripts\ninja -C build install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - cmd: if %builder% == vs2017_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2017%" x64 && C:\Python37\Scripts\meson --buildtype=release --prefix="%CD%\%DIST_FOLDER%" -Duse_webui=true build && C:\Python37\Scripts\ninja -C build install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
-  - cmd: if %builder% == clang_cl_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2019%" x64 && set CC=clang-cl && C:\Python38-x64\Scripts\meson --buildtype=release --prefix="%CD%\%DIST_FOLDER%" -Duse_webui=true build && C:\Python38-x64\Scripts\ninja -C build install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - cmd: if %builder% == clang_cl_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "%VSVARSALLPATH2019%" x64 && set CC=clang-cl && C:\Python38\Scripts\meson --buildtype=release --prefix="%CD%\%DIST_FOLDER%" -Duse_webui=true build && C:\Python38\Scripts\ninja -C build install && 7z a %ARTIFACT_ZIP% %DIST_FOLDER% )
 
 # Run tests only conditionally
 for:
@@ -110,7 +110,7 @@ for:
     after_test:
       - git clone --depth 1 git@github.com:rizinorg/rizin-win-installer
       - set PATH=%PATH%;%INNO_SETUP%
-      - iscc rizin-win-installer/rizin.iss /DRadare2Location=..\%DIST_FOLDER%\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=rizin.ico /DMyAppVersion=%RZ_VERSION%
+      - iscc rizin-win-installer/rizin.iss /DRizinLocation=..\%DIST_FOLDER%\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=rizin.ico /DMyAppVersion=%RZ_VERSION%
       - move rizin-win-installer\Output\rizin.exe rizin_installer-%builder%.exe
 
 # Artifacts
@@ -121,16 +121,16 @@ artifacts:
   - path: rizin_installer-%builder%.exe
 
 # Upload builds to the CI release at GitHub
-deploy:
-  tag: Continuous-Windows
-  release: Continuous-Windows
-  description: 'Radare2 Windows release'
-  provider: GitHub
-  auth_token:
-    secure: aIhLJhegEu8fMuyfhVxiEyF5+28ozTtmDmQ3UBddNou3nQlXyIWJ5dZSPnf6HqsS # encrypted token from GitHub
-  artifact: /.*\.zip/ # All generated ZIP packages for MSVC and clang-cl builds
-  draft: false
-  prerelease: true
-  force_update: true
-  on:
-    branch: master                 # release from master branch only
+# deploy:
+#   tag: Continuous-Windows
+#   release: Continuous-Windows
+#   description: 'Rizin Windows release'
+#   provider: GitHub
+#   auth_token:
+#     secure: aIhLJhegEu8fMuyfhVxiEyF5+28ozTtmDmQ3UBddNou3nQlXyIWJ5dZSPnf6HqsS # encrypted token from GitHub
+#   artifact: /.*\.zip/ # All generated ZIP packages for MSVC and clang-cl builds
+#   draft: false
+#   prerelease: true
+#   force_update: true
+#   on:
+#     branch: master                 # release from master branch only
