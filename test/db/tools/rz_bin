@@ -76,7 +76,7 @@ RUN
 
 NAME=rz-bin -s file pe
 FILE=bins/pe/a.exe
-CMDS=!rz-bin -s ${RZ_FILE}|wc -l|awk "{print \$1}"
+CMDS=!rz-bin -s ${RZ_FILE}|wc -l|'awk "{print \$1}"'
 EXPECT=<<EOF
 24
 EOF
@@ -84,7 +84,7 @@ RUN
 
 NAME=rz-bin -s file elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!rz-bin -s ${RZ_FILE}|wc -l|awk "{print \$1}"
+CMDS=!rz-bin -s ${RZ_FILE}|wc -l|'awk "{print \$1}"'
 EXPECT=<<EOF
 69
 EOF
@@ -93,8 +93,8 @@ RUN
 NAME=rz-bin -S, -SS, -rS and -rSS file elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
-!rz-bin -S ${RZ_FILE}|wc -l|awk "{print \$1}"
-!rz-bin -SS ${RZ_FILE}|wc -l|awk "{print \$1}"
+!rz-bin -S ${RZ_FILE}|wc -l|'awk "{print \$1}"'
+!rz-bin -SS ${RZ_FILE}|wc -l|'awk "{print \$1}"'
 !env RZ_BIN_PREFIX=prixfixe rz-bin -S ${RZ_FILE}
 !env RZ_BIN_PREFIX=prixfixe rz-bin -SS ${RZ_FILE}
 EOF
@@ -155,7 +155,7 @@ RUN
 
 NAME=rz-bin -SSS
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!rz-bin -SSS ${RZ_FILE}|wc -l|awk "{print \$1}"
+CMDS=!rz-bin -SSS ${RZ_FILE}|wc -l|'awk "{print \$1}"'
 EXPECT=<<EOF
 13
 EOF
@@ -163,7 +163,7 @@ RUN
 
 NAME=rz-bin -z pe
 FILE=bins/pe/a.exe
-CMDS=!rz-bin -z ${RZ_FILE}|wc -l|awk "{print \$1}"
+CMDS=!rz-bin -z ${RZ_FILE}|wc -l|'awk "{print \$1}"'
 EXPECT=<<EOF
 7
 EOF
@@ -219,7 +219,7 @@ RUN
 
 NAME=rz-bin -z elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!rz-bin -z ${RZ_FILE}|wc -l|awk "{print \$1}"
+CMDS=!rz-bin -z ${RZ_FILE}|wc -l|'awk "{print \$1}"'
 EXPECT=<<EOF
 4
 EOF
@@ -227,7 +227,7 @@ RUN
 
 NAME=rz-bin -G 0x1000 -rs fatmach0
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -G 0x1000 -rs ${RZ_FILE}|grep "f " | wc -l|awk "{print \$1}"
+CMDS=!rz-bin -G 0x1000 -rs ${RZ_FILE}|'grep "f "' | wc -l|'awk "{print \$1}"'
 EXPECT=<<EOF
 3
 EOF
@@ -235,7 +235,7 @@ RUN
 
 NAME=rz-bin -G 0x1300 -rs fatmach0
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rz-bin -G 0x1300 -rs ${RZ_FILE}|wc -l|awk "{print \$1}"
+CMDS=!rz-bin -G 0x1300 -rs ${RZ_FILE}|wc -l|'awk "{print \$1}"'
 EXPECT=<<EOF
 1
 EOF
@@ -1023,7 +1023,7 @@ RUN
 
 NAME=rz-bin -H
 FILE=bins/pe/base.exe
-CMDS=!rz-bin -H ${RZ_FILE} | grep -c "Machine : 0x14c"
+CMDS=!rz-bin -H ${RZ_FILE} | 'grep -c "Machine : 0x14c"'
 EXPECT=<<EOF
 1
 EOF
@@ -1031,7 +1031,7 @@ RUN
 
 NAME=rz-bin -d
 FILE=bins/elf/analysis/dwarftest
-CMDS=!rz-bin -d ${RZ_FILE} | grep -c "0x00400535	/tmp/r2-regressions/.//dwarftest.c"
+CMDS=!rz-bin -d ${RZ_FILE} | 'grep -c "0x00400535	/tmp/r2-regressions/.//dwarftest.c"'
 EXPECT=<<EOF
 1
 EOF
