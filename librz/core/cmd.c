@@ -2177,11 +2177,12 @@ RZ_API int rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd) {
 		out = NULL;
 		// TODO: implement foo
 		str = rz_core_cmd_str (core, rizin_cmd);
-		rz_sys_cmd_str_full (shell_cmd + 1, str, &out, &olen, NULL);
+		rz_sys_cmd_str_full (++shell_cmd, str, &out, &olen, NULL);
 		free (str);
 		rz_cons_memcat (out, olen);
 		free (out);
 		ret = 0;
+		goto out;
 	}
 #if __UNIX__
 	rz_str_trim_head (rizin_cmd);
@@ -2226,6 +2227,7 @@ RZ_API int rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd) {
 #endif
 	eprintf ("rz_core_cmd_pipe: unimplemented for this platform\n");
 #endif
+out:
 	if (pipecolor != -1) {
 		rz_config_set_i (core->config, "scr.color", pipecolor);
 	}
@@ -5995,8 +5997,9 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(pipe_command) {
 	TSNode second_cmd = ts_node_named_child (node, 1);
 	rz_return_val_if_fail (!ts_node_is_null (second_cmd), false);
 	char *first_str = ts_node_sub_string (first_cmd, state->input);
-	char *second_str = ts_node_sub_string (second_cmd, state->input);
+	char *second_str = ts_node_handle_arg (state, node, second_cmd, 1);
 	int value = state->core->num->value;
+	RZ_LOG_DEBUG("pipe_command, first_cmd = '%s', second_cmd = '%s'\n", first_str, second_str);
 	RzCmdStatus res = rz_cmd_int2status (rz_core_cmd_pipe (state->core, first_str, second_str));
 	state->core->num->value = value;
 	free (first_str);

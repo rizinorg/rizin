@@ -6916,6 +6916,10 @@
           "named": true
         },
         {
+          "type": "args",
+          "named": true
+        },
+        {
           "type": "grep_command",
           "named": true
         },
@@ -7037,10 +7041,6 @@
         },
         {
           "type": "pipe_command",
-          "named": true
-        },
-        {
-          "type": "pipe_second_command",
           "named": true
         },
         {
@@ -11228,10 +11228,6 @@
   },
   {
     "type": "html_redirect_operator",
-    "named": true
-  },
-  {
-    "type": "pipe_second_command",
     "named": true
   },
   {
