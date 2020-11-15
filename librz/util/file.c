@@ -253,6 +253,57 @@ RZ_API char *rz_file_abspath(const char *file) {
 	return NULL;
 }
 
+RZ_API char *rz_file_relpath(const char *base, const char *path) {
+	// skip longest common prefix
+	while (*base && *path) {
+		while (*base == *RZ_SYS_DIR) {
+			base++;
+		}
+		while (*path == *RZ_SYS_DIR) {
+			path++;
+		}
+		while (*base && *path && *base != *RZ_SYS_DIR && *path != *RZ_SYS_DIR) {
+			if (*base != *path) {
+				goto diverge;
+			}
+			base++;
+			path++;
+		}
+	}
+
+	size_t ups;
+diverge:
+	// count number of ".." needed which is just the number of remaining tokens in base
+	ups = 0;
+	while (*base) {
+		while (*base == *RZ_SYS_DIR) {
+			base++;
+		}
+		if (!*base) {
+			break;
+		}
+		ups++;
+		while (*base && *base != *RZ_SYS_DIR) {
+			base++;
+		}
+	}
+
+	// put all the ".."s and append the rest of the path
+	size_t suff_len = strlen (path);
+	char *r = malloc (ups * 3 + suff_len + 1); // ups * strlen("../") + strlen(path)
+	if (!r) {
+		return NULL;
+	}
+	size_t i;
+	for (i = 0; i < ups; i++) {
+		r[i * 3] = '.';
+		r[i * 3 + 1] = '.';
+		r[i * 3 + 2] = *RZ_SYS_DIR;
+	}
+	memcpy (r + i * 3, path, suff_len + 1);
+	return r;
+}
+
 RZ_API char *rz_file_path(const char *bin) {
 	rz_return_val_if_fail (bin, NULL);
 	char *file = NULL;
