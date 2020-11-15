@@ -27,17 +27,16 @@ EXPECT_ERR=<<EOF
 EOF
 RUN
 
-# this test fails on newshell and windows better to mark it as broken
-NAME=r2 remote webserver two
+NAME=rizin remote webserver two
 BROKEN=1
 FILE=--
 CMDS=<<EOF
 e cfg.newshell=true
-& !rz-run timeout=3 daemon=1 system="r2 -e http.root=/404 -e http.port=9292 -c=h -qcq -"
-sleep 1
+& !rz-run timeout=3 daemon=1 system="rizin -e http.root=/404 -e http.port=9292 -c=h -qcq -"
+sleep 3
 =+ http://127.0.0.1:9292/cmd/
 =
-=0 ?e hello remote world
+= 0 "?e hello remote world"
 EOF
 EXPECT=<<EOF
 0 fd:-1 http://127.0.0.1:9292/cmd/
