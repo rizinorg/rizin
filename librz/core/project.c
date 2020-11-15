@@ -30,10 +30,10 @@ RZ_API RZ_NONNULL const char *rz_project_err_message(RzProjectErr err) {
 	return "unknown error";
 }
 
-RZ_API RzProjectErr rz_project_save(RzCore *core, RzProject *prj) {
+RZ_API RzProjectErr rz_project_save(RzCore *core, RzProject *prj, const char *file) {
 	sdb_set (prj, RZ_DB_KEY_TYPE, RZ_DB_PROJECT_TYPE, 0);
 	sdb_set (prj, RZ_DB_KEY_VERSION, sdb_fmt ("%u", RZ_DB_PROJECT_VERSION), 0);
-	rz_serialize_core_save (sdb_ns (prj, "core", true), core);
+	rz_serialize_core_save (sdb_ns (prj, "core", true), core, file);
 	return RZ_PROJECT_ERR_SUCCESS;
 }
 
@@ -42,7 +42,7 @@ RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file) {
 	if (!prj) {
 		return RZ_PROJECT_ERR_UNKNOWN;
 	}
-	RzProjectErr err = rz_project_save (core, prj);
+	RzProjectErr err = rz_project_save (core, prj, file);
 	if (err != RZ_PROJECT_ERR_SUCCESS) {
 		sdb_free (prj);
 		return err;
@@ -75,7 +75,7 @@ RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, RZ_NULLABLE co
 		SERIALIZE_ERR ("missing core namespace");
 		return RZ_PROJECT_ERR_INVALID_CONTENTS;
 	}
-	if (!rz_serialize_core_load (core_db, core, res)) {
+	if (!rz_serialize_core_load (core_db, core, file, res)) {
 		return RZ_PROJECT_ERR_INVALID_CONTENTS;
 	}
 

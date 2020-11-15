@@ -23,7 +23,7 @@ typedef enum rz_project_err {
 } RzProjectErr;
 
 RZ_API RZ_NONNULL const char *rz_project_err_message(RzProjectErr err);
-RZ_API RzProjectErr rz_project_save(RzCore *core, RzProject *prj);
+RZ_API RzProjectErr rz_project_save(RzCore *core, RzProject *prj, const char *file);
 RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file);
 RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, RZ_NULLABLE const char *file, RzSerializeResultInfo *res);
 RZ_API RzProjectErr rz_project_load_file(RzCore *core, const char *file, RzSerializeResultInfo *res);

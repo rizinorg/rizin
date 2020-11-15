@@ -919,8 +919,10 @@ RZ_API void rz_core_annotated_code_print_comment_cmds(RzAnnotatedCode *code);
 
 /* serialize */
 
-RZ_API void rz_serialize_core_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core);
-RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE RzSerializeResultInfo *res);
+// prj_file here is only used to re-locate the loaded RIO descs, the project file itself is not touched by these functions.
+RZ_API void rz_serialize_core_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE const char *prj_file);
+RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE const char *prj_file,
+		RZ_NULLABLE RzSerializeResultInfo *res);
 
 #endif
 
