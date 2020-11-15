@@ -25,6 +25,7 @@ EOF
 RUN
 
 NAME=rizin remote webserver two
+BROKEN=1
 FILE=--
 CMDS=<<EOF
 e cfg.newshell=true
