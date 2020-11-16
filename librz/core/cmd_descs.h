@@ -10,8 +10,8 @@
 
 // Command handlers, manually defined somewhere else
 RZ_IPI int rz_cmd_system(void *data, const char *input);
-RZ_IPI int rz_cmd_last(void *data, const char *input);
-RZ_IPI int rz_cmd_hash(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_last_output_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_hash_bang_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_alias(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_env_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_tasks(void *data, const char *input);

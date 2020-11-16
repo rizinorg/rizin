@@ -6,6 +6,7 @@
 
 #include "cmd_descs.h"
 
+static const RzCmdDescDetail hash_bang_details[2];
 static const RzCmdDescDetail pointer_details[2];
 static const RzCmdDescDetail env_details[3];
 static const RzCmdDescDetail wB_details[2];
@@ -21,6 +22,7 @@ static const RzCmdDescDetail iterators_details[2];
 static const RzCmdDescDetail redirection_details[2];
 static const RzCmdDescDetail pipe_details[2];
 static const RzCmdDescDetail grep_details[5];
+static const RzCmdDescArg hash_bang_args[3];
 static const RzCmdDescArg pointer_args[3];
 static const RzCmdDescArg interpret_args[2];
 static const RzCmdDescArg interpret_script_args[2];
@@ -87,12 +89,34 @@ static const RzCmdDescHelp cmd_system_help = {
 	.summary = "Run given commands as in system(3)",
 };
 
-static const RzCmdDescHelp cmd_last_help = {
+static const RzCmdDescArg last_output_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp last_output_help = {
 	.summary = "Print last output",
+	.args = last_output_args,
 };
 
-static const RzCmdDescHelp cmd_hash_help = {
-	.summary = "Hashbang to run an rlang script",
+static const RzCmdDescDetailEntry hash_bang_Examples_detail_entries[] = {
+	{ .text = "#!", .arg_str = "python", .comment = "Run python commandline" },
+	{ .text = "#!", .arg_str = "python foo.py", .comment = "Run foo.py python script" },
+	{ .text = "#!", .arg_str = "python foo.py arg1", .comment = "Run foo.py python script and pass it arg1 as argument" },
+	{ 0 },
+};
+static const RzCmdDescDetail hash_bang_details[] = {
+	{ .name = "Examples", .entries = hash_bang_Examples_detail_entries },
+	{ 0 },
+};
+
+static const RzCmdDescArg hash_bang_args[] = {
+	{ .name = "interpreter-name", .type = RZ_CMD_ARG_TYPE_STRING, .optional = true, .no_space = true, },
+	{ .name = "arg", .type = RZ_CMD_ARG_TYPE_ARRAY_STRING, .optional = true, },
+	{ 0 },
+};
+static const RzCmdDescHelp hash_bang_help = {
+	.summary = "List all available interpreters / Run interpreter",
+	.details = hash_bang_details,
+	.args = hash_bang_args,
 };
 
 static const RzCmdDescHelp cmd_alias_help = {
@@ -1380,393 +1404,255 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	RzCmdDesc *root_cd = rz_cmd_get_root (core->rcmd);
 	RzCmdDesc *cmd_system_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "!", rz_cmd_system, &cmd_system_help);
 	rz_warn_if_fail (cmd_system_cd);
-
-	RzCmdDesc *cmd_last_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "_", rz_cmd_last, &cmd_last_help);
-	rz_warn_if_fail (cmd_last_cd);
-
-	RzCmdDesc *cmd_hash_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "#", rz_cmd_hash, &cmd_hash_help);
-	rz_warn_if_fail (cmd_hash_cd);
-
+	RzCmdDesc *last_output_cd = rz_cmd_desc_argv_new (core->rcmd, root_cd, "_", rz_last_output_handler, &last_output_help);
+	rz_warn_if_fail (last_output_cd);
+	RzCmdDesc *hash_bang_cd = rz_cmd_desc_argv_new (core->rcmd, root_cd, "#!", rz_hash_bang_handler, &hash_bang_help);
+	rz_warn_if_fail (hash_bang_cd);
 	RzCmdDesc *cmd_alias_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "$", rz_cmd_alias, &cmd_alias_help);
 	rz_warn_if_fail (cmd_alias_cd);
-
 	RzCmdDesc *env_percentage_cd = rz_cmd_desc_argv_new (core->rcmd, root_cd, "%", rz_env_handler, &env_percentage_help);
 	rz_warn_if_fail (env_percentage_cd);
-
 	RzCmdDesc *cmd_tasks_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "&", rz_cmd_tasks, &cmd_tasks_help);
 	rz_warn_if_fail (cmd_tasks_cd);
-
 	RzCmdDesc *cmd_macro_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "(", rz_cmd_macro, &cmd_macro_help);
 	rz_warn_if_fail (cmd_macro_cd);
-
 	RzCmdDesc *pointer_cd = rz_cmd_desc_argv_new (core->rcmd, root_cd, "*", rz_pointer_handler, &pointer_help);
 	rz_warn_if_fail (pointer_cd);
-
 	RzCmdDesc *cmd_stdin_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "-", rz_cmd_stdin, &cmd_stdin_help);
 	rz_warn_if_fail (cmd_stdin_cd);
-
 	RzCmdDesc *dot__cd = rz_cmd_desc_group_new (core->rcmd, root_cd, ".", rz_interpret_handler, &interpret_help, &dot__help);
-	rz_warn_if_fail (dot__cd);
-	RzCmdDesc *interpret_script_cd = rz_cmd_desc_argv_new (core->rcmd, dot__cd, ". ", rz_interpret_script_handler, &interpret_script_help);
+	rz_warn_if_fail (dot__cd);	RzCmdDesc *interpret_script_cd = rz_cmd_desc_argv_new (core->rcmd, dot__cd, ". ", rz_interpret_script_handler, &interpret_script_help);
 	rz_warn_if_fail (interpret_script_cd);
-
 	RzCmdDesc *repeat_forward_cd = rz_cmd_desc_argv_new (core->rcmd, dot__cd, "...", rz_repeat_forward_handler, &repeat_forward_help);
 	rz_warn_if_fail (repeat_forward_cd);
-
 	RzCmdDesc *interpret_output_cd = rz_cmd_desc_argv_new (core->rcmd, dot__cd, "..", rz_interpret_output_handler, &interpret_output_help);
 	rz_warn_if_fail (interpret_output_cd);
-
 	RzCmdDesc *interpret_editor_2_cd = rz_cmd_desc_argv_new (core->rcmd, dot__cd, ".-", rz_interpret_editor_2_handler, &interpret_editor_2_help);
 	rz_warn_if_fail (interpret_editor_2_cd);
-
 	RzCmdDesc *interpret_pipe_cd = rz_cmd_desc_argv_new (core->rcmd, dot__cd, ".*", rz_interpret_pipe_handler, &interpret_pipe_help);
 	rz_warn_if_fail (interpret_pipe_cd);
-
 	RzCmdDesc *interpret_system_cd = rz_cmd_desc_argv_new (core->rcmd, dot__cd, ".!", rz_interpret_system_handler, &interpret_system_help);
 	rz_warn_if_fail (interpret_system_cd);
-
 	RzCmdDesc *interpret_macro_cd = rz_cmd_desc_argv_new (core->rcmd, dot__cd, ".(", rz_interpret_macro_handler, &interpret_macro_help);
 	rz_warn_if_fail (interpret_macro_cd);
-
 	RzCmdDesc *cmd_search_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "/", rz_cmd_search, &cmd_search_help);
 	rz_warn_if_fail (cmd_search_cd);
-
 	RzCmdDesc *equal__cd = rz_cmd_desc_group_new (core->rcmd, root_cd, "=", rz_remote_handler, &remote_help, &equal__help);
-	rz_warn_if_fail (equal__cd);
-	RzCmdDesc *remote_send_cd = rz_cmd_desc_argv_new (core->rcmd, equal__cd, "=<", rz_remote_send_handler, &remote_send_help);
+	rz_warn_if_fail (equal__cd);	RzCmdDesc *remote_send_cd = rz_cmd_desc_argv_new (core->rcmd, equal__cd, "=<", rz_remote_send_handler, &remote_send_help);
 	rz_warn_if_fail (remote_send_cd);
-
 	RzCmdDesc *io_system_run_cd = rz_cmd_desc_argv_new (core->rcmd, equal__cd, "=!", rz_io_system_run_handler, &io_system_run_help);
 	rz_warn_if_fail (io_system_run_cd);
-
 	RzCmdDesc *remote_add_cd = rz_cmd_desc_argv_new (core->rcmd, equal__cd, "=+", rz_remote_add_handler, &remote_add_help);
 	rz_warn_if_fail (remote_add_cd);
-
 	RzCmdDesc *remote_del_cd = rz_cmd_desc_argv_new (core->rcmd, equal__cd, "=-", rz_remote_del_handler, &remote_del_help);
 	rz_warn_if_fail (remote_del_cd);
-
 	RzCmdDesc *remote_open_cd = rz_cmd_desc_argv_new (core->rcmd, equal__cd, "==", rz_remote_open_handler, &remote_open_help);
 	rz_warn_if_fail (remote_open_cd);
-
 	RzCmdDesc *remote_mode_enable_cd = rz_cmd_desc_argv_new (core->rcmd, equal__cd, "=!=", rz_remote_mode_enable_handler, &remote_mode_enable_help);
 	rz_warn_if_fail (remote_mode_enable_cd);
-
 	RzCmdDesc *remote_mode_disable_cd = rz_cmd_desc_argv_new (core->rcmd, equal__cd, "!=!", rz_remote_mode_disable_handler, &remote_mode_disable_help);
 	rz_warn_if_fail (remote_mode_disable_cd);
-
 	RzCmdDesc *remote_rap_cd = rz_cmd_desc_argv_new (core->rcmd, equal__cd, "=:", rz_remote_rap_handler, &remote_rap_help);
 	rz_warn_if_fail (remote_rap_cd);
-
 	RzCmdDesc *equal_g_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, equal__cd, "=g", rz_equal_g_handler_old, &equal_g_handler_old_help);
 	rz_warn_if_fail (equal_g_handler_old_cd);
-
 	RzCmdDesc *equal_h_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, equal__cd, "=h", rz_equal_h_handler_old, &equal_h_handler_old_help);
 	rz_warn_if_fail (equal_h_handler_old_cd);
-
 	RzCmdDesc *equal_H_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, equal__cd, "=H", rz_equal_H_handler_old, &equal_H_handler_old_help);
 	rz_warn_if_fail (equal_H_handler_old_cd);
-
 	RzCmdDesc *remote_tcp_cd = rz_cmd_desc_argv_new (core->rcmd, equal__cd, "=t", rz_remote_tcp_handler, &remote_tcp_help);
 	rz_warn_if_fail (remote_tcp_cd);
-
 	RzCmdDesc *remote_rap_bg_cd = rz_cmd_desc_argv_new (core->rcmd, equal__cd, "=&:", rz_remote_rap_bg_handler, &remote_rap_bg_help);
 	rz_warn_if_fail (remote_rap_bg_cd);
-
 	RzCmdDesc *cmd_help_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "?", rz_cmd_help, &cmd_help_help);
 	rz_warn_if_fail (cmd_help_cd);
-
 	RzCmdDesc *push_escaped_cd = rz_cmd_desc_argv_new (core->rcmd, root_cd, "<", rz_push_escaped_handler, &push_escaped_help);
 	rz_warn_if_fail (push_escaped_cd);
-
 	RzCmdDesc *cmd_ox_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "0", rz_cmd_ox, &cmd_ox_help);
 	rz_warn_if_fail (cmd_ox_cd);
-
 	RzCmdDesc *cmd_anal_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "a", rz_cmd_anal, &cmd_anal_help);
 	rz_warn_if_fail (cmd_anal_cd);
-
 	RzCmdDesc *cmd_bsize_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "b", rz_cmd_bsize, &cmd_bsize_help);
 	rz_warn_if_fail (cmd_bsize_cd);
-
 	RzCmdDesc *cmd_cmp_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "c", rz_cmd_cmp, &cmd_cmp_help);
 	rz_warn_if_fail (cmd_cmp_cd);
-
 	RzCmdDesc *cmd_meta_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "C", rz_cmd_meta, &cmd_meta_help);
 	rz_warn_if_fail (cmd_meta_cd);
-
 	RzCmdDesc *cmd_debug_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "d", rz_cmd_debug, &cmd_debug_help);
 	rz_warn_if_fail (cmd_debug_cd);
-
 	RzCmdDesc *cmd_eval_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "e", rz_cmd_eval, &cmd_eval_help);
-	rz_warn_if_fail (cmd_eval_cd);
-	RzCmdDesc *env_cd = rz_cmd_desc_argv_new (core->rcmd, cmd_eval_cd, "env", rz_env_handler, &env_help);
+	rz_warn_if_fail (cmd_eval_cd);	RzCmdDesc *env_cd = rz_cmd_desc_argv_new (core->rcmd, cmd_eval_cd, "env", rz_env_handler, &env_help);
 	rz_warn_if_fail (env_cd);
-
 	RzCmdDesc *cmd_flag_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "f", rz_cmd_flag, &cmd_flag_help);
 	rz_warn_if_fail (cmd_flag_cd);
-
 	RzCmdDesc *cmd_egg_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "g", rz_cmd_egg, &cmd_egg_help);
 	rz_warn_if_fail (cmd_egg_cd);
-
 	RzCmdDesc *cmd_info_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "i", rz_cmd_info, &cmd_info_help);
 	rz_warn_if_fail (cmd_info_cd);
-
 	RzCmdDesc *cmd_kuery_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "k", rz_cmd_kuery, &cmd_kuery_help);
 	rz_warn_if_fail (cmd_kuery_cd);
-
 	RzCmdDesc *ls_cd = rz_cmd_desc_argv_new (core->rcmd, root_cd, "ls", rz_ls_handler, &ls_help);
 	rz_warn_if_fail (ls_cd);
-
 	RzCmdDesc *cmd_m_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "m", rz_cmd_m, &cmd_m_help);
 	rz_warn_if_fail (cmd_m_cd);
-
 	RzCmdDesc *cmd_plugins_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "L", rz_cmd_plugins, &cmd_plugins_help);
 	rz_warn_if_fail (cmd_plugins_cd);
-
 	RzCmdDesc *cmd_open_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "o", rz_cmd_open, &cmd_open_help);
 	rz_warn_if_fail (cmd_open_cd);
-
 	RzCmdDesc *cmd_print_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "p", rz_cmd_print, &cmd_print_help);
 	rz_warn_if_fail (cmd_print_cd);
-
 	RzCmdDesc *P_cd = rz_cmd_desc_group_new (core->rcmd, root_cd, "P", NULL, NULL, &P_help);
-	rz_warn_if_fail (P_cd);
-	RzCmdDesc *project_save_cd = rz_cmd_desc_argv_new (core->rcmd, P_cd, "Ps", rz_project_save_handler, &project_save_help);
+	rz_warn_if_fail (P_cd);	RzCmdDesc *project_save_cd = rz_cmd_desc_argv_new (core->rcmd, P_cd, "Ps", rz_project_save_handler, &project_save_help);
 	rz_warn_if_fail (project_save_cd);
-
 	RzCmdDesc *project_open_cd = rz_cmd_desc_argv_new (core->rcmd, P_cd, "Po", rz_project_open_handler, &project_open_help);
 	rz_warn_if_fail (project_open_cd);
-
 	RzCmdDesc *cmd_quit_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "q", rz_cmd_quit, &cmd_quit_help);
 	rz_warn_if_fail (cmd_quit_cd);
-
 	RzCmdDesc *cmd_resize_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "r", rz_cmd_resize, &cmd_resize_help);
 	rz_warn_if_fail (cmd_resize_cd);
-
 	RzCmdDesc *cmd_seek_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "s", rz_cmd_seek, &cmd_seek_help);
 	rz_warn_if_fail (cmd_seek_cd);
-
 	RzCmdDesc *cmd_type_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "t", rz_cmd_type, &cmd_type_help);
 	rz_warn_if_fail (cmd_type_cd);
-
 	RzCmdDesc *uniq_cd = rz_cmd_desc_argv_new (core->rcmd, root_cd, "uniq", rz_uniq_handler, &uniq_help);
 	rz_warn_if_fail (uniq_cd);
-
 	RzCmdDesc *uname_cd = rz_cmd_desc_argv_new (core->rcmd, root_cd, "uname", rz_uname_handler, &uname_help);
 	rz_warn_if_fail (uname_cd);
-
 	RzCmdDesc *cmd_visual_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "V", rz_cmd_visual, &cmd_visual_help);
 	rz_warn_if_fail (cmd_visual_cd);
-
 	RzCmdDesc *cmd_panels_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "v", rz_cmd_panels, &cmd_panels_help);
 	rz_warn_if_fail (cmd_panels_cd);
-
 	RzCmdDesc *w_cd = rz_cmd_desc_group_new (core->rcmd, root_cd, "w", rz_write_handler, &write_help, &w_help);
-	rz_warn_if_fail (w_cd);
-	RzCmdDesc *wB_cd = rz_cmd_desc_group_new (core->rcmd, w_cd, "wB", rz_write_bits_handler, &write_bits_help, &wB_help);
-	rz_warn_if_fail (wB_cd);
-	RzCmdDesc *write_unset_bits_cd = rz_cmd_desc_argv_new (core->rcmd, wB_cd, "wB-", rz_write_unset_bits_handler, &write_unset_bits_help);
+	rz_warn_if_fail (w_cd);	RzCmdDesc *wB_cd = rz_cmd_desc_group_new (core->rcmd, w_cd, "wB", rz_write_bits_handler, &write_bits_help, &wB_help);
+	rz_warn_if_fail (wB_cd);	RzCmdDesc *write_unset_bits_cd = rz_cmd_desc_argv_new (core->rcmd, wB_cd, "wB-", rz_write_unset_bits_handler, &write_unset_bits_help);
 	rz_warn_if_fail (write_unset_bits_cd);
-
 	RzCmdDesc *wv_cd = rz_cmd_desc_group_new (core->rcmd, w_cd, "wv", rz_write_value_handler, &write_value_help, &wv_help);
-	rz_warn_if_fail (wv_cd);
-	RzCmdDesc *write_value1_cd = rz_cmd_desc_argv_new (core->rcmd, wv_cd, "wv1", rz_write_value1_handler, &write_value1_help);
+	rz_warn_if_fail (wv_cd);	RzCmdDesc *write_value1_cd = rz_cmd_desc_argv_new (core->rcmd, wv_cd, "wv1", rz_write_value1_handler, &write_value1_help);
 	rz_warn_if_fail (write_value1_cd);
-
 	RzCmdDesc *write_value2_cd = rz_cmd_desc_argv_new (core->rcmd, wv_cd, "wv2", rz_write_value2_handler, &write_value2_help);
 	rz_warn_if_fail (write_value2_cd);
-
 	RzCmdDesc *write_value4_cd = rz_cmd_desc_argv_new (core->rcmd, wv_cd, "wv4", rz_write_value4_handler, &write_value4_help);
 	rz_warn_if_fail (write_value4_cd);
-
 	RzCmdDesc *write_value8_cd = rz_cmd_desc_argv_new (core->rcmd, wv_cd, "wv8", rz_write_value8_handler, &write_value8_help);
 	rz_warn_if_fail (write_value8_cd);
-
 	RzCmdDesc *write_zero_cd = rz_cmd_desc_argv_new (core->rcmd, w_cd, "w0", rz_write_zero_handler, &write_zero_help);
 	rz_warn_if_fail (write_zero_cd);
-
 	RzCmdDesc *write_incdec_cd = rz_cmd_desc_inner_new (core->rcmd, w_cd, "w", &write_incdec_help);
-	rz_warn_if_fail (write_incdec_cd);
-	RzCmdDesc *w1_cd = rz_cmd_desc_group_new (core->rcmd, write_incdec_cd, "w1", NULL, NULL, &w1_help);
-	rz_warn_if_fail (w1_cd);
-	RzCmdDesc *write_1_inc_cd = rz_cmd_desc_argv_new (core->rcmd, w1_cd, "w1+", rz_write_1_inc_handler, &write_1_inc_help);
+	rz_warn_if_fail (write_incdec_cd);	RzCmdDesc *w1_cd = rz_cmd_desc_group_new (core->rcmd, write_incdec_cd, "w1", NULL, NULL, &w1_help);
+	rz_warn_if_fail (w1_cd);	RzCmdDesc *write_1_inc_cd = rz_cmd_desc_argv_new (core->rcmd, w1_cd, "w1+", rz_write_1_inc_handler, &write_1_inc_help);
 	rz_warn_if_fail (write_1_inc_cd);
-
 	RzCmdDesc *write_1_dec_cd = rz_cmd_desc_argv_new (core->rcmd, w1_cd, "w1-", rz_write_1_dec_handler, &write_1_dec_help);
 	rz_warn_if_fail (write_1_dec_cd);
-
 	RzCmdDesc *w2_cd = rz_cmd_desc_group_new (core->rcmd, write_incdec_cd, "w2", NULL, NULL, &w2_help);
-	rz_warn_if_fail (w2_cd);
-	RzCmdDesc *write_2_inc_cd = rz_cmd_desc_argv_new (core->rcmd, w2_cd, "w2+", rz_write_2_inc_handler, &write_2_inc_help);
+	rz_warn_if_fail (w2_cd);	RzCmdDesc *write_2_inc_cd = rz_cmd_desc_argv_new (core->rcmd, w2_cd, "w2+", rz_write_2_inc_handler, &write_2_inc_help);
 	rz_warn_if_fail (write_2_inc_cd);
-
 	RzCmdDesc *write_2_dec_cd = rz_cmd_desc_argv_new (core->rcmd, w2_cd, "w2-", rz_write_2_dec_handler, &write_2_dec_help);
 	rz_warn_if_fail (write_2_dec_cd);
-
 	RzCmdDesc *w4_cd = rz_cmd_desc_group_new (core->rcmd, write_incdec_cd, "w4", NULL, NULL, &w4_help);
-	rz_warn_if_fail (w4_cd);
-	RzCmdDesc *write_4_inc_cd = rz_cmd_desc_argv_new (core->rcmd, w4_cd, "w4+", rz_write_4_inc_handler, &write_4_inc_help);
+	rz_warn_if_fail (w4_cd);	RzCmdDesc *write_4_inc_cd = rz_cmd_desc_argv_new (core->rcmd, w4_cd, "w4+", rz_write_4_inc_handler, &write_4_inc_help);
 	rz_warn_if_fail (write_4_inc_cd);
-
 	RzCmdDesc *write_4_dec_cd = rz_cmd_desc_argv_new (core->rcmd, w4_cd, "w4-", rz_write_4_dec_handler, &write_4_dec_help);
 	rz_warn_if_fail (write_4_dec_cd);
-
 	RzCmdDesc *w8_cd = rz_cmd_desc_group_new (core->rcmd, write_incdec_cd, "w8", NULL, NULL, &w8_help);
-	rz_warn_if_fail (w8_cd);
-	RzCmdDesc *write_8_inc_cd = rz_cmd_desc_argv_new (core->rcmd, w8_cd, "w8+", rz_write_8_inc_handler, &write_8_inc_help);
+	rz_warn_if_fail (w8_cd);	RzCmdDesc *write_8_inc_cd = rz_cmd_desc_argv_new (core->rcmd, w8_cd, "w8+", rz_write_8_inc_handler, &write_8_inc_help);
 	rz_warn_if_fail (write_8_inc_cd);
-
 	RzCmdDesc *write_8_dec_cd = rz_cmd_desc_argv_new (core->rcmd, w8_cd, "w8-", rz_write_8_dec_handler, &write_8_dec_help);
 	rz_warn_if_fail (write_8_dec_cd);
-
 	RzCmdDesc *w6_cd = rz_cmd_desc_group_new (core->rcmd, w_cd, "w6", NULL, NULL, &w6_help);
-	rz_warn_if_fail (w6_cd);
-	RzCmdDesc *write_base64_decode_cd = rz_cmd_desc_argv_new (core->rcmd, w6_cd, "w6d", rz_write_base64_decode_handler, &write_base64_decode_help);
+	rz_warn_if_fail (w6_cd);	RzCmdDesc *write_base64_decode_cd = rz_cmd_desc_argv_new (core->rcmd, w6_cd, "w6d", rz_write_base64_decode_handler, &write_base64_decode_help);
 	rz_warn_if_fail (write_base64_decode_cd);
-
 	RzCmdDesc *write_base64_encode_cd = rz_cmd_desc_argv_new (core->rcmd, w6_cd, "w6e", rz_write_base64_encode_handler, &write_base64_encode_help);
 	rz_warn_if_fail (write_base64_encode_cd);
-
 	RzCmdDesc *wh_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "wh", rz_wh_handler_old, &wh_handler_old_help);
 	rz_warn_if_fail (wh_handler_old_cd);
-
 	RzCmdDesc *we_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "we", rz_we_handler_old, &we_handler_old_help);
 	rz_warn_if_fail (we_handler_old_cd);
-
 	RzCmdDesc *wp_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "wp", rz_wp_handler_old, &wp_handler_old_help);
 	rz_warn_if_fail (wp_handler_old_cd);
-
 	RzCmdDesc *wu_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "wu", rz_wu_handler_old, &wu_handler_old_help);
 	rz_warn_if_fail (wu_handler_old_cd);
-
 	RzCmdDesc *wr_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "wr", rz_wr_handler_old, &wr_handler_old_help);
 	rz_warn_if_fail (wr_handler_old_cd);
-
 	RzCmdDesc *wA_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "wA", rz_wA_handler_old, &wA_handler_old_help);
 	rz_warn_if_fail (wA_handler_old_cd);
-
 	RzCmdDesc *wc_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "wc", rz_wc_handler_old, &wc_handler_old_help);
 	rz_warn_if_fail (wc_handler_old_cd);
-
 	RzCmdDesc *wz_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "wz", rz_wz_handler_old, &wz_handler_old_help);
 	rz_warn_if_fail (wz_handler_old_cd);
-
 	RzCmdDesc *wt_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "wt", rz_wt_handler_old, &wt_handler_old_help);
 	rz_warn_if_fail (wt_handler_old_cd);
-
 	RzCmdDesc *wf_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "wf", rz_wf_handler_old, &wf_handler_old_help);
 	rz_warn_if_fail (wf_handler_old_cd);
-
 	RzCmdDesc *ww_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "ww", rz_ww_handler_old, &ww_handler_old_help);
 	rz_warn_if_fail (ww_handler_old_cd);
-
 	RzCmdDesc *wx_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "wx", rz_wx_handler_old, &wx_handler_old_help);
 	rz_warn_if_fail (wx_handler_old_cd);
-
 	RzCmdDesc *wa_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "wa", rz_wa_handler_old, &wa_handler_old_help);
 	rz_warn_if_fail (wa_handler_old_cd);
-
 	RzCmdDesc *wb_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "wb", rz_wb_handler_old, &wb_handler_old_help);
 	rz_warn_if_fail (wb_handler_old_cd);
-
 	RzCmdDesc *wm_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "wm", rz_wm_handler_old, &wm_handler_old_help);
 	rz_warn_if_fail (wm_handler_old_cd);
-
 	RzCmdDesc *wo_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "wo", rz_wo_handler_old, &wo_handler_old_help);
 	rz_warn_if_fail (wo_handler_old_cd);
-
 	RzCmdDesc *wd_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "wd", rz_wd_handler_old, &wd_handler_old_help);
 	rz_warn_if_fail (wd_handler_old_cd);
-
 	RzCmdDesc *ws_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "ws", rz_ws_handler_old, &ws_handler_old_help);
 	rz_warn_if_fail (ws_handler_old_cd);
-
 	RzCmdDesc *cmd_hexdump_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "x", rz_cmd_hexdump, &cmd_hexdump_help);
 	rz_warn_if_fail (cmd_hexdump_cd);
-
 	RzCmdDesc *cmd_yank_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "y", rz_cmd_yank, &cmd_yank_help);
 	rz_warn_if_fail (cmd_yank_cd);
-
 	RzCmdDesc *z_cd = rz_cmd_desc_group_modes_new (core->rcmd, root_cd, "z", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_SDB, rz_zign_show_handler, &zign_show_help, &z_help);
-	rz_warn_if_fail (z_cd);
-	RzCmdDesc *zign_find_cd = rz_cmd_desc_argv_modes_new (core->rcmd, z_cd, "z.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_zign_find_handler, &zign_find_help);
+	rz_warn_if_fail (z_cd);	RzCmdDesc *zign_find_cd = rz_cmd_desc_argv_modes_new (core->rcmd, z_cd, "z.", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_zign_find_handler, &zign_find_help);
 	rz_warn_if_fail (zign_find_cd);
-
 	RzCmdDesc *zb_cd = rz_cmd_desc_group_new (core->rcmd, z_cd, "zb", rz_zign_best_handler, &zign_best_help, &zb_help);
-	rz_warn_if_fail (zb_cd);
-	RzCmdDesc *zign_best_name_cd = rz_cmd_desc_argv_new (core->rcmd, zb_cd, "zbr", rz_zign_best_name_handler, &zign_best_name_help);
+	rz_warn_if_fail (zb_cd);	RzCmdDesc *zign_best_name_cd = rz_cmd_desc_argv_new (core->rcmd, zb_cd, "zbr", rz_zign_best_name_handler, &zign_best_name_help);
 	rz_warn_if_fail (zign_best_name_cd);
-
 	RzCmdDesc *zign_delete_cd = rz_cmd_desc_argv_new (core->rcmd, z_cd, "z-", rz_zign_delete_handler, &zign_delete_help);
 	rz_warn_if_fail (zign_delete_cd);
-
 	RzCmdDesc *za_cd = rz_cmd_desc_group_new (core->rcmd, z_cd, "za", rz_zign_add_handler, &zign_add_help, &za_help);
-	rz_warn_if_fail (za_cd);
-	RzCmdDesc *zign_add_fcn_cd = rz_cmd_desc_argv_new (core->rcmd, za_cd, "zaf", rz_zign_add_fcn_handler, &zign_add_fcn_help);
+	rz_warn_if_fail (za_cd);	RzCmdDesc *zign_add_fcn_cd = rz_cmd_desc_argv_new (core->rcmd, za_cd, "zaf", rz_zign_add_fcn_handler, &zign_add_fcn_help);
 	rz_warn_if_fail (zign_add_fcn_cd);
-
 	RzCmdDesc *zign_add_all_fcns_cd = rz_cmd_desc_argv_new (core->rcmd, za_cd, "zaF", rz_zign_add_all_fcns_handler, &zign_add_all_fcns_help);
 	rz_warn_if_fail (zign_add_all_fcns_cd);
-
 	RzCmdDesc *zign_generate_cd = rz_cmd_desc_argv_new (core->rcmd, z_cd, "zg", rz_zign_generate_handler, &zign_generate_help);
 	rz_warn_if_fail (zign_generate_cd);
-
 	RzCmdDesc *zo_cd = rz_cmd_desc_group_new (core->rcmd, z_cd, "zo", rz_zign_load_sdb_handler, &zign_load_sdb_help, &zo_help);
-	rz_warn_if_fail (zo_cd);
-	RzCmdDesc *zign_save_sdb_cd = rz_cmd_desc_argv_new (core->rcmd, zo_cd, "zos", rz_zign_save_sdb_handler, &zign_save_sdb_help);
+	rz_warn_if_fail (zo_cd);	RzCmdDesc *zign_save_sdb_cd = rz_cmd_desc_argv_new (core->rcmd, zo_cd, "zos", rz_zign_save_sdb_handler, &zign_save_sdb_help);
 	rz_warn_if_fail (zign_save_sdb_cd);
-
 	RzCmdDesc *zign_load_gzip_sdb_cd = rz_cmd_desc_argv_new (core->rcmd, zo_cd, "zoz", rz_zign_load_gzip_sdb_handler, &zign_load_gzip_sdb_help);
 	rz_warn_if_fail (zign_load_gzip_sdb_cd);
-
 	RzCmdDesc *zf_cd = rz_cmd_desc_group_new (core->rcmd, z_cd, "zf", NULL, NULL, &zf_help);
-	rz_warn_if_fail (zf_cd);
-	RzCmdDesc *zign_flirt_dump_cd = rz_cmd_desc_argv_new (core->rcmd, zf_cd, "zfd", rz_zign_flirt_dump_handler, &zign_flirt_dump_help);
+	rz_warn_if_fail (zf_cd);	RzCmdDesc *zign_flirt_dump_cd = rz_cmd_desc_argv_new (core->rcmd, zf_cd, "zfd", rz_zign_flirt_dump_handler, &zign_flirt_dump_help);
 	rz_warn_if_fail (zign_flirt_dump_cd);
-
 	RzCmdDesc *zign_flirt_scan_cd = rz_cmd_desc_argv_new (core->rcmd, zf_cd, "zfs", rz_zign_flirt_scan_handler, &zign_flirt_scan_help);
 	rz_warn_if_fail (zign_flirt_scan_cd);
-
 	RzCmdDesc *z_slash__cd = rz_cmd_desc_group_modes_new (core->rcmd, z_cd, "z/", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_zign_search_handler, &zign_search_help, &z_slash__help);
-	rz_warn_if_fail (z_slash__cd);
-	RzCmdDesc *zign_search_fcn_cd = rz_cmd_desc_argv_modes_new (core->rcmd, z_slash__cd, "z/f", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_zign_search_fcn_handler, &zign_search_fcn_help);
+	rz_warn_if_fail (z_slash__cd);	RzCmdDesc *zign_search_fcn_cd = rz_cmd_desc_argv_modes_new (core->rcmd, z_slash__cd, "z/f", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN, rz_zign_search_fcn_handler, &zign_search_fcn_help);
 	rz_warn_if_fail (zign_search_fcn_cd);
-
 	RzCmdDesc *zc_cd = rz_cmd_desc_group_new (core->rcmd, z_cd, "zc", rz_zign_cmp_handler, &zign_cmp_help, &zc_help);
-	rz_warn_if_fail (zc_cd);
-	RzCmdDesc *zcn_cd = rz_cmd_desc_group_new (core->rcmd, zc_cd, "zcn", rz_zign_cmp_name_handler, &zign_cmp_name_help, &zcn_help);
-	rz_warn_if_fail (zcn_cd);
-	RzCmdDesc *zign_cmp_diff_name_cd = rz_cmd_desc_argv_new (core->rcmd, zcn_cd, "zcn!", rz_zign_cmp_diff_name_handler, &zign_cmp_diff_name_help);
+	rz_warn_if_fail (zc_cd);	RzCmdDesc *zcn_cd = rz_cmd_desc_group_new (core->rcmd, zc_cd, "zcn", rz_zign_cmp_name_handler, &zign_cmp_name_help, &zcn_help);
+	rz_warn_if_fail (zcn_cd);	RzCmdDesc *zign_cmp_diff_name_cd = rz_cmd_desc_argv_new (core->rcmd, zcn_cd, "zcn!", rz_zign_cmp_diff_name_handler, &zign_cmp_diff_name_help);
 	rz_warn_if_fail (zign_cmp_diff_name_cd);
-
 	RzCmdDesc *zs_cd = rz_cmd_desc_group_modes_new (core->rcmd, z_cd, "zs", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN, rz_zign_space_select_handler, &zign_space_select_help, &zs_help);
-	rz_warn_if_fail (zs_cd);
-	RzCmdDesc *zign_space_delete_cd = rz_cmd_desc_argv_new (core->rcmd, zs_cd, "zs-", rz_zign_space_delete_handler, &zign_space_delete_help);
+	rz_warn_if_fail (zs_cd);	RzCmdDesc *zign_space_delete_cd = rz_cmd_desc_argv_new (core->rcmd, zs_cd, "zs-", rz_zign_space_delete_handler, &zign_space_delete_help);
 	rz_warn_if_fail (zign_space_delete_cd);
-
 	RzCmdDesc *zign_space_add_cd = rz_cmd_desc_argv_new (core->rcmd, zs_cd, "zs+", rz_zign_space_add_handler, &zign_space_add_help);
 	rz_warn_if_fail (zign_space_add_cd);
-
 	RzCmdDesc *zign_space_rename_cd = rz_cmd_desc_argv_new (core->rcmd, zs_cd, "zsr", rz_zign_space_rename_handler, &zign_space_rename_help);
 	rz_warn_if_fail (zign_space_rename_cd);
-
 	RzCmdDesc *zi_cd = rz_cmd_desc_group_modes_new (core->rcmd, z_cd, "zi", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET, rz_zign_info_handler, &zign_info_help, &zi_help);
-	rz_warn_if_fail (zi_cd);
-	RzCmdDesc *zign_info_range_cd = rz_cmd_desc_argv_new (core->rcmd, zi_cd, "zii", rz_zign_info_range_handler, &zign_info_range_help);
+	rz_warn_if_fail (zi_cd);	RzCmdDesc *zign_info_range_cd = rz_cmd_desc_argv_new (core->rcmd, zi_cd, "zii", rz_zign_info_range_handler, &zign_info_range_help);
 	rz_warn_if_fail (zign_info_range_cd);
-
 	RzCmdDesc *tmp_modifiers_cd = rz_cmd_desc_fake_new (core->rcmd, root_cd, "@", &tmp_modifiers_help);
 	rz_warn_if_fail (tmp_modifiers_cd);
-
 	RzCmdDesc *iterators_cd = rz_cmd_desc_fake_new (core->rcmd, root_cd, "@@", &iterators_help);
 	rz_warn_if_fail (iterators_cd);
-
 	RzCmdDesc *redirection_cd = rz_cmd_desc_fake_new (core->rcmd, root_cd, ">", &redirection_help);
 	rz_warn_if_fail (redirection_cd);
-
 	RzCmdDesc *pipe_cd = rz_cmd_desc_fake_new (core->rcmd, root_cd, "|", &pipe_help);
 	rz_warn_if_fail (pipe_cd);
-
 	RzCmdDesc *grep_cd = rz_cmd_desc_fake_new (core->rcmd, root_cd, "~", &grep_help);
 	rz_warn_if_fail (grep_cd);
-
 }

@@ -1917,6 +1917,11 @@ RZ_IPI int rz_cmd_last(void *data, const char *input) {
 	return 0;
 }
 
+RZ_IPI RzCmdStatus rz_last_output_handler(RzCore *core, int argc, const char **argv) {
+	rz_cons_last ();
+	return RZ_CMD_STATUS_OK;
+}
+
 RZ_IPI int rz_cmd_system(void *data, const char *input) {
 	RzCore *core = (RzCore*)data;
 	ut64 n;

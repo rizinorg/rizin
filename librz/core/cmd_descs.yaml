@@ -57,13 +57,32 @@
   summary: Run given commands as in system(3)
   type: RZ_CMD_DESC_TYPE_OLDINPUT
 - name: _
-  cname: cmd_last
+  cname: last_output
   summary: Print last output
-  type: RZ_CMD_DESC_TYPE_OLDINPUT
-- name: "#"
-  cname: cmd_hash
-  summary: Hashbang to run an rlang script
-  type: RZ_CMD_DESC_TYPE_OLDINPUT
+  args: []
+- name: "#!"
+  cname: hash_bang
+  summary: List all available interpreters / Run interpreter
+  args:
+    - name: interpreter-name
+      type: RZ_CMD_ARG_TYPE_STRING
+      optional: true
+      no_space: true
+    - name: arg
+      type: RZ_CMD_ARG_TYPE_ARRAY_STRING
+      optional: true
+  details:
+    - name: Examples
+      entries:
+        - text: "#!"
+          arg_str: "python"
+          comment: Run python commandline
+        - text: "#!"
+          arg_str: "python foo.py"
+          comment: Run foo.py python script
+        - text: "#!"
+          arg_str: "python foo.py arg1"
+          comment: Run foo.py python script and pass it arg1 as argument
 - name: $
   cname: cmd_alias
   summary: Alias commands and strings
