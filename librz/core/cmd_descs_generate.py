@@ -125,6 +125,7 @@ def compute_cname(name):
         '?': '_question_',
         '/': '_slash_',
         '\\': '_backslash_',
+        '&': '_and_',
         '!': '_escl_',
         '#': '_hash_',
         ' ': '_space_',

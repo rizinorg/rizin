@@ -14,7 +14,13 @@ RZ_IPI RzCmdStatus rz_last_output_handler(RzCore *core, int argc, const char **a
 RZ_IPI RzCmdStatus rz_hash_bang_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_alias(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_env_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI int rz_cmd_tasks(void *data, const char *input);
+RZ_IPI RzCmdStatus rz_tasks_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+RZ_IPI RzCmdStatus rz_tasks_transient_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_tasks_output_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_tasks_break_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_tasks_delete_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_tasks_delete_all_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_tasks_wait_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_macro(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_pointer_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_stdin(void *data, const char *input);

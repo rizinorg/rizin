@@ -23,6 +23,12 @@ static const RzCmdDescDetail redirection_details[2];
 static const RzCmdDescDetail pipe_details[2];
 static const RzCmdDescDetail grep_details[5];
 static const RzCmdDescArg hash_bang_args[3];
+static const RzCmdDescArg tasks_args[2];
+static const RzCmdDescArg tasks_transient_args[2];
+static const RzCmdDescArg tasks_output_args[2];
+static const RzCmdDescArg tasks_break_args[2];
+static const RzCmdDescArg tasks_delete_args[2];
+static const RzCmdDescArg tasks_wait_args[2];
 static const RzCmdDescArg pointer_args[3];
 static const RzCmdDescArg interpret_args[2];
 static const RzCmdDescArg interpret_script_args[2];
@@ -130,8 +136,69 @@ static const RzCmdDescHelp env_percentage_help = {
 	.args = env_args,
 };
 
-static const RzCmdDescHelp cmd_tasks_help = {
+static const RzCmdDescHelp and__help = {
 	.summary = "Manage tasks",
+};
+static const RzCmdDescArg tasks_args[] = {
+	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD, .optional = true, },
+	{ 0 },
+};
+static const RzCmdDescHelp tasks_help = {
+	.summary = "List all tasks / Run <cmd> in a new background task",
+	.args = tasks_args,
+};
+
+static const RzCmdDescArg tasks_transient_args[] = {
+	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD, },
+	{ 0 },
+};
+static const RzCmdDescHelp tasks_transient_help = {
+	.summary = "Run <cmd> in a new transient background task (auto-delete when it is finished)",
+	.args = tasks_transient_args,
+};
+
+static const RzCmdDescArg tasks_output_args[] = {
+	{ .name = "n", .type = RZ_CMD_ARG_TYPE_NUM, },
+	{ 0 },
+};
+static const RzCmdDescHelp tasks_output_help = {
+	.summary = "Show output of task <n>",
+	.args = tasks_output_args,
+};
+
+static const RzCmdDescArg tasks_break_args[] = {
+	{ .name = "n", .type = RZ_CMD_ARG_TYPE_NUM, },
+	{ 0 },
+};
+static const RzCmdDescHelp tasks_break_help = {
+	.summary = "Break task <n>",
+	.args = tasks_break_args,
+};
+
+static const RzCmdDescArg tasks_delete_args[] = {
+	{ .name = "n", .type = RZ_CMD_ARG_TYPE_NUM, },
+	{ 0 },
+};
+static const RzCmdDescHelp tasks_delete_help = {
+	.summary = "Delete task <n> or schedule for deletion when it is finished",
+	.args = tasks_delete_args,
+};
+
+static const RzCmdDescArg tasks_delete_all_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp tasks_delete_all_help = {
+	.summary = "Delete all done tasks",
+	.args = tasks_delete_all_args,
+};
+
+static const RzCmdDescArg tasks_wait_args[] = {
+	{ .name = "name", .type = RZ_CMD_ARG_TYPE_NUM, .optional = true, },
+	{ 0 },
+};
+static const RzCmdDescHelp tasks_wait_help = {
+	.summary = "Wait until task <n> is finished / all tasks are finished",
+	.args = tasks_wait_args,
 };
 
 static const RzCmdDescHelp cmd_macro_help = {
@@ -1412,8 +1479,19 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail (cmd_alias_cd);
 	RzCmdDesc *env_percentage_cd = rz_cmd_desc_argv_new (core->rcmd, root_cd, "%", rz_env_handler, &env_percentage_help);
 	rz_warn_if_fail (env_percentage_cd);
-	RzCmdDesc *cmd_tasks_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "&", rz_cmd_tasks, &cmd_tasks_help);
-	rz_warn_if_fail (cmd_tasks_cd);
+	RzCmdDesc *and__cd = rz_cmd_desc_group_modes_new (core->rcmd, root_cd, "&", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON, rz_tasks_handler, &tasks_help, &and__help);
+	rz_warn_if_fail (and__cd);	RzCmdDesc *tasks_transient_cd = rz_cmd_desc_argv_new (core->rcmd, and__cd, "&t", rz_tasks_transient_handler, &tasks_transient_help);
+	rz_warn_if_fail (tasks_transient_cd);
+	RzCmdDesc *tasks_output_cd = rz_cmd_desc_argv_new (core->rcmd, and__cd, "&=", rz_tasks_output_handler, &tasks_output_help);
+	rz_warn_if_fail (tasks_output_cd);
+	RzCmdDesc *tasks_break_cd = rz_cmd_desc_argv_new (core->rcmd, and__cd, "&b", rz_tasks_break_handler, &tasks_break_help);
+	rz_warn_if_fail (tasks_break_cd);
+	RzCmdDesc *tasks_delete_cd = rz_cmd_desc_argv_new (core->rcmd, and__cd, "&-", rz_tasks_delete_handler, &tasks_delete_help);
+	rz_warn_if_fail (tasks_delete_cd);
+	RzCmdDesc *tasks_delete_all_cd = rz_cmd_desc_argv_new (core->rcmd, and__cd, "&-*", rz_tasks_delete_all_handler, &tasks_delete_all_help);
+	rz_warn_if_fail (tasks_delete_all_cd);
+	RzCmdDesc *tasks_wait_cd = rz_cmd_desc_argv_new (core->rcmd, and__cd, "&&", rz_tasks_wait_handler, &tasks_wait_help);
+	rz_warn_if_fail (tasks_wait_cd);
 	RzCmdDesc *cmd_macro_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "(", rz_cmd_macro, &cmd_macro_help);
 	rz_warn_if_fail (cmd_macro_cd);
 	RzCmdDesc *pointer_cd = rz_cmd_desc_argv_new (core->rcmd, root_cd, "*", rz_pointer_handler, &pointer_help);
