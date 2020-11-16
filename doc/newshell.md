@@ -132,12 +132,7 @@ static RzCmdStatus sky_handler(RzCore *core, int argc, const char **argv) {
 ```
 
 The YAML file is used at built-time (by meson only) to autogenerate two
-files: `cmd_descs.c` and `cmd_descs.h`. To make sure the Make build system
-still works, update the committed versions of these files with the following
-command:
-```
-$ ./librz/core/cmd_descs_generate.py --output-dir ./librz/core/ ./librz/core/cmd_descs.yaml
-```
+files: `cmd_descs.c` and `cmd_descs.h`.
 
 ## Where is the handler of command `x`?
 
@@ -158,12 +153,7 @@ Some examples:
 
 Find the command in
 [`librz/core/cmd_descs.yaml`](https://github.com/rizinorg/rizin/blob/9ce5003ca647cdfc181ac3c0f6206762ebb9e3e9/librz/core/cmd_descs.yaml),
-then fix/improve the `summary` and/or `description` fields. Once you have
-done that, make sure to test your changes are effective by compiling as usual
-and then run:
-```
-$ ./librz/core/cmd_descs_generate.py --output-dir ./librz/core/ ./librz/core/cmd_descs.yaml
-```
+then fix/improve the `summary` and/or `description` fields.
 
 ## How to show examples of a command or additional details
 
