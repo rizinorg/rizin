@@ -552,3 +552,33 @@ RZ_IPI int rz_cmd_hash(void *data, const char *input) {
 	   should not be reached, see rz_core_cmd_subst() */
 	return 0;
 }
+
+RZ_IPI RzCmdStatus rz_hash_bang_handler(RzCore *core, int argc, const char **argv) {
+	if (argc == 1) {
+		rz_lang_list (core->lang);
+	} else {
+		RzLangPlugin *p = rz_lang_get_by_name (core->lang, argv[1]);
+		if (!p) {
+			eprintf ("No interpreter with name '%s'\n", argv[1]);
+			return RZ_CMD_STATUS_ERROR;
+		}
+		core->lang->cur = p;
+		if (argc > 2) {
+			if (rz_lang_set_argv (core->lang, argc - 2, (char **)&argv[2])) {
+				rz_lang_run_file (core->lang, argv[2]);
+			} else {
+				char *run_str = rz_str_array_join (argv + 2, argc - 2, " ");
+				rz_lang_run_file (core->lang, run_str);
+				free (run_str);
+			}
+		} else {
+			if (rz_cons_is_interactive ()) {
+				rz_lang_prompt (core->lang);
+			} else {
+				eprintf ("Error: scr.interactive required to run the rlang prompt\n");
+				return RZ_CMD_STATUS_ERROR;
+			}
+		}
+	}
+	return RZ_CMD_STATUS_OK;
+}
