@@ -1,6 +1,9 @@
 # Format of RzCmdDesc/RzCmdDescHelp descriptor
 # - name: same as RzCmdDesc.name (mandatory)
-#   cname: name used in the generated C code for structures, handlers, etc.
+#   cname: >
+#     name used in the generated C code for structures, handlers, etc. Make sure
+#     this is a valid C name. It cannot contain special characters like `$`, `"`,
+#     `=`, etc.
 #   summary: same as RzCmdDescHelp.summary (mandatory)
 #   description: same as RzCmdDescHelp.description
 #   type: >
