@@ -54,7 +54,7 @@ RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file) {
 	return err;
 }
 
-RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, RZ_NULLABLE const char *file, RzSerializeResultInfo *res) {
+RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, bool load_bin_io, RZ_NULLABLE const char *file, RzSerializeResultInfo *res) {
 	const char *type = sdb_const_get (prj, RZ_DB_KEY_TYPE, 0);
 	if (!type || strcmp (type, RZ_DB_PROJECT_TYPE) != 0) {
 		return RZ_PROJECT_ERR_INVALID_TYPE;
@@ -75,7 +75,7 @@ RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, RZ_NULLABLE co
 		SERIALIZE_ERR ("missing core namespace");
 		return RZ_PROJECT_ERR_INVALID_CONTENTS;
 	}
-	if (!rz_serialize_core_load (core_db, core, file, res)) {
+	if (!rz_serialize_core_load (core_db, core, load_bin_io, file, res)) {
 		return RZ_PROJECT_ERR_INVALID_CONTENTS;
 	}
 
@@ -84,7 +84,7 @@ RZ_API RzProjectErr rz_project_load(RzCore *core, RzProject *prj, RZ_NULLABLE co
 	return RZ_PROJECT_ERR_SUCCESS;
 }
 
-RZ_API RzProjectErr rz_project_load_file(RzCore *core, const char *file, RzSerializeResultInfo *res) {
+RZ_API RzProjectErr rz_project_load_file(RzCore *core, const char *file, bool load_bin_io, RzSerializeResultInfo *res) {
 	RzProject *prj = sdb_new0 ();
 	if (!prj) {
 		return RZ_PROJECT_ERR_UNKNOWN;
@@ -93,7 +93,7 @@ RZ_API RzProjectErr rz_project_load_file(RzCore *core, const char *file, RzSeria
 		SERIALIZE_ERR ("failed to read database file");
 		return RZ_PROJECT_ERR_FILE;
 	}
-	RzProjectErr ret = rz_project_load (core, prj, file, res);
+	RzProjectErr ret = rz_project_load (core, prj, load_bin_io, file, res);
 	sdb_free (prj);
 	return ret;
 }

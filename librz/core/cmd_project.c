@@ -12,7 +12,7 @@ RZ_IPI RzCmdStatus rz_project_save_handler(RzCore *core, int argc, const char **
 
 RZ_IPI RzCmdStatus rz_project_open_handler(RzCore *core, int argc, const char **argv) {
 	RzSerializeResultInfo *res = rz_serialize_result_info_new ();
-	RzProjectErr err = rz_project_load_file (core, argv[1], res);
+	RzProjectErr err = rz_project_load_file (core, argv[1], true, res);
 	if (err != RZ_PROJECT_ERR_SUCCESS) {
 		eprintf ("Failed to load project: %s\n", rz_project_err_message (err));
 		RzListIter *it;
