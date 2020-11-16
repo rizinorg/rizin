@@ -965,19 +965,19 @@
           summary: Load zinatures from sdb file
           args:
             - name: filename
-              type: RZ_CMD_ARG_TYPE_FCN
+              type: RZ_CMD_ARG_TYPE_FILE
         - name: zos
           cname: zign_save_sdb
           summary: Save zinatures to sdb file
           args:
             - name: filename
-              type: RZ_CMD_ARG_TYPE_FCN
+              type: RZ_CMD_ARG_TYPE_FILE
         - name: zoz
           cname: zign_load_gzip_sdb
           summary: Load zinatures from gzipped sdb file
           args:
             - name: filename
-              type: RZ_CMD_ARG_TYPE_FCN
+              type: RZ_CMD_ARG_TYPE_FILE
     - name: zf
       summary: Manage FLIRT signatures
       subcommands:
@@ -986,13 +986,13 @@
           summary: Open FLIRT file and dump
           args:
             - name: filename
-              type: RZ_CMD_ARG_TYPE_FCN
+              type: RZ_CMD_ARG_TYPE_FILE
         - name: zfs
           cname: zign_flirt_scan
           summary: Open FLIRT file and scan
           args:
             - name: filename
-              type: RZ_CMD_ARG_TYPE_FCN
+              type: RZ_CMD_ARG_TYPE_FILE
     - name: z/
       summary: Search zignatures
       subcommands:

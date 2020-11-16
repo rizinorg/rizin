@@ -1052,7 +1052,7 @@ static const RzCmdDescHelp zo_help = {
 	.summary = "Manage zignature files",
 };
 static const RzCmdDescArg zign_load_sdb_args[] = {
-	{ .name = "filename", .type = RZ_CMD_ARG_TYPE_FCN, },
+	{ .name = "filename", .type = RZ_CMD_ARG_TYPE_FILE, },
 	{ 0 },
 };
 static const RzCmdDescHelp zign_load_sdb_help = {
@@ -1061,7 +1061,7 @@ static const RzCmdDescHelp zign_load_sdb_help = {
 };
 
 static const RzCmdDescArg zign_save_sdb_args[] = {
-	{ .name = "filename", .type = RZ_CMD_ARG_TYPE_FCN, },
+	{ .name = "filename", .type = RZ_CMD_ARG_TYPE_FILE, },
 	{ 0 },
 };
 static const RzCmdDescHelp zign_save_sdb_help = {
@@ -1070,7 +1070,7 @@ static const RzCmdDescHelp zign_save_sdb_help = {
 };
 
 static const RzCmdDescArg zign_load_gzip_sdb_args[] = {
-	{ .name = "filename", .type = RZ_CMD_ARG_TYPE_FCN, },
+	{ .name = "filename", .type = RZ_CMD_ARG_TYPE_FILE, },
 	{ 0 },
 };
 static const RzCmdDescHelp zign_load_gzip_sdb_help = {
@@ -1082,7 +1082,7 @@ static const RzCmdDescHelp zf_help = {
 	.summary = "Manage FLIRT signatures",
 };
 static const RzCmdDescArg zign_flirt_dump_args[] = {
-	{ .name = "filename", .type = RZ_CMD_ARG_TYPE_FCN, },
+	{ .name = "filename", .type = RZ_CMD_ARG_TYPE_FILE, },
 	{ 0 },
 };
 static const RzCmdDescHelp zign_flirt_dump_help = {
@@ -1091,7 +1091,7 @@ static const RzCmdDescHelp zign_flirt_dump_help = {
 };
 
 static const RzCmdDescArg zign_flirt_scan_args[] = {
-	{ .name = "filename", .type = RZ_CMD_ARG_TYPE_FCN, },
+	{ .name = "filename", .type = RZ_CMD_ARG_TYPE_FILE, },
 	{ 0 },
 };
 static const RzCmdDescHelp zign_flirt_scan_help = {
