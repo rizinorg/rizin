@@ -304,6 +304,22 @@ diverge:
 	return r;
 }
 
+RZ_API char *rz_file_path_local_to_unix(const char *path) {
+#if __WINDOWS__
+	return rz_str_replace (path, RZ_SYS_PATH, "/");
+#else
+	return strdup (path);
+#endif
+}
+
+RZ_API char *rz_file_path_unix_to_local(const char *path) {
+#if __WINDOWS__
+	return rz_str_replace (path, "/", RZ_SYS_PATH);
+#else
+	return strdup (path);
+#endif
+}
+
 RZ_API char *rz_file_path(const char *bin) {
 	rz_return_val_if_fail (bin, NULL);
 	char *file = NULL;

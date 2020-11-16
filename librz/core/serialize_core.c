@@ -113,7 +113,13 @@ static void file_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 			if (prj_abs) {
 				char *rel = rz_file_relpath (prj_abs, abs);
 				if (rel) {
-					sdb_set (db, "relative", rel, 0);
+					// convert only the relative path to a common format because it is the only path that makes any sense
+					// when a project file is relocated to another machine. Absolute and raw are always specific to one environment.
+					char *rel_unix = rz_file_path_local_to_unix (rel);
+					if (rel_unix) {
+						sdb_set (db, "relative", rel_unix, 0);
+						free (rel_unix);
+					}
 					free (rel);
 				}
 				free (prj_abs);
