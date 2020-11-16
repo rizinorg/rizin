@@ -248,7 +248,7 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 				}
 			}
 		}
-		return rz_str_newf ("%d", wrap->pi.dwProcessId);
+		return rz_str_newf ("%lu", wrap->pi.dwProcessId);
 	} else {
 		eprintf ("Try: '=!pid'\n");
 	}

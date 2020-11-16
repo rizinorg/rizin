@@ -1008,7 +1008,7 @@ RZ_API void rz_anal_extract_rarg(RzAnal *anal, RzAnalOp *op, RzAnalFunction *fcn
 				}
 			}
 			if (!vname) {
-				name = rz_str_newf ("arg%lu", i + 1);
+				name = rz_str_newf ("arg%zu", i + 1);
 				vname = name;
 			}
 			rz_anal_function_set_var (fcn, delta, RZ_ANAL_VAR_KIND_REG, type, size, true, vname);

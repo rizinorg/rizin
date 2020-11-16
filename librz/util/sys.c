@@ -906,7 +906,7 @@ RZ_API void rz_sys_perror_str(const char *fun) {
 			0, NULL )) {
 		char *err = rz_sys_conv_win_to_utf8 (lpMsgBuf);
 		if (err) {
-			eprintf ("%s: (%#x) %s%s", fun, dw, err,
+			eprintf ("%s: (%#lx) %s%s", fun, dw, err,
 			         rz_str_endswith (err, "\n") ? "" : "\n");
 			free (err);
 		}
@@ -1321,7 +1321,7 @@ RZ_API RSysInfo *rz_sys_info(void) {
 	if (!si) {
 		return NULL;
 	}
-	
+
 	if (RegOpenKeyExA (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0,
 		KEY_QUERY_VALUE, &key) != ERROR_SUCCESS) {
 		rz_sys_perror ("rz_sys_info/RegOpenKeyExA");
@@ -1356,7 +1356,7 @@ RZ_API RSysInfo *rz_sys_info(void) {
 		|| type != REG_SZ) {
 		goto beach;
 	}
-	si->version = rz_str_newf ("%d.%d.%s", major, minor, tmp);
+	si->version = rz_str_newf ("%lu.%lu.%s", major, minor, tmp);
 
 	size = sizeof (tmp);
 	if (RegQueryValueExA (key, "ReleaseId", NULL, &type,
