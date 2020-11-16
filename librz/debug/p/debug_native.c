@@ -375,7 +375,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 		RzDebugInfo *r = rz_debug_native_info (dbg, "");
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
-			rz_cons_printf ("(%d) Finished thread %d Exit code %d\n", (ut32)item->pid, (ut32)item->tid, (ut32)item->dwExitCode);
+			rz_cons_printf ("(%d) Finished thread %d Exit code %lu\n", (ut32)item->pid, (ut32)item->tid, item->dwExitCode);
 			rz_cons_flush ();
 
 			rz_debug_info_free (r);
@@ -387,7 +387,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 		RzDebugInfo *r = rz_debug_native_info (dbg, "");
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
-			rz_cons_printf ("(%d) Finished process with exit code %d\n", dbg->main_pid, item->dwExitCode);
+			rz_cons_printf ("(%d) Finished process with exit code %lu\n", dbg->main_pid, item->dwExitCode);
 			rz_cons_flush ();
 			rz_debug_info_free (r);
 		}

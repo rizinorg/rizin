@@ -255,9 +255,9 @@ RZ_API bool rz_th_start(RzThread *th, int enable) {
 
 RZ_API int rz_th_wait(struct rz_th_t *th) {
 	int ret = false;
-	void *thret;
 	if (th) {
 #if HAVE_PTHREAD
+		void *thret;
 		ret = pthread_join (th->tid, &thret);
 #elif __WINDOWS__
 		ret = WaitForSingleObject (th->tid, INFINITE);
