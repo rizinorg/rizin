@@ -124,6 +124,7 @@ static bool lastcmd_repeat(RzCore *core, int next);
 #include "cmd_print.c"
 #include "cmd_help.c"
 #include "cmd_remote.c"
+#include "cmd_tasks.c"
 
 static const char *help_msg_dollar[] = {
 	"Usage:", "$alias[=cmd] [args...]", "Alias commands and strings (See ?$? for help on $variables)",
@@ -1642,14 +1643,8 @@ RZ_IPI int rz_cmd_tasks(void *data, const char *input) {
 		rz_core_task_list (core, *input);
 		break;
 	case 'b': { // "&b"
-		if (rz_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
-			return 0;
-		}
 		int tid = rz_num_math (core->num, input + 1);
-		if (tid) {
-			rz_core_task_break (&core->tasks, tid);
-		}
+		task_break (core, tid);
 		break;
 	}
 	case '&': { // "&&"
@@ -1662,19 +1657,8 @@ RZ_IPI int rz_cmd_tasks(void *data, const char *input) {
 		break;
 	}
 	case '=': { // "&="
-		// rz_core_task_list (core, '=');
 		int tid = rz_num_math (core->num, input + 1);
-		if (tid) {
-			RzCoreTask *task = rz_core_task_get_incref (&core->tasks, tid);
-			if (task) {
-				if (task->res) {
-					rz_cons_println (task->res);
-				}
-				rz_core_task_decref (task);
-			} else {
-				eprintf ("Cannot find task\n");
-			}
-		}
+		task_output (core, tid);
 		break;
 	}
 	case '-': // "&-"
@@ -1695,16 +1679,7 @@ RZ_IPI int rz_cmd_tasks(void *data, const char *input) {
 	case ' ': // "& "
 	case '_': // "&_"
 	case 't': { // "&t"
-		if (rz_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
-			return 0;
-		}
-		RzCoreTask *task = rz_core_task_new (core, true, input + 1, NULL, core);
-		if (!task) {
-			break;
-		}
-		task->transient = input[0] == 't';
-		rz_core_task_enqueue (&core->tasks, task);
+		task_enqueue (core, input + 1, input[0] == 't');
 		break;
 	}
 	}
