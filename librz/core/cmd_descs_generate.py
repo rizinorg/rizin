@@ -77,26 +77,19 @@ DESC_HELP_TEMPLATE = '''static const RzCmdDescHelp {cname} = {{
 '''
 
 DEFINE_OLDINPUT_TEMPLATE = '''\tRzCmdDesc *{cname}_cd = rz_cmd_desc_oldinput_new (core->rcmd, {parent_cname}_cd, {name}, {handler_cname}, &{help_cname});
-\trz_warn_if_fail ({cname}_cd);
-'''
+\trz_warn_if_fail ({cname}_cd);'''
 DEFINE_ARGV_TEMPLATE = '''\tRzCmdDesc *{cname}_cd = rz_cmd_desc_argv_new (core->rcmd, {parent_cname}_cd, {name}, {handler_cname}, &{help_cname});
-\trz_warn_if_fail ({cname}_cd);
-'''
+\trz_warn_if_fail ({cname}_cd);'''
 DEFINE_ARGV_MODES_TEMPLATE = '''\tRzCmdDesc *{cname}_cd = rz_cmd_desc_argv_modes_new (core->rcmd, {parent_cname}_cd, {name}, {modes}, {handler_cname}, &{help_cname});
-\trz_warn_if_fail ({cname}_cd);
-'''
+\trz_warn_if_fail ({cname}_cd);'''
 DEFINE_GROUP_TEMPLATE = '''\tRzCmdDesc *{cname}_cd = rz_cmd_desc_group_new (core->rcmd, {parent_cname}_cd, {name}, {handler_cname}, {help_cname_ref}, &{group_help_cname});
-\trz_warn_if_fail ({cname}_cd);
-'''
+\trz_warn_if_fail ({cname}_cd);'''
 DEFINE_GROUP_MODES_TEMPLATE = '''\tRzCmdDesc *{cname}_cd = rz_cmd_desc_group_modes_new (core->rcmd, {parent_cname}_cd, {name}, {modes}, {handler_cname}, {help_cname_ref}, &{group_help_cname});
-\trz_warn_if_fail ({cname}_cd);
-'''
+\trz_warn_if_fail ({cname}_cd);'''
 DEFINE_INNER_TEMPLATE = '''\tRzCmdDesc *{cname}_cd = rz_cmd_desc_inner_new (core->rcmd, {parent_cname}_cd, {name}, &{help_cname});
-\trz_warn_if_fail ({cname}_cd);
-'''
+\trz_warn_if_fail ({cname}_cd);'''
 DEFINE_FAKE_TEMPLATE = '''\tRzCmdDesc *{cname}_cd = rz_cmd_desc_fake_new (core->rcmd, {parent_cname}_cd, {name}, &{help_cname});
-\trz_warn_if_fail ({cname}_cd);
-'''
+\trz_warn_if_fail ({cname}_cd);'''
 
 CD_TYPE_OLDINPUT = 'RZ_CMD_DESC_TYPE_OLDINPUT'
 CD_TYPE_GROUP = 'RZ_CMD_DESC_TYPE_GROUP'
@@ -104,6 +97,8 @@ CD_TYPE_ARGV = 'RZ_CMD_DESC_TYPE_ARGV'
 CD_TYPE_ARGV_MODES = 'RZ_CMD_DESC_TYPE_ARGV_MODES'
 CD_TYPE_FAKE = 'RZ_CMD_DESC_TYPE_FAKE'
 CD_TYPE_INNER = 'RZ_CMD_DESC_TYPE_INNER'
+
+CD_VALID_TYPES = [CD_TYPE_OLDINPUT, CD_TYPE_GROUP, CD_TYPE_ARGV, CD_TYPE_ARGV_MODES, CD_TYPE_FAKE, CD_TYPE_INNER]
 
 def escape(s):
     return s.replace('\\', '\\\\').replace('"', '\\"')
@@ -130,6 +125,8 @@ def compute_cname(name):
         '?': '_question_',
         '/': '_slash_',
         '\\': '_backslash_',
+        '!': '_escl_',
+        '#': '_hash_',
         ' ': '_space_',
     }))
     if name.startswith('_'):
@@ -248,7 +245,7 @@ class CmdDesc(object):
     c_args = {}
     c_details = {}
 
-    def __init__(self, c, parent='root', pos=0):
+    def __init__(self, c, parent=None, pos=0):
         self.pos = pos
 
         if not c:
@@ -306,7 +303,7 @@ class CmdDesc(object):
         if 'subcommands' in c:
             self.subcommands = [CmdDesc(x, self, i) for i, x in enumerate(c.get('subcommands', []))]
         # handle the exec_cd, which is a cd that has the same name as its parent
-        if self.subcommands and self.subcommands[0].name == self.name and self.subcommands[0].type != CD_TYPE_INNER:
+        if self.subcommands and self.subcommands[0].name == self.name and self.subcommands[0].type not in [CD_TYPE_INNER, CD_TYPE_FAKE]:
             self.exec_cd = self.subcommands[0]
 
         self._validate()
@@ -319,11 +316,15 @@ class CmdDesc(object):
             CmdDesc.c_details[CmdDesc.get_detail_cname(self)] = self
 
     def _validate(self):
+        if self.type not in CD_VALID_TYPES:
+            print('Command %s does not have a valid type.' % (self.name,))
+            sys.exit(1)
+
         if self.type in [CD_TYPE_ARGV, CD_TYPE_ARGV_MODES, CD_TYPE_OLDINPUT] and not self.cname:
             print('Command %s does not have cname field' % (self.name,))
             sys.exit(1)
         
-        if self.parent and self.parent.name == self.name and self.pos != 0 and self.type != CD_TYPE_INNER:
+        if self.parent and self.parent.name == self.name and self.pos != 0 and self.type not in [CD_TYPE_INNER, CD_TYPE_FAKE]:
             print('If a command has the same name as its parent, it can only be the first child. See parent of Command %s' % (self.cname,))
             sys.exit(1)
         
