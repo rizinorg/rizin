@@ -38,6 +38,7 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_STRING, ///< Argument that can be an arbitrary string
 	RZ_CMD_ARG_TYPE_ENV, ///< Argument can be the name of an existing rizin variable
 	RZ_CMD_ARG_TYPE_ZIGN, ///< Argument can be the name of an existing zignature
+	RZ_CMD_ARG_TYPE_ZIGN_SPACE, ///< Argument can be the name of an existing zignature space
 	RZ_CMD_ARG_TYPE_CHOICES, ///< Argument can be one of the provided choices
 	RZ_CMD_ARG_TYPE_ARRAY_STRING, ///< Argument is an array of arbitrary strings (if present, must be last in the list)
 	RZ_CMD_ARG_TYPE_FCN, ///< Argument can be the name of an existing function
@@ -360,48 +361,6 @@ typedef struct rz_core_plugin_t {
 	RzCmdCb init;
 	RzCmdCb fini;
 } RzCorePlugin;
-
-#define DEFINE_CMD_ARGV_DESC_DETAIL(core, name, c_name, parent, handler, help) \
-	do { \
-		RzCmdDesc *c_name##_cd = rz_cmd_desc_argv_new (core->rcmd, parent, #name, handler, help); \
-		rz_warn_if_fail (c_name##_cd); \
-	} while (0)
-#define DEFINE_CMD_ARGV_DESC_SPECIAL(core, name, c_name, parent) \
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, name, c_name, parent, c_name##_handler, &c_name##_help)
-#define DEFINE_CMD_ARGV_DESC_INNER(core, name, c_name, parent) \
-	RzCmdDesc *c_name##_cd = rz_cmd_desc_inner_new (core->rcmd, parent, #name, &c_name##_help); \
-	rz_warn_if_fail (c_name##_cd)
-#define DEFINE_CMD_ARGV_GROUP_DETAIL(core, name, c_name, parent, exec_handler, help, group_help) \
-	RzCmdDesc *c_name##_cd = rz_cmd_desc_group_new (core->rcmd, parent, #name, exec_handler, help, group_help); \
-	rz_warn_if_fail (c_name##_cd)
-#define DEFINE_CMD_ARGV_GROUP_EXEC(core, name, parent) \
-	DEFINE_CMD_ARGV_GROUP_DETAIL (core, name, name, parent, name##_handler, &name##_help, &name##_group_help)
-#define DEFINE_CMD_ARGV_GROUP_EXEC_SPECIAL(core, name, c_name, parent) \
-	DEFINE_CMD_ARGV_GROUP_DETAIL (core, name, c_name, parent, c_name##_handler, &c_name##_help, &c_name##_group_help)
-#define DEFINE_CMD_ARGV_GROUP_SPECIAL(core, name, c_name, parent) \
-	DEFINE_CMD_ARGV_GROUP_DETAIL (core, name, c_name, parent, NULL, NULL, &c_name##_group_help)
-#define DEFINE_CMD_ARGV_GROUP(core, name, parent) \
-	DEFINE_CMD_ARGV_GROUP_DETAIL (core, name, name, parent, NULL, NULL, &name##_group_help)
-#define DEFINE_CMD_ARGV_GROUP_MODES_EXEC_SPECIAL(core, name, c_name, parent, modes) \
-	RzCmdDesc *c_name##_cd = rz_cmd_desc_group_modes_new (core->rcmd, parent, #name, modes, c_name##_handler, &c_name##_help, &c_name##_group_help); \
-	rz_warn_if_fail (c_name##_cd)
-#define DEFINE_CMD_ARGV_GROUP_MODES_EXEC(core, name, parent, modes) \
-	DEFINE_CMD_ARGV_GROUP_MODES_EXEC_SPECIAL (core, name, name, parent, modes)
-#define DEFINE_CMD_ARGV_MODES_SPECIAL(core, name, c_name, parent, modes) \
-	RzCmdDesc *c_name##_cd = rz_cmd_desc_argv_modes_new (core->rcmd, parent, #name, modes, c_name##_handler, &c_name##_help); \
-	rz_warn_if_fail (c_name##_cd)
-#define DEFINE_CMD_ARGV_MODES(core, name, parent, modes) \
-	DEFINE_CMD_ARGV_MODES_SPECIAL (core, name, name, parent, modes)
-#define DEFINE_CMD_ARGV_DESC(core, name, parent) \
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, name, name, parent)
-#define DEFINE_CMD_OLDINPUT_DESC_SPECIAL(core, name, c_name, parent) \
-	RzCmdDesc *c_name##_cd = rz_cmd_desc_oldinput_new (core->rcmd, parent, #name, c_name##_handler_old, &c_name##_help); \
-	rz_warn_if_fail (c_name##_cd)
-#define DEFINE_CMD_OLDINPUT_DESC(core, name, parent) \
-	DEFINE_CMD_OLDINPUT_DESC_SPECIAL (core, name, name, parent)
-#define DEFINE_CMD_FAKE_SPECIAL(core, name, c_name, parent) \
-	RzCmdDesc *c_name##_cd = rz_cmd_desc_fake_new (core->rcmd, parent, #name, &c_name##_help); \
-	rz_warn_if_fail (c_name##_cd)
 
 #ifdef RZ_API
 RZ_API int rz_core_plugin_init(RzCmd *cmd);

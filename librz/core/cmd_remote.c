@@ -62,7 +62,7 @@ static int getArg(char ch, int def) {
 	return def;
 }
 
-static int equal_g_handler_old(void *data, const char *input) {
+RZ_IPI int rz_equal_g_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	if (input[0] == '?') {
 		rz_core_cmd_help (core, help_msg_equalg);
@@ -72,7 +72,7 @@ static int equal_g_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int equal_h_handler_old(void *data, const char *input) {
+RZ_IPI int rz_equal_h_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	if (input[0] == '?') {
 		rz_core_cmd_help (core, help_msg_equalh);
@@ -82,7 +82,7 @@ static int equal_h_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int equal_H_handler_old(void *data, const char *input) {
+RZ_IPI int rz_equal_H_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	if (input[0] == '?') {
 		rz_core_cmd_help (core, help_msg_equalh);
@@ -93,7 +93,7 @@ static int equal_H_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int cmd_remote(void *data, const char *input) {
+RZ_IPI int rz_cmd_remote(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	switch (*input) {
 	case '\0': // "="
@@ -130,13 +130,13 @@ static int cmd_remote(void *data, const char *input) {
 		rz_core_rtr_session (core, input + 1);
 		break;
 	case 'g': // "=g"
-		equal_g_handler_old (core, input + 1);
+		rz_equal_g_handler_old (core, input + 1);
 		break;
 	case 'h': // "=h"
-		equal_h_handler_old (core, input + 1);
+		rz_equal_h_handler_old (core, input + 1);
 		break;
 	case 'H': // "=H"
-		equal_H_handler_old (core, input + 1);
+		rz_equal_H_handler_old (core, input + 1);
 		break;
 	case '?': // "=?"
 		rz_core_cmd_help (core, help_msg_equal);
@@ -148,7 +148,7 @@ static int cmd_remote(void *data, const char *input) {
 	return 0;
 }
 
-static RzCmdStatus equal_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_remote_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 1) {
 		rz_core_rtr_list (core);
 		return RZ_CMD_STATUS_OK;
@@ -161,14 +161,14 @@ static RzCmdStatus equal_handler(RzCore *core, int argc, const char **argv) {
 	return RZ_CMD_STATUS_ERROR;
 }
 
-static RzCmdStatus equal_minor_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_remote_send_handler(RzCore *core, int argc, const char **argv) {
 	char *args = rz_str_array_join (argv + 1, argc - 1, " ");
 	rz_core_rtr_pushout (core, args);
 	free (args);
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus equal_esclamation_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_io_system_run_handler(RzCore *core, int argc, const char **argv) {
 	char *args = rz_str_array_join (argv + 1, argc - 1, " ");
 	char *res = rz_io_system (core->io, args);
 	if (res) {
@@ -179,39 +179,39 @@ static RzCmdStatus equal_esclamation_handler(RzCore *core, int argc, const char 
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus equal_plus_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_remote_add_handler(RzCore *core, int argc, const char **argv) {
 	char *args = rz_str_array_join (argv + 1, argc - 1, " ");
 	rz_core_rtr_add (core, args);
 	free (args);
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus equal_minus_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_remote_del_handler(RzCore *core, int argc, const char **argv) {
 	char *args = rz_str_array_join (argv + 1, argc - 1, " ");
 	rz_core_rtr_remove (core, args);
 	free (args);
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus equal_equal_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_remote_open_handler(RzCore *core, int argc, const char **argv) {
 	char *args = rz_str_array_join (argv + 1, argc - 1, " ");
 	rz_core_rtr_session (core, args);
 	free (args);
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus equal_esclamation_equal_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_remote_mode_enable_handler(RzCore *core, int argc, const char **argv) {
 	RZ_FREE (core->cmdremote);
 	core->cmdremote = rz_str_trim_dup ("0");
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus esclamation_equal_esclamation_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_remote_mode_disable_handler(RzCore *core, int argc, const char **argv) {
 	RZ_FREE (core->cmdremote);
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus equal_colon_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_remote_rap_handler(RzCore *core, int argc, const char **argv) {
 	char *args = rz_str_array_join (argv + 1, argc - 1, " ");
 	args = rz_str_prepend (args, ":");
 	rz_core_rtr_cmd (core, args);
@@ -219,7 +219,7 @@ static RzCmdStatus equal_colon_handler(RzCore *core, int argc, const char **argv
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus equal_and_colon_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_remote_rap_bg_handler(RzCore *core, int argc, const char **argv) {
 	char *args = rz_str_array_join (argv + 1, argc - 1, " ");
 	args = rz_str_prepend (args, "&:");
 	rz_core_rtr_cmd (core, args);
@@ -227,7 +227,7 @@ static RzCmdStatus equal_and_colon_handler(RzCore *core, int argc, const char **
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus equal_t_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_remote_tcp_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 2) {
 		rz_core_rtr_cmds (core, argv[1]);
 		return RZ_CMD_STATUS_OK;
@@ -250,21 +250,4 @@ static RzCmdStatus equal_t_handler(RzCore *core, int argc, const char **argv) {
 		return RZ_CMD_STATUS_OK;
 	}
 	return RZ_CMD_STATUS_ERROR;
-}
-
-static void cmd_remote_init(RzCore *core, RzCmdDesc *parent) {
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, =<, equal_minor, parent);
-	DEFINE_CMD_ARGV_DESC_INNER (core, =, equal_fd, parent);
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, =!, equal_esclamation, parent);
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, =+, equal_plus, parent);
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, =-, equal_minus, parent);
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, ==, equal_equal, parent);
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, =!=, equal_esclamation_equal, parent);
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, !=!, esclamation_equal_esclamation, parent);
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, =:, equal_colon, parent);
-	DEFINE_CMD_OLDINPUT_DESC_SPECIAL (core, =g, equal_g, parent);
-	DEFINE_CMD_OLDINPUT_DESC_SPECIAL (core, =h, equal_h, parent);
-	DEFINE_CMD_OLDINPUT_DESC_SPECIAL (core, =H, equal_H, parent);
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, =t, equal_t, parent);
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, =&:, equal_and_colon, parent);
 }

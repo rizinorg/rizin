@@ -510,37 +510,6 @@ struct trace_node {
 	int refs;
 };
 
-static void cmd_debug_init(RzCore *core, RzCmdDesc *parent) {
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, d);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, db);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, dbt);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, dc);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, dcs);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, dcu);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, dd);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, de);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, des);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, di);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, dk);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, dko);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, dm);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, dmi);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, dmm);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, dmp);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, do);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, dp);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, dr);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, drp);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, drs);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, drt);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, drx);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, ds);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, dt);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, dte);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, dts);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, dx);
-}
-
 // XXX those tmp files are never removed and we shuoldnt use files for this
 static void setRarunProfileString(RzCore *core, const char *str) {
 	char *file = rz_file_temp ("rz_run");
@@ -4680,7 +4649,7 @@ static void consumeBuffer(RzBuffer *buf, const char *cmd, const char *errmsg) {
 	rz_cons_printf ("\n");
 }
 
-static int cmd_debug(void *data, const char *input) {
+RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	RzDebugTracepoint *t;
 	int follow = 0;

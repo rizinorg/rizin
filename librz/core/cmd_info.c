@@ -77,11 +77,6 @@ static const char *help_msg_id[] = {
 	NULL
 };
 
-static void cmd_info_init(RzCore *core, RzCmdDesc *parent) {
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, i);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, id);
-}
-
 #define PAIR_WIDTH 9
 // TODO: reuse implementation in core/bin.c
 static void pair(const char *a, const char *b) {
@@ -445,7 +440,7 @@ static bool isKnownPackage(const char *cn) {
 	return false;
 }
 
-static int cmd_info(void *data, const char *input) {
+RZ_IPI int rz_cmd_info(void *data, const char *input) {
 	RzCore *core = (RzCore *) data;
 	bool newline = rz_cons_is_interactive ();
 	int fd = rz_io_fd_get_current (core->io);
@@ -1186,10 +1181,10 @@ static int cmd_info(void *data, const char *input) {
 			return 0;
 		case 'a': // "ia"
 			switch (mode) {
-			case RZ_MODE_RADARE: cmd_info (core, "IieEcsSmz*"); break;
-			case RZ_MODE_JSON: cmd_info (core, "IieEcsSmzj"); break;
-			case RZ_MODE_SIMPLE: cmd_info (core, "IieEcsSmzq"); break;
-			default: cmd_info (core, "IiEecsSmz"); break;
+			case RZ_MODE_RADARE: rz_cmd_info (core, "IieEcsSmz*"); break;
+			case RZ_MODE_JSON: rz_cmd_info (core, "IieEcsSmzj"); break;
+			case RZ_MODE_SIMPLE: rz_cmd_info (core, "IieEcsSmzq"); break;
+			default: rz_cmd_info (core, "IiEecsSmz"); break;
 			}
 			break;
 		case '?': // "i?"

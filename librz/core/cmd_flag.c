@@ -102,14 +102,6 @@ static const char *help_msg_fz[] = {
 	NULL
 };
 
-static void cmd_flag_init(RzCore *core, RzCmdDesc *parent) {
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, f);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, fc);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, fd);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, fs);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, fz);
-}
-
 static bool listFlag(RzFlagItem *flag, void *user) {
 	rz_list_append (user, flag);
 	return true;
@@ -755,7 +747,7 @@ static void print_function_labels(RzAnal *anal, RzAnalFunction *fcn, int rad) {
 	}
 }
 
-static int cmd_flag(void *data, const char *input) {
+RZ_IPI int rz_cmd_flag(void *data, const char *input) {
 	static int flagenum = 0;
 	RzCore *core = (RzCore *)data;
 	ut64 off = core->offset;

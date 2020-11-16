@@ -23,10 +23,11 @@
 #include <sys/types.h>
 #include <ctype.h>
 #include <stdarg.h>
-#include "cmd_helps.h"
 #if __UNIX__
 #include <sys/utsname.h>
 #endif
+
+#include "cmd_descs.h"
 
 #include <tree_sitter/api.h>
 TSLanguage *tree_sitter_rzcmd ();
@@ -400,7 +401,7 @@ static int rz_core_cmd_nullcallback(void *data) {
 	return 1;
 }
 
-static RzCmdStatus uniq_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_uniq_handler(RzCore *core, int argc, const char **argv) {
 	char *res = rz_syscmd_uniq (argv[1]);
 	if (!res) {
 		return RZ_CMD_STATUS_ERROR;
@@ -410,7 +411,7 @@ static RzCmdStatus uniq_handler(RzCore *core, int argc, const char **argv) {
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus uname_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_uname_handler(RzCore *core, int argc, const char **argv) {
 	RSysInfo *si = rz_sys_info ();
 	if (!si) {
 		return RZ_CMD_STATUS_ERROR;
@@ -424,7 +425,7 @@ static RzCmdStatus uname_handler(RzCore *core, int argc, const char **argv) {
 	return RZ_CMD_STATUS_OK;
 }
 
-static int cmd_alias(void *data, const char *input) {
+RZ_IPI int rz_cmd_alias(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	if (*input == '?') {
 		rz_core_cmd_help (core, help_msg_dollar);
@@ -567,7 +568,7 @@ static int cmd_alias(void *data, const char *input) {
 	return 0;
 }
 
-static int cmd_yank(void *data, const char *input) {
+RZ_IPI int rz_cmd_yank(void *data, const char *input) {
 	ut64 n;
 	RzCore *core = (RzCore *)data;
 	switch (input[0]) {
@@ -877,7 +878,7 @@ RZ_API bool rz_core_run_script(RzCore *core, const char *file) {
 	return ret;
 }
 
-static int cmd_m(void *data, const char *input) {
+RZ_IPI int rz_cmd_m(void *data, const char *input) {
 	switch (*input) {
 	case '?': // "m?"
 		eprintf ("Usage: m[kv] # mkdir to create directory, mv to move a file\n");
@@ -897,7 +898,7 @@ static int cmd_m(void *data, const char *input) {
 	return 0;
 }
 
-static int cmd_ls(void *data, const char *input) { // "ls"
+RZ_IPI int rz_cmd_ls(void *data, const char *input) { // "ls"
 	const char *arg = strchr (input, ' ');
 	if (arg) {
 		arg = rz_str_trim_head_ro (arg + 1);
@@ -920,7 +921,7 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 	return 0;
 }
 
-static RzCmdStatus ls_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_ls_handler(RzCore *core, int argc, const char **argv) {
 	char *arg = rz_str_array_join (argv + 1, argc - 1, " ");
 	char *res = rz_syscmd_ls (arg);
 	if (!res) {
@@ -932,7 +933,7 @@ static RzCmdStatus ls_handler(RzCore *core, int argc, const char **argv) {
 	return RZ_CMD_STATUS_OK;
 }
 
-static int cmd_stdin(void *data, const char *input) {
+RZ_IPI int rz_cmd_stdin(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	if (input[0] == '?') {
 		rz_cons_printf ("Usage: '-' '.-' '. -' do the same\n");
@@ -941,7 +942,7 @@ static int cmd_stdin(void *data, const char *input) {
 	return rz_core_run_script (core, "-");
 }
 
-static int cmd_interpret(void *data, const char *input) {
+RZ_IPI int rz_cmd_interpret(void *data, const char *input) {
 	char *str, *ptr, *eol, *rbuf, *filter, *inp;
 	const char *host, *port, *cmd;
 	RzCore *core = (RzCore *)data;
@@ -1107,7 +1108,7 @@ RZ_API int rz_line_hist_sdb_down(RzLine *line) {
 	return true;
 }
 
-static int cmd_kuery(void *data, const char *input) {
+RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 	char buf[1024], *out;
 	RzCore *core = (RzCore*)data;
 	const char *sp, *p = "[sdb]> ";
@@ -1328,7 +1329,7 @@ static int cmd_kuery(void *data, const char *input) {
 	return 0;
 }
 
-static int cmd_bsize(void *data, const char *input) {
+RZ_IPI int rz_cmd_bsize(void *data, const char *input) {
 	ut64 n;
 	RzFlagItem *flag;
 	RzCore *core = (RzCore *)data;
@@ -1455,7 +1456,7 @@ static int cmd_rebase(RzCore *core, const char *input) {
 	return 0;
 }
 
-static int cmd_resize(void *data, const char *input) {
+RZ_IPI int rz_cmd_resize(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	ut64 newsize = 0;
 	st64 delta = 0;
@@ -1564,7 +1565,7 @@ static int cmd_resize(void *data, const char *input) {
 	return true;
 }
 
-static int cmd_panels(void *data, const char *input) {
+RZ_IPI int rz_cmd_panels(void *data, const char *input) {
 	RzCore *core = (RzCore*) data;
 	if (core->vmode) {
 		return false;
@@ -1606,7 +1607,7 @@ static int cmd_panels(void *data, const char *input) {
 	return true;
 }
 
-static int cmd_visual(void *data, const char *input) {
+RZ_IPI int rz_cmd_visual(void *data, const char *input) {
 	RzCore *core = (RzCore*) data;
 	if (core->http_up) {
 		return false;
@@ -1618,7 +1619,7 @@ static int cmd_visual(void *data, const char *input) {
 	return rz_core_visual ((RzCore *)data, input);
 }
 
-static int cmd_pipein(void *user, const char *input) {
+RZ_IPI int rz_cmd_pipein(void *user, const char *input) {
 	char *buf = strdup (input);
 	int len = rz_str_unescape (buf);
 	rz_cons_readpush (buf, len);
@@ -1626,14 +1627,14 @@ static int cmd_pipein(void *user, const char *input) {
 	return 0;
 }
 
-static RzCmdStatus pipein_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_push_escaped_handler(RzCore *core, int argc, const char **argv) {
 	char *input = rz_str_array_join (argv + 1, argc - 1, " ");
-	RzCmdStatus res = rz_cmd_int2status (cmd_pipein (core, input));
+	RzCmdStatus res = rz_cmd_int2status (rz_cmd_pipein (core, input));
 	free (input);
 	return res;
 }
 
-static int cmd_tasks(void *data, const char *input) {
+RZ_IPI int rz_cmd_tasks(void *data, const char *input) {
 	RzCore *core = (RzCore*) data;
 	switch (input[0]) {
 	case '\0': // "&"
@@ -1710,7 +1711,7 @@ static int cmd_tasks(void *data, const char *input) {
 	return 0;
 }
 
-static int cmd_pointer(void *data, const char *input) {
+RZ_IPI int rz_cmd_pointer(void *data, const char *input) {
 	RzCore *core = (RzCore*) data;
 	int ret = true;
 	char *str, *eq;
@@ -1738,7 +1739,7 @@ static int cmd_pointer(void *data, const char *input) {
 	return ret;
 }
 
-static RzCmdStatus pointer_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_pointer_handler(RzCore *core, int argc, const char **argv) {
 	int ret;
 	switch (argc) {
 	case 2:
@@ -1756,7 +1757,7 @@ static RzCmdStatus pointer_handler(RzCore *core, int argc, const char **argv) {
 	}
 }
 
-static int cmd_env(void *data, const char *input) {
+RZ_IPI int rz_cmd_env(void *data, const char *input) {
 	RzCore *core = (RzCore*)data;
 	int ret = true;
 	switch (*input) {
@@ -1905,7 +1906,7 @@ static void cmd_autocomplete(RzCore *core, const char *input) {
 	eprintf ("Invalid usage of !!!\n");
 }
 
-static int cmd_last(void *data, const char *input) {
+RZ_IPI int rz_cmd_last(void *data, const char *input) {
 	switch (*input) {
 	case 0:
 		rz_cons_last ();
@@ -1916,7 +1917,7 @@ static int cmd_last(void *data, const char *input) {
 	return 0;
 }
 
-static int cmd_system(void *data, const char *input) {
+RZ_IPI int rz_cmd_system(void *data, const char *input) {
 	RzCore *core = (RzCore*)data;
 	ut64 n;
 	int ret = 0;
@@ -6540,7 +6541,7 @@ RZ_API int rz_core_cmd_task_sync(RzCore *core, const char *cmd, bool log) {
 	return res;
 }
 
-static int cmd_ox(void *data, const char *input) {
+RZ_IPI int rz_cmd_ox(void *data, const char *input) {
 	return rz_core_cmdf ((RzCore*)data, "s 0%s", input);
 }
 
@@ -6585,62 +6586,47 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		const char *cmd;
 		const char *description;
 		RzCmdCb cb;
-		void (*descriptor_init)(RzCore *core, RzCmdDesc *parent);
-		const RzCmdDescHelp *help;
-		const RzCmdDescHelp *group_help;
-		RzCmdDescType type;
-		RzCmdArgvCb argv_cb;
-		int modes;
-		RzCmdArgvModesCb argv_modes_cb;
 	} cmds[] = {
-		{ "!", "run system command", cmd_system, NULL, &system_help },
-		{ "_", "print last output", cmd_last, NULL, &underscore_help },
-		{ "#", "calculate hash", cmd_hash, NULL, &hash_help },
-		{ "$", "alias", cmd_alias, NULL, &alias_help },
-		{ "%", "short version of 'env' command", cmd_env, NULL, &percentage_help, NULL, RZ_CMD_DESC_TYPE_ARGV, env_handler },
-		{ "&", "tasks", cmd_tasks, NULL, &tasks_help },
-		{ "(", "macro", cmd_macro, cmd_macro_init, &macro_help },
-		{ "*", "pointer read/write", cmd_pointer, NULL, &pointer_help, NULL, RZ_CMD_DESC_TYPE_ARGV, pointer_handler },
-		{ "-", "open cfg.editor and run script", cmd_stdin, NULL, &stdin_help },
-		{ ".", "interpret", cmd_interpret, cmd_interpret_init, &point_help, &point_group_help, RZ_CMD_DESC_TYPE_GROUP, point_handler },
-		{ "/", "search kw, pattern aes", cmd_search, cmd_search_init, &search_help },
-		{ "=", "io pipe", cmd_remote, cmd_remote_init, &equal_help, &equal_group_help, RZ_CMD_DESC_TYPE_GROUP, equal_handler },
-		{ "?", "help message", cmd_help, cmd_help_init, &help_help },
-		{ "<", "pipe into RzCons.readChar", cmd_pipein, NULL, &pipein_help, NULL, RZ_CMD_DESC_TYPE_ARGV, pipein_handler },
-		{ "0", "alias for s 0x", cmd_ox, NULL, &zero_help },
-		{ "a", "analysis", cmd_anal, cmd_anal_init, &anal_help },
-		{ "b", "change block size", cmd_bsize, NULL, &b_help },
-		{ "c", "compare memory", cmd_cmp, cmd_cmp_init, &c_help },
-		{ "C", "code metadata", cmd_meta, cmd_meta_init, &C_help },
-		{ "d", "debugger operations", cmd_debug, cmd_debug_init, &d_help },
-		{ "e", "evaluate configuration variable", cmd_eval, cmd_eval_init, &e_help },
-		{ "f", "get/set flags", cmd_flag, cmd_flag_init, &f_help },
-		{ "g", "egg manipulation", cmd_egg, cmd_egg_init, &g_help },
-		{ "i", "get file info", cmd_info, cmd_info_init, &i_help },
-		{ "k", "perform sdb query", cmd_kuery, NULL, &k_help },
-		{ "ls", "list files and directories", cmd_ls, NULL, &ls_help, NULL, RZ_CMD_DESC_TYPE_ARGV, ls_handler },
-		{ "m", "make directory and move files", cmd_m, NULL, &m_help },
-		{ "L", "manage dynamically loaded plugins", cmd_plugins, NULL, &L_help },
-		{ "o", "open or map file", cmd_open, cmd_open_init, &o_help },
-		{ "p", "print current block", cmd_print, cmd_print_init, &p_help },
-		{ "P", "project", NULL, cmd_project_init, NULL, &P_group_help, RZ_CMD_DESC_TYPE_GROUP },
-		{ "q", "exit program session", cmd_quit, cmd_quit_init, &q_help },
-		{ "r", "change file size", cmd_resize, NULL, &rz_help },
-		{ "s", "seek to an offset", cmd_seek, cmd_seek_init, &s_help },
-		{ "t", "type information (cparse)", cmd_type, cmd_type_init, &t_help },
-		{ "uniq", "", NULL, NULL, &uniq_help, NULL, RZ_CMD_DESC_TYPE_ARGV, uniq_handler },
-		{ "uname", "", NULL, NULL, &uname_help, NULL, RZ_CMD_DESC_TYPE_ARGV, uname_handler },
-		{ "V", "enter visual mode", cmd_visual, NULL, &V_help },
-		{ "v", "enter visual mode", cmd_panels, NULL, &v_help },
-		{ "w", "write bytes", cmd_write, cmd_write_init, &w_help, &w_group_help, RZ_CMD_DESC_TYPE_GROUP, w_handler },
-		{ "x", "alias for px", cmd_hexdump, NULL, &x_help },
-		{ "y", "yank bytes", cmd_yank, NULL, &y_help },
-		{ "z", "zignatures", cmd_zign, cmd_zign_init, &z_help, &z_group_help, RZ_CMD_DESC_TYPE_GROUP, NULL, RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_SDB, z_handler },
-		{ "@", "temporary modifiers", NULL, NULL, &tmp_modifier_help, NULL, RZ_CMD_DESC_TYPE_FAKE },
-		{ "@@", "iterators", NULL, NULL, &iterator_help, NULL, RZ_CMD_DESC_TYPE_FAKE },
-		{ ">", "redirection", NULL, NULL, &redirection_help, NULL, RZ_CMD_DESC_TYPE_FAKE },
-		{ "|", "pipe", NULL, NULL, &pipe_help, NULL, RZ_CMD_DESC_TYPE_FAKE },
-		{ "~", "grep", NULL, NULL, &grep_help, NULL, RZ_CMD_DESC_TYPE_FAKE },
+		{ "!", "run system command", rz_cmd_system },
+		{ "_", "print last output", rz_cmd_last },
+		{ "#", "calculate hash", rz_cmd_hash },
+		{ "$", "alias", rz_cmd_alias },
+		{ "%", "short version of 'env' command", rz_cmd_env },
+		{ "&", "tasks", rz_cmd_tasks },
+		{ "(", "macro", rz_cmd_macro },
+		{ "*", "pointer read/write", rz_cmd_pointer },
+		{ "-", "open cfg.editor and run script", rz_cmd_stdin },
+		{ ".", "interpret", rz_cmd_interpret },
+		{ "/", "search kw, pattern aes", rz_cmd_search },
+		{ "=", "io pipe", rz_cmd_remote },
+		{ "?", "help message", rz_cmd_help },
+		{ "<", "pipe into RzCons.readChar", rz_cmd_pipein },
+		{ "0", "alias for s 0x", rz_cmd_ox },
+		{ "a", "analysis", rz_cmd_anal },
+		{ "b", "change block size", rz_cmd_bsize },
+		{ "c", "compare memory", rz_cmd_cmp },
+		{ "C", "code metadata", rz_cmd_meta },
+		{ "d", "debugger operations", rz_cmd_debug },
+		{ "e", "evaluate configuration variable", rz_cmd_eval },
+		{ "f", "get/set flags", rz_cmd_flag },
+		{ "g", "egg manipulation", rz_cmd_egg },
+		{ "i", "get file info", rz_cmd_info },
+		{ "k", "perform sdb query", rz_cmd_kuery },
+		{ "ls", "list files and directories", rz_cmd_ls },
+		{ "m", "make directory and move files", rz_cmd_m },
+		{ "L", "manage dynamically loaded plugins", rz_cmd_plugins },
+		{ "o", "open or map file", rz_cmd_open },
+		{ "p", "print current block", rz_cmd_print },
+		{ "q", "exit program session", rz_cmd_quit },
+		{ "r", "change file size", rz_cmd_resize },
+		{ "s", "seek to an offset", rz_cmd_seek },
+		{ "t", "type information (cparse)", rz_cmd_type },
+		{ "V", "enter visual mode", rz_cmd_visual },
+		{ "v", "enter visual mode", rz_cmd_panels },
+		{ "w", "write bytes", rz_cmd_write },
+		{ "x", "alias for px", rz_cmd_hexdump },
+		{ "y", "yank bytes", rz_cmd_yank },
+		{ "z", "zignatures", rz_cmd_zign },
 	};
 
 	core->rcmd = rz_cmd_new (!!core->cons);
@@ -6652,40 +6638,10 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 	rz_cmd_set_data (core->rcmd, core);
 	core->cmd_descriptors = rz_list_newf (free);
 
-	RzCmdDesc *root = rz_cmd_get_root (core->rcmd);
 	size_t i;
 	for (i = 0; i < RZ_ARRAY_SIZE (cmds); i++) {
 		if (cmds[i].cb) {
 			rz_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].cb);
-		}
-
-		RzCmdDesc *cd = NULL;
-		switch (cmds[i].type) {
-		case RZ_CMD_DESC_TYPE_OLDINPUT:
-			cd = rz_cmd_desc_oldinput_new (core->rcmd, root, cmds[i].cmd, cmds[i].cb, cmds[i].help);
-			break;
-		case RZ_CMD_DESC_TYPE_ARGV:
-			cd = rz_cmd_desc_argv_new (core->rcmd, root, cmds[i].cmd, cmds[i].argv_cb, cmds[i].help);
-			break;
-		case RZ_CMD_DESC_TYPE_ARGV_MODES:
-			cd = rz_cmd_desc_argv_modes_new (core->rcmd, root, cmds[i].cmd, cmds[i].modes, cmds[i].argv_modes_cb, cmds[i].help);
-			break;
-		case RZ_CMD_DESC_TYPE_INNER:
-			cd = rz_cmd_desc_inner_new (core->rcmd, root, cmds[i].cmd, cmds[i].help);
-			break;
-		case RZ_CMD_DESC_TYPE_GROUP:
-			if (cmds[i].modes) {
-				cd = rz_cmd_desc_group_modes_new (core->rcmd, root, cmds[i].cmd, cmds[i].modes, cmds[i].argv_modes_cb, cmds[i].help, cmds[i].group_help);
-			} else {
-				cd = rz_cmd_desc_group_new (core->rcmd, root, cmds[i].cmd, cmds[i].argv_cb, cmds[i].help, cmds[i].group_help);
-			}
-			break;
-		case RZ_CMD_DESC_TYPE_FAKE:
-			cd = rz_cmd_desc_fake_new (core->rcmd, root, cmds[i].cmd, cmds[i].help);
-			break;
-		}
-		if (cd && cmds[i].descriptor_init) {
-			cmds[i].descriptor_init (core, cd);
 		}
 	}
 	DEPRECATED_DEFINE_CMD_DESCRIPTOR_SPECIAL (core, $, dollar);
@@ -6700,4 +6656,5 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, u);
 	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, y);
 	cmd_descriptor_init (core);
+	newshell_cmddescs_init (core);
 }

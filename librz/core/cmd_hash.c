@@ -529,7 +529,7 @@ static int cmd_hash_bang (RzCore *core, const char *input) {
 	return true;
 }
 
-static int cmd_hash(void *data, const char *input) {
+RZ_IPI int rz_cmd_hash(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 
 	if (*input == '!') {

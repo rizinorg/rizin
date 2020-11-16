@@ -22,10 +22,6 @@ static const char *help_msg_g[] = {
 	NULL
 };
 
-static void cmd_egg_init(RzCore *core, RzCmdDesc *parent) {
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, g);
-}
-
 static void cmd_egg_option(RzEgg *egg, const char *key, const char *input) {
 	if (!*input) {
 		return;
@@ -130,7 +126,7 @@ static int cmd_egg_compile(RzEgg *egg) {
 	return ret;
 }
 
-static int cmd_egg(void *data, const char *input) {
+RZ_IPI int rz_cmd_egg(void *data, const char *input) {
 	RzCore *core = (RzCore *) data;
 	RzEgg *egg = core->egg;
 	char *oa, *p;

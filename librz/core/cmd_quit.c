@@ -15,10 +15,6 @@ static const char *help_msg_q[] = {
 	NULL
 };
 
-static void cmd_quit_init(RzCore *core, RzCmdDesc *parent) {
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, q);
-}
-
 static int cmd_Quit(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	if (input[0] == '!') {
@@ -38,7 +34,7 @@ static int cmd_Quit(void *data, const char *input) {
 	return -2;
 }
 
-static int cmd_quit(void *data, const char *input) {
+RZ_IPI int rz_cmd_quit(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	if (input)
 	switch (*input) {

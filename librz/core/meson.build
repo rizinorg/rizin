@@ -1,3 +1,12 @@
+cmd_descs_generate_py = files('cmd_descs_generate.py')
+cmd_descs_yaml = files('cmd_descs.yaml')
+cmd_descs_c = custom_target(
+  'cmd_descs.c',
+  output: ['cmd_descs.c', 'cmd_descs.h'],
+  input: [cmd_descs_generate_py, cmd_descs_yaml],
+  command: [py3_exe, cmd_descs_generate_py, '--output-dir', meson.current_build_dir(), cmd_descs_yaml]
+)
+
 rz_core_sources = [
   'anal_tp.c',
   'anal_objc.c',
@@ -10,9 +19,9 @@ rz_core_sources = [
   'cconfig.c',
   'cio.c',
   'cmd.c',
+  cmd_descs_c,
   #'cmd_anal.c',
   'cmd_api.c',
-  'cmd_helps.c',
   #'cmd_cmp.c',
   #'cmd_debug.c',
   #'cmd_egg.c',

@@ -67,7 +67,7 @@ static const char *help_msg_eco[] = {
 static char *curtheme = "default";
 static bool getNext = false;
 
-static RzCmdStatus env_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_env_handler(RzCore *core, int argc, const char **argv) {
 	char *p, **e;
 	switch (argc) {
 	case 1:
@@ -91,13 +91,6 @@ static RzCmdStatus env_handler(RzCore *core, int argc, const char **argv) {
 	default:
 		return RZ_CMD_STATUS_WRONG_ARGS;
 	}
-}
-
-static void cmd_eval_init(RzCore *core, RzCmdDesc *parent) {
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, e);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, ec);
-
-	DEFINE_CMD_ARGV_DESC (core, env, parent);
 }
 
 static bool load_theme(RzCore *core, const char *path) {
@@ -333,7 +326,7 @@ RZ_API void rz_core_echo(RzCore *core, const char *input) {
 	}
 }
 
-static int cmd_eval(void *data, const char *input) {
+RZ_IPI int rz_cmd_eval(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	switch (input[0]) {
 	case '\0': // "e"
@@ -393,7 +386,7 @@ static int cmd_eval(void *data, const char *input) {
 		return true;
 	case 'x': // exit
 		// XXX we need headers for the cmd_xxx files.
-		return cmd_quit (data, "");
+		return rz_cmd_quit (data, "");
 	case 'j': // json
 		rz_config_list (core->config, NULL, 'j');
 		break;

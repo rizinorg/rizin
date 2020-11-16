@@ -62,13 +62,6 @@ static const char *help_msg_ss[] = {
 	NULL
 };
 
-static void cmd_seek_init(RzCore *core, RzCmdDesc *parent) {
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, s);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, sC);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, sl);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, ss);
-}
-
 static void __init_seek_line(RzCore *core) {
 	ut64 from, to;
 
@@ -316,7 +309,7 @@ static void cmd_seek_opcode(RzCore *core, const char *input) {
 	core->num->value = val;
 }
 
-static int cmd_seek(void *data, const char *input) {
+RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 	RzCore *core = (RzCore *) data;
 	char *cmd, *p;
 	ut64 off = core->offset;

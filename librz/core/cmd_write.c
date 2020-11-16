@@ -5,7 +5,6 @@
 #include "rz_cons.h"
 #include "rz_core.h"
 #include "rz_io.h"
-#include "cmd_helps.h"
 
 static const char *help_msg_w[] = {
 	"Usage:","w[x] [str] [<file] [<<EOF] [@addr]","",
@@ -300,7 +299,7 @@ static void cmd_write_inc(RzCore *core, int size, st64 num) {
 	}
 }
 
-static int wo_handler_old(void *data, const char *input) {
+RZ_IPI int rz_wo_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	ut8 *buf;
 	int len;
@@ -452,7 +451,7 @@ static int wo_handler_old(void *data, const char *input) {
 }
 
 #define WSEEK(x,y) if (wseek)rz_core_seek_delta (x,y)
-static void cmd_write_value(RzCore *core, const char *input) {
+static void rz_cmd_write_value(RzCore *core, const char *input) {
 	int type = 0;
 	ut64 off = 0LL;
 	ut8 buf[sizeof(ut64)];
@@ -562,27 +561,27 @@ static RzCmdStatus common_wv_handler(RzCore *core, int argc, const char **argv, 
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus wv_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_write_value_handler(RzCore *core, int argc, const char **argv) {
 	return common_wv_handler (core, argc, argv, 0);
 }
 
-static RzCmdStatus wv1_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_write_value1_handler(RzCore *core, int argc, const char **argv) {
 	return common_wv_handler (core, argc, argv, 1);
 }
 
-static RzCmdStatus wv2_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_write_value2_handler(RzCore *core, int argc, const char **argv) {
 	return common_wv_handler (core, argc, argv, 2);
 }
 
-static RzCmdStatus wv4_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_write_value4_handler(RzCore *core, int argc, const char **argv) {
 	return common_wv_handler (core, argc, argv, 4);
 }
 
-static RzCmdStatus wv8_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_write_value8_handler(RzCore *core, int argc, const char **argv) {
 	return common_wv_handler (core, argc, argv, 8);
 }
 
-static RzCmdStatus w6e_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_write_base64_encode_handler(RzCore *core, int argc, const char **argv) {
 	int wseek = rz_config_get_i (core->config, "cfg.wseek");
 	const char *str = argv[1];
 	size_t str_len = strlen (str) + 1;
@@ -618,7 +617,7 @@ static RzCmdStatus w6e_handler(RzCore *core, int argc, const char **argv) {
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus w6d_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_write_base64_decode_handler(RzCore *core, int argc, const char **argv) {
 	int wseek = rz_config_get_i (core->config, "cfg.wseek");
 	const char *str = argv[1];
 	size_t str_len = strlen (str) + 1;
@@ -807,7 +806,7 @@ static bool cmd_wfs(RzCore *core, const char *input) {
 	return true;
 }
 
-static int wf_handler_old(void *data, const char *input) {
+RZ_IPI int rz_wf_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	if (!core || !*input) {
 		return -1;
@@ -903,7 +902,7 @@ static void cmd_write_pcache(RzCore *core, const char *input) {
 	}
 }
 
-static int wB_handler_old(void *data, const char *input) {
+RZ_IPI int rz_wB_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	switch (input[0]) {
 	case ' ':
@@ -919,12 +918,12 @@ static int wB_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static RzCmdStatus wB_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_write_bits_handler(RzCore *core, int argc, const char **argv) {
 	cmd_write_bits (core, 1, rz_num_math (core->num, argv[1]));
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus wB_minus_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_write_unset_bits_handler(RzCore *core, int argc, const char **argv) {
 	cmd_write_bits (core, 0, rz_num_math (core->num, argv[1]));
 	return RZ_CMD_STATUS_OK;
 }
@@ -948,18 +947,18 @@ static int w0_handler_common(RzCore *core, ut64 len) {
 	return res;
 }
 
-static int w0_handler_old(void *data, const char *input) {
+RZ_IPI int rz_w0_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	ut64 len = rz_num_math (core->num, input);
 	return w0_handler_common (core, len);
 }
 
-static RzCmdStatus w0_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_write_zero_handler(RzCore *core, int argc, const char **argv) {
 	ut64 len = rz_num_math (core->num, argv[1]);
 	return rz_cmd_int2status (w0_handler_common (core, len));
 }
 
-static int w_incdec_handler_old(void *data, const char *input, int inc) {
+static int rz_w_incdec_handler_old(void *data, const char *input, int inc) {
 	RzCore *core = (RzCore *)data;
 	st64 num = 1;
 	if (input[0] && input[1]) {
@@ -988,23 +987,35 @@ static RzCmdStatus w_incdec_handler(RzCore *core, int argc, const char **argv, i
 	return RZ_CMD_STATUS_OK;
 }
 
-static RzCmdStatus w1_incdec_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_write_1_inc_handler(RzCore *core, int argc, const char **argv) {
+	return w_incdec_handler (core, argc, argv, 1);
+}
+RZ_IPI RzCmdStatus rz_write_1_dec_handler(RzCore *core, int argc, const char **argv) {
 	return w_incdec_handler (core, argc, argv, 1);
 }
 
-static RzCmdStatus w2_incdec_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_write_2_inc_handler(RzCore *core, int argc, const char **argv) {
+	return w_incdec_handler (core, argc, argv, 2);
+}
+RZ_IPI RzCmdStatus rz_write_2_dec_handler(RzCore *core, int argc, const char **argv) {
 	return w_incdec_handler (core, argc, argv, 2);
 }
 
-static RzCmdStatus w4_incdec_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_write_4_inc_handler(RzCore *core, int argc, const char **argv) {
+	return w_incdec_handler (core, argc, argv, 4);
+}
+RZ_IPI RzCmdStatus rz_write_4_dec_handler(RzCore *core, int argc, const char **argv) {
 	return w_incdec_handler (core, argc, argv, 4);
 }
 
-static RzCmdStatus w8_incdec_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_write_8_inc_handler(RzCore *core, int argc, const char **argv) {
+	return w_incdec_handler (core, argc, argv, 8);
+}
+RZ_IPI RzCmdStatus rz_write_8_dec_handler(RzCore *core, int argc, const char **argv) {
 	return w_incdec_handler (core, argc, argv, 8);
 }
 
-static int w6_handler_old(void *data, const char *input) {
+RZ_IPI int rz_w6_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	int wseek = rz_config_get_i (core->config, "cfg.wseek");
 	int fail = 0;
@@ -1072,7 +1083,7 @@ static int w6_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wh_handler_old(void *data, const char *input) {
+RZ_IPI int rz_wh_handler_old(void *data, const char *input) {
 	char *p = strchr (input, ' ');
 	if (p) {
 		while (*p == ' ')
@@ -1086,7 +1097,7 @@ static int wh_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int we_handler_old(void *data, const char *input) {
+RZ_IPI int rz_we_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	ut64 addr = 0, len = 0, b_size = 0;
 	st64 dist = 0;
@@ -1220,7 +1231,7 @@ static int we_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wp_handler_old(void *data, const char *input) {
+RZ_IPI int rz_wp_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	if (input[0] == '-' || (input[0] == ' ' && input[1] == '-')) {
 		char *out = rz_core_editor (core, NULL, NULL);
@@ -1242,7 +1253,7 @@ static int wp_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wu_handler_old(void *data, const char *input) {
+RZ_IPI int rz_wu_handler_old(void *data, const char *input) {
 	// TODO: implement it in an API RzCore.write_unified_hexpatch() is ETOOLONG
 	if (input[0]==' ') {
 		char *data = rz_file_slurp (input+1, NULL);
@@ -1299,7 +1310,7 @@ static int wu_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wr_handler_old(void *data, const char *input) {
+RZ_IPI int rz_wr_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	int wseek = rz_config_get_i (core->config, "cfg.wseek");
 	ut64 off = rz_num_math (core->num, input);
@@ -1322,7 +1333,7 @@ static int wr_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wA_handler_old(void *data, const char *input) {
+RZ_IPI int rz_wA_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	int wseek = rz_config_get_i (core->config, "cfg.wseek");
 	int len;
@@ -1352,7 +1363,7 @@ static int wA_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wc_handler_old(void *data, const char *input) {
+RZ_IPI int rz_wc_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	switch (input[0]) {
 	case '\0': // "wc"
@@ -1454,20 +1465,20 @@ static void w_handler_common(RzCore *core, const char *input) {
 	rz_core_block_read (core);
 }
 
-static int w_handler_old(void *data, const char *input) {
+RZ_IPI int rz_w_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	w_handler_common (core, input);
 	return 0;
 }
 
-static RzCmdStatus w_handler(RzCore *core, int argc, const char **argv) {
+RZ_IPI RzCmdStatus rz_write_handler(RzCore *core, int argc, const char **argv) {
 	char *s = rz_str_array_join (argv + 1, argc - 1, " ");
 	w_handler_common (core, s);
 	free (s);
 	return RZ_CMD_STATUS_OK;
 }
 
-static int wz_handler_old(void *data, const char *input) {
+RZ_IPI int rz_wz_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	int wseek = rz_config_get_i (core->config, "cfg.wseek");
 	char *str = strdup (input);
@@ -1489,7 +1500,7 @@ static int wz_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wt_handler_old(void *data, const char *input) {
+RZ_IPI int rz_wt_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	char *str = strdup (input);
 	char *ostr = str;
@@ -1657,7 +1668,7 @@ static int wt_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int ww_handler_old(void *data, const char *input) {
+RZ_IPI int rz_ww_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	int wseek = rz_config_get_i (core->config, "cfg.wseek");
 	char *str = strdup (input);
@@ -1693,7 +1704,7 @@ static int ww_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wx_handler_old(void *data, const char *input) {
+RZ_IPI int rz_wx_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	int wseek = rz_config_get_i (core->config, "cfg.wseek");
 	const char *arg;
@@ -1761,7 +1772,7 @@ static int wx_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wa_handler_old(void *data, const char *input) {
+RZ_IPI int rz_wa_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	int wseek = rz_config_get_i (core->config, "cfg.wseek");
 	switch (input[0]) {
@@ -1904,7 +1915,7 @@ static int wa_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wb_handler_old(void *data, const char *input) {
+RZ_IPI int rz_wb_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	int len = strlen (input);
 	ut8 *buf = malloc (len + 2);
@@ -1928,7 +1939,7 @@ static int wb_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wm_handler_old(void *data, const char *input) {
+RZ_IPI int rz_wm_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	char *str = strdup (input);
 	int size = rz_hex_str2bin (input, (ut8 *)str);
@@ -1962,7 +1973,7 @@ static int wm_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int wd_handler_old(void *data, const char *input) {
+RZ_IPI int rz_wd_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	if (input[0] && input[0] == ' ') {
 		char *arg, *inp = strdup (input + 1);
@@ -1986,7 +1997,7 @@ static int wd_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static int ws_handler_old(void *data, const char *input) {
+RZ_IPI int rz_ws_handler_old(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	int wseek = rz_config_get_i (core->config, "cfg.wseek");
 	char *str = strdup (input);
@@ -2011,7 +2022,7 @@ static int ws_handler_old(void *data, const char *input) {
 }
 
 /* TODO: simplify using rz_write */
-static int cmd_write(void *data, const char *input) {
+RZ_IPI int rz_cmd_write(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 
 	if (!input) {
@@ -2020,79 +2031,79 @@ static int cmd_write(void *data, const char *input) {
 
 	switch (*input) {
 	case 'B': // "wB"
-		wB_handler_old (data, input + 1);
+		rz_wB_handler_old (data, input + 1);
 		break;
 	case '0': // "w0"
-		w0_handler_old (data, input + 1);
+		rz_w0_handler_old (data, input + 1);
 		break;
 	case '1': // "w1"
 	case '2': // "w2"
 	case '4': // "w4"
 	case '8': // "w8"
-		w_incdec_handler_old (data, input + 1, *input - '0');
+		rz_w_incdec_handler_old (data, input + 1, *input - '0');
 		break;
 	case '6': // "w6"
-		w6_handler_old (core, input + 1);
+		rz_w6_handler_old (core, input + 1);
 		break;
 	case 'h': // "wh"
-		wh_handler_old (core, input + 1);
+		rz_wh_handler_old (core, input + 1);
 		break;
 	case 'e': // "we"
-		we_handler_old (core, input + 1);
+		rz_we_handler_old (core, input + 1);
 		break;
 	case 'p': // "wp"
-		wp_handler_old (core, input + 1);
+		rz_wp_handler_old (core, input + 1);
 		break;
 	case 'u': // "wu"
-		wu_handler_old (core, input + 1);
+		rz_wu_handler_old (core, input + 1);
 		break;
 	case 'r': // "wr"
-		wr_handler_old (core, input + 1);
+		rz_wr_handler_old (core, input + 1);
 		break;
 	case 'A': // "wA"
-		wA_handler_old (core, input + 1);
+		rz_wA_handler_old (core, input + 1);
 		break;
 	case 'c': // "wc"
-		wc_handler_old (core, input + 1);
+		rz_wc_handler_old (core, input + 1);
 		break;
 	case ' ': // "w"
-		w_handler_old (core, input + 1);
+		rz_w_handler_old (core, input + 1);
 		break;
 	case 'z': // "wz"
-		wz_handler_old (core, input + 1);
+		rz_wz_handler_old (core, input + 1);
 		break;
 	case 't': // "wt"
-		wt_handler_old (core, input + 1);
+		rz_wt_handler_old (core, input + 1);
 		break;
 	case 'f': // "wf"
-		wf_handler_old (core, input + 1);
+		rz_wf_handler_old (core, input + 1);
 		break;
 	case 'w': // "ww"
-		ww_handler_old (core, input + 1);
+		rz_ww_handler_old (core, input + 1);
 		break;
 	case 'x': // "wx"
-		wx_handler_old (core, input + 1);
+		rz_wx_handler_old (core, input + 1);
 		break;
 	case 'a': // "wa"
-		wa_handler_old (core, input + 1);
+		rz_wa_handler_old (core, input + 1);
 		break;
 	case 'b': // "wb"
-		wb_handler_old (core, input + 1);
+		rz_wb_handler_old (core, input + 1);
 		break;
 	case 'm': // "wm"
-		wm_handler_old (core, input + 1);
+		rz_wm_handler_old (core, input + 1);
 		break;
 	case 'v': // "wv"
-		cmd_write_value (core, input + 1);
+		rz_cmd_write_value (core, input + 1);
 		break;
 	case 'o': // "wo"
-		wo_handler_old (core, input + 1);
+		rz_wo_handler_old (core, input + 1);
 		break;
 	case 'd': // "wd"
-		wd_handler_old (core, input + 1);
+		rz_wd_handler_old (core, input + 1);
 		break;
 	case 's': // "ws"
-		ws_handler_old (core, input + 1);
+		rz_ws_handler_old (core, input + 1);
 		break;
 	default:
 	case '?': // "w?"
@@ -2100,66 +2111,4 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	}
 	return 0;
-}
-
-static void cmd_write_init(RzCore *core, RzCmdDesc *parent) {
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, w);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, wa);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, wA);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, wc);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, we);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, wo);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, wop);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, wp);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, wt);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, wv);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, wx);
-
-	DEFINE_CMD_ARGV_GROUP_EXEC (core, wB, parent);
-	DEFINE_CMD_ARGV_DESC_SPECIAL (core, wB-, wB_minus, wB_cd);
-
-	DEFINE_CMD_ARGV_GROUP_EXEC (core, wv, parent);
-	DEFINE_CMD_ARGV_DESC (core, wv1, wv_cd);
-	DEFINE_CMD_ARGV_DESC (core, wv2, wv_cd);
-	DEFINE_CMD_ARGV_DESC (core, wv4, wv_cd);
-	DEFINE_CMD_ARGV_DESC (core, wv8, wv_cd);
-
-	DEFINE_CMD_ARGV_DESC (core, w0, parent);
-
-	DEFINE_CMD_ARGV_DESC_INNER (core, w, w_incdec, parent);
-	DEFINE_CMD_ARGV_GROUP_SPECIAL (core, w1, w1_incdec, w_incdec_cd);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1+, w1_inc, w1_incdec_cd, w1_incdec_handler, &w1_inc_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w1-, w1_dec, w1_incdec_cd, w1_incdec_handler, &w1_dec_help);
-	DEFINE_CMD_ARGV_GROUP_SPECIAL (core, w2, w2_incdec, w_incdec_cd);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2+, w2_inc, w2_incdec_cd, w2_incdec_handler, &w2_inc_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w2-, w2_dec, w2_incdec_cd, w2_incdec_handler, &w2_dec_help);
-	DEFINE_CMD_ARGV_GROUP_SPECIAL (core, w4, w4_incdec, w_incdec_cd);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4+, w4_inc, w4_incdec_cd, w4_incdec_handler, &w4_inc_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w4-, w4_dec, w4_incdec_cd, w4_incdec_handler, &w4_dec_help);
-	DEFINE_CMD_ARGV_GROUP_SPECIAL (core, w8, w8_incdec, w_incdec_cd);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8+, w8_inc, w8_incdec_cd, w8_incdec_handler, &w8_inc_help);
-	DEFINE_CMD_ARGV_DESC_DETAIL (core, w8-, w8_dec, w8_incdec_cd, w8_incdec_handler, &w8_dec_help);
-
-	DEFINE_CMD_ARGV_GROUP (core, w6, parent);
-	DEFINE_CMD_ARGV_DESC (core, w6d, w6_cd);
-	DEFINE_CMD_ARGV_DESC (core, w6e, w6_cd);
-
-	DEFINE_CMD_OLDINPUT_DESC (core, wh, parent);
-	DEFINE_CMD_OLDINPUT_DESC (core, we, parent);
-	DEFINE_CMD_OLDINPUT_DESC (core, wp, parent);
-	DEFINE_CMD_OLDINPUT_DESC (core, wu, parent);
-	DEFINE_CMD_OLDINPUT_DESC (core, wr, parent);
-	DEFINE_CMD_OLDINPUT_DESC (core, wA, parent);
-	DEFINE_CMD_OLDINPUT_DESC (core, wc, parent);
-	DEFINE_CMD_OLDINPUT_DESC (core, wz, parent);
-	DEFINE_CMD_OLDINPUT_DESC (core, wt, parent);
-	DEFINE_CMD_OLDINPUT_DESC (core, wf, parent);
-	DEFINE_CMD_OLDINPUT_DESC (core, ww, parent);
-	DEFINE_CMD_OLDINPUT_DESC (core, wx, parent);
-	DEFINE_CMD_OLDINPUT_DESC (core, wa, parent);
-	DEFINE_CMD_OLDINPUT_DESC (core, wb, parent);
-	DEFINE_CMD_OLDINPUT_DESC (core, wm, parent);
-	DEFINE_CMD_OLDINPUT_DESC (core, wo, parent);
-	DEFINE_CMD_OLDINPUT_DESC (core, wd, parent);
-	DEFINE_CMD_OLDINPUT_DESC (core, ws, parent);
 }

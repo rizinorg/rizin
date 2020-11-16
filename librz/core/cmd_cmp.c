@@ -32,10 +32,6 @@ static const char *help_msg_c[] = {
 	NULL
 };
 
-static void cmd_cmp_init(RzCore *core, RzCmdDesc *parent) {
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, c);
-}
-
 RZ_API void rz_core_cmpwatch_free(RzCoreCmpWatcher *w) {
 	free (w->ndata);
 	free (w->odata);
@@ -541,7 +537,7 @@ static void __core_cmp_bits (RzCore *core, ut64 addr) {
 	rz_cons_newline ();
 }
 
-static int cmd_cmp(void *data, const char *input) {
+RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 	static char *oldcwd = NULL;
 	int ret = 0, i, mode = 0;
 	RzCore *core = (RzCore *)data;

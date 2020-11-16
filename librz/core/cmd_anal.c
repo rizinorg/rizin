@@ -752,43 +752,6 @@ static const char *help_msg_axt[]= {
 	NULL
 };
 
-static void cmd_anal_init(RzCore *core, RzCmdDesc *parent) {
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, a);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, aa);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, aar);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, ab);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, ac);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, ad);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, ae);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, aea);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, aec);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, aep);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, af);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, afb);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, afc);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, afC);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, afi);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, afl);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, afll);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, afn);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, aft);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, afv);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, afvb);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, afvr);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, afvs);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, ag);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, age);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, agn);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, ah);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, ahi);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, ao);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, ar);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, ara);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, arw);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, as);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, ax);
-}
-
 static int cmpname (const void *_a, const void *_b) {
 	const RzAnalFunction *a = _a, *b = _b;
 	return (int)strcmp (a->name, b->name);
@@ -10573,7 +10536,7 @@ bool go_on = true;
 	free (s);
 }
 
-static int cmd_anal(void *data, const char *input) {
+RZ_IPI int rz_cmd_anal(void *data, const char *input) {
 	const char *r;
 	RzCore *core = (RzCore *)data;
 	ut32 tbs = core->blocksize;

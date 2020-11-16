@@ -134,16 +134,6 @@ static const char *help_msg_Cvs[] = {
 	NULL
 };
 
-static void cmd_meta_init(RzCore *core, RzCmdDesc *parent) {
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, C);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, CC);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, CS);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, Cs);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, Cvb);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, Cvr);
-	DEPRECATED_DEFINE_CMD_DESCRIPTOR (core, Cvs);
-}
-
 static int remove_meta_offset(RzCore *core, ut64 offset) {
 	char aoffset[64];
 	char *aoffsetptr = sdb_itoa (offset, aoffset, 16);
@@ -1003,7 +993,7 @@ void rz_comment_vars(RzCore *core, const char *input) {
 	free (oname);
 }
 
-static int cmd_meta(void *data, const char *input) {
+RZ_IPI int rz_cmd_meta(void *data, const char *input) {
 	RzCore *core = (RzCore*)data;
 	RzAnalFunction *f;
 	RzSpaces *ms;
