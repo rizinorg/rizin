@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import argparse
 import os
@@ -509,7 +509,7 @@ def handler2decl(type, handler_name):
 
 parser = argparse.ArgumentParser(description='Generate .c/.h files from Command Descriptors YAML file.')
 parser.add_argument('--src-output-dir', type=str, required=False, help='Source output directory')
-parser.add_argument('--output-dir', type=str, required=False, help='Output directory')
+parser.add_argument('--output-dir', type=str, required=True, help='Output directory')
 parser.add_argument('yaml_file', type=argparse.FileType("r"), help='Input YAML file containing all commands descriptions')
 
 args = parser.parse_args()
@@ -529,7 +529,8 @@ cf_text = CMDDESCS_C_TEMPLATE.format(
     init_code='\n'.join(init_code),
 )
 open(os.path.join(args.output_dir, 'cmd_descs.c'), 'w').write(cf_text)
-open(os.path.join(args.src_output_dir, 'cmd_descs.c'), 'w').write(cf_text)
+if args.src_output_dir:
+    open(os.path.join(args.src_output_dir, 'cmd_descs.c'), 'w').write(cf_text)
 
 handlers_decls = filter(lambda th: th[1] is not None, [(cd.type, cd.get_handler_cname()) for cd in CmdDesc.c_cds.values()])
 
@@ -537,4 +538,5 @@ hf_text = CMDDESCS_H_TEMPLATE.format(
     handlers_declarations='\n'.join([handler2decl(t, h) for t, h in handlers_decls]),
 )
 open(os.path.join(args.output_dir, 'cmd_descs.h'), 'w').write(hf_text)
-open(os.path.join(args.src_output_dir, 'cmd_descs.h'), 'w').write(hf_text)
+if args.src_output_dir:
+    open(os.path.join(args.src_output_dir, 'cmd_descs.h'), 'w').write(hf_text)
