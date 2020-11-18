@@ -264,10 +264,11 @@ module.exports = grammar({
         tmp_hex_command: $ => prec.right(1, seq($._simple_command, '@x:', $.arg)),
 
         // basic commands
+        // FIXME: this is not required anymore, just consider it as regular cmd_identifier
         _task_command: $ => prec.left(1, choice(
             seq(
                 field('command', alias(choice('&', '&t'), $.cmd_identifier)),
-                field('args', optional($._simple_command)),
+                field('args', optional($.args)),
             ),
             seq(
                 field('command', alias(/&[A-Za-z=\-+*&0-9]*/, $.cmd_identifier)),

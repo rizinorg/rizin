@@ -20,6 +20,7 @@ if get_option('enable_tests')
     'buf',
     'ovf',
     'cmd',
+    'core_cmd',
     'rzpipe',
     'cons',
     'contrbtree',

@@ -30,6 +30,16 @@
 #define MIN_SUMMARY_WIDTH 6
 #define MAX_RIGHT_ALIGHNMENT 20
 
+// NOTE: this should be in sync with SPECIAL_CHARACTERS in
+//       rizin-shell-parser grammar, except for ", ' and
+//       whitespaces, because we let cmd_substitution_arg create
+//       new arguments
+static const char *SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>";
+static const char *SPECIAL_CHARS_REGULAR_SINGLE = "@;~$#|`\"'()<> ";
+static const char *SPECIAL_CHARS_PF = "@;~$#|`\"'<>";
+static const char *SPECIAL_CHARS_DOUBLE_QUOTED = "\"$()`";
+static const char *SPECIAL_CHARS_SINGLE_QUOTED = "'";
+
 static const RzCmdDescHelp not_defined_help = {
 	.usage = "Usage not defined",
 	.summary = "Help summary not defined",
@@ -451,11 +461,15 @@ static void get_minmax_argc(RzCmdDesc *cd, int *min_argc, int *max_argc) {
 	const RzCmdDescArg *arg = cd->help->args;
 	while (arg && arg->name && !arg->optional) {
 		if (arg->type == RZ_CMD_ARG_TYPE_FAKE) {
+			arg++;
 			continue;
 		}
 		(*min_argc)++;
 		(*max_argc)++;
 		switch (arg->type) {
+		case RZ_CMD_ARG_TYPE_CMD_LAST:
+		case RZ_CMD_ARG_TYPE_STRING_LAST:
+			return;
 		case RZ_CMD_ARG_TYPE_ARRAY_STRING:
 			*max_argc = INT_MAX;
 			return;
@@ -466,6 +480,7 @@ static void get_minmax_argc(RzCmdDesc *cd, int *min_argc, int *max_argc) {
 	}
 	while (arg && arg->name) {
 		if (arg->type == RZ_CMD_ARG_TYPE_FAKE) {
+			arg++;
 			continue;
 		}
 		(*max_argc)++;
@@ -487,13 +502,79 @@ static RzOutputMode cd_suffix2mode(RzCmdDesc *cd, const char *cmdid) {
 	return suffix2mode (cmdid + strlen (cd->name));
 }
 
-static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args, RzOutputMode mode) {
+/**
+ * Performs a preprocessing step on the user arguments. This is used to group
+ * together some arguments that are returned by the parser as multiple
+ * arguments but we want to let the command handler see them as a single one to
+ * make life easier for users.
+ *
+ * For example:
+ * `cmdid pd 10` would be considered as having 2 arguments, "pd" and "10".
+ * However, if <cmdid> was defined to have as argument
+ * RZ_CMD_ARG_TYPE_CMD_LAST, we want to group "pd" and "10" in one single
+ * argument "pd 10" and pass that to <cmdid> handler.
+ */
+static void args_preprocessing(RzCmdDesc *cd, RzCmdParsedArgs *args) {
+	const RzCmdDescArg *arg = cd->help->args;
+	size_t i, j;
+	for (arg = cd->help->args, i = 1; arg && arg->name && i < args->argc - 1; arg++, i++) {
+		char *tmp;
+		switch (arg->type) {
+		case RZ_CMD_ARG_TYPE_CMD_LAST:
+			for (j = i; j < args->argc; j++) {
+				char *s = rz_cmd_escape_arg (args->argv[j], RZ_CMD_ESCAPE_ONE_ARG);
+				if (strcmp (s, args->argv[j])) {
+					free (args->argv[j]);
+					args->argv[j] = s;
+				} else {
+					free (s);
+				}
+			}
+			// fallthrough
+		case RZ_CMD_ARG_TYPE_STRING_LAST:
+			tmp = rz_str_array_join ((const char **)&args->argv[i], args->argc - i, " ");
+			if (!tmp) {
+				return;
+			}
+			for (j = i; j < args->argc; j++) {
+				free (args->argv[j]);
+			}
+			args->argv[i] = tmp;
+			args->argc = i + 1;
+			return;
+		default:
+			break;
+		}
+	}
+}
+
+static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args) {
+	if (!rz_cmd_desc_has_handler (cd)) {
+		return RZ_CMD_STATUS_INVALID;
+	}
+
+	args_preprocessing(cd, args);
+
+	int i;
+	const char *s;
+	rz_cmd_parsed_args_foreach_arg (args, i, s) {
+		RZ_LOG_DEBUG ("processed parsed_arg %d: '%s'\n", i, s);
+	}
+
+	RzOutputMode mode;
 	switch (cd->type) {
 	case RZ_CMD_DESC_TYPE_ARGV:
+		if (args->argc < cd->d.argv_data.min_argc || args->argc > cd->d.argv_data.max_argc) {
+			return RZ_CMD_STATUS_WRONG_ARGS;
+		}
 		return cd->d.argv_data.cb (cmd->data, args->argc, (const char **)args->argv);
 	case RZ_CMD_DESC_TYPE_ARGV_MODES:
+		mode = cd_suffix2mode (cd, rz_cmd_parsed_args_cmd (args));
 		if (!mode) {
 			return RZ_CMD_STATUS_INVALID;
+		}
+		if (args->argc < cd->d.argv_modes_data.min_argc || args->argc > cd->d.argv_modes_data.max_argc) {
+			return RZ_CMD_STATUS_WRONG_ARGS;
 		}
 		return cd->d.argv_modes_data.cb (cmd->data, args->argc, (const char **)args->argv, mode);
 	default:
@@ -505,6 +586,12 @@ static RzCmdStatus call_cd(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args) {
 	char *exec_string;
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
 
+	int i;
+	const char *s;
+	rz_cmd_parsed_args_foreach_arg (args, i, s) {
+		RZ_LOG_DEBUG ("parsed_arg %d: '%s'\n", i, s);
+	}
+
 	switch (cd->type) {
 	case RZ_CMD_DESC_TYPE_GROUP:
 		if (!cd->d.group_data.exec_cd) {
@@ -513,17 +600,7 @@ static RzCmdStatus call_cd(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args) {
 		return call_cd (cmd, cd->d.group_data.exec_cd, args);
 	case RZ_CMD_DESC_TYPE_ARGV:
 	case RZ_CMD_DESC_TYPE_ARGV_MODES:
-		if (rz_cmd_desc_has_handler (cd)) {
-			RzOutputMode mode = cd_suffix2mode (cd, rz_cmd_parsed_args_cmd (args));
-			int min_argc, max_argc;
-			get_minmax_argc (cd, &min_argc, &max_argc);
-			if (args->argc >= min_argc && args->argc <= max_argc) {
-				return argv_call_cb (cmd, cd, args, mode);
-			} else {
-				return RZ_CMD_STATUS_WRONG_ARGS;
-			}
-		}
-		return RZ_CMD_STATUS_INVALID;
+		return argv_call_cb (cmd, cd, args);
 	case RZ_CMD_DESC_TYPE_OLDINPUT:
 		exec_string = rz_cmd_parsed_args_execstr (args);
 		res = int2cmdstatus (cd->d.oldinput_data.cb (cmd->data, exec_string + strlen (cd->name)));
@@ -1633,6 +1710,7 @@ static RzCmdDesc *argv_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCm
 	}
 
 	res->d.argv_data.cb = cb;
+	get_minmax_argc (res, &res->d.argv_data.min_argc, &res->d.argv_data.max_argc);
 	return res;
 }
 
@@ -1649,6 +1727,7 @@ static RzCmdDesc *argv_modes_new(RzCmd* cmd, RzCmdDesc *parent, const char *name
 
 	res->d.argv_modes_data.cb = cb;
 	res->d.argv_modes_data.modes = modes;
+	get_minmax_argc (res, &res->d.argv_modes_data.min_argc, &res->d.argv_modes_data.max_argc);
 	return res;
 }
 
@@ -1837,4 +1916,75 @@ static void cmd_foreach_cmdname(RzCmd *cmd, RzCmdDesc *cd, RzCmdForeachNameCb cb
 RZ_API void rz_cmd_foreach_cmdname(RzCmd *cmd, RzCmdForeachNameCb cb, void *user) {
 	RzCmdDesc *cd = rz_cmd_get_root (cmd);
 	cmd_foreach_cmdname (cmd, cd, cb, user);
+}
+
+static char *escape_special_chars(const char *s, const char *special_chars) {
+	size_t s_len = strlen (s);
+	char *d = RZ_NEWS (char, s_len * 2 + 1);
+	int i, j = 0;
+	for (i = 0; i < s_len; i++) {
+		if (strchr (special_chars, s[i])) {
+			d[j++] = '\\';
+		}
+		d[j++] = s[i];
+	}
+	d[j++] = '\0';
+	return d;
+}
+
+static char *unescape_special_chars(const char *s, const char *special_chars) {
+	char *dst = RZ_NEWS (char, strlen (s) + 1);
+	int i, j = 0;
+
+	for (i = 0; s[i]; i++) {
+		if (s[i] != '\\' || !strchr (special_chars, s[i + 1])) {
+			dst[j++] = s[i];
+			continue;
+		}
+		dst[j++] = s[i + 1];
+		i++;
+	}
+	dst[j++] = '\0';
+	return dst;
+}
+
+/**
+ * Returns an heap-allocated string with special characters considered by the
+ * rizin grammar as special characters escaped. Use this when you need to
+ * escape a string that should appear as argument of a command.
+ */
+RZ_API char *rz_cmd_escape_arg(const char *arg, RzCmdEscape esc) {
+	switch (esc) {
+	case RZ_CMD_ESCAPE_ONE_ARG:
+		return escape_special_chars (arg, SPECIAL_CHARS_REGULAR_SINGLE);
+	case RZ_CMD_ESCAPE_MULTI_ARG:
+		return escape_special_chars (arg, SPECIAL_CHARS_REGULAR);
+	case RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG:
+		return escape_special_chars (arg, SPECIAL_CHARS_DOUBLE_QUOTED);
+	case RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG:
+		return escape_special_chars (arg, SPECIAL_CHARS_SINGLE_QUOTED);
+	case RZ_CMD_ESCAPE_PF_ARG:
+		return escape_special_chars (arg, SPECIAL_CHARS_PF);
+	}
+	rz_return_val_if_reached (strdup(arg));
+}
+
+/**
+ * Returns an heap-allocated unescaped string. It is the opposite of
+ * \p rz_cmd_escape_arg.
+ */
+RZ_API char *rz_cmd_unescape_arg(const char *arg, RzCmdEscape esc) {
+	switch (esc) {
+	case RZ_CMD_ESCAPE_ONE_ARG:
+		return unescape_special_chars (arg, SPECIAL_CHARS_REGULAR_SINGLE);
+	case RZ_CMD_ESCAPE_MULTI_ARG:
+		return unescape_special_chars (arg, SPECIAL_CHARS_REGULAR);
+	case RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG:
+		return unescape_special_chars (arg, SPECIAL_CHARS_DOUBLE_QUOTED);
+	case RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG:
+		return unescape_special_chars (arg, SPECIAL_CHARS_SINGLE_QUOTED);
+	case RZ_CMD_ESCAPE_PF_ARG:
+		return unescape_special_chars (arg, SPECIAL_CHARS_PF);
+	}
+	rz_return_val_if_reached (strdup(arg));
 }

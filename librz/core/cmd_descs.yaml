@@ -102,7 +102,7 @@
       summary: List all tasks / Run <cmd> in a new background task
       args:
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD
+          type: RZ_CMD_ARG_TYPE_CMD_LAST
           optional: true
       modes:
         - RZ_OUTPUT_MODE_STANDARD
@@ -112,7 +112,7 @@
       summary: Run <cmd> in a new transient background task (auto-delete when it is finished)
       args:
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD
+          type: RZ_CMD_ARG_TYPE_CMD_LAST
     - name: "&="
       cname: tasks_output
       summary: Show output of task <n>
@@ -188,7 +188,7 @@
         command as rizin commands
       args:
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD
+          type: RZ_CMD_ARG_TYPE_CMD_LAST
           optional: true
           no_space: true
     - name: ". "
@@ -257,7 +257,7 @@
           type: RZ_CMD_ARG_TYPE_NUM
           optional: true
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD
+          type: RZ_CMD_ARG_TYPE_CMD_LAST
     - name: =<
       cname: remote_send
       summary: Send output of local <cmd> to remote <fd>
@@ -266,13 +266,13 @@
           type: RZ_CMD_ARG_TYPE_NUM
           optional: true
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD
+          type: RZ_CMD_ARG_TYPE_CMD_LAST
     - name: =!
       cname: io_system_run
       summary: Run <cmd> via rz_io_system
       args:
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD
+          type: RZ_CMD_ARG_TYPE_CMD_LAST
           optional: true
     - name: =+
       cname: remote_add
@@ -308,7 +308,7 @@
         - name: "[host:]port"
           type: RZ_CMD_ARG_TYPE_STRING
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD
+          type: RZ_CMD_ARG_TYPE_CMD_LAST
           optional: true
     - name: =g
       cname: equal_g_handler_old
@@ -329,7 +329,7 @@
         - name: "[host:]port"
           type: RZ_CMD_ARG_TYPE_STRING
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD
+          type: RZ_CMD_ARG_TYPE_CMD_LAST
           optional: true
     - name: "=&:"
       cname: remote_rap_bg
@@ -533,7 +533,7 @@
       summary: Write string
       args:
         - name: string
-          type: RZ_CMD_ARG_TYPE_ARRAY_STRING
+          type: RZ_CMD_ARG_TYPE_STRING_LAST
     - name: wB
       summary: Set or unset bits with given value
       subcommands:
