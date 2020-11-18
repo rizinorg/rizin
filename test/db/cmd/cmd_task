@@ -14,9 +14,10 @@ EOF
 RUN
 
 NAME=& + grep
+ARGS=-e cfg.newshell=true
 FILE=-
 CMDS=<<EOF
-"& ?e Hello\nfrom\na task!~task"
+& "?e Hello\nfrom\na task!~task"
 && 1
 &= 1
 EOF
