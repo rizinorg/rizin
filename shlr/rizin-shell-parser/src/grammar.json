@@ -1506,7 +1506,7 @@
                   "members": [
                     {
                       "type": "SYMBOL",
-                      "name": "_simple_command"
+                      "name": "args"
                     },
                     {
                       "type": "BLANK"

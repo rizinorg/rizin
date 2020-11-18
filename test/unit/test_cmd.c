@@ -637,6 +637,65 @@ bool test_foreach_cmdname(void) {
 	mu_end;
 }
 
+bool test_arg_escaping(void) {
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello", RZ_CMD_ESCAPE_ONE_ARG), "hello", "regular string remains the same");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello world", RZ_CMD_ESCAPE_ONE_ARG), "hello\\ world", "spaces are escaped");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello $(world)", RZ_CMD_ESCAPE_ONE_ARG), "hello\\ \\$\\(world\\)", "$ is escaped");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello `world`", RZ_CMD_ESCAPE_ONE_ARG), "hello\\ \\`world\\`", "` is escaped");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello\"world\"", RZ_CMD_ESCAPE_ONE_ARG), "hello\\\"world\\\"", "\" is escaped");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello>world", RZ_CMD_ESCAPE_ONE_ARG), "hello\\>world", "> is escaped");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello|world", RZ_CMD_ESCAPE_ONE_ARG), "hello\\|world", "| is escaped");
+
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello", RZ_CMD_ESCAPE_ONE_ARG), "hello", "regular string remains the same");
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello\\ world", RZ_CMD_ESCAPE_ONE_ARG), "hello world", "spaces are unescaped");
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello \\$\\(world\\)", RZ_CMD_ESCAPE_ONE_ARG), "hello $(world)", "$ is unescaped");
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello \\`world\\`", RZ_CMD_ESCAPE_ONE_ARG), "hello `world`", "` is unescaped");
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello\\\"world\\\"", RZ_CMD_ESCAPE_ONE_ARG), "hello\"world\"", "\" is unescaped");
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello\\>world", RZ_CMD_ESCAPE_ONE_ARG), "hello>world", "> is unescaped");
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello\\|world", RZ_CMD_ESCAPE_ONE_ARG), "hello|world", "| is unescaped");
+
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello `world`", RZ_CMD_ESCAPE_MULTI_ARG), "hello \\`world\\`", "` is escaped");
+	mu_end;
+}
+
+bool test_double_quoted_arg_escaping(void) {
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello", "regular string remains the same");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello world", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello world", "spaces are not escaped");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello\"world\"", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello\\\"world\\\"", "\" is escaped");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello'world'", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello'world'", "' is not escaped");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello|world", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello|world", "| is not escaped");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello>world", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello>world", "> is not escaped");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello@world", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello@world", "@ is not escaped");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello $(world)", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello \\$\\(world\\)", "$ is escaped");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello `world`", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello \\`world\\`", "` is escaped");
+
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello", "regular string remains the same");
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello world", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello world", "spaces are not escaped");
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello\\\"world\\\"", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello\"world\"", "\" is unescaped");
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello\\'world\\'", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello\\'world\\'", "' is not unescaped");
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello \\$\\(world\\)", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello $(world)", "$ is unescaped");
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello \\`world\\`", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello `world`", "` is unescaped");
+	mu_end;
+}
+
+bool test_single_quoted_arg_escaping(void) {
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello", "regular string remains the same");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello world", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello world", "spaces are not escaped");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello\"world\"", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello\"world\"", "\" is not escaped");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello'world'", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello\\'world\\'", "' is escaped");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello|@>world", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello|@>world", "|@> are not escaped");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello $(world)", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello $(world)", "$ is not escaped");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello `world`", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello `world`", "` is not escaped");
+
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello", "regular string remains the same");
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello world", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello world", "spaces are not escaped");
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello\\\"world\\\"", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello\\\"world\\\"", "\" is not unescaped");
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello\\'world\\'", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello'world'", "' is unescaped");
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello \\$\\(world\\)", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello \\$\\(world\\)", "$ is not unescaped");
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello \\`world\\`", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello \\`world\\`", "` is not unescaped");
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test (test_parsed_args_noargs);
 	mu_run_test (test_parsed_args_onearg);
@@ -659,6 +718,9 @@ int all_tests() {
 	mu_run_test (test_cmd_argv_modes);
 	mu_run_test (test_cmd_group_argv_modes);
 	mu_run_test (test_foreach_cmdname);
+	mu_run_test (test_arg_escaping);
+	mu_run_test (test_double_quoted_arg_escaping);
+	mu_run_test (test_single_quoted_arg_escaping);
 	return tests_passed != tests_run;
 }
 

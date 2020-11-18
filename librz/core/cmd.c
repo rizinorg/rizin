@@ -32,15 +32,6 @@
 #include <tree_sitter/api.h>
 TSLanguage *tree_sitter_rzcmd ();
 
-// NOTE: this should be in sync with SPECIAL_CHARACTERS in
-//       rizin-shell-parser grammar, except for ", ' and
-//       whitespaces, because we let cmd_substitution_arg create
-//       new arguments
-static const char *SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>";
-static const char *SPECIAL_CHARS_PF = "@;~$#|`\"'<>";
-static const char *SPECIAL_CHARS_DOUBLE_QUOTED = "\"";
-static const char *SPECIAL_CHARS_SINGLE_QUOTED = "'";
-
 RZ_API void rz_save_panels_layout(RzCore *core, const char *_name);
 RZ_API bool rz_load_panels_layout(RzCore *core, const char *_name);
 
@@ -1994,22 +1985,6 @@ RZ_IPI int rz_cmd_system(void *data, const char *input) {
 	return ret;
 }
 
-static char *unescape_special_chars(const char *s, const char *special_chars) {
-	char *dst = RZ_NEWS (char, strlen (s) + 1);
-	int i, j = 0;
-
-	for (i = 0; s[i]; i++) {
-		if (s[i] != '\\' || !strchr (special_chars, s[i + 1])) {
-			dst[j++] = s[i];
-			continue;
-		}
-		dst[j++] = s[i + 1];
-		i++;
-	}
-	dst[j++] = '\0';
-	return dst;
-}
-
 #if __WINDOWS__
 #include <tchar.h>
 #define __CLOSE_DUPPED_PIPES() \
@@ -3491,7 +3466,7 @@ fuji:
 beach:
 	if (grep) {
 		char *old_grep = grep;
-		grep = unescape_special_chars (old_grep, SPECIAL_CHARS_REGULAR);
+		grep = rz_cmd_unescape_arg (old_grep, true);
 		free (old_grep);
 	}
 	rz_cons_grep_process (grep);
@@ -4400,21 +4375,6 @@ static void replace_whitespaces(char *s, char ch) {
 	}
 }
 
-static char *escape_special_chars(char *s, const char *special_chars) {
-	size_t s_len = strlen (s);
-	char *d = RZ_NEWS (char, s_len * 2 + 1);
-	int i, j = 0;
-	for (i = 0; i < s_len; i++) {
-		if (strchr (special_chars, s[i])) {
-			d[j++] = '\\';
-		}
-		d[j++] = s[i];
-	}
-	d[j++] = '\0';
-	free (s);
-	return d;
-}
-
 void free_tsr2cmd_edit(struct tsr2cmd_edit *edit) {
 	free (edit->new_text);
 	free (edit->old_text);
@@ -4457,17 +4417,17 @@ static void handle_cmd_substitution_arg(struct tsr2cmd_state *state, TSNode arg,
 	TSNode inn_cmd = ts_node_child (arg, 1);
 	rz_return_if_fail (!ts_node_is_null (inn_cmd));
 	char *out = do_handle_substitution_cmd (state, inn_cmd);
+	char *res = NULL;
 	// escape special chars to prevent creation of new tokens when parsing again
-	const char *special_chars;
 	if (is_ts_double_quoted_arg (ts_node_parent (arg))) {
-		special_chars = SPECIAL_CHARS_DOUBLE_QUOTED;
+		res = rz_cmd_escape_arg (out, RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG);
 	} else if (is_ts_pf_arg (ts_node_parent (arg))) {
-		special_chars = SPECIAL_CHARS_PF;
+		res = rz_cmd_escape_arg (out, RZ_CMD_ESCAPE_PF_ARG);
 	} else {
-		special_chars = SPECIAL_CHARS_REGULAR;
+		res = rz_cmd_escape_arg (out, RZ_CMD_ESCAPE_MULTI_ARG);
 	}
-	out = escape_special_chars (out, special_chars);
-	struct tsr2cmd_edit *e = create_cmd_edit (state, arg, out);
+	free (out);
+	struct tsr2cmd_edit *e = create_cmd_edit (state, arg, res);
 	rz_list_append (edits, e);
 }
 
@@ -4504,26 +4464,15 @@ static void handle_substitution_args(struct tsr2cmd_state *state, TSNode args, R
 	}
 }
 
-static char *unescape_arg_str(struct tsr2cmd_state *state, const char *arg_str, const char *special_chars) {
-	char *unescaped_arg = unescape_special_chars (arg_str, special_chars);
-	RZ_LOG_DEBUG ("original arg = '%s', unescaped arg = '%s'\n", arg_str, unescaped_arg);
-	return unescaped_arg;
-}
-
-static char *unescape_arg(struct tsr2cmd_state *state, TSNode arg, const char *special_chars) {
-	char *arg_str = ts_node_sub_string (arg, state->input);
-	char *unescaped_arg = unescape_arg_str (state, arg_str, special_chars);
-	free (arg_str);
-	return unescaped_arg;
-}
-
 static char *do_handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg, bool do_unwrap) {
 	if (is_ts_arg (arg)) {
 		return do_handle_ts_unescape_arg (state, ts_node_named_child (arg, 0), do_unwrap);
 	} else if (is_ts_arg_identifier (arg)) {
-		return unescape_arg (state, arg, SPECIAL_CHARS_REGULAR);
+		char *arg_str = ts_node_sub_string (arg, state->input);
+		char *unescaped_arg = rz_cmd_unescape_arg (arg_str, RZ_CMD_ESCAPE_ONE_ARG);
+		free (arg_str);
+		return unescaped_arg;
 	} else if (is_ts_single_quoted_arg (arg) || is_ts_double_quoted_arg (arg)) {
-		const char *special = is_ts_single_quoted_arg (arg)? SPECIAL_CHARS_SINGLE_QUOTED: SPECIAL_CHARS_DOUBLE_QUOTED;
 		char *o_arg_str = ts_node_sub_string (arg, state->input);
 		char *arg_str = o_arg_str;
 		if (do_unwrap) {
@@ -4531,7 +4480,12 @@ static char *do_handle_ts_unescape_arg(struct tsr2cmd_state *state, TSNode arg, 
 			arg_str[strlen (arg_str) - 1] = '\0';
 			arg_str++;
 		}
-		char *res = unescape_arg_str (state, arg_str, special);
+		char *res;
+		if (is_ts_single_quoted_arg (arg)) {
+			res = rz_cmd_unescape_arg (arg_str, RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG);
+		} else {
+			res = rz_cmd_unescape_arg (arg_str, RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG);
+		}
 		free (o_arg_str);
 		return res;
 	} else if (is_ts_concatenation (arg)) {
@@ -4698,12 +4652,6 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_command) {
 		if (!pr_args) {
 			goto err;
 		}
-	}
-
-	int i;
-	const char *s;
-	rz_cmd_parsed_args_foreach_arg (pr_args, i, s) {
-		RZ_LOG_DEBUG ("parsed_arg %d: '%s'\n", i, s);
 	}
 
 	pr_args->has_space_after_cmd = !ts_node_is_null (args) && ts_node_end_byte (command) < ts_node_start_byte (args);
@@ -5574,8 +5522,9 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_interpret_command) {
 	}
 
 	char *in_cmd_out = do_handle_substitution_cmd (state, in_cmd);
-	in_cmd_out = escape_special_chars (in_cmd_out, SPECIAL_CHARS_REGULAR);
-	struct tsr2cmd_edit *e = create_cmd_edit (state, in_cmd, in_cmd_out);
+	char *in_cmd_out_es = rz_cmd_escape_arg (in_cmd_out, RZ_CMD_ESCAPE_MULTI_ARG);
+	free (in_cmd_out);
+	struct tsr2cmd_edit *e = create_cmd_edit (state, in_cmd, in_cmd_out_es);
 	rz_list_append (edits, e);
 
 	TSNode op = ts_node_child (node, 1);
@@ -5607,8 +5556,9 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_interpret_offsetssizes_command) {
 	}
 
 	char *in_cmd_out = do_handle_substitution_cmd (state, in_cmd);
-	in_cmd_out = escape_special_chars (in_cmd_out, SPECIAL_CHARS_REGULAR);
-	struct tsr2cmd_edit *e = create_cmd_edit (state, in_cmd, in_cmd_out);
+	char *in_cmd_out_es = rz_cmd_escape_arg (in_cmd_out, RZ_CMD_ESCAPE_MULTI_ARG);
+	free (in_cmd_out);
+	struct tsr2cmd_edit *e = create_cmd_edit (state, in_cmd, in_cmd_out_es);
 	rz_list_append (edits, e);
 
 	TSNode op = ts_node_child (node, 1);
@@ -5932,9 +5882,9 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(grep_command) {
 	RZ_LOG_DEBUG ("grep_command specifier: '%s'\n", arg_str);
 	RzStrBuf *sb = rz_strbuf_new (arg_str);
 	rz_strbuf_prepend (sb, "~");
-	char *specifier_str = rz_cons_grep_strip (rz_strbuf_get (sb), "`");
+	char *specifier_str_es = rz_cons_grep_strip (rz_strbuf_get (sb), "`");
 	rz_strbuf_free (sb);
-	specifier_str = unescape_special_chars (specifier_str, SPECIAL_CHARS_REGULAR);
+	char *specifier_str = rz_cmd_unescape_arg (specifier_str_es, true);
 	RZ_LOG_DEBUG ("grep_command processed specifier: '%s'\n", specifier_str);
 	rz_cons_grep_process (specifier_str);
 	free (arg_str);
@@ -6206,7 +6156,11 @@ static int run_cmd_depth(RzCore *core, char *cmd) {
 	return ret;
 }
 
-RZ_API int rz_core_cmd(RzCore *core, const char *cstr, int log) {
+RZ_API RzCmdStatus rz_core_cmd_newshell(RzCore *core, const char *cstr, int log){
+	return core_cmd_tsr2cmd (core, cstr, false, log);
+}
+
+RZ_API int rz_core_cmd (RzCore *core, const char *cstr, int log) {
 	if (core->use_tree_sitter_rzcmd) {
 		return rz_cmd_status2int(core_cmd_tsr2cmd (core, cstr, false, log));
 	}
@@ -6284,6 +6238,10 @@ RZ_API int rz_core_cmd(RzCore *core, const char *cstr, int log) {
 	free (cmd);
 beach:
 	return ret;
+}
+
+RZ_API RzCmdStatus rz_core_cmd_lines_newshell(RzCore *core, const char *lines) {
+	return core_cmd_tsr2cmd (core, lines, true, false);
 }
 
 RZ_API int rz_core_cmd_lines(RzCore *core, const char *lines) {
@@ -6423,6 +6381,10 @@ RZ_API int rz_core_cmdf(RzCore *core, const char *fmt, ...) {
 	ret = rz_core_cmd (core, string, 0);
 	va_end (ap);
 	return ret;
+}
+
+RZ_API RzCmdStatus rz_core_cmd0_newshell(RzCore *core, const char *cmd) {
+	return rz_core_cmd_newshell (core, cmd, 0);
 }
 
 RZ_API int rz_core_cmd0(RzCore *core, const char *cmd) {

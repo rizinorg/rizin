@@ -36,6 +36,7 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_FAKE, ///< This is not considered a real argument, just used to show something in the help. Name of arg is shown as-is and it is not counted.
 	RZ_CMD_ARG_TYPE_NUM, ///< Argument that can be interpreted by RzNum (numbers, flags, operations, etc.)
 	RZ_CMD_ARG_TYPE_STRING, ///< Argument that can be an arbitrary string
+	RZ_CMD_ARG_TYPE_STRING_LAST, ///< Argument that can be an arbitrary string with spaces (if present, it must be last in the list)
 	RZ_CMD_ARG_TYPE_ENV, ///< Argument can be the name of an existing rizin variable
 	RZ_CMD_ARG_TYPE_ZIGN, ///< Argument can be the name of an existing zignature
 	RZ_CMD_ARG_TYPE_ZIGN_SPACE, ///< Argument can be the name of an existing zignature space
@@ -45,8 +46,17 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_FILE, ///< Argument is a filename
 	RZ_CMD_ARG_TYPE_OPTION, ///< Argument is an option, prefixed with `-`. It is present or not. No argument.
 	RZ_CMD_ARG_TYPE_CMD, ///< Argument is an rizin command
+	RZ_CMD_ARG_TYPE_CMD_LAST, ///< Argument is an rizin command and it can also contain spaces (if present, must be last in the list)
 	RZ_CMD_ARG_TYPE_MACRO, ///< Argument is the name of a pre-defined macro
 } RzCmdArgType;
+
+typedef enum rz_cmd_escape_t {
+	RZ_CMD_ESCAPE_ONE_ARG, ///< The string should be escaped so that it appears as one single argument
+	RZ_CMD_ESCAPE_MULTI_ARG, ///< The string should be escaped so that it appears as one or multiple arguments
+	RZ_CMD_ESCAPE_PF_ARG, ///< The string should be escaped so that it appears as one or multiple `pf` arguments
+	RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG, ///< The string should be escaped so that it can be wrapped in "...."
+	RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG, ///< The string should be escaped so that it can be wrapped in '....'
+} RzCmdEscape;
 
 typedef int (*RzCmdCb) (void *user, const char *input);
 typedef RzCmdStatus (*RzCmdArgvCb) (RzCore *core, int argc, const char **argv);
@@ -310,6 +320,8 @@ typedef struct rz_cmd_desc_t {
 		} oldinput_data;
 		struct {
 			RzCmdArgvCb cb;
+			int min_argc;
+			int max_argc;
 		} argv_data;
 		struct {
 			struct rz_cmd_desc_t *exec_cd;
@@ -317,6 +329,8 @@ typedef struct rz_cmd_desc_t {
 		struct {
 			RzCmdArgvModesCb cb;
 			int modes;
+			int min_argc;
+			int max_argc;
 		} argv_modes_data;
 	} d;
 } RzCmdDesc;
@@ -431,6 +445,9 @@ RZ_API bool rz_cmd_parsed_args_setcmd(RzCmdParsedArgs *arg, const char *cmd);
 RZ_API char *rz_cmd_parsed_args_argstr(RzCmdParsedArgs *arg);
 RZ_API char *rz_cmd_parsed_args_execstr(RzCmdParsedArgs *arg);
 RZ_API const char *rz_cmd_parsed_args_cmd(RzCmdParsedArgs *arg);
+
+RZ_API char *rz_cmd_escape_arg(const char *arg, RzCmdEscape escape);
+RZ_API char *rz_cmd_unescape_arg(const char *arg, RzCmdEscape escape);
 
 #define rz_cmd_parsed_args_foreach_arg(args, i, arg) for ((i) = 1; (i) < (args->argc) && ((arg) = (args)->argv[i]); (i)++)
 
