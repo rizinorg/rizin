@@ -3,7 +3,6 @@ rz_util_sources = [
   'ascii_table.c',
   'assert.c',
   'alloc.c',
-  'donut.c',
   'table.c',
   'getopt.c',
   'print_code.c',
