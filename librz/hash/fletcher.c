@@ -2,7 +2,7 @@
 
 #include <rz_hash.h>
 
-RZ_API ut16 rz_hash_fletcher8(const ut8 *d, size_t length) {
+RZ_API ut8 rz_hash_fletcher8(const ut8 *d, size_t length) {
 	size_t i;
 	ut16 a = 0;
 	ut16 b = 0;
