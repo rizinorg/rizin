@@ -149,6 +149,7 @@ RZ_API void rz_bin_info_free(RzBinInfo *rb) {
 	free (rb->actual_checksum);
 	free (rb->claimed_checksum);
 	free (rb->compiler);
+	free (rb->head_flag);
 	free (rb);
 }
 

@@ -749,6 +749,8 @@ RZ_API void rz_core_anal_cc_init(RzCore *core) {
 		anal_arch, bits);
 	// Avoid sdb reloading
 	if (cc->path && !strcmp (cc->path, dbpath) && !strcmp (cc->path, dbhomepath)) {
+		free (dbpath);
+		free (dbhomepath);
 		return;
 	}
 	sdb_reset (cc);
@@ -774,6 +776,8 @@ RZ_API void rz_core_anal_cc_init(RzCore *core) {
 	if (sdb_isempty (core->anal->sdb_cc)) {
 		eprintf ("Warning: Missing calling conventions for '%s'. Deriving it from the regprofile.\n", anal_arch);
 	}
+	free (dbpath);
+	free (dbhomepath);
 }
 
 static int bin_info(RzCore *r, int mode, ut64 laddr) {
