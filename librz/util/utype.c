@@ -195,7 +195,7 @@ RZ_API ut64 rz_type_get_bitsize(Sdb *TDB, const char *type) {
 }
 
 RZ_API char *rz_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
-	int i, prev_typesize, typesize = 0;
+	int i, cur_offset, next_offset = 0;
 	char *res = NULL;
 
 	if (offset < 0) {
@@ -223,17 +223,28 @@ RZ_API char *rz_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
 			free (subtype);
 			break;
 		}
-		int val = rz_num_math (NULL, rz_str_word_get0 (subtype, len - 1));
-		int arrsz = val ? val : 1;
-		if ((typesize / 8) == offset) {
+		cur_offset = rz_num_math (NULL, rz_str_word_get0 (subtype, len - 2));
+		if (cur_offset > 0 && cur_offset < next_offset) {
+			free (subtype);
+			break;
+		}
+		if (!cur_offset) {
+			cur_offset = next_offset;
+		}
+		if (cur_offset == offset) {
 			res = rz_str_newf ("%s.%s", type, name);
 			free (subtype);
 			break;
 		}
-		prev_typesize = typesize;
-		typesize += rz_type_get_bitsize (TDB, subtype) * arrsz;
+		int arrsz = rz_num_math (NULL, rz_str_word_get0 (subtype, len - 1));
+		int fsize = (rz_type_get_bitsize (TDB, subtype) * (arrsz ? arrsz : 1)) / 8;
+		if (!fsize) {
+			free (subtype);
+			break;
+		}
+		next_offset = cur_offset + fsize;
 		// Handle nested structs
-		if (offset < (typesize / 8)) {
+		if (offset > cur_offset && offset < next_offset) {
 			char *nested_type = (char *)rz_str_word_get0 (subtype, 0);
 			if (rz_str_startswith (nested_type, "struct ") && !rz_str_endswith (nested_type, " *")) {
 				len = rz_str_split (nested_type, ' ');
@@ -242,7 +253,7 @@ RZ_API char *rz_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
 					break;
 				}
 				nested_type = (char *)rz_str_word_get0 (nested_type, 1);
-				char *nested_res = rz_type_get_struct_memb (TDB, nested_type, offset - (prev_typesize / 8));
+				char *nested_res = rz_type_get_struct_memb (TDB, nested_type, offset - cur_offset);
 				if (nested_res) {
 					len = rz_str_split(nested_res, '.');
 					res = rz_str_newf ("%s.%s.%s", type, name, rz_str_word_get0 (nested_res, len - 1));
