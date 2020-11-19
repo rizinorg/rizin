@@ -42,32 +42,32 @@ RZ_API int rz_hash_calculate(RzHash *ctx, ut64 algobit, const ut8 *buf, int len)
 	}
 	if (algobit & RZ_HASH_XXHASH) {
 		ut32 res = rz_hash_xxhash (buf, len);
-		memcpy (ctx->digest, &res, RZ_HASH_SIZE_XXHASH);
+		rz_write_le32 (ctx->digest, res);
 		return RZ_HASH_SIZE_XXHASH;
 	}
 	if (algobit & RZ_HASH_FLETCHER8) {
 		ut8 res = rz_hash_fletcher8 (buf, len);
-		memcpy (ctx->digest, &res, RZ_HASH_SIZE_FLETCHER8);
+		rz_write_le8 (ctx->digest, res);
 		return RZ_HASH_SIZE_FLETCHER8;
 	}
 	if (algobit & RZ_HASH_FLETCHER16) {
 		ut16 res = rz_hash_fletcher16 (buf, len);
-		memcpy (ctx->digest, &res, RZ_HASH_SIZE_FLETCHER16);
+		rz_write_le16 (ctx->digest, res);
 		return RZ_HASH_SIZE_FLETCHER16;
 	}
 	if (algobit & RZ_HASH_FLETCHER32) {
 		ut32 res = rz_hash_fletcher32 (buf, len);
-		memcpy (ctx->digest, &res, RZ_HASH_SIZE_FLETCHER32);
+		rz_write_le32 (ctx->digest, res);
 		return RZ_HASH_SIZE_FLETCHER32;
 	}
 	if (algobit & RZ_HASH_FLETCHER64) {
 		ut64 res = rz_hash_fletcher64 (buf, len);
-		memcpy (ctx->digest, &res, RZ_HASH_SIZE_FLETCHER64);
+		rz_write_le64 (ctx->digest, res);
 		return RZ_HASH_SIZE_FLETCHER64;
 	}
 	if (algobit & RZ_HASH_ADLER32) {
 		ut32 res = rz_hash_adler32 (buf, len);
-		memcpy (ctx->digest, &res, RZ_HASH_SIZE_ADLER32);
+		rz_write_le32 (ctx->digest, res);
 		return RZ_HASH_SIZE_ADLER32;
 	}
 	if (algobit & RZ_HASH_HAMDIST) {
@@ -93,7 +93,7 @@ RZ_API int rz_hash_calculate(RzHash *ctx, ut64 algobit, const ut8 *buf, int len)
 	}
 	if (algobit & RZ_HASH_XORPAIR) {
 		ut16 res = rz_hash_xorpair (buf, len);
-		memcpy (ctx->digest, &res, 2);
+		rz_write_le16 (ctx->digest, res);
 		return RZ_HASH_SIZE_XORPAIR;
 	}
 	if (algobit & RZ_HASH_MOD255) {
@@ -107,7 +107,7 @@ RZ_API int rz_hash_calculate(RzHash *ctx, ut64 algobit, const ut8 *buf, int len)
 
 	if (algobit & RZ_HASH_CRC8_SMBUS) {
 		ut8 res = rz_hash_crc_preset (buf, len, CRC_PRESET_8_SMBUS);
-		memcpy (ctx->digest, &res, RZ_HASH_SIZE_CRC8_SMBUS);
+		rz_write_le8 (ctx->digest, res);
 		return RZ_HASH_SIZE_CRC8_SMBUS;
 	}
 #if RZ_HAVE_CRC8_EXTRA
