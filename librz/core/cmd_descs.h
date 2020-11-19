@@ -68,6 +68,7 @@ RZ_IPI int rz_cmd_open(void *data, const char *input);
 RZ_IPI int rz_cmd_print(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_project_save_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_project_open_handler(RzCore *core, int argc, const char **argv);
+RZ_IPI RzCmdStatus rz_project_open_no_bin_io_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_quit(void *data, const char *input);
 RZ_IPI int rz_cmd_resize(void *data, const char *input);
 RZ_IPI int rz_cmd_seek(void *data, const char *input);

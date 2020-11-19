@@ -1,3 +1,71 @@
+NAME=load without file
+FILE=bins/elf/crackme0x05
+CMDS=<<EOF
+e cfg.newshell=1
+f a_nice_refreshing_un-moisten @ 0x080483d8
+Ps .tmp_load_without_file.rzdb
+o
+?e --
+o--
+o
+pdi 3 @ 0x080483d8
+?e --
+Poo .tmp_load_without_file.rzdb
+rm .tmp_load_without_file.rzdb
+o
+?e --
+pdi 3 @ 0x080483d8
+EOF
+EXPECT=<<EOF
+ 3 * r-x 0x00001de8 bins/elf/crackme0x05
+ 4 - rw- 0x00000004 null://4
+--
+0x080483d8                   ff  invalid
+0x080483d9                   ff  invalid
+0x080483da                   ff  invalid
+--
+--
+0x080483d8   a_nice_refreshing_un_moisten:
+0x080483d8                   ff  invalid
+0x080483d9                   ff  invalid
+0x080483da                   ff  invalid
+EOF
+RUN
+
+NAME=load on top of file
+FILE=bins/elf/crackme0x05
+CMDS=<<EOF
+e cfg.newshell=1
+f a_nice_refreshing_un-moisten @ 0x080483d8
+Ps .tmp_load_on_top_of_file.rzdb
+o
+?e --
+o--
+o
+pdi 3 @ 0x080483d8
+?e --
+o bins/elf/crackme0x00b
+Poo .tmp_load_on_top_of_file.rzdb
+rm .tmp_load_on_top_of_file.rzdb
+?e --
+pdi 3 @ 0x080483d8
+EOF
+EXPECT=<<EOF
+ 3 * r-x 0x00001de8 bins/elf/crackme0x05
+ 4 - rw- 0x00000004 null://4
+--
+0x080483d8                   ff  invalid
+0x080483d9                   ff  invalid
+0x080483da                   ff  invalid
+--
+--
+0x080483d8   a_nice_refreshing_un_moisten:
+0x080483d8                 0000  add byte [eax], al
+0x080483da                 00e9  add cl, ch
+0x080483dc                   90  nop
+EOF
+RUN
+
 NAME=flags
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
