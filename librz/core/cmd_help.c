@@ -122,7 +122,6 @@ static const char *help_msg_question_e[] = {
 	"?e", "", "echo message with newline",
 	"?e=", " 32", "progress bar at 32 percentage",
 	"?eb", " 10 20 30", "proportional segments bar",
-	"?ed", " 1", "draw a 3D ascii donut at the given animation frame",
 	"?eg", " 10 20", "move cursor to column 10, row 20",
 	"?en", " nonl", "echo message without ending newline",
 	"?ep", " 10 20 30", "draw a pie char with given portion sizes",
@@ -1006,41 +1005,6 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			free (newmsg);
 			break;
 		}
-		case 'd': // "?ed"
-			  if (input[2] == 'd') {
-				  int i,j;
-				  rz_cons_show_cursor (0);
-				  rz_cons_clear00 ();
-				  for (i = 1; i < 100; i++) {
-					  if (rz_cons_is_breaked ()) {
-						  break;
-					  }
-					  for (j = 0; j < 20; j++) {
-						  char *d = rz_str_donut (i);
-						  rz_cons_gotoxy (0,0);
-						  rz_str_trim_tail (d);
-						  rz_cons_clear_line (0);
-						  rz_cons_printf ("Downloading the Gibson...\n\n");
-						  rz_core_cmdf (core, "?e=%d", i);
-						  rz_cons_strcat (d);
-						  rz_cons_clear_line (0);
-						  rz_cons_newline ();
-						  free (d);
-						  rz_cons_flush ();
-						  rz_sys_usleep (2000);
-					  }
-				  }
-				  rz_cons_clear00();
-				  rz_cons_printf ("\nPayload installed. Thanks for your patience.\n\n");
-			} else {
-				  char *d = rz_str_donut (rz_num_math (core->num, input + 2));
-				  rz_str_trim_tail (d);
-				  const char *color = (core->cons && core->cons->context->pal.flag)? core->cons->context->pal.flag: "";
-				  rz_cons_printf ("%s%s", color, d);
-				  rz_cons_newline ();
-				  free (d);
-			}
-			break;
 		case 'p':
 			  {
 			char *word, *str = strdup (input + 2);
