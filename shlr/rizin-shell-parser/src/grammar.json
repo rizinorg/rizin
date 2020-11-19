@@ -1467,92 +1467,6 @@
         ]
       }
     },
-    "_task_command": {
-      "type": "PREC_LEFT",
-      "value": 1,
-      "content": {
-        "type": "CHOICE",
-        "members": [
-          {
-            "type": "SEQ",
-            "members": [
-              {
-                "type": "FIELD",
-                "name": "command",
-                "content": {
-                  "type": "ALIAS",
-                  "content": {
-                    "type": "CHOICE",
-                    "members": [
-                      {
-                        "type": "STRING",
-                        "value": "&"
-                      },
-                      {
-                        "type": "STRING",
-                        "value": "&t"
-                      }
-                    ]
-                  },
-                  "named": true,
-                  "value": "cmd_identifier"
-                }
-              },
-              {
-                "type": "FIELD",
-                "name": "args",
-                "content": {
-                  "type": "CHOICE",
-                  "members": [
-                    {
-                      "type": "SYMBOL",
-                      "name": "args"
-                    },
-                    {
-                      "type": "BLANK"
-                    }
-                  ]
-                }
-              }
-            ]
-          },
-          {
-            "type": "SEQ",
-            "members": [
-              {
-                "type": "FIELD",
-                "name": "command",
-                "content": {
-                  "type": "ALIAS",
-                  "content": {
-                    "type": "PATTERN",
-                    "value": "&[A-Za-z=\\-+*&0-9]*"
-                  },
-                  "named": true,
-                  "value": "cmd_identifier"
-                }
-              },
-              {
-                "type": "FIELD",
-                "name": "args",
-                "content": {
-                  "type": "CHOICE",
-                  "members": [
-                    {
-                      "type": "SYMBOL",
-                      "name": "args"
-                    },
-                    {
-                      "type": "BLANK"
-                    }
-                  ]
-                }
-              }
-            ]
-          }
-        ]
-      }
-    },
     "number_command": {
       "type": "CHOICE",
       "members": [
@@ -1664,10 +1578,6 @@
         {
           "type": "SYMBOL",
           "name": "_last_command"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "_task_command"
         }
       ]
     },
