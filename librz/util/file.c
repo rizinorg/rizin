@@ -93,7 +93,7 @@ RZ_API const char *rz_file_basename(const char *path) {
 
 /*
 Example:
-	str = rz_file_basename ("home/inisider/Downloads");
+	str = rz_file_dirname ("home/inisider/Downloads/user32.dll");
 	// str == "home/inisider/Downloads"
 	free (str);
 */

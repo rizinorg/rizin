@@ -4,7 +4,7 @@
 
 #include <rz_util/rz_str.h>
 
-#define SERIALIZE_ERR(...) do { if(res) { rz_list_push (res, rz_str_newf(__VA_ARGS__)); } } while(0)
+#define SERIALIZE_ERR(...) do { if(res) { rz_list_push (res, rz_str_newf (__VA_ARGS__)); } } while(0)
 
 // Hashtable-based key parser to prevent strcmp chains
 typedef HtPP KeyParser;

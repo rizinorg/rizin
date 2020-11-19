@@ -23,11 +23,27 @@ bool test_rz_file_relpath(const char *base, const char *path, const char *expect
 	mu_end;
 }
 
+bool test_rz_file_dirname(void) {
+	char *s = rz_file_dirname (RZ_SYS_DIR"home"RZ_SYS_DIR"mememan"RZ_SYS_DIR"henlo.txt");
+	mu_assert_streq (s, RZ_SYS_DIR"home"RZ_SYS_DIR"mememan", "dirname");
+	free (s);
+
+	s = rz_file_dirname (RZ_SYS_DIR"home"RZ_SYS_DIR"mememan"RZ_SYS_DIR);
+	mu_assert_streq (s, RZ_SYS_DIR"home", "dirname");
+	free (s);
+
+	s = rz_file_dirname ("orang");
+	mu_assert_streq (s, "", "dirname");
+	free (s);
+	mu_end;
+}
+
 int all_tests() {
 	size_t i;
 	for (i = 0; i < RELPATH_CASES_COUNT; i++) {
 		mu_run_test (test_rz_file_relpath, relpath_cases[i].base, relpath_cases[i].path, relpath_cases[i].expect);
 	}
+	mu_run_test (test_rz_file_dirname);
 	return tests_passed != tests_run;
 }
 
