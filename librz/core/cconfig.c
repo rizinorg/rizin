@@ -3679,7 +3679,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("scr.null", "false", &cb_scrnull, "Show no output");
 	SETCB ("scr.utf8", rz_str_bool (rz_cons_is_utf8()), &cb_utf8, "Show UTF-8 characters instead of ANSI");
 	SETCB ("scr.utf8.curvy", "false", &cb_utf8_curvy, "Show curved UTF-8 corners (requires scr.utf8)");
-	SETBPREF ("scr.demo", "false", "Use demoscene effects if available");
 	SETBPREF ("scr.histsave", "true", "Always save history on exit");
 	n = NODECB ("scr.strconv", "asciiesc", &cb_scrstrconv);
 	SETDESC (n, "Convert string before display");

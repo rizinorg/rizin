@@ -4923,56 +4923,6 @@ void __refresh_core_offset (RzCore *core) {
 	}
 }
 
-static void demo_begin (RzCore *core, RzConsCanvas *can) {
-	char *s = rz_cons_canvas_to_string (can);
-	if (s) {
-		// TODO drop utf8!!
-		rz_str_ansi_filter (s, NULL, NULL, -1);
-		int i, h, w = rz_cons_get_size (&h);
-		for (i = 0; i < 40; i+= (1 + (i/30))) {
-			int H = i * ((double)h / 40);
-			char *r = rz_str_scale (s, w, H);
-			rz_cons_clear00 ();
-			rz_cons_gotoxy (0, (h / 2) - (H / 2));
-			rz_cons_strcat (r);
-			rz_cons_flush ();
-			free (r);
-			rz_sys_usleep (3000);
-		}
-		free (s);
-	}
-}
-
-static void demo_end (RzCore *core, RzConsCanvas *can) {
-	bool utf8 = rz_config_get_i (core->config, "scr.utf8");
-	rz_config_set_i (core->config, "scr.utf8", 0);
-	RzPanel *cur = __get_cur_panel (core->panels);
-	cur->view->refresh = true;
-	firstRun= false;
-	__panels_refresh (core);
-	firstRun= true;
-	rz_config_set_i (core->config, "scr.utf8", utf8);
-	char *s = rz_cons_canvas_to_string (can);
-	if (s) {
-		// TODO drop utf8!!
-		rz_str_ansi_filter (s, NULL, NULL, -1);
-		int i, h, w = rz_cons_get_size (&h);
-		for (i = h; i > 0; i--) {
-			int H = i;
-			char *r = rz_str_scale (s, w, H);
-			rz_cons_clear00 ();
-			rz_cons_gotoxy (0, (h / 2) - (H / 2)); // center
-			//rz_cons_gotoxy (0, h-H); // bottom
-			rz_cons_strcat (r);
-			rz_cons_flush ();
-			free (r);
-			rz_sys_usleep (3000);
-		}
-		rz_sys_usleep (100000);
-		free (s);
-	}
-}
-
 void __panels_refresh(RzCore *core) {
 	RzPanels *panels = core->panels;
 	if (!panels) {
@@ -5077,11 +5027,6 @@ void __panels_refresh(RzCore *core) {
 	}
 
 	if (firstRun) {
-		if (core->panels_root->n_panels < 2) {
-			if (rz_config_get_i (core->config, "scr.demo")) {
-				demo_begin (core, can);
-			}
-		}
 		firstRun = false;
 		rz_config_set_i (core->config, "scr.utf8", utf8);
 		RzPanel *cur = __get_cur_panel (core->panels);
@@ -7231,11 +7176,6 @@ repeat:
 	case 'q':
 	case -1: // EOF
 		__set_root_state (core, DEL);
-		if (core->panels_root->n_panels < 2) {
-			if (rz_config_get_i (core->config, "scr.demo")) {
-				demo_end (core, can);
-			}
-		}
 		goto exit;
 #if 0
 	case 27: // ESC
