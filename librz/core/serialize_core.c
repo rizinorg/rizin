@@ -119,7 +119,7 @@ static char *prj_relative_restore(const char *prj_dir, const char *rel_file) {
 	if (!rel_local) {
 		return NULL;
 	}
-	char *abs = rz_file_abspath_rel(prj_dir, rel_local);
+	char *abs = rz_file_abspath_rel (prj_dir, rel_local);
 	free (rel_local);
 	return abs;
 }
@@ -151,7 +151,7 @@ static void file_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 		if (!prj_dir) {
 			goto beach;
 		}
-		char *rel = prj_relative_make(prj_dir, abs);
+		char *rel = prj_relative_make (prj_dir, abs);
 		if (rel) {
 			sdb_set (db, "relative", rel, 0);
 			free (rel);
