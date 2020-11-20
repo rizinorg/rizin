@@ -109,6 +109,9 @@ RZ_API char *rz_file_dirname(const char *path) {
 	} else {
 		ptr = (char*)rz_str_rchr (newpath, NULL, '\\');
 		if (ptr) {
+			if (ptr == newpath) {
+				ptr++;
+			}
 			*ptr = 0;
 		}
 	}

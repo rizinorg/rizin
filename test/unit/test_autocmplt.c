@@ -78,6 +78,7 @@ static RzCore *fake_core_new2(void) {
 
 static bool test_autocmplt_cmdid(void) {
     RzCore *core = fake_core_new ();
+    mu_assert_notnull (core, "core should be created");
     RzLineBuffer *buf = &core->cons->line->buffer;
 
     strcpy (buf->data, "x");
@@ -111,6 +112,7 @@ static bool test_autocmplt_cmdid(void) {
 
 static bool test_autocmplt_newcommand(void) {
     RzCore *core = fake_core_new ();
+    mu_assert_notnull (core, "core should be created");
     RzLineBuffer *buf = &core->cons->line->buffer;
 
     strcpy (buf->data, "");
@@ -147,6 +149,7 @@ static bool test_autocmplt_newcommand(void) {
 
 static bool test_autocmplt_argid(void) {
     RzCore *core = fake_core_new ();
+    mu_assert_notnull (core, "core should be created");
     RzLineBuffer *buf = &core->cons->line->buffer;
 
     const char *s = "xd ./unit/test_interv";
@@ -168,6 +171,7 @@ static bool test_autocmplt_argid(void) {
 
 static bool test_autocmplt_quotedarg(void) {
     RzCore *core = fake_core_new ();
+    mu_assert_notnull (core, "core should be created");
     RzLineBuffer *buf = &core->cons->line->buffer;
 
     const char *s = "xd \"./unit/test_interv";
@@ -204,14 +208,15 @@ static bool test_autocmplt_quotedarg(void) {
 
 static bool test_autocmplt_newarg(void) {
     RzCore *core = fake_core_new ();
+    mu_assert_notnull (core, "core should be created");
     RzLineBuffer *buf = &core->cons->line->buffer;
 
     char *cwd = rz_sys_getdir ();
     rz_sys_mkdir ("newarg_test");
     rz_sys_chdir ("newarg_test");
-    rz_file_touch ("file0");
-    rz_file_touch ("file1");
-    rz_file_touch ("file2");
+    mu_assert_true (rz_file_touch ("file0"), "");
+    mu_assert_true (rz_file_touch ("file1"), "");
+    mu_assert_true (rz_file_touch ("file2"), "");
 
     const char *s = "xd ";
     strcpy (buf->data, s);
@@ -249,6 +254,7 @@ static bool test_autocmplt_newarg(void) {
 
 static bool test_autocmplt_fcn(void) {
     RzCore *core = fake_core_new2 ();
+    mu_assert_notnull (core, "core not null");
     RzLineBuffer *buf = &core->cons->line->buffer;
 
     rz_core_anal_all (core);
