@@ -191,3 +191,20 @@ Same project, different file
 0x08048407           e810ffffff  call sym.imp.printf
 EOF
 RUN
+
+NAME=rizin project with implicit file
+FILE=-
+CMDS=<<EOF
+!rizin -escr.utf8=0 -escr.color=0 -escr.interactive=0 -N -Qc "f easy @ 0x080483fe; Ps .crackme2.rzdb" bins/elf/ioli/crackme0x00
+?e Reload project including file
+!rizin -escr.utf8=0 -escr.color=0 -escr.interactive=0 -N -p .crackme.rzdb -Qc "pdi 3 @ easy"
+!rm .crackme2.rzdb
+EOF
+EXPECT=<<EOF
+Reload project including file
+0x080483fe   easy:
+0x080483fe                 08e8  or al, ch
+0x08048400                   fc  cld
+0x08048401                 7bfb  jnp 0x80483fe
+EOF
+RUN
