@@ -108,12 +108,16 @@ RZ_API char *rz_file_dirname(const char *path) {
 		*ptr = 0;
 	} else {
 		ptr = (char*)rz_str_rchr (newpath, NULL, '\\');
-		if (ptr) {
-			if (ptr == newpath) {
+		if (!ptr) {
+			ptr = newpath;
+		}
+		if (ptr && ptr == newpath && *ptr == '.') { // keep '.'
+			ptr++;
+			if (*ptr == '.') { // keep '..'
 				ptr++;
 			}
-			*ptr = 0;
 		}
+		*ptr = 0;
 	}
 	return newpath;
 }
@@ -269,6 +273,9 @@ RZ_API char *rz_file_relpath(const char *base, const char *path) {
 			base++;
 			path++;
 		}
+	}
+	while (*path == '/') {
+		path++;
 	}
 
 	size_t ups;
