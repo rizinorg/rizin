@@ -1,10 +1,12 @@
-# r2docker
+# rizin docker
 # ========
 #
 # Requires 1GB of free disk space
 #
 # Build docker image with:
 # $ docker build -t rizin:latest .
+# To enable rz-asm plugins based on binutils, pass '--build-arg with_ARCH_as=1' to the build command.
+# Supported ARCHs are arm32, arm64, ppc. Each ARCH should be passed in a separate '--build-arg'.
 #
 # Run the docker image:
 # $ docker images
@@ -39,6 +41,10 @@ ARG RZ_VERSION=master
 # rz-pipe python version
 ARG RZ_PIPE_PY_VERSION=1.4.2
 
+ARG with_arm32_as
+ARG with_arm64_as
+ARG with_ppc_as
+
 ENV RZ_VERSION ${RZ_VERSION}
 ENV RZ_PIPE_PY_VERSION ${RZ_PIPE_PY_VERSION}
 
@@ -69,7 +75,10 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   libncurses5:i386 \
   libstdc++6:i386 \
   gnupg2 \
-  python-pip && \
+  python-pip \
+  ${with_arm64_as:+binutils-aarch64-linux-gnu} \
+  ${with_arm32_as:+binutils-arm-linux-gnueabi} \
+  ${with_ppc_as:+binutils-powerpc64le-linux-gnu} && \
   pip install rzpipe=="$RZ_PIPE_PY_VERSION" && \
   cd /mnt && \
   git clone -b "$RZ_VERSION" -q --depth 1 https://github.com/rizinorg/rizin.git && \
@@ -84,6 +93,10 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   glib-2.0 && \
   apt-get autoremove --purge -y && \
   apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+ENV RZ_ARM64_AS=${with_arm64_as:+aarch64-linux-gnu-as}
+ENV RZ_ARM32_AS=${with_arm32_as:+arm-linux-gnueabi-as}
+ENV RZ_PPC_AS=${with_ppc_as:+powerpc64le-linux-gnu-as}
 
 # Create non-root user
 RUN useradd -m rizin && \
