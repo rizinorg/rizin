@@ -49,7 +49,9 @@ p8 10 | grep 10
   (pipe_command
     (arged_command (cmd_identifier)
       (args (arg (arg_identifier))))
-    (pipe_second_command)))
+	(args
+      (arg (arg_identifier))
+      (arg (arg_identifier)))))
 
 ===========
 Double pipe
@@ -64,8 +66,11 @@ pd 10 | cat | grep mov
     (pipe_command
       (arged_command (cmd_identifier)
         (args (arg (arg_identifier))))
-      (pipe_second_command))
-    (pipe_second_command)))
+	  (args
+        (arg (arg_identifier))))
+    (args
+      (arg (arg_identifier))
+      (arg (arg_identifier)))))
 
 ===================================
 Pipe to another command with no arg
@@ -78,7 +83,9 @@ f | grep main
 (commands
   (pipe_command
     (arged_command (cmd_identifier))
-    (pipe_second_command)))
+    (args
+      (arg (arg_identifier))
+      (arg (arg_identifier)))))
 
 =======================
 Pipe to interpreter "."

@@ -134,7 +134,6 @@ static bool scan_number(TSLexer *lexer, const bool *valid_symbols) {
 }
 
 bool tree_sitter_rzcmd_external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid_symbols) {
-	// FIXME: /* in the shell should become a multiline comment
 	if (valid_symbols[CONCAT] && is_concat (lexer->lookahead)) {
 		lexer->result_symbol = CONCAT;
 		return true;

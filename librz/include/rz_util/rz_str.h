@@ -150,6 +150,7 @@ RZ_API char *rz_str_path_escape(const char *path);
 RZ_API int rz_str_unescape(char *buf);
 RZ_API char *rz_str_escape(const char *buf);
 RZ_API char *rz_str_escape_sh(const char *buf);
+RZ_API char *rz_str_sh_string(const char *args[], int n_args);
 RZ_API char *rz_str_escape_dot(const char *buf);
 RZ_API char *rz_str_escape_latin1(const char *buf, bool show_asciidot, bool esc_bslash, bool colors);
 RZ_API char *rz_str_escape_utf8(const char *buf, bool show_asciidot, bool esc_bslash);

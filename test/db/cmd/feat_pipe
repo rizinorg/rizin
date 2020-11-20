@@ -1,0 +1,12 @@
+NAME=escape-pipe in grep
+ARGS=-ecfg.newshell=true
+CMDS=<<EOF
+wx f30f1efa31ed4989d15e4889e24883e4f050544c8d05261c0100
+pi 10 | grep 'push\|pop'
+EOF
+EXPECT=<<EOF
+pop rsi
+push rax
+push rsp
+EOF
+RUN

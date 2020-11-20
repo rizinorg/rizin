@@ -204,6 +204,19 @@ RZ_API bool rz_sandbox_enable (bool e) {
 	return enabled;
 }
 
+/**
+ * Execute command \p argv[0] by passing as arguments \p argv . It composes a
+ * single string to execute through the shell from the \p argv array, parsing
+ * arguments appropriately and passing it to \p rz_sandbox_system .
+ */
+RZ_API int rz_sandbox_system_args(const char *argv[]) {
+	char *s = rz_str_sh_string (argv, -1);
+	rz_sandbox_system (s, 0);
+	eprintf ("Failure to execute `%s`\n", s);
+	free (s);
+	exit (-1);
+}
+
 RZ_API int rz_sandbox_system(const char *x, int n) {
 	rz_return_val_if_fail (x, -1);
 	if (enabled) {

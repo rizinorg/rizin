@@ -564,13 +564,9 @@
         },
         {
           "type": "SYMBOL",
-          "name": "pipe_second_command"
+          "name": "args"
         }
       ]
-    },
-    "pipe_second_command": {
-      "type": "PATTERN",
-      "value": "[^|\\r\\n;]+"
     },
     "_offsetsizes_args": {
       "type": "REPEAT1",

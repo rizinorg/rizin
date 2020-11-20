@@ -209,8 +209,7 @@ module.exports = grammar({
             field('command', $._simple_command),
             '|T'
         )),
-        pipe_command: $ => seq($._simple_command, '|', $.pipe_second_command),
-        pipe_second_command: $ => /[^|\r\n;]+/,
+        pipe_command: $ => seq($._simple_command, '|', $.args),
 
         _offsetsizes_args: $ => repeat1(seq($.arg, $.arg)),
 

@@ -68,7 +68,7 @@ typedef int (*RzCmdNullCb) (void *user);
  */
 typedef struct rz_cmd_parsed_args_t {
 	int argc;
-	char **argv;
+	char **argv; ///< array of argc strings, plus a NULL at the end
 	bool has_space_after_cmd;
 } RzCmdParsedArgs;
 

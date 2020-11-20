@@ -2109,13 +2109,12 @@ err_r_w32_cmd_pipe:
 #undef __CLOSE_DUPPED_PIPES
 #endif
 
-RZ_API int rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd) {
+static int core_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd, const char **shell_cmd_argv) {
 #if __UNIX__
 	int stdout_fd, fds[2];
 	int child;
 #endif
-	int si, olen, ret = -1, pipecolor = -1;
-	char *str, *out = NULL;
+	int si, ret = -1, pipecolor = -1;
 
 	if (rz_sandbox_enable (0)) {
 		eprintf ("Pipes are not allowed in sandbox mode\n");
@@ -2127,21 +2126,11 @@ RZ_API int rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd) {
 		pipecolor = rz_config_get_i (core->config, "scr.color");
 		rz_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 	}
-	if (*shell_cmd=='!') {
-		rz_cons_grep_parsecmd (shell_cmd, "\"");
-		olen = 0;
-		out = NULL;
-		// TODO: implement foo
-		str = rz_core_cmd_str (core, rizin_cmd);
-		rz_sys_cmd_str_full (shell_cmd + 1, str, &out, &olen, NULL);
-		free (str);
-		rz_cons_memcat (out, olen);
-		free (out);
-		ret = 0;
-	}
 #if __UNIX__
 	rz_str_trim_head (rizin_cmd);
-	rz_str_trim_head (shell_cmd);
+	if (shell_cmd) {
+		rz_str_trim_head (shell_cmd);
+	}
 
 	rz_sys_signal (SIGPIPE, SIG_IGN);
 	stdout_fd = dup (1);
@@ -2165,7 +2154,11 @@ RZ_API int rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd) {
 				close (fds[1]);
 				dup2 (fds[0], 0);
 				//dup2 (1, 2); // stderr goes to stdout
-				rz_sandbox_system (shell_cmd, 0);
+				if (shell_cmd_argv) {
+					rz_sandbox_system_args (shell_cmd_argv);
+				} else {
+					rz_sandbox_system (shell_cmd, 0);
+				}
 				close (stdout_fd);
 			}
 		} else {
@@ -2173,7 +2166,13 @@ RZ_API int rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd) {
 		}
 	}
 #elif __WINDOWS__
-	rz_w32_cmd_pipe (core, rizin_cmd, shell_cmd);
+	if (shell_cmd_argv) {
+		shell_cmd = rz_str_sh_string (shell_cmd_argv, -1);
+		rz_w32_cmd_pipe (core, rizin_cmd, shell_cmd);
+		free (shell_cmd);
+	} else {
+		rz_w32_cmd_pipe (core, rizin_cmd, shell_cmd);
+	}
 #else
 #ifdef _MSC_VER
 #pragma message ("rz_core_cmd_pipe UNIMPLEMENTED FOR THIS PLATFORM")
@@ -2187,6 +2186,20 @@ RZ_API int rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd) {
 	}
 	rz_config_set_i (core->config, "scr.interactive", si);
 	return ret;
+}
+
+/**
+ * Pipe stdout of the rizin command \p rizin_cmd to the stdin of the shell
+ * command specified in \p shell_cmd_argv[0] . The shell command is executed
+ * with the arguments \p shell_cmd_argv. \p rz_sandbox_system_args is used
+ * under the hood.
+ */
+RZ_API int rz_core_cmd_pipe_args(RzCore *core, char *rizin_cmd, const char *shell_cmd_argv[]) {
+	return core_cmd_pipe (core, rizin_cmd, NULL, shell_cmd_argv);
+}
+
+RZ_API int rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd) {
+	return core_cmd_pipe (core, rizin_cmd, shell_cmd, NULL);
 }
 
 static char *parse_tmp_evals(RzCore *core, const char *str) {
@@ -5926,12 +5939,30 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(pipe_command) {
 	TSNode second_cmd = ts_node_named_child (node, 1);
 	rz_return_val_if_fail (!ts_node_is_null (second_cmd), false);
 	char *first_str = ts_node_sub_string (first_cmd, state->input);
-	char *second_str = ts_node_sub_string (second_cmd, state->input);
+
+	RzCmdParsedArgs *a = ts_node_handle_arg_prargs (state, node, second_cmd, 1, true);
+	if (!a) {
+		RZ_LOG_ERROR ("Cannot parse args\n");
+		return RZ_CMD_STATUS_INVALID;
+	}
+
+	RZ_LOG_DEBUG ("pipe argc = %d\n", a->argc);
+
+	size_t i;
+	const char *s;
+	rz_cmd_parsed_args_foreach_arg (a, i, s) {
+		RZ_LOG_DEBUG ("pipe arg %" PFMTSZd ": %s\n", i, s);
+	}
+
+	// ts_node_handle_arg_prargs fills RzCmdParsedArgs from argv[1], to leave
+	// space for the command name in argv[0]. However, the shell command name is
+	// already in argv[1].
 	int value = state->core->num->value;
-	RzCmdStatus res = rz_cmd_int2status (rz_core_cmd_pipe (state->core, first_str, second_str));
+	RzCmdStatus res = rz_cmd_int2status (rz_core_cmd_pipe_args (state->core, first_str, (const char **)&a->argv[1]));
 	state->core->num->value = value;
+
+	rz_cmd_parsed_args_free (a);
 	free (first_str);
-	free (second_str);
 	return res;
 }
 

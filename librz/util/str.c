@@ -1383,6 +1383,37 @@ RZ_API char *rz_str_escape_sh(const char *buf) {
 	return new_buf;
 }
 
+/**
+ * Returns an heap-allocated string that can be executed by the system shell.
+ * Arguments are escaped and concatenated through a space.
+ *
+ * \param args Array of arguments to escape and concatenate. It should contain
+ *             at least \p n_args strings. If \p n_args is -1, the last argument
+ *             should be NULL.
+ * \param n_args Number of strings in \p args or -1 if \p args is NULL-terminated.
+ */
+RZ_API char *rz_str_sh_string(const char *args[], int n_args) {
+	rz_return_val_if_fail (args && n_args >= -1, NULL);
+	if (n_args == -1) {
+		n_args = 0;
+		while (args[n_args]) {
+			n_args++;
+		}
+	}
+
+	char **res = RZ_NEWS0 (char *, n_args);
+	size_t i;
+	for (i = 0; i < n_args; i++) {
+		res[i] = rz_str_newf ("\"%s\"", rz_str_escape_sh (args[i]));
+	}
+	char *s = rz_str_array_join ((const char **)res, n_args, " ");
+	for (i = 0; i < n_args; i++) {
+		free (res[i]);
+	}
+	free (res);
+	return s;
+}
+
 RZ_API char *rz_str_escape_dot(const char *buf) {
 	return rz_str_escape_ (buf, true, true, true, false, true);
 }
