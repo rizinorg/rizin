@@ -180,11 +180,13 @@ FILE=-
 CMDS=<<EOF
 !rizin -escr.utf8=0 -escr.color=0 -escr.interactive=0 -N -Qc "f easy @ 0x080483fe; Ps .crackme.rzdb" bins/elf/ioli/crackme0x00
 ?e Same project, different file
-!rizin -escr.utf8=0 -escr.color=0 -escr.interactive=0 -N -p .crackme.rzdb -Qc "pdi 3 @ easy" bins/elf/ioli/crackme0x01
+!rizin -escr.utf8=0 -escr.color=0 -escr.interactive=0 -N -p .crackme.rzdb -Qc "o; pdi 3 @ easy" bins/elf/ioli/crackme0x01
 !rm .crackme.rzdb
 EOF
 EXPECT=<<EOF
 Same project, different file
+ 3 * r-x 0x00001d4b bins/elf/ioli/crackme0x01
+ 4 - rw- 0x00000004 null://4
 0x080483fe   easy:
 0x080483fe                 29c4  sub esp, eax
 0x08048400       c7042428850408  mov dword [esp], str.IOLI_Crackme_Level_0x01

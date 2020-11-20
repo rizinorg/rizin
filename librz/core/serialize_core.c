@@ -133,7 +133,8 @@ static void file_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, RZ_NULLABLE c
 		return;
 	}
 	if (!desc->plugin || strcmp (desc->plugin->name, "default")) {
-		eprintf ("Warning: The current file is not loaded as a regular file. This is not supported in projects yet.\n");
+		eprintf ("Warning: The current file is not loaded as a regular file. "
+				"This is not supported in projects yet and it will be necessary to manually re-load to use the project.\n");
 		return;
 	}
 	const char *filename = desc->uri;

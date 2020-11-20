@@ -794,7 +794,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	if (prj) {
 		RzSerializeResultInfo *res = rz_serialize_result_info_new ();
-		RzProjectErr err = rz_project_load_file (r, prj, true, res);
+		RzProjectErr err = rz_project_load_file (r, prj, !pfile, res);
 		if (err != RZ_PROJECT_ERR_SUCCESS) {
 			eprintf ("Failed to load project: %s\n", rz_project_err_message (err));
 			RzListIter *it;
