@@ -313,7 +313,7 @@ diverge:
 
 RZ_API char *rz_file_path_local_to_unix(const char *path) {
 #if __WINDOWS__
-	return rz_str_replace (path, RZ_SYS_PATH, "/");
+	return rz_str_replace (path, RZ_SYS_DIR, "/");
 #else
 	return strdup (path);
 #endif
@@ -321,7 +321,7 @@ RZ_API char *rz_file_path_local_to_unix(const char *path) {
 
 RZ_API char *rz_file_path_unix_to_local(const char *path) {
 #if __WINDOWS__
-	return rz_str_replace (path, "/", RZ_SYS_PATH);
+	return rz_str_replace (path, "/", RZ_SYS_DIR);
 #else
 	return strdup (path);
 #endif
