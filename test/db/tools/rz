@@ -199,7 +199,7 @@ FILE=-
 CMDS=<<EOF
 !rizin -escr.utf8=0 -escr.color=0 -escr.interactive=0 -N -Qc "f easy @ 0x080483fe; Ps .crackme2.rzdb" bins/elf/ioli/crackme0x00
 ?e Reload project including file
-!rizin -escr.utf8=0 -escr.color=0 -escr.interactive=0 -N -p .crackme.rzdb -Qc "pdi 3 @ easy"
+!rizin -escr.utf8=0 -escr.color=0 -escr.interactive=0 -N -p .crackme2.rzdb -Qc "pdi 3 @ easy"
 !rm .crackme2.rzdb
 EOF
 EXPECT=<<EOF
