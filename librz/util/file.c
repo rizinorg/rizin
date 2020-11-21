@@ -312,19 +312,25 @@ diverge:
 }
 
 RZ_API char *rz_file_path_local_to_unix(const char *path) {
+	char *r = strdup (path);
+	if (!r) {
+		return NULL;
+	}
 #if __WINDOWS__
-	return rz_str_replace (path, RZ_SYS_DIR, "/", true);
-#else
-	return strdup (path);
+	rz_str_replace (r, RZ_SYS_DIR, "/", true);
 #endif
+	return r;
 }
 
 RZ_API char *rz_file_path_unix_to_local(const char *path) {
+	char *r = strdup (path);
+	if (!r) {
+		return NULL;
+	}
 #if __WINDOWS__
-	return rz_str_replace (path, "/", RZ_SYS_DIR, true);
-#else
-	return strdup (path);
+	rz_str_replace (r, "/", RZ_SYS_DIR, true);
 #endif
+	return r;
 }
 
 RZ_API char *rz_file_path(const char *bin) {
