@@ -1617,6 +1617,7 @@ RZ_API char *cmd_syscall_dostr(RzCore *core, st64 n, ut64 addr) {
 	}
 	char *res = rz_str_newf ("%s = %s (", syscallNumber (item->num), item->name);
 	// TODO: move this to rz_syscall
+	const char *cc = rz_analysis_syscc_default (core->analysis);
 	//TODO replace the hardcoded CC with the sdb ones
 	for (i = 0; i < item->args; i++) {
 		// XXX this is a hack to make syscall args work on x86-32 and x86-64
@@ -1625,7 +1626,7 @@ RZ_API char *cmd_syscall_dostr(RzCore *core, st64 n, ut64 addr) {
 		if (core->rasm->bits == 32 && core->rasm->cur && !strcmp (core->rasm->cur->arch, "x86")) {
 			regidx++;
 		}
-		ut64 arg = rz_debug_arg_get (core->dbg, RZ_ANALYSIS_CC_TYPE_FASTCALL, regidx);
+		ut64 arg = rz_debug_arg_get (core->dbg, cc, regidx);
 		//rz_cons_printf ("(%d:0x%"PFMT64x")\n", i, arg);
 		if (item->sargs) {
 			switch (item->sargs[i]) {
@@ -1643,7 +1644,7 @@ RZ_API char *cmd_syscall_dostr(RzCore *core, st64 n, ut64 addr) {
 				break;
 			case 'Z': {
 				//TODO replace the hardcoded CC with the sdb ones
-				ut64 len = rz_debug_arg_get (core->dbg, RZ_ANALYSIS_CC_TYPE_FASTCALL, i + 2);
+				ut64 len = rz_debug_arg_get (core->dbg, cc, i + 2);
 				len = RZ_MIN (len + 1, sizeof (str) - 1);
 				if (len == 0) {
 					len = 16; // override default
@@ -5947,7 +5948,7 @@ static void rz_analysis_aefa(RzCore *core, const char *arg) {
 		int i;
 		eprintf ("NARGS %d (%s)\n", nargs, key);
 		for (i = 0; i < nargs; i++) {
-			ut64 v = rz_debug_arg_get (core->dbg, RZ_ANALYSIS_CC_TYPE_STDCALL, i);
+			ut64 v = rz_debug_arg_get (core->dbg, "reg", i);
 			eprintf ("arg: 0x%08"PFMT64x"\n", v);
 		}
 	}
@@ -10400,6 +10401,7 @@ static void show_reg_args(RzCore *core, int nargs, RzStrBuf *sb) {
 // TODO: Implement aC* and aCj
 static void cmd_analysis_aC(RzCore *core, const char *input) {
 	bool is_aCer = false;
+	const char *cc = rz_analysis_cc_default (core->analysis);
 	RzAnalysisFuncArg *arg;
 	RzListIter *iter;
 	RzListIter *nextele;
@@ -10427,7 +10429,7 @@ static void cmd_analysis_aC(RzCore *core, const char *input) {
 		rz_strbuf_free (sb);
 		return;
 	}
-bool go_on = true;
+	bool go_on = true;
 	if (op->type != RZ_ANALYSIS_OP_TYPE_CALL) {
 		show_reg_args (core, -1, sb);
 		go_on = false;
@@ -10520,7 +10522,7 @@ bool go_on = true;
 					rz_strbuf_appendf (sb, "; 0x%"PFMT64x"(", pcv);
 				}
 				for (i = 0; i < nargs; i++) {
-					ut64 v = rz_debug_arg_get (core->dbg, RZ_ANALYSIS_CC_TYPE_FASTCALL, i);
+					ut64 v = rz_debug_arg_get (core->dbg, cc, i);
 					rz_strbuf_appendf (sb, "%s0x%"PFMT64x, i?", ":"", v);
 				}
 				rz_strbuf_appendf (sb, ")");

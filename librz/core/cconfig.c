@@ -2587,7 +2587,7 @@ static bool cb_analysissyscc(RzCore *core, RzConfigNode *node) {
 	return true;
 }
 
-static bool cb_analysiscc(RzCore *core, RConfigNode *node) {
+static bool cb_analysiscc(RzCore *core, RzConfigNode *node) {
 	if (core && core->analysis) {
 		if (!strcmp (node->value, "?")) {
 			rz_core_cmd0 (core, "afcl");
@@ -2908,8 +2908,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF ("analysis.fcnprefix", "fcn",  "Prefix new function names with this");
 	const char *analysiscc = rz_analysis_cc_default (core->analysis);
 	SETCB ("analysis.cc", analysiscc? analysiscc: "", (RzConfigCallback)&cb_analysiscc, "Specify default calling convention");
-	const char *analysissyscc = rz_analsysis_syscc_default (core->analysis);
-	SETCB ("analysis.syscc", analysissyscc? analysissyscc: "", (RzConfigCallback)&cb_analsyscc, "Specify default syscall calling convention");
+	const char *analysissyscc = rz_analysis_syscc_default (core->analysis);
+	SETCB ("analysis.syscc", analysissyscc? analysissyscc: "", (RzConfigCallback)&cb_analysissyscc, "Specify default syscall calling convention");
 	SETCB ("analysis.verbose", "false", &cb_analverbose, "Show RzAnalysis warnings when analyzing code");
 	SETCB ("analysis.roregs", "gp,zero", (RzConfigCallback)&cb_analysis_roregs, "Comma separated list of register names to be readonly");
 	SETICB ("analysis.gp", 0, (RzConfigCallback)&cb_analysis_gp, "Set the value of the GP register (MIPS)");
