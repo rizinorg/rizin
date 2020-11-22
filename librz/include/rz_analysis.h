@@ -1812,6 +1812,9 @@ RZ_API void rz_analysis_cc_set_error(RzAnalysis *analysis, const char *conventio
 RZ_API int rz_analysis_cc_max_arg(RzAnalysis *analysis, const char *cc);
 RZ_API const char *rz_analysis_cc_ret(RzAnalysis *analysis, const char *convention);
 RZ_API const char *rz_analysis_cc_default(RzAnalysis *analysis);
+RZ_API void rz_analysis_set_cc_default(RzAnalysis *analysis, const char *convention);
+RZ_API const char *rz_analysis_syscc_default(RzAnalysis *analysis);
+RZ_API void rz_analysis_set_syscc_default(RzAnalysis *analysis, const char *convention);
 RZ_API const char *rz_analysis_cc_func(RzAnalysis *analysis, const char *func_name);
 RZ_API bool rz_analysis_noreturn_at(RzAnalysis *analysis, ut64 addr);
 
