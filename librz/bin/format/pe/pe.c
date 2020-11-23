@@ -574,12 +574,112 @@ error:
 	return false;
 }
 
+static int read_dos_header(RzBuffer *b, PE_(image_dos_header) *header) {
+	st64 o_addr = rz_buf_seek (b, 0, RZ_BUF_CUR);
+	if (rz_buf_seek (b, 0, RZ_BUF_SET) < 0) {
+		return -1;
+	}
+	header->e_magic = rz_buf_read_le16 (b);
+	header->e_cblp = rz_buf_read_le16 (b);
+	header->e_cp = rz_buf_read_le16 (b);
+	header->e_crlc = rz_buf_read_le16 (b);
+	header->e_cparhdr = rz_buf_read_le16 (b);
+	header->e_minalloc = rz_buf_read_le16 (b);
+	header->e_maxalloc = rz_buf_read_le16 (b);
+	header->e_ss = rz_buf_read_le16 (b);
+	header->e_sp = rz_buf_read_le16 (b);
+	header->e_csum = rz_buf_read_le16 (b);
+	header->e_ip = rz_buf_read_le16 (b);
+	header->e_cs = rz_buf_read_le16 (b);
+	header->e_lfarlc = rz_buf_read_le16 (b);
+	header->e_ovno = rz_buf_read_le16 (b);
+	int i;
+	for (i = 0; i < 4; i++) {
+		header->e_res[i] = rz_buf_read_le16 (b);
+	}
+	header->e_oemid = rz_buf_read_le16 (b);
+	header->e_oeminfo = rz_buf_read_le16 (b);
+	for (i = 0; i < 10; i++) {
+		header->e_res2[i] = rz_buf_read_le16 (b);
+	}
+	header->e_lfanew = rz_buf_read_le32 (b);
+	if (rz_buf_seek (b, o_addr, RZ_BUF_SET) < 0) {
+		return -1;
+	}
+	return sizeof (PE_(image_dos_header));
+}
+
+static int read_nt_headers(RzBuffer *b, ut64 addr, PE_(image_nt_headers) *headers) {
+	st64 o_addr = rz_buf_seek (b, 0, RZ_BUF_CUR);
+	if (rz_buf_seek (b, addr, RZ_BUF_SET) < 0) {
+		return -1;
+	}
+	headers->Signature = rz_buf_read_le32 (b);
+	headers->file_header.Machine = rz_buf_read_le16 (b);
+	headers->file_header.NumberOfSections = rz_buf_read_le16 (b);
+	headers->file_header.TimeDateStamp = rz_buf_read_le32 (b);
+	headers->file_header.PointerToSymbolTable = rz_buf_read_le32 (b);
+	headers->file_header.NumberOfSymbols = rz_buf_read_le32 (b);
+	headers->file_header.SizeOfOptionalHeader = rz_buf_read_le16 (b);
+	headers->file_header.Characteristics = rz_buf_read_le16 (b);
+	headers->optional_header.Magic = rz_buf_read_le16 (b);
+	headers->optional_header.MajorLinkerVersion = rz_buf_read8 (b);
+	headers->optional_header.MinorLinkerVersion = rz_buf_read8 (b);
+	headers->optional_header.SizeOfCode = rz_buf_read_le32 (b);
+	headers->optional_header.SizeOfInitializedData = rz_buf_read_le32 (b);
+	headers->optional_header.SizeOfUninitializedData = rz_buf_read_le32 (b);
+	headers->optional_header.AddressOfEntryPoint = rz_buf_read_le32 (b);
+	headers->optional_header.BaseOfCode = rz_buf_read_le32 (b);
+#ifdef RZ_BIN_PE64
+	headers->optional_header.ImageBase = rz_buf_read_le64 (b);
+#else
+	headers->optional_header.BaseOfData = rz_buf_read_le32 (b);
+	headers->optional_header.ImageBase = rz_buf_read_le32 (b);
+#endif
+	headers->optional_header.SectionAlignment = rz_buf_read_le32 (b);
+	headers->optional_header.FileAlignment = rz_buf_read_le32 (b);
+	headers->optional_header.MajorOperatingSystemVersion = rz_buf_read_le16 (b);
+	headers->optional_header.MinorOperatingSystemVersion = rz_buf_read_le16 (b);
+	headers->optional_header.MajorImageVersion = rz_buf_read_le16 (b);
+	headers->optional_header.MinorImageVersion = rz_buf_read_le16 (b);
+	headers->optional_header.MajorSubsystemVersion = rz_buf_read_le16 (b);
+	headers->optional_header.MinorSubsystemVersion = rz_buf_read_le16 (b);
+	headers->optional_header.Win32VersionValue = rz_buf_read_le32 (b);
+	headers->optional_header.SizeOfImage = rz_buf_read_le32 (b);
+	headers->optional_header.SizeOfHeaders = rz_buf_read_le32 (b);
+	headers->optional_header.CheckSum = rz_buf_read_le32 (b);
+	headers->optional_header.Subsystem = rz_buf_read_le16 (b);
+	headers->optional_header.DllCharacteristics = rz_buf_read_le16 (b);
+#ifdef RZ_BIN_PE64
+	headers->optional_header.SizeOfStackReserve = rz_buf_read_le64 (b);
+	headers->optional_header.SizeOfStackCommit = rz_buf_read_le64 (b);
+	headers->optional_header.SizeOfHeapReserve = rz_buf_read_le64 (b);
+	headers->optional_header.SizeOfHeapCommit = rz_buf_read_le64 (b);
+#else
+	headers->optional_header.SizeOfStackReserve = rz_buf_read_le32 (b);
+	headers->optional_header.SizeOfStackCommit = rz_buf_read_le32 (b);
+	headers->optional_header.SizeOfHeapReserve = rz_buf_read_le32 (b);
+	headers->optional_header.SizeOfHeapCommit = rz_buf_read_le32 (b);
+#endif
+	headers->optional_header.LoaderFlags = rz_buf_read_le32 (b);
+	headers->optional_header.NumberOfRvaAndSizes = rz_buf_read_le32 (b);
+	int i;
+	for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES; i++) {
+		headers->optional_header.DataDirectory[i].VirtualAddress = rz_buf_read_le32 (b);
+		headers->optional_header.DataDirectory[i].Size = rz_buf_read_le32 (b);
+	}
+	if (rz_buf_seek (b, o_addr, RZ_BUF_SET) < 0) {
+		return -1;
+	}
+	return sizeof (PE_(image_nt_headers));
+}
+
 static int bin_pe_init_hdr(struct PE_(rz_bin_pe_obj_t)* bin) {
 	if (!(bin->dos_header = malloc (sizeof(PE_(image_dos_header))))) {
 		rz_sys_perror ("malloc (dos header)");
 		return false;
 	}
-	if (rz_buf_read_at (bin->b, 0, (ut8*) bin->dos_header, sizeof(PE_(image_dos_header))) < 0) {
+	if (read_dos_header (bin->b, bin->dos_header) < 0) {
 		bprintf ("Warning: read (dos header)\n");
 		return false;
 	}
@@ -597,8 +697,8 @@ static int bin_pe_init_hdr(struct PE_(rz_bin_pe_obj_t)* bin) {
 		return false;
 	}
 	bin->nt_header_offset = bin->dos_header->e_lfanew;
-	if (rz_buf_read_at (bin->b, bin->dos_header->e_lfanew, (ut8*) bin->nt_headers, sizeof (PE_(image_nt_headers))) < 0) {
-		bprintf ("Warning: read (dos header)\n");
+	if (read_nt_headers (bin->b, bin->dos_header->e_lfanew, bin->nt_headers) < 0) {
+		bprintf ("Warning: read (nt header)\n");
 		return false;
 	}
 	sdb_set (bin->kv, "pe_magic.cparse",     "enum pe_magic { IMAGE_NT_OPTIONAL_HDR32_MAGIC=0x10b, IMAGE_NT_OPTIONAL_HDR64_MAGIC=0x20b, IMAGE_ROM_OPTIONAL_HDR_MAGIC=0x107 };", 0);
@@ -656,10 +756,10 @@ static int bin_pe_init_hdr(struct PE_(rz_bin_pe_obj_t)* bin) {
 	bin->optional_header = &bin->nt_headers->optional_header;
 	bin->data_directory = (PE_(image_data_directory*)) & bin->optional_header->DataDirectory;
 
-	if (strncmp ((char *)&bin->dos_header->e_magic, "MZ", 2) ||
-		(strncmp ((char *)&bin->nt_headers->Signature, "PE", 2) &&
+	if (bin->dos_header->e_magic != 0x5a4d || // "MZ"
+		(bin->nt_headers->Signature != 0x4550 && // "PE"
 		/* Check also for Phar Lap TNT DOS extender PL executable */
-		strncmp ((char *)&bin->nt_headers->Signature, "PL", 2))) {
+		bin->nt_headers->Signature != 0x4c50)) { // "PL"
 		return false;
 	}
 	return true;
