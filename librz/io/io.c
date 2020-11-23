@@ -20,30 +20,30 @@ typedef int (*cbOnIterMap)(RzIO *io, int fd, ut64 addr, ut8 *buf, int len, RzIOM
 // If prefix_mode is true, returns the number of bytes of operated prefix; returns < 0 on error.
 // If prefix_mode is false, operates in non-stop mode and returns true iff all IO operations on overlapped maps are complete.
 static st64 on_map_skyline(RzIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg, cbOnIterMap op, bool prefix_mode) {
-	const RzPVector *skyline = &io->map_skyline;
+	RzVector *skyline = &io->map_skyline.v;
 	ut64 addr = vaddr;
 	size_t i;
 	bool ret = true, wrap = !prefix_mode && vaddr + len < vaddr;
-#define CMP(addr, part) ((addr) < rz_itv_end (((RzIOMapSkyline *)(part))->itv) - 1 ? -1 : \
-			(addr) > rz_itv_end (((RzIOMapSkyline *)(part))->itv) - 1 ? 1 : 0)
+#define CMP(addr, part) ((addr) < rz_itv_end (((RzSkylineItem *)(part))->itv) - 1 ? -1 : \
+			(addr) > rz_itv_end (((RzSkylineItem *)(part))->itv) - 1 ? 1 : 0)
 	// Let i be the first skyline part whose right endpoint > addr
 	if (!len) {
-		i = rz_pvector_len (skyline);
+		i = rz_vector_len (skyline);
 	} else {
-		rz_pvector_lower_bound (skyline, addr, i, CMP);
-		if (i == rz_pvector_len (skyline) && wrap) {
+		rz_vector_lower_bound (skyline, addr, i, CMP);
+		if (i == rz_vector_len (skyline) && wrap) {
 			wrap = false;
 			i = 0;
 			addr = 0;
 		}
 	}
 #undef CMP
-	while (i < rz_pvector_len (skyline)) {
-		const RzIOMapSkyline *part = rz_pvector_at (skyline, i);
+	while (i < rz_vector_len (skyline)) {
+		const RzSkylineItem *part = rz_vector_index_ptr (skyline, i);
 		// Right endpoint <= addr
 		if (rz_itv_end (part->itv) - 1 < addr) {
 			i++;
-			if (wrap && i == rz_pvector_len (skyline)) {
+			if (wrap && i == rz_vector_len (skyline)) {
 				wrap = false;
 				i = 0;
 				addr = 0;
@@ -62,10 +62,11 @@ static st64 on_map_skyline(RzIO *io, ut64 vaddr, ut8 *buf, int len, int match_fl
 		if (len1 < 1) {
 			break;
 		}
+		RzIOMap *map = part->user;
 		// The map satisfies the permission requirement or p_cache is enabled
-		if (((part->map->perm & match_flg) == match_flg || io->p_cache)) {
-			st64 result = op (io, part->map->fd, part->map->delta + addr - part->map->itv.addr,
-					buf + (addr - vaddr), len1, part->map, NULL);
+		if (((map->perm & match_flg) == match_flg || io->p_cache)) {
+			st64 result = op (io, map->fd, map->delta + addr - map->itv.addr,
+					buf + (addr - vaddr), len1, map, NULL);
 			if (prefix_mode) {
 				if (result < 0) {
 					return result;
@@ -106,7 +107,7 @@ RZ_API RzIO* rz_io_init(RzIO* io) {
 	rz_return_val_if_fail (io, NULL);
 	io->addrbytes = 1;
 	rz_io_desc_init (io);
-	rz_pvector_init (&io->map_skyline, free);
+	rz_skyline_init (&io->map_skyline);
 	rz_io_map_init (io);
 	rz_io_cache_init (io);
 	rz_io_plugin_init (io);
@@ -666,7 +667,7 @@ RZ_API int rz_io_fini(RzIO* io) {
 	rz_io_desc_fini (io);
 	rz_io_map_fini (io);
 	ls_free (io->plugins);
-	rz_list_free (io->cache);
+	rz_io_cache_fini (io);
 	rz_list_free (io->undo.w_list);
 	if (io->runprofile) {
 		RZ_FREE (io->runprofile);

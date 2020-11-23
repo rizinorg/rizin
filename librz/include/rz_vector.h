@@ -76,16 +76,16 @@ static inline bool rz_vector_empty(const RzVector *vec) {
 
 RZ_API void rz_vector_clear(RzVector *vec);
 
+// returns the length of the vector
+static inline size_t rz_vector_len(const RzVector *vec) {
+	rz_return_val_if_fail (vec, 0);
+	return vec->len;
+}
+
 // returns a pointer to the offset inside the array where the element of the index lies.
 static inline void *rz_vector_index_ptr(RzVector *vec, size_t index) {
 	rz_return_val_if_fail (vec && index < vec->capacity, NULL);
 	return (char *)vec->a + vec->elem_size * index;
-}
-
-// returns the number of elements in the vector
-static inline size_t rz_vector_len(RzVector *vec) {
-	rz_return_val_if_fail (vec, 0);
-	return vec->len;
 }
 
 // helper function to assign an element of size vec->elem_size from elem to p.
