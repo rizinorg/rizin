@@ -6618,16 +6618,19 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 		}
 	}
 	RzAnalEsil *esil = core->anal->esil;
-	RzList *ocache = core->io->cache;
+	RzPVector ocache = core->io->cache;
 	RzCache *ocacheb = core->io->buffer;
 	const int ocached = core->io->cached;
-	if (ocache) {
+	if (ocache.v.a) {
 		if (ocacheb && ocacheb->len) {
 			RzCache *c = rz_cache_new ();
 			rz_cache_set (c, ocacheb->base, ocacheb->buf, ocacheb->len);
 			core->io->buffer = c;
 		}
-		core->io->cache = rz_list_clone (ocache);
+		RzPVector *vec = (RzPVector *)rz_vector_clone ((RzVector *)&ocache);
+		vec->v.free = NULL;
+		core->io->cache = *vec;
+		free (vec);
 	} else {
 		rz_io_cache_init (core->io);
 	}
@@ -6729,17 +6732,23 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 	}
 	free (buf);
 	rz_reg_arena_pop (reg);
-	int len = rz_list_length (ocache);
-	if (rz_list_length (core->io->cache) > len) {
+	int len = rz_pvector_len (&ocache);
+	if (rz_pvector_len (&core->io->cache) > len) {
 		// TODO: Implement push/pop for IO.cache
 		while (len > 0) {
-			(void)rz_list_pop_head (core->io->cache);
+			(void)rz_pvector_pop_front (&core->io->cache);
 			len--;
 		}
-		core->io->cache->free = ocache->free;
+		core->io->cache.v.free = ocache.v.free;
 	}
 	rz_io_cache_fini (core->io);
 	core->io->cache = ocache;
+	rz_skyline_clear (&core->io->cache_skyline);
+	void **it;
+	rz_pvector_foreach (&ocache, it) {
+		RzIOCache *c = (RzIOCache *)*it;
+		rz_skyline_add (&core->io->cache_skyline, c->itv, c);
+	}
 	core->io->buffer = ocacheb;
 	core->io->cached = ocached;
 	rz_config_hold_restore (chold);

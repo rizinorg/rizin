@@ -1,7 +1,56 @@
 #include <rz_io.h>
 #include "minunit.h"
 
-bool test_r_io_mapsplit (void) {
+bool test_rz_io_cache(void) {
+	RzIO *io = rz_io_new ();
+	rz_io_open (io, "malloc://15", RZ_PERM_RW, 0);
+	rz_io_write (io, (ut8 *)"ZZZZZZZZZZZZZZZ", 15);
+	rz_io_cache_init (io);
+	mu_assert_false (rz_io_cache_at (io, 0), "Cache shouldn't exist at 0");
+	mu_assert_false (rz_io_cache_at (io, 10), "Cache shouldn't exist at 10");
+	mu_assert_true (rz_io_cache_write (io, 0, (ut8 *)"AAAAA", 5), "Cache write at 0 failed");
+	mu_assert_true (rz_io_cache_write (io, 10, (ut8 *)"BBBBB", 5), "Cache write at 10 failed");
+	mu_assert_true (rz_io_cache_at (io, 0), "Cache should exist at 0 (beggining of cache)");
+	mu_assert_true (rz_io_cache_at (io, 4), "Cache should exist at 4 (end of cache)");
+	mu_assert_false (rz_io_cache_at (io, 8), "Cache shouldn't exist at 8 (between 2 caches)");
+	mu_assert_true (rz_io_cache_at (io, 12), "Cache should exist at 12 (middle of cache)");
+	ut8 buf[15];
+	memset (buf, 'Z', sizeof (buf));
+	mu_assert_true (rz_io_cache_read (io, 0, buf, sizeof (buf)), "Cache read failed");
+	mu_assert_memeq (buf, (ut8 *)"AAAAAZZZZZBBBBB", sizeof (buf), "Cache read doesn't match expected output");
+	memset (buf, 'Z', sizeof (buf));
+	mu_assert_true (rz_io_cache_write (io, 0, (ut8 *)"CC", 2), "Overlapped cache write at 0 failed");
+	mu_assert_true (rz_io_cache_write (io, 4, (ut8 *)"DD", 2), "Overlapped cache write at 4 failed");
+	mu_assert_true (rz_io_cache_write (io, 8, (ut8 *)"EEE", 3), "Cache write at 4 failed");
+	mu_assert_true (rz_io_cache_read (io, 0, buf, 2), "Cache read at 0 failed");
+	mu_assert_true (rz_io_cache_read (io, 2, buf + 2, 2), "Cache read at 2 failed");
+	mu_assert_true (rz_io_cache_read (io, 4, buf + 4, 2), "Cache read at 4 failed");
+	mu_assert_true (rz_io_cache_read (io, 6, buf + 6, 2), "Cache read at 6 failed");
+	mu_assert_true (rz_io_cache_read (io, 8, buf + 8, 3), "Cache read at 8 failed");
+	mu_assert_true (rz_io_cache_read (io, 11, buf + 11, 4), "Cache read at 11 failed");
+	mu_assert_memeq (buf, (ut8 *)"CCAADDZZEEEBBBB", sizeof (buf), "Cache read doesn't match expected output");
+	mu_assert_true (rz_io_cache_write (io, 0, (ut8 *)"FFFFFFFFFFFFFFF", 15), "Cache write failed");
+	mu_assert_true (rz_io_cache_read (io, 0, buf, sizeof (buf)), "Cache read failed");
+	mu_assert_memeq (buf, (ut8 *)"FFFFFFFFFFFFFFF", sizeof (buf), "Cache read doesn't match expected output");
+	rz_io_read_at (io, 0, buf, sizeof (buf));
+	mu_assert_memeq (buf, (ut8 *)"ZZZZZZZZZZZZZZZ", sizeof (buf), "IO read without cache doesn't match expected output");
+	io->cached = RZ_PERM_R;
+	rz_io_read_at (io, 0, buf, sizeof (buf));
+	mu_assert_memeq (buf, (ut8 *)"FFFFFFFFFFFFFFF", sizeof (buf), "IO read with cache doesn't match expected output");
+	rz_io_cache_invalidate (io, 6, 1);
+	memset (buf, 'Z', sizeof (buf));
+	rz_io_read_at (io, 0, buf, sizeof (buf));
+	mu_assert_memeq (buf, (ut8 *)"CCAADDZZEEEBBBB", sizeof (buf), "IO read after cache invalidate doesn't match expected output");
+	rz_io_cache_commit (io, 0, 15);
+	memset (buf, 'Z', sizeof (buf));
+	io->cached = 0;
+	rz_io_read_at (io, 0, buf, sizeof (buf));
+	mu_assert_memeq (buf, (ut8 *)"CCAADDZZEEEBBBB", sizeof (buf), "IO read after cache commit doesn't match expected output");
+	rz_io_free (io);
+	mu_end;
+}
+
+bool test_rz_io_mapsplit (void) {
 	RzIO *io = rz_io_new ();
 	io->va = true;
 	rz_io_open_at (io, "null://2", RZ_PERM_R, 0LL, UT64_MAX);
@@ -13,7 +62,7 @@ bool test_r_io_mapsplit (void) {
 	mu_end;
 }
 
-bool test_r_io_mapsplit2 (void) {
+bool test_rz_io_mapsplit2 (void) {
 	RzIO *io = rz_io_new ();
 	io->va = true;
 	rz_io_open_at (io, "null://2", RZ_PERM_R, 0LL, 0LL);
@@ -30,7 +79,7 @@ bool test_r_io_mapsplit2 (void) {
 	mu_end;
 }
 
-bool test_r_io_mapsplit3 (void) {
+bool test_rz_io_mapsplit3 (void) {
 	RzIO *io = rz_io_new ();
 	io->va = true;
 	rz_io_open_at (io, "null://2", RZ_PERM_R, 0LL, UT64_MAX - 1);
@@ -47,7 +96,7 @@ bool test_r_io_mapsplit3 (void) {
 	mu_end;
 }
 
-bool test_r_io_pcache (void) {
+bool test_rz_io_pcache (void) {
 	RzIO *io = rz_io_new ();
 	io->ff = 1;
 	ut8 buf[8];
@@ -77,7 +126,7 @@ bool test_r_io_pcache (void) {
 	mu_end;
 }
 
-bool test_r_io_desc_exchange (void) {
+bool test_rz_io_desc_exchange (void) {
 	RzIO *io = rz_io_new ();
 	int fd = rz_io_fd_open (io, "malloc://3", RZ_PERM_R, 0),
 	    fdx = rz_io_fd_open (io, "malloc://6", RZ_PERM_R, 0);
@@ -114,7 +163,7 @@ bool test_va_malloc_zero(void) {
 	mu_end;
 }
 
-bool test_r_io_priority(void) {
+bool test_rz_io_priority(void) {
 	RzIO *io = rz_io_new();
 	ut32 map0, map1, map_big;
 	ut64 buf;
@@ -182,7 +231,7 @@ bool test_r_io_priority(void) {
 	mu_end;
 }
 
-bool test_r_io_priority2(void) {
+bool test_rz_io_priority2(void) {
 	RzIO *io = rz_io_new();
 	ut32 map0;
 	ut8 buf[2];
@@ -213,13 +262,14 @@ bool test_r_io_priority2(void) {
 }
 
 int all_tests() {
-	mu_run_test(test_r_io_mapsplit);
-	mu_run_test(test_r_io_mapsplit2);
-	mu_run_test(test_r_io_mapsplit3);
-	mu_run_test(test_r_io_pcache);
-	mu_run_test(test_r_io_desc_exchange);
-	mu_run_test(test_r_io_priority);
-	mu_run_test(test_r_io_priority2);
+	mu_run_test(test_rz_io_cache);
+	mu_run_test(test_rz_io_mapsplit);
+	mu_run_test(test_rz_io_mapsplit2);
+	mu_run_test(test_rz_io_mapsplit3);
+	mu_run_test(test_rz_io_pcache);
+	mu_run_test(test_rz_io_desc_exchange);
+	mu_run_test(test_rz_io_priority);
+	mu_run_test(test_rz_io_priority2);
 	mu_run_test(test_va_malloc_zero);
 	return tests_passed != tests_run;
 }

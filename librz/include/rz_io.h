@@ -7,6 +7,7 @@
 #include <rz_util.h>
 #include "rz_socket.h"
 #include "rz_vector.h"
+#include "rz_skyline.h"
 
 #define RZ_IO_SEEK_SET	0
 #define RZ_IO_SEEK_CUR	1
@@ -89,11 +90,11 @@ typedef struct rz_io_t {
 	int p_cache;
 	RzIDPool *map_ids;
 	RzPVector maps; //from tail backwards maps with higher priority are found
-	RzPVector map_skyline; // map parts that are not covered by others
+	RzSkyline map_skyline; // map parts that are not covered by others
 	RzIDStorage *files;
 	RzCache *buffer;
-	RzList *cache;	//sdblist?
-	RBNode cacheTree;
+	RzPVector cache;
+	RzSkyline cache_skyline;
 	ut8 *write_mask;
 	int write_mask_len;
 	RzIOUndo undo;
@@ -178,11 +179,6 @@ typedef struct rz_io_map_t {
 	ut64 delta; // paddr = itv.addr + delta
 	char *name;
 } RzIOMap;
-
-typedef struct rz_io_map_skyline_t {
-	RzIOMap *map;
-	RzInterval itv;
-} RzIOMapSkyline;
 
 typedef struct rz_io_cache_t {
 	RzInterval itv;

@@ -9,73 +9,14 @@
 
 #define END_OF_MAP_IDS UT32_MAX
 
-#define CMP_END_GTE(addr, itv) \
-	(((addr) < rz_itv_end (*(RzInterval *)(itv))) ? -1 : 1)
-
-#define CMP_END_GTE_PART(addr, part) \
-	(((addr) < (rz_itv_end (((RzIOMapSkyline *)(part))->itv)) || !rz_itv_end (((RzIOMapSkyline *)(part))->itv)) ? -1 : 1)
-
-#define CMP_BEGIN_GTE_PART(addr, part) \
-	(((addr) > (rz_itv_begin (((RzIOMapSkyline *)(part))->itv))) - ((addr) < (rz_itv_begin (((RzIOMapSkyline *)(part))->itv))))
-
-static bool add_map_to_skyline(RzIO *io, RzIOMap *map) {
-	size_t slot;
-	RzPVector *skyline = &io->map_skyline;
-
-	RzIOMapSkyline *new_part = RZ_NEW (RzIOMapSkyline);
-	new_part->map = map;
-	new_part->itv = map->itv;
-	const ut64 new_part_end = rz_itv_end (new_part->itv);
-
-	// `part` is the first RzIOMapSkyline with part->itv.addr >= new_part->itv.addr
-	rz_pvector_lower_bound (skyline, new_part->itv.addr, slot, CMP_BEGIN_GTE_PART);
-	RzIOMapSkyline *part = slot < rz_pvector_len (skyline) ? rz_pvector_at (skyline, slot) : NULL;
-	if (slot) {
-		RzIOMapSkyline *prev_part = rz_pvector_at (skyline, slot - 1);
-		const ut64 prev_part_end = rz_itv_end (prev_part->itv);
-		if (prev_part_end > rz_itv_begin (new_part->itv)) {
-			if (prev_part_end > new_part_end) {
-				RzIOMapSkyline *tail = RZ_NEW (RzIOMapSkyline);
-				tail->map = prev_part->map;
-				tail->itv.addr = new_part_end;
-				tail->itv.size = prev_part_end - rz_itv_begin (tail->itv);
-				if (slot < rz_pvector_len (skyline)) {
-					rz_pvector_insert (skyline, slot, tail);
-				} else {
-					rz_pvector_push (skyline, tail);
-				}
-			}
-			prev_part->itv.size = rz_itv_begin (new_part->itv) - rz_itv_begin (prev_part->itv);
-		}
-	}
-	if (part) {
-		while (part && rz_itv_include (new_part->itv, part->itv)) {
-			// Remove `part` that fits in `new_part`
-			rz_pvector_remove_at (skyline, slot);
-			part = slot < rz_pvector_len (skyline) ? rz_pvector_at (skyline, slot) : NULL;
-		}
-		if (part && rz_itv_overlap (new_part->itv, part->itv)) {
-			// Chop start of last `part` that intersects `new_part`
-			const ut64 oaddr = rz_itv_begin (part->itv);
-			part->itv.addr = new_part_end;
-			part->itv.size -= rz_itv_begin (part->itv) - oaddr;
-		}
-	}
-	if (slot < rz_pvector_len (skyline)) {
-		rz_pvector_insert (skyline, slot, new_part);
-	} else {
-		rz_pvector_push (skyline, new_part);
-	}
-	return true;
-}
-
 // Store map parts that are not covered by others into io->map_skyline
 void io_map_calculate_skyline(RzIO *io) {
-	rz_pvector_clear (&io->map_skyline);
+	rz_skyline_clear (&io->map_skyline);
 	// Last map has highest priority (it shadows previous maps)
 	void **it;
 	rz_pvector_foreach (&io->maps, it) {
-		add_map_to_skyline (io, (RzIOMap *)*it);
+		RzIOMap *map = (RzIOMap *)*it;
+		rz_skyline_add (&io->map_skyline, map->itv, map);
 	}
 }
 
@@ -101,7 +42,7 @@ RzIOMap* io_map_new(RzIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size
 	map->delta = delta;
 	// new map lives on the top, being top the list's tail
 	rz_pvector_push (&io->maps, map);
-	add_map_to_skyline (io, map);
+	rz_skyline_add (&io->map_skyline, map->itv, map);
 	return map;
 }
 
@@ -223,14 +164,7 @@ RZ_API RzIOMap* rz_io_map_get_paddr(RzIO* io, ut64 paddr) {
 // gets first map where addr fits in
 RZ_API RzIOMap *rz_io_map_get(RzIO* io, ut64 addr) {
 	rz_return_val_if_fail (io, NULL);
-	const RzPVector *skyline = &io->map_skyline;
-	size_t i, len = rz_pvector_len (skyline);
-	rz_pvector_lower_bound (skyline, addr, i, CMP_END_GTE_PART);
-	if (i == len) {
-		return NULL;
-	}
-	const RzIOMapSkyline *sky = rz_pvector_at (skyline, i);
-	return sky->itv.addr <= addr ? sky->map : NULL;
+	return rz_skyline_get (&io->map_skyline, addr);
 }
 
 RZ_API bool rz_io_map_is_mapped(RzIO* io, ut64 addr) {
@@ -379,7 +313,7 @@ RZ_API void rz_io_map_fini(RzIO* io) {
 	rz_pvector_clear (&io->maps);
 	rz_id_pool_free (io->map_ids);
 	io->map_ids = NULL;
-	rz_pvector_clear (&io->map_skyline);
+	rz_skyline_clear (&io->map_skyline);
 }
 
 RZ_API void rz_io_map_set_name(RzIOMap* map, const char* name) {
