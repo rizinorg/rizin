@@ -416,7 +416,7 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RzAnalBlock *block, vo
 		}
 		// Steal vars from this block
 		size_t i;
-		for (i = 0; i + 1 < block->ninstr; i++) {
+		for (i = 0; i < block->ninstr; i++) {
 			const ut64 addr = rz_anal_bb_opaddr_i (block, i);
 			RzPVector *vars_used = rz_anal_function_get_vars_used_at (other_fcn, addr);
 			if (!vars_used) {
