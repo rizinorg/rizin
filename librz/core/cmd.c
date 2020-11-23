@@ -4900,10 +4900,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_fromto_command) {
 	char *from_str = ts_node_handle_arg (state, node, from, 1);
 	char *to_str = ts_node_handle_arg (state, node, to, 2);
 
-	const char *fromvars[] = { "analysis.from", "diff.from", "graph.from",
-		"io.buffer.from", "lines.from", "search.from", "zoom.from", NULL };
-	const char *tovars[] = { "analysis.to", "diff.to", "graph.to",
-		"io.buffer.to", "lines.to", "search.to", "zoom.to", NULL };
+	const char *fromvars[] = { "anal.from", "diff.from", "graph.from", "search.from", "zoom.from", NULL };
+	const char *tovars[] = { "anal.to", "diff.to", "graph.to", "search.to", "zoom.to", NULL };
 	ut64 from_val = rz_num_math (core->num, from_str);
 	ut64 to_val = rz_num_math (core->num, to_str);
 	RZ_LOG_DEBUG ("tmp_fromto_command, changing fromto to (%" PFMT64x ", %" PFMT64x ")\n", from_val, to_val);
