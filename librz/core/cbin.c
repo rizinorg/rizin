@@ -748,7 +748,7 @@ RZ_API void rz_core_anal_cc_init(RzCore *core) {
 	char *dbhomepath = rz_str_newf (RZ_JOIN_3_PATHS ("~", RZ_HOME_SDB_FCNSIGN, "cc-%s-%d.sdb"),
 		anal_arch, bits);
 	// Avoid sdb reloading
-	if (cc->path && !strcmp (cc->path, dbpath) && !strcmp (cc->path, dbhomepath)) {
+	if (cc->path && (!strcmp (cc->path, dbpath) || !strcmp (cc->path, dbhomepath))) {
 		free (dbpath);
 		free (dbhomepath);
 		return;
