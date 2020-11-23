@@ -1354,9 +1354,19 @@ RZ_IPI int rz_cmd_bsize(void *data, const char *input) {
 			eprintf ("Usage: bf [flagname]\n");
 		}
 		break;
-	case 'j': // "bj"
-		rz_cons_printf ("{\"blocksize\":%d,\"blocksize_limit\":%d}\n", core->blocksize, core->blocksize_max);
+	case 'j': { // "bj"
+		PJ * pj = pj_new ();
+		if (!pj) {
+			break;
+		}
+		pj_o (pj);
+		pj_ki (pj, "blocksize", core->blocksize);
+		pj_ki (pj, "blocksize_limit", core->blocksize_max);
+		pj_end (pj);
+		rz_cons_println (pj_string (pj));
+		pj_free (pj);
 		break;
+	}
 	case '*': // "b*"
 		rz_cons_printf ("b 0x%x\n", core->blocksize);
 		break;
