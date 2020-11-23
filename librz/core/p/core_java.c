@@ -212,11 +212,6 @@ typedef struct rz_cmd_java_cms_t {
 #define SUMMARY_INFO_DESC "print summary information for the current java class file"
 #define SUMMARY_INFO_LEN 7
 
-#define LIST_CODE_REFS "lcr"
-#define LIST_CODE_REFS_ARGS " [addr]"
-#define LIST_CODE_REFS_DESC "list all references to fields and methods in code sections"
-#define LIST_CODE_REFS_LEN 3
-
 #define PRINT_EXC "exc"
 #define PRINT_EXC_ARGS " [<addr>]"
 #define PRINT_EXC_DESC "list all exceptions to fields and methods in code sections"
@@ -253,6 +248,7 @@ static RzCmdJavaCmd JAVA_CMDS[] = {
 	{ INSERT_MREF, INSERT_MREF_ARGS, INSERT_MREF_DESC, INSERT_MREF_LEN, rz_cmd_java_handle_insert_method_ref },
 	{ CALC_SZ, CALC_SZ_ARGS, CALC_SZ_DESC, CALC_SZ_LEN, rz_cmd_java_handle_calc_class_sz },
 	{ ISVALID, ISVALID_ARGS, ISVALID_DESC, ISVALID_LEN, rz_cmd_java_handle_isvalid },
+	{ NULL, NULL, NULL, 0, NULL}
 };
 
 enum {
@@ -271,13 +267,12 @@ enum {
 	REPLACE_CLASS_NAME_IDX = 12,
 	RELOAD_BIN_IDX = 13,
 	SUMMARY_INFO_IDX = 14,
-	LIST_CODE_REFS_IDX = 15,
-	PRINT_EXC_IDX = 16,
-	YARA_CODE_REFS_IDX = 17,
-	INSERT_MREF_IDX = 18,
-	CALC_SZ_IDX = 19,
-	ISVALID_IDX = 20,
-	END_CMDS = 21,
+	PRINT_EXC_IDX = 15,
+	YARA_CODE_REFS_IDX = 16,
+	INSERT_MREF_IDX = 17,
+	CALC_SZ_IDX = 18,
+	ISVALID_IDX = 19,
+	END_CMDS = 20,
 };
 
 static ut8 _(rz_cmd_java_obj_ref)(const char *name, const char *class_name, ut32 len) {
@@ -385,7 +380,7 @@ static int rz_cmd_java_handle_help(RzCore *core, const char *input) {
 	help_msg[0] = "Usage:";
 	help_msg[1] = "java [cmd] [arg..] ";
 	help_msg[2] = rz_core_plugin_java.desc;
-	for (i = 0; i < END_CMDS; i++) {
+	for (i = 0; JAVA_CMDS[i].name; i++) {
 		RzCmdJavaCmd *cmd = &JAVA_CMDS[i];
 		help_msg[3 + (i * 3) + 0] = cmd->name;
 		help_msg[3 + (i * 3) + 1] = cmd->args;
@@ -1462,7 +1457,7 @@ static int rz_cmd_java_call(void *user, const char *input) {
 	if (input[4] != ' ') {
 		return rz_cmd_java_handle_help (core, input);
 	}
-	for (; i < END_CMDS - 1; i++) {
+	for (; JAVA_CMDS[i].name; i++) {
 		//IFDBG rz_cons_printf ("Checking cmd: %s %d %s\n", JAVA_CMDS[i].name, JAVA_CMDS[i].name_len, p);
 		IFDBG rz_cons_printf ("Checking cmd: %s %d\n", JAVA_CMDS[i].name,
 			strncmp (input + 5, JAVA_CMDS[i].name, JAVA_CMDS[i].name_len));
@@ -1833,16 +1828,11 @@ static int rz_cmd_java_handle_yara_code_extraction_refs(RzCore *core, const char
 
 	if (name && count != (ut64)-1 && addr != (ut64)-1) {
 		// find function at addr
-
 		// find the start basic block
-
 		// read the bytes
-
 		// hexlify the bytes
-
 		// set the name = bytes
-
-		// print t
+		// print it
 	}
 	free (name);
 	return res;
