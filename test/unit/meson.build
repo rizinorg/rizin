@@ -63,6 +63,7 @@ if get_option('enable_tests')
     'unum',
     'util',
     'vector',
+    'skyline',
     'big',
     'idpool',
     'idstorage'
