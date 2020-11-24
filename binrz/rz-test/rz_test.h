@@ -158,6 +158,7 @@ typedef struct rz_test_test_result_info_t {
 	RzTestResult result;
 	bool timeout;
 	bool run_failed; // something went seriously wrong (e.g. rizin not found)
+	ut64 time_elapsed;
 	union {
 		RzTestProcessOutput *proc_out; // for test->type == RZ_TEST_TYPE_CMD, RZ_TEST_TYPE_JSON or RZ_TEST_TYPE_FUZZ
 		RzAsmTestOutput *asm_out;  // for test->type == RZ_TEST_TYPE_ASM

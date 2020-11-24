@@ -104,7 +104,7 @@ for:
       - python3 -m pip install "git+ssh://git@github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python"
       - cd test
       - git clone -q --depth 1 git@github.com:rizinorg/rizin-testbins bins
-      - rz-test -L db
+      - rz-test -o results.json -L db
       - cd ..
 
     after_test:
@@ -119,6 +119,8 @@ artifacts:
   - path: "%ARTIFACT_ZIP%"
   # Inno Setup files
   - path: rizin_installer-%builder%.exe
+  # Test results
+  - path: test/results.json
 
 # Upload builds to the CI release at GitHub
 # deploy:

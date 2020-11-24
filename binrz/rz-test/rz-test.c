@@ -18,6 +18,7 @@ typedef struct rz_test_state_t {
 	RzTestRunConfig run_config;
 	bool verbose;
 	RzTestDatabase *db;
+	PJ *test_results;
 
 	RzThreadCond *cond; // signaled from workers to main thread to update status
 	RzThreadLock *lock; // protects everything below
@@ -58,6 +59,7 @@ static int help(bool verbose) {
 		" -f [file]    file to use for json tests (default is "JSON_TEST_FILE_DEFAULT")\n"
 		" -C [dir]     chdir before running rz_test (default follows executable symlink + test/new\n"
 		" -t [seconds] timeout per test (default is "TIMEOUT_DEFAULT_STR")\n"
+		" -o [file]    output test run information in JSON format to file"
 		"\n"
 		"Supported test types: @json @unit @fuzz @cmds\n"
 		"OS/Arch for archos tests: "RZ_TEST_ARCH_OS"\n");
@@ -163,6 +165,7 @@ int main(int argc, char **argv) {
 	char *rizin_cmd = NULL;
 	char *rz_asm_cmd = NULL;
 	char *json_test_file = NULL;
+	char *output_file = NULL;
 	char *fuzz_dir = NULL;
 	const char *rz_test_dir = NULL;
 	ut64 timeout_sec = TIMEOUT_DEFAULT;
@@ -183,7 +186,7 @@ int main(int argc, char **argv) {
 #endif
 
 	RzGetopt opt;
-	rz_getopt_init (&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:i");
+	rz_getopt_init (&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:");
 
 	int c;
 	while ((c = rz_getopt_next (&opt)) != -1) {
@@ -248,6 +251,10 @@ int main(int argc, char **argv) {
 				timeout_sec = UT64_MAX;
 			}
 			break;
+		case 'o':
+			free (output_file);
+			output_file = strdup (opt.arg);
+			break;
 		default:
 			ret = help (false);
 			goto beach;
@@ -296,6 +303,10 @@ int main(int argc, char **argv) {
 	rz_pvector_init (&state.queue, NULL);
 	rz_pvector_init (&state.results, (RzPVectorFree)rz_test_test_result_info_free);
 	rz_pvector_init (&state.completed_paths, NULL);
+	if (output_file) {
+		state.test_results = pj_new ();
+		pj_a (state.test_results);
+	}
 	state.lock = rz_th_lock_new (false);
 	if (!state.lock) {
 		return -1;
@@ -453,6 +464,13 @@ int main(int argc, char **argv) {
 	}
 	printf (" %"PFMT64d" seconds.\n", seconds % 60);
 
+	if (output_file) {
+		pj_end (state.test_results);
+		char *results = pj_drain (state.test_results);
+		rz_file_dump (output_file, (ut8 *)results, strlen (results), false);
+		free (results);
+	}
+
 	if (interactive) {
 		interact (&state);
 	}
@@ -481,6 +499,52 @@ beach:
 	}
 #endif
 	return ret;
+}
+
+static void test_result_to_json(PJ *pj, RzTestResultInfo *result) {
+	rz_return_if_fail (pj && result);
+	pj_o (pj);
+	pj_k (pj, "type");
+	RzTest *test = result->test;
+	switch (test->type) {
+	case RZ_TEST_TYPE_CMD:
+		pj_s (pj, "cmd");
+		pj_ks (pj, "name", test->cmd_test->name.value);
+		break;
+	case RZ_TEST_TYPE_ASM:
+		pj_s (pj, "asm");
+		pj_ks (pj, "arch", test->asm_test->arch);
+		pj_ki (pj, "bits", test->asm_test->bits);
+		pj_kn (pj, "line", test->asm_test->line);
+		break;
+	case RZ_TEST_TYPE_JSON:
+		pj_s (pj, "json");
+		pj_ks (pj, "cmd", test->json_test->cmd);
+		break;
+	case RZ_TEST_TYPE_FUZZ:
+		pj_s (pj, "fuzz");
+		pj_ks (pj, "file", test->fuzz_test->file);
+		break;
+	}
+	pj_k (pj, "result");
+	switch (result->result) {
+	case RZ_TEST_RESULT_OK:
+		pj_s (pj, "ok");
+		break;
+	case RZ_TEST_RESULT_FAILED:
+		pj_s (pj, "failed");
+		break;
+	case RZ_TEST_RESULT_BROKEN:
+		pj_s (pj, "broken");
+		break;
+	case RZ_TEST_RESULT_FIXED:
+		pj_s (pj, "fixed");
+		break;
+	}
+	pj_kb (pj, "run_failed", result->run_failed);
+	pj_kn (pj, "time_elapsed", result->time_elapsed);
+	pj_kb (pj, "timeout", result->timeout);
+	pj_end (pj);
 }
 
 static RzThreadFunctionRet worker_th(RzThread *th) {
@@ -665,6 +729,9 @@ static void print_new_results(RzTestState *state, ut64 prev_completed) {
 	ut64 i;
 	for (i = prev_completed; i < completed; i++) {
 		RzTestResultInfo *result = rz_pvector_at (&state->results, (size_t)i);
+		if (state->test_results) {
+			test_result_to_json (state->test_results, result);
+		}
 		if (!state->verbose && (result->result == RZ_TEST_RESULT_OK || result->result == RZ_TEST_RESULT_FIXED || result->result == RZ_TEST_RESULT_BROKEN)) {
 			continue;
 		}

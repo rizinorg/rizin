@@ -183,7 +183,7 @@ RZ_API RzTestSubprocess *rz_test_subprocess_start(
 	}
 
 	PROCESS_INFORMATION proc_info = { 0 };
-	STARTUPINFO start_info = { 0 };
+	STARTUPINFOA start_info = { 0 };
 	start_info.cb = sizeof (start_info);
 	start_info.hStdError = stderr_write;
 	start_info.hStdOutput = stdout_write;
@@ -1163,7 +1163,7 @@ RZ_API char *rz_test_test_name(RzTest *test) {
 	return NULL;
 }
 
-RZ_API bool rz_test_test_broken(RzTest *test) {
+RZ_API bool rz_test_broken(RzTest *test) {
 	switch (test->type) {
 	case RZ_TEST_TYPE_CMD:
 		return test->cmd_test->broken.value;
@@ -1184,6 +1184,7 @@ RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test)
 	}
 	ret->test = test;
 	bool success = false;
+	ut64 start_time = rz_time_now_mono ();
 	switch (test->type) {
 	case RZ_TEST_TYPE_CMD: {
 		RzCmdTest *cmd_test = test->cmd_test;
@@ -1221,7 +1222,8 @@ RZ_API RzTestResultInfo *rz_test_run_test(RzTestRunConfig *config, RzTest *test)
 		ret->run_failed = !out;
 	}
 	}
-	bool broken = rz_test_test_broken (test);
+	ret->time_elapsed = rz_time_now_mono () - start_time;
+	bool broken = rz_test_broken (test);
 #if ASAN
 # if !RZ_ASSERT_STDOUT
 # error RZ_ASSERT_STDOUT undefined or 0
