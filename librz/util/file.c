@@ -274,7 +274,7 @@ RZ_API char *rz_file_relpath(const char *base, const char *path) {
 			path++;
 		}
 	}
-	while (*path == '/') {
+	while (*path == *RZ_SYS_DIR) {
 		path++;
 	}
 
