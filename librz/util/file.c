@@ -198,7 +198,7 @@ RZ_API bool rz_file_is_abspath(const char *file) {
 RZ_API char *rz_file_abspath_rel(const char *cwd, const char *file) {
 	char *ret = NULL;
 	if (!file || !strcmp (file, ".") || !strcmp (file, "./")) {
-		return rz_sys_getdir ();
+		return strdup (cwd);
 	}
 	if (strstr (file, "://")) {
 		return strdup (file);
@@ -216,20 +216,7 @@ RZ_API char *rz_file_abspath_rel(const char *cwd, const char *file) {
 			return strdup (file);
 		}
 		if (!strchr (file, ':')) {
-			PTCHAR abspath = malloc (MAX_PATH * sizeof (TCHAR));
-			if (abspath) {
-				PTCHAR f = rz_sys_conv_utf8_to_win (file);
-				int s = GetFullPathName (f, MAX_PATH, abspath, NULL);
-				if (s > MAX_PATH) {
-					RZ_LOG_ERROR ("rz_file_abspath/GetFullPathName: Path to file too long.\n");
-				} else if (!s) {
-					rz_sys_perror ("rz_file_abspath/GetFullPathName");
-				} else {
-					ret = rz_sys_conv_win_to_utf8 (abspath);
-				}
-				free (abspath);
-				free (f);
-			}
+			ret = rz_str_newf ("%s" RZ_SYS_DIR "%s", cwd, file);
 		}
 #endif
 	}
