@@ -1061,8 +1061,13 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 	RzListIter *it;
 	RzBinFile *bf;
 	RzListIter *iter;
+	PJ *pj;
 	if (mode == 'j') {
-		rz_cons_printf ("[");
+		pj = pj_new ();
+		if (!pj) {
+			return 0;
+		}
+		pj_a (pj);
 	}
 	rz_list_foreach (core->files, iter, f) {
 		desc = rz_io_desc_get (core->io, f->fd);
@@ -1072,15 +1077,17 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 		}
 		from = 0LL;
 		switch (mode) {
-		case 'j':
-			rz_cons_printf ("{\"raised\":%s,\"fd\":%d,\"uri\":\"%s\",\"from\":%"
-				PFMT64d ",\"writable\":%s,\"size\":%d}%s",
-				rz_str_bool (core->io->desc->fd == f->fd),
-				(int) f->fd, desc->uri, (ut64) from,
-				rz_str_bool (desc->perm & RZ_PERM_W),
-				(int) rz_io_desc_size (desc),
-				iter->n? ",": "");
+			case 'j': {  // "oij"
+			pj_o (pj);
+			pj_kb (pj, "raised", core->io->desc->fd == f->fd);
+			pj_ki (pj, "fd", f->fd);
+			pj_ks (pj, "uri", desc->uri);
+			pj_kn (pj, "from", (ut64) from);
+			pj_kb (pj, "writable", desc->perm & RZ_PERM_W);
+			pj_ki (pj, "size", (int) rz_io_desc_size (desc));
+			pj_end (pj);
 			break;
+		}
 		case '*':
 		case 'r':
 			// TODO: use a getter
@@ -1145,7 +1152,9 @@ RZ_API int rz_core_file_list(RzCore *core, int mode) {
 		count++;
 	}
 	if (mode == 'j') {
-		rz_cons_printf ("]\n");
+		pj_end (pj);
+		rz_cons_println (pj_string (pj));
+		pj_free (pj);
 	}
 	return count;
 }
