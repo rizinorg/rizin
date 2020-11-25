@@ -34,10 +34,10 @@
 //       rizin-shell-parser grammar, except for ", ' and
 //       whitespaces, because we let cmd_substitution_arg create
 //       new arguments
-static const char *SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>";
-static const char *SPECIAL_CHARS_REGULAR_SINGLE = "@;~$#|`\"'()<> ";
-static const char *SPECIAL_CHARS_PF = "@;~$#|`\"'<>";
-static const char *SPECIAL_CHARS_DOUBLE_QUOTED = "\"$()`";
+static const char *SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>\\";
+static const char *SPECIAL_CHARS_REGULAR_SINGLE = "@;~$#|`\"'()<>\\ ";
+static const char *SPECIAL_CHARS_PF = "@;~$#|`\"'<>\\";
+static const char *SPECIAL_CHARS_DOUBLE_QUOTED = "\"$()`\\";
 static const char *SPECIAL_CHARS_SINGLE_QUOTED = "'";
 
 static const RzCmdDescHelp not_defined_help = {

@@ -645,6 +645,7 @@ bool test_arg_escaping(void) {
 	mu_assert_streq_free (rz_cmd_escape_arg ("hello\"world\"", RZ_CMD_ESCAPE_ONE_ARG), "hello\\\"world\\\"", "\" is escaped");
 	mu_assert_streq_free (rz_cmd_escape_arg ("hello>world", RZ_CMD_ESCAPE_ONE_ARG), "hello\\>world", "> is escaped");
 	mu_assert_streq_free (rz_cmd_escape_arg ("hello|world", RZ_CMD_ESCAPE_ONE_ARG), "hello\\|world", "| is escaped");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello\\world", RZ_CMD_ESCAPE_ONE_ARG), "hello\\\\world", "\\ is escaped");
 
 	mu_assert_streq_free (rz_cmd_unescape_arg ("hello", RZ_CMD_ESCAPE_ONE_ARG), "hello", "regular string remains the same");
 	mu_assert_streq_free (rz_cmd_unescape_arg ("hello\\ world", RZ_CMD_ESCAPE_ONE_ARG), "hello world", "spaces are unescaped");
@@ -653,6 +654,7 @@ bool test_arg_escaping(void) {
 	mu_assert_streq_free (rz_cmd_unescape_arg ("hello\\\"world\\\"", RZ_CMD_ESCAPE_ONE_ARG), "hello\"world\"", "\" is unescaped");
 	mu_assert_streq_free (rz_cmd_unescape_arg ("hello\\>world", RZ_CMD_ESCAPE_ONE_ARG), "hello>world", "> is unescaped");
 	mu_assert_streq_free (rz_cmd_unescape_arg ("hello\\|world", RZ_CMD_ESCAPE_ONE_ARG), "hello|world", "| is unescaped");
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello\\\\world", RZ_CMD_ESCAPE_ONE_ARG), "hello\\world", "\\ is unescaped");
 
 	mu_assert_streq_free (rz_cmd_escape_arg ("hello `world`", RZ_CMD_ESCAPE_MULTI_ARG), "hello \\`world\\`", "` is escaped");
 	mu_end;
@@ -668,6 +670,7 @@ bool test_double_quoted_arg_escaping(void) {
 	mu_assert_streq_free (rz_cmd_escape_arg ("hello@world", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello@world", "@ is not escaped");
 	mu_assert_streq_free (rz_cmd_escape_arg ("hello $(world)", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello \\$\\(world\\)", "$ is escaped");
 	mu_assert_streq_free (rz_cmd_escape_arg ("hello `world`", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello \\`world\\`", "` is escaped");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello\\world", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello\\\\world", "\\ is escaped");
 
 	mu_assert_streq_free (rz_cmd_unescape_arg ("hello", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello", "regular string remains the same");
 	mu_assert_streq_free (rz_cmd_unescape_arg ("hello world", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello world", "spaces are not escaped");
@@ -675,6 +678,8 @@ bool test_double_quoted_arg_escaping(void) {
 	mu_assert_streq_free (rz_cmd_unescape_arg ("hello\\'world\\'", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello\\'world\\'", "' is not unescaped");
 	mu_assert_streq_free (rz_cmd_unescape_arg ("hello \\$\\(world\\)", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello $(world)", "$ is unescaped");
 	mu_assert_streq_free (rz_cmd_unescape_arg ("hello \\`world\\`", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello `world`", "` is unescaped");
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello\\\\world", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello\\world", "\\ is unescaped");
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello\\y world", RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG), "hello\\y world", "\\y is not unescaped");
 	mu_end;
 }
 
@@ -686,6 +691,7 @@ bool test_single_quoted_arg_escaping(void) {
 	mu_assert_streq_free (rz_cmd_escape_arg ("hello|@>world", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello|@>world", "|@> are not escaped");
 	mu_assert_streq_free (rz_cmd_escape_arg ("hello $(world)", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello $(world)", "$ is not escaped");
 	mu_assert_streq_free (rz_cmd_escape_arg ("hello `world`", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello `world`", "` is not escaped");
+	mu_assert_streq_free (rz_cmd_escape_arg ("hello\\world", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello\\world", "\\ is not escaped");
 
 	mu_assert_streq_free (rz_cmd_unescape_arg ("hello", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello", "regular string remains the same");
 	mu_assert_streq_free (rz_cmd_unescape_arg ("hello world", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello world", "spaces are not escaped");
@@ -693,6 +699,7 @@ bool test_single_quoted_arg_escaping(void) {
 	mu_assert_streq_free (rz_cmd_unescape_arg ("hello\\'world\\'", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello'world'", "' is unescaped");
 	mu_assert_streq_free (rz_cmd_unescape_arg ("hello \\$\\(world\\)", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello \\$\\(world\\)", "$ is not unescaped");
 	mu_assert_streq_free (rz_cmd_unescape_arg ("hello \\`world\\`", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello \\`world\\`", "` is not unescaped");
+	mu_assert_streq_free (rz_cmd_unescape_arg ("hello\\\\world", RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG), "hello\\\\world", "\\ is not escaped");
 	mu_end;
 }
 
