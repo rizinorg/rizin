@@ -6823,7 +6823,6 @@ RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int
 	char space[32] = {
 		0
 	};
-	const char *white;
 	const char *reset = p->resetbg? Color_RESET: Color_RESET_NOBG;
 	bool show_color = p->flags & RZ_PRINT_FLAGS_COLOR;
 	if (show_color) {
@@ -6836,13 +6835,12 @@ RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int
 		if (offseg) {
 			ut32 s, a;
 			a = off & 0xffff;
-			s = (off - a) >> seggrn;
+			s = ((off - a) >> seggrn) & 0xffff;
 			if (offdec) {
-				snprintf (space, sizeof (space), "%d:%d", s & 0xffff, a & 0xffff);
-				white = rz_str_pad (' ', 9 - strlen (space));
-				rz_cons_printf ("%s%s%s%s%s", k, inv, white, space, reset);
+				snprintf (space, sizeof (space), "%d:%d", s, a);
+				rz_cons_printf ("%s%s%9s%s", k, inv, space, reset);
 			} else {
-				rz_cons_printf ("%s%s%04x:%04x%s", k, inv, s & 0xFFFF, a & 0xFFFF, reset);
+				rz_cons_printf ("%s%s%04x:%04x%s", k, inv, s, a, reset);
 			}
 		} else {
 			int sz = lenof (off, 0);
@@ -6851,11 +6849,10 @@ RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int
 				if (label) {
 					const int label_padding = 10;
 					if (delta > 0) {
+						const char *pad = rz_str_pad (' ', sz - sz2 + label_padding);
 						if (offdec) {
-							const char *pad = rz_str_pad (' ', sz - sz2 + label_padding);
 							rz_cons_printf ("%s%s%s%s+%d%s", k, inv, label, reset, delta, pad);
 						} else {
-							const char *pad = rz_str_pad (' ', sz - sz2 + label_padding);
 							rz_cons_printf ("%s%s%s%s+0x%x%s", k, inv, label, reset, delta, pad);
 						}
 					} else {
@@ -6873,8 +6870,7 @@ RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int
 			} else {
 				if (offdec) {
 					snprintf (space, sizeof (space), "%"PFMT64u, off);
-					white = rz_str_pad (' ', 10 - strlen (space));
-					rz_cons_printf ("%s%s%s%s%s", k, inv, white, space, reset);
+					rz_cons_printf ("%s%s%10s%s", k, inv, space, reset);
 				} else {
 					if (p->wide_offsets) {
 						rz_cons_printf ("%s%s0x%016"PFMT64x "%s", k, inv, off, reset);
@@ -6892,8 +6888,7 @@ RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int
 			s = (off - a) >> seggrn;
 			if (offdec) {
 				snprintf (space, sizeof (space), "%d:%d", s & 0xffff, a & 0xffff);
-				white = rz_str_pad (' ', 9 - strlen (space));
-				rz_cons_printf ("%s%s%s", white, space, reset);
+				rz_cons_printf ("%9s%s", space, reset);
 			} else {
 				rz_cons_printf ("%04x:%04x", s & 0xFFFF, a & 0xFFFF);
 			}
@@ -6910,8 +6905,7 @@ RZ_API void rz_print_offset_sg(RzPrint *p, ut64 off, int invert, int offseg, int
 			} else {
 				if (offdec) {
 					snprintf (space, sizeof (space), "%"PFMT64u, off);
-					white = rz_str_pad (' ', 10 - strlen (space));
-					rz_cons_printf ("%s%s", white, space);
+					rz_cons_printf ("%10s", space);
 				} else {
 					rz_cons_printf ("0x%08"PFMT64x " ", off);
 				}
