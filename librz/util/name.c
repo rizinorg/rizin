@@ -87,7 +87,7 @@ RZ_API bool rz_name_filter(char *name, int maxlen) {
 
 RZ_API char *rz_name_filter2(const char *name) {
 	size_t i;
-	while (!IS_PRINTABLE (*name)) {
+	while (!rz_name_validate_char (*name)) {
 		name++;
 	}
 	char *res = strdup (name);
@@ -95,6 +95,9 @@ RZ_API char *rz_name_filter2(const char *name) {
 		if (!rz_name_validate_char (res[i])) {
 			res[i] = '_';
 		}
+	}
+	for (i--; i != 0 && res[i] == '_'; i--) {
+		res[i] = '\0';
 	}
 	return res;
 }
