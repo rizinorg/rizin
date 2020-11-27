@@ -958,7 +958,7 @@ static const char *rizin_argv[] = {
 	"pb?", "pb", "pB", "pxb", "pB?",
 	"pc?", "pc", "pc*", "pca", "pcA", "pcd", "pch", "pcj", "pcp", "pcs", "pcS", "pcw",
 	"pC?", "pC", "pCa", "pCA", "pCc", "pCd", "pCD", "pCx", "pCw",
-	"pd?", "pd", "pd--", "pD", "pda", "pdb", "pdc", "pdC", "pdf", "pdi", "pdj", "pdJ",
+	"pd?", "pd", "pd--", "pD", "pda", "pdb", "pdC", "pdf", "pdi", "pdj", "pdJ",
 	"pdk", "pdl", "pdp", "pdr", "pdr.", "pdR", "pds?", "pds", "pdsb", "pdsf", "pdt",
 	"pD",
 	"pf?", "pf", "pf??", "pf???", "pf.", "pfj", "pfj.", "pf*", "pf*.", "pfd", "pfd.",
@@ -1431,9 +1431,6 @@ static bool find_e_opts(RzCore *core, RzLineCompletion *completion, RzLineBuffer
 	const size_t nmatch = 2;
 	RzRegexMatch pmatch[2];
 	bool ret = false;
-
-	// required to get the new list of items to autocomplete for cmd.pdc at least
-	rz_core_config_update (core);
 
 	if (rz_regex_exec (rx, buf->data, nmatch, pmatch, 1)) {
 		goto out;

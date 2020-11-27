@@ -11,9 +11,6 @@
 #define PANEL_TITLE_REGISTERS        "Registers"
 #define PANEL_TITLE_DISASSEMBLY      "Disassembly"
 #define PANEL_TITLE_DISASMSUMMARY    "Disassemble Summary"
-#define PANEL_TITLE_ALL_DECOMPILER   "Show All Decompiler Output"
-#define PANEL_TITLE_DECOMPILER       "Decompiler"
-#define PANEL_TITLE_DECOMPILER_O     "Decompiler With Offsets"
 #define PANEL_TITLE_GRAPH            "Graph"
 #define PANEL_TITLE_TINY_GRAPH       "Tiny Graph"
 #define PANEL_TITLE_FUNCTIONS        "Functions"
@@ -32,8 +29,6 @@
 #define PANEL_CMD_REGISTERS          "dr"
 #define PANEL_CMD_DISASSEMBLY        "pd"
 #define PANEL_CMD_DISASMSUMMARY      "pdsf"
-#define PANEL_CMD_DECOMPILER         "pdc"
-#define PANEL_CMD_DECOMPILER_O       "pddo"
 #define PANEL_CMD_FUNCTION           "afl"
 #define PANEL_CMD_GRAPH              "agf"
 #define PANEL_CMD_TINYGRAPH          "agft"
@@ -79,7 +74,7 @@ static const char *menus_File[] = {
 };
 
 static const char *menus_Settings[] = {
-	"Colors", "Decompiler", "Disassembly", "Screen",
+	"Colors", "Disassembly", "Screen",
 	NULL
 };
 
@@ -104,10 +99,10 @@ static const char *menus_iocache[] = {
 };
 
 static char *menus_View[] = {
-	"Console", "Hexdump", "Disassembly", "Disassemble Summary", "Decompiler", "Decompiler With Offsets", "Graph", "Tiny Graph",
+	"Console", "Hexdump", "Disassembly", "Disassemble Summary", "Graph", "Tiny Graph",
 	"Functions", "Function Calls", "Sections", "Segments", PANEL_TITLE_STRINGS_DATA, PANEL_TITLE_STRINGS_BIN, "Symbols", "Imports",
 	"Info", "Database",  "Breakpoints", "Comments", "Classes", "Entropy", "Entropy Fire", "Stack", "Xrefs Here", "Methods",
-	"Var READ address", "Var WRITE address", "Summary", "Relocs", "Headers", "File Hashes", PANEL_TITLE_ALL_DECOMPILER,
+	"Var READ address", "Var WRITE address", "Summary", "Relocs", "Headers", "File Hashes",
 	NULL
 };
 
@@ -184,7 +179,7 @@ static const char *function_rotate[] = {
 };
 
 static const char *cache_white_list_cmds[] = {
-	"pdc", "pddo", "agf", "Help",
+	"pddo", "agf", "Help",
 	NULL
 };
 
@@ -197,7 +192,6 @@ static const char *help_msg_panels[] = {
 	"\\",       "show the user-friendly hud",
 	"?",        "show this help",
 	".",        "seek to PC or entrypoint",
-	"*",        "show decompiler in the current panel",
 	"\"",       "create a panel from the list and replace the current one",
 	"/",        "highlight the keyword",
 	"(",        "toggle snow",
@@ -206,7 +200,6 @@ static const char *help_msg_panels[] = {
 	"' '",      "(space) toggle graph / panels",
 	"tab",      "go to the next panel",
 	"Enter",    "start Zoom mode",
-	"a",        "toggle auto update for decompiler",
 	"b",        "browse symbols, flags, configurations, classes, ...",
 	"c",        "toggle cursor",
 	"C",        "toggle color",
@@ -380,7 +373,6 @@ static void __update_help_contents(RzCore *core, RzPanel *panel);
 static void __update_help_title(RzCore *core, RzPanel *panel);
 static void __update_panel_contents(RzCore *core, RzPanel *panel, const char *cmdstr);
 static void __update_panel_title(RzCore *core, RzPanel *panel);
-static void __update_pdc_contents(RzCore *core, RzPanel *panel, char *cmdstr);
 static void __default_panel_print(RzCore *core, RzPanel *panel);
 static void __resize_panel_left(RzPanels *panels);
 static void __resize_panel_right(RzPanels *panels);
@@ -436,7 +428,6 @@ static char *__apply_filter_cmd(RzCore *core, RzPanel *panel);
 static int __add_cmd_panel(void *user);
 static int __add_cmdf_panel(RzCore *core, char *input, char *str);
 static void __set_cmd_str_cache(RzCore *core, RzPanel *p, char *s);
-static void __set_decompiler_cache(RzCore *core, char *s);
 static char *__handle_cmd_str_cache(RzCore *core, RzPanel *panel, bool force_cache);
 static char *__find_cmd_str_cache(RzCore *core, RzPanel *panel);
 static char *__load_cmdf(RzCore *core, RzPanel *p, char *input, char *str);
@@ -520,8 +511,6 @@ static int __quit_cb(void *user);
 static int __io_cache_on_cb(void *user);
 static int __io_cache_off_cb(void *user);
 static int __settings_colors_cb(void *user);
-static int __settings_decompiler_cb(void *user);
-static int __show_all_decompiler_cb(void *user);
 
 /* direction callback */
 static void __direction_default_cb(void *user, int direction);
@@ -542,7 +531,6 @@ static void __rotate_function_cb(void *user, bool rev);
 
 /* print callback */
 static void __print_default_cb(void *user, void *p);
-static void __print_decompiler_cb(void *user, void *p);
 static void __print_disassembly_cb(void *user, void *p);
 static void __print_disasmsummary_cb (void *user, void *p);
 static void __print_graph_cb(void *user, void *p);
@@ -561,7 +549,6 @@ static void __put_breakpoints_cb(void *user, RZ_UNUSED RzPanel *panel, RZ_UNUSED
 static void __continue_almighty_cb(void *user, RZ_UNUSED RzPanel *panel, RZ_UNUSED const RzPanelLayout dir, RZ_UNUSED RZ_NULLABLE const char *title);
 static void __step_almighty_cb(void *user, RZ_UNUSED RzPanel *panel, RZ_UNUSED const RzPanelLayout dir, RZ_UNUSED RZ_NULLABLE const char *title);
 static void __step_over_almighty_cb(void *user, RZ_UNUSED RzPanel *panel, RZ_UNUSED const RzPanelLayout dir, RZ_UNUSED RZ_NULLABLE const char *title);
-static void __delegate_show_all_decompiler_cb(void *user, RzPanel *panel, const RzPanelLayout dir, RZ_NULLABLE const char *title);
 
 /* menu */
 static void __del_menu(RzCore *core);
@@ -840,10 +827,7 @@ bool __check_panel_type(RzPanel *panel, const char *type) {
 	}
 	int len = strlen (type);
 	if (!strcmp (type, PANEL_CMD_DISASSEMBLY)) {
-		if (!strncmp (tmp, type, len) &&
-				strcmp (panel->model->cmd, PANEL_CMD_DECOMPILER) &&
-				strcmp (panel->model->cmd, PANEL_CMD_DECOMPILER_O) &&
-				strcmp (panel->model->cmd, PANEL_CMD_DISASMSUMMARY)) {
+		if (!strncmp (tmp, type, len) && strcmp (panel->model->cmd, PANEL_CMD_DISASMSUMMARY)) {
 			free (tmp);
 			return true;
 		}
@@ -925,23 +909,6 @@ void __set_cmd_str_cache(RzCore *core, RzPanel *p, char *s) {
 	p->model->cmdStrCache = s;
 	__set_dcb (core, p);
 	__set_pcb (p);
-}
-
-void __set_decompiler_cache(RzCore *core, char *s) {
-	RzAnalFunction *func = rz_anal_get_fcn_in (core->anal, core->offset, RZ_ANAL_FCN_TYPE_NULL);
-	if (func) {
-		if (core->panels_root->cur_pdc_cache) {
-			sdb_ptr_set (core->panels_root->cur_pdc_cache, rz_num_as_string (NULL, func->addr, false), rz_str_new (s), 0);
-		} else {
-			Sdb *sdb = sdb_new0 ();
-			const char *pdc_now = rz_config_get (core->config, "cmd.pdc");
-			sdb_ptr_set (sdb, rz_num_as_string (NULL, func->addr, false), rz_str_new (s), 0);
-			core->panels_root->cur_pdc_cache = sdb;
-			if (!sdb_exists (core->panels_root->pdc_caches, pdc_now)) {
-				sdb_ptr_set (core->panels_root->pdc_caches, rz_str_new (pdc_now), sdb, 0);
-			}
-		}
-	}
 }
 
 void __set_read_only(RzCore *core, RzPanel *p, char *s) {
@@ -1174,39 +1141,6 @@ void __update_panel_title(RzCore *core, RzPanel *panel) {
 	rz_strbuf_free (title);
 	rz_strbuf_free (cache_title);
 	free (cmd_title);
-}
-
-//TODO: make this a task
-void __update_pdc_contents(RzCore *core, RzPanel *panel, char *cmdstr) {
-	RzPanels *panels = core->panels;
-	RzConsCanvas *can = panels->can;
-	int sx = panel->view->sx;
-	int sy = RZ_MAX (panel->view->sy, 0);
-	int x = panel->view->pos.x;
-	int y = panel->view->pos.y;
-	int w = panel->view->pos.w;
-	int h = panel->view->pos.h;
-	char *text = NULL;
-
-	(void) rz_cons_canvas_gotoxy (can, x + 2, y + 2);
-
-	if (sx < 0) {
-		char *white = (char*)rz_str_pad (' ', 128);
-		int idx = RZ_MIN (-sx, strlen (white) - 1);
-		white[idx] = 0;
-		text = rz_str_ansi_crop (cmdstr, 0, sy, w + sx - 3, h - 2 + sy);
-		char *newText = rz_str_prefix_all (text, white);
-		if (newText) {
-			free (text);
-			text = newText;
-		}
-	} else {
-		text = rz_str_ansi_crop (cmdstr, sx, sy, w + sx - 3, h - 2 + sy);
-	}
-	if (text) {
-		rz_cons_canvas_write (can, text);
-		free (text);
-	}
 }
 
 void __default_panel_print(RzCore *core, RzPanel *panel) {
@@ -3172,10 +3106,6 @@ void __set_pcb(RzPanel *p) {
 		p->model->print_cb = __print_hexdump_cb;
 		return;
 	}
-	if (__check_panel_type (p, PANEL_CMD_DECOMPILER)) {
-		p->model->print_cb = __print_decompiler_cb;
-		return;
-	}
 	if (__check_panel_type (p, PANEL_CMD_GRAPH)) {
 		p->model->print_cb = __print_graph_cb;
 		return;
@@ -3210,75 +3140,6 @@ int __rw_cb(void *user) {
 int __debugger_cb(void *user) {
 	RzCore *core = (RzCore *)user;
 	rz_core_cmd (core, "oo", 0);
-	return 0;
-}
-
-int __settings_decompiler_cb(void *user) {
-	RzCore *core = (RzCore *)user;
-	RzPanelsRoot *root = core->panels_root;
-	RzPanelsMenu *menu = core->panels->panels_menu;
-	RzPanelsMenuItem *parent = menu->history[menu->depth - 1];
-	RzPanelsMenuItem *child = parent->sub[parent->selectedIndex];
-	const char *pdc_next = child->name;
-	const char *pdc_now = rz_config_get (core->config, "cmd.pdc");
-	if (!strcmp (pdc_next, pdc_now)) {
-		return 0;
-	}
-	root->cur_pdc_cache = sdb_ptr_get (root->pdc_caches, pdc_next, 0);
-	if (!root->cur_pdc_cache) {
-		Sdb *sdb = sdb_new0 ();
-		if (sdb) {
-			sdb_ptr_set (root->pdc_caches, pdc_next, sdb, 0);
-			root->cur_pdc_cache = sdb;
-		}
-	}
-	rz_config_set (core->config, "cmd.pdc", pdc_next);
-	int j = 0;
-	for (j = 0; j < core->panels->n_panels; j++) {
-		RzPanel *panel = __get_panel (core->panels, j);
-		if (!strncmp (panel->model->cmd, "pdc", 3)) {
-			char *cmdstr = rz_core_cmd_strf (core, "pdc@0x%08"PFMT64x, panel->model->addr);
-			__update_panel_contents (core, panel, cmdstr);
-			__reset_scroll_pos (panel);
-			free (cmdstr);
-		}
-	}
-	__set_refresh_all (core, true, false);
-	__set_mode (core, PANEL_MODE_DEFAULT);
-	return 0;
-}
-
-int __show_all_decompiler_cb(void *user) {
-	RzCore *core = (RzCore *)user;
-	RzAnalFunction *func = rz_anal_get_fcn_in (core->anal, core->offset, RZ_ANAL_FCN_TYPE_NULL);
-	if (!func) {
-		return 0;
-	}
-	RzPanelsRoot *root = core->panels_root;
-	const char *pdc_now = rz_config_get (core->config, "cmd.pdc");
-	char *opts = rz_core_cmd_str (core, "e cmd.pdc=?");
-	RzList *optl = rz_str_split_list (opts, "\n", 0);
-	RzListIter *iter;
-	char *opt;
-	int i = 0;
-	__handle_tab_new (core);
-	RzPanels *panels = __get_panels (root, root->n_panels - 1);
-	rz_list_foreach (optl, iter, opt) {
-		if (RZ_STR_ISEMPTY (opt)) {
-			continue;
-		}
-		rz_config_set (core->config, "cmd.pdc", opt);
-		RzPanel *panel = __get_panel (panels, i++);
-		panels->n_panels = i;
-		panel->model->title = rz_str_new (opt);
-		__set_read_only (core, panel, rz_core_cmd_str (core, opt));
-	}
-	__layout_equal_hor (panels);
-	rz_list_free (optl);
-	free (opts);
-	rz_config_set (core->config, "cmd.pdc", pdc_now);
-	root->cur_panels = root->n_panels - 1;
-	__set_root_state (core, ROTATE);
 	return 0;
 }
 
@@ -4118,39 +3979,6 @@ void __print_default_cb(void *user, void *p) {
 	__update_panel_contents (core, panel, cmdstr);
 }
 
-void __print_decompiler_cb(void *user, void *p) {
-	//TODO: Refactoring
-	//TODO: Also, __check_func_diff should use addr not name
-	RzCore *core = (RzCore *)user;
-	RzPanel *panel = (RzPanel *)p;
-	bool update = core->panels->autoUpdate && __check_func_diff (core, panel);
-	char *cmdstr = NULL;
-	if (!update) {
-		cmdstr = __find_cmd_str_cache (core, panel);
-		if (cmdstr) {
-			__update_pdc_contents (core, panel, cmdstr);
-		}
-		return;
-	}
-	RzAnalFunction *func = rz_anal_get_fcn_in (core->anal, core->offset, RZ_ANAL_FCN_TYPE_NULL);
-	if (func && core->panels_root->cur_pdc_cache) {
-		cmdstr = rz_str_new ((char *)sdb_ptr_get (core->panels_root->cur_pdc_cache,
-					rz_num_as_string (NULL, func->addr, false), 0));
-		if (cmdstr) {
-			__set_cmd_str_cache (core, panel, cmdstr);
-			__reset_scroll_pos (panel);
-			__update_pdc_contents (core, panel, cmdstr);
-			return;
-		}
-	}
-	cmdstr = __handle_cmd_str_cache (core, panel, false);
-	if (cmdstr) {
-		__reset_scroll_pos (panel);
-		__set_decompiler_cache (core, cmdstr);
-		__update_pdc_contents (core, panel, cmdstr);
-	}
-}
-
 void __print_disasmsummary_cb (void *user, void *p) {
 	RzCore *core = (RzCore *)user;
 	RzPanel *panel = (RzPanel *)p;
@@ -4651,11 +4479,7 @@ bool __init_panels_menu(RzCore *core) {
 		char *pos;
 		RzListIter* iter;
 		rz_list_foreach (list, iter, pos) {
-			if (!strcmp (pos, PANEL_TITLE_ALL_DECOMPILER)) {
-				__add_menu (core, parent, pos, __show_all_decompiler_cb);
-			} else {
-				__add_menu (core, parent, pos, __add_cmd_panel);
-			}
+			__add_menu (core, parent, pos, __add_cmd_panel);
 		}
 	}
 
@@ -4785,20 +4609,6 @@ bool __init_panels_menu(RzCore *core) {
 	__init_menu_saved_layout (core, "File.Load Layout.Saved");
 
 	__init_menu_color_settings_layout (core, "Settings.Colors");
-
-	{
-		parent = "Settings.Decompiler";
-		char *opts = rz_core_cmd_str (core, "e cmd.pdc=?");
-		RzList *optl = rz_str_split_list (opts, "\n", 0);
-		RzListIter *iter;
-		char *opt;
-		rz_list_foreach (optl, iter, opt) {
-			__add_menu (core, parent, strdup (opt), __settings_decompiler_cb);
-		}
-		rz_list_free (optl);
-		free (opts);
-	}
-
 	__init_menu_disasm_settings_layout (core, "Settings.Disassembly");
 	__init_menu_screen_settings_layout (core, "Settings.Screen");
 
@@ -5149,8 +4959,6 @@ void __init_sdb(RzCore *core) {
 	sdb_set (db, "RegisterRefs", "drr", 0);
 	sdb_set (db, "Disassembly", "pd", 0);
 	sdb_set (db, "Disassemble Summary", "pdsf", 0);
-	sdb_set (db, "Decompiler", "pdc", 0);
-	sdb_set (db, "Decompiler With Offsets", "pdco", 0);
 	sdb_set (db, "Graph", "agf", 0);
 	sdb_set (db, "Tiny Graph", "agft", 0);
 	sdb_set (db, "Info", "i", 0);
@@ -5199,7 +5007,6 @@ void __init_almighty_db(RzCore *core) {
 	sdb_ptr_set (db, "Search strings in the whole bin", &__search_strings_bin_create, 0);
 	sdb_ptr_set (db, "Create New", &__create_panel_input, 0);
 	sdb_ptr_set (db, "Change Command of Current Panel", &__replace_current_panel_input, 0);
-	sdb_ptr_set (db, PANEL_TITLE_ALL_DECOMPILER, &__delegate_show_all_decompiler_cb, 0);
 	if (rz_config_get_i (core->config, "cfg.debug")) {
 		sdb_ptr_set (db, "Put Breakpoints", &__put_breakpoints_cb, 0);
 		sdb_ptr_set (db, "Continue", &__continue_almighty_cb, 0);
@@ -5212,10 +5019,6 @@ void __init_all_dbs(RzCore *core) {
 	__init_sdb (core);
 	__init_almighty_db (core);
 	__init_rotate_db (core);
-}
-
-static void __delegate_show_all_decompiler_cb(void *user, RzPanel *panel, const RzPanelLayout dir, RZ_NULLABLE const char *title) {
-	(void)__show_all_decompiler_cb ((RzCore *)user);
 }
 
 void __create_panel_db(void *user, RzPanel *panel, const RzPanelLayout dir, RZ_NULLABLE const char *title) {
@@ -6132,12 +5935,6 @@ void __rotate_disasm_cb(void *user, bool rev) {
 	RzCore *core = (RzCore *)user;
 	RzPanel *p = __get_cur_panel (core->panels);
 
-	//TODO: need to come up with a better solution but okay for now
-	if (!strcmp (p->model->cmd, PANEL_CMD_DECOMPILER) ||
-			!strcmp (p->model->cmd, PANEL_CMD_DECOMPILER_O)) {
-		return;
-	}
-
 	if (rev) {
 		if (!p->model->rotate) {
 			p->model->rotate = 4;
@@ -6288,8 +6085,6 @@ RZ_API bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root) 
 		panels_root->panels = calloc (sizeof (RzPanels *), PANEL_NUM_LIMIT);
 		panels_root->n_panels = 0;
 		panels_root->cur_panels = 0;
-		panels_root->pdc_caches = sdb_new0 ();
-		panels_root->cur_pdc_cache = NULL;
 		__set_root_state (core, DEFAULT);
 		__init_new_panels_root (core);
 	} else {
@@ -6297,14 +6092,6 @@ RZ_API bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root) 
 			panels_root->n_panels = 0;
 			panels_root->cur_panels = 0;
 			__init_new_panels_root (core);
-		}
-		const char *pdc_now = rz_config_get (core->config, "cmd.pdc");
-		if (sdb_exists (panels_root->pdc_caches, pdc_now)) {
-			panels_root->cur_pdc_cache = sdb_ptr_get (panels_root->pdc_caches, rz_str_new (pdc_now), 0);
-		} else {
-			Sdb *sdb = sdb_new0();
-			sdb_ptr_set (panels_root->pdc_caches, rz_str_new (pdc_now), sdb, 0);
-			panels_root->cur_pdc_cache = sdb;
 		}
 	}
 	{
@@ -6886,12 +6673,7 @@ repeat:
 		if (__check_root_state (core, ROTATE)) {
 			goto exit;
 		}
-		// all panels containing decompiler data should be cached
-		if (strstr (cur->model->title, "Decomp")) {
-			cur->model->cache = true;
-		} else {
-			cur->model->cache = false;
-		}
+		cur->model->cache = false;
 		break;
 	case 'O':
 		__handle_print_rotate (core);
@@ -7056,9 +6838,6 @@ repeat:
 		if (__check_func (core)) {
 			rz_cons_canvas_free (can);
 			panels->can = NULL;
-
-			__replace_cmd (core, PANEL_TITLE_DECOMPILER, PANEL_CMD_DECOMPILER);
-
 			int h, w = rz_cons_get_size (&h);
 			panels->can = __create_new_canvas (core, w, h);
 		}

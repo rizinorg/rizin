@@ -494,21 +494,6 @@ static bool cb_asmassembler(void *user, void *data) {
 	return true;
 }
 
-static void update_cmdpdc_options(RzCore *core, RzConfigNode *node) {
-	rz_return_if_fail (core && core->rasm && node);
-	RzListIter *iter;
-	rz_list_purge (node->options);
-	char *opts = rz_core_cmd_str (core, "e cmd.pdc=?");
-	RzList *optl = rz_str_split_list (opts, "\n", 0);
-	char *opt;
-	node->options->free = free;
-	rz_list_foreach (optl, iter, opt) {
-		SETOPTIONS (node, strdup (opt), NULL);
-	}
-	rz_list_free (optl);
-	free (opts);
-}
-
 static void update_asmcpu_options(RzCore *core, RzConfigNode *node) {
 	RzAsmPlugin *h;
 	RzListIter *iter;
@@ -1291,48 +1276,6 @@ static bool cb_cfg_fortunes_type(void *user, void *data) {
 		rz_core_fortune_list_types ();
 		return false;
 	}
-	return true;
-}
-
-static void check_decompiler(const char* name) {
-	char *path = rz_file_path (name);
-	if (path && path[0] == '/') {
-		rz_cons_printf ("!*%s\n", name);
-	}
-	free (path);
-}
-
-static bool cb_cmdpdc(void *user, void *data) {
-	RzCore *core = (RzCore *) user;
-	RzConfigNode *node = (RzConfigNode *)data;
-	if (node->value[0] == '?') {
-		rz_cons_printf ("pdc\n");
-		// spaguetti
-		check_decompiler ("r2retdec");
-		RzListIter *iter;
-		RzCorePlugin *cp;
-		rz_list_foreach (core->rcmd->plist, iter, cp) {
-			if (!strcmp (cp->name, "r2ghidra")) {
-				rz_cons_printf ("pdg\n");
-			}
-		}
-		check_decompiler ("r2ghidra");
-		check_decompiler ("r2jadx");
-		check_decompiler ("r2snow");
-		RzConfigNode *r2dec = rz_config_node_get (core->config, "r2dec.asm");
-		if (r2dec) {
-			rz_cons_printf ("pdd\n");
-		}
-		return false;
-	}
-	return true;
-}
-
-static bool cb_cmdlog(void *user, void *data) {
-	RzCore *core = (RzCore *) user;
-	RzConfigNode *node = (RzConfigNode *) data;
-	RZ_FREE (core->cmdlog);
-	core->cmdlog = strdup (node->value);
 	return true;
 }
 
@@ -3453,10 +3396,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF ("cmd.hit", "", "Run when a search hit is found");
 	SETPREF ("cmd.open", "", "Run when file is opened");
 	SETPREF ("cmd.load", "", "Run when binary is loaded");
-	RzConfigNode *cmdpdc = NODECB ("cmd.pdc", "", &cb_cmdpdc);
-	SETDESC (cmdpdc, "Select pseudo-decompiler command to run after pdc");
-	update_cmdpdc_options (core, cmdpdc);
-	SETCB ("cmd.log", "", &cb_cmdlog, "Every time a new T log is added run this command");
 	SETPREF ("cmd.prompt", "", "Prompt commands");
 	SETCB ("cmd.repeat", "false", &cb_cmdrepeat, "Empty command an alias for '..' (repeat last command)");
 	SETPREF ("cmd.fcn.new", "", "Run when new function is analyzed");
@@ -3841,7 +3780,3 @@ RZ_API void rz_core_parse_rizinrc(RzCore *r) {
 	}
 }
 
-RZ_API void rz_core_config_update(RzCore *core) {
-	RzConfigNode *cmdpdc = rz_config_node_get (core->config, "cmd.pdc");
-	update_cmdpdc_options (core, cmdpdc);
-}
