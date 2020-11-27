@@ -300,7 +300,6 @@ static void __free_menu_item(RzPanelsMenuItem *item);
 static RzPanel *__get_panel(RzPanels *panels, int i);
 static RzPanel *__get_cur_panel(RzPanels *panels);
 static int __get_panel_idx_in_pos(RzCore *core, int x, int y);
-static RzPanels *__get_panels(RzPanelsRoot *panels_root, int i);
 static char *get_word_from_canvas(RzCore *core, RzPanels *panels, int x, int y);
 static char *get_word_from_canvas_for_menu(RzCore *core, RzPanels *panels, int x, int y);
 
@@ -362,7 +361,6 @@ static void __panel_prompt(const char *prompt, char *buf, int len);
 static void __panels_layout_refresh(RzCore *core);
 static void __panels_layout(RzPanels *panels);
 static void __layout_default(RzPanels *panels);
-static void __layout_equal_hor(RzPanels *panels);
 RZ_API void rz_save_panels_layout(RzCore *core, const char *_name);
 RZ_API bool rz_load_panels_layout(RzCore *core, const char *_name);
 static void __split_panel_vertical(RzCore *core, RzPanel *p, const char *name, const char *cmd);
@@ -1254,20 +1252,6 @@ void __layout_default(RzPanels *panels) {
 		}
 		__set_geometry (&p->view->pos, pos_x, 2 + (ph * (i - 1)) - 1, tmp_w, tmp_h + 1);
 		total_h += 2 + (ph * (i - 1)) - 1 + tmp_h + 1;
-	}
-}
-
-void __layout_equal_hor(RzPanels *panels) {
-	int h, w = rz_cons_get_size (&h);
-	int pw = w / panels->n_panels;
-	int i, cw = 0;
-	for (i = 0; i < panels->n_panels; i++) {
-		RzPanel *p = __get_panel (panels, i);
-		__set_geometry(&p->view->pos, cw, 1, pw, h - 1);
-		cw += pw - 1;
-		if (i == panels->n_panels - 2) {
-			pw = w - cw;
-		}
 	}
 }
 
@@ -6169,13 +6153,6 @@ void __del_panels(RzCore *core) {
 	if (panels_root->cur_panels >= panels_root->n_panels) {
 		panels_root->cur_panels = panels_root->n_panels - 1;
 	}
-}
-
-RzPanels *__get_panels(RzPanelsRoot *panels_root, int i) {
-	if (!panels_root || (i >= PANEL_NUM_LIMIT)) {
-		return NULL;
-	}
-	return panels_root->panels[i];
 }
 
 void __handle_tab(RzCore *core) {
