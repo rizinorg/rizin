@@ -14,10 +14,11 @@ RZ_API bool rz_skyline_add(RzSkyline *skyline, RzInterval itv, void *user) {
 	RzSkylineItem new_part = { itv, user };
 	const ut64 new_part_end = rz_itv_end (new_part.itv);
 
-	// `part` is the first RzSkylineItem with part->itv.addr >= new_part.itv.addr
+	// `slot` is the index of the first RzSkylineItem with part->itv.addr >= new_part.itv.addr
 	size_t slot;
 	rz_vector_lower_bound (skyline_vec, new_part.itv.addr, slot, CMP_BEGIN_GTE_PART);
-	RzSkylineItem *part = slot < rz_vector_len (skyline_vec) ? rz_vector_index_ptr (skyline_vec, slot) : NULL;
+	const bool is_last = slot == rz_vector_len (skyline_vec);
+	bool is_inside_prev_part = false;
 	if (slot) {
 		RzSkylineItem *prev_part = rz_vector_index_ptr (skyline_vec, slot - 1);
 		const ut64 prev_part_end = rz_itv_end (prev_part->itv);
@@ -28,15 +29,13 @@ RZ_API bool rz_skyline_add(RzSkyline *skyline, RzInterval itv, void *user) {
 				tail.user = prev_part->user;
 				tail.itv.addr = new_part_end;
 				tail.itv.size = prev_part_end - rz_itv_begin (tail.itv);
-				if (slot < rz_vector_len (skyline_vec)) {
-					rz_vector_insert (skyline_vec, slot, &tail);
-				} else {
-					rz_vector_push (skyline_vec, &tail);
-				}
+				rz_vector_insert (skyline_vec, slot, &tail);
+				is_inside_prev_part = true;
 			}
 		}
 	}
-	if (part) {
+	if (!is_last && !is_inside_prev_part) {
+		RzSkylineItem *part = rz_vector_index_ptr (skyline_vec, slot);
 		while (part && rz_itv_include (new_part.itv, part->itv)) {
 			// Remove `part` that fits in `new_part`
 			rz_vector_remove_at (skyline_vec, slot, NULL);
@@ -49,11 +48,7 @@ RZ_API bool rz_skyline_add(RzSkyline *skyline, RzInterval itv, void *user) {
 			part->itv.size -= rz_itv_begin (part->itv) - oaddr;
 		}
 	}
-	if (slot < rz_vector_len (skyline_vec)) {
-		rz_vector_insert (skyline_vec, slot, &new_part);
-	} else {
-		rz_vector_push (skyline_vec, &new_part);
-	}
+	rz_vector_insert (skyline_vec, slot, &new_part);
 	return true;
 }
 
