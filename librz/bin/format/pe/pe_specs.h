@@ -6,6 +6,8 @@
 #undef PE_Word
 #undef PE_DWord
 #undef PE_VWord
+#undef RZ_BUF_READ_PE_DWORD_AT
+#undef PE_DWORD_MAX
 
 #ifdef RZ_BIN_PE64
 #define PE_(name) Pe64_ ## name
@@ -14,6 +16,8 @@
 #define PE_Word ut16
 #define PE_DWord ut64
 #define PE_VWord ut32
+#define RZ_BUF_READ_PE_DWORD_AT rz_buf_read_le64_at
+#define PE_DWORD_MAX UT64_MAX
 #else
 #define PE_(name) Pe32_ ## name
 #define ILT_MASK1 0x80000000
@@ -21,10 +25,12 @@
 #define PE_Word ut16
 #define PE_DWord ut32
 #define PE_VWord ut32
+#define RZ_BUF_READ_PE_DWORD_AT rz_buf_read_le32_at
+#define PE_DWORD_MAX UT32_MAX
 #endif
 
-#ifndef _INCLUDE_R_BIN_PE_SPECS_H_
-#define _INCLUDE_R_BIN_PE_SPECS_H_
+#ifndef _INCLUDE_RZ_BIN_PE_SPECS_H_
+#define _INCLUDE_RZ_BIN_PE_SPECS_H_
 
 #define PE_NAME_LENGTH 256
 #define PE_STRING_LENGTH 256
@@ -496,19 +502,19 @@ typedef struct {
 
 typedef struct {
 	union {
-		struct {
-			ut32 NameOffset: 31;
-			ut32 NameIsString: 1;
-		} s;
+		// struct {
+		// 	ut32 NameOffset: 31;
+		// 	ut32 NameIsString: 1;
+		// } s;
+		// ut16 Id;
 		ut32 Name;
-		ut16 Id;
 	} u1;
 	union {
+		// struct {
+		// 	ut32 OffsetToDirectory: 31;
+		// 	ut32 DataIsDirectory: 1;
+		// } s;
 		ut32 OffsetToData;
-		struct {
-			ut32 OffsetToDirectory: 31;
-			ut32 DataIsDirectory: 1;
-		} s;
 	} u2;
 } Pe_image_resource_directory_entry;
 
@@ -775,5 +781,15 @@ typedef struct {
 	ut32 Count;
 	PE64_SCOPE_RECORD ScopeRecord[];
 } PE64_SCOPE_TABLE;
+
+int Pe32_read_dos_header(RzBuffer *b, Pe32_image_dos_header *header);
+int Pe32_read_nt_headers(RzBuffer *b, ut64 addr, Pe32_image_nt_headers *headers);
+int Pe32_read_image_section_header(RzBuffer *b, ut64 addr, Pe32_image_section_header *section_header);
+void Pe32_write_image_section_header(RzBuffer *b, ut64 addr, Pe32_image_section_header *section_header);
+
+int Pe64_read_dos_header(RzBuffer *b, Pe64_image_dos_header *header);
+int Pe64_read_nt_headers(RzBuffer *b, ut64 addr, Pe64_image_nt_headers *headers);
+int Pe64_read_image_section_header(RzBuffer *b, ut64 addr, Pe64_image_section_header *section_header);
+void Pe64_write_image_section_header(RzBuffer *b, ut64 addr, Pe64_image_section_header *section_header);
 
 #endif
