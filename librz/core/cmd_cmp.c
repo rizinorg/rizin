@@ -14,7 +14,6 @@ static const char *help_msg_c[] = {
 	"cc", " [at]", "Compares in two hexdump columns of block size",
 	"ccc", " [at]", "Same as above, but only showing different lines",
 	"ccd", " [at]", "Compares in two disasm columns of block size",
-	"ccdd", " [at]", "Compares decompiler output (e cmd.pdc=pdg|pdd)",
 	"cd", " [dir]", "chdir",
 	// "cc", " [offset]", "code bindiff current block against offset"
 	// "cD", " [file]", "like above, but using radiff -b",
@@ -362,25 +361,6 @@ static int cmd_cmp_disasm(RzCore *core, const char *input, int mode) {
 	}
 	rz_io_read_at (core->io, off, buf, core->blocksize + 32);
 	switch (mode) {
-	case 'd': // decompiler
-		{
-#if 0
-		char *a = rz_core_cmd_strf (core, "pdc @ 0x%"PFMT64x, off);
-		char *b = rz_core_cmd_strf (core, "pdc @ 0x%"PFMT64x, core->offset);
-		RzDiff *d = rz_diff_new ();
-		char *s = rz_diff_buffers_unified (d, a, strlen(a), b, strlen(b));
-		rz_cons_printf ("%s\n", s);
-		free (a);
-		free (b);
-		free (s);
-		rz_diff_free (d);
-#else
-		rz_core_cmdf (core, "pdc @ 0x%"PFMT64x">$a", off);
-		rz_core_cmdf (core, "pdc @ 0x%"PFMT64x">$b", core->offset);
-		rz_core_cmd0 (core, "diff $a $b;rm $a;rm $b");
-#endif
-		}
-		break;
 	case 'c': // columns
 		for (i = j = 0; i < core->blocksize && j < core->blocksize;) {
 			// dis A

@@ -15,7 +15,7 @@ static const char *help_msg_L[] = {
 	"La", "", "list asm/anal plugins (aL, e asm.arch=" "??" ")",
 	"Lc", "", "list core plugins",
 	"Ld", "", "list debug plugins (same as dL)",
-	"LD", "", "list supported decompilers (e cmd.pdc=?)",
+	"LD", "", "list supported decompilers",
 	"Lm", "", "list fs plugins (same as mL)",
 	"Lh", "", "list hash plugins (same as ph)",
 	"Li", "", "list bin plugins (same as iL)",
@@ -54,13 +54,6 @@ RZ_IPI int rz_cmd_plugins(void *data, const char *input) {
 		break;
 	case 'p': // "Lp"
 		rz_core_cmd0 (core, "e asm.parser=?");
-		break;
-	case 'D': // "LD"
-		if (input[1] == ' ') {
-			rz_core_cmdf (core, "e cmd.pdc=%s", rz_str_trim_head_ro (input + 2));
-		} else {
-			rz_core_cmd0 (core, "e cmd.pdc=?");
-		}
 		break;
 	case 'l': // "Ll"
 		rz_core_cmd0 (core, "#!");
