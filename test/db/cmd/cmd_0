@@ -285,26 +285,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdc 0
-FILE=bins/elf/analysis/hello-arm32
-CMDS=<<EOF
-aa
-pdc 0
-EOF
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=pdc 0
-FILE=bins/elf/analysis/hello-arm32
-CMDS=<<EOF
-aa
-pdc 0
-EOF
-EXPECT=<<EOF
-EOF
-RUN
-
 NAME=pdj 0
 FILE=bins/elf/analysis/hello-arm32
 CMDS=pdj 0

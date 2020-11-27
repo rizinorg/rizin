@@ -312,7 +312,6 @@ static const char *help_msg_pd[] = {
 	"pd--", "[n]", "context disassembly of N instructions",
 	"pda", "", "disassemble all possible opcodes (byte per byte)",
 	"pdb", "", "disassemble basic block",
-	"pdc", "", "pseudo disassembler output in C-like syntax",
 	"pdC", "", "show comments found in N instructions",
 	"pde", "[q|qq|j] [N]", "disassemble N instructions following execution flow from current PC",
 	"pdf", "", "disassemble function",
@@ -5205,11 +5204,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		switch (input[1]) {
 		case 'C': // "pdC"
 			rz_core_disasm_pdi (core, l, 0, 'C');
-			pd_result = 0;
-			processed_cmd = true;
-			break;
-		case 'c': // "pdc" // "pDc"
-			rz_core_pseudo_code (core, input + 2);
 			pd_result = 0;
 			processed_cmd = true;
 			break;
