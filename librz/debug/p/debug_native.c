@@ -546,25 +546,25 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 #endif
 		} else if (status == 1) {
 			/* XXX(jjd): does this actually happen? */
-			eprintf ("EEK DEAD DEBUGEE!\n");
+			eprintf ("debugger is dead with status 1!\n");
 			reason = RZ_DEBUG_REASON_DEAD;
 		} else if (status == 0) {
 			/* XXX(jjd): does this actually happen? */
-			eprintf ("STATUS=0?!?!?!?\n");
+			eprintf ("debugger is dead with status 0\n");
 			reason = RZ_DEBUG_REASON_DEAD;
 		} else {
 			if (ret != pid) {
 				reason = RZ_DEBUG_REASON_NEW_PID;
 			} else {
 				/* ugh. still don't know :-/ */
-				eprintf ("CRAP. returning from wait without knowing why...\n");
+				eprintf ("returning from wait without knowing why...\n");
 			}
 		}
 	}
 
 	/* if we still don't know what to do, we have a problem... */
 	if (reason == RZ_DEBUG_REASON_UNKNOWN) {
-		eprintf ("%s: no idea what happened... wtf?!?!\n", __func__);
+		eprintf ("%s: no idea what happened...\n", __func__);
 		reason = RZ_DEBUG_REASON_ERROR;
 	}
 #endif // __APPLE__

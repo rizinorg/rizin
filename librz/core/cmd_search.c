@@ -202,7 +202,7 @@ static int search_hash(RzCore *core, const char *hashname, const char *hashstr, 
 			buf = malloc (bufsz);
 			if (!buf) {
 				eprintf ("Cannot allocate %"PFMT64d " bytes\n", bufsz);
-				goto hell;
+				goto fail;
 			}
 			eprintf ("Search in range 0x%08"PFMT64x " and 0x%08"PFMT64x "\n", from, to);
 			int blocks = (int) (to - from - len);
@@ -237,7 +237,7 @@ static int search_hash(RzCore *core, const char *hashname, const char *hashstr, 
 	rz_cons_break_pop ();
 	eprintf ("No hashes found\n");
 	return 0;
-hell:
+fail:
 	return -1;
 }
 
@@ -998,7 +998,7 @@ static bool is_end_gadget(const RzAnalOp *aop, const ut8 crop) {
 		case RZ_ANAL_OP_TYPE_UCJMP:
 		case RZ_ANAL_OP_TYPE_CCALL:
 		case RZ_ANAL_OP_TYPE_UCCALL:
-		case RZ_ANAL_OP_TYPE_CRET:   // i'm a condret
+		case RZ_ANAL_OP_TYPE_CRET:
 			return true;
 		}
 	}

@@ -161,7 +161,7 @@ static int decode_imm_reg(const ut16 instr, struct v810_cmd *cmd) {
 	case V810_ADD_IMM5:
 	case V810_CMP_IMM5:
 		snprintf (cmd->operands, V810_INSTR_MAXLEN - 1, "%d, r%u",
-				(st8)SEXT5(immed), REG2(instr));
+				(st8)SIGN_EXT_T5(immed), REG2(instr));
 		break;
 	case V810_LDSR:
 	case V810_STSR:

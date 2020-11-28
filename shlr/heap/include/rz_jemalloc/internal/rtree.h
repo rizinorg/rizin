@@ -76,7 +76,7 @@ struct rtree_level_s {
 	 * Cumulative number of key bits distinguished by traversing to
 	 * corresponding tree level.
 	 */
-	unsigned		cumbits;
+	unsigned		cumulative_bits;
 };
 
 struct rtree_s {
@@ -149,7 +149,7 @@ rtree_subkey(rtree_t *rtree, uintptr_t key, unsigned level)
 {
 
 	return ((key >> ((ZU(1) << (LG_SIZEOF_PTR+3)) -
-	    rtree->levels[level].cumbits)) & ((ZU(1) <<
+	    rtree->levels[level].cumulative_bits)) & ((ZU(1) <<
 	    rtree->levels[level].bits) - 1));
 }
 

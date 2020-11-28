@@ -38,9 +38,9 @@ bool test_config_load() {
 
 	Sdb *db = ref_db ();
 	sdb_set (db, "sneaky", "not part of config", 0);
-	bool suck = rz_serialize_config_load (db, config, NULL);
+	bool loaded = rz_serialize_config_load (db, config, NULL);
 	sdb_free (db);
-	mu_assert ("load success", suck);
+	mu_assert ("load success", loaded);
 
 	mu_assert_eq (rz_list_length (config->nodes), 3, "count after load");
 	mu_assert_streq (rz_config_get (config, "somestring"), "somevalue", "loaded config string");

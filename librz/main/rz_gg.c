@@ -565,7 +565,7 @@ RZ_API int rz_main_rz_gg(int argc, const char **argv) {
 			}
 		} else {
 			if (!format) {
-				eprintf ("No format specified wtf\n");
+				eprintf ("No format specified\n");
 				goto fail;
 			}
 			RzPrint *p = rz_print_new ();

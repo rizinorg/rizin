@@ -3,9 +3,9 @@
 
 #define V850_INSTR_MAXLEN	24
 
-#define SEXT5(imm) (((imm) & 0x10) ? (imm) | 0xE0 : (imm))
-#define SEXT9(imm) (((imm) & 0x100) ? (imm) | 0xFFFFFE00 : (imm))
-#define SEXT26(imm) (((imm) & 0x2000000) ? (imm) | 0xFC000000 : (imm))
+#define SIGN_EXT_T5(imm) (((imm) & 0x10) ? (imm) | 0xE0 : (imm))
+#define SIGN_EXT_T9(imm) (((imm) & 0x100) ? (imm) | 0xFFFFFE00 : (imm))
+#define SIGN_EXT_T26(imm) (((imm) & 0x2000000) ? (imm) | 0xFC000000 : (imm))
 
 enum v850_cmd_opcodes {
 	V850_MOV	= 0x0,

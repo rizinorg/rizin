@@ -128,7 +128,7 @@ RZ_API void rz_core_visual_toggle_decompiler_disasm(RzCore *core, bool for_graph
 }
 
 static void setcursor(RzCore *core, bool cur) {
-	int flags = core->print->flags; // wtf
+	int flags = core->print->flags;
 	if (core->print->cur_enabled) {
 		flags |= RZ_PRINT_FLAGS_CURSOR;
 	} else {

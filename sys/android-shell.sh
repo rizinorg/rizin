@@ -54,7 +54,7 @@ OS=`uname|tr 'A-Z' 'a-z'`
 
 if [ ! -x /work ]; then
 	echo "Building android locally with NDK instead of dockcross..."
-	# TODO: autodetect or gtfo
+	# TODO: autodetect
 	if [ -f ~/.rzandroidrc ]; then
 		. ~/.rzandroidrc
 		echo "Using data from ${HOME}/.rzandroidrc.."

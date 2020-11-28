@@ -3596,7 +3596,7 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 				}
 				free (inp);
 			} else {
-				eprintf ("Cannot strdup. Your heap is fucked up\n");
+				eprintf ("Cannot strdup. Your heap is a mess\n");
 			}
 		} else {
 			eprintf ("Use: dbc [addr] [command]\n");
@@ -3622,7 +3622,7 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 				}
 				free (inp);
 			} else {
-				eprintf ("Cannot strdup. Your heap is fucked up\n");
+				eprintf ("Cannot strdup. Your heap is a mess\n");
 			}
 		} else {
 			eprintf ("Use: dbC [addr] [command]\n");

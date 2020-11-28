@@ -210,7 +210,7 @@ static void task_free (RzCoreTask *task) {
 RZ_API RzCoreTask *rz_core_task_new(RzCore *core, bool create_cons, const char *cmd, RzCoreTaskCallback cb, void *user) {
 	RzCoreTask *task = RZ_NEW0 (RzCoreTask);
 	if (!task) {
-		goto hell;
+		goto fail;
 	}
 
 	task->thread = NULL;
@@ -222,13 +222,13 @@ RZ_API RzCoreTask *rz_core_task_new(RzCore *core, bool create_cons, const char *
 	task->dispatch_cond = rz_th_cond_new ();
 	task->dispatch_lock = rz_th_lock_new (false);
 	if (!task->dispatch_cond || !task->dispatch_lock) {
-		goto hell;
+		goto fail;
 	}
 
 	if (create_cons) {
 		task->cons_context = rz_cons_context_new (rz_cons_singleton ()->context);
 		if (!task->cons_context) {
-			goto hell;
+			goto fail;
 		}
 		task->cons_context->cmd_depth = core->max_cmd_depth;
 	}
@@ -243,7 +243,7 @@ RZ_API RzCoreTask *rz_core_task_new(RzCore *core, bool create_cons, const char *
 
 	return task;
 
-hell:
+fail:
 	task_free (task);
 	return NULL;
 }
@@ -398,7 +398,7 @@ static RzThreadFunctionRet task_run(RzCoreTask *task) {
 
 	if (task->cons_context && task->cons_context->breaked) {
 		// breaked in RZ_CORE_TASK_STATE_BEFORE_START
-		goto stillbirth;
+		goto nonstart;
 	}
 
 	char *res_str;
@@ -417,7 +417,7 @@ static RzThreadFunctionRet task_run(RzCoreTask *task) {
 	}
 
 	TASK_SIGSET_T old_sigset;
-stillbirth:
+nonstart:
 	tasks_lock_enter (scheduler, &old_sigset);
 
 	task_end (task);

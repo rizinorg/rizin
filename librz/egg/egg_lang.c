@@ -717,7 +717,6 @@ static void rcc_fun(RzEgg *egg, const char *str) {
 		} else {
 			// e->jmp (egg, egg->lang.ctxpush[context], 0);
 			if (CTX > 0) {
-				// WTF?
 				eprintf ("LABEL %d\n", CTX);
 				rz_egg_printf (egg, "\n%s:\n", str);
 			} else {
@@ -1127,7 +1126,7 @@ static void rcc_next(RzEgg *egg) {
 // fixed by izhuer
 		/*
 		if (ocn) { // Used to call .var0()
-		    // WTF? ocn mustn't be NULL here
+		    // XXX: ocn mustn't be NULL here
 		    // XXX: Probably buggy and wrong
 		    *buf = 0;
 		    free (str);

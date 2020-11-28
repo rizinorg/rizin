@@ -55,7 +55,7 @@ RZ_API char *rz_bin_filter_name(RzBinFile *bf, Sdb *db, ut64 vaddr, char *name) 
 			resname = p;
 		}
 
-		// two symbols at different addresses and same name wtf
+		// two symbols at different addresses and same name
 		//	eprintf ("Symbol '%s' dupped!\n", sym->name);
 	}
 	return resname;

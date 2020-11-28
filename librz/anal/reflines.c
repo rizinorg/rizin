@@ -338,7 +338,7 @@ static inline bool refline_kept(RzAnalRefline *ref, bool middle_after, ut64 addr
 }
 
 // TODO: move into another file
-// TODO: this is TOO SLOW. do not iterate over all reflines or gtfo
+// TODO: this is TOO SLOW. do not iterate over all reflines
 RZ_API RzAnalRefStr *rz_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	RzCore *core = _core;
 	RzCons *cons = core->cons;

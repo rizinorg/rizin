@@ -294,7 +294,7 @@ RZ_API int rz_io_wundo_set(RzIO *io, int n, int set) {
 				break;
 			}
 		}
-		if (u) { // wtf?
+		if (u) {
 			rz_io_wundo_apply (io, u, set);
 			return true;
 		}

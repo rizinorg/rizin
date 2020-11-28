@@ -822,7 +822,6 @@ static int analop(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len
 			op->ptr = OPERAND(1).imm;
 			break;
 		case MIPS_OP_REG:
-			// wtf?
 			break;
 		default:
 			break;

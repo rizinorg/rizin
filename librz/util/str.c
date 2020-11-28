@@ -1083,7 +1083,7 @@ RZ_API char* rz_str_replace_thunked(char *str, char *clean, int *thunk, int clen
 		bias = vlen - newo;
 
 		slen += bias;
-		// HACK: this 32 avoids overwrites wtf
+		// HACK: this 32 avoids overwrites
 		newstr = realloc (str, slen + klen);
 		if (!newstr) {
 			eprintf ("realloc fail\n");
@@ -1790,7 +1790,7 @@ RZ_API char *rz_str_format_msvc_argv(size_t argc, const char **argv) {
 			rz_strbuf_append (&sb, "\"");
 		}
 		if (must_escape) {
-			size_t bs_count = 0; // bullshit counter
+			size_t bs_count = 0; // backslash counter
 			for (; *arg; arg++) {
 				switch (*arg) {
 				case '\"':
@@ -1998,7 +1998,7 @@ RZ_API const char *rz_str_ansi_chrn(const char *str, size_t n) {
 }
 
 /*
- * filter out ansi CSI shit in-place!.
+ * filter out ansi CSI.
  * str - input string,
  * out - if not NULL write a pointer to the original string there,
  * cposs - if not NULL write a pointer to thunk array there

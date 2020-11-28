@@ -1023,7 +1023,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 				int len = rz_hash_calculate (rh, hash, tmp, h->to);
 				free (tmp);
 				if (len < 1) {
-					eprintf ("Invalid wtf\n");
+					eprintf ("Invalid hash len\n");
 				}
 				rz_hash_free (rh);
 				rz_cons_printf ("%s  %" PFMT64u "-%" PFMT64u "c  ", h->type, h->from, h->to+h->from);
@@ -2925,7 +2925,7 @@ static int bin_sections(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const 
 			}
 #endif
 			if (section->format) {
-				// This is damn slow if section vsize is HUGE
+				// This is really slow if section vsize is HUGE
 				if (section->vsize < 1024 * 1024 * 2) {
 					rz_core_cmdf (r, "%s @ 0x%"PFMT64x, section->format, section->vaddr);
 				}

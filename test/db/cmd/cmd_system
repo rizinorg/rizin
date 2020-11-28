@@ -1,29 +1,29 @@
 NAME=!
 FILE=-
 CMDS=<<EOF
-?e fuck
+?e magic
 ?e yeah
-!echo fuck
+!echo magic
 !echo yeah
 EOF
 EXPECT=<<EOF
-fuck
+magic
 yeah
-fuck
+magic
 yeah
 EOF
 RUN
 
 NAME=!| grep
 FILE=-
-CMDS=!echo fuck|grep bob
+CMDS=!echo magic|grep bob
 EXPECT=<<EOF
 EOF
 RUN
 
 NAME=!| sed
 FILE=-
-CMDS=!echo fuck|sed -e s,fuck,yeah,
+CMDS=!echo magic|sed -e s,magic,yeah,
 EXPECT=<<EOF
 yeah
 EOF
@@ -31,7 +31,7 @@ RUN
 
 NAME=?e|
 FILE=-
-CMDS=?e fuck|sed -e s,fuck,yeah,
+CMDS=?e magic|sed -e s,magic,yeah,
 EXPECT=<<EOF
 yeah
 EOF

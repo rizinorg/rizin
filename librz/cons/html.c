@@ -155,7 +155,6 @@ RZ_API char *rz_cons_html_filter(const char *ptr, int *newlen) {
 				str = ptr + 1;
 				esc = 0;
 			} else if (ptr[0] == '0' && ptr[1] == ';' && ptr[2] == '0') {
-				// wtf ?
 				rz_cons_gotoxy (0, 0);
 				ptr += 4;
 				esc = 0;

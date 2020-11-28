@@ -3772,7 +3772,7 @@ RZ_API int rz_core_anal_search(RzCore *core, ut64 from, ut64 to, ut64 ref, int m
 			arch = RZ_ARCH_ARM64;
 		}
 	}
-	// TODO: get current section range here or gtfo
+	// TODO: get current section range here
 	// ???
 	// XXX must read bytes correctly
 	do_bckwrd_srch = bckwrds = core->search->bckwrds;
@@ -4658,7 +4658,7 @@ static void add_string_ref(RzCore *core, ut64 xref_from, ut64 xref_to) {
 }
 
 
-// dup with isValidAddress wtf
+// dup with isValidAddress
 static bool myvalid(RzIO *io, ut64 addr) {
 	if (addr < 0x100) {
 		return false;

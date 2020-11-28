@@ -1453,9 +1453,9 @@ struct elf_obj_tdata
      linker.  */
   bfd_boolean linker;
 
-  /* Irix 5 often screws up the symbol table, sorting local symbols
+  /* Irix 5 often messes up the symbol table, sorting local symbols
      after global symbols.  This flag is set if the symbol table in
-     this BFD appears to be screwed up.  If it is, we ignore the
+     this BFD appears to be messed up.  If it is, we ignore the
      sh_info field in the symbol table header, and always read all the
      symbols.  */
   bfd_boolean bad_symtab;

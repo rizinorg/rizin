@@ -161,7 +161,7 @@ static RzList *ios_dbg_maps(RzDebug *dbg) {
 			i++;
 			rz_list_append (list, mr);
 		}
-		if (size<1) size = osize; // fuck
+		if (size < 1) size = osize;
 		address += size;
 		size = 0;
 	}

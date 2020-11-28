@@ -36,7 +36,7 @@ RZ_API void rz_debug_trace_free (RzDebugTrace *trace) {
 	RZ_FREE (trace);
 }
 
-// TODO: added overlap/mask support here... wtf?
+// TODO: added overlap/mask support here...
 // TODO: think about tagged traces
 RZ_API int rz_debug_trace_tag (RzDebug *dbg, int tag) {
 	//if (tag>0 && tag<31) core->dbg->trace->tag = 1<<(sz-1);

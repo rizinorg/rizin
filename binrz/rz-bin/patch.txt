@@ -1,7 +1,7 @@
 # This is an example file for rapatch
 
 #0x8048000  : mov eax, 33
-#0x8048005  # This is fucking awesome
+#0x8048005  # This is awesome
 !echo ++ Patching binary
 . import.rdb
 

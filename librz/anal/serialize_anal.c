@@ -209,25 +209,25 @@ RZ_API RzAnalSwitchOp *rz_serialize_anal_switch_op_load(RZ_NONNULL const RJson *
 				sop->def_val = child->num.u_value;
 			}
 		} else if (child->type == RZ_JSON_ARRAY && strcmp (child->key, "cases") == 0) {
-			RJson *baby;
-			for (baby = child->children.first; baby; baby = baby->next) {
-				if (baby->type != RZ_JSON_OBJECT) {
+			RJson *obj;
+			for (obj = child->children.first; obj; obj = obj->next) {
+				if (obj->type != RZ_JSON_OBJECT) {
 					continue;
 				}
 				ut64 addr = UT64_MAX;
 				ut64 jump = UT64_MAX;
 				ut64 value = UT64_MAX;
-				RJson *semen;
-				for (semen = baby->children.first; semen; semen = semen->next) {
-					if (semen->type != RZ_JSON_INTEGER) {
+				RJson *cases;
+				for (cases = obj->children.first; cases; cases = cases->next) {
+					if (cases->type != RZ_JSON_INTEGER) {
 						continue;
 					}
-					if (strcmp (semen->key, "addr") == 0) {
-						addr = semen->num.u_value;
-					} else if (strcmp (semen->key, "jump") == 0) {
-						jump = semen->num.u_value;
-					} else if (strcmp (semen->key, "value") == 0) {
-						value = semen->num.u_value;
+					if (strcmp (cases->key, "addr") == 0) {
+						addr = cases->num.u_value;
+					} else if (strcmp (cases->key, "jump") == 0) {
+						jump = cases->num.u_value;
+					} else if (strcmp (cases->key, "value") == 0) {
+						value = cases->num.u_value;
 					}
 				}
 				rz_anal_switch_op_add_case (sop, addr, value, jump);

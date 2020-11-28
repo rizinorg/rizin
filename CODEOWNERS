@@ -1,37 +1,36 @@
-* @trufae
-*.js @trufae
-CODEOWNERS @trufae @XVilka @kazarmy @thestr4ng3r @ret2libc
+* @wargio
+*.js @wargio
+CODEOWNERS @wargio @XVilka @kazarmy @thestr4ng3r @ret2libc
 librz/anal/ @thestr4ng3r
-librz/anal/esil* @trufae @condret
+librz/anal/esil* @wargio
 librz/anal/xrefs.c @ret2libc
-librz/arch/gb/ @condret
-librz/asm/ @wargio @trufae
+librz/arch/gb/ @wargio
+librz/asm/ @wargio
 librz/asm/p/x86_* @ret2libc
-librz/asm/p/arm_* @trufae
-librz/bin/ @ret2libc @trufae
+librz/asm/p/arm_* @wargio
+librz/bin/ @ret2libc @wargio
 librz/bin/format/elf/ @ret2libc @kazarmy
-librz/bin/format/mach0/ @trufae
-librz/bin/format/objc/ @trufae
+librz/bin/format/mach0/ @wargio
+librz/bin/format/objc/ @wargio
 librz/bin/format/wasm/ @wargio
-librz/config/ @trufae @ret2libc
-librz/cons/ @thestr4ng3r @trufae
-librz/core/cmd.c @ret2libc @trufae 
-librz/debug/ @yossizap @trufae
-librz/egg/ @trufae
-librz/flag/ @ret2libc @trufae
-librz/fs/ @trufae
-librz/io/ @condret @trufae @ret2libc
-librz/lang/ @thestr4ng3r @trufae @ret2libc
-librz/magic/ @trufae
-librz/parse/ @ret2libc @trufae
-librz/reg/ @XVilka @trufae
+librz/config/ @wargio @ret2libc
+librz/cons/ @thestr4ng3r @wargio
+librz/core/cmd.c @ret2libc @wargio 
+librz/debug/ @yossizap @wargio
+librz/egg/ @wargio
+librz/flag/ @ret2libc @wargio
+librz/fs/ @wargio
+librz/io/ @wargio @ret2libc
+librz/lang/ @thestr4ng3r @wargio @ret2libc
+librz/magic/ @wargio
+librz/parse/ @ret2libc @wargio
+librz/reg/ @XVilka @wargio
 librz/socket/ @XVilka @yossizap
-librz/syscall/ @ret2libc @trufae
+librz/syscall/ @ret2libc @wargio
 librz/util/ @ret2libc @thestr4ng3r
 shlr/gdb/ @yossizap
 shlr/ptrace-wrap/ @thestr4ng3r
 shlr/rizin-shell-parser/ @ret2libc
-shlr/tcc/ @XVilka @trufae
+shlr/tcc/ @XVilka @wargio
 shlr/w32dbg_wrap/ @yossizap
 shlr/winkd/ @yossizap
-doc/fortunes.nsfw @thestr4ng3r

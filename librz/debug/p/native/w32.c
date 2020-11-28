@@ -21,16 +21,16 @@ static bool w32dbg_SeDebugPrivilege(void) {
 	tokenPriv.PrivilegeCount = 1;
 	tokenPriv.Privileges[0].Luid = luidDebug;
 	tokenPriv.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-	if (AdjustTokenPrivileges (hToken, FALSE, &tokenPriv, 0, NULL, NULL) != FALSE) {
-		if (tokenPriv.Privileges[0].Attributes == SE_PRIVILEGE_ENABLED) {
-		//	eprintf ("PRIV ENABLED\n");
-		}
-		// Always successful, even in the cases which lead to OpenProcess failure
-		//	eprintf ("Successfully changed token privileges.\n");
-		// XXX if we cant get the token nobody tells?? wtf
-	} else {
+	if (AdjustTokenPrivileges (hToken, FALSE, &tokenPriv, 0, NULL, NULL) == FALSE) {
 		eprintf ("Failed to change token privileges 0x%x\n", (int)GetLastError());
 		ret = false;
+		//} else {
+		//if (tokenPriv.Privileges[0].Attributes == SE_PRIVILEGE_ENABLED) {
+		//	eprintf ("PRIV ENABLED\n");
+		//}
+		// Always successful, even in the cases which lead to OpenProcess failure
+		//	eprintf ("Successfully changed token privileges.\n");
+		// XXX if we can't get the token nobody tells?
 	}
 	CloseHandle (hToken);
 	return ret;

@@ -9,12 +9,12 @@
 #define IMM5(instr) REG1((instr))
 #define COND(instr) (((instr) >> 9) & 0xF)
 
-#define SEXT5(imm) (((imm) & 0x10) ? (imm) | 0xE0 : (imm))
-#define SEXT9(imm) (((imm) & 0x100) ? (imm) | 0xFFFFFE00 : (imm))
-#define SEXT26(imm) (((imm) & 0x2000000) ? (imm) | 0xFC000000 : (imm))
+#define SIGN_EXT_T5(imm) (((imm) & 0x10) ? (imm) | 0xE0 : (imm))
+#define SIGN_EXT_T9(imm) (((imm) & 0x100) ? (imm) | 0xFFFFFE00 : (imm))
+#define SIGN_EXT_T26(imm) (((imm) & 0x2000000) ? (imm) | 0xFC000000 : (imm))
 
-#define DISP9(word1) SEXT9((word1) & 0x1FE)
-#define DISP26(word1, word2) SEXT26((((word1) & 0x3FF) << 16) | (word2))
+#define DISP9(word1) SIGN_EXT_T9((word1) & 0x1FE)
+#define DISP26(word1, word2) SIGN_EXT_T26((((word1) & 0x3FF) << 16) | (word2))
 
 enum v810_cmd_opcodes {
 	V810_MOV		= 0x0,

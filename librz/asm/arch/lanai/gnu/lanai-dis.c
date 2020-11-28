@@ -237,16 +237,16 @@ print_insn_lanai (memaddr, info)
 		    (*info->fprintf_func) (stream, "***ERROR***");
 			break;
 		  case 'o':
-		    imm = SEX (X_C16(insn), 16);
+		    imm = SIGN_EXT (X_C16(insn), 16);
 		    if (X_RS1 (insn) == 0) {
 			    goto print_address;
 		    }
 		    goto print_immediate;
 		  case 's':
-		    imm = SEX (X_C16(insn), 16);
+		    imm = SIGN_EXT (X_C16(insn), 16);
 		    goto print_immediate;
 		  case 'i':
-		    imm = SEX (X_C10(insn), 10);
+		    imm = SIGN_EXT (X_C10(insn), 10);
 		    if (X_RS1 (insn) == 0) {
 			    goto print_address;
 		    }
@@ -261,7 +261,7 @@ print_insn_lanai (memaddr, info)
 		    imm = X_C25(insn);
 		    goto print_address;
 		  case 'b':
-		    imm = SEX (X_C25(insn), 25);
+		    imm = SIGN_EXT (X_C25(insn), 25);
 		    goto print_address;
 
 		  print_immediate:

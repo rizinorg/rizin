@@ -346,7 +346,7 @@ RZ_API bool rz_io_write_at(RzIO* io, ut64 addr, const ut8* buf, int len) {
 	if (io->write_mask) {
 		mybuf = rz_mem_dup ((void*)buf, len);
 		for (i = 0; i < len; i++) {
-			//this sucks
+			//TODO: this needs some love because it is not optimal.
 			mybuf[i] &= io->write_mask[i % io->write_mask_len];
 		}
 	}

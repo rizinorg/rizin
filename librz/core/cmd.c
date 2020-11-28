@@ -1837,7 +1837,6 @@ static void cmd_autocomplete(RzCore *core, const char *input) {
 			break;
 		}
 		if ((end - input) >= sizeof (arg)) {
-			// wtf?
 			eprintf ("Exceeded the max arg length (255).\n");
 			return;
 		}

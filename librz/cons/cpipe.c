@@ -3,7 +3,7 @@
 #include <rz_cons.h>
 #include <limits.h>
 
-// TODO: kill globals, and make this stackable
+// TODO: remove globals, and make this stackable
 // cons_pipe should be using a stack pipe_push, pipe_pop
 static int backup_fd = -1;
 static int backup_fdn = 1;

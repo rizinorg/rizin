@@ -11,7 +11,7 @@ static int label_off(struct directive *d) {
 	int off = d->d_operand;
 	int lame = off & 0x80;
 
-	if (!d->d_prefix) { // WTF
+	if (!d->d_prefix) {
 		off = (char) (off & 0xff);
 	} else if (d->d_prefix == 1) {
 		off = (short) (off & 0xffff);

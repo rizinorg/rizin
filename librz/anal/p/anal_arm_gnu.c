@@ -205,7 +205,7 @@ static int arm_op32(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 		case 5:
 			if ((b[3] & 0xf) == 5) {
 				op->ptr = 8 + addr + b[0] + ((b[1] & 0xf) << 8);
-				// XXX: if set it breaks the visual disasm wtf
+				// XXX: if set it breaks the visual disasm
 				// op->refptr = true;
 			}
 		case 4:

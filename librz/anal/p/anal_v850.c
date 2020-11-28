@@ -255,7 +255,7 @@ static int v850_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int le
 		op->fail = addr + 4;
 		rz_strbuf_appendf (&op->esil, "pc,%s,=,pc,%u,+=", F5_RN2(word1), F5_DISP(((ut32)word2 << 16) | word1));
 		break;
-#if 0 // WTF - same opcode as JARL?
+#if 0 // same opcode as JARL?
 	case V850_JR:
 		jumpdisp = DISP26(word1, word2);
 		op->type = RZ_ANAL_OP_TYPE_JMP;
@@ -310,7 +310,7 @@ static int v850_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int le
 		break;
 	case V850_CMP_IMM5:
 		op->type = RZ_ANAL_OP_TYPE_CMP;
-		rz_strbuf_appendf (&op->esil, "%d,%s,==", (st8)SEXT5(F2_IMM(word1)), F2_RN2(word1));
+		rz_strbuf_appendf (&op->esil, "%d,%s,==", (st8)SIGN_EXT_T5(F2_IMM(word1)), F2_RN2(word1));
 		update_flags (op, -1);
 		break;
 	case V850_TST:
@@ -341,7 +341,7 @@ static int v850_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int le
 			op->stackptr = F2_IMM (word1);
 			op->val = op->stackptr;
 		}
-		rz_strbuf_appendf (&op->esil, "%d,%s,+=", (st8)SEXT5(F2_IMM (word1)), F2_RN2 (word1));
+		rz_strbuf_appendf (&op->esil, "%d,%s,+=", (st8)SIGN_EXT_T5(F2_IMM (word1)), F2_RN2 (word1));
 		update_flags (op, -1);
 		break;
 	case V850_ADDI:

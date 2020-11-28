@@ -387,10 +387,6 @@ static int internal_esil_reg_write(RzAnalEsil *esil, const char *regname, ut64 n
 	return false;
 }
 
-//WTF IS THIS!!!
-//Are you really trying to prevent the analyzed binary from doing anything that would cause it to segfault irl?
-//WHY?
-//	- condret
 static int internal_esil_reg_write_no_null (RzAnalEsil *esil, const char *regname, ut64 num) {
 	rz_return_val_if_fail (esil && esil->anal && esil->anal->reg, false);
 
@@ -600,9 +596,6 @@ static bool esil_cf(RzAnalEsil *esil) {
 	}
 
 	if (rz_anal_esil_get_parm_type (esil, src) != RZ_ANAL_ESIL_PARM_NUM) {
-		//I'd wish we could enforce consts here
-		//I can't say why, but I feel like "al,$c" would be cancer af
-		//	- condret
 		free (src);
 		return false;
 	}
@@ -720,20 +713,13 @@ static bool esil_js(RzAnalEsil *esil) {
 	return rz_anal_esil_pushnum (esil, esil->jump_target_set);
 }
 
-//regsize
-//can we please deprecate this, it's neither accurate, nor needed
-//plugins should know regsize, and since this is a const even users should know this: ?´e anal.bits´/8
-//	- condret
-// YES PLS KILL IT
+// TODO: this should be deprecated because it is not accurate
 static bool esil_rs(RzAnalEsil *esil) {
 	rz_return_val_if_fail (esil && esil->anal, false);
 	return rz_anal_esil_pushnum (esil, esil->anal->bits >> 3);
 }
 
-//can we please deprecate this, plugins should know their current address
-//even if they don't know it, $$ should be equal to PC register at the begin of each expression
-//	- condret
-// YES PLS KILL IT
+// TODO: this should be deprecated because plugins should know their current address
 static bool esil_address(RzAnalEsil *esil) {
 	rz_return_val_if_fail (esil, false);
 	return rz_anal_esil_pushnum (esil, esil->address);

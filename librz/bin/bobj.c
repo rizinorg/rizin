@@ -140,7 +140,7 @@ RZ_IPI RzBinObject *rz_bin_object_new(RzBinFile *bf, RzBinPlugin *plugin, ut64 b
 	o->boffset = offset;
 	o->strings_db = ht_up_new0 ();
 	o->regstate = NULL;
-	o->kv = sdb_new0 (); // XXX bf->sdb bf->o->sdb wtf
+	o->kv = sdb_new0 (); // XXX bf->sdb bf->o->sdb
 	o->baddr = baseaddr;
 	o->classes = rz_list_newf ((RzListFree)rz_bin_class_free);
 	o->classes_ht = ht_pp_new0 ();
@@ -479,7 +479,6 @@ RZ_API bool rz_bin_object_delete(RzBin *bin, ut32 bf_id) {
 		if (bin->cur == bf) {
 			bin->cur = NULL;
 		}
-		// wtf
 		if (!bf->o) {
 			rz_list_delete_data (bin->binfiles, bf);
 		}

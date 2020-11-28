@@ -104,7 +104,7 @@ RZ_API RzSocketHTTPRequest *rz_socket_http_accept (RzSocket *s, RzSocketHTTPOpti
 		}
 	}
 	if (content_length>0) {
-		rz_socket_read_block (hr->s, (ut8*)buf, 1); // one missing byte wtf
+		rz_socket_read_block (hr->s, (ut8*)buf, 1); // one missing byte
 		if (ST32_ADD_OVFCHK (content_length, 1)) {
 			rz_socket_http_close (hr);
 			eprintf ("Could not allocate hr data\n");

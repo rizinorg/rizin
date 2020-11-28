@@ -4512,7 +4512,7 @@ struct aarch64_opcode aarch64_opcode_table[] =
       "a 16-bit unsigned immediate")					\
     Y(IMMEDIATE, imm, "CCMP_IMM", 0, F(FLD_imm5),			\
       "a 5-bit unsigned immediate")					\
-    Y(IMMEDIATE, imm, "SIMM5", OPD_F_SEXT, F(FLD_imm5),			\
+    Y(IMMEDIATE, imm, "SIMM5", OPD_F_SIGN_EXT_T, F(FLD_imm5),			\
       "a 5-bit signed immediate")					\
     Y(IMMEDIATE, imm, "NZCV", 0, F(FLD_nzcv),				\
       "a flag bit specifier giving an alternative value for each flag")	\
@@ -4534,15 +4534,15 @@ struct aarch64_opcode aarch64_opcode_table[] =
     Y(COND, cond, "COND", 0, F(), "a condition")			\
     Y(COND, cond, "COND1", 0, F(),					\
       "one of the standard conditions, excluding AL and NV.")		\
-    X(ADDRESS, 0, ext_imm, "ADDR_ADRP", OPD_F_SEXT, F(FLD_immhi, FLD_immlo),\
+    X(ADDRESS, 0, ext_imm, "ADDR_ADRP", OPD_F_SIGN_EXT_T, F(FLD_immhi, FLD_immlo),\
       "21-bit PC-relative address of a 4KB page")			\
-    Y(ADDRESS, imm, "ADDR_PCREL14", OPD_F_SEXT | OPD_F_SHIFT_BY_2,	\
+    Y(ADDRESS, imm, "ADDR_PCREL14", OPD_F_SIGN_EXT_T | OPD_F_SHIFT_BY_2,	\
       F(FLD_imm14), "14-bit PC-relative address")			\
-    Y(ADDRESS, imm, "ADDR_PCREL19", OPD_F_SEXT | OPD_F_SHIFT_BY_2,	\
+    Y(ADDRESS, imm, "ADDR_PCREL19", OPD_F_SIGN_EXT_T | OPD_F_SHIFT_BY_2,	\
       F(FLD_imm19), "19-bit PC-relative address")			\
-    Y(ADDRESS, imm, "ADDR_PCREL21", OPD_F_SEXT, F(FLD_immhi,FLD_immlo),	\
+    Y(ADDRESS, imm, "ADDR_PCREL21", OPD_F_SIGN_EXT_T, F(FLD_immhi,FLD_immlo),	\
       "21-bit PC-relative address")					\
-    Y(ADDRESS, imm, "ADDR_PCREL26", OPD_F_SEXT | OPD_F_SHIFT_BY_2,	\
+    Y(ADDRESS, imm, "ADDR_PCREL26", OPD_F_SIGN_EXT_T | OPD_F_SHIFT_BY_2,	\
       F(FLD_imm26), "26-bit PC-relative address")			\
     Y(ADDRESS, addr_simple, "ADDR_SIMPLE", 0, F(),			\
       "an address with base register (no offset)")			\
@@ -4752,13 +4752,13 @@ struct aarch64_opcode aarch64_opcode_table[] =
       F(FLD_SVE_tszh,FLD_SVE_imm5), "a shift-right immediate operand")	\
     Y(IMMEDIATE, sve_shrimm, "SVE_SHRIMM_UNPRED", 0,			\
       F(FLD_SVE_tszh,FLD_imm5), "a shift-right immediate operand")	\
-    Y(IMMEDIATE, imm, "SVE_SIMM5", OPD_F_SEXT, F(FLD_SVE_imm5),		\
+    Y(IMMEDIATE, imm, "SVE_SIMM5", OPD_F_SIGN_EXT_T, F(FLD_SVE_imm5),		\
       "a 5-bit signed immediate")					\
-    Y(IMMEDIATE, imm, "SVE_SIMM5B", OPD_F_SEXT, F(FLD_SVE_imm5b),	\
+    Y(IMMEDIATE, imm, "SVE_SIMM5B", OPD_F_SIGN_EXT_T, F(FLD_SVE_imm5b),	\
       "a 5-bit signed immediate")					\
-    Y(IMMEDIATE, imm, "SVE_SIMM6", OPD_F_SEXT, F(FLD_SVE_imms),		\
+    Y(IMMEDIATE, imm, "SVE_SIMM6", OPD_F_SIGN_EXT_T, F(FLD_SVE_imms),		\
       "a 6-bit signed immediate")					\
-    Y(IMMEDIATE, imm, "SVE_SIMM8", OPD_F_SEXT, F(FLD_SVE_imm8),		\
+    Y(IMMEDIATE, imm, "SVE_SIMM8", OPD_F_SIGN_EXT_T, F(FLD_SVE_imm8),		\
       "an 8-bit signed immediate")					\
     Y(IMMEDIATE, imm, "SVE_UIMM3", 0, F(FLD_SVE_imm3),			\
       "a 3-bit unsigned immediate")					\

@@ -129,7 +129,7 @@ enum lh5801_insn_format {
 	LH5801_IFMT_RFULL = 0,
 	LH5801_IFMT_RLOW  = 1 << 10,
 	LH5801_IFMT_RHIGH = 2 << 10,
-	LH5801_IFMT_RMEM  = 3 << 10,		/* <-- kill this, see above */
+	LH5801_IFMT_RMEM  = 3 << 10,		/* <-- should be removed, see above */
 	LH5801_IFMT_RMODE_MASK = 3 << 10,
 };
 

@@ -1058,7 +1058,7 @@ static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 		case PPC_INS_BLRL:
 		case PPC_INS_BCLR:
 		case PPC_INS_BCLRL:
-			op->type = RZ_ANAL_OP_TYPE_CRET;		//I'm a condret
+			op->type = RZ_ANAL_OP_TYPE_CRET;
 			op->fail = addr + op->size;
 			switch (insn->detail->ppc.bc) {
 			case PPC_BC_INVALID:

@@ -405,7 +405,7 @@ RZ_API int rz_cons_any_key(const char *msg) {
 	}
 	rz_cons_flush ();
 	return rz_cons_readchar ();
-	//rz_cons_strcat ("\x1b[2J\x1b[0;0H"); // wtf?
+	//rz_cons_strcat ("\x1b[2J\x1b[0;0H");
 }
 
 extern void resizeWin(void);

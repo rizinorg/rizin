@@ -650,7 +650,8 @@ static void cmd_open_map(RzCore *core, const char *input) {
 			switch (words) {
 			case 6:
 				name = rz_str_word_get0 (s, 5);
-			case 5:			//this sucks
+			case 5:
+				//TODO: this needs some love because it is not optimal.
 				rwx = rz_str_rwx (rz_str_word_get0 (s, 4));
 				rwx_arg = true;
 			case 4:
@@ -1824,7 +1825,7 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 				eprintf ("This command can only be executed on the main task!\n");
 				return 0;
 			}
-			// memleak? lose all settings wtf
+			// memleak? loses all settings
 			// if load fails does not fallbacks to previous file
 			rz_core_task_sync_end (&core->tasks);
 			rz_core_fini (core);

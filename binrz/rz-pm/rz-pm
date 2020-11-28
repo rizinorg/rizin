@@ -154,7 +154,7 @@ countDown() {
 	echo 'Go!'
 }
 
-commitSuicide() {
+purgeSystem() {
 	confirm "Do you wanna purge rizin completely from your system and home?"
 	if [ $? != 0 ]; then
 		echo "Aborted." > /dev/stderr
@@ -706,8 +706,8 @@ cache)
 	fi
 	eval echo "\$$2"
 	;;
-suicide)
-	commitSuicide
+purge)
+	purgeSystem
 	;;
 -d|doc|--doc)
 	rz-pm_doc "$2"
@@ -736,7 +736,7 @@ Commands:
  init | update ..            initialize/update database
  cd [git/dir]                cd into given git (see 'rz-pm ls')
  ls                          ls all cloned git repos in GITDIR
- suicide                     self remove all (home + system) installations of rizin
+ purge                       self remove all (home + system) installations of rizin
  cache                       cache contents of rizin -H to make rz-pm rizin-independent
 Environment:
  SUDO=sudo                    use this tool as sudo

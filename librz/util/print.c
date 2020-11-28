@@ -519,7 +519,7 @@ RZ_API char* rz_print_hexpair(RzPrint *p, const char *str, int n) {
 	const char *color_text = "";
 	const char *color_other = "";
 	int bs = p->bytespace;
-	/* XXX That's hacky as shit.. but partially works O:) */
+	/* XXX That is hacky but it partially works */
 	/* TODO: Use rz_print_set_cursor for win support */
 	int cur = RZ_MIN (p->cur, p->ocur);
 	int ocur = RZ_MAX (p->cur, p->ocur);
@@ -1651,7 +1651,7 @@ RZ_API void rz_print_zoom_buf(RzPrint *p, void *user, RzPrintZoomCallback cb, ut
 			return;
 		}
 
-		// TODO: memoize blocks or gtfo
+		// TODO: memoize blocks
 		for (i = 0; i < len; i++) {
 			if (p->cons->context->breaked) {
 				break;

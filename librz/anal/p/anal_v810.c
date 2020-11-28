@@ -82,7 +82,7 @@ static int v810_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case V810_MOV_IMM5:
 		op->type = RZ_ANAL_OP_TYPE_MOV;
 		rz_strbuf_appendf (&op->esil, "%d,r%u,=",
-						  (st8)SEXT5(IMM5(word1)), REG2(word1));
+						  (st8)SIGN_EXT_T5(IMM5(word1)), REG2(word1));
 		break;
 	case V810_MOVHI:
 		op->type = RZ_ANAL_OP_TYPE_MOV;
@@ -183,7 +183,7 @@ static int v810_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case V810_CMP_IMM5:
 		op->type = RZ_ANAL_OP_TYPE_CMP;
 		rz_strbuf_appendf (&op->esil, "%d,r%u,==",
-						  (st8)SEXT5(IMM5(word1)), REG2(word1));
+						  (st8)SIGN_EXT_T5(IMM5(word1)), REG2(word1));
 		update_flags (op, -1);
 		break;
 	case V810_SUB:
@@ -207,7 +207,7 @@ static int v810_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int le
 	case V810_ADD_IMM5:
 		op->type = RZ_ANAL_OP_TYPE_ADD;
 		rz_strbuf_appendf (&op->esil, "%d,r%u,+=",
-						  (st8)SEXT5(IMM5(word1)), REG2(word1));
+						  (st8)SIGN_EXT_T5(IMM5(word1)), REG2(word1));
 		update_flags(op, -1);
 		break;
 	case V810_SHR:

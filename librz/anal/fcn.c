@@ -842,7 +842,7 @@ repeat:
 			break;
 		}
 		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
-			// swapped parameters wtf
+			// swapped parameters
 			rz_anal_xrefs_set (anal, op.addr, op.ptr, RZ_ANAL_REF_TYPE_DATA);
 		}
 		analyze_retpoline (anal, &op);

@@ -112,7 +112,7 @@ static void emit_load_ptr(RzEgg *egg, const char *dst) {
 }
 
 static void emit_branch(RzEgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst) {
-	// This function signature is crap
+	// This function signature is bad
 	char *p, str[64];
 	char *arg = NULL;
 	char *op = "beq";

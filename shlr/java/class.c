@@ -3840,7 +3840,6 @@ RZ_API RzBinJavaAttrInfo *rz_bin_java_line_number_table_attr_new(RzBinJavaObj *b
 		if (!lnattr) {
 			break;
 		}
-		// wtf it works
 		if (offset - 2 > sz) {
 			RZ_FREE (lnattr);
 			break;

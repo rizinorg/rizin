@@ -2,7 +2,7 @@
  * This code was done 
  *    by an anonymous gnome
  * ------------------------
- * That's pure mathematics, so no sense to adding license shit here.
+ * That's pure mathematics, so no sense to adding a license here.
  */
 
 #include <stdlib.h>

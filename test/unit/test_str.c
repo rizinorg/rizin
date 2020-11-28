@@ -13,12 +13,13 @@ bool test_rz_str_replace_char_once(void) {
 
 bool test_rz_str_replace(void) {
 	// infinite loop test
-	char *str = rz_str_replace (strdup ("hello world"), "hell", "ihell", 0);
-	mu_assert_streq (str, "ihello world", "error, replace char multi failed");
+	char *str;
+	str = rz_str_replace (strdup ("hello world"), "hello", "bell", 0);
+	mu_assert_streq (str, "bell world", "error, replace char multi failed");
 	free (str);
 
-	str = rz_str_replace (strdup ("hello world"), "hell", "ihell", 1);
-	mu_assert_streq (str, "ihello world", "error, replace char multi failed");
+	str = rz_str_replace (strdup ("hello world"), "hello", "bell", 1);
+	mu_assert_streq (str, "bell world", "error, replace char multi failed");
 	free (str);
 
 	str = rz_str_replace (strdup ("hello world"), "hello", "", 1);
@@ -144,7 +145,7 @@ bool test_rz_str_case(void) {
 }
 
 //TODO test rz_str_hash64, rz_str_hash
-//TODO test rz_str_delta (WTF!)
+//TODO test rz_str_delta (WHAT!)
 
 bool test_rz_str_split(void) {
 	char* hi = strdup ("hello world");
@@ -173,7 +174,7 @@ bool test_rz_str_tokenize(void) {
 }
 
 bool test_rz_str_char_count(void) {
-	mu_assert_eq (rz_str_char_count ("poop", 'p'), 2, "number of p in poop");
+	mu_assert_eq (rz_str_char_count ("papaya", 'p'), 2, "number of p in papaya");
 	mu_end;
 }
 
@@ -394,7 +395,7 @@ bool test_rz_str_constpool(void) {
 	free (a_ref_cpy);
 	mu_assert_ptreq (a_pooled2, a_pooled, "same on re-get with different ptr");
 
-	const char *b_ref = "damnation";
+	const char *b_ref = "foonation";
 	const char *b_pooled = rz_str_constpool_get (&pool, b_ref);
 	mu_assert_ptrneq (b_pooled, b_ref, "pooled != ref (second)");
 	mu_assert_streq (b_pooled, b_ref, "pooled == ref (strcmp, second)");

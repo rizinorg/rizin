@@ -121,7 +121,7 @@ RZ_API int rz_search_xrefs_update(RzSearch *s, ut64 from, const ut8 *buf, int le
 RZ_API int rz_search_hit_new(RzSearch *s, RzSearchKeyword *kw, ut64 addr);
 RZ_API void rz_search_set_distance(RzSearch *s, int dist);
 RZ_API int rz_search_strings(RzSearch *s, ut32 min, ut32 max);
-RZ_API int rz_search_set_string_limits(RzSearch *s, ut32 min, ut32 max); // WTF dupped?
+RZ_API int rz_search_set_string_limits(RzSearch *s, ut32 min, ut32 max); // dup again?
 //RZ_API int rz_search_set_callback(RzSearch *s, int (*callback)(struct rz_search_kw_t *, void *, ut64), void *user);
 RZ_API void rz_search_set_callback(RzSearch *s, RzSearchCallback(callback), void *user);
 RZ_API int rz_search_begin(RzSearch *s);

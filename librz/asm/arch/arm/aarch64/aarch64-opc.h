@@ -188,7 +188,7 @@ extern const aarch64_operand aarch64_operands[];
 
 #define OPD_F_HAS_INSERTER	0x00000001
 #define OPD_F_HAS_EXTRACTOR	0x00000002
-#define OPD_F_SEXT		0x00000004	/* Require sign-extension.  */
+#define OPD_F_SIGN_EXT_T		0x00000004	/* Require sign-extension.  */
 #define OPD_F_SHIFT_BY_2	0x00000008	/* Need to left shift the field
 						   value by 2 to get the value
 						   of an immediate operand.  */
@@ -232,7 +232,7 @@ operand_has_extractor (const aarch64_operand *operand)
 static inline bfd_boolean
 operand_need_sign_extension (const aarch64_operand *operand)
 {
-  return (operand->flags & OPD_F_SEXT) ? TRUE : FALSE;
+  return (operand->flags & OPD_F_SIGN_EXT_T) ? TRUE : FALSE;
 }
 
 static inline bfd_boolean

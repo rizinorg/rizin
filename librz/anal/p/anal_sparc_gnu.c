@@ -150,7 +150,7 @@ static int fcc_to_r_cond(const int cond) {
 #define X_ASI(i)     (((i) >> 5) & 0xff)
 #define X_RS2(i)     (((i) >> 0) & 0x1f)
 #define X_IMM(i,n)   (((i) >> 0) & ((1 << (n)) - 1))
-#define X_SIMM(i,n)  SEX (X_IMM ((i), (n)), (n))
+#define X_SIMM(i,n)  SIGN_EXT (X_IMM ((i), (n)), (n))
 #define X_DISP22(i)  (((i) >> 0) & 0x3fffff)
 #define X_IMM22(i)   X_DISP22 (i)
 #define X_DISP30(i)  (((i) >> 0) & 0x3fffffff)

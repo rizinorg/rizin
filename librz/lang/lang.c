@@ -231,7 +231,7 @@ RZ_API int rz_lang_run_file(RzLang *lang, const char *file) {
 	return ret;
 }
 
-/* TODO: deprecate or make it more modular .. reading from stdin in a lib?!? wtf */
+/* TODO: deprecate or make it more modular .. reading from stdin in a lib! */
 RZ_API int rz_lang_prompt(RzLang *lang) {
 	char buf[1024];
 	const char *p;
