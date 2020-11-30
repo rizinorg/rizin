@@ -439,7 +439,7 @@ NAME=wz esc seqs
 FILE=-
 CMDS=<<EOF
 e str.escbslash=true
-wz \a\b\t\n\v\f\r\e\\\x40\7\15\176
+wz \a\b\t\n\v\f\r\e\\\\\x40\7\15\176
 izz~0x0
 px 16~0x0
 EOF
