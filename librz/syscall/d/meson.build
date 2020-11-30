@@ -22,38 +22,12 @@ sdb_files = [
   'windows-x86-64',
 ]
 
-sdb_pre_script = '''#script
-import re
-import sys
-inf = open(sys.argv[1])
-outf = open(sys.argv[2], 'w')
-for line in inf:
-    if not line.startswith('_') and '=' in line:
-        arr = re.split('=|,', line)
-        print('%s.%s=%s' % (arr[1], arr[2], arr[0]), file=outf)
-    print(line, file=outf, end='')
-inf.close()
-outf.close()
-'''
-
-sdb_pre_cmd = [
-  py3_exe,
-  '-c',
-  sdb_pre_script,
-  '@INPUT@',
-  '@OUTPUT@'
-]
-
 foreach file : sdb_files
-  infile = '@0@.sdb.txt'.format(file)
-  if host_machine.system() == 'windows'
-    infile = run_command(sdb_readlink_cmd + [join_paths(meson.current_source_dir(), infile)]).stdout().strip()
-  endif
   tmp_outfile = '@0@.sdb.txt.tmp'.format(file)
   pre_sdb_txt = custom_target(tmp_outfile,
-    input: infile,
+    input: '@0@.sdb.txt'.format(file),
     output: tmp_outfile,
-    command: sdb_pre_cmd,
+    command: [py3_exe, syscall_preprocessing_py, '@INPUT@', '@OUTPUT@'],
     build_by_default: true,
     install: false
   )
