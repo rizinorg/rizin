@@ -3,6 +3,7 @@
 #include <rz_search.h>
 #include <rz_list.h>
 #include <ctype.h>
+#include "search_priv.h"
 
 // Experimental search engine (fails, because stops at first hit of every block read
 #define USE_BMH 0
@@ -15,7 +16,7 @@ typedef struct {
 	ut8 data[];
 } RzSearchLeftover;
 
-RZ_API RzSearch *rz_search_new(int mode) {
+RZ_API RzSearch *rz_search_new(RzSearchMode mode) {
 	RzSearch *s = RZ_NEW0 (RzSearch);
 	if (!s) {
 		return NULL;
@@ -33,7 +34,6 @@ RZ_API RzSearch *rz_search_new(int mode) {
 	s->distance = 0;
 	s->contiguous = 0;
 	s->overlap = false;
-	s->pattern_size = 0;
 	s->string_max = 255;
 	s->string_min = 3;
 	s->hits = rz_list_newf (free);
@@ -69,12 +69,12 @@ RZ_API int rz_search_set_string_limits(RzSearch *s, ut32 min, ut32 max) {
 	return true;
 }
 
-RZ_API int rz_search_magic_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
+RZ_IPI int rz_search_magic_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
 	eprintf ("TODO: import librz/core/cmd_search.c /m implementation into rsearch\n");
 	return false;
 }
 
-RZ_API int rz_search_set_mode(RzSearch *s, int mode) {
+RZ_API int rz_search_set_mode(RzSearch *s, RzSearchMode mode) {
 	s->update = NULL;
 	switch (mode) {
 	case RZ_SEARCH_KEYWORD: s->update = rz_search_mybinparse_update; break;
@@ -84,12 +84,15 @@ RZ_API int rz_search_set_mode(RzSearch *s, int mode) {
 	case RZ_SEARCH_STRING: s->update = rz_search_strings_update; break;
 	case RZ_SEARCH_DELTAKEY: s->update = rz_search_deltakey_update; break;
 	case RZ_SEARCH_MAGIC: s->update = rz_search_magic_update; break;
+	case RZ_SEARCH_ESIL:
+		rz_warn_if_reached ();
+		break;
 	}
-	if (s->update || mode == RZ_SEARCH_PATTERN) {
-		s->mode = mode;
-		return true;
+	if (!s->update) {
+		return false;
 	}
-	return false;
+	s->mode = mode;
+	return true;
 }
 
 RZ_API int rz_search_begin(RzSearch *s) {
@@ -139,7 +142,7 @@ RZ_API int rz_search_hit_new(RzSearch *s, RzSearchKeyword *kw, ut64 addr) {
 
 // TODO support search across block boundaries
 // Supported search variants: backward, overlap
-RZ_API int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
+RZ_IPI int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
 	RzListIter *iter;
 	int longest = 0, i, j;
 	RzSearchKeyword *kw;
@@ -356,7 +359,7 @@ static bool brute_force_match(RzSearch *s, RzSearchKeyword *kw, const ut8 *buf, 
 }
 
 // Supported search variants: backward, binmask, icase, inverse, overlap
-RZ_API int rz_search_mybinparse_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
+RZ_IPI int rz_search_mybinparse_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
 	RzSearchKeyword *kw;
 	RzListIter *iter;
 	RzSearchLeftover *left;
@@ -455,11 +458,6 @@ RZ_API void rz_search_set_distance(RzSearch *s, int dist) {
 	} else {
 		s->distance = (dist>0)?dist:0;
 	}
-}
-
-// deprecate? or standarize with ->align ??
-RZ_API void rz_search_pattern_size(RzSearch *s, int size) {
-	s->pattern_size = size;
 }
 
 RZ_API void rz_search_set_callback(RzSearch *s, RzSearchCallback(callback), void *user) {

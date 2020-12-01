@@ -2545,55 +2545,6 @@ static void rop_kuery(void *data, const char *input) {
 	}
 }
 
-static int memcmpdiff(const ut8 *a, const ut8 *b, int len) {
-	int i, diff = 0;
-	for (i = 0; i < len; i++) {
-		if (a[i] == b[i] && a[i] == 0x00) {
-			/* ignore nulls */
-		} else if (a[i] != b[i]) {
-			diff++;
-		}
-	}
-	return diff;
-}
-
-static void search_similar_pattern_in(RzCore *core, int count, ut64 from, ut64 to) {
-	ut64 addr = from;
-	ut8 *block = calloc (core->blocksize, 1);
-	if (!block) {
-		return;
-	}
-	while (addr < to) {
-		(void) rz_io_read_at (core->io, addr, block, core->blocksize);
-		if (rz_cons_is_breaked ()) {
-			break;
-		}
-		int diff = memcmpdiff (core->block, block, core->blocksize);
-		int equal = core->blocksize - diff;
-		if (equal >= count) {
-			int pc = (equal * 100) / core->blocksize;
-			rz_cons_printf ("0x%08"PFMT64x " %4d/%d %3d%%  ", addr, equal, core->blocksize, pc);
-			ut8 ptr[2] = {
-				(ut8)(pc * 2.5), 0
-			};
-			rz_print_fill (core->print, ptr, 1, UT64_MAX, core->blocksize);
-		}
-		addr += core->blocksize;
-	}
-	free (block);
-}
-
-static void search_similar_pattern(RzCore *core, int count, struct search_parameters *param) {
-	RzIOMap *p;
-	RzListIter *iter;
-
-	rz_cons_break_push (NULL, NULL);
-	rz_list_foreach (param->boundaries, iter, p) {
-		search_similar_pattern_in (core, count, p->itv.addr, rz_itv_end (p->itv));
-	}
-	rz_cons_break_pop ();
-}
-
 static bool isArm(RzCore *core) {
 	RzAsm *as = core ? core->rasm : NULL;
 	if (as && as->cur && as->cur->arch) {
@@ -3408,29 +3359,6 @@ reread:
 			eprintf ("Usage: /m [file]\n");
 		}
 		rz_cons_clear_line (1);
-		break;
-	case 'p': // "/p"
-	{
-		if (input[param_offset - 1]) {
-			int ps = atoi (input + param_offset);
-			if (ps > 1) {
-				RzListIter *iter;
-				RzIOMap *map;
-				rz_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- %llx %llx\n", map->itv.addr, rz_itv_end (map->itv));
-					rz_cons_break_push (NULL, NULL);
-					rz_search_pattern_size (core->search, ps);
-					rz_search_pattern (core->search, map->itv.addr, rz_itv_end (map->itv));
-					rz_cons_break_pop ();
-				}
-				break;
-			}
-		}
-		eprintf ("Invalid pattern size (must be > 0)\n");
-	}
-	break;
-	case 'P': // "/P"
-		search_similar_pattern (core, atoi (input + 1), &param);
 		break;
 	case 'V': // "/V"
 		{

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_search.h"
+#include <rz_search.h>
+#include "search_priv.h"
 
 // TODO: this file needs some love
 enum {
@@ -58,7 +59,7 @@ static bool is_encoded(int encoding, unsigned char c) {
 	return false;
 }
 
-RZ_API int rz_search_strings_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
+RZ_IPI int rz_search_strings_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
 	int i = 0;
 	int widechar = 0;
 	int matches = 0;

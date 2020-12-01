@@ -245,6 +245,68 @@
   cname: cmd_search
   summary: Search for bytes, regexps, patterns, ..
   type: RZ_CMD_DESC_TYPE_OLDINPUT
+
+# - name: /
+#   summary: Search for bytes, regexps, patterns, ..
+#   subcommands:
+#     - name: "/"
+#       cname: search_string
+#       summary: Search for <string>
+#       modes:
+#         - RZ_OUTPUT_MODE_STANDARD
+#         - RZ_OUTPUT_MODE_JSON
+#       args:
+#         - name: string
+#           type: RZ_CMD_ARG_TYPE_STRING_LAST
+#     - name: "/!"
+#       summary: Search for opposite
+#       subcommands:
+#         - name: "/!"
+#           cname: search_not_string
+#           summary: Search for first occurrence not matching <string>
+#           modes:
+#             - RZ_OUTPUT_MODE_STANDARD
+#             - RZ_OUTPUT_MODE_JSON
+#           args:
+#             - name: string
+#               type: RZ_CMD_ARG_TYPE_STRING_LAST
+#     - name: "/+"
+#       cname: search_chunks
+#       summary: Construct the string with chunks
+#       args:
+#         - name: string
+#           type: RZ_CMD_ARG_TYPE_STRING_LAST
+#     - name: "//"
+#       cname: search_repeat
+#       summary: Repeat last search
+#       args: []
+#     - name: "/a"
+#       cname: search_asm
+#       summary: Search for assembly instructions matching given properties
+#       type: RZ_CMD_DESC_TYPE_OLDINPUT
+    # - name: "/b"
+    # - name: "/c"
+    # - name: "/d"
+    # - name: "/e"
+    # - name: "/E"
+    # - name: "/f"
+    # - name: "/F"
+    # - name: "/g"
+    # - name: "/h"
+    # - name: "/i"
+    # - name: "/m"
+    # - name: "/o"
+    # - name: "/O"
+    # - name: "/p"
+    # - name: "/P"
+    # - name: "/s"
+    # - name: "/r"
+    # - name: "/R"
+    # - name: "/v"
+    # - name: "/V"
+    # - name: "/w"
+    # - name: "/x"
+    # - name: "/z"
 - name: "="
   summary: Connect with other instances of rizin
   subcommands:

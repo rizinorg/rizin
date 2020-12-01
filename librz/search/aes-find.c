@@ -11,6 +11,7 @@
 
 #include <rz_search.h>
 #include <rz_crypto/rz_aes.h>
+#include "search_priv.h"
 
 #define AES128_SEARCH_LENGTH 24
 #define AES192_SEARCH_LENGTH 32
@@ -55,7 +56,7 @@ static bool aes128_key_test(const unsigned char *buf) {
 	return word1 && word2;
 }
 
-RZ_API int rz_search_aes_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
+RZ_IPI int rz_search_aes_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
 	int i, t, last = len - AES128_SEARCH_LENGTH;
 	RzListIter *iter;
 	RzSearchKeyword *kw;

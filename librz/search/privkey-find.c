@@ -4,6 +4,7 @@
 // Integrated and refactored by jvoisin and spelissier
 
 #include <rz_search.h>
+#include "search_priv.h"
 
 /* The minimal length to perform a search is the sizes of
 the sequence tag, the minimal length of the sequence,
@@ -64,7 +65,7 @@ static int check_fields(const ut8 *start) {
 // Finds and return index of a private key:
 // As defined in RFC 3447 for RSA, as defined in RFC 5915 for 
 // elliptic curves and as defined in 7 of RFC 8410 for SafeCurves
-RZ_API int rz_search_privkey_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
+RZ_IPI int rz_search_privkey_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
 	int i, k, max, index, t;
 	RzListIter *iter;
 	RzSearchKeyword *kw;

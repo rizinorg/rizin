@@ -47,6 +47,7 @@ if get_option('enable_tests')
     'queue',
     'rz_test',
     'rbtree',
+    'search',
     'serialize_analysis',
     'serialize_config',
     'serialize_flag',

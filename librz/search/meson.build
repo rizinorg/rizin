@@ -1,6 +1,5 @@
 rz_search_sources = [
   'aes-find.c',
-  'bytepat.c',
   'keyword.c',
   'regexp.c',
   'privkey-find.c',
