@@ -180,14 +180,33 @@ FILE=-
 CMDS=<<EOF
 !rizin -escr.utf8=0 -escr.color=0 -escr.interactive=0 -N -Qc "f easy @ 0x080483fe; Ps .crackme.rzdb" bins/elf/ioli/crackme0x00
 ?e Same project, different file
-!rizin -escr.utf8=0 -escr.color=0 -escr.interactive=0 -N -p .crackme.rzdb -Qc "pdi 3 @ easy" bins/elf/ioli/crackme0x01
+!rizin -escr.utf8=0 -escr.color=0 -escr.interactive=0 -N -p .crackme.rzdb -Qc "o; pdi 3 @ easy" bins/elf/ioli/crackme0x01
 !rm .crackme.rzdb
 EOF
 EXPECT=<<EOF
 Same project, different file
+ 3 * r-x 0x00001d4b bins/elf/ioli/crackme0x01
+ 4 - rw- 0x00000004 null://4
 0x080483fe   easy:
 0x080483fe                 29c4  sub esp, eax
 0x08048400       c7042428850408  mov dword [esp], str.IOLI_Crackme_Level_0x01
 0x08048407           e810ffffff  call sym.imp.printf
+EOF
+RUN
+
+NAME=rizin project with implicit file
+FILE=-
+CMDS=<<EOF
+!rizin -escr.utf8=0 -escr.color=0 -escr.interactive=0 -N -Qc "f easy @ 0x080483fe; Ps .crackme2.rzdb" bins/elf/ioli/crackme0x00
+?e Reload project including file
+!rizin -escr.utf8=0 -escr.color=0 -escr.interactive=0 -N -p .crackme2.rzdb -Qc "pdi 3 @ easy"
+!rm .crackme2.rzdb
+EOF
+EXPECT=<<EOF
+Reload project including file
+0x080483fe   easy:
+0x080483fe                 08e8  or al, ch
+0x08048400                   fc  cld
+0x08048401                 7bfb  jnp 0x80483fe
 EOF
 RUN

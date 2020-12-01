@@ -488,7 +488,7 @@ RZ_API bool rz_syscmd_mv(const char *input) {
 	input = input + 2;
 	if (!rz_sandbox_enable (0)) {
 #if __WINDOWS__
-		rz_sys_cmdf ("move %s", input);
+		rz_sys_cmdf ("move %s >nul", input);
 #else
 		rz_sys_cmdf ("mv %s", input);
 #endif

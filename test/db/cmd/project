@@ -1,3 +1,197 @@
+NAME=load with file without moving anything
+FILE=bins/elf/crackme0x05
+CMDS=<<EOF
+e cfg.newshell=1
+f i_do_hope_that_no_entity_knocks_over_my_beverage @ 0x080483d8
+Ps .tmp_load_no_move.rzdb
+o--
+Po .tmp_load_no_move.rzdb
+rm .tmp_load_no_move.rzdb
+pdi 3 @ 0x080483d8
+EOF
+EXPECT=<<EOF
+0x080483d8   i_do_hope_that_no_entity_knocks_over_my_beverage:
+0x080483d8                   50  push eax
+0x080483d9                   54  push esp
+0x080483da                   52  push edx
+EOF
+RUN
+
+NAME=load with file using saved absolute file path after project file was moved
+FILE=bins/elf/crackme0x05
+CMDS=<<EOF
+e cfg.newshell=1
+f i_do_hope_that_no_entity_knocks_over_my_beverage @ 0x080483d8
+Ps .tmp_load_move_project.rzdb
+o--
+mkdir -p .tmp_load_move_project
+mv .tmp_load_move_project.rzdb .tmp_load_move_project/
+cd .tmp_load_move_project
+Po .tmp_load_move_project.rzdb
+rm .tmp_load_move_project.rzdb
+cd ..
+rm .tmp_load_move_project
+pdi 3 @ 0x080483d8
+EOF
+EXPECT=<<EOF
+0x080483d8   i_do_hope_that_no_entity_knocks_over_my_beverage:
+0x080483d8                   50  push eax
+0x080483d9                   54  push esp
+0x080483da                   52  push edx
+EOF
+RUN
+
+NAME=load with file using saved relative file path after project file and binary were moved together
+FILE=--
+CMDS=<<EOF
+e cfg.newshell=1
+cp bins/elf/crackme0x05 .tmp_load_move_both.bin
+o .tmp_load_move_both.bin
+f i_do_hope_that_no_entity_knocks_over_my_beverage @ 0x080483d8
+Ps .tmp_load_move_both.rzdb
+o--
+mkdir -p .tmp_load_move_both
+mv .tmp_load_move_both.rzdb .tmp_load_move_both/
+mv .tmp_load_move_both.bin .tmp_load_move_both/
+Po .tmp_load_move_both/.tmp_load_move_both.rzdb
+pdi 3 @ 0x080483d8
+o--
+rm .tmp_load_move_both/.tmp_load_move_both.rzdb
+rm .tmp_load_move_both/.tmp_load_move_both.bin
+rm .tmp_load_move_both
+EOF
+EXPECT=<<EOF
+0x080483d8   i_do_hope_that_no_entity_knocks_over_my_beverage:
+0x080483d8                   50  push eax
+0x080483d9                   54  push esp
+0x080483da                   52  push edx
+EOF
+RUN
+
+NAME=load with file using saved relative file path after project file and binary were moved together with different relation
+FILE=--
+CMDS=<<EOF
+e cfg.newshell=1
+mkdir -p .tmp_load_move_both2/.tmp_load_move_both2
+cp bins/elf/crackme0x05 .tmp_load_move_both2/somebin
+o .tmp_load_move_both2/somebin
+f i_do_hope_that_no_entity_knocks_over_my_beverage @ 0x080483d8
+Ps .tmp_load_move_both2.rzdb
+o--
+mv .tmp_load_move_both2.rzdb .tmp_load_move_both2/
+mv .tmp_load_move_both2/somebin .tmp_load_move_both2/.tmp_load_move_both2/somebin
+Po .tmp_load_move_both2/.tmp_load_move_both2.rzdb
+pdi 3 @ 0x080483d8
+o--
+rm .tmp_load_move_both2/.tmp_load_move_both2.rzdb
+rm .tmp_load_move_both2/.tmp_load_move_both2/somebin
+rm .tmp_load_move_both2/.tmp_load_move_both2
+rm .tmp_load_move_both2
+EOF
+EXPECT=<<EOF
+0x080483d8   i_do_hope_that_no_entity_knocks_over_my_beverage:
+0x080483d8                   50  push eax
+0x080483d9                   54  push esp
+0x080483da                   52  push edx
+EOF
+RUN
+
+NAME=load with file using saved raw file path after everything has been messed up, but binary is in cwd
+FILE=--
+CMDS=<<EOF
+e cfg.newshell=1
+mkdir -p .tmp_load_move_bin
+cp bins/elf/crackme0x05 .tmp_load_move_bin.bin
+o .tmp_load_move_bin.bin
+f i_do_hope_that_no_entity_knocks_over_my_beverage @ 0x080483d8
+Ps .tmp_load_move_bin.rzdb
+o--
+mv .tmp_load_move_bin.bin .tmp_load_move_bin/.tmp_load_move_bin.bin
+cd .tmp_load_move_bin
+Po ../.tmp_load_move_bin.rzdb
+pdi 3 @ 0x080483d8
+o--
+cd ..
+rm .tmp_load_move_bin/.tmp_load_move_bin.bin
+rm .tmp_load_move_bin
+rm .tmp_load_move_bin.rzdb
+EOF
+EXPECT=<<EOF
+0x080483d8   i_do_hope_that_no_entity_knocks_over_my_beverage:
+0x080483d8                   50  push eax
+0x080483d9                   54  push esp
+0x080483da                   52  push edx
+EOF
+RUN
+
+NAME=load without file
+FILE=bins/elf/crackme0x05
+CMDS=<<EOF
+e cfg.newshell=1
+f a_nice_refreshing_un-moisten @ 0x080483d8
+Ps .tmp_load_without_file.rzdb
+o
+?e --
+o--
+o
+pdi 3 @ 0x080483d8
+?e --
+Poo .tmp_load_without_file.rzdb
+rm .tmp_load_without_file.rzdb
+o
+?e --
+pdi 3 @ 0x080483d8
+EOF
+EXPECT=<<EOF
+ 3 * r-x 0x00001de8 bins/elf/crackme0x05
+ 4 - rw- 0x00000004 null://4
+--
+0x080483d8                   ff  invalid
+0x080483d9                   ff  invalid
+0x080483da                   ff  invalid
+--
+--
+0x080483d8   a_nice_refreshing_un_moisten:
+0x080483d8                   ff  invalid
+0x080483d9                   ff  invalid
+0x080483da                   ff  invalid
+EOF
+RUN
+
+NAME=load on top of file
+FILE=bins/elf/crackme0x05
+CMDS=<<EOF
+e cfg.newshell=1
+f a_nice_refreshing_un-moisten @ 0x080483d8
+Ps .tmp_load_on_top_of_file.rzdb
+o
+?e --
+o--
+o
+pdi 3 @ 0x080483d8
+?e --
+o bins/elf/crackme0x00b
+Poo .tmp_load_on_top_of_file.rzdb
+rm .tmp_load_on_top_of_file.rzdb
+?e --
+pdi 3 @ 0x080483d8
+EOF
+EXPECT=<<EOF
+ 3 * r-x 0x00001de8 bins/elf/crackme0x05
+ 4 - rw- 0x00000004 null://4
+--
+0x080483d8                   ff  invalid
+0x080483d9                   ff  invalid
+0x080483da                   ff  invalid
+--
+--
+0x080483d8   a_nice_refreshing_un_moisten:
+0x080483d8                 0000  add byte [eax], al
+0x080483da                 00e9  add cl, ch
+0x080483dc                   90  nop
+EOF
+RUN
+
 NAME=flags
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
@@ -10,7 +204,7 @@ Ps .tmp_flags.rzdb
 o--
 f
 ?e --
-Po .tmp_flags.rzdb
+Poo .tmp_flags.rzdb
 rm .tmp_flags.rzdb
 f~?
 f~main
@@ -50,7 +244,7 @@ e asm.indentspace
 e anal.fcnprefix=fcn
 e anal.fcnprefix
 ?e --
-Po .tmp_config.rzdb
+Poo .tmp_config.rzdb
 rm .tmp_config.rzdb
 e asm.describe
 e asm.indentspace
@@ -80,7 +274,7 @@ s
 Ps .tmp_seek.rzdb
 o--
 s 0
-Po .tmp_seek.rzdb
+Poo .tmp_seek.rzdb
 rm .tmp_seek.rzdb
 s
 EOF
@@ -102,7 +296,7 @@ Ps .tmp_anal.rzdb
 o--
 afl
 ?e --
-Po .tmp_anal.rzdb
+Poo .tmp_anal.rzdb
 rm .tmp_anal.rzdb
 afl
 EOF

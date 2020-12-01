@@ -488,6 +488,12 @@
       args:
         - name: project.rzdb
           type: RZ_CMD_ARG_TYPE_FILE
+    - name: Poo
+      cname: project_open_no_bin_io
+      summary: Open a project on top of currently loaded binaries
+      args:
+        - name: project.rzdb
+          type: RZ_CMD_ARG_TYPE_FILE
 - name: q
   cname: cmd_quit
   summary: Quit program with a return value

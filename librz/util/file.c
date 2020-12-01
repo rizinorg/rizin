@@ -93,7 +93,7 @@ RZ_API const char *rz_file_basename(const char *path) {
 
 /*
 Example:
-	str = rz_file_basename ("home/inisider/Downloads");
+	str = rz_file_dirname ("home/inisider/Downloads/user32.dll");
 	// str == "home/inisider/Downloads"
 	free (str);
 */
@@ -108,12 +108,16 @@ RZ_API char *rz_file_dirname(const char *path) {
 		*ptr = 0;
 	} else {
 		ptr = (char*)rz_str_rchr (newpath, NULL, '\\');
-		if (ptr) {
-			if (ptr == newpath) {
+		if (!ptr) {
+			ptr = newpath;
+		}
+		if (ptr && ptr == newpath && *ptr == '.') { // keep '.'
+			ptr++;
+			if (*ptr == '.') { // keep '..'
 				ptr++;
 			}
-			*ptr = 0;
 		}
+		*ptr = 0;
 	}
 	return newpath;
 }
@@ -194,7 +198,7 @@ RZ_API bool rz_file_is_abspath(const char *file) {
 RZ_API char *rz_file_abspath_rel(const char *cwd, const char *file) {
 	char *ret = NULL;
 	if (!file || !strcmp (file, ".") || !strcmp (file, "./")) {
-		return rz_sys_getdir ();
+		return strdup (cwd);
 	}
 	if (strstr (file, "://")) {
 		return strdup (file);
@@ -212,20 +216,7 @@ RZ_API char *rz_file_abspath_rel(const char *cwd, const char *file) {
 			return strdup (file);
 		}
 		if (!strchr (file, ':')) {
-			PTCHAR abspath = malloc (MAX_PATH * sizeof (TCHAR));
-			if (abspath) {
-				PTCHAR f = rz_sys_conv_utf8_to_win (file);
-				int s = GetFullPathName (f, MAX_PATH, abspath, NULL);
-				if (s > MAX_PATH) {
-					RZ_LOG_ERROR ("rz_file_abspath/GetFullPathName: Path to file too long.\n");
-				} else if (!s) {
-					rz_sys_perror ("rz_file_abspath/GetFullPathName");
-				} else {
-					ret = rz_sys_conv_win_to_utf8 (abspath);
-				}
-				free (abspath);
-				free (f);
-			}
+			ret = rz_str_newf ("%s" RZ_SYS_DIR "%s", cwd, file);
 		}
 #endif
 	}
@@ -251,6 +242,82 @@ RZ_API char *rz_file_abspath(const char *file) {
 		return ret;
 	}
 	return NULL;
+}
+
+RZ_API char *rz_file_relpath(const char *base, const char *path) {
+	// skip longest common prefix
+	while (*base && *path) {
+		while (*base == *RZ_SYS_DIR) {
+			base++;
+		}
+		while (*path == *RZ_SYS_DIR) {
+			path++;
+		}
+		while (*base && *path && *base != *RZ_SYS_DIR && *path != *RZ_SYS_DIR) {
+			if (*base != *path) {
+				goto diverge;
+			}
+			base++;
+			path++;
+		}
+	}
+	while (*path == *RZ_SYS_DIR) {
+		path++;
+	}
+
+	size_t ups;
+diverge:
+	// count number of ".." needed which is just the number of remaining tokens in base
+	ups = 0;
+	while (*base) {
+		while (*base == *RZ_SYS_DIR) {
+			base++;
+		}
+		if (!*base) {
+			break;
+		}
+		ups++;
+		while (*base && *base != *RZ_SYS_DIR) {
+			base++;
+		}
+	}
+
+	// put all the ".."s and append the rest of the path
+	size_t suff_len = strlen (path);
+	char *r = malloc (ups * 3 + suff_len + 1); // ups * strlen("../") + strlen(path)
+	if (!r) {
+		return NULL;
+	}
+	size_t i;
+	for (i = 0; i < ups; i++) {
+		r[i * 3] = '.';
+		r[i * 3 + 1] = '.';
+		r[i * 3 + 2] = *RZ_SYS_DIR;
+	}
+	memcpy (r + i * 3, path, suff_len + 1);
+	return r;
+}
+
+RZ_API char *rz_file_path_local_to_unix(const char *path) {
+	char *r = strdup (path);
+	if (!r) {
+		return NULL;
+	}
+#if __WINDOWS__
+	rz_str_replace (r, RZ_SYS_DIR, "/", true);
+#endif
+	return r;
+}
+
+RZ_API char *rz_file_path_unix_to_local(const char *path) {
+	char *r = strdup (path);
+	if (!r) {
+		return NULL;
+	}
+#if __WINDOWS__
+	rz_str_replace (r, "/", RZ_SYS_DIR, true);
+#endif
+	return r;
 }
 
 RZ_API char *rz_file_path(const char *bin) {

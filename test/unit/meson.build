@@ -32,6 +32,7 @@ if get_option('enable_tests')
     'dwarf_integration',
     'esil_dfg_filter',
     'event',
+    'file',
     'flags',
     'glob',
     'graph',

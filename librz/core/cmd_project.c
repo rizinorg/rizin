@@ -10,9 +10,9 @@ RZ_IPI RzCmdStatus rz_project_save_handler(RzCore *core, int argc, const char **
 	return RZ_CMD_STATUS_OK;
 }
 
-RZ_IPI RzCmdStatus rz_project_open_handler(RzCore *core, int argc, const char **argv) {
+static RzCmdStatus project_open(RzCore *core, int args, const char **argv, bool load_bin_io) {
 	RzSerializeResultInfo *res = rz_serialize_result_info_new ();
-	RzProjectErr err = rz_project_load_file (core, argv[1], res);
+	RzProjectErr err = rz_project_load_file (core, argv[1], load_bin_io, res);
 	if (err != RZ_PROJECT_ERR_SUCCESS) {
 		eprintf ("Failed to load project: %s\n", rz_project_err_message (err));
 		RzListIter *it;
@@ -24,3 +24,12 @@ RZ_IPI RzCmdStatus rz_project_open_handler(RzCore *core, int argc, const char **
 	rz_serialize_result_info_free (res);
 	return RZ_CMD_STATUS_OK;
 }
+
+RZ_IPI RzCmdStatus rz_project_open_handler(RzCore *core, int argc, const char **argv) {
+	return project_open (core, argc, argv, true);
+}
+
+RZ_IPI RzCmdStatus rz_project_open_no_bin_io_handler(RzCore *core, int argc, const char **argv) {
+	return project_open (core, argc, argv, false);
+}
+

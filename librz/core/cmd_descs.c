@@ -50,6 +50,7 @@ static const RzCmdDescArg env_args[3];
 static const RzCmdDescArg ls_args[2];
 static const RzCmdDescArg project_save_args[2];
 static const RzCmdDescArg project_open_args[2];
+static const RzCmdDescArg project_open_no_bin_io_args[2];
 static const RzCmdDescArg uniq_args[2];
 static const RzCmdDescArg uname_args[2];
 static const RzCmdDescArg write_args[2];
@@ -582,6 +583,15 @@ static const RzCmdDescArg project_open_args[] = {
 static const RzCmdDescHelp project_open_help = {
 	.summary = "Open a project",
 	.args = project_open_args,
+};
+
+static const RzCmdDescArg project_open_no_bin_io_args[] = {
+	{ .name = "project.rzdb", .type = RZ_CMD_ARG_TYPE_FILE, },
+	{ 0 },
+};
+static const RzCmdDescHelp project_open_no_bin_io_help = {
+	.summary = "Open a project on top of currently loaded binaries",
+	.args = project_open_no_bin_io_args,
 };
 
 static const RzCmdDescHelp cmd_quit_help = {
@@ -1584,6 +1594,8 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail (project_save_cd);
 	RzCmdDesc *project_open_cd = rz_cmd_desc_argv_new (core->rcmd, P_cd, "Po", rz_project_open_handler, &project_open_help);
 	rz_warn_if_fail (project_open_cd);
+	RzCmdDesc *project_open_no_bin_io_cd = rz_cmd_desc_argv_new (core->rcmd, P_cd, "Poo", rz_project_open_no_bin_io_handler, &project_open_no_bin_io_help);
+	rz_warn_if_fail (project_open_no_bin_io_cd);
 	RzCmdDesc *cmd_quit_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "q", rz_cmd_quit, &cmd_quit_help);
 	rz_warn_if_fail (cmd_quit_cd);
 	RzCmdDesc *cmd_resize_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "r", rz_cmd_resize, &cmd_resize_help);

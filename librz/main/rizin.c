@@ -794,7 +794,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	if (prj) {
 		RzSerializeResultInfo *res = rz_serialize_result_info_new ();
-		RzProjectErr err = rz_project_load_file (r, prj, res);
+		RzProjectErr err = rz_project_load_file (r, prj, !pfile, res);
 		if (err != RZ_PROJECT_ERR_SUCCESS) {
 			eprintf ("Failed to load project: %s\n", rz_project_err_message (err));
 			RzListIter *it;
@@ -1173,7 +1173,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		if (!pfile) {
 			pfile = file;
 		}
-		if (!fh) {
+		if (!fh && !prj) {
 			if (pfile && *pfile) {
 				rz_cons_flush ();
 				if (perms & RZ_PERM_W) {
@@ -1196,7 +1196,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			rz_core_cmdf (r, "m /root %s @ 0", fstype);
 		}
 		rz_core_cmd0 (r, "=!"); // initalize io subsystem
-		iod = r->io ? rz_io_desc_get (r->io, fh->fd) : NULL;
+		iod = r->io && fh ? rz_io_desc_get (r->io, fh->fd) : NULL;
 		if (mapaddr) {
 			rz_core_seek (r, mapaddr, true);
 		}
@@ -1427,16 +1427,21 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 				}
 
 				prj = rz_config_get (r->config, "prj.file");
+				RzProjectErr prj_err = RZ_PROJECT_ERR_SUCCESS;
 				if (no_question_save) {
 					if (prj && *prj && y_save_project){
-						rz_project_save_file (r, prj); // TODO: check error
+						prj_err = rz_project_save_file (r, prj);
 					}
 				} else {
 					question = rz_str_newf ("Do you want to save the '%s' project? (Y/n)", prj);
 					if (prj && *prj && rz_cons_yesno ('y', "%s", question)) {
-						rz_project_save_file (r, prj); // TODO: check error
+						prj_err = rz_project_save_file (r, prj);
 					}
 					free (question);
+				}
+				if (prj_err != RZ_PROJECT_ERR_SUCCESS) {
+					eprintf ("Failed to save project: %s\n", rz_project_err_message (prj_err));
+					continue;
 				}
 
 				if (rz_config_get_i (r->config, "scr.confirmquit")) {
