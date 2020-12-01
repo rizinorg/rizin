@@ -16,7 +16,7 @@ typedef struct {
 	const ut8* end;
 	const ut8* pos;
 	ut16 inc;
-        ut32 options;
+	ut32 options;
 } vle_handle;
 
 typedef struct {
