@@ -83,7 +83,8 @@ rz_util_sources = [
   'regex/regexec.c',
   'regex/regerror.c',
   'annotated_code.c',
-  'serialize_spaces.c'
+  'serialize_spaces.c',
+  'subprocess.c',
 ]
 
 rz_util_deps = [ldl, mth, spp_dep, pth, utl, sdb_dep, zlib_dep, platform_deps]

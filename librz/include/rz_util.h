@@ -77,6 +77,7 @@ int gettimeofday (struct timeval* p, void* tz);
 #include "rz_util/rz_pkcs7.h"
 #include "rz_util/rz_protobuf.h"
 #include "rz_util/rz_big.h"
+#include "rz_util/rz_subprocess.h"
 // requires io, core, ... #include "rz_util/rz_print.h"
 
 #ifdef __cplusplus
