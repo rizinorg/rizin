@@ -399,7 +399,7 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 #if __UNIX__
 		if (in) {
 			int pipes[2];
-			if (pipe (pipes) != -1) {
+			if (rz_sys_pipe (pipes, true) != -1) {
 				size_t cmdl = strlen (cmd)-2;
 				if (write (pipes[1], cmd + 1, cmdl) != cmdl) {
 					eprintf ("[ERROR] rz_run: Cannot write to the pipe\n");
@@ -411,8 +411,9 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 					close (0);
 					return 1;
 				}
-				close (0);
-				dup2 (pipes[0], 0);
+				while ((dup2(pipes[0], STDIN_FILENO) == -1) && (errno == EINTR)) {}
+				rz_sys_pipe_close (pipes[0]);
+				rz_sys_pipe_close (pipes[1]);
 			} else {
 				eprintf ("[ERROR] rz_run: Cannot create pipe\n");
 			}
@@ -987,7 +988,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 	if (p->_input) {
 		char *inp;
 		int f2[2];
-		if (pipe (f2) != -1) {
+		if (rz_sys_pipe (f2, true) != -1) {
 			close (0);
 			dup2 (f2[0], 0);
 		} else {
@@ -1000,7 +1001,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 			if  (write (f2[1], inp, inpl) != inpl) {
 				eprintf ("[ERROR] rz_run: Cannot write to the pipe\n");
 			}
-			close (f2[1]);
+			rz_sys_pipe_close (f2[1]);
 			free (inp);
 		} else {
 			eprintf ("Invalid input\n");
@@ -1071,7 +1072,7 @@ RZ_API int rz_run_config_env(RzRunProfile *p) {
 RZ_API int rz_run_start(RzRunProfile *p) {
 #if LIBC_HAVE_FORK
 	if (p->_execve) {
-		exit (execv (p->_program, (char* const*)p->_args));
+		exit (rz_sys_execv (p->_program, (char* const*)p->_args));
 	}
 #endif
 #if __APPLE__ && !__POWERPC__ && LIBC_HAVE_FORK
@@ -1168,7 +1169,7 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 #if __UNIX__
 			close(0);
 			close(1);
-			exit (execl ("/bin/sh","/bin/sh", "-c", p->_system, NULL));
+			exit (rz_sys_execl ("/bin/sh","/bin/sh", "-c", p->_system, NULL));
 #else
 			exit (rz_sys_cmd (p->_system));
 #endif
@@ -1247,13 +1248,13 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 			}
 			setsid ();
 #if !LIBC_HAVE_FORK
-		exit (execv (p->_program, (char* const*)p->_args));
+		exit (rz_sys_execv (p->_program, (char* const*)p->_args));
 #endif
 #endif
 		}
 // TODO: must be HAVE_EXECVE
 #if LIBC_HAVE_FORK
-		exit (execv (p->_program, (char* const*)p->_args));
+		exit (rz_sys_execv (p->_program, (char* const*)p->_args));
 #endif
 	}
 	if (p->_runlib) {

@@ -140,14 +140,14 @@ static int lang_pipe_run(RzLang *lang, const char *code, int len) {
 	int input[2];
 	int output[2];
 
-	if (pipe (input) != 0) {
+	if (rz_sys_pipe (input, false) != 0) {
 		eprintf ("rz_lang_pipe: pipe failed on input\n");
 		if (safe_in != -1) {
 			close (safe_in);
 		}
 		return false;
 	}
-	if (pipe (output) != 0) {
+	if (rz_sys_pipe (output, false) != 0) {
 		eprintf ("rz_lang_pipe: pipe failed on output\n");
 		if (safe_in != -1) {
 			close (safe_in);
@@ -166,10 +166,10 @@ static int lang_pipe_run(RzLang *lang, const char *code, int len) {
 		/* children */
 		rz_sandbox_system (code, 1);
 		(void) write (input[1], "", 1);
-		close (input[0]);
-		close (input[1]);
-		close (output[0]);
-		close (output[1]);
+		rz_sys_pipe_close (input[0]);
+		rz_sys_pipe_close (input[1]);
+		rz_sys_pipe_close (output[0]);
+		rz_sys_pipe_close (output[1]);
 		fflush (stdout);
 		fflush (stderr);
 		rz_sys_exit (0, true);
@@ -178,8 +178,8 @@ static int lang_pipe_run(RzLang *lang, const char *code, int len) {
 		/* parent */
 		char *res, buf[8192]; // TODO: use the heap?
 		/* Close pipe ends not required in the parent */
-		close (output[1]);
-		close (input[0]);
+		rz_sys_pipe_close (output[1]);
+		rz_sys_pipe_close (input[0]);
 		rz_cons_break_push (NULL, NULL);
 		for (;;) {
 			if (rz_cons_is_breaked ()) {
@@ -223,10 +223,10 @@ static int lang_pipe_run(RzLang *lang, const char *code, int len) {
 		}
 	}
 
-	close (input[0]);
-	close (input[1]);
-	close (output[0]);
-	close (output[1]);
+	rz_sys_pipe_close (input[0]);
+	rz_sys_pipe_close (input[1]);
+	rz_sys_pipe_close (output[0]);
+	rz_sys_pipe_close (output[1]);
 	if (safe_in != -1) {
 		close (safe_in);
 	}

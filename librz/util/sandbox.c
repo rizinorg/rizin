@@ -227,10 +227,10 @@ RZ_API int rz_sandbox_system(const char *x, int n) {
 			return WEXITSTATUS (s);
 		}
 #else
-		return system (x);
+		return rz_sys_system (x);
 #endif
 	}
-	return execl ("/bin/sh", "sh", "-c", x, (const char*)NULL);
+	return rz_sys_execl ("/bin/sh", "sh", "-c", x, (const char*)NULL);
 #else
 	#include <spawn.h>
 	if (n && !strchr (x, '|')) {
@@ -270,7 +270,7 @@ RZ_API int rz_sandbox_system(const char *x, int n) {
 	if (child) {
 		return waitpid (child, NULL, 0);
 	}
-	if (execl ("/bin/sh", "sh", "-c", x, (const char*)NULL) == -1) {
+	if (rz_sys_execl ("/bin/sh", "sh", "-c", x, (const char*)NULL) == -1) {
 		perror ("execl");
 	}
 	exit (1);

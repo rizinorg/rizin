@@ -16,35 +16,18 @@
 RZ_API struct rz_socket_proc_t *rz_socket_proc_open(char* const argv[]) {
 #if __UNIX__ && LIBC_HAVE_FORK
 	RzSocketProc *sp = RZ_NEW (RzSocketProc);
-#ifdef O_CLOEXEC
-	const int flags = O_CLOEXEC; //O_NONBLOCK|O_CLOEXEC;
-#else
-	const int flags = 0; //O_NONBLOCK|O_CLOEXEC;
-#endif
 
 	if (!sp) {
 		return NULL;
 	}
 
-	if (pipe (sp->fd0) == -1) {
+	if (rz_sys_pipe (sp->fd0, true) == -1) {
 		perror ("pipe");
-		goto error;
-	}
-	if (fcntl (sp->fd0[0], flags) < 0) {
-		goto error;
-	}
-	if (fcntl (sp->fd0[1], flags) < 0) {
 		goto error;
 	}
 
-	if (pipe (sp->fd1) == -1) {
+	if (rz_sys_pipe (sp->fd1, true) == -1) {
 		perror ("pipe");
-		goto error;
-	}
-	if (fcntl (sp->fd1[0], flags) < 0) {
-		goto error;
-	}
-	if (fcntl (sp->fd1[1], flags) < 0) {
 		goto error;
 	}
 
@@ -55,7 +38,7 @@ RZ_API struct rz_socket_proc_t *rz_socket_proc_open(char* const argv[]) {
 		dup2 (sp->fd0[0], 0);
 		close (1);
 		dup2 (sp->fd1[1], 1);
-		execv (argv[0], argv);
+		rz_sys_execv (argv[0], argv);
 		exit (1);
 		break;
 	case -1:
