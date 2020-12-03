@@ -175,8 +175,7 @@ System types:
   --target=TARGET        configure for building compilers for TARGET [HOST]
 EOF2
 
-printf "
-Optional Features:
+printf "\nOptional Features:
   --disable-debugger     disable native debugger features
   --with-sysmagic        force to use system's magic
   --with-capstone5       build next branch of the capstone repository
@@ -197,20 +196,16 @@ Optional Features:
   --with-libversion      specify different libversion (LIBVERSION=xxx)
   --without-jemalloc     build without jemalloc
   --without-rz-test      build without rz-test for regression testing
-  --with-checks-level    value between 0 and 3 to enable different level of assert (see RZ_CHECKS_LEVEL) (RZ_CHECKS_LEVEL=2)
-"
-printf "
-Some influential environment variables:
+  --with-checks-level    value between 0 and 3 to enable different level of assert (see RZ_CHECKS_LEVEL) (RZ_CHECKS_LEVEL=2)\n"
+printf "\nSome influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
               nonstandard directory <lib dir>
   CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
               headers in a nonstandard directory <include dir>
-  CPP         C preprocessor
-"
-printf "
-Report bugs to: pancake <pancake@nopcode.org>"
+  CPP         C preprocessor\n"
+printf "\nReport bugs to: pancake <pancake@nopcode.org>"
 echo ""
 exit 0
 }
@@ -355,7 +350,7 @@ parse_options "$1"
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR DOCDIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH VERSION_NUMBER PKGNAME VPATH CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS HAVE_PATCH PATCH HAVE_GIT GIT HAVE_LIB_MAGIC USE_MAGIC USE_LIB_MAGIC LIBMAGIC CSNEXT LOADLIBS WANT_DYLINK HAVE_FORK WANT_PTRACE_WRAP WITH_LIBR WITH_CAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE USE_CAPSTONE HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP HAVE_LIB_XXHASH USE_XXHASH USE_LIB_XXHASH LIBXXHASH WITH_GPL HAVE_DECL_ADDR_NO_RANDOMIZE HAVE_DECL___GLIBC__ HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET HAVE_CLOCK_NANOSLEEP HAVE_SIGACTION HAVE_CLOCK_GETTIME CLOCK_LDFLAGS SUPPORT_GNU99 NEWSHELL_CFLAGS SUPPORT_C99 HAVE_LIB_GMP HAVE_LIB_SSL SSL_CFLAGS SSL_LDFLAGS HAVE_PKGCFG_OPENSSL HAVE_OPENSSL WANT_OPENSSL HAVE_LIBUV_VERSION_1_0_0 LIBUV_CFLAGS LIBUV_LDFLAGS HAVE_PKGCFG_LIBUV HAVE_LIBUV WANT_LIBUV USE_RPATH USERCC USEROSTYPE LIBVERSION HAVE_JEMALLOC HAVE_PTRACE USE_PTRACE_WRAP WANT_RZ_TEST RZ_CHECKS_LEVEL"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR DOCDIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH VERSION_NUMBER PKGNAME VPATH CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS HAVE_PATCH PATCH HAVE_GIT GIT HAVE_LIB_MAGIC USE_MAGIC USE_LIB_MAGIC LIBMAGIC CSNEXT LOADLIBS WANT_DYLINK HAVE_FORK WANT_PTRACE_WRAP WITH_LIBR WITH_CAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE USE_CAPSTONE HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP HAVE_LIB_XXHASH USE_XXHASH USE_LIB_XXHASH LIBXXHASH WITH_GPL HAVE_DECL_ADDR_NO_RANDOMIZE HAVE_DECL___GLIBC__ HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET HAVE_CLOCK_NANOSLEEP HAVE_SIGACTION HAVE_CLOCK_GETTIME HAVE_PIPE HAVE_EXECV HAVE_EXECVE HAVE_EXECVP HAVE_EXECL HAVE_SYSTEM HAVE_PIPE2 CLOCK_LDFLAGS SUPPORT_GNU99 NEWSHELL_CFLAGS SUPPORT_C99 HAVE_LIB_GMP HAVE_LIB_SSL SSL_CFLAGS SSL_LDFLAGS HAVE_PKGCFG_OPENSSL HAVE_OPENSSL WANT_OPENSSL HAVE_LIBUV_VERSION_1_0_0 LIBUV_CFLAGS LIBUV_LDFLAGS HAVE_PKGCFG_LIBUV HAVE_LIBUV WANT_LIBUV USE_RPATH USERCC USEROSTYPE LIBVERSION HAVE_JEMALLOC HAVE_PTRACE USE_PTRACE_WRAP WANT_RZ_TEST RZ_CHECKS_LEVEL"
 
 create_environ
 
@@ -583,6 +578,57 @@ if [ $? = 0 ]; then
 	echo yes ; HAVE_CLOCK_GETTIME=1
 else
 	HAVE_CLOCK_GETTIME=0 ; echo no ; fi
+printf "checking function pipe() in c... "
+echo "int main(int ac, char **av){ pipe(0); return 0; }" > test.c
+${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -lc test.c >/dev/null 2>&1
+if [ $? = 0 ]; then
+	echo yes ; HAVE_PIPE=1
+else
+	HAVE_PIPE=0 ; echo no ; fi
+printf "checking function execv() in c... "
+echo "int main(int ac, char **av){ execv(0); return 0; }" > test.c
+${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -lc test.c >/dev/null 2>&1
+if [ $? = 0 ]; then
+	echo yes ; HAVE_EXECV=1
+else
+	HAVE_EXECV=0 ; echo no ; fi
+printf "checking function execve() in c... "
+echo "int main(int ac, char **av){ execve(0); return 0; }" > test.c
+${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -lc test.c >/dev/null 2>&1
+if [ $? = 0 ]; then
+	echo yes ; HAVE_EXECVE=1
+else
+	HAVE_EXECVE=0 ; echo no ; fi
+printf "checking function execvp() in c... "
+echo "int main(int ac, char **av){ execvp(0); return 0; }" > test.c
+${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -lc test.c >/dev/null 2>&1
+if [ $? = 0 ]; then
+	echo yes ; HAVE_EXECVP=1
+else
+	HAVE_EXECVP=0 ; echo no ; fi
+printf "checking for HAVE_EXECL... "
+ echo "#include <unistd.h>" > temp.c ; echo "int main(int argc, char *argv) { void *x = (void *)execl; return 0;}" >> temp.c ; ${CC} temp.c ; HAVE_EXECL=$? ; rm -f temp.c
+if [ "$HAVE_EXECL" = 0 ]; then
+	HAVE_EXECL=1
+	echo yes
+else
+	HAVE_EXECL=0
+	echo no
+fi
+printf "checking function system() in c... "
+echo "int main(int ac, char **av){ system(0); return 0; }" > test.c
+${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -lc test.c >/dev/null 2>&1
+if [ $? = 0 ]; then
+	echo yes ; HAVE_SYSTEM=1
+else
+	HAVE_SYSTEM=0 ; echo no ; fi
+printf "checking function pipe2() in c... "
+echo "int main(int ac, char **av){ pipe2(0); return 0; }" > test.c
+${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -lc test.c >/dev/null 2>&1
+if [ $? = 0 ]; then
+	echo yes ; HAVE_PIPE2=1
+else
+	HAVE_PIPE2=0 ; echo no ; fi
 if [ "$HAVE_CLOCK_GETTIME" = "0" ]; then
 if [ "$HAVE_DECL___GLIBC__" = "1" ]; then
 CLOCK_LDFLAGS="${CLOCK_LDFLAGS} '-lrt'"; fi; fi

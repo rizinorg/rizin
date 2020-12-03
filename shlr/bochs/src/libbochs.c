@@ -244,13 +244,13 @@ bool bochs_open(libbochs_t* b, const char * pathBochs, const char * pathConfig) 
 	int aStdoutPipe[2];
 	int nChild;
 
-	if (pipe (aStdinPipe) < 0) {
+	if (rz_sys_pipe (aStdinPipe, true) < 0) {
 		eprintf ("Error: allocating pipe for child input redirect");
 		return false;
 	}
-	if (pipe(aStdoutPipe) < 0) {
-		close (aStdinPipe[PIPE_READ]);
-		close (aStdinPipe[PIPE_WRITE]);
+	if (rz_sys_pipe(aStdoutPipe, true) < 0) {
+		rz_sys_pipe_close (aStdinPipe[PIPE_READ]);
+		rz_sys_pipe_close (aStdinPipe[PIPE_WRITE]);
 		eprintf ("Error: allocating pipe for child output redirect");
 		return false;
 	}
@@ -275,16 +275,16 @@ bool bochs_open(libbochs_t* b, const char * pathBochs, const char * pathConfig) 
 			return false;
 		}
 
-		close (aStdinPipe[PIPE_READ]);
-		close (aStdinPipe[PIPE_WRITE]);
-		close (aStdoutPipe[PIPE_READ]);
-		close (aStdoutPipe[PIPE_WRITE]);
-		(void) execl (pathBochs, pathBochs, "-q", "-f", pathConfig, NULL);
+		rz_sys_pipe_close (aStdinPipe[PIPE_READ]);
+		rz_sys_pipe_close (aStdinPipe[PIPE_WRITE]);
+		rz_sys_pipe_close (aStdoutPipe[PIPE_READ]);
+		rz_sys_pipe_close (aStdoutPipe[PIPE_WRITE]);
+		(void) rz_sys_execl (pathBochs, pathBochs, "-q", "-f", pathConfig, NULL);
 		perror ("execl");
 		exit (1);
 	} else if (nChild > 0) {
-		close (aStdinPipe[PIPE_READ]);
-		close (aStdoutPipe[PIPE_WRITE]);
+		rz_sys_pipe_close (aStdinPipe[PIPE_READ]);
+		rz_sys_pipe_close (aStdoutPipe[PIPE_WRITE]);
 
 		if (read (aStdoutPipe[PIPE_READ], lpTmpBuffer, 1) != 1) {
 			eprintf ("boch_open failed");
@@ -306,10 +306,10 @@ bool bochs_open(libbochs_t* b, const char * pathBochs, const char * pathConfig) 
 	} else {
 		perror ("pipe");
 		// failed to create child
-		close (aStdinPipe[PIPE_READ]);
-		close (aStdinPipe[PIPE_WRITE]);
-		close (aStdoutPipe[PIPE_READ]);
-		close (aStdoutPipe[PIPE_WRITE]);
+		rz_sys_pipe_close (aStdinPipe[PIPE_READ]);
+		rz_sys_pipe_close (aStdinPipe[PIPE_WRITE]);
+		rz_sys_pipe_close (aStdoutPipe[PIPE_READ]);
+		rz_sys_pipe_close (aStdoutPipe[PIPE_WRITE]);
 	}
 #endif
 	return result;
