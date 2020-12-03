@@ -125,19 +125,19 @@ RZ_API int rzpipe_close(RzPipe *rzpipe) {
 	}
 #else
 	if (rzpipe->input[0] != -1) {
-		close (rzpipe->input[0]);
+		rz_sys_pipe_close (rzpipe->input[0]);
 		rzpipe->input[0] = -1;
 	}
 	if (rzpipe->input[1] != -1) {
-		close (rzpipe->input[1]);
+		rz_sys_pipe_close (rzpipe->input[1]);
 		rzpipe->input[1] = -1;
 	}
 	if (rzpipe->output[0] != -1) {
-		close (rzpipe->output[0]);
+		rz_sys_pipe_close (rzpipe->output[0]);
 		rzpipe->output[0] = -1;
 	}
 	if (rzpipe->output[1] != -1) {
-		close (rzpipe->output[1]);
+		rz_sys_pipe_close (rzpipe->output[1]);
 		rzpipe->output[1] = -1;
 	}
 	if (rzpipe->child != -1) {
@@ -246,13 +246,13 @@ RZ_API RzPipe *rzpipe_open(const char *cmd) {
 	w32_createPipe (rzp, cmd);
 	rzp->child = (int)(rzp->pipe);
 #else
-	int r = pipe (rzp->input);
+	int r = rz_sys_pipe (rzp->input, false);
 	if (r != 0) {
 		eprintf ("pipe failed on input\n");
 		rzpipe_close (rzp);
 		return NULL;
 	}
-	r = pipe (rzp->output);
+	r = rz_sys_pipe (rzp->output, false);
 	if (r != 0) {
 		eprintf ("pipe failed on output\n");
 		rzpipe_close (rzp);
@@ -284,8 +284,8 @@ RZ_API RzPipe *rzpipe_open(const char *cmd) {
 			return NULL;
 		}
 		// Close parent's end of pipes
-		close (rzp->input[0]);
-		close (rzp->output[1]);
+		rz_sys_pipe_close (rzp->input[0]);
+		rz_sys_pipe_close (rzp->output[1]);
 		rzp->input[0] = -1;
 		rzp->output[1] = -1;
 	} else {
@@ -295,8 +295,8 @@ RZ_API RzPipe *rzpipe_open(const char *cmd) {
 			close (1);
 			dup2 (rzp->input[0], 0);
 			dup2 (rzp->output[1], 1);
-			close (rzp->input[1]);
-			close (rzp->output[0]);
+			rz_sys_pipe_close (rzp->input[1]);
+			rz_sys_pipe_close (rzp->output[0]);
 			rzp->input[1] = -1;
 			rzp->output[0] = -1;
 			rc = rz_sandbox_system (cmd, 1);
@@ -305,7 +305,7 @@ RZ_API RzPipe *rzpipe_open(const char *cmd) {
 			}
 			// trigger the blocking read
 			write (1, "\xff", 1);
-			close (rzp->output[1]);
+			rz_sys_pipe_close (rzp->output[1]);
 			close (0);
 			close (1);
 		}

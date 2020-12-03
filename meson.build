@@ -363,12 +363,17 @@ foreach item : [
     ['explicit_memset', '#include <string.h>', []],
     ['clock_nanosleep', '#include <time.h>', []],
     ['clock_gettime', '#include <time.h>', [lrt]],
-    ['sigaction', '#include <signal.h>', []]
+    ['sigaction', '#include <signal.h>', []],
+    ['pipe2', '#define _GNU_SOURCE\n#include <fcntl.h>\n#include <unistd.h>', []]
   ]
   func = item[0]
   ok = cc.has_function(func, prefix: item[1], dependencies: item[2])
   userconf.set10('HAVE_@0@'.format(func.to_upper()), ok)
 endforeach
+
+if userconf.get('HAVE_PIPE2') == 1
+  add_project_arguments('-D_GNU_SOURCE', language: ['c', 'cpp'])
+endif
 
 rz_userconf_h = configure_file(
   input: 'librz/include/rz_userconf.h.acr',

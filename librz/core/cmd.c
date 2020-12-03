@@ -2157,15 +2157,15 @@ RZ_API int rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd) {
 	rz_sys_signal (SIGPIPE, SIG_IGN);
 	stdout_fd = dup (1);
 	if (stdout_fd != -1) {
-		if (pipe (fds) == 0) {
+		if (rz_sys_pipe (fds, true) == 0) {
 			child = rz_sys_fork ();
 			if (child == -1) {
 				eprintf ("Cannot fork\n");
 				close (stdout_fd);
 			} else if (child) {
 				dup2 (fds[1], 1);
-				close (fds[1]);
-				close (fds[0]);
+				rz_sys_pipe_close (fds[1]);
+				rz_sys_pipe_close (fds[0]);
 				rz_core_cmd (core, rizin_cmd, 0);
 				rz_cons_flush ();
 				close (1);

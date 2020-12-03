@@ -47,6 +47,28 @@ RZ_API char *rz_sys_pid_to_path(int pid);
 RZ_API int rz_sys_run(const ut8 *buf, int len);
 RZ_API int rz_sys_run_rop(const ut8 *buf, int len);
 RZ_API int rz_sys_getpid(void);
+#if __UNIX__
+#if HAVE_PIPE2
+#include <fcntl.h>
+#include <unistd.h>
+static inline int rz_sys_pipe(int pipefd[2], bool close_on_exec) { return pipe2 (pipefd, close_on_exec? O_CLOEXEC: 0); }
+#define rz_sys_pipe_close close
+#define rz_sys_execv execv
+#define rz_sys_execve execve
+#define rz_sys_execvp execvp
+#define rz_sys_execl execl
+#define rz_sys_system system
+#else
+RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec);
+RZ_API int rz_sys_pipe_close(int fd);
+RZ_API int rz_sys_execv(const char *pathname, char *const argv[]);
+RZ_API int rz_sys_execve(const char *pathname, char *const argv[], char *const envp[]);
+RZ_API int rz_sys_execvp(const char *file, char *const argv[]);
+RZ_API int rz_sys_execl(const char *pathname, const char *arg, ...);
+RZ_API int rz_sys_system(const char *command);
+#endif
+#endif
+
 RZ_API int rz_sys_crash_handler(const char *cmd);
 RZ_API const char *rz_sys_arch_str(int arch);
 RZ_API int rz_sys_arch_id(const char *arch);

@@ -463,21 +463,21 @@ RZ_API bool rz_subprocess_init(void) {
 	if (!subprocs_mutex) {
 		return false;
 	}
-	if (pipe (sigchld_pipe) == -1) {
+	if (rz_sys_pipe (sigchld_pipe, true) == -1) {
 		perror ("pipe");
 		rz_th_lock_free (subprocs_mutex);
 		return false;
 	}
 	sigchld_thread = rz_th_new (sigchld_th, NULL, 0);
 	if (!sigchld_thread) {
-		close (sigchld_pipe [0]);
-		close (sigchld_pipe [1]);
+		rz_sys_pipe_close (sigchld_pipe [0]);
+		rz_sys_pipe_close (sigchld_pipe [1]);
 		rz_th_lock_free (subprocs_mutex);
 		return false;
 	}
 	if (rz_sys_signal (SIGCHLD, handle_sigchld) < 0) {
-		close (sigchld_pipe [0]);
-		close (sigchld_pipe [1]);
+		rz_sys_pipe_close (sigchld_pipe [0]);
+		rz_sys_pipe_close (sigchld_pipe [1]);
 		rz_th_lock_free (subprocs_mutex);
 		return false;
 	}
@@ -488,9 +488,9 @@ RZ_API void rz_subprocess_fini(void) {
 	rz_sys_signal (SIGCHLD, SIG_IGN);
 	ut8 b = 0;
 	write (sigchld_pipe[1], &b, 1);
-	close (sigchld_pipe [1]);
+	rz_sys_pipe_close (sigchld_pipe [1]);
 	rz_th_wait (sigchld_thread);
-	close (sigchld_pipe [0]);
+	rz_sys_pipe_close (sigchld_pipe [0]);
 	rz_th_free (sigchld_thread);
 	rz_pvector_clear (&subprocs);
 	rz_th_lock_free (subprocs_mutex);
@@ -526,7 +526,7 @@ RZ_API RzSubprocess *rz_subprocess_start(
 	rz_strbuf_init (&proc->out);
 	rz_strbuf_init (&proc->err);
 
-	if (pipe (proc->killpipe) == -1) {
+	if (rz_sys_pipe (proc->killpipe, true) == -1) {
 		perror ("pipe");
 		goto error;
 	}
@@ -536,14 +536,14 @@ RZ_API RzSubprocess *rz_subprocess_start(
 	}
 
 	int stdin_pipe[2] = { -1, -1 };
-	if (pipe (stdin_pipe) == -1) {
+	if (rz_sys_pipe (stdin_pipe, true) == -1) {
 		perror ("pipe");
 		goto error;
 	}
 	proc->stdin_fd = stdin_pipe[1];
 
 	int stdout_pipe[2] = { -1, -1 };
-	if (pipe (stdout_pipe) == -1) {
+	if (rz_sys_pipe (stdout_pipe, true) == -1) {
 		perror ("pipe");
 		goto error;
 	}
@@ -554,7 +554,7 @@ RZ_API RzSubprocess *rz_subprocess_start(
 	proc->stdout_fd = stdout_pipe[0];
 
 	int stderr_pipe[2] = { -1, -1 };
-	if (pipe (stderr_pipe) == -1) {
+	if (rz_sys_pipe (stderr_pipe, true) == -1) {
 		perror ("pipe");
 		goto error;
 	}
@@ -567,37 +567,34 @@ RZ_API RzSubprocess *rz_subprocess_start(
 	proc->pid = rz_sys_fork ();
 	if (proc->pid == -1) {
 		// fail
-		rz_th_lock_leave (subprocs_mutex);
 		perror ("fork");
-		free (proc);
-		free (argv);
-		return NULL;
+		goto error;
 	} else if (proc->pid == 0) {
 		// child
 		while ((dup2(stdin_pipe[0], STDIN_FILENO) == -1) && (errno == EINTR)) {}
-		close (stdin_pipe[0]);
-		close (stdin_pipe[1]);
+		rz_sys_pipe_close (stdin_pipe[0]);
+		rz_sys_pipe_close (stdin_pipe[1]);
 		while ((dup2(stdout_pipe[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
-		close (stdout_pipe[1]);
-		close (stdout_pipe[0]);
+		rz_sys_pipe_close (stdout_pipe[1]);
+		rz_sys_pipe_close (stdout_pipe[0]);
 		while ((dup2(stderr_pipe[1], STDERR_FILENO) == -1) && (errno == EINTR)) {}
-		close (stderr_pipe[1]);
-		close (stderr_pipe[0]);
+		rz_sys_pipe_close (stderr_pipe[1]);
+		rz_sys_pipe_close (stderr_pipe[0]);
 
 		size_t i;
 		for (i = 0; i < env_size; i++) {
 			setenv (envvars[i], envvals[i], 1);
 		}
-		execvp (file, argv);
+		rz_sys_execvp (file, argv);
 		perror ("exec");
 		rz_sys_exit (-1, true);
 	}
 	free (argv);
 
 	// parent
-	close (stdin_pipe[0]);
-	close (stdout_pipe[1]);
-	close (stderr_pipe[1]);
+	rz_sys_pipe_close (stdin_pipe[0]);
+	rz_sys_pipe_close (stdout_pipe[1]);
+	rz_sys_pipe_close (stderr_pipe[1]);
 
 	rz_pvector_push (&subprocs, proc);
 
@@ -607,29 +604,29 @@ RZ_API RzSubprocess *rz_subprocess_start(
 error:
 	free (argv);
 	if (proc && proc->killpipe[0] == -1) {
-		close (proc->killpipe[0]);
+		rz_sys_pipe_close (proc->killpipe[0]);
 	}
 	if (proc && proc->killpipe[1] == -1) {
-		close (proc->killpipe[1]);
+		rz_sys_pipe_close (proc->killpipe[1]);
 	}
 	free (proc);
-	if (stderr_pipe[0] == -1) {
-		close (stderr_pipe[0]);
+	if (stderr_pipe[0] != -1) {
+		rz_sys_pipe_close (stderr_pipe[0]);
 	}
-	if (stderr_pipe[1] == -1) {
-		close (stderr_pipe[1]);
+	if (stderr_pipe[1] != -1) {
+		rz_sys_pipe_close (stderr_pipe[1]);
 	}
-	if (stdout_pipe[0] == -1) {
-		close (stdout_pipe[0]);
+	if (stdout_pipe[0] != -1) {
+		rz_sys_pipe_close (stdout_pipe[0]);
 	}
-	if (stdout_pipe[1] == -1) {
-		close (stdout_pipe[1]);
+	if (stdout_pipe[1] != -1) {
+		rz_sys_pipe_close (stdout_pipe[1]);
 	}
-	if (stdin_pipe[0] == -1) {
-		close (stdin_pipe[0]);
+	if (stdin_pipe[0] != -1) {
+		rz_sys_pipe_close (stdin_pipe[0]);
 	}
-	if (stdin_pipe[1] == -1) {
-		close (stdin_pipe[1]);
+	if (stdin_pipe[1] != -1) {
+		rz_sys_pipe_close (stdin_pipe[1]);
 	}
 	rz_subprocess_unlock ();
 	return NULL;
@@ -736,9 +733,11 @@ RZ_API void rz_subprocess_kill(RzSubprocess *proc) {
 }
 
 RZ_API void rz_subprocess_stdin_write(RzSubprocess *proc, const ut8 *buf, size_t buf_size) {
+	rz_subprocess_lock ();
 	write (proc->stdin_fd, buf, buf_size);
-	close (proc->stdin_fd);
+	rz_sys_pipe_close (proc->stdin_fd);
 	proc->stdin_fd = -1;
+	rz_subprocess_unlock ();
 }
 
 RZ_API RzSubprocessOutput *rz_subprocess_drain(RzSubprocess *proc) {
@@ -763,13 +762,13 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	rz_subprocess_unlock ();
 	rz_strbuf_fini (&proc->out);
 	rz_strbuf_fini (&proc->err);
-	close (proc->killpipe[0]);
-	close (proc->killpipe[1]);
+	rz_sys_pipe_close (proc->killpipe[0]);
+	rz_sys_pipe_close (proc->killpipe[1]);
 	if (proc->stdin_fd != -1) {
-		close (proc->stdin_fd);
+		rz_sys_pipe_close (proc->stdin_fd);
 	}
-	close (proc->stdout_fd);
-	close (proc->stderr_fd);
+	rz_sys_pipe_close (proc->stdout_fd);
+	rz_sys_pipe_close (proc->stderr_fd);
 	free (proc);
 }
 

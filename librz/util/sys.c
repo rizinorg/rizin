@@ -607,21 +607,21 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 	if (len) {
 		*len = 0;
 	}
-	if (pipe (sh_in)) {
+	if (rz_sys_pipe (sh_in, true)) {
 		return false;
 	}
 	if (output) {
-		if (pipe (sh_out)) {
-			close (sh_in[0]);
-			close (sh_in[1]);
-			close (sh_out[0]);
-			close (sh_out[1]);
+		if (rz_sys_pipe (sh_out, true)) {
+			rz_sys_pipe_close (sh_in[0]);
+			rz_sys_pipe_close (sh_in[1]);
+			rz_sys_pipe_close (sh_out[0]);
+			rz_sys_pipe_close (sh_out[1]);
 			return false;
 		}
 	}
-	if (pipe (sh_err)) {
-		close (sh_in[0]);
-		close (sh_in[1]);
+	if (rz_sys_pipe (sh_err, true)) {
+		rz_sys_pipe_close (sh_in[0]);
+		rz_sys_pipe_close (sh_in[1]);
 		return false;
 	}
 
@@ -629,21 +629,21 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 	case -1:
 		return false;
 	case 0:
-		dup2 (sh_in[0], 0);
-		close (sh_in[0]);
-		close (sh_in[1]);
+		while ((dup2(sh_in[0], STDIN_FILENO) == -1) && (errno == EINTR)) {}
+		rz_sys_pipe_close (sh_in[0]);
+		rz_sys_pipe_close (sh_in[1]);
 		if (output) {
-			dup2 (sh_out[1], 1);
-			close (sh_out[0]);
-			close (sh_out[1]);
+			while ((dup2 (sh_out[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
+			rz_sys_pipe_close (sh_out[0]);
+			rz_sys_pipe_close (sh_out[1]);
 		}
 		if (sterr) {
-			dup2 (sh_err[1], 2);
+			while ((dup2(sh_err[1], STDERR_FILENO) == -1) && (errno == EINTR)) {}
+			rz_sys_pipe_close (sh_err[0]);
+			rz_sys_pipe_close (sh_err[1]);
 		} else {
 			close (2);
 		}
-		close (sh_err[0]);
-		close (sh_err[1]);
 		exit (rz_sandbox_system (cmd, 0));
 	default:
 		outputptr = strdup ("");
@@ -658,12 +658,13 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 			}
 		}
 		if (output) {
-			close (sh_out[1]);
+			rz_sys_pipe_close (sh_out[1]);
 		}
-		close (sh_err[1]);
-		close (sh_in[0]);
+		rz_sys_pipe_close (sh_err[1]);
+		rz_sys_pipe_close (sh_in[0]);
 		if (!inputptr || !*inputptr) {
-			close (sh_in[1]);
+			rz_sys_pipe_close (sh_in[1]);
+			sh_in[1] = -1;
 		}
 		// we should handle broken pipes somehow better
 		rz_sys_signal (SIGPIPE, SIG_IGN);
@@ -719,7 +720,7 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 				}
 				inputptr += bytes;
 				if (!*inputptr) {
-					close (sh_in[1]);
+					rz_sys_pipe_close (sh_in[1]);
 					/* If neither stdout nor stderr should be captured,
 					 * abort now - nothing more to do for select(). */
 					if (!output && !sterr) {
@@ -729,10 +730,12 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 			}
 		}
 		if (output) {
-			close (sh_out[0]);
+			rz_sys_pipe_close (sh_out[0]);
 		}
-		close (sh_err[0]);
-		close (sh_in[1]);
+		rz_sys_pipe_close (sh_err[0]);
+		if (sh_in[1] != -1) {
+			rz_sys_pipe_close (sh_in[1]);
+		}
 		waitpid (pid, &status, 0);
 		bool ret = true;
 		if (status) {
@@ -1380,3 +1383,248 @@ RZ_API void rz_sys_info_free(RSysInfo *si) {
 	free (si->machine);
 	free (si);
 }
+
+#if __UNIX__
+#if HAVE_PIPE2
+#elif defined(O_CLOEXEC)
+static RzThreadLock *sys_pipe_mutex;
+
+__attribute__ ((constructor)) static void sys_pipe_constructor(void) {
+	sys_pipe_mutex = rz_th_lock_new (true);
+}
+
+__attribute__ ((destructor)) static void sys_pipe_destructor(void) {
+	rz_th_lock_free (sys_pipe_mutex);
+}
+
+static bool set_close_on_exec(int fd) {
+	int flags = fcntl (fd, F_GETFD);
+	if (flags == -1) {
+		return false;
+	}
+	flags |= FD_CLOEXEC;
+	return fcntl (fd, F_SETFD, flags) != -1;
+}
+
+/**
+ * \brief Create a pipe and use O_CLOEXEC flag when \p close_on_exec is true
+ *
+ * If \p rz_sys functions are used to exec/system the new process, no race
+ * condition happen even on systems that don't support atomic creation of pipes
+ * with O_CLOEXEC.
+ */
+RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec) {
+	int res = -1;
+	rz_th_lock_enter (sys_pipe_mutex);
+	if ((res = pipe (pipefd)) == -1) {
+		perror ("pipe");
+		goto err;
+	}
+	if (close_on_exec && (!set_close_on_exec (pipefd[0]) || !set_close_on_exec (pipefd[1]))) {
+		perror ("close-on-exec");
+		close (pipefd[0]);
+		close (pipefd[1]);
+		goto err;
+	}
+err:
+	rz_th_lock_leave (sys_pipe_mutex);
+	return res;
+}
+
+/**
+ * \brief Close a file descriptor previously created pipe \p rz_sys_pipe
+ */
+RZ_API int rz_sys_pipe_close(int fd) {
+	return close (fd);
+}
+
+RZ_API int rz_sys_execv(const char *pathname, char *const argv[]) {
+	rz_th_lock_enter (sys_pipe_mutex);
+	int res = execv (pathname, argv);
+	rz_th_lock_leave (sys_pipe_mutex);
+	return res;
+}
+
+RZ_API int rz_sys_execve(const char *pathname, char *const argv[], char *const envp[]) {
+	rz_th_lock_enter (sys_pipe_mutex);
+	int res = execve (pathname, argv, envp);
+	rz_th_lock_leave (sys_pipe_mutex);
+	return res;
+}
+
+RZ_API int rz_sys_execvp(const char *file, char *const argv[]) {
+	rz_th_lock_enter (sys_pipe_mutex);
+	int res = execvp (file, argv);
+	rz_th_lock_leave (sys_pipe_mutex);
+	return res;
+}
+
+RZ_API int rz_sys_execl(const char *pathname, const char *arg, ...) {
+	va_list count_args, args;
+	va_start (args, arg);
+	va_copy (count_args, args);
+	size_t i, argc = 0;
+	while (va_arg (count_args, char *) != NULL) {
+		argc++;
+	}
+	va_end (count_args);
+	char **argv = RZ_NEWS0 (char *, argc + 2);
+	argv[0] = strdup (pathname);
+	for (i = 1; i <= argc; i++) {
+		argv[i] = va_arg (args, char *);
+	}
+	va_end (args);
+	rz_th_lock_enter (sys_pipe_mutex);
+	int res = execv (pathname, argv);
+	rz_th_lock_leave (sys_pipe_mutex);
+	return res;
+}
+
+RZ_API int rz_sys_system(const char *command) {
+	rz_th_lock_enter (sys_pipe_mutex);
+	int res = system (command);
+	rz_th_lock_leave (sys_pipe_mutex);
+	return res;
+}
+#else
+#include <ht_uu.h>
+static HtUU *fd2close;
+static RzThreadLock *sys_pipe_mutex;
+
+static void prepare_atfork(void) {
+	rz_th_lock_enter (sys_pipe_mutex);
+}
+
+static void parent_atfork(void) {
+	rz_th_lock_leave (sys_pipe_mutex);
+}
+
+static void child_atfork(void) {
+	rz_th_lock_leave (sys_pipe_mutex);
+}
+
+__attribute__ ((constructor)) static void sys_pipe_constructor(void) {
+	sys_pipe_mutex = rz_th_lock_new (false);
+	pthread_atfork(prepare_atfork, parent_atfork, child_atfork);
+	fd2close = ht_uu_new0 ();
+}
+
+__attribute__ ((destructor)) static void sys_pipe_destructor(void) {
+	ht_uu_free (fd2close);
+	rz_th_lock_free (sys_pipe_mutex);
+}
+
+static bool set_close_on_exec(int fd, bool close_on_exec) {
+	bool res = ht_uu_insert (fd2close, fd, close_on_exec);
+	rz_warn_if_fail (res);
+	return res;
+}
+
+static bool close_on_exec_fd_cb(void *user, const ut64 key, const ut64 val) {
+	bool close_on_exec = (bool)val;
+	if (close_on_exec) {
+		close ((int)key);
+	}
+	return true;
+}
+
+static void close_fds(void) {
+	ht_uu_foreach (fd2close, close_on_exec_fd_cb, NULL);
+}
+
+/**
+ * \brief Create a pipe and simulates the O_CLOEXEC flag when \p close_on_exec is true
+ *
+ * If \p rz_sys functions are used to exec/system a new process, pipes created
+ * with this function would be closed before executing the new executable,
+ * making sure these file descriptors don't leak.
+ */
+RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec) {
+	int res = -1;
+	rz_th_lock_enter (sys_pipe_mutex);
+	if ((res = pipe (pipefd)) == -1) {
+		perror ("pipe");
+		goto err;
+	}
+	if (!set_close_on_exec (pipefd[0], close_on_exec) || !set_close_on_exec (pipefd[1], close_on_exec)) {
+		perror ("close-on-exec");
+		close (pipefd[0]);
+		close (pipefd[1]);
+		goto err;
+	}
+err:
+	rz_th_lock_leave (sys_pipe_mutex);
+	return res;
+}
+
+/**
+ * \brief Close a file descriptor previously created pipe \p rz_sys_pipe
+ *
+ * This is necessary to ensure that the file descriptor is not "closed again"
+ * when an \p rz_sys exec/system is executed later.
+ */
+RZ_API int rz_sys_pipe_close(int fd) {
+	rz_th_lock_enter (sys_pipe_mutex);
+	bool deleted = ht_uu_delete (fd2close, fd);
+	rz_warn_if_fail (deleted);
+	int res = close (fd);
+	rz_th_lock_leave (sys_pipe_mutex);
+	return res;
+}
+
+RZ_API int rz_sys_execv(const char *pathname, char *const argv[]) {
+	rz_th_lock_enter (sys_pipe_mutex);
+	close_fds ();
+	int res = execv (pathname, argv);
+	rz_th_lock_leave (sys_pipe_mutex);
+	return res;
+}
+
+RZ_API int rz_sys_execve(const char *pathname, char *const argv[], char *const envp[]) {
+	rz_th_lock_enter (sys_pipe_mutex);
+	close_fds ();
+	int res = execve (pathname, argv, envp);
+	rz_th_lock_leave (sys_pipe_mutex);
+	return res;
+}
+
+RZ_API int rz_sys_execvp(const char *file, char *const argv[]) {
+	rz_th_lock_enter (sys_pipe_mutex);
+	close_fds ();
+	int res = execvp (file, argv);
+	rz_th_lock_leave (sys_pipe_mutex);
+	return res;
+}
+
+RZ_API int rz_sys_execl(const char *pathname, const char *arg, ...) {
+	va_list count_args, args;
+	va_start (args, arg);
+	va_copy (count_args, args);
+	size_t i, argc = 0;
+	while (va_arg (count_args, char *) != NULL) {
+		argc++;
+	}
+	va_end (count_args);
+	char **argv = RZ_NEWS0 (char *, argc + 2);
+	argv[0] = strdup (pathname);
+	for (i = 1; i <= argc; i++) {
+		argv[i] = va_arg (args, char *);
+	}
+	va_end (args);
+
+	rz_th_lock_enter (sys_pipe_mutex);
+	close_fds ();
+	int res = execv (pathname, argv);
+	rz_th_lock_leave (sys_pipe_mutex);
+	return res;
+}
+
+RZ_API int rz_sys_system(const char *command) {
+	rz_th_lock_enter (sys_pipe_mutex);
+	close_fds ();
+	int res = system (command);
+	rz_th_lock_leave (sys_pipe_mutex);
+	return res;
+}
+#endif
+#endif
