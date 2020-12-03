@@ -283,11 +283,11 @@ int main(int argc, char **argv) {
 		free (tmp);
 	}
 
-	if (!rz_test_subprocess_init ()) {
+	if (!rz_subprocess_init ()) {
 		eprintf ("Subprocess init failed\n");
 		return -1;
 	}
-	atexit (rz_test_subprocess_fini);
+	atexit (rz_subprocess_fini);
 
 	ut64 time_start = rz_time_now_mono ();
 	RzTestState state = {{0}};
@@ -605,10 +605,10 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 		}
 		d->diff_cmd = "git diff --no-index --word-diff=porcelain --word-diff-regex=.";
 	}
-	rz_test_subprocess_lock (); // diffing may fork(), potentially preventing pipes from other subprocs to be closed completely
+	rz_subprocess_lock (); // diffing may fork(), potentially preventing pipes from other subprocs to be closed completely
 	char *uni = rz_diff_buffers_to_string (d, (const ut8 *)expected, (int)strlen (expected),
 	                                      (const ut8 *)actual, (int)strlen (actual));
-	rz_test_subprocess_unlock ();
+	rz_subprocess_unlock ();
 	rz_diff_free (d);
 
 	RzList *lines = rz_str_split_duplist (uni, "\n", false);
@@ -656,7 +656,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 	printf ("\n");
 }
 
-static RzTestProcessOutput *print_runner(const char *file, const char *args[], size_t args_size,
+static RzSubprocessOutput *print_runner(const char *file, const char *args[], size_t args_size,
 	const char *envvars[], const char *envvals[], size_t env_size, ut64 timeout_ms, void *user) {
 	size_t i;
 	for (i = 0; i < env_size; i++) {
@@ -1012,7 +1012,7 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 static void interact_fix(RzTestResultInfo *result, RzPVector *fixup_results) {
 	assert (result->test->type == RZ_TEST_TYPE_CMD);
 	RzCmdTest *test = result->test->cmd_test;
-	RzTestProcessOutput *out = result->proc_out;
+	RzSubprocessOutput *out = result->proc_out;
 	if (test->expect.value && out->out) {
 		replace_cmd_kv_file (result->test->path, test->expect.line_begin, test->expect.line_end, "EXPECT", out->out, fixup_results);
 	}

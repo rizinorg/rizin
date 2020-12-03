@@ -369,6 +369,18 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	CloseHandle (proc->proc);
 	free (proc);
 }
+
+RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
+	return proc->ret;
+}
+
+RZ_API char *rz_subprocess_out(RzSubprocess *proc) {
+	return rz_strbuf_drain_nofree (&proc->out);
+}
+
+RZ_API char *rz_subprocess_err(RzSubprocess *proc) {
+	return rz_strbuf_drain_nofree (&proc->err);
+}
 #else
 
 #include <errno.h>
@@ -759,6 +771,18 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	close (proc->stdout_fd);
 	close (proc->stderr_fd);
 	free (proc);
+}
+
+RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
+	return proc->ret;
+}
+
+RZ_API char *rz_subprocess_out(RzSubprocess *proc) {
+	return rz_strbuf_drain_nofree (&proc->out);
+}
+
+RZ_API char *rz_subprocess_err(RzSubprocess *proc) {
+	return rz_strbuf_drain_nofree (&proc->err);
 }
 #endif
 

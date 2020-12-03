@@ -22,6 +22,9 @@ RZ_API RzSubprocess *rz_subprocess_start(
 RZ_API void rz_subprocess_free(RzSubprocess *proc);
 RZ_API bool rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms);
 RZ_API void rz_subprocess_kill(RzSubprocess *proc);
+RZ_API int rz_subprocess_ret(RzSubprocess *proc);
+RZ_API char *rz_subprocess_out(RzSubprocess *proc);
+RZ_API char *rz_subprocess_err(RzSubprocess *proc);
 RZ_API void rz_subprocess_stdin_write(RzSubprocess *proc, const ut8 *buf, size_t buf_size);
 RZ_API RzSubprocessOutput *rz_subprocess_drain(RzSubprocess *proc);
 RZ_API void rz_subprocess_output_free(RzSubprocessOutput *out);
