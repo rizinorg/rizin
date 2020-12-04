@@ -5,7 +5,7 @@
 typedef struct {
 	ut64 addr;
 	ut64 faddr;
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 	int pos; // related to columns
 	int cur; // current row selected
 	RzList *columns;

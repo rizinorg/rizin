@@ -52,74 +52,74 @@ static inline ut64 xtensa_imm12s (ut64 addr, const ut8 *buf) {
 	return (addr + 4 + imm12);
 }
 
-typedef void (*XtensaOpFn) (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf);
+typedef void (*XtensaOpFn) (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf);
 
-static void xtensa_null_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_null_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->type = RZ_ANAL_OP_TYPE_NULL;
 }
 
-static void xtensa_unk_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_unk_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->type = RZ_ANAL_OP_TYPE_UNK;
 }
 
-static void xtensa_mov_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_mov_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->type = RZ_ANAL_OP_TYPE_MOV;
 }
 
-static void xtensa_load_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_load_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->type = RZ_ANAL_OP_TYPE_LOAD;
 }
 
-static void xtensa_store_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_store_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->type = RZ_ANAL_OP_TYPE_STORE;
 }
 
-static void xtensa_add_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_add_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->type = RZ_ANAL_OP_TYPE_ADD;
 }
 
-static void xtensa_sub_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_sub_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->type = RZ_ANAL_OP_TYPE_SUB;
 }
 
-static void xtensa_mul_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_mul_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->type = RZ_ANAL_OP_TYPE_MUL;
 }
 
-static void xtensa_div_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_div_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->type = RZ_ANAL_OP_TYPE_DIV;
 }
 
-static void xtensa_mod_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_mod_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->type = RZ_ANAL_OP_TYPE_MOD;
 }
 
-static void xtensa_and_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_and_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->type = RZ_ANAL_OP_TYPE_AND;
 }
 
-static void xtensa_or_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_or_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->type = RZ_ANAL_OP_TYPE_OR;
 }
 
-static void xtensa_xor_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_xor_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->type = RZ_ANAL_OP_TYPE_XOR;
 }
 
-static void xtensa_shl_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_shl_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->type = RZ_ANAL_OP_TYPE_SHL;
 }
 
-static void xtensa_shr_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_shr_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->type = RZ_ANAL_OP_TYPE_SHR;
 }
 
-static void xtensa_l32r_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_l32r_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->type = RZ_ANAL_OP_TYPE_LOAD;
 	op->ptr = ((addr + 3) & ~3) + ((buf[2] << 8 | buf[1]) << 2) - 0x40000;
 }
 
-static void xtensa_snm0_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_snm0_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	switch ((buf[0] >> 4) & 0xf) {
 	case 0x0: case 0x1: case 0x2: case 0x3:
 		op->type = RZ_ANAL_OP_TYPE_ILL;
@@ -139,7 +139,7 @@ static void xtensa_snm0_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *bu
 	}
 }
 
-static void xtensa_sync_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_sync_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	switch ((buf[0] >> 4) & 0xf) {
 	case 0x0: case 0x1: case 0x2: case 0x3:
 	case 0x8:
@@ -153,7 +153,7 @@ static void xtensa_sync_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *bu
 	}
 }
 
-static void xtensa_rfei_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_rfei_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	switch ((buf[0] >> 4) & 0xf) {
 	case 0x0:
 		switch (buf[1] & 0xf) {
@@ -175,7 +175,7 @@ static void xtensa_rfei_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *bu
 	}
 }
 
-static void xtensa_st0_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_st0_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	switch ((buf[1] >> 4) & 0xf) {
 	case 0x0:
 		xtensa_snm0_op (anal, op, addr, buf);
@@ -204,7 +204,7 @@ static void xtensa_st0_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf
 	}
 }
 
-static void xtensa_st1_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_st1_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	switch ((buf[1] >> 4) & 0xf) {
 	case 0x0: case 0x1: case 0x2: case 0x3:
 	case 0x4:
@@ -228,7 +228,7 @@ static void xtensa_st1_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf
 	}
 }
 
-static void xtensa_rt0_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_rt0_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	switch (buf[1] & 0xf) {
 	case 0:
 		op->type = RZ_ANAL_OP_TYPE_NOT;
@@ -243,7 +243,7 @@ static void xtensa_rt0_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf
 	}
 }
 
-static void xtensa_tlb_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_tlb_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	switch ((buf[2] >> 4) & 0xf) {
 	case 0x3:
 	case 0x4: case 0x5: case 0x6: case 0x7:
@@ -257,7 +257,7 @@ static void xtensa_tlb_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf
 	}
 }
 
-static void xtensa_accer_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_accer_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	switch ((buf[2] >> 4) & 0xf) {
 	case 0x0:
 	case 0x8:
@@ -270,7 +270,7 @@ static void xtensa_accer_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *b
 	}
 }
 
-static void xtensa_imp_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_imp_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	switch ((buf[1] >> 4) & 0xf) {
 	case 0x0: case 0x1: case 0x2: case 0x3:
 	case 0x8: case 0x9:
@@ -346,18 +346,18 @@ static XtensaOpFn xtensa_rst2_fns[] = {
 	xtensa_mod_op
 };
 
-static void xtensa_rst0_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_rst0_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	xtensa_rst0_fns[(buf[2] >> 4) & 0xf] (anal, op, addr, buf);
 }
-static void xtensa_rst1_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_rst1_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	xtensa_rst1_fns[(buf[2] >> 4) & 0xf] (anal, op, addr, buf);
 }
 
-static void xtensa_rst2_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_rst2_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	xtensa_rst2_fns[(buf[2] >> 4) & 0xf] (anal, op, addr, buf);
 }
 
-static void xtensa_lsc4_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_lsc4_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	switch ((buf[2] >> 4) & 0xf) {
 	case 0x0:
 		xtensa_load_op (anal, op, addr, buf);
@@ -371,7 +371,7 @@ static void xtensa_lsc4_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *bu
 	}
 }
 
-static void xtensa_lscx_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_lscx_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->family = RZ_ANAL_OP_FAMILY_FPU;
 	switch ((buf[2] >> 4) & 0xf) {
 	case 0x0: case 0x1:
@@ -386,7 +386,7 @@ static void xtensa_lscx_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *bu
 	}
 }
 
-static void xtensa_fp0_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_fp0_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->family = RZ_ANAL_OP_FAMILY_FPU;
 	switch ((buf[2] >> 4) & 0xf) {
 	case 0x0: case 0x4:
@@ -424,7 +424,7 @@ static void xtensa_fp0_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf
 	}
 }
 
-static void xtensa_fp1_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_fp1_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->family = RZ_ANAL_OP_FAMILY_FPU;
 	switch ((buf[2] >> 4) & 0xf) {
 	case 0x1: case 0x2: case 0x3:
@@ -460,7 +460,7 @@ static XtensaOpFn xtensa_qrst_fns[] = {
 	xtensa_unk_op
 };
 
-static void xtensa_qrst_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_qrst_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	xtensa_qrst_fns[buf[2] & 0xf] (anal, op, addr, buf);
 }
 
@@ -483,11 +483,11 @@ static XtensaOpFn xtensa_lsai_fns[] = {
 	xtensa_store_op
 };
 
-static void xtensa_lsai_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_lsai_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	xtensa_lsai_fns[(buf[1] >> 4) & 0xf] (anal, op, addr, buf);
 }
 
-static void xtensa_lsci_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_lsci_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	ut8 r = buf[1] >> 4;
 	op->family = RZ_ANAL_OP_FAMILY_FPU;
 	if ((r & 3) == 0) {
@@ -501,19 +501,19 @@ static void xtensa_lsci_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *bu
 	}
 }
 
-static void xtensa_calln_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_calln_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->type = RZ_ANAL_OP_TYPE_CALL;
 	op->fail = addr + op->size;
 	op->jump = xtensa_offset (addr, buf);
 }
 
-static void xtensa_b_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_b_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->type = RZ_ANAL_OP_TYPE_CJMP;
 	op->fail = addr + op->size;
 	op->jump = xtensa_imm8s (addr, buf[2]);
 }
 
-static void xtensa_si_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_si_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	ut8 n = (buf[0] >> 4) & 3;
 	ut8 m = (buf[0] >> 6);
 	switch (n) {
@@ -563,7 +563,7 @@ static void xtensa_si_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf)
 	}
 }
 
-static void xtensa_st2n_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_st2n_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	if (buf[0] & 0x80) {
 		op->type = RZ_ANAL_OP_TYPE_CJMP;
 		op->fail = addr + op->size;
@@ -573,7 +573,7 @@ static void xtensa_st2n_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *bu
 	}
 }
 
-static void xtensa_st3n_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void xtensa_st3n_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	switch ((buf[1] >> 4) & 0xf) {
 	case 0x0:
 		op->type = RZ_ANAL_OP_TYPE_MOV;
@@ -636,7 +636,7 @@ static inline void sign_extend2(st32 *value, ut8 bit1, ut8 bit2, ut8 shift) {
 }
 
 static void xtensa_check_stack_op(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	st32 imm;
 	ut32 dst;
 	ut32 src;
@@ -695,7 +695,7 @@ static void esil_sign_extend(RzStrBuf *esil, ut8 bit) {
 }
 
 static void esil_load_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	ut32 offset;
 	ut32 reg_d;
 	ut32 reg_a;
@@ -765,7 +765,7 @@ static void esil_load_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format fo
 }
 
 static void esil_load_relative(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	ut32 offset;
 	st32 dst;
 
@@ -805,7 +805,7 @@ static void esil_load_relative(xtensa_isa isa, xtensa_opcode opcode, xtensa_form
 }
 
 static void esil_add_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	st32 imm;
 	ut32 dst;
 	ut32 src;
@@ -838,7 +838,7 @@ static void esil_add_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format for
 }
 
 static void esil_store_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 
 	ut32 offset;
 	ut32 reg_d;
@@ -895,7 +895,7 @@ static void esil_store_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format f
 }
 
 static void esil_move_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	st32 imm;
 	ut32 reg;
 
@@ -927,7 +927,7 @@ static void esil_move_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format fo
 }
 
 static void esil_move(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	ut32 dst;
 	ut32 src;
 
@@ -950,7 +950,7 @@ static void esil_move(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format
 }
 
 static void esil_move_conditional(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	ut32 dst;
 	ut32 src;
 	ut32 cond;
@@ -1011,7 +1011,7 @@ static void esil_move_conditional(xtensa_isa isa, xtensa_opcode opcode, xtensa_f
 }
 
 static void esil_add_sub(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	ut32 dst;
 	ut32 op1;
 	ut32 op2;
@@ -1072,7 +1072,7 @@ static void esil_add_sub(xtensa_isa isa, xtensa_opcode opcode, xtensa_format for
 }
 
 static void esil_branch_compare_imm(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	ut32 cmp_reg;
 	// Unsigned immediate operands still fit in st32
 	st32 cmp_imm;
@@ -1136,7 +1136,7 @@ static void esil_branch_compare_imm(xtensa_isa isa, xtensa_opcode opcode,
 }
 
 static void esil_branch_compare(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	ut32 op1_reg;
 	ut32 op2_reg;
 	st32 branch_imm;
@@ -1199,7 +1199,7 @@ static void esil_branch_compare(xtensa_isa isa, xtensa_opcode opcode,
 }
 
 static void esil_branch_compare_single(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	ut32 op_reg;
 	st32 branch_imm;
 
@@ -1257,7 +1257,7 @@ static void esil_branch_compare_single(xtensa_isa isa, xtensa_opcode opcode,
 }
 
 static void esil_branch_check_mask(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	ut32 op1_reg;
 	ut32 op2_reg;
 	st32 branch_imm;
@@ -1334,7 +1334,7 @@ static void esil_branch_check_mask(xtensa_isa isa, xtensa_opcode opcode,
 }
 
 static void esil_bitwise_op(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	ut32 dst;
 	ut32 op1;
 	ut32 op2;
@@ -1381,7 +1381,7 @@ static void esil_bitwise_op(xtensa_isa isa, xtensa_opcode opcode, xtensa_format 
 }
 
 static void esil_branch_check_bit_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	ut32 src_reg;
 	ut32 imm_bit;
 	st32 imm_offset;
@@ -1440,7 +1440,7 @@ static void esil_branch_check_bit_imm(xtensa_isa isa, xtensa_opcode opcode, xten
 }
 
 static void esil_branch_check_bit(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	ut32 src_reg;
 	ut32 bit_reg;
 	st32 imm_offset;
@@ -1504,7 +1504,7 @@ static void esil_branch_check_bit(xtensa_isa isa, xtensa_opcode opcode, xtensa_f
 }
 
 static void esil_abs_neg(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-		size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	ut32 src_reg;
 	ut32 dst_reg;
 
@@ -1565,7 +1565,7 @@ static void esil_abs_neg(xtensa_isa isa, xtensa_opcode opcode, xtensa_format for
 }
 
 static void esil_call(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	bool call = opcode == 76;
 	st32 imm_offset;
 
@@ -1595,7 +1595,7 @@ static void esil_call(xtensa_isa isa, xtensa_opcode opcode,
 }
 
 static void esil_callx(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	bool callx = opcode == 77;
 	ut32 dst_reg;
 
@@ -1622,7 +1622,7 @@ static void esil_callx(xtensa_isa isa, xtensa_opcode opcode,
 }
 
 static void esil_set_shift_amount(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	ut32 src_reg;
 
 	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &src_reg);
@@ -1639,7 +1639,7 @@ static void esil_set_shift_amount(xtensa_isa isa, xtensa_opcode opcode,
 }
 
 static void esil_set_shift_amount_imm(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	ut32 sa_imm;
 
 	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &sa_imm);
@@ -1655,7 +1655,7 @@ static void esil_set_shift_amount_imm(xtensa_isa isa, xtensa_opcode opcode,
 }
 
 static void esil_shift_logic_imm(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	ut32 reg_dst;
 	ut32 reg_src;
 	ut32 imm_amount;
@@ -1694,7 +1694,7 @@ static void esil_shift_logic_imm(xtensa_isa isa, xtensa_opcode opcode,
 }
 
 static void esil_shift_logic_sar(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	ut32 reg_dst;
 	ut32 reg_src;
 
@@ -1729,7 +1729,7 @@ static void esil_shift_logic_sar(xtensa_isa isa, xtensa_opcode opcode,
 }
 
 static void esil_extract_unsigned(xtensa_isa isa, xtensa_opcode opcode,
-		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+		xtensa_format format, size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	ut32 reg_dst;
 	ut32 reg_src;
 	ut32 imm_shift;
@@ -1764,7 +1764,7 @@ static void esil_extract_unsigned(xtensa_isa isa, xtensa_opcode opcode,
 }
 
 static void analop_esil (xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
-						 size_t i, xtensa_insnbuf slot_buffer, RzAnalOp *op) {
+						 size_t i, xtensa_insnbuf slot_buffer, RzAnalysisOp *op) {
 	switch (opcode) {
 	case 26: /* add.n */
 	case 41: /* add */
@@ -1909,7 +1909,7 @@ static void analop_esil (xtensa_isa isa, xtensa_opcode opcode, xtensa_format for
 	}
 }
 
-static int xtensa_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf_original, int len_original, RzAnalOpMask mask) {
+static int xtensa_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf_original, int len_original, RzAnalysisOpMask mask) {
 	if (!op) {
 		return 1;
 	}
@@ -1973,7 +1973,7 @@ static int xtensa_op (RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf_orig
 	return op->size;
 }
 
-static char *get_reg_profile(RzAnal *anal) {
+static char *get_reg_profile(RzAnalysis *anal) {
 	return strdup (
 		// Assuming call0 ABI
 		"# a0		return address\n"
@@ -2015,7 +2015,7 @@ static char *get_reg_profile(RzAnal *anal) {
 	);
 }
 
-RzAnalPlugin rz_anal_plugin_xtensa = {
+RzAnalysisPlugin rz_anal_plugin_xtensa = {
 	.name = "xtensa",
 	.desc = "Xtensa disassembler",
 	.license = "LGPL3",

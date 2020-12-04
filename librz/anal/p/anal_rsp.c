@@ -13,10 +13,10 @@
 #include <rz_anal.h>
 #include "../../asm/arch/rsp/rsp_idec.h"
 
-static int rsp_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *b, int len, RzAnalOpMask mask) {
+static int rsp_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *b, int len, RzAnalysisOpMask mask) {
 	int i;
 	typedef struct {
-		RzAnalValue* value;
+		RzAnalysisValue* value;
 		char esil[32];
 	} ParsedOperands;
 
@@ -578,7 +578,7 @@ static int rsp_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *b, int len, 
 }
 
 
-static char *get_reg_profile(RzAnal *anal) {
+static char *get_reg_profile(RzAnalysis *anal) {
 	static const char *p =
 		"=PC    pc\n"
 		"=SP    sp\n"
@@ -682,11 +682,11 @@ static char *get_reg_profile(RzAnal *anal) {
 	return strdup (p);
 }
 
-static int archinfo(RzAnal *anal, int q) {
+static int archinfo(RzAnalysis *anal, int q) {
 	return 4;
 }
 
-RzAnalPlugin rz_anal_plugin_rsp = {
+RzAnalysisPlugin rz_anal_plugin_rsp = {
 	.name = "rsp",
 	.desc = "RSP code analysis plugin",
 	.license = "LGPL3",

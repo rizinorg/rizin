@@ -95,22 +95,22 @@ static int map_cond2rizin(ut8 cond) {
 	return -1;
 }
 
-static void arcompact_jump(RzAnalOp *op, ut64 addr, ut64 jump, ut8 delay) {
+static void arcompact_jump(RzAnalysisOp *op, ut64 addr, ut64 jump, ut8 delay) {
 	op->jump = jump;
 	op->fail = addr + op->size;
 	op->delay = delay;
 }
 
-static void arcompact_jump_cond(RzAnalOp *op, ut64 addr, ut64 jump, ut8 delay, ut8 cond) {
+static void arcompact_jump_cond(RzAnalysisOp *op, ut64 addr, ut64 jump, ut8 delay, ut8 cond) {
 	arcompact_jump (op, addr, jump, delay);
 	op->cond = map_cond2rizin (cond);
 }
 
-static void arcompact_branch(RzAnalOp *op, ut64 addr, st64 offset, ut8 delay) {
+static void arcompact_branch(RzAnalysisOp *op, ut64 addr, st64 offset, ut8 delay) {
 	arcompact_jump (op, addr, (addr & ~3) + offset, delay);
 }
 
-static void map_zz2refptr(RzAnalOp *op, ut8 mode_zz) {
+static void map_zz2refptr(RzAnalysisOp *op, ut8 mode_zz) {
 	switch (mode_zz) {
 	case 0: op->refptr = 4; break;
 	case 1: op->refptr = 1; break;
@@ -121,7 +121,7 @@ static void map_zz2refptr(RzAnalOp *op, ut8 mode_zz) {
 	}
 }
 
-static int arcompact_genops_jmp(RzAnalOp *op, ut64 addr, arc_fields *f, ut64 basic_type) {
+static int arcompact_genops_jmp(RzAnalysisOp *op, ut64 addr, arc_fields *f, ut64 basic_type) {
 	ut64 type_ujmp;
 	ut64 type_cjmp;
 	ut64 type_ucjmp;
@@ -200,7 +200,7 @@ static int arcompact_genops_jmp(RzAnalOp *op, ut64 addr, arc_fields *f, ut64 bas
 	return 0;
 }
 
-static int arcompact_genops(RzAnalOp *op, ut64 addr, ut32 words[2]) {
+static int arcompact_genops(RzAnalysisOp *op, ut64 addr, ut32 words[2]) {
 	arc_fields fields = {0};
 
 	fields.format = (words[0] & 0x00c00000) >> 22;
@@ -445,7 +445,7 @@ static int arcompact_genops(RzAnalOp *op, ut64 addr, ut32 words[2]) {
 	return op->size;
 }
 
-static int arcompact_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int arcompact_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len) {
 	ut32 words[2]; /* storage for the de-swizled opcode data */
 	arc_fields fields;
 
@@ -1013,7 +1013,7 @@ static int arcompact_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, 
 	return op->size;
 }
 
-static int arc_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask) {
+static int arc_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	const ut8 *b = (ut8 *)data;
 
 	if (anal->bits == 16) {
@@ -1065,7 +1065,7 @@ static int arc_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int le
 	return op->size;
 }
 
-static int archinfo(RzAnal *anal, int query) {
+static int archinfo(RzAnalysis *anal, int query) {
 	if (anal->bits != 16) {
 		return -1;
 	}
@@ -1082,7 +1082,7 @@ static int archinfo(RzAnal *anal, int query) {
 	}
 }
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	if (anal->bits != 16) {
 		return false;
 	}
@@ -1137,7 +1137,7 @@ static bool set_reg_profile(RzAnal *anal) {
 	return rz_reg_set_profile_string (anal->reg, p16);
 }
 
-RzAnalPlugin rz_anal_plugin_arc = {
+RzAnalysisPlugin rz_anal_plugin_arc = {
 	.name = "arc",
 	.arch = "arc",
 	.license = "LGPL3",

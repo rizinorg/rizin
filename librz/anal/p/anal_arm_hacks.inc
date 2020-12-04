@@ -1,5 +1,5 @@
 #include "rz_anal.h"
-static int hack_handle_dp_reg(ut32 insn, RzAnalOp *op) {
+static int hack_handle_dp_reg(ut32 insn, RzAnalysisOp *op) {
 	const bool op0 = (insn >> 30) & 0x1;
 	const bool op1 = (insn >> 28) & 0x1;
 	const ut8 op2 = (insn >> 21) & 0xf;
@@ -34,7 +34,7 @@ static int hack_handle_dp_reg(ut32 insn, RzAnalOp *op) {
 	return -1;
 }
 
-static int hack_handle_ldst(ut32 insn, RzAnalOp *op) {
+static int hack_handle_ldst(ut32 insn, RzAnalysisOp *op) {
 	const ut8 op0 = (insn >> 28) & 0xf;
 	const bool op1 = (insn >> 26) & 0x1;
 	ut8 op2 = (insn >> 23) & 0x3;
@@ -97,7 +97,7 @@ static int hack_handle_ldst(ut32 insn, RzAnalOp *op) {
 	return -1;
 }
 
-static int hack_handle_dp_imm(ut32 insn, RzAnalOp *op) {
+static int hack_handle_dp_imm(ut32 insn, RzAnalysisOp *op) {
 	const ut8 op0 = (insn >> 23) & 0x7;
 
 	// Add/subtract (immediate, with tags)
@@ -120,7 +120,7 @@ static int hack_handle_dp_imm(ut32 insn, RzAnalOp *op) {
 	return -1;
 }
 
-static int hack_handle_br_exc_sys(ut32 insn, RzAnalOp *op) {
+static int hack_handle_br_exc_sys(ut32 insn, RzAnalysisOp *op) {
 	const ut8 op0 = (insn >> 29) & 0x7;
 	const ut16 op1 = (insn >> 12) & 0x3fff;
 	ut8 op2 = insn & 0x1f;
@@ -143,7 +143,7 @@ static int hack_handle_br_exc_sys(ut32 insn, RzAnalOp *op) {
 	return -1;
 }
 
-static inline int hackyArmAnal(RzAnal *a, RzAnalOp *op, const ut8 *buf, int len) {
+static inline int hackyArmAnal(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, int len) {
 	int ret = -1;
 	// Hacky support for ARMv8.3 and ARMv8.5
 	if (a->bits == 64 && len >= 4) {

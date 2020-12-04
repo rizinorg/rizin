@@ -3,7 +3,7 @@
 
 #include "minunit.h"
 
-const RzAnalHint empty_hint = {
+const RzAnalysisHint empty_hint = {
 	.addr = UT64_MAX,
 	.ptr = 0,
 	.val = UT64_MAX,
@@ -25,7 +25,7 @@ const RzAnalHint empty_hint = {
 	.stackframe = UT64_MAX,
 };
 
-bool hint_equals(const RzAnalHint *a, const RzAnalHint *b) {
+bool hint_equals(const RzAnalysisHint *a, const RzAnalysisHint *b) {
 #define CHECK_EQ(member) mu_assert_eq (a->member, b->member, "hint member " #member)
 	CHECK_EQ (ptr);
 	CHECK_EQ (val);
@@ -59,12 +59,12 @@ bool hint_equals(const RzAnalHint *a, const RzAnalHint *b) {
 } while (0)
 
 bool test_r_anal_addr_hints() {
-	RzAnal *anal = rz_anal_new ();
-	RzAnalHint *hint = rz_anal_hint_get (anal, 0x1337);
+	RzAnalysis *anal = rz_anal_new ();
+	RzAnalysisHint *hint = rz_anal_hint_get (anal, 0x1337);
 	assert_hint_eq (hint, &empty_hint);
 	rz_anal_hint_free (hint);
 
-	RzAnalHint cur = empty_hint;
+	RzAnalysisHint cur = empty_hint;
 #define CHECK \
 	hint = rz_anal_hint_get (anal, 0x1337); \
 	assert_hint_eq (hint, &cur); \
@@ -218,7 +218,7 @@ bool test_r_anal_addr_hints() {
 
 #define RANGED_TEST(name, val, resetval, assert_val) \
 bool test_r_anal_hints_##name() { \
-	RzAnal *anal = rz_anal_new (); \
+	RzAnalysis *anal = rz_anal_new (); \
 	\
 	ut64 hint_addr = 0xdead; \
 	assert_val (rz_anal_hint_##name##_at (anal, 0x1337, &hint_addr), resetval, "no " #name ""); \
@@ -247,9 +247,9 @@ bool test_r_anal_hints_##name() { \
 	\
 	rz_anal_hint_##name##_at (anal, 0x1337, NULL); /* make sure this does not null-deref */ \
 	\
-	RzAnalHint cur = empty_hint; \
+	RzAnalysisHint cur = empty_hint; \
 	cur.name = val; \
-	RzAnalHint *hint = rz_anal_hint_get (anal, 0x1337); \
+	RzAnalysisHint *hint = rz_anal_hint_get (anal, 0x1337); \
 	assert_hint_eq (hint, &cur); \
 	rz_anal_hint_free (hint); \
 	hint = rz_anal_hint_get (anal, 0x1338); \

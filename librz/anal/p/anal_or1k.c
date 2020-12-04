@@ -37,7 +37,7 @@ static ut64 n_oper_to_addr(ut32 n, ut32 mask, ut64 addr) {
 	return (ut64) ((st64) ((st32) (sign_extend(n, mask) << 2)) + addr);
 }
 
-static int insn_to_op(RzAnal *a, RzAnalOp *op, ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 insn) {
+static int insn_to_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 insn) {
 	struct operands o = {0};
 	insn_type_t type = type_of_opcode(descr, extra);
 	insn_type_descr_t *type_descr = &types[INSN_X];
@@ -147,7 +147,7 @@ static int insn_to_op(RzAnal *a, RzAnalOp *op, ut64 addr, insn_t *descr, insn_ex
 	return 4;
 }
 
-static int or1k_op(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask) {
+static int or1k_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	ut32 insn, opcode;
 	ut8 opcode_idx;
 	insn_t *insn_descr;
@@ -186,7 +186,7 @@ static int or1k_op(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *data, int len,
 	return op->size;
 }
 
-RzAnalPlugin rz_anal_plugin_or1k = {
+RzAnalysisPlugin rz_anal_plugin_or1k = {
 	.name = "or1k",
 	.desc = "OpenRISC 1000",
 	.license = "LGPL3",

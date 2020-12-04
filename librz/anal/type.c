@@ -28,7 +28,7 @@ static char *get_type_data(Sdb *sdb_types, const char *type, const char *sname) 
 	return members;
 }
 
-RZ_API void rz_anal_remove_parsed_type(RzAnal *anal, const char *name) {
+RZ_API void rz_anal_remove_parsed_type(RzAnalysis *anal, const char *name) {
 	rz_return_if_fail (anal && name);
 	Sdb *TDB = anal->sdb_types;
 	SdbKv *kv;
@@ -53,7 +53,7 @@ RZ_API void rz_anal_remove_parsed_type(RzAnal *anal, const char *name) {
 	}
 }
 
-RZ_API void rz_anal_save_parsed_type(RzAnal *anal, const char *parsed) {
+RZ_API void rz_anal_save_parsed_type(RzAnalysis *anal, const char *parsed) {
 	rz_return_if_fail (anal && parsed);
 
 	// First, if any parsed types exist, let's remove them.
@@ -83,9 +83,9 @@ static int typecmp(const void *a, const void *b) {
 	return strcmp (a, b);
 }
 
-RZ_API RzList *rz_anal_types_from_fcn(RzAnal *anal, RzAnalFunction *fcn) {
+RZ_API RzList *rz_anal_types_from_fcn(RzAnalysis *anal, RzAnalysisFunction *fcn) {
 	RzListIter *iter;
-	RzAnalVar *var;
+	RzAnalysisVar *var;
 	RzList *list = rz_anal_var_all_list (anal, fcn);
 	RzList *type_used = rz_list_new ();
 	rz_list_foreach (list, iter, var) {
@@ -98,28 +98,28 @@ RZ_API RzList *rz_anal_types_from_fcn(RzAnal *anal, RzAnalFunction *fcn) {
 
 RZ_IPI void enum_type_case_free(void *e, void *user) {
 	(void)user;
-	RzAnalEnumCase *cas = e;
+	RzAnalysisEnumCase *cas = e;
 	free ((char *)cas->name);
 }
 
 RZ_IPI void struct_type_member_free(void *e, void *user) {
 	(void)user;
-	RzAnalStructMember *member = e;
+	RzAnalysisStructMember *member = e;
 	free ((char *)member->name);
 	free ((char *)member->type);
 }
 
 RZ_IPI void union_type_member_free(void *e, void *user) {
 	(void)user;
-	RzAnalUnionMember *member = e;
+	RzAnalysisUnionMember *member = e;
 	free ((char *)member->name);
 	free ((char *)member->type);
 }
 
-static RzAnalBaseType *get_enum_type(RzAnal *anal, const char *sname) {
+static RzAnalysisBaseType *get_enum_type(RzAnalysis *anal, const char *sname) {
 	rz_return_val_if_fail (anal && sname, NULL);
 
-	RzAnalBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ENUM);
+	RzAnalysisBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
 		return NULL;
 	}
@@ -147,7 +147,7 @@ static RzAnalBaseType *get_enum_type(RzAnal *anal, const char *sname) {
 			goto error;
 		}
 
-		RzAnalEnumCase cas = { .name = strdup (cur), .val = strtol (value, NULL, 16) };
+		RzAnalysisEnumCase cas = { .name = strdup (cur), .val = strtol (value, NULL, 16) };
 
 		void *element = rz_vector_push (cases, &cas); // returns null if no space available
 		if (!element) {
@@ -166,10 +166,10 @@ error:
 	return NULL;
 }
 
-static RzAnalBaseType *get_struct_type(RzAnal *anal, const char *sname) {
+static RzAnalysisBaseType *get_struct_type(RzAnalysis *anal, const char *sname) {
 	rz_return_val_if_fail (anal && sname, NULL);
 
-	RzAnalBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_STRUCT);
+	RzAnalysisBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_STRUCT);
 	if (!base_type) {
 		return NULL;
 	}
@@ -203,7 +203,7 @@ static RzAnalBaseType *get_struct_type(RzAnal *anal, const char *sname) {
 			goto error;
 		}
 		offset = sdb_anext (offset, NULL);
-		RzAnalStructMember cas = {
+		RzAnalysisStructMember cas = {
 			.name = strdup (cur),
 			.type = strdup (type),
 			.offset = strtol (offset, NULL, 10)
@@ -228,10 +228,10 @@ error:
 	return NULL;
 }
 
-static RzAnalBaseType *get_union_type(RzAnal *anal, const char *sname) {
+static RzAnalysisBaseType *get_union_type(RzAnalysis *anal, const char *sname) {
 	rz_return_val_if_fail (anal && sname, NULL);
 
-	RzAnalBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_UNION);
+	RzAnalysisBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_UNION);
 	if (!base_type) {
 		return NULL;
 	}
@@ -259,7 +259,7 @@ static RzAnalBaseType *get_union_type(RzAnal *anal, const char *sname) {
 			goto error;
 		}
 		char *value = sdb_anext (values, NULL);
-		RzAnalUnionMember cas = { .name = strdup (cur), .type = strdup (value) };
+		RzAnalysisUnionMember cas = { .name = strdup (cur), .type = strdup (value) };
 		free (values);
 
 		void *element = rz_vector_push (members, &cas); // returns null if no space available
@@ -279,10 +279,10 @@ error:
 	return NULL;
 }
 
-static RzAnalBaseType *get_typedef_type(RzAnal *anal, const char *sname) {
+static RzAnalysisBaseType *get_typedef_type(RzAnalysis *anal, const char *sname) {
 	rz_return_val_if_fail (anal && RZ_STR_ISNOTEMPTY (sname), NULL);
 
-	RzAnalBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_TYPEDEF);
+	RzAnalysisBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_TYPEDEF);
 	if (!base_type) {
 		return NULL;
 	}
@@ -298,10 +298,10 @@ error:
 	return NULL;
 }
 
-static RzAnalBaseType *get_atomic_type(RzAnal *anal, const char *sname) {
+static RzAnalysisBaseType *get_atomic_type(RzAnalysis *anal, const char *sname) {
 	rz_return_val_if_fail (anal && RZ_STR_ISNOTEMPTY (sname), NULL);
 
-	RzAnalBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ATOMIC);
+	RzAnalysisBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ATOMIC);
 	if (!base_type) {
 		return NULL;
 	}
@@ -323,7 +323,7 @@ error:
 }
 
 // returns NULL if name is not found or any failure happened
-RZ_API RzAnalBaseType *rz_anal_get_base_type(RzAnal *anal, const char *name) {
+RZ_API RzAnalysisBaseType *rz_anal_get_base_type(RzAnalysis *anal, const char *name) {
 	rz_return_val_if_fail (anal && name, NULL);
 
 	char *sname = rz_str_sanitize_sdb_key (name);
@@ -333,7 +333,7 @@ RZ_API RzAnalBaseType *rz_anal_get_base_type(RzAnal *anal, const char *name) {
 		return NULL;
 	}
 
-	RzAnalBaseType *base_type = NULL;
+	RzAnalysisBaseType *base_type = NULL;
 	if (!strcmp (type, "struct")) {
 		base_type = get_struct_type (anal, sname);
 	} else if (!strcmp (type, "enum")) {
@@ -355,7 +355,7 @@ RZ_API RzAnalBaseType *rz_anal_get_base_type(RzAnal *anal, const char *name) {
 	return base_type;
 }
 
-static void save_struct(const RzAnal *anal, const RzAnalBaseType *type) {
+static void save_struct(const RzAnalysis *anal, const RzAnalysisBaseType *type) {
 	rz_return_if_fail (anal && type && type->name
 		&& type->kind == RZ_ANAL_BASE_TYPE_KIND_STRUCT);
 	char *kind = "struct";
@@ -381,7 +381,7 @@ static void save_struct(const RzAnal *anal, const RzAnalBaseType *type) {
 	rz_strbuf_init (&param_val);
 
 	int i = 0;
-	RzAnalStructMember *member;
+	RzAnalysisStructMember *member;
 	rz_vector_foreach (&type->struct_data.members, member) {
 		// struct.name.param=type,offset,argsize
 		char *member_sname = rz_str_sanitize_sdb_key (member->name);
@@ -404,7 +404,7 @@ static void save_struct(const RzAnal *anal, const RzAnalBaseType *type) {
 	rz_strbuf_fini (&param_val);
 }
 
-static void save_union(const RzAnal *anal, const RzAnalBaseType *type) {
+static void save_union(const RzAnalysis *anal, const RzAnalysisBaseType *type) {
 	rz_return_if_fail (anal && type && type->name
 		&& type->kind == RZ_ANAL_BASE_TYPE_KIND_UNION);
 	const char *kind = "union";
@@ -430,7 +430,7 @@ static void save_union(const RzAnal *anal, const RzAnalBaseType *type) {
 	rz_strbuf_init (&param_val);
 
 	int i = 0;
-	RzAnalUnionMember *member;
+	RzAnalysisUnionMember *member;
 	rz_vector_foreach (&type->union_data.members, member) {
 		// union.name.arg1=type,offset,argsize
 		char *member_sname = rz_str_sanitize_sdb_key (member->name);
@@ -453,7 +453,7 @@ static void save_union(const RzAnal *anal, const RzAnalBaseType *type) {
 	rz_strbuf_fini (&param_val);
 }
 
-static void save_enum(const RzAnal *anal, const RzAnalBaseType *type) {
+static void save_enum(const RzAnalysis *anal, const RzAnalysisBaseType *type) {
 	rz_return_if_fail (anal && type && type->name
 		&& type->kind == RZ_ANAL_BASE_TYPE_KIND_ENUM);
 	/*
@@ -480,7 +480,7 @@ static void save_enum(const RzAnal *anal, const RzAnalBaseType *type) {
 	rz_strbuf_init (&param_val);
 
 	int i = 0;
-	RzAnalEnumCase *cas;
+	RzAnalysisEnumCase *cas;
 	rz_vector_foreach (&type->enum_data.cases, cas) {
 		// enum.name.arg1=type,offset,???
 		char *case_sname = rz_str_sanitize_sdb_key (cas->name);
@@ -507,7 +507,7 @@ static void save_enum(const RzAnal *anal, const RzAnalBaseType *type) {
 	rz_strbuf_fini (&param_val);
 }
 
-static void save_atomic_type(const RzAnal *anal, const RzAnalBaseType *type) {
+static void save_atomic_type(const RzAnalysis *anal, const RzAnalysisBaseType *type) {
 	rz_return_if_fail (anal && type && type->name
 		&& type->kind == RZ_ANAL_BASE_TYPE_KIND_ATOMIC);
 	/*
@@ -538,7 +538,7 @@ static void save_atomic_type(const RzAnal *anal, const RzAnalBaseType *type) {
 	rz_strbuf_fini (&key);
 	rz_strbuf_fini (&val);
 }
-static void save_typedef(const RzAnal *anal, const RzAnalBaseType *type) {
+static void save_typedef(const RzAnalysis *anal, const RzAnalysisBaseType *type) {
 	rz_return_if_fail (anal && type && type->name && type->kind == RZ_ANAL_BASE_TYPE_KIND_TYPEDEF);
 	/*
 		C:
@@ -565,7 +565,7 @@ static void save_typedef(const RzAnal *anal, const RzAnalBaseType *type) {
 	rz_strbuf_fini (&val);
 }
 
-RZ_API void rz_anal_base_type_free(RzAnalBaseType *type) {
+RZ_API void rz_anal_base_type_free(RzAnalysisBaseType *type) {
 	rz_return_if_fail (type);
 	RZ_FREE (type->name);
 	RZ_FREE (type->type);
@@ -589,21 +589,21 @@ RZ_API void rz_anal_base_type_free(RzAnalBaseType *type) {
 	RZ_FREE (type);
 }
 
-RZ_API RzAnalBaseType *rz_anal_base_type_new(RzAnalBaseTypeKind kind) {
-	RzAnalBaseType *type = RZ_NEW0 (RzAnalBaseType);
+RZ_API RzAnalysisBaseType *rz_anal_base_type_new(RzAnalysisBaseTypeKind kind) {
+	RzAnalysisBaseType *type = RZ_NEW0 (RzAnalysisBaseType);
 	if (!type) {
 		return NULL;
 	}
 	type->kind = kind;
 	switch (type->kind) {
 	case RZ_ANAL_BASE_TYPE_KIND_STRUCT:
-		rz_vector_init (&type->struct_data.members, sizeof (RzAnalStructMember), struct_type_member_free, NULL);
+		rz_vector_init (&type->struct_data.members, sizeof (RzAnalysisStructMember), struct_type_member_free, NULL);
 		break;
 	case RZ_ANAL_BASE_TYPE_KIND_ENUM:
-		rz_vector_init (&type->enum_data.cases, sizeof (RzAnalEnumCase), enum_type_case_free, NULL);
+		rz_vector_init (&type->enum_data.cases, sizeof (RzAnalysisEnumCase), enum_type_case_free, NULL);
 		break;
 	case RZ_ANAL_BASE_TYPE_KIND_UNION:
-		rz_vector_init (&type->union_data.members, sizeof (RzAnalUnionMember), union_type_member_free, NULL);
+		rz_vector_init (&type->union_data.members, sizeof (RzAnalysisUnionMember), union_type_member_free, NULL);
 		break;
 	default:
 		break;
@@ -613,13 +613,13 @@ RZ_API RzAnalBaseType *rz_anal_base_type_new(RzAnalBaseTypeKind kind) {
 }
 
 /**
- * @brief Saves RzAnalBaseType into the SDB
+ * @brief Saves RzAnalysisBaseType into the SDB
  *
  * @param anal
- * @param type RzAnalBaseType to save
+ * @param type RzAnalysisBaseType to save
  * @param name Name of the type
  */
-RZ_API void rz_anal_save_base_type(const RzAnal *anal, const RzAnalBaseType *type) {
+RZ_API void rz_anal_save_base_type(const RzAnalysis *anal, const RzAnalysisBaseType *type) {
 	rz_return_if_fail (anal && type && type->name);
 
 	// TODO, solve collisions, if there are 2 types with the same name and kind

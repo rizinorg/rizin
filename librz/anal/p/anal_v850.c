@@ -133,7 +133,7 @@ static const char* V850_REG_NAMES[] = {
 	"lp",
 };
 
-static void update_flags(RzAnalOp *op, int flags) {
+static void update_flags(RzAnalysisOp *op, int flags) {
 	if (flags & V850_FLAG_CY) {
 		rz_strbuf_append (&op->esil, "31,$c,cy,:=");
 	}
@@ -148,7 +148,7 @@ static void update_flags(RzAnalOp *op, int flags) {
 	}
 }
 
-static void clear_flags(RzAnalOp *op, int flags) {
+static void clear_flags(RzAnalysisOp *op, int flags) {
 	if (flags & V850_FLAG_CY) {
 		rz_strbuf_append (&op->esil, ",0,cy,=");
 	}
@@ -163,7 +163,7 @@ static void clear_flags(RzAnalOp *op, int flags) {
 	}
 }
 
-static int v850_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int v850_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	int ret = 0;
 	ut8 opcode = 0;
 	const char *reg1 = NULL;
@@ -487,7 +487,7 @@ static int v850_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int le
 	return ret;
 }
 
-static char *get_reg_profile(RzAnal *anal) {
+static char *get_reg_profile(RzAnalysis *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	r3\n"
@@ -553,7 +553,7 @@ static char *get_reg_profile(RzAnal *anal) {
 	return strdup (p);
 }
 
-static RzList *anal_preludes(RzAnal *anal) {
+static RzList *anal_preludes(RzAnalysis *anal) {
 #define KW(d,ds,m,ms) rz_list_append (l, rz_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
 	RzList *l = rz_list_newf ((RzListFree)rz_search_keyword_free);
 	KW ("\x80\x07", 2, "\xf0\xff", 2);
@@ -561,7 +561,7 @@ static RzList *anal_preludes(RzAnal *anal) {
 	return l;
 }
 
-static int archinfo(RzAnal *anal, int q) {
+static int archinfo(RzAnalysis *anal, int q) {
 	switch (q) {
 	case RZ_ANAL_ARCHINFO_ALIGN:
 		return 2;
@@ -573,7 +573,7 @@ static int archinfo(RzAnal *anal, int q) {
 	return 0;
 }
 
-RzAnalPlugin rz_anal_plugin_v850 = {
+RzAnalysisPlugin rz_anal_plugin_v850 = {
 	.name = "v850",
 	.desc = "V850 code analysis plugin",
 	.license = "LGPL3",

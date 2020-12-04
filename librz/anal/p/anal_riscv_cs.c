@@ -177,7 +177,7 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 
 #define ARG(x) (*str[x]!=0)?str[x]:arg(handle, insn, str[x], x)
 
-static int analop_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+static int analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	char str[8][32] = {{0}};
 	int i;
 
@@ -218,7 +218,7 @@ static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num
 	return 0;
 }
 
-static void op_fillval(RzAnal *anal, RzAnalOp *op, csh *handle, cs_insn *insn) {
+static void op_fillval(RzAnalysis *anal, RzAnalysisOp *op, csh *handle, cs_insn *insn) {
 	static RzRegItem reg;
 	switch (op->type & RZ_ANAL_OP_TYPE_MASK) {
 	case RZ_ANAL_OP_TYPE_LOAD:
@@ -294,7 +294,7 @@ capstone bug
 	}
 }
 
-static void set_opdir(RzAnalOp *op) {
+static void set_opdir(RzAnalysisOp *op) {
         switch (op->type & RZ_ANAL_OP_TYPE_MASK) {
         case RZ_ANAL_OP_TYPE_LOAD:
                 op->direction = RZ_ANAL_OP_DIR_READ;
@@ -316,7 +316,7 @@ static void set_opdir(RzAnalOp *op) {
         }
 }
 
-static int analop(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int analop(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	int n, ret, opsize = -1;
 	static csh hndl = 0;
 	static int omode = -1;
@@ -394,7 +394,7 @@ fin:
 	return opsize;
 }
 
-static char *get_reg_profile(RzAnal *anal) {
+static char *get_reg_profile(RzAnalysis *anal) {
 	const char *p = NULL;
 	switch (anal->bits) {
 	case 32: p =
@@ -574,7 +574,7 @@ static char *get_reg_profile(RzAnal *anal) {
 	return (p && *p)? strdup (p): NULL;
 }
 
-static int archinfo(RzAnal *anal, int q) {
+static int archinfo(RzAnalysis *anal, int q) {
 	switch (q) {
 	case RZ_ANAL_ARCHINFO_ALIGN:
 		return 4;
@@ -589,7 +589,7 @@ static int archinfo(RzAnal *anal, int q) {
 	return 0;
 }
 
-RzAnalPlugin rz_anal_plugin_riscv_cs = {
+RzAnalysisPlugin rz_anal_plugin_riscv_cs = {
 	.name = "riscv.cs",
 	.desc = "Capstone RISCV analyzer",
 	.license = "BSD",
@@ -610,7 +610,7 @@ RZ_API RzLibStruct rizin_plugin = {
 #endif
 
 #else
-RzAnalPlugin rz_anal_plugin_riscv_cs = {0};
+RzAnalysisPlugin rz_anal_plugin_riscv_cs = {0};
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
 	.type = RZ_LIB_TYPE_ANAL,

@@ -58,19 +58,19 @@ static void setup_sdb_for_not_found(Sdb *res) {
 }
 
 static bool test_anal_get_base_type_struct(void) {
-	RzAnal *anal = rz_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RzAnal");
-	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
+	RzAnalysis *anal = rz_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RzAnalysis");
+	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 
 	setup_sdb_for_struct (anal->sdb_types);
 
-	RzAnalBaseType *base = rz_anal_get_base_type (anal, "kappa");
+	RzAnalysisBaseType *base = rz_anal_get_base_type (anal, "kappa");
 	mu_assert_notnull (base, "Couldn't create get base type of struct \"kappa\"");
 
 	mu_assert_eq (RZ_ANAL_BASE_TYPE_KIND_STRUCT, base->kind, "Wrong base type");
 	mu_assert_streq (base->name, "kappa", "type name");
 
-	RzAnalStructMember *member;
+	RzAnalysisStructMember *member;
 
 	member = rz_vector_index_ptr (&base->struct_data.members, 0);
 	mu_assert_eq (member->offset, 0, "Incorrect offset for struct member");
@@ -88,14 +88,14 @@ static bool test_anal_get_base_type_struct(void) {
 }
 
 static bool test_anal_save_base_type_struct(void) {
-	RzAnal *anal = rz_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RzAnal");
-	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
+	RzAnalysis *anal = rz_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RzAnalysis");
+	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 
-	RzAnalBaseType *base = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_STRUCT);
+	RzAnalysisBaseType *base = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_STRUCT);
 	base->name = strdup ("kappa");
 
-	RzAnalStructMember member = {
+	RzAnalysisStructMember member = {
 		.offset = 0,
 		.type = strdup ("int32_t"),
 		.name = strdup ("bar")
@@ -120,19 +120,19 @@ static bool test_anal_save_base_type_struct(void) {
 }
 
 static bool test_anal_get_base_type_union(void) {
-	RzAnal *anal = rz_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RzAnal");
-	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
+	RzAnalysis *anal = rz_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RzAnalysis");
+	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 
 	setup_sdb_for_union (anal->sdb_types);
 
-	RzAnalBaseType *base = rz_anal_get_base_type (anal, "kappa");
+	RzAnalysisBaseType *base = rz_anal_get_base_type (anal, "kappa");
 	mu_assert_notnull (base, "Couldn't create get base type of union \"kappa\"");
 
 	mu_assert_eq (RZ_ANAL_BASE_TYPE_KIND_UNION, base->kind, "Wrong base type");
 	mu_assert_streq (base->name, "kappa", "type name");
 
-	RzAnalUnionMember *member;
+	RzAnalysisUnionMember *member;
 
 	member = rz_vector_index_ptr (&base->union_data.members, 0);
 	mu_assert_streq (member->type, "int32_t", "Incorrect type for union member");
@@ -148,14 +148,14 @@ static bool test_anal_get_base_type_union(void) {
 }
 
 static bool test_anal_save_base_type_union(void) {
-	RzAnal *anal = rz_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RzAnal");
-	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
+	RzAnalysis *anal = rz_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RzAnalysis");
+	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 
-	RzAnalBaseType *base = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_UNION);
+	RzAnalysisBaseType *base = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_UNION);
 	base->name = strdup ("kappa");
 
-	RzAnalUnionMember member = {
+	RzAnalysisUnionMember member = {
 		.offset = 0,
 		.type = strdup ("int32_t"),
 		.name = strdup ("bar")
@@ -180,19 +180,19 @@ static bool test_anal_save_base_type_union(void) {
 }
 
 static bool test_anal_get_base_type_enum(void) {
-	RzAnal *anal = rz_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RzAnal");
-	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
+	RzAnalysis *anal = rz_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RzAnalysis");
+	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 
 	setup_sdb_for_enum (anal->sdb_types);
 
-	RzAnalBaseType *base = rz_anal_get_base_type (anal, "foo");
+	RzAnalysisBaseType *base = rz_anal_get_base_type (anal, "foo");
 	mu_assert_notnull (base, "Couldn't create get base type of enum \"foo\"");
 
 	mu_assert_eq (RZ_ANAL_BASE_TYPE_KIND_ENUM, base->kind, "Wrong base type");
 	mu_assert_streq (base->name, "foo", "type name");
 
-	RzAnalEnumCase *cas = rz_vector_index_ptr (&base->enum_data.cases, 0);
+	RzAnalysisEnumCase *cas = rz_vector_index_ptr (&base->enum_data.cases, 0);
 	mu_assert_eq (cas->val, 1, "Incorrect value for enum case");
 	mu_assert_streq (cas->name, "firstCase", "Incorrect name for enum case");
 
@@ -206,14 +206,14 @@ static bool test_anal_get_base_type_enum(void) {
 }
 
 static bool test_anal_save_base_type_enum(void) {
-	RzAnal *anal = rz_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RzAnal");
-	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
+	RzAnalysis *anal = rz_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RzAnalysis");
+	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 
-	RzAnalBaseType *base = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ENUM);
+	RzAnalysisBaseType *base = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ENUM);
 	base->name = strdup ("foo");
 
-	RzAnalEnumCase cas = {
+	RzAnalysisEnumCase cas = {
 		.name = strdup ("firstCase"),
 		.val = 1
 	};
@@ -236,13 +236,13 @@ static bool test_anal_save_base_type_enum(void) {
 }
 
 static bool test_anal_get_base_type_typedef(void) {
-	RzAnal *anal = rz_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RzAnal");
-	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
+	RzAnalysis *anal = rz_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RzAnalysis");
+	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 
 	setup_sdb_for_typedef (anal->sdb_types);
 
-	RzAnalBaseType *base = rz_anal_get_base_type (anal, "string");
+	RzAnalysisBaseType *base = rz_anal_get_base_type (anal, "string");
 	mu_assert_notnull (base, "Couldn't create get base type of typedef \"string\"");
 
 	mu_assert_eq (RZ_ANAL_BASE_TYPE_KIND_TYPEDEF, base->kind, "Wrong base type");
@@ -255,11 +255,11 @@ static bool test_anal_get_base_type_typedef(void) {
 }
 
 static bool test_anal_save_base_type_typedef(void) {
-	RzAnal *anal = rz_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RzAnal");
-	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
+	RzAnalysis *anal = rz_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RzAnalysis");
+	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 
-	RzAnalBaseType *base = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_TYPEDEF);
+	RzAnalysisBaseType *base = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_TYPEDEF);
 	base->name = strdup ("string");
 	base->type = strdup ("char *");
 
@@ -276,13 +276,13 @@ static bool test_anal_save_base_type_typedef(void) {
 }
 
 static bool test_anal_get_base_type_atomic(void) {
-	RzAnal *anal = rz_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RzAnal");
-	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
+	RzAnalysis *anal = rz_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RzAnalysis");
+	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 
 	setup_sdb_for_atomic (anal->sdb_types);
 
-	RzAnalBaseType *base = rz_anal_get_base_type (anal, "char");
+	RzAnalysisBaseType *base = rz_anal_get_base_type (anal, "char");
 	mu_assert_notnull (base, "Couldn't create get base type of atomic type \"char\"");
 
 	mu_assert_eq (RZ_ANAL_BASE_TYPE_KIND_ATOMIC, base->kind, "Wrong base type");
@@ -296,11 +296,11 @@ static bool test_anal_get_base_type_atomic(void) {
 }
 
 static bool test_anal_save_base_type_atomic(void) {
-	RzAnal *anal = rz_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RzAnal");
-	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
+	RzAnalysis *anal = rz_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RzAnalysis");
+	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 
-	RzAnalBaseType *base = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ATOMIC);
+	RzAnalysisBaseType *base = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ATOMIC);
 	base->name = strdup ("char");
 	base->type = strdup ("c");
 	base->size = 8;
@@ -318,13 +318,13 @@ static bool test_anal_save_base_type_atomic(void) {
 }
 
 static bool test_anal_get_base_type_not_found(void) {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 	setup_sdb_for_not_found (anal->sdb_types);
 
-	mu_assert_notnull (anal, "Couldn't create new RzAnal");
-	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
+	mu_assert_notnull (anal, "Couldn't create new RzAnalysis");
+	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 
-	RzAnalBaseType *base = rz_anal_get_base_type (anal, "non_existant23321312___");
+	RzAnalysisBaseType *base = rz_anal_get_base_type (anal, "non_existant23321312___");
 	mu_assert_null (base, "Should find nothing");
 	base = rz_anal_get_base_type (anal, "foo");
 	mu_assert_null (base, "Should find nothing");

@@ -5,7 +5,7 @@
 /*	shared internal state of the subgraph generating functions	*/
 
 typedef struct esil_cfg_generator_t {
-	RzAnalEsil *esil;
+	RzAnalysisEsil *esil;
 	union {
 		RzStack *ifelse;
 		RzStack *vals;
@@ -13,13 +13,13 @@ typedef struct esil_cfg_generator_t {
 	// union for semantic purposes
 	RContRBTree *blocks;
 	// consider moving this to cfg? well, yes and no.
-	// making Graph nodes fast available in RzAnalEsilCFG is great idea
+	// making Graph nodes fast available in RzAnalysisEsilCFG is great idea
 	// A balanced tree is only best solution, if we want to store and lookup intervals
 	// We need to look for intervals, so that we can resolve goto destinations INSIDE of a cpu-instruction
 	// After an instruction got graphed, we only need their entry node (nodes with first == {xxx, 0 })
 	// So after graphing an instruction, the blocks-tree should be cleared (don't free the content)
 	// 	and nodes with first == {xxx, 0} should be stored in an sdb or similar in cfg, with xxx as key
-	RzAnalEsilCFG *cfg;
+	RzAnalysisEsilCFG *cfg;
 	RzGraphNode *cur;
 	// current graph-node, so that I don't have to abuse cfg->start
 	RzIDStorage *atoms;
@@ -66,7 +66,7 @@ static char *internal_esil_strchrtok(char *str, const char tok) {
 	return NULL;
 }
 
-RzAnalEsilOp *esil_get_op (RzAnalEsil *esil, const char *op) {
+RzAnalysisEsilOp *esil_get_op (RzAnalysisEsil *esil, const char *op) {
 	rz_return_val_if_fail (RZ_STR_ISNOTEMPTY (op) && esil && esil->ops, NULL);
 	return ht_pp_find (esil->ops, op, NULL);
 }
@@ -81,7 +81,7 @@ static void esil_expr_atomize(RzIDStorage *atoms, char *expr) {
 }
 
 static void _free_bb_cb(void *data) {
-	RzAnalEsilBB *bb = (RzAnalEsilBB *)data;
+	RzAnalysisEsilBB *bb = (RzAnalysisEsilBB *)data;
 	free (bb->expr);
 	free (bb);
 }
@@ -89,14 +89,14 @@ static void _free_bb_cb(void *data) {
 // REMINDER: generating the block content needs to prepend setting the program counter
 // rz_anal_esil_cfg_op does this ^, use it whenever generating cfg from op
 
-// this nasty function is an insert-compare for RzGraphNodes that contain RzAnalEsilBB
+// this nasty function is an insert-compare for RzGraphNodes that contain RzAnalysisEsilBB
 static int _graphnode_esilbb_insert_cmp(void *incoming, void *in, void *user) {
 	RzGraphNode *incoming_gnode = (RzGraphNode *)incoming;
 	RzGraphNode *in_gnode = (RzGraphNode *)in;
-	RzAnalEsilBB *incoming_bb = (RzAnalEsilBB *)incoming_gnode->data;
-	RzAnalEsilBB *in_bb = (RzAnalEsilBB *)in_gnode->data;
+	RzAnalysisEsilBB *incoming_bb = (RzAnalysisEsilBB *)incoming_gnode->data;
+	RzAnalysisEsilBB *in_bb = (RzAnalysisEsilBB *)in_gnode->data;
 
-	// RzAnalEsilBBs have the nice property, that they cannot intersect,
+	// RzAnalysisEsilBBs have the nice property, that they cannot intersect,
 	// so just comparing first and first should be fine for inserting
 #if 0
 	return incoming_bb->first - in_bb->first;
@@ -114,9 +114,9 @@ static int _graphnode_esilbb_insert_cmp(void *incoming, void *in, void *user) {
 }
 
 static int _graphnode_esilbb_find_cmp(void *incoming, void *in, void *user) {
-	RzAnalEsilEOffset *find_me = (RzAnalEsilEOffset *)incoming;
+	RzAnalysisEsilEOffset *find_me = (RzAnalysisEsilEOffset *)incoming;
 	RzGraphNode *in_gnode = (RzGraphNode *)in;
-	RzAnalEsilBB *in_bb = (RzAnalEsilBB *)in_gnode->data;
+	RzAnalysisEsilBB *in_bb = (RzAnalysisEsilBB *)in_gnode->data;
 	// not sure if this is needed that way
 	if (find_me->off < in_bb->first.off) {
 		return -1;
@@ -136,7 +136,7 @@ static int _graphnode_esilbb_find_cmp(void *incoming, void *in, void *user) {
 static int _graphnode_delete_always_0_cmp(void *incoming, void *in, void *user) {
 	EsilCfgGen *gen = (EsilCfgGen *)user;
 	RzGraphNode *delete_me = (RzGraphNode *)in;
-	RzAnalEsilBB *delete_me_bb = (RzAnalEsilBB *)delete_me->data;
+	RzAnalysisEsilBB *delete_me_bb = (RzAnalysisEsilBB *)delete_me->data;
 	rz_graph_del_node (gen->cfg->g, delete_me);
 	ut32 id;
 	for (id = delete_me_bb->first.idx; id <= delete_me_bb->last.idx; id++) {
@@ -153,10 +153,10 @@ void _handle_if_enter (EsilCfgGen *gen, ut32 id, const bool has_next) {
 	EsilCfgScopeCookie *cookie = RZ_NEW0 (EsilCfgScopeCookie);
 
 	// get current bb
-	//	RzAnalEsilBB *bb = (RzAnalEsilBB *)gen->cur->data;
+	//	RzAnalysisEsilBB *bb = (RzAnalysisEsilBB *)gen->cur->data;
 
 	// create if-enter-bb
-	RzAnalEsilBB *entered_bb = RZ_NEW0 (RzAnalEsilBB);
+	RzAnalysisEsilBB *entered_bb = RZ_NEW0 (RzAnalysisEsilBB);
 	entered_bb->first.off = entered_bb->last.off = gen->off;
 	entered_bb->first.idx = entered_bb->last.idx = id + 1;
 	entered_bb->enter = RZ_ANAL_ESIL_BLOCK_ENTER_TRUE;
@@ -184,7 +184,7 @@ void _handle_else_enter (EsilCfgGen *gen, ut32 id, const bool has_next) {
 	EsilCfgScopeCookie *cookie = (EsilCfgScopeCookie *)rz_stack_peek (gen->ifelse);
 
 	// create if-enter-bb
-	RzAnalEsilBB *entered_bb = RZ_NEW0 (RzAnalEsilBB);
+	RzAnalysisEsilBB *entered_bb = RZ_NEW0 (RzAnalysisEsilBB);
 	entered_bb->first.off = entered_bb->last.off = gen->off;
 	entered_bb->first.idx = entered_bb->last.idx = id + 1;
 
@@ -216,12 +216,12 @@ void _handle_fi_leave (EsilCfgGen *gen, ut32 id, const bool has_next) {
 		return;
 	}
 
-	RzAnalEsilBB *cur_bb = (RzAnalEsilBB *)gen->cur->data;
+	RzAnalysisEsilBB *cur_bb = (RzAnalysisEsilBB *)gen->cur->data;
 	// this block is not executed when the if or else block is empty
-	if (memcmp (&cur_bb->first, &cur_bb->last, sizeof (RzAnalEsilEOffset))) {
+	if (memcmp (&cur_bb->first, &cur_bb->last, sizeof (RzAnalysisEsilEOffset))) {
 		// TODO: add some thoughts in comments here
 		cur_bb->last.idx--;
-		RzAnalEsilBB *leaving_bb = RZ_NEW0 (RzAnalEsilBB);
+		RzAnalysisEsilBB *leaving_bb = RZ_NEW0 (RzAnalysisEsilBB);
 		leaving_bb->first.off = leaving_bb->last.off = gen->off;
 		leaving_bb->first.idx = leaving_bb->last.idx = id;
 		RzGraphNode *leaving_node = rz_graph_add_node (gen->cfg->g, leaving_bb);
@@ -258,8 +258,8 @@ void _handle_control_flow_ifelsefi (EsilCfgGen *gen, char *atom, ut32 id) {
 bool _round_0_cb (void *user, void *data, ut32 id) {
 	EsilCfgGen *gen = (EsilCfgGen *)user;
 	char *atom = (char *)data;
-	RzAnalEsilBB *bb = (RzAnalEsilBB *)gen->cur->data;
-	RzAnalEsilOp *op = esil_get_op (gen->esil, atom);
+	RzAnalysisEsilBB *bb = (RzAnalysisEsilBB *)gen->cur->data;
+	RzAnalysisEsilOp *op = esil_get_op (gen->esil, atom);
 	bb->last.idx = (ut16)id;
 	if (op && op->type == RZ_ANAL_ESIL_OP_TYPE_CONTROL_FLOW) {
 		_handle_control_flow_ifelsefi (gen, atom, id);
@@ -268,11 +268,11 @@ bool _round_0_cb (void *user, void *data, ut32 id) {
 }
 
 RzGraphNode *_common_break_goto (EsilCfgGen *gen, ut32 id) {
-	RzAnalEsilEOffset off = { gen->off, (ut16)id };
+	RzAnalysisEsilEOffset off = { gen->off, (ut16)id };
 	RzGraphNode *gnode = rz_rbtree_cont_find (gen->blocks, &off, _graphnode_esilbb_find_cmp, NULL);
-	RzAnalEsilBB *bb = (RzAnalEsilBB *)gnode->data;
+	RzAnalysisEsilBB *bb = (RzAnalysisEsilBB *)gnode->data;
 	if (id != bb->last.idx) {
-		RzAnalEsilBB *next_bb = RZ_NEW0 (RzAnalEsilBB);
+		RzAnalysisEsilBB *next_bb = RZ_NEW0 (RzAnalysisEsilBB);
 		// split blocks
 		next_bb->first.off = gen->off;
 		next_bb->first.idx = id + 1;
@@ -299,7 +299,7 @@ void _handle_break (EsilCfgGen *gen, ut32 id) {
 
 void _handle_goto (EsilCfgGen *gen, ut32 idx) {
 	RzGraphNode *gnode = _common_break_goto (gen, idx);
-	RzAnalEsilBB *bb = (RzAnalEsilBB *)gnode->data;
+	RzAnalysisEsilBB *bb = (RzAnalysisEsilBB *)gnode->data;
 	// so what we're doing here is emulating this block with a certain degree of abstraction:
 	// no reg-access
 	// no io-access
@@ -315,7 +315,7 @@ void _handle_goto (EsilCfgGen *gen, ut32 idx) {
 	// bb->last.idx is the GOTO operation itself, we do not reach this in the loop
 	for (id = bb->first.idx; id < bb->last.idx; id++) {
 		char *atom = (char *)rz_id_storage_get (gen->atoms, (ut32)id);
-		RzAnalEsilOp *op = esil_get_op (gen->esil, atom);
+		RzAnalysisEsilOp *op = esil_get_op (gen->esil, atom);
 		if (op) {
 			ut32 j;
 			for (j = 0; j < op->pop; j++) {
@@ -345,16 +345,16 @@ void _handle_goto (EsilCfgGen *gen, ut32 idx) {
 	}
 
 	// get the node to the corresponding GOTO destination
-	RzAnalEsilEOffset dst_off = { gen->off, (ut16)v->val };
+	RzAnalysisEsilEOffset dst_off = { gen->off, (ut16)v->val };
 	RzGraphNode *dst_node = rz_rbtree_cont_find (gen->blocks, &dst_off, _graphnode_esilbb_find_cmp, NULL);
 	if (!dst_node) {
 		// out-of-bounds
 		// check if this works
 		dst_node = gen->cfg->end;
 	} else {
-		RzAnalEsilBB *dst_bb = (RzAnalEsilBB *)dst_node->data;
+		RzAnalysisEsilBB *dst_bb = (RzAnalysisEsilBB *)dst_node->data;
 		if (dst_bb->first.idx != v->val) {
-			RzAnalEsilBB *split_bb = RZ_NEW0 (RzAnalEsilBB);
+			RzAnalysisEsilBB *split_bb = RZ_NEW0 (RzAnalysisEsilBB);
 			split_bb[0] = dst_bb[0];
 			dst_bb->last.idx = v->val - 1;
 			split_bb->first.idx = v->val;
@@ -374,7 +374,7 @@ beach:
 bool _round_1_cb (void *user, void *data, ut32 id) {
 	EsilCfgGen *gen = (EsilCfgGen *)user;
 	char *atom = (char *)data;
-	RzAnalEsilOp *op = esil_get_op (gen->esil, atom);
+	RzAnalysisEsilOp *op = esil_get_op (gen->esil, atom);
 	if (op && op->type == RZ_ANAL_ESIL_OP_TYPE_CONTROL_FLOW) {
 		if (!strcmp ("BREAK", atom)) {
 			_handle_break (gen, id);
@@ -387,7 +387,7 @@ bool _round_1_cb (void *user, void *data, ut32 id) {
 }
 
 void _round_2_cb (RzGraphNode *n, RzGraphVisitor *vi) {
-	RzAnalEsilBB *bb = (RzAnalEsilBB *)n->data;
+	RzAnalysisEsilBB *bb = (RzAnalysisEsilBB *)n->data;
 	EsilCfgGen *gen = (EsilCfgGen *)vi->data;
 	RzStrBuf *buf = rz_strbuf_new ((char *)rz_id_storage_get (gen->atoms, bb->first.idx));
 	rz_strbuf_append (buf, ",");
@@ -404,7 +404,7 @@ void _round_2_cb (RzGraphNode *n, RzGraphVisitor *vi) {
 // this function takes a cfg, an offset and an esil expression
 // concatinates to already existing graph.
 // Also expects RzIDStorage atoms and RContRBTree to be allocate in prior of the call
-static RzAnalEsilCFG *esil_cfg_gen(RzAnalEsilCFG *cfg, RzAnal *anal, RzIDStorage *atoms, RContRBTree *blocks, RzStack *stack, ut64 off, char *expr) {
+static RzAnalysisEsilCFG *esil_cfg_gen(RzAnalysisEsilCFG *cfg, RzAnalysis *anal, RzIDStorage *atoms, RContRBTree *blocks, RzStack *stack, ut64 off, char *expr) {
 	// consider expr as RzStrBuf, so that we can sanitze broken esil
 	// (ex: "b,a,+=,$z,zf,:=,7,$c,cf,:=,zf,?{,1,b,+=,cf,?{,3,a,-=" =>
 	// 	"b,a,+=,$z,zf,:=,7,$c,cf,:=,zf,?{,1,b,+=,cf,?{,3,a,-=,},}")
@@ -414,7 +414,7 @@ static RzAnalEsilCFG *esil_cfg_gen(RzAnalEsilCFG *cfg, RzAnal *anal, RzIDStorage
 	if (!_expr) {
 		return cfg; //NULL?
 	}
-	RzAnalEsilBB *end_bb = RZ_NEW0 (RzAnalEsilBB);
+	RzAnalysisEsilBB *end_bb = RZ_NEW0 (RzAnalysisEsilBB);
 	if (!end_bb) {
 		free (_expr);
 		return cfg;
@@ -438,7 +438,7 @@ static RzAnalEsilCFG *esil_cfg_gen(RzAnalEsilCFG *cfg, RzAnal *anal, RzIDStorage
 	//
 	// without information about the outside cfg, we CANNOT merge cpu-instructions
 
-	RzAnalEsilBB *bb = (RzAnalEsilBB *)cfg->end->data;
+	RzAnalysisEsilBB *bb = (RzAnalysisEsilBB *)cfg->end->data;
 
 	end_bb->expr = bb->expr;
 	// FIXME: use end_bb here
@@ -494,10 +494,10 @@ static RzAnalEsilCFG *esil_cfg_gen(RzAnalEsilCFG *cfg, RzAnal *anal, RzIDStorage
 	return cfg;
 }
 
-RZ_API RzAnalEsilCFG *rz_anal_esil_cfg_new(void) {
-	RzAnalEsilCFG *cf = RZ_NEW0 (RzAnalEsilCFG);
+RZ_API RzAnalysisEsilCFG *rz_anal_esil_cfg_new(void) {
+	RzAnalysisEsilCFG *cf = RZ_NEW0 (RzAnalysisEsilCFG);
 	if (cf) {
-		RzAnalEsilBB *p = RZ_NEW0 (RzAnalEsilBB);
+		RzAnalysisEsilBB *p = RZ_NEW0 (RzAnalysisEsilBB);
 		if (!p) {
 			free (cf);
 			return NULL;
@@ -534,7 +534,7 @@ RZ_API RzAnalEsilCFG *rz_anal_esil_cfg_new(void) {
 
 // this little function takes a cfg, an offset and an esil expression
 // concatinates to already existing graph
-RZ_API RzAnalEsilCFG *rz_anal_esil_cfg_expr(RzAnalEsilCFG *cfg, RzAnal *anal, const ut64 off, char *expr) {
+RZ_API RzAnalysisEsilCFG *rz_anal_esil_cfg_expr(RzAnalysisEsilCFG *cfg, RzAnalysis *anal, const ut64 off, char *expr) {
 	if (!anal || !anal->esil) {
 		return NULL;
 	}
@@ -553,25 +553,25 @@ RZ_API RzAnalEsilCFG *rz_anal_esil_cfg_expr(RzAnalEsilCFG *cfg, RzAnal *anal, co
 		rz_rbtree_cont_free (blocks);
 		return NULL;
 	}
-	RzAnalEsilCFG *cf = cfg ? cfg : rz_anal_esil_cfg_new ();
+	RzAnalysisEsilCFG *cf = cfg ? cfg : rz_anal_esil_cfg_new ();
 	if (!cf) {
 		rz_stack_free (stack);
 		rz_id_storage_free (atoms);
 		rz_rbtree_cont_free (blocks);
 		return NULL;
 	}
-	RzAnalEsilCFG *ret = esil_cfg_gen (cf, anal, atoms, blocks, stack, off, expr);
+	RzAnalysisEsilCFG *ret = esil_cfg_gen (cf, anal, atoms, blocks, stack, off, expr);
 	rz_stack_free (stack);
 	rz_id_storage_free (atoms);
 	rz_rbtree_cont_free (blocks);
 	return ret;
 }
 
-RZ_API RzAnalEsilCFG *rz_anal_esil_cfg_op(RzAnalEsilCFG *cfg, RzAnal *anal, RzAnalOp *op) {
+RZ_API RzAnalysisEsilCFG *rz_anal_esil_cfg_op(RzAnalysisEsilCFG *cfg, RzAnalysis *anal, RzAnalysisOp *op) {
 	if (!op || !anal || !anal->reg || !anal->esil) {
 		return NULL;
 	}
-	RzAnalEsilBB *glue_bb = RZ_NEW0 (RzAnalEsilBB);
+	RzAnalysisEsilBB *glue_bb = RZ_NEW0 (RzAnalysisEsilBB);
 	if (!glue_bb) {
 		eprintf ("Couldn't allocate glue_bb\n");
 		return NULL;
@@ -595,7 +595,7 @@ RZ_API RzAnalEsilCFG *rz_anal_esil_cfg_op(RzAnalEsilCFG *cfg, RzAnal *anal, RzAn
 	glue_bb->first.off = glue_bb->last.off = op->addr;
 	glue_bb->first.idx = glue_bb->last.idx = 0;
 
-	RzAnalEsilCFG *ret;
+	RzAnalysisEsilCFG *ret;
 
 	if (!cfg) {
 		ret = rz_anal_esil_cfg_expr (cfg, anal, op->addr, rz_strbuf_get (&op->esil));
@@ -616,7 +616,7 @@ RZ_API RzAnalEsilCFG *rz_anal_esil_cfg_op(RzAnalEsilCFG *cfg, RzAnal *anal, RzAn
 	return ret;
 }
 
-static void merge_2_blocks(RzAnalEsilCFG *cfg, RzGraphNode *node, RzGraphNode *block) {
+static void merge_2_blocks(RzAnalysisEsilCFG *cfg, RzGraphNode *node, RzGraphNode *block) {
 	// merge node and block, block dies in this
 	// block----->node ===> node
 	if (node == cfg->end) {
@@ -628,8 +628,8 @@ static void merge_2_blocks(RzAnalEsilCFG *cfg, RzGraphNode *node, RzGraphNode *b
 	rz_list_foreach (block->in_nodes, iter, n) {
 		rz_graph_add_edge (cfg->g, n, node);
 	}
-	RzAnalEsilBB *block_bb, *node_bb = (RzAnalEsilBB *)node->data;
-	block_bb = (RzAnalEsilBB *)block->data;
+	RzAnalysisEsilBB *block_bb, *node_bb = (RzAnalysisEsilBB *)node->data;
+	block_bb = (RzAnalysisEsilBB *)block->data;
 	if ((block_bb->enter == RZ_ANAL_ESIL_BLOCK_ENTER_TRUE) || (block_bb->enter == RZ_ANAL_ESIL_BLOCK_ENTER_FALSE)) {
 		node_bb->enter = block_bb->enter;
 	} else {
@@ -647,7 +647,7 @@ static void merge_2_blocks(RzAnalEsilCFG *cfg, RzGraphNode *node, RzGraphNode *b
 }
 
 // this method is really slow, because of foolish graph api
-RZ_API void rz_anal_esil_cfg_merge_blocks(RzAnalEsilCFG *cfg) {
+RZ_API void rz_anal_esil_cfg_merge_blocks(RzAnalysisEsilCFG *cfg) {
 	if (!cfg || !cfg->g || !cfg->g->nodes) {
 		return;
 	}
@@ -655,7 +655,7 @@ RZ_API void rz_anal_esil_cfg_merge_blocks(RzAnalEsilCFG *cfg) {
 	RzGraphNode *node;
 	rz_list_foreach_safe (cfg->g->nodes, iter, ator, node) {
 		if (rz_list_length (node->in_nodes) == 1) {
-			RzAnalEsilBB *bb = (RzAnalEsilBB *)node->data;
+			RzAnalysisEsilBB *bb = (RzAnalysisEsilBB *)node->data;
 			RzGraphNode *top = (RzGraphNode *)rz_list_get_top (node->out_nodes);
 			// segfaults here ?
 			if (!(top && bb->enter == RZ_ANAL_ESIL_BLOCK_ENTER_GLUE && (rz_list_length (top->in_nodes) > 1))) {
@@ -668,7 +668,7 @@ RZ_API void rz_anal_esil_cfg_merge_blocks(RzAnalEsilCFG *cfg) {
 	}
 }
 
-RZ_API void rz_anal_esil_cfg_free(RzAnalEsilCFG *cfg) {
+RZ_API void rz_anal_esil_cfg_free(RzAnalysisEsilCFG *cfg) {
 	if (cfg && cfg->g) {
 		rz_graph_free (cfg->g);
 	}

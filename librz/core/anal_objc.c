@@ -274,7 +274,7 @@ static bool objc_find_refs(RzCore *core) {
 			RzList *list = rz_anal_xrefs_get (core->anal, selRefVA);
 			if (list) {
 				RzListIter *iter;
-				RzAnalRef *ref;
+				RzAnalysisRef *ref;
 				rz_list_foreach (list, iter, ref) {
 					rz_anal_xrefs_set (core->anal, ref->addr, funcVA, RZ_ANAL_REF_TYPE_CODE);
 					total_xrefs++;

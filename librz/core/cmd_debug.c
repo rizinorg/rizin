@@ -767,7 +767,7 @@ static int step_until_esil(RzCore *core, const char *esilstr) {
 
 static bool is_repeatable_inst(RzCore *core, ut64 addr) {
 	// we have read the bytes already
-	RzAnalOp *op = rz_core_op_anal (core, addr, RZ_ANAL_OP_MASK_ALL);
+	RzAnalysisOp *op = rz_core_op_anal (core, addr, RZ_ANAL_OP_MASK_ALL);
 	bool ret = op && ((op->prefix & RZ_ANAL_OP_PREFIX_REP) || (op->prefix & RZ_ANAL_OP_PREFIX_REPNE));
 	rz_anal_op_free (op);
 	return ret;
@@ -827,7 +827,7 @@ static int step_until_inst(RzCore *core, const char *instr, bool regex) {
 }
 
 static int step_until_optype(RzCore *core, const char *_optypes) {
-	RzAnalOp op;
+	RzAnalysisOp op;
 	ut8 buf[32];
 	ut64 pc;
 	int res = true;
@@ -1142,7 +1142,7 @@ static void cmd_debug_pid(RzCore *core, const char *input) {
 }
 
 static void cmd_debug_backtrace(RzCore *core, const char *input) {
-	RzAnalOp analop;
+	RzAnalysisOp analop;
 	ut64 addr, len = rz_num_math (core->num, input);
 	if (!len) {
 		rz_bp_traptrace_list (core->dbg->bp);
@@ -2991,7 +2991,7 @@ static void backtrace_vars(RzCore *core, RzList *frames) {
 			}
 		}
 //////////
-		RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, f->addr, 0);
+		RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, f->addr, 0);
 		// char *str = rz_str_newf ("[frame %d]", n);
 		rz_cons_printf ("%d  0x%08"PFMT64x" sp: 0x%08"PFMT64x" %-5d"
 				"[%s]  %s %s\n", n, f->addr, f->sp, (int)f->size,
@@ -3438,7 +3438,7 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 			rz_list_foreach (list, iter, frame) {
 				char *flagdesc, *flagdesc2, *pcstr, *spstr;
 				get_backtrace_info (core, frame, addr, &flagdesc, &flagdesc2, &pcstr, &spstr, hex_format);
-				RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, frame->addr, 0);
+				RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, frame->addr, 0);
 				rz_cons_printf ("%s{\"idx\":%d,\"pc\":%s,\"sp\":%s,\"frame_size\":%d,"
 						"\"fname\":\"%s\",\"desc\":\"%s%s\"}", (i ? " ," : ""),
 						i,
@@ -3515,7 +3515,7 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 			rz_list_foreach (list, iter, frame) {
 				char *flagdesc, *flagdesc2, *pcstr, *spstr;
 				get_backtrace_info (core, frame, addr, &flagdesc, &flagdesc2, &pcstr, &spstr, hex_format);
-				RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, frame->addr, 0);
+				RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, frame->addr, 0);
 				rz_cons_printf ("%d  %s sp: %s  %-5d"
 						"[%s]  %s %s\n", i++,
 						pcstr, spstr,
@@ -3802,7 +3802,7 @@ static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_ad
 
 	while (true) {
 		ut8 buf[32];
-		RzAnalOp aop;
+		RzAnalysisOp aop;
 		int addr_in_range;
 
 		if (rz_cons_is_breaked()) {
@@ -4450,7 +4450,7 @@ static char *get_corefile_name (const char *raw_name, int pid) {
 static int cmd_debug_step (RzCore *core, const char *input) {
 	ut64 addr = core->offset;;
 	ut8 buf[64];
-	RzAnalOp aop;
+	RzAnalysisOp aop;
 	int i, times = 1;
 	char *ptr = strchr (input, ' ');
 	if (ptr) {
@@ -4535,7 +4535,7 @@ static int cmd_debug_step (RzCore *core, const char *input) {
 		for (i = 0; i < times; i++) {
 			ut8 buf[64];
 			ut64 addr;
-			RzAnalOp aop;
+			RzAnalysisOp aop;
 			rz_debug_reg_sync (core->dbg, RZ_REG_TYPE_GPR, false);
 			addr = rz_debug_reg_get (core->dbg, "PC");
 			rz_io_read_at (core->io, addr, buf, sizeof (buf));
@@ -4660,7 +4660,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	RzList *list;
 	RzDebugPid *p;
 	RzDebugTracepoint *trace;
-	RzAnalOp *op;
+	RzAnalysisOp *op;
 
 	if (rz_sandbox_enable (0)) {
 		eprintf ("Debugger commands disabled in sandbox mode\n");
@@ -4783,7 +4783,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				if (ptr) {
 					count = rz_num_math (core->num, ptr + 1);
 				}
-				RzAnalOp *op = rz_core_op_anal (core, addr, RZ_ANAL_OP_MASK_HINT);
+				RzAnalysisOp *op = rz_core_op_anal (core, addr, RZ_ANAL_OP_MASK_HINT);
 				if (op) {
 					RzDebugTracepoint *tp = rz_debug_trace_add (core->dbg, addr, op->size);
 					if (!tp) {
@@ -4820,7 +4820,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				if (!addr) {
 					addr = core->offset;
 				}
-				RzAnalOp *op = rz_core_anal_op (core, addr, RZ_ANAL_OP_MASK_ESIL);
+				RzAnalysisOp *op = rz_core_anal_op (core, addr, RZ_ANAL_OP_MASK_ESIL);
 				if (op) {
 					rz_anal_esil_trace_op (core->anal->esil, op);
 				}

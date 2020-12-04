@@ -91,7 +91,7 @@ typedef struct {
 	ut8 op;
 	int cycles;
 	op8051 instr;	// instruction
-	_RzAnalOpType type;
+	_RzAnalysisOpType type;
 	char* string;	// disassembly output
 	size_t len;
 	argmask8051 mask;	// bits masked to determine opcode

@@ -30,7 +30,7 @@ static bool __typeLoad(void *p, const char *k, const char *v) {
 		return false;
 	}
 	int btype = 0;
-	RzAnal *anal = (RzAnal*)p;
+	RzAnalysis *anal = (RzAnalysis*)p;
 	//rz_cons_printf ("tk %s=%s\n", k, v);
 	// TODO: Add unions support
 	if (!strncmp (v, "struct", 6) && strncmp (k, "struct.", 7)) {
@@ -93,7 +93,7 @@ static void __errorFunc(void *opaque, const char *msg) {
 	}
 }
 
-RZ_API char *rz_parse_c_file(RzAnal *anal, const char *path, const char *dir, char **error_msg) {
+RZ_API char *rz_parse_c_file(RzAnalysis *anal, const char *path, const char *dir, char **error_msg) {
 	char *str = NULL;
 	TCCState *T = tcc_new (anal->cpu, anal->bits, anal->os);
 	if (!T) {
@@ -110,7 +110,7 @@ RZ_API char *rz_parse_c_file(RzAnal *anal, const char *path, const char *dir, ch
 	return str;
 }
 
-RZ_API char *rz_parse_c_string(RzAnal *anal, const char *code, char **error_msg) {
+RZ_API char *rz_parse_c_string(RzAnalysis *anal, const char *code, char **error_msg) {
 	char *str = NULL;
 	TCCState *T = tcc_new (anal->cpu, anal->bits, anal->os);
 	if (!T) {

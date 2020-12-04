@@ -62,7 +62,7 @@ static RzList *backtrace_x86_64_anal(RzDebug *dbg, ut64 at) {
 	RzList *list;
 	RzReg *reg = dbg->reg;
 	RzIOBind *bio = &dbg->iob;
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 
 	_rip = rz_reg_get_value (reg, rz_reg_get (reg, "rip", RZ_REG_TYPE_GPR));
 	if (at == UT64_MAX) {

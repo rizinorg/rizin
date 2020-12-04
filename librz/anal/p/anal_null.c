@@ -4,16 +4,16 @@
 #include <rz_types.h>
 #include <rz_lib.h>
 
-static int null_anal(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask) {
+static int null_anal(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	/* This should better follow the disassembler */
 	return op->size = 1;
 }
 
-static bool null_set_reg_profile(RzAnal* anal){
+static bool null_set_reg_profile(RzAnalysis* anal){
 	return rz_reg_set_profile_string(anal->reg, "");
 }
 
-RzAnalPlugin rz_anal_plugin_null = {
+RzAnalysisPlugin rz_anal_plugin_null = {
 	.name = "null",
 	.desc = "Fallback/Null analysis plugin",
 	.arch = "none",

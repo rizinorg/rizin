@@ -376,7 +376,7 @@ static const char *reg32_to_name(ut8 reg) {
 	return reg < RZ_ARRAY_SIZE (names) ? names[reg] : "unk";
 }
 
-static void anop_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	int rs = a->bits/8;
 	const char *pc = (a->bits==16)?"ip":
 		(a->bits==32)?"eip":"rip";
@@ -1895,9 +1895,9 @@ static RzRegItem *cs_reg2reg(RzReg *reg, csh *h, int id) {
 	return rz_reg_get (reg, (char *)cs_reg_name (*h, id), -1);
 }
 
-static void set_access_info(RzReg *reg, RzAnalOp *op, csh *handle, cs_insn *insn, int mode) {
+static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *insn, int mode) {
 	int i;
-	RzAnalValue *val;
+	RzAnalysisValue *val;
 	int regsz;
 	x86_reg sp;
 	switch (mode) {
@@ -2070,7 +2070,7 @@ static void set_access_info(RzReg *reg, RzAnalOp *op, csh *handle, cs_insn *insn
 	(op)->src[2] = rz_anal_value_new (); \
 	(op)->dst = rz_anal_value_new ();
 
-static void set_src_dst(RzReg *reg, RzAnalValue *val, csh *handle, cs_insn *insn, int x) {
+static void set_src_dst(RzReg *reg, RzAnalysisValue *val, csh *handle, cs_insn *insn, int x) {
 	switch (INSOP (x).type) {
 	case X86_OP_MEM:
 		val->mul = INSOP (x).mem.scale;
@@ -2091,7 +2091,7 @@ static void set_src_dst(RzReg *reg, RzAnalValue *val, csh *handle, cs_insn *insn
 	}
 }
 
-static void op_fillval(RzAnal *a, RzAnalOp *op, csh *handle, cs_insn *insn, int mode) {
+static void op_fillval(RzAnalysis *a, RzAnalysisOp *op, csh *handle, cs_insn *insn, int mode) {
 	set_access_info (a->reg, op, handle, insn, mode);
 	switch (op->type & RZ_ANAL_OP_TYPE_MASK) {
 	case RZ_ANAL_OP_TYPE_MOV:
@@ -2130,7 +2130,7 @@ static void op_fillval(RzAnal *a, RzAnalOp *op, csh *handle, cs_insn *insn, int 
 	}
 }
 
-static void op0_memimmhandle(RzAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
+static void op0_memimmhandle(RzAnalysisOp *op, cs_insn *insn, ut64 addr, int regsz) {
 	op->ptr = UT64_MAX;
 	switch (INSOP(0).type) {
 	case X86_OP_MEM:
@@ -2168,7 +2168,7 @@ static void op0_memimmhandle(RzAnalOp *op, cs_insn *insn, ut64 addr, int regsz) 
 	}
 }
 
-static void op1_memimmhandle(RzAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
+static void op1_memimmhandle(RzAnalysisOp *op, cs_insn *insn, ut64 addr, int regsz) {
 	if (op->refptr < 1 || op->ptr == UT64_MAX) {
 		switch (INSOP(1).type) {
 		case X86_OP_MEM:
@@ -2196,7 +2196,7 @@ static void op1_memimmhandle(RzAnalOp *op, cs_insn *insn, ut64 addr, int regsz) 
 	}
 }
 
-static void op_stackidx(RzAnalOp *op, cs_insn *insn, bool minus) {
+static void op_stackidx(RzAnalysisOp *op, cs_insn *insn, bool minus) {
 	if (INSOP(0).type == X86_OP_REG && INSOP(1).type == X86_OP_IMM) {
 		if (INSOP(0).reg == X86_REG_RSP || INSOP(0).reg == X86_REG_ESP) {
 			op->stackop = RZ_ANAL_STACK_INC;
@@ -2209,7 +2209,7 @@ static void op_stackidx(RzAnalOp *op, cs_insn *insn, bool minus) {
 	}
 }
 
-static void set_opdir(RzAnalOp *op, cs_insn *insn) {
+static void set_opdir(RzAnalysisOp *op, cs_insn *insn) {
 	switch (op->type & RZ_ANAL_OP_TYPE_MASK) {
 	case RZ_ANAL_OP_TYPE_MOV:
 		switch (INSOP(0).type) {
@@ -2239,7 +2239,7 @@ static void set_opdir(RzAnalOp *op, cs_insn *insn) {
 	}
 }
 
-static void anop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	struct Getarg gop = {
 		.handle = *handle,
 		.insn = insn,
@@ -3165,7 +3165,7 @@ static int cs_len_prefix_opcode(uint8_t *item) {
 	return len;
 }
 
-static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	static int omode = 0;
 #if USE_ITERZ_API
 	static
@@ -3269,7 +3269,7 @@ static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 }
 
 #if 0
-static int x86_int_0x80(RzAnalEsil *esil, int interrupt) {
+static int x86_int_0x80(RzAnalysisEsil *esil, int interrupt) {
 	int syscall;
 	ut64 eax, ebx, ecx, edx;
 	if (!esil || (interrupt != 0x80))
@@ -3303,14 +3303,14 @@ static int x86_int_0x80(RzAnalEsil *esil, int interrupt) {
 #endif
 
 #if 0
-static int esil_x86_cs_intr(RzAnalEsil *esil, int intr) {
+static int esil_x86_cs_intr(RzAnalysisEsil *esil, int intr) {
 	if (!esil) return false;
 	eprintf ("INTERRUPT 0x%02x HAPPENS\n", intr);
 	return true;
 }
 #endif
 
-static int esil_x86_cs_init(RzAnalEsil *esil) {
+static int esil_x86_cs_init(RzAnalysisEsil *esil) {
 	if (!esil) {
 		return false;
 	}
@@ -3335,11 +3335,11 @@ static int fini(void *p) {
 	return true;
 }
 
-static int esil_x86_cs_fini(RzAnalEsil *esil) {
+static int esil_x86_cs_fini(RzAnalysisEsil *esil) {
 	return true;
 }
 
-static char *get_reg_profile(RzAnal *anal) {
+static char *get_reg_profile(RzAnalysis *anal) {
 	const char *p = NULL;
 	switch (anal->bits) {
 	case 16: p =
@@ -3736,7 +3736,7 @@ static char *get_reg_profile(RzAnal *anal) {
 	return (p && *p)? strdup (p): NULL;
 }
 
-static int archinfo(RzAnal *anal, int q) {
+static int archinfo(RzAnalysis *anal, int q) {
 	switch (q) {
 	case RZ_ANAL_ARCHINFO_ALIGN:
 		return 0;
@@ -3748,7 +3748,7 @@ static int archinfo(RzAnal *anal, int q) {
 	return 0;
 }
 
-static RzList *anal_preludes(RzAnal *anal) {
+static RzList *anal_preludes(RzAnalysis *anal) {
 #define KW(d,ds,m,ms) rz_list_append (l, rz_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
 	RzList *l = rz_list_newf ((RzListFree)rz_search_keyword_free);
 	switch (anal->bits) {
@@ -3771,7 +3771,7 @@ static RzList *anal_preludes(RzAnal *anal) {
 	return l;
 }
 
-RzAnalPlugin rz_anal_plugin_x86_cs = {
+RzAnalysisPlugin rz_anal_plugin_x86_cs = {
 	.name = "x86",
 	.desc = "Capstone X86 analysis",
 	.esil = true,

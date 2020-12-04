@@ -11,7 +11,7 @@
 // XXX: do not hardcode size/type here, use proper decoding table
 // http://hotkosc.ru:8080/method-vax.doc
 
-static int vax_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int vax_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	op->size = 1;
 	if (len < 1) {
 		return -1;
@@ -79,7 +79,7 @@ static int vax_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len
 	return op->size;
 }
 
-RzAnalPlugin rz_anal_plugin_vax = {
+RzAnalysisPlugin rz_anal_plugin_vax = {
 	.name = "vax",
 	.desc = "VAX code analysis plugin",
 	.license = "LGPL3",

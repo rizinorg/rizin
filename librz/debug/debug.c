@@ -785,7 +785,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 	ut8 buf[32];
 	ut64 pc, sp, r;
 	ut64 next[2];
-	RzAnalOp op;
+	RzAnalysisOp op;
 	int br, i, ret;
 	union {
 		ut64 r64;
@@ -1014,7 +1014,7 @@ static bool isStepOverable(ut64 opType) {
 }
 
 RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
-	RzAnalOp op;
+	RzAnalysisOp op;
 	ut64 buf_pc, pc, ins_size;
 	ut8 buf[DBG_BUF_SIZE];
 	int steps_taken = 0;
@@ -1278,7 +1278,7 @@ repeat:
 		} else if (what & RZ_DBG_SIGNAL_SKIP) {
 			// skip signal. requires skipping one instruction
 			ut8 buf[64];
-			RzAnalOp op = {0};
+			RzAnalysisOp op = {0};
 			ut64 pc = rz_debug_reg_get (dbg, "PC");
 			dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
 			rz_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC);
@@ -1331,7 +1331,7 @@ RZ_API int rz_debug_continue_until_nontraced(RzDebug *dbg) {
 RZ_API int rz_debug_continue_until_optype(RzDebug *dbg, int type, int over) {
 	int ret, n = 0;
 	ut64 pc, buf_pc = 0;
-	RzAnalOp op;
+	RzAnalysisOp op;
 	ut8 buf[DBG_BUF_SIZE];
 
 	if (rz_debug_is_dead (dbg)) {

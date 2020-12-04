@@ -32,7 +32,7 @@ static unsigned int disarm_branch_offset(unsigned int pc, unsigned int insoff) {
 
 #define API static
 
-static int op_thumb(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int op_thumb(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len) {
 	int op_code;
 	ut16 *_ins = (ut16 *) data;
 	ut16 ins = *_ins;
@@ -165,7 +165,7 @@ static int op_cond(const ut8 *data) {
 	return iconds[b];
 }
 
-static int arm_op32(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int arm_op32(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len) {
 	const ut8 *b = (ut8 *) data;
 	ut8 ndata[4];
 	ut32 branch_dst_addr, i = 0;
@@ -352,7 +352,7 @@ static ut64 getaddr(ut64 addr, const ut8 *d) {
 	return addr + (4 * (d[0] + (d[1] << 8) + (d[2] << 16)));
 }
 
-static int arm_op64(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *d, int len) {
+static int arm_op64(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *d, int len) {
 	if (d[3] == 0) {
 		return -1;      // invalid
 	}
@@ -401,14 +401,14 @@ static int arm_op64(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *d, int len
 	return op->size;
 }
 
-static int arm_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask) {
+static int arm_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	if (anal->bits == 64) {
 		return arm_op64 (anal, op, addr, data, len);
 	}
 	return arm_op32 (anal, op, addr, data, len);
 }
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	// TODO: support 64bit profile
 	const char *p32 =
 		"=PC	r15\n"
@@ -443,7 +443,7 @@ static bool set_reg_profile(RzAnal *anal) {
 	return rz_reg_set_profile_string (anal->reg, p32);
 }
 
-static int archinfo(RzAnal *anal, int q) {
+static int archinfo(RzAnalysis *anal, int q) {
 	if (q == RZ_ANAL_ARCHINFO_ALIGN) {
 		if (anal && anal->bits == 16) {
 			return 2;
@@ -462,7 +462,7 @@ static int archinfo(RzAnal *anal, int q) {
 	return 4; // XXX
 }
 
-RzAnalPlugin rz_anal_plugin_arm_gnu = {
+RzAnalysisPlugin rz_anal_plugin_arm_gnu = {
 	.name = "arm.gnu",
 	.arch = "arm",
 	.license = "LGPL3",

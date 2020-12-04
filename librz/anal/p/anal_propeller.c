@@ -9,7 +9,7 @@
 
 #include <propeller_disas.h>
 
-static int propeller_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int propeller_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	int ret;
 	struct propeller_cmd cmd;
 
@@ -98,7 +98,7 @@ static int propeller_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, i
 	return ret;
 }
 
-RzAnalPlugin rz_anal_plugin_propeller = {
+RzAnalysisPlugin rz_anal_plugin_propeller = {
 	.name = "propeller",
 	.desc = "Parallax propeller code analysis plugin",
 	.license = "LGPL3",

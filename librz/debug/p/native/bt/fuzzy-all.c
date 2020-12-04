@@ -20,7 +20,7 @@ static int iscallret(RzDebug *dbg, ut64 addr) {
 		}
 		// IMMAMISSINGANYOP
 	} else {
-		RzAnalOp op;
+		RzAnalysisOp op;
 		(void) dbg->iob.read_at (dbg->iob.io, addr-8, buf, 8);
 		(void) rz_anal_op (dbg->anal, &op, addr-8, buf, 8, RZ_ANAL_OP_MASK_BASIC);
 		if (op.type == RZ_ANAL_OP_TYPE_CALL || op.type == RZ_ANAL_OP_TYPE_UCALL) {

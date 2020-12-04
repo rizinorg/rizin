@@ -15,13 +15,13 @@ bool ht_pp_count(void *user, const void *k, const void *v) {
 	return true;
 }
 
-static bool function_check_invariants(RzAnal *anal) {
+static bool function_check_invariants(RzAnalysis *anal) {
 	if (!block_check_invariants (anal)) {
 		return false;
 	}
 
 	RzListIter *it;
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 	rz_list_foreach (anal->fcns, it, fcn) {
 		mu_assert_ptreq (ht_up_find (anal->ht_addr_fun, fcn->addr, NULL), fcn, "function in addr ht");
 		mu_assert_ptreq (ht_pp_find (anal->ht_name_fun, fcn->name, NULL), fcn, "function in name ht");
@@ -45,12 +45,12 @@ static bool function_check_invariants(RzAnal *anal) {
 #define assert_leaks(anal) do { if (!check_leaks (anal)) { return false; } } while (0)
 
 bool test_r_anal_function_relocate() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 	assert_invariants (anal);
 
-	RzAnalFunction *fa = rz_anal_create_function (anal, "do_something", 0x1337, 0, NULL);
+	RzAnalysisFunction *fa = rz_anal_create_function (anal, "do_something", 0x1337, 0, NULL);
 	assert_invariants (anal);
-	RzAnalFunction *fb = rz_anal_create_function (anal, "do_something_else", 0xdeadbeef, 0, NULL);
+	RzAnalysisFunction *fb = rz_anal_create_function (anal, "do_something_else", 0xdeadbeef, 0, NULL);
 	assert_invariants (anal);
 	rz_anal_create_function (anal, "do_something_different", 0xc0ffee, 0, NULL);
 	assert_invariants (anal);
@@ -71,9 +71,9 @@ bool test_r_anal_function_relocate() {
 }
 
 bool test_r_anal_function_labels() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 
-	RzAnalFunction *f = rz_anal_create_function (anal, "do_something", 0x1337, 0, NULL);
+	RzAnalysisFunction *f = rz_anal_create_function (anal, "do_something", 0x1337, 0, NULL);
 
 	bool s = rz_anal_function_set_label (f, "smartfriend", 0x1339);
 	mu_assert_true (s, "set label");

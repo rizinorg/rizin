@@ -7,10 +7,10 @@
 
 typedef struct {
 	ut64 addr;
-	RzAnalBlock *ret;
+	RzAnalysisBlock *ret;
 } BBFromOffsetJmpmidCtx;
 
-static bool bb_from_offset_jmpmid_cb(RzAnalBlock *block, void *user) {
+static bool bb_from_offset_jmpmid_cb(RzAnalysisBlock *block, void *user) {
 	BBFromOffsetJmpmidCtx *ctx = user;
 	// If an instruction starts exactly at the search addr, return that block immediately
 	if (rz_anal_block_op_starts_at (block, ctx->addr)) {
@@ -24,13 +24,13 @@ static bool bb_from_offset_jmpmid_cb(RzAnalBlock *block, void *user) {
 	return true;
 }
 
-static bool bb_from_offset_first_cb(RzAnalBlock *block, void *user) {
-	RzAnalBlock **ret = user;
+static bool bb_from_offset_first_cb(RzAnalysisBlock *block, void *user) {
+	RzAnalysisBlock **ret = user;
 	*ret = block;
 	return false;
 }
 
-RZ_API RzAnalBlock *rz_anal_bb_from_offset(RzAnal *anal, ut64 off) {
+RZ_API RzAnalysisBlock *rz_anal_bb_from_offset(RzAnalysis *anal, ut64 off) {
 	const bool x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
 	if (anal->opt.jmpmid && x86) {
 		BBFromOffsetJmpmidCtx ctx = { off, NULL };
@@ -38,14 +38,14 @@ RZ_API RzAnalBlock *rz_anal_bb_from_offset(RzAnal *anal, ut64 off) {
 		return ctx.ret;
 	}
 
-	RzAnalBlock *ret = NULL;
+	RzAnalysisBlock *ret = NULL;
 	rz_anal_blocks_foreach_in (anal, off, bb_from_offset_first_cb, &ret);
 	return ret;
 }
 
 /* return the offset of the i-th instruction in the basicblock bb.
  * If the index of the instruction is not valid, it returns UT16_MAX */
-RZ_API ut16 rz_anal_bb_offset_inst(RzAnalBlock *bb, int i) {
+RZ_API ut16 rz_anal_bb_offset_inst(RzAnalysisBlock *bb, int i) {
 	if (i < 0 || i >= bb->ninstr) {
 		return UT16_MAX;
 	}
@@ -54,7 +54,7 @@ RZ_API ut16 rz_anal_bb_offset_inst(RzAnalBlock *bb, int i) {
 
 /* return the address of the i-th instruction in the basicblock bb.
  * If the index of the instruction is not valid, it returns UT64_MAX */
-RZ_API ut64 rz_anal_bb_opaddr_i(RzAnalBlock *bb, int i) {
+RZ_API ut64 rz_anal_bb_opaddr_i(RzAnalysisBlock *bb, int i) {
 	ut16 offset = rz_anal_bb_offset_inst (bb, i);
 	if (offset == UT16_MAX) {
 		return UT64_MAX;
@@ -63,7 +63,7 @@ RZ_API ut64 rz_anal_bb_opaddr_i(RzAnalBlock *bb, int i) {
 }
 
 /* set the offset of the i-th instruction in the basicblock bb */
-RZ_API bool rz_anal_bb_set_offset(RzAnalBlock *bb, int i, ut16 v) {
+RZ_API bool rz_anal_bb_set_offset(RzAnalysisBlock *bb, int i, ut16 v) {
 	// the offset 0 of the instruction 0 is not stored because always 0
 	if (i > 0 && v > 0) {
 		if (i >= bb->op_pos_size) {
@@ -83,7 +83,7 @@ RZ_API bool rz_anal_bb_set_offset(RzAnalBlock *bb, int i, ut16 v) {
 
 /* return the address of the instruction that occupy a given offset.
  * If the offset is not part of the given basicblock, UT64_MAX is returned. */
-RZ_API ut64 rz_anal_bb_opaddr_at(RzAnalBlock *bb, ut64 off) {
+RZ_API ut64 rz_anal_bb_opaddr_at(RzAnalysisBlock *bb, ut64 off) {
 	ut16 delta, delta_off, last_delta;
 	int i;
 
@@ -103,7 +103,7 @@ RZ_API ut64 rz_anal_bb_opaddr_at(RzAnalBlock *bb, ut64 off) {
 }
 
 // returns the size of the i-th instruction in a basic block
-RZ_API ut64 rz_anal_bb_size_i(RzAnalBlock *bb, int i) {
+RZ_API ut64 rz_anal_bb_size_i(RzAnalysisBlock *bb, int i) {
 	if (i < 0 || i >= bb->ninstr) {
 		return UT64_MAX;
 	}
@@ -114,7 +114,7 @@ RZ_API ut64 rz_anal_bb_size_i(RzAnalBlock *bb, int i) {
 
 /* returns the address of the basic block that contains addr or UT64_MAX if
  * there is no such basic block */
-RZ_API ut64 rz_anal_get_bbaddr(RzAnal *anal, ut64 addr) {
-	RzAnalBlock *bb = rz_anal_bb_from_offset (anal, addr);
+RZ_API ut64 rz_anal_get_bbaddr(RzAnalysis *anal, ut64 addr) {
+	RzAnalysisBlock *bb = rz_anal_bb_from_offset (anal, addr);
 	return bb? bb->addr: UT64_MAX;
 }

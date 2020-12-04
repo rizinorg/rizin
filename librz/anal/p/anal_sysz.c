@@ -50,7 +50,7 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	rz_strbuf_append (buf, "]}");
 }
 
-static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	csh handle;
 	cs_insn *insn;
 	int mode = CS_MODE_BIG_ENDIAN;
@@ -141,7 +141,7 @@ static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 	return op->size;
 }
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	const char *p =
 		"=PC	r15\n"
 		"=LR	r14\n"
@@ -180,7 +180,7 @@ static bool set_reg_profile(RzAnal *anal) {
 	return rz_reg_set_profile_string (anal->reg, p);
 }
 
-static int archinfo(RzAnal *anal, int q) {
+static int archinfo(RzAnalysis *anal, int q) {
 	switch (q) {
 	case RZ_ANAL_ARCHINFO_ALIGN:
 		return 2;
@@ -192,7 +192,7 @@ static int archinfo(RzAnal *anal, int q) {
 	return 2;
 }
 
-RzAnalPlugin rz_anal_plugin_sysz = {
+RzAnalysisPlugin rz_anal_plugin_sysz = {
 	.name = "sysz",
 	.desc = "Capstone SystemZ microanalysis",
 	.esil = false,

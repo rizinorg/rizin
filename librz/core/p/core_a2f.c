@@ -121,7 +121,7 @@ static ut64 analyzeStackBased(RzCore *core, Sdb *db, ut64 addr, RzList *delayed_
 #define bbAddOpcode(x) sdb_array_insert_num (db, sdb_fmt ("bb.%"PFMT64x, addr+cur), -1, x, 0);
 	ut64 oaddr = addr;
 	ut64 *value = NULL;
-	RzAnalOp *op;
+	RzAnalysisOp *op;
 	int cur = 0;
 	bool block_end = false;
 	RzStack *stack = rz_stack_newf (10, free);

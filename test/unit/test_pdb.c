@@ -27,7 +27,7 @@ int pdb_info(const char *file, RzPdb *pdb) {
 	return true;
 }
 
-int pdb_info_save_types(RzAnal *anal, const char *file, RzPdb *pdb) {
+int pdb_info_save_types(RzAnalysis *anal, const char *file, RzPdb *pdb) {
 	pdb->cb_printf = rz_cons_printf;
 	if (!init_pdb_parser (pdb, file)) {
 		return false;
@@ -462,7 +462,7 @@ bool test_pdb_tpi_rust(void) {
 
 bool test_pdb_type_save(void) {
 	RzPdb pdb = RZ_EMPTY;
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 	mu_assert_true (pdb_info_save_types (anal, "bins/pdb/Project1.pdb", &pdb), "pdb parsing failed");
 	check_kv ("R2_TEST_ENUM", "enum");
 	check_kv ("enum.R2_TEST_ENUM", "eENUM1_R2,eENUM2_R2,eENUM_R2_MAX");

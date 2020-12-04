@@ -6,20 +6,20 @@
 #define KEY(x) sdb_fmt ("%d."x, esil->trace->idx)
 #define KEYAT(x,y) sdb_fmt ("%d."x".0x%"PFMT64x, esil->trace->idx, y)
 #define KEYREG(x,y) sdb_fmt ("%d."x".%s", esil->trace->idx, y)
-#define CMP_REG_CHANGE(x, y) ((x) - ((RzAnalEsilRegChange *)y)->idx)
-#define CMP_MEM_CHANGE(x, y) ((x) - ((RzAnalEsilMemChange *)y)->idx)
+#define CMP_REG_CHANGE(x, y) ((x) - ((RzAnalysisEsilRegChange *)y)->idx)
+#define CMP_MEM_CHANGE(x, y) ((x) - ((RzAnalysisEsilMemChange *)y)->idx)
 
 static int ocbs_set = false;
-static RzAnalEsilCallbacks ocbs = {0};
+static RzAnalysisEsilCallbacks ocbs = {0};
 
 static void htup_vector_free(HtUPKv *kv) {
 	rz_vector_free (kv->value);
 }
 
-RZ_API RzAnalEsilTrace *rz_anal_esil_trace_new(RzAnalEsil *esil) {
+RZ_API RzAnalysisEsilTrace *rz_anal_esil_trace_new(RzAnalysisEsil *esil) {
 	rz_return_val_if_fail (esil && esil->stack_addr && esil->stack_size, NULL);
 	size_t i;
-	RzAnalEsilTrace *trace = RZ_NEW0 (RzAnalEsilTrace);
+	RzAnalysisEsilTrace *trace = RZ_NEW0 (RzAnalysisEsilTrace);
 	if (!trace) {
 		return NULL;
 	}
@@ -61,7 +61,7 @@ error:
 	return NULL;
 }
 
-RZ_API void rz_anal_esil_trace_free(RzAnalEsilTrace *trace) {
+RZ_API void rz_anal_esil_trace_free(RzAnalysisEsilTrace *trace) {
 	size_t i;
 	if (trace) {
 		ht_up_free (trace->registers);
@@ -75,43 +75,43 @@ RZ_API void rz_anal_esil_trace_free(RzAnalEsilTrace *trace) {
 	}
 }
 
-static void add_reg_change(RzAnalEsilTrace *trace, int idx, RzRegItem *ri, ut64 data) {
+static void add_reg_change(RzAnalysisEsilTrace *trace, int idx, RzRegItem *ri, ut64 data) {
 	ut64 addr = ri->offset | (ri->arena << 16);
 	RzVector *vreg = ht_up_find (trace->registers, addr, NULL);
 	if (!vreg) {
-		vreg = rz_vector_new (sizeof (RzAnalEsilRegChange), NULL, NULL);
+		vreg = rz_vector_new (sizeof (RzAnalysisEsilRegChange), NULL, NULL);
 		if (!vreg) {
 			eprintf ("Error: creating a register vector.\n");
 			return;
 		}
 		ht_up_insert (trace->registers, addr, vreg);
 	}
-	RzAnalEsilRegChange reg = { idx, data };
+	RzAnalysisEsilRegChange reg = { idx, data };
 	rz_vector_push (vreg, &reg);
 }
 
-static void add_mem_change(RzAnalEsilTrace *trace, int idx, ut64 addr, ut8 data) {
+static void add_mem_change(RzAnalysisEsilTrace *trace, int idx, ut64 addr, ut8 data) {
 	RzVector *vmem = ht_up_find (trace->memory, addr, NULL);
 	if (!vmem) {
-		vmem = rz_vector_new (sizeof (RzAnalEsilMemChange), NULL, NULL);
+		vmem = rz_vector_new (sizeof (RzAnalysisEsilMemChange), NULL, NULL);
 		if (!vmem) {
 			eprintf ("Error: creating a memory vector.\n");
 			return;
 		}
 		ht_up_insert (trace->memory, addr, vmem);
 	}
-	RzAnalEsilMemChange mem = { idx, data };
+	RzAnalysisEsilMemChange mem = { idx, data };
 	rz_vector_push (vmem, &mem);
 }
 
-static int trace_hook_reg_read(RzAnalEsil *esil, const char *name, ut64 *res, int *size) {
+static int trace_hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res, int *size) {
 	int ret = 0;
 	if (*name == '0') {
 		//eprintf ("Register not found in profile\n");
 		return 0;
 	}
 	if (ocbs.hook_reg_read) {
-		RzAnalEsilCallbacks cbs = esil->cb;
+		RzAnalysisEsilCallbacks cbs = esil->cb;
 		esil->cb = ocbs;
 		ret = ocbs.hook_reg_read (esil, name, res, size);
 		esil->cb = cbs;
@@ -130,7 +130,7 @@ static int trace_hook_reg_read(RzAnalEsil *esil, const char *name, ut64 *res, in
 	return ret;
 }
 
-static int trace_hook_reg_write(RzAnalEsil *esil, const char *name, ut64 *val) {
+static int trace_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 	int ret = 0;
 	//eprintf ("[ESIL] REG WRITE %s 0x%08"PFMT64x"\n", name, *val);
 	sdb_array_add (DB, KEY ("reg.write"), name, 0);
@@ -138,7 +138,7 @@ static int trace_hook_reg_write(RzAnalEsil *esil, const char *name, ut64 *val) {
 	RzRegItem *ri = rz_reg_get (esil->anal->reg, name, -1);
 	add_reg_change (esil->trace, esil->trace->idx + 1, ri, *val);
 	if (ocbs.hook_reg_write) {
-		RzAnalEsilCallbacks cbs = esil->cb;
+		RzAnalysisEsilCallbacks cbs = esil->cb;
 		esil->cb = ocbs;
 		ret = ocbs.hook_reg_write (esil, name, val);
 		esil->cb = cbs;
@@ -146,7 +146,7 @@ static int trace_hook_reg_write(RzAnalEsil *esil, const char *name, ut64 *val) {
 	return ret;
 }
 
-static int trace_hook_mem_read(RzAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static int trace_hook_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len) {
 	char *hexbuf = calloc ((1 + len), 4);
 	int ret = 0;
 	if (esil->cb.mem_read) {
@@ -159,7 +159,7 @@ static int trace_hook_mem_read(RzAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	free (hexbuf);
 
 	if (ocbs.hook_mem_read) {
-		RzAnalEsilCallbacks cbs = esil->cb;
+		RzAnalysisEsilCallbacks cbs = esil->cb;
 		esil->cb = ocbs;
 		ret = ocbs.hook_mem_read (esil, addr, buf, len);
 		esil->cb = cbs;
@@ -167,7 +167,7 @@ static int trace_hook_mem_read(RzAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	return ret;
 }
 
-static int trace_hook_mem_write(RzAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static int trace_hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	size_t i;
 	int ret = 0;
 	char *hexbuf = malloc ((1+len)*3);
@@ -181,7 +181,7 @@ static int trace_hook_mem_write(RzAnalEsil *esil, ut64 addr, const ut8 *buf, int
 	}
 
 	if (ocbs.hook_mem_write) {
-		RzAnalEsilCallbacks cbs = esil->cb;
+		RzAnalysisEsilCallbacks cbs = esil->cb;
 		esil->cb = ocbs;
 		ret = ocbs.hook_mem_write (esil, addr, buf, len);
 		esil->cb = cbs;
@@ -189,7 +189,7 @@ static int trace_hook_mem_write(RzAnalEsil *esil, ut64 addr, const ut8 *buf, int
 	return ret;
 }
 
-RZ_API void rz_anal_esil_trace_op(RzAnalEsil *esil, RzAnalOp *op) {
+RZ_API void rz_anal_esil_trace_op(RzAnalysisEsil *esil, RzAnalysisOp *op) {
 	rz_return_if_fail (esil && op);
 	const char *expr = rz_strbuf_get (&op->esil);
 	if (RZ_STR_ISEMPTY (expr)) {
@@ -244,33 +244,33 @@ RZ_API void rz_anal_esil_trace_op(RzAnalEsil *esil, RzAnalOp *op) {
 
 static bool restore_memory_cb(void *user, const ut64 key, const void *value) {
 	size_t index;
-	RzAnalEsil *esil = user;
+	RzAnalysisEsil *esil = user;
 	RzVector *vmem = (RzVector *)value;
 
 	rz_vector_upper_bound (vmem, esil->trace->idx, index, CMP_MEM_CHANGE);
 	if (index > 0 && index <= vmem->len) {
-		RzAnalEsilMemChange *c = rz_vector_index_ptr (vmem, index - 1);
+		RzAnalysisEsilMemChange *c = rz_vector_index_ptr (vmem, index - 1);
 		esil->anal->iob.write_at (esil->anal->iob.io, key, &c->data, 1);
 	}
 	return true;
 }
 
-static bool restore_register(RzAnalEsil *esil, RzRegItem *ri, int idx) {
+static bool restore_register(RzAnalysisEsil *esil, RzRegItem *ri, int idx) {
 	size_t index;
 	RzVector *vreg = ht_up_find (esil->trace->registers, ri->offset | (ri->arena << 16), NULL);
 	if (vreg) {
 		rz_vector_upper_bound (vreg, idx, index, CMP_REG_CHANGE);
 		if (index > 0 && index <= vreg->len) {
-			RzAnalEsilRegChange *c = rz_vector_index_ptr (vreg, index - 1);
+			RzAnalysisEsilRegChange *c = rz_vector_index_ptr (vreg, index - 1);
 			rz_reg_set_value (esil->anal->reg, ri, c->data);
 		}
 	}
 	return true;
 }
 
-RZ_API void rz_anal_esil_trace_restore(RzAnalEsil *esil, int idx) {
+RZ_API void rz_anal_esil_trace_restore(RzAnalysisEsil *esil, int idx) {
 	size_t i;
-	RzAnalEsilTrace *trace = esil->trace;
+	RzAnalysisEsilTrace *trace = esil->trace;
 	// Restore initial state when going backward
 	if (idx < esil->trace->idx) {
 		// Restore initial registers value
@@ -347,7 +347,7 @@ static int cmp_strings_by_leading_number(void *data1, void *data2) {
 	return 0;
 }
 
-RZ_API void rz_anal_esil_trace_list (RzAnalEsil *esil) {
+RZ_API void rz_anal_esil_trace_list (RzAnalysisEsil *esil) {
 	PrintfCallback p = esil->anal->cb_printf;
 	SdbKv *kv;
 	SdbListIter *iter;
@@ -359,7 +359,7 @@ RZ_API void rz_anal_esil_trace_list (RzAnalEsil *esil) {
 	ls_free (list);
 }
 
-RZ_API void rz_anal_esil_trace_show(RzAnalEsil *esil, int idx) {
+RZ_API void rz_anal_esil_trace_show(RzAnalysisEsil *esil, int idx) {
 	PrintfCallback p = esil->anal->cb_printf;
 	const char *str2;
 	const char *str;

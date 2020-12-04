@@ -80,7 +80,7 @@ static i8051_map_entry mem_map[3] = {
 	{ NULL, UT32_MAX, "xdata" }
 };
 
-static void map_cpu_memory (RzAnal *anal, int entry, ut32 addr, ut32 size, bool force) {
+static void map_cpu_memory (RzAnalysis *anal, int entry, ut32 addr, ut32 size, bool force) {
 	RzIODesc *desc = mem_map[entry].desc;
 	if (desc && anal->iob.fd_get_name (anal->iob.io, desc->fd)) {
 		if (force || addr != mem_map[entry].addr) {
@@ -109,7 +109,7 @@ static void map_cpu_memory (RzAnal *anal, int entry, ut32 addr, ut32 size, bool 
 	mem_map[entry].addr = addr;
 }
 
-static void set_cpu_model(RzAnal *anal, bool force) {
+static void set_cpu_model(RzAnalysis *anal, bool force) {
 	ut32 addr_idata, addr_sfr, addr_xdata;
 
 	if (!anal->reg) {
@@ -240,11 +240,11 @@ static RI8051Reg registers[] = {
 #define ev_sp2 0
 #define ev_sp1 0
 
-static void exr_a(RzAnalOp *op, ut8 dummy) {
+static void exr_a(RzAnalysisOp *op, ut8 dummy) {
 	e ("a,");
 }
 
-static void exr_dir1(RzAnalOp *op, ut8 addr) {
+static void exr_dir1(RzAnalysisOp *op, ut8 addr) {
 	if (addr < 0x80) {
 		ef ("_idata,%d,+,[1],", addr);
 	} else {
@@ -252,58 +252,58 @@ static void exr_dir1(RzAnalOp *op, ut8 addr) {
 	}
 }
 
-static void exr_bit(RzAnalOp *op, ut8 addr) {
+static void exr_bit(RzAnalysisOp *op, ut8 addr) {
 	exr_dir1 (op, addr);
 }
 
-static void exr_dpx (RzAnalOp *op, ut8 dummy) {
+static void exr_dpx (RzAnalysisOp *op, ut8 dummy) {
 	e ("_xdata,dptr,+,[1],");
 }
 
-static void exr_imm1(RzAnalOp *op, ut8 val) {
+static void exr_imm1(RzAnalysisOp *op, ut8 val) {
 	ef ("%d,", val);
 }
 
-static void exr_imm2(RzAnalOp *op, ut8 val) {
+static void exr_imm2(RzAnalysisOp *op, ut8 val) {
 	ef ("%d,", val);
 }
 
-static void exr_imm16(RzAnalOp *op, ut16 val) {
+static void exr_imm16(RzAnalysisOp *op, ut16 val) {
 	ef ("%d,", val);
 }
 
-static void exr_ri(RzAnalOp *op, ut8 reg) {
+static void exr_ri(RzAnalysisOp *op, ut8 reg) {
 	ef ("_idata,r%d,+,[1],", reg);
 }
 
-static void exr_rix(RzAnalOp *op, ut8 reg) {
+static void exr_rix(RzAnalysisOp *op, ut8 reg) {
 	ef ("8,0xff,_pdata,&,<<,_xdata,+,r%d,+,[1],", reg);
 }
 
-static void exr_rn(RzAnalOp *op, ut8 reg) {
+static void exr_rn(RzAnalysisOp *op, ut8 reg) {
 	ef ("r%d,", reg);
 }
 
-static void exr_sp1(RzAnalOp *op, ut8 dummy) {
+static void exr_sp1(RzAnalysisOp *op, ut8 dummy) {
 	e ("_idata,sp,+,[1],");
 	e ("1,sp,-=,");
 }
 
-static void exr_sp2(RzAnalOp *op, ut8 dummy) {
+static void exr_sp2(RzAnalysisOp *op, ut8 dummy) {
 	e ("1,sp,-=,");
 	e ("_idata,sp,+,[2],");
 	e ("1,sp,-=,");
 }
 
-static void exw_a(RzAnalOp *op, ut8 dummy) {
+static void exw_a(RzAnalysisOp *op, ut8 dummy) {
 	e ("a,=,");
 }
 
-static void exw_c(RzAnalOp *op, ut8 dummy) {
+static void exw_c(RzAnalysisOp *op, ut8 dummy) {
 	e ("c,=,");
 }
 
-static void exw_dir1(RzAnalOp *op, ut8 addr) {
+static void exw_dir1(RzAnalysisOp *op, ut8 addr) {
 	if (addr < 0x80) {
 		ef ("_idata,%d,+,=[1],", addr);
 	} else {
@@ -311,58 +311,58 @@ static void exw_dir1(RzAnalOp *op, ut8 addr) {
 	}
 }
 
-static void exw_dir2(RzAnalOp *op, ut8 addr) {
+static void exw_dir2(RzAnalysisOp *op, ut8 addr) {
 	exw_dir1 (op, addr);
 }
 
-static void exw_bit(RzAnalOp *op, ut8 addr) {
+static void exw_bit(RzAnalysisOp *op, ut8 addr) {
 	exw_dir1 (op, addr);
 }
 
-static void exw_dp (RzAnalOp *op, ut8 dummy) {
+static void exw_dp (RzAnalysisOp *op, ut8 dummy) {
 	e ("dptr,=,");
 }
 
-static void exw_dpx (RzAnalOp *op, ut8 dummy) {
+static void exw_dpx (RzAnalysisOp *op, ut8 dummy) {
 	e ("_xdata,dptr,+,=[1],");
 }
 
-static void exw_ri(RzAnalOp *op, ut8 reg) {
+static void exw_ri(RzAnalysisOp *op, ut8 reg) {
 	ef ("_idata,r%d,+,=[1],", reg);
 }
 
-static void exw_rix(RzAnalOp *op, ut8 reg) {
+static void exw_rix(RzAnalysisOp *op, ut8 reg) {
 	ef ("8,0xff,_pdata,&,<<,_xdata,+,r%d,+,=[1],", reg);
 }
 
-static void exw_rn(RzAnalOp *op, ut8 reg) {
+static void exw_rn(RzAnalysisOp *op, ut8 reg) {
 	ef ("r%d,=,", reg);
 }
 
-static void exw_sp1(RzAnalOp *op, ut8 dummy) {
+static void exw_sp1(RzAnalysisOp *op, ut8 dummy) {
 	e ("1,sp,+=,");
 	e ("_idata,sp,+,=[1],");
 }
 
-static void exw_sp2(RzAnalOp *op, ut8 dummy) {
+static void exw_sp2(RzAnalysisOp *op, ut8 dummy) {
 	e ("1,sp,+=,");
 	e ("_idata,sp,+,=[2],");
 	e ("1,sp,+=,");
 }
 
-static void exi_a(RzAnalOp *op, ut8 dummy, const char* operation) {
+static void exi_a(RzAnalysisOp *op, ut8 dummy, const char* operation) {
 	ef ("a,%s=,", operation);
 }
 
-static void exi_c(RzAnalOp *op, ut8 dummy, const char* operation) {
+static void exi_c(RzAnalysisOp *op, ut8 dummy, const char* operation) {
 	ef ("c,%s=,", operation);
 }
 
-static void exi_dp (RzAnalOp *op, ut8 dummy, const char *operation) {
+static void exi_dp (RzAnalysisOp *op, ut8 dummy, const char *operation) {
 	ef ("dptr,%s=,", operation);
 }
 
-static void exi_dir1 (RzAnalOp *op, ut8 addr, const char *operation) {
+static void exi_dir1 (RzAnalysisOp *op, ut8 addr, const char *operation) {
 	if (addr < 0x80) {
 		ef ("_idata,%d,+,%s=[1],", addr, operation);
 	} else {
@@ -370,15 +370,15 @@ static void exi_dir1 (RzAnalOp *op, ut8 addr, const char *operation) {
 	}
 }
 
-static void exi_bit (RzAnalOp *op, ut8 addr, const char *operation) {
+static void exi_bit (RzAnalysisOp *op, ut8 addr, const char *operation) {
 	exi_dir1 (op, addr, operation);
 }
 
-static void exi_ri(RzAnalOp *op, ut8 reg, const char *operation) {
+static void exi_ri(RzAnalysisOp *op, ut8 reg, const char *operation) {
 	ef ("_idata,r%d,+,%s=[1],", reg, operation);
 }
 
-static void exi_rn(RzAnalOp *op, ut8 reg, const char *operation) {
+static void exi_rn(RzAnalysisOp *op, ut8 reg, const char *operation) {
 	ef ("r%d,%s=,", reg, operation);
 }
 
@@ -433,7 +433,7 @@ static void exi_rn(RzAnalOp *op, ut8 reg, const char *operation) {
 	case base + 0xE: case base + 0xF: \
 		alu_op (rn, aluop, flags); break;
 
-static void analop_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	rz_strbuf_init (&op->esil);
 	rz_strbuf_set (&op->esil, "");
 
@@ -715,11 +715,11 @@ static void analop_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf) {
 	}
 }
 
-static RzAnalEsilCallbacks ocbs = {0};
+static RzAnalysisEsilCallbacks ocbs = {0};
 
 #if 0
 // custom reg read/write temporarily disabled - see r2 issue #9242
-static int i8051_hook_reg_read(RzAnalEsil *, const char *, ut64 *, int *);
+static int i8051_hook_reg_read(RzAnalysisEsil *, const char *, ut64 *, int *);
 
 static int i8051_reg_compare(const void *name, const void *reg) {
 	return strcmp ((const char*)name, ((RI8051Reg*)reg)->name);
@@ -733,7 +733,7 @@ static RI8051Reg *i8051_reg_find(const char *name) {
 		i8051_reg_compare);
 }
 
-static int i8051_reg_get_offset(RzAnalEsil *esil, RI8051Reg *ri) {
+static int i8051_reg_get_offset(RzAnalysisEsil *esil, RI8051Reg *ri) {
 	ut8 offset = ri->offset;
 	if (ri->banked) {
 		ut64 psw = 0LL;
@@ -748,11 +748,11 @@ static int i8051_reg_get_offset(RzAnalEsil *esil, RI8051Reg *ri) {
 //           as rz_reg_get already does this. Also, the anal esil callbacks
 //           approach interferes with rz_reg_arena_swap.
 
-static int i8051_hook_reg_read(RzAnalEsil *esil, const char *name, ut64 *res, int *size) {
+static int i8051_hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res, int *size) {
 	int ret = 0;
 	ut64 val = 0LL;
 	RI8051Reg *ri;
-	RzAnalEsilCallbacks cbs = esil->cb;
+	RzAnalysisEsilCallbacks cbs = esil->cb;
 
 	if ((ri = i8051_reg_find (name))) {
 		ut8 offset = i8051_reg_get_offset(esil, ri);
@@ -770,10 +770,10 @@ static int i8051_hook_reg_read(RzAnalEsil *esil, const char *name, ut64 *res, in
 	return ret;
 }
 
-static int i8051_hook_reg_write(RzAnalEsil *esil, const char *name, ut64 *val) {
+static int i8051_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 	int ret = 0;
 	RI8051Reg *ri;
-	RzAnalEsilCallbacks cbs = esil->cb;
+	RzAnalysisEsilCallbacks cbs = esil->cb;
 	if ((ri = i8051_reg_find (name))) {
 		ut8 offset = i8051_reg_get_offset(esil, ri);
 		ret = rz_anal_esil_mem_write (esil, IRAM_BASE + offset, (ut8*)val, ri->num_bytes);
@@ -787,7 +787,7 @@ static int i8051_hook_reg_write(RzAnalEsil *esil, const char *name, ut64 *val) {
 }
 #endif
 
-static int esil_i8051_init (RzAnalEsil *esil) {
+static int esil_i8051_init (RzAnalysisEsil *esil) {
 	if (esil->cb.user) {
 		return true;
 	}
@@ -802,7 +802,7 @@ static int esil_i8051_init (RzAnalEsil *esil) {
 	return true;
 }
 
-static int esil_i8051_fini (RzAnalEsil *esil) {
+static int esil_i8051_fini (RzAnalysisEsil *esil) {
 	if (!i8051_is_init) {
 		return false;
 	}
@@ -811,7 +811,7 @@ static int esil_i8051_fini (RzAnalEsil *esil) {
 	return true;
 }
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
@@ -872,7 +872,7 @@ static bool set_reg_profile(RzAnal *anal) {
 	return retval;
 }
 
-static ut32 map_direct_addr(RzAnal *anal, ut8 addr) {
+static ut32 map_direct_addr(RzAnalysis *anal, ut8 addr) {
 	if (addr < 0x80) {
 		return addr + i8051_reg_read (anal->reg, "_idata");
 	} else {
@@ -880,7 +880,7 @@ static ut32 map_direct_addr(RzAnal *anal, ut8 addr) {
 	}
 }
 
-static int i8051_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int i8051_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	set_cpu_model (anal, false);
 
 	int i = 0;
@@ -1033,7 +1033,7 @@ static int i8051_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int l
 	return op->size;
 }
 
-RzAnalPlugin rz_anal_plugin_8051 = {
+RzAnalysisPlugin rz_anal_plugin_8051 = {
 	.name = "8051",
 	.arch = "8051",
 	.esil = true,

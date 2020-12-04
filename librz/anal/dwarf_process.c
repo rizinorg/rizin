@@ -7,7 +7,7 @@
 #include <string.h>
 
 typedef struct dwarf_parse_context_t {
-	const RzAnal *anal;
+	const RzAnalysis *anal;
 	const RzBinDwarfDie *all_dies;
 	const ut64 count;
 	Sdb *sdb;
@@ -361,15 +361,15 @@ static st32 parse_type (Context *ctx, const ut64 offset, RzStrBuf *strbuf, ut64 
 }
 
 /**
- * @brief Parses structured entry into *result RzAnalStructMember
+ * @brief Parses structured entry into *result RzAnalysisStructMember
  * http://www.dwarfstd.org/doc/DWARF4.pdf#page=102&zoom=100,0,0
  * 
  * @param ctx
  * @param idx index of the current entry
  * @param result ptr to result member to fill up
- * @return RzAnalStructMember* ptr to parsed Member
+ * @return RzAnalysisStructMember* ptr to parsed Member
  */
-static RzAnalStructMember *parse_struct_member (Context *ctx, ut64 idx, RzAnalStructMember *result) {
+static RzAnalysisStructMember *parse_struct_member (Context *ctx, ut64 idx, RzAnalysisStructMember *result) {
 	rz_return_val_if_fail (result, NULL);
 	const RzBinDwarfDie *die = &ctx->all_dies[idx];
 
@@ -440,15 +440,15 @@ cleanup:
 }
 
 /**
- * @brief  Parses enum entry into *result RzAnalEnumCase
+ * @brief  Parses enum entry into *result RzAnalysisEnumCase
  * http://www.dwarfstd.org/doc/DWARF4.pdf#page=110&zoom=100,0,0
  * 
  * @param ctx
  * @param idx index of the current entry
  * @param result ptr to result case to fill up
- * @return RzAnalEnumCase* Ptr to parsed enum case
+ * @return RzAnalysisEnumCase* Ptr to parsed enum case
  */
-static RzAnalEnumCase *parse_enumerator(Context *ctx, ut64 idx, RzAnalEnumCase *result) {
+static RzAnalysisEnumCase *parse_enumerator(Context *ctx, ut64 idx, RzAnalysisEnumCase *result) {
 	const RzBinDwarfDie *die = &ctx->all_dies[idx];
 
 	char *name = NULL;
@@ -484,7 +484,7 @@ cleanup:
 
 /**
  * @brief  Parses a structured entry (structs, classes, unions) into 
- *         RzAnalBaseType and saves it using rz_anal_save_base_type ()
+ *         RzAnalysisBaseType and saves it using rz_anal_save_base_type ()
  * 
  * @param ctx
  * @param idx index of the current entry
@@ -493,14 +493,14 @@ cleanup:
 static void parse_structure_type(Context *ctx, ut64 idx) {
 	const RzBinDwarfDie *die = &ctx->all_dies[idx];
 
-	RzAnalBaseTypeKind kind;
+	RzAnalysisBaseTypeKind kind;
 	if (die->tag == DW_TAG_union_type) {
 		kind = RZ_ANAL_BASE_TYPE_KIND_UNION;
 	} else {
 		kind = RZ_ANAL_BASE_TYPE_KIND_STRUCT;
 	}
 
-	RzAnalBaseType *base_type = rz_anal_base_type_new (kind);
+	RzAnalysisBaseType *base_type = rz_anal_base_type_new (kind);
 	if (!base_type) {
 		return;
 	}
@@ -526,7 +526,7 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 
 	base_type->size = get_die_size (die);
 
-	RzAnalStructMember member = { 0 };
+	RzAnalysisStructMember member = { 0 };
 	// Parse out all members, can this in someway be extracted to a function?
 	if (die->has_children) {
 		int child_depth = 1; // Direct children of the node
@@ -537,7 +537,7 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 			// we take only direct descendats of the structure
 			// can be also DW_TAG_suprogram for class methods or tag for templates
 			if (child_depth == 1 && child_die->tag == DW_TAG_member) {
-				RzAnalStructMember *result = parse_struct_member (ctx, j, &member);
+				RzAnalysisStructMember *result = parse_struct_member (ctx, j, &member);
 				if (!result) {
 					goto cleanup;
 				} else {
@@ -561,7 +561,7 @@ cleanup:
 }
 
 /**
- * @brief Parses a enum entry into RzAnalBaseType and saves it
+ * @brief Parses a enum entry into RzAnalysisBaseType and saves it
  *        int Sdb using rz_anal_save_base_type ()
  * 
  * @param ctx 
@@ -570,7 +570,7 @@ cleanup:
 static void parse_enum_type(Context *ctx, ut64 idx) {
 	const RzBinDwarfDie *die = &ctx->all_dies[idx];
 
-	RzAnalBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ENUM);
+	RzAnalysisBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
 		return;
 	}
@@ -589,7 +589,7 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 		base_type->type = rz_strbuf_drain_nofree (&strbuf);
 	}
 
-	RzAnalEnumCase cas;
+	RzAnalysisEnumCase cas;
 	if (die->has_children) {
 		int child_depth = 1; // Direct children of the node
 		size_t j;
@@ -598,7 +598,7 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 			const RzBinDwarfDie *child_die = &ctx->all_dies[j];
 			// we take only direct descendats of the structure
 			if (child_depth == 1 && child_die->tag == DW_TAG_enumerator) {
-				RzAnalEnumCase *result = parse_enumerator (ctx, j, &cas);
+				RzAnalysisEnumCase *result = parse_enumerator (ctx, j, &cas);
 				if (!result) {
 					goto cleanup;
 				} else {
@@ -624,7 +624,7 @@ cleanup:
 }
 
 /**
- * @brief Parses a typedef entry into RzAnalBaseType and saves it
+ * @brief Parses a typedef entry into RzAnalysisBaseType and saves it
  *        using rz_anal_save_base_type ()
  * 
  * http://www.dwarfstd.org/doc/DWARF4.pdf#page=96&zoom=100,0,0
@@ -665,7 +665,7 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 	if (!name) { // type has to have a name for now
 		goto cleanup;
 	}
-	RzAnalBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_TYPEDEF);
+	RzAnalysisBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_TYPEDEF);
 	if (!base_type) {
 		goto cleanup;
 	}
@@ -715,7 +715,7 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 	if (!name) { // type has to have a name for now
 		return;
 	}
-	RzAnalBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ATOMIC);
+	RzAnalysisBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ATOMIC);
 	if (!base_type) {
 		return;
 	}
@@ -1525,7 +1525,7 @@ static void parse_type_entry(Context *ctx, ut64 idx) {
  * @param anal 
  * @param ctx 
  */
-RZ_API void rz_anal_dwarf_process_info(const RzAnal *anal, RzAnalDwarfContext *ctx) {
+RZ_API void rz_anal_dwarf_process_info(const RzAnalysis *anal, RzAnalysisDwarfContext *ctx) {
 	rz_return_if_fail (ctx && anal);
 	Sdb *dwarf_sdb =  sdb_ns (anal->sdb, "dwarf", 1);
 	size_t i, j;
@@ -1560,7 +1560,7 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
  * @param anal 
  * @param dwarf_sdb 
  */
-RZ_API void rz_anal_dwarf_integrate_functions(RzAnal *anal, RzFlag *flags, Sdb *dwarf_sdb) {
+RZ_API void rz_anal_dwarf_integrate_functions(RzAnalysis *anal, RzFlag *flags, Sdb *dwarf_sdb) {
 	rz_return_if_fail (anal && dwarf_sdb);
 
 	/* get all entries with value == func */
@@ -1576,7 +1576,7 @@ RZ_API void rz_anal_dwarf_integrate_functions(RzAnal *anal, RzFlag *flags, Sdb *
 		free (addr_key);
 
 		/* if the function is analyzed so we can edit */
-		RzAnalFunction *fcn = rz_anal_get_function_at (anal, faddr);
+		RzAnalysisFunction *fcn = rz_anal_get_function_at (anal, faddr);
 		if (fcn) {
 			/* prepend dwarf debug info stuff with dbg. */
 			char *real_name_key = rz_str_newf ("fcn.%s.name", func_sname);

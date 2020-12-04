@@ -6,7 +6,7 @@
 #include <rz_asm.h>
 #include <rz_anal.h>
 
-static int chip8_anop(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask) {
+static int chip8_anop(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	ut16 opcode = rz_read_be16 (data);
 //	uint8_t x = (opcode >> 8) & 0x0F;
 //	uint8_t y = (opcode >> 4) & 0x0F;
@@ -150,7 +150,7 @@ static int chip8_anop(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, in
 	return op->size;
 }
 
-RzAnalPlugin rz_anal_plugin_chip8 = {
+RzAnalysisPlugin rz_anal_plugin_chip8 = {
 	.name = "chip8",
 	.desc = "CHIP8 analysis plugin",
 	.license = "LGPL3",

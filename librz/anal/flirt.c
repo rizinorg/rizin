@@ -444,7 +444,7 @@ static void node_free(RzFlirtNode *node) {
 	free (node);
 }
 
-static void print_module(const RzAnal *anal, const RzFlirtModule *module) {
+static void print_module(const RzAnalysis *anal, const RzFlirtModule *module) {
 	RzListIter *pub_func_it, *ref_func_it, *tail_byte_it;
 	RzFlirtFunction *func, *ref_func;
 	RzFlirtTailByte *tail_byte;
@@ -485,7 +485,7 @@ static void print_module(const RzAnal *anal, const RzFlirtModule *module) {
 }
 
 
-static void print_node_pattern(const RzAnal *anal, const RzFlirtNode *node) {
+static void print_node_pattern(const RzAnalysis *anal, const RzFlirtNode *node) {
 	int i;
 	for (i = 0; i < node->length; i++) {
 		if (node->variant_bool_array[i]) {
@@ -497,11 +497,11 @@ static void print_node_pattern(const RzAnal *anal, const RzFlirtNode *node) {
 	anal->cb_printf (":\n");
 }
 
-static void print_indentation(const RzAnal *anal, int indent) {
+static void print_indentation(const RzAnalysis *anal, int indent) {
 	anal->cb_printf ("%s", rz_str_pad (' ', indent));
 }
 
-static void print_node(const RzAnal *anal, const RzFlirtNode *node, int indent) {
+static void print_node(const RzAnalysis *anal, const RzFlirtNode *node, int indent) {
 	/*Prints a signature node. The output is similar to dumpsig*/
 	int i;
 	RzListIter *child_it, *module_it;
@@ -527,13 +527,13 @@ static void print_node(const RzAnal *anal, const RzFlirtNode *node, int indent) 
 	}
 }
 
-static int module_match_buffer(RzAnal *anal, const RzFlirtModule *module,
+static int module_match_buffer(RzAnalysis *anal, const RzFlirtModule *module,
                                ut8 *b, ut64 address, ut32 buf_size) {
 	/* Returns true if module matches b, according to the signatures infos.
 	* Return false otherwise.
 	* The buffer starts from the first byte after the pattern */
 	RzFlirtFunction *flirt_func;
-	RzAnalFunction *next_module_function;
+	RzAnalysisFunction *next_module_function;
 	RzListIter *tail_byte_it, *flirt_func_it;
 	RzFlirtTailByte *tail_byte;
 
@@ -556,7 +556,7 @@ static int module_match_buffer(RzAnal *anal, const RzFlirtModule *module,
 		// Once the first module function is found, we need to go through the module->public_functions
 		// list to identify the others. See flirt doc for more information
 
-		next_module_function = rz_anal_get_function_at ((RzAnal *) anal, address + flirt_func->offset);
+		next_module_function = rz_anal_get_function_at ((RzAnalysis *) anal, address + flirt_func->offset);
 		if (next_module_function) {
 			char *name;
 			int name_offs = 0;
@@ -579,13 +579,13 @@ static int module_match_buffer(RzAnal *anal, const RzFlirtModule *module,
 			if (next_module_function_size < flirt_fcn_size) {
 				RzListIter *iter;
 				RzListIter *iter_tmp;
-				RzAnalFunction *fcn;
+				RzAnalysisFunction *fcn;
 				rz_list_foreach_safe (anal->fcns, iter, iter_tmp, fcn) {
 					if (fcn != next_module_function &&
 							fcn->addr >= next_module_function->addr + next_module_function_size &&
 							fcn->addr < next_module_function->addr + flirt_fcn_size) {
 						RzListIter *iter_bb;
-						RzAnalBlock *block;
+						RzAnalysisBlock *block;
 						rz_list_foreach (fcn->bbs, iter_bb, block) {
 							rz_anal_function_add_block (next_module_function, block);
 						}
@@ -595,7 +595,7 @@ static int module_match_buffer(RzAnal *anal, const RzFlirtModule *module,
 				}
 				rz_anal_function_resize (next_module_function, flirt_fcn_size);
 				next_module_function_size = rz_anal_function_linear_size (next_module_function);
-				rz_anal_trim_jmprefs ((RzAnal *)anal, next_module_function);
+				rz_anal_trim_jmprefs ((RzAnalysis *)anal, next_module_function);
 			}
 
 
@@ -634,7 +634,7 @@ static int node_pattern_match(const RzFlirtNode *node, ut8 *b, int buf_size) {
 	return true;
 }
 
-static int node_match_buffer(RzAnal *anal, const RzFlirtNode *node, ut8 *b, ut64 address, ut32 buf_size, ut32 buf_idx) {
+static int node_match_buffer(RzAnalysis *anal, const RzFlirtNode *node, ut8 *b, ut64 address, ut32 buf_size, ut32 buf_idx) {
 	RzListIter *node_child_it, *module_it;
 	RzFlirtNode *child;
 	RzFlirtModule *module;
@@ -658,7 +658,7 @@ static int node_match_buffer(RzAnal *anal, const RzFlirtNode *node, ut8 *b, ut64
 	return false;
 }
 
-static int node_match_functions(RzAnal *anal, const RzFlirtNode *root_node) {
+static int node_match_functions(RzAnalysis *anal, const RzFlirtNode *root_node) {
 	/* Tries to find matching functions between the signature infos in root_node
 	* and the analyzed functions in anal
 	* Returns false on error. */
@@ -670,7 +670,7 @@ static int node_match_functions(RzAnal *anal, const RzFlirtNode *root_node) {
 
 	anal->flb.push_fs (anal->flb.f, "flirt");
 	RzListIter *it_func;
-	RzAnalFunction *func;
+	RzAnalysisFunction *func;
 	rz_list_foreach (anal->fcns, it_func, func) {
 		if (func->type != RZ_ANAL_FCN_TYPE_FCN && func->type != RZ_ANAL_FCN_TYPE_LOC) { // scan only for unknown functions
 			continue;
@@ -909,7 +909,7 @@ err_exit:
 	return false;
 }
 
-static ut8 parse_leaf(const RzAnal *anal, RzBuffer *b, RzFlirtNode *node) {
+static ut8 parse_leaf(const RzAnalysis *anal, RzBuffer *b, RzFlirtNode *node) {
 	/*parses a signature leaf: modules with same leading pattern*/
 	/*returns false on parsing error*/
 	ut8 flags, crc_length;
@@ -1048,7 +1048,7 @@ static bool read_node_bytes(RzFlirtNode *node, RzBuffer *b) {
 	return true;
 }
 
-static ut8 parse_tree(const RzAnal *anal, RzBuffer *b, RzFlirtNode *root_node) {
+static ut8 parse_tree(const RzAnalysis *anal, RzBuffer *b, RzFlirtNode *root_node) {
 	/*parse a signature pattern tree or sub-tree*/
 	/*returns false on parsing error*/
 	RzFlirtNode *node = NULL;
@@ -1290,7 +1290,7 @@ static int parse_v10_header(RzBuffer *buf, idasig_v10_t *header) {
 	return true;
 }
 
-static RzFlirtNode *flirt_parse(const RzAnal *anal, RzBuffer *flirt_buf) {
+static RzFlirtNode *flirt_parse(const RzAnalysis *anal, RzBuffer *flirt_buf) {
 	ut8 *name = NULL;
 	ut8 *buf = NULL, *decompressed_buf = NULL;
 	RzBuffer *rz_buf = NULL;
@@ -1433,7 +1433,7 @@ exit:
 	return ret;
 }
 
-RZ_API void rz_sign_flirt_dump(const RzAnal *anal, const char *flirt_file) {
+RZ_API void rz_sign_flirt_dump(const RzAnalysis *anal, const char *flirt_file) {
 	/*dump a flirt signature content on screen.*/
 	RzBuffer *flirt_buf;
 	RzFlirtNode *node;
@@ -1455,7 +1455,7 @@ RZ_API void rz_sign_flirt_dump(const RzAnal *anal, const char *flirt_file) {
 	}
 }
 
-RZ_API void rz_sign_flirt_scan(RzAnal *anal, const char *flirt_file) {
+RZ_API void rz_sign_flirt_scan(RzAnalysis *anal, const char *flirt_file) {
 	/*parses a flirt signature file and scan the currently opened file against it.*/
 	RzBuffer *flirt_buf;
 	RzFlirtNode *node;

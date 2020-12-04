@@ -769,7 +769,7 @@ RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *cont
 }
 
 
-static char *unique_class_name(RzAnal *anal, const char *original_name) {
+static char *unique_class_name(RzAnalysis *anal, const char *original_name) {
 	if (!rz_anal_class_exists (anal, original_name)) {
 		return strdup (original_name);
 	}
@@ -791,12 +791,12 @@ static char *unique_class_name(RzAnal *anal, const char *original_name) {
 	return name;
 }
 
-static void recovery_apply_vtable(RzAnal *anal, const char *class_name, RVTableInfo *vtable_info) {
+static void recovery_apply_vtable(RzAnalysis *anal, const char *class_name, RVTableInfo *vtable_info) {
 	if (!vtable_info) {
 		return;
 	}
 
-	RzAnalVTable vtable;
+	RzAnalysisVTable vtable;
 	vtable.id = NULL;
 	vtable.offset = 0;
 	vtable.addr = vtable_info->saddr;
@@ -805,7 +805,7 @@ static void recovery_apply_vtable(RzAnal *anal, const char *class_name, RVTableI
 
 	RVTableMethodInfo *vmeth;
 	rz_vector_foreach (&vtable_info->methods, vmeth) {
-		RzAnalMethod meth;
+		RzAnalysisMethod meth;
 		meth.addr = vmeth->addr;
 		meth.vtable_offset = vmeth->vtable_offset;
 		meth.name = rz_str_newf ("virtual_%" PFMT64d, meth.vtable_offset);
@@ -843,7 +843,7 @@ static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *clas
 			continue;
 		}
 
-		RzAnalBaseClass base;
+		RzAnalysisBaseClass base;
 		base.id = NULL;
 		base.offset = (ut64)base_desc->bcd->where.mdisp;
 		base.class_name = strdup (base_class_name);
@@ -865,7 +865,7 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 		return NULL;
 	}
 
-	RzAnal *anal = context->vt_context->anal;
+	RzAnalysis *anal = context->vt_context->anal;
 
 	const char *existing = ht_up_find (context->col_td_classes, col->addr, NULL);
 	if (existing != NULL) {
@@ -906,7 +906,7 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 		return NULL;
 	}
 
-	RzAnal *anal = context->vt_context->anal;
+	RzAnalysis *anal = context->vt_context->anal;
 
 	const char *existing = ht_up_find (context->col_td_classes, td->addr, NULL);
 	if (existing != NULL) {

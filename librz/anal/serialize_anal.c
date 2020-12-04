@@ -14,13 +14,13 @@
  * /
  *   /blocks
  *     0x<addr>={size:<ut64>, jump?:<ut64>, fail?:<ut64>, traced?:true, folded?:true, colorize?:<ut32>,
- *               fingerprint?:"<base64>", diff?: <RzAnalDiff>, switch_op?:<RzAnalSwitchOp>,
+ *               fingerprint?:"<base64>", diff?: <RzAnalysisDiff>, switch_op?:<RzAnalysisSwitchOp>,
  *               ninstr:<int>, op_pos?:[<ut16>], stackptr:<int>, parent_stackptr:<int>,
  *               cmpval:<ut64>, cmpreg?:<str>}
  *   /functions
  *     0x<addr>={name:<str>, bits?:<int>, type:<int>, cc?:<str>, stack:<int>, maxstack:<int>,
  *               ninstr:<int>, folded?:<bool>, pure?:<bool>, bp_frame?:<bool>, bp_off?:<st64>, noreturn?:<bool>,
- *               fingerprint?:"<base64>", diff?:<RzAnalDiff>, bbs:[<ut64>], imports?:[<str>], vars?:[<RzAnalVar>],
+ *               fingerprint?:"<base64>", diff?:<RzAnalysisDiff>, bbs:[<ut64>], imports?:[<str>], vars?:[<RzAnalysisVar>],
  *               labels?: {<str>:<ut64>}}
  *   /xrefs
  *     0x<addr>=[{to:<ut64>, type?:"c"|"C"|"d"|"s"}]
@@ -35,34 +35,34 @@
  *               immbase?:<int>,ptr?:<ut64>,ret?:<ut64>,syntax?:<str>,opcode?:<str>,esil?:<str>,optype?:<int>,
  *               size?:<ut64>,frame?:<ut64>,val?:<ut64>,high?:<bool>}
  *   /classes
- *     <direct dump of RzAnal.sdb_classes>
+ *     <direct dump of RzAnalysis.sdb_classes>
  *     /attrs
- *       <direct dump of RzAnal.sdb_classes_attrs>
+ *       <direct dump of RzAnalysis.sdb_classes_attrs>
  *
  *   /zigns
- *     <direct dump of RzAnal.sdb_zigns>
+ *     <direct dump of RzAnalysis.sdb_zigns>
  *     /spaces
  *       see spaces.c
  *
  *   /imports
  *     <str>=i
  *
- * RzAnalDiff JSON:
+ * RzAnalysisDiff JSON:
  * {type?:"m"|"u", addr:<ut64>, dist:<double>, name?:<str>, size:<ut32>}
  *
- * RzAnalSwitchOp JSON:
- * {addr:<ut64>, min:<ut64>, max:<ut64>, def:<ut64>, cases:[<RzAnalCaseOp>]}
+ * RzAnalysisSwitchOp JSON:
+ * {addr:<ut64>, min:<ut64>, max:<ut64>, def:<ut64>, cases:[<RzAnalysisCaseOp>]}
  *
- * RzAnalCaseOp JSON:
+ * RzAnalysisCaseOp JSON:
  * {addr:<ut64>, jump:<ut64>, value:<ut64>}
  *
- * RzAnalVar JSON:
+ * RzAnalysisVar JSON:
  * {name:<str>, type:<str>, kind:"s|b|r", arg?:<bool>, delta?:<st64>, reg?:<str>, cmt?:<str>,
  *   accs?: [{off:<st64>, type:"r|w|rw", reg:<str>, sp?:<st64>}], constrs?:[<int>,<ut64>,...]}
  *
  */
 
-RZ_API void rz_serialize_anal_diff_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalDiff *diff) {
+RZ_API void rz_serialize_anal_diff_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisDiff *diff) {
 	pj_o (j);
 	switch (diff->type) {
 	case RZ_ANAL_DIFF_TYPE_MATCH:
@@ -112,11 +112,11 @@ RZ_API void rz_serialize_anal_diff_parser_free(RzSerializeAnalDiffParser parser)
 	key_parser_free (parser);
 }
 
-RZ_API RZ_NULLABLE RzAnalDiff *rz_serialize_anal_diff_load(RZ_NONNULL RzSerializeAnalDiffParser parser, RZ_NONNULL const RJson *json) {
+RZ_API RZ_NULLABLE RzAnalysisDiff *rz_serialize_anal_diff_load(RZ_NONNULL RzSerializeAnalDiffParser parser, RZ_NONNULL const RJson *json) {
 	if (json->type != RZ_JSON_OBJECT) {
 		return NULL;
 	}
-	RzAnalDiff *diff = rz_anal_diff_new ();
+	RzAnalysisDiff *diff = rz_anal_diff_new ();
 	if (!diff) {
 		return NULL;
 	}
@@ -163,7 +163,7 @@ RZ_API RZ_NULLABLE RzAnalDiff *rz_serialize_anal_diff_load(RZ_NONNULL RzSerializ
 	return diff;
 }
 
-RZ_API void rz_serialize_anal_case_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalCaseOp *op) {
+RZ_API void rz_serialize_anal_case_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisCaseOp *op) {
 	pj_o (j);
 	pj_kn (j, "addr", op->addr);
 	pj_kn (j, "jump", op->jump);
@@ -171,7 +171,7 @@ RZ_API void rz_serialize_anal_case_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalCa
 	pj_end (j);
 }
 
-RZ_API void rz_serialize_anal_switch_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalSwitchOp *op) {
+RZ_API void rz_serialize_anal_switch_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisSwitchOp *op) {
 	pj_o (j);
 	pj_kn (j, "addr", op->addr);
 	pj_kn (j, "min", op->min_val);
@@ -180,7 +180,7 @@ RZ_API void rz_serialize_anal_switch_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnal
 	pj_k (j, "cases");
 	pj_a (j);
 	RzListIter *it;
-	RzAnalCaseOp *cop;
+	RzAnalysisCaseOp *cop;
 	rz_list_foreach (op->cases, it, cop) {
 		rz_serialize_anal_case_op_save (j, cop);
 	}
@@ -188,11 +188,11 @@ RZ_API void rz_serialize_anal_switch_op_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnal
 	pj_end (j);
 }
 
-RZ_API RzAnalSwitchOp *rz_serialize_anal_switch_op_load(RZ_NONNULL const RJson *json) {
+RZ_API RzAnalysisSwitchOp *rz_serialize_anal_switch_op_load(RZ_NONNULL const RJson *json) {
 	if (json->type != RZ_JSON_OBJECT) {
 		return NULL;
 	}
-	RzAnalSwitchOp *sop = rz_anal_switch_op_new (0, 0, 0, 0);
+	RzAnalysisSwitchOp *sop = rz_anal_switch_op_new (0, 0, 0, 0);
 	if (!sop) {
 		return NULL;
 	}
@@ -237,7 +237,7 @@ RZ_API RzAnalSwitchOp *rz_serialize_anal_switch_op_load(RZ_NONNULL const RJson *
 	return sop;
 }
 
-static void block_store(RZ_NONNULL Sdb *db, const char *key, RzAnalBlock *block) {
+static void block_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisBlock *block) {
 	PJ *j = pj_new ();
 	if (!j) {
 		return;
@@ -313,11 +313,11 @@ static void block_store(RZ_NONNULL Sdb *db, const char *key, RzAnalBlock *block)
 	pj_free (j);
 }
 
-RZ_API void rz_serialize_anal_blocks_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal) {
+RZ_API void rz_serialize_anal_blocks_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal) {
 	RBIter iter;
-	RzAnalBlock *block;
+	RzAnalysisBlock *block;
 	RzStrBuf key = { 0 };
-	rz_rbtree_foreach (anal->bb_tree, iter, block, RzAnalBlock, _rb) {
+	rz_rbtree_foreach (anal->bb_tree, iter, block, RzAnalysisBlock, _rb) {
 		rz_strbuf_setf (&key, "0x%"PFMT64x, block->addr);
 		block_store (db, rz_strbuf_get (&key), block);
 	}
@@ -343,7 +343,7 @@ enum {
 };
 
 typedef struct {
-	RzAnal *anal;
+	RzAnalysis *anal;
 	KeyParser *parser;
 	RzSerializeAnalDiffParser diff_parser;
 } BlockLoadCtx;
@@ -361,7 +361,7 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 		return false;
 	}
 
-	RzAnalBlock proto = { 0 };
+	RzAnalysisBlock proto = { 0 };
 	proto.jump = UT64_MAX;
 	proto.fail = UT64_MAX;
 	proto.size = UT64_MAX;
@@ -509,7 +509,7 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 		goto error;
 	}
 
-	RzAnalBlock *block = rz_anal_create_block (ctx->anal, addr, proto.size);
+	RzAnalysisBlock *block = rz_anal_create_block (ctx->anal, addr, proto.size);
 	if (!block) {
 		goto error;
 	}
@@ -541,7 +541,7 @@ error:
 	return false;
 }
 
-RZ_API bool rz_serialize_anal_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RzSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal, RzSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res) {
 	BlockLoadCtx ctx = { anal, key_parser_new (), diff_parser };
 	if (!ctx.parser) {
 		SERIALIZE_ERR ("parser init failed");
@@ -570,7 +570,7 @@ RZ_API bool rz_serialize_anal_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal 
 	return ret;
 }
 
-RZ_API void rz_serialize_anal_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalVar *var) {
+RZ_API void rz_serialize_anal_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisVar *var) {
 	pj_o (j);
 	pj_ks (j, "name", var->name);
 	pj_ks (j, "type", var->type);
@@ -599,7 +599,7 @@ RZ_API void rz_serialize_anal_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalVar *v
 	}
 	if (!rz_vector_empty (&var->accesses)) {
 		pj_ka (j, "accs");
-		RzAnalVarAccess *acc;
+		RzAnalysisVarAccess *acc;
 		rz_vector_foreach (&var->accesses, acc) {
 			pj_o (j);
 			pj_kn (j, "off", acc->offset);
@@ -628,7 +628,7 @@ RZ_API void rz_serialize_anal_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalVar *v
 	}
 	if (!rz_vector_empty (&var->constraints)) {
 		pj_ka (j, "constrs");
-		RzAnalVarConstraint *constr;
+		RzAnalysisVarConstraint *constr;
 		rz_vector_foreach (&var->constraints, constr) {
 			pj_i (j, (int)constr->cond);
 			pj_n (j, constr->val);
@@ -671,23 +671,23 @@ RZ_API void rz_serialize_anal_var_parser_free(RzSerializeAnalVarParser parser) {
 	key_parser_free (parser);
 }
 
-RZ_API RZ_NULLABLE RzAnalVar *rz_serialize_anal_var_load(RZ_NONNULL RzAnalFunction *fcn, RZ_NONNULL RzSerializeAnalVarParser parser, RZ_NONNULL const RJson *json) {
+RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_anal_var_load(RZ_NONNULL RzAnalysisFunction *fcn, RZ_NONNULL RzSerializeAnalVarParser parser, RZ_NONNULL const RJson *json) {
 	if (json->type != RZ_JSON_OBJECT) {
 		return NULL;
 	}
 	const char *name = NULL;
 	const char *type = NULL;
-	RzAnalVarKind kind = -1;
+	RzAnalysisVarKind kind = -1;
 	bool arg = false;
 	st64 delta = ST64_MAX;
 	const char *regname = NULL;
 	const char *comment = NULL;
 	RzVector accesses;
-	rz_vector_init (&accesses, sizeof (RzAnalVarAccess), NULL, NULL);
+	rz_vector_init (&accesses, sizeof (RzAnalysisVarAccess), NULL, NULL);
 	RzVector constraints;
-	rz_vector_init (&constraints, sizeof (RzAnalVarConstraint), NULL, NULL);
+	rz_vector_init (&constraints, sizeof (RzAnalysisVarConstraint), NULL, NULL);
 
-	RzAnalVar *ret = NULL;
+	RzAnalysisVar *ret = NULL;
 
 	KEY_PARSER_JSON (parser, json, child, {
 		case VAR_FIELD_NAME:
@@ -790,7 +790,7 @@ RZ_API RZ_NULLABLE RzAnalVar *rz_serialize_anal_var_load(RZ_NONNULL RzAnalFuncti
 					continue;
 				}
 
-				RzAnalVarAccess *acc = rz_vector_push (&accesses, NULL);
+				RzAnalysisVarAccess *acc = rz_vector_push (&accesses, NULL);
 				acc->offset = offv->num.s_value;
 				acc->type = acctype;
 				acc->stackptr = spv ? spv->num.s_value : 0;
@@ -811,8 +811,8 @@ RZ_API RZ_NULLABLE RzAnalVar *rz_serialize_anal_var_load(RZ_NONNULL RzAnalFuncti
 				if (!sibling || sibling->type != RZ_JSON_INTEGER) {
 					break;
 				}
-				RzAnalVarConstraint constr;
-				constr.cond = (_RzAnalCond)baby->num.s_value;
+				RzAnalysisVarConstraint constr;
+				constr.cond = (_RzAnalysisCond)baby->num.s_value;
 				constr.val = sibling->num.u_value;
 				if (constr.cond < RZ_ANAL_COND_AL || constr.cond > RZ_ANAL_COND_LS) {
 					baby = sibling;
@@ -848,11 +848,11 @@ RZ_API RZ_NULLABLE RzAnalVar *rz_serialize_anal_var_load(RZ_NONNULL RzAnalFuncti
 		free (ret->comment);
 		ret->comment = strdup (comment);
 	}
-	RzAnalVarAccess *acc;
+	RzAnalysisVarAccess *acc;
 	rz_vector_foreach (&accesses, acc) {
 		rz_anal_var_set_access (ret, acc->reg, fcn->addr + acc->offset, acc->type, acc->stackptr);
 	}
-	RzAnalVarConstraint *constr;
+	RzAnalysisVarConstraint *constr;
 	rz_vector_foreach (&constraints, constr) {
 		rz_anal_var_add_constraint (ret, constr);
 	}
@@ -868,7 +868,7 @@ static bool store_label_cb(void *j, const ut64 k, const void *v) {
 	return true;
 }
 
-static void function_store(RZ_NONNULL Sdb *db, const char *key, RzAnalFunction *function) {
+static void function_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisFunction *function) {
 	PJ *j = pj_new ();
 	if (!j) {
 		return;
@@ -915,7 +915,7 @@ static void function_store(RZ_NONNULL Sdb *db, const char *key, RzAnalFunction *
 
 	pj_ka (j, "bbs");
 	RzListIter *it;
-	RzAnalBlock *block;
+	RzAnalysisBlock *block;
 	rz_list_foreach (function->bbs, it, block) {
 		pj_n (j, block->addr);
 	}
@@ -934,7 +934,7 @@ static void function_store(RZ_NONNULL Sdb *db, const char *key, RzAnalFunction *
 		pj_ka (j, "vars");
 		void **vit;
 		rz_pvector_foreach (&function->vars, vit) {
-			RzAnalVar *var = *vit;
+			RzAnalysisVar *var = *vit;
 			rz_serialize_anal_var_save (j, var);
 		}
 		pj_end (j);
@@ -951,9 +951,9 @@ static void function_store(RZ_NONNULL Sdb *db, const char *key, RzAnalFunction *
 	pj_free (j);
 }
 
-RZ_API void rz_serialize_anal_functions_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal) {
+RZ_API void rz_serialize_anal_functions_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal) {
 	RzListIter *it;
-	RzAnalFunction *function;
+	RzAnalysisFunction *function;
 	RzStrBuf key;
 	rz_strbuf_init (&key);
 	rz_list_foreach (anal->fcns, it, function) {
@@ -985,7 +985,7 @@ enum {
 };
 
 typedef struct {
-	RzAnal *anal;
+	RzAnalysis *anal;
 	KeyParser *parser;
 	RzSerializeAnalDiffParser diff_parser;
 	RzSerializeAnalVarParser var_parser;
@@ -1004,7 +1004,7 @@ static bool function_load_cb(void *user, const char *k, const char *v) {
 		return false;
 	}
 
-	RzAnalFunction *function = rz_anal_function_new (ctx->anal);
+	RzAnalysisFunction *function = rz_anal_function_new (ctx->anal);
 	function->bits = 0; // should be 0 if not specified
 	function->bp_frame = false; // should be false if not specified
 	function->bp_off = 0; // 0 if not specified
@@ -1132,7 +1132,7 @@ static bool function_load_cb(void *user, const char *k, const char *v) {
 				if (baby->type != RZ_JSON_INTEGER) {
 					continue;
 				}
-				RzAnalBlock *block = rz_anal_get_block_at (ctx->anal, baby->num.u_value);
+				RzAnalysisBlock *block = rz_anal_get_block_at (ctx->anal, baby->num.u_value);
 				if (!block) {
 					continue;
 				}
@@ -1211,7 +1211,7 @@ beach:
 	return ret;
 }
 
-RZ_API bool rz_serialize_anal_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RzSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal, RzSerializeAnalDiffParser diff_parser, RZ_NULLABLE RzSerializeResultInfo *res) {
 	FunctionLoadCtx ctx = {
 		.anal = anal,
 		.parser = key_parser_new (),
@@ -1253,7 +1253,7 @@ beach:
 }
 
 static bool store_xref_cb(void *j, const ut64 k, const void *v) {
-	const RzAnalRef *xref = v;
+	const RzAnalysisRef *xref = v;
 	pj_o (j);
 	pj_kn (j, "to", k);
 	if (xref->type != RZ_ANAL_REF_TYPE_NULL) {
@@ -1282,12 +1282,12 @@ static bool store_xrefs_list_cb(void *db, const ut64 k, const void *v) {
 	return true;
 }
 
-RZ_API void rz_serialize_anal_xrefs_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal) {
+RZ_API void rz_serialize_anal_xrefs_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal) {
 	ht_up_foreach (anal->dict_refs, store_xrefs_list_cb, db);
 }
 
 static bool xrefs_load_cb(void *user, const char *k, const char *v) {
-	RzAnal *anal = user;
+	RzAnalysis *anal = user;
 
 	errno = 0;
 	ut64 from = strtoull (k, NULL, 0);
@@ -1316,7 +1316,7 @@ static bool xrefs_load_cb(void *user, const char *k, const char *v) {
 		}
 		ut64 to = baby->num.u_value;
 
-		RzAnalRefType type = RZ_ANAL_REF_TYPE_NULL;
+		RzAnalysisRefType type = RZ_ANAL_REF_TYPE_NULL;
 		baby = rz_json_get (child, "type");
 		if (baby) {
 			// must be a 1-char string
@@ -1348,7 +1348,7 @@ error:
 	return false;
 }
 
-RZ_API bool rz_serialize_anal_xrefs_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_xrefs_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	bool ret = sdb_foreach (db, xrefs_load_cb, anal);
 	if (!ret) {
 		SERIALIZE_ERR ("xrefs parsing failed");
@@ -1356,7 +1356,7 @@ RZ_API bool rz_serialize_anal_xrefs_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *
 	return ret;
 }
 
-RZ_API void rz_serialize_anal_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal) {
+RZ_API void rz_serialize_anal_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal) {
 	rz_serialize_spaces_save (sdb_ns (db, "spaces", true), &anal->meta_spaces);
 
 	PJ *j = pj_new ();
@@ -1365,7 +1365,7 @@ RZ_API void rz_serialize_anal_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *a
 	}
 	char key[0x20];
 	RzIntervalTreeIter it;
-	RzAnalMetaItem *meta;
+	RzAnalysisMetaItem *meta;
 	ut64 addr = 0;
 	size_t count = 0;
 #define FLUSH pj_end (j); \
@@ -1446,7 +1446,7 @@ RZ_API void rz_serialize_anal_meta_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *a
 }
 
 static bool meta_load_cb(void *user, const char *k, const char *v) {
-	RzAnal *anal = user;
+	RzAnalysis *anal = user;
 
 	errno = 0;
 	ut64 addr = strtoull (k, NULL, 0);
@@ -1471,7 +1471,7 @@ static bool meta_load_cb(void *user, const char *k, const char *v) {
 		}
 
 		ut64 size = 1;
-		RzAnalMetaType type = RZ_META_TYPE_ANY;
+		RzAnalysisMetaType type = RZ_META_TYPE_ANY;
 		const char *str = NULL;
 		int subtype = 0;
 		const char *space_name = NULL;
@@ -1548,7 +1548,7 @@ static bool meta_load_cb(void *user, const char *k, const char *v) {
 			continue;
 		}
 
-		RzAnalMetaItem *item = RZ_NEW0 (RzAnalMetaItem);
+		RzAnalysisMetaItem *item = RZ_NEW0 (RzAnalysisMetaItem);
 		if (!item) {
 			break;
 		}
@@ -1577,7 +1577,7 @@ error:
 	return false;
 }
 
-RZ_API bool rz_serialize_anal_meta_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_meta_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	Sdb *spaces_db = sdb_ns (db, "spaces", false);
 	if (!spaces_db) {
 		SERIALIZE_ERR ("missing meta spaces namespace");
@@ -1594,7 +1594,7 @@ RZ_API bool rz_serialize_anal_meta_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *a
 }
 
 typedef struct {
-	const RzVector/*<const RzAnalAddrHintRecord>*/ *addr_hints;
+	const RzVector/*<const RzAnalysisAddrHintRecord>*/ *addr_hints;
 	const char *arch;
 	int bits;
 	bool arch_set;
@@ -1618,7 +1618,7 @@ static HintsAtAddr *hints_at_addr(HtUP *acc, ut64 addr) {
 	return h;
 }
 
-static bool addr_hint_acc_cb(ut64 addr, const RzVector/*<const RzAnalAddrHintRecord>*/ *records, void *user) {
+static bool addr_hint_acc_cb(ut64 addr, const RzVector/*<const RzAnalysisAddrHintRecord>*/ *records, void *user) {
 	HintsAtAddr *h = hints_at_addr (user, addr);
 	if (!h) {
 		return false;
@@ -1671,7 +1671,7 @@ static bool hints_acc_store_cb(void *user, const ut64 addr, const void *v) {
 		pj_ki (j, "bits", h->bits);
 	}
 	if (h->addr_hints) {
-		RzAnalAddrHintRecord *record;
+		RzAnalysisAddrHintRecord *record;
 		rz_vector_foreach (h->addr_hints, record) {
 			switch (record->type) {
 			case RZ_ANAL_ADDR_HINT_TYPE_IMMBASE:
@@ -1731,7 +1731,7 @@ static bool hints_acc_store_cb(void *user, const ut64 addr, const void *v) {
 	return true;
 }
 
-RZ_API void rz_serialize_anal_hints_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal) {
+RZ_API void rz_serialize_anal_hints_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal) {
 	HtUP/*<HintsAtAddr *>*/ *acc = ht_up_new (NULL, hints_at_addr_kv_free, NULL);
 	rz_anal_addr_hints_foreach (anal, addr_hint_acc_cb, acc);
 	rz_anal_arch_hints_foreach (anal, arch_hint_acc_cb, acc);
@@ -1762,13 +1762,13 @@ enum {
 };
 
 typedef struct {
-	RzAnal *anal;
+	RzAnalysis *anal;
 	KeyParser *parser;
 } HintsLoadCtx;
 
 static bool hints_load_cb(void *user, const char *k, const char *v) {
 	HintsLoadCtx *ctx = user;
-	RzAnal *anal = ctx->anal;
+	RzAnalysis *anal = ctx->anal;
 
 	errno = 0;
 	ut64 addr = strtoull (k, NULL, 0);
@@ -1899,7 +1899,7 @@ static bool hints_load_cb(void *user, const char *k, const char *v) {
 	return true;
 }
 
-RZ_API bool rz_serialize_anal_hints_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_hints_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	HintsLoadCtx ctx = {
 		.anal = anal,
 		.parser = key_parser_new (),
@@ -1937,11 +1937,11 @@ beach:
 	return ret;
 }
 
-RZ_API void rz_serialize_anal_classes_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal) {
+RZ_API void rz_serialize_anal_classes_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal) {
 	sdb_copy (anal->sdb_classes, db);
 }
 
-RZ_API bool rz_serialize_anal_classes_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_classes_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	if (!sdb_ns (db, "attrs", false)) {
 		SERIALIZE_ERR ("missing attrs namespace");
 		return false;
@@ -1952,22 +1952,22 @@ RZ_API bool rz_serialize_anal_classes_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal
 	return true;
 }
 
-RZ_API void rz_serialize_anal_types_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal) {
+RZ_API void rz_serialize_anal_types_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal) {
 	sdb_copy (anal->sdb_types, db);
 }
 
-RZ_API bool rz_serialize_anal_types_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_types_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	sdb_reset (anal->sdb_types);
 	sdb_copy (db, anal->sdb_types);
 	return true;
 }
 
-RZ_API void rz_serialize_anal_sign_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal) {
+RZ_API void rz_serialize_anal_sign_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal) {
 	sdb_copy (anal->sdb_zigns, db);
 	rz_serialize_spaces_save (sdb_ns (db, "spaces", true), &anal->zign_spaces);
 }
 
-RZ_API bool rz_serialize_anal_sign_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_sign_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	sdb_reset (anal->sdb_zigns);
 	sdb_copy (db, anal->sdb_zigns);
 	Sdb *spaces_db = sdb_ns (db, "spaces", false);
@@ -1981,7 +1981,7 @@ RZ_API bool rz_serialize_anal_sign_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *a
 	return true;
 }
 
-RZ_API void rz_serialize_anal_imports_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal) {
+RZ_API void rz_serialize_anal_imports_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal) {
 	RzListIter *it;
 	const char *imp;
 	rz_list_foreach (anal->imports, it, imp) {
@@ -1994,29 +1994,29 @@ static bool import_load_cb(void *user, const char *k, const char *v) {
 	return true;
 }
 
-RZ_API bool rz_serialize_anal_imports_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_imports_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	return sdb_foreach (db, import_load_cb, anal);
 }
 
-RZ_API void rz_serialize_anal_pin_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal) {
+RZ_API void rz_serialize_anal_pin_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal) {
 	sdb_copy (anal->sdb_pins, db);
 }
 
-RZ_API bool rz_serialize_anal_pin_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_pin_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	sdb_copy (db, anal->sdb_pins);
 	return true;
 }
 
-RZ_API void rz_serialize_anal_cc_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal) {
+RZ_API void rz_serialize_anal_cc_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal) {
 	sdb_copy (anal->sdb_cc, db);
 }
 
-RZ_API bool rz_serialize_anal_cc_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_cc_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	sdb_copy (db, anal->sdb_cc);
 	return true;
 }
 
-RZ_API void rz_serialize_anal_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal) {
+RZ_API void rz_serialize_anal_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal) {
 	rz_serialize_anal_xrefs_save (sdb_ns (db, "xrefs", true), anal);
 	rz_serialize_anal_blocks_save (sdb_ns (db, "blocks", true), anal);
 	rz_serialize_anal_functions_save (sdb_ns (db, "functions", true), anal);
@@ -2030,7 +2030,7 @@ RZ_API void rz_serialize_anal_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal) 
 	rz_serialize_anal_cc_save (sdb_ns (db, "cc", true), anal);
 }
 
-RZ_API bool rz_serialize_anal_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
+RZ_API bool rz_serialize_anal_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnalysis *anal, RZ_NULLABLE RzSerializeResultInfo *res) {
 	bool ret = false;
 	RzSerializeAnalDiffParser diff_parser = rz_serialize_anal_diff_parser_new ();
 	if (!diff_parser) {
@@ -2053,8 +2053,8 @@ RZ_API bool rz_serialize_anal_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzAnal *anal, 
 	RzPVector orphaned_bbs;
 	rz_pvector_init (&orphaned_bbs, (RzPVectorFree)rz_anal_block_unref);
 	RBIter iter;
-	RzAnalBlock *block;
-	rz_rbtree_foreach (anal->bb_tree, iter, block, RzAnalBlock, _rb) {
+	RzAnalysisBlock *block;
+	rz_rbtree_foreach (anal->bb_tree, iter, block, RzAnalysisBlock, _rb) {
 		if (block->ref <= 1) {
 			rz_pvector_push (&orphaned_bbs, block);
 			continue;

@@ -54,7 +54,7 @@ static void z80_op_size(const ut8 *data, int len, int *size, int *size_prefix) {
 	}
 }
 
-static int z80_anal_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask) {
+static int z80_anal_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	int ilen = 0;
 	z80_op_size (data, len, &ilen, &op->nopcode);
 
@@ -367,7 +367,7 @@ static int z80_anal_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, i
 	return ilen;
 }
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	const char *p =
 		"=PC	mpc\n"
 		"=SP	sp\n"
@@ -409,11 +409,11 @@ static bool set_reg_profile(RzAnal *anal) {
 	return rz_reg_set_profile_string (anal->reg, p);
 }
 
-static int archinfo(RzAnal *anal, int q) {
+static int archinfo(RzAnalysis *anal, int q) {
 	return 1;
 }
 
-RzAnalPlugin rz_anal_plugin_z80 = {
+RzAnalysisPlugin rz_anal_plugin_z80 = {
 	.name = "z80",
 	.arch = "z80",
 	.license = "LGPL3",

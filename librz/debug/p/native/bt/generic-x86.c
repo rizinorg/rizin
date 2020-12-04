@@ -45,7 +45,7 @@ static RzList *backtrace_x86_32_anal(RzDebug *dbg, ut64 at) {
 	ut32 i, _esp, esp, eip, ebp2;
 	RzList *list;
 	RzIOBind *bio = &dbg->iob;
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 	RzDebugFrame *frame;
 	ut8 buf[4];
 

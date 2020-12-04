@@ -5,8 +5,8 @@ static bool sanitize_instr_acc(void *user, const ut64 k, const void *v) {
 	RzPVector *vec = (RzPVector *)v;
 	void **it;
 	rz_pvector_foreach (vec, it) {
-		RzAnalVar *var = *it;
-		RzAnalVarAccess *acc;
+		RzAnalysisVar *var = *it;
+		RzAnalysisVarAccess *acc;
 		bool found = false;
 		rz_vector_foreach (&var->accesses, acc) {
 			if (acc->offset == (st64)k) {
@@ -19,13 +19,13 @@ static bool sanitize_instr_acc(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
-static bool sanitize(RzAnalFunction *fcn) {
+static bool sanitize(RzAnalysisFunction *fcn) {
 	ht_up_foreach (fcn->inst_vars, sanitize_instr_acc, NULL);
 
 	void **it;
 	rz_pvector_foreach (&fcn->vars, it) {
-		RzAnalVar *var = *it;
-		RzAnalVarAccess *acc;
+		RzAnalysisVar *var = *it;
+		RzAnalysisVarAccess *acc;
 		rz_vector_foreach (&var->accesses, acc) {
 			RzPVector *iaccs = ht_up_find (fcn->inst_vars, acc->offset, NULL);
 			mu_assert ("var refs instr but instr does not ref var", rz_pvector_contains (iaccs, var));
@@ -34,7 +34,7 @@ static bool sanitize(RzAnalFunction *fcn) {
 	return true;
 }
 
-#define assert_sane(anal) do { RzListIter *ass_it; RzAnalFunction *ass_fcn; \
+#define assert_sane(anal) do { RzListIter *ass_it; RzAnalysisFunction *ass_fcn; \
 	rz_list_foreach ((anal)->fcns, ass_it, ass_fcn) { \
 		if (!sanitize (ass_fcn)) { \
 			return false; \
@@ -43,23 +43,23 @@ static bool sanitize(RzAnalFunction *fcn) {
 } while (0);
 
 bool test_r_anal_var() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 	rz_anal_use (anal, "x86");
 	rz_anal_set_bits (anal, 64);
 
-	RzAnalFunction *fcn = rz_anal_create_function (anal, "fcn", 0x100, RZ_ANAL_FCN_TYPE_FCN, NULL);
+	RzAnalysisFunction *fcn = rz_anal_create_function (anal, "fcn", 0x100, RZ_ANAL_FCN_TYPE_FCN, NULL);
 	assert_sane (anal);
 
 	// creating variables and renaming
 
-	RzAnalVar *a = rz_anal_function_set_var (fcn, -8, RZ_ANAL_VAR_KIND_BPV, "char *", 8, false, "random_name");
+	RzAnalysisVar *a = rz_anal_function_set_var (fcn, -8, RZ_ANAL_VAR_KIND_BPV, "char *", 8, false, "random_name");
 	mu_assert_notnull (a, "create a var");
 	mu_assert_streq (a->name, "random_name", "var name");
 	bool succ = rz_anal_var_rename (a, "var_a", false);
 	mu_assert ("rename success", succ);
 	mu_assert_streq (a->name, "var_a", "var name after rename");
 
-	RzAnalVar *b = rz_anal_function_set_var (fcn, -0x10, RZ_ANAL_VAR_KIND_SPV, "char *", 8, false, "var_a");
+	RzAnalysisVar *b = rz_anal_function_set_var (fcn, -0x10, RZ_ANAL_VAR_KIND_SPV, "char *", 8, false, "var_a");
 	mu_assert_null (b, "create a var with the same name");
 	b = rz_anal_function_set_var (fcn, -0x10, RZ_ANAL_VAR_KIND_SPV, "char *", 8, false, "new_var");
 	mu_assert_notnull (b, "create a var with another name");
@@ -74,12 +74,12 @@ bool test_r_anal_var() {
 	mu_assert ("rename success", succ);
 	mu_assert_streq (b->name, "var_b", "var name after rename");
 
-	RzAnalVar *c = rz_anal_function_set_var (fcn, 0x30, RZ_ANAL_VAR_KIND_REG, "int64_t", 8, true, "arg42");
+	RzAnalysisVar *c = rz_anal_function_set_var (fcn, 0x30, RZ_ANAL_VAR_KIND_REG, "int64_t", 8, true, "arg42");
 	mu_assert_notnull (c, "create a var");
 
 	// querying variables
 
-	RzAnalVar *v = rz_anal_function_get_var (fcn, RZ_ANAL_VAR_KIND_REG, 0x41);
+	RzAnalysisVar *v = rz_anal_function_get_var (fcn, RZ_ANAL_VAR_KIND_REG, 0x41);
 	mu_assert_null (v, "get no var");
 	v = rz_anal_function_get_var (fcn, RZ_ANAL_VAR_KIND_REG, 0x30);
 	mu_assert_ptreq (v, c, "get var (reg)");

@@ -5,7 +5,7 @@
 #include <rz_lib.h>
 #include "../../asm/arch/mcore/mcore.h"
 
-static int mcore_anal(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int mcore_anal(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	mcore_handle handle = {0};
 	mcore_t* instr = NULL;
 
@@ -43,7 +43,7 @@ static int mcore_anal(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int
 	return op->size;
 }
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	const char *p = \
 		"=PC	pc\n"
 		"=SP	r1\n"
@@ -109,11 +109,11 @@ static bool set_reg_profile(RzAnal *anal) {
 	return rz_reg_set_profile_string (anal->reg, p);
 }
 
-static int archinfo(RzAnal *anal, int q) {
+static int archinfo(RzAnalysis *anal, int q) {
 	return 2;
 }
 
-RzAnalPlugin rz_anal_plugin_mcore = {
+RzAnalysisPlugin rz_anal_plugin_mcore = {
 	.name = "mcore",
 	.desc = "MCore analysis plugin",
 	.arch = "mcore",

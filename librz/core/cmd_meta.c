@@ -385,9 +385,9 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 				if (!arg) {
 					arg = core->offset;
 				}
-				RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, arg, 0);
+				RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, arg, 0);
 				if (fcn) {
-					RzAnalBlock *bb;
+					RzAnalysisBlock *bb;
 					RzListIter *iter;
 					rz_list_foreach (fcn->bbs, iter, bb) {
 						int i;
@@ -672,14 +672,14 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 	case '.': // "Cf.", "Cd.", ...
 		if (input[2] == '.') { // "Cs.."
 			ut64 size;
-			RzAnalMetaItem *mi = rz_meta_get_at (core->anal, addr, type, &size);
+			RzAnalysisMetaItem *mi = rz_meta_get_at (core->anal, addr, type, &size);
 			if (mi) {
 				rz_meta_print (core->anal, mi, addr, size, input[3], NULL, false);
 			}
 			break;
 		} else if (input[2] == 'j') { // "Cs.j"
 			ut64 size;
-			RzAnalMetaItem *mi = rz_meta_get_at (core->anal, addr, type, &size);
+			RzAnalysisMetaItem *mi = rz_meta_get_at (core->anal, addr, type, &size);
 			if (mi) {
 				rz_meta_print (core->anal, mi, addr, size, input[2], NULL, false);
 				rz_cons_newline ();
@@ -687,7 +687,7 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 			break;
 		}
 		ut64 size;
-		RzAnalMetaItem *mi = rz_meta_get_at (core->anal, addr, type, &size);
+		RzAnalysisMetaItem *mi = rz_meta_get_at (core->anal, addr, type, &size);
 		if (!mi) {
 			break;
 		}
@@ -888,7 +888,7 @@ void rz_comment_var_help(RzCore *core, char type) {
 
 void rz_comment_vars(RzCore *core, const char *input) {
 	//TODO enable base64 and make it the default for C*
-	RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
+	RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
 	char *oname = NULL, *name = NULL;
 
 	if (!input[0] || input[1] == '?' || (input[0] != 'b' && input[0] != 'r' && input[0] != 's')) {
@@ -906,7 +906,7 @@ void rz_comment_vars(RzCore *core, const char *input) {
 		void **it;
 		char kind = input[0];
 		rz_pvector_foreach (&fcn->vars, it) {
-			RzAnalVar *var = *it;
+			RzAnalysisVar *var = *it;
 			if (var->kind != kind || !var->comment) {
 				continue;
 			}
@@ -934,7 +934,7 @@ void rz_comment_vars(RzCore *core, const char *input) {
 				comment = heap_comment;
 			}
 		}
-		RzAnalVar *var = rz_anal_function_get_var_byname (fcn, name);
+		RzAnalysisVar *var = rz_anal_function_get_var_byname (fcn, name);
 		if (!var) {
 			int idx = (int)strtol (name, NULL, 0);
 			var = rz_anal_function_get_var (fcn, input[0], idx);
@@ -960,7 +960,7 @@ void rz_comment_vars(RzCore *core, const char *input) {
 	case '-': { // "Cv-"
 		name++;
 		rz_str_trim (name);
-		RzAnalVar *var = rz_anal_function_get_var_byname (fcn, name);
+		RzAnalysisVar *var = rz_anal_function_get_var_byname (fcn, name);
 		if (!var) {
 			int idx = (int)strtol (name, NULL, 0);
 			var = rz_anal_function_get_var (fcn, input[0], idx);
@@ -977,7 +977,7 @@ void rz_comment_vars(RzCore *core, const char *input) {
 		char *comment;
 		name++;
 		rz_str_trim (name);
-		RzAnalVar *var = rz_anal_function_get_var_byname (fcn, name);
+		RzAnalysisVar *var = rz_anal_function_get_var_byname (fcn, name);
 		if (!var) {
 			eprintf ("can't find variable named `%s`\n", name);
 			break;
@@ -995,7 +995,7 @@ void rz_comment_vars(RzCore *core, const char *input) {
 
 RZ_IPI int rz_cmd_meta(void *data, const char *input) {
 	RzCore *core = (RzCore*)data;
-	RzAnalFunction *f;
+	RzAnalysisFunction *f;
 	RzSpaces *ms;
 	int i;
 

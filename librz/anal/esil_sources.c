@@ -2,21 +2,21 @@
 #include <rz_util.h>
 #include <rz_lib.h>
 
-RZ_API void rz_anal_esil_sources_init (RzAnalEsil *esil) {
+RZ_API void rz_anal_esil_sources_init (RzAnalysisEsil *esil) {
 	if (esil && !esil->sources) {
 		esil->sources =rz_id_storage_new (1, 0xffffffff);	//0 is reserved for stuff from plugins
 	}
 }
 
-RZ_API ut32 rz_anal_esil_load_source(RzAnalEsil *esil, const char *path) {
-	RzAnalEsilSource *src;
+RZ_API ut32 rz_anal_esil_load_source(RzAnalysisEsil *esil, const char *path) {
+	RzAnalysisEsilSource *src;
 
 	if (!esil) {
 		eprintf ("no esil?\n");
 		return 0;
 	}
 	
-	src = RZ_NEW0 (RzAnalEsilSource);
+	src = RZ_NEW0 (RzAnalysisEsilSource);
 	src->content = rz_lib_dl_open(path);
 	if (!src->content) {
 		eprintf ("no content\n");
@@ -35,21 +35,21 @@ RZ_API ut32 rz_anal_esil_load_source(RzAnalEsil *esil, const char *path) {
 	return src->id;
 }
 
-static RzAnalEsilSource *_get_source(RzAnalEsil *esil, ut32 src_id) {
+static RzAnalysisEsilSource *_get_source(RzAnalysisEsil *esil, ut32 src_id) {
 	if (!esil || !esil->sources) {
 		return NULL;
 	}
-	return (RzAnalEsilSource *)rz_id_storage_get (esil->sources, src_id);
+	return (RzAnalysisEsilSource *)rz_id_storage_get (esil->sources, src_id);
 }
 
-RZ_API void *rz_anal_esil_get_source(RzAnalEsil *esil, ut32 src_id) {
-	RzAnalEsilSource *src = _get_source(esil, src_id);
+RZ_API void *rz_anal_esil_get_source(RzAnalysisEsil *esil, ut32 src_id) {
+	RzAnalysisEsilSource *src = _get_source(esil, src_id);
 
 	return src ? src->content : NULL;
 }
 
-RZ_API bool rz_anal_esil_claim_source(RzAnalEsil *esil, ut32 src_id) {
-	RzAnalEsilSource *src = _get_source(esil, src_id);
+RZ_API bool rz_anal_esil_claim_source(RzAnalysisEsil *esil, ut32 src_id) {
+	RzAnalysisEsilSource *src = _get_source(esil, src_id);
 
 	if (src) {
 		src->claimed++;
@@ -58,8 +58,8 @@ RZ_API bool rz_anal_esil_claim_source(RzAnalEsil *esil, ut32 src_id) {
 	return false;
 }
 
-RZ_API void rz_anal_esil_release_source(RzAnalEsil *esil, ut32 src_id) {
-	RzAnalEsilSource *src = _get_source(esil, src_id);
+RZ_API void rz_anal_esil_release_source(RzAnalysisEsil *esil, ut32 src_id) {
+	RzAnalysisEsilSource *src = _get_source(esil, src_id);
 
 	if (!src) {
 		return;
@@ -74,7 +74,7 @@ RZ_API void rz_anal_esil_release_source(RzAnalEsil *esil, ut32 src_id) {
 }
 
 static bool _free_source_cb(void *user, void *data, ut32 id) {
-	RzAnalEsilSource *src = (RzAnalEsilSource *)data;
+	RzAnalysisEsilSource *src = (RzAnalysisEsilSource *)data;
 
 	if (src) {
 		rz_lib_dl_close (src->content);
@@ -83,7 +83,7 @@ static bool _free_source_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
-RZ_API void rz_anal_esil_sources_fini(RzAnalEsil *esil) {
+RZ_API void rz_anal_esil_sources_fini(RzAnalysisEsil *esil) {
 	if (esil) {
 		rz_id_storage_foreach(esil->sources, _free_source_cb, NULL);
 		rz_id_storage_free(esil->sources);

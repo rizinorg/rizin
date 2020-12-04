@@ -32,7 +32,7 @@ const char *getRealRef(RzCore *core, ut64 off) {
 	return NULL;
 }
 
-RZ_API RzList *rz_sign_fcn_vars(RzAnal *a, RzAnalFunction *fcn) {
+RZ_API RzList *rz_sign_fcn_vars(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail (a && fcn, NULL);
 
 	RzCore *core = a->coreb.core;
@@ -42,7 +42,7 @@ RZ_API RzList *rz_sign_fcn_vars(RzAnal *a, RzAnalFunction *fcn) {
 	}
 
 	RzListIter *iter;
-	RzAnalVar *var;
+	RzAnalysisVar *var;
 	RzList *ret = rz_list_newf ((RzListFree) free);
 	if (!ret) {
 		return NULL;
@@ -65,7 +65,7 @@ RZ_API RzList *rz_sign_fcn_vars(RzAnal *a, RzAnalFunction *fcn) {
 	return ret;
 }
 
-RZ_API RzList *rz_sign_fcn_types(RzAnal *a, RzAnalFunction *fcn) {
+RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn) {
 
 	// From anal/types/*:
 	// Get key-value types from sdb matching "func.%s", fcn->name
@@ -111,9 +111,9 @@ RZ_API RzList *rz_sign_fcn_types(RzAnal *a, RzAnalFunction *fcn) {
 	return ret;
 }
 
-RZ_API RzList *rz_sign_fcn_xrefs(RzAnal *a, RzAnalFunction *fcn) {
+RZ_API RzList *rz_sign_fcn_xrefs(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	RzListIter *iter = NULL;
-	RzAnalRef *refi = NULL;
+	RzAnalysisRef *refi = NULL;
 
 	rz_return_val_if_fail (a && fcn, NULL);
 
@@ -137,9 +137,9 @@ RZ_API RzList *rz_sign_fcn_xrefs(RzAnal *a, RzAnalFunction *fcn) {
 	return ret;
 }
 
-RZ_API RzList *rz_sign_fcn_refs(RzAnal *a, RzAnalFunction *fcn) {
+RZ_API RzList *rz_sign_fcn_refs(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	RzListIter *iter = NULL;
-	RzAnalRef *refi = NULL;
+	RzAnalysisRef *refi = NULL;
 
 	rz_return_val_if_fail (a && fcn, NULL);
 
@@ -163,7 +163,7 @@ RZ_API RzList *rz_sign_fcn_refs(RzAnal *a, RzAnalFunction *fcn) {
 	return ret;
 }
 
-static RzList *zign_types_to_list(RzAnal *a, const char *types) {
+static RzList *zign_types_to_list(RzAnalysis *a, const char *types) {
 	RzList *ret = rz_list_newf ((RzListFree)free);
 	if (!ret) {
 		return NULL;
@@ -208,7 +208,7 @@ static RzList *do_reflike_sig(const char *token) {
 		success = false; \
 		goto out; \
 	}
-RZ_API bool rz_sign_deserialize(RzAnal *a, RzSignItem *it, const char *k, const char *v) {
+RZ_API bool rz_sign_deserialize(RzAnalysis *a, RzSignItem *it, const char *k, const char *v) {
 	rz_return_val_if_fail (a && it && k && v, false);
 
 	bool success = true;
@@ -379,15 +379,15 @@ out:
 }
 #undef DBL_VAL_FAIL
 
-static void serializeKey(RzAnal *a, const RzSpace *space, const char* name, char *k) {
+static void serializeKey(RzAnalysis *a, const RzSpace *space, const char* name, char *k) {
 	snprintf (k, RZ_SIGN_KEY_MAXSZ, "zign|%s|%s", space? space->name: "*", name);
 }
 
-static void serializeKeySpaceStr(RzAnal *a, const char *space, const char* name, char *k) {
+static void serializeKeySpaceStr(RzAnalysis *a, const char *space, const char* name, char *k) {
 	snprintf (k, RZ_SIGN_KEY_MAXSZ, "zign|%s|%s", space, name);
 }
 
-static void serialize(RzAnal *a, RzSignItem *it, char *k, char *v) {
+static void serialize(RzAnalysis *a, RzSignItem *it, char *k, char *v) {
 	RzListIter *iter = NULL;
 	char *hexbytes = NULL, *hexmask = NULL, *hexgraph = NULL;
 	char *refs = NULL, *xrefs = NULL, *ref = NULL, *var, *vars = NULL;
@@ -510,7 +510,7 @@ static void serialize(RzAnal *a, RzSignItem *it, char *k, char *v) {
 	}
 }
 
-static RzList *deserialize_sign_space(RzAnal *a, RzSpace *space) {
+static RzList *deserialize_sign_space(RzAnalysis *a, RzSpace *space) {
 	rz_return_val_if_fail (a && space, NULL);
 
 	char k[RZ_SIGN_KEY_MAXSZ];
@@ -631,7 +631,7 @@ static void mergeItem(RzSignItem *dst, RzSignItem *src) {
 	}
 }
 
-RZ_API RzSignItem *rz_sign_get_item(RzAnal *a, const char *name) {
+RZ_API RzSignItem *rz_sign_get_item(RzAnalysis *a, const char *name) {
 	char k[RZ_SIGN_KEY_MAXSZ];
 	serializeKey (a, rz_spaces_current (&a->zign_spaces), name, k);
 
@@ -650,7 +650,7 @@ RZ_API RzSignItem *rz_sign_get_item(RzAnal *a, const char *name) {
 	return it;
 }
 
-RZ_API bool rz_sign_add_item(RzAnal *a, RzSignItem *it) {
+RZ_API bool rz_sign_add_item(RzAnalysis *a, RzSignItem *it) {
 	char key[RZ_SIGN_KEY_MAXSZ], val[RZ_SIGN_VAL_MAXSZ];
 	const char *curval = NULL;
 	bool retval = true;
@@ -678,7 +678,7 @@ out:
 	return retval;
 }
 
-static bool addHash(RzAnal *a, const char *name, int type, const char *val) {
+static bool addHash(RzAnalysis *a, const char *name, int type, const char *val) {
 	RzSignItem *it = rz_sign_item_new ();
 	if (!it) {
 		rz_sign_item_free (it);
@@ -708,7 +708,7 @@ static bool addHash(RzAnal *a, const char *name, int type, const char *val) {
 	return retval;
 }
 
-static bool addBBHash(RzAnal *a, RzAnalFunction *fcn, const char *name) {
+static bool addBBHash(RzAnalysis *a, RzAnalysisFunction *fcn, const char *name) {
 	bool retval = false;
 	RzSignItem *it = rz_sign_item_new ();
 	if (!it) {
@@ -728,7 +728,7 @@ beach:
 	return retval;
 }
 
-static bool addBytes(RzAnal *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask) {
+static bool addBytes(RzAnalysis *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask) {
 	bool retval = true;
 
 	if (rz_mem_is_zero (mask, size)) {
@@ -774,7 +774,7 @@ fail:
 	return false;
 }
 
-RZ_API bool rz_sign_add_hash(RzAnal *a, const char *name, int type, const char *val, int len) {
+RZ_API bool rz_sign_add_hash(RzAnalysis *a, const char *name, int type, const char *val, int len) {
 	rz_return_val_if_fail (a && name && type && val && len > 0, false);
 	if (type != RZ_SIGN_BBHASH) {
 		eprintf ("error: hash type unknown");
@@ -788,17 +788,17 @@ RZ_API bool rz_sign_add_hash(RzAnal *a, const char *name, int type, const char *
 	return addHash (a, name, type, val);
 }
 
-RZ_API bool rz_sign_add_bb_hash(RzAnal *a, RzAnalFunction *fcn, const char *name) {
+RZ_API bool rz_sign_add_bb_hash(RzAnalysis *a, RzAnalysisFunction *fcn, const char *name) {
 	rz_return_val_if_fail (a && fcn && name, false);
 	return addBBHash (a, fcn, name);
 }
 
-RZ_API bool rz_sign_add_bytes(RzAnal *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask) {
+RZ_API bool rz_sign_add_bytes(RzAnalysis *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask) {
 	rz_return_val_if_fail (a && name && size > 0 && bytes && mask, false);
 	return addBytes (a, name, size, bytes, mask);
 }
 
-RZ_API bool rz_sign_add_anal(RzAnal *a, const char *name, ut64 size, const ut8 *bytes, ut64 at) {
+RZ_API bool rz_sign_add_anal(RzAnalysis *a, const char *name, ut64 size, const ut8 *bytes, ut64 at) {
 	bool retval = false;
 	rz_return_val_if_fail (a && name && size > 0 && bytes, false);
 	ut8 *mask = rz_anal_mask (a, size, bytes, at);
@@ -809,7 +809,7 @@ RZ_API bool rz_sign_add_anal(RzAnal *a, const char *name, ut64 size, const ut8 *
 	return retval;
 }
 
-static RzSignGraph *rz_sign_fcn_graph(RzAnalFunction *fcn) {
+static RzSignGraph *rz_sign_fcn_graph(RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail (fcn, false);
 	RzSignGraph *graph = RZ_NEW0 (RzSignGraph);
 	if (graph) {
@@ -822,8 +822,8 @@ static RzSignGraph *rz_sign_fcn_graph(RzAnalFunction *fcn) {
 }
 
 static int bb_sort_by_addr(const void *x, const void *y) {
-	RzAnalBlock *a = (RzAnalBlock *)x;
-	RzAnalBlock *b = (RzAnalBlock *)y;
+	RzAnalysisBlock *a = (RzAnalysisBlock *)x;
+	RzAnalysisBlock *b = (RzAnalysisBlock *)y;
 	if (a->addr > b->addr) {
 		return 1;
 	}
@@ -833,7 +833,7 @@ static int bb_sort_by_addr(const void *x, const void *y) {
 	return 0;
 }
 
-static RzSignBytes *rz_sign_fcn_bytes(RzAnal *a, RzAnalFunction *fcn) {
+static RzSignBytes *rz_sign_fcn_bytes(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail (a && fcn && fcn->bbs && fcn->bbs->head, false);
 
 	// get size
@@ -841,7 +841,7 @@ static RzSignBytes *rz_sign_fcn_bytes(RzAnal *a, RzAnalFunction *fcn) {
 	int maxsz = a->coreb.cfggeti (core, "zign.maxsz");
 	rz_list_sort (fcn->bbs, &bb_sort_by_addr);
 	ut64 ea = fcn->addr;
-	RzAnalBlock *bb = (RzAnalBlock *)fcn->bbs->tail->data;
+	RzAnalysisBlock *bb = (RzAnalysisBlock *)fcn->bbs->tail->data;
 	int size = RZ_MIN (bb->addr + bb->size - ea, maxsz);
 
 	// alloc space for signature
@@ -894,7 +894,7 @@ bytes_failed:
 	return NULL;
 }
 
-static RzSignHash *rz_sign_fcn_bbhash(RzAnal *a, RzAnalFunction *fcn) {
+static RzSignHash *rz_sign_fcn_bbhash(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail (a && fcn, NULL);
 	RzSignHash *hash = RZ_NEW0 (RzSignHash);
 	if (!hash) {
@@ -910,7 +910,7 @@ static RzSignHash *rz_sign_fcn_bbhash(RzAnal *a, RzAnalFunction *fcn) {
 	return hash;
 }
 
-RZ_API bool rz_sign_addto_item(RzAnal *a, RzSignItem *it, RzAnalFunction *fcn, RzSignType type) {
+RZ_API bool rz_sign_addto_item(RzAnalysis *a, RzSignItem *it, RzAnalysisFunction *fcn, RzSignType type) {
 	rz_return_val_if_fail (a && it && fcn, false);
 	switch (type) {
 	case RZ_SIGN_GRAPH:
@@ -945,7 +945,7 @@ RZ_API bool rz_sign_addto_item(RzAnal *a, RzSignItem *it, RzAnalFunction *fcn, R
 	return false;
 }
 
-RZ_API bool rz_sign_add_graph(RzAnal *a, const char *name, RzSignGraph graph) {
+RZ_API bool rz_sign_add_graph(RzAnalysis *a, const char *name, RzSignGraph graph) {
 	rz_return_val_if_fail (a && !RZ_STR_ISEMPTY (name), false);
 	bool retval = true;
 	RzSignItem *it = rz_sign_item_new ();
@@ -971,7 +971,7 @@ RZ_API bool rz_sign_add_graph(RzAnal *a, const char *name, RzSignGraph graph) {
 	return retval;
 }
 
-RZ_API bool rz_sign_add_comment(RzAnal *a, const char *name, const char *comment) {
+RZ_API bool rz_sign_add_comment(RzAnalysis *a, const char *name, const char *comment) {
 	rz_return_val_if_fail (a && name && comment, false);
 
 	RzSignItem *it = rz_sign_item_new ();
@@ -986,7 +986,7 @@ RZ_API bool rz_sign_add_comment(RzAnal *a, const char *name, const char *comment
 	return retval;
 }
 
-RZ_API bool rz_sign_add_name(RzAnal *a, const char *name, const char *realname) {
+RZ_API bool rz_sign_add_name(RzAnalysis *a, const char *name, const char *realname) {
 	rz_return_val_if_fail (a && name && realname, false);
 	RzSignItem *it = rz_sign_item_new ();
 	if (it) {
@@ -1000,7 +1000,7 @@ RZ_API bool rz_sign_add_name(RzAnal *a, const char *name, const char *realname) 
 	return false;
 }
 
-RZ_API bool rz_sign_add_addr(RzAnal *a, const char *name, ut64 addr) {
+RZ_API bool rz_sign_add_addr(RzAnalysis *a, const char *name, ut64 addr) {
 	rz_return_val_if_fail (a && name && addr != UT64_MAX, false);
 
 	RzSignItem *it = rz_sign_item_new ();
@@ -1018,7 +1018,7 @@ RZ_API bool rz_sign_add_addr(RzAnal *a, const char *name, ut64 addr) {
 	return retval;
 }
 
-RZ_API bool rz_sign_add_vars(RzAnal *a, const char *name, RzList *vars) {
+RZ_API bool rz_sign_add_vars(RzAnalysis *a, const char *name, RzList *vars) {
 	rz_return_val_if_fail (a && name && vars, false);
 
 	RzListIter *iter;
@@ -1044,7 +1044,7 @@ RZ_API bool rz_sign_add_vars(RzAnal *a, const char *name, RzList *vars) {
 	return retval;
 }
 
-RZ_API bool rz_sign_add_types(RzAnal *a, const char *name, RzList *types) {
+RZ_API bool rz_sign_add_types(RzAnalysis *a, const char *name, RzList *types) {
 	rz_return_val_if_fail (a && name && types, false);
 
 	RzListIter *iter;
@@ -1070,7 +1070,7 @@ RZ_API bool rz_sign_add_types(RzAnal *a, const char *name, RzList *types) {
 	return retval;
 }
 
-RZ_API bool rz_sign_add_refs(RzAnal *a, const char *name, RzList *refs) {
+RZ_API bool rz_sign_add_refs(RzAnalysis *a, const char *name, RzList *refs) {
 	rz_return_val_if_fail (a && name && refs, false);
 
 	char *ref;
@@ -1095,7 +1095,7 @@ RZ_API bool rz_sign_add_refs(RzAnal *a, const char *name, RzList *refs) {
 	return retval;
 }
 
-RZ_API bool rz_sign_add_xrefs(RzAnal *a, const char *name, RzList *xrefs) {
+RZ_API bool rz_sign_add_xrefs(RzAnalysis *a, const char *name, RzList *xrefs) {
 	rz_return_val_if_fail (a && name && xrefs, false);
 
 	RzListIter *iter = NULL;
@@ -1121,7 +1121,7 @@ RZ_API bool rz_sign_add_xrefs(RzAnal *a, const char *name, RzList *xrefs) {
 }
 
 struct ctxDeleteCB {
-	RzAnal *anal;
+	RzAnalysis *anal;
 	char buf[RZ_SIGN_KEY_MAXSZ];
 };
 
@@ -1133,7 +1133,7 @@ static bool deleteBySpaceCB(void *user, const char *k, const char *v) {
 	return true;
 }
 
-RZ_API bool rz_sign_delete(RzAnal *a, const char *name) {
+RZ_API bool rz_sign_delete(RzAnalysis *a, const char *name) {
 	struct ctxDeleteCB ctx = {0};
 	char k[RZ_SIGN_KEY_MAXSZ];
 
@@ -1358,7 +1358,7 @@ RZ_API void rz_sign_close_match_free(RzSignCloseMatch *match) {
 	}
 }
 
-RZ_API RzList *rz_sign_find_closest_sig(RzAnal *a, RzSignItem *it, int count, double score_threshold) {
+RZ_API RzList *rz_sign_find_closest_sig(RzAnalysis *a, RzSignItem *it, int count, double score_threshold) {
 	rz_return_val_if_fail (a && it && count > 0 && score_threshold >= 0 && score_threshold <= 1, NULL);
 
 	// need at least one acceptable signature type
@@ -1391,7 +1391,7 @@ RZ_API RzList *rz_sign_find_closest_sig(RzAnal *a, RzSignItem *it, int count, do
 	return output;
 }
 
-RZ_API RzList *rz_sign_find_closest_fcn(RzAnal *a, RzSignItem *it, int count, double score_threshold) {
+RZ_API RzList *rz_sign_find_closest_fcn(RzAnalysis *a, RzSignItem *it, int count, double score_threshold) {
 	rz_return_val_if_fail (a && it && count > 0 && score_threshold >= 0 && score_threshold <= 1, NULL);
 	rz_return_val_if_fail (it->bytes || it->graph, NULL);
 
@@ -1412,7 +1412,7 @@ RZ_API RzList *rz_sign_find_closest_fcn(RzAnal *a, RzSignItem *it, int count, do
 		data.bytes_combined = NULL;
 	}
 
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 	RzListIter *iter;
 	rz_list_foreach (a->fcns, iter, fcn) {
 		// turn function into signature item
@@ -1437,7 +1437,7 @@ RZ_API RzList *rz_sign_find_closest_fcn(RzAnal *a, RzSignItem *it, int count, do
 	return output;
 }
 
-RZ_API bool rz_sign_diff(RzAnal *a, RzSignOptions *options, const char *other_space_name) {
+RZ_API bool rz_sign_diff(RzAnalysis *a, RzSignOptions *options, const char *other_space_name) {
 	rz_return_val_if_fail (a && other_space_name, false);
 
 	RzSpace *current_space = rz_spaces_current (&a->zign_spaces);
@@ -1495,7 +1495,7 @@ RZ_API bool rz_sign_diff(RzAnal *a, RzSignOptions *options, const char *other_sp
 	return true;
 }
 
-RZ_API bool rz_sign_diff_by_name(RzAnal *a, RzSignOptions *options, const char *other_space_name, bool not_matching) {
+RZ_API bool rz_sign_diff_by_name(RzAnalysis *a, RzSignOptions *options, const char *other_space_name, bool not_matching) {
 	rz_return_val_if_fail (a && other_space_name, false);
 
 	RzSpace *current_space = rz_spaces_current (&a->zign_spaces);
@@ -1554,18 +1554,18 @@ RZ_API bool rz_sign_diff_by_name(RzAnal *a, RzSignOptions *options, const char *
 }
 
 struct ctxListCB {
-	RzAnal *anal;
+	RzAnalysis *anal;
 	int idx;
 	int format;
 	PJ *pj;
 };
 
 struct ctxGetListCB {
-	RzAnal *anal;
+	RzAnalysis *anal;
 	RzList *list;
 };
 
-static void listBytes(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
+static void listBytes(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	RzSignBytes *bytes = it->bytes;
 
 	if (!bytes->bytes) {
@@ -1607,7 +1607,7 @@ static void listBytes(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
 	free (strmask);
 }
 
-static void listGraph(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
+static void listGraph(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	RzSignGraph *graph = it->graph;
 
 	if (format == 'q') {
@@ -1630,7 +1630,7 @@ static void listGraph(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static void listComment(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
+static void listComment(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	if (it->comment) {
 		if (format == 'q') {
 			//	a->cb_printf (" addr(0x%08"PFMT64x")", it->addr);
@@ -1645,7 +1645,7 @@ static void listComment(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static void listRealname(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
+static void listRealname(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	if (it->realname) {
 		if (format == 'q') {
 			//	a->cb_printf (" addr(0x%08"PFMT64x")", it->addr);
@@ -1660,7 +1660,7 @@ static void listRealname(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static void listOffset(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
+static void listOffset(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	if (format == 'q') {
 		//	a->cb_printf (" addr(0x%08"PFMT64x")", it->addr);
 	} else if (format == '*') {
@@ -1672,7 +1672,7 @@ static void listOffset(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static void listVars(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
+static void listVars(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	RzListIter *iter = NULL;
 	char *var = NULL;
 	int i = 0;
@@ -1711,7 +1711,7 @@ static void listVars(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static void print_list_type_header(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
+static void print_list_type_header(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	if (format == '*') {
 		a->cb_printf ("za %s t ", it->name);
 	} else if (format == 'q') {
@@ -1724,7 +1724,7 @@ static void print_list_type_header(RzAnal *a, RzSignItem *it, PJ *pj, int format
 	}
 }
 
-static void print_function_args_json(RzAnal *a, PJ *pj, char *arg_type) {
+static void print_function_args_json(RzAnalysis *a, PJ *pj, char *arg_type) {
 	char *arg_name = strchr (arg_type, ',');
 
 	if (arg_name == NULL) {
@@ -1743,7 +1743,7 @@ static void print_function_args_json(RzAnal *a, PJ *pj, char *arg_type) {
 	pj_end (pj);
 }
 
-static void print_type_json(RzAnal *a, char *type, PJ *pj, size_t pos) {
+static void print_type_json(RzAnalysis *a, char *type, PJ *pj, size_t pos) {
 	if (pos == 0) {
 		return;
 	}
@@ -1760,7 +1760,7 @@ static void print_type_json(RzAnal *a, char *type, PJ *pj, size_t pos) {
 	print_function_args_json (a, pj, str_type);
 }
 
-static void print_list_separator(RzAnal *a, RzSignItem *it, PJ *pj, int format, int pos) {
+static void print_list_separator(RzAnalysis *a, RzSignItem *it, PJ *pj, int format, int pos) {
 	if (pos == 0 || format == 'j') {
 		return;
 	}
@@ -1771,7 +1771,7 @@ static void print_list_separator(RzAnal *a, RzSignItem *it, PJ *pj, int format, 
 	}
 }
 
-static void print_list_type_body(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
+static void print_list_type_body(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	int i = 0;
 	char *type = NULL;
 	RzListIter *iter = NULL;
@@ -1790,7 +1790,7 @@ static void print_list_type_body(RzAnal *a, RzSignItem *it, PJ *pj, int format) 
 	}
 }
 
-static void listTypes(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
+static void listTypes(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	print_list_type_header (a, it, pj, format);
 	print_list_type_body (a, it, pj, format);
 
@@ -1801,7 +1801,7 @@ static void listTypes(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static void listXRefs(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
+static void listXRefs(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	RzListIter *iter = NULL;
 	char *ref = NULL;
 	int i = 0;
@@ -1842,7 +1842,7 @@ static void listXRefs(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static void listRefs(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
+static void listRefs(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	RzListIter *iter = NULL;
 	char *ref = NULL;
 	int i = 0;
@@ -1883,7 +1883,7 @@ static void listRefs(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static void listHash(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
+static void listHash(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 	if (!it->hash) {
 		return;
 	}
@@ -1916,7 +1916,7 @@ static void listHash(RzAnal *a, RzSignItem *it, PJ *pj, int format) {
 static bool listCB(void *user, const char *k, const char *v) {
 	struct ctxListCB *ctx = (struct ctxListCB *)user;
 	RzSignItem *it = rz_sign_item_new ();
-	RzAnal *a = ctx->anal;
+	RzAnalysis *a = ctx->anal;
 
 	if (!rz_sign_deserialize (a, it, k, v)) {
 		eprintf ("error: cannot deserialize zign\n");
@@ -2035,7 +2035,7 @@ out:
 	return true;
 }
 
-RZ_API void rz_sign_list(RzAnal *a, int format) {
+RZ_API void rz_sign_list(RzAnalysis *a, int format) {
 	rz_return_if_fail (a);
 	PJ *pj = NULL;
 
@@ -2068,7 +2068,7 @@ static bool listGetCB(void *user, const char *key, const char *val) {
 	return true;
 }
 
-RZ_API RzList *rz_sign_get_list(RzAnal *a) {
+RZ_API RzList *rz_sign_get_list(RzAnalysis *a) {
 	rz_return_val_if_fail (a, NULL);
 	struct ctxGetListCB ctx = { a, rz_list_newf ((RzListFree)rz_sign_item_free) };
 	sdb_foreach (a->sdb_zigns, listGetCB, &ctx);
@@ -2076,13 +2076,13 @@ RZ_API RzList *rz_sign_get_list(RzAnal *a) {
 }
 
 static int cmpaddr(const void *_a, const void *_b) {
-	const RzAnalBlock *a = _a, *b = _b;
+	const RzAnalysisBlock *a = _a, *b = _b;
 	return (a->addr - b->addr);
 }
 
-RZ_API char *rz_sign_calc_bbhash(RzAnal *a, RzAnalFunction *fcn) {
+RZ_API char *rz_sign_calc_bbhash(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	RzListIter *iter = NULL;
-	RzAnalBlock *bbi = NULL;
+	RzAnalysisBlock *bbi = NULL;
 	char *digest_hex = NULL;
 	RzHash *ctx = rz_hash_new (true, RZ_ZIGN_HASH);
 	if (!ctx) {
@@ -2112,7 +2112,7 @@ beach:
 }
 
 struct ctxCountForCB {
-	RzAnal *anal;
+	RzAnalysis *anal;
 	const RzSpace *space;
 	int count;
 };
@@ -2133,7 +2133,7 @@ static bool countForCB(void *user, const char *k, const char *v) {
 	return true;
 }
 
-RZ_API int rz_sign_space_count_for(RzAnal *a, const RzSpace *space) {
+RZ_API int rz_sign_space_count_for(RzAnalysis *a, const RzSpace *space) {
 	struct ctxCountForCB ctx = { a, space, 0 };
 	rz_return_val_if_fail (a, 0);
 	sdb_foreach (a->sdb_zigns, countForCB, &ctx);
@@ -2141,7 +2141,7 @@ RZ_API int rz_sign_space_count_for(RzAnal *a, const RzSpace *space) {
 }
 
 struct ctxUnsetForCB {
-	RzAnal *anal;
+	RzAnalysis *anal;
 	const RzSpace *space;
 };
 
@@ -2164,14 +2164,14 @@ static bool unsetForCB(void *user, const char *k, const char *v) {
 	return true;
 }
 
-RZ_API void rz_sign_space_unset_for(RzAnal *a, const RzSpace *space) {
+RZ_API void rz_sign_space_unset_for(RzAnalysis *a, const RzSpace *space) {
 	rz_return_if_fail (a);
 	struct ctxUnsetForCB ctx = { a, space };
 	sdb_foreach (a->sdb_zigns, unsetForCB, &ctx);
 }
 
 struct ctxRenameForCB {
-	RzAnal *anal;
+	RzAnalysis *anal;
 	char oprefix[RZ_SIGN_KEY_MAXSZ];
 	char nprefix[RZ_SIGN_KEY_MAXSZ];
 };
@@ -2192,7 +2192,7 @@ static bool renameForCB(void *user, const char *k, const char *v) {
 	return true;
 }
 
-RZ_API void rz_sign_space_rename_for(RzAnal *a, const RzSpace *space, const char *oname, const char *nname) {
+RZ_API void rz_sign_space_rename_for(RzAnalysis *a, const RzSpace *space, const char *oname, const char *nname) {
 	rz_return_if_fail (a && space && oname && nname);
 	struct ctxRenameForCB ctx = {.anal = a};
 	serializeKeySpaceStr (a, oname, "", ctx.oprefix);
@@ -2201,7 +2201,7 @@ RZ_API void rz_sign_space_rename_for(RzAnal *a, const RzSpace *space, const char
 }
 
 struct ctxForeachCB {
-	RzAnal *anal;
+	RzAnalysis *anal;
 	RzSignForeachCallback cb;
 	bool freeit;
 	void *user;
@@ -2210,7 +2210,7 @@ struct ctxForeachCB {
 static bool foreachCB(void *user, const char *k, const char *v) {
 	struct ctxForeachCB *ctx = (struct ctxForeachCB *) user;
 	RzSignItem *it = rz_sign_item_new ();
-	RzAnal *a = ctx->anal;
+	RzAnalysis *a = ctx->anal;
 
 	if (rz_sign_deserialize (a, it, k, v)) {
 		RzSpace *cur = rz_spaces_current (&a->zign_spaces);
@@ -2226,13 +2226,13 @@ static bool foreachCB(void *user, const char *k, const char *v) {
 	return true;
 }
 
-static bool rz_sign_foreach_nofree(RzAnal *a, RzSignForeachCallback cb, void *user) {
+static bool rz_sign_foreach_nofree(RzAnalysis *a, RzSignForeachCallback cb, void *user) {
 	rz_return_val_if_fail (a && cb, false);
 	struct ctxForeachCB ctx = { a, cb, false, user };
 	return sdb_foreach (a->sdb_zigns, foreachCB, &ctx);
 }
 
-RZ_API bool rz_sign_foreach(RzAnal *a, RzSignForeachCallback cb, void *user) {
+RZ_API bool rz_sign_foreach(RzAnalysis *a, RzSignForeachCallback cb, void *user) {
 	rz_return_val_if_fail (a && cb, false);
 	struct ctxForeachCB ctx = { a, cb, true, user };
 	return sdb_foreach (a->sdb_zigns, foreachCB, &ctx);
@@ -2286,7 +2286,7 @@ static int addSearchKwCB(RzSignItem *it, void *user) {
 	return 1;
 }
 
-RZ_API void rz_sign_search_init(RzAnal *a, RzSignSearch *ss, int minsz, RzSignSearchCallback cb, void *user) {
+RZ_API void rz_sign_search_init(RzAnalysis *a, RzSignSearch *ss, int minsz, RzSignSearchCallback cb, void *user) {
 	struct ctxAddSearchKwCB ctx = { ss, minsz };
 	rz_return_if_fail (a && ss && cb);
 	ss->cb = cb;
@@ -2298,7 +2298,7 @@ RZ_API void rz_sign_search_init(RzAnal *a, RzSignSearch *ss, int minsz, RzSignSe
 	rz_search_set_callback (ss->search, searchHitCB, ss);
 }
 
-RZ_API int rz_sign_search_update(RzAnal *a, RzSignSearch *ss, ut64 *at, const ut8 *buf, int len) {
+RZ_API int rz_sign_search_update(RzAnalysis *a, RzSignSearch *ss, ut64 *at, const ut8 *buf, int len) {
 	rz_return_val_if_fail (a && ss && buf && len > 0, 0);
 	return rz_search_update (ss->search, *at, buf, len);
 }
@@ -2310,7 +2310,7 @@ static int matchCount(int a, int b) {
 	return RZ_ABS (c) < m;
 }
 
-static bool fcnMetricsCmp(RzSignItem *it, RzAnalFunction *fcn) {
+static bool fcnMetricsCmp(RzSignItem *it, RzAnalysisFunction *fcn) {
 	RzSignGraph *graph = it->graph;
 	int ebbs = -1;
 
@@ -2548,7 +2548,7 @@ RZ_API void rz_sign_bytes_free(RzSignBytes *bytes) {
 }
 
 static bool loadCB(void *user, const char *k, const char *v) {
-	RzAnal *a = (RzAnal *) user;
+	RzAnalysis *a = (RzAnalysis *) user;
 	char nk[RZ_SIGN_KEY_MAXSZ], nv[RZ_SIGN_VAL_MAXSZ];
 	RzSignItem *it = rz_sign_item_new ();
 	if (it && rz_sign_deserialize (a, it, k, v)) {
@@ -2561,7 +2561,7 @@ static bool loadCB(void *user, const char *k, const char *v) {
 	return true;
 }
 
-RZ_API char *rz_sign_path(RzAnal *a, const char *file) {
+RZ_API char *rz_sign_path(RzAnalysis *a, const char *file) {
 	char *abs = rz_file_abspath (file);
 	if (abs) {
 		if (rz_file_is_regular (abs)) {
@@ -2597,7 +2597,7 @@ RZ_API char *rz_sign_path(RzAnal *a, const char *file) {
 	return NULL;
 }
 
-RZ_API bool rz_sign_load(RzAnal *a, const char *file) {
+RZ_API bool rz_sign_load(RzAnalysis *a, const char *file) {
 	if (!a || !file) {
 		return false;
 	}
@@ -2619,7 +2619,7 @@ RZ_API bool rz_sign_load(RzAnal *a, const char *file) {
 	return true;
 }
 
-RZ_API bool rz_sign_load_gz(RzAnal *a, const char *filename) {
+RZ_API bool rz_sign_load_gz(RzAnalysis *a, const char *filename) {
 	ut8 *buf = NULL;
 	int size = 0;
 	char *tmpfile = NULL;
@@ -2670,7 +2670,7 @@ out:
 	return retval;
 }
 
-RZ_API bool rz_sign_save(RzAnal *a, const char *file) {
+RZ_API bool rz_sign_save(RzAnalysis *a, const char *file) {
 	rz_return_val_if_fail (a && file, false);
 
 	if (sdb_isempty (a->sdb_zigns)) {

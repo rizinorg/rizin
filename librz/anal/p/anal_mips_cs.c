@@ -93,7 +93,7 @@ static ut64 t9_pre = UT64_MAX;
 #define ES_ADD_CK32_OVERF(x, y, z) es_add_ck (op, x, y, z, 32)
 #define ES_ADD_CK64_OVERF(x, y, z) es_add_ck (op, x, y, z, 64)
 
-static inline void es_sign_n_64(RzAnal *a, RzAnalOp *op, const char *arg, int bit)
+static inline void es_sign_n_64(RzAnalysis *a, RzAnalysisOp *op, const char *arg, int bit)
 {
 	if (a->bits == 64) {
 		rz_strbuf_appendf (&op->esil, ",%d,%s,~,%s,=,", bit, arg, arg);
@@ -102,7 +102,7 @@ static inline void es_sign_n_64(RzAnal *a, RzAnalOp *op, const char *arg, int bi
 	}
 }
 
-static inline void es_add_ck(RzAnalOp *op, const char *a1, const char *a2, const char *re, int bit)
+static inline void es_add_ck(RzAnalysisOp *op, const char *a1, const char *a2, const char *re, int bit)
 {
 	ut64 mask = 1ULL << (bit-1);
 	rz_strbuf_appendf (&op->esil,
@@ -197,7 +197,7 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 
 #define ARG(x) (*str[x]!=0)?str[x]:arg(handle, insn, str[x], x)
 
-static int analop_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+static int analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	char str[8][32] = {{0}};
 	int i;
 
@@ -623,7 +623,7 @@ static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num
 	return 0;
 }
 
-static void op_fillval(RzAnal *anal, RzAnalOp *op, csh *handle, cs_insn *insn) {
+static void op_fillval(RzAnalysis *anal, RzAnalysisOp *op, csh *handle, cs_insn *insn) {
 	static RzRegItem reg;
 	switch (op->type & RZ_ANAL_OP_TYPE_MASK) {
 	case RZ_ANAL_OP_TYPE_LOAD:
@@ -699,7 +699,7 @@ capstone bug
 	}
 }
 
-static void set_opdir(RzAnalOp *op) {
+static void set_opdir(RzAnalysisOp *op) {
         switch (op->type & RZ_ANAL_OP_TYPE_MASK) {
         case RZ_ANAL_OP_TYPE_LOAD:
                 op->direction = RZ_ANAL_OP_DIR_READ;
@@ -721,7 +721,7 @@ static void set_opdir(RzAnalOp *op) {
         }
 }
 
-static int analop(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int analop(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	int n, ret, opsize = -1;
 	static csh hndl = 0;
 	static int omode = -1;
@@ -1098,7 +1098,7 @@ fin:
 	return opsize;
 }
 
-static char *get_reg_profile(RzAnal *anal) {
+static char *get_reg_profile(RzAnalysis *anal) {
 	const char *p = NULL;
 	switch (anal->bits) {
 	default:
@@ -1202,18 +1202,18 @@ static char *get_reg_profile(RzAnal *anal) {
 	return p? strdup (p): NULL;
 }
 
-static int archinfo(RzAnal *anal, int q) {
+static int archinfo(RzAnalysis *anal, int q) {
 	return 4;
 }
 
-static RzList *anal_preludes(RzAnal *anal) {
+static RzList *anal_preludes(RzAnalysis *anal) {
 #define KW(d,ds,m,ms) rz_list_append (l, rz_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
 	RzList *l = rz_list_newf ((RzListFree)rz_search_keyword_free);
 	KW ("\x27\xbd\x00", 3, NULL, 0);
 	return l;
 }
 
-RzAnalPlugin rz_anal_plugin_mips_cs = {
+RzAnalysisPlugin rz_anal_plugin_mips_cs = {
 	.name = "mips",
 	.desc = "Capstone MIPS analyzer",
 	.license = "BSD",

@@ -10,7 +10,7 @@
 
 static struct snes_asm_flags* snesflags = NULL;
 
-static int snes_anop(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask) {
+static int snes_anop(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	op->size = snes_op_get_size(snesflags->M, snesflags->X, &snes_op[data[0]]);
 	if (op->size > len) {
 		return op->size = 0;
@@ -252,7 +252,7 @@ static int snes_anal_fini (void* user) {
 	return 0;
 }
 
-RzAnalPlugin rz_anal_plugin_snes = {
+RzAnalysisPlugin rz_anal_plugin_snes = {
 	.name = "snes",
 	.desc = "SNES analysis plugin",
 	.license = "LGPL3",

@@ -344,9 +344,9 @@ static inline void mk_reg_str(const char *regname, int delta, bool sign, bool at
 	rz_strbuf_free (sb);
 }
 
-static bool subvar(RzParse *p, RzAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RzList *bpargs, *spargs;
-	RzAnal *anal = p->analb.anal;
+	RzAnalysis *anal = p->analb.anal;
 	RzListIter *bpargiter, *spiter;
 	char oldstr[64], newstr[64];
 	char *tstr = strdup (data);
@@ -421,7 +421,7 @@ static bool subvar(RzParse *p, RzAnalFunction *f, ut64 addr, int oplen, char *da
 	if (p->get_op_ireg) {
 		ireg = p->get_op_ireg(p->user, addr);
 	}
-	RzAnalVarField *bparg, *sparg;
+	RzAnalysisVarField *bparg, *sparg;
 	rz_list_foreach (spargs, spiter, sparg) {
 		char sign = '+';
 		st64 delta = p->get_ptr_at

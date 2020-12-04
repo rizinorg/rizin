@@ -4,8 +4,8 @@
 #include <rz_util.h>
 #include <rz_list.h>
 
-RZ_API RzAnalOp *rz_anal_op_new(void) {
-	RzAnalOp *op = RZ_NEW (RzAnalOp);
+RZ_API RzAnalysisOp *rz_anal_op_new(void) {
+	RzAnalysisOp *op = RZ_NEW (RzAnalysisOp);
 	rz_anal_op_init (op);
 	return op;
 }
@@ -18,7 +18,7 @@ RZ_API RzList *rz_anal_op_list_new(void) {
 	return list;
 }
 
-RZ_API void rz_anal_op_init(RzAnalOp *op) {
+RZ_API void rz_anal_op_init(RzAnalysisOp *op) {
 	if (op) {
 		memset (op, 0, sizeof (*op));
 		op->addr = UT64_MAX;
@@ -31,7 +31,7 @@ RZ_API void rz_anal_op_init(RzAnalOp *op) {
 	}
 }
 
-RZ_API bool rz_anal_op_fini(RzAnalOp *op) {
+RZ_API bool rz_anal_op_fini(RzAnalysisOp *op) {
 	if (!op) {
 		return false;
 	}
@@ -58,11 +58,11 @@ RZ_API void rz_anal_op_free(void *_op) {
 		return;
 	}
 	rz_anal_op_fini (_op);
-	memset (_op, 0, sizeof (RzAnalOp));
+	memset (_op, 0, sizeof (RzAnalysisOp));
 	free (_op);
 }
 
-static int defaultCycles(RzAnalOp *op) {
+static int defaultCycles(RzAnalysisOp *op) {
 	switch (op->type) {
 	case RZ_ANAL_OP_TYPE_PUSH:
 	case RZ_ANAL_OP_TYPE_POP:
@@ -88,7 +88,7 @@ static int defaultCycles(RzAnalOp *op) {
 	}
 }
 
-RZ_API int rz_anal_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask) {
+RZ_API int rz_anal_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	rz_anal_op_init (op);
 	rz_return_val_if_fail (anal && op && len > 0, -1);
 
@@ -129,7 +129,7 @@ RZ_API int rz_anal_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, in
 		}
         }
 	if (mask & RZ_ANAL_OP_MASK_HINT) {
-		RzAnalHint *hint = rz_anal_hint_get (anal, addr);
+		RzAnalysisHint *hint = rz_anal_hint_get (anal, addr);
 		if (hint) {
 			rz_anal_op_hint (op, hint);
 			rz_anal_hint_free (hint);
@@ -138,8 +138,8 @@ RZ_API int rz_anal_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, in
 	return ret;
 }
 
-RZ_API RzAnalOp *rz_anal_op_copy(RzAnalOp *op) {
-	RzAnalOp *nop = RZ_NEW0 (RzAnalOp);
+RZ_API RzAnalysisOp *rz_anal_op_copy(RzAnalysisOp *op) {
+	RzAnalysisOp *nop = RZ_NEW0 (RzAnalysisOp);
 	if (!nop) {
 		return NULL;
 	}
@@ -159,7 +159,7 @@ RZ_API RzAnalOp *rz_anal_op_copy(RzAnalOp *op) {
 	nop->dst = rz_anal_value_copy (op->dst);
 	if (op->access) {
 		RzListIter *it;
-		RzAnalValue *val;
+		RzAnalysisValue *val;
 		RzList *naccess = rz_list_newf ((RzListFree)rz_anal_value_free);
 		rz_list_foreach (op->access, it, val) {
 			rz_list_append (naccess, rz_anal_value_copy (val));
@@ -369,14 +369,14 @@ repeat:
 	return "undefined";
 }
 
-RZ_API const char *rz_anal_op_to_esil_string(RzAnal *anal, RzAnalOp *op) {
+RZ_API const char *rz_anal_op_to_esil_string(RzAnalysis *anal, RzAnalysisOp *op) {
 	return rz_strbuf_get (&op->esil);
 }
 
 // TODO: use esil here?
-RZ_API char *rz_anal_op_to_string(RzAnal *anal, RzAnalOp *op) {
-	RzAnalBlock *bb;
-	RzAnalFunction *f;
+RZ_API char *rz_anal_op_to_string(RzAnalysis *anal, RzAnalysisOp *op) {
+	RzAnalysisBlock *bb;
+	RzAnalysisFunction *f;
 	char *cstr, ret[128];
 	char *r0 = rz_anal_value_to_string (op->dst);
 	char *a0 = rz_anal_value_to_string (op->src[0]);
@@ -624,7 +624,7 @@ RZ_API int rz_anal_op_family_from_string(const char *f) {
 }
 
 /* apply hint to op, return the number of hints applied */
-RZ_API int rz_anal_op_hint(RzAnalOp *op, RzAnalHint *hint) {
+RZ_API int rz_anal_op_hint(RzAnalysisOp *op, RzAnalysisHint *hint) {
 	int changes = 0;
 	if (hint) {
 		if (hint->val != UT64_MAX) {
@@ -664,10 +664,10 @@ RZ_API int rz_anal_op_hint(RzAnalOp *op, RzAnalHint *hint) {
 // returns the '33' in 'rax + 33'
 // returns value for the given register name in specific address / range
 // imho this should not iterate, should be just a helper to get that value
-RZ_API int rz_anal_op_reg_delta(RzAnal *anal, ut64 addr, const char *name) {
+RZ_API int rz_anal_op_reg_delta(RzAnalysis *anal, ut64 addr, const char *name) {
 	ut8 buf[32];
 	anal->iob.read_at (anal->iob.io, addr, buf, sizeof (buf));
-	RzAnalOp op = { 0 };
+	RzAnalysisOp op = { 0 };
 	if (rz_anal_op (anal, &op, addr, buf, sizeof (buf), RZ_ANAL_OP_MASK_ALL) > 0) {
 		if (op.dst && op.dst->reg && op.dst->reg->name && (!name || !strcmp (op.dst->reg->name, name))) {
 			if (op.src[0]) {

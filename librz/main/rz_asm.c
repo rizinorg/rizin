@@ -12,7 +12,7 @@
 typedef struct {
 	RzLib *l;
 	RzAsm *a;
-	RzAnal *anal;
+	RzAnalysis *anal;
 	bool oneliner;
 	bool coutput;
 	bool json;
@@ -65,7 +65,7 @@ static char *stackop2str(int type) {
 	return strdup ("unknown");
 }
 
-static int showanal(RzAsmState *as, RzAnalOp *op, ut64 offset, ut8 *buf, int len, PJ *pj) {
+static int showanal(RzAsmState *as, RzAnalysisOp *op, ut64 offset, ut8 *buf, int len, PJ *pj) {
 	int ret = rz_anal_op (as->anal, op, offset, buf, len, RZ_ANAL_OP_MASK_ESIL);
 	if (ret < 1) {
 		return ret;
@@ -130,7 +130,7 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 		return 0;
 	}
 	
-	RzAnalOp aop = { 0 };
+	RzAnalysisOp aop = { 0 };
 	
 	if (as->json) {
 		pj_a (pj);
@@ -167,7 +167,7 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 
 static const char *has_esil(RzAsmState *as, const char *name) {
 	RzListIter *iter;
-	RzAnalPlugin *h;
+	RzAnalysisPlugin *h;
 	rz_list_foreach (as->anal->plugins, iter, h) {
 		if (h->name && !strcmp (name, h->name)) {
 			return h->esil? "Ae": "A_";
@@ -346,7 +346,7 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 	}
 
 	if (hex == 2) {
-		RzAnalOp aop = { 0 };
+		RzAnalysisOp aop = { 0 };
 		while (ret < len) {
 			aop.size = 0;
 			if (rz_anal_op (as->anal, &aop, addr, data + ret, len - ret, RZ_ANAL_OP_MASK_ESIL) > 0) {
@@ -479,7 +479,7 @@ static int __lib_asm_cb(RzLibPlugin *pl, void *user, void *data) {
 
 /* anal callback */
 static int __lib_anal_cb(RzLibPlugin *pl, void *user, void *data) {
-	RzAnalPlugin *hand = (RzAnalPlugin *)data;
+	RzAnalysisPlugin *hand = (RzAnalysisPlugin *)data;
 	RzAsmState *as = (RzAsmState *)user;
 	rz_anal_add (as->anal, hand);
 	return true;

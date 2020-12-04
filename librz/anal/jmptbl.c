@@ -9,7 +9,7 @@
 
 #define JMPTBL_MAXSZ 512
 
-static void apply_case(RzAnal *anal, RzAnalBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
+static void apply_case(RzAnalysis *anal, RzAnalysisBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
 	// eprintf ("** apply_case: 0x%"PFMT64x " from 0x%"PFMT64x "\n", case_addr, case_addr_loc);
 	rz_meta_set_data_at (anal, case_addr_loc, offset_sz);
 	rz_anal_hint_set_immbase (anal, case_addr_loc, 10);
@@ -24,7 +24,7 @@ static void apply_case(RzAnal *anal, RzAnalBlock *block, ut64 switch_addr, ut64 
 	}
 }
 
-static void apply_switch(RzAnal *anal, ut64 switch_addr, ut64 jmptbl_addr, ut64 cases_count, ut64 default_case_addr) {
+static void apply_switch(RzAnalysis *anal, ut64 switch_addr, ut64 jmptbl_addr, ut64 cases_count, ut64 default_case_addr) {
 	char tmp[0x30];
 	snprintf (tmp, sizeof (tmp), "switch table (%"PFMT64u" cases) at 0x%"PFMT64x, cases_count, jmptbl_addr);
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, switch_addr, tmp);
@@ -40,12 +40,12 @@ static void apply_switch(RzAnal *anal, ut64 switch_addr, ut64 jmptbl_addr, ut64 
 }
 
 // analyze a jmptablle inside a function // maybe rename to rz_anal_fcn_jmptbl() ?
-RZ_API bool rz_anal_jmptbl(RzAnal *anal, RzAnalFunction *fcn, RzAnalBlock *block, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr) {
+RZ_API bool rz_anal_jmptbl(RzAnalysis *anal, RzAnalysisFunction *fcn, RzAnalysisBlock *block, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr) {
 	const int depth = 50;
 	return try_walkthrough_jmptbl (anal, fcn, block, depth, jmpaddr, table, table, tablesize, tablesize, default_addr, false);
 }
 
-RZ_API bool try_walkthrough_casetbl(RzAnal *anal, RzAnalFunction *fcn, RzAnalBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 casetbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0) {
+RZ_API bool try_walkthrough_casetbl(RzAnalysis *anal, RzAnalysisFunction *fcn, RzAnalysisBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 casetbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0) {
 	bool ret = ret0;
 	if (jmptbl_size == 0) {
 		jmptbl_size = JMPTBL_MAXSZ;
@@ -133,7 +133,7 @@ RZ_API bool try_walkthrough_casetbl(RzAnal *anal, RzAnalFunction *fcn, RzAnalBlo
 	return ret;
 }
 
-RZ_API bool try_walkthrough_jmptbl(RzAnal *anal, RzAnalFunction *fcn, RzAnalBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0) {
+RZ_API bool try_walkthrough_jmptbl(RzAnalysis *anal, RzAnalysisFunction *fcn, RzAnalysisBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0) {
 	bool ret = ret0;
 	// jmptbl_size can not always be determined
 	if (jmptbl_size == 0) {
@@ -213,12 +213,12 @@ RZ_API bool try_walkthrough_jmptbl(RzAnal *anal, RzAnalFunction *fcn, RzAnalBloc
 }
 
 // TODO: RENAME
-RZ_API bool try_get_delta_jmptbl_info(RzAnal *anal, RzAnalFunction *fcn, ut64 jmp_addr, ut64 lea_addr, ut64 *table_size, ut64 *default_case) {
+RZ_API bool try_get_delta_jmptbl_info(RzAnalysis *anal, RzAnalysisFunction *fcn, ut64 jmp_addr, ut64 lea_addr, ut64 *table_size, ut64 *default_case) {
 	bool isValid = false;
 	bool foundCmp = false;
 	int i;
 
-	RzAnalOp tmp_aop = {0};
+	RzAnalysisOp tmp_aop = {0};
 	if (lea_addr > jmp_addr) {
 		return false;
 	}
@@ -273,7 +273,7 @@ RZ_API bool try_get_delta_jmptbl_info(RzAnal *anal, RzAnalFunction *fcn, ut64 jm
 }
 
 // TODO: find a better function name
-RZ_API int walkthrough_arm_jmptbl_style(RzAnal *anal, RzAnalFunction *fcn, RzAnalBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0) {
+RZ_API int walkthrough_arm_jmptbl_style(RzAnalysis *anal, RzAnalysisFunction *fcn, RzAnalysisBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0) {
 	/*
 	 * Example about arm jump table
 	 *
@@ -315,11 +315,11 @@ RZ_API int walkthrough_arm_jmptbl_style(RzAnal *anal, RzAnalFunction *fcn, RzAna
 	return ret;
 }
 
-RZ_API bool try_get_jmptbl_info(RzAnal *anal, RzAnalFunction *fcn, ut64 addr, RzAnalBlock *my_bb, ut64 *table_size, ut64 *default_case) {
+RZ_API bool try_get_jmptbl_info(RzAnalysis *anal, RzAnalysisFunction *fcn, ut64 addr, RzAnalysisBlock *my_bb, ut64 *table_size, ut64 *default_case) {
 	bool isValid = false;
 	int i;
 	RzListIter *iter;
-	RzAnalBlock *tmp_bb, *prev_bb;
+	RzAnalysisBlock *tmp_bb, *prev_bb;
 	prev_bb = 0;
 	if (!fcn->bbs) {
 		return false;
@@ -354,7 +354,7 @@ RZ_API bool try_get_jmptbl_info(RzAnal *anal, RzAnalFunction *fcn, ut64 addr, Rz
 	// default case is the jump target of the unconditional jump
 	*default_case = prev_bb->jump == my_bb->addr ? prev_bb->fail : prev_bb->jump;
 
-	RzAnalOp tmp_aop = {0};
+	RzAnalysisOp tmp_aop = {0};
 	ut8 *bb_buf = calloc (1, prev_bb->size);
 	if (!bb_buf) {
 		return false;
@@ -363,7 +363,7 @@ RZ_API bool try_get_jmptbl_info(RzAnal *anal, RzAnalFunction *fcn, ut64 addr, Rz
 	anal->iob.read_at (anal->iob.io, prev_bb->addr, (ut8 *) bb_buf, prev_bb->size);
 	isValid = false;
 
-	RzAnalHint *hint = rz_anal_hint_get (anal, addr);
+	RzAnalysisHint *hint = rz_anal_hint_get (anal, addr);
 	if (hint) {
 		ut64 val = hint->val;
 		rz_anal_hint_free (hint);

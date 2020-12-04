@@ -7,7 +7,7 @@
 #include <rz_anal.h>
 //#include "../../asm/arch/tricore/gnu/tricore-opc.c"
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	a10\n"
@@ -73,7 +73,7 @@ static bool set_reg_profile(RzAnal *anal) {
 	return rz_reg_set_profile_string (anal->reg, p);
 }
 
-RzAnalPlugin rz_anal_plugin_tricore = {
+RzAnalysisPlugin rz_anal_plugin_tricore = {
 	.name = "tricore",
 	.desc = "TRICORE analysis plugin",
 	.license = "LGPL3",

@@ -3,7 +3,7 @@
 #include <rz_asm.h>
 #include <rz_lib.h>
 
-static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	int opsize = -1;
 	op->type = -1;
 	opsize = 2;
@@ -237,7 +237,7 @@ static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 	return opsize;
 }
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	r14\n" // XXX
@@ -274,7 +274,7 @@ static bool set_reg_profile(RzAnal *anal) {
 	return rz_reg_set_profile_string (anal->reg, p);
 }
 
-RzAnalPlugin rz_anal_plugin_cris = {
+RzAnalysisPlugin rz_anal_plugin_cris = {
 	.name = "cris",
 	.desc = "Axis Communications 32-bit embedded processor",
 	.license = "LGPL3",

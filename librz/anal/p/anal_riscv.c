@@ -292,7 +292,7 @@ static const char* arg_n(riscv_args_t* args, int n) {
 	return args->arg[n];
 }
 
-static int riscv_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask) {
+static int riscv_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	const int no_alias = 1;
 	riscv_args_t args = {0};
 	ut64 word = 0;
@@ -613,7 +613,7 @@ static int riscv_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 	}
 	if (mask & RZ_ANAL_OP_MASK_VAL && args.num) {
 		int i, j = 1;
-		op->dst = RZ_NEW0 (RzAnalValue);
+		op->dst = RZ_NEW0 (RzAnalysisValue);
 		char *argf = strdup (o->args);
 		char *comma = strtok (argf, ",");
 		if (comma && strchr (comma, '(')) {
@@ -626,7 +626,7 @@ static int riscv_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 			op->dst->reg = rz_reg_get (anal->reg, args.arg[0], -1);
 		}
 		for (i = 0; j < args.num; i++, j++) {
-			op->src[i] = RZ_NEW0 (RzAnalValue);
+			op->src[i] = RZ_NEW0 (RzAnalysisValue);
 			comma = strtok (NULL, ",");
 			if (comma && strchr (comma, '(')) {
 				op->src[i]->delta = (st64)rz_num_get (NULL, args.arg[j]);
@@ -643,7 +643,7 @@ static int riscv_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 	return op->size;
 }
 
-static char *get_reg_profile(RzAnal *anal) {
+static char *get_reg_profile(RzAnalysis *anal) {
 	const char *p = NULL;
 	switch (anal->bits) {
 	case 32: p =
@@ -823,7 +823,7 @@ static char *get_reg_profile(RzAnal *anal) {
 	return (p && *p)? strdup (p): NULL;
 }
 
-RzAnalPlugin rz_anal_plugin_riscv = {
+RzAnalysisPlugin rz_anal_plugin_riscv = {
 	.name = "riscv",
 	.desc = "RISC-V analysis plugin",
 	.license = "GPL",

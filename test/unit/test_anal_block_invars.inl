@@ -1,9 +1,9 @@
 
-static bool block_check_invariants(RzAnal *anal) {
+static bool block_check_invariants(RzAnalysis *anal) {
 	RBIter iter;
-	RzAnalBlock *block;
+	RzAnalysisBlock *block;
 	ut64 last_start = UT64_MAX;
-	rz_rbtree_foreach (anal->bb_tree, iter, block, RzAnalBlock, _rb) {
+	rz_rbtree_foreach (anal->bb_tree, iter, block, RzAnalysisBlock, _rb) {
 		if (last_start != UT64_MAX) {
 			mu_assert ("corrupted binary tree", block->addr >= last_start);
 			mu_assert_neq (block->addr, last_start, "double blocks");
@@ -14,10 +14,10 @@ static bool block_check_invariants(RzAnal *anal) {
 		mu_assert ("block->ref < rz_list_length (block->fcns)", block->ref >= rz_list_length (block->fcns));
 
 		RzListIter *fcniter;
-		RzAnalFunction *fcn;
+		RzAnalysisFunction *fcn;
 		rz_list_foreach (block->fcns, fcniter, fcn) {
 			RzListIter *fcniter2;
-			RzAnalFunction *fcn2;
+			RzAnalysisFunction *fcn2;
 			for (fcniter2 = fcniter->n; fcniter2 && (fcn2 = fcniter2->data, 1); fcniter2 = fcniter2->n) {
 				mu_assert_ptrneq (fcn, fcn2, "duplicate function in basic block");
 			}
@@ -26,7 +26,7 @@ static bool block_check_invariants(RzAnal *anal) {
 	}
 
 	RzListIter *fcniter;
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 	rz_list_foreach (anal->fcns, fcniter, fcn) {
 		RzListIter *blockiter;
 		ut64 min = UT64_MAX;
@@ -34,7 +34,7 @@ static bool block_check_invariants(RzAnal *anal) {
 		ut64 realsz = 0;
 		rz_list_foreach (fcn->bbs, blockiter, block) {
 			RzListIter *blockiter2;
-			RzAnalBlock *block2;
+			RzAnalysisBlock *block2;
 			if (block->addr < min) {
 				min = block->addr;
 			}
@@ -58,10 +58,10 @@ static bool block_check_invariants(RzAnal *anal) {
 	return true;
 }
 
-static bool block_check_leaks(RzAnal *anal) {
+static bool block_check_leaks(RzAnalysis *anal) {
 	RBIter iter;
-	RzAnalBlock *block;
-	rz_rbtree_foreach (anal->bb_tree, iter, block, RzAnalBlock, _rb) {
+	RzAnalysisBlock *block;
+	rz_rbtree_foreach (anal->bb_tree, iter, block, RzAnalysisBlock, _rb) {
 		if (block->ref != rz_list_length (block->fcns))  {
 			mu_assert ("leaked basic block", false);
 		}

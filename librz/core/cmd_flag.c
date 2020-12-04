@@ -676,7 +676,7 @@ static int flag_space_stack_list(RzFlag *f, int mode) {
 typedef struct {
 	int rad;
 	PJ *pj;
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 } PrintFcnLabelsCtx;
 
 static bool print_function_labels_cb(void *user, const ut64 addr, const void *v) {
@@ -700,7 +700,7 @@ static bool print_function_labels_cb(void *user, const ut64 addr, const void *v)
 }
 
 
-static void print_function_labels_for(RzAnalFunction *fcn, int rad, PJ *pj) {
+static void print_function_labels_for(RzAnalysisFunction *fcn, int rad, PJ *pj) {
 	rz_return_if_fail (fcn && (rad != 'j' || pj));
 	bool json = rad == 'j';
 	if (json) {
@@ -713,7 +713,7 @@ static void print_function_labels_for(RzAnalFunction *fcn, int rad, PJ *pj) {
 	}
 }
 
-static void print_function_labels(RzAnal *anal, RzAnalFunction *fcn, int rad) {
+static void print_function_labels(RzAnalysis *anal, RzAnalysisFunction *fcn, int rad) {
 	rz_return_if_fail (anal || fcn);
 	PJ *pj = NULL;
 	bool json = rad == 'j';
@@ -726,7 +726,7 @@ static void print_function_labels(RzAnal *anal, RzAnalFunction *fcn, int rad) {
 		if (json) {
 			pj_o (pj);
 		}
-		RzAnalFunction *f;
+		RzAnalysisFunction *f;
 		RzListIter *iter;
 		rz_list_foreach (anal->fcns, iter, f) {
 			if (!f->labels->count) {
@@ -1003,7 +1003,7 @@ rep:
 				flagname++;
 			}
 			if (*flagname == '.') {
-				RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, off, 0);
+				RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, off, 0);
 				if (fcn) {
 					rz_anal_function_delete_label_at (fcn, off);
 				} else {
@@ -1027,7 +1027,7 @@ rep:
 				if (input[2] == '*') {
 					print_function_labels (core->anal, NULL, input[1]);
 				} else {
-					RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, off, 0);
+					RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, off, 0);
 					if (fcn) {
 						print_function_labels (core->anal, fcn, input[1]);
 					} else {
@@ -1036,7 +1036,7 @@ rep:
 				}
 			} else {
 				char *name = strdup (input + ((input[2] == ' ')? 2: 1));
-				RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, off, 0);
+				RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, off, 0);
 				if (name) {
 					char *eq = strchr (name, '=');
 					if (eq) {
@@ -1057,7 +1057,7 @@ rep:
 				}
 			}
 		} else {
-			RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, off, 0);
+			RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, off, 0);
 			if (fcn) {
 				print_function_labels (core->anal, fcn, 0);
 			} else {

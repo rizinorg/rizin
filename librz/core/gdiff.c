@@ -9,12 +9,12 @@
 
 RZ_API int rz_core_gdiff_fcn(RzCore *c, ut64 addr, ut64 addr2) {
 	RzList *la, *lb;
-	RzAnalFunction *fa = rz_anal_get_function_at (c->anal, addr);
-	RzAnalFunction *fb = rz_anal_get_function_at (c->anal, addr2);
+	RzAnalysisFunction *fa = rz_anal_get_function_at (c->anal, addr);
+	RzAnalysisFunction *fb = rz_anal_get_function_at (c->anal, addr2);
 	if (!fa || !fb) {
 		return false;
 	}
-	RzAnalBlock *bb;
+	RzAnalysisBlock *bb;
 	RzListIter *iter;
 	rz_list_foreach (fa->bbs, iter, bb) {
 		rz_anal_diff_fingerprint_bb (c->anal, bb);
@@ -35,8 +35,8 @@ RZ_API int rz_core_gdiff_fcn(RzCore *c, ut64 addr, ut64 addr2) {
 /* Fingerprint functions and blocks, then diff. */
 RZ_API int rz_core_gdiff(RzCore *c, RzCore *c2) {
 	RzCore *cores[2] = {c, c2};
-	RzAnalFunction *fcn;
-	RzAnalBlock *bb;
+	RzAnalysisFunction *fcn;
+	RzAnalysisBlock *bb;
 	RzListIter *iter, *iter2;
 	int i;
 
@@ -94,7 +94,7 @@ RZ_API void rz_core_diff_show(RzCore *c, RzCore *c2) {
         RzList *fcns = rz_anal_get_fcns (c->anal);
         const char *match;
         RzListIter *iter;
-        RzAnalFunction *f;
+        RzAnalysisFunction *f;
         int maxnamelen = 0;
         ut64 maxsize = 0;
         int digits = 1;

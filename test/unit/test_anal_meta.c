@@ -4,7 +4,7 @@
 #include "minunit.h"
 
 bool test_meta_set() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 
 	rz_meta_set (anal, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x100, "summer of love");
@@ -13,7 +13,7 @@ bool test_meta_set() {
 	bool found[3] = { 0 };
 	size_t count = 0;
 	RzIntervalTreeIter it;
-	RzAnalMetaItem *item;
+	RzAnalysisMetaItem *item;
 	rz_interval_tree_foreach (&anal->meta, it, item) {
 		count++;
 		RzIntervalNode *node = rz_interval_tree_iter_get (&it);
@@ -132,13 +132,13 @@ bool test_meta_set() {
 }
 
 bool test_meta_get_at() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 
 	rz_meta_set (anal, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
 	rz_meta_set_with_subtype (anal, RZ_META_TYPE_STRING, RZ_STRING_ENC_UTF8, 0x200, 0x30, "true confessions");
 
-	RzAnalMetaItem *item = rz_meta_get_at (anal, 0x100, RZ_META_TYPE_COMMENT, NULL);
+	RzAnalysisMetaItem *item = rz_meta_get_at (anal, 0x100, RZ_META_TYPE_COMMENT, NULL);
 	mu_assert_notnull (item, "get item");
 	mu_assert_streq (item->str, "vera gemini", "get contents");
 
@@ -170,14 +170,14 @@ bool test_meta_get_at() {
 }
 
 bool test_meta_get_in() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 
 	rz_meta_set (anal, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
 
 	RzIntervalNode *node = rz_meta_get_in (anal, 0x100, RZ_META_TYPE_COMMENT);
 	mu_assert_notnull (node, "get item");
-	RzAnalMetaItem *item = node->data;
+	RzAnalysisMetaItem *item = node->data;
 	mu_assert_streq (item->str, "vera gemini", "get contents");
 	node = rz_meta_get_in (anal, 0xff, RZ_META_TYPE_COMMENT);
 	mu_assert_null (node, "get item");
@@ -211,7 +211,7 @@ bool test_meta_get_in() {
 }
 
 bool test_meta_get_all_at() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 
 	rz_meta_set (anal, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
@@ -222,7 +222,7 @@ bool test_meta_get_all_at() {
 	void **it;
 	bool found[2] = { 0 };
 	rz_pvector_foreach (items, it) {
-		RzAnalMetaItem *item = ((RzIntervalNode *)*it)->data;
+		RzAnalysisMetaItem *item = ((RzIntervalNode *)*it)->data;
 		switch (item->type) {
 		case RZ_META_TYPE_DATA:
 			found[0] = true;
@@ -251,7 +251,7 @@ bool test_meta_get_all_at() {
 }
 
 bool test_meta_get_all_in() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 
 	rz_meta_set (anal, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
@@ -262,7 +262,7 @@ bool test_meta_get_all_in() {
 	void **it;
 	bool found[2] = { 0 };
 	rz_pvector_foreach (items, it) {
-		RzAnalMetaItem *item = ((RzIntervalNode *)*it)->data;
+		RzAnalysisMetaItem *item = ((RzIntervalNode *)*it)->data;
 		switch (item->type) {
 		case RZ_META_TYPE_DATA:
 			found[0] = true;
@@ -280,7 +280,7 @@ bool test_meta_get_all_in() {
 
 	items = rz_meta_get_all_in (anal, 0x100, RZ_META_TYPE_COMMENT);
 	mu_assert_eq (rz_pvector_len (items), 1, "all count");
-	RzAnalMetaItem *item = ((RzIntervalNode *)rz_pvector_at (items, 0))->data;
+	RzAnalysisMetaItem *item = ((RzIntervalNode *)rz_pvector_at (items, 0))->data;
 	mu_assert_streq (item->str, "vera gemini", "contents");
 	rz_pvector_free (items);
 
@@ -313,7 +313,7 @@ bool test_meta_get_all_in() {
 }
 
 bool test_meta_get_all_intersect() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 
 	rz_meta_set (anal, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
@@ -324,7 +324,7 @@ bool test_meta_get_all_intersect() {
 	void **it;
 	bool found[2] = { 0 };
 	rz_pvector_foreach (items, it) {
-		RzAnalMetaItem *item = ((RzIntervalNode *)*it)->data;
+		RzAnalysisMetaItem *item = ((RzIntervalNode *)*it)->data;
 		switch (item->type) {
 		case RZ_META_TYPE_DATA:
 			found[0] = true;
@@ -342,7 +342,7 @@ bool test_meta_get_all_intersect() {
 
 	items = rz_meta_get_all_intersect (anal, 0x100, 1, RZ_META_TYPE_DATA);
 	mu_assert_eq (rz_pvector_len (items), 1, "all count");
-	RzAnalMetaItem *item = ((RzIntervalNode *)rz_pvector_at (items, 0))->data;
+	RzAnalysisMetaItem *item = ((RzIntervalNode *)rz_pvector_at (items, 0))->data;
 	mu_assert_eq (item->type, RZ_META_TYPE_DATA, "contents");
 	rz_pvector_free (items);
 
@@ -377,14 +377,14 @@ bool test_meta_get_all_intersect() {
 }
 
 bool test_meta_del() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 
 	rz_meta_set (anal, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
 	rz_meta_set_with_subtype (anal, RZ_META_TYPE_STRING, RZ_STRING_ENC_UTF8, 0x200, 0x30, "true confessions");
 
 	rz_meta_del (anal, RZ_META_TYPE_COMMENT, 0x100, 1);
-	RzAnalMetaItem *item = rz_meta_get_at (anal, 0x100, RZ_META_TYPE_COMMENT, NULL);
+	RzAnalysisMetaItem *item = rz_meta_get_at (anal, 0x100, RZ_META_TYPE_COMMENT, NULL);
 	mu_assert_null (item, "item deleted");
 	item = rz_meta_get_at (anal, 0x100, RZ_META_TYPE_DATA, NULL);
 	mu_assert_notnull (item, "item not deleted");
@@ -442,7 +442,7 @@ bool test_meta_del() {
 }
 
 bool test_meta_rebase() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 
 	rz_meta_set (anal, RZ_META_TYPE_DATA, 0x200, 4, NULL);
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x200, "summer of love");
@@ -452,7 +452,7 @@ bool test_meta_rebase() {
 	bool found[3] = { 0 };
 	size_t count = 0;
 	RzIntervalTreeIter it;
-	RzAnalMetaItem *item;
+	RzAnalysisMetaItem *item;
 	rz_interval_tree_foreach (&anal->meta, it, item) {
 		count++;
 		RzIntervalNode *node = rz_interval_tree_iter_get (&it);
@@ -492,7 +492,7 @@ bool test_meta_rebase() {
 }
 
 bool test_meta_spaces() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 
 	rz_meta_set (anal, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x100, "summer of love");
@@ -505,7 +505,7 @@ bool test_meta_spaces() {
 	bool found[4] = { 0 };
 	size_t count = 0;
 	RzIntervalTreeIter it;
-	RzAnalMetaItem *item;
+	RzAnalysisMetaItem *item;
 	rz_interval_tree_foreach (&anal->meta, it, item) {
 		count++;
 		switch (item->type) {
@@ -537,7 +537,7 @@ bool test_meta_spaces() {
 	mu_assert ("meta 2", found[2]);
 	mu_assert ("meta 3", found[3]);
 
-	RzAnalMetaItem *reaper_item = rz_meta_get_at (anal, 0x100, RZ_META_TYPE_ANY, NULL);
+	RzAnalysisMetaItem *reaper_item = rz_meta_get_at (anal, 0x100, RZ_META_TYPE_ANY, NULL);
 	mu_assert_notnull (reaper_item, "get item");
 	mu_assert_streq (reaper_item->str, "reaper", "comment string");
 

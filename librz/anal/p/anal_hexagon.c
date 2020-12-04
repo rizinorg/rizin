@@ -9,7 +9,7 @@
 #include "hexagon_insn.h"
 #include "hexagon_anal.h"
 
-static int hexagon_v6_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int hexagon_v6_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	HexInsn hi = {0};;
 	ut32 data = 0;
 	data = rz_read_le32 (buf);
@@ -23,7 +23,7 @@ static int hexagon_v6_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, 
 	return hexagon_anal_instruction (&hi, op);
 }
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	// TODO: Add missing registers
 	const char *p =
 		"=PC	pc\n"
@@ -89,7 +89,7 @@ static bool set_reg_profile(RzAnal *anal) {
 	return rz_reg_set_profile_string (anal->reg, p);
 }
 
-RzAnalPlugin rz_anal_plugin_hexagon = {
+RzAnalysisPlugin rz_anal_plugin_hexagon = {
 	.name = "hexagon",
 	.desc = "Qualcomm Hexagon (QDSP6) V6",
 	.license = "LGPL3",

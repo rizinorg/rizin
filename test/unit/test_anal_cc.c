@@ -25,14 +25,14 @@ static Sdb *ref_db_self_err() {
 	return db;
 }
 
-static RzAnal *ref_anal() {
-	RzAnal *anal = rz_anal_new ();
+static RzAnalysis *ref_anal() {
+	RzAnalysis *anal = rz_anal_new ();
 	rz_anal_cc_set (anal, "rax sectarian(rdx, rcx, stack)");
 	return anal;
 }
 
-static RzAnal *ref_anal_self_err() {
-	RzAnal *anal = rz_anal_new ();
+static RzAnalysis *ref_anal_self_err() {
+	RzAnalysis *anal = rz_anal_new ();
 	rz_anal_cc_set (anal, "rax sectarian(rdx, rcx, stack)");
 	rz_anal_cc_set_self (anal, "sectarian", "rsi");
 	rz_anal_cc_set_error (anal, "sectarian", "rdi");
@@ -40,7 +40,7 @@ static RzAnal *ref_anal_self_err() {
 }
 
 bool test_r_anal_cc_set() {
-	RzAnal *anal = ref_anal ();
+	RzAnalysis *anal = ref_anal ();
 
 	Sdb *ref = ref_db ();
 	assert_sdb_eq (anal->sdb_cc, ref, "set cc");
@@ -51,7 +51,7 @@ bool test_r_anal_cc_set() {
 }
 
 bool test_r_anal_cc_set_self_err() {
-	RzAnal *anal = ref_anal_self_err ();
+	RzAnalysis *anal = ref_anal_self_err ();
 
 	Sdb *ref = ref_db_self_err ();
 	assert_sdb_eq (anal->sdb_cc, ref, "set cc");
@@ -62,7 +62,7 @@ bool test_r_anal_cc_set_self_err() {
 }
 
 bool test_r_anal_cc_get() {
-	RzAnal *anal = ref_anal ();
+	RzAnalysis *anal = ref_anal ();
 	char *v = rz_anal_cc_get (anal, "sectarian");
 	mu_assert_streq (v, "rax sectarian (rdx, rcx, stack);", "get cc");
 	free (v);
@@ -75,7 +75,7 @@ bool test_r_anal_cc_get() {
 }
 
 bool test_r_anal_cc_get_self_err() {
-	RzAnal *anal = ref_anal_self_err ();
+	RzAnalysis *anal = ref_anal_self_err ();
 	char *v = rz_anal_cc_get (anal, "sectarian");
 	mu_assert_streq (v, "rax rsi.sectarian (rdx, rcx, stack) rdi;", "get cc");
 	free (v);
@@ -88,7 +88,7 @@ bool test_r_anal_cc_get_self_err() {
 }
 
 bool test_r_anal_cc_del() {
-	RzAnal *anal = ref_anal ();
+	RzAnalysis *anal = ref_anal ();
 	rz_anal_cc_del (anal, "sectarian");
 	Sdb *ref = sdb_new0 ();
 	assert_sdb_eq (anal->sdb_cc, ref, "deleted");

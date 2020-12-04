@@ -44,7 +44,7 @@
 https://www.classes.cs.uchicago.edu/archive/2006/winter/23000-1/docs/h8300.pdf
  */
 
-static void h8300_anal_jmp(RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void h8300_anal_jmp(RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	ut16 ad;
 
 	switch (buf[0]) {
@@ -63,7 +63,7 @@ static void h8300_anal_jmp(RzAnalOp *op, ut64 addr, const ut8 *buf) {
 	}
 }
 
-static void h8300_anal_jsr(RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void h8300_anal_jsr(RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	ut16 ad;
 
 	switch (buf[0]) {
@@ -83,7 +83,7 @@ static void h8300_anal_jsr(RzAnalOp *op, ut64 addr, const ut8 *buf) {
 	}
 }
 
-static int analop_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static int analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	int ret = -1;
 	ut8 opcode = buf[0];
 	if (!op) {
@@ -536,8 +536,8 @@ static int analop_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf) {
 	return ret;
 }
 
-static int h8300_op(RzAnal *anal, RzAnalOp *op, ut64 addr,
-		const ut8 *buf, int len, RzAnalOpMask mask)
+static int h8300_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr,
+		const ut8 *buf, int len, RzAnalysisOpMask mask)
 {
 	int ret;
 	ut8 opcode = buf[0];
@@ -679,7 +679,7 @@ static int h8300_op(RzAnal *anal, RzAnalOp *op, ut64 addr,
 	return ret;
 }
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	char *p =
 		"=PC	pc\n"
 		"=SP	r7\n"
@@ -721,7 +721,7 @@ static bool set_reg_profile(RzAnal *anal) {
 	return rz_reg_set_profile_string (anal->reg, p);
 }
 
-RzAnalPlugin rz_anal_plugin_h8300 = {
+RzAnalysisPlugin rz_anal_plugin_h8300 = {
 	.name = "h8300",
 	.desc = "H8300 code analysis plugin",
 	.license = "LGPL3",

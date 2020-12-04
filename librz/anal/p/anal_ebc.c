@@ -8,7 +8,7 @@
 
 #include <ebc_disas.h>
 
-static void ebc_anal_jmp8(RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void ebc_anal_jmp8(RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	int jmpadr = (int8_t)buf[1];
 	op->jump = addr + 2 + (jmpadr * 2);
 	op->addr = addr;
@@ -21,7 +21,7 @@ static void ebc_anal_jmp8(RzAnalOp *op, ut64 addr, const ut8 *buf) {
 	}
 }
 
-static void ebc_anal_jmp(RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void ebc_anal_jmp(RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	op->fail = addr + 6;
 	op->jump = (ut64)*(int32_t*)(buf + 2);
 	if (TEST_BIT (buf[1], 4)) {
@@ -38,7 +38,7 @@ static void ebc_anal_jmp(RzAnalOp *op, ut64 addr, const ut8 *buf) {
 	}
 }
 
-static void ebc_anal_call(RzAnalOp *op, ut64 addr, const ut8 *buf) {
+static void ebc_anal_call(RzAnalysisOp *op, ut64 addr, const ut8 *buf) {
 	int32_t addr_call;
 
 	op->fail = addr + 6;
@@ -57,7 +57,7 @@ static void ebc_anal_call(RzAnalOp *op, ut64 addr, const ut8 *buf) {
 	}
 }
 
-static int ebc_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int ebc_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	int ret;
 	ebc_command_t cmd;
 	ut8 opcode = buf[0] & EBC_OPCODE_MASK;
@@ -161,7 +161,7 @@ static int ebc_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len
 	return ret;
 }
 
-RzAnalPlugin rz_anal_plugin_ebc = {
+RzAnalysisPlugin rz_anal_plugin_ebc = {
 	.name = "ebc",
 	.desc = "EBC code analysis plugin",
 	.license = "LGPL3",

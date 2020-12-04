@@ -758,13 +758,13 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 		return;
 	}
 
-	RzAnalVTable vtable = { .id = NULL, .offset = 0, .size = 0, .addr = vtable_info->saddr};
+	RzAnalysisVTable vtable = { .id = NULL, .offset = 0, .size = 0, .addr = vtable_info->saddr};
 	rz_anal_class_vtable_set (context->anal, class_name, &vtable);
 	rz_anal_class_vtable_fini (&vtable);
 
 	RVTableMethodInfo *vmeth;
 	rz_vector_foreach (&vtable_info->methods, vmeth) {
-		RzAnalMethod meth;
+		RzAnalysisMethod meth;
 		meth.addr = vmeth->addr;
 		meth.vtable_offset = vmeth->vtable_offset;
 		meth.name = rz_str_newf ("virtual_%" PFMT64d, meth.vtable_offset);
@@ -790,7 +790,7 @@ static void add_class_bases(RVTableContext *context, const class_type_info *cti)
 		base_addr += VT_WORD_SIZE (context); // offset to name
 		if (rtti_itanium_read_type_name (context, base_addr, &base_info)) {
 			// TODO in future, store the RTTI offset from vtable and use it
-			RzAnalBaseClass base = { .class_name = base_info.name, .offset = 0 };
+			RzAnalysisBaseClass base = { .class_name = base_info.name, .offset = 0 };
 			rz_anal_class_base_set (context->anal, cti->name, &base);
 			rz_anal_class_base_fini (&base);
 		}
@@ -802,7 +802,7 @@ static void add_class_bases(RVTableContext *context, const class_type_info *cti)
 			ut64 base_addr = base_class_info->base_class_addr + VT_WORD_SIZE (context); // offset to name
 			if (rtti_itanium_read_type_name (context, base_addr, &base_info)) {
 				// TODO in future, store the RTTI offset from vtable and use it
-				RzAnalBaseClass base = { .class_name = base_info.name, .offset = 0 };
+				RzAnalysisBaseClass base = { .class_name = base_info.name, .offset = 0 };
 				rz_anal_class_base_set (context->anal, cti->name, &base);
 				rz_anal_class_base_fini (&base);
 			}

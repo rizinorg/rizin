@@ -42,7 +42,7 @@ static ut64 t9_pre = UT64_MAX;
 #define ES_ADD_CK32_OVERF(x, y, z) es_add_ck (op, x, y, z, 32)
 #define ES_ADD_CK64_OVERF(x, y, z) es_add_ck (op, x, y, z, 64)
 
-static inline void es_sign_n_64(RzAnal *a, RzAnalOp *op, const char *arg, int bit)
+static inline void es_sign_n_64(RzAnalysis *a, RzAnalysisOp *op, const char *arg, int bit)
 {
 	if (a->bits == 64) {
 		rz_strbuf_appendf (&op->esil, ",%d,%s,~,%s,=,", bit, arg, arg);
@@ -51,7 +51,7 @@ static inline void es_sign_n_64(RzAnal *a, RzAnalOp *op, const char *arg, int bi
 	}
 }
 
-static inline void es_add_ck(RzAnalOp *op, const char *a1, const char *a2, const char *re, int bit)
+static inline void es_add_ck(RzAnalysisOp *op, const char *a1, const char *a2, const char *re, int bit)
 {
 	ut64 mask = 1ULL << (bit-1);
 	rz_strbuf_appendf (&op->esil,
@@ -747,7 +747,7 @@ static const char* mips_reg_decode(ut32 reg_num) {
 	return NULL;
 }
 
-static int analop_esil(RzAnal *a, RzAnalOp *op, ut64 addr, gnu_insn*insn) {
+static int analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, gnu_insn*insn) {
 
 	switch (insn->id) {
 		case MIPS_INS_NOP:
@@ -1051,7 +1051,7 @@ static int analop_esil(RzAnal *a, RzAnalOp *op, ut64 addr, gnu_insn*insn) {
 }
 
 
-static int mips_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *b, int len, RzAnalOpMask mask) {
+static int mips_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *b, int len, RzAnalysisOpMask mask) {
 	ut32 opcode;
 	// WIP char buf[10]; int reg; int family;
 	int optype, oplen = (anal->bits==16)?2:4;
@@ -1674,7 +1674,7 @@ static int mips_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *b, int len,
 */
 
 /* Set the profile register */
-static bool mips_set_reg_profile(RzAnal* anal){
+static bool mips_set_reg_profile(RzAnalysis* anal){
      const char *p =
 #if 0
           "=PC    pc\n"
@@ -1769,11 +1769,11 @@ static bool mips_set_reg_profile(RzAnal* anal){
 	return rz_reg_set_profile_string (anal->reg, p);
 }
 
-static int archinfo(RzAnal *anal, int q) {
+static int archinfo(RzAnalysis *anal, int q) {
 	return 4;
 }
 
-RzAnalPlugin rz_anal_plugin_mips_gnu = {
+RzAnalysisPlugin rz_anal_plugin_mips_gnu = {
 	.name = "mips.gnu",
 	.desc = "MIPS code analysis plugin",
 	.license = "LGPL3",

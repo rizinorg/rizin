@@ -4,7 +4,7 @@
 #include <rz_types.h>
 #include <rz_lib.h>
 
-static int mal_anal(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask) {
+static int mal_anal(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	if (len) {
 		switch ((data[0] + addr) % 94) {
 		case 4:
@@ -36,7 +36,7 @@ static int mal_anal(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 	return false;
 }
 
-RzAnalPlugin rz_anal_plugin_malbolge = {
+RzAnalysisPlugin rz_anal_plugin_malbolge = {
 	.name = "malbolge",
 	.desc = "Malbolge analysis plugin",
 	.arch = "malbolge",

@@ -4,7 +4,7 @@
 
 #define MAXSTRLEN 50
 
-static void set_fcn_args_info(RzAnalFuncArg *arg, RzAnal *anal, const char *fcn_name, const char *cc, int arg_num) {
+static void set_fcn_args_info(RzAnalysisFuncArg *arg, RzAnalysis *anal, const char *fcn_name, const char *cc, int arg_num) {
 	if (!fcn_name || !arg || !anal) {
 		return;
 	}
@@ -27,7 +27,7 @@ static void set_fcn_args_info(RzAnalFuncArg *arg, RzAnal *anal, const char *fcn_
 	arg->cc_source = rz_anal_cc_arg (anal, cc, arg_num);
 }
 
-RZ_API char *resolve_fcn_name(RzAnal *anal, const char *func_name) {
+RZ_API char *resolve_fcn_name(RzAnalysis *anal, const char *func_name) {
 	const char *str = func_name;
 	const char *name = func_name;
 	if (rz_type_func_exist (anal->sdb_types, func_name)) {
@@ -155,13 +155,13 @@ RZ_API void rz_core_print_func_args(RzCore *core) {
 	}
 	const char *pc = rz_reg_get_name (core->anal->reg, RZ_REG_NAME_PC);
 	ut64 cur_addr = rz_reg_getv (core->anal->reg, pc);
-	RzAnalOp *op = rz_core_anal_op (core, cur_addr, RZ_ANAL_OP_MASK_BASIC);
+	RzAnalysisOp *op = rz_core_anal_op (core, cur_addr, RZ_ANAL_OP_MASK_BASIC);
 	if (!op) {
 		return;
 	}
 	if (op->type == RZ_ANAL_OP_TYPE_CALL) {
-		RzAnalFunction *fcn;
-		RzAnalFuncArg *arg;
+		RzAnalysisFunction *fcn;
+		RzAnalysisFuncArg *arg;
 		bool onstack = false;
 		const char *fcn_name = NULL;
 		ut64 pcv = op->jump;
@@ -208,7 +208,7 @@ RZ_API void rz_core_print_func_args(RzCore *core) {
 	rz_anal_op_fini (op);
 }
 
-static void rz_anal_fcn_arg_free(RzAnalFuncArg *arg) {
+static void rz_anal_fcn_arg_free(RzAnalysisFuncArg *arg) {
 	if (!arg) {
 		return;
 	}
@@ -216,7 +216,7 @@ static void rz_anal_fcn_arg_free(RzAnalFuncArg *arg) {
 	free (arg);
 }
 
-/* Returns a list of RzAnalFuncArg */
+/* Returns a list of RzAnalysisFuncArg */
 RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) {
 	if (!fcn_name || !core->anal) {
 		return NULL;
@@ -244,7 +244,7 @@ RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) {
 	ut64 s_width = (core->anal->bits == 64)? 8: 4;
 	if (src && !strcmp (src, "stack_rev")) {
 		for (i = nargs - 1; i >= 0; i--) {
-			RzAnalFuncArg *arg = RZ_NEW0 (RzAnalFuncArg);
+			RzAnalysisFuncArg *arg = RZ_NEW0 (RzAnalysisFuncArg);
 			set_fcn_args_info (arg, core->anal, key, cc, i);
 			arg->src = spv;
 			spv += arg->size? arg->size : s_width;
@@ -252,7 +252,7 @@ RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) {
 		}
 	} else {
 		for (i = 0; i < nargs; i++) {
-			RzAnalFuncArg *arg = RZ_NEW0 (RzAnalFuncArg);
+			RzAnalysisFuncArg *arg = RZ_NEW0 (RzAnalysisFuncArg);
 			if (!arg) {
 				return NULL;
 			}

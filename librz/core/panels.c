@@ -1512,7 +1512,7 @@ void __cursor_up(RzCore *core) {
 
 void __cursor_down(RzCore *core) {
 	RzPrint *print = core->print;
-	RzAnalOp *aop = rz_core_anal_op (core, core->offset + print->cur, RZ_ANAL_OP_MASK_BASIC);
+	RzAnalysisOp *aop = rz_core_anal_op (core, core->offset + print->cur, RZ_ANAL_OP_MASK_BASIC);
 	if (aop) {
 		print->cur += aop->size;
 		rz_anal_op_free (aop);
@@ -2885,7 +2885,7 @@ void __call_visual_graph(RzCore *core) {
 }
 
 bool __check_func(RzCore *core) {
-	RzAnalFunction *fun = rz_anal_get_fcn_in (core->anal, core->offset, RZ_ANAL_FCN_TYPE_NULL);
+	RzAnalysisFunction *fun = rz_anal_get_fcn_in (core->anal, core->offset, RZ_ANAL_FCN_TYPE_NULL);
 	if (!fun) {
 		rz_cons_message ("Not in a function. Type 'df' to define it here");
 		return false;
@@ -2898,7 +2898,7 @@ bool __check_func(RzCore *core) {
 }
 
 bool __check_func_diff(RzCore *core, RzPanel *p) {
-	RzAnalFunction *func = rz_anal_get_fcn_in (core->anal, core->offset, RZ_ANAL_FCN_TYPE_NULL);
+	RzAnalysisFunction *func = rz_anal_get_fcn_in (core->anal, core->offset, RZ_ANAL_FCN_TYPE_NULL);
 	if (!func) {
 		if (RZ_STR_ISEMPTY (p->model->funcName)) {
 			return false;

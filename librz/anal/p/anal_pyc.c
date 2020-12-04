@@ -9,7 +9,7 @@
 
 static pyc_opcodes *ops = NULL;
 
-static int archinfo(RzAnal *anal, int query) {
+static int archinfo(RzAnalysis *anal, int query) {
 	if (!strcmp (anal->cpu, "x86")) {
 		return -1;
 	}
@@ -24,7 +24,7 @@ static int archinfo(RzAnal *anal, int query) {
 	}
 }
 
-static char *get_reg_profile(RzAnal *anal) {
+static char *get_reg_profile(RzAnalysis *anal) {
 	return strdup (
 		"=PC    pc\n"
 		"=BP    bp\n"
@@ -36,14 +36,14 @@ static char *get_reg_profile(RzAnal *anal) {
 	);
 }
 
-static RzList *get_pyc_code_obj(RzAnal *anal) {
+static RzList *get_pyc_code_obj(RzAnalysis *anal) {
 	RzBin *b = anal->binb.bin;
 	RzBinPlugin *plugin = b->cur && b->cur->o? b->cur->o->plugin: NULL;
 	bool is_pyc = (plugin && strcmp (plugin->name, "pyc") == 0);
 	return is_pyc? b->cur->o->bin_obj: NULL;
 }
 
-static int pyc_op(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask) {
+static int pyc_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	RzList *cobjs = rz_list_get_n (get_pyc_code_obj (a), 0);
 	RzListIter *iter = NULL;
 	pyc_code_object *func = NULL, *t = NULL;
@@ -134,7 +134,7 @@ static int finish(void *user) {
 	return 0;
 }
 
-RzAnalPlugin rz_anal_plugin_pyc = {
+RzAnalysisPlugin rz_anal_plugin_pyc = {
 	.name = "pyc",
 	.desc = "Python bytecode analysis plugin",
 	.license = "LGPL3",

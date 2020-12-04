@@ -70,7 +70,7 @@ static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num
 	return 0;
 }
 
-static void op_fillval(RzAnalOp *op, csh handle, cs_insn *insn) {
+static void op_fillval(RzAnalysisOp *op, csh handle, cs_insn *insn) {
 	static RzRegItem reg;
 	switch (op->type & RZ_ANAL_OP_TYPE_MASK) {
 	case RZ_ANAL_OP_TYPE_LOAD:
@@ -94,7 +94,7 @@ static void op_fillval(RzAnalOp *op, csh handle, cs_insn *insn) {
 	}
 }
 
-static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	static csh handle = 0;
 	static int omode;
 	cs_insn *insn;
@@ -318,7 +318,7 @@ static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 	return op->size;
 }
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	const char *p = \
 		"=PC	pc\n"
 		"=SP	sp\n"
@@ -376,11 +376,11 @@ static bool set_reg_profile(RzAnal *anal) {
 	return rz_reg_set_profile_string (anal->reg, p);
 }
 
-static int archinfo(RzAnal *anal, int q) {
+static int archinfo(RzAnalysis *anal, int q) {
 	return 4; /* :D */
 }
 
-RzAnalPlugin rz_anal_plugin_sparc_cs = {
+RzAnalysisPlugin rz_anal_plugin_sparc_cs = {
 	.name = "sparc",
 	.desc = "Capstone SPARC analysis",
 	.esil = true,

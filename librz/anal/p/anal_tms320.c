@@ -12,22 +12,22 @@
 
 static tms320_dasm_t engine = { 0 };
 
-typedef int (* TMS_ANAL_OP_FN)(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len);
+typedef int (* TMS_ANAL_OP_FN)(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len);
 
-int tms320_c54x_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len);
-int tms320_c55x_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len);
-int tms320_c55x_plus_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len);
+int tms320_c54x_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len);
+int tms320_c55x_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len);
+int tms320_c55x_plus_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len);
 
 static bool match(const char * str, const char * token) {
 	return !strncasecmp(str, token, strlen(token));
 }
 
-int tms320_c54x_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+int tms320_c54x_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len) {
 	// TODO: add the implementation
 	return 0;
 }
 
-int tms320_c55x_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+int tms320_c55x_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len) {
 	const char * str = engine.syntax;
 
 	op->delay = 0;
@@ -80,7 +80,7 @@ int tms320_c55x_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int le
 	return op->size;
 }
 
-int tms320_op(RzAnal * anal, RzAnalOp * op, ut64 addr, const ut8 * buf, int len, RzAnalOpMask mask) {
+int tms320_op(RzAnalysis * anal, RzAnalysisOp * op, ut64 addr, const ut8 * buf, int len, RzAnalysisOpMask mask) {
 	TMS_ANAL_OP_FN aop = tms320_c55x_op;
 
 	if (anal->cpu && rz_str_casecmp(anal->cpu, "c64x") == 0) {
@@ -108,7 +108,7 @@ static int tms320_fini(void * unused) {
 	return tms320_dasm_fini (&engine);
 }
 
-RzAnalPlugin rz_anal_plugin_tms320 = {
+RzAnalysisPlugin rz_anal_plugin_tms320 = {
 	.name = "tms320",
 	.arch = "tms320",
 	.bits = 32,

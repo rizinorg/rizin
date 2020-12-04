@@ -304,12 +304,12 @@ typedef struct rz_debug_t {
 
 	RzEvent *ev;
 
-	RzAnal *anal;
+	RzAnalysis *anal;
 	RzList *maps; // <RzDebugMap>
 	RzList *maps_user; // <RzDebugMap>
 
 	bool trace_continue;
-	RzAnalOp *cur_op;
+	RzAnalysisOp *cur_op;
 	RzDebugSession *session;
 
 	Sdb *sgnls;
@@ -549,7 +549,7 @@ RZ_API void rz_debug_tracenodes_reset(RzDebug *dbg);
 
 RZ_API void rz_debug_trace_reset(RzDebug *dbg);
 RZ_API int rz_debug_trace_pc(RzDebug *dbg, ut64 pc);
-RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalOp *op);
+RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalysisOp *op);
 RZ_API void rz_debug_trace_at(RzDebug *dbg, const char *str);
 RZ_API RzDebugTracepoint *rz_debug_trace_get(RzDebug *dbg, ut64 addr);
 RZ_API void rz_debug_trace_list(RzDebug *dbg, int mode, ut64 offset);

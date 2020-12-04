@@ -206,7 +206,7 @@ static void autocmplt_cmd_arg_zign_space(RzCore *core, RzLineNSCompletionResult 
 
 static void autocmplt_cmd_arg_fcn(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	RzListIter *iter;
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 	rz_list_foreach (core->anal->fcns, iter, fcn) {
 		char *name = rz_core_anal_fcn_name (core, fcn);
 		if (!strncmp (name, s, len)) {

@@ -4,26 +4,26 @@
 #include <sdb.h>
 
 static void _interrupt_free_cb(void *user) {
-	RzAnalEsilInterrupt *intr = (RzAnalEsilInterrupt *)user;
+	RzAnalysisEsilInterrupt *intr = (RzAnalysisEsilInterrupt *)user;
 	if (intr && intr->handler && intr->handler->fini) {
 		intr->handler->fini (intr->user);
 	}
 	free (intr);
 }
 
-static bool _set_interrupt(RzAnalEsil *esil, RzAnalEsilInterrupt *intr) {
+static bool _set_interrupt(RzAnalysisEsil *esil, RzAnalysisEsilInterrupt *intr) {
 	return intr->handler->num ?
 		dict_set (esil->interrupts, intr->handler->num, intr->handler->num, intr) :
 		(esil->intr0 = intr, true);
 }
 
-static RzAnalEsilInterrupt *_get_interrupt(RzAnalEsil *esil, ut32 intr_num) {
+static RzAnalysisEsilInterrupt *_get_interrupt(RzAnalysisEsil *esil, ut32 intr_num) {
 	return intr_num ?
-		(RzAnalEsilInterrupt *)dict_getu(esil->interrupts, intr_num) :
+		(RzAnalysisEsilInterrupt *)dict_getu(esil->interrupts, intr_num) :
 		esil->intr0;
 }
 
-static void _del_interrupt(RzAnalEsil *esil, ut32 intr_num) {
+static void _del_interrupt(RzAnalysisEsil *esil, ut32 intr_num) {
 	if (intr_num) {
 		dict_del (esil->interrupts, intr_num);
 	} else {
@@ -31,15 +31,15 @@ static void _del_interrupt(RzAnalEsil *esil, ut32 intr_num) {
 	}
 }
 
-RZ_API void rz_anal_esil_interrupts_init(RzAnalEsil *esil) {
+RZ_API void rz_anal_esil_interrupts_init(RzAnalysisEsil *esil) {
 	rz_return_if_fail (esil);
 	esil->interrupts = dict_new (sizeof (ut32), NULL);
 	esil->intr0 = NULL; // is this needed?
 }
 
-RZ_API RzAnalEsilInterrupt *rz_anal_esil_interrupt_new(RzAnalEsil *esil, ut32 src_id,  RzAnalEsilInterruptHandler *ih) {
+RZ_API RzAnalysisEsilInterrupt *rz_anal_esil_interrupt_new(RzAnalysisEsil *esil, ut32 src_id,  RzAnalysisEsilInterruptHandler *ih) {
 	rz_return_val_if_fail (esil && ih && ih->cb, NULL);
-	RzAnalEsilInterrupt *intr = RZ_NEW0 (RzAnalEsilInterrupt);
+	RzAnalysisEsilInterrupt *intr = RZ_NEW0 (RzAnalysisEsilInterrupt);
 	if (!intr) {
 		return NULL;
 	}
@@ -52,7 +52,7 @@ RZ_API RzAnalEsilInterrupt *rz_anal_esil_interrupt_new(RzAnalEsil *esil, ut32 sr
 	return intr;
 }
 
-RZ_API void rz_anal_esil_interrupt_free(RzAnalEsil *esil, RzAnalEsilInterrupt *intr) {
+RZ_API void rz_anal_esil_interrupt_free(RzAnalysisEsil *esil, RzAnalysisEsilInterrupt *intr) {
 	if (intr && esil) {
 		_del_interrupt (esil, intr->handler->num);
 	}
@@ -65,10 +65,10 @@ RZ_API void rz_anal_esil_interrupt_free(RzAnalEsil *esil, RzAnalEsilInterrupt *i
 	free (intr);
 }
 
-RZ_API bool rz_anal_esil_set_interrupt(RzAnalEsil *esil, RzAnalEsilInterrupt *intr) {
+RZ_API bool rz_anal_esil_set_interrupt(RzAnalysisEsil *esil, RzAnalysisEsilInterrupt *intr) {
 	rz_return_val_if_fail (esil && esil->interrupts && intr && intr->handler && intr->handler->cb, false);
 	// check if interrupt is already set
-	RzAnalEsilInterrupt *o_intr = _get_interrupt(esil, intr->handler->num);
+	RzAnalysisEsilInterrupt *o_intr = _get_interrupt(esil, intr->handler->num);
 	if (o_intr) {
 		rz_anal_esil_interrupt_free (esil, o_intr);
 	}
@@ -76,7 +76,7 @@ RZ_API bool rz_anal_esil_set_interrupt(RzAnalEsil *esil, RzAnalEsilInterrupt *in
 	return _set_interrupt(esil, intr);
 }
 
-RZ_API int rz_anal_esil_fire_interrupt(RzAnalEsil *esil, ut32 intr_num) {
+RZ_API int rz_anal_esil_fire_interrupt(RzAnalysisEsil *esil, ut32 intr_num) {
 	rz_return_val_if_fail (esil, false);
 
 	if (esil->cmd && esil->cmd (esil, esil->cmd_intr, intr_num, 0)) {	//compatibility
@@ -87,7 +87,7 @@ RZ_API int rz_anal_esil_fire_interrupt(RzAnalEsil *esil, ut32 intr_num) {
 		eprintf ("no interrupts initialized\n");
 		return false;
 	}
-	RzAnalEsilInterrupt *intr = _get_interrupt (esil, intr_num);
+	RzAnalysisEsilInterrupt *intr = _get_interrupt (esil, intr_num);
 #if 0
 	// we don't want this warning
 	if (!intr) {
@@ -98,8 +98,8 @@ RZ_API int rz_anal_esil_fire_interrupt(RzAnalEsil *esil, ut32 intr_num) {
 			intr->handler->cb (esil, intr_num, intr->user) : false;
 }
 
-RZ_API bool rz_anal_esil_load_interrupts (RzAnalEsil *esil, RzAnalEsilInterruptHandler *handlers[], ut32 src_id) {
-	RzAnalEsilInterrupt *intr;
+RZ_API bool rz_anal_esil_load_interrupts (RzAnalysisEsil *esil, RzAnalysisEsilInterruptHandler *handlers[], ut32 src_id) {
+	RzAnalysisEsilInterrupt *intr;
 	ut32 i = 0;
 
 	rz_return_val_if_fail (esil && esil->interrupts && handlers, false);
@@ -121,13 +121,13 @@ RZ_API bool rz_anal_esil_load_interrupts (RzAnalEsil *esil, RzAnalEsilInterruptH
 	return true;
 }
 
-RZ_API bool rz_anal_esil_load_interrupts_from_lib(RzAnalEsil *esil, const char *path) {
+RZ_API bool rz_anal_esil_load_interrupts_from_lib(RzAnalysisEsil *esil, const char *path) {
 	rz_return_val_if_fail (esil, false);
 	ut32 src_id = rz_anal_esil_load_source (esil, path);
 	if (!src_id) { // why id=0 is invalid?
 		return false;
 	}
-	RzAnalEsilInterruptHandler **handlers = (RzAnalEsilInterruptHandler **)\
+	RzAnalysisEsilInterruptHandler **handlers = (RzAnalysisEsilInterruptHandler **)\
 		rz_lib_dl_sym (rz_anal_esil_get_source (esil, src_id), "interrupts");
 	if (!handlers) {
 		rz_anal_esil_release_source (esil, src_id); //unload
@@ -136,7 +136,7 @@ RZ_API bool rz_anal_esil_load_interrupts_from_lib(RzAnalEsil *esil, const char *
 	return rz_anal_esil_load_interrupts (esil, handlers, src_id);
 }
 
-RZ_API void rz_anal_esil_interrupts_fini(RzAnalEsil *esil) {
+RZ_API void rz_anal_esil_interrupts_fini(RzAnalysisEsil *esil) {
 	if (esil && esil->interrupts) {
 		_interrupt_free_cb (esil->intr0);
 		esil->intr0 = NULL;

@@ -946,7 +946,7 @@ static bool __rebase_flags(RzFlagItem *flag, void *user) {
 
 static bool __rebase_refs_i(void *user, const ut64 k, const void *v) {
 	struct __rebase_struct *reb = (void *)user;
-	RzAnalRef *ref = (RzAnalRef *)v;
+	RzAnalysisRef *ref = (RzAnalysisRef *)v;
 	ref->addr += reb->diff;
 	ref->at += reb->diff;
 	if (reb->type) {
@@ -965,7 +965,7 @@ static bool __rebase_refs(void *user, const ut64 k, const void *v) {
 
 static void __rebase_everything(RzCore *core, RzList *old_sections, ut64 old_base) {
 	RzListIter *it, *itit, *ititit;
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 	ut64 new_base = core->bin->cur->o->baddr_shift;
 	RzBinSection *old_section;
 	ut64 diff = new_base - old_base;
@@ -980,7 +980,7 @@ static void __rebase_everything(RzCore *core, RzList *old_sections, ut64 old_bas
 			}
 				rz_anal_function_rebase_vars (core->anal, fcn);
 			rz_anal_function_relocate (fcn, fcn->addr + diff);
-			RzAnalBlock *bb;
+			RzAnalysisBlock *bb;
 			ut64 new_sec_addr = new_base + old_section->vaddr;
 			rz_list_foreach (fcn->bbs, ititit, bb) {
 				if (bb->addr >= new_sec_addr && bb->addr <= new_sec_addr + old_section->vsize) {

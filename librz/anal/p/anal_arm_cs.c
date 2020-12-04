@@ -753,7 +753,7 @@ static int regsize64(cs_insn *insn, int n) {
 #define REGSIZE32(x) regsize32 (insn, x)
 
 // return postfix
-const char* arm_prefix_cond(RzAnalOp *op, int cond_type) {
+const char* arm_prefix_cond(RzAnalysisOp *op, int cond_type) {
 	const char *close_cond[2];
 	close_cond[0] = "\0";
 	close_cond[1] = ",}\0";
@@ -828,7 +828,7 @@ const char* arm_prefix_cond(RzAnalOp *op, int cond_type) {
 
 /* arm64 */
 
-static const char *arg(RzAnal *a, csh *handle, cs_insn *insn, char *buf, int n) {
+static const char *arg(RzAnalysis *a, csh *handle, cs_insn *insn, char *buf, int n) {
 	buf[0] = 0;
 	switch (insn->detail->arm.operands[n].type) {
 	case ARM_OP_REG:
@@ -920,7 +920,7 @@ static void shifted_reg64_append(RzStrBuf *sb, csh *handle, cs_insn *insn, int n
 
 // got rid of the opchar= pattern here because it caused missing operators to fail silently
 // and makes things more complicated with very little benefit
-static void arm64math(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, const char *opchar, int negate) {
+static void arm64math(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, const char *opchar, int negate) {
 	const char *r0 = REG64(0);
 	const char *r1 = REG64(1);
 
@@ -950,7 +950,7 @@ static void arm64math(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int le
 	}
 }
 
-static int analop64_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+static int analop64_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 
 	const char *postfix = NULL;
 
@@ -1847,7 +1847,7 @@ static int analop64_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int
 #define MATH32_NEG(opchar) arm32math(a, op, addr, buf, len, handle, insn, pcdelta, str, opchar, 1)
 #define MATH32AS(opchar) arm32mathaddsub(a, op, addr, buf, len, handle, insn, pcdelta, str, opchar)
 
-static void arm32math(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, int pcdelta, char (*str)[32], const char *opchar, int negate) {
+static void arm32math(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, int pcdelta, char (*str)[32], const char *opchar, int negate) {
 	const char *dest = ARG(0);
 	const char *op1;
 	const char *op2;
@@ -1885,7 +1885,7 @@ static void arm32math(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int le
 	}
 }
 
-static void arm32mathaddsub(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, int pcdelta, char(*str)[32], const char *opchar) {
+static void arm32mathaddsub(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, int pcdelta, char(*str)[32], const char *opchar) {
 	const char *dst = ARG (0);
 	const char *src;
 	bool noflags = false;
@@ -1908,7 +1908,7 @@ static void arm32mathaddsub(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, 
 		(!strcmp (opchar, "+")? "30,$c,31,$c,^,31,$c": "30,$c,31,$c,^,32,$b"));
 }
 
-static int analop_esil(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, bool thumb) {
+static int analop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, bool thumb) {
 	int i;
 	const char *postfix = NULL;
 	char str[32][32];
@@ -2638,7 +2638,7 @@ static int cond_cs2r2(int cc) {
 	return cc;
 }
 
-static void anop64(csh handle, RzAnalOp *op, cs_insn *insn) {
+static void anop64(csh handle, RzAnalysisOp *op, cs_insn *insn) {
 	ut64 addr = op->addr;
 
 	/* grab family */
@@ -3105,7 +3105,7 @@ static void check_itblock(cs_insn *insn) {
 	}
 }
 
-static void anop32(RzAnal *a, csh handle, RzAnalOp *op, cs_insn *insn, bool thumb, const ut8 *buf, int len) {
+static void anop32(RzAnalysis *a, csh handle, RzAnalysisOp *op, cs_insn *insn, bool thumb, const ut8 *buf, int len) {
 	const ut64 addr = op->addr;
 	const int pcdelta = thumb? 4: 8;
 	int i;
@@ -3649,7 +3649,7 @@ static int parse_reg64_name(RzReg *reg, RzRegItem **reg_base, RzRegItem **reg_de
 	return 0;
 }
 
-static void set_opdir(RzAnalOp *op) {
+static void set_opdir(RzAnalysisOp *op) {
 	switch (op->type & RZ_ANAL_OP_TYPE_MASK) {
 	case RZ_ANAL_OP_TYPE_LOAD:
 		op->direction = RZ_ANAL_OP_DIR_READ;
@@ -3671,7 +3671,7 @@ static void set_opdir(RzAnalOp *op) {
         }
 }
 
-static void set_src_dst(RzAnalValue *val, RzReg *reg, csh *handle, cs_insn *insn, int x, int bits) {
+static void set_src_dst(RzAnalysisValue *val, RzReg *reg, csh *handle, cs_insn *insn, int x, int bits) {
 	cs_arm_op armop = INSOP (x);
 	cs_arm64_op arm64op = INSOP64 (x);
 	if (bits == 64) {
@@ -3709,7 +3709,7 @@ static void set_src_dst(RzAnalValue *val, RzReg *reg, csh *handle, cs_insn *insn
 	}
 }
 
-static void create_src_dst(RzAnalOp *op) {
+static void create_src_dst(RzAnalysisOp *op) {
 	op->src[0] = rz_anal_value_new ();
 	op->src[1] = rz_anal_value_new ();
 	op->src[2] = rz_anal_value_new ();
@@ -3717,7 +3717,7 @@ static void create_src_dst(RzAnalOp *op) {
 }
 
 
-static void op_fillval(RzAnal *anal, RzAnalOp *op, csh handle, cs_insn *insn, int bits) {
+static void op_fillval(RzAnalysis *anal, RzAnalysisOp *op, csh handle, cs_insn *insn, int bits) {
 	create_src_dst (op);
 	int i, j;
 	int count = bits == 64 ? insn->detail->arm64.op_count : insn->detail->arm.op_count;
@@ -3794,7 +3794,7 @@ static void op_fillval(RzAnal *anal, RzAnalOp *op, csh handle, cs_insn *insn, in
 	}
 }
 
-static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	static csh handle = 0;
 	static int omode = -1;
 	static int obits = 32;
@@ -3873,7 +3873,7 @@ static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 	return op->size;
 }
 
-static char *get_reg_profile(RzAnal *anal) {
+static char *get_reg_profile(RzAnalysis *anal) {
 	const char *p;
 	if (anal->bits == 64) {
 		p = \
@@ -4260,7 +4260,7 @@ static char *get_reg_profile(RzAnal *anal) {
 	return strdup (p);
 }
 
-static int archinfo(RzAnal *anal, int q) {
+static int archinfo(RzAnalysis *anal, int q) {
 	if (q == RZ_ANAL_ARCHINFO_DATA_ALIGN) {
 		return 4;
 	}
@@ -4282,11 +4282,11 @@ static int archinfo(RzAnal *anal, int q) {
 	return 4; // XXX
 }
 
-static ut8 *anal_mask(RzAnal *anal, int size, const ut8 *data, ut64 at) {
-	RzAnalOp *op = NULL;
+static ut8 *anal_mask(RzAnalysis *anal, int size, const ut8 *data, ut64 at) {
+	RzAnalysisOp *op = NULL;
 	ut8 *ret = NULL;
 	int oplen, idx = 0, obits = anal->bits;
-	RzAnalHint *hint = NULL;
+	RzAnalysisHint *hint = NULL;
 
 	if (!data) {
 		return NULL;
@@ -4405,7 +4405,7 @@ static ut8 *anal_mask(RzAnal *anal, int size, const ut8 *data, ut64 at) {
 	return ret;
 }
 
-static RzList *anal_preludes(RzAnal *anal) {
+static RzList *anal_preludes(RzAnalysis *anal) {
 #define KW(d,ds,m,ms) rz_list_append (l, rz_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
 	RzList *l = rz_list_newf ((RzListFree)rz_search_keyword_free);
 	switch (anal->bits) {
@@ -4447,7 +4447,7 @@ static int fini(void* user) {
 	return 0;
 }
 
-RzAnalPlugin rz_anal_plugin_arm_cs = {
+RzAnalysisPlugin rz_anal_plugin_arm_cs = {
 	.name = "arm",
 	.desc = "Capstone ARM analyzer",
 	.license = "BSD",

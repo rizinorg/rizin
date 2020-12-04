@@ -12,18 +12,18 @@
 typedef struct refline_end {
 	int val;
 	bool is_from;
-	RzAnalRefline *r;
+	RzAnalysisRefline *r;
 } ReflineEnd;
 
 static int cmp_asc(const struct refline_end *a, const struct refline_end *b) {
 	return (a->val > b->val) - (a->val < b->val);
 }
 
-static int cmp_by_ref_lvl(const RzAnalRefline *a, const RzAnalRefline *b) {
+static int cmp_by_ref_lvl(const RzAnalysisRefline *a, const RzAnalysisRefline *b) {
 	return (a->level < b->level) - (a->level > b->level);
 }
 
-static ReflineEnd *refline_end_new(ut64 val, bool is_from, RzAnalRefline *ref) {
+static ReflineEnd *refline_end_new(ut64 val, bool is_from, RzAnalysisRefline *ref) {
 	ReflineEnd *re = RZ_NEW0 (struct refline_end);
 	if (!re) {
 		return NULL;
@@ -36,7 +36,7 @@ static ReflineEnd *refline_end_new(ut64 val, bool is_from, RzAnalRefline *ref) {
 
 static bool add_refline(RzList *list, RzList *sten, ut64 addr, ut64 to, int *idx) {
 	ReflineEnd *re1, *re2;
-	RzAnalRefline *item = RZ_NEW0 (RzAnalRefline);
+	RzAnalysisRefline *item = RZ_NEW0 (RzAnalysisRefline);
 	if (!item) {
 		return false;
 	}
@@ -65,22 +65,22 @@ static bool add_refline(RzList *list, RzList *sten, ut64 addr, ut64 to, int *idx
 	return true;
 }
 
-RZ_API void rz_anal_reflines_free (RzAnalRefline *rl) {
+RZ_API void rz_anal_reflines_free (RzAnalysisRefline *rl) {
 	free (rl);
 }
 
-/* returns a list of RzAnalRefline for the code present in the buffer buf, of
- * length len. A RzAnalRefline exists from address A to address B if a jmp,
+/* returns a list of RzAnalysisRefline for the code present in the buffer buf, of
+ * length len. A RzAnalysisRefline exists from address A to address B if a jmp,
  * conditional jmp or call instruction exists at address A and it targets
  * address B.
  *
  * nlines - max number of lines of code to consider
  * linesout - true if you want to display lines that go outside of the scope [addr;addr+len)
  * linescall - true if you want to display call lines */
-RZ_API RzList *rz_anal_reflines_get(RzAnal *anal, ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall) {
+RZ_API RzList *rz_anal_reflines_get(RzAnalysis *anal, ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall) {
 	RzList *list, *sten;
 	RzListIter *iter;
-	RzAnalOp op;
+	RzAnalysisOp op;
 	struct refline_end *el;
 	const ut8 *ptr = buf;
 	const ut8 *end = buf + len;
@@ -128,7 +128,7 @@ RZ_API RzList *rz_anal_reflines_get(RzAnal *anal, ut64 addr, const ut8 *buf, ut6
 				ut64 skip = 0;
 				rz_pvector_foreach (metas, it) {
 					RzIntervalNode *node = *it;
-					RzAnalMetaItem *meta = node->data;
+					RzAnalysisMetaItem *meta = node->data;
 					switch (meta->type) {
 					case RZ_META_TYPE_DATA:
 					case RZ_META_TYPE_STRING:
@@ -191,7 +191,7 @@ do_skip:
 			break;
 		case RZ_ANAL_OP_TYPE_SWITCH:
 		{
-			RzAnalCaseOp *caseop;
+			RzAnalysisCaseOp *caseop;
 			RzListIter *iter;
 
 			// add caseops
@@ -261,9 +261,9 @@ list_err:
 	return NULL;
 }
 
-RZ_API int rz_anal_reflines_middle(RzAnal *a, RzList* /*<RzAnalRefline>*/ list, ut64 addr, int len) {
+RZ_API int rz_anal_reflines_middle(RzAnalysis *a, RzList* /*<RzAnalysisRefline>*/ list, ut64 addr, int len) {
 	if (a && list) {
-		RzAnalRefline *ref;
+		RzAnalysisRefline *ref;
 		RzListIter *iter;
 		rz_list_foreach (list, iter, ref) {
 			if ((ref->to > addr) && (ref->to < addr + len)) {
@@ -274,7 +274,7 @@ RZ_API int rz_anal_reflines_middle(RzAnal *a, RzList* /*<RzAnalRefline>*/ list, 
 	return false;
 }
 
-static const char* get_corner_char(RzAnalRefline *ref, ut64 addr, bool is_middle_before) {
+static const char* get_corner_char(RzAnalysisRefline *ref, ut64 addr, bool is_middle_before) {
 	if (ref->from == ref->to) {
 		return "@";
 	}
@@ -306,7 +306,7 @@ static void add_spaces(RzBuffer *b, int level, int pos, bool wide) {
 	}
 }
 
-static void fill_level(RzBuffer *b, int pos, char ch, RzAnalRefline *r, bool wide) {
+static void fill_level(RzBuffer *b, int pos, char ch, RzAnalysisRefline *r, bool wide) {
 	int sz = r->level;
 	if (wide) {
 		sz *= 2;
@@ -322,7 +322,7 @@ static void fill_level(RzBuffer *b, int pos, char ch, RzAnalRefline *r, bool wid
 	}
 }
 
-static inline bool refline_kept(RzAnalRefline *ref, bool middle_after, ut64 addr) {
+static inline bool refline_kept(RzAnalysisRefline *ref, bool middle_after, ut64 addr) {
 	if (middle_after) {
 		if (ref->direction < 0) {
 			if (ref->from == addr) {
@@ -339,14 +339,14 @@ static inline bool refline_kept(RzAnalRefline *ref, bool middle_after, ut64 addr
 
 // TODO: move into another file
 // TODO: this is TOO SLOW. do not iterate over all reflines
-RZ_API RzAnalRefStr *rz_anal_reflines_str(void *_core, ut64 addr, int opts) {
+RZ_API RzAnalysisRefStr *rz_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	RzCore *core = _core;
 	RzCons *cons = core->cons;
-	RzAnal *anal = core->anal;
+	RzAnalysis *anal = core->anal;
 	RzBuffer *b;
 	RzBuffer *c;
 	RzListIter *iter;
-	RzAnalRefline *ref;
+	RzAnalysisRefline *ref;
 	int l;
 	bool wide = opts & RZ_ANAL_REFLINE_TYPE_WIDE;
 	int dir = 0, pos = -1, max_level = -1;
@@ -472,13 +472,13 @@ RZ_API RzAnalRefStr *rz_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	col_str = rz_str_append (col_str, arr_col);
 
 	rz_list_free (lvls);
-	RzAnalRefStr *out = RZ_NEW0 (RzAnalRefStr);
+	RzAnalysisRefStr *out = RZ_NEW0 (RzAnalysisRefStr);
 	out->str = str;
 	out->cols = col_str;
 	return out;
 }
 
-RZ_API void rz_anal_reflines_str_free(RzAnalRefStr *refstr) {
+RZ_API void rz_anal_reflines_str_free(RzAnalysisRefStr *refstr) {
 	free (refstr->str);
 	free (refstr->cols);
 	free (refstr);

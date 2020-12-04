@@ -203,7 +203,7 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 #define ARG(n) getarg2(&gop, n, "")
 #define ARG2(n,m) getarg2(&gop, n, m)
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	const char *p = NULL;
 	if (anal->bits == 32) {
 		p =
@@ -409,7 +409,7 @@ static bool set_reg_profile(RzAnal *anal) {
 	return rz_reg_set_profile_string (anal->reg, p);
 }
 
-static int analop_vle(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int analop_vle(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len) {
 	vle_t* instr = NULL;
 	vle_handle handle = {0};
 	op->size = 2;
@@ -514,7 +514,7 @@ static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num
 
 static RzRegItem base_regs[4];
 
-static void create_src_dst(RzAnalOp *op) {
+static void create_src_dst(RzAnalysisOp *op) {
 	op->src[0] = rz_anal_value_new ();
 	op->src[1] = rz_anal_value_new ();
 	op->src[2] = rz_anal_value_new ();
@@ -525,7 +525,7 @@ static void create_src_dst(RzAnalOp *op) {
 	ZERO_FILL (base_regs[3]);
 }
 
-static void set_src_dst(RzAnalValue *val, csh *handle, cs_insn *insn, int x) {
+static void set_src_dst(RzAnalysisValue *val, csh *handle, cs_insn *insn, int x) {
 	cs_ppc_op ppcop = INSOP (x);
 	parse_reg_name (&base_regs[x], *handle, insn, x);
 	switch (ppcop.type) {
@@ -543,7 +543,7 @@ static void set_src_dst(RzAnalValue *val, csh *handle, cs_insn *insn, int x) {
 	val->reg = &base_regs[x];
 }
 
-static void op_fillval(RzAnalOp *op, csh handle, cs_insn *insn) {
+static void op_fillval(RzAnalysisOp *op, csh handle, cs_insn *insn) {
 	create_src_dst (op);
 	switch (op->type & RZ_ANAL_OP_TYPE_MASK) {
 	case RZ_ANAL_OP_TYPE_MOV:
@@ -578,7 +578,7 @@ static void op_fillval(RzAnalOp *op, csh handle, cs_insn *insn) {
 	}
 }
 
-static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	static csh handle = 0;
 	static int omode = -1, obits = -1;
 	int n, ret;
@@ -1254,21 +1254,21 @@ static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 	return op->size;
 }
 
-static int archinfo(RzAnal *a, int q) {
+static int archinfo(RzAnalysis *a, int q) {
 	if (a->cpu && !strncmp (a->cpu, "vle", 3)) {
 		return 2;
 	}
 	return 4;
 }
 
-static RzList *anal_preludes(RzAnal *anal) {
+static RzList *anal_preludes(RzAnalysis *anal) {
 #define KW(d,ds,m,ms) rz_list_append (l, rz_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
 	RzList *l = rz_list_newf ((RzListFree)rz_search_keyword_free);
 	KW ("\x7c\x08\x02\xa6", 4, NULL, 0);
 	return l;
 }
 
-RzAnalPlugin rz_anal_plugin_ppc_cs = {
+RzAnalysisPlugin rz_anal_plugin_ppc_cs = {
 	.name = "ppc",
 	.desc = "Capstone PowerPC analysis",
 	.license = "BSD",

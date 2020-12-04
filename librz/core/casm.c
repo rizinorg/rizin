@@ -137,7 +137,7 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 			}
 			rz_asm_set_pc (core->rasm, addr);
 			if (mode == 'i') {
-				RzAnalOp analop = {0};
+				RzAnalysisOp analop = {0};
 				ut64 len = RZ_MIN (15, core->blocksize - idx);
 				if (rz_anal_op (core->anal, &analop, addr, buf + idx, len, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM) < 1) {
 					idx ++; // TODO: honor mininstrsz
@@ -177,7 +177,7 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 				idx ++; // TODO: honor mininstrsz
 				continue;
 			} else if (mode == 'e') {
-				RzAnalOp analop = {0};
+				RzAnalysisOp analop = {0};
 				if (rz_anal_op (core->anal, &analop, addr, buf + idx, 15, RZ_ANAL_OP_MASK_ESIL) < 1) {
 					idx ++; // TODO: honor mininstrsz
 					continue;

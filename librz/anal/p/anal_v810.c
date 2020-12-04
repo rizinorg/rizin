@@ -16,7 +16,7 @@ enum {
 	V810_FLAG_Z = 8,
 };
 
-static void update_flags(RzAnalOp *op, int flags) {
+static void update_flags(RzAnalysisOp *op, int flags) {
 	if (flags & V810_FLAG_CY) {
 		rz_strbuf_append (&op->esil, ",31,$c,cy,:=");
 	}
@@ -31,7 +31,7 @@ static void update_flags(RzAnalOp *op, int flags) {
 	}
 }
 
-static void clear_flags(RzAnalOp *op, int flags) {
+static void clear_flags(RzAnalysisOp *op, int flags) {
 	if (flags & V810_FLAG_CY) {
 		rz_strbuf_append (&op->esil, ",0,cy,:=");
 	}
@@ -46,7 +46,7 @@ static void clear_flags(RzAnalOp *op, int flags) {
 	}
 }
 
-static int v810_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int v810_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	int ret;
 	ut8 opcode, reg1, reg2, imm5, cond;
 	ut16 word1, word2 = 0;
@@ -386,7 +386,7 @@ static int v810_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int le
 	return ret;
 }
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	r3\n"
@@ -443,7 +443,7 @@ static bool set_reg_profile(RzAnal *anal) {
 	return rz_reg_set_profile_string (anal->reg, p);
 }
 
-RzAnalPlugin rz_anal_plugin_v810 = {
+RzAnalysisPlugin rz_anal_plugin_v810 = {
 	.name = "v810",
 	.desc = "V810 code analysis plugin",
 	.license = "LGPL3",

@@ -26,7 +26,7 @@ void rz_core_hack_help(const RzCore *core) {
 	rz_core_cmd_help (core, help_msg);
 }
 
-RZ_API bool rz_core_hack_dalvik(RzCore *core, const char *op, const RzAnalOp *analop) {
+RZ_API bool rz_core_hack_dalvik(RzCore *core, const char *op, const RzAnalysisOp *analop) {
 	if (!strcmp (op, "nop")) {
 		rz_core_cmdf (core, "wx 0000");
 	} else if (!strcmp (op, "ret2")) {
@@ -44,7 +44,7 @@ RZ_API bool rz_core_hack_dalvik(RzCore *core, const char *op, const RzAnalOp *an
 	return true;
 }
 
-RZ_API bool rz_core_hack_arm64(RzCore *core, const char *op, const RzAnalOp *analop) {
+RZ_API bool rz_core_hack_arm64(RzCore *core, const char *op, const RzAnalysisOp *analop) {
 	if (!strcmp (op, "nop")) {
 		rz_core_cmdf (core, "wx 1f2003d5");
 	} else if (!strcmp (op, "ret")) {
@@ -77,7 +77,7 @@ RZ_API bool rz_core_hack_arm64(RzCore *core, const char *op, const RzAnalOp *ana
 	}
 	return true;
 }
-RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalOp *analop) {
+RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalysisOp *analop) {
 	const int bits = core->rasm->bits;
 	const ut8 *b = core->block;
 
@@ -196,7 +196,7 @@ RZ_API bool rz_core_hack_arm(RzCore *core, const char *op, const RzAnalOp *analo
 	return true;
 }
 
-RZ_API bool rz_core_hack_x86(RzCore *core, const char *op, const RzAnalOp *analop) {
+RZ_API bool rz_core_hack_x86(RzCore *core, const char *op, const RzAnalysisOp *analop) {
 	const ut8 *b = core->block;
 	int i, size = analop->size;
 	if (!strcmp (op, "nop")) {
@@ -264,7 +264,7 @@ RZ_API bool rz_core_hack_x86(RzCore *core, const char *op, const RzAnalOp *analo
 }
 
 RZ_API int rz_core_hack(RzCore *core, const char *op) {
-	bool (*hack)(RzCore *core, const char *op, const RzAnalOp *analop) = NULL;
+	bool (*hack)(RzCore *core, const char *op, const RzAnalysisOp *analop) = NULL;
 	const char *asmarch = rz_config_get (core->config, "asm.arch");
 	const int asmbits = core->rasm->bits;
 
@@ -285,7 +285,7 @@ RZ_API int rz_core_hack(RzCore *core, const char *op) {
 		eprintf ("TODO: write hacks are only for x86\n");
 	}
 	if (hack) {
-		RzAnalOp analop;
+		RzAnalysisOp analop;
 		if (!rz_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, RZ_ANAL_OP_MASK_BASIC)) {
 			eprintf ("anal op fail\n");
 			return false;

@@ -274,27 +274,27 @@ static st64 get_immed_sgnext(const ut64 insn, const ut8 nbit) {
 		| (((insn & ((ut64)1 << nbit)) >> nbit) * mask));
 }
 
-static RzAnalValue * value_fill_addr_pc_disp(const ut64 addr, const st64 disp) {
-	RzAnalValue *val = rz_anal_value_new();
+static RzAnalysisValue * value_fill_addr_pc_disp(const ut64 addr, const st64 disp) {
+	RzAnalysisValue *val = rz_anal_value_new();
 	val->base = addr + disp;
 	return val;
 }
 
-static RzAnalValue * value_fill_addr_reg_regdelta(RzAnal const * const anal, const int ireg, const int iregdelta) {
-	RzAnalValue *val = rz_anal_value_new();
+static RzAnalysisValue * value_fill_addr_reg_regdelta(RzAnalysis const * const anal, const int ireg, const int iregdelta) {
+	RzAnalysisValue *val = rz_anal_value_new();
 	val->reg = rz_reg_get(anal->reg, gpr_regs[ireg], RZ_REG_TYPE_GPR);
 	val->reg = rz_reg_get(anal->reg, gpr_regs[iregdelta], RZ_REG_TYPE_GPR);
 	return val;
 }
 
-static RzAnalValue * value_fill_addr_reg_disp(RzAnal const * const anal, const int ireg, const st64 disp) {
-	RzAnalValue *val = rz_anal_value_new();
+static RzAnalysisValue * value_fill_addr_reg_disp(RzAnalysis const * const anal, const int ireg, const st64 disp) {
+	RzAnalysisValue *val = rz_anal_value_new();
 	val->reg = rz_reg_get(anal->reg, gpr_regs[ireg], RZ_REG_TYPE_GPR);
 	val->delta = disp;
 	return val;
 }
 
-static void anal_call(RzAnalOp *op, const ut32 insn, const ut64 addr) {
+static void anal_call(RzAnalysisOp *op, const ut32 insn, const ut64 addr) {
 	const st64 disp = (get_immed_sgnext(insn, 29) * 4);
 	op->type = RZ_ANAL_OP_TYPE_CALL;
 	op->dst = value_fill_addr_pc_disp(addr, disp);
@@ -302,7 +302,7 @@ static void anal_call(RzAnalOp *op, const ut32 insn, const ut64 addr) {
 	op->fail = addr + 4;
 }
 
-static void anal_jmpl(RzAnal const * const anal, RzAnalOp *op, const ut32 insn, const ut64 addr) {
+static void anal_jmpl(RzAnalysis const * const anal, RzAnalysisOp *op, const ut32 insn, const ut64 addr) {
 	st64 disp = 0;
 	if (X_LDST_I (insn)) {
 		disp = get_immed_sgnext (insn, 12);
@@ -331,7 +331,7 @@ static void anal_jmpl(RzAnal const * const anal, RzAnalOp *op, const ut32 insn, 
 	}
 }
 
-static void anal_branch(RzAnalOp *op, const ut32 insn, const ut64 addr) {
+static void anal_branch(RzAnalysisOp *op, const ut32 insn, const ut64 addr) {
 	st64 disp = 0;
 	int rz_cond = 0;
 	op->eob = true;
@@ -369,7 +369,7 @@ static void anal_branch(RzAnalOp *op, const ut32 insn, const ut64 addr) {
 }
 
 // TODO: this implementation is just a fast hack. needs to be rewritten and completed
-static int sparc_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask) {
+static int sparc_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	int sz = 4;
 	ut32 insn;
 
@@ -464,7 +464,7 @@ static int sparc_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 	return sz;
 }
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	/* As far as I can see, sparc v9 register and instruction set
 	   don't depened  on bits of the running application.
 	   But: They depend on the bits of the consuming application,
@@ -603,11 +603,11 @@ static bool set_reg_profile(RzAnal *anal) {
 	return rz_reg_set_profile_string (anal->reg, p);
 }
 
-static int archinfo(RzAnal *anal, int q) {
+static int archinfo(RzAnalysis *anal, int q) {
 	return 4; /* :D */
 }
 
-RzAnalPlugin rz_anal_plugin_sparc_gnu = {
+RzAnalysisPlugin rz_anal_plugin_sparc_gnu = {
 	.name = "sparc.gnu",
 	.desc = "SPARC analysis plugin",
 	.license = "LGPL3",

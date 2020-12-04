@@ -9,8 +9,8 @@
 
 #include <cr16_disas.h>
 
-static int cr16_op(RzAnal *anal, RzAnalOp *op, ut64 addr,
-		const ut8 *buf, int len, RzAnalOpMask mask)
+static int cr16_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr,
+		const ut8 *buf, int len, RzAnalysisOpMask mask)
 {
 	int ret;
 	struct cr16_cmd cmd;
@@ -118,7 +118,7 @@ static int cr16_op(RzAnal *anal, RzAnalOp *op, ut64 addr,
 	return ret;
 }
 
-RzAnalPlugin rz_anal_plugin_cr16 = {
+RzAnalysisPlugin rz_anal_plugin_cr16 = {
 	.name = "cr16",
 	.desc = "CR16 code analysis plugin",
 	.license = "LGPL3",

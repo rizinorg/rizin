@@ -23,7 +23,7 @@ static int __esil_step(RzDebug *dbg) {
 	int oplen;
 	ut8 buf[64];
 	ut64 pc = 0LL; // getreg("pc")
-	RzAnalOp op = {0};
+	RzAnalysisOp op = {0};
 
 	rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
 	pc = rz_debug_reg_get (dbg, "PC");

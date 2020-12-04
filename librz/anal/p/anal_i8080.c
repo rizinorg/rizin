@@ -11,7 +11,7 @@
 // hack
 #include "../../asm/arch/i8080/i8080dis.c"
 
-static int i8080_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask) {
+static int i8080_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	char out[32];
 	int ilen = i8080_disasm (data, out, len);
 	op->addr = addr;
@@ -187,7 +187,7 @@ static int i8080_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 	return op->size = ilen;
 }
 
-RzAnalPlugin rz_anal_plugin_i8080 = {
+RzAnalysisPlugin rz_anal_plugin_i8080 = {
 	.name = "i8080",
 	.desc = "I8080 CPU code analysis plugin",
 	.license = "LGPL3",

@@ -7,10 +7,10 @@
 
 #include <assert.h>
 
-#define unwrap(rbnode) container_of (rbnode, RzAnalBlock, _rb)
+#define unwrap(rbnode) container_of (rbnode, RzAnalysisBlock, _rb)
 
 static void __max_end(RBNode *node) {
-	RzAnalBlock *block = unwrap (node);
+	RzAnalysisBlock *block = unwrap (node);
 	block->_max_end = block->addr + block->size;
 	int i;
 	for (i = 0; i < 2; i++) {
@@ -25,7 +25,7 @@ static void __max_end(RBNode *node) {
 
 static int __bb_addr_cmp(const void *incoming, const RBNode *in_tree, void *user) {
 	ut64 incoming_addr = *(ut64 *)incoming;
-	const RzAnalBlock *in_tree_block = container_of (in_tree, const RzAnalBlock, _rb);
+	const RzAnalysisBlock *in_tree_block = container_of (in_tree, const RzAnalysisBlock, _rb);
 	if (incoming_addr < in_tree_block->addr) {
 		return -1;
 	}
@@ -37,15 +37,15 @@ static int __bb_addr_cmp(const void *incoming, const RBNode *in_tree, void *user
 
 #define D if (anal && anal->verbose)
 
-RZ_API void rz_anal_block_ref(RzAnalBlock *bb) {
+RZ_API void rz_anal_block_ref(RzAnalysisBlock *bb) {
 	assert (bb->ref > 0); // 0-refd must already be freed.
 	bb->ref++;
 }
 
 #define DFLT_NINSTR 3
 
-static RzAnalBlock *block_new(RzAnal *a, ut64 addr, ut64 size) {
-	RzAnalBlock *block = RZ_NEW0 (RzAnalBlock);
+static RzAnalysisBlock *block_new(RzAnalysis *a, ut64 addr, ut64 size) {
+	RzAnalysisBlock *block = RZ_NEW0 (RzAnalysisBlock);
 	if (!block) {
 		return NULL;
 	}
@@ -67,7 +67,7 @@ static RzAnalBlock *block_new(RzAnal *a, ut64 addr, ut64 size) {
 	return block;
 }
 
-static void block_free(RzAnalBlock *block) {
+static void block_free(RzAnalysisBlock *block) {
 	if (!block) {
 		return;
 	}
@@ -83,17 +83,17 @@ static void block_free(RzAnalBlock *block) {
 }
 
 void __block_free_rb(RBNode *node, void *user) {
-	RzAnalBlock *block = unwrap (node);
+	RzAnalysisBlock *block = unwrap (node);
 	block_free (block);
 }
 
-RZ_API RzAnalBlock *rz_anal_get_block_at(RzAnal *anal, ut64 addr) {
+RZ_API RzAnalysisBlock *rz_anal_get_block_at(RzAnalysis *anal, ut64 addr) {
 	RBNode *node = rz_rbtree_find (anal->bb_tree, &addr, __bb_addr_cmp, NULL);
 	return node? unwrap (node): NULL;
 }
 
 // This is a special case of what rz_interval_node_all_in() does
-static bool all_in(RzAnalBlock *node, ut64 addr, RzAnalBlockCb cb, void *user) {
+static bool all_in(RzAnalysisBlock *node, ut64 addr, RzAnalysisBlockCb cb, void *user) {
 	while (node && addr < node->addr) {
 		// less than the current node, but might still be contained further down
 		node = unwrap (node->_rb.child[0]);
@@ -119,18 +119,18 @@ static bool all_in(RzAnalBlock *node, ut64 addr, RzAnalBlockCb cb, void *user) {
 	return true;
 }
 
-RZ_API bool rz_anal_blocks_foreach_in(RzAnal *anal, ut64 addr, RzAnalBlockCb cb, void *user) {
+RZ_API bool rz_anal_blocks_foreach_in(RzAnalysis *anal, ut64 addr, RzAnalysisBlockCb cb, void *user) {
 	return all_in (anal->bb_tree ? unwrap (anal->bb_tree) : NULL, addr, cb, user);
 }
 
-static bool block_list_cb(RzAnalBlock *block, void *user) {
+static bool block_list_cb(RzAnalysisBlock *block, void *user) {
 	RzList *list = user;
 	rz_anal_block_ref (block);
 	rz_list_push (list, block);
 	return true;
 }
 
-RZ_API RzList *rz_anal_get_blocks_in(RzAnal *anal, ut64 addr) {
+RZ_API RzList *rz_anal_get_blocks_in(RzAnalysis *anal, ut64 addr) {
 	RzList *list = rz_list_newf ((RzListFree)rz_anal_block_unref);
 	if (list) {
 		rz_anal_blocks_foreach_in (anal, addr, block_list_cb, list);
@@ -138,7 +138,7 @@ RZ_API RzList *rz_anal_get_blocks_in(RzAnal *anal, ut64 addr) {
 	return list;
 }
 
-static void all_intersect(RzAnalBlock *node, ut64 addr, ut64 size, RzAnalBlockCb cb, void *user) {
+static void all_intersect(RzAnalysisBlock *node, ut64 addr, ut64 size, RzAnalysisBlockCb cb, void *user) {
 	ut64 end = addr + size;
 	while (node && end <= node->addr) {
 		// less than the current node, but might still be contained further down
@@ -158,11 +158,11 @@ static void all_intersect(RzAnalBlock *node, ut64 addr, ut64 size, RzAnalBlockCb
 	all_intersect (unwrap (node->_rb.child[1]), addr, size, cb, user);
 }
 
-RZ_API void rz_anal_blocks_foreach_intersect(RzAnal *anal, ut64 addr, ut64 size, RzAnalBlockCb cb, void *user) {
+RZ_API void rz_anal_blocks_foreach_intersect(RzAnalysis *anal, ut64 addr, ut64 size, RzAnalysisBlockCb cb, void *user) {
 	all_intersect (anal->bb_tree ? unwrap (anal->bb_tree) : NULL, addr, size, cb, user);
 }
 
-RZ_API RzList *rz_anal_get_blocks_intersect(RzAnal *anal, ut64 addr, ut64 size) {
+RZ_API RzList *rz_anal_get_blocks_intersect(RzAnalysis *anal, ut64 addr, ut64 size) {
 	RzList *list = rz_list_newf ((RzListFree)rz_anal_block_unref);
 	if (!list) {
 		return NULL;
@@ -171,11 +171,11 @@ RZ_API RzList *rz_anal_get_blocks_intersect(RzAnal *anal, ut64 addr, ut64 size) 
 	return list;
 }
 
-RZ_API RzAnalBlock *rz_anal_create_block(RzAnal *anal, ut64 addr, ut64 size) {
+RZ_API RzAnalysisBlock *rz_anal_create_block(RzAnalysis *anal, ut64 addr, ut64 size) {
 	if (rz_anal_get_block_at (anal, addr)) {
 		return NULL;
 	}
-	RzAnalBlock *block = block_new (anal, addr, size);
+	RzAnalysisBlock *block = block_new (anal, addr, size);
 	if (!block) {
 		return NULL;
 	}
@@ -183,7 +183,7 @@ RZ_API RzAnalBlock *rz_anal_create_block(RzAnal *anal, ut64 addr, ut64 size) {
 	return block;
 }
 
-RZ_API void rz_anal_delete_block(RzAnalBlock *bb) {
+RZ_API void rz_anal_delete_block(RzAnalysisBlock *bb) {
 	rz_anal_block_ref (bb);
 	while (!rz_list_empty (bb->fcns)) {
 		rz_anal_function_remove_block (rz_list_first (bb->fcns), bb);
@@ -191,13 +191,13 @@ RZ_API void rz_anal_delete_block(RzAnalBlock *bb) {
 	rz_anal_block_unref (bb);
 }
 
-RZ_API void rz_anal_block_set_size(RzAnalBlock *block, ut64 size) {
+RZ_API void rz_anal_block_set_size(RzAnalysisBlock *block, ut64 size) {
 	if (block->size == size) {
 		return;
 	}
 
 	// Update the block's function's cached ranges
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 	RzListIter *iter;
 	rz_list_foreach (block->fcns, iter, fcn) {
 		if (fcn->meta._min != UT64_MAX && fcn->meta._max == block->addr + block->size) {
@@ -210,7 +210,7 @@ RZ_API void rz_anal_block_set_size(RzAnalBlock *block, ut64 size) {
 	rz_rbtree_aug_update_sum (block->anal->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max_end);
 }
 
-RZ_API bool rz_anal_block_relocate(RzAnalBlock *block, ut64 addr, ut64 size) {
+RZ_API bool rz_anal_block_relocate(RzAnalysisBlock *block, ut64 addr, ut64 size) {
 	if (block->addr == addr) {
 		rz_anal_block_set_size (block, size);
 		return true;
@@ -221,7 +221,7 @@ RZ_API bool rz_anal_block_relocate(RzAnalBlock *block, ut64 addr, ut64 size) {
 	}
 
 	// Update the block's function's cached ranges
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 	RzListIter *iter;
 	rz_list_foreach (block->fcns, iter, fcn) {
 		if (fcn->meta._min != UT64_MAX) {
@@ -251,8 +251,8 @@ RZ_API bool rz_anal_block_relocate(RzAnalBlock *block, ut64 addr, ut64 size) {
 	return true;
 }
 
-RZ_API RzAnalBlock *rz_anal_block_split(RzAnalBlock *bbi, ut64 addr) {
-	RzAnal *anal = bbi->anal;
+RZ_API RzAnalysisBlock *rz_anal_block_split(RzAnalysisBlock *bbi, ut64 addr) {
+	RzAnalysis *anal = bbi->anal;
 	rz_return_val_if_fail (bbi && addr >= bbi->addr && addr < bbi->addr + bbi->size && addr != UT64_MAX, 0);
 	if (addr == bbi->addr) {
 		rz_anal_block_ref (bbi); // ref to be consistent with splitted return refcount
@@ -265,7 +265,7 @@ RZ_API RzAnalBlock *rz_anal_block_split(RzAnalBlock *bbi, ut64 addr) {
 	}
 
 	// create the second block
-	RzAnalBlock *bb = block_new (anal, addr, bbi->addr + bbi->size - addr);
+	RzAnalysisBlock *bb = block_new (anal, addr, bbi->addr + bbi->size - addr);
 	if (!bb) {
 		return NULL;
 	}
@@ -284,7 +284,7 @@ RZ_API RzAnalBlock *rz_anal_block_split(RzAnalBlock *bbi, ut64 addr) {
 
 	// insert the second block into all functions of the first
 	RzListIter *iter;
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 	rz_list_foreach (bbi->fcns, iter, fcn) {
 		rz_anal_function_add_block (fcn, bb);
 	}
@@ -312,7 +312,7 @@ RZ_API RzAnalBlock *rz_anal_block_split(RzAnalBlock *bbi, ut64 addr) {
 	return bb;
 }
 
-RZ_API bool rz_anal_block_merge(RzAnalBlock *a, RzAnalBlock *b) {
+RZ_API bool rz_anal_block_merge(RzAnalysisBlock *a, RzAnalysisBlock *b) {
 	if (!rz_anal_block_is_contiguous (a, b)) {
 		return false;
 	}
@@ -321,7 +321,7 @@ RZ_API bool rz_anal_block_merge(RzAnalBlock *a, RzAnalBlock *b) {
 	if (rz_list_length (a->fcns) != rz_list_length (b->fcns)) {
 		return false;
 	}
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 	RzListIter *iter;
 	rz_list_foreach (a->fcns, iter, fcn) {
 		if (!rz_list_contains (b->fcns, fcn)) {
@@ -358,7 +358,7 @@ RZ_API bool rz_anal_block_merge(RzAnalBlock *a, RzAnalBlock *b) {
 	return true;
 }
 
-RZ_API void rz_anal_block_unref(RzAnalBlock *bb) {
+RZ_API void rz_anal_block_unref(RzAnalysisBlock *bb) {
 	if (!bb) {
 		return;
 	}
@@ -366,13 +366,13 @@ RZ_API void rz_anal_block_unref(RzAnalBlock *bb) {
 	bb->ref--;
 	assert (bb->ref >= rz_list_length (bb->fcns)); // all of the block's functions must hold a reference to it
 	if (bb->ref < 1) {
-		RzAnal *anal = bb->anal;
+		RzAnalysis *anal = bb->anal;
 		assert (!bb->fcns || rz_list_empty (bb->fcns));
 		rz_rbtree_aug_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
 	}
 }
 
-RZ_API bool rz_anal_block_successor_addrs_foreach(RzAnalBlock *block, RzAnalAddrCb cb, void *user) {
+RZ_API bool rz_anal_block_successor_addrs_foreach(RzAnalysisBlock *block, RzAnalysisAddrCb cb, void *user) {
 #define CB_ADDR(addr) do { \
 		if (addr == UT64_MAX) { \
 			break; \
@@ -386,7 +386,7 @@ RZ_API bool rz_anal_block_successor_addrs_foreach(RzAnalBlock *block, RzAnalAddr
 	CB_ADDR (block->fail);
 	if (block->switch_op && block->switch_op->cases) {
 		RzListIter *iter;
-		RzAnalCaseOp *caseop;
+		RzAnalysisCaseOp *caseop;
 		rz_list_foreach (block->switch_op->cases, iter, caseop) {
 			CB_ADDR (caseop->jump);
 		}
@@ -397,19 +397,19 @@ RZ_API bool rz_anal_block_successor_addrs_foreach(RzAnalBlock *block, RzAnalAddr
 }
 
 typedef struct rz_anal_block_recurse_context_t {
-	RzAnal *anal;
-	RzPVector/*<RzAnalBlock>*/ to_visit;
+	RzAnalysis *anal;
+	RzPVector/*<RzAnalysisBlock>*/ to_visit;
 	HtUP *visited;
-} RzAnalBlockRecurseContext;
+} RzAnalysisBlockRecurseContext;
 
 static bool block_recurse_successor_cb(ut64 addr, void *user) {
-	RzAnalBlockRecurseContext *ctx = user;
+	RzAnalysisBlockRecurseContext *ctx = user;
 	if (ht_up_find_kv (ctx->visited, addr, NULL)) {
 		// already visited
 		return true;
 	}
 	ht_up_insert (ctx->visited, addr, NULL);
-	RzAnalBlock *block = rz_anal_get_block_at (ctx->anal, addr);
+	RzAnalysisBlock *block = rz_anal_get_block_at (ctx->anal, addr);
 	if (!block) {
 		return true;
 	}
@@ -417,9 +417,9 @@ static bool block_recurse_successor_cb(ut64 addr, void *user) {
 	return true;
 }
 
-RZ_API bool rz_anal_block_recurse(RzAnalBlock *block, RzAnalBlockCb cb, void *user) {
+RZ_API bool rz_anal_block_recurse(RzAnalysisBlock *block, RzAnalysisBlockCb cb, void *user) {
 	bool breaked = false;
-	RzAnalBlockRecurseContext ctx;
+	RzAnalysisBlockRecurseContext ctx;
 	ctx.anal = block->anal;
 	rz_pvector_init (&ctx.to_visit, NULL);
 	ctx.visited = ht_up_new0 ();
@@ -431,7 +431,7 @@ RZ_API bool rz_anal_block_recurse(RzAnalBlock *block, RzAnalBlockCb cb, void *us
 	rz_pvector_push (&ctx.to_visit, block);
 
 	while (!rz_pvector_empty (&ctx.to_visit)) {
-		RzAnalBlock *cur = rz_pvector_pop (&ctx.to_visit);
+		RzAnalysisBlock *cur = rz_pvector_pop (&ctx.to_visit);
 		breaked = !cb (cur, user);
 		if (breaked) {
 			break;
@@ -445,9 +445,9 @@ beach:
 	return !breaked;
 }
 
-RZ_API bool rz_anal_block_recurse_followthrough(RzAnalBlock *block, RzAnalBlockCb cb, void *user) {
+RZ_API bool rz_anal_block_recurse_followthrough(RzAnalysisBlock *block, RzAnalysisBlockCb cb, void *user) {
 	bool breaked = false;
-	RzAnalBlockRecurseContext ctx;
+	RzAnalysisBlockRecurseContext ctx;
 	ctx.anal = block->anal;
 	rz_pvector_init (&ctx.to_visit, NULL);
 	ctx.visited = ht_up_new0 ();
@@ -459,7 +459,7 @@ RZ_API bool rz_anal_block_recurse_followthrough(RzAnalBlock *block, RzAnalBlockC
 	rz_pvector_push (&ctx.to_visit, block);
 
 	while (!rz_pvector_empty (&ctx.to_visit)) {
-		RzAnalBlock *cur = rz_pvector_pop (&ctx.to_visit);
+		RzAnalysisBlock *cur = rz_pvector_pop (&ctx.to_visit);
 		bool b = !cb (cur, user);
 		if (b) {
 			breaked = true;
@@ -475,20 +475,20 @@ beach:
 }
 
 typedef struct {
-	RzAnalBlock *bb;
+	RzAnalysisBlock *bb;
 	RzListIter *switch_it;
 } RecurseDepthFirstCtx;
 
-RZ_API bool rz_anal_block_recurse_depth_first(RzAnalBlock *block, RzAnalBlockCb cb, RZ_NULLABLE RzAnalBlockCb on_exit, void *user) {
+RZ_API bool rz_anal_block_recurse_depth_first(RzAnalysisBlock *block, RzAnalysisBlockCb cb, RZ_NULLABLE RzAnalysisBlockCb on_exit, void *user) {
 	bool breaked = false;
 	HtUP *visited = ht_up_new0 ();
 	if (!visited) {
 		goto beach;
 	}
-	RzAnal *anal = block->anal;
+	RzAnalysis *anal = block->anal;
 	RzVector path;
 	rz_vector_init (&path, sizeof (RecurseDepthFirstCtx), NULL, NULL);
-	RzAnalBlock *cur_bb = block;
+	RzAnalysisBlock *cur_bb = block;
 	RecurseDepthFirstCtx ctx = { cur_bb, NULL };
 	rz_vector_push (&path, &ctx);
 	ht_up_insert (visited, cur_bb->addr, NULL);
@@ -504,7 +504,7 @@ RZ_API bool rz_anal_block_recurse_depth_first(RzAnalBlock *block, RzAnalBlockCb 
 		} else if (cur_bb->fail != UT64_MAX && !ht_up_find_kv (visited, cur_bb->fail, NULL)) {
 			cur_bb = rz_anal_get_block_at (anal, cur_bb->fail);
 		} else {
-			RzAnalCaseOp *cop = NULL;
+			RzAnalysisCaseOp *cop = NULL;
 			if (cur_bb->switch_op && !cur_ctx->switch_it) {
 				cur_ctx->switch_it = cur_bb->switch_op->cases->head;
 				cop = rz_list_first (cur_bb->switch_op->cases);
@@ -541,14 +541,14 @@ beach:
 	return !breaked;
 }
 
-static bool recurse_list_cb(RzAnalBlock *block, void *user) {
+static bool recurse_list_cb(RzAnalysisBlock *block, void *user) {
 	RzList *list = user;
 	rz_anal_block_ref (block);
 	rz_list_push (list, block);
 	return true;
 }
 
-RZ_API RzList *rz_anal_block_recurse_list(RzAnalBlock *block) {
+RZ_API RzList *rz_anal_block_recurse_list(RzAnalysisBlock *block) {
 	RzList *ret = rz_list_newf ((RzListFree)rz_anal_block_unref);
 	if (ret) {
 		rz_anal_block_recurse (block, recurse_list_cb, ret);
@@ -556,14 +556,14 @@ RZ_API RzList *rz_anal_block_recurse_list(RzAnalBlock *block) {
 	return ret;
 }
 
-RZ_API void rz_anal_block_add_switch_case(RzAnalBlock *block, ut64 switch_addr, ut64 case_value, ut64 case_addr) {
+RZ_API void rz_anal_block_add_switch_case(RzAnalysisBlock *block, ut64 switch_addr, ut64 case_value, ut64 case_addr) {
 	if (!block->switch_op) {
 		block->switch_op = rz_anal_switch_op_new (switch_addr, 0, 0, 0);
 	}
 	rz_anal_switch_op_add_case (block->switch_op, case_addr, case_value, case_addr);
 }
 
-RZ_API bool rz_anal_block_op_starts_at(RzAnalBlock *bb, ut64 addr) {
+RZ_API bool rz_anal_block_op_starts_at(RzAnalysisBlock *bb, ut64 addr) {
 	if (!rz_anal_block_contains (bb, addr)) {
 		return false;
 	}
@@ -582,11 +582,11 @@ RZ_API bool rz_anal_block_op_starts_at(RzAnalBlock *bb, ut64 addr) {
 }
 
 typedef struct {
-	RzAnal *anal;
-	RzAnalBlock *cur_parent;
+	RzAnalysis *anal;
+	RzAnalysisBlock *cur_parent;
 	ut64 dst;
-	RzPVector/*<RzAnalBlock>*/ *next_visit; // accumulate block of the next level in the tree
-	HtUP/*<RzAnalBlock>*/ *visited; // maps addrs to their previous block (or NULL for entry)
+	RzPVector/*<RzAnalysisBlock>*/ *next_visit; // accumulate block of the next level in the tree
+	HtUP/*<RzAnalysisBlock>*/ *visited; // maps addrs to their previous block (or NULL for entry)
 } PathContext;
 
 static bool shortest_path_successor_cb(ut64 addr, void *user) {
@@ -596,7 +596,7 @@ static bool shortest_path_successor_cb(ut64 addr, void *user) {
 		return true;
 	}
 	ht_up_insert (ctx->visited, addr, ctx->cur_parent);
-	RzAnalBlock *block = rz_anal_get_block_at (ctx->anal, addr);
+	RzAnalysisBlock *block = rz_anal_get_block_at (ctx->anal, addr);
 	if (block) {
 		rz_pvector_push (ctx->next_visit, block);
 	}
@@ -604,7 +604,7 @@ static bool shortest_path_successor_cb(ut64 addr, void *user) {
 }
 
 
-RZ_API RZ_NULLABLE RzList/*<RzAnalBlock *>*/ *rz_anal_block_shortest_path(RzAnalBlock *block, ut64 dst) {
+RZ_API RZ_NULLABLE RzList/*<RzAnalysisBlock *>*/ *rz_anal_block_shortest_path(RzAnalysisBlock *block, ut64 dst) {
 	RzList *ret = NULL;
 	PathContext ctx;
 	ctx.anal = block->anal;
@@ -630,7 +630,7 @@ RZ_API RZ_NULLABLE RzList/*<RzAnalBlock *>*/ *rz_anal_block_shortest_path(RzAnal
 	while (!rz_pvector_empty (cur_visit)) {
 		void **it;
 		rz_pvector_foreach (cur_visit, it) {
-			RzAnalBlock *cur = *it;
+			RzAnalysisBlock *cur = *it;
 			ctx.cur_parent = cur;
 			rz_anal_block_successor_addrs_foreach (cur, shortest_path_successor_cb, &ctx);
 		}
@@ -642,8 +642,8 @@ RZ_API RZ_NULLABLE RzList/*<RzAnalBlock *>*/ *rz_anal_block_shortest_path(RzAnal
 
 	// reconstruct the path
 	bool found = false;
-	RzAnalBlock *prev = ht_up_find (ctx.visited, dst, &found);
-	RzAnalBlock *dst_block = rz_anal_get_block_at (block->anal, dst);
+	RzAnalysisBlock *prev = ht_up_find (ctx.visited, dst, &found);
+	RzAnalysisBlock *dst_block = rz_anal_get_block_at (block->anal, dst);
 	if (found && dst_block) {
 		ret = rz_list_newf ((RzListFree)rz_anal_block_unref);
 		rz_anal_block_ref (dst_block);
@@ -662,7 +662,7 @@ beach:
 	return ret;
 }
 
-RZ_API bool rz_anal_block_was_modified(RzAnalBlock *block) {
+RZ_API bool rz_anal_block_was_modified(RzAnalysisBlock *block) {
 	rz_return_val_if_fail (block, false);
 	if (!block->anal->iob.read_at) {
 		return false;
@@ -680,7 +680,7 @@ RZ_API bool rz_anal_block_was_modified(RzAnalBlock *block) {
 	return block->bbhash != cur_hash;
 }
 
-RZ_API void rz_anal_block_update_hash(RzAnalBlock *block) {
+RZ_API void rz_anal_block_update_hash(RzAnalysisBlock *block) {
 	rz_return_if_fail (block);
 	if (!block->anal->iob.read_at) {
 		return;
@@ -698,7 +698,7 @@ RZ_API void rz_anal_block_update_hash(RzAnalBlock *block) {
 }
 
 typedef struct {
-	RzAnalBlock *block;
+	RzAnalysisBlock *block;
 	bool reachable;
 } NoreturnSuccessor;
 
@@ -708,7 +708,7 @@ static void noreturn_successor_free(HtUPKv *kv) {
 	free (succ);
 }
 
-static bool noreturn_successors_cb(RzAnalBlock *block, void *user) {
+static bool noreturn_successors_cb(RzAnalysisBlock *block, void *user) {
 	HtUP *succs = user;
 	NoreturnSuccessor *succ = RZ_NEW0 (NoreturnSuccessor);
 	if (!succ) {
@@ -721,7 +721,7 @@ static bool noreturn_successors_cb(RzAnalBlock *block, void *user) {
 	return true;
 }
 
-static bool noreturn_successors_reachable_cb(RzAnalBlock *block, void *user) {
+static bool noreturn_successors_reachable_cb(RzAnalysisBlock *block, void *user) {
 	HtUP *succs = user;
 	NoreturnSuccessor *succ = ht_up_find (succs, block->addr, NULL);
 	if (succ) {
@@ -731,7 +731,7 @@ static bool noreturn_successors_reachable_cb(RzAnalBlock *block, void *user) {
 }
 
 static bool noreturn_remove_unreachable_cb(void *user, const ut64 k, const void *v) {
-	RzAnalFunction *fcn = user;
+	RzAnalysisFunction *fcn = user;
 	NoreturnSuccessor *succ = (NoreturnSuccessor *)v;
 	if (!succ->reachable && rz_list_contains (succ->block->fcns, fcn)) {
 		rz_anal_function_remove_block (fcn, succ->block);
@@ -748,7 +748,7 @@ static bool noreturn_get_blocks_cb(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
-RZ_API RzAnalBlock *rz_anal_block_chop_noreturn(RzAnalBlock *block, ut64 addr) {
+RZ_API RzAnalysisBlock *rz_anal_block_chop_noreturn(RzAnalysisBlock *block, ut64 addr) {
 	rz_return_val_if_fail (block, NULL);
 	if (!rz_anal_block_contains (block, addr) || addr == block->addr) {
 		return block;
@@ -772,11 +772,11 @@ RZ_API RzAnalBlock *rz_anal_block_chop_noreturn(RzAnalBlock *block, ut64 addr) {
 
 	// Now, for each fcn, check which of our successors are still reachable in the function remove and the ones that are not.
 	RzListIter *it;
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 	// We need to clone the list because block->fcns will get modified in the loop
 	RzList *fcns_cpy = rz_list_clone (block->fcns);
 	rz_list_foreach (fcns_cpy, it, fcn) {
-		RzAnalBlock *entry = rz_anal_get_block_at (block->anal, fcn->addr);
+		RzAnalysisBlock *entry = rz_anal_get_block_at (block->anal, fcn->addr);
 		if (entry && rz_list_contains (entry->fcns, fcn)) {
 			rz_anal_block_recurse (entry, noreturn_successors_reachable_cb, succs);
 		}
@@ -802,7 +802,7 @@ RZ_API RzAnalBlock *rz_anal_block_chop_noreturn(RzAnalBlock *block, ut64 addr) {
 	rz_anal_block_automerge (&merge_blocks);
 
 	// No try to recover the pointer to the block if it still exists
-	RzAnalBlock *ret = NULL;
+	RzAnalysisBlock *ret = NULL;
 	for (it = merge_blocks.head; it && (block = it->data, 1); it = it->n) {
 		if (block->addr == block_addr) {
 			// block is still there
@@ -818,9 +818,9 @@ RZ_API RzAnalBlock *rz_anal_block_chop_noreturn(RzAnalBlock *block, ut64 addr) {
 typedef struct {
 	HtUP *predecessors; // maps a block to its predecessor if it has exactly one, or NULL if there are multiple or the predecessor has multiple successors
 	HtUP *visited_blocks; // during predecessor search, mark blocks whose successors we already checked. Value is void *-casted count of successors
-	HtUP *blocks; // adresses of the blocks we might want to merge with their predecessors => RzAnalBlock *
+	HtUP *blocks; // adresses of the blocks we might want to merge with their predecessors => RzAnalysisBlock *
 
-	RzAnalBlock *cur_pred;
+	RzAnalysisBlock *cur_pred;
 	size_t cur_succ_count;
 } AutomergeCtx;
 
@@ -833,13 +833,13 @@ static bool count_successors_cb(ut64 addr, void *user) {
 static bool automerge_predecessor_successor_cb(ut64 addr, void *user) {
 	AutomergeCtx *ctx = user;
 	ctx->cur_succ_count++;
-	RzAnalBlock *block = ht_up_find (ctx->blocks, addr, NULL);
+	RzAnalysisBlock *block = ht_up_find (ctx->blocks, addr, NULL);
 	if (!block) {
 		// we shouldn't merge this one so GL_DONT_CARE
 		return true;
 	}
 	bool found;
-	RzAnalBlock *pred = ht_up_find (ctx->predecessors, (ut64)block, &found);
+	RzAnalysisBlock *pred = ht_up_find (ctx->predecessors, (ut64)block, &found);
 	if (found) {
 		if (pred) {
 			// only one predecessor found so far, but we are the second so there are multiple now
@@ -854,9 +854,9 @@ static bool automerge_predecessor_successor_cb(ut64 addr, void *user) {
 
 static bool automerge_get_predecessors_cb(void *user, const ut64 k, const void *v) {
 	AutomergeCtx *ctx = user;
-	const RzAnalFunction *fcn = (const RzAnalFunction *)k;
+	const RzAnalysisFunction *fcn = (const RzAnalysisFunction *)k;
 	RzListIter *it;
-	RzAnalBlock *block;
+	RzAnalysisBlock *block;
 	rz_list_foreach (fcn->bbs, it, block) {
 		bool already_visited;
 		ht_up_find (ctx->visited_blocks, (ut64)block, &already_visited);
@@ -889,10 +889,10 @@ RZ_API void rz_anal_block_automerge(RzList *blocks) {
 
 	// Get all the functions and prepare ctx.blocks
 	RzListIter *it;
-	RzAnalBlock *block;
+	RzAnalysisBlock *block;
 	rz_list_foreach (blocks, it, block) {
 		RzListIter *fit;
-		RzAnalFunction *fcn;
+		RzAnalysisFunction *fcn;
 		rz_list_foreach (block->fcns, fit, fcn) {
 			ht_up_insert (relevant_fcns, (ut64)fcn, NULL);
 		}
@@ -905,7 +905,7 @@ RZ_API void rz_anal_block_automerge(RzList *blocks) {
 	// Now finally do the merging
 	RzListIter *tmp;
 	rz_list_foreach_safe (blocks, it, tmp, block) {
-		RzAnalBlock *predecessor = ht_up_find (ctx.predecessors, (ut64)block, NULL);
+		RzAnalysisBlock *predecessor = ht_up_find (ctx.predecessors, (ut64)block, NULL);
 		if (!predecessor) {
 			continue;
 		}
@@ -919,9 +919,9 @@ RZ_API void rz_anal_block_automerge(RzList *blocks) {
 		// However if there are other blocks that have block as the predecessor,
 		// we would uaf after the merge since block will be freed.
 		RzListIter *bit;
-		RzAnalBlock *clock;
+		RzAnalysisBlock *clock;
 		for (bit = it->n; bit && (clock = bit->data, 1); bit = bit->n) {
-			RzAnalBlock *fixup_pred = ht_up_find (ctx.predecessors, (ut64)clock, NULL);
+			RzAnalysisBlock *fixup_pred = ht_up_find (ctx.predecessors, (ut64)clock, NULL);
 			if (fixup_pred == block) {
 				rz_list_push (fixup_candidates, clock);
 			}

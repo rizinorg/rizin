@@ -7,7 +7,7 @@
 
 // NOTE: buf should be at least 16 bytes!
 // XXX addr should be off_t for 64 love
-static int ppc_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *bytes, int len, RzAnalOpMask mask) {
+static int ppc_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *bytes, int len, RzAnalysisOpMask mask) {
 //int arch_ppc_op(ut64 addr, const u8 *bytes, struct op_t *op)
 	// XXX hack
 	int opcode = (bytes[0] & 0xf8) >> 3; // bytes 0-5
@@ -78,7 +78,7 @@ static int ppc_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *bytes, int l
 	return op->size;
 }
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
     const char *p =
 	"=PC	srr0\n"
 	"=SR	srr1\n" // status register
@@ -136,11 +136,11 @@ static bool set_reg_profile(RzAnal *anal) {
 	return rz_reg_set_profile_string (anal->reg, p);
 }
 
-static int archinfo(RzAnal *anal, int q) {
+static int archinfo(RzAnalysis *anal, int q) {
 	return 4; /* :D */
 }
 
-RzAnalPlugin rz_anal_plugin_ppc_gnu = {
+RzAnalysisPlugin rz_anal_plugin_ppc_gnu = {
 	.name = "ppc.gnu",
 	.desc = "PowerPC analysis plugin",
 	.license = "LGPL3",

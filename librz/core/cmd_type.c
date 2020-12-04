@@ -765,7 +765,7 @@ static void typesList(RzCore *core, int mode) {
 	}
 }
 
-static void set_offset_hint(RzCore *core, RzAnalOp *op, const char *type, ut64 laddr, ut64 at, int offimm) {
+static void set_offset_hint(RzCore *core, RzAnalysisOp *op, const char *type, ut64 laddr, ut64 at, int offimm) {
 	char *res = rz_type_get_struct_memb (core->anal->sdb_types, type, offimm);
 	const char *cmt = ((offimm == 0) && res)? res: type;
 	if (offimm > 0) {
@@ -789,7 +789,7 @@ RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to) {
 	const int mininstrsz = rz_anal_archinfo (core->anal, RZ_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = RZ_MAX (1, mininstrsz);
 	while (at < to) {
-		RzAnalOp *op = rz_core_anal_op (core, at, RZ_ANAL_OP_MASK_BASIC);
+		RzAnalysisOp *op = rz_core_anal_op (core, at, RZ_ANAL_OP_MASK_BASIC);
 		if (!op || op->size <= 0) {
 			at += minopcode;
 			continue;
@@ -807,9 +807,9 @@ RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to) {
 }
 
 static void set_retval(RzCore *core, ut64 at) {
-	RzAnal *anal = core->anal;
-	RzAnalHint *hint = rz_anal_hint_get (anal, at);
-	RzAnalFunction *fcn = rz_anal_get_fcn_in (anal, at, 0);
+	RzAnalysis *anal = core->anal;
+	RzAnalysisHint *hint = rz_anal_hint_get (anal, at);
+	RzAnalysisFunction *fcn = rz_anal_get_fcn_in (anal, at, 0);
 
 	if (!hint || !fcn || !fcn->name) {
 		goto beach;
@@ -830,17 +830,17 @@ beach:
 	return;
 }
 
-RZ_API void rz_core_link_stroff(RzCore *core, RzAnalFunction *fcn) {
-	RzAnalBlock *bb;
+RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
+	RzAnalysisBlock *bb;
 	RzListIter *it;
-	RzAnalOp aop = {0};
+	RzAnalysisOp aop = {0};
 	bool ioCache = rz_config_get_i (core->config, "io.cache");
 	bool stack_set = false;
 	bool resolved = false;
 	const char *varpfx;
 	int dbg_follow = rz_config_get_i (core->config, "dbg.follow");
 	Sdb *TDB = core->anal->sdb_types;
-	RzAnalEsil *esil;
+	RzAnalysisEsil *esil;
 	int iotrap = rz_config_get_i (core->config, "esil.iotrap");
 	int stacksize = rz_config_get_i (core->config, "esil.stack.depth");
 	unsigned int addrsize = rz_config_get_i (core->config, "esil.addr.size");
@@ -931,7 +931,7 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalFunction *fcn) {
 				dst_addr = rz_reg_getv (esil->anal->reg, aop.dst->reg->name) + index;
 				dst_imm = aop.dst->delta;
 			}
-			RzAnalVar *var = rz_anal_get_used_function_var (core->anal, aop.addr);
+			RzAnalysisVar *var = rz_anal_get_used_function_var (core->anal, aop.addr);
 			if (false) { // src_addr != UT64_MAX || dst_addr != UT64_MAX) {
 			//  if (src_addr == UT64_MAX && dst_addr == UT64_MAX) {
 				rz_anal_op_fini (&aop);
@@ -1388,7 +1388,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 	case 'x': {
 		  char *type, *type2;
 		RzListIter *iter, *iter2;
-		RzAnalFunction *fcn;
+		RzAnalysisFunction *fcn;
 		switch (input[1]) {
 		case '.': // "tx." type xrefs
 		case 'f': // "txf" type xrefs
@@ -1524,7 +1524,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 				if (rz_list_length (fcns) > 1) {
 					eprintf ("Multiple functions found in here.\n");
 				} else if (rz_list_length (fcns) == 1) {
-					RzAnalFunction *fcn = rz_list_first (fcns);
+					RzAnalysisFunction *fcn = rz_list_first (fcns);
 					rz_core_link_stroff (core, fcn);
 				} else {
 					eprintf ("Cannot find any function here\n");
@@ -1624,9 +1624,9 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 					ut64 addr = arg ? rz_num_math (core->num, arg): core->offset;
 					ut64 original_addr = addr;
 					if (!addr && arg) {
-						RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, -1);
+						RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, -1);
 						if (fcn) {
-							RzAnalVar *var = rz_anal_function_get_var_byname (fcn, arg);
+							RzAnalysisVar *var = rz_anal_function_get_var_byname (fcn, arg);
 							if (var) {
 								addr = rz_anal_var_addr (var);
 							}

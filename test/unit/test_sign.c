@@ -4,7 +4,7 @@
 #include "minunit.h"
 
 static bool test_anal_sign_get_set(void) {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 
 	RzSignItem *item = rz_sign_item_new ();
 	item->name = strdup ("sym.mahboi");

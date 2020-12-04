@@ -15,7 +15,7 @@ typedef struct _pic_midrange_op_args_val {
 	ut8 b;
 } PicMidrangeOpArgsVal;
 
-typedef void (*pic_midrange_inst_handler_t) (RzAnal *anal, RzAnalOp *op,
+typedef void (*pic_midrange_inst_handler_t) (RzAnalysis *anal, RzAnalysisOp *op,
 					     ut64 addr,
 					     PicMidrangeOpArgsVal *args);
 
@@ -26,7 +26,7 @@ typedef struct _pic_midrange_op_anal_info {
 } PicMidrangeOpAnalInfo;
 
 #define INST_HANDLER(OPCODE_NAME)                                            \
-	static void _inst__##OPCODE_NAME (RzAnal *anal, RzAnalOp *op,          \
+	static void _inst__##OPCODE_NAME (RzAnalysis *anal, RzAnalysisOp *op,          \
 					  ut64 addr,                         \
 					  PicMidrangeOpArgsVal *args)
 #define INST_DECL(NAME, ARGS)                                                \
@@ -656,7 +656,7 @@ static bool pic_midrange_reg_write (RzReg *reg, const char *regname, ut32 num) {
 	return false;
 }
 
-static void anal_pic_midrange_malloc (RzAnal *anal, bool force) {
+static void anal_pic_midrange_malloc (RzAnalysis *anal, bool force) {
 	static bool init_done = false;
 
 	if (!init_done || force) {
@@ -680,7 +680,7 @@ static void anal_pic_midrange_malloc (RzAnal *anal, bool force) {
 	}
 }
 
-static int anal_pic_midrange_op (RzAnal *anal, RzAnalOp *op, ut64 addr,
+static int anal_pic_midrange_op (RzAnalysis *anal, RzAnalysisOp *op, ut64 addr,
 				 const ut8 *buf, int len) {
 
 	ut16 instr;
@@ -717,7 +717,7 @@ static int anal_pic_midrange_op (RzAnal *anal, RzAnalOp *op, ut64 addr,
 	return op->size;
 }
 
-static void pic18_cond_branch (RzAnalOp *op, ut64 addr, const ut8 *buf, char *flag) {
+static void pic18_cond_branch (RzAnalysisOp *op, ut64 addr, const ut8 *buf, char *flag) {
 	op->type = RZ_ANAL_OP_TYPE_CJMP;
 	op->jump = addr + 2 + 2 * (*(ut16 *)buf & 0xff);
 	op->fail = addr + op->size;
@@ -725,7 +725,7 @@ static void pic18_cond_branch (RzAnalOp *op, ut64 addr, const ut8 *buf, char *fl
 	rz_strbuf_setf (&op->esil, "%s,?,{,0x%" PFMT64x ",pc,=,}", flag, op->jump);
 }
 
-static int anal_pic_pic18_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int anal_pic_pic18_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len) {
 	//TODO code should be refactored and broken into smaller chunks!!
 	//TODO complete the esil emitter
 	if (len < 2) {
@@ -1004,7 +1004,7 @@ beach:
 	return op->size;
 }
 
-static bool anal_pic_midrange_set_reg_profile (RzAnal *esil) {
+static bool anal_pic_midrange_set_reg_profile (RzAnalysis *esil) {
 	const char *p = \
 		"=PC	pc\n"
 		"=SP	stkptr\n"
@@ -1034,7 +1034,7 @@ static bool anal_pic_midrange_set_reg_profile (RzAnal *esil) {
 	return rz_reg_set_profile_string (esil->reg, p);
 }
 
-static bool anal_pic_pic18_set_reg_profile(RzAnal *esil) {
+static bool anal_pic_pic18_set_reg_profile(RzAnalysis *esil) {
 	const char *p =
 		"#pc lives in nowhere actually"
 		"=PC	pc\n"
@@ -1154,7 +1154,7 @@ static bool anal_pic_pic18_set_reg_profile(RzAnal *esil) {
 }
 
 
-static int anal_pic_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int anal_pic_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	if (anal->cpu && strcasecmp (anal->cpu, "baseline") == 0) {
 		// TODO: implement
 		return -1;
@@ -1168,7 +1168,7 @@ static int anal_pic_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, in
 	return -1;
 }
 
-static bool anal_pic_set_reg_profile(RzAnal *anal) {
+static bool anal_pic_set_reg_profile(RzAnalysis *anal) {
 	if (anal->cpu && strcasecmp (anal->cpu, "baseline") == 0) {
 		// TODO: We are using the midrange profile as the baseline
 		return anal_pic_midrange_set_reg_profile (anal);
@@ -1182,7 +1182,7 @@ static bool anal_pic_set_reg_profile(RzAnal *anal) {
 	return false;
 }
 
-RzAnalPlugin rz_anal_plugin_pic = {
+RzAnalysisPlugin rz_anal_plugin_pic = {
 	.name = "pic",
 	.desc = "PIC analysis plugin",
 	.license = "LGPL3",

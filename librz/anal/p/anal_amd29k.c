@@ -5,7 +5,7 @@
 #include "../../asm/arch/amd29k/amd29k.h"
 
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	const char *p =
 			"=PC	pc\n"
 			"=SP	gp1\n"
@@ -278,11 +278,11 @@ static bool set_reg_profile(RzAnal *anal) {
 	return rz_reg_set_profile_string (anal->reg, p);
 }
 
-static int archinfo(RzAnal *a, int q) {
+static int archinfo(RzAnalysis *a, int q) {
 	return 4;
 }
 
-static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	op->size = 4;
 	op->eob = false;
 
@@ -321,7 +321,7 @@ static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 	return op->size;
 }
 
-RzAnalPlugin rz_anal_plugin_amd29k = {
+RzAnalysisPlugin rz_anal_plugin_amd29k = {
 	.name = "amd29k",
 	.desc = "AMD 29k analysis",
 	.license = "BSD",

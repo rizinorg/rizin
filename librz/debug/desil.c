@@ -83,7 +83,7 @@ static int esilbreak_check_pc (RzDebug *dbg, ut64 pc) {
 	return 0;
 }
 
-static int esilbreak_mem_read(RzAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static int esilbreak_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len) {
 	EsilBreak *ew;
 	RzListIter *iter;
 	eprintf (Color_GREEN"MEM READ 0x%"PFMT64x"\n"Color_RESET, addr);
@@ -98,7 +98,7 @@ static int esilbreak_mem_read(RzAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	return 0; // fallback
 }
 
-static int esilbreak_mem_write(RzAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static int esilbreak_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	EsilBreak *ew;
 	RzListIter *iter;
 	eprintf (Color_RED"MEM WRTE 0x%"PFMT64x"\n"Color_RESET, addr);
@@ -113,7 +113,7 @@ static int esilbreak_mem_write(RzAnalEsil *esil, ut64 addr, const ut8 *buf, int 
 	return 1; // fallback
 }
 
-static int esilbreak_reg_read(RzAnalEsil *esil, const char *regname, ut64 *num, int *size) {
+static int esilbreak_reg_read(RzAnalysisEsil *esil, const char *regname, ut64 *num, int *size) {
 	EsilBreak *ew;
 	RzListIter *iter;
 	if (regname[0]>='0' && regname[0]<='9') {
@@ -188,7 +188,7 @@ static int exprmatchreg (RzDebug *dbg, const char *regname, const char *expr) {
 	return ret;
 }
 
-static int esilbreak_reg_write(RzAnalEsil *esil, const char *regname, ut64 *num) {
+static int esilbreak_reg_write(RzAnalysisEsil *esil, const char *regname, ut64 *num) {
 	EsilBreak *ew;
 	RzListIter *iter;
 	if (regname[0] >= '0' && regname[0] <= '9') {
@@ -214,7 +214,7 @@ RZ_API void rz_debug_esil_prestep (RzDebug *d, int p) {
 }
 
 RZ_API int rz_debug_esil_stepi (RzDebug *d) {
-	RzAnalOp op;
+	RzAnalysisOp op;
 	ut8 obuf[64];
 	int ret = 1;
 	dbg = d;

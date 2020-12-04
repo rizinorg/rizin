@@ -29,9 +29,9 @@ static char *create_type_name_from_offset(ut64 offset) {
  * 
  * @param type_info Current type info (member)
  * @param types List of all types
- * @return RzAnalStructMember* parsed member, NULL if fail
+ * @return RzAnalysisStructMember* parsed member, NULL if fail
  */
-static RzAnalStructMember *parse_member(STypeInfo *type_info, RzList *types) {
+static RzAnalysisStructMember *parse_member(STypeInfo *type_info, RzList *types) {
 	rz_return_val_if_fail (type_info && types, NULL);
 	if (type_info->leaf_type != eLF_MEMBER) {
 		return NULL;
@@ -45,7 +45,7 @@ static RzAnalStructMember *parse_member(STypeInfo *type_info, RzList *types) {
 	type_info->get_val (type_info, &offset); // gets offset
 	type_info->get_name (type_info, &name);
 	type_info->get_print_type (type_info, &type);
-	RzAnalStructMember *member = RZ_NEW0 (RzAnalStructMember);
+	RzAnalysisStructMember *member = RZ_NEW0 (RzAnalysisStructMember);
 	if (!member) {
 		goto cleanup;
 	}
@@ -63,9 +63,9 @@ cleanup:
  * 
  * @param type_info Current type info (enum case)
  * @param types List of all types
- * @return RzAnalEnumCase* parsed enum case, NULL if fail 
+ * @return RzAnalysisEnumCase* parsed enum case, NULL if fail 
  */
-static RzAnalEnumCase *parse_enumerate(STypeInfo *type_info, RzList *types) {
+static RzAnalysisEnumCase *parse_enumerate(STypeInfo *type_info, RzList *types) {
 	rz_return_val_if_fail (type_info && types && type_info->leaf_type == eLF_ENUMERATE, NULL);
 	rz_return_val_if_fail (type_info->get_val && type_info->get_name, NULL);
 
@@ -74,7 +74,7 @@ static RzAnalEnumCase *parse_enumerate(STypeInfo *type_info, RzList *types) {
 	// sometimes, the type doesn't have get_val for some reason
 	type_info->get_val (type_info, &value);
 	type_info->get_name (type_info, &name);
-	RzAnalEnumCase *cas = RZ_NEW0 (RzAnalEnumCase);
+	RzAnalysisEnumCase *cas = RZ_NEW0 (RzAnalysisEnumCase);
 	if (!cas) {
 		goto cleanup;
 	}
@@ -93,7 +93,7 @@ cleanup:
  * @param type Current type
  * @param types List of all types 
  */
-static void parse_enum(const RzAnal *anal, SType *type, RzList *types) {
+static void parse_enum(const RzAnalysis *anal, SType *type, RzList *types) {
 	rz_return_if_fail (anal && type && types);
 	STypeInfo *type_info = &type->type_data;
 	// assert all member functions we need info from
@@ -101,7 +101,7 @@ static void parse_enum(const RzAnal *anal, SType *type, RzList *types) {
 		type_info->get_name &&
 		type_info->get_utype);
 
-	RzAnalBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ENUM);
+	RzAnalysisBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
 		return;
 	}
@@ -127,7 +127,7 @@ static void parse_enum(const RzAnal *anal, SType *type, RzList *types) {
 	RzListIter *it = rz_list_iterator (members);
 	while (rz_list_iter_next (it)) {
 		STypeInfo *member_info = rz_list_iter_get (it);
-		RzAnalEnumCase *enum_case = parse_enumerate (member_info, types);
+		RzAnalysisEnumCase *enum_case = parse_enumerate (member_info, types);
 		if (!enum_case) {
 			continue; // skip it, move forward
 		}
@@ -157,7 +157,7 @@ cleanup:
  * @param type Current type
  * @param types List of all types
  */
-static void parse_structure(const RzAnal *anal, SType *type, RzList *types) {
+static void parse_structure(const RzAnalysis *anal, SType *type, RzList *types) {
 	rz_return_if_fail (anal && type && types);
 	STypeInfo *type_info = &type->type_data;
 	// assert all member functions we need info from
@@ -166,7 +166,7 @@ static void parse_structure(const RzAnal *anal, SType *type, RzList *types) {
 		type_info->get_name &&
 		type_info->get_val);
 
-	RzAnalBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_STRUCT);
+	RzAnalysisBaseType *base_type = rz_anal_base_type_new (RZ_ANAL_BASE_TYPE_KIND_STRUCT);
 	if (!base_type) {
 		return;
 	}
@@ -187,7 +187,7 @@ static void parse_structure(const RzAnal *anal, SType *type, RzList *types) {
 	RzListIter *it = rz_list_iterator (members);
 	while (rz_list_iter_next (it)) {
 		STypeInfo *member_info = rz_list_iter_get (it);
-		RzAnalStructMember *struct_member = parse_member (member_info, types);
+		RzAnalysisStructMember *struct_member = parse_member (member_info, types);
 		if (!struct_member) {
 			continue; // skip the failure
 		}
@@ -220,7 +220,7 @@ cleanup:
  * @param type Current type
  * @param types List of all types
  */
-static void parse_type (const RzAnal *anal, SType *type, RzList *types) {
+static void parse_type (const RzAnalysis *anal, SType *type, RzList *types) {
 	rz_return_if_fail (anal && type && types);
 
 	int is_forward_decl;
@@ -253,7 +253,7 @@ static void parse_type (const RzAnal *anal, SType *type, RzList *types) {
  * @param anal
  * @param pdb PDB information
  */
-RZ_API void rz_parse_pdb_types(const RzAnal *anal, const RzPdb *pdb) {
+RZ_API void rz_parse_pdb_types(const RzAnalysis *anal, const RzPdb *pdb) {
 	rz_return_if_fail (anal && pdb);
 	RzList *plist = pdb->pdb_streams;
 	// getting the TPI stream from the streams list

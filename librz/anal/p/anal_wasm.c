@@ -17,7 +17,7 @@ static ut64 scope_hint = UT64_MAX;
 static ut64 addr_old = UT64_MAX;
 
 // finds the address of the call function (essentially where to jump to).
-static ut64 get_cf_offset(RzAnal *anal, const ut8 *data, int len) {
+static ut64 get_cf_offset(RzAnalysis *anal, const ut8 *data, int len) {
 	ut32 fcn_id;
 
 	if (!read_u32_leb128 (&data[1], &data[len - 1], &fcn_id)) {
@@ -36,7 +36,7 @@ static ut64 get_cf_offset(RzAnal *anal, const ut8 *data, int len) {
 	return UT64_MAX;
 }
 
-static bool advance_till_scope_end(RzAnal* anal, RzAnalOp *op, ut64 address, ut32 expected_type, ut32 depth, bool use_else) {
+static bool advance_till_scope_end(RzAnalysis* anal, RzAnalysisOp *op, ut64 address, ut32 expected_type, ut32 depth, bool use_else) {
 	ut8 buffer[16];
 	ut8 *ptr = buffer;
 	ut8 *end = ptr + sizeof (buffer);
@@ -72,9 +72,9 @@ static bool advance_till_scope_end(RzAnal* anal, RzAnalOp *op, ut64 address, ut3
 }
 
 // analyzes the wasm opcode.
-static int wasm_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask) {
+static int wasm_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	WasmOp wop = {{0}};
-	RzAnalHint *hint = NULL;
+	RzAnalysisHint *hint = NULL;
 	int ret = wasm_dis (&wop, data, len);
 	op->size = ret;
 	op->addr = addr;
@@ -147,7 +147,7 @@ static int wasm_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int l
 			break;
 		case WASM_OP_BR:
 			{
-				RzAnalHint *hint2 = NULL;
+				RzAnalysisHint *hint2 = NULL;
 				ut32 val;
 				read_u32_leb128 (data + 1, data + len, &val);
 				if ((hint2 = rz_anal_hint_get (anal, addr)) && hint2->jump != UT64_MAX) {
@@ -176,7 +176,7 @@ static int wasm_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int l
 			break;
 		case WASM_OP_BRIF:
 			{
-				RzAnalHint *hint2 = NULL;
+				RzAnalysisHint *hint2 = NULL;
 				ut32 val;
 				read_u32_leb128 (data + 1, data + len, &val);
 				if ((hint2 = rz_anal_hint_get (anal, addr)) && hint2->jump != UT64_MAX) {
@@ -439,11 +439,11 @@ anal_end:
 	return op->size;
 }
 
-static int archinfo(RzAnal *a, int q) {
+static int archinfo(RzAnalysis *a, int q) {
 	return 1;
 }
 
-static char *get_reg_profile(RzAnal *anal) {
+static char *get_reg_profile(RzAnalysis *anal) {
 	return strdup (
 		"=PC	pc\n"
 		"=BP	bp\n"
@@ -455,7 +455,7 @@ static char *get_reg_profile(RzAnal *anal) {
 	);
 }
 
-RzAnalPlugin rz_anal_plugin_wasm = {
+RzAnalysisPlugin rz_anal_plugin_wasm = {
 	.name = "wasm",
 	.desc = "WebAssembly analysis plugin",
 	.license = "LGPL3",

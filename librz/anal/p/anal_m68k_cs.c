@@ -30,7 +30,7 @@ static inline ut64 make_64bits_address(ut64 address) {
 	return UT32_MAX & address;
 }
 
-static inline void handle_branch_instruction(RzAnalOp *op, ut64 addr, cs_m68k *m68k, ut32 type, int index) {
+static inline void handle_branch_instruction(RzAnalysisOp *op, ut64 addr, cs_m68k *m68k, ut32 type, int index) {
 #if CS_API_MAJOR >= 4
 		if (m68k->operands[index].type == M68K_OP_BR_DISP) {
 			op->type = type;
@@ -46,7 +46,7 @@ static inline void handle_branch_instruction(RzAnalOp *op, ut64 addr, cs_m68k *m
 #endif
 }
 
-static inline void handle_jump_instruction(RzAnalOp *op, ut64 addr, cs_m68k *m68k, ut32 type) {
+static inline void handle_jump_instruction(RzAnalysisOp *op, ut64 addr, cs_m68k *m68k, ut32 type) {
 	op->type = type;
 
 	// Handle PC relative mode jump
@@ -128,7 +128,7 @@ static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num
 	return 0;
 }
 
-static void op_fillval(RzAnalOp *op, csh handle, cs_insn *insn) {
+static void op_fillval(RzAnalysisOp *op, csh handle, cs_insn *insn) {
 	static RzRegItem reg;
 	switch (op->type & RZ_ANAL_OP_TYPE_MASK) {
 	case RZ_ANAL_OP_TYPE_MOV:
@@ -157,7 +157,7 @@ static void op_fillval(RzAnalOp *op, csh handle, cs_insn *insn) {
 	}
 }
 
-static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	int n, ret, opsize = -1;
 	static csh handle = 0;
 	static int omode = -1;
@@ -702,7 +702,7 @@ fin:
 	return opsize;
 }
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	const char *p = \
 		"=PC    pc\n"
 		"=SP    a7\n"
@@ -760,7 +760,7 @@ static bool set_reg_profile(RzAnal *anal) {
 	return rz_reg_set_profile_string (anal->reg, p);
 }
 
-RzAnalPlugin rz_anal_plugin_m68k_cs = {
+RzAnalysisPlugin rz_anal_plugin_m68k_cs = {
 	.name = "m68k",
 	.desc = "Capstone M68K analyzer",
 	.license = "BSD",
@@ -771,7 +771,7 @@ RzAnalPlugin rz_anal_plugin_m68k_cs = {
 	.op = &analop,
 };
 #else
-RzAnalPlugin rz_anal_plugin_m68k_cs = {
+RzAnalysisPlugin rz_anal_plugin_m68k_cs = {
 	.name = "m68k (unsupported)",
 	.desc = "Capstone M68K analyzer (unsupported)",
 	.license = "BSD",

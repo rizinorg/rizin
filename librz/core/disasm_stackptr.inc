@@ -3,7 +3,7 @@
 #define USE_BB_STACKPTR 0
 #define USE_BB_LINEAR 1
 
-static void ds_update_stackptr(RDisasmState *ds, RzAnalOp *op) {
+static void ds_update_stackptr(RDisasmState *ds, RzAnalysisOp *op) {
 	if (!ds->show_stackptr) {
 		return;
 	}
@@ -21,7 +21,7 @@ static void ds_update_stackptr(RDisasmState *ds, RzAnalOp *op) {
 		break;
 	}
 	/* XXX if we reset the stackptr 'ret 0x4' has not effect.
-	 * Use RzAnalFunction->RzAnalOp->stackptr? */
+	 * Use RzAnalysisFunction->RzAnalysisOp->stackptr? */
 	if (op->type == RZ_ANAL_OP_TYPE_RET) {
 		ds->stackptr = 0;
 	}
@@ -32,7 +32,7 @@ static int _stackptr_range(RDisasmState *ds, ut64 addr, ut64 addr_end, int stack
 	ut64 end = addr_end;
 	while (at < end) {
 		int sz = 1;
-		RzAnalOp* op = rz_core_anal_op (ds->core, at, 0);
+		RzAnalysisOp* op = rz_core_anal_op (ds->core, at, 0);
 		if (op) {
 			*ostackptr = stackptr;
 			switch (op->stackop) {
@@ -72,7 +72,7 @@ static int ds_ostackptr_atfcn(RDisasmState *ds, int *ostackptr) {
 	ut64 addr = ds->at;
 	RzList *paths = rz_core_anal_graph_to (ds->core, addr, 2);
 	if (paths) {
-		RzAnalBlock *bb;
+		RzAnalysisBlock *bb;
 		RzList *path;
 		RzListIter *pathi;
 		RzListIter *bbi;
@@ -95,9 +95,9 @@ static int ds_ostackptr_at(RDisasmState *ds, int *ostackptr) {
 #if USE_BB_STACKPTR
 	// XXX doesnt works because bb->stackptr returns the maximum increment of the bb instead of the initial stackptr value
 	*ostackptr = ds->ostackptr;
-	RzAnalFunction *fcn = rz_anal_get_fcn_in (ds->core->anal, ds->at, RZ_ANAL_FCN_TYPE_NULL);
+	RzAnalysisFunction *fcn = rz_anal_get_fcn_in (ds->core->anal, ds->at, RZ_ANAL_FCN_TYPE_NULL);
 	if (fcn) {
-		RzAnalBlock *bb = rz_anal_fcn_bbget_in (ds->core->anal, fcn, ds->at);
+		RzAnalysisBlock *bb = rz_anal_fcn_bbget_in (ds->core->anal, fcn, ds->at);
 		if (bb) {
 			return bb->stackptr;
 		} else {

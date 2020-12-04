@@ -30,7 +30,7 @@ typedef struct fcn {
 	ut64 ends;
 } fcn_t;
 
-static bool __is_data_block_cb(RzAnalBlock *block, void *user) {
+static bool __is_data_block_cb(RzAnalysisBlock *block, void *user) {
 	bool *block_exists = user;
 	*block_exists = true;
 	return false;
@@ -54,7 +54,7 @@ static int __isdata(RzCore *core, ut64 addr) {
 	int result = 0;
 	rz_pvector_foreach (list, it) {
 		RzIntervalNode *node = *it;
-		RzAnalMetaItem *meta = node->data;
+		RzAnalysisMetaItem *meta = node->data;
 		switch (meta->type) {
 		case RZ_META_TYPE_DATA:
 		case RZ_META_TYPE_STRING:
@@ -220,7 +220,7 @@ static void createFunction(RzCore *core, fcn_t* fcn, const char *name) {
 		pfx = "fcn";
 	}
 
-	RzAnalFunction *f = rz_anal_function_new (core->anal);
+	RzAnalysisFunction *f = rz_anal_function_new (core->anal);
 	if (!f) {
 		eprintf ("Failed to create new function\n");
 		return;
@@ -293,7 +293,7 @@ RZ_API bool core_anal_bbs(RzCore *core, const char* input) {
 			cur += dsize;
 			continue;
 		}
-		RzAnalOp *const op = rz_core_anal_op (core, dst, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM);
+		RzAnalysisOp *const op = rz_core_anal_op (core, dst, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM);
 
 		if (!op || !op->mnemonic) {
 			block_score -= 10;
@@ -539,7 +539,7 @@ RZ_API bool core_anal_bbs_range (RzCore *core, const char* input) {
 	ut64 start = core->offset;
 	ut64 size = input[0] ? rz_num_math (core->num, input + 1) : core->blocksize;
 	ut64 b_start = start;
-	RzAnalOp *op;
+	RzAnalysisOp *op;
 	RzListIter *iter;
 	int block_score = 0;
 	RzList *block_list;

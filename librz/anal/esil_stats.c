@@ -2,43 +2,43 @@
 
 #include <rz_anal.h>
 
-static int hook_flag_read(RzAnalEsil *esil, const char *flag, ut64 *num) {
+static int hook_flag_read(RzAnalysisEsil *esil, const char *flag, ut64 *num) {
 	sdb_array_add (esil->stats, "flg.read", flag, 0);
 	return 0;
 }
 
-static int hook_command(RzAnalEsil *esil, const char *op) {
+static int hook_command(RzAnalysisEsil *esil, const char *op) {
 	sdb_array_add (esil->stats, "ops.list", op, 0);
 	return 0;
 }
 
-static int hook_mem_read(RzAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static int hook_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len) {
 	sdb_array_add_num (esil->stats, "mem.read", addr, 0);
 	return 0;
 }
 
-static int hook_mem_write(RzAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static int hook_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	sdb_array_add_num (esil->stats, "mem.write", addr, 0);
 	return 0;
 }
 
-static int hook_reg_read(RzAnalEsil *esil, const char *name, ut64 *res, int *size) {
+static int hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res, int *size) {
 	const char *key = (*name>='0' && *name<='9')? "num.load": "reg.read";
 	sdb_array_add (esil->stats, key, name, 0);
 	return 0;
 }
 
-static int hook_reg_write(RzAnalEsil *esil, const char *name, ut64 *val) {
+static int hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 	sdb_array_add (esil->stats, "reg.write", name, 0);
 	return 0;
 }
 
-static int hook_NOP_mem_write(RzAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static int hook_NOP_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	eprintf ("NOP WRITE AT 0x%08"PFMT64x"\n", addr);
 	return 1; // override
 }
 
-RZ_API void rz_anal_esil_mem_ro(RzAnalEsil *esil, int mem_readonly) {
+RZ_API void rz_anal_esil_mem_ro(RzAnalysisEsil *esil, int mem_readonly) {
 	if (mem_readonly) {
 		esil->cb.hook_mem_write = hook_NOP_mem_write;
 	} else {
@@ -46,7 +46,7 @@ RZ_API void rz_anal_esil_mem_ro(RzAnalEsil *esil, int mem_readonly) {
 	}
 }
 
-RZ_API void rz_anal_esil_stats(RzAnalEsil *esil, int enable) {
+RZ_API void rz_anal_esil_stats(RzAnalysisEsil *esil, int enable) {
 	if (enable) {
 		if (esil->stats) {
 			sdb_reset (esil->stats);

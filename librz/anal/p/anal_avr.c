@@ -34,7 +34,7 @@ typedef struct _cpu_model_tag {
 	CPU_CONST *consts[10];
 } CPU_MODEL;
 
-typedef void (*inst_handler_t) (RzAnal *anal, RzAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu);
+typedef void (*inst_handler_t) (RzAnalysis *anal, RzAnalysisOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu);
 
 typedef struct _opcodes_tag_ {
 	const char *const name;
@@ -46,7 +46,7 @@ typedef struct _opcodes_tag_ {
 	ut64 type;
 } OPCODE_DESC;
 
-static OPCODE_DESC* avr_op_analyze(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, CPU_MODEL *cpu);
+static OPCODE_DESC* avr_op_analyze(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, CPU_MODEL *cpu);
 
 #define CPU_MODEL_DECL(model, pc, consts)				\
 	{								\
@@ -58,7 +58,7 @@ static OPCODE_DESC* avr_op_analyze(RzAnal *anal, RzAnalOp *op, ut64 addr, const 
 #define CPU_PC_MASK(cpu)		MASK((cpu)->pc)
 #define CPU_PC_SIZE(cpu)		((((cpu)->pc) >> 3) + ((((cpu)->pc) & 0x07) ? 1 : 0))
 
-#define INST_HANDLER(OPCODE_NAME)	static void _inst__ ## OPCODE_NAME (RzAnal *anal, RzAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu)
+#define INST_HANDLER(OPCODE_NAME)	static void _inst__ ## OPCODE_NAME (RzAnalysis *anal, RzAnalysisOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu)
 #define INST_DECL(OP, M, SL, C, SZ, T)	{ #OP, (M), (SL), _inst__ ## OP, (C), (SZ), RZ_ANAL_OP_TYPE_ ## T }
 #define INST_LAST			{ "unknown", 0, 0, (void *) 0, 2, 1, RZ_ANAL_OP_TYPE_UNK }
 
@@ -207,7 +207,7 @@ static CPU_CONST *const_by_name(CPU_MODEL *cpu, int type, char *c) {
 	return NULL;
 }
 
-static int __esil_pop_argument(RzAnalEsil *esil, ut64 *v) {
+static int __esil_pop_argument(RzAnalysisEsil *esil, ut64 *v) {
 	char *t = rz_anal_esil_pop (esil);
 	if (!t || !rz_anal_esil_get_parm (esil, t, v)) {
 		free (t);
@@ -249,7 +249,7 @@ static RzStrBuf *__generic_io_dest(ut8 port, int write, CPU_MODEL *cpu) {
 	return r;
 }
 
-static void __generic_ld_st(RzAnalOp *op, char *mem, char ireg, int use_ramp, int prepostdec, int offset, int st) {
+static void __generic_ld_st(RzAnalysisOp *op, char *mem, char ireg, int use_ramp, int prepostdec, int offset, int st) {
 	if (ireg) {
 		// preincrement index register
 		if (prepostdec < 0) {
@@ -277,7 +277,7 @@ static void __generic_ld_st(RzAnalOp *op, char *mem, char ireg, int use_ramp, in
 	}
 }
 
-static void __generic_pop(RzAnalOp *op, int sz) {
+static void __generic_pop(RzAnalysisOp *op, int sz) {
 	if (sz > 1) {
 		ESIL_A ("1,sp,+,_ram,+,");	// calc SRAM(sp+1)
 		ESIL_A ("[%d],", sz);		// read value
@@ -288,7 +288,7 @@ static void __generic_pop(RzAnalOp *op, int sz) {
 	}
 }
 
-static void __generic_push(RzAnalOp *op, int sz) {
+static void __generic_push(RzAnalysisOp *op, int sz) {
 	ESIL_A ("sp,_ram,+,");			// calc pointer SRAM(sp)
 	if (sz > 1) {
 		ESIL_A ("-%d,+,", sz - 1);	// dec SP by 'sz'
@@ -571,7 +571,7 @@ INST_HANDLER (cpse) {	// CPSE Rd, Rr
 	}
 	int r = (buf[0] & 0xf) | ((buf[1] & 0x2) << 3);
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
-	RzAnalOp next_op = {0};
+	RzAnalysisOp next_op = {0};
 
 	// calculate next instruction size (call recursively avr_op_analyze)
 	// and free next_op's esil string (we dont need it now)
@@ -1291,7 +1291,7 @@ INST_HANDLER (sbix) {	// SBIC A, b
 	}
 	int a = (buf[0] >> 3) & 0x1f;
 	int b = buf[0] & 0x07;
-	RzAnalOp next_op = { 0 };
+	RzAnalysisOp next_op = { 0 };
 	RzStrBuf *io_port;
 
 	op->type2 = 0;
@@ -1348,7 +1348,7 @@ INST_HANDLER (sbrx) {	// SBRC Rr, b
 	}
 	int b = buf[0] & 0x7;
 	int r = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x01) << 4);
-	RzAnalOp next_op = {0};
+	RzAnalysisOp next_op = {0};
 
 	// calculate next instruction size (call recursively avr_op_analyze)
 	// and free next_op's esil string (we dont need it now)
@@ -1595,7 +1595,7 @@ OPCODE_DESC opcodes[] = {
 	INST_LAST
 };
 
-static OPCODE_DESC* avr_op_analyze(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, CPU_MODEL *cpu) {
+static OPCODE_DESC* avr_op_analyze(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, CPU_MODEL *cpu) {
 	OPCODE_DESC *opcode_desc;
 	if (len < 2) {
 		return NULL;
@@ -1666,7 +1666,7 @@ INVALID_OP:
 	return NULL;
 }
 
-static int avr_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int avr_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	CPU_MODEL *cpu;
 	ut64 offset;
 
@@ -1701,7 +1701,7 @@ static int avr_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len
 	return op->size;
 }
 
-static bool avr_custom_des (RzAnalEsil *esil) {
+static bool avr_custom_des (RzAnalysisEsil *esil) {
 	ut64 key, encrypt, text,des_round;
 	ut32 key_lo, key_hi, buf_lo, buf_hi;
 	if (!esil || !esil->anal || !esil->anal->reg) {
@@ -1751,7 +1751,7 @@ static bool avr_custom_des (RzAnalEsil *esil) {
 }
 
 // ESIL operation SPM_PAGE_ERASE
-static bool avr_custom_spm_page_erase(RzAnalEsil *esil) {
+static bool avr_custom_spm_page_erase(RzAnalysisEsil *esil) {
 	CPU_MODEL *cpu;
 	ut8 c;
 	ut64 addr, page_size_bits, i;
@@ -1785,7 +1785,7 @@ static bool avr_custom_spm_page_erase(RzAnalEsil *esil) {
 }
 
 // ESIL operation SPM_PAGE_FILL
-static bool avr_custom_spm_page_fill(RzAnalEsil *esil) {
+static bool avr_custom_spm_page_fill(RzAnalysisEsil *esil) {
 	CPU_MODEL *cpu;
 	ut64 addr, page_size_bits, i;
 	ut8 r0, r1;
@@ -1826,7 +1826,7 @@ static bool avr_custom_spm_page_fill(RzAnalEsil *esil) {
 }
 
 // ESIL operation SPM_PAGE_WRITE
-static bool avr_custom_spm_page_write(RzAnalEsil *esil) {
+static bool avr_custom_spm_page_write(RzAnalysisEsil *esil) {
 	CPU_MODEL *cpu;
 	char *t = NULL;
 	ut64 addr, page_size_bits, tmp_page;
@@ -1862,7 +1862,7 @@ static bool avr_custom_spm_page_write(RzAnalEsil *esil) {
 	return true;
 }
 
-static int esil_avr_hook_reg_write(RzAnalEsil *esil, const char *name, ut64 *val) {
+static int esil_avr_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *val) {
 	CPU_MODEL *cpu;
 
 	if (!esil || !esil->anal) {
@@ -1888,7 +1888,7 @@ static int esil_avr_hook_reg_write(RzAnalEsil *esil, const char *name, ut64 *val
 	return 0;
 }
 
-static int esil_avr_init(RzAnalEsil *esil) {
+static int esil_avr_init(RzAnalysisEsil *esil) {
 	if (!esil) {
 		return false;
 	}
@@ -1902,11 +1902,11 @@ static int esil_avr_init(RzAnalEsil *esil) {
 	return true;
 }
 
-static int esil_avr_fini(RzAnalEsil *esil) {
+static int esil_avr_fini(RzAnalysisEsil *esil) {
 	return true;
 }
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	const char *p =
 		"=PC	pcl\n"
 		"=SP	sp\n"
@@ -2032,7 +2032,7 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 	return rz_reg_set_profile_string (anal->reg, p);
 }
 
-static int archinfo(RzAnal *anal, int q) {
+static int archinfo(RzAnalysis *anal, int q) {
 	if (q == RZ_ANAL_ARCHINFO_ALIGN) {
 		return 2;
 	}
@@ -2045,8 +2045,8 @@ static int archinfo(RzAnal *anal, int q) {
 	return 2; // XXX
 }
 
-static ut8 *anal_mask_avr(RzAnal *anal, int size, const ut8 *data, ut64 at) {
-	RzAnalOp *op = NULL;
+static ut8 *anal_mask_avr(RzAnalysis *anal, int size, const ut8 *data, ut64 at) {
+	RzAnalysisOp *op = NULL;
 	ut8 *ret = NULL;
 	int idx;
 
@@ -2092,7 +2092,7 @@ static ut8 *anal_mask_avr(RzAnal *anal, int size, const ut8 *data, ut64 at) {
 	return ret;
 }
 
-RzAnalPlugin rz_anal_plugin_avr = {
+RzAnalysisPlugin rz_anal_plugin_avr = {
 	.name = "avr",
 	.desc = "AVR code analysis plugin",
 	.license = "LGPL3",

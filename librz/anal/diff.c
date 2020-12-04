@@ -4,8 +4,8 @@
 #include <rz_util.h>
 #include <rz_diff.h>
 
-RZ_API RzAnalDiff *rz_anal_diff_new(void) {
-	RzAnalDiff *diff = RZ_NEW0 (RzAnalDiff);
+RZ_API RzAnalysisDiff *rz_anal_diff_new(void) {
+	RzAnalysisDiff *diff = RZ_NEW0 (RzAnalysisDiff);
 	if (diff) {
 		diff->type = RZ_ANAL_DIFF_TYPE_NULL;
 		diff->addr = UT64_MAX;
@@ -16,7 +16,7 @@ RZ_API RzAnalDiff *rz_anal_diff_new(void) {
 	return diff;
 }
 
-RZ_API void* rz_anal_diff_free(RzAnalDiff *diff) {
+RZ_API void* rz_anal_diff_free(RzAnalysisDiff *diff) {
 	if (diff && diff->name) {
 		RZ_FREE (diff->name);
 	}
@@ -25,7 +25,7 @@ RZ_API void* rz_anal_diff_free(RzAnalDiff *diff) {
 }
 
 /* 0-1 */
-RZ_API void rz_anal_diff_setup(RzAnal *anal, int doops, double thbb, double thfcn) {
+RZ_API void rz_anal_diff_setup(RzAnalysis *anal, int doops, double thbb, double thfcn) {
 	if (doops >= 0) {
 		anal->diff_ops = doops;
 	}
@@ -34,7 +34,7 @@ RZ_API void rz_anal_diff_setup(RzAnal *anal, int doops, double thbb, double thfc
 }
 
 /* 0-100 */
-RZ_API void rz_anal_diff_setup_i(RzAnal *anal, int doops, int thbb, int thfcn) {
+RZ_API void rz_anal_diff_setup_i(RzAnalysis *anal, int doops, int thbb, int thfcn) {
 	if (doops >= 0) {
 		anal->diff_ops = doops;
 	}
@@ -43,8 +43,8 @@ RZ_API void rz_anal_diff_setup_i(RzAnal *anal, int doops, int thbb, int thfcn) {
 }
 
 // Fingerprint function basic block
-RZ_API int rz_anal_diff_fingerprint_bb(RzAnal *anal, RzAnalBlock *bb) {
-	RzAnalOp *op;
+RZ_API int rz_anal_diff_fingerprint_bb(RzAnalysis *anal, RzAnalysisBlock *bb) {
+	RzAnalysisOp *op;
 	ut8 *buf;
 	int oplen, idx = 0;
 
@@ -85,8 +85,8 @@ RZ_API int rz_anal_diff_fingerprint_bb(RzAnal *anal, RzAnalBlock *bb) {
 	return bb->size;
 }
 
-RZ_API size_t rz_anal_diff_fingerprint_fcn(RzAnal *anal, RzAnalFunction *fcn) {
-	RzAnalBlock *bb;
+RZ_API size_t rz_anal_diff_fingerprint_fcn(RzAnalysis *anal, RzAnalysisFunction *fcn) {
+	RzAnalysisBlock *bb;
 	RzListIter *iter;
 
 	if (anal && anal->cur && anal->cur->fingerprint_fcn) {
@@ -106,8 +106,8 @@ RZ_API size_t rz_anal_diff_fingerprint_fcn(RzAnal *anal, RzAnalFunction *fcn) {
 	return fcn->fingerprint_size;
 }
 
-RZ_API bool rz_anal_diff_bb(RzAnal *anal, RzAnalFunction *fcn, RzAnalFunction *fcn2) {
-	RzAnalBlock *bb, *bb2, *mbb, *mbb2;
+RZ_API bool rz_anal_diff_bb(RzAnalysis *anal, RzAnalysisFunction *fcn, RzAnalysisFunction *fcn2) {
+	RzAnalysisBlock *bb, *bb2, *mbb, *mbb2;
 	RzListIter *iter, *iter2;
 	double t, ot;
 
@@ -170,8 +170,8 @@ RZ_API bool rz_anal_diff_bb(RzAnal *anal, RzAnalFunction *fcn, RzAnalFunction *f
 	return true;
 }
 
-RZ_API int rz_anal_diff_fcn(RzAnal *anal, RzList *fcns, RzList *fcns2) {
-	RzAnalFunction *fcn, *fcn2, *mfcn, *mfcn2;
+RZ_API int rz_anal_diff_fcn(RzAnalysis *anal, RzList *fcns, RzList *fcns2) {
+	RzAnalysisFunction *fcn, *fcn2, *mfcn, *mfcn2;
 	RzListIter *iter, *iter2;
 	ut64 maxsize, minsize;
 	double t, ot;
@@ -288,7 +288,7 @@ RZ_API int rz_anal_diff_fcn(RzAnal *anal, RzList *fcns, RzList *fcns2) {
 	return true;
 }
 
-RZ_API int rz_anal_diff_eval(RzAnal *anal) {
+RZ_API int rz_anal_diff_eval(RzAnalysis *anal) {
 	if (anal && anal->cur && anal->cur->diff_eval) {
 		return (anal->cur->diff_eval (anal));
 	}

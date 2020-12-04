@@ -37,7 +37,7 @@ static inline ut16 i2ut16(struct instruction *in) {
 	return *((uint16_t*)in);
 }
 
-static int xap_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *bytes, int len, RzAnalOpMask mask) {
+static int xap_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *bytes, int len, RzAnalysisOpMask mask) {
 	struct instruction *in = (struct instruction *)bytes;
 	ut16 lol, ins;
 	struct directive d = {{0}};
@@ -60,7 +60,7 @@ static int xap_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *bytes, int l
 	xap_decode (&s, &d);
 	d.d_operand = get_operand (&s, &d);
 
-	memset (op, 0, sizeof (RzAnalOp));
+	memset (op, 0, sizeof (RzAnalysisOp));
 	op->type = RZ_ANAL_OP_TYPE_UNK;
 	op->size = 2;
 
@@ -209,7 +209,7 @@ static int xap_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *bytes, int l
 	return op->size;
 }
 
-RzAnalPlugin rz_anal_plugin_xap = {
+RzAnalysisPlugin rz_anal_plugin_xap = {
 	.name = "xap",
 	.desc = "XAP code analysis plugin",
 	.license = "LGPL3",

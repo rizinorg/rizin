@@ -278,7 +278,7 @@ static int cmd_seek_opcode_forward (RzCore *core, int n) {
 	// N forward instructions
 	int i, ret, val = 0;
 	for (val = i = 0; i < n; i++) {
-		RzAnalOp op;
+		RzAnalysisOp op;
 		ret = rz_anal_op (core->anal, &op, core->offset, core->block,
 			core->blocksize, RZ_ANAL_OP_MASK_BASIC);
 		if (ret < 1) {
@@ -370,7 +370,7 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 			rz_core_cmd0 (core, "C*~^\"CC");
 		} else if (input[1] == ' ') {
 			RzIntervalTreeIter it;
-			RzAnalMetaItem *meta;
+			RzAnalysisMetaItem *meta;
 			bool seeked = false;
 			rz_interval_tree_foreach (&core->anal->meta, it, meta) {
 				if (meta->type == RZ_META_TYPE_COMMENT && !strcmp (meta->str, input + 2)) {
@@ -670,7 +670,7 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 		rz_core_anal_bb_seek (core, off);
 		break;
 	case 'f': { // "sf"
-		RzAnalFunction *fcn;
+		RzAnalysisFunction *fcn;
 		switch (input[1]) {
 		case '\0': // "sf"
 			fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);

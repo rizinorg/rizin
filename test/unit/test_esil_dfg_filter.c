@@ -4,11 +4,11 @@
 #include "minunit.h"
 
 bool test_filter_regs(void) {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 	rz_anal_use (anal, "x86");
 	rz_anal_set_bits (anal, 32);
 	rz_anal_set_reg_profile (anal);
-	RzAnalEsil *esil = rz_anal_esil_new (4096, 0, 1);
+	RzAnalysisEsil *esil = rz_anal_esil_new (4096, 0, 1);
 	esil->anal = anal;
 
 	// create expected results
@@ -18,7 +18,7 @@ bool test_filter_regs(void) {
 	const ut64 al = rz_reg_getv (anal->reg, "al");
 	rz_reg_setv (anal->reg, "eax", 0);
 
-	RzAnalEsilDFG *dfg = rz_anal_esil_dfg_expr (anal, NULL, "0x9090,ax,:=,0xff,ah,:=");
+	RzAnalysisEsilDFG *dfg = rz_anal_esil_dfg_expr (anal, NULL, "0x9090,ax,:=,0xff,ah,:=");
 
 	// filter for ax register
 	RzStrBuf *filtered_expr = rz_anal_esil_dfg_filter (dfg, "ax");

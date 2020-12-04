@@ -92,7 +92,7 @@ static const char *help_msg_zc[] = {
 	NULL
 };
 
-static void addFcnZign(RzCore *core, RzAnalFunction *fcn, const char *name) {
+static void addFcnZign(RzCore *core, RzAnalysisFunction *fcn, const char *name) {
 	char *ptr = NULL;
 	char *zignspace = NULL;
 	char *zigname = NULL;
@@ -348,7 +348,7 @@ out_case_manual:
 		break;
 	case 'f': // "zaf"
 		{
-			RzAnalFunction *fcni = NULL;
+			RzAnalysisFunction *fcni = NULL;
 			RzListIter *iter = NULL;
 			const char *fcnname = NULL, *zigname = NULL;
 			char *args = NULL;
@@ -391,7 +391,7 @@ out_case_fcn:
 		break;
 	case 'F':
 		{
-			RzAnalFunction *fcni = NULL;
+			RzAnalysisFunction *fcni = NULL;
 			RzListIter *iter = NULL;
 			int count = 0;
 
@@ -582,7 +582,7 @@ struct ctxSearchCB {
 	const char *prefix;
 };
 
-static void apply_name(RzCore *core, RzAnalFunction *fcn, RzSignItem *it, bool rad) {
+static void apply_name(RzCore *core, RzAnalysisFunction *fcn, RzSignItem *it, bool rad) {
 	rz_return_if_fail (core && fcn && it && it->name);
 	const char *name = it->realname? it->realname: it->name;
 	if (rad) {
@@ -603,7 +603,7 @@ static void apply_name(RzCore *core, RzAnalFunction *fcn, RzSignItem *it, bool r
 	}
 }
 
-static void apply_types(RzCore *core, RzAnalFunction *fcn, RzSignItem *it) {
+static void apply_types(RzCore *core, RzAnalysisFunction *fcn, RzSignItem *it) {
 	rz_return_if_fail (core && fcn && it && it->name);
 	if (!it->types) {
 		return;
@@ -672,7 +672,7 @@ static const char *getprefix(RzSignType t) {
 static int searchHitCB(RzSignItem *it, RzSearchKeyword *kw, ut64 addr, void *user) {
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *)user;
 	apply_flag (ctx->core, it, addr, kw->keyword_length, kw->count, ctx->prefix, ctx->rad);
-	RzAnalFunction *fcn = rz_anal_get_fcn_in (ctx->core->anal, addr, 0);
+	RzAnalysisFunction *fcn = rz_anal_get_fcn_in (ctx->core->anal, addr, 0);
 	// TODO: create fcn if it does not exist
 	if (fcn) {
 		apply_name (ctx->core, fcn, it, ctx->rad);
@@ -682,7 +682,7 @@ static int searchHitCB(RzSignItem *it, RzSearchKeyword *kw, ut64 addr, void *use
 	return 1;
 }
 
-static int fcnMatchCB(RzSignItem *it, RzAnalFunction *fcn, RzSignType type, bool seen, void *user) {
+static int fcnMatchCB(RzSignItem *it, RzAnalysisFunction *fcn, RzSignType type, bool seen, void *user) {
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *)user;
 	const char *prefix = getprefix (type);
 	// TODO(nibble): use one counter per metric zign instead of ctx->count
@@ -800,7 +800,7 @@ static bool fill_search_metrics(RzSignSearchMetrics *sm, RzCore *c, void *user) 
 static bool search(RzCore *core, bool rad, bool only_func) {
 	RzList *list;
 	RzListIter *iter;
-	RzAnalFunction *fcni = NULL;
+	RzAnalysisFunction *fcni = NULL;
 	RzIOMap *map;
 	bool retval = true;
 	int hits = 0;
@@ -906,7 +906,7 @@ static void print_possible_matches(RzList *list) {
 	}
 }
 
-static RzSignItem *item_frm_signame(RzAnal *a, const char *signame) {
+static RzSignItem *item_frm_signame(RzAnalysis *a, const char *signame) {
 	// example zign|*|sym.unlink_blk
 	const RzSpace *space = rz_spaces_current (&a->zign_spaces);
 	char *k = rz_str_newf ("zign|%s|%s", space? space->name: "*", signame);
@@ -1004,7 +1004,7 @@ static bool bestmatch_fcn(RzCore *core, const char *input) {
 }
 
 static bool do_bestmatch_sig(RzCore *core, int count) {
-	RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
+	RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
 	if (!fcn) {
 		eprintf ("No function at 0x%08" PFMT64x "\n", core->offset);
 		return false;
@@ -1138,7 +1138,7 @@ static int cmdCheck(void *data, const char *input) {
 	RzCore *core = (RzCore *) data;
 	RzSignSearch *ss;
 	RzListIter *iter;
-	RzAnalFunction *fcni = NULL;
+	RzAnalysisFunction *fcni = NULL;
 	ut64 at = core->offset;
 	bool retval = true;
 	bool rad = input[0] == '*';
@@ -1359,7 +1359,7 @@ RZ_IPI RzCmdStatus rz_zign_add_handler(RzCore *core, int argc, const char **argv
 }
 
 RZ_IPI RzCmdStatus rz_zign_add_fcn_handler(RzCore *core, int argc, const char **argv) {
-	RzAnalFunction *fcni = NULL;
+	RzAnalysisFunction *fcni = NULL;
 	RzListIter *iter = NULL;
 	const char *fcnname = argc > 1? argv[1]: NULL;
 	const char *zigname = argc > 2? argv[2]: NULL;
@@ -1379,7 +1379,7 @@ RZ_IPI RzCmdStatus rz_zign_add_fcn_handler(RzCore *core, int argc, const char **
 }
 
 RZ_IPI RzCmdStatus rz_zign_add_all_fcns_handler(RzCore *core, int argc, const char **argv) {
-	RzAnalFunction *fcni = NULL;
+	RzAnalysisFunction *fcni = NULL;
 	RzListIter *iter = NULL;
 	int count = 0;
 	rz_cons_break_push (NULL, NULL);

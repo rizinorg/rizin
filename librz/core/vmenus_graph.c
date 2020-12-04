@@ -37,7 +37,7 @@ RZ_API char *rz_str_widget_list(void *user, RzList *list, int rows, int cur, Pri
 
 typedef struct {
 	ut64 addr;
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 	int cur; // current row selected
 	int cur_sort; // holds current sort
 	RzCore *core;
@@ -49,7 +49,7 @@ typedef struct {
 typedef struct {
 	ut64 addr;
 	const char *name;
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 } RzCoreVisualViewGraphItem;
 
 static char *print_item(void *_core, void *_item, bool selected) {
@@ -68,7 +68,7 @@ static char *print_item(void *_core, void *_item, bool selected) {
 static RzList *__xrefs(RzCore *core, ut64 addr) {
 	RzList *r = rz_list_newf (free);
 	RzListIter *iter;
-	RzAnalRef *ref;
+	RzAnalysisRef *ref;
 	RzList *xrefs = rz_anal_xrefs_get (core->anal, addr);
 	rz_list_foreach (xrefs, iter, ref) {
 		if (ref->type != 'C') {
@@ -78,7 +78,7 @@ static RzList *__xrefs(RzCore *core, ut64 addr) {
 		RzFlagItem *f = rz_flag_get_at (core->flags, ref->addr, 0);
 		item->addr = ref->addr;
 		item->name = f? f->name: NULL;
-		RzAnalFunction *rf = rz_anal_get_fcn_in (core->anal, ref->addr, 0);
+		RzAnalysisFunction *rf = rz_anal_get_fcn_in (core->anal, ref->addr, 0);
 		item->fcn = rf;
 		if (rf) {
 			item->name = rf->name;
@@ -91,8 +91,8 @@ static RzList *__xrefs(RzCore *core, ut64 addr) {
 static RzList *__refs(RzCore *core, ut64 addr) {
 	RzList *r = rz_list_newf (free);
 	RzListIter *iter;
-	RzAnalRef *ref;
-	RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, addr, 0);
+	RzAnalysisRef *ref;
+	RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, addr, 0);
 	if (!fcn) {
 		return r;
 	}
@@ -105,7 +105,7 @@ static RzList *__refs(RzCore *core, ut64 addr) {
 		RzFlagItem *f = rz_flag_get_at (core->flags, ref->addr, 0);
 		item->addr = ref->addr;
 		item->name = f? f->name: NULL;
-		RzAnalFunction *rf = rz_anal_get_fcn_in (core->anal, ref->addr, 0);
+		RzAnalysisFunction *rf = rz_anal_get_fcn_in (core->anal, ref->addr, 0);
 		if (rf) {
 			item->name = rf->name;
 			item->fcn = rf;
@@ -118,7 +118,7 @@ static RzList *__refs(RzCore *core, ut64 addr) {
 static RzList *__fcns(RzCore *core) {
 	RzList *r = rz_list_newf (free);
 	RzListIter *iter;
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 	rz_list_foreach (core->anal->fcns, iter, fcn) {
 		RzCoreVisualViewGraphItem *item = RZ_NEW0 (RzCoreVisualViewGraphItem);
 		item->addr = fcn->addr;
@@ -257,7 +257,7 @@ RZ_API int rz_core_visual_view_graph(RzCore *core) {
 	status.cur_sort = SORT_NAME;
 	__reset_status (&status);
 	__sync_status_with_cursor (&status);
-	RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, status.addr, 0);
+	RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, status.addr, 0);
 	if (fcn) {
 		status.addr = fcn->addr;
 		status.fcn = fcn;

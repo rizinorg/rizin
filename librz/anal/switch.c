@@ -2,8 +2,8 @@
 
 #include <rz_anal.h>
 
-static RzAnalSwitchOp *__switch_op_new(void) {
-	RzAnalSwitchOp * swop = RZ_NEW0 (RzAnalSwitchOp);
+static RzAnalysisSwitchOp *__switch_op_new(void) {
+	RzAnalysisSwitchOp * swop = RZ_NEW0 (RzAnalysisSwitchOp);
 	if (swop) {
 		swop->cases = rz_list_new ();
 		if (!swop->cases) {
@@ -16,8 +16,8 @@ static RzAnalSwitchOp *__switch_op_new(void) {
 	return swop;
 }
 
-RZ_API RzAnalSwitchOp *rz_anal_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val, ut64 def_val) {
-	RzAnalSwitchOp *swop = __switch_op_new ();
+RZ_API RzAnalysisSwitchOp *rz_anal_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val, ut64 def_val) {
+	RzAnalysisSwitchOp *swop = __switch_op_new ();
 	if (swop) {
 		swop->addr = addr;
 		swop->min_val = min_val;
@@ -27,8 +27,8 @@ RZ_API RzAnalSwitchOp *rz_anal_switch_op_new(ut64 addr, ut64 min_val, ut64 max_v
 	return swop;
 }
 
-RZ_API RzAnalCaseOp * rz_anal_case_op_new(ut64 addr, ut64 val, ut64 jump) {
-	RzAnalCaseOp *c = RZ_NEW0 (RzAnalCaseOp);
+RZ_API RzAnalysisCaseOp * rz_anal_case_op_new(ut64 addr, ut64 val, ut64 jump) {
+	RzAnalysisCaseOp *c = RZ_NEW0 (RzAnalysisCaseOp);
 	if (c) {
 		c->addr = addr;
 		c->value = val;
@@ -37,16 +37,16 @@ RZ_API RzAnalCaseOp * rz_anal_case_op_new(ut64 addr, ut64 val, ut64 jump) {
 	return c;
 }
 
-RZ_API void rz_anal_switch_op_free(RzAnalSwitchOp * swop) {
+RZ_API void rz_anal_switch_op_free(RzAnalysisSwitchOp * swop) {
 	if (swop) {
 		rz_list_free (swop->cases);
 		free (swop);
 	}
 }
 
-RZ_API RzAnalCaseOp* rz_anal_switch_op_add_case(RzAnalSwitchOp * swop, ut64 addr, ut64 value, ut64 jump) {
+RZ_API RzAnalysisCaseOp* rz_anal_switch_op_add_case(RzAnalysisSwitchOp * swop, ut64 addr, ut64 value, ut64 jump) {
 	rz_return_val_if_fail (swop && addr != UT64_MAX, NULL);
-	RzAnalCaseOp * caseop = rz_anal_case_op_new (addr, value, jump);
+	RzAnalysisCaseOp * caseop = rz_anal_case_op_new (addr, value, jump);
 	if (caseop) {
 		rz_list_append (swop->cases, caseop);
 	}

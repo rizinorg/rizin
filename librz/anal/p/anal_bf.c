@@ -23,13 +23,13 @@ static int getid (char ch) {
 }
 
 #define BUFSIZE_INC 32
-static int bf_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int bf_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	ut64 dst = 0LL;
 	if (!op) {
 		return 1;
 	}
-	/* Ayeeee! What's inside op? Do we have an initialized RzAnalOp? Are we going to have a leak here? :-( */
-	memset (op, 0, sizeof (RzAnalOp)); /* We need to refactorize this. Something like rz_anal_op_init would be more appropriate */
+	/* Ayeeee! What's inside op? Do we have an initialized RzAnalysisOp? Are we going to have a leak here? :-( */
+	memset (op, 0, sizeof (RzAnalysisOp)); /* We need to refactorize this. Something like rz_anal_op_init would be more appropriate */
 	rz_strbuf_init (&op->esil);
 	op->size = 1;
 	op->id = getid (buf[0]);
@@ -128,7 +128,7 @@ beach:
 	return op->size;
 }
 
-static char *get_reg_profile(RzAnal *anal) {
+static char *get_reg_profile(RzAnalysis *anal) {
 	return strdup (
 		"=PC	pc\n"
 		"=BP	brk\n"
@@ -145,7 +145,7 @@ static char *get_reg_profile(RzAnal *anal) {
 	);
 }
 
-RzAnalPlugin rz_anal_plugin_bf = {
+RzAnalysisPlugin rz_anal_plugin_bf = {
 	.name = "bf",
 	.desc = "brainfuck code analysis plugin",
 	.license = "LGPL3",

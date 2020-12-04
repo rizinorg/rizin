@@ -44,7 +44,7 @@ static const char *getCondz(ut8 cond) {
 	return "";
 }
 
-static int dalvik_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask) {
+static int dalvik_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	int sz = dalvik_opcodes[data[0]].len;
 	if (!op || sz >= len) {
 		if (op && (mask & RZ_ANAL_OP_MASK_DISASM)) {
@@ -703,7 +703,7 @@ static int dalvik_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int
 	return sz;
 }
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	const char *p =
 	"=PC	ip\n"
 	"=SP	sp\n"
@@ -755,7 +755,7 @@ static bool set_reg_profile(RzAnal *anal) {
 	return rz_reg_set_profile_string (anal->reg, p);
 }
 
-RzAnalPlugin rz_anal_plugin_dalvik = {
+RzAnalysisPlugin rz_anal_plugin_dalvik = {
 	.name = "dalvik",
 	.arch = "dalvik",
 	.set_reg_profile = &set_reg_profile,

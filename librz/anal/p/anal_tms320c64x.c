@@ -59,7 +59,7 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	rz_strbuf_append (buf, "]}");
 }
 
-static int tms320c64x_analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int tms320c64x_analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	static csh handle = 0;
 	static int omode;
 	cs_insn *insn;
@@ -184,11 +184,11 @@ static int tms320c64x_analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf,
 
 /*
 
-static int archinfo(RzAnal *anal, int q) {
+static int archinfo(RzAnalysis *anal, int q) {
 	return 4; // :D
 }
 
-RzAnalPlugin rz_anal_plugin_tms320c64x = {
+RzAnalysisPlugin rz_anal_plugin_tms320c64x = {
 	.name = "tms320c64x",
 	.desc = "Capstone TMS320C64X analysis",
 	.license = "BSD",
@@ -199,7 +199,7 @@ RzAnalPlugin rz_anal_plugin_tms320c64x = {
 };
 
 #else
-RzAnalPlugin rz_anal_plugin_tms320c64x = {
+RzAnalysisPlugin rz_anal_plugin_tms320c64x = {
 	.name = "tms320c64x",
 	.desc = "Capstone TMS320C64X analysis (unsupported)",
 	.license = "BSD",

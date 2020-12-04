@@ -24,11 +24,11 @@ RZ_API const char *rz_anal_cond_tostring(int cc) {
 	return "??";
 }
 
-RZ_API RzAnalCond *rz_anal_cond_new(void) {
-	return RZ_NEW0 (RzAnalCond);
+RZ_API RzAnalysisCond *rz_anal_cond_new(void) {
+	return RZ_NEW0 (RzAnalysisCond);
 }
 
-RZ_API void rz_anal_cond_fini (RzAnalCond *c) {
+RZ_API void rz_anal_cond_fini (RzAnalysisCond *c) {
 	if (!c) {
 		return;
 	}
@@ -37,7 +37,7 @@ RZ_API void rz_anal_cond_fini (RzAnalCond *c) {
 	c->arg[0] = c->arg[1] = NULL;
 }
 
-RZ_API void rz_anal_cond_free (RzAnalCond *c) {
+RZ_API void rz_anal_cond_free (RzAnalysisCond *c) {
 	if (!c) {
 		return;
 	}
@@ -46,16 +46,16 @@ RZ_API void rz_anal_cond_free (RzAnalCond *c) {
 }
 
 // XXX?
-RZ_API RzAnalCond *rz_anal_cond_clone(RzAnalCond *cond) {
-	RzAnalCond *c = RZ_NEW (RzAnalCond);
+RZ_API RzAnalysisCond *rz_anal_cond_clone(RzAnalysisCond *cond) {
+	RzAnalysisCond *c = RZ_NEW (RzAnalysisCond);
 	if (!c) {
 		return NULL;
 	}
-	memcpy (c, cond, sizeof (RzAnalCond));
+	memcpy (c, cond, sizeof (RzAnalysisCond));
 	return c;
 }
 
-static inline const char *condstring(RzAnalCond *cond) {
+static inline const char *condstring(RzAnalysisCond *cond) {
 	const char *condstr_single[] = { "!", "", "0<", "0<=", "0>", "0>=" };
 	const char *condstr[] = { "==", "!=", ">=", ">", "<=", "<" };
 	if (cond) {
@@ -68,7 +68,7 @@ static inline const char *condstring(RzAnalCond *cond) {
 	return "";
 }
 
-RZ_API int rz_anal_cond_eval(RzAnal *anal, RzAnalCond *cond) {
+RZ_API int rz_anal_cond_eval(RzAnalysis *anal, RzAnalysisCond *cond) {
 	// XXX: sign issue here?
 	st64 arg0 = (st64) rz_anal_value_to_ut64 (anal, cond->arg[0]);
 	if (cond->arg[1]) {
@@ -95,7 +95,7 @@ RZ_API int rz_anal_cond_eval(RzAnal *anal, RzAnalCond *cond) {
 }
 
 // XXX conflict naming with tostring()
-RZ_API char *rz_anal_cond_to_string(RzAnalCond *cond) {
+RZ_API char *rz_anal_cond_to_string(RzAnalysisCond *cond) {
 	char *val0, *val1, *out = NULL;
 	const char *cnd;
 	if (!cond) {
@@ -124,8 +124,8 @@ RZ_API char *rz_anal_cond_to_string(RzAnalCond *cond) {
 	return out? out: strdup ("?");
 }
 
-RZ_API RzAnalCond *rz_anal_cond_new_from_op(RzAnalOp *op) {
-	RzAnalCond *cond;
+RZ_API RzAnalysisCond *rz_anal_cond_new_from_op(RzAnalysisOp *op) {
+	RzAnalysisCond *cond;
 	if (!(cond = rz_anal_cond_new ())) {
 		return NULL;
 	}
@@ -140,8 +140,8 @@ RZ_API RzAnalCond *rz_anal_cond_new_from_op(RzAnalOp *op) {
 	return cond;
 }
 
-RZ_API RzAnalCond *rz_anal_cond_new_from_string(const char *str) {
-	RzAnalCond *cond = RZ_NEW (RzAnalCond);
+RZ_API RzAnalysisCond *rz_anal_cond_new_from_string(const char *str) {
+	RzAnalysisCond *cond = RZ_NEW (RzAnalysisCond);
 	// TODO: find '<','=','>','!'...
 	return cond;
 }

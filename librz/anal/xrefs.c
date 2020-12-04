@@ -24,8 +24,8 @@ xrefs
 // XXX: is it possible to have multiple type for the same (from, to) pair?
 //      if it is, things need to be adjusted
 
-static RzAnalRef *rz_anal_ref_new(ut64 addr, ut64 at, ut64 type) {
-	RzAnalRef *ref = RZ_NEW (RzAnalRef);
+static RzAnalysisRef *rz_anal_ref_new(ut64 addr, ut64 at, ut64 type) {
+	RzAnalysisRef *ref = RZ_NEW (RzAnalysisRef);
 	if (ref) {
 		ref->addr = addr;
 		ref->at = at;
@@ -52,8 +52,8 @@ static void xrefs_ref_free(HtUPKv *kv) {
 
 static bool appendRef(void *u, const ut64 k, const void *v) {
 	RzList *list = (RzList *)u;
-	RzAnalRef *ref = (RzAnalRef *)v;
-	RzAnalRef *cloned = rz_anal_ref_new (ref->addr, ref->at, ref->type);
+	RzAnalysisRef *ref = (RzAnalysisRef *)v;
+	RzAnalysisRef *cloned = rz_anal_ref_new (ref->addr, ref->at, ref->type);
 	if (cloned) {
 		rz_list_append (list, cloned);
 		return true;
@@ -67,7 +67,7 @@ static bool mylistrefs_cb(void *list, const ut64 k, const void *v) {
 	return true;
 }
 
-static int ref_cmp(const RzAnalRef *a, const RzAnalRef *b) {
+static int ref_cmp(const RzAnalysisRef *a, const RzAnalysisRef *b) {
 	if (a->at < b->at) {
 		return -1;
 	}
@@ -111,14 +111,14 @@ static void setxref(HtUP *m, ut64 from, ut64 to, int type) {
 		}
 		ht_up_insert (m, from, ht);
 	}
-	RzAnalRef *ref = rz_anal_ref_new (to, from, type);
+	RzAnalysisRef *ref = rz_anal_ref_new (to, from, type);
 	if (ref) {
 		ht_up_update (ht, to, ref);
 	}
 }
 
 // set a reference from FROM to TO and a cross-reference(xref) from TO to FROM.
-RZ_API int rz_anal_xrefs_set(RzAnal *anal, ut64 from, ut64 to, const RzAnalRefType type) {
+RZ_API int rz_anal_xrefs_set(RzAnalysis *anal, ut64 from, ut64 to, const RzAnalysisRefType type) {
 	if (!anal || from == to) {
 		return false;
 	}
@@ -135,7 +135,7 @@ RZ_API int rz_anal_xrefs_set(RzAnal *anal, ut64 from, ut64 to, const RzAnalRefTy
 	return true;
 }
 
-RZ_API int rz_anal_xrefs_deln(RzAnal *anal, ut64 from, ut64 to, const RzAnalRefType type) {
+RZ_API int rz_anal_xrefs_deln(RzAnalysis *anal, ut64 from, ut64 to, const RzAnalysisRefType type) {
 	if (!anal) {
 		return false;
 	}
@@ -144,7 +144,7 @@ RZ_API int rz_anal_xrefs_deln(RzAnal *anal, ut64 from, ut64 to, const RzAnalRefT
 	return true;
 }
 
-RZ_API int rz_anal_xref_del(RzAnal *anal, ut64 from, ut64 to) {
+RZ_API int rz_anal_xref_del(RzAnalysis *anal, ut64 from, ut64 to) {
 	bool res = false;
 	res |= rz_anal_xrefs_deln (anal, from, to, RZ_ANAL_REF_TYPE_NULL);
 	res |= rz_anal_xrefs_deln (anal, from, to, RZ_ANAL_REF_TYPE_CODE);
@@ -154,13 +154,13 @@ RZ_API int rz_anal_xref_del(RzAnal *anal, ut64 from, ut64 to) {
 	return res;
 }
 
-RZ_API int rz_anal_xrefs_from(RzAnal *anal, RzList *list, const char *kind, const RzAnalRefType type, ut64 addr) {
+RZ_API int rz_anal_xrefs_from(RzAnalysis *anal, RzList *list, const char *kind, const RzAnalysisRefType type, ut64 addr) {
 	listxrefs (anal->dict_refs, addr, list);
 	sortxrefs (list);
 	return true;
 }
 
-RZ_API RzList *rz_anal_xrefs_get(RzAnal *anal, ut64 to) {
+RZ_API RzList *rz_anal_xrefs_get(RzAnalysis *anal, ut64 to) {
 	RzList *list = rz_anal_ref_list_new ();
 	if (!list) {
 		return NULL;
@@ -174,7 +174,7 @@ RZ_API RzList *rz_anal_xrefs_get(RzAnal *anal, ut64 to) {
 	return list;
 }
 
-RZ_API RzList *rz_anal_refs_get(RzAnal *anal, ut64 from) {
+RZ_API RzList *rz_anal_refs_get(RzAnalysis *anal, ut64 from) {
 	RzList *list = rz_anal_ref_list_new ();
 	if (!list) {
 		return NULL;
@@ -188,7 +188,7 @@ RZ_API RzList *rz_anal_refs_get(RzAnal *anal, ut64 from) {
 	return list;
 }
 
-RZ_API RzList *rz_anal_xrefs_get_from(RzAnal *anal, ut64 to) {
+RZ_API RzList *rz_anal_xrefs_get_from(RzAnalysis *anal, ut64 to) {
 	RzList *list = rz_anal_ref_list_new ();
 	if (!list) {
 		return NULL;
@@ -202,9 +202,9 @@ RZ_API RzList *rz_anal_xrefs_get_from(RzAnal *anal, ut64 to) {
 	return list;
 }
 
-RZ_API void rz_anal_xrefs_list(RzAnal *anal, int rad) {
+RZ_API void rz_anal_xrefs_list(RzAnalysis *anal, int rad) {
 	RzListIter *iter;
-	RzAnalRef *ref;
+	RzAnalysisRef *ref;
 	PJ *pj = NULL;
 	RzList *list = rz_anal_ref_list_new();
 	listxrefs (anal->dict_refs, UT64_MAX, list);
@@ -279,7 +279,7 @@ RZ_API void rz_anal_xrefs_list(RzAnal *anal, int rad) {
 	rz_list_free (list);
 }
 
-RZ_API const char *rz_anal_xrefs_type_tostring(RzAnalRefType type) {
+RZ_API const char *rz_anal_xrefs_type_tostring(RzAnalysisRefType type) {
 	switch (type) {
 	case RZ_ANAL_REF_TYPE_CODE:
 		return "CODE";
@@ -295,20 +295,20 @@ RZ_API const char *rz_anal_xrefs_type_tostring(RzAnalRefType type) {
 	}
 }
 
-RZ_API RzAnalRefType rz_anal_xrefs_type(char ch) {
+RZ_API RzAnalysisRefType rz_anal_xrefs_type(char ch) {
 	switch (ch) {
 	case RZ_ANAL_REF_TYPE_CODE:
 	case RZ_ANAL_REF_TYPE_CALL:
 	case RZ_ANAL_REF_TYPE_DATA:
 	case RZ_ANAL_REF_TYPE_STRING:
 	case RZ_ANAL_REF_TYPE_NULL:
-		return (RzAnalRefType)ch;
+		return (RzAnalysisRefType)ch;
 	default:
 		return RZ_ANAL_REF_TYPE_NULL;
 	}
 }
 
-RZ_API bool rz_anal_xrefs_init(RzAnal *anal) {
+RZ_API bool rz_anal_xrefs_init(RzAnalysis *anal) {
 	ht_up_free (anal->dict_refs);
 	anal->dict_refs = NULL;
 	ht_up_free (anal->dict_xrefs);
@@ -335,15 +335,15 @@ static bool count_cb(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
-RZ_API ut64 rz_anal_xrefs_count(RzAnal *anal) {
+RZ_API ut64 rz_anal_xrefs_count(RzAnalysis *anal) {
 	ut64 ret = 0;
 	ht_up_foreach (anal->dict_xrefs, count_cb, &ret);
 	return ret;
 }
 
-static RzList *fcn_get_refs(RzAnalFunction *fcn, HtUP *ht) {
+static RzList *fcn_get_refs(RzAnalysisFunction *fcn, HtUP *ht) {
 	RzListIter *iter;
-	RzAnalBlock *bb;
+	RzAnalysisBlock *bb;
 	RzList *list = rz_anal_ref_list_new ();
 	if (!list) {
 		return NULL;
@@ -360,17 +360,17 @@ static RzList *fcn_get_refs(RzAnalFunction *fcn, HtUP *ht) {
 	return list;
 }
 
-RZ_API RzList *rz_anal_function_get_refs(RzAnalFunction *fcn) {
+RZ_API RzList *rz_anal_function_get_refs(RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail (fcn, NULL);
 	return fcn_get_refs (fcn, fcn->anal->dict_refs);
 }
 
-RZ_API RzList *rz_anal_function_get_xrefs(RzAnalFunction *fcn) {
+RZ_API RzList *rz_anal_function_get_xrefs(RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail (fcn, NULL);
 	return fcn_get_refs (fcn, fcn->anal->dict_xrefs);
 }
 
-RZ_API const char *rz_anal_ref_type_tostring(RzAnalRefType t) {
+RZ_API const char *rz_anal_ref_type_tostring(RzAnalysisRefType t) {
 	switch (t) {
 	case RZ_ANAL_REF_TYPE_NULL:
 		return "null";

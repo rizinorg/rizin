@@ -6,11 +6,11 @@
 #define check_invariants block_check_invariants
 #define check_leaks block_check_leaks
 
-static size_t blocks_count(RzAnal *anal) {
+static size_t blocks_count(RzAnalysis *anal) {
 	size_t count = 0;
 	RBIter iter;
-	RzAnalBlock *block;
-	rz_rbtree_foreach(anal->bb_tree, iter, block, RzAnalBlock, _rb) {
+	RzAnalysisBlock *block;
+	rz_rbtree_foreach(anal->bb_tree, iter, block, RzAnalysisBlock, _rb) {
 		count++;
 	}
 	return count;
@@ -18,12 +18,12 @@ static size_t blocks_count(RzAnal *anal) {
 
 
 bool test_r_anal_block_create() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 	assert_block_invariants (anal);
 
 	mu_assert_eq (blocks_count (anal), 0, "initial count");
 
-	RzAnalBlock *block = rz_anal_create_block (anal, 0x1337, 42);
+	RzAnalysisBlock *block = rz_anal_create_block (anal, 0x1337, 42);
 	assert_block_invariants (anal);
 	mu_assert ("created block", block);
 	mu_assert_eq (block->addr, 0x1337, "created addr");
@@ -31,7 +31,7 @@ bool test_r_anal_block_create() {
 	mu_assert_eq (block->ref, 1, "created initial ref");
 	mu_assert_eq (blocks_count (anal), 1, "count after create");
 
-	RzAnalBlock *block2 = rz_anal_create_block (anal, 0x133f, 100);
+	RzAnalysisBlock *block2 = rz_anal_create_block (anal, 0x133f, 100);
 	assert_block_invariants (anal);
 	mu_assert ("created block (overlap)", block2);
 	mu_assert_eq (block2->addr, 0x133f, "created addr");
@@ -39,7 +39,7 @@ bool test_r_anal_block_create() {
 	mu_assert_eq (block2->ref, 1, "created initial ref");
 	mu_assert_eq (blocks_count (anal), 2, "count after create");
 
-	RzAnalBlock *block3 = rz_anal_create_block (anal, 0x1337, 5);
+	RzAnalysisBlock *block3 = rz_anal_create_block (anal, 0x1337, 5);
 	assert_block_invariants (anal);
 	mu_assert ("no double create on same start", !block3);
 	mu_assert_eq (blocks_count (anal), 2, "count after failed create");
@@ -53,7 +53,7 @@ bool test_r_anal_block_create() {
 }
 
 bool test_r_anal_block_contains() {
-	RzAnalBlock dummy = { 0 };
+	RzAnalysisBlock dummy = { 0 };
 	dummy.addr = 0x1337;
 	dummy.size = 42;
 	mu_assert ("contains before", !rz_anal_block_contains (&dummy, 100));
@@ -65,10 +65,10 @@ bool test_r_anal_block_contains() {
 }
 
 bool test_r_anal_block_split() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 	assert_block_invariants (anal);
 
-	RzAnalBlock *block = rz_anal_create_block (anal, 0x1337, 42);
+	RzAnalysisBlock *block = rz_anal_create_block (anal, 0x1337, 42);
 	assert_block_invariants (anal);
 	mu_assert_eq (blocks_count (anal), 1, "count after create");
 	block->jump = 0xdeadbeef;
@@ -80,7 +80,7 @@ bool test_r_anal_block_split() {
 	rz_anal_bb_set_offset (block, 3, 4);
 	rz_anal_bb_set_offset (block, 4, 30);
 
-	RzAnalBlock *second = rz_anal_block_split (block, 0x1337);
+	RzAnalysisBlock *second = rz_anal_block_split (block, 0x1337);
 	assert_block_invariants (anal);
 	mu_assert_ptreq (second, block, "nop split on first addr");
 	mu_assert_eq (blocks_count (anal), 1, "count after nop split");
@@ -120,20 +120,20 @@ bool test_r_anal_block_split() {
 }
 
 bool test_r_anal_block_split_in_function() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 	assert_block_invariants (anal);
 
-	RzAnalFunction *fcn = rz_anal_create_function (anal, "bbowner", 0x1337, 0, NULL);
+	RzAnalysisFunction *fcn = rz_anal_create_function (anal, "bbowner", 0x1337, 0, NULL);
 	assert_block_invariants (anal);
 
-	RzAnalBlock *block = rz_anal_create_block (anal, 0x1337, 42);
+	RzAnalysisBlock *block = rz_anal_create_block (anal, 0x1337, 42);
 	assert_block_invariants (anal);
 	mu_assert_eq (blocks_count (anal), 1, "count after create");
 	rz_anal_function_add_block (fcn, block);
 	assert_block_invariants (anal);
 	mu_assert_eq (block->ref, 2, "block refs after adding to function");
 
-	RzAnalBlock *second = rz_anal_block_split (block, 0x1339);
+	RzAnalysisBlock *second = rz_anal_block_split (block, 0x1339);
 	assert_block_invariants (anal);
 	mu_assert_ptrneq (second, block, "non-nop split");
 	mu_assert_eq (blocks_count (anal), 2, "count after non-nop split");
@@ -154,11 +154,11 @@ bool test_r_anal_block_split_in_function() {
 }
 
 bool test_r_anal_block_merge() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 	assert_block_invariants (anal);
 
-	RzAnalBlock *first = rz_anal_create_block (anal, 0x1337, 42);
-	RzAnalBlock *second = rz_anal_create_block (anal, 0x1337 + 42, 624);
+	RzAnalysisBlock *first = rz_anal_create_block (anal, 0x1337, 42);
+	RzAnalysisBlock *second = rz_anal_create_block (anal, 0x1337 + 42, 624);
 	assert_block_invariants (anal);
 	mu_assert_eq (blocks_count (anal), 2, "count after create");
 	second->jump = 0xdeadbeef;
@@ -202,13 +202,13 @@ bool test_r_anal_block_merge() {
 }
 
 bool test_r_anal_block_merge_in_function() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 	assert_block_invariants (anal);
 
-	RzAnalFunction *fcn = rz_anal_create_function (anal, "bbowner", 0x1337, 0, NULL);
+	RzAnalysisFunction *fcn = rz_anal_create_function (anal, "bbowner", 0x1337, 0, NULL);
 
-	RzAnalBlock *first = rz_anal_create_block (anal, 0x1337, 42);
-	RzAnalBlock *second = rz_anal_create_block (anal, 0x1337 + 42, 624);
+	RzAnalysisBlock *first = rz_anal_create_block (anal, 0x1337, 42);
+	RzAnalysisBlock *second = rz_anal_create_block (anal, 0x1337 + 42, 624);
 	assert_block_invariants (anal);
 	mu_assert_eq (blocks_count (anal), 2, "count after create");
 
@@ -235,12 +235,12 @@ bool test_r_anal_block_merge_in_function() {
 }
 
 bool test_r_anal_block_delete() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 	assert_block_invariants (anal);
 
-	RzAnalFunction *fcn = rz_anal_create_function (anal, "bbowner", 0x1337, 0, NULL);
+	RzAnalysisFunction *fcn = rz_anal_create_function (anal, "bbowner", 0x1337, 0, NULL);
 
-	RzAnalBlock *block = rz_anal_create_block (anal, 0x1337, 42);
+	RzAnalysisBlock *block = rz_anal_create_block (anal, 0x1337, 42);
 	assert_block_invariants (anal);
 	mu_assert_eq (blocks_count (anal), 1, "count after create");
 
@@ -263,12 +263,12 @@ bool test_r_anal_block_delete() {
 }
 
 bool test_r_anal_block_set_size() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 	assert_block_invariants (anal);
 
-	RzAnalFunction *fcn = rz_anal_create_function (anal, "bbowner", 0x1337, 0, NULL);
+	RzAnalysisFunction *fcn = rz_anal_create_function (anal, "bbowner", 0x1337, 0, NULL);
 
-	RzAnalBlock *block = rz_anal_create_block (anal, 0x1337, 42);
+	RzAnalysisBlock *block = rz_anal_create_block (anal, 0x1337, 42);
 	assert_block_invariants (anal);
 
 	rz_anal_function_add_block (fcn, block);
@@ -278,7 +278,7 @@ bool test_r_anal_block_set_size() {
 	assert_block_invariants (anal);
 	mu_assert_eq (block->size, 300, "size after set_size");
 
-	RzAnalBlock *second = rz_anal_create_block (anal, 0x1337+300, 100);
+	RzAnalysisBlock *second = rz_anal_create_block (anal, 0x1337+300, 100);
 	assert_block_invariants (anal);
 	rz_anal_function_add_block (fcn, block);
 	assert_block_invariants (anal);
@@ -302,12 +302,12 @@ bool test_r_anal_block_set_size() {
 }
 
 bool test_r_anal_block_relocate() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 	assert_block_invariants (anal);
 
-	RzAnalFunction *fcn = rz_anal_create_function (anal, "bbowner", 0x1337, 0, NULL);
+	RzAnalysisFunction *fcn = rz_anal_create_function (anal, "bbowner", 0x1337, 0, NULL);
 
-	RzAnalBlock *block = rz_anal_create_block (anal, 0x1337, 42);
+	RzAnalysisBlock *block = rz_anal_create_block (anal, 0x1337, 42);
 	assert_block_invariants (anal);
 
 	rz_anal_function_add_block (fcn, block);
@@ -321,7 +321,7 @@ bool test_r_anal_block_relocate() {
 	mu_assert_eq (block->addr, 0x200, "addr after relocate");
 	mu_assert_eq (block->size, 0x100, "size after relocate");
 
-	RzAnalBlock *second = rz_anal_create_block (anal, 0x1337+300, 100);
+	RzAnalysisBlock *second = rz_anal_create_block (anal, 0x1337+300, 100);
 	assert_block_invariants (anal);
 	rz_anal_function_add_block (fcn, second);
 	assert_block_invariants (anal);
@@ -367,7 +367,7 @@ bool test_r_anal_block_relocate() {
 }
 
 bool test_r_anal_block_query() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 	assert_block_invariants (anal);
 
 #define N 200
@@ -375,7 +375,7 @@ bool test_r_anal_block_query() {
 #define SPACE 0x10000
 #define SAMPLES 300
 
-	RzAnalBlock *blocks[N];
+	RzAnalysisBlock *blocks[N];
 	size_t i;
 	for (i = 0; i < N; i++) {
 		blocks[i] = rz_anal_create_block (anal, rand () % SPACE, rand () % MAXSIZE); // may return null on duplicates
@@ -398,7 +398,7 @@ bool test_r_anal_block_query() {
 
 		// goal is to check cases where rz_anal_get_block_at() returns null,
 		// but since the addr is random, there may be a block sometimes too.
-		RzAnalBlock *block = NULL;
+		RzAnalysisBlock *block = NULL;
 		for (j = 0; j < N; j++) {
 			if (!blocks[j]) {
 				continue;
@@ -419,7 +419,7 @@ bool test_r_anal_block_query() {
 		ut64 addr = rand () % SPACE;
 		RzList *in = rz_anal_get_blocks_in (anal, addr);
 
-		RzAnalBlock *block;
+		RzAnalysisBlock *block;
 		RzListIter *it;
 		rz_list_foreach (in, it, block) {
 			mu_assert_eq (block->ref, 2, "block refd in returned list");
@@ -448,7 +448,7 @@ bool test_r_anal_block_query() {
 		ut64 size = rand() % MAXSIZE;
 		RzList *in = rz_anal_get_blocks_intersect (anal, addr, size);
 
-		RzAnalBlock *block;
+		RzAnalysisBlock *block;
 		RzListIter *it;
 		rz_list_foreach (in, it, block) {
 			mu_assert_eq (block->ref, 2, "block refd in returned list");
@@ -457,7 +457,7 @@ bool test_r_anal_block_query() {
 		size_t linear_found = 0;
 		size_t j;
 		for (j = 0; j < N; j++) {
-			RzAnalBlock *block = blocks[j];
+			RzAnalysisBlock *block = blocks[j];
 			if (!block || addr + size <= block->addr || addr >= block->addr + block->size) {
 				continue;
 			}
@@ -484,10 +484,10 @@ bool addr_list_cb(ut64 addr, void *user) {
 }
 
 bool test_r_anal_block_successors() {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 	assert_block_invariants (anal);
 
-	RzAnalBlock *blocks[10];
+	RzAnalysisBlock *blocks[10];
 	blocks[0] = rz_anal_create_block (anal, 0x10, 0x10);
 	blocks[1] = rz_anal_create_block (anal, 0x30, 0x10);
 	blocks[2] = rz_anal_create_block (anal, 0x50, 0x10);
@@ -506,7 +506,7 @@ bool test_r_anal_block_successors() {
 	blocks[1]->fail = 0x50;
 	blocks[2]->jump = 0x10;
 
-	RzAnalSwitchOp *sop = rz_anal_switch_op_new (0x55, 0x13, 0x15, 0x42);
+	RzAnalysisSwitchOp *sop = rz_anal_switch_op_new (0x55, 0x13, 0x15, 0x42);
 	mu_assert_eq (sop->addr, 0x55, "addr");
 	mu_assert_eq (sop->min_val, 0x13, "addr");
 	mu_assert_eq (sop->max_val, 0x15, "addr");
@@ -536,7 +536,7 @@ bool test_r_anal_block_successors() {
 	rz_list_free (result);
 
 	result = rz_anal_block_recurse_list (blocks[0]);
-	RzAnalBlock *block;
+	RzAnalysisBlock *block;
 	RzListIter *it;
 	rz_list_foreach (result, it, block) {
 		mu_assert_eq (block->ref, 2, "block refd in returned list");
@@ -555,7 +555,7 @@ bool test_r_anal_block_successors() {
 	rz_list_free (result);
 
 	size_t i;
-	for (i = 0; i < sizeof (blocks) / sizeof (RzAnalBlock *); i++) {
+	for (i = 0; i < sizeof (blocks) / sizeof (RzAnalysisBlock *); i++) {
 		rz_anal_block_unref (blocks[i]);
 	}
 
@@ -567,35 +567,35 @@ bool test_r_anal_block_successors() {
 bool test_r_anal_block_automerge() {
 	size_t i;
 	for (i = 0; i < SAMPLES; i++) {
-		RzAnal *anal = rz_anal_new ();
+		RzAnalysis *anal = rz_anal_new ();
 		assert_block_invariants (anal);
 
-		RzAnalBlock *a = rz_anal_create_block (anal, 0x100, 0x10);
+		RzAnalysisBlock *a = rz_anal_create_block (anal, 0x100, 0x10);
 
-		RzAnalBlock *b = rz_anal_create_block (anal, 0x110, 0x10);
+		RzAnalysisBlock *b = rz_anal_create_block (anal, 0x110, 0x10);
 		a->jump = b->addr;
 
-		RzAnalBlock *c = rz_anal_create_block (anal, 0x120, 0x10);
+		RzAnalysisBlock *c = rz_anal_create_block (anal, 0x120, 0x10);
 		b->jump = c->addr;
 		c->fail = b->addr;
 
-		RzAnalBlock *d = rz_anal_create_block (anal, 0x130, 0x10);
+		RzAnalysisBlock *d = rz_anal_create_block (anal, 0x130, 0x10);
 		c->jump = d->addr;
 
-		RzAnalBlock *e = rz_anal_create_block (anal, 0x140, 0x10);
+		RzAnalysisBlock *e = rz_anal_create_block (anal, 0x140, 0x10);
 		d->jump = e->addr;
 
-		RzAnalBlock *f = rz_anal_create_block (anal, 0x150, 0x10);
+		RzAnalysisBlock *f = rz_anal_create_block (anal, 0x150, 0x10);
 		e->jump = f->addr;
 
-		RzAnalFunction *fa = rz_anal_create_function (anal, "fcn", 0x100, RZ_ANAL_FCN_TYPE_FCN, NULL);
+		RzAnalysisFunction *fa = rz_anal_create_function (anal, "fcn", 0x100, RZ_ANAL_FCN_TYPE_FCN, NULL);
 		rz_anal_function_add_block (fa, a);
 		rz_anal_function_add_block (fa, c);
 		rz_anal_function_add_block (fa, d);
 		rz_anal_function_add_block (fa, e);
 		rz_anal_function_add_block (fa, f);
 
-		RzAnalFunction *fb = rz_anal_create_function (anal, "fcn2", 0x110, RZ_ANAL_FCN_TYPE_FCN, NULL);
+		RzAnalysisFunction *fb = rz_anal_create_function (anal, "fcn2", 0x110, RZ_ANAL_FCN_TYPE_FCN, NULL);
 		rz_anal_function_add_block (fb, b);
 		rz_anal_function_add_block (fb, c);
 		rz_anal_function_add_block (fb, d);
@@ -629,7 +629,7 @@ bool test_r_anal_block_automerge() {
 		mu_assert ("remaining blocks d", rz_list_contains (shuffled_blocks, d));
 		mu_assert_eq (blocks_count (anal), rz_list_length (shuffled_blocks), "blocks in anal count");
 		RzListIter *it;
-		RzAnalBlock *block;
+		RzAnalysisBlock *block;
 		rz_list_foreach (shuffled_blocks, it, block) {
 			mu_assert_ptreq (rz_anal_get_block_at (anal, block->addr), block, "remaining blocks in anal");
 		}
@@ -643,21 +643,21 @@ bool test_r_anal_block_automerge() {
 }
 
 bool test_r_anal_block_chop_noreturn(void) {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_anal_new ();
 	assert_block_invariants (anal);
 
-	RzAnalBlock *a = rz_anal_create_block (anal, 0x100, 0x10);
-	RzAnalBlock *b = rz_anal_create_block (anal, 0x110, 0x10);
-	RzAnalBlock *c = rz_anal_create_block (anal, 0x120, 0x10);
+	RzAnalysisBlock *a = rz_anal_create_block (anal, 0x100, 0x10);
+	RzAnalysisBlock *b = rz_anal_create_block (anal, 0x110, 0x10);
+	RzAnalysisBlock *c = rz_anal_create_block (anal, 0x120, 0x10);
 	a->jump = c->addr;
 	b->jump = c->addr;
 
-	RzAnalFunction *fa = rz_anal_create_function (anal, "fcn", 0x100, RZ_ANAL_FCN_TYPE_FCN, NULL);
+	RzAnalysisFunction *fa = rz_anal_create_function (anal, "fcn", 0x100, RZ_ANAL_FCN_TYPE_FCN, NULL);
 	rz_anal_function_add_block (fa, a);
 	rz_anal_function_add_block (fa, b);
 	rz_anal_function_add_block (fa, c);
 
-	RzAnalFunction *fb = rz_anal_create_function (anal, "fcn2", 0x130, RZ_ANAL_FCN_TYPE_FCN, NULL);
+	RzAnalysisFunction *fb = rz_anal_create_function (anal, "fcn2", 0x130, RZ_ANAL_FCN_TYPE_FCN, NULL);
 	fb->is_noreturn = true;
 
 	rz_anal_block_chop_noreturn (b, 0x111);

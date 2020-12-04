@@ -20,15 +20,15 @@
 
 ut64 METHOD_START = 0;
 
-static void java_update_anal_types (RzAnal *anal, RzBinJavaObj *bin_obj);
+static void java_update_anal_types (RzAnalysis *anal, RzBinJavaObj *bin_obj);
 
-static int java_cmd_ext(RzAnal *anal, const char* input);
+static int java_cmd_ext(RzAnalysis *anal, const char* input);
 
-static int java_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask);
+static int java_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask);
 
-static RzBinJavaObj * get_java_bin_obj(RzAnal *anal);
+static RzBinJavaObj * get_java_bin_obj(RzAnalysis *anal);
 
-static RzBinJavaObj * get_java_bin_obj(RzAnal *anal) {
+static RzBinJavaObj * get_java_bin_obj(RzAnalysis *anal) {
 	RzBin *b = anal->binb.bin;
 	RzBinPlugin *plugin = b->cur && b->cur->o ? b->cur->o->plugin : NULL;
 	ut8 is_java = (plugin && strcmp (plugin->name, "java") == 0) ? 1 : 0;
@@ -39,7 +39,7 @@ static ut64 java_get_method_start(void) {
 	return METHOD_START;
 }
 
-static int java_switch_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int java_switch_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len) {
 	ut8 op_byte = data[0];
 	ut64 offset = addr - java_get_method_start ();
 	ut8 pos = (offset + 1)%4 ? 1 + 4 - (offset+1)%4 : 1;
@@ -198,7 +198,7 @@ static int rz_anal_java_is_op_type_eop(ut64 x) {
 }
 
 
-static int java_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask) {
+static int java_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	/* get opcode size */
 	if (len < 1) {
 		op->type = RZ_ANAL_OP_TYPE_ILL;
@@ -285,7 +285,7 @@ static int java_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int l
 }
 
 
-static void java_update_anal_types (RzAnal *anal, RzBinJavaObj *bin_obj) {
+static void java_update_anal_types (RzAnalysis *anal, RzBinJavaObj *bin_obj) {
 	Sdb *D = anal->sdb_types;
 	if (D && bin_obj) {
 		RzListIter *iter;
@@ -303,7 +303,7 @@ static void java_update_anal_types (RzAnal *anal, RzBinJavaObj *bin_obj) {
 	}
 }
 
-static int java_cmd_ext(RzAnal *anal, const char* input) {
+static int java_cmd_ext(RzAnalysis *anal, const char* input) {
 	RzBinJavaObj *obj = (RzBinJavaObj *) get_java_bin_obj (anal);
 
 	if (!obj) {
@@ -333,7 +333,7 @@ static int java_cmd_ext(RzAnal *anal, const char* input) {
 	return 0;
 }
 
-RzAnalPlugin rz_anal_plugin_java = {
+RzAnalysisPlugin rz_anal_plugin_java = {
 	.name = "java",
 	.desc = "Java bytecode analysis plugin",
 	.license = "Apache",

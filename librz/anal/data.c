@@ -54,7 +54,7 @@ static int is_invalid(const ut8 *buf, int size) {
 }
 
 #define USE_IS_VALID_OFFSET 1
-static ut64 is_pointer(RzAnal *anal, const ut8 *buf, int size) {
+static ut64 is_pointer(RzAnalysis *anal, const ut8 *buf, int size) {
 	ut64 n;
 	ut8 buf2[32];
 	RzIOBind *iob = &anal->iob;
@@ -97,7 +97,7 @@ static bool is_bin(const ut8 *buf, int size) {
 
 // TODO: add is_flag, is comment?
 
-RZ_API char *rz_anal_data_to_string(RzAnalData *d, RzConsPrintablePalette *pal) {
+RZ_API char *rz_anal_data_to_string(RzAnalysisData *d, RzConsPrintablePalette *pal) {
 	int i, len, mallocsz = 1024;
 	ut32 n32;
 
@@ -197,8 +197,8 @@ RZ_API char *rz_anal_data_to_string(RzAnalData *d, RzConsPrintablePalette *pal) 
 	return rz_strbuf_drain (sb);
 }
 
-RZ_API RzAnalData *rz_anal_data_new_string(ut64 addr, const char *p, int len, int type) {
-	RzAnalData *ad = RZ_NEW0 (RzAnalData);
+RZ_API RzAnalysisData *rz_anal_data_new_string(ut64 addr, const char *p, int len, int type) {
+	RzAnalysisData *ad = RZ_NEW0 (RzAnalysisData);
 	if (!ad) {
 		return NULL;
 	}
@@ -232,8 +232,8 @@ RZ_API RzAnalData *rz_anal_data_new_string(ut64 addr, const char *p, int len, in
 	return ad;
 }
 
-RZ_API RzAnalData *rz_anal_data_new(ut64 addr, int type, ut64 n, const ut8 *buf, int len) {
-	RzAnalData *ad = RZ_NEW0 (RzAnalData);
+RZ_API RzAnalysisData *rz_anal_data_new(ut64 addr, int type, ut64 n, const ut8 *buf, int len) {
+	RzAnalysisData *ad = RZ_NEW0 (RzAnalysisData);
 	int l = RZ_MIN (len, 8);
 	if (!ad) {
 		return NULL;
@@ -262,7 +262,7 @@ RZ_API RzAnalData *rz_anal_data_new(ut64 addr, int type, ut64 n, const ut8 *buf,
 	return ad;
 }
 
-RZ_API void rz_anal_data_free(RzAnalData *d) {
+RZ_API void rz_anal_data_free(RzAnalysisData *d) {
 	if (d) {
 		if (d->buf != (ut8 *)&(d->sbuf)) {
 			free (d->buf);
@@ -272,7 +272,7 @@ RZ_API void rz_anal_data_free(RzAnalData *d) {
 	}
 }
 
-RZ_API RzAnalData *rz_anal_data(RzAnal *anal, ut64 addr, const ut8 *buf, int size, int wordsize) {
+RZ_API RzAnalysisData *rz_anal_data(RzAnalysis *anal, ut64 addr, const ut8 *buf, int size, int wordsize) {
 	ut64 dst = 0;
 	int n, nsize = 0;
 	int bits = anal->bits;
@@ -335,13 +335,13 @@ RZ_API RzAnalData *rz_anal_data(RzAnal *anal, ut64 addr, const ut8 *buf, int siz
 	return rz_anal_data_new (addr, RZ_ANAL_DATA_TYPE_UNKNOWN, dst, buf, RZ_MIN (word, size));
 }
 
-RZ_API const char *rz_anal_data_kind(RzAnal *a, ut64 addr, const ut8 *buf, int len) {
+RZ_API const char *rz_anal_data_kind(RzAnalysis *a, ut64 addr, const ut8 *buf, int len) {
 	int inv = 0;
 	int unk = 0;
 	int str = 0;
 	int num = 0;
 	int i, j;
-	RzAnalData *data;
+	RzAnalysisData *data;
 	int word = a->bits / 8;
 	for (i = j = 0; i < len; j++) {
 		if (str && !buf[i]) {
@@ -398,7 +398,7 @@ RZ_API const char *rz_anal_data_kind(RzAnal *a, ut64 addr, const ut8 *buf, int l
 	return "data";
 }
 
-RZ_API const char *rz_anal_datatype_to_string(RzAnalDataType t) {
+RZ_API const char *rz_anal_datatype_to_string(RzAnalysisDataType t) {
 	switch (t) {
 	case RZ_ANAL_DATATYPE_NULL:
 		return NULL;

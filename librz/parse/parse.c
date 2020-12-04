@@ -134,7 +134,7 @@ RZ_API char *rz_parse_immtrim(char *opstr) {
 	return opstr;
 }
 
-RZ_API bool rz_parse_subvar(RzParse *p, RzAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+RZ_API bool rz_parse_subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	if (p->cur && p->cur->subvar) {
 		return p->cur->subvar (p, f, addr, oplen, data, str, len);
 	}

@@ -2,30 +2,30 @@
 
 #include <rz_anal.h>
 
-RZ_API RzAnalValue *rz_anal_value_new(void) { //macro for this ?
-	return RZ_NEW0 (RzAnalValue);
+RZ_API RzAnalysisValue *rz_anal_value_new(void) { //macro for this ?
+	return RZ_NEW0 (RzAnalysisValue);
 }
 
-RZ_API RzAnalValue *rz_anal_value_new_from_string(const char *str) {
+RZ_API RzAnalysisValue *rz_anal_value_new_from_string(const char *str) {
 	/* TODO */
 	return NULL;
 }
 
-RZ_API RzAnalValue *rz_anal_value_copy(RzAnalValue *ov) {
+RZ_API RzAnalysisValue *rz_anal_value_copy(RzAnalysisValue *ov) {
 	rz_return_val_if_fail (ov, NULL);
 
-	RzAnalValue *v = RZ_NEW0 (RzAnalValue);
+	RzAnalysisValue *v = RZ_NEW0 (RzAnalysisValue);
 	if (!v) {
 		return NULL;
 	}
 
-	memcpy (v, ov, sizeof (RzAnalValue));
+	memcpy (v, ov, sizeof (RzAnalysisValue));
 	// reference to reg and regdelta should be kept
 	return v;
 }
 
 // TODO: move into .h as #define free
-RZ_API void rz_anal_value_free(RzAnalValue *value) {
+RZ_API void rz_anal_value_free(RzAnalysisValue *value) {
 	free (value);
 #if 0
 	ut64 pval = (ut64)(size_t)value;
@@ -37,7 +37,7 @@ RZ_API void rz_anal_value_free(RzAnalValue *value) {
 }
 
 // mul*value+regbase+regidx+delta
-RZ_API ut64 rz_anal_value_to_ut64(RzAnal *anal, RzAnalValue *val) {
+RZ_API ut64 rz_anal_value_to_ut64(RzAnalysis *anal, RzAnalysisValue *val) {
 	ut64 num;
 	if (!val) {
 		return 0LL;
@@ -61,7 +61,7 @@ RZ_API ut64 rz_anal_value_to_ut64(RzAnal *anal, RzAnalValue *val) {
 	return num;
 }
 
-RZ_API int rz_anal_value_set_ut64(RzAnal *anal, RzAnalValue *val, ut64 num) {
+RZ_API int rz_anal_value_set_ut64(RzAnalysis *anal, RzAnalysisValue *val, ut64 num) {
 	if (val->memref) {
 		if (anal->iob.io) {
 			ut8 data[8];
@@ -79,7 +79,7 @@ RZ_API int rz_anal_value_set_ut64(RzAnal *anal, RzAnalValue *val, ut64 num) {
 	return false;							//is this necessary
 }
 
-RZ_API char *rz_anal_value_to_string (RzAnalValue *value) {
+RZ_API char *rz_anal_value_to_string (RzAnalysisValue *value) {
 	char *out = NULL;
 	if (value) {
 		out = rz_str_new ("");

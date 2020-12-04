@@ -18,7 +18,7 @@
 
 static csh handle = 0;
 
-static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	static int omode = 0;
 #if USE_ITERZ_API
 	static
@@ -168,7 +168,7 @@ static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 	return op->size;
 }
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
@@ -193,7 +193,7 @@ static bool set_reg_profile(RzAnal *anal) {
 	return rz_reg_set_profile_string (anal->reg, p);
 }
 
-RzAnalPlugin rz_anal_plugin_6502_cs = {
+RzAnalysisPlugin rz_anal_plugin_6502_cs = {
 	.name = "6502.cs",
 	.desc = "Capstone mos65xx analysis plugin",
 	.license = "LGPL3",
@@ -212,7 +212,7 @@ RZ_API RzLibStruct rizin_plugin = {
 #endif
 #else
 //  empty plugin
-RzAnalPlugin rz_anal_plugin_6502_cs = {
+RzAnalysisPlugin rz_anal_plugin_6502_cs = {
 	.name = "6502.cs",
 	.desc = "Capstone mos65xx analysis plugin (not supported)",
 	.license = "LGPL3",

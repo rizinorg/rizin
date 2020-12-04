@@ -26,7 +26,7 @@ static ut64 ws_find_label(int l, const RzIOBind *iob) {
 	return 0;
 }
 
-static int ws_anal(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask) {
+static int ws_anal(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	op->addr = addr;
 	op->type = RZ_ANAL_OP_TYPE_UNK;
 	RzAsmOp *aop = RZ_NEW0 (RzAsmOp);
@@ -119,7 +119,7 @@ static int ws_anal(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int l
 	return op->size;
 }
 
-RzAnalPlugin rz_anal_plugin_ws = {
+RzAnalysisPlugin rz_anal_plugin_ws = {
 	.name = "ws",
 	.desc = "Space, tab and linefeed analysis plugin",
 	.license = "LGPL3",

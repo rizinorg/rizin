@@ -160,7 +160,7 @@ static void cmd_info_here(RzCore *core, int mode) {
 			pj_ks (pj, "comment", item->comment);
 		}
 		RzListIter *iter;
-		RzAnalRef *ref;
+		RzAnalysisRef *ref;
 		if (item->data) {
 			pj_ks (pj, "data", item->data);
 		}

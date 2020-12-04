@@ -50,7 +50,7 @@ static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	rz_strbuf_append (buf, "}");
 }
 
-static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	static csh handle = 0;
 	static int omode = 0;
 	cs_insn *insn;
@@ -122,7 +122,7 @@ static int analop(RzAnal *a, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, R
 	return op->size;
 }
 
-RzAnalPlugin rz_anal_plugin_xcore_cs = {
+RzAnalysisPlugin rz_anal_plugin_xcore_cs = {
 	.name = "xcore",
 	.desc = "Capstone XCORE analysis",
 	.license = "BSD",

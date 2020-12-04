@@ -4,10 +4,10 @@
 
 #define D if (anal->verbose)
 
-static bool get_functions_block_cb(RzAnalBlock *block, void *user) {
+static bool get_functions_block_cb(RzAnalysisBlock *block, void *user) {
 	RzList *list = user;
 	RzListIter *iter;
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 	rz_list_foreach (block->fcns, iter, fcn) {
 		if (rz_list_contains (list, fcn)) {
 			continue;
@@ -17,7 +17,7 @@ static bool get_functions_block_cb(RzAnalBlock *block, void *user) {
 	return true;
 }
 
-RZ_API RzList *rz_anal_get_functions_in(RzAnal *anal, ut64 addr) {
+RZ_API RzList *rz_anal_get_functions_in(RzAnalysis *anal, ut64 addr) {
 	RzList *list = rz_list_new ();
 	if (!list) {
 		return NULL;
@@ -26,7 +26,7 @@ RZ_API RzList *rz_anal_get_functions_in(RzAnal *anal, ut64 addr) {
 	return list;
 }
 
-static bool __fcn_exists(RzAnal *anal, const char *name, ut64 addr) {
+static bool __fcn_exists(RzAnalysis *anal, const char *name, ut64 addr) {
 	// check if name is already registered
 	bool found = false;
 	if (addr == UT64_MAX) {
@@ -37,7 +37,7 @@ static bool __fcn_exists(RzAnal *anal, const char *name, ut64 addr) {
 		eprintf ("TODO: Empty function name, we must auto generate one\n");
 		return true;
 	}
-	RzAnalFunction *f = ht_pp_find (anal->ht_name_fun, name, &found);
+	RzAnalysisFunction *f = ht_pp_find (anal->ht_name_fun, name, &found);
 	if (f && found) {
 		eprintf ("Invalid function name '%s' at 0x%08"PFMT64x"\n", name, addr);
 		return true;
@@ -52,7 +52,7 @@ static bool __fcn_exists(RzAnal *anal, const char *name, ut64 addr) {
 	return false;
 }
 
-RZ_IPI void rz_anal_var_free(RzAnalVar *av);
+RZ_IPI void rz_anal_var_free(RzAnalysisVar *av);
 
 static void inst_vars_kv_free(HtUPKv *kv) {
 	rz_pvector_free (kv->value);
@@ -67,8 +67,8 @@ static void label_addrs_kv_free(HtPPKv *kv) {
 	free (kv->value);
 }
 
-RZ_API RzAnalFunction *rz_anal_function_new(RzAnal *anal) {
-	RzAnalFunction *fcn = RZ_NEW0 (RzAnalFunction);
+RZ_API RzAnalysisFunction *rz_anal_function_new(RzAnalysis *anal) {
+	RzAnalysisFunction *fcn = RZ_NEW0 (RzAnalysisFunction);
 	if (!fcn) {
 		return NULL;
 	}
@@ -90,12 +90,12 @@ RZ_API RzAnalFunction *rz_anal_function_new(RzAnal *anal) {
 }
 
 RZ_API void rz_anal_function_free(void *_fcn) {
-	RzAnalFunction *fcn = _fcn;
+	RzAnalysisFunction *fcn = _fcn;
 	if (!_fcn) {
 		return;
 	}
 
-	RzAnalBlock *block;
+	RzAnalysisBlock *block;
 	RzListIter *iter;
 	rz_list_foreach (fcn->bbs, iter, block) {
 		rz_list_delete_data (block->fcns, fcn);
@@ -103,7 +103,7 @@ RZ_API void rz_anal_function_free(void *_fcn) {
 	}
 	rz_list_free (fcn->bbs);
 
-	RzAnal *anal = fcn->anal;
+	RzAnalysis *anal = fcn->anal;
 	if (ht_up_find (anal->ht_addr_fun, fcn->addr, NULL) == _fcn) {
 		ht_up_delete (anal->ht_addr_fun, fcn->addr);
 	}
@@ -126,7 +126,7 @@ RZ_API void rz_anal_function_free(void *_fcn) {
 	free (fcn);
 }
 
-RZ_API bool rz_anal_add_function(RzAnal *anal, RzAnalFunction *fcn) {
+RZ_API bool rz_anal_add_function(RzAnalysis *anal, RzAnalysisFunction *fcn) {
 	if (__fcn_exists (anal, fcn->name, fcn->addr)) {
 		return false;
 	}
@@ -143,8 +143,8 @@ RZ_API bool rz_anal_add_function(RzAnal *anal, RzAnalFunction *fcn) {
 	return true;
 }
 
-RZ_API RzAnalFunction *rz_anal_create_function(RzAnal *anal, const char *name, ut64 addr, int type, RzAnalDiff *diff) {
-	RzAnalFunction *fcn = rz_anal_function_new (anal);
+RZ_API RzAnalysisFunction *rz_anal_create_function(RzAnalysis *anal, const char *name, ut64 addr, int type, RzAnalysisDiff *diff) {
+	RzAnalysisFunction *fcn = rz_anal_function_new (anal);
 	if (!fcn) {
 		return NULL;
 	}
@@ -177,13 +177,13 @@ RZ_API RzAnalFunction *rz_anal_create_function(RzAnal *anal, const char *name, u
 	return fcn;
 }
 
-RZ_API bool rz_anal_function_delete(RzAnalFunction *fcn) {
+RZ_API bool rz_anal_function_delete(RzAnalysisFunction *fcn) {
 	return rz_list_delete_data (fcn->anal->fcns, fcn);
 }
 
-RZ_API RzAnalFunction *rz_anal_get_function_at(RzAnal *anal, ut64 addr) {
+RZ_API RzAnalysisFunction *rz_anal_get_function_at(RzAnalysis *anal, ut64 addr) {
 	bool found = false;
-	RzAnalFunction *f = ht_up_find (anal->ht_addr_fun, addr, &found);
+	RzAnalysisFunction *f = ht_up_find (anal->ht_addr_fun, addr, &found);
 	if (f && found) {
 		return f;
 	}
@@ -201,7 +201,7 @@ static bool inst_vars_relocate_cb(void *user, const ut64 k, const void *v) {
 	return true;
 }
 
-RZ_API bool rz_anal_function_relocate(RzAnalFunction *fcn, ut64 addr) {
+RZ_API bool rz_anal_function_relocate(RzAnalysisFunction *fcn, ut64 addr) {
 	if (fcn->addr == addr) {
 		return true;
 	}
@@ -214,8 +214,8 @@ RZ_API bool rz_anal_function_relocate(RzAnalFunction *fcn, ut64 addr) {
 	st64 delta = (st64)addr - (st64)fcn->addr;
 	void **it;
 	rz_pvector_foreach (&fcn->vars, it) {
-		RzAnalVar *var = *it;
-		RzAnalVarAccess *acc;
+		RzAnalysisVar *var = *it;
+		RzAnalysisVarAccess *acc;
 		rz_vector_foreach (&var->accesses, acc) {
 			acc->offset -= delta;
 		}
@@ -237,9 +237,9 @@ RZ_API bool rz_anal_function_relocate(RzAnalFunction *fcn, ut64 addr) {
 	return true;
 }
 
-RZ_API bool rz_anal_function_rename(RzAnalFunction *fcn, const char *name) {
-	RzAnal *anal = fcn->anal;
-	RzAnalFunction *existing = ht_pp_find (anal->ht_name_fun, name, NULL);
+RZ_API bool rz_anal_function_rename(RzAnalysisFunction *fcn, const char *name) {
+	RzAnalysis *anal = fcn->anal;
+	RzAnalysisFunction *existing = ht_pp_find (anal->ht_name_fun, name, NULL);
 	if (existing) {
 		if (existing == fcn) {
 			// fcn->name == name, nothing to do
@@ -261,7 +261,7 @@ RZ_API bool rz_anal_function_rename(RzAnalFunction *fcn, const char *name) {
 	return true;
 }
 
-RZ_API void rz_anal_function_add_block(RzAnalFunction *fcn, RzAnalBlock *bb) {
+RZ_API void rz_anal_function_add_block(RzAnalysisFunction *fcn, RzAnalysisBlock *bb) {
 	if (rz_list_contains (bb->fcns, fcn)) {
 		return;
 	}
@@ -283,7 +283,7 @@ RZ_API void rz_anal_function_add_block(RzAnalFunction *fcn, RzAnalBlock *bb) {
 	}
 }
 
-RZ_API void rz_anal_function_remove_block(RzAnalFunction *fcn, RzAnalBlock *bb) {
+RZ_API void rz_anal_function_remove_block(RzAnalysisFunction *fcn, RzAnalysisBlock *bb) {
 	rz_list_delete_data (bb->fcns, fcn);
 
 	if (fcn->meta._min != UT64_MAX
@@ -296,13 +296,13 @@ RZ_API void rz_anal_function_remove_block(RzAnalFunction *fcn, RzAnalBlock *bb) 
 	rz_anal_block_unref (bb);
 }
 
-static void ensure_fcn_range(RzAnalFunction *fcn) {
+static void ensure_fcn_range(RzAnalysisFunction *fcn) {
 	if (fcn->meta._min != UT64_MAX) { // recalculate only if invalid
 		return;
 	}
 	ut64 minval = UT64_MAX;
 	ut64 maxval = UT64_MIN;
-	RzAnalBlock *block;
+	RzAnalysisBlock *block;
 	RzListIter *iter;
 	rz_list_foreach (fcn->bbs, iter, block) {
 			if (block->addr < minval) {
@@ -316,29 +316,29 @@ static void ensure_fcn_range(RzAnalFunction *fcn) {
 	fcn->meta._max = minval == UT64_MAX ? UT64_MAX : maxval;
 }
 
-RZ_API ut64 rz_anal_function_linear_size(RzAnalFunction *fcn) {
+RZ_API ut64 rz_anal_function_linear_size(RzAnalysisFunction *fcn) {
 	ensure_fcn_range (fcn);
 	return fcn->meta._max - fcn->meta._min;
 }
 
-RZ_API ut64 rz_anal_function_min_addr(RzAnalFunction *fcn) {
+RZ_API ut64 rz_anal_function_min_addr(RzAnalysisFunction *fcn) {
 	ensure_fcn_range (fcn);
 	return fcn->meta._min;
 }
 
-RZ_API ut64 rz_anal_function_max_addr(RzAnalFunction *fcn) {
+RZ_API ut64 rz_anal_function_max_addr(RzAnalysisFunction *fcn) {
 	ensure_fcn_range (fcn);
 	return fcn->meta._max;
 }
 
-RZ_API ut64 rz_anal_function_size_from_entry(RzAnalFunction *fcn) {
+RZ_API ut64 rz_anal_function_size_from_entry(RzAnalysisFunction *fcn) {
 	ensure_fcn_range (fcn);
 	return fcn->meta._min == UT64_MAX ? 0 : fcn->meta._max - fcn->addr;
 }
 
-RZ_API ut64 rz_anal_function_realsize(const RzAnalFunction *fcn) {
+RZ_API ut64 rz_anal_function_realsize(const RzAnalysisFunction *fcn) {
 	RzListIter *iter;
-	RzAnalBlock *bb;
+	RzAnalysisBlock *bb;
 	ut64 sz = 0;
 	if (!sz) {
 		rz_list_foreach (fcn->bbs, iter, bb) {
@@ -348,9 +348,9 @@ RZ_API ut64 rz_anal_function_realsize(const RzAnalFunction *fcn) {
 	return sz;
 }
 
-static bool fcn_in_cb(RzAnalBlock *block, void *user) {
+static bool fcn_in_cb(RzAnalysisBlock *block, void *user) {
 	RzListIter *iter;
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 	rz_list_foreach (block->fcns, iter, fcn) {
 		if (fcn == user) {
 			return false;
@@ -359,15 +359,15 @@ static bool fcn_in_cb(RzAnalBlock *block, void *user) {
 	return true;
 }
 
-RZ_API bool rz_anal_function_contains(RzAnalFunction *fcn, ut64 addr) {
+RZ_API bool rz_anal_function_contains(RzAnalysisFunction *fcn, ut64 addr) {
 	// fcn_in_cb breaks with false if it finds the fcn
 	return !rz_anal_blocks_foreach_in (fcn->anal, addr, fcn_in_cb, fcn);
 }
 
-RZ_API bool rz_anal_function_was_modified(RzAnalFunction *fcn) {
+RZ_API bool rz_anal_function_was_modified(RzAnalysisFunction *fcn) {
 	rz_return_val_if_fail (fcn, false);
 	RzListIter *it;
-	RzAnalBlock *bb;
+	RzAnalysisBlock *bb;
 	rz_list_foreach (fcn->bbs, it, bb) {
 		if (rz_anal_block_was_modified (bb)) {
 			return true;

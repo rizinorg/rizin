@@ -277,7 +277,7 @@ static int parse(RzParse *p, const char *data, char *str) {
 	return true;
 }
 
-static char *subs_var_string(RzParse *p, RzAnalVarField *var, char *tstr, const char *oldstr, const char *reg, int delta) {
+static char *subs_var_string(RzParse *p, RzAnalysisVarField *var, char *tstr, const char *oldstr, const char *reg, int delta) {
 	char *newstr = p->localvar_only
 		? rz_str_newf ("%s", var->name)
 		: rz_str_newf ("%s %c %s", reg, delta > 0 ? '+' : '-', var->name);
@@ -325,11 +325,11 @@ static char *mount_oldstr(RzParse* p, const char *reg, st64 delta, bool ucase) {
 	return oldstr;
 }
 
-static bool subvar(RzParse *p, RzAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RzList *spargs = NULL;
 	RzList *bpargs = NULL;
 	RzListIter *iter;
-	RzAnal *anal = p->analb.anal;
+	RzAnalysis *anal = p->analb.anal;
 	char *oldstr;
 	char *tstr = strdup (data);
 	if (!tstr) {
@@ -376,7 +376,7 @@ static bool subvar(RzParse *p, RzAnalFunction *f, ut64 addr, int oplen, char *da
 	bpargs = p->varlist (f, 'b');
 	spargs = p->varlist (f, 's');
 	bool ucase = IS_UPPER (*tstr);
-	RzAnalVarField *var;
+	RzAnalysisVarField *var;
 	rz_list_foreach (bpargs, iter, var) {
 		st64 delta = p->get_ptr_at
 			? p->get_ptr_at (f, var->delta, addr)

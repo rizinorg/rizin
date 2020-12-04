@@ -26,7 +26,7 @@ enum {
 	_6502_FLAGS_BNZ = (_6502_FLAGS_B | _6502_FLAGS_Z | _6502_FLAGS_N),
 };
 
-static void _6502_anal_update_flags(RzAnalOp *op, int flags) {
+static void _6502_anal_update_flags(RzAnalysisOp *op, int flags) {
 	/* FIXME: 9,$b instead of 8,$b to prevent the bug triggered by: A = 0 - 0xff - 1 */
 	if (flags & _6502_FLAGS_B) {
 		rz_strbuf_append (&op->esil, ",9,$b,C,:=");
@@ -43,7 +43,7 @@ static void _6502_anal_update_flags(RzAnalOp *op, int flags) {
 }
 
 /* ORA, AND, EOR, ADC, STA, LDA, CMP and SBC share this pattern */
-static void _6502_anal_esil_get_addr_pattern1(RzAnalOp *op, const ut8* data, int len, char* addrbuf, int addrsize) {
+static void _6502_anal_esil_get_addr_pattern1(RzAnalysisOp *op, const ut8* data, int len, char* addrbuf, int addrsize) {
 	if (len < 1) {
 		return;
 	}
@@ -88,7 +88,7 @@ static void _6502_anal_esil_get_addr_pattern1(RzAnalOp *op, const ut8* data, int
 }
 
 /* ASL, ROL, LSR, ROR, STX, LDX, DEC and INC share this pattern */
-static void _6502_anal_esil_get_addr_pattern2(RzAnalOp *op, const ut8* data, int len, char* addrbuf, int addrsize, char reg) {
+static void _6502_anal_esil_get_addr_pattern2(RzAnalysisOp *op, const ut8* data, int len, char* addrbuf, int addrsize, char reg) {
 	// turn off bits 5, 6 and 7
 	if (len < 1) {
 		return;
@@ -122,7 +122,7 @@ static void _6502_anal_esil_get_addr_pattern2(RzAnalOp *op, const ut8* data, int
 }
 
 /* BIT, JMP, JMP(), STY, LDY, CPY, and CPX share this pattern */
-static void _6502_anal_esil_get_addr_pattern3(RzAnalOp *op, const ut8* data, int len, char* addrbuf, int addrsize, char reg) {
+static void _6502_anal_esil_get_addr_pattern3(RzAnalysisOp *op, const ut8* data, int len, char* addrbuf, int addrsize, char reg) {
 	// turn off bits 5, 6 and 7
 	if (len < 1) {
 		return;
@@ -155,7 +155,7 @@ static void _6502_anal_esil_get_addr_pattern3(RzAnalOp *op, const ut8* data, int
 	}
 }
 
-static void _6502_anal_esil_ccall(RzAnalOp *op, ut8 data0) {
+static void _6502_anal_esil_ccall(RzAnalysisOp *op, ut8 data0) {
 	char *flag;
 	switch (data0) {
 	case 0x10: // bpl $ffff
@@ -191,7 +191,7 @@ static void _6502_anal_esil_ccall(RzAnalOp *op, ut8 data0) {
 }
 
 // inc register
-static void _6502_anal_esil_inc_reg(RzAnalOp *op, ut8 data0, char* sign) {
+static void _6502_anal_esil_inc_reg(RzAnalysisOp *op, ut8 data0, char* sign) {
 	char* reg = NULL;
 
 	switch(data0) {
@@ -208,7 +208,7 @@ static void _6502_anal_esil_inc_reg(RzAnalOp *op, ut8 data0, char* sign) {
 	_6502_anal_update_flags (op, _6502_FLAGS_NZ);
 }
 
-static void _6502_anal_esil_mov(RzAnalOp *op, ut8 data0) {
+static void _6502_anal_esil_mov(RzAnalysisOp *op, ut8 data0) {
 	const char* src="unk";
 	const char* dst="unk";
 	switch(data0) {
@@ -248,7 +248,7 @@ static void _6502_anal_esil_mov(RzAnalOp *op, ut8 data0) {
 	}
 }
 
-static void _6502_anal_esil_push(RzAnalOp *op, ut8 data0) {
+static void _6502_anal_esil_push(RzAnalysisOp *op, ut8 data0) {
 	// case 0x08: // php
 	// case 0x48: // pha
 	char *reg = (data0==0x08) ? "flags" : "a";
@@ -256,7 +256,7 @@ static void _6502_anal_esil_push(RzAnalOp *op, ut8 data0) {
 	rz_strbuf_setf (&op->esil, "%s,sp,0x100,+,=[1],sp,--=", reg);
 }
 
-static void _6502_anal_esil_pop(RzAnalOp *op, ut8 data0) {
+static void _6502_anal_esil_pop(RzAnalysisOp *op, ut8 data0) {
 	// case 0x28: // plp
 	// case 0x68: // pla
 	char *reg = (data0==0x28) ? "flags" : "a";
@@ -268,7 +268,7 @@ static void _6502_anal_esil_pop(RzAnalOp *op, ut8 data0) {
 	}
 }
 
-static void _6502_anal_esil_flags(RzAnalOp *op, ut8 data0) {
+static void _6502_anal_esil_flags(RzAnalysisOp *op, ut8 data0) {
 	int enabled=0;
 	char flag ='u';
 	switch(data0) {
@@ -305,7 +305,7 @@ static void _6502_anal_esil_flags(RzAnalOp *op, ut8 data0) {
 	rz_strbuf_setf (&op->esil, "%d,%c,=", enabled, flag);
 }
 
-static int _6502_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask) {
+static int _6502_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	char addrbuf[64];
 	const int buffsize = sizeof (addrbuf) - 1;
 	if (len < 1) {
@@ -907,7 +907,7 @@ static int _6502_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int 
 	return op->size;
 }
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
@@ -932,7 +932,7 @@ static bool set_reg_profile(RzAnal *anal) {
 	return rz_reg_set_profile_string (anal->reg, p);
 }
 
-static int esil_6502_init (RzAnalEsil *esil) {
+static int esil_6502_init (RzAnalysisEsil *esil) {
 	if (esil->anal && esil->anal->reg) {		//initial values
 		rz_reg_set_value (esil->anal->reg, rz_reg_get (esil->anal->reg, "pc", -1), 0x0000);
 		rz_reg_set_value (esil->anal->reg, rz_reg_get (esil->anal->reg, "sp", -1), 0xff);
@@ -944,11 +944,11 @@ static int esil_6502_init (RzAnalEsil *esil) {
 	return true;
 }
 
-static int esil_6502_fini (RzAnalEsil *esil) {
+static int esil_6502_fini (RzAnalysisEsil *esil) {
 	return true;
 }
 
-RzAnalPlugin rz_anal_plugin_6502 = {
+RzAnalysisPlugin rz_anal_plugin_6502 = {
 	.name = "6502",
 	.desc = "6502/NES analysis plugin",
 	.license = "LGPL3",

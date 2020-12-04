@@ -180,7 +180,7 @@
 #define PC_IDX 16
 
 /* for {bra,bsr} only: (sign-extend 12bit offset)<<1 + PC +4 */
-static ut64 disarm_12bit_offset (RzAnalOp *op, unsigned int insoff) {
+static ut64 disarm_12bit_offset (RzAnalysisOp *op, unsigned int insoff) {
 	ut64 off = insoff;
 	/* sign extend if higher bit is 1 (0x0800) */
 	if ((off & 0x0800) == 0x0800)
@@ -205,44 +205,44 @@ static ut64 disarm_8bit_offset (ut64 pc, ut32 offs) {
 
 static char *regs[]={"r0","r1","r2","r3","r4","r5","r6","r7","r8","r9","r10","r11","r12","r13","r14","r15","pc"};
 
-static RzAnalValue *anal_fill_ai_rg(RzAnal *anal, int idx) {
-	RzAnalValue *ret = rz_anal_value_new ();
+static RzAnalysisValue *anal_fill_ai_rg(RzAnalysis *anal, int idx) {
+	RzAnalysisValue *ret = rz_anal_value_new ();
 	ret->reg = rz_reg_get (anal->reg, regs[idx], RZ_REG_TYPE_GPR);
 	return ret;
 }
 
-static RzAnalValue *anal_fill_im(RzAnal *anal, st32 v) {
-	RzAnalValue *ret = rz_anal_value_new ();
+static RzAnalysisValue *anal_fill_im(RzAnalysis *anal, st32 v) {
+	RzAnalysisValue *ret = rz_anal_value_new ();
 	ret->imm = v;
 	return ret;
 }
 
 /* Implements @(disp,Rn) , size=1 for .b, 2 for .w, 4 for .l */
-static RzAnalValue *anal_fill_reg_disp_mem(RzAnal *anal, int reg, st64 delta, st64 size) {
-	RzAnalValue *ret = anal_fill_ai_rg (anal, reg);
+static RzAnalysisValue *anal_fill_reg_disp_mem(RzAnalysis *anal, int reg, st64 delta, st64 size) {
+	RzAnalysisValue *ret = anal_fill_ai_rg (anal, reg);
 	ret->memref = size;
 	ret->delta = delta*size;
 	return ret;
 }
 
 /* Rn */
-static RzAnalValue *anal_fill_reg_ref(RzAnal *anal, int reg, st64 size) {
-	RzAnalValue *ret = anal_fill_ai_rg (anal, reg);
+static RzAnalysisValue *anal_fill_reg_ref(RzAnalysis *anal, int reg, st64 size) {
+	RzAnalysisValue *ret = anal_fill_ai_rg (anal, reg);
 	ret->memref = size;
 	return ret;
 }
 
 /* @(R0,Rx) references for all sizes */
-static RzAnalValue *anal_fill_r0_reg_ref(RzAnal *anal, int reg, st64 size) {
-	RzAnalValue *ret = anal_fill_ai_rg (anal, 0);
+static RzAnalysisValue *anal_fill_r0_reg_ref(RzAnalysis *anal, int reg, st64 size) {
+	RzAnalysisValue *ret = anal_fill_ai_rg (anal, 0);
 	ret->regdelta = rz_reg_get (anal->reg, regs[reg], RZ_REG_TYPE_GPR);
 	ret->memref = size;
 	return ret;
 }
 
 // @(disp,PC) for size=2(.w), size=4(.l). disp is 0-extended
-static RzAnalValue *anal_pcrel_disp_mov(RzAnal* anal, RzAnalOp* op, ut8 disp, int size) {
-	RzAnalValue *ret = rz_anal_value_new ();
+static RzAnalysisValue *anal_pcrel_disp_mov(RzAnalysis* anal, RzAnalysisOp* op, ut8 disp, int size) {
+	RzAnalysisValue *ret = rz_anal_value_new ();
 	if (size==2) {
 		ret->base = op->addr + 4;
 		ret->delta = disp << 1;
@@ -255,15 +255,15 @@ static RzAnalValue *anal_pcrel_disp_mov(RzAnal* anal, RzAnalOp* op, ut8 disp, in
 }
 
 //= PC+4+R<reg>
-static RzAnalValue *anal_regrel_jump(RzAnal* anal, RzAnalOp* op, ut8 reg) {
-	RzAnalValue *ret = rz_anal_value_new ();
+static RzAnalysisValue *anal_regrel_jump(RzAnalysis* anal, RzAnalysisOp* op, ut8 reg) {
+	RzAnalysisValue *ret = rz_anal_value_new ();
 	ret->reg = rz_reg_get (anal->reg, regs[reg], RZ_REG_TYPE_GPR);
 	ret->base = op->addr + 4;
 	return ret;
 }
 
 /* 16 decoder routines, based on 1st nibble value */
-static int first_nibble_is_0(RzAnal* anal, RzAnalOp* op, ut16 code) { //STOP
+static int first_nibble_is_0(RzAnalysis* anal, RzAnalysisOp* op, ut16 code) { //STOP
 	if (IS_BSRF (code)) {
 		/* Call 'far' subroutine Rn+PC+4 */
 		op->type = RZ_ANAL_OP_TYPE_UCALL;
@@ -412,7 +412,7 @@ static int first_nibble_is_0(RzAnal* anal, RzAnalOp* op, ut16 code) { //STOP
 }
 
 //nibble=1; 0001nnnnmmmmi4*4 mov.l <REG_M>,@(<disp>,<REG_N>)
-static int movl_reg_rdisp(RzAnal* anal, RzAnalOp* op, ut16 code) {
+static int movl_reg_rdisp(RzAnalysis* anal, RzAnalysisOp* op, ut16 code) {
 	op->type = RZ_ANAL_OP_TYPE_STORE;
 	op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 	op->dst = anal_fill_reg_disp_mem (anal, GET_TARGET_REG (code), code & 0x0F, LONG_SIZE);
@@ -420,7 +420,7 @@ static int movl_reg_rdisp(RzAnal* anal, RzAnalOp* op, ut16 code) {
 	return op->size;
 }
 
-static int first_nibble_is_2(RzAnal* anal, RzAnalOp* op, ut16 code) {
+static int first_nibble_is_2(RzAnalysis* anal, RzAnalysisOp* op, ut16 code) {
 	if (IS_MOVB_REG_TO_REGREF (code)) {	// 0010nnnnmmmm0000 mov.b <REG_M>,@<REG_N>
 		op->type = RZ_ANAL_OP_TYPE_STORE;
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
@@ -493,7 +493,7 @@ static int first_nibble_is_2(RzAnal* anal, RzAnalOp* op, ut16 code) {
 }
 
 
-static int first_nibble_is_3(RzAnal* anal, RzAnalOp* op, ut16 code) {
+static int first_nibble_is_3(RzAnalysis* anal, RzAnalysisOp* op, ut16 code) {
 	//TODO Handle carry/overflow , CMP/xx?
 	if (IS_ADD (code)) {
 		op->type = RZ_ANAL_OP_TYPE_ADD;
@@ -594,7 +594,7 @@ static int first_nibble_is_3(RzAnal* anal, RzAnalOp* op, ut16 code) {
 
 
 
-static int first_nibble_is_4(RzAnal* anal, RzAnalOp* op, ut16 code) {
+static int first_nibble_is_4(RzAnalysis* anal, RzAnalysisOp* op, ut16 code) {
 	switch(code & 0xF0FF) { //TODO: change to common } else if construction
 	case 0x4020:	//shal
 		op->type = RZ_ANAL_OP_TYPE_SAL;
@@ -770,7 +770,7 @@ static int first_nibble_is_4(RzAnal* anal, RzAnalOp* op, ut16 code) {
 }
 
 //nibble=5; 0101nnnnmmmmi4*4 mov.l @(<disp>,<REG_M>),<REG_N>
-static int movl_rdisp_reg(RzAnal* anal, RzAnalOp* op, ut16 code) {
+static int movl_rdisp_reg(RzAnalysis* anal, RzAnalysisOp* op, ut16 code) {
 	op->type = RZ_ANAL_OP_TYPE_LOAD;
 	op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	op->src[0] = anal_fill_reg_disp_mem (anal, GET_SOURCE_REG (code), code & 0x0F, LONG_SIZE);
@@ -779,7 +779,7 @@ static int movl_rdisp_reg(RzAnal* anal, RzAnalOp* op, ut16 code) {
 }
 
 
-static int first_nibble_is_6(RzAnal* anal, RzAnalOp* op, ut16 code) {
+static int first_nibble_is_6(RzAnalysis* anal, RzAnalysisOp* op, ut16 code) {
 	if (IS_MOV_REGS (code)) {
 		op->type = RZ_ANAL_OP_TYPE_MOV;
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
@@ -864,7 +864,7 @@ static int first_nibble_is_6(RzAnal* anal, RzAnalOp* op, ut16 code) {
 
 
 //nibble=7; 0111nnnni8*1.... add #<imm>,<REG_N>
-static int add_imm(RzAnal* anal, RzAnalOp* op, ut16 code) {
+static int add_imm(RzAnalysis* anal, RzAnalysisOp* op, ut16 code) {
 	op->type = RZ_ANAL_OP_TYPE_ADD;
 	op->src[0] = anal_fill_im (anal, (st8)(code & 0xFF)); //Casting to (st8) forces sign-extension.
 	op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
@@ -872,7 +872,7 @@ static int add_imm(RzAnal* anal, RzAnalOp* op, ut16 code) {
 	return op->size;
 }
 
-static int first_nibble_is_8(RzAnal* anal, RzAnalOp* op, ut16 code) {
+static int first_nibble_is_8(RzAnalysis* anal, RzAnalysisOp* op, ut16 code) {
 	if (IS_BT_OR_BF (code)) {
 		op->type = RZ_ANAL_OP_TYPE_CJMP; //Jump if true or jump if false insns
 		op->jump = disarm_8bit_offset (op->addr, GET_BTF_OFFSET (code));
@@ -921,7 +921,7 @@ static int first_nibble_is_8(RzAnal* anal, RzAnalOp* op, ut16 code) {
 }
 
 //nibble=9; 1001nnnni8p2.... mov.w @(<disp>,PC),<REG_N>
-static int movw_pcdisp_reg(RzAnal* anal, RzAnalOp* op, ut16 code) {
+static int movw_pcdisp_reg(RzAnalysis* anal, RzAnalysisOp* op, ut16 code) {
 	op->type = RZ_ANAL_OP_TYPE_LOAD;
 	op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	op->src[0] = rz_anal_value_new ();
@@ -932,7 +932,7 @@ static int movw_pcdisp_reg(RzAnal* anal, RzAnalOp* op, ut16 code) {
 }
 
 //nibble=A; 1010i12......... bra <bdisp12>
-static int bra(RzAnal* anal, RzAnalOp* op, ut16 code) {
+static int bra(RzAnalysis* anal, RzAnalysisOp* op, ut16 code) {
 	/* Unconditional branch, relative to PC */
 	op->type = RZ_ANAL_OP_TYPE_JMP;
 	op->delay = 1;
@@ -943,7 +943,7 @@ static int bra(RzAnal* anal, RzAnalOp* op, ut16 code) {
 }
 
 //nibble=B; 1011i12......... bsr <bdisp12>
-static int bsr(RzAnal* anal, RzAnalOp* op, ut16 code) {
+static int bsr(RzAnalysis* anal, RzAnalysisOp* op, ut16 code) {
 	/* Subroutine call, relative to PC */
 	op->type = RZ_ANAL_OP_TYPE_CALL;
 	op->jump = disarm_12bit_offset (op, GET_BRA_OFFSET (code));
@@ -952,7 +952,7 @@ static int bsr(RzAnal* anal, RzAnalOp* op, ut16 code) {
 	return op->size;
 }
 
-static int first_nibble_is_c(RzAnal* anal, RzAnalOp* op, ut16 code) {
+static int first_nibble_is_c(RzAnalysis* anal, RzAnalysisOp* op, ut16 code) {
 	if (IS_TRAP (code)) {
 		op->type = RZ_ANAL_OP_TYPE_SWI;
 		op->val = (ut8)(code & 0xFF);
@@ -1038,7 +1038,7 @@ static int first_nibble_is_c(RzAnal* anal, RzAnalOp* op, ut16 code) {
 }
 
 //nibble=d; 1101nnnni8 : mov.l @(<disp>,PC), Rn
-static int movl_pcdisp_reg(RzAnal* anal, RzAnalOp* op, ut16 code) {
+static int movl_pcdisp_reg(RzAnalysis* anal, RzAnalysisOp* op, ut16 code) {
 	op->type = RZ_ANAL_OP_TYPE_LOAD;
 	op->src[0] = anal_pcrel_disp_mov (anal, op, code & 0xFF, LONG_SIZE);
 	//TODO: check it
@@ -1049,7 +1049,7 @@ static int movl_pcdisp_reg(RzAnal* anal, RzAnalOp* op, ut16 code) {
 }
 
 //nibble=e; 1110nnnni8*1.... mov #<imm>,<REG_N>
-static int mov_imm_reg(RzAnal* anal, RzAnalOp* op, ut16 code) {
+static int mov_imm_reg(RzAnalysis* anal, RzAnalysisOp* op, ut16 code) {
 	op->type = RZ_ANAL_OP_TYPE_MOV;
 	op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	op->src[0] = anal_fill_im (anal, (st8)(code & 0xFF));
@@ -1058,14 +1058,14 @@ static int mov_imm_reg(RzAnal* anal, RzAnalOp* op, ut16 code) {
 }
 
 //nibble=f;
-static int fpu_insn(RzAnal* anal, RzAnalOp* op, ut16 code) {
+static int fpu_insn(RzAnalysis* anal, RzAnalysisOp* op, ut16 code) {
 	//Not interested on FPU stuff for now
 	op->family = RZ_ANAL_OP_FAMILY_FPU;
 	return op->size;
 }
 
 /* Table of routines for further analysis based on 1st nibble */
-static int (*first_nibble_decode[])(RzAnal*,RzAnalOp*,ut16) = {
+static int (*first_nibble_decode[])(RzAnalysis*,RzAnalysisOp*,ut16) = {
 	first_nibble_is_0,
 	movl_reg_rdisp,
 	first_nibble_is_2,
@@ -1088,7 +1088,7 @@ static int (*first_nibble_decode[])(RzAnal*,RzAnalOp*,ut16) = {
 /* This is the basic operation analysis. Just initialize and jump to
  * routines defined in first_nibble_decode table
  */
-static int sh_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len, RzAnalOpMask mask) {
+static int sh_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	ut8 op_MSB, op_LSB;
 	int ret;
 	if (!data || len < 2) {
@@ -1107,7 +1107,7 @@ static int sh_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, int len
 }
 
 /* Set the profile register */
-static bool sh_set_reg_profile(RzAnal* anal) {
+static bool sh_set_reg_profile(RzAnalysis* anal) {
 	//TODO Add system ( ssr, spc ) + fpu regs
 	const char *p =
 		"=PC	pc\n"
@@ -1145,7 +1145,7 @@ static bool sh_set_reg_profile(RzAnal* anal) {
 	return rz_reg_set_profile_string(anal->reg, p);
 }
 
-static int archinfo(RzAnal *anal, int q) {
+static int archinfo(RzAnalysis *anal, int q) {
 #if 0
 	if (q == RZ_ANAL_ARCHINFO_ALIGN) {
 		return 4;
@@ -1155,7 +1155,7 @@ static int archinfo(RzAnal *anal, int q) {
 }
 
 
-RzAnalPlugin rz_anal_plugin_sh = {
+RzAnalysisPlugin rz_anal_plugin_sh = {
 	.name = "sh",
 	.desc = "SH-4 code analysis plugin",
 	.license = "LGPL3",

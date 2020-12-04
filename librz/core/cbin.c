@@ -1105,7 +1105,7 @@ static int bin_dwarf(RzCore *core, int mode) {
 		// I suppose there is no reason the parse it for a printing purposes
 		if (info && mode != RZ_MODE_PRINT) {
 			/* Should we do this by default? */
-			RzAnalDwarfContext ctx = {
+			RzAnalysisDwarfContext ctx = {
 				.info = info,
 				.loc = loc_table
 			};

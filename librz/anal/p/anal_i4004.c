@@ -9,7 +9,7 @@
 
 #define	AVR_SOFTCAST(x,y)	((x)+((y)*0x100))
 
-static bool set_reg_profile(RzAnal *anal) {
+static bool set_reg_profile(RzAnalysis *anal) {
 	const char *p =
 		"=PC	PC\n"
 		/* syntax not yet supported */
@@ -97,7 +97,7 @@ static int i4004_get_ins_len (ut8 hex) {
 	return ret;
 }
 
-static int i4004_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int len, RzAnalOpMask mask) {
+static int i4004_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	char basm[128];
 	const size_t basz = sizeof (basm)-1;
 	int rlen = i4004_get_ins_len (*buf);
@@ -201,7 +201,7 @@ static int i4004_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *buf, int l
 	return op->size = rlen;
 }
 
-RzAnalPlugin rz_anal_plugin_i4004 = {
+RzAnalysisPlugin rz_anal_plugin_i4004 = {
 	.name = "i4004",
 	.desc = "i4004 code analysis plugin",
 	.license = "LGPL3",

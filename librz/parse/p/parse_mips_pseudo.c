@@ -250,11 +250,11 @@ static int parse(RzParse *p, const char *data, char *str) {
 	return true;
 }
 
-static bool subvar(RzParse *p, RzAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RzListIter *iter;
 	char *oldstr;
 	char *tstr = strdup (data);
-	RzAnal *anal = p->analb.anal;
+	RzAnalysis *anal = p->analb.anal;
 
 	if (!p->varlist) {
 		free (tstr);
@@ -263,7 +263,7 @@ static bool subvar(RzParse *p, RzAnalFunction *f, ut64 addr, int oplen, char *da
 	RzList *bpargs = p->varlist (f, 'b');
 	RzList *spargs = p->varlist (f, 's');
 	const bool ucase = IS_UPPER (*tstr);
-	RzAnalVarField *var;
+	RzAnalysisVarField *var;
 	rz_list_foreach (spargs, iter, var) {
 		st64 delta = p->get_ptr_at
 			? p->get_ptr_at (f, var->delta, addr)

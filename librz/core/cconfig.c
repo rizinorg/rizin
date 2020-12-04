@@ -50,11 +50,11 @@ static void print_node_options(RzConfigNode *node) {
 	}
 }
 
-static int compareName(const RzAnalFunction *a, const RzAnalFunction *b) {
+static int compareName(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
 	return (a && b && a->name && b->name ?  strcmp (a->name, b->name) : 0);
 }
 
-static int compareNameLen(const RzAnalFunction *a, const RzAnalFunction *b) {
+static int compareNameLen(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
 	size_t la, lb;
 	if (!a || !b || !a->name || !b->name) {
 		return 0;
@@ -64,16 +64,16 @@ static int compareNameLen(const RzAnalFunction *a, const RzAnalFunction *b) {
 	return (la > lb) - (la < lb);
 }
 
-static int compareAddress(const RzAnalFunction *a, const RzAnalFunction *b) {
+static int compareAddress(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
 	return (a && b && a->addr && b->addr ? (a->addr > b->addr) - (a->addr < b->addr) : 0);
 }
 
-static int compareType(const RzAnalFunction *a, const RzAnalFunction *b) {
+static int compareType(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
 	return (a && b && a->diff->type && b->diff->type ?
 			(a->diff->type > b->diff->type) - (a->diff->type < b->diff->type) : 0);
 }
 
-static int compareSize(const RzAnalFunction *a, const RzAnalFunction *b) {
+static int compareSize(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
 	ut64 sa, sb;
 	// return a && b && a->_size < b->_size;
 	if (!a || !b) {
@@ -84,7 +84,7 @@ static int compareSize(const RzAnalFunction *a, const RzAnalFunction *b) {
 	return (sa > sb) - (sa < sb);
 }
 
-static int compareDist(const RzAnalFunction *a, const RzAnalFunction *b) {
+static int compareDist(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
 	return (a && b && a->diff->dist && b->diff->dist ?
 			(a->diff->dist > b->diff->dist) - (a->diff->dist < b->diff->dist) : 0);
 }
@@ -118,7 +118,7 @@ fail:
 
 static const char *has_esil(RzCore *core, const char *name) {
 	RzListIter *iter;
-	RzAnalPlugin *h;
+	RzAnalysisPlugin *h;
 	rz_return_val_if_fail (core && core->anal && name, NULL);
 	rz_list_foreach (core->anal->plugins, iter, h) {
 		if (h->name && !strcmp (name, h->name)) {
@@ -354,7 +354,7 @@ static bool cb_analhpskip(void *user, void *data) {
 }
 
 static void update_analarch_options(RzCore *core, RzConfigNode *node) {
-	RzAnalPlugin *h;
+	RzAnalysisPlugin *h;
 	RzListIter *it;
 	if (core && core->anal && node) {
 		rz_list_purge (node->options);
@@ -1771,7 +1771,7 @@ static bool cb_iopcachewrite(void *user, void *data) {
 	return true;
 }
 
-RZ_API bool rz_core_esil_cmd(RzAnalEsil *esil, const char *cmd, ut64 a1, ut64 a2) {
+RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut64 a2) {
 	if (cmd && *cmd) {
 		RzCore *core = esil->anal->user;
 		rz_core_cmdf (core, "%s %"PFMT64d" %" PFMT64d, cmd, a1, a2);
@@ -2887,7 +2887,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* anal */
 	SETBPREF ("anal.detectwrites", "false", "Automatically reanalyze function after a write");
 	SETPREF ("anal.fcnprefix", "fcn",  "Prefix new function names with this");
-	SETCB ("anal.verbose", "false", &cb_analverbose, "Show RzAnal warnings when analyzing code");
+	SETCB ("anal.verbose", "false", &cb_analverbose, "Show RzAnalysis warnings when analyzing code");
 	SETBPREF ("anal.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
 	SETCB ("anal.roregs", "gp,zero", (RzConfigCallback)&cb_anal_roregs, "Comma separated list of register names to be readonly");
 	SETICB ("anal.gp", 0, (RzConfigCallback)&cb_anal_gp, "Set the value of the GP register (MIPS)");

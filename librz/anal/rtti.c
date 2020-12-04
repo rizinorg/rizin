@@ -2,7 +2,7 @@
 
 #include "rz_anal.h"
 
-RZ_API char *rz_anal_rtti_demangle_class_name(RzAnal *anal, const char *name) {
+RZ_API char *rz_anal_rtti_demangle_class_name(RzAnalysis *anal, const char *name) {
 	RVTableContext context;
 	rz_anal_vtable_begin (anal, &context);
 	if (context.abi == RZ_ANAL_CPP_ABI_MSVC) {
@@ -11,7 +11,7 @@ RZ_API char *rz_anal_rtti_demangle_class_name(RzAnal *anal, const char *name) {
 	return rz_anal_rtti_itanium_demangle_class_name (&context, name);
 }
 
-RZ_API void rz_anal_rtti_print_at_vtable(RzAnal *anal, ut64 addr, int mode) {
+RZ_API void rz_anal_rtti_print_at_vtable(RzAnalysis *anal, ut64 addr, int mode) {
 	bool use_json = mode == 'j';
 	if (use_json) {
 		rz_cons_print ("[");
@@ -30,7 +30,7 @@ RZ_API void rz_anal_rtti_print_at_vtable(RzAnal *anal, ut64 addr, int mode) {
 	}
 }
 
-RZ_API void rz_anal_rtti_print_all(RzAnal *anal, int mode) {
+RZ_API void rz_anal_rtti_print_all(RzAnalysis *anal, int mode) {
 	RVTableContext context;
 	rz_anal_vtable_begin (anal, &context);
 
@@ -81,7 +81,7 @@ RZ_API void rz_anal_rtti_print_all(RzAnal *anal, int mode) {
 	rz_cons_break_pop ();
 }
 
-RZ_API void rz_anal_rtti_recover_all(RzAnal *anal) {
+RZ_API void rz_anal_rtti_recover_all(RzAnalysis *anal) {
 	RVTableContext context;
 	rz_anal_vtable_begin (anal, &context);
 

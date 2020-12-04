@@ -15,24 +15,24 @@ static bool test_parse_dwarf_types(void) {
 	mu_assert_notnull (bin, "Couldn't create new RzBin");
 	RzIO *io = rz_io_new ();
 	mu_assert_notnull (io, "Couldn't create new RzIO");
-	RzAnal *anal = rz_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RzAnal");
+	RzAnalysis *anal = rz_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RzAnalysis");
 	rz_io_bind (io, &bin->iob);
 	anal->binb.demangle = rz_bin_demangle;
 	RzBinOptions opt = { 0 };
 	bool res = rz_bin_open (bin, "bins/pe/vista-glass.exe", &opt);
-	// TODO fix, how to correctly promote binary info to the RzAnal in unit tests?
+	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	anal->cpu = strdup ("x86");
 	anal->bits = 32;
 	mu_assert ("pe/vista-glass.exe binary could not be opened", res);
-	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
+	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev (bin, MODE);
 	mu_assert_notnull (abbrevs, "Couldn't parse Abbreviations");
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info (abbrevs, bin, MODE);
 	mu_assert_notnull (info, "Couldn't parse debug_info section");
 
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc (bin, 4);
-	RzAnalDwarfContext ctx = {
+	RzAnalysisDwarfContext ctx = {
 		.info = info,
 		.loc = loc_table
 	};
@@ -82,25 +82,25 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	mu_assert_notnull (bin, "Couldn't create new RzBin");
 	RzIO *io = rz_io_new ();
 	mu_assert_notnull (io, "Couldn't create new RzIO");
-	RzAnal *anal = rz_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RzAnal");
+	RzAnalysis *anal = rz_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RzAnalysis");
 	rz_io_bind (io, &bin->iob);
 	anal->binb.demangle = rz_bin_demangle;
 
 	RzBinOptions opt = { 0 };
 	bool res = rz_bin_open (bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
-	// TODO fix, how to correctly promote binary info to the RzAnal in unit tests?
+	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	anal->cpu = strdup ("x86");
 	anal->bits = 64;
 	mu_assert ("elf/dwarf4_many_comp_units.elf binary could not be opened", res);
-	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
+	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev (bin, MODE);
 	mu_assert_notnull (abbrevs, "Couldn't parse Abbreviations");
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info (abbrevs, bin, MODE);
 	mu_assert_notnull (info, "Couldn't parse debug_info section");
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc (bin, 8);
 
-	RzAnalDwarfContext ctx = {
+	RzAnalysisDwarfContext ctx = {
 		.info = info,
 		.loc = loc_table
 	};
@@ -138,25 +138,25 @@ static bool test_dwarf_function_parsing_go(void) {
 	mu_assert_notnull (bin, "Couldn't create new RzBin");
 	RzIO *io = rz_io_new ();
 	mu_assert_notnull (io, "Couldn't create new RzIO");
-	RzAnal *anal = rz_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RzAnal");
+	RzAnalysis *anal = rz_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RzAnalysis");
 	rz_io_bind (io, &bin->iob);
 	anal->binb.demangle = rz_bin_demangle;
 
 	RzBinOptions opt = { 0 };
 	bool res = rz_bin_open (bin, "bins/elf/dwarf_go_tree", &opt);
-	// TODO fix, how to correctly promote binary info to the RzAnal in unit tests?
+	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	anal->cpu = strdup ("x86");
 	anal->bits = 64;
 	mu_assert ("bins/elf/dwarf_go_tree", res);
-	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
+	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev (bin, MODE);
 	mu_assert_notnull (abbrevs, "Couldn't parse Abbreviations");
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info (abbrevs, bin, MODE);
 	mu_assert_notnull (info, "Couldn't parse debug_info section");
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc (bin, 8);
 
-	RzAnalDwarfContext ctx = {
+	RzAnalysisDwarfContext ctx = {
 		.info = info,
 		.loc = loc_table
 	};
@@ -192,25 +192,25 @@ static bool test_dwarf_function_parsing_rust(void) {
 	mu_assert_notnull (bin, "Couldn't create new RzBin");
 	RzIO *io = rz_io_new ();
 	mu_assert_notnull (io, "Couldn't create new RzIO");
-	RzAnal *anal = rz_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RzAnal");
+	RzAnalysis *anal = rz_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RzAnalysis");
 	rz_io_bind (io, &bin->iob);
 	anal->binb.demangle = rz_bin_demangle;
 
 	RzBinOptions opt = { 0 };
 	bool res = rz_bin_open (bin, "bins/elf/dwarf_rust_bubble", &opt);
-	// TODO fix, how to correctly promote binary info to the RzAnal in unit tests?
+	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
 	anal->cpu = strdup ("x86");
 	anal->bits = 64;
 	mu_assert ("bins/elf/dwarf_rust_bubble", res);
-	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
+	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev (bin, MODE);
 	mu_assert_notnull (abbrevs, "Couldn't parse Abbreviations");
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info (abbrevs, bin, MODE);
 	mu_assert_notnull (info, "Couldn't parse debug_info section");
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc (bin, 8);
 
-	RzAnalDwarfContext ctx = {
+	RzAnalysisDwarfContext ctx = {
 		.info = info,
 		.loc = loc_table
 	};

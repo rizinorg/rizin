@@ -4,8 +4,8 @@
 #include <rz_list.h>
 #include <rz_types.h>
 
-RZ_API RzAnalCycleFrame *rz_anal_cycle_frame_new(void) {
-	RzAnalCycleFrame *cf = RZ_NEW0 (RzAnalCycleFrame);
+RZ_API RzAnalysisCycleFrame *rz_anal_cycle_frame_new(void) {
+	RzAnalysisCycleFrame *cf = RZ_NEW0 (RzAnalysisCycleFrame);
 	if (cf) {
 		if (!(cf->hooks = rz_list_new ())) {
 			RZ_FREE (cf);
@@ -14,7 +14,7 @@ RZ_API RzAnalCycleFrame *rz_anal_cycle_frame_new(void) {
 	return cf;
 }
 
-RZ_API void rz_anal_cycle_frame_free(RzAnalCycleFrame *cf) {
+RZ_API void rz_anal_cycle_frame_free(RzAnalysisCycleFrame *cf) {
 	if (!cf) {
 		return;
 	}

@@ -6,7 +6,7 @@
 #include <rz_asm.h>
 #include <rz_anal.h>
 
-static int nios2_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *b, int len, RzAnalOpMask mask) {
+static int nios2_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *b, int len, RzAnalysisOpMask mask) {
 	if (!op) {
 		return 1;
 	}
@@ -86,7 +86,7 @@ static int nios2_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *b, int len
 	return op->size;
 }
 
-RzAnalPlugin rz_anal_plugin_nios2 = {
+RzAnalysisPlugin rz_anal_plugin_nios2 = {
 	.name = "nios2",
 	.desc = "NIOS II code analysis plugin",
 	.license = "LGPL3",

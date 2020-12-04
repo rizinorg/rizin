@@ -21,7 +21,7 @@ static ut64 letter_divs[RZ_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 
 extern bool rz_core_is_project (RzCore *core, const char *name);
 
-static int on_fcn_new(RzAnal *_anal, void* _user, RzAnalFunction *fcn) {
+static int on_fcn_new(RzAnalysis *_anal, void* _user, RzAnalysisFunction *fcn) {
 	RzCore *core = (RzCore*)_user;
 	const char *cmd = rz_config_get (core->config, "cmd.fcn.new");
 	if (cmd && *cmd) {
@@ -34,7 +34,7 @@ static int on_fcn_new(RzAnal *_anal, void* _user, RzAnalFunction *fcn) {
 	return 0;
 }
 
-static int on_fcn_delete (RzAnal *_anal, void* _user, RzAnalFunction *fcn) {
+static int on_fcn_delete (RzAnalysis *_anal, void* _user, RzAnalysisFunction *fcn) {
 	RzCore *core = (RzCore*)_user;
 	const char *cmd = rz_config_get (core->config, "cmd.fcn.delete");
 	if (cmd && *cmd) {
@@ -47,7 +47,7 @@ static int on_fcn_delete (RzAnal *_anal, void* _user, RzAnalFunction *fcn) {
 	return 0;
 }
 
-static int on_fcn_rename(RzAnal *_anal, void* _user, RzAnalFunction *fcn, const char *oname) {
+static int on_fcn_rename(RzAnalysis *_anal, void* _user, RzAnalysisFunction *fcn, const char *oname) {
 	RzCore *core = (RzCore*)_user;
 	const char *cmd = rz_config_get (core->config, "cmd.fcn.rename");
 	if (cmd && *cmd) {
@@ -340,9 +340,9 @@ RZ_API RzCore *rz_core_cast(void *p) {
 }
 
 static ut64 getref (RzCore *core, int n, char t, int type) {
-	RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
+	RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
 	RzListIter *iter;
-	RzAnalRef *r;
+	RzAnalysisRef *r;
 	RzList *list;
 	int i = 0;
 	if (!fcn) {
@@ -368,9 +368,9 @@ static ut64 getref (RzCore *core, int n, char t, int type) {
 	return UT64_MAX;
 }
 
-static ut64 bbInstructions(RzAnalFunction *fcn, ut64 addr) {
+static ut64 bbInstructions(RzAnalysisFunction *fcn, ut64 addr) {
 	RzListIter *iter;
-	RzAnalBlock *bb;
+	RzAnalysisBlock *bb;
 	rz_list_foreach (fcn->bbs, iter, bb) {
 		if (RZ_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->ninstr;
@@ -379,9 +379,9 @@ static ut64 bbInstructions(RzAnalFunction *fcn, ut64 addr) {
 	return UT64_MAX;
 }
 
-static ut64 bbBegin(RzAnalFunction *fcn, ut64 addr) {
+static ut64 bbBegin(RzAnalysisFunction *fcn, ut64 addr) {
 	RzListIter *iter;
-	RzAnalBlock *bb;
+	RzAnalysisBlock *bb;
 	rz_list_foreach (fcn->bbs, iter, bb) {
 		if (RZ_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->addr;
@@ -390,9 +390,9 @@ static ut64 bbBegin(RzAnalFunction *fcn, ut64 addr) {
 	return UT64_MAX;
 }
 
-static ut64 bbJump(RzAnalFunction *fcn, ut64 addr) {
+static ut64 bbJump(RzAnalysisFunction *fcn, ut64 addr) {
 	RzListIter *iter;
-	RzAnalBlock *bb;
+	RzAnalysisBlock *bb;
 	rz_list_foreach (fcn->bbs, iter, bb) {
 		if (RZ_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->jump;
@@ -401,9 +401,9 @@ static ut64 bbJump(RzAnalFunction *fcn, ut64 addr) {
 	return UT64_MAX;
 }
 
-static ut64 bbFail(RzAnalFunction *fcn, ut64 addr) {
+static ut64 bbFail(RzAnalysisFunction *fcn, ut64 addr) {
 	RzListIter *iter;
-	RzAnalBlock *bb;
+	RzAnalysisBlock *bb;
 	rz_list_foreach (fcn->bbs, iter, bb) {
 		if (RZ_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->fail;
@@ -412,9 +412,9 @@ static ut64 bbFail(RzAnalFunction *fcn, ut64 addr) {
 	return UT64_MAX;
 }
 
-static ut64 bbSize(RzAnalFunction *fcn, ut64 addr) {
+static ut64 bbSize(RzAnalysisFunction *fcn, ut64 addr) {
 	RzListIter *iter;
-	RzAnalBlock *bb;
+	RzAnalysisBlock *bb;
 	rz_list_foreach (fcn->bbs, iter, bb) {
 		if (RZ_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
 			return bb->size;
@@ -442,11 +442,11 @@ static const char *str_callback(RNum *user, ut64 off, int *ok) {
 
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RzCore *core = (RzCore *)userptr; // XXX ?
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 	char *ptr, *bptr, *out = NULL;
 	RzFlagItem *flag;
 	RzBinSection *s;
-	RzAnalOp op;
+	RzAnalysisOp op;
 	ut64 ret = 0;
 
 	if (ok) {
@@ -465,7 +465,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			if (!off) {
 				off = core->offset;
 			}
-			RzAnalFunction *fcn = rz_anal_get_function_at (core->anal, off);
+			RzAnalysisFunction *fcn = rz_anal_get_function_at (core->anal, off);
 			if (fcn) {
 				if (ok) {
 					*ok = true;
@@ -768,7 +768,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	default:
 		if (*str >= 'A') {
 			// NOTE: functions override flags
-			RzAnalFunction *fcn = rz_anal_get_function_byname (core->anal, str);
+			RzAnalysisFunction *fcn = rz_anal_get_function_byname (core->anal, str);
 			if (fcn) {
 				if (ok) {
 					*ok = true;
@@ -1368,7 +1368,7 @@ static void autocomplete_flagspaces(RzCore *core, RzLineCompletion *completion, 
 static void autocomplete_functions (RzCore *core, RzLineCompletion *completion, const char* str) {
 	rz_return_if_fail (str);
 	RzListIter *iter;
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 	int n = strlen (str);
 	rz_list_foreach (core->anal->fcns, iter, fcn) {
 		char *name = rz_core_anal_fcn_name (core, fcn);
@@ -1698,7 +1698,7 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 		}
 	} else if ((!strncmp (buf->data, "afvn ", 5))
 	|| (!strncmp (buf->data, "afan ", 5))) {
-		RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
+		RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
 		RzList *vars;
 		if (!strncmp (buf->data, "afvn ", 5)) {
 			vars = rz_anal_var_list (core->anal, fcn, RZ_ANAL_VAR_KIND_BPV);
@@ -1706,7 +1706,7 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 			vars = rz_list_new (); // TODO rz_anal_var_list (core->anal, fcn, RZ_ANAL_VAR_KIND_ARG);
 		}
 		const char *f_ptr, *l_ptr;
-		RzAnalVar *var;
+		RzAnalysisVar *var;
 		int len = strlen (buf->data);
 
 		f_ptr = rz_sub_str_lchr (buf->data, 0, buf->index, ' ');
@@ -2005,7 +2005,7 @@ static char *rz_core_anal_hasrefs_to_depth(RzCore *core, ut64 value, int depth) 
 			rz_strbuf_appendf (s, " %s", fi->name);
 		}
 	}
-	RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, value, 0);
+	RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, value, 0);
 	if (fcn) {
 		rz_strbuf_appendf (s, " %s", fcn->name);
 	}
@@ -2172,8 +2172,8 @@ static int mywrite(const ut8 *buf, int len) {
 }
 
 static bool exists_var(RzPrint *print, ut64 func_addr, char *str) {
-	RzAnal *anal = ((RzCore*)(print->user))->anal;
-	RzAnalFunction *fcn = rz_anal_get_function_at (anal, func_addr);
+	RzAnalysis *anal = ((RzCore*)(print->user))->anal;
+	RzAnalysisFunction *fcn = rz_anal_get_function_at (anal, func_addr);
 	if (!fcn) {
 		return false;
 	}
@@ -2912,9 +2912,9 @@ RZ_API char *rz_core_op_str(RzCore *core, ut64 addr) {
 	return str;
 }
 
-RZ_API RzAnalOp *rz_core_op_anal(RzCore *core, ut64 addr, RzAnalOpMask mask) {
+RZ_API RzAnalysisOp *rz_core_op_anal(RzCore *core, ut64 addr, RzAnalysisOpMask mask) {
 	ut8 buf[64];
-	RzAnalOp *op = RZ_NEW (RzAnalOp);
+	RzAnalysisOp *op = RZ_NEW (RzAnalysisOp);
 	rz_io_read_at (core->io, addr, buf, sizeof (buf));
 	rz_anal_op (core->anal, op, addr, buf, sizeof (buf), mask);
 	return op;
