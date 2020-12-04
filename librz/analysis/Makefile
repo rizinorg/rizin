@@ -25,7 +25,7 @@ all: plugins
 plugins: ${LIBSO} ${LIBAR}
 	@${MAKE} -C p all
 
-include ${STATIC_ANAL_PLUGINS}
+include ${STATIC_ANALYSIS_PLUGINS}
 
 STATIC_OBJS=$(addprefix $(LTOP)/analysis/p/,$(STATIC_OBJ))
 OBJLIBS=meta.o reflines.o op.o fcn.o bb.o var.o block.o
