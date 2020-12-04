@@ -234,7 +234,7 @@ Disassembly example:
     │ │││   0x100001147    48394a38     rdx,56,+,[8],rcx,==,cz,?=
 ```
 
-Rizin anal ESIL code example
+Rizin analysis ESIL code example
 ==============================
 
 As an example implementation of ESIL analysis for the AVR family of

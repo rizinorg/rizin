@@ -120,7 +120,7 @@ static const char *help_msg_abt[] = {
 };
 
 static const char *help_msg_ac[] = {
-	"Usage:", "ac", "anal classes commands",
+	"Usage:", "ac", "analysis classes commands",
 	"acl[j*]", "", "list all classes",
 	"acll[j]", " (class_name)", "list all or single class detailed",
 	"ac", " [class name]", "add class",
@@ -6445,14 +6445,14 @@ static void cmd_anal_esil(RzCore *core, const char *input) {
 		if (input[1] == 'a') { // "aefa"
 			rz_analysis_aefa (core, rz_str_trim_head_ro (input + 2));
 		} else { // This should be aefb -> because its emulating all the bbs
-			// anal ESIL to REIL.
+			// convert ESIL to REIL.
 			__anal_esil_function (core, core->offset);
 		} break;
 	case 't': // "aet"
 		switch (input[1]) {
 		case 'r': // "aetr"
 		{
-			// anal ESIL to REIL.
+			// convert ESIL to REIL.
 			RzAnalysisEsil *esil = rz_analysis_esil_new (stacksize, iotrap, addrsize);
 			if (!esil) {
 				return;

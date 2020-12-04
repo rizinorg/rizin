@@ -1237,7 +1237,7 @@ RZ_API void rz_analysis_class_list_vtable_offset_functions(RzAnalysis *analysis,
  * @brief Creates RzGraph from class inheritance information where 
  *        each node has RzGraphNodeInfo as generic data
  * 
- * @param anal 
+ * @param analysis 
  * @return RzGraph* NULL if failure
  */
 RZ_API RzGraph *rz_analysis_class_get_inheritance_graph(RzAnalysis *analysis) {

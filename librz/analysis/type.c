@@ -615,7 +615,7 @@ RZ_API RzAnalysisBaseType *rz_analysis_base_type_new(RzAnalysisBaseTypeKind kind
 /**
  * @brief Saves RzAnalysisBaseType into the SDB
  *
- * @param anal
+ * @param analysis
  * @param type RzAnalysisBaseType to save
  * @param name Name of the type
  */

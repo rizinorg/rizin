@@ -1,4 +1,4 @@
-NAME=anal classes
+NAME=classes analysis
 FILE=bins/pe/cpp_sample.exe
 CMDS=<<EOF
 aar
@@ -20,7 +20,7 @@ type_info
 EOF
 RUN
 
-NAME=anal classes armv7
+NAME=classes analysis armv7
 FILE=bins/mach0/TestRTTI-armv7
 CMDS=<<EOF
 avrr
@@ -59,7 +59,7 @@ name_unique: true
 EOF
 RUN
 
-NAME=anal classes arm64
+NAME=classes analysis arm64
 FILE=bins/mach0/TestRTTI-arm64
 CMDS=<<EOF
 avrr
@@ -98,7 +98,7 @@ name_unique: true
 EOF
 RUN
 
-NAME=anal classes arm64e
+NAME=classes analysis arm64e
 FILE=bins/mach0/TestRTTI-arm64e
 CMDS=<<EOF
 avrr

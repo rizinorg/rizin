@@ -1,4 +1,4 @@
-NAME=mips hello ref anal
+NAME=mips hello reference analysis
 FILE=bins/elf/analysis/mips-hello
 CMDS=<<EOF
 s sym.main
@@ -35,7 +35,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=mips hello ref anal subtract
+NAME=mips hello ref analysis subtract
 FILE=bins/elf/analysis/busybox-mips
 ARGS=-e bin.strings=false -e anal.strings=true
 CMDS=<<EOF

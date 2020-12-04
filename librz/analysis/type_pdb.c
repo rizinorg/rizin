@@ -13,8 +13,8 @@ static bool is_parsable_type(const ELeafType type) {
 
 /**
  * @brief Create a type name from offset
- * 
- * @param offset 
+ *
+ * @param offset
  * @return char* Name or NULL if error
  */
 static char *create_type_name_from_offset(ut64 offset) {
@@ -26,7 +26,7 @@ static char *create_type_name_from_offset(ut64 offset) {
 
 /**
  * @brief Parses class/struct/union member
- * 
+ *
  * @param type_info Current type info (member)
  * @param types List of all types
  * @return RzAnalysisStructMember* parsed member, NULL if fail
@@ -60,10 +60,10 @@ cleanup:
 
 /**
  * @brief Parse enum case
- * 
+ *
  * @param type_info Current type info (enum case)
  * @param types List of all types
- * @return RzAnalysisEnumCase* parsed enum case, NULL if fail 
+ * @return RzAnalysisEnumCase* parsed enum case, NULL if fail
  */
 static RzAnalysisEnumCase *parse_enumerate(STypeInfo *type_info, RzList *types) {
 	rz_return_val_if_fail (type_info && types && type_info->leaf_type == eLF_ENUMERATE, NULL);
@@ -88,10 +88,10 @@ cleanup:
 
 /**
  * @brief Parses enum into BaseType and saves it into SDB
- * 
- * @param anal 
+ *
+ * @param analysis
  * @param type Current type
- * @param types List of all types 
+ * @param types List of all types
  */
 static void parse_enum(const RzAnalysis *analysis, SType *type, RzList *types) {
 	rz_return_if_fail (analysis && type && types);
@@ -152,8 +152,8 @@ cleanup:
 
 /**
  * @brief Parses classes, unions and structures into BaseType and saves them into SDB
- * 
- * @param anal 
+ *
+ * @param analysis
  * @param type Current type
  * @param types List of all types
  */
@@ -215,8 +215,8 @@ cleanup:
 
 /**
  * @brief Delegate the type parsing to appropriate function
- * 
- * @param anal 
+ *
+ * @param analysis
  * @param type Current type
  * @param types List of all types
  */
@@ -249,8 +249,8 @@ static void parse_type (const RzAnalysis *analysis, SType *type, RzList *types) 
 
 /**
  * @brief Saves PDB types from TPI stream into the SDB
- * 
- * @param anal
+ *
+ * @param analysis
  * @param pdb PDB information
  */
 RZ_API void rz_parse_pdb_types(const RzAnalysis *analysis, const RzPdb *pdb) {

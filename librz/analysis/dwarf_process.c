@@ -1522,7 +1522,7 @@ static void parse_type_entry(Context *ctx, ut64 idx) {
  * @brief Parses type and function information out of DWARF entries
  *        and stores them to the sdb for further use
  * 
- * @param anal 
+ * @param analysis 
  * @param ctx 
  */
 RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzAnalysisDwarfContext *ctx) {
@@ -1557,7 +1557,7 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
  * @brief Use parsed DWARF function info from Sdb in the anal functions
  *  XXX right now we only save parsed name and variables, we can't use signature now
  *  XXX refactor to be more readable
- * @param anal 
+ * @param analysis 
  * @param dwarf_sdb 
  */
 RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *flags, Sdb *dwarf_sdb) {
