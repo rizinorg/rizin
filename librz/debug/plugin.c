@@ -22,8 +22,8 @@ RZ_API bool rz_debug_use(RzDebug *dbg, const char *str) {
 		rz_list_foreach (dbg->plugins, iter, h) {
 			if (h->name && !strcmp (str, h->name)) {
 				dbg->h = h;
-				if (dbg->anal && dbg->anal->cur) {
-					rz_debug_set_arch (dbg, dbg->anal->cur->arch, dbg->bits);
+				if (dbg->analysis && dbg->analysis->cur) {
+					rz_debug_set_arch (dbg, dbg->analysis->cur->arch, dbg->bits);
 				}
 				dbg->bp->breakpoint = dbg->h->breakpoint;
 				dbg->bp->user = dbg;
@@ -34,9 +34,9 @@ RZ_API bool rz_debug_use(RzDebug *dbg, const char *str) {
 		char *p = dbg->h->reg_profile (dbg);
 		if (p) {
 			rz_reg_set_profile_string (dbg->reg, p);
-			if (dbg->anal && dbg->reg != dbg->anal->reg) {
-				rz_reg_free (dbg->anal->reg);
-				dbg->anal->reg = dbg->reg;
+			if (dbg->analysis && dbg->reg != dbg->analysis->reg) {
+				rz_reg_free (dbg->analysis->reg);
+				dbg->analysis->reg = dbg->reg;
 			}
 			if (dbg->h->init) {
 				dbg->h->init (dbg);

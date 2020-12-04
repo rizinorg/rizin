@@ -42,11 +42,11 @@ RZ_API RzAnalysisEsilTrace *rz_analysis_esil_trace_new(RzAnalysisEsil *esil) {
 	if (!trace->stack_data) {
 		goto error;
 	}
-	esil->anal->iob.read_at (esil->anal->iob.io, trace->stack_addr,
+	esil->analysis->iob.read_at (esil->analysis->iob.io, trace->stack_addr,
 		trace->stack_data, trace->stack_size);
 	// Save initial registers arenas
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
-		RzRegArena *a = esil->anal->reg->regset[i].arena;
+		RzRegArena *a = esil->analysis->reg->regset[i].arena;
 		RzRegArena *b = rz_reg_arena_new (a->size);
 		if (!b) {
 			goto error;
@@ -135,7 +135,7 @@ static int trace_hook_reg_write(RzAnalysisEsil *esil, const char *name, ut64 *va
 	//eprintf ("[ESIL] REG WRITE %s 0x%08"PFMT64x"\n", name, *val);
 	sdb_array_add (DB, KEY ("reg.write"), name, 0);
 	sdb_num_set (DB, KEYREG ("reg.write", name), *val, 0);
-	RzRegItem *ri = rz_reg_get (esil->anal->reg, name, -1);
+	RzRegItem *ri = rz_reg_get (esil->analysis->reg, name, -1);
 	add_reg_change (esil->trace, esil->trace->idx + 1, ri, *val);
 	if (ocbs.hook_reg_write) {
 		RzAnalysisEsilCallbacks cbs = esil->cb;
@@ -216,7 +216,7 @@ RZ_API void rz_analysis_esil_trace_op(RzAnalysisEsil *esil, RzAnalysisOp *op) {
 	ocbs_set = true;
 	sdb_num_set (DB, "idx", esil->trace->idx, 0);
 	sdb_num_set (DB, KEY ("addr"), op->addr, 0);
-	RzRegItem *pc_ri = rz_reg_get (esil->anal->reg, "PC", -1);
+	RzRegItem *pc_ri = rz_reg_get (esil->analysis->reg, "PC", -1);
 	add_reg_change (esil->trace, esil->trace->idx, pc_ri, op->addr);
 //	sdb_set (DB, KEY ("opcode"), op->mnemonic, 0);
 //	sdb_set (DB, KEY ("addr"), expr, 0);
@@ -250,7 +250,7 @@ static bool restore_memory_cb(void *user, const ut64 key, const void *value) {
 	rz_vector_upper_bound (vmem, esil->trace->idx, index, CMP_MEM_CHANGE);
 	if (index > 0 && index <= vmem->len) {
 		RzAnalysisEsilMemChange *c = rz_vector_index_ptr (vmem, index - 1);
-		esil->anal->iob.write_at (esil->anal->iob.io, key, &c->data, 1);
+		esil->analysis->iob.write_at (esil->analysis->iob.io, key, &c->data, 1);
 	}
 	return true;
 }
@@ -262,7 +262,7 @@ static bool restore_register(RzAnalysisEsil *esil, RzRegItem *ri, int idx) {
 		rz_vector_upper_bound (vreg, idx, index, CMP_REG_CHANGE);
 		if (index > 0 && index <= vreg->len) {
 			RzAnalysisEsilRegChange *c = rz_vector_index_ptr (vreg, index - 1);
-			rz_reg_set_value (esil->anal->reg, ri, c->data);
+			rz_reg_set_value (esil->analysis->reg, ri, c->data);
 		}
 	}
 	return true;
@@ -275,21 +275,21 @@ RZ_API void rz_analysis_esil_trace_restore(RzAnalysisEsil *esil, int idx) {
 	if (idx < esil->trace->idx) {
 		// Restore initial registers value
 		for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
-			RzRegArena *a = esil->anal->reg->regset[i].arena;
+			RzRegArena *a = esil->analysis->reg->regset[i].arena;
 			RzRegArena *b = trace->arena[i];
 			if (a && b) {
 				memcpy (a->bytes, b->bytes, a->size);
 			}
 		}
 		// Restore initial stack memory
-		esil->anal->iob.write_at (esil->anal->iob.io, trace->stack_addr,
+		esil->analysis->iob.write_at (esil->analysis->iob.io, trace->stack_addr,
 			trace->stack_data, trace->stack_size);
 	}
 	// Apply latest changes to registers and memory
 	esil->trace->idx = idx;
 	RzListIter *iter;
 	RzRegItem *ri;
-	rz_list_foreach (esil->anal->reg->allregs, iter, ri) {
+	rz_list_foreach (esil->analysis->reg->allregs, iter, ri) {
 		restore_register (esil, ri, idx);
 	}
 	ht_up_foreach (trace->memory, restore_memory_cb, esil);
@@ -348,7 +348,7 @@ static int cmp_strings_by_leading_number(void *data1, void *data2) {
 }
 
 RZ_API void rz_analysis_esil_trace_list (RzAnalysisEsil *esil) {
-	PrintfCallback p = esil->anal->cb_printf;
+	PrintfCallback p = esil->analysis->cb_printf;
 	SdbKv *kv;
 	SdbListIter *iter;
 	SdbList *list = sdb_foreach_list (esil->trace->db, true);
@@ -360,7 +360,7 @@ RZ_API void rz_analysis_esil_trace_list (RzAnalysisEsil *esil) {
 }
 
 RZ_API void rz_analysis_esil_trace_show(RzAnalysisEsil *esil, int idx) {
-	PrintfCallback p = esil->anal->cb_printf;
+	PrintfCallback p = esil->analysis->cb_printf;
 	const char *str2;
 	const char *str;
 	int trace_idx = esil->trace->idx;

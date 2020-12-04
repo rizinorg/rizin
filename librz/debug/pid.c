@@ -97,7 +97,7 @@ RZ_API int rz_debug_thread_list(RzDebug *dbg, int pid, char fmt) {
 
 				rz_strbuf_appendf (path, "(0x%" PFMT64x ")", p->pc);
 
-				fcn = rz_analysis_get_fcn_in (dbg->anal, p->pc, 0);
+				fcn = rz_analysis_get_fcn_in (dbg->analysis, p->pc, 0);
 				if (fcn) {
 					rz_strbuf_appendf (path, " in %s+0x%" PFMT64x, fcn->name, (p->pc - fcn->addr));
 				}

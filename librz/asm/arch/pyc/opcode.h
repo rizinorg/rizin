@@ -64,7 +64,7 @@ typedef struct {
 	void (*func)(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg);
 } op_anal_func;
 
-void anal_pyc_op(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg);
+void analysis_pyc_op(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg);
 
 pyc_opcodes *opcode_2x(void);
 pyc_opcodes *opcode_3x(void);

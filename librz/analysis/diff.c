@@ -25,34 +25,34 @@ RZ_API void* rz_analysis_diff_free(RzAnalysisDiff *diff) {
 }
 
 /* 0-1 */
-RZ_API void rz_analysis_diff_setup(RzAnalysis *anal, int doops, double thbb, double thfcn) {
+RZ_API void rz_analysis_diff_setup(RzAnalysis *analysis, int doops, double thbb, double thfcn) {
 	if (doops >= 0) {
-		anal->diff_ops = doops;
+		analysis->diff_ops = doops;
 	}
-	anal->diff_thbb = (thbb>=0)? thbb: RZ_ANAL_THRESHOLDBB;
-	anal->diff_thfcn = (thfcn>=0)? thfcn: RZ_ANAL_THRESHOLDFCN;
+	analysis->diff_thbb = (thbb>=0)? thbb: RZ_ANAL_THRESHOLDBB;
+	analysis->diff_thfcn = (thfcn>=0)? thfcn: RZ_ANAL_THRESHOLDFCN;
 }
 
 /* 0-100 */
-RZ_API void rz_analysis_diff_setup_i(RzAnalysis *anal, int doops, int thbb, int thfcn) {
+RZ_API void rz_analysis_diff_setup_i(RzAnalysis *analysis, int doops, int thbb, int thfcn) {
 	if (doops >= 0) {
-		anal->diff_ops = doops;
+		analysis->diff_ops = doops;
 	}
-	anal->diff_thbb = (thbb>=0)? ((double)thbb) / 100: RZ_ANAL_THRESHOLDBB;
-	anal->diff_thfcn = (thfcn>=0)? ((double)thfcn) / 100: RZ_ANAL_THRESHOLDFCN;
+	analysis->diff_thbb = (thbb>=0)? ((double)thbb) / 100: RZ_ANAL_THRESHOLDBB;
+	analysis->diff_thfcn = (thfcn>=0)? ((double)thfcn) / 100: RZ_ANAL_THRESHOLDFCN;
 }
 
 // Fingerprint function basic block
-RZ_API int rz_analysis_diff_fingerprint_bb(RzAnalysis *anal, RzAnalysisBlock *bb) {
+RZ_API int rz_analysis_diff_fingerprint_bb(RzAnalysis *analysis, RzAnalysisBlock *bb) {
 	RzAnalysisOp *op;
 	ut8 *buf;
 	int oplen, idx = 0;
 
-	if (!anal) {
+	if (!analysis) {
 		return false;
 	}
-	if (anal->cur && anal->cur->fingerprint_bb) {
-		return (anal->cur->fingerprint_bb (anal, bb));
+	if (analysis->cur && analysis->cur->fingerprint_bb) {
+		return (analysis->cur->fingerprint_bb (analysis, bb));
 	}
 	if (!(bb->fingerprint = malloc (1 + bb->size))) {
 		return false;
@@ -61,16 +61,16 @@ RZ_API int rz_analysis_diff_fingerprint_bb(RzAnalysis *anal, RzAnalysisBlock *bb
 		free (bb->fingerprint);
 		return false;
 	}
-	if (anal->iob.read_at (anal->iob.io, bb->addr, buf, bb->size)) {
+	if (analysis->iob.read_at (analysis->iob.io, bb->addr, buf, bb->size)) {
 		memcpy (bb->fingerprint, buf, bb->size);
-		if (anal->diff_ops) { // diff using only the opcode
+		if (analysis->diff_ops) { // diff using only the opcode
 			if (!(op = rz_analysis_op_new ())) {
 				free (bb->fingerprint);
 				free (buf);
 				return false;
 			}
 			while (idx < bb->size) {
-				if ((oplen = rz_analysis_op (anal, op, 0, buf+idx, bb->size-idx, RZ_ANAL_OP_MASK_BASIC)) < 1) {
+				if ((oplen = rz_analysis_op (analysis, op, 0, buf+idx, bb->size-idx, RZ_ANAL_OP_MASK_BASIC)) < 1) {
 					break;
 				}
 				if (op->nopcode != 0) {
@@ -85,12 +85,12 @@ RZ_API int rz_analysis_diff_fingerprint_bb(RzAnalysis *anal, RzAnalysisBlock *bb
 	return bb->size;
 }
 
-RZ_API size_t rz_analysis_diff_fingerprint_fcn(RzAnalysis *anal, RzAnalysisFunction *fcn) {
+RZ_API size_t rz_analysis_diff_fingerprint_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
 	RzAnalysisBlock *bb;
 	RzListIter *iter;
 
-	if (anal && anal->cur && anal->cur->fingerprint_fcn) {
-		return (anal->cur->fingerprint_fcn (anal, fcn));
+	if (analysis && analysis->cur && analysis->cur->fingerprint_fcn) {
+		return (analysis->cur->fingerprint_fcn (analysis, fcn));
 	}
 
 	fcn->fingerprint = NULL;
@@ -106,16 +106,16 @@ RZ_API size_t rz_analysis_diff_fingerprint_fcn(RzAnalysis *anal, RzAnalysisFunct
 	return fcn->fingerprint_size;
 }
 
-RZ_API bool rz_analysis_diff_bb(RzAnalysis *anal, RzAnalysisFunction *fcn, RzAnalysisFunction *fcn2) {
+RZ_API bool rz_analysis_diff_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysisFunction *fcn2) {
 	RzAnalysisBlock *bb, *bb2, *mbb, *mbb2;
 	RzListIter *iter, *iter2;
 	double t, ot;
 
-	if (!anal || !fcn || !fcn2) {
+	if (!analysis || !fcn || !fcn2) {
 		return false;
 	}
-	if (anal->cur && anal->cur->diff_bb) {
-		return (anal->cur->diff_bb (anal, fcn, fcn2));
+	if (analysis->cur && analysis->cur->diff_bb) {
+		return (analysis->cur->diff_bb (analysis, fcn, fcn2));
 	}
 	fcn->diff->type = fcn2->diff->type = RZ_ANAL_DIFF_TYPE_MATCH;
 	rz_list_foreach (fcn->bbs, iter, bb) {
@@ -128,7 +128,7 @@ RZ_API bool rz_analysis_diff_bb(RzAnalysis *anal, RzAnalysisFunction *fcn, RzAna
 			if (!bb2->diff || bb2->diff->type == RZ_ANAL_DIFF_TYPE_NULL) {
 				rz_diff_buffers_distance (NULL, bb->fingerprint, bb->size,
 						bb2->fingerprint, bb2->size, NULL, &t);
-				if (t > anal->diff_thbb && t > ot) {
+				if (t > analysis->diff_thbb && t > ot) {
 					ot = t;
 					mbb = bb;
 					mbb2 = bb2;
@@ -148,7 +148,7 @@ RZ_API bool rz_analysis_diff_bb(RzAnalysis *anal, RzAnalysisFunction *fcn, RzAna
 			if (!mbb->diff || !mbb2->diff) {
 				return false;
 			}
-			if (ot == 1 || t > anal->diff_thfcn) {
+			if (ot == 1 || t > analysis->diff_thfcn) {
 				mbb->diff->type = mbb2->diff->type = RZ_ANAL_DIFF_TYPE_MATCH;
 			} else {
 				mbb->diff->type = mbb2->diff->type = \
@@ -170,17 +170,17 @@ RZ_API bool rz_analysis_diff_bb(RzAnalysis *anal, RzAnalysisFunction *fcn, RzAna
 	return true;
 }
 
-RZ_API int rz_analysis_diff_fcn(RzAnalysis *anal, RzList *fcns, RzList *fcns2) {
+RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns, RzList *fcns2) {
 	RzAnalysisFunction *fcn, *fcn2, *mfcn, *mfcn2;
 	RzListIter *iter, *iter2;
 	ut64 maxsize, minsize;
 	double t, ot;
 
-	if (!anal) {
+	if (!analysis) {
 		return false;
 	}
-	if (anal->cur && anal->cur->diff_fcn) {
-		return (anal->cur->diff_fcn (anal, fcns, fcns2));
+	if (analysis->cur && analysis->cur->diff_fcn) {
+		return (analysis->cur->diff_fcn (analysis, fcns, fcns2));
 	}
 	/* Compare functions with the same name */
 	if (fcns) {
@@ -211,7 +211,7 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *anal, RzList *fcns, RzList *fcns2) {
 				if (fcn->name) {
 					fcn2->diff->name = strdup (fcn->name);
 				}
-				rz_analysis_diff_bb (anal, fcn, fcn2);
+				rz_analysis_diff_bb (analysis, fcn, fcn2);
 				break;
 			}
 		}
@@ -240,7 +240,7 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *anal, RzList *fcns, RzList *fcns2) {
 				maxsize = fcn2_size;
 				minsize = fcn_size;
 			}
-			if (maxsize * anal->diff_thfcn > minsize) {
+			if (maxsize * analysis->diff_thfcn > minsize) {
 				eprintf ("Exceeded anal threshold while diffing %s and %s\n", fcn->name, fcn2->name);
 				continue;
 			}
@@ -254,7 +254,7 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *anal, RzList *fcns, RzList *fcns2) {
 			}
 			rz_diff_buffers_distance (NULL, fcn->fingerprint, fcn->fingerprint_size, fcn2->fingerprint, fcn2->fingerprint_size, NULL, &t);
 			fcn->diff->dist = fcn2->diff->dist = t;
-			if (t > anal->diff_thfcn && t > ot) {
+			if (t > analysis->diff_thfcn && t > ot) {
 				ot = t;
 				mfcn = fcn;
 				mfcn2 = fcn2;
@@ -282,15 +282,15 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *anal, RzList *fcns, RzList *fcns2) {
 			if (mfcn->name) {
 				mfcn2->diff->name = strdup (mfcn->name);
 			}
-			rz_analysis_diff_bb (anal, mfcn, mfcn2);
+			rz_analysis_diff_bb (analysis, mfcn, mfcn2);
 		}
 	}
 	return true;
 }
 
-RZ_API int rz_analysis_diff_eval(RzAnalysis *anal) {
-	if (anal && anal->cur && anal->cur->diff_eval) {
-		return (anal->cur->diff_eval (anal));
+RZ_API int rz_analysis_diff_eval(RzAnalysis *analysis) {
+	if (analysis && analysis->cur && analysis->cur->diff_eval) {
+		return (analysis->cur->diff_eval (analysis));
 	}
 	return true; // XXX: shouldn't this be false?
 }

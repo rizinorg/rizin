@@ -68,11 +68,11 @@ static inline const char *condstring(RzAnalysisCond *cond) {
 	return "";
 }
 
-RZ_API int rz_analysis_cond_eval(RzAnalysis *anal, RzAnalysisCond *cond) {
+RZ_API int rz_analysis_cond_eval(RzAnalysis *analysis, RzAnalysisCond *cond) {
 	// XXX: sign issue here?
-	st64 arg0 = (st64) rz_analysis_value_to_ut64 (anal, cond->arg[0]);
+	st64 arg0 = (st64) rz_analysis_value_to_ut64 (analysis, cond->arg[0]);
 	if (cond->arg[1]) {
-		st64 arg1 = (st64) rz_analysis_value_to_ut64 (anal, cond->arg[1]);
+		st64 arg1 = (st64) rz_analysis_value_to_ut64 (analysis, cond->arg[1]);
 		switch (cond->type) {
 		case RZ_ANAL_COND_EQ: return arg0 == arg1;
 		case RZ_ANAL_COND_NE: return arg0 != arg1;

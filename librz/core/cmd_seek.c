@@ -203,7 +203,7 @@ static void seek_to_register(RzCore *core, const char *input, bool is_silent) {
 		rz_core_seek (core, off, true);
 	} else {
 		RzReg *orig = core->dbg->reg;
-		core->dbg->reg = core->anal->reg;
+		core->dbg->reg = core->analysis->reg;
 		off = rz_debug_reg_get (core->dbg, input);
 		core->dbg->reg = orig;
 		if (!is_silent) {
@@ -250,7 +250,7 @@ static int cmd_seek_opcode_backward(RzCore *core, int numinstr) {
 		ret = rz_core_asm_bwdis_len (core, &instr_len, &addr, numinstr);
 #endif
 		addr = core->offset;
-		const int mininstrsize = rz_analysis_archinfo (core->anal, RZ_ANAL_ARCHINFO_MIN_OP_SIZE);
+		const int mininstrsize = rz_analysis_archinfo (core->analysis, RZ_ANAL_ARCHINFO_MIN_OP_SIZE);
 		for (i = 0; i < numinstr; i++) {
 			ut64 prev_addr = rz_core_prevop_addr_force (core, addr, 1);
 			if (prev_addr == UT64_MAX) {
@@ -279,7 +279,7 @@ static int cmd_seek_opcode_forward (RzCore *core, int n) {
 	int i, ret, val = 0;
 	for (val = i = 0; i < n; i++) {
 		RzAnalysisOp op;
-		ret = rz_analysis_op (core->anal, &op, core->offset, core->block,
+		ret = rz_analysis_op (core->analysis, &op, core->offset, core->block,
 			core->blocksize, RZ_ANAL_OP_MASK_BASIC);
 		if (ret < 1) {
 			ret = 1;
@@ -372,7 +372,7 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 			RzIntervalTreeIter it;
 			RzAnalysisMetaItem *meta;
 			bool seeked = false;
-			rz_interval_tree_foreach (&core->anal->meta, it, meta) {
+			rz_interval_tree_foreach (&core->analysis->meta, it, meta) {
 				if (meta->type == RZ_META_TYPE_COMMENT && !strcmp (meta->str, input + 2)) {
 					if (!silent) {
 						rz_io_sundo_push (core->io, core->offset, rz_print_get_cursor (core->print));
@@ -667,25 +667,25 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 		if (!silent) {
 			rz_io_sundo_push (core->io, core->offset, rz_print_get_cursor (core->print));
 		}
-		rz_core_anal_bb_seek (core, off);
+		rz_core_analysis_bb_seek (core, off);
 		break;
 	case 'f': { // "sf"
 		RzAnalysisFunction *fcn;
 		switch (input[1]) {
 		case '\0': // "sf"
-			fcn = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
+			fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 			if (fcn) {
 				rz_core_seek (core, rz_analysis_function_max_addr (fcn), true);
 			}
 			break;
 		case ' ': // "sf "
-			fcn = rz_analysis_get_function_byname (core->anal, input + 2);
+			fcn = rz_analysis_get_function_byname (core->analysis, input + 2);
 			if (fcn) {
 				rz_core_seek (core, fcn->addr, true);
 			}
 			break;
 		case '.': // "sf."
-			fcn = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
+			fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 			if (fcn) {
 				rz_core_seek (core, fcn->addr, true);
 			}

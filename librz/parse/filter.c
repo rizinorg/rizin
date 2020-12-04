@@ -164,9 +164,9 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 	replaceWords (ptr, "qword ", src);
 #endif
 	if (p->subreg) {
-		__replaceRegisters (p->analb.anal->reg, ptr, false);
+		__replaceRegisters (p->analb.analysis->reg, ptr, false);
 		if (x86) {
-			__replaceRegisters (p->analb.anal->reg, ptr, true);
+			__replaceRegisters (p->analb.analysis->reg, ptr, true);
 		}
 	}
 	ptr2 = NULL;
@@ -186,7 +186,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 		}
 		off = rz_num_math (NULL, ptr);
 		if (off >= p->minval) {
-			fcn = p->analb.get_fcn_in (p->analb.anal, off, 0);
+			fcn = p->analb.get_fcn_in (p->analb.analysis, off, 0);
 			if (fcn && fcn->addr == off) {
 				*ptr = 0;
 				// hack to realign pointer for colours
@@ -485,7 +485,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				break;
 			case 10:
 				{
-					RzList *regs = rz_reg_get_list (p->analb.anal->reg, RZ_REG_TYPE_GPR);
+					RzList *regs = rz_reg_get_list (p->analb.analysis->reg, RZ_REG_TYPE_GPR);
 					RzRegItem *reg;
 					RzListIter *iter;
 					bool imm32 = false;
@@ -513,9 +513,9 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char 
 				}
 				break;
 			case 80:
-				if (p && p->analb.anal && p->analb.anal->syscall) {
+				if (p && p->analb.analysis && p->analb.analysis->syscall) {
 					RzSyscallItem *si;
-					si = rz_syscall_get (p->analb.anal->syscall, off, -1);
+					si = rz_syscall_get (p->analb.analysis->syscall, off, -1);
 					if (si) {
 						snprintf (num, sizeof (num), "%s()", si->name);
 					} else {

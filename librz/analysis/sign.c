@@ -47,9 +47,9 @@ RZ_API RzList *rz_sign_fcn_vars(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	if (!ret) {
 		return NULL;
 	}
-	RzList *reg_vars = rz_analysis_var_list (core->anal, fcn, RZ_ANAL_VAR_KIND_REG);
-	RzList *spv_vars = rz_analysis_var_list (core->anal, fcn, RZ_ANAL_VAR_KIND_SPV);
-	RzList *bpv_vars = rz_analysis_var_list (core->anal, fcn, RZ_ANAL_VAR_KIND_BPV);
+	RzList *reg_vars = rz_analysis_var_list (core->analysis, fcn, RZ_ANAL_VAR_KIND_REG);
+	RzList *spv_vars = rz_analysis_var_list (core->analysis, fcn, RZ_ANAL_VAR_KIND_SPV);
+	RzList *bpv_vars = rz_analysis_var_list (core->analysis, fcn, RZ_ANAL_VAR_KIND_BPV);
 	rz_list_foreach (bpv_vars, iter, var) {
 		rz_list_append (ret, rz_str_newf ("b%d", var->delta));
 	}
@@ -1121,14 +1121,14 @@ RZ_API bool rz_sign_add_xrefs(RzAnalysis *a, const char *name, RzList *xrefs) {
 }
 
 struct ctxDeleteCB {
-	RzAnalysis *anal;
+	RzAnalysis *analysis;
 	char buf[RZ_SIGN_KEY_MAXSZ];
 };
 
 static bool deleteBySpaceCB(void *user, const char *k, const char *v) {
 	struct ctxDeleteCB *ctx = (struct ctxDeleteCB *) user;
 	if (!strncmp (k, ctx->buf, strlen (ctx->buf))) {
-		sdb_remove (ctx->anal->sdb_zigns, k, 0);
+		sdb_remove (ctx->analysis->sdb_zigns, k, 0);
 	}
 	return true;
 }
@@ -1146,7 +1146,7 @@ RZ_API bool rz_sign_delete(RzAnalysis *a, const char *name) {
 			sdb_reset (a->sdb_zigns);
 			return true;
 		}
-		ctx.anal = a;
+		ctx.analysis = a;
 		serializeKey (a, rz_spaces_current (&a->zign_spaces), "", ctx.buf);
 		sdb_foreach (a->sdb_zigns, deleteBySpaceCB, &ctx);
 		return true;
@@ -1554,14 +1554,14 @@ RZ_API bool rz_sign_diff_by_name(RzAnalysis *a, RzSignOptions *options, const ch
 }
 
 struct ctxListCB {
-	RzAnalysis *anal;
+	RzAnalysis *analysis;
 	int idx;
 	int format;
 	PJ *pj;
 };
 
 struct ctxGetListCB {
-	RzAnalysis *anal;
+	RzAnalysis *analysis;
 	RzList *list;
 };
 
@@ -1916,7 +1916,7 @@ static void listHash(RzAnalysis *a, RzSignItem *it, PJ *pj, int format) {
 static bool listCB(void *user, const char *k, const char *v) {
 	struct ctxListCB *ctx = (struct ctxListCB *)user;
 	RzSignItem *it = rz_sign_item_new ();
-	RzAnalysis *a = ctx->anal;
+	RzAnalysis *a = ctx->analysis;
 
 	if (!rz_sign_deserialize (a, it, k, v)) {
 		eprintf ("error: cannot deserialize zign\n");
@@ -2060,7 +2060,7 @@ static bool listGetCB(void *user, const char *key, const char *val) {
 	if (!item) {
 		return false;
 	}
-	if (!rz_sign_deserialize (ctx->anal, item, key, val)) {
+	if (!rz_sign_deserialize (ctx->analysis, item, key, val)) {
 		rz_sign_item_free (item);
 		return false;
 	}
@@ -2112,7 +2112,7 @@ beach:
 }
 
 struct ctxCountForCB {
-	RzAnalysis *anal;
+	RzAnalysis *analysis;
 	const RzSpace *space;
 	int count;
 };
@@ -2121,7 +2121,7 @@ static bool countForCB(void *user, const char *k, const char *v) {
 	struct ctxCountForCB *ctx = (struct ctxCountForCB *) user;
 	RzSignItem *it = rz_sign_item_new ();
 
-	if (rz_sign_deserialize (ctx->anal, it, k, v)) {
+	if (rz_sign_deserialize (ctx->analysis, it, k, v)) {
 		if (it->space == ctx->space) {
 			ctx->count++;
 		}
@@ -2141,7 +2141,7 @@ RZ_API int rz_sign_space_count_for(RzAnalysis *a, const RzSpace *space) {
 }
 
 struct ctxUnsetForCB {
-	RzAnalysis *anal;
+	RzAnalysis *analysis;
 	const RzSpace *space;
 };
 
@@ -2149,11 +2149,11 @@ static bool unsetForCB(void *user, const char *k, const char *v) {
 	struct ctxUnsetForCB *ctx = (struct ctxUnsetForCB *) user;
 	char nk[RZ_SIGN_KEY_MAXSZ], nv[RZ_SIGN_VAL_MAXSZ];
 	RzSignItem *it = rz_sign_item_new ();
-	Sdb *db = ctx->anal->sdb_zigns;
-	if (rz_sign_deserialize (ctx->anal, it, k, v)) {
+	Sdb *db = ctx->analysis->sdb_zigns;
+	if (rz_sign_deserialize (ctx->analysis, it, k, v)) {
 		if (it->space && it->space == ctx->space) {
 			it->space = NULL;
-			serialize (ctx->anal, it, nk, nv);
+			serialize (ctx->analysis, it, nk, nv);
 			sdb_remove (db, k, 0);
 			sdb_set (db, nk, nv, 0);
 		}
@@ -2171,7 +2171,7 @@ RZ_API void rz_sign_space_unset_for(RzAnalysis *a, const RzSpace *space) {
 }
 
 struct ctxRenameForCB {
-	RzAnalysis *anal;
+	RzAnalysis *analysis;
 	char oprefix[RZ_SIGN_KEY_MAXSZ];
 	char nprefix[RZ_SIGN_KEY_MAXSZ];
 };
@@ -2180,7 +2180,7 @@ static bool renameForCB(void *user, const char *k, const char *v) {
 	struct ctxRenameForCB *ctx = (struct ctxRenameForCB *) user;
 	char nk[RZ_SIGN_KEY_MAXSZ], nv[RZ_SIGN_VAL_MAXSZ];
 	const char *zigname = NULL;
-	Sdb *db = ctx->anal->sdb_zigns;
+	Sdb *db = ctx->analysis->sdb_zigns;
 
 	if (!strncmp (k, ctx->oprefix, strlen (ctx->oprefix))) {
 		zigname = k + strlen (ctx->oprefix);
@@ -2194,14 +2194,14 @@ static bool renameForCB(void *user, const char *k, const char *v) {
 
 RZ_API void rz_sign_space_rename_for(RzAnalysis *a, const RzSpace *space, const char *oname, const char *nname) {
 	rz_return_if_fail (a && space && oname && nname);
-	struct ctxRenameForCB ctx = {.anal = a};
+	struct ctxRenameForCB ctx = {.analysis = a};
 	serializeKeySpaceStr (a, oname, "", ctx.oprefix);
 	serializeKeySpaceStr (a, nname, "", ctx.nprefix);
 	sdb_foreach (a->sdb_zigns, renameForCB, &ctx);
 }
 
 struct ctxForeachCB {
-	RzAnalysis *anal;
+	RzAnalysis *analysis;
 	RzSignForeachCallback cb;
 	bool freeit;
 	void *user;
@@ -2210,7 +2210,7 @@ struct ctxForeachCB {
 static bool foreachCB(void *user, const char *k, const char *v) {
 	struct ctxForeachCB *ctx = (struct ctxForeachCB *) user;
 	RzSignItem *it = rz_sign_item_new ();
-	RzAnalysis *a = ctx->anal;
+	RzAnalysis *a = ctx->analysis;
 
 	if (rz_sign_deserialize (a, it, k, v)) {
 		RzSpace *cur = rz_spaces_current (&a->zign_spaces);
@@ -2364,7 +2364,7 @@ static bool hash_match(RzSignItem *it, char **digest_hex, RzSignSearchMetrics *s
 	}
 
 	if (!*digest_hex) {
-		*digest_hex = rz_sign_calc_bbhash (sm->anal, sm->fcn);
+		*digest_hex = rz_sign_calc_bbhash (sm->analysis, sm->fcn);
 	}
 	if (strcmp (hash->bbhash, *digest_hex)) {
 		return false;
@@ -2396,7 +2396,7 @@ static bool vars_match(RzSignItem *it, RzList **vars, RzSignSearchMetrics *sm) {
 	}
 
 	if (!*vars) {
-		*vars = rz_sign_fcn_vars (sm->anal, sm->fcn);
+		*vars = rz_sign_fcn_vars (sm->analysis, sm->fcn);
 		if (!*vars) {
 			return false;
 		}
@@ -2415,7 +2415,7 @@ static bool refs_match(RzSignItem *it, RzList **refs, RzSignSearchMetrics *sm) {
 	}
 
 	if (!*refs) {
-		*refs = rz_sign_fcn_refs (sm->anal, sm->fcn);
+		*refs = rz_sign_fcn_refs (sm->analysis, sm->fcn);
 		if (!*refs) {
 			return false;
 		}
@@ -2434,7 +2434,7 @@ static bool types_match(RzSignItem *it, RzList **types, RzSignSearchMetrics *sm)
 	}
 
 	if (!*types) {
-		*types = rz_sign_fcn_types (sm->anal, sm->fcn);
+		*types = rz_sign_fcn_types (sm->analysis, sm->fcn);
 		if (!*types) {
 			return false;
 		}
@@ -2496,9 +2496,9 @@ static int match_metrics(RzSignItem *it, void *user) {
 }
 
 RZ_API int rz_sign_fcn_match_metrics(RzSignSearchMetrics *sm) {
-	rz_return_val_if_fail (sm && sm->mincc >= 0 && sm->anal && sm->fcn, false);
+	rz_return_val_if_fail (sm && sm->mincc >= 0 && sm->analysis && sm->fcn, false);
 	struct metric_ctx ctx = { 0, sm, NULL, NULL, NULL, NULL };
-	rz_sign_foreach (sm->anal, match_metrics, (void *)&ctx);
+	rz_sign_foreach (sm->analysis, match_metrics, (void *)&ctx);
 	rz_list_free (ctx.refs);
 	rz_list_free (ctx.types);
 	rz_list_free (ctx.vars);

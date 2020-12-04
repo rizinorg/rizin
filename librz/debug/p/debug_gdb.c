@@ -288,11 +288,11 @@ static int rz_debug_gdb_reg_write(RzDebug *dbg, int type, const ut8 *buf, int si
 		return -1;
 	}
 	int buflen = 0;
-	int bits = dbg->anal->bits;
-	const char *pcname = rz_reg_get_name (dbg->anal->reg, RZ_REG_NAME_PC);
-	RzRegItem *reg = rz_reg_get (dbg->anal->reg, pcname, 0);
+	int bits = dbg->analysis->bits;
+	const char *pcname = rz_reg_get_name (dbg->analysis->reg, RZ_REG_NAME_PC);
+	RzRegItem *reg = rz_reg_get (dbg->analysis->reg, pcname, 0);
 	if (reg) {
-		if (dbg->anal->bits != reg->size) {
+		if (dbg->analysis->bits != reg->size) {
 			bits = reg->size;
 		}
 	}
@@ -379,7 +379,7 @@ static int rz_debug_gdb_attach(RzDebug *dbg, int pid) {
 			support_hw_bp = UNKNOWN;
 			desc = &g->desc;
 			int arch = rz_sys_arch_id (dbg->arch);
-			int bits = dbg->anal->bits;
+			int bits = dbg->analysis->bits;
 			gdbr_set_architecture (desc, arch, bits);
 		} else {
 			eprintf ("ERROR: Underlying IO descriptor is not a GDB one..\n");
@@ -405,7 +405,7 @@ static int rz_debug_gdb_detach(RzDebug *dbg, int pid) {
 static const char *rz_debug_gdb_reg_profile(RzDebug *dbg) {
 	check_connection (dbg);
 	int arch = rz_sys_arch_id (dbg->arch);
-	int bits = dbg->anal->bits;
+	int bits = dbg->analysis->bits;
 	// XXX This happens when rizin set dbg.backend before opening io_gdb
 	if (!desc) {
 		return gdbr_get_reg_profile (arch, bits);

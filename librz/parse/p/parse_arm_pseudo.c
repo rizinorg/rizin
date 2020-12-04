@@ -329,7 +329,7 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char
 	RzList *spargs = NULL;
 	RzList *bpargs = NULL;
 	RzListIter *iter;
-	RzAnalysis *anal = p->analb.anal;
+	RzAnalysis *analysis = p->analb.analysis;
 	char *oldstr;
 	char *tstr = strdup (data);
 	if (!tstr) {
@@ -391,7 +391,7 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char
 			reg = p->get_reg_at (f, var->delta, addr);
 		}
 		if (!reg) {
-			reg = anal->reg->name[RZ_REG_NAME_BP];
+			reg = analysis->reg->name[RZ_REG_NAME_BP];
 		}
 		oldstr = mount_oldstr (p, reg, delta, ucase);
 		if (strstr (tstr, oldstr)) {
@@ -415,7 +415,7 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char
 			reg = p->get_reg_at (f, var->delta, addr);
 		}
 		if (!reg) {
-			reg = anal->reg->name[RZ_REG_NAME_SP];
+			reg = analysis->reg->name[RZ_REG_NAME_SP];
 		}
 		oldstr = mount_oldstr (p, reg, delta, ucase);
 		if (strstr (tstr, oldstr)) {

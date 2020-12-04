@@ -14,10 +14,10 @@ static const char *ops[] = { FOREACHOP(REIL_OP_STRING) };
 
 // Get size of a register.
 static ut8 esil_internal_sizeof_reg(RzAnalysisEsil *esil, const char *r) {
-	if (!esil || !esil->anal || !esil->anal->reg || !r) {
+	if (!esil || !esil->analysis || !esil->analysis->reg || !r) {
 		return false;
 	}
-	RzRegItem *i = rz_reg_get(esil->anal->reg, r, -1);
+	RzRegItem *i = rz_reg_get(esil->analysis->reg, r, -1);
 	return i ? (ut8)i->size : 0;
 }
 
@@ -79,7 +79,7 @@ RzAnalysisReilArg *reil_pop_arg(RzAnalysisEsil *esil) {
 		if (op->type == ARG_REG) {
 			op->size = esil_internal_sizeof_reg(esil, op->name);
 		} else if (op->type == ARG_CONST) {
-			op->size = esil->anal->bits;
+			op->size = esil->analysis->bits;
 		}
 		free(buf);
 		return op;
@@ -126,28 +126,28 @@ void reil_print_inst(RzAnalysisEsil *esil, RzAnalysisReilInst *ins) {
 	if (!ins || !esil) {
 		return;
 	}
-	esil->anal->cb_printf("%04"PFMT64x".%02x: %8s",
+	esil->analysis->cb_printf("%04"PFMT64x".%02x: %8s",
 		esil->Reil->addr, esil->Reil->seq_num++, ops[ins->opcode]);
 	for (i = 0; i < 3; i++) {
 		if (i > 0) {
-			esil->anal->cb_printf (" ,");
+			esil->analysis->cb_printf (" ,");
 		}
 		if (!ins->arg[i]) {
 			continue;
 		}
 		if (ins->arg[i]->type == ARG_NONE) {
-			esil->anal->cb_printf ("%10s   ", ins->arg[i]->name);
+			esil->analysis->cb_printf ("%10s   ", ins->arg[i]->name);
 			continue;
 		}
 		if (ins->arg[i]->type == ARG_REG) {
 			char *tmp_buf = rz_str_newf ("%s%s", REIL_REG_PREFIX, ins->arg[i]->name);
-			esil->anal->cb_printf ("%10s:%02d", tmp_buf, ins->arg[i]->size);
+			esil->analysis->cb_printf ("%10s:%02d", tmp_buf, ins->arg[i]->size);
 			free (tmp_buf);
 			continue;
 		}
-		esil->anal->cb_printf ("%10s:%02d", ins->arg[i]->name, ins->arg[i]->size);
+		esil->analysis->cb_printf ("%10s:%02d", ins->arg[i]->name, ins->arg[i]->size);
 	}
-	esil->anal->cb_printf("\n");
+	esil->analysis->cb_printf("\n");
 }
 
 // Used to cast sizes during assignment. OR is used for casting.
@@ -437,9 +437,9 @@ static bool reil_cmp(RzAnalysisEsil *esil) {
 			ins->arg[2]->name, ins->arg[2]->size);
 	rz_snprintf (esil->Reil->old, sizeof (esil->Reil->cur) - 1, "%s:%d",
 			op2->name, op2->size);
-	if (rz_reg_get (esil->anal->reg, op2->name, -1)) {
+	if (rz_reg_get (esil->analysis->reg, op2->name, -1)) {
 		esil->Reil->lastsz = op2->size;
-	} else if (rz_reg_get (esil->anal->reg, op1->name, -1)) {
+	} else if (rz_reg_get (esil->analysis->reg, op1->name, -1)) {
 		esil->Reil->lastsz = op1->size;
 	}
 	reil_push_arg (esil, ins->arg[2]);
@@ -842,7 +842,7 @@ static bool reil_poken(RzAnalysisEsil *esil, ut8 n) {
 }
 
 static bool reil_poke(RzAnalysisEsil *esil) {
-	return reil_poken (esil, esil->anal->bits / 8);
+	return reil_poken (esil, esil->analysis->bits / 8);
 }
 
 static bool reil_poke1(RzAnalysisEsil *esil) { return reil_poken(esil, 1); }
@@ -877,37 +877,37 @@ static bool reil_mem_bineq_n(RzAnalysisEsil *esil, RzAnalysisReilOpcode opcode, 
 	return ret;
 }
 
-static bool reil_mem_oreq(RzAnalysisEsil *esil)  { return reil_mem_bineq_n(esil, REIL_OR, esil->anal->bits / 8); }
+static bool reil_mem_oreq(RzAnalysisEsil *esil)  { return reil_mem_bineq_n(esil, REIL_OR, esil->analysis->bits / 8); }
 static bool reil_mem_oreq1(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_OR, 1); }
 static bool reil_mem_oreq2(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_OR, 2); }
 static bool reil_mem_oreq4(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_OR, 4); }
 static bool reil_mem_oreq8(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_OR, 8); }
 
-static bool reil_mem_andeq(RzAnalysisEsil *esil)  { return reil_mem_bineq_n(esil, REIL_AND, esil->anal->bits / 8); }
+static bool reil_mem_andeq(RzAnalysisEsil *esil)  { return reil_mem_bineq_n(esil, REIL_AND, esil->analysis->bits / 8); }
 static bool reil_mem_andeq1(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_AND, 1); }
 static bool reil_mem_andeq2(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_AND, 2); }
 static bool reil_mem_andeq4(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_AND, 4); }
 static bool reil_mem_andeq8(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_AND, 8); }
 
-static bool reil_mem_xoreq(RzAnalysisEsil *esil)  { return reil_mem_bineq_n(esil, REIL_XOR, esil->anal->bits / 8); }
+static bool reil_mem_xoreq(RzAnalysisEsil *esil)  { return reil_mem_bineq_n(esil, REIL_XOR, esil->analysis->bits / 8); }
 static bool reil_mem_xoreq1(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_XOR, 1); }
 static bool reil_mem_xoreq2(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_XOR, 2); }
 static bool reil_mem_xoreq4(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_XOR, 4); }
 static bool reil_mem_xoreq8(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_XOR, 8); }
 
-static bool reil_mem_addeq(RzAnalysisEsil *esil)  { return reil_mem_bineq_n(esil, REIL_ADD, esil->anal->bits / 8); }
+static bool reil_mem_addeq(RzAnalysisEsil *esil)  { return reil_mem_bineq_n(esil, REIL_ADD, esil->analysis->bits / 8); }
 static bool reil_mem_addeq1(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_ADD, 1); }
 static bool reil_mem_addeq2(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_ADD, 2); }
 static bool reil_mem_addeq4(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_ADD, 4); }
 static bool reil_mem_addeq8(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_ADD, 8); }
 
-static bool reil_mem_subeq(RzAnalysisEsil *esil)  { return reil_mem_bineq_n(esil, REIL_SUB, esil->anal->bits / 8); }
+static bool reil_mem_subeq(RzAnalysisEsil *esil)  { return reil_mem_bineq_n(esil, REIL_SUB, esil->analysis->bits / 8); }
 static bool reil_mem_subeq1(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_SUB, 1); }
 static bool reil_mem_subeq2(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_SUB, 2); }
 static bool reil_mem_subeq4(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_SUB, 4); }
 static bool reil_mem_subeq8(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_SUB, 8); }
 
-static bool reil_mem_muleq(RzAnalysisEsil *esil)  { return reil_mem_bineq_n(esil, REIL_MUL, esil->anal->bits / 8); }
+static bool reil_mem_muleq(RzAnalysisEsil *esil)  { return reil_mem_bineq_n(esil, REIL_MUL, esil->analysis->bits / 8); }
 static bool reil_mem_muleq1(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_MUL, 1); }
 static bool reil_mem_muleq2(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_MUL, 2); }
 static bool reil_mem_muleq4(RzAnalysisEsil *esil) { return reil_mem_bineq_n(esil, REIL_MUL, 4); }
@@ -929,7 +929,7 @@ static bool reil_mem_inceq_n(RzAnalysisEsil *esil, ut8 size) {
 }
 
 static bool reil_mem_inceq(RzAnalysisEsil *esil) {
-	return reil_mem_inceq_n(esil, esil->anal->bits / 8);
+	return reil_mem_inceq_n(esil, esil->analysis->bits / 8);
 }
 static bool reil_mem_inceq1(RzAnalysisEsil *esil) { return reil_mem_inceq_n(esil, 1); }
 static bool reil_mem_inceq2(RzAnalysisEsil *esil) { return reil_mem_inceq_n(esil, 2); }
@@ -952,7 +952,7 @@ static int reil_mem_deceq_n(RzAnalysisEsil *esil, ut8 size) {
 }
 
 static bool reil_mem_deceq(RzAnalysisEsil *esil) {
-	return reil_mem_deceq_n(esil, esil->anal->bits / 8);
+	return reil_mem_deceq_n(esil, esil->analysis->bits / 8);
 }
 static bool reil_mem_deceq1(RzAnalysisEsil *esil) { return reil_mem_deceq_n(esil, 1); }
 static bool reil_mem_deceq2(RzAnalysisEsil *esil) { return reil_mem_deceq_n(esil, 2); }
@@ -1121,7 +1121,7 @@ void reil_flag_spew_inst(RzAnalysisEsil *esil, const char *flag) {
 			reil_generate_partity_flag(esil);
 			break;
 		case 'r':
-			rz_analysis_esil_pushnum(esil, esil->anal->bits / 8);
+			rz_analysis_esil_pushnum(esil, esil->analysis->bits / 8);
 			break;
 		case 's':
 			reil_generate_signature(esil);
@@ -1140,13 +1140,13 @@ static int setup_reil_ins(RzAnalysisEsil *esil, const char *op) {
 	return 0;
 }
 
-RZ_API int rz_analysis_esil_to_reil_setup(RzAnalysisEsil *esil, RzAnalysis *anal, int romem,
+RZ_API int rz_analysis_esil_to_reil_setup(RzAnalysisEsil *esil, RzAnalysis *analysis, int romem,
 		int stats) {
 	if (!esil) {
 		return false;
 	}
 	esil->verbose = 2;
-	esil->anal = anal;
+	esil->analysis = analysis;
 	esil->trap = 0;
 	esil->trap_code = 0;
 
@@ -1163,7 +1163,7 @@ RZ_API int rz_analysis_esil_to_reil_setup(RzAnalysisEsil *esil, RzAnalysis *anal
 	esil->Reil->skip = 0;
 
 	// Store the pc
-	const char *name = rz_reg_get_name (esil->anal->reg, rz_reg_get_name_idx ("PC"));
+	const char *name = rz_reg_get_name (esil->analysis->reg, rz_reg_get_name_idx ("PC"));
 	strncpy (esil->Reil->pc, name, sizeof (esil->Reil->pc) - 1);
 
 	rz_analysis_esil_mem_ro(esil, romem);

@@ -396,7 +396,7 @@ static void printSnow(RzCore *core) {
 #endif
 
 static void rotateAsmBits(RzCore *core) {
-	RzAnalysisHint *hint = rz_analysis_hint_get (core->anal, core->offset);
+	RzAnalysisHint *hint = rz_analysis_hint_get (core->analysis, core->offset);
 	int bits = hint? hint->bits : rz_config_get_i (core->config, "asm.bits");
 	int retries = 4;
 	while (retries > 0) {
@@ -1161,8 +1161,8 @@ static ut64 prevop_addr(RzCore *core, ut64 addr) {
 	RzAnalysisBlock *bb;
 	RzAnalysisOp op;
 	int len, ret, i;
-	int minop = rz_analysis_archinfo (core->anal, RZ_ANAL_ARCHINFO_MIN_OP_SIZE);
-	int maxop = rz_analysis_archinfo (core->anal, RZ_ANAL_ARCHINFO_MAX_OP_SIZE);
+	int minop = rz_analysis_archinfo (core->analysis, RZ_ANAL_ARCHINFO_MIN_OP_SIZE);
+	int maxop = rz_analysis_archinfo (core->analysis, RZ_ANAL_ARCHINFO_MAX_OP_SIZE);
 
 	if (minop == maxop) {
 		if (minop == -1) {
@@ -1175,7 +1175,7 @@ static ut64 prevop_addr(RzCore *core, ut64 addr) {
 	// TODO: look in the current basicblock, then in the current function
 	// and search in all functions only as a last chance, to try to speed
 	// up the process.
-	bb = rz_analysis_bb_from_offset (core->anal, addr - minop);
+	bb = rz_analysis_bb_from_offset (core->analysis, addr - minop);
 	if (bb) {
 		ut64 res = rz_analysis_bb_opaddr_at (bb, addr - minop);
 		if (res != UT64_MAX) {
@@ -1188,7 +1188,7 @@ static ut64 prevop_addr(RzCore *core, ut64 addr) {
 	base = target > OPDELTA ? target - OPDELTA : 0;
 	rz_io_read_at (core->io, base, buf, sizeof (buf));
 	for (i = 0; i < sizeof (buf); i++) {
-		ret = rz_analysis_op (core->anal, &op, base + i,
+		ret = rz_analysis_op (core->analysis, &op, base + i,
 			buf + i, sizeof (buf) - i, RZ_ANAL_OP_MASK_BASIC);
 		if (ret) {
 			len = op.size;
@@ -1216,12 +1216,12 @@ static ut64 prevop_addr(RzCore *core, ut64 addr) {
 
 //  Returns true if we can use analysis to find the previous operation address,
 //  sets prev_addr to the value of the instruction numinstrs back.
-//  If we can't use the anal, then set prev_addr to UT64_MAX and return false;
+//  If we can't use the analysis, then set prev_addr to UT64_MAX and return false;
 RZ_API bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, ut64 *prev_addr) {
 	RzAnalysisBlock *bb;
 	int i;
 	// Check that we're in a bb, otherwise this prevop stuff won't work.
-	bb = rz_analysis_bb_from_offset (core->anal, start_addr);
+	bb = rz_analysis_bb_from_offset (core->analysis, start_addr);
 	if (bb) {
 		if (rz_analysis_bb_opaddr_at (bb, start_addr) != UT64_MAX) {
 			// Do some anal looping.
@@ -1375,11 +1375,11 @@ RZ_API int rz_core_visual_refs(RzCore *core, bool xref, bool fcnInsteadOfAddr) {
 repeat:
 	rz_list_free (xrefs);
 	if (xrefsMode) {
-		RzAnalysisFunction *fun = rz_analysis_get_fcn_in (core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
+		RzAnalysisFunction *fun = rz_analysis_get_fcn_in (core->analysis, addr, RZ_ANAL_FCN_TYPE_NULL);
 		if (fun) {
 			if (xref) { //  function xrefs
-				xrefs = rz_analysis_xrefs_get (core->anal, addr);
-				//XXX xrefs = rz_analysis_fcn_get_xrefs (core->anal, fun);
+				xrefs = rz_analysis_xrefs_get (core->analysis, addr);
+				//XXX xrefs = rz_analysis_fcn_get_xrefs (core->analysis, fun);
 				// this function is buggy so we must get the xrefs of the addr
 			} else { // functon refs
 				xrefs = rz_analysis_function_get_refs (fun);
@@ -1389,9 +1389,9 @@ repeat:
 		}
 	} else {
 		if (xref) { // address xrefs
-			xrefs = rz_analysis_xrefs_get (core->anal, addr);
+			xrefs = rz_analysis_xrefs_get (core->analysis, addr);
 		} else { // address refs
-			xrefs = rz_analysis_refs_get (core->anal, addr);
+			xrefs = rz_analysis_refs_get (core->analysis, addr);
 		}
 	}
 
@@ -1439,7 +1439,7 @@ repeat:
 				if (idx == skip) {
 					cur_ref_addr = refi->addr;
 				}
-				RzAnalysisFunction *fun = rz_analysis_get_fcn_in (core->anal, refi->addr, RZ_ANAL_FCN_TYPE_NULL);
+				RzAnalysisFunction *fun = rz_analysis_get_fcn_in (core->analysis, refi->addr, RZ_ANAL_FCN_TYPE_NULL);
 				char *name;
 				if (fun) {
 					name = strdup (fun->name);
@@ -1662,7 +1662,7 @@ static void visual_comma(RzCore *core) {
 	bool mouse_state = __holdMouseState (core);
 	ut64 addr = core->offset + (core->print->cur_enabled? core->print->cur: 0);
 	char *comment, *cwd, *cmtfile;
-	const char *prev_cmt = rz_meta_get_string (core->anal, RZ_META_TYPE_COMMENT, addr);
+	const char *prev_cmt = rz_meta_get_string (core->analysis, RZ_META_TYPE_COMMENT, addr);
 	comment = prev_cmt ? strdup (prev_cmt) : NULL;
 	cmtfile = rz_str_between (comment, ",(", ")");
 	cwd = getcommapath (core);
@@ -1673,11 +1673,11 @@ static void visual_comma(RzCore *core) {
 			cmtfile = strdup (fn);
 			if (!comment || !*comment) {
 				comment = rz_str_newf (",(%s)", fn);
-				rz_meta_set_string (core->anal, RZ_META_TYPE_COMMENT, addr, comment);
+				rz_meta_set_string (core->analysis, RZ_META_TYPE_COMMENT, addr, comment);
 			} else {
 				// append filename in current comment
 				char *nc = rz_str_newf ("%s ,(%s)", comment, fn);
-				rz_meta_set_string (core->anal, RZ_META_TYPE_COMMENT, addr, nc);
+				rz_meta_set_string (core->analysis, RZ_META_TYPE_COMMENT, addr, nc);
 				free (nc);
 			}
 		}
@@ -1718,7 +1718,7 @@ static void cursor_ocur(RzCore *core, bool use_ocur) {
 }
 
 static void nextOpcode(RzCore *core) {
-	RzAnalysisOp *aop = rz_core_anal_op (core, core->offset + core->print->cur, RZ_ANAL_OP_MASK_BASIC);
+	RzAnalysisOp *aop = rz_core_analysis_op (core, core->offset + core->print->cur, RZ_ANAL_OP_MASK_BASIC);
 	RzPrint *p = core->print;
 	if (aop) {
 		p->cur += aop->size;
@@ -2291,9 +2291,9 @@ static bool canWrite(RzCore *core, ut64 addr) {
 }
 
 static bool toggle_bb(RzCore *core, ut64 addr) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, addr, RZ_ANAL_FCN_TYPE_NULL);
 	if (fcn) {
-		RzAnalysisBlock *bb = rz_analysis_fcn_bbget_in (core->anal, fcn, addr);
+		RzAnalysisBlock *bb = rz_analysis_fcn_bbget_in (core->analysis, fcn, addr);
 		if (bb) {
 			bb->folded = !bb->folded;
 		} else {
@@ -2392,7 +2392,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 				rz_cons_enable_mouse (true);
 			}
 			do {
-				op = rz_core_anal_op (core, core->offset + core->print->cur, RZ_ANAL_OP_MASK_BASIC);
+				op = rz_core_analysis_op (core, core->offset + core->print->cur, RZ_ANAL_OP_MASK_BASIC);
 				if (op) {
 					if (op->type == RZ_ANAL_OP_TYPE_JMP ||
 					op->type == RZ_ANAL_OP_TYPE_CJMP ||
@@ -2811,7 +2811,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			break;
 		case '^':
 			  {
-				  RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
+				  RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 				  if (fcn) {
 					  rz_core_seek (core, fcn->addr, false);
 				  } else {
@@ -2852,7 +2852,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			if (rz_config_get_i (core->config, "graph.web")) {
 				rz_core_cmd0 (core, "agv $$");
 			} else {
-				RzAnalysisFunction *fun = rz_analysis_get_fcn_in (core->anal, core->offset, RZ_ANAL_FCN_TYPE_NULL);
+				RzAnalysisFunction *fun = rz_analysis_get_fcn_in (core->analysis, core->offset, RZ_ANAL_FCN_TYPE_NULL);
 				int ocolor = rz_config_get_i (core->config, "scr.color");
 				if (!fun) {
 					rz_cons_message ("Not in a function. Type 'df' to define it here");
@@ -2933,9 +2933,9 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					int times = RZ_MAX (1, wheelspeed);
 					// Check if we have a data annotation.
 					ut64 amisize;
-					RzAnalysisMetaItem *ami = rz_meta_get_at (core->anal, core->offset, RZ_META_TYPE_DATA, &amisize);
+					RzAnalysisMetaItem *ami = rz_meta_get_at (core->analysis, core->offset, RZ_META_TYPE_DATA, &amisize);
 					if (!ami) {
-						ami = rz_meta_get_at (core->anal, core->offset, RZ_META_TYPE_STRING, &amisize);
+						ami = rz_meta_get_at (core->analysis, core->offset, RZ_META_TYPE_STRING, &amisize);
 					}
 					if (ami) {
 						rz_core_seek_delta (core, amisize);
@@ -3194,7 +3194,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			break;
 		case '0':
 		{
-			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, core->offset, RZ_ANAL_FCN_TYPE_NULL);
+			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, RZ_ANAL_FCN_TYPE_NULL);
 			if (fcn) {
 				rz_core_seek (core, fcn->addr, true);
 			}
@@ -3506,10 +3506,10 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 		{
 			RzAnalysisFunction *fcn;
 			if (core->print->cur_enabled) {
-				fcn = rz_analysis_get_fcn_in (core->anal,
+				fcn = rz_analysis_get_fcn_in (core->analysis,
 					core->offset + core->print->cur, RZ_ANAL_FCN_TYPE_NULL);
 			} else {
-				fcn = rz_analysis_get_fcn_in (core->anal,
+				fcn = rz_analysis_get_fcn_in (core->analysis,
 					core->offset, RZ_ANAL_FCN_TYPE_NULL);
 			}
 			if (fcn) {
@@ -3656,7 +3656,7 @@ RZ_API void rz_core_visual_title(RzCore *core, int color) {
 					f->name, (int) (addr - f->offset), addr);
 			}
 		} else {
-			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, addr, 0);
+			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, addr, 0);
 			if (fcn) {
 				int delta = addr - fcn->addr;
 				if (delta > 0) {
@@ -4095,7 +4095,7 @@ static void visual_refresh_oneshot(RzCore *core) {
 }
 
 RZ_API void rz_core_visual_disasm_up(RzCore *core, int *cols) {
-	RzAnalysisFunction *f = rz_analysis_get_fcn_in (core->anal, core->offset, RZ_ANAL_FCN_TYPE_NULL);
+	RzAnalysisFunction *f = rz_analysis_get_fcn_in (core->analysis, core->offset, RZ_ANAL_FCN_TYPE_NULL);
 	if (f && f->folded) {
 		*cols = core->offset - f->addr; // + f->size;
 		if (*cols < 1) {
@@ -4110,7 +4110,7 @@ RZ_API void rz_core_visual_disasm_down(RzCore *core, RzAsmOp *op, int *cols) {
 	int midflags = rz_config_get_i (core->config, "asm.flags.middle");
 	const bool midbb = rz_config_get_i (core->config, "asm.bb.middle");
 	RzAnalysisFunction *f = NULL;
-	f = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
+	f = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 	op->size = 1;
 	if (f && f->folded) {
 		*cols = core->offset - rz_analysis_function_max_addr (f);

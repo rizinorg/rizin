@@ -7,7 +7,7 @@
 #include "hexagon.h"
 #include "hexagon_insn.h"
 
-int hexagon_anal_instruction(HexInsn *hi, RzAnalysisOp *op) {
+int hexagon_analysis_instruction(HexInsn *hi, RzAnalysisOp *op) {
 	switch (hi->instruction) {
 	case HEX_INS_CALL__R22_2: {
 		// call #r22:2

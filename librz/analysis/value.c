@@ -37,17 +37,17 @@ RZ_API void rz_analysis_value_free(RzAnalysisValue *value) {
 }
 
 // mul*value+regbase+regidx+delta
-RZ_API ut64 rz_analysis_value_to_ut64(RzAnalysis *anal, RzAnalysisValue *val) {
+RZ_API ut64 rz_analysis_value_to_ut64(RzAnalysis *analysis, RzAnalysisValue *val) {
 	ut64 num;
 	if (!val) {
 		return 0LL;
 	}
 	num = val->base + (val->delta*(val->mul?val->mul:1));
 	if (val->reg) {
-		num += rz_reg_get_value (anal->reg, val->reg);
+		num += rz_reg_get_value (analysis->reg, val->reg);
 	}
 	if (val->regdelta) {
-		num += rz_reg_get_value (anal->reg, val->regdelta);
+		num += rz_reg_get_value (analysis->reg, val->regdelta);
 	}
 	switch (val->memref) {
 	case 1:
@@ -61,19 +61,19 @@ RZ_API ut64 rz_analysis_value_to_ut64(RzAnalysis *anal, RzAnalysisValue *val) {
 	return num;
 }
 
-RZ_API int rz_analysis_value_set_ut64(RzAnalysis *anal, RzAnalysisValue *val, ut64 num) {
+RZ_API int rz_analysis_value_set_ut64(RzAnalysis *analysis, RzAnalysisValue *val, ut64 num) {
 	if (val->memref) {
-		if (anal->iob.io) {
+		if (analysis->iob.io) {
 			ut8 data[8];
-			ut64 addr = rz_analysis_value_to_ut64 (anal, val);
+			ut64 addr = rz_analysis_value_to_ut64 (analysis, val);
 			rz_mem_set_num (data, val->memref, num);
-			anal->iob.write_at (anal->iob.io, addr, data, val->memref);
+			analysis->iob.write_at (analysis->iob.io, addr, data, val->memref);
 		} else {
 			eprintf ("No IO binded to rz_analysis\n");
 		}
 	} else {
 		if (val->reg) {
-			rz_reg_set_value (anal->reg, val->reg, num);
+			rz_reg_set_value (analysis->reg, val->reg, num);
 		}
 	}
 	return false;							//is this necessary

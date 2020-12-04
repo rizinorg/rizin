@@ -15,25 +15,25 @@ bool ht_pp_count(void *user, const void *k, const void *v) {
 	return true;
 }
 
-static bool function_check_invariants(RzAnalysis *anal) {
-	if (!block_check_invariants (anal)) {
+static bool function_check_invariants(RzAnalysis *analysis) {
+	if (!block_check_invariants (analysis)) {
 		return false;
 	}
 
 	RzListIter *it;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (anal->fcns, it, fcn) {
-		mu_assert_ptreq (ht_up_find (anal->ht_addr_fun, fcn->addr, NULL), fcn, "function in addr ht");
-		mu_assert_ptreq (ht_pp_find (anal->ht_name_fun, fcn->name, NULL), fcn, "function in name ht");
+	rz_list_foreach (analysis->fcns, it, fcn) {
+		mu_assert_ptreq (ht_up_find (analysis->ht_addr_fun, fcn->addr, NULL), fcn, "function in addr ht");
+		mu_assert_ptreq (ht_pp_find (analysis->ht_name_fun, fcn->name, NULL), fcn, "function in name ht");
 	}
 
 	size_t addr_count = 0;
-	ht_up_foreach (anal->ht_addr_fun, ht_up_count, &addr_count);
-	mu_assert_eq (addr_count, rz_list_length (anal->fcns), "function addr ht count");
+	ht_up_foreach (analysis->ht_addr_fun, ht_up_count, &addr_count);
+	mu_assert_eq (addr_count, rz_list_length (analysis->fcns), "function addr ht count");
 
 	size_t name_count = 0;
-	ht_pp_foreach (anal->ht_name_fun, ht_pp_count, &name_count);
-	mu_assert_eq (name_count, rz_list_length (anal->fcns), "function name ht count");
+	ht_pp_foreach (analysis->ht_name_fun, ht_pp_count, &name_count);
+	mu_assert_eq (name_count, rz_list_length (analysis->fcns), "function name ht count");
 
 	return true;
 }
@@ -41,39 +41,39 @@ static bool function_check_invariants(RzAnalysis *anal) {
 #define check_invariants function_check_invariants
 #define check_leaks block_check_leaks
 
-#define assert_invariants(anal) do { if (!check_invariants (anal)) { return false; } } while (0)
-#define assert_leaks(anal) do { if (!check_leaks (anal)) { return false; } } while (0)
+#define assert_invariants(analysis) do { if (!check_invariants (analysis)) { return false; } } while (0)
+#define assert_leaks(analysis) do { if (!check_leaks (analysis)) { return false; } } while (0)
 
 bool test_r_anal_function_relocate() {
-	RzAnalysis *anal = rz_analysis_new ();
-	assert_invariants (anal);
+	RzAnalysis *analysis = rz_analysis_new ();
+	assert_invariants (analysis);
 
-	RzAnalysisFunction *fa = rz_analysis_create_function (anal, "do_something", 0x1337, 0, NULL);
-	assert_invariants (anal);
-	RzAnalysisFunction *fb = rz_analysis_create_function (anal, "do_something_else", 0xdeadbeef, 0, NULL);
-	assert_invariants (anal);
-	rz_analysis_create_function (anal, "do_something_different", 0xc0ffee, 0, NULL);
-	assert_invariants (anal);
+	RzAnalysisFunction *fa = rz_analysis_create_function (analysis, "do_something", 0x1337, 0, NULL);
+	assert_invariants (analysis);
+	RzAnalysisFunction *fb = rz_analysis_create_function (analysis, "do_something_else", 0xdeadbeef, 0, NULL);
+	assert_invariants (analysis);
+	rz_analysis_create_function (analysis, "do_something_different", 0xc0ffee, 0, NULL);
+	assert_invariants (analysis);
 
 	bool success = rz_analysis_function_relocate (fa, fb->addr);
-	assert_invariants (anal);
+	assert_invariants (analysis);
 	mu_assert_false (success, "failed relocate");
 	mu_assert_eq (fa->addr, 0x1337, "failed relocate addr");
 
 	success = rz_analysis_function_relocate (fa, 0x1234);
-	assert_invariants (anal);
+	assert_invariants (analysis);
 	mu_assert_true (success, "successful relocate");
 	mu_assert_eq (fa->addr, 0x1234, "successful relocate addr");
 
-	assert_leaks (anal);
-	rz_analysis_free (anal);
+	assert_leaks (analysis);
+	rz_analysis_free (analysis);
 	mu_end;
 }
 
 bool test_r_anal_function_labels() {
-	RzAnalysis *anal = rz_analysis_new ();
+	RzAnalysis *analysis = rz_analysis_new ();
 
-	RzAnalysisFunction *f = rz_analysis_create_function (anal, "do_something", 0x1337, 0, NULL);
+	RzAnalysisFunction *f = rz_analysis_create_function (analysis, "do_something", 0x1337, 0, NULL);
 
 	bool s = rz_analysis_function_set_label (f, "smartfriend", 0x1339);
 	mu_assert_true (s, "set label");
@@ -120,7 +120,7 @@ bool test_r_anal_function_labels() {
 	name = rz_analysis_function_get_label_at (f, 0x1339);
 	mu_assert_streq (name, "smartfriend", "get label at (unaffected by delete)");
 
-	rz_analysis_free (anal);
+	rz_analysis_free (analysis);
 	mu_end;
 }
 

@@ -77,7 +77,7 @@ RZ_API void rz_analysis_reflines_free (RzAnalysisRefline *rl) {
  * nlines - max number of lines of code to consider
  * linesout - true if you want to display lines that go outside of the scope [addr;addr+len)
  * linescall - true if you want to display call lines */
-RZ_API RzList *rz_analysis_reflines_get(RzAnalysis *anal, ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall) {
+RZ_API RzList *rz_analysis_reflines_get(RzAnalysis *analysis, ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall) {
 	RzList *list, *sten;
 	RzListIter *iter;
 	RzAnalysisOp op;
@@ -117,12 +117,12 @@ RZ_API RzList *rz_analysis_reflines_get(RzAnalysis *anal, ut64 addr, const ut8 *
 			}
 			nlines--;
 		}
-		if (anal->maxreflines && count > anal->maxreflines) {
+		if (analysis->maxreflines && count > analysis->maxreflines) {
 			break;
 		}
 		addr += sz;
 		{
-			RzPVector *metas = rz_meta_get_all_at (anal, addr);
+			RzPVector *metas = rz_meta_get_all_at (analysis, addr);
 			if (metas) {
 				void **it;
 				ut64 skip = 0;
@@ -150,7 +150,7 @@ do_skip:
 				}
 			}
 		}
-		if (!anal->iob.is_valid_offset (anal->iob.io, addr, 1)) {
+		if (!analysis->iob.is_valid_offset (analysis->iob.io, addr, 1)) {
 			const int size = 4;
 			ptr += size;
 			addr += size;
@@ -159,7 +159,7 @@ do_skip:
 
 		// This can segfault if opcode length and buffer check fails
 		rz_analysis_op_fini (&op);
-		sz = rz_analysis_op (anal, &op, addr, ptr, (int)(end - ptr), RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_HINT);
+		sz = rz_analysis_op (analysis, &op, addr, ptr, (int)(end - ptr), RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_HINT);
 		sz = op.size;
 		if (sz <= 0) {
 			sz = 1;
@@ -342,7 +342,7 @@ static inline bool refline_kept(RzAnalysisRefline *ref, bool middle_after, ut64 
 RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *_core, ut64 addr, int opts) {
 	RzCore *core = _core;
 	RzCons *cons = core->cons;
-	RzAnalysis *anal = core->anal;
+	RzAnalysis *analysis = core->analysis;
 	RzBuffer *b;
 	RzBuffer *c;
 	RzListIter *iter;
@@ -355,13 +355,13 @@ RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *_core, ut64 addr, int op
 	char *str = NULL;
 	char *col_str = NULL;
 
-	rz_return_val_if_fail (cons && anal && anal->reflines, NULL);
+	rz_return_val_if_fail (cons && analysis && analysis->reflines, NULL);
 
 	RzList *lvls = rz_list_new ();
 	if (!lvls) {
 		return NULL;
 	}
-	rz_list_foreach (anal->reflines, iter, ref) {
+	rz_list_foreach (analysis->reflines, iter, ref) {
 		if (core->cons && core->cons->context->breaked) {
 			rz_list_free (lvls);
 			return NULL;
@@ -445,8 +445,8 @@ RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *_core, ut64 addr, int op
 		rz_buf_free (c);
 		return NULL;
 	}
-	if (core->anal->lineswidth > 0) {
-		int lw = core->anal->lineswidth;
+	if (core->analysis->lineswidth > 0) {
+		int lw = core->analysis->lineswidth;
 		l = strlen (str);
 		if (l > lw) {
 			rz_str_cpy (str, str + l - lw);

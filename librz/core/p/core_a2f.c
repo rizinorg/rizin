@@ -140,7 +140,7 @@ static ut64 analyzeStackBased(RzCore *core, Sdb *db, ut64 addr, RzList *delayed_
 		free (value);
 		cur = 0;
 		while (!block_end && cur < maxfcnsize) {
-			op = rz_core_anal_op (core, addr + cur, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM);
+			op = rz_core_analysis_op (core, addr + cur, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM);
 			if (!op || !op->mnemonic) {
 				eprintf ("a2f: Cannot analyze opcode at 0x%"PFMT64x"\n", addr+cur);
 				oaddr = UT64_MAX;

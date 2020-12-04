@@ -28,9 +28,9 @@ static char *get_type_data(Sdb *sdb_types, const char *type, const char *sname) 
 	return members;
 }
 
-RZ_API void rz_analysis_remove_parsed_type(RzAnalysis *anal, const char *name) {
-	rz_return_if_fail (anal && name);
-	Sdb *TDB = anal->sdb_types;
+RZ_API void rz_analysis_remove_parsed_type(RzAnalysis *analysis, const char *name) {
+	rz_return_if_fail (analysis && name);
+	Sdb *TDB = analysis->sdb_types;
 	SdbKv *kv;
 	SdbListIter *iter;
 	const char *type = sdb_const_get (TDB, name, 0);
@@ -53,8 +53,8 @@ RZ_API void rz_analysis_remove_parsed_type(RzAnalysis *anal, const char *name) {
 	}
 }
 
-RZ_API void rz_analysis_save_parsed_type(RzAnalysis *anal, const char *parsed) {
-	rz_return_if_fail (anal && parsed);
+RZ_API void rz_analysis_save_parsed_type(RzAnalysis *analysis, const char *parsed) {
+	rz_return_if_fail (analysis && parsed);
 
 	// First, if any parsed types exist, let's remove them.
 	char *type = strdup (parsed);
@@ -70,23 +70,23 @@ RZ_API void rz_analysis_save_parsed_type(RzAnalysis *anal, const char *parsed) {
 			while (name > type && *(name - 1) != '\n') {
 				name--;
 			}
-			rz_analysis_remove_parsed_type (anal, name);
+			rz_analysis_remove_parsed_type (analysis, name);
 		}
 		free (type);
 	}
 
 	// Now add the type to sdb.
-	sdb_query_lines (anal->sdb_types, parsed);
+	sdb_query_lines (analysis->sdb_types, parsed);
 }
 
 static int typecmp(const void *a, const void *b) {
 	return strcmp (a, b);
 }
 
-RZ_API RzList *rz_analysis_types_from_fcn(RzAnalysis *anal, RzAnalysisFunction *fcn) {
+RZ_API RzList *rz_analysis_types_from_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
 	RzListIter *iter;
 	RzAnalysisVar *var;
-	RzList *list = rz_analysis_var_all_list (anal, fcn);
+	RzList *list = rz_analysis_var_all_list (analysis, fcn);
 	RzList *type_used = rz_list_new ();
 	rz_list_foreach (list, iter, var) {
 		rz_list_append (type_used, var->type);
@@ -116,15 +116,15 @@ RZ_IPI void union_type_member_free(void *e, void *user) {
 	free ((char *)member->type);
 }
 
-static RzAnalysisBaseType *get_enum_type(RzAnalysis *anal, const char *sname) {
-	rz_return_val_if_fail (anal && sname, NULL);
+static RzAnalysisBaseType *get_enum_type(RzAnalysis *analysis, const char *sname) {
+	rz_return_val_if_fail (analysis && sname, NULL);
 
 	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
 		return NULL;
 	}
 
-	char *members = get_type_data (anal->sdb_types, "enum", sname);
+	char *members = get_type_data (analysis->sdb_types, "enum", sname);
 	if (!members) {
 		goto error;
 	}
@@ -140,7 +140,7 @@ static RzAnalysisBaseType *get_enum_type(RzAnalysis *anal, const char *sname) {
 		if (!val_key) {
 			goto error;
 		}
-		const char *value = sdb_const_get (anal->sdb_types, val_key, NULL);
+		const char *value = sdb_const_get (analysis->sdb_types, val_key, NULL);
 		free (val_key);
 
 		if (!value) { // if nothing is found, ret NULL
@@ -166,15 +166,15 @@ error:
 	return NULL;
 }
 
-static RzAnalysisBaseType *get_struct_type(RzAnalysis *anal, const char *sname) {
-	rz_return_val_if_fail (anal && sname, NULL);
+static RzAnalysisBaseType *get_struct_type(RzAnalysis *analysis, const char *sname) {
+	rz_return_val_if_fail (analysis && sname, NULL);
 
 	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANAL_BASE_TYPE_KIND_STRUCT);
 	if (!base_type) {
 		return NULL;
 	}
 
-	char *sdb_members = get_type_data (anal->sdb_types, "struct", sname);
+	char *sdb_members = get_type_data (analysis->sdb_types, "struct", sname);
 	if (!sdb_members) {
 		goto error;
 	}
@@ -190,7 +190,7 @@ static RzAnalysisBaseType *get_struct_type(RzAnalysis *anal, const char *sname) 
 		if (!type_key) {
 			goto error;
 		}
-		char *values = sdb_get (anal->sdb_types, type_key, NULL);
+		char *values = sdb_get (analysis->sdb_types, type_key, NULL);
 		free (type_key);
 
 		if (!values) {
@@ -228,15 +228,15 @@ error:
 	return NULL;
 }
 
-static RzAnalysisBaseType *get_union_type(RzAnalysis *anal, const char *sname) {
-	rz_return_val_if_fail (anal && sname, NULL);
+static RzAnalysisBaseType *get_union_type(RzAnalysis *analysis, const char *sname) {
+	rz_return_val_if_fail (analysis && sname, NULL);
 
 	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANAL_BASE_TYPE_KIND_UNION);
 	if (!base_type) {
 		return NULL;
 	}
 
-	char *sdb_members = get_type_data (anal->sdb_types, "union", sname);
+	char *sdb_members = get_type_data (analysis->sdb_types, "union", sname);
 	if (!sdb_members) {
 		goto error;
 	}
@@ -252,7 +252,7 @@ static RzAnalysisBaseType *get_union_type(RzAnalysis *anal, const char *sname) {
 		if (!type_key) {
 			goto error;
 		}
-		char *values = sdb_get (anal->sdb_types, type_key, NULL);
+		char *values = sdb_get (analysis->sdb_types, type_key, NULL);
 		free (type_key);
 
 		if (!values) {
@@ -279,15 +279,15 @@ error:
 	return NULL;
 }
 
-static RzAnalysisBaseType *get_typedef_type(RzAnalysis *anal, const char *sname) {
-	rz_return_val_if_fail (anal && RZ_STR_ISNOTEMPTY (sname), NULL);
+static RzAnalysisBaseType *get_typedef_type(RzAnalysis *analysis, const char *sname) {
+	rz_return_val_if_fail (analysis && RZ_STR_ISNOTEMPTY (sname), NULL);
 
 	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANAL_BASE_TYPE_KIND_TYPEDEF);
 	if (!base_type) {
 		return NULL;
 	}
 
-	base_type->type = get_type_data (anal->sdb_types, "typedef", sname);
+	base_type->type = get_type_data (analysis->sdb_types, "typedef", sname);
 	if (!base_type->type) {
 		goto error;
 	}
@@ -298,21 +298,21 @@ error:
 	return NULL;
 }
 
-static RzAnalysisBaseType *get_atomic_type(RzAnalysis *anal, const char *sname) {
-	rz_return_val_if_fail (anal && RZ_STR_ISNOTEMPTY (sname), NULL);
+static RzAnalysisBaseType *get_atomic_type(RzAnalysis *analysis, const char *sname) {
+	rz_return_val_if_fail (analysis && RZ_STR_ISNOTEMPTY (sname), NULL);
 
 	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ATOMIC);
 	if (!base_type) {
 		return NULL;
 	}
 
-	base_type->type = get_type_data (anal->sdb_types, "type", sname);
+	base_type->type = get_type_data (analysis->sdb_types, "type", sname);
 	if (!base_type->type) {
 		goto error;
 	}
 
 	RzStrBuf key;
-	base_type->size = sdb_num_get (anal->sdb_types, rz_strbuf_initf (&key, "type.%s.size", sname), 0);
+	base_type->size = sdb_num_get (analysis->sdb_types, rz_strbuf_initf (&key, "type.%s.size", sname), 0);
 	rz_strbuf_fini (&key);
 
 	return base_type;
@@ -323,11 +323,11 @@ error:
 }
 
 // returns NULL if name is not found or any failure happened
-RZ_API RzAnalysisBaseType *rz_analysis_get_base_type(RzAnalysis *anal, const char *name) {
-	rz_return_val_if_fail (anal && name, NULL);
+RZ_API RzAnalysisBaseType *rz_analysis_get_base_type(RzAnalysis *analysis, const char *name) {
+	rz_return_val_if_fail (analysis && name, NULL);
 
 	char *sname = rz_str_sanitize_sdb_key (name);
-	const char *type = sdb_const_get (anal->sdb_types, sname, NULL);
+	const char *type = sdb_const_get (analysis->sdb_types, sname, NULL);
 	if (!type) {
 		free (sname);
 		return NULL;
@@ -335,15 +335,15 @@ RZ_API RzAnalysisBaseType *rz_analysis_get_base_type(RzAnalysis *anal, const cha
 
 	RzAnalysisBaseType *base_type = NULL;
 	if (!strcmp (type, "struct")) {
-		base_type = get_struct_type (anal, sname);
+		base_type = get_struct_type (analysis, sname);
 	} else if (!strcmp (type, "enum")) {
-		base_type = get_enum_type (anal, sname);
+		base_type = get_enum_type (analysis, sname);
 	} else if (!strcmp (type, "union")) {
-		base_type = get_union_type (anal, sname);
+		base_type = get_union_type (analysis, sname);
 	} else if (!strcmp (type, "typedef")) {
-		base_type = get_typedef_type (anal, sname);
+		base_type = get_typedef_type (analysis, sname);
 	} else if (!strcmp (type, "type")) {
-		base_type = get_atomic_type (anal, sname);
+		base_type = get_atomic_type (analysis, sname);
 	}
 
 	if (base_type) {
@@ -355,8 +355,8 @@ RZ_API RzAnalysisBaseType *rz_analysis_get_base_type(RzAnalysis *anal, const cha
 	return base_type;
 }
 
-static void save_struct(const RzAnalysis *anal, const RzAnalysisBaseType *type) {
-	rz_return_if_fail (anal && type && type->name
+static void save_struct(const RzAnalysis *analysis, const RzAnalysisBaseType *type) {
+	rz_return_if_fail (analysis && type && type->name
 		&& type->kind == RZ_ANAL_BASE_TYPE_KIND_STRUCT);
 	char *kind = "struct";
 	/*
@@ -371,7 +371,7 @@ static void save_struct(const RzAnalysis *anal, const RzAnalysisBaseType *type) 
 	*/
 	char *sname = rz_str_sanitize_sdb_key (type->name);
 	// name=struct
-	sdb_set (anal->sdb_types, sname, kind, 0);
+	sdb_set (analysis->sdb_types, sname, kind, 0);
 
 	RzStrBuf arglist;
 	RzStrBuf param_key;
@@ -385,7 +385,7 @@ static void save_struct(const RzAnalysis *anal, const RzAnalysisBaseType *type) 
 	rz_vector_foreach (&type->struct_data.members, member) {
 		// struct.name.param=type,offset,argsize
 		char *member_sname = rz_str_sanitize_sdb_key (member->name);
-		sdb_set (anal->sdb_types,
+		sdb_set (analysis->sdb_types,
 			rz_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname),
 			rz_strbuf_setf (&param_val, "%s,%zu,%u", member->type, member->offset, 0), 0ULL);
 		free (member_sname);
@@ -394,7 +394,7 @@ static void save_struct(const RzAnalysis *anal, const RzAnalysisBaseType *type) 
 	}
 	// struct.name=param1,param2,paramN
 	char *key = rz_str_newf ("%s.%s", kind, sname);
-	sdb_set (anal->sdb_types, key, rz_strbuf_get (&arglist), 0);
+	sdb_set (analysis->sdb_types, key, rz_strbuf_get (&arglist), 0);
 	free (key);
 
 	free (sname);
@@ -404,8 +404,8 @@ static void save_struct(const RzAnalysis *anal, const RzAnalysisBaseType *type) 
 	rz_strbuf_fini (&param_val);
 }
 
-static void save_union(const RzAnalysis *anal, const RzAnalysisBaseType *type) {
-	rz_return_if_fail (anal && type && type->name
+static void save_union(const RzAnalysis *analysis, const RzAnalysisBaseType *type) {
+	rz_return_if_fail (analysis && type && type->name
 		&& type->kind == RZ_ANAL_BASE_TYPE_KIND_UNION);
 	const char *kind = "union";
 	/*
@@ -420,7 +420,7 @@ static void save_union(const RzAnalysis *anal, const RzAnalysisBaseType *type) {
 	*/
 	char *sname = rz_str_sanitize_sdb_key (type->name);
 	// name=union
-	sdb_set (anal->sdb_types, sname, kind, 0);
+	sdb_set (analysis->sdb_types, sname, kind, 0);
 
 	RzStrBuf arglist;
 	RzStrBuf param_key;
@@ -434,7 +434,7 @@ static void save_union(const RzAnalysis *anal, const RzAnalysisBaseType *type) {
 	rz_vector_foreach (&type->union_data.members, member) {
 		// union.name.arg1=type,offset,argsize
 		char *member_sname = rz_str_sanitize_sdb_key (member->name);
-		sdb_set (anal->sdb_types,
+		sdb_set (analysis->sdb_types,
 				rz_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname),
 				rz_strbuf_setf (&param_val, "%s,%zu,%u", member->type, member->offset, 0), 0ULL);
 		free (member_sname);
@@ -443,7 +443,7 @@ static void save_union(const RzAnalysis *anal, const RzAnalysisBaseType *type) {
 	}
 	// union.name=arg1,arg2,argN
 	char *key = rz_str_newf ("%s.%s", kind, sname);
-	sdb_set (anal->sdb_types, key, rz_strbuf_get (&arglist), 0);
+	sdb_set (analysis->sdb_types, key, rz_strbuf_get (&arglist), 0);
 	free (key);
 
 	free (sname);
@@ -453,8 +453,8 @@ static void save_union(const RzAnalysis *anal, const RzAnalysisBaseType *type) {
 	rz_strbuf_fini (&param_val);
 }
 
-static void save_enum(const RzAnalysis *anal, const RzAnalysisBaseType *type) {
-	rz_return_if_fail (anal && type && type->name
+static void save_enum(const RzAnalysis *analysis, const RzAnalysisBaseType *type) {
+	rz_return_if_fail (analysis && type && type->name
 		&& type->kind == RZ_ANAL_BASE_TYPE_KIND_ENUM);
 	/*
 		C:
@@ -470,7 +470,7 @@ static void save_enum(const RzAnalysis *anal, const RzAnalysisBaseType *type) {
 		enum.MyEnum.argN=0x3
 	*/
 	char *sname = rz_str_sanitize_sdb_key (type->name);
-	sdb_set (anal->sdb_types, sname, "enum", 0);
+	sdb_set (analysis->sdb_types, sname, "enum", 0);
 
 	RzStrBuf arglist;
 	RzStrBuf param_key;
@@ -484,11 +484,11 @@ static void save_enum(const RzAnalysis *anal, const RzAnalysisBaseType *type) {
 	rz_vector_foreach (&type->enum_data.cases, cas) {
 		// enum.name.arg1=type,offset,???
 		char *case_sname = rz_str_sanitize_sdb_key (cas->name);
-		sdb_set (anal->sdb_types,
+		sdb_set (analysis->sdb_types,
 				rz_strbuf_setf (&param_key, "enum.%s.%s", sname, case_sname),
 				rz_strbuf_setf (&param_val, "0x%" PFMT32x "", cas->val), 0);
 
-		sdb_set (anal->sdb_types,
+		sdb_set (analysis->sdb_types,
 				rz_strbuf_setf (&param_key, "enum.%s.0x%" PFMT32x "", sname, cas->val),
 				case_sname, 0);
 		free (case_sname);
@@ -497,7 +497,7 @@ static void save_enum(const RzAnalysis *anal, const RzAnalysisBaseType *type) {
 	}
 	// enum.name=arg1,arg2,argN
 	char *key = rz_str_newf ("enum.%s", sname);
-	sdb_set (anal->sdb_types, key, rz_strbuf_get (&arglist), 0);
+	sdb_set (analysis->sdb_types, key, rz_strbuf_get (&arglist), 0);
 	free (key);
 
 	free (sname);
@@ -507,8 +507,8 @@ static void save_enum(const RzAnalysis *anal, const RzAnalysisBaseType *type) {
 	rz_strbuf_fini (&param_val);
 }
 
-static void save_atomic_type(const RzAnalysis *anal, const RzAnalysisBaseType *type) {
-	rz_return_if_fail (anal && type && type->name
+static void save_atomic_type(const RzAnalysis *analysis, const RzAnalysisBaseType *type) {
+	rz_return_if_fail (analysis && type && type->name
 		&& type->kind == RZ_ANAL_BASE_TYPE_KIND_ATOMIC);
 	/*
 		C: (cannot define a custom atomic type)
@@ -518,18 +518,18 @@ static void save_atomic_type(const RzAnalysis *anal, const RzAnalysisBaseType *t
 		type.char.size=8
 	*/
 	char *sname = rz_str_sanitize_sdb_key (type->name);
-	sdb_set (anal->sdb_types, sname, "type", 0);
+	sdb_set (analysis->sdb_types, sname, "type", 0);
 
 	RzStrBuf key;
 	RzStrBuf val;
 	rz_strbuf_init (&key);
 	rz_strbuf_init (&val);
 
-	sdb_set (anal->sdb_types,
+	sdb_set (analysis->sdb_types,
 			rz_strbuf_setf (&key, "type.%s.size", sname),
 			rz_strbuf_setf (&val, "%" PFMT64u "", type->size), 0);
 
-	sdb_set (anal->sdb_types,
+	sdb_set (analysis->sdb_types,
 			rz_strbuf_setf (&key, "type.%s", sname),
 			type->type, 0);
 
@@ -538,8 +538,8 @@ static void save_atomic_type(const RzAnalysis *anal, const RzAnalysisBaseType *t
 	rz_strbuf_fini (&key);
 	rz_strbuf_fini (&val);
 }
-static void save_typedef(const RzAnalysis *anal, const RzAnalysisBaseType *type) {
-	rz_return_if_fail (anal && type && type->name && type->kind == RZ_ANAL_BASE_TYPE_KIND_TYPEDEF);
+static void save_typedef(const RzAnalysis *analysis, const RzAnalysisBaseType *type) {
+	rz_return_if_fail (analysis && type && type->name && type->kind == RZ_ANAL_BASE_TYPE_KIND_TYPEDEF);
 	/*
 		C:
 		typedef char byte;
@@ -548,14 +548,14 @@ static void save_typedef(const RzAnalysis *anal, const RzAnalysisBaseType *type)
 		typedef.byte=char
 	*/
 	char *sname = rz_str_sanitize_sdb_key (type->name);
-	sdb_set (anal->sdb_types, sname, "typedef", 0);
+	sdb_set (analysis->sdb_types, sname, "typedef", 0);
 
 	RzStrBuf key;
 	RzStrBuf val;
 	rz_strbuf_init (&key);
 	rz_strbuf_init (&val);
 
-	sdb_set (anal->sdb_types,
+	sdb_set (analysis->sdb_types,
 			rz_strbuf_setf (&key, "typedef.%s", sname),
 			rz_strbuf_setf (&val, "%s", type->type), 0);
 
@@ -619,26 +619,26 @@ RZ_API RzAnalysisBaseType *rz_analysis_base_type_new(RzAnalysisBaseTypeKind kind
  * @param type RzAnalysisBaseType to save
  * @param name Name of the type
  */
-RZ_API void rz_analysis_save_base_type(const RzAnalysis *anal, const RzAnalysisBaseType *type) {
-	rz_return_if_fail (anal && type && type->name);
+RZ_API void rz_analysis_save_base_type(const RzAnalysis *analysis, const RzAnalysisBaseType *type) {
+	rz_return_if_fail (analysis && type && type->name);
 
 	// TODO, solve collisions, if there are 2 types with the same name and kind
 
 	switch (type->kind) {
 	case RZ_ANAL_BASE_TYPE_KIND_STRUCT:
-		save_struct (anal, type);
+		save_struct (analysis, type);
 		break;
 	case RZ_ANAL_BASE_TYPE_KIND_ENUM:
-		save_enum (anal, type);
+		save_enum (analysis, type);
 		break;
 	case RZ_ANAL_BASE_TYPE_KIND_UNION:
-		save_union (anal, type);
+		save_union (analysis, type);
 		break;
 	case RZ_ANAL_BASE_TYPE_KIND_TYPEDEF:
-		save_typedef (anal, type);
+		save_typedef (analysis, type);
 		break;
 	case RZ_ANAL_BASE_TYPE_KIND_ATOMIC:
-		save_atomic_type (anal, type);
+		save_atomic_type (analysis, type);
 		break;
 	default:
 		break;

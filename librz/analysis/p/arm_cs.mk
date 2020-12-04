@@ -1,5 +1,5 @@
-N=anal_arm_cs
-OBJ_ARM_CS=anal_arm_cs.o
+N=analysis_arm_cs
+OBJ_ARM_CS=analysis_arm_cs.o
 
 include $(CURDIR)capstone.mk
 

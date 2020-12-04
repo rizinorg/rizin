@@ -96,7 +96,7 @@ static void addFcnZign(RzCore *core, RzAnalysisFunction *fcn, const char *name) 
 	char *ptr = NULL;
 	char *zignspace = NULL;
 	char *zigname = NULL;
-	const RzSpace *curspace = rz_spaces_current (&core->anal->zign_spaces);
+	const RzSpace *curspace = rz_spaces_current (&core->analysis->zign_spaces);
 	int len = 0;
 
 	if (name) {
@@ -107,7 +107,7 @@ static void addFcnZign(RzCore *core, RzAnalysisFunction *fcn, const char *name) 
 		if ((ptr = strchr (fcn->name, ':')) != NULL) {
 			len = ptr - fcn->name;
 			zignspace = rz_str_newlen (fcn->name, len);
-			rz_spaces_push (&core->anal->zign_spaces, zignspace);
+			rz_spaces_push (&core->analysis->zign_spaces, zignspace);
 		} else if (curspace) {
 			zigname = rz_str_newf ("%s:", curspace->name);
 		}
@@ -122,33 +122,33 @@ static void addFcnZign(RzCore *core, RzAnalysisFunction *fcn, const char *name) 
 	}
 	// add sig types info to item
 	it->name = zigname; // will be free'd when item is free'd
-	it->space = rz_spaces_current (&core->anal->zign_spaces);
-	rz_sign_addto_item (core->anal, it, fcn, RZ_SIGN_GRAPH);
-	rz_sign_addto_item (core->anal, it, fcn, RZ_SIGN_BYTES);
-	rz_sign_addto_item (core->anal, it, fcn, RZ_SIGN_XREFS);
-	rz_sign_addto_item (core->anal, it, fcn, RZ_SIGN_REFS);
-	rz_sign_addto_item (core->anal, it, fcn, RZ_SIGN_VARS);
-	rz_sign_addto_item (core->anal, it, fcn, RZ_SIGN_TYPES);
-	rz_sign_addto_item (core->anal, it, fcn, RZ_SIGN_BBHASH);
-	rz_sign_addto_item (core->anal, it, fcn, RZ_SIGN_OFFSET);
-	rz_sign_addto_item (core->anal, it, fcn, RZ_SIGN_NAME);
+	it->space = rz_spaces_current (&core->analysis->zign_spaces);
+	rz_sign_addto_item (core->analysis, it, fcn, RZ_SIGN_GRAPH);
+	rz_sign_addto_item (core->analysis, it, fcn, RZ_SIGN_BYTES);
+	rz_sign_addto_item (core->analysis, it, fcn, RZ_SIGN_XREFS);
+	rz_sign_addto_item (core->analysis, it, fcn, RZ_SIGN_REFS);
+	rz_sign_addto_item (core->analysis, it, fcn, RZ_SIGN_VARS);
+	rz_sign_addto_item (core->analysis, it, fcn, RZ_SIGN_TYPES);
+	rz_sign_addto_item (core->analysis, it, fcn, RZ_SIGN_BBHASH);
+	rz_sign_addto_item (core->analysis, it, fcn, RZ_SIGN_OFFSET);
+	rz_sign_addto_item (core->analysis, it, fcn, RZ_SIGN_NAME);
 
-	/* rz_sign_add_addr (core->anal, zigname, fcn->addr); */
+	/* rz_sign_add_addr (core->analysis, zigname, fcn->addr); */
 
 	// commit the item to anal
-	rz_sign_add_item (core->anal, it);
+	rz_sign_add_item (core->analysis, it);
 
 	/*
 	XXX this is very slow and poorly tested
 	char *comments = getFcnComments (core, fcn);
 	if (comments) {
-		rz_sign_add_comment (core->anal, zigname, comments);
+		rz_sign_add_comment (core->analysis, zigname, comments);
 	}
 	*/
 
 	rz_sign_item_free (it); // causes zigname to be free'd
 	if (zignspace) {
-		rz_spaces_pop (&core->anal->zign_spaces);
+		rz_spaces_pop (&core->analysis->zign_spaces);
 		free (zignspace);
 	}
 }
@@ -159,7 +159,7 @@ static bool addCommentZign(RzCore *core, const char *name, RzList *args) {
 		return false;
 	}
 	const char *comment = (const char *)rz_list_get_top (args);
-	return rz_sign_add_comment (core->anal, name, comment);
+	return rz_sign_add_comment (core->analysis, name, comment);
 }
 
 static bool addNameZign(RzCore *core, const char *name, RzList *args) {
@@ -168,7 +168,7 @@ static bool addNameZign(RzCore *core, const char *name, RzList *args) {
 		return false;
 	}
 	const char *realname = (const char *)rz_list_get_top (args);
-	return rz_sign_add_name (core->anal, name, realname);
+	return rz_sign_add_name (core->analysis, name, realname);
 }
 
 static bool addGraphZign(RzCore *core, const char *name, RzList *args) {
@@ -191,7 +191,7 @@ static bool addGraphZign(RzCore *core, const char *name, RzList *args) {
 			return false;
 		}
 	}
-	return rz_sign_add_graph (core->anal, name, graph);
+	return rz_sign_add_graph (core->analysis, name, graph);
 }
 
 static bool addHashZign(RzCore *core, const char *name, int type, RzList *args) {
@@ -204,7 +204,7 @@ static bool addHashZign(RzCore *core, const char *name, int type, RzList *args) 
 	if (!len) {
 		return false;
 	}
-	return rz_sign_add_hash (core->anal, name, type, hash, len);
+	return rz_sign_add_hash (core->analysis, name, type, hash, len);
 }
 
 static bool addBytesZign(RzCore *core, const char *name, int type, RzList *args) {
@@ -250,10 +250,10 @@ static bool addBytesZign(RzCore *core, const char *name, int type, RzList *args)
 
 	switch (type) {
 	case RZ_SIGN_BYTES:
-		retval = rz_sign_add_bytes (core->anal, name, size, bytes, mask);
+		retval = rz_sign_add_bytes (core->analysis, name, size, bytes, mask);
 		break;
 	case RZ_SIGN_ANAL:
-		retval = rz_sign_add_anal (core->anal, name, size, bytes, 0);
+		retval = rz_sign_add_anal (core->analysis, name, size, bytes, 0);
 		break;
 	}
 
@@ -274,7 +274,7 @@ static bool addOffsetZign(RzCore *core, const char *name, RzList *args) {
 		return false;
 	}
 	ut64 offset = rz_num_get (core->num, offstr);
-	return rz_sign_add_addr (core->anal, name, offset);
+	return rz_sign_add_addr (core->analysis, name, offset);
 }
 
 static bool addZign(RzCore *core, const char *name, int type, RzList *args) {
@@ -291,13 +291,13 @@ static bool addZign(RzCore *core, const char *name, int type, RzList *args) {
 	case RZ_SIGN_OFFSET:
 		return addOffsetZign (core, name, args);
 	case RZ_SIGN_REFS:
-		return rz_sign_add_refs (core->anal, name, args);
+		return rz_sign_add_refs (core->analysis, name, args);
 	case RZ_SIGN_XREFS:
-		return rz_sign_add_xrefs (core->anal, name, args);
+		return rz_sign_add_xrefs (core->analysis, name, args);
 	case RZ_SIGN_VARS:
-		return rz_sign_add_vars (core->anal, name, args);
+		return rz_sign_add_vars (core->analysis, name, args);
 	case RZ_SIGN_TYPES:
-		return rz_sign_add_types (core->anal, name, args);
+		return rz_sign_add_types (core->analysis, name, args);
 	case RZ_SIGN_BBHASH:
 		return addHashZign (core, name, type, args);
 	default:
@@ -372,7 +372,7 @@ out_case_manual:
 			}
 
 			rz_cons_break_push (NULL, NULL);
-			rz_list_foreach (core->anal->fcns, iter, fcni) {
+			rz_list_foreach (core->analysis->fcns, iter, fcni) {
 				if (rz_cons_is_breaked ()) {
 					break;
 				}
@@ -396,7 +396,7 @@ out_case_fcn:
 			int count = 0;
 
 			rz_cons_break_push (NULL, NULL);
-			rz_list_foreach (core->anal->fcns, iter, fcni) {
+			rz_list_foreach (core->analysis->fcns, iter, fcni) {
 				if (rz_cons_is_breaked ()) {
 					break;
 				}
@@ -457,19 +457,19 @@ static int cmdOpen(void *data, const char *input) {
 	switch (*input) {
 	case ' ':
 		if (input[1]) {
-			return rz_sign_load (core->anal, input + 1);
+			return rz_sign_load (core->analysis, input + 1);
 		}
 		eprintf ("Usage: zo filename\n");
 		return false;
 	case 's':
 		if (input[1] == ' ' && input[2]) {
-			return rz_sign_save (core->anal, input + 2);
+			return rz_sign_save (core->analysis, input + 2);
 		}
 		eprintf ("Usage: zos filename\n");
 		return false;
 	case 'z':
 		if (input[1] == ' ' && input[2]) {
-			return rz_sign_load_gz (core->anal, input + 2);
+			return rz_sign_load_gz (core->analysis, input + 2);
 		}
 		eprintf ("Usage: zoz filename\n");
 		return false;
@@ -486,7 +486,7 @@ static int cmdOpen(void *data, const char *input) {
 
 static int cmdSpace(void *data, const char *input) {
 	RzCore *core = (RzCore *) data;
-	RzSpaces *zs = &core->anal->zign_spaces;
+	RzSpaces *zs = &core->analysis->zign_spaces;
 
 	switch (*input) {
 	case '+':
@@ -545,7 +545,7 @@ static int cmdFlirt(void *data, const char *input) {
 			eprintf ("Usage: zfd filename\n");
 			return false;
 		}
-		rz_sign_flirt_dump (core->anal, input + 2);
+		rz_sign_flirt_dump (core->analysis, input + 2);
 		break;
 	case 's':
 		// TODO
@@ -558,7 +558,7 @@ static int cmdFlirt(void *data, const char *input) {
 		RzListIter *iter;
 		RzList *files = rz_file_globsearch (input + 2, depth);
 		rz_list_foreach (files, iter, file) {
-			rz_sign_flirt_scan (core->anal, file);
+			rz_sign_flirt_scan (core->analysis, file);
 		}
 		rz_list_free (files);
 		break;
@@ -598,8 +598,8 @@ static void apply_name(RzCore *core, RzAnalysisFunction *fcn, RzSignItem *it, bo
 		rz_flag_rename (core->flags, flag, name);
 	}
 	rz_analysis_function_rename (fcn, name);
-	if (core->anal->cb.on_fcn_rename) {
-		core->anal->cb.on_fcn_rename (core->anal, core->anal->user, fcn, name);
+	if (core->analysis->cb.on_fcn_rename) {
+		core->analysis->cb.on_fcn_rename (core->analysis, core->analysis->user, fcn, name);
 	}
 }
 
@@ -628,7 +628,7 @@ static void apply_types(RzCore *core, RzAnalysisFunction *fcn, RzSignItem *it) {
 		}
 	}
 	rz_str_remove_char (alltypes, '"');
-	rz_analysis_save_parsed_type (core->anal, alltypes);
+	rz_analysis_save_parsed_type (core->analysis, alltypes);
 	free (start);
 	free (alltypes);
 }
@@ -672,7 +672,7 @@ static const char *getprefix(RzSignType t) {
 static int searchHitCB(RzSignItem *it, RzSearchKeyword *kw, ut64 addr, void *user) {
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *)user;
 	apply_flag (ctx->core, it, addr, kw->keyword_length, kw->count, ctx->prefix, ctx->rad);
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (ctx->core->anal, addr, 0);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (ctx->core->analysis, addr, 0);
 	// TODO: create fcn if it does not exist
 	if (fcn) {
 		apply_name (ctx->core, fcn, it, ctx->rad);
@@ -708,7 +708,7 @@ static bool searchRange(RzCore *core, ut64 from, ut64 to, bool rad, struct ctxSe
 	}
 	RzSignSearch *ss = rz_sign_search_new ();
 	ss->search->align = rz_config_get_i (core->config, "search.align");
-	rz_sign_search_init (core->anal, ss, minsz, searchHitCB, ctx);
+	rz_sign_search_init (core->analysis, ss, minsz, searchHitCB, ctx);
 
 	rz_cons_break_push (NULL, NULL);
 	for (at = from; at < to; at += core->blocksize) {
@@ -722,7 +722,7 @@ static bool searchRange(RzCore *core, ut64 from, ut64 to, bool rad, struct ctxSe
 			break;
 		}
 		(void)rz_io_read_at (core->io, at, buf, rlen);
-		if (rz_sign_search_update (core->anal, ss, &at, buf, rlen) == -1) {
+		if (rz_sign_search_update (core->analysis, ss, &at, buf, rlen) == -1) {
 			eprintf ("search: update read error at 0x%08" PFMT64x "\n", at);
 			retval = false;
 			break;
@@ -756,7 +756,7 @@ static bool searchRange2(RzCore *core, RzSignSearch *ss, ut64 from, ut64 to, boo
 			break;
 		}
 		(void)rz_io_read_at (core->io, at, buf, rlen);
-		if (rz_sign_search_update (core->anal, ss, &at, buf, rlen) == -1) {
+		if (rz_sign_search_update (core->analysis, ss, &at, buf, rlen) == -1) {
 			eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 			retval = false;
 			break;
@@ -790,7 +790,7 @@ static bool fill_search_metrics(RzSignSearchMetrics *sm, RzCore *c, void *user) 
 	search_add_to_types(c, sm, RZ_SIGN_VARS, "zign.vars", &i);
 #endif
 	sm->mincc = rz_config_get_i (c->config, "zign.mincc");
-	sm->anal = c->anal;
+	sm->analysis = c->analysis;
 	sm->cb = fcnMatchCB;
 	sm->user = user;
 	sm->fcn = NULL;
@@ -850,15 +850,15 @@ static bool search(RzCore *core, bool rad, bool only_func) {
 			ss = rz_sign_search_new ();
 			ss->search->align = rz_config_get_i (core->config, "search.align");
 			int minsz = rz_config_get_i (core->config, "zign.minsz");
-			rz_sign_search_init (core->anal, ss, minsz, searchHitCB, &bytes_search_ctx);
+			rz_sign_search_init (core->analysis, ss, minsz, searchHitCB, &bytes_search_ctx);
 		}
 
-		rz_list_foreach (core->anal->fcns, iter, fcni) {
+		rz_list_foreach (core->analysis->fcns, iter, fcni) {
 			if (rz_cons_is_breaked ()) {
 				break;
 			}
 			if (useBytes && only_func) {
-				eprintf ("Matching func %d / %d (hits %d)\n", count, rz_list_length (core->anal->fcns), bytes_search_ctx.count);
+				eprintf ("Matching func %d / %d (hits %d)\n", count, rz_list_length (core->analysis->fcns), bytes_search_ctx.count);
 				int fcnlen = rz_analysis_function_realsize (fcni);
 				int len = RZ_MIN (core->io->addrbytes * fcnlen, maxsz);
 				retval &= searchRange2 (core, ss, fcni->addr, fcni->addr + len, rad, &bytes_search_ctx);
@@ -944,7 +944,7 @@ static double get_zb_threshold(RzCore *core) {
 
 static bool do_bestmatch_fcn(RzCore *core, const char *zigname, int count) {
 	rz_return_val_if_fail (core, false);
-	RzSignItem *it = item_frm_signame (core->anal, zigname);
+	RzSignItem *it = item_frm_signame (core->analysis, zigname);
 	if (!it) {
 		eprintf ("Couldn't get signature for %s\n", zigname);
 		return false;
@@ -960,7 +960,7 @@ static bool do_bestmatch_fcn(RzCore *core, const char *zigname, int count) {
 	}
 
 	double thresh = get_zb_threshold (core);
-	RzList *list = rz_sign_find_closest_fcn (core->anal, it, count, thresh);
+	RzList *list = rz_sign_find_closest_fcn (core->analysis, it, count, thresh);
 	rz_sign_item_free (it);
 
 	if (list) {
@@ -1004,7 +1004,7 @@ static bool bestmatch_fcn(RzCore *core, const char *input) {
 }
 
 static bool do_bestmatch_sig(RzCore *core, int count) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 	if (!fcn) {
 		eprintf ("No function at 0x%08" PFMT64x "\n", core->offset);
 		return false;
@@ -1016,7 +1016,7 @@ static bool do_bestmatch_sig(RzCore *core, int count) {
 	}
 
 	if (rz_config_get_i (core->config, "zign.bytes")) {
-		rz_sign_addto_item (core->anal, item, fcn, RZ_SIGN_BYTES);
+		rz_sign_addto_item (core->analysis, item, fcn, RZ_SIGN_BYTES);
 		RzSignBytes *b = item->bytes;
 		int minsz = rz_config_get_i (core->config, "zign.minsz");
 		if (b && b->size < minsz) {
@@ -1026,14 +1026,14 @@ static bool do_bestmatch_sig(RzCore *core, int count) {
 		}
 	}
 	if (rz_config_get_i (core->config, "zign.graph")) {
-		rz_sign_addto_item (core->anal, item, fcn, RZ_SIGN_GRAPH);
+		rz_sign_addto_item (core->analysis, item, fcn, RZ_SIGN_GRAPH);
 	}
 
 	double th = get_zb_threshold (core);
 	bool found = false;
 	if (item->graph || item->bytes) {
 		rz_cons_break_push (NULL, NULL);
-		RzList *list = rz_sign_find_closest_sig (core->anal, item, count, th);
+		RzList *list = rz_sign_find_closest_sig (core->analysis, item, count, th);
 		if (list) {
 			found = true;
 			print_possible_matches (list);
@@ -1096,7 +1096,7 @@ static int cmdCompare(void *data, const char *input) {
 			result = false;
 			break;
 		}
-		result = rz_sign_diff (core->anal, options, input + 1);
+		result = rz_sign_diff (core->analysis, options, input + 1);
 		break;
 	case 'n':
 		switch (input[1]) {
@@ -1106,7 +1106,7 @@ static int cmdCompare(void *data, const char *input) {
 				result = false;
 				break;
 			}
-			result = rz_sign_diff_by_name (core->anal, options, input + 2, false);
+			result = rz_sign_diff_by_name (core->analysis, options, input + 2, false);
 			break;
 		case '!':
 			if (input[2] != ' ' || !input[3]) {
@@ -1114,7 +1114,7 @@ static int cmdCompare(void *data, const char *input) {
 				result = false;
 				break;
 			}
-			result = rz_sign_diff_by_name (core->anal, options, input + 3, true);
+			result = rz_sign_diff_by_name (core->analysis, options, input + 3, true);
 			break;
 		default:
 			eprintf ("Usage: zcn! other_space\n");
@@ -1167,8 +1167,8 @@ static int cmdCheck(void *data, const char *input) {
 	if (useBytes) {
 		eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", at, at + core->blocksize);
 		ss = rz_sign_search_new ();
-		rz_sign_search_init (core->anal, ss, minsz, searchHitCB, &bytes_search_ctx);
-		if (rz_sign_search_update (core->anal, ss, &at, core->block, core->blocksize) == -1) {
+		rz_sign_search_init (core->analysis, ss, minsz, searchHitCB, &bytes_search_ctx);
+		if (rz_sign_search_update (core->analysis, ss, &at, core->block, core->blocksize) == -1) {
 			eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 			retval = false;
 		}
@@ -1179,7 +1179,7 @@ static int cmdCheck(void *data, const char *input) {
 	if (metsearch) {
 		eprintf ("[+] searching function metrics\n");
 		rz_cons_break_push (NULL, NULL);
-		rz_list_foreach (core->anal->fcns, iter, fcni) {
+		rz_list_foreach (core->analysis->fcns, iter, fcni) {
 			if (rz_cons_is_breaked ()) {
 				break;
 			}
@@ -1253,13 +1253,13 @@ RZ_IPI int rz_cmd_zign(void *data, const char *input) {
 	case '*':
 	case 'q':
 	case 'j': // "zj"
-		rz_sign_list (core->anal, *input);
+		rz_sign_list (core->analysis, *input);
 		break;
 	case 'k': // "zk"
 		rz_core_cmd0 (core, "k anal/zigns/*");
 		break;
 	case '-': // "z-"
-		rz_sign_delete (core->anal, arg);
+		rz_sign_delete (core->analysis, arg);
 		break;
 	case '.': // "z."
 		return cmdCheck (data, arg);
@@ -1296,16 +1296,16 @@ RZ_IPI RzCmdStatus rz_zign_show_handler(RzCore *core, int argc, const char **arg
 	char *out;
 	switch (mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_sign_list (core->anal, '\0');
+		rz_sign_list (core->analysis, '\0');
 		return RZ_CMD_STATUS_OK;
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_sign_list (core->anal, 'q');
+		rz_sign_list (core->analysis, 'q');
 		return RZ_CMD_STATUS_OK;
 	case RZ_OUTPUT_MODE_JSON:
-		rz_sign_list (core->anal, 'j');
+		rz_sign_list (core->analysis, 'j');
 		return RZ_CMD_STATUS_OK;
 	case RZ_OUTPUT_MODE_RIZIN:
-		rz_sign_list (core->anal, '*');
+		rz_sign_list (core->analysis, '*');
 		return RZ_CMD_STATUS_OK;
 	case RZ_OUTPUT_MODE_SDB:
 		out = sdb_querys (core->sdb, NULL, 0, "anal/zigns/*");
@@ -1342,7 +1342,7 @@ RZ_IPI RzCmdStatus rz_zign_best_name_handler(RzCore *core, int argc, const char 
 }
 
 RZ_IPI RzCmdStatus rz_zign_delete_handler(RzCore *core, int argc, const char **argv) {
-	rz_sign_delete (core->anal, argv[1]);
+	rz_sign_delete (core->analysis, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1364,7 +1364,7 @@ RZ_IPI RzCmdStatus rz_zign_add_fcn_handler(RzCore *core, int argc, const char **
 	const char *fcnname = argc > 1? argv[1]: NULL;
 	const char *zigname = argc > 2? argv[2]: NULL;
 	rz_cons_break_push (NULL, NULL);
-	rz_list_foreach (core->anal->fcns, iter, fcni) {
+	rz_list_foreach (core->analysis->fcns, iter, fcni) {
 		if (rz_cons_is_breaked ()) {
 			break;
 		}
@@ -1383,7 +1383,7 @@ RZ_IPI RzCmdStatus rz_zign_add_all_fcns_handler(RzCore *core, int argc, const ch
 	RzListIter *iter = NULL;
 	int count = 0;
 	rz_cons_break_push (NULL, NULL);
-	rz_list_foreach (core->anal->fcns, iter, fcni) {
+	rz_list_foreach (core->analysis->fcns, iter, fcni) {
 		if (rz_cons_is_breaked ()) {
 			break;
 		}
@@ -1400,19 +1400,19 @@ RZ_IPI RzCmdStatus rz_zign_generate_handler(RzCore *core, int argc, const char *
 }
 
 RZ_IPI RzCmdStatus rz_zign_load_sdb_handler(RzCore *core, int argc, const char **argv) {
-	return rz_sign_load (core->anal, argv[1])? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
+	return rz_sign_load (core->analysis, argv[1])? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI RzCmdStatus rz_zign_load_gzip_sdb_handler(RzCore *core, int argc, const char **argv) {
-	return rz_sign_load_gz (core->anal, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	return rz_sign_load_gz (core->analysis, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI RzCmdStatus rz_zign_save_sdb_handler(RzCore *core, int argc, const char **argv) {
-	return rz_sign_save (core->anal, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	return rz_sign_save (core->analysis, argv[1]) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI RzCmdStatus rz_zign_flirt_dump_handler(RzCore *core, int argc, const char **argv) {
-	rz_sign_flirt_dump (core->anal, argv[1]);
+	rz_sign_flirt_dump (core->analysis, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -1422,7 +1422,7 @@ RZ_IPI RzCmdStatus rz_zign_flirt_scan_handler(RzCore *core, int argc, const char
 	RzListIter *iter;
 	RzList *files = rz_file_globsearch (argv[1], depth);
 	rz_list_foreach (files, iter, file) {
-		rz_sign_flirt_scan (core->anal, file);
+		rz_sign_flirt_scan (core->analysis, file);
 	}
 	rz_list_free (files);
 	return RZ_CMD_STATUS_OK;
@@ -1440,7 +1440,7 @@ RZ_IPI RzCmdStatus rz_zign_cmp_handler(RzCore *core, int argc, const char **argv
 	const char *raw_bytes_thresh = rz_config_get (core->config, "zign.diff.bthresh");
 	const char *raw_graph_thresh = rz_config_get (core->config, "zign.diff.gthresh");
 	RzSignOptions *options = rz_sign_options_new (raw_bytes_thresh, raw_graph_thresh);
-	RzCmdStatus res = rz_sign_diff (core->anal, options, argv[1])? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
+	RzCmdStatus res = rz_sign_diff (core->analysis, options, argv[1])? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
 	rz_sign_options_free (options);
 	return res;
 }
@@ -1449,7 +1449,7 @@ static RzCmdStatus zcn_handler_common(RzCore *core, int argc, const char **argv,
 	const char *raw_bytes_thresh = rz_config_get (core->config, "zign.diff.bthresh");
 	const char *raw_graph_thresh = rz_config_get (core->config, "zign.diff.gthresh");
 	RzSignOptions *options = rz_sign_options_new (raw_bytes_thresh, raw_graph_thresh);
-	RzCmdStatus res = rz_sign_diff_by_name (core->anal, options, argv[1], negative_match) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
+	RzCmdStatus res = rz_sign_diff_by_name (core->analysis, options, argv[1], negative_match) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 	rz_sign_options_free (options);
 	return res;
 }
@@ -1466,43 +1466,43 @@ RZ_IPI RzCmdStatus rz_zign_space_select_handler(RzCore *core, int argc, const ch
 	if (argc == 1) {
 		switch (mode) {
 		case RZ_OUTPUT_MODE_STANDARD:
-			spaces_list (&core->anal->zign_spaces, '\0');
+			spaces_list (&core->analysis->zign_spaces, '\0');
 			break;
 		case RZ_OUTPUT_MODE_JSON:
-			spaces_list (&core->anal->zign_spaces, 'j');
+			spaces_list (&core->analysis->zign_spaces, 'j');
 			break;
 		case RZ_OUTPUT_MODE_RIZIN:
-			spaces_list (&core->anal->zign_spaces, '*');
+			spaces_list (&core->analysis->zign_spaces, '*');
 			break;
 		default:
 			return RZ_CMD_STATUS_ERROR;
 		}
 	} else {
-		rz_spaces_set (&core->anal->zign_spaces, argv[1]);
+		rz_spaces_set (&core->analysis->zign_spaces, argv[1]);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_zign_space_delete_handler(RzCore *core, int argc, const char **argv) {
 	if (argc == 1) {
-		rz_spaces_pop (&core->anal->zign_spaces);
+		rz_spaces_pop (&core->analysis->zign_spaces);
 		return RZ_CMD_STATUS_OK;
 	}
 	if (!strcmp (argv[1], "*")) {
-		rz_spaces_unset (&core->anal->zign_spaces, NULL);
+		rz_spaces_unset (&core->analysis->zign_spaces, NULL);
 	} else {
-		rz_spaces_unset (&core->anal->zign_spaces, argv[1]);
+		rz_spaces_unset (&core->analysis->zign_spaces, argv[1]);
 	}
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_zign_space_add_handler(RzCore *core, int argc, const char **argv) {
-	rz_spaces_push (&core->anal->zign_spaces, argv[1]);
+	rz_spaces_push (&core->analysis->zign_spaces, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_zign_space_rename_handler(RzCore *core, int argc, const char **argv) {
-	rz_spaces_rename (&core->anal->zign_spaces, NULL, argv[1]);
+	rz_spaces_rename (&core->analysis->zign_spaces, NULL, argv[1]);
 	return RZ_CMD_STATUS_OK;
 }
 

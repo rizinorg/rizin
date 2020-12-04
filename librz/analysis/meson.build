@@ -1,5 +1,5 @@
 rz_analysis_sources = [
-  'anal.c',
+  'analysis.c',
   'bb.c',
   'block.c',
   'function.c',
@@ -38,7 +38,7 @@ rz_analysis_sources = [
   'var.c',
   'vtable.c',
   'xrefs.c',
-  'serialize_anal.c',
+  'serialize_analysis.c',
   'p/analysis_6502.c',
   'p/analysis_6502_cs.c',
   'p/analysis_8051.c',

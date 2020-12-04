@@ -59,7 +59,7 @@ static RzList *backtrace_x86_32_anal(RzDebug *dbg, ut64 at) {
 	esp = _esp;
 
 	eip = rz_reg_get_value (reg, rz_reg_get (reg, "eip", RZ_REG_TYPE_GPR));
-	fcn = rz_analysis_get_fcn_in (dbg->anal, eip, RZ_ANAL_FCN_TYPE_NULL);
+	fcn = rz_analysis_get_fcn_in (dbg->analysis, eip, RZ_ANAL_FCN_TYPE_NULL);
 	if (fcn != NULL) {
 		frame = RZ_NEW0 (RzDebugFrame);
 		frame->addr = eip;

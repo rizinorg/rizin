@@ -4,11 +4,11 @@
 
 #define MAXSTRLEN 50
 
-static void set_fcn_args_info(RzAnalysisFuncArg *arg, RzAnalysis *anal, const char *fcn_name, const char *cc, int arg_num) {
-	if (!fcn_name || !arg || !anal) {
+static void set_fcn_args_info(RzAnalysisFuncArg *arg, RzAnalysis *analysis, const char *fcn_name, const char *cc, int arg_num) {
+	if (!fcn_name || !arg || !analysis) {
 		return;
 	}
-	Sdb *TDB = anal->sdb_types;
+	Sdb *TDB = analysis->sdb_types;
 	arg->name = rz_type_func_args_name (TDB, fcn_name, arg_num);
 	arg->orig_c_type = rz_type_func_args_type (TDB, fcn_name, arg_num);
 	if (!arg->name || !arg->orig_c_type) {
@@ -24,23 +24,23 @@ static void set_fcn_args_info(RzAnalysisFuncArg *arg, RzAnalysis *anal, const ch
 	arg->fmt = sdb_const_get (TDB, query, 0);
 	const char *t_query = sdb_fmt ("type.%s.size", arg->c_type);
 	arg->size = sdb_num_get (TDB, t_query, 0) / 8;
-	arg->cc_source = rz_analysis_cc_arg (anal, cc, arg_num);
+	arg->cc_source = rz_analysis_cc_arg (analysis, cc, arg_num);
 }
 
-RZ_API char *resolve_fcn_name(RzAnalysis *anal, const char *func_name) {
+RZ_API char *resolve_fcn_name(RzAnalysis *analysis, const char *func_name) {
 	const char *str = func_name;
 	const char *name = func_name;
-	if (rz_type_func_exist (anal->sdb_types, func_name)) {
+	if (rz_type_func_exist (analysis->sdb_types, func_name)) {
 		return strdup (func_name);
 	}
 	while ((str = strchr (str, '.'))) {
 		name = str + 1;
 		str++;
 	}
-	if (rz_type_func_exist (anal->sdb_types, name)) {
+	if (rz_type_func_exist (analysis->sdb_types, name)) {
 		return strdup (name);
 	}
-	return rz_type_func_guess (anal->sdb_types, (char*)func_name);
+	return rz_type_func_guess (analysis->sdb_types, (char*)func_name);
 }
 
 static ut64 get_buf_val(ut8 *buf, int endian, int width) {
@@ -61,7 +61,7 @@ static void print_format_values(RzCore *core, const char *fmt, bool onstack, ut6
 	ut64 bval = src;
 	int i;
 	int endian = core->print->big_endian;
-	int width = (core->anal->bits == 64)? 8: 4;
+	int width = (core->analysis->bits == 64)? 8: 4;
 	int bsize = RZ_MIN (64, core->blocksize);
 
 	ut8 *buf = malloc (bsize);
@@ -147,15 +147,15 @@ static void print_format_values(RzCore *core, const char *fmt, bool onstack, ut6
 RZ_API void rz_core_print_func_args(RzCore *core) {
 	RzListIter *iter;
 	bool color = rz_config_get_i (core->config, "scr.color");
-	if (!core->anal) {
+	if (!core->analysis) {
 		return;
 	}
-	if (!core->anal->reg) {
+	if (!core->analysis->reg) {
 		return;
 	}
-	const char *pc = rz_reg_get_name (core->anal->reg, RZ_REG_NAME_PC);
-	ut64 cur_addr = rz_reg_getv (core->anal->reg, pc);
-	RzAnalysisOp *op = rz_core_anal_op (core, cur_addr, RZ_ANAL_OP_MASK_BASIC);
+	const char *pc = rz_reg_get_name (core->analysis->reg, RZ_REG_NAME_PC);
+	ut64 cur_addr = rz_reg_getv (core->analysis->reg, pc);
+	RzAnalysisOp *op = rz_core_analysis_op (core, cur_addr, RZ_ANAL_OP_MASK_BASIC);
 	if (!op) {
 		return;
 	}
@@ -168,7 +168,7 @@ RZ_API void rz_core_print_func_args(RzCore *core) {
 		if (pcv == UT64_MAX) {
 			pcv = op->ptr;
 		}
-		fcn = rz_analysis_get_function_at (core->anal, pcv);
+		fcn = rz_analysis_get_function_at (core->analysis, pcv);
 		if (fcn) {
 			fcn_name = fcn->name;
 		} else {
@@ -218,34 +218,34 @@ static void rz_analysis_fcn_arg_free(RzAnalysisFuncArg *arg) {
 
 /* Returns a list of RzAnalysisFuncArg */
 RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) {
-	if (!fcn_name || !core->anal) {
+	if (!fcn_name || !core->analysis) {
 		return NULL;
 	}
-	Sdb *TDB = core->anal->sdb_types;
+	Sdb *TDB = core->analysis->sdb_types;
 	RzList *list = rz_list_newf ((RzListFree)rz_analysis_fcn_arg_free);
-	char *key = resolve_fcn_name (core->anal, fcn_name);
+	char *key = resolve_fcn_name (core->analysis, fcn_name);
 	if (!key) {
 		return NULL;
 	}
-	const char *sp = rz_reg_get_name (core->anal->reg, RZ_REG_NAME_SP);
+	const char *sp = rz_reg_get_name (core->analysis->reg, RZ_REG_NAME_SP);
 	int nargs = rz_type_func_args_count (TDB, key);
-	if (!rz_analysis_cc_func (core->anal, key)){
+	if (!rz_analysis_cc_func (core->analysis, key)){
 		return NULL;
 	}
-	char *cc = strdup (rz_analysis_cc_func (core->anal, key));
-	const char *src = rz_analysis_cc_arg (core->anal, cc, 0); // src of first argument
+	char *cc = strdup (rz_analysis_cc_func (core->analysis, key));
+	const char *src = rz_analysis_cc_arg (core->analysis, cc, 0); // src of first argument
 	if (!cc) {
 		// unsupported calling convention
 		free (key);
 		return NULL;
 	}
 	int i;
-	ut64 spv = rz_reg_getv (core->anal->reg, sp);
-	ut64 s_width = (core->anal->bits == 64)? 8: 4;
+	ut64 spv = rz_reg_getv (core->analysis->reg, sp);
+	ut64 s_width = (core->analysis->bits == 64)? 8: 4;
 	if (src && !strcmp (src, "stack_rev")) {
 		for (i = nargs - 1; i >= 0; i--) {
 			RzAnalysisFuncArg *arg = RZ_NEW0 (RzAnalysisFuncArg);
-			set_fcn_args_info (arg, core->anal, key, cc, i);
+			set_fcn_args_info (arg, core->analysis, key, cc, i);
 			arg->src = spv;
 			spv += arg->size? arg->size : s_width;
 			rz_list_append (list, arg);
@@ -256,7 +256,7 @@ RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) {
 			if (!arg) {
 				return NULL;
 			}
-			set_fcn_args_info (arg, core->anal, key, cc, i);
+			set_fcn_args_info (arg, core->analysis, key, cc, i);
 			if (src && !strncmp (src, "stack", 5)) {
 				arg->src = spv;
 				if (!arg->size) {
@@ -266,10 +266,10 @@ RZ_API RzList *rz_core_get_func_args(RzCore *core, const char *fcn_name) {
 			} else {
 				const char *cs = arg->cc_source;
 				if (!cs) {
-					cs = rz_analysis_cc_default (core->anal);
+					cs = rz_analysis_cc_default (core->analysis);
 				}
 				if (cs) {
-					arg->src = rz_reg_getv (core->anal->reg, cs);
+					arg->src = rz_reg_getv (core->analysis->reg, cs);
 				}
 			}
 			rz_list_append (list, arg);

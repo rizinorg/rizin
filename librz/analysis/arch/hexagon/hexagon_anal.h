@@ -1,2 +1,2 @@
-int hexagon_anal_instruction(HexInsn *hi, RzAnalysisOp *op);
+int hexagon_analysis_instruction(HexInsn *hi, RzAnalysisOp *op);
 

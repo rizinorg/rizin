@@ -1,5 +1,5 @@
-N=anal_arm_gnu
-OBJ_ARM=anal_arm_gnu.o ../../asm/arch/arm/winedbg/be_arm.o
+N=analysis_arm_gnu
+OBJ_ARM=analysis_arm_gnu.o ../../asm/arch/arm/winedbg/be_arm.o
 
 STATIC_OBJ+=${OBJ_ARM}
 TARGET_ARM=$(N).${EXT_SO}

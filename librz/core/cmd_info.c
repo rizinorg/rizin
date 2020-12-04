@@ -165,7 +165,7 @@ static void cmd_info_here(RzCore *core, int mode) {
 			pj_ks (pj, "data", item->data);
 		}
 		{
-			RzList *refs = rz_analysis_refs_get (core->anal, core->offset);
+			RzList *refs = rz_analysis_refs_get (core->analysis, core->offset);
 			if (refs && rz_list_length (refs) > 0) {
 				pj_k (pj, "refs");
 				pj_a (pj);
@@ -179,7 +179,7 @@ static void cmd_info_here(RzCore *core, int mode) {
 			}
 		}
 		{
-			RzList *refs = rz_analysis_xrefs_get (core->anal, core->offset);
+			RzList *refs = rz_analysis_xrefs_get (core->analysis, core->offset);
 			if (refs && rz_list_length (refs) > 0) {
 				pj_k (pj, "xrefs");
 				pj_a (pj);

@@ -113,15 +113,15 @@ static RzList *rz_debug_qnx_map_get (RzDebug *dbg) {
 
 static int rz_debug_qnx_reg_write (RzDebug *dbg, int type, const ut8 *buf, int size) {
 	int buflen = 0;
-	int bits = dbg->anal->bits;
-	const char *pcname = rz_reg_get_name (dbg->anal->reg, RZ_REG_NAME_PC);
-	RzRegItem *reg = rz_reg_get (dbg->anal->reg, pcname, 0);
+	int bits = dbg->analysis->bits;
+	const char *pcname = rz_reg_get_name (dbg->analysis->reg, RZ_REG_NAME_PC);
+	RzRegItem *reg = rz_reg_get (dbg->analysis->reg, pcname, 0);
 	if (!reg_buf) {
 		// we cannot write registers before we once read them
 		return -1;
 	}
 	if (reg) {
-		if (dbg->anal->bits != reg->size) {
+		if (dbg->analysis->bits != reg->size) {
 			bits = reg->size;
 		}
 	}
@@ -186,7 +186,7 @@ static int rz_debug_qnx_attach (RzDebug *dbg, int pid) {
 		if (!strcmp ("qnx", d->plugin->name)) {
 			RzIOQnx *g = d->data;
 			int arch = rz_sys_arch_id (dbg->arch);
-			int bits = dbg->anal->bits;
+			int bits = dbg->analysis->bits;
 			if ((desc = &g->desc)) {
 				switch (arch) {
 				case RZ_SYS_ARCH_X86:
@@ -228,7 +228,7 @@ static int rz_debug_qnx_detach (RzDebug *dbg, int pid) {
 
 static const char *rz_debug_qnx_reg_profile (RzDebug *dbg) {
 	int arch = rz_sys_arch_id (dbg->arch);
-	int bits = dbg->anal->bits;
+	int bits = dbg->analysis->bits;
 	switch (arch) {
 	case RZ_SYS_ARCH_X86:
 		return strdup (

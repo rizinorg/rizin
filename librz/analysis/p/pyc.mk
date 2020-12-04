@@ -1,5 +1,5 @@
 PYC_ASM_ROOT=../../asm/arch/pyc/
-OBJ_PYC=anal_pyc.o
+OBJ_PYC=analysis_pyc.o
 OBJ_PYC+=$(PYC_ASM_ROOT)/opcode_10.o
 OBJ_PYC+=$(PYC_ASM_ROOT)/opcode_11.o
 OBJ_PYC+=$(PYC_ASM_ROOT)/opcode_12.o
@@ -32,10 +32,10 @@ OBJ_PYC+=$(PYC_ASM_ROOT)/opcode_arg_fmt.o
 OBJ_PYC+=$(PYC_ASM_ROOT)/opcode.o
 
 STATIC_OBJ+=${OBJ_PYC}
-TARGET_PYC=anal_pyc.$(EXT_SO)
+TARGET_PYC=analysis_pyc.$(EXT_SO)
 
 ALL_TARGETS+=${TARGET_PYC}
 CFLAGS+=-I$(PYC_ROOT)
 
 ${TARGET_PYC}: ${OBJ_PYC}
-	${CC} $(call libname,anal_pyc) ${CFLAGS} $(LDFLAGS) -o ${TARGET_PYC} ${OBJ_PYC} -lrz_util
+	${CC} $(call libname,analysis_pyc) ${CFLAGS} $(LDFLAGS) -o ${TARGET_PYC} ${OBJ_PYC} -lrz_util

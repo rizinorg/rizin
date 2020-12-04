@@ -6,9 +6,9 @@
 #define VTABLE_BUFF_SIZE 10
 
 #define VTABLE_READ_ADDR_FUNC(fname, read_fname, sz) \
-	static bool fname(RzAnalysis *anal, ut64 addr, ut64 *buf) {\
+	static bool fname(RzAnalysis *analysis, ut64 addr, ut64 *buf) {\
 		ut8 tmp[sz];\
-		if (!anal->iob.read_at (anal->iob.io, addr, tmp, sz)) {\
+		if (!analysis->iob.read_at (analysis->iob.io, addr, tmp, sz)) {\
 			return false;\
 		}\
 		*buf = read_fname (tmp);\
@@ -35,26 +35,26 @@ RZ_API ut64 rz_analysis_vtable_info_get_size(RVTableContext *context, RVTableInf
 	return (ut64)vtable->methods.len * context->word_size;
 }
 
-RZ_API bool rz_analysis_vtable_begin(RzAnalysis *anal, RVTableContext *context) {
-	context->anal = anal;
-	context->abi = anal->cpp_abi;
-	context->word_size = (ut8) (anal->bits / 8);
-	const bool is_arm = anal->cur->arch && rz_str_startswith (anal->cur->arch, "arm");
+RZ_API bool rz_analysis_vtable_begin(RzAnalysis *analysis, RVTableContext *context) {
+	context->analysis = analysis;
+	context->abi = analysis->cpp_abi;
+	context->word_size = (ut8) (analysis->bits / 8);
+	const bool is_arm = analysis->cur->arch && rz_str_startswith (analysis->cur->arch, "arm");
 	if (is_arm && context->word_size < 4) {
 		context->word_size = 4;
 	}
 	switch (context->word_size) {
 	case 1:
-		context->read_addr = anal->big_endian ? vtable_read_addr_be8 : vtable_read_addr_le8;
+		context->read_addr = analysis->big_endian ? vtable_read_addr_be8 : vtable_read_addr_le8;
 		break;
 	case 2:
-		context->read_addr = anal->big_endian ? vtable_read_addr_be16 : vtable_read_addr_le16;
+		context->read_addr = analysis->big_endian ? vtable_read_addr_be16 : vtable_read_addr_le16;
 		break;
 	case 4:
-		context->read_addr = anal->big_endian ? vtable_read_addr_be32 : vtable_read_addr_le32;
+		context->read_addr = analysis->big_endian ? vtable_read_addr_be32 : vtable_read_addr_le32;
 		break;
 	case 8:
-		context->read_addr = anal->big_endian ? vtable_read_addr_be64 : vtable_read_addr_le64;
+		context->read_addr = analysis->big_endian ? vtable_read_addr_be64 : vtable_read_addr_le64;
 		break;
 	default:
 		return false;
@@ -64,7 +64,7 @@ RZ_API bool rz_analysis_vtable_begin(RzAnalysis *anal, RVTableContext *context) 
 
 static bool vtable_addr_in_text_section(RVTableContext *context, ut64 curAddress) {
 	//section of the curAddress
-	RzBinSection *value = context->anal->binb.get_vsect_at (context->anal->binb.bin, curAddress);
+	RzBinSection *value = context->analysis->binb.get_vsect_at (context->analysis->binb.bin, curAddress);
 	//If the pointed value lies in .text section
 	return value && strstr (value->name, "text") && (value->perm & 1) != 0;
 }
@@ -72,7 +72,7 @@ static bool vtable_addr_in_text_section(RVTableContext *context, ut64 curAddress
 static bool vtable_is_value_in_text_section(RVTableContext *context, ut64 curAddress, ut64 *value) {
 	//value at the current address
 	ut64 curAddressValue;
-	if (!context->read_addr (context->anal, curAddress, &curAddressValue)) {
+	if (!context->read_addr (context->analysis, curAddress, &curAddressValue)) {
 		return false;
 	}
 	//if the value is in text section
@@ -114,14 +114,14 @@ static bool vtable_is_addr_vtable_start_itanium(RVTableContext *context, RzBinSe
 	if (curAddress && !vtable_is_value_in_text_section (context, curAddress, NULL)) { // Vtable beginning referenced from the code
 		return false;
 	}
-	if (!context->read_addr (context->anal, curAddress - context->word_size, &value)) { // get the RTTI pointer
+	if (!context->read_addr (context->analysis, curAddress - context->word_size, &value)) { // get the RTTI pointer
 		return false;
 	}
-	RzBinSection *rtti_section = context->anal->binb.get_vsect_at (context->anal->binb.bin, value);
+	RzBinSection *rtti_section = context->analysis->binb.get_vsect_at (context->analysis->binb.bin, value);
 	if (value && !section_can_contain_rtti (rtti_section)) { // RTTI ptr must point somewhere in the data section
 		return false;
 	}
-	if (!context->read_addr (context->anal, curAddress - 2 * context->word_size, &value)) { // Offset to top
+	if (!context->read_addr (context->analysis, curAddress - 2 * context->word_size, &value)) { // Offset to top
 		return false;
 	}
 	if ((st32)value > 0) { // Offset to top has to be negative
@@ -141,7 +141,7 @@ static bool vtable_is_addr_vtable_start_msvc(RVTableContext *context, ut64 curAd
 		return false;
 	}
 	// total xref's to curAddress
-	RzList *xrefs = rz_analysis_xrefs_get (context->anal, curAddress);
+	RzList *xrefs = rz_analysis_xrefs_get (context->analysis, curAddress);
 	if (rz_list_empty (xrefs)) {
 		rz_list_free (xrefs);
 		return false;
@@ -150,10 +150,10 @@ static bool vtable_is_addr_vtable_start_msvc(RVTableContext *context, ut64 curAd
 		// section in which currenct xref lies
 		if (vtable_addr_in_text_section (context, xref->addr)) {
 			ut8 buf[VTABLE_BUFF_SIZE];
-			context->anal->iob.read_at (context->anal->iob.io, xref->addr, buf, sizeof(buf));
+			context->analysis->iob.read_at (context->analysis->iob.io, xref->addr, buf, sizeof(buf));
 
 			RzAnalysisOp analop = { 0 };
-			rz_analysis_op (context->anal, &analop, xref->addr, buf, sizeof(buf), RZ_ANAL_OP_MASK_BASIC);
+			rz_analysis_op (context->analysis, &analop, xref->addr, buf, sizeof(buf), RZ_ANAL_OP_MASK_BASIC);
 
 			if (analop.type == RZ_ANAL_OP_TYPE_MOV
 				|| analop.type == RZ_ANAL_OP_TYPE_LEA) {
@@ -181,7 +181,7 @@ static bool vtable_is_addr_vtable_start(RVTableContext *context, RzBinSection *s
 
 RZ_API RVTableInfo *rz_analysis_vtable_parse_at(RVTableContext *context, ut64 addr) {
 	ut64 offset_to_top;
-	if (!context->read_addr (context->anal, addr - 2 * context->word_size, &offset_to_top)) {
+	if (!context->read_addr (context->analysis, addr - 2 * context->word_size, &offset_to_top)) {
 		return NULL;
 	}
 
@@ -204,7 +204,7 @@ RZ_API RVTableInfo *rz_analysis_vtable_parse_at(RVTableContext *context, ut64 ad
 		addr += context->word_size;
 
 		// a ref means the vtable has ended
-		RzList *ll = rz_analysis_xrefs_get (context->anal, addr);
+		RzList *ll = rz_analysis_xrefs_get (context->analysis, addr);
 		if (!rz_list_empty (ll)) {
 			rz_list_free (ll);
 			break;
@@ -215,8 +215,8 @@ RZ_API RVTableInfo *rz_analysis_vtable_parse_at(RVTableContext *context, ut64 ad
 }
 
 RZ_API RzList *rz_analysis_vtable_search(RVTableContext *context) {
-	RzAnalysis *anal = context->anal;
-	if (!anal) {
+	RzAnalysis *analysis = context->analysis;
+	if (!analysis) {
 		return NULL;
 	}
 
@@ -225,7 +225,7 @@ RZ_API RzList *rz_analysis_vtable_search(RVTableContext *context) {
 		return NULL;
 	}
 
-	RzList *sections = anal->binb.get_sections (anal->binb.bin);
+	RzList *sections = analysis->binb.get_sections (analysis->binb.bin);
 	if (!sections) {
 		rz_list_free (vtables);
 		return NULL;
@@ -254,7 +254,7 @@ RZ_API RzList *rz_analysis_vtable_search(RVTableContext *context) {
 			if (rz_cons_is_breaked ()) {
 				break;
 			}
-			if (!anal->iob.is_valid_offset (anal->iob.io, startAddress, 0)) {
+			if (!analysis->iob.is_valid_offset (analysis->iob.io, startAddress, 0)) {
 				break;
 			}
 
@@ -283,9 +283,9 @@ RZ_API RzList *rz_analysis_vtable_search(RVTableContext *context) {
 	return vtables;
 }
 
-RZ_API void rz_analysis_list_vtables(RzAnalysis *anal, int rad) {
+RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, int rad) {
 	RVTableContext context;
-	rz_analysis_vtable_begin (anal, &context);
+	rz_analysis_vtable_begin (analysis, &context);
 
 	const char *noMethodName = "No Name found";
 	RVTableMethodInfo *curMethod;
@@ -307,7 +307,7 @@ RZ_API void rz_analysis_list_vtables(RzAnalysis *anal, int rad) {
 				if (!isFirstMethod) {
 					rz_cons_print (",");
 				}
-				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (anal, curMethod->addr, 0);
+				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (analysis, curMethod->addr, 0);
 				const char *const name = fcn ? fcn->name : NULL;
 				rz_cons_printf ("{\"offset\":%"PFMT64d",\"name\":\"%s\"}",
 						curMethod->addr, name ? name : noMethodName);
@@ -325,7 +325,7 @@ RZ_API void rz_analysis_list_vtables(RzAnalysis *anal, int rad) {
 						   table->saddr);
 			rz_vector_foreach (&table->methods, curMethod) {
 				rz_cons_printf ("Cd %d @ 0x%08"PFMT64x"\n", context.word_size, table->saddr + curMethod->vtable_offset);
-				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (anal, curMethod->addr, 0);
+				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (analysis, curMethod->addr, 0);
 				const char *const name = fcn ? fcn->name : NULL;
 				if (name) {
 					rz_cons_printf ("f %s=0x%08"PFMT64x"\n", name, curMethod->addr);
@@ -339,7 +339,7 @@ RZ_API void rz_analysis_list_vtables(RzAnalysis *anal, int rad) {
 			ut64 vtableStartAddress = table->saddr;
 			rz_cons_printf ("\nVtable Found at 0x%08"PFMT64x"\n", vtableStartAddress);
 			rz_vector_foreach (&table->methods, curMethod) {
-				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (anal, curMethod->addr, 0);
+				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (analysis, curMethod->addr, 0);
 				const char *const name = fcn ? fcn->name : NULL;
 				rz_cons_printf ("0x%08"PFMT64x" : %s\n", vtableStartAddress, name ? name : noMethodName);
 				vtableStartAddress += context.word_size;

@@ -88,25 +88,25 @@ static int defaultCycles(RzAnalysisOp *op) {
 	}
 }
 
-RZ_API int rz_analysis_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
+RZ_API int rz_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	rz_analysis_op_init (op);
-	rz_return_val_if_fail (anal && op && len > 0, -1);
+	rz_return_val_if_fail (analysis && op && len > 0, -1);
 
 	int ret = RZ_MIN (2, len);
-	if (len > 0 && anal->cur && anal->cur->op) {
+	if (len > 0 && analysis->cur && analysis->cur->op) {
 		//use core binding to set asm.bits correctly based on the addr
 		//this is because of the hassle of arm/thumb
-		if (anal && anal->coreb.archbits) {
-			anal->coreb.archbits (anal->coreb.core, addr);
+		if (analysis && analysis->coreb.archbits) {
+			analysis->coreb.archbits (analysis->coreb.core, addr);
 		}
-		if (anal->pcalign && addr % anal->pcalign) {
+		if (analysis->pcalign && addr % analysis->pcalign) {
 			op->type = RZ_ANAL_OP_TYPE_ILL;
 			op->addr = addr;
-			// eprintf ("Unaligned instruction for %d bits at 0x%"PFMT64x"\n", anal->bits, addr);
+			// eprintf ("Unaligned instruction for %d bits at 0x%"PFMT64x"\n", analysis->bits, addr);
 			op->size = 1;
 			return -1;
 		}
-		ret = anal->cur->op (anal, op, addr, data, len, mask);
+		ret = analysis->cur->op (analysis, op, addr, data, len, mask);
 		if (ret < 1) {
 			op->type = RZ_ANAL_OP_TYPE_ILL;
 		}
@@ -124,12 +124,12 @@ RZ_API int rz_analysis_op(RzAnalysis *anal, RzAnalysisOp *op, ut64 addr, const u
 		}
 	}
 	if (!op->mnemonic && (mask & RZ_ANAL_OP_MASK_DISASM)) {
-		if (anal->verbose) {
+		if (analysis->verbose) {
 			eprintf ("Warning: unhandled RZ_ANAL_OP_MASK_DISASM in rz_analysis_op\n");
 		}
         }
 	if (mask & RZ_ANAL_OP_MASK_HINT) {
-		RzAnalysisHint *hint = rz_analysis_hint_get (anal, addr);
+		RzAnalysisHint *hint = rz_analysis_hint_get (analysis, addr);
 		if (hint) {
 			rz_analysis_op_hint (op, hint);
 			rz_analysis_hint_free (hint);
@@ -369,12 +369,12 @@ repeat:
 	return "undefined";
 }
 
-RZ_API const char *rz_analysis_op_to_esil_string(RzAnalysis *anal, RzAnalysisOp *op) {
+RZ_API const char *rz_analysis_op_to_esil_string(RzAnalysis *analysis, RzAnalysisOp *op) {
 	return rz_strbuf_get (&op->esil);
 }
 
 // TODO: use esil here?
-RZ_API char *rz_analysis_op_to_string(RzAnalysis *anal, RzAnalysisOp *op) {
+RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op) {
 	RzAnalysisBlock *bb;
 	RzAnalysisFunction *f;
 	char *cstr, ret[128];
@@ -396,7 +396,7 @@ RZ_API char *rz_analysis_op_to_string(RzAnalysis *anal, RzAnalysisOp *op) {
 		snprintf (ret, sizeof (ret), "%s = %s", r0, a0);
 		break;
 	case RZ_ANAL_OP_TYPE_CJMP:
-		if ((bb = rz_analysis_bb_from_offset (anal, op->addr))) {
+		if ((bb = rz_analysis_bb_from_offset (analysis, op->addr))) {
 			cstr = rz_analysis_cond_to_string (bb->cond);
 			snprintf (ret, sizeof (ret), "if (%s) goto 0x%"PFMT64x, cstr, op->jump);
 			free (cstr);
@@ -428,7 +428,7 @@ RZ_API char *rz_analysis_op_to_string(RzAnalysis *anal, RzAnalysisOp *op) {
 		snprintf (ret, sizeof (ret), "%s()", r0);
 		break;
 	case RZ_ANAL_OP_TYPE_CALL:
-		f = rz_analysis_get_fcn_in (anal, op->jump, RZ_ANAL_FCN_TYPE_NULL);
+		f = rz_analysis_get_fcn_in (analysis, op->jump, RZ_ANAL_FCN_TYPE_NULL);
 		if (f) {
 			snprintf (ret, sizeof (ret), "%s()", f->name);
 		} else {
@@ -436,8 +436,8 @@ RZ_API char *rz_analysis_op_to_string(RzAnalysis *anal, RzAnalysisOp *op) {
 		}
 		break;
 	case RZ_ANAL_OP_TYPE_CCALL:
-		f = rz_analysis_get_fcn_in (anal, op->jump, RZ_ANAL_FCN_TYPE_NULL);
-		if ((bb = rz_analysis_bb_from_offset (anal, op->addr))) {
+		f = rz_analysis_get_fcn_in (analysis, op->jump, RZ_ANAL_FCN_TYPE_NULL);
+		if ((bb = rz_analysis_bb_from_offset (analysis, op->addr))) {
 			cstr = rz_analysis_cond_to_string (bb->cond);
 			if (f) {
 				snprintf (ret, sizeof (ret), "if (%s) %s()", cstr, f->name);
@@ -515,7 +515,7 @@ RZ_API char *rz_analysis_op_to_string(RzAnalysis *anal, RzAnalysisOp *op) {
 		memcpy (ret, "ret", 4);
 		break;
 	case RZ_ANAL_OP_TYPE_CRET:
-		if ((bb = rz_analysis_bb_from_offset (anal, op->addr))) {
+		if ((bb = rz_analysis_bb_from_offset (analysis, op->addr))) {
 			cstr = rz_analysis_cond_to_string (bb->cond);
 			snprintf (ret, sizeof (ret), "if (%s) ret", cstr);
 			free (cstr);
@@ -664,11 +664,11 @@ RZ_API int rz_analysis_op_hint(RzAnalysisOp *op, RzAnalysisHint *hint) {
 // returns the '33' in 'rax + 33'
 // returns value for the given register name in specific address / range
 // imho this should not iterate, should be just a helper to get that value
-RZ_API int rz_analysis_op_reg_delta(RzAnalysis *anal, ut64 addr, const char *name) {
+RZ_API int rz_analysis_op_reg_delta(RzAnalysis *analysis, ut64 addr, const char *name) {
 	ut8 buf[32];
-	anal->iob.read_at (anal->iob.io, addr, buf, sizeof (buf));
+	analysis->iob.read_at (analysis->iob.io, addr, buf, sizeof (buf));
 	RzAnalysisOp op = { 0 };
-	if (rz_analysis_op (anal, &op, addr, buf, sizeof (buf), RZ_ANAL_OP_MASK_ALL) > 0) {
+	if (rz_analysis_op (analysis, &op, addr, buf, sizeof (buf), RZ_ANAL_OP_MASK_ALL) > 0) {
 		if (op.dst && op.dst->reg && op.dst->reg->name && (!name || !strcmp (op.dst->reg->name, name))) {
 			if (op.src[0]) {
 				return op.src[0]->delta;

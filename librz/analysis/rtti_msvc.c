@@ -66,18 +66,18 @@ static bool rtti_msvc_read_complete_object_locator(RVTableContext *context, ut64
 		return false;
 	}
 
-	if (!context->anal->iob.read_at (context->anal->iob.io, addr, buf, colSize)) {
+	if (!context->analysis->iob.read_at (context->analysis->iob.io, addr, buf, colSize)) {
 		return false;
 	}
 
-	ut32 (*read_at_32)(const void *src, size_t offset) = context->anal->big_endian ? rz_read_at_be32 : rz_read_at_le32;
+	ut32 (*read_at_32)(const void *src, size_t offset) = context->analysis->big_endian ? rz_read_at_be32 : rz_read_at_le32;
 	col->signature = read_at_32 (buf, 0);
 	col->vtable_offset = read_at_32 (buf, 4);
 	col->cd_offset = read_at_32 (buf, 8);
 
 	int offsetSize = RZ_MIN (context->word_size, 4);
-	col->type_descriptor_addr = (ut32) rz_read_ble (buf + 12, (bool) context->anal->big_endian, offsetSize * 8);
-	col->class_descriptor_addr = (ut32) rz_read_ble (buf + 12 + offsetSize, (bool) context->anal->big_endian, offsetSize * 8);
+	col->type_descriptor_addr = (ut32) rz_read_ble (buf + 12, (bool) context->analysis->big_endian, offsetSize * 8);
+	col->class_descriptor_addr = (ut32) rz_read_ble (buf + 12 + offsetSize, (bool) context->analysis->big_endian, offsetSize * 8);
 	if (context->word_size == 8) {
 		// 64bit is special:
 		// Type Descriptor and Class Hierarchy Descriptor addresses are computed
@@ -102,16 +102,16 @@ static bool rtti_msvc_read_class_hierarchy_descriptor(RVTableContext *context, u
 		return false;
 	}
 
-	if (!context->anal->iob.read_at (context->anal->iob.io, addr, buf, chdSize)) {
+	if (!context->analysis->iob.read_at (context->analysis->iob.io, addr, buf, chdSize)) {
 		return false;
 	}
 
-	ut32 (*read_at_32)(const void *src, size_t offset) = context->anal->big_endian ? rz_read_at_be32 : rz_read_at_le32;
+	ut32 (*read_at_32)(const void *src, size_t offset) = context->analysis->big_endian ? rz_read_at_be32 : rz_read_at_le32;
 	chd->signature = read_at_32 (buf, 0);
 	chd->attributes = read_at_32 (buf, 4);
 	chd->num_base_classes = read_at_32 (buf, 8);
 	if (context->word_size <= 4) {
-		chd->base_class_array_addr = (ut32) rz_read_ble (buf + 12, (bool) context->anal->big_endian, context->word_size * 8);
+		chd->base_class_array_addr = (ut32) rz_read_ble (buf + 12, (bool) context->analysis->big_endian, context->word_size * 8);
 	} else {
 		// 64bit is special, like in Complete Object Locator.
 		// Only the offset from the base from Complete Object Locator
@@ -136,13 +136,13 @@ static bool rtti_msvc_read_base_class_descriptor(RVTableContext *context, ut64 a
 		return false;
 	}
 
-	if (!context->anal->iob.read_at (context->anal->iob.io, addr, buf, bcdSize)) {
+	if (!context->analysis->iob.read_at (context->analysis->iob.io, addr, buf, bcdSize)) {
 		return false;
 	}
 
-	ut32 (*read_at_32)(const void *src, size_t offset) = context->anal->big_endian ? rz_read_at_be32 : rz_read_at_le32;
+	ut32 (*read_at_32)(const void *src, size_t offset) = context->analysis->big_endian ? rz_read_at_be32 : rz_read_at_le32;
 	int typeDescriptorAddrSize = RZ_MIN (context->word_size, 4);
-	bcd->type_descriptor_addr = (ut32) rz_read_ble (buf, (bool) context->anal->big_endian, typeDescriptorAddrSize * 8);
+	bcd->type_descriptor_addr = (ut32) rz_read_ble (buf, (bool) context->analysis->big_endian, typeDescriptorAddrSize * 8);
 	size_t offset = (size_t) typeDescriptorAddrSize;
 	bcd->num_contained_bases = read_at_32 (buf, offset);
 	bcd->where.mdisp = read_at_32 (buf, offset + sizeof (ut32));
@@ -166,7 +166,7 @@ static RzList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num
 	ut64 stride = RZ_MIN (context->word_size, 4);
 
 	if (num_base_classes > BASE_CLASSES_MAX) {
-		if (context->anal->verbose) {
+		if (context->analysis->verbose) {
 			eprintf ("WARNING: Length of base class array at 0x%08"PFMT64x" exceeds %d.\n", addr, BASE_CLASSES_MAX);
 		}
 		num_base_classes = BASE_CLASSES_MAX;
@@ -180,7 +180,7 @@ static RzList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num
 
 		ut64 bcdAddr;
 		if (context->word_size <= 4) {
-			if (!context->read_addr (context->anal, addr, &bcdAddr)) {
+			if (!context->read_addr (context->analysis, addr, &bcdAddr)) {
 				break;
 			}
 			if (bcdAddr == UT32_MAX) {
@@ -189,11 +189,11 @@ static RzList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num
 		} else {
 			// special offset calculation for 64bit
 			ut8 tmp[4] = {0};
-			if (!context->anal->iob.read_at(context->anal->iob.io, addr, tmp, 4)) {
+			if (!context->analysis->iob.read_at(context->analysis->iob.io, addr, tmp, 4)) {
 				rz_list_free (ret);
 				return NULL;
 			}
-			ut32 (*read_32)(const void *src) = context->anal->big_endian ? rz_read_be32 : rz_read_le32;
+			ut32 (*read_32)(const void *src) = context->analysis->big_endian ? rz_read_be32 : rz_read_le32;
 			ut32 bcdOffset = read_32 (tmp);
 			if (bcdOffset == UT32_MAX) {
 				break;
@@ -229,10 +229,10 @@ static bool rtti_msvc_read_type_descriptor(RVTableContext *context, ut64 addr, r
 		return false;
 	}
 
-	if (!context->read_addr (context->anal, addr, &td->vtable_addr)) {
+	if (!context->read_addr (context->analysis, addr, &td->vtable_addr)) {
 		return false;
 	}
-	if (!context->read_addr (context->anal, addr + context->word_size, &td->spare)) {
+	if (!context->read_addr (context->analysis, addr + context->word_size, &td->spare)) {
 		return false;
 	}
 
@@ -243,7 +243,7 @@ static bool rtti_msvc_read_type_descriptor(RVTableContext *context, ut64 addr, r
 	bool endFound = false;
 	bool endInvalid = false;
 	while (1) {
-		context->anal->iob.read_at (context->anal->iob.io, nameAddr + bufOffset, buf, sizeof (buf));
+		context->analysis->iob.read_at (context->analysis->iob.io, nameAddr + bufOffset, buf, sizeof (buf));
 		int i;
 		for (i=0; i<sizeof (buf); i++) {
 			if (buf[i] == '\0') {
@@ -274,7 +274,7 @@ static bool rtti_msvc_read_type_descriptor(RVTableContext *context, ut64 addr, r
 	if (bufOffset == 0) {
 		memcpy (td->name, buf, nameLen + 1);
 	} else {
-		context->anal->iob.read_at (context->anal->iob.io, nameAddr,
+		context->analysis->iob.read_at (context->analysis->iob.io, nameAddr,
 									(ut8 *)td->name, (int) (nameLen + 1));
 	}
 
@@ -387,7 +387,7 @@ RZ_API char *rz_analysis_rtti_msvc_demangle_class_name(RVTableContext *context, 
 		|| strncmp (name + original_len - 2, "@@", 2) != 0) {
 		return NULL;
 	}
-	char *ret = context->anal->binb.demangle (NULL, "msvc", name, 0, false);
+	char *ret = context->analysis->binb.demangle (NULL, "msvc", name, 0, false);
 	if (ret && *ret) {
 		char *n = strchr (ret, ' ');
 		if (n && *(++n)) {
@@ -466,7 +466,7 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 
 	ut64 colRefAddr = atAddress - context->word_size;
 	ut64 colAddr;
-	if (!context->read_addr (context->anal, colRefAddr, &colAddr)) {
+	if (!context->read_addr (context->analysis, colRefAddr, &colAddr)) {
 		return false;
 	}
 
@@ -729,7 +729,7 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 			continue;
 		}
 		if (!td->valid) {
-			if (context->vt_context->anal->verbose) {
+			if (context->vt_context->analysis->verbose) {
 				eprintf ("Warning: type descriptor of base is invalid.\n");
 			}
 			continue;
@@ -769,13 +769,13 @@ RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *cont
 }
 
 
-static char *unique_class_name(RzAnalysis *anal, const char *original_name) {
-	if (!rz_analysis_class_exists (anal, original_name)) {
+static char *unique_class_name(RzAnalysis *analysis, const char *original_name) {
+	if (!rz_analysis_class_exists (analysis, original_name)) {
 		return strdup (original_name);
 	}
 
 	char *name = NULL;
-	if (anal->verbose) {
+	if (analysis->verbose) {
 		eprintf ("Warning: class name %s already taken!\n", original_name);
 	}
 	int i = 1;
@@ -786,12 +786,12 @@ static char *unique_class_name(RzAnalysis *anal, const char *original_name) {
 		if (!name) {
 			return NULL;
 		}
-	} while (rz_analysis_class_exists (anal, name));
+	} while (rz_analysis_class_exists (analysis, name));
 
 	return name;
 }
 
-static void recovery_apply_vtable(RzAnalysis *anal, const char *class_name, RVTableInfo *vtable_info) {
+static void recovery_apply_vtable(RzAnalysis *analysis, const char *class_name, RVTableInfo *vtable_info) {
 	if (!vtable_info) {
 		return;
 	}
@@ -800,7 +800,7 @@ static void recovery_apply_vtable(RzAnalysis *anal, const char *class_name, RVTa
 	vtable.id = NULL;
 	vtable.offset = 0;
 	vtable.addr = vtable_info->saddr;
-	rz_analysis_class_vtable_set (anal, class_name, &vtable);
+	rz_analysis_class_vtable_set (analysis, class_name, &vtable);
 	rz_analysis_class_vtable_fini (&vtable);
 
 	RVTableMethodInfo *vmeth;
@@ -809,7 +809,7 @@ static void recovery_apply_vtable(RzAnalysis *anal, const char *class_name, RVTa
 		meth.addr = vmeth->addr;
 		meth.vtable_offset = vmeth->vtable_offset;
 		meth.name = rz_str_newf ("virtual_%" PFMT64d, meth.vtable_offset);
-		rz_analysis_class_method_set (anal, class_name, &meth);
+		rz_analysis_class_method_set (analysis, class_name, &meth);
 		rz_analysis_class_method_fini (&meth);
 	}
 }
@@ -828,7 +828,7 @@ static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *clas
 
 		const char *base_class_name;
 		if (!base_td->col) {
-			if (context->vt_context->anal->verbose) {
+			if (context->vt_context->analysis->verbose) {
 				eprintf ("Warning: Base td %s has no col. Falling back to recovery from td only.\n", base_td->td.name);
 			}
 			base_class_name = recovery_apply_type_descriptor (context, base_td);
@@ -837,7 +837,7 @@ static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *clas
 		}
 
 		if (!base_class_name) {
-			if (context->vt_context->anal->verbose) {
+			if (context->vt_context->analysis->verbose) {
 				eprintf ("Failed to convert !base td->col or td to a class\n");
 			}
 			continue;
@@ -847,7 +847,7 @@ static void recovery_apply_bases(RRTTIMSVCAnalContext *context, const char *clas
 		base.id = NULL;
 		base.offset = (ut64)base_desc->bcd->where.mdisp;
 		base.class_name = strdup (base_class_name);
-		rz_analysis_class_base_set (context->vt_context->anal, class_name, &base);
+		rz_analysis_class_base_set (context->vt_context->analysis, class_name, &base);
 		rz_analysis_class_base_fini (&base);
 	}
 }
@@ -859,13 +859,13 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 	}
 
 	if (!col->td) {
-		if (context->vt_context->anal->verbose) {
+		if (context->vt_context->analysis->verbose) {
 			eprintf ("Warning: no td for col at 0x%"PFMT64x"\n", col->addr);
 		}
 		return NULL;
 	}
 
-	RzAnalysis *anal = context->vt_context->anal;
+	RzAnalysis *analysis = context->vt_context->analysis;
 
 	const char *existing = ht_up_find (context->col_td_classes, col->addr, NULL);
 	if (existing != NULL) {
@@ -874,7 +874,7 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 
 	char *name = rz_analysis_rtti_msvc_demangle_class_name (context->vt_context, col->td->td.name);
 	if (!name) {
-		if (context->vt_context->anal->verbose) {
+		if (context->vt_context->analysis->verbose) {
 			eprintf ("Failed to demangle a class name: \"%s\"\n", col->td->td.name);
 		}
 		name = strdup (col->td->td.name);
@@ -884,16 +884,16 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 	}
 
 	char *tmp = name;
-	name = unique_class_name (anal, name);
+	name = unique_class_name (analysis, name);
 	free (tmp);
 	if (!name) {
 		return NULL;
 	}
 
-	rz_analysis_class_create (anal, name);
+	rz_analysis_class_create (analysis, name);
 	ht_up_insert (context->col_td_classes, col->addr, name);
 
-	recovery_apply_vtable (anal, name, col->vtable);
+	recovery_apply_vtable (analysis, name, col->vtable);
 	recovery_apply_bases (context, name, &col->base_td);
 
 	return name;
@@ -906,7 +906,7 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 		return NULL;
 	}
 
-	RzAnalysis *anal = context->vt_context->anal;
+	RzAnalysis *analysis = context->vt_context->analysis;
 
 	const char *existing = ht_up_find (context->col_td_classes, td->addr, NULL);
 	if (existing != NULL) {
@@ -915,7 +915,7 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 
 	char *name = rz_analysis_rtti_msvc_demangle_class_name (context->vt_context, td->td.name);
 	if (!name) {
-		if (context->vt_context->anal->verbose) {
+		if (context->vt_context->analysis->verbose) {
 			eprintf("Failed to demangle a class name: \"%s\"\n", td->td.name);
 		}
 		name = strdup (td->td.name);
@@ -924,14 +924,14 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 		}
 	}
 
-	rz_analysis_class_create (anal, name);
+	rz_analysis_class_create (analysis, name);
 	ht_up_insert (context->col_td_classes, td->addr, name);
 
 	if (!td->col || !td->col->valid) {
 		return name;
 	}
 
-	recovery_apply_vtable (anal, name, td->col->vtable);
+	recovery_apply_vtable (analysis, name, td->col->vtable);
 	recovery_apply_bases (context, name, &td->col->base_td);
 
 	return name;
@@ -958,7 +958,7 @@ RZ_API void rz_analysis_rtti_msvc_recover_all(RVTableContext *vt_context, RzList
 	rz_list_foreach (vtables, vtableIter, table) {
 		ut64 colRefAddr = table->saddr - vt_context->word_size;
 		ut64 colAddr;
-		if (!vt_context->read_addr (vt_context->anal, colRefAddr, &colAddr)) {
+		if (!vt_context->read_addr (vt_context->analysis, colRefAddr, &colAddr)) {
 			continue;
 		}
 		recovery_anal_complete_object_locator (&context, colAddr, table);

@@ -71,7 +71,7 @@ typedef enum {
 #undef RZ_NEWCOPY
 #endif
 
-// used in debug, io, bin, anal, ...
+// used in debug, io, bin, analysis, ...
 #define RZ_PERM_R	4
 #define RZ_PERM_W	2
 #define RZ_PERM_X	1

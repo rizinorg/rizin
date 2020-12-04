@@ -24,23 +24,23 @@ static bool find_node_cb(RzIntervalNode *node, void *user) {
 	return true;
 }
 
-static RzIntervalNode *find_node_at(RzAnalysis *anal, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
+static RzIntervalNode *find_node_at(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
 	FindCtx ctx = {
 		.type = type,
 		.space = space,
 		.node = NULL
 	};
-	rz_interval_tree_all_at (&anal->meta, addr, find_node_cb, &ctx);
+	rz_interval_tree_all_at (&analysis->meta, addr, find_node_cb, &ctx);
 	return ctx.node;
 }
 
-static RzIntervalNode *find_node_in(RzAnalysis *anal, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
+static RzIntervalNode *find_node_in(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
 	FindCtx ctx = {
 		.type = type,
 		.space = space,
 		.node = NULL
 	};
-	rz_interval_tree_all_in (&anal->meta, addr, true, find_node_cb, &ctx);
+	rz_interval_tree_all_in (&analysis->meta, addr, true, find_node_cb, &ctx);
 	return ctx.node;
 }
 
@@ -59,7 +59,7 @@ static bool collect_nodes_cb(RzIntervalNode *node, void *user) {
 	return true;
 }
 
-static RzPVector *collect_nodes_at(RzAnalysis *anal, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
+static RzPVector *collect_nodes_at(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -68,11 +68,11 @@ static RzPVector *collect_nodes_at(RzAnalysis *anal, RzAnalysisMetaType type, RZ
 	if (!ctx.result) {
 		return NULL;
 	}
-	rz_interval_tree_all_at (&anal->meta, addr, collect_nodes_cb, &ctx);
+	rz_interval_tree_all_at (&analysis->meta, addr, collect_nodes_cb, &ctx);
 	return ctx.result;
 }
 
-static RzPVector *collect_nodes_in(RzAnalysis *anal, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
+static RzPVector *collect_nodes_in(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 addr) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -81,11 +81,11 @@ static RzPVector *collect_nodes_in(RzAnalysis *anal, RzAnalysisMetaType type, RZ
 	if (!ctx.result) {
 		return NULL;
 	}
-	rz_interval_tree_all_in (&anal->meta, addr, true, collect_nodes_cb, &ctx);
+	rz_interval_tree_all_in (&analysis->meta, addr, true, collect_nodes_cb, &ctx);
 	return ctx.result;
 }
 
-static RzPVector *collect_nodes_intersect(RzAnalysis *anal, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 start, ut64 end) {
+static RzPVector *collect_nodes_intersect(RzAnalysis *analysis, RzAnalysisMetaType type, RZ_NULLABLE const RzSpace *space, ut64 start, ut64 end) {
 	CollectCtx ctx = {
 		.type = type,
 		.space = space,
@@ -94,7 +94,7 @@ static RzPVector *collect_nodes_intersect(RzAnalysis *anal, RzAnalysisMetaType t
 	if (!ctx.result) {
 		return NULL;
 	}
-	rz_interval_tree_all_intersect (&anal->meta, start, end, true, collect_nodes_cb, &ctx);
+	rz_interval_tree_all_intersect (&analysis->meta, start, end, true, collect_nodes_cb, &ctx);
 	return ctx.result;
 }
 
@@ -533,12 +533,12 @@ RZ_API void rz_meta_print_list_in_function(RzAnalysis *a, int type, int rad, ut6
 	print_meta_list (a, type, rad, addr);
 }
 
-RZ_API void rz_meta_rebase(RzAnalysis *anal, ut64 diff) {
+RZ_API void rz_meta_rebase(RzAnalysis *analysis, ut64 diff) {
 	if (!diff) {
 		return;
 	}
-	RzIntervalTree old = anal->meta;
-	rz_interval_tree_init (&anal->meta, old.free);
+	RzIntervalTree old = analysis->meta;
+	rz_interval_tree_init (&analysis->meta, old.free);
 	RzIntervalTreeIter it;
 	RzAnalysisMetaItem *item;
 	rz_interval_tree_foreach (&old, it, item) {
@@ -550,7 +550,7 @@ RZ_API void rz_meta_rebase(RzAnalysis *anal, ut64 diff) {
 			newstart = node->start;
 			newend = node->end;
 		}
-		rz_interval_tree_insert (&anal->meta, newstart, newend, item);
+		rz_interval_tree_insert (&analysis->meta, newstart, newend, item);
 	}
 	old.free = NULL;
 	rz_interval_tree_fini (&old);

@@ -34,8 +34,8 @@ static bool sanitize(RzAnalysisFunction *fcn) {
 	return true;
 }
 
-#define assert_sane(anal) do { RzListIter *ass_it; RzAnalysisFunction *ass_fcn; \
-	rz_list_foreach ((anal)->fcns, ass_it, ass_fcn) { \
+#define assert_sane(analysis) do { RzListIter *ass_it; RzAnalysisFunction *ass_fcn; \
+	rz_list_foreach ((analysis)->fcns, ass_it, ass_fcn) { \
 		if (!sanitize (ass_fcn)) { \
 			return false; \
 		} \
@@ -43,12 +43,12 @@ static bool sanitize(RzAnalysisFunction *fcn) {
 } while (0);
 
 bool test_r_anal_var() {
-	RzAnalysis *anal = rz_analysis_new ();
-	rz_analysis_use (anal, "x86");
-	rz_analysis_set_bits (anal, 64);
+	RzAnalysis *analysis = rz_analysis_new ();
+	rz_analysis_use (analysis, "x86");
+	rz_analysis_set_bits (analysis, 64);
 
-	RzAnalysisFunction *fcn = rz_analysis_create_function (anal, "fcn", 0x100, RZ_ANAL_FCN_TYPE_FCN, NULL);
-	assert_sane (anal);
+	RzAnalysisFunction *fcn = rz_analysis_create_function (analysis, "fcn", 0x100, RZ_ANAL_FCN_TYPE_FCN, NULL);
+	assert_sane (analysis);
 
 	// creating variables and renaming
 
@@ -126,12 +126,12 @@ bool test_r_anal_var() {
 	stackptr = rz_analysis_function_get_var_stackptr_at (fcn, -0x10, 0x10);
 	mu_assert_eq (stackptr, -100, "stackptr");
 
-	assert_sane (anal);
+	assert_sane (analysis);
 
 	// relocate function
 
 	rz_analysis_function_relocate (fcn, 0xffffffffffff0100UL);
-	assert_sane (anal);
+	assert_sane (analysis);
 
 	used_vars = rz_analysis_function_get_vars_used_at (fcn, 0xffffffffffff0130UL); // addresses should stay the same
 	mu_assert ("no used vars", !used_vars || rz_pvector_len (used_vars));
@@ -163,7 +163,7 @@ bool test_r_anal_var() {
 	mu_assert ("used vars", rz_pvector_contains (used_vars, b));
 
 	rz_analysis_function_relocate (fcn, 0x8000000000000010);
-	assert_sane (anal);
+	assert_sane (analysis);
 
 	used_vars = rz_analysis_function_get_vars_used_at (fcn, 0x8000000000000100);
 	mu_assert ("no used vars", !used_vars || rz_pvector_len (used_vars));
@@ -201,10 +201,10 @@ bool test_r_anal_var() {
 	stackptr = rz_analysis_function_get_var_stackptr_at (fcn, -8, 0x120);
 	mu_assert_eq (stackptr, 42, "stackptr");
 
-	assert_sane (anal);
+	assert_sane (analysis);
 
 	rz_analysis_var_delete (a);
-	assert_sane (anal);
+	assert_sane (analysis);
 
 	used_vars = rz_analysis_function_get_vars_used_at (fcn, 0xffffffffffff0130UL);
 	mu_assert ("used vars count", !used_vars || !rz_pvector_len (used_vars));
@@ -219,7 +219,7 @@ bool test_r_anal_var() {
 	rz_analysis_var_delete (b);
 	rz_analysis_var_delete (c);
 
-	rz_analysis_free (anal);
+	rz_analysis_free (analysis);
 	mu_end;
 }
 

@@ -7,7 +7,7 @@
 #include <string.h>
 
 typedef struct dwarf_parse_context_t {
-	const RzAnalysis *anal;
+	const RzAnalysis *analysis;
 	const RzBinDwarfDie *all_dies;
 	const ut64 count;
 	Sdb *sdb;
@@ -555,7 +555,7 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 			}
 		}
 	}
-	rz_analysis_save_base_type (ctx->anal, base_type);
+	rz_analysis_save_base_type (ctx->analysis, base_type);
 cleanup:
 	rz_analysis_base_type_free (base_type);
 }
@@ -618,7 +618,7 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 			}
 		}
 	}
-	rz_analysis_save_base_type (ctx->anal, base_type);
+	rz_analysis_save_base_type (ctx->analysis, base_type);
 cleanup:
 	rz_analysis_base_type_free (base_type);
 }
@@ -671,7 +671,7 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 	}
 	base_type->name = name;
 	base_type->type = type;
-	rz_analysis_save_base_type (ctx->anal, base_type);
+	rz_analysis_save_base_type (ctx->analysis, base_type);
 	rz_analysis_base_type_free (base_type);
 	rz_strbuf_fini (&strbuf);
 	return;
@@ -721,7 +721,7 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 	}
 	base_type->name = name;
 	base_type->size = size;
-	rz_analysis_save_base_type (ctx->anal, base_type);
+	rz_analysis_save_base_type (ctx->analysis, base_type);
 	rz_analysis_base_type_free (base_type);
 }
 
@@ -1029,7 +1029,7 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RzBinDwarfAtt
 			/* Will mostly be used for SP based arguments */
 			/* TODO I need to find binaries that uses this so I can test it out*/
 			reg_num = block.data[i] - DW_OP_reg0; // get the reg number
-			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind, ctx->anal->bits);
+			reg_name = get_dwarf_reg_name (ctx->analysis->cpu, reg_num, &kind, ctx->analysis->bits);
 		} break;
 		case DW_OP_breg0:
 		case DW_OP_breg1:
@@ -1073,7 +1073,7 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RzBinDwarfAtt
 			offset = rz_sleb128 (&buffer, &block.data[block.length]);
 			/* TODO do a proper expression parsing, move by the amount of bytes sleb reads */
 			i += buffer - &block.data[0];
-			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind, ctx->anal->bits);
+			reg_name = get_dwarf_reg_name (ctx->analysis->cpu, reg_num, &kind, ctx->analysis->bits);
 		} break;
 		case DW_OP_bregx: {
 			if (i == block.length - 1) {
@@ -1088,12 +1088,12 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RzBinDwarfAtt
 				return NULL;
 			}
 			offset = rz_sleb128 (&buffer, buf_end);
-			reg_name = get_dwarf_reg_name (ctx->anal->cpu, reg_num, &kind, ctx->anal->bits);
+			reg_name = get_dwarf_reg_name (ctx->analysis->cpu, reg_num, &kind, ctx->analysis->bits);
 		} break;
 		case DW_OP_addr: {
 			/* The DW_OP_addr operation has a single operand that encodes a machine address and whose
 			size is the size of an address on the target machine.  */
-			const int addr_size = ctx->anal->bits / 8;
+			const int addr_size = ctx->analysis->bits / 8;
 			const ut8 *dump = &block.data[++i];
 			/* malformed, not enough bytes to represent address */
 			if (block.length - i < addr_size) {
@@ -1104,13 +1104,13 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RzBinDwarfAtt
 				address = rz_read_ble8 (dump);
 				break;
 			case 2:
-				address = rz_read_ble16 (dump, ctx->anal->big_endian);
+				address = rz_read_ble16 (dump, ctx->analysis->big_endian);
 				break;
 			case 4:
-				address = rz_read_ble32 (dump, ctx->anal->big_endian);
+				address = rz_read_ble32 (dump, ctx->analysis->big_endian);
 				break;
 			case 8:
-				address = rz_read_ble64 (dump, ctx->anal->big_endian);
+				address = rz_read_ble64 (dump, ctx->analysis->big_endian);
 				break;
 			default:
 				rz_warn_if_reached (); /* weird addr_size */
@@ -1403,7 +1403,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 		rz_strbuf_append (&ret_type, "void");
 	}
 	rz_warn_if_fail (ctx->lang);
-	char *new_name = ctx->anal->binb.demangle (NULL, ctx->lang, fcn.name, fcn.addr, false);
+	char *new_name = ctx->analysis->binb.demangle (NULL, ctx->lang, fcn.name, fcn.addr, false);
 	fcn.name = new_name ? new_name : strdup (fcn.name);
 	fcn.signature = rz_str_newf ("%s %s(%s);", rz_strbuf_get (&ret_type), fcn.name, rz_strbuf_get (&args));
 	sdb_save_dwarf_function (&fcn, variables, ctx->sdb);
@@ -1525,15 +1525,15 @@ static void parse_type_entry(Context *ctx, ut64 idx) {
  * @param anal 
  * @param ctx 
  */
-RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *anal, RzAnalysisDwarfContext *ctx) {
-	rz_return_if_fail (ctx && anal);
-	Sdb *dwarf_sdb =  sdb_ns (anal->sdb, "dwarf", 1);
+RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzAnalysisDwarfContext *ctx) {
+	rz_return_if_fail (ctx && analysis);
+	Sdb *dwarf_sdb =  sdb_ns (analysis->sdb, "dwarf", 1);
 	size_t i, j;
 	const RzBinDwarfDebugInfo *info = ctx->info;
 	for (i = 0; i < info->count; i++) {
 		RzBinDwarfCompUnit *unit = &info->comp_units[i];
 		Context dw_context = { // context per unit?
-			.anal = anal,
+			.analysis = analysis,
 			.all_dies = unit->dies,
 			.count = unit->count,
 			.die_map = info->lookup_table,
@@ -1560,8 +1560,8 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
  * @param anal 
  * @param dwarf_sdb 
  */
-RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *anal, RzFlag *flags, Sdb *dwarf_sdb) {
-	rz_return_if_fail (anal && dwarf_sdb);
+RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *flags, Sdb *dwarf_sdb) {
+	rz_return_if_fail (analysis && dwarf_sdb);
 
 	/* get all entries with value == func */
 	SdbList *sdb_list = sdb_foreach_list_filter (dwarf_sdb, filter_sdb_function_names, false);
@@ -1576,7 +1576,7 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *anal, RzFlag *flag
 		free (addr_key);
 
 		/* if the function is analyzed so we can edit */
-		RzAnalysisFunction *fcn = rz_analysis_get_function_at (anal, faddr);
+		RzAnalysisFunction *fcn = rz_analysis_get_function_at (analysis, faddr);
 		if (fcn) {
 			/* prepend dwarf debug info stuff with dbg. */
 			char *real_name_key = rz_str_newf ("fcn.%s.name", func_sname);
@@ -1593,7 +1593,7 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *anal, RzFlag *flag
 			char *fcnstr = sdb_get (dwarf_sdb, tmp, 0);
 			free (tmp);
 			/* Apply signature as a comment at a function address */
-			rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, faddr, fcnstr);
+			rz_meta_set_string (analysis, RZ_META_TYPE_COMMENT, faddr, fcnstr);
 			free (fcnstr);
 		}
 		char *var_names_key = rz_str_newf ("fcn.%s.vars", func_sname);
@@ -1621,7 +1621,7 @@ RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *anal, RzFlag *flag
 			} else if (*kind == 's' && fcn) {
 				rz_analysis_function_set_var (fcn, offset - fcn->maxstack, *kind, type, 4, false, var_name);
 			} else if (*kind == 'r' && fcn) {
-				RzRegItem *i = rz_reg_get (anal->reg, extra, -1);
+				RzRegItem *i = rz_reg_get (analysis->reg, extra, -1);
 				if (!i) {
 					goto loop_end;
 				}

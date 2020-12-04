@@ -77,7 +77,7 @@ static RzList *backtrace_x86_64_anal(RzDebug *dbg, ut64 at) {
 	bio->read_at (bio->io, _rip, (ut8*)&buf, 8);
 
 	// TODO : frame->size by using esil to emulate first instructions
-	fcn = rz_analysis_get_fcn_in (dbg->anal, _rip, RZ_ANAL_FCN_TYPE_NULL);
+	fcn = rz_analysis_get_fcn_in (dbg->analysis, _rip, RZ_ANAL_FCN_TYPE_NULL);
 	if (fcn) {
 		frame = RZ_NEW0 (RzDebugFrame);
 		frame->addr = _rip;
@@ -95,7 +95,7 @@ static RzList *backtrace_x86_64_anal(RzDebug *dbg, ut64 at) {
 		bio->read_at (bio->io, _rbp+8, (ut8*)&ptr, 8);
 		if (!ptr || !_rbp)
 			break;
-		//fcn = rz_analysis_get_fcn_in (dbg->anal, ptr, RZ_ANAL_FCN_TYPE_NULL);
+		//fcn = rz_analysis_get_fcn_in (dbg->analysis, ptr, RZ_ANAL_FCN_TYPE_NULL);
 		frame = RZ_NEW0 (RzDebugFrame);
 		frame->addr = ptr;
 		frame->size = 0;

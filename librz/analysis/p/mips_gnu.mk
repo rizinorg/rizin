@@ -1,4 +1,4 @@
-N=anal_mips_gnu
+N=analysis_mips_gnu
 OBJ_MIPS=$(N).o
 
 include p/capstone.mk

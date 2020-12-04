@@ -233,7 +233,7 @@ mov edi, str.Hello_World
 EOF
 RUN
 
-NAME=pi -5 @ 0x0040050f (anal)
+NAME=pi -5 @ 0x0040050f (analysis)
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 e asm.arch=x86

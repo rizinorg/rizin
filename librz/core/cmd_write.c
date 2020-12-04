@@ -1796,7 +1796,7 @@ RZ_IPI int rz_wa_handler_old(void *data, const char *input) {
 		if (acode) {
 			if (input[0] == 'i') { // "wai"
 				RzAnalysisOp analop;
-				if (!rz_analysis_op (core->anal, &analop, core->offset, core->block, core->blocksize, RZ_ANAL_OP_MASK_BASIC)) {
+				if (!rz_analysis_op (core->analysis, &analop, core->offset, core->block, core->blocksize, RZ_ANAL_OP_MASK_BASIC)) {
 					eprintf ("Invalid instruction?\n");
 					break;
 				}

@@ -713,8 +713,8 @@ static void print_function_labels_for(RzAnalysisFunction *fcn, int rad, PJ *pj) 
 	}
 }
 
-static void print_function_labels(RzAnalysis *anal, RzAnalysisFunction *fcn, int rad) {
-	rz_return_if_fail (anal || fcn);
+static void print_function_labels(RzAnalysis *analysis, RzAnalysisFunction *fcn, int rad) {
+	rz_return_if_fail (analysis || fcn);
 	PJ *pj = NULL;
 	bool json = rad == 'j';
 	if (json) {
@@ -728,7 +728,7 @@ static void print_function_labels(RzAnalysis *anal, RzAnalysisFunction *fcn, int
 		}
 		RzAnalysisFunction *f;
 		RzListIter *iter;
-		rz_list_foreach (anal->fcns, iter, f) {
+		rz_list_foreach (analysis->fcns, iter, f) {
 			if (!f->labels->count) {
 				continue;
 			}
@@ -1003,7 +1003,7 @@ rep:
 				flagname++;
 			}
 			if (*flagname == '.') {
-				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, off, 0);
+				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, off, 0);
 				if (fcn) {
 					rz_analysis_function_delete_label_at (fcn, off);
 				} else {
@@ -1025,18 +1025,18 @@ rep:
 		if (input[1]) {
 			if (input[1] == '*' || input[1] == 'j') {
 				if (input[2] == '*') {
-					print_function_labels (core->anal, NULL, input[1]);
+					print_function_labels (core->analysis, NULL, input[1]);
 				} else {
-					RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, off, 0);
+					RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, off, 0);
 					if (fcn) {
-						print_function_labels (core->anal, fcn, input[1]);
+						print_function_labels (core->analysis, fcn, input[1]);
 					} else {
 						eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 					}
 				}
 			} else {
 				char *name = strdup (input + ((input[2] == ' ')? 2: 1));
-				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, off, 0);
+				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, off, 0);
 				if (name) {
 					char *eq = strchr (name, '=');
 					if (eq) {
@@ -1057,9 +1057,9 @@ rep:
 				}
 			}
 		} else {
-			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, off, 0);
+			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, off, 0);
 			if (fcn) {
-				print_function_labels (core->anal, fcn, 0);
+				print_function_labels (core->analysis, fcn, 0);
 			} else {
 				eprintf ("Local flags require a function to work.");
 			}

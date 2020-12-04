@@ -54,10 +54,10 @@ static int is_invalid(const ut8 *buf, int size) {
 }
 
 #define USE_IS_VALID_OFFSET 1
-static ut64 is_pointer(RzAnalysis *anal, const ut8 *buf, int size) {
+static ut64 is_pointer(RzAnalysis *analysis, const ut8 *buf, int size) {
 	ut64 n;
 	ut8 buf2[32];
-	RzIOBind *iob = &anal->iob;
+	RzIOBind *iob = &analysis->iob;
 	if (size > sizeof (buf2)) {
 		size = sizeof (buf2);
 	}
@@ -272,10 +272,10 @@ RZ_API void rz_analysis_data_free(RzAnalysisData *d) {
 	}
 }
 
-RZ_API RzAnalysisData *rz_analysis_data(RzAnalysis *anal, ut64 addr, const ut8 *buf, int size, int wordsize) {
+RZ_API RzAnalysisData *rz_analysis_data(RzAnalysis *analysis, ut64 addr, const ut8 *buf, int size, int wordsize) {
 	ut64 dst = 0;
 	int n, nsize = 0;
-	int bits = anal->bits;
+	int bits = analysis->bits;
 	int word = wordsize? wordsize: RZ_MIN (8, bits / 8);
 
 	if (size < 4) {
@@ -317,7 +317,7 @@ RZ_API RzAnalysisData *rz_analysis_data(RzAnalysis *anal, ut64 addr, const ut8 *
 		return rz_analysis_data_new (addr, RZ_ANAL_DATA_TYPE_HEADER, -1, buf, word);
 	}
 	if (size >= word) {
-		dst = is_pointer (anal, buf, word);
+		dst = is_pointer (analysis, buf, word);
 		if (dst) {
 			return rz_analysis_data_new (addr, RZ_ANAL_DATA_TYPE_POINTER, dst, buf, word);
 		}

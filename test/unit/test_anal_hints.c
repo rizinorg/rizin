@@ -59,274 +59,274 @@ bool hint_equals(const RzAnalysisHint *a, const RzAnalysisHint *b) {
 } while (0)
 
 bool test_r_anal_addr_hints() {
-	RzAnalysis *anal = rz_analysis_new ();
-	RzAnalysisHint *hint = rz_analysis_hint_get (anal, 0x1337);
+	RzAnalysis *analysis = rz_analysis_new ();
+	RzAnalysisHint *hint = rz_analysis_hint_get (analysis, 0x1337);
 	assert_hint_eq (hint, &empty_hint);
 	rz_analysis_hint_free (hint);
 
 	RzAnalysisHint cur = empty_hint;
 #define CHECK \
-	hint = rz_analysis_hint_get (anal, 0x1337); \
+	hint = rz_analysis_hint_get (analysis, 0x1337); \
 	assert_hint_eq (hint, &cur); \
 	rz_analysis_hint_free (hint);
-	hint = rz_analysis_hint_get (anal, 0x1338); \
+	hint = rz_analysis_hint_get (analysis, 0x1338); \
 	assert_hint_eq (hint, &empty_hint); \
 	rz_analysis_hint_free (hint);
-	hint = rz_analysis_hint_get (anal, 0x1336); \
+	hint = rz_analysis_hint_get (analysis, 0x1336); \
 	assert_hint_eq (hint, &empty_hint); \
 	rz_analysis_hint_free (hint);
 
 	// set --------
 
-	rz_analysis_hint_set_syntax (anal, 0x1337, "mysyntax");
+	rz_analysis_hint_set_syntax (analysis, 0x1337, "mysyntax");
 	cur.syntax = "mysyntax";
 	CHECK
 
-	rz_analysis_hint_set_type (anal, 0x1337, RZ_ANAL_OP_TYPE_RET);
+	rz_analysis_hint_set_type (analysis, 0x1337, RZ_ANAL_OP_TYPE_RET);
 	cur.type = RZ_ANAL_OP_TYPE_RET;
 	CHECK
 
-	rz_analysis_hint_set_jump (anal, 0x1337, 0xdeadbeef);
+	rz_analysis_hint_set_jump (analysis, 0x1337, 0xdeadbeef);
 	cur.jump = 0xdeadbeef;
 	CHECK
 
-	rz_analysis_hint_set_fail (anal, 0x1337, 0xc0ffee);
+	rz_analysis_hint_set_fail (analysis, 0x1337, 0xc0ffee);
 	cur.fail = 0xc0ffee;
 	CHECK
 
-	rz_analysis_hint_set_nword (anal, 0x1337, 42);
+	rz_analysis_hint_set_nword (analysis, 0x1337, 42);
 	cur.nword = 42;
 	CHECK
 
-	rz_analysis_hint_set_offset (anal, 0x1337, "mytypeoff");
+	rz_analysis_hint_set_offset (analysis, 0x1337, "mytypeoff");
 	cur.offset = "mytypeoff";
 	CHECK
 
-	rz_analysis_hint_set_immbase (anal, 0x1337, 7);
+	rz_analysis_hint_set_immbase (analysis, 0x1337, 7);
 	cur.immbase = 7;
 	CHECK
 
-	rz_analysis_hint_set_size (anal, 0x1337, 0x123);
+	rz_analysis_hint_set_size (analysis, 0x1337, 0x123);
 	cur.size = 0x123;
 	CHECK
 
-	rz_analysis_hint_set_opcode (anal, 0x1337, "myopcode");
+	rz_analysis_hint_set_opcode (analysis, 0x1337, "myopcode");
 	cur.opcode = "myopcode";
 	CHECK
 
-	rz_analysis_hint_set_esil (anal, 0x1337, "/,-rf,rm");
+	rz_analysis_hint_set_esil (analysis, 0x1337, "/,-rf,rm");
 	cur.esil = "/,-rf,rm";
 	CHECK
 
-	rz_analysis_hint_set_pointer (anal, 0x1337, 0x4242);
+	rz_analysis_hint_set_pointer (analysis, 0x1337, 0x4242);
 	cur.ptr = 0x4242;
 	CHECK
 
-	rz_analysis_hint_set_ret (anal, 0x1337, 0xf00d);
+	rz_analysis_hint_set_ret (analysis, 0x1337, 0xf00d);
 	cur.ret = 0xf00d;
 	CHECK
 
-	rz_analysis_hint_set_high (anal, 0x1337);
+	rz_analysis_hint_set_high (analysis, 0x1337);
 	cur.high = true;
 	CHECK
 
-	rz_analysis_hint_set_stackframe (anal, 0x1337, 0x4321);
+	rz_analysis_hint_set_stackframe (analysis, 0x1337, 0x4321);
 	cur.stackframe = 0x4321;
 	CHECK
 
-	rz_analysis_hint_set_val (anal, 0x1337, 0x112358d);
+	rz_analysis_hint_set_val (analysis, 0x1337, 0x112358d);
 	cur.val = 0x112358d;
 	CHECK
 
-	rz_analysis_hint_set_newbits (anal, 0x1337, 16);
+	rz_analysis_hint_set_newbits (analysis, 0x1337, 16);
 	cur.new_bits = 16;
 	CHECK
 
 	// unset --------
 
-	rz_analysis_hint_unset_syntax (anal, 0x1337);
+	rz_analysis_hint_unset_syntax (analysis, 0x1337);
 	cur.syntax = NULL;
 	CHECK
 
-	rz_analysis_hint_unset_type (anal, 0x1337);
+	rz_analysis_hint_unset_type (analysis, 0x1337);
 	cur.type = 0;
 	CHECK
 
-	rz_analysis_hint_unset_jump (anal, 0x1337);
+	rz_analysis_hint_unset_jump (analysis, 0x1337);
 	cur.jump = UT64_MAX;
 	CHECK
 
-	rz_analysis_hint_unset_fail (anal, 0x1337);
+	rz_analysis_hint_unset_fail (analysis, 0x1337);
 	cur.fail = UT64_MAX;
 	CHECK
 
-	rz_analysis_hint_unset_nword (anal, 0x1337);
+	rz_analysis_hint_unset_nword (analysis, 0x1337);
 	cur.nword = 0;
 	CHECK
 
-	rz_analysis_hint_unset_offset (anal, 0x1337);
+	rz_analysis_hint_unset_offset (analysis, 0x1337);
 	cur.offset = NULL;
 	CHECK
 
-	rz_analysis_hint_unset_immbase (anal, 0x1337);
+	rz_analysis_hint_unset_immbase (analysis, 0x1337);
 	cur.immbase = 0;
 	CHECK
 
-	rz_analysis_hint_unset_size (anal, 0x1337);
+	rz_analysis_hint_unset_size (analysis, 0x1337);
 	cur.size = 0;
 	CHECK
 
-	rz_analysis_hint_unset_opcode (anal, 0x1337);
+	rz_analysis_hint_unset_opcode (analysis, 0x1337);
 	cur.opcode = NULL;
 	CHECK
 
-	rz_analysis_hint_unset_esil (anal, 0x1337);
+	rz_analysis_hint_unset_esil (analysis, 0x1337);
 	cur.esil = NULL;
 	CHECK
 
-	rz_analysis_hint_unset_pointer (anal, 0x1337);
+	rz_analysis_hint_unset_pointer (analysis, 0x1337);
 	cur.ptr = 0;
 	CHECK
 
-	rz_analysis_hint_unset_ret (anal, 0x1337);
+	rz_analysis_hint_unset_ret (analysis, 0x1337);
 	cur.ret = UT64_MAX;
 	CHECK
 
-	rz_analysis_hint_unset_high (anal, 0x1337);
+	rz_analysis_hint_unset_high (analysis, 0x1337);
 	cur.high = false;
 	CHECK
 
-	rz_analysis_hint_unset_stackframe (anal, 0x1337);
+	rz_analysis_hint_unset_stackframe (analysis, 0x1337);
 	cur.stackframe = UT64_MAX;
 	CHECK
 
-	rz_analysis_hint_unset_val (anal, 0x1337);
+	rz_analysis_hint_unset_val (analysis, 0x1337);
 	cur.val = UT64_MAX;
 	CHECK
 
-	rz_analysis_hint_unset_newbits (anal, 0x1337);
+	rz_analysis_hint_unset_newbits (analysis, 0x1337);
 	cur.new_bits = 0;
 	//CHECK
-	hint = rz_analysis_hint_get (anal, 0x1337);
+	hint = rz_analysis_hint_get (analysis, 0x1337);
 	assert_hint_eq (hint, &empty_hint);
 	rz_analysis_hint_free (hint);
 
-	rz_analysis_free (anal);
+	rz_analysis_free (analysis);
 	mu_end;
 #undef CHECK
 }
 
 #define RANGED_TEST(name, val, resetval, assert_val) \
 bool test_r_anal_hints_##name() { \
-	RzAnalysis *anal = rz_analysis_new (); \
+	RzAnalysis *analysis = rz_analysis_new (); \
 	\
 	ut64 hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, 0x1337, &hint_addr), resetval, "no " #name ""); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, 0x1337, &hint_addr), resetval, "no " #name ""); \
 	mu_assert_eq (hint_addr, UT64_MAX, "hint addr"); \
 	\
-	rz_analysis_hint_##name##_at (anal, 0x1337, NULL); /* make sure this does not null-deref */ \
+	rz_analysis_hint_##name##_at (analysis, 0x1337, NULL); /* make sure this does not null-deref */ \
 	\
 	/* -- */ \
-	rz_analysis_hint_set_##name (anal, 0x1337, val); \
+	rz_analysis_hint_set_##name (analysis, 0x1337, val); \
 	\
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, 0x1337, &hint_addr), val, #name " at addr"); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, 0x1337, &hint_addr), val, #name " at addr"); \
 	mu_assert_eq (hint_addr, 0x1337, "hint addr"); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, 0x1338, &hint_addr), val, #name " after addr"); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, 0x1338, &hint_addr), val, #name " after addr"); \
 	mu_assert_eq (hint_addr, 0x1337, "hint addr"); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, UT64_MAX, &hint_addr), val, #name " after addr"); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, UT64_MAX, &hint_addr), val, #name " after addr"); \
 	mu_assert_eq (hint_addr, 0x1337, "hint addr"); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, 0x1336, &hint_addr), resetval, "no " #name " before addr"); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, 0x1336, &hint_addr), resetval, "no " #name " before addr"); \
 	mu_assert_eq (hint_addr, UT64_MAX, "hint addr"); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, 0, &hint_addr), resetval, "no " #name " before addr"); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, 0, &hint_addr), resetval, "no " #name " before addr"); \
 	mu_assert_eq (hint_addr, UT64_MAX, "hint addr"); \
 	\
-	rz_analysis_hint_##name##_at (anal, 0x1337, NULL); /* make sure this does not null-deref */ \
+	rz_analysis_hint_##name##_at (analysis, 0x1337, NULL); /* make sure this does not null-deref */ \
 	\
 	RzAnalysisHint cur = empty_hint; \
 	cur.name = val; \
-	RzAnalysisHint *hint = rz_analysis_hint_get (anal, 0x1337); \
+	RzAnalysisHint *hint = rz_analysis_hint_get (analysis, 0x1337); \
 	assert_hint_eq (hint, &cur); \
 	rz_analysis_hint_free (hint); \
-	hint = rz_analysis_hint_get (anal, 0x1338); \
+	hint = rz_analysis_hint_get (analysis, 0x1338); \
 	assert_hint_eq (hint, &cur); \
 	rz_analysis_hint_free (hint); \
-	hint = rz_analysis_hint_get (anal, 0x1336); \
+	hint = rz_analysis_hint_get (analysis, 0x1336); \
 	assert_hint_eq (hint, &empty_hint); \
 	rz_analysis_hint_free (hint); \
 	\
 	/* -- */ \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, 0xdeadbeef, &hint_addr), val, "before reset " #name " at addr"); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, 0xdeadbeef, &hint_addr), val, "before reset " #name " at addr"); \
 	mu_assert_eq (hint_addr, 0x1337, "hint addr"); \
-	rz_analysis_hint_set_##name (anal, 0xdeadbeef, resetval); \
+	rz_analysis_hint_set_##name (analysis, 0xdeadbeef, resetval); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, 0xdeadbeef, &hint_addr), resetval, "reset " #name " at addr"); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, 0xdeadbeef, &hint_addr), resetval, "reset " #name " at addr"); \
 	mu_assert_eq (hint_addr, 0xdeadbeef, "hint addr"); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, 0xdeadbeef + 1, &hint_addr), resetval, "reset " #name " after addr"); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, 0xdeadbeef + 1, &hint_addr), resetval, "reset " #name " after addr"); \
 	mu_assert_eq (hint_addr, 0xdeadbeef, "hint addr"); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, UT64_MAX, &hint_addr), resetval, "reset " #name " after addr"); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, UT64_MAX, &hint_addr), resetval, "reset " #name " after addr"); \
 	mu_assert_eq (hint_addr, 0xdeadbeef, "hint addr"); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, 0xdeadbeef - 1, &hint_addr), val, "" #name " before addr"); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, 0xdeadbeef - 1, &hint_addr), val, "" #name " before addr"); \
 	mu_assert_eq (hint_addr, 0x1337, "hint addr"); \
 	\
 	/* -- */ \
-	rz_analysis_hint_unset_##name (anal, 0xdeadbeef); \
+	rz_analysis_hint_unset_##name (analysis, 0xdeadbeef); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, 0x1337, &hint_addr), val, #name " at addr"); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, 0x1337, &hint_addr), val, #name " at addr"); \
 	mu_assert_eq (hint_addr, 0x1337, "hint addr"); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, 0x1338, &hint_addr), val, #name " after addr"); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, 0x1338, &hint_addr), val, #name " after addr"); \
 	mu_assert_eq (hint_addr, 0x1337, "hint addr"); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, UT64_MAX, &hint_addr), val, #name " after addr"); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, UT64_MAX, &hint_addr), val, #name " after addr"); \
 	mu_assert_eq (hint_addr, 0x1337, "hint addr"); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, 0x1336, &hint_addr), resetval, "no " #name " before addr"); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, 0x1336, &hint_addr), resetval, "no " #name " before addr"); \
 	mu_assert_eq (hint_addr, UT64_MAX, "hint addr"); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, 0, &hint_addr), resetval, "no " #name " before addr"); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, 0, &hint_addr), resetval, "no " #name " before addr"); \
 	mu_assert_eq (hint_addr, UT64_MAX, "hint addr"); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, 0xdeadbeef, &hint_addr), val, "unset reset " #name " at addr"); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, 0xdeadbeef, &hint_addr), val, "unset reset " #name " at addr"); \
 	mu_assert_eq (hint_addr, 0x1337, "hint addr"); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, 0xdeadbeef + 1, &hint_addr), val, "unset reset " #name " after addr"); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, 0xdeadbeef + 1, &hint_addr), val, "unset reset " #name " after addr"); \
 	mu_assert_eq (hint_addr, 0x1337, "hint addr"); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, UT64_MAX, &hint_addr), val, "unset reset " #name " after addr"); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, UT64_MAX, &hint_addr), val, "unset reset " #name " after addr"); \
 	mu_assert_eq (hint_addr, 0x1337, "hint addr"); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, 0xdeadbeef - 1, &hint_addr), val, #name " before addr"); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, 0xdeadbeef - 1, &hint_addr), val, #name " before addr"); \
 	mu_assert_eq (hint_addr, 0x1337, "hint addr"); \
 	\
 	/* -- */ \
-	rz_analysis_hint_unset_##name (anal, 0x1337); \
+	rz_analysis_hint_unset_##name (analysis, 0x1337); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, 0x1336, &hint_addr), resetval, "unset " #name ""); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, 0x1336, &hint_addr), resetval, "unset " #name ""); \
 	mu_assert_eq (hint_addr, UT64_MAX, "hint addr"); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, 0, &hint_addr), resetval, "unset " #name ""); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, 0, &hint_addr), resetval, "unset " #name ""); \
 	mu_assert_eq (hint_addr, UT64_MAX, "hint addr"); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, 0x1337, &hint_addr), resetval, "unset " #name ""); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, 0x1337, &hint_addr), resetval, "unset " #name ""); \
 	mu_assert_eq (hint_addr, UT64_MAX, "hint addr"); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, 0x1338, &hint_addr), resetval, "unset " #name ""); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, 0x1338, &hint_addr), resetval, "unset " #name ""); \
 	mu_assert_eq (hint_addr, UT64_MAX, "hint addr"); \
 	hint_addr = 0xdead; \
-	assert_val (rz_analysis_hint_##name##_at (anal, UT64_MAX, &hint_addr), resetval, "unset " #name ""); \
+	assert_val (rz_analysis_hint_##name##_at (analysis, UT64_MAX, &hint_addr), resetval, "unset " #name ""); \
 	mu_assert_eq (hint_addr, UT64_MAX, "hint addr"); \
 	hint_addr = 0xdead; \
 	\
-	rz_analysis_free (anal); \
+	rz_analysis_free (analysis); \
 	mu_end; \
 }
 

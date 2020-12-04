@@ -923,7 +923,7 @@ RZ_API void rz_analysis_esil_dfg_free(RzAnalysisEsilDFG *dfg) {
 	}
 }
 
-RZ_API RzAnalysisEsilDFG *rz_analysis_esil_dfg_expr(RzAnalysis *anal, RzAnalysisEsilDFG *dfg, const char *expr) {
+RZ_API RzAnalysisEsilDFG *rz_analysis_esil_dfg_expr(RzAnalysis *analysis, RzAnalysisEsilDFG *dfg, const char *expr) {
 	if (!expr) {
 		return NULL;
 	}
@@ -931,9 +931,9 @@ RZ_API RzAnalysisEsilDFG *rz_analysis_esil_dfg_expr(RzAnalysis *anal, RzAnalysis
 	if (!esil) {
 		return NULL;
 	}
-	esil->anal = anal;
+	esil->analysis = analysis;
 
-	RzAnalysisEsilDFG *edf = dfg ? dfg : rz_analysis_esil_dfg_new (anal->reg);
+	RzAnalysisEsilDFG *edf = dfg ? dfg : rz_analysis_esil_dfg_new (analysis->reg);
 	if (!edf) {
 		rz_analysis_esil_free (esil);
 		return NULL;
@@ -1084,11 +1084,11 @@ RZ_API RzStrBuf *rz_analysis_esil_dfg_filter(RzAnalysisEsilDFG *dfg, const char 
 	return filtered;
 }
 
-RZ_API RzStrBuf *rz_analysis_esil_dfg_filter_expr(RzAnalysis *anal, const char *expr, const char *reg) {
+RZ_API RzStrBuf *rz_analysis_esil_dfg_filter_expr(RzAnalysis *analysis, const char *expr, const char *reg) {
 	if (!reg) {
 		return NULL;
 	}
-	RzAnalysisEsilDFG *dfg = rz_analysis_esil_dfg_expr (anal, NULL, expr);
+	RzAnalysisEsilDFG *dfg = rz_analysis_esil_dfg_expr (analysis, NULL, expr);
 	if (!dfg) {
 		return NULL;
 	}

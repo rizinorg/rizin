@@ -243,7 +243,7 @@ which contains information on how the instructions are expressed in ESIL and
 other opcode information such as cycle counts per instruction:
 
 ````
-static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int avr_op(RAnal *analysis, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
   short ofst;
     int d, r, k;
     (...)

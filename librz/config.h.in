@@ -16,7 +16,7 @@
 #define RZ_DEBUG_STATIC_PLUGINS @plugins_debug@
 #define RZ_BP_STATIC_PLUGINS @plugins_bp@
 #define RZ_ASM_STATIC_PLUGINS @plugins_asm@
-#define RZ_ANAL_STATIC_PLUGINS @plugins_anal@
+#define RZ_ANALYSIS_STATIC_PLUGINS @plugins_analysis@
 #define RZ_CORE_STATIC_PLUGINS @plugins_core@
 #define RZ_LANG_STATIC_PLUGINS @plugins_lang@
 #define RZ_PARSE_STATIC_PLUGINS @plugins_parse@

@@ -20,7 +20,7 @@ static void loadGP(RzCore *core) {
 			rz_config_set (core->config, "anal.roregs", "zero");
 			rz_core_cmd0 (core, "10aes@entry0");
 			rz_config_set (core->config, "anal.roregs", "zero,gp");
-			gp = rz_reg_getv (core->anal->reg, "gp");
+			gp = rz_reg_getv (core->analysis->reg, "gp");
 		}
 		// eprintf ("[mips] gp: 0x%08"PFMT64x"\n", gp);
 		rz_config_set_i (core->config, "anal.gp", gp);
@@ -190,7 +190,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 		loadGP (core);
 	}
 	// update anal io bind
-	rz_io_bind (core->io, &(core->anal->iob));
+	rz_io_bind (core->io, &(core->analysis->iob));
 	if (core->file && core->file->fd >= 0) {
 		rz_core_cmd0 (core, "o-!");
 	}
@@ -439,7 +439,7 @@ static int rz_core_file_do_load_for_io_plugin(RzCore *r, ut64 baseaddr, ut64 loa
 	}
 	binfile = rz_bin_cur (r->bin);
 	if (rz_core_bin_set_env (r, binfile)) {
-		if (!r->anal->sdb_cc->path) {
+		if (!r->analysis->sdb_cc->path) {
 			RZ_LOG_WARN ("No calling convention defined for this file, analysis may be inaccurate.\n");
 		}
 	}
@@ -786,23 +786,23 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 			rz_bin_info_free (inf);
 		}
 		if (binfile->o->regstate) {
-			if (rz_reg_arena_set_bytes (r->anal->reg, binfile->o->regstate)) {
+			if (rz_reg_arena_set_bytes (r->analysis->reg, binfile->o->regstate)) {
 				eprintf ("Setting up coredump: Problem while setting the registers\n");
 			} else {
 				eprintf ("Setting up coredump: Registers have been set\n");
-				const char *regname = rz_reg_get_name (r->anal->reg, RZ_REG_NAME_SP);
+				const char *regname = rz_reg_get_name (r->analysis->reg, RZ_REG_NAME_SP);
 				if (regname) {
-					RzRegItem *reg = rz_reg_get (r->anal->reg, regname, -1);
+					RzRegItem *reg = rz_reg_get (r->analysis->reg, regname, -1);
 					if (reg) {
-						sp_addr = rz_reg_get_value (r->anal->reg, reg);
+						sp_addr = rz_reg_get_value (r->analysis->reg, reg);
 						stack_map = rz_io_map_get (r->io, sp_addr);
 					}
 				}
-				regname = rz_reg_get_name (r->anal->reg, RZ_REG_NAME_PC);
+				regname = rz_reg_get_name (r->analysis->reg, RZ_REG_NAME_PC);
 				if (regname) {
-					RzRegItem *reg = rz_reg_get (r->anal->reg, regname, -1);
+					RzRegItem *reg = rz_reg_get (r->analysis->reg, regname, -1);
 					if (reg) {
-						ut64 seek = rz_reg_get_value (r->anal->reg, reg);
+						ut64 seek = rz_reg_get_value (r->analysis->reg, reg);
 						rz_core_seek (r, seek, true);
 					}
 				}

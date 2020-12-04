@@ -304,7 +304,7 @@ typedef struct rz_debug_t {
 
 	RzEvent *ev;
 
-	RzAnalysis *anal;
+	RzAnalysis *analysis;
 	RzList *maps; // <RzDebugMap>
 	RzList *maps_user; // <RzDebugMap>
 

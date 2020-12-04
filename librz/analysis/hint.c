@@ -136,8 +136,8 @@ RZ_API void rz_analysis_hint_del(RzAnalysis *a, ut64 addr, ut64 size) {
 	}
 }
 
-static void unset_addr_hint_record(RzAnalysis *anal, RzAnalysisAddrHintType type, ut64 addr) {
-	RzVector *records = ht_up_find (anal->addr_hints, addr, NULL);
+static void unset_addr_hint_record(RzAnalysis *analysis, RzAnalysisAddrHintType type, ut64 addr) {
+	RzVector *records = ht_up_find (analysis->addr_hints, addr, NULL);
 	if (!records) {
 		return;
 	}
@@ -153,14 +153,14 @@ static void unset_addr_hint_record(RzAnalysis *anal, RzAnalysisAddrHintType type
 }
 
 // create or return the existing addr hint record of the given type at addr
-static RzAnalysisAddrHintRecord *ensure_addr_hint_record(RzAnalysis *anal, RzAnalysisAddrHintType type, ut64 addr) {
-	RzVector *records = ht_up_find (anal->addr_hints, addr, NULL);
+static RzAnalysisAddrHintRecord *ensure_addr_hint_record(RzAnalysis *analysis, RzAnalysisAddrHintType type, ut64 addr) {
+	RzVector *records = ht_up_find (analysis->addr_hints, addr, NULL);
 	if (!records) {
 		records = rz_vector_new (sizeof (RzAnalysisAddrHintRecord), addr_hint_record_fini, NULL);
 		if (!records) {
 			return NULL;
 		}
-		ht_up_insert (anal->addr_hints, addr, records);
+		ht_up_insert (analysis->addr_hints, addr, records);
 	}
 	void *pos;
 	rz_vector_foreach (records, pos) {
@@ -381,8 +381,8 @@ RZ_API void rz_analysis_hint_free(RzAnalysisHint *h) {
 	}
 }
 
-RZ_API RZ_NULLABLE RZ_BORROW const char *rz_analysis_hint_arch_at(RzAnalysis *anal, ut64 addr, RZ_NULLABLE ut64 *hint_addr) {
-	RBNode *node = rz_rbtree_upper_bound (anal->arch_hints, &addr, ranged_hint_record_cmp, NULL);
+RZ_API RZ_NULLABLE RZ_BORROW const char *rz_analysis_hint_arch_at(RzAnalysis *analysis, ut64 addr, RZ_NULLABLE ut64 *hint_addr) {
+	RBNode *node = rz_rbtree_upper_bound (analysis->arch_hints, &addr, ranged_hint_record_cmp, NULL);
 	if (!node) {
 		if (hint_addr) {
 			*hint_addr = UT64_MAX;
@@ -396,8 +396,8 @@ RZ_API RZ_NULLABLE RZ_BORROW const char *rz_analysis_hint_arch_at(RzAnalysis *an
 	return record->arch;
 }
 
-RZ_API int rz_analysis_hint_bits_at(RzAnalysis *anal, ut64 addr, RZ_NULLABLE ut64 *hint_addr) {
-	RBNode *node = rz_rbtree_upper_bound (anal->bits_hints, &addr, ranged_hint_record_cmp, NULL);
+RZ_API int rz_analysis_hint_bits_at(RzAnalysis *analysis, ut64 addr, RZ_NULLABLE ut64 *hint_addr) {
+	RBNode *node = rz_rbtree_upper_bound (analysis->bits_hints, &addr, ranged_hint_record_cmp, NULL);
 	if (!node) {
 		if (hint_addr) {
 			*hint_addr = UT64_MAX;
@@ -411,8 +411,8 @@ RZ_API int rz_analysis_hint_bits_at(RzAnalysis *anal, ut64 addr, RZ_NULLABLE ut6
 	return record->bits;
 }
 
-RZ_API RZ_NULLABLE const RzVector/*<const RzAnalysisAddrHintRecord>*/ *rz_analysis_addr_hints_at(RzAnalysis *anal, ut64 addr) {
-	return ht_up_find (anal->addr_hints, addr, NULL);
+RZ_API RZ_NULLABLE const RzVector/*<const RzAnalysisAddrHintRecord>*/ *rz_analysis_addr_hints_at(RzAnalysis *analysis, ut64 addr) {
+	return ht_up_find (analysis->addr_hints, addr, NULL);
 }
 
 typedef struct {
@@ -425,15 +425,15 @@ static bool addr_hint_foreach_cb(void *user, const ut64 key, const void *value) 
 	return ctx->cb (key, value, ctx->user);
 }
 
-RZ_API void rz_analysis_addr_hints_foreach(RzAnalysis *anal, RzAnalysisAddrHintRecordsCb cb, void *user) {
+RZ_API void rz_analysis_addr_hints_foreach(RzAnalysis *analysis, RzAnalysisAddrHintRecordsCb cb, void *user) {
 	AddrHintForeachCtx ctx = { cb, user };
-	ht_up_foreach (anal->addr_hints, addr_hint_foreach_cb, &ctx);
+	ht_up_foreach (analysis->addr_hints, addr_hint_foreach_cb, &ctx);
 }
 
-RZ_API void rz_analysis_arch_hints_foreach(RzAnalysis *anal, RzAnalysisArchHintCb cb, void *user) {
+RZ_API void rz_analysis_arch_hints_foreach(RzAnalysis *analysis, RzAnalysisArchHintCb cb, void *user) {
 	RBIter iter;
 	RzAnalysisRangedHintRecordBase *record;
-	rz_rbtree_foreach (anal->arch_hints, iter, record, RzAnalysisRangedHintRecordBase, rb) {
+	rz_rbtree_foreach (analysis->arch_hints, iter, record, RzAnalysisRangedHintRecordBase, rb) {
 		bool cont = cb (record->addr, ((RzAnalysisArchHintRecord *)record)->arch, user);
 		if (!cont) {
 			break;
@@ -441,10 +441,10 @@ RZ_API void rz_analysis_arch_hints_foreach(RzAnalysis *anal, RzAnalysisArchHintC
 	}
 }
 
-RZ_API void rz_analysis_bits_hints_foreach(RzAnalysis *anal, RzAnalysisBitsHintCb cb, void *user) {
+RZ_API void rz_analysis_bits_hints_foreach(RzAnalysis *analysis, RzAnalysisBitsHintCb cb, void *user) {
 	RBIter iter;
 	RzAnalysisRangedHintRecordBase *record;
-	rz_rbtree_foreach (anal->bits_hints, iter, record, RzAnalysisRangedHintRecordBase, rb) {
+	rz_rbtree_foreach (analysis->bits_hints, iter, record, RzAnalysisRangedHintRecordBase, rb) {
 		bool cont = cb (record->addr, ((RzAnalysisBitsHintRecord *)record)->bits, user);
 		if (!cont) {
 			break;

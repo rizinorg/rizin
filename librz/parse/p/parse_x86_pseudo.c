@@ -346,7 +346,7 @@ static inline void mk_reg_str(const char *regname, int delta, bool sign, bool at
 
 static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RzList *bpargs, *spargs;
-	RzAnalysis *anal = p->analb.anal;
+	RzAnalysis *analysis = p->analb.analysis;
 	RzListIter *bpargiter, *spiter;
 	char oldstr[64], newstr[64];
 	char *tstr = strdup (data);
@@ -441,7 +441,7 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char
 			reg = p->get_reg_at (f, sparg->delta, addr);
 		}
 		if (!reg) {
-			reg = anal->reg->name[RZ_REG_NAME_SP];
+			reg = analysis->reg->name[RZ_REG_NAME_SP];
 		}
 		mk_reg_str (reg, delta, sign == '+', att, ireg, oldstr, sizeof (oldstr));
 
@@ -488,7 +488,7 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char
 			reg = p->get_reg_at (f, bparg->delta, addr);
 		}
 		if (!reg) {
-			reg = anal->reg->name[RZ_REG_NAME_BP];
+			reg = analysis->reg->name[RZ_REG_NAME_BP];
 		}
 		mk_reg_str (reg, delta, sign == '+', att, ireg, oldstr, sizeof (oldstr));
 		if (ucase) {
@@ -522,8 +522,8 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char
 	}
 
 	char bp[32];
-	if (anal->reg->name[RZ_REG_NAME_BP]) {
-		strncpy (bp, anal->reg->name[RZ_REG_NAME_BP], sizeof (bp) - 1);
+	if (analysis->reg->name[RZ_REG_NAME_BP]) {
+		strncpy (bp, analysis->reg->name[RZ_REG_NAME_BP], sizeof (bp) - 1);
 		if (isupper ((ut8)*str)) {
 			rz_str_case (bp, true);
 		}

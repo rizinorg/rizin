@@ -32,7 +32,7 @@ static int prestep = 1; // TODO: make it configurable
 static ut64 opc = 0;
 RzList *esil_watchpoints = NULL;
 #define EWPS esil_watchpoints
-#define ESIL dbg->anal->esil
+#define ESIL dbg->analysis->esil
 
 static int exprmatch (RzDebug *dbg, ut64 addr, const char *expr) {
 	char *e = strdup (expr);
@@ -232,7 +232,7 @@ RZ_API int rz_debug_esil_stepi (RzDebug *d) {
 
 	//dbg->iob.read_at (dbg->iob.io, npc, buf, sizeof (buf));
 
-	//dbg->anal->reg = dbg->reg; // hack
+	//dbg->analysis->reg = dbg->reg; // hack
 	ESIL->cb.hook_mem_read = &esilbreak_mem_read;
 	ESIL->cb.hook_mem_write = &esilbreak_mem_write;
 	ESIL->cb.hook_reg_read = &esilbreak_reg_read;
@@ -249,7 +249,7 @@ RZ_API int rz_debug_esil_stepi (RzDebug *d) {
 		//	npc = rz_debug_reg_get (dbg, dbg->reg->name[RZ_REG_NAME_PC]);
 	}
 
-	if (rz_analysis_op (dbg->anal, &op, opc, obuf, sizeof (obuf), RZ_ANAL_OP_MASK_ESIL)) {
+	if (rz_analysis_op (dbg->analysis, &op, opc, obuf, sizeof (obuf), RZ_ANAL_OP_MASK_ESIL)) {
 		if (esilbreak_check_pc (dbg, opc)) {
 			eprintf ("STOP AT 0x%08"PFMT64x"\n", opc);
 			ret = 0;

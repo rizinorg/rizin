@@ -340,20 +340,20 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 			eprintf ("Usage: CC, [file]\n");
 		} else if (input[2] == ' ') {
 			const char *fn = input+2;
-			const char *comment = rz_meta_get_string (core->anal, RZ_META_TYPE_COMMENT, addr);
+			const char *comment = rz_meta_get_string (core->analysis, RZ_META_TYPE_COMMENT, addr);
 			while (*fn== ' ')fn++;
 			if (comment && *comment) {
 				// append filename in current comment
 				char *nc = rz_str_newf ("%s ,(%s)", comment, fn);
-				rz_meta_set_string (core->anal, RZ_META_TYPE_COMMENT, addr, nc);
+				rz_meta_set_string (core->analysis, RZ_META_TYPE_COMMENT, addr, nc);
 				free (nc);
 			} else {
 				char *newcomment = rz_str_newf (",(%s)", fn);
-				rz_meta_set_string (core->anal, RZ_META_TYPE_COMMENT, addr, newcomment);
+				rz_meta_set_string (core->analysis, RZ_META_TYPE_COMMENT, addr, newcomment);
 				free (newcomment);
 			}
 		} else {
-			const char *comment = rz_meta_get_string (core->anal, RZ_META_TYPE_COMMENT, addr);
+			const char *comment = rz_meta_get_string (core->analysis, RZ_META_TYPE_COMMENT, addr);
 			if (comment && *comment) {
 				char *cmtfile = rz_str_between (comment, ",(", ")");
 				if (cmtfile && *cmtfile) {
@@ -368,14 +368,14 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 	case '.':
 		  {
 			  ut64 at = input[2]? rz_num_math (core->num, input + 2): addr;
-			  const char *comment = rz_meta_get_string (core->anal, RZ_META_TYPE_COMMENT, at);
+			  const char *comment = rz_meta_get_string (core->analysis, RZ_META_TYPE_COMMENT, at);
 			  if (comment) {
 				  rz_cons_println (comment);
 			  }
 		  }
 		break;
 	case 0: // "CC"
-		rz_meta_print_list_all (core->anal, RZ_META_TYPE_COMMENT, 0);
+		rz_meta_print_list_all (core->analysis, RZ_META_TYPE_COMMENT, 0);
 		break;
 	case 'f': // "CCf"
 		switch (input[2]) {
@@ -385,7 +385,7 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 				if (!arg) {
 					arg = core->offset;
 				}
-				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, arg, 0);
+				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, arg, 0);
 				if (fcn) {
 					RzAnalysisBlock *bb;
 					RzListIter *iter;
@@ -393,36 +393,36 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 						int i;
 						for (i = 0; i < bb->size; i++) {
 							ut64 addr = bb->addr + i;
-							rz_meta_del (core->anal, RZ_META_TYPE_COMMENT, addr, 1);
+							rz_meta_del (core->analysis, RZ_META_TYPE_COMMENT, addr, 1);
 						}
 					}
 				}
 			}
 			break;
 		case 'j': // "CCfj"
-			rz_meta_print_list_in_function (core->anal, RZ_META_TYPE_COMMENT, 'j', core->offset);
+			rz_meta_print_list_in_function (core->analysis, RZ_META_TYPE_COMMENT, 'j', core->offset);
 			break;
 		case '*': // "CCf*"
-			rz_meta_print_list_in_function (core->anal, RZ_META_TYPE_COMMENT, 1, core->offset);
+			rz_meta_print_list_in_function (core->analysis, RZ_META_TYPE_COMMENT, 1, core->offset);
 			break;
 		default:
-			rz_meta_print_list_in_function (core->anal, RZ_META_TYPE_COMMENT, 0, core->offset);
+			rz_meta_print_list_in_function (core->analysis, RZ_META_TYPE_COMMENT, 0, core->offset);
 			break;
 		}
 		break;
 	case 'j': // "CCj"
-		rz_meta_print_list_all (core->anal, RZ_META_TYPE_COMMENT, 'j');
+		rz_meta_print_list_all (core->analysis, RZ_META_TYPE_COMMENT, 'j');
 		break;
 	case '!':
 		{
 			char *out;
-			const char *comment = rz_meta_get_string (core->anal, RZ_META_TYPE_COMMENT, addr);
+			const char *comment = rz_meta_get_string (core->analysis, RZ_META_TYPE_COMMENT, addr);
 			out = rz_core_editor (core, NULL, comment);
 			if (out) {
-				//rz_meta_set (core->anal->meta, RZ_META_TYPE_COMMENT, addr, 0, out);
+				//rz_meta_set (core->analysis->meta, RZ_META_TYPE_COMMENT, addr, 0, out);
 				rz_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
-				//rz_meta_del (core->anal->meta, input[0], addr, addr+1);
-				rz_meta_set_string (core->anal,
+				//rz_meta_del (core->analysis->meta, input[0], addr, addr+1);
+				rz_meta_set_string (core->analysis,
 						RZ_META_TYPE_COMMENT, addr, out);
 				free (out);
 			}
@@ -432,7 +432,7 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 	case ' ':
 		{
 		const char *newcomment = rz_str_trim_head_ro (input + 2);
-		const char *comment = rz_meta_get_string (core->anal, RZ_META_TYPE_COMMENT, addr);
+		const char *comment = rz_meta_get_string (core->analysis, RZ_META_TYPE_COMMENT, addr);
 		char *text;
 		char *nc = strdup (newcomment);
 		rz_str_unescape (nc);
@@ -442,28 +442,28 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 				strcpy (text, comment);
 				strcat (text, " ");
 				strcat (text, nc);
-				rz_meta_set_string (core->anal, RZ_META_TYPE_COMMENT, addr, text);
+				rz_meta_set_string (core->analysis, RZ_META_TYPE_COMMENT, addr, text);
 				free (text);
 			} else {
 				rz_sys_perror ("malloc");
 			}
 		} else {
-			rz_meta_set_string (core->anal, RZ_META_TYPE_COMMENT, addr, nc);
+			rz_meta_set_string (core->analysis, RZ_META_TYPE_COMMENT, addr, nc);
 		}
 		free (nc);
 		}
 		break;
 	case '*': // "CC*"
-		rz_meta_print_list_all (core->anal, RZ_META_TYPE_COMMENT, 1);
+		rz_meta_print_list_all (core->analysis, RZ_META_TYPE_COMMENT, 1);
 		break;
 	case '-': // "CC-"
 		if (input[2] == '*') { // "CC-*"
-			rz_meta_del (core->anal, RZ_META_TYPE_COMMENT, UT64_MAX, UT64_MAX);
+			rz_meta_del (core->analysis, RZ_META_TYPE_COMMENT, UT64_MAX, UT64_MAX);
 		} else if (input[2]) { // "CC-$$+32"
 			ut64 arg = rz_num_math (core->num, input + 2);
-			rz_meta_del (core->anal, RZ_META_TYPE_COMMENT, arg, 1);
+			rz_meta_del (core->analysis, RZ_META_TYPE_COMMENT, arg, 1);
 		} else { // "CC-"
-			rz_meta_del (core->anal, RZ_META_TYPE_COMMENT, core->offset, 1);
+			rz_meta_del (core->analysis, RZ_META_TYPE_COMMENT, core->offset, 1);
 		}
 		break;
 	case 'u': // "CCu"
@@ -483,9 +483,9 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 			newcomment = strdup (arg);
 		}
 		if (newcomment) {
-			const char *comment = rz_meta_get_string (core->anal, RZ_META_TYPE_COMMENT, addr);
+			const char *comment = rz_meta_get_string (core->analysis, RZ_META_TYPE_COMMENT, addr);
 			if (!comment || (comment && !strstr (comment, newcomment))) {
-				rz_meta_set_string (core->anal, RZ_META_TYPE_COMMENT, addr, newcomment);
+				rz_meta_set_string (core->analysis, RZ_META_TYPE_COMMENT, addr, newcomment);
 			}
 			free (newcomment);
 		}
@@ -509,7 +509,7 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 		if (input[2]=='-') {
 			if (input[3]) {
 				addr = rz_num_math (core->num, input+3);
-				rz_meta_del (core->anal,
+				rz_meta_del (core->analysis,
 						RZ_META_TYPE_COMMENT,
 						addr, 1);
 			} else eprintf ("Usage: CCa-[address]\n");
@@ -520,16 +520,16 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 		// Comment at
 		if (p) {
 			if (input[2]=='+') {
-				const char *comment = rz_meta_get_string (core->anal, RZ_META_TYPE_COMMENT, addr);
+				const char *comment = rz_meta_get_string (core->analysis, RZ_META_TYPE_COMMENT, addr);
 				if (comment) {
 					char *text = rz_str_newf ("%s\n%s", comment, p);
-					rz_meta_set (core->anal, RZ_META_TYPE_COMMENT, addr, 1, text);
+					rz_meta_set (core->analysis, RZ_META_TYPE_COMMENT, addr, 1, text);
 					free (text);
 				} else {
-					rz_meta_set (core->anal, RZ_META_TYPE_COMMENT, addr, 1, p);
+					rz_meta_set (core->analysis, RZ_META_TYPE_COMMENT, addr, 1, p);
 				}
 			} else {
-				rz_meta_set (core->anal, RZ_META_TYPE_COMMENT, addr, 1, p);
+				rz_meta_set (core->analysis, RZ_META_TYPE_COMMENT, addr, 1, p);
 			}
 		} else {
 			eprintf ("Usage: CCa [address] [comment]\n");
@@ -548,24 +548,24 @@ static int cmd_meta_vartype_comment(RzCore *core, const char *input) {
 		rz_core_cmd_help (core, help_msg_Ct);
 		break;
 	case 0: // "Ct"
-		rz_meta_print_list_all (core->anal, RZ_META_TYPE_VARTYPE, 0);
+		rz_meta_print_list_all (core->analysis, RZ_META_TYPE_VARTYPE, 0);
 		break;
 	case ' ': // "Ct <vartype comment> @ addr"
 		{
 		const char* newcomment = rz_str_trim_head_ro (input + 2);
-		const char *comment = rz_meta_get_string (core->anal, RZ_META_TYPE_VARTYPE, addr);
+		const char *comment = rz_meta_get_string (core->analysis, RZ_META_TYPE_VARTYPE, addr);
 		char *nc = strdup (newcomment);
 		rz_str_unescape (nc);
 		if (comment) {
 			char *text = rz_str_newf ("%s %s", comment, nc);
 			if (text) {
-				rz_meta_set_string (core->anal, RZ_META_TYPE_VARTYPE, addr, text);
+				rz_meta_set_string (core->analysis, RZ_META_TYPE_VARTYPE, addr, text);
 				free (text);
 			} else {
 				rz_sys_perror ("malloc");
 			}
 		} else {
-			rz_meta_set_string (core->anal, RZ_META_TYPE_VARTYPE, addr, nc);
+			rz_meta_set_string (core->analysis, RZ_META_TYPE_VARTYPE, addr, nc);
 		}
 		free (nc);
 		}
@@ -573,14 +573,14 @@ static int cmd_meta_vartype_comment(RzCore *core, const char *input) {
 	case '.': // "Ct. @ addr"
 		{
 		ut64 at = input[2]? rz_num_math (core->num, input + 2): addr;
-		const char *comment = rz_meta_get_string (core->anal, RZ_META_TYPE_VARTYPE, at);
+		const char *comment = rz_meta_get_string (core->analysis, RZ_META_TYPE_VARTYPE, at);
 		if (comment) {
 			rz_cons_println (comment);
 		}
 		}
 		break;
 	case '-': // "Ct-"
-		rz_meta_del (core->anal, RZ_META_TYPE_VARTYPE, core->offset, 1);
+		rz_meta_del (core->analysis, RZ_META_TYPE_VARTYPE, core->offset, 1);
 		break;
 	default:
 		rz_core_cmd_help (core, help_msg_Ct);
@@ -624,7 +624,7 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 	case '-': // "Cf-", "Cd-", ...
 		switch (input[2]) {
 		case '*': // "Cf-*", "Cd-*", ...
-			rz_meta_del (core->anal, input[0], 0, UT64_MAX);
+			rz_meta_del (core->analysis, input[0], 0, UT64_MAX);
 			break;
 		case ' ':
 			p2 = strchr (input + 3, ' ');
@@ -637,7 +637,7 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 					break;
 				}
 				for (i = 0; i < rep && UT64_MAX - cur_addr > size; i++, cur_addr += size) {
-					rz_meta_del (core->anal, input[0], cur_addr, size);
+					rz_meta_del (core->analysis, input[0], cur_addr, size);
 				}
 				break;
 			} else {
@@ -645,26 +645,26 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 				/* fallthrough */
 			}
 		default:
-			rz_meta_del (core->anal, input[0], addr, 1);
+			rz_meta_del (core->analysis, input[0], addr, 1);
 			break;
 		}
 		break;
 	case '*': // "Cf*", "Cd*", ...
-		rz_meta_print_list_all (core->anal, input[0], 1);
+		rz_meta_print_list_all (core->analysis, input[0], 1);
 		break;
 	case 'j': // "Cfj", "Cdj", ...
-		rz_meta_print_list_all (core->anal, input[0], 'j');
+		rz_meta_print_list_all (core->analysis, input[0], 'j');
 		break;
 	case '!': // "Cf!", "Cd!", ...
 		{
 			char *out;
-			const char *comment = rz_meta_get_string (core->anal, RZ_META_TYPE_COMMENT, addr);
+			const char *comment = rz_meta_get_string (core->analysis, RZ_META_TYPE_COMMENT, addr);
 			out = rz_core_editor (core, NULL, comment);
 			if (out) {
-				//rz_meta_set (core->anal->meta, RZ_META_TYPE_COMMENT, addr, 0, out);
+				//rz_meta_set (core->analysis->meta, RZ_META_TYPE_COMMENT, addr, 0, out);
 				rz_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
-				//rz_meta_del (core->anal->meta, input[0], addr, addr+1);
-				rz_meta_set_string (core->anal, RZ_META_TYPE_COMMENT, addr, out);
+				//rz_meta_del (core->analysis->meta, input[0], addr, addr+1);
+				rz_meta_set_string (core->analysis, RZ_META_TYPE_COMMENT, addr, out);
 				free (out);
 			}
 		}
@@ -672,22 +672,22 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 	case '.': // "Cf.", "Cd.", ...
 		if (input[2] == '.') { // "Cs.."
 			ut64 size;
-			RzAnalysisMetaItem *mi = rz_meta_get_at (core->anal, addr, type, &size);
+			RzAnalysisMetaItem *mi = rz_meta_get_at (core->analysis, addr, type, &size);
 			if (mi) {
-				rz_meta_print (core->anal, mi, addr, size, input[3], NULL, false);
+				rz_meta_print (core->analysis, mi, addr, size, input[3], NULL, false);
 			}
 			break;
 		} else if (input[2] == 'j') { // "Cs.j"
 			ut64 size;
-			RzAnalysisMetaItem *mi = rz_meta_get_at (core->anal, addr, type, &size);
+			RzAnalysisMetaItem *mi = rz_meta_get_at (core->analysis, addr, type, &size);
 			if (mi) {
-				rz_meta_print (core->anal, mi, addr, size, input[2], NULL, false);
+				rz_meta_print (core->analysis, mi, addr, size, input[2], NULL, false);
 				rz_cons_newline ();
 			}
 			break;
 		}
 		ut64 size;
-		RzAnalysisMetaItem *mi = rz_meta_get_at (core->anal, addr, type, &size);
+		RzAnalysisMetaItem *mi = rz_meta_get_at (core->analysis, addr, type, &size);
 		if (!mi) {
 			break;
 		}
@@ -721,7 +721,7 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 	case 'a':
 	case '8':
 		if (type != 'z' && !input[1] && !core->tmpseek) {
-			rz_meta_print_list_all (core->anal, type, 0);
+			rz_meta_print_list_all (core->analysis, type, 0);
 			break;
 		}
 		if (type == 'z') {
@@ -852,15 +852,15 @@ static int cmd_meta_others(RzCore *core, const char *input) {
 				default:
 					subtype = RZ_STRING_ENC_GUESS;
 				}
-				rz_meta_set_with_subtype (core->anal, type, subtype, addr, n, name);
+				rz_meta_set_with_subtype (core->analysis, type, subtype, addr, n, name);
 			} else {
-				rz_meta_set (core->anal, type, addr, n, name);
+				rz_meta_set (core->analysis, type, addr, n, name);
 			}
 			free (t);
 			repcnt ++;
 			addr += n;
 		}
-		//rz_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
+		//rz_meta_cleanup (core->analysis->meta, 0LL, UT64_MAX);
 		break;
 	default:
 		eprintf ("Missing space after CC\n");
@@ -888,7 +888,7 @@ void rz_comment_var_help(RzCore *core, char type) {
 
 void rz_comment_vars(RzCore *core, const char *input) {
 	//TODO enable base64 and make it the default for C*
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 	char *oname = NULL, *name = NULL;
 
 	if (!input[0] || input[1] == '?' || (input[0] != 'b' && input[0] != 'r' && input[0] != 's')) {
@@ -1004,19 +1004,19 @@ RZ_IPI int rz_cmd_meta(void *data, const char *input) {
 		rz_comment_vars (core, input + 1);
 		break;
 	case '\0': // "C"
-		rz_meta_print_list_all (core->anal, RZ_META_TYPE_ANY, 0);
+		rz_meta_print_list_all (core->analysis, RZ_META_TYPE_ANY, 0);
 		break;
 	case 'j': // "Cj"
 	case '*': { // "C*"
 		if (!input[0] || input[1] == '.') {
-			rz_meta_print_list_at (core->anal, core->offset, *input);
+			rz_meta_print_list_at (core->analysis, core->offset, *input);
 		} else {
-			rz_meta_print_list_all (core->anal, RZ_META_TYPE_ANY, *input);
+			rz_meta_print_list_all (core->analysis, RZ_META_TYPE_ANY, *input);
 		}
 		break;
 	}
 	case '.': { // "C."
-		rz_meta_print_list_at (core->anal, core->offset, 0);
+		rz_meta_print_list_at (core->analysis, core->offset, 0);
 		break;
 	}
 	case 'L': // "CL"
@@ -1040,25 +1040,25 @@ RZ_IPI int rz_cmd_meta(void *data, const char *input) {
 	case '-': // "C-"
 		if (input[1] != '*') {
 			i = input[1] ? rz_num_math (core->num, input + (input[1] == ' ' ? 2 : 1)) : 1;
-			rz_meta_del (core->anal, RZ_META_TYPE_ANY, core->offset, i);
+			rz_meta_del (core->analysis, RZ_META_TYPE_ANY, core->offset, i);
 		} else {
-			rz_meta_del (core->anal, RZ_META_TYPE_ANY, 0, UT64_MAX);
+			rz_meta_del (core->analysis, RZ_META_TYPE_ANY, 0, UT64_MAX);
 		}
 		break;
 	case '?': // "C?"
 		rz_core_cmd_help (core, help_msg_C);
 		break;
 	case 'F': // "CF"
-		f = rz_analysis_get_fcn_in (core->anal, core->offset,
+		f = rz_analysis_get_fcn_in (core->analysis, core->offset,
 			RZ_ANAL_FCN_TYPE_FCN|RZ_ANAL_FCN_TYPE_SYM);
 		if (f) {
-			rz_analysis_str_to_fcn (core->anal, f, input + 2);
+			rz_analysis_str_to_fcn (core->analysis, f, input + 2);
 		} else {
 			eprintf ("Cannot find function here\n");
 		}
 		break;
 	case 'S': // "CS"
-		ms = &core->anal->meta_spaces;
+		ms = &core->analysis->meta_spaces;
 		/** copypasta from `fs`.. this must be refactorized to be shared */
 		switch (input[1]) {
 		case '?': // "CS?"

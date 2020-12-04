@@ -248,9 +248,9 @@ RZ_IPI int rz_cmd_egg(void *data, const char *input) {
 			}
 		}
 		rz_cons_printf ("\nTarget options\n");
-		rz_cons_printf ("arch : %s\n", core->anal->cpu);
-		rz_cons_printf ("os   : %s\n", core->anal->os);
-		rz_cons_printf ("bits : %d\n", core->anal->bits);
+		rz_cons_printf ("arch : %s\n", core->analysis->cpu);
+		rz_cons_printf ("os   : %s\n", core->analysis->os);
+		rz_cons_printf ("bits : %d\n", core->analysis->bits);
 	}
 	break;
 	case 'r': // "gr"

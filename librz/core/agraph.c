@@ -2140,44 +2140,44 @@ static char *get_body(RzCore *core, ut64 addr, int size, int opts) {
 
 static char *get_bb_body(RzCore *core, RzAnalysisBlock *b, int opts, RzAnalysisFunction *fcn, bool emu, ut64 saved_gp, ut8 *saved_arena) {
 	if (emu) {
-		core->anal->gp = saved_gp;
+		core->analysis->gp = saved_gp;
 		if (b->parent_reg_arena) {
-			rz_reg_arena_poke (core->anal->reg, b->parent_reg_arena);
+			rz_reg_arena_poke (core->analysis->reg, b->parent_reg_arena);
 			RZ_FREE (b->parent_reg_arena);
-			ut64 gp = rz_reg_getv (core->anal->reg, "gp");
+			ut64 gp = rz_reg_getv (core->analysis->reg, "gp");
 			if (gp) {
-				core->anal->gp = gp;
+				core->analysis->gp = gp;
 			}
 		} else {
-			rz_reg_arena_poke (core->anal->reg, saved_arena);
+			rz_reg_arena_poke (core->analysis->reg, saved_arena);
 		}
 	}
 	if (b->parent_stackptr != INT_MAX) {
-		core->anal->stackptr = b->parent_stackptr;
+		core->analysis->stackptr = b->parent_stackptr;
 	}
 	char *body = get_body (core, b->addr, b->size, opts);
 	if (b->jump != UT64_MAX) {
 		if (b->jump > b->addr) {
-			RzAnalysisBlock *jumpbb = rz_analysis_get_block_at (b->anal, b->jump);
+			RzAnalysisBlock *jumpbb = rz_analysis_get_block_at (b->analysis, b->jump);
 			if (jumpbb && rz_list_contains (jumpbb->fcns, fcn)) {
-				if (emu && core->anal->last_disasm_reg != NULL && !jumpbb->parent_reg_arena) {
-					jumpbb->parent_reg_arena = rz_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
+				if (emu && core->analysis->last_disasm_reg != NULL && !jumpbb->parent_reg_arena) {
+					jumpbb->parent_reg_arena = rz_reg_arena_dup (core->analysis->reg, core->analysis->last_disasm_reg);
 				}
 				if (jumpbb->parent_stackptr == INT_MAX) {
-					jumpbb->parent_stackptr = core->anal->stackptr + b->stackptr;
+					jumpbb->parent_stackptr = core->analysis->stackptr + b->stackptr;
 				}
 			}
 		}
 	}
 	if (b->fail != UT64_MAX) {
 		if (b->fail > b->addr) {
-			RzAnalysisBlock *failbb = rz_analysis_get_block_at (b->anal, b->fail);
+			RzAnalysisBlock *failbb = rz_analysis_get_block_at (b->analysis, b->fail);
 			if (failbb && rz_list_contains (failbb->fcns, fcn)) {
-				if (emu && core->anal->last_disasm_reg != NULL && !failbb->parent_reg_arena) {
-					failbb->parent_reg_arena = rz_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
+				if (emu && core->analysis->last_disasm_reg != NULL && !failbb->parent_reg_arena) {
+					failbb->parent_reg_arena = rz_reg_arena_dup (core->analysis->reg, core->analysis->last_disasm_reg);
 				}
 				if (failbb->parent_stackptr == INT_MAX) {
-					failbb->parent_stackptr = core->anal->stackptr + b->stackptr;
+					failbb->parent_stackptr = core->analysis->stackptr + b->stackptr;
 				}
 			}
 		}
@@ -2193,15 +2193,15 @@ static void get_bbupdate(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	RzAnalysisBlock *bb;
 	RzListIter *iter;
 	bool emu = rz_config_get_i (core->config, "asm.emu");
-	ut64 saved_gp = core->anal->gp;
+	ut64 saved_gp = core->analysis->gp;
 	ut8 *saved_arena = NULL;
-	int saved_stackptr = core->anal->stackptr;
+	int saved_stackptr = core->analysis->stackptr;
 	char *shortcut = 0;
 	int shortcuts = 0;
 	core->keep_asmqjmps = false;
 
 	if (emu) {
-		saved_arena = rz_reg_arena_peek (core->anal->reg);
+		saved_arena = rz_reg_arena_peek (core->analysis->reg);
 	}
 	if (!fcn) {
 		RZ_FREE (saved_arena);
@@ -2236,13 +2236,13 @@ static void get_bbupdate(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	}
 
 	if (emu) {
-		core->anal->gp = saved_gp;
+		core->analysis->gp = saved_gp;
 		if (saved_arena) {
-			rz_reg_arena_poke (core->anal->reg, saved_arena);
+			rz_reg_arena_poke (core->analysis->reg, saved_arena);
 			RZ_FREE (saved_arena);
 		}
 	}
-	core->anal->stackptr = saved_stackptr;
+	core->analysis->stackptr = saved_stackptr;
 }
 
 static void fold_asm_trace(RzCore *core, RzAGraph *g) {
@@ -2310,16 +2310,16 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	bool emu = rz_config_get_i (core->config, "asm.emu");
 	bool few = rz_config_get_i (core->config, "graph.few");
 	int ret = false;
-	ut64 saved_gp = core->anal->gp;
+	ut64 saved_gp = core->analysis->gp;
 	ut8 *saved_arena = NULL;
-	int saved_stackptr = core->anal->stackptr;
+	int saved_stackptr = core->analysis->stackptr;
 	core->keep_asmqjmps = false;
 
 	if (!fcn) {
 		return false;
 	}
 	if (emu) {
-		saved_arena = rz_reg_arena_peek (core->anal->reg);
+		saved_arena = rz_reg_arena_peek (core->analysis->reg);
 	}
 	rz_list_sort (fcn->bbs, (RzListComparator) bbcmp);
 	RzAnalysisBlock *curbb = NULL;
@@ -2405,20 +2405,20 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 
 cleanup:
 	if (emu) {
-		core->anal->gp = saved_gp;
+		core->analysis->gp = saved_gp;
 		if (saved_arena) {
-			rz_reg_arena_poke (core->anal->reg, saved_arena);
+			rz_reg_arena_poke (core->analysis->reg, saved_arena);
 			RZ_FREE (saved_arena);
 		}
 	}
-	core->anal->stackptr = saved_stackptr;
+	core->analysis->stackptr = saved_stackptr;
 	return ret;
 }
 
 /* build the RzGraph inside the RzAGraph g, starting from the Call Graph
  * information */
 static bool get_cgnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
-	RzAnalysisFunction *f = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
+	RzAnalysisFunction *f = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 	RzANode *node, *fcn_anode;
 	RzListIter *iter;
 	RzAnalysisRef *ref;
@@ -2452,7 +2452,7 @@ static bool get_cgnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 		free (title);
 
 		int size = 0;
-		RzAnalysisBlock *bb = rz_analysis_bb_from_offset (core->anal, ref->addr);
+		RzAnalysisBlock *bb = rz_analysis_bb_from_offset (core->analysis, ref->addr);
 		if (bb) {
 			size = bb->size;
 		}
@@ -3368,7 +3368,7 @@ static bool check_changes(RzAGraph *g, int is_interactive, RzCore *core, RzAnaly
 		agraph_set_layout (g);
 	}
 	if (core) {
-		ut64 off = rz_analysis_get_bbaddr (core->anal, core->offset);
+		ut64 off = rz_analysis_get_bbaddr (core->analysis, core->offset);
 		if (off != UT64_MAX) {
 			char *title = get_title (off);
 			RzANode *cur_anode = get_anode (g->curnode);
@@ -3519,7 +3519,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		ut64 addr = rz_reg_get_value (core->dbg->reg, r);
 		RzANode *acur = get_anode (g->curnode);
 
-		addr = rz_analysis_get_bbaddr (core->anal, addr);
+		addr = rz_analysis_get_bbaddr (core->analysis, addr);
 		char *title = get_title (addr);
 		if (!acur || strcmp (acur->title, title)) {
 			rz_core_cmd0 (core, "sr PC");
@@ -3530,7 +3530,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 
 	if (grd->follow_offset) {
 		if (rz_io_is_valid_offset (core->io, core->offset, 0)) {
-			f = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
+			f = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 			if (!f) {
 				if (!g->is_dis) {
 					if (!rz_cons_yesno ('y', "\rNo function at 0x%08"PFMT64x". Define it here (Y/n)? ", core->offset)) {
@@ -3538,7 +3538,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 					}
 					rz_core_cmd0 (core, "af");
 				}
-				f = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
+				f = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 				g->need_reload_nodes = true;
 			}
 			if (f && fcn && f != *fcn) {
@@ -3962,7 +3962,7 @@ static void goto_asmqjmps(RzAGraph *g, RzCore *core) {
 }
 
 static void seek_to_node(RzANode *n, RzCore *core) {
-	ut64 off = rz_analysis_get_bbaddr (core->anal, core->offset);
+	ut64 off = rz_analysis_get_bbaddr (core->analysis, core->offset);
 	char *title = get_title (off);
 
 	if (title && strcmp (title, n->title)) {
@@ -4046,9 +4046,9 @@ static void rotateColor(RzCore *core) {
 
 // dupe in visual.c
 static bool toggle_bb(RzCore *core, ut64 addr) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, addr, RZ_ANAL_FCN_TYPE_NULL);
 	if (fcn) {
-		RzAnalysisBlock *bb = rz_analysis_fcn_bbget_in (core->anal, fcn, addr);
+		RzAnalysisBlock *bb = rz_analysis_fcn_bbget_in (core->analysis, fcn, addr);
 		if (bb) {
 			bb->folded = !bb->folded;
 		} else {
@@ -4162,7 +4162,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 
 	if (!g) {
 		graph_allocated = true;
-		fcn = _fcn? _fcn: rz_analysis_get_fcn_in (core->anal, core->offset, 0);
+		fcn = _fcn? _fcn: rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 		if (!fcn) {
 			rz_config_hold_restore (hc);
 			rz_config_hold_free (hc);
@@ -4399,7 +4399,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 				break;
 			}
 			ut64 old_off = core->offset;
-			ut64 off = rz_analysis_get_bbaddr (core->anal, core->offset);
+			ut64 off = rz_analysis_get_bbaddr (core->analysis, core->offset);
 			rz_core_seek (core, off, false);
 			if ((key == 'x' && !rz_core_visual_refs (core, true, true)) ||
 			    (key == 'X' && !rz_core_visual_refs (core, false, true))) {
@@ -4740,7 +4740,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			break;
 		case '^':
 			  {
-				  RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
+				  RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 				  if (fcn) {
 					  rz_core_seek (core, fcn->addr, false);
 				  }

@@ -1,9 +1,9 @@
 
-static bool block_check_invariants(RzAnalysis *anal) {
+static bool block_check_invariants(RzAnalysis *analysis) {
 	RBIter iter;
 	RzAnalysisBlock *block;
 	ut64 last_start = UT64_MAX;
-	rz_rbtree_foreach (anal->bb_tree, iter, block, RzAnalysisBlock, _rb) {
+	rz_rbtree_foreach (analysis->bb_tree, iter, block, RzAnalysisBlock, _rb) {
 		if (last_start != UT64_MAX) {
 			mu_assert ("corrupted binary tree", block->addr >= last_start);
 			mu_assert_neq (block->addr, last_start, "double blocks");
@@ -27,7 +27,7 @@ static bool block_check_invariants(RzAnalysis *anal) {
 
 	RzListIter *fcniter;
 	RzAnalysisFunction *fcn;
-	rz_list_foreach (anal->fcns, fcniter, fcn) {
+	rz_list_foreach (analysis->fcns, fcniter, fcn) {
 		RzListIter *blockiter;
 		ut64 min = UT64_MAX;
 		ut64 max = UT64_MIN;
@@ -58,10 +58,10 @@ static bool block_check_invariants(RzAnalysis *anal) {
 	return true;
 }
 
-static bool block_check_leaks(RzAnalysis *anal) {
+static bool block_check_leaks(RzAnalysis *analysis) {
 	RBIter iter;
 	RzAnalysisBlock *block;
-	rz_rbtree_foreach (anal->bb_tree, iter, block, RzAnalysisBlock, _rb) {
+	rz_rbtree_foreach (analysis->bb_tree, iter, block, RzAnalysisBlock, _rb) {
 		if (block->ref != rz_list_length (block->fcns))  {
 			mu_assert ("leaked basic block", false);
 		}
@@ -69,5 +69,5 @@ static bool block_check_leaks(RzAnalysis *anal) {
 	return true;
 }
 
-#define assert_block_invariants(anal) do { if (!block_check_invariants (anal)) { return false; } } while (0)
-#define assert_block_leaks(anal) do { if (!block_check_leaks (anal)) { return false; } } while (0)
+#define assert_block_invariants(analysis) do { if (!block_check_invariants (analysis)) { return false; } } while (0)
+#define assert_block_leaks(analysis) do { if (!block_check_leaks (analysis)) { return false; } } while (0)

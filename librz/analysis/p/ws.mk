@@ -1,10 +1,10 @@
-OBJ_WS=anal_ws.o
+OBJ_WS=analysis_ws.o
 
 STATIC_OBJ+=${OBJ_WS}
-TARGET_WS=anal_ws.${EXT_SO}
+TARGET_WS=analysis_ws.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_WS}
 
 ${TARGET_WS}: ${OBJ_WS}
-	${CC} $(call libname,anal_ws) ${LDFLAGS} ${CFLAGS} \
-		 -o anal_ws.${EXT_SO} ${OBJ_WS}
+	${CC} $(call libname,analysis_ws) ${LDFLAGS} ${CFLAGS} \
+		 -o analysis_ws.${EXT_SO} ${OBJ_WS}

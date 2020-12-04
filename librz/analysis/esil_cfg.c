@@ -328,7 +328,7 @@ void _handle_goto (EsilCfgGen *gen, ut32 idx) {
 			}
 		} else {
 			EsilVal *val = RZ_NEW (EsilVal);
-			if (rz_reg_get (gen->esil->anal->reg, atom, -1)) {
+			if (rz_reg_get (gen->esil->analysis->reg, atom, -1)) {
 				val->type = ESIL_VAL_REG;
 			} else {
 				val->type = ESIL_VAL_CONST;
@@ -404,7 +404,7 @@ void _round_2_cb (RzGraphNode *n, RzGraphVisitor *vi) {
 // this function takes a cfg, an offset and an esil expression
 // concatinates to already existing graph.
 // Also expects RzIDStorage atoms and RContRBTree to be allocate in prior of the call
-static RzAnalysisEsilCFG *esil_cfg_gen(RzAnalysisEsilCFG *cfg, RzAnalysis *anal, RzIDStorage *atoms, RContRBTree *blocks, RzStack *stack, ut64 off, char *expr) {
+static RzAnalysisEsilCFG *esil_cfg_gen(RzAnalysisEsilCFG *cfg, RzAnalysis *analysis, RzIDStorage *atoms, RContRBTree *blocks, RzStack *stack, ut64 off, char *expr) {
 	// consider expr as RzStrBuf, so that we can sanitze broken esil
 	// (ex: "b,a,+=,$z,zf,:=,7,$c,cf,:=,zf,?{,1,b,+=,cf,?{,3,a,-=" =>
 	// 	"b,a,+=,$z,zf,:=,7,$c,cf,:=,zf,?{,1,b,+=,cf,?{,3,a,-=,},}")
@@ -447,7 +447,7 @@ static RzAnalysisEsilCFG *esil_cfg_gen(RzAnalysisEsilCFG *cfg, RzAnalysis *anal,
 	bb->first.idx = bb->last.idx = 0;
 	start = cfg->end;
 
-	EsilCfgGen gen = { anal->esil, { stack }, blocks, cfg, start, atoms, off };
+	EsilCfgGen gen = { analysis->esil, { stack }, blocks, cfg, start, atoms, off };
 	cfg->end = end;
 	// create an edge from cur to end?
 	// Well yes, but no. Would be great to do this,
@@ -534,8 +534,8 @@ RZ_API RzAnalysisEsilCFG *rz_analysis_esil_cfg_new(void) {
 
 // this little function takes a cfg, an offset and an esil expression
 // concatinates to already existing graph
-RZ_API RzAnalysisEsilCFG *rz_analysis_esil_cfg_expr(RzAnalysisEsilCFG *cfg, RzAnalysis *anal, const ut64 off, char *expr) {
-	if (!anal || !anal->esil) {
+RZ_API RzAnalysisEsilCFG *rz_analysis_esil_cfg_expr(RzAnalysisEsilCFG *cfg, RzAnalysis *analysis, const ut64 off, char *expr) {
+	if (!analysis || !analysis->esil) {
 		return NULL;
 	}
 	RzStack *stack = rz_stack_new (4);
@@ -560,15 +560,15 @@ RZ_API RzAnalysisEsilCFG *rz_analysis_esil_cfg_expr(RzAnalysisEsilCFG *cfg, RzAn
 		rz_rbtree_cont_free (blocks);
 		return NULL;
 	}
-	RzAnalysisEsilCFG *ret = esil_cfg_gen (cf, anal, atoms, blocks, stack, off, expr);
+	RzAnalysisEsilCFG *ret = esil_cfg_gen (cf, analysis, atoms, blocks, stack, off, expr);
 	rz_stack_free (stack);
 	rz_id_storage_free (atoms);
 	rz_rbtree_cont_free (blocks);
 	return ret;
 }
 
-RZ_API RzAnalysisEsilCFG *rz_analysis_esil_cfg_op(RzAnalysisEsilCFG *cfg, RzAnalysis *anal, RzAnalysisOp *op) {
-	if (!op || !anal || !anal->reg || !anal->esil) {
+RZ_API RzAnalysisEsilCFG *rz_analysis_esil_cfg_op(RzAnalysisEsilCFG *cfg, RzAnalysis *analysis, RzAnalysisOp *op) {
+	if (!op || !analysis || !analysis->reg || !analysis->esil) {
 		return NULL;
 	}
 	RzAnalysisEsilBB *glue_bb = RZ_NEW0 (RzAnalysisEsilBB);
@@ -582,7 +582,7 @@ RZ_API RzAnalysisEsilCFG *rz_analysis_esil_cfg_op(RzAnalysisEsilCFG *cfg, RzAnal
 		eprintf ("Couldn't allocate glue\n");
 		return NULL;
 	}
-	const char *pc = rz_reg_get_name (anal->reg, RZ_REG_NAME_PC);
+	const char *pc = rz_reg_get_name (analysis->reg, RZ_REG_NAME_PC);
 	rz_strbuf_setf (glue, "0x%" PFMT64x ",%s,:=,", op->addr + op->size, pc);
 	glue_bb->expr = strdup (rz_strbuf_get (glue));
 	rz_strbuf_free (glue);
@@ -598,7 +598,7 @@ RZ_API RzAnalysisEsilCFG *rz_analysis_esil_cfg_op(RzAnalysisEsilCFG *cfg, RzAnal
 	RzAnalysisEsilCFG *ret;
 
 	if (!cfg) {
-		ret = rz_analysis_esil_cfg_expr (cfg, anal, op->addr, rz_strbuf_get (&op->esil));
+		ret = rz_analysis_esil_cfg_expr (cfg, analysis, op->addr, rz_strbuf_get (&op->esil));
 		RzGraphNode *glue_node = rz_graph_add_node (ret->g, glue_bb);
 		glue_node->free = _free_bb_cb;
 		rz_graph_add_edge (ret->g, glue_node, ret->start);
@@ -611,7 +611,7 @@ RZ_API RzAnalysisEsilCFG *rz_analysis_esil_cfg_op(RzAnalysisEsilCFG *cfg, RzAnal
 		cfg->end->data = glue_node->data;
 		glue_node->data = foo;
 		cfg->end = glue_node;
-		ret = rz_analysis_esil_cfg_expr (cfg, anal, op->addr, rz_strbuf_get (&op->esil));
+		ret = rz_analysis_esil_cfg_expr (cfg, analysis, op->addr, rz_strbuf_get (&op->esil));
 	}
 	return ret;
 }

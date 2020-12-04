@@ -30,16 +30,16 @@ static bool bb_from_offset_first_cb(RzAnalysisBlock *block, void *user) {
 	return false;
 }
 
-RZ_API RzAnalysisBlock *rz_analysis_bb_from_offset(RzAnalysis *anal, ut64 off) {
-	const bool x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
-	if (anal->opt.jmpmid && x86) {
+RZ_API RzAnalysisBlock *rz_analysis_bb_from_offset(RzAnalysis *analysis, ut64 off) {
+	const bool x86 = analysis->cur->arch && !strcmp (analysis->cur->arch, "x86");
+	if (analysis->opt.jmpmid && x86) {
 		BBFromOffsetJmpmidCtx ctx = { off, NULL };
-		rz_analysis_blocks_foreach_in (anal, off, bb_from_offset_jmpmid_cb, &ctx);
+		rz_analysis_blocks_foreach_in (analysis, off, bb_from_offset_jmpmid_cb, &ctx);
 		return ctx.ret;
 	}
 
 	RzAnalysisBlock *ret = NULL;
-	rz_analysis_blocks_foreach_in (anal, off, bb_from_offset_first_cb, &ret);
+	rz_analysis_blocks_foreach_in (analysis, off, bb_from_offset_first_cb, &ret);
 	return ret;
 }
 
@@ -114,7 +114,7 @@ RZ_API ut64 rz_analysis_bb_size_i(RzAnalysisBlock *bb, int i) {
 
 /* returns the address of the basic block that contains addr or UT64_MAX if
  * there is no such basic block */
-RZ_API ut64 rz_analysis_get_bbaddr(RzAnalysis *anal, ut64 addr) {
-	RzAnalysisBlock *bb = rz_analysis_bb_from_offset (anal, addr);
+RZ_API ut64 rz_analysis_get_bbaddr(RzAnalysis *analysis, ut64 addr) {
+	RzAnalysisBlock *bb = rz_analysis_bb_from_offset (analysis, addr);
 	return bb? bb->addr: UT64_MAX;
 }

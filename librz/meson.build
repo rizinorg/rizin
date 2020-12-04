@@ -1,4 +1,4 @@
-anal_plugins = [
+analysis_plugins = [
   '6502',
   '8051',
   'amd29k',

@@ -44,12 +44,12 @@ static int __isdata(RzCore *core, ut64 addr) {
 
 	bool block_exists = false;
 	// This will just set block_exists = true if there is any basic block at this addr
-	rz_analysis_blocks_foreach_in (core->anal, addr, __is_data_block_cb, &block_exists);
+	rz_analysis_blocks_foreach_in (core->analysis, addr, __is_data_block_cb, &block_exists);
 	if (block_exists) {
 		return 1;
 	}
 
-	RzPVector *list = rz_meta_get_all_in (core->anal, addr, RZ_META_TYPE_ANY);
+	RzPVector *list = rz_meta_get_all_in (core->analysis, addr, RZ_META_TYPE_ANY);
 	void **it;
 	int result = 0;
 	rz_pvector_foreach (list, it) {
@@ -220,7 +220,7 @@ static void createFunction(RzCore *core, fcn_t* fcn, const char *name) {
 		pfx = "fcn";
 	}
 
-	RzAnalysisFunction *f = rz_analysis_function_new (core->anal);
+	RzAnalysisFunction *f = rz_analysis_function_new (core->analysis);
 	if (!f) {
 		eprintf ("Failed to create new function\n");
 		return;
@@ -228,17 +228,17 @@ static void createFunction(RzCore *core, fcn_t* fcn, const char *name) {
 
 	f->name = name? strdup (name): rz_str_newf ("%s.%" PFMT64x, pfx, fcn->addr);
 	f->addr = fcn->addr;
-	f->bits = core->anal->bits;
-	f->cc = rz_str_constpool_get (&core->anal->constpool, rz_analysis_cc_default (core->anal));
+	f->bits = core->analysis->bits;
+	f->cc = rz_str_constpool_get (&core->analysis->constpool, rz_analysis_cc_default (core->analysis));
 	f->type = RZ_ANAL_FCN_TYPE_FCN;
 
 	rz_list_foreach (fcn->bbs, fcn_iter, cur) {
 		if (__isdata (core, cur->start)) {
 			continue;
 		}
-		rz_analysis_fcn_add_bb (core->anal, f, cur->start, (cur->end - cur->start), cur->jump, cur->fail, NULL);
+		rz_analysis_fcn_add_bb (core->analysis, f, cur->start, (cur->end - cur->start), cur->jump, cur->fail, NULL);
 	}
-	if (!rz_analysis_add_function (core->anal, f)) {
+	if (!rz_analysis_add_function (core->analysis, f)) {
 		// eprintf ("Failed to insert function\n");
 		rz_analysis_function_free (f);
 		return;
@@ -293,7 +293,7 @@ RZ_API bool core_anal_bbs(RzCore *core, const char* input) {
 			cur += dsize;
 			continue;
 		}
-		RzAnalysisOp *const op = rz_core_anal_op (core, dst, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM);
+		RzAnalysisOp *const op = rz_core_analysis_op (core, dst, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM);
 
 		if (!op || !op->mnemonic) {
 			block_score -= 10;
@@ -315,7 +315,7 @@ RZ_API bool core_anal_bbs(RzCore *core, const char* input) {
 			}
 			break;
 		case RZ_ANAL_OP_TYPE_CALL:
-			if (rz_analysis_noreturn_at (core->anal, op->jump)) {
+			if (rz_analysis_noreturn_at (core->analysis, op->jump)) {
 				addBB (block_list, b_start, dst + op->size, UT64_MAX, UT64_MAX, END, block_score);
 				b_start = dst + op->size;
 				block_score = 0;
@@ -583,7 +583,7 @@ RZ_API bool core_anal_bbs_range (RzCore *core, const char* input) {
 				}
 
 				if (!bFound) {
-					op = rz_core_anal_op (core, b_start + cur, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM);
+					op = rz_core_analysis_op (core, b_start + cur, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM);
 
 					if (!op || !op->mnemonic) {
 						block_score -= 10;

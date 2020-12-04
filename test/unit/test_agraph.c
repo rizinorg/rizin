@@ -15,7 +15,7 @@ bool test_graph_to_agraph() {
 	rz_core_cmd0 (core, "acb D B");
 	rz_core_cmd0 (core, "acb D C");
 
-	RzGraph *graph = rz_analysis_class_get_inheritance_graph (core->anal);
+	RzGraph *graph = rz_analysis_class_get_inheritance_graph (core->analysis);
 	mu_assert_notnull (graph, "Couldn't create the graph");
 	mu_assert_eq (graph->nodes->length, 4, "Wrong node count");
 

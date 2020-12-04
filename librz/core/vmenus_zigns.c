@@ -38,7 +38,7 @@ static char *print_item (void *_core, void *_item, bool selected) {
 
 static RzList *__signs(RzCoreVisualViewZigns *status, ut64 addr, bool update) {
 	RzCore *core = status->core;
-	return rz_sign_get_list (core->anal);
+	return rz_sign_get_list (core->analysis);
 }
 
 RZ_API int __core_visual_view_zigns_update(RzCore *core, RzCoreVisualViewZigns *status) {
@@ -97,7 +97,7 @@ RZ_API int rz_core_visual_view_zigns(RzCore *core) {
 			break;
 		case 'd':
 			if (cur_name && *cur_name) {
-				rz_sign_delete (core->anal, cur_name);
+				rz_sign_delete (core->analysis, cur_name);
 				RZ_FREE (cur_name);
 			}
 			break;

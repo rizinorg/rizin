@@ -78,7 +78,7 @@ typedef struct rz_sign_search_met {
 	 */
 	RzSignType types[7];
 	int mincc; // min complexity for graph search
-	RzAnalysis *anal;
+	RzAnalysis *analysis;
 	void *user; // user data for callback function
 	RzSignMatchCallback cb;
 	RzAnalysisFunction *fcn;
@@ -149,8 +149,8 @@ RZ_API RzList *rz_sign_fcn_vars(RzAnalysis *a, RzAnalysisFunction *fcn);
 RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn);
 
 RZ_API int rz_sign_is_flirt(RzBuffer *buf);
-RZ_API void rz_sign_flirt_dump(const RzAnalysis *anal, const char *flirt_file);
-RZ_API void rz_sign_flirt_scan(RzAnalysis *anal, const char *flirt_file);
+RZ_API void rz_sign_flirt_dump(const RzAnalysis *analysis, const char *flirt_file);
+RZ_API void rz_sign_flirt_scan(RzAnalysis *analysis, const char *flirt_file);
 
 RZ_API RzList *rz_sign_find_closest_sig(RzAnalysis *a, RzSignItem *it, int count, double score_threshold);
 RZ_API RzList *rz_sign_find_closest_fcn(RzAnalysis *a, RzSignItem *it, int count, double score_threshold);
