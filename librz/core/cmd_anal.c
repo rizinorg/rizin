@@ -25,7 +25,7 @@ static const char *help_msg_a[] = {
 	"ah", "[?]", "analysis hints (force opcode size, ...)",
 	"ai", " [addr]", "address information (show perms, stack, heap, ...)",
 	"aj", "", "same as a* but in json (aflj)",
-	"aL", "", "list all asm/anal plugins (e asm.arch=?)",
+	"aL", "", "list all asm/analysis plugins (e asm.arch=?)",
 	"an", " [name] [@addr]", "show/rename/create whatever flag/function is used at addr",
 	"ao", "[?] [len]", "analyze Opcodes (or emulate it)",
 	"aO", "[?] [len]", "Analyze N instructions in M bytes",
@@ -6732,7 +6732,7 @@ static void cmd_anal_opcode(RzCore *core, const char *input) {
 		rz_config_set_i (core->config, "asm.lines", false);
 		rz_config_set_i (core->config, "asm.xrefs", false);
 
-		hooks = rz_core_anal_cycles (core, ccl); //analyse
+		hooks = rz_core_anal_cycles (core, ccl); //analysisyse
 		rz_cons_clear_line (1);
 		rz_list_foreach (hooks, iter, hook) {
 			instr_tmp = rz_core_disassemble_instr (core, hook->addr, 1);

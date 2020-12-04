@@ -17,7 +17,7 @@ endif
 LDFLAGS+=-L$(LTOP)/util -lrz_util
 LDFLAGS+=-L$(LTOP)/cons -lrz_cons
 LDFLAGS+=-L$(LTOP)/parse -lrz_parse
-LDFLAGS+=-L$(LTOP)/anal -lrz_analysis
+LDFLAGS+=-L$(LTOP)/analysis -lrz_analysis
 LDFLAGS+=-L$(LTOP)/reg -lrz_reg
 LDFLAGS+=-L$(LTOP)/bp -lrz_bp
 LDFLAGS+=-L$(LTOP)/io -lrz_io

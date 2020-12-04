@@ -14,7 +14,7 @@ BUILDSEC=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null ||
 else
 BUILDSEC=$(shell date "+__%H:%M:%S")
 endif
-DATADIRS=librz/cons/d librz/flag/d librz/bin/d librz/asm/d librz/syscall/d librz/magic/d librz/anal/d
+DATADIRS=librz/cons/d librz/flag/d librz/bin/d librz/asm/d librz/syscall/d librz/magic/d librz/analysis/d
 USE_ZIP=YES
 ZIP=zip
 
@@ -141,7 +141,7 @@ windist:
 	mkdir -p "${WINDIST}/share/rizin/${VERSION}/sysregs"
 	cp -f librz/sysregs/d/*.sdb "${WINDIST}/share/rizin/${VERSION}/sysregs"
 	mkdir -p "${WINDIST}/share/rizin/${VERSION}/fcnsign"
-	cp -f librz/anal/d/*.sdb "${WINDIST}/share/rizin/${VERSION}/fcnsign"
+	cp -f librz/analysis/d/*.sdb "${WINDIST}/share/rizin/${VERSION}/fcnsign"
 	mkdir -p "${WINDIST}/share/rizin/${VERSION}/opcodes"
 	cp -f librz/asm/d/*.sdb "${WINDIST}/share/rizin/${VERSION}/opcodes"
 	mkdir -p "${WINDIST}/share/rizin/${VERSION}/flag"
@@ -294,7 +294,7 @@ deinstall uninstall:
 	cd binrz && ${MAKE} uninstall
 	cd shlr && ${MAKE} uninstall
 	cd librz/syscall/d && ${MAKE} uninstall
-	cd librz/anal/d && ${MAKE} uninstall
+	cd librz/analysis/d && ${MAKE} uninstall
 	@echo
 	@echo "Run 'make purge' to also remove installed files from previous versions of rz"
 	@echo
@@ -435,7 +435,7 @@ meson-symstall: symstall-sdb
 	ln -fs $(PWD)/build/librz/parse/librz_parse.$(EXT_SO) ${L}/librz_parse.$(EXT_SO)
 	ln -fs $(PWD)/build/librz/lang/librz_lang.$(EXT_SO) ${L}/librz_lang.$(EXT_SO)
 	ln -fs $(PWD)/build/librz/asm/librz_asm.$(EXT_SO) ${L}/librz_asm.$(EXT_SO)
-	ln -fs $(PWD)/build/librz/anal/librz_analysis.$(EXT_SO) ${L}/librz_analysis.$(EXT_SO)
+	ln -fs $(PWD)/build/librz/analysis/librz_analysis.$(EXT_SO) ${L}/librz_analysis.$(EXT_SO)
 	ln -fs $(PWD)/build/librz/egg/librz_egg.$(EXT_SO) ${L}/librz_egg.$(EXT_SO)
 	ln -fs $(PWD)/build/librz/debug/librz_debug.$(EXT_SO) ${L}/librz_debug.$(EXT_SO)
 	ln -fs $(PWD)/build/librz/core/librz_core.$(EXT_SO) ${L}/librz_core.$(EXT_SO)

@@ -2,7 +2,7 @@ include ../../config.mk
 include ../../../mk/platform.mk
 
 CFLAGS+=-I../../include -I../arch -Wall -shared $(PIC_CFLAGS) ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
-CFLAGS+=-L../../util -lrz_util -L../../anal -lrz_analysis -L../../reg -lrz_reg -L../../crypto -lrz_crypto
+CFLAGS+=-L../../util -lrz_util -L../../analysis -lrz_analysis -L../../reg -lrz_reg -L../../crypto -lrz_crypto
 LDFLAGS+=${LINK}
 
 CURDIR=

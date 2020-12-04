@@ -77,7 +77,7 @@ enum {
 	RZ_ANAL_DATA_TYPE_PATTERN = 9,
 };
 
-// used from core/anal.c
+// used from core/analysis.c
 #define RZ_ANAL_ADDR_TYPE_EXEC      1
 #define RZ_ANAL_ADDR_TYPE_READ      1 << 1
 #define RZ_ANAL_ADDR_TYPE_WRITE     1 << 2
@@ -575,7 +575,7 @@ typedef struct rz_analysis_callbacks_t {
 typedef struct rz_analysis_options_t {
 	int depth;
 	int graph_depth;
-	bool vars; //analyze local var and arguments
+	bool vars; //analysisyze local var and arguments
 	bool varname_stack; // name vars based on their offset in the stack
 	int cjmpref;
 	int jmpref;

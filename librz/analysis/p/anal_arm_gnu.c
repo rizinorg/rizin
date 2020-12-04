@@ -10,7 +10,7 @@
 #include "wine-arm.h"
 #include "../asm/arch/arm/asm-arm.h"
 #include "../asm/arch/arm/winedbg/be_arm.h"
-#include "./anal_arm_hacks.inc"
+#include "./analysis_arm_hacks.inc"
 
 static unsigned int disarm_branch_offset(unsigned int pc, unsigned int insoff) {
 	unsigned int add = insoff << 2;

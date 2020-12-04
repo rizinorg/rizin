@@ -7,7 +7,7 @@
 #include <capstone.h>
 #include <arm.h>
 #include <rz_util/rz_assert.h>
-#include "./anal_arm_hacks.inc"
+#include "./analysis_arm_hacks.inc"
 
 
 #define esilprintf(op, fmt, ...) rz_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)

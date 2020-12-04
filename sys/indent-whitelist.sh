@@ -32,13 +32,13 @@ librz/include/r_list.h
 librz/include/r_reg.h
 librz/include/r_util.h
 
-librz/anal/var.c
-librz/anal/fcn.c
-librz/anal/cycles.c
-librz/anal/esil.c
-librz/anal/data.c
-librz/anal/flirt.c
-librz/anal/p/anal_arc.c
+librz/analysis/var.c
+librz/analysis/fcn.c
+librz/analysis/cycles.c
+librz/analysis/esil.c
+librz/analysis/data.c
+librz/analysis/flirt.c
+librz/analysis/p/analysis_arc.c
 
 librz/config/config.c
 librz/config/callback.c

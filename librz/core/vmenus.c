@@ -2259,7 +2259,7 @@ RZ_API int rz_core_visual_comments (RzCore *core) {
 			" j/k   - down/up keys\n"
 			" h/b   - go back\n"
 			" l/' ' - accept current selection\n"
-			" a/d/e - add/delete/edit comment/anal symbol\n"
+			" a/d/e - add/delete/edit comment/analysis symbol\n"
 			" p/P   - rotate print format\n");
 			rz_cons_flush ();
 			rz_cons_any_key (NULL);

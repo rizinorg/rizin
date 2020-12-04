@@ -101,7 +101,7 @@ typedef long long int int64_t;
 #endif
 #endif
 
-// TODO: Make it dependable from the r2 asm/anal settings
+// TODO: Make it dependable from the r2 asm/analysis settings
 #define LDOUBLE_SIZE 12
 #define LDOUBLE_ALIGN 4
 #define MAX_ALIGN 8

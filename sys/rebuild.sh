@@ -49,7 +49,7 @@ RebuildSpp() {
 RebuildJava() {
 	Rebuild shlr/java
 	Rebuild librz/asm
-	Rebuild librz/anal
+	Rebuild librz/analysis
 	Rebuild librz/bin
 	Rebuild librz/core
 }
@@ -60,7 +60,7 @@ RebuildCapstone() {
 	fi
 	Rebuild shlr/capstone
 	Rebuild librz/asm
-	Rebuild librz/anal
+	Rebuild librz/analysis
 }
 
 RebuildSdb() {

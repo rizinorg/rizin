@@ -11,7 +11,7 @@
  * /
  *   /config => see config.c
  *   /flags => see flag.c
- *   /anal => see anal.c
+ *   /analysis => see anal.c
  *   /file => see below
  *   offset=<offset>
  *   blocksize=<blocksize>

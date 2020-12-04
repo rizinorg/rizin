@@ -54,7 +54,7 @@ RZ_API ut64 rz_analysis_value_to_ut64(RzAnalysis *anal, RzAnalysisValue *val) {
 	case 2:
 	case 4:
 	case 8:
-		//anal->bio ...
+		//analysis->bio ...
 		eprintf ("TODO: memref for to_ut64 not supported\n");
 		break;
 	}
