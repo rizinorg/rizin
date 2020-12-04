@@ -44,7 +44,7 @@ static int __isdata(RzCore *core, ut64 addr) {
 
 	bool block_exists = false;
 	// This will just set block_exists = true if there is any basic block at this addr
-	rz_anal_blocks_foreach_in (core->anal, addr, __is_data_block_cb, &block_exists);
+	rz_analysis_blocks_foreach_in (core->anal, addr, __is_data_block_cb, &block_exists);
 	if (block_exists) {
 		return 1;
 	}
@@ -220,7 +220,7 @@ static void createFunction(RzCore *core, fcn_t* fcn, const char *name) {
 		pfx = "fcn";
 	}
 
-	RzAnalysisFunction *f = rz_anal_function_new (core->anal);
+	RzAnalysisFunction *f = rz_analysis_function_new (core->anal);
 	if (!f) {
 		eprintf ("Failed to create new function\n");
 		return;
@@ -229,18 +229,18 @@ static void createFunction(RzCore *core, fcn_t* fcn, const char *name) {
 	f->name = name? strdup (name): rz_str_newf ("%s.%" PFMT64x, pfx, fcn->addr);
 	f->addr = fcn->addr;
 	f->bits = core->anal->bits;
-	f->cc = rz_str_constpool_get (&core->anal->constpool, rz_anal_cc_default (core->anal));
+	f->cc = rz_str_constpool_get (&core->anal->constpool, rz_analysis_cc_default (core->anal));
 	f->type = RZ_ANAL_FCN_TYPE_FCN;
 
 	rz_list_foreach (fcn->bbs, fcn_iter, cur) {
 		if (__isdata (core, cur->start)) {
 			continue;
 		}
-		rz_anal_fcn_add_bb (core->anal, f, cur->start, (cur->end - cur->start), cur->jump, cur->fail, NULL);
+		rz_analysis_fcn_add_bb (core->anal, f, cur->start, (cur->end - cur->start), cur->jump, cur->fail, NULL);
 	}
-	if (!rz_anal_add_function (core->anal, f)) {
+	if (!rz_analysis_add_function (core->anal, f)) {
 		// eprintf ("Failed to insert function\n");
-		rz_anal_function_free (f);
+		rz_analysis_function_free (f);
 		return;
 	}
 }
@@ -315,7 +315,7 @@ RZ_API bool core_anal_bbs(RzCore *core, const char* input) {
 			}
 			break;
 		case RZ_ANAL_OP_TYPE_CALL:
-			if (rz_anal_noreturn_at (core->anal, op->jump)) {
+			if (rz_analysis_noreturn_at (core->anal, op->jump)) {
 				addBB (block_list, b_start, dst + op->size, UT64_MAX, UT64_MAX, END, block_score);
 				b_start = dst + op->size;
 				block_score = 0;
@@ -354,7 +354,7 @@ RZ_API bool core_anal_bbs(RzCore *core, const char* input) {
 			break;
 		}
 		cur += op->size;
-		rz_anal_op_free (op);
+		rz_analysis_op_free (op);
 	}
 
 	if (debug) {
@@ -635,7 +635,7 @@ RZ_API bool core_anal_bbs_range (RzCore *core, const char* input) {
 						cur += op->size;
 						break;
 					}
-					rz_anal_op_free (op);
+					rz_analysis_op_free (op);
 					op = NULL;
 				}
 				else {

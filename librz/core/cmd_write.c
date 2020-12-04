@@ -1796,17 +1796,17 @@ RZ_IPI int rz_wa_handler_old(void *data, const char *input) {
 		if (acode) {
 			if (input[0] == 'i') { // "wai"
 				RzAnalysisOp analop;
-				if (!rz_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, RZ_ANAL_OP_MASK_BASIC)) {
+				if (!rz_analysis_op (core->anal, &analop, core->offset, core->block, core->blocksize, RZ_ANAL_OP_MASK_BASIC)) {
 					eprintf ("Invalid instruction?\n");
 					break;
 				}
 				if (analop.size < acode->len) {
 					eprintf ("Doesnt fit\n");
-					rz_anal_op_fini (&analop);
+					rz_analysis_op_fini (&analop);
 					rz_asm_code_free (acode);
 					break;
 				}
-				rz_anal_op_fini (&analop);
+				rz_analysis_op_fini (&analop);
 				rz_core_cmd0 (core, "wao nop");
 			}
 			if (acode->len > 0) {

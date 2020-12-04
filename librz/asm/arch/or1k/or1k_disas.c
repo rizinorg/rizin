@@ -1,6 +1,6 @@
 /* rizin - LGPL - Copyright 2019 - v3l0c1r4pt0r */
 
-#include <rz_anal.h>
+#include <rz_analysis.h>
 #include "or1k_disas.h"
 
 insn_type_descr_t types[] = {

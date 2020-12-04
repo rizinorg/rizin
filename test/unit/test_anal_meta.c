@@ -1,10 +1,10 @@
 
-#include <rz_anal.h>
+#include <rz_analysis.h>
 
 #include "minunit.h"
 
 bool test_meta_set() {
-	RzAnalysis *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_analysis_new ();
 
 	rz_meta_set (anal, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x100, "summer of love");
@@ -127,12 +127,12 @@ bool test_meta_set() {
 	mu_assert ("meta 1", found[1]);
 	mu_assert ("meta 2", found[2]);
 
-	rz_anal_free (anal);
+	rz_analysis_free (anal);
 	mu_end;
 }
 
 bool test_meta_get_at() {
-	RzAnalysis *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_analysis_new ();
 
 	rz_meta_set (anal, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
@@ -165,12 +165,12 @@ bool test_meta_get_at() {
 	item = rz_meta_get_at (anal, 0x101, RZ_META_TYPE_ANY, NULL);
 	mu_assert_null (item, "get item");
 
-	rz_anal_free (anal);
+	rz_analysis_free (anal);
 	mu_end;
 }
 
 bool test_meta_get_in() {
-	RzAnalysis *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_analysis_new ();
 
 	rz_meta_set (anal, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
@@ -206,12 +206,12 @@ bool test_meta_get_in() {
 	mu_assert_notnull (node, "get item");
 	// which one we get is undefined here (intended)
 
-	rz_anal_free (anal);
+	rz_analysis_free (anal);
 	mu_end;
 }
 
 bool test_meta_get_all_at() {
-	RzAnalysis *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_analysis_new ();
 
 	rz_meta_set (anal, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
@@ -246,12 +246,12 @@ bool test_meta_get_all_at() {
 	mu_assert_eq (rz_pvector_len (items), 0, "all count");
 	rz_pvector_free (items);
 
-	rz_anal_free (anal);
+	rz_analysis_free (anal);
 	mu_end;
 }
 
 bool test_meta_get_all_in() {
-	RzAnalysis *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_analysis_new ();
 
 	rz_meta_set (anal, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
@@ -308,12 +308,12 @@ bool test_meta_get_all_in() {
 	mu_assert_eq (rz_pvector_len (items), 0, "all count");
 	rz_pvector_free (items);
 
-	rz_anal_free (anal);
+	rz_analysis_free (anal);
 	mu_end;
 }
 
 bool test_meta_get_all_intersect() {
-	RzAnalysis *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_analysis_new ();
 
 	rz_meta_set (anal, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
@@ -372,12 +372,12 @@ bool test_meta_get_all_intersect() {
 	mu_assert_eq (rz_pvector_len (items), 0, "all count");
 	rz_pvector_free (items);
 
-	rz_anal_free (anal);
+	rz_analysis_free (anal);
 	mu_end;
 }
 
 bool test_meta_del() {
-	RzAnalysis *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_analysis_new ();
 
 	rz_meta_set (anal, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x100, "vera gemini");
@@ -437,12 +437,12 @@ bool test_meta_del() {
 	item = rz_meta_get_at (anal, 0x200, RZ_META_TYPE_STRING, NULL);
 	mu_assert_null (item, "item deleted");
 
-	rz_anal_free (anal);
+	rz_analysis_free (anal);
 	mu_end;
 }
 
 bool test_meta_rebase() {
-	RzAnalysis *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_analysis_new ();
 
 	rz_meta_set (anal, RZ_META_TYPE_DATA, 0x200, 4, NULL);
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x200, "summer of love");
@@ -487,12 +487,12 @@ bool test_meta_rebase() {
 	mu_assert ("meta 1", found[1]);
 	mu_assert ("meta 2", found[2]);
 
-	rz_anal_free (anal);
+	rz_analysis_free (anal);
 	mu_end;
 }
 
 bool test_meta_spaces() {
-	RzAnalysis *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_analysis_new ();
 
 	rz_meta_set (anal, RZ_META_TYPE_DATA, 0x100, 4, NULL);
 	rz_meta_set_string (anal, RZ_META_TYPE_COMMENT, 0x100, "summer of love");
@@ -587,7 +587,7 @@ bool test_meta_spaces() {
 	}
 	mu_assert_eq (count, 3, "masked untouched");
 
-	rz_anal_free (anal);
+	rz_analysis_free (anal);
 	mu_end;
 }
 

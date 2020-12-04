@@ -1,10 +1,10 @@
-#include <rz_anal.h>
+#include <rz_analysis.h>
 #include <rz_sign.h>
 
 #include "minunit.h"
 
 static bool test_anal_sign_get_set(void) {
-	RzAnalysis *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_analysis_new ();
 
 	RzSignItem *item = rz_sign_item_new ();
 	item->name = strdup ("sym.mahboi");
@@ -102,7 +102,7 @@ static bool test_anal_sign_get_set(void) {
 	mu_assert_streq (item->comment, "gee it sure is boring around here", "item in space comment");
 	rz_sign_item_free (item);
 
-	rz_anal_free (anal);
+	rz_analysis_free (anal);
 	mu_end;
 }
 

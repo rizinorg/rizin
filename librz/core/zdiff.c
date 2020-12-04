@@ -90,7 +90,7 @@ RZ_API int rz_core_zdiff(RzCore *c, RzCore *c2) {
 	}
 	
 	/* Diff functions */
-	// rz_anal_diff_fcn (cores[0]->anal, cores[0]->anal->fcns, cores[1]->anal->fcns);
+	// rz_analysis_diff_fcn (cores[0]->anal, cores[0]->anal->fcns, cores[1]->anal->fcns);
 
 	return true;
 }

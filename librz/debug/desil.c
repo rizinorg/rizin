@@ -219,7 +219,7 @@ RZ_API int rz_debug_esil_stepi (RzDebug *d) {
 	int ret = 1;
 	dbg = d;
 	if (!ESIL) {
-		ESIL = rz_anal_esil_new (32, true, 64);
+		ESIL = rz_analysis_esil_new (32, true, 64);
 		// TODO setup something?
 		if (!ESIL) {
 			return 0;
@@ -249,16 +249,16 @@ RZ_API int rz_debug_esil_stepi (RzDebug *d) {
 		//	npc = rz_debug_reg_get (dbg, dbg->reg->name[RZ_REG_NAME_PC]);
 	}
 
-	if (rz_anal_op (dbg->anal, &op, opc, obuf, sizeof (obuf), RZ_ANAL_OP_MASK_ESIL)) {
+	if (rz_analysis_op (dbg->anal, &op, opc, obuf, sizeof (obuf), RZ_ANAL_OP_MASK_ESIL)) {
 		if (esilbreak_check_pc (dbg, opc)) {
 			eprintf ("STOP AT 0x%08"PFMT64x"\n", opc);
 			ret = 0;
 		} else {
-			rz_anal_esil_set_pc (ESIL, opc);
+			rz_analysis_esil_set_pc (ESIL, opc);
 			eprintf ("0x%08"PFMT64x"  %s\n", opc, RZ_STRBUF_SAFEGET (&op.esil));
-			(void)rz_anal_esil_parse (ESIL, RZ_STRBUF_SAFEGET (&op.esil));
-			//rz_anal_esil_dumpstack (ESIL);
-			rz_anal_esil_stack_free (ESIL);
+			(void)rz_analysis_esil_parse (ESIL, RZ_STRBUF_SAFEGET (&op.esil));
+			//rz_analysis_esil_dumpstack (ESIL);
+			rz_analysis_esil_stack_free (ESIL);
 			ret = 1;
 		}
 	}

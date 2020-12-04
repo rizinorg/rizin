@@ -1101,8 +1101,8 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 		}
 		rz_config_set_i (c->config, "diff.bare", showbare);
 		rz_config_set_i (c2->config, "diff.bare", showbare);
-		rz_anal_diff_setup_i (c->anal, diffops, threshold, threshold);
-		rz_anal_diff_setup_i (c2->anal, diffops, threshold, threshold);
+		rz_analysis_diff_setup_i (c->anal, diffops, threshold, threshold);
+		rz_analysis_diff_setup_i (c2->anal, diffops, threshold, threshold);
 		if (pdc) {
 			if (!addr) {
 				//addr = "entry0";

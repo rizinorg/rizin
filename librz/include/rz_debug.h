@@ -2,7 +2,7 @@
 #define RZ_DEBUG_H
 
 #include <rz_types.h>
-#include <rz_anal.h>
+#include <rz_analysis.h>
 #include <rz_cons.h>
 #include <rz_hash.h>
 #include <rz_util.h>
@@ -117,7 +117,7 @@ typedef enum {
 } RzDebugReasonType;
 
 
-/* TODO: move to rz_anal */
+/* TODO: move to rz_analysis */
 typedef struct rz_debug_frame_t {
 	ut64 addr;
 	int size;

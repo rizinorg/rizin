@@ -6,7 +6,7 @@
 #include <rz_core.h>
 #include <rz_cons.h>
 #include <string.h>
-#include <rz_anal.h>
+#include <rz_analysis.h>
 
 #include "../../../shlr/java/ops.h"
 #include "../../../shlr/java/class.h"

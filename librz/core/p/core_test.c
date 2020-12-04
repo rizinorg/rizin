@@ -11,7 +11,7 @@ mv core_test.so ~/.config/rizin/plugins
 #include <rz_core.h>
 #include <rz_cons.h>
 #include <string.h>
-#include <rz_anal.h>
+#include <rz_analysis.h>
 
 #undef RZ_API
 #define RZ_API static

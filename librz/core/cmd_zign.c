@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
-#include <rz_anal.h>
+#include <rz_analysis.h>
 #include <rz_sign.h>
 #include <rz_list.h>
 #include <rz_cons.h>
@@ -597,7 +597,7 @@ static void apply_name(RzCore *core, RzAnalysisFunction *fcn, RzSignItem *it, bo
 	if (flag && flag->space && strcmp (flag->space->name, RZ_FLAGS_FS_FUNCTIONS)) {
 		rz_flag_rename (core->flags, flag, name);
 	}
-	rz_anal_function_rename (fcn, name);
+	rz_analysis_function_rename (fcn, name);
 	if (core->anal->cb.on_fcn_rename) {
 		core->anal->cb.on_fcn_rename (core->anal, core->anal->user, fcn, name);
 	}
@@ -628,7 +628,7 @@ static void apply_types(RzCore *core, RzAnalysisFunction *fcn, RzSignItem *it) {
 		}
 	}
 	rz_str_remove_char (alltypes, '"');
-	rz_anal_save_parsed_type (core->anal, alltypes);
+	rz_analysis_save_parsed_type (core->anal, alltypes);
 	free (start);
 	free (alltypes);
 }
@@ -672,7 +672,7 @@ static const char *getprefix(RzSignType t) {
 static int searchHitCB(RzSignItem *it, RzSearchKeyword *kw, ut64 addr, void *user) {
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *)user;
 	apply_flag (ctx->core, it, addr, kw->keyword_length, kw->count, ctx->prefix, ctx->rad);
-	RzAnalysisFunction *fcn = rz_anal_get_fcn_in (ctx->core->anal, addr, 0);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (ctx->core->anal, addr, 0);
 	// TODO: create fcn if it does not exist
 	if (fcn) {
 		apply_name (ctx->core, fcn, it, ctx->rad);
@@ -686,7 +686,7 @@ static int fcnMatchCB(RzSignItem *it, RzAnalysisFunction *fcn, RzSignType type, 
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *)user;
 	const char *prefix = getprefix (type);
 	// TODO(nibble): use one counter per metric zign instead of ctx->count
-	ut64 sz = rz_anal_function_realsize (fcn);
+	ut64 sz = rz_analysis_function_realsize (fcn);
 	apply_flag (ctx->core, it, fcn->addr, sz, ctx->count, prefix, ctx->rad);
 	if (!seen) {
 		apply_name (ctx->core, fcn, it, ctx->rad);
@@ -859,7 +859,7 @@ static bool search(RzCore *core, bool rad, bool only_func) {
 			}
 			if (useBytes && only_func) {
 				eprintf ("Matching func %d / %d (hits %d)\n", count, rz_list_length (core->anal->fcns), bytes_search_ctx.count);
-				int fcnlen = rz_anal_function_realsize (fcni);
+				int fcnlen = rz_analysis_function_realsize (fcni);
 				int len = RZ_MIN (core->io->addrbytes * fcnlen, maxsz);
 				retval &= searchRange2 (core, ss, fcni->addr, fcni->addr + len, rad, &bytes_search_ctx);
 			}
@@ -1004,7 +1004,7 @@ static bool bestmatch_fcn(RzCore *core, const char *input) {
 }
 
 static bool do_bestmatch_sig(RzCore *core, int count) {
-	RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
 	if (!fcn) {
 		eprintf ("No function at 0x%08" PFMT64x "\n", core->offset);
 		return false;

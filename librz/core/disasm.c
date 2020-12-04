@@ -353,10 +353,10 @@ RZ_API ut64 rz_core_pava (RzCore *core, ut64 addr) {
 }
 
 static RzAnalysisFunction *fcnIn(RDisasmState *ds, ut64 at, int type) {
-	if (ds->fcn && rz_anal_function_contains (ds->fcn, at)) {
+	if (ds->fcn && rz_analysis_function_contains (ds->fcn, at)) {
 		return ds->fcn;
 	}
-	return rz_anal_get_fcn_in (ds->core->anal, at, type);
+	return rz_analysis_get_fcn_in (ds->core->anal, at, type);
 }
 
 static const char *get_utf8_char(const char line, RDisasmState *ds) {
@@ -853,7 +853,7 @@ static void ds_reflines_init(RDisasmState *ds) {
 
 	if (ds->show_lines_bb || ds->pj) {
 		ds_reflines_fini (ds);
-		anal->reflines = rz_anal_reflines_get (anal,
+		anal->reflines = rz_analysis_reflines_get (anal,
 			ds->addr, ds->buf, ds->len, ds->l,
 			ds->linesout, ds->show_lines_call);
 	} else {
@@ -874,8 +874,8 @@ static void ds_free(RDisasmState *ds) {
 		}
 	}
 	rz_asm_op_fini (&ds->asmop);
-	rz_anal_op_fini (&ds->analop);
-	rz_anal_hint_free (ds->hint);
+	rz_analysis_op_fini (&ds->analop);
+	rz_analysis_hint_free (ds->hint);
 	ds_print_esil_anal_fini (ds);
 	ds_reflines_fini (ds);
 	ds_print_esil_anal_fini (ds);
@@ -933,7 +933,7 @@ static char *colorize_asm_string(RzCore *core, RDisasmState *ds, bool print_colo
 
 static bool ds_must_strip(RDisasmState *ds) {
 	if (ds && ds->strip && *ds->strip) {
-		const char * optype = rz_anal_optype_to_string (ds->analop.type);
+		const char * optype = rz_analysis_optype_to_string (ds->analop.type);
 		if (optype && *optype) {
 			return strstr (ds->strip, optype);
 		}
@@ -972,16 +972,16 @@ static char *get_op_ireg (void *user, ut64 addr) {
 	if (op && op->ireg) {
 		res = strdup (op->ireg);
 	}
-	rz_anal_op_free (op);
+	rz_analysis_op_free (op);
 	return res;
 }
 
 static st64 get_ptr_at(RzAnalysisFunction *fcn, st64 delta, ut64 addr) {
-	return rz_anal_function_get_var_stackptr_at (fcn, delta, addr);
+	return rz_analysis_function_get_var_stackptr_at (fcn, delta, addr);
 }
 
 static const char *get_reg_at(RzAnalysisFunction *fcn, st64 delta, ut64 addr) {
-	return rz_anal_function_get_var_reg_at (fcn, delta, addr);
+	return rz_analysis_function_get_var_reg_at (fcn, delta, addr);
 }
 
 static void ds_build_op_str(RDisasmState *ds, bool print_color) {
@@ -997,7 +997,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	}
 	if (ds->decode) {
 		free (ds->opstr);
-		ds->opstr = rz_anal_op_to_string (core->anal, &ds->analop);
+		ds->opstr = rz_analysis_op_to_string (core->anal, &ds->analop);
 		return;
 	}
 	if (!ds->opstr) {
@@ -1026,7 +1026,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			ds->opstr = strdup (ds->strsub);
 		}
 		if (core->parser->subrel) {
-			RzList *list = rz_anal_refs_get (core->anal, at);
+			RzList *list = rz_analysis_refs_get (core->anal, at);
 			RzListIter *iter;
 			RzAnalysisRef *ref;
 			rz_list_foreach (list, iter, ref) {
@@ -1135,8 +1135,8 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 
 RZ_API RzAnalysisHint *rz_core_hint_begin(RzCore *core, RzAnalysisHint* hint, ut64 at) {
 	static char *hint_syntax = NULL;
-	rz_anal_hint_free (hint);
-	hint = rz_anal_hint_get (core->anal, at);
+	rz_analysis_hint_free (hint);
+	hint = rz_analysis_hint_get (core->anal, at);
 	if (hint_syntax) {
 		rz_config_set (core->config, "asm.syntax", hint_syntax);
 		hint_syntax = NULL;
@@ -1153,7 +1153,7 @@ RZ_API RzAnalysisHint *rz_core_hint_begin(RzCore *core, RzAnalysisHint* hint, ut
 			/* TODO: do something here */
 		}
 	}
-	RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, at, 0);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, at, 0);
 	if (fcn) {
 		if (fcn->bits == 16 || fcn->bits == 32) {
 			if (!hint) {
@@ -1224,10 +1224,10 @@ static void ds_begin_cont(RDisasmState *ds) {
 	ds_begin_line (ds);
 	ds_setup_print_pre (ds, false, false);
 	if (!ds->linesright && ds->show_lines_bb && ds->line) {
-		RzAnalysisRefStr *refstr = rz_anal_reflines_str (ds->core, ds->at,
+		RzAnalysisRefStr *refstr = rz_analysis_reflines_str (ds->core, ds->at,
 		                    ds->linesopts | RZ_ANAL_REFLINE_TYPE_MIDDLE_AFTER);
 		ds_print_ref_lines (refstr->str, refstr->cols, ds);
-		rz_anal_reflines_str_free (refstr);
+		rz_analysis_reflines_str_free (refstr);
 	}
 }
 
@@ -1247,7 +1247,7 @@ static void ds_show_refs(RDisasmState *ds) {
 	if (!ds->show_cmtrefs) {
 		return;
 	}
-	RzList *list = rz_anal_xrefs_get_from (ds->core->anal, ds->at);
+	RzList *list = rz_analysis_xrefs_get_from (ds->core->anal, ds->at);
 
 	rz_list_foreach (list, iter, ref) {
 		const char *cmt = rz_meta_get_string (ds->core->anal, RZ_META_TYPE_COMMENT, ref->addr);
@@ -1271,9 +1271,9 @@ static void ds_show_refs(RDisasmState *ds) {
 			RzAnalysisOp aop;
 			ut8 buf[12];
 			rz_io_read_at (ds->core->io, ref->at, buf, sizeof (buf));
-			rz_anal_op (ds->core->anal, &aop, ref->at, buf, sizeof (buf), RZ_ANAL_OP_MASK_ALL);
+			rz_analysis_op (ds->core->anal, &aop, ref->at, buf, sizeof (buf), RZ_ANAL_OP_MASK_ALL);
 			if ((aop.type & RZ_ANAL_OP_TYPE_MASK) == RZ_ANAL_OP_TYPE_UCALL) {
-				RzAnalysisFunction * fcn = rz_anal_get_function_at (ds->core->anal, ref->addr);
+				RzAnalysisFunction * fcn = rz_analysis_get_function_at (ds->core->anal, ref->addr);
 				ds_begin_comment (ds);
 				if (fcn) {
 					ds_comment (ds, true, "; %s", fcn->name);
@@ -1297,7 +1297,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		return;
 	}
 	/* show xrefs */
-	RzList *xrefs = rz_anal_xrefs_get (core->anal, ds->at);
+	RzList *xrefs = rz_analysis_xrefs_get (core->anal, ds->at);
 	if (!xrefs) {
 		return;
 	}
@@ -1326,7 +1326,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		ds_comment (ds, false, "%s; XREFS: ", ds->show_color? ds->pal_comment: "");
 		rz_list_foreach (xrefs, iter, refi) {
 			ds_comment (ds, false, "%s 0x%08"PFMT64x"  ",
-				rz_anal_xrefs_type_tostring (refi->type), refi->addr);
+				rz_analysis_xrefs_type_tostring (refi->type), refi->addr);
 			if (count == cols) {
 				if (iter->n) {
 					ds_print_color_reset (ds);
@@ -1359,7 +1359,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			if (fun) {
 				if (iter != xrefs->tail) {
 					ut64 next_addr = ((RzAnalysisRef *)(iter->n->data))->addr;
-					next_fun = rz_anal_get_fcn_in (core->anal, next_addr, -1);
+					next_fun = rz_analysis_get_fcn_in (core->anal, next_addr, -1);
 					if (next_fun && next_fun->addr == fun->addr) {
 						rz_list_append (addrs, rz_num_dup (refi->addr));
 						continue;
@@ -1406,7 +1406,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			const char* plural = rz_list_length (addrs) > 1 ? "S" : "";
 			const char* plus = fun ? "" : "+";
 			ds_comment (ds, false, "%s; %s XREF%s from %s @ ",
-				COLOR (ds, pal_comment), rz_anal_xrefs_type_tostring (refi->type), plural,
+				COLOR (ds, pal_comment), rz_analysis_xrefs_type_tostring (refi->type), plural,
 				realname ? realname : name);
 			ut64 *addrptr;
 			rz_list_foreach (addrs, it, addrptr) {
@@ -1414,7 +1414,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 					ds_comment (ds, false, "%s%s0x%"PFMT64x, it == addrs->head ? "" : ", ", plus, *addrptr);
 				}
 			}
-			if (realname && (!fun || rz_anal_get_function_at (core->anal, ds->at))) {
+			if (realname && (!fun || rz_analysis_get_function_at (core->anal, ds->at))) {
 				const char *pad = ds->show_comment_right ? "" : " ";
 				if (!ds->show_comment_right) {
 					ds_newline (ds);
@@ -1540,9 +1540,9 @@ static int handleMidBB(RzCore *core, RDisasmState *ds) {
 	// a bb (and fcn) can be as small as 1 byte, and advancing i based on
 	// bb->size is unsound if basic blocks can nest or overlap
 	for (i = 1; i < ds->oplen; i++) {
-		RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, ds->at + i, 0);
+		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, ds->at + i, 0);
 		if (fcn) {
-			RzAnalysisBlock *bb = rz_anal_fcn_bbget_in (core->anal, fcn, ds->at + i);
+			RzAnalysisBlock *bb = rz_analysis_fcn_bbget_in (core->anal, fcn, ds->at + i);
 			if (bb && bb->addr > ds->at) {
 				ds->hasMidbb = true;
 				return bb->addr - ds->at;
@@ -1628,14 +1628,14 @@ static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines) {
 
 //TODO: this function is a temporary fix. All analysis should be based on realsize. However, now for same architectures realisze is not used
 static ut32 tmp_get_realsize (RzAnalysisFunction *f) {
-	ut32 size = rz_anal_function_realsize (f);
-	return (size > 0) ? size : rz_anal_function_linear_size (f);
+	ut32 size = rz_analysis_function_realsize (f);
+	return (size > 0) ? size : rz_analysis_function_linear_size (f);
 }
 
 static void ds_show_functions_argvar(RDisasmState *ds, RzAnalysisFunction *fcn, RzAnalysisVar *var, const char *base, bool is_var, char sign) {
 	int delta = var->kind == 'b' ? RZ_ABS (var->delta + fcn->bp_off) : RZ_ABS (var->delta);
 	const char *pfx = is_var ? "var" : "arg";
-	char *constr = rz_anal_var_get_constraints_readable (var);
+	char *constr = rz_analysis_var_get_constraints_readable (var);
 	rz_cons_printf ("%s%s %s%s%s%s %s%s%s%s@ %s%c0x%x", COLOR_ARG (ds, color_func_var), pfx,
 			COLOR_ARG (ds, color_func_var_type), var->type,
 			rz_str_endswith (var->type, "*") ? "" : " ",
@@ -1762,7 +1762,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	bool showSig = ds->show_fcnsig && ds->show_calls;
 	bool call = rz_config_get_i (core->config, "asm.calls");
 	const char *lang = demangle ? rz_config_get (core->config, "bin.lang") : NULL;
-	f = rz_anal_get_function_at (core->anal, ds->at);
+	f = rz_analysis_get_function_at (core->anal, ds->at);
 	if (!f) {
 		return;
 	}
@@ -1778,7 +1778,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	}
 
 	ds_begin_line (ds);
-	char *sign = rz_anal_function_get_signature (f);
+	char *sign = rz_analysis_function_get_signature (f);
 	if (empty_signature (sign)) {
 		RZ_FREE (sign);
 	}
@@ -1787,7 +1787,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			core->cons->vline[LINE_CROSS]); // |-
 		if (!showSig) {
 			rz_cons_printf ("%s%s%s %"PFMT64u, COLOR (ds, color_floc),
-					fcn_name, COLOR_RESET (ds), rz_anal_function_linear_size (f));
+					fcn_name, COLOR_RESET (ds), rz_analysis_function_linear_size (f));
 			ds_newline (ds);
 		}
 	} else {
@@ -1835,7 +1835,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	}
 	ds->stackptr = core->anal->stackptr;
 	RzAnalysisFcnVarsCache vars_cache;
-	rz_anal_fcn_vars_cache_init (core->anal, &vars_cache, f);
+	rz_analysis_fcn_vars_cache_init (core->anal, &vars_cache, f);
 
 	int o_varsum = ds->show_varsum;
 	if (ds->interactive && !o_varsum) {
@@ -1855,7 +1855,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			ds_print_pre (ds, true);
 			rz_cons_printf ("%s  ", COLOR_RESET (ds));
 		}
-		rz_cons_printf ("%" PFMT64d ": ", rz_anal_function_realsize (f));
+		rz_cons_printf ("%" PFMT64d ": ", rz_analysis_function_realsize (f));
 
 		// show function's realname in the signature if realnames are enabled
 		if (core->flags->realnames) {
@@ -1865,7 +1865,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			}
 		}
 
-		char *sig = rz_anal_fcn_format_sig (core->anal, f, fcn_name, &vars_cache, COLOR (ds, color_fname), COLOR_RESET (ds));
+		char *sig = rz_analysis_fcn_format_sig (core->anal, f, fcn_name, &vars_cache, COLOR (ds, color_fname), COLOR_RESET (ds));
 		if (sig) {
 			rz_cons_print (sig);
 			free (sig);
@@ -1951,7 +1951,7 @@ static void ds_show_functions(RDisasmState *ds) {
 		}
 	}
 	ds->show_varsum = o_varsum;
-	rz_anal_fcn_vars_cache_fini (&vars_cache);
+	rz_analysis_fcn_vars_cache_fini (&vars_cache);
 	if (fcn_name_alloc) {
 		free (fcn_name);
 	}
@@ -1990,14 +1990,14 @@ static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle) {
 	RzAnalysisFunction *f = fcnIn (ds, ds->at, RZ_ANAL_FCN_TYPE_NULL);
 	if (f) {
 		if (f->addr == ds->at) {
-			if (ds->analop.size == rz_anal_function_linear_size (f) && !middle) {
+			if (ds->analop.size == rz_analysis_function_linear_size (f) && !middle) {
 				ds->pre = DS_PRE_FCN_TAIL;
 			} else {
 				ds->pre = DS_PRE_FCN_MIDDLE;
 			}
-		} else if (rz_anal_function_max_addr (f) - ds->analop.size == ds->at && f->addr == rz_anal_function_min_addr (f)) {
+		} else if (rz_analysis_function_max_addr (f) - ds->analop.size == ds->at && f->addr == rz_analysis_function_min_addr (f)) {
 			ds->pre = DS_PRE_FCN_TAIL;
-		} else if (rz_anal_function_contains (f, ds->at)) {
+		} else if (rz_analysis_function_contains (f, ds->at)) {
 			ds->pre = DS_PRE_FCN_MIDDLE;
 		}
 		if (tail) {
@@ -2203,7 +2203,7 @@ static void ds_show_flags(RDisasmState *ds) {
 	char addr[64];
 	ut64 switch_addr = UT64_MAX;
 	int case_start = -1, case_prev = 0, case_current = 0;
-	f = rz_anal_get_function_at (ds->core->anal, ds->at);
+	f = rz_analysis_get_function_at (ds->core->anal, ds->at);
 	const RzList *flaglist = rz_flag_get_list (core->flags, ds->at);
 	RzList *uniqlist = flaglist? rz_list_uniq (flaglist, flagCmp): NULL;
 	int count = 0;
@@ -2355,7 +2355,7 @@ static void ds_update_ref_lines(RDisasmState *ds) {
 	if (ds->show_lines_bb) {
 		free (ds->line);
 		free (ds->line_col);
-		RzAnalysisRefStr *line = rz_anal_reflines_str (ds->core, ds->at, ds->linesopts);
+		RzAnalysisRefStr *line = rz_analysis_reflines_str (ds->core, ds->at, ds->linesopts);
 		ds->line = line->str;
 		ds->line_col = line->cols;
 		free (ds->refline);
@@ -2363,7 +2363,7 @@ static void ds_update_ref_lines(RDisasmState *ds) {
 		free (ds->refline2);
 		free (ds->prev_line_col);
 		free (line);
-		line = rz_anal_reflines_str (ds->core, ds->at,
+		line = rz_analysis_reflines_str (ds->core, ds->at,
 			ds->linesopts | RZ_ANAL_REFLINE_TYPE_MIDDLE_BEFORE);
 		ds->refline2 = line->str;
 		ds->prev_line_col = line->cols;
@@ -2668,7 +2668,7 @@ static void ds_print_lines_left(RDisasmState *ds) {
 
 static void ds_print_family(RDisasmState *ds) {
 	if (ds->show_family) {
-		const char *familystr = rz_anal_op_family_to_string (ds->analop.family);
+		const char *familystr = rz_analysis_op_family_to_string (ds->analop.family);
 		rz_cons_printf ("%5s ", familystr? familystr: "");
 	}
 }
@@ -2723,9 +2723,9 @@ static void ds_print_offset(RDisasmState *ds) {
 		unsigned int seggrn = rz_config_get_i (core->config, "asm.seggrn");
 
 		if (ds->show_reloff) {
-			RzAnalysisFunction *f = rz_anal_get_function_at (core->anal, at);
+			RzAnalysisFunction *f = rz_analysis_get_function_at (core->anal, at);
 			if (!f) {
-				f = fcnIn (ds, at, RZ_ANAL_FCN_TYPE_NULL); // rz_anal_get_fcn_in (core->anal, at, RZ_ANAL_FCN_TYPE_NULL);
+				f = fcnIn (ds, at, RZ_ANAL_FCN_TYPE_NULL); // rz_analysis_get_fcn_in (core->anal, at, RZ_ANAL_FCN_TYPE_NULL);
 			}
 			if (f) {
 				delta = at - f->addr;
@@ -2823,7 +2823,7 @@ static void ds_print_trace(RDisasmState *ds) {
 
 static void ds_adistrick_comments(RDisasmState *ds) {
 	if (ds->adistrick) {
-		ds->middle = rz_anal_reflines_middle (ds->core->anal,
+		ds->middle = rz_analysis_reflines_middle (ds->core->anal,
 			ds->core->anal->reflines, ds->at, ds->analop.size);
 	}
 }
@@ -3234,7 +3234,7 @@ static void ds_print_indent(RDisasmState *ds) {
 
 static void ds_print_optype(RDisasmState *ds) {
 	if (ds->show_optype) {
-		const char *optype = rz_anal_optype_to_string (ds->analop.type);
+		const char *optype = rz_analysis_optype_to_string (ds->analop.type);
 		ds_print_color_reset (ds);
 		const char *pad = rz_str_pad (' ', 8 - strlen (optype));
 		rz_cons_printf ("[%s]%s", optype, pad);
@@ -3273,13 +3273,13 @@ static int ds_print_middle(RDisasmState *ds, int ret) {
 static bool ds_print_labels(RDisasmState *ds, RzAnalysisFunction *f) {
 	const char *label;
 	if (!f) {
-		// f = rz_anal_get_fcn_in (core->anal, ds->at, 0);
+		// f = rz_analysis_get_fcn_in (core->anal, ds->at, 0);
 		f = fcnIn (ds, ds->at, 0);
 	}
 	if (!f) {
 		return false;
 	}
-	label = rz_anal_function_get_label_at (f, ds->at);
+	label = rz_analysis_function_get_label_at (f, ds->at);
 	if (!label) {
 		return false;
 	}
@@ -3394,7 +3394,7 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		return;
 	}
 	st64 delta = ds->analop.jump - f->addr;
-	const char *label = rz_anal_function_get_label_at (f, ds->analop.jump);
+	const char *label = rz_analysis_function_get_label_at (f, ds->analop.jump);
 	if (label) {
 		ds_begin_comment (ds);
 		ds_comment (ds, true, "; %s.%s", f->name, label);
@@ -3467,14 +3467,14 @@ static int ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos) {
 static bool ds_print_core_vmode_jump_hit(RDisasmState *ds, int pos) {
 	RzCore *core = ds->core;
 	RzAnalysis *a = core->anal;
-	RzAnalysisHint *hint = rz_anal_hint_get (a, ds->at);
+	RzAnalysisHint *hint = rz_analysis_hint_get (a, ds->at);
 	bool res = false;
 	if (hint) {
 		if (hint->jump != UT64_MAX) {
 			ds_print_shortcut (ds, hint->jump, pos);
 			res = true;
 		}
-		rz_anal_hint_free (hint);
+		rz_analysis_hint_free (hint);
 	}
 	return res;
 }
@@ -3706,7 +3706,7 @@ static void ds_print_dwarf(RDisasmState *ds) {
 static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 	if (ds->show_varaccess) {
 		// XXX assume analop is filled
-		//rz_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
+		//rz_analysis_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
 		int v = ds->analop.ptr;
 		switch (ds->analop.stackop) {
 		case RZ_ANAL_STACK_GET:
@@ -3914,7 +3914,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	RzList *list = NULL;
 	RzListIter *iter;
 	RzAnalysisRef *ref;
-	list = rz_anal_refs_get (core->anal, ds->at);
+	list = rz_analysis_refs_get (core->anal, ds->at);
 	rz_list_foreach (list, iter, ref) {
 		if (ref->type == RZ_ANAL_REF_TYPE_STRING || ref->type == RZ_ANAL_REF_TYPE_DATA) {
 			if ((f = rz_flag_get_i (core->flags, ref->addr))) {
@@ -3996,7 +3996,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 						msg2 = calloc (sizeof (char), len);
 						rz_io_read_at (core->io, n, (ut8*)msg2, len - 1);
 						msg2[len - 1] = 0;
-						kind = rz_anal_data_kind (core->anal, refaddr, (const ut8*)msg2, len - 1);
+						kind = rz_analysis_data_kind (core->anal, refaddr, (const ut8*)msg2, len - 1);
 						if (kind && !strcmp (kind, "text")) {
 							rz_str_filter (msg2, 0);
 							if (*msg2) {
@@ -4107,8 +4107,8 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			} else if (refaddr > 10) {
 				if ((st64)refaddr < 0) {
 					// resolve local var if possible
-					RzAnalysisFunction *fcn = rz_anal_get_function_at (core->anal, ds->at);
-					RzAnalysisVar *v = fcn ? rz_anal_function_get_var (fcn, 'v', (int)refaddr) : NULL;
+					RzAnalysisFunction *fcn = rz_analysis_get_function_at (core->anal, ds->at);
+					RzAnalysisVar *v = fcn ? rz_analysis_function_get_var (fcn, 'v', (int)refaddr) : NULL;
 					ds_begin_comment (ds);
 					if (v) {
 						ds_comment (ds, true, "; var %s", v->name);
@@ -4125,7 +4125,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				}
 			}
 			//XXX this should be refactored with along the above
-			kind = rz_anal_data_kind (core->anal, refaddr, (const ut8*)msg, len - 1);
+			kind = rz_analysis_data_kind (core->anal, refaddr, (const ut8*)msg, len - 1);
 			if (kind) {
 				if (!strcmp (kind, "text")) {
 					if (!string_printed && print_msg) {
@@ -4459,14 +4459,14 @@ static void ds_pre_emulation(RDisasmState *ds) {
 		RzAnalysisOp* op = rz_core_anal_op (ds->core, addr, RZ_ANAL_OP_MASK_ESIL | RZ_ANAL_OP_MASK_HINT);
 		if (op) {
 			if (do_esil) {
-				rz_anal_esil_set_pc (esil, addr);
-				rz_anal_esil_parse (esil, RZ_STRBUF_SAFEGET (&op->esil));
+				rz_analysis_esil_set_pc (esil, addr);
+				rz_analysis_esil_parse (esil, RZ_STRBUF_SAFEGET (&op->esil));
 				if (op->size > 0) {
 					i += op->size - 1;
 				}
 			}
 			ds_update_stackptr (ds, op);
-			rz_anal_op_free (op);
+			rz_analysis_op_free (op);
 		}
 	}
 	esil->cb.hook_reg_write = orig_cb;
@@ -4491,11 +4491,11 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 		int esd = rz_config_get_i (core->config, "esil.stack.depth");
 		unsigned int addrsize = rz_config_get_i (core->config, "esil.addr.size");
 
-		if (!(core->anal->esil = rz_anal_esil_new (esd, iotrap, addrsize))) {
+		if (!(core->anal->esil = rz_analysis_esil_new (esd, iotrap, addrsize))) {
 			RZ_FREE (ds->esil_regstate);
 			return;
 		}
-		rz_anal_esil_setup (core->anal->esil, core->anal, 0, 0, 1);
+		rz_analysis_esil_setup (core->anal->esil, core->anal, 0, 0, 1);
 	}
 	core->anal->esil->user = ds;
 	free (ds->esil_regstate);
@@ -4518,7 +4518,7 @@ static void ds_print_bbline(RDisasmState *ds) {
 		RzAnalysisBlock *bb = NULL;
 		RzAnalysisFunction *f_before = NULL;
 		if (ds->fcn) {
-			bb = rz_anal_fcn_bbget_at (ds->core->anal, ds->fcn, ds->at);
+			bb = rz_analysis_fcn_bbget_at (ds->core->anal, ds->fcn, ds->at);
 		} else {
 			f_before = fcnIn (ds, ds->at - 1, RZ_ANAL_FCN_TYPE_NULL);
 		}
@@ -4660,10 +4660,10 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	const char *esilstr = RZ_STRBUF_SAFEGET (&ds->analop.esil);
 	if (RZ_STR_ISNOTEMPTY (esilstr)) {
 		mipsTweak (ds);
-		rz_anal_esil_set_pc (esil, at);
-		rz_anal_esil_parse (esil, esilstr);
+		rz_analysis_esil_set_pc (esil, at);
+		rz_analysis_esil_parse (esil, esilstr);
 	}
-	rz_anal_esil_stack_free (esil);
+	rz_analysis_esil_stack_free (esil);
 	rz_config_hold_i (hc, "io.cache", NULL);
 	rz_config_set (core->config, "io.cache", "true");
 	if (!ds->show_comments) {
@@ -4683,7 +4683,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	case RZ_ANAL_OP_TYPE_JMP:
 		{
 			ut64 addr = ds->analop.jump;
-			if (!rz_anal_get_function_at (ds->core->anal, addr)
+			if (!rz_analysis_get_function_at (ds->core->anal, addr)
 					&& !rz_flag_get_at (core->flags, addr, false)) {
 				break;
 			}
@@ -4707,13 +4707,13 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 			if (pcv == UT64_MAX) {
 				pcv = ds->analop.ptr; // call [reloc-addr] // windows style
 				if (pcv == UT64_MAX || !pcv) {
-					rz_anal_esil_reg_read (esil, "$jt", &pcv, NULL);
+					rz_analysis_esil_reg_read (esil, "$jt", &pcv, NULL);
 					if (pcv == UT64_MAX || !pcv) {
 						pcv = rz_reg_getv (core->anal->reg, pc);
 					}
 				}
 			}
-			fcn = rz_anal_get_function_at (core->anal, pcv);
+			fcn = rz_analysis_get_function_at (core->anal, pcv);
 			if (fcn) {
 				fcn_name = fcn->name;
 			} else {
@@ -4791,9 +4791,9 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 				nargs = DEFAULT_NARGS;
 				if (fcn) {
 					// @TODO: fcn->nargs should be updated somewhere and used here instead
-					nargs = rz_anal_var_count (core->anal, fcn, 's', 1) +
-							rz_anal_var_count (core->anal, fcn, 'b', 1) +
-							rz_anal_var_count (core->anal, fcn, 'r', 1);
+					nargs = rz_analysis_var_count (core->anal, fcn, 's', 1) +
+							rz_analysis_var_count (core->anal, fcn, 'b', 1) +
+							rz_analysis_var_count (core->anal, fcn, 'r', 1);
 				}
 				if (nargs > 0) {
 					ds_comment_esil (ds, true, false, "%s", ds->show_color ? ds->pal_comment : "");
@@ -4834,7 +4834,7 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	char *name;
 	char *full_name = NULL;
 	if (ds->analop.type == RZ_ANAL_OP_TYPE_CALL) {
-		// RzAnalysisFunction *fcn = rz_anal_get_fcn_in (anal, ds->analop.jump, -1);
+		// RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (anal, ds->analop.jump, -1);
 		RzAnalysisFunction *fcn = fcnIn (ds, ds->analop.jump, -1);
 		if (fcn) {
 			full_name = fcn->name;
@@ -5060,7 +5060,7 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 	}
 	ut64 addr = ds->analop.jump;
 
-	RzAnalysisFunction *fcn = rz_anal_get_function_at (anal, addr);
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at (anal, addr);
 	if (fcn) {
 		if (!set_jump_realname (ds, addr, &kw, &name)) {
 			name = fcn->name;
@@ -5205,8 +5205,8 @@ toro:
 
 	if (core->print->cur_enabled) {
 		// TODO: support in-the-middle-of-instruction too
-		rz_anal_op_fini (&ds->analop);
-		if (rz_anal_op (core->anal, &ds->analop, core->offset + core->print->cur,
+		rz_analysis_op_fini (&ds->analop);
+		if (rz_analysis_op (core->anal, &ds->analop, core->offset + core->print->cur,
 			buf + core->print->cur, (int)(len - core->print->cur), RZ_ANAL_OP_MASK_ALL)) {
 			// TODO: check for ds->analop.type and ret
 			ds->dest = ds->analop.jump;
@@ -5280,18 +5280,18 @@ toro:
 		// ds_update_pc (ds, ds->at);
 		rz_asm_set_pc (core->rasm, ds->at);
 		ds_update_ref_lines (ds);
-		rz_anal_op_fini (&ds->analop);
-		rz_anal_op (core->anal, &ds->analop, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx), RZ_ANAL_OP_MASK_ALL);
+		rz_analysis_op_fini (&ds->analop);
+		rz_analysis_op (core->anal, &ds->analop, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx), RZ_ANAL_OP_MASK_ALL);
 		if (ds_must_strip (ds)) {
 			inc = ds->analop.size;
 			// inc = ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
-			rz_anal_op_fini (&ds->analop);
+			rz_analysis_op_fini (&ds->analop);
 			continue;
 		}
-		// f = rz_anal_get_fcn_in (core->anal, ds->at, RZ_ANAL_FCN_TYPE_NULL);
+		// f = rz_analysis_get_fcn_in (core->anal, ds->at, RZ_ANAL_FCN_TYPE_NULL);
 		f = ds->fcn = fcnIn (ds, ds->at, RZ_ANAL_FCN_TYPE_NULL);
-		if (f && f->folded && rz_anal_function_contains (f, ds->at)) {
-			int delta = (ds->at <= f->addr) ? (ds->at - rz_anal_function_max_addr (f)) : 0;
+		if (f && f->folded && rz_analysis_function_contains (f, ds->at)) {
+			int delta = (ds->at <= f->addr) ? (ds->at - rz_analysis_function_max_addr (f)) : 0;
 			if (of != f) {
 				char cmt[32];
 				get_bits_comment (core, f, cmt, sizeof (cmt));
@@ -5306,7 +5306,7 @@ toro:
 				ds_setup_print_pre (ds, true, false);
 				ds_print_lines_left (ds);
 				ds_print_offset (ds);
-				rz_cons_printf ("(%" PFMT64d " byte folded function)\n", rz_anal_function_linear_size (f));
+				rz_cons_printf ("(%" PFMT64d " byte folded function)\n", rz_analysis_function_linear_size (f));
 				//rz_cons_printf ("%s%s%s\n", COLOR (ds, color_fline), core->cons->vline[RDWN_CORNER], COLOR_RESET (ds));
 				if (delta < 0) {
 					delta = -delta;
@@ -5316,7 +5316,7 @@ toro:
 				inc = 0; //delta;
 				idx = 0;
 				of = f;
-				rz_anal_op_fini (&ds->analop);
+				rz_analysis_op_fini (&ds->analop);
 				if (len == l) {
 					break;
 				}
@@ -5326,7 +5326,7 @@ toro:
 				rz_io_read_at (core->io, ds->addr, buf, len);
 				inc = 0; //delta;
 				idx = 0;
-				rz_anal_op_fini (&ds->analop);
+				rz_analysis_op_fini (&ds->analop);
 			}
 			continue;
 		}
@@ -5344,7 +5344,7 @@ toro:
 				// could be struct with a bitfield entry
 				inc = (type_bitsize >> 3) + (!!(type_bitsize & 0x7));
 				free (fmt);
-				rz_anal_op_fini (&ds->analop);
+				rz_analysis_op_fini (&ds->analop);
 				continue;
 			}
 		} else {
@@ -5352,7 +5352,7 @@ toro:
 				ret = ds_disassemble (ds, buf + addrbytes * idx, len - addrbytes * idx);
 				if (ret == -31337) {
 					inc = ds->oplen;
-					rz_anal_op_fini (&ds->analop);
+					rz_analysis_op_fini (&ds->analop);
 					continue;
 				}
 			}
@@ -5360,13 +5360,13 @@ toro:
 		if (ds->retry) {
 			ds->retry = false;
 			rz_cons_break_pop ();
-			rz_anal_op_fini (&ds->analop);
+			rz_analysis_op_fini (&ds->analop);
 			goto retry;
 		}
 		ds_atabs_option (ds);
 		if (ds->analop.addr != ds->at) {
-			rz_anal_op_fini (&ds->analop);
-			rz_anal_op (core->anal, &ds->analop, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx), RZ_ANAL_OP_MASK_ALL);
+			rz_analysis_op_fini (&ds->analop);
+			rz_analysis_op (core->anal, &ds->analop, ds->at, buf + addrbytes * idx, (int)(len - addrbytes * idx), RZ_ANAL_OP_MASK_ALL);
 		}
 		if (ret < 1) {
 			rz_strbuf_fini (&ds->analop.esil);
@@ -5401,15 +5401,15 @@ toro:
 		}
 		if (ds->pdf) {
 			static bool sparse = false;
-			RzAnalysisBlock *bb = rz_anal_fcn_bbget_in (core->anal, ds->pdf, ds->at);
+			RzAnalysisBlock *bb = rz_analysis_fcn_bbget_in (core->anal, ds->pdf, ds->at);
 			if (!bb) {
 				for (inc = 1; inc < ds->oplen; inc++) {
-					RzAnalysisBlock *bb = rz_anal_fcn_bbget_in (core->anal, ds->pdf, ds->at + inc);
+					RzAnalysisBlock *bb = rz_analysis_fcn_bbget_in (core->anal, ds->pdf, ds->at + inc);
 					if (bb) {
 						break;
 					}
 				}
-				rz_anal_op_fini (&ds->analop);
+				rz_analysis_op_fini (&ds->analop);
 				if (!sparse) {
 					rz_cons_printf ("..\n");
 					sparse = true;
@@ -5454,11 +5454,11 @@ toro:
 		////
 		RzAnalysisFunction *fcn = f;
 		if (fcn) {
-			RzAnalysisBlock *bb = rz_anal_fcn_bbget_in (core->anal, fcn, ds->at);
+			RzAnalysisBlock *bb = rz_analysis_fcn_bbget_in (core->anal, fcn, ds->at);
 			if (!bb) {
-				fcn = rz_anal_get_function_at (core->anal, ds->at);
+				fcn = rz_analysis_get_function_at (core->anal, ds->at);
 				if (fcn) {
-					bb = rz_anal_fcn_bbget_in (core->anal, fcn, ds->at);
+					bb = rz_analysis_fcn_bbget_in (core->anal, fcn, ds->at);
 				}
 			}
 			if (bb) {
@@ -5600,7 +5600,7 @@ toro:
 		}
 		inc += ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
 	}
-	rz_anal_op_fini (&ds->analop);
+	rz_analysis_op_fini (&ds->analop);
 
 	RZ_FREE (nbuf);
 	rz_cons_break_pop ();
@@ -5705,7 +5705,7 @@ toro:
 		ds->has_description = false;
 		rz_asm_set_pc (core->rasm, ds->at);
 		// XXX copypasta from main disassembler function
-		// rz_anal_get_fcn_in (core->anal, ds->at, RZ_ANAL_FCN_TYPE_NULL);
+		// rz_analysis_get_fcn_in (core->anal, ds->at, RZ_ANAL_FCN_TYPE_NULL);
 		ret = rz_asm_disassemble (core->rasm, &ds->asmop,
 			buf + addrbytes * i, nb_bytes - addrbytes * i);
 		ds->oplen = ret;
@@ -5721,10 +5721,10 @@ toro:
 		if (skip_bytes_bb && skip_bytes_bb < ret) {
 			ret = skip_bytes_bb;
 		}
-		rz_anal_op_fini (&ds->analop);
+		rz_analysis_op_fini (&ds->analop);
 		if (!hasanal) {
 			// XXX we probably don't need MASK_ALL
-			rz_anal_op (core->anal, &ds->analop, ds->at, buf + addrbytes * i, nb_bytes - addrbytes * i, RZ_ANAL_OP_MASK_ALL);
+			rz_analysis_op (core->anal, &ds->analop, ds->at, buf + addrbytes * i, nb_bytes - addrbytes * i, RZ_ANAL_OP_MASK_ALL);
 			hasanal = true;
 		}
 		if (ds_must_strip (ds)) {
@@ -5749,10 +5749,10 @@ toro:
 			if (ds->decode && !ds->immtrim) {
 				RZ_FREE (ds->opstr);
 				if (!hasanal) {
-					rz_anal_op (core->anal, &ds->analop, ds->at, buf + i, nb_bytes - i, RZ_ANAL_OP_MASK_ALL);
+					rz_analysis_op (core->anal, &ds->analop, ds->at, buf + i, nb_bytes - i, RZ_ANAL_OP_MASK_ALL);
 					hasanal = true;
 				}
-				tmpopstr = rz_anal_op_to_string (core->anal, &ds->analop);
+				tmpopstr = rz_analysis_op_to_string (core->anal, &ds->analop);
 				ds->opstr = (tmpopstr)? tmpopstr: strdup (rz_asm_op_get_asm (&ds->asmop));
 			} else if (ds->immtrim) {
 				free (ds->opstr);
@@ -5760,7 +5760,7 @@ toro:
 				rz_parse_immtrim (ds->opstr);
 			} else if (ds->use_esil) {
 				if (!hasanal) {
-					rz_anal_op (core->anal, &ds->analop,
+					rz_analysis_op (core->anal, &ds->analop,
 						ds->at, buf + i,
 						nb_bytes - i, RZ_ANAL_OP_MASK_ESIL | RZ_ANAL_OP_MASK_HINT);
 					hasanal = true;
@@ -5813,7 +5813,7 @@ toro:
 			RZ_FREE (ds->opstr);
 		}
 		if (ds->hint) {
-			rz_anal_hint_free (ds->hint);
+			rz_analysis_hint_free (ds->hint);
 			ds->hint = NULL;
 		}
 	}
@@ -6026,14 +6026,14 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		rz_str_ncpy (opstr, rz_asm_op_get_asm (&asmop), sizeof (opstr) - 1);
 
 		ds->has_description = false;
-		rz_anal_op_fini (&ds->analop);
-		rz_anal_op (core->anal, &ds->analop, at, buf + i, nb_bytes - i, RZ_ANAL_OP_MASK_ALL);
+		rz_analysis_op_fini (&ds->analop);
+		rz_analysis_op (core->anal, &ds->analop, at, buf + i, nb_bytes - i, RZ_ANAL_OP_MASK_ALL);
 
 		if (ds->pseudo) {
 			rz_parse_parse (core->parser, opstr, opstr);
 		}
 
-		// f = rz_anal_get_fcn_in (core->anal, at,
+		// f = rz_analysis_get_fcn_in (core->anal, at,
 		f = fcnIn (ds, at, RZ_ANAL_FCN_TYPE_FCN | RZ_ANAL_FCN_TYPE_SYM | RZ_ANAL_FCN_TYPE_LOC);
 		if (ds->subvar && f) {
 			int ba_len = rz_strbuf_length (&asmop.buf_asm) + 128;
@@ -6093,7 +6093,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		pj_s (pj, RZ_STRBUF_SAFEGET (&ds->analop.esil));
 		pj_kb (pj, "refptr", ds->analop.refptr);
 		pj_kn (pj, "fcn_addr", f ? f->addr : 0);
-		pj_kn (pj, "fcn_last", f ? rz_anal_function_max_addr (f) - ds->oplen : 0);
+		pj_kn (pj, "fcn_last", f ? rz_analysis_function_max_addr (f) - ds->oplen : 0);
 		pj_ki (pj, "size", ds->analop.size);
 		pj_ks (pj, "opcode", opstr);
 		pj_ks (pj, "disasm", str);
@@ -6102,8 +6102,8 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 			pj_ks (pj, "bytes", hex);
 			free (hex);
 		}
-		pj_ks (pj, "family", rz_anal_op_family_to_string (ds->analop.family));
-		pj_ks (pj, "type", rz_anal_optype_to_string (ds->analop.type));
+		pj_ks (pj, "family", rz_analysis_op_family_to_string (ds->analop.family));
+		pj_ks (pj, "type", rz_analysis_optype_to_string (ds->analop.type));
 		// indicate a relocated address
 		RzBinReloc *rel = rz_core_getreloc (core, ds->at, ds->analop.size);
 		// reloc is true if address in reloc table
@@ -6163,14 +6163,14 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		{
 			RzAnalysisRef *ref;
 			RzListIter *iter;
-			RzList *refs = rz_anal_refs_get (core->anal, at);
+			RzList *refs = rz_analysis_refs_get (core->anal, at);
 			if (refs && !rz_list_empty (refs)) {
 				pj_k (pj, "refs");
 				pj_a (pj);
 				rz_list_foreach (refs, iter, ref) {
 					pj_o (pj);
 					pj_kn (pj, "addr", ref->addr);
-					pj_ks (pj, "type", rz_anal_xrefs_type_tostring (ref->type));
+					pj_ks (pj, "type", rz_analysis_xrefs_type_tostring (ref->type));
 					pj_end (pj);
 				}
 				pj_end (pj);
@@ -6181,14 +6181,14 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 		{
 			RzAnalysisRef *ref;
 			RzListIter *iter;
-			RzList *xrefs = rz_anal_xrefs_get (core->anal, at);
+			RzList *xrefs = rz_analysis_xrefs_get (core->anal, at);
 			if (xrefs && !rz_list_empty (xrefs)) {
 				pj_k (pj, "xrefs");
 				pj_a (pj);
 				rz_list_foreach (xrefs, iter, ref) {
 					pj_o (pj);
 					pj_kn (pj, "addr", ref->addr);
-					pj_ks (pj, "type", rz_anal_xrefs_type_tostring (ref->type));
+					pj_ks (pj, "type", rz_analysis_xrefs_type_tostring (ref->type));
 					pj_end (pj);
 				}
 				pj_end (pj);
@@ -6211,7 +6211,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 	}
 	// rz_cons_printf ("]");
 	core->offset = old_offset;
-	rz_anal_op_fini (&ds->analop);
+	rz_analysis_op_fini (&ds->analop);
 	ds_free (ds);
 	if (!result) {
 		pj_o (pj);
@@ -6268,7 +6268,7 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 				if (scr_color) {
 					RzAnalysisOp aop;
 					RzAnalysisFunction *f = fcnIn (ds, ds->vat, RZ_ANAL_FCN_TYPE_NULL);
-					rz_anal_op (core->anal, &aop, addr, buf+i, l-i, RZ_ANAL_OP_MASK_ALL);
+					rz_analysis_op (core->anal, &aop, addr, buf+i, l-i, RZ_ANAL_OP_MASK_ALL);
 					char *buf_asm = rz_print_colorize_opcode (core->print, str,
 							core->cons->context->pal.reg, core->cons->context->pal.num, false, f ? f->addr : 0);
 					if (buf_asm) {
@@ -6504,9 +6504,9 @@ toro:
 					0
 				};
 				char *tmpopstr, *opstr = NULL;
-				rz_anal_op (core->anal, &analop, core->offset + i,
+				rz_analysis_op (core->anal, &analop, core->offset + i,
 					buf + addrbytes * i, nb_bytes - addrbytes * i, RZ_ANAL_OP_MASK_ALL);
-				tmpopstr = rz_anal_op_to_string (core->anal, &analop);
+				tmpopstr = rz_analysis_op_to_string (core->anal, &analop);
 				if (fmt == 'e') { // pie
 					char *esil = (RZ_STRBUF_SAFEGET (&analop.esil));
 					rz_cons_println (esil);
@@ -6521,7 +6521,7 @@ toro:
 					}
 					rz_cons_println (opstr);
 				}
-				rz_anal_op_fini (&analop);
+				rz_analysis_op_fini (&analop);
 			} else {
 				char opstr[128] = {
 					0
@@ -6534,25 +6534,25 @@ toro:
 					rz_parse_immtrim (asm_str);
 				}
 				if (subnames) {
-					RzAnalysisHint *hint = rz_anal_hint_get (core->anal, at);
+					RzAnalysisHint *hint = rz_analysis_hint_get (core->anal, at);
 					rz_parse_filter (core->parser, at, core->flags, hint,
 						asm_str, opstr, sizeof (opstr) - 1, core->print->big_endian);
-					rz_anal_hint_free (hint);
+					rz_analysis_hint_free (hint);
 					asm_str = (char *)&opstr;
 				}
 				if (show_color) {
 					RzAnalysisOp aop = {
 						0
 					};
-					RzAnalysisFunction *f = rz_anal_get_fcn_in (core->anal, core->offset + i, RZ_ANAL_FCN_TYPE_NULL);
-					rz_anal_op (core->anal, &aop, core->offset + i,
+					RzAnalysisFunction *f = rz_analysis_get_fcn_in (core->anal, core->offset + i, RZ_ANAL_FCN_TYPE_NULL);
+					rz_analysis_op (core->anal, &aop, core->offset + i,
 						buf + addrbytes * i, nb_bytes - addrbytes * i, RZ_ANAL_OP_MASK_BASIC);
 					asm_str = rz_print_colorize_opcode (core->print, asm_str, color_reg, color_num, false, f ? f->addr : 0);
 					rz_cons_printf ("%s%s"Color_RESET "\n",
 						rz_print_color_op_type (core->print, aop.type),
 						asm_str);
 					free (asm_str);
-					rz_anal_op_fini (&aop);
+					rz_analysis_op_fini (&aop);
 				} else {
 					rz_cons_println (asm_str);
 				}
@@ -6640,8 +6640,8 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 	rz_config_set_i (core->config, "io.cache", true);
 	rz_config_set_i (core->config, "asm.lines", false);
 	const char *strip = rz_config_get (core->config, "asm.strip");
-	const int max_op_size = rz_anal_archinfo (core->anal, RZ_ANAL_ARCHINFO_MAX_OP_SIZE);
-	int min_op_size = rz_anal_archinfo (core->anal, RZ_ANAL_ARCHINFO_MIN_OP_SIZE);
+	const int max_op_size = rz_analysis_archinfo (core->anal, RZ_ANAL_ARCHINFO_MAX_OP_SIZE);
+	int min_op_size = rz_analysis_archinfo (core->anal, RZ_ANAL_ARCHINFO_MIN_OP_SIZE);
 	min_op_size = min_op_size > 0 ? min_op_size : 1;
 	const ut64 read_len = max_op_size > 0 ? max_op_size : 32;
 	size_t buf_sz = 0x100, block_sz = 0, block_instr = 0;
@@ -6654,7 +6654,7 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 			break;
 		}
 		RzAnalysisOp op;
-		int ret = rz_anal_op (core->anal, &op, op_addr, buf + block_sz, read_len, RZ_ANAL_OP_MASK_ESIL);
+		int ret = rz_analysis_op (core->anal, &op, op_addr, buf + block_sz, read_len, RZ_ANAL_OP_MASK_ESIL);
 		const bool invalid_instr = ret < 1 || op.size < 1 || op.type == RZ_ANAL_OP_TYPE_ILL;
 		bool end_of_block = false;
 		switch (op.type & RZ_ANAL_OP_TYPE_MASK & ~RZ_ANAL_OP_HINT_MASK) {
@@ -6666,7 +6666,7 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 			end_of_block = true;
 			break;
 		}
-		if (RZ_STR_ISNOTEMPTY (strip) && strstr (strip, rz_anal_optype_to_string (op.type))) {
+		if (RZ_STR_ISNOTEMPTY (strip) && strstr (strip, rz_analysis_optype_to_string (op.type))) {
 			i--;
 		} else {
 			if (invalid_instr) {
@@ -6712,13 +6712,13 @@ RZ_API int rz_core_disasm_pde(RzCore *core, int nb_opcodes, int mode) {
 		if (invalid_instr) {
 			break;
 		}
-		rz_anal_esil_set_pc (core->anal->esil, op_addr);
+		rz_analysis_esil_set_pc (core->anal->esil, op_addr);
 		rz_reg_set_value (reg, pc, op_addr + op.size);
 		const char *e = rz_strbuf_get (&op.esil);
 		if (RZ_STR_ISNOTEMPTY (e)) {
-			rz_anal_esil_parse (esil, e);
+			rz_analysis_esil_parse (esil, e);
 		}
-		rz_anal_op_fini (&op);
+		rz_analysis_op_fini (&op);
 
 		if (end_of_block) {
 			block_start = rz_reg_get_value (reg, pc);

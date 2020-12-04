@@ -462,7 +462,7 @@ bool test_pdb_tpi_rust(void) {
 
 bool test_pdb_type_save(void) {
 	RzPdb pdb = RZ_EMPTY;
-	RzAnalysis *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_analysis_new ();
 	mu_assert_true (pdb_info_save_types (anal, "bins/pdb/Project1.pdb", &pdb), "pdb parsing failed");
 	check_kv ("R2_TEST_ENUM", "enum");
 	check_kv ("enum.R2_TEST_ENUM", "eENUM1_R2,eENUM2_R2,eENUM_R2_MAX");
@@ -495,7 +495,7 @@ bool test_pdb_type_save(void) {
 	check_kv ("struct.localeinfo_struct", "locinfo,mbcinfo");
 	check_kv ("struct.localeinfo_struct.locinfo", "struct threadlocaleinfostruct*,0,0");
 	check_kv ("struct.localeinfo_struct.mbcinfo", "struct threadmbcinfostruct*,4,0");
-	rz_anal_free (anal);
+	rz_analysis_free (anal);
 	mu_end;
 }
 

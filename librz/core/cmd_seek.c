@@ -250,7 +250,7 @@ static int cmd_seek_opcode_backward(RzCore *core, int numinstr) {
 		ret = rz_core_asm_bwdis_len (core, &instr_len, &addr, numinstr);
 #endif
 		addr = core->offset;
-		const int mininstrsize = rz_anal_archinfo (core->anal, RZ_ANAL_ARCHINFO_MIN_OP_SIZE);
+		const int mininstrsize = rz_analysis_archinfo (core->anal, RZ_ANAL_ARCHINFO_MIN_OP_SIZE);
 		for (i = 0; i < numinstr; i++) {
 			ut64 prev_addr = rz_core_prevop_addr_force (core, addr, 1);
 			if (prev_addr == UT64_MAX) {
@@ -279,13 +279,13 @@ static int cmd_seek_opcode_forward (RzCore *core, int n) {
 	int i, ret, val = 0;
 	for (val = i = 0; i < n; i++) {
 		RzAnalysisOp op;
-		ret = rz_anal_op (core->anal, &op, core->offset, core->block,
+		ret = rz_analysis_op (core->anal, &op, core->offset, core->block,
 			core->blocksize, RZ_ANAL_OP_MASK_BASIC);
 		if (ret < 1) {
 			ret = 1;
 		}
 		rz_core_seek_delta (core, ret);
-		rz_anal_op_fini (&op);
+		rz_analysis_op_fini (&op);
 		val += ret;
 	}
 	return val;
@@ -673,19 +673,19 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 		RzAnalysisFunction *fcn;
 		switch (input[1]) {
 		case '\0': // "sf"
-			fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
+			fcn = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
-				rz_core_seek (core, rz_anal_function_max_addr (fcn), true);
+				rz_core_seek (core, rz_analysis_function_max_addr (fcn), true);
 			}
 			break;
 		case ' ': // "sf "
-			fcn = rz_anal_get_function_byname (core->anal, input + 2);
+			fcn = rz_analysis_get_function_byname (core->anal, input + 2);
 			if (fcn) {
 				rz_core_seek (core, fcn->addr, true);
 			}
 			break;
 		case '.': // "sf."
-			fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
+			fcn = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				rz_core_seek (core, fcn->addr, true);
 			}

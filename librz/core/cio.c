@@ -345,10 +345,10 @@ RZ_API void rz_core_arch_bits_at(RzCore *core, ut64 addr, RZ_OUT RZ_NULLABLE int
 	}
 	//if we found bits related with anal hints pick it up
 	if (bits && !bitsval && !core->fixedbits) {
-		bitsval = rz_anal_hint_bits_at (core->anal, addr, NULL);
+		bitsval = rz_analysis_hint_bits_at (core->anal, addr, NULL);
 	}
 	if (arch && !archval && !core->fixedarch) {
-		archval = rz_anal_hint_arch_at (core->anal, addr, NULL);
+		archval = rz_analysis_hint_arch_at (core->anal, addr, NULL);
 	}
 	if (bits && bitsval) {
 		*bits = bitsval;

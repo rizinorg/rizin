@@ -40,7 +40,7 @@ RZ_API RzCoreItem *rz_core_item_at (RzCore *core, ut64 addr) {
 			}
 		}
 	}
-	RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, addr, 1);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, addr, 1);
 	if (fcn) {
 		ci->fcnname = strdup (fcn->name);
 	}
@@ -61,7 +61,7 @@ RZ_API RzCoreItem *rz_core_item_at (RzCore *core, ut64 addr) {
 				}
 			}
 			ci->size = op->size;
-			rz_anal_op_free (op);
+			rz_analysis_op_free (op);
 		}
 	}
 	char *cmt = rz_core_cmd_strf (core, "CC.@0x%08"PFMT64x, addr);

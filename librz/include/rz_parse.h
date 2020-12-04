@@ -5,7 +5,7 @@
 
 #include <rz_types.h>
 #include <rz_flag.h>
-#include <rz_anal.h>
+#include <rz_analysis.h>
 
 #ifdef __cplusplus
 extern "C" {

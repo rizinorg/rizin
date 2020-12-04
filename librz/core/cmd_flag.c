@@ -1003,9 +1003,9 @@ rep:
 				flagname++;
 			}
 			if (*flagname == '.') {
-				RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, off, 0);
+				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, off, 0);
 				if (fcn) {
-					rz_anal_function_delete_label_at (fcn, off);
+					rz_analysis_function_delete_label_at (fcn, off);
 				} else {
 					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 				}
@@ -1027,7 +1027,7 @@ rep:
 				if (input[2] == '*') {
 					print_function_labels (core->anal, NULL, input[1]);
 				} else {
-					RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, off, 0);
+					RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, off, 0);
 					if (fcn) {
 						print_function_labels (core->anal, fcn, input[1]);
 					} else {
@@ -1036,7 +1036,7 @@ rep:
 				}
 			} else {
 				char *name = strdup (input + ((input[2] == ' ')? 2: 1));
-				RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, off, 0);
+				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, off, 0);
 				if (name) {
 					char *eq = strchr (name, '=');
 					if (eq) {
@@ -1046,9 +1046,9 @@ rep:
 					rz_str_trim (name);
 					if (fcn) {
 						if (*name=='-') {
-							rz_anal_function_delete_label (fcn, name + 1);
+							rz_analysis_function_delete_label (fcn, name + 1);
 						} else {
-							rz_anal_function_set_label (fcn, name, off);
+							rz_analysis_function_set_label (fcn, name, off);
 						}
 					} else {
 						eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
@@ -1057,7 +1057,7 @@ rep:
 				}
 			}
 		} else {
-			RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, off, 0);
+			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, off, 0);
 			if (fcn) {
 				print_function_labels (core->anal, fcn, 0);
 			} else {

@@ -317,7 +317,7 @@ parse_plugins = [
 include_files =[
   'include/rznaked.h',
   'include/rz_agraph.h',
-  'include/rz_anal.h',
+  'include/rz_analysis.h',
   'include/rz_asm.h',
   'include/rz_bind.h',
   'include/rz_getopt.h',

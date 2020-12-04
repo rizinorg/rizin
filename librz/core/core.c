@@ -340,7 +340,7 @@ RZ_API RzCore *rz_core_cast(void *p) {
 }
 
 static ut64 getref (RzCore *core, int n, char t, int type) {
-	RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
 	RzListIter *iter;
 	RzAnalysisRef *r;
 	RzList *list;
@@ -349,9 +349,9 @@ static ut64 getref (RzCore *core, int n, char t, int type) {
 		return UT64_MAX;
 	}
 	if (t == 'r') {
-		list = rz_anal_function_get_refs (fcn);
+		list = rz_analysis_function_get_refs (fcn);
 	} else {
-		list = rz_anal_function_get_xrefs (fcn);
+		list = rz_analysis_function_get_xrefs (fcn);
 	}
 	rz_list_foreach (list, iter, r) {
 		if (r->type == type) {
@@ -465,12 +465,12 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			if (!off) {
 				off = core->offset;
 			}
-			RzAnalysisFunction *fcn = rz_anal_get_function_at (core->anal, off);
+			RzAnalysisFunction *fcn = rz_analysis_get_function_at (core->anal, off);
 			if (fcn) {
 				if (ok) {
 					*ok = true;
 				}
-				ut64 dst = rz_anal_function_get_label (fcn, str + 1);
+				ut64 dst = rz_analysis_function_get_label (fcn, str + 1);
 				if (dst == UT64_MAX) {
 					dst = fcn->addr;
 				}
@@ -541,9 +541,9 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			*ok = 1;
 		}
 		// TODO: group analop-dependant vars after a char, so i can filter
-		rz_anal_op (core->anal, &op, core->offset, core->block, core->blocksize, RZ_ANAL_OP_MASK_BASIC);
-		rz_anal_op_fini (&op); // we don't need strings or pointers, just values, which are not nullified in fini
-		// XXX the above line is assuming op after fini keeps jump, fail, ptr, val, size and rz_anal_op_is_eob()
+		rz_analysis_op (core->anal, &op, core->offset, core->block, core->blocksize, RZ_ANAL_OP_MASK_BASIC);
+		rz_analysis_op_fini (&op); // we don't need strings or pointers, just values, which are not nullified in fini
+		// XXX the above line is assuming op after fini keeps jump, fail, ptr, val, size and rz_analysis_op_is_eob()
 		switch (str[1]) {
 		case '.': // can use pc, sp, a0, a1, ...
 			return rz_debug_reg_get (core->dbg, str + 2);
@@ -633,7 +633,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				}
 				return UT64_MAX;
 			}
-			return rz_anal_op_is_eob (&op);
+			return rz_analysis_op_is_eob (&op);
 		case 'j': // $j jump address
 			return op.jump;
 		case 'p': // $p
@@ -744,13 +744,13 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'X': // $X nth xref
 			return getref (core, atoi (str + 2), 'x', RZ_ANAL_REF_TYPE_CALL);
 		case 'F': // $F function size
-			fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
+			fcn = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				switch (str[2]) {
 				/* function bounds (uppercase) */
 				case 'B': return fcn->addr; // begin
-				case 'E': return rz_anal_function_max_addr (fcn); // end
-				case 'S': return (str[3]=='S') ? rz_anal_function_realsize (fcn) : rz_anal_function_linear_size (fcn);
+				case 'E': return rz_analysis_function_max_addr (fcn); // end
+				case 'S': return (str[3]=='S') ? rz_analysis_function_realsize (fcn) : rz_analysis_function_linear_size (fcn);
 				case 'I': return fcn->ninstr;
 				/* basic blocks (lowercase) */
 				case 'b': return bbBegin (fcn, core->offset);
@@ -768,7 +768,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	default:
 		if (*str >= 'A') {
 			// NOTE: functions override flags
-			RzAnalysisFunction *fcn = rz_anal_get_function_byname (core->anal, str);
+			RzAnalysisFunction *fcn = rz_analysis_get_function_byname (core->anal, str);
 			if (fcn) {
 				if (ok) {
 					*ok = true;
@@ -776,7 +776,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				return fcn->addr;
 			}
 #if 0
-			ut64 addr = rz_anal_fcn_label_get (core->anal, core->offset, str);
+			ut64 addr = rz_analysis_fcn_label_get (core->anal, core->offset, str);
 			if (addr != 0) {
 				ret = addr;
 			} else {
@@ -1698,12 +1698,12 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 		}
 	} else if ((!strncmp (buf->data, "afvn ", 5))
 	|| (!strncmp (buf->data, "afan ", 5))) {
-		RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
+		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
 		RzList *vars;
 		if (!strncmp (buf->data, "afvn ", 5)) {
-			vars = rz_anal_var_list (core->anal, fcn, RZ_ANAL_VAR_KIND_BPV);
+			vars = rz_analysis_var_list (core->anal, fcn, RZ_ANAL_VAR_KIND_BPV);
 		} else {
-			vars = rz_list_new (); // TODO rz_anal_var_list (core->anal, fcn, RZ_ANAL_VAR_KIND_ARG);
+			vars = rz_list_new (); // TODO rz_analysis_var_list (core->anal, fcn, RZ_ANAL_VAR_KIND_ARG);
 		}
 		const char *f_ptr, *l_ptr;
 		RzAnalysisVar *var;
@@ -2005,7 +2005,7 @@ static char *rz_core_anal_hasrefs_to_depth(RzCore *core, ut64 value, int depth) 
 			rz_strbuf_appendf (s, " %s", fi->name);
 		}
 	}
-	RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, value, 0);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, value, 0);
 	if (fcn) {
 		rz_strbuf_appendf (s, " %s", fcn->name);
 	}
@@ -2173,14 +2173,14 @@ static int mywrite(const ut8 *buf, int len) {
 
 static bool exists_var(RzPrint *print, ut64 func_addr, char *str) {
 	RzAnalysis *anal = ((RzCore*)(print->user))->anal;
-	RzAnalysisFunction *fcn = rz_anal_get_function_at (anal, func_addr);
+	RzAnalysisFunction *fcn = rz_analysis_get_function_at (anal, func_addr);
 	if (!fcn) {
 		return false;
 	}
-	return !!rz_anal_function_get_var_byname (fcn, str);
+	return !!rz_analysis_function_get_var_byname (fcn, str);
 }
 
-static bool rz_core_anal_read_at(struct rz_anal_t *anal, ut64 addr, ut8 *buf, int len) {
+static bool rz_core_anal_read_at(struct rz_analysis_t *anal, ut64 addr, ut8 *buf, int len) {
 	return rz_io_read_at (anal->iob.io, addr, buf, len);
 }
 
@@ -2344,7 +2344,7 @@ static void ev_iowrite_cb(RzEvent *ev, int type, void *user, void *data) {
 	RzCore *core = user;
 	RzEventIOWrite *iow = data;
 	if (rz_config_get_i (core->config, "anal.detectwrites")) {
-		rz_anal_update_analysis_range (core->anal, iow->addr, iow->len);
+		rz_analysis_update_analysis_range (core->anal, iow->addr, iow->len);
 		if (core->cons->event_resize && core->cons->event_data) {
 			// Force a reload of the graph
 			core->cons->event_resize (core->cons->event_data);
@@ -2450,7 +2450,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->rasm = rz_asm_new ();
 	core->rasm->num = core->num;
 	rz_asm_set_user_ptr (core->rasm, core);
-	core->anal = rz_anal_new ();
+	core->anal = rz_analysis_new ();
 	core->gadgets = rz_list_newf ((RzListFree)rz_core_gadget_free);
 	core->anal->ev = core->ev;
 	core->anal->read_at = rz_core_anal_read_at;
@@ -2460,11 +2460,11 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->anal->cb.on_fcn_rename = on_fcn_rename;
 	core->print->sdb_types = core->anal->sdb_types;
 	core->rasm->syscall = rz_syscall_ref (core->anal->syscall); // BIND syscall anal/asm
-	rz_anal_set_user_ptr (core->anal, core);
+	rz_analysis_set_user_ptr (core->anal, core);
 	core->anal->cb_printf = (void *) rz_cons_printf;
 	core->parser = rz_parse_new ();
-	rz_anal_bind (core->anal, &(core->parser->analb));
-	core->parser->varlist = rz_anal_function_get_var_fields;
+	rz_analysis_bind (core->anal, &(core->parser->analb));
+	core->parser->varlist = rz_analysis_function_get_var_fields;
 	/// XXX shouhld be using coreb
 	rz_parse_set_user_ptr (core->parser, core);
 	core->bin = rz_bin_new ();
@@ -2501,9 +2501,9 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->anal->flg_class_set = core_flg_class_set;
 	core->anal->flg_class_get = core_flg_class_get;
 	core->anal->flg_fcn_set = core_flg_fcn_set;
-	rz_anal_bind (core->anal, &(core->parser->analb));
+	rz_analysis_bind (core->anal, &(core->parser->analb));
 	core->parser->flag_get = rz_core_flag_get_by_spaces;
-	core->parser->label_get = rz_anal_function_get_label_at;
+	core->parser->label_get = rz_analysis_function_get_label_at;
 
 	rz_core_bind (core, &(core->anal->coreb));
 
@@ -2536,7 +2536,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 
 	// TODO: get arch from rz_bin or from native arch
 	rz_asm_use (core->rasm, RZ_SYS_ARCH);
-	rz_anal_use (core->anal, RZ_SYS_ARCH);
+	rz_analysis_use (core->anal, RZ_SYS_ARCH);
 	if (RZ_SYS_BITS & RZ_SYS_BITS_64) {
 		rz_config_set_i (core->config, "asm.bits", 64);
 	} else {
@@ -2618,7 +2618,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_core_task_scheduler_fini (&c->tasks);
 	c->rcmd = rz_cmd_free (c->rcmd);
 	rz_list_free (c->cmd_descriptors);
-	c->anal = rz_anal_free (c->anal);
+	c->anal = rz_analysis_free (c->anal);
 	rz_asm_free (c->rasm);
 	c->rasm = NULL;
 	c->print = rz_print_free (c->print);
@@ -2916,7 +2916,7 @@ RZ_API RzAnalysisOp *rz_core_op_anal(RzCore *core, ut64 addr, RzAnalysisOpMask m
 	ut8 buf[64];
 	RzAnalysisOp *op = RZ_NEW (RzAnalysisOp);
 	rz_io_read_at (core->io, addr, buf, sizeof (buf));
-	rz_anal_op (core->anal, op, addr, buf, sizeof (buf), mask);
+	rz_analysis_op (core->anal, op, addr, buf, sizeof (buf), mask);
 	return op;
 }
 

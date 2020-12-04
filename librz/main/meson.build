@@ -26,7 +26,7 @@ rz_main_deps = [
   rz_bin_dep,
   rz_lang_dep,
   rz_io_dep,
-  rz_anal_dep,
+  rz_analysis_dep,
   rz_parse_dep,
   rz_bp_dep,
   rz_egg_dep,

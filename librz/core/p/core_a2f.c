@@ -235,7 +235,7 @@ static ut64 analyzeStackBased(RzCore *core, Sdb *db, ut64 addr, RzList *delayed_
 				break;
 			}
 			cur += op->size;
-			rz_anal_op_free (op);
+			rz_analysis_op_free (op);
 			op = NULL;
 		}
 	}

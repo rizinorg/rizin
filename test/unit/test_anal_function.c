@@ -1,4 +1,4 @@
-#include <rz_anal.h>
+#include <rz_analysis.h>
 #include "minunit.h"
 
 #include "test_anal_block_invars.inl"
@@ -45,82 +45,82 @@ static bool function_check_invariants(RzAnalysis *anal) {
 #define assert_leaks(anal) do { if (!check_leaks (anal)) { return false; } } while (0)
 
 bool test_r_anal_function_relocate() {
-	RzAnalysis *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_analysis_new ();
 	assert_invariants (anal);
 
-	RzAnalysisFunction *fa = rz_anal_create_function (anal, "do_something", 0x1337, 0, NULL);
+	RzAnalysisFunction *fa = rz_analysis_create_function (anal, "do_something", 0x1337, 0, NULL);
 	assert_invariants (anal);
-	RzAnalysisFunction *fb = rz_anal_create_function (anal, "do_something_else", 0xdeadbeef, 0, NULL);
+	RzAnalysisFunction *fb = rz_analysis_create_function (anal, "do_something_else", 0xdeadbeef, 0, NULL);
 	assert_invariants (anal);
-	rz_anal_create_function (anal, "do_something_different", 0xc0ffee, 0, NULL);
+	rz_analysis_create_function (anal, "do_something_different", 0xc0ffee, 0, NULL);
 	assert_invariants (anal);
 
-	bool success = rz_anal_function_relocate (fa, fb->addr);
+	bool success = rz_analysis_function_relocate (fa, fb->addr);
 	assert_invariants (anal);
 	mu_assert_false (success, "failed relocate");
 	mu_assert_eq (fa->addr, 0x1337, "failed relocate addr");
 
-	success = rz_anal_function_relocate (fa, 0x1234);
+	success = rz_analysis_function_relocate (fa, 0x1234);
 	assert_invariants (anal);
 	mu_assert_true (success, "successful relocate");
 	mu_assert_eq (fa->addr, 0x1234, "successful relocate addr");
 
 	assert_leaks (anal);
-	rz_anal_free (anal);
+	rz_analysis_free (anal);
 	mu_end;
 }
 
 bool test_r_anal_function_labels() {
-	RzAnalysis *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_analysis_new ();
 
-	RzAnalysisFunction *f = rz_anal_create_function (anal, "do_something", 0x1337, 0, NULL);
+	RzAnalysisFunction *f = rz_analysis_create_function (anal, "do_something", 0x1337, 0, NULL);
 
-	bool s = rz_anal_function_set_label (f, "smartfriend", 0x1339);
+	bool s = rz_analysis_function_set_label (f, "smartfriend", 0x1339);
 	mu_assert_true (s, "set label");
-	s = rz_anal_function_set_label (f, "stray", 0x133c);
+	s = rz_analysis_function_set_label (f, "stray", 0x133c);
 	mu_assert_true (s, "set label");
-	s = rz_anal_function_set_label (f, "the", 0x1340);
+	s = rz_analysis_function_set_label (f, "the", 0x1340);
 	mu_assert_true (s, "set label");
-	s = rz_anal_function_set_label (f, "stray", 0x1234);
+	s = rz_analysis_function_set_label (f, "stray", 0x1234);
 	mu_assert_false (s, "set label (existing name)");
-	s = rz_anal_function_set_label (f, "henlo", 0x133c);
+	s = rz_analysis_function_set_label (f, "henlo", 0x133c);
 	mu_assert_false (s, "set label (existing addr)");
 
-	ut64 addr = rz_anal_function_get_label (f, "smartfriend");
+	ut64 addr = rz_analysis_function_get_label (f, "smartfriend");
 	mu_assert_eq (addr, 0x1339, "get label");
-	addr = rz_anal_function_get_label (f, "stray");
+	addr = rz_analysis_function_get_label (f, "stray");
 	mu_assert_eq (addr, 0x133c, "get label");
-	addr = rz_anal_function_get_label (f, "skies");
+	addr = rz_analysis_function_get_label (f, "skies");
 	mu_assert_eq (addr, UT64_MAX, "get label (unknown)");
 
-	const char *name = rz_anal_function_get_label_at (f, 0x1339);
+	const char *name = rz_analysis_function_get_label_at (f, 0x1339);
 	mu_assert_streq (name, "smartfriend", "get label at");
-	name = rz_anal_function_get_label_at (f, 0x133c);
+	name = rz_analysis_function_get_label_at (f, 0x133c);
 	mu_assert_streq (name, "stray", "get label at");
-	name = rz_anal_function_get_label_at (f, 0x1234);
+	name = rz_analysis_function_get_label_at (f, 0x1234);
 	mu_assert_null (name, "get label at (unknown)");
 
-	rz_anal_function_delete_label (f, "stray");
-	addr = rz_anal_function_get_label (f, "stray");
+	rz_analysis_function_delete_label (f, "stray");
+	addr = rz_analysis_function_get_label (f, "stray");
 	mu_assert_eq (addr, UT64_MAX, "get label (deleted)");
-	name = rz_anal_function_get_label_at (f, 0x133c);
+	name = rz_analysis_function_get_label_at (f, 0x133c);
 	mu_assert_null (name, "get label at (deleted)");
-	addr = rz_anal_function_get_label (f, "smartfriend");
+	addr = rz_analysis_function_get_label (f, "smartfriend");
 	mu_assert_eq (addr, 0x1339, "get label (unaffected by delete)");
-	name = rz_anal_function_get_label_at (f, 0x1339);
+	name = rz_analysis_function_get_label_at (f, 0x1339);
 	mu_assert_streq (name, "smartfriend", "get label at (unaffected by delete)");
 
-	rz_anal_function_delete_label_at (f, 0x1340);
-	addr = rz_anal_function_get_label (f, "the");
+	rz_analysis_function_delete_label_at (f, 0x1340);
+	addr = rz_analysis_function_get_label (f, "the");
 	mu_assert_eq (addr, UT64_MAX, "get label (deleted)");
-	name = rz_anal_function_get_label_at (f, 0x340);
+	name = rz_analysis_function_get_label_at (f, 0x340);
 	mu_assert_null (name, "get label at (deleted)");
-	addr = rz_anal_function_get_label (f, "smartfriend");
+	addr = rz_analysis_function_get_label (f, "smartfriend");
 	mu_assert_eq (addr, 0x1339, "get label (unaffected by delete)");
-	name = rz_anal_function_get_label_at (f, 0x1339);
+	name = rz_analysis_function_get_label_at (f, 0x1339);
 	mu_assert_streq (name, "smartfriend", "get label at (unaffected by delete)");
 
-	rz_anal_free (anal);
+	rz_analysis_free (anal);
 	mu_end;
 }
 

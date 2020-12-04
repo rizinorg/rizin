@@ -1,4 +1,4 @@
-#include <rz_anal.h>
+#include <rz_analysis.h>
 #include <rz_bin.h>
 #include "minunit.h"
 
@@ -15,7 +15,7 @@ static bool test_parse_dwarf_types(void) {
 	mu_assert_notnull (bin, "Couldn't create new RzBin");
 	RzIO *io = rz_io_new ();
 	mu_assert_notnull (io, "Couldn't create new RzIO");
-	RzAnalysis *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_analysis_new ();
 	mu_assert_notnull (anal, "Couldn't create new RzAnalysis");
 	rz_io_bind (io, &bin->iob);
 	anal->binb.demangle = rz_bin_demangle;
@@ -36,7 +36,7 @@ static bool test_parse_dwarf_types(void) {
 		.info = info,
 		.loc = loc_table
 	};
-	rz_anal_dwarf_process_info (anal, &ctx);
+	rz_analysis_dwarf_process_info (anal, &ctx);
 
 	char * value = NULL;
 	Sdb *sdb = anal->sdb_types;
@@ -71,7 +71,7 @@ static bool test_parse_dwarf_types(void) {
 	check_kv ("union.unaligned.s8", "long long int,0,0");
 	rz_bin_dwarf_free_debug_info (info);
 	rz_bin_dwarf_free_debug_abbrev (abbrevs);
-	rz_anal_free (anal);
+	rz_analysis_free (anal);
 	rz_bin_free (bin);
 	rz_io_free (io);
 	mu_end;
@@ -82,7 +82,7 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	mu_assert_notnull (bin, "Couldn't create new RzBin");
 	RzIO *io = rz_io_new ();
 	mu_assert_notnull (io, "Couldn't create new RzIO");
-	RzAnalysis *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_analysis_new ();
 	mu_assert_notnull (anal, "Couldn't create new RzAnalysis");
 	rz_io_bind (io, &bin->iob);
 	anal->binb.demangle = rz_bin_demangle;
@@ -104,7 +104,7 @@ static bool test_dwarf_function_parsing_cpp(void) {
 		.info = info,
 		.loc = loc_table
 	};
-	rz_anal_dwarf_process_info (anal, &ctx);
+	rz_analysis_dwarf_process_info (anal, &ctx);
 
 	Sdb *sdb = sdb_ns (anal->sdb, "dwarf", 0);
 	mu_assert_notnull (sdb, "No dwarf function information in db");
@@ -127,7 +127,7 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	rz_bin_dwarf_free_debug_info (info);
 	rz_bin_dwarf_free_debug_abbrev (abbrevs);
 	rz_bin_dwarf_free_loc (loc_table);
-	rz_anal_free (anal);
+	rz_analysis_free (anal);
 	rz_bin_free (bin);
 	rz_io_free (io);
 	mu_end;
@@ -138,7 +138,7 @@ static bool test_dwarf_function_parsing_go(void) {
 	mu_assert_notnull (bin, "Couldn't create new RzBin");
 	RzIO *io = rz_io_new ();
 	mu_assert_notnull (io, "Couldn't create new RzIO");
-	RzAnalysis *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_analysis_new ();
 	mu_assert_notnull (anal, "Couldn't create new RzAnalysis");
 	rz_io_bind (io, &bin->iob);
 	anal->binb.demangle = rz_bin_demangle;
@@ -160,7 +160,7 @@ static bool test_dwarf_function_parsing_go(void) {
 		.info = info,
 		.loc = loc_table
 	};
-	rz_anal_dwarf_process_info (anal, &ctx);
+	rz_analysis_dwarf_process_info (anal, &ctx);
 
 	Sdb *sdb = sdb_ns (anal->sdb, "dwarf", 0);
 	mu_assert_notnull (sdb, "No dwarf function information in db");
@@ -181,7 +181,7 @@ static bool test_dwarf_function_parsing_go(void) {
 	rz_bin_dwarf_free_debug_info (info);
 	rz_bin_dwarf_free_debug_abbrev (abbrevs);
 	rz_bin_dwarf_free_loc (loc_table);
-	rz_anal_free (anal);
+	rz_analysis_free (anal);
 	rz_bin_free (bin);
 	rz_io_free (io);
 	mu_end;
@@ -192,7 +192,7 @@ static bool test_dwarf_function_parsing_rust(void) {
 	mu_assert_notnull (bin, "Couldn't create new RzBin");
 	RzIO *io = rz_io_new ();
 	mu_assert_notnull (io, "Couldn't create new RzIO");
-	RzAnalysis *anal = rz_anal_new ();
+	RzAnalysis *anal = rz_analysis_new ();
 	mu_assert_notnull (anal, "Couldn't create new RzAnalysis");
 	rz_io_bind (io, &bin->iob);
 	anal->binb.demangle = rz_bin_demangle;
@@ -214,7 +214,7 @@ static bool test_dwarf_function_parsing_rust(void) {
 		.info = info,
 		.loc = loc_table
 	};
-	rz_anal_dwarf_process_info (anal, &ctx);
+	rz_analysis_dwarf_process_info (anal, &ctx);
 
 	Sdb *sdb = sdb_ns (anal->sdb, "dwarf", 0);
 	mu_assert_notnull (sdb, "No dwarf function information in db");
@@ -238,7 +238,7 @@ static bool test_dwarf_function_parsing_rust(void) {
 	rz_bin_dwarf_free_debug_info (info);
 	rz_bin_dwarf_free_debug_abbrev (abbrevs);
 	rz_bin_dwarf_free_loc (loc_table);
-	rz_anal_free (anal);
+	rz_analysis_free (anal);
 	rz_bin_free (bin);
 	rz_io_free (io);
 	mu_end;

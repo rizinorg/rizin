@@ -15,7 +15,7 @@
 #include "rz_lang.h"
 #include "rz_asm.h"
 #include "rz_parse.h"
-#include "rz_anal.h"
+#include "rz_analysis.h"
 #include "rz_cmd.h"
 #include "rz_cons.h"
 #include "rz_search.h"

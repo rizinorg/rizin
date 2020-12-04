@@ -1,7 +1,7 @@
 /* rizin - LGPL - Copyright 2017 - wargio */
 #include "vle.h"
 #include "vle_internal.h"
-#include <rz_anal.h>
+#include <rz_analysis.h>
 
 #define USE_INTERNAL_PPC(x) ((x)->options&VLE_INTERNAL_PPC)
 

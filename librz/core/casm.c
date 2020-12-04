@@ -139,7 +139,7 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 			if (mode == 'i') {
 				RzAnalysisOp analop = {0};
 				ut64 len = RZ_MIN (15, core->blocksize - idx);
-				if (rz_anal_op (core->anal, &analop, addr, buf + idx, len, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM) < 1) {
+				if (rz_analysis_op (core->anal, &analop, addr, buf + idx, len, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM) < 1) {
 					idx ++; // TODO: honor mininstrsz
 					continue;
 				}
@@ -173,18 +173,18 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 					rz_list_append (hits, hit);
 					continue;
 				}
-				rz_anal_op_fini (&analop);
+				rz_analysis_op_fini (&analop);
 				idx ++; // TODO: honor mininstrsz
 				continue;
 			} else if (mode == 'e') {
 				RzAnalysisOp analop = {0};
-				if (rz_anal_op (core->anal, &analop, addr, buf + idx, 15, RZ_ANAL_OP_MASK_ESIL) < 1) {
+				if (rz_analysis_op (core->anal, &analop, addr, buf + idx, 15, RZ_ANAL_OP_MASK_ESIL) < 1) {
 					idx ++; // TODO: honor mininstrsz
 					continue;
 				}
 				//opsz = analop.size;
 				opst = strdup (rz_strbuf_get (&analop.esil));
-				rz_anal_op_fini (&analop);
+				rz_analysis_op_fini (&analop);
 			} else {
 				if (!(len = rz_asm_disassemble (
 					      core->rasm, &op,

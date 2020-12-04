@@ -67,7 +67,7 @@ static char *colorize_asm_string(RzCore *core, const char *buf_asm, int optype, 
 	bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 	const char *color_num = core->cons->context->pal.num;
 	const char *color_reg = core->cons->context->pal.reg;
-	RzAnalysisFunction* fcn = rz_anal_get_fcn_in (core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
+	RzAnalysisFunction* fcn = rz_analysis_get_fcn_in (core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
 
 	if (!use_color) {
 		return strdup (source);
@@ -141,15 +141,15 @@ RZ_API bool rz_core_visual_esil(RzCore *core) {
 		return false;
 	}
 	memcpy (buf, core->block, sizeof (ut64));
-	RzAnalysisEsil *esil = rz_anal_esil_new (20, 0, addrsize);
+	RzAnalysisEsil *esil = rz_analysis_esil_new (20, 0, addrsize);
 	esil->anal = core->anal;
-	rz_anal_esil_set_pc (esil, core->offset);
+	rz_analysis_esil_set_pc (esil, core->offset);
 	for (;;) {
 		rz_cons_clear00 ();
 		// bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 		(void) rz_asm_disassemble (core->rasm, &asmop, buf, sizeof (ut64));
 		analop.type = -1;
-		(void)rz_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), RZ_ANAL_OP_MASK_ESIL);
+		(void)rz_analysis_op (core->anal, &analop, core->offset, buf, sizeof (ut64), RZ_ANAL_OP_MASK_ESIL);
 		analopType = analop.type & RZ_ANAL_OP_TYPE_MASK;
 		rz_cons_printf ("rizin's esil debugger:\n\n");
 		rz_cons_printf ("pos: %d\n", x);
@@ -205,8 +205,8 @@ RZ_API bool rz_core_visual_esil(RzCore *core) {
 			free (r);
 		}
 		rz_cons_printf ("esil stack:\n");
-		rz_anal_esil_dumpstack (esil);
-		rz_anal_op_fini (&analop);
+		rz_analysis_esil_dumpstack (esil);
+		rz_analysis_op_fini (&analop);
 		rz_cons_newline ();
 		rz_cons_visual_flush ();
 
@@ -223,7 +223,7 @@ RZ_API bool rz_core_visual_esil(RzCore *core) {
 			eprintf ("step ((%s))\n", word);
 			rz_sys_usleep (500);
 			x = RZ_MIN (x + 1, nbits - 1);
-			rz_anal_esil_runword (esil, word);
+			rz_analysis_esil_runword (esil, word);
 			break;
 		case 'S':
 			eprintf ("esil step over :D\n");
@@ -267,7 +267,7 @@ RZ_API bool rz_core_visual_esil(RzCore *core) {
 		}
 	}
 beach:
-	rz_anal_esil_free (esil);
+	rz_analysis_esil_free (esil);
 	free (word);
 	return true;
 }
@@ -295,7 +295,7 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 		bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 		(void) rz_asm_disassemble (core->rasm, &asmop, buf, sizeof (ut64));
 		analop.type = -1;
-		(void)rz_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), RZ_ANAL_OP_MASK_ESIL);
+		(void)rz_analysis_op (core->anal, &analop, core->offset, buf, sizeof (ut64), RZ_ANAL_OP_MASK_ESIL);
 		analopType = analop.type & RZ_ANAL_OP_TYPE_MASK;
 		rz_cons_printf ("rizin's bit editor:\n\n");
 		rz_cons_printf ("offset: 0x%08"PFMT64x"\n"Color_RESET, core->offset + cur);
@@ -317,7 +317,7 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 			free (op);
 		}
 		rz_cons_printf (Color_RESET"esl: %s\n"Color_RESET, rz_strbuf_get (&analop.esil));
-		rz_anal_op_fini (&analop);
+		rz_analysis_op_fini (&analop);
 		rz_cons_printf ("chr:");
 		for (i = 0; i < 8; i++) {
 			const ut8 *byte = buf + i;
@@ -1336,9 +1336,9 @@ RZ_API int rz_core_visual_classes(RzCore *core) {
 }
 
 static void anal_class_print(RzAnalysis *anal, const char *class_name) {
-	RzVector *bases = rz_anal_class_base_get_all (anal, class_name);
-	RzVector *vtables = rz_anal_class_vtable_get_all (anal, class_name);
-	RzVector *methods = rz_anal_class_method_get_all (anal, class_name);
+	RzVector *bases = rz_analysis_class_base_get_all (anal, class_name);
+	RzVector *vtables = rz_analysis_class_vtable_get_all (anal, class_name);
+	RzVector *methods = rz_analysis_class_method_get_all (anal, class_name);
 
 	rz_cons_print (class_name);
 	if (bases) {
@@ -1434,7 +1434,7 @@ static const char *show_anal_classes(RzCore *core, char mode, int *idx, SdbList 
 RZ_API int rz_core_visual_anal_classes(RzCore *core) {
 	int ch, index = 0;
 	char command[1024];
-	SdbList *list = rz_anal_class_get_all (core->anal, true);
+	SdbList *list = rz_analysis_class_get_all (core->anal, true);
 	int oldcur = 0;
 	char mode = ' ';
 	const char *class_name = "";
@@ -2491,18 +2491,18 @@ static void function_rename(RzCore *core, ut64 addr, const char *name) {
 			rz_flag_unset_name (core->flags, fcn->name);
 			free (fcn->name);
 			fcn->name = strdup (name);
-			rz_flag_set (core->flags, name, addr, rz_anal_function_size_from_entry (fcn));
+			rz_flag_set (core->flags, name, addr, rz_analysis_function_size_from_entry (fcn));
 			break;
 		}
 	}
 }
 
 static void variable_rename (RzCore *core, ut64 addr, int vindex, const char *name) {
-	RzAnalysisFunction* fcn = rz_anal_get_fcn_in (core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
+	RzAnalysisFunction* fcn = rz_analysis_get_fcn_in (core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
 	ut64 a_tmp = core->offset;
 	int i = 0;
 	RzListIter *iter;
-	RzList *list = rz_anal_var_all_list (core->anal, fcn);
+	RzList *list = rz_analysis_var_all_list (core->anal, fcn);
 	RzAnalysisVar* var;
 
 	rz_list_foreach (list, iter, var) {
@@ -2518,14 +2518,14 @@ static void variable_rename (RzCore *core, ut64 addr, int vindex, const char *na
 }
 
 static void variable_set_type (RzCore *core, ut64 addr, int vindex, const char *type) {
-	RzAnalysisFunction* fcn = rz_anal_get_fcn_in (core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
-	RzList *list = rz_anal_var_all_list (core->anal, fcn);
+	RzAnalysisFunction* fcn = rz_analysis_get_fcn_in (core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
+	RzList *list = rz_analysis_var_all_list (core->anal, fcn);
 	RzListIter *iter;
 	RzAnalysisVar* var;
 
 	rz_list_foreach (list, iter, var) {
 		if (vindex == 0) {
-			rz_anal_var_set_type (var, type);
+			rz_analysis_var_set_type (var, type);
 			break;
 		}
 		vindex--;
@@ -2566,13 +2566,13 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 					var_functions = rz_str_newf ("%c%c %s0x%08"PFMT64x"" Color_RESET" %4"PFMT64d" %s%s"Color_RESET"",
 							(seek == fcn->addr)?'>':' ',
 							(idx==i)?'*':' ',
-							color_addr, fcn->addr, rz_anal_function_realsize (fcn),
+							color_addr, fcn->addr, rz_analysis_function_realsize (fcn),
 							color_fcn, fcn->name);
 				} else {
 					var_functions = rz_str_newf ("%c%c 0x%08"PFMT64x" %4"PFMT64d" %s",
 							(seek == fcn->addr)?'>':' ',
 							(idx==i)?'*':' ',
-							fcn->addr, rz_anal_function_realsize (fcn), fcn->name);
+							fcn->addr, rz_analysis_function_realsize (fcn), fcn->name);
 				}
 				if (var_functions) {
 					if (!rz_cons_singleton ()->show_vals) {
@@ -2601,11 +2601,11 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 static ut64 var_variables_show(RzCore* core, int idx, int *vindex, int show, int cols) {
 	int i = 0;
 	const ut64 addr = var_functions_show (core, idx, 0, cols);
-	RzAnalysisFunction* fcn = rz_anal_get_fcn_in (core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
+	RzAnalysisFunction* fcn = rz_analysis_get_fcn_in (core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
 	int window;
 	int wdelta = (idx > 5) ? idx - 5 : 0;
 	RzListIter *iter;
-	RzList *list = rz_anal_var_all_list (core->anal, fcn);
+	RzList *list = rz_analysis_var_all_list (core->anal, fcn);
 	RzAnalysisVar* var;
 	// Adjust the window size automatically.
 	(void)rz_cons_get_size (&window);
@@ -2682,9 +2682,9 @@ static void rz_core_visual_anal_refresh_column (RzCore *core, int colpos) {
 	const ut64 addr = (level != 0 && level != 1)
 		? core->offset
 		: var_functions_show (core, option, 0, colpos);
-	// RzAnalysisFunction* fcn = rz_anal_get_fcn_in(core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
+	// RzAnalysisFunction* fcn = rz_analysis_get_fcn_in(core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
 	int h, w = rz_cons_get_size (&h);
-	// int sz = (fcn)? RZ_MIN (rz_anal_fcn_size (fcn), h * 15) : 16; // max instr is 15 bytes.
+	// int sz = (fcn)? RZ_MIN (rz_analysis_fcn_size (fcn), h * 15) : 16; // max instr is 15 bytes.
 
 	const char *cmd;
 	if (printMode > 0 && printMode < lastPrintMode) {
@@ -3308,7 +3308,7 @@ RZ_API void rz_core_seek_next(RzCore *core, const char *type) {
 	ut64 next = UT64_MAX;
 	if (strstr (type, "opc")) {
 		RzAnalysisOp aop;
-		if (rz_anal_op (core->anal, &aop, core->offset, core->block, core->blocksize, RZ_ANAL_OP_MASK_BASIC)) {
+		if (rz_analysis_op (core->anal, &aop, core->offset, core->block, core->blocksize, RZ_ANAL_OP_MASK_BASIC)) {
 			next = core->offset + aop.size;
 		} else {
 			eprintf ("Invalid opcode\n");
@@ -3397,7 +3397,7 @@ static void handleHints(RzCore *core) {
 				rz_str_trim (arg);
 				int bits = atoi (arg);
 				if (bits == 8 || bits == 16 || bits == 32 || bits == 64) {
-					rz_anal_hint_set_bits (core->anal, core->offset, bits);
+					rz_analysis_hint_set_bits (core->anal, core->offset, bits);
 				}
 			}
 			break;
@@ -3589,7 +3589,7 @@ onemoretime:
 						}
 					}
 				}
-				rz_anal_op_free (op);
+				rz_analysis_op_free (op);
 			}
 			if (man) {
 				char *p = strstr (man, "INODE");
@@ -3613,20 +3613,20 @@ onemoretime:
 			break;
 		}
 		// TODO: get the aligned instruction even if the cursor is in the middle of it.
-		rz_anal_op (core->anal, &op, off,
+		rz_analysis_op (core->anal, &op, off,
 			core->block + off - core->offset, 32, RZ_ANAL_OP_MASK_BASIC);
 
 		tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
-		RzAnalysisVar *var = rz_anal_get_used_function_var (core->anal, op.addr);
+		RzAnalysisVar *var = rz_analysis_get_used_function_var (core->anal, op.addr);
 		if (var) {
 //			q = rz_str_newf ("?i Rename variable %s to;afvn %s `yp`", op.var->name, op.var->name);
 			char *newname = rz_cons_input (sdb_fmt ("New variable name for '%s': ", var->name));
 			if (newname && *newname) {
-				rz_anal_var_rename (var, newname, true);
+				rz_analysis_var_rename (var, newname, true);
 				free (newname);
 			}
 		} else if (tgt_addr != UT64_MAX) {
-			RzAnalysisFunction *fcn = rz_anal_get_function_at (core->anal, tgt_addr);
+			RzAnalysisFunction *fcn = rz_analysis_get_function_at (core->anal, tgt_addr);
 			RzFlagItem *f = rz_flag_get_i (core->flags, tgt_addr);
 			if (fcn) {
 				q = rz_str_newf ("?i Rename function %s to;afn `yp` 0x%"PFMT64x,
@@ -3644,7 +3644,7 @@ onemoretime:
 			rz_core_cmd0 (core, q);
 			free (q);
 		}
-		rz_anal_op_fini (&op);
+		rz_analysis_op_fini (&op);
 		break;
 	}
 	case 'C':
@@ -3689,17 +3689,17 @@ onemoretime:
 	case 'e':
 		// set function size
 		{
-		RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, off, 0);
+		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, off, 0);
 		if (!fcn) {
-			fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
+			fcn = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
 		}
 		if (fcn) {
 			RzAnalysisOp op;
 			ut64 size;
-			if (rz_anal_op (core->anal, &op, off, core->block+delta,
+			if (rz_analysis_op (core->anal, &op, off, core->block+delta,
 					core->blocksize-delta, RZ_ANAL_OP_MASK_BASIC)) {
 				size = off - fcn->addr + op.size;
-				rz_anal_function_resize (fcn, size);
+				rz_analysis_function_resize (fcn, size);
 			}
 		}
 		}
@@ -3833,9 +3833,9 @@ onemoretime:
 		break;
 	case 'f':
 		{
-			RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
+			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
-				rz_anal_function_resize (fcn, core->offset - fcn->addr);
+				rz_analysis_function_resize (fcn, core->offset - fcn->addr);
 			}
 			rz_cons_break_push (NULL, NULL);
 			rz_core_cmdf (core, "af @ 0x%08" PFMT64x, off); // required for thumb autodetection
@@ -3879,12 +3879,12 @@ onemoretime:
 		RzAnalysisOp *op = NULL;
 		RzAnalysisVar *var = NULL;
 		for (try_off = start_off; try_off < start_off + incr*16; try_off += incr) {
-			rz_anal_op_free (op);
+			rz_analysis_op_free (op);
 			op = rz_core_anal_op (core, try_off, RZ_ANAL_OP_MASK_ALL);
 			if (!op) {
 				break;
 			}
-			var = rz_anal_get_used_function_var (core->anal, op->addr);
+			var = rz_analysis_get_used_function_var (core->anal, op->addr);
 			if (var) {
 				break;
 			}
@@ -3893,7 +3893,7 @@ onemoretime:
 		if (var) {
 			char *newname = rz_cons_input (sdb_fmt ("New variable name for '%s': ", var->name));
 			if (newname && *newname) {
-				rz_anal_var_rename (var, newname, true);
+				rz_analysis_var_rename (var, newname, true);
 				free (newname);
 			}
 		} else {
@@ -3901,7 +3901,7 @@ onemoretime:
 			rz_cons_any_key (NULL);
 		}
 
-		rz_anal_op_free (op);
+		rz_analysis_op_free (op);
 		break;
         }
 	case 'Q':

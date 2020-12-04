@@ -756,7 +756,7 @@ static int step_until_esil(RzCore *core, const char *esilstr) {
 		}
 		rz_debug_step (core->dbg, 1);
 		rz_debug_reg_sync (core->dbg, RZ_REG_TYPE_ALL, false);
-		if (rz_anal_esil_condition (core->anal->esil, esilstr)) {
+		if (rz_analysis_esil_condition (core->anal->esil, esilstr)) {
 			eprintf ("ESIL BREAK!\n");
 			break;
 		}
@@ -769,7 +769,7 @@ static bool is_repeatable_inst(RzCore *core, ut64 addr) {
 	// we have read the bytes already
 	RzAnalysisOp *op = rz_core_op_anal (core, addr, RZ_ANAL_OP_MASK_ALL);
 	bool ret = op && ((op->prefix & RZ_ANAL_OP_PREFIX_REP) || (op->prefix & RZ_ANAL_OP_PREFIX_REPNE));
-	rz_anal_op_free (op);
+	rz_analysis_op_free (op);
 	return ret;
 }
 
@@ -880,16 +880,16 @@ static int step_until_optype(RzCore *core, const char *_optypes) {
 		}
 		rz_io_read_at (core->io, pc, buf, sizeof (buf));
 
-		if (!rz_anal_op (core->dbg->anal, &op, pc, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC)) {
-			eprintf ("Error: rz_anal_op failed\n");
+		if (!rz_analysis_op (core->dbg->anal, &op, pc, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC)) {
+			eprintf ("Error: rz_analysis_op failed\n");
 			res = false;
 			goto cleanup_after_push;
 		}
 
 		// This is slow because we do lots of strcmp's.
-		// To improve this, the function rz_anal_optype_string_to_int should be implemented
+		// To improve this, the function rz_analysis_optype_string_to_int should be implemented
 		// I also don't check if the opcode type exists.
-		const char *optype_str = rz_anal_optype_to_string (op.type);
+		const char *optype_str = rz_analysis_optype_to_string (op.type);
 		rz_list_foreach (optypes_list, iter, optype) {
 			if (!strcmp (optype_str, optype)) {
 				goto cleanup_after_push;
@@ -1170,7 +1170,7 @@ static void cmd_debug_backtrace(RzCore *core, const char *input) {
 			/* XXX Bottleneck..we need to reuse the bytes read by traptrace */
 			// XXX Do asm.arch should define the max size of opcode?
 			rz_io_read_at (core->io, addr, buf, 32); // XXX longer opcodes?
-			rz_anal_op (core->anal, &analop, addr, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC);
+			rz_analysis_op (core->anal, &analop, addr, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC);
 		} while (rz_bp_traptrace_at (core->dbg->bp, addr, analop.size));
 		rz_bp_traptrace_enable (core->dbg->bp, false);
 	}
@@ -2991,7 +2991,7 @@ static void backtrace_vars(RzCore *core, RzList *frames) {
 			}
 		}
 //////////
-		RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, f->addr, 0);
+		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, f->addr, 0);
 		// char *str = rz_str_newf ("[frame %d]", n);
 		rz_cons_printf ("%d  0x%08"PFMT64x" sp: 0x%08"PFMT64x" %-5d"
 				"[%s]  %s %s\n", n, f->addr, f->sp, (int)f->size,
@@ -3355,7 +3355,7 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 		RzBinSymbol *symbol;
 		rz_list_foreach (symbols, iter, symbol) {
 			if (symbol->type && !strcmp (symbol->type, RZ_BIN_TYPE_FUNC_STR)) {
-				if (rz_anal_noreturn_at (core->anal, symbol->vaddr)) {
+				if (rz_analysis_noreturn_at (core->anal, symbol->vaddr)) {
 					bpi = rz_debug_bp_add (core->dbg, symbol->vaddr, hwbp, false, 0, NULL, 0);
 					if (bpi) {
 						bpi->name = rz_str_newf ("%s.%s", "sym", symbol->name);
@@ -3438,7 +3438,7 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 			rz_list_foreach (list, iter, frame) {
 				char *flagdesc, *flagdesc2, *pcstr, *spstr;
 				get_backtrace_info (core, frame, addr, &flagdesc, &flagdesc2, &pcstr, &spstr, hex_format);
-				RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, frame->addr, 0);
+				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, frame->addr, 0);
 				rz_cons_printf ("%s{\"idx\":%d,\"pc\":%s,\"sp\":%s,\"frame_size\":%d,"
 						"\"fname\":\"%s\",\"desc\":\"%s%s\"}", (i ? " ," : ""),
 						i,
@@ -3515,7 +3515,7 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 			rz_list_foreach (list, iter, frame) {
 				char *flagdesc, *flagdesc2, *pcstr, *spstr;
 				get_backtrace_info (core, frame, addr, &flagdesc, &flagdesc2, &pcstr, &spstr, hex_format);
-				RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, frame->addr, 0);
+				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, frame->addr, 0);
 				rz_cons_printf ("%d  %s sp: %s  %-5d"
 						"[%s]  %s %s\n", i++,
 						pcstr, spstr,
@@ -3829,7 +3829,7 @@ static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_ad
 		addr_in_range = addr >= from && addr < to;
 
 		rz_io_read_at (core->io, addr, buf, sizeof (buf));
-		rz_anal_op (core->anal, &aop, addr, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC);
+		rz_analysis_op (core->anal, &aop, addr, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC);
 		eprintf ("%d %"PFMT64x"\r", n++, addr);
 		switch (aop.type) {
 		case RZ_ANAL_OP_TYPE_UCALL:
@@ -4539,7 +4539,7 @@ static int cmd_debug_step (RzCore *core, const char *input) {
 			rz_debug_reg_sync (core->dbg, RZ_REG_TYPE_GPR, false);
 			addr = rz_debug_reg_get (core->dbg, "PC");
 			rz_io_read_at (core->io, addr, buf, sizeof (buf));
-			rz_anal_op (core->anal, &aop, addr, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC);
+			rz_analysis_op (core->anal, &aop, addr, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC);
 			if (aop.type == RZ_ANAL_OP_TYPE_CALL) {
 				RzBinObject *o = rz_bin_cur_object (core->bin);
 				RzBinSection *s = rz_bin_get_section_at (o, aop.jump, true);
@@ -4561,7 +4561,7 @@ static int cmd_debug_step (RzCore *core, const char *input) {
 			for (i = 0; i < times; i++) {
 				rz_debug_reg_sync (core->dbg, RZ_REG_TYPE_GPR, false);
 				rz_io_read_at (core->io, addr, buf, sizeof (buf));
-				rz_anal_op (core->anal, &aop, addr, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC);
+				rz_analysis_op (core->anal, &aop, addr, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC);
 #if 0
 				if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
 					eprintf ("Don't know how to skip this instruction\n");
@@ -4733,7 +4733,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 						rz_cons_printf ("%d %s\n", trace->count, op->mnemonic);
 					}
 					n++;
-					rz_anal_op_free (op);
+					rz_analysis_op_free (op);
 				}
 			} else if (input[2] == ' ') {
 				int n = 0;
@@ -4743,7 +4743,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 						rz_cons_printf ("0x%08"PFMT64x" %s\n", trace->addr, op->mnemonic);
 					}
 					n++;
-					rz_anal_op_free (op);
+					rz_analysis_op_free (op);
 				}
 			} else {
 				// TODO: reimplement using the api
@@ -4751,7 +4751,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				rz_list_foreach (core->dbg->trace->traces, iter, trace) {
 					op = rz_core_anal_op (core, trace->addr, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM);
 					rz_cons_printf ("0x%08"PFMT64x" %s\n", trace->addr, op->mnemonic);
-					rz_anal_op_free (op);
+					rz_analysis_op_free (op);
 				}
 			}
 			break;
@@ -4787,12 +4787,12 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				if (op) {
 					RzDebugTracepoint *tp = rz_debug_trace_add (core->dbg, addr, op->size);
 					if (!tp) {
-						rz_anal_op_free (op);
+						rz_analysis_op_free (op);
 						break;
 					}
 					tp->count = count;
-					rz_anal_trace_bb (core->anal, addr);
-					rz_anal_op_free (op);
+					rz_analysis_trace_bb (core->anal, addr);
+					rz_analysis_op_free (op);
 				} else {
 					eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
 				}
@@ -4806,14 +4806,14 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				int iotrap = rz_config_get_i (core->config, "esil.iotrap");
 				int nonull = rz_config_get_i (core->config, "esil.nonull");
 				unsigned int addrsize = rz_config_get_i (core->config, "esil.addr.size");
-				if (!(core->anal->esil = rz_anal_esil_new (stacksize, iotrap, addrsize))) {
+				if (!(core->anal->esil = rz_analysis_esil_new (stacksize, iotrap, addrsize))) {
 					return 0;
 				}
-				rz_anal_esil_setup (core->anal->esil, core->anal, romem, stats, nonull);
+				rz_analysis_esil_setup (core->anal->esil, core->anal, romem, stats, nonull);
 			}
 			switch (input[2]) {
 			case 0: // "dte"
-				rz_anal_esil_trace_list (core->anal->esil);
+				rz_analysis_esil_trace_list (core->anal->esil);
 				break;
 			case 'i': { // "dtei"
 				ut64 addr = rz_num_math (core->num, input + 3);
@@ -4822,9 +4822,9 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				}
 				RzAnalysisOp *op = rz_core_anal_op (core, addr, RZ_ANAL_OP_MASK_ESIL);
 				if (op) {
-					rz_anal_esil_trace_op (core->anal->esil, op);
+					rz_analysis_esil_trace_op (core->anal->esil, op);
 				}
-				rz_anal_op_free (op);
+				rz_analysis_op_free (op);
 			} break;
 			case '-': // "dte-"
 				if (!strcmp (input + 3, "*")) {
@@ -4838,7 +4838,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				break;
 			case ' ': { // "dte "
 				int idx = atoi (input + 3);
-				rz_anal_esil_trace_show (
+				rz_analysis_esil_trace_show (
 					core->anal->esil, idx);
 			} break;
 			case 'k': // "dtek"

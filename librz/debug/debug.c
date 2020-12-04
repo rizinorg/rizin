@@ -426,7 +426,7 @@ RZ_API RzDebug *rz_debug_free(RzDebug *dbg) {
 		free (dbg->btalgo);
 		rz_debug_trace_free (dbg->trace);
 		rz_debug_session_free (dbg->session);
-		rz_anal_op_free (dbg->cur_op);
+		rz_analysis_op_free (dbg->cur_op);
 		dbg->trace = NULL;
 		rz_egg_free (dbg->egg);
 		free (dbg->arch);
@@ -813,7 +813,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 	if (!dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf))) {
 		return false;
 	}
-	if (!rz_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC)) {
+	if (!rz_analysis_op (dbg->anal, &op, pc, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC)) {
 		return false;
 	}
 	if (op.type == RZ_ANAL_OP_TYPE_ILL) {
@@ -1060,7 +1060,7 @@ RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
 			dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 		}
 		// Analyze the opcode
-		if (!rz_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), RZ_ANAL_OP_MASK_BASIC)) {
+		if (!rz_analysis_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), RZ_ANAL_OP_MASK_BASIC)) {
 			eprintf ("debug-step-over: Decode error at %"PFMT64x"\n", pc);
 			return steps_taken;
 		}
@@ -1281,7 +1281,7 @@ repeat:
 			RzAnalysisOp op = {0};
 			ut64 pc = rz_debug_reg_get (dbg, "PC");
 			dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-			rz_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC);
+			rz_analysis_op (dbg->anal, &op, pc, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC);
 			if (op.size > 0) {
 				const char *signame = rz_signal_to_string (dbg->reason.signum);
 				rz_debug_reg_set (dbg, "PC", pc+op.size);
@@ -1363,7 +1363,7 @@ RZ_API int rz_debug_continue_until_optype(RzDebug *dbg, int type, int over) {
 			dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 		}
 		// Analyze the opcode
-		if (!rz_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), RZ_ANAL_OP_MASK_BASIC)) {
+		if (!rz_analysis_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), RZ_ANAL_OP_MASK_BASIC)) {
 			eprintf ("Decode error at %"PFMT64x"\n", pc);
 			return false;
 		}

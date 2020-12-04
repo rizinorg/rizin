@@ -2,7 +2,7 @@
 #define RZ_SIGN_H
 
 #include <rz_types.h>
-#include <rz_anal.h>
+#include <rz_analysis.h>
 #include <rz_search.h>
 
 #ifdef __cplusplus

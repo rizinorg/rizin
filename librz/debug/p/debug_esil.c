@@ -33,14 +33,14 @@ static int __esil_step(RzDebug *dbg) {
 	//memset (buf, 0, sizeof (buf));
 	dbg->iob.read_at (dbg->iob.io, pc, buf, 64);
 	eprintf ("READ 0x%08"PFMT64x" %02x %02x %02x\n", pc, buf[0], buf[1], buf[2]);
-	oplen = rz_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), RZ_ANAL_OP_MASK_ESIL);
+	oplen = rz_analysis_op (dbg->anal, &op, pc, buf, sizeof (buf), RZ_ANAL_OP_MASK_ESIL);
 	if (oplen > 0) {
 		if (*RZ_STRBUF_SAFEGET (&op.esil)) {
 			eprintf ("ESIL: %s\n", RZ_STRBUF_SAFEGET (&op.esil));
-			rz_anal_esil_parse (dbg->anal->esil, RZ_STRBUF_SAFEGET (&op.esil));
+			rz_analysis_esil_parse (dbg->anal->esil, RZ_STRBUF_SAFEGET (&op.esil));
 		}
 	}
-	rz_anal_op_fini (&op);
+	rz_analysis_op_fini (&op);
 	eprintf ("TODO: ESIL STEP\n");
 	return true;
 }
@@ -108,7 +108,7 @@ static char *__esil_reg_profile(RzDebug *dbg) {
 			"gpr	memi	.32	32	0\n"
 		      );
 	}
-	return rz_anal_get_reg_profile (dbg->anal);
+	return rz_analysis_get_reg_profile (dbg->anal);
 }
 
 static int __esil_breakpoint (RzBreakpoint *bp, RzBreakpointItem *b, bool set) {

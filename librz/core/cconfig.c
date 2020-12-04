@@ -79,8 +79,8 @@ static int compareSize(const RzAnalysisFunction *a, const RzAnalysisFunction *b)
 	if (!a || !b) {
 		return 0;
 	}
-	sa = rz_anal_function_realsize (a);
-	sb = rz_anal_function_realsize (b);
+	sa = rz_analysis_function_realsize (a);
+	sb = rz_analysis_function_realsize (b);
 	return (sa > sb) - (sa < sb);
 }
 
@@ -373,7 +373,7 @@ static bool cb_analarch(void *user, void *data) {
 		return false;
 	}
 	if (*node->value) {
-		if (rz_anal_use (core->anal, node->value)) {
+		if (rz_analysis_use (core->anal, node->value)) {
 			return true;
 		}
 		const char *aa = rz_config_get (core->config, "asm.arch");
@@ -390,10 +390,10 @@ static bool cb_analarch(void *user, void *data) {
 static bool cb_analcpu(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RzConfigNode *node = (RzConfigNode *) data;
-	rz_anal_set_cpu (core->anal, node->value);
+	rz_analysis_set_cpu (core->anal, node->value);
 	/* set pcalign */
 	{
-		int v = rz_anal_archinfo (core->anal, RZ_ANAL_ARCHINFO_ALIGN);
+		int v = rz_analysis_archinfo (core->anal, RZ_ANAL_ARCHINFO_ALIGN);
 		rz_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
 	}
 	return true;
@@ -672,7 +672,7 @@ static bool cb_asmarch(void *user, void *data) {
 		update_asmcpu_options (core, asmcpu);
 	}
 	{
-		int v = rz_anal_archinfo (core->anal, RZ_ANAL_ARCHINFO_ALIGN);
+		int v = rz_analysis_archinfo (core->anal, RZ_ANAL_ARCHINFO_ALIGN);
 		if (v != -1) {
 			rz_config_set_i (core->config, "asm.pcalign", v);
 		} else {
@@ -740,7 +740,7 @@ static bool cb_asmbits(void *user, void *data) {
 			}
 			// else { eprintf ("Cannot set bits %d to '%s'\n", bits, h->name); }
 		}
-		if (!rz_anal_set_bits (core->anal, bits)) {
+		if (!rz_analysis_set_bits (core->anal, bits)) {
 			eprintf ("asm.arch: Cannot setup '%d' bits analysis engine\n", bits);
 			ret = false;
 		}
@@ -765,7 +765,7 @@ static bool cb_asmbits(void *user, void *data) {
 				free (rp);
 			}
 		} else {
-			(void)rz_anal_set_reg_profile (core->anal);
+			(void)rz_analysis_set_reg_profile (core->anal);
 		}
 	}
 	rz_core_anal_cc_init (core);
@@ -783,7 +783,7 @@ static bool cb_asmbits(void *user, void *data) {
 			rz_config_set_i (core->config, "dbg.bpsize", rz_bp_size (core->dbg->bp));
 		}
 		/* set pcalign */
-		int v = rz_anal_archinfo (core->anal, RZ_ANAL_ARCHINFO_ALIGN);
+		int v = rz_analysis_archinfo (core->anal, RZ_ANAL_ARCHINFO_ALIGN);
 		rz_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
 	}
 	return ret;
@@ -941,7 +941,7 @@ static bool cb_asmos(void *user, void *data) {
 		rz_syscall_setup (core->anal->syscall, asmarch->value, core->anal->bits, asmcpu, node->value);
 		__setsegoff (core->config, asmarch->value, asmbits);
 	}
-	rz_anal_set_os (core->anal, node->value);
+	rz_analysis_set_os (core->anal, node->value);
 	rz_core_anal_cc_init (core);
 	return true;
 }
@@ -1159,7 +1159,7 @@ static bool cb_bigendian(void *user, void *data) {
 	// Try to set endian based on preference, restrict by RzAsmPlugin
 	bool isbig = rz_asm_set_big_endian (core->rasm, node->i_value);
 	// Set anal endianness the same as asm
-	rz_anal_set_big_endian (core->anal, isbig);
+	rz_analysis_set_big_endian (core->anal, isbig);
 	// the big endian should also be assigned to dbg->bp->endian
 	if (core->dbg && core->dbg->bp) {
 		core->dbg->bp->endian = isbig;
@@ -2586,7 +2586,7 @@ static bool cb_anal_gp(RzCore *core, RzConfigNode *node) {
 
 static bool cb_anal_from(RzCore *core, RzConfigNode *node) {
 	if (rz_config_get_i (core->config, "anal.limits")) {
-		rz_anal_set_limits (core->anal,
+		rz_analysis_set_limits (core->anal,
 				rz_config_get_i (core->config, "anal.from"),
 				rz_config_get_i (core->config, "anal.to"));
 	}
@@ -2596,11 +2596,11 @@ static bool cb_anal_from(RzCore *core, RzConfigNode *node) {
 static bool cb_anal_limits(void *user, RzConfigNode *node) {
 	RzCore *core = (RzCore*)user;
 	if (node->i_value) {
-		rz_anal_set_limits (core->anal,
+		rz_analysis_set_limits (core->anal,
 				rz_config_get_i (core->config, "anal.from"),
 				rz_config_get_i (core->config, "anal.to"));
 	} else {
-		rz_anal_unset_limits (core->anal);
+		rz_analysis_unset_limits (core->anal);
 	}
 	return 1;
 }

@@ -950,9 +950,9 @@ static bool __rebase_refs_i(void *user, const ut64 k, const void *v) {
 	ref->addr += reb->diff;
 	ref->at += reb->diff;
 	if (reb->type) {
-		rz_anal_xrefs_set (reb->core->anal, ref->addr, ref->at, ref->type);
+		rz_analysis_xrefs_set (reb->core->anal, ref->addr, ref->at, ref->type);
 	} else {
-		rz_anal_xrefs_set (reb->core->anal, ref->at, ref->addr, ref->type);
+		rz_analysis_xrefs_set (reb->core->anal, ref->at, ref->addr, ref->type);
 	}
 	return true;
 }
@@ -978,8 +978,8 @@ static void __rebase_everything(RzCore *core, RzList *old_sections, ut64 old_bas
 			if (!__is_inside_section (fcn->addr, old_section)) {
 				continue;
 			}
-				rz_anal_function_rebase_vars (core->anal, fcn);
-			rz_anal_function_relocate (fcn, fcn->addr + diff);
+				rz_analysis_function_rebase_vars (core->anal, fcn);
+			rz_analysis_function_relocate (fcn, fcn->addr + diff);
 			RzAnalysisBlock *bb;
 			ut64 new_sec_addr = new_base + old_section->vaddr;
 			rz_list_foreach (fcn->bbs, ititit, bb) {
@@ -987,7 +987,7 @@ static void __rebase_everything(RzCore *core, RzList *old_sections, ut64 old_bas
 					// Todo: Find better way to check if bb was already rebased
 					continue;
 				}
-				rz_anal_block_relocate (bb, bb->addr + diff, bb->size);
+				rz_analysis_block_relocate (bb, bb->addr + diff, bb->size);
 				if (bb->jump != UT64_MAX) {
 					bb->jump += diff;
 				}
@@ -1016,7 +1016,7 @@ static void __rebase_everything(RzCore *core, RzList *old_sections, ut64 old_bas
 	HtUP *old_xrefs = core->anal->dict_xrefs;
 	core->anal->dict_refs = NULL;
 	core->anal->dict_xrefs = NULL;
-	rz_anal_xrefs_init (core->anal);
+	rz_analysis_xrefs_init (core->anal);
 	reb.type = 0;
 	ht_up_foreach (old_refs, __rebase_refs, &reb);
 	reb.type = 1;
@@ -1612,7 +1612,7 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 			rz_bin_file_delete_all (core->bin);
 
 			// TODO: Move to a-- ?
-			rz_anal_purge (core->anal);
+			rz_analysis_purge (core->anal);
 			// TODO: Move to f-- ?
 			rz_flag_unset_all (core->flags);
 			// TODO: rbin?

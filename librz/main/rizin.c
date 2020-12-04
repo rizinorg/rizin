@@ -33,7 +33,7 @@ static int rz_main_version_verify(int show) {
 		const char *name;
 		vc callback;
 	} vcs[] = {
-		{ "rz_anal", rz_anal_version },
+		{ "rz_analysis", rz_analysis_version },
 		{ "rz_lib", rz_lib_version },
 		{ "rz_egg", rz_egg_version },
 		{ "rz_asm", rz_asm_version },

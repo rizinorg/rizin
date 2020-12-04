@@ -6,7 +6,7 @@
 
 #include <rz_lib.h>
 #include <rz_util.h>
-#include <rz_anal.h>
+#include <rz_analysis.h>
 #include <rz_parse.h>
 // 16 bit examples
 //    0x0001f3a4      9a67620eca       call word 0xca0e:0x6267

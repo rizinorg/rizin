@@ -1,6 +1,6 @@
 /* rizin - LGPL - Copyright 2009-2020 - pancake */
 
-#include "rz_anal.h"
+#include "rz_analysis.h"
 #include "rz_bin.h"
 #include "rz_cons.h"
 #include "rz_core.h"
@@ -385,7 +385,7 @@ static int cmd_meta_comment(RzCore *core, const char *input) {
 				if (!arg) {
 					arg = core->offset;
 				}
-				RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, arg, 0);
+				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, arg, 0);
 				if (fcn) {
 					RzAnalysisBlock *bb;
 					RzListIter *iter;
@@ -888,7 +888,7 @@ void rz_comment_var_help(RzCore *core, char type) {
 
 void rz_comment_vars(RzCore *core, const char *input) {
 	//TODO enable base64 and make it the default for C*
-	RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
 	char *oname = NULL, *name = NULL;
 
 	if (!input[0] || input[1] == '?' || (input[0] != 'b' && input[0] != 'r' && input[0] != 's')) {
@@ -934,10 +934,10 @@ void rz_comment_vars(RzCore *core, const char *input) {
 				comment = heap_comment;
 			}
 		}
-		RzAnalysisVar *var = rz_anal_function_get_var_byname (fcn, name);
+		RzAnalysisVar *var = rz_analysis_function_get_var_byname (fcn, name);
 		if (!var) {
 			int idx = (int)strtol (name, NULL, 0);
-			var = rz_anal_function_get_var (fcn, input[0], idx);
+			var = rz_analysis_function_get_var (fcn, input[0], idx);
 		}
 		if (!var) {
 			eprintf ("can't find variable at given offset\n");
@@ -960,10 +960,10 @@ void rz_comment_vars(RzCore *core, const char *input) {
 	case '-': { // "Cv-"
 		name++;
 		rz_str_trim (name);
-		RzAnalysisVar *var = rz_anal_function_get_var_byname (fcn, name);
+		RzAnalysisVar *var = rz_analysis_function_get_var_byname (fcn, name);
 		if (!var) {
 			int idx = (int)strtol (name, NULL, 0);
-			var = rz_anal_function_get_var (fcn, input[0], idx);
+			var = rz_analysis_function_get_var (fcn, input[0], idx);
 		}
 		if (!var) {
 			eprintf ("can't find variable at given offset\n");
@@ -977,7 +977,7 @@ void rz_comment_vars(RzCore *core, const char *input) {
 		char *comment;
 		name++;
 		rz_str_trim (name);
-		RzAnalysisVar *var = rz_anal_function_get_var_byname (fcn, name);
+		RzAnalysisVar *var = rz_analysis_function_get_var_byname (fcn, name);
 		if (!var) {
 			eprintf ("can't find variable named `%s`\n", name);
 			break;
@@ -1049,10 +1049,10 @@ RZ_IPI int rz_cmd_meta(void *data, const char *input) {
 		rz_core_cmd_help (core, help_msg_C);
 		break;
 	case 'F': // "CF"
-		f = rz_anal_get_fcn_in (core->anal, core->offset,
+		f = rz_analysis_get_fcn_in (core->anal, core->offset,
 			RZ_ANAL_FCN_TYPE_FCN|RZ_ANAL_FCN_TYPE_SYM);
 		if (f) {
-			rz_anal_str_to_fcn (core->anal, f, input + 2);
+			rz_analysis_str_to_fcn (core->anal, f, input + 2);
 		} else {
 			eprintf ("Cannot find function here\n");
 		}

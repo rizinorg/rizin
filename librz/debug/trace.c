@@ -60,8 +60,8 @@ RZ_API bool rz_debug_trace_ins_before(RzDebug *dbg) {
 	if (!dbg->cur_op) {
 		return false;
 	}
-	if (!rz_anal_op (dbg->anal, dbg->cur_op, pc, buf_pc, sizeof (buf_pc), RZ_ANAL_OP_MASK_VAL)) {
-		rz_anal_op_free (dbg->cur_op);
+	if (!rz_analysis_op (dbg->anal, dbg->cur_op, pc, buf_pc, sizeof (buf_pc), RZ_ANAL_OP_MASK_VAL)) {
+		rz_analysis_op_free (dbg->cur_op);
 		dbg->cur_op = NULL;
 		return false;
 	}
@@ -146,7 +146,7 @@ RZ_API bool rz_debug_trace_ins_after(RzDebug *dbg) {
 			break;
 		}
 	}
-	rz_anal_op_free (dbg->cur_op);
+	rz_analysis_op_free (dbg->cur_op);
 	dbg->cur_op = NULL;
 	return true;
 }
@@ -162,12 +162,12 @@ RZ_API int rz_debug_trace_pc(RzDebug *dbg, ut64 pc) {
 		return false;
 	}
 	(void)dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-	if (rz_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), RZ_ANAL_OP_MASK_ESIL) < 1) {
+	if (rz_analysis_op (dbg->anal, &op, pc, buf, sizeof (buf), RZ_ANAL_OP_MASK_ESIL) < 1) {
 		eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", pc);
 		return false;
 	}
 	rz_debug_trace_op (dbg, &op);
-	rz_anal_op_fini (&op);
+	rz_analysis_op_fini (&op);
 	return true;
 }
 
@@ -175,7 +175,7 @@ RZ_API void rz_debug_trace_op(RzDebug *dbg, RzAnalysisOp *op) {
 	static ut64 oldpc = UT64_MAX; // Must trace the previously traced instruction
 	if (dbg->trace->enabled) {
 		if (dbg->anal->esil) {
-			rz_anal_esil_trace_op (dbg->anal->esil, op);
+			rz_analysis_esil_trace_op (dbg->anal->esil, op);
 		} else {
 			if (dbg->verbose) {
 				eprintf ("Run aeim to get dbg->anal->esil initialized\n");
@@ -276,7 +276,7 @@ RZ_API RzDebugTracepoint *rz_debug_trace_add (RzDebug *dbg, ut64 addr, int size)
 	if (!rz_debug_trace_is_traceable (dbg, addr)) {
 		return NULL;
 	}
-	rz_anal_trace_bb (dbg->anal, addr);
+	rz_analysis_trace_bb (dbg->anal, addr);
 	tp = RZ_NEW0 (RzDebugTracepoint);
 	if (!tp) {
 		return NULL;

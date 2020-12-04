@@ -14,7 +14,7 @@ extern "C" {
  *
  * Provides minimal information to draw something without output format specific details.
  */
-typedef struct rz_anal_graph_node_info_t {
+typedef struct rz_analysis_graph_node_info_t {
 	char *title;
 	char *body;
 	/**

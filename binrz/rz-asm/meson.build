@@ -4,7 +4,7 @@ executable('rz-asm', 'rz-asm.c',
     rz_main_dep,
     rz_util_dep,
     rz_asm_dep,
-    rz_anal_dep,
+    rz_analysis_dep,
     rz_crypto_dep,
     rz_syscall_dep,
     rz_hash_dep

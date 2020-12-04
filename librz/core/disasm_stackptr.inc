@@ -49,7 +49,7 @@ static int _stackptr_range(RDisasmState *ds, ut64 addr, ut64 addr_end, int stack
 			if (op->size > 0) {
 				sz = op->size;
 			}
-			rz_anal_op_free (op);
+			rz_analysis_op_free (op);
 		}
 		at += sz;
 	} 
@@ -95,9 +95,9 @@ static int ds_ostackptr_at(RDisasmState *ds, int *ostackptr) {
 #if USE_BB_STACKPTR
 	// XXX doesnt works because bb->stackptr returns the maximum increment of the bb instead of the initial stackptr value
 	*ostackptr = ds->ostackptr;
-	RzAnalysisFunction *fcn = rz_anal_get_fcn_in (ds->core->anal, ds->at, RZ_ANAL_FCN_TYPE_NULL);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (ds->core->anal, ds->at, RZ_ANAL_FCN_TYPE_NULL);
 	if (fcn) {
-		RzAnalysisBlock *bb = rz_anal_fcn_bbget_in (ds->core->anal, fcn, ds->at);
+		RzAnalysisBlock *bb = rz_analysis_fcn_bbget_in (ds->core->anal, fcn, ds->at);
 		if (bb) {
 			return bb->stackptr;
 		} else {

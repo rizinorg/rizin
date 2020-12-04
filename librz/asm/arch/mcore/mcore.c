@@ -1,6 +1,6 @@
 #include "mcore.h"
 
-#include <rz_anal.h>
+#include <rz_analysis.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>

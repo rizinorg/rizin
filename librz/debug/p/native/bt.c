@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_anal.h>
+#include <rz_analysis.h>
 
 #include "bt/generic-x86.c"
 #include "bt/generic-x64.c"

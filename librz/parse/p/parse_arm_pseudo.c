@@ -6,7 +6,7 @@
 #include <rz_lib.h>
 #include <rz_util.h>
 #include <rz_flag.h>
-#include <rz_anal.h>
+#include <rz_analysis.h>
 #include <rz_parse.h>
 
 static int replace(int argc, const char *argv[], char *newstr) {

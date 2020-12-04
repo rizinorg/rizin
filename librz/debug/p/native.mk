@@ -26,7 +26,7 @@ ${TARGET_PTRACE}: ${OBJ_PTRACE}
 		${LDFLAGS_LINKPATH}.. -L.. -lrz_debug \
 		${LDFLAGS_LINKPATH}../../io -L../../io -lrz_io \
 		${LDFLAGS_LINKPATH}../../bp -L../../bp -lrz_bp \
-		${LDFLAGS_LINKPATH}../../anal -L../../anal -lrz_anal \
+		${LDFLAGS_LINKPATH}../../anal -L../../anal -lrz_analysis \
 		${LDFLAGS_LINKPATH}../../reg -L../../reg -lrz_reg \
 		${LDFLAGS_LINKPATH}../../util -L../../util -lrz_util \
 		${LDFLAGS_LINKPATH}../../syscall -L../../util -lrz_syscall \

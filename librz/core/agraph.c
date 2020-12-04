@@ -2158,7 +2158,7 @@ static char *get_bb_body(RzCore *core, RzAnalysisBlock *b, int opts, RzAnalysisF
 	char *body = get_body (core, b->addr, b->size, opts);
 	if (b->jump != UT64_MAX) {
 		if (b->jump > b->addr) {
-			RzAnalysisBlock *jumpbb = rz_anal_get_block_at (b->anal, b->jump);
+			RzAnalysisBlock *jumpbb = rz_analysis_get_block_at (b->anal, b->jump);
 			if (jumpbb && rz_list_contains (jumpbb->fcns, fcn)) {
 				if (emu && core->anal->last_disasm_reg != NULL && !jumpbb->parent_reg_arena) {
 					jumpbb->parent_reg_arena = rz_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
@@ -2171,7 +2171,7 @@ static char *get_bb_body(RzCore *core, RzAnalysisBlock *b, int opts, RzAnalysisF
 	}
 	if (b->fail != UT64_MAX) {
 		if (b->fail > b->addr) {
-			RzAnalysisBlock *failbb = rz_anal_get_block_at (b->anal, b->fail);
+			RzAnalysisBlock *failbb = rz_analysis_get_block_at (b->anal, b->fail);
 			if (failbb && rz_list_contains (failbb->fcns, fcn)) {
 				if (emu && core->anal->last_disasm_reg != NULL && !failbb->parent_reg_arena) {
 					failbb->parent_reg_arena = rz_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
@@ -2328,7 +2328,7 @@ static int get_bbnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 			if (!curbb) {
 				curbb = bb;
 			}
-			if (rz_anal_block_contains (bb, core->offset)) {
+			if (rz_analysis_block_contains (bb, core->offset)) {
 				curbb = bb;
 				break;
 			}
@@ -2418,7 +2418,7 @@ cleanup:
 /* build the RzGraph inside the RzAGraph g, starting from the Call Graph
  * information */
 static bool get_cgnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
-	RzAnalysisFunction *f = rz_anal_get_fcn_in (core->anal, core->offset, 0);
+	RzAnalysisFunction *f = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
 	RzANode *node, *fcn_anode;
 	RzListIter *iter;
 	RzAnalysisRef *ref;
@@ -2443,7 +2443,7 @@ static bool get_cgnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 	fcn_anode->x = 10;
 	fcn_anode->y = 3;
 
-	refs = rz_anal_function_get_refs (fcn);
+	refs = rz_analysis_function_get_refs (fcn);
 	rz_list_foreach (refs, iter, ref) {
 		title = get_title (ref->addr);
 		if (rz_agraph_get_node (g, title) != NULL) {
@@ -2452,7 +2452,7 @@ static bool get_cgnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 		free (title);
 
 		int size = 0;
-		RzAnalysisBlock *bb = rz_anal_bb_from_offset (core->anal, ref->addr);
+		RzAnalysisBlock *bb = rz_analysis_bb_from_offset (core->anal, ref->addr);
 		if (bb) {
 			size = bb->size;
 		}
@@ -3368,7 +3368,7 @@ static bool check_changes(RzAGraph *g, int is_interactive, RzCore *core, RzAnaly
 		agraph_set_layout (g);
 	}
 	if (core) {
-		ut64 off = rz_anal_get_bbaddr (core->anal, core->offset);
+		ut64 off = rz_analysis_get_bbaddr (core->anal, core->offset);
 		if (off != UT64_MAX) {
 			char *title = get_title (off);
 			RzANode *cur_anode = get_anode (g->curnode);
@@ -3489,10 +3489,10 @@ static int agraph_print(RzAGraph *g, int is_interactive, RzCore *core, RzAnalysi
 }
 
 static void check_function_modified(RzCore *core, RzAnalysisFunction *fcn) {
-	if (rz_anal_function_was_modified (fcn)) {
+	if (rz_analysis_function_was_modified (fcn)) {
 		if (rz_config_get_i (core->config, "anal.detectwrites")
 			|| rz_cons_yesno ('y', "Function was modified. Reanalyze? (Y/n)")) {
-			rz_anal_function_update_analysis (fcn);
+			rz_analysis_function_update_analysis (fcn);
 		}
 	}
 }
@@ -3519,7 +3519,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		ut64 addr = rz_reg_get_value (core->dbg->reg, r);
 		RzANode *acur = get_anode (g->curnode);
 
-		addr = rz_anal_get_bbaddr (core->anal, addr);
+		addr = rz_analysis_get_bbaddr (core->anal, addr);
 		char *title = get_title (addr);
 		if (!acur || strcmp (acur->title, title)) {
 			rz_core_cmd0 (core, "sr PC");
@@ -3530,7 +3530,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 
 	if (grd->follow_offset) {
 		if (rz_io_is_valid_offset (core->io, core->offset, 0)) {
-			f = rz_anal_get_fcn_in (core->anal, core->offset, 0);
+			f = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
 			if (!f) {
 				if (!g->is_dis) {
 					if (!rz_cons_yesno ('y', "\rNo function at 0x%08"PFMT64x". Define it here (Y/n)? ", core->offset)) {
@@ -3538,7 +3538,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 					}
 					rz_core_cmd0 (core, "af");
 				}
-				f = rz_anal_get_fcn_in (core->anal, core->offset, 0);
+				f = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
 				g->need_reload_nodes = true;
 			}
 			if (f && fcn && f != *fcn) {
@@ -3962,7 +3962,7 @@ static void goto_asmqjmps(RzAGraph *g, RzCore *core) {
 }
 
 static void seek_to_node(RzANode *n, RzCore *core) {
-	ut64 off = rz_anal_get_bbaddr (core->anal, core->offset);
+	ut64 off = rz_analysis_get_bbaddr (core->anal, core->offset);
 	char *title = get_title (off);
 
 	if (title && strcmp (title, n->title)) {
@@ -4046,9 +4046,9 @@ static void rotateColor(RzCore *core) {
 
 // dupe in visual.c
 static bool toggle_bb(RzCore *core, ut64 addr) {
-	RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, addr, RZ_ANAL_FCN_TYPE_NULL);
 	if (fcn) {
-		RzAnalysisBlock *bb = rz_anal_fcn_bbget_in (core->anal, fcn, addr);
+		RzAnalysisBlock *bb = rz_analysis_fcn_bbget_in (core->anal, fcn, addr);
 		if (bb) {
 			bb->folded = !bb->folded;
 		} else {
@@ -4162,7 +4162,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 
 	if (!g) {
 		graph_allocated = true;
-		fcn = _fcn? _fcn: rz_anal_get_fcn_in (core->anal, core->offset, 0);
+		fcn = _fcn? _fcn: rz_analysis_get_fcn_in (core->anal, core->offset, 0);
 		if (!fcn) {
 			rz_config_hold_restore (hc);
 			rz_config_hold_free (hc);
@@ -4399,7 +4399,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 				break;
 			}
 			ut64 old_off = core->offset;
-			ut64 off = rz_anal_get_bbaddr (core->anal, core->offset);
+			ut64 off = rz_analysis_get_bbaddr (core->anal, core->offset);
 			rz_core_seek (core, off, false);
 			if ((key == 'x' && !rz_core_visual_refs (core, true, true)) ||
 			    (key == 'X' && !rz_core_visual_refs (core, false, true))) {
@@ -4740,7 +4740,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			break;
 		case '^':
 			  {
-				  RzAnalysisFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
+				  RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->anal, core->offset, 0);
 				  if (fcn) {
 					  rz_core_seek (core, fcn->addr, false);
 				  }

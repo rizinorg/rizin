@@ -53,7 +53,7 @@ static bool block_check_invariants(RzAnalysis *anal) {
 			mu_assert_eq (fcn->meta._max, max, "function max wrong");
 		}
 
-		mu_assert_eq (rz_anal_function_realsize (fcn), realsz, "realsize wrong");
+		mu_assert_eq (rz_analysis_function_realsize (fcn), realsz, "realsize wrong");
 	}
 	return true;
 }
