@@ -423,7 +423,7 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 	if (p->mem)  {
 		o->mem = p->mem (bf);
 	}
-	if (bin->filter_rules & (RZ_BIN_REQ_INFO | RZ_BIN_REQ_SYMBOLS | RZ_BIN_REQ_IMPORTS)) {
+	if (o->info && bin->filter_rules & (RZ_BIN_REQ_INFO | RZ_BIN_REQ_SYMBOLS | RZ_BIN_REQ_IMPORTS)) {
 		o->lang = isSwift? RZ_BIN_NM_SWIFT: rz_bin_load_languages (bf);
 	}
 	return true;
