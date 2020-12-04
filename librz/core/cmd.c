@@ -5142,6 +5142,7 @@ static bool handle_tmp_desc(struct tsr2cmd_state *state, TSNode command, const u
 		rz_config_set_i (core->config, "io.va", 1);
 	}
 	rz_io_map_new (core->io, d->fd, d->perm, 0, core->offset, rz_buf_size (b));
+	ut32 obsz = core->blocksize;
 	rz_core_block_size (core, rz_buf_size (b));
 	core->fixedblock = true;
 	rz_core_block_read (core);
@@ -5153,6 +5154,7 @@ static bool handle_tmp_desc(struct tsr2cmd_state *state, TSNode command, const u
 		rz_config_set_i (core->config, "io.va", 0);
 	}
 	rz_io_desc_close (d);
+	rz_core_block_size (core, obsz);
 
 out_buf:
 	rz_buf_free (b);
@@ -5188,6 +5190,26 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_string_command) {
 
 	sz = strlen (arg_str);
 	const ut8 *buf = (const ut8 *)arg_str;
+
+	RzCmdStatus res = handle_tmp_desc (state, command, buf, sz);
+
+	free (arg_str);
+	return res;
+}
+
+DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_value_command) {
+	RzCore *core = state->core;
+	TSNode command = ts_node_named_child (node, 0);
+	TSNode arg = ts_node_named_child (node, 1);
+	char *arg_str = ts_node_handle_arg (state, node, arg, 1);
+
+	ut64 v = rz_num_math (core->num, arg_str);
+	ut8 buf[8] = { 0 };
+	int be = rz_config_get_i (core->config, "cfg.bigendian");
+	int bi = rz_config_get_i (core->config, "asm.bits");
+
+	rz_write_ble(buf, v, be, bi);
+	int sz = bi / 8;
 
 	RzCmdStatus res = handle_tmp_desc (state, command, buf, sz);
 

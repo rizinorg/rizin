@@ -278,3 +278,16 @@ pd @ entry0 + 2
       (arg (arg_identifier))
       (arg (arg_identifier))
       (arg (arg_identifier)))))
+
+===============
+Temporary value
+===============
+
+pv4 @v:0xdeadbeef
+
+---
+
+(commands
+  (tmp_value_command
+    (arged_command (cmd_identifier))
+	(arg (arg_identifier))))
