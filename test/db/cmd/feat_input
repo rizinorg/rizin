@@ -39,22 +39,22 @@ RUN
 NAME="quoted"
 FILE=malloc://1024
 CMDS=<<EOF
-"w fuck;you@23"
+"w aaaa;bbb@23"
 psz
 EOF
 EXPECT=<<EOF
-fuck;you@23
+aaaa;bbb@23
 EOF
 RUN
 
 NAME="quoted"@addr
 FILE=malloc://1024
 CMDS=<<EOF
-"w fuck;you@23"@0x10
+"w aaaa;bbb@23"@0x10
 psz@0x10
 EOF
 EXPECT=<<EOF
-fuck;you@23
+aaaa;bbb@23
 EOF
 RUN
 

@@ -501,7 +501,7 @@ static RzIODesc *rz_io_zip_open(RzIO *io, const char *file, int rw, int mode) {
 	if (!res) {
 		eprintf ("Failed to open the archive %s and file %s\n",
 			zip_filename, filename_in_zipfile);
-		//free (zfo); zfo is already freed by rz_io_desc_new	//WTF
+		//free (zfo); zfo is already freed by rz_io_desc_new
 		rz_io_desc_free (res);
 		res = NULL;
 	}

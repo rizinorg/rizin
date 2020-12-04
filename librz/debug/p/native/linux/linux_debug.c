@@ -559,16 +559,16 @@ RzDebugReasonType linux_dbg_wait(RzDebug *dbg, int pid) {
 				reason = RZ_DEBUG_REASON_NONE;
 #endif
 			} else if (status == 1) {
-				eprintf ("EEK DEAD DEBUGEE!\n");
+				eprintf ("debugger is dead with status 1\n");
 				reason = RZ_DEBUG_REASON_DEAD;
 			} else if (status == 0) {
-				eprintf ("STATUS=0?!?!?!?\n");
+				eprintf ("debugger is dead with status 0\n");
 				reason = RZ_DEBUG_REASON_DEAD;
 			} else {
 				if (ret != tid) {
 					reason = RZ_DEBUG_REASON_NEW_PID;
 				} else {
-					eprintf ("CRAP. returning from wait without knowing why...\n");
+					eprintf ("returning from wait without knowing why...\n");
 				}
 			}
 			if (reason != RZ_DEBUG_REASON_UNKNOWN) {

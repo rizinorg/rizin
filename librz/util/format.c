@@ -1216,7 +1216,7 @@ static void rz_print_format_nulltermstring(const RzPrint* p, int len, int endian
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	if (!p->iob.is_valid_offset (p->iob.io, seeki, 1)) {
 		ut8 ch = 0xff;
-		// XXX there are some cases where the memory is there but is_valid_offset fails wtf
+		// XXX there are some cases where the memory is there but is_valid_offset fails
 		if (p->iob.read_at (p->iob.io, seeki, &ch, 1) != 1 && ch != 0xff) {
 			p->cb_printf ("-1");
 			return;

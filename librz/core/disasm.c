@@ -721,7 +721,7 @@ static RDisasmState * ds_init(RzCore *core) {
 	ds->asm_hint_emu = rz_config_get_i (core->config, "asm.hint.emu");
 	ds->asm_hint_cdiv = rz_config_get_i (core->config, "asm.hint.cdiv");
 	ds->asm_hint_pos = rz_config_get_i (core->config, "asm.hint.pos");
-	ds->asm_hints = rz_config_get_i (core->config, "asm.hints"); // only for cdiv wtf
+	ds->asm_hints = rz_config_get_i (core->config, "asm.hints");
 	ds->show_slow = rz_config_get_i (core->config, "asm.slow");
 	ds->show_refptr = rz_config_get_i (core->config, "asm.refptr");
 	ds->show_calls = rz_config_get_i (core->config, "asm.calls");
@@ -3001,7 +3001,7 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 			delta = ds->at - node->start;
 			ds->oplen = mi_size - delta;
 			ds->asmop.size = (int)mi_size;
-			//i += mi->size-1; // wtf?
+			//i += mi->size-1;
 			RZ_FREE (ds->line);
 			RZ_FREE (ds->line_col);
 			RZ_FREE (ds->refline);

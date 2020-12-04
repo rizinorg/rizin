@@ -71,7 +71,7 @@ typedef struct sparc_opcode_hash
 static sparc_opcode_hash *opcode_hash_table[HASH_SIZE];
 
 /* Sign-extend a value which is N bits long.  */
-#define	SEX(value, bits) \
+#define	SIGN_EXT(value, bits) \
 	((((int)(value)) << ((8 * sizeof (int)) - (bits)))	\
 			 >> ((8 * sizeof (int)) - (bits)) )
 
@@ -132,7 +132,7 @@ static char *v9a_asr_reg_names[] =
 #define X_ASI(i)     (((i) >> 5) & 0xff)
 #define X_RS2(i)     (((i) >> 0) & 0x1f)
 #define X_IMM(i,n)   (((i) >> 0) & ((1 << (n)) - 1))
-#define X_SIMM(i,n)  SEX (X_IMM ((i), (n)), (n))
+#define X_SIMM(i,n)  SIGN_EXT (X_IMM ((i), (n)), (n))
 #define X_DISP22(i)  (((i) >> 0) & 0x3fffff)
 #define X_IMM22(i)   X_DISP22 (i)
 #define X_DISP30(i)  (((i) >> 0) & 0x3fffffff)
@@ -779,12 +779,12 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 		    }
 
 		  case 'k':
-		    info->target = memaddr + SEX (X_DISP16 (insn), 16) * 4;
+		    info->target = memaddr + SIGN_EXT (X_DISP16 (insn), 16) * 4;
 		    (*info->print_address_func) (info->target, info);
 		    break;
 
 		  case 'G':
-		    info->target = memaddr + SEX (X_DISP19 (insn), 19) * 4;
+		    info->target = memaddr + SIGN_EXT (X_DISP19 (insn), 19) * 4;
 		    (*info->print_address_func) (info->target, info);
 		    break;
 
@@ -900,17 +900,17 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 		    break;
 
 		  case 'L':
-		    info->target = memaddr + SEX (X_DISP30 (insn), 30) * 4;
+		    info->target = memaddr + SIGN_EXT (X_DISP30 (insn), 30) * 4;
 		    (*info->print_address_func) (info->target, info);
 		    break;
 
 		  case 'n':
 		    (*info->fprintf_func)
-		      (stream, "%#x", SEX (X_DISP22 (insn), 22));
+		      (stream, "%#x", SIGN_EXT (X_DISP22 (insn), 22));
 		    break;
 
 		  case 'l':
-		    info->target = memaddr + SEX (X_DISP22 (insn), 22) * 4;
+		    info->target = memaddr + SIGN_EXT (X_DISP22 (insn), 22) * 4;
 		    (*info->print_address_func) (info->target, info);
 		    break;
 

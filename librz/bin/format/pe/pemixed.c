@@ -64,7 +64,7 @@ struct PE_(rz_bin_pe_obj_t)* rz_bin_pemixed_init_native(struct PE_(rz_bin_pe_obj
 	//copy pe_bin->b and assign to sub_bin_native
 
 	// if (!(tmp_buf = malloc (b_size))) {
-	// 	eprintf("wtf malloc\n");
+	// 	eprintf("bad malloc\n");
 	// };
 
 	// if (!(rz_buf_read_at (pe_bin->b, 0, tmp_buf, b_size))) {

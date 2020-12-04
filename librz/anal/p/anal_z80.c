@@ -293,7 +293,7 @@ static int z80_anal_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, i
 	case 0xff:				//rst 56
 		op->jump = 0x38;
 		op->type = RZ_ANAL_OP_TYPE_SWI;
-		break;				// condret: i think that foo resets some regs, but i'm not sure
+		break;
 
 	// conditional call
 	case 0xc4: // nz

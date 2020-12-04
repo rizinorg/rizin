@@ -25,8 +25,8 @@ Sdb *ref_0_db() {
 	sdb_set (zones_db, PERTURBATOR, "{\"from\":3735928559,\"to\":18446744073709551614}", 0);
 
 	Sdb *flags_db = sdb_ns (db, "flags", true);
-	sdb_set (flags_db, "damnation", "{\"realname\":\"Damnation\",\"demangled\":true,\"offset\":3582,\"size\":16,\"space\":\"reveries\",\"color\":\"white\",\"comment\":\"windowpane\",\"alias\":\"d4mn4t10n\"}", 0);
-	sdb_set (flags_db, "d4mn4t10n", "{\"realname\":\"d4mn4t10n\",\"demangled\":false,\"offset\":3582,\"size\":1}", 0);
+	sdb_set (flags_db, "foobars", "{\"realname\":\"Foobars\",\"demangled\":true,\"offset\":3582,\"size\":16,\"space\":\"reveries\",\"color\":\"white\",\"comment\":\"windowpane\",\"alias\":\"f00b4r5\"}", 0);
+	sdb_set (flags_db, "f00b4r5", "{\"realname\":\"f00b4r5\",\"demangled\":false,\"offset\":3582,\"size\":1}", 0);
 	sdb_set (flags_db, "deliverance", "{\"realname\":\"deliverance\",\"demangled\":false,\"offset\":66,\"size\":19}", 0);
 
 	return db;
@@ -39,17 +39,17 @@ RzFlag *ref_0_flag() {
 	flag->realnames = true;
 
 	rz_flag_set (flag, "deliverance", 0x42 + 1337, 0x13);
-	rz_flag_set (flag, "d4mn4t10n", 0x1337, 1);
+	rz_flag_set (flag, "f00b4r5", 0x1337, 1);
 
 	rz_flag_space_set (flag, "ghost");
 	rz_flag_space_set (flag, "reveries");
 
-	RzFlagItem *damnation = rz_flag_set (flag, "damnation", 0x1337, 0x10);
-	damnation->demangled = true;
-	rz_flag_item_set_realname (damnation, "Damnation");
-	rz_flag_item_set_color (damnation, "white");
-	rz_flag_item_set_comment (damnation, "windowpane");
-	rz_flag_item_set_alias (damnation, "d4mn4t10n");
+	RzFlagItem *foobars = rz_flag_set (flag, "foobars", 0x1337, 0x10);
+	foobars->demangled = true;
+	rz_flag_item_set_realname (foobars, "Foobars");
+	rz_flag_item_set_color (foobars, "white");
+	rz_flag_item_set_comment (foobars, "windowpane");
+	rz_flag_item_set_alias (foobars, "f00b4r5");
 
 	rz_flag_tags_set (flag, "lotus", "eater");
 	rz_flag_tags_set (flag, PERTURBATOR, PERTURBATOR);
@@ -172,9 +172,9 @@ static bool flag_cmp_cb(RzFlagItem *fi, void *user) {
 static bool test_load(Sdb *db, RzFlag *ref) {
 	RzFlag *flag = rz_flag_new ();
 
-	bool suck = rz_serialize_flag_load (db, flag, NULL);
+	bool loaded = rz_serialize_flag_load (db, flag, NULL);
 	sdb_free (db);
-	mu_assert ("load success", suck);
+	mu_assert ("load success", loaded);
 
 	if (!spaces_eq (&flag->spaces, &ref->spaces)) {
 		return false;

@@ -2055,7 +2055,7 @@ RZ_API int rz_core_visual_trackflags(RzCore *core) {
 				int len;
 				rz_cons_show_cursor (true);
 				rz_cons_set_raw (0);
-				// TODO: use rz_flag_rename or wtf?..fr doesnt uses this..
+				// TODO: use rz_flag_rename or fail?..`fr` doesn't uses this..
 				snprintf (cmd, sizeof (cmd), "fr %s ", fs2);
 				len = strlen (cmd);
 				eprintf ("Rename flag '%s' as:\n", fs2);

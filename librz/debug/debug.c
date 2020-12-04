@@ -341,7 +341,7 @@ RZ_API RzBreakpointItem *rz_debug_bp_add(RzDebug *dbg, ut64 addr, int hw, bool w
 
 static const char *rz_debug_str_callback(RNum *userptr, ut64 off, int *ok) {
 	// RzDebug *dbg = (RzDebug *)userptr;
-	eprintf ("STR CALLBACK WTF WTF WTF\n");
+	eprintf ("rz_debug_str_callback has been called. this should not happen\n");
 	return NULL;
 }
 

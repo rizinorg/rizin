@@ -238,7 +238,7 @@ RZ_API void rz_graph_del_edge(RzGraph *t, RzGraphNode *from, RzGraphNode *to) {
 	t->n_edges--;
 }
 
-// XXX remove comments and static inline all this crap
+// XXX remove comments and static inline all this stuff
 /* returns the list of nodes reachable from `n` */
 RZ_API const RzList *rz_graph_get_neighbours(const RzGraph *g, const RzGraphNode *n) {
 	return n? n->out_nodes: NULL;

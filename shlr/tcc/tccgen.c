@@ -1908,7 +1908,7 @@ tok_next:
 		if (type.ref) {
 			type.ref->c = len;
 		}
-		// XXX ptr is NULL HERE WTF
+		// XXX ptr is NULL HERE
 		// memcpy(ptr, funcname, len);
 		next ();
 	}

@@ -671,7 +671,7 @@ RZ_API RzConfig* rz_config_clone(RzConfig *cfg) {
 
 RZ_API void rz_config_free(RzConfig *cfg) {
 	if (cfg) {
-		cfg->nodes->free = rz_config_node_free; // damn
+		cfg->nodes->free = rz_config_node_free;
 		rz_list_free (cfg->nodes);
 		ht_pp_free (cfg->ht);
 		free (cfg);

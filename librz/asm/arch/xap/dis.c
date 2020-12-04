@@ -427,21 +427,6 @@ static int decode_known(struct state *s, struct directive *d) {
 			strcat(d->d_asm, ")");
 	}
 
-#if 0
-	/* XXX quirks */
-	if (!rel && in->in_mode == DATA_MODE_IMMEDIATE
-	    && ((d->d_operand & 0xff00) == 0x7F00) && d->d_operand & 0x80)
-		s->s_ff_quirk = 1;
-
-	if (rel && !s->s_prefix && d->d_operand == 0x7F) {
-		if (s->s_nopd) {
-			printf("w00t\n");
-			strcpy(s->s_nopd->d_asm, "nop");
-		}
-		printf("Warning: fucking up a branch %x\n", d->d_off);
-		decode_unknown(s, d);
-	}
-#endif
 	return 1;
 }
 

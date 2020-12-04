@@ -2342,7 +2342,7 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 		rz_str_ncpy (sectname, bin->sects[i].sectname, 17);
 		rz_str_filter (sectname, -1);
 		// hack to support multiple sections with same name
-		// snprintf (segname, sizeof (segname), "%d", i); // wtf
+		// snprintf (segname, sizeof (segname), "%d", i);
 		memcpy (raw_segname, bin->sects[i].segname, 16);
 		raw_segname[16] = 0;
 		snprintf (segname, sizeof (segname), "%zd.%s", i, raw_segname);

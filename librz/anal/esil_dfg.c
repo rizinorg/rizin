@@ -894,7 +894,7 @@ RZ_API RzAnalEsilDFG *rz_anal_esil_dfg_new(RzReg *regs) {
 	RzListIter *ator;
 	rz_list_foreach (regs->allregs, ator, ri) {
 		const ut32 from = ri->offset;
-		const ut32 to = from + ri->size - 1;	// closed intervals because of FUCK YOU
+		const ut32 to = from + ri->size - 1;
 		const ut64 v = to | (((ut64)from) << 32);
 		const ut32 reg_strlen = 4 + strlen (ri->name) + 1;
 		char *reg = RZ_NEWS0 (char, reg_strlen);
@@ -1010,20 +1010,18 @@ static void _dfg_rev_dfs_cb(RzGraphNode *n, RzGraphVisitor *vi) {
 	}
 }
 
-static char *condrets_strtok(char *str, const char tok) {
+
+// There is an exact copy of this function in esil_cfg.c
+static char *internal_esil_strchrtok(char *str, const char tok) {
 	if (!str) {
 		return NULL;
 	}
-	ut32 i = 0;
-	while (1 == 1) {
-		if (!str[i]) {
-			break;
-		}
+	ut32 i;
+	for (i = 0; str[i]; i++) {
 		if (str[i] == tok) {
 			str[i] = '\0';
 			return &str[i + 1];
 		}
-		i++;
 	}
 	return NULL;
 }
@@ -1036,7 +1034,7 @@ static RzStrBuf *get_resolved_expr(RzAnalEsilDFGFilter *filter, RzAnalEsilDFGNod
 	}
 	char *p, *q;
 	// we can do this bc every generative node MUST end with an operator
-	for (p = expr; (q = condrets_strtok (p, ',')); p = q) {
+	for (p = expr; (q = internal_esil_strchrtok (p, ',')); p = q) {
 		RzGraphNode *gn = sdb_ptr_get (filter->results, p, 0);
 		if (!gn) {
 			rz_strbuf_appendf (res, ",%s,", p);

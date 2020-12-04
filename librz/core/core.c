@@ -1703,7 +1703,7 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 		if (!strncmp (buf->data, "afvn ", 5)) {
 			vars = rz_anal_var_list (core->anal, fcn, RZ_ANAL_VAR_KIND_BPV);
 		} else {
-			vars = rz_list_new (); // TODO wtf rz_anal_var_list (core->anal, fcn, RZ_ANAL_VAR_KIND_ARG);
+			vars = rz_list_new (); // TODO rz_anal_var_list (core->anal, fcn, RZ_ANAL_VAR_KIND_ARG);
 		}
 		const char *f_ptr, *l_ptr;
 		RzAnalVar *var;
@@ -2590,7 +2590,7 @@ RZ_API void rz_core_fini(RzCore *c) {
 	rz_core_task_break_all (&c->tasks);
 	rz_core_task_join (&c->tasks, NULL, -1);
 	rz_core_wait (c);
-	/* TODO: it leaks as shit */
+	/* TODO: it leaks badly */
 	//update_sdb (c);
 	// avoid double free
 	rz_list_free (c->ropchain);

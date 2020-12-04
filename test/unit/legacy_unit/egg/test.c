@@ -58,21 +58,3 @@ int main(int argc, char **argv) {
 	rz_egg_free (egg);
 	return 0;
 }
-/*
-	rz_egg_syscall (egg, "close", 0);
-rz_egg_compile (egg);
-*/
-/*
-	printf ("src (%s)\n", rz_egg_get_source (egg));
-	printf ("ass (%s)\n", rz_egg_get_assembly (egg));
-	b = rz_egg_get_bin (egg);
-	if (b == NULL) {
-		eprintf ("Cannot assemble egg :(\n");
-	} else {
-		printf ("BUFFER : %d\n", b->length);
-		for (i=0;i<b->length;i++) {
-			printf ("%02x", b->buf[i]);
-		}
-		printf ("\n");
-	}
-*/

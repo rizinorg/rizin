@@ -192,7 +192,7 @@ static int esilbreak_reg_write(RzAnalEsil *esil, const char *regname, ut64 *num)
 	EsilBreak *ew;
 	RzListIter *iter;
 	if (regname[0] >= '0' && regname[0] <= '9') {
-		// wtf this should never happen
+		// this should never happen
 		//eprintf (Color_BLUE"IMM WRTE %s\n"Color_RESET, regname);
 		return 0;
 	}

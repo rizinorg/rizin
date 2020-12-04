@@ -18,7 +18,7 @@
 		Some structs are different based on the Windows version (XP, Vista, 7, Server, 8, 8.1, 10)
 		  and updates (Service Packs, Windows 10 Seasonal Updates)
 			-Maybe use offsets instead of depending on structs
-			-Create structs for each windows version (ie post-fix XP_SP2, 7, 10_1703)? (Oh god)
+			-Create structs for each windows version (ie post-fix XP_SP2, 7, 10_1703)?
 			-What about the parsing functions? Alter its behaviour depending on version or create
 				one function for each version
 */

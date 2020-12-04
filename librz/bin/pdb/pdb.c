@@ -564,7 +564,7 @@ static void finish_pdb_parse(RzPdb *pdb) {
    hacking up things like that may only produce problems. so it is better to not assume that a specific
    element in a list is of a specific type and just store this info in the type struct or so.
 */
-// XXX: this loop is fucked up. i prefer to leak than crash
+// XXX: this loop is a mess and leaks memory.
 	it = rz_list_iterator (pdb->pdb_streams);
 	while (rz_list_iter_next (it)) {
 		switch (i) {

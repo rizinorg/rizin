@@ -666,9 +666,7 @@ endif
 subdir('test/unit')
 
 install_data(
-  'doc/fortunes.creepy',
   'doc/fortunes.fun',
-  'doc/fortunes.nsfw',
   'doc/fortunes.tips',
   install_dir: rizin_fortunes
 )

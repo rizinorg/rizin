@@ -1145,7 +1145,7 @@ static int mips_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *b, int len,
 			break;
 		case 8: // jr
 			//eprintf ("%llx jr\n", addr);
-			// TODO: check return value or gtfo
+			// TODO: check return value
 			op->delay = 1;
 			insn.id = MIPS_INS_JR;
 			if (rs == 31) {
@@ -1154,7 +1154,6 @@ static int mips_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *b, int len,
 				op->type = RZ_ANAL_OP_TYPE_RJMP;
 				op->jump = t9_pre;
 				break;
-
 			} else {
 				op->type = RZ_ANAL_OP_TYPE_RJMP;
 			}

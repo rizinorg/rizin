@@ -103,7 +103,7 @@ static void remove_second_operand(struct msp430_cmd *cmd)
 	}
 }
 
-/* TODO: This is ugly as hell */
+/* TODO: This code is messy, needs to be refactored. */
 static int decode_emulation(ut16 instr, struct msp430_cmd *cmd)
 {
 	int ret = -1;

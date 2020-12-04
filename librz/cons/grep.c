@@ -811,7 +811,7 @@ RZ_API int rz_cons_grep_line(char *buf, int len) {
 			}
 			outlen = outlen > 0? outlen - 1: 0;
 			if (outlen > len) { // should never happen
-				eprintf ("rz_cons_grep_line: wtf, how you reach this?\n");
+				eprintf ("rz_cons_grep_line: how you have reached this?\n");
 				free (in);
 				free (out);
 				return -1;

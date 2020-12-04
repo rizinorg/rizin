@@ -216,10 +216,10 @@ RZ_API ut64 rz_num_get(RNum *num, const char *str) {
 		sscanf (str, "0x%"PFMT64x, &ret);
 	} else if (str[0] == '\'') {
 		ret = str[1] & 0xff;
-	// ugly as hell
+	// needs refactoring
 	} else if (!strncmp (str, "0xff..", 6) || !strncmp (str, "0xFF..", 6)) {
 		ret = rz_num_tailff (num, str + 6);
-	// ugly as hell
+	// needs refactoring
 	} else if (!strncmp (str, "0o", 2)) {
 		if (sscanf (str + 2, "%"PFMT64o, &ret) != 1) {
 			error (num, "invalid octal number");
@@ -477,7 +477,7 @@ RZ_API ut64 rz_num_math(RNum *num, const char *str) {
 					p = p2 + 1;
 					continue;
 				}
-				eprintf ("WTF!\n");
+				eprintf ("something really bad has happened! can't find '('\n");
 			} else {
 				ret = rz_num_op (op, ret, rz_num_math_internal (num, p));
 			}
@@ -705,12 +705,10 @@ RZ_API bool rz_is_valid_input_num_value(RNum *num, const char *input_value) {
 	return !(value == 0 && *input_value != '0');
 }
 
-// SHITTY API
 RZ_API ut64 rz_get_input_num_value(RNum *num, const char *str) {
 	return (str && *str)? rz_num_math (num, str) : 0;
 }
 
-// SHITTY API
 static inline ut64 __nth_nibble(ut64 n, ut32 i) {
 	int sz = (sizeof (n) << 1) - 1;
 	int s = (sz - i) * 4;

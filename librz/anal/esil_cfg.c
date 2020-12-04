@@ -51,21 +51,17 @@ typedef struct esil_value_t {
 } EsilVal;
 
 /*	HELPERS 	*/
-
-static char *condrets_strtok(char *str, const char tok) {
+// There is an exact copy of this function in esil_dfg.c
+static char *internal_esil_strchrtok(char *str, const char tok) {
 	if (!str) {
 		return NULL;
 	}
-	ut32 i = 0;
-	while (1 == 1) {
-		if (!str[i]) {
-			break;
-		}
+	ut32 i;
+	for (i = 0; str[i]; i++) {
 		if (str[i] == tok) {
 			str[i] = '\0';
 			return &str[i + 1];
 		}
-		i++;
 	}
 	return NULL;
 }
@@ -80,7 +76,7 @@ static void esil_expr_atomize(RzIDStorage *atoms, char *expr) {
 	ut32 forget_me;
 	for (
 		; !!expr && rz_id_storage_add (atoms, expr, &forget_me);
-		expr = condrets_strtok (expr, ',')) {
+		expr = internal_esil_strchrtok (expr, ',')) {
 	}
 }
 
@@ -455,7 +451,7 @@ static RzAnalEsilCFG *esil_cfg_gen(RzAnalEsilCFG *cfg, RzAnal *anal, RzIDStorage
 	cfg->end = end;
 	// create an edge from cur to end?
 	// Well yes, but no. Would be great to do this,
-	// but rgraph api is slow af on node delition. Be careful instead
+	// but rgraph api is slow on node deletion. Be careful instead
 
 	// We created a new graph node above, which is going to be the post-dominator
 	// of the subgraph, that we are going to add to the existing graph.
@@ -650,7 +646,7 @@ static void merge_2_blocks(RzAnalEsilCFG *cfg, RzGraphNode *node, RzGraphNode *b
 	}
 }
 
-// this shit is slow af, bc of foolish graph api
+// this method is really slow, because of foolish graph api
 RZ_API void rz_anal_esil_cfg_merge_blocks(RzAnalEsilCFG *cfg) {
 	if (!cfg || !cfg->g || !cfg->g->nodes) {
 		return;

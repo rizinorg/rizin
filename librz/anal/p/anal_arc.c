@@ -46,7 +46,7 @@ static inline ut32 rz_read_me32_arc(const void *src) {
 	return (((ut32)s[1]) << 24) | (((ut32)s[0]) << 16) | (((ut32)s[3]) << 8) | (((ut32)s[2]) << 0);
 }
 
-static int sex(int bits, int imm) {
+static int sign_ext(int bits, int imm) {
 	int maxsint = (1 << (bits - 1)) - 1;
 	int maxuint = (1 << (bits)) - 1;
 
@@ -57,14 +57,14 @@ static int sex(int bits, int imm) {
 	return imm;
 }
 
-#define SEX_S7(imm) sex (7, imm);
-#define SEX_S8(imm) sex (8, imm);
-#define SEX_S9(imm) sex (9, imm);
-#define SEX_S10(imm) sex (10, imm);
-#define SEX_S12(imm) sex (12, imm);
-#define SEX_S13(imm) sex (13, imm);
-#define SEX_S21(imm) sex (21, imm);
-#define SEX_S25(imm) sex (25, imm);
+#define SIGN_EXT_S7(imm) sign_ext (7, imm);
+#define SIGN_EXT_S8(imm) sign_ext (8, imm);
+#define SIGN_EXT_S9(imm) sign_ext (9, imm);
+#define SIGN_EXT_S10(imm) sign_ext (10, imm);
+#define SIGN_EXT_S12(imm) sign_ext (12, imm);
+#define SIGN_EXT_S13(imm) sign_ext (13, imm);
+#define SIGN_EXT_S21(imm) sign_ext (21, imm);
+#define SIGN_EXT_S25(imm) sign_ext (25, imm);
 
 static int map_cond2rizin(ut8 cond) {
 	switch (cond) {
@@ -167,7 +167,7 @@ static int arcompact_genops_jmp(RzAnalOp *op, ut64 addr, arc_fields *f, ut64 bas
 	case 2: /* unconditional jumps via s12 imm */
 		op->type = basic_type;
 		f->imm = (f->a << 6 | f->c);
-		f->imm = SEX_S12 (f->imm);
+		f->imm = SIGN_EXT_S12 (f->imm);
 		arcompact_jump (op, addr, f->imm, f->mode_n);
 		return op->size;
 	case 3: /* conditional jumps */
@@ -231,7 +231,7 @@ static int arcompact_genops(RzAnalOp *op, ut64 addr, ut32 words[2]) {
 		fields.imm = fields.c;
 	} else if (fields.format == 2) {
 		/* REG_S12IMM */
-		fields.imm = SEX_S12 (fields.c | fields.a << 6);
+		fields.imm = SIGN_EXT_S12 (fields.c | fields.a << 6);
 	}
 
 	switch (fields.subopcode) {
@@ -276,7 +276,7 @@ static int arcompact_genops(RzAnalOp *op, ut64 addr, ut32 words[2]) {
 	case 0x0a: /* move */
 		if (fields.format == 2) {
 			op->type = RZ_ANAL_OP_TYPE_MOV;
-			op->val = SEX_S12 (fields.a << 6 | fields.c);
+			op->val = SIGN_EXT_S12 (fields.a << 6 | fields.c);
 		} else if (fields.format == 3) {
 			fields.cond = fields.a & 0x1f;
 			op->cond = map_cond2rizin (fields.cond);
@@ -340,7 +340,7 @@ static int arcompact_genops(RzAnalOp *op, ut64 addr, ut32 words[2]) {
 		/* TODO: describe it to rizin better? */
 		switch (fields.format) {
 		case 2: /* Loop Set Up (Unconditional) */
-			fields.imm = SEX_S13 ((fields.c | (fields.a << 6)) << 1);
+			fields.imm = SIGN_EXT_S13 ((fields.c | (fields.a << 6)) << 1);
 			op->jump = (addr & ~3) + fields.imm;
 			op->type = RZ_ANAL_OP_TYPE_CJMP;
 			op->fail = addr + op->size;
@@ -386,7 +386,7 @@ static int arcompact_genops(RzAnalOp *op, ut64 addr, ut32 words[2]) {
 		case 8: /* Zero extend word */
 			// op->type = RZ_ANAL_OP_TYPE_UNK;
 			op->type = RZ_ANAL_OP_TYPE_MOV;
-			/* TODO: a better encoding for SEX and EXT instructions */
+			/* TODO: a better encoding for SIGN and ZERO EXTEND instructions */
 			break;
 		case 9: /* Absolute */
 			op->type = RZ_ANAL_OP_TYPE_ABS;
@@ -496,7 +496,7 @@ static int arcompact_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, 
 
 		if (fields.format == 0) {
 			/* Branch Conditionally 0x00 [0x0] */
-			fields.limm = SEX_S21 (fields.limm);
+			fields.limm = SIGN_EXT_S21 (fields.limm);
 			fields.cond = (words[0] & 0x1f);
 			op->cond = map_cond2rizin (fields.cond);
 			op->type = RZ_ANAL_OP_TYPE_CJMP;
@@ -505,7 +505,7 @@ static int arcompact_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, 
 			fields.limm |= (fields.c & 0x0f) << 21;
 			/* the  & 0xf clearly shows we don't overflow */
 			/* TODO: don't generate code to show this */
-			fields.limm = SEX_S25 (fields.limm);
+			fields.limm = SIGN_EXT_S25 (fields.limm);
 			op->type = RZ_ANAL_OP_TYPE_JMP;
 		}
 		arcompact_branch (op, addr, fields.limm, fields.mode_n);
@@ -519,7 +519,7 @@ static int arcompact_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, 
 			fields.subopcode = (words[0] & 0x0f);
 			fields.b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >> 9;
 			fields.c = (words[0] & 0x00000fc0) >> 6;
-			fields.imm = SEX_S9 ((words[0] & 0x00fe0000) >> 16 | (words[0] & 0x8000) >> 7);
+			fields.imm = SIGN_EXT_S9 ((words[0] & 0x00fe0000) >> 16 | (words[0] & 0x8000) >> 7);
 			op->type = RZ_ANAL_OP_TYPE_CJMP;
 
 			if (fields.format2 == 0) {
@@ -543,7 +543,7 @@ static int arcompact_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, 
 
 			if (fields.format2 == 0) {
 				/* Branch and Link Conditionally, 0x01, [0x0, 0x0] */
-				fields.imm = SEX_S21 (fields.imm);
+				fields.imm = SIGN_EXT_S21 (fields.imm);
 				fields.cond = (words[0] & 0x1f);
 				op->cond = map_cond2rizin (fields.cond);
 				op->type = RZ_ANAL_OP_TYPE_CCALL;
@@ -552,7 +552,7 @@ static int arcompact_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, 
 				fields.imm |= (fields.c & 0x0f) << 21;
 				/* the  & 0xf clearly shows we don't overflow */
 				/* TODO: don't generate code to show this */
-				fields.imm = SEX_S25 (fields.imm);
+				fields.imm = SIGN_EXT_S25 (fields.imm);
 				op->type = RZ_ANAL_OP_TYPE_CALL;
 			}
 			arcompact_branch (op, addr, fields.imm, fields.mode_n);
@@ -561,7 +561,7 @@ static int arcompact_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, 
 	case 2: /* Load Register with Offset, 0x02 */
 		fields.a = (words[0] & 0x0000003f);
 		fields.b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >> 9;
-		fields.imm = SEX_S9 ((words[0] & 0x00ff0000) >> 16 | (words[0] & 0x8000) >> 7);
+		fields.imm = SIGN_EXT_S9 ((words[0] & 0x00ff0000) >> 16 | (words[0] & 0x8000) >> 7);
 		/* fields.mode_aa = (words[0] & 0x600) >> 9; */
 		fields.mode_zz = (words[0] & 0x180) >> 7;
 
@@ -587,7 +587,7 @@ static int arcompact_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, 
 	case 3: /* Store Register with Offset, 0x03 */
 		fields.c = (words[0] & 0xfc0) >> 6;
 		fields.b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >> 9;
-		fields.imm = SEX_S9 ((words[0] & 0x00ff0000) >> 16 | (words[0] & 0x8000) >> 7);
+		fields.imm = SIGN_EXT_S9 ((words[0] & 0x00ff0000) >> 16 | (words[0] & 0x8000) >> 7);
 		/* ut8 mode_aa = (words[0] & 0x18) >> 3; */
 		fields.mode_zz = (words[0] & 0x6) >> 1;
 
@@ -975,14 +975,14 @@ static int arcompact_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, 
 		break;
 	case 0x1d: /* Branch on Compare Register with Zero, 0x1D, [0x00 - 0x01] */
 		/* fields.subopcode = (words[0] & 0x00800000) >> (16+7); */
-		fields.imm = SEX_S8 ((words[0] & 0x007f0000) >> (16 - 1));
+		fields.imm = SIGN_EXT_S8 ((words[0] & 0x007f0000) >> (16 - 1));
 		/* fields.subopcode? reg NE: reg EQ; */
 		op->type = RZ_ANAL_OP_TYPE_CJMP;
 		arcompact_branch (op, addr, fields.imm, 0);
 		break;
 	case 0x1e: /* Branch Conditionally, 0x1E, [0x00 - 0x03] */
 		fields.subopcode = (words[0] & 0x06000000) >> (16 + 9);
-		fields.imm = SEX_S10 ((words[0] & 0x01ff0000) >> (16 - 1));
+		fields.imm = SIGN_EXT_S10 ((words[0] & 0x01ff0000) >> (16 - 1));
 		switch (fields.subopcode) {
 		case 0: /* B_S */
 			op->type = RZ_ANAL_OP_TYPE_JMP;
@@ -997,14 +997,14 @@ static int arcompact_op(RzAnal *anal, RzAnalOp *op, ut64 addr, const ut8 *data, 
 			break;
 		case 3: /* Bcc_S */
 			op->type = RZ_ANAL_OP_TYPE_CJMP;
-			fields.imm = SEX_S7 ((words[0] & 0x003f0000) >> (16 - 1));
+			fields.imm = SIGN_EXT_S7 ((words[0] & 0x003f0000) >> (16 - 1));
 			/* TODO: cond codes (looks like it is the BR table again?) */
 			break;
 		}
 		arcompact_branch (op, addr, fields.imm, 0);
 		break;
 	case 0x1f: /* Branch and Link Unconditionally, 0x1F */
-		fields.imm = SEX_S13 ((words[0] & 0x07ff0000) >> (16 - 2));
+		fields.imm = SIGN_EXT_S13 ((words[0] & 0x07ff0000) >> (16 - 2));
 		op->type = RZ_ANAL_OP_TYPE_CALL;
 		arcompact_branch (op, addr, fields.imm, 0);
 		break;

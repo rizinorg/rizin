@@ -1999,7 +1999,7 @@ RZ_API void rz_core_print_examine(RzCore *core, const char *str) {
 		rz_core_cmdf (core, "pxo %d @ 0x%"PFMT64x, count * size, addr);
 		break;
 	case 'f':
-	case 'A': // XXX (float in hex wtf)
+	case 'A': // XXX (float in hex)
 		n = 3;
 		snprintf (cmd, sizeof (cmd), "pxo %d @ 0x%"PFMT64x,
 			count * size, addr);

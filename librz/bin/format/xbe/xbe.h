@@ -26,7 +26,7 @@ typedef struct {
 	ut32 init_flags;
 	ut32 ep;
 	ut32 tls_addr;
-	ut32 pe_shit[7];
+	ut32 pe_data[7];
 	ut32 debug_path_addr;
 	ut32 debug_name_addr;
 	ut32 debug_uname_addr;
@@ -36,7 +36,7 @@ typedef struct {
 	ut32 lib_versions_addr;
 	ut32 kernel_lib_addr;
 	ut32 xapi_lib_addr;
-	ut32 shit[2];
+	ut32 padding[2];
 }) xbe_header;
 
 
@@ -51,7 +51,7 @@ typedef struct  {
 	ut32 size;
 	ut32 name_addr;
 	ut32 refcount;
-	ut32 shit[2];
+	ut32 padding[2];
 	ut8  digest[20];
 }) xbe_section;
 

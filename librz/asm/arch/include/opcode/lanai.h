@@ -364,7 +364,7 @@ Literals:([])*+- ,
 
 
 /* Sign-extend a value which is N bits long.  */
-#define SEX(value, bits)                                        \
+#define SIGN_EXT(value, bits)                                        \
         ((((int)(value)) << ((8 * sizeof (int)) - bits) )       \
                          >> ((8 * sizeof (int)) - bits) )
 

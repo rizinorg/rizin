@@ -17,7 +17,7 @@ static RzStrBuf *buf_global = NULL;
 static unsigned char bytes[4];
 
 static int hppa_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
-#if 0 // XXX wtf ?!
+#if 0 // XXX rewrite needed
 	if (length == 4)  {
 		// swap
 		myaddr[0] = bytes[3];

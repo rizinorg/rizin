@@ -118,7 +118,6 @@ indentFile() {
 			rm -f "${D}/.clang-format"
 		fi
 	fi
-# one of those rules fuckups the ascii art in comment blocks
 
 	# fix ternary conditional indent
 #	perl -ne 's/ \? /? /g;print' < .tmp-format > .tmp-format2

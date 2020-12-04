@@ -88,7 +88,7 @@ int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 // APPLE
 
 /*
-#if OLDIESHIT
+#if OLDIEDEF
 #if __x86_64__
 #define RZ_DEBUG_STATE_T x86_THREAD_STATE
 #define RZ_DEBUG_REG_T _STRUCT_X86_THREAD_STATE64
@@ -98,9 +98,8 @@ int ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 #define RZ_DEBUG_STATE_T i386_THREAD_STATE
 #define RZ_DEBUG_STATE_SZ i386_THREAD_STATE_COUNT
 #endif
-#endif
+#endif // OLDIEDEF
 */
-// oldie
 
 #if __LP64__
 #define ADDR "%16lx"

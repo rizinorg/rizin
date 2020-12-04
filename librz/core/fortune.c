@@ -3,12 +3,15 @@
 #include <rz_core.h>
 
 static const char *fortunes[] = {
-	"tips", "fun", "nsfw", "creepy"
+	"tips", "fun"
 };
 
-static char *getFortuneFile(RzCore *core, const char *type) {
-	return rz_str_newf (RZ_JOIN_3_PATHS ("%s", RZ_FORTUNES, "fortunes.%s"),
-		rz_sys_prefix (NULL), type);
+static char *rizin_fortune_file(const char *type) {
+	if (!strncmp(type, "tips", 4) || !strncmp(type, "fun", 3)) {
+		return rz_str_newf (RZ_JOIN_3_PATHS ("%s", RZ_FORTUNES, "fortunes.%s"),
+			rz_sys_prefix (NULL), type);
+	}
+	return RZ_STR_DUP(type);
 }
 
 RZ_API void rz_core_fortune_list_types(void) {
@@ -19,48 +22,34 @@ RZ_API void rz_core_fortune_list_types(void) {
 }
 
 RZ_API void rz_core_fortune_list(RzCore *core) {
-	// TODO: use file.fortunes // can be dangerous in sandbox mode
-	const char *types = (char *)rz_config_get (core->config, "cfg.fortunes.type");
-	size_t i, j;
-	for (i = 0; i < RZ_ARRAY_SIZE (fortunes); i++) {
-		if (strstr (types, fortunes[i])) {
-			char *file = getFortuneFile (core, fortunes[i]);
-			char *str = rz_file_slurp (file, NULL);
-			if (!str) {
-				free (file);
-				continue;
-			}
-			for (j = 0; str[j]; j++) {
-				if (str[j] == '\n') {
-					if (i < j) {
-						str[j] = '\0';
-						rz_cons_printf ("%s\n", str + i);
-					}
-					i = j + 1;
-				}
-			}
-			free (str);
-			free (file);
+	const char *types = (char *)rz_config_get (core->config, "cfg.fortunes.file");
+
+	char *file = rizin_fortune_file(types);
+	char *str = rz_file_slurp (file, NULL);
+	if (!str) {
+		free (file);
+		return;
+	}
+	size_t j, beg;
+	for (j = 0, beg = 0; str[j]; j++) {
+		if (str[j] == '\n') {
+			str[j] = '\0';
+			rz_cons_printf ("%s\n", str + beg);
+			beg = j + 1;
 		}
 	}
+	free (str);
+	free (file);
 }
 
 static char *getrandomline(RzCore *core) {
-	size_t i;
-	const char *types = (char *)rz_config_get (core->config, "cfg.fortunes.type");
-	char *line = NULL, *templine;
-	for (i = 0; i < RZ_ARRAY_SIZE (fortunes); i++) {
-		if (strstr (types, fortunes[i])) {
-			int lines = 0;
-			char *file = getFortuneFile(core, fortunes[i]);
-			templine = rz_file_slurp_random_line_count (file, &lines);
-			if (templine && *templine) {
-				free (line);
-				line = templine;
-			}
-			free (file);
-		}
-	}
+	int lines = 0;
+	const char *types = (char *)rz_config_get (core->config, "cfg.fortunes.file");
+
+	char *file = rizin_fortune_file(types);
+	char *line = rz_file_slurp_random_line_count (file, &lines);
+
+	free (file);
 	return line;
 }
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 /* XXX : move to rz_util??? rename method names.. to long? */
-/* proc IO is not related to socket io.. this is shitty!! */
+/* proc IO is not related to socket io.. */
 
 #include <rz_socket.h>
 #include <rz_util.h>
@@ -26,7 +26,7 @@ RZ_API struct rz_socket_proc_t *rz_socket_proc_open(char* const argv[]) {
 		return NULL;
 	}
 
-	if (pipe (sp->fd0)==-1) {
+	if (pipe (sp->fd0) == -1) {
 		perror ("pipe");
 		goto error;
 	}
@@ -37,7 +37,7 @@ RZ_API struct rz_socket_proc_t *rz_socket_proc_open(char* const argv[]) {
 		goto error;
 	}
 
-	if (pipe (sp->fd1)==-1) {
+	if (pipe (sp->fd1) == -1) {
 		perror ("pipe");
 		goto error;
 	}

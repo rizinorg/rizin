@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
 	rz_str_ncpy(dst, src, 100);
 	check ("This is my text", dst, "rz_str_ncpy (n > src length)");
 
-	strcpy(dst, "This is a $hell < fin.txt");
+	strcpy(dst, "This is a $mess < fin.txt");
 	rz_str_sanitize(dst);
 	check("This is a _hell _ fin.txt", dst, "rz_str_sanitize");
 
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
 	check("\x1b[30mHell\x1b[32mo\nIt'\x1b[33ms a t\x1b[31mest\x1b[39;49m\n", res_s, "rz_str_replace_thunked");
 
 	int l;
-	strcpy(str, "\x1b[30mHell\x1b[32mo\nIt'\x1b[33ms an hell\n");
+	strcpy(str, "\x1b[30mMess\x1b[32mo\nIt'\x1b[33ms a mess\n");
 	l = rz_str_ansi_filter (str, &orig, &cpos, 0);
 	res_s = rz_str_replace_thunked(orig, str, cpos, l, "ell", "\x1b[31mell\x1b[39;49m", 1);
 	check("\x1b[30mH\x1b[31mell\x1b[39;49mo\nIt'\x1b[33ms an h\x1b[31mell\x1b[39;49m\n", res_s, "rz_str_ansi_filter + replace_thunked");

@@ -10,7 +10,7 @@
 #define rz_hash_adler32 __adler32
 #include "../../hash/adler32.c"
 
-// globals to kill
+// globals to be removed
 extern struct rz_bin_dbginfo_t rz_bin_dbginfo_dex;
 static bool dexdump = false;
 static Sdb *mdb = NULL;
@@ -1734,7 +1734,7 @@ static bool dex_loadcode(RzBinFile *bf) {
 				sym->is_imported = true;
 				sym->type = RZ_BIN_TYPE_FUNC_STR;
 				sym->bind = "NONE";
-				//XXX so damn unsafe check buffer boundaries!!!!
+				//XXX so unsafe check buffer boundaries!!!!
 				//XXX use rz_buf API!!
 				sym->paddr = sym->vaddr = bin->header.method_offset + (sizeof (struct dex_method_t) * i) ;
 				sym->ordinal = sym_count++;
@@ -1884,7 +1884,7 @@ static int getoffset(RzBinFile *bf, int type, int idx) {
 }
 
 static char *getname(RzBinFile *bf, int type, int idx, bool sd) {
-	simplifiedDemangling = sd; // XXX kill globals
+	simplifiedDemangling = sd; // XXX remove globals
 	struct rz_bin_dex_obj_t *dex = bf->o->bin_obj;
 	switch (type) {
 	case 'm': // methods

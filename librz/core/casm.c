@@ -711,7 +711,7 @@ static RzList *rz_core_asm_back_disassemble (RzCore *core, ut64 addr, int len, u
 			add_hit_to_sorted_hits(hits, current_instr_addr, current_instr_len, is_valid);
 
 			if (hit_count < purge_results) {
-				hit_count = 0; // WTF??
+				hit_count = 0;
 			} else {
 				hit_count -= purge_results;
 			}

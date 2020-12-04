@@ -195,7 +195,7 @@ static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 
 RzIOPlugin rz_io_plugin_bfdbg = {
 	.name = "bfdbg",
-	.desc = "Attach to brainFuck Debugger instance",
+	.desc = "Attach to brainfuck Debugger instance",
 	.license = "LGPL3",
 	.uris = "bfdbg://",
 	.open = __open,

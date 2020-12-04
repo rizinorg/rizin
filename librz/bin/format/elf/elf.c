@@ -3308,7 +3308,7 @@ static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RzBinElfSymbol **s
 			p++;
 		}
 		/*Take those symbols that are not present in the shdr but yes in phdr*/
-		/*This should only should happen with fucked up binaries*/
+		/*This should only should happen with invalid binaries*/
 		if (count > 0) {
 			/*what happens if a shdr says it has only one symbol? we should look anyway into phdr*/
 			tmp = (RzBinElfSymbol*)realloc (ret, (nsym + count + 1) * sizeof (RzBinElfSymbol));

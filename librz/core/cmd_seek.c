@@ -245,7 +245,7 @@ static int cmd_seek_opcode_backward(RzCore *core, int numinstr) {
 		ret = core->offset - addr;
 	} else {
 #if 0
-		// core_asm_bwdis_len is buggy as hell we should kill it. seems like prevop_addr
+		// core_asm_bwdis_len is really buggy and we should remove it. seems like prevop_addr
 		// works as expected, because is the one used from visual
 		ret = rz_core_asm_bwdis_len (core, &instr_len, &addr, numinstr);
 #endif

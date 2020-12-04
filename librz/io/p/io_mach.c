@@ -200,7 +200,7 @@ static ut64 getNextValid(RzIO *io, RzIODesc *fd, ut64 addr) {
 			lower = address;
 		}
 		if (size < 1) {
-			size = osize; // fuck
+			size = osize;
 		}
 		address += size;
 		size = 0;

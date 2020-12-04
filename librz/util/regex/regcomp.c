@@ -314,7 +314,7 @@ RZ_API int rz_regex_comp(RzRegex *preg, const char *pattern, int cflags) {
 	g->mlen = 0;
 	g->nsub = 0;
 	g->ncategories = 1;	/* category 0 is "everything else" */
-	g->categories = &g->catspace[-(CHAR_MIN)]; // WTF
+	g->categories = &g->catspace[-(CHAR_MIN)];
 	(void) memset ((char *)g->catspace, 0, NC*sizeof(cat_t));
 	g->backrefs = 0;
 
