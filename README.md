@@ -1,4 +1,6 @@
-# Introduction
+<img width="150" height="150" align="left" style="float: left; margin: 0 10px 0 0;" alt="Rizin logo" src="https://raw.githubusercontent.com/rizinorg/rizin/dev/doc/img/rizin.svg?sanitize=true">
+
+# Rizin
 
 Rizin is a fork of the radare2 reverse engineering framework with a focus on
 usability, working features and code cleanliness.
