@@ -44,7 +44,7 @@ jobs:
           curl \
             --form project=rizin \
             --form token=$TOKEN \
-            --form email=noreply@radare.org \
+            --form email=noreply@rizin.re \
             --form file=@rizin.tgz \
             --form version=trunk \
             --form description="rizin" \
