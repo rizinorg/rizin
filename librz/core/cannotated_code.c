@@ -51,6 +51,7 @@ RZ_API void rz_core_annotated_code_print_json(RzAnnotatedCode *code) {
 			break;
 		case RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT:
 			pj_ks (pj, "type", "syntax_highlight");
+			type_str = NULL;
 			switch (annotation->syntax_highlight.type) {
 			case RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD:
 				type_str = "keyword";
@@ -77,7 +78,9 @@ RZ_API void rz_core_annotated_code_print_json(RzAnnotatedCode *code) {
 				type_str = "global_variable";
 				break;
 			}
-			pj_ks (pj, "syntax_highlight", type_str);
+			if (type_str) {
+				pj_ks (pj, "syntax_highlight", type_str);
+			}
 			break;
 		}
 		pj_end (pj);
