@@ -12,7 +12,7 @@ RZ_API RzCoreItem *rz_core_item_at (RzCore *core, ut64 addr) {
 		if (map->perm & RZ_PERM_X) {
 			// if theres a meta consider it data
 			ut64 size;
-			RzAnalMetaItem *item = rz_meta_get_at (core->anal, addr, RZ_META_TYPE_ANY, &size);
+			RzAnalysisMetaItem *item = rz_meta_get_at (core->analysis, addr, RZ_META_TYPE_ANY, &size);
 			if (item) {
 				switch (item->type) {
 				case RZ_META_TYPE_DATA:
@@ -40,7 +40,7 @@ RZ_API RzCoreItem *rz_core_item_at (RzCore *core, ut64 addr) {
 			}
 		}
 	}
-	RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, addr, 1);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, addr, 1);
 	if (fcn) {
 		ci->fcnname = strdup (fcn->name);
 	}
@@ -50,7 +50,7 @@ RZ_API RzCoreItem *rz_core_item_at (RzCore *core, ut64 addr) {
 		ci->sectname = strdup (sec->name);
 	}
 	if (!ci->data) {
-		RzAnalOp* op = rz_core_anal_op (core, addr, RZ_ANAL_OP_MASK_ESIL | RZ_ANAL_OP_MASK_HINT);
+		RzAnalysisOp* op = rz_core_analysis_op (core, addr, RZ_ANAL_OP_MASK_ESIL | RZ_ANAL_OP_MASK_HINT);
 		if (op) {
 			if (!ci->data) {
 				if (op->mnemonic) {
@@ -61,7 +61,7 @@ RZ_API RzCoreItem *rz_core_item_at (RzCore *core, ut64 addr) {
 				}
 			}
 			ci->size = op->size;
-			rz_anal_op_free (op);
+			rz_analysis_op_free (op);
 		}
 	}
 	char *cmt = rz_core_cmd_strf (core, "CC.@0x%08"PFMT64x, addr);

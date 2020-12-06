@@ -7,7 +7,7 @@
 #include <rz_lib.h>
 #include <rz_util.h>
 #include <rz_flag.h>
-#include <rz_anal.h>
+#include <rz_analysis.h>
 #include <rz_parse.h>
 
 static int can_replace(const char *str, int idx, int max_operands) {
@@ -250,11 +250,11 @@ static int parse(RzParse *p, const char *data, char *str) {
 	return true;
 }
 
-static bool subvar(RzParse *p, RzAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RzListIter *iter;
 	char *oldstr;
 	char *tstr = strdup (data);
-	RzAnal *anal = p->analb.anal;
+	RzAnalysis *analysis = p->analb.analysis;
 
 	if (!p->varlist) {
 		free (tstr);
@@ -263,7 +263,7 @@ static bool subvar(RzParse *p, RzAnalFunction *f, ut64 addr, int oplen, char *da
 	RzList *bpargs = p->varlist (f, 'b');
 	RzList *spargs = p->varlist (f, 's');
 	const bool ucase = IS_UPPER (*tstr);
-	RzAnalVarField *var;
+	RzAnalysisVarField *var;
 	rz_list_foreach (spargs, iter, var) {
 		st64 delta = p->get_ptr_at
 			? p->get_ptr_at (f, var->delta, addr)
@@ -278,7 +278,7 @@ static bool subvar(RzParse *p, RzAnalFunction *f, ut64 addr, int oplen, char *da
 			reg = p->get_reg_at (f, var->delta, addr);
 		}
 		if (!reg) {
-			reg = anal->reg->name[RZ_REG_NAME_SP];
+			reg = analysis->reg->name[RZ_REG_NAME_SP];
 		}
 		char *tmpf;
 		//TODO: honor asm pseudo
@@ -324,7 +324,7 @@ static bool subvar(RzParse *p, RzAnalFunction *f, ut64 addr, int oplen, char *da
 			reg = p->get_reg_at (f, var->delta, addr);
 		}
 		if (!reg) {
-			reg = anal->reg->name[RZ_REG_NAME_BP];
+			reg = analysis->reg->name[RZ_REG_NAME_BP];
 		}
 		if (RZ_ABS (delta) < 10) {
 			tmpf = "%d(%s)";

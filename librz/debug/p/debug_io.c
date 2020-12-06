@@ -86,7 +86,7 @@ static char *__io_reg_profile(RzDebug *dbg) {
 		rz_cons_pop ();
 		return ret;
 	}
-	return rz_anal_get_reg_profile (dbg->anal);
+	return rz_analysis_get_reg_profile (dbg->analysis);
 }
 
 // "dr8" read register state

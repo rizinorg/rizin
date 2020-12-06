@@ -694,7 +694,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz_str_escape anal addr
+NAME=rz_str_escape analysis addr
 FILE=bins/pe/cmd_adf_sample0.exe
 CMDS=pd 1 @ 0x0040116a
 EXPECT=<<EOF
@@ -1617,7 +1617,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pd @a overwrites anal hints
+NAME=pd @a overwrites analysis hints
 FILE=bins/elf/analysis/ls-linux64
 CMDS=<<EOF
 e asm.comments=false

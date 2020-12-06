@@ -991,7 +991,7 @@ name: main
 EOF
 RUN
 
-NAME=anal hasnext on main
+NAME=analysis hasnext on main
 FILE=bins/elf/true32
 CMDS=<<EOF
 e anal.hasnext=true
@@ -1003,7 +1003,7 @@ size: 261
 EOF
 RUN
 
-NAME=anal without hasnext on main
+NAME=analysis without hasnext on main
 FILE=bins/elf/true32
 CMDS=<<EOF
 e anal.hasnext=false
@@ -1780,7 +1780,7 @@ cdecl
 EOF
 RUN
 
-NAME=anal vars crash
+NAME=analysis vars crash
 FILE=-
 CMDS=<<EOF
 af
@@ -1791,7 +1791,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=anal vars crash 2
+NAME=analysis vars crash 2
 FILE=-
 CMDS=<<EOF
 e asm.bits=64
@@ -1937,7 +1937,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=anal vars count
+NAME=analysis vars count
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
 af
@@ -1948,7 +1948,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=anal vars retype
+NAME=analysis vars retype
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
 af
@@ -1960,7 +1960,7 @@ var char var_30h @ rbp-0x30
 EOF
 RUN
 
-NAME=anal vars rename
+NAME=analysis vars rename
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
 af

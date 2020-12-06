@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-#include <rz_anal.h>
+#include <rz_analysis.h>
 
 #ifndef RZ_JAVA_OPS_H
 #define RZ_JAVA_OPS_H

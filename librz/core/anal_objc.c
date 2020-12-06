@@ -213,7 +213,7 @@ static void core_objc_free(RzCoreObjc *o) {
 static bool objc_find_refs(RzCore *core) {
 	RzCoreObjc *objc = core_objc_new (core);
 	if (!objc) {
-		if (core->anal->verbose) {
+		if (core->analysis->verbose) {
 			eprintf ("Could not find necessary Objective-C sections...\n");
 		}
 		return false;
@@ -271,12 +271,12 @@ static bool objc_find_refs(RzCore *core) {
 				break;
 			}
 
-			RzList *list = rz_anal_xrefs_get (core->anal, selRefVA);
+			RzList *list = rz_analysis_xrefs_get (core->analysis, selRefVA);
 			if (list) {
 				RzListIter *iter;
-				RzAnalRef *ref;
+				RzAnalysisRef *ref;
 				rz_list_foreach (list, iter, ref) {
-					rz_anal_xrefs_set (core->anal, ref->addr, funcVA, RZ_ANAL_REF_TYPE_CODE);
+					rz_analysis_xrefs_set (core->analysis, ref->addr, funcVA, RZ_ANAL_REF_TYPE_CODE);
 					total_xrefs++;
 				}
 			}
@@ -293,7 +293,7 @@ static bool objc_find_refs(RzCore *core) {
 	ut64 a;
 	const size_t word_size = objc->word_size;
 	for (a = va_selrefs; a < ss_selrefs; a += word_size) {
-		rz_meta_set (core->anal, RZ_META_TYPE_DATA, a, word_size, NULL);
+		rz_meta_set (core->analysis, RZ_META_TYPE_DATA, a, word_size, NULL);
 		total_words++;
 	}
 	snprintf (rs, sizeof (rs), "Found %zu objc xrefs in %zu dwords.", total_xrefs, total_words);
@@ -302,9 +302,9 @@ static bool objc_find_refs(RzCore *core) {
 	return true;
 }
 
-RZ_API bool cmd_anal_objc(RzCore *core, const char *input, bool auto_anal) {
+RZ_API bool cmd_anal_objc(RzCore *core, const char *input, bool auto_analysis) {
 	rz_return_val_if_fail (core && input, 0);
-	if (!auto_anal) {
+	if (!auto_analysis) {
 		objc_analyze (core);
 	}
 	return objc_find_refs (core);

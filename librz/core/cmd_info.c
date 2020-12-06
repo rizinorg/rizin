@@ -160,18 +160,18 @@ static void cmd_info_here(RzCore *core, int mode) {
 			pj_ks (pj, "comment", item->comment);
 		}
 		RzListIter *iter;
-		RzAnalRef *ref;
+		RzAnalysisRef *ref;
 		if (item->data) {
 			pj_ks (pj, "data", item->data);
 		}
 		{
-			RzList *refs = rz_anal_refs_get (core->anal, core->offset);
+			RzList *refs = rz_analysis_refs_get (core->analysis, core->offset);
 			if (refs && rz_list_length (refs) > 0) {
 				pj_k (pj, "refs");
 				pj_a (pj);
 				rz_list_foreach (refs, iter, ref) {
 					pj_o (pj);
-					pj_ks (pj, "type", rz_anal_ref_type_tostring (ref->type));
+					pj_ks (pj, "type", rz_analysis_ref_type_tostring (ref->type));
 					pj_kn (pj, "addr", ref->addr);
 					pj_end (pj);
 				}
@@ -179,13 +179,13 @@ static void cmd_info_here(RzCore *core, int mode) {
 			}
 		}
 		{
-			RzList *refs = rz_anal_xrefs_get (core->anal, core->offset);
+			RzList *refs = rz_analysis_xrefs_get (core->analysis, core->offset);
 			if (refs && rz_list_length (refs) > 0) {
 				pj_k (pj, "xrefs");
 				pj_a (pj);
 				rz_list_foreach (refs, iter, ref) {
 					pj_o (pj);
-					pj_ks (pj, "type", rz_anal_ref_type_tostring (ref->type));
+					pj_ks (pj, "type", rz_analysis_ref_type_tostring (ref->type));
 					pj_kn (pj, "addr", ref->addr);
 					pj_end (pj);
 				}

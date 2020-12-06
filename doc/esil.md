@@ -234,16 +234,16 @@ Disassembly example:
     │ │││   0x100001147    48394a38     rdx,56,+,[8],rcx,==,cz,?=
 ```
 
-Rizin anal ESIL code example
+Rizin analysis ESIL code example
 ==============================
 
 As an example implementation of ESIL analysis for the AVR family of
-microcontrollers there is a `avr_op` function in `/librz/anal/p/anal_avr.c`
+microcontrollers there is a `avr_op` function in `/librz/analysis/p/analysis_avr.c`
 which contains information on how the instructions are expressed in ESIL and
 other opcode information such as cycle counts per instruction:
 
 ````
-static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len) {
   short ofst;
     int d, r, k;
     (...)

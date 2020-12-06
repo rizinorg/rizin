@@ -58,7 +58,7 @@ typedef struct rz_event_class_rename_t {
 
 typedef struct rz_event_class_attr_t {
 	const char *class_name;
-	int attr_type; // RzAnalClassAttrType
+	int attr_type; // RzAnalysisClassAttrType
 	const char *attr_id;
 } RzEventClassAttr;
 

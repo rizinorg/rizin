@@ -2,7 +2,7 @@
 #include "amd29k_internal.h"
 #include <stdio.h>
 #include <string.h>
-#include <rz_anal.h>
+#include <rz_analysis.h>
 
 #define CPU_ANY "*"
 

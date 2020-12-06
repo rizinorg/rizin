@@ -33,7 +33,7 @@ static int rz_main_version_verify(int show) {
 		const char *name;
 		vc callback;
 	} vcs[] = {
-		{ "rz_anal", rz_anal_version },
+		{ "rz_analysis", rz_analysis_version },
 		{ "rz_lib", rz_lib_version },
 		{ "rz_egg", rz_egg_version },
 		{ "rz_asm", rz_asm_version },
@@ -853,9 +853,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			if (file && *file && *file != '.') {
 				complete_path = rz_str_newf ("%s"RZ_SYS_DIR"%s", path, file);
 				if (rz_str_endswith (complete_path, "gz")) {
-					rz_sign_load_gz (r->anal, complete_path);
+					rz_sign_load_gz (r->analysis, complete_path);
 				} else {
-					rz_sign_load (r->anal, complete_path);
+					rz_sign_load (r->analysis, complete_path);
 				}
 				free (complete_path);
 			}

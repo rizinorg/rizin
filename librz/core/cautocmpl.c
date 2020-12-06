@@ -189,7 +189,7 @@ static void autocmplt_cmd_arg_num(RzCore *core, RzLineNSCompletionResult *res, c
 }
 
 static void autocmplt_cmd_arg_zign_space(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
-	RzSpaces *zs = &core->anal->zign_spaces;
+	RzSpaces *zs = &core->analysis->zign_spaces;
 	RzSpace *space;
 	RzSpaceIter it;
 
@@ -206,9 +206,9 @@ static void autocmplt_cmd_arg_zign_space(RzCore *core, RzLineNSCompletionResult 
 
 static void autocmplt_cmd_arg_fcn(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
 	RzListIter *iter;
-	RzAnalFunction *fcn;
-	rz_list_foreach (core->anal->fcns, iter, fcn) {
-		char *name = rz_core_anal_fcn_name (core, fcn);
+	RzAnalysisFunction *fcn;
+	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+		char *name = rz_core_analysis_fcn_name (core, fcn);
 		if (!strncmp (name, s, len)) {
 			rz_line_ns_completion_result_add (res, name);
 		}

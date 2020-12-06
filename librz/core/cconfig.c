@@ -50,11 +50,11 @@ static void print_node_options(RzConfigNode *node) {
 	}
 }
 
-static int compareName(const RzAnalFunction *a, const RzAnalFunction *b) {
+static int compareName(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
 	return (a && b && a->name && b->name ?  strcmp (a->name, b->name) : 0);
 }
 
-static int compareNameLen(const RzAnalFunction *a, const RzAnalFunction *b) {
+static int compareNameLen(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
 	size_t la, lb;
 	if (!a || !b || !a->name || !b->name) {
 		return 0;
@@ -64,27 +64,27 @@ static int compareNameLen(const RzAnalFunction *a, const RzAnalFunction *b) {
 	return (la > lb) - (la < lb);
 }
 
-static int compareAddress(const RzAnalFunction *a, const RzAnalFunction *b) {
+static int compareAddress(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
 	return (a && b && a->addr && b->addr ? (a->addr > b->addr) - (a->addr < b->addr) : 0);
 }
 
-static int compareType(const RzAnalFunction *a, const RzAnalFunction *b) {
+static int compareType(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
 	return (a && b && a->diff->type && b->diff->type ?
 			(a->diff->type > b->diff->type) - (a->diff->type < b->diff->type) : 0);
 }
 
-static int compareSize(const RzAnalFunction *a, const RzAnalFunction *b) {
+static int compareSize(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
 	ut64 sa, sb;
 	// return a && b && a->_size < b->_size;
 	if (!a || !b) {
 		return 0;
 	}
-	sa = rz_anal_function_realsize (a);
-	sb = rz_anal_function_realsize (b);
+	sa = rz_analysis_function_realsize (a);
+	sb = rz_analysis_function_realsize (b);
 	return (sa > sb) - (sa < sb);
 }
 
-static int compareDist(const RzAnalFunction *a, const RzAnalFunction *b) {
+static int compareDist(const RzAnalysisFunction *a, const RzAnalysisFunction *b) {
 	return (a && b && a->diff->dist && b->diff->dist ?
 			(a->diff->dist > b->diff->dist) - (a->diff->dist < b->diff->dist) : 0);
 }
@@ -95,17 +95,17 @@ static bool cb_diff_sort(void *_core, void *_node) {
 	RzCore *core = _core;
 	if (column && strcmp (column, "?")) {
 		if (!strcmp (column, "name")) {
-			core->anal->columnSort = (RzListComparator)compareName;
+			core->analysis->columnSort = (RzListComparator)compareName;
 		} else if (!strcmp (column, "namelen")) {
-			core->anal->columnSort = (RzListComparator)compareNameLen;
+			core->analysis->columnSort = (RzListComparator)compareNameLen;
 		} else if (!strcmp (column, "addr")) {
-			core->anal->columnSort = (RzListComparator)compareAddress;
+			core->analysis->columnSort = (RzListComparator)compareAddress;
 		} else if (!strcmp (column, "type")) {
-			core->anal->columnSort = (RzListComparator)compareType;
+			core->analysis->columnSort = (RzListComparator)compareType;
 		} else if (!strcmp (column, "size")) {
-			core->anal->columnSort = (RzListComparator)compareSize;
+			core->analysis->columnSort = (RzListComparator)compareSize;
 		} else if (!strcmp (column, "dist")) {
-			core->anal->columnSort = (RzListComparator)compareDist;
+			core->analysis->columnSort = (RzListComparator)compareDist;
 		} else {
 			goto fail;
 		}
@@ -118,9 +118,9 @@ fail:
 
 static const char *has_esil(RzCore *core, const char *name) {
 	RzListIter *iter;
-	RzAnalPlugin *h;
-	rz_return_val_if_fail (core && core->anal && name, NULL);
-	rz_list_foreach (core->anal->plugins, iter, h) {
+	RzAnalysisPlugin *h;
+	rz_return_val_if_fail (core && core->analysis && name, NULL);
+	rz_list_foreach (core->analysis->plugins, iter, h) {
 		if (h->name && !strcmp (name, h->name)) {
 			return h->esil? "Ae": "A_";
 		}
@@ -229,76 +229,76 @@ static bool cb_debug_hitinfo(void *user, void *data) {
 static bool cb_anal_jmpretpoline(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.retpoline = node->i_value;
+	core->analysis->opt.retpoline = node->i_value;
 	return true;
 }
 static bool cb_anal_jmptailcall(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.tailcall = node->i_value;
+	core->analysis->opt.tailcall = node->i_value;
 	return true;
 }
 
 static bool cb_analarmthumb(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.armthumb = node->i_value;
+	core->analysis->opt.armthumb = node->i_value;
 	return true;
 }
 
 static bool cb_analdepth(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.depth = node->i_value;
+	core->analysis->opt.depth = node->i_value;
 	return true;
 }
 
 static bool cb_analgraphdepth(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->anal->opt.graph_depth = node->i_value;
+	core->analysis->opt.graph_depth = node->i_value;
 	return true;
 }
 
 static bool cb_analafterjmp(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.afterjmp = node->i_value;
+	core->analysis->opt.afterjmp = node->i_value;
 	return true;
 }
 
 static bool cb_anal_delay(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.delay = node->i_value;
+	core->analysis->opt.delay = node->i_value;
 	return true;
 }
 
 static bool cb_anal_endsize(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.endsize = node->i_value;
+	core->analysis->opt.endsize = node->i_value;
 	return true;
 }
 
 static bool cb_analvars(void *user, void *data) {
         RzCore *core = (RzCore*) user;
         RzConfigNode *node = (RzConfigNode*) data;
-        core->anal->opt.vars = node->i_value;
+        core->analysis->opt.vars = node->i_value;
         return true;
 }
 
 static bool cb_analvars_stackname(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
-	core->anal->opt.varname_stack = node->i_value;
+	core->analysis->opt.varname_stack = node->i_value;
 	return true;
 }
 
 static bool cb_anal_nonull(void *user, void *data) {
         RzCore *core = (RzCore*) user;
         RzConfigNode *node = (RzConfigNode*) data;
-        core->anal->opt.nonull = node->i_value;
+        core->analysis->opt.nonull = node->i_value;
         return true;
 }
 
@@ -314,51 +314,51 @@ static bool cb_analstrings(void *user, void *data) {
 static bool cb_anal_ignbithints(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.ignbithints = node->i_value;
+	core->analysis->opt.ignbithints = node->i_value;
 	return true;
 }
 
 static bool cb_analsleep(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->sleep = node->i_value;
+	core->analysis->sleep = node->i_value;
 	return true;
 }
 
 static bool cb_analmaxrefs(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->maxreflines = node->i_value;
+	core->analysis->maxreflines = node->i_value;
 	return true;
 }
 
 static bool cb_analnorevisit(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.norevisit = node->i_value;
+	core->analysis->opt.norevisit = node->i_value;
 	return true;
 }
 
 static bool cb_analnopskip(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.nopskip = node->i_value;
+	core->analysis->opt.nopskip = node->i_value;
 	return true;
 }
 
 static bool cb_analhpskip(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.hpskip = node->i_value;
+	core->analysis->opt.hpskip = node->i_value;
 	return true;
 }
 
 static void update_analarch_options(RzCore *core, RzConfigNode *node) {
-	RzAnalPlugin *h;
+	RzAnalysisPlugin *h;
 	RzListIter *it;
-	if (core && core->anal && node) {
+	if (core && core->analysis && node) {
 		rz_list_purge (node->options);
-		rz_list_foreach (core->anal->plugins, it, h) {
+		rz_list_foreach (core->analysis->plugins, it, h) {
 			SETOPTIONS (node, h->name, NULL);
 		}
 	}
@@ -373,7 +373,7 @@ static bool cb_analarch(void *user, void *data) {
 		return false;
 	}
 	if (*node->value) {
-		if (rz_anal_use (core->anal, node->value)) {
+		if (rz_analysis_use (core->analysis, node->value)) {
 			return true;
 		}
 		const char *aa = rz_config_get (core->config, "asm.arch");
@@ -390,10 +390,10 @@ static bool cb_analarch(void *user, void *data) {
 static bool cb_analcpu(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RzConfigNode *node = (RzConfigNode *) data;
-	rz_anal_set_cpu (core->anal, node->value);
+	rz_analysis_set_cpu (core->analysis, node->value);
 	/* set pcalign */
 	{
-		int v = rz_anal_archinfo (core->anal, RZ_ANAL_ARCHINFO_ALIGN);
+		int v = rz_analysis_archinfo (core->analysis, RZ_ANAL_ARCHINFO_ALIGN);
 		rz_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
 	}
 	return true;
@@ -402,14 +402,14 @@ static bool cb_analcpu(void *user, void *data) {
 static bool cb_analrecont(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.recont = node->i_value;
+	core->analysis->opt.recont = node->i_value;
 	return true;
 }
 
 static bool cb_analijmp(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.ijmp = node->i_value;
+	core->analysis->opt.ijmp = node->i_value;
 	return true;
 }
 
@@ -567,8 +567,8 @@ static bool cb_asmarch(void *user, void *data) {
 		return false;
 	}
 	asmos = rz_config_get (core->config, "asm.os");
-	if (core && core->anal && core->anal->bits) {
-		bits = core->anal->bits;
+	if (core && core->analysis && core->analysis->bits) {
+		bits = core->analysis->bits;
 	}
 	if (node->value[0] == '?') {
 		update_asmarch_options (core, node);
@@ -621,8 +621,8 @@ static bool cb_asmarch(void *user, void *data) {
 	}
 	snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
 	rz_config_set (core->config, "asm.parser", asmparser);
-	if (core->rasm->cur && core->anal &&
-	    !(core->rasm->cur->bits & core->anal->bits)) {
+	if (core->rasm->cur && core->analysis &&
+	    !(core->rasm->cur->bits & core->analysis->bits)) {
 		rz_config_set_i (core->config, "asm.bits", bits);
 	}
 
@@ -643,9 +643,9 @@ static bool cb_asmarch(void *user, void *data) {
 		}
 	}
 	// set pcalign
-	if (core->anal) {
+	if (core->analysis) {
 		const char *asmcpu = rz_config_get (core->config, "asm.cpu");
-		if (!rz_syscall_setup (core->anal->syscall, node->value, core->anal->bits, asmcpu, asmos)) {
+		if (!rz_syscall_setup (core->analysis->syscall, node->value, core->analysis->bits, asmcpu, asmos)) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
@@ -672,7 +672,7 @@ static bool cb_asmarch(void *user, void *data) {
 		update_asmcpu_options (core, asmcpu);
 	}
 	{
-		int v = rz_anal_archinfo (core->anal, RZ_ANAL_ARCHINFO_ALIGN);
+		int v = rz_analysis_archinfo (core->analysis, RZ_ANAL_ARCHINFO_ALIGN);
 		if (v != -1) {
 			rz_config_set_i (core->config, "asm.pcalign", v);
 		} else {
@@ -684,10 +684,10 @@ static bool cb_asmarch(void *user, void *data) {
 	// changing anal.arch sets types db
 	// so ressetting is redundant and may lead to bugs
 	// 1 case this is usefull is when sdb_types is null
-	if (!core->anal || !core->anal->sdb_types) {
-		rz_core_anal_type_init (core);
+	if (!core->analysis || !core->analysis->sdb_types) {
+		rz_core_analysis_type_init (core);
 	}
-	rz_core_anal_cc_init (core);
+	rz_core_analysis_cc_init (core);
 
 	return true;
 }
@@ -725,7 +725,7 @@ static bool cb_asmbits(void *user, void *data) {
 	int bits = node->i_value;
 #if 0
 // TODO: pretty good optimization, but breaks many tests when arch is different i think
-	if (bits == core->rasm->bits && bits == core->anal->bits && bits == core->dbg->bits) {
+	if (bits == core->rasm->bits && bits == core->analysis->bits && bits == core->dbg->bits) {
 		// early optimization
 		return true;
 	}
@@ -740,14 +740,14 @@ static bool cb_asmbits(void *user, void *data) {
 			}
 			// else { eprintf ("Cannot set bits %d to '%s'\n", bits, h->name); }
 		}
-		if (!rz_anal_set_bits (core->anal, bits)) {
+		if (!rz_analysis_set_bits (core->analysis, bits)) {
 			eprintf ("asm.arch: Cannot setup '%d' bits analysis engine\n", bits);
 			ret = false;
 		}
 		core->print->bits = bits;
 	}
-	if (core->dbg && core->anal && core->anal->cur) {
-		rz_debug_set_arch (core->dbg, core->anal->cur->arch, bits);
+	if (core->dbg && core->analysis && core->analysis->cur) {
+		rz_debug_set_arch (core->dbg, core->analysis->cur->arch, bits);
 		bool load_from_debug = rz_config_get_i (core->config, "cfg.debug");
 		if (load_from_debug) {
 			if (core->dbg->h && core->dbg->h->reg_profile) {
@@ -761,29 +761,29 @@ static bool cb_asmbits(void *user, void *data) {
 #endif
 				char *rp = core->dbg->h->reg_profile (core->dbg);
 				rz_reg_set_profile_string (core->dbg->reg, rp);
-				rz_reg_set_profile_string (core->anal->reg, rp);
+				rz_reg_set_profile_string (core->analysis->reg, rp);
 				free (rp);
 			}
 		} else {
-			(void)rz_anal_set_reg_profile (core->anal);
+			(void)rz_analysis_set_reg_profile (core->analysis);
 		}
 	}
-	rz_core_anal_cc_init (core);
+	rz_core_analysis_cc_init (core);
 	const char *asmos = rz_config_get (core->config, "asm.os");
 	const char *asmarch = rz_config_get (core->config, "asm.arch");
 	const char *asmcpu = rz_config_get (core->config, "asm.cpu");
-	if (core->anal) {
-		if (!rz_syscall_setup (core->anal->syscall, asmarch, bits, asmcpu, asmos)) {
+	if (core->analysis) {
+		if (!rz_syscall_setup (core->analysis->syscall, asmarch, bits, asmcpu, asmos)) {
 			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, RZ_LIBDIR"/rizin/"RZ_VERSION"/syscall");
 		}
-		__setsegoff (core->config, asmarch, core->anal->bits);
+		__setsegoff (core->config, asmarch, core->analysis->bits);
 		if (core->dbg) {
-			rz_bp_use (core->dbg->bp, asmarch, core->anal->bits);
+			rz_bp_use (core->dbg->bp, asmarch, core->analysis->bits);
 			rz_config_set_i (core->config, "dbg.bpsize", rz_bp_size (core->dbg->bp));
 		}
 		/* set pcalign */
-		int v = rz_anal_archinfo (core->anal, RZ_ANAL_ARCHINFO_ALIGN);
+		int v = rz_analysis_archinfo (core->analysis, RZ_ANAL_ARCHINFO_ALIGN);
 		rz_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
 	}
 	return ret;
@@ -833,7 +833,7 @@ static bool cb_asmfeatures(void *user, void *data) {
 static bool cb_asmlineswidth(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RzConfigNode *node = (RzConfigNode *) data;
-	core->anal->lineswidth = node->i_value;
+	core->analysis->lineswidth = node->i_value;
 	return true;
 }
 
@@ -918,7 +918,7 @@ static bool cb_asm_pcalign(void *user, void *data) {
 		align = 0;
 	}
 	core->rasm->pcalign = align;
-	core->anal->pcalign = align;
+	core->analysis->pcalign = align;
 	return true;
 }
 
@@ -938,11 +938,11 @@ static bool cb_asmos(void *user, void *data) {
 	asmarch = rz_config_node_get (core->config, "asm.arch");
 	if (asmarch) {
 		const char *asmcpu = rz_config_get (core->config, "asm.cpu");
-		rz_syscall_setup (core->anal->syscall, asmarch->value, core->anal->bits, asmcpu, node->value);
+		rz_syscall_setup (core->analysis->syscall, asmarch->value, core->analysis->bits, asmcpu, node->value);
 		__setsegoff (core->config, asmarch->value, asmbits);
 	}
-	rz_anal_set_os (core->anal, node->value);
-	rz_core_anal_cc_init (core);
+	rz_analysis_set_os (core->analysis, node->value);
+	rz_core_analysis_cc_init (core);
 	return true;
 }
 
@@ -1148,8 +1148,8 @@ static bool cb_asmsyntax(void *user, void *data) {
 static bool cb_dirzigns(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	free (core->anal->zign_path);
-	core->anal->zign_path = strdup (node->value);
+	free (core->analysis->zign_path);
+	core->analysis->zign_path = strdup (node->value);
 	return true;
 }
 
@@ -1159,7 +1159,7 @@ static bool cb_bigendian(void *user, void *data) {
 	// Try to set endian based on preference, restrict by RzAsmPlugin
 	bool isbig = rz_asm_set_big_endian (core->rasm, node->i_value);
 	// Set anal endianness the same as asm
-	rz_anal_set_big_endian (core->anal, isbig);
+	rz_analysis_set_big_endian (core->analysis, isbig);
 	// the big endian should also be assigned to dbg->bp->endian
 	if (core->dbg && core->dbg->bp) {
 		core->dbg->bp->endian = isbig;
@@ -1535,8 +1535,8 @@ static bool cb_gotolimit(void *user, void *data) {
 		eprintf ("Cannot change gotolimit\n");
 		return false;
 	}
-	if (core->anal->esil) {
-		core->anal->esil_goto_limit = node->i_value;
+	if (core->analysis->esil) {
+		core->analysis->esil_goto_limit = node->i_value;
 	}
 	return true;
 }
@@ -1544,8 +1544,8 @@ static bool cb_gotolimit(void *user, void *data) {
 static bool cb_esilverbose (void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	if (core->anal->esil) {
-		core->anal->esil->verbose = node->i_value;
+	if (core->analysis->esil) {
+		core->analysis->esil->verbose = node->i_value;
 	}
 	return true;
 }
@@ -1771,9 +1771,9 @@ static bool cb_iopcachewrite(void *user, void *data) {
 	return true;
 }
 
-RZ_API bool rz_core_esil_cmd(RzAnalEsil *esil, const char *cmd, ut64 a1, ut64 a2) {
+RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut64 a2) {
 	if (cmd && *cmd) {
-		RzCore *core = esil->anal->user;
+		RzCore *core = esil->analysis->user;
 		rz_core_cmdf (core, "%s %"PFMT64d" %" PFMT64d, cmd, a1, a2);
 		return core->num->value;
 	}
@@ -1783,10 +1783,10 @@ RZ_API bool rz_core_esil_cmd(RzAnalEsil *esil, const char *cmd, ut64 a1, ut64 a2
 static bool cb_cmd_esil_ioer(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RzConfigNode *node = (RzConfigNode *) data;
-	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->cmd = rz_core_esil_cmd;
-		free (core->anal->esil->cmd_ioer);
-		core->anal->esil->cmd_ioer = strdup (node->value);
+	if (core && core->analysis && core->analysis->esil) {
+		core->analysis->esil->cmd = rz_core_esil_cmd;
+		free (core->analysis->esil->cmd_ioer);
+		core->analysis->esil->cmd_ioer = strdup (node->value);
 	}
 	return true;
 }
@@ -1794,10 +1794,10 @@ static bool cb_cmd_esil_ioer(void *user, void *data) {
 static bool cb_cmd_esil_todo(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RzConfigNode *node = (RzConfigNode *) data;
-	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->cmd = rz_core_esil_cmd;
-		free (core->anal->esil->cmd_todo);
-		core->anal->esil->cmd_todo = strdup (node->value);
+	if (core && core->analysis && core->analysis->esil) {
+		core->analysis->esil->cmd = rz_core_esil_cmd;
+		free (core->analysis->esil->cmd_todo);
+		core->analysis->esil->cmd_todo = strdup (node->value);
 	}
 	return true;
 }
@@ -1805,10 +1805,10 @@ static bool cb_cmd_esil_todo(void *user, void *data) {
 static bool cb_cmd_esil_intr(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RzConfigNode *node = (RzConfigNode *) data;
-	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->cmd = rz_core_esil_cmd;
-		free (core->anal->esil->cmd_intr);
-		core->anal->esil->cmd_intr = strdup (node->value);
+	if (core && core->analysis && core->analysis->esil) {
+		core->analysis->esil->cmd = rz_core_esil_cmd;
+		free (core->analysis->esil->cmd_intr);
+		core->analysis->esil->cmd_intr = strdup (node->value);
 	}
 	return true;
 }
@@ -1816,10 +1816,10 @@ static bool cb_cmd_esil_intr(void *user, void *data) {
 static bool cb_mdevrange(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RzConfigNode *node = (RzConfigNode *) data;
-	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->cmd = rz_core_esil_cmd;
-		free (core->anal->esil->mdev_range);
-		core->anal->esil->mdev_range = strdup (node->value);
+	if (core && core->analysis && core->analysis->esil) {
+		core->analysis->esil->cmd = rz_core_esil_cmd;
+		free (core->analysis->esil->mdev_range);
+		core->analysis->esil->mdev_range = strdup (node->value);
 	}
 	return true;
 }
@@ -1827,10 +1827,10 @@ static bool cb_mdevrange(void *user, void *data) {
 static bool cb_cmd_esil_step(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RzConfigNode *node = (RzConfigNode *) data;
-	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->cmd = rz_core_esil_cmd;
-		free (core->anal->esil->cmd_step);
-		core->anal->esil->cmd_step = strdup (node->value);
+	if (core && core->analysis && core->analysis->esil) {
+		core->analysis->esil->cmd = rz_core_esil_cmd;
+		free (core->analysis->esil->cmd_step);
+		core->analysis->esil->cmd_step = strdup (node->value);
 	}
 	return true;
 }
@@ -1838,10 +1838,10 @@ static bool cb_cmd_esil_step(void *user, void *data) {
 static bool cb_cmd_esil_step_out(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RzConfigNode *node = (RzConfigNode *) data;
-	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->cmd = rz_core_esil_cmd;
-		free (core->anal->esil->cmd_step_out);
-		core->anal->esil->cmd_step_out = strdup (node->value);
+	if (core && core->analysis && core->analysis->esil) {
+		core->analysis->esil->cmd = rz_core_esil_cmd;
+		free (core->analysis->esil->cmd_step_out);
+		core->analysis->esil->cmd_step_out = strdup (node->value);
 	}
 	return true;
 }
@@ -1849,10 +1849,10 @@ static bool cb_cmd_esil_step_out(void *user, void *data) {
 static bool cb_cmd_esil_mdev(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RzConfigNode *node = (RzConfigNode *) data;
-	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->cmd = rz_core_esil_cmd;
-		free (core->anal->esil->cmd_mdev);
-		core->anal->esil->cmd_mdev = strdup (node->value);
+	if (core && core->analysis && core->analysis->esil) {
+		core->analysis->esil->cmd = rz_core_esil_cmd;
+		free (core->analysis->esil->cmd_mdev);
+		core->analysis->esil->cmd_mdev = strdup (node->value);
 	}
 	return true;
 }
@@ -1860,9 +1860,9 @@ static bool cb_cmd_esil_mdev(void *user, void *data) {
 static bool cb_cmd_esil_trap(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RzConfigNode *node = (RzConfigNode *) data;
-	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->cmd = rz_core_esil_cmd;
-		core->anal->esil->cmd_trap = strdup (node->value);
+	if (core && core->analysis && core->analysis->esil) {
+		core->analysis->esil->cmd = rz_core_esil_cmd;
+		core->analysis->esil->cmd_trap = strdup (node->value);
 	}
 	return true;
 }
@@ -2214,8 +2214,8 @@ static bool cb_graphformat(void *user, void *data) {
 static bool cb_exectrap(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *) data;
 	RzCore *core = (RzCore*) user;
-	if (core->anal && core->anal->esil) {
-		core->anal->esil->exectrap = node->i_value;
+	if (core->analysis && core->analysis->esil) {
+		core->analysis->esil->exectrap = node->i_value;
 	}
 	return true;
 }
@@ -2223,8 +2223,8 @@ static bool cb_exectrap(void *user, void *data) {
 static bool cb_iotrap(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *) data;
 	RzCore *core = (RzCore*) user;
-	if (core->anal && core->anal->esil) {
-		core->anal->esil->iotrap = node->i_value;
+	if (core->analysis && core->analysis->esil) {
+		core->analysis->esil->iotrap = node->i_value;
 	}
 	return true;
 }
@@ -2311,7 +2311,7 @@ static bool cb_seggrn(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RzConfigNode *node = (RzConfigNode *) data;
 	core->rasm->seggrn = node->i_value;
-	core->anal->seggrn = node->i_value;
+	core->analysis->seggrn = node->i_value;
 	core->print->seggrn = node->i_value;
 	return true;
 }
@@ -2403,7 +2403,7 @@ static bool cb_zoombyte(void *user, void *data) {
 static bool cb_analverbose(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RzConfigNode *node = (RzConfigNode *) data;
-	core->anal->verbose = node->i_value;
+	core->analysis->verbose = node->i_value;
 	return true;
 }
 
@@ -2555,7 +2555,7 @@ static bool cb_searchin(void *user, void *data) {
 	}
 	// Set anal.noncode if exec bit set in anal.in
 	if (rz_str_startswith (node->name, "anal")) {
-		core->anal->opt.noncode = (strchr (node->value, 'x') == NULL);
+		core->analysis->opt.noncode = (strchr (node->value, 'x') == NULL);
 	}
 	return true;
 }
@@ -2572,21 +2572,21 @@ static bool cb_dirpfx(RzCore *core, RzConfigNode *node) {
 }
 
 static bool cb_anal_roregs(RzCore *core, RzConfigNode *node) {
-	if (core && core->anal && core->anal->reg) {
-		rz_list_free (core->anal->reg->roregs);
-		core->anal->reg->roregs = rz_str_split_duplist (node->value, ",", true);
+	if (core && core->analysis && core->analysis->reg) {
+		rz_list_free (core->analysis->reg->roregs);
+		core->analysis->reg->roregs = rz_str_split_duplist (node->value, ",", true);
 	}
 	return true;
 }
 
 static bool cb_anal_gp(RzCore *core, RzConfigNode *node) {
-	core->anal->gp = node->i_value;
+	core->analysis->gp = node->i_value;
 	return true;
 }
 
 static bool cb_anal_from(RzCore *core, RzConfigNode *node) {
 	if (rz_config_get_i (core->config, "anal.limits")) {
-		rz_anal_set_limits (core->anal,
+		rz_analysis_set_limits (core->analysis,
 				rz_config_get_i (core->config, "anal.from"),
 				rz_config_get_i (core->config, "anal.to"));
 	}
@@ -2596,102 +2596,102 @@ static bool cb_anal_from(RzCore *core, RzConfigNode *node) {
 static bool cb_anal_limits(void *user, RzConfigNode *node) {
 	RzCore *core = (RzCore*)user;
 	if (node->i_value) {
-		rz_anal_set_limits (core->anal,
+		rz_analysis_set_limits (core->analysis,
 				rz_config_get_i (core->config, "anal.from"),
 				rz_config_get_i (core->config, "anal.to"));
 	} else {
-		rz_anal_unset_limits (core->anal);
+		rz_analysis_unset_limits (core->analysis);
 	}
 	return 1;
 }
 
 static bool cb_anal_rnr(void *user, RzConfigNode *node) {
 	RzCore *core = (RzCore*)user;
-	core->anal->recursive_noreturn = node->i_value;
+	core->analysis->recursive_noreturn = node->i_value;
 	return 1;
 }
 
 static bool cb_anal_jmptbl(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.jmptbl = node->i_value;
+	core->analysis->opt.jmptbl = node->i_value;
 	return true;
 }
 
 static bool cb_anal_cjmpref(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.cjmpref = node->i_value;
+	core->analysis->opt.cjmpref = node->i_value;
 	return true;
 }
 
 static bool cb_anal_jmpref(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.jmpref = node->i_value;
+	core->analysis->opt.jmpref = node->i_value;
 	return true;
 }
 
 static bool cb_anal_jmpabove(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.jmpabove = node->i_value;
+	core->analysis->opt.jmpabove = node->i_value;
 	return true;
 }
 
 static bool cb_anal_loads(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.loads = node->i_value;
+	core->analysis->opt.loads = node->i_value;
 	return true;
 }
 
 static bool cb_anal_followdatarefs(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.followdatarefs = node->i_value;
+	core->analysis->opt.followdatarefs = node->i_value;
 	return true;
 }
 
 static bool cb_anal_jmpmid(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.jmpmid = node->i_value;
+	core->analysis->opt.jmpmid = node->i_value;
 	return true;
 }
 
 static bool cb_anal_searchstringrefs(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.searchstringrefs = node->i_value;
+	core->analysis->opt.searchstringrefs = node->i_value;
 	return true;
 }
 
 static bool cb_anal_pushret(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.pushret = node->i_value;
+	core->analysis->opt.pushret = node->i_value;
 	return true;
 }
 
 static bool cb_anal_brokenrefs(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.followbrokenfcnsrefs = node->i_value;
+	core->analysis->opt.followbrokenfcnsrefs = node->i_value;
 	return true;
 }
 
 static bool cb_anal_trycatch(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.trycatch = node->i_value;
+	core->analysis->opt.trycatch = node->i_value;
 	return true;
 }
 
 static bool cb_anal_bb_max_size(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	core->anal->opt.bb_max_size = node->i_value;
+	core->analysis->opt.bb_max_size = node->i_value;
 	return true;
 }
 
@@ -2706,10 +2706,10 @@ static bool cb_anal_cpp_abi(void *user, void *data) {
 
 	if (*node->value) {
 		if (strcmp (node->value, "itanium") == 0) {
-			core->anal->cpp_abi = RZ_ANAL_CPP_ABI_ITANIUM;
+			core->analysis->cpp_abi = RZ_ANAL_CPP_ABI_ITANIUM;
 			return true;
 		} else if (strcmp (node->value, "msvc") == 0) {
-			core->anal->cpp_abi = RZ_ANAL_CPP_ABI_MSVC;
+			core->analysis->cpp_abi = RZ_ANAL_CPP_ABI_MSVC;
 			return true;
 		}
 		eprintf ("anal.cpp.abi: cannot find '%s'\n", node->value);
@@ -2887,7 +2887,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* anal */
 	SETBPREF ("anal.detectwrites", "false", "Automatically reanalyze function after a write");
 	SETPREF ("anal.fcnprefix", "fcn",  "Prefix new function names with this");
-	SETCB ("anal.verbose", "false", &cb_analverbose, "Show RzAnal warnings when analyzing code");
+	SETCB ("anal.verbose", "false", &cb_analverbose, "Show RzAnalysis warnings when analyzing code");
 	SETBPREF ("anal.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
 	SETCB ("anal.roregs", "gp,zero", (RzConfigCallback)&cb_anal_roregs, "Comma separated list of register names to be readonly");
 	SETICB ("anal.gp", 0, (RzConfigCallback)&cb_anal_gp, "Set the value of the GP register (MIPS)");
@@ -2987,7 +2987,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF ("esil.prestep", "true", "Step before esil evaluation in `de` commands");
 	SETPREF ("esil.fillstack", "", "Initialize ESIL stack with (random, debrujn, sequence, zeros, ...)");
 	SETICB ("esil.verbose", 0, &cb_esilverbose, "Show ESIL verbose level (0, 1, 2)");
-	SETICB ("esil.gotolimit", core->anal->esil_goto_limit, &cb_gotolimit, "Maximum number of gotos per ESIL expression");
+	SETICB ("esil.gotolimit", core->analysis->esil_goto_limit, &cb_gotolimit, "Maximum number of gotos per ESIL expression");
 	SETICB ("esil.stack.depth", 256, &cb_esilstackdepth, "Number of elements that can be pushed on the esilstack");
 	SETI ("esil.stack.size", 0xf0000, "Set stack size in ESIL VM");
 	SETI ("esil.stack.addr", 0x100000, "Set stack address in ESIL VM");

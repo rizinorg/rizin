@@ -29,10 +29,10 @@ well as setting up profiles. (??profiles??)
 The functionality lives in the following files:
 (?? why so many files? can this be simplified??)
 
-    librz/reg/arena.c        // ?? used by anal and debugger
+    librz/reg/arena.c        // ?? used by analysis and debugger
     librz/reg/cond.c         // condition registers
     librz/reg/double.c       // support for double-precision floating point numbers
-    librz/reg/profile.c      // ?? used by anal and debugger
+    librz/reg/profile.c      // ?? used by analysis and debugger
     librz/reg/reg.c          // top-level register specific code (all of rizin)
     librz/reg/value.c        // dealing with register values
     librz/reg/t/p.c          // test code for printing general-purpose registers
@@ -76,7 +76,7 @@ The main top-level debugger functionality lives here. It aims to abstract away
 the common code flow and integration into Rizin while delegating more nuanced
 system interactions to plug-ins.
 
-    librz/debug/arg.c        // used by the anal engine (??)
+    librz/debug/arg.c        // used by the analysis engine (??)
     librz/debug/desc.c       // code for handling file descriptors inside an inferior
     librz/debug/esil.c       // ESIL related debugging code (??)
     librz/debug/map.c        // top-level API for dealing with memory maps

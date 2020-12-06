@@ -124,7 +124,7 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 			return -1;
 		}
 		core = opencore (NULL);
-		rz_sign_flirt_dump (core->anal, ifile);
+		rz_sign_flirt_dump (core->analysis, ifile);
 		rz_cons_flush ();
 		rz_core_free (core);
 		return 0;
@@ -145,7 +145,7 @@ RZ_API int rz_main_rz_sign(int argc, const char **argv) {
 	}
 
 	if (space) {
-		rz_spaces_set (&core->anal->zign_spaces, space);
+		rz_spaces_set (&core->analysis->zign_spaces, space);
 	}
 
 	// run analysis to find functions

@@ -13,7 +13,7 @@ Attribute list
 
 Note that you will substitute `x` for the calling convention name you will use.
 
-`default.cc=x` : used to set the default calling convention used for all functions in `RAnal` instance for which this key is set, string of this calling convention `"x"` will be returned for every call of `RZ_API const char *r_anal_cc_default(RAnal *anal)`.
+`default.cc=x` : used to set the default calling convention used for all functions in `RzAnalysis` instance for which this key is set, string of this calling convention `"x"` will be returned for every call of `RZ_API const char *r_analysis_cc_default(RzAnalysis *analysis)`.
 
 `x=cc`: used to initialize calling convention (think of it as their is calling convention called x).
 
@@ -32,8 +32,8 @@ File Path
 
 In order to integrate the calling convention profile you created with the rizin source, few set of conventions should be followed:
 
-- Store the unparsed sdb file in `path-to-rizin-source/librz/anal/d`.
+- Store the unparsed sdb file in `path-to-rizin-source/librz/analysis/d`.
 - If you want the sdb to be loaded for specific architecture the file name should follow this convention `cc-arch-bits`, for example to create profile that loads automatically for x86 arch with 16 bits call the file `cc-x86-16`
-- In the file `path-to-rizin-source/librz/anal/d/makefile` add entry `F+= cc-arch-bits` with desired arch and bits and you should be ready to go.
+- In the file `path-to-rizin-source/librz/analysis/d/makefile` add entry `F+= cc-arch-bits` with desired arch and bits and you should be ready to go.
 
 

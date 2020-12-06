@@ -968,7 +968,7 @@ RZ_API void rz_core_rtr_cmd(RzCore *core, const char *input) {
 			rz_socket_close (fh);
 			return;
 		}
-		char *cmd_output = rz_socket_rap_client_command (fh, cmd, &core->anal->coreb);
+		char *cmd_output = rz_socket_rap_client_command (fh, cmd, &core->analysis->coreb);
 		rz_cons_println (cmd_output);
 		free (cmd_output);
 		return;

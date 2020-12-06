@@ -257,7 +257,7 @@ static bool test_autocmplt_fcn(void) {
     mu_assert_notnull (core, "core not null");
     RzLineBuffer *buf = &core->cons->line->buffer;
 
-    rz_core_anal_all (core);
+    rz_core_analysis_all (core);
 
     const char *s = "unittest ./file2 sym.imp.s";
     strcpy (buf->data, s);

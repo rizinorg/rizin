@@ -1,4 +1,4 @@
-#include <rz_anal.h>
+#include <rz_analysis.h>
 #include <rz_bin.h>
 #include "minunit.h"
 
@@ -15,31 +15,31 @@ static bool test_parse_dwarf_types(void) {
 	mu_assert_notnull (bin, "Couldn't create new RzBin");
 	RzIO *io = rz_io_new ();
 	mu_assert_notnull (io, "Couldn't create new RzIO");
-	RzAnal *anal = rz_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RzAnal");
+	RzAnalysis *analysis = rz_analysis_new ();
+	mu_assert_notnull (analysis, "Couldn't create new RzAnalysis");
 	rz_io_bind (io, &bin->iob);
-	anal->binb.demangle = rz_bin_demangle;
+	analysis->binb.demangle = rz_bin_demangle;
 	RzBinOptions opt = { 0 };
 	bool res = rz_bin_open (bin, "bins/pe/vista-glass.exe", &opt);
-	// TODO fix, how to correctly promote binary info to the RzAnal in unit tests?
-	anal->cpu = strdup ("x86");
-	anal->bits = 32;
+	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
+	analysis->cpu = strdup ("x86");
+	analysis->bits = 32;
 	mu_assert ("pe/vista-glass.exe binary could not be opened", res);
-	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
+	mu_assert_notnull (analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev (bin, MODE);
 	mu_assert_notnull (abbrevs, "Couldn't parse Abbreviations");
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info (abbrevs, bin, MODE);
 	mu_assert_notnull (info, "Couldn't parse debug_info section");
 
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc (bin, 4);
-	RzAnalDwarfContext ctx = {
+	RzAnalysisDwarfContext ctx = {
 		.info = info,
 		.loc = loc_table
 	};
-	rz_anal_dwarf_process_info (anal, &ctx);
+	rz_analysis_dwarf_process_info (analysis, &ctx);
 
 	char * value = NULL;
-	Sdb *sdb = anal->sdb_types;
+	Sdb *sdb = analysis->sdb_types;
 	check_kv ("_cairo_status", "enum");
 	check_kv ("enum._cairo_status.0x0", "CAIRO_STATUS_SUCCESS");
 	check_kv ("enum._cairo_status.CAIRO_STATUS_SUCCESS", "0x0");
@@ -71,7 +71,7 @@ static bool test_parse_dwarf_types(void) {
 	check_kv ("union.unaligned.s8", "long long int,0,0");
 	rz_bin_dwarf_free_debug_info (info);
 	rz_bin_dwarf_free_debug_abbrev (abbrevs);
-	rz_anal_free (anal);
+	rz_analysis_free (analysis);
 	rz_bin_free (bin);
 	rz_io_free (io);
 	mu_end;
@@ -82,31 +82,31 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	mu_assert_notnull (bin, "Couldn't create new RzBin");
 	RzIO *io = rz_io_new ();
 	mu_assert_notnull (io, "Couldn't create new RzIO");
-	RzAnal *anal = rz_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RzAnal");
+	RzAnalysis *analysis = rz_analysis_new ();
+	mu_assert_notnull (analysis, "Couldn't create new RzAnalysis");
 	rz_io_bind (io, &bin->iob);
-	anal->binb.demangle = rz_bin_demangle;
+	analysis->binb.demangle = rz_bin_demangle;
 
 	RzBinOptions opt = { 0 };
 	bool res = rz_bin_open (bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
-	// TODO fix, how to correctly promote binary info to the RzAnal in unit tests?
-	anal->cpu = strdup ("x86");
-	anal->bits = 64;
+	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
+	analysis->cpu = strdup ("x86");
+	analysis->bits = 64;
 	mu_assert ("elf/dwarf4_many_comp_units.elf binary could not be opened", res);
-	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
+	mu_assert_notnull (analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev (bin, MODE);
 	mu_assert_notnull (abbrevs, "Couldn't parse Abbreviations");
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info (abbrevs, bin, MODE);
 	mu_assert_notnull (info, "Couldn't parse debug_info section");
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc (bin, 8);
 
-	RzAnalDwarfContext ctx = {
+	RzAnalysisDwarfContext ctx = {
 		.info = info,
 		.loc = loc_table
 	};
-	rz_anal_dwarf_process_info (anal, &ctx);
+	rz_analysis_dwarf_process_info (analysis, &ctx);
 
-	Sdb *sdb = sdb_ns (anal->sdb, "dwarf", 0);
+	Sdb *sdb = sdb_ns (analysis->sdb, "dwarf", 0);
 	mu_assert_notnull (sdb, "No dwarf function information in db");
 	char *value = NULL;
 	check_kv ("Mammal", "fcn");
@@ -127,7 +127,7 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	rz_bin_dwarf_free_debug_info (info);
 	rz_bin_dwarf_free_debug_abbrev (abbrevs);
 	rz_bin_dwarf_free_loc (loc_table);
-	rz_anal_free (anal);
+	rz_analysis_free (analysis);
 	rz_bin_free (bin);
 	rz_io_free (io);
 	mu_end;
@@ -138,31 +138,31 @@ static bool test_dwarf_function_parsing_go(void) {
 	mu_assert_notnull (bin, "Couldn't create new RzBin");
 	RzIO *io = rz_io_new ();
 	mu_assert_notnull (io, "Couldn't create new RzIO");
-	RzAnal *anal = rz_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RzAnal");
+	RzAnalysis *analysis = rz_analysis_new ();
+	mu_assert_notnull (analysis, "Couldn't create new RzAnalysis");
 	rz_io_bind (io, &bin->iob);
-	anal->binb.demangle = rz_bin_demangle;
+	analysis->binb.demangle = rz_bin_demangle;
 
 	RzBinOptions opt = { 0 };
 	bool res = rz_bin_open (bin, "bins/elf/dwarf_go_tree", &opt);
-	// TODO fix, how to correctly promote binary info to the RzAnal in unit tests?
-	anal->cpu = strdup ("x86");
-	anal->bits = 64;
+	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
+	analysis->cpu = strdup ("x86");
+	analysis->bits = 64;
 	mu_assert ("bins/elf/dwarf_go_tree", res);
-	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
+	mu_assert_notnull (analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev (bin, MODE);
 	mu_assert_notnull (abbrevs, "Couldn't parse Abbreviations");
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info (abbrevs, bin, MODE);
 	mu_assert_notnull (info, "Couldn't parse debug_info section");
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc (bin, 8);
 
-	RzAnalDwarfContext ctx = {
+	RzAnalysisDwarfContext ctx = {
 		.info = info,
 		.loc = loc_table
 	};
-	rz_anal_dwarf_process_info (anal, &ctx);
+	rz_analysis_dwarf_process_info (analysis, &ctx);
 
-	Sdb *sdb = sdb_ns (anal->sdb, "dwarf", 0);
+	Sdb *sdb = sdb_ns (analysis->sdb, "dwarf", 0);
 	mu_assert_notnull (sdb, "No dwarf function information in db");
 	char *value = NULL;
 
@@ -181,7 +181,7 @@ static bool test_dwarf_function_parsing_go(void) {
 	rz_bin_dwarf_free_debug_info (info);
 	rz_bin_dwarf_free_debug_abbrev (abbrevs);
 	rz_bin_dwarf_free_loc (loc_table);
-	rz_anal_free (anal);
+	rz_analysis_free (analysis);
 	rz_bin_free (bin);
 	rz_io_free (io);
 	mu_end;
@@ -192,31 +192,31 @@ static bool test_dwarf_function_parsing_rust(void) {
 	mu_assert_notnull (bin, "Couldn't create new RzBin");
 	RzIO *io = rz_io_new ();
 	mu_assert_notnull (io, "Couldn't create new RzIO");
-	RzAnal *anal = rz_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RzAnal");
+	RzAnalysis *analysis = rz_analysis_new ();
+	mu_assert_notnull (analysis, "Couldn't create new RzAnalysis");
 	rz_io_bind (io, &bin->iob);
-	anal->binb.demangle = rz_bin_demangle;
+	analysis->binb.demangle = rz_bin_demangle;
 
 	RzBinOptions opt = { 0 };
 	bool res = rz_bin_open (bin, "bins/elf/dwarf_rust_bubble", &opt);
-	// TODO fix, how to correctly promote binary info to the RzAnal in unit tests?
-	anal->cpu = strdup ("x86");
-	anal->bits = 64;
+	// TODO fix, how to correctly promote binary info to the RzAnalysis in unit tests?
+	analysis->cpu = strdup ("x86");
+	analysis->bits = 64;
 	mu_assert ("bins/elf/dwarf_rust_bubble", res);
-	mu_assert_notnull (anal->sdb_types, "Couldn't create new RzAnal.sdb_types");
+	mu_assert_notnull (analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
 	RzBinDwarfDebugAbbrev *abbrevs = rz_bin_dwarf_parse_abbrev (bin, MODE);
 	mu_assert_notnull (abbrevs, "Couldn't parse Abbreviations");
 	RzBinDwarfDebugInfo *info = rz_bin_dwarf_parse_info (abbrevs, bin, MODE);
 	mu_assert_notnull (info, "Couldn't parse debug_info section");
 	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = rz_bin_dwarf_parse_loc (bin, 8);
 
-	RzAnalDwarfContext ctx = {
+	RzAnalysisDwarfContext ctx = {
 		.info = info,
 		.loc = loc_table
 	};
-	rz_anal_dwarf_process_info (anal, &ctx);
+	rz_analysis_dwarf_process_info (analysis, &ctx);
 
-	Sdb *sdb = sdb_ns (anal->sdb, "dwarf", 0);
+	Sdb *sdb = sdb_ns (analysis->sdb, "dwarf", 0);
 	mu_assert_notnull (sdb, "No dwarf function information in db");
 	char *value = NULL;
 
@@ -238,7 +238,7 @@ static bool test_dwarf_function_parsing_rust(void) {
 	rz_bin_dwarf_free_debug_info (info);
 	rz_bin_dwarf_free_debug_abbrev (abbrevs);
 	rz_bin_dwarf_free_loc (loc_table);
-	rz_anal_free (anal);
+	rz_analysis_free (analysis);
 	rz_bin_free (bin);
 	rz_io_free (io);
 	mu_end;

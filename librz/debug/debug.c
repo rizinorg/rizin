@@ -364,7 +364,7 @@ RZ_API RzDebug *rz_debug_new(int hard) {
 	dbg->follow_child = false;
 	RZ_FREE (dbg->btalgo);
 	dbg->trace_execs = 0;
-	dbg->anal = NULL;
+	dbg->analysis = NULL;
 	dbg->pid = -1;
 	dbg->bpsize = 1;
 	dbg->tid = -1;
@@ -426,7 +426,7 @@ RZ_API RzDebug *rz_debug_free(RzDebug *dbg) {
 		free (dbg->btalgo);
 		rz_debug_trace_free (dbg->trace);
 		rz_debug_session_free (dbg->session);
-		rz_anal_op_free (dbg->cur_op);
+		rz_analysis_op_free (dbg->cur_op);
 		dbg->trace = NULL;
 		rz_egg_free (dbg->egg);
 		free (dbg->arch);
@@ -785,7 +785,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 	ut8 buf[32];
 	ut64 pc, sp, r;
 	ut64 next[2];
-	RzAnalOp op;
+	RzAnalysisOp op;
 	int br, i, ret;
 	union {
 		ut64 r64;
@@ -813,7 +813,7 @@ RZ_API int rz_debug_step_soft(RzDebug *dbg) {
 	if (!dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf))) {
 		return false;
 	}
-	if (!rz_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC)) {
+	if (!rz_analysis_op (dbg->analysis, &op, pc, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC)) {
 		return false;
 	}
 	if (op.type == RZ_ANAL_OP_TYPE_ILL) {
@@ -1014,7 +1014,7 @@ static bool isStepOverable(ut64 opType) {
 }
 
 RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
-	RzAnalOp op;
+	RzAnalysisOp op;
 	ut64 buf_pc, pc, ins_size;
 	ut8 buf[DBG_BUF_SIZE];
 	int steps_taken = 0;
@@ -1044,7 +1044,7 @@ RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
 		return steps_taken;
 	}
 
-	if (!dbg->anal || !dbg->reg) {
+	if (!dbg->analysis || !dbg->reg) {
 		return steps_taken;
 	}
 
@@ -1060,7 +1060,7 @@ RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
 			dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 		}
 		// Analyze the opcode
-		if (!rz_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), RZ_ANAL_OP_MASK_BASIC)) {
+		if (!rz_analysis_op (dbg->analysis, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), RZ_ANAL_OP_MASK_BASIC)) {
 			eprintf ("debug-step-over: Decode error at %"PFMT64x"\n", pc);
 			return steps_taken;
 		}
@@ -1278,10 +1278,10 @@ repeat:
 		} else if (what & RZ_DBG_SIGNAL_SKIP) {
 			// skip signal. requires skipping one instruction
 			ut8 buf[64];
-			RzAnalOp op = {0};
+			RzAnalysisOp op = {0};
 			ut64 pc = rz_debug_reg_get (dbg, "PC");
 			dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-			rz_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC);
+			rz_analysis_op (dbg->analysis, &op, pc, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC);
 			if (op.size > 0) {
 				const char *signame = rz_signal_to_string (dbg->reason.signum);
 				rz_debug_reg_set (dbg, "PC", pc+op.size);
@@ -1331,14 +1331,14 @@ RZ_API int rz_debug_continue_until_nontraced(RzDebug *dbg) {
 RZ_API int rz_debug_continue_until_optype(RzDebug *dbg, int type, int over) {
 	int ret, n = 0;
 	ut64 pc, buf_pc = 0;
-	RzAnalOp op;
+	RzAnalysisOp op;
 	ut8 buf[DBG_BUF_SIZE];
 
 	if (rz_debug_is_dead (dbg)) {
 		return false;
 	}
 
-	if (!dbg->anal || !dbg->reg) {
+	if (!dbg->analysis || !dbg->reg) {
 		eprintf ("Undefined pointer at dbg->anal\n");
 		return false;
 	}
@@ -1363,7 +1363,7 @@ RZ_API int rz_debug_continue_until_optype(RzDebug *dbg, int type, int over) {
 			dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 		}
 		// Analyze the opcode
-		if (!rz_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), RZ_ANAL_OP_MASK_BASIC)) {
+		if (!rz_analysis_op (dbg->analysis, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), RZ_ANAL_OP_MASK_BASIC)) {
 			eprintf ("Decode error at %"PFMT64x"\n", pc);
 			return false;
 		}
@@ -1465,7 +1465,7 @@ static int show_syscall(RzDebug *dbg, const char *sysreg) {
 	int reg, i, args;
 	RzSyscallItem *si;
 	reg = (int)rz_debug_reg_get (dbg, sysreg);
-	si = rz_syscall_get (dbg->anal->syscall, reg, -1);
+	si = rz_syscall_get (dbg->analysis->syscall, reg, -1);
 	if (si) {
 		sysname = si->name? si->name: "unknown";
 		args = si->args;

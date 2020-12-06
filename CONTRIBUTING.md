@@ -82,7 +82,7 @@ rules to make the git history more readable and consistent:
 
 ### Commit message hashtag list:
 
-* ##anal     - analysis related
+* ##analysis - analysis related
 * ##asm      - assembler
 * ##bin      - binary parsing
 * ##build    - build fixes/changes

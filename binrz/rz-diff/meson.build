@@ -8,7 +8,7 @@ executable('rz-diff', 'rz-diff.c',
     rz_cons_dep,
     rz_core_dep,
     rz_bin_dep,
-    rz_anal_dep,
+    rz_analysis_dep,
     rz_asm_dep,
     rz_hash_dep,
     rz_config_dep

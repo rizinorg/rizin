@@ -12,7 +12,7 @@ static const char *help_msg_L[] = {
 	"L", " blah."RZ_LIB_EXT, "load plugin file",
 	"L-", "duk", "unload core plugin by name",
 	"Ll", "", "list lang plugins (same as #!)",
-	"La", "", "list asm/anal plugins (aL, e asm.arch=" "??" ")",
+	"La", "", "list asm/analysis plugins (aL, e asm.arch=" "??" ")",
 	"Lc", "", "list core plugins",
 	"Ld", "", "list debug plugins (same as dL)",
 	"LD", "", "list supported decompilers",

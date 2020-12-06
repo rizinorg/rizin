@@ -5,7 +5,7 @@
 
 #include <rz_types.h>
 #include <rz_flag.h>
-#include <rz_anal.h>
+#include <rz_analysis.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -13,7 +13,7 @@ extern "C" {
 
 RZ_LIB_VERSION_HEADER(rz_parse);
 
-typedef RzList* (*RzAnalVarList)(RzAnalFunction *fcn, int kind);
+typedef RzList* (*RzAnalysisVarList)(RzAnalysisFunction *fcn, int kind);
 
 typedef struct rz_parse_t {
 	void *user;
@@ -29,15 +29,15 @@ typedef struct rz_parse_t {
 	int minval;
 	char *retleave_asm;
 	struct rz_parse_plugin_t *cur;
-	// RzAnal *anal; // weak anal ref XXX do not use. use analb.anal
+	// RzAnalysis *analysis; // weak anal ref XXX do not use. use analb.anal
 	RzList *parsers;
-	RzAnalVarList varlist;
-	st64 (*get_ptr_at)(RzAnalFunction *fcn, st64 delta, ut64 addr);
-	const char *(*get_reg_at)(RzAnalFunction *fcn, st64 delta, ut64 addr);
+	RzAnalysisVarList varlist;
+	st64 (*get_ptr_at)(RzAnalysisFunction *fcn, st64 delta, ut64 addr);
+	const char *(*get_reg_at)(RzAnalysisFunction *fcn, st64 delta, ut64 addr);
 	char* (*get_op_ireg)(void *user, ut64 addr);
-	RzAnalBind analb;
+	RzAnalysisBind analb;
 	RzFlagGetAtAddr flag_get; // XXX
-	RzAnalLabelAt label_get;
+	RzAnalysisLabelAt label_get;
 } RzParse;
 
 typedef struct rz_parse_plugin_t {
@@ -48,7 +48,7 @@ typedef struct rz_parse_plugin_t {
 	int (*parse)(RzParse *p, const char *data, char *str);
 	bool (*assemble)(RzParse *p, char *data, char *str);
 	int (*filter)(RzParse *p, ut64 addr, RzFlag *f, char *data, char *str, int len, bool big_endian);
-	bool (*subvar)(RzParse *p, RzAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
+	bool (*subvar)(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
 	int (*replace)(int argc, const char *argv[], char *newstr);
 } RzParsePlugin;
 
@@ -66,14 +66,14 @@ RZ_API bool rz_parse_use(RzParse *p, const char *name);
 /* action */
 RZ_API bool rz_parse_parse(RzParse *p, const char *data, char *str);
 RZ_API bool rz_parse_assemble(RzParse *p, char *data, char *str); // XXX deprecate, unused and probably useless, related to write-hack
-RZ_API bool rz_parse_filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalHint *hint, char *data, char *str, int len, bool big_endian);
-RZ_API bool rz_parse_subvar(RzParse *p, RzAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
+RZ_API bool rz_parse_filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char *data, char *str, int len, bool big_endian);
+RZ_API bool rz_parse_subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char *data, char *str, int len);
 RZ_API char *rz_parse_immtrim(char *opstr);
 
 /* c */
 // why we have anal scoped things in rparse
-RZ_API char *rz_parse_c_string(RzAnal *anal, const char *code, char **error_msg);
-RZ_API char *rz_parse_c_file(RzAnal *anal, const char *path, const char *dir, char **error_msg);
+RZ_API char *rz_parse_c_string(RzAnalysis *analysis, const char *code, char **error_msg);
+RZ_API char *rz_parse_c_file(RzAnalysis *analysis, const char *path, const char *dir, char **error_msg);
 RZ_API void rz_parse_c_reset(RzParse *p);
 
 /* ctype */

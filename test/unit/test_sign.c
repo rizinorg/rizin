@@ -1,10 +1,10 @@
-#include <rz_anal.h>
+#include <rz_analysis.h>
 #include <rz_sign.h>
 
 #include "minunit.h"
 
 static bool test_anal_sign_get_set(void) {
-	RzAnal *anal = rz_anal_new ();
+	RzAnalysis *analysis = rz_analysis_new ();
 
 	RzSignItem *item = rz_sign_item_new ();
 	item->name = strdup ("sym.mahboi");
@@ -47,16 +47,16 @@ static bool test_anal_sign_get_set(void) {
 	item->hash = RZ_NEW0 (RzSignHash);
 	item->hash->bbhash = strdup ("7bfa1358c427e26bc03c2384f41de7be6ebc01958a57e9a6deda5bdba9768851");
 
-	rz_sign_add_item (anal, item);
+	rz_sign_add_item (analysis, item);
 	rz_sign_item_free (item);
 
-	rz_spaces_set (&anal->zign_spaces, "koridai");
-	rz_sign_add_comment (anal, "sym.boring", "gee it sure is boring around here");
+	rz_spaces_set (&analysis->zign_spaces, "koridai");
+	rz_sign_add_comment (analysis, "sym.boring", "gee it sure is boring around here");
 
 	// --
 	
-	rz_spaces_set (&anal->zign_spaces, NULL);
-	item = rz_sign_get_item (anal, "sym.mahboi");
+	rz_spaces_set (&analysis->zign_spaces, NULL);
+	item = rz_sign_get_item (analysis, "sym.mahboi");
 	mu_assert_notnull (item, "get item");
 
 	mu_assert_streq (item->name, "sym.mahboi", "name");
@@ -96,13 +96,13 @@ static bool test_anal_sign_get_set(void) {
 	mu_assert_streq (item->hash->bbhash, "7bfa1358c427e26bc03c2384f41de7be6ebc01958a57e9a6deda5bdba9768851", "hash val");
 	rz_sign_item_free (item);
 	
-	rz_spaces_set (&anal->zign_spaces, "koridai");
-	item = rz_sign_get_item (anal, "sym.boring");
+	rz_spaces_set (&analysis->zign_spaces, "koridai");
+	item = rz_sign_get_item (analysis, "sym.boring");
 	mu_assert_notnull (item, "get item in space");
 	mu_assert_streq (item->comment, "gee it sure is boring around here", "item in space comment");
 	rz_sign_item_free (item);
 
-	rz_anal_free (anal);
+	rz_analysis_free (analysis);
 	mu_end;
 }
 

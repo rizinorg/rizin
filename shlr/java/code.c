@@ -3,7 +3,7 @@
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_list.h>
-#include <rz_anal.h>
+#include <rz_analysis.h>
 
 #include <stdio.h>
 #include <string.h>

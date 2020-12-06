@@ -7,7 +7,7 @@
 #include <rz_core.h>
 #include <rz_reg.h>
 #include <rz_lib.h>
-#include <rz_anal.h>
+#include <rz_analysis.h>
 #include <signal.h>
 #include <sys/types.h>
 
@@ -801,7 +801,7 @@ static int linux_map_thp (RzDebug *dbg, ut64 addr, int size) {
 		return false;
 	}
 
-	int num = rz_syscall_get_num (dbg->anal->syscall, "madvise");
+	int num = rz_syscall_get_num (dbg->analysis->syscall, "madvise");
 
 	snprintf (code, sizeof (code),
 		"sc_madvise@syscall(%d);\n"
@@ -853,7 +853,7 @@ static RzDebugMap* linux_map_alloc (RzDebug *dbg, ut64 addr, int size, bool thp)
 	} else {
 		sc_name = "mmap";
 	}
-	num = rz_syscall_get_num (dbg->anal->syscall, sc_name);
+	num = rz_syscall_get_num (dbg->analysis->syscall, sc_name);
 #ifndef MAP_ANONYMOUS
 #define MAP_ANONYMOUS 0x20
 #endif
@@ -906,7 +906,7 @@ static int linux_map_dealloc(RzDebug *dbg, ut64 addr, int size) {
 		"x64", "x86.as",
 		NULL
 	};
-	int num = rz_syscall_get_num (dbg->anal->syscall, "munmap");
+	int num = rz_syscall_get_num (dbg->analysis->syscall, "munmap");
 
 	snprintf (code, sizeof (code),
 		"sc_munmap@syscall(%d);\n"
@@ -1505,7 +1505,7 @@ static int rz_debug_native_map_protect (RzDebug *dbg, ut64 addr, int size, int p
 	char code[1024];
 	int num;
 
-	num = rz_syscall_get_num (dbg->anal->syscall, "mprotect");
+	num = rz_syscall_get_num (dbg->analysis->syscall, "mprotect");
 	snprintf (code, sizeof (code),
 		"sc@syscall(%d);\n"
 		"main@global(0) { sc(%p,%d,%d);\n"

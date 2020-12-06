@@ -315,7 +315,7 @@ static RzList *darwin_dbg_maps(RzDebug *dbg) {
 	//return osx_dbg_maps (dbg);
 	return ios_dbg_maps (dbg);
 #if 0
-	const char *osname = dbg->anal->syscall->os;
+	const char *osname = dbg->analysis->syscall->os;
 	if (osname && !strcmp (osname, "ios")) {
 		return ios_dbg_maps (dbg);
 	} 

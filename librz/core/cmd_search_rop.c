@@ -254,7 +254,7 @@ static char* rop_classify_constant(RzCore *core, RzList *ropList) {
 		}
 		esil_split_flg (esil_str, &esil_main, &esil_flg);
 		cmd_anal_esil (core, esil_main? esil_main: esil_str);
-		out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
+		out = sdb_querys (core->analysis->esil->stats, NULL, 0, "*");
 		if (!out) {
 			goto continue_error;
 		}
@@ -333,7 +333,7 @@ static char* rop_classify_mov(RzCore *core, RzList *ropList) {
 		}
 		esil_split_flg (esil_str, &esil_main, &esil_flg);
 		cmd_anal_esil (core, esil_main? esil_main: esil_str);
-		out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
+		out = sdb_querys (core->analysis->esil->stats, NULL, 0, "*");
 		if (out) {
 			ops_list  = parse_list (strstr (out, "ops.list"));
 			flg_read  = parse_list (strstr (out, "flg.read"));
@@ -436,7 +436,7 @@ static char* rop_classify_arithmetic(RzCore *core, RzList *ropList) {
 		} else {
 			cmd_anal_esil (core, esil_str);
 		}
-		out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
+		out = sdb_querys (core->analysis->esil->stats, NULL, 0, "*");
 		// rz_cons_println (out);
 		if (!out) {
 			goto continue_error;
@@ -569,7 +569,7 @@ static char* rop_classify_arithmetic_const(RzCore *core, RzList *ropList) {
 		} else {
 			cmd_anal_esil (core, esil_str);
 		}
-		char *out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
+		char *out = sdb_querys (core->analysis->esil->stats, NULL, 0, "*");
 		// rz_cons_println (out);
 		if (out) {
 			ops_list  = parse_list (strstr (out, "ops.list"));
@@ -670,7 +670,7 @@ static int rop_classify_nops(RzCore *core, RzList *ropList) {
 
 		// rz_cons_printf ("Emulating nop:%s\n", esil_str);
 		cmd_anal_esil (core, esil_str);
-		char *out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
+		char *out = sdb_querys (core->analysis->esil->stats, NULL, 0, "*");
 		// rz_cons_println (out);
 		if (out) {
 			free (out);

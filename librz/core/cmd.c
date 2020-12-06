@@ -16,7 +16,7 @@
 #define INTERACTIVE_MAX_REP 1024
 
 #include <rz_core.h>
-#include <rz_anal.h>
+#include <rz_analysis.h>
 #include <rz_cons.h>
 #include <rz_cmd.h>
 #include <stdint.h>
@@ -84,7 +84,7 @@ static RzCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
 static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char* colon, bool *tmpseek);
 
 static int bb_cmpaddr(const void *_a, const void *_b) {
-	const RzAnalBlock *a = _a, *b = _b;
+	const RzAnalysisBlock *a = _a, *b = _b;
 	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
 }
 
@@ -741,10 +741,10 @@ RZ_API bool rz_core_run_script(RzCore *core, const char *file) {
 		ret = true;
 	} else if (rz_file_is_c (file)) {
 		const char *dir = rz_config_get (core->config, "dir.types");
-		char *out = rz_parse_c_file (core->anal, file, dir, NULL);
+		char *out = rz_parse_c_file (core->analysis, file, dir, NULL);
 		if (out) {
 			rz_cons_strcat (out);
-			sdb_query_lines (core->anal->sdb_types, out);
+			sdb_query_lines (core->analysis->sdb_types, out);
 			free (out);
 		}
 		ret = out != NULL;
@@ -1453,7 +1453,7 @@ static int cmd_rebase(RzCore *core, const char *input) {
 	rz_core_cmd0 (core, ".iM*");
 	rz_core_cmd0 (core, ".ii*");
 	rz_core_cmd0 (core, ".iz*");
-	// TODO: rz_anal_move :??
+	// TODO: rz_analysis_move :??
 	// TODO: differentiate analysis by map ranges (associated with files or memory maps)
 	return 0;
 }
@@ -3075,7 +3075,7 @@ repeat_arroba:
 			case 'B': // "@B:#" // seek to the last instruction in current bb
 				{
 					int index = (int)rz_num_math (core->num, ptr + 2);
-					RzAnalBlock *bb = rz_anal_bb_from_offset (core->anal, core->offset);
+					RzAnalysisBlock *bb = rz_analysis_bb_from_offset (core->analysis, core->offset);
 					if (bb) {
 						// handle negative indices
 						if (index < 0) {
@@ -3083,7 +3083,7 @@ repeat_arroba:
 						}
 
 						if (index >= 0 && index < bb->ninstr) {
-							ut16 inst_off = rz_anal_bb_offset_inst (bb, index);
+							ut16 inst_off = rz_analysis_bb_offset_inst (bb, index);
 							rz_core_seek (core, bb->addr + inst_off, true);
 							cmd_tmpseek = core->tmpseek = true;
 						} else {
@@ -3573,8 +3573,8 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 	case 'C': {
 		char *glob = filter ? rz_str_trim_dup (filter): NULL;
 		RzIntervalTreeIter it;
-		RzAnalMetaItem *meta;
-		rz_interval_tree_foreach (&core->anal->meta, it, meta) {
+		RzAnalysisMetaItem *meta;
+		rz_interval_tree_foreach (&core->analysis->meta, it, meta) {
 			if (meta->type != RZ_META_TYPE_COMMENT) {
 				continue;
 			}
@@ -3643,7 +3643,7 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 				}
 				RzList *list = rz_list_newf (free);
 				rz_list_foreach (head, iter, item) {
-					if (item->size != core->anal->bits) {
+					if (item->size != core->analysis->bits) {
 						continue;
 					}
 					if (item->type != i) {
@@ -3797,8 +3797,8 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 		{
 			ut64 obs = core->blocksize;
 			ut64 offorig = core->offset;
-			RzAnalFunction *fcn;
-			list = core->anal->fcns;
+			RzAnalysisFunction *fcn;
+			list = core->analysis->fcns;
 			rz_cons_break_push (NULL, NULL);
 			rz_list_foreach (list, iter, fcn) {
 				if (rz_cons_is_breaked ()) {
@@ -3806,7 +3806,7 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 				}
 				if (!filter || rz_str_glob (fcn->name, filter)) {
 					rz_core_seek (core, fcn->addr, true);
-					rz_core_block_size (core, rz_anal_function_linear_size (fcn));
+					rz_core_block_size (core, rz_analysis_function_linear_size (fcn));
 					rz_core_cmd0 (core, cmd);
 				}
 			}
@@ -3817,12 +3817,12 @@ RZ_API int rz_core_cmd_foreach3(RzCore *core, const char *cmd, char *each) { // 
 		break;
 	case 'b':
 		{
-			RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
+			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 			ut64 offorig = core->offset;
 			ut64 obs = core->blocksize;
 			if (fcn) {
 				RzListIter *iter;
-				RzAnalBlock *bb;
+				RzAnalysisBlock *bb;
 				rz_list_foreach (fcn->bbs, iter, bb) {
 					rz_core_seek (core, bb->addr, true);
 					rz_core_block_size (core, bb->size);
@@ -3925,8 +3925,8 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 	case 'b': // "@@b" - function basic blocks
 		{
 			RzListIter *iter;
-			RzAnalBlock *bb;
-			RzAnalFunction *fcn = rz_anal_get_function_at (core->anal, core->offset);
+			RzAnalysisBlock *bb;
+			RzAnalysisFunction *fcn = rz_analysis_get_function_at (core->analysis, core->offset);
 			int bs = core->blocksize;
 			if (fcn) {
 				rz_list_sort (fcn->bbs, bb_cmp);
@@ -3971,9 +3971,9 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 	case 'i': // "@@i" - function instructions
 		{
 			RzListIter *iter;
-			RzAnalBlock *bb;
+			RzAnalysisBlock *bb;
 			int i;
-			RzAnalFunction *fcn = rz_anal_get_function_at (core->anal, core->offset);
+			RzAnalysisFunction *fcn = rz_analysis_get_function_at (core->analysis, core->offset);
 			if (fcn) {
 				rz_list_sort (fcn->bbs, bb_cmp);
 				rz_list_foreach (fcn->bbs, iter, bb) {
@@ -3992,10 +3992,10 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 		break;
 	case 'f': // "@@f"
 		if (each[1] == ':') {
-			RzAnalFunction *fcn;
+			RzAnalysisFunction *fcn;
 			RzListIter *iter;
-			if (core->anal) {
-				rz_list_foreach (core->anal->fcns, iter, fcn) {
+			if (core->analysis) {
+				rz_list_foreach (core->analysis->fcns, iter, fcn) {
 					if (each[2] && strstr (fcn->name, each + 2)) {
 						rz_core_seek (core, fcn->addr, true);
 						rz_core_cmd (core, cmd, 0);
@@ -4007,11 +4007,11 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 			}
 			goto out_finish;
 		} else {
-			RzAnalFunction *fcn;
+			RzAnalysisFunction *fcn;
 			RzListIter *iter;
-			if (core->anal) {
+			if (core->analysis) {
 				RzConsGrep grep = core->cons->context->grep;
-				rz_list_foreach (core->anal->fcns, iter, fcn) {
+				rz_list_foreach (core->analysis->fcns, iter, fcn) {
 					char *buf;
 					rz_core_seek (core, fcn->addr, true);
 					rz_cons_push ();
@@ -5000,7 +5000,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_nthi_command) {
 
 	ut64 orig_offset = state->core->offset;
 	int index = rz_num_math (core->num, arg_str);
-	RzAnalBlock *bb = rz_anal_bb_from_offset (core->anal, core->offset);
+	RzAnalysisBlock *bb = rz_analysis_bb_from_offset (core->analysis, core->offset);
 	if (bb) {
 		// handle negative indices
 		if (index < 0) {
@@ -5008,7 +5008,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_nthi_command) {
 		}
 
 		if (index >= 0 && index < bb->ninstr) {
-			ut16 inst_off = rz_anal_bb_offset_inst (bb, index);
+			ut16 inst_off = rz_analysis_bb_offset_inst (bb, index);
 			rz_core_seek (core, bb->addr + inst_off, true);
 		} else {
 			eprintf ("The current basic block has just %d instructions\n", bb->ninstr);
@@ -5416,19 +5416,19 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_instrs_command) {
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	ut64 orig_offset = core->offset;
 	int bs = core->blocksize;
-	RzList *bbl = rz_anal_get_blocks_in (core->anal, core->offset);
+	RzList *bbl = rz_analysis_get_blocks_in (core->analysis, core->offset);
 	if (!bbl) {
 		eprintf ("No basic block contains current address\n");
 		return RZ_CMD_STATUS_INVALID;
 	}
-	RzAnalBlock *bb = rz_list_get_top (bbl);
-	rz_anal_block_ref (bb);
+	RzAnalysisBlock *bb = rz_list_get_top (bbl);
+	rz_analysis_block_ref (bb);
 	rz_list_free (bbl);
 
 	int i;
 	for (i = 0; i < bb->ninstr; i++) {
-		ut64 i_addr = rz_anal_bb_opaddr_i (bb, i);
-		int sz = rz_anal_bb_size_i (bb, i);
+		ut64 i_addr = rz_analysis_bb_opaddr_i (bb, i);
+		int sz = rz_analysis_bb_size_i (bb, i);
 		rz_core_block_size (core, sz);
 		rz_core_seek (core, i_addr, true);
 		RzCmdStatus cmd_res = handle_ts_command_tmpseek (state, command);
@@ -5437,7 +5437,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_instrs_command) {
 			break;
 		}
 	}
-	rz_anal_block_unref (bb);
+	rz_analysis_block_unref (bb);
 
 err:
 	rz_core_block_size (core, bs);
@@ -5498,7 +5498,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_hit_command) {
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_bbs_command) {
 	RzCore *core = state->core;
 	TSNode command = ts_node_named_child (node, 0);
-	RzAnalFunction *fcn = rz_anal_get_fcn_in (core->anal, core->offset, 0);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 	ut64 offorig = core->offset;
 	ut64 obs = core->blocksize;
 	if (!fcn) {
@@ -5506,7 +5506,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_bbs_command) {
 	}
 
 	RzListIter *iter;
-	RzAnalBlock *bb;
+	RzAnalysisBlock *bb;
 	RzCmdStatus ret = RZ_CMD_STATUS_OK;
 	rz_list_foreach (fcn->bbs, iter, bb) {
 		rz_core_seek (core, bb->addr, true);
@@ -5598,8 +5598,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_comment_command) {
 	ut64 off = core->offset;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	RzIntervalTreeIter it;
-	RzAnalMetaItem *meta;
-	rz_interval_tree_foreach (&core->anal->meta, it, meta) {
+	RzAnalysisMetaItem *meta;
+	rz_interval_tree_foreach (&core->analysis->meta, it, meta) {
 		if (meta->type != RZ_META_TYPE_COMMENT) {
 			continue;
 		}
@@ -5667,7 +5667,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_register_command) {
 		RzList *list = rz_list_newf (free);
 		RzListIter *iter;
 		rz_list_foreach (head, iter, item) {
-			if (item->size != core->anal->bits) {
+			if (item->size != core->analysis->bits) {
 				continue;
 			}
 			if (item->type != i) {
@@ -5836,8 +5836,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_function_command) {
 	}
 	ut64 obs = core->blocksize;
 	ut64 offorig = core->offset;
-	RzAnalFunction *fcn;
-	RzList *list = core->anal->fcns;
+	RzAnalysisFunction *fcn;
+	RzList *list = core->analysis->fcns;
 	RzListIter *iter;
 	RzCmdStatus res = RZ_CMD_STATUS_OK;
 	rz_cons_break_push (NULL, NULL);
@@ -5847,7 +5847,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_function_command) {
 		}
 		if (!filter || rz_str_glob (fcn->name, filter)) {
 			rz_core_seek (core, fcn->addr, true);
-			rz_core_block_size (core, rz_anal_function_linear_size (fcn));
+			rz_core_block_size (core, rz_analysis_function_linear_size (fcn));
 			RzCmdStatus cmd_res = handle_ts_command_tmpseek (state, command);
 			UPDATE_CMD_STATUS_RES (res, cmd_res, err);
 		}

@@ -6,7 +6,7 @@
 #include <rz_types.h>
 #include <rz_list.h>
 #include <rz_util.h>
-#include <rz_anal.h>
+#include <rz_analysis.h>
 
 #define OBJECT_SIZE_ON_STACK 1
 
@@ -61,10 +61,10 @@ typedef struct {
 
 typedef struct {
 	char *op_name;
-	void (*func)(RzAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg);
+	void (*func)(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg);
 } op_anal_func;
 
-void anal_pyc_op(RzAnalOp *op, pyc_opcode_object *op_obj, ut32 oparg);
+void analysis_pyc_op(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg);
 
 pyc_opcodes *opcode_2x(void);
 pyc_opcodes *opcode_3x(void);

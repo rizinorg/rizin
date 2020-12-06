@@ -14,7 +14,7 @@
 #include <rz_asm.h>
 #include <rz_reg.h>
 #include <rz_lib.h>
-#include <rz_anal.h>
+#include <rz_analysis.h>
 #include <string.h>
 #include <mach/mach_host.h>
 #include <mach/host_priv.h>

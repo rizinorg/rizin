@@ -253,7 +253,7 @@ SUBDIRS ./config-user.mk
 	pkgcfg/rz_magic.pc
 	pkgcfg/rz_asm.pc
 	pkgcfg/rz_bin.pc
-	pkgcfg/rz_anal.pc
+	pkgcfg/rz_analysis.pc
 	pkgcfg/rz_hash.pc
 	pkgcfg/rz_cons.pc
 	pkgcfg/rz_core.pc

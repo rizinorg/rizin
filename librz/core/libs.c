@@ -35,7 +35,7 @@ CB (debug, dbg)
 #define rz_bp_add rz_bp_plugin_add
 CB (bp, dbg->bp)
 CB (lang, lang)
-CB (anal, anal)
+CB (analysis, analysis)
 CB (asm, rasm)
 CB (parse, parser)
 CB (bin, bin)
@@ -99,7 +99,7 @@ RZ_API void rz_core_loadlibs_init(RzCore *core) {
 	DF (DBG, "debugger plugins", debug);
 	DF (BP, "debugger breakpoint plugins", bp);
 	DF (LANG, "language plugins", lang);
-	DF (ANAL, "analysis plugins", anal);
+	DF (ANAL, "analysis plugins", analysis);
 	DF (ASM, "(dis)assembler plugins", asm);
 	DF (PARSE, "parsing plugins", parse);
 	DF (BIN, "bin plugins", bin);

@@ -763,17 +763,17 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 		switch (input[1]) {
 		case 'o':         // "cgo"
 			file2 = (char *) rz_str_trim_head_ro (input + 2);
-			rz_anal_diff_setup (core->anal, true, -1, -1);
+			rz_analysis_diff_setup (core->analysis, true, -1, -1);
 			break;
 		case 'f':         // "cgf"
 			eprintf ("TODO: agf is experimental\n");
-			rz_anal_diff_setup (core->anal, true, -1, -1);
+			rz_analysis_diff_setup (core->analysis, true, -1, -1);
 			rz_core_gdiff_fcn (core, core->offset,
 				rz_num_math (core->num, input + 2));
 			return false;
 		case ' ':
 			file2 = (char *) rz_str_trim_head_ro (input + 2);
-			rz_anal_diff_setup (core->anal, false, -1, -1);
+			rz_analysis_diff_setup (core->analysis, false, -1, -1);
 			break;
 		default: {
 			const char *help_message[] = {
@@ -807,8 +807,8 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 		}
 		// TODO: must replicate on core1 too
 		rz_config_set_i (core2->config, "io.va", true);
-		rz_anal_diff_setup (core->anal, diffops, -1, -1);
-		rz_anal_diff_setup (core2->anal, diffops, -1, -1);
+		rz_analysis_diff_setup (core->analysis, diffops, -1, -1);
+		rz_analysis_diff_setup (core2->analysis, diffops, -1, -1);
 
 		rz_core_bin_load (core2, file2,
 			rz_config_get_i (core->config, "bin.baddr"));

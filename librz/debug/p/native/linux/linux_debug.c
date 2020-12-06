@@ -7,7 +7,7 @@
 #include <rz_asm.h>
 #include <rz_reg.h>
 #include <rz_lib.h>
-#include <rz_anal.h>
+#include <rz_analysis.h>
 #include <signal.h>
 #include <sys/uio.h>
 #include <errno.h>

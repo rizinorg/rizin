@@ -486,27 +486,27 @@ RZ_IPI int rz_cmd_eval(void *data, const char *input) {
 				return false;
 			case '-': // ecH-
 				if (input[3] == '*') {
-					rz_meta_del (core->anal, RZ_META_TYPE_HIGHLIGHT, 0, UT64_MAX);
+					rz_meta_del (core->analysis, RZ_META_TYPE_HIGHLIGHT, 0, UT64_MAX);
 				} else {
-					rz_meta_del (core->anal, RZ_META_TYPE_HIGHLIGHT, core->offset, 1);
-					// rz_meta_set_string (core->anal, RZ_META_TYPE_HIGHLIGHT, core->offset, "");
+					rz_meta_del (core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, 1);
+					// rz_meta_set_string (core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, "");
 				}
 				rz_str_argv_free (argv);
 				return false;
 			case '.':
-				rz_meta_print_list_in_function (core->anal, RZ_META_TYPE_HIGHLIGHT, 0, core->offset);
+				rz_meta_print_list_in_function (core->analysis, RZ_META_TYPE_HIGHLIGHT, 0, core->offset);
 				rz_str_argv_free (argv);
 				return false;
 			case '\0':
-				rz_meta_print_list_all (core->anal, RZ_META_TYPE_HIGHLIGHT, 0);
+				rz_meta_print_list_all (core->analysis, RZ_META_TYPE_HIGHLIGHT, 0);
 				rz_str_argv_free (argv);
 				return false;
 			case 'j':
-				rz_meta_print_list_all (core->anal, RZ_META_TYPE_HIGHLIGHT, 'j');
+				rz_meta_print_list_all (core->analysis, RZ_META_TYPE_HIGHLIGHT, 'j');
 				rz_str_argv_free (argv);
 				return false;
 			case '*':
-				rz_meta_print_list_all (core->anal, RZ_META_TYPE_HIGHLIGHT, '*');
+				rz_meta_print_list_all (core->analysis, RZ_META_TYPE_HIGHLIGHT, '*');
 				rz_str_argv_free (argv);
 				return false;
 			case ' ':
@@ -546,10 +546,10 @@ RZ_IPI int rz_cmd_eval(void *data, const char *input) {
 				rz_str_argv_free (argv);
 				return true;
 			}
-			rz_meta_set_string (core->anal, RZ_META_TYPE_HIGHLIGHT, core->offset, "");
-			const char *str = rz_meta_get_string (core->anal, RZ_META_TYPE_HIGHLIGHT, core->offset);
+			rz_meta_set_string (core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, "");
+			const char *str = rz_meta_get_string (core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset);
 			char *dup = rz_str_newf ("%s \"%s%s\"", str?str:"", word?word:"", color_code?color_code:rz_cons_singleton ()->context->pal.wordhl);
-			rz_meta_set_string (core->anal, RZ_META_TYPE_HIGHLIGHT, core->offset, dup);
+			rz_meta_set_string (core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, dup);
 			rz_str_argv_free (argv);
 			RZ_FREE (word);
 			RZ_FREE (dup);

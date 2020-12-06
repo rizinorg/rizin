@@ -1,9 +1,9 @@
 * @wargio @XVilka @kazarmy @thestr4ng3r @ret2libc
 *.js @wargio
 CODEOWNERS @wargio @XVilka @kazarmy @thestr4ng3r @ret2libc
-librz/anal/ @thestr4ng3r
-librz/anal/esil* @wargio
-librz/anal/xrefs.c @ret2libc
+librz/analysis/ @thestr4ng3r
+librz/analysis/esil* @wargio
+librz/analysis/xrefs.c @ret2libc
 librz/arch/gb/ @wargio
 librz/asm/ @wargio
 librz/asm/p/x86_* @ret2libc

@@ -1512,10 +1512,10 @@ void __cursor_up(RzCore *core) {
 
 void __cursor_down(RzCore *core) {
 	RzPrint *print = core->print;
-	RzAnalOp *aop = rz_core_anal_op (core, core->offset + print->cur, RZ_ANAL_OP_MASK_BASIC);
+	RzAnalysisOp *aop = rz_core_analysis_op (core, core->offset + print->cur, RZ_ANAL_OP_MASK_BASIC);
 	if (aop) {
 		print->cur += aop->size;
-		rz_anal_op_free (aop);
+		rz_analysis_op_free (aop);
 	} else {
 		print->cur += 4;
 	}
@@ -2885,7 +2885,7 @@ void __call_visual_graph(RzCore *core) {
 }
 
 bool __check_func(RzCore *core) {
-	RzAnalFunction *fun = rz_anal_get_fcn_in (core->anal, core->offset, RZ_ANAL_FCN_TYPE_NULL);
+	RzAnalysisFunction *fun = rz_analysis_get_fcn_in (core->analysis, core->offset, RZ_ANAL_FCN_TYPE_NULL);
 	if (!fun) {
 		rz_cons_message ("Not in a function. Type 'df' to define it here");
 		return false;
@@ -2898,7 +2898,7 @@ bool __check_func(RzCore *core) {
 }
 
 bool __check_func_diff(RzCore *core, RzPanel *p) {
-	RzAnalFunction *func = rz_anal_get_fcn_in (core->anal, core->offset, RZ_ANAL_FCN_TYPE_NULL);
+	RzAnalysisFunction *func = rz_analysis_get_fcn_in (core->analysis, core->offset, RZ_ANAL_FCN_TYPE_NULL);
 	if (!func) {
 		if (RZ_STR_ISEMPTY (p->model->funcName)) {
 			return false;
@@ -3018,8 +3018,8 @@ void __init_panel_param(RzCore *core, RzPanel *p, const char *title, const char 
 		__set_dcb (core, p);
 		__set_rcb (core->panels, p);
 		if (__check_panel_type (p, PANEL_CMD_STACK)) {
-			const char *sp = rz_reg_get_name (core->anal->reg, RZ_REG_NAME_SP);
-			const ut64 stackbase = rz_reg_getv (core->anal->reg, sp);
+			const char *sp = rz_reg_get_name (core->analysis->reg, RZ_REG_NAME_SP);
+			const ut64 stackbase = rz_reg_getv (core->analysis->reg, sp);
 			m->baseAddr = stackbase;
 			__set_panel_addr (core, p, stackbase - rz_config_get_i (core->config, "stack.delta"));
 		}
@@ -4908,11 +4908,11 @@ void __panels_check_stackbase(RzCore *core) {
 		return;
 	}
 	int i;
-	const char *sp = rz_reg_get_name (core->anal->reg, RZ_REG_NAME_SP);
+	const char *sp = rz_reg_get_name (core->analysis->reg, RZ_REG_NAME_SP);
 	if (!sp) {
 		return;
 	}
-	const ut64 stackbase = rz_reg_getv (core->anal->reg, sp);
+	const ut64 stackbase = rz_reg_getv (core->analysis->reg, sp);
 	RzPanels *panels = core->panels;
 	for (i = 1; i < panels->n_panels; i++) {
 		RzPanel *panel = __get_panel (panels, i);

@@ -138,9 +138,9 @@ static void __replaceRegisters(RzReg *reg, char *s, bool x86) {
 	}
 }
 
-static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalHint *hint, char *data, char *str, int len, bool big_endian) {
+static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char *data, char *str, int len, bool big_endian) {
 	char *ptr = data, *ptr2, *ptr_backup;
-	RzAnalFunction *fcn;
+	RzAnalysisFunction *fcn;
 	RzFlagItem *flag;
 	ut64 off;
 	bool x86 = false;
@@ -164,9 +164,9 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalHint *hint, char *dat
 	replaceWords (ptr, "qword ", src);
 #endif
 	if (p->subreg) {
-		__replaceRegisters (p->analb.anal->reg, ptr, false);
+		__replaceRegisters (p->analb.analysis->reg, ptr, false);
 		if (x86) {
-			__replaceRegisters (p->analb.anal->reg, ptr, true);
+			__replaceRegisters (p->analb.analysis->reg, ptr, true);
 		}
 	}
 	ptr2 = NULL;
@@ -186,7 +186,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalHint *hint, char *dat
 		}
 		off = rz_num_math (NULL, ptr);
 		if (off >= p->minval) {
-			fcn = p->analb.get_fcn_in (p->analb.anal, off, 0);
+			fcn = p->analb.get_fcn_in (p->analb.analysis, off, 0);
 			if (fcn && fcn->addr == off) {
 				*ptr = 0;
 				// hack to realign pointer for colours
@@ -485,7 +485,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalHint *hint, char *dat
 				break;
 			case 10:
 				{
-					RzList *regs = rz_reg_get_list (p->analb.anal->reg, RZ_REG_TYPE_GPR);
+					RzList *regs = rz_reg_get_list (p->analb.analysis->reg, RZ_REG_TYPE_GPR);
 					RzRegItem *reg;
 					RzListIter *iter;
 					bool imm32 = false;
@@ -513,9 +513,9 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalHint *hint, char *dat
 				}
 				break;
 			case 80:
-				if (p && p->analb.anal && p->analb.anal->syscall) {
+				if (p && p->analb.analysis && p->analb.analysis->syscall) {
 					RzSyscallItem *si;
-					si = rz_syscall_get (p->analb.anal->syscall, off, -1);
+					si = rz_syscall_get (p->analb.analysis->syscall, off, -1);
 					if (si) {
 						snprintf (num, sizeof (num), "%s()", si->name);
 					} else {
@@ -549,7 +549,7 @@ static bool filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalHint *hint, char *dat
 // TODO we shouhld use RzCoreBind and use the hintGet/flagGet methods, but we can also have rflagbind+ranalbind, but kiss pls
 // TODO: NEW SIGNATURE: RZ_API char *rz_parse_filter(RzParse *p, ut64 addr, const char *str)
 // DEPRECATE
-RZ_API bool rz_parse_filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalHint *hint, char *data, char *str, int len, bool big_endian) {
+RZ_API bool rz_parse_filter(RzParse *p, ut64 addr, RzFlag *f, RzAnalysisHint *hint, char *data, char *str, int len, bool big_endian) {
 	filter (p, addr, f, hint, data, str, len, big_endian);
 	if (p->cur && p->cur->filter) {
 		return p->cur->filter (p, addr, f, data, str, len, big_endian);

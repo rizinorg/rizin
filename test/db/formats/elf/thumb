@@ -109,7 +109,7 @@ push {r7, lr}
 EOF
 RUN
 
-NAME=thumb anal expand
+NAME=thumb analysis expand
 FILE=bins/elf/analysis/thumb
 CMDS=<<EOF
 pi 2@sym.main

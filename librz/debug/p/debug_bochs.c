@@ -342,7 +342,7 @@ static int rz_debug_bochs_attach(RzDebug *dbg, int pid) {
 		if (!strcmp ("bochs", d->plugin->name)) {
 			RzIOBochs *g = d->data;
 			//int arch = rz_sys_arch_id (dbg->arch);
-			// int bits = dbg->anal->bits;
+			// int bits = dbg->analysis->bits;
 			if (( desc = &g->desc )) {
 				eprintf("bochs attach: ok\n");
 				saveRegs = malloc(1024);
@@ -362,7 +362,7 @@ static int rz_debug_bochs_detach(RzDebug *dbg, int pid) {
 }
 
 static const char *rz_debug_bochs_reg_profile(RzDebug *dbg) {
-	int bits = dbg->anal->bits;
+	int bits = dbg->analysis->bits;
 
 	if (bits == 16 || bits == 32 || bits == 64) {
 		return strdup (

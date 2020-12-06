@@ -40,8 +40,8 @@ RZ_API int rz_core_zdiff(RzCore *c, RzCore *c2) {
 		return false;
 	}
 	////////// moove this into anal/sign
-	SdbList *a = sdb_foreach_list (c->anal->sdb_zigns, false);
-	SdbList *b = sdb_foreach_list (c2->anal->sdb_zigns, false);
+	SdbList *a = sdb_foreach_list (c->analysis->sdb_zigns, false);
+	SdbList *b = sdb_foreach_list (c2->analysis->sdb_zigns, false);
 
 	eprintf ("Diff %d %d\n", (int)ls_length (a), (int)ls_length (b));
 	SdbListIter *iter;
@@ -49,7 +49,7 @@ RZ_API int rz_core_zdiff(RzCore *c, RzCore *c2) {
 	RzList *la = rz_list_new ();
 	ls_foreach (a, iter, kv) {
 		RzSignItem *it = rz_sign_item_new ();
-		if (rz_sign_deserialize (c->anal, it, kv->base.key, kv->base.value)) {
+		if (rz_sign_deserialize (c->analysis, it, kv->base.key, kv->base.value)) {
 			rz_list_append (la, it);
 		} else {
 			rz_sign_item_free (it);
@@ -58,7 +58,7 @@ RZ_API int rz_core_zdiff(RzCore *c, RzCore *c2) {
 	RzList *lb = rz_list_new ();
 	ls_foreach (b, iter, kv) {
 		RzSignItem *it = rz_sign_item_new ();
-		if (rz_sign_deserialize (c2->anal, it, kv->base.key, kv->base.value)) {
+		if (rz_sign_deserialize (c2->analysis, it, kv->base.key, kv->base.value)) {
 			rz_list_append (lb, it);
 		} else {
 			rz_sign_item_free (it);
@@ -90,7 +90,7 @@ RZ_API int rz_core_zdiff(RzCore *c, RzCore *c2) {
 	}
 	
 	/* Diff functions */
-	// rz_anal_diff_fcn (cores[0]->anal, cores[0]->anal->fcns, cores[1]->anal->fcns);
+	// rz_analysis_diff_fcn (cores[0]->analysis, cores[0]->analysis->fcns, cores[1]->analysis->fcns);
 
 	return true;
 }

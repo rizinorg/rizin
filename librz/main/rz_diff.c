@@ -833,7 +833,7 @@ static char *get_graph_commands(RzCore *c, ut64 off) {
         bool tmp_html = rz_cons_singleton ()->is_html;
         rz_cons_singleton ()->is_html = false;
         rz_cons_push ();
-        rz_core_anal_graph (c, off, RZ_CORE_ANAL_GRAPHBODY | RZ_CORE_ANAL_GRAPHDIFF |  RZ_CORE_ANAL_STAR);
+        rz_core_analysis_graph (c, off, RZ_CORE_ANAL_GRAPHBODY | RZ_CORE_ANAL_GRAPHDIFF |  RZ_CORE_ANAL_STAR);
         const char *static_str = rz_cons_get_buffer ();
         char *retstr = strdup (static_str? static_str: "");
         rz_cons_pop ();
@@ -881,10 +881,10 @@ static void __print_diff_graph(RzCore *c, ut64 off, int gmode) {
         rz_agraph_reset(c->graph);
         switch (gmode) {
         case GRAPH_DOT_MODE:
-                rz_core_anal_graph (c, off, opts);
+                rz_core_analysis_graph (c, off, opts);
                 break;
         case GRAPH_STAR_MODE:
-                rz_core_anal_graph (c, off, opts |  RZ_CORE_ANAL_STAR);
+                rz_core_analysis_graph (c, off, opts |  RZ_CORE_ANAL_STAR);
                 break;
         case GRAPH_TINY_MODE:
                 __generate_graph (c, off);
@@ -904,10 +904,10 @@ static void __print_diff_graph(RzCore *c, ut64 off, int gmode) {
                 rz_core_agraph_print (c, use_utf8, "g");
                 break;
         case GRAPH_JSON_MODE:
-                rz_core_anal_graph (c, off, opts | RZ_CORE_ANAL_JSON);
+                rz_core_analysis_graph (c, off, opts | RZ_CORE_ANAL_JSON);
                 break;
         case GRAPH_JSON_DIS_MODE:
-                rz_core_anal_graph (c, off, opts | RZ_CORE_ANAL_JSON | RZ_CORE_ANAL_JSON_FORMAT_DISASM);
+                rz_core_analysis_graph (c, off, opts | RZ_CORE_ANAL_JSON | RZ_CORE_ANAL_JSON_FORMAT_DISASM);
                 break;
         case GRAPH_DEFAULT_MODE:
         default:
@@ -1101,8 +1101,8 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 		}
 		rz_config_set_i (c->config, "diff.bare", showbare);
 		rz_config_set_i (c2->config, "diff.bare", showbare);
-		rz_anal_diff_setup_i (c->anal, diffops, threshold, threshold);
-		rz_anal_diff_setup_i (c2->anal, diffops, threshold, threshold);
+		rz_analysis_diff_setup_i (c->analysis, diffops, threshold, threshold);
+		rz_analysis_diff_setup_i (c2->analysis, diffops, threshold, threshold);
 		if (pdc) {
 			if (!addr) {
 				//addr = "entry0";
@@ -1131,15 +1131,15 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 				*second++ = 0;
 				ut64 off = rz_num_math (c->num, words);
 				// define the same function at each offset
-				rz_core_anal_fcn (c, off, UT64_MAX, RZ_ANAL_REF_TYPE_NULL, depth);
-				rz_core_anal_fcn (c2, rz_num_math (c2->num, second),
+				rz_core_analysis_fcn (c, off, UT64_MAX, RZ_ANAL_REF_TYPE_NULL, depth);
+				rz_core_analysis_fcn (c2, rz_num_math (c2->num, second),
 					UT64_MAX, RZ_ANAL_REF_TYPE_NULL, depth);
 				rz_core_gdiff (c, c2);
 				__print_diff_graph (c, off, gmode);
 			} else {
-				rz_core_anal_fcn (c, rz_num_math (c->num, words),
+				rz_core_analysis_fcn (c, rz_num_math (c->num, words),
 					UT64_MAX, RZ_ANAL_REF_TYPE_NULL, depth);
-				rz_core_anal_fcn (c2, rz_num_math (c2->num, words),
+				rz_core_analysis_fcn (c2, rz_num_math (c2->num, words),
 					UT64_MAX, RZ_ANAL_REF_TYPE_NULL, depth);
 				rz_core_gdiff (c, c2);
 				__print_diff_graph (c, rz_num_math (c->num, addr), gmode);

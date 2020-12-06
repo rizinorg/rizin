@@ -1,7 +1,7 @@
 include ../config.mk
 
 NAME=rz_debug
-RZ_DEPS=rz_reg rz_anal rz_bp rz_io rz_parse rz_cons rz_syscall rz_hash rz_flag rz_util rz_egg rz_crypto
+RZ_DEPS=rz_reg rz_analysis rz_bp rz_io rz_parse rz_cons rz_syscall rz_hash rz_flag rz_util rz_egg rz_crypto
 RZ_DEPS+=rz_socket
 CFLAGS+=-DRZ_PLUGIN_INCORE
 

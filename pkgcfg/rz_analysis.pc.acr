@@ -1,0 +1,11 @@
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=@LIBDIR@
+includedir=${prefix}/include
+
+Name: rz_analysis
+Description: rizin foundation libraries
+Version: @VERSION@
+Requires: rz_util rz_reg rz_syscall rz_search rz_cons rz_flag rz_crypto
+Libs: -L${libdir} -lrz_analysis  
+Cflags: -I${includedir}/librz 

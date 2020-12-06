@@ -121,7 +121,7 @@ static ut64 analyzeStackBased(RzCore *core, Sdb *db, ut64 addr, RzList *delayed_
 #define bbAddOpcode(x) sdb_array_insert_num (db, sdb_fmt ("bb.%"PFMT64x, addr+cur), -1, x, 0);
 	ut64 oaddr = addr;
 	ut64 *value = NULL;
-	RzAnalOp *op;
+	RzAnalysisOp *op;
 	int cur = 0;
 	bool block_end = false;
 	RzStack *stack = rz_stack_newf (10, free);
@@ -140,7 +140,7 @@ static ut64 analyzeStackBased(RzCore *core, Sdb *db, ut64 addr, RzList *delayed_
 		free (value);
 		cur = 0;
 		while (!block_end && cur < maxfcnsize) {
-			op = rz_core_anal_op (core, addr + cur, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM);
+			op = rz_core_analysis_op (core, addr + cur, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM);
 			if (!op || !op->mnemonic) {
 				eprintf ("a2f: Cannot analyze opcode at 0x%"PFMT64x"\n", addr+cur);
 				oaddr = UT64_MAX;
@@ -235,7 +235,7 @@ static ut64 analyzeStackBased(RzCore *core, Sdb *db, ut64 addr, RzList *delayed_
 				break;
 			}
 			cur += op->size;
-			rz_anal_op_free (op);
+			rz_analysis_op_free (op);
 			op = NULL;
 		}
 	}

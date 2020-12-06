@@ -32,7 +32,7 @@ static int prestep = 1; // TODO: make it configurable
 static ut64 opc = 0;
 RzList *esil_watchpoints = NULL;
 #define EWPS esil_watchpoints
-#define ESIL dbg->anal->esil
+#define ESIL dbg->analysis->esil
 
 static int exprmatch (RzDebug *dbg, ut64 addr, const char *expr) {
 	char *e = strdup (expr);
@@ -83,7 +83,7 @@ static int esilbreak_check_pc (RzDebug *dbg, ut64 pc) {
 	return 0;
 }
 
-static int esilbreak_mem_read(RzAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static int esilbreak_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int len) {
 	EsilBreak *ew;
 	RzListIter *iter;
 	eprintf (Color_GREEN"MEM READ 0x%"PFMT64x"\n"Color_RESET, addr);
@@ -98,7 +98,7 @@ static int esilbreak_mem_read(RzAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	return 0; // fallback
 }
 
-static int esilbreak_mem_write(RzAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static int esilbreak_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	EsilBreak *ew;
 	RzListIter *iter;
 	eprintf (Color_RED"MEM WRTE 0x%"PFMT64x"\n"Color_RESET, addr);
@@ -113,7 +113,7 @@ static int esilbreak_mem_write(RzAnalEsil *esil, ut64 addr, const ut8 *buf, int 
 	return 1; // fallback
 }
 
-static int esilbreak_reg_read(RzAnalEsil *esil, const char *regname, ut64 *num, int *size) {
+static int esilbreak_reg_read(RzAnalysisEsil *esil, const char *regname, ut64 *num, int *size) {
 	EsilBreak *ew;
 	RzListIter *iter;
 	if (regname[0]>='0' && regname[0]<='9') {
@@ -188,7 +188,7 @@ static int exprmatchreg (RzDebug *dbg, const char *regname, const char *expr) {
 	return ret;
 }
 
-static int esilbreak_reg_write(RzAnalEsil *esil, const char *regname, ut64 *num) {
+static int esilbreak_reg_write(RzAnalysisEsil *esil, const char *regname, ut64 *num) {
 	EsilBreak *ew;
 	RzListIter *iter;
 	if (regname[0] >= '0' && regname[0] <= '9') {
@@ -214,12 +214,12 @@ RZ_API void rz_debug_esil_prestep (RzDebug *d, int p) {
 }
 
 RZ_API int rz_debug_esil_stepi (RzDebug *d) {
-	RzAnalOp op;
+	RzAnalysisOp op;
 	ut8 obuf[64];
 	int ret = 1;
 	dbg = d;
 	if (!ESIL) {
-		ESIL = rz_anal_esil_new (32, true, 64);
+		ESIL = rz_analysis_esil_new (32, true, 64);
 		// TODO setup something?
 		if (!ESIL) {
 			return 0;
@@ -232,7 +232,7 @@ RZ_API int rz_debug_esil_stepi (RzDebug *d) {
 
 	//dbg->iob.read_at (dbg->iob.io, npc, buf, sizeof (buf));
 
-	//dbg->anal->reg = dbg->reg; // hack
+	//dbg->analysis->reg = dbg->reg; // hack
 	ESIL->cb.hook_mem_read = &esilbreak_mem_read;
 	ESIL->cb.hook_mem_write = &esilbreak_mem_write;
 	ESIL->cb.hook_reg_read = &esilbreak_reg_read;
@@ -249,16 +249,16 @@ RZ_API int rz_debug_esil_stepi (RzDebug *d) {
 		//	npc = rz_debug_reg_get (dbg, dbg->reg->name[RZ_REG_NAME_PC]);
 	}
 
-	if (rz_anal_op (dbg->anal, &op, opc, obuf, sizeof (obuf), RZ_ANAL_OP_MASK_ESIL)) {
+	if (rz_analysis_op (dbg->analysis, &op, opc, obuf, sizeof (obuf), RZ_ANAL_OP_MASK_ESIL)) {
 		if (esilbreak_check_pc (dbg, opc)) {
 			eprintf ("STOP AT 0x%08"PFMT64x"\n", opc);
 			ret = 0;
 		} else {
-			rz_anal_esil_set_pc (ESIL, opc);
+			rz_analysis_esil_set_pc (ESIL, opc);
 			eprintf ("0x%08"PFMT64x"  %s\n", opc, RZ_STRBUF_SAFEGET (&op.esil));
-			(void)rz_anal_esil_parse (ESIL, RZ_STRBUF_SAFEGET (&op.esil));
-			//rz_anal_esil_dumpstack (ESIL);
-			rz_anal_esil_stack_free (ESIL);
+			(void)rz_analysis_esil_parse (ESIL, RZ_STRBUF_SAFEGET (&op.esil));
+			//rz_analysis_esil_dumpstack (ESIL);
+			rz_analysis_esil_stack_free (ESIL);
 			ret = 1;
 		}
 	}

@@ -78,7 +78,7 @@ RUN
 
 NAME=rizin -V
 FILE=-
-CMDS=!!rizin -V~rz_anal?
+CMDS=!!rizin -V~rz_analysis?
 EXPECT=<<EOF
 1
 EOF

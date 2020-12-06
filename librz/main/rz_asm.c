@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_anal.h>
+#include <rz_analysis.h>
 #include <rz_asm.h>
 #include <rz_lib.h>
 #include <rz_types.h>
@@ -12,7 +12,7 @@
 typedef struct {
 	RzLib *l;
 	RzAsm *a;
-	RzAnal *anal;
+	RzAnalysis *analysis;
 	bool oneliner;
 	bool coutput;
 	bool json;
@@ -23,10 +23,10 @@ static void __load_plugins(RzAsmState *as);
 
 static void __as_set_archbits(RzAsmState *as) {
 	rz_asm_use (as->a, RZ_SYS_ARCH);
-	rz_anal_use (as->anal, RZ_SYS_ARCH);
+	rz_analysis_use (as->analysis, RZ_SYS_ARCH);
 	int sysbits = (RZ_SYS_BITS & RZ_SYS_BITS_64)? 64: 32;
 	rz_asm_set_bits (as->a, sysbits);
-	rz_anal_set_bits (as->anal, sysbits);
+	rz_analysis_set_bits (as->analysis, sysbits);
 }
 
 static RzAsmState *__as_new(void) {
@@ -37,7 +37,7 @@ static RzAsmState *__as_new(void) {
 		if (as->a) {
 			as->a->num = rz_num_new (NULL, NULL, NULL);
 		}
-		as->anal = rz_anal_new ();
+		as->analysis = rz_analysis_new ();
 		__load_plugins (as);
 		__as_set_archbits (as);
 	}
@@ -49,7 +49,7 @@ static void __as_free(RzAsmState *as) {
 		rz_num_free (as->a->num);
 	}
 	rz_asm_free (as->a);
-	rz_anal_free (as->anal);
+	rz_analysis_free (as->analysis);
 	rz_lib_free (as->l);
     	free (as);
 }
@@ -65,13 +65,13 @@ static char *stackop2str(int type) {
 	return strdup ("unknown");
 }
 
-static int showanal(RzAsmState *as, RzAnalOp *op, ut64 offset, ut8 *buf, int len, PJ *pj) {
-	int ret = rz_anal_op (as->anal, op, offset, buf, len, RZ_ANAL_OP_MASK_ESIL);
+static int showanal(RzAsmState *as, RzAnalysisOp *op, ut64 offset, ut8 *buf, int len, PJ *pj) {
+	int ret = rz_analysis_op (as->analysis, op, offset, buf, len, RZ_ANAL_OP_MASK_ESIL);
 	if (ret < 1) {
 		return ret;
 	}
 	char *stackop = stackop2str (op->stackop);
-	const char *optype = rz_anal_optype_to_string (op->type);
+	const char *optype = rz_analysis_optype_to_string (op->type);
 	char *bytes = rz_hex_bin2strdup (buf, ret);
 	if (as->json) {
 		pj_o (pj);
@@ -112,7 +112,7 @@ static int showanal(RzAsmState *as, RzAnalOp *op, ut64 offset, ut8 *buf, int len
 		printf ("stackop:  %s\n", stackop);
 		printf ("esil:     %s\n", rz_strbuf_get (&op->esil));
 		printf ("stackptr: %" PFMT64d "\n", op->stackptr);
-		// produces (null) printf ("decode str: %s\n", rz_anal_op_to_string (anal, op));
+		// produces (null) printf ("decode str: %s\n", rz_analysis_op_to_string (analysis, op));
 		printf ("\n");
 	}
 	free (stackop);
@@ -130,14 +130,14 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 		return 0;
 	}
 	
-	RzAnalOp aop = { 0 };
+	RzAnalysisOp aop = { 0 };
 	
 	if (as->json) {
 		pj_a (pj);
 	}
 	for (ret = 0; ret < len;) {
 		aop.size = 0;
-		if (rz_anal_op (as->anal, &aop, offset, buf + ret, len - ret, RZ_ANAL_OP_MASK_BASIC) < 1) {
+		if (rz_analysis_op (as->analysis, &aop, offset, buf + ret, len - ret, RZ_ANAL_OP_MASK_BASIC) < 1) {
 			eprintf ("Error analyzing instruction at 0x%08"PFMT64x"\n", offset);
 			break;
 		}
@@ -154,7 +154,7 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 		}
 		showanal (as, &aop, offset, buf + ret, len - ret, pj);
 		ret += aop.size;
-		rz_anal_op_fini (&aop);
+		rz_analysis_op_fini (&aop);
 	}
 	if (as->json) {
 		pj_end (pj); 
@@ -167,8 +167,8 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 
 static const char *has_esil(RzAsmState *as, const char *name) {
 	RzListIter *iter;
-	RzAnalPlugin *h;
-	rz_list_foreach (as->anal->plugins, iter, h) {
+	RzAnalysisPlugin *h;
+	rz_list_foreach (as->analysis->plugins, iter, h) {
 		if (h->name && !strcmp (name, h->name)) {
 			return h->esil? "Ae": "A_";
 		}
@@ -346,10 +346,10 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 	}
 
 	if (hex == 2) {
-		RzAnalOp aop = { 0 };
+		RzAnalysisOp aop = { 0 };
 		while (ret < len) {
 			aop.size = 0;
-			if (rz_anal_op (as->anal, &aop, addr, data + ret, len - ret, RZ_ANAL_OP_MASK_ESIL) > 0) {
+			if (rz_analysis_op (as->analysis, &aop, addr, data + ret, len - ret, RZ_ANAL_OP_MASK_ESIL) > 0) {
 				printf ("%s\n", RZ_STRBUF_SAFEGET (&aop.esil));
 			}
 			if (aop.size < 1) {
@@ -357,7 +357,7 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 				break;
 			}
 			ret += aop.size;
-			rz_anal_op_fini (&aop);
+			rz_analysis_op_fini (&aop);
 		}
 	} else if (hex) {
 		RzAsmOp op;
@@ -479,9 +479,9 @@ static int __lib_asm_cb(RzLibPlugin *pl, void *user, void *data) {
 
 /* anal callback */
 static int __lib_anal_cb(RzLibPlugin *pl, void *user, void *data) {
-	RzAnalPlugin *hand = (RzAnalPlugin *)data;
+	RzAnalysisPlugin *hand = (RzAnalysisPlugin *)data;
 	RzAsmState *as = (RzAsmState *)user;
-	rz_anal_add (as->anal, hand);
+	rz_analysis_add (as->analysis, hand);
 	return true;
 }
 
@@ -695,7 +695,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 			ret = 0;
 			goto beach;
 		}
-		rz_anal_use (as->anal, arch);
+		rz_analysis_use (as->analysis, arch);
 	} else if (env_arch) {
 		if (!rz_asm_use (as->a, env_arch)) {
 			eprintf ("rz_asm: Unknown asm plugin '%s'\n", env_arch);
@@ -709,7 +709,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 	}
 	rz_asm_set_cpu (as->a, cpu);
 	rz_asm_set_bits (as->a, (env_bits && *env_bits)? atoi (env_bits): bits);
-	rz_anal_set_bits (as->anal, (env_bits && *env_bits)? atoi (env_bits): bits);
+	rz_analysis_set_bits (as->analysis, (env_bits && *env_bits)? atoi (env_bits): bits);
 	as->a->syscall = rz_syscall_new ();
 	rz_syscall_setup (as->a->syscall, arch, bits, cpu, kernel);
 	{
@@ -717,7 +717,7 @@ RZ_API int rz_main_rz_asm(int argc, const char *argv[]) {
 		if (isbig && !canbebig) {
 			eprintf ("Warning: This architecture can't swap to big endian.\n");
 		}
-		rz_anal_set_big_endian (as->anal, canbebig);
+		rz_analysis_set_big_endian (as->analysis, canbebig);
 	}
 	if (whatsop) {
 		const char *s = rz_asm_describe (as->a, opt.argv[opt.ind]);

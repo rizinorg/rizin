@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_util/rz_print.h>
-#include <rz_anal.h>
+#include <rz_analysis.h>
 
 #define DFLT_ROWS 16
 
