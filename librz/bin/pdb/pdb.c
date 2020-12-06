@@ -1047,7 +1047,7 @@ static void print_types_regular(const RzPdb *pdb, const RzList *types) {
 		SType *type = rz_list_iter_get (it);
 		STypeInfo *type_info = &type->type_data;
 		// skip unprintable types
-		if (!is_printable_type (type_info->leaf_type)) {
+		if (!type || !is_printable_type (type_info->leaf_type)) {
 			continue;
 		}
 		// skip forward references
@@ -1106,7 +1106,7 @@ static void print_types_json(const RzPdb *pdb, PJ *pj, const RzList *types) {
 		SType *type = rz_list_iter_get (it);
 		STypeInfo *type_info = &type->type_data;
 		// skip unprintable types
-		if (!is_printable_type (type_info->leaf_type)) {
+		if (!type || !is_printable_type (type_info->leaf_type)) {
 			continue;
 		}
 		// skip forward references
@@ -1222,7 +1222,7 @@ static void print_types_format(const RzPdb *pdb, const RzList *types) {
 		SType *type = rz_list_iter_get (it);
 		STypeInfo *type_info = &type->type_data;
 		// skip unprintable types and enums
-		if (!is_printable_type (type_info->leaf_type) || type_info->leaf_type == eLF_ENUM) {
+		if (!type || !is_printable_type (type_info->leaf_type) || type_info->leaf_type == eLF_ENUM) {
 			continue;
 		}
 		// skip forward references

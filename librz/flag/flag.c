@@ -680,7 +680,7 @@ RZ_API char *rz_flag_get_liststr(RzFlag *f, ut64 off) {
 	char *p = NULL;
 	rz_list_foreach (list, iter, fi) {
 		p = rz_str_appendf (p, "%s%s",
-			fi->realname, iter->n? ",": ":");
+			fi->realname, iter->n? ",": "");
 	}
 	return p;
 }

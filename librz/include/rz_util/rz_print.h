@@ -40,7 +40,7 @@ typedef int (*RzPrintSizeCallback)(void *user, ut64 addr);
 typedef char *(*RzPrintCommentCallback)(void *user, ut64 addr);
 typedef const char *(*RzPrintSectionGet)(void *user, ut64 addr);
 typedef const char *(*RzPrintColorFor)(void *user, ut64 addr, bool verbose);
-typedef char *(*RzPrintHasRefs)(void *user, ut64 addr, bool verbose);
+typedef char *(*RzPrintHasRefs)(void *user, ut64 addr, int mode);
 
 typedef struct rz_print_zoom_t {
 	ut8 *buf;

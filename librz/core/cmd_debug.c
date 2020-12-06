@@ -1900,7 +1900,7 @@ RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, int mode) {
 		colorend = Color_RESET;
 	}
 
-	rz_table_set_columnsf (t, "ssss", "role", "reg", "value", "ref");
+	rz_table_set_columnsf (t, "ssss", "role", "reg", "value", "refstr");
 	rz_list_foreach (list, iter, r) {
 		if (r->size != bits) {
 			continue;
@@ -1947,7 +1947,7 @@ RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, int mode) {
 		free (rrstr);
 	}
 
-	char *s = (mode == 'j')? rz_table_tojson(t): rz_table_tostring(t);
+	char *s = (mode == 'j')? rz_table_tojson (t): rz_table_tostring (t);
 	rz_cons_print (s);
 	free (s);
 	rz_table_free (t);

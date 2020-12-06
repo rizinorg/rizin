@@ -265,7 +265,7 @@ RZ_API void rz_parse_pdb_types(const RzAnalysis *analysis, const RzPdb *pdb) {
 	RzListIter *iter = rz_list_iterator (tpi_stream->types);
 	while (rz_list_iter_next (iter)) { // iterate all types
 		SType *type = rz_list_iter_get (iter);
-		if (is_parsable_type (type->type_data.leaf_type)) {
+		if (type && is_parsable_type (type->type_data.leaf_type)) {
 			parse_type (analysis, type, tpi_stream->types);
 		}
 	}
