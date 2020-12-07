@@ -286,8 +286,8 @@ RZ_API int rz_core_hack(RzCore *core, const char *op) {
 	}
 	if (hack) {
 		RzAnalysisOp analop;
-		if (!rz_analysis_op (core->analysis, &analop, core->offset, core->block, core->blocksize, RZ_ANAL_OP_MASK_BASIC)) {
-			eprintf ("anal op fail\n");
+		if (!rz_analysis_op (core->analysis, &analop, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC)) {
+			eprintf ("analysis op fail\n");
 			return false;
 		}
 		return hack (core, op, &analop);

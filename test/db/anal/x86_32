@@ -3451,7 +3451,7 @@ family: cpu
 EOF
 RUN
 
-NAME=Fix #15315 - Honor RAnalOp.disp in `aar` and `ao`
+NAME=Fix #15315 - Honor RzAnalysisOp.disp in `aar` and `ao`
 FILE=bins/pe/honor_ranal_op_disp.exe
 CMDS=<<EOF
 aar

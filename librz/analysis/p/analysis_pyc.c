@@ -15,9 +15,9 @@ static int archinfo(RzAnalysis *analysis, int query) {
 	}
 
 	switch (query) {
-	case RZ_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
 		return (analysis->bits == 16)? 1: 2;
-	case RZ_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
 		return (analysis->bits == 16)? 3: 2;
 	default:
 		return -1;
@@ -62,7 +62,7 @@ static int pyc_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, i
 	ut8 op_code = data[0];
 	op->addr = addr;
 	op->sign = true;
-	op->type = RZ_ANAL_OP_TYPE_ILL;
+	op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 	op->id = op_code;
 
 	if (!ops || !pyc_opcodes_equal (ops, a->cpu)) {
@@ -73,7 +73,7 @@ static int pyc_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, i
 	bool is_python36 = a->bits == 8;
 	pyc_opcode_object *op_obj = &ops->opcodes[op_code];
 	if (!op_obj->op_name) {
-		op->type = RZ_ANAL_OP_TYPE_ILL;
+		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		op->size = 1;
 		goto analysis_end;
 	}
@@ -93,29 +93,29 @@ static int pyc_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, i
 	}
 
 	if (op_obj->type & HASJABS) {
-		op->type = RZ_ANAL_OP_TYPE_JMP;
+		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		op->jump = func_base + oparg;
 
 		if (op_obj->type & HASCONDITION) {
-			op->type = RZ_ANAL_OP_TYPE_CJMP;
+			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 			op->fail = addr + ((is_python36)? 2: 3);
 		}
 		goto analysis_end;
 	}
 	if (op_obj->type & HASJREL) {
-		op->type = RZ_ANAL_OP_TYPE_JMP;
+		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		op->jump = addr + oparg + ((is_python36)? 2: 3);
 		op->fail = addr + ((is_python36)? 2: 3);
 
 		if (op_obj->type & HASCONDITION) {
-			op->type = RZ_ANAL_OP_TYPE_CJMP;
+			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 			//op->fail = addr + ((is_python36)? 2: 3);
 		}
 		//goto analysis_end;
 	}
 
 	if (op_obj->type & HASCOMPARE) {
-		op->type = RZ_ANAL_OP_TYPE_CMP;
+		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		goto analysis_end;
 	}
 

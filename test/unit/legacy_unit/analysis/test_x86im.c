@@ -4,7 +4,7 @@
 #include <rz_types.h>
 #include "x86/x86im/x86im.h"
 
-static int anal_op (char *buf, int bits) {
+static int analysis_op (char *buf, int bits) {
 	x86im_instr_object io;
 	ut8 data[1024];
 	int ret;
@@ -68,5 +68,5 @@ int main(int argc, char **argv) {
 		return 1;
 	} else if (argc == 3)
 		bits = atoi (argv[2]);
-	return anal_op (argv[1], bits);
+	return analysis_op (argv[1], bits);
 }

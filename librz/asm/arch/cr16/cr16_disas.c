@@ -349,7 +349,7 @@ static inline int cr16_print_4bit_opcode(struct cr16_cmd *cmd, ut16 instr)
 	return 0;
 }
 
-static inline void cr16_anal_4bit_opcode(const ut16 in, struct cr16_cmd *cmd)
+static inline void cr16_analysis_4bit_opcode(const ut16 in, struct cr16_cmd *cmd)
 {
 	switch (cr16_get_opcode_low(in)) {
 	case CR16_ADDU:
@@ -406,7 +406,7 @@ static inline int cr16_decode_i_r(const ut8 *instr, struct cr16_cmd *cmd, int le
 		if (cr16_print_4biti_opcode(cmd, in)) {
 			return -1;
 		}
-		cr16_anal_4bit_opcode(in, cmd);
+		cr16_analysis_4bit_opcode(in, cmd);
 	} else {
 		if (cr16_print_4bit_opcode(cmd, in)) {
 			return -1;
@@ -655,7 +655,7 @@ static int cr16_decode_r_r(const ut8 *instr, struct cr16_cmd *cmd, int len) {
 		if (cr16_print_4biti_opcode(cmd, c)) {
 			return -1;
 		}
-		cr16_anal_4bit_opcode(c, cmd);
+		cr16_analysis_4bit_opcode(c, cmd);
 	} else {
 		if (cr16_print_4bit_opcode(cmd, c)) {
 			return -1;

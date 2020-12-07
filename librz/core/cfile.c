@@ -189,7 +189,7 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 	} else {
 		loadGP (core);
 	}
-	// update anal io bind
+	// update analysis io bind
 	rz_io_bind (core->io, &(core->analysis->iob));
 	if (core->file && core->file->fd >= 0) {
 		rz_core_cmd0 (core, "o-!");

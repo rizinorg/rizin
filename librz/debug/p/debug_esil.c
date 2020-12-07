@@ -33,7 +33,7 @@ static int __esil_step(RzDebug *dbg) {
 	//memset (buf, 0, sizeof (buf));
 	dbg->iob.read_at (dbg->iob.io, pc, buf, 64);
 	eprintf ("READ 0x%08"PFMT64x" %02x %02x %02x\n", pc, buf[0], buf[1], buf[2]);
-	oplen = rz_analysis_op (dbg->analysis, &op, pc, buf, sizeof (buf), RZ_ANAL_OP_MASK_ESIL);
+	oplen = rz_analysis_op (dbg->analysis, &op, pc, buf, sizeof (buf), RZ_ANALYSIS_OP_MASK_ESIL);
 	if (oplen > 0) {
 		if (*RZ_STRBUF_SAFEGET (&op.esil)) {
 			eprintf ("ESIL: %s\n", RZ_STRBUF_SAFEGET (&op.esil));

@@ -353,7 +353,7 @@
   summary: Alias for `s 0x...`
   type: RZ_CMD_DESC_TYPE_OLDINPUT
 - name: a
-  cname: cmd_anal
+  cname: cmd_analysis
   summary: Analysis commands
   type: RZ_CMD_DESC_TYPE_OLDINPUT
 - name: b
@@ -946,7 +946,7 @@
             - name: Zignature types
               entries:
                 - text: "a"
-                  comment: "bytes pattern (anal mask)"
+                  comment: "bytes pattern (analysis mask)"
                 - text: "b"
                   comment: "bytes pattern"
                 - text: "c"

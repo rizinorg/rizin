@@ -672,7 +672,7 @@ static int node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_no
 	RzListIter *it_func;
 	RzAnalysisFunction *func;
 	rz_list_foreach (analysis->fcns, it_func, func) {
-		if (func->type != RZ_ANAL_FCN_TYPE_FCN && func->type != RZ_ANAL_FCN_TYPE_LOC) { // scan only for unknown functions
+		if (func->type != RZ_ANALYSIS_FCN_TYPE_FCN && func->type != RZ_ANALYSIS_FCN_TYPE_LOC) { // scan only for unknown functions
 			continue;
 		}
 

@@ -16,12 +16,12 @@ else
 endif
 
 rz_core_sources = [
-  'anal_tp.c',
-  'anal_objc.c',
+  'analysis_tp.c',
+  'analysis_objc.c',
   'casm.c',
   'blaze.c',
   'citem.c',
-  'canal.c',
+  'canalysis.c',
   'carg.c',
   'cautocmpl.c',
   'cbin.c',
@@ -29,7 +29,7 @@ rz_core_sources = [
   'cio.c',
   'cmd.c',
   cmd_descs_c,
-  #'cmd_anal.c',
+  #'cmd_analysis.c',
   'cmd_api.c',
   #'cmd_cmp.c',
   #'cmd_debug.c',

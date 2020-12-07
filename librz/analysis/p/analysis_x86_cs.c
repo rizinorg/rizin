@@ -342,20 +342,20 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, int sel, ut
 static int cond_x862r2(int id) {
 	switch (id) {
 	case X86_INS_JE:
-		return RZ_ANAL_COND_EQ;
+		return RZ_ANALYSIS_COND_EQ;
 	case X86_INS_JNE:
-		return RZ_ANAL_COND_NE;
+		return RZ_ANALYSIS_COND_NE;
 	case X86_INS_JB:
 	case X86_INS_JL:
-		return RZ_ANAL_COND_LT;
+		return RZ_ANALYSIS_COND_LT;
 	case X86_INS_JBE:
 	case X86_INS_JLE:
-		return RZ_ANAL_COND_LE;
+		return RZ_ANALYSIS_COND_LE;
 	case X86_INS_JG:
 	case X86_INS_JA:
-		return RZ_ANAL_COND_GT;
+		return RZ_ANALYSIS_COND_GT;
 	case X86_INS_JAE:
-		return RZ_ANAL_COND_GE;
+		return RZ_ANALYSIS_COND_GE;
 	case X86_INS_JS:
 	case X86_INS_JNS:
 	case X86_INS_JO:
@@ -406,7 +406,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	const char *counter = (a->bits==16)?"cx":
 		(a->bits==32)?"ecx":"rcx";
 
-	if (op->prefix & RZ_ANAL_OP_PREFIX_REP) {
+	if (op->prefix & RZ_ANALYSIS_OP_PREFIX_REP) {
 		esilprintf (op, "%s,!,?{,BREAK,},", counter);
 	}
 
@@ -716,7 +716,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case X86_INS_MOVSB:
 	case X86_INS_MOVSQ:
 	case X86_INS_MOVSW:
-		if (op->prefix & RZ_ANAL_OP_PREFIX_REP) {
+		if (op->prefix & RZ_ANALYSIS_OP_PREFIX_REP) {
 			int width = INSOP(0).size;
 			src = (char *)cs_reg_name(*handle, INSOP(1).mem.base);
 			dst = (char *)cs_reg_name(*handle, INSOP(0).mem.base);
@@ -760,7 +760,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		{
 		switch (INSOP(0).type) {
 		case X86_OP_MEM:
-			if (op->prefix & RZ_ANAL_OP_PREFIX_REP) {
+			if (op->prefix & RZ_ANALYSIS_OP_PREFIX_REP) {
 				int width = INSOP(0).size;
 				src = (char *)cs_reg_name(*handle, INSOP(1).mem.base);
 				dst = (char *)cs_reg_name(*handle, INSOP(0).mem.base);
@@ -1883,7 +1883,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 		break;
 	}
 
-	if (op->prefix & RZ_ANAL_OP_PREFIX_REP) {
+	if (op->prefix & RZ_ANALYSIS_OP_PREFIX_REP) {
 		rz_strbuf_appendf (&op->esil, ",%s,--=,%s,?{,5,GOTO,}", counter, counter);
 	}
 }
@@ -1925,8 +1925,8 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 
 	// PC register
 	val = rz_analysis_value_new ();
-	val->type = RZ_ANAL_VAL_REG;
-	val->access = RZ_ANAL_ACC_W;
+	val->type = RZ_ANALYSIS_VAL_REG;
+	val->access = RZ_ANALYSIS_ACC_W;
 	val->reg = cs_reg2reg (reg, handle, X86_REG_RIP);
 	rz_list_append (ret, val);
 
@@ -1938,8 +1938,8 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 		if (read_count > 0) {
 			for (i = 0; i < read_count; i++) {
 				val = rz_analysis_value_new ();
-				val->type = RZ_ANAL_VAL_REG;
-				val->access = RZ_ANAL_ACC_R;
+				val->type = RZ_ANALYSIS_VAL_REG;
+				val->access = RZ_ANALYSIS_ACC_R;
 				val->reg = cs_reg2reg (reg, handle, regs_read[i]);
 				rz_list_append (ret, val);
 			}
@@ -1947,8 +1947,8 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 		if (write_count > 0) {
 			for (i = 0; i < write_count; i++) {
 				val = rz_analysis_value_new ();
-				val->type = RZ_ANAL_VAL_REG;
-				val->access = RZ_ANAL_ACC_W;
+				val->type = RZ_ANALYSIS_VAL_REG;
+				val->access = RZ_ANALYSIS_ACC_W;
 				val->reg = cs_reg2reg (reg, handle, regs_write[i]);
 				rz_list_append (ret, val);
 			}
@@ -1959,8 +1959,8 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 	switch (insn->id) {
 	case X86_INS_PUSH:
 		val = rz_analysis_value_new ();
-		val->type = RZ_ANAL_VAL_MEM;
-		val->access = RZ_ANAL_ACC_W;
+		val->type = RZ_ANALYSIS_VAL_MEM;
+		val->access = RZ_ANALYSIS_ACC_W;
 		val->reg = cs_reg2reg (reg, handle, sp);
 		val->delta = -INSOP(0).size;
 		val->memref = INSOP(0).size;
@@ -1969,8 +1969,8 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 	case X86_INS_PUSHAW:
 		// AX, CX, DX, BX, SP, BP, SI, DI
 		val = rz_analysis_value_new ();
-		val->type = RZ_ANAL_VAL_MEM;
-		val->access = RZ_ANAL_ACC_W;
+		val->type = RZ_ANALYSIS_VAL_MEM;
+		val->access = RZ_ANALYSIS_ACC_W;
 		val->reg = cs_reg2reg (reg, handle, sp);
 		val->delta = -16;
 		val->memref = 16;
@@ -1979,8 +1979,8 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 	case X86_INS_PUSHAL:
 		// EAX, ECX, EDX, EBX, EBP, ESP, EBP, ESI, EDI
 		val = rz_analysis_value_new ();
-		val->type = RZ_ANAL_VAL_MEM;
-		val->access = RZ_ANAL_ACC_W;
+		val->type = RZ_ANALYSIS_VAL_MEM;
+		val->access = RZ_ANALYSIS_ACC_W;
 		val->reg = cs_reg2reg (reg, handle, sp);
 		val->delta = -32;
 		val->memref = 32;
@@ -1988,8 +1988,8 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 		break;
 	case X86_INS_PUSHF:
 		val = rz_analysis_value_new ();
-		val->type = RZ_ANAL_VAL_MEM;
-		val->access = RZ_ANAL_ACC_W;
+		val->type = RZ_ANALYSIS_VAL_MEM;
+		val->access = RZ_ANALYSIS_ACC_W;
 		val->reg = cs_reg2reg (reg, handle, sp);
 		val->delta = -2;
 		val->memref = 2;
@@ -1997,8 +1997,8 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 		break;
 	case X86_INS_PUSHFD:
 		val = rz_analysis_value_new ();
-		val->type = RZ_ANAL_VAL_MEM;
-		val->access = RZ_ANAL_ACC_W;
+		val->type = RZ_ANALYSIS_VAL_MEM;
+		val->access = RZ_ANALYSIS_ACC_W;
 		val->reg = cs_reg2reg (reg, handle, sp);
 		val->delta = -4;
 		val->memref = 4;
@@ -2006,8 +2006,8 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 		break;
 	case X86_INS_PUSHFQ:
 		val = rz_analysis_value_new ();
-		val->type = RZ_ANAL_VAL_MEM;
-		val->access = RZ_ANAL_ACC_W;
+		val->type = RZ_ANALYSIS_VAL_MEM;
+		val->access = RZ_ANALYSIS_ACC_W;
 		val->reg = cs_reg2reg (reg, handle, sp);
 		val->delta = -8;
 		val->memref = 8;
@@ -2016,8 +2016,8 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 	case X86_INS_CALL:
 	case X86_INS_LCALL:
 		val = rz_analysis_value_new ();
-		val->type = RZ_ANAL_VAL_MEM;
-		val->access = RZ_ANAL_ACC_W;
+		val->type = RZ_ANALYSIS_VAL_MEM;
+		val->access = RZ_ANALYSIS_ACC_W;
 		val->reg = cs_reg2reg (reg, handle, sp);
 		val->delta = -regsz;
 		val->memref = regsz;
@@ -2031,21 +2031,21 @@ static void set_access_info(RzReg *reg, RzAnalysisOp *op, csh *handle, cs_insn *
 	for (i = 0; i < INSOPS; i++) {
 		if (INSOP (i).type == X86_OP_MEM) {
 			val = rz_analysis_value_new ();
-			val->type = RZ_ANAL_VAL_MEM;
+			val->type = RZ_ANALYSIS_VAL_MEM;
 #if CS_API_MAJOR >= 4
 			switch (INSOP (i).access) {
 			case CS_AC_READ:
-				val->access = RZ_ANAL_ACC_R;
+				val->access = RZ_ANALYSIS_ACC_R;
 				break;
 			case CS_AC_WRITE:
-				val->access = RZ_ANAL_ACC_W;
+				val->access = RZ_ANALYSIS_ACC_W;
 				break;
 			case CS_AC_INVALID:
-				val->access = RZ_ANAL_ACC_UNKNOWN;
+				val->access = RZ_ANALYSIS_ACC_UNKNOWN;
 				break;
 			}
 #else
-			val->access = RZ_ANAL_ACC_UNKNOWN;
+			val->access = RZ_ANALYSIS_ACC_UNKNOWN;
 #endif
 			val->mul = INSOP (i).mem.scale;
 			val->delta = INSOP (i).mem.disp;
@@ -2093,34 +2093,34 @@ static void set_src_dst(RzReg *reg, RzAnalysisValue *val, csh *handle, cs_insn *
 
 static void op_fillval(RzAnalysis *a, RzAnalysisOp *op, csh *handle, cs_insn *insn, int mode) {
 	set_access_info (a->reg, op, handle, insn, mode);
-	switch (op->type & RZ_ANAL_OP_TYPE_MASK) {
-	case RZ_ANAL_OP_TYPE_MOV:
-	case RZ_ANAL_OP_TYPE_CMP:
-	case RZ_ANAL_OP_TYPE_LEA:
-	case RZ_ANAL_OP_TYPE_CMOV:
-	case RZ_ANAL_OP_TYPE_SHL:
-	case RZ_ANAL_OP_TYPE_SHR:
-	case RZ_ANAL_OP_TYPE_SAL:
-	case RZ_ANAL_OP_TYPE_SAR:
-	case RZ_ANAL_OP_TYPE_ROL:
-	case RZ_ANAL_OP_TYPE_ROR:
-	case RZ_ANAL_OP_TYPE_ADD:
-	case RZ_ANAL_OP_TYPE_AND:
-	case RZ_ANAL_OP_TYPE_OR:
-	case RZ_ANAL_OP_TYPE_XOR:
-	case RZ_ANAL_OP_TYPE_SUB:
-	case RZ_ANAL_OP_TYPE_XCHG:
-	case RZ_ANAL_OP_TYPE_POP:
-	case RZ_ANAL_OP_TYPE_NOT:
-	case RZ_ANAL_OP_TYPE_ACMP:
+	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	case RZ_ANALYSIS_OP_TYPE_MOV:
+	case RZ_ANALYSIS_OP_TYPE_CMP:
+	case RZ_ANALYSIS_OP_TYPE_LEA:
+	case RZ_ANALYSIS_OP_TYPE_CMOV:
+	case RZ_ANALYSIS_OP_TYPE_SHL:
+	case RZ_ANALYSIS_OP_TYPE_SHR:
+	case RZ_ANALYSIS_OP_TYPE_SAL:
+	case RZ_ANALYSIS_OP_TYPE_SAR:
+	case RZ_ANALYSIS_OP_TYPE_ROL:
+	case RZ_ANALYSIS_OP_TYPE_ROR:
+	case RZ_ANALYSIS_OP_TYPE_ADD:
+	case RZ_ANALYSIS_OP_TYPE_AND:
+	case RZ_ANALYSIS_OP_TYPE_OR:
+	case RZ_ANALYSIS_OP_TYPE_XOR:
+	case RZ_ANALYSIS_OP_TYPE_SUB:
+	case RZ_ANALYSIS_OP_TYPE_XCHG:
+	case RZ_ANALYSIS_OP_TYPE_POP:
+	case RZ_ANALYSIS_OP_TYPE_NOT:
+	case RZ_ANALYSIS_OP_TYPE_ACMP:
 		CREATE_SRC_DST (op);
 		set_src_dst (a->reg, op->dst, handle, insn, 0);
 		set_src_dst (a->reg, op->src[0], handle, insn, 1);
 		set_src_dst (a->reg, op->src[1], handle, insn, 2);
 		set_src_dst (a->reg, op->src[2], handle, insn, 3);
 		break;
-	case RZ_ANAL_OP_TYPE_UPUSH:
-		if ((op->type & RZ_ANAL_OP_TYPE_REG)) {
+	case RZ_ANALYSIS_OP_TYPE_UPUSH:
+		if ((op->type & RZ_ANALYSIS_OP_TYPE_REG)) {
 			CREATE_SRC_DST (op);
 			set_src_dst (a->reg, op->src[0], handle, insn, 0);
 		}
@@ -2143,8 +2143,8 @@ static void op0_memimmhandle(RzAnalysisOp *op, cs_insn *insn, ut64 addr, int reg
 		if (INSOP(0).mem.base == X86_REG_RIP) {
 			op->ptr = addr + insn->size + op->disp;
 		} else if (INSOP(0).mem.base == X86_REG_RBP || INSOP(0).mem.base == X86_REG_EBP) {
-			op->type |= RZ_ANAL_OP_TYPE_REG;
-			op->stackop = RZ_ANAL_STACK_SET;
+			op->type |= RZ_ANALYSIS_OP_TYPE_REG;
+			op->stackop = RZ_ANALYSIS_STACK_SET;
 			op->stackptr = regsz;
 		} else if (INSOP(0).mem.segment == X86_REG_INVALID && INSOP(0).mem.base == X86_REG_INVALID
 			   && INSOP(0).mem.index == X86_REG_INVALID && INSOP(0).mem.scale == 1) { // [<addr>]
@@ -2177,7 +2177,7 @@ static void op1_memimmhandle(RzAnalysisOp *op, cs_insn *insn, ut64 addr, int reg
 			if (INSOP(1).mem.base == X86_REG_RIP) {
 				op->ptr = addr + insn->size + op->disp;
 			} else if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
-				op->stackop = RZ_ANAL_STACK_GET;
+				op->stackop = RZ_ANALYSIS_STACK_GET;
 				op->stackptr = regsz;
 			} else if (INSOP(1).mem.segment == X86_REG_INVALID && INSOP(1).mem.base == X86_REG_INVALID
 			           && INSOP(1).mem.index == X86_REG_INVALID && INSOP(1).mem.scale == 1) { // [<addr>]
@@ -2199,7 +2199,7 @@ static void op1_memimmhandle(RzAnalysisOp *op, cs_insn *insn, ut64 addr, int reg
 static void op_stackidx(RzAnalysisOp *op, cs_insn *insn, bool minus) {
 	if (INSOP(0).type == X86_OP_REG && INSOP(1).type == X86_OP_IMM) {
 		if (INSOP(0).reg == X86_REG_RSP || INSOP(0).reg == X86_REG_ESP) {
-			op->stackop = RZ_ANAL_STACK_INC;
+			op->stackop = RZ_ANALYSIS_STACK_INC;
 			if (minus) {
 				op->stackptr = -INSOP(1).imm;
 			} else {
@@ -2210,29 +2210,29 @@ static void op_stackidx(RzAnalysisOp *op, cs_insn *insn, bool minus) {
 }
 
 static void set_opdir(RzAnalysisOp *op, cs_insn *insn) {
-	switch (op->type & RZ_ANAL_OP_TYPE_MASK) {
-	case RZ_ANAL_OP_TYPE_MOV:
+	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	case RZ_ANALYSIS_OP_TYPE_MOV:
 		switch (INSOP(0).type) {
 		case X86_OP_MEM:
-			op->direction = RZ_ANAL_OP_DIR_WRITE;
+			op->direction = RZ_ANALYSIS_OP_DIR_WRITE;
 			break;
 		case X86_OP_REG:
 			if (INSOP(1).type == X86_OP_MEM) {
-				op->direction = RZ_ANAL_OP_DIR_READ;
+				op->direction = RZ_ANALYSIS_OP_DIR_READ;
 			}
 			break;
 		default:
 			break;
 		}
 		break;
-	case RZ_ANAL_OP_TYPE_LEA:
-		op->direction = RZ_ANAL_OP_DIR_REF;
+	case RZ_ANALYSIS_OP_TYPE_LEA:
+		op->direction = RZ_ANALYSIS_OP_DIR_REF;
 		break;
-	case RZ_ANAL_OP_TYPE_CALL:
-	case RZ_ANAL_OP_TYPE_JMP:
-	case RZ_ANAL_OP_TYPE_UJMP:
-	case RZ_ANAL_OP_TYPE_UCALL:
-		op->direction = RZ_ANAL_OP_DIR_EXEC;
+	case RZ_ANALYSIS_OP_TYPE_CALL:
+	case RZ_ANALYSIS_OP_TYPE_JMP:
+	case RZ_ANALYSIS_OP_TYPE_UJMP:
+	case RZ_ANALYSIS_OP_TYPE_UCALL:
+		op->direction = RZ_ANALYSIS_OP_DIR_EXEC;
 		break;
 	default:
 		break;
@@ -2253,14 +2253,14 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	}
 	switch (insn->id) {
 	case X86_INS_FNOP:
-		op->family = RZ_ANAL_OP_FAMILY_FPU;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 		/* fallthru */
 	case X86_INS_NOP:
 	case X86_INS_PAUSE:
-		op->type = RZ_ANAL_OP_TYPE_NOP;
+		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		break;
 	case X86_INS_HLT:
-		op->type = RZ_ANAL_OP_TYPE_TRAP;
+		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 		break;
 	case X86_INS_FBLD:
 	case X86_INS_FBSTP:
@@ -2298,26 +2298,26 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_FISTTP:
 	case X86_INS_FSQRT:
 	case X86_INS_FXCH:
-		op->family = RZ_ANAL_OP_FAMILY_FPU;
-		op->type = RZ_ANAL_OP_TYPE_STORE;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;
 	case X86_INS_FTST:
 	case X86_INS_FUCOMI:
 	case X86_INS_FUCOMPP:
 	case X86_INS_FUCOMP:
 	case X86_INS_FUCOM:
-		op->family = RZ_ANAL_OP_FAMILY_FPU;
-		op->type = RZ_ANAL_OP_TYPE_CMP;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
 	case X86_INS_BT:
 	case X86_INS_BTC:
 	case X86_INS_BTR:
 	case X86_INS_BTS:
-		op->type = RZ_ANAL_OP_TYPE_CMP;
+		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
 	case X86_INS_FABS:
-		op->type = RZ_ANAL_OP_TYPE_ABS;
-		op->family = RZ_ANAL_OP_FAMILY_FPU;
+		op->type = RZ_ANALYSIS_OP_TYPE_ABS;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 		break;
 	case X86_INS_FLDCW:
 	case X86_INS_FLDENV:
@@ -2329,8 +2329,8 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_FLDZ:
 	case X86_INS_FLD1:
 	case X86_INS_FLD:
-		op->type = RZ_ANAL_OP_TYPE_LOAD;
-		op->family = RZ_ANAL_OP_FAMILY_FPU;
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 		break;
 	case X86_INS_FIST:
 	case X86_INS_FISTP:
@@ -2339,8 +2339,8 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_FSTPNCE:
 	case X86_INS_FXRSTOR:
 	case X86_INS_FXRSTOR64:
-		op->type = RZ_ANAL_OP_TYPE_STORE;
-		op->family = RZ_ANAL_OP_FAMILY_FPU;
+		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 		break;
 	case X86_INS_FDIV:
 	case X86_INS_FIDIV:
@@ -2348,8 +2348,8 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_FDIVR:
 	case X86_INS_FIDIVR:
 	case X86_INS_FDIVRP:
-		op->type = RZ_ANAL_OP_TYPE_DIV;
-		op->family = RZ_ANAL_OP_FAMILY_FPU;
+		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 		break;
 	case X86_INS_FSUBR:
 	case X86_INS_FISUBR:
@@ -2357,19 +2357,19 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_FSUB:
 	case X86_INS_FISUB:
 	case X86_INS_FSUBP:
-		op->type = RZ_ANAL_OP_TYPE_SUB;
-		op->family = RZ_ANAL_OP_FAMILY_FPU;
+		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 		break;
 	case X86_INS_FMUL:
 	case X86_INS_FIMUL:
 	case X86_INS_FMULP:
-		op->type = RZ_ANAL_OP_TYPE_MUL;
-		op->family = RZ_ANAL_OP_FAMILY_FPU;
+		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
 		break;
 	case X86_INS_CLI:
 	case X86_INS_STI:
-		op->type = RZ_ANAL_OP_TYPE_MOV;
-		op->family = RZ_ANAL_OP_FAMILY_PRIV;
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 		break;
 	case X86_INS_CLC:
 	case X86_INS_STC:
@@ -2381,7 +2381,7 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 #endif
 	case X86_INS_STAC:
 	case X86_INS_STGI:
-		op->type = RZ_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 	// cmov
 	case X86_INS_SETNE:
@@ -2400,7 +2400,7 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_SETBE:
 	case X86_INS_SETE:
 	case X86_INS_SETGE:
-		op->type = RZ_ANAL_OP_TYPE_CMOV;
+		op->type = RZ_ANALYSIS_OP_TYPE_CMOV;
 		op->family = 0;
 		break;
 	// cmov
@@ -2412,8 +2412,8 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_FCMOVNE:
 	case X86_INS_FCMOVNU:
 	case X86_INS_FCMOVU:
-		op->family = RZ_ANAL_OP_FAMILY_FPU;
-		op->type = RZ_ANAL_OP_TYPE_CMOV;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		op->type = RZ_ANALYSIS_OP_TYPE_CMOV;
 		break;
 	case X86_INS_CMOVA:
 	case X86_INS_CMOVAE:
@@ -2431,36 +2431,36 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_CMOVO:
 	case X86_INS_CMOVP:
 	case X86_INS_CMOVS:
-		op->type = RZ_ANAL_OP_TYPE_CMOV;
+		op->type = RZ_ANALYSIS_OP_TYPE_CMOV;
 		break;
 	case X86_INS_STOSB:
 	case X86_INS_STOSD:
 	case X86_INS_STOSQ:
 	case X86_INS_STOSW:
-		op->type = RZ_ANAL_OP_TYPE_STORE;
+		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		break;
 	case X86_INS_LODSB:
 	case X86_INS_LODSD:
 	case X86_INS_LODSQ:
 	case X86_INS_LODSW:
-		op->type = RZ_ANAL_OP_TYPE_LOAD;
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		break;
 	case X86_INS_PALIGNR:
 	case X86_INS_VALIGND:
 	case X86_INS_VALIGNQ:
 	case X86_INS_VPALIGNR:
-		op->type = RZ_ANAL_OP_TYPE_AND;
-		op->family = RZ_ANAL_OP_FAMILY_CPU;
+		op->type = RZ_ANALYSIS_OP_TYPE_AND;
+		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 		break;
 	case X86_INS_CPUID:
-		op->type = RZ_ANAL_OP_TYPE_MOV;
-		op->family = RZ_ANAL_OP_FAMILY_CPU;
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 		break;
 	case X86_INS_SFENCE:
 	case X86_INS_LFENCE:
 	case X86_INS_MFENCE:
-		op->type = RZ_ANAL_OP_TYPE_NOP;
-		op->family = RZ_ANAL_OP_FAMILY_THREAD;
+		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
+		op->family = RZ_ANALYSIS_OP_FAMILY_THREAD;
 		break;
 	// mov
 	case X86_INS_MOVNTQ:
@@ -2475,8 +2475,8 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_VMOVNTDQ:
 	case X86_INS_VMOVNTPD:
 	case X86_INS_VMOVNTPS:
-		op->type = RZ_ANAL_OP_TYPE_MOV;
-		op->family = RZ_ANAL_OP_FAMILY_SSE;
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		op->family = RZ_ANALYSIS_OP_FAMILY_SSE;
 		break;
 	case X86_INS_PCMPEQB:
 	case X86_INS_PCMPEQD:
@@ -2516,8 +2516,8 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_VPCMPUW:
 	case X86_INS_VPCMPW:
 #endif
-		op->type = RZ_ANAL_OP_TYPE_CMP;
-		op->family = RZ_ANAL_OP_FAMILY_SSE;
+		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
+		op->family = RZ_ANALYSIS_OP_FAMILY_SSE;
 		break;
 	case X86_INS_MOVSS:
 	case X86_INS_MOV:
@@ -2541,7 +2541,7 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_MOVQ:
 	case X86_INS_MOVDQ2Q:
 		{
-		op->type = RZ_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		op0_memimmhandle (op, insn, addr, regsz);
 		op1_memimmhandle (op, insn, addr, regsz);
 		}
@@ -2550,13 +2550,13 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_RCL:
 		// TODO: RCL Still does not work as intended
 		//  - Set flags
-		op->type = RZ_ANAL_OP_TYPE_ROL;
+		op->type = RZ_ANALYSIS_OP_TYPE_ROL;
 		break;
 	case X86_INS_ROR:
 	case X86_INS_RCR:
 		// TODO: RCR Still does not work as intended
 		//  - Set flags
-		op->type = RZ_ANAL_OP_TYPE_ROR;
+		op->type = RZ_ANALYSIS_OP_TYPE_ROR;
 		break;
 	case X86_INS_SHL:
 	case X86_INS_SHLD:
@@ -2565,25 +2565,25 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 		// this operation. It is undefined for SHL and SHR where the
 		// number of bits shifted is greater than the size of the
 		// destination.
-		op->type = RZ_ANAL_OP_TYPE_SHL;
+		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
 		break;
 	case X86_INS_SAR:
 	case X86_INS_SARX:
 		// TODO: Set CF. See case X86_INS_SHL for more details.
-		op->type = RZ_ANAL_OP_TYPE_SAR;
+		op->type = RZ_ANALYSIS_OP_TYPE_SAR;
 		break;
 	case X86_INS_SAL:
 		// TODO: Set CF: See case X86_INS_SAL for more details.
-		op->type = RZ_ANAL_OP_TYPE_SAL;
+		op->type = RZ_ANALYSIS_OP_TYPE_SAL;
 		break;
 	case X86_INS_SALC:
-		op->type = RZ_ANAL_OP_TYPE_SAL;
+		op->type = RZ_ANALYSIS_OP_TYPE_SAL;
 		break;
 	case X86_INS_SHR:
 	case X86_INS_SHRD:
 	case X86_INS_SHRX:
 		// TODO: Set CF: See case X86_INS_SAL for more details.
-		op->type = RZ_ANAL_OP_TYPE_SHR;
+		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 		op->val = INSOP(1).imm;
 		// XXX this should be op->imm
 		//op->src[0] = rz_analysis_value_new ();
@@ -2599,9 +2599,9 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_CMPSS:
 	case X86_INS_TEST:
 		if (insn->id == X86_INS_TEST) {
-			op->type = RZ_ANAL_OP_TYPE_ACMP;					//compare via and
+			op->type = RZ_ANALYSIS_OP_TYPE_ACMP;					//compare via and
 		} else {
-			op->type = RZ_ANAL_OP_TYPE_CMP;
+			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		}
 		switch (INSOP(0).type) {
 		case X86_OP_MEM:
@@ -2610,9 +2610,9 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 			if (INSOP(0).mem.base == X86_REG_RIP) {
 				op->ptr = addr + insn->size + op->disp;
 			} else if (INSOP(0).mem.base == X86_REG_RBP || INSOP(0).mem.base == X86_REG_EBP) {
-				op->stackop = RZ_ANAL_STACK_SET;
+				op->stackop = RZ_ANALYSIS_STACK_SET;
 				op->stackptr = regsz;
-				op->type |= RZ_ANAL_OP_TYPE_REG;
+				op->type |= RZ_ANALYSIS_OP_TYPE_REG;
 			} else if (INSOP(0).mem.segment == X86_REG_INVALID && INSOP(0).mem.base == X86_REG_INVALID
 			           && INSOP(0).mem.index == X86_REG_INVALID && INSOP(0).mem.scale == 1) { // [<addr>]
 				op->ptr = op->disp;
@@ -2629,8 +2629,8 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 				if (INSOP(1).mem.base == X86_REG_RIP) {
 					op->ptr = addr + insn->size + op->disp;;
 				} else if (INSOP(1).mem.base == X86_REG_RBP || INSOP(1).mem.base == X86_REG_EBP) {
-					op->type |= RZ_ANAL_OP_TYPE_REG;
-					op->stackop = RZ_ANAL_STACK_SET;
+					op->type |= RZ_ANALYSIS_OP_TYPE_REG;
+					op->stackop = RZ_ANALYSIS_STACK_SET;
 					op->stackptr = regsz;
 				} else if (INSOP(1).mem.segment == X86_REG_INVALID
 				           && INSOP(1).mem.base == X86_REG_INVALID
@@ -2652,10 +2652,10 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 		}
 		break;
 	case X86_INS_LEA:
-		op->type = RZ_ANAL_OP_TYPE_LEA;
+		op->type = RZ_ANALYSIS_OP_TYPE_LEA;
 		switch (INSOP(1).type) {
 		case X86_OP_MEM:
-			// op->type = RZ_ANAL_OP_TYPE_ULEA;
+			// op->type = RZ_ANALYSIS_OP_TYPE_ULEA;
 			op->disp = INSOP(1).mem.disp;
 			op->refptr = INSOP(1).size;
 			switch (INSOP(1).mem.base) {
@@ -2664,7 +2664,7 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 				break;
 			case X86_REG_RBP:
 			case X86_REG_EBP:
-				op->stackop = RZ_ANAL_STACK_GET;
+				op->stackop = RZ_ANALYSIS_STACK_GET;
 				op->stackptr = regsz;
 				break;
 			default:
@@ -2685,8 +2685,8 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	// pushal, popal - push/pop EAX,EBX,ECX,EDX,ESP,EBP,ESI,EDI
 	case X86_INS_PUSHAL:
 		op->ptr = UT64_MAX;
-		op->type = RZ_ANAL_OP_TYPE_UPUSH;
-		op->stackop = RZ_ANAL_STACK_INC;
+		op->type = RZ_ANALYSIS_OP_TYPE_UPUSH;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = regsz * 8;
 		break;
 	case X86_INS_ENTER:
@@ -2698,59 +2698,59 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 		case X86_OP_MEM:
 			if (INSOP(0).mem.disp && !INSOP(0).mem.base && !INSOP(0).mem.index) {
 				op->val = op->ptr = INSOP(0).mem.disp;
-				op->type = RZ_ANAL_OP_TYPE_PUSH;
+				op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 			} else {
-				op->type = RZ_ANAL_OP_TYPE_UPUSH;
+				op->type = RZ_ANALYSIS_OP_TYPE_UPUSH;
 			}
 			op->cycles = CYCLE_REG + CYCLE_MEM;
 			break;
 		case X86_OP_IMM:
 			op->val = op->ptr = INSOP(0).imm;
-			op->type = RZ_ANAL_OP_TYPE_PUSH;
+			op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 			op->cycles = CYCLE_REG + CYCLE_MEM;
 			break;
 		case X86_OP_REG:
-			op->type = RZ_ANAL_OP_TYPE_RPUSH;
+			op->type = RZ_ANALYSIS_OP_TYPE_RPUSH;
 			op->cycles = CYCLE_REG + CYCLE_MEM;
 			break;
 		default:
-			op->type = RZ_ANAL_OP_TYPE_UPUSH;
+			op->type = RZ_ANALYSIS_OP_TYPE_UPUSH;
 			op->cycles = CYCLE_MEM + CYCLE_MEM;
 			break;
 		}
-		op->stackop = RZ_ANAL_STACK_INC;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = regsz;
 		break;
 	case X86_INS_LEAVE:
-		op->type = RZ_ANAL_OP_TYPE_POP;
-		op->stackop = RZ_ANAL_STACK_INC;
+		op->type = RZ_ANALYSIS_OP_TYPE_POP;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = -regsz;
 		break;
 	case X86_INS_POP:
 	case X86_INS_POPF:
 	case X86_INS_POPFD:
 	case X86_INS_POPFQ:
-		op->type = RZ_ANAL_OP_TYPE_POP;
-		op->stackop = RZ_ANAL_STACK_INC;
+		op->type = RZ_ANALYSIS_OP_TYPE_POP;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = -regsz;
 		break;
 	case X86_INS_POPAW:
 	case X86_INS_POPAL:
-		op->type = RZ_ANAL_OP_TYPE_POP;
-		op->stackop = RZ_ANAL_STACK_INC;
+		op->type = RZ_ANALYSIS_OP_TYPE_POP;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = -regsz * 8;
 		break;
 	case X86_INS_IRET:
 	case X86_INS_IRETD:
 	case X86_INS_IRETQ:
 	case X86_INS_SYSRET:
-		op->family = RZ_ANAL_OP_FAMILY_PRIV;
+		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 		/* fallthrough */
 	case X86_INS_RET:
 	case X86_INS_RETF:
 	case X86_INS_RETFQ:
-		op->type = RZ_ANAL_OP_TYPE_RET;
-		op->stackop = RZ_ANAL_STACK_INC;
+		op->type = RZ_ANALYSIS_OP_TYPE_RET;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = -regsz;
 		op->cycles = CYCLE_MEM + CYCLE_JMP;
 		break;
@@ -2762,33 +2762,33 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_UD2B:
 #endif
 	case X86_INS_INT3:
-		op->type = RZ_ANAL_OP_TYPE_TRAP; // TRAP
+		op->type = RZ_ANALYSIS_OP_TYPE_TRAP; // TRAP
 		break;
 	case X86_INS_INT1:
-		op->type = RZ_ANAL_OP_TYPE_SWI;
+		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		op->val = 1;
 		break;
 	case X86_INS_INT:
-		op->type = RZ_ANAL_OP_TYPE_SWI;
+		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		op->val = (int)INSOP(0).imm;
 		break;
 	case X86_INS_SYSCALL:
 	case X86_INS_SYSENTER:
-		op->type = RZ_ANAL_OP_TYPE_SWI;
+		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		op->cycles = CYCLE_JMP;
 		break;
 	case X86_INS_SYSEXIT:
-		op->type = RZ_ANAL_OP_TYPE_SWI;
-		op->family = RZ_ANAL_OP_FAMILY_PRIV;
+		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
+		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 		break;
 	case X86_INS_INTO:
-		op->type = RZ_ANAL_OP_TYPE_SWI;
+		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		// int4 if overflow bit is set , so this is an optional swi
-		op->type |= RZ_ANAL_OP_TYPE_COND;
+		op->type |= RZ_ANALYSIS_OP_TYPE_COND;
 		break;
 	case X86_INS_VMCALL:
 	case X86_INS_VMMCALL:
-		op->type = RZ_ANAL_OP_TYPE_TRAP;
+		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 		break;
 	case X86_INS_JL:
 	case X86_INS_JLE:
@@ -2812,7 +2812,7 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_LOOP:
 	case X86_INS_LOOPE:
 	case X86_INS_LOOPNE:
-		op->type = RZ_ANAL_OP_TYPE_CJMP;
+		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->jump = INSOP(0).imm;
 		op->fail = addr + op->size;
 		op->cycles = CYCLE_JMP;
@@ -2831,7 +2831,7 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 		op->cycles = CYCLE_JMP + CYCLE_MEM;
 		switch (INSOP(0).type) {
 		case X86_OP_IMM:
-			op->type = RZ_ANAL_OP_TYPE_CALL;
+			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 			// TODO: what if UCALL?
 			if (INSOP(1).type == X86_OP_IMM) {
 				ut64 seg = INSOP(0).imm;
@@ -2844,7 +2844,7 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 			op->fail = addr + op->size;
 			break;
 		case X86_OP_MEM:
-			op->type = RZ_ANAL_OP_TYPE_UCALL;
+			op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 			op->jump = UT64_MAX;
 			op->ptr = INSOP (0).mem.disp;
 			op->disp = INSOP (0).mem.disp;
@@ -2854,7 +2854,7 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 			if (INSOP (0).mem.index == X86_REG_INVALID) {
 				if (INSOP (0).mem.base != X86_REG_INVALID) {
 					op->reg = cs_reg_name (*handle, INSOP (0).mem.base);
-					op->type = RZ_ANAL_OP_TYPE_IRCALL;
+					op->type = RZ_ANALYSIS_OP_TYPE_IRCALL;
 				}
 			} else {
 				op->ireg = cs_reg_name (*handle, INSOP (0).mem.index);
@@ -2867,12 +2867,12 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 			break;
 		case X86_OP_REG:
 			op->reg = cs_reg_name (*handle, INSOP (0).reg);
-			op->type = RZ_ANAL_OP_TYPE_RCALL;
+			op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
 			op->ptr = UT64_MAX;
 			op->cycles += CYCLE_REG;
 			break;
 		default:
-			op->type = RZ_ANAL_OP_TYPE_UCALL;
+			op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 			op->jump = UT64_MAX;
 			break;
 		}
@@ -2890,12 +2890,12 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 			} else {
 				op->jump = INSOP(0).imm;
 			}
-			op->type = RZ_ANAL_OP_TYPE_JMP;
+			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 			op->cycles = CYCLE_JMP;
 			break;
 		case X86_OP_MEM:
-			// op->type = RZ_ANAL_OP_TYPE_UJMP;
-			op->type = RZ_ANAL_OP_TYPE_MJMP;
+			// op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
+			op->type = RZ_ANALYSIS_OP_TYPE_MJMP;
 			op->ptr = INSOP (0).mem.disp;
 			op->disp = INSOP (0).mem.disp;
 			op->reg = NULL;
@@ -2904,13 +2904,13 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 			if (INSOP(0).mem.base != X86_REG_INVALID) {
 				if (INSOP (0).mem.base != X86_REG_INVALID) {
 					op->reg = cs_reg_name (*handle, INSOP (0).mem.base);
-					op->type = RZ_ANAL_OP_TYPE_IRJMP;
+					op->type = RZ_ANALYSIS_OP_TYPE_IRJMP;
 				}
 			}
 			if (INSOP (0).mem.index == X86_REG_INVALID) {
 				op->ireg = NULL;
 			} else {
-				op->type = RZ_ANAL_OP_TYPE_UJMP;
+				op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 				op->ireg = cs_reg_name (*handle, INSOP (0).mem.index);
 				op->scale = INSOP (0).mem.scale;
 			}
@@ -2923,13 +2923,13 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 			{
 			op->cycles = CYCLE_JMP + CYCLE_REG;
 			op->reg = cs_reg_name (gop.handle, INSOP(0).reg);
-			op->type = RZ_ANAL_OP_TYPE_RJMP;
+			op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
 			op->ptr = UT64_MAX;
 			}
 			break;
 		//case X86_OP_FP:
 		default: // other?
-			op->type = RZ_ANAL_OP_TYPE_UJMP;
+			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 			op->ptr = UT64_MAX;
 			break;
 		}
@@ -2938,14 +2938,14 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_INSW:
 	case X86_INS_INSD:
 	case X86_INS_INSB:
-		op->type = RZ_ANAL_OP_TYPE_IO;
+		op->type = RZ_ANALYSIS_OP_TYPE_IO;
 		op->type2 = 0;
 		break;
 	case X86_INS_OUT:
 	case X86_INS_OUTSB:
 	case X86_INS_OUTSD:
 	case X86_INS_OUTSW:
-		op->type = RZ_ANAL_OP_TYPE_IO;
+		op->type = RZ_ANALYSIS_OP_TYPE_IO;
 		op->type2 = 1;
 		break;
 	case X86_INS_VXORPD:
@@ -2956,10 +2956,10 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_XORPS:
 	case X86_INS_KXORW:
 	case X86_INS_PXOR:
-		op->type = RZ_ANAL_OP_TYPE_XOR;
+		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		break;
 	case X86_INS_XOR:
-		op->type = RZ_ANAL_OP_TYPE_XOR;
+		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 		// TODO: Add stack indexing handling chang
 		op0_memimmhandle (op, insn, addr, regsz);
 		op1_memimmhandle (op, insn, addr, regsz);
@@ -2968,7 +2968,7 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 		// The OF and CF flags are cleared; the SF, ZF, and PF flags are
 		// set according to the result. The state of the AF flag is
 		// undefined.
-		op->type = RZ_ANAL_OP_TYPE_OR;
+		op->type = RZ_ANALYSIS_OP_TYPE_OR;
 		// TODO: Add stack indexing handling chang
 		op0_memimmhandle (op, insn, addr, regsz);
 		op1_memimmhandle (op, insn, addr, regsz);
@@ -2976,22 +2976,22 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_INC:
 		// The CF flag is not affected. The OF, SF, ZF, AF, and PF flags
 		// are set according to the result.
-		op->type = RZ_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		op->val = 1;
 		break;
 	case X86_INS_DEC:
 		// The CF flag is not affected. The OF, SF, ZF, AF, and PF flags
 		// are set according to the result.
-		op->type = RZ_ANAL_OP_TYPE_SUB;
+		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		op->val = 1;
 		break;
 	case X86_INS_NEG:
-		op->type = RZ_ANAL_OP_TYPE_SUB;
-		op->family = RZ_ANAL_OP_FAMILY_CPU;
+		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
+		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 		break;
 	case X86_INS_NOT:
-		op->type = RZ_ANAL_OP_TYPE_NOT;
-		op->family = RZ_ANAL_OP_FAMILY_CPU;
+		op->type = RZ_ANALYSIS_OP_TYPE_NOT;
+		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 		break;
 	case X86_INS_PSUBB:
 	case X86_INS_PSUBW:
@@ -3001,25 +3001,25 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_PSUBSW:
 	case X86_INS_PSUBUSB:
 	case X86_INS_PSUBUSW:
-		op->type = RZ_ANAL_OP_TYPE_SUB;
+		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		break;
 	case X86_INS_SUB:
-		op->type = RZ_ANAL_OP_TYPE_SUB;
+		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		op_stackidx (op, insn, false);
 		op0_memimmhandle (op, insn, addr, regsz);
 		op1_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_SBB:
 		// dst = dst - (src + cf)
-		op->type = RZ_ANAL_OP_TYPE_SUB;
+		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		break;
 	case X86_INS_LIDT:
-		op->type = RZ_ANAL_OP_TYPE_LOAD;
-		op->family = RZ_ANAL_OP_FAMILY_PRIV;
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
+		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 		break;
 	case X86_INS_SIDT:
-		op->type = RZ_ANAL_OP_TYPE_STORE;
-		op->family = RZ_ANAL_OP_FAMILY_PRIV;
+		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
+		op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 		break;
 	case X86_INS_RDRAND:
 	case X86_INS_RDSEED:
@@ -3042,30 +3042,30 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_AESIMC:
 	case X86_INS_AESKEYGENASSIST:
 		// AES instructions
-		op->family = RZ_ANAL_OP_FAMILY_CRYPTO;
-		op->type = RZ_ANAL_OP_TYPE_MOV; // XXX
+		op->family = RZ_ANALYSIS_OP_FAMILY_CRYPTO;
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV; // XXX
 		break;
 	case X86_INS_ANDN:
 	case X86_INS_ANDPD:
 	case X86_INS_ANDPS:
 	case X86_INS_ANDNPD:
 	case X86_INS_ANDNPS:
-		op->type = RZ_ANAL_OP_TYPE_AND;
+		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		break;
 	case X86_INS_AND:
-		op->type = RZ_ANAL_OP_TYPE_AND;
+		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 		// TODO: Add stack register change operation
 		op0_memimmhandle (op, insn, addr, regsz);
 		op1_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_IDIV:
-		op->type = RZ_ANAL_OP_TYPE_DIV;
+		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
 		break;
 	case X86_INS_DIV:
-		op->type = RZ_ANAL_OP_TYPE_DIV;
+		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
 		break;
 	case X86_INS_IMUL:
-		op->type = RZ_ANAL_OP_TYPE_MUL;
+		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 		op->sign = true;
 		break;
 	case X86_INS_AAM:
@@ -3075,13 +3075,13 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_MULPS:
 	case X86_INS_MULSD:
 	case X86_INS_MULSS:
-		op->type = RZ_ANAL_OP_TYPE_MUL;
+		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 		break;
 	case X86_INS_PACKSSDW:
 	case X86_INS_PACKSSWB:
 	case X86_INS_PACKUSWB:
-		op->type = RZ_ANAL_OP_TYPE_MOV;
-		op->family = RZ_ANAL_OP_FAMILY_MMX;
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
 		break;
 	case X86_INS_PADDB:
 	case X86_INS_PADDD:
@@ -3090,23 +3090,23 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_PADDSW:
 	case X86_INS_PADDUSB:
 	case X86_INS_PADDUSW:
-		op->type = RZ_ANAL_OP_TYPE_ADD;
-		op->family = RZ_ANAL_OP_FAMILY_MMX;
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
 		break;
 	case X86_INS_XCHG:
-		op->type = RZ_ANAL_OP_TYPE_MOV;
-		op->family = RZ_ANAL_OP_FAMILY_CPU;
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 		break;
 	case X86_INS_XADD: /* xchg + add */
-		op->type = RZ_ANAL_OP_TYPE_ADD;
-		op->family = RZ_ANAL_OP_FAMILY_CPU;
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
+		op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 		break;
 	case X86_INS_FADD:
 #if CS_API_MAJOR == 4
 	case X86_INS_FADDP:
 #endif
-		op->family = RZ_ANAL_OP_FAMILY_FPU;
-		op->type = RZ_ANAL_OP_TYPE_ADD;
+		op->family = RZ_ANALYSIS_OP_FAMILY_FPU;
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
 	case X86_INS_ADDPS:
 	case X86_INS_ADDSD:
@@ -3116,44 +3116,44 @@ static void anop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int
 	case X86_INS_ADDPD:
 		// The OF, SF, ZF, AF, CF, and PF flags are set according to the
 		// result.
-		op->type = RZ_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		op_stackidx (op, insn, true);
 		op->val = INSOP(1).imm;
 		break;
 	case X86_INS_ADD:
 		// The OF, SF, ZF, AF, CF, and PF flags are set according to the
 		// result.
-		op->type = RZ_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		op_stackidx (op, insn, true);
 		op0_memimmhandle (op, insn, addr, regsz);
 		op1_memimmhandle (op, insn, addr, regsz);
 		break;
 	case X86_INS_ADC:
-		op->type = RZ_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		break;
 		/* Direction flag */
 	case X86_INS_CLD:
-		op->type = RZ_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 	case X86_INS_STD:
-		op->type = RZ_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 	case X86_INS_SUBSD:    //cvtss2sd
 	case X86_INS_CVTSS2SD: //cvtss2sd
 		break;
 	}
 	if (cs_insn_group (*handle, insn, X86_GRP_MMX)) {
-		op->family = RZ_ANAL_OP_FAMILY_MMX;
+		op->family = RZ_ANALYSIS_OP_FAMILY_MMX;
 	}
 	// TODO: add SSE* families?
 	if (cs_insn_group (*handle, insn, X86_GRP_SSE1)) {
-		op->family = RZ_ANAL_OP_FAMILY_SSE;
+		op->family = RZ_ANALYSIS_OP_FAMILY_SSE;
 	}
 	if (cs_insn_group (*handle, insn, X86_GRP_SSE2)) {
-		op->family = RZ_ANAL_OP_FAMILY_SSE;
+		op->family = RZ_ANALYSIS_OP_FAMILY_SSE;
 	}
 	if (cs_insn_group (*handle, insn, X86_GRP_SSE3)) {
-		op->family = RZ_ANAL_OP_FAMILY_SSE;
+		op->family = RZ_ANALYSIS_OP_FAMILY_SSE;
 	}
 }
 
@@ -3207,12 +3207,12 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 #endif
 	if (n < 1) {
-		op->type = RZ_ANAL_OP_TYPE_ILL;
-		if (mask & RZ_ANAL_OP_MASK_DISASM) {
+		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
+		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
 	} else {
-		if (mask & RZ_ANAL_OP_MASK_DISASM) {
+		if (mask & RZ_ANALYSIS_OP_MASK_DISASM) {
 			op->mnemonic = rz_str_newf ("%s%s%s",
 				insn->mnemonic,
 				insn->op_str[0]?" ":"",
@@ -3226,30 +3226,30 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 			+ cs_len_prefix_opcode (insn->detail->x86.opcode);
 		op->size = insn->size;
 		op->id = insn->id;
-		op->family = RZ_ANAL_OP_FAMILY_CPU; // almost everything is CPU
+		op->family = RZ_ANALYSIS_OP_FAMILY_CPU; // almost everything is CPU
 		op->prefix = 0;
 		op->cond = cond_x862r2 (insn->id);
 		switch (insn->detail->x86.prefix[0]) {
 		case X86_PREFIX_REPNE:
-			op->prefix |= RZ_ANAL_OP_PREFIX_REPNE;
+			op->prefix |= RZ_ANALYSIS_OP_PREFIX_REPNE;
 			break;
 		case X86_PREFIX_REP:
-			op->prefix |= RZ_ANAL_OP_PREFIX_REP;
+			op->prefix |= RZ_ANALYSIS_OP_PREFIX_REP;
 			break;
 		case X86_PREFIX_LOCK:
-			op->prefix |= RZ_ANAL_OP_PREFIX_LOCK;
-			op->family = RZ_ANAL_OP_FAMILY_THREAD; // XXX ?
+			op->prefix |= RZ_ANALYSIS_OP_PREFIX_LOCK;
+			op->family = RZ_ANALYSIS_OP_FAMILY_THREAD; // XXX ?
 			break;
 		}
 		anop (a, op, addr, buf, len, &handle, insn);
 		set_opdir (op, insn);
-		if (mask & RZ_ANAL_OP_MASK_ESIL) {
+		if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 			anop_esil (a, op, addr, buf, len, &handle, insn);
 		}
-		if (mask & RZ_ANAL_OP_MASK_OPEX) {
+		if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
 			opex (&op->opex, insn, mode);
 		}
-		if (mask & RZ_ANAL_OP_MASK_VAL) {
+		if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
 			op_fillval (a, op, &handle, insn, mode);
 		}
 	}
@@ -3257,7 +3257,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 	if (insn) {
 #if HAVE_CSGRP_PRIVILEGE
 		if (cs_insn_group (handle, insn, X86_GRP_PRIVILEGE)) {
-			op->family = RZ_ANAL_OP_FAMILY_PRIV;
+			op->family = RZ_ANALYSIS_OP_FAMILY_PRIV;
 		}
 #endif
 #if !USE_ITERZ_API
@@ -3738,11 +3738,11 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 
 static int archinfo(RzAnalysis *analysis, int q) {
 	switch (q) {
-	case RZ_ANAL_ARCHINFO_ALIGN:
+	case RZ_ANALYSIS_ARCHINFO_ALIGN:
 		return 0;
-	case RZ_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
 		return 16;
-	case RZ_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
 		return 1;
 	}
 	return 0;

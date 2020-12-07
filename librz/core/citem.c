@@ -50,7 +50,7 @@ RZ_API RzCoreItem *rz_core_item_at (RzCore *core, ut64 addr) {
 		ci->sectname = strdup (sec->name);
 	}
 	if (!ci->data) {
-		RzAnalysisOp* op = rz_core_analysis_op (core, addr, RZ_ANAL_OP_MASK_ESIL | RZ_ANAL_OP_MASK_HINT);
+		RzAnalysisOp* op = rz_core_analysis_op (core, addr, RZ_ANALYSIS_OP_MASK_ESIL | RZ_ANALYSIS_OP_MASK_HINT);
 		if (op) {
 			if (!ci->data) {
 				if (op->mnemonic) {

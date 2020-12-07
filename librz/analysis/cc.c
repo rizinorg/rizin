@@ -11,7 +11,7 @@ RZ_API void rz_analysis_cc_del(RzAnalysis *analysis, const char *name) {
 	sdb_unset (DB, rz_strbuf_initf (&sb, "%s", name), 0);
 	sdb_unset (DB, rz_strbuf_setf (&sb, "cc.%s.ret", name), 0);
 	sdb_unset (DB, rz_strbuf_setf (&sb, "cc.%s.argn", name), 0);
-	for (i = 0; i < RZ_ANAL_CC_MAXARG; i++) {
+	for (i = 0; i < RZ_ANALYSIS_CC_MAXARG; i++) {
 		sdb_unset (DB, rz_strbuf_setf (&sb, "cc.%s.arg%zu", name, i), 0);
 	}
 	sdb_unset (DB, rz_strbuf_setf (&sb, "cc.%s.self", name), 0);
@@ -84,7 +84,7 @@ RZ_API char *rz_analysis_cc_get(RzAnalysis *analysis, const char *name) {
 	const char *self = rz_analysis_cc_self (analysis, name);
 	rz_strbuf_appendf (sb, "%s %s%s%s (", ret, self? self: "", self? ".": "", name);
 	bool isFirst = true;
-	for (i = 0; i < RZ_ANAL_CC_MAXARG; i++) {
+	for (i = 0; i < RZ_ANALYSIS_CC_MAXARG; i++) {
 		const char *k = sdb_fmt ("cc.%s.arg%d", name, i);
 		const char *arg = sdb_const_get (DB, k, 0);
 		if (!arg) {
@@ -174,7 +174,7 @@ RZ_API int rz_analysis_cc_max_arg(RzAnalysis *analysis, const char *cc) {
 	oldDB = DB;
 	free (oldCC);
 	oldCC = strdup (cc);
-	for (i = 0; i < RZ_ANAL_CC_MAXARG; i++) {
+	for (i = 0; i < RZ_ANALYSIS_CC_MAXARG; i++) {
 		const char *query = sdb_fmt ("cc.%s.arg%d", cc, i);
 		const char *res = sdb_const_get (DB, query, 0);
 		if (!res) {

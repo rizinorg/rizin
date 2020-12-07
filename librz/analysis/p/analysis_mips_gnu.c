@@ -1062,7 +1062,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		return oplen;
 	}
 
-	op->type = RZ_ANAL_OP_TYPE_UNK;
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 	op->size = oplen;
 	op->addr = addr;
 	// Be endian aware
@@ -1070,7 +1070,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 
 	// eprintf ("MIPS: %02x %02x %02x %02x (after endian: big=%d)\n", buf[0], buf[1], buf[2], buf[3], analysis->big_endian);
 	if (opcode == 0) {
-		op->type = RZ_ANAL_OP_TYPE_NOP;
+		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		return oplen;
 	}
 
@@ -1117,7 +1117,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			op->val = sa;
 		case 4: // sllv
 			insn.id = MIPS_INS_SLLV;
-			op->type = RZ_ANAL_OP_TYPE_SHL;
+			op->type = RZ_ANALYSIS_OP_TYPE_SHL;
 			break;
 		case 2: // srl
 			insn.id = MIPS_INS_SRL;
@@ -1125,23 +1125,23 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			op->val = sa;
 		case 6: // srlv
 			insn.id = MIPS_INS_SRLV;
-			op->type = RZ_ANAL_OP_TYPE_SHR;
+			op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 			break;
 		case 3: // sra
 			insn.id = MIPS_INS_SRA;
-			op->type = RZ_ANAL_OP_TYPE_SAR;
+			op->type = RZ_ANALYSIS_OP_TYPE_SAR;
 			break;
 		case 7: // srav
 			insn.id = MIPS_INS_SRAV;
-			op->type = RZ_ANAL_OP_TYPE_SAR;
+			op->type = RZ_ANALYSIS_OP_TYPE_SAR;
 			break;
 		case 59: // dsra
 			insn.id = MIPS_INS_DSRA;	//TODO double
-			op->type = RZ_ANAL_OP_TYPE_SAR;
+			op->type = RZ_ANALYSIS_OP_TYPE_SAR;
 			break;
 		case 63: // dsra32
 			insn.id = MIPS_INS_DSRA32;
-			op->type = RZ_ANAL_OP_TYPE_SAR;
+			op->type = RZ_ANALYSIS_OP_TYPE_SAR;
 			break;
 		case 8: // jr
 			//eprintf ("%llx jr\n", addr);
@@ -1149,13 +1149,13 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			op->delay = 1;
 			insn.id = MIPS_INS_JR;
 			if (rs == 31) {
-				op->type = RZ_ANAL_OP_TYPE_RET;
+				op->type = RZ_ANALYSIS_OP_TYPE_RET;
 			} else if (rs == 25) {
-				op->type = RZ_ANAL_OP_TYPE_RJMP;
+				op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
 				op->jump = t9_pre;
 				break;
 			} else {
-				op->type = RZ_ANAL_OP_TYPE_RJMP;
+				op->type = RZ_ANALYSIS_OP_TYPE_RJMP;
 			}
 			break;
 		case 9: // jalr
@@ -1163,20 +1163,20 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			op->delay = 1;
 			insn.id = MIPS_INS_JALR;
 			if (rs  == 25){
-				op->type = RZ_ANAL_OP_TYPE_RCALL;
+				op->type = RZ_ANALYSIS_OP_TYPE_RCALL;
 				op->jump = t9_pre;
 				break;
 			}
-			op->type = RZ_ANAL_OP_TYPE_UCALL;
+			op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 			break;
 		case 10: //movz
 			insn.id = MIPS_INS_MOVZ;
 			break;
 		case 12: // syscall
-			op->type = RZ_ANAL_OP_TYPE_SWI;
+			op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 			break;
 		case 13: // break
-			op->type = RZ_ANAL_OP_TYPE_TRAP;
+			op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 			break;
 		case 16: // mfhi
 			insn.id = MIPS_INS_MFHI;
@@ -1189,66 +1189,66 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			break;
 		case 19: // mtlo
 			insn.id = MIPS_INS_MTLO;
-			op->type = RZ_ANAL_OP_TYPE_MOV;
+			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 			break;
 		case 24: // mult
 			insn.id = MIPS_INS_MULT;
 		case 25: // multu
 			insn.id = MIPS_INS_MULTU;
-			op->type = RZ_ANAL_OP_TYPE_MUL;
+			op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 			break;
 		case 26: // div
 		case 27: // divu
-			op->type = RZ_ANAL_OP_TYPE_DIV;
+			op->type = RZ_ANALYSIS_OP_TYPE_DIV;
 			insn.id = MIPS_INS_DIV;
 			break;
 		case 32: // add
 			insn.id = MIPS_INS_ADD;
 		case 33: // addu	//TODO:表明位数
 			insn.id = MIPS_INS_ADDU;
-			op->type = RZ_ANAL_OP_TYPE_ADD;
+			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 			break;
 		case 44: //dadd
 			insn.id = MIPS_INS_DADD;
-			op->type = RZ_ANAL_OP_TYPE_ADD;
+			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 			break;
 		case 45: //daddu move
 			if(rt == 0) {
-				op->type = RZ_ANAL_OP_TYPE_MOV;
+				op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 				insn.id = MIPS_INS_MOV;
 				break;
 			}
-			op->type = RZ_ANAL_OP_TYPE_ADD;
+			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 			insn.id = MIPS_INS_DADDU;
 			break;
 		case 34: // sub
 		case 35: // subu
 			insn.id = MIPS_INS_SUB;
-			op->type = RZ_ANAL_OP_TYPE_SUB;
+			op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 			break;
 		case 46: //dsub
 			insn.id = MIPS_INS_SUB;
-			op->type = RZ_ANAL_OP_TYPE_SUB;
+			op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 			break;
 		case 47: //dsubu
 			insn.id = MIPS_INS_SUB;
-			op->type = RZ_ANAL_OP_TYPE_SUB;
+			op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 			break;
 		case 36: // and
 			insn.id = MIPS_INS_AND;
-			op->type = RZ_ANAL_OP_TYPE_AND;
+			op->type = RZ_ANALYSIS_OP_TYPE_AND;
 			break;
 		case 37: // or
 			insn.id = MIPS_INS_OR;
-			op->type = RZ_ANAL_OP_TYPE_OR;
+			op->type = RZ_ANALYSIS_OP_TYPE_OR;
 			break;
 		case 38: // xor
 			insn.id = MIPS_INS_XOR;
-			op->type = RZ_ANAL_OP_TYPE_XOR;
+			op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 			break;
 		case 39: // nor
 			insn.id = MIPS_INS_NOR;
-			op->type = RZ_ANAL_OP_TYPE_NOR;
+			op->type = RZ_ANALYSIS_OP_TYPE_NOR;
 			break;
 		case 42: // slt
 			insn.id = MIPS_INS_SLT;
@@ -1295,14 +1295,14 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		switch (optype) {
 		case 2: // j
 			insn.id = MIPS_INS_J;
-			op->type = RZ_ANAL_OP_TYPE_JMP;
+			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 			op->jump = page_hack + address;
 			op->delay = 1;
 			snprintf ((char *)insn.j_reg.jump, REG_BUF_MAX, "0x%"PFMT64x, op->jump);
 			break;
 		case 3: // jal
 			insn.id = MIPS_INS_JAL;
-			op->type = RZ_ANAL_OP_TYPE_CALL;
+			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 			op->jump = page_hack + address;
 			op->fail = addr + 8;
 			op->delay = 1;
@@ -1389,7 +1389,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 						insn.id = MIPS_INS_BGEZAL;
 					}
 					op->delay = 1;
-					op->type = RZ_ANAL_OP_TYPE_CALL;
+					op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 					break;
 				default:
 					op->delay = 1;
@@ -1420,7 +1420,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			if (!insn.id) {
 				insn.id = MIPS_INS_BGTZ;
 			}
-			op->type = RZ_ANAL_OP_TYPE_CJMP;
+			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 			op->jump = addr + (imm << 2) + 4;
 			op->fail = addr + 8;
 			op->delay = 1;
@@ -1453,7 +1453,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			break;
 		case 9: // addiu
 			insn.id = MIPS_INS_ADDIU;
-			op->type = RZ_ANAL_OP_TYPE_ADD;
+			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 			op->dst = rz_analysis_value_new ();
 			op->dst->reg = rz_reg_get (analysis->reg, mips_reg_decode(rt), RZ_REG_TYPE_GPR);
 			// TODO: currently there is no way for the macro to get access to this register
@@ -1467,7 +1467,7 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			break;
 		case 8: // addi
 			insn.id = MIPS_INS_ADDI;
-			op->type = RZ_ANAL_OP_TYPE_ADD;
+			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 			break;
 		case 10: // slti
 			insn.id = MIPS_INS_SLTI;
@@ -1477,23 +1477,23 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			break;
 		case 12: // andi
 			insn.id = MIPS_INS_ANDI;
-			op->type = RZ_ANAL_OP_TYPE_AND;
+			op->type = RZ_ANALYSIS_OP_TYPE_AND;
 			break;
 		case 13: // ori
 			insn.id = MIPS_INS_ORI;
-			op->type = RZ_ANAL_OP_TYPE_OR;
+			op->type = RZ_ANALYSIS_OP_TYPE_OR;
 			break;
 		case 14: // xori
 			insn.id = MIPS_INS_XORI;
-			op->type = RZ_ANAL_OP_TYPE_XOR;
+			op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 			break;
 		case 24: // daddi
 			insn.id = MIPS_INS_DADDI;
-			op->type = RZ_ANAL_OP_TYPE_ADD;
+			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 			break;
 		case 25: // daddiu
 			insn.id = MIPS_INS_DADDIU;
-			op->type = RZ_ANAL_OP_TYPE_ADD;
+			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 			if (rs == 0) {
 				insn.id = MIPS_INS_LDI;
 				snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%"PFMT32x, imm);
@@ -1529,38 +1529,38 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 			if (rt == 25) {
 				t9_pre = op->ptr;
 			}
-			op->type = RZ_ANAL_OP_TYPE_LOAD;
+			op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 			break;
 		case 36: // lbu
 			insn.id = MIPS_INS_LBU;
-			op->type = RZ_ANAL_OP_TYPE_LOAD;
+			op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 			break;
 		case 37: // lhu
 			insn.id = MIPS_INS_LHU;
-			op->type = RZ_ANAL_OP_TYPE_LOAD;
+			op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 			break;
 		case 40: // sb
 			insn.id = MIPS_INS_SB;
-			op->type = RZ_ANAL_OP_TYPE_STORE;
+			op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 			break;
 		case 41: // sh
 			insn.id = MIPS_INS_SH;
-			op->type = RZ_ANAL_OP_TYPE_STORE;
+			op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 			break;
 		case 43: // sw
 			insn.id = MIPS_INS_SW;
-			op->type = RZ_ANAL_OP_TYPE_STORE;
+			op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 			break;
 		case 63: //sd
 			insn.id = MIPS_INS_SD;
-			op->type = RZ_ANAL_OP_TYPE_STORE;
+			op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 			break;
 		case 49: // lwc1
 		case 57: // swc1
 			break;
 		case 29: // jalx
 			insn.id = MIPS_INS_JALX;
-			op->type = RZ_ANAL_OP_TYPE_CALL;
+			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 			op->jump = addr + 4*((buf[3] | buf[2]<<8 | buf[1]<<16));
 			op->fail = addr + 8;
 			op->delay = 1;
@@ -1571,12 +1571,12 @@ static int mips_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 		//family = 'I';
 	}
 
-	if (mask & RZ_ANAL_OP_MASK_ESIL) {
+	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 		if (analop_esil (analysis, op, addr, &insn)) {
 			rz_strbuf_fini (&op->esil);
 		}
 	}
-	if (mask & RZ_ANAL_OP_MASK_VAL) {
+	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
 		//TODO: add op_fillval (analysis, op, &insn);
 	}
 	return oplen;

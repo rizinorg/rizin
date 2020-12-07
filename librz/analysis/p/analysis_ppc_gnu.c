@@ -24,9 +24,9 @@ static int ppc_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	//eprintf("OPCODE IS %08x : %02x (opcode=%d) baddr = %d\n", addr, bytes[0], opcode, baddr);
 
 	switch (opcode) {
-//	case 0: // bl op->type = RZ_ANAL_OP_TYPE_NOP; break;
+//	case 0: // bl op->type = RZ_ANALYSIS_OP_TYPE_NOP; break;
 	case 11: // cmpi
-		op->type = RZ_ANAL_OP_TYPE_CMP;
+		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		break;
 	case 9: // pure branch
 		if (bytes[0] == 0x4e) {
@@ -40,19 +40,19 @@ static int ppc_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 		op->eob = 1;
 		break;
 	case 6: // bc // conditional jump
-		op->type = RZ_ANAL_OP_TYPE_JMP;
+		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		op->jump = (aa)?(baddr):(addr+baddr+4);
 		op->eob = 1;
 		break;
 #if 0
 	case 7: // sc/svc
-		op->type = RZ_ANAL_OP_TYPE_SWI;
+		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		break;
 #endif
 #if 0
 	case 15: // bl
 		// OK
-		op->type = RZ_ANAL_OP_TYPE_CJMP;
+		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->jump = (aa)?(baddr):(addr+baddr);
 		op->fail = addr+4;
 		op->eob = 1;
@@ -60,13 +60,13 @@ static int ppc_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 #endif
 	case 8: // bne i tal
 		// OK
-		op->type = RZ_ANAL_OP_TYPE_CJMP;
+		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->jump = (aa)?(baddr):(addr+baddr+4);
 		op->fail = addr+4;
 		op->eob = 1;
 		break;
 	case 19: // bclr/bcr/bcctr/bcc
-		op->type = RZ_ANAL_OP_TYPE_RET; // jump to LR
+		op->type = RZ_ANALYSIS_OP_TYPE_RET; // jump to LR
 		if (lk) {
 			op->jump = 0xFFFFFFFF; // LR ?!?
 			op->fail = addr+4;

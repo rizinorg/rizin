@@ -27,9 +27,9 @@ RzAnalysisReilArgType reil_get_arg_type(RzAnalysisEsil *esil, char *s) {
 	}
 	int type = rz_analysis_esil_get_parm_type(esil, s);
 	switch (type) {
-	case RZ_ANAL_ESIL_PARM_REG:
+	case RZ_ANALYSIS_ESIL_PARM_REG:
 		return ARG_REG;
-	case RZ_ANAL_ESIL_PARM_NUM:
+	case RZ_ANALYSIS_ESIL_PARM_NUM:
 		return ARG_CONST;
 	default:
 		return ARG_NONE;
@@ -1168,12 +1168,12 @@ RZ_API int rz_analysis_esil_to_reil_setup(RzAnalysisEsil *esil, RzAnalysis *anal
 
 	rz_analysis_esil_mem_ro(esil, romem);
 
-#define	OT_UNK	RZ_ANAL_ESIL_OP_TYPE_UNKNOWN
-#define	OT_CTR	RZ_ANAL_ESIL_OP_TYPE_CONTROL_FLOW
-#define	OT_MATH	RZ_ANAL_ESIL_OP_TYPE_MATH
-#define	OT_REGW	RZ_ANAL_ESIL_OP_TYPE_REG_WRITE
-#define	OT_MEMW	RZ_ANAL_ESIL_OP_TYPE_MEM_WRITE
-#define	OT_MEMR	RZ_ANAL_ESIL_OP_TYPE_MEM_READ
+#define	OT_UNK	RZ_ANALYSIS_ESIL_OP_TYPE_UNKNOWN
+#define	OT_CTR	RZ_ANALYSIS_ESIL_OP_TYPE_CONTROL_FLOW
+#define	OT_MATH	RZ_ANALYSIS_ESIL_OP_TYPE_MATH
+#define	OT_REGW	RZ_ANALYSIS_ESIL_OP_TYPE_REG_WRITE
+#define	OT_MEMW	RZ_ANALYSIS_ESIL_OP_TYPE_MEM_WRITE
+#define	OT_MEMR	RZ_ANALYSIS_ESIL_OP_TYPE_MEM_READ
 
 	rz_analysis_esil_set_op(esil, "=", reil_eq, 0, 2, OT_REGW);
 	rz_analysis_esil_set_op(esil, ":=", reil_eq, 0, 2, OT_REGW);

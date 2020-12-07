@@ -61,21 +61,21 @@ static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	d.d_operand = get_operand (&s, &d);
 
 	memset (op, 0, sizeof (RzAnalysisOp));
-	op->type = RZ_ANAL_OP_TYPE_UNK;
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 	op->size = 2;
 
 	switch (i2ut16 (in)) {
 	case INST_NOP:
-		op->type = RZ_ANAL_OP_TYPE_NOP;
+		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		break;
 	case INST_BRK:
-		op->type = RZ_ANAL_OP_TYPE_TRAP;
+		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 		break;
 	case INST_BC:
-		op->type = RZ_ANAL_OP_TYPE_TRAP;
+		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 		break;
 	case INST_BRXL:
-		op->type = RZ_ANAL_OP_TYPE_TRAP;
+		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 		break;
 	default:
 		switch (in->in_opcode) {
@@ -85,49 +85,49 @@ static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 			case 2:
 			case 3:
 			case 0xa:
-				op->type = RZ_ANAL_OP_TYPE_PUSH;
+				op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 				break;
 			case 4:
 			case 5:
 			case 6:
 			case 7:
 			case 0xe:
-				op->type = RZ_ANAL_OP_TYPE_POP;
+				op->type = RZ_ANALYSIS_OP_TYPE_POP;
 				break;
 			}
 			break;
 		case 1:
-			op->type = RZ_ANAL_OP_TYPE_POP;
+			op->type = RZ_ANALYSIS_OP_TYPE_POP;
 			break;
 		case 2:
-			op->type = RZ_ANAL_OP_TYPE_PUSH;
+			op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 			break;
 		case 3:
 		case 4:
 		case 7:
-			op->type = RZ_ANAL_OP_TYPE_ADD;
+			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 			break;
 		case 5:
 		case 6:
-			op->type = RZ_ANAL_OP_TYPE_SUB;
+			op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 			break;
 		case 8:
-			op->type = RZ_ANAL_OP_TYPE_CMP;
+			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 			break;
 		case 9:
 			switch(in->in_reg) {
 			case 0:
-				op->type = RZ_ANAL_OP_TYPE_MUL;
+				op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 				break;
 			case 1:
-				op->type = RZ_ANAL_OP_TYPE_DIV;
+				op->type = RZ_ANALYSIS_OP_TYPE_DIV;
 				break;
 			case 2:
-				op->type = RZ_ANAL_OP_TYPE_CMP;
+				op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 				break;
 			case 3:
 				// BSR
-				op->type = RZ_ANAL_OP_TYPE_CALL;
+				op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 				op->jump = label_off (&d);
 				if (op->jump & 1) {
 					op->jump += 3;
@@ -138,18 +138,18 @@ static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 			}
 			break;
 		case 0xb:
-			op->type = RZ_ANAL_OP_TYPE_OR;
+			op->type = RZ_ANALYSIS_OP_TYPE_OR;
 			break;
 		case 0xc:
-			op->type = RZ_ANAL_OP_TYPE_AND;
+			op->type = RZ_ANALYSIS_OP_TYPE_AND;
 			break;
 		case 0xd:
-			op->type = RZ_ANAL_OP_TYPE_XOR;
+			op->type = RZ_ANALYSIS_OP_TYPE_XOR;
 			break;
 		case 0xe:
 			switch (in->in_reg) {
 			case 0: // BRA
-				op->type = RZ_ANAL_OP_TYPE_JMP;
+				op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 				op->jump = label_off (&d)+4;
 				if (op->jump & 1) {
 					op->jump += 3;
@@ -158,7 +158,7 @@ static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 				break;
 			case 1:
 				// BLT
-				op->type = RZ_ANAL_OP_TYPE_CJMP;
+				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 				op->jump = label_off (&d);
 				if (op->jump & 1) {
 					op->jump += 3;
@@ -168,7 +168,7 @@ static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 				break;
 			case 2:
 				// BPL
-				op->type = RZ_ANAL_OP_TYPE_CJMP;
+				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 				op->jump = label_off (&d);
 				if (op->jump & 1) {
 					op->jump += 3;
@@ -178,7 +178,7 @@ static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 				break;
 			case 3:
 				// BMI
-				op->type = RZ_ANAL_OP_TYPE_CJMP;
+				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 				op->jump = label_off (&d);
 				if (op->jump & 1) {
 					op->jump += 3;
@@ -194,7 +194,7 @@ static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 			case 1: // BEQ
 			case 2: // BCC
 			case 3: // BCS
-				op->type = RZ_ANAL_OP_TYPE_CJMP;
+				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 				op->jump = label_off (&d);
 				if (op->jump & 1) {
 					op->jump += 3;

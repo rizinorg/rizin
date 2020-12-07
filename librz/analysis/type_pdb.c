@@ -101,7 +101,7 @@ static void parse_enum(const RzAnalysis *analysis, SType *type, RzList *types) {
 		type_info->get_name &&
 		type_info->get_utype);
 
-	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ENUM);
+	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANALYSIS_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
 		return;
 	}
@@ -166,7 +166,7 @@ static void parse_structure(const RzAnalysis *analysis, SType *type, RzList *typ
 		type_info->get_name &&
 		type_info->get_val);
 
-	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANAL_BASE_TYPE_KIND_STRUCT);
+	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANALYSIS_BASE_TYPE_KIND_STRUCT);
 	if (!base_type) {
 		return;
 	}
@@ -197,9 +197,9 @@ static void parse_structure(const RzAnalysis *analysis, SType *type, RzList *typ
 		}
 	}
 	if (type_info->leaf_type == eLF_STRUCTURE || type_info->leaf_type == eLF_CLASS) {
-		base_type->kind = RZ_ANAL_BASE_TYPE_KIND_STRUCT;
+		base_type->kind = RZ_ANALYSIS_BASE_TYPE_KIND_STRUCT;
 	} else { // union
-		base_type->kind = RZ_ANAL_BASE_TYPE_KIND_UNION;
+		base_type->kind = RZ_ANALYSIS_BASE_TYPE_KIND_UNION;
 	}
 	char *sname = rz_str_sanitize_sdb_key (name);
 	base_type->name = sname;

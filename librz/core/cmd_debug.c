@@ -18,7 +18,7 @@
 #include "linux_heap_jemalloc.c"
 #endif
 
-void cmd_anal_reg (RzCore *core, const char *str);
+void cmd_analysis_reg (RzCore *core, const char *str);
 
 static const char *help_msg_d[] = {
 	"Usage:", "d", " # Debug commands",
@@ -767,8 +767,8 @@ static int step_until_esil(RzCore *core, const char *esilstr) {
 
 static bool is_repeatable_inst(RzCore *core, ut64 addr) {
 	// we have read the bytes already
-	RzAnalysisOp *op = rz_core_op_anal (core, addr, RZ_ANAL_OP_MASK_ALL);
-	bool ret = op && ((op->prefix & RZ_ANAL_OP_PREFIX_REP) || (op->prefix & RZ_ANAL_OP_PREFIX_REPNE));
+	RzAnalysisOp *op = rz_core_op_analysis (core, addr, RZ_ANALYSIS_OP_MASK_ALL);
+	bool ret = op && ((op->prefix & RZ_ANALYSIS_OP_PREFIX_REP) || (op->prefix & RZ_ANALYSIS_OP_PREFIX_REPNE));
 	rz_analysis_op_free (op);
 	return ret;
 }
@@ -880,7 +880,7 @@ static int step_until_optype(RzCore *core, const char *_optypes) {
 		}
 		rz_io_read_at (core->io, pc, buf, sizeof (buf));
 
-		if (!rz_analysis_op (core->dbg->analysis, &op, pc, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC)) {
+		if (!rz_analysis_op (core->dbg->analysis, &op, pc, buf, sizeof (buf), RZ_ANALYSIS_OP_MASK_BASIC)) {
 			eprintf ("Error: rz_analysis_op failed\n");
 			res = false;
 			goto cleanup_after_push;
@@ -1170,7 +1170,7 @@ static void cmd_debug_backtrace(RzCore *core, const char *input) {
 			/* XXX Bottleneck..we need to reuse the bytes read by traptrace */
 			// XXX Do asm.arch should define the max size of opcode?
 			rz_io_read_at (core->io, addr, buf, 32); // XXX longer opcodes?
-			rz_analysis_op (core->analysis, &analop, addr, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC);
+			rz_analysis_op (core->analysis, &analop, addr, buf, sizeof (buf), RZ_ANALYSIS_OP_MASK_BASIC);
 		} while (rz_bp_traptrace_at (core->dbg->bp, addr, analop.size));
 		rz_bp_traptrace_enable (core->dbg->bp, false);
 	}
@@ -2950,7 +2950,7 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 static void backtrace_vars(RzCore *core, RzList *frames) {
 	RzDebugFrame *f;
 	RzListIter *iter;
-	// anal vs debug ?
+	// analysis vs debug ?
 	const char *sp = rz_reg_get_name (core->analysis->reg, RZ_REG_NAME_SP);
 	const char *bp = rz_reg_get_name (core->analysis->reg, RZ_REG_NAME_BP);
 	if (!sp) {
@@ -3016,7 +3016,7 @@ static void asciiart_backtrace(RzCore *core, RzList *frames) {
 	RzDebugFrame *f;
 	RzListIter *iter;
 	bool mymap = false;
-	// anal vs debug ?
+	// analysis vs debug ?
 	const char *sp = rz_reg_get_name (core->analysis->reg, RZ_REG_NAME_SP);
 	const char *bp = rz_reg_get_name (core->analysis->reg, RZ_REG_NAME_BP);
 	if (!sp) {
@@ -3829,13 +3829,13 @@ static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_ad
 		addr_in_range = addr >= from && addr < to;
 
 		rz_io_read_at (core->io, addr, buf, sizeof (buf));
-		rz_analysis_op (core->analysis, &aop, addr, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC);
+		rz_analysis_op (core->analysis, &aop, addr, buf, sizeof (buf), RZ_ANALYSIS_OP_MASK_BASIC);
 		eprintf ("%d %"PFMT64x"\r", n++, addr);
 		switch (aop.type) {
-		case RZ_ANAL_OP_TYPE_UCALL:
-		case RZ_ANAL_OP_TYPE_ICALL:
-		case RZ_ANAL_OP_TYPE_RCALL:
-		case RZ_ANAL_OP_TYPE_IRCALL:
+		case RZ_ANALYSIS_OP_TYPE_UCALL:
+		case RZ_ANALYSIS_OP_TYPE_ICALL:
+		case RZ_ANALYSIS_OP_TYPE_RCALL:
+		case RZ_ANALYSIS_OP_TYPE_IRCALL:
 			{
 				ut64 called_addr;
 				int called_in_range;
@@ -3858,7 +3858,7 @@ static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_ad
 				// TODO: push pc+aop.length into the call path stack
 				break;
 			}
-		case RZ_ANAL_OP_TYPE_CALL:
+		case RZ_ANALYSIS_OP_TYPE_CALL:
 			{
 				int called_in_range = aop.jump >= from && aop.jump < to;
 				if (!called_in_range && addr_in_range && !shallow_trace) {
@@ -3872,7 +3872,7 @@ static void do_debug_trace_calls(RzCore *core, ut64 from, ut64 to, ut64 final_ad
 				}
 				break;
 			}
-		case RZ_ANAL_OP_TYPE_RET:
+		case RZ_ANALYSIS_OP_TYPE_RET:
 #if 0
 			// TODO: we must store ret value for each call in the graph path to do this check
 			rz_debug_step (dbg, 1);
@@ -4346,14 +4346,14 @@ static int cmd_debug_continue (RzCore *core, const char *input) {
 	case 'c': // "dcc"
 		rz_reg_arena_swap (core->dbg->reg, true);
 		if (input[2] == 'u') {
-			rz_debug_continue_until_optype (core->dbg, RZ_ANAL_OP_TYPE_UCALL, 0);
+			rz_debug_continue_until_optype (core->dbg, RZ_ANALYSIS_OP_TYPE_UCALL, 0);
 		} else {
-			rz_debug_continue_until_optype (core->dbg, RZ_ANAL_OP_TYPE_CALL, 0);
+			rz_debug_continue_until_optype (core->dbg, RZ_ANALYSIS_OP_TYPE_CALL, 0);
 		}
 		break;
 	case 'r':
 		rz_reg_arena_swap (core->dbg->reg, true);
-		rz_debug_continue_until_optype (core->dbg, RZ_ANAL_OP_TYPE_RET, 1);
+		rz_debug_continue_until_optype (core->dbg, RZ_ANALYSIS_OP_TYPE_RET, 1);
 		break;
 	case 'k':
 		// select pid and rz_debug_continue_kill (core->dbg,
@@ -4539,8 +4539,8 @@ static int cmd_debug_step (RzCore *core, const char *input) {
 			rz_debug_reg_sync (core->dbg, RZ_REG_TYPE_GPR, false);
 			addr = rz_debug_reg_get (core->dbg, "PC");
 			rz_io_read_at (core->io, addr, buf, sizeof (buf));
-			rz_analysis_op (core->analysis, &aop, addr, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC);
-			if (aop.type == RZ_ANAL_OP_TYPE_CALL) {
+			rz_analysis_op (core->analysis, &aop, addr, buf, sizeof (buf), RZ_ANALYSIS_OP_MASK_BASIC);
+			if (aop.type == RZ_ANALYSIS_OP_TYPE_CALL) {
 				RzBinObject *o = rz_bin_cur_object (core->bin);
 				RzBinSection *s = rz_bin_get_section_at (o, aop.jump, true);
 				if (!s) {
@@ -4561,7 +4561,7 @@ static int cmd_debug_step (RzCore *core, const char *input) {
 			for (i = 0; i < times; i++) {
 				rz_debug_reg_sync (core->dbg, RZ_REG_TYPE_GPR, false);
 				rz_io_read_at (core->io, addr, buf, sizeof (buf));
-				rz_analysis_op (core->analysis, &aop, addr, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC);
+				rz_analysis_op (core->analysis, &aop, addr, buf, sizeof (buf), RZ_ANALYSIS_OP_MASK_BASIC);
 #if 0
 				if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
 					eprintf ("Don't know how to skip this instruction\n");
@@ -4728,7 +4728,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			} else if (input[2] == 'i') {
 				int n = 0;
 				rz_list_foreach (core->dbg->trace->traces, iter, trace) {
-					op = rz_core_analysis_op (core, trace->addr, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM);
+					op = rz_core_analysis_op (core, trace->addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
 					if (n >= min) {
 						rz_cons_printf ("%d %s\n", trace->count, op->mnemonic);
 					}
@@ -4738,7 +4738,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 			} else if (input[2] == ' ') {
 				int n = 0;
 				rz_list_foreach (core->dbg->trace->traces, iter, trace) {
-					op = rz_core_analysis_op (core, trace->addr, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM);
+					op = rz_core_analysis_op (core, trace->addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
 					if (n >= min) {
 						rz_cons_printf ("0x%08"PFMT64x" %s\n", trace->addr, op->mnemonic);
 					}
@@ -4749,7 +4749,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				// TODO: reimplement using the api
 				//rz_core_cmd0 (core, "pd 1 @@= `dtq`");
 				rz_list_foreach (core->dbg->trace->traces, iter, trace) {
-					op = rz_core_analysis_op (core, trace->addr, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM);
+					op = rz_core_analysis_op (core, trace->addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
 					rz_cons_printf ("0x%08"PFMT64x" %s\n", trace->addr, op->mnemonic);
 					rz_analysis_op_free (op);
 				}
@@ -4783,7 +4783,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				if (ptr) {
 					count = rz_num_math (core->num, ptr + 1);
 				}
-				RzAnalysisOp *op = rz_core_op_anal (core, addr, RZ_ANAL_OP_MASK_HINT);
+				RzAnalysisOp *op = rz_core_op_analysis (core, addr, RZ_ANALYSIS_OP_MASK_HINT);
 				if (op) {
 					RzDebugTracepoint *tp = rz_debug_trace_add (core->dbg, addr, op->size);
 					if (!tp) {
@@ -4820,7 +4820,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				if (!addr) {
 					addr = core->offset;
 				}
-				RzAnalysisOp *op = rz_core_analysis_op (core, addr, RZ_ANAL_OP_MASK_ESIL);
+				RzAnalysisOp *op = rz_core_analysis_op (core, addr, RZ_ANALYSIS_OP_MASK_ESIL);
 				if (op) {
 					rz_analysis_esil_trace_op (core->analysis->esil, op);
 				}
@@ -5029,7 +5029,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		if (core->bin->is_debugger || input[1] == '?') {
 			cmd_debug_reg (core, input + 1);
 		} else {
-			cmd_anal_reg (core, input + 1);
+			cmd_analysis_reg (core, input + 1);
 		}
 		//rz_core_cmd (core, "|reg", 0);
 		break;

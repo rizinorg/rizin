@@ -17,7 +17,7 @@ RZ_API bool rz_analysis_var_display(RzAnalysis *analysis, RzAnalysisVar *var) {
 	}
 	bool usePxr = !strcmp (var->type, "int"); // hacky but useful
 	switch (var->kind) {
-	case RZ_ANAL_VAR_KIND_REG:
+	case RZ_ANALYSIS_VAR_KIND_REG:
 		i = rz_reg_index_get (analysis->reg, var->delta);
 		if (i) {
 			if (usePxr) {
@@ -29,7 +29,7 @@ RZ_API bool rz_analysis_var_display(RzAnalysis *analysis, RzAnalysisVar *var) {
 			eprintf ("register not found\n");
 		}
 		break;
-	case RZ_ANAL_VAR_KIND_BPV: {
+	case RZ_ANALYSIS_VAR_KIND_BPV: {
 		const st32 real_delta = var->delta + var->fcn->bp_off;
 		const ut32 udelta = RZ_ABS (real_delta);
 		const char sign = real_delta >= 0 ? '+' : '-';
@@ -40,7 +40,7 @@ RZ_API bool rz_analysis_var_display(RzAnalysis *analysis, RzAnalysisVar *var) {
 		}
 	}
 		break;
-	case RZ_ANAL_VAR_KIND_SPV: {
+	case RZ_ANALYSIS_VAR_KIND_SPV: {
 		ut32 udelta = RZ_ABS (var->delta + var->fcn->maxstack);
 		if (usePxr) {
 			analysis->cb_printf ("pxr $w @%s+0x%x\n", analysis->reg->name[RZ_REG_NAME_SP], udelta);
@@ -125,7 +125,7 @@ RZ_API RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int 
 	}
 	RzRegItem *reg = NULL;
 	if (!kind) {
-		kind = RZ_ANAL_VAR_KIND_BPV;
+		kind = RZ_ANALYSIS_VAR_KIND_BPV;
 	}
 	if (!type) {
 		type = __int_type_from_size (size);
@@ -137,15 +137,15 @@ RZ_API RzAnalysisVar *rz_analysis_function_set_var(RzAnalysisFunction *fcn, int 
 		}
 	}
 	switch (kind) {
-	case RZ_ANAL_VAR_KIND_BPV: // base pointer var/args
-	case RZ_ANAL_VAR_KIND_SPV: // stack pointer var/args
-	case RZ_ANAL_VAR_KIND_REG: // registers args
+	case RZ_ANALYSIS_VAR_KIND_BPV: // base pointer var/args
+	case RZ_ANALYSIS_VAR_KIND_SPV: // stack pointer var/args
+	case RZ_ANALYSIS_VAR_KIND_REG: // registers args
 		break;
 	default:
 		eprintf ("Invalid var kind '%c'\n", kind);
 		return NULL;
 	}
-	if (kind == RZ_ANAL_VAR_KIND_REG) {
+	if (kind == RZ_ANALYSIS_VAR_KIND_REG) {
 		reg = rz_reg_index_get (fcn->analysis->reg, RZ_ABS (delta));
 		if (!reg) {
 			eprintf ("Register wasn't found at the given delta\n");
@@ -281,10 +281,10 @@ RZ_API ut64 rz_analysis_var_addr(RzAnalysisVar *var) {
 	rz_return_val_if_fail (var, UT64_MAX);
 	RzAnalysis *analysis = var->fcn->analysis;
 	const char *regname = NULL;
-	if (var->kind == RZ_ANAL_VAR_KIND_BPV) {
+	if (var->kind == RZ_ANALYSIS_VAR_KIND_BPV) {
 		regname = rz_reg_get_name (analysis->reg, RZ_REG_NAME_BP);
 		return rz_reg_getv (analysis->reg, regname) + var->delta + var->fcn->bp_off;
-	} else if (var->kind == RZ_ANAL_VAR_KIND_SPV) {
+	} else if (var->kind == RZ_ANALYSIS_VAR_KIND_SPV) {
 		regname = rz_reg_get_name (analysis->reg, RZ_REG_NAME_SP);
 		return rz_reg_getv (analysis->reg, regname) + var->delta;
 	}
@@ -379,7 +379,7 @@ RZ_API bool rz_analysis_var_rename(RzAnalysisVar *var, const char *new_name, boo
 RZ_API int rz_analysis_var_get_argnum(RzAnalysisVar *var) {
 	rz_return_val_if_fail (var, -1);
 	RzAnalysis *analysis = var->fcn->analysis;
-	if (!var->isarg || var->kind != RZ_ANAL_VAR_KIND_REG) { // TODO: support bp and sp too
+	if (!var->isarg || var->kind != RZ_ANALYSIS_VAR_KIND_REG) { // TODO: support bp and sp too
 		return -1;
 	}
 	if (!var->regname) {
@@ -428,7 +428,7 @@ RZ_API RzAnalysisVar *rz_analysis_var_get_dst_var(RzAnalysisVar *var) {
 	rz_return_val_if_fail (var, NULL);
 	RzAnalysisVarAccess *acc;
 	rz_vector_foreach (&var->accesses, acc) {
-		if (!(acc->type & RZ_ANAL_VAR_ACCESS_TYPE_READ)) {
+		if (!(acc->type & RZ_ANALYSIS_VAR_ACCESS_TYPE_READ)) {
 			continue;
 		}
 		ut64 addr = var->fcn->addr + acc->offset;
@@ -440,7 +440,7 @@ RZ_API RzAnalysisVar *rz_analysis_var_get_dst_var(RzAnalysisVar *var) {
 				continue;
 			}
 			RzAnalysisVarAccess *other_acc = rz_analysis_var_get_access_at (used_var, addr);
-			if (other_acc && other_acc->type & RZ_ANAL_VAR_ACCESS_TYPE_WRITE) {
+			if (other_acc && other_acc->type & RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE) {
 				return used_var;
 			}
 		}
@@ -547,25 +547,25 @@ RZ_API char *rz_analysis_var_get_constraints_readable(RzAnalysisVar *var) {
 	for (i = 0; i < n; i += 1) {
 		RzAnalysisVarConstraint *constr = rz_vector_index_ptr (&var->constraints, i);
 		switch (constr->cond) {
-		case RZ_ANAL_COND_LE:
+		case RZ_ANALYSIS_COND_LE:
 			if (high) {
 				rz_strbuf_append (&sb, " && ");
 			}
 			rz_strbuf_appendf (&sb, "<= 0x%"PFMT64x "", constr->val);
 			low = true;
 			break;
-		case RZ_ANAL_COND_LT:
+		case RZ_ANALYSIS_COND_LT:
 			if (high) {
 				rz_strbuf_append (&sb, " && ");
 			}
 			rz_strbuf_appendf (&sb, "< 0x%"PFMT64x "", constr->val);
 			low = true;
 			break;
-		case RZ_ANAL_COND_GE:
+		case RZ_ANALYSIS_COND_GE:
 			rz_strbuf_appendf (&sb, ">= 0x%"PFMT64x "", constr->val);
 			high = true;
 			break;
-		case RZ_ANAL_COND_GT:
+		case RZ_ANALYSIS_COND_GT:
 			rz_strbuf_appendf (&sb, "> 0x%"PFMT64x "", constr->val);
 			high = true;
 			break;
@@ -590,7 +590,7 @@ RZ_API int rz_analysis_var_count(RzAnalysis *a, RzAnalysisFunction *fcn, int kin
 		0
 	};
 	rz_list_foreach (list, iter, var) {
-		if (kind == RZ_ANAL_VAR_KIND_REG) {
+		if (kind == RZ_ANALYSIS_VAR_KIND_REG) {
 			count[1]++;
 			continue;
 		}
@@ -647,7 +647,7 @@ RZ_API RZ_OWN char *rz_analysis_function_autoname_var(RzAnalysisFunction *fcn, c
 		RzAnalysisVar *var = *it;
 		if (!strcmp (varname, var->name)) {
 			if (var->kind != kind) {
-				const char *k = kind == RZ_ANAL_VAR_KIND_SPV ? "sp" : "bp";
+				const char *k = kind == RZ_ANALYSIS_VAR_KIND_SPV ? "sp" : "bp";
 				free (varname);
 				varname = rz_str_newf ("%s_%s_%xh", pfx, k, uptr);
 				return varname;
@@ -667,7 +667,7 @@ static RzAnalysisVar *get_stack_var(RzAnalysisFunction *fcn, int delta) {
 	void **it;
 	rz_pvector_foreach (&fcn->vars, it) {
 		RzAnalysisVar *var = *it;
-		bool is_stack = var->kind == RZ_ANAL_VAR_KIND_SPV || var->kind == RZ_ANAL_VAR_KIND_BPV;
+		bool is_stack = var->kind == RZ_ANALYSIS_VAR_KIND_SPV || var->kind == RZ_ANALYSIS_VAR_KIND_BPV;
 		if (is_stack && var->delta == delta) {
 			return var;
 		}
@@ -729,13 +729,13 @@ static void extract_arg(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysi
 			if (*addr == ',') {
 				addr++;
 			}
-			if (!op->stackop && op->type != RZ_ANAL_OP_TYPE_PUSH && op->type != RZ_ANAL_OP_TYPE_POP
-				&& op->type != RZ_ANAL_OP_TYPE_RET && rz_str_isnumber (addr)) {
+			if (!op->stackop && op->type != RZ_ANALYSIS_OP_TYPE_PUSH && op->type != RZ_ANALYSIS_OP_TYPE_POP
+				&& op->type != RZ_ANALYSIS_OP_TYPE_RET && rz_str_isnumber (addr)) {
 				ptr = (st64)rz_num_get (NULL, addr);
 				if (ptr && op->src[0] && ptr == op->src[0]->imm) {
 					goto beach;
 				}
-			} else if ((op->stackop == RZ_ANAL_STACK_SET) || (op->stackop == RZ_ANAL_STACK_GET)) {
+			} else if ((op->stackop == RZ_ANALYSIS_STACK_SET) || (op->stackop == RZ_ANALYSIS_STACK_GET)) {
 				if (op->ptr % 4) {
 					goto beach;
 				}
@@ -752,12 +752,12 @@ static void extract_arg(RzAnalysis *analysis, RzAnalysisFunction *fcn, RzAnalysi
 		eprintf ("Warning: Analysis didn't fill op->src/dst at 0x%" PFMT64x ".\n", op->addr);
 	}
 
-	int rw = (op->direction == RZ_ANAL_OP_DIR_WRITE) ? RZ_ANAL_VAR_ACCESS_TYPE_WRITE : RZ_ANAL_VAR_ACCESS_TYPE_READ;
+	int rw = (op->direction == RZ_ANALYSIS_OP_DIR_WRITE) ? RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE : RZ_ANALYSIS_VAR_ACCESS_TYPE_READ;
 	if (*sign == '+') {
-		const bool isarg = type == RZ_ANAL_VAR_KIND_SPV ? ptr >= fcn->stack : ptr >= fcn->bp_off;
+		const bool isarg = type == RZ_ANALYSIS_VAR_KIND_SPV ? ptr >= fcn->stack : ptr >= fcn->bp_off;
 		const char *pfx = isarg ? ARGPREFIX : VARPREFIX;
 		st64 frame_off;
-		if (type == RZ_ANAL_VAR_KIND_SPV) {
+		if (type == RZ_ANALYSIS_VAR_KIND_SPV) {
 			frame_off = ptr - fcn->stack;
 		} else {
 			frame_off = ptr - fcn->bp_off;
@@ -843,22 +843,22 @@ static bool is_reg_in_src(const char *regname, RzAnalysis *analysis, RzAnalysisO
 
 static inline bool op_affect_dst(RzAnalysisOp* op) {
 	switch (op->type) {
-	case RZ_ANAL_OP_TYPE_ADD:
-	case RZ_ANAL_OP_TYPE_SUB:
-	case RZ_ANAL_OP_TYPE_MUL:
-	case RZ_ANAL_OP_TYPE_DIV:
-	case RZ_ANAL_OP_TYPE_SHR:
-	case RZ_ANAL_OP_TYPE_SHL:
-	case RZ_ANAL_OP_TYPE_SAL:
-	case RZ_ANAL_OP_TYPE_SAR:
-	case RZ_ANAL_OP_TYPE_OR:
-	case RZ_ANAL_OP_TYPE_AND:
-	case RZ_ANAL_OP_TYPE_XOR:
-	case RZ_ANAL_OP_TYPE_NOR:
-	case RZ_ANAL_OP_TYPE_NOT:
-	case RZ_ANAL_OP_TYPE_ROR:
-	case RZ_ANAL_OP_TYPE_ROL:
-	case RZ_ANAL_OP_TYPE_CAST:
+	case RZ_ANALYSIS_OP_TYPE_ADD:
+	case RZ_ANALYSIS_OP_TYPE_SUB:
+	case RZ_ANALYSIS_OP_TYPE_MUL:
+	case RZ_ANALYSIS_OP_TYPE_DIV:
+	case RZ_ANALYSIS_OP_TYPE_SHR:
+	case RZ_ANALYSIS_OP_TYPE_SHL:
+	case RZ_ANALYSIS_OP_TYPE_SAL:
+	case RZ_ANALYSIS_OP_TYPE_SAR:
+	case RZ_ANALYSIS_OP_TYPE_OR:
+	case RZ_ANALYSIS_OP_TYPE_AND:
+	case RZ_ANALYSIS_OP_TYPE_XOR:
+	case RZ_ANALYSIS_OP_TYPE_NOR:
+	case RZ_ANALYSIS_OP_TYPE_NOT:
+	case RZ_ANALYSIS_OP_TYPE_ROR:
+	case RZ_ANALYSIS_OP_TYPE_ROL:
+	case RZ_ANALYSIS_OP_TYPE_CAST:
 		return true;
 	default:
 		return false;
@@ -875,11 +875,11 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 	RzAnalysisValue *dst = op->dst;
 	RzAnalysisValue *src = op->src[0];
 	switch (op->type) {
-	case RZ_ANAL_OP_TYPE_POP:
+	case RZ_ANALYSIS_OP_TYPE_POP:
 		return false;
-	case RZ_ANAL_OP_TYPE_MOV:
+	case RZ_ANALYSIS_OP_TYPE_MOV:
 		return (is_reg_in_src (regname, analysis, op)) || (STR_EQUAL (opdreg, regname) && dst->memref);
-	case RZ_ANAL_OP_TYPE_CMOV:
+	case RZ_ANALYSIS_OP_TYPE_CMOV:
 		if (STR_EQUAL (opdreg, regname)) {
 			return false;
 		}
@@ -887,8 +887,8 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 			return true;
 		}
 		return false;
-	case RZ_ANAL_OP_TYPE_LEA:
-	case RZ_ANAL_OP_TYPE_LOAD:
+	case RZ_ANALYSIS_OP_TYPE_LEA:
+	case RZ_ANALYSIS_OP_TYPE_LOAD:
 		if (is_reg_in_src (regname, analysis, op)) {
 			return true;
 		}
@@ -896,7 +896,7 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 			return false;
 		}
     		return false;
-	case RZ_ANAL_OP_TYPE_XOR:
+	case RZ_ANALYSIS_OP_TYPE_XOR:
 		if (STR_EQUAL (opsreg, opdreg) && !src->memref && !dst->memref) {
 			return false;
 		}
@@ -940,7 +940,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 		argc = rz_type_func_args_count (TDB, fname);
 	}
 
-	bool is_call = (op->type & 0xf) == RZ_ANAL_OP_TYPE_CALL || (op->type & 0xf) == RZ_ANAL_OP_TYPE_UCALL;
+	bool is_call = (op->type & 0xf) == RZ_ANALYSIS_OP_TYPE_CALL || (op->type & 0xf) == RZ_ANALYSIS_OP_TYPE_UCALL;
 	if (is_call && *count < max_count) {
 		RzList *callee_rargs_l = NULL;
 		int callee_rargs = 0;
@@ -966,8 +966,8 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 			}
 			callee_rargs = callee_rargs 
 				? callee_rargs
-				: rz_analysis_var_count (analysis, f, RZ_ANAL_VAR_KIND_REG, 1);
-			callee_rargs_l = rz_analysis_var_list (analysis, f, RZ_ANAL_VAR_KIND_REG);
+				: rz_analysis_var_count (analysis, f, RZ_ANALYSIS_VAR_KIND_REG, 1);
+			callee_rargs_l = rz_analysis_var_list (analysis, f, RZ_ANALYSIS_VAR_KIND_REG);
 		}
 		size_t i;
 		for (i = 0; i < callee_rargs; i++) {
@@ -1011,7 +1011,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 				name = rz_str_newf ("arg%zu", i + 1);
 				vname = name;
 			}
-			rz_analysis_function_set_var (fcn, delta, RZ_ANAL_VAR_KIND_REG, type, size, true, vname);
+			rz_analysis_function_set_var (fcn, delta, RZ_ANALYSIS_VAR_KIND_REG, type, size, true, vname);
 			(*count)++;
 			free (name);
 			free (type);
@@ -1036,7 +1036,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 				}
 			}
 			if (reg_set[i] == 1 && is_used_like_an_arg) {
-				var = rz_analysis_function_get_var (fcn, RZ_ANAL_VAR_KIND_REG, delta);
+				var = rz_analysis_function_get_var (fcn, RZ_ANALYSIS_VAR_KIND_REG, delta);
 			} else if (reg_set[i] != 2 && is_used_like_an_arg) {
 				const char *vname = NULL;
 				char *type = NULL;
@@ -1049,7 +1049,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 					name = rz_str_newf ("arg%d", i + 1);
 					vname = name;
 				}
-				var = rz_analysis_function_set_var (fcn, delta, RZ_ANAL_VAR_KIND_REG, type, size, true, vname);
+				var = rz_analysis_function_set_var (fcn, delta, RZ_ANALYSIS_VAR_KIND_REG, type, size, true, vname);
 				free (name);
 				free (type);
 				(*count)++;
@@ -1063,7 +1063,7 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 				reg_set[i] = 1;
 			}
 			if (var) {
-				rz_analysis_var_set_access (var, var->regname, op->addr, RZ_ANAL_VAR_ACCESS_TYPE_READ, 0);
+				rz_analysis_var_set_access (var, var->regname, op->addr, RZ_ANALYSIS_VAR_ACCESS_TYPE_READ, 0);
 				rz_meta_set_string (analysis, RZ_META_TYPE_VARTYPE, op->addr, var->name);
 			}
 		}
@@ -1079,9 +1079,9 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 			if (ri) {
 				delta = ri->index;
 			}
-			RzAnalysisVar *newvar = rz_analysis_function_set_var (fcn, delta, RZ_ANAL_VAR_KIND_REG, 0, size, true, vname);
+			RzAnalysisVar *newvar = rz_analysis_function_set_var (fcn, delta, RZ_ANALYSIS_VAR_KIND_REG, 0, size, true, vname);
 			if (newvar) {
-				rz_analysis_var_set_access (newvar, newvar->regname, op->addr, RZ_ANAL_VAR_ACCESS_TYPE_READ, 0);
+				rz_analysis_var_set_access (newvar, newvar->regname, op->addr, RZ_ANALYSIS_VAR_ACCESS_TYPE_READ, 0);
 			}
 			rz_meta_set_string (analysis, RZ_META_TYPE_VARTYPE, op->addr, vname);
 			free (vname);
@@ -1103,9 +1103,9 @@ RZ_API void rz_analysis_extract_rarg(RzAnalysis *analysis, RzAnalysisOp *op, RzA
 			if (ri) {
 				delta = ri->index;
 			}
-			RzAnalysisVar *newvar = rz_analysis_function_set_var (fcn, delta, RZ_ANAL_VAR_KIND_REG, 0, size, true, vname);
+			RzAnalysisVar *newvar = rz_analysis_function_set_var (fcn, delta, RZ_ANALYSIS_VAR_KIND_REG, 0, size, true, vname);
 			if (newvar) {
-				rz_analysis_var_set_access (newvar, newvar->regname, op->addr, RZ_ANAL_VAR_ACCESS_TYPE_READ, 0);
+				rz_analysis_var_set_access (newvar, newvar->regname, op->addr, RZ_ANALYSIS_VAR_ACCESS_TYPE_READ, 0);
 			}
 			rz_meta_set_string (analysis, RZ_META_TYPE_VARTYPE, op->addr, vname);
 			free (vname);
@@ -1122,10 +1122,10 @@ RZ_API void rz_analysis_extract_vars(RzAnalysis *analysis, RzAnalysisFunction *f
 	const char *BP = analysis->reg->name[RZ_REG_NAME_BP];
 	const char *SP = analysis->reg->name[RZ_REG_NAME_SP];
 	if (BP) {
-		extract_arg (analysis, fcn, op, BP, "+", RZ_ANAL_VAR_KIND_BPV);
-		extract_arg (analysis, fcn, op, BP, "-", RZ_ANAL_VAR_KIND_BPV);
+		extract_arg (analysis, fcn, op, BP, "+", RZ_ANALYSIS_VAR_KIND_BPV);
+		extract_arg (analysis, fcn, op, BP, "-", RZ_ANALYSIS_VAR_KIND_BPV);
 	}
-	extract_arg (analysis, fcn, op, SP, "+", RZ_ANAL_VAR_KIND_SPV);
+	extract_arg (analysis, fcn, op, SP, "+", RZ_ANALYSIS_VAR_KIND_SPV);
 }
 
 static RzList *var_generate_list(RzAnalysis *a, RzAnalysisFunction *fcn, int kind) {
@@ -1134,7 +1134,7 @@ static RzList *var_generate_list(RzAnalysis *a, RzAnalysisFunction *fcn, int kin
 	}
 	RzList *list = rz_list_new ();
 	if (kind < 1) {
-		kind = RZ_ANAL_VAR_KIND_BPV; // by default show vars
+		kind = RZ_ANALYSIS_VAR_KIND_BPV; // by default show vars
 	}
 	void **it;
 	rz_pvector_foreach (&fcn->vars, it) {
@@ -1153,9 +1153,9 @@ RZ_API RzList *rz_analysis_var_all_list(RzAnalysis *analysis, RzAnalysisFunction
 	if (!list) {
 		return NULL;
 	}
-	RzList *reg_vars = rz_analysis_var_list (analysis, fcn, RZ_ANAL_VAR_KIND_REG);
-	RzList *bpv_vars = rz_analysis_var_list (analysis, fcn, RZ_ANAL_VAR_KIND_BPV);
-	RzList *spv_vars = rz_analysis_var_list (analysis, fcn, RZ_ANAL_VAR_KIND_SPV);
+	RzList *reg_vars = rz_analysis_var_list (analysis, fcn, RZ_ANALYSIS_VAR_KIND_REG);
+	RzList *bpv_vars = rz_analysis_var_list (analysis, fcn, RZ_ANALYSIS_VAR_KIND_BPV);
+	RzList *spv_vars = rz_analysis_var_list (analysis, fcn, RZ_ANALYSIS_VAR_KIND_SPV);
 	rz_list_join (list, reg_vars);
 	rz_list_join (list, bpv_vars);
 	rz_list_join (list, spv_vars);
@@ -1183,7 +1183,7 @@ RZ_API RzList *rz_analysis_function_get_var_fields(RzAnalysisFunction *fcn, int 
 	}
 	RzList *list = rz_list_newf ((RzListFree)var_field_free);
 	if (kind < 1) {
-		kind = RZ_ANAL_VAR_KIND_BPV; // by default show vars
+		kind = RZ_ANALYSIS_VAR_KIND_BPV; // by default show vars
 	}
 	void **it;
 	rz_pvector_foreach (&fcn->vars, it) {
@@ -1244,7 +1244,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 		switch (mode) {
 		case '*':
 			// we can't express all type info here :(
-			if (kind == RZ_ANAL_VAR_KIND_REG) { // registers
+			if (kind == RZ_ANALYSIS_VAR_KIND_REG) { // registers
 				RzRegItem *i = rz_reg_index_get (analysis->reg, var->delta);
 				if (!i) {
 					eprintf ("Register not found");
@@ -1253,7 +1253,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 				analysis->cb_printf ("afv%c %s %s %s @ 0x%"PFMT64x "\n",
 					kind, i->name, var->name, var->type, fcn->addr);
 			} else {
-				int delta = kind == RZ_ANAL_VAR_KIND_BPV
+				int delta = kind == RZ_ANALYSIS_VAR_KIND_BPV
 					? var->delta + fcn->bp_off
 					: var->delta;
 				analysis->cb_printf ("afv%c %d %s %s @ 0x%"PFMT64x "\n",
@@ -1263,7 +1263,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 			break;
 		case 'j':
 			switch (var->kind) {
-			case RZ_ANAL_VAR_KIND_BPV: {
+			case RZ_ANALYSIS_VAR_KIND_BPV: {
 				st64 delta = (st64)var->delta + fcn->bp_off;
 				pj_o (pj);
 				pj_ks (pj, "name", var->name);
@@ -1281,7 +1281,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 				pj_end (pj);
 			}
 				break;
-			case RZ_ANAL_VAR_KIND_REG: {
+			case RZ_ANALYSIS_VAR_KIND_REG: {
 				RzRegItem *i = rz_reg_index_get (analysis->reg, var->delta);
 				if (!i) {
 					eprintf ("Register not found");
@@ -1295,7 +1295,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 				pj_end (pj);
 			}
 				break;
-			case RZ_ANAL_VAR_KIND_SPV: {
+			case RZ_ANALYSIS_VAR_KIND_SPV: {
 				st64 delta = (st64)var->delta + fcn->maxstack;
 				pj_o (pj);
 				pj_ks (pj, "name", var->name);
@@ -1317,7 +1317,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 			break;
 		default:
 			switch (kind) {
-			case RZ_ANAL_VAR_KIND_BPV:
+			case RZ_ANALYSIS_VAR_KIND_BPV:
 			{
 				int delta = var->delta + fcn->bp_off;
 				if (var->isarg) {
@@ -1334,7 +1334,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 				}
 			}
 				break;
-			case RZ_ANAL_VAR_KIND_REG: {
+			case RZ_ANALYSIS_VAR_KIND_REG: {
 				RzRegItem *i = rz_reg_index_get (analysis->reg, var->delta);
 				if (!i) {
 					eprintf ("Register not found");
@@ -1344,7 +1344,7 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 					var->type, var->name, i->name);
 				}
 				break;
-			case RZ_ANAL_VAR_KIND_SPV:
+			case RZ_ANALYSIS_VAR_KIND_SPV:
 			{
 				int delta = fcn->maxstack + var->delta;
 				if (!var->isarg) {
@@ -1372,9 +1372,9 @@ RZ_API void rz_analysis_var_list_show(RzAnalysis *analysis, RzAnalysisFunction *
 }
 
 RZ_API void rz_analysis_fcn_vars_cache_init(RzAnalysis *analysis, RzAnalysisFcnVarsCache *cache, RzAnalysisFunction *fcn) {
-	cache->bvars = rz_analysis_var_list (analysis, fcn, RZ_ANAL_VAR_KIND_BPV);
-	cache->rvars = rz_analysis_var_list (analysis, fcn, RZ_ANAL_VAR_KIND_REG);
-	cache->svars = rz_analysis_var_list (analysis, fcn, RZ_ANAL_VAR_KIND_SPV);
+	cache->bvars = rz_analysis_var_list (analysis, fcn, RZ_ANALYSIS_VAR_KIND_BPV);
+	cache->rvars = rz_analysis_var_list (analysis, fcn, RZ_ANALYSIS_VAR_KIND_REG);
+	cache->svars = rz_analysis_var_list (analysis, fcn, RZ_ANALYSIS_VAR_KIND_SPV);
 	rz_list_sort (cache->bvars, (RzListComparator)var_comparator);
 	RzListIter *it;
 	RzAnalysisVar *var;

@@ -102,7 +102,7 @@ static bool lastcmd_repeat(RzCore *core, int next);
 #include "cmd_cmp.c"
 #include "cmd_eval.c"
 #include "cmd_interpret.c"
-#include "cmd_anal.c"
+#include "cmd_analysis.c"
 #include "cmd_open.c"
 #include "cmd_meta.c"
 #include "cmd_type.c"
@@ -182,9 +182,9 @@ static const char *help_msg_b[] = {
 
 static const char *help_msg_k[] = {
 	"Usage:", "k[s] [key[=value]]", "Sdb Query",
-	"k", " anal/**", "list namespaces under anal",
-	"k", " anal/meta/*", "list kv from anal > meta namespaces",
-	"k", " anal/meta/meta.0x80404", "get value for meta.0x80404 key",
+	"k", " analysis/**", "list namespaces under analysis",
+	"k", " analysis/meta/*", "list kv from analysis > meta namespaces",
+	"k", " analysis/meta/meta.0x80404", "get value for meta.0x80404 key",
 	"k", " foo", "show value",
 	"k", " foo=bar", "set value",
 	"k", "", "list keys",
@@ -6577,7 +6577,7 @@ RZ_API void rz_core_cmd_init(RzCore *core) {
 		{ "?", "help message", rz_cmd_help },
 		{ "<", "pipe into RzCons.readChar", rz_cmd_pipein },
 		{ "0", "alias for s 0x", rz_cmd_ox },
-		{ "a", "analysis", rz_cmd_anal },
+		{ "a", "analysis", rz_cmd_analysis },
 		{ "b", "change block size", rz_cmd_bsize },
 		{ "c", "compare memory", rz_cmd_cmp },
 		{ "C", "code metadata", rz_cmd_meta },

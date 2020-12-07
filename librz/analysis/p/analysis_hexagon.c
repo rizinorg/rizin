@@ -7,7 +7,7 @@
 #include <rz_lib.h>
 #include "hexagon.h"
 #include "hexagon_insn.h"
-#include "hexagon_anal.h"
+#include "hexagon_analysis.h"
 
 static int hexagon_v6_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	HexInsn hi = {0};;

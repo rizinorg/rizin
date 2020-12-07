@@ -541,7 +541,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			*ok = 1;
 		}
 		// TODO: group analop-dependant vars after a char, so i can filter
-		rz_analysis_op (core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANAL_OP_MASK_BASIC);
+		rz_analysis_op (core->analysis, &op, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC);
 		rz_analysis_op_fini (&op); // we don't need strings or pointers, just values, which are not nullified in fini
 		// XXX the above line is assuming op after fini keeps jump, fail, ptr, val, size and rz_analysis_op_is_eob()
 		switch (str[1]) {
@@ -712,7 +712,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			if (str[2] == 'B') { // $DD
 				return rz_debug_get_baddr (core->dbg, NULL);
 			} else if (IS_DIGIT (str[2])) {
-				return getref (core, atoi (str + 2), 'r', RZ_ANAL_REF_TYPE_DATA);
+				return getref (core, atoi (str + 2), 'r', RZ_ANALYSIS_REF_TYPE_DATA);
 			} else {
 				RzDebugMap *map;
 				RzListIter *iter;
@@ -738,11 +738,11 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			  }
 			  return core->offset;
 		case 'C': // $C nth call
-			return getref (core, atoi (str + 2), 'r', RZ_ANAL_REF_TYPE_CALL);
+			return getref (core, atoi (str + 2), 'r', RZ_ANALYSIS_REF_TYPE_CALL);
 		case 'J': // $J nth jump
-			return getref (core, atoi (str + 2), 'r', RZ_ANAL_REF_TYPE_CODE);
+			return getref (core, atoi (str + 2), 'r', RZ_ANALYSIS_REF_TYPE_CODE);
 		case 'X': // $X nth xref
-			return getref (core, atoi (str + 2), 'x', RZ_ANAL_REF_TYPE_CALL);
+			return getref (core, atoi (str + 2), 'x', RZ_ANALYSIS_REF_TYPE_CALL);
 		case 'F': // $F function size
 			fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 			if (fcn) {
@@ -1701,9 +1701,9 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 		RzList *vars;
 		if (!strncmp (buf->data, "afvn ", 5)) {
-			vars = rz_analysis_var_list (core->analysis, fcn, RZ_ANAL_VAR_KIND_BPV);
+			vars = rz_analysis_var_list (core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_BPV);
 		} else {
-			vars = rz_list_new (); // TODO rz_analysis_var_list (core->analysis, fcn, RZ_ANAL_VAR_KIND_ARG);
+			vars = rz_list_new (); // TODO rz_analysis_var_list (core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_ARG);
 		}
 		const char *f_ptr, *l_ptr;
 		RzAnalysisVar *var;
@@ -1993,7 +1993,7 @@ static char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, int dep
 		break;
 	}
 	RzBinSection *sect = value? rz_bin_get_section_at (rz_bin_cur_object (core->bin), value, true): NULL;
-	if(! ((type&RZ_ANAL_ADDR_TYPE_HEAP)||(type&RZ_ANAL_ADDR_TYPE_STACK)) ) {
+	if(! ((type&RZ_ANALYSIS_ADDR_TYPE_HEAP)||(type&RZ_ANALYSIS_ADDR_TYPE_STACK)) ) {
 		// Do not repeat "stack" or "heap" words unnecessarily.
 		if (sect && sect->name[0]) {
 			rz_strbuf_appendf (s," (%s)", sect->name);
@@ -2015,30 +2015,30 @@ static char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, int dep
 		if (!c) {
 			c = "";
 		}
-		if (type & RZ_ANAL_ADDR_TYPE_HEAP) {
+		if (type & RZ_ANALYSIS_ADDR_TYPE_HEAP) {
 			rz_strbuf_appendf (s, " %sheap%s", c, cend);
-		} else if (type & RZ_ANAL_ADDR_TYPE_STACK) {
+		} else if (type & RZ_ANALYSIS_ADDR_TYPE_STACK) {
 			rz_strbuf_appendf (s, " %sstack%s", c, cend);
 		}
-		if (type & RZ_ANAL_ADDR_TYPE_PROGRAM) {
+		if (type & RZ_ANALYSIS_ADDR_TYPE_PROGRAM) {
 			rz_strbuf_appendf (s, " %sprogram%s", c, cend);
 		}
-		if (type & RZ_ANAL_ADDR_TYPE_LIBRARY) {
+		if (type & RZ_ANALYSIS_ADDR_TYPE_LIBRARY) {
 			rz_strbuf_appendf (s, " %slibrary%s", c, cend);
 		}
-		if (type & RZ_ANAL_ADDR_TYPE_ASCII) {
+		if (type & RZ_ANALYSIS_ADDR_TYPE_ASCII) {
 			rz_strbuf_appendf (s, " %sascii%s ('%c')", c, cend, (char)value);
 		}
-		if (type & RZ_ANAL_ADDR_TYPE_SEQUENCE) {
+		if (type & RZ_ANALYSIS_ADDR_TYPE_SEQUENCE) {
 			rz_strbuf_appendf (s, " %ssequence%s", c, cend);
 		}
-		if (type & RZ_ANAL_ADDR_TYPE_READ) {
+		if (type & RZ_ANALYSIS_ADDR_TYPE_READ) {
 			rz_strbuf_appendf (s, " %sR%s", c, cend);
 		}
-		if (type & RZ_ANAL_ADDR_TYPE_WRITE) {
+		if (type & RZ_ANALYSIS_ADDR_TYPE_WRITE) {
 			rz_strbuf_appendf (s, " %sW%s", c, cend);
 		}
-		if (type & RZ_ANAL_ADDR_TYPE_EXEC) {
+		if (type & RZ_ANALYSIS_ADDR_TYPE_EXEC) {
 			RzAsmOp op;
 			ut8 buf[32];
 			rz_strbuf_appendf (s, " %sX%s", c, cend);
@@ -2061,7 +2061,7 @@ static char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, int dep
 					}
 				}
 			}
-		} else if (type & RZ_ANAL_ADDR_TYPE_READ) {
+		} else if (type & RZ_ANALYSIS_ADDR_TYPE_READ) {
 			ut8 buf[32];
 			ut32 *n32 = (ut32 *)buf;
 			ut64 *n64 = (ut64*)buf;
@@ -2094,7 +2094,7 @@ static char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, int dep
 		}
 
 	}
-	if ((type & RZ_ANAL_ADDR_TYPE_READ) && !(type & RZ_ANAL_ADDR_TYPE_EXEC) && depth) {
+	if ((type & RZ_ANALYSIS_ADDR_TYPE_READ) && !(type & RZ_ANALYSIS_ADDR_TYPE_EXEC) && depth) {
 		// Try to telescope further, but only several levels deep.
 		ut8 buf[32];
 		ut32 *n32 = (ut32 *)buf;
@@ -2139,19 +2139,19 @@ RZ_API const char *rz_core_analysis_optype_colorfor(RzCore *core, ut64 addr, boo
 		return NULL;
 	}
 	type = rz_core_analysis_address (core, addr);
-	if (type & RZ_ANAL_ADDR_TYPE_EXEC) {
+	if (type & RZ_ANALYSIS_ADDR_TYPE_EXEC) {
 		return core->cons->context->pal.ai_exec; //Color_RED;
 	}
-	if (type & RZ_ANAL_ADDR_TYPE_WRITE) {
+	if (type & RZ_ANALYSIS_ADDR_TYPE_WRITE) {
 		return core->cons->context->pal.ai_write; //Color_BLUE;
 	}
-	if (type & RZ_ANAL_ADDR_TYPE_READ) {
+	if (type & RZ_ANALYSIS_ADDR_TYPE_READ) {
 		return core->cons->context->pal.ai_read; //Color_GREEN;
 	}
-	if (type & RZ_ANAL_ADDR_TYPE_SEQUENCE) {
+	if (type & RZ_ANALYSIS_ADDR_TYPE_SEQUENCE) {
 		return core->cons->context->pal.ai_seq; //Color_MAGENTA;
 	}
-	if (type & RZ_ANAL_ADDR_TYPE_ASCII) {
+	if (type & RZ_ANALYSIS_ADDR_TYPE_ASCII) {
 		return core->cons->context->pal.ai_ascii; //Color_YELLOW;
 	}
 	return NULL;
@@ -2912,7 +2912,7 @@ RZ_API char *rz_core_op_str(RzCore *core, ut64 addr) {
 	return str;
 }
 
-RZ_API RzAnalysisOp *rz_core_op_anal(RzCore *core, ut64 addr, RzAnalysisOpMask mask) {
+RZ_API RzAnalysisOp *rz_core_op_analysis(RzCore *core, ut64 addr, RzAnalysisOpMask mask) {
 	ut8 buf[64];
 	RzAnalysisOp *op = RZ_NEW (RzAnalysisOp);
 	rz_io_read_at (core->io, addr, buf, sizeof (buf));

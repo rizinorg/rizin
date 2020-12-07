@@ -14,7 +14,7 @@ typedef struct {
     ppcps_field_t operands[6];
     int n;
     int op;
-    ut32 anal_op;
+    ut32 analysis_op;
 } ppcps_t;
 
 bool libps_decode(ut32 data, ppcps_t* ps);

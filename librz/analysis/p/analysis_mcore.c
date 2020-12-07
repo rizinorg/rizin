@@ -18,21 +18,21 @@ static int mcore_analysis(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, con
 	if ((instr = mcore_next (&handle))) {
 		op->type = instr->type;
 		switch (instr->type) {
-		case RZ_ANAL_OP_TYPE_CALL:
-		case RZ_ANAL_OP_TYPE_CJMP:
+		case RZ_ANALYSIS_OP_TYPE_CALL:
+		case RZ_ANALYSIS_OP_TYPE_CJMP:
 			op->fail = addr + 2;
 			op->jump = addr + instr->args[0].value + 1;
 			break;
-		case RZ_ANAL_OP_TYPE_JMP:
+		case RZ_ANALYSIS_OP_TYPE_JMP:
 			op->jump = addr + instr->args[0].value + 1;
 			break;
-		case RZ_ANAL_OP_TYPE_ICALL:
+		case RZ_ANALYSIS_OP_TYPE_ICALL:
 			// the loading address depends on the word
 			// that this pointer points to.
 			// op->jump = addr + ((instr->args[i].value << 2) & 0xfffffffc);
 			break;
-		case RZ_ANAL_OP_TYPE_RET:
-		case RZ_ANAL_OP_TYPE_ILL:
+		case RZ_ANALYSIS_OP_TYPE_RET:
+		case RZ_ANALYSIS_OP_TYPE_ILL:
 			op->eob = true;
 			break;
 		default:

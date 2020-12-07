@@ -249,7 +249,7 @@ RZ_API int rz_debug_esil_stepi (RzDebug *d) {
 		//	npc = rz_debug_reg_get (dbg, dbg->reg->name[RZ_REG_NAME_PC]);
 	}
 
-	if (rz_analysis_op (dbg->analysis, &op, opc, obuf, sizeof (obuf), RZ_ANAL_OP_MASK_ESIL)) {
+	if (rz_analysis_op (dbg->analysis, &op, opc, obuf, sizeof (obuf), RZ_ANALYSIS_OP_MASK_ESIL)) {
 		if (esilbreak_check_pc (dbg, opc)) {
 			eprintf ("STOP AT 0x%08"PFMT64x"\n", opc);
 			ret = 0;

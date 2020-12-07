@@ -51,7 +51,7 @@ static RzCore *core = NULL;
 static const char *arch = NULL;
 const char *runcmd = NULL;
 static int bits = 0;
-static int anal_all = 0;
+static int analysis_all = 0;
 static bool verbose = false;
 static RzList *evals = NULL;
 
@@ -91,9 +91,9 @@ static RzCore *opencore(const char *f) {
 			rz_config_set_i (c->config, "io.va", false);
 		}
 
-		if (anal_all) {
+		if (analysis_all) {
 			const char *cmd = "aac";
-			switch (anal_all) {
+			switch (analysis_all) {
 			case 1: cmd = "aaa"; break;
 			case 2: cmd = "aaaa"; break;
 			}
@@ -941,7 +941,7 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 			arch = opt.arg;
 			break;
 		case 'A':
-			anal_all++;
+			analysis_all++;
 			break;
 		case 'b':
 			bits = atoi (opt.arg);
@@ -1131,16 +1131,16 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 				*second++ = 0;
 				ut64 off = rz_num_math (c->num, words);
 				// define the same function at each offset
-				rz_core_analysis_fcn (c, off, UT64_MAX, RZ_ANAL_REF_TYPE_NULL, depth);
+				rz_core_analysis_fcn (c, off, UT64_MAX, RZ_ANALYSIS_REF_TYPE_NULL, depth);
 				rz_core_analysis_fcn (c2, rz_num_math (c2->num, second),
-					UT64_MAX, RZ_ANAL_REF_TYPE_NULL, depth);
+					UT64_MAX, RZ_ANALYSIS_REF_TYPE_NULL, depth);
 				rz_core_gdiff (c, c2);
 				__print_diff_graph (c, off, gmode);
 			} else {
 				rz_core_analysis_fcn (c, rz_num_math (c->num, words),
-					UT64_MAX, RZ_ANAL_REF_TYPE_NULL, depth);
+					UT64_MAX, RZ_ANALYSIS_REF_TYPE_NULL, depth);
 				rz_core_analysis_fcn (c2, rz_num_math (c2->num, words),
-					UT64_MAX, RZ_ANAL_REF_TYPE_NULL, depth);
+					UT64_MAX, RZ_ANALYSIS_REF_TYPE_NULL, depth);
 				rz_core_gdiff (c, c2);
 				__print_diff_graph (c, rz_num_math (c->num, addr), gmode);
 			}

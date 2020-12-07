@@ -276,7 +276,7 @@ static bool objc_find_refs(RzCore *core) {
 				RzListIter *iter;
 				RzAnalysisRef *ref;
 				rz_list_foreach (list, iter, ref) {
-					rz_analysis_xrefs_set (core->analysis, ref->addr, funcVA, RZ_ANAL_REF_TYPE_CODE);
+					rz_analysis_xrefs_set (core->analysis, ref->addr, funcVA, RZ_ANALYSIS_REF_TYPE_CODE);
 					total_xrefs++;
 				}
 			}
@@ -302,7 +302,7 @@ static bool objc_find_refs(RzCore *core) {
 	return true;
 }
 
-RZ_API bool cmd_anal_objc(RzCore *core, const char *input, bool auto_analysis) {
+RZ_API bool cmd_analysis_objc(RzCore *core, const char *input, bool auto_analysis) {
 	rz_return_val_if_fail (core && input, 0);
 	if (!auto_analysis) {
 		objc_analyze (core);

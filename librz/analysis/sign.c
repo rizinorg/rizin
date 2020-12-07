@@ -47,9 +47,9 @@ RZ_API RzList *rz_sign_fcn_vars(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	if (!ret) {
 		return NULL;
 	}
-	RzList *reg_vars = rz_analysis_var_list (core->analysis, fcn, RZ_ANAL_VAR_KIND_REG);
-	RzList *spv_vars = rz_analysis_var_list (core->analysis, fcn, RZ_ANAL_VAR_KIND_SPV);
-	RzList *bpv_vars = rz_analysis_var_list (core->analysis, fcn, RZ_ANAL_VAR_KIND_BPV);
+	RzList *reg_vars = rz_analysis_var_list (core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_REG);
+	RzList *spv_vars = rz_analysis_var_list (core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_SPV);
+	RzList *bpv_vars = rz_analysis_var_list (core->analysis, fcn, RZ_ANALYSIS_VAR_KIND_BPV);
 	rz_list_foreach (bpv_vars, iter, var) {
 		rz_list_append (ret, rz_str_newf ("b%d", var->delta));
 	}
@@ -126,7 +126,7 @@ RZ_API RzList *rz_sign_fcn_xrefs(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	RzList *ret = rz_list_newf ((RzListFree) free);
 	RzList *xrefs = rz_analysis_function_get_xrefs (fcn);
 	rz_list_foreach (xrefs, iter, refi) {
-		if (refi->type == RZ_ANAL_REF_TYPE_CODE || refi->type == RZ_ANAL_REF_TYPE_CALL) {
+		if (refi->type == RZ_ANALYSIS_REF_TYPE_CODE || refi->type == RZ_ANALYSIS_REF_TYPE_CALL) {
 			const char *flag = getRealRef (core, refi->addr);
 			if (flag) {
 				rz_list_append (ret, rz_str_new (flag));
@@ -152,7 +152,7 @@ RZ_API RzList *rz_sign_fcn_refs(RzAnalysis *a, RzAnalysisFunction *fcn) {
 	RzList *ret = rz_list_newf ((RzListFree) free);
 	RzList *refs = rz_analysis_function_get_refs (fcn);
 	rz_list_foreach (refs, iter, refi) {
-		if (refi->type == RZ_ANAL_REF_TYPE_CODE || refi->type == RZ_ANAL_REF_TYPE_CALL) {
+		if (refi->type == RZ_ANALYSIS_REF_TYPE_CODE || refi->type == RZ_ANALYSIS_REF_TYPE_CALL) {
 			const char *flag = getRealRef (core, refi->addr);
 			if (flag) {
 				rz_list_append (ret, rz_str_new (flag));
@@ -798,7 +798,7 @@ RZ_API bool rz_sign_add_bytes(RzAnalysis *a, const char *name, ut64 size, const 
 	return addBytes (a, name, size, bytes, mask);
 }
 
-RZ_API bool rz_sign_add_anal(RzAnalysis *a, const char *name, ut64 size, const ut8 *bytes, ut64 at) {
+RZ_API bool rz_sign_add_analysis(RzAnalysis *a, const char *name, ut64 size, const ut8 *bytes, ut64 at) {
 	bool retval = false;
 	rz_return_val_if_fail (a && name && size > 0 && bytes, false);
 	ut8 *mask = rz_analysis_mask (a, size, bytes, at);

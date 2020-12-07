@@ -656,7 +656,7 @@ void recovery_type_descriptor_free(RecoveryTypeDescriptor *td) {
 }
 
 
-typedef struct rtti_msvc_anal_context_t {
+typedef struct rtti_msvc_analysis_context_t {
 	RVTableContext *vt_context;
 	RzPVector vtables; // <RVTableInfo>
 	RzPVector complete_object_locators; // <RecoveryCompleteObjectLocator>
@@ -667,9 +667,9 @@ typedef struct rtti_msvc_anal_context_t {
 } RRTTIMSVCAnalContext;
 
 
-RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr, RecoveryCompleteObjectLocator *col);
+RecoveryTypeDescriptor *recovery_analysis_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr, RecoveryCompleteObjectLocator *col);
 
-RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAnalContext *context, ut64 addr, RVTableInfo *vtable) {
+RecoveryCompleteObjectLocator *recovery_analysis_complete_object_locator(RRTTIMSVCAnalContext *context, ut64 addr, RVTableInfo *vtable) {
 	RecoveryCompleteObjectLocator *col = ht_up_find (context->addr_col, addr, NULL);
 	if (col) {
 		return col;
@@ -690,7 +690,7 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 
 
 	ut64 td_addr = rtti_msvc_addr (context->vt_context, col->addr, col->col.object_base, col->col.type_descriptor_addr);
-	col->td = recovery_anal_type_descriptor (context, td_addr, col);
+	col->td = recovery_analysis_type_descriptor (context, td_addr, col);
 	if (!col->td->valid) {
 		col->valid = false;
 		return col;
@@ -724,7 +724,7 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 	rtti_base_class_descriptor *bcd;
 	rz_list_foreach (col->bcd, bcdIter, bcd) {
 		ut64 base_td_addr = rtti_msvc_addr (context->vt_context, col->addr, col->col.object_base, bcd->type_descriptor_addr);
-		RecoveryTypeDescriptor *td = recovery_anal_type_descriptor (context, base_td_addr, NULL);
+		RecoveryTypeDescriptor *td = recovery_analysis_type_descriptor (context, base_td_addr, NULL);
 		if (td == col->td) {
 			continue;
 		}
@@ -742,7 +742,7 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 	return col;
 }
 
-RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr, RecoveryCompleteObjectLocator *col) {
+RecoveryTypeDescriptor *recovery_analysis_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr, RecoveryCompleteObjectLocator *col) {
 	RecoveryTypeDescriptor *td = ht_up_find (context->addr_td, addr, NULL);
 	if (td) {
 		if (col != NULL) {
@@ -961,7 +961,7 @@ RZ_API void rz_analysis_rtti_msvc_recover_all(RVTableContext *vt_context, RzList
 		if (!vt_context->read_addr (vt_context->analysis, colRefAddr, &colAddr)) {
 			continue;
 		}
-		recovery_anal_complete_object_locator (&context, colAddr, table);
+		recovery_analysis_complete_object_locator (&context, colAddr, table);
 	}
 
 	void **it;

@@ -153,10 +153,10 @@ static bool vtable_is_addr_vtable_start_msvc(RVTableContext *context, ut64 curAd
 			context->analysis->iob.read_at (context->analysis->iob.io, xref->addr, buf, sizeof(buf));
 
 			RzAnalysisOp analop = { 0 };
-			rz_analysis_op (context->analysis, &analop, xref->addr, buf, sizeof(buf), RZ_ANAL_OP_MASK_BASIC);
+			rz_analysis_op (context->analysis, &analop, xref->addr, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_BASIC);
 
-			if (analop.type == RZ_ANAL_OP_TYPE_MOV
-				|| analop.type == RZ_ANAL_OP_TYPE_LEA) {
+			if (analop.type == RZ_ANALYSIS_OP_TYPE_MOV
+				|| analop.type == RZ_ANALYSIS_OP_TYPE_LEA) {
 				rz_list_free (xrefs);
 				rz_analysis_op_fini (&analop);
 				return true;
@@ -170,10 +170,10 @@ static bool vtable_is_addr_vtable_start_msvc(RVTableContext *context, ut64 curAd
 }
 
 static bool vtable_is_addr_vtable_start(RVTableContext *context, RzBinSection *section, ut64 curAddress) {
-	if (context->abi == RZ_ANAL_CPP_ABI_MSVC) {
+	if (context->abi == RZ_ANALYSIS_CPP_ABI_MSVC) {
 		return vtable_is_addr_vtable_start_msvc (context, curAddress);
 	}
-	if (context->abi == RZ_ANAL_CPP_ABI_ITANIUM) {
+	if (context->abi == RZ_ANALYSIS_CPP_ABI_ITANIUM) {
 		return vtable_is_addr_vtable_start_itanium (context, section, curAddress);
 	}
 	rz_return_val_if_reached (false);

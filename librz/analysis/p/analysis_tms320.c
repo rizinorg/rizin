@@ -32,49 +32,49 @@ int tms320_c55x_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 
 	op->delay = 0;
 	op->size = tms320_dasm(&engine, buf, len);
-	op->type = RZ_ANAL_OP_TYPE_NULL;
+	op->type = RZ_ANALYSIS_OP_TYPE_NULL;
 
 	str = strstr(str, "||") ? str + 3 : str;
 
 	if (match(str, "B ")) {
-		op->type = RZ_ANAL_OP_TYPE_JMP;
+		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		if (match (str, "B AC")) {
-			op->type = RZ_ANAL_OP_TYPE_UJMP;
+			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 		}
 	} else if (match(str, "BCC ") || match(str, "BCCU ")) {
-		op->type = RZ_ANAL_OP_TYPE_CJMP;
+		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 	} else if (match(str, "CALL ")) {
-		op->type = RZ_ANAL_OP_TYPE_CALL;
+		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		if (match (str, "CALL AC")) {
-			op->type = RZ_ANAL_OP_TYPE_UCALL;
+			op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 		}
 	} else if (match(str, "CALLCC ")) {
-		op->type = RZ_ANAL_OP_TYPE_CCALL;
+		op->type = RZ_ANALYSIS_OP_TYPE_CCALL;
 	} else if (match(str, "RET")) {
-		op->type = RZ_ANAL_OP_TYPE_RET;
+		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		if (match (str, "RETCC")) {
-			op->type = RZ_ANAL_OP_TYPE_CRET;
+			op->type = RZ_ANALYSIS_OP_TYPE_CRET;
 		}
 	} else if (match(str, "MOV ")) {
-		op->type = RZ_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 	} else if (match(str, "PSHBOTH ")) {
-		op->type = RZ_ANAL_OP_TYPE_UPUSH;
+		op->type = RZ_ANALYSIS_OP_TYPE_UPUSH;
 	} else if (match(str, "PSH ")) {
-		op->type = RZ_ANAL_OP_TYPE_PUSH;
+		op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 	} else if (match(str, "POPBOTH ") || match(str, "POP ")) {
-		op->type = RZ_ANAL_OP_TYPE_POP;
+		op->type = RZ_ANALYSIS_OP_TYPE_POP;
 	} else if (match(str, "CMP ")) {
-		op->type = RZ_ANAL_OP_TYPE_CMP;
+		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 	} else if (match(str, "CMPAND ")) {
-		op->type = RZ_ANAL_OP_TYPE_ACMP;
+		op->type = RZ_ANALYSIS_OP_TYPE_ACMP;
 	} else if (match(str, "NOP")) {
-		op->type = RZ_ANAL_OP_TYPE_NOP;
+		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 	} else if (match(str, "INTR ")) {
-		op->type = RZ_ANAL_OP_TYPE_SWI;
+		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 	} else if (match(str, "TRAP ")) {
-		op->type = RZ_ANAL_OP_TYPE_TRAP;
+		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 	} else if (match(str, "INVALID")) {
-		op->type = RZ_ANAL_OP_TYPE_UNK;
+		op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 	}
 
 	return op->size;

@@ -29,7 +29,7 @@ typedef struct rz_parse_t {
 	int minval;
 	char *retleave_asm;
 	struct rz_parse_plugin_t *cur;
-	// RzAnalysis *analysis; // weak anal ref XXX do not use. use analb.anal
+	// RzAnalysis *analysis; // weak analysis ref XXX do not use. use analb.anal
 	RzList *parsers;
 	RzAnalysisVarList varlist;
 	st64 (*get_ptr_at)(RzAnalysisFunction *fcn, st64 delta, ut64 addr);
@@ -71,7 +71,7 @@ RZ_API bool rz_parse_subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int op
 RZ_API char *rz_parse_immtrim(char *opstr);
 
 /* c */
-// why we have anal scoped things in rparse
+// why we have analysis scoped things in rparse
 RZ_API char *rz_parse_c_string(RzAnalysis *analysis, const char *code, char **error_msg);
 RZ_API char *rz_parse_c_file(RzAnalysis *analysis, const char *path, const char *dir, char **error_msg);
 RZ_API void rz_parse_c_reset(RzParse *p);

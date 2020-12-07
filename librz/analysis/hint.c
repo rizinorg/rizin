@@ -36,16 +36,16 @@ static void addr_hint_record_fini(void *element, void *user) {
 	(void)user;
 	RzAnalysisAddrHintRecord *record = element;
 	switch (record->type) {
-	case RZ_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET:
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_TYPE_OFFSET:
 		free (record->type_offset);
 		break;
-	case RZ_ANAL_ADDR_HINT_TYPE_SYNTAX:
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_SYNTAX:
 		free (record->syntax);
 		break;
-	case RZ_ANAL_ADDR_HINT_TYPE_OPCODE:
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_OPCODE:
 		free (record->opcode);
 		break;
-	case RZ_ANAL_ADDR_HINT_TYPE_ESIL:
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_ESIL:
 		free (record->esil);
 		break;
 	default:
@@ -199,83 +199,83 @@ static RzAnalysisRangedHintRecordBase *ensure_ranged_hint_record(RBTree *tree, u
 }
 
 RZ_API void rz_analysis_hint_set_offset(RzAnalysis *a, ut64 addr, const char *typeoff) {
-	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET,
+	SET_HINT (RZ_ANALYSIS_ADDR_HINT_TYPE_TYPE_OFFSET,
 			  free (r->type_offset);
 		r->type_offset = strdup (typeoff);
 	);
 }
 
 RZ_API void rz_analysis_hint_set_nword(RzAnalysis *a, ut64 addr, int nword) {
-	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_NWORD, r->nword = nword;);
+	SET_HINT (RZ_ANALYSIS_ADDR_HINT_TYPE_NWORD, r->nword = nword;);
 }
 
 RZ_API void rz_analysis_hint_set_jump(RzAnalysis *a, ut64 addr, ut64 jump) {
-	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_JUMP, r->jump = jump;);
+	SET_HINT (RZ_ANALYSIS_ADDR_HINT_TYPE_JUMP, r->jump = jump;);
 }
 
 RZ_API void rz_analysis_hint_set_fail(RzAnalysis *a, ut64 addr, ut64 fail) {
-	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_FAIL, r->fail = fail;);
+	SET_HINT (RZ_ANALYSIS_ADDR_HINT_TYPE_FAIL, r->fail = fail;);
 }
 
 RZ_API void rz_analysis_hint_set_newbits(RzAnalysis *a, ut64 addr, int bits) {
-	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_NEW_BITS, r->newbits = bits;);
+	SET_HINT (RZ_ANALYSIS_ADDR_HINT_TYPE_NEW_BITS, r->newbits = bits;);
 }
 
 RZ_API void rz_analysis_hint_set_high(RzAnalysis *a, ut64 addr) {
-	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_HIGH,);
+	SET_HINT (RZ_ANALYSIS_ADDR_HINT_TYPE_HIGH,);
 }
 
 RZ_API void rz_analysis_hint_set_immbase(RzAnalysis *a, ut64 addr, int base) {
 	if (base) {
-		SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_IMMBASE, r->immbase = base;);
+		SET_HINT (RZ_ANALYSIS_ADDR_HINT_TYPE_IMMBASE, r->immbase = base;);
 	} else {
-		unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_IMMBASE, addr);
+		unset_addr_hint_record (a, RZ_ANALYSIS_ADDR_HINT_TYPE_IMMBASE, addr);
 	}
 }
 
 RZ_API void rz_analysis_hint_set_pointer(RzAnalysis *a, ut64 addr, ut64 ptr) {
-	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_PTR, r->ptr = ptr;);
+	SET_HINT (RZ_ANALYSIS_ADDR_HINT_TYPE_PTR, r->ptr = ptr;);
 }
 
 RZ_API void rz_analysis_hint_set_ret(RzAnalysis *a, ut64 addr, ut64 val) {
-	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_RET, r->retval = val;);
+	SET_HINT (RZ_ANALYSIS_ADDR_HINT_TYPE_RET, r->retval = val;);
 }
 
 RZ_API void rz_analysis_hint_set_syntax(RzAnalysis *a, ut64 addr, const char *syn) {
-	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_SYNTAX,
+	SET_HINT (RZ_ANALYSIS_ADDR_HINT_TYPE_SYNTAX,
 			  free (r->syntax);
 		r->syntax = strdup (syn);
 	);
 }
 
 RZ_API void rz_analysis_hint_set_opcode(RzAnalysis *a, ut64 addr, const char *opcode) {
-	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_OPCODE,
+	SET_HINT (RZ_ANALYSIS_ADDR_HINT_TYPE_OPCODE,
 			  free (r->opcode);
 		r->opcode = strdup (opcode);
 	);
 }
 
 RZ_API void rz_analysis_hint_set_esil(RzAnalysis *a, ut64 addr, const char *esil) {
-	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_ESIL,
+	SET_HINT (RZ_ANALYSIS_ADDR_HINT_TYPE_ESIL,
 			  free (r->esil);
 		r->esil = strdup (esil);
 	);
 }
 
 RZ_API void rz_analysis_hint_set_type (RzAnalysis *a, ut64 addr, int type) {
-	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_OPTYPE, r->optype = type;);
+	SET_HINT (RZ_ANALYSIS_ADDR_HINT_TYPE_OPTYPE, r->optype = type;);
 }
 
 RZ_API void rz_analysis_hint_set_size(RzAnalysis *a, ut64 addr, ut64 size) {
-	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_SIZE, r->size = size;);
+	SET_HINT (RZ_ANALYSIS_ADDR_HINT_TYPE_SIZE, r->size = size;);
 }
 
 RZ_API void rz_analysis_hint_set_stackframe(RzAnalysis *a, ut64 addr, ut64 size) {
-	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_STACKFRAME, r->stackframe = size;);
+	SET_HINT (RZ_ANALYSIS_ADDR_HINT_TYPE_STACKFRAME, r->stackframe = size;);
 }
 
 RZ_API void rz_analysis_hint_set_val(RzAnalysis *a, ut64 addr, ut64 v) {
-	SET_HINT (RZ_ANAL_ADDR_HINT_TYPE_VAL, r->val = v;);
+	SET_HINT (RZ_ANALYSIS_ADDR_HINT_TYPE_VAL, r->val = v;);
 }
 
 RZ_API void rz_analysis_hint_set_arch(RzAnalysis *a, ut64 addr, const char *arch) {
@@ -299,67 +299,67 @@ RZ_API void rz_analysis_hint_set_bits(RzAnalysis *a, ut64 addr, int bits) {
 }
 
 RZ_API void rz_analysis_hint_unset_size(RzAnalysis *a, ut64 addr) {
-	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_SIZE, addr);
+	unset_addr_hint_record (a, RZ_ANALYSIS_ADDR_HINT_TYPE_SIZE, addr);
 }
 
 RZ_API void rz_analysis_hint_unset_esil(RzAnalysis *a, ut64 addr) {
-	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_ESIL, addr);
+	unset_addr_hint_record (a, RZ_ANALYSIS_ADDR_HINT_TYPE_ESIL, addr);
 }
 
 RZ_API void rz_analysis_hint_unset_opcode(RzAnalysis *a, ut64 addr) {
-	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_OPCODE, addr);
+	unset_addr_hint_record (a, RZ_ANALYSIS_ADDR_HINT_TYPE_OPCODE, addr);
 }
 
 RZ_API void rz_analysis_hint_unset_high(RzAnalysis *a, ut64 addr) {
-	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_HIGH, addr);
+	unset_addr_hint_record (a, RZ_ANALYSIS_ADDR_HINT_TYPE_HIGH, addr);
 }
 
 RZ_API void rz_analysis_hint_unset_immbase(RzAnalysis *a, ut64 addr) {
-	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_IMMBASE, addr);
+	unset_addr_hint_record (a, RZ_ANALYSIS_ADDR_HINT_TYPE_IMMBASE, addr);
 }
 
 RZ_API void rz_analysis_hint_unset_nword(RzAnalysis *a, ut64 addr) {
-	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_NWORD, addr);
+	unset_addr_hint_record (a, RZ_ANALYSIS_ADDR_HINT_TYPE_NWORD, addr);
 }
 
 RZ_API void rz_analysis_hint_unset_syntax(RzAnalysis *a, ut64 addr) {
-	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_SYNTAX, addr);
+	unset_addr_hint_record (a, RZ_ANALYSIS_ADDR_HINT_TYPE_SYNTAX, addr);
 }
 
 RZ_API void rz_analysis_hint_unset_pointer(RzAnalysis *a, ut64 addr) {
-	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_PTR, addr);
+	unset_addr_hint_record (a, RZ_ANALYSIS_ADDR_HINT_TYPE_PTR, addr);
 }
 
 RZ_API void rz_analysis_hint_unset_ret(RzAnalysis *a, ut64 addr) {
-	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_RET, addr);
+	unset_addr_hint_record (a, RZ_ANALYSIS_ADDR_HINT_TYPE_RET, addr);
 }
 
 RZ_API void rz_analysis_hint_unset_offset(RzAnalysis *a, ut64 addr) {
-	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET, addr);
+	unset_addr_hint_record (a, RZ_ANALYSIS_ADDR_HINT_TYPE_TYPE_OFFSET, addr);
 }
 
 RZ_API void rz_analysis_hint_unset_jump(RzAnalysis *a, ut64 addr) {
-	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_JUMP, addr);
+	unset_addr_hint_record (a, RZ_ANALYSIS_ADDR_HINT_TYPE_JUMP, addr);
 }
 
 RZ_API void rz_analysis_hint_unset_fail(RzAnalysis *a, ut64 addr) {
-	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_FAIL, addr);
+	unset_addr_hint_record (a, RZ_ANALYSIS_ADDR_HINT_TYPE_FAIL, addr);
 }
 
 RZ_API void rz_analysis_hint_unset_newbits(RzAnalysis *a, ut64 addr) {
-	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_NEW_BITS, addr);
+	unset_addr_hint_record (a, RZ_ANALYSIS_ADDR_HINT_TYPE_NEW_BITS, addr);
 }
 
 RZ_API void rz_analysis_hint_unset_val (RzAnalysis *a, ut64 addr) {
-	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_VAL, addr);
+	unset_addr_hint_record (a, RZ_ANALYSIS_ADDR_HINT_TYPE_VAL, addr);
 }
 
 RZ_API void rz_analysis_hint_unset_type (RzAnalysis *a, ut64 addr) {
-	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_OPTYPE, addr);
+	unset_addr_hint_record (a, RZ_ANALYSIS_ADDR_HINT_TYPE_OPTYPE, addr);
 }
 
 RZ_API void rz_analysis_hint_unset_stackframe(RzAnalysis *a, ut64 addr) {
-	unset_addr_hint_record (a, RZ_ANAL_ADDR_HINT_TYPE_STACKFRAME, addr);
+	unset_addr_hint_record (a, RZ_ANALYSIS_ADDR_HINT_TYPE_STACKFRAME, addr);
 }
 
 RZ_API void rz_analysis_hint_unset_arch(RzAnalysis *a, ut64 addr) {
@@ -454,52 +454,52 @@ RZ_API void rz_analysis_bits_hints_foreach(RzAnalysis *analysis, RzAnalysisBitsH
 
 static void hint_merge(RzAnalysisHint *hint, RzAnalysisAddrHintRecord *record) {
 	switch (record->type) {
-	case RZ_ANAL_ADDR_HINT_TYPE_IMMBASE:
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_IMMBASE:
 		hint->immbase = record->immbase;
 		break;
-	case RZ_ANAL_ADDR_HINT_TYPE_JUMP:
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_JUMP:
 		hint->jump = record->jump;
 		break;
-	case RZ_ANAL_ADDR_HINT_TYPE_FAIL:
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_FAIL:
 		hint->fail = record->fail;
 		break;
-	case RZ_ANAL_ADDR_HINT_TYPE_STACKFRAME:
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_STACKFRAME:
 		hint->stackframe = record->stackframe;
 		break;
-	case RZ_ANAL_ADDR_HINT_TYPE_PTR:
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_PTR:
 		hint->ptr = record->ptr;
 		break;
-	case RZ_ANAL_ADDR_HINT_TYPE_NWORD:
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_NWORD:
 		hint->nword = record->nword;
 		break;
-	case RZ_ANAL_ADDR_HINT_TYPE_RET:
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_RET:
 		hint->ret = record->retval;
 		break;
-	case RZ_ANAL_ADDR_HINT_TYPE_NEW_BITS:
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_NEW_BITS:
 		hint->new_bits = record->newbits;
 		break;
-	case RZ_ANAL_ADDR_HINT_TYPE_SIZE:
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_SIZE:
 		hint->size = record->size;
 		break;
-	case RZ_ANAL_ADDR_HINT_TYPE_SYNTAX:
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_SYNTAX:
 		hint->syntax = record->syntax ? strdup (record->syntax) : NULL;
 		break;
-	case RZ_ANAL_ADDR_HINT_TYPE_OPTYPE:
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_OPTYPE:
 		hint->type = record->optype;
 		break;
-	case RZ_ANAL_ADDR_HINT_TYPE_OPCODE:
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_OPCODE:
 		hint->opcode = record->opcode ? strdup (record->opcode) : NULL;
 		break;
-	case RZ_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET:
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_TYPE_OFFSET:
 		hint->offset = record->type_offset ? strdup (record->type_offset) : NULL;
 		break;
-	case RZ_ANAL_ADDR_HINT_TYPE_ESIL:
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_ESIL:
 		hint->esil = record->esil ? strdup (record->esil) : NULL;
 		break;
-	case RZ_ANAL_ADDR_HINT_TYPE_HIGH:
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_HIGH:
 		hint->high = true;
 		break;
-	case RZ_ANAL_ADDR_HINT_TYPE_VAL:
+	case RZ_ANALYSIS_ADDR_HINT_TYPE_VAL:
 		hint->val = record->val;
 		break;
 	}
