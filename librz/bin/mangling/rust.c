@@ -24,7 +24,7 @@ RZ_API char *rz_bin_demangle_rust (RzBinFile *binfile, const char *sym, ut64 vad
 	char *str, *out, *in;
 
 	str = rz_bin_demangle_cxx (binfile, sym, vaddr);
-	
+
 	if (!str) {
 		return str;
 	}
