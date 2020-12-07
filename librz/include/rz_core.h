@@ -43,13 +43,13 @@ RZ_LIB_VERSION_HEADER(rz_core);
 #define RZ_CORE_BLOCKSIZE 0x100
 #define RZ_CORE_BLOCKSIZE_MAX 0x3200000 /* 32MB */
 
-#define RZ_CORE_ANAL_GRAPHLINES          1
-#define RZ_CORE_ANAL_GRAPHBODY           2
-#define RZ_CORE_ANAL_GRAPHDIFF           4
-#define RZ_CORE_ANAL_JSON                8
-#define RZ_CORE_ANAL_KEYVALUE            16
-#define RZ_CORE_ANAL_JSON_FORMAT_DISASM  32
-#define RZ_CORE_ANAL_STAR                64
+#define RZ_CORE_ANALYSIS_GRAPHLINES          1
+#define RZ_CORE_ANALYSIS_GRAPHBODY           2
+#define RZ_CORE_ANALYSIS_GRAPHDIFF           4
+#define RZ_CORE_ANALYSIS_JSON                8
+#define RZ_CORE_ANALYSIS_KEYVALUE            16
+#define RZ_CORE_ANALYSIS_JSON_FORMAT_DISASM  32
+#define RZ_CORE_ANALYSIS_STAR                64
 
 #define RZ_FLAGS_FS_CLASSES "classes"
 #define RZ_FLAGS_FS_FUNCTIONS "functions"
@@ -701,10 +701,10 @@ RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool arg
 #define RZ_CORE_PRJ_META		0x0010
 #define RZ_CORE_PRJ_XREFS	0x0020
 #define RZ_CORE_PRJ_FCNS		0x0040
-#define RZ_CORE_PRJ_ANAL_HINTS	0x0080
-#define RZ_CORE_PRJ_ANAL_TYPES	0x0100
-#define RZ_CORE_PRJ_ANAL_MACROS	0x0200
-#define RZ_CORE_PRJ_ANAL_SEEK	0x0400
+#define RZ_CORE_PRJ_ANALYSIS_HINTS	0x0080
+#define RZ_CORE_PRJ_ANALYSIS_TYPES	0x0100
+#define RZ_CORE_PRJ_ANALYSIS_MACROS	0x0200
+#define RZ_CORE_PRJ_ANALYSIS_SEEK	0x0400
 #define RZ_CORE_PRJ_DBG_BREAK   0x0800
 #define RZ_CORE_PRJ_ALL		0xFFFF
 

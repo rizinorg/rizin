@@ -252,7 +252,7 @@ static bool addBytesZign(RzCore *core, const char *name, int type, RzList *args)
 	case RZ_SIGN_BYTES:
 		retval = rz_sign_add_bytes (core->analysis, name, size, bytes, mask);
 		break;
-	case RZ_SIGN_ANAL:
+	case RZ_SIGN_ANALYSIS:
 		retval = rz_sign_add_analysis (core->analysis, name, size, bytes, 0);
 		break;
 	}
@@ -280,7 +280,7 @@ static bool addOffsetZign(RzCore *core, const char *name, RzList *args) {
 static bool addZign(RzCore *core, const char *name, int type, RzList *args) {
 	switch (type) {
 	case RZ_SIGN_BYTES:
-	case RZ_SIGN_ANAL:
+	case RZ_SIGN_ANALYSIS:
 		return addBytesZign (core, name, type, args);
 	case RZ_SIGN_GRAPH:
 		return addGraphZign (core, name, args);

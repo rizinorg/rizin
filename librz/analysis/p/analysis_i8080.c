@@ -198,7 +198,7 @@ RzAnalysisPlugin rz_analysis_plugin_i8080 = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANALYSIS,
 	.data = &rz_analysis_plugin_i8080,
 	.version = RZ_VERSION
 };

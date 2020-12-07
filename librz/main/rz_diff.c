@@ -833,7 +833,7 @@ static char *get_graph_commands(RzCore *c, ut64 off) {
         bool tmp_html = rz_cons_singleton ()->is_html;
         rz_cons_singleton ()->is_html = false;
         rz_cons_push ();
-        rz_core_analysis_graph (c, off, RZ_CORE_ANAL_GRAPHBODY | RZ_CORE_ANAL_GRAPHDIFF |  RZ_CORE_ANAL_STAR);
+        rz_core_analysis_graph (c, off, RZ_CORE_ANALYSIS_GRAPHBODY | RZ_CORE_ANALYSIS_GRAPHDIFF |  RZ_CORE_ANALYSIS_STAR);
         const char *static_str = rz_cons_get_buffer ();
         char *retstr = strdup (static_str? static_str: "");
         rz_cons_pop ();
@@ -876,7 +876,7 @@ static void __generate_graph (RzCore *c, ut64 off) {
 }
 
 static void __print_diff_graph(RzCore *c, ut64 off, int gmode) {
-        int opts = RZ_CORE_ANAL_GRAPHBODY | RZ_CORE_ANAL_GRAPHDIFF;
+        int opts = RZ_CORE_ANALYSIS_GRAPHBODY | RZ_CORE_ANALYSIS_GRAPHDIFF;
         int use_utf8 = rz_config_get_i (c->config, "scr.utf8");
         rz_agraph_reset(c->graph);
         switch (gmode) {
@@ -884,7 +884,7 @@ static void __print_diff_graph(RzCore *c, ut64 off, int gmode) {
                 rz_core_analysis_graph (c, off, opts);
                 break;
         case GRAPH_STAR_MODE:
-                rz_core_analysis_graph (c, off, opts |  RZ_CORE_ANAL_STAR);
+                rz_core_analysis_graph (c, off, opts |  RZ_CORE_ANALYSIS_STAR);
                 break;
         case GRAPH_TINY_MODE:
                 __generate_graph (c, off);
@@ -904,10 +904,10 @@ static void __print_diff_graph(RzCore *c, ut64 off, int gmode) {
                 rz_core_agraph_print (c, use_utf8, "g");
                 break;
         case GRAPH_JSON_MODE:
-                rz_core_analysis_graph (c, off, opts | RZ_CORE_ANAL_JSON);
+                rz_core_analysis_graph (c, off, opts | RZ_CORE_ANALYSIS_JSON);
                 break;
         case GRAPH_JSON_DIS_MODE:
-                rz_core_analysis_graph (c, off, opts | RZ_CORE_ANAL_JSON | RZ_CORE_ANAL_JSON_FORMAT_DISASM);
+                rz_core_analysis_graph (c, off, opts | RZ_CORE_ANALYSIS_JSON | RZ_CORE_ANALYSIS_JSON_FORMAT_DISASM);
                 break;
         case GRAPH_DEFAULT_MODE:
         default:

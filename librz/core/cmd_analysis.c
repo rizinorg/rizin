@@ -7255,8 +7255,8 @@ static void analysis_axg(RzCore *core, const char *input, int level, Sdb *db, in
 	RzListIter *iter;
 	RzAnalysisRef *ref;
 	ut64 addr = core->offset;
-	bool is_json = opts & RZ_CORE_ANAL_JSON;
-	bool is_rz = opts & RZ_CORE_ANAL_GRAPHBODY;
+	bool is_json = opts & RZ_CORE_ANALYSIS_JSON;
+	bool is_rz = opts & RZ_CORE_ANALYSIS_GRAPHBODY;
 	if (is_json && !pj) {
 		return;
 	}
@@ -7518,10 +7518,10 @@ static bool cmd_analysis_refs(RzCore *core, const char *input) {
 		{
 			Sdb *db = sdb_new0 ();
 			if (input[1] == '*') {
-				analysis_axg (core, input + 2, 0, db, RZ_CORE_ANAL_GRAPHBODY, NULL); // rizin commands
+				analysis_axg (core, input + 2, 0, db, RZ_CORE_ANALYSIS_GRAPHBODY, NULL); // rizin commands
 			} else if (input[1] == 'j') {
 				PJ *pj = pj_new ();
-				analysis_axg (core, input + 2, 0, db, RZ_CORE_ANAL_JSON, pj);
+				analysis_axg (core, input + 2, 0, db, RZ_CORE_ANALYSIS_JSON, pj);
 				rz_cons_printf("%s\n", pj_string (pj));
 				pj_free (pj);
 			} else {
@@ -8761,14 +8761,14 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		case 'd': // "agfd"
 			if (input[2] == 'm') {
 				rz_core_analysis_graph (core, rz_num_math (core->num, input + 3),
-					RZ_CORE_ANAL_GRAPHLINES);
+					RZ_CORE_ANALYSIS_GRAPHLINES);
 			} else {
 				rz_core_analysis_graph (core, rz_num_math (core->num, input + 2),
-					RZ_CORE_ANAL_GRAPHBODY);
+					RZ_CORE_ANALYSIS_GRAPHBODY);
 			}
 			break;
 		case 'j': // "agfj"
-			rz_core_analysis_graph (core, rz_num_math (core->num, input + 2), RZ_CORE_ANAL_JSON);
+			rz_core_analysis_graph (core, rz_num_math (core->num, input + 2), RZ_CORE_ANALYSIS_JSON);
 			break;
 		case 'J': { // "agfJ"
 			// Honor asm.graph=false in json as well
@@ -8777,7 +8777,7 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 			const bool o_graph_offset = rz_config_get_i (core->config, "graph.offset");
 			rz_config_set_i (core->config, "asm.offset", o_graph_offset);
 			rz_core_analysis_graph (core, rz_num_math (core->num, input + 2),
-				RZ_CORE_ANAL_JSON | RZ_CORE_ANAL_JSON_FORMAT_DISASM);
+				RZ_CORE_ANALYSIS_JSON | RZ_CORE_ANALYSIS_JSON_FORMAT_DISASM);
 			rz_config_hold_restore (hc);
 			rz_config_hold_free (hc);
 			break;
@@ -8964,7 +8964,7 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		rz_core_cmdf (core, "agfk%s", input + 1);
 		break;
 	case 'l': // "agl"
-		rz_core_analysis_graph (core, rz_num_math (core->num, input + 1), RZ_CORE_ANAL_GRAPHLINES);
+		rz_core_analysis_graph (core, rz_num_math (core->num, input + 1), RZ_CORE_ANALYSIS_GRAPHLINES);
 		break;
 	case 'a': // "aga"
 		switch (input[1]) {
@@ -8999,24 +8999,24 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		}
 		break;
 	case 'd': {// "agd"
-	        int diff_opt = RZ_CORE_ANAL_GRAPHBODY | RZ_CORE_ANAL_GRAPHDIFF;
+	        int diff_opt = RZ_CORE_ANALYSIS_GRAPHBODY | RZ_CORE_ANALYSIS_GRAPHDIFF;
                 switch (input[1]) {
                         case 'j': {
                                 ut64 addr = input[2] ? rz_num_math (core->num, input + 2) : core->offset;
                                 rz_core_gdiff_fcn (core, addr, core->offset);
-                                rz_core_analysis_graph (core, addr, diff_opt | RZ_CORE_ANAL_JSON);
+                                rz_core_analysis_graph (core, addr, diff_opt | RZ_CORE_ANALYSIS_JSON);
                                 break;
                         }
                         case 'J': {
                                 ut64 addr = input[2] ? rz_num_math (core->num, input + 2) : core->offset;
                                 rz_core_gdiff_fcn (core, addr, core->offset);
-                                rz_core_analysis_graph (core, addr, diff_opt | RZ_CORE_ANAL_JSON | RZ_CORE_ANAL_JSON_FORMAT_DISASM);
+                                rz_core_analysis_graph (core, addr, diff_opt | RZ_CORE_ANALYSIS_JSON | RZ_CORE_ANALYSIS_JSON_FORMAT_DISASM);
                                 break;
                         }
                         case '*': {
                                 ut64 addr = input[2] ? rz_num_math (core->num, input + 2) : core->offset;
                                 rz_core_gdiff_fcn (core, addr, core->offset);
-                                rz_core_analysis_graph (core, addr, diff_opt | RZ_CORE_ANAL_STAR);
+                                rz_core_analysis_graph (core, addr, diff_opt | RZ_CORE_ANALYSIS_STAR);
                                 break;
                         }
                         case ' ':

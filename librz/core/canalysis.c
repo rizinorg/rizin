@@ -1391,12 +1391,12 @@ RZ_API void rz_core_analysis_hint_print(RzAnalysis* a, ut64 addr, int mode) {
 
 static char *core_analysis_graph_label(RzCore *core, RzAnalysisBlock *bb, int opts) {
 	int is_html = rz_cons_singleton ()->is_html;
-	int is_json = opts & RZ_CORE_ANAL_JSON;
+	int is_json = opts & RZ_CORE_ANALYSIS_JSON;
 	char cmd[1024], file[1024], *cmdstr = NULL, *filestr = NULL, *str = NULL;
 	int line = 0, oline = 0, idx = 0;
 	ut64 at;
 
-	if (opts & RZ_CORE_ANAL_GRAPHLINES) {
+	if (opts & RZ_CORE_ANALYSIS_GRAPHLINES) {
 		for (at = bb->addr; at < bb->addr + bb->size; at += 2) {
 			rz_bin_addr2line (core->bin, at, file, sizeof (file) - 1, &line);
 			if (line != 0 && line != oline && strcmp (file, "??")) {
@@ -1421,10 +1421,10 @@ static char *core_analysis_graph_label(RzCore *core, RzAnalysisBlock *bb, int op
 			}
 			oline = line;
 		}
-	} else if (opts & RZ_CORE_ANAL_STAR) {
+	} else if (opts & RZ_CORE_ANALYSIS_STAR) {
                 snprintf (cmd, sizeof (cmd), "pdb %"PFMT64u" @ 0x%08" PFMT64x, bb->size, bb->addr);
                 str = rz_core_cmd_str (core, cmd);
-	} else if (opts & RZ_CORE_ANAL_GRAPHBODY) {
+	} else if (opts & RZ_CORE_ANALYSIS_GRAPHBODY) {
 		const bool scrColor = rz_config_get (core->config, "scr.color");
 		const bool scrUtf8 = rz_config_get (core->config, "scr.utf8");
 		rz_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
@@ -1464,9 +1464,9 @@ static void core_analysis_color_curr_node(RzCore *core, RzAnalysisBlock *bbi) {
 static int core_analysis_graph_construct_edges (RzCore *core, RzAnalysisFunction *fcn, int opts, PJ *pj, Sdb *DB) {
         RzAnalysisBlock *bbi;
         RzListIter *iter;
-        int is_keva = opts & RZ_CORE_ANAL_KEYVALUE;
-        int is_star = opts & RZ_CORE_ANAL_STAR;
-        int is_json = opts & RZ_CORE_ANAL_JSON;
+        int is_keva = opts & RZ_CORE_ANALYSIS_KEYVALUE;
+        int is_star = opts & RZ_CORE_ANALYSIS_STAR;
+        int is_json = opts & RZ_CORE_ANALYSIS_JSON;
         int is_html = rz_cons_singleton ()->is_html;
         char *pal_jump = palColorFor ("graph.true");
         char *pal_fail = palColorFor ("graph.false");
@@ -1589,14 +1589,14 @@ static int core_analysis_graph_construct_edges (RzCore *core, RzAnalysisFunction
 static int core_analysis_graph_construct_nodes (RzCore *core, RzAnalysisFunction *fcn, int opts, PJ *pj, Sdb *DB) {
         RzAnalysisBlock *bbi;
         RzListIter *iter;
-        int is_keva = opts & RZ_CORE_ANAL_KEYVALUE;
-        int is_star = opts & RZ_CORE_ANAL_STAR;
-        int is_json = opts & RZ_CORE_ANAL_JSON;
+        int is_keva = opts & RZ_CORE_ANALYSIS_KEYVALUE;
+        int is_star = opts & RZ_CORE_ANALYSIS_STAR;
+        int is_json = opts & RZ_CORE_ANALYSIS_JSON;
         int is_html = rz_cons_singleton ()->is_html;
         int left = 300;
         int top = 0;
 
-        int is_json_format_disasm = opts & RZ_CORE_ANAL_JSON_FORMAT_DISASM;
+        int is_json_format_disasm = opts & RZ_CORE_ANALYSIS_JSON_FORMAT_DISASM;
         char *pal_curr = palColorFor ("graph.current");
         char *pal_traced = palColorFor ("graph.traced");
         char *pal_box4 = palColorFor ("graph.box4");
@@ -1670,7 +1670,7 @@ static int core_analysis_graph_construct_nodes (RzCore *core, RzAnalysisFunction
                         continue;
                 }
                 if ((str = core_analysis_graph_label (core, bbi, opts))) {
-                        if (opts & RZ_CORE_ANAL_GRAPHDIFF) {
+                        if (opts & RZ_CORE_ANALYSIS_GRAPHDIFF) {
                                 const char *difftype = bbi->diff? (\
                                 bbi->diff->type==RZ_ANALYSIS_DIFF_TYPE_MATCH? "lightgray":
                                 bbi->diff->type==RZ_ANALYSIS_DIFF_TYPE_UNMATCH? "yellow": "red"): "orange";
@@ -1820,8 +1820,8 @@ static int core_analysis_graph_construct_nodes (RzCore *core, RzAnalysisFunction
 }
 
 static int core_analysis_graph_nodes(RzCore *core, RzAnalysisFunction *fcn, int opts, PJ *pj) {
-	int is_json = opts & RZ_CORE_ANAL_JSON;
-	int is_keva = opts & RZ_CORE_ANAL_KEYVALUE;
+	int is_json = opts & RZ_CORE_ANALYSIS_JSON;
+	int is_keva = opts & RZ_CORE_ANALYSIS_KEYVALUE;
 	int nodes = 0;
 	Sdb *DB = NULL;
 	char *pal_jump = palColorFor ("graph.true");
@@ -3605,10 +3605,10 @@ RZ_API int rz_core_analysis_graph(RzCore *core, ut64 addr, int opts) {
 	ut64 to = rz_config_get_i (core->config, "graph.to");
 	const char *font = rz_config_get (core->config, "graph.font");
 	int is_html = rz_cons_singleton ()->is_html;
-	int is_json = opts & RZ_CORE_ANAL_JSON;
-	int is_json_format_disasm = opts & RZ_CORE_ANAL_JSON_FORMAT_DISASM;
-	int is_keva = opts & RZ_CORE_ANAL_KEYVALUE;
-	int is_star = opts & RZ_CORE_ANAL_STAR;
+	int is_json = opts & RZ_CORE_ANALYSIS_JSON;
+	int is_json_format_disasm = opts & RZ_CORE_ANALYSIS_JSON_FORMAT_DISASM;
+	int is_keva = opts & RZ_CORE_ANALYSIS_KEYVALUE;
+	int is_star = opts & RZ_CORE_ANALYSIS_STAR;
 	RzConfigHold *hc;
 	RzAnalysisFunction *fcni;
 	RzListIter *iter;
@@ -3627,7 +3627,7 @@ RZ_API int rz_core_analysis_graph(RzCore *core, ut64 addr, int opts) {
 	}
 
 	rz_config_hold_i (hc, "asm.lines", "asm.bytes", "asm.dwarf", NULL);
-	//opts |= RZ_CORE_ANAL_GRAPHBODY;
+	//opts |= RZ_CORE_ANALYSIS_GRAPHBODY;
 	rz_config_set_i (core->config, "asm.lines", 0);
 	rz_config_set_i (core->config, "asm.dwarf", 0);
 	if (!is_json_format_disasm) {

@@ -70,7 +70,7 @@ enum {
 	RZ_LIB_TYPE_DBG,     /* debugger */
 	RZ_LIB_TYPE_LANG,    /* language */
 	RZ_LIB_TYPE_ASM,     /* assembler */
-	RZ_LIB_TYPE_ANAL,    /* analysis */
+	RZ_LIB_TYPE_ANALYSIS,    /* analysis */
 	RZ_LIB_TYPE_PARSE,   /* parsers */
 	RZ_LIB_TYPE_BIN,     /* bin headers */
 	RZ_LIB_TYPE_BIN_XTR, /* bin extractors */

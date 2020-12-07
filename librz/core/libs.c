@@ -99,7 +99,7 @@ RZ_API void rz_core_loadlibs_init(RzCore *core) {
 	DF (DBG, "debugger plugins", debug);
 	DF (BP, "debugger breakpoint plugins", bp);
 	DF (LANG, "language plugins", lang);
-	DF (ANAL, "analysis plugins", analysis);
+	DF (ANALYSIS, "analysis plugins", analysis);
 	DF (ASM, "(dis)assembler plugins", asm);
 	DF (PARSE, "parsing plugins", parse);
 	DF (BIN, "bin plugins", bin);

@@ -214,7 +214,7 @@ RzAnalysisPlugin rz_analysis_plugin_i4004 = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANALYSIS,
 	.data = &rz_analysis_plugin_i4004,
 	.version = RZ_VERSION
 };

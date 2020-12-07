@@ -12,7 +12,7 @@
 
 static tms320_dasm_t engine = { 0 };
 
-typedef int (* TMS_ANAL_OP_FN)(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len);
+typedef int (* TMS_ANALYSIS_OP_FN)(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len);
 
 int tms320_c54x_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len);
 int tms320_c55x_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len);
@@ -81,7 +81,7 @@ int tms320_c55x_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 
 }
 
 int tms320_op(RzAnalysis * analysis, RzAnalysisOp * op, ut64 addr, const ut8 * buf, int len, RzAnalysisOpMask mask) {
-	TMS_ANAL_OP_FN aop = tms320_c55x_op;
+	TMS_ANALYSIS_OP_FN aop = tms320_c55x_op;
 
 	if (analysis->cpu && rz_str_casecmp(analysis->cpu, "c64x") == 0) {
 #ifdef CAPSTONE_TMS320C64X_H
@@ -121,7 +121,7 @@ RzAnalysisPlugin rz_analysis_plugin_tms320 = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANALYSIS,
 	.data = &rz_analysis_plugin_tms320,
 	.version = RZ_VERSION
 };
