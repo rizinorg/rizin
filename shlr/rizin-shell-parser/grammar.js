@@ -133,6 +133,7 @@ module.exports = grammar({
             $.tmp_reg_command,
             $.tmp_file_command,
             $.tmp_string_command,
+            $.tmp_value_command,
             $.tmp_hex_command,
         ),
 
@@ -261,6 +262,7 @@ module.exports = grammar({
         tmp_reg_command: $ => prec.right(1, seq($._simple_command, '@r:', $.arg)),
         tmp_file_command: $ => prec.right(1, seq($._simple_command, '@f:', $.arg)),
         tmp_string_command: $ => prec.right(1, seq($._simple_command, '@s:', $.arg)),
+        tmp_value_command: $ => prec.right(1, seq($._simple_command, '@v:', $.arg)),
         tmp_hex_command: $ => prec.right(1, seq($._simple_command, '@x:', $.arg)),
 
         // basic commands

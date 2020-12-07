@@ -253,6 +253,10 @@
         },
         {
           "type": "SYMBOL",
+          "name": "tmp_value_command"
+        },
+        {
+          "type": "SYMBOL",
           "name": "tmp_hex_command"
         }
       ]
@@ -1438,6 +1442,27 @@
           {
             "type": "STRING",
             "value": "@s:"
+          },
+          {
+            "type": "SYMBOL",
+            "name": "arg"
+          }
+        ]
+      }
+    },
+    "tmp_value_command": {
+      "type": "PREC_RIGHT",
+      "value": 1,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "SYMBOL",
+            "name": "_simple_command"
+          },
+          {
+            "type": "STRING",
+            "value": "@v:"
           },
           {
             "type": "SYMBOL",

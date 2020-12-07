@@ -1331,6 +1331,7 @@ static const RzCmdDescDetailEntry tmp_modifiers_empty_detail_entries[] = {
 	{ .text = "<cmd> @o:", .arg_str = "<fd>", .comment = "Temporary switch to another fd" },
 	{ .text = "<cmd> @r:", .arg_str = "<reg>", .comment = "Temporary seek to register value" },
 	{ .text = "<cmd> @s:", .arg_str = "<string>", .comment = "Temporary replace block with string" },
+	{ .text = "<cmd> @v:", .arg_str = "<value>", .comment = "Temporary replace block with value, written according to asm.bits and cfg.bigendian" },
 	{ .text = "<cmd> @x:", .arg_str = "<hexstring>", .comment = "Temporary replace block with hexstring" },
 	{ 0 },
 };
