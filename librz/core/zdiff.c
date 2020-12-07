@@ -39,7 +39,7 @@ RZ_API int rz_core_zdiff(RzCore *c, RzCore *c2) {
 	if (!c || !c2) {
 		return false;
 	}
-	////////// moove this into anal/sign
+	////////// moove this into analysis/sign
 	SdbList *a = sdb_foreach_list (c->analysis->sdb_zigns, false);
 	SdbList *b = sdb_foreach_list (c2->analysis->sdb_zigns, false);
 

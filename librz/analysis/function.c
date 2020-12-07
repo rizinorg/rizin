@@ -156,7 +156,7 @@ RZ_API RzAnalysisFunction *rz_analysis_create_function(RzAnalysis *analysis, con
 		free (fcn->name);
 		fcn->name = strdup (name);
 	} else {
-		const char *fcnprefix = analysis->coreb.cfgGet ? analysis->coreb.cfgGet (analysis->coreb.core, "anal.fcnprefix") : NULL;
+		const char *fcnprefix = analysis->coreb.cfgGet ? analysis->coreb.cfgGet (analysis->coreb.core, "analysis.fcnprefix") : NULL;
 		if (!fcnprefix) {
 			fcnprefix = "fcn";
 		}

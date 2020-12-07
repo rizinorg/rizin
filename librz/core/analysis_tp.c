@@ -209,7 +209,7 @@ static RzList *parse_format(RzCore *core, char *fmt) {
 		return NULL;
 	}
 	Sdb *s = core->analysis->sdb_fmts;
-	const char *spec = rz_config_get (core->config, "anal.types.spec");
+	const char *spec = rz_config_get (core->config, "analysis.types.spec");
 	char arr[10] = {0};
 	char *ptr = strchr (fmt, '%');
 	fmt[strlen (fmt) - 1] = '\0';
@@ -285,7 +285,7 @@ static void type_match(RzCore *core, char *fcn_name, ut64 addr, ut64 baddr, cons
 	RzAnalysis *analysis = core->analysis;
 	RzList *types = NULL;
 	int idx = sdb_num_get (trace, "idx", 0);
-	bool verbose = rz_config_get_i (core->config, "anal.types.verbose");
+	bool verbose = rz_config_get_i (core->config, "analysis.types.verbose");
 	bool stack_rev = false, in_stack = false, format = false;
 
 	if (!fcn_name || !cc) {
@@ -462,7 +462,7 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 
 	RzAnalysis *analysis = core->analysis;
 	Sdb *TDB = analysis->sdb_types;
-	bool chk_constraint = rz_config_get_i (core->config, "anal.types.constraint");
+	bool chk_constraint = rz_config_get_i (core->config, "analysis.types.constraint");
 	int ret, bsize = RZ_MAX (64, core->blocksize);
 	const int mininstrsz = rz_analysis_archinfo (analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = RZ_MAX (1, mininstrsz);

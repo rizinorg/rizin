@@ -1155,7 +1155,7 @@ static void cmd_p_minus_e(RzCore *core, ut64 at, ut64 ate) {
 }
 
 static void helpCmdTasks(RzCore *core) {
-	// TODO: integrate with =h& and bg anal/string/searches/..
+	// TODO: integrate with =h& and bg analysis/string/searches/..
 	rz_core_cmd_help (core, help_msg_amper);
 }
 

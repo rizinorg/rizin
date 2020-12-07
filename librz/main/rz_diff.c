@@ -1121,7 +1121,7 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 			szb = (ut64)strlen ((const char *) bufb);
 			mode = MODE_DIFF;
 		} else if (mode == MODE_GRAPH) {
-			int depth = rz_config_get_i (c->config, "anal.depth");
+			int depth = rz_config_get_i (c->config, "analysis.depth");
 			if (depth < 1) {
 				depth = 64;
 			}

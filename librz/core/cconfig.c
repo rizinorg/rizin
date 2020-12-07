@@ -378,9 +378,9 @@ static bool cb_analarch(void *user, void *data) {
 		}
 		const char *aa = rz_config_get (core->config, "asm.arch");
 		if (!aa || strcmp (aa, node->value)) {
-			eprintf ("anal.arch: cannot find '%s'\n", node->value);
+			eprintf ("analysis.arch: cannot find '%s'\n", node->value);
 		} else {
-			rz_config_set (core->config, "anal.arch", "null");
+			rz_config_set (core->config, "analysis.arch", "null");
 			return true;
 		}
 	}
@@ -528,7 +528,7 @@ static bool cb_asmcpu(void *user, void *data) {
 		return 0;
 	}
 	rz_asm_set_cpu (core->rasm, node->value);
-	rz_config_set (core->config, "anal.cpu", node->value);
+	rz_config_set (core->config, "analysis.cpu", node->value);
 	return true;
 }
 
@@ -628,16 +628,16 @@ static bool cb_asmarch(void *user, void *data) {
 
 	//rz_debug_set_arch (core->dbg, rz_sys_arch_id (node->value), bits);
 	rz_debug_set_arch (core->dbg, node->value, bits);
-	if (!rz_config_set (core->config, "anal.arch", node->value)) {
+	if (!rz_config_set (core->config, "analysis.arch", node->value)) {
 		char *p, *s = strdup (node->value);
 		if (s) {
 			p = strchr (s, '.');
 			if (p) {
 				*p = 0;
 			}
-			if (!rz_config_set (core->config, "anal.arch", s)) {
-				/* fall back to the anal.null plugin */
-				rz_config_set (core->config, "anal.arch", "null");
+			if (!rz_config_set (core->config, "analysis.arch", s)) {
+				/* fall back to the analysis.null plugin */
+				rz_config_set (core->config, "analysis.arch", "null");
 			}
 			free (s);
 		}
@@ -680,8 +680,8 @@ static bool cb_asmarch(void *user, void *data) {
 		}
 	}
 	/* reload types and cc info */
-	// changing asm.arch changes anal.arch
-	// changing anal.arch sets types db
+	// changing asm.arch changes analysis.arch
+	// changing analysis.arch sets types db
 	// so ressetting is redundant and may lead to bugs
 	// 1 case this is usefull is when sdb_types is null
 	if (!core->analysis || !core->analysis->sdb_types) {
@@ -2546,15 +2546,15 @@ static bool cb_searchin(void *user, void *data) {
 			"dbg.map            search in current memory map\n"
 			"dbg.maps           search in all memory maps\n"
 			"dbg.maps.[rwx]     search in all executable marked memory maps\n"
-			"anal.fcn           search in the current function\n"
-			"anal.bb            search in the current basic-block\n");
+			"analysis.fcn           search in the current function\n"
+			"analysis.bb            search in the current basic-block\n");
 		} else {
 			print_node_options (node);
 		}
 		return false;
 	}
-	// Set anal.noncode if exec bit set in anal.in
-	if (rz_str_startswith (node->name, "anal")) {
+	// Set analysis.noncode if exec bit set in analysis.in
+	if (rz_str_startswith (node->name, "analysis")) {
 		core->analysis->opt.noncode = (strchr (node->value, 'x') == NULL);
 	}
 	return true;
@@ -2585,10 +2585,10 @@ static bool cb_analysis_gp(RzCore *core, RzConfigNode *node) {
 }
 
 static bool cb_analysis_from(RzCore *core, RzConfigNode *node) {
-	if (rz_config_get_i (core->config, "anal.limits")) {
+	if (rz_config_get_i (core->config, "analysis.limits")) {
 		rz_analysis_set_limits (core->analysis,
-				rz_config_get_i (core->config, "anal.from"),
-				rz_config_get_i (core->config, "anal.to"));
+				rz_config_get_i (core->config, "analysis.from"),
+				rz_config_get_i (core->config, "analysis.to"));
 	}
 	return true;
 }
@@ -2597,8 +2597,8 @@ static bool cb_analysis_limits(void *user, RzConfigNode *node) {
 	RzCore *core = (RzCore*)user;
 	if (node->i_value) {
 		rz_analysis_set_limits (core->analysis,
-				rz_config_get_i (core->config, "anal.from"),
-				rz_config_get_i (core->config, "anal.to"));
+				rz_config_get_i (core->config, "analysis.from"),
+				rz_config_get_i (core->config, "analysis.to"));
 	} else {
 		rz_analysis_unset_limits (core->analysis);
 	}
@@ -2712,7 +2712,7 @@ static bool cb_analysis_cpp_abi(void *user, void *data) {
 			core->analysis->cpp_abi = RZ_ANALYSIS_CPP_ABI_MSVC;
 			return true;
 		}
-		eprintf ("anal.cpp.abi: cannot find '%s'\n", node->value);
+		eprintf ("analysis.cpp.abi: cannot find '%s'\n", node->value);
 	}
 	return false;
 }
@@ -2885,82 +2885,82 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI ("pdb.autoload", false, "Automatically load the required pdb files for loaded DLLs");
 
 	/* analysis */
-	SETBPREF ("anal.detectwrites", "false", "Automatically reanalyze function after a write");
-	SETPREF ("anal.fcnprefix", "fcn",  "Prefix new function names with this");
-	SETCB ("anal.verbose", "false", &cb_analverbose, "Show RzAnalysis warnings when analyzing code");
-	SETBPREF ("anal.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
-	SETCB ("anal.roregs", "gp,zero", (RzConfigCallback)&cb_analysis_roregs, "Comma separated list of register names to be readonly");
-	SETICB ("anal.gp", 0, (RzConfigCallback)&cb_analysis_gp, "Set the value of the GP register (MIPS)");
-	SETBPREF ("anal.gpfixed", "true", "Set gp register to anal.gp before emulating each instruction in aae");
-	SETCB ("anal.limits", "false", (RzConfigCallback)&cb_analysis_limits, "Restrict analysis to address range [anal.from:anal.to]");
-	SETCB ("anal.rnr", "false", (RzConfigCallback)&cb_analysis_rnr, "Recursive no return checks (EXPERIMENTAL)");
-	SETCB ("anal.limits", "false", (RzConfigCallback)&cb_analysis_limits, "Restrict analysis to address range [anal.from:anal.to]");
-	SETICB ("anal.from", -1, (RzConfigCallback)&cb_analysis_from, "Lower limit on the address range for analysis");
-	SETICB ("anal.to", -1, (RzConfigCallback)&cb_analysis_from, "Upper limit on the address range for analysis");
-	n = NODECB ("anal.in", "io.maps.x", &cb_searchin);
+	SETBPREF ("analysis.detectwrites", "false", "Automatically reanalyze function after a write");
+	SETPREF ("analysis.fcnprefix", "fcn",  "Prefix new function names with this");
+	SETCB ("analysis.verbose", "false", &cb_analverbose, "Show RzAnalysis warnings when analyzing code");
+	SETBPREF ("analysis.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), analysis.depth ignored atm");
+	SETCB ("analysis.roregs", "gp,zero", (RzConfigCallback)&cb_analysis_roregs, "Comma separated list of register names to be readonly");
+	SETICB ("analysis.gp", 0, (RzConfigCallback)&cb_analysis_gp, "Set the value of the GP register (MIPS)");
+	SETBPREF ("analysis.gpfixed", "true", "Set gp register to analysis.gp before emulating each instruction in aae");
+	SETCB ("analysis.limits", "false", (RzConfigCallback)&cb_analysis_limits, "Restrict analysis to address range [analysis.from:analysis.to]");
+	SETCB ("analysis.rnr", "false", (RzConfigCallback)&cb_analysis_rnr, "Recursive no return checks (EXPERIMENTAL)");
+	SETCB ("analysis.limits", "false", (RzConfigCallback)&cb_analysis_limits, "Restrict analysis to address range [analysis.from:analysis.to]");
+	SETICB ("analysis.from", -1, (RzConfigCallback)&cb_analysis_from, "Lower limit on the address range for analysis");
+	SETICB ("analysis.to", -1, (RzConfigCallback)&cb_analysis_from, "Upper limit on the address range for analysis");
+	n = NODECB ("analysis.in", "io.maps.x", &cb_searchin);
 	SETDESC (n, "Specify search boundaries for analysis");
 	SETOPTIONS (n, "range", "block",
 		"bin.segment", "bin.segments", "bin.segments.x", "bin.segments.r", "bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
 		"io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x",
 		"dbg.stack", "dbg.heap",
 		"dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x",
-		"anal.fcn", "anal.bb",
+		"analysis.fcn", "analysis.bb",
 	NULL);
-	SETI ("anal.timeout", 0, "Stop analyzing after a couple of seconds");
-	SETCB ("anal.jmp.retpoline", "true", &cb_analysis_jmpretpoline, "Analyze retpolines, may be slower if not needed");
-	SETICB ("anal.jmp.tailcall", 0, &cb_analysis_jmptailcall, "Consume a branch as a call if delta is big");
+	SETI ("analysis.timeout", 0, "Stop analyzing after a couple of seconds");
+	SETCB ("analysis.jmp.retpoline", "true", &cb_analysis_jmpretpoline, "Analyze retpolines, may be slower if not needed");
+	SETICB ("analysis.jmp.tailcall", 0, &cb_analysis_jmptailcall, "Consume a branch as a call if delta is big");
 
-	SETCB ("anal.armthumb", "false", &cb_analarmthumb, "aae computes arm/thumb changes (lot of false positives ahead)");
-	SETCB ("anal.jmp.after", "true", &cb_analafterjmp, "Continue analysis after jmp/ujmp");
-	SETCB ("anal.endsize", "true", &cb_analysis_endsize, "Adjust function size at the end of the analysis (known to be buggy)");
-	SETCB ("anal.delay", "true", &cb_analysis_delay, "Enable delay slot analysis if supported by the architecture");
-	SETICB ("anal.depth", 64, &cb_analdepth, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
-	SETICB ("anal.graph_depth", 256, &cb_analgraphdepth, "Max depth for path search");
-	SETICB ("anal.sleep", 0, &cb_analsleep, "Sleep N usecs every so often during analysis. Avoid 100% CPU usage");
-	SETCB ("anal.ignbithints", "false", &cb_analysis_ignbithints, "Ignore the ahb hints (only obey asm.bits)");
-	SETBPREF ("anal.calls", "false", "Make basic af analysis walk into calls");
-	SETBPREF ("anal.autoname", "false", "Speculatively set a name for the functions, may result in some false positives");
-	SETBPREF ("anal.hasnext", "false", "Continue analysis after each function");
-	SETICB ("anal.nonull", 0, &cb_analysis_nonull, "Do not analyze regions of N null bytes");
-	SETBPREF ("anal.esil", "false", "Use the new ESIL code analysis");
-	SETCB ("anal.strings", "false", &cb_analstrings, "Identify and register strings during analysis (aar only)");
-	SETPREF ("anal.types.spec", "gcc",  "Set profile for specifying format chars used in type analysis");
-	SETBPREF ("anal.types.verbose", "false", "Verbose output from type analysis");
-	SETBPREF ("anal.types.constraint", "false", "Enable constraint types analysis for variables");
-	SETCB ("anal.vars", "true", &cb_analvars, "Analyze local variables and arguments");
-	SETCB ("anal.vars.stackname", "false", &cb_analvars_stackname, "Name variables based on their offset on the stack");
-	SETBPREF ("anal.vinfun", "true",  "Search values in functions (aav) (false by default to only find on non-code)");
-	SETBPREF ("anal.vinfunrange", "false",  "Search values outside function ranges (requires anal.vinfun=false)\n");
-	SETCB ("anal.norevisit", "false", &cb_analnorevisit, "Do not visit function analysis twice (EXPERIMENTAL)");
-	SETCB ("anal.nopskip", "true", &cb_analnopskip, "Skip nops at the beginning of functions");
-	SETCB ("anal.hpskip", "false", &cb_analhpskip, "Skip `mov reg, reg` and `lea reg, [reg] at the beginning of functions");
-	n = NODECB ("anal.arch", RZ_SYS_ARCH, &cb_analarch);
+	SETCB ("analysis.armthumb", "false", &cb_analarmthumb, "aae computes arm/thumb changes (lot of false positives ahead)");
+	SETCB ("analysis.jmp.after", "true", &cb_analafterjmp, "Continue analysis after jmp/ujmp");
+	SETCB ("analysis.endsize", "true", &cb_analysis_endsize, "Adjust function size at the end of the analysis (known to be buggy)");
+	SETCB ("analysis.delay", "true", &cb_analysis_delay, "Enable delay slot analysis if supported by the architecture");
+	SETICB ("analysis.depth", 64, &cb_analdepth, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
+	SETICB ("analysis.graph_depth", 256, &cb_analgraphdepth, "Max depth for path search");
+	SETICB ("analysis.sleep", 0, &cb_analsleep, "Sleep N usecs every so often during analysis. Avoid 100% CPU usage");
+	SETCB ("analysis.ignbithints", "false", &cb_analysis_ignbithints, "Ignore the ahb hints (only obey asm.bits)");
+	SETBPREF ("analysis.calls", "false", "Make basic af analysis walk into calls");
+	SETBPREF ("analysis.autoname", "false", "Speculatively set a name for the functions, may result in some false positives");
+	SETBPREF ("analysis.hasnext", "false", "Continue analysis after each function");
+	SETICB ("analysis.nonull", 0, &cb_analysis_nonull, "Do not analyze regions of N null bytes");
+	SETBPREF ("analysis.esil", "false", "Use the new ESIL code analysis");
+	SETCB ("analysis.strings", "false", &cb_analstrings, "Identify and register strings during analysis (aar only)");
+	SETPREF ("analysis.types.spec", "gcc",  "Set profile for specifying format chars used in type analysis");
+	SETBPREF ("analysis.types.verbose", "false", "Verbose output from type analysis");
+	SETBPREF ("analysis.types.constraint", "false", "Enable constraint types analysis for variables");
+	SETCB ("analysis.vars", "true", &cb_analvars, "Analyze local variables and arguments");
+	SETCB ("analysis.vars.stackname", "false", &cb_analvars_stackname, "Name variables based on their offset on the stack");
+	SETBPREF ("analysis.vinfun", "true",  "Search values in functions (aav) (false by default to only find on non-code)");
+	SETBPREF ("analysis.vinfunrange", "false",  "Search values outside function ranges (requires analysis.vinfun=false)\n");
+	SETCB ("analysis.norevisit", "false", &cb_analnorevisit, "Do not visit function analysis twice (EXPERIMENTAL)");
+	SETCB ("analysis.nopskip", "true", &cb_analnopskip, "Skip nops at the beginning of functions");
+	SETCB ("analysis.hpskip", "false", &cb_analhpskip, "Skip `mov reg, reg` and `lea reg, [reg] at the beginning of functions");
+	n = NODECB ("analysis.arch", RZ_SYS_ARCH, &cb_analarch);
 	SETDESC (n, "Select the architecture to use");
 	update_analarch_options (core, n);
-	SETCB ("anal.cpu", RZ_SYS_ARCH, &cb_analcpu, "Specify the anal.cpu to use");
-	SETPREF ("anal.prelude", "", "Specify an hexpair to find preludes in code");
-	SETCB ("anal.recont", "false", &cb_analrecont, "End block after splitting a basic block instead of error"); // testing
-	SETCB ("anal.jmp.indir", "false", &cb_analijmp, "Follow the indirect jumps in function analysis"); // testing
-	SETI ("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
+	SETCB ("analysis.cpu", RZ_SYS_ARCH, &cb_analcpu, "Specify the analysis.cpu to use");
+	SETPREF ("analysis.prelude", "", "Specify an hexpair to find preludes in code");
+	SETCB ("analysis.recont", "false", &cb_analrecont, "End block after splitting a basic block instead of error"); // testing
+	SETCB ("analysis.jmp.indir", "false", &cb_analijmp, "Follow the indirect jumps in function analysis"); // testing
+	SETI ("analysis.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
 	SETICB ("asm.lines.maxref", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
 
-	SETCB ("anal.jmp.tbl", "true", &cb_analysis_jmptbl, "Analyze jump tables in switch statements");
+	SETCB ("analysis.jmp.tbl", "true", &cb_analysis_jmptbl, "Analyze jump tables in switch statements");
 
-	SETCB ("anal.jmp.cref", "false", &cb_analysis_cjmpref, "Create references for conditional jumps");
-	SETCB ("anal.jmp.ref", "true", &cb_analysis_jmpref, "Create references for unconditional jumps");
+	SETCB ("analysis.jmp.cref", "false", &cb_analysis_cjmpref, "Create references for conditional jumps");
+	SETCB ("analysis.jmp.ref", "true", &cb_analysis_jmpref, "Create references for unconditional jumps");
 
-	SETCB ("anal.jmp.above", "true", &cb_analysis_jmpabove, "Jump above function pointer");
-	SETCB ("anal.loads", "false", &cb_analysis_loads, "Define as dword/string/qword when analyzing load instructions");
-	SETCB ("anal.datarefs", "false", &cb_analysis_followdatarefs, "Follow data references for code coverage");
-	SETCB ("anal.brokenrefs", "false", &cb_analysis_brokenrefs, "Follow function references as well if function analysis was failed");
-	SETCB ("anal.jmp.mid", "true", &cb_analysis_jmpmid, "Continue analysis after jump to middle of instruction (x86 only)");
+	SETCB ("analysis.jmp.above", "true", &cb_analysis_jmpabove, "Jump above function pointer");
+	SETCB ("analysis.loads", "false", &cb_analysis_loads, "Define as dword/string/qword when analyzing load instructions");
+	SETCB ("analysis.datarefs", "false", &cb_analysis_followdatarefs, "Follow data references for code coverage");
+	SETCB ("analysis.brokenrefs", "false", &cb_analysis_brokenrefs, "Follow function references as well if function analysis was failed");
+	SETCB ("analysis.jmp.mid", "true", &cb_analysis_jmpmid, "Continue analysis after jump to middle of instruction (x86 only)");
 
-	SETCB ("anal.refstr", "false", &cb_analysis_searchstringrefs, "Search string references in data references");
-	SETCB ("anal.trycatch", "false", &cb_analysis_trycatch, "Honor try.X.Y.{from,to,catch} flags");
-	SETCB ("anal.bb.maxsize", "512K", &cb_analysis_bb_max_size, "Maximum basic block size");
-	SETCB ("anal.pushret", "false", &cb_analysis_pushret, "Analyze push+ret as jmp");
+	SETCB ("analysis.refstr", "false", &cb_analysis_searchstringrefs, "Search string references in data references");
+	SETCB ("analysis.trycatch", "false", &cb_analysis_trycatch, "Honor try.X.Y.{from,to,catch} flags");
+	SETCB ("analysis.bb.maxsize", "512K", &cb_analysis_bb_max_size, "Maximum basic block size");
+	SETCB ("analysis.pushret", "false", &cb_analysis_pushret, "Analyze push+ret as jmp");
 
-	n = NODECB ("anal.cpp.abi", "itanium", &cb_analysis_cpp_abi);
+	n = NODECB ("analysis.cpp.abi", "itanium", &cb_analysis_cpp_abi);
 	SETDESC (n, "Select C++ ABI (Compiler)");
 	SETOPTIONS (n, "itanium", "msvc", NULL);
 
@@ -3124,7 +3124,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF ("asm.cmt.fold", "false", "Fold comments, toggle with Vz");
 	SETBPREF ("asm.family", "false", "Show family name in disasm");
 	SETBPREF ("asm.symbol", "false", "Show symbol+delta instead of absolute offset");
-	SETBPREF ("asm.anal", "false", "Analyze code and refs while disassembling (see anal.strings)");
+	SETBPREF ("asm.analysis", "false", "Analyze code and refs while disassembling (see analysis.strings)");
 	SETI ("asm.symbol.col", 40, "Columns width to show asm.section");
 	SETCB ("asm.assembler", "", &cb_asmassembler, "Set the plugin name to use when assembling");
 	SETBPREF ("asm.minicols", "false", "Only show the instruction in the column disasm");
@@ -3327,7 +3327,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("dbg.forks", "false", &cb_dbg_forks, "Stop execution if fork() is done (see dbg.threads)");
 	n = NODECB ("dbg.btalgo", "fuzzy", &cb_dbg_btalgo);
 	SETDESC (n, "Select backtrace algorithm");
-	SETOPTIONS (n, "default", "fuzzy", "anal", "trace", NULL);
+	SETOPTIONS (n, "default", "fuzzy", "analysis", "trace", NULL);
 	SETCB ("dbg.threads", "false", &cb_stopthreads, "Stop all threads when debugger breaks (see dbg.forks)");
 	SETCB ("dbg.clone", "false", &cb_dbg_clone, "Stop execution if new thread is created");
 	SETCB ("dbg.aftersyscall", "true", &cb_dbg_aftersc, "Stop execution before the syscall is executed (see dcs)");
@@ -3351,7 +3351,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		rz_config_set_i (cfg, "dbg.follow", 32);
 	}
 	rz_config_desc (cfg, "dbg.follow", "Follow program counter when pc > core->offset + dbg.follow");
-	SETBPREF ("dbg.rebase", "true", "Rebase anal/meta/comments/flags when reopening file in debugger");
+	SETBPREF ("dbg.rebase", "true", "Rebase analysis/meta/comments/flags when reopening file in debugger");
 	SETCB ("dbg.swstep", "false", &cb_swstep, "Force use of software steps (code analysis+breakpoint)");
 	SETBPREF ("dbg.trace.inrange", "false", "While tracing, avoid following calls outside specified range");
 	SETBPREF ("dbg.trace.libs", "true", "Trace library code too");
@@ -3637,7 +3637,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		"io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x",
 		"dbg.stack", "dbg.heap",
 		"dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x",
-		"anal.fcn", "anal.bb",
+		"analysis.fcn", "analysis.bb",
 	NULL);
 	SETICB ("search.kwidx", 0, &cb_search_kwidx, "Store last search index count");
 	SETPREF ("search.prefix", "hit", "Prefix name in search hits label");
@@ -3713,7 +3713,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		"io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x",
 		"dbg.stack", "dbg.heap",
 		"dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x",
-		"anal.fcn", "anal.bb",
+		"analysis.fcn", "analysis.bb",
 	NULL);
 	/* lines */
 	SETI ("lines.from", 0, "Start address for line seek");

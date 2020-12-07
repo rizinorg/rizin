@@ -1274,10 +1274,10 @@ static void autocomplete_sdb (RzCore *core, RzLineCompletion *completion, const 
 		*p1 = 0;
 		char *ns = p1 + 1;
 		p2 = strchr (ns, '/');
-		if (!p2) { // anal/m
+		if (!p2) { // analysis/m
 			char *tmp = p1 + 1;
 			int n = strlen (tmp);
-			out = sdb_querys (sdb, NULL, 0, "anal/**");
+			out = sdb_querys (sdb, NULL, 0, "analysis/**");
 			if (!out) {
 				return;
 			}
@@ -1288,19 +1288,19 @@ static void autocomplete_sdb (RzCore *core, RzLineCompletion *completion, const 
 				}
 				cur_cmd = rz_str_ndup (out, cur_pos - out);
 				if (!strncmp (tmp, cur_cmd, n)) {
-					char *cmplt = rz_str_newf ("anal/%s/", cur_cmd);
+					char *cmplt = rz_str_newf ("analysis/%s/", cur_cmd);
 					rz_line_completion_push (completion, cmplt);
 					free (cmplt);
 				}
 				out += cur_pos - out + 1;
 			}
 
-		} else { // anal/meta/*
+		} else { // analysis/meta/*
 			char *tmp = p2 + 1;
 			int n = strlen (tmp);
 			char *spltr = strchr (ns, '/');
 			*spltr = 0;
-			next_cmd = rz_str_newf ("anal/%s/*", ns);
+			next_cmd = rz_str_newf ("analysis/%s/*", ns);
 			out = sdb_querys (sdb, NULL, 0, next_cmd);
 			if (!out) {
 				free (lpath);
@@ -1315,7 +1315,7 @@ static void autocomplete_sdb (RzCore *core, RzLineCompletion *completion, const 
 				key = strchr (temp_cmd, '=');
 				*key = 0;
 				if (!strncmp (tmp, temp_cmd, n)) {
-					char *cmplt = rz_str_newf ("anal/%s/%s", ns, temp_cmd);
+					char *cmplt = rz_str_newf ("analysis/%s/%s", ns, temp_cmd);
 					rz_line_completion_push (completion, cmplt);
 					free (cmplt);
 				}
@@ -1324,8 +1324,8 @@ static void autocomplete_sdb (RzCore *core, RzLineCompletion *completion, const 
 		}
 	} else {
 		int n = strlen (lpath);
-		if (!strncmp (lpath, "anal", n)) {
-			rz_line_completion_push (completion, "anal/");
+		if (!strncmp (lpath, "analysis", n)) {
+			rz_line_completion_push (completion, "analysis/");
 		}
 	}
 }
@@ -1875,9 +1875,9 @@ static void update_sdb(RzCore *core) {
 	if (!core) {
 		return;
 	}
-	//SDB// anal/
+	//SDB// analysis/
 	if (core->analysis && core->analysis->sdb) {
-		sdb_ns_set (DB, "anal", core->analysis->sdb);
+		sdb_ns_set (DB, "analysis", core->analysis->sdb);
 	}
 	//SDB// bin/
 	if (core->bin && core->bin->sdb) {
@@ -2455,7 +2455,7 @@ static int win_eprintf(const char *format, ...) {
 static void ev_iowrite_cb(RzEvent *ev, int type, void *user, void *data) {
 	RzCore *core = user;
 	RzEventIOWrite *iow = data;
-	if (rz_config_get_i (core->config, "anal.detectwrites")) {
+	if (rz_config_get_i (core->config, "analysis.detectwrites")) {
 		rz_analysis_update_analysis_range (core->analysis, iow->addr, iow->len);
 		if (core->cons->event_resize && core->cons->event_data) {
 			// Force a reload of the graph
@@ -2571,7 +2571,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->analysis->cb.on_fcn_delete = on_fcn_delete;
 	core->analysis->cb.on_fcn_rename = on_fcn_rename;
 	core->print->sdb_types = core->analysis->sdb_types;
-	core->rasm->syscall = rz_syscall_ref (core->analysis->syscall); // BIND syscall anal/asm
+	core->rasm->syscall = rz_syscall_ref (core->analysis->syscall); // BIND syscall analysis/asm
 	rz_analysis_set_user_ptr (core->analysis, core);
 	core->analysis->cb_printf = (void *) rz_cons_printf;
 	core->parser = rz_parse_new ();

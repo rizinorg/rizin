@@ -67,7 +67,7 @@ RZ_API RzList *rz_sign_fcn_vars(RzAnalysis *a, RzAnalysisFunction *fcn) {
 
 RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn) {
 
-	// From anal/types/*:
+	// From analysis/types/*:
 	// Get key-value types from sdb matching "func.%s", fcn->name
 	// Get func.%s.args (number of args)
 	// Get type,name pairs

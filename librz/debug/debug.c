@@ -1339,7 +1339,7 @@ RZ_API int rz_debug_continue_until_optype(RzDebug *dbg, int type, int over) {
 	}
 
 	if (!dbg->analysis || !dbg->reg) {
-		eprintf ("Undefined pointer at dbg->anal\n");
+		eprintf ("Undefined pointer at dbg->analysis\n");
 		return false;
 	}
 

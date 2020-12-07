@@ -774,7 +774,7 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 }
 
 /**
- * @brief Add any base class information about the type into anal/classes
+ * @brief Add any base class information about the type into analysis/classes
  * 
  * @param context 
  * @param cti 

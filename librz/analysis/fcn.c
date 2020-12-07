@@ -1455,7 +1455,7 @@ RZ_API int rz_analysis_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 a
 			analysis->visited = set_u_new ();
 		}
 		if (set_u_contains (analysis->visited, addr)) {
-			eprintf ("rz_analysis_fcn: anal.norevisit at 0x%08"PFMT64x" %c\n", addr, reftype);
+			eprintf ("rz_analysis_fcn: analysis.norevisit at 0x%08"PFMT64x" %c\n", addr, reftype);
 			return RZ_ANALYSIS_RET_END;
 		}
 		set_u_add (analysis->visited, addr);

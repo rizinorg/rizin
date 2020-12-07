@@ -554,7 +554,7 @@ RZ_API void rz_core_print_func_args(RzCore *core);
 RZ_API char *resolve_fcn_name(RzAnalysis *analysis, const char * func_name);
 RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to);
 
-/* anal.c */
+/* analysis.c */
 RZ_API RzAnalysisOp* rz_core_analysis_op(RzCore *core, ut64 addr, int mask);
 RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *addr);
 RZ_API void rz_core_analysis_fcn_merge(RzCore *core, ut64 addr, ut64 addr2);

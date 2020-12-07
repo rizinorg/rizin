@@ -3490,7 +3490,7 @@ static int agraph_print(RzAGraph *g, int is_interactive, RzCore *core, RzAnalysi
 
 static void check_function_modified(RzCore *core, RzAnalysisFunction *fcn) {
 	if (rz_analysis_function_was_modified (fcn)) {
-		if (rz_config_get_i (core->config, "anal.detectwrites")
+		if (rz_config_get_i (core->config, "analysis.detectwrites")
 			|| rz_cons_yesno ('y', "Function was modified. Reanalyze? (Y/n)")) {
 			rz_analysis_function_update_analysis (fcn);
 		}

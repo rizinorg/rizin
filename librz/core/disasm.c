@@ -612,7 +612,7 @@ static RDisasmState * ds_init(RzCore *core) {
 		const char *ah = rz_config_get (core->config, "asm.highlight");
 		ds->asm_highlight = (ah && *ah)? rz_num_math (core->num, ah): UT64_MAX;
 	}
-	ds->asm_analysis = rz_config_get_i (core->config, "asm.anal");
+	ds->asm_analysis = rz_config_get_i (core->config, "asm.analysis");
 	ds->show_color = rz_config_get_i (core->config, "scr.color");
 	ds->show_color_bytes = rz_config_get_i (core->config, "scr.color.bytes"); // maybe rename to asm.color.bytes
 	ds->show_color_args = rz_config_get_i (core->config, "scr.color.args");
@@ -4601,8 +4601,8 @@ static void mipsTweak(RDisasmState *ds) {
 	RzCore *core = ds->core;
 	const char *asm_arch = rz_config_get (core->config, "asm.arch");
 	if (asm_arch && *asm_arch && strstr (asm_arch, "mips")) {
-		if (rz_config_get_i (core->config, "anal.gpfixed")) {
-			ut64 gp = rz_config_get_i (core->config, "anal.gp");
+		if (rz_config_get_i (core->config, "analysis.gpfixed")) {
+			ut64 gp = rz_config_get_i (core->config, "analysis.gp");
 			rz_reg_setv (core->analysis->reg, "gp", gp);
 		}
 	}

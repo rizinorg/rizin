@@ -1256,7 +1256,7 @@ RZ_IPI int rz_cmd_zign(void *data, const char *input) {
 		rz_sign_list (core->analysis, *input);
 		break;
 	case 'k': // "zk"
-		rz_core_cmd0 (core, "k anal/zigns/*");
+		rz_core_cmd0 (core, "k analysis/zigns/*");
 		break;
 	case '-': // "z-"
 		rz_sign_delete (core->analysis, arg);
@@ -1308,7 +1308,7 @@ RZ_IPI RzCmdStatus rz_zign_show_handler(RzCore *core, int argc, const char **arg
 		rz_sign_list (core->analysis, '*');
 		return RZ_CMD_STATUS_OK;
 	case RZ_OUTPUT_MODE_SDB:
-		out = sdb_querys (core->sdb, NULL, 0, "anal/zigns/*");
+		out = sdb_querys (core->sdb, NULL, 0, "analysis/zigns/*");
 		if (!out) {
 			return RZ_CMD_STATUS_ERROR;
 		}
