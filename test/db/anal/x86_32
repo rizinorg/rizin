@@ -3452,7 +3452,7 @@ EOF
 RUN
 
 NAME=Fix #15315 - Honor RAnalOp.disp in `aar` and `ao`
-FILE=bins/pe/honor_ranal_op_disp.exe
+FILE=bins/pe/honor_ranalysis_op_disp.exe
 CMDS=<<EOF
 aar
 s 0x00402130

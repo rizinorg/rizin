@@ -205,7 +205,7 @@ RZ_API char * rz_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 ad
 RZ_API void rz_print_2bpp_row(RzPrint *p, ut8 *buf);
 RZ_API void rz_print_2bpp_tiles(RzPrint *p, ut8 *buf, ut32 tiles);
 RZ_API char * rz_print_colorize_opcode(RzPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr);
-RZ_API const char * rz_print_color_op_type(RzPrint *p, ut32 anal_type);
+RZ_API const char * rz_print_color_op_type(RzPrint *p, ut32 analysis_type);
 RZ_API void rz_print_set_interrupted(int i);
 RZ_API void rz_print_init_rowoffsets(RzPrint *p);
 RZ_API ut32 rz_print_rowoff(RzPrint *p, int i);

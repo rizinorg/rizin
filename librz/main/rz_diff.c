@@ -51,7 +51,7 @@ static RzCore *core = NULL;
 static const char *arch = NULL;
 const char *runcmd = NULL;
 static int bits = 0;
-static int anal_all = 0;
+static int analysis_all = 0;
 static bool verbose = false;
 static RzList *evals = NULL;
 
@@ -91,9 +91,9 @@ static RzCore *opencore(const char *f) {
 			rz_config_set_i (c->config, "io.va", false);
 		}
 
-		if (anal_all) {
+		if (analysis_all) {
 			const char *cmd = "aac";
-			switch (anal_all) {
+			switch (analysis_all) {
 			case 1: cmd = "aaa"; break;
 			case 2: cmd = "aaaa"; break;
 			}
@@ -941,7 +941,7 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 			arch = opt.arg;
 			break;
 		case 'A':
-			anal_all++;
+			analysis_all++;
 			break;
 		case 'b':
 			bits = atoi (opt.arg);

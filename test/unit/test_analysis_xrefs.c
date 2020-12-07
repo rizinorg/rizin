@@ -1,7 +1,7 @@
 #include <rz_analysis.h>
 #include "minunit.h"
 
-bool test_r_anal_xrefs_count() {
+bool test_r_analysis_xrefs_count() {
 	RzAnalysis *analysis = rz_analysis_new ();
 
 	mu_assert_eq (rz_analysis_xrefs_count (analysis), 0, "xrefs count");
@@ -19,7 +19,7 @@ bool test_r_anal_xrefs_count() {
 }
 
 int all_tests() {
-	mu_run_test (test_r_anal_xrefs_count);
+	mu_run_test (test_r_analysis_xrefs_count);
 	return tests_passed != tests_run;
 }
 

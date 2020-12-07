@@ -1480,7 +1480,7 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 			break;
 		}
 	} break;
-	// ta: moved to anal hints (aht)- just for tail, at the moment
+	// ta: moved to analysis hints (aht)- just for tail, at the moment
 	case 'a': // "ta"
 		switch (input[1]) {
 		case 'i': { // "tai"

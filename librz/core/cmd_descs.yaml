@@ -946,7 +946,7 @@
             - name: Zignature types
               entries:
                 - text: "a"
-                  comment: "bytes pattern (anal mask)"
+                  comment: "bytes pattern (analysis mask)"
                 - text: "b"
                   comment: "bytes pattern"
                 - text: "c"

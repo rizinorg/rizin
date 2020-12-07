@@ -246,7 +246,7 @@ static void createFunction(RzCore *core, fcn_t* fcn, const char *name) {
 }
 
 #define Fhandled(x) sdb_fmt("handled.%"PFMT64x"", x)
-RZ_API bool core_anal_bbs(RzCore *core, const char* input) {
+RZ_API bool core_analysis_bbs(RzCore *core, const char* input) {
 	if (!rz_io_is_valid_offset (core->io, core->offset, false)) {
 		eprintf ("No valid offset given to analyze\n");
 		return false;
@@ -528,7 +528,7 @@ RZ_API bool core_anal_bbs(RzCore *core, const char* input) {
 	return true;
 }
 
-RZ_API bool core_anal_bbs_range (RzCore *core, const char* input) {
+RZ_API bool core_analysis_bbs_range (RzCore *core, const char* input) {
 	if (!rz_io_is_valid_offset (core->io, core->offset, false)) {
 		eprintf ("No valid offset given to analyze\n");
 		return false;

@@ -8,7 +8,7 @@
 
 RZ_LIB_VERSION(rz_analysis);
 
-static RzAnalysisPlugin *anal_static_plugins[] = {
+static RzAnalysisPlugin *analysis_static_plugins[] = {
 	RZ_ANALYSIS_STATIC_PLUGINS
 };
 
@@ -133,8 +133,8 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	rz_analysis_set_bits (analysis, 32);
 	analysis->plugins = rz_list_newf ((RzListFree) rz_analysis_plugin_free);
 	if (analysis->plugins) {
-		for (i = 0; anal_static_plugins[i]; i++) {
-			rz_analysis_add (analysis, anal_static_plugins[i]);
+		for (i = 0; analysis_static_plugins[i]; i++) {
+			rz_analysis_add (analysis, analysis_static_plugins[i]);
 		}
 	}
 	return analysis;

@@ -1862,9 +1862,9 @@ RZ_API void rz_print_2bpp_tiles(RzPrint *p, ut8 *buf, ut32 tiles) {
 }
 
 // probably move somewhere else. RzPrint doesnt needs to know about the RZ_ANALYSIS_ enums
-RZ_API const char* rz_print_color_op_type(RzPrint *p, ut32 anal_type) {
+RZ_API const char* rz_print_color_op_type(RzPrint *p, ut32 analysis_type) {
 	RzConsPrintablePalette *pal = &p->cons->context->pal;
-	switch (anal_type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	switch (analysis_type & RZ_ANALYSIS_OP_TYPE_MASK) {
 	case RZ_ANALYSIS_OP_TYPE_NOP:
 		return pal->nop;
 	case RZ_ANALYSIS_OP_TYPE_ADD:

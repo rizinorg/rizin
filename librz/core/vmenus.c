@@ -1335,7 +1335,7 @@ RZ_API int rz_core_visual_classes(RzCore *core) {
 	return true;
 }
 
-static void anal_class_print(RzAnalysis *analysis, const char *class_name) {
+static void analysis_class_print(RzAnalysis *analysis, const char *class_name) {
 	RzVector *bases = rz_analysis_class_base_get_all (analysis, class_name);
 	RzVector *vtables = rz_analysis_class_vtable_get_all (analysis, class_name);
 	RzVector *methods = rz_analysis_class_method_get_all (analysis, class_name);
@@ -1383,17 +1383,17 @@ static void anal_class_print(RzAnalysis *analysis, const char *class_name) {
 	}
 }
 
-static const char *show_anal_classes(RzCore *core, char mode, int *idx, SdbList *list, const char *class_name) {
+static const char *show_analysis_classes(RzCore *core, char mode, int *idx, SdbList *list, const char *class_name) {
 	bool show_color = rz_config_get_i (core->config, "scr.color");
 	SdbListIter *iter;
 	SdbKv *kv;
 	int i = 0;
 	int skip = *idx - 10;
 	const char * cur_class = NULL;
-	rz_cons_printf ("[hjkl_/Cfm]> anal classes:\n\n");
+	rz_cons_printf ("[hjkl_/Cfm]> analysis classes:\n\n");
 
 	if (mode == 'd' && class_name) {
-		anal_class_print (core->analysis, class_name);
+		analysis_class_print (core->analysis, class_name);
 		return class_name;
 	}
 
@@ -1431,7 +1431,7 @@ static const char *show_anal_classes(RzCore *core, char mode, int *idx, SdbList 
 // Should the classes be refreshed after command execution with :
 // in case new class information would be added?
 // Add grep?
-RZ_API int rz_core_visual_anal_classes(RzCore *core) {
+RZ_API int rz_core_visual_analysis_classes(RzCore *core) {
 	int ch, index = 0;
 	char command[1024];
 	SdbList *list = rz_analysis_class_get_all (core->analysis, true);
@@ -1447,7 +1447,7 @@ RZ_API int rz_core_visual_anal_classes(RzCore *core) {
 		int cols;
 		rz_cons_clear00 ();
 
-		class_name = show_anal_classes (core, mode, &index, list, class_name);
+		class_name = show_analysis_classes (core, mode, &index, list, class_name);
 
 		/* update terminal size */
 		(void) rz_cons_get_size (&cols);
@@ -2254,7 +2254,7 @@ RZ_API int rz_core_visual_comments (RzCore *core) {
 		case 'h':
 			rz_cons_clear00 ();
 			rz_cons_printf (
-			"\nVT: Visual Comments/Anal help:\n\n"
+			"\nVT: Visual Comments/Analysis help:\n\n"
 			" q     - quit menu\n"
 			" j/k   - down/up keys\n"
 			" h/b   - go back\n"
@@ -2678,7 +2678,7 @@ static const char *printCmds[lastPrintMode] = {
 	"pdf", "pd $r", "afi", "pdsf", "pdc", "pdr"
 };
 
-static void rz_core_visual_anal_refresh_column (RzCore *core, int colpos) {
+static void rz_core_visual_analysis_refresh_column (RzCore *core, int colpos) {
 	const ut64 addr = (level != 0 && level != 1)
 		? core->offset
 		: var_functions_show (core, option, 0, colpos);
@@ -2758,7 +2758,7 @@ static void rz_core_vmenu_append_help (RzStrBuf *p, const char **help) {
 	}
 }
 
-static ut64 rz_core_visual_anal_refresh (RzCore *core) {
+static ut64 rz_core_visual_analysis_refresh (RzCore *core) {
 	if (!core) {
 		return 0LL;
 	}
@@ -2775,7 +2775,7 @@ static ut64 rz_core_visual_anal_refresh (RzCore *core) {
 	}
 
 	rz_cons_clear00 ();
-	rz_core_visual_anal_refresh_column (core, cols);
+	rz_core_visual_analysis_refresh_column (core, cols);
 	if (cols > 30) {
 		rz_cons_column (cols);
 	}
@@ -2847,8 +2847,8 @@ static ut64 rz_core_visual_anal_refresh (RzCore *core) {
 	return addr;
 }
 
-static void rz_core_visual_anal_refresh_oneshot (RzCore *core) {
-	rz_core_task_enqueue_oneshot (&core->tasks, (RzCoreTaskOneShot) rz_core_visual_anal_refresh, core);
+static void rz_core_visual_analysis_refresh_oneshot (RzCore *core) {
+	rz_core_task_enqueue_oneshot (&core->tasks, (RzCoreTaskOneShot) rz_core_visual_analysis_refresh, core);
 }
 
 static void rz_core_visual_debugtraces_help(RzCore *core) {
@@ -2969,7 +2969,7 @@ static void addVar(RzCore *core, int ch, const char *msg) {
 }
 
 /* Like emenu but for real */
-RZ_API void rz_core_visual_anal(RzCore *core, const char *input) {
+RZ_API void rz_core_visual_analysis(RzCore *core, const char *input) {
 	char old[218];
 	int nfcns, ch, _option = 0;
 
@@ -2979,7 +2979,7 @@ RZ_API void rz_core_visual_anal(RzCore *core, const char *input) {
 
 	core->cons->event_resize = NULL; // avoid running old event with new data
 	core->cons->event_data = core;
-	core->cons->event_resize = (RzConsEvent) rz_core_visual_anal_refresh_oneshot;
+	core->cons->event_resize = (RzConsEvent) rz_core_visual_analysis_refresh_oneshot;
 
 	level = 0;
 
@@ -2987,7 +2987,7 @@ RZ_API void rz_core_visual_anal(RzCore *core, const char *input) {
 	rz_config_set_i (core->config, "asm.bytes", 0);
 	for (;;) {
 		nfcns = rz_list_length (core->analysis->fcns);
-		addr = rz_core_visual_anal_refresh (core);
+		addr = rz_core_visual_analysis_refresh (core);
 		if (input && *input) {
 			ch = *input;
 			input++;
@@ -3377,10 +3377,10 @@ static bool isDisasmPrint(int mode) {
 }
 
 static void handleHints(RzCore *core) {
-	//TODO extend for more anal hints
+	//TODO extend for more analysis hints
 	int i = 0;
 	char ch[64] = RZ_EMPTY;
-	const char *lines[] = {"[dh]- Define anal hint:"
+	const char *lines[] = {"[dh]- Define analysis hint:"
 		," b [16,32,64]     set bits hint"
 		, NULL};
 	for (i = 0; lines[i]; i++) {
@@ -3388,7 +3388,7 @@ static void handleHints(RzCore *core) {
 		rz_cons_printf ("\r%s\n", lines[i]);
 	}
 	rz_cons_flush ();
-	rz_line_set_prompt ("anal hint: ");
+	rz_line_set_prompt ("analysis hint: ");
 	if (rz_cons_fgets (ch, sizeof (ch), 0, NULL) > 0) {
 		switch (ch[0]) {
 		case 'b':
@@ -3452,7 +3452,7 @@ RZ_API void rz_core_visual_define(RzCore *core, const char *args, int distance) 
 		," I    (ahi1) immediate base (b(in), o(ct), d(ec), h(ex), s(tr))"
 		," j    merge down (join this and next functions)"
 		," k    merge up (join this and previous function)"
-		," h    define anal hint"
+		," h    define analysis hint"
 		," m    manpage for current call"
 		," n    rename flag used at cursor"
 		," N    edit function signature (afs!)"

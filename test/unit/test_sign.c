@@ -3,7 +3,7 @@
 
 #include "minunit.h"
 
-static bool test_anal_sign_get_set(void) {
+static bool test_analysis_sign_get_set(void) {
 	RzAnalysis *analysis = rz_analysis_new ();
 
 	RzSignItem *item = rz_sign_item_new ();
@@ -107,7 +107,7 @@ static bool test_anal_sign_get_set(void) {
 }
 
 int all_tests(void) {
-	mu_run_test (test_anal_sign_get_set);
+	mu_run_test (test_analysis_sign_get_set);
 	return tests_passed != tests_run;
 }
 

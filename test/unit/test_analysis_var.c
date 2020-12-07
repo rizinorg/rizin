@@ -42,7 +42,7 @@ static bool sanitize(RzAnalysisFunction *fcn) {
 	} \
 } while (0);
 
-bool test_r_anal_var() {
+bool test_r_analysis_var() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	rz_analysis_use (analysis, "x86");
 	rz_analysis_set_bits (analysis, 64);
@@ -224,7 +224,7 @@ bool test_r_anal_var() {
 }
 
 int all_tests() {
-	mu_run_test (test_r_anal_var);
+	mu_run_test (test_r_analysis_var);
 	return tests_passed != tests_run;
 }
 

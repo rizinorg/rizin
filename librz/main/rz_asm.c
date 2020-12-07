@@ -65,7 +65,7 @@ static char *stackop2str(int type) {
 	return strdup ("unknown");
 }
 
-static int showanal(RzAsmState *as, RzAnalysisOp *op, ut64 offset, ut8 *buf, int len, PJ *pj) {
+static int showanalysis(RzAsmState *as, RzAnalysisOp *op, ut64 offset, ut8 *buf, int len, PJ *pj) {
 	int ret = rz_analysis_op (as->analysis, op, offset, buf, len, RZ_ANALYSIS_OP_MASK_ESIL);
 	if (ret < 1) {
 		return ret;
@@ -129,9 +129,9 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 		free (buf);
 		return 0;
 	}
-	
+
 	RzAnalysisOp aop = { 0 };
-	
+
 	if (as->json) {
 		pj_a (pj);
 	}
@@ -152,12 +152,12 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 			}
 			break;
 		}
-		showanal (as, &aop, offset, buf + ret, len - ret, pj);
+		showanalysis (as, &aop, offset, buf + ret, len - ret, pj);
 		ret += aop.size;
 		rz_analysis_op_fini (&aop);
 	}
 	if (as->json) {
-		pj_end (pj); 
+		pj_end (pj);
 		printf ("%s\n", pj_string (pj));
 		pj_free (pj);
 	}
@@ -477,8 +477,8 @@ static int __lib_asm_cb(RzLibPlugin *pl, void *user, void *data) {
 	return true;
 }
 
-/* anal callback */
-static int __lib_anal_cb(RzLibPlugin *pl, void *user, void *data) {
+/* analysis callback */
+static int __lib_analysis_cb(RzLibPlugin *pl, void *user, void *data) {
 	RzAnalysisPlugin *hand = (RzAnalysisPlugin *)data;
 	RzAsmState *as = (RzAsmState *)user;
 	rz_analysis_add (as->analysis, hand);
@@ -511,7 +511,7 @@ static void __load_plugins(RzAsmState *as) {
 		return;
 	}
 	rz_lib_add_handler (as->l, RZ_LIB_TYPE_ASM, "(dis)assembly plugins", &__lib_asm_cb, NULL, as);
-	rz_lib_add_handler (as->l, RZ_LIB_TYPE_ANAL, "analysis/emulation plugins", &__lib_anal_cb, NULL, as);
+	rz_lib_add_handler (as->l, RZ_LIB_TYPE_ANAL, "analysis/emulation plugins", &__lib_analysis_cb, NULL, as);
 
 	char *path = rz_sys_getenv (RZ_LIB_ENV);
 	if (path && *path) {

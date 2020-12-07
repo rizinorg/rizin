@@ -4652,7 +4652,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
 		case 'v':
-			rz_core_visual_anal (core, NULL);
+			rz_core_visual_analysis (core, NULL);
 			break;
 		case 'J':
 			// copypaste from 'j'

@@ -57,7 +57,7 @@ static void setup_sdb_for_not_found(Sdb *res) {
 	sdb_set (res, "struct.omega.ff", "", 0);
 }
 
-static bool test_anal_get_base_type_struct(void) {
+static bool test_analysis_get_base_type_struct(void) {
 	RzAnalysis *analysis = rz_analysis_new ();
 	mu_assert_notnull (analysis, "Couldn't create new RzAnalysis");
 	mu_assert_notnull (analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
@@ -87,7 +87,7 @@ static bool test_anal_get_base_type_struct(void) {
 	mu_end;
 }
 
-static bool test_anal_save_base_type_struct(void) {
+static bool test_analysis_save_base_type_struct(void) {
 	RzAnalysis *analysis = rz_analysis_new ();
 	mu_assert_notnull (analysis, "Couldn't create new RzAnalysis");
 	mu_assert_notnull (analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
@@ -119,7 +119,7 @@ static bool test_anal_save_base_type_struct(void) {
 	mu_end;
 }
 
-static bool test_anal_get_base_type_union(void) {
+static bool test_analysis_get_base_type_union(void) {
 	RzAnalysis *analysis = rz_analysis_new ();
 	mu_assert_notnull (analysis, "Couldn't create new RzAnalysis");
 	mu_assert_notnull (analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
@@ -147,7 +147,7 @@ static bool test_anal_get_base_type_union(void) {
 	mu_end;
 }
 
-static bool test_anal_save_base_type_union(void) {
+static bool test_analysis_save_base_type_union(void) {
 	RzAnalysis *analysis = rz_analysis_new ();
 	mu_assert_notnull (analysis, "Couldn't create new RzAnalysis");
 	mu_assert_notnull (analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
@@ -179,7 +179,7 @@ static bool test_anal_save_base_type_union(void) {
 	mu_end;
 }
 
-static bool test_anal_get_base_type_enum(void) {
+static bool test_analysis_get_base_type_enum(void) {
 	RzAnalysis *analysis = rz_analysis_new ();
 	mu_assert_notnull (analysis, "Couldn't create new RzAnalysis");
 	mu_assert_notnull (analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
@@ -205,7 +205,7 @@ static bool test_anal_get_base_type_enum(void) {
 	mu_end;
 }
 
-static bool test_anal_save_base_type_enum(void) {
+static bool test_analysis_save_base_type_enum(void) {
 	RzAnalysis *analysis = rz_analysis_new ();
 	mu_assert_notnull (analysis, "Couldn't create new RzAnalysis");
 	mu_assert_notnull (analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
@@ -235,7 +235,7 @@ static bool test_anal_save_base_type_enum(void) {
 	mu_end;
 }
 
-static bool test_anal_get_base_type_typedef(void) {
+static bool test_analysis_get_base_type_typedef(void) {
 	RzAnalysis *analysis = rz_analysis_new ();
 	mu_assert_notnull (analysis, "Couldn't create new RzAnalysis");
 	mu_assert_notnull (analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
@@ -254,7 +254,7 @@ static bool test_anal_get_base_type_typedef(void) {
 	mu_end;
 }
 
-static bool test_anal_save_base_type_typedef(void) {
+static bool test_analysis_save_base_type_typedef(void) {
 	RzAnalysis *analysis = rz_analysis_new ();
 	mu_assert_notnull (analysis, "Couldn't create new RzAnalysis");
 	mu_assert_notnull (analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
@@ -275,7 +275,7 @@ static bool test_anal_save_base_type_typedef(void) {
 	mu_end;
 }
 
-static bool test_anal_get_base_type_atomic(void) {
+static bool test_analysis_get_base_type_atomic(void) {
 	RzAnalysis *analysis = rz_analysis_new ();
 	mu_assert_notnull (analysis, "Couldn't create new RzAnalysis");
 	mu_assert_notnull (analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
@@ -295,7 +295,7 @@ static bool test_anal_get_base_type_atomic(void) {
 	mu_end;
 }
 
-static bool test_anal_save_base_type_atomic(void) {
+static bool test_analysis_save_base_type_atomic(void) {
 	RzAnalysis *analysis = rz_analysis_new ();
 	mu_assert_notnull (analysis, "Couldn't create new RzAnalysis");
 	mu_assert_notnull (analysis->sdb_types, "Couldn't create new RzAnalysis.sdb_types");
@@ -317,7 +317,7 @@ static bool test_anal_save_base_type_atomic(void) {
 	mu_end;
 }
 
-static bool test_anal_get_base_type_not_found(void) {
+static bool test_analysis_get_base_type_not_found(void) {
 	RzAnalysis *analysis = rz_analysis_new ();
 	setup_sdb_for_not_found (analysis->sdb_types);
 
@@ -340,17 +340,17 @@ static bool test_anal_get_base_type_not_found(void) {
 }
 
 int all_tests(void) {
-	mu_run_test (test_anal_get_base_type_struct);
-	mu_run_test (test_anal_save_base_type_struct);
-	mu_run_test (test_anal_get_base_type_union);
-	mu_run_test (test_anal_save_base_type_union);
-	mu_run_test (test_anal_get_base_type_enum);
-	mu_run_test (test_anal_save_base_type_enum);
-	mu_run_test (test_anal_get_base_type_typedef);
-	mu_run_test (test_anal_save_base_type_typedef);
-	mu_run_test (test_anal_get_base_type_atomic);
-	mu_run_test (test_anal_save_base_type_atomic);
-	mu_run_test (test_anal_get_base_type_not_found);
+	mu_run_test (test_analysis_get_base_type_struct);
+	mu_run_test (test_analysis_save_base_type_struct);
+	mu_run_test (test_analysis_get_base_type_union);
+	mu_run_test (test_analysis_save_base_type_union);
+	mu_run_test (test_analysis_get_base_type_enum);
+	mu_run_test (test_analysis_save_base_type_enum);
+	mu_run_test (test_analysis_get_base_type_typedef);
+	mu_run_test (test_analysis_save_base_type_typedef);
+	mu_run_test (test_analysis_get_base_type_atomic);
+	mu_run_test (test_analysis_save_base_type_atomic);
+	mu_run_test (test_analysis_get_base_type_not_found);
 	return tests_passed != tests_run;
 }
 

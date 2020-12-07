@@ -6,7 +6,7 @@
 #include <rz_core.h>
 #define LOOP_MAX 10
 
-static bool anal_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt, RzAnalysisEsilTrace **et) {
+static bool analysis_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt, RzAnalysisEsilTrace **et) {
 	if (!core->analysis->esil) {
 		return false;
 	}
@@ -30,7 +30,7 @@ static bool anal_emul_init(RzCore *core, RzConfigHold *hc, RzDebugTrace **dt, Rz
 	return (core->dbg->trace && core->analysis->esil->trace);
 }
 
-static void anal_emul_restore(RzCore *core, RzConfigHold *hc, RzDebugTrace *dt, RzAnalysisEsilTrace *et) {
+static void analysis_emul_restore(RzCore *core, RzConfigHold *hc, RzDebugTrace *dt, RzAnalysisEsilTrace *et) {
 	rz_config_hold_restore (hc);
 	rz_config_hold_free (hc);
 	rz_debug_trace_free (core->dbg->trace);
@@ -473,13 +473,13 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 	}
 	RzDebugTrace *dt = NULL;
 	RzAnalysisEsilTrace *et = NULL;
-	if (!anal_emul_init (core, hc, &dt, &et) || !fcn) {
-		anal_emul_restore (core, hc, dt, et);
+	if (!analysis_emul_init (core, hc, &dt, &et) || !fcn) {
+		analysis_emul_restore (core, hc, dt, et);
 		return;
 	}
 	ut8 *buf = malloc (bsize);
 	if (!buf) {
-		anal_emul_restore (core, hc, dt, et);
+		analysis_emul_restore (core, hc, dt, et);
 		return;
 	}
 
@@ -774,5 +774,5 @@ out_function:
 	RZ_FREE (ret_type);
 	free (buf);
 	rz_cons_break_pop();
-	anal_emul_restore (core, hc, dt, et);
+	analysis_emul_restore (core, hc, dt, et);
 }

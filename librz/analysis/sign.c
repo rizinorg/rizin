@@ -798,7 +798,7 @@ RZ_API bool rz_sign_add_bytes(RzAnalysis *a, const char *name, ut64 size, const 
 	return addBytes (a, name, size, bytes, mask);
 }
 
-RZ_API bool rz_sign_add_anal(RzAnalysis *a, const char *name, ut64 size, const ut8 *bytes, ut64 at) {
+RZ_API bool rz_sign_add_analysis(RzAnalysis *a, const char *name, ut64 size, const ut8 *bytes, ut64 at) {
 	bool retval = false;
 	rz_return_val_if_fail (a && name && size > 0 && bytes, false);
 	ut8 *mask = rz_analysis_mask (a, size, bytes, at);

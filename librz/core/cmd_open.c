@@ -1606,7 +1606,7 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 			}
 			break;
 		case '-': // "o--"
-			eprintf ("All core files, io, anal and flags info purged.\n");
+			eprintf ("All core files, io, analysis and flags info purged.\n");
 			rz_core_file_close_fd (core, -1);
 			rz_io_close_all (core->io);
 			rz_bin_file_delete_all (core->bin);

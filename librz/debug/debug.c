@@ -1067,7 +1067,7 @@ RZ_API int rz_debug_step_over(RzDebug *dbg, int steps) {
 		if (op.fail == -1) {
 			ins_size = pc + op.size;
 		} else {
-			// Use op.fail here instead of pc+op.size to enforce anal backends to fill in this field
+			// Use op.fail here instead of pc+op.size to enforce analysis backends to fill in this field
 			ins_size = op.fail;
 		}
 		// Skip over all the subroutine calls

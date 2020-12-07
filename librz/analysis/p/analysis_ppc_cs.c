@@ -415,7 +415,7 @@ static int analop_vle(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	op->size = 2;
 	if (len > 1 && !vle_init (&handle, buf, len) && (instr = vle_next (&handle))) {
 		op->size = instr->size;
-		op->type = instr->anal_op;
+		op->type = instr->analysis_op;
 		//op->id = instr->type;
 
 		switch (op->type) {

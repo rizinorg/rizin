@@ -3347,7 +3347,7 @@ static void rz_analysis_esil_setup_ops(RzAnalysisEsil *esil) {
 	OP ("SETD", esil_set_delay_slot, 0, 1, OT_UNK);
 }
 
-/* register callbacks using this anal module. */
+/* register callbacks using this analysis module. */
 RZ_API bool rz_analysis_esil_setup(RzAnalysisEsil *esil, RzAnalysis *analysis, int romem, int stats, int nonull) {
 	rz_return_val_if_fail (esil, false);
 	//esil->debug = 0;

@@ -767,7 +767,7 @@ static int step_until_esil(RzCore *core, const char *esilstr) {
 
 static bool is_repeatable_inst(RzCore *core, ut64 addr) {
 	// we have read the bytes already
-	RzAnalysisOp *op = rz_core_op_anal (core, addr, RZ_ANALYSIS_OP_MASK_ALL);
+	RzAnalysisOp *op = rz_core_op_analysis (core, addr, RZ_ANALYSIS_OP_MASK_ALL);
 	bool ret = op && ((op->prefix & RZ_ANALYSIS_OP_PREFIX_REP) || (op->prefix & RZ_ANALYSIS_OP_PREFIX_REPNE));
 	rz_analysis_op_free (op);
 	return ret;
@@ -2950,7 +2950,7 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 static void backtrace_vars(RzCore *core, RzList *frames) {
 	RzDebugFrame *f;
 	RzListIter *iter;
-	// anal vs debug ?
+	// analysis vs debug ?
 	const char *sp = rz_reg_get_name (core->analysis->reg, RZ_REG_NAME_SP);
 	const char *bp = rz_reg_get_name (core->analysis->reg, RZ_REG_NAME_BP);
 	if (!sp) {
@@ -3016,7 +3016,7 @@ static void asciiart_backtrace(RzCore *core, RzList *frames) {
 	RzDebugFrame *f;
 	RzListIter *iter;
 	bool mymap = false;
-	// anal vs debug ?
+	// analysis vs debug ?
 	const char *sp = rz_reg_get_name (core->analysis->reg, RZ_REG_NAME_SP);
 	const char *bp = rz_reg_get_name (core->analysis->reg, RZ_REG_NAME_BP);
 	if (!sp) {
@@ -4783,7 +4783,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				if (ptr) {
 					count = rz_num_math (core->num, ptr + 1);
 				}
-				RzAnalysisOp *op = rz_core_op_anal (core, addr, RZ_ANALYSIS_OP_MASK_HINT);
+				RzAnalysisOp *op = rz_core_op_analysis (core, addr, RZ_ANALYSIS_OP_MASK_HINT);
 				if (op) {
 					RzDebugTracepoint *tp = rz_debug_trace_add (core->dbg, addr, op->size);
 					if (!tp) {

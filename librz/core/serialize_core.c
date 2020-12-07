@@ -25,7 +25,7 @@ RZ_API void rz_serialize_core_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 	file_save (sdb_ns (db, "file", true), core, prj_file);
 	rz_serialize_config_save (sdb_ns (db, "config", true), core->config);
 	rz_serialize_flag_save (sdb_ns (db, "flags", true), core->flags);
-	rz_serialize_anal_save (sdb_ns (db, "anal", true), core->analysis);
+	rz_serialize_analysis_save (sdb_ns (db, "anal", true), core->analysis);
 
 	char buf[0x20];
 	if (snprintf (buf, sizeof (buf), "0x%"PFMT64x, core->offset) < 0) {
@@ -50,7 +50,7 @@ RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 	}
 	SUB ("config", rz_serialize_config_load (subdb, core->config, res));
 	SUB ("flags", rz_serialize_flag_load (subdb, core->flags, res));
-	SUB ("anal", rz_serialize_anal_load (subdb, core->analysis, res));
+	SUB ("anal", rz_serialize_analysis_load (subdb, core->analysis, res));
 
 	const char *str = sdb_get (db, "offset", 0);
 	if (!str || !*str) {

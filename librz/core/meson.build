@@ -16,8 +16,8 @@ else
 endif
 
 rz_core_sources = [
-  'anal_tp.c',
-  'anal_objc.c',
+  'analysis_tp.c',
+  'analysis_objc.c',
   'casm.c',
   'blaze.c',
   'citem.c',

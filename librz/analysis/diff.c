@@ -241,7 +241,7 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns, RzList *fcns
 				minsize = fcn_size;
 			}
 			if (maxsize * analysis->diff_thfcn > minsize) {
-				eprintf ("Exceeded anal threshold while diffing %s and %s\n", fcn->name, fcn2->name);
+				eprintf ("Exceeded analysis threshold while diffing %s and %s\n", fcn->name, fcn2->name);
 				continue;
 			}
 			if (fcn2->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) {

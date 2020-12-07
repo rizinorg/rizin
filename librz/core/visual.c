@@ -1171,7 +1171,7 @@ static ut64 prevop_addr(RzCore *core, ut64 addr) {
 		return addr - minop;
 	}
 
-	// let's see if we can use anal info to get the previous instruction
+	// let's see if we can use analysis info to get the previous instruction
 	// TODO: look in the current basicblock, then in the current function
 	// and search in all functions only as a last chance, to try to speed
 	// up the process.
@@ -1182,7 +1182,7 @@ static ut64 prevop_addr(RzCore *core, ut64 addr) {
 			return res;
 		}
 	}
-	// if we anal info didn't help then fallback to the dumb solution.
+	// if we analysis info didn't help then fallback to the dumb solution.
 	int midflags = rz_config_get_i (core->config, "asm.flags.middle");
 	target = addr;
 	base = target > OPDELTA ? target - OPDELTA : 0;
@@ -1224,7 +1224,7 @@ RZ_API bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, ut
 	bb = rz_analysis_bb_from_offset (core->analysis, start_addr);
 	if (bb) {
 		if (rz_analysis_bb_opaddr_at (bb, start_addr) != UT64_MAX) {
-			// Do some anal looping.
+			// Do some analysis looping.
 			for (i = 0; i < numinstrs; i++) {
 				*prev_addr = prevop_addr (core, start_addr);
 				start_addr = *prev_addr;
@@ -1238,7 +1238,7 @@ RZ_API bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, ut
 }
 
 //  Like rz_core_prevop_addr(), but also uses fallback from prevop_addr() if
-//  no anal info is available.
+//  no analysis info is available.
 RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinstrs) {
 	int i;
 	for (i = 0; i < numinstrs; i++) {
@@ -2109,7 +2109,7 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 		" _  hud mode (V_)\n"
 		" 1  bit editor (vd1)\n"
 		" b  blocks\n"
-		" a  anal classes\n"
+		" a  analysis classes\n"
 		" c  classes\n"
 		" C  comments\n"
 		" d  debug traces\n"
@@ -2168,14 +2168,14 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 			rz_core_visual_trackflags (core);
 			break;
 		case 'F': // "vbF"
-			rz_core_visual_anal (core, NULL);
+			rz_core_visual_analysis (core, NULL);
 			// rz_core_cmd0 (core, "s $(afl~...)");
 			break;
 		case 'd': // "vbd"
 			rz_core_visual_debugtraces (core, NULL);
 			break;
 		case 'v': // "vbv"
-			rz_core_visual_anal (core, "v");
+			rz_core_visual_analysis (core, "v");
 			break;
 		case 'e': // "vbe"
 			rz_core_visual_config (core);
@@ -2187,7 +2187,7 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 			rz_core_visual_classes (core);
 			break;
 		case 'a': // "vba"
-			rz_core_visual_anal_classes (core);
+			rz_core_visual_analysis_classes (core);
 			break;
 		case 'C': // "vbC"
 			rz_core_visual_comments (core);
@@ -2868,7 +2868,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			}
 			break;
 		case 'v':
-			rz_core_visual_anal (core, NULL);
+			rz_core_visual_analysis (core, NULL);
 			break;
 		case 'h':
 		case 'l':

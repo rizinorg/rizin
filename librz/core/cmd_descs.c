@@ -1558,7 +1558,7 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail (push_escaped_cd);
 	RzCmdDesc *cmd_ox_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "0", rz_cmd_ox, &cmd_ox_help);
 	rz_warn_if_fail (cmd_ox_cd);
-	RzCmdDesc *cmd_analysis_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "a", rz_cmd_analysus, &cmd_analysis_help);
+	RzCmdDesc *cmd_analysis_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "a", rz_cmd_analysis, &cmd_analysis_help);
 	rz_warn_if_fail (cmd_analysis_cd);
 	RzCmdDesc *cmd_bsize_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "b", rz_cmd_bsize, &cmd_bsize_help);
 	rz_warn_if_fail (cmd_bsize_cd);

@@ -16,7 +16,7 @@ typedef struct {
 	ut32 op;
 	ut32 mask;
 	ut16 type;
-	ut32 anal_op;
+	ut32 analysis_op;
 	int cond;
 	ut16 types[5];
 } e_vle_t;
@@ -26,7 +26,7 @@ typedef struct {
 	ut16 op;
 	ut16 mask;
 	ut16 n;
-	ut32 anal_op;
+	ut32 analysis_op;
 	int cond;
 	field_t fields[5];
 } se_vle_t;
@@ -36,7 +36,7 @@ typedef struct {
 	ut32 op;
 	ut32 mask;
 	ut16 type;
-	ut32 anal_op;
+	ut32 analysis_op;
 	int cond;
 	ut16 types[5];
 } ppc_t;

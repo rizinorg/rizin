@@ -253,7 +253,7 @@ static bool addBytesZign(RzCore *core, const char *name, int type, RzList *args)
 		retval = rz_sign_add_bytes (core->analysis, name, size, bytes, mask);
 		break;
 	case RZ_SIGN_ANAL:
-		retval = rz_sign_add_anal (core->analysis, name, size, bytes, 0);
+		retval = rz_sign_add_analysis (core->analysis, name, size, bytes, 0);
 		break;
 	}
 
@@ -412,7 +412,7 @@ out_case_fcn:
 			// TODO #7967 help refactor: move to detail
 			rz_cons_printf ("Adding Zignatures (examples and documentation)\n\n"
 				"Zignature types:\n"
-				"  a: bytes pattern (anal mask)\n"
+				"  a: bytes pattern (analysis mask)\n"
 				"  b: bytes pattern\n"
 				"  c: base64 comment\n"
 				"  n: real function name\n"

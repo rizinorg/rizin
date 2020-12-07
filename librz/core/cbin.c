@@ -692,7 +692,7 @@ RZ_API void rz_core_analysis_type_init(RzCore *core) {
 	Sdb *types = core->analysis->sdb_types;
 	// make sure they are empty this is initializing
 	sdb_reset (types);
-	const char *anal_arch = rz_config_get (core->config, "anal.arch");
+	const char *analysis_arch = rz_config_get (core->config, "anal.arch");
 	const char *os = rz_config_get (core->config, "asm.os");
 	// spaguetti ahead
 
@@ -701,7 +701,7 @@ RZ_API void rz_core_analysis_type_init(RzCore *core) {
 		sdb_concat_by_path (types, dbpath);
 	}
 	dbpath = sdb_fmt (RZ_JOIN_3_PATHS ("%s", RZ_SDB_FCNSIGN, "types-%s.sdb"),
-		dir_prefix, anal_arch);
+		dir_prefix, analysis_arch);
 	if (rz_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
@@ -721,17 +721,17 @@ RZ_API void rz_core_analysis_type_init(RzCore *core) {
 		sdb_concat_by_path (types, dbpath);
 	}
 	dbpath = sdb_fmt (RZ_JOIN_3_PATHS ("%s", RZ_SDB_FCNSIGN, "types-%s-%d.sdb"),
-		dir_prefix, anal_arch, bits);
+		dir_prefix, analysis_arch, bits);
 	if (rz_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
 	dbpath = sdb_fmt (RZ_JOIN_3_PATHS ("%s", RZ_SDB_FCNSIGN, "types-%s-%s.sdb"),
-		dir_prefix, anal_arch, os);
+		dir_prefix, analysis_arch, os);
 	if (rz_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
 	dbpath = sdb_fmt (RZ_JOIN_3_PATHS ("%s", RZ_SDB_FCNSIGN, "types-%s-%s-%d.sdb"),
-		dir_prefix, anal_arch, os, bits);
+		dir_prefix, analysis_arch, os, bits);
 	if (rz_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
@@ -739,14 +739,14 @@ RZ_API void rz_core_analysis_type_init(RzCore *core) {
 
 RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 	const char *dir_prefix = rz_config_get (core->config, "dir.prefix");
-	const char *anal_arch = rz_config_get (core->config, "anal.arch");
+	const char *analysis_arch = rz_config_get (core->config, "anal.arch");
 	int bits = core->analysis->bits;
 	Sdb *cc = core->analysis->sdb_cc;
 
 	char *dbpath = rz_str_newf (RZ_JOIN_3_PATHS ("%s", RZ_SDB_FCNSIGN, "cc-%s-%d.sdb"),
-		dir_prefix, anal_arch, bits);
+		dir_prefix, analysis_arch, bits);
 	char *dbhomepath = rz_str_newf (RZ_JOIN_3_PATHS ("~", RZ_HOME_SDB_FCNSIGN, "cc-%s-%d.sdb"),
-		anal_arch, bits);
+		analysis_arch, bits);
 	// Avoid sdb reloading
 	if (cc->path && (!strcmp (cc->path, dbpath) || !strcmp (cc->path, dbhomepath))) {
 		free (dbpath);
@@ -774,7 +774,7 @@ RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 		eprintf ("Warning: Cannot derive CC from reg profile.\n");
 	}
 	if (sdb_isempty (core->analysis->sdb_cc)) {
-		eprintf ("Warning: Missing calling conventions for '%s'. Deriving it from the regprofile.\n", anal_arch);
+		eprintf ("Warning: Missing calling conventions for '%s'. Deriving it from the regprofile.\n", analysis_arch);
 	}
 	free (dbpath);
 	free (dbhomepath);
@@ -2344,7 +2344,7 @@ static int bin_symbols(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				handle_arm_special_symbol (r, symbol, va);
 			}
 		} else if (IS_MODE_SET (mode)) {
-			// TODO: provide separate API in RzBinPlugin to let plugins handle anal hints/metadata
+			// TODO: provide separate API in RzBinPlugin to let plugins handle analysis hints/metadata
 			if (is_arm) {
 				handle_arm_symbol (r, symbol, info, va);
 			}

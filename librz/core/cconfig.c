@@ -226,13 +226,13 @@ static bool cb_debug_hitinfo(void *user, void *data) {
 	return true;
 }
 
-static bool cb_anal_jmpretpoline(void *user, void *data) {
+static bool cb_analysis_jmpretpoline(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.retpoline = node->i_value;
 	return true;
 }
-static bool cb_anal_jmptailcall(void *user, void *data) {
+static bool cb_analysis_jmptailcall(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.tailcall = node->i_value;
@@ -267,14 +267,14 @@ static bool cb_analafterjmp(void *user, void *data) {
 	return true;
 }
 
-static bool cb_anal_delay(void *user, void *data) {
+static bool cb_analysis_delay(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.delay = node->i_value;
 	return true;
 }
 
-static bool cb_anal_endsize(void *user, void *data) {
+static bool cb_analysis_endsize(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.endsize = node->i_value;
@@ -295,7 +295,7 @@ static bool cb_analvars_stackname(void *user, void *data) {
 	return true;
 }
 
-static bool cb_anal_nonull(void *user, void *data) {
+static bool cb_analysis_nonull(void *user, void *data) {
         RzCore *core = (RzCore*) user;
         RzConfigNode *node = (RzConfigNode*) data;
         core->analysis->opt.nonull = node->i_value;
@@ -311,7 +311,7 @@ static bool cb_analstrings(void *user, void *data) {
 	return true;
 }
 
-static bool cb_anal_ignbithints(void *user, void *data) {
+static bool cb_analysis_ignbithints(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.ignbithints = node->i_value;
@@ -1158,7 +1158,7 @@ static bool cb_bigendian(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *) data;
 	// Try to set endian based on preference, restrict by RzAsmPlugin
 	bool isbig = rz_asm_set_big_endian (core->rasm, node->i_value);
-	// Set anal endianness the same as asm
+	// Set analysis endianness the same as asm
 	rz_analysis_set_big_endian (core->analysis, isbig);
 	// the big endian should also be assigned to dbg->bp->endian
 	if (core->dbg && core->dbg->bp) {
@@ -2571,7 +2571,7 @@ static bool cb_dirpfx(RzCore *core, RzConfigNode *node) {
 	return true;
 }
 
-static bool cb_anal_roregs(RzCore *core, RzConfigNode *node) {
+static bool cb_analysis_roregs(RzCore *core, RzConfigNode *node) {
 	if (core && core->analysis && core->analysis->reg) {
 		rz_list_free (core->analysis->reg->roregs);
 		core->analysis->reg->roregs = rz_str_split_duplist (node->value, ",", true);
@@ -2579,12 +2579,12 @@ static bool cb_anal_roregs(RzCore *core, RzConfigNode *node) {
 	return true;
 }
 
-static bool cb_anal_gp(RzCore *core, RzConfigNode *node) {
+static bool cb_analysis_gp(RzCore *core, RzConfigNode *node) {
 	core->analysis->gp = node->i_value;
 	return true;
 }
 
-static bool cb_anal_from(RzCore *core, RzConfigNode *node) {
+static bool cb_analysis_from(RzCore *core, RzConfigNode *node) {
 	if (rz_config_get_i (core->config, "anal.limits")) {
 		rz_analysis_set_limits (core->analysis,
 				rz_config_get_i (core->config, "anal.from"),
@@ -2593,7 +2593,7 @@ static bool cb_anal_from(RzCore *core, RzConfigNode *node) {
 	return true;
 }
 
-static bool cb_anal_limits(void *user, RzConfigNode *node) {
+static bool cb_analysis_limits(void *user, RzConfigNode *node) {
 	RzCore *core = (RzCore*)user;
 	if (node->i_value) {
 		rz_analysis_set_limits (core->analysis,
@@ -2605,97 +2605,97 @@ static bool cb_anal_limits(void *user, RzConfigNode *node) {
 	return 1;
 }
 
-static bool cb_anal_rnr(void *user, RzConfigNode *node) {
+static bool cb_analysis_rnr(void *user, RzConfigNode *node) {
 	RzCore *core = (RzCore*)user;
 	core->analysis->recursive_noreturn = node->i_value;
 	return 1;
 }
 
-static bool cb_anal_jmptbl(void *user, void *data) {
+static bool cb_analysis_jmptbl(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.jmptbl = node->i_value;
 	return true;
 }
 
-static bool cb_anal_cjmpref(void *user, void *data) {
+static bool cb_analysis_cjmpref(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.cjmpref = node->i_value;
 	return true;
 }
 
-static bool cb_anal_jmpref(void *user, void *data) {
+static bool cb_analysis_jmpref(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.jmpref = node->i_value;
 	return true;
 }
 
-static bool cb_anal_jmpabove(void *user, void *data) {
+static bool cb_analysis_jmpabove(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.jmpabove = node->i_value;
 	return true;
 }
 
-static bool cb_anal_loads(void *user, void *data) {
+static bool cb_analysis_loads(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.loads = node->i_value;
 	return true;
 }
 
-static bool cb_anal_followdatarefs(void *user, void *data) {
+static bool cb_analysis_followdatarefs(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.followdatarefs = node->i_value;
 	return true;
 }
 
-static bool cb_anal_jmpmid(void *user, void *data) {
+static bool cb_analysis_jmpmid(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.jmpmid = node->i_value;
 	return true;
 }
 
-static bool cb_anal_searchstringrefs(void *user, void *data) {
+static bool cb_analysis_searchstringrefs(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.searchstringrefs = node->i_value;
 	return true;
 }
 
-static bool cb_anal_pushret(void *user, void *data) {
+static bool cb_analysis_pushret(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.pushret = node->i_value;
 	return true;
 }
 
-static bool cb_anal_brokenrefs(void *user, void *data) {
+static bool cb_analysis_brokenrefs(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.followbrokenfcnsrefs = node->i_value;
 	return true;
 }
 
-static bool cb_anal_trycatch(void *user, void *data) {
+static bool cb_analysis_trycatch(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.trycatch = node->i_value;
 	return true;
 }
 
-static bool cb_anal_bb_max_size(void *user, void *data) {
+static bool cb_analysis_bb_max_size(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.bb_max_size = node->i_value;
 	return true;
 }
 
-static bool cb_anal_cpp_abi(void *user, void *data) {
+static bool cb_analysis_cpp_abi(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 
@@ -2884,19 +2884,19 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI ("pdb.extract", 1, "Avoid extract of the pdb file, just download");
 	SETI ("pdb.autoload", false, "Automatically load the required pdb files for loaded DLLs");
 
-	/* anal */
+	/* analysis */
 	SETBPREF ("anal.detectwrites", "false", "Automatically reanalyze function after a write");
 	SETPREF ("anal.fcnprefix", "fcn",  "Prefix new function names with this");
 	SETCB ("anal.verbose", "false", &cb_analverbose, "Show RzAnalysis warnings when analyzing code");
 	SETBPREF ("anal.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
-	SETCB ("anal.roregs", "gp,zero", (RzConfigCallback)&cb_anal_roregs, "Comma separated list of register names to be readonly");
-	SETICB ("anal.gp", 0, (RzConfigCallback)&cb_anal_gp, "Set the value of the GP register (MIPS)");
+	SETCB ("anal.roregs", "gp,zero", (RzConfigCallback)&cb_analysis_roregs, "Comma separated list of register names to be readonly");
+	SETICB ("anal.gp", 0, (RzConfigCallback)&cb_analysis_gp, "Set the value of the GP register (MIPS)");
 	SETBPREF ("anal.gpfixed", "true", "Set gp register to anal.gp before emulating each instruction in aae");
-	SETCB ("anal.limits", "false", (RzConfigCallback)&cb_anal_limits, "Restrict analysis to address range [anal.from:anal.to]");
-	SETCB ("anal.rnr", "false", (RzConfigCallback)&cb_anal_rnr, "Recursive no return checks (EXPERIMENTAL)");
-	SETCB ("anal.limits", "false", (RzConfigCallback)&cb_anal_limits, "Restrict analysis to address range [anal.from:anal.to]");
-	SETICB ("anal.from", -1, (RzConfigCallback)&cb_anal_from, "Lower limit on the address range for analysis");
-	SETICB ("anal.to", -1, (RzConfigCallback)&cb_anal_from, "Upper limit on the address range for analysis");
+	SETCB ("anal.limits", "false", (RzConfigCallback)&cb_analysis_limits, "Restrict analysis to address range [anal.from:anal.to]");
+	SETCB ("anal.rnr", "false", (RzConfigCallback)&cb_analysis_rnr, "Recursive no return checks (EXPERIMENTAL)");
+	SETCB ("anal.limits", "false", (RzConfigCallback)&cb_analysis_limits, "Restrict analysis to address range [anal.from:anal.to]");
+	SETICB ("anal.from", -1, (RzConfigCallback)&cb_analysis_from, "Lower limit on the address range for analysis");
+	SETICB ("anal.to", -1, (RzConfigCallback)&cb_analysis_from, "Upper limit on the address range for analysis");
 	n = NODECB ("anal.in", "io.maps.x", &cb_searchin);
 	SETDESC (n, "Specify search boundaries for analysis");
 	SETOPTIONS (n, "range", "block",
@@ -2907,21 +2907,21 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		"anal.fcn", "anal.bb",
 	NULL);
 	SETI ("anal.timeout", 0, "Stop analyzing after a couple of seconds");
-	SETCB ("anal.jmp.retpoline", "true", &cb_anal_jmpretpoline, "Analyze retpolines, may be slower if not needed");
-	SETICB ("anal.jmp.tailcall", 0, &cb_anal_jmptailcall, "Consume a branch as a call if delta is big");
+	SETCB ("anal.jmp.retpoline", "true", &cb_analysis_jmpretpoline, "Analyze retpolines, may be slower if not needed");
+	SETICB ("anal.jmp.tailcall", 0, &cb_analysis_jmptailcall, "Consume a branch as a call if delta is big");
 
 	SETCB ("anal.armthumb", "false", &cb_analarmthumb, "aae computes arm/thumb changes (lot of false positives ahead)");
 	SETCB ("anal.jmp.after", "true", &cb_analafterjmp, "Continue analysis after jmp/ujmp");
-	SETCB ("anal.endsize", "true", &cb_anal_endsize, "Adjust function size at the end of the analysis (known to be buggy)");
-	SETCB ("anal.delay", "true", &cb_anal_delay, "Enable delay slot analysis if supported by the architecture");
+	SETCB ("anal.endsize", "true", &cb_analysis_endsize, "Adjust function size at the end of the analysis (known to be buggy)");
+	SETCB ("anal.delay", "true", &cb_analysis_delay, "Enable delay slot analysis if supported by the architecture");
 	SETICB ("anal.depth", 64, &cb_analdepth, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
 	SETICB ("anal.graph_depth", 256, &cb_analgraphdepth, "Max depth for path search");
 	SETICB ("anal.sleep", 0, &cb_analsleep, "Sleep N usecs every so often during analysis. Avoid 100% CPU usage");
-	SETCB ("anal.ignbithints", "false", &cb_anal_ignbithints, "Ignore the ahb hints (only obey asm.bits)");
+	SETCB ("anal.ignbithints", "false", &cb_analysis_ignbithints, "Ignore the ahb hints (only obey asm.bits)");
 	SETBPREF ("anal.calls", "false", "Make basic af analysis walk into calls");
 	SETBPREF ("anal.autoname", "false", "Speculatively set a name for the functions, may result in some false positives");
 	SETBPREF ("anal.hasnext", "false", "Continue analysis after each function");
-	SETICB ("anal.nonull", 0, &cb_anal_nonull, "Do not analyze regions of N null bytes");
+	SETICB ("anal.nonull", 0, &cb_analysis_nonull, "Do not analyze regions of N null bytes");
 	SETBPREF ("anal.esil", "false", "Use the new ESIL code analysis");
 	SETCB ("anal.strings", "false", &cb_analstrings, "Identify and register strings during analysis (aar only)");
 	SETPREF ("anal.types.spec", "gcc",  "Set profile for specifying format chars used in type analysis");
@@ -2944,23 +2944,23 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI ("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
 	SETICB ("asm.lines.maxref", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
 
-	SETCB ("anal.jmp.tbl", "true", &cb_anal_jmptbl, "Analyze jump tables in switch statements");
+	SETCB ("anal.jmp.tbl", "true", &cb_analysis_jmptbl, "Analyze jump tables in switch statements");
 
-	SETCB ("anal.jmp.cref", "false", &cb_anal_cjmpref, "Create references for conditional jumps");
-	SETCB ("anal.jmp.ref", "true", &cb_anal_jmpref, "Create references for unconditional jumps");
+	SETCB ("anal.jmp.cref", "false", &cb_analysis_cjmpref, "Create references for conditional jumps");
+	SETCB ("anal.jmp.ref", "true", &cb_analysis_jmpref, "Create references for unconditional jumps");
 
-	SETCB ("anal.jmp.above", "true", &cb_anal_jmpabove, "Jump above function pointer");
-	SETCB ("anal.loads", "false", &cb_anal_loads, "Define as dword/string/qword when analyzing load instructions");
-	SETCB ("anal.datarefs", "false", &cb_anal_followdatarefs, "Follow data references for code coverage");
-	SETCB ("anal.brokenrefs", "false", &cb_anal_brokenrefs, "Follow function references as well if function analysis was failed");
-	SETCB ("anal.jmp.mid", "true", &cb_anal_jmpmid, "Continue analysis after jump to middle of instruction (x86 only)");
+	SETCB ("anal.jmp.above", "true", &cb_analysis_jmpabove, "Jump above function pointer");
+	SETCB ("anal.loads", "false", &cb_analysis_loads, "Define as dword/string/qword when analyzing load instructions");
+	SETCB ("anal.datarefs", "false", &cb_analysis_followdatarefs, "Follow data references for code coverage");
+	SETCB ("anal.brokenrefs", "false", &cb_analysis_brokenrefs, "Follow function references as well if function analysis was failed");
+	SETCB ("anal.jmp.mid", "true", &cb_analysis_jmpmid, "Continue analysis after jump to middle of instruction (x86 only)");
 
-	SETCB ("anal.refstr", "false", &cb_anal_searchstringrefs, "Search string references in data references");
-	SETCB ("anal.trycatch", "false", &cb_anal_trycatch, "Honor try.X.Y.{from,to,catch} flags");
-	SETCB ("anal.bb.maxsize", "512K", &cb_anal_bb_max_size, "Maximum basic block size");
-	SETCB ("anal.pushret", "false", &cb_anal_pushret, "Analyze push+ret as jmp");
+	SETCB ("anal.refstr", "false", &cb_analysis_searchstringrefs, "Search string references in data references");
+	SETCB ("anal.trycatch", "false", &cb_analysis_trycatch, "Honor try.X.Y.{from,to,catch} flags");
+	SETCB ("anal.bb.maxsize", "512K", &cb_analysis_bb_max_size, "Maximum basic block size");
+	SETCB ("anal.pushret", "false", &cb_analysis_pushret, "Analyze push+ret as jmp");
 
-	n = NODECB ("anal.cpp.abi", "itanium", &cb_anal_cpp_abi);
+	n = NODECB ("anal.cpp.abi", "itanium", &cb_analysis_cpp_abi);
 	SETDESC (n, "Select C++ ABI (Compiler)");
 	SETOPTIONS (n, "itanium", "msvc", NULL);
 

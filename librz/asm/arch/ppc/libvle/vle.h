@@ -29,7 +29,7 @@ typedef struct {
 	vle_field_t fields[10];
 	ut16 n;
 	ut16 size;
-	ut32 anal_op;
+	ut32 analysis_op;
 	int cond;
 } vle_t;
 

@@ -2,7 +2,7 @@
 #include <rz_core.h>
 #include "minunit.h"
 
-#include "test_anal_block_invars.inl"
+#include "test_analysis_block_invars.inl"
 #define check_invariants block_check_invariants
 #define check_leaks block_check_leaks
 
@@ -17,7 +17,7 @@ static size_t blocks_count(RzAnalysis *analysis) {
 }
 
 
-bool test_r_anal_block_create() {
+bool test_r_analysis_block_create() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -52,7 +52,7 @@ bool test_r_anal_block_create() {
 	mu_end;
 }
 
-bool test_r_anal_block_contains() {
+bool test_r_analysis_block_contains() {
 	RzAnalysisBlock dummy = { 0 };
 	dummy.addr = 0x1337;
 	dummy.size = 42;
@@ -64,7 +64,7 @@ bool test_r_anal_block_contains() {
 	mu_end;
 }
 
-bool test_r_anal_block_split() {
+bool test_r_analysis_block_split() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -119,7 +119,7 @@ bool test_r_anal_block_split() {
 	mu_end;
 }
 
-bool test_r_anal_block_split_in_function() {
+bool test_r_analysis_block_split_in_function() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -153,7 +153,7 @@ bool test_r_anal_block_split_in_function() {
 	mu_end;
 }
 
-bool test_r_anal_block_merge() {
+bool test_r_analysis_block_merge() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -201,7 +201,7 @@ bool test_r_anal_block_merge() {
 	mu_end;
 }
 
-bool test_r_anal_block_merge_in_function() {
+bool test_r_analysis_block_merge_in_function() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -234,7 +234,7 @@ bool test_r_anal_block_merge_in_function() {
 	mu_end;
 }
 
-bool test_r_anal_block_delete() {
+bool test_r_analysis_block_delete() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -262,7 +262,7 @@ bool test_r_anal_block_delete() {
 	mu_end;
 }
 
-bool test_r_anal_block_set_size() {
+bool test_r_analysis_block_set_size() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -301,7 +301,7 @@ bool test_r_anal_block_set_size() {
 	mu_end;
 }
 
-bool test_r_anal_block_relocate() {
+bool test_r_analysis_block_relocate() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -366,7 +366,7 @@ bool test_r_anal_block_relocate() {
 	mu_end;
 }
 
-bool test_r_anal_block_query() {
+bool test_r_analysis_block_query() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -483,7 +483,7 @@ bool addr_list_cb(ut64 addr, void *user) {
 	return true;
 }
 
-bool test_r_anal_block_successors() {
+bool test_r_analysis_block_successors() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -564,7 +564,7 @@ bool test_r_anal_block_successors() {
 	mu_end;
 }
 
-bool test_r_anal_block_automerge() {
+bool test_r_analysis_block_automerge() {
 	size_t i;
 	for (i = 0; i < SAMPLES; i++) {
 		RzAnalysis *analysis = rz_analysis_new ();
@@ -627,7 +627,7 @@ bool test_r_anal_block_automerge() {
 		mu_assert ("remaining blocks b", rz_list_contains (shuffled_blocks, b));
 		mu_assert ("remaining blocks c", rz_list_contains (shuffled_blocks, c));
 		mu_assert ("remaining blocks d", rz_list_contains (shuffled_blocks, d));
-		mu_assert_eq (blocks_count (analysis), rz_list_length (shuffled_blocks), "blocks in anal count");
+		mu_assert_eq (blocks_count (analysis), rz_list_length (shuffled_blocks), "blocks in analysis count");
 		RzListIter *it;
 		RzAnalysisBlock *block;
 		rz_list_foreach (shuffled_blocks, it, block) {
@@ -642,7 +642,7 @@ bool test_r_anal_block_automerge() {
 	mu_end;
 }
 
-bool test_r_anal_block_chop_noreturn(void) {
+bool test_r_analysis_block_chop_noreturn(void) {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -668,19 +668,19 @@ bool test_r_anal_block_chop_noreturn(void) {
 }
 
 int all_tests() {
-	mu_run_test (test_r_anal_block_chop_noreturn);
-	mu_run_test (test_r_anal_block_create);
-	mu_run_test (test_r_anal_block_contains);
-	mu_run_test (test_r_anal_block_split);
-	mu_run_test (test_r_anal_block_split_in_function);
-	mu_run_test (test_r_anal_block_merge);
-	mu_run_test (test_r_anal_block_merge_in_function);
-	mu_run_test (test_r_anal_block_delete);
-	mu_run_test (test_r_anal_block_set_size);
-	mu_run_test (test_r_anal_block_relocate);
-	mu_run_test (test_r_anal_block_query);
-	mu_run_test (test_r_anal_block_successors);
-	mu_run_test (test_r_anal_block_automerge);
+	mu_run_test (test_r_analysis_block_chop_noreturn);
+	mu_run_test (test_r_analysis_block_create);
+	mu_run_test (test_r_analysis_block_contains);
+	mu_run_test (test_r_analysis_block_split);
+	mu_run_test (test_r_analysis_block_split_in_function);
+	mu_run_test (test_r_analysis_block_merge);
+	mu_run_test (test_r_analysis_block_merge_in_function);
+	mu_run_test (test_r_analysis_block_delete);
+	mu_run_test (test_r_analysis_block_set_size);
+	mu_run_test (test_r_analysis_block_relocate);
+	mu_run_test (test_r_analysis_block_query);
+	mu_run_test (test_r_analysis_block_successors);
+	mu_run_test (test_r_analysis_block_automerge);
 	return tests_passed != tests_run;
 }
 
@@ -688,6 +688,6 @@ int main(int argc, char **argv) {
 	struct timeval tv;
 	gettimeofday (&tv, NULL);
 	unsigned int seed = argc > 1 ? strtoul (argv[1], NULL, 0) : tv.tv_sec + tv.tv_usec;
-	printf("seed for test_anal_block: %u\n", seed);
+	printf("seed for test_analysis_block: %u\n", seed);
 	return all_tests();
 }

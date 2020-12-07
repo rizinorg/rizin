@@ -2912,7 +2912,7 @@ RZ_API char *rz_core_op_str(RzCore *core, ut64 addr) {
 	return str;
 }
 
-RZ_API RzAnalysisOp *rz_core_op_anal(RzCore *core, ut64 addr, RzAnalysisOpMask mask) {
+RZ_API RzAnalysisOp *rz_core_op_analysis(RzCore *core, ut64 addr, RzAnalysisOpMask mask) {
 	ut8 buf[64];
 	RzAnalysisOp *op = RZ_NEW (RzAnalysisOp);
 	rz_io_read_at (core->io, addr, buf, sizeof (buf));

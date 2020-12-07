@@ -297,7 +297,7 @@ static void ds_pre_line(RDisasmState *ds);
 static void ds_begin_line(RDisasmState *ds);
 static void ds_newline(RDisasmState *ds);
 static void ds_begin_cont(RDisasmState *ds);
-static void ds_print_esil_anal(RDisasmState *ds);
+static void ds_print_esil_analysis(RDisasmState *ds);
 static void ds_reflines_init(RDisasmState *ds);
 static void ds_align_comment(RDisasmState *ds);
 static RDisasmState * ds_init(RzCore * core);
@@ -536,7 +536,7 @@ static void ds_comment_esil(RDisasmState *ds, bool up, bool end, const char *for
 	}
 }
 
-static void ds_print_esil_anal_fini(RDisasmState *ds) {
+static void ds_print_esil_analysis_fini(RDisasmState *ds) {
 	RzCore *core = ds->core;
 	if (ds->show_emu && ds->esil_regstate) {
 		RzCore* core = ds->core;
@@ -876,9 +876,9 @@ static void ds_free(RDisasmState *ds) {
 	rz_asm_op_fini (&ds->asmop);
 	rz_analysis_op_fini (&ds->analop);
 	rz_analysis_hint_free (ds->hint);
-	ds_print_esil_anal_fini (ds);
+	ds_print_esil_analysis_fini (ds);
 	ds_reflines_fini (ds);
-	ds_print_esil_anal_fini (ds);
+	ds_print_esil_analysis_fini (ds);
 	sdb_free (ds->ssa);
 	free (ds->comment);
 	free (ds->line);
@@ -3848,9 +3848,9 @@ static inline bool is_filtered_flag(RDisasmState *ds, const char *name) {
 		return false;
 	}
 	ut64 refaddr = ds->analop.ptr;
-	const char *anal_flag = rz_meta_get_string (ds->core->analysis, RZ_META_TYPE_STRING, refaddr);
-	if (anal_flag) {
-		char *dupped = strdup (anal_flag);
+	const char *analysis_flag = rz_meta_get_string (ds->core->analysis, RZ_META_TYPE_STRING, refaddr);
+	if (analysis_flag) {
+		char *dupped = strdup (analysis_flag);
 		if (dupped) {
 			rz_name_filter (dupped, -1);
 			if (!strcmp (&name[4], dupped)) {
@@ -4472,7 +4472,7 @@ static void ds_pre_emulation(RDisasmState *ds) {
 	esil->cb.hook_reg_write = orig_cb;
 }
 
-static void ds_print_esil_anal_init(RDisasmState *ds) {
+static void ds_print_esil_analysis_init(RDisasmState *ds) {
 	RzCore *core = ds->core;
 	const char *pc = rz_reg_get_name (core->analysis->reg, RZ_REG_NAME_PC);
 	if (!pc) {
@@ -4613,8 +4613,8 @@ static void mipsTweak(RDisasmState *ds) {
 	}
 }
 
-// modifies anal register state
-static void ds_print_esil_anal(RDisasmState *ds) {
+// modifies analysis register state
+static void ds_print_esil_analysis(RDisasmState *ds) {
 	RzCore *core = ds->core;
 	RzAnalysisEsil *esil = core->analysis->esil;
 	const char *pc;
@@ -4626,7 +4626,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 		return;
 	}
 	if (!esil) {
-		ds_print_esil_anal_init (ds);
+		ds_print_esil_analysis_init (ds);
 		esil = core->analysis->esil;
 	}
 	if (!ds->show_emu) {
@@ -5222,7 +5222,7 @@ toro:
 		}
 	}
 
-	ds_print_esil_anal_init (ds);
+	ds_print_esil_analysis_init (ds);
 	inc = 0;
 	if (!ds->l) {
 		ds->l = core->blocksize;
@@ -5435,7 +5435,7 @@ toro:
 				RZ_FREE (ds->opstr);
 			}
 			if (ds->show_emu) {
-				ds_print_esil_anal (ds);
+				ds_print_esil_analysis (ds);
 			}
 			if ((ds->analop.type == RZ_ANALYSIS_OP_TYPE_CALL || ds->analop.type & RZ_ANALYSIS_OP_TYPE_UCALL) && ds->show_calls) {
 				ds_print_calls_hints (ds);
@@ -5563,7 +5563,7 @@ toro:
 				ds_print_demangled (ds);
 				ds_print_color_reset (ds);
 				ds_print_comments_right (ds);
-				ds_print_esil_anal (ds);
+				ds_print_esil_analysis (ds);
 				ds_show_refs (ds);
 			}
 		}
@@ -5643,7 +5643,7 @@ toro:
 	rz_print_set_rowoff (core->print, ds->lines, ds->at - addr, calc_row_offsets);
 	rz_print_set_rowoff (core->print, ds->lines + 1, UT32_MAX, calc_row_offsets);
 	// TODO: this too (must review)
-	ds_print_esil_anal_fini (ds);
+	ds_print_esil_analysis_fini (ds);
 	ds_reflines_fini (ds);
 	ds_free (ds);
 	RZ_FREE (nbuf);
@@ -5845,7 +5845,7 @@ static bool handle_backwards_disasm(RzCore *core, int *nb_opcodes, int *nb_bytes
 			const ut64 old_offset = core->offset;
 			int nbytes = 0;
 
-			// We have some anal_info.
+			// We have some analysis_info.
 			if (rz_core_prevop_addr (core, core->offset, *nb_opcodes, &core->offset)) {
 				nbytes = old_offset - core->offset;
 			} else {
@@ -5971,7 +5971,7 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 	}
 	core->offset = addr;
 
-	// TODO: add support for anal hints
+	// TODO: add support for analysis hints
 	// If using #bytes i = j
 	// If using #opcodes, j is the offset from start address. i is the
 	// offset in current disassembly buffer (256 by default)

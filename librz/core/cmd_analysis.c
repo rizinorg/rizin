@@ -785,7 +785,7 @@ static bool listOpDescriptions(void *_core, const char *k, const char *v) {
 
 #if JAYRO_03
 
-static bool anal_is_bad_call(RzCore *core, ut64 from, ut64 to, ut64 addr, ut8 *buf, int bufi) {
+static bool analysis_is_bad_call(RzCore *core, ut64 from, ut64 to, ut64 addr, ut8 *buf, int bufi) {
 	ut64 align = RZ_ABS (addr % PE_ALIGN);
 	ut32 call_bytes;
 
@@ -1705,7 +1705,7 @@ static void cmd_syscall_do(RzCore *core, st64 n, ut64 addr) {
 	}
 }
 
-static void core_anal_bytes(RzCore *core, const ut8 *buf, int len, int nops, int fmt) {
+static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops, int fmt) {
 	int stacksize = rz_config_get_i (core->config, "esil.stack.depth");
 	bool iotrap = rz_config_get_i (core->config, "esil.iotrap");
 	bool romem = rz_config_get_i (core->config, "esil.romem");
@@ -2238,7 +2238,7 @@ static RzList *get_calls(RzAnalysisBlock *block) {
 	return list;
 }
 
-static void anal_bb_list(RzCore *core, const char *input) {
+static void analysis_bb_list(RzCore *core, const char *input) {
 	const int mode = *input;
 	PJ *pj = NULL;
 	RTable *table = NULL;
@@ -2390,7 +2390,7 @@ static void anal_bb_list(RzCore *core, const char *input) {
 	}
 }
 
-static bool anal_fcn_list_bb(RzCore *core, const char *input, bool one) {
+static bool analysis_fcn_list_bb(RzCore *core, const char *input, bool one) {
 	RzDebugTracepoint *tp = NULL;
 	RzListIter *iter;
 	RzAnalysisBlock *b;
@@ -2652,7 +2652,7 @@ static bool anal_fcn_list_bb(RzCore *core, const char *input, bool one) {
 	return true;
 }
 
-static bool anal_bb_edge (RzCore *core, const char *input) {
+static bool analysis_bb_edge (RzCore *core, const char *input) {
 	// "afbe" switch-bb-addr case-bb-addr
 	char *arg = strdup (rz_str_trim_head_ro (input));
 	char *sp = strchr (arg, ' ');
@@ -2672,7 +2672,7 @@ static bool anal_bb_edge (RzCore *core, const char *input) {
 	return ret;
 }
 
-static bool anal_fcn_del_bb(RzCore *core, const char *input) {
+static bool analysis_fcn_del_bb(RzCore *core, const char *input) {
 	ut64 addr = rz_num_math (core->num, input);
 	if (!addr) {
 		addr = core->offset;
@@ -2700,7 +2700,7 @@ static bool anal_fcn_del_bb(RzCore *core, const char *input) {
 	return false;
 }
 
-static int anal_fcn_add_bb(RzCore *core, const char *input) {
+static int analysis_fcn_add_bb(RzCore *core, const char *input) {
 	// fcn_addr bb_addr bb_size [jump] [fail]
 	char *ptr;
 	const char *ptr2 = NULL;
@@ -3939,10 +3939,10 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 	case 'b': // "afb"
 		switch (input[2]) {
 		case '-': // "afb-"
-			anal_fcn_del_bb (core, input + 3);
+			analysis_fcn_del_bb (core, input + 3);
 			break;
 		case 'e': // "afbe"
-			anal_bb_edge (core, input + 3);
+			analysis_bb_edge (core, input + 3);
 			break;
 		case 'F': // "afbF"
 			{
@@ -3970,16 +3970,16 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 		case '*': // "afb*"
 		case 'j': // "afbj"
 		case 't': // "afbt"
-			anal_fcn_list_bb (core, input + 2, false);
+			analysis_fcn_list_bb (core, input + 2, false);
 			break;
 		case 'i': // "afbi"
-			anal_fcn_list_bb (core, input + 2, true);
+			analysis_fcn_list_bb (core, input + 2, true);
 			break;
 		case '.': // "afb."
-			anal_fcn_list_bb (core, input[2]? " $$": input + 2, true);
+			analysis_fcn_list_bb (core, input[2]? " $$": input + 2, true);
 			break;
 		case '+': // "afb+"
-			anal_fcn_add_bb (core, input + 3);
+			analysis_fcn_add_bb (core, input + 3);
 			break;
 		case 'c': // "afbc"
 			{
@@ -3991,7 +3991,7 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 				ptr = strchr (ptr + 1, ' ');
 				if (ptr) {
 					color = rz_num_math (core->num, ptr + 1);
-					RzAnalysisOp *op = rz_core_op_anal (core, addr, RZ_ANALYSIS_OP_MASK_ALL);
+					RzAnalysisOp *op = rz_core_op_analysis (core, addr, RZ_ANALYSIS_OP_MASK_ALL);
 					if (op) {
 						rz_analysis_colorize_bb (core->analysis, addr, color);
 						rz_analysis_op_free (op);
@@ -4323,7 +4323,7 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 }
 
 // size: 0: bits; -1: any; >0: exact size
-static void __anal_reg_list(RzCore *core, int type, int bits, char mode) {
+static void __analysis_reg_list(RzCore *core, int type, int bits, char mode) {
 	if (mode == 'i') {
 		rz_core_debug_ri (core, core->analysis->reg, 0);
 		return;
@@ -4711,7 +4711,7 @@ void cmd_analysis_reg(RzCore *core, const char *str) {
 					}
 				}
 			}
-			__anal_reg_list (core, type, size, str[0]);
+			__analysis_reg_list (core, type, size, str[0]);
 			if (!rz_list_empty (core->dbg->q_regs)) {
 				rz_list_free (core->dbg->q_regs);
 			}
@@ -4726,7 +4726,7 @@ void cmd_analysis_reg(RzCore *core, const char *str) {
 	case 'j': // "arj"
 	case 'i': // "arj"
 	case '\0': // "ar"
-		__anal_reg_list (core, type, size, str[0]);
+		__analysis_reg_list (core, type, size, str[0]);
 		break;
 	case ' ': { // "ar "
 		arg = strchr (str + 1, '=');
@@ -4769,12 +4769,12 @@ void cmd_analysis_reg(RzCore *core, const char *str) {
 				if (j - i + 1 <= sizeof name) {
 					rz_str_ncpy (name, str + i, j - i + 1);
 					if (IS_DIGIT (name[0])) { // e.g. ar 32
-						__anal_reg_list (core, RZ_REG_TYPE_GPR, atoi (name), '\0');
+						__analysis_reg_list (core, RZ_REG_TYPE_GPR, atoi (name), '\0');
 					} else if (showreg (core, name) > 0) { // e.g. ar rax
 					} else { // e.g. ar gpr ; ar all
 						type = rz_reg_type_by_name (name);
 						// TODO differentiate ALL and illegal register types and print error message for the latter
-						__anal_reg_list (core, type, -1, '\0');
+						__analysis_reg_list (core, type, -1, '\0');
 					}
 				}
 				i = j;
@@ -5948,7 +5948,7 @@ static void rz_analysis_aefa(RzCore *core, const char *arg) {
 #endif
 }
 
-static void __core_anal_appcall(RzCore *core, const char *input) {
+static void __core_analysis_appcall(RzCore *core, const char *input) {
 //	rz_reg_arena_push (core->dbg->reg);
 	RzListIter *iter;
 	char *arg;
@@ -5972,7 +5972,7 @@ static void __core_anal_appcall(RzCore *core, const char *input) {
 //	rz_reg_arena_pop (core->dbg->reg);
 }
 
-static void __anal_esil_function(RzCore *core, ut64 addr) {
+static void __analysis_esil_function(RzCore *core, ut64 addr) {
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
 	if (!core->analysis->esil) {
@@ -6243,7 +6243,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		if (input[1] == '?') { // "aec?"
 			rz_core_cmd_help (core, help_msg_aeC);
 		} else {
-			__core_anal_appcall (core, rz_str_trim_head_ro (input + 1));
+			__core_analysis_appcall (core, rz_str_trim_head_ro (input + 1));
 		}
 		break;
 	case 'c': // "aec"
@@ -6446,7 +6446,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 			rz_analysis_aefa (core, rz_str_trim_head_ro (input + 2));
 		} else { // This should be aefb -> because its emulating all the bbs
 			// convert ESIL to REIL.
-			__anal_esil_function (core, core->offset);
+			__analysis_esil_function (core, core->offset);
 		} break;
 	case 't': // "aet"
 		switch (input[1]) {
@@ -6638,7 +6638,7 @@ static void cmd_analysis_bytes(RzCore *core, const char *input) {
 			rz_core_block_size (core, len);
 		}
 	}
-	core_anal_bytes (core, core->block, len, 0, input[0]);
+	core_analysis_bytes (core, core->block, len, 0, input[0]);
 	if (tbs != core->blocksize) {
 		rz_core_block_size (core, tbs);
 	}
@@ -6667,7 +6667,7 @@ static void cmd_analysis_opcode(RzCore *core, const char *input) {
 		} else {
 			count = 1;
 		}
-		core_anal_bytes (core, core->block, core->blocksize, count, input[0]);
+		core_analysis_bytes (core, core->block, core->blocksize, count, input[0]);
 		if (obs != core->blocksize) {
 			rz_core_block_size (core, obs);
 		}
@@ -6755,7 +6755,7 @@ static void cmd_analysis_opcode(RzCore *core, const char *input) {
 		} else if (input[1] == 0) {
 			int cur = RZ_MAX (core->print->cur, 0);
 			// XXX: we need cmd_xxx.h (cmd_anal.h)
-			core_anal_bytes (core, core->block + cur, core->blocksize, 1, 'd');
+			core_analysis_bytes (core, core->block + cur, core->blocksize, 1, 'd');
 		} else if (input[1] == ' ') {
 			char *d = rz_asm_describe (core->rasm, input + 2);
 			if (d && *d) {
@@ -6787,7 +6787,7 @@ static void cmd_analysis_opcode(RzCore *core, const char *input) {
 				len = l = core->blocksize;
 				count = 1;
 			}
-			core_anal_bytes (core, core->block, len, count, 0);
+			core_analysis_bytes (core, core->block, len, count, 0);
 		}
 		break;
 	case 'f':
@@ -6953,7 +6953,7 @@ ctrl_c:
 	rz_cons_break_pop ();
 }
 
-static void _anal_calls(RzCore *core, ut64 addr, ut64 addr_end, bool printCommands, bool importsOnly) {
+static void _analysis_calls(RzCore *core, ut64 addr, ut64 addr_end, bool printCommands, bool importsOnly) {
 	RzAnalysisOp op;
 	int depth = rz_config_get_i (core->config, "anal.depth");
 	const int addrbytes = core->io->addrbytes;
@@ -7024,7 +7024,7 @@ static void _anal_calls(RzCore *core, ut64 addr, ut64 addr_end, bool printComman
 				}
 				if (isValidCall) {
 #if JAYRO_03
-					if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
+					if (!analysis_is_bad_call (core, from, to, addr, buf, bufi)) {
 						fcn = rz_analysis_get_fcn_in (core->analysis, op.jump, RZ_ANALYSIS_FCN_TYPE_ROOT);
 						if (!fcn) {
 							rz_core_analysis_fcn (core, op.jump, addr, RZ_ANALYSIS_REF_TYPE_CALL, depth);
@@ -7091,7 +7091,7 @@ static void cmd_analysis_calls(RzCore *core, const char *input, bool printComman
 		if (ranges) {
 			rz_list_foreach (ranges, iter, map) {
 				ut64 addr = map->itv.addr;
-				_anal_calls (core, addr, rz_itv_end (map->itv), printCommands, importsOnly);
+				_analysis_calls (core, addr, rz_itv_end (map->itv), printCommands, importsOnly);
 			}
 		}
 	} else {
@@ -7104,7 +7104,7 @@ static void cmd_analysis_calls(RzCore *core, const char *input, bool printComman
 				if (rz_cons_is_breaked ()) {
 					break;
 				}
-				_anal_calls (core, addr, rz_itv_end (r->itv), printCommands, importsOnly);
+				_analysis_calls (core, addr, rz_itv_end (r->itv), printCommands, importsOnly);
 			}
 		}
 	}
@@ -7248,7 +7248,7 @@ static void cmd_analysis_syscall(RzCore *core, const char *input) {
 	}
 }
 
-static void anal_axg(RzCore *core, const char *input, int level, Sdb *db, int opts, PJ* pj) {
+static void analysis_axg(RzCore *core, const char *input, int level, Sdb *db, int opts, PJ* pj) {
 	char arg[32], pre[128];
 	RzListIter *iter;
 	RzAnalysisRef *ref;
@@ -7350,7 +7350,7 @@ static void anal_axg(RzCore *core, const char *input, int level, Sdb *db, int op
 			}
 			if (sdb_add (db, fcn->name, "1", 0)) {
 				snprintf (arg, sizeof (arg), "0x%08"PFMT64x, fcn->addr);
-				anal_axg (core, arg, level + 1, db, opts, pj);
+				analysis_axg (core, arg, level + 1, db, opts, pj);
 			} else {
 				if (is_json) {
 					pj_end (pj);
@@ -7377,7 +7377,7 @@ static void anal_axg(RzCore *core, const char *input, int level, Sdb *db, int op
 			}
 			snprintf (arg, sizeof (arg), "0x%08"PFMT64x, ref->addr);
 			if (sdb_add (db, arg, "1", 0)) {
-				anal_axg (core, arg, level + 1, db, opts, pj);
+				analysis_axg (core, arg, level + 1, db, opts, pj);
 			} else {
 				if (is_json) {
 					pj_end (pj);
@@ -7516,14 +7516,14 @@ static bool cmd_analysis_refs(RzCore *core, const char *input) {
 		{
 			Sdb *db = sdb_new0 ();
 			if (input[1] == '*') {
-				anal_axg (core, input + 2, 0, db, RZ_CORE_ANAL_GRAPHBODY, NULL); // rizin commands
+				analysis_axg (core, input + 2, 0, db, RZ_CORE_ANAL_GRAPHBODY, NULL); // rizin commands
 			} else if (input[1] == 'j') {
 				PJ *pj = pj_new ();
-				anal_axg (core, input + 2, 0, db, RZ_CORE_ANAL_JSON, pj);
+				analysis_axg (core, input + 2, 0, db, RZ_CORE_ANAL_JSON, pj);
 				rz_cons_printf("%s\n", pj_string (pj));
 				pj_free (pj);
 			} else {
-				anal_axg (core, input[1] ? input + 2 : NULL, 0, db, 0, NULL);
+				analysis_axg (core, input[1] ? input + 2 : NULL, 0, db, 0, NULL);
 			}
 			sdb_free (db);
 		}
@@ -9907,7 +9907,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 	return true;
 }
 
-static bool anal_fcn_data (RzCore *core, const char *input) {
+static bool analysis_fcn_data (RzCore *core, const char *input) {
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_ANY);
 	if (fcn) {
 		int i;
@@ -9952,7 +9952,7 @@ static bool anal_fcn_data (RzCore *core, const char *input) {
 	return false;
 }
 
-static bool anal_fcn_data_gaps (RzCore *core, const char *input) {
+static bool analysis_fcn_data_gaps (RzCore *core, const char *input) {
 	ut64 end = UT64_MAX;
 	RzAnalysisFunction *fcn;
 	RzListIter *iter;
@@ -10536,7 +10536,7 @@ bool go_on = true;
 	free (s);
 }
 
-RZ_IPI int rz_cmd_anal(void *data, const char *input) {
+RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 	const char *r;
 	RzCore *core = (RzCore *)data;
 	ut32 tbs = core->blocksize;
@@ -10575,7 +10575,7 @@ RZ_IPI int rz_cmd_anal(void *data, const char *input) {
 			if (buf) {
 				int len = rz_hex_str2bin (input + 1, buf);
 				if (len > 0) {
-					core_anal_bytes (core, buf, len, 0, input[1]);
+					core_analysis_bytes (core, buf, len, 0, input[1]);
 				}
 				free (buf);
 			}
@@ -10590,10 +10590,10 @@ RZ_IPI int rz_cmd_anal(void *data, const char *input) {
 			rz_core_cmdf (core, "aeab%s", input + 1);
 			break;
 		case 'b': // "abb"
-			core_anal_bbs (core, input + 2);
+			core_analysis_bbs (core, input + 2);
 			break;
 		case 'r': // "abr"
-			core_anal_bbs_range (core, input + 2);
+			core_analysis_bbs_range (core, input + 2);
 			break;
 		case ',': // "ab,"
 		case 't': // "abt"
@@ -10603,11 +10603,11 @@ RZ_IPI int rz_cmd_anal(void *data, const char *input) {
 			if (input[2] == '?') {
 				rz_core_cmd_help (core, help_msg_abl);
 			} else {
-				anal_bb_list (core, input + 2);
+				analysis_bb_list (core, input + 2);
 			}
 			break;
 		case 'j': // "abj"
-			anal_fcn_list_bb (core, input + 1, false);
+			analysis_fcn_list_bb (core, input + 1, false);
 			break;
 		case 0:
 		case ' ': // "ab "
@@ -10703,9 +10703,9 @@ RZ_IPI int rz_cmd_anal(void *data, const char *input) {
 		switch (input[1]) {
 		case 'f': // "adf"
 			if (input[2] == 'g') {
-				anal_fcn_data_gaps (core, rz_str_trim_head_ro (input + 1));
+				analysis_fcn_data_gaps (core, rz_str_trim_head_ro (input + 1));
 			} else {
-				anal_fcn_data (core, input + 1);
+				analysis_fcn_data (core, input + 1);
 			}
 			break;
 		case 't': // "adt"

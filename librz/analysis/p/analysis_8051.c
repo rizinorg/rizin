@@ -745,7 +745,7 @@ static int i8051_reg_get_offset(RzAnalysisEsil *esil, RI8051Reg *ri) {
 
 // dkreuter: It would be nice if we could attach hooks to RzRegItems directly.
 //           That way we could avoid doing a string lookup on register names
-//           as rz_reg_get already does this. Also, the anal esil callbacks
+//           as rz_reg_get already does this. Also, the analysis esil callbacks
 //           approach interferes with rz_reg_arena_swap.
 
 static int i8051_hook_reg_read(RzAnalysisEsil *esil, const char *name, ut64 *res, int *size) {

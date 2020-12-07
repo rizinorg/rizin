@@ -53,7 +53,7 @@ static const char *help_msg_slash[] = {
 	"/i", " foo", "search for string 'foo' ignoring case",
 	"/m", "[?][ebm] magicfile", "search for magic, filesystems or binary headers",
 	"/o", " [n]", "show offset of n instructions backward",
-	"/O", " [n]", "same as /o, but with a different fallback if anal cannot be used",
+	"/O", " [n]", "same as /o, but with a different fallback if analysis cannot be used",
 	"/p", " patternsize", "search for pattern of given size",
 	"/P", " patternsize", "search similar blocks",
 	"/s", "[*] [threshold]", "find sections by grouping blocks with similar entropy",
@@ -1064,7 +1064,7 @@ static RzList *construct_rop_gadget(RzCore *core, ut64 addr, ut8 *buf, int bufle
 		// opsz = rz_strbuf_length (asmop.buf);
 		char *opst = aop.mnemonic;
 		if (!opst) {
-			RZ_LOG_WARN ("Anal plugin %s did not return disassembly\n", core->analysis->cur->name);
+			RZ_LOG_WARN ("Analysis plugin %s did not return disassembly\n", core->analysis->cur->name);
 			RzAsmOp asmop;
 			rz_asm_set_pc (core->rasm, addr);
 			if (!rz_asm_disassemble (core->rasm, &asmop, buf + idx, buflen - idx)) {
@@ -1973,7 +1973,7 @@ static void do_ref_search(RzCore *core, ut64 addr,ut64 from, ut64 to, struct sea
 	rz_list_free (list);
 }
 
-static bool do_anal_search(RzCore *core, struct search_parameters *param, const char *input) {
+static bool do_analysis_search(RzCore *core, struct search_parameters *param, const char *input) {
 	RzSearch *search = core->search;
 	ut64 at;
 	RzAnalysisOp aop;
@@ -3254,7 +3254,7 @@ reread:
 			}
 			dosearch = false;
 		} else {
-			dosearch = do_anal_search (core, &param, input + 1);
+			dosearch = do_analysis_search (core, &param, input + 1);
 		}
 		break;
 	case 'c': { // "/c"

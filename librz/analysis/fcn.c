@@ -557,7 +557,7 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 
 	if (depth < 1) {
 		if (analysis->verbose) {
-			eprintf ("Anal went too deep at address 0x%"PFMT64x ".\n", addr);
+			eprintf ("Analysis went too deep at address 0x%"PFMT64x ".\n", addr);
 		}
 		return RZ_ANALYSIS_RET_ERROR; // MUST BE TOO DEEP
 	}
@@ -1502,7 +1502,7 @@ RZ_API int rz_analysis_fcn(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 a
 			}
 		}
 #if JAYRO_04
-		// fcn is not yet in anal => pass NULL
+		// fcn is not yet in analysis => pass NULL
 		rz_analysis_function_resize (fcn, endaddr - fcn->addr);
 #endif
 		rz_analysis_trim_jmprefs (analysis, fcn);
@@ -1974,7 +1974,7 @@ static bool can_affect_bp(RzAnalysis *analysis, RzAnalysisOp* op) {
  * This function checks whether any operation in a given function may change bp (excluding "mov bp, sp"
  * and "pop bp" at the end).
  */
-static void __anal_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
+static void __analysis_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction *fcn) {
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
 	char str_to_find[40] = "\"type\":\"reg\",\"value\":\"";
@@ -2053,7 +2053,7 @@ static void __anal_fcn_check_bp_use(RzAnalysis *analysis, RzAnalysisFunction *fc
 
 RZ_API void rz_analysis_function_check_bp_use(RzAnalysisFunction *fcn) {
 	rz_return_if_fail (fcn);
-	__anal_fcn_check_bp_use (fcn->analysis, fcn);
+	__analysis_fcn_check_bp_use (fcn->analysis, fcn);
 }
 
 typedef struct {

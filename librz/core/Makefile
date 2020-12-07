@@ -10,7 +10,7 @@ OBJS=core.o cmd.o cfile.o cconfig.o visual.o cio.o yank.o libs.o agraph.o
 OBJS+=fortune.o hack.o vasm.o patch.o cbin.o rtr.o cmd_api.o cmd_descs.o
 OBJS+=carg.o canalysis.o cautocmpl.o project.o gdiff.o casm.o disasm.o cplugin.o
 OBJS+=vmenus.o vmenus_graph.o vmenus_zigns.o zdiff.o citem.o
-OBJS+=task.o panels.o vmarks.o anal_tp.o anal_objc.o blaze.o
+OBJS+=task.o panels.o vmarks.o analysis_tp.o analysis_objc.o blaze.o
 OBJS+=cannotated_code.o serialize_core.o
 
 CFLAGS+=-I../../shlr/heap/include

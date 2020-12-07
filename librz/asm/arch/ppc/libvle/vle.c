@@ -867,7 +867,7 @@ static vle_t *find_ppc(const ut8* buffer) {
 			ret->name = p->name;
 			ret->size = 4;
 			ret->n = 0;
-			ret->anal_op = p->anal_op;
+			ret->analysis_op = p->analysis_op;
 			set_ppc_fields (ret, p, data);
 			return ret;
 		}
@@ -887,7 +887,7 @@ static vle_t *find_e(const ut8* buffer) {
 			ret->name = p->name;
 			ret->size = 4;
 			ret->n = 0;
-			ret->anal_op = p->anal_op;
+			ret->analysis_op = p->analysis_op;
 			set_e_fields (ret, p, data);
 			return ret;
 		}
@@ -906,7 +906,7 @@ static vle_t *find_se(const ut8* buffer) {
 			vle_t* ret = RZ_NEW0 (vle_t);
 			ret->name = p->name;
 			ret->size = 2;
-			ret->anal_op = p->anal_op;
+			ret->analysis_op = p->analysis_op;
 			for (j = 0; j < p->n; j++) {
 				for (k = 0; k < p->n; k++) {
 					if (p->fields[k].idx == j) {
