@@ -1,7 +1,7 @@
 OBJ_HEXAGON=analysis_hexagon.o
 OBJ_HEXAGON+=../../asm/arch/hexagon/hexagon.o
 OBJ_HEXAGON+=../../asm/arch/hexagon/hexagon_disas.o
-OBJ_HEXAGON+=../../analysis/arch/hexagon/hexagon_anal.o
+OBJ_HEXAGON+=../../analysis/arch/hexagon/hexagon_analysis.o
 
 CFLAGS +=-I../asm/arch/hexagon
 CFLAGS +=-I../analysis/arch/hexagon
