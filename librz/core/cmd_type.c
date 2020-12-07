@@ -786,15 +786,15 @@ RZ_API int rz_core_get_stacksz(RzCore *core, ut64 from, ut64 to) {
 	if (from >= to) {
 		return 0;
 	}
-	const int mininstrsz = rz_analysis_archinfo (core->analysis, RZ_ANAL_ARCHINFO_MIN_OP_SIZE);
+	const int mininstrsz = rz_analysis_archinfo (core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = RZ_MAX (1, mininstrsz);
 	while (at < to) {
-		RzAnalysisOp *op = rz_core_analysis_op (core, at, RZ_ANAL_OP_MASK_BASIC);
+		RzAnalysisOp *op = rz_core_analysis_op (core, at, RZ_ANALYSIS_OP_MASK_BASIC);
 		if (!op || op->size <= 0) {
 			at += minopcode;
 			continue;
 		}
-		if ((op->stackop == RZ_ANAL_STACK_INC) && RZ_ABS (op->stackptr) < 8096) {
+		if ((op->stackop == RZ_ANALYSIS_STACK_INC) && RZ_ABS (op->stackptr) < 8096) {
 			stack += op->stackptr;
 			if (stack > maxstack) {
 				maxstack = stack;
@@ -856,8 +856,8 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
 	}
 	rz_analysis_esil_setup (esil, core->analysis, 0, 0, 0);
 	int i, ret, bsize = RZ_MAX (64, core->blocksize);
-	const int mininstrsz = rz_analysis_archinfo (core->analysis, RZ_ANAL_ARCHINFO_MIN_OP_SIZE);
-	const int maxinstrsz = rz_analysis_archinfo (core->analysis, RZ_ANAL_ARCHINFO_MAX_OP_SIZE);
+	const int mininstrsz = rz_analysis_archinfo (core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
+	const int maxinstrsz = rz_analysis_archinfo (core->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
 	const int minopcode = RZ_MAX (1, mininstrsz);
 	ut8 *buf = malloc (bsize);
 	if (!buf) {
@@ -905,7 +905,7 @@ RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn) {
 			if (!i) {
 				rz_io_read_at (core->io, at, buf, bsize);
 			}
-			ret = rz_analysis_op (core->analysis, &aop, at, buf + i, bsize - i, RZ_ANAL_OP_MASK_VAL);
+			ret = rz_analysis_op (core->analysis, &aop, at, buf + i, bsize - i, RZ_ANALYSIS_OP_MASK_VAL);
 			if (ret <= 0) {
 				i += minopcode;
 				at += minopcode;

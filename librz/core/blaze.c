@@ -230,7 +230,7 @@ static void createFunction(RzCore *core, fcn_t* fcn, const char *name) {
 	f->addr = fcn->addr;
 	f->bits = core->analysis->bits;
 	f->cc = rz_str_constpool_get (&core->analysis->constpool, rz_analysis_cc_default (core->analysis));
-	f->type = RZ_ANAL_FCN_TYPE_FCN;
+	f->type = RZ_ANALYSIS_FCN_TYPE_FCN;
 
 	rz_list_foreach (fcn->bbs, fcn_iter, cur) {
 		if (__isdata (core, cur->start)) {
@@ -293,7 +293,7 @@ RZ_API bool core_anal_bbs(RzCore *core, const char* input) {
 			cur += dsize;
 			continue;
 		}
-		RzAnalysisOp *const op = rz_core_analysis_op (core, dst, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM);
+		RzAnalysisOp *const op = rz_core_analysis_op (core, dst, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
 
 		if (!op || !op->mnemonic) {
 			block_score -= 10;
@@ -309,12 +309,12 @@ RZ_API bool core_anal_bbs(RzCore *core, const char* input) {
 			continue;
 		}
 		switch (op->type) {
-		case RZ_ANAL_OP_TYPE_NOP:
+		case RZ_ANALYSIS_OP_TYPE_NOP:
 			if (nopskip && b_start == dst) {
 				b_start = dst + op->size;
 			}
 			break;
-		case RZ_ANAL_OP_TYPE_CALL:
+		case RZ_ANALYSIS_OP_TYPE_CALL:
 			if (rz_analysis_noreturn_at (core->analysis, op->jump)) {
 				addBB (block_list, b_start, dst + op->size, UT64_MAX, UT64_MAX, END, block_score);
 				b_start = dst + op->size;
@@ -323,12 +323,12 @@ RZ_API bool core_anal_bbs(RzCore *core, const char* input) {
 				addBB (block_list, op->jump, UT64_MAX, UT64_MAX, UT64_MAX, CALL, block_score);
 			}
 			break;
-		case RZ_ANAL_OP_TYPE_JMP:
+		case RZ_ANALYSIS_OP_TYPE_JMP:
 			addBB (block_list, b_start, dst + op->size, op->jump, UT64_MAX, END, block_score);
 			b_start = dst + op->size;
 			block_score = 0;
 			break;
-		case RZ_ANAL_OP_TYPE_TRAP:
+		case RZ_ANALYSIS_OP_TYPE_TRAP:
 			// we don't want to add trap stuff
 			if (b_start < dst) {
 				addBB (block_list, b_start, dst, UT64_MAX, UT64_MAX, NORMAL, block_score);
@@ -336,18 +336,18 @@ RZ_API bool core_anal_bbs(RzCore *core, const char* input) {
 			b_start = dst + op->size;
 			block_score = 0;
 			break;
-		case RZ_ANAL_OP_TYPE_RET:
+		case RZ_ANALYSIS_OP_TYPE_RET:
 			addBB (block_list, b_start, dst + op->size, UT64_MAX, UT64_MAX, END, block_score);
 			b_start = dst + op->size;
 			block_score = 0;
 			break;
-		case RZ_ANAL_OP_TYPE_CJMP:
+		case RZ_ANALYSIS_OP_TYPE_CJMP:
 			addBB (block_list, b_start, dst + op->size, op->jump, dst + op->size, NORMAL, block_score);
 			b_start = dst + op->size;
 			block_score = 0;
 			break;
-		case RZ_ANAL_OP_TYPE_UNK:
-		case RZ_ANAL_OP_TYPE_ILL:
+		case RZ_ANALYSIS_OP_TYPE_UNK:
+		case RZ_ANALYSIS_OP_TYPE_ILL:
 			block_score -= 10;
 			break;
 		default:
@@ -583,7 +583,7 @@ RZ_API bool core_anal_bbs_range (RzCore *core, const char* input) {
 				}
 
 				if (!bFound) {
-					op = rz_core_analysis_op (core, b_start + cur, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM);
+					op = rz_core_analysis_op (core, b_start + cur, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
 
 					if (!op || !op->mnemonic) {
 						block_score -= 10;
@@ -600,22 +600,22 @@ RZ_API bool core_anal_bbs_range (RzCore *core, const char* input) {
 					}
 					//eprintf ("0x%08"PFMT64x" %s\n", b_start + cur, op->mnemonic);
 					switch (op->type) {
-					case RZ_ANAL_OP_TYPE_RET:
+					case RZ_ANALYSIS_OP_TYPE_RET:
 						addBB (block_list, b_start, b_start + cur + op->size, UT64_MAX, UT64_MAX, END, block_score);
 						cur = size;
 						break;
-					case RZ_ANAL_OP_TYPE_UJMP:
-					case RZ_ANAL_OP_TYPE_IRJMP:
+					case RZ_ANALYSIS_OP_TYPE_UJMP:
+					case RZ_ANALYSIS_OP_TYPE_IRJMP:
 						addBB (block_list, b_start, b_start + cur + op->size, op->jump, UT64_MAX, END, block_score);
 						cur = size;
 						break;
-					case RZ_ANAL_OP_TYPE_JMP:
+					case RZ_ANALYSIS_OP_TYPE_JMP:
 						addBB (block_list, b_start, b_start + cur + op->size, op->jump, UT64_MAX, END, block_score);
 						b_start = op->jump;
 						cur = 0;
 						block_score = 0;
 						break;
-					case RZ_ANAL_OP_TYPE_CJMP:
+					case RZ_ANALYSIS_OP_TYPE_CJMP:
 						//eprintf ("bb_b  0x%08"PFMT64x" - 0x%08"PFMT64x"\n", b_start, b_start + cur + op->size);
 						addBB (block_list, b_start, b_start + cur + op->size, op->jump, b_start + cur + op->size, NORMAL, block_score);
 						b_start = b_start + cur + op->size;
@@ -625,9 +625,9 @@ RZ_API bool core_anal_bbs_range (RzCore *core, const char* input) {
 						}
 						block_score = 0;
 						break;
-					case RZ_ANAL_OP_TYPE_TRAP:
-					case RZ_ANAL_OP_TYPE_UNK:
-					case RZ_ANAL_OP_TYPE_ILL:
+					case RZ_ANALYSIS_OP_TYPE_TRAP:
+					case RZ_ANALYSIS_OP_TYPE_UNK:
+					case RZ_ANALYSIS_OP_TYPE_ILL:
 						block_score -= 10;
 						cur += op->size;
 						break;

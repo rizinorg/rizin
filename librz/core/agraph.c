@@ -331,8 +331,8 @@ static char *get_node_color (int color, int cur) {
                 return cur ? cons->context->pal.graph_box2 : cons->context->pal.graph_box;
         }
         return color ? (\
-                color==RZ_ANAL_DIFF_TYPE_MATCH ? cons->context->pal.graph_diff_match:
-                color==RZ_ANAL_DIFF_TYPE_UNMATCH? cons->context->pal.graph_diff_unmatch : cons->context->pal.graph_diff_new): cons->context->pal.graph_diff_unknown;
+                color==RZ_ANALYSIS_DIFF_TYPE_MATCH ? cons->context->pal.graph_diff_match:
+                color==RZ_ANALYSIS_DIFF_TYPE_UNMATCH? cons->context->pal.graph_diff_unmatch : cons->context->pal.graph_diff_new): cons->context->pal.graph_diff_unknown;
 }
 
 static void normal_RzANode_print(const RzAGraph *g, const RzANode *n, int cur) {
@@ -4046,7 +4046,7 @@ static void rotateColor(RzCore *core) {
 
 // dupe in visual.c
 static bool toggle_bb(RzCore *core, ut64 addr) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, addr, RZ_ANAL_FCN_TYPE_NULL);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
 	if (fcn) {
 		RzAnalysisBlock *bb = rz_analysis_fcn_bbget_in (core->analysis, fcn, addr);
 		if (bb) {

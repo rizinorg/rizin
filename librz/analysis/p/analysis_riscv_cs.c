@@ -220,8 +220,8 @@ static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num
 
 static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh *handle, cs_insn *insn) {
 	static RzRegItem reg;
-	switch (op->type & RZ_ANAL_OP_TYPE_MASK) {
-	case RZ_ANAL_OP_TYPE_LOAD:
+	switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	case RZ_ANALYSIS_OP_TYPE_LOAD:
 		if (OPERAND(1).type == RISCV_OP_MEM) {
 			ZERO_FILL (reg);
 			op->src[0] = rz_analysis_value_new ();
@@ -230,7 +230,7 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh *handle, cs_i
 			op->src[0]->delta = OPERAND(1).mem.disp;
 		}
 		break;
-	case RZ_ANAL_OP_TYPE_STORE:
+	case RZ_ANALYSIS_OP_TYPE_STORE:
 		if (OPERAND(1).type == RISCV_OP_MEM) {
 			ZERO_FILL (reg);
 			op->dst = rz_analysis_value_new ();
@@ -239,20 +239,20 @@ static void op_fillval(RzAnalysis *analysis, RzAnalysisOp *op, csh *handle, cs_i
 			op->dst->delta = OPERAND(1).mem.disp;
 		}
 		break;
-	case RZ_ANAL_OP_TYPE_SHL:
-	case RZ_ANAL_OP_TYPE_SHR:
-	case RZ_ANAL_OP_TYPE_SAR:
-	case RZ_ANAL_OP_TYPE_XOR:
-	case RZ_ANAL_OP_TYPE_SUB:
-	case RZ_ANAL_OP_TYPE_AND:
-	case RZ_ANAL_OP_TYPE_ADD:
-	case RZ_ANAL_OP_TYPE_OR:
+	case RZ_ANALYSIS_OP_TYPE_SHL:
+	case RZ_ANALYSIS_OP_TYPE_SHR:
+	case RZ_ANALYSIS_OP_TYPE_SAR:
+	case RZ_ANALYSIS_OP_TYPE_XOR:
+	case RZ_ANALYSIS_OP_TYPE_SUB:
+	case RZ_ANALYSIS_OP_TYPE_AND:
+	case RZ_ANALYSIS_OP_TYPE_ADD:
+	case RZ_ANALYSIS_OP_TYPE_OR:
 		SET_SRC_DST_3_REG_OR_IMM (op);
 		break;
-	case RZ_ANAL_OP_TYPE_MOV:
+	case RZ_ANALYSIS_OP_TYPE_MOV:
 		SET_SRC_DST_3_REG_OR_IMM (op);
 		break;
-	case RZ_ANAL_OP_TYPE_DIV: // UDIV
+	case RZ_ANALYSIS_OP_TYPE_DIV: // UDIV
 #if 0
 capstone bug
 ------------
@@ -295,21 +295,21 @@ capstone bug
 }
 
 static void set_opdir(RzAnalysisOp *op) {
-        switch (op->type & RZ_ANAL_OP_TYPE_MASK) {
-        case RZ_ANAL_OP_TYPE_LOAD:
-                op->direction = RZ_ANAL_OP_DIR_READ;
+        switch (op->type & RZ_ANALYSIS_OP_TYPE_MASK) {
+        case RZ_ANALYSIS_OP_TYPE_LOAD:
+                op->direction = RZ_ANALYSIS_OP_DIR_READ;
                 break;
-        case RZ_ANAL_OP_TYPE_STORE:
-                op->direction = RZ_ANAL_OP_DIR_WRITE;
+        case RZ_ANALYSIS_OP_TYPE_STORE:
+                op->direction = RZ_ANALYSIS_OP_DIR_WRITE;
                 break;
-        case RZ_ANAL_OP_TYPE_LEA:
-                op->direction = RZ_ANAL_OP_DIR_REF;
+        case RZ_ANALYSIS_OP_TYPE_LEA:
+                op->direction = RZ_ANALYSIS_OP_DIR_REF;
                 break;
-        case RZ_ANAL_OP_TYPE_CALL:
-        case RZ_ANAL_OP_TYPE_JMP:
-        case RZ_ANAL_OP_TYPE_UJMP:
-        case RZ_ANAL_OP_TYPE_UCALL:
-                op->direction = RZ_ANAL_OP_DIR_EXEC;
+        case RZ_ANALYSIS_OP_TYPE_CALL:
+        case RZ_ANALYSIS_OP_TYPE_JMP:
+        case RZ_ANALYSIS_OP_TYPE_UJMP:
+        case RZ_ANALYSIS_OP_TYPE_UCALL:
+                op->direction = RZ_ANALYSIS_OP_DIR_EXEC;
                 break;
         default:
                 break;
@@ -350,42 +350,42 @@ static int analop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	opsize = op->size = insn->size;
 	switch (insn->id) {
 	case RISCV_INS_C_NOP:
-		op->type = RZ_ANAL_OP_TYPE_NOP;
+		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		break;
 	case RISCV_INS_INVALID:
-		op->type = RZ_ANAL_OP_TYPE_ILL;
+		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		break;
 	case RISCV_INS_C_JALR:
-		op->type = RZ_ANAL_OP_TYPE_UCALL;
+		op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 		break;
 	case RISCV_INS_C_JR:
-		op->type = RZ_ANAL_OP_TYPE_UJMP;
+		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 		break;
 	case RISCV_INS_C_MV:
-		op->type = RZ_ANAL_OP_TYPE_MOV;
+		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		break;
 	case RISCV_INS_JAL:
-		op->type = RZ_ANAL_OP_TYPE_CALL;
+		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		op->jump = IMM(0);
 		op->fail = op->addr + op->size;
 		break;
 	case RISCV_INS_MRET:
 	case RISCV_INS_SRET:
 	case RISCV_INS_URET:
-		op->type = RZ_ANAL_OP_TYPE_RET;
+		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 		break;
 	}
 beach:
 	set_opdir (op);
-	if (insn && mask & RZ_ANAL_OP_MASK_OPEX) {
+	if (insn && mask & RZ_ANALYSIS_OP_MASK_OPEX) {
 		opex (&op->opex, hndl, insn);
 	}
-	if (mask & RZ_ANAL_OP_MASK_ESIL) {
+	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 		if (analop_esil (analysis, op, addr, buf, len, &hndl, insn) != 0) {
 			rz_strbuf_fini (&op->esil);
 		}
 	}
-	if (mask & RZ_ANAL_OP_MASK_VAL) {
+	if (mask & RZ_ANALYSIS_OP_MASK_VAL) {
 		op_fillval (analysis, op, &hndl, insn);
 	}
 	cs_free (insn, n);
@@ -576,11 +576,11 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 
 static int archinfo(RzAnalysis *analysis, int q) {
 	switch (q) {
-	case RZ_ANAL_ARCHINFO_ALIGN:
+	case RZ_ANALYSIS_ARCHINFO_ALIGN:
 		return 4;
-	case RZ_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
 		return 4;
-	case RZ_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
 		if (analysis->bits == 64) {
 			return 4;
 		}

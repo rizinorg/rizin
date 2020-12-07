@@ -60,19 +60,19 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 		// capstone-next
 		int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 		if (n < 1) {
-			op->type = RZ_ANAL_OP_TYPE_ILL;
+			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		} else {
-			if (mask & RZ_ANAL_OP_MASK_OPEX) {
+			if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
 				opex (&op->opex, handle, insn);
 			}
 			op->size = insn->size;
 			switch (insn->id) {
 			case SYSZ_INS_BRCL:
 			case SYSZ_INS_BRASL:
-				op->type = RZ_ANAL_OP_TYPE_CALL;
+				op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 				break;
 			case SYSZ_INS_BR:
-				op->type = RZ_ANAL_OP_TYPE_JMP;
+				op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 				break;
 			case SYSZ_INS_BRC:
 			case SYSZ_INS_BER:
@@ -93,7 +93,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 			case SYSZ_INS_BRAS:
 			case SYSZ_INS_BRCT:
 			case SYSZ_INS_BRCTG:
-				op->type = RZ_ANAL_OP_TYPE_CJMP;
+				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 				break;
 			case SYSZ_INS_JE:
 			case SYSZ_INS_JGE:
@@ -124,12 +124,12 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 			case SYSZ_INS_JO:
 			case SYSZ_INS_JGO:
 			case SYSZ_INS_JG:
-				op->type = RZ_ANAL_OP_TYPE_CJMP;
+				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 				op->jump = INSOP(0).imm;
 				op->fail = addr+op->size;
 				break;
 			case SYSZ_INS_J:
-				op->type = RZ_ANAL_OP_TYPE_JMP;
+				op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 				op->jump = INSOP(0).imm;
 				op->fail = UT64_MAX;
 				break;
@@ -182,11 +182,11 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 
 static int archinfo(RzAnalysis *analysis, int q) {
 	switch (q) {
-	case RZ_ANAL_ARCHINFO_ALIGN:
+	case RZ_ANALYSIS_ARCHINFO_ALIGN:
 		return 2;
-	case RZ_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
 		return 4;
-	case RZ_ANAL_ARCHINFO_MIN_OP_SIZE:
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
 		return 2;
 	}
 	return 2;

@@ -67,7 +67,7 @@ static char *colorize_asm_string(RzCore *core, const char *buf_asm, int optype, 
 	bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 	const char *color_num = core->cons->context->pal.num;
 	const char *color_reg = core->cons->context->pal.reg;
-	RzAnalysisFunction* fcn = rz_analysis_get_fcn_in (core->analysis, addr, RZ_ANAL_FCN_TYPE_NULL);
+	RzAnalysisFunction* fcn = rz_analysis_get_fcn_in (core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
 
 	if (!use_color) {
 		return strdup (source);
@@ -149,8 +149,8 @@ RZ_API bool rz_core_visual_esil(RzCore *core) {
 		// bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 		(void) rz_asm_disassemble (core->rasm, &asmop, buf, sizeof (ut64));
 		analop.type = -1;
-		(void)rz_analysis_op (core->analysis, &analop, core->offset, buf, sizeof (ut64), RZ_ANAL_OP_MASK_ESIL);
-		analopType = analop.type & RZ_ANAL_OP_TYPE_MASK;
+		(void)rz_analysis_op (core->analysis, &analop, core->offset, buf, sizeof (ut64), RZ_ANALYSIS_OP_MASK_ESIL);
+		analopType = analop.type & RZ_ANALYSIS_OP_TYPE_MASK;
 		rz_cons_printf ("rizin's esil debugger:\n\n");
 		rz_cons_printf ("pos: %d\n", x);
 		{
@@ -295,8 +295,8 @@ RZ_API bool rz_core_visual_bit_editor(RzCore *core) {
 		bool use_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
 		(void) rz_asm_disassemble (core->rasm, &asmop, buf, sizeof (ut64));
 		analop.type = -1;
-		(void)rz_analysis_op (core->analysis, &analop, core->offset, buf, sizeof (ut64), RZ_ANAL_OP_MASK_ESIL);
-		analopType = analop.type & RZ_ANAL_OP_TYPE_MASK;
+		(void)rz_analysis_op (core->analysis, &analop, core->offset, buf, sizeof (ut64), RZ_ANALYSIS_OP_MASK_ESIL);
+		analopType = analop.type & RZ_ANALYSIS_OP_TYPE_MASK;
 		rz_cons_printf ("rizin's bit editor:\n\n");
 		rz_cons_printf ("offset: 0x%08"PFMT64x"\n"Color_RESET, core->offset + cur);
 		{
@@ -2498,7 +2498,7 @@ static void function_rename(RzCore *core, ut64 addr, const char *name) {
 }
 
 static void variable_rename (RzCore *core, ut64 addr, int vindex, const char *name) {
-	RzAnalysisFunction* fcn = rz_analysis_get_fcn_in (core->analysis, addr, RZ_ANAL_FCN_TYPE_NULL);
+	RzAnalysisFunction* fcn = rz_analysis_get_fcn_in (core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
 	ut64 a_tmp = core->offset;
 	int i = 0;
 	RzListIter *iter;
@@ -2518,7 +2518,7 @@ static void variable_rename (RzCore *core, ut64 addr, int vindex, const char *na
 }
 
 static void variable_set_type (RzCore *core, ut64 addr, int vindex, const char *type) {
-	RzAnalysisFunction* fcn = rz_analysis_get_fcn_in (core->analysis, addr, RZ_ANAL_FCN_TYPE_NULL);
+	RzAnalysisFunction* fcn = rz_analysis_get_fcn_in (core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
 	RzList *list = rz_analysis_var_all_list (core->analysis, fcn);
 	RzListIter *iter;
 	RzAnalysisVar* var;
@@ -2601,7 +2601,7 @@ static ut64 var_functions_show(RzCore *core, int idx, int show, int cols) {
 static ut64 var_variables_show(RzCore* core, int idx, int *vindex, int show, int cols) {
 	int i = 0;
 	const ut64 addr = var_functions_show (core, idx, 0, cols);
-	RzAnalysisFunction* fcn = rz_analysis_get_fcn_in (core->analysis, addr, RZ_ANAL_FCN_TYPE_NULL);
+	RzAnalysisFunction* fcn = rz_analysis_get_fcn_in (core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
 	int window;
 	int wdelta = (idx > 5) ? idx - 5 : 0;
 	RzListIter *iter;
@@ -2682,7 +2682,7 @@ static void rz_core_visual_anal_refresh_column (RzCore *core, int colpos) {
 	const ut64 addr = (level != 0 && level != 1)
 		? core->offset
 		: var_functions_show (core, option, 0, colpos);
-	// RzAnalysisFunction* fcn = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANAL_FCN_TYPE_NULL);
+	// RzAnalysisFunction* fcn = rz_analysis_get_fcn_in(core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
 	int h, w = rz_cons_get_size (&h);
 	// int sz = (fcn)? RZ_MIN (rz_analysis_fcn_size (fcn), h * 15) : 16; // max instr is 15 bytes.
 
@@ -3308,7 +3308,7 @@ RZ_API void rz_core_seek_next(RzCore *core, const char *type) {
 	ut64 next = UT64_MAX;
 	if (strstr (type, "opc")) {
 		RzAnalysisOp aop;
-		if (rz_analysis_op (core->analysis, &aop, core->offset, core->block, core->blocksize, RZ_ANAL_OP_MASK_BASIC)) {
+		if (rz_analysis_op (core->analysis, &aop, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC)) {
 			next = core->offset + aop.size;
 		} else {
 			eprintf ("Invalid opcode\n");
@@ -3578,7 +3578,7 @@ onemoretime:
 		{
 			char *man = NULL;
 			/* check for manpage */
-			RzAnalysisOp *op = rz_core_analysis_op (core, off, RZ_ANAL_OP_MASK_BASIC);
+			RzAnalysisOp *op = rz_core_analysis_op (core, off, RZ_ANALYSIS_OP_MASK_BASIC);
 			if (op) {
 				if (op->jump != UT64_MAX) {
 					RzFlagItem *item = rz_flag_get_i (core->flags, op->jump);
@@ -3614,7 +3614,7 @@ onemoretime:
 		}
 		// TODO: get the aligned instruction even if the cursor is in the middle of it.
 		rz_analysis_op (core->analysis, &op, off,
-			core->block + off - core->offset, 32, RZ_ANAL_OP_MASK_BASIC);
+			core->block + off - core->offset, 32, RZ_ANALYSIS_OP_MASK_BASIC);
 
 		tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
 		RzAnalysisVar *var = rz_analysis_get_used_function_var (core->analysis, op.addr);
@@ -3697,7 +3697,7 @@ onemoretime:
 			RzAnalysisOp op;
 			ut64 size;
 			if (rz_analysis_op (core->analysis, &op, off, core->block+delta,
-					core->blocksize-delta, RZ_ANAL_OP_MASK_BASIC)) {
+					core->blocksize-delta, RZ_ANALYSIS_OP_MASK_BASIC)) {
 				size = off - fcn->addr + op.size;
 				rz_analysis_function_resize (fcn, size);
 			}
@@ -3880,7 +3880,7 @@ onemoretime:
 		RzAnalysisVar *var = NULL;
 		for (try_off = start_off; try_off < start_off + incr*16; try_off += incr) {
 			rz_analysis_op_free (op);
-			op = rz_core_analysis_op (core, try_off, RZ_ANAL_OP_MASK_ALL);
+			op = rz_core_analysis_op (core, try_off, RZ_ANALYSIS_OP_MASK_ALL);
 			if (!op) {
 				break;
 			}

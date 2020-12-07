@@ -292,23 +292,23 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 	if (amd29k_instr_decode (buf, len, &instruction, a->cpu)) {
 		op->type = instruction.op_type;
 		switch (op->type) {
-		case RZ_ANAL_OP_TYPE_JMP:
+		case RZ_ANALYSIS_OP_TYPE_JMP:
 			op->jump = amd29k_instr_jump (addr, &instruction);
 			//op->delay = 1;
 			break;
-		case RZ_ANAL_OP_TYPE_CJMP:
+		case RZ_ANALYSIS_OP_TYPE_CJMP:
 			op->jump = amd29k_instr_jump (addr, &instruction);
 			op->fail = addr + 4;
 			//op->delay = 1;
 			break;
-		case RZ_ANAL_OP_TYPE_ICALL:
+		case RZ_ANALYSIS_OP_TYPE_ICALL:
 			if (amd29k_instr_is_ret (&instruction)) {
-				op->type = RZ_ANAL_OP_TYPE_RET;
+				op->type = RZ_ANALYSIS_OP_TYPE_RET;
 				op->eob = true;
 			}
 			//op->delay = 1;
 			break;
-		case RZ_ANAL_OP_TYPE_RET:
+		case RZ_ANALYSIS_OP_TYPE_RET:
 			op->eob = true;
 			//op->delay = 1;
 			break;

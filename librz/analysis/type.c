@@ -119,7 +119,7 @@ RZ_IPI void union_type_member_free(void *e, void *user) {
 static RzAnalysisBaseType *get_enum_type(RzAnalysis *analysis, const char *sname) {
 	rz_return_val_if_fail (analysis && sname, NULL);
 
-	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ENUM);
+	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANALYSIS_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
 		return NULL;
 	}
@@ -169,7 +169,7 @@ error:
 static RzAnalysisBaseType *get_struct_type(RzAnalysis *analysis, const char *sname) {
 	rz_return_val_if_fail (analysis && sname, NULL);
 
-	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANAL_BASE_TYPE_KIND_STRUCT);
+	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANALYSIS_BASE_TYPE_KIND_STRUCT);
 	if (!base_type) {
 		return NULL;
 	}
@@ -231,7 +231,7 @@ error:
 static RzAnalysisBaseType *get_union_type(RzAnalysis *analysis, const char *sname) {
 	rz_return_val_if_fail (analysis && sname, NULL);
 
-	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANAL_BASE_TYPE_KIND_UNION);
+	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANALYSIS_BASE_TYPE_KIND_UNION);
 	if (!base_type) {
 		return NULL;
 	}
@@ -282,7 +282,7 @@ error:
 static RzAnalysisBaseType *get_typedef_type(RzAnalysis *analysis, const char *sname) {
 	rz_return_val_if_fail (analysis && RZ_STR_ISNOTEMPTY (sname), NULL);
 
-	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANAL_BASE_TYPE_KIND_TYPEDEF);
+	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANALYSIS_BASE_TYPE_KIND_TYPEDEF);
 	if (!base_type) {
 		return NULL;
 	}
@@ -301,7 +301,7 @@ error:
 static RzAnalysisBaseType *get_atomic_type(RzAnalysis *analysis, const char *sname) {
 	rz_return_val_if_fail (analysis && RZ_STR_ISNOTEMPTY (sname), NULL);
 
-	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ATOMIC);
+	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANALYSIS_BASE_TYPE_KIND_ATOMIC);
 	if (!base_type) {
 		return NULL;
 	}
@@ -357,7 +357,7 @@ RZ_API RzAnalysisBaseType *rz_analysis_get_base_type(RzAnalysis *analysis, const
 
 static void save_struct(const RzAnalysis *analysis, const RzAnalysisBaseType *type) {
 	rz_return_if_fail (analysis && type && type->name
-		&& type->kind == RZ_ANAL_BASE_TYPE_KIND_STRUCT);
+		&& type->kind == RZ_ANALYSIS_BASE_TYPE_KIND_STRUCT);
 	char *kind = "struct";
 	/*
 		C:
@@ -406,7 +406,7 @@ static void save_struct(const RzAnalysis *analysis, const RzAnalysisBaseType *ty
 
 static void save_union(const RzAnalysis *analysis, const RzAnalysisBaseType *type) {
 	rz_return_if_fail (analysis && type && type->name
-		&& type->kind == RZ_ANAL_BASE_TYPE_KIND_UNION);
+		&& type->kind == RZ_ANALYSIS_BASE_TYPE_KIND_UNION);
 	const char *kind = "union";
 	/*
 	C:
@@ -455,7 +455,7 @@ static void save_union(const RzAnalysis *analysis, const RzAnalysisBaseType *typ
 
 static void save_enum(const RzAnalysis *analysis, const RzAnalysisBaseType *type) {
 	rz_return_if_fail (analysis && type && type->name
-		&& type->kind == RZ_ANAL_BASE_TYPE_KIND_ENUM);
+		&& type->kind == RZ_ANALYSIS_BASE_TYPE_KIND_ENUM);
 	/*
 		C:
 			enum name {case1 = 1, case2 = 2, caseN = 3};
@@ -509,7 +509,7 @@ static void save_enum(const RzAnalysis *analysis, const RzAnalysisBaseType *type
 
 static void save_atomic_type(const RzAnalysis *analysis, const RzAnalysisBaseType *type) {
 	rz_return_if_fail (analysis && type && type->name
-		&& type->kind == RZ_ANAL_BASE_TYPE_KIND_ATOMIC);
+		&& type->kind == RZ_ANALYSIS_BASE_TYPE_KIND_ATOMIC);
 	/*
 		C: (cannot define a custom atomic type)
 		Sdb:
@@ -539,7 +539,7 @@ static void save_atomic_type(const RzAnalysis *analysis, const RzAnalysisBaseTyp
 	rz_strbuf_fini (&val);
 }
 static void save_typedef(const RzAnalysis *analysis, const RzAnalysisBaseType *type) {
-	rz_return_if_fail (analysis && type && type->name && type->kind == RZ_ANAL_BASE_TYPE_KIND_TYPEDEF);
+	rz_return_if_fail (analysis && type && type->name && type->kind == RZ_ANALYSIS_BASE_TYPE_KIND_TYPEDEF);
 	/*
 		C:
 		typedef char byte;
@@ -571,17 +571,17 @@ RZ_API void rz_analysis_base_type_free(RzAnalysisBaseType *type) {
 	RZ_FREE (type->type);
 
 	switch (type->kind) {
-	case RZ_ANAL_BASE_TYPE_KIND_STRUCT:
+	case RZ_ANALYSIS_BASE_TYPE_KIND_STRUCT:
 		rz_vector_fini (&type->struct_data.members);
 		break;
-	case RZ_ANAL_BASE_TYPE_KIND_UNION:
+	case RZ_ANALYSIS_BASE_TYPE_KIND_UNION:
 		rz_vector_fini (&type->union_data.members);
 		break;
-	case RZ_ANAL_BASE_TYPE_KIND_ENUM:
+	case RZ_ANALYSIS_BASE_TYPE_KIND_ENUM:
 		rz_vector_fini (&type->enum_data.cases);
 		break;
-	case RZ_ANAL_BASE_TYPE_KIND_TYPEDEF:
-	case RZ_ANAL_BASE_TYPE_KIND_ATOMIC:
+	case RZ_ANALYSIS_BASE_TYPE_KIND_TYPEDEF:
+	case RZ_ANALYSIS_BASE_TYPE_KIND_ATOMIC:
 		break;
 	default:
 		break;
@@ -596,13 +596,13 @@ RZ_API RzAnalysisBaseType *rz_analysis_base_type_new(RzAnalysisBaseTypeKind kind
 	}
 	type->kind = kind;
 	switch (type->kind) {
-	case RZ_ANAL_BASE_TYPE_KIND_STRUCT:
+	case RZ_ANALYSIS_BASE_TYPE_KIND_STRUCT:
 		rz_vector_init (&type->struct_data.members, sizeof (RzAnalysisStructMember), struct_type_member_free, NULL);
 		break;
-	case RZ_ANAL_BASE_TYPE_KIND_ENUM:
+	case RZ_ANALYSIS_BASE_TYPE_KIND_ENUM:
 		rz_vector_init (&type->enum_data.cases, sizeof (RzAnalysisEnumCase), enum_type_case_free, NULL);
 		break;
-	case RZ_ANAL_BASE_TYPE_KIND_UNION:
+	case RZ_ANALYSIS_BASE_TYPE_KIND_UNION:
 		rz_vector_init (&type->union_data.members, sizeof (RzAnalysisUnionMember), union_type_member_free, NULL);
 		break;
 	default:
@@ -625,19 +625,19 @@ RZ_API void rz_analysis_save_base_type(const RzAnalysis *analysis, const RzAnaly
 	// TODO, solve collisions, if there are 2 types with the same name and kind
 
 	switch (type->kind) {
-	case RZ_ANAL_BASE_TYPE_KIND_STRUCT:
+	case RZ_ANALYSIS_BASE_TYPE_KIND_STRUCT:
 		save_struct (analysis, type);
 		break;
-	case RZ_ANAL_BASE_TYPE_KIND_ENUM:
+	case RZ_ANALYSIS_BASE_TYPE_KIND_ENUM:
 		save_enum (analysis, type);
 		break;
-	case RZ_ANAL_BASE_TYPE_KIND_UNION:
+	case RZ_ANALYSIS_BASE_TYPE_KIND_UNION:
 		save_union (analysis, type);
 		break;
-	case RZ_ANAL_BASE_TYPE_KIND_TYPEDEF:
+	case RZ_ANALYSIS_BASE_TYPE_KIND_TYPEDEF:
 		save_typedef (analysis, type);
 		break;
-	case RZ_ANAL_BASE_TYPE_KIND_ATOMIC:
+	case RZ_ANALYSIS_BASE_TYPE_KIND_ATOMIC:
 		save_atomic_type (analysis, type);
 		break;
 	default:

@@ -284,7 +284,7 @@ static int __prelude_cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	RzCore *core = (RzCore *) user;
 	int depth = rz_config_get_i (core->config, "anal.depth");
 	// eprintf ("ap: Found function prelude %d at 0x%08"PFMT64x"\n", preludecnt, addr);
-	rz_core_analysis_fcn (core, addr, -1, RZ_ANAL_REF_TYPE_NULL, depth);
+	rz_core_analysis_fcn (core, addr, -1, RZ_ANALYSIS_REF_TYPE_NULL, depth);
 	preludecnt++;
 	return 1;
 }
@@ -836,7 +836,7 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 		}
 	} else if (!strcmp (mode, "anal.fcn") || !strcmp (mode, "anal.bb")) {
 		RzAnalysisFunction *f = rz_analysis_get_fcn_in (core->analysis, core->offset,
-			RZ_ANAL_FCN_TYPE_FCN | RZ_ANAL_FCN_TYPE_SYM);
+			RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
 		if (f) {
 			ut64 from = f->addr, size = rz_analysis_function_size_from_entry (f);
 
@@ -974,31 +974,31 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 }
 
 static bool is_end_gadget(const RzAnalysisOp *aop, const ut8 crop) {
-	if (aop->family == RZ_ANAL_OP_FAMILY_SECURITY) {
+	if (aop->family == RZ_ANALYSIS_OP_FAMILY_SECURITY) {
 		return false;
 	}
 	switch (aop->type) {
-	case RZ_ANAL_OP_TYPE_TRAP:
-	case RZ_ANAL_OP_TYPE_RET:
-	case RZ_ANAL_OP_TYPE_UCALL:
-	case RZ_ANAL_OP_TYPE_RCALL:
-	case RZ_ANAL_OP_TYPE_ICALL:
-	case RZ_ANAL_OP_TYPE_IRCALL:
-	case RZ_ANAL_OP_TYPE_UJMP:
-	case RZ_ANAL_OP_TYPE_RJMP:
-	case RZ_ANAL_OP_TYPE_IJMP:
-	case RZ_ANAL_OP_TYPE_IRJMP:
-	case RZ_ANAL_OP_TYPE_JMP:
-	case RZ_ANAL_OP_TYPE_CALL:
+	case RZ_ANALYSIS_OP_TYPE_TRAP:
+	case RZ_ANALYSIS_OP_TYPE_RET:
+	case RZ_ANALYSIS_OP_TYPE_UCALL:
+	case RZ_ANALYSIS_OP_TYPE_RCALL:
+	case RZ_ANALYSIS_OP_TYPE_ICALL:
+	case RZ_ANALYSIS_OP_TYPE_IRCALL:
+	case RZ_ANALYSIS_OP_TYPE_UJMP:
+	case RZ_ANALYSIS_OP_TYPE_RJMP:
+	case RZ_ANALYSIS_OP_TYPE_IJMP:
+	case RZ_ANALYSIS_OP_TYPE_IRJMP:
+	case RZ_ANALYSIS_OP_TYPE_JMP:
+	case RZ_ANALYSIS_OP_TYPE_CALL:
 		return true;
 	}
 	if (crop) { // if conditional jumps, calls and returns should be used for the gadget-search too
 		switch (aop->type) {
-		case RZ_ANAL_OP_TYPE_CJMP:
-		case RZ_ANAL_OP_TYPE_UCJMP:
-		case RZ_ANAL_OP_TYPE_CCALL:
-		case RZ_ANAL_OP_TYPE_UCCALL:
-		case RZ_ANAL_OP_TYPE_CRET:
+		case RZ_ANALYSIS_OP_TYPE_CJMP:
+		case RZ_ANALYSIS_OP_TYPE_UCJMP:
+		case RZ_ANALYSIS_OP_TYPE_CCALL:
+		case RZ_ANALYSIS_OP_TYPE_UCCALL:
+		case RZ_ANALYSIS_OP_TYPE_CRET:
 			return true;
 		}
 	}
@@ -1054,9 +1054,9 @@ static RzList *construct_rop_gadget(RzCore *core, ut64 addr, ut8 *buf, int bufle
 	}
 	while (nb_instr < max_instr) {
 		ht_uu_insert (localbadstart, idx, 1);
-		rz_analysis_op (core->analysis, &aop, addr, buf + idx, buflen - idx, RZ_ANAL_OP_MASK_DISASM);
+		rz_analysis_op (core->analysis, &aop, addr, buf + idx, buflen - idx, RZ_ANALYSIS_OP_MASK_DISASM);
 
-		if (nb_instr == 0 && (is_end_gadget (&aop, 0) || aop.type == RZ_ANAL_OP_TYPE_NOP)) {
+		if (nb_instr == 0 && (is_end_gadget (&aop, 0) || aop.type == RZ_ANALYSIS_OP_TYPE_NOP)) {
 			valid = false;
 			goto ret;
 		}
@@ -1185,9 +1185,9 @@ static void print_rop(RzCore *core, RzList *hitlist, char mode, bool *json_first
 			rz_io_read_at (core->io, hit->addr, buf, hit->len);
 			rz_asm_set_pc (core->rasm, hit->addr);
 			rz_asm_disassemble (core->rasm, &asmop, buf, hit->len);
-			rz_analysis_op (core->analysis, &analop, hit->addr, buf, hit->len, RZ_ANAL_OP_MASK_ESIL);
+			rz_analysis_op (core->analysis, &analop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_ESIL);
 			size += hit->len;
-			if (analop.type != RZ_ANAL_OP_TYPE_RET) {
+			if (analop.type != RZ_ANALYSIS_OP_TYPE_RET) {
 				char *opstr_n = rz_str_newf (" %s", RZ_STRBUF_SAFEGET (&analop.esil));
 				rz_list_append (ropList, (void *) opstr_n);
 			}
@@ -1218,10 +1218,10 @@ static void print_rop(RzCore *core, RzList *hitlist, char mode, bool *json_first
 			rz_io_read_at (core->io, hit->addr, buf, hit->len);
 			rz_asm_set_pc (core->rasm, hit->addr);
 			rz_asm_disassemble (core->rasm, &asmop, buf, hit->len);
-			rz_analysis_op (core->analysis, &analop, hit->addr, buf, hit->len, RZ_ANAL_OP_MASK_BASIC);
+			rz_analysis_op (core->analysis, &analop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_BASIC);
 			size += hit->len;
 			const char *opstr = RZ_STRBUF_SAFEGET (&analop.esil);
-			if (analop.type != RZ_ANAL_OP_TYPE_RET) {
+			if (analop.type != RZ_ANALYSIS_OP_TYPE_RET) {
 				rz_list_append (ropList, rz_str_newf (" %s", opstr));
 			}
 			if (esil) {
@@ -1259,9 +1259,9 @@ static void print_rop(RzCore *core, RzList *hitlist, char mode, bool *json_first
 			rz_io_read_at (core->io, hit->addr, buf, hit->len);
 			rz_asm_set_pc (core->rasm, hit->addr);
 			rz_asm_disassemble (core->rasm, &asmop, buf, hit->len);
-			rz_analysis_op (core->analysis, &analop, hit->addr, buf, hit->len, RZ_ANAL_OP_MASK_ESIL);
+			rz_analysis_op (core->analysis, &analop, hit->addr, buf, hit->len, RZ_ANALYSIS_OP_MASK_ESIL);
 			size += hit->len;
-			if (analop.type != RZ_ANAL_OP_TYPE_RET) {
+			if (analop.type != RZ_ANALYSIS_OP_TYPE_RET) {
 				char *opstr_n = rz_str_newf (" %s", RZ_STRBUF_SAFEGET (&analop.esil));
 				rz_list_append (ropList, (void *) opstr_n);
 			}
@@ -1416,7 +1416,7 @@ static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, cons
 			RzAnalysisOp end_gadget = RZ_EMPTY;
 			// Disassemble one.
 			if (rz_analysis_op (core->analysis, &end_gadget, from + i, buf + i,
-				    delta - i, RZ_ANAL_OP_MASK_BASIC) < 1) {
+				    delta - i, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 				rz_analysis_op_fini (&end_gadget);
 				continue;
 			}
@@ -1641,7 +1641,7 @@ static void do_esil_search(RzCore *core, struct search_parameters *param, const 
 		}
 		/* hook addrinfo */
 		core->analysis->esil->cb.user = core;
-		rz_analysis_esil_set_op (core->analysis->esil, "AddrInfo", esil_addrinfo, 1, 1, RZ_ANAL_ESIL_OP_TYPE_UNKNOWN);
+		rz_analysis_esil_set_op (core->analysis->esil, "AddrInfo", esil_addrinfo, 1, 1, RZ_ANALYSIS_ESIL_OP_TYPE_UNKNOWN);
 		/* hook addrinfo */
 		rz_analysis_esil_setup (core->analysis->esil, core->analysis, 1, 0, nonull);
 		rz_analysis_esil_stack_free (core->analysis->esil);
@@ -1742,7 +1742,7 @@ static int emulateSyscallPrelude(RzCore *core, ut64 at, ut64 curpc) {
 	int i, inslen, bsize = RZ_MIN (64, core->blocksize);
 	ut8 *arr;
 	RzAnalysisOp aop;
-	const int mininstrsz = rz_analysis_archinfo (core->analysis, RZ_ANAL_ARCHINFO_MIN_OP_SIZE);
+	const int mininstrsz = rz_analysis_archinfo (core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = RZ_MAX (1, mininstrsz);
 	const char *a0 = rz_reg_get_name (core->analysis->reg, RZ_REG_NAME_SN);
 	const char *pc = rz_reg_get_name (core->dbg->reg, RZ_REG_NAME_PC);
@@ -1763,7 +1763,7 @@ static int emulateSyscallPrelude(RzCore *core, ut64 at, ut64 curpc) {
 		if (!i) {
 			rz_io_read_at (core->io, curpc, arr, bsize);
 		}
-		inslen = rz_analysis_op (core->analysis, &aop, curpc, arr + i, bsize - i, RZ_ANAL_OP_MASK_BASIC);
+		inslen = rz_analysis_op (core->analysis, &aop, curpc, arr + i, bsize - i, RZ_ANALYSIS_OP_MASK_BASIC);
 		if (inslen) {
  			int incr = (core->search->align > 0)? core->search->align - 1:  inslen - 1;
 			if (incr < 0) {
@@ -1798,7 +1798,7 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 	int kwidx = core->search->n_kws;
 	RzIOMap* map;
 	RzListIter *iter;
-	const int mininstrsz = rz_analysis_archinfo (core->analysis, RZ_ANAL_ARCHINFO_MIN_OP_SIZE);
+	const int mininstrsz = rz_analysis_archinfo (core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = RZ_MAX (1, mininstrsz);
 	RzAnalysisEsil *esil;
 	int align = core->search->align;
@@ -1857,10 +1857,10 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 			if (!i) {
 				rz_io_read_at (core->io, at, buf, bsize);
 			}
-			ret = rz_analysis_op (core->analysis, &aop, at, buf + i, bsize - i, RZ_ANAL_OP_MASK_ESIL);
+			ret = rz_analysis_op (core->analysis, &aop, at, buf + i, bsize - i, RZ_ANALYSIS_OP_MASK_ESIL);
 			curpos = idx++ % (MAXINSTR + 1);
 			previnstr[curpos] = ret; // This array holds prev n instr size + cur instr size
-			if (aop.type == RZ_ANAL_OP_TYPE_MOV) {
+			if (aop.type == RZ_ANALYSIS_OP_TYPE_MOV) {
 				const char *es = RZ_STRBUF_SAFEGET (&aop.esil);
 				if (strstr (es, esp)) {
 					if (aop.val != -1) {
@@ -1872,7 +1872,7 @@ static void do_syscall_search(RzCore *core, struct search_parameters *param) {
 					}
 				}
 			}
-			if ((aop.type == RZ_ANAL_OP_TYPE_SWI) && ret) { // && (aop.val > 10)) {
+			if ((aop.type == RZ_ANALYSIS_OP_TYPE_SWI) && ret) { // && (aop.val > 10)) {
 				int scVector = -1; // int 0x80, svc 0x70, ...
 				int scNumber = 0; // r0/eax/...
 #if USE_EMULATION
@@ -2060,7 +2060,7 @@ static bool do_anal_search(RzCore *core, struct search_parameters *param, const 
 			at = from + i;
 			ut8 bufop[32];
 			rz_io_read_at (core->io, at, bufop, sizeof (bufop));
-			ret = rz_analysis_op (core->analysis, &aop, at, bufop, sizeof(bufop), RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM);
+			ret = rz_analysis_op (core->analysis, &aop, at, bufop, sizeof(bufop), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
 			if (ret) {
 				bool match = false;
 				if (type == 'm') {
@@ -2879,7 +2879,7 @@ static void __core_cmd_search_asm_infinite (RzCore *core, const char *arg) {
 		}
 		(void) rz_io_read_at (core->io, map_begin, buf, map_size);
 		for (at = map->itv.addr; at + 24< map_end; at += 1) {
-			rz_analysis_op (core->analysis, &analop, at, buf + (at - map_begin), 24, RZ_ANAL_OP_MASK_HINT);
+			rz_analysis_op (core->analysis, &analop, at, buf + (at - map_begin), 24, RZ_ANALYSIS_OP_MASK_HINT);
 			if (at == analop.jump) {
 				rz_cons_printf ("0x%08"PFMT64x"\n", at);
 			}

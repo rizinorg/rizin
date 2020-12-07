@@ -35,7 +35,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 	op->id = getid (buf[0]);
 	switch (buf[0]) {
 	case '[':
-		op->type = RZ_ANAL_OP_TYPE_CJMP;
+		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->fail = addr+1;
 		buf = rz_mem_dup ((void *)buf, len);
 		if (!buf) {
@@ -62,7 +62,7 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 					}
 				}
 				if (*p == 0x00 || *p == 0xff) {
-					op->type = RZ_ANAL_OP_TYPE_ILL;
+					op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 					goto beach;
 				}
 				if (i == len - 1 && analysis->read_at) {
@@ -83,45 +83,45 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 beach:
 		free ((ut8 *)buf);
 		break;
-	case ']': op->type = RZ_ANAL_OP_TYPE_UJMP;
+	case ']': op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 		// XXX This is wrong esil
 		rz_strbuf_set (&op->esil, "brk,--=,brk,[1],pc,=");
 		break;
 	case '>':
-		op->type = RZ_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		op->size = countChar (buf, len, '>');
 		rz_strbuf_setf (&op->esil, "%d,ptr,+=", op->size);
 		break;
 	case '<':
-		op->type = RZ_ANAL_OP_TYPE_SUB;
+		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		op->size = countChar (buf, len, '<');
 		rz_strbuf_setf (&op->esil, "%d,ptr,-=", op->size);
 		break;
 	case '+':
 		op->size = countChar (buf, len, '+');
-		op->type = RZ_ANAL_OP_TYPE_ADD;
+		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 		rz_strbuf_setf (&op->esil, "%d,ptr,+=[1]", op->size);
 		break;
 	case '-':
-		op->type = RZ_ANAL_OP_TYPE_SUB;
+		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 		op->size = countChar (buf, len, '-');
 		rz_strbuf_setf (&op->esil, "%d,ptr,-=[1]", op->size);
 		break;
 	case '.':
 		// print element in stack to screen
-		op->type = RZ_ANAL_OP_TYPE_STORE;
+		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		rz_strbuf_set (&op->esil, "ptr,[1],scr,=[1],scr,++=");
 		break;
 	case ',':
-		op->type = RZ_ANAL_OP_TYPE_LOAD;
+		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		rz_strbuf_set (&op->esil, "kbd,[1],ptr,=[1],kbd,++=");
 		break;
 	case 0x00:
 	case 0xff:
-		op->type = RZ_ANAL_OP_TYPE_TRAP;
+		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
 		break;
 	default:
-		op->type = RZ_ANAL_OP_TYPE_NOP;
+		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		rz_strbuf_set (&op->esil, ",");
 		break;
 	}

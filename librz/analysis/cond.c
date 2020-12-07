@@ -4,22 +4,22 @@
 
 RZ_API const char *rz_analysis_cond_tostring(int cc) {
 	switch (cc) {
-	case RZ_ANAL_COND_EQ: return "eq";
-	case RZ_ANAL_COND_NV: return "nv";
-	case RZ_ANAL_COND_NE: return "ne";
-	case RZ_ANAL_COND_HS: return "hs";
-	case RZ_ANAL_COND_LO: return "lo";
-	case RZ_ANAL_COND_MI: return "mi";
-	case RZ_ANAL_COND_PL: return "pl";
-	case RZ_ANAL_COND_VS: return "vs";
-	case RZ_ANAL_COND_VC: return "vc";
-	case RZ_ANAL_COND_HI: return "hi";
-	case RZ_ANAL_COND_LS: return "ls";
-	case RZ_ANAL_COND_GE: return "ge";
-	case RZ_ANAL_COND_LT: return "lt";
-	case RZ_ANAL_COND_GT: return "gt";
-	case RZ_ANAL_COND_LE: return "le";
-	case RZ_ANAL_COND_AL: return "al";
+	case RZ_ANALYSIS_COND_EQ: return "eq";
+	case RZ_ANALYSIS_COND_NV: return "nv";
+	case RZ_ANALYSIS_COND_NE: return "ne";
+	case RZ_ANALYSIS_COND_HS: return "hs";
+	case RZ_ANALYSIS_COND_LO: return "lo";
+	case RZ_ANALYSIS_COND_MI: return "mi";
+	case RZ_ANALYSIS_COND_PL: return "pl";
+	case RZ_ANALYSIS_COND_VS: return "vs";
+	case RZ_ANALYSIS_COND_VC: return "vc";
+	case RZ_ANALYSIS_COND_HI: return "hi";
+	case RZ_ANALYSIS_COND_LS: return "ls";
+	case RZ_ANALYSIS_COND_GE: return "ge";
+	case RZ_ANALYSIS_COND_LT: return "lt";
+	case RZ_ANALYSIS_COND_GT: return "gt";
+	case RZ_ANALYSIS_COND_LE: return "le";
+	case RZ_ANALYSIS_COND_AL: return "al";
 	}
 	return "??";
 }
@@ -74,21 +74,21 @@ RZ_API int rz_analysis_cond_eval(RzAnalysis *analysis, RzAnalysisCond *cond) {
 	if (cond->arg[1]) {
 		st64 arg1 = (st64) rz_analysis_value_to_ut64 (analysis, cond->arg[1]);
 		switch (cond->type) {
-		case RZ_ANAL_COND_EQ: return arg0 == arg1;
-		case RZ_ANAL_COND_NE: return arg0 != arg1;
-		case RZ_ANAL_COND_GE: return arg0 >= arg1;
-		case RZ_ANAL_COND_GT: return arg0 > arg1;
-		case RZ_ANAL_COND_LE: return arg0 <= arg1;
-		case RZ_ANAL_COND_LT: return arg0 < arg1;
+		case RZ_ANALYSIS_COND_EQ: return arg0 == arg1;
+		case RZ_ANALYSIS_COND_NE: return arg0 != arg1;
+		case RZ_ANALYSIS_COND_GE: return arg0 >= arg1;
+		case RZ_ANALYSIS_COND_GT: return arg0 > arg1;
+		case RZ_ANALYSIS_COND_LE: return arg0 <= arg1;
+		case RZ_ANALYSIS_COND_LT: return arg0 < arg1;
 		}
 	} else {
 		switch (cond->type) {
-		case RZ_ANAL_COND_EQ: return !arg0;
-		case RZ_ANAL_COND_NE: return arg0;
-		case RZ_ANAL_COND_GT: return arg0>0;
-		case RZ_ANAL_COND_GE: return arg0>=0;
-		case RZ_ANAL_COND_LT: return arg0<0;
-		case RZ_ANAL_COND_LE: return arg0<=0;
+		case RZ_ANALYSIS_COND_EQ: return !arg0;
+		case RZ_ANALYSIS_COND_NE: return arg0;
+		case RZ_ANALYSIS_COND_GT: return arg0>0;
+		case RZ_ANALYSIS_COND_GE: return arg0>=0;
+		case RZ_ANALYSIS_COND_LT: return arg0<0;
+		case RZ_ANALYSIS_COND_LE: return arg0<=0;
 		}
 	}
 	return false;
@@ -105,7 +105,7 @@ RZ_API char *rz_analysis_cond_to_string(RzAnalysisCond *cond) {
 	val0 = rz_analysis_value_to_string (cond->arg[0]);
 	val1 = rz_analysis_value_to_string (cond->arg[1]);
 	if (val0) {
-		if (RZ_ANAL_COND_SINGLE (cond)) {
+		if (RZ_ANALYSIS_COND_SINGLE (cond)) {
 			int val0len = strlen (val0) + 10;
 			if ((out = malloc (val0len))) {
 				snprintf (out, val0len, "%s%s", cnd, val0);

@@ -1861,84 +1861,84 @@ RZ_API void rz_print_2bpp_tiles(RzPrint *p, ut8 *buf, ut32 tiles) {
 	}
 }
 
-// probably move somewhere else. RzPrint doesnt needs to know about the RZ_ANAL_ enums
+// probably move somewhere else. RzPrint doesnt needs to know about the RZ_ANALYSIS_ enums
 RZ_API const char* rz_print_color_op_type(RzPrint *p, ut32 anal_type) {
 	RzConsPrintablePalette *pal = &p->cons->context->pal;
-	switch (anal_type & RZ_ANAL_OP_TYPE_MASK) {
-	case RZ_ANAL_OP_TYPE_NOP:
+	switch (anal_type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	case RZ_ANALYSIS_OP_TYPE_NOP:
 		return pal->nop;
-	case RZ_ANAL_OP_TYPE_ADD:
-	case RZ_ANAL_OP_TYPE_SUB:
-	case RZ_ANAL_OP_TYPE_MUL:
-	case RZ_ANAL_OP_TYPE_DIV:
-	case RZ_ANAL_OP_TYPE_MOD:
-	case RZ_ANAL_OP_TYPE_LENGTH:
+	case RZ_ANALYSIS_OP_TYPE_ADD:
+	case RZ_ANALYSIS_OP_TYPE_SUB:
+	case RZ_ANALYSIS_OP_TYPE_MUL:
+	case RZ_ANALYSIS_OP_TYPE_DIV:
+	case RZ_ANALYSIS_OP_TYPE_MOD:
+	case RZ_ANALYSIS_OP_TYPE_LENGTH:
 		return pal->math;
-	case RZ_ANAL_OP_TYPE_AND:
-	case RZ_ANAL_OP_TYPE_OR:
-	case RZ_ANAL_OP_TYPE_XOR:
-	case RZ_ANAL_OP_TYPE_NOT:
-	case RZ_ANAL_OP_TYPE_SHL:
-	case RZ_ANAL_OP_TYPE_SAL:
-	case RZ_ANAL_OP_TYPE_SAR:
-	case RZ_ANAL_OP_TYPE_SHR:
-	case RZ_ANAL_OP_TYPE_ROL:
-	case RZ_ANAL_OP_TYPE_ROR:
-	case RZ_ANAL_OP_TYPE_CPL:
+	case RZ_ANALYSIS_OP_TYPE_AND:
+	case RZ_ANALYSIS_OP_TYPE_OR:
+	case RZ_ANALYSIS_OP_TYPE_XOR:
+	case RZ_ANALYSIS_OP_TYPE_NOT:
+	case RZ_ANALYSIS_OP_TYPE_SHL:
+	case RZ_ANALYSIS_OP_TYPE_SAL:
+	case RZ_ANALYSIS_OP_TYPE_SAR:
+	case RZ_ANALYSIS_OP_TYPE_SHR:
+	case RZ_ANALYSIS_OP_TYPE_ROL:
+	case RZ_ANALYSIS_OP_TYPE_ROR:
+	case RZ_ANALYSIS_OP_TYPE_CPL:
 		return pal->bin;
-	case RZ_ANAL_OP_TYPE_IO:
+	case RZ_ANALYSIS_OP_TYPE_IO:
 		return pal->swi;
-	case RZ_ANAL_OP_TYPE_JMP:
-	case RZ_ANAL_OP_TYPE_UJMP:
+	case RZ_ANALYSIS_OP_TYPE_JMP:
+	case RZ_ANALYSIS_OP_TYPE_UJMP:
 		return pal->ujmp;
-	case RZ_ANAL_OP_TYPE_IJMP:
-	case RZ_ANAL_OP_TYPE_RJMP:
-	case RZ_ANAL_OP_TYPE_IRJMP:
-	case RZ_ANAL_OP_TYPE_MJMP:
+	case RZ_ANALYSIS_OP_TYPE_IJMP:
+	case RZ_ANALYSIS_OP_TYPE_RJMP:
+	case RZ_ANALYSIS_OP_TYPE_IRJMP:
+	case RZ_ANALYSIS_OP_TYPE_MJMP:
 		return pal->jmp;
-	case RZ_ANAL_OP_TYPE_CJMP:
-	case RZ_ANAL_OP_TYPE_UCJMP:
-	case RZ_ANAL_OP_TYPE_SWITCH:
+	case RZ_ANALYSIS_OP_TYPE_CJMP:
+	case RZ_ANALYSIS_OP_TYPE_UCJMP:
+	case RZ_ANALYSIS_OP_TYPE_SWITCH:
 		return pal->cjmp;
-	case RZ_ANAL_OP_TYPE_CMP:
-	case RZ_ANAL_OP_TYPE_ACMP:
+	case RZ_ANALYSIS_OP_TYPE_CMP:
+	case RZ_ANALYSIS_OP_TYPE_ACMP:
 		return pal->cmp;
-	case RZ_ANAL_OP_TYPE_UCALL:
+	case RZ_ANALYSIS_OP_TYPE_UCALL:
 		return pal->ucall;
-	case RZ_ANAL_OP_TYPE_ICALL:
-	case RZ_ANAL_OP_TYPE_RCALL:
-	case RZ_ANAL_OP_TYPE_IRCALL:
-	case RZ_ANAL_OP_TYPE_UCCALL:
-	case RZ_ANAL_OP_TYPE_CALL:
-	case RZ_ANAL_OP_TYPE_CCALL:
+	case RZ_ANALYSIS_OP_TYPE_ICALL:
+	case RZ_ANALYSIS_OP_TYPE_RCALL:
+	case RZ_ANALYSIS_OP_TYPE_IRCALL:
+	case RZ_ANALYSIS_OP_TYPE_UCCALL:
+	case RZ_ANALYSIS_OP_TYPE_CALL:
+	case RZ_ANALYSIS_OP_TYPE_CCALL:
 		return pal->call;
-	case RZ_ANAL_OP_TYPE_NEW:
-	case RZ_ANAL_OP_TYPE_SWI:
+	case RZ_ANALYSIS_OP_TYPE_NEW:
+	case RZ_ANALYSIS_OP_TYPE_SWI:
 		return pal->swi;
-	case RZ_ANAL_OP_TYPE_ILL:
-	case RZ_ANAL_OP_TYPE_TRAP:
+	case RZ_ANALYSIS_OP_TYPE_ILL:
+	case RZ_ANALYSIS_OP_TYPE_TRAP:
 		return pal->trap;
-	case RZ_ANAL_OP_TYPE_CRET:
-	case RZ_ANAL_OP_TYPE_RET:
+	case RZ_ANALYSIS_OP_TYPE_CRET:
+	case RZ_ANALYSIS_OP_TYPE_RET:
 		return pal->ret;
-	case RZ_ANAL_OP_TYPE_CAST:
-	case RZ_ANAL_OP_TYPE_MOV:
-	case RZ_ANAL_OP_TYPE_LEA:
-	case RZ_ANAL_OP_TYPE_CMOV: // TODO: add cmov cathegory?
+	case RZ_ANALYSIS_OP_TYPE_CAST:
+	case RZ_ANALYSIS_OP_TYPE_MOV:
+	case RZ_ANALYSIS_OP_TYPE_LEA:
+	case RZ_ANALYSIS_OP_TYPE_CMOV: // TODO: add cmov cathegory?
 		return pal->mov;
-	case RZ_ANAL_OP_TYPE_PUSH:
-	case RZ_ANAL_OP_TYPE_UPUSH:
-	case RZ_ANAL_OP_TYPE_RPUSH:
-	case RZ_ANAL_OP_TYPE_LOAD:
+	case RZ_ANALYSIS_OP_TYPE_PUSH:
+	case RZ_ANALYSIS_OP_TYPE_UPUSH:
+	case RZ_ANALYSIS_OP_TYPE_RPUSH:
+	case RZ_ANALYSIS_OP_TYPE_LOAD:
 		return pal->push;
-	case RZ_ANAL_OP_TYPE_POP:
-	case RZ_ANAL_OP_TYPE_STORE:
+	case RZ_ANALYSIS_OP_TYPE_POP:
+	case RZ_ANALYSIS_OP_TYPE_STORE:
 		return pal->pop;
-	case RZ_ANAL_OP_TYPE_CRYPTO:
+	case RZ_ANALYSIS_OP_TYPE_CRYPTO:
 		return pal->crypto;
-	case RZ_ANAL_OP_TYPE_NULL:
+	case RZ_ANALYSIS_OP_TYPE_NULL:
 		return pal->other;
-	case RZ_ANAL_OP_TYPE_UNK:
+	case RZ_ANALYSIS_OP_TYPE_UNK:
 	default:
 		return pal->invalid;
 	}

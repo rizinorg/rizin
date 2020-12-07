@@ -2221,152 +2221,152 @@ static int cmd_print_pxA(RzCore *core, int len, const char *input) {
 		bgcolor = Color_BGBLACK;
 		fgcolor = Color_WHITE;
 		text = NULL;
-		if (rz_analysis_op (core->analysis, &op, core->offset + i, data + i, len - i, RZ_ANAL_OP_MASK_BASIC) <= 0) {
+		if (rz_analysis_op (core->analysis, &op, core->offset + i, data + i, len - i, RZ_ANALYSIS_OP_MASK_BASIC) <= 0) {
 			op.type = 0;
 			bgcolor = Color_BGRED;
 			op.size = 1;
 		}
 		switch (op.type) {
-		case RZ_ANAL_OP_TYPE_LEA:
-		case RZ_ANAL_OP_TYPE_MOV:
-		case RZ_ANAL_OP_TYPE_CAST:
-		case RZ_ANAL_OP_TYPE_LENGTH:
-		case RZ_ANAL_OP_TYPE_CMOV:
+		case RZ_ANALYSIS_OP_TYPE_LEA:
+		case RZ_ANALYSIS_OP_TYPE_MOV:
+		case RZ_ANALYSIS_OP_TYPE_CAST:
+		case RZ_ANALYSIS_OP_TYPE_LENGTH:
+		case RZ_ANALYSIS_OP_TYPE_CMOV:
 			text = "mv";
 			bgcolor = pal->mov;
 			fgcolor = Color_YELLOW;
 			break;
-		case RZ_ANAL_OP_TYPE_PUSH:
-		case RZ_ANAL_OP_TYPE_UPUSH:
-		case RZ_ANAL_OP_TYPE_RPUSH:
+		case RZ_ANALYSIS_OP_TYPE_PUSH:
+		case RZ_ANALYSIS_OP_TYPE_UPUSH:
+		case RZ_ANALYSIS_OP_TYPE_RPUSH:
 			bgcolor = pal->push;
 			fgcolor = Color_WHITE;
 			text = "->";
 			break;
-		case RZ_ANAL_OP_TYPE_IO:
+		case RZ_ANALYSIS_OP_TYPE_IO:
 			bgcolor = pal->swi;
 			fgcolor = Color_WHITE;
 			text = "io";
 			break;
-		case RZ_ANAL_OP_TYPE_TRAP:
-		case RZ_ANAL_OP_TYPE_SWI:
-		case RZ_ANAL_OP_TYPE_NEW:
+		case RZ_ANALYSIS_OP_TYPE_TRAP:
+		case RZ_ANALYSIS_OP_TYPE_SWI:
+		case RZ_ANALYSIS_OP_TYPE_NEW:
 			// bgcolor = Color_BGRED;
 			bgcolor = pal->trap; // rz_cons_swap_ground (pal->trap);
 			fgcolor = Color_WHITE;
 			text = "$$";
 			break;
-		case RZ_ANAL_OP_TYPE_POP:
+		case RZ_ANALYSIS_OP_TYPE_POP:
 			text = "<-";
 			bgcolor = rz_cons_swap_ground (pal->pop);
 			bgcolor_in_heap = true;
 			fgcolor = Color_WHITE;
 			break;
-		case RZ_ANAL_OP_TYPE_NOP:
+		case RZ_ANALYSIS_OP_TYPE_NOP:
 			fgcolor = Color_WHITE;
 			bgcolor = rz_cons_swap_ground (pal->nop);
 			bgcolor_in_heap = true;
 			text = "..";
 			break;
-		case RZ_ANAL_OP_TYPE_MUL:
+		case RZ_ANALYSIS_OP_TYPE_MUL:
 			fgcolor = Color_BLACK;
 			bgcolor = rz_cons_swap_ground (pal->math);
 			bgcolor_in_heap = true;
 			text = "_*";
 			break;
-		case RZ_ANAL_OP_TYPE_DIV:
+		case RZ_ANALYSIS_OP_TYPE_DIV:
 			bgcolor = rz_cons_swap_ground (pal->math);
 			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "_/";
 			break;
-		case RZ_ANAL_OP_TYPE_AND:
+		case RZ_ANALYSIS_OP_TYPE_AND:
 			bgcolor = rz_cons_swap_ground (pal->bin);
 			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "_&";
 			break;
-		case RZ_ANAL_OP_TYPE_XOR:
+		case RZ_ANALYSIS_OP_TYPE_XOR:
 			bgcolor = rz_cons_swap_ground (pal->bin);
 			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "_^";
 			break;
-		case RZ_ANAL_OP_TYPE_OR:
+		case RZ_ANALYSIS_OP_TYPE_OR:
 			bgcolor = rz_cons_swap_ground (pal->bin);
 			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "_|";
 			break;
-		case RZ_ANAL_OP_TYPE_SHR:
+		case RZ_ANALYSIS_OP_TYPE_SHR:
 			bgcolor = rz_cons_swap_ground (pal->bin);
 			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = ">>";
 			break;
-		case RZ_ANAL_OP_TYPE_SHL:
+		case RZ_ANALYSIS_OP_TYPE_SHL:
 			bgcolor = rz_cons_swap_ground (pal->bin);
 			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "<<";
 			break;
-		case RZ_ANAL_OP_TYPE_SUB:
+		case RZ_ANALYSIS_OP_TYPE_SUB:
 			bgcolor = rz_cons_swap_ground (pal->math);
 			bgcolor_in_heap = true;
 			fgcolor = Color_WHITE;
 			text = "--";
 			break;
-		case RZ_ANAL_OP_TYPE_ADD:
+		case RZ_ANALYSIS_OP_TYPE_ADD:
 			bgcolor = rz_cons_swap_ground (pal->math);
 			bgcolor_in_heap = true;
 			fgcolor = Color_WHITE;
 			text = "++";
 			break;
-		case RZ_ANAL_OP_TYPE_JMP:
-		case RZ_ANAL_OP_TYPE_UJMP:
-		case RZ_ANAL_OP_TYPE_IJMP:
-		case RZ_ANAL_OP_TYPE_RJMP:
-		case RZ_ANAL_OP_TYPE_IRJMP:
-		case RZ_ANAL_OP_TYPE_MJMP:
+		case RZ_ANALYSIS_OP_TYPE_JMP:
+		case RZ_ANALYSIS_OP_TYPE_UJMP:
+		case RZ_ANALYSIS_OP_TYPE_IJMP:
+		case RZ_ANALYSIS_OP_TYPE_RJMP:
+		case RZ_ANALYSIS_OP_TYPE_IRJMP:
+		case RZ_ANALYSIS_OP_TYPE_MJMP:
 			bgcolor = rz_cons_swap_ground (pal->jmp);
 			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "_J";
 			break;
-		case RZ_ANAL_OP_TYPE_CJMP:
-		case RZ_ANAL_OP_TYPE_UCJMP:
+		case RZ_ANALYSIS_OP_TYPE_CJMP:
+		case RZ_ANALYSIS_OP_TYPE_UCJMP:
 			bgcolor = rz_cons_swap_ground (pal->cjmp);
 			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "cJ";
 			break;
-		case RZ_ANAL_OP_TYPE_CALL:
-		case RZ_ANAL_OP_TYPE_UCALL:
-		case RZ_ANAL_OP_TYPE_ICALL:
-		case RZ_ANAL_OP_TYPE_RCALL:
-		case RZ_ANAL_OP_TYPE_IRCALL:
-		case RZ_ANAL_OP_TYPE_UCCALL:
+		case RZ_ANALYSIS_OP_TYPE_CALL:
+		case RZ_ANALYSIS_OP_TYPE_UCALL:
+		case RZ_ANALYSIS_OP_TYPE_ICALL:
+		case RZ_ANALYSIS_OP_TYPE_RCALL:
+		case RZ_ANALYSIS_OP_TYPE_IRCALL:
+		case RZ_ANALYSIS_OP_TYPE_UCCALL:
 			bgcolor = rz_cons_swap_ground (pal->call);
 			bgcolor_in_heap = true;
 			fgcolor = Color_WHITE;
 			text = "_C";
 			break;
-		case RZ_ANAL_OP_TYPE_ACMP:
-		case RZ_ANAL_OP_TYPE_CMP:
+		case RZ_ANALYSIS_OP_TYPE_ACMP:
+		case RZ_ANALYSIS_OP_TYPE_CMP:
 			bgcolor = rz_cons_swap_ground (pal->cmp);
 			bgcolor_in_heap = true;
 			fgcolor = Color_BLACK;
 			text = "==";
 			break;
-		case RZ_ANAL_OP_TYPE_RET:
+		case RZ_ANALYSIS_OP_TYPE_RET:
 			bgcolor = rz_cons_swap_ground (pal->ret);
 			bgcolor_in_heap = true;
 			fgcolor = Color_WHITE;
 			text = "_R";
 			break;
 		case -1:
-		case RZ_ANAL_OP_TYPE_ILL:
-		case RZ_ANAL_OP_TYPE_UNK:
+		case RZ_ANALYSIS_OP_TYPE_ILL:
+		case RZ_ANALYSIS_OP_TYPE_UNK:
 			bgcolor = rz_cons_swap_ground (pal->invalid);
 			bgcolor_in_heap = true;
 			fgcolor = Color_WHITE;
@@ -2543,7 +2543,7 @@ static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *
 			line = s = rz_core_cmd_strf (core, "pD %"PFMT64u" @ 0x%08"PFMT64x, bb->size, bb->addr);
 		}
 	} else if (!strncmp (input, "dsf", 3) || !strncmp (input, "dsr", 3)) {
-		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, RZ_ANAL_FCN_TYPE_NULL);
+		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
 		if (fcn) {
 			line = s = rz_core_cmd_str (core, "pdr");
 		} else {
@@ -3317,31 +3317,31 @@ cleanup:
 static bool checkAnalType(RzAnalysisOp *op, int t) {
 	if (t == 'c') {
 		switch (op->type) {
-		case RZ_ANAL_OP_TYPE_RCALL:
-		case RZ_ANAL_OP_TYPE_UCALL:
-		case RZ_ANAL_OP_TYPE_CALL:
+		case RZ_ANALYSIS_OP_TYPE_RCALL:
+		case RZ_ANALYSIS_OP_TYPE_UCALL:
+		case RZ_ANALYSIS_OP_TYPE_CALL:
 			return true;
 		}
 	} else if (t == 's') {
-		if (op->family == RZ_ANAL_OP_FAMILY_PRIV) {
+		if (op->family == RZ_ANALYSIS_OP_FAMILY_PRIV) {
 			return true;
 		}
 		switch (op->type) {
-		case RZ_ANAL_OP_TYPE_SWI:
+		case RZ_ANALYSIS_OP_TYPE_SWI:
 			return true;
 		}
 	} else if (t == 'i') {
 		switch (op->type) {
-		case RZ_ANAL_OP_TYPE_TRAP:
-		case RZ_ANAL_OP_TYPE_ILL:
+		case RZ_ANALYSIS_OP_TYPE_TRAP:
+		case RZ_ANALYSIS_OP_TYPE_ILL:
 			return true;
 		}
 	} else if (t == 'j') {
 		switch (op->type) {
-		case RZ_ANAL_OP_TYPE_JMP:
-		//case RZ_ANAL_OP_TYPE_RJMP:
-		//case RZ_ANAL_OP_TYPE_UJMP:
-		case RZ_ANAL_OP_TYPE_CJMP:
+		case RZ_ANALYSIS_OP_TYPE_JMP:
+		//case RZ_ANALYSIS_OP_TYPE_RJMP:
+		//case RZ_ANALYSIS_OP_TYPE_UJMP:
+		case RZ_ANALYSIS_OP_TYPE_CJMP:
 			return true;
 		default:
 			break;
@@ -3401,7 +3401,7 @@ static ut8 *analBars(RzCore *core, size_t type, size_t nblocks, size_t blocksize
 				}
 				continue;
 			}
-			RzAnalysisOp *op = rz_core_analysis_op (core, off + j, RZ_ANAL_OP_MASK_BASIC);
+			RzAnalysisOp *op = rz_core_analysis_op (core, off + j, RZ_ANALYSIS_OP_MASK_BASIC);
 			if (op) {
 				if (op->size < 1) {
 					// do nothing
@@ -4156,7 +4156,7 @@ static void disasm_until_ret(RzCore *core, ut64 addr, char type_print, const cha
 		limit = rz_num_math (core->num, arg + 1);
 	}
 	for (i = 0; i < limit; i++) {
-		RzAnalysisOp *op = rz_core_analysis_op (core, addr, RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_DISASM);
+		RzAnalysisOp *op = rz_core_analysis_op (core, addr, RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_DISASM);
 		if (op) {
 			char *mnem = op->mnemonic;
 			char *m = malloc ((strlen (mnem) * 2) + 32);
@@ -4174,13 +4174,13 @@ static void disasm_until_ret(RzCore *core, ut64 addr, char type_print, const cha
 				}
 			}
 			switch (op->type & 0xfffff) {
-			case RZ_ANAL_OP_TYPE_RET:
-			case RZ_ANAL_OP_TYPE_UJMP:
+			case RZ_ANALYSIS_OP_TYPE_RET:
+			case RZ_ANALYSIS_OP_TYPE_UJMP:
 				goto beach;
 				break;
 
 			}
-			if (op->type == RZ_ANAL_OP_TYPE_JMP) {
+			if (op->type == RZ_ANALYSIS_OP_TYPE_JMP) {
 				addr = op->jump;
 			} else {
 				addr += op->size;
@@ -4235,7 +4235,7 @@ static void disasm_recursive(RzCore *core, ut64 addr, int count, char type_print
 	while (count-- > 0) {
 		rz_io_read_at (core->io, addr, buf, sizeof (buf));
 		rz_analysis_op_fini (&aop);
-		ret = rz_analysis_op (core->analysis, &aop, addr, buf, sizeof (buf), RZ_ANAL_OP_MASK_BASIC);
+		ret = rz_analysis_op (core->analysis, &aop, addr, buf, sizeof (buf), RZ_ANALYSIS_OP_MASK_BASIC);
 		if (ret < 0 || aop.size < 1) {
 			addr++;
 			continue;
@@ -4247,12 +4247,12 @@ static void disasm_recursive(RzCore *core, ut64 addr, int count, char type_print
 			rz_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x, addr);
 		}
 		switch (aop.type) {
-		case RZ_ANAL_OP_TYPE_JMP:
+		case RZ_ANALYSIS_OP_TYPE_JMP:
 			addr = aop.jump;
 			continue;
-		case RZ_ANAL_OP_TYPE_UCJMP:
+		case RZ_ANALYSIS_OP_TYPE_UCJMP:
 			break;
-		case RZ_ANAL_OP_TYPE_RET:
+		case RZ_ANALYSIS_OP_TYPE_RET:
 			count = 0;	// stop disassembling when hitting RET
 			break;
 		default:
@@ -4427,7 +4427,7 @@ static void rz_core_disasm_table(RzCore * core, int l, const char *input) {
 	}
 	rz_table_set_columnsf (t, "snssssss", "name", "addr", "bytes", "disasm", "comment", "esil", "refs", "xrefs");
 	const int minopsz = 1;
-	const int options = RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_HINT | RZ_ANAL_OP_MASK_DISASM | RZ_ANAL_OP_MASK_ESIL;
+	const int options = RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT | RZ_ANALYSIS_OP_MASK_DISASM | RZ_ANALYSIS_OP_MASK_ESIL;
 	ut64 ea = core->offset;
 	for (i = 0; i < l; i++) {
 		RzAnalysisOp *op = rz_core_analysis_op (core, ea, options);
@@ -4648,7 +4648,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 
 	if (input[0] && input[0] != 'z' && input[1] == 'f' && input[2]!='?') {
 		RzAnalysisFunction *f = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
-		// RZ_ANAL_FCN_TYPE_FCN|RZ_ANAL_FCN_TYPE_SYM);
+		// RZ_ANALYSIS_FCN_TYPE_FCN|RZ_ANALYSIS_FCN_TYPE_SYM);
 		if (f) {
 			len = rz_analysis_function_linear_size (f);
 			if (len > core->blocksize) {
@@ -4772,7 +4772,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					while (printed < bufsz) {
 						aop.size = 0;
 						if (rz_analysis_op (core->analysis, &aop, core->offset,
-							    (const ut8 *)acode->bytes + printed, bufsz - printed, RZ_ANAL_OP_MASK_ESIL) > 0) {
+							    (const ut8 *)acode->bytes + printed, bufsz - printed, RZ_ANALYSIS_OP_MASK_ESIL) > 0) {
 							const char *str = RZ_STRBUF_SAFEGET (&aop.esil);
 							rz_cons_println (str);
 						} else {
@@ -4809,7 +4809,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 						while (printed < bufsz) {
 							aop.size = 0;
 							if (rz_analysis_op (core->analysis, &aop, core->offset,
-								    (const ut8 *)hex_arg + printed, bufsz - printed, RZ_ANAL_OP_MASK_ESIL) > 0) {
+								    (const ut8 *)hex_arg + printed, bufsz - printed, RZ_ANALYSIS_OP_MASK_ESIL) > 0) {
 								const char *str = RZ_STRBUF_SAFEGET (&aop.esil);
 								rz_cons_println (str);
 							} else {
@@ -4936,7 +4936,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		case 'f': // "pIf"
 		{
 			const RzAnalysisFunction *f = rz_analysis_get_fcn_in (core->analysis, core->offset,
-				RZ_ANAL_FCN_TYPE_FCN | RZ_ANAL_FCN_TYPE_SYM);
+				RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
 			if (f) {
 				rz_core_print_disasm_instructions (core,
 					rz_analysis_function_linear_size ((RzAnalysisFunction *) f), 0);
@@ -5011,7 +5011,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					}
 					// get function in current offset
 					RzAnalysisFunction *f = rz_analysis_get_fcn_in (core->analysis, core->offset,
-						RZ_ANAL_FCN_TYPE_FCN | RZ_ANAL_FCN_TYPE_SYM);
+						RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
 
 					// validate that a function was found in the given address
 					if (!f) {
@@ -5049,10 +5049,10 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 						rz_list_foreach (refs, iter, refi) {
 							if (pj) {
 								RzAnalysisFunction *f = rz_analysis_get_fcn_in (core->analysis, refi->addr,
-									RZ_ANAL_FCN_TYPE_FCN | RZ_ANAL_FCN_TYPE_SYM);
+									RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
 								char *dst = rz_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
 								char *dst2 = NULL;
-								RzAnalysisOp *op = rz_core_analysis_op (core, refi->addr, RZ_ANAL_OP_MASK_BASIC);
+								RzAnalysisOp *op = rz_core_analysis_op (core, refi->addr, RZ_ANALYSIS_OP_MASK_BASIC);
 								RzBinReloc *rel = rz_core_getreloc (core, refi->addr, op->size);
 								if (rel) {
 									if (rel && rel->import && rel->import->name) {
@@ -5087,7 +5087,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					}
 				} else if (l != 0) {
 					RzAnalysisFunction *f = rz_analysis_get_fcn_in (core->analysis, core->offset,
-						RZ_ANAL_FCN_TYPE_FCN | RZ_ANAL_FCN_TYPE_SYM);
+						RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
 					if (f) {
 						ut32 bsz = core->blocksize;
 						// int fsz = rz_analysis_function_realsize (f);
@@ -5104,7 +5104,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		case 'r': // "pir"
 		{
 			RzAnalysisFunction *f = rz_analysis_get_fcn_in (core->analysis, core->offset,
-				RZ_ANAL_FCN_TYPE_FCN | RZ_ANAL_FCN_TYPE_SYM);
+				RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
 			if (f) {
 				func_walk_blocks (core, f, input[2], 'I', input[2] == '.');
 			} else {
@@ -5263,7 +5263,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			processed_cmd = true;
 			{
 				RzAnalysisFunction *f = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
-				// RZ_ANAL_FCN_TYPE_FCN|RZ_ANAL_FCN_TYPE_SYM);
+				// RZ_ANALYSIS_FCN_TYPE_FCN|RZ_ANALYSIS_FCN_TYPE_SYM);
 				if (f) {
 					func_walk_blocks (core, f, input[2], 'D', input[2] == '.');
 				} else {
@@ -5323,7 +5323,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				ut64 oseek = core->offset;
 				int oblock = core->blocksize;
 				RzAnalysisFunction *f = rz_analysis_get_fcn_in (core->analysis, core->offset,
-					RZ_ANAL_FCN_TYPE_FCN | RZ_ANAL_FCN_TYPE_SYM);
+					RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
 				if (f) {
 					ut32 rs = rz_analysis_function_realsize (f);
 					ut32 fs = rz_analysis_function_linear_size (f);
@@ -5336,7 +5336,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 				processed_cmd = true;
 			} else {
 				ut32 bsz = core->blocksize;
-				RzAnalysisFunction *f = rz_analysis_get_fcn_in (core->analysis, core->offset, RZ_ANAL_FCN_TYPE_ROOT);
+				RzAnalysisFunction *f = rz_analysis_get_fcn_in (core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_ROOT);
 				if (!f) {
 					f = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 				}

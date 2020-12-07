@@ -7,7 +7,7 @@
 
 #define IFDBG if (esil && esil->verbose > 1)
 #define IFVBS if (esil && esil->verbose > 0)
-#define FLG(x) RZ_ANAL_ESIL_FLAG_##x
+#define FLG(x) RZ_ANALYSIS_ESIL_FLAG_##x
 #define cpuflag(x, y)\
 if (esil) {\
 	if (y) { \
@@ -72,7 +72,7 @@ static bool popRN(RzAnalysisEsil *esil, ut64 *n) {
 	return false;
 }
 
-/* RZ_ANAL_ESIL API */
+/* RZ_ANALYSIS_ESIL API */
 
 static void esil_ops_free(HtPPKv *kv) {
 	free (kv->key);
@@ -94,7 +94,7 @@ RZ_API RzAnalysisEsil *rz_analysis_esil_new(int stacksize, int iotrap, unsigned 
 	}
 	esil->verbose = false;
 	esil->stacksize = stacksize;
-	esil->parse_goto_count = RZ_ANAL_ESIL_GOTO_LIMIT;
+	esil->parse_goto_count = RZ_ANALYSIS_ESIL_GOTO_LIMIT;
 	esil->ops = ht_pp_new (NULL, esil_ops_free, NULL);
 	esil->iotrap = iotrap;
 	rz_analysis_esil_sources_init (esil);
@@ -193,7 +193,7 @@ static ut8 esil_internal_sizeof_reg(RzAnalysisEsil *esil, const char *r) {
 }
 
 static bool alignCheck(RzAnalysisEsil *esil, ut64 addr) {
-	int dataAlign = rz_analysis_archinfo (esil->analysis, RZ_ANAL_ARCHINFO_DATA_ALIGN);
+	int dataAlign = rz_analysis_archinfo (esil->analysis, RZ_ANALYSIS_ARCHINFO_DATA_ALIGN);
 	return !(dataAlign > 0 && addr % dataAlign);
 }
 
@@ -202,7 +202,7 @@ static int internal_esil_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int
 
 	addr &= esil->addrmask;
 	if (!alignCheck (esil, addr)) {
-		esil->trap = RZ_ANAL_TRAP_READ_ERR;
+		esil->trap = RZ_ANALYSIS_TRAP_READ_ERR;
 		esil->trap_code = addr;
 		return false;
 	}
@@ -219,7 +219,7 @@ static int internal_esil_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, int
 	// now with siol, read_at return true/false can't be used to check error vs len
 	if (!esil->analysis->iob.is_valid_offset (esil->analysis->iob.io, addr, false)) {
 		if (esil->iotrap) {
-			esil->trap = RZ_ANAL_TRAP_READ_ERR;
+			esil->trap = RZ_ANALYSIS_TRAP_READ_ERR;
 			esil->trap_code = addr;
 		}
 		if (esil->cmd && esil->cmd_ioer && *esil->cmd_ioer) {
@@ -234,7 +234,7 @@ static int internal_esil_mem_read_no_null(RzAnalysisEsil *esil, ut64 addr, ut8 *
 
 	addr &= esil->addrmask;
 	if (!alignCheck (esil, addr)) {
-		esil->trap = RZ_ANAL_TRAP_READ_ERR;
+		esil->trap = RZ_ANALYSIS_TRAP_READ_ERR;
 		esil->trap_code = addr;
 		return false;
 	}
@@ -244,7 +244,7 @@ static int internal_esil_mem_read_no_null(RzAnalysisEsil *esil, ut64 addr, ut8 *
 	// now with siol, read_at return true/false can't be used to check error vs len
 	if (!esil->analysis->iob.is_valid_offset (esil->analysis->iob.io, addr, false)) {
 		if (esil->iotrap) {
-			esil->trap = RZ_ANAL_TRAP_READ_ERR;
+			esil->trap = RZ_ANALYSIS_TRAP_READ_ERR;
 			esil->trap_code = addr;
 		}
 	}
@@ -259,7 +259,7 @@ RZ_API int rz_analysis_esil_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, 
 		ret = esil->cb.hook_mem_read (esil, addr, buf, len);
 	}
 	if (!alignCheck (esil, addr)) {
-		esil->trap = RZ_ANAL_TRAP_READ_ERR;
+		esil->trap = RZ_ANALYSIS_TRAP_READ_ERR;
 		esil->trap_code = addr;
 		return false;
 	}
@@ -267,7 +267,7 @@ RZ_API int rz_analysis_esil_mem_read(RzAnalysisEsil *esil, ut64 addr, ut8 *buf, 
 		ret = esil->cb.mem_read (esil, addr, buf, len);
 		if (ret != len) {
 			if (esil->iotrap) {
-				esil->trap = RZ_ANAL_TRAP_READ_ERR;
+				esil->trap = RZ_ANALYSIS_TRAP_READ_ERR;
 				esil->trap_code = addr;
 			}
 		}
@@ -289,7 +289,7 @@ static int internal_esil_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *b
 	}
 	addr &= esil->addrmask;
 	if (!alignCheck (esil, addr)) {
-		esil->trap = RZ_ANAL_TRAP_READ_ERR;
+		esil->trap = RZ_ANALYSIS_TRAP_READ_ERR;
 		esil->trap_code = addr;
 		return false;
 	}
@@ -307,7 +307,7 @@ static int internal_esil_mem_write(RzAnalysisEsil *esil, ut64 addr, const ut8 *b
 	// now with siol, write_at return true/false can't be used to check error vs len
 	if (!esil->analysis->iob.is_valid_offset (esil->analysis->iob.io, addr, false)) {
 		if (esil->iotrap) {
-			esil->trap = RZ_ANAL_TRAP_WRITE_ERR;
+			esil->trap = RZ_ANALYSIS_TRAP_WRITE_ERR;
 			esil->trap_code = addr;
 		}
 		if (esil->cmd && esil->cmd_ioer && *esil->cmd_ioer) {
@@ -333,7 +333,7 @@ static int internal_esil_mem_write_no_null(RzAnalysisEsil *esil, ut64 addr, cons
 	// now with siol, write_at return true/false can't be used to check error vs len
 	if (!esil->analysis->iob.is_valid_offset (esil->analysis->iob.io, addr, false)) {
 		if (esil->iotrap) {
-			esil->trap = RZ_ANAL_TRAP_WRITE_ERR;
+			esil->trap = RZ_ANALYSIS_TRAP_WRITE_ERR;
 			esil->trap_code = addr;
 		}
 	}
@@ -440,10 +440,10 @@ RZ_API int rz_analysis_esil_get_parm_type(RzAnalysisEsil *esil, const char *str)
 	int len, i;
 
 	if (!str || !(len = strlen (str))) {
-		return RZ_ANAL_ESIL_PARM_INVALID;
+		return RZ_ANALYSIS_ESIL_PARM_INVALID;
 	}
 	if (!strncmp (str, "0x", 2)) {
-		return RZ_ANAL_ESIL_PARM_NUM;
+		return RZ_ANALYSIS_ESIL_PARM_NUM;
 	}
 	if (!((IS_DIGIT (str[0])) || str[0] == '-')) {
 		goto not_a_number;
@@ -453,12 +453,12 @@ RZ_API int rz_analysis_esil_get_parm_type(RzAnalysisEsil *esil, const char *str)
 			goto not_a_number;
 		}
 	}
-	return RZ_ANAL_ESIL_PARM_NUM;
+	return RZ_ANALYSIS_ESIL_PARM_NUM;
 not_a_number:
 	if (rz_reg_get (esil->analysis->reg, str, -1)) {
-		return RZ_ANAL_ESIL_PARM_REG;
+		return RZ_ANALYSIS_ESIL_PARM_REG;
 	}
-	return RZ_ANAL_ESIL_PARM_INVALID;
+	return RZ_ANALYSIS_ESIL_PARM_INVALID;
 }
 
 RZ_API int rz_analysis_esil_get_parm_size(RzAnalysisEsil *esil, const char *str, ut64 *num, int *size) {
@@ -470,13 +470,13 @@ RZ_API int rz_analysis_esil_get_parm_size(RzAnalysisEsil *esil, const char *str,
 		return false;
 	}
 	switch (parm_type) {
-	case RZ_ANAL_ESIL_PARM_NUM:
+	case RZ_ANALYSIS_ESIL_PARM_NUM:
 		*num = rz_num_get (NULL, str);
 		if (size) {
 			*size = esil->analysis->bits;
 		}
 		return true;
-	case RZ_ANAL_ESIL_PARM_REG:
+	case RZ_ANALYSIS_ESIL_PARM_REG:
 		if (!rz_analysis_esil_reg_read (esil, str, num, size)) {
 			break;
 		}
@@ -595,7 +595,7 @@ static bool esil_cf(RzAnalysisEsil *esil) {
 		return false;
 	}
 
-	if (rz_analysis_esil_get_parm_type (esil, src) != RZ_ANAL_ESIL_PARM_NUM) {
+	if (rz_analysis_esil_get_parm_type (esil, src) != RZ_ANALYSIS_ESIL_PARM_NUM) {
 		free (src);
 		return false;
 	}
@@ -618,7 +618,7 @@ static bool esil_bf(RzAnalysisEsil *esil) {
 		return false;
 	}
 
-	if (rz_analysis_esil_get_parm_type (esil, src) != RZ_ANAL_ESIL_PARM_NUM) {
+	if (rz_analysis_esil_get_parm_type (esil, src) != RZ_ANALYSIS_ESIL_PARM_NUM) {
 		free (src);
 		return false;
 	}
@@ -655,7 +655,7 @@ static bool esil_of(RzAnalysisEsil *esil) {
 		return false;
 	}
 
-	if (rz_analysis_esil_get_parm_type (esil, p_bit) != RZ_ANAL_ESIL_PARM_NUM) {
+	if (rz_analysis_esil_get_parm_type (esil, p_bit) != RZ_ANALYSIS_ESIL_PARM_NUM) {
 		free (p_bit);
 		return false;
 	}
@@ -681,7 +681,7 @@ static bool esil_sf(RzAnalysisEsil *esil) {
 	char *p_size = rz_analysis_esil_pop (esil);
 	rz_return_val_if_fail (p_size, false);
 
-	if (rz_analysis_esil_get_parm_type (esil, p_size) != RZ_ANAL_ESIL_PARM_NUM) {
+	if (rz_analysis_esil_get_parm_type (esil, p_size) != RZ_ANALYSIS_ESIL_PARM_NUM) {
 		free (p_size);
 		return false;
 	}
@@ -730,7 +730,7 @@ static bool esil_weak_eq(RzAnalysisEsil *esil) {
 	char *dst = rz_analysis_esil_pop (esil);
 	char *src = rz_analysis_esil_pop (esil);
 
-	if (!(dst && src && (rz_analysis_esil_get_parm_type(esil, dst) == RZ_ANAL_ESIL_PARM_REG))) {
+	if (!(dst && src && (rz_analysis_esil_get_parm_type(esil, dst) == RZ_ANALYSIS_ESIL_PARM_REG))) {
 		free (dst);
 		free (src);
 		return false;
@@ -904,14 +904,14 @@ static int esil_interrupt_linux_i386(RzAnalysisEsil *esil) { 		//move this into 
 
 	if (sn == 3) {
 		// trap
-		esil->trap = RZ_ANAL_TRAP_BREAKPOINT;
+		esil->trap = RZ_ANALYSIS_TRAP_BREAKPOINT;
 		esil->trap_code = 3;
 		return -1;
 	}
 
 	if (sn != 0x80) {
 		eprintf ("Interrupt 0x%x not handled.", sn);
-		esil->trap = RZ_ANAL_TRAP_UNHANDLED;
+		esil->trap = RZ_ANALYSIS_TRAP_UNHANDLED;
 		esil->trap_code = sn;
 		return -1;
 	}
@@ -1413,21 +1413,21 @@ static bool esil_or(RzAnalysisEsil *esil) {
 
 RZ_API const char *rz_analysis_esil_trapstr(int type) {
 	switch (type) {
-	case RZ_ANAL_TRAP_READ_ERR:
+	case RZ_ANALYSIS_TRAP_READ_ERR:
 		return "read-err";
-	case RZ_ANAL_TRAP_WRITE_ERR:
+	case RZ_ANALYSIS_TRAP_WRITE_ERR:
 		return "write-err";
-	case RZ_ANAL_TRAP_BREAKPOINT:
+	case RZ_ANALYSIS_TRAP_BREAKPOINT:
 		return "breakpoint";
-	case RZ_ANAL_TRAP_UNHANDLED:
+	case RZ_ANALYSIS_TRAP_UNHANDLED:
 		return "unhandled";
-	case RZ_ANAL_TRAP_DIVBYZERO:
+	case RZ_ANALYSIS_TRAP_DIVBYZERO:
 		return "divbyzero";
-	case RZ_ANAL_TRAP_INVALID:
+	case RZ_ANALYSIS_TRAP_INVALID:
 		return "invalid";
-	case RZ_ANAL_TRAP_UNALIGNED:
+	case RZ_ANALYSIS_TRAP_UNALIGNED:
 		return "unaligned";
-	case RZ_ANAL_TRAP_TODO:
+	case RZ_ANALYSIS_TRAP_TODO:
 		return "todo";
 	default:
 		return "unknown";
@@ -1511,7 +1511,7 @@ static bool esil_mod(RzAnalysisEsil *esil) {
 				if (esil->verbose > 0) {
 					eprintf ("0x%08"PFMT64x" esil_mod: Division by zero!\n", esil->address);
 				}
-				esil->trap = RZ_ANAL_TRAP_DIVBYZERO;
+				esil->trap = RZ_ANALYSIS_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			} else {
 				rz_analysis_esil_pushnum (esil, d % s);
@@ -1537,7 +1537,7 @@ static bool esil_signed_mod(RzAnalysisEsil *esil) {
 				if (esil->verbose > 0) {
 					eprintf ("0x%08"PFMT64x" esil_mod: Division by zero!\n", esil->address);
 				}
-				esil->trap = RZ_ANAL_TRAP_DIVBYZERO;
+				esil->trap = RZ_ANALYSIS_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			} else {
 				rz_analysis_esil_pushnum (esil, d % s);
@@ -1566,7 +1566,7 @@ static bool esil_modeq(RzAnalysisEsil *esil) {
 				rz_analysis_esil_reg_write (esil, dst, d % s);
 			} else {
 				ERR ("esil_modeq: Division by zero!");
-				esil->trap = RZ_ANAL_TRAP_DIVBYZERO;
+				esil->trap = RZ_ANALYSIS_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			}
 			ret = true;
@@ -1590,7 +1590,7 @@ static bool esil_div(RzAnalysisEsil *esil) {
 		if (dst && rz_analysis_esil_get_parm (esil, dst, &d)) {
 			if (s == 0) {
 				ERR ("esil_div: Division by zero!");
-				esil->trap = RZ_ANAL_TRAP_DIVBYZERO;
+				esil->trap = RZ_ANALYSIS_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			} else {
 				rz_analysis_esil_pushnum (esil, d / s);
@@ -1614,7 +1614,7 @@ static bool esil_signed_div(RzAnalysisEsil *esil) {
 		if (dst && rz_analysis_esil_get_parm (esil, dst, (ut64 *)&d)) {
 			if (ST64_DIV_OVFCHK (d, s)) {
 				ERR ("esil_div: Division by zero!");
-				esil->trap = RZ_ANAL_TRAP_DIVBYZERO;
+				esil->trap = RZ_ANALYSIS_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			} else {
 				rz_analysis_esil_pushnum (esil, d / s);
@@ -1643,7 +1643,7 @@ static bool esil_diveq(RzAnalysisEsil *esil) {
 				rz_analysis_esil_reg_write (esil, dst, d / s);
 			} else {
 				// eprintf ("0x%08"PFMT64x" esil_diveq: Division by zero!\n", esil->address);
-				esil->trap = RZ_ANAL_TRAP_DIVBYZERO;
+				esil->trap = RZ_ANALYSIS_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 			}
 			ret = true;
@@ -1754,7 +1754,7 @@ static bool esil_inceq(RzAnalysisEsil *esil) {
 	bool ret = false;
 	ut64 sd;
 	char *src_dst = rz_analysis_esil_pop (esil);
-	if (src_dst && (rz_analysis_esil_get_parm_type (esil, src_dst) == RZ_ANAL_ESIL_PARM_REG) && rz_analysis_esil_get_parm (esil, src_dst, &sd)) {
+	if (src_dst && (rz_analysis_esil_get_parm_type (esil, src_dst) == RZ_ANALYSIS_ESIL_PARM_REG) && rz_analysis_esil_get_parm (esil, src_dst, &sd)) {
 		// inc rax
 		esil->old = sd++;
 		esil->cur = sd;
@@ -1821,7 +1821,7 @@ static bool esil_deceq(RzAnalysisEsil *esil) {
 	bool ret = false;
 	ut64 sd;
 	char *src_dst = rz_analysis_esil_pop (esil);
-	if (src_dst && (rz_analysis_esil_get_parm_type (esil, src_dst) == RZ_ANAL_ESIL_PARM_REG) && rz_analysis_esil_get_parm (esil, src_dst, &sd)) {
+	if (src_dst && (rz_analysis_esil_get_parm_type (esil, src_dst) == RZ_ANALYSIS_ESIL_PARM_REG) && rz_analysis_esil_get_parm (esil, src_dst, &sd)) {
 		esil->old = sd;
 		sd--;
 		esil->cur = sd;
@@ -2319,7 +2319,7 @@ static bool esil_mem_modeq_n(RzAnalysisEsil *esil, int bits) {
 	if (src0 && rz_analysis_esil_get_parm (esil, src0, &s)) {
 		if (s == 0) {
 			ERR ("esil_mem_modeq4: Division by zero!");
-			esil->trap = RZ_ANAL_TRAP_DIVBYZERO;
+			esil->trap = RZ_ANALYSIS_TRAP_DIVBYZERO;
 			esil->trap_code = 0;
 		} else {
 			rz_analysis_esil_push (esil, dst);
@@ -2372,7 +2372,7 @@ static bool esil_mem_diveq_n(RzAnalysisEsil *esil, int bits) {
 	if (src0 && rz_analysis_esil_get_parm (esil, src0, &s)) {
 		if (s == 0) {
 			ERR ("esil_mem_diveq8: Division by zero!");
-			esil->trap = RZ_ANAL_TRAP_DIVBYZERO;
+			esil->trap = RZ_ANALYSIS_TRAP_DIVBYZERO;
 			esil->trap_code = 0;
 		} else {
 			rz_analysis_esil_push (esil, dst);
@@ -3067,7 +3067,7 @@ loop:
 	esil->parse_stop = 0;
 // memleak or failing aetr test. wat du
 //	rz_analysis_esil_stack_free (esil);
-	esil->parse_goto_count = esil->analysis? esil->analysis->esil_goto_limit: RZ_ANAL_ESIL_GOTO_LIMIT;
+	esil->parse_goto_count = esil->analysis? esil->analysis->esil_goto_limit: RZ_ANALYSIS_ESIL_GOTO_LIMIT;
 	str = ostr;
 repeat:
 	wordi = 0;
@@ -3192,12 +3192,12 @@ RZ_API int rz_analysis_esil_condition(RzAnalysisEsil *esil, const char *str) {
 
 static void rz_analysis_esil_setup_ops(RzAnalysisEsil *esil) {
 #define OP(v, w, x, y, z) rz_analysis_esil_set_op (esil, v, w, x, y, z)
-#define	OT_UNK	RZ_ANAL_ESIL_OP_TYPE_UNKNOWN
-#define	OT_CTR	RZ_ANAL_ESIL_OP_TYPE_CONTROL_FLOW
-#define	OT_MATH	RZ_ANAL_ESIL_OP_TYPE_MATH
-#define	OT_REGW	RZ_ANAL_ESIL_OP_TYPE_REG_WRITE
-#define	OT_MEMW	RZ_ANAL_ESIL_OP_TYPE_MEM_WRITE
-#define	OT_MEMR	RZ_ANAL_ESIL_OP_TYPE_MEM_READ
+#define	OT_UNK	RZ_ANALYSIS_ESIL_OP_TYPE_UNKNOWN
+#define	OT_CTR	RZ_ANALYSIS_ESIL_OP_TYPE_CONTROL_FLOW
+#define	OT_MATH	RZ_ANALYSIS_ESIL_OP_TYPE_MATH
+#define	OT_REGW	RZ_ANALYSIS_ESIL_OP_TYPE_REG_WRITE
+#define	OT_MEMW	RZ_ANALYSIS_ESIL_OP_TYPE_MEM_WRITE
+#define	OT_MEMR	RZ_ANALYSIS_ESIL_OP_TYPE_MEM_READ
 
 	OP ("$", esil_interrupt, 0, 1, OT_UNK);		//hm, type seems a bit wrong
 	OP ("$z", esil_zf, 1, 0, OT_UNK);

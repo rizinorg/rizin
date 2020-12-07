@@ -22,13 +22,13 @@ static int iscallret(RzDebug *dbg, ut64 addr) {
 	} else {
 		RzAnalysisOp op;
 		(void) dbg->iob.read_at (dbg->iob.io, addr-8, buf, 8);
-		(void) rz_analysis_op (dbg->analysis, &op, addr-8, buf, 8, RZ_ANAL_OP_MASK_BASIC);
-		if (op.type == RZ_ANAL_OP_TYPE_CALL || op.type == RZ_ANAL_OP_TYPE_UCALL) {
+		(void) rz_analysis_op (dbg->analysis, &op, addr-8, buf, 8, RZ_ANALYSIS_OP_MASK_BASIC);
+		if (op.type == RZ_ANALYSIS_OP_TYPE_CALL || op.type == RZ_ANALYSIS_OP_TYPE_UCALL) {
 			return 1;
 		}
 		/* delay slot */
-		(void) rz_analysis_op (dbg->analysis, &op, addr-4, buf, 4, RZ_ANAL_OP_MASK_BASIC);
-		if (op.type == RZ_ANAL_OP_TYPE_CALL || op.type == RZ_ANAL_OP_TYPE_UCALL) {
+		(void) rz_analysis_op (dbg->analysis, &op, addr-4, buf, 4, RZ_ANALYSIS_OP_MASK_BASIC);
+		if (op.type == RZ_ANALYSIS_OP_TYPE_CALL || op.type == RZ_ANALYSIS_OP_TYPE_UCALL) {
 			return 1;
 		}
 	}

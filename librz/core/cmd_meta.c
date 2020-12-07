@@ -1050,7 +1050,7 @@ RZ_IPI int rz_cmd_meta(void *data, const char *input) {
 		break;
 	case 'F': // "CF"
 		f = rz_analysis_get_fcn_in (core->analysis, core->offset,
-			RZ_ANAL_FCN_TYPE_FCN|RZ_ANAL_FCN_TYPE_SYM);
+			RZ_ANALYSIS_FCN_TYPE_FCN|RZ_ANALYSIS_FCN_TYPE_SYM);
 		if (f) {
 			rz_analysis_str_to_fcn (core->analysis, f, input + 2);
 		} else {

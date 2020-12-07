@@ -896,27 +896,27 @@ static int i8051_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	op->nopcode = 1;
 	op->size = _8051_ops[i].len;
 	op->type = _8051_ops[i].type;
-	op->family = RZ_ANAL_OP_FAMILY_CPU; // maybe also FAMILY_IO...
+	op->family = RZ_ANALYSIS_OP_FAMILY_CPU; // maybe also FAMILY_IO...
 	op->id = i;
 
 	switch (_8051_ops[i].instr) {
 	default:
-		op->cond = RZ_ANAL_COND_AL;
+		op->cond = RZ_ANALYSIS_COND_AL;
 	break;
 	case OP_CJNE:
 	case OP_DJNZ:
 	case OP_JB:
 	case OP_JBC:
 	case OP_JNZ:
-		op->cond = RZ_ANAL_COND_NE;
+		op->cond = RZ_ANALYSIS_COND_NE;
 	break;
 	case OP_JNB:
 	case OP_JZ:
-		op->cond = RZ_ANAL_COND_EQ;
+		op->cond = RZ_ANALYSIS_COND_EQ;
 	break; case OP_JC:
-		op->cond = RZ_ANAL_COND_HS;
+		op->cond = RZ_ANALYSIS_COND_HS;
 	break; case OP_JNC:
-		op->cond = RZ_ANAL_COND_LO;
+		op->cond = RZ_ANALYSIS_COND_LO;
 	}
 
 	switch (_8051_ops[i].instr) {
@@ -969,16 +969,16 @@ static int i8051_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	switch(_8051_ops[i].instr) {
 	default:
 	break; case OP_PUSH:
-		op->stackop = RZ_ANAL_STACK_INC;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = 1;
 	break; case OP_POP:
-		op->stackop = RZ_ANAL_STACK_INC;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = -1;
 	break; case OP_RET:
-		op->stackop = RZ_ANAL_STACK_INC;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = -2;
 	break; case OP_CALL:
-		op->stackop = RZ_ANAL_STACK_INC;
+		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->stackptr = 2;
 		if (arg1 == A_ADDR11) {
 			op->jump = arg_addr11 (addr + op->size, buf);
@@ -1016,7 +1016,7 @@ static int i8051_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->refptr = 1;
 	}
 
-	if (mask & RZ_ANAL_OP_MASK_ESIL) {
+	if (mask & RZ_ANALYSIS_OP_MASK_ESIL) {
 		ut8 copy[3] = {0, 0, 0};
 		memcpy (copy, buf, len >= 3 ? 3 : len);
 		analop_esil (analysis, op, addr, copy);
@@ -1026,7 +1026,7 @@ static int i8051_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	op->mnemonic = rz_8051_disas (addr, buf, len, &olen);
 	op->size = olen;
 
-	if (mask & RZ_ANAL_OP_MASK_HINT) {
+	if (mask & RZ_ANALYSIS_OP_MASK_HINT) {
 		// TODO: op->hint
 	}
 

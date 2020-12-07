@@ -495,9 +495,9 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 
 	RzAnalysisBaseTypeKind kind;
 	if (die->tag == DW_TAG_union_type) {
-		kind = RZ_ANAL_BASE_TYPE_KIND_UNION;
+		kind = RZ_ANALYSIS_BASE_TYPE_KIND_UNION;
 	} else {
-		kind = RZ_ANAL_BASE_TYPE_KIND_STRUCT;
+		kind = RZ_ANALYSIS_BASE_TYPE_KIND_STRUCT;
 	}
 
 	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (kind);
@@ -570,7 +570,7 @@ cleanup:
 static void parse_enum_type(Context *ctx, ut64 idx) {
 	const RzBinDwarfDie *die = &ctx->all_dies[idx];
 
-	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ENUM);
+	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANALYSIS_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
 		return;
 	}
@@ -665,7 +665,7 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 	if (!name) { // type has to have a name for now
 		goto cleanup;
 	}
-	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANAL_BASE_TYPE_KIND_TYPEDEF);
+	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANALYSIS_BASE_TYPE_KIND_TYPEDEF);
 	if (!base_type) {
 		goto cleanup;
 	}
@@ -715,7 +715,7 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 	if (!name) { // type has to have a name for now
 		return;
 	}
-	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANAL_BASE_TYPE_KIND_ATOMIC);
+	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANALYSIS_BASE_TYPE_KIND_ATOMIC);
 	if (!base_type) {
 		return;
 	}

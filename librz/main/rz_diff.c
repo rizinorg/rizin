@@ -1131,16 +1131,16 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 				*second++ = 0;
 				ut64 off = rz_num_math (c->num, words);
 				// define the same function at each offset
-				rz_core_analysis_fcn (c, off, UT64_MAX, RZ_ANAL_REF_TYPE_NULL, depth);
+				rz_core_analysis_fcn (c, off, UT64_MAX, RZ_ANALYSIS_REF_TYPE_NULL, depth);
 				rz_core_analysis_fcn (c2, rz_num_math (c2->num, second),
-					UT64_MAX, RZ_ANAL_REF_TYPE_NULL, depth);
+					UT64_MAX, RZ_ANALYSIS_REF_TYPE_NULL, depth);
 				rz_core_gdiff (c, c2);
 				__print_diff_graph (c, off, gmode);
 			} else {
 				rz_core_analysis_fcn (c, rz_num_math (c->num, words),
-					UT64_MAX, RZ_ANAL_REF_TYPE_NULL, depth);
+					UT64_MAX, RZ_ANALYSIS_REF_TYPE_NULL, depth);
 				rz_core_analysis_fcn (c2, rz_num_math (c2->num, words),
-					UT64_MAX, RZ_ANAL_REF_TYPE_NULL, depth);
+					UT64_MAX, RZ_ANALYSIS_REF_TYPE_NULL, depth);
 				rz_core_gdiff (c, c2);
 				__print_diff_graph (c, rz_num_math (c->num, addr), gmode);
 			}

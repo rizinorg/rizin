@@ -34,18 +34,18 @@ static char *key_attr_content_specific(const char *class_name, const char *attr_
 }
 
 typedef enum {
-	RZ_ANAL_CLASS_ATTR_TYPE_METHOD,
-	RZ_ANAL_CLASS_ATTR_TYPE_VTABLE,
-	RZ_ANAL_CLASS_ATTR_TYPE_BASE
+	RZ_ANALYSIS_CLASS_ATTR_TYPE_METHOD,
+	RZ_ANALYSIS_CLASS_ATTR_TYPE_VTABLE,
+	RZ_ANALYSIS_CLASS_ATTR_TYPE_BASE
 } RzAnalysisClassAttrType;
 
 static const char *attr_type_id(RzAnalysisClassAttrType attr_type) {
 	switch (attr_type) {
-	case RZ_ANAL_CLASS_ATTR_TYPE_METHOD:
+	case RZ_ANALYSIS_CLASS_ATTR_TYPE_METHOD:
 		return "method";
-	case RZ_ANAL_CLASS_ATTR_TYPE_VTABLE:
+	case RZ_ANALYSIS_CLASS_ATTR_TYPE_VTABLE:
 		return "vtable";
-	case RZ_ANAL_CLASS_ATTR_TYPE_BASE:
+	case RZ_ANALYSIS_CLASS_ATTR_TYPE_BASE:
 		return "base";
 	default:
 		return NULL;
@@ -150,27 +150,27 @@ static bool rename_key(Sdb *sdb, const char *key_old, const char *key_new) {
 
 RZ_API RzAnalysisClassErr rz_analysis_class_rename(RzAnalysis *analysis, const char *old_name, const char *new_name) {
 	if (rz_analysis_class_exists (analysis, new_name)) {
-		return RZ_ANAL_CLASS_ERR_CLASH;
+		return RZ_ANALYSIS_CLASS_ERR_CLASH;
 	}
 
 	char *old_name_sanitized = rz_str_sanitize_sdb_key (old_name);
 	if (!old_name_sanitized) {
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 	char *new_name_sanitized = rz_str_sanitize_sdb_key (new_name);
 	if (!new_name_sanitized) {
 		free (old_name_sanitized);
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 
-	RzAnalysisClassErr err = RZ_ANAL_CLASS_ERR_SUCCESS;
+	RzAnalysisClassErr err = RZ_ANALYSIS_CLASS_ERR_SUCCESS;
 
 	rz_analysis_class_base_rename_class (analysis, old_name, new_name);
 	rz_analysis_class_method_rename_class (analysis, old_name, new_name);
 	rz_analysis_class_vtable_rename_class (analysis, old_name, new_name);
 
 	if (!rename_key (analysis->sdb_classes, key_class (old_name_sanitized), key_class (new_name_sanitized))) {
-		err = RZ_ANAL_CLASS_ERR_NONEXISTENT_CLASS;
+		err = RZ_ANALYSIS_CLASS_ERR_NONEXISTENT_CLASS;
 		goto beach;
 	}
 
@@ -242,7 +242,7 @@ static RzAnalysisClassErr rz_analysis_class_set_attr_raw(RzAnalysis *analysis, c
 	const char *attr_type_str = attr_type_id (attr_type);
 
 	if (!rz_analysis_class_exists_raw (analysis, class_name)) {
-		return RZ_ANAL_CLASS_ERR_NONEXISTENT_CLASS;
+		return RZ_ANALYSIS_CLASS_ERR_NONEXISTENT_CLASS;
 	}
 
 	sdb_array_add (analysis->sdb_classes_attrs, key_attr_types (class_name), attr_type_str, 0);
@@ -259,20 +259,20 @@ static RzAnalysisClassErr rz_analysis_class_set_attr_raw(RzAnalysis *analysis, c
 	};
 	rz_event_send (analysis->ev, RZ_EVENT_CLASS_ATTR_SET, &event);
 
-	return RZ_ANAL_CLASS_ERR_SUCCESS;
+	return RZ_ANALYSIS_CLASS_ERR_SUCCESS;
 }
 
 // ids will be sanitized automatically
 static RzAnalysisClassErr rz_analysis_class_set_attr(RzAnalysis *analysis, const char *class_name, RzAnalysisClassAttrType attr_type, const char *attr_id, const char *content) {
 	char *class_name_sanitized = rz_str_sanitize_sdb_key (class_name);
 	if (!class_name_sanitized) {
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 
 	char *attr_id_sanitized = rz_str_sanitize_sdb_key (attr_id);
 	if (!attr_id_sanitized) {
 		free (class_name_sanitized);
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 
 	RzAnalysisClassErr err = rz_analysis_class_set_attr_raw (analysis, class_name_sanitized, attr_type, attr_id_sanitized, content);
@@ -304,19 +304,19 @@ static RzAnalysisClassErr rz_analysis_class_delete_attr_raw(RzAnalysis *analysis
 	};
 	rz_event_send (analysis->ev, RZ_EVENT_CLASS_ATTR_DEL, &event);
 
-	return RZ_ANAL_CLASS_ERR_SUCCESS;
+	return RZ_ANALYSIS_CLASS_ERR_SUCCESS;
 }
 
 static RzAnalysisClassErr rz_analysis_class_delete_attr(RzAnalysis *analysis, const char *class_name, RzAnalysisClassAttrType attr_type, const char *attr_id) {
 	char *class_name_sanitized = rz_str_sanitize_sdb_key (class_name);
 	if (!class_name_sanitized) {
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 
 	char *attr_id_sanitized = rz_str_sanitize_sdb_key (attr_id);
 	if (!attr_id_sanitized) {
 		free (class_name_sanitized);
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 
 	RzAnalysisClassErr err = rz_analysis_class_delete_attr_raw (analysis, class_name_sanitized, attr_type, attr_id_sanitized);
@@ -331,11 +331,11 @@ static RzAnalysisClassErr rz_analysis_class_rename_attr_raw(RzAnalysis *analysis
 	char *key = key_attr_type_attrs (class_name, attr_type_str);
 
 	if (sdb_array_contains (analysis->sdb_classes_attrs, key, attr_id_new, 0)) {
-		return RZ_ANAL_CLASS_ERR_CLASH;
+		return RZ_ANALYSIS_CLASS_ERR_CLASH;
 	}
 
 	if (!sdb_array_remove (analysis->sdb_classes_attrs, key, attr_id_old, 0)) {
-		return RZ_ANAL_CLASS_ERR_NONEXISTENT_ATTR;
+		return RZ_ANALYSIS_CLASS_ERR_NONEXISTENT_ATTR;
 	}
 
 	sdb_array_add (analysis->sdb_classes_attrs, key, attr_id_new, 0);
@@ -368,24 +368,24 @@ static RzAnalysisClassErr rz_analysis_class_rename_attr_raw(RzAnalysis *analysis
 	};
 	rz_event_send (analysis->ev, RZ_EVENT_CLASS_ATTR_RENAME, &event);
 
-	return RZ_ANAL_CLASS_ERR_SUCCESS;
+	return RZ_ANALYSIS_CLASS_ERR_SUCCESS;
 }
 
 static RzAnalysisClassErr rz_analysis_class_rename_attr(RzAnalysis *analysis, const char *class_name, RzAnalysisClassAttrType attr_type, const char *attr_id_old, const char *attr_id_new) {
 	char *class_name_sanitized = rz_str_sanitize_sdb_key (class_name);
 	if (!class_name_sanitized) {
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 	char *attr_id_old_sanitized = rz_str_sanitize_sdb_key (attr_id_old);
 	if (!attr_id_old_sanitized) {
 		free (class_name_sanitized);
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 	char *attr_id_new_sanitized = rz_str_sanitize_sdb_key (attr_id_new);
 	if (!attr_id_new_sanitized) {
 		free (class_name_sanitized);
 		free (attr_id_old_sanitized);
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 	RzAnalysisClassErr ret = rz_analysis_class_rename_attr_raw (analysis, class_name_sanitized, attr_type, attr_id_old_sanitized, attr_id_new_sanitized);
 	free (class_name_sanitized);
@@ -453,7 +453,7 @@ static RzAnalysisClassErr rz_analysis_class_add_attr_unique_raw(RzAnalysis *anal
 	rz_analysis_class_unique_attr_id_raw (analysis, class_name, attr_type, attr_id, sizeof(attr_id));
 
 	RzAnalysisClassErr err = rz_analysis_class_set_attr (analysis, class_name, attr_type, attr_id, content);
-	if (err != RZ_ANAL_CLASS_ERR_SUCCESS) {
+	if (err != RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
 		return err;
 	}
 
@@ -461,13 +461,13 @@ static RzAnalysisClassErr rz_analysis_class_add_attr_unique_raw(RzAnalysis *anal
 		rz_str_ncpy (attr_id_out, attr_id, attr_id_out_size);
 	}
 
-	return RZ_ANAL_CLASS_ERR_SUCCESS;
+	return RZ_ANALYSIS_CLASS_ERR_SUCCESS;
 }
 
 static RzAnalysisClassErr rz_analysis_class_add_attr_unique(RzAnalysis *analysis, const char *class_name, RzAnalysisClassAttrType attr_type, const char *content, char *attr_id_out, size_t attr_id_out_size) {
 	char *class_name_sanitized = rz_str_sanitize_sdb_key (class_name);
 	if (!class_name_sanitized) {
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 
 	RzAnalysisClassErr err = rz_analysis_class_add_attr_unique_raw (analysis, class_name_sanitized, attr_type, content, attr_id_out, attr_id_out_size);
@@ -488,12 +488,12 @@ RZ_API void rz_analysis_class_method_fini(RzAnalysisMethod *meth) {
 	free (meth->name);
 }
 
-// if the method exists: store it in *meth and return RZ_ANAL_CLASS_ERR_SUCCESS
+// if the method exists: store it in *meth and return RZ_ANALYSIS_CLASS_ERR_SUCCESS
 // else return the error, contents of *meth are undefined
 RZ_API RzAnalysisClassErr rz_analysis_class_method_get(RzAnalysis *analysis, const char *class_name, const char *meth_name, RzAnalysisMethod *meth) {
-	char *content = rz_analysis_class_get_attr (analysis, class_name, RZ_ANAL_CLASS_ATTR_TYPE_METHOD, meth_name, false);
+	char *content = rz_analysis_class_get_attr (analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_METHOD, meth_name, false);
 	if (!content) {
-		return RZ_ANAL_CLASS_ERR_NONEXISTENT_ATTR;
+		return RZ_ANALYSIS_CLASS_ERR_NONEXISTENT_ATTR;
 	}
 
 	char *cur = content;
@@ -505,7 +505,7 @@ RZ_API RzAnalysisClassErr rz_analysis_class_method_get(RzAnalysis *analysis, con
 	cur = next;
 	if (!cur) {
 		free (content);
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 	sdb_anext (cur, NULL);
 
@@ -515,10 +515,10 @@ RZ_API RzAnalysisClassErr rz_analysis_class_method_get(RzAnalysis *analysis, con
 
 	meth->name = rz_str_sanitize_sdb_key (meth_name);
 	if (!meth->name) {
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 
-	return RZ_ANAL_CLASS_ERR_SUCCESS;
+	return RZ_ANALYSIS_CLASS_ERR_SUCCESS;
 }
 
 static void rz_analysis_class_method_fini_proxy(void *e, void *user) {
@@ -538,14 +538,14 @@ RZ_API RzVector/*<RzAnalysisMethod>*/ *rz_analysis_class_method_get_all(RzAnalys
 		rz_vector_free (vec);
 		return NULL;
 	}
-	char *array = sdb_get (analysis->sdb_classes_attrs, key_attr_type_attrs (class_name_sanitized, attr_type_id (RZ_ANAL_CLASS_ATTR_TYPE_METHOD)), 0);
+	char *array = sdb_get (analysis->sdb_classes_attrs, key_attr_type_attrs (class_name_sanitized, attr_type_id (RZ_ANALYSIS_CLASS_ATTR_TYPE_METHOD)), 0);
 	free (class_name_sanitized);
 
 	rz_vector_reserve (vec, (size_t) sdb_alen (array));
 	char *cur;
 	sdb_aforeach (cur, array) {
 		RzAnalysisMethod meth;
-		if (rz_analysis_class_method_get (analysis, class_name, cur, &meth) == RZ_ANAL_CLASS_ERR_SUCCESS) {
+		if (rz_analysis_class_method_get (analysis, class_name, cur, &meth) == RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
 			rz_vector_push (vec, &meth);
 		}
 		sdb_aforeach_next (cur);
@@ -557,27 +557,27 @@ RZ_API RzVector/*<RzAnalysisMethod>*/ *rz_analysis_class_method_get_all(RzAnalys
 
 RZ_API RzAnalysisClassErr rz_analysis_class_method_set(RzAnalysis *analysis, const char *class_name, RzAnalysisMethod *meth) {
 	char *content = sdb_fmt ("%"PFMT64u"%c%"PFMT64d, meth->addr, SDB_RS, meth->vtable_offset);
-	RzAnalysisClassErr err = rz_analysis_class_set_attr (analysis, class_name, RZ_ANAL_CLASS_ATTR_TYPE_METHOD, meth->name, content);
-	if (err != RZ_ANAL_CLASS_ERR_SUCCESS) {
+	RzAnalysisClassErr err = rz_analysis_class_set_attr (analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_METHOD, meth->name, content);
+	if (err != RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
 		return err;
 	}
 	rz_analysis_class_set_flag (analysis, flagname_method (class_name, meth->name), meth->addr, 0);
-	return RZ_ANAL_CLASS_ERR_SUCCESS;
+	return RZ_ANALYSIS_CLASS_ERR_SUCCESS;
 }
 
 RZ_API RzAnalysisClassErr rz_analysis_class_method_rename(RzAnalysis *analysis, const char *class_name, const char *old_meth_name, const char *new_meth_name) {
-	RzAnalysisClassErr err = rz_analysis_class_rename_attr (analysis, class_name, RZ_ANAL_CLASS_ATTR_TYPE_METHOD, old_meth_name, new_meth_name);
-	if (err != RZ_ANAL_CLASS_ERR_SUCCESS) {
+	RzAnalysisClassErr err = rz_analysis_class_rename_attr (analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_METHOD, old_meth_name, new_meth_name);
+	if (err != RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
 		return err;
 	}
 	rz_analysis_class_rename_flag (analysis,
 			flagname_method (class_name, old_meth_name),
 			flagname_method (class_name, new_meth_name));
-	return RZ_ANAL_CLASS_ERR_SUCCESS;
+	return RZ_ANALYSIS_CLASS_ERR_SUCCESS;
 }
 
 static void rz_analysis_class_method_rename_class(RzAnalysis *analysis, const char *old_class_name, const char *new_class_name) {
-	char *array = sdb_get (analysis->sdb_classes_attrs, key_attr_type_attrs (old_class_name, attr_type_id (RZ_ANAL_CLASS_ATTR_TYPE_METHOD)), 0);
+	char *array = sdb_get (analysis->sdb_classes_attrs, key_attr_type_attrs (old_class_name, attr_type_id (RZ_ANALYSIS_CLASS_ATTR_TYPE_METHOD)), 0);
 	if (!array) {
 		return;
 	}
@@ -592,7 +592,7 @@ static void rz_analysis_class_method_rename_class(RzAnalysis *analysis, const ch
 }
 
 static void rz_analysis_class_method_delete_class(RzAnalysis *analysis, const char *class_name) {
-	char *array = sdb_get (analysis->sdb_classes_attrs, key_attr_type_attrs (class_name, attr_type_id (RZ_ANAL_CLASS_ATTR_TYPE_METHOD)), 0);
+	char *array = sdb_get (analysis->sdb_classes_attrs, key_attr_type_attrs (class_name, attr_type_id (RZ_ANALYSIS_CLASS_ATTR_TYPE_METHOD)), 0);
 	if (!array) {
 		return;
 	}
@@ -607,15 +607,15 @@ static void rz_analysis_class_method_delete_class(RzAnalysis *analysis, const ch
 RZ_API RzAnalysisClassErr rz_analysis_class_method_delete(RzAnalysis *analysis, const char *class_name, const char *meth_name) {
 	char *class_name_sanitized = rz_str_sanitize_sdb_key (class_name);
 	if (!class_name_sanitized) {
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 	char *meth_name_sanitized = rz_str_sanitize_sdb_key (meth_name);
 	if (!meth_name_sanitized) {
 		free (class_name_sanitized);
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
-	RzAnalysisClassErr err = rz_analysis_class_delete_attr_raw (analysis, class_name_sanitized, RZ_ANAL_CLASS_ATTR_TYPE_METHOD, meth_name_sanitized);
-	if (err == RZ_ANAL_CLASS_ERR_SUCCESS) {
+	RzAnalysisClassErr err = rz_analysis_class_delete_attr_raw (analysis, class_name_sanitized, RZ_ANALYSIS_CLASS_ATTR_TYPE_METHOD, meth_name_sanitized);
+	if (err == RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
 		rz_analysis_class_unset_flag (analysis, flagname_method (class_name_sanitized, meth_name_sanitized));
 	}
 	free (class_name_sanitized);
@@ -632,9 +632,9 @@ RZ_API void rz_analysis_class_base_fini(RzAnalysisBaseClass *base) {
 }
 
 RZ_API RzAnalysisClassErr rz_analysis_class_base_get(RzAnalysis *analysis, const char *class_name, const char *base_id, RzAnalysisBaseClass *base) {
-	char *content = rz_analysis_class_get_attr (analysis, class_name, RZ_ANAL_CLASS_ATTR_TYPE_BASE, base_id, false);
+	char *content = rz_analysis_class_get_attr (analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_BASE, base_id, false);
 	if (!content) {
-		return RZ_ANAL_CLASS_ERR_NONEXISTENT_ATTR;
+		return RZ_ANALYSIS_CLASS_ERR_NONEXISTENT_ATTR;
 	}
 
 	char *cur = content;
@@ -644,14 +644,14 @@ RZ_API RzAnalysisClassErr rz_analysis_class_base_get(RzAnalysis *analysis, const
 	base->class_name = strdup (cur);
 	if (!base->class_name) {
 		free (content);
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 
 	cur = next;
 	if (!cur) {
 		free (content);
 		free (base->class_name);
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 	sdb_anext (cur, NULL);
 
@@ -662,10 +662,10 @@ RZ_API RzAnalysisClassErr rz_analysis_class_base_get(RzAnalysis *analysis, const
 	base->id = rz_str_sanitize_sdb_key (base_id);
 	if (!base->id) {
 		free (base->class_name);
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 
-	return RZ_ANAL_CLASS_ERR_SUCCESS;
+	return RZ_ANALYSIS_CLASS_ERR_SUCCESS;
 }
 
 static void rz_analysis_class_base_fini_proxy(void *e, void *user) {
@@ -685,14 +685,14 @@ RZ_API RzVector/*<RzAnalysisBaseClass>*/ *rz_analysis_class_base_get_all(RzAnaly
 		rz_vector_free (vec);
 		return NULL;
 	}
-	char *array = sdb_get (analysis->sdb_classes_attrs, key_attr_type_attrs (class_name_sanitized, attr_type_id (RZ_ANAL_CLASS_ATTR_TYPE_BASE)), 0);
+	char *array = sdb_get (analysis->sdb_classes_attrs, key_attr_type_attrs (class_name_sanitized, attr_type_id (RZ_ANALYSIS_CLASS_ATTR_TYPE_BASE)), 0);
 	free (class_name_sanitized);
 
 	rz_vector_reserve (vec, (size_t) sdb_alen (array));
 	char *cur;
 	sdb_aforeach (cur, array) {
 		RzAnalysisBaseClass base;
-		if (rz_analysis_class_base_get (analysis, class_name, cur, &base) == RZ_ANAL_CLASS_ERR_SUCCESS) {
+		if (rz_analysis_class_base_get (analysis, class_name, cur, &base) == RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
 			rz_vector_push (vec, &base);
 		}
 		sdb_aforeach_next (cur);
@@ -706,13 +706,13 @@ static RzAnalysisClassErr rz_analysis_class_base_set_raw(RzAnalysis *analysis, c
 	char *content = sdb_fmt ("%s" SDB_SS "%"PFMT64u, base_class_name_sanitized, base->offset);
 	RzAnalysisClassErr err;
 	if (base->id) {
-		err = rz_analysis_class_set_attr (analysis, class_name, RZ_ANAL_CLASS_ATTR_TYPE_BASE, base->id, content);
+		err = rz_analysis_class_set_attr (analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_BASE, base->id, content);
 	} else {
 		base->id = malloc(16);
 		if (base->id) {
-			err = rz_analysis_class_add_attr_unique (analysis, class_name, RZ_ANAL_CLASS_ATTR_TYPE_BASE, content, base->id, 16);
+			err = rz_analysis_class_add_attr_unique (analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_BASE, content, base->id, 16);
 		} else {
-			err = RZ_ANAL_CLASS_ERR_OTHER;
+			err = RZ_ANALYSIS_CLASS_ERR_OTHER;
 		}
 	}
 	return err;
@@ -721,12 +721,12 @@ static RzAnalysisClassErr rz_analysis_class_base_set_raw(RzAnalysis *analysis, c
 RZ_API RzAnalysisClassErr rz_analysis_class_base_set(RzAnalysis *analysis, const char *class_name, RzAnalysisBaseClass *base) {
 	char *base_class_name_sanitized = rz_str_sanitize_sdb_key (base->class_name);
 	if (!base_class_name_sanitized) {
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 
 	if (!rz_analysis_class_exists_raw (analysis, base_class_name_sanitized)) {
 		free (base_class_name_sanitized);
-		return RZ_ANAL_CLASS_ERR_NONEXISTENT_CLASS;
+		return RZ_ANALYSIS_CLASS_ERR_NONEXISTENT_CLASS;
 	}
 	RzVector /*<RzAnalysisBaseClass>*/ *bases = rz_analysis_class_base_get_all (analysis, class_name);
 	if (bases) {
@@ -735,7 +735,7 @@ RZ_API RzAnalysisClassErr rz_analysis_class_base_set(RzAnalysis *analysis, const
 			if (!strcmp (existing_base->class_name, base->class_name)) {
 				free (base_class_name_sanitized);
 				rz_vector_free (bases);
-				return RZ_ANAL_CLASS_ERR_OTHER;
+				return RZ_ANALYSIS_CLASS_ERR_OTHER;
 			}
 		}
 	}
@@ -746,7 +746,7 @@ RZ_API RzAnalysisClassErr rz_analysis_class_base_set(RzAnalysis *analysis, const
 }
 
 RZ_API RzAnalysisClassErr rz_analysis_class_base_delete(RzAnalysis *analysis, const char *class_name, const char *base_id) {
-	return rz_analysis_class_delete_attr (analysis, class_name, RZ_ANAL_CLASS_ATTR_TYPE_BASE, base_id);
+	return rz_analysis_class_delete_attr (analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_BASE, base_id);
 }
 
 typedef struct {
@@ -809,9 +809,9 @@ RZ_API void rz_analysis_class_vtable_fini(RzAnalysisVTable *vtable) {
 }
 
 RZ_API RzAnalysisClassErr rz_analysis_class_vtable_get(RzAnalysis *analysis, const char *class_name, const char *vtable_id, RzAnalysisVTable *vtable) {
-	char *content = rz_analysis_class_get_attr (analysis, class_name, RZ_ANAL_CLASS_ATTR_TYPE_VTABLE, vtable_id, false);
+	char *content = rz_analysis_class_get_attr (analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_VTABLE, vtable_id, false);
 	if (!content) {
-		return RZ_ANAL_CLASS_ERR_NONEXISTENT_ATTR;
+		return RZ_ANALYSIS_CLASS_ERR_NONEXISTENT_ATTR;
 	}
 
 	char *cur = content;
@@ -823,7 +823,7 @@ RZ_API RzAnalysisClassErr rz_analysis_class_vtable_get(RzAnalysis *analysis, con
 	cur = next;
 	if (!cur) {
 		free (content);
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 	sdb_anext (cur, &next);
 
@@ -841,10 +841,10 @@ RZ_API RzAnalysisClassErr rz_analysis_class_vtable_get(RzAnalysis *analysis, con
 
 	vtable->id = rz_str_sanitize_sdb_key (vtable_id);
 	if (!vtable->id) {
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 
-	return RZ_ANAL_CLASS_ERR_SUCCESS;
+	return RZ_ANALYSIS_CLASS_ERR_SUCCESS;
 }
 
 static void rz_analysis_class_vtable_fini_proxy(void *e, void *user) {
@@ -864,14 +864,14 @@ RZ_API RzVector/*<RzAnalysisVTable>*/ *rz_analysis_class_vtable_get_all(RzAnalys
 		rz_vector_free (vec);
 		return NULL;
 	}
-	char *array = sdb_get (analysis->sdb_classes_attrs, key_attr_type_attrs (class_name_sanitized, attr_type_id (RZ_ANAL_CLASS_ATTR_TYPE_VTABLE)), 0);
+	char *array = sdb_get (analysis->sdb_classes_attrs, key_attr_type_attrs (class_name_sanitized, attr_type_id (RZ_ANALYSIS_CLASS_ATTR_TYPE_VTABLE)), 0);
 	free (class_name_sanitized);
 
 	rz_vector_reserve (vec, (size_t) sdb_alen (array));
 	char *cur;
 	sdb_aforeach (cur, array) {
 		RzAnalysisVTable vtable;
-		if (rz_analysis_class_vtable_get (analysis, class_name, cur, &vtable) == RZ_ANAL_CLASS_ERR_SUCCESS) {
+		if (rz_analysis_class_vtable_get (analysis, class_name, cur, &vtable) == RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
 			rz_vector_push (vec, &vtable);
 		}
 		sdb_aforeach_next (cur);
@@ -884,24 +884,24 @@ RZ_API RzVector/*<RzAnalysisVTable>*/ *rz_analysis_class_vtable_get_all(RzAnalys
 RZ_API RzAnalysisClassErr rz_analysis_class_vtable_set(RzAnalysis *analysis, const char *class_name, RzAnalysisVTable *vtable) {
 	char *content = sdb_fmt ("0x%"PFMT64x SDB_SS "%"PFMT64u SDB_SS "%"PFMT64u, vtable->addr, vtable->offset, vtable->size);
 	if (vtable->id) {
-		return rz_analysis_class_set_attr (analysis, class_name, RZ_ANAL_CLASS_ATTR_TYPE_VTABLE, vtable->id, content);
+		return rz_analysis_class_set_attr (analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_VTABLE, vtable->id, content);
 	}
 	vtable->id = malloc(16);
 	if (!vtable->id) {
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
-	RzAnalysisClassErr err = rz_analysis_class_add_attr_unique (analysis, class_name, RZ_ANAL_CLASS_ATTR_TYPE_VTABLE, content, vtable->id, 16);
-	if (err != RZ_ANAL_CLASS_ERR_SUCCESS) {
+	RzAnalysisClassErr err = rz_analysis_class_add_attr_unique (analysis, class_name, RZ_ANALYSIS_CLASS_ATTR_TYPE_VTABLE, content, vtable->id, 16);
+	if (err != RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
 		return err;
 	}
 
 	rz_analysis_class_set_flag (analysis, flagname_vtable (class_name, vtable->id), vtable->addr, vtable->size);
 
-	return RZ_ANAL_CLASS_ERR_SUCCESS;
+	return RZ_ANALYSIS_CLASS_ERR_SUCCESS;
 }
 
 static void rz_analysis_class_vtable_rename_class(RzAnalysis *analysis, const char *old_class_name, const char *new_class_name) {
-	char *array = sdb_get (analysis->sdb_classes_attrs, key_attr_type_attrs (old_class_name, attr_type_id (RZ_ANAL_CLASS_ATTR_TYPE_VTABLE)), 0);
+	char *array = sdb_get (analysis->sdb_classes_attrs, key_attr_type_attrs (old_class_name, attr_type_id (RZ_ANALYSIS_CLASS_ATTR_TYPE_VTABLE)), 0);
 	if (!array) {
 		return;
 	}
@@ -916,7 +916,7 @@ static void rz_analysis_class_vtable_rename_class(RzAnalysis *analysis, const ch
 }
 
 static void rz_analysis_class_vtable_delete_class(RzAnalysis *analysis, const char *class_name) {
-	char *array = sdb_get (analysis->sdb_classes_attrs, key_attr_type_attrs (class_name, attr_type_id (RZ_ANAL_CLASS_ATTR_TYPE_VTABLE)), 0);
+	char *array = sdb_get (analysis->sdb_classes_attrs, key_attr_type_attrs (class_name, attr_type_id (RZ_ANALYSIS_CLASS_ATTR_TYPE_VTABLE)), 0);
 	if (!array) {
 		return;
 	}
@@ -931,15 +931,15 @@ static void rz_analysis_class_vtable_delete_class(RzAnalysis *analysis, const ch
 RZ_API RzAnalysisClassErr rz_analysis_class_vtable_delete(RzAnalysis *analysis, const char *class_name, const char *vtable_id) {
 	char *class_name_sanitized = rz_str_sanitize_sdb_key (class_name);
 	if (!class_name_sanitized) {
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
 	char *vtable_id_sanitized = rz_str_sanitize_sdb_key (vtable_id);
 	if (!vtable_id_sanitized) {
 		free (class_name_sanitized);
-		return RZ_ANAL_CLASS_ERR_OTHER;
+		return RZ_ANALYSIS_CLASS_ERR_OTHER;
 	}
-	RzAnalysisClassErr err = rz_analysis_class_delete_attr_raw (analysis, class_name_sanitized, RZ_ANAL_CLASS_ATTR_TYPE_VTABLE, vtable_id_sanitized);
-	if (err == RZ_ANAL_CLASS_ERR_SUCCESS) {
+	RzAnalysisClassErr err = rz_analysis_class_delete_attr_raw (analysis, class_name_sanitized, RZ_ANALYSIS_CLASS_ATTR_TYPE_VTABLE, vtable_id_sanitized);
+	if (err == RZ_ANALYSIS_CLASS_ERR_SUCCESS) {
 		rz_analysis_class_unset_flag (analysis, flagname_vtable (class_name_sanitized, vtable_id_sanitized));
 	}
 	free (class_name_sanitized);

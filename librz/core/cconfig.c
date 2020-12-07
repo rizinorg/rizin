@@ -393,7 +393,7 @@ static bool cb_analcpu(void *user, void *data) {
 	rz_analysis_set_cpu (core->analysis, node->value);
 	/* set pcalign */
 	{
-		int v = rz_analysis_archinfo (core->analysis, RZ_ANAL_ARCHINFO_ALIGN);
+		int v = rz_analysis_archinfo (core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 		rz_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
 	}
 	return true;
@@ -672,7 +672,7 @@ static bool cb_asmarch(void *user, void *data) {
 		update_asmcpu_options (core, asmcpu);
 	}
 	{
-		int v = rz_analysis_archinfo (core->analysis, RZ_ANAL_ARCHINFO_ALIGN);
+		int v = rz_analysis_archinfo (core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 		if (v != -1) {
 			rz_config_set_i (core->config, "asm.pcalign", v);
 		} else {
@@ -783,7 +783,7 @@ static bool cb_asmbits(void *user, void *data) {
 			rz_config_set_i (core->config, "dbg.bpsize", rz_bp_size (core->dbg->bp));
 		}
 		/* set pcalign */
-		int v = rz_analysis_archinfo (core->analysis, RZ_ANAL_ARCHINFO_ALIGN);
+		int v = rz_analysis_archinfo (core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 		rz_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
 	}
 	return ret;
@@ -2706,10 +2706,10 @@ static bool cb_anal_cpp_abi(void *user, void *data) {
 
 	if (*node->value) {
 		if (strcmp (node->value, "itanium") == 0) {
-			core->analysis->cpp_abi = RZ_ANAL_CPP_ABI_ITANIUM;
+			core->analysis->cpp_abi = RZ_ANALYSIS_CPP_ABI_ITANIUM;
 			return true;
 		} else if (strcmp (node->value, "msvc") == 0) {
-			core->analysis->cpp_abi = RZ_ANAL_CPP_ABI_MSVC;
+			core->analysis->cpp_abi = RZ_ANALYSIS_CPP_ABI_MSVC;
 			return true;
 		}
 		eprintf ("anal.cpp.abi: cannot find '%s'\n", node->value);

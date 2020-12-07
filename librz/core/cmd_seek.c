@@ -250,7 +250,7 @@ static int cmd_seek_opcode_backward(RzCore *core, int numinstr) {
 		ret = rz_core_asm_bwdis_len (core, &instr_len, &addr, numinstr);
 #endif
 		addr = core->offset;
-		const int mininstrsize = rz_analysis_archinfo (core->analysis, RZ_ANAL_ARCHINFO_MIN_OP_SIZE);
+		const int mininstrsize = rz_analysis_archinfo (core->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 		for (i = 0; i < numinstr; i++) {
 			ut64 prev_addr = rz_core_prevop_addr_force (core, addr, 1);
 			if (prev_addr == UT64_MAX) {
@@ -280,7 +280,7 @@ static int cmd_seek_opcode_forward (RzCore *core, int n) {
 	for (val = i = 0; i < n; i++) {
 		RzAnalysisOp op;
 		ret = rz_analysis_op (core->analysis, &op, core->offset, core->block,
-			core->blocksize, RZ_ANAL_OP_MASK_BASIC);
+			core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC);
 		if (ret < 1) {
 			ret = 1;
 		}

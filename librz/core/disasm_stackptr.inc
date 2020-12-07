@@ -10,10 +10,10 @@ static void ds_update_stackptr(RDisasmState *ds, RzAnalysisOp *op) {
 	ds->ostackptr = ds->stackptr;
 	switch (op->stackop) {
 	
-	case RZ_ANAL_STACK_RESET:
+	case RZ_ANALYSIS_STACK_RESET:
 		ds->stackptr = 0;
 		break;
-	case RZ_ANAL_STACK_INC:
+	case RZ_ANALYSIS_STACK_INC:
 		ds->stackptr += op->stackptr;
 		break;
 	default:
@@ -22,7 +22,7 @@ static void ds_update_stackptr(RDisasmState *ds, RzAnalysisOp *op) {
 	}
 	/* XXX if we reset the stackptr 'ret 0x4' has not effect.
 	 * Use RzAnalysisFunction->RzAnalysisOp->stackptr? */
-	if (op->type == RZ_ANAL_OP_TYPE_RET) {
+	if (op->type == RZ_ANALYSIS_OP_TYPE_RET) {
 		ds->stackptr = 0;
 	}
 }
@@ -36,10 +36,10 @@ static int _stackptr_range(RDisasmState *ds, ut64 addr, ut64 addr_end, int stack
 		if (op) {
 			*ostackptr = stackptr;
 			switch (op->stackop) {
-			case RZ_ANAL_STACK_RESET:
+			case RZ_ANALYSIS_STACK_RESET:
 				stackptr = 0;
 				break;
-			case RZ_ANAL_STACK_INC:
+			case RZ_ANALYSIS_STACK_INC:
 				stackptr += op->stackptr;
 				break;
 			default:
@@ -95,7 +95,7 @@ static int ds_ostackptr_at(RDisasmState *ds, int *ostackptr) {
 #if USE_BB_STACKPTR
 	// XXX doesnt works because bb->stackptr returns the maximum increment of the bb instead of the initial stackptr value
 	*ostackptr = ds->ostackptr;
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (ds->core->analysis, ds->at, RZ_ANAL_FCN_TYPE_NULL);
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (ds->core->analysis, ds->at, RZ_ANALYSIS_FCN_TYPE_NULL);
 	if (fcn) {
 		RzAnalysisBlock *bb = rz_analysis_fcn_bbget_in (ds->core->analysis, fcn, ds->at);
 		if (bb) {
@@ -119,8 +119,8 @@ static void ds_print_stackptr(RDisasmState *ds) {
 	int stackptr = ds_ostackptr_at (ds, &ostackptr);
 	if (ds->show_stackptr) {
 		rz_cons_printf ("%5d%s", stackptr,
-			ds->analop.type == RZ_ANAL_OP_TYPE_CALL?">":
-			ds->analop.stackop == RZ_ANAL_STACK_ALIGN? "=":
+			ds->analop.type == RZ_ANALYSIS_OP_TYPE_CALL?">":
+			ds->analop.stackop == RZ_ANALYSIS_STACK_ALIGN? "=":
 			stackptr > ostackptr? "+":
 			stackptr < ostackptr? "-": " ");
 		ds_update_stackptr (ds, &ds->analop);

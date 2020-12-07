@@ -90,12 +90,12 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->ht_addr_fun = ht_up_new0 ();
 	analysis->ht_name_fun = ht_pp_new0 ();
 	analysis->os = strdup (RZ_SYS_OS);
-	analysis->esil_goto_limit = RZ_ANAL_ESIL_GOTO_LIMIT;
+	analysis->esil_goto_limit = RZ_ANALYSIS_ESIL_GOTO_LIMIT;
 	analysis->opt.nopskip = true; // skip nops in code analysis
 	analysis->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
 	analysis->gp = 0LL;
 	analysis->sdb = sdb_new0 ();
-	analysis->cpp_abi = RZ_ANAL_CPP_ABI_ITANIUM;
+	analysis->cpp_abi = RZ_ANALYSIS_CPP_ABI_ITANIUM;
 	analysis->opt.depth = 32;
 	analysis->opt.noncode = false; // do not analyze data by default
 	rz_spaces_init (&analysis->meta_spaces, "CS");
@@ -118,8 +118,8 @@ RZ_API RzAnalysis *rz_analysis_new(void) {
 	analysis->cb_printf = (PrintfCallback) printf;
 	(void)rz_analysis_pin_init (analysis);
 	(void)rz_analysis_xrefs_init (analysis);
-	analysis->diff_thbb = RZ_ANAL_THRESHOLDBB;
-	analysis->diff_thfcn = RZ_ANAL_THRESHOLDFCN;
+	analysis->diff_thbb = RZ_ANALYSIS_THRESHOLDBB;
+	analysis->diff_thfcn = RZ_ANALYSIS_THRESHOLDFCN;
 	analysis->syscall = rz_syscall_new ();
 	rz_io_bind_init (analysis->iob);
 	rz_flag_bind_init (analysis->flb);
@@ -295,7 +295,7 @@ RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits) {
 RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu) {
 	free (analysis->cpu);
 	analysis->cpu = cpu ? strdup (cpu) : NULL;
-	int v = rz_analysis_archinfo (analysis, RZ_ANAL_ARCHINFO_ALIGN);
+	int v = rz_analysis_archinfo (analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 	if (v != -1) {
 		analysis->pcalign = v;
 	}
@@ -332,7 +332,7 @@ RZ_API ut8 *rz_analysis_mask(RzAnalysis *analysis, int size, const ut8 *data, ut
 	memset (ret, 0xff, size);
 
 	while (idx < size) {
-		if ((oplen = rz_analysis_op (analysis, op, at, data + idx, size - idx, RZ_ANAL_OP_MASK_BASIC)) < 1) {
+		if ((oplen = rz_analysis_op (analysis, op, at, data + idx, size - idx, RZ_ANALYSIS_OP_MASK_BASIC)) < 1) {
 			break;
 		}
 		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode != 0) {
@@ -387,7 +387,7 @@ RZ_API RzAnalysisOp *rz_analysis_op_hexstr(RzAnalysis *analysis, ut64 addr, cons
 		return NULL;
 	}
 	int len = rz_hex_str2bin (str, buf);
-	rz_analysis_op (analysis, op, addr, buf, len, RZ_ANAL_OP_MASK_BASIC);
+	rz_analysis_op (analysis, op, addr, buf, len, RZ_ANALYSIS_OP_MASK_BASIC);
 	free (buf);
 	return op;
 }
@@ -397,14 +397,14 @@ RZ_API bool rz_analysis_op_is_eob(RzAnalysisOp *op) {
 		return true;
 	}
 	switch (op->type) {
-	case RZ_ANAL_OP_TYPE_JMP:
-	case RZ_ANAL_OP_TYPE_UJMP:
-	case RZ_ANAL_OP_TYPE_RJMP:
-	case RZ_ANAL_OP_TYPE_IJMP:
-	case RZ_ANAL_OP_TYPE_IRJMP:
-	case RZ_ANAL_OP_TYPE_CJMP:
-	case RZ_ANAL_OP_TYPE_RET:
-	case RZ_ANAL_OP_TYPE_TRAP:
+	case RZ_ANALYSIS_OP_TYPE_JMP:
+	case RZ_ANALYSIS_OP_TYPE_UJMP:
+	case RZ_ANALYSIS_OP_TYPE_RJMP:
+	case RZ_ANALYSIS_OP_TYPE_IJMP:
+	case RZ_ANALYSIS_OP_TYPE_IRJMP:
+	case RZ_ANALYSIS_OP_TYPE_CJMP:
+	case RZ_ANALYSIS_OP_TYPE_RET:
+	case RZ_ANALYSIS_OP_TYPE_TRAP:
 		return true;
 	default:
 		return false;
@@ -430,9 +430,9 @@ RZ_API void rz_analysis_purge(RzAnalysis *analysis) {
 RZ_API int rz_analysis_archinfo(RzAnalysis *analysis, int query) {
 	rz_return_val_if_fail (analysis, -1);
 	switch (query) {
-	case RZ_ANAL_ARCHINFO_MIN_OP_SIZE:
-	case RZ_ANAL_ARCHINFO_MAX_OP_SIZE:
-	case RZ_ANAL_ARCHINFO_ALIGN:
+	case RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE:
+	case RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE:
+	case RZ_ANALYSIS_ARCHINFO_ALIGN:
 		if (analysis->cur && analysis->cur->archinfo) {
 			return analysis->cur->archinfo (analysis, query);
 		}
@@ -608,25 +608,25 @@ static bool noreturn_recurse(RzAnalysis *analysis, ut64 addr) {
 		eprintf ("Couldn't read buffer\n");
 		return false;
 	}
-	if (rz_analysis_op (analysis, &op, addr, bbuf, sizeof (bbuf), RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_VAL) < 1) {
+	if (rz_analysis_op (analysis, &op, addr, bbuf, sizeof (bbuf), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_VAL) < 1) {
 		return false;
 	}
-	switch (op.type & RZ_ANAL_OP_TYPE_MASK) {
-	case RZ_ANAL_OP_TYPE_JMP:
+	switch (op.type & RZ_ANALYSIS_OP_TYPE_MASK) {
+	case RZ_ANALYSIS_OP_TYPE_JMP:
 		if (op.jump == UT64_MAX) {
 			recurse_addr = op.ptr;
 		} else {
 			recurse_addr = op.jump;
 		}
 		break;
-	case RZ_ANAL_OP_TYPE_UCALL:
-	case RZ_ANAL_OP_TYPE_RCALL:
-	case RZ_ANAL_OP_TYPE_ICALL:
-	case RZ_ANAL_OP_TYPE_IRCALL:
+	case RZ_ANALYSIS_OP_TYPE_UCALL:
+	case RZ_ANALYSIS_OP_TYPE_RCALL:
+	case RZ_ANALYSIS_OP_TYPE_ICALL:
+	case RZ_ANALYSIS_OP_TYPE_IRCALL:
 		recurse_addr = op.ptr;
 		break;
-	case RZ_ANAL_OP_TYPE_CCALL:
-	case RZ_ANAL_OP_TYPE_CALL:
+	case RZ_ANALYSIS_OP_TYPE_CCALL:
+	case RZ_ANALYSIS_OP_TYPE_CALL:
 		recurse_addr = op.jump;
 		break;
 	}

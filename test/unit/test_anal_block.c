@@ -588,14 +588,14 @@ bool test_r_anal_block_automerge() {
 		RzAnalysisBlock *f = rz_analysis_create_block (analysis, 0x150, 0x10);
 		e->jump = f->addr;
 
-		RzAnalysisFunction *fa = rz_analysis_create_function (analysis, "fcn", 0x100, RZ_ANAL_FCN_TYPE_FCN, NULL);
+		RzAnalysisFunction *fa = rz_analysis_create_function (analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN, NULL);
 		rz_analysis_function_add_block (fa, a);
 		rz_analysis_function_add_block (fa, c);
 		rz_analysis_function_add_block (fa, d);
 		rz_analysis_function_add_block (fa, e);
 		rz_analysis_function_add_block (fa, f);
 
-		RzAnalysisFunction *fb = rz_analysis_create_function (analysis, "fcn2", 0x110, RZ_ANAL_FCN_TYPE_FCN, NULL);
+		RzAnalysisFunction *fb = rz_analysis_create_function (analysis, "fcn2", 0x110, RZ_ANALYSIS_FCN_TYPE_FCN, NULL);
 		rz_analysis_function_add_block (fb, b);
 		rz_analysis_function_add_block (fb, c);
 		rz_analysis_function_add_block (fb, d);
@@ -652,12 +652,12 @@ bool test_r_anal_block_chop_noreturn(void) {
 	a->jump = c->addr;
 	b->jump = c->addr;
 
-	RzAnalysisFunction *fa = rz_analysis_create_function (analysis, "fcn", 0x100, RZ_ANAL_FCN_TYPE_FCN, NULL);
+	RzAnalysisFunction *fa = rz_analysis_create_function (analysis, "fcn", 0x100, RZ_ANALYSIS_FCN_TYPE_FCN, NULL);
 	rz_analysis_function_add_block (fa, a);
 	rz_analysis_function_add_block (fa, b);
 	rz_analysis_function_add_block (fa, c);
 
-	RzAnalysisFunction *fb = rz_analysis_create_function (analysis, "fcn2", 0x130, RZ_ANAL_FCN_TYPE_FCN, NULL);
+	RzAnalysisFunction *fb = rz_analysis_create_function (analysis, "fcn2", 0x130, RZ_ANALYSIS_FCN_TYPE_FCN, NULL);
 	fb->is_noreturn = true;
 
 	rz_analysis_block_chop_noreturn (b, 0x111);

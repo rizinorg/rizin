@@ -56,17 +56,17 @@ static void __as_free(RzAsmState *as) {
 
 static char *stackop2str(int type) {
 	switch (type) {
-	case RZ_ANAL_STACK_NULL: return strdup ("null");
-	case RZ_ANAL_STACK_NOP: return strdup ("nop");
-	//case RZ_ANAL_STACK_INCSTACK: return strdup ("incstack");
-	case RZ_ANAL_STACK_GET: return strdup ("get");
-	case RZ_ANAL_STACK_SET: return strdup ("set");
+	case RZ_ANALYSIS_STACK_NULL: return strdup ("null");
+	case RZ_ANALYSIS_STACK_NOP: return strdup ("nop");
+	//case RZ_ANALYSIS_STACK_INCSTACK: return strdup ("incstack");
+	case RZ_ANALYSIS_STACK_GET: return strdup ("get");
+	case RZ_ANALYSIS_STACK_SET: return strdup ("set");
 	}
 	return strdup ("unknown");
 }
 
 static int showanal(RzAsmState *as, RzAnalysisOp *op, ut64 offset, ut8 *buf, int len, PJ *pj) {
-	int ret = rz_analysis_op (as->analysis, op, offset, buf, len, RZ_ANAL_OP_MASK_ESIL);
+	int ret = rz_analysis_op (as->analysis, op, offset, buf, len, RZ_ANALYSIS_OP_MASK_ESIL);
 	if (ret < 1) {
 		return ret;
 	}
@@ -137,7 +137,7 @@ static int show_analinfo(RzAsmState *as, const char *arg, ut64 offset) {
 	}
 	for (ret = 0; ret < len;) {
 		aop.size = 0;
-		if (rz_analysis_op (as->analysis, &aop, offset, buf + ret, len - ret, RZ_ANAL_OP_MASK_BASIC) < 1) {
+		if (rz_analysis_op (as->analysis, &aop, offset, buf + ret, len - ret, RZ_ANALYSIS_OP_MASK_BASIC) < 1) {
 			eprintf ("Error analyzing instruction at 0x%08"PFMT64x"\n", offset);
 			break;
 		}
@@ -349,7 +349,7 @@ static int rasm_disasm(RzAsmState *as, ut64 addr, const char *buf, int len, int 
 		RzAnalysisOp aop = { 0 };
 		while (ret < len) {
 			aop.size = 0;
-			if (rz_analysis_op (as->analysis, &aop, addr, data + ret, len - ret, RZ_ANAL_OP_MASK_ESIL) > 0) {
+			if (rz_analysis_op (as->analysis, &aop, addr, data + ret, len - ret, RZ_ANALYSIS_OP_MASK_ESIL) > 0) {
 				printf ("%s\n", RZ_STRBUF_SAFEGET (&aop.esil));
 			}
 			if (aop.size < 1) {

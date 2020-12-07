@@ -65,10 +65,10 @@
 RZ_API void rz_serialize_anal_diff_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisDiff *diff) {
 	pj_o (j);
 	switch (diff->type) {
-	case RZ_ANAL_DIFF_TYPE_MATCH:
+	case RZ_ANALYSIS_DIFF_TYPE_MATCH:
 		pj_ks (j, "type", "m");
 		break;
-	case RZ_ANAL_DIFF_TYPE_UNMATCH:
+	case RZ_ANALYSIS_DIFF_TYPE_UNMATCH:
 		pj_ks (j, "type", "u");
 		break;
 	}
@@ -126,9 +126,9 @@ RZ_API RZ_NULLABLE RzAnalysisDiff *rz_serialize_anal_diff_load(RZ_NONNULL RzSeri
 				break;
 			}
 			if (strcmp (child->str_value, "m") == 0) {
-				diff->type = RZ_ANAL_DIFF_TYPE_MATCH;
+				diff->type = RZ_ANALYSIS_DIFF_TYPE_MATCH;
 			} else if (strcmp (child->str_value, "u") == 0) {
-				diff->type = RZ_ANAL_DIFF_TYPE_UNMATCH;
+				diff->type = RZ_ANALYSIS_DIFF_TYPE_UNMATCH;
 			}
 			break;
 		case DIFF_FIELD_ADDR:
@@ -575,17 +575,17 @@ RZ_API void rz_serialize_anal_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisVa
 	pj_ks (j, "name", var->name);
 	pj_ks (j, "type", var->type);
 	switch (var->kind) {
-	case RZ_ANAL_VAR_KIND_REG:
+	case RZ_ANALYSIS_VAR_KIND_REG:
 		pj_ks (j, "kind", "r");
 		break;
-	case RZ_ANAL_VAR_KIND_SPV:
+	case RZ_ANALYSIS_VAR_KIND_SPV:
 		pj_ks (j, "kind", "s");
 		break;
-	case RZ_ANAL_VAR_KIND_BPV:
+	case RZ_ANALYSIS_VAR_KIND_BPV:
 		pj_ks (j, "kind", "b");
 		break;
 	}
-	if (var->kind != RZ_ANAL_VAR_KIND_REG) {
+	if (var->kind != RZ_ANALYSIS_VAR_KIND_REG) {
 		pj_kN (j, "delta", var->delta);
 	}
 	if (var->regname) {
@@ -604,13 +604,13 @@ RZ_API void rz_serialize_anal_var_save(RZ_NONNULL PJ *j, RZ_NONNULL RzAnalysisVa
 			pj_o (j);
 			pj_kn (j, "off", acc->offset);
 			switch (acc->type) {
-			case RZ_ANAL_VAR_ACCESS_TYPE_READ:
+			case RZ_ANALYSIS_VAR_ACCESS_TYPE_READ:
 				pj_ks (j, "type", "r");
 				break;
-			case RZ_ANAL_VAR_ACCESS_TYPE_WRITE:
+			case RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE:
 				pj_ks (j, "type", "w");
 				break;
-			case RZ_ANAL_VAR_ACCESS_TYPE_READ | RZ_ANAL_VAR_ACCESS_TYPE_WRITE:
+			case RZ_ANALYSIS_VAR_ACCESS_TYPE_READ | RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE:
 				pj_ks (j, "type", "rw");
 				break;
 			}
@@ -709,13 +709,13 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_anal_var_load(RZ_NONNULL RzAnalys
 			}
 			switch (*child->str_value) {
 			case 'r':
-				kind = RZ_ANAL_VAR_KIND_REG;
+				kind = RZ_ANALYSIS_VAR_KIND_REG;
 				break;
 			case 's':
-				kind = RZ_ANAL_VAR_KIND_SPV;
+				kind = RZ_ANALYSIS_VAR_KIND_SPV;
 				break;
 			case 'b':
-				kind = RZ_ANAL_VAR_KIND_BPV;
+				kind = RZ_ANALYSIS_VAR_KIND_BPV;
 				break;
 			default:
 				break;
@@ -778,14 +778,14 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_anal_var_load(RZ_NONNULL RzAnalys
 				// parse "r", "w" or "rw" and reject everything else
 				if (acctype_str[0] == 'r') {
 					if (acctype_str[1] == 'w') {
-						acctype = RZ_ANAL_VAR_ACCESS_TYPE_READ | RZ_ANAL_VAR_ACCESS_TYPE_WRITE;
+						acctype = RZ_ANALYSIS_VAR_ACCESS_TYPE_READ | RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE;
 					} else if (!acctype_str[1]) {
-						acctype = RZ_ANAL_VAR_ACCESS_TYPE_READ;
+						acctype = RZ_ANALYSIS_VAR_ACCESS_TYPE_READ;
 					} else {
 						continue;
 					}
 				} else if (acctype_str[0] == 'w' && !acctype_str[1]) {
-					acctype = RZ_ANAL_VAR_ACCESS_TYPE_WRITE;
+					acctype = RZ_ANALYSIS_VAR_ACCESS_TYPE_WRITE;
 				} else {
 					continue;
 				}
@@ -814,7 +814,7 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_anal_var_load(RZ_NONNULL RzAnalys
 				RzAnalysisVarConstraint constr;
 				constr.cond = (_RzAnalysisCond)baby->num.s_value;
 				constr.val = sibling->num.u_value;
-				if (constr.cond < RZ_ANAL_COND_AL || constr.cond > RZ_ANAL_COND_LS) {
+				if (constr.cond < RZ_ANALYSIS_COND_AL || constr.cond > RZ_ANALYSIS_COND_LS) {
 					baby = sibling;
 					continue;
 				}
@@ -827,7 +827,7 @@ RZ_API RZ_NULLABLE RzAnalysisVar *rz_serialize_anal_var_load(RZ_NONNULL RzAnalys
 			break;
 	})
 
-	if (kind == RZ_ANAL_VAR_KIND_REG) {
+	if (kind == RZ_ANALYSIS_VAR_KIND_REG) {
 		if (!regname) {
 			goto beach;
 		}
@@ -1256,7 +1256,7 @@ static bool store_xref_cb(void *j, const ut64 k, const void *v) {
 	const RzAnalysisRef *xref = v;
 	pj_o (j);
 	pj_kn (j, "to", k);
-	if (xref->type != RZ_ANAL_REF_TYPE_NULL) {
+	if (xref->type != RZ_ANALYSIS_REF_TYPE_NULL) {
 		char type[2] = { xref->type, '\0' };
 		pj_ks (j, "type", type);
 	}
@@ -1316,7 +1316,7 @@ static bool xrefs_load_cb(void *user, const char *k, const char *v) {
 		}
 		ut64 to = baby->num.u_value;
 
-		RzAnalysisRefType type = RZ_ANAL_REF_TYPE_NULL;
+		RzAnalysisRefType type = RZ_ANALYSIS_REF_TYPE_NULL;
 		baby = rz_json_get (child, "type");
 		if (baby) {
 			// must be a 1-char string
@@ -1324,10 +1324,10 @@ static bool xrefs_load_cb(void *user, const char *k, const char *v) {
 				goto error;
 			}
 			switch (baby->str_value[0]) {
-			case RZ_ANAL_REF_TYPE_CODE:
-			case RZ_ANAL_REF_TYPE_CALL:
-			case RZ_ANAL_REF_TYPE_DATA:
-			case RZ_ANAL_REF_TYPE_STRING:
+			case RZ_ANALYSIS_REF_TYPE_CODE:
+			case RZ_ANALYSIS_REF_TYPE_CALL:
+			case RZ_ANALYSIS_REF_TYPE_DATA:
+			case RZ_ANALYSIS_REF_TYPE_STRING:
 				type = baby->str_value[0];
 				break;
 			default:
@@ -1674,52 +1674,52 @@ static bool hints_acc_store_cb(void *user, const ut64 addr, const void *v) {
 		RzAnalysisAddrHintRecord *record;
 		rz_vector_foreach (h->addr_hints, record) {
 			switch (record->type) {
-			case RZ_ANAL_ADDR_HINT_TYPE_IMMBASE:
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_IMMBASE:
 				pj_ki (j, "immbase", record->immbase);
 				break;
-			case RZ_ANAL_ADDR_HINT_TYPE_JUMP:
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_JUMP:
 				pj_kn (j, "jump", record->jump);
 				break;
-			case RZ_ANAL_ADDR_HINT_TYPE_FAIL:
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_FAIL:
 				pj_kn (j, "fail", record->fail);
 				break;
-			case RZ_ANAL_ADDR_HINT_TYPE_STACKFRAME:
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_STACKFRAME:
 				pj_kn (j, "frame", record->stackframe);
 				break;
-			case RZ_ANAL_ADDR_HINT_TYPE_PTR:
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_PTR:
 				pj_kn (j, "ptr", record->ptr);
 				break;
-			case RZ_ANAL_ADDR_HINT_TYPE_NWORD:
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_NWORD:
 				pj_ki (j, "nword", record->nword);
 				break;
-			case RZ_ANAL_ADDR_HINT_TYPE_RET:
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_RET:
 				pj_kn (j, "ret", record->retval);
 				break;
-			case RZ_ANAL_ADDR_HINT_TYPE_NEW_BITS:
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_NEW_BITS:
 				pj_ki (j, "newbits", record->newbits);
 				break;
-			case RZ_ANAL_ADDR_HINT_TYPE_SIZE:
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_SIZE:
 				pj_kn (j, "size", record->size);
 				break;
-			case RZ_ANAL_ADDR_HINT_TYPE_SYNTAX:
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_SYNTAX:
 				pj_ks (j, "syntax", record->syntax);
 				break;
-			case RZ_ANAL_ADDR_HINT_TYPE_OPTYPE:
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_OPTYPE:
 				pj_ki (j, "optype", record->optype);
 				break;
-			case RZ_ANAL_ADDR_HINT_TYPE_OPCODE:
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_OPCODE:
 				pj_ks (j, "opcode", record->opcode);
 				break;
-			case RZ_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET:
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_TYPE_OFFSET:
 				pj_ks (j, "toff", record->type_offset);
 				break;
-			case RZ_ANAL_ADDR_HINT_TYPE_ESIL:
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_ESIL:
 				pj_ks (j, "esil", record->esil);
 				break;
-			case RZ_ANAL_ADDR_HINT_TYPE_HIGH:
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_HIGH:
 				pj_kb (j, "high", true);
 				break;
-			case RZ_ANAL_ADDR_HINT_TYPE_VAL:
+			case RZ_ANALYSIS_ADDR_HINT_TYPE_VAL:
 				pj_kn (j, "val", record->val);
 				break;
 			}

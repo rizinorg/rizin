@@ -7,7 +7,7 @@
 RZ_API RzAnalysisDiff *rz_analysis_diff_new(void) {
 	RzAnalysisDiff *diff = RZ_NEW0 (RzAnalysisDiff);
 	if (diff) {
-		diff->type = RZ_ANAL_DIFF_TYPE_NULL;
+		diff->type = RZ_ANALYSIS_DIFF_TYPE_NULL;
 		diff->addr = UT64_MAX;
 		diff->dist = 0;
 		diff->name = NULL;
@@ -29,8 +29,8 @@ RZ_API void rz_analysis_diff_setup(RzAnalysis *analysis, int doops, double thbb,
 	if (doops >= 0) {
 		analysis->diff_ops = doops;
 	}
-	analysis->diff_thbb = (thbb>=0)? thbb: RZ_ANAL_THRESHOLDBB;
-	analysis->diff_thfcn = (thfcn>=0)? thfcn: RZ_ANAL_THRESHOLDFCN;
+	analysis->diff_thbb = (thbb>=0)? thbb: RZ_ANALYSIS_THRESHOLDBB;
+	analysis->diff_thfcn = (thfcn>=0)? thfcn: RZ_ANALYSIS_THRESHOLDFCN;
 }
 
 /* 0-100 */
@@ -38,8 +38,8 @@ RZ_API void rz_analysis_diff_setup_i(RzAnalysis *analysis, int doops, int thbb, 
 	if (doops >= 0) {
 		analysis->diff_ops = doops;
 	}
-	analysis->diff_thbb = (thbb>=0)? ((double)thbb) / 100: RZ_ANAL_THRESHOLDBB;
-	analysis->diff_thfcn = (thfcn>=0)? ((double)thfcn) / 100: RZ_ANAL_THRESHOLDFCN;
+	analysis->diff_thbb = (thbb>=0)? ((double)thbb) / 100: RZ_ANALYSIS_THRESHOLDBB;
+	analysis->diff_thfcn = (thfcn>=0)? ((double)thfcn) / 100: RZ_ANALYSIS_THRESHOLDFCN;
 }
 
 // Fingerprint function basic block
@@ -70,7 +70,7 @@ RZ_API int rz_analysis_diff_fingerprint_bb(RzAnalysis *analysis, RzAnalysisBlock
 				return false;
 			}
 			while (idx < bb->size) {
-				if ((oplen = rz_analysis_op (analysis, op, 0, buf+idx, bb->size-idx, RZ_ANAL_OP_MASK_BASIC)) < 1) {
+				if ((oplen = rz_analysis_op (analysis, op, 0, buf+idx, bb->size-idx, RZ_ANALYSIS_OP_MASK_BASIC)) < 1) {
 					break;
 				}
 				if (op->nopcode != 0) {
@@ -117,15 +117,15 @@ RZ_API bool rz_analysis_diff_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, R
 	if (analysis->cur && analysis->cur->diff_bb) {
 		return (analysis->cur->diff_bb (analysis, fcn, fcn2));
 	}
-	fcn->diff->type = fcn2->diff->type = RZ_ANAL_DIFF_TYPE_MATCH;
+	fcn->diff->type = fcn2->diff->type = RZ_ANALYSIS_DIFF_TYPE_MATCH;
 	rz_list_foreach (fcn->bbs, iter, bb) {
-		if (bb->diff && bb->diff->type != RZ_ANAL_DIFF_TYPE_NULL) {
+		if (bb->diff && bb->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) {
 			continue;
 		}
 		ot = 0;
 		mbb = mbb2 = NULL;
 		rz_list_foreach (fcn2->bbs, iter2, bb2) {
-			if (!bb2->diff || bb2->diff->type == RZ_ANAL_DIFF_TYPE_NULL) {
+			if (!bb2->diff || bb2->diff->type == RZ_ANALYSIS_DIFF_TYPE_NULL) {
 				rz_diff_buffers_distance (NULL, bb->fingerprint, bb->size,
 						bb2->fingerprint, bb2->size, NULL, &t);
 				if (t > analysis->diff_thbb && t > ot) {
@@ -149,11 +149,11 @@ RZ_API bool rz_analysis_diff_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, R
 				return false;
 			}
 			if (ot == 1 || t > analysis->diff_thfcn) {
-				mbb->diff->type = mbb2->diff->type = RZ_ANAL_DIFF_TYPE_MATCH;
+				mbb->diff->type = mbb2->diff->type = RZ_ANALYSIS_DIFF_TYPE_MATCH;
 			} else {
 				mbb->diff->type = mbb2->diff->type = \
 				fcn->diff->type = fcn2->diff->type = \
-					RZ_ANAL_DIFF_TYPE_UNMATCH;
+					RZ_ANALYSIS_DIFF_TYPE_UNMATCH;
 			}
 			RZ_FREE (mbb->fingerprint);
 			RZ_FREE (mbb2->fingerprint);
@@ -163,8 +163,8 @@ RZ_API bool rz_analysis_diff_bb(RzAnalysis *analysis, RzAnalysisFunction *fcn, R
 			mbb2->diff->size = mbb->size;
 		} else {
 			fcn->diff->type = fcn2->diff->type = (fcn->diff->dist >= 0.6)
-				? RZ_ANAL_DIFF_TYPE_MATCH
-				: RZ_ANAL_DIFF_TYPE_UNMATCH;
+				? RZ_ANALYSIS_DIFF_TYPE_MATCH
+				: RZ_ANALYSIS_DIFF_TYPE_UNMATCH;
 		}
 	}
 	return true;
@@ -194,8 +194,8 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns, RzList *fcns
 						NULL, &t);
 				/* Set flag in matched functions */
 				fcn->diff->type = fcn2->diff->type = (t >= 1)
-					? RZ_ANAL_DIFF_TYPE_MATCH
-					: RZ_ANAL_DIFF_TYPE_UNMATCH;
+					? RZ_ANALYSIS_DIFF_TYPE_MATCH
+					: RZ_ANALYSIS_DIFF_TYPE_UNMATCH;
 				fcn->diff->dist = fcn2->diff->dist = t;
 				RZ_FREE (fcn->fingerprint);
 				RZ_FREE (fcn2->fingerprint);
@@ -219,13 +219,13 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns, RzList *fcns
 	/* Compare remaining functions */
 	rz_list_foreach (fcns, iter, fcn) {
 /*
-		if ((fcn->type != RZ_ANAL_FCN_TYPE_FCN &&
-			fcn->type != RZ_ANAL_FCN_TYPE_SYM) ||
-			fcn->diff->type != RZ_ANAL_DIFF_TYPE_NULL) {
+		if ((fcn->type != RZ_ANALYSIS_FCN_TYPE_FCN &&
+			fcn->type != RZ_ANALYSIS_FCN_TYPE_SYM) ||
+			fcn->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) {
 			continue;
 		}
 */
-		if (fcn->diff->type != RZ_ANAL_DIFF_TYPE_NULL) {
+		if (fcn->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) {
 			continue;
 		}
 		ot = 0;
@@ -244,11 +244,11 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns, RzList *fcns
 				eprintf ("Exceeded anal threshold while diffing %s and %s\n", fcn->name, fcn2->name);
 				continue;
 			}
-			if (fcn2->diff->type != RZ_ANAL_DIFF_TYPE_NULL) {
+			if (fcn2->diff->type != RZ_ANALYSIS_DIFF_TYPE_NULL) {
 				eprintf ("Function %s already diffed\n", fcn2->name);
 				continue;
 			}
-			if ((fcn2->type != RZ_ANAL_FCN_TYPE_FCN && fcn2->type != RZ_ANAL_FCN_TYPE_SYM)) {
+			if ((fcn2->type != RZ_ANALYSIS_FCN_TYPE_FCN && fcn2->type != RZ_ANALYSIS_FCN_TYPE_SYM)) {
 				eprintf ("Function %s type not supported\n", fcn2->name);
 				continue;
 			}
@@ -266,8 +266,8 @@ RZ_API int rz_analysis_diff_fcn(RzAnalysis *analysis, RzList *fcns, RzList *fcns
 		if (mfcn && mfcn2) {
 			/* Set flag in matched functions */
 			mfcn->diff->type = mfcn2->diff->type = (ot == 1)
-				? RZ_ANAL_DIFF_TYPE_MATCH
-				: RZ_ANAL_DIFF_TYPE_UNMATCH;
+				? RZ_ANALYSIS_DIFF_TYPE_MATCH
+				: RZ_ANALYSIS_DIFF_TYPE_UNMATCH;
 			RZ_FREE (mfcn->fingerprint);
 			RZ_FREE (mfcn2->fingerprint);
 			mfcn->diff->addr = mfcn2->addr;

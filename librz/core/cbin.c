@@ -831,7 +831,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 			rz_config_set (r->config, "asm.bits", str);
 			rz_config_set (r->config, "asm.dwarf",
 				(RZ_BIN_DBG_STRIPPED & info->dbg_info) ? "false" : "true");
-			v = rz_analysis_archinfo (r->analysis, RZ_ANAL_ARCHINFO_ALIGN);
+			v = rz_analysis_archinfo (r->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 			if (v != -1) {
 				rz_config_set_i (r->config, "asm.pcalign", v);
 			}
@@ -849,15 +849,15 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 		rz_cons_printf ("bits %d\n", info->bits);
 		rz_cons_printf ("os %s\n", info->os);
 		rz_cons_printf ("endian %s\n", info->big_endian? "big": "little");
-		v = rz_analysis_archinfo (r->analysis, RZ_ANAL_ARCHINFO_MIN_OP_SIZE);
+		v = rz_analysis_archinfo (r->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 		if (v != -1) {
 			rz_cons_printf ("minopsz %d\n", v);
 		}
-		v = rz_analysis_archinfo (r->analysis, RZ_ANAL_ARCHINFO_MAX_OP_SIZE);
+		v = rz_analysis_archinfo (r->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
 		if (v != -1) {
 			rz_cons_printf ("maxopsz %d\n", v);
 		}
-		v = rz_analysis_archinfo (r->analysis, RZ_ANAL_ARCHINFO_ALIGN);
+		v = rz_analysis_archinfo (r->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 		if (v != -1) {
 			rz_cons_printf ("pcalign %d\n", v);
 		}
@@ -891,7 +891,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 			if (info->default_cc) {
 				rz_cons_printf ("k anal/cc/default.cc=%s", info->default_cc);
 			}
-			v = rz_analysis_archinfo (r->analysis, RZ_ANAL_ARCHINFO_ALIGN);
+			v = rz_analysis_archinfo (r->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 			if (v != -1) {
 				rz_cons_printf ("e asm.pcalign=%d\n", v);
 			}
@@ -943,11 +943,11 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 		pair_bool ("linenum", RZ_BIN_DBG_LINENUMS & info->dbg_info, mode, false);
 		pair_bool ("lsyms", RZ_BIN_DBG_SYMS & info->dbg_info, mode, false);
 		pair_str ("machine", info->machine, mode, false);
-		v = rz_analysis_archinfo (r->analysis, RZ_ANAL_ARCHINFO_MAX_OP_SIZE);
+		v = rz_analysis_archinfo (r->analysis, RZ_ANALYSIS_ARCHINFO_MAX_OP_SIZE);
 		if (v != -1) {
 			pair_int ("maxopsz", v, mode, false);
 		}
-		v = rz_analysis_archinfo (r->analysis, RZ_ANAL_ARCHINFO_MIN_OP_SIZE);
+		v = rz_analysis_archinfo (r->analysis, RZ_ANALYSIS_ARCHINFO_MIN_OP_SIZE);
 		if (v != -1) {
 			pair_int ("minopsz", v, mode, false);
 		}
@@ -957,7 +957,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 			pair_bool ("overlay", info->pe_overlay, mode, false);
 		}
 		pair_str ("cc", info->default_cc, mode, false);
-		v = rz_analysis_archinfo (r->analysis, RZ_ANAL_ARCHINFO_ALIGN);
+		v = rz_analysis_archinfo (r->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 		if (v != -1) {
 			pair_int ("pcalign", v, mode, false);
 		}

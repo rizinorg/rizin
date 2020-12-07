@@ -155,11 +155,11 @@ RZ_API void rz_core_print_func_args(RzCore *core) {
 	}
 	const char *pc = rz_reg_get_name (core->analysis->reg, RZ_REG_NAME_PC);
 	ut64 cur_addr = rz_reg_getv (core->analysis->reg, pc);
-	RzAnalysisOp *op = rz_core_analysis_op (core, cur_addr, RZ_ANAL_OP_MASK_BASIC);
+	RzAnalysisOp *op = rz_core_analysis_op (core, cur_addr, RZ_ANALYSIS_OP_MASK_BASIC);
 	if (!op) {
 		return;
 	}
-	if (op->type == RZ_ANAL_OP_TYPE_CALL) {
+	if (op->type == RZ_ANALYSIS_OP_TYPE_CALL) {
 		RzAnalysisFunction *fcn;
 		RzAnalysisFuncArg *arg;
 		bool onstack = false;
@@ -195,7 +195,7 @@ RZ_API void rz_core_print_func_args(RzCore *core) {
 			//if (nargs > 0) {
 				int i;
 				for (i = 0; i < nargs; i++) {
-					ut64 v = rz_debug_arg_get (core->dbg, RZ_ANAL_CC_TYPE_STDCALL, i);
+					ut64 v = rz_debug_arg_get (core->dbg, RZ_ANALYSIS_CC_TYPE_STDCALL, i);
 					print_arg_str (i, "", color);
 					rz_cons_printf ("0x%08" PFMT64x, v);
 					rz_cons_newline ();

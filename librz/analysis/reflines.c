@@ -159,7 +159,7 @@ do_skip:
 
 		// This can segfault if opcode length and buffer check fails
 		rz_analysis_op_fini (&op);
-		sz = rz_analysis_op (analysis, &op, addr, ptr, (int)(end - ptr), RZ_ANAL_OP_MASK_BASIC | RZ_ANAL_OP_MASK_HINT);
+		sz = rz_analysis_op (analysis, &op, addr, ptr, (int)(end - ptr), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
 		sz = op.size;
 		if (sz <= 0) {
 			sz = 1;
@@ -168,12 +168,12 @@ do_skip:
 
 		/* store data */
 		switch (op.type) {
-		case RZ_ANAL_OP_TYPE_CALL:
+		case RZ_ANALYSIS_OP_TYPE_CALL:
 			if (!linescall) {
 				break;
 			}
-		case RZ_ANAL_OP_TYPE_CJMP:
-		case RZ_ANAL_OP_TYPE_JMP:
+		case RZ_ANALYSIS_OP_TYPE_CJMP:
+		case RZ_ANALYSIS_OP_TYPE_JMP:
 			if ((!linesout && (op.jump > opc + len || op.jump < opc)) || !op.jump) {
 				break;
 			}
@@ -189,7 +189,7 @@ do_skip:
 				}
 			}
 			break;
-		case RZ_ANAL_OP_TYPE_SWITCH:
+		case RZ_ANALYSIS_OP_TYPE_SWITCH:
 		{
 			RzAnalysisCaseOp *caseop;
 			RzListIter *iter;
@@ -348,10 +348,10 @@ RZ_API RzAnalysisRefStr *rz_analysis_reflines_str(void *_core, ut64 addr, int op
 	RzListIter *iter;
 	RzAnalysisRefline *ref;
 	int l;
-	bool wide = opts & RZ_ANAL_REFLINE_TYPE_WIDE;
+	bool wide = opts & RZ_ANALYSIS_REFLINE_TYPE_WIDE;
 	int dir = 0, pos = -1, max_level = -1;
-	bool middle_before = opts & RZ_ANAL_REFLINE_TYPE_MIDDLE_BEFORE;
-	bool middle_after = opts & RZ_ANAL_REFLINE_TYPE_MIDDLE_AFTER;
+	bool middle_before = opts & RZ_ANALYSIS_REFLINE_TYPE_MIDDLE_BEFORE;
+	bool middle_after = opts & RZ_ANALYSIS_REFLINE_TYPE_MIDDLE_AFTER;
 	char *str = NULL;
 	char *col_str = NULL;
 
