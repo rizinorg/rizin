@@ -22,7 +22,7 @@ typedef enum {
 	RZ_SIGN_BYTES     = 'b', // bytes pattern
 	RZ_SIGN_BYTES_MASK= 'm', // bytes pattern
 	RZ_SIGN_BYTES_SIZE= 's', // bytes pattern
-	RZ_SIGN_ANAL      = 'a', // bytes pattern (anal mask)
+	RZ_SIGN_ANAL      = 'a', // bytes pattern (analysis mask)
 	RZ_SIGN_COMMENT   = 'c', // comment
 	RZ_SIGN_GRAPH     = 'g', // graph metrics
 	RZ_SIGN_OFFSET    = 'o', // addr

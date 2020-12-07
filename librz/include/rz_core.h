@@ -455,7 +455,7 @@ RZ_API char* rz_core_add_asmqjmp(RzCore *core, ut64 addr);
 RZ_API void rz_core_analysis_type_init(RzCore *core);
 RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn);
 RZ_API void rz_core_analysis_inflags (RzCore *core, const char *glob);
-RZ_API bool cmd_anal_objc (RzCore *core, const char *input, bool auto_analysis);
+RZ_API bool cmd_analysis_objc (RzCore *core, const char *input, bool auto_analysis);
 RZ_API void rz_core_analysis_cc_init(RzCore *core);
 RZ_API void rz_core_analysis_paths(RzCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json);
 RZ_API void rz_core_analysis_esil_graph(RzCore *core, const char *expr);

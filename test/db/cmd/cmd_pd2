@@ -810,7 +810,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=no-anal asm.symbol from fcn mid
+NAME=no-analysis asm.symbol from fcn mid
 FILE=bins/elf/analysis/tiny1
 CMDS=<<EOF
 e asm.symbol=true

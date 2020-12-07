@@ -3529,8 +3529,8 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 		case '0': // 0x00 bytes
 		case 'f': // 0xff bytes
 		case 'F': // 0xff bytes
-		case 'A': // anal stats
-		case 'a': // anal bb
+		case 'A': // analysis stats
+		case 'a': // analysis basic blocks
 		case 'p': // printable chars
 		case 'z': // zero terminated strings
 		case 'b': // zero terminated strings
@@ -3681,7 +3681,7 @@ static void cmd_print_bars(RzCore *core, const char *input) {
 		}
 		break;
 	case 'j': // "p=j" cjmp and jmp
-	case 'A': // "p=A" anal info
+	case 'A': // "p=A" analysis info
 	case 'a': // "p=a" bb info
 	case 'c': // "p=c" calls
 	case 'i': // "p=i" invalid
@@ -5481,7 +5481,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					} else { // pd
 						int instr_len;
 						if (!rz_core_prevop_addr (core, core->offset, l, &start)) {
-							// anal ignorance.
 							start = rz_core_prevop_addr_force (core, core->offset, l);
 						}
 						instr_len = core->offset - start;

@@ -18,7 +18,7 @@
 #include "linux_heap_jemalloc.c"
 #endif
 
-void cmd_anal_reg (RzCore *core, const char *str);
+void cmd_analysis_reg (RzCore *core, const char *str);
 
 static const char *help_msg_d[] = {
 	"Usage:", "d", " # Debug commands",
@@ -5029,7 +5029,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		if (core->bin->is_debugger || input[1] == '?') {
 			cmd_debug_reg (core, input + 1);
 		} else {
-			cmd_anal_reg (core, input + 1);
+			cmd_analysis_reg (core, input + 1);
 		}
 		//rz_core_cmd (core, "|reg", 0);
 		break;

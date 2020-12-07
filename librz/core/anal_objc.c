@@ -302,7 +302,7 @@ static bool objc_find_refs(RzCore *core) {
 	return true;
 }
 
-RZ_API bool cmd_anal_objc(RzCore *core, const char *input, bool auto_analysis) {
+RZ_API bool cmd_analysis_objc(RzCore *core, const char *input, bool auto_analysis) {
 	rz_return_val_if_fail (core && input, 0);
 	if (!auto_analysis) {
 		objc_analyze (core);

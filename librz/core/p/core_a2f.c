@@ -370,7 +370,7 @@ static int analyzeFunction(RzCore *core, ut64 addr) {
 	return true;
 }
 
-static int rz_cmd_anal_call(void *user, const char *input) {
+static int rz_cmd_analysis_call(void *user, const char *input) {
 	RzCore *core = (RzCore *) user;
 	if (!strncmp (input, "a2", 2)) {
 		switch (input[2]) {
@@ -395,7 +395,7 @@ RzCorePlugin rz_core_plugin_a2f = {
 	.name = "a2f",
 	.desc = "The reworked analysis from scratch thing",
 	.license = "LGPL3",
-	.call = rz_cmd_anal_call,
+	.call = rz_cmd_analysis_call,
 };
 
 #ifndef RZ_PLUGIN_INCORE

@@ -353,7 +353,7 @@
   summary: Alias for `s 0x...`
   type: RZ_CMD_DESC_TYPE_OLDINPUT
 - name: a
-  cname: cmd_anal
+  cname: cmd_analysis
   summary: Analysis commands
   type: RZ_CMD_DESC_TYPE_OLDINPUT
 - name: b

@@ -50,7 +50,7 @@ RZ_IPI RzCmdStatus rz_remote_rap_bg_handler(RzCore *core, int argc, const char *
 RZ_IPI int rz_cmd_help(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_push_escaped_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_ox(void *data, const char *input);
-RZ_IPI int rz_cmd_anal(void *data, const char *input);
+RZ_IPI int rz_cmd_analysis(void *data, const char *input);
 RZ_IPI int rz_cmd_bsize(void *data, const char *input);
 RZ_IPI int rz_cmd_cmp(void *data, const char *input);
 RZ_IPI int rz_cmd_meta(void *data, const char *input);

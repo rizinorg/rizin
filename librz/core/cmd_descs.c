@@ -456,7 +456,7 @@ static const RzCmdDescHelp cmd_ox_help = {
 	.summary = "Alias for `s 0x...`",
 };
 
-static const RzCmdDescHelp cmd_anal_help = {
+static const RzCmdDescHelp cmd_analysis_help = {
 	.summary = "Analysis commands",
 };
 
@@ -1063,7 +1063,7 @@ static const RzCmdDescHelp za_help = {
 	.summary = "Add zignature",
 };
 static const RzCmdDescDetailEntry zign_add_Zignature_space_types_detail_entries[] = {
-	{ .text = "a", .arg_str = NULL, .comment = "bytes pattern (anal mask)" },
+	{ .text = "a", .arg_str = NULL, .comment = "bytes pattern (analysis mask)" },
 	{ .text = "b", .arg_str = NULL, .comment = "bytes pattern" },
 	{ .text = "c", .arg_str = NULL, .comment = "base64 comment" },
 	{ .text = "n", .arg_str = NULL, .comment = "real function name" },
@@ -1558,8 +1558,8 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail (push_escaped_cd);
 	RzCmdDesc *cmd_ox_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "0", rz_cmd_ox, &cmd_ox_help);
 	rz_warn_if_fail (cmd_ox_cd);
-	RzCmdDesc *cmd_anal_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "a", rz_cmd_anal, &cmd_anal_help);
-	rz_warn_if_fail (cmd_anal_cd);
+	RzCmdDesc *cmd_analysis_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "a", rz_cmd_analysus, &cmd_analysis_help);
+	rz_warn_if_fail (cmd_analysis_cd);
 	RzCmdDesc *cmd_bsize_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "b", rz_cmd_bsize, &cmd_bsize_help);
 	rz_warn_if_fail (cmd_bsize_cd);
 	RzCmdDesc *cmd_cmp_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "c", rz_cmd_cmp, &cmd_cmp_help);
