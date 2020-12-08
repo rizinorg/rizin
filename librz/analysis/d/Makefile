@@ -31,7 +31,7 @@ F+= cc-ppc-64
 F+= cc-xtensa-32
 F+= cc-riscv-64
 F+= cc-hexagon-32
-F+= cc-spc700-64
+F+= cc-spc700-16
 F+= cc-sysz-64
 
 WIN_TYPES=
