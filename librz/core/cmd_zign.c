@@ -252,7 +252,7 @@ static bool addBytesZign(RzCore *core, const char *name, int type, RzList *args)
 	case RZ_SIGN_BYTES:
 		retval = rz_sign_add_bytes (core->analysis, name, size, bytes, mask);
 		break;
-	case RZ_SIGN_ANAL:
+	case RZ_SIGN_ANALYSIS:
 		retval = rz_sign_add_analysis (core->analysis, name, size, bytes, 0);
 		break;
 	}
@@ -280,7 +280,7 @@ static bool addOffsetZign(RzCore *core, const char *name, RzList *args) {
 static bool addZign(RzCore *core, const char *name, int type, RzList *args) {
 	switch (type) {
 	case RZ_SIGN_BYTES:
-	case RZ_SIGN_ANAL:
+	case RZ_SIGN_ANALYSIS:
 		return addBytesZign (core, name, type, args);
 	case RZ_SIGN_GRAPH:
 		return addGraphZign (core, name, args);
@@ -1256,7 +1256,7 @@ RZ_IPI int rz_cmd_zign(void *data, const char *input) {
 		rz_sign_list (core->analysis, *input);
 		break;
 	case 'k': // "zk"
-		rz_core_cmd0 (core, "k anal/zigns/*");
+		rz_core_cmd0 (core, "k analysis/zigns/*");
 		break;
 	case '-': // "z-"
 		rz_sign_delete (core->analysis, arg);
@@ -1308,7 +1308,7 @@ RZ_IPI RzCmdStatus rz_zign_show_handler(RzCore *core, int argc, const char **arg
 		rz_sign_list (core->analysis, '*');
 		return RZ_CMD_STATUS_OK;
 	case RZ_OUTPUT_MODE_SDB:
-		out = sdb_querys (core->sdb, NULL, 0, "anal/zigns/*");
+		out = sdb_querys (core->sdb, NULL, 0, "analysis/zigns/*");
 		if (!out) {
 			return RZ_CMD_STATUS_ERROR;
 		}

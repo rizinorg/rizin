@@ -67,7 +67,7 @@ RZ_API RzList *rz_sign_fcn_vars(RzAnalysis *a, RzAnalysisFunction *fcn) {
 
 RZ_API RzList *rz_sign_fcn_types(RzAnalysis *a, RzAnalysisFunction *fcn) {
 
-	// From anal/types/*:
+	// From analysis/types/*:
 	// Get key-value types from sdb matching "func.%s", fcn->name
 	// Get func.%s.args (number of args)
 	// Get type,name pairs
@@ -260,7 +260,7 @@ RZ_API bool rz_sign_deserialize(RzAnalysis *a, RzSignItem *it, const char *k, co
 		}
 		RzSignType st = (RzSignType)*word;
 		switch (st) {
-		case RZ_SIGN_ANAL:
+		case RZ_SIGN_ANALYSIS:
 			eprintf ("Unsupported\n");
 			break;
 		case RZ_SIGN_NAME:

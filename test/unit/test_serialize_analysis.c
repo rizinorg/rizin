@@ -1748,7 +1748,7 @@ bool test_analysis_load() {
 	mu_assert ("load success", succ);
 
 	// all tested in detail by dedicated tests, we only check here
-	// if the things are loaded at all when loading a whole anal.
+	// if the things are loaded at all when loading a whole analysis.
 	size_t blocks_count = 0;
 	RBIter iter;
 	RzAnalysisBlock *block;

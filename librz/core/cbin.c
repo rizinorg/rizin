@@ -335,11 +335,11 @@ RZ_API int rz_core_bin_set_env(RzCore *r, RzBinFile *binfile) {
 		r->dbg->bp->baddr = baseaddr;
 		rz_config_set (r->config, "asm.arch", arch);
 		rz_config_set_i (r->config, "asm.bits", bits);
-		rz_config_set (r->config, "anal.arch", arch);
+		rz_config_set (r->config, "analysis.arch", arch);
 		if (info->cpu && *info->cpu) {
-			rz_config_set (r->config, "anal.cpu", info->cpu);
+			rz_config_set (r->config, "analysis.cpu", info->cpu);
 		} else {
-			rz_config_set (r->config, "anal.cpu", arch);
+			rz_config_set (r->config, "analysis.cpu", arch);
 		}
 		rz_asm_use (r->rasm, arch);
 		rz_core_bin_info (r, RZ_CORE_BIN_ACC_ALL, RZ_MODE_SET, va, NULL, NULL);
@@ -692,7 +692,7 @@ RZ_API void rz_core_analysis_type_init(RzCore *core) {
 	Sdb *types = core->analysis->sdb_types;
 	// make sure they are empty this is initializing
 	sdb_reset (types);
-	const char *analysis_arch = rz_config_get (core->config, "anal.arch");
+	const char *analysis_arch = rz_config_get (core->config, "analysis.arch");
 	const char *os = rz_config_get (core->config, "asm.os");
 	// spaguetti ahead
 
@@ -739,7 +739,7 @@ RZ_API void rz_core_analysis_type_init(RzCore *core) {
 
 RZ_API void rz_core_analysis_cc_init(RzCore *core) {
 	const char *dir_prefix = rz_config_get (core->config, "dir.prefix");
-	const char *analysis_arch = rz_config_get (core->config, "anal.arch");
+	const char *analysis_arch = rz_config_get (core->config, "analysis.arch");
 	int bits = core->analysis->bits;
 	Sdb *cc = core->analysis->sdb_cc;
 
@@ -815,9 +815,9 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 			}
 			rz_config_set (r->config, "asm.os", info->os);
 			if (info->rclass && !strcmp (info->rclass, "pe")) {
-				rz_config_set (r->config, "anal.cpp.abi", "msvc");
+				rz_config_set (r->config, "analysis.cpp.abi", "msvc");
 			} else {
-				rz_config_set (r->config, "anal.cpp.abi", "itanium");
+				rz_config_set (r->config, "analysis.cpp.abi", "itanium");
 			}
 			rz_config_set (r->config, "asm.arch", info->arch);
 			if (info->cpu && *info->cpu) {
@@ -826,7 +826,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 			if (info->features && *info->features) {
 				rz_config_set (r->config, "asm.features", info->features);
 			}
-			rz_config_set (r->config, "anal.arch", info->arch);
+			rz_config_set (r->config, "analysis.arch", info->arch);
 			snprintf (str, RZ_FLAG_NAME_SIZE, "%i", info->bits);
 			rz_config_set (r->config, "asm.bits", str);
 			rz_config_set (r->config, "asm.dwarf",
@@ -839,7 +839,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 		rz_core_analysis_type_init (r);
 		rz_core_analysis_cc_init (r);
 		if (info->default_cc && rz_analysis_cc_exist (r->analysis, info->default_cc)) {
-			rz_core_cmdf (r, "k anal/cc/default.cc=%s", info->default_cc);
+			rz_core_cmdf (r, "k analysis/cc/default.cc=%s", info->default_cc);
 		}
 	} else if (IS_MODE_SIMPLE (mode)) {
 		rz_cons_printf ("arch %s\n", info->arch);
@@ -889,7 +889,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 				rz_cons_printf ("e asm.cpu=%s\n", info->cpu);
 			}
 			if (info->default_cc) {
-				rz_cons_printf ("k anal/cc/default.cc=%s", info->default_cc);
+				rz_cons_printf ("k analysis/cc/default.cc=%s", info->default_cc);
 			}
 			v = rz_analysis_archinfo (r->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 			if (v != -1) {
@@ -4175,7 +4175,7 @@ RZ_API int rz_core_bin_info(RzCore *core, int action, int mode, int va, RzCoreBi
 	// use our internal values for va
 	va = va ? VA_TRUE : VA_FALSE;
 #if 0
-	if (rz_config_get_i (core->config, "anal.strings")) {
+	if (rz_config_get_i (core->config, "analysis.strings")) {
 		rz_core_cmd0 (core, "aar");
 	}
 #endif

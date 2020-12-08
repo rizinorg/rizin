@@ -347,7 +347,7 @@ RZ_API bool try_get_jmptbl_info(RzAnalysis *analysis, RzAnalysisFunction *fcn, u
 	}
 	// predecessor must be a conditional jump
 	if (!prev_bb || !prev_bb->jump || !prev_bb->fail) {
-		aprintf ("Warning: [anal.jmp.tbl] Missing predecesessor cjmp bb at 0x%08"PFMT64x"\n", addr);
+		aprintf ("Warning: [analysis.jmp.tbl] Missing predecesessor cjmp bb at 0x%08"PFMT64x"\n", addr);
 		return false;
 	}
 

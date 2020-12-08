@@ -67,14 +67,14 @@ static void arch_hint_record_free_rb(RBNode *node, void *user) {
 	free (record);
 }
 
-// used in anal.c, but no API needed
+// used in analysis.c, but no API needed
 void rz_analysis_hint_storage_init(RzAnalysis *a) {
 	a->addr_hints = ht_up_new (NULL, addr_hint_record_ht_free, NULL);
 	a->arch_hints = NULL;
 	a->bits_hints = NULL;
 }
 
-// used in anal.c, but no API needed
+// used in analysis.c, but no API needed
 void rz_analysis_hint_storage_fini(RzAnalysis *a) {
 	ht_up_free (a->addr_hints);
 	rz_rbtree_free (a->arch_hints, arch_hint_record_free_rb, NULL);

@@ -115,7 +115,7 @@ static char *getFunctionName(RzCore *core, ut64 addr) {
 
 static RzCore *mycore = NULL;
 
-// XXX: copypaste from anal/data.c
+// XXX: copypaste from analysis/data.c
 #define MINLEN 1
 static int is_string(const ut8 *buf, int size, int *len) {
 	int i, fakeLen = 0;
@@ -750,13 +750,13 @@ static int __core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, in
 //		rz_sys_backtrace ();
 		return false;
 	}
-	int has_next = rz_config_get_i (core->config, "anal.hasnext");
+	int has_next = rz_config_get_i (core->config, "analysis.hasnext");
 	RzAnalysisHint *hint = NULL;
 	int i, nexti = 0;
 	ut64 *next = NULL;
 	int fcnlen;
 	RzAnalysisFunction *fcn = rz_analysis_function_new (core->analysis);
-	const char *fcnpfx = rz_config_get (core->config, "anal.fcnprefix");
+	const char *fcnpfx = rz_config_get (core->config, "analysis.fcnprefix");
 	if (!fcnpfx) {
 		fcnpfx = "fcn";
 	}
@@ -843,7 +843,7 @@ static int __core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, in
 				RZ_FREE (fcn->name);
 				const char *fcnpfx = rz_analysis_fcntype_tostring (fcn->type);
 				if (!fcnpfx || !*fcnpfx || !strcmp (fcnpfx, "fcn")) {
-					fcnpfx = rz_config_get (core->config, "anal.fcnprefix");
+					fcnpfx = rz_config_get (core->config, "analysis.fcnprefix");
 				}
 				fcn->name = rz_str_newf ("%s.%08"PFMT64x, fcnpfx, fcn->addr);
 				autoname_imp_trampoline (core, fcn);
@@ -1000,7 +1000,7 @@ RZ_API RzAnalysisOp* rz_core_analysis_op(RzCore *core, ut64 addr, int mask) {
 	if (!op->mnemonic && mask & RZ_ANALYSIS_OP_MASK_DISASM) {
 		RzAsmOp asmop;
 		if (core->analysis->verbose) {
-			eprintf ("WARNING: Implement RzAnalysisOp.MASK_DISASM for current anal.arch. Using the sluggish RzAsmOp fallback for now.\n");
+			eprintf ("WARNING: Implement RzAnalysisOp.MASK_DISASM for current analysis.arch. Using the sluggish RzAsmOp fallback for now.\n");
 		}
 		rz_asm_set_pc (core->rasm, addr);
 		rz_asm_op_init (&asmop);
@@ -1391,12 +1391,12 @@ RZ_API void rz_core_analysis_hint_print(RzAnalysis* a, ut64 addr, int mode) {
 
 static char *core_analysis_graph_label(RzCore *core, RzAnalysisBlock *bb, int opts) {
 	int is_html = rz_cons_singleton ()->is_html;
-	int is_json = opts & RZ_CORE_ANAL_JSON;
+	int is_json = opts & RZ_CORE_ANALYSIS_JSON;
 	char cmd[1024], file[1024], *cmdstr = NULL, *filestr = NULL, *str = NULL;
 	int line = 0, oline = 0, idx = 0;
 	ut64 at;
 
-	if (opts & RZ_CORE_ANAL_GRAPHLINES) {
+	if (opts & RZ_CORE_ANALYSIS_GRAPHLINES) {
 		for (at = bb->addr; at < bb->addr + bb->size; at += 2) {
 			rz_bin_addr2line (core->bin, at, file, sizeof (file) - 1, &line);
 			if (line != 0 && line != oline && strcmp (file, "??")) {
@@ -1421,10 +1421,10 @@ static char *core_analysis_graph_label(RzCore *core, RzAnalysisBlock *bb, int op
 			}
 			oline = line;
 		}
-	} else if (opts & RZ_CORE_ANAL_STAR) {
+	} else if (opts & RZ_CORE_ANALYSIS_STAR) {
                 snprintf (cmd, sizeof (cmd), "pdb %"PFMT64u" @ 0x%08" PFMT64x, bb->size, bb->addr);
                 str = rz_core_cmd_str (core, cmd);
-	} else if (opts & RZ_CORE_ANAL_GRAPHBODY) {
+	} else if (opts & RZ_CORE_ANALYSIS_GRAPHBODY) {
 		const bool scrColor = rz_config_get (core->config, "scr.color");
 		const bool scrUtf8 = rz_config_get (core->config, "scr.utf8");
 		rz_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
@@ -1464,9 +1464,9 @@ static void core_analysis_color_curr_node(RzCore *core, RzAnalysisBlock *bbi) {
 static int core_analysis_graph_construct_edges (RzCore *core, RzAnalysisFunction *fcn, int opts, PJ *pj, Sdb *DB) {
         RzAnalysisBlock *bbi;
         RzListIter *iter;
-        int is_keva = opts & RZ_CORE_ANAL_KEYVALUE;
-        int is_star = opts & RZ_CORE_ANAL_STAR;
-        int is_json = opts & RZ_CORE_ANAL_JSON;
+        int is_keva = opts & RZ_CORE_ANALYSIS_KEYVALUE;
+        int is_star = opts & RZ_CORE_ANALYSIS_STAR;
+        int is_json = opts & RZ_CORE_ANALYSIS_JSON;
         int is_html = rz_cons_singleton ()->is_html;
         char *pal_jump = palColorFor ("graph.true");
         char *pal_fail = palColorFor ("graph.false");
@@ -1589,14 +1589,14 @@ static int core_analysis_graph_construct_edges (RzCore *core, RzAnalysisFunction
 static int core_analysis_graph_construct_nodes (RzCore *core, RzAnalysisFunction *fcn, int opts, PJ *pj, Sdb *DB) {
         RzAnalysisBlock *bbi;
         RzListIter *iter;
-        int is_keva = opts & RZ_CORE_ANAL_KEYVALUE;
-        int is_star = opts & RZ_CORE_ANAL_STAR;
-        int is_json = opts & RZ_CORE_ANAL_JSON;
+        int is_keva = opts & RZ_CORE_ANALYSIS_KEYVALUE;
+        int is_star = opts & RZ_CORE_ANALYSIS_STAR;
+        int is_json = opts & RZ_CORE_ANALYSIS_JSON;
         int is_html = rz_cons_singleton ()->is_html;
         int left = 300;
         int top = 0;
 
-        int is_json_format_disasm = opts & RZ_CORE_ANAL_JSON_FORMAT_DISASM;
+        int is_json_format_disasm = opts & RZ_CORE_ANALYSIS_JSON_FORMAT_DISASM;
         char *pal_curr = palColorFor ("graph.current");
         char *pal_traced = palColorFor ("graph.traced");
         char *pal_box4 = palColorFor ("graph.box4");
@@ -1670,7 +1670,7 @@ static int core_analysis_graph_construct_nodes (RzCore *core, RzAnalysisFunction
                         continue;
                 }
                 if ((str = core_analysis_graph_label (core, bbi, opts))) {
-                        if (opts & RZ_CORE_ANAL_GRAPHDIFF) {
+                        if (opts & RZ_CORE_ANALYSIS_GRAPHDIFF) {
                                 const char *difftype = bbi->diff? (\
                                 bbi->diff->type==RZ_ANALYSIS_DIFF_TYPE_MATCH? "lightgray":
                                 bbi->diff->type==RZ_ANALYSIS_DIFF_TYPE_UNMATCH? "yellow": "red"): "orange";
@@ -1820,8 +1820,8 @@ static int core_analysis_graph_construct_nodes (RzCore *core, RzAnalysisFunction
 }
 
 static int core_analysis_graph_nodes(RzCore *core, RzAnalysisFunction *fcn, int opts, PJ *pj) {
-	int is_json = opts & RZ_CORE_ANAL_JSON;
-	int is_keva = opts & RZ_CORE_ANAL_KEYVALUE;
+	int is_json = opts & RZ_CORE_ANALYSIS_JSON;
+	int is_keva = opts & RZ_CORE_ANALYSIS_KEYVALUE;
 	int nodes = 0;
 	Sdb *DB = NULL;
 	char *pal_jump = palColorFor ("graph.true");
@@ -1951,7 +1951,7 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 		return 0;
 	}
 
-	const bool use_esil = rz_config_get_i (core->config, "anal.esil");
+	const bool use_esil = rz_config_get_i (core->config, "analysis.esil");
 	RzAnalysisFunction *fcn;
 
 	//update bits based on the core->offset otherwise we could have the
@@ -1966,7 +1966,7 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 			return false;
 		}
 	}
-	if (rz_config_get_i (core->config, "anal.a2f")) {
+	if (rz_config_get_i (core->config, "analysis.a2f")) {
 		rz_core_cmd0 (core, ".a2f");
 		return 0;
 	}
@@ -3579,7 +3579,7 @@ static RzList *analysis_graph_to(RzCore *core, ut64 addr, int depth, HtUP *avoid
 }
 
 RZ_API RzList* rz_core_analysis_graph_to(RzCore *core, ut64 addr, int n) {
-	int depth = rz_config_get_i (core->config, "anal.graph_depth");
+	int depth = rz_config_get_i (core->config, "analysis.graph_depth");
 	RzList *path, *paths = rz_list_new ();
 	HtUP *avoid = ht_up_new0 ();
 	while (n) {
@@ -3605,10 +3605,10 @@ RZ_API int rz_core_analysis_graph(RzCore *core, ut64 addr, int opts) {
 	ut64 to = rz_config_get_i (core->config, "graph.to");
 	const char *font = rz_config_get (core->config, "graph.font");
 	int is_html = rz_cons_singleton ()->is_html;
-	int is_json = opts & RZ_CORE_ANAL_JSON;
-	int is_json_format_disasm = opts & RZ_CORE_ANAL_JSON_FORMAT_DISASM;
-	int is_keva = opts & RZ_CORE_ANAL_KEYVALUE;
-	int is_star = opts & RZ_CORE_ANAL_STAR;
+	int is_json = opts & RZ_CORE_ANALYSIS_JSON;
+	int is_json_format_disasm = opts & RZ_CORE_ANALYSIS_JSON_FORMAT_DISASM;
+	int is_keva = opts & RZ_CORE_ANALYSIS_KEYVALUE;
+	int is_star = opts & RZ_CORE_ANALYSIS_STAR;
 	RzConfigHold *hc;
 	RzAnalysisFunction *fcni;
 	RzListIter *iter;
@@ -3627,7 +3627,7 @@ RZ_API int rz_core_analysis_graph(RzCore *core, ut64 addr, int opts) {
 	}
 
 	rz_config_hold_i (hc, "asm.lines", "asm.bytes", "asm.dwarf", NULL);
-	//opts |= RZ_CORE_ANAL_GRAPHBODY;
+	//opts |= RZ_CORE_ANALYSIS_GRAPHBODY;
 	rz_config_set_i (core->config, "asm.lines", 0);
 	rz_config_set_i (core->config, "asm.dwarf", 0);
 	if (!is_json_format_disasm) {
@@ -3760,7 +3760,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 	if (!buf) {
 		return -1;
 	}
-	int ptrdepth = rz_config_get_i (core->config, "anal.ptrdepth");
+	int ptrdepth = rz_config_get_i (core->config, "analysis.ptrdepth");
 	int i, count = 0;
 	RzAnalysisOp op = RZ_EMPTY;
 	ut64 at;
@@ -3810,7 +3810,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 				 (!bckwrds && i < core->blocksize - OPSZ) ||
 				 (bckwrds && i > 0);
 				 bckwrds ? i-- : i++) {
-				// TODO: honor anal.align
+				// TODO: honor analysis.align
 				if (rz_cons_is_breaked ()) {
 					break;
 				}
@@ -3985,7 +3985,7 @@ static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisRefType ty
 
 RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, int rad) {
 	int cfg_debug = rz_config_get_i (core->config, "cfg.debug");
-	bool cfg_analysis_strings = rz_config_get_i (core->config, "anal.strings");
+	bool cfg_analysis_strings = rz_config_get_i (core->config, "analysis.strings");
 	ut64 at;
 	int count = 0;
 	const int bsz = 8096;
@@ -4141,7 +4141,7 @@ RZ_API int rz_core_analysis_all(RzCore *core) {
 	RzBinAddr *entry;
 	RzBinSymbol *symbol;
 	int depth = core->analysis->opt.depth;
-	bool analysis_vars = rz_config_get_i (core->config, "anal.vars");
+	bool analysis_vars = rz_config_get_i (core->config, "analysis.vars");
 
 	/* Analyze Functions */
 	/* Entries */
@@ -4236,7 +4236,7 @@ RZ_API int rz_core_analysis_data(RzCore *core, ut64 addr, int count, int depth, 
 			continue;
 		}
 		/* rz_analysis_data requires null-terminated buffer according to coverity */
-		/* but it should not.. so this must be fixed in anal/data.c instead of */
+		/* but it should not.. so this must be fixed in analysis/data.c instead of */
 		/* null terminating here */
 		d = rz_analysis_data (core->analysis, addr + i, buf + i, len - i, wordsize);
 		str = rz_analysis_data_to_string (d, pal);
@@ -5027,9 +5027,9 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 }
 
 RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *target) {
-	bool cfg_analysis_strings = rz_config_get_i (core->config, "anal.strings");
+	bool cfg_analysis_strings = rz_config_get_i (core->config, "analysis.strings");
 	bool emu_lazy = rz_config_get_i (core->config, "emu.lazy");
-	bool gp_fixed = rz_config_get_i (core->config, "anal.gpfixed");
+	bool gp_fixed = rz_config_get_i (core->config, "analysis.gpfixed");
 	RzAnalysisEsil *ESIL = core->analysis->esil;
 	ut64 refptr = 0LL;
 	const char *pcname;
@@ -5151,7 +5151,7 @@ RZ_API void rz_core_analysis_esil(RzCore *core, const char *str, const char *tar
 		archIsArm = true;
 	}
 
-	ut64 gp = rz_config_get_i (core->config, "anal.gp");
+	ut64 gp = rz_config_get_i (core->config, "analysis.gp");
 	const char *gp_reg = NULL;
 	if (!strcmp (core->analysis->cur->arch, "mips")) {
 		gp_reg = "gp";
@@ -5477,9 +5477,9 @@ static bool stringAt(RzCore *core, ut64 addr) {
 RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut64 vmin,
 					 ut64 vmax, int vsize, inRangeCb cb, void *cb_user) {
 	int i, align = core->search->align, hitctr = 0;
-	bool vinfun = rz_config_get_i (core->config, "anal.vinfun");
-	bool vinfunr = rz_config_get_i (core->config, "anal.vinfunrange");
-	bool analStrings = rz_config_get_i (core->config, "anal.strings");
+	bool vinfun = rz_config_get_i (core->config, "analysis.vinfun");
+	bool vinfunr = rz_config_get_i (core->config, "analysis.vinfunrange");
+	bool analStrings = rz_config_get_i (core->config, "analysis.strings");
 	mycore = core;
 	ut8 buf[4096];
 	ut64 v64, value = 0, size;
@@ -5751,9 +5751,9 @@ static int __addrs_cmp(void *_a, void *_b) {
 RZ_API void rz_core_analysis_inflags(RzCore *core, const char *glob) {
 	RzList *addrs = rz_list_newf (free);
 	RzListIter *iter;
-	bool a2f = rz_config_get_i (core->config, "anal.a2f");
-	char *analysis_in = strdup (rz_config_get (core->config, "anal.in"));
-	rz_config_set (core->config, "anal.in", "block");
+	bool a2f = rz_config_get_i (core->config, "analysis.a2f");
+	char *analysis_in = strdup (rz_config_get (core->config, "analysis.in"));
+	rz_config_set (core->config, "analysis.in", "block");
 	// aaFa = use a2f instead of af+
 	bool simple = (!glob || *glob != 'a');
 	glob = rz_str_trim_head_ro (glob);
@@ -5805,7 +5805,7 @@ RZ_API void rz_core_analysis_inflags(RzCore *core, const char *glob) {
 		}
 	}
 	rz_list_free (addrs);
-	rz_config_set (core->config, "anal.in", analysis_in);
+	rz_config_set (core->config, "analysis.in", analysis_in);
 	free (analysis_in);
 }
 

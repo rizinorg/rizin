@@ -23,7 +23,7 @@ RUN
 
 NAME=mips hello ref anal
 FILE=bins/elf/analysis/mips.elf
-ARGS=-e bin.strings=false -e anal.strings=true
+ARGS=-e bin.strings=false -e analysis.strings=true
 CMDS=<<EOF
 s entry0
 aae
@@ -37,7 +37,7 @@ RUN
 
 NAME=mips hello ref analysis subtract
 FILE=bins/elf/analysis/busybox-mips
-ARGS=-e bin.strings=false -e anal.strings=true
+ARGS=-e bin.strings=false -e analysis.strings=true
 CMDS=<<EOF
 aae @entry0
 pd 1 @0x00406228
@@ -131,7 +131,7 @@ RUN
 
 NAME=mips hello pseudo move instruction
 FILE=bins/elf/analysis/mips-hello
-ARGS=-e bin.strings=false -e anal.strings=false
+ARGS=-e bin.strings=false -e analysis.strings=false
 CMDS=<<EOF
 pd 1 @main+0x18
 e asm.pseudo=true
@@ -201,8 +201,8 @@ CMDS=<<EOF
 e asm.calls=false
 e asm.bits=32
 e asm.arch=mips
-e anal.jmp.eob=true
-e anal.nopskip=false
+e analysis.jmp.eob=true
+e analysis.nopskip=false
 e asm.cmtcol=0
 e asm.comments=false
 e asm.lines.bb=0
@@ -233,7 +233,7 @@ e io.va=true
 e asm.calls=false
 e asm.bits=32
 e asm.arch=mips
-e anal.jmp.eob=false
+e analysis.jmp.eob=false
 e asm.lines.bb=0
 e asm.lines.fcn=false
 e asm.nbytes=4
@@ -311,7 +311,7 @@ e io.va=true
 e asm.calls=false
 e asm.bits=32
 e asm.arch=mips
-e anal.jmp.eob=false
+e analysis.jmp.eob=false
 e asm.comments=false
 e asm.nbytes=4
 e asm.lines.bb=false
@@ -343,8 +343,8 @@ e asm.calls=false
 e asm.bits=32
 e asm.arch=mips
 e asm.comments=false
-e anal.jmp.eob=false
-e anal.nopskip=false
+e analysis.jmp.eob=false
+e analysis.nopskip=false
 e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=false
@@ -375,8 +375,8 @@ e asm.calls=false
 e asm.arch=mips
 e asm.bits=32
 e asm.comments=false
-e anal.jmp.eob=false
-e anal.nopskip=false
+e analysis.jmp.eob=false
+e analysis.nopskip=false
 e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=false
@@ -406,8 +406,8 @@ e asm.calls=false
 e asm.arch=mips
 e asm.bits=32
 e asm.comments=false
-e anal.jmp.eob=false
-e anal.nopskip=false
+e analysis.jmp.eob=false
+e analysis.nopskip=false
 e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=false
@@ -440,9 +440,9 @@ e asm.calls=false
 e asm.bits=32
 e asm.arch=mips
 e asm.comments=0
-e anal.hasnext=1
-e anal.jmp.eob=0
-e anal.nopskip=1
+e analysis.hasnext=1
+e analysis.jmp.eob=0
+e analysis.nopskip=1
 e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=false
@@ -509,9 +509,9 @@ e io.va=true
 e asm.bits=32
 e asm.arch=mips.gnu
 e asm.comments=0
-e anal.hasnext=1
-e anal.jmp.eob=0
-e anal.nopskip=1
+e analysis.hasnext=1
+e analysis.jmp.eob=0
+e analysis.nopskip=1
 e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=false
@@ -573,11 +573,11 @@ e io.va=true
 e asm.calls=false
 e asm.bits=32
 e asm.arch=mips
-e anal.noncode=1
+e analysis.noncode=1
 e asm.comments=0
-e anal.hasnext=1
-e anal.jmp.eob=0
-e anal.nopskip=1
+e analysis.hasnext=1
+e analysis.jmp.eob=0
+e analysis.nopskip=1
 e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=false
@@ -643,11 +643,11 @@ e io.va=true
 e asm.calls=false
 e asm.bits=32
 e asm.arch=mips
-e anal.noncode=1
+e analysis.noncode=1
 e asm.comments=0
-e anal.hasnext=1
-e anal.jmp.eob=0
-e anal.nopskip=1
+e analysis.hasnext=1
+e analysis.jmp.eob=0
+e analysis.nopskip=1
 e asm.nbytes=4
 e asm.lines.bb=false
 e asm.lines.fcn=true

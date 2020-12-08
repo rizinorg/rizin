@@ -1283,7 +1283,7 @@ RzAnalysisPlugin rz_analysis_plugin_ppc_cs = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANALYSIS,
 	.data = &rz_analysis_plugin_ppc_cs,
 	.version = RZ_VERSION
 };

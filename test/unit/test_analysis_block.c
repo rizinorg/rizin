@@ -631,7 +631,7 @@ bool test_r_analysis_block_automerge() {
 		RzListIter *it;
 		RzAnalysisBlock *block;
 		rz_list_foreach (shuffled_blocks, it, block) {
-			mu_assert_ptreq (rz_analysis_get_block_at (analysis, block->addr), block, "remaining blocks in anal");
+			mu_assert_ptreq (rz_analysis_get_block_at (analysis, block->addr), block, "remaining blocks in analysis");
 		}
 		rz_list_free (shuffled_blocks);
 

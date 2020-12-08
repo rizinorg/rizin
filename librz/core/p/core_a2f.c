@@ -277,7 +277,7 @@ static int analyzeFunction(RzCore *core, ut64 addr) {
 	ut64 loc_addr = 0;
 	char *command = NULL;
 	char *function_label;
-	bool vars = rz_config_get_i (core->config, "anal.vars");
+	bool vars = rz_config_get_i (core->config, "analysis.vars");
 	if (!db) {
 		eprintf ("Cannot create db\n");
 		return false;

@@ -729,7 +729,7 @@ static void analysis_SETUP_ASYNC_WITH(RzAnalysisOp *op, pyc_opcode_object *op_ob
 	op->fail = mid;
 }
 
-static op_analysis_func op_anal[] = {
+static op_analysis_func op_analysis[] = {
 	{ "BEFORE_ASYNC_WITH", analysis_BEFORE_ASYNC_WITH },
 	{ "BEGIN_FINALLY", analysis_BEGIN_FINALLY },
 	{ "BINARY_ADD", analysis_BINARY_ADD },
@@ -898,9 +898,9 @@ static op_analysis_func op_anal[] = {
 
 void analysis_pyc_op(RzAnalysisOp *op, pyc_opcode_object *op_obj, ut32 oparg) {
 	size_t i;
-	for (i = 0; i < (sizeof (op_anal) / sizeof (op_analysis_func)); i++) {
-		if (!strcmp (op_anal[i].op_name, op_obj->op_name)) {
-			op_anal[i].func (op, op_obj, oparg);
+	for (i = 0; i < (sizeof (op_analysis) / sizeof (op_analysis_func)); i++) {
+		if (!strcmp (op_analysis[i].op_name, op_obj->op_name)) {
+			op_analysis[i].func (op, op_obj, oparg);
 			break;
 		}
 	}

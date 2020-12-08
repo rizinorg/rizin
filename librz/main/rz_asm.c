@@ -511,7 +511,7 @@ static void __load_plugins(RzAsmState *as) {
 		return;
 	}
 	rz_lib_add_handler (as->l, RZ_LIB_TYPE_ASM, "(dis)assembly plugins", &__lib_asm_cb, NULL, as);
-	rz_lib_add_handler (as->l, RZ_LIB_TYPE_ANAL, "analysis/emulation plugins", &__lib_analysis_cb, NULL, as);
+	rz_lib_add_handler (as->l, RZ_LIB_TYPE_ANALYSIS, "analysis/emulation plugins", &__lib_analysis_cb, NULL, as);
 
 	char *path = rz_sys_getenv (RZ_LIB_ENV);
 	if (path && *path) {

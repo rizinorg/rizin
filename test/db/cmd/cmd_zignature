@@ -404,7 +404,7 @@ FILE=bins/elf/analysis/zigs_stripped
 CMDS=<<EOF
 za sym.print b 5548....48......48......48......48....bf........b8........e8........90c9c3
 z/
-e anal.hasnext=0
+e analysis.hasnext=0
 aa
 axt 0x400536
 EOF

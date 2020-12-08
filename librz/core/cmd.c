@@ -1112,7 +1112,7 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 	switch (input[0]) {
 
 	case 'j':
-		out = sdb_querys (s, NULL, 0, "anal/**");
+		out = sdb_querys (s, NULL, 0, "analysis/**");
 		if (!out) {
 			rz_cons_println ("No Output from sdb");
 			break;
@@ -1123,7 +1123,7 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
   			break;
 		}
 		pj_o (pj);
-		pj_ko (pj, "anal");
+		pj_ko (pj, "analysis");
 		pj_ka (pj, "cur_cmd");
 
 		while (*out) {
@@ -1135,7 +1135,7 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 			pj_s (pj, cur_cmd);
 
 			free (next_cmd);
-			next_cmd = rz_str_newf ("anal/%s/*", cur_cmd);
+			next_cmd = rz_str_newf ("analysis/%s/*", cur_cmd);
 			temp_storage = sdb_querys (s, NULL, 0, next_cmd);
 
 			if (!temp_storage) {
@@ -2470,8 +2470,8 @@ static bool set_tmp_bits(RzCore *core, int bits, char **tmpbits, int *cmd_ignbit
 	rz_config_set_i (core->config, "asm.bits", bits);
 	core->fixedbits = true;
 	// XXX: why?
-	*cmd_ignbithints = rz_config_get_i (core->config, "anal.ignbithints");
-	rz_config_set_i (core->config, "anal.ignbithints", 1);
+	*cmd_ignbithints = rz_config_get_i (core->config, "analysis.ignbithints");
+	rz_config_set_i (core->config, "analysis.ignbithints", 1);
 	return true;
 }
 
@@ -3363,8 +3363,8 @@ next_arroba:
 			}
 		} else {
 			bool tmpseek = false;
-			const char *fromvars[] = { "anal.from", "diff.from", "graph.from", "search.from", "zoom.from", NULL };
-			const char *tovars[] = { "anal.to", "diff.to", "graph.to", "search.to", "zoom.to", NULL };
+			const char *fromvars[] = { "analysis.from", "diff.from", "graph.from", "search.from", "zoom.from", NULL };
+			const char *tovars[] = { "analysis.to", "diff.to", "graph.to", "search.to", "zoom.to", NULL };
 			ut64 curfrom[RZ_ARRAY_SIZE (fromvars) - 1], curto[RZ_ARRAY_SIZE (tovars) - 1];
 
 			// "@{A B}"
@@ -3374,7 +3374,7 @@ next_arroba:
 				if (!p) {
 					eprintf ("Usage: / ABCD @{0x1000 0x3000}\n");
 					eprintf ("Run command and define the following vars:\n");
-					eprintf (" (anal|diff|graph|search|zoom).{from,to}\n");
+					eprintf (" (analysis|diff|graph|search|zoom).{from,to}\n");
 					free (tmpeval);
 					free (tmpasm);
 					free (tmpbits);
@@ -3499,7 +3499,7 @@ beach:
 		*tmpseek = cmd_tmpseek;
 	}
 	if (cmd_ignbithints != -1) {
-		rz_config_set_i (core->config, "anal.ignbithints", cmd_ignbithints);
+		rz_config_set_i (core->config, "analysis.ignbithints", cmd_ignbithints);
 	}
 	return rc;
 fail:
@@ -4900,9 +4900,9 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_fromto_command) {
 	char *from_str = ts_node_handle_arg (state, node, from, 1);
 	char *to_str = ts_node_handle_arg (state, node, to, 2);
 
-	const char *fromvars[] = { "anal.from", "diff.from", "graph.from",
+	const char *fromvars[] = { "analysis.from", "diff.from", "graph.from",
 		"io.buffer.from", "lines.from", "search.from", "zoom.from", NULL };
-	const char *tovars[] = { "anal.to", "diff.to", "graph.to",
+	const char *tovars[] = { "analysis.to", "diff.to", "graph.to",
 		"io.buffer.to", "lines.to", "search.to", "zoom.to", NULL };
 	ut64 from_val = rz_num_math (core->num, from_str);
 	ut64 to_val = rz_num_math (core->num, to_str);
@@ -4963,7 +4963,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_arch_command) {
 		free (tmpbits);
 	}
 	if (cmd_ignbithints != -1) {
-		rz_config_set_i (core->config, "anal.ignbithints", cmd_ignbithints);
+		rz_config_set_i (core->config, "analysis.ignbithints", cmd_ignbithints);
 	}
 	free (arg_str);
 	return res;
@@ -4985,7 +4985,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_bits_command) {
 
 	rz_config_set (core->config, "asm.bits", tmpbits);
 	core->fixedbits = oldfixedbits;
-	rz_config_set_i (core->config, "anal.ignbithints", cmd_ignbithints);
+	rz_config_set_i (core->config, "analysis.ignbithints", cmd_ignbithints);
 
 	free (tmpbits);
 	free (arg_str);

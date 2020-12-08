@@ -17,13 +17,13 @@ static void loadGP(RzCore *core) {
 	if (__isMips (core->rasm)) {
 		ut64 gp = rz_num_math (core->num, "loc._gp");
 		if (!gp || gp == UT64_MAX) {
-			rz_config_set (core->config, "anal.roregs", "zero");
+			rz_config_set (core->config, "analysis.roregs", "zero");
 			rz_core_cmd0 (core, "10aes@entry0");
-			rz_config_set (core->config, "anal.roregs", "zero,gp");
+			rz_config_set (core->config, "analysis.roregs", "zero,gp");
 			gp = rz_reg_getv (core->analysis->reg, "gp");
 		}
 		// eprintf ("[mips] gp: 0x%08"PFMT64x"\n", gp);
-		rz_config_set_i (core->config, "anal.gp", gp);
+		rz_config_set_i (core->config, "analysis.gp", gp);
 	}
 }
 

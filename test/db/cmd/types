@@ -107,7 +107,7 @@ RUN
 NAME=jni and SoP
 FILE=bins/elf/libverifyPass.so
 CMDS=<<EOF
-e anal.vars.stackname=true
+e analysis.vars.stackname=true
 e asm.lines.bb = false
 aa
 s sym.Java_com_app_ndh_NDHActivity_print
@@ -459,13 +459,13 @@ NAME=Types not reloaded when arch is the same
 FILE=-
 CMDS=<<EOF
 e asm.archx86
-e anal.arch=x86
-e anal.bits=32
+e analysis.arch=x86
+e analysis.bits=32
 t-*
 tk a=b
 e asm.arch=x68
-e anal.arch=x86
-e anal.bits=32
+e analysis.arch=x86
+e analysis.bits=32
 tk a
 EOF
 EXPECT=<<EOF
@@ -1284,7 +1284,7 @@ RUN
 NAME=bashbot test (arm 32-bits)
 FILE=bins/elf/bashbot.arm.gcc.O0.elf
 CMDS=<<EOF
-e anal.vars.stackname=true
+e analysis.vars.stackname=true
 s main
 af
 aaft
@@ -1358,7 +1358,7 @@ RUN
 NAME=constrained type
 FILE=bins/elf/constr_type
 CMDS=<<EOF
-e anal.types.constraint = true
+e analysis.types.constraint = true
 aaa
 s sym.single_cond
 pd 1~4h
@@ -1380,7 +1380,7 @@ RUN
 NAME=mov str
 FILE=bins/elf/movstr
 CMDS=<<EOF
-e anal.vars.stackname=true
+e analysis.vars.stackname=true
 aaa
 s main
 afv~var_28h
@@ -1453,7 +1453,7 @@ RUN
 NAME=afs without type
 FILE=bins/elf/analysis/pid_stripped
 CMDS=<<EOF
-e anal.vars.stackname=true
+e analysis.vars.stackname=true
 s 0x4e2420
 af
 afs

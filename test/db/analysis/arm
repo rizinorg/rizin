@@ -319,7 +319,7 @@ FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
-e anal.armthumb=true
+e analysis.armthumb=true
 wx 0910 a0e3 11ff 2fe1 0421 0924
 aae
 pi 2 @8
@@ -386,8 +386,8 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
 wx 1f2003d5d0d8065800021fd61f2003d5
-e anal.nopskip=false
-e anal.jmp.after=false
+e analysis.nopskip=false
+e analysis.jmp.after=false
 af
 afl~[2]
 EOF
@@ -402,8 +402,8 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
 wx 1f2003d5d0d8065800021fd61f2003d5
-e anal.nopskip=false
-e anal.jmp.after=true
+e analysis.nopskip=false
+e analysis.jmp.after=true
 af
 afl~[2]
 EOF
@@ -418,8 +418,8 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
 wx 1f2003d5d0d8065800021fd61f2003d5
-e anal.nopskip=true
-e anal.jmp.after=false
+e analysis.nopskip=true
+e analysis.jmp.after=false
 af
 afl~[2]
 EOF
@@ -784,7 +784,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
-e anal.vars.stackname=true
+e analysis.vars.stackname=true
 wx f0b503af2de9000d95b0002001210222032340f2040940f2050c40f2060e0724082509261490139112921193cdf80090cdf804c0cdf808e0039404950596ddf85080cdf81880ddf84ca0cdf81ca0ddf848b0cdf820b0ddf84480cdf82480cdf82890cdf82cc0cdf830e00d940e950f96fff740ff00211090084615b0bde8000df0bd
 aa
 afv~var

@@ -105,7 +105,7 @@ FILE=-
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch = x86
-e anal.arch = x86
+e analysis.arch = x86
 wx 69c389000000
 ao~opcode,esil
 EOF
@@ -121,7 +121,7 @@ FILE=-
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch = x86
-e anal.arch = x86
+e analysis.arch = x86
 wx 48c7c004000000
 wx 48c7c305000000 @ 7
 wx 69c303000000 @ 14
@@ -411,7 +411,7 @@ FILE=-
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch = x86
-e anal.arch = x86
+e analysis.arch = x86
 wx b8010000000f34b801000000cd80ebfe
 e cmd.esil.intr=?e SYSCALL
 10aes

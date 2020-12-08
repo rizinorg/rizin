@@ -45,11 +45,11 @@ static RzList *rz_debug_native_frames(RzDebug *dbg, ut64 at) {
 	if (dbg->btalgo) {
 		if (!strcmp (dbg->btalgo, "fuzzy")) {
 			cb = backtrace_fuzzy;
-		} else if (!strcmp (dbg->btalgo, "anal")) {
+		} else if (!strcmp (dbg->btalgo, "analysis")) {
 			if (dbg->bits == RZ_SYS_BITS_64) {
-				cb = backtrace_x86_64_anal;
+				cb = backtrace_x86_64_analysis;
 			} else {
-				cb = backtrace_x86_32_anal;
+				cb = backtrace_x86_32_analysis;
 			}
 		}
 	}

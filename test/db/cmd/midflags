@@ -108,7 +108,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch = x86
-e anal.arch = x86
+e analysis.arch = x86
 wx 554889e54157415641554154534881ec
 e asm.flags.middle=0
 f dat.sym = 2
@@ -189,7 +189,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch = x86
-e anal.arch = x86
+e analysis.arch = x86
 wx 554889e54157415641554154534881ec
 e asm.midflags=2
 f dat.sym = 2

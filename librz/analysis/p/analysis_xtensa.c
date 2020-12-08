@@ -472,7 +472,7 @@ static XtensaOpFn xtensa_lsai_fns[] = {
 	xtensa_store_op,
 	xtensa_store_op,
 	xtensa_store_op,
-	xtensa_null_op, /*xtensa_cache_op,probably not interesting for anal?*/
+	xtensa_null_op, /*xtensa_cache_op,probably not interesting for analysis?*/
 	xtensa_unk_op,
 	xtensa_load_op,
 	xtensa_mov_op,
@@ -2028,7 +2028,7 @@ RzAnalysisPlugin rz_analysis_plugin_xtensa = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANALYSIS,
 	.data = &rz_analysis_plugin_xtensa,
 	.version = RZ_VERSION
 };

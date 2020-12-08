@@ -352,7 +352,7 @@ NAME=/A search
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch = x86
-e anal.arch = x86
+e analysis.arch = x86
 e asm.bits=32
 "wa add esp,8;pop ebx; pop ebp; ret"
 /at ret
@@ -396,7 +396,7 @@ NAME=Rop search
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
-e anal.arch=x86
+e analysis.arch=x86
 e asm.bits=32
 "wa add esp,8;pop ebx; pop ebp; ret"
 e scr.color=false
@@ -424,7 +424,7 @@ NAME=Rop search w/ regexp
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
-e anal.arch=x86
+e analysis.arch=x86
 e asm.bits=32
 "wa add esp,8;pop ebx; pop ebp; ret"
 e scr.color=false
@@ -466,7 +466,7 @@ NAME=/c/ search instructions extended regex
 FILE=bins/pe/standard.exe
 CMDS=<<EOF
 e asm.arch = x86
-e anal.arch = x86
+e analysis.arch = x86
 e asm.bits=32
 "/ad/ ror (bh|...), (cl|.)"
 q

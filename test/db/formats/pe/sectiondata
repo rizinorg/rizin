@@ -93,7 +93,7 @@ RUN
 NAME=PE: corkami cm01.exe - section refs 1
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
-e anal.strings = true
+e analysis.strings = true
 aaa
 pi 2 @ 0x004010b7
 EOF
@@ -106,7 +106,7 @@ RUN
 NAME=PE: corkami cm01.exe - section refs 2
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
-e anal.strings = true
+e analysis.strings = true
 aaa
 pi 2 @ 0x0040136b
 EOF
@@ -119,7 +119,7 @@ RUN
 NAME=PE: corkami cm01.exe - section refs 3
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
-e anal.strings = true
+e analysis.strings = true
 aaa
 pi 2 @ 0x004013af
 EOF
@@ -132,7 +132,7 @@ RUN
 NAME=PE: corkami cm01.exe - section refs 4
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
-e anal.strings = true
+e analysis.strings = true
 aaa
 pi 2 @ 0x0040134f
 EOF

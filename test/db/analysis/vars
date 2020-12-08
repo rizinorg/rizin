@@ -176,7 +176,7 @@ FILE=-
 ARGS=-a x86 -b 64
 CMDS=<<EOF
 e asm.flags=false
-e anal.vars.stackname = true
+e analysis.vars.stackname = true
 afc=ms
 wx 488bc448895808488970104889781841574881ecb00000008364242000488d48884c8d9c24b0000000498b5b10498b7318498b7b20498be3415fc3
 af
@@ -234,7 +234,7 @@ ARGS=-a arm -b 16
 CMDS=<<EOF
 e asm.flags=false
 e asm.comments=false
-e anal.vars.stackname = true
+e analysis.vars.stackname = true
 wx 80b483b000af78600b467b8013467b707b78002b03d07a887b689a6103e07b881a047b689a6100bf0c37bd465df8047b7047
 af
 aaef

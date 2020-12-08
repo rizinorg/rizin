@@ -603,7 +603,7 @@ RzAnalysisPlugin rz_analysis_plugin_riscv_cs = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANALYSIS,
 	.data = &rz_analysis_plugin_riscv_cs,
 	.version = RZ_VERSION
 };
@@ -613,7 +613,7 @@ RZ_API RzLibStruct rizin_plugin = {
 RzAnalysisPlugin rz_analysis_plugin_riscv_cs = {0};
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANALYSIS,
 	.version = RZ_VERSION
 };
 #endif

@@ -194,7 +194,7 @@ NAME=Variable analysis with stp/preindexed str
 FILE=-
 ARGS=-a arm -b 64
 CMDS=<<EOF
-e anal.vars.stackname=true
+e analysis.vars.stackname=true
 wx f30f1ef8fd7b01a9fd430091fd7b41a9e00313aaf30742f8c0035fd6
 aap
 aaef

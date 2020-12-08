@@ -2,7 +2,7 @@ NAME=binopeq(+=)
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
-e anal.arch=x86
+e analysis.arch=x86
 e asm.bits=32
 "aetr eax,ebx,+="
 EOF
@@ -17,7 +17,7 @@ NAME=binop(+)
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
-e anal.arch=x86
+e analysis.arch=x86
 e asm.bits=32
 "aetr eax,ebx,+"
 EOF
@@ -31,7 +31,7 @@ NAME=cmp(==)
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
-e anal.arch=x86
+e analysis.arch=x86
 e asm.bits=32
 "aetr eax,ebx,=="
 EOF
@@ -45,7 +45,7 @@ NAME=smaller_or_eq(<=)
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
-e anal.arch=x86
+e analysis.arch=x86
 e asm.bits=32
 "aetr eax,ebx,<="
 EOF
@@ -61,7 +61,7 @@ NAME=not_eq(!=)
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
-e anal.arch=x86
+e analysis.arch=x86
 e asm.bits=32
 "aetr ebx,!="
 EOF
@@ -77,7 +77,7 @@ NAME=conditional(?{)
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
-e anal.arch=x86
+e analysis.arch=x86
 e asm.bits=32
 "aetr zf,?{,0x800,eip,=,}"
 EOF
@@ -92,7 +92,7 @@ NAME=mem_bineq
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
-e anal.arch=x86
+e analysis.arch=x86
 e asm.bits=32
 "aetr 0xff,eax,|=[2]"
 EOF
@@ -109,7 +109,7 @@ NAME=flags
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
-e anal.arch=x86
+e analysis.arch=x86
 e asm.bits=32
 aetr 0,0x2147a8,rip,+,[8],==,$z,zf,=,$b64,cf,=,$p,pf,=,$s,sf,=
 EOF

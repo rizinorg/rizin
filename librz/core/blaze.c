@@ -190,7 +190,7 @@ static void printFunctionCommands(RzCore *core, fcn_t* fcn, const char *name) {
 
 	RzListIter *fcn_iter;
 	bb_t *cur = NULL;
-	const char *pfx = rz_config_get (core->config, "anal.fcnprefix");
+	const char *pfx = rz_config_get (core->config, "analysis.fcnprefix");
 	if (!pfx) {
 		pfx = "fcn";
 	}
@@ -215,7 +215,7 @@ static void createFunction(RzCore *core, fcn_t* fcn, const char *name) {
 
 	RzListIter *fcn_iter;
 	bb_t *cur = NULL;
-	const char *pfx = rz_config_get (core->config, "anal.fcnprefix");
+	const char *pfx = rz_config_get (core->config, "analysis.fcnprefix");
 	if (!pfx) {
 		pfx = "fcn";
 	}
@@ -262,7 +262,7 @@ RZ_API bool core_analysis_bbs(RzCore *core, const char* input) {
 	bb_t *block = NULL;
 	int invalid_instruction_barrier = -20000;
 	bool debug = rz_config_get_i (core->config, "cfg.debug");
-	bool nopskip = rz_config_get_i (core->config, "anal.nopskip");
+	bool nopskip = rz_config_get_i (core->config, "analysis.nopskip");
 
 	block_list = rz_list_new ();
 	if (!block_list) {

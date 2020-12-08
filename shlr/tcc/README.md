@@ -9,4 +9,4 @@ Main IO function:
 
 	tcc_appendf()
 
-Appends sdb queries to be executed from the core anal.
+Appends sdb queries to be executed from the core analysis.

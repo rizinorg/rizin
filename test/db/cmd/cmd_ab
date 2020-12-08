@@ -1,7 +1,7 @@
 NAME=ablt
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
-e anal.calls=false
+e analysis.calls=false
 af
 echo $(ablq)
 abt

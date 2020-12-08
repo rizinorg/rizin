@@ -48,7 +48,7 @@ static const char *help_msg_slash[] = {
 	"/f", "", "search forwards, (command modifier)",
 	"/F", " file [off] [sz]", "search contents of file with offset and size",
 	// TODO: add subcommands to find paths between functions and filter only function names instead of offsets, etc
-	"/g", "[g] [from]", "find all graph paths A to B (/gg follow jumps, see search.count and anal.depth)",
+	"/g", "[g] [from]", "find all graph paths A to B (/gg follow jumps, see search.count and analysis.depth)",
 	"/h", "[t] [hash] [len]", "find block matching this hash. See ph",
 	"/i", " foo", "search for string 'foo' ignoring case",
 	"/m", "[?][ebm] magicfile", "search for magic, filesystems or binary headers",
@@ -282,7 +282,7 @@ static void cmd_search_bin(RzCore *core, RzInterval itv) {
 
 static int __prelude_cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	RzCore *core = (RzCore *) user;
-	int depth = rz_config_get_i (core->config, "anal.depth");
+	int depth = rz_config_get_i (core->config, "analysis.depth");
 	// eprintf ("ap: Found function prelude %d at 0x%08"PFMT64x"\n", preludecnt, addr);
 	rz_core_analysis_fcn (core, addr, -1, RZ_ANALYSIS_REF_TYPE_NULL, depth);
 	preludecnt++;
@@ -333,10 +333,10 @@ static int count_functions(RzCore *core) {
 
 RZ_API int rz_core_search_preludes(RzCore *core, bool log) {
 	int ret = -1;
-	const char *prelude = rz_config_get (core->config, "anal.prelude");
+	const char *prelude = rz_config_get (core->config, "analysis.prelude");
 	ut64 from = UT64_MAX;
 	ut64 to = UT64_MAX;
-	const char *where = rz_config_get (core->config, "anal.in");
+	const char *where = rz_config_get (core->config, "analysis.in");
 
 	RzList *list = rz_core_get_boundaries_prot (core, RZ_PERM_X, where, "search");
 	RzListIter *iter;
@@ -567,7 +567,7 @@ static void append_bound(RzList *list, RzIO *io, RzInterval search_itv, ut64 fro
 	map->perm = perms;
 	RzInterval itv = {from, size};
 	if (size == -1) {
-		eprintf ("Warning: Invalid range. Use different search.in=? or anal.in=dbg.maps.x\n");
+		eprintf ("Warning: Invalid range. Use different search.in=? or analysis.in=dbg.maps.x\n");
 		free (map);
 		return;
 	}
@@ -834,14 +834,14 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 				}
 			}
 		}
-	} else if (!strcmp (mode, "anal.fcn") || !strcmp (mode, "anal.bb")) {
+	} else if (!strcmp (mode, "analysis.fcn") || !strcmp (mode, "analysis.bb")) {
 		RzAnalysisFunction *f = rz_analysis_get_fcn_in (core->analysis, core->offset,
 			RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
 		if (f) {
 			ut64 from = f->addr, size = rz_analysis_function_size_from_entry (f);
 
 			/* Search only inside the basic block */
-			if (!strcmp (mode, "anal.bb")) {
+			if (!strcmp (mode, "analysis.bb")) {
 				RzListIter *iter;
 				RzAnalysisBlock *bb;
 
@@ -856,7 +856,7 @@ RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *m
 			}
 			append_bound (list, core->io, search_itv, from, size, 5);
 		} else {
-			eprintf ("WARNING: search.in = ( anal.bb | anal.fcn )"\
+			eprintf ("WARNING: search.in = ( analysis.bb | analysis.fcn )"\
 				"requires to seek into a valid function\n");
 			append_bound (list, core->io, search_itv, core->offset, 1, 5);
 		}
@@ -3709,7 +3709,7 @@ reread:
 	case 'g': // "/g" graph search
 		if (input[1] == '?') {
 			rz_cons_printf ("Usage: /g[g] [fromaddr] @ [toaddr]\n");
-			rz_cons_printf ("(find all graph paths A to B (/gg follow jumps, see search.count and anal.depth)");
+			rz_cons_printf ("(find all graph paths A to B (/gg follow jumps, see search.count and analysis.depth)");
 		} else {
 			ut64 addr = UT64_MAX;
 			if (input[1]) {
@@ -3722,7 +3722,7 @@ reread:
 					addr = core->offset;
 				}
 			}
-			const int depth = rz_config_get_i (core->config, "anal.depth");
+			const int depth = rz_config_get_i (core->config, "analysis.depth");
 			// Va;ifate input length
 			if (input[1] != '\0') {
 				rz_core_analysis_paths (core, addr, core->offset, input[1] == 'g', depth, (input[1] == 'j' || input[2] == 'j'));

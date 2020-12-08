@@ -2,7 +2,7 @@ NAME="pdf dwarf invalid main for analysis not found (aa)"
 FILE=bins/src/dwarftest
 CMDS=<<EOF
 e asm.dwarf=true
-e anal.nopskip=true # if set to true it breaks the test
+e analysis.nopskip=true # if set to true it breaks the test
 aa
 pd 1 @main
 EOF

@@ -616,15 +616,15 @@ typedef struct rz_analysis_hint_cb_t {
 } RHintCb;
 
 typedef struct rz_analysis_t {
-	char *cpu;      // anal.cpu
+	char *cpu;      // analysis.cpu
 	char *os;       // asm.os
 	int bits;       // asm.bits
 	int lineswidth; // asm.lines.width
 	int big_endian; // cfg.bigendian
-	int sleep;      // anal.sleep, sleep some usecs before analyzing more (avoid 100% cpu usages)
-	RzAnalysisCPPABI cpp_abi; // anal.cpp.abi
+	int sleep;      // analysis.sleep, sleep some usecs before analyzing more (avoid 100% cpu usages)
+	RzAnalysisCPPABI cpp_abi; // analysis.cpp.abi
 	void *user;
-	ut64 gp;        // anal.gp, global pointer. used for mips. but can be used by other arches too in the future
+	ut64 gp;        // analysis.gp, global pointer. used for mips. but can be used by other arches too in the future
 	RBTree bb_tree; // all basic blocks by address. They can overlap each other, but must never start at the same address.
 	RzList *fcns;
 	HtUP *ht_addr_fun; // address => function
@@ -647,14 +647,14 @@ typedef struct rz_analysis_t {
 	int pcalign; // asm.pcalign
 	struct rz_analysis_esil_t *esil;
 	struct rz_analysis_plugin_t *cur;
-	RzAnalysisRange *limit; // anal.from, anal.to
+	RzAnalysisRange *limit; // analysis.from, analysis.to
 	RzList *plugins;
 	Sdb *sdb_types;
 	Sdb *sdb_fmts;
 	Sdb *sdb_zigns;
 	HtUP *dict_refs;
 	HtUP *dict_xrefs;
-	bool recursive_noreturn; // anal.rnr
+	bool recursive_noreturn; // analysis.rnr
 	RzSpaces zign_spaces;
 	char *zign_path; // dir.zigns
 	PrintfCallback cb_printf;
@@ -1525,7 +1525,7 @@ RZ_API bool rz_analysis_function_contains(RzAnalysisFunction *fcn, ut64 addr);
 // returns true if function bytes were modified
 RZ_API bool rz_analysis_function_was_modified(RzAnalysisFunction *fcn);
 
-/* anal.c */
+/* analysis.c */
 RZ_API RzAnalysis *rz_analysis_new(void);
 RZ_API void rz_analysis_purge(RzAnalysis *analysis);
 RZ_API RzAnalysis *rz_analysis_free(RzAnalysis *r);

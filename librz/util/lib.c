@@ -11,7 +11,7 @@ static bool __has_debug = false;
 
 /* XXX : this must be registered in runtime */
 static const char *rz_lib_types[] = {
-	"io", "dbg", "lang", "asm", "anal", "parse", "bin", "bin_xtr",
+	"io", "dbg", "lang", "asm", "analysis", "parse", "bin", "bin_xtr",
 	"bp", "syscall", "fastcall", "crypto", "core", "egg", "fs", NULL
 };
 

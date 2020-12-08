@@ -127,10 +127,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=af anal.endsize sparc
+NAME=af analysis.endsize sparc
 FILE=bins/elf/elf-Linux-SparcV8-bash
 CMDS=<<EOF
-e anal.endsize=0
+e analysis.endsize=0
 aaa
 s 0x0002bca0
 afi~name
@@ -140,10 +140,10 @@ name: main
 EOF
 RUN
 
-NAME=af anal.endsize sparc
+NAME=af analysis.endsize sparc
 FILE=bins/elf/elf-Linux-SparcV8-bash
 CMDS=<<EOF
-e anal.endsize=1
+e analysis.endsize=1
 aaa
 s 0x0002bca0
 afi~name
@@ -153,11 +153,11 @@ name: main
 EOF
 RUN
 
-NAME=anal.fcnprefix sparc
+NAME=analysis.fcnprefix sparc
 FILE=bins/elf/elf-solaris-sparc-ls
 CMDS=<<EOF
 s 0x00018c08
-e anal.fcnprefix=root
+e analysis.fcnprefix=root
 af
 afl
 EOF
@@ -166,10 +166,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=anal.recont=true
+NAME=analysis.recont=true
 FILE=bins/elf/elf-Linux-SparcV8-bash
 CMDS=<<EOF
-e anal.recont=true
+e analysis.recont=true
 s 0x0002bca0
 af
 afb
@@ -267,10 +267,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=af anal.endsize sparc
+NAME=af analysis.endsize sparc
 FILE=bins/elf/elf-Linux-SparcV8-bash
 CMDS=<<EOF
-e anal.endsize=0
+e analysis.endsize=0
 aaa
 s 0x0002bca0
 afi~name

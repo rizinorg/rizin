@@ -734,7 +734,7 @@ RzAnalysisPlugin rz_analysis_plugin_h8300 = {
 
 #ifndef RZ_PLUGIN_INCORE
 struct rz_lib_struct_t rizin_plugin = {
-	.type = RZ_LIB_TYPE_ANAL,
+	.type = RZ_LIB_TYPE_ANALYSIS,
 	.data = &rz_analysis_plugin_h8300,
 	.version = RZ_VERSION
 };

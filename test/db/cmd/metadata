@@ -299,7 +299,7 @@ RUN
 NAME=C[Chsdmf][*j] without arguments
 FILE=malloc://1024
 CMDS=<<EOF
-k anal/meta/range.0x5=0x5120
+k analysis/meta/range.0x5=0x5120
 w hello world
 Cs @ $$
 s 0x100
