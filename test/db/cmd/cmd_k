@@ -32,7 +32,7 @@ kj~{}
 EOF
 EXPECT=<<EOF
 {
-  "anal": {
+  "analysis": {
     "cur_cmd": [
       "types",
       "*aligned_alloc=func",

@@ -297,10 +297,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=with anal.nopskip
+NAME=with analysis.nopskip
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
-e anal.nopskip=true
+e analysis.nopskip=true
 aaa
 s 0x00011390
 agf > /dev/null

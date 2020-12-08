@@ -152,7 +152,7 @@ rz_analysis_sources = [
   '../asm/arch/pyc/opcode_38.c',
   '../asm/arch/pyc/opcode_39.c',
   '../asm/arch/pyc/opcode_3x.c',
-  '../asm/arch/pyc/opcode_anal.c',
+  '../asm/arch/pyc/opcode_analysis.c',
   '../asm/arch/pyc/opcode_arg_fmt.c',
   '../asm/arch/pyc/opcode.c',
   '../asm/arch/pyc/pyc_dis.c'

@@ -21,7 +21,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=anal.ijmp missing branch bug
+NAME=analysis.ijmp missing branch bug
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
@@ -161,7 +161,7 @@ RUN
 NAME=x86_64 main() jmptbl in bins/elf/ls.odd
 FILE=bins/elf/ls.odd
 CMDS=<<EOF
-e anal.jmp.tbl=true
+e analysis.jmp.tbl=true
 s main
 aF
 afb
@@ -471,7 +471,7 @@ NAME=x86_64 main() jmptbl in bins/elf/analysis/ls-alxchk
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
 e asm.bytes=false
-e anal.jmp.tbl=true
+e analysis.jmp.tbl=true
 s main
 aF
 pd 3 @ 0x3ec1
@@ -489,7 +489,7 @@ RUN
 NAME=aac pe trampoline fcn name 64bit
 FILE=bins/pe/testx64.exe
 CMDS=<<EOF
-e anal.autoname=false
+e analysis.autoname=false
 aac
 pd 1 @ 0x140001970
 EOF
@@ -571,7 +571,7 @@ RUN
 NAME=a2f jmp after ret
 FILE=malloc://512
 CMDS=<<EOF
-e anal.hasnext=0
+e analysis.hasnext=0
 e asm.arch=x86
 e asm.bits=64
 wx b8010000004839ca7f26b8ffffffff4839ca7c1c498b4838498b5138b8010000004839ca7f0ab8ffffffff4839ca7d025dc34883c7684883c6685dc3
@@ -586,7 +586,7 @@ RUN
 NAME=a2f jmp after ret - _size (symsize)
 FILE=malloc://512
 CMDS=<<EOF
-e anal.hasnext=0
+e analysis.hasnext=0
 e asm.arch=x86
 e asm.bits=64
 wx b8010000004839ca7f26b8ffffffff4839ca7c1c498b4838498b5138b8010000004839ca7f0ab8ffffffff4839ca7d025dc34883c7684883c6685dc3
@@ -603,7 +603,7 @@ RUN
 NAME=a2f jmp after ret - realsize (bbs_sum)
 FILE=malloc://512
 CMDS=<<EOF
-e anal.hasnext=0
+e analysis.hasnext=0
 e asm.arch=x86
 e asm.bits=64
 wx b8010000004839ca7f26b8ffffffff4839ca7c1c498b4838498b5138b8010000004839ca7f0ab8ffffffff4839ca7d025dc34883c7684883c6685dc3
@@ -740,7 +740,7 @@ NAME=aav without vinfun
 FILE=bins/elf/analysis/mipsbe-busybox
 CMDS=<<EOF
 af @ 0x0040dea4
-e anal.vinfun=false
+e analysis.vinfun=false
 aav
 pd 1 @ 0x0040decc~?andi
 EOF
@@ -753,7 +753,7 @@ NAME=aav with vinfun
 FILE=bins/elf/analysis/mipsbe-busybox
 CMDS=<<EOF
 af @ 0x0040dea4
-e anal.vinfun=true
+e analysis.vinfun=true
 aav
 pd 1 @ 0x0040decc~?dword
 EOF
@@ -802,7 +802,7 @@ RUN
 NAME=function address
 FILE=bins/mach0/mach0-i386
 CMDS=<<EOF
-e anal.hasnext=0
+e analysis.hasnext=0
 aa
 afo sym._foo
 afo sym._bar
@@ -816,7 +816,7 @@ RUN
 NAME=afr
 FILE=bins/mach0/mach0-i386
 CMDS=<<EOF
-e anal.hasnext=0
+e analysis.hasnext=0
 afr
 afl
 EOF
@@ -830,7 +830,7 @@ RUN
 NAME=aF
 FILE=bins/mach0/mach0-i386
 CMDS=<<EOF
-e anal.hasnext=0
+e analysis.hasnext=0
 aF
 afl
 EOF
@@ -954,7 +954,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=anal/fcn_name
+NAME=analysis/fcn_name
 FILE=bins/elf/analysis/main-g
 CMDS=<<EOF
 s 0x0040042c
@@ -966,7 +966,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=anal/fcn_subname
+NAME=analysis/fcn_subname
 FILE=bins/elf/analysis/main-g
 CMDS=<<EOF
 s 0x0040042c
@@ -980,7 +980,7 @@ name: sym.call_gmon_start
 EOF
 RUN
 
-NAME=anal/name
+NAME=analysis/name
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
 af
@@ -994,7 +994,7 @@ RUN
 NAME=analysis hasnext on main
 FILE=bins/elf/true32
 CMDS=<<EOF
-e anal.hasnext=true
+e analysis.hasnext=true
 af@main
 afi@main~size
 EOF
@@ -1006,7 +1006,7 @@ RUN
 NAME=analysis without hasnext on main
 FILE=bins/elf/true32
 CMDS=<<EOF
-e anal.hasnext=false
+e analysis.hasnext=false
 af@main
 afi@main~size
 EOF
@@ -1020,7 +1020,7 @@ FILE=malloc://512
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch = x86
-e anal.arch = x86
+e analysis.arch = x86
 ao~?
 ahe test
 ao~esil
@@ -1796,7 +1796,7 @@ FILE=-
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch = x86
-e anal.arch = x86
+e analysis.arch = x86
 e asm.calls=false
 wx 554889e5534881ec3810000048830c24004881c42010000064488b042528000000488945e831c04885ff4889fb909090909090c3 @ 10
 aa
@@ -1989,7 +1989,7 @@ RUN
 NAME=afvR and afvW test
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
-e anal.vars.stackname=true
+e analysis.vars.stackname=true
 aa
 s main
 ?e
@@ -2023,7 +2023,7 @@ NAME=axt capstone x86
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 e asm.arch = x86
-e anal.arch = x86
+e analysis.arch = x86
 e scr.color=false
 e scr.wheel = false
 aa
@@ -2038,7 +2038,7 @@ NAME=axt capstone x86: IOLI0
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
 e asm.arch = x86
-e anal.arch = x86
+e analysis.arch = x86
 e scr.color=false
 e scr.wheel = false
 aa
@@ -2145,7 +2145,7 @@ NAME=axf string ref capstone x86
 FILE=bins/elf/ioli/crackme0x03
 CMDS=<<EOF
 e asm.arch = x86
-e anal.arch = x86
+e analysis.arch = x86
 e scr.color = false
 e scr.wheel = false
 aa
@@ -2229,7 +2229,7 @@ RUN
 NAME=strings xref issue
 FILE=bins/elf/redpill
 CMDS=<<EOF
-e anal.strings=true
+e analysis.strings=true
 aa
 aae
 axt 0x00001d89
@@ -2285,7 +2285,7 @@ RUN
 NAME=reference PIC binary
 FILE=bins/elf/analysis/xrefpic
 CMDS=<<EOF
-e anal.strings=true
+e analysis.strings=true
 aa
 aae
 axt@0x80484e0
@@ -2298,7 +2298,7 @@ RUN
 NAME=strings xref issue without subrel
 FILE=bins/elf/redpill
 CMDS=<<EOF
-e anal.strings=true
+e analysis.strings=true
 e asm.sub.rel=false
 aa
 aae
@@ -2324,7 +2324,7 @@ RUN
 NAME=reference PIC binary without subrel
 FILE=bins/elf/analysis/xrefpic
 CMDS=<<EOF
-e anal.strings=true
+e analysis.strings=true
 e asm.sub.rel=false
 aa
 aae
@@ -2338,7 +2338,7 @@ RUN
 NAME=refs on PIC binary disassembly
 FILE=bins/elf/analysis/xrefpic
 CMDS=<<EOF
-e anal.strings=true
+e analysis.strings=true
 aa
 aae
 pd 1 @ 0x08048432
@@ -2354,7 +2354,7 @@ CMDS=<<EOF
 e asm.bytes=false
 e asm.comments=false
 e scr.color=1
-e anal.strings=true
+e analysis.strings=true
 aa
 aae
 pd 1 @ 0x08048432
@@ -2402,7 +2402,7 @@ FILE=bins/elf/crackme
 CMDS=<<EOF
 e asm.lines.bb=false
 e asm.lines.fcn=false
-e anal.jmp.cref=true
+e analysis.jmp.cref=true
 aa
 afr
 pd 1 @0x400730
@@ -2505,7 +2505,7 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-e anal.jmp.mid=false
+e analysis.jmp.mid=false
 e io.cache=true
 wx b8210000c1ebfdbb2c000000000
 af
@@ -2560,14 +2560,14 @@ diff: type: new
 EOF
 RUN
 
-NAME=overlapping basic blocks and anal.jmp.mid
+NAME=overlapping basic blocks and analysis.jmp.mid
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-e anal.nopskip=false
+e analysis.nopskip=false
 e asm.bb.middle=true
-e anal.jmp.mid=true
+e analysis.jmp.mid=true
 e io.cache=true
 "(show_fcn bin; wx $0; af-*; af; afi; ?e; afb; ?e; pdr; ?e; agf; ?e; e asm.bb.middle=true; pdf; ?e; e asm.bb.middle=false; pdf)"
 .(show_fcn b8210000c1ebfdbb2c000000cc)
@@ -2943,9 +2943,9 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-e anal.jmp.mid=true
+e analysis.jmp.mid=true
 e io.cache=true
-e anal.nopskip=false
+e analysis.nopskip=false
 wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
 af
 s 0x4
@@ -2996,7 +2996,7 @@ RUN
 NAME=af jmp after ret
 FILE=malloc://512
 CMDS=<<EOF
-e anal.hasnext=0
+e analysis.hasnext=0
 e asm.arch=x86
 e asm.bits=64
 wx b8010000004839ca7f26b8ffffffff4839ca7c1c498b4838498b5138b8010000004839ca7f0ab8ffffffff4839ca7d025dc34883c7684883c6685dc3
@@ -3011,7 +3011,7 @@ RUN
 NAME=af jmp after ret
 FILE=malloc://512
 CMDS=<<EOF
-e anal.hasnext=0
+e analysis.hasnext=0
 e asm.arch=x86
 e asm.bits=64
 wx b8010000004839ca7f26b8ffffffff4839ca7c1c498b4838498b5138b8010000004839ca7f0ab8ffffffff4839ca7d025dc34883c7684883c6685dc3
@@ -3074,7 +3074,7 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-e anal.hasnext=0
+e analysis.hasnext=0
 # testing mov eax, -4 sar
 wx 48c7c0fcffffff 48d1f8 48d1f8 48d1f8 48d1f8 48d1f8 48d1f8
 aes
@@ -3099,7 +3099,7 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-e anal.hasnext=0
+e analysis.hasnext=0
 wx 48c7c0fcffffff 48d1f8 48d1f8 48d1f8
 aes
 dr?rax
@@ -3141,7 +3141,7 @@ ret
 EOF
 RUN
 
-NAME=t.anal/x86/aap
+NAME=t.analysis/x86/aap
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
 f-sym.func.*
@@ -3157,7 +3157,7 @@ RUN
 NAME=mac-ls switch count
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
-e anal.jmp.tbl=true
+e analysis.jmp.tbl=true
 af
 f~switch
 EOF
@@ -3485,7 +3485,7 @@ RUN
 NAME=./noncode
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
-e anal.noncode=false
+e analysis.noncode=false
 afr
 afl~?str.
 EOF
@@ -3497,8 +3497,8 @@ RUN
 NAME=./noncode
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
-e anal.noncode=false
-e anal.calls=true
+e analysis.noncode=false
+e analysis.calls=true
 af
 afl~?str.
 EOF
@@ -3511,7 +3511,7 @@ NAME=Microsoft x64 CC Args/Vars
 FILE=bins/pe/testx64.exe
 CMDS=<<EOF
 e asm.comments=0
-e anal.vars.stackname=true
+e analysis.vars.stackname=true
 s 0x140001080
 afc=ms
 af
@@ -3592,7 +3592,7 @@ RUN
 NAME=x86_64 retpoline disabled jmptbl
 FILE=bins/elf/retpoline
 CMDS=<<EOF
-e anal.jmp.retpoline = false
+e analysis.jmp.retpoline = false
 s 0x780
 af
 pdr~- case[2]

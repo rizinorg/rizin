@@ -61,7 +61,7 @@ FILE=malloc://128
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch=x86
-e anal.arch=x86
+e analysis.arch=x86
 wx 6833320000
 e asm.imm.str=1
 pd 1
@@ -129,7 +129,7 @@ FILE=malloc://128
 CMDS=<<EOF
 e asm.bits=64
 e asm.arch = x86
-e anal.arch = x86
+e analysis.arch = x86
 wx b8ffffffff
 e asm.lines.bb=0
 pd 1
@@ -479,7 +479,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-e anal.eobjmp=true
+e analysis.eobjmp=true
 wx ff2572962100
 af
 pdf~jmp[0]
@@ -496,7 +496,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-e anal.eobjmp=false
+e analysis.eobjmp=false
 wx ff2572962100
 af
 afi~size[1]
@@ -577,7 +577,7 @@ RUN
 NAME=pd asm.sub.varonly
 FILE=malloc://1024
 CMDS=<<EOF
-e anal.vars.stackname=true
+e analysis.vars.stackname=true
 e asm.arch=x86
 e asm.bits=64
 e asm.sub.var=true
@@ -1627,9 +1627,9 @@ e asm.flags=false
 ahb 16
 aha arm
 pd 1
-e anal.ignbithints=1
+e analysis.ignbithints=1
 pd 1 @b:32
-e anal.ignbithints=0
+e analysis.ignbithints=0
 pd 1 @b:16
 pd 1 @b:32
 ah*

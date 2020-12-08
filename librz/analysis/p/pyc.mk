@@ -27,7 +27,7 @@ OBJ_PYC+=$(PYC_ASM_ROOT)/opcode_37.o
 OBJ_PYC+=$(PYC_ASM_ROOT)/opcode_38.o
 OBJ_PYC+=$(PYC_ASM_ROOT)/opcode_39.o
 OBJ_PYC+=$(PYC_ASM_ROOT)/opcode_3x.o
-OBJ_PYC+=$(PYC_ASM_ROOT)/opcode_anal.o
+OBJ_PYC+=$(PYC_ASM_ROOT)/opcode_analysis.o
 OBJ_PYC+=$(PYC_ASM_ROOT)/opcode_arg_fmt.o
 OBJ_PYC+=$(PYC_ASM_ROOT)/opcode.o
 

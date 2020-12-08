@@ -3,7 +3,7 @@ FILE=bins/bf/hello-ok.bf
 ARGS=-b32
 CMDS=<<EOF
 e asm.arch = bf
-e anal.arch = bf
+e analysis.arch = bf
 f input 128 0x3000
 o malloc://128 0x3000~z
 f screen 80*25 0x4000
@@ -35,7 +35,7 @@ FILE=bins/bf/hello-unbalanced-loop.bf
 ARGS=-b32
 CMDS=<<EOF
 e asm.arch = bf
-e anal.arch = bf
+e analysis.arch = bf
 f input 128 0x3000
 o malloc://128 0x3000~z
 f screen 80*25 0x4000
@@ -64,7 +64,7 @@ FILE=bins/bf/hello-loops.bf
 ARGS=-b32
 CMDS=<<EOF
 e asm.arch = bf
-e anal.arch = bf
+e analysis.arch = bf
 f input 128 0x3000
 o malloc://128 0x3000~z
 f screen 80*25 0x4000

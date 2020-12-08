@@ -3,9 +3,9 @@ FILE=-
 CMDS=<<EOF
 ac Flatline
 acll
-k anal/classes/*
+k analysis/classes/*
 ?e -
-k anal/classes/attrs/*
+k analysis/classes/attrs/*
 EOF
 EXPECT=<<EOF
 Flatline
@@ -20,9 +20,9 @@ CMDS=<<EOF
 ac Flatline
 acm Flatline PrayerPosition 0x1337 0x42
 acll
-k anal/classes/*
+k analysis/classes/*
 ?e -
-k anal/classes/attrs/*
+k analysis/classes/attrs/*
 f@F:classes
 EOF
 EXPECT=<<EOF
@@ -44,23 +44,23 @@ ac Flatline
 acm Flatline PrayerPosition 0x1337 0x42
 acm Flatline RemainIndoors 0xdeadbeef
 acll
-k anal/classes/*
+k analysis/classes/*
 ?e -
-k anal/classes/attrs/*
+k analysis/classes/attrs/*
 f@F:classes
 ?e --
 acm- Flatline PrayerPosition
 acll
-k anal/classes/*
+k analysis/classes/*
 ?e -
-k anal/classes/attrs/*
+k analysis/classes/attrs/*
 f@F:classes
 ?e --
 acm- Flatline RemainIndoors
 acll
-k anal/classes/*
+k analysis/classes/*
 ?e -
-k anal/classes/attrs/*
+k analysis/classes/attrs/*
 f@F:classes
 EOF
 EXPECT=<<EOF
@@ -97,16 +97,16 @@ CMDS=<<EOF
 ac Flatline
 acm Flatline PrayerPosition 0x1337 0x42
 acll
-k anal/classes/*
+k analysis/classes/*
 ?e -
-k anal/classes/attrs/*
+k analysis/classes/attrs/*
 f@F:classes
 ?e --
 acmn Flatline PrayerPosition Marigold
 acll
-k anal/classes/*
+k analysis/classes/*
 ?e -
-k anal/classes/attrs/*
+k analysis/classes/attrs/*
 f@F:classes
 EOF
 EXPECT=<<EOF
@@ -142,31 +142,31 @@ acm Flatline PrayerPosition 0x1337 0x42
 acv Flatline 0x1337
 
 acll
-k anal/classes/*
+k analysis/classes/*
 ?e -
-k anal/classes/attrs/*
+k analysis/classes/attrs/*
 f@F:classes
 
 ?e --
 ac- Album
 acll
-k anal/classes/*
+k analysis/classes/*
 ?e -
-k anal/classes/attrs/*
+k analysis/classes/attrs/*
 f@F:classes
 
 ?e --
 acll
-k anal/classes/*
+k analysis/classes/*
 ?e -
-k anal/classes/attrs/*
+k analysis/classes/attrs/*
 f@F:classes
 ?e --
 ac- Flatline
 acll
-k anal/classes/*
+k analysis/classes/*
 ?e -
-k anal/classes/attrs/*
+k analysis/classes/attrs/*
 f@F:classes
 EOF
 EXPECT=<<EOF
@@ -241,9 +241,9 @@ ac Flatline
 acb Flatline PeripherySong
 acb Flatline NiceSong 0x42
 acll
-k anal/classes/*
+k analysis/classes/*
 ?e -
-k anal/classes/attrs/*
+k analysis/classes/attrs/*
 acb Flatline
 EOF
 EXPECT=<<EOF
@@ -273,15 +273,15 @@ ac Flatline
 acb Flatline PeripherySong
 acb Flatline NiceSong 0x42
 acb Flatline
-k anal/classes/*
+k analysis/classes/*
 ?e -
-k anal/classes/attrs/*
+k analysis/classes/attrs/*
 ?e --
 acb- Flatline 0
 acb Flatline
-k anal/classes/*
+k analysis/classes/*
 ?e -
-k anal/classes/attrs/*
+k analysis/classes/attrs/*
 EOF
 EXPECT=<<EOF
 Flatline:
@@ -315,9 +315,9 @@ ac Deadwing
 acv Deadwing 0x1337
 acv Deadwing 0xdeadbeef 0x42
 acll
-k anal/classes/*
+k analysis/classes/*
 ?e -
-k anal/classes/attrs/*
+k analysis/classes/attrs/*
 f@F:classes
 EOF
 EXPECT=<<EOF
@@ -344,9 +344,9 @@ acv Deadwing 0x1337
 acv Deadwing 0xdeadbeef 0x42
 acv Deadwing 0xefefef 0x42 0x20
 acll
-k anal/classes/*
+k analysis/classes/*
 ?e -
-k anal/classes/attrs/*
+k analysis/classes/attrs/*
 f@F:classes
 ?e --
 acv- Deadwing 0
@@ -388,16 +388,16 @@ acb Deadwing PorcupineTreeAlbum 0x8
 acv PorcupineTreeAlbum 0x1337 0x42
 acm PorcupineTreeAlbum Listen 0xdeadbeef
 acll
-k anal/classes/*
+k analysis/classes/*
 ?e -
-k anal/classes/attrs/*
+k analysis/classes/attrs/*
 f@F:classes
 ?e --
 acn PorcupineTreeAlbum Masterpiece
 acll
-k anal/classes/*
+k analysis/classes/*
 ?e -
-k anal/classes/attrs/*
+k analysis/classes/attrs/*
 f@F:classes
 EOF
 EXPECT=<<EOF

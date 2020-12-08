@@ -18,7 +18,7 @@ RUN
 NAME=hang-on-aa/-aac fix (#15004)
 FILE=bins/pe/15004.file
 CMDS=<<EOF
-e anal.vars.stackname=true
+e analysis.vars.stackname=true
 aa
 e asm.var=false
 pdb
@@ -45,13 +45,13 @@ fcn.00401e80
 EOF
 RUN
 
-NAME=anal.pushret
+NAME=analysis.pushret
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 "wa push 10;ret;nop;nop;nop;nop;nop;nop;nop;ret"
-e anal.pushret=true
+e analysis.pushret=true
 af
 afi~size
 EOF
@@ -64,7 +64,7 @@ RUN
 NAME=aac pe trampoline fcn name 32bit
 FILE=bins/pe/testx32.exe
 CMDS=<<EOF
-e anal.autoname=false
+e analysis.autoname=false
 aac
 pd 1 @ 0x004017f6
 EOF
@@ -76,7 +76,7 @@ RUN
 NAME=a2f 8 bbs 4 ret and some jumps
 FILE=malloc://512
 CMDS=<<EOF
-e anal.hasnext=0
+e analysis.hasnext=0
 e asm.arch=x86
 e asm.bits=32
 wx 85c0740585c07405c385c0eb01c385c07401c3b8efbeaddec3
@@ -98,7 +98,7 @@ RUN
 NAME=a2f 3bbs with entry in the middle of the function
 FILE=malloc://512
 CMDS=<<EOF
-e anal.hasnext=0
+e analysis.hasnext=0
 e asm.arch=x86
 e asm.bits=32
 wx 31c031c983c10183c10285c975f231c931c040c3
@@ -116,7 +116,7 @@ RUN
 NAME=a2f 6 bbs with entry at the end of the function
 FILE=malloc://512
 CMDS=<<EOF
-e anal.hasnext=0
+e analysis.hasnext=0
 e asm.arch=x86
 e asm.bits=32
 wx 31c083c00183e801750831c083e80183c00131c983c10183e90175e431d283ea0183c2017402ebd831c0c3
@@ -138,7 +138,7 @@ NAME=a2f cjmp
 FILE=malloc://0x5000
 CMDS=<<EOF
 e asm.arch = x86
-e anal.arch = x86
+e analysis.arch = x86
 e io.cache=true
 e asm.bits=32
 wx 31c0740140c3
@@ -166,7 +166,7 @@ RUN
 NAME=aaa with maxbbsz
 FILE=bins/pe/flare_notepad.ex
 CMDS=<<EOF
-e anal.bb.maxsize = 2048
+e analysis.bb.maxsize = 2048
 aaa
 pdf~ret?
 EOF
@@ -299,14 +299,14 @@ e asm.functions=false
 e asm.fcncalls=false
 e asm.lines.fcn=false
 e scr.utf8=false
-e anal.jmp.after=false
-e anal.calls=false
-e anal.jmp.cref=false
-e anal.jmp.above=true
-e anal.jmp.ref=true
-e anal.split=true
+e analysis.jmp.after=false
+e analysis.calls=false
+e analysis.jmp.cref=false
+e analysis.jmp.above=true
+e analysis.jmp.ref=true
+e analysis.split=true
 # HACK to avoid ASAN taking too long on travis.. this is broken anyway
-e anal.bb.maxsize=1K
+e analysis.bb.maxsize=1K
 adf @ sym.testObf27.exe_VirtMe
 .adf @ sym.testObf27.exe_VirtMe
 adf @ 0x00560e67
@@ -323,10 +323,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=af anal.endsize
+NAME=af analysis.endsize
 FILE=bins/elf/echo-bin
 CMDS=<<EOF
-e anal.endsize=0
+e analysis.endsize=0
 aaa
 s 0x1144
 afi~name
@@ -336,10 +336,10 @@ name: main
 EOF
 RUN
 
-NAME=af anal.endsize
+NAME=af analysis.endsize
 FILE=bins/elf/echo-bin
 CMDS=<<EOF
-e anal.endsize=1
+e analysis.endsize=1
 aaa
 s 0x1144
 afi~name
@@ -352,7 +352,7 @@ RUN
 NAME=af 8 bbs 4 ret and some jumps
 FILE=malloc://512
 CMDS=<<EOF
-e anal.hasnext=0
+e analysis.hasnext=0
 e asm.arch=x86
 e asm.bits=32
 wx 85c0740585c07405c385c0eb01c385c07401c3b8efbeaddec3
@@ -374,7 +374,7 @@ RUN
 NAME=af 3bbs with entry in the middle of the function
 FILE=malloc://512
 CMDS=<<EOF
-e anal.hasnext=0
+e analysis.hasnext=0
 e asm.arch=x86
 e asm.bits=32
 wx 31c031c983c10183c10285c975f231c931c040c3
@@ -392,7 +392,7 @@ RUN
 NAME=af 6 bbs with entry at the end of the function
 FILE=malloc://512
 CMDS=<<EOF
-e anal.hasnext=0
+e analysis.hasnext=0
 e asm.arch=x86
 e asm.bits=32
 wx 31c083c00183e801750831c083e80183c00131c983c10183e90175e431d283ea0183c2017402ebd831c0c3
@@ -428,11 +428,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=anal.fcnprefix
+NAME=analysis.fcnprefix
 FILE=bins/pe/test.exe
 CMDS=<<EOF
 s 0x401000
-e anal.fcnprefix=root
+e analysis.fcnprefix=root
 af
 afl
 EOF
@@ -494,10 +494,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=anal.recont=true
+NAME=analysis.recont=true
 FILE=bins/pe/bcc1.ex
 CMDS=<<EOF
-e anal.recont=true
+e analysis.recont=true
 af
 afb
 afb @ 0x401012
@@ -537,9 +537,9 @@ RUN
 NAME=afb twice
 FILE=bins/pe/bcc1.ex
 CMDS=<<EOF
-e anal.recont=true
-e anal.depth=100
-e anal.hasnext=true
+e analysis.recont=true
+e analysis.depth=100
+e analysis.hasnext=true
 af @ 0x40dfd0
 af;afb;afb @ 0x40dfd0
 EOF
@@ -577,7 +577,7 @@ RUN
 NAME=./followbrokenfcnsrefs
 FILE=bins/pe/bdc1.ex
 CMDS=<<EOF
-e anal.brokenrefs=true
+e analysis.brokenrefs=true
 af
 s 0x4068e8
 fd
@@ -602,7 +602,7 @@ RUN
 NAME=function address from operand
 FILE=bins/pe/test.exe
 CMDS=<<EOF
-e anal.datarefs=true
+e analysis.datarefs=true
 s 0x401820
 af
 s 0x401880
@@ -616,8 +616,8 @@ RUN
 NAME=function address from data structure
 FILE=bins/pe/test.exe
 CMDS=<<EOF
-e anal.datarefs=true
-e anal.recont=true
+e analysis.datarefs=true
+e analysis.recont=true
 s 0x4039ba
 af
 s 0x401441
@@ -712,7 +712,7 @@ RUN
 NAME=mac-ls switch count3
 FILE=bins/pe/test.exe
 CMDS=<<EOF
-e anal.jmp.tbl=true
+e analysis.jmp.tbl=true
 s 0x402cb6
 af
 afb
@@ -962,7 +962,7 @@ RUN
 NAME=mac-ls switch count4
 FILE=bins/pe/ConsoleApplication1.exe
 CMDS=<<EOF
-e anal.jmp.tbl=true
+e analysis.jmp.tbl=true
 s 0x401090
 af
 afb
@@ -1189,7 +1189,7 @@ RUN
 NAME=./nojmpabove
 FILE=bins/pe/test.exe
 CMDS=<<EOF
-e anal.jmp.above=false
+e analysis.jmp.above=false
 af
 afb
 EOF
@@ -1202,7 +1202,7 @@ RUN
 NAME=./searchstringrefs
 FILE=bins/pe/test.exe
 CMDS=<<EOF
-e anal.refstr=true
+e analysis.refstr=true
 s 0x401000
 af
 afx
@@ -1221,9 +1221,9 @@ NAME=16bit segment bounds - capstone
 FILE=malloc://1024k
 CMDS=<<EOF
 e asm.arch=x86
-e anal.arch=x86
+e analysis.arch=x86
 e asm.bits=16
-e anal.hasnext=0
+e analysis.hasnext=0
 wx e9c300 @ f000:ffaa
 s f000:ffaa
 pi 1
@@ -1254,7 +1254,7 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-e anal.hasnext=0
+e analysis.hasnext=0
 # testing mov eax, -4 sar
 # 64bit code seems to fail
 # wx 48c7c0fcffffff 48d1f8 48d1f8 48d1f8 48d1f8 48d1f8 48d1f8
@@ -1284,7 +1284,7 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-e anal.hasnext=0
+e analysis.hasnext=0
 wx 5589d8b900000000b885000000cd8089c35dc3
 af
 afi~size
@@ -1311,7 +1311,7 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-e anal.hasnext=0
+e analysis.hasnext=0
 wx 554889e5415741564155
 ao 3~bytes
 EOF
@@ -1353,7 +1353,7 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-e anal.hasnext=0
+e analysis.hasnext=0
 b 0x4e
 wx 743684c0741284d2b8010000007509f3c30f1f8000000000488b4e40488b07488b1648394f407f187c1e4889d64889c7e933e1ffff0f1f0084d274c60f1f4000b8ffffffffc36690b801000000c3
 af
@@ -1371,7 +1371,7 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-e anal.hasnext=0
+e analysis.hasnext=0
 b 0x4e
 wx 743684c0741284d2b8010000007509f3c30f1f8000000000488b4e40488b07488b1648394f407f187c1e4889d64889c7e933e1ffff0f1f0084d274c60f1f4000b8ffffffffc36690b801000000c3
 af
@@ -1388,7 +1388,7 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-e anal.hasnext=0
+e analysis.hasnext=0
 b 0x4e
 wx 5589e583ec2083f8000f8507000000b800000000eb05b80100000083c4205dc3
 af
@@ -2869,7 +2869,7 @@ NAME=arj x86 32 bits
 FILE=malloc://0x100
 CMDS=<<EOF
 e asm.arch = x86
-e anal.arch = x86
+e analysis.arch = x86
 e asm.bits=32
 arj
 EOF
@@ -2881,8 +2881,8 @@ RUN
 NAME=af x86-32..
 FILE=malloc://1024
 CMDS=<<EOF
-e anal.hasnext=0
-e anal.eobjmp=false
+e analysis.hasnext=0
+e analysis.eobjmp=false
 e asm.arch=x86
 e asm.bits=32
 wx 6a00 4889e5 c3
@@ -2897,9 +2897,9 @@ RUN
 NAME=af x86-32 ujmp eobjmp=true
 FILE=malloc://1024
 CMDS=<<EOF
-e anal.hasnext=0
+e analysis.hasnext=0
 e asm.arch=x86
-e anal.eobjmp=true
+e analysis.eobjmp=true
 e asm.bits=32
 wx 6a00 4889e5 ff25f8120000 ff25f8120000ffe0c3
 af
@@ -2913,9 +2913,9 @@ RUN
 NAME=af x86-32 ujmp eobjmp=false
 FILE=malloc://1024
 CMDS=<<EOF
-e anal.hasnext=0
+e analysis.hasnext=0
 e asm.arch=x86
-e anal.eobjmp=false
+e analysis.eobjmp=false
 e asm.bits=32
 wx 6a00 4889e5 ff25f8120000 ff25f8120000ffe0c3
 af
@@ -2929,9 +2929,9 @@ RUN
 NAME=af bug
 FILE=malloc://1024
 CMDS=<<EOF
-e anal.hasnext=0
+e analysis.hasnext=0
 e asm.arch=x86
-e anal.eobjmp=false
+e analysis.eobjmp=false
 e asm.bits=32
 wx 6a004889e54883e4f0488b7d08488d751089fa83c201c1e2034801f24889d1eb044883c1084883390075f64883c108e8580f000089c7e81b390000c3554889e5
 s +0x40
@@ -2976,8 +2976,8 @@ RUN
 NAME=disasm bug
 FILE=malloc://1024
 CMDS=<<EOF
-e anal.hasnext=0
-e anal.eobjmp=false
+e analysis.hasnext=0
+e analysis.eobjmp=false
 e asm.arch=x86
 e asm.bits=32
 wx 6a004889e54883e4f0488b7d08488d751089fa83c201c1e2034801f24889d1eb044883c1084883390075f64883c108e8580f000089c7e81b390000c3554889e5
@@ -3023,8 +3023,8 @@ RUN
 NAME=af afF
 FILE=malloc://1024
 CMDS=<<EOF
-e anal.hasnext=0
-e anal.eobjmp=false
+e analysis.hasnext=0
+e analysis.eobjmp=false
 e asm.arch=x86
 e asm.bits=32
 wx 6a004889e5c3
@@ -3041,8 +3041,8 @@ RUN
 NAME=af afF graph
 FILE=malloc://1024
 CMDS=<<EOF
-e anal.hasnext=0
-e anal.eobjmp=false
+e analysis.hasnext=0
+e analysis.eobjmp=false
 e asm.arch=x86
 e asm.bits=32
 wx 6a004889e5c3
@@ -3223,7 +3223,7 @@ e asm.leahints=false
 e asm.cpu=x86
 e asm.arch=x86
 e scr.utf8=true
-e anal.vars.stackname=true
+e analysis.vars.stackname=true
 e asm.comments=false
 e asm.bytes=false
 wx 31c039d6724aeb72908db426000000008d7e0131d289e8f7f131d28944241c89f8f7f13944241c76678b93080200008b028b50143b5018736dc6020983c20189501489f031d201cef7f129d639f5762a8b8b8c05000085c975b683c6018b93080200008b028b50143b50187327c6022083c20139f589501477d68b44242c65330514000000753783c43c5b5e5f5dc39089feebc9c744240420000000890424e87cc9ffffeba6c744240409000000890424e86ac9ffff8b8b8c050000eb84e87d1001008db6000000008dbc270000000055575653e8f7f0ffff81c32b9d010083ec3c658b0d14000000894c242c31c98b6a0c8b720889e929f1c1e90285c9894c241c0f848100000039f50f84930000008b7a1801fdf7d721fd8b7a1089e9896a0c2b4a0489fd2b6a0439e97f718b7a0c31ed
@@ -3286,8 +3286,8 @@ e asm.calls=false
 e asm.bits=32
 e asm.leahints=false
 e asm.cpu=x86
-e anal.cpu=x86
-e anal.vars.stackname=true
+e analysis.cpu=x86
+e analysis.vars.stackname=true
 e asm.arch=x86
 e asm.comments=false
 e asm.bytes=false
@@ -3364,8 +3364,8 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
 e asm.arch = x86
-e anal.arch = x86
-e anal.vars.stackname=true
+e analysis.arch = x86
+e analysis.vars.stackname=true
 e asm.calls=false
 wx 83ec108b44241899f77c241c8b44241401d08944240c8b44242099f77c24288b44240c01d0894424088b5424148b44240c8d0c028b44242c99f7f98b44240801d0894424048b54240c8b44240801c28b44240401d083c410c38d4c240483e4f0ff71fc5589e55183ec046a076a066a056a046a036a026a01e883ffffff83c41c83ec08506844850408e847feffff83c410b8000000008b4dfcc98d61fcc36690669066909055575653e887feffff81c3371b000083ec0c8b6c24208db30cffffffe8d3fdffff8d8308ffffff29c6c1fe0285f6742531ff8db60000000083ec04ff74242cff74242c55ff94bb08ffffff83c70183c41039f775e383c40c5b5e5f
 e asm.bits=32

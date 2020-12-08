@@ -1,10 +1,10 @@
 NAME=af localflag
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
-e anal.calls=false
+e analysis.calls=false
 af
 aflc
-e anal.calls=true
+e analysis.calls=true
 af-*
 af
 aflc

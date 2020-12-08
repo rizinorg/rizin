@@ -156,7 +156,7 @@ rz_asm_sources = [
   'arch/pyc/opcode_38.c',
   'arch/pyc/opcode_39.c',
   'arch/pyc/opcode_3x.c',
-  'arch/pyc/opcode_anal.c',
+  'arch/pyc/opcode_analysis.c',
   'arch/pyc/opcode_arg_fmt.c',
   'arch/pyc/opcode.c',
   'arch/pyc/pyc_dis.c',

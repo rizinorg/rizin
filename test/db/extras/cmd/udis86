@@ -19,7 +19,7 @@ FILE=malloc://1024k
 CMDS=<<EOF
 e asm.arch=x86.udis
 e asm.bits=16
-e anal.hasnext=0
+e analysis.hasnext=0
 wx e9c300 @ f000:ffaa
 s f000:ffaa
 pi 1
@@ -33,7 +33,7 @@ NAME="udis1"
 CMDS=<<EOF
 e asm.arch=x86.udis
 e asm.bits=32
-e anal.hasnext=0
+e analysis.hasnext=0
 b 0x4e
 wx 743684c0741284d2b8010000007509f3c30f1f8000000000488b4e40488b07488b1648394f407f187c1e4889d64889c7e933e1ffff0f1f0084d274c60f1f4000b8ffffffffc36690b801000000c3
 af
@@ -50,7 +50,7 @@ NAME="udis2"
 CMDS=<<EOF
 e asm.arch=x86.udis
 e asm.bits=32
-e anal.hasnext=0
+e analysis.hasnext=0
 b 0x4e
 wx 743684c0741284d2b8010000007509f3c30f1f8000000000488b4e40488b07488b1648394f407f187c1e4889d64889c7e933e1ffff0f1f0084d274c60f1f4000b8ffffffffc36690b801000000c3
 af
@@ -65,7 +65,7 @@ NAME="udis3"
 CMDS=<<EOF
 e asm.arch=x86.udis
 e asm.bits=32
-e anal.hasnext=0
+e analysis.hasnext=0
 b 0x4e
 wx 5589e583ec2083f8000f8507000000b800000000eb05b80100000083c4205dc3
 af
@@ -82,7 +82,7 @@ NAME="axt udis86"
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 e asm.arch = x86.udis
-e anal.arch = x86.udis
+e analysis.arch = x86.udis
 e scr.color = false
 e scr.wheel = false
 aa
@@ -97,7 +97,7 @@ NAME="axt udis86: IOLI0"
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
 e asm.arch = x86.udis
-e anal.arch = x86.udis
+e analysis.arch = x86.udis
 e scr.color=false
 e scr.wheel = false
 aa
@@ -113,7 +113,7 @@ BROKEN=1
 FILE=bins/elf/ioli/crackme0x03
 CMDS=<<EOF
 e asm.arch = x86.udis
-e anal.arch = x86.udis
+e analysis.arch = x86.udis
 e scr.color = false
 e scr.wheel = false
 aa

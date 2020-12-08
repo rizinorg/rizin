@@ -1,10 +1,10 @@
 NAME=aav find xrefs
 FILE=bins/mach0/macho-bash
 CMDS=<<EOF
-e anal.loads=true
-e anal.in=range
-e anal.from=0x8000
-e anal.to=0x8000+4K
+e analysis.loads=true
+e analysis.in=range
+e analysis.from=0x8000
+e analysis.to=0x8000+4K
 aac
 afna
 aar

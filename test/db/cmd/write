@@ -451,7 +451,7 @@ RUN
 
 NAME=Automatically reanalyze function control flow after a write
 FILE=-
-ARGS=-a x86 -b 64 -e anal.detectwrites=true
+ARGS=-a x86 -b 64 -e analysis.detectwrites=true
 CMDS=<<EOF
 wa jne 6 @ 2
 wa ret @ 8
@@ -509,7 +509,7 @@ RUN
 
 NAME=Write misaligns jump instruction, control flow is reanalyzed
 FILE=-
-ARGS=-a x86 -b 64 -e anal.detectwrites=true
+ARGS=-a x86 -b 64 -e analysis.detectwrites=true
 CMDS=<<EOF
 wx e80200000075020000c3
 af
@@ -555,7 +555,7 @@ RUN
 
 NAME=Write reanalysis keeps already unreachable block
 FILE=-
-ARGS=-a x86 -b 64 -e anal.detectwrites=true
+ARGS=-a x86 -b 64 -e analysis.detectwrites=true
 CMDS=<<EOF
 wx 0000c300c3
 af
@@ -582,7 +582,7 @@ RUN
 
 NAME=Write reanalysis of child of non-modified block
 FILE=-
-ARGS=-a x86 -b 64 -e anal.detectwrites=true
+ARGS=-a x86 -b 64 -e analysis.detectwrites=true
 CMDS=<<EOF
 wx eb020000000075fac3
 af

@@ -2959,7 +2959,7 @@ static void afCc(RzCore *core, const char *input) {
 	if (fcn) {
 		ut32 totalCycles = rz_analysis_function_cost (fcn);
 		// FIXME: This defeats the purpose of the function, but afC is used in project files.
-		// cf. canal.c
+		// cf. canalysis.c
 		rz_cons_printf ("%d\n", totalCycles);
 	} else {
 		eprintf ("afCc: Cannot find function\n");

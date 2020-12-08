@@ -233,22 +233,22 @@ e asm.describe=1
 e asm.describe
 e asm.indentspace=8
 e asm.indentspace
-e anal.fcnprefix=myfunctions
-e anal.fcnprefix
+e analysis.fcnprefix=myfunctions
+e analysis.fcnprefix
 Ps .tmp_config.rzdb
 ?e --
 e asm.describe=0
 e asm.describe
 e asm.indentspace=0
 e asm.indentspace
-e anal.fcnprefix=fcn
-e anal.fcnprefix
+e analysis.fcnprefix=fcn
+e analysis.fcnprefix
 ?e --
 Poo .tmp_config.rzdb
 rm .tmp_config.rzdb
 e asm.describe
 e asm.indentspace
-e anal.fcnprefix
+e analysis.fcnprefix
 EOF
 EXPECT=<<EOF
 true
@@ -291,13 +291,13 @@ e cfg.newshell=1
 af+ 0x100 windowpane
 afb+ windowpane 0x100 0x30
 afl
-Ps .tmp_anal.rzdb
+Ps .tmp_analysis.rzdb
 ?e --
 o--
 afl
 ?e --
-Poo .tmp_anal.rzdb
-rm .tmp_anal.rzdb
+Poo .tmp_analysis.rzdb
+rm .tmp_analysis.rzdb
 afl
 EOF
 EXPECT=<<EOF
