@@ -120,7 +120,6 @@ jobs:
     - uses: actions/checkout@v2
       if: matrix.enabled
       with:
-          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
           submodules: recursive
     - name: Install pkg-config with Homebrew
       if: (matrix.os == 'macos-latest' || matrix.os == 'self-hosted-mac') && matrix.enabled
@@ -136,7 +135,6 @@ jobs:
       uses: actions/checkout@v2
       with:
           repository: rizinorg/rz-pipe
-          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
           path: test/rz-pipe
     - name: Install test dependencies
       if: matrix.run_tests && matrix.enabled
@@ -149,14 +147,12 @@ jobs:
       uses: actions/checkout@v2
       with:
           repository: rizinorg/rizin-testbins
-          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
           path: test/bins
     - name: Checkout fuzz targets # TODO: this can be removed as soon as the fuzztargets repo is public
       if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
       uses: actions/checkout@v2
       with:
           repository: rizinorg/rizin-fuzztargets
-          token: ${{ secrets.RIZIN_TOKEN }}
           path: test/fuzz/targets
     - name: Configure with ACR and build
       if: matrix.build_system == 'acr' && matrix.enabled
@@ -325,7 +321,6 @@ jobs:
     - uses: actions/checkout@v2
       with:
           submodules: recursive
-          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
     - name: Checkout our Testsuite Binaries
       uses: actions/checkout@v2
       with:
@@ -357,7 +352,6 @@ jobs:
     - uses: actions/checkout@v2
       with:
           submodules: recursive
-          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
     - name: Extract rizin version
       shell: bash
       run: echo "##[set-output name=branch;]$(python sys/version.py)"
@@ -433,7 +427,6 @@ jobs:
     - uses: actions/checkout@v2
       with:
           submodules: recursive
-          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
     - name: Install pkg-config with Homebrew
       run: brew install pkg-config
     - name: Create OSX package
@@ -467,7 +460,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
           submodules: recursive
     - uses: actions/setup-python@v2
     - name: Install dependencies
@@ -495,7 +487,6 @@ jobs:
     - uses: actions/checkout@v2
       with:
         repository: rizinorg/rizin-win-installer
-        token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
         path: ./rizin-win-installer
     - name: Create installer
       shell: pwsh
@@ -515,7 +506,6 @@ jobs:
     - uses: actions/checkout@v2
       with:
           submodules: recursive
-          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
     - name: Extract rizin version
       shell: bash
       run: echo "##[set-output name=branch;]$(python sys/version.py)"
@@ -550,7 +540,6 @@ jobs:
     - uses: actions/checkout@v2
       with:
           submodules: recursive
-          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
     - name: Install dependencies
       run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
     - name: Compile with meson
@@ -674,7 +663,6 @@ jobs:
     - uses: actions/checkout@v2
       with:
           submodules: recursive
-          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
     - uses: actions/setup-python@v2
     - name: Install pkg-config
       shell: pwsh
@@ -725,7 +713,6 @@ jobs:
     - uses: actions/checkout@v2
       with:
           submodules: recursive
-          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
     - name: Extract rizin version
       shell: bash
       run: echo "##[set-output name=branch;]$(python sys/version.py)"
@@ -870,7 +857,6 @@ jobs:
     - uses: actions/checkout@v2
       with:
           submodules: recursive
-          token: ${{ secrets.RIZIN_TOKEN }} # TODO: remove when the repo is public
     - name: Publish to Registry
       uses: docker/build-push-action@v1
       with:
