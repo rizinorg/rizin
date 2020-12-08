@@ -1,0 +1,7 @@
+default.cc=spc700
+
+spc700=cc
+cc.spc700.arg0=a
+cc.spc700.arg1=x
+cc.spc700.arg2=y
+cc.spc700.ret=a

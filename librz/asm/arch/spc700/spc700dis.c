@@ -32,7 +32,7 @@ static ut64 spc700_resolve_relative(ut64 pc, ut8 r) {
 	return (ut64)spc;
 }
 
-static size_t spc700_disas(RzAsmOp *op, ut64 pc, const ut8 *buf, size_t bufsz) {
+static size_t spc700_disas(RzStrBuf *out, ut64 pc, const ut8 *buf, size_t bufsz) {
 	if (!bufsz) {
 		return 0;
 	}
@@ -41,38 +41,41 @@ static size_t spc700_disas(RzAsmOp *op, ut64 pc, const ut8 *buf, size_t bufsz) {
 	if (bufsz < (ut64)opsz) {
 		return 0;
 	}
+	if (!out) {
+		return opsz;
+	}
 	switch (sop->arg) {
 	case SPC700_ARG_NONE:
-		rz_strbuf_set (&op->buf_asm, sop->name);
+		rz_strbuf_set (out, sop->name);
 		break;
 	case SPC700_ARG_IMM8:
 	case SPC700_ARG_ABS8:
 	case SPC700_ARG_UPPER8:
-		rz_strbuf_setf (&op->buf_asm, sop->name, (unsigned int)buf[1]);
+		rz_strbuf_setf (out, sop->name, (unsigned int)buf[1]);
 		break;
 	case SPC700_ARG_ABS8_REL8:
-		rz_strbuf_setf (&op->buf_asm, sop->name,
+		rz_strbuf_setf (out, sop->name,
 				(unsigned int)buf[1],
 				(unsigned int)spc700_resolve_relative (pc + 3, buf[2]));
 		break;
 	case SPC700_ARG_ABS16:
-		rz_strbuf_setf (&op->buf_asm, sop->name, (unsigned int)buf[1] | ((unsigned int)buf[2] << 8));
+		rz_strbuf_setf (out, sop->name, (unsigned int)buf[1] | ((unsigned int)buf[2] << 8));
 		break;
 	case SPC700_ARG_ABS13_BIT3:
-		rz_strbuf_setf (&op->buf_asm, sop->name,
+		rz_strbuf_setf (out, sop->name,
 				(unsigned int)((ut16)buf[1] | ((ut16)(buf[2] & 0x1f) << 8)),
 				(unsigned int)(buf[2] >> 5));
 		break;
 	case SPC700_ARG_REL8:
-		rz_strbuf_setf (&op->buf_asm, sop->name,
+		rz_strbuf_setf (out, sop->name,
 				(unsigned int)spc700_resolve_relative (pc + 2, buf[1]));
 		break;
 	case SPC700_ARG_IMM8_ABS8:
 	case SPC700_ARG_ABS8_ABS8:
-		rz_strbuf_setf (&op->buf_asm, sop->name, (unsigned int)buf[2], (unsigned int)buf[1]);
+		rz_strbuf_setf (out, sop->name, (unsigned int)buf[2], (unsigned int)buf[1]);
 		break;
 	default:
-		rz_strbuf_set (&op->buf_asm, "invalid");
+		rz_strbuf_set (out, "invalid");
 		break;
 	}
 	return opsz;
