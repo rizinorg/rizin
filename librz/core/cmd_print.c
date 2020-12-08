@@ -4482,20 +4482,6 @@ static void rz_core_disasm_table(RzCore * core, int l, const char *input) {
 	rz_table_free (t);
 }
 
-// the caller controls the size of the buffer is enough for the base wordsize
-static ut64 read_value(const ut8 *buf, int base, int be) {
-	if (base == 8) {
-		return rz_read_ble64 (buf, be);
-	}
-	if (base == 4) {
-		return rz_read_ble32 (buf, be) & UT32_MAX;
-	}
-	if (base == 2) {
-		return rz_read_ble16 (buf, be) & UT16_MAX;
-	}
-	return *buf;
-}
-
 static void cmd_pxr(RzCore *core, int len, int mode, int wordsize, const char *arg) {
 	PJ *pj = NULL;
 	RTable *t = NULL;
@@ -4523,9 +4509,10 @@ static void cmd_pxr(RzCore *core, int len, int mode, int wordsize, const char *a
 
 		bool withref = false;
 		int end = RZ_MIN (core->blocksize, len);
+		int bitsize = wordsize * 8;
 		for (i = 0; i + wordsize < end; i += wordsize) {
 			ut64 addr = core->offset + i;
-			ut64 val = read_value (buf + i, wordsize, be);
+			ut64 val = rz_read_ble (buf + i, be, bitsize);
 			if (pj) {
 				pj_o (pj);
 				pj_kn (pj, "addr", addr);
