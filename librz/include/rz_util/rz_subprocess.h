@@ -14,8 +14,6 @@ typedef struct rz_subprocess_t RzSubprocess;
 
 RZ_API bool rz_subprocess_init(void);
 RZ_API void rz_subprocess_fini(void);
-RZ_API void rz_subprocess_lock(void);
-RZ_API void rz_subprocess_unlock(void);
 RZ_API RzSubprocess *rz_subprocess_start(
 	const char *file, const char *args[], size_t args_size,
 	const char *envvars[], const char *envvals[], size_t env_size);
