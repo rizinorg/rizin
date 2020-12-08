@@ -21,14 +21,23 @@ jobs:
   build-and-test:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    # continue-on-error: ${{ matrix.ignore_error }}
+    continue-on-error: ${{ matrix.ignore_error }}
     timeout-minutes: ${{ matrix.timeout }}
     strategy:
       fail-fast: false
       matrix:
-        # name: [linux-acr-gcc-tests, linux-acr-clang-build, linux-acr-clang-tests, linux-meson-gcc-build, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-meson-clang-tests, linux-gcc-tests-asan, capstone-v3, capstone-v5]
-        name: [linux-acr-gcc-tests, linux-meson-gcc-tests, macos-meson-clang-tests]
-        # ignore_error: [false]
+        name: [
+          linux-acr-gcc-tests,
+          linux-acr-clang-tests,
+          linux-acr-clang-build,
+          linux-meson-gcc-build,
+          linux-meson-gcc-tests,
+          macos-meson-clang-tests,
+          linux-gcc-tests-asan,
+          capstone-v3,
+          capstone-v5
+        ]
+        ignore_error: [false]
         include:
           - name: linux-acr-gcc-tests
             os: ubuntu-latest
@@ -37,34 +46,26 @@ jobs:
             run_tests: true
             enabled: true
             timeout: 45
-          # - name: linux-acr-clang-tests
-          #   os: ubuntu-latest
-          #   build_system: acr
-          #   compiler: clang
-          #   run_tests: true
-          #   enabled: ${{ github.event_name != 'pull_request' }}
-          #   timeout: 45
-          # - name: linux-meson-gcc-tests
-          #   os: ubuntu-latest
-          #   build_system: meson
-          #   compiler: gcc
-          #   run_tests: true
-          #   meson_options: -Duse_webui=true
-          #   enabled: ${{ github.event_name != 'pull_request' }}
-          #   timeout: 45
-          # - name: linux-acr-clang-build
-          #   os: ubuntu-latest
-          #   build_system: acr
-          #   compiler: clang
-          #   enabled: ${{ github.event_name == 'pull_request' }}
-          #   timeout: 45
-          # - name: linux-meson-gcc-build
-          #   os: ubuntu-latest
-          #   build_system: meson
-          #   compiler: gcc
-          #   enabled: ${{ github.event_name == 'pull_request' }}
-          #   timeout: 45
-          #   cflags: '-Werror -Wno-cpp'
+          - name: linux-acr-clang-tests
+            os: ubuntu-latest
+            build_system: acr
+            compiler: clang
+            run_tests: true
+            enabled: ${{ github.event_name != 'pull_request' }}
+            timeout: 45
+          - name: linux-acr-clang-build
+            os: ubuntu-latest
+            build_system: acr
+            compiler: clang
+            enabled: ${{ github.event_name == 'pull_request' }}
+            timeout: 45
+          - name: linux-meson-gcc-build
+            os: ubuntu-latest
+            build_system: meson
+            compiler: gcc
+            enabled: ${{ github.event_name == 'pull_request' }}
+            timeout: 45
+            cflags: '-Werror -Wno-cpp'
           - name: linux-meson-gcc-tests
             os: ubuntu-latest
             build_system: meson
@@ -76,45 +77,44 @@ jobs:
             timeout: 60
             cflags: '-Werror -Wno-cpp'
           - name: macos-meson-clang-tests
-          # os: macos-latest
-            os: self-hosted-mac
+            os: macos-latest
             build_system: meson
             compiler: clang
             run_tests: true
             meson_options: -Duse_webui=true
             enabled: true
             timeout: 60
-          # - name: linux-gcc-tests-asan
-          #   os: ubuntu-20.04
-          #   build_system: meson
-          #   compiler: gcc
-          #   cflags: '-DRZ_ASSERT_STDOUT=1 -Werror -Wno-cpp'
-          #   meson_options: -Db_sanitize=address,undefined -Duse_webui=true
-          #   asan: true
-          #   asan_options: 'detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1'
-          #   run_tests: true
-          #   enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'asan') }}
-          #   timeout: 100
-          #   # NOTE: asan errors ignored for release- branch for now, because there are too many issues that would block the release
-          #   ignore_error: ${{ github.event_name == 'push' && contains(github.ref, 'release-') }}
-          # - name: capstone-v3
-          #   os: ubuntu-latest
-          #   build_system: meson
-          #   compiler: gcc
-          #   meson_options: -Duse_capstone_version=v3
-          #   run_tests: false
-          #   enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
-          #   timeout: 45
-          #   cflags: '-Werror -Wno-cpp'
-          # - name: capstone-v5
-          #   os: ubuntu-latest
-          #   build_system: meson
-          #   compiler: gcc
-          #   meson_options: -Duse_capstone_version=v5
-          #   run_tests: false
-          #   enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
-          #   timeout: 45
-          #   cflags: '-Werror -Wno-cpp'
+          - name: linux-gcc-tests-asan
+            os: ubuntu-20.04
+            build_system: meson
+            compiler: gcc
+            cflags: '-DRZ_ASSERT_STDOUT=1 -Werror -Wno-cpp'
+            meson_options: -Db_sanitize=address,undefined -Duse_webui=true
+            asan: true
+            asan_options: 'detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1'
+            run_tests: true
+            enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'asan') }}
+            timeout: 100
+            # NOTE: asan errors ignored for release- branch for now, because there are too many issues that would block the release
+            ignore_error: ${{ github.event_name == 'push' && contains(github.ref, 'release-') }}
+          - name: capstone-v3
+            os: ubuntu-latest
+            build_system: meson
+            compiler: gcc
+            meson_options: -Duse_capstone_version=v3
+            run_tests: false
+            enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
+            timeout: 45
+            cflags: '-Werror -Wno-cpp'
+          - name: capstone-v5
+            os: ubuntu-latest
+            build_system: meson
+            compiler: gcc
+            meson_options: -Duse_capstone_version=v5
+            run_tests: false
+            enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
+            timeout: 45
+            cflags: '-Werror -Wno-cpp'
 
     steps:
     - uses: actions/checkout@v2
@@ -122,10 +122,10 @@ jobs:
       with:
           submodules: recursive
     - name: Install pkg-config with Homebrew
-      if: (matrix.os == 'macos-latest' || matrix.os == 'self-hosted-mac') && matrix.enabled
+      if: matrix.os == 'macos-latest' && matrix.enabled
       run: brew install pkg-config
     - name: Install python
-      if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-latest' && matrix.os != 'self-hosted-mac' && matrix.enabled
+      if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-latest' && matrix.enabled
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools
     - name: Install meson and ninja
       if: matrix.build_system == 'meson' && matrix.enabled
@@ -419,8 +419,7 @@ jobs:
 
   build-osx-pkg:
     name: Build OSX package
-    # runs-on: macos-latest
-    runs-on: self-hosted-mac
+    runs-on: macos-latest
     if: contains(github.head_ref, 'osx') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
@@ -441,10 +440,8 @@ jobs:
 
   build-windows:
     name: Build Windows zip/installer ${{ matrix.name }}
-    #runs-on: windows-latest
-    runs-on: self-hosted-win
-    # if: contains(github.head_ref, 'windows') || (github.event_name == 'push' && contains(github.ref, 'release-'))
-    if: contains(github.head_ref, 'windows') || (github.event_name == 'push' && contains(github.ref, 'dev'))
+    runs-on: windows-latest
+    if: contains(github.head_ref, 'windows') || (github.event_name == 'push' && contains(github.ref, 'release-'))
     needs: [build-and-test]
     strategy:
       fail-fast: false
@@ -498,8 +495,7 @@ jobs:
 
   build-ios-cydia:
     name: Build iOS Cydia packages
-    #runs-on: macos-latest
-    runs-on: self-hosted-mac
+    runs-on: macos-latest
     if: contains(github.head_ref, 'ios') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
