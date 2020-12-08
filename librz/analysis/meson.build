@@ -80,6 +80,7 @@ rz_analysis_sources = [
   'p/analysis_snes.c',
   'p/analysis_sparc_cs.c',
   'p/analysis_sparc_gnu.c',
+  'p/analysis_spc700.c',
   'p/analysis_sysz.c',
   'p/analysis_tms320.c',
   'p/analysis_tms320_c55x_plus.c',

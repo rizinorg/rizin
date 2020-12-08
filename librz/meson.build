@@ -38,6 +38,7 @@ analysis_plugins = [
   'snes',
   'sparc_cs',
   'sparc_gnu',
+  'spc700',
   'sysz',
   'tms320',
   #'tms320c64x',

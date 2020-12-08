@@ -2225,6 +2225,7 @@ extern RzAnalysisPlugin rz_analysis_plugin_sh;
 extern RzAnalysisPlugin rz_analysis_plugin_snes;
 extern RzAnalysisPlugin rz_analysis_plugin_sparc_cs;
 extern RzAnalysisPlugin rz_analysis_plugin_sparc_gnu;
+extern RzAnalysisPlugin rz_analysis_plugin_spc700;
 extern RzAnalysisPlugin rz_analysis_plugin_sysz;
 extern RzAnalysisPlugin rz_analysis_plugin_tms320;
 extern RzAnalysisPlugin rz_analysis_plugin_tms320c64x;
