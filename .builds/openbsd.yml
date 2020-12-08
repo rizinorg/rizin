@@ -14,7 +14,7 @@ sources:
 tasks:
     - rzpipe: |
         /usr/local/bin/python3 -m ensurepip --user
-        /usr/local/bin/python3 -m pip install --user 'git+https://github.com/rizinorg/rizin-rzpipe#egg=rzpipe&subdirectory=python'
+        /usr/local/bin/python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
     - build: |
         cd rizin
         ./configure --prefix=${HOME}
