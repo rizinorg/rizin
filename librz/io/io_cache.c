@@ -1,17 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
-// TODO: implement a more intelligent way to store cached memory
-
-#include "rz_io.h"
+#include <rz_io.h>
 #include <rz_skyline.h>
-
-#if 0
-#define CACHE_CONTAINER(x) container_of ((RBNode*)x, RzCache, rb)
-
-static void _fcn_tree_calc_max_addr(RBNode *node) {
-	RzIOCache *c = CACHE_CONTAINER (node);
-}
-#endif // 0
 
 static void cache_item_free(RzIOCache *cache) {
 	if (!cache) {
@@ -28,6 +18,7 @@ RZ_API bool rz_io_cache_at(RzIO *io, ut64 addr) {
 }
 
 RZ_API void rz_io_cache_init(RzIO *io) {
+	rz_return_if_fail (io);
 	rz_pvector_init (&io->cache, (RzPVectorFree)cache_item_free);
 	rz_skyline_init (&io->cache_skyline);
 	io->buffer = rz_cache_new ();
@@ -35,6 +26,7 @@ RZ_API void rz_io_cache_init(RzIO *io) {
 }
 
 RZ_API void rz_io_cache_fini(RzIO *io) {
+	rz_return_if_fail (io);
 	rz_pvector_fini (&io->cache);
 	rz_skyline_fini (&io->cache_skyline);
 	rz_cache_free (io->buffer);
@@ -46,6 +38,7 @@ RZ_API void rz_io_cache_commit(RzIO *io, ut64 from, ut64 to) {
 	void **iter;
 	RzIOCache *c;
 	RzInterval range = (RzInterval){from, to - from};
+	rz_return_if_fail (io);
 	rz_pvector_foreach (&io->cache, iter) {
 		// if (from <= c->to - 1 && c->from <= to - 1) {
 		c = *iter;
@@ -64,12 +57,14 @@ RZ_API void rz_io_cache_commit(RzIO *io, ut64 from, ut64 to) {
 }
 
 RZ_API void rz_io_cache_reset(RzIO *io, int set) {
+	rz_return_if_fail (io);
 	io->cached = set;
 	rz_pvector_clear (&io->cache);
 	rz_skyline_clear (&io->cache_skyline);
 }
 
 RZ_API int rz_io_cache_invalidate(RzIO *io, ut64 from, ut64 to) {
+	rz_return_val_if_fail (io, 0);
 	int invalidated = 0;
 	void **iter;
 	RzIOCache *c;
@@ -94,11 +89,12 @@ RZ_API int rz_io_cache_invalidate(RzIO *io, ut64 from, ut64 to) {
 	return invalidated;
 }
 
-RZ_API int rz_io_cache_list(RzIO *io, int rad) {
+RZ_API bool rz_io_cache_list(RzIO *io, int rad) {
+	rz_return_val_if_fail (io, false);
 	size_t i, j = 0;
 	void **iter;
 	RzIOCache *c;
-	PJ *pj;
+	PJ *pj = NULL;
 	if (rad == 2) {
 		pj = pj_new ();
 		pj_a (pj);
@@ -153,8 +149,8 @@ RZ_API int rz_io_cache_list(RzIO *io, int rad) {
 }
 
 RZ_API bool rz_io_cache_write(RzIO *io, ut64 addr, const ut8 *buf, int len) {
-	RzIOCache *ch;
-	ch = RZ_NEW0 (RzIOCache);
+	rz_return_val_if_fail (io && buf, false);
+	RzIOCache *ch = RZ_NEW0 (RzIOCache);
 	if (!ch) {
 		return false;
 	}
@@ -172,7 +168,7 @@ RZ_API bool rz_io_cache_write(RzIO *io, ut64 addr, const ut8 *buf, int len) {
 	}
 	ch->written = false;
 	{
-		bool cm = io->cachemode;
+		const bool cm = io->cachemode;
 		io->cachemode = false;
 		rz_io_read_at (io, addr, ch->odata, len);
 		io->cachemode = cm;
@@ -186,7 +182,7 @@ RZ_API bool rz_io_cache_write(RzIO *io, ut64 addr, const ut8 *buf, int len) {
 }
 
 RZ_API bool rz_io_cache_read(RzIO *io, ut64 addr, ut8 *buf, int len) {
-	rz_return_val_if_fail (io, false);
+	rz_return_val_if_fail (io && buf, false);
 	RzSkyline *skyline = &io->cache_skyline;
 	const RzSkylineItem *iter = rz_skyline_get_item_intersect (skyline, addr, len);
 	if (!iter) {
