@@ -8,3 +8,19 @@ pop esi
 mov ecx, esp
 EOF
 RUN
+
+NAME=restore fd
+FILE=bins/elf/analysis/pie
+ARGS=-d
+CMDS=<<EOF
+s main
+p8 8
+p8 8 @v:0xdeadbeef
+p8 8
+EOF
+EXPECT=<<EOF
+5589e5cc5dc36690
+efbeadde5dc36690
+5589e5cc5dc36690
+EOF
+RUN
