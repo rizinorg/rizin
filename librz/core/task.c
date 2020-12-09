@@ -11,7 +11,7 @@ RZ_API void rz_core_task_scheduler_init (RzCoreTaskScheduler *tasks, RzCore *cor
 	tasks->lock = rz_th_lock_new (true);
 	tasks->tasks_running = 0;
 	tasks->oneshot_running = false;
-	tasks->main_task = rz_core_task_new (core, false, NULL, NULL, NULL);
+	tasks->main_task = rz_core_task_new (core, false, NULL);
 	rz_list_append (tasks->tasks, tasks->main_task);
 	tasks->current_task = NULL;
 }
@@ -207,7 +207,7 @@ static void task_free (RzCoreTask *task) {
 	free (task);
 }
 
-RZ_API RzCoreTask *rz_core_task_new(RzCore *core, bool create_cons, const char *cmd, RzCoreTaskCallback cb, void *user) {
+RZ_API RzCoreTask *rz_core_task_new(RzCore *core, bool create_cons, const char *cmd) {
 	RzCoreTask *task = RZ_NEW0 (RzCoreTask);
 	if (!task) {
 		goto fail;
@@ -238,9 +238,6 @@ RZ_API RzCoreTask *rz_core_task_new(RzCore *core, bool create_cons, const char *
 	task->refcount = 1;
 	task->transient = false;
 	task->core = core;
-	task->user = user;
-	task->cb = cb;
-
 	return task;
 
 fail:
@@ -421,10 +418,6 @@ nonstart:
 	tasks_lock_enter (scheduler, &old_sigset);
 
 	task_end (task);
-
-	if (task->cb) {
-		task->cb (task->user, task->res);
-	}
 
 	if (task->running_sem) {
 		rz_th_sem_post (task->running_sem);

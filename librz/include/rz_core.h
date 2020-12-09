@@ -812,8 +812,6 @@ RZ_API char *cmd_syscall_dostr(RzCore *core, st64 num, ut64 addr);
 
 /* tasks */
 
-typedef void (*RzCoreTaskCallback)(void *user, char *out);
-
 typedef enum {
 	RZ_CORE_TASK_STATE_BEFORE_START,
 	RZ_CORE_TASK_STATE_RUNNING,
@@ -827,7 +825,6 @@ typedef struct rz_core_task_t {
 	bool transient; // delete when finished
 	int refcount;
 	RzThreadSemaphore *running_sem;
-	void *user;
 	RzCore *core;
 	bool dispatched;
 	RzThreadCond *dispatch_cond;
@@ -837,7 +834,6 @@ typedef struct rz_core_task_t {
 	char *res;
 	bool cmd_log;
 	RzConsContext *cons_context;
-	RzCoreTaskCallback cb;
 } RzCoreTask;
 
 typedef void (*RzCoreTaskOneShot)(void *);
@@ -845,15 +841,15 @@ typedef void (*RzCoreTaskOneShot)(void *);
 RZ_API void rz_core_echo(RzCore *core, const char *msg);
 RZ_API RTable *rz_core_table(RzCore *core);
 
-RZ_API void rz_core_task_scheduler_init (RzCoreTaskScheduler *tasks, RzCore *core);
-RZ_API void rz_core_task_scheduler_fini (RzCoreTaskScheduler *tasks);
+RZ_API void rz_core_task_scheduler_init(RzCoreTaskScheduler *tasks, RzCore *core);
+RZ_API void rz_core_task_scheduler_fini(RzCoreTaskScheduler *tasks);
 RZ_API RzCoreTask *rz_core_task_get(RzCoreTaskScheduler *scheduler, int id);
 RZ_API RzCoreTask *rz_core_task_get_incref(RzCoreTaskScheduler *scheduler, int id);
 RZ_API void rz_core_task_print(RzCore *core, RzCoreTask *task, int mode);
 RZ_API void rz_core_task_list(RzCore *core, int mode);
 RZ_API int rz_core_task_running_tasks_count(RzCoreTaskScheduler *scheduler);
 RZ_API const char *rz_core_task_status(RzCoreTask *task);
-RZ_API RzCoreTask *rz_core_task_new(RzCore *core, bool create_cons, const char *cmd, RzCoreTaskCallback cb, void *user);
+RZ_API RzCoreTask *rz_core_task_new(RzCore *core, bool create_cons, const char *cmd);
 RZ_API void rz_core_task_incref(RzCoreTask *task);
 RZ_API void rz_core_task_decref(RzCoreTask *task);
 RZ_API void rz_core_task_enqueue(RzCoreTaskScheduler *scheduler, RzCoreTask *task);
