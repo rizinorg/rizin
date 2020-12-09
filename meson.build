@@ -348,6 +348,10 @@ userconf.set10('WITH_GPL', true)
 ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
 userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
 
+if not cc.compiles('extern char **environ;\nint main(int argc, char **argv) { (void)environ; return 0; }')
+  error('Environ is not found')
+endif
+
 lrt = []
 if not cc.has_function('clock_gettime', prefix: '#include <time.h>') and cc.has_header_symbol('features.h', '__GLIBC__')
   lrt = cc.find_library('rt', required: true)
