@@ -34,6 +34,6 @@ RUN apt-get install -y \
 
 RUN pip3 install meson
 RUN pip3 install ninja
-RUN pip3 install 'git+https://github.com/rizinorg/rizin-rzpipe#egg=rzpipe&subdirectory=python'
+RUN pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
 
 CMD []
