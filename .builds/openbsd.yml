@@ -17,14 +17,27 @@ tasks:
         /usr/local/bin/python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
     - build: |
         cd rizin
-        ./configure --prefix=${HOME}
-        gmake
+        meson --prefix=${HOME} build
+        ninja -C build
     - install: |
         cd rizin
         export PATH=${HOME}/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${PKG_CONFIG_PATH}
-        gmake install
+        ninja -C build install
+    - unittest: |
+        cd rizin
+        export PATH=${HOME}/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${PKG_CONFIG_PATH}
+        # OpenBSD does not have a "python3" command by default
+        # but a test needs it.
+        ln -s /usr/local/bin/python3 ${HOME}/bin/python3
+        # Workaround until the feature request is solved
+        # https://todo.sr.ht/~sircmpwn/builds.sr.ht/274
+        ln -s ${HOME}/rizin-testbins test/bins
+        # Running the unit tests
+        ninja -C build test
     - test: |
         cd rizin
         export PATH=${HOME}/bin:${PATH}
@@ -36,6 +49,5 @@ tasks:
         # Workaround until the feature request is solved
         # https://todo.sr.ht/~sircmpwn/builds.sr.ht/274
         ln -s ${HOME}/rizin-testbins test/bins
-        # Running the test suite
-        cd test && gmake -k all
-
+        # Running the unit tests
+        rz-test -L -o results.json
