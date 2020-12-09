@@ -31,13 +31,13 @@
 #
 
 # Using debian 10 as base image.
-FROM debian:10
+FROM opensuse/leap:15.2
 
 # Label base
 LABEL rizin latest
 
 # Radare version
-ARG RZ_VERSION=master
+ARG RZ_VERSION=dev
 # rz-pipe python version
 ARG RZ_PIPE_PY_VERSION=1.4.2
 
@@ -57,51 +57,36 @@ VOLUME ["/mnt"]
 
 # Install all build dependencies
 # Install bindings
-# Build and install rizin on master branch
+# Build and install rizin on dev branch
 # Remove all build dependencies
 # Cleanup
-RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
-  apt-get update && \
-  apt-get install -y \
-  curl \
-  wget \
-  gcc \
-  git \
-  bison \
-  pkg-config \
-  make \
-  glib-2.0 \
-  libc6:i386 \
-  libncurses5:i386 \
-  libstdc++6:i386 \
-  gnupg2 \
-  python-pip \
-  ${with_arm64_as:+binutils-aarch64-linux-gnu} \
-  ${with_arm32_as:+binutils-arm-linux-gnueabi} \
-  ${with_ppc_as:+binutils-powerpc64le-linux-gnu} && \
-  pip install rzpipe=="$RZ_PIPE_PY_VERSION" && \
-  cd /mnt && \
-  git clone -b "$RZ_VERSION" -q --depth 1 https://github.com/rizinorg/rizin.git && \
-  cd rizin && \
-  ./configure && \
-  make && \
-  make install && \
-  apt-get install -y xz-utils && \
-  apt-get remove --purge -y \
-  bison \
-  python-pip \
-  glib-2.0 && \
-  apt-get autoremove --purge -y && \
-  apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN zypper install -y \
+	gcc \
+	ccache \
+	patch \
+	git \
+	python3-pip \
+	meson \
+	${with_arm64_as:+cross-aarch64-binutils} \
+	${with_arm32_as:+cross-arm-binutils} \
+	${with_ppc_as:+cross-ppc64le-binutils} && \
+	cd /mnt && \
+	git clone -b "$RZ_VERSION" --recurse-submodules https://github.com/rizinorg/rizin.git && \
+	cd rizin && \
+	meson build && \
+	meson compile -C build && \
+	meson install -C build && \
+	zypper remove --clean-deps -y \
+	meson \
+	python3-pip && \
+	zypper clean && rm -rf /tmp/* /var/tmp/*
 
 ENV RZ_ARM64_AS=${with_arm64_as:+aarch64-linux-gnu-as}
 ENV RZ_ARM32_AS=${with_arm32_as:+arm-linux-gnueabi-as}
 ENV RZ_PPC_AS=${with_ppc_as:+powerpc64le-linux-gnu-as}
 
 # Create non-root user
-RUN useradd -m rizin && \
-  adduser rizin sudo && \
-  echo "rizin:rizin" | chpasswd
+RUN useradd -m rizin
 
 # Initilise base user
 USER rizin
@@ -110,8 +95,8 @@ ENV HOME /home/rizin
 
 # Setup rz-pm
 RUN rz-pm init && \
-  rz-pm update && \
-  chown -R rizin:rizin /home/rizin/.config
+	rz-pm update && \
+	chown -R rizin:users /home/rizin/.config
 
 # Base command for container
 CMD ["/bin/bash"]
