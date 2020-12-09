@@ -8,6 +8,7 @@ skip_tags: true
 branches:
   only:
     - dev
+    - /windows-.*/
 
 # Environment variables
 environment:
@@ -64,6 +65,8 @@ init:
 
 # Required software for building
 install:
+  # Download submodules
+  - cmd: git submodule update --init --recursive
   # Update environment variables
   - ps: $env:RZ_VERSION = ( python sys\\version.py )
   - ps: $env:DIST_FOLDER = "rizin-$env:builder-$env:RZ_VERSION"
@@ -96,7 +99,7 @@ for:
       - where rizin
       - rizin -v
       - copy C:\Python38-x64\python.exe C:\Python38-x64\python3.exe
-      - python3 -m pip install "https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python"
+      - python3 -m pip install "git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python"
       - cd test
       - git clone -q --depth 1 https://github.com/rizinorg/rizin-testbins bins
       - rz-test -o results.json -L db
