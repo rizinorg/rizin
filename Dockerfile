@@ -1,7 +1,7 @@
 # rizin docker
 # ========
 #
-# Requires 1GB of free disk space
+# Requires 400MB of free disk space
 #
 # Build docker image with:
 # $ docker build -t rizin:latest .
@@ -31,7 +31,7 @@
 #
 
 # Using debian 10 as base image.
-FROM opensuse/leap:15.2
+FROM debian:10
 
 # Label base
 LABEL rizin latest
@@ -49,37 +49,41 @@ ENV RZ_VERSION ${RZ_VERSION}
 ENV RZ_PIPE_PY_VERSION ${RZ_PIPE_PY_VERSION}
 
 RUN echo -e "Building versions:\n\
-  RZ_VERSION=$RZ_VERSION\n\
-  RZ_PIPE_PY_VERSION=${RZ_PIPE_PY_VERSION}"
+	RZ_VERSION=$RZ_VERSION\n\
+	RZ_PIPE_PY_VERSION=${RZ_PIPE_PY_VERSION}"
 
 # Build rizin in a volume to minimize space used by build
 VOLUME ["/mnt"]
 
 # Install all build dependencies
 # Install bindings
-# Build and install rizin on dev branch
+# Build and install rizin on master branch
 # Remove all build dependencies
 # Cleanup
-RUN zypper install -y \
+# gcc git python3-pip ccache patch
+# pip3 install meson ninja
+RUN apt-get update && \
+	apt-get install -y \
 	gcc \
-	ccache \
-	patch \
 	git \
 	python3-pip \
-	meson \
-	${with_arm64_as:+cross-aarch64-binutils} \
-	${with_arm32_as:+cross-arm-binutils} \
-	${with_ppc_as:+cross-ppc64le-binutils} && \
+	${with_arm64_as:+binutils-aarch64-linux-gnu} \
+	${with_arm32_as:+binutils-arm-linux-gnueabi} \
+	${with_ppc_as:+binutils-powerpc64le-linux-gnu} && \
+	pip3 install meson ninja && \
 	cd /mnt && \
+	git clone https://github.com/rizinorg/rz-pipe && \
+	pip3 install ./rz-pipe/python && \
 	git clone -b "$RZ_VERSION" --recurse-submodules https://github.com/rizinorg/rizin.git && \
 	cd rizin && \
 	meson build && \
 	meson compile -C build && \
 	meson install -C build && \
-	zypper remove --clean-deps -y \
-	meson \
-	python3-pip && \
-	zypper clean && rm -rf /tmp/* /var/tmp/*
+	pip3 uninstall -y meson ninja && \
+	apt-get remove --purge -y \
+	python3-pip gcc &&\
+	apt-get autoremove --purge -y && \
+	apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ENV RZ_ARM64_AS=${with_arm64_as:+aarch64-linux-gnu-as}
 ENV RZ_ARM32_AS=${with_arm32_as:+arm-linux-gnueabi-as}
@@ -96,7 +100,7 @@ ENV HOME /home/rizin
 # Setup rz-pm
 RUN rz-pm init && \
 	rz-pm update && \
-	chown -R rizin:users /home/rizin/.config
+	chown -R rizin:rizin /home/rizin/.config
 
 # Base command for container
 CMD ["/bin/bash"]
