@@ -269,7 +269,7 @@ RZ_API void rz_core_task_decref (RzCoreTask *task) {
 	tasks_lock_leave (scheduler, &old_sigset);
 }
 
-RZ_API void rz_core_task_schedule(RzCoreTask *current, RTaskState next_state) {
+RZ_API void rz_core_task_schedule(RzCoreTask *current, RzTaskState next_state) {
 	RzCore *core = current->core;
 	RzCoreTaskScheduler *scheduler = &core->tasks;
 	bool stop = next_state != RZ_CORE_TASK_STATE_RUNNING;

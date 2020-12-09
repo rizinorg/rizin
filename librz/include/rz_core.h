@@ -817,11 +817,11 @@ typedef enum {
 	RZ_CORE_TASK_STATE_RUNNING,
 	RZ_CORE_TASK_STATE_SLEEPING,
 	RZ_CORE_TASK_STATE_DONE
-} RTaskState;
+} RzTaskState;
 
 typedef struct rz_core_task_t {
 	int id;
-	RTaskState state;
+	RzTaskState state;
 	bool transient; // delete when finished
 	int refcount;
 	RzThreadSemaphore *running_sem;
