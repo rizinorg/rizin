@@ -348,8 +348,8 @@ userconf.set10('WITH_GPL', true)
 ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
 userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
 
-if not cc.compiles('extern char **environ;\nint main(int argc, char **argv) { (void)environ; return 0; }')
-  error('Environ is not found')
+if host_machine.system() == 'freebsd'
+  add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c')
 endif
 
 lrt = []
