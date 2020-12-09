@@ -19,7 +19,7 @@ tasks:
         sudo python3 -m pip install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
     - build: |
         cd rizin
-        meson --prefix=${HOME} build
+        meson -Db_lundef=false --prefix=${HOME} build
         ninja -C build
     - install: |
         cd rizin
