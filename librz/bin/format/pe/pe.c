@@ -1228,9 +1228,6 @@ static int bin_pe_init_metadata_hdr(struct PE_(rz_bin_pe_obj_t)* bin) {
 		goto fail;
 	}
 
-	eprintf ("Metadata Signature: 0x%"PFMT64x" 0x%"PFMT64x" %d\n",
-		(ut64)metadata_directory, (ut64)metadata->Signature, (int)metadata->VersionStringLength);
-
 	// read the version string
 	int len = metadata->VersionStringLength; // XXX: dont trust this length
 	if (len > 0) {
@@ -1246,7 +1243,6 @@ static int bin_pe_init_metadata_hdr(struct PE_(rz_bin_pe_obj_t)* bin) {
 			free (metadata);
 			return 0;
 		}
-		eprintf (".NET Version: %s\n", metadata->VersionString);
 	}
 
 	// read the header after the string
@@ -1257,9 +1253,7 @@ static int bin_pe_init_metadata_hdr(struct PE_(rz_bin_pe_obj_t)* bin) {
 		goto fail;
 	}
 
-	eprintf ("Number of Metadata Streams: %d\n", metadata->NumberOfStreams);
 	bin->metadata_header = metadata;
-
 
 	// read metadata streams
 	int start_of_stream = metadata_directory + 20 + metadata->VersionStringLength;
@@ -1282,7 +1276,6 @@ static int bin_pe_init_metadata_hdr(struct PE_(rz_bin_pe_obj_t)* bin) {
 			free (streams);
 			goto fail;
 		}
-		eprintf ("DirectoryAddress: %x Size: %x\n", stream->Offset, stream->Size);
 		char* stream_name = calloc (1, MAX_METADATA_STRING_LENGTH + 1);
 
 		if (!stream_name) {
@@ -1304,7 +1297,6 @@ static int bin_pe_init_metadata_hdr(struct PE_(rz_bin_pe_obj_t)* bin) {
 			free (streams);
 			goto fail;
 		}
-		eprintf ("Stream name: %s %d\n", stream_name, c);
 		stream->Name = stream_name;
 		streams[count] = stream;
 		start_of_stream += 8 + c;
