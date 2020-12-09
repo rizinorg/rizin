@@ -7,6 +7,10 @@
 
 RZ_API int rz_cons_less_str(const char *str, const char *exitkeys) {
 	rz_return_val_if_fail (str && *str, 0);
+	if (!rz_cons_is_interactive ()) {
+		eprintf ("Internal less requires scr.interactive=true.\n");
+		return 0;
+	}
 
 	static int in_help = false;
 	static const char *rz_cons_less_help = \
