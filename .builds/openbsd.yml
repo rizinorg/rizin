@@ -43,5 +43,6 @@ tasks:
         # Workaround until the feature request is solved
         # https://todo.sr.ht/~sircmpwn/builds.sr.ht/274
         ln -s ${HOME}/rizin-testbins test/bins
+        cd test
         # Running the unit tests
         rz-test -L -o results.json

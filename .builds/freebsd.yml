@@ -46,4 +46,5 @@ tasks:
         # https://todo.sr.ht/~sircmpwn/builds.sr.ht/274
         ln -s ${HOME}/rizin-testbins test/bins
         # Running the test suite
+        cd test
         rz-test -L -o results.json
