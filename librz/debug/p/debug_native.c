@@ -173,15 +173,15 @@ static int rz_debug_native_detach (RzDebug *dbg, int pid) {
 #endif
 }
 
-static int rz_debug_native_select(RzDebug *dbg, int pid, int tid) {
 #if __WINDOWS__
+static int rz_debug_native_select(RzDebug *dbg, int pid, int tid) {
 	return w32_select (dbg, pid, tid);
-#elif __linux__
-	return linux_select (dbg, pid, tid);
-#else
-	return -1;
-#endif
 }
+#elif __linux__
+static int rz_debug_native_select(RzDebug *dbg, int pid, int tid) {
+	return linux_select (dbg, pid, tid);
+}
+#endif
 
 static int rz_debug_native_continue_syscall (RzDebug *dbg, int pid, int num) {
 // XXX: num is ignored
@@ -534,7 +534,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 #if __OpenBSD__ || __NetBSD__
 			reason = RZ_DEBUG_REASON_BREAKPOINT;
 #else
-			if (z_debug_handle_signals (dbg) != 0) {
+			if (rz_debug_handle_signals (dbg) != 0) {
 				return RZ_DEBUG_REASON_ERROR;
 			}
 			reason = dbg->reason.type;
