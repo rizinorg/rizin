@@ -235,7 +235,10 @@ static RzLineNSCompletionResult *multicompletion_run2(RzLineBuffer *buf, RzLineP
 }
 
 bool test_line_multicompletion(void) {
-	rz_cons_new ();
+	RzCons *cons = rz_cons_new ();
+	// Make test reproducible everywhere
+	cons->force_columns = 80;
+	cons->force_rows = 23;
 	RzLine *line = rz_line_new ();
 	line->ns_completion.run = multicompletion_run;
 
