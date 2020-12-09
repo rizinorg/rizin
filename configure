@@ -129,7 +129,7 @@ done
 : ${INSTALL_PROGRAM_STRIP:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
 : ${INSTALL_LIB:=${INSTALL} -m 755 -c}
- PKGNAME='rizin' ; VERSION='1.0-git' ; VERSION_MAJOR=1; VERSION_MINOR=1; VERSION_PATCH=0; VERSION_NUMBER=10000; CONTACT_MAIL="core@rizin.re" ; CONTACT_NAME="Rizin Core Team" ; CONTACT="Rizin Core Team <core@rizin.re>" ;
+ PKGNAME='rizin' ; VERSION='1.0-git' ; VERSION_MAJOR=1; VERSION_MINOR=1; VERSION_PATCH=0; VERSION_NUMBER=10000; CONTACT_MAIL="team@rizin.re" ; CONTACT_NAME="Rizin Core Team" ; CONTACT="Rizin Core Team <team@rizin.re>" ;
 }
 
 show_usage() {
