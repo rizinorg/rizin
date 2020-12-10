@@ -40,10 +40,6 @@ Usage: rizin [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i fil
              [-s addr] [-B baddr] [-m maddr] [-c cmd] [-e k=v] file|pid|-|--|=
 ```
 
-NOTE: You may have to add `LD_LIBRARY_PATH=/usr/local/lib64` or
-`LD_LIBRARY_PATH=/usr/local/lib` based on your system to make sure rizin will
-find the installed libraries.
-
 Please have a look at [BUILDING.md][] for more information about building Rizin.
 
 # Contributing
