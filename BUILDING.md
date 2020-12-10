@@ -163,7 +163,7 @@ same build directory where you had previously installed Rizin:
 $ ninja -C uninstall
 ```
 
-If you had compiled Rizin using configure+make, use:
+If you had compiled Rizin using configure+make (deprecated), use:
 
 ```
 $ sudo make uninstall
