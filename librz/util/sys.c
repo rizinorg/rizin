@@ -21,6 +21,10 @@
 # include <sys/param.h>
 # include <sys/sysctl.h>
 #endif
+#if defined(__OpenBSD__)
+# include <sys/sysctl.h>
+# include <sys/stat.h>
+#endif
 #if defined(__HAIKU__)
 # include <kernel/image.h>
 # include <sys/param.h>
@@ -1186,6 +1190,59 @@ RZ_API char *rz_sys_pid_to_path(int pid) {
 	if (ret != 0) {
 		return NULL;
 	}
+#elif __OpenBSD__
+	// Taken from https://stackoverflow.com/questions/31494901/how-to-get-the-executable-path-on-openbsd
+	char pathbuf[PATH_MAX];
+	int mib[4] = {CTL_KERN, KERN_PROC_ARGS, pid, KERN_PROC_ARGV};
+	size_t len;
+
+	pathbuf[0] = '\0';
+	ret = sysctl (mib, 4, NULL, &len, NULL, 0);
+	if (ret < 0) {
+		return NULL;
+	}
+	char **argv = malloc (len);
+	ret = sysctl (mib, 4, argv, &len, NULL, 0);
+	if (ret < 0) {
+		free (argv);
+		return NULL;
+	}
+	const char *comm = argv[0];
+	int ok = 0;
+	if (*comm == '/' || *comm == '.') {
+		if (!realpath (comm, pathbuf)) {
+			free (argv);
+			return NULL;
+		}
+	} else {
+		char *sp;
+		char *xpath = strdup (getenv ("PATH"));
+		char *path = strtok_r (xpath, ":", &sp);
+		struct stat st;
+
+		if (!xpath) {
+			free (argv);
+			return NULL;
+		}
+
+		while (path) {
+			snprintf (pathbuf, PATH_MAX, "%s/%s", path, comm);
+			if (!stat (pathbuf, &st) && (st.st_mode & S_IXUSR)) {
+				ok = 1;
+				break;
+			}
+			path = strtok_r (NULL, ":", &sp);
+		}
+		free (xpath);
+	}
+
+	if (ok) {
+		char *p = strrchr (pathbuf, '/');
+		if (p) {
+			*p = '\0';
+		}
+	}
+	free (argv);
 #elif __HAIKU__
 	char pathbuf[MAXPATHLEN];
 	int32_t group = 0;
