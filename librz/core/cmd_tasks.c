@@ -5,7 +5,7 @@
 #include "cmd_descs.h"
 
 static int task_enqueue(RzCore *core, const char *cmd, bool transient) {
-	RzCoreTask *task = rz_core_task_new (core, true, cmd);
+	RzCoreTask *task = rz_core_cmd_task_new (core, true, cmd);
 	if (!task) {
 		return -1;
 	}
@@ -20,8 +20,9 @@ static int task_output(RzCore *core, int tid) {
 	}
 	RzCoreTask *task = rz_core_task_get_incref (&core->tasks, tid);
 	if (task) {
-		if (task->res) {
-			rz_cons_println (task->res);
+		const char *res = rz_core_cmd_task_get_result (task);
+		if (res) {
+			rz_cons_println (res);
 		}
 		rz_core_task_decref (task);
 	} else {
@@ -32,7 +33,7 @@ static int task_output(RzCore *core, int tid) {
 }
 
 static int task_break(RzCore *core, int tid) {
-	if (tid) {
+	if (!tid) {
 		return -1;
 	}
 	rz_core_task_break (&core->tasks, tid);

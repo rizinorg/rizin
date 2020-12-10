@@ -6503,21 +6503,6 @@ RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd) {
 	return retstr;
 }
 
-/* run cmd in the main task synchronously */
-RZ_API int rz_core_cmd_task_sync(RzCore *core, const char *cmd, bool log) {
-	RzCoreTask *task = core->tasks.main_task;
-	char *s = strdup (cmd);
-	if (!s) {
-		return 0;
-	}
-	task->cmd = s;
-	task->cmd_log = log;
-	task->state = RZ_CORE_TASK_STATE_BEFORE_START;
-	int res = rz_core_task_run_sync (&core->tasks, task);
-	free (s);
-	return res;
-}
-
 RZ_IPI int rz_cmd_ox(void *data, const char *input) {
 	return rz_core_cmdf ((RzCore*)data, "s 0%s", input);
 }

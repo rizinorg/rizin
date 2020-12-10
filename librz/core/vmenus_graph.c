@@ -388,7 +388,6 @@ RZ_API int rz_core_visual_view_graph(RzCore *core) {
 					cmd[0] = '\0';
 				}
 				rz_config_set (core->config, "scr.highlight", cmd);
-				//rz_core_cmd_task_sync (core, cmd, 1);
 				rz_cons_set_raw (1);
 				rz_cons_show_cursor (false);
 				rz_cons_clear ();
@@ -407,7 +406,6 @@ RZ_API int rz_core_visual_view_graph(RzCore *core) {
 				cmd[0] = '\0';
 			}
 			rz_core_cmd0 (core, cmd);
-			//rz_core_cmd_task_sync (core, cmd, 1);
 			rz_cons_set_raw (1);
 			rz_cons_show_cursor (false);
 			if (cmd[0]) {
