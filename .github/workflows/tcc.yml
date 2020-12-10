@@ -41,7 +41,7 @@ jobs:
     - name: Install test dependencies
       run: |
           sudo apt-get --assume-yes install python3-wheel python3-setuptools
-          python3 -m pip install --user 'git+https://github.com/rizinorg/rizin-rzpipe#egg=r2pipe&subdirectory=python'
+          python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
 
     - name: Run tests
       env:
