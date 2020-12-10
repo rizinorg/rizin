@@ -166,7 +166,7 @@ $ ninja -C uninstall
 If you had compiled Rizin using configure+make, use:
 
 ```
-# sudo make uninstall
+$ sudo make uninstall
 ```
 
 Furthermore, if you had installed Rizin using a distribution package, use the
