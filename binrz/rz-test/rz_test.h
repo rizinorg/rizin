@@ -61,6 +61,10 @@ typedef struct rz_test_cmd_test_t {
 	bool load_plugins;
 } RzCmdTest;
 
+// A temporary workaround while clang-format bug is not fixed:
+// https://bugs.llvm.org/show_bug.cgi?id=46240
+
+// clang-format off
 #define RZ_CMD_TEST_FOREACH_RECORD_NOP(name, field)
 #define RZ_CMD_TEST_FOREACH_RECORD(macro_str, macro_bool, macro_int) \
 	macro_str ("NAME", name) \
@@ -74,6 +78,7 @@ typedef struct rz_test_cmd_test_t {
 	macro_str ("REGEXP_FILTER_OUT", regexp_out) \
 	macro_str ("REGEXP_FILTER_ERR", regexp_err) \
 	macro_bool ("BROKEN", broken)
+// clang-format on
 
 typedef enum rz_test_asm_test_mode_t {
 	RZ_ASM_TEST_MODE_ASSEMBLE = 1,
