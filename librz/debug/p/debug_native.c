@@ -497,6 +497,7 @@ static RzDebugReasonType rz_debug_native_wait(RzDebug *dbg, int pid) {
 		rz_debug_select (dbg, ret, ret);
 	}
 #endif // WAIT_ON_ALL_CHILDREN
+
 	// TODO: switch status and handle reasons here
 	// FIXME: Remove linux handling from this function?
 #if __linux__ && defined(PT_GETEVENTMSG)
