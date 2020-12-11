@@ -1049,6 +1049,7 @@ RUN
 NAME=test-thumb-load
 FILE=malloc://0x200
 CMDS=<<EOF
+e asm.bytes = true
 e asm.arch=arm
 e asm.bits=16
 wb 054b

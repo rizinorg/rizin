@@ -25,6 +25,7 @@ NAME=mips hello ref anal
 FILE=bins/elf/analysis/mips.elf
 ARGS=-e bin.strings=false -e analysis.strings=true
 CMDS=<<EOF
+e asm.bytes=true
 s entry0
 aae
 s 0x0041ed50
@@ -39,6 +40,7 @@ NAME=mips hello ref analysis subtract
 FILE=bins/elf/analysis/busybox-mips
 ARGS=-e bin.strings=false -e analysis.strings=true
 CMDS=<<EOF
+e asm.bytes=true
 aae @entry0
 pd 1 @0x00406228
 fs strings
@@ -54,6 +56,7 @@ NAME=Calculate GP
 FILE=bins/elf/analysis/mips64r2-ld-2.28.so
 CMDS=<<EOF
 s 0x000023f0
+e asm.bytes=true
 pd 1
 s 0x00002494
 pd 1
@@ -68,6 +71,7 @@ NAME=mips ld(load doubleword) instruction
 FILE=bins/elf/analysis/mips64r2-busybox-loongson
 CMDS=<<EOF
 s 0x120004460
+e asm.bytes=true
 f--
 pd 1
 EOF
@@ -135,6 +139,7 @@ ARGS=-e bin.strings=false -e analysis.strings=false
 CMDS=<<EOF
 pd 1 @main+0x18
 e asm.pseudo=true
+e asm.bytes=true
 pd 1 @main+0x18
 EOF
 EXPECT=<<EOF
@@ -148,6 +153,7 @@ FILE=malloc://32
 ARGS=-a mips -m 0x80100000
 CMDS=<<EOF
 e io.va=true
+e asm.bytes = true
 wx 0000beaf
 pd 1
 e asm.pseudo=true
@@ -200,6 +206,7 @@ FILE=malloc://40
 CMDS=<<EOF
 e asm.calls=false
 e asm.bits=32
+e asm.bytes = true
 e asm.arch=mips
 e analysis.jmp.eob=true
 e analysis.nopskip=false
@@ -267,6 +274,7 @@ ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
 e asm.calls=false
+e asm.bytes = true
 e asm.bits=32
 e asm.arch=mips
 e asm.nbytes=4
@@ -310,6 +318,7 @@ CMDS=<<EOF
 e io.va=true
 e asm.calls=false
 e asm.bits=32
+e asm.bytes = true
 e asm.arch=mips
 e analysis.jmp.eob=false
 e asm.comments=false
@@ -340,6 +349,7 @@ ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
 e asm.calls=false
+e asm.bytes = true
 e asm.bits=32
 e asm.arch=mips
 e asm.comments=false
@@ -375,6 +385,7 @@ e asm.calls=false
 e asm.arch=mips
 e asm.bits=32
 e asm.comments=false
+e asm.bytes = true
 e analysis.jmp.eob=false
 e analysis.nopskip=false
 e asm.nbytes=4
@@ -402,6 +413,7 @@ FILE=malloc://56
 ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
+e asm.bytes = true
 e asm.calls=false
 e asm.arch=mips
 e asm.bits=32
@@ -572,6 +584,7 @@ CMDS=<<EOF
 e io.va=true
 e asm.calls=false
 e asm.bits=32
+e asm.bytes = true
 e asm.arch=mips
 e analysis.noncode=1
 e asm.comments=0
@@ -641,6 +654,7 @@ ARGS=-m 0x8060b4f8
 CMDS=<<EOF
 e io.va=true
 e asm.calls=false
+e asm.bytes = true
 e asm.bits=32
 e asm.arch=mips
 e analysis.noncode=1
@@ -709,6 +723,7 @@ NAME=mips big endian strings, calls, etc. analysis
 FILE=bins/elf/analysis/mipsbe-ip
 CMDS=<<EOF
 s 0x00402088
+e asm.bytes = true
 pd 10
 EOF
 EXPECT=<<EOF

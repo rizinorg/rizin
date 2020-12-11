@@ -745,6 +745,7 @@ NAME=cbz/cbnz likeliness
 FILE=malloc://0x200
 CMDS=<<EOF
 e asm.arch=arm
+e asm.bytes = true
 e asm.bits=64
 e cfg.bigendian=false
 e emu.str=true

@@ -3375,6 +3375,7 @@ RUN
 NAME=test_switch_indirect.exe switch/case flags
 FILE=bins/jmptbl/test_switch_indirect.exe
 CMDS=<<EOF
+e asm.bytes=true
 s main
 af
 e asm.lines = false
@@ -3510,6 +3511,7 @@ RUN
 NAME=Microsoft x64 CC Args/Vars
 FILE=bins/pe/testx64.exe
 CMDS=<<EOF
+e asm.bytes=true
 e asm.comments=0
 e analysis.vars.stackname=true
 s 0x140001080
@@ -3604,6 +3606,7 @@ RUN
 NAME=lea pseudo improvements (pseudo disabled)
 FILE=-
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 e asm.comments=false
@@ -3646,6 +3649,7 @@ NAME=lea pseudo improvements (pseudo enabled)
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=64
 e asm.comments=false
 e asm.pseudo=true
