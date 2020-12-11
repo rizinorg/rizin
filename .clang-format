@@ -17,6 +17,7 @@ AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: Inline
 AllowShortLoopsOnASingleLine: false
 AlignAfterOpenBracket: DontAlign
+AlignConsecutiveMacros: true
 AlignTrailingComments: false
 AlignOperands: false
 Cpp11BracedListStyle: false
