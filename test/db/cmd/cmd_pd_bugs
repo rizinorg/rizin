@@ -62,6 +62,7 @@ NAME=call fcn eip 32bit
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
 s 0x5e50
+e asm.bytes=true
 e asm.bits=32
 af; afn eip
 pd 1 @ 0x5f16~:0
@@ -79,6 +80,7 @@ FILE=bins/elf/analysis/ls-alxchk
 BROKEN=1
 CMDS=<<EOF
 s 0x5e50
+e asm.bytes=true
 e asm.bits=64
 af; afn eip
 pd 1 @ 0x5f16~:0
@@ -111,6 +113,7 @@ NAME=lea edx bug segfault for x86 32bit #5710@rizin
 FILE=malloc://128
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=32
 e asm.lines.bb=false
 e asm.comments=false
@@ -160,6 +163,7 @@ RUN
 NAME=crackme test
 FILE=bins/elf/crackme
 CMDS=<<EOF
+e asm.bytes=true
 pd 2
 pi 2
 EOF
@@ -178,6 +182,7 @@ RUN
 NAME=indent asm.lines.fcn=0, asm.lines.bb=1 for issue 9316
 FILE=-
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 af+ 0 test
@@ -212,6 +217,7 @@ RUN
 NAME=asm.flgoff indent
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
+e asm.bytes=true
 e asm.flags.offset=1
 s sym.check
 pd 1

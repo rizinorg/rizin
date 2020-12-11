@@ -36,6 +36,7 @@ FILE=bins/bf/hello-unbalanced-loop.bf
 ARGS=-b32
 CMDS=<<EOF
 e asm.arch = bf
+e asm.bytes = true
 e analysis.arch = bf
 f input 128 0x3000
 o malloc://128 0x3000~z

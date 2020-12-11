@@ -67,6 +67,7 @@ RUN
 NAME=pdi 2@x:9090@0x1000
 FILE=malloc://128
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=32
 pdi 2 @x:9090@0x1000
@@ -80,6 +81,7 @@ RUN
 NAME=pd 2@x:9090
 FILE=malloc://128
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=32
 pd 2 @x:9090

@@ -87,6 +87,7 @@ RUN
 NAME=noreturn real test
 FILE=bins/elf/analysis/noreturn
 CMDS=<<EOF
+e asm.bytes=true
 aa
 s main
 pdf

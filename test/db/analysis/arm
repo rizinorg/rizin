@@ -16,6 +16,7 @@ NAME=thumb ldr pc-rel analysis
 FILE=malloc://32
 CMDS=<<EOF
 e asm.arch=arm
+e asm.bytes=true
 e asm.bytes = true
 e asm.bits=16
 wx dff80000 12000000 34000000
@@ -661,6 +662,7 @@ NAME=ELF ARM: function arg
 FILE=bins/elf/analysis/armcall
 CMDS=<<EOF
 e asm.calls=false
+e asm.bytes=true
 afr@main
 afva@sym.call
 pdf@sym.call
@@ -688,6 +690,7 @@ NAME=ELF ARM: function args
 FILE=bins/elf/analysis/armcall
 CMDS=<<EOF
 e asm.calls=false
+e asm.bytes=true
 af@main
 afva@main
 pdf@main
