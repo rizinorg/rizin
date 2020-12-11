@@ -86,10 +86,10 @@ want this behaviour and you know what you are doing, you can still use
 
 ## Windows
 
-The building steps on Windows are the same as on *NIX systems, however you will
-have to run the following commands from the Visual Studio Developer Powershell
-(on Visual Studio Community 2019 you can find it under Tools > Command Line >
-Developer Powershell). To install Meson on Windows, follow instructions
+The building steps on Windows are the same as on *NIX systems, however you
+will have to run the following commands from the Visual Studio Developer
+shell (search for "x64 Native Tools Command Prompt for VS 2019" or similar).
+To install Meson on Windows, follow instructions
 [here](https://mesonbuild.com/Getting-meson.html).
 
 ```
