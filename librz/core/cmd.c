@@ -5132,6 +5132,7 @@ static bool handle_tmp_desc(struct tsr2cmd_state *state, TSNode command, const u
 	int pamode = !core->io->va;
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID, o_fixedblock = core->fixedblock;
 	RzBuffer *b = rz_buf_new_with_bytes (buf, sz);
+	int cur_fd = rz_io_fd_get_current (core->io);
 	RzIODesc *d = rz_io_open_buffer (core->io, b, RZ_PERM_RWX, 0);
 	if (!d) {
 		eprintf ("Cannot open io buffer\n");
@@ -5154,6 +5155,7 @@ static bool handle_tmp_desc(struct tsr2cmd_state *state, TSNode command, const u
 	}
 	rz_io_desc_close (d);
 	rz_core_block_size (core, obsz);
+	rz_io_use_fd (core->io, cur_fd);
 
 out_buf:
 	rz_buf_free (b);

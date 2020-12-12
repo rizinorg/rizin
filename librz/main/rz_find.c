@@ -12,46 +12,64 @@
 #include <rz_lib.h>
 #include <rz_io.h>
 
-// XXX kill those globals
-static bool showstr = false;
-static bool rad = false;
-static bool identify = false;
-static bool quiet = false;
-static bool hexstr = false;
-static bool widestr = false;
-static bool nonstop = false;
-static bool json = false;
-static int mode = RZ_SEARCH_STRING;
-static int align = 0;
-static ut8 *buf = NULL;
-static ut64 bsize = 4096;
-static ut64 from = 0LL, to = -1;
-static ut64 cur = 0;
-static RzPrint *pr = NULL;
-static RzList *keywords;
-static const char *mask = NULL;
-static const char *curfile = NULL;
-static const char *comma = "";
+typedef struct {
+	bool showstr;
+	bool rad;
+	bool identify;
+	bool quiet;
+	bool hexstr;
+	bool widestr;
+	bool nonstop;
+	bool json;
+	int mode;
+	int align;
+	ut8 *buf;
+	ut64 bsize;
+	ut64 from;
+	ut64 to;
+	ut64 cur;
+	RzPrint *pr;
+	RzList *keywords;
+	const char *mask;
+	const char *curfile;
+	const char *comma;
+} RzfindOptions;
+
+static void rzfind_options_fini(RzfindOptions *ro) {
+	free (ro->buf);
+	rz_list_free (ro->keywords);
+}
+
+static void rzfind_options_init(RzfindOptions *ro) {
+	memset (ro, 0, sizeof (RzfindOptions));
+	ro->mode = RZ_SEARCH_STRING;
+	ro->bsize = 4096;
+	ro->to = UT64_MAX;
+	ro->keywords = rz_list_newf (NULL);
+}
+
+static int rzfind_open(RzfindOptions *ro, const char *file);
 
 static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
-	int delta = addr - cur;
-	if (cur > addr && (cur - addr == kw->keyword_length - 1)) {
+	RzfindOptions *ro = (RzfindOptions*)user;
+	int delta = addr - ro->cur;
+	if (ro->cur > addr && (ro->cur - addr == kw->keyword_length - 1)) {
 		// This case occurs when there is hit in search left over
-		delta = cur - addr;
+		delta = ro->cur - addr;
 	}
-	if (delta < 0 || delta >= bsize) {
+	if (delta < 0 || delta >= ro->bsize) {
 		eprintf ("Invalid delta\n");
 		return 0;
 	}
 	char _str[128];
 	char *str = _str;
 	*_str = 0;
-	if (showstr) {
-		if (widestr) {
+	if (ro->showstr) {
+		if (ro->widestr) {
 			str = _str;
 			int i, j = 0;
-			for (i = delta; buf[i] && i < sizeof (_str); i++) {
-				char ch = buf[i];
+			for (i = delta; ro->buf[i] && i < sizeof (_str); i++) {
+				char ch = ro->buf[i];
 				if (ch == '"' || ch == '\\') {
 					ch = '\'';
 				}
@@ -65,7 +83,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 					j += 3;
 					break;
 				}
-				if (buf[i]) {
+				if (ro->buf[i]) {
 					break;
 				}
 			}
@@ -73,7 +91,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		} else {
 			size_t i;
 			for (i = 0; i < sizeof (_str); i++) {
-				char ch = buf[delta + i];
+				char ch = ro->buf[delta + i];
 				if (ch == '"' || ch == '\\') {
 					ch = '\'';
 				}
@@ -87,7 +105,7 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	} else {
 		size_t i;
 		for (i = 0; i < sizeof (_str); i++) {
-			char ch = buf[delta + i];
+			char ch = ro->buf[delta + i];
 			if (ch == '"' || ch == '\\') {
 				ch = '\'';
 			}
@@ -98,19 +116,20 @@ static int hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		}
 		str[i] = 0;
 	}
-	if (json) {
+	if (ro->json) {
 		const char *type = "string";
-		printf ("%s{\"offset\":%"PFMT64d",\"type\":\"%s\",\"data\":\"%s\"}", comma, addr, type, str);
-		comma = ",";
-	} else if (rad) {
-		printf ("f hit%d_%d 0x%08"PFMT64x" ; %s\n", 0, kw->count, addr, curfile);
+		printf ("%s{\"offset\":%"PFMT64d",\"type\":\"%s\",\"data\":\"%s\"}",
+			ro->comma, addr, type, str);
+		ro->comma = ",";
+	} else if (ro->rad) {
+		printf ("f hit%d_%d 0x%08"PFMT64x" ; %s\n", 0, kw->count, addr, ro->curfile);
 	} else {
-		if (showstr) {
+		if (ro->showstr) {
 			printf ("0x%"PFMT64x" %s\n", addr, str);
 		} else {
 			printf ("0x%"PFMT64x"\n", addr);
-			if (pr) {
-				rz_print_hexdump (pr, addr, (ut8*)buf + delta, 78, 16, 1, 1);
+			if (ro->pr) {
+				rz_print_hexdump (ro->pr, addr, (ut8*)ro->buf + delta, 78, 16, 1, 1);
 				rz_cons_flush ();
 			}
 		}
@@ -149,21 +168,21 @@ static int show_help(const char *argv0, int line) {
 	return 0;
 }
 
-static int rafind_open_file(const char *file, const ut8 *data, int datalen) {
+static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data, int datalen) {
 	RzListIter *iter;
 	RzSearch *rs = NULL;
 	const char *kw;
 	bool last = false;
 	int ret, result = 0;
 
-	buf = NULL;
-	if (!quiet) {
+	ro->buf = NULL;
+	if (!ro->quiet) {
 		printf ("File: %s\n", file);
 	}
 
 	char *efile = rz_str_escape_sh (file);
 
-	if (identify) {
+	if (ro->identify) {
 		char *cmd = rz_str_newf ("rizin -e search.show=false -e search.maxhits=1 -nqcpm \"%s\"", efile);
 		rz_sandbox_system (cmd, 1);
 		free (cmd);
@@ -187,22 +206,22 @@ static int rafind_open_file(const char *file, const ut8 *data, int datalen) {
 		rz_io_write_at (io, 0, data, datalen);
 	}
 
-	rs = rz_search_new (mode);
+	rs = rz_search_new (ro->mode);
 	if (!rs) {
 		result = 1;
 		goto err;
 	}
 
-	buf = calloc (1, bsize);
-	if (!buf) {
-		eprintf ("Cannot allocate %"PFMT64d" bytes\n", bsize);
+	ro->buf = calloc (1, ro->bsize);
+	if (!ro->buf) {
+		eprintf ("Cannot allocate %"PFMT64d" bytes\n", ro->bsize);
 		result = 1;
 		goto err;
 	}
-	rs->align = align;
-	rz_search_set_callback (rs, &hit, buf);
-	if (to == -1) {
-		to = rz_io_size (io);
+	rs->align = ro->align;
+	rz_search_set_callback (rs, &hit, ro);
+	if (ro->to == -1) {
+		ro->to = rz_io_size (io);
 	}
 
 	if (!rz_cons_new ()) {
@@ -210,103 +229,86 @@ static int rafind_open_file(const char *file, const ut8 *data, int datalen) {
 		goto err;
 	}
 
-	if (mode == RZ_SEARCH_STRING) {
+	if (ro->mode == RZ_SEARCH_STRING) {
 		/* TODO: implement using api */
-		rz_sys_cmdf ("rz_bin -q%szzz \"%s\"", json? "j": "", efile);
+		rz_sys_cmdf ("rz-bin -q%szzz \"%s\"", ro->json? "j": "", efile);
 		goto done;
 	}
-	if (mode == RZ_SEARCH_MAGIC) {
+	if (ro->mode == RZ_SEARCH_MAGIC) {
 		/* TODO: implement using api */
-		char *tostr = (to && to != UT64_MAX)?
-			rz_str_newf ("-e search.to=%"PFMT64d, to): strdup ("");
-		char *cmd = rz_str_newf ("rizin"
+		char *tostr = (ro->to && ro->to != UT64_MAX)?
+			rz_str_newf ("-e search.to=%"PFMT64d, ro->to): strdup ("");
+		rz_sys_cmdf ("rizin"
 			" -e search.in=range"
 			" -e search.align=%d"
 			" -e search.from=%"PFMT64d
 			" %s -qnc/m%s \"%s\"",
-			align, from, tostr, json? "j": "", efile);
-		rz_sandbox_system (cmd, 1);
-		free (cmd);
+			ro->align, ro->from, tostr, ro->json? "j": "", efile);
 		free (tostr);
 		goto done;
 	}
-	if (mode == RZ_SEARCH_ESIL) {
-		rz_list_foreach (keywords, iter, kw) {
+	if (ro->mode == RZ_SEARCH_ESIL) {
+		/* TODO: implement using api */
+		rz_list_foreach (ro->keywords, iter, kw) {
 			rz_sys_cmdf ("rizin -qc \"/E %s\" \"%s\"", kw, efile);
 		}
 		goto done;
 	}
-	if (mode == RZ_SEARCH_KEYWORD) {
-		rz_list_foreach (keywords, iter, kw) {
-			if (hexstr) {
-				if (mask) {
-					rz_search_kw_add (rs, rz_search_keyword_new_hex (kw, mask, NULL));
+	if (ro->mode == RZ_SEARCH_KEYWORD) {
+		rz_list_foreach (ro->keywords, iter, kw) {
+			if (ro->hexstr) {
+				if (ro->mask) {
+					rz_search_kw_add (rs, rz_search_keyword_new_hex (kw, ro->mask, NULL));
 				} else {
 					rz_search_kw_add (rs, rz_search_keyword_new_hexmask (kw, NULL));
 				}
-			} else if (widestr) {
-				rz_search_kw_add (rs, rz_search_keyword_new_wide (kw, mask, NULL, 0));
+			} else if (ro->widestr) {
+				rz_search_kw_add (rs, rz_search_keyword_new_wide (kw, ro->mask, NULL, 0));
 			} else {
-				rz_search_kw_add (rs, rz_search_keyword_new_str (kw, mask, NULL, 0));
+				rz_search_kw_add (rs, rz_search_keyword_new_str (kw, ro->mask, NULL, 0));
 			}
 		}
-	} else if (mode == RZ_SEARCH_STRING) {
+	} else if (ro->mode == RZ_SEARCH_STRING) {
 		rz_search_kw_add (rs, rz_search_keyword_new_hexmask ("00", NULL)); //XXX
 	}
 
-	curfile = file;
+	ro->curfile = file;
 	rz_search_begin (rs);
-	(void)rz_io_seek (io, from, RZ_IO_SEEK_SET);
+	(void)rz_io_seek (io, ro->from, RZ_IO_SEEK_SET);
 	result = 0;
-	for (cur = from; !last && cur < to; cur += bsize) {
-		if ((cur + bsize) > to) {
-			bsize = to - cur;
+	for (ro->cur = ro->from; !last && ro->cur < ro->to; ro->cur += ro->bsize) {
+		if ((ro->cur + ro->bsize) > ro->to) {
+			ro->bsize = ro->to - ro->cur;
 			last = true;
 		}
-		ret = rz_io_pread_at (io, cur, buf, bsize);
+		ret = rz_io_pread_at (io, ro->cur, ro->buf, ro->bsize);
 		if (ret == 0) {
-			if (nonstop) {
+			if (ro->nonstop) {
 				continue;
 			}
 			result = 1;
 			break;
 		}
-		if (ret != bsize && ret > 0) {
-			bsize = ret;
+		if (ret != ro->bsize && ret > 0) {
+			ro->bsize = ret;
 		}
 
-		if (rz_search_update (rs, cur, buf, ret) == -1) {
-			eprintf ("search: update read error at 0x%08"PFMT64x"\n", cur);
+		if (rz_search_update (rs, ro->cur, ro->buf, ret) == -1) {
+			eprintf ("search: update read error at 0x%08"PFMT64x"\n", ro->cur);
 			break;
 		}
 	}
 done:
 	rz_cons_free ();
 err:
-	free (buf);
 	free (efile);
 	rz_search_free (rs);
 	rz_io_free (io);
+	rzfind_options_fini (ro);
 	return result;
 }
-static int rafind_open_dir(const char *dir);
 
-static int rafind_open(const char *file) {
-	if (!strcmp (file, "-")) {
-		int sz = 0;
-		ut8 *buf = (ut8 *)rz_stdin_slurp (&sz);
-		char *ff = rz_str_newf ("malloc://%d", sz);
-		int res = rafind_open_file (ff, buf, sz);
-		free (ff);
-		free (buf);
-		return res;
-	}
-	return rz_file_is_directory (file)
-		? rafind_open_dir (file)
-		: rafind_open_file (file, NULL, -1);
-}
-
-static int rafind_open_dir(const char *dir) {
+static int rzfind_open_dir(RzfindOptions *ro, const char *dir) {
 	RzListIter *iter;
 	char *fullpath;
 	char *fname = NULL;
@@ -320,7 +322,7 @@ static int rafind_open_dir(const char *dir) {
 				continue;
 			}
 			fullpath = rz_str_newf ("%s"RZ_SYS_DIR"%s", dir, fname);
-			(void)rafind_open (fullpath);
+			(void)rzfind_open (ro, fullpath);
 			free (fullpath);
 		}
 		rz_list_free (files);
@@ -328,63 +330,83 @@ static int rafind_open_dir(const char *dir) {
 	return 0;
 }
 
+static int rzfind_open(RzfindOptions *ro, const char *file) {
+	if (!strcmp (file, "-")) {
+		int sz = 0;
+		ut8 *buf = (ut8 *)rz_stdin_slurp (&sz);
+		if (!buf) {
+			return 0;
+		}
+		char *ff = rz_str_newf ("malloc://%d", sz);
+		int res = rzfind_open_file (ro, ff, buf, sz);
+		free (ff);
+		free (buf);
+		return res;
+	}
+	return rz_file_is_directory (file)
+		? rzfind_open_dir (ro, file)
+		: rzfind_open_file (ro, file, NULL, -1);
+}
+
 RZ_API int rz_main_rz_find(int argc, const char **argv) {
+	RzfindOptions ro;
+	rzfind_options_init (&ro);
+
 	int c;
 	const char *file = NULL;
 
-	keywords = rz_list_newf (NULL);
 	RzGetopt opt;
 	rz_getopt_init (&opt, argc, argv, "a:ie:b:jmM:s:S:x:Xzf:F:t:E:rqnhvZ");
 	while ((c = rz_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
-			align = rz_num_math (NULL, opt.arg);
+			ro.align = rz_num_math (NULL, opt.arg);
 			break;
 		case 'r':
-			rad = true;
+			ro.rad = true;
 			break;
 		case 'i':
-			identify = true;
+			ro.identify = true;
 			break;
 		case 'j':
-			json = true;
+			ro.json = true;
 			break;
 		case 'n':
-			nonstop = 1;
+			ro.nonstop = 1;
 			break;
 		case 'm':
-			mode = RZ_SEARCH_MAGIC;
+			ro.mode = RZ_SEARCH_MAGIC;
 			break;
 		case 'e':
-			mode = RZ_SEARCH_REGEXP;
-			hexstr = 0;
-			rz_list_append (keywords, (void*)opt.arg);
+			ro.mode = RZ_SEARCH_REGEXP;
+			ro.hexstr = 0;
+			rz_list_append (ro.keywords, (void*)opt.arg);
 			break;
 		case 'E':
-			mode = RZ_SEARCH_ESIL;
-			rz_list_append (keywords, (void*)opt.arg);
+			ro.mode = RZ_SEARCH_ESIL;
+			rz_list_append (ro.keywords, (void*)opt.arg);
 			break;
 		case 's':
-			mode = RZ_SEARCH_KEYWORD;
-			hexstr = 0;
-			widestr = 0;
-			rz_list_append (keywords, (void*)opt.arg);
+			ro.mode = RZ_SEARCH_KEYWORD;
+			ro.hexstr = false;
+			ro.widestr = false;
+			rz_list_append (ro.keywords, (void*)opt.arg);
 			break;
 		case 'S':
-			mode = RZ_SEARCH_KEYWORD;
-			hexstr = 0;
-			widestr = 1;
-			rz_list_append (keywords, (void*)opt.arg);
+			ro.mode = RZ_SEARCH_KEYWORD;
+			ro.hexstr = false;
+			ro.widestr = true;
+			rz_list_append (ro.keywords, (void*)opt.arg);
 			break;
 		case 'b':
-			bsize = rz_num_math (NULL, opt.arg);
+			ro.bsize = rz_num_math (NULL, opt.arg);
 			break;
 		case 'M':
 			// XXX should be from hexbin
-			mask = opt.arg;
+			ro.mask = opt.arg;
 			break;
 		case 'f':
-			from = rz_num_math (NULL, opt.arg);
+			ro.from = rz_num_math (NULL, opt.arg);
 			break;
 		case 'F':
 			{
@@ -396,38 +418,38 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 				}
 				char *hexdata = rz_hex_bin2strdup ((ut8*)data, data_size);
 				if (hexdata) {
-					mode = RZ_SEARCH_KEYWORD;
-					hexstr = true;
-					widestr = false;
-					rz_list_append (keywords, (void*)hexdata);
+					ro.mode = RZ_SEARCH_KEYWORD;
+					ro.hexstr = true;
+					ro.widestr = false;
+					rz_list_append (ro.keywords, (void*)hexdata);
 				}
 				free (data);
 			}
 			break;
 		case 't':
-			to = rz_num_math (NULL, opt.arg);
+			ro.to = rz_num_math (NULL, opt.arg);
 			break;
 		case 'x':
-			mode = RZ_SEARCH_KEYWORD;
-			hexstr = 1;
-			widestr = 0;
-			rz_list_append (keywords, (void*)opt.arg);
+			ro.mode = RZ_SEARCH_KEYWORD;
+			ro.hexstr = 1;
+			ro.widestr = 0;
+			rz_list_append (ro.keywords, (void*)opt.arg);
 			break;
 		case 'X':
-			pr = rz_print_new ();
+			ro.pr = rz_print_new ();
 			break;
 		case 'q':
-			quiet = true;
+			ro.quiet = true;
 			break;
 		case 'v':
 			return rz_main_version_print ("rz_find");
 		case 'h':
 			return show_help(argv[0], 0);
 		case 'z':
-			mode = RZ_SEARCH_STRING;
+			ro.mode = RZ_SEARCH_STRING;
 			break;
 		case 'Z':
-			showstr = true;
+			ro.showstr = true;
 			break;
 		default:
 			return show_help (argv[0], 1);
@@ -438,9 +460,9 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 	}
 	/* Enable quiet mode if searching just a single file */
 	if (opt.ind + 1 == argc && RZ_STR_ISNOTEMPTY (argv[opt.ind]) && !rz_file_is_directory (argv[opt.ind])) {
-		quiet = true;
+		ro.quiet = true;
 	}
-	if (json) {
+	if (ro.json) {
 		printf ("[");
 	}
 	for (; opt.ind < argc; opt.ind++) {
@@ -450,10 +472,9 @@ RZ_API int rz_main_rz_find(int argc, const char **argv) {
 			eprintf ("Cannot open empty path\n");
 			return 1;
 		}
-
-		rafind_open (file);
+		rzfind_open (&ro, file);
 	}
-	if (json) {
+	if (ro.json) {
 		printf ("]\n");
 	}
 	return 0;

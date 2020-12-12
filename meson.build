@@ -348,6 +348,10 @@ userconf.set10('WITH_GPL', true)
 ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
 userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
 
+if host_machine.system() == 'freebsd'
+  add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c')
+endif
+
 lrt = []
 if not cc.has_function('clock_gettime', prefix: '#include <time.h>') and cc.has_header_symbol('features.h', '__GLIBC__')
   lrt = cc.find_library('rt', required: true)
@@ -558,9 +562,17 @@ if get_option('b_sanitize').contains('undefined')
   pkgcfg_sanitize_libs += ' -lubsan'
 endif
 
+use_rpath = false
+if host_machine.system() != 'windows' and get_option('default_library') == 'shared'
+  if get_option('local').enabled() or (get_option('local').auto() and get_option('prefix') != '/usr')
+    use_rpath = true
+  endif
+endif
+
 rpath_exe = ''
 rpath_lib = ''
-if get_option('local') and get_option('default_library') == 'shared'
+if use_rpath
+  message('RPATH will be used to link libraries and executables')
   rpath_exe = '$ORIGIN/../' + get_option('libdir')
   rpath_lib = '$ORIGIN'
 endif

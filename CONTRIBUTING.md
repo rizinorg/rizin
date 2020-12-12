@@ -34,32 +34,32 @@ To "update" your branch `my-awesome-feature`, you *rebase* it onto
 the latest `rizinorg/dev`, and *force-push* the result into your fork.
 
 #### Step 1: Switch to `dev` branch.
-
-    $ git checkout dev
-
+```sh
+$ git checkout dev
+```
 #### Step 2: Pull new commits published to rizinorg repo.
-
-    $ git pull https://github.com/rizinorg/rizin
-
+```sh
+$ git pull https://github.com/rizinorg/rizin
+```
 #### Step 3: Switch back to `my-awesome-feature` branch.
-
-    $ git checkout my-awesome-feature
-
+```sh
+$ git checkout my-awesome-feature
+```
 #### Step 4: Rebase the `my-awesome-feature` branch.
-
-    $ git rebase dev
-
+```sh
+$ git rebase dev
+```
 Optionally, use the alternative mode "interactive rebase". It allows
 to `squash` your commits all into one, reorder, reword them, etc.
-
-    $ git rebase -i dev
-
+```sh
+$ git rebase -i dev
+```
 Follow git instructions when conflicts arise.
 
 #### Step 5: publish your updated local branch.
-
-    $ git push -f
-
+```sh
+$ git push -f
+```
 This `-f` *force-flag* is needed because git commits are immutable: rebasing
 creates newer versions of them. git needs to confirm the destruction of
 previous incarnations.
@@ -86,22 +86,22 @@ rules to make the git history more readable and consistent:
 * ##asm      - assembler
 * ##bin      - binary parsing
 * ##build    - build fixes/changes
-* ##config   - config var changes/additions/renamings
+* ##config   - config variables changes/additions/renamings
 * ##cons     - console/terminal-related
 * ##crypto   - cryptography
 * ##debug    - debugger stuff
 * ##diff     - diffing code, strings, basic blocks, ...
 * ##disasm   - disassembler
 * ##doc      - documentation
-* ##egg      - the `r_lang` compiler
+* ##egg      - the `rz_lang` compiler
 * ##emu      - emulation, including esil
 * ##graph    - basic block graph, callgraph, ...
-* ##io       - related to the `r_io` library
+* ##io       - related to the `rz_io` library
 * ##json     - json fixes/changes
 * ##lang     - bindings
 * ##meta     - metadata handling other than printing
 * ##optimization-space/time optimizations
-* ##port     - portability (new OS/archs)
+* ##port     - portability (new OS/architectures)
 * ##print    - printing data, structures, strings, tables, types ..
 * ##projects - saving/loading state
 * ##refactor - improve code quality
@@ -111,8 +111,8 @@ rules to make the git history more readable and consistent:
 * ##signatures-searching/generating them
 * ##test     - testing infrastructure fixes/changes
 * ##tools    - rz-pm, rz_run, rz_ax ... that don't fit in other categories
-* ##util     - core apis
-* ##visual   - visual ui, including panels
+* ##util     - core APIs
+* ##visual   - visual UI, including panels
 
 # Additional resources
 

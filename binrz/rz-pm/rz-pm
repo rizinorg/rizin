@@ -52,7 +52,7 @@ WRKDIR="$PWD"
 
 # prefix
 export RZPM_SYSPREFIX="${PREFIX}"
-export RZPM_HOMEPREFIX="${RZDATAHOME}/prefix"
+export RZPM_HOMEPREFIX="${RZDATAHOME}"
 export RZPM_PREFIX="${RZPM_HOMEPREFIX}"
 
 # bindir
@@ -334,7 +334,6 @@ RZPM_GIT() {
 	if [ -d "${DIR}" ]; then
 		cd "${DIR}"
 		if [ -z "${RZPM_GITSKIP}" ]; then
-			git checkout master
 			git pull
 		fi
 	else
@@ -428,7 +427,7 @@ pkgFilePath() {
 	done
 }
 
-rz-pm_doc() {
+rz_pm_doc() {
 	if [ -z "$2" ]; then
 		echo "Usage: rz-pm -d [package]  # show docs on [package]"
 		exit 1
@@ -441,7 +440,7 @@ rz-pm_doc() {
 	fi
 }
 
-rz-pm_install() {
+rz_pm_install() {
 	FILE="$(pkgFilePath "$2")"
 	if [ -f "${FILE}" ]; then
 		NAME="$2"
@@ -456,7 +455,7 @@ rz-pm_install() {
 	fi
 }
 
-rz-pm_uninstall() {
+rz_pm_uninstall() {
 	if [ -z "$2" ]; then
 		echo "Usage: rz-pm -u [package]  # uninstall [package]"
 		exit 1
@@ -491,7 +490,7 @@ case "$1" in
 		exit 1
 	elif [ "$2" = "all" ]; then
 		for a in `cd ${RZPM_DBDIR} && ls` ; do
-			rz-pm_install "$a"
+			rz_pm_install "$a"
 			if [ "$?" != 0 ]; then
 				printf "\033[31mERROR: Installation failed for $a\033[0m\n"
 			fi
@@ -499,7 +498,7 @@ case "$1" in
 	else
 		A1="$1"
 		while [ -n "$2" ] ; do
-			rz-pm_install $A1 "$2"
+			rz_pm_install $A1 "$2"
 			shift
 		done
 	fi
@@ -510,7 +509,7 @@ case "$1" in
 	rm -f "${FILE}"
 	;;
 -u|uninstall)
-	rz-pm_uninstall "$@"
+	rz_pm_uninstall "$@"
 	;;
 -t|test)
 	[ -n "$2" ] && TRAVIS_TYPE="$2"
@@ -552,7 +551,7 @@ case "$1" in
 	if [ ! -d "${RZPM_PLUGDIR}" ]; then
 		mkdir -p "${RZPM_PLUGDIR}"
 	fi
-	rz-pm_install "$@"
+	rz_pm_install "$@"
 	;;
 -gu|global-uninstall)
 	GLOBAL=1
@@ -562,7 +561,7 @@ case "$1" in
 	RZPM_BINDIR="${RZPM_SYSBINDIR}"
 	RZPM_WWWROOT="${RZPM_SYSWWWROOT}"
 	#TODO set RZPM_ETCD= to a "global" rizinrc.d
-	rz-pm_uninstall "$@"
+	rz_pm_uninstall "$@"
 	;;
 -cp)
 	if [ -n "${RZPM_PLUGDIR}" ]; then
@@ -710,7 +709,7 @@ purge)
 	purgeSystem
 	;;
 -d|doc|--doc)
-	rz-pm_doc "$2"
+	rz_pm_doc "$2"
 	;;
 *|help|-h)
 	cat <<HELP

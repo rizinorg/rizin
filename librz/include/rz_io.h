@@ -15,6 +15,9 @@
 
 #define RZ_IO_UNDOS 64
 
+#define rz_io_map_get_from(map) map->itv.addr
+#define rz_io_map_get_to(map) ( rz_itv_end (map->itv) - 1 )
+
 #if HAVE_PTRACE
 
 #if __sun
@@ -412,7 +415,7 @@ RZ_API bool rz_io_cache_at(RzIO *io, ut64 addr);
 RZ_API void rz_io_cache_commit(RzIO *io, ut64 from, ut64 to);
 RZ_API void rz_io_cache_init(RzIO *io);
 RZ_API void rz_io_cache_fini (RzIO *io);
-RZ_API int rz_io_cache_list(RzIO *io, int rad);
+RZ_API bool rz_io_cache_list(RzIO *io, int rad);
 RZ_API void rz_io_cache_reset(RzIO *io, int set);
 RZ_API bool rz_io_cache_write(RzIO *io, ut64 addr, const ut8 *buf, int len);
 RZ_API bool rz_io_cache_read(RzIO *io, ut64 addr, ut8 *buf, int len);

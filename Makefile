@@ -62,9 +62,9 @@ all: plugins.cfg librz/include/rz_version.h
 	${MAKE} -C binrz
 
 #.PHONY: librz/include/rz_version.h
-GIT_TAP=$(shell git describe --tags --match "[0-9]*" 2>/dev/null || echo $(VERSION))
+GIT_TAP=$(shell git tag -l --sort=refname | grep -e '^\d.\d.\d$' | tail -n1 || echo $(VERSION))
 GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo HEAD)
-RZ_VER=$(shell grep VERSION configure.acr | head -n1 | awk '{print $$2}')
+RZ_VER=$(shell ./configure -qV)
 ifdef SOURCE_DATE_EPOCH
 GIT_NOW=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+%Y-%m-%d" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+%Y-%m-%d" 2>/dev/null || date -u "+%Y-%m-%d")
 else
@@ -172,7 +172,7 @@ ifneq ($(USE_ZIP),NO)
 	$(ZIP) -r "${ZIPNAME}" "rizin-${WINBITS}-${VERSION}"
 endif
 
-clean: 
+clean:
 	rm -f librz/librz.a librz/librz.dylib librz/include/rz_version.h
 	rm -rf librz/.librz
 	for DIR in shlr librz binrz ; do $(MAKE) -C "$$DIR" clean ; done

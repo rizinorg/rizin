@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include "rz_list.h"
-#include "rz_config.h"
-#include "rz_core.h"
-#include "rz_util.h"
-#include "rz_bin.h"
-#include "rz_debug.h"
+#include <rz_bin.h>
+#include <rz_debug.h>
 
 static const char *help_msg_o[] = {
 	"Usage: o","[com- ] [file] ([offset])","",
@@ -389,13 +385,17 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 
 // TODO: discuss the output format
 static void map_list(RzIO *io, int mode, RzPrint *print, int fd) {
+	PJ *pj;
 	if (!io || !print || !print->cb_printf) {
 		return;
 	}
 	if (mode == 'j') {
-		print->cb_printf ("[");
+		pj = pj_new ();
+		if (!pj) {
+			return;
+		}
+		pj_a (pj);
 	}
-	bool first = true;
 	char *om_cmds = NULL;
 
 	void **it;
@@ -407,28 +407,29 @@ static void map_list(RzIO *io, int mode, RzPrint *print, int fd) {
 		switch (mode) {
 		case 'q':
 			if (fd == -2) {
-				print->cb_printf ("0x%08"PFMT64x"\n", map->itv.addr);
+				print->cb_printf ("0x%08"PFMT64x"\n", rz_io_map_get_from (map));
 			} else {
 				print->cb_printf ("%d %d\n", map->fd, map->id);
 			}
 			break;
 		case 'j':
-			if (!first) {
-				print->cb_printf (",");
-			}
-			first = false;
-			print->cb_printf ("{\"map\":%i,\"fd\":%d,\"delta\":%"PFMT64u",\"from\":%"PFMT64u
-					",\"to\":%"PFMT64u",\"perm\":\"%s\",\"name\":\"%s\"}", map->id, map->fd,
-					map->delta, map->itv.addr, rz_itv_end (map->itv),
-					rz_str_rwx_i (map->perm), (map->name ? map->name : ""));
+			pj_o (pj);
+			pj_ki (pj, "map", map->id);
+			pj_ki (pj, "fd", map->fd);
+			pj_kn (pj, "delta", map->delta);
+			pj_kn (pj, "from", rz_io_map_get_from (map));
+			pj_kn (pj, "to", rz_itv_end (map->itv));
+			pj_ks (pj, "perm", rz_str_rwx_i (map->perm));
+			pj_ks (pj, "name", rz_str_get2 (map->name));
+			pj_end (pj);
 			break;
 		case 1:
 		case '*':
 		case 'r': {
 			// Need FIFO order here
 			char *om_cmd = rz_str_newf ("om %d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s%s%s\n",
-					map->fd, map->itv.addr, map->itv.size, map->delta, rz_str_rwx_i(map->perm),
-					map->name ? " " : "", map->name ? map->name : "");
+					map->fd, rz_io_map_get_from (map), map->itv.size, map->delta, rz_str_rwx_i(map->perm),
+					map->name ? " " : "", rz_str_get2 (map->name));
 			if (om_cmd) {
 				om_cmds = rz_str_prepend (om_cmds, om_cmd);
 				free (om_cmd);
@@ -438,8 +439,8 @@ static void map_list(RzIO *io, int mode, RzPrint *print, int fd) {
 		default:
 			print->cb_printf ("%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
 					" - 0x%08"PFMT64x" %s %s\n", map->id, map->fd,
-					map->delta, map->itv.addr, rz_itv_end (map->itv) - 1,
-					rz_str_rwx_i (map->perm), (map->name ? map->name : ""));
+					map->delta, rz_io_map_get_from (map), rz_io_map_get_to (map),
+					rz_str_rwx_i (map->perm), rz_str_get2 (map->name));
 			break;
 		}
 	}
@@ -448,7 +449,9 @@ static void map_list(RzIO *io, int mode, RzPrint *print, int fd) {
 		free (om_cmds);
 	}
 	if (mode == 'j') {
-		print->cb_printf ("]\n");
+		pj_end (pj);
+		print->cb_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	}
 }
 
@@ -550,15 +553,36 @@ static void cmd_open_map(RzCore *core, const char *input) {
 	ut64 new;
 	RzIOMap *map = NULL;
 	const char *P;
+	PJ *pj;
 
 	switch (input[1]) {
 	case '.': // "om."
 		map = rz_io_map_get (core->io, core->offset);
 		if (map) {
-			core->print->cb_printf ("map: %i fd: %i +0x%"PFMT64x" 0x%"PFMT64x
-				" - 0x%"PFMT64x" ; %s : %s\n", map->id, map->fd,
-				map->delta, map->itv.addr, rz_itv_end (map->itv),
-			rz_str_rwx_i (map->perm), map->name ? map->name : "");
+			if (input[2] == 'j') { // "om.j"
+				pj = pj_new ();
+				if (!pj) {
+					return;
+				}
+				pj_o (pj);
+				pj_ki (pj, "map", map->id);
+				pj_ki (pj, "fd", map->fd);
+				pj_kn (pj, "delta", map->delta);
+				pj_kn (pj, "from", rz_io_map_get_from (map));
+				pj_kn (pj, "to", rz_itv_end (map->itv));
+				pj_ks (pj, "perm", rz_str_rwx_i (map->perm));
+				pj_ks (pj, "name", rz_str_get2 (map->name));
+				pj_end (pj);
+
+				core->print->cb_printf ("%s\n", pj_string (pj));
+
+				pj_free (pj);
+			} else {
+				core->print->cb_printf ("%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
+					" - 0x%08"PFMT64x" %s %s\n", map->id, map->fd,
+					map->delta, rz_io_map_get_from (map), rz_io_map_get_to (map),
+					rz_str_rwx_i (map->perm), rz_str_get2 (map->name));
+			}
 		}
 		break;
 	case 'r': // "omr"
@@ -1157,7 +1181,7 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 				p->cb_printf ("  +0x%"PFMT64x" 0x%"PFMT64x
 					" - 0x%"PFMT64x" : %s : %s : %s\n", map->delta,
 					map->from, map->to, rz_str_rwx_i (map->flags), "",
-					map->name ? map->name : "");
+					rz_str_get2 (map));
 			}
 		}
 	}

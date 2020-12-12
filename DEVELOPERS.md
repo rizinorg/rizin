@@ -94,7 +94,7 @@ if (a == b) {
 * Use `rz_return_*` functions to check preconditions that are caused by
   programmers' errors. Please note the difference between conditions that should
   never happen, and that are handled through `rz_return_*` functions, and
-  conditions that can happen at runtime (e.g. malloc returns NULL, input coming
+  conditions that can happen at runtime (e.g. `malloc()` returns `NULL`, input coming
   from user, etc.), and should be handled in the usual way through if-else.
 
 ```c
@@ -119,7 +119,7 @@ a = (b << 3) * 5;
 
 * Multiline ternary operator conditionals must be indented a-la JS way:
 
-```c
+```diff
 - ret = over ?
 -         rz_debug_step_over (dbg, 1) :
 -         rz_debug_step (dbg, 1);
@@ -130,7 +130,7 @@ a = (b << 3) * 5;
 
 * Split long conditional expressions into small `static inline` functions to make them more readable:
 
-```c
+```diff
 +static inline bool inRange(RzBreakpointItem *b, ut64 addr) {
 +       return (addr >= b->addr && addr < (b->addr + b->size));
 +}
@@ -158,15 +158,14 @@ a = (b << 3) * 5;
 The structure of the C files in Rizin must be like this:
 
 ```c
+// SPDX-License-Identifier: LGPL-3.0-only
 /* Copyright ... */           ## copyright
 #include <rz_core.h>           ## includes
 static int globals            ## const, define, global variables
 static void helper(void) {}   ## static functions
 RZ_IPI void internal(void) {}  ## internal apis (used only inside the library)
 RZ_API void public(void) {}    ## public apis starting with constructor/destructor
-
 ```
-
 
 * Why return int vs enum
 
@@ -184,7 +183,7 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 
 * Do not leave trailing whitespaces at the end of line
 
-* Do not use assert.h, use rz_util/rz_assert.h instead.
+* Do not use `assert.h`, use `rz_util/rz_assert.h` instead.
 
 * You can use `export RZ_DEBUG_ASSERT=1` to set a breakpoint when hitting an assert.
 
@@ -195,7 +194,7 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 * Function names should be explicit enough to not require a comment
   explaining what it does when seen elsewhere in code.
 
-* Use 'RZ_API' define to mark exportable (public) methods only for module APIs
+* Use `RZ_API` define to mark exportable (public) methods only for module APIs
 
 * The rest of functions must be static, to avoid polluting the global space.
 
@@ -205,13 +204,14 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
   the algorithm, only external-copy-pasted-not-going-to-be-maintained code
   can be accepted in this way (gnu code, external disassemblers, etc..)
 
-* See .clang-format for automated indentation
+* See `.clang-format` for automated indentation
 
-* Use the Rizin types instead of the ones in stdint, which are known to cause some
-  portability issues. So, instead of uint8_t, use ut8, etc..
+* Use the Rizin types instead of the ones in `<stdint.h>`, which are known to cause some
+  portability issues. So, instead of `uint8_t`, use `ut8`, etc.. As a bonus point they
+  are shorter to write.
 
-* Never ever use `%lld` or `%llx`. This is not portable. Always use the PFMT64x
-  macros. Those are similar to the ones in GLIB.
+* Never ever use `%lld` or `%llx`. This is not portable. Always use the `PFMT64x`
+  macros. Those are similar to the ones in GLIB. See all macroses in `librz/include/rz_types.h`.
 
 ### Shell Scripts
 
@@ -230,10 +230,10 @@ of bytes and store intermediate values as integers with width larger than
 a single byte.
 
 It can seem very easy to write the following code:
-
-  	ut8 opcode[4] = {0x10, 0x20, 0x30, 0x40};
-  	ut32 value = *(ut32*)opcode;
-
+```c
+ut8 opcode[4] = {0x10, 0x20, 0x30, 0x40};
+ut32 value = *(ut32*)opcode;
+```
 ... and then continue to use "value" in the code to represent the opcode.
 
 This needs to be avoided!
@@ -249,14 +249,14 @@ value stored in "value" might be 0x40302010 instead of 0x10203040.
 
 Use bitshifts and OR instructions to interpret bytes in a known endian.
 Instead of casting streams of bytes to larger width integers, do the following:
-
+```c
 ut8 opcode[4] = {0x10, 0x20, 0x30, 0x40};
 ut32 value = opcode[0] | opcode[1] << 8 | opcode[2] << 16 | opcode[3] << 24;
-
+```
 or if you prefer the other endian:
-
+```c
 ut32 value = opcode[3] | opcode[2] << 8 | opcode[1] << 16 | opcode[0] << 24;
-
+```
 This is much better because you actually know which endian your bytes are stored in
 within the integer value, REGARDLESS of the host endian of the machine.
 
@@ -265,17 +265,17 @@ within the integer value, REGARDLESS of the host endian of the machine.
 Rizin now uses helper functions to interpret all byte streams in a known endian.
 
 Please use these at all times, eg:
-
+```c
   	val32 = rz_read_be32(buffer)		// reads 4 bytes from a stream in BE
   	val32 = rz_read_le32(buffer)		// reads 4 bytes from a stream in LE
   	val32 = rz_read_ble32(buffer, isbig)	// reads 4 bytes from a stream:
   						//   if isbig is true, reads in BE
   						//   otherwise reads in LE
-
+```
 There are a number of helper functions for 64, 32, 16, and 8 bit reads and writes.
 
 (Note that 8 bit reads are equivalent to casting a single byte of the buffer
-to a ut8 value, ie endian is irrelevant).
+to a `ut8` value, ie endian is irrelevant).
 
 ## Packed structures
 

@@ -38,11 +38,12 @@ $ ninja -C build # or `meson compile -C build`
 $ sudo ninja -C build install # or `meson install -C build`
 ```
 
-As not all systems look for libraries in `/usr/local` subdirectories, you may
-have to set `LD_LIBRARY_PATH` to the proper path (e.g. `/usr/local/lib64` or
-`/usr/local/lib`). Otherwise, if you don't want to change your `LD_LIBRARY_PATH`
-you can use `meson -Dlocal=true build` in the first step to use `RPATH` and make
-sure the rizin binary can find its libraries by itself.
+NOTE: when `--prefix=/usr` is not used, meson will set `RPATH` to ensure that
+libraries can be found on the system without having to deal with
+`LD_LIBRARY_PATH` or ld settings. This is done to ensure a simple
+installation process out-of-the-box, but if you don't want this behaviour and
+you know what you are doing, you can still use `-Dlocal=disabled` to avoid
+using `RPATH`.
 
 ### Build system-wide, in `/usr`
 
@@ -57,8 +58,9 @@ $ ninja -C build
 $ sudo ninja -C build install
 ```
 
-This kind of installation usually does not require any change to
-`LD_LIBRARY_PATH` and it should work out of the box.
+This kind of installation is not recommended if your system provides Rizin as
+a package or if you don't want to mess with software provided by your
+distribution.
 
 
 ### Build user-wide, in `~/.local`
@@ -74,28 +76,30 @@ $ ninja -C build install
 ```
 
 The `install` step will install rizin in `~/.local/bin`, so make sure to add it
-to your `PATH` variable. As most systems don't look for libraries in
-`~/.local/lib`/`~/.local/lib64`, you will have to set `LD_LIBRARY_PATH`
-accordingly or, if you prefer, use `meson -Dlocal=true --prefix=~/.local build`
-instead of just `meson --prefix=~/.local build`.
+to your `PATH` variable (e.g. `export PATH=$PATH:~/.local/bin`).
+
+NOTE: meson will set `RPATH` to ensure that libraries can be found on the
+system without having to deal with `LD_LIBRARY_PATH` or ld settings. This is
+done to ensure a simple installation process out-of-the-box, but if you don't
+want this behaviour and you know what you are doing, you can still use
+`-Dlocal=disabled` to avoid using `RPATH`.
 
 ## Windows
 
-The building steps on Windows are the same as on *NIX systems, however you will
-have to run the following commands from the Visual Studio Developer Powershell
-(on Visual Studio Community 2019 you can find it under Tools > Command Line >
-Developer Powershell). To install Meson on Windows, follow instructions
-[here](https://mesonbuild.com/Getting-meson.html). We also suggest to compile
-Rizin statically, to avoid dealing with libraries when running the Rizin
-binaries.
+The building steps on Windows are the same as on *NIX systems, however you
+will have to run the following commands from the Visual Studio Developer
+shell (search for "x64 Native Tools Command Prompt for VS 2019" or similar).
+To install Meson on Windows, follow instructions
+[here](https://mesonbuild.com/Getting-meson.html).
 
 ```
-$ meson --prefix=$PWD\rizin-install --default-library=static -Dstatic_runtime=true build
+$ meson --prefix=%CD%\rizin-install build
 $ ninja -C build
 $ ninja -C build install
 ```
 
-You can run rizin from `$PWD\rizin-install\bin`.
+You can run rizin from `%CD%\rizin-install\bin`. If you don't specify any
+`--prefix`, meson will install rizin directly under `C:\`.
 
 ## Build with ASAN/UBSAN
 
@@ -153,3 +157,36 @@ $ ./configure --prefix=/usr
 $ make
 $ sudo make install
 ```
+
+# Uninstall
+
+If Rizin was installed using `meson`, you can run the following command from the
+same build directory where you had previously installed Rizin:
+
+```
+$ ninja -C uninstall
+```
+
+If you had compiled Rizin using `configure` and `make` (**deprecated**), use:
+
+```
+$ sudo make uninstall
+```
+
+Furthermore, if you had installed Rizin using a distribution package, use the
+corresponding package manager's method for removing a package to uninstall Rizin.
+
+# Update
+
+Firstly, use `git pull --recurse-submodules` to update both the Rizin
+codebase and its submodules to the latest version.
+
+To re-build Rizin after you have updated your source code, you can use:
+```
+$ ninja -C build # or `meson compile -C build`
+$ sudo ninja -C build install # or `meson install -C build`
+```
+
+If you are a developer, it might not be necessary to run the `install` step
+(the second step from above) every time you build Rizin. You can directly use
+`rizin` from `./build/binrz/rizin/rizin.`
