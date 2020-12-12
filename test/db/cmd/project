@@ -307,3 +307,28 @@ EXPECT=<<EOF
 0x00000100    1 48           windowpane
 EOF
 RUN
+
+NAME=remember saved project file during session
+FILE=bins/elf/crackme0x05
+CMDS=<<EOF
+e cfg.newshell=1
+Ps .tmp_remember.rzdb
+e prj.file
+f cashews @ 0x080483d8
+Ps
+o--
+e prj.file=
+e prj.file
+Po .tmp_remember.rzdb
+e prj.file
+rm .tmp_remember.rzdb
+pdi 1 @ 0x080483d8
+EOF
+EXPECT=<<EOF
+.tmp_remember.rzdb
+
+.tmp_remember.rzdb
+0x080483d8   cashews:
+0x080483d8                   50  push eax
+EOF
+RUN
