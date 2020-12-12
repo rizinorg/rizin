@@ -157,3 +157,36 @@ $ ./configure --prefix=/usr
 $ make
 $ sudo make install
 ```
+
+# Uninstall
+
+If Rizin was installed using `meson`, you can run the following command from the
+same build directory where you had previously installed Rizin:
+
+```
+$ ninja -C uninstall
+```
+
+If you had compiled Rizin using `configure` and `make` (**deprecated**), use:
+
+```
+$ sudo make uninstall
+```
+
+Furthermore, if you had installed Rizin using a distribution package, use the
+corresponding package manager's method for removing a package to uninstall Rizin.
+
+# Update
+
+Firstly, use `git pull --recurse-submodules` to update both the Rizin
+codebase and its submodules to the latest version.
+
+To re-build Rizin after you have updated your source code, you can use:
+```
+$ ninja -C build # or `meson compile -C build`
+$ sudo ninja -C build install # or `meson install -C build`
+```
+
+If you are a developer, it might not be necessary to run the `install` step
+(the second step from above) every time you build Rizin. You can directly use
+`rizin` from `./build/binrz/rizin/rizin.`

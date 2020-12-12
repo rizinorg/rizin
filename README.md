@@ -35,9 +35,10 @@ Then compile and install with:
 $ meson build
 $ ninja -C build # or `meson compile -C build`
 $ ninja -C build install # or `meson install -C build`
-$ rizin
-Usage: rizin [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]
-             [-s addr] [-B baddr] [-m maddr] [-c cmd] [-e k=v] file|pid|-|--|=
+$ rizin --
+ -- Thank you for using rizin. Have a nice night!
+[0x00000000]>
+# Run "ninja -C build uninstall" without quotes to uninstall rizin
 ```
 
 Please have a look at [BUILDING.md][] for more information about building Rizin.
