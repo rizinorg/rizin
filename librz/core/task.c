@@ -142,6 +142,7 @@ static void task_free (RzCoreTask *task) {
 	if (task->runner_free) {
 		task->runner_free (task->runner_user);
 	}
+	rz_th_wait (task->thread);
 	rz_th_free (task->thread);
 	rz_th_sem_free (task->running_sem);
 	rz_th_cond_free (task->dispatch_cond);
@@ -202,6 +203,23 @@ RZ_API void rz_core_task_decref (RzCoreTask *task) {
 	tasks_lock_leave (sched, &old_sigset);
 }
 
+/**
+ * Delete all done, transient, non-current jobs that have not been deleted yet.
+ */
+static void cleanup_transient(RzCoreTaskScheduler *sched, RzCoreTask *exclude) {
+	RzCoreTask *ltask;
+	RzListIter *iter;
+	RzListIter *iter_tmp;
+	rz_list_foreach_safe (sched->tasks, iter, iter_tmp, ltask) {
+		if (ltask == exclude) {
+			continue;
+		}
+		if (ltask->transient && ltask->state == RZ_CORE_TASK_STATE_DONE) {
+			rz_list_delete (sched->tasks, iter);
+		}
+	}
+}
+
 RZ_API void rz_core_task_schedule(RzCoreTask *current, RzTaskState next_state) {
 	RzCoreTaskScheduler *sched = current->sched;
 	bool stop = next_state != RZ_CORE_TASK_STATE_RUNNING;
@@ -220,6 +238,8 @@ RZ_API void rz_core_task_schedule(RzCoreTask *current, RzTaskState next_state) {
 	if (stop) {
 		sched->tasks_running--;
 	}
+
+	cleanup_transient (sched, current);
 
 	// oneshots always have priority.
 	// if there are any queued, run them immediately.
@@ -242,7 +262,9 @@ RZ_API void rz_core_task_schedule(RzCoreTask *current, RzTaskState next_state) {
 	tasks_lock_leave (sched, &old_sigset);
 
 	if (next) {
+		// TODO: this doesn't belong here:
 		rz_cons_context_reset ();
+
 		rz_th_lock_enter (next->dispatch_lock);
 		next->dispatched = true;
 		rz_th_lock_leave (next->dispatch_lock);
@@ -253,6 +275,10 @@ RZ_API void rz_core_task_schedule(RzCoreTask *current, RzTaskState next_state) {
 			}
 			current->dispatched = false;
 			rz_th_lock_leave (current->dispatch_lock);
+
+			tasks_lock_enter (sched, &old_sigset);
+			cleanup_transient (sched, current);
+			tasks_lock_leave (sched, &old_sigset);
 		}
 	}
 
@@ -336,21 +362,8 @@ nonstart:
 		rz_th_sem_post (task->running_sem);
 	}
 
-	int ret = RZ_TH_STOP;
-	if (task->transient) {
-		RzCoreTask *ltask;
-		RzListIter *iter;
-		rz_list_foreach (sched->tasks, iter, ltask) {
-			if (ltask == task) {
-				rz_list_delete (sched->tasks, iter);
-				ret = RZ_TH_FREED;
-				break;
-			}
-		}
-	}
-
 	tasks_lock_leave (sched, &old_sigset);
-	return ret;
+	return RZ_TH_STOP;
 }
 
 static RzThreadFunctionRet task_run_thread(RzThread *th) {
