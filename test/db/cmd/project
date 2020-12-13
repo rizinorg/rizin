@@ -47,7 +47,6 @@ NAME=load with file using saved relative file path after project file and binary
 FILE=--
 CMDS=<<EOF
 e asm.bytes=true
-e asm.bytes=true
 e cfg.newshell=1
 cp bins/elf/crackme0x05 .tmp_load_move_both.bin
 o .tmp_load_move_both.bin
@@ -319,6 +318,7 @@ RUN
 NAME=remember saved project file during session
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
+e asm.bytes=true
 e cfg.newshell=1
 Ps .tmp_remember.rzdb
 e prj.file
