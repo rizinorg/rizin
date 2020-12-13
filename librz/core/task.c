@@ -644,6 +644,7 @@ RZ_IPI void rz_core_cmd_task_ctx_switch(RzCoreTask *next, void *user) {
 		CoreTaskCtx *ctx = next->runner_user;
 		if (ctx->cons_context) {
 			rz_cons_context_load (ctx->cons_context);
+			return;
 		}
 	}
 	rz_cons_context_reset ();
