@@ -324,7 +324,7 @@ static RzThreadFunctionRet task_run(RzCoreTask *task) {
 		goto nonstart;
 	}
 
-	task->runner (task->runner_user);
+	task->runner (sched, task->runner_user);
 
 	TASK_SIGSET_T old_sigset;
 nonstart:
@@ -587,10 +587,9 @@ static CmdTaskCtx *cmd_task_ctx_new(RzCore *core, bool create_cons, const char *
 	return ctx;
 }
 
-static void cmd_task_runner(void *user) {
+static void cmd_task_runner(RzCoreTaskScheduler *sched, void *user) {
 	CmdTaskCtx *ctx = user;
 	RzCore *core = ctx->core_ctx.core;
-	RzCoreTaskScheduler *sched = &core->tasks;
 	RzCoreTask *task = rz_core_task_self (sched);
 	char *res_str;
 	if (task == sched->main_task) {

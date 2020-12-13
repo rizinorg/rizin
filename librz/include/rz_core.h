@@ -837,7 +837,7 @@ typedef enum {
 /**
  * Main payload of a task, the function that should be executed asynchronously.
  */
-typedef void (*RzCoreTaskRunner)(void *user);
+typedef void (*RzCoreTaskRunner)(RzCoreTaskScheduler *sched, void *user);
 
 /**
  * Task-specific callback to free/cleanup any runner-specific data.
@@ -867,7 +867,7 @@ typedef void (*RzCoreTaskOneShot)(void *);
 RZ_API void rz_core_echo(RzCore *core, const char *msg);
 RZ_API RTable *rz_core_table(RzCore *core);
 
-RZ_API void rz_core_task_scheduler_init(RzCoreTaskScheduler *tasks,
+RZ_API void rz_core_task_scheduler_init(RzCoreTaskScheduler *sched,
 		RzCoreTaskContextSwitch ctx_switch, void *ctx_switch_user,
 		RzCoreTaskBreak break_cb, void *break_cb_user);
 RZ_API void rz_core_task_scheduler_fini(RzCoreTaskScheduler *tasks);

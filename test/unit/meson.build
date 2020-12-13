@@ -61,6 +61,7 @@ if get_option('enable_tests')
     'str',
     'strbuf',
     'table',
+    'task',
     'tree',
     'uleb128',
     'unum',
