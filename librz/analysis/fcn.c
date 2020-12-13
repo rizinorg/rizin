@@ -1595,8 +1595,8 @@ RZ_API RzAnalysisFunction *rz_analysis_get_function_byname(RzAnalysis *a, const 
 /* rename RzAnalysisFunctionBB.add() */
 RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, RZ_BORROW RzAnalysisDiff *diff) {
 	D eprintf ("Add bb\n");
-	if (size == 0) { // empty basic blocks allowed?
-		eprintf ("Warning: empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion.\n", addr);
+	if (size == 0) {
+		eprintf ("Warning: empty basic block at 0x%08"PFMT64x" is not allowed.\n", addr);
 		rz_warn_if_reached ();
 		return false;
 	}
@@ -1612,21 +1612,8 @@ RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 
 		block = NULL;
 	}
 
-	const bool is_x86 = a->cur->arch && !strcmp (a->cur->arch, "x86");
-	// TODO fix this x86-ism
-	if (is_x86) {
-		rz_analysis_fcn_invalidate_read_ahead_cache ();
-		fcn_recurse (a, fcn, addr, size, 1);
-		block = rz_analysis_get_block_at (a, addr);
-		if (block) {
-			rz_analysis_block_set_size (block, size);
-		}
-	} else {
-		block = rz_analysis_create_block (a, addr, size);
-	}
-
+	block = rz_analysis_create_block (a, addr, size);
 	if (!block) {
-		D eprintf ("Warning: rz_analysis_fcn_add_bb failed in fcn 0x%08"PFMT64x" at 0x%08"PFMT64x"\n", fcn->addr, addr);
 		return false;
 	}
 
@@ -1648,6 +1635,7 @@ RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 
 			}
 		}
 	}
+	rz_analysis_block_unref (block);
 	return true;
 }
 
