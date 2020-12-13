@@ -51,6 +51,9 @@ RZ_API RzProjectErr rz_project_save_file(RzCore *core, const char *file) {
 		err = RZ_PROJECT_ERR_FILE;
 	}
 	sdb_free (prj);
+	if (err == RZ_PROJECT_ERR_SUCCESS) {
+		rz_config_set (core->config, "prj.file", file);
+	}
 	return err;
 }
 

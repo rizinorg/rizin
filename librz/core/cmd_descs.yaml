@@ -482,6 +482,7 @@
       args:
         - name: project.rzdb
           type: RZ_CMD_ARG_TYPE_FILE
+          optional: true
     - name: Po
       cname: project_open
       summary: Open a project

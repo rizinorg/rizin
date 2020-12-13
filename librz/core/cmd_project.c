@@ -3,9 +3,20 @@
 #include <rz_project.h>
 
 RZ_IPI RzCmdStatus rz_project_save_handler(RzCore *core, int argc, const char **argv) {
-	RzProjectErr err = rz_project_save_file (core, argv[1]);
+	const char *file;
+	if (argc == 1) {
+		file = rz_config_get (core->config, "prj.file");
+		if (RZ_STR_ISEMPTY (file)) {
+			eprintf ("There is no project file associated with the current session yet.\n"
+				"Specify the file explitily as `Ps <file.rzdb>` or set it manually with `e prj.file=<project-path>`.\n");
+			return RZ_CMD_STATUS_ERROR;
+		}
+	} else { // argc == 2 checked by the shell
+		file = argv[1];
+	}
+	RzProjectErr err = rz_project_save_file (core, file);
 	if (err != RZ_PROJECT_ERR_SUCCESS) {
-		eprintf ("Failed to save project: %s\n", rz_project_err_message (err));
+		eprintf ("Failed to save project to file %s: %s\n", file, rz_project_err_message (err));
 	}
 	return RZ_CMD_STATUS_OK;
 }
