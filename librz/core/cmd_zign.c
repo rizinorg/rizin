@@ -1328,6 +1328,10 @@ RZ_IPI RzCmdStatus rz_zign_best_handler(RzCore *core, int argc, const char **arg
 	int count = ZB_DEFAULT_N;
 	if (argc > 1) {
 		count = rz_num_math (core->num, argv[1]);
+		if (count <= 0) {
+			eprintf ("Invalid count: %s\n", argv[1]);
+			return RZ_CMD_STATUS_INVALID;
+		}
 	}
 	return do_bestmatch_sig (core, count)? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
 }
@@ -1337,6 +1341,10 @@ RZ_IPI RzCmdStatus rz_zign_best_name_handler(RzCore *core, int argc, const char 
 	int count = ZB_DEFAULT_N;
 	if (argc > 2) {
 		count = rz_num_math (core->num, argv[2]);
+		if (count <= 0) {
+			eprintf ("Invalid count: %s\n", argv[2]);
+			return RZ_CMD_STATUS_INVALID;
+		}
 	}
 	return do_bestmatch_fcn (core, zigname, count) ? RZ_CMD_STATUS_OK : RZ_CMD_STATUS_ERROR;
 }
