@@ -2366,7 +2366,7 @@ static int bin_symbols(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					}
 				} else {
 					fi = rz_flag_set (r->flags, sn.methflag, addr, symbol->size);
-					char *comment = fi->comment ? strdup (fi->comment) : NULL;
+					char *comment = (fi && fi->comment) ? strdup (fi->comment) : NULL;
 					if (comment) {
 						rz_flag_item_set_comment (fi, comment);
 						RZ_FREE (comment);
