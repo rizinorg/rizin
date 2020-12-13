@@ -1626,11 +1626,7 @@ RZ_API int rz_sys_execv(const char *pathname, char *const argv[]) {
 	rz_th_lock_leave (sys_pipe_mutex);
 	return res;
 }
-#elif HAVE_EXECV
-RZ_API int rz_sys_execv(const char *pathname, char *const argv[]) {
-	return execv (pathname, argv);
-}
-#else
+#elif !HAVE_EXECV
 RZ_API int rz_sys_execv(const char *pathname, char *const argv[]) {
 	return -1;
 }
@@ -1651,11 +1647,7 @@ RZ_API int rz_sys_execve(const char *pathname, char *const argv[], char *const e
 	rz_th_lock_leave (sys_pipe_mutex);
 	return res;
 }
-#elif HAVE_EXECVE
-RZ_API int rz_sys_execve(const char *pathname, char *const argv[], char *const envp[]) {
-	return execve (pathname, argv, envp);
-}
-#else
+#elif !HAVE_EXECVE
 RZ_API int rz_sys_execve(const char *pathname, char *const argv[], char *const envp[]) {
 	return -1;
 }
@@ -1676,11 +1668,7 @@ RZ_API int rz_sys_execvp(const char *file, char *const argv[]) {
 	rz_th_lock_leave (sys_pipe_mutex);
 	return res;
 }
-#elif HAVE_EXECVP
-RZ_API int rz_sys_execvp(const char *file, char *const argv[]) {
-	return execvp (file, argv);
-}
-#else
+#elif !HAVE_EXECVP
 RZ_API int rz_sys_execvp(const char *file, char *const argv[]) {
 	return -1;
 }
@@ -1751,11 +1739,7 @@ RZ_API int rz_sys_system(const char *command) {
 	rz_th_lock_leave (sys_pipe_mutex);
 	return res;
 }
-#elif HAVE_SYSTEM
-RZ_API int rz_sys_system(const char *command) {
-	return system (command);
-}
-#else
+#elif !HAVE_SYSTEM
 RZ_API int rz_sys_system(const char *command) {
 	return -1;
 }
