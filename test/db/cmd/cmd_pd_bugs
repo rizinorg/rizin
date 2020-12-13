@@ -202,6 +202,7 @@ NAME=indent asm.lines.fcn=1, asm.lines.bb=0 for issue 9316
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=64
 af+ 0 test
 e asm.lines.fcn=1

@@ -238,6 +238,7 @@ ARGS=-m 0x80100000
 CMDS=<<EOF
 e io.va=true
 e asm.calls=false
+e asm.bytes=true
 e asm.bits=32
 e asm.arch=mips
 e analysis.jmp.eob=false

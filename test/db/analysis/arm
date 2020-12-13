@@ -15,6 +15,7 @@ RUN
 NAME=thumb ldr pc-rel analysis
 FILE=malloc://32
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=arm
 e asm.bits=16
 wx dff80000 12000000 34000000
@@ -56,6 +57,7 @@ RUN
 NAME=thumb ldr pc-rel analysis
 FILE=malloc://32
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=arm
 e asm.bits=16
 wx 0149 014a 014b 0000 1111 2222 3333 4444 5555 6666

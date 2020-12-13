@@ -178,6 +178,7 @@ NAME=asm.sub.names issue
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.sub.names=0
+e asm.bytes=true
 e asm.arch=arm
 e asm.bits=64
 wx fa67bba9

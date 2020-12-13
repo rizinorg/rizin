@@ -345,7 +345,7 @@ RUN
 
 NAME=: 64bit - relocs following
 FILE=bins/mdmp/hello64.dmp
-CMDS=pd 9 @[0x004083ac];e asm.bytes=true;
+CMDS=e asm.bytes=true; pd 9 @[0x004083ac];
 EXPECT=<<EOF
             ;-- vfprintf:
             0x7fefdb0a1a4      4883ec38       sub rsp, 0x38
