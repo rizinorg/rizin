@@ -1411,16 +1411,24 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RzBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x3);
+	ut64 pos = COMPUTE_PLTGOT_POSITION (rel, got_addr, 0x3);
 
 	switch (rel->type) {
-	case RZ_ARM_JUMP_SLOT: {
+	case RZ_ARM_JUMP_SLOT:
 		plt_addr += pos * 12 + 20;
 		if (is_thumb_symbol (plt_addr)) {
 			plt_addr--;
 		}
 		return plt_addr;
-	}
+	case RZ_AARCH64_RELATIVE:
+		eprintf ("Unsupported relocation type for imports %d\n", rel->type);
+		return UT64_MAX;
+	case RZ_AARCH64_IRELATIVE:
+		if (rel->addend > plt_addr) { // start
+			return (plt_addr + pos * 16 + 32) + rel->addend;
+		}
+		// same as fallback to JUMP_SLOT
+		return plt_addr + pos * 16 + 32;
 	case RZ_AARCH64_JUMP_SLOT:
 		return plt_addr + pos * 16 + 32;
 	default:
@@ -1589,7 +1597,7 @@ static ut64 get_import_addr_x86(ELFOBJ *bin, RzBinElfReloc *rel) {
 
 	if (pltsec_section) {
 		ut64 got_addr = bin->dyn_info.dt_pltgot;
-		ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x3);
+		ut64 pos = COMPUTE_PLTGOT_POSITION (rel, got_addr, 0x3);
 		return pltsec_section->rva + pos * X86_PLT_ENTRY_SIZE;
 	}
 
