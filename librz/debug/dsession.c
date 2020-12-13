@@ -63,10 +63,6 @@ RZ_API bool rz_debug_add_checkpoint(RzDebug *dbg) {
 	rz_debug_reg_sync (dbg, RZ_REG_TYPE_ALL, 0);
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		RzRegArena *a = dbg->reg->regset[i].arena;
-		// Ignore empty register arenas
-		if (!a->bytes) {
-			continue;
-		}
 		RzRegArena *b = rz_reg_arena_new (a->size);
 		memcpy (b->bytes, a->bytes, b->size);
 		checkpoint.arena[i] = b;
