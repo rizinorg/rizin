@@ -5,6 +5,10 @@
 #include "cmd_descs.h"
 
 static int task_enqueue(RzCore *core, const char *cmd, bool transient) {
+	if (rz_sandbox_enable (0)) {
+		eprintf ("This command is disabled in sandbox mode\n");
+		return -1;
+	}
 	RzCoreTask *task = rz_core_cmd_task_new (core, true, cmd);
 	if (!task) {
 		return -1;
@@ -33,6 +37,10 @@ static int task_output(RzCore *core, int tid) {
 }
 
 static int task_break(RzCore *core, int tid) {
+	if (rz_sandbox_enable (0)) {
+		eprintf ("This command is disabled in sandbox mode\n");
+		return -1;
+	}
 	if (!tid) {
 		return -1;
 	}
@@ -65,16 +73,28 @@ RZ_IPI RzCmdStatus rz_tasks_break_handler(RzCore *core, int argc, const char **a
 }
 
 RZ_IPI RzCmdStatus rz_tasks_delete_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_sandbox_enable (0)) {
+		eprintf ("This command is disabled in sandbox mode\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	int tid = rz_num_math (core->num, argv[1]);
 	return rz_core_task_del (&core->tasks, tid)? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
 }
 
 RZ_IPI RzCmdStatus rz_tasks_delete_all_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_sandbox_enable (0)) {
+		eprintf ("This command is disabled in sandbox mode\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	rz_core_task_del_all_done (&core->tasks);
 	return RZ_CMD_STATUS_OK;
 }
 
 RZ_IPI RzCmdStatus rz_tasks_wait_handler(RzCore *core, int argc, const char **argv) {
+	if (rz_sandbox_enable (0)) {
+		eprintf ("This command is disabled in sandbox mode\n");
+		return RZ_CMD_STATUS_ERROR;
+	}
 	int tid = 0;
 	if (argc == 2) {
 		tid = rz_num_math (core->num, argv[1]);
