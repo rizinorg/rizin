@@ -752,6 +752,7 @@ CMDS=<<EOF
 f- @ 0x1b5d8
 f NULL_error 56 @ 0x1b5d8
 e asm.cmt.right=true
+e asm.bytes=true
 pd 1 @ 0x0001145f
 e asm.cmt.right=false
 pd 1 @ 0x0001145f
@@ -1332,6 +1333,7 @@ RUN
 NAME=pdJ flags
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
+e asm.bytes=true
 s main
 pdJ 1 @ 0x00400506
 aa
@@ -1833,8 +1835,8 @@ NAME=@b and @addr should coexist
 FILE=bins/firmware/armthumb.bin
 ARGS=-aarm -b32
 CMDS=<<EOF
-pd 1 @b:32 @0xc
 e asm.bytes=true
+pd 1 @b:32 @0xc
 EOF
 EXPECT=<<EOF
             0x0000000c      01207047       ldrbmi r2, [r0, -r1]!

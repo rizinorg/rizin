@@ -1405,7 +1405,7 @@ RUN
 
 NAME=DEX test.dex val
 FILE=bins/dex/test.dex
-CMDS=ao~val[1]
+CMDS=e asm.bytes=true; ao~val[1];
 EXPECT=<<EOF
 0x00000021
 EOF
@@ -1413,7 +1413,7 @@ RUN
 
 NAME=DEX test.dex
 FILE=bins/dex/test.dex
-CMDS=pd 1 @ 0x000001c4;e asm.bytes=true;
+CMDS=e asm.bytes=true; pd 1 @ 0x000001c4;
 EXPECT=<<EOF
             0x000001c4      1234           const/4 v4, 0x3
 EOF

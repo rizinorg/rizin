@@ -1,6 +1,6 @@
 NAME=ELF: corkami tiny.elf - entry0
 FILE=bins/elf/analysis/tiny.elf
-CMDS=?v entry0;pid 4 @ entry0; e asm.bytes=true;
+CMDS=?v entry0; e asm.bytes=true; pid 4 @ entry0;
 EXPECT=<<EOF
 0x10020
 0x00010020   entry0:

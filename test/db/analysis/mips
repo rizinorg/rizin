@@ -137,9 +137,9 @@ NAME=mips hello pseudo move instruction
 FILE=bins/elf/analysis/mips-hello
 ARGS=-e bin.strings=false -e analysis.strings=false
 CMDS=<<EOF
+e asm.bytes=true
 pd 1 @main+0x18
 e asm.pseudo=true
-e asm.bytes=true
 pd 1 @main+0x18
 EOF
 EXPECT=<<EOF
@@ -206,7 +206,7 @@ FILE=malloc://40
 CMDS=<<EOF
 e asm.calls=false
 e asm.bits=32
-e asm.bytes = true
+e asm.bytes=true
 e asm.arch=mips
 e analysis.jmp.eob=true
 e analysis.nopskip=false
@@ -450,6 +450,7 @@ ARGS=-m 0x8060b4f8
 CMDS=<<EOF
 e io.va=true
 e asm.calls=false
+e asm.bytes=true
 e asm.bits=32
 e asm.arch=mips
 e asm.comments=0

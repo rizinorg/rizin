@@ -1803,6 +1803,7 @@ RUN
 NAME=analysis vars crash 2
 FILE=-
 CMDS=<<EOF
+e asm.bytes=true
 e asm.bits=64
 e asm.arch = x86
 e analysis.arch = x86
@@ -2389,6 +2390,7 @@ RUN
 NAME=refs with aar
 FILE=bins/elf/crackme
 CMDS=<<EOF
+e asm.bytes=true
 e asm.lines.bb=false
 e asm.lines.fcn=false
 aar
