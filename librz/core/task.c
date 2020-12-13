@@ -262,9 +262,6 @@ RZ_API void rz_core_task_schedule(RzCoreTask *current, RzTaskState next_state) {
 	tasks_lock_leave (sched, &old_sigset);
 
 	if (next) {
-		// TODO: this doesn't belong here:
-		rz_cons_context_reset ();
-
 		rz_th_lock_enter (next->dispatch_lock);
 		next->dispatched = true;
 		rz_th_lock_leave (next->dispatch_lock);
