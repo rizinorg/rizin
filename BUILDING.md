@@ -164,7 +164,7 @@ If Rizin was installed using `meson`, you can run the following command from the
 same build directory where you had previously installed Rizin:
 
 ```
-$ sudo ninja -C uninstall
+$ sudo ninja -C uninstall # `sudo` may not be required based on how you configured the `build` directory with meson the first time```
 ```
 
 If you had compiled Rizin using `configure` and `make` (**deprecated**), use:
@@ -184,7 +184,7 @@ codebase and its submodules to the latest version.
 To re-build Rizin after you have updated your source code, you can use:
 ```
 $ ninja -C build # or `meson compile -C build`
-$ sudo ninja -C build install # or `sudo meson install -C build`
+$ sudo ninja -C build install # or `sudo meson install -C build`. `sudo` may not be required based on how you configured the `build` directory with meson the first time
 ```
 
 If you are a developer, it might not be necessary to run the `install` step
