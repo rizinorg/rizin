@@ -17,7 +17,6 @@ FILE=malloc://32
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bytes=true
-e asm.bytes = true
 e asm.bits=16
 wx dff80000 12000000 34000000
 pd 1

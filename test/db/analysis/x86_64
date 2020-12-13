@@ -2455,6 +2455,7 @@ FILE=malloc://10000
 CMDS=<<EOF
 e asm.arch=8051
 e asm.lines.bb=false
+e asm.bytes = true
 e asm.lines.fcn=false
 wx 307401000022
 aa

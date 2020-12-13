@@ -212,7 +212,7 @@ RUN
 
 NAME=: 32bit - relocs following
 FILE=bins/mdmp/hello.dmp
-CMDS=pd 12 @[0x004061cc]
+CMDS=pd 12 @[0x004061cc];e asm.bytes=true;
 EXPECT=<<EOF
             ;-- vfprintf:
             0x773e7430      8bff           mov edi, edi
@@ -345,7 +345,7 @@ RUN
 
 NAME=: 64bit - relocs following
 FILE=bins/mdmp/hello64.dmp
-CMDS=pd 9 @[0x004083ac]
+CMDS=pd 9 @[0x004083ac];e asm.bytes=true;
 EXPECT=<<EOF
             ;-- vfprintf:
             0x7fefdb0a1a4      4883ec38       sub rsp, 0x38

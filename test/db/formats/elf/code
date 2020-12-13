@@ -1,6 +1,6 @@
 NAME=ELF: dis entry0 hello-android-arm
 FILE=bins/elf/analysis/hello-android-arm
-CMDS=pid 4@entry0
+CMDS=pid 4@entry0; e asm.bytes=true;
 EXPECT=<<EOF
 0x00008300   sym._start:
 0x00008300             0d00a0e1  mov r0, sp

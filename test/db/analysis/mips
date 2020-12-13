@@ -297,6 +297,7 @@ FILE=malloc://20
 CMDS=<<EOF
 e asm.calls=false
 e asm.bits=32
+e asm.bytes = true
 e asm.arch=mips
 e asm.nbytes=4
 e asm.lines.fcn=false

@@ -26,7 +26,10 @@ RUN
 
 NAME=ELF: .plt/.plt.sec sections
 FILE=bins/elf/ls-cet
-CMDS=pdi 10 @ main+0x28
+CMDS=<<EOF
+e asm.bytes=true
+pdi 10 @ main+0x28
+EOF
 EXPECT=<<EOF
 0x00004e98                 31c0  xor eax, eax
 0x00004e9a           e8a1e60000  call 0x13540
@@ -44,6 +47,7 @@ RUN
 NAME=ELF: use reloc table in dyn entry
 FILE=bins/elf/simple-hello-world-with-wrong-rela-section-name
 CMDS=<<EOF
+e asm.bytes=true
 e asm.comments=false
 e asm.lines=false
 pd 15 @ entry0~call
@@ -57,6 +61,7 @@ NAME=ELF: RZ_X86_64_PLT32 patch reloc
 FILE=bins/elf/radare2.c.obj
 ARGS=-e io.cache=true
 CMDS=<<EOF
+e asm.bytes=true
 e asm.comments=false
 e asm.lines=false
 pd 1 @ 0x0800005e
@@ -70,6 +75,7 @@ NAME=ELF: RZ_X86_64_PLT32 patch reloc 2
 FILE=bins/elf/test.ko
 ARGS=-e io.cache=true
 CMDS=<<EOF
+e asm.bytes=true
 e asm.comments=false
 e asm.lines=false
 e asm.flags=false
@@ -87,6 +93,7 @@ RUN
 NAME=ELF: RZ_X86_64_PLT32 patch reloc 2 (no io.cache)
 FILE=bins/elf/test.ko
 CMDS=<<EOF
+e asm.bytes=true
 e asm.comments=false
 e asm.lines=false
 e asm.flags=false
