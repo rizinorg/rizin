@@ -164,7 +164,7 @@ If Rizin was installed using `meson`, you can run the following command from the
 same build directory where you had previously installed Rizin:
 
 ```
-$ ninja -C uninstall
+$ sudo ninja -C uninstall
 ```
 
 If you had compiled Rizin using `configure` and `make` (**deprecated**), use:
