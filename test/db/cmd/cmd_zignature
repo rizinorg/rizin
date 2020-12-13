@@ -1028,6 +1028,7 @@ RUN
 
 NAME=zb bad count
 FILE=bins/elf/static-glibc-2.27
+ARGS=-e cfg.newshell=false
 CMDS=<<EOF
 s 0x00410210
 e zign.maxsz = 32
@@ -1042,6 +1043,7 @@ RUN
 
 NAME=zb negative count
 FILE=bins/elf/static-glibc-2.27
+ARGS=-e cfg.newshell=false
 CMDS=<<EOF
 s 0x00410210
 e zign.maxsz = 32
@@ -1513,6 +1515,7 @@ RUN
 
 NAME=zbr bad count
 FILE=bins/elf/static-glibc-2.27
+ARGS=-e cfg.newshell=false
 CMDS=<<EOF
 aa
 e zign.maxsz = 32
@@ -1526,6 +1529,7 @@ RUN
 
 NAME=zbr negative count
 FILE=bins/elf/static-glibc-2.27
+ARGS=-e cfg.newshell=false
 CMDS=<<EOF
 aa
 e zign.maxsz = 32
@@ -1539,6 +1543,7 @@ RUN
 
 NAME=zbr zero count
 FILE=bins/elf/static-glibc-2.27
+ARGS=-e cfg.newshell=false
 CMDS=<<EOF
 aa
 e zign.maxsz = 32
