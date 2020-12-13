@@ -2464,7 +2464,7 @@ static void ev_iowrite_cb(RzEvent *ev, int type, void *user, void *data) {
 	}
 }
 
-RZ_IPI void rz_core_cmd_task_ctx_switch(RzCoreTask *next, void *user);
+RZ_IPI void rz_core_task_ctx_switch(RzCoreTask *next, void *user);
 RZ_IPI void rz_core_task_break_cb(RzCoreTask *task, void *user);
 
 RZ_API bool rz_core_init(RzCore *core) {
@@ -2511,7 +2511,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->print->use_comments = false;
 	core->rtr_n = 0;
 	core->blocksize_max = RZ_CORE_BLOCKSIZE_MAX;
-	rz_core_task_scheduler_init (&core->tasks, rz_core_cmd_task_ctx_switch, NULL, rz_core_task_break_cb, NULL);
+	rz_core_task_scheduler_init (&core->tasks, rz_core_task_ctx_switch, NULL, rz_core_task_break_cb, NULL);
 	core->watchers = rz_list_new ();
 	core->watchers->free = (RzListFree)rz_core_cmpwatch_free;
 	core->scriptstack = rz_list_new ();

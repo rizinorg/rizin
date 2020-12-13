@@ -526,16 +526,6 @@ RZ_API int rz_core_task_del (RzCoreTaskScheduler *scheduler, int id) {
 	return ret;
 }
 
-RZ_API void rz_core_task_del_all_done (RzCoreTaskScheduler *scheduler) {
-	RzCoreTask *task;
-	RzListIter *iter, *iter2;
-	rz_list_foreach_safe (scheduler->tasks, iter, iter2, task) {
-		if (task != scheduler->main_task && task->state == RZ_CORE_TASK_STATE_DONE) {
-			rz_list_delete (scheduler->tasks, iter);
-		}
-	}
-}
-
 // above here is for agnostic RzTask api later
 // -------------------------------------------
 // below here is for RzCore-specific tasks
@@ -549,18 +539,14 @@ typedef struct core_task_ctx_t {
 	RzConsContext *cons_context;
 } CoreTaskCtx;
 
-static bool core_task_ctx_init(CoreTaskCtx *ctx, RzCore *core, bool create_cons) {
+static bool core_task_ctx_init(CoreTaskCtx *ctx, RzCore *core) {
 	ctx->core = core;
-	if (create_cons) {
-		ctx->cons_context = rz_cons_context_new (rz_cons_singleton ()->context);
-		if (!ctx->cons_context) {
-			return false;
-		}
-		ctx->cons_context->cmd_depth = core->max_cmd_depth;
-		rz_cons_context_break_push (ctx->cons_context, NULL, NULL, false);
-	} else {
-		ctx->cons_context = NULL;
+	ctx->cons_context = rz_cons_context_new (rz_cons_singleton ()->context);
+	if (!ctx->cons_context) {
+		return false;
 	}
+	ctx->cons_context->cmd_depth = core->max_cmd_depth;
+	rz_cons_context_break_push (ctx->cons_context, NULL, NULL, false);
 	return true;
 }
 
@@ -581,13 +567,13 @@ typedef struct cmd_task_ctx_t {
 	char *res;
 } CmdTaskCtx;
 
-static CmdTaskCtx *cmd_task_ctx_new(RzCore *core, bool create_cons, const char *cmd) {
+static CmdTaskCtx *cmd_task_ctx_new(RzCore *core, const char *cmd) {
 	rz_return_val_if_fail (cmd, NULL);
 	CmdTaskCtx *ctx = RZ_NEW (CmdTaskCtx);
 	if (!ctx) {
 		return NULL;
 	}
-	if (!core_task_ctx_init (&ctx->core_ctx, core, create_cons)) {
+	if (!core_task_ctx_init (&ctx->core_ctx, core)) {
 		free (ctx);
 		return NULL;
 	}
@@ -626,8 +612,12 @@ static void cmd_task_free(void *user) {
 	free (ctx);
 }
 
-RZ_API RzCoreTask *rz_core_cmd_task_new(RzCore *core, bool create_cons, const char *cmd) {
-	CmdTaskCtx *ctx = cmd_task_ctx_new (core, create_cons, cmd);
+/**
+ * Create a new task that runs a command and saves its result.
+ * These tasks are user-visible under the & command family.
+ */
+RZ_API RzCoreTask *rz_core_cmd_task_new(RzCore *core, const char *cmd) {
+	CmdTaskCtx *ctx = cmd_task_ctx_new (core, cmd);
 	if (!ctx) {
 		return NULL;
 	}
@@ -639,7 +629,92 @@ RZ_API RzCoreTask *rz_core_cmd_task_new(RzCore *core, bool create_cons, const ch
 	return task;
 }
 
-RZ_IPI void rz_core_cmd_task_ctx_switch(RzCoreTask *next, void *user) {
+/**
+ * Get the result of the command that was run in a task created with rz_core_cmd_task_new.
+ * If the task is not a command task, returns NULL.
+ */
+RZ_API const char *rz_core_cmd_task_get_result(RzCoreTask *task) {
+	// Check if this is really a command task
+	if (!task->runner_user || task->runner != cmd_task_runner) {
+		return NULL;
+	}
+	CmdTaskCtx *ctx = task->runner_user;
+	return ctx->res;
+}
+
+/**
+ * Context for (user-invisible) function tasks
+ */
+typedef struct function_task_ctx_t {
+	CoreTaskCtx core_ctx;
+	RzCoreTaskFunction fcn;
+	void *fcn_user;
+	void *res;
+} FunctionTaskCtx;
+
+static FunctionTaskCtx *function_task_ctx_new(RzCore *core, RzCoreTaskFunction fcn, void *fcn_user) {
+	FunctionTaskCtx *ctx = RZ_NEW (FunctionTaskCtx);
+	if (!ctx) {
+		return NULL;
+	}
+	if (!core_task_ctx_init (&ctx->core_ctx, core)) {
+		free (ctx);
+		return NULL;
+	}
+	ctx->fcn = fcn;
+	ctx->fcn_user = fcn_user;
+	ctx->res = NULL;
+	return ctx;
+}
+
+static void function_task_runner(RzCoreTaskScheduler *sched, void *user) {
+	FunctionTaskCtx *ctx = user;
+	RzCore *core = ctx->core_ctx.core;
+	rz_cons_push ();
+	ctx->res = ctx->fcn (core, ctx->fcn_user);
+	rz_cons_pop ();
+}
+
+static void function_task_free(void *user) {
+	if (!user) {
+		return;
+	}
+	FunctionTaskCtx *ctx = user;
+	core_task_ctx_fini (&ctx->core_ctx);
+	free (ctx);
+}
+
+/**
+ * Create a new task that runs a custom function and saves its result.
+ * These tasks are not user-visible.
+ */
+RZ_API RzCoreTask *rz_core_function_task_new(RzCore *core, RzCoreTaskFunction fcn, void *fcn_user) {
+	FunctionTaskCtx *ctx = function_task_ctx_new (core, fcn, fcn_user);
+	if (!ctx) {
+		return NULL;
+	}
+	RzCoreTask *task = rz_core_task_new(&core->tasks, function_task_runner, function_task_free, ctx);
+	if (!task) {
+		cmd_task_free (ctx);
+		return NULL;
+	}
+	return task;
+}
+
+/**
+ * Get the return value of the function that was run in a task created with rz_core_function_task_new.
+ * If the task is not a function task, returns NULL.
+ */
+RZ_API void *rz_core_function_task_get_result(RzCoreTask *task) {
+	// Check if this is really a command task
+	if (!task->runner_user || task->runner != function_task_runner) {
+		return NULL;
+	}
+	FunctionTaskCtx *ctx = task->runner_user;
+	return ctx->res;
+}
+
+RZ_IPI void rz_core_task_ctx_switch(RzCoreTask *next, void *user) {
 	if (next->runner_user) {
 		CoreTaskCtx *ctx = next->runner_user;
 		if (ctx->cons_context) {
@@ -741,12 +816,26 @@ RZ_API void rz_core_task_list(RzCore *core, int mode) {
 	tasks_lock_leave (&core->tasks, &old_sigset);
 }
 
-RZ_API const char *rz_core_cmd_task_get_result(RzCoreTask *task) {
-	// Check if this is really a command task
-	if (!task->runner_user || task->runner != cmd_task_runner) {
-		return NULL;
+RZ_API bool rz_core_task_is_cmd(RzCore *core, int id) {
+	RzCoreTask *task = rz_core_task_get_incref (&core->tasks, id);
+	if (!task) {
+		return false;
 	}
-	CmdTaskCtx *ctx = task->runner_user;
-	return ctx->res;
+	bool r = task->runner == cmd_task_runner;
+	rz_core_task_decref (task);
+	return r;
 }
 
+RZ_API void rz_core_task_del_all_done(RzCore *core) {
+	TASK_SIGSET_T old_sigset;
+	tasks_lock_enter (&core->tasks, &old_sigset);
+	RzCoreTaskScheduler *sched = &core->tasks;
+	RzCoreTask *task;
+	RzListIter *iter, *iter2;
+	rz_list_foreach_safe (sched->tasks, iter, iter2, task) {
+		if (task != sched->main_task && task->state == RZ_CORE_TASK_STATE_DONE && task->runner == cmd_task_runner) {
+			rz_list_delete (sched->tasks, iter);
+		}
+	}
+	tasks_lock_leave (&core->tasks, &old_sigset);
+}

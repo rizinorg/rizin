@@ -1668,7 +1668,7 @@ RZ_IPI int rz_cmd_tasks(void *data, const char *input) {
 			return 0;
 		}
 		if (input[1] == '*') {
-			rz_core_task_del_all_done (&core->tasks);
+			rz_core_task_del_all_done (core);
 		} else {
 			rz_core_task_del (&core->tasks, rz_num_math (core->num, input + 1));
 		}

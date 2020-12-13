@@ -23,6 +23,7 @@ if get_option('enable_tests')
     'ovf',
     'cmd',
     'core_cmd',
+    'core_task',
     'rzpipe',
     'cons',
     'contrbtree',
