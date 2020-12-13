@@ -16,12 +16,33 @@ typedef struct {
 	ut8 data[];
 } RzSearchLeftover;
 
+static int search_set_mode(RzSearch *s, RzSearchMode mode) {
+	s->update = NULL;
+	switch (mode) {
+	case RZ_SEARCH_KEYWORD: s->update = rz_search_mybinparse_update; break;
+	case RZ_SEARCH_REGEXP: s->update = rz_search_regexp_update; break;
+	case RZ_SEARCH_AES: s->update = rz_search_aes_update; break;
+	case RZ_SEARCH_PRIV_KEY: s->update = rz_search_privkey_update; break;
+	case RZ_SEARCH_STRING: s->update = rz_search_strings_update; break;
+	case RZ_SEARCH_DELTAKEY: s->update = rz_search_deltakey_update; break;
+	case RZ_SEARCH_MAGIC: s->update = rz_search_magic_update; break;
+	case RZ_SEARCH_ESIL:
+		rz_warn_if_reached ();
+		break;
+	}
+	if (!s->update) {
+		return false;
+	}
+	s->mode = mode;
+	return true;
+}
+
 RZ_API RzSearch *rz_search_new(RzSearchMode mode) {
 	RzSearch *s = RZ_NEW0 (RzSearch);
 	if (!s) {
 		return NULL;
 	}
-	if (!rz_search_set_mode (s, mode)) {
+	if (!search_set_mode (s, mode)) {
 		free (s);
 		eprintf ("Cannot init search for mode %d\n", mode);
 		return false;
@@ -48,9 +69,64 @@ RZ_API RzSearch *rz_search_new(RzSearchMode mode) {
 	return s;
 }
 
+RZ_API RzSearch *rz_search_new_keywords(void) {
+	return rz_search_new (RZ_SEARCH_KEYWORD);
+}
+
+RZ_API RzSearch *rz_search_new_string(void) {
+	return rz_search_new (RZ_SEARCH_STRING);
+}
+
+RZ_API RzSearch *rz_search_new_aes(void) {
+	return rz_search_new (RZ_SEARCH_AES);
+}
+
+RZ_API RzSearch *rz_search_new_priv_key(void) {
+	return rz_search_new (RZ_SEARCH_PRIV_KEY);
+}
+
+RZ_API RzSearch *rz_search_new_delta_key(void) {
+	return rz_search_new (RZ_SEARCH_DELTAKEY);
+}
+
+RZ_API RzSearch *rz_search_new_magic(const char *file) {
+	RzSearch *res = rz_search_new (RZ_SEARCH_MAGIC);
+	if (!res) {
+		return NULL;
+	}
+	res->magic = rz_magic_new (0);
+	if (!res->magic) {
+		rz_search_free (res);
+		return NULL;
+	}
+	if (RZ_STR_ISNOTEMPTY (file)) {
+		rz_magic_load (res->magic, file);
+	}
+	return res;
+}
+
 RZ_API RzSearch *rz_search_free(RzSearch *s) {
 	if (!s) {
 		return NULL;
+	}
+	switch (s->mode) {
+	case RZ_SEARCH_ESIL:
+		break;
+	case RZ_SEARCH_KEYWORD:
+		break;
+	case RZ_SEARCH_REGEXP:
+		break;
+	case RZ_SEARCH_STRING:
+		break;
+	case RZ_SEARCH_AES:
+		break;
+	case RZ_SEARCH_PRIV_KEY:
+		break;
+	case RZ_SEARCH_DELTAKEY:
+		break;
+	case RZ_SEARCH_MAGIC:
+		rz_magic_free (s->magic);
+		break;
 	}
 	rz_list_free (s->hits);
 	rz_list_free (s->kws);
@@ -70,29 +146,7 @@ RZ_API int rz_search_set_string_limits(RzSearch *s, ut32 min, ut32 max) {
 }
 
 RZ_IPI int rz_search_magic_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
-	eprintf ("TODO: import librz/core/cmd_search.c /m implementation into rsearch\n");
 	return false;
-}
-
-RZ_API int rz_search_set_mode(RzSearch *s, RzSearchMode mode) {
-	s->update = NULL;
-	switch (mode) {
-	case RZ_SEARCH_KEYWORD: s->update = rz_search_mybinparse_update; break;
-	case RZ_SEARCH_REGEXP: s->update = rz_search_regexp_update; break;
-	case RZ_SEARCH_AES: s->update = rz_search_aes_update; break;
-	case RZ_SEARCH_PRIV_KEY: s->update = rz_search_privkey_update; break;
-	case RZ_SEARCH_STRING: s->update = rz_search_strings_update; break;
-	case RZ_SEARCH_DELTAKEY: s->update = rz_search_deltakey_update; break;
-	case RZ_SEARCH_MAGIC: s->update = rz_search_magic_update; break;
-	case RZ_SEARCH_ESIL:
-		rz_warn_if_reached ();
-		break;
-	}
-	if (!s->update) {
-		return false;
-	}
-	s->mode = mode;
-	return true;
 }
 
 RZ_API int rz_search_begin(RzSearch *s) {
@@ -536,7 +590,7 @@ RZ_API void rz_search_string_prepare_backward(RzSearch *s) {
 
 RZ_API void rz_search_reset(RzSearch *s, int mode) {
 	s->nhits = 0;
-	if (!rz_search_set_mode (s, mode)) {
+	if (!search_set_mode (s, mode)) {
 		eprintf ("Cannot init search for mode %d\n", mode);
 	}
 }

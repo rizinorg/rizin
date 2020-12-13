@@ -10,7 +10,7 @@ rz_search_sources = [
 rz_search = library('rz_search', rz_search_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
-  dependencies: [rz_util_dep],
+  dependencies: [rz_util_dep, rz_magic_dep],
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,

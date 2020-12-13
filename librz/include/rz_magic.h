@@ -278,7 +278,7 @@ typedef struct rz_magic_set RzMagic;
 
 #ifdef RZ_API
 RZ_API RzMagic* rz_magic_new(int flags);
-RZ_API void rz_magic_free(RzMagic*);
+RZ_API void rz_magic_free(RzMagic *ms);
 
 RZ_API const char *rz_magic_file(RzMagic*, const char *);
 RZ_API const char *rz_magic_descriptor(RzMagic*, int);

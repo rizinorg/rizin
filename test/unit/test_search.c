@@ -163,10 +163,10 @@ static bool test_search_deltakey(void) {
 
 static bool test_search_magic(void) {
 	ut64 res = 0;
-	RzSearch *rs = rz_search_new (RZ_SEARCH_MAGIC);
+	RzSearch *rs = rz_search_new_magic (NULL);
 	rz_search_set_callback (rs, &search_keyword_hit, &res);
 	rz_search_begin (rs);
-	const char *buffer = "Hello\x7fELFWorld";
+	const char *buffer = "Hello" "\x7f" "ELFWorld";
 	rz_search_update_i (rs, 0LL, (ut8*)buffer, strlen(buffer));
 	rz_search_free (rs);
 	mu_test_status = MU_TEST_BROKEN;

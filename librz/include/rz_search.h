@@ -4,6 +4,7 @@
 #include <rz_types.h>
 #include <rz_util.h>
 #include <rz_list.h>
+#include <rz_magic.h>
 #include <rz_io.h>
 
 #ifdef __cplusplus
@@ -50,7 +51,7 @@ typedef int (*RzSearchCallback)(RzSearchKeyword *kw, void *user, ut64 where);
 
 typedef struct rz_search_t {
 	int n_kws; // hit${n_kws}_${count}
-	int mode;
+	RzSearchMode mode;
 	ut32 string_min; // max length of strings for RZ_SEARCH_STRING
 	ut32 string_max; // min length of strings for RZ_SEARCH_STRING
 	void *data; // data used by search algorithm
@@ -68,14 +69,23 @@ typedef struct rz_search_t {
 	RzList *kws; // TODO: Use rz_search_kw_new ()
 	RzIOBind iob;
 	char bckwrds;
+	RzMagic *magic;
 } RzSearch;
 
 #ifdef RZ_API
 
 #define RZ_SEARCH_AES_BOX_SIZE 31
 
+// Deprecated: use the specific rz_search_new_* functions instead
 RZ_API RzSearch *rz_search_new(RzSearchMode mode);
-RZ_API int rz_search_set_mode(RzSearch *s, RzSearchMode mode);
+
+RZ_API RzSearch *rz_search_new_keywords(void);
+RZ_API RzSearch *rz_search_new_string(void);
+RZ_API RzSearch *rz_search_new_aes(void);
+RZ_API RzSearch *rz_search_new_priv_key(void);
+RZ_API RzSearch *rz_search_new_delta_key(void);
+RZ_API RzSearch *rz_search_new_magic(const char *file);
+
 RZ_API RzSearch *rz_search_free(RzSearch *s);
 
 /* keyword management */
