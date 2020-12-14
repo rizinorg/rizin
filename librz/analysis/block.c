@@ -1117,4 +1117,5 @@ RZ_API void rz_analysis_block_analyze_ops(RzAnalysisBlock *block) {
 		// TODO: xrefs
 		rz_analysis_op_fini (&op);
 	}
+	block->ninstr = i;
 }

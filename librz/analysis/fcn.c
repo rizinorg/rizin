@@ -1609,7 +1609,6 @@ RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 
 	RzAnalysisBlock *block = rz_analysis_get_block_at (a, addr);
 	if (block) {
 		rz_analysis_delete_block (block);
-		rz_analysis_block_unref (block);
 		block = NULL;
 	}
 
@@ -1849,19 +1848,16 @@ RZ_API RzAnalysisBlock *rz_analysis_fcn_bbget_in(const RzAnalysis *analysis, RzA
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
-	RzAnalysisBlock *candidate = NULL; // maybe not the optimal one, but fits criteria
+	const bool is_x86 = analysis->cur->arch && !strcmp (analysis->cur->arch, "x86");
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
 	rz_list_foreach (fcn->bbs, iter, bb) {
-		if (addr >= bb->addr && addr < (bb->addr + bb->size)) {
-			if (rz_analysis_block_op_starts_at (bb, addr)) {
-				return bb;
-			}
-			candidate = bb;
+		if (addr >= bb->addr && addr < (bb->addr + bb->size)
+			&& (!analysis->opt.jmpmid || !is_x86 || rz_analysis_block_op_starts_at (bb, addr))) {
 			return bb;
 		}
 	}
-	return candidate;
+	return NULL;
 }
 
 RZ_API RzAnalysisBlock *rz_analysis_fcn_bbget_at(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr) {
