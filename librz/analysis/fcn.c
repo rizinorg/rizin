@@ -369,7 +369,7 @@ static RzAnalysisBlock *bbget(RzAnalysis *analysis, ut64 addr, bool jumpmid) {
 					bool in_delay_slot = false;
 					int i;
 					for (i = last_instr_idx; i >= 0; i--) {
-						const ut64 off = rz_analysis_bb_offset_inst (bb, i);
+						const ut64 off = rz_analysis_block_get_op_offset (bb, i);
 						const ut64 at = bb->addr + off;
 						if (addr <= at || off >= bb->size) {
 							continue;
@@ -417,7 +417,7 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RzAnalysisBlock *block
 		// Steal vars from this block
 		size_t i;
 		for (i = 0; i < block->ninstr; i++) {
-			const ut64 addr = rz_analysis_bb_opaddr_i (block, i);
+			const ut64 addr = rz_analysis_block_get_op_addr (block, i);
 			RzPVector *vars_used = rz_analysis_function_get_vars_used_at (other_fcn, addr);
 			if (!vars_used) {
 				continue;
@@ -739,7 +739,7 @@ repeat:
 			if (newbbsize > MAX_FCN_SIZE) {
 				gotoBeach (RZ_ANALYSIS_RET_ERROR);
 			}
-			rz_analysis_bb_set_offset (bb, bb->ninstr++, at - bb->addr);
+			rz_analysis_block_set_op_offset (bb, bb->ninstr++, at - bb->addr);
 			rz_analysis_block_set_size (bb, newbbsize);
 			fcn->ninstr++;
 		}
@@ -1609,6 +1609,7 @@ RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 
 	RzAnalysisBlock *block = rz_analysis_get_block_at (a, addr);
 	if (block) {
 		rz_analysis_delete_block (block);
+		rz_analysis_block_unref (block);
 		block = NULL;
 	}
 
@@ -1620,7 +1621,6 @@ RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 
 	rz_analysis_function_add_block (fcn, block);
 
 	block->jump = jump;
-	block->fail = fail;
 	block->fail = fail;
 	if (diff) {
 		if (!block->diff) {
@@ -1848,16 +1848,19 @@ RZ_API RzAnalysisBlock *rz_analysis_fcn_bbget_in(const RzAnalysis *analysis, RzA
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
-	const bool is_x86 = analysis->cur->arch && !strcmp (analysis->cur->arch, "x86");
+	RzAnalysisBlock *candidate = NULL; // maybe not the optimal one, but fits criteria
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
 	rz_list_foreach (fcn->bbs, iter, bb) {
-		if (addr >= bb->addr && addr < (bb->addr + bb->size)
-			&& (!analysis->opt.jmpmid || !is_x86 || rz_analysis_block_op_starts_at (bb, addr))) {
+		if (addr >= bb->addr && addr < (bb->addr + bb->size)) {
+			if (rz_analysis_block_op_starts_at (bb, addr)) {
+				return bb;
+			}
+			candidate = bb;
 			return bb;
 		}
 	}
-	return NULL;
+	return candidate;
 }
 
 RZ_API RzAnalysisBlock *rz_analysis_fcn_bbget_at(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr) {
@@ -2116,7 +2119,7 @@ static void clear_bb_vars(RzAnalysisFunction *fcn, RzAnalysisBlock *bb, ut64 fro
 		return;
 	}
 	for (i = 0; i < bb->ninstr; i++) {
-		const ut64 addr = rz_analysis_bb_opaddr_i (bb, i);
+		const ut64 addr = rz_analysis_block_get_op_addr (bb, i);
 		if (addr < from) {
 			continue;
 		}
@@ -2215,7 +2218,7 @@ RZ_API void rz_analysis_update_analysis_range(RzAnalysis *analysis, ut64 addr, i
 		}
 		rz_list_foreach_safe (bb->fcns, it2, tmp, fcn) {
 			if (align > 1) {
-				if ((end_write < rz_analysis_bb_opaddr_i (bb, bb->ninstr - 1))
+				if ((end_write < rz_analysis_block_get_op_addr (bb, bb->ninstr - 1))
 					&& (!bb->switch_op || end_write < bb->switch_op->addr)) {
 					// Special case when instructions are aligned and we don't
 					// need to worry about a write messing with the jump instructions

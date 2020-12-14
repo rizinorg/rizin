@@ -74,11 +74,11 @@ bool test_r_analysis_block_split() {
 	block->jump = 0xdeadbeef;
 	block->fail = 0xc0ffee;
 	block->ninstr = 5;
-	rz_analysis_bb_set_offset (block, 0, 0);
-	rz_analysis_bb_set_offset (block, 1, 1);
-	rz_analysis_bb_set_offset (block, 2, 2);
-	rz_analysis_bb_set_offset (block, 3, 4);
-	rz_analysis_bb_set_offset (block, 4, 30);
+	rz_analysis_block_set_op_offset (block, 0, 0);
+	rz_analysis_block_set_op_offset (block, 1, 1);
+	rz_analysis_block_set_op_offset (block, 2, 2);
+	rz_analysis_block_set_op_offset (block, 3, 4);
+	rz_analysis_block_set_op_offset (block, 4, 30);
 
 	RzAnalysisBlock *second = rz_analysis_block_split (block, 0x1337);
 	assert_block_invariants (analysis);
@@ -103,13 +103,13 @@ bool test_r_analysis_block_split() {
 	mu_assert_eq (second->fail, 0xc0ffee, "second fail");
 
 	mu_assert_eq (block->ninstr, 2, "first ninstr after split");
-	mu_assert_eq (rz_analysis_bb_offset_inst (block, 0), 0, "first op_pos[0]");
-	mu_assert_eq (rz_analysis_bb_offset_inst (block, 1), 1, "first op_pos[1]");
+	mu_assert_eq (rz_analysis_block_get_op_offset (block, 0), 0, "first op_pos[0]");
+	mu_assert_eq (rz_analysis_block_get_op_offset (block, 1), 1, "first op_pos[1]");
 
 	mu_assert_eq (second->ninstr, 3, "second ninstr after split");
-	mu_assert_eq (rz_analysis_bb_offset_inst (second, 0), 0, "second op_pos[0]");
-	mu_assert_eq (rz_analysis_bb_offset_inst (second, 1), 2, "second op_pos[1]");
-	mu_assert_eq (rz_analysis_bb_offset_inst (second, 2), 28, "second op_pos[2]");
+	mu_assert_eq (rz_analysis_block_get_op_offset (second, 0), 0, "second op_pos[0]");
+	mu_assert_eq (rz_analysis_block_get_op_offset (second, 1), 2, "second op_pos[1]");
+	mu_assert_eq (rz_analysis_block_get_op_offset (second, 2), 28, "second op_pos[2]");
 
 	rz_analysis_block_unref (block);
 	rz_analysis_block_unref (second);
@@ -165,15 +165,15 @@ bool test_r_analysis_block_merge() {
 	second->fail = 0xc0ffee;
 
 	first->ninstr = 3;
-	rz_analysis_bb_set_offset (first, 0, 0);
-	rz_analysis_bb_set_offset (first, 1, 13);
-	rz_analysis_bb_set_offset (first, 2, 16);
+	rz_analysis_block_set_op_offset (first, 0, 0);
+	rz_analysis_block_set_op_offset (first, 1, 13);
+	rz_analysis_block_set_op_offset (first, 2, 16);
 
 	second->ninstr = 4;
-	rz_analysis_bb_set_offset (second, 0, 0);
-	rz_analysis_bb_set_offset (second, 1, 4);
-	rz_analysis_bb_set_offset (second, 2, 9);
-	rz_analysis_bb_set_offset (second, 3, 30);
+	rz_analysis_block_set_op_offset (second, 0, 0);
+	rz_analysis_block_set_op_offset (second, 1, 4);
+	rz_analysis_block_set_op_offset (second, 2, 9);
+	rz_analysis_block_set_op_offset (second, 3, 30);
 
 	bool success = rz_analysis_block_merge (first, second);
 	assert_block_invariants (analysis);
@@ -185,13 +185,13 @@ bool test_r_analysis_block_merge() {
 	mu_assert_eq (first->fail, 0xc0ffee, "fail after merge");
 
 	mu_assert_eq (first->ninstr, 3+4, "ninstr after merge");
-	mu_assert_eq (rz_analysis_bb_offset_inst (first, 0), 0, "offset 0 after merge");
-	mu_assert_eq (rz_analysis_bb_offset_inst (first, 1), 13, "offset 1 after merge");
-	mu_assert_eq (rz_analysis_bb_offset_inst (first, 2), 16, "offset 2 after merge");
-	mu_assert_eq (rz_analysis_bb_offset_inst (first, 3), 42+0, "offset 3 after merge");
-	mu_assert_eq (rz_analysis_bb_offset_inst (first, 4), 42+4, "offset 4 after merge");
-	mu_assert_eq (rz_analysis_bb_offset_inst (first, 5), 42+9, "offset 5 after merge");
-	mu_assert_eq (rz_analysis_bb_offset_inst (first, 6), 42+30, "offset 6 after merge");
+	mu_assert_eq (rz_analysis_block_get_op_offset (first, 0), 0, "offset 0 after merge");
+	mu_assert_eq (rz_analysis_block_get_op_offset (first, 1), 13, "offset 1 after merge");
+	mu_assert_eq (rz_analysis_block_get_op_offset (first, 2), 16, "offset 2 after merge");
+	mu_assert_eq (rz_analysis_block_get_op_offset (first, 3), 42+0, "offset 3 after merge");
+	mu_assert_eq (rz_analysis_block_get_op_offset (first, 4), 42+4, "offset 4 after merge");
+	mu_assert_eq (rz_analysis_block_get_op_offset (first, 5), 42+9, "offset 5 after merge");
+	mu_assert_eq (rz_analysis_block_get_op_offset (first, 6), 42+30, "offset 6 after merge");
 
 	rz_analysis_block_unref (first);
 	// second must be already freed by the merge!

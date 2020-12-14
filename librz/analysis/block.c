@@ -292,18 +292,18 @@ RZ_API RzAnalysisBlock *rz_analysis_block_split(RzAnalysisBlock *bbi, ut64 addr)
 	// recalculate offset of instructions in both bb and bbi
 	int i;
 	i = 0;
-	while (i < bbi->ninstr && rz_analysis_bb_offset_inst (bbi, i) < bbi->size) {
+	while (i < bbi->ninstr && rz_analysis_block_get_op_offset (bbi, i) < bbi->size) {
 		i++;
 	}
 	int new_bbi_instr = i;
-	if (bb->addr - bbi->addr == rz_analysis_bb_offset_inst (bbi, i)) {
+	if (bb->addr - bbi->addr == rz_analysis_block_get_op_offset (bbi, i)) {
 		bb->ninstr = 0;
 		while (i < bbi->ninstr) {
-			ut16 off_op = rz_analysis_bb_offset_inst (bbi, i);
+			ut16 off_op = rz_analysis_block_get_op_offset (bbi, i);
 			if (off_op >= bbi->size + bb->size) {
 				break;
 			}
-			rz_analysis_bb_set_offset (bb, bb->ninstr, off_op - bbi->size);
+			rz_analysis_block_set_op_offset (bb, bb->ninstr, off_op - bbi->size);
 			bb->ninstr++;
 			i++;
 		}
@@ -338,7 +338,7 @@ RZ_API bool rz_analysis_block_merge(RzAnalysisBlock *a, RzAnalysisBlock *b) {
 	// merge ops from b into a
 	size_t i;
 	for (i = 0; i < b->ninstr; i++) {
-		rz_analysis_bb_set_offset (a, a->ninstr++, a->size + rz_analysis_bb_offset_inst (b, i));
+		rz_analysis_block_set_op_offset (a, a->ninstr++, a->size + rz_analysis_block_get_op_offset (b, i));
 	}
 
 	// merge everything else into a
@@ -573,7 +573,7 @@ RZ_API bool rz_analysis_block_op_starts_at(RzAnalysisBlock *bb, ut64 addr) {
 	}
 	size_t i;
 	for (i = 0; i < bb->ninstr; i++) {
-		ut16 inst_off = rz_analysis_bb_offset_inst (bb, i);
+		ut16 inst_off = rz_analysis_block_get_op_offset (bb, i);
 		if (off == inst_off) {
 			return true;
 		}
@@ -951,4 +951,122 @@ beach:
 	ht_up_free (ctx.blocks);
 	ht_up_free (relevant_fcns);
 	rz_list_free (fixup_candidates);
+}
+
+typedef struct {
+	ut64 addr;
+	RzAnalysisBlock *ret;
+} BlockFromOffsetJmpmidCtx;
+
+static bool block_from_offset_jmpmid_cb(RzAnalysisBlock *block, void *user) {
+	BlockFromOffsetJmpmidCtx *ctx = user;
+	// If an instruction starts exactly at the search addr, return that block immediately
+	if (rz_analysis_block_op_starts_at (block, ctx->addr)) {
+		ctx->ret = block;
+		return false;
+	}
+	// else search the closest one
+	if (!ctx->ret || ctx->ret->addr < block->addr) {
+		ctx->ret = block;
+	}
+	return true;
+}
+
+static bool bb_from_offset_first_cb(RzAnalysisBlock *block, void *user) {
+	RzAnalysisBlock **ret = user;
+	*ret = block;
+	return false;
+}
+
+/**
+ * Find a single block that seems to be the "most relevant" one that contains the given offset.
+ * This should only be used when explicitly only a single basic block should be considered, for example
+ * for user-exposed features, since it can always be that multiple blocks overlap.
+ * Use rz_analysis_get_blocks_in() in all other cases!
+ */
+RZ_API RzAnalysisBlock *rz_analysis_find_most_relevant_block_in(RzAnalysis *analysis, ut64 off) {
+	const bool x86 = analysis->cur->arch && !strcmp (analysis->cur->arch, "x86");
+	if (analysis->opt.jmpmid && x86) {
+		BlockFromOffsetJmpmidCtx ctx = { off, NULL };
+		rz_analysis_blocks_foreach_in (analysis, off, block_from_offset_jmpmid_cb, &ctx);
+		return ctx.ret;
+	}
+
+	RzAnalysisBlock *ret = NULL;
+	rz_analysis_blocks_foreach_in (analysis, off, bb_from_offset_first_cb, &ret);
+	return ret;
+}
+
+/**
+ * @return the offset of the i-th instruction in the basicblock bb or U16_MAX if i is invalid.
+ */
+RZ_API ut16 rz_analysis_block_get_op_offset(RzAnalysisBlock *block, size_t i) {
+	if (i >= block->ninstr) {
+		return UT16_MAX;
+	}
+	return (i > 0 && (i - 1) < block->op_pos_size) ? block->op_pos[i - 1] : 0;
+}
+
+/**
+ * @return the absolute address of the i-th instruction in block or UT64_MAX if i is invalid.
+ */
+RZ_API ut64 rz_analysis_block_get_op_addr(RzAnalysisBlock *block, size_t i) {
+	ut16 offset = rz_analysis_block_get_op_offset (block, i);
+	if (offset == UT16_MAX) {
+		return UT64_MAX;
+	}
+	return block->addr + offset;
+}
+
+/**
+ * set the offset of the i-th instruction in the basicblock bb
+ */
+RZ_API bool rz_analysis_block_set_op_offset(RzAnalysisBlock *block, size_t i, ut16 v) {
+	// the offset 0 of the instruction 0 is not stored because always 0
+	if (i > 0 && v > 0) {
+		if (i >= block->op_pos_size) {
+			size_t new_pos_size = i * 2;
+			ut16 *tmp_op_pos = realloc (block->op_pos, new_pos_size * sizeof (*block->op_pos));
+			if (!tmp_op_pos) {
+				return false;
+			}
+			block->op_pos_size = new_pos_size;
+			block->op_pos = tmp_op_pos;
+		}
+		block->op_pos[i - 1] = v;
+		return true;
+	}
+	return true;
+}
+
+/**
+ * @return the address of the instruction that occupies a given offset or UT64_MAX if off is not in the block.
+ */
+RZ_API ut64 rz_analysis_block_get_op_addr_in(RzAnalysisBlock *bb, ut64 off) {
+	ut16 delta, delta_off, last_delta;
+	int i;
+
+	if (!rz_analysis_block_contains (bb, off)) {
+		return UT64_MAX;
+	}
+	last_delta = 0;
+	delta_off = off - bb->addr;
+	for (i = 0; i < bb->ninstr; i++) {
+		delta = rz_analysis_block_get_op_offset (bb, i);
+		if (delta > delta_off) {
+			return bb->addr + last_delta;
+		}
+		last_delta = delta;
+	}
+	return bb->addr + last_delta;
+}
+
+// returns the size of the i-th instruction in a basic block
+RZ_API ut64 rz_analysis_block_get_op_size(RzAnalysisBlock *bb, size_t i) {
+	if (i >= bb->ninstr) {
+		return UT64_MAX;
+	}
+	ut16 idx_cur = rz_analysis_block_get_op_offset (bb, i);
+	ut16 idx_next = rz_analysis_block_get_op_offset (bb, i + 1);
+	return idx_next != UT16_MAX? idx_next - idx_cur: bb->size - idx_cur;
 }

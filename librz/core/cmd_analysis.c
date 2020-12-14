@@ -2158,8 +2158,8 @@ static ut64 __opaddr(RzAnalysisBlock *b, ut64 addr) {
 	int i;
 	if (addr >= b->addr && addr < (b->addr + b->size)) {
 		for (i = 0; i < b->ninstr; i++) {
-			ut64 aa = b->addr + rz_analysis_bb_offset_inst (b, i);
-			ut64 ab = b->addr + rz_analysis_bb_offset_inst (b, i + 1);
+			ut64 aa = rz_analysis_block_get_op_addr (b, i);
+			ut64 ab = rz_analysis_block_get_op_addr (b, i + 1);
 			if (addr >= aa && addr < ab) {
 				return aa;
 			}
@@ -2487,7 +2487,7 @@ static bool analysis_fcn_list_bb(RzCore *core, const char *input, bool one) {
 				break;
 			case 'r':
 				if (b->jump == UT64_MAX) {
-					ut64 retaddr = rz_analysis_bb_opaddr_i (b, b->ninstr - 1);
+					ut64 retaddr = rz_analysis_block_get_op_addr (b, b->ninstr - 1);
 					if (retaddr == UT64_MAX) {
 						break;
 					}
@@ -3993,12 +3993,11 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 				ptr = strchr (ptr + 1, ' ');
 				if (ptr) {
 					color = rz_num_math (core->num, ptr + 1);
-					RzAnalysisOp *op = rz_core_op_analysis (core, addr, RZ_ANALYSIS_OP_MASK_ALL);
-					if (op) {
-						rz_analysis_colorize_bb (core->analysis, addr, color);
-						rz_analysis_op_free (op);
+					RzAnalysisBlock *block = rz_analysis_find_most_relevant_block_in (core->analysis, addr);
+					if (block) {
+						block->colorize = color;
 					} else {
-						eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
+						eprintf ("No basic block at 0x%08" PFMT64x "\n", addr);
 					}
 				}
 			}
@@ -6577,7 +6576,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 				break;
 			}
 		} else if (input[1] == 'b') { // "aeab"
-			RzAnalysisBlock *bb = rz_analysis_bb_from_offset (core->analysis, core->offset);
+			RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in (core->analysis, core->offset);
 			if (bb) {
 				switch (input[2]) {
 				case 'j': // "aeabj"
