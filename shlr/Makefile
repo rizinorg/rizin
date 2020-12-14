@@ -323,27 +323,6 @@ rizin-shell-parser/src/scanner.o: rizin-shell-parser/src/scanner.c
 SHLRS+=tree-sitter/libtree-sitter.a
 SHLRS+=rizin-shell-parser/libshell-parser.a
 
-www-sync-m sync-www-m: ../../rizin-webui/dist/m
-	cp -rf ../../rizin-webui/dist/m www/m.tmp
-	rm -rf www/m
-	mv www/m.tmp www/m
-	git add www/m
-
-www-sync-p sync-www-p:
-	cp -rf ../../rizin-webui/dist/p www/p.tmp
-	rm -rf www/p
-	mv www/p.tmp www/p
-	git add www/p
-
-www-sync-t sync-www-t:
-	cp -rf ../../rizin-webui/dist/t www/t.tmp
-	rm -rf www/t
-	mv www/t.tmp www/t
-	git add www/p
-
-sync-www www-sync: www-sync-m www-sync-p www-sync-t
-	@echo webui sync done
-
 spp-sync sync-spp:
 	-git rm -r spp
 	rm -rf spp
