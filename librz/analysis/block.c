@@ -1074,8 +1074,7 @@ RZ_API ut64 rz_analysis_block_get_op_size(RzAnalysisBlock *bb, size_t i) {
 }
 
 /**
- * Successively disassemble the ops in this block, update the contained op addrs
- * and create xrefs if necessary.
+ * Successively disassemble the ops in this block and update the contained op addrs.
  * This will not move or resize the block itself or touch anything else around it,
  * it is primarily useful when creating or editing blocks after full function analysis.
  */
@@ -1099,6 +1098,12 @@ RZ_API void rz_analysis_block_analyze_ops(RzAnalysisBlock *block) {
 	ut64 addr = block->addr;
 	size_t i = 0;
 	while (addr < block->addr + block->size) {
+		RzAnalysisOp op;
+		if (rz_analysis_op (block->analysis, &op, addr,
+				buf + (addr - block->addr), block->addr + block->size - addr, 0) <= 0) {
+			rz_analysis_op_fini (&op);
+			break;
+		}
 		if (i > 0) {
 			ut64 off = addr - block->addr;
 			if (off >= UT16_MAX) {
@@ -1107,14 +1112,7 @@ RZ_API void rz_analysis_block_analyze_ops(RzAnalysisBlock *block) {
 			rz_analysis_block_set_op_offset (block, i, (ut16)off);
 		}
 		i++;
-		RzAnalysisOp op;
-		if (rz_analysis_op (block->analysis, &op, addr,
-				buf + (addr - block->addr), block->addr + block->size - addr, 0) > 0) {
-			addr += op.size;
-		} else {
-			addr += 1;
-		}
-		// TODO: xrefs
+		addr += op.size > 0 ? op.size : 1;
 		rz_analysis_op_fini (&op);
 	}
 	block->ninstr = i;
