@@ -129,12 +129,12 @@ done
 : ${INSTALL_PROGRAM_STRIP:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
 : ${INSTALL_LIB:=${INSTALL} -m 755 -c}
- PKGNAME='rizin' ; VERSION='1.0.0-git' ; VERSION_MAJOR=1; VERSION_MINOR=0; VERSION_PATCH=0; VERSION_NUMBER=10000; CONTACT_MAIL="team@rizin.re" ; CONTACT_NAME="Rizin Core Team" ; CONTACT="Rizin Core Team <team@rizin.re>" ;
+ PKGNAME='rizin' ; VERSION='0.1.0-git' ; VERSION_MAJOR=0; VERSION_MINOR=1; VERSION_PATCH=0; VERSION_NUMBER=00100; CONTACT_MAIL="team@rizin.re" ; CONTACT_NAME="Rizin Core Team" ; CONTACT="Rizin Core Team <team@rizin.re>" ;
 }
 
 show_usage() {
 cat <<EOF2
-'configure' configures rizin-1.0.0-git to adapt to many kinds of systems.
+'configure' configures rizin-0.1.0-git to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -175,8 +175,7 @@ System types:
   --target=TARGET        configure for building compilers for TARGET [HOST]
 EOF2
 
-printf "
-Optional Features:
+printf "\nOptional Features:
   --disable-debugger     disable native debugger features
   --with-sysmagic        force to use system's magic
   --with-capstone5       build next branch of the capstone repository
@@ -197,20 +196,16 @@ Optional Features:
   --with-libversion      specify different libversion (LIBVERSION=xxx)
   --without-jemalloc     build without jemalloc
   --without-rz-test      build without rz-test for regression testing
-  --with-checks-level    value between 0 and 3 to enable different level of assert (see RZ_CHECKS_LEVEL) (RZ_CHECKS_LEVEL=2)
-"
-printf "
-Some influential environment variables:
+  --with-checks-level    value between 0 and 3 to enable different level of assert (see RZ_CHECKS_LEVEL) (RZ_CHECKS_LEVEL=2)\n"
+printf "\nSome influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
               nonstandard directory <lib dir>
   CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
               headers in a nonstandard directory <include dir>
-  CPP         C preprocessor
-"
-printf "
-Report bugs to: Rizin Core Team <team@rizin.re>"
+  CPP         C preprocessor\n"
+printf "\nReport bugs to: Rizin Core Team <team@rizin.re>"
 echo ""
 exit 0
 }
@@ -234,10 +229,10 @@ ocho() {
 
 show_version() {
 if [ "$QUIET" = 1 ]; then
-	echo "1.0.0-git"
+	echo "0.1.0-git"
 	exit 0
 fi
-echo "rizin-1.0.0-git configuration script done with acr v1.9.4.
+echo "rizin-0.1.0-git configuration script done with acr v1.9.4.
 The 'Free Software Foundation' message is only for autodetection.
 Originally written by pancake <nopcode.org>."
 exit 0
@@ -266,7 +261,7 @@ case $flag in
 	show_version ; ;;
 -r|--r|--report)
 echo "PKGNAME:   rizin"
-echo "VERSION:   1.0.0-git"
+echo "VERSION:   0.1.0-git"
 echo "LANGS:     c"
 echo "REQUIRED:  libdl"
 echo "OPTIONAL:  libmagic libz libzip libxxhash libssl liblibuv>=1.0.0"
