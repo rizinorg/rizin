@@ -5,7 +5,7 @@
 // TODO: remove rz_search_reset
 // TODO: remove rz_search_string_prepare_backward and include it in rzsearch
 // TODO: test by using rz_search_find as well
-// TODO: remove rz_search_update_i
+// TODO: remove rz_search_update
 // TODO: remove rz_search_set_mode, the mode shall be defined at creation time and that's it
 // TODO: make sure rz_search_update actually does not modify the buffer
 // TODO: refactor keyword search to use regexp search
@@ -23,7 +23,7 @@ static int search_keyword_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	return 1;
 }
 
-static int search_keyword_back_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
+static int search_keyword_list_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 	RzList *l = (RzList *)user;
 	ut64 *v = RZ_NEW (ut64);
 	*v = addr;
@@ -38,9 +38,70 @@ static bool test_search_keyword_str(void) {
 	rz_search_set_callback (rs, &search_keyword_hit, &res);
 	rz_search_begin (rs);
 	const char *buffer = "abcdefAAAghi";
-	rz_search_update_i (rs, 0LL, (ut8*)buffer, strlen(buffer));
+	rz_search_update (rs, 0LL, (ut8*)buffer, strlen(buffer));
 	rz_search_free (rs);
 	mu_assert_eq (res, 6, "AAA can be found after 6 chars");
+	mu_end;
+}
+
+static bool test_search_keyword_str_across_blocks(void) {
+	ut64 res = 0;
+	RzSearch *rs = rz_search_new (RZ_SEARCH_KEYWORD);
+	rz_search_kw_add (rs, rz_search_keyword_new_str ("AAAAA", "", NULL, 0));
+	rz_search_set_callback (rs, &search_keyword_hit, &res);
+	rz_search_begin (rs);
+	const char *buffer1 = "1234567890AAA";
+	const char *buffer2 = "AA0987654321";
+	rz_search_update (rs, 0LL, (ut8*)buffer1, strlen(buffer1));
+	rz_search_update (rs, strlen (buffer1), (ut8*)buffer2, strlen(buffer2));
+	rz_search_free (rs);
+	mu_assert_eq (res, strlen (buffer1) - 3, "AAAAA can be found 3 chars before the end of buffer1");
+
+	res = 0;
+	rs = rz_search_new (RZ_SEARCH_KEYWORD);
+	rz_search_kw_add (rs, rz_search_keyword_new_str ("ABCDE", "", NULL, 0));
+	rz_search_set_callback (rs, &search_keyword_hit, &res);
+	rz_search_begin (rs);
+	buffer1 = "0AB";
+	buffer2 = "CDE";
+	rz_search_update (rs, 0LL, (ut8*)buffer1, strlen(buffer1));
+	rz_search_update (rs, strlen (buffer1), (ut8*)buffer2, strlen(buffer2));
+	rz_search_free (rs);
+	mu_assert_eq (res, 1, "ABCDE can be found at the first char");
+	mu_end;
+}
+
+static bool test_search_keyword_str_across_blocks_multi(void) {
+	RzList *res = rz_list_newf ((RzListFree)free);
+	RzSearch *rs = rz_search_new (RZ_SEARCH_KEYWORD);
+	rz_search_kw_add (rs, rz_search_keyword_new_str ("ABCDEF", "", NULL, 0));
+	rz_search_kw_add (rs, rz_search_keyword_new_str ("BCD", "", NULL, 0));
+	rz_search_set_callback (rs, &search_keyword_list_hit, res);
+	rz_search_begin (rs);
+	const char *buffer1 = "1234567890ABCD";
+	const char *buffer2 = "EF0987654321";
+	rz_search_update (rs, 0LL, (ut8*)buffer1, strlen(buffer1));
+	rz_search_update (rs, strlen (buffer1), (ut8*)buffer2, strlen(buffer2));
+	rz_search_free (rs);
+	mu_assert_eq (rz_list_length (res), 2, "ABCDEF and BCD are both found");
+	mu_assert_eq (*(ut64 *)rz_list_get_n (res, 0), strlen (buffer1) - 3, "BCD is found");
+	mu_assert_eq (*(ut64 *)rz_list_get_n (res, 1), strlen (buffer1) - 4, "ABCDEF is found");
+	rz_list_free (res);
+	mu_end;
+}
+
+static bool test_search_keyword_str_overlap(void) {
+	RzList *res = rz_list_newf ((RzListFree)free);
+	RzSearch *rs = rz_search_new (RZ_SEARCH_KEYWORD);
+	rs->overlap = true;
+	rz_search_kw_add (rs, rz_search_keyword_new_str ("AAA", "", NULL, 0));
+	rz_search_set_callback (rs, &search_keyword_list_hit, res);
+	rz_search_begin (rs);
+	const char *buffer = "abcdefAAAAAAAAghi";
+	rz_search_update (rs, 0LL, (ut8*)buffer, strlen(buffer));
+	rz_search_free (rs);
+	mu_assert_eq (rz_list_length (res), 6, "AAA can be found 6 times");
+	rz_list_free (res);
 	mu_end;
 }
 
@@ -49,18 +110,34 @@ static bool test_search_keyword_str_back(void) {
 	RzSearch *rs = rz_search_new (RZ_SEARCH_KEYWORD);
 	rs->bckwrds = true;
 	rz_search_kw_add (rs, rz_search_keyword_new_str ("ABC", "", NULL, 0));
-	rz_search_set_callback (rs, &search_keyword_back_hit, res);
+	rz_search_set_callback (rs, &search_keyword_list_hit, res);
 	rz_search_begin (rs);
 	// FIXME: as it is just a search, the buffer should be constant, but
 	// backwards search requires non-const
 	char buffer[] = "123456ABCdefghiABCDExxxx";
 	// FIXME: this should not be necessary from an API PoV
 	rz_search_string_prepare_backward (rs);
-	rz_search_update_i (rs, strlen(buffer), (ut8*)buffer, strlen(buffer));
+	rz_search_update (rs, strlen(buffer), (ut8*)buffer, strlen(buffer));
 	rz_search_free (rs);
 	mu_assert_eq (rz_list_length (res), 2, "two ABC were found");
 	mu_assert_eq (*(ut64 *)rz_list_get_n (res, 0), 15, "first it finds the last ABC");
 	mu_assert_eq (*(ut64 *)rz_list_get_n (res, 1), 6, "then it finds the first ABC");
+	rz_list_free (res);
+	mu_end;
+}
+
+static bool test_search_keyword_str_inverse(void) {
+	RzList *res = rz_list_newf ((RzListFree)free);
+	RzSearch *rs = rz_search_new (RZ_SEARCH_KEYWORD);
+	rs->inverse = true;
+	rz_search_kw_add (rs, rz_search_keyword_new_str ("AAA", "", NULL, 0));
+	rz_search_set_callback (rs, &search_keyword_list_hit, res);
+	rz_search_begin (rs);
+	const char *buffer = "AAAAAAAAAAabcdef";
+	rz_search_update (rs, 0LL, (ut8*)buffer, strlen(buffer));
+	rz_search_free (rs);
+	mu_assert_eq (rz_list_length (res), 1, "AAA can *not* be found at some point");
+	mu_assert_eq (*(ut64 *)rz_list_get_n (res, 0), 8, "First occurence is after 8 chars (AAa)");
 	rz_list_free (res);
 	mu_end;
 }
@@ -72,9 +149,26 @@ static bool test_search_keyword_hex(void) {
 	rz_search_set_callback (rs, &search_keyword_hit, &res);
 	rz_search_begin (rs);
 	const char *buffer = "abcdefAAAghi";
-	rz_search_update_i (rs, 0LL, (ut8*)buffer, strlen(buffer));
+	rz_search_update (rs, 0LL, (ut8*)buffer, strlen(buffer));
 	rz_search_free (rs);
 	mu_assert_eq (res, 6, "AAA can be found after 6 chars");
+	mu_end;
+}
+
+static bool test_search_keyword_hex_contiguous(void) {
+	RzList *res = rz_list_newf ((RzListFree)free);
+	RzSearch *rs = rz_search_new (RZ_SEARCH_KEYWORD);
+	rs->contiguous = false;
+	rz_search_kw_add (rs, rz_search_keyword_new_hex ("414243", "", NULL));
+	rz_search_set_callback (rs, &search_keyword_list_hit, res);
+	rz_search_begin (rs);
+	const char *buffer = "\xaa\xbb\xcc\x41\x42\x43\x41\x42\x43\x41\x42\x43\xff\x41\x42\x43";
+	rz_search_update (rs, 0LL, (ut8*)buffer, strlen(buffer));
+	rz_search_free (rs);
+	mu_assert_eq (rz_list_length (res), 2, "414243 can be found 2 times non contiguously");
+	mu_assert_eq (*(ut64 *)rz_list_get_n (res, 0), 3, "first occurence of 414243");
+	mu_assert_eq (*(ut64 *)rz_list_get_n (res, 1), 13, "second occurence of 414243");
+	rz_list_free (res);
 	mu_end;
 }
 
@@ -87,7 +181,7 @@ static bool test_search_keyword_regexp(void) {
 	rz_search_set_callback (rs, &search_keyword_hit, &res);
 	rz_search_begin (rs);
 	const char *buffer = "abcAAAdefA3Ajjj";
-	rz_search_update_i (rs, 0LL, (ut8*)buffer, strlen(buffer));
+	rz_search_update (rs, 0LL, (ut8*)buffer, strlen(buffer));
 	rz_search_free (rs);
 	mu_assert_eq (res, 9, "AAA should be skip, A3A found");
 	mu_end;
@@ -101,7 +195,7 @@ static bool test_search_string(void) {
 	rz_search_set_callback (rs, &search_keyword_hit, &res);
 	rz_search_begin (rs);
 	const char *buffer = "\x90\x90\x90\x01\x02\x03\x61\x62\x63\x44\x04\x05\x06";
-	rz_search_update_i (rs, 0LL, (ut8*)buffer, strlen(buffer));
+	rz_search_update (rs, 0LL, (ut8*)buffer, strlen(buffer));
 	rz_search_free (rs);
 	mu_assert_eq (res, 6, "ABCD should be found");
 	mu_end;
@@ -114,11 +208,10 @@ static bool test_search_aes(void) {
 	rz_search_kw_add (rs, rz_search_keyword_new_hexmask ("00", NULL));
 	rz_search_set_callback (rs, &search_keyword_hit, &res);
 	rz_search_begin (rs);
-	const char buffer[] = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17";
-	rz_search_update_i (rs, 0LL, (ut8*)buffer, sizeof(buffer));
+	const char buffer[] = "\x31\x32\x33\x34\x35\x36\x37\x38\x39\x30\x31\x32\x33\x34\x35\x36\x28\xa4\x36\xf7\x1d\x92\x01\xcf\x24\xa2\x30\xfd\x17\x96\x05\xcb\xba\xcf\x29\x07\xa7\x5d\x28\xc8\x83\xff\x18\x35\x94\x69\x1d\xfe\x47\x6b\x92\x25\xe0\x36\xba\xed\x63\xc9\xa2\xd8\xf7\xa0\xbf\x26\xaf\x63\x65\x4d\x4f\x55\xdf\xa0\x2c\x9c\x7d\x78\xdb\x3c\xc2\x5e\x54\x46\x3d\xf4\x1b\x13\xe2\x54\x37\x8f\x9f\x2c\xec\xb3\x5d\x72\x19\x0a\x7d\x3a\x02\x19\x9f\x6e\x35\x96\x00\x42\xd9\x25\x5d\x30\x66\x46\x79\x0f\x64\x5f\xe6\x61\x51\xc9\xe6\x23\x88\xec\xbb\x13\x28\xac\x04\xcb\x4c\xf3\xe2\xaa\x1d\x3a\x04\x89\x95\xd6\xbf\x9a\xc5\xa4\xbc\xe1\x89\x57\x5e\x4b\x94\x6d\x5a\xc2\x01\xbb\xe5\x58\x2f\x7d\xd6\x9d\xa6\x2a\x88\xd6\x32\x47\xd2\x14\x33\xfc\x37\x4c";
+	rz_search_update (rs, 0LL, (ut8*)buffer, sizeof(buffer));
 	rz_search_free (rs);
-	mu_test_status = MU_TEST_BROKEN;
-	mu_assert_eq (res, 3, "AES 128 bit key should be found");
+	mu_assert_eq (res, 0, "AES 128 bit key should be found");
 	mu_end;
 }
 
@@ -129,7 +222,7 @@ static bool test_search_priv_key(void) {
 	rz_search_kw_add (rs, rz_search_keyword_new_hexmask ("00", NULL));
 	rz_search_set_callback (rs, &search_keyword_hit, &res);
 	rz_search_begin (rs);
-	rz_search_update_i (rs, 0LL, (ut8*)rsa_private_4096, sizeof(rsa_private_4096));
+	rz_search_update (rs, 0LL, (ut8*)rsa_private_4096, sizeof(rsa_private_4096));
 	rz_search_free (rs);
 	mu_assert_eq (res, 0xd, "RSA private key found");
 	mu_end;
@@ -144,7 +237,7 @@ static bool test_search_deltakey(void) {
 	rz_search_set_callback (rs, &search_keyword_hit, &res);
 	rz_search_begin (rs);
 	const char *buffer = "abcdefAAAghi";
-	rz_search_update_i (rs, 0LL, (ut8*)buffer, strlen(buffer));
+	rz_search_update (rs, 0LL, (ut8*)buffer, strlen(buffer));
 	rz_search_free (rs);
 	mu_assert_eq (res, 6, "3 characters equal are AAA");
 
@@ -154,7 +247,7 @@ static bool test_search_deltakey(void) {
 	rz_search_set_callback (rs, &search_keyword_hit, &res);
 	rz_search_begin (rs);
 	buffer = "XXXabdgefAAAghi";
-	rz_search_update_i (rs, 0LL, (ut8*)buffer, strlen(buffer));
+	rz_search_update (rs, 0LL, (ut8*)buffer, strlen(buffer));
 	rz_search_free (rs);
 	mu_assert_eq (res, 3, "4 characters with the specified diff are abdg");
 
@@ -167,7 +260,7 @@ static bool test_search_magic(void) {
 	rz_search_set_callback (rs, &search_keyword_hit, &res);
 	rz_search_begin (rs);
 	const char *buffer = "Hello" "\x7f" "ELFWorld";
-	rz_search_update_i (rs, 0LL, (ut8*)buffer, strlen(buffer));
+	rz_search_update (rs, 0LL, (ut8*)buffer, strlen(buffer));
 	rz_search_free (rs);
 	mu_test_status = MU_TEST_BROKEN;
 	mu_assert_eq (res, 5, "\\x7fELF magic can be found after 5 chars");
@@ -176,8 +269,13 @@ static bool test_search_magic(void) {
 
 int all_tests() {
 	mu_run_test (test_search_keyword_str);
+	mu_run_test (test_search_keyword_str_across_blocks);
+	mu_run_test (test_search_keyword_str_across_blocks_multi);
+	mu_run_test (test_search_keyword_str_overlap);
 	mu_run_test (test_search_keyword_str_back);
+	mu_run_test (test_search_keyword_str_inverse);
 	mu_run_test (test_search_keyword_hex);
+	mu_run_test (test_search_keyword_hex_contiguous);
 	mu_run_test (test_search_keyword_regexp);
 	mu_run_test (test_search_string);
 	mu_run_test (test_search_aes);

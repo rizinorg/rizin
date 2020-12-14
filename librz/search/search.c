@@ -16,37 +16,12 @@ typedef struct {
 	ut8 data[];
 } RzSearchLeftover;
 
-static int search_set_mode(RzSearch *s, RzSearchMode mode) {
-	s->update = NULL;
-	switch (mode) {
-	case RZ_SEARCH_KEYWORD: s->update = rz_search_mybinparse_update; break;
-	case RZ_SEARCH_REGEXP: s->update = rz_search_regexp_update; break;
-	case RZ_SEARCH_AES: s->update = rz_search_aes_update; break;
-	case RZ_SEARCH_PRIV_KEY: s->update = rz_search_privkey_update; break;
-	case RZ_SEARCH_STRING: s->update = rz_search_strings_update; break;
-	case RZ_SEARCH_DELTAKEY: s->update = rz_search_deltakey_update; break;
-	case RZ_SEARCH_MAGIC: s->update = rz_search_magic_update; break;
-	case RZ_SEARCH_ESIL:
-		rz_warn_if_reached ();
-		break;
-	}
-	if (!s->update) {
-		return false;
-	}
-	s->mode = mode;
-	return true;
-}
-
 RZ_API RzSearch *rz_search_new(RzSearchMode mode) {
 	RzSearch *s = RZ_NEW0 (RzSearch);
 	if (!s) {
 		return NULL;
 	}
-	if (!search_set_mode (s, mode)) {
-		free (s);
-		eprintf ("Cannot init search for mode %d\n", mode);
-		return false;
-	}
+	s->mode = mode;
 	s->inverse = false;
 	s->data = NULL;
 	s->user = NULL;
@@ -310,51 +285,6 @@ RZ_IPI int rz_search_deltakey_update(RzSearch *s, ut64 from, const ut8 *buf, int
 	return s->nhits - old_nhits;
 }
 
-#if 0
-// Boyer-Moore-Horspool pattern matching
-// Supported search variants: icase, overlap
-static int rz_search_horspool(RzSearch *s, RzSearchKeyword *kw, ut64 from, const ut8 *buf, int len) {
-	ut64 bad_char_shift[UT8_MAX + 1];
-	int i, j, m = kw->keyword_length - 1, count = 0;
-	ut8 ch;
-
-	for (i = 0; i < RZ_ARRAY_SIZE (bad_char_shift); i++) {
-		bad_char_shift[i] = kw->keyword_length;
-	}
-	for (i = 0; i < m; i++) {
-		ch = kw->bin_keyword[i];
-		bad_char_shift[kw->icase ? tolower (ch) : ch] = m - i;
-	}
-
-	for (i = 0; i + m < len; ) {
-	next:
-		for (j = m; ; j--) {
-			ut8 a = buf[i + j], b = kw->bin_keyword[j];
-			if (kw->icase) {
-				a = tolower (a);
-				b = tolower (b);
-			}
-			if (a != b) break;
-			if (i == 0) {
-				if (!rz_search_hit_new (s, kw, from + i)) {
-					return -1;
-				}
-				kw->count++;
-				count++;
-				if (!s->overlap) {
-					i += kw->keyword_length;
-					goto next;
-				}
-			}
-		}
-		ch = buf[i + m];
-		i += bad_char_shift[kw->icase ? tolower (ch) : ch];
-	}
-
-	return false;
-}
-#endif
-
 static bool brute_force_match(RzSearch *s, RzSearchKeyword *kw, const ut8 *buf, int i) {
 	int j = 0;
 	if (s->distance) { // slow path, more work in the loop
@@ -522,20 +452,29 @@ RZ_API void rz_search_set_callback(RzSearch *s, RzSearchCallback(callback), void
 // backward search: from points to the right endpoint
 // forward search: from points to the left endpoint
 RZ_API int rz_search_update(RzSearch *s, ut64 from, const ut8 *buf, long len) {
-	int ret = -1;
-	if (s->update) {
-		if (s->maxhits && s->nhits >= s->maxhits) {
-			return 0;
-		}
-		ret = s->update (s, from, buf, len);
-	} else {
-		eprintf ("rz_search_update: No search method defined\n");
+	if (s->maxhits && s->nhits >= s->maxhits) {
+		return 0;
 	}
-	return ret;
-}
-
-RZ_API int rz_search_update_i(RzSearch *s, ut64 from, const ut8 *buf, long len) {
-	return rz_search_update (s, from, buf, len);
+	switch (s->mode) {
+	case RZ_SEARCH_KEYWORD:
+		return rz_search_mybinparse_update (s, from, buf, len);
+	case RZ_SEARCH_REGEXP:
+		return rz_search_regexp_update (s, from, buf, len);
+	case RZ_SEARCH_AES:
+		return rz_search_aes_update (s, from, buf, len);
+	case RZ_SEARCH_PRIV_KEY:
+		return rz_search_privkey_update (s, from, buf, len);
+	case RZ_SEARCH_STRING:
+		return rz_search_strings_update (s, from, buf, len);
+	case RZ_SEARCH_DELTAKEY:
+		return rz_search_deltakey_update (s, from, buf, len);
+	case RZ_SEARCH_MAGIC:
+		return rz_search_magic_update (s, from, buf, len);
+	case RZ_SEARCH_ESIL:
+		rz_return_val_if_reached (-1);
+		break;
+	}
+	return -1;
 }
 
 static int listcb(RzSearchKeyword *k, void *user, ut64 addr) {
@@ -545,7 +484,7 @@ static int listcb(RzSearchKeyword *k, void *user, ut64 addr) {
 	}
 	hit->kw = k;
 	hit->addr = addr;
-	rz_list_append (user, hit);
+	rz_list_append ((RzList *)user, hit);
 	return 1;
 }
 
@@ -590,9 +529,7 @@ RZ_API void rz_search_string_prepare_backward(RzSearch *s) {
 
 RZ_API void rz_search_reset(RzSearch *s, int mode) {
 	s->nhits = 0;
-	if (!search_set_mode (s, mode)) {
-		eprintf ("Cannot init search for mode %d\n", mode);
-	}
+	s->mode = mode;
 }
 
 RZ_API void rz_search_kw_reset(RzSearch *s) {
