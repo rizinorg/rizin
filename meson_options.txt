@@ -1,3 +1,4 @@
+option('no_git', type: 'boolean', value: false, description: 'Disable git submodule update')
 option('cli', type: 'feature', value: 'auto', description: 'Build CLI programs (“auto” means they will be built when not a subproject)')
 option('static_runtime', type: 'boolean', value: false)
 option('local', type: 'feature', value: 'auto', description: 'Adds support for local/side-by-side installation (sets rpath if needed)')
