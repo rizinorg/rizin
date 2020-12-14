@@ -1,73 +1,114 @@
 # handle capstone dependency
 capstone_dep = dependency('capstone', version: '>=3.0.4', required: false)
 if not capstone_dep.found() or not get_option('use_sys_capstone')
-  message('Use bundled capstone')
+  message('Use rizin-provided capstone')
 
-  if get_option('capstone_in_builddir')
+  capstone_git_user = 'aquynh'
+
+  capstone_version = get_option('use_capstone_version')
+  use_capstone_git = false
+  capstone_in_builddir = false
+
+  # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
+  if capstone_version == 'bundled'
+    CS_TIP = '2edae851d9fee511a57d4da32d5acecedd95d7ed'
+    CS_BRA = 'v4'
+    CS_VERSION = '4.0.2'
+    use_capstone_git = true
+  elif capstone_version == 'v5'
+    CS_TIP = 'd956ceddabcbe544ee8f074ba75c86c6381b34e6'
+    CS_BRA = 'next'
+    CS_VERSION = '5'
+    use_capstone_git = true
+    capstone_in_builddir = true
+  elif capstone_version == 'v3'
+    CS_TIP = '61bf71c771680033651f16cff832446e421847b1'
+    CS_BRA = 'v3'
+    CS_VERSION = '3.0.5'
+    capstone_in_builddir = true
+  elif capstone_version == 'v4'
+    CS_TIP = '2edae851d9fee511a57d4da32d5acecedd95d7ed'
+    CS_BRA = 'v4'
+    CS_VERSION = '4.0.2'
+    capstone_in_builddir = true
+  else
+    error('Wrong capstone version selected. Please use one of the supported versions.')
+  endif
+
+  if (get_option('capstone_in_builddir').auto() and capstone_in_builddir) or get_option('capstone_in_builddir').enabled()
     capstone_path = join_paths(meson.current_build_dir(), 'capstone')
   else
     capstone_path = 'capstone'
   endif
 
-  capstone_version = get_option('use_capstone_version')
-
-  use_capstone5 = get_option('use_capstone5')
-  if use_capstone5
-    warning('use_capstone5 is deprecated. Use -Duse_capstone_version=v5 instead.')
-    capstone_version = 'v5'
-  endif
-
   res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(capstone_path))
   if res.returncode() == 0
-    if not git_exe.found()
-      error('Cannot load capstone library. Either provide capstone in ./shlr/capstone or install git, so it can be downloaded')
-    endif
-
-    # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
-    if capstone_version == 'v5'
-      CS_TIP = 'd956ceddabcbe544ee8f074ba75c86c6381b34e6'
-      CS_BRA = 'next'
-    elif capstone_version == 'v3'
-      CS_TIP = '61bf71c771680033651f16cff832446e421847b1'
-      CS_BRA = 'v3'
-    elif capstone_version == 'v4'
-      CS_TIP = '2edae851d9fee511a57d4da32d5acecedd95d7ed'
-      CS_BRA = 'v4'
-    else
-      error('Wrong capstone version selected. Please use one of the supported versions.')
-    endif
-
-    capstone_git_user = 'aquynh'
-
-    message('Cloning capstone ' + CS_BRA + ' branch, commit ' + CS_TIP + ', into ' + capstone_path)
-    git_cmd = 'clone -b @0@ https://github.com/@1@/capstone.git @2@'.format(CS_BRA, capstone_git_user, capstone_path)
-    clone_cmd = run_command(git_exe, git_cmd.split())
-    if clone_cmd.returncode() != 0
-      error('Cannot execute git clone command')
-    endif
-
-    reset_cmd_str = '-C @0@ reset --hard @1@'.format(capstone_path, CS_TIP)
-    reset_cmd = run_command(git_exe, reset_cmd_str.split())
-    if reset_cmd.returncode() != 0
-      error('Cannot execute git reset command')
-    endif
-
-    patches_files = [
-      'capstone-calloc.patch',
-      'fix-x86-16.patch',
-      'sparc-crash.patch',
-      'sstream-null.patch'
-    ]
-
-    message('Patching capstone with rizin\'s patches')
-    foreach file : patches_files
-      patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', file)
-      patch_cmd_str = '-C @0@ apply -p1 @1@'.format(capstone_path, patch_path)
-      patch_cmd = run_command(git_exe, patch_cmd_str.split())
-      if patch_cmd.returncode() != 0
-        warning('Cannot apply patch ' + file)
+    if use_capstone_git
+      if not git_exe.found()
+        error('Cannot load capstone library. Either provide capstone in ./shlr/capstone or install git, so it can be downloaded. Otherwise, select another capstone released version.')
       endif
-    endforeach
+
+      message('Cloning capstone ' + CS_BRA + ' branch, commit ' + CS_TIP + ', into ' + capstone_path)
+      git_cmd = 'clone -b @0@ https://github.com/@1@/capstone.git @2@'.format(CS_BRA, capstone_git_user, capstone_path)
+      clone_cmd = run_command(git_exe, git_cmd.split())
+      if clone_cmd.returncode() != 0
+        error('Cannot execute git clone command')
+      endif
+
+      reset_cmd_str = '-C @0@ reset --hard @1@'.format(capstone_path, CS_TIP)
+      reset_cmd = run_command(git_exe, reset_cmd_str.split())
+      if reset_cmd.returncode() != 0
+        error('Cannot execute git reset command')
+      endif
+
+      patches_files = [
+        'capstone-calloc.patch',
+        'fix-x86-16.patch',
+        'sparc-crash.patch',
+        'sstream-null.patch'
+      ]
+
+      message('Patching capstone with rizin\'s patches')
+      foreach file : patches_files
+        patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', file)
+        patch_cmd_str = '-C @0@ apply -p1 @1@'.format(capstone_path, patch_path)
+        patch_cmd = run_command(git_exe, patch_cmd_str.split())
+        if patch_cmd.returncode() != 0
+          warning('Cannot apply patch ' + file)
+        endif
+      endforeach
+    else
+      wget = find_program('wget', required: false)
+      curl = find_program('curl', required: false)
+      tar = find_program('tar', required: false)
+
+      if not tar.found()
+        error('tar not found, but it is required to download and extract the selected capstone version.')
+      endif
+
+      capstone_tar_path = capstone_path + '.tar.gz'
+
+      if wget.found()
+        message('Downloading capstone version ' + CS_VERSION + ', into ' + capstone_path)
+        wget_cmd = '-O @0@ https://github.com/@1@/capstone/archive/@2@.tar.gz'.format(capstone_tar_path, capstone_git_user, CS_VERSION)
+        if run_command(wget, wget_cmd.split()).returncode() != 0
+          error('Cannot execute wget command')
+        endif
+
+        run_command(py3_exe, '-c', '__import__("os").mkdir("@0@")'.format(capstone_path))
+
+        message('Extracting capstone file @0@'.format(capstone_tar_path))
+        tar_cmd = '-C @0@ --strip-components 1 -xf @1@'.format(capstone_path, capstone_tar_path)
+        if run_command(tar, tar_cmd.split()).returncode() != 0
+          error('Cannot execute tar command')
+        endif
+      elif curl.found()
+      else
+        error('wget/curl are not available on your system. Either provide capstone in ./shlr/capstone or install wget/curl. Otherwise, select the bundled capstone version.')
+      endif
+    endif
+  else
+    message('Capstone directory @0@ already exists. Remove it if you want to re-download capstone.'.format(capstone_path))
   endif
 
   rel_cs_files = [
@@ -134,7 +175,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
   foreach rel_cs_file : rel_cs_files
     cs_files += [join_paths(capstone_path, rel_cs_file)]
   endforeach
-  if capstone_version == 'v4' or capstone_version == 'v5'
+  if capstone_version == 'v4' or capstone_version == 'v5' or capstone_version == 'bundled'
     foreach rel_cs_file : rel_cs4_files
       cs_files += [join_paths(capstone_path, rel_cs_file)]
     endforeach
@@ -145,9 +186,11 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     endforeach
   endif
 
-  capstone_includes = [platform_inc, include_directories('capstone/include')]
-  if capstone_version == 'v4' or capstone_version == 'v5'
+  capstone_includes = [platform_inc]
+  if capstone_version == 'v4' or capstone_version == 'v5' or capstone_version == 'bundled'
     capstone_includes += [include_directories('capstone/include/capstone')]
+  elif capstone_version == 'v3'
+    capstone_includes += [include_directories('capstone/include')]
   endif
 
   librzcapstone = static_library('rzcapstone', cs_files,
