@@ -108,76 +108,77 @@ static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 
 static void opex(RzStrBuf *buf, cs_insn *insn, int mode) {
 	int i;
-	rz_strbuf_init (buf);
-	rz_strbuf_append (buf, "{");
+	PJ *pj = pj_new ();
+	pj_o (pj);
+
 	cs_x86 *x = &insn->detail->x86;
 	if (x->op_count == 0) {
 		hidden_op (insn, x, mode);
 	}
-	rz_strbuf_appendf (buf, "\"operands\":[");
+	pj_ka (pj, "operands");
 	for (i = 0; i < x->op_count; i++) {
 		cs_x86_op *op = &x->operands[i];
-		if (i > 0) {
-			rz_strbuf_append (buf, ",");
-		}
-		rz_strbuf_appendf (buf, "{\"size\":%d", op->size);
+		pj_o (pj);
+		pj_ki (pj, "size", op->size);
 #if CS_API_MAJOR >= 4
-		rz_strbuf_appendf (buf, ",\"rw\":%d", op->access); // read , write, read|write
+		pj_ki (pj, "rw", op->access);// read , write, read|write
 #endif
 		switch (op->type) {
 		case X86_OP_REG:
-			rz_strbuf_appendf (buf, ",\"type\":\"reg\"");
-			rz_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
+			pj_ks (pj, "type", "reg");
+			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
 			break;
 		case X86_OP_IMM:
-			rz_strbuf_appendf (buf, ",\"type\":\"imm\"");
-			rz_strbuf_appendf (buf, ",\"value\":%" PFMT64d, (st64)op->imm);
+			pj_ks (pj, "type", "imm");
+			pj_kn (pj, "value", op->imm);
 			break;
 		case X86_OP_MEM:
-			rz_strbuf_appendf (buf, ",\"type\":\"mem\"");
+			pj_ks (pj, "type", "mem");
 			if (op->mem.segment != X86_REG_INVALID) {
-				rz_strbuf_appendf (buf, ",\"segment\":\"%s\"", cs_reg_name (handle, op->mem.segment));
+				pj_ks (pj, "segment", cs_reg_name (handle, op->mem.segment));
 			}
 			if (op->mem.base != X86_REG_INVALID) {
-				rz_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
+				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
 			}
 			if (op->mem.index != X86_REG_INVALID) {
-				rz_strbuf_appendf (buf, ",\"index\":\"%s\"", cs_reg_name (handle, op->mem.index));
+				pj_ks (pj, "index", cs_reg_name (handle, op->mem.index));
 			}
-			rz_strbuf_appendf (buf, ",\"scale\":%d", op->mem.scale);
-			rz_strbuf_appendf (buf, ",\"disp\":%" PFMT64d, (st64)op->mem.disp);
+			pj_ki (pj, "scale", op->mem.scale);
+			pj_ki (pj, "disp", op->mem.disp);
 			break;
 		default:
-			rz_strbuf_appendf (buf, ",\"type\":\"invalid\"");
+			pj_ks (pj, "type", "invalid");
 			break;
 		}
-		rz_strbuf_appendf (buf, "}");
+		pj_end (pj);
 	}
-	rz_strbuf_appendf (buf, "]");
+	pj_end (pj);
 	if (x->rex) {
-		rz_strbuf_append (buf, ",\"rex\":true");
+		pj_kb (pj, "rex", true);
 	}
 	if (x->modrm) {
-		rz_strbuf_append (buf, ",\"modrm\":true");
-	}
-	if (x->sib) {
-		rz_strbuf_appendf (buf, ",\"sib\":%d", x->sib);
+		pj_kb (pj, "modrm", true);
 	}
 	if (x->disp) {
-		rz_strbuf_appendf (buf, ",\"disp\":%" PFMT64d, (st64)x->disp);
+		pj_ki (pj, "disp", x->disp);
+	}
+	if (x->sib) {
+		pj_ki (pj, "sib", x->sib);
 	}
 	if (x->sib_index) {
-		rz_strbuf_appendf (buf, ",\"sib_index\":\"%s\"",
-				cs_reg_name (handle, x->sib_index));
+		pj_ks (pj, "sib_index", cs_reg_name (handle, x->sib_index));
 	}
 	if (x->sib_scale) {
-		rz_strbuf_appendf (buf, ",\"sib_scale\":%d", x->sib_scale);
+		pj_ks (pj, "sib_scale", cs_reg_name (handle, x->sib_scale));
 	}
 	if (x->sib_base) {
-		rz_strbuf_appendf (buf, ",\"sib_base\":\"%s\"",
-				cs_reg_name (handle, x->sib_base));
+		pj_ks (pj, "sib_base", cs_reg_name (handle, x->sib_base));
 	}
-	rz_strbuf_append (buf, "}");
+	pj_end (pj);
+
+	char *s = pj_drain (pj);
+	rz_strbuf_append (buf, s);
+	free (s);
 }
 
 static bool is_xmm_reg(cs_x86_op op) {
