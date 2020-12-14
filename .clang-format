@@ -8,7 +8,7 @@ ContinuationIndentWidth: 8
 IndentCaseLabels: false
 IndentFunctionDeclarationAfterType: false
 IndentWidth: 8
-UseTab: Always
+UseTab: ForContinuationAndIndentation
 ColumnLimit: 0
 BreakBeforeBraces: Attach
 BreakBeforeTernaryOperators: true
