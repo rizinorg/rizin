@@ -1475,6 +1475,7 @@ RZ_API ut64 rz_analysis_block_get_op_addr(RzAnalysisBlock *block, size_t i);
 RZ_API ut64 rz_analysis_block_get_op_addr_in(RzAnalysisBlock *bb, ut64 off);
 RZ_API bool rz_analysis_block_set_op_offset(RzAnalysisBlock *block, size_t i, ut16 v);
 RZ_API ut64 rz_analysis_block_get_op_size(RzAnalysisBlock *bb, size_t i);
+RZ_API void rz_analysis_block_analyze_ops(RzAnalysisBlock *block);
 
 // ---------------------------------------
 

@@ -1618,6 +1618,7 @@ RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 
 		return false;
 	}
 
+	rz_analysis_block_analyze_ops (block);
 	rz_analysis_function_add_block (fcn, block);
 
 	block->jump = jump;

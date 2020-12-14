@@ -1061,7 +1061,9 @@ RZ_API ut64 rz_analysis_block_get_op_addr_in(RzAnalysisBlock *bb, ut64 off) {
 	return bb->addr + last_delta;
 }
 
-// returns the size of the i-th instruction in a basic block
+/**
+ * @return the size of the i-th instruction in a basic block
+ */
 RZ_API ut64 rz_analysis_block_get_op_size(RzAnalysisBlock *bb, size_t i) {
 	if (i >= bb->ninstr) {
 		return UT64_MAX;
@@ -1069,4 +1071,50 @@ RZ_API ut64 rz_analysis_block_get_op_size(RzAnalysisBlock *bb, size_t i) {
 	ut16 idx_cur = rz_analysis_block_get_op_offset (bb, i);
 	ut16 idx_next = rz_analysis_block_get_op_offset (bb, i + 1);
 	return idx_next != UT16_MAX? idx_next - idx_cur: bb->size - idx_cur;
+}
+
+/**
+ * Successively disassemble the ops in this block, update the contained op addrs
+ * and create xrefs if necessary.
+ * This will not move or resize the block itself or touch anything else around it,
+ * it is primarily useful when creating or editing blocks after full function analysis.
+ */
+RZ_API void rz_analysis_block_analyze_ops(RzAnalysisBlock *block) {
+	rz_return_if_fail (block);
+	RzAnalysis *a = block->analysis;
+	if (!a->iob.read_at) {
+		return;
+	}
+	if (block->addr + block->size < block->addr) {
+		return;
+	}
+	ut8 *buf = malloc (block->size);
+	if (!buf) {
+		return;
+	}
+	if (!a->iob.read_at (a->iob.io, block->addr, buf, block->size)) {
+		free (buf);
+		return;
+	}
+	ut64 addr = block->addr;
+	size_t i = 0;
+	while (addr < block->addr + block->size) {
+		if (i > 0) {
+			ut64 off = addr - block->addr;
+			if (off >= UT16_MAX) {
+				break;
+			}
+			rz_analysis_block_set_op_offset (block, i, (ut16)off);
+		}
+		i++;
+		RzAnalysisOp op;
+		if (rz_analysis_op (block->analysis, &op, addr,
+				buf + (addr - block->addr), block->addr + block->size - addr, 0) > 0) {
+			addr += op.size;
+		} else {
+			addr += 1;
+		}
+		// TODO: xrefs
+		rz_analysis_op_fini (&op);
+	}
 }
