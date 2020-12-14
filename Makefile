@@ -342,9 +342,6 @@ purge: purge-doc purge-dev user-uninstall
 	rm -rf "${DESTDIR}${INCLUDEDIR}/librz"
 	rm -rf "${DESTDIR}${DATADIR}/rizin"
 
-system-purge: purge
-	sys/purge.sh
-
 RZ_V=rizin-${VERSION}
 
 v ver version:
