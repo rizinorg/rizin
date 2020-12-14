@@ -4633,6 +4633,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_command) {
 	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
 	rz_return_val_if_fail (!ts_node_is_null (command), false);
 	char *command_str = ts_node_sub_string (command, state->input);
+	rz_str_unescape (command_str);
 	RZ_LOG_DEBUG ("arged_command command: '%s'\n", command_str);
 	TSNode args = ts_node_child_by_field_name (node, "args", strlen ("args"));
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
