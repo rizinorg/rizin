@@ -40,13 +40,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=p3 0
-FILE=bins/elf/analysis/hello-arm32
-CMDS=p3 0
-EXPECT=<<EOF
-EOF
-RUN
-
 NAME=p8 0
 FILE=bins/elf/analysis/hello-arm32
 CMDS=p8 0
