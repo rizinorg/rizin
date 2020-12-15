@@ -82,7 +82,7 @@ RZ_IPI RzCmdStatus rz_tasks_delete_handler(RzCore *core, int argc, const char **
 	}
 	int tid = rz_num_math (core->num, argv[1]);
 	if (!rz_core_task_is_cmd (core, tid)) {
-		return -1;
+		return RZ_CMD_STATUS_ERROR;
 	}
 	return rz_core_task_del (&core->tasks, tid)? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
 }
@@ -106,7 +106,7 @@ RZ_IPI RzCmdStatus rz_tasks_wait_handler(RzCore *core, int argc, const char **ar
 		tid = rz_num_math (core->num, argv[1]);
 	}
 	if (!rz_core_task_is_cmd (core, tid)) {
-		return -1;
+		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_core_task_join (&core->tasks, core->tasks.current_task, tid ? tid : -1);
 	return RZ_CMD_STATUS_OK;
