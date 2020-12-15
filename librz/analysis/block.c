@@ -1071,7 +1071,7 @@ RZ_API void rz_analysis_block_analyze_ops(RzAnalysisBlock *block) {
 	if (!a->iob.read_at) {
 		return;
 	}
-	if (block->addr + block->size < block->addr) {
+	if (block->addr + block->size <= block->addr) {
 		return;
 	}
 	ut8 *buf = malloc (block->size);
@@ -1094,6 +1094,7 @@ RZ_API void rz_analysis_block_analyze_ops(RzAnalysisBlock *block) {
 		if (i > 0) {
 			ut64 off = addr - block->addr;
 			if (off >= UT16_MAX) {
+				rz_analysis_op_fini (&op);
 				break;
 			}
 			rz_analysis_block_set_op_offset (block, i, (ut16)off);
@@ -1103,4 +1104,5 @@ RZ_API void rz_analysis_block_analyze_ops(RzAnalysisBlock *block) {
 		rz_analysis_op_fini (&op);
 	}
 	block->ninstr = i;
+	free (buf);
 }

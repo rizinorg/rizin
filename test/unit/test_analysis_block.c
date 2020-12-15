@@ -665,6 +665,7 @@ bool test_rz_analysis_block_chop_noreturn(void) {
 	rz_analysis_block_chop_noreturn (b, 0x111);
 
 	assert_block_invariants (analysis);
+	rz_analysis_free (analysis);
 
 	mu_end;
 }
