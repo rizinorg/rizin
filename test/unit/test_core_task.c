@@ -13,9 +13,10 @@ static void *my_function(RzCore *core, void *user) {
 
 static bool test_core_task(void) {
 	RzCore *core = rz_core_new ();
+	rz_config_set_i (core->config, "scr.interactive", 0);
 	rz_core_task_sync_begin (&core->tasks);
 
-	RzCoreTask *a = rz_core_cmd_task_new (core, "?e hello; ?e world; ?e from; ?e a; ?e task");
+	RzCoreTask *a = rz_core_cmd_task_new (core, "?e hello; ?e world; ?e from; ?e a; ?e task", NULL, NULL);
 	rz_core_task_enqueue (&core->tasks, a);
 
 	RzCoreTask *b = rz_core_function_task_new (core, my_function, (void *)(size_t)1337);
@@ -52,9 +53,38 @@ static bool test_core_task(void) {
 	mu_end;
 }
 
+static void finished_cb(const char *res, void *user) {
+	*(char **)user = strdup (res);
+}
+
+static bool test_core_task_finished_cb(void) {
+	RzCore *core = rz_core_new ();
+	rz_config_set_i (core->config, "scr.interactive", 0);
+	rz_core_task_sync_begin (&core->tasks);
+
+	char *res_indir = NULL; // finished_cb puts the result in here too
+	RzCoreTask *a = rz_core_cmd_task_new (core, "?e amor; ?e vincit; ?e omnia", finished_cb, &res_indir);
+	rz_core_task_enqueue (&core->tasks, a);
+
+	rz_core_task_join (&core->tasks, rz_core_task_self (&core->tasks), a->id);
+
+	const char *cmd_result = rz_core_cmd_task_get_result (a);
+	mu_assert_streq (cmd_result, "amor\nvincit\nomnia\n", "cmd result");
+	mu_assert_streq (res_indir, "amor\nvincit\nomnia\n", "cmd result");
+	free (res_indir);
+
+	rz_core_task_del (&core->tasks, a->id);
+
+	rz_core_task_sync_end (&core->tasks);
+	rz_core_free (core);
+	mu_end;
+
+}
+
 // This test is best served with helgrind
 static int all_tests(void) {
 	mu_run_test (test_core_task);
+	mu_run_test (test_core_task_finished_cb);
 	return tests_passed != tests_run;
 }
 

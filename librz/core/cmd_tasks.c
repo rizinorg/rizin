@@ -9,7 +9,7 @@ static int task_enqueue(RzCore *core, const char *cmd, bool transient) {
 		eprintf ("This command is disabled in sandbox mode\n");
 		return -1;
 	}
-	RzCoreTask *task = rz_core_cmd_task_new (core, cmd);
+	RzCoreTask *task = rz_core_cmd_task_new (core, cmd, NULL, NULL);
 	if (!task) {
 		return -1;
 	}

@@ -565,9 +565,11 @@ typedef struct cmd_task_ctx_t {
 	char *cmd;
 	bool cmd_log;
 	char *res;
+	RzCoreCmdTaskFinished finished_cb;
+	void *finished_cb_user;
 } CmdTaskCtx;
 
-static CmdTaskCtx *cmd_task_ctx_new(RzCore *core, const char *cmd) {
+static CmdTaskCtx *cmd_task_ctx_new(RzCore *core, const char *cmd, RzCoreCmdTaskFinished finished_cb, void *finished_cb_user) {
 	rz_return_val_if_fail (cmd, NULL);
 	CmdTaskCtx *ctx = RZ_NEW (CmdTaskCtx);
 	if (!ctx) {
@@ -580,6 +582,8 @@ static CmdTaskCtx *cmd_task_ctx_new(RzCore *core, const char *cmd) {
 	ctx->cmd = strdup (cmd);
 	ctx->cmd_log = false;
 	ctx->res = NULL;
+	ctx->finished_cb = finished_cb;
+	ctx->finished_cb_user = finished_cb_user;
 	return ctx;
 }
 
@@ -595,6 +599,10 @@ static void cmd_task_runner(RzCoreTaskScheduler *sched, void *user) {
 		res_str = rz_core_cmd_str (core, ctx->cmd);
 	}
 	ctx->res = res_str;
+
+	if (ctx->finished_cb) {
+		ctx->finished_cb (res_str, ctx->finished_cb_user);
+	}
 
 	if (task != sched->main_task && rz_cons_default_context_is_interactive ()) {
 		eprintf ("\nTask %d finished\n", task->id);
@@ -616,8 +624,8 @@ static void cmd_task_free(void *user) {
  * Create a new task that runs a command and saves its result.
  * These tasks are user-visible under the & command family.
  */
-RZ_API RzCoreTask *rz_core_cmd_task_new(RzCore *core, const char *cmd) {
-	CmdTaskCtx *ctx = cmd_task_ctx_new (core, cmd);
+RZ_API RzCoreTask *rz_core_cmd_task_new(RzCore *core, const char *cmd, RzCoreCmdTaskFinished finished_cb, void *finished_cb_user) {
+	CmdTaskCtx *ctx = cmd_task_ctx_new (core, cmd, finished_cb, finished_cb_user);
 	if (!ctx) {
 		return NULL;
 	}
