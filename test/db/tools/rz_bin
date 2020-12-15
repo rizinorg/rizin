@@ -1054,18 +1054,16 @@ EOF
 RUN
 
 NAME=rz-bin rust static type
-BROKEN=1
 FILE=-
-CMDS=!rz-bin -D rust '_ZN71_$LT$Test$u20$$u2b$$u20$$u27$static$u20$as$u20$foo..Bar$LT$Test$GT$$GT$3barE'
+CMDS=!rz-bin -D rust _ZN71_$LT$Test$u20$$u2b$$u20$$u27$static$u20$as$u20$foo..Bar$LT$Test$GT$$GT$3barE
 EXPECT=<<EOF
 <Test + 'static as foo::Bar<Test>>::bar
 EOF
 RUN
 
 NAME=rz-bin rust static type with hash
-BROKEN=1
 FILE=-
-CMDS=!rz-bin -D rust '_ZN96_$LT$core..fmt..Write..write_fmt..Adapter$LT$$u27$a$C$$u20$T$GT$$u20$as$u20$core..fmt..Write$GT$9write_str17he4f4768a2f446facE'
+CMDS=!rz-bin -D rust _ZN96_$LT$core..fmt..Write..write_fmt..Adapter$LT$$u27$a$C$$u20$T$GT$$u20$as$u20$core..fmt..Write$GT$9write_str17he4f4768a2f446facE
 EXPECT=<<EOF
 <core::fmt::Write::write_fmt::Adapter<'a, T> as core::fmt::Write>::write_str::he4f4768a2f446fac
 EOF
