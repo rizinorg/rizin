@@ -745,42 +745,45 @@ RZ_API const char *rz_core_task_status(RzCoreTask *task) {
 	}
 }
 
-RZ_API void rz_core_task_print(RzCore *core, RzCoreTask *task, int mode) {
+RZ_API void rz_core_task_print(RzCore *core, RzCoreTask *task, int mode, PJ *j) {
+	rz_return_if_fail (mode != 'j' || j);
 	if (task != core->tasks.main_task && task->runner != cmd_task_runner) {
 		// don't print tasks that are custom function-runners, which come from internal code.
 		// only main and command ones, which should be user-visible.
 		return;
 	}
-	const char *cmd;
-	if (task == core->tasks.main_task) {
-		cmd = "";
-	} else {
+	const char *cmd = NULL;
+	if (task != core->tasks.main_task) {
 		cmd = ((CmdTaskCtx *)task->runner_user)->cmd;
 	}
 	switch (mode) {
-	case 'j':
-		{
-		rz_cons_printf ("{\"id\":%d,\"state\":\"", task->id);
+	case 'j': {
+		pj_o (j);
+		pj_ki (j, "id", task->id);
+		const char *state;
+		// This is NOT the same as rz_core_task_status()!
+		// rz_core_task_status() is meant to be readable and may be changed.
+		// These are meant to be stable for scripting.
 		switch (task->state) {
 		case RZ_CORE_TASK_STATE_BEFORE_START:
-			rz_cons_print ("before_start");
+			state = "before_start";
 			break;
 		case RZ_CORE_TASK_STATE_RUNNING:
-			rz_cons_print ("running");
+			state = "running";
 			break;
 		case RZ_CORE_TASK_STATE_SLEEPING:
-			rz_cons_print ("sleeping");
+			state = "sleeping";
 			break;
 		case RZ_CORE_TASK_STATE_DONE:
-			rz_cons_print ("done");
+			state = "done";
 			break;
 		}
-		rz_cons_printf ("\",\"transient\":%s,\"cmd\":", task->transient ? "true" : "false");
+		pj_ks (j, "state", state);
+		pj_kb (j, "transient", task->transient);
 		if (cmd) {
-			rz_cons_printf ("\"%s\"}", cmd);
-		} else {
-			rz_cons_printf ("null}");
+			pj_ks (j, "cmd", cmd);
 		}
+		pj_end (j);
 		break;
 	default: {
 		rz_cons_printf ("%3d %3s %12s  %s\n",
@@ -797,19 +800,20 @@ RZ_API void rz_core_task_print(RzCore *core, RzCoreTask *task, int mode) {
 RZ_API void rz_core_task_list(RzCore *core, int mode) {
 	RzListIter *iter;
 	RzCoreTask *task;
+	PJ *j = NULL;
 	if (mode == 'j') {
-		rz_cons_printf ("[");
+		j = pj_new ();
+		pj_a (j);
 	}
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter (&core->tasks, &old_sigset);
 	rz_list_foreach (core->tasks.tasks, iter, task) {
-		rz_core_task_print (core, task, mode);
-		if (mode == 'j' && iter->n) {
-			rz_cons_printf (",");
-		}
+		rz_core_task_print (core, task, mode, j);
 	}
-	if (mode == 'j') {
-		rz_cons_printf ("]\n");
+	if (j) {
+		pj_end (j);
+		rz_cons_println (pj_string (j));
+		pj_free (j);
 	} else {
 		rz_cons_printf ("--\ntotal running: %d\n", core->tasks.tasks_running);
 	}
