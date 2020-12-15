@@ -829,7 +829,7 @@ RZ_API bool rz_cons_context_is_main(void) {
 
 RZ_API void rz_cons_context_break(RzConsContext *context) {
 	if (!context) {
-		return;
+		context = &rz_cons_context_default;
 	}
 	context->breaked = true;
 	if (context->event_interrupt) {
