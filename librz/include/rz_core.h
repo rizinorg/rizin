@@ -895,7 +895,8 @@ RZ_API int rz_core_search_value_in_range (RzCore *core, RzInterval search_itv,
 		ut64 vmin, ut64 vmax, int vsize, inRangeCb cb, void *cb_user);
 
 // core-specific tasks
-RZ_API RzCoreTask *rz_core_cmd_task_new(RzCore *core, const char *cmd);
+typedef void (*RzCoreCmdTaskFinished)(const char *res, void *user);
+RZ_API RzCoreTask *rz_core_cmd_task_new(RzCore *core, const char *cmd, RzCoreCmdTaskFinished finished_cb, void *finished_cb_user);
 RZ_API const char *rz_core_cmd_task_get_result(RzCoreTask *task);
 typedef void *(*RzCoreTaskFunction)(RzCore *core, void *user);
 RZ_API RzCoreTask *rz_core_function_task_new(RzCore *core, RzCoreTaskFunction fcn, void *fcn_user);
