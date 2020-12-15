@@ -93,7 +93,7 @@ jobs:
             asan: true
             asan_options: 'detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1'
             run_tests: true
-            enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'asan') }}
+            enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'asan') || contains(github.head_ref, 'import')}}
             timeout: 100
             # NOTE: asan errors ignored for release- branch for now, because there are too many issues that would block the release
             ignore_error: ${{ github.event_name == 'push' && contains(github.ref, 'release-') }}

@@ -562,9 +562,17 @@ if get_option('b_sanitize').contains('undefined')
   pkgcfg_sanitize_libs += ' -lubsan'
 endif
 
+use_rpath = false
+if host_machine.system() != 'windows' and get_option('default_library') == 'shared'
+  if get_option('local').enabled() or (get_option('local').auto() and get_option('prefix') != '/usr')
+    use_rpath = true
+  endif
+endif
+
 rpath_exe = ''
 rpath_lib = ''
-if get_option('local') and get_option('default_library') == 'shared'
+if use_rpath
+  message('RPATH will be used to link libraries and executables')
   rpath_exe = '$ORIGIN/../' + get_option('libdir')
   rpath_lib = '$ORIGIN'
 endif

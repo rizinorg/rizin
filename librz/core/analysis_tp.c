@@ -255,11 +255,13 @@ static void retype_callee_arg(RzAnalysis *analysis, const char *callee_name, boo
 		if (!rvar) {
 			return;
 		}
+		char *t = strdup (type);
 		__var_retype (analysis, rvar, NULL, type, false, false);
 		RzAnalysisVar *lvar = rz_analysis_var_get_dst_var (rvar);
 		if (lvar) {
-			__var_retype (analysis, lvar, NULL, type, false, false);
+			__var_retype (analysis, lvar, NULL, t, false, false);
 		}
+		free (t);
 	}
 }
 

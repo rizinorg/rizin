@@ -509,6 +509,9 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 	case X86_INS_CLC:
 		esilprintf (op, "0,cf,:=");
 		break;
+	case X86_INS_CMC:
+		esilprintf (op, "cf,!,cf,=");
+		break;
 	case X86_INS_STC:
 		esilprintf (op, "1,cf,:=");
 		break;
