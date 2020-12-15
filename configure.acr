@@ -1,6 +1,6 @@
 PKGNAME rizin
-VERSION 4.6.0-git
-CONTACT pancake ; pancake@nopcode.org
+VERSION 0.1.0-git
+CONTACT Rizin Core Team ; team@rizin.re
 
 LANG_C!
 
