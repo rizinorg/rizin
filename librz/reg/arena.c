@@ -166,7 +166,7 @@ RZ_API int rz_reg_fit_arena(RzReg *reg) {
 	return true;
 }
 
-RZ_API RzRegArena *rz_reg_arena_new(int size) {
+RZ_API RzRegArena *rz_reg_arena_new(size_t size) {
 	RzRegArena *arena = RZ_NEW0 (RzRegArena);
 	if (!arena) {
 		RZ_LOG_ERROR ("Failed to allocate RzRegArena.\n");

@@ -36,6 +36,14 @@ RZ_API void rz_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize) {
 	}
 }
 
+RZ_API void *rz_mem_copy(void *dest, size_t dmax, const void *src, size_t smax) {
+	if (!smax || !dmax) {
+		return NULL;
+	}
+	rz_return_val_if_fail (dest && src, NULL);
+	return memcpy (dest, src, (smax < dmax) ? smax : dmax);
+}
+
 RZ_API int rz_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len) {
 	ut8 *mdest = malloc (len);
 	if (!mdest) {
