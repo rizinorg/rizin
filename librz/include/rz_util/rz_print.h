@@ -219,9 +219,6 @@ RZ_API void rz_print_rowlog_done(RzPrint *print, const char *str);
 // WIP
 RZ_API int rz_print_unpack7bit(const char *src, char *dest);
 RZ_API int rz_print_pack7bit(const char *src, char *dest);
-RZ_API char *rz_print_stereogram_bytes(const ut8 *buf, int len);
-RZ_API char *rz_print_stereogram(const char *bump, int w, int h);
-RZ_API void rz_print_stereogram_print(RzPrint *p, const char *buf);
 RZ_API void rz_print_set_screenbounds(RzPrint *p, ut64 addr);
 RZ_API int rz_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off);
 RZ_API char* rz_print_json_indent(const char* s, bool color, const char *tab, const char **colors);
