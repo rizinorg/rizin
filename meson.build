@@ -1,4 +1,4 @@
-project('rizin', 'c', license: 'LGPL3', meson_version: '>=0.50.1')
+project('rizin', 'c', license: 'LGPL3', meson_version: '>=0.55.0')
 
 py3_exe = import('python').find_installation()
 git_exe = find_program('git', required: false)
@@ -447,86 +447,10 @@ else
   message('Use system-provided zlib library')
 endif
 
-
-# handle sdb dependency
-# NOTE: copying most of the stuff from sdb to here for the moment, since we
-# should use subpackages to handle this well
-sdb_files = [
-  'shlr/sdb/src/array.c',
-  'shlr/sdb/src/base64.c',
-  'shlr/sdb/src/buffer.c',
-  'shlr/sdb/src/set.c',
-  'shlr/sdb/src/cdb.c',
-  'shlr/sdb/src/cdb_make.c',
-  'shlr/sdb/src/dict.c',
-  'shlr/sdb/src/diff.c',
-  'shlr/sdb/src/disk.c',
-  'shlr/sdb/src/fmt.c',
-  'shlr/sdb/src/ht_uu.c',
-  'shlr/sdb/src/ht_up.c',
-  'shlr/sdb/src/ht_pp.c',
-  'shlr/sdb/src/journal.c',
-  'shlr/sdb/src/json.c',
-  'shlr/sdb/src/lock.c',
-  'shlr/sdb/src/ls.c',
-  'shlr/sdb/src/match.c',
-  'shlr/sdb/src/ns.c',
-  'shlr/sdb/src/num.c',
-  'shlr/sdb/src/query.c',
-  'shlr/sdb/src/sdb.c',
-  'shlr/sdb/src/sdbht.c',
-  'shlr/sdb/src/text.c',
-  'shlr/sdb/src/util.c'
-]
-
-sdb_inc = [platform_inc, include_directories('shlr/sdb/src')]
-
-# Create sdb_version.h
-r = run_command(py3_exe, 'sys/sdb_version.py', 'shlr/sdb/config.mk')
-if r.returncode() == 0
-  sdb_version = r.stdout().strip().split('\n')[0]
-else
-  sdb_version = 'unknown'
-endif
-run_command(py3_exe, '-c', 'with open("shlr/sdb/src/sdb_version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
-
-sdb_inc_files = [
-  'shlr/sdb/src/buffer.h',
-  'shlr/sdb/src/cdb.h',
-  'shlr/sdb/src/set.h',
-  'shlr/sdb/src/cdb_make.h',
-  'shlr/sdb/src/config.h',
-  'shlr/sdb/src/dict.h',
-  'shlr/sdb/src/ht_inc.h',
-  'shlr/sdb/src/ht_pp.h',
-  'shlr/sdb/src/ht_up.h',
-  'shlr/sdb/src/ht_uu.h',
-  'shlr/sdb/src/ls.h',
-  'shlr/sdb/src/sdb.h',
-  'shlr/sdb/src/sdbht.h',
-  'shlr/sdb/src/sdb_version.h',
-  'shlr/sdb/src/types.h'
-]
-install_headers(sdb_inc_files, install_dir: join_paths(rizin_incdir, 'sdb'))
-
-librzsdb = static_library('rzsdb', sdb_files,
-  include_directories: sdb_inc,
-  implicit_include_directories: false,
-  c_args: host_machine.system() == 'windows' ? '-DSDB_API=__declspec(dllexport)' : [],
-)
-
-sdb_dep = declare_dependency(
-  link_whole: librzsdb,
-  include_directories: sdb_inc
-)
-
-sdb_exe = executable('sdb', ['shlr/sdb/src/main.c'] + sdb_files,
-  include_directories: [
-    include_directories(['shlr/sdb/src'])
-  ],
-  implicit_include_directories: false,
-  native: true,
-)
+sdb_proj = subproject('sdb', default_options: ['default_library=static'])
+sdb_dep = sdb_proj.get_variable('sdb_dep')
+# FIXME: sdb_native_exe should be get
+sdb_exe  = sdb_proj.get_variable('sdb_exe')
 
 sdb_gen_cmd = [
   sdb_exe,
@@ -535,7 +459,6 @@ sdb_gen_cmd = [
   '@INPUT@'
 ]
 
-# handle spp dependency
 spp_files = [
   'shlr/spp/spp.c'
 ]

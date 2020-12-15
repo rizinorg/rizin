@@ -35,7 +35,7 @@ jobs:
           macos-meson-clang-tests,
           linux-gcc-tests-asan,
           capstone-v3,
-          capstone-v5
+          capstone-next
         ]
         ignore_error: [false]
         include:
@@ -106,7 +106,7 @@ jobs:
             enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
             timeout: 45
             cflags: '-Werror -Wno-cpp'
-          - name: capstone-v5
+          - name: capstone-next
             os: ubuntu-latest
             build_system: meson
             compiler: gcc

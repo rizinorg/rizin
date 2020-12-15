@@ -3,258 +3,30 @@ capstone_dep = dependency('capstone', version: '>=3.0.4', required: false)
 if not capstone_dep.found() or not get_option('use_sys_capstone')
   message('Use rizin-provided capstone')
 
-  capstone_git_user = 'aquynh'
-
   capstone_version = get_option('use_capstone_version')
-  use_capstone_git = false
-  capstone_in_builddir = false
-
-  # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
   if capstone_version == 'bundled'
-    CS_TIP = '2edae851d9fee511a57d4da32d5acecedd95d7ed'
-    CS_BRA = 'v4'
-    CS_VERSION = '4.0.2'
-    use_capstone_git = true
-  elif capstone_version == 'v5'
-    CS_TIP = 'd956ceddabcbe544ee8f074ba75c86c6381b34e6'
-    CS_BRA = 'next'
-    CS_VERSION = '5'
-    use_capstone_git = true
-    capstone_in_builddir = true
+    capstone_proj = subproject('capstone-v4', default_options: ['default_library=static'])
+  elif capstone_version == 'next'
+    capstone_proj = subproject('capstone-next', default_options: ['default_library=static'])
   elif capstone_version == 'v3'
-    CS_TIP = '61bf71c771680033651f16cff832446e421847b1'
-    CS_BRA = 'v3'
-    CS_VERSION = '3.0.5'
-    capstone_in_builddir = true
+    capstone_proj = subproject('capstone-v3', default_options: ['default_library=static'])
   elif capstone_version == 'v4'
-    CS_TIP = '2edae851d9fee511a57d4da32d5acecedd95d7ed'
-    CS_BRA = 'v4'
-    CS_VERSION = '4.0.2'
-    capstone_in_builddir = true
+    capstone_proj = subproject('capstone-v4', default_options: ['default_library=static'])
   else
     error('Wrong capstone version selected. Please use one of the supported versions.')
   endif
-
-  if (get_option('capstone_in_builddir').auto() and capstone_in_builddir) or get_option('capstone_in_builddir').enabled()
-    capstone_path = join_paths(meson.current_build_dir(), 'capstone')
-  else
-    capstone_path = 'capstone'
-  endif
-
-  res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(capstone_path))
-  if res.returncode() == 0
-    if use_capstone_git
-      if not git_exe.found()
-        error('Cannot load capstone library. Either provide capstone in ./shlr/capstone or install git, so it can be downloaded. Otherwise, select another capstone released version.')
-      endif
-
-      message('Cloning capstone ' + CS_BRA + ' branch, commit ' + CS_TIP + ', into ' + capstone_path)
-      git_cmd = 'clone -b @0@ https://github.com/@1@/capstone.git @2@'.format(CS_BRA, capstone_git_user, capstone_path)
-      clone_cmd = run_command(git_exe, git_cmd.split())
-      if clone_cmd.returncode() != 0
-        error('Cannot execute git clone command')
-      endif
-
-      reset_cmd_str = '-C @0@ reset --hard @1@'.format(capstone_path, CS_TIP)
-      reset_cmd = run_command(git_exe, reset_cmd_str.split())
-      if reset_cmd.returncode() != 0
-        error('Cannot execute git reset command')
-      endif
-
-      patches_files = [
-        'capstone-calloc.patch',
-        'fix-x86-16.patch',
-        'sparc-crash.patch',
-        'sstream-null.patch'
-      ]
-
-      message('Patching capstone with rizin\'s patches')
-      foreach file : patches_files
-        patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', file)
-        patch_cmd_str = '-C @0@ apply -p1 @1@'.format(capstone_path, patch_path)
-        patch_cmd = run_command(git_exe, patch_cmd_str.split())
-        if patch_cmd.returncode() != 0
-          warning('Cannot apply patch ' + file)
-        endif
-      endforeach
-    else
-      wget = find_program('wget', required: false)
-      curl = find_program('curl', required: false)
-      tar = find_program('tar', required: false)
-
-      if not tar.found()
-        error('tar not found, but it is required to download and extract the selected capstone version.')
-      endif
-
-      capstone_tar_path = capstone_path + '.tar.gz'
-
-      if wget.found()
-        message('Downloading capstone version ' + CS_VERSION + ', into ' + capstone_path)
-        wget_cmd = '-O @0@ https://github.com/@1@/capstone/archive/@2@.tar.gz'.format(capstone_tar_path, capstone_git_user, CS_VERSION)
-        if run_command(wget, wget_cmd.split()).returncode() != 0
-          error('Cannot execute wget command')
-        endif
-
-        run_command(py3_exe, '-c', '__import__("os").mkdir("@0@")'.format(capstone_path))
-
-        message('Extracting capstone file @0@'.format(capstone_tar_path))
-        tar_cmd = '-C @0@ --strip-components 1 -xf @1@'.format(capstone_path, capstone_tar_path)
-        if run_command(tar, tar_cmd.split()).returncode() != 0
-          error('Cannot execute tar command')
-        endif
-      elif curl.found()
-      else
-        error('wget/curl are not available on your system. Either provide capstone in ./shlr/capstone or install wget/curl. Otherwise, select the bundled capstone version.')
-      endif
-    endif
-  else
-    message('Capstone directory @0@ already exists. Remove it if you want to re-download capstone.'.format(capstone_path))
-  endif
-
-  rel_cs_files = [
-    'arch/AArch64/AArch64BaseInfo.c',
-    'arch/AArch64/AArch64Disassembler.c',
-    'arch/AArch64/AArch64InstPrinter.c',
-    'arch/AArch64/AArch64Mapping.c',
-    'arch/AArch64/AArch64Module.c',
-    'arch/ARM/ARMDisassembler.c',
-    'arch/ARM/ARMInstPrinter.c',
-    'arch/ARM/ARMMapping.c',
-    'arch/ARM/ARMModule.c',
-    'arch/Mips/MipsDisassembler.c',
-    'arch/Mips/MipsInstPrinter.c',
-    'arch/Mips/MipsMapping.c',
-    'arch/Mips/MipsModule.c',
-    'arch/PowerPC/PPCDisassembler.c',
-    'arch/PowerPC/PPCInstPrinter.c',
-    'arch/PowerPC/PPCMapping.c',
-    'arch/PowerPC/PPCModule.c',
-    'arch/Sparc/SparcDisassembler.c',
-    'arch/Sparc/SparcInstPrinter.c',
-    'arch/Sparc/SparcMapping.c',
-    'arch/Sparc/SparcModule.c',
-    'arch/SystemZ/SystemZDisassembler.c',
-    'arch/SystemZ/SystemZInstPrinter.c',
-    'arch/SystemZ/SystemZMapping.c',
-    'arch/SystemZ/SystemZMCTargetDesc.c',
-    'arch/SystemZ/SystemZModule.c',
-    'arch/X86/X86ATTInstPrinter.c',
-    'arch/X86/X86Disassembler.c',
-    'arch/X86/X86DisassemblerDecoder.c',
-    'arch/X86/X86IntelInstPrinter.c',
-    'arch/X86/X86Mapping.c',
-    'arch/X86/X86Module.c',
-    'arch/XCore/XCoreDisassembler.c',
-    'arch/XCore/XCoreInstPrinter.c',
-    'arch/XCore/XCoreMapping.c',
-    'arch/XCore/XCoreModule.c',
-    'cs.c',
-    'MCInst.c',
-    'MCInstrDesc.c',
-    'MCRegisterInfo.c',
-    'SStream.c',
-    'utils.c',
-  ]
-  rel_cs4_files = [
-    'arch/M680X/M680XDisassembler.c',
-    'arch/M680X/M680XInstPrinter.c',
-    'arch/M680X/M680XModule.c',
-    'arch/M68K/M68KDisassembler.c',
-    'arch/M68K/M68KInstPrinter.c',
-    'arch/M68K/M68KModule.c',
-    'arch/TMS320C64x/TMS320C64xDisassembler.c',
-    'arch/TMS320C64x/TMS320C64xInstPrinter.c',
-    'arch/TMS320C64x/TMS320C64xMapping.c',
-    'arch/TMS320C64x/TMS320C64xModule.c',
-  ]
-  rel_cs5_files = [
-    'arch/X86/X86InstPrinterCommon.c',
-  ]
-
-  cs_files = []
-  foreach rel_cs_file : rel_cs_files
-    cs_files += [join_paths(capstone_path, rel_cs_file)]
-  endforeach
-  if capstone_version == 'v4' or capstone_version == 'v5' or capstone_version == 'bundled'
-    foreach rel_cs_file : rel_cs4_files
-      cs_files += [join_paths(capstone_path, rel_cs_file)]
-    endforeach
-  endif
-  if capstone_version == 'v5'
-    foreach rel_cs_file : rel_cs5_files
-      cs_files += [join_paths(capstone_path, rel_cs_file)]
-    endforeach
-  endif
-
-  capstone_includes = [platform_inc]
-  if capstone_version == 'v4' or capstone_version == 'v5' or capstone_version == 'bundled'
-    capstone_includes += [include_directories('capstone/include/capstone')]
-  elif capstone_version == 'v3'
-    capstone_includes += [include_directories('capstone/include')]
-  endif
-
-  librzcapstone = static_library('rzcapstone', cs_files,
-    c_args: [
-      '-DCAPSTONE_X86_ATT_DISABLE_NO',
-      '-DCAPSTONE_X86_REDUCE_NO',
-      '-DCAPSTONE_USE_SYS_DYN_MEM',
-      '-DCAPSTONE_DIET_NO',
-      '-DCAPSTONE_HAS_ARM',
-      '-DCAPSTONE_HAS_ARM64',
-      '-DCAPSTONE_HAS_M68K',
-      '-DCAPSTONE_HAS_M680X',
-      '-DCAPSTONE_HAS_MIPS',
-      '-DCAPSTONE_HAS_POWERPC',
-      '-DCAPSTONE_HAS_SPARC',
-      '-DCAPSTONE_HAS_SYSZ',
-      '-DCAPSTONE_HAS_X86',
-      '-DCAPSTONE_HAS_XCORE',
-      '-DCAPSTONE_HAS_TMS320C64X',
-    ],
-    include_directories: capstone_includes,
-    implicit_include_directories: false
-  )
-
-  capstone_dep = declare_dependency(
-    link_with: librzcapstone,
-    include_directories: capstone_includes
-  )
+  capstone_dep = capstone_proj.get_variable('capstone_dep')
 else
   message('Use system-provided capstone library')
 endif
 
 
 # handle tree-sitter
-tree_sitter_cflags = ''
-if cc.has_argument('-std=gnu99')
-  tree_sitter_cflags = '-std=gnu99'
-elif cc.has_argument('-std=c99')
-  tree_sitter_cflags = '-std=c99'
-endif
-
 tree_sitter_dep = dependency('tree-sitter', required: false)
 if not tree_sitter_dep.found() or not get_option('use_sys_tree_sitter')
   message('Use bundled tree-sitter')
-  tree_sitter_path = 'tree-sitter'
-  tree_sitter_vc_path = 'tree-sitter.vc'
-
-  tree_sitter_files = [
-    join_paths(tree_sitter_path, 'lib/src/lib.c'),
-  ]
-
-  tree_sitter_inc = [platform_inc, include_directories('tree-sitter/lib/src'), include_directories('tree-sitter/lib/include')]
-
-  libtree_sitter = static_library('tree_sitter', tree_sitter_files,
-    include_directories: tree_sitter_inc,
-    implicit_include_directories: false,
-    c_args: tree_sitter_cflags,
-  )
-
-  tree_sitter_dep = declare_dependency(
-    compile_args: tree_sitter_cflags,
-    link_with: libtree_sitter,
-    include_directories: tree_sitter_inc
-  )
+  tree_sitter_proj = subproject('tree-sitter', default_options: ['default_library=static'])
+  tree_sitter_dep = tree_sitter_proj.get_variable('tree_sitter_dep')
 else
   message('Use system-provided tree-sitter library')
 endif
