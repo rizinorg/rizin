@@ -1668,7 +1668,7 @@ RZ_IPI int rz_cmd_tasks(void *data, const char *input) {
 			return 0;
 		}
 		if (input[1] == '*') {
-			rz_core_task_del_all_done (&core->tasks);
+			rz_core_task_del_all_done (core);
 		} else {
 			rz_core_task_del (&core->tasks, rz_num_math (core->num, input + 1));
 		}
@@ -2157,15 +2157,15 @@ RZ_API int rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd) {
 	rz_sys_signal (SIGPIPE, SIG_IGN);
 	stdout_fd = dup (1);
 	if (stdout_fd != -1) {
-		if (pipe (fds) == 0) {
+		if (rz_sys_pipe (fds, true) == 0) {
 			child = rz_sys_fork ();
 			if (child == -1) {
 				eprintf ("Cannot fork\n");
 				close (stdout_fd);
 			} else if (child) {
 				dup2 (fds[1], 1);
-				close (fds[1]);
-				close (fds[0]);
+				rz_sys_pipe_close (fds[1]);
+				rz_sys_pipe_close (fds[0]);
 				rz_core_cmd (core, rizin_cmd, 0);
 				rz_cons_flush ();
 				close (1);
@@ -6501,21 +6501,6 @@ RZ_API char *rz_core_cmd_str(RzCore *core, const char *cmd) {
 	rz_cons_pop ();
 	rz_cons_echo (NULL);
 	return retstr;
-}
-
-/* run cmd in the main task synchronously */
-RZ_API int rz_core_cmd_task_sync(RzCore *core, const char *cmd, bool log) {
-	RzCoreTask *task = core->tasks.main_task;
-	char *s = strdup (cmd);
-	if (!s) {
-		return 0;
-	}
-	task->cmd = s;
-	task->cmd_log = log;
-	task->state = RZ_CORE_TASK_STATE_BEFORE_START;
-	int res = rz_core_task_run_sync (&core->tasks, task);
-	free (s);
-	return res;
 }
 
 RZ_IPI int rz_cmd_ox(void *data, const char *input) {

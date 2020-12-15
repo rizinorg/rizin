@@ -136,3 +136,4 @@ subprojects/capstone-bundled
 subprojects/sdb
 subprojects/tree-sitter-0.17.3
 subprojects/packagecache
+.cache/

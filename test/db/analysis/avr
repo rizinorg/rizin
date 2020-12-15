@@ -475,6 +475,7 @@ NAME=disasm code after search command IN
 FILE=bins/firmware/arduino_avr.bin
 ARGS=-a avr
 CMDS=<<EOF
+e asm.bytes = true
 s 0
 /ad in ~ 0x18
 pd 5
@@ -565,6 +566,7 @@ NAME=detect false xrefs
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
+e asm.bytes = true
 e asm.lines=false
 aar
 pd 4 @ 4

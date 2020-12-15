@@ -5,8 +5,8 @@
 #define _FILE_OFFSET_BITS 64
 
 // defines like IS_DIGIT, etc'
-#include "rz_util/rz_str_util.h"
 #include <rz_userconf.h>
+#include <rz_util/rz_str_util.h>
 #include <stddef.h>
 #include <assert.h>
 

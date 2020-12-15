@@ -1,6 +1,6 @@
 NAME=PE: hello cxx - entry dis
 FILE=bins/pe/hellocxx-mingw32.exe
-CMDS=?v entry0;pid 4
+CMDS=?v entry0; e asm.bytes=true; pid 4
 EXPECT=<<EOF
 0x401280
 0x00401280   entry0:

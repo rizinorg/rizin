@@ -28,6 +28,7 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
+e asm.bytes=true
 f foo
 fr foo bar
 f

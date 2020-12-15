@@ -169,6 +169,7 @@ FILE=bins/elf/hello.ppc
 CMDS=<<EOF
 CL $$ foo.c:123
 e asm.lines=0
+e asm.bytes=true
 e asm.flags=0
 e asm.dwarf=1
 e asm.cmt.col=20

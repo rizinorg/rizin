@@ -7,7 +7,7 @@ RUN
 
 NAME=PE: corkami mz.exe - dis
 FILE=bins/pe/mz.exe
-CMDS=pid 4
+CMDS=e asm.bytes=true; pid 4; 
 EXPECT=<<EOF
 0x00401000   section.sect_0:
 0x00401000           6818104000  push 0x401018

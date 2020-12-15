@@ -19,6 +19,7 @@ RUN
 NAME=bytes for invalid insn (#11434)
 FILE=-
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 wx 60; pd 2
@@ -187,6 +188,7 @@ RUN
 NAME=pdf hidden code in sparse fix
 FILE=bins/pe/cmd_adf_sample0.exe
 CMDS=<<EOF
+e asm.bytes=true
 e asm.var=false
 e io.cache=true
 wx 90eb09 @ 0x560e71
@@ -255,6 +257,7 @@ NAME=esil func cmts
 FILE=bins/elf/arm1.bin
 CMDS=<<EOF
 tn- __libc_start_main
+e asm.bytes=true
 e asm.emu=true
 e emu.write=true
 s 0x8174
@@ -309,6 +312,7 @@ RUN
 NAME=esil func cmt refline
 FILE=bins/elf/ls
 CMDS=<<EOF
+e asm.bytes=true
 e io.cache=true
 e asm.emu=true
 e asm.types=2
@@ -327,6 +331,7 @@ RUN
 NAME=aht asm.cmt.right=false fix (#12330)
 FILE=-
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 e io.cache=true
@@ -703,6 +708,7 @@ RUN
 NAME=lea section flag bracket fix
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
+e asm.bytes=true
 s 0x5e6e
 e scr.color=0
 pd 1

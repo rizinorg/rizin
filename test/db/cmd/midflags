@@ -10,6 +10,7 @@ NAME=pi asm.midflags=2
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=64
 wx 554889e54157415641554154534881ec
 e asm.flags.middle=2
@@ -70,6 +71,7 @@ NAME=Another pi asm.midflags=2
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=64
 wx 554889e54157415641554154534881ec
 e asm.midflags=2
@@ -89,6 +91,7 @@ NAME=pid asm.midflags=0
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=64
 wx 554889e54157415641554154534881ec
 e asm.flags.middle=0
@@ -272,6 +275,7 @@ NAME=pid asm.midflags=0
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=32
 e asm.flags.middle=0
 f mid.flag = 4
@@ -309,6 +313,7 @@ NAME=pd asm.midflags=0
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=32
 e asm.flags.middle=0
 e asm.lines.bb=false
@@ -329,6 +334,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
+e asm.bytes=true
 e asm.lines.bb=false
 e asm.midflags=2
 f mid.flag = 5
@@ -350,6 +356,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 e asm.lines.bb=false
+e asm.bytes=true
 e asm.flags.middle=2
 f mid.flag = 4
 wx 31ed4989d15e4889e2
@@ -368,6 +375,7 @@ NAME=antidisasm trick for x86 with midflags
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=32
 wx 66b8eb0531c074f9e89090909090
 e asm.lines.bb=false

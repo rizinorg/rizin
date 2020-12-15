@@ -1,5 +1,7 @@
 
 if get_option('enable_tests')
+  subdir('auxiliary')
+
   tests = [
     'addr_interval',
     'analysis_block',
@@ -21,6 +23,7 @@ if get_option('enable_tests')
     'ovf',
     'cmd',
     'core_cmd',
+    'core_task',
     'rzpipe',
     'cons',
     'contrbtree',
@@ -59,6 +62,7 @@ if get_option('enable_tests')
     'str',
     'strbuf',
     'table',
+    'task',
     'tree',
     'uleb128',
     'unum',
@@ -67,7 +71,8 @@ if get_option('enable_tests')
     'skyline',
     'big',
     'idpool',
-    'idstorage'
+    'idstorage',
+    'subprocess',
   ]
 
   foreach test : tests

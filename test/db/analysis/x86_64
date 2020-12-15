@@ -76,6 +76,7 @@ RUN
 NAME=x86_64 socket syscall
 FILE=bins/elf/socket-syscall
 CMDS=<<EOF
+e asm.bytes=true
 aa
 aae
 s main
@@ -489,6 +490,7 @@ RUN
 NAME=aac pe trampoline fcn name 64bit
 FILE=bins/pe/testx64.exe
 CMDS=<<EOF
+e asm.bytes=true
 e analysis.autoname=false
 aac
 pd 1 @ 0x140001970
@@ -502,6 +504,7 @@ NAME=block takeover
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 e asm.comments=false
+e asm.bytes=true
 e asm.var=false
 aac
 pdr @ 0x00487350
@@ -1062,6 +1065,7 @@ RUN
 NAME=delete memory format with Cf-
 FILE=bins/dmg/src/Hello
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 pd 1
@@ -1395,6 +1399,7 @@ RUN
 NAME=no string on cbz
 FILE=malloc://8096
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=arm
 e asm.bits=64
 e cfg.bigendian=false
@@ -1437,6 +1442,7 @@ RUN
 NAME=Mixed reg/stack callee arguments type matching
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
+e asm.bytes=true
 s 0x14000b54c
 aei
 aeim
@@ -1695,6 +1701,7 @@ RUN
 NAME=afva for fastcall with no esp vars
 FILE=bins/elf/analysis/fast
 CMDS=<<EOF
+e asm.bytes=true
 aa
 s sym.fastcaslled
 afc fastcall
@@ -1742,6 +1749,7 @@ NAME=afva for cdecl/stdcall with no esp vars
 FILE=bins/elf/analysis/fast
 CMDS=<<EOF
 e asm.calls=false
+e asm.bytes=true
 aa
 s sym.nonfastcaslled
 afc
@@ -1783,6 +1791,7 @@ RUN
 NAME=analysis vars crash
 FILE=-
 CMDS=<<EOF
+e asm.bytes=true
 af
 afvr-*
 afvr-*
@@ -1794,6 +1803,7 @@ RUN
 NAME=analysis vars crash 2
 FILE=-
 CMDS=<<EOF
+e asm.bytes=true
 e asm.bits=64
 e asm.arch = x86
 e analysis.arch = x86
@@ -2008,6 +2018,7 @@ RUN
 NAME=axt avr
 FILE=bins/firmware/main.avr
 CMDS=<<EOF
+e asm.bytes=true
 f str.hello 12 @ 0x276
 Csa 12 @ str.hello
 axd 0x260 @ str.hello
@@ -2339,6 +2350,7 @@ NAME=refs on PIC binary disassembly
 FILE=bins/elf/analysis/xrefpic
 CMDS=<<EOF
 e analysis.strings=true
+e asm.bytes=true
 aa
 aae
 pd 1 @ 0x08048432
@@ -2378,6 +2390,7 @@ RUN
 NAME=refs with aar
 FILE=bins/elf/crackme
 CMDS=<<EOF
+e asm.bytes=true
 e asm.lines.bb=false
 e asm.lines.fcn=false
 aar
@@ -2400,6 +2413,7 @@ RUN
 NAME=refs with afr
 FILE=bins/elf/crackme
 CMDS=<<EOF
+e asm.bytes=true
 e asm.lines.bb=false
 e asm.lines.fcn=false
 e analysis.jmp.cref=true
@@ -2425,6 +2439,7 @@ NAME=cjmp data refs with aar
 FILE=malloc://10000
 CMDS=<<EOF
 e asm.arch=8051
+e asm.bytes=true
 e asm.lines.bb=false
 e asm.lines.fcn=false
 wx 307401000022
@@ -2442,6 +2457,7 @@ FILE=malloc://10000
 CMDS=<<EOF
 e asm.arch=8051
 e asm.lines.bb=false
+e asm.bytes = true
 e asm.lines.fcn=false
 wx 307401000022
 aa
@@ -2504,6 +2520,7 @@ NAME=r_analysis_fcn_split_bb FITFCNSZ fix (#12008)
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=64
 e analysis.jmp.mid=false
 e io.cache=true
@@ -2564,6 +2581,7 @@ NAME=overlapping basic blocks and analysis.jmp.mid
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=64
 e analysis.nopskip=false
 e asm.bb.middle=true
@@ -3375,6 +3393,7 @@ RUN
 NAME=test_switch_indirect.exe switch/case flags
 FILE=bins/jmptbl/test_switch_indirect.exe
 CMDS=<<EOF
+e asm.bytes=true
 s main
 af
 e asm.lines = false
@@ -3510,6 +3529,7 @@ RUN
 NAME=Microsoft x64 CC Args/Vars
 FILE=bins/pe/testx64.exe
 CMDS=<<EOF
+e asm.bytes=true
 e asm.comments=0
 e analysis.vars.stackname=true
 s 0x140001080
@@ -3604,6 +3624,7 @@ RUN
 NAME=lea pseudo improvements (pseudo disabled)
 FILE=-
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 e asm.comments=false
@@ -3646,6 +3667,7 @@ NAME=lea pseudo improvements (pseudo enabled)
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=64
 e asm.comments=false
 e asm.pseudo=true

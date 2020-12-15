@@ -373,6 +373,7 @@ NAME=ib java class file
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.calls=false
+e asm.bytes=true
 e asm.comments=false
 e asm.cmtflgrefs=false
 e scr.color=false
@@ -2811,7 +2812,10 @@ RUN
 
 NAME=bss section comment
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=pd 3 @ section..bss
+CMDS=<<EOF
+e asm.bytes=true
+pd 3 @ section..bss
+EOF
 EXPECT=<<EOF
             ;-- section..bss:
             ;-- .bss:

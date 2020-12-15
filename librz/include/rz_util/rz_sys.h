@@ -9,7 +9,6 @@
 #define RZ_SYS_DEVNULL "/dev/null"
 #endif
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -47,6 +46,39 @@ RZ_API char *rz_sys_pid_to_path(int pid);
 RZ_API int rz_sys_run(const ut8 *buf, int len);
 RZ_API int rz_sys_run_rop(const ut8 *buf, int len);
 RZ_API int rz_sys_getpid(void);
+#if !HAVE_PIPE || (__UNIX__ && HAVE_PIPE)
+RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec);
+RZ_API int rz_sys_pipe_close(int fd);
+#else
+#define rz_sys_pipe pipe
+#define rz_sys_pipe_close close
+#endif
+#if !HAVE_EXECV || (__UNIX__ && HAVE_EXECV && HAVE_PIPE && !HAVE_PIPE2)
+RZ_API int rz_sys_execv(const char *pathname, char *const argv[]);
+#else
+#define rz_sys_execv execv
+#endif
+#if !HAVE_EXECVE || (__UNIX__ && HAVE_EXECVE && HAVE_PIPE && !HAVE_PIPE2)
+RZ_API int rz_sys_execve(const char *pathname, char *const argv[], char *const envp[]);
+#else
+#define rz_sys_execve execve
+#endif
+#if !HAVE_EXECVP || (__UNIX__ && HAVE_EXECVP && HAVE_PIPE && !HAVE_PIPE2)
+RZ_API int rz_sys_execvp(const char *file, char *const argv[]);
+#else
+#define rz_sys_execvp execvp
+#endif
+#if !HAVE_EXECL || (__UNIX__ && HAVE_EXECL && HAVE_PIPE && !HAVE_PIPE2)
+RZ_API int rz_sys_execl(const char *pathname, const char *arg, ...);
+#else
+#define rz_sys_execl execl
+#endif
+#if !HAVE_SYSTEM || (__UNIX__ && HAVE_SYSTEM && HAVE_PIPE && !HAVE_PIPE2)
+RZ_API int rz_sys_system(const char *command);
+#else
+#define rz_sys_system system
+#endif
+
 RZ_API int rz_sys_crash_handler(const char *cmd);
 RZ_API const char *rz_sys_arch_str(int arch);
 RZ_API int rz_sys_arch_id(const char *arch);

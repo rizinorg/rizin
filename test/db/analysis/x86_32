@@ -18,6 +18,7 @@ RUN
 NAME=hang-on-aa/-aac fix (#15004)
 FILE=bins/pe/15004.file
 CMDS=<<EOF
+e asm.bytes=true
 e analysis.vars.stackname=true
 aa
 e asm.var=false
@@ -64,6 +65,7 @@ RUN
 NAME=aac pe trampoline fcn name 32bit
 FILE=bins/pe/testx32.exe
 CMDS=<<EOF
+e asm.bytes=true
 e analysis.autoname=false
 aac
 pd 1 @ 0x004017f6
@@ -250,7 +252,7 @@ RUN
 
 NAME=x86: fastcall argument analysis
 FILE=bins/elf/analysis/fast
-CMDS=aa ; s sym.fastcaslled ; afc fastcall ; afva ; pdf~arg,var
+CMDS=aa ; s sym.fastcaslled ; e asm.bytes=true; afc fastcall ; afva ; pdf~arg,var
 EXPECT=<<EOF
 / 59: sym.fastcaslled (int32_t arg1, int32_t arg2, int32_t arg_8h, int32_t arg_ch);
 |           ; var int32_t var_20h @ ebp-0x20
@@ -1460,6 +1462,7 @@ RUN
 NAME=resolve reloc symbols 1
 FILE=bins/elf/libc.so.6
 CMDS=<<EOF
+e asm.bytes=true
 s 0x0003a4af
 pd 1
 EOF
@@ -2829,7 +2832,7 @@ RUN
 
 NAME=get function in, node before entry
 FILE=bins/elf/fcn_in_test.elf
-CMDS=e asm.lines=false;e asm.comments=false;af @ main; pdr @ 0x1180
+CMDS=e asm.lines=false;e asm.comments=false;e asm.bytes=true;af @ main; pdr @ 0x1180
 EXPECT=<<EOF
 ;-- start2:
 0x00001180      31c0           xor eax, eax
@@ -3347,6 +3350,7 @@ RUN
 NAME=no string on jmp
 FILE=malloc://8096
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=32
 e emu.str=true
@@ -3362,6 +3366,7 @@ RUN
 NAME=afva for esp based vars
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.bytes=true
 e asm.bits=32
 e asm.arch = x86
 e analysis.arch = x86
