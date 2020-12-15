@@ -3,6 +3,7 @@ FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
+e asm.bytes=true
 e analysis.hasnext=0
 wx b8010000004839ca7f00
 pD -10 @ 0xa
@@ -19,6 +20,7 @@ FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
+e asm.bytes=true
 e analysis.hasnext=0
 wx b8010000004839ca7f00
 pD -10 @ 10
@@ -34,6 +36,7 @@ NAME=pD 5 @ 0
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=64
 e analysis.hasnext=0
 wx b8010000004839ca7f00
@@ -63,6 +66,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
+e asm.bytes=true
 wx 90909090909090909090 ; s 10 ; pD -10
 EOF
 EXPECT=<<EOF

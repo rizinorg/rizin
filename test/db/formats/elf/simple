@@ -9,6 +9,7 @@ RUN
 NAME=ELF: simple.elf - code
 FILE=bins/elf/analysis/simple.elf
 CMDS=<<EOF
+e asm.bytes=true
 e asm.sub.names=false
 pid 4 @ entry0
 EOF
@@ -23,7 +24,7 @@ RUN
 
 NAME=ELF: asm.flags.middle=0 + local symbols
 FILE=bins/elf/analysis/example.elf
-CMDS=e asm.flags.middle=0;pd 3 @ 0x356
+CMDS=e asm.flags.middle=0;e asm.bytes=true;pd 3 @ 0x356
 EXPECT=<<EOF
         :   0x00000356      00f033f9       bl sym.app_uart_get
         :   0x0000035a      0028           cmp r0, 0
@@ -33,7 +34,7 @@ RUN
 
 NAME=ELF: asm.flags.middle=1 + local symbols
 FILE=bins/elf/analysis/example.elf
-CMDS=e asm.flags.middle=1;pd 3 @ 0x356
+CMDS=e asm.flags.middle=1;e asm.bytes=true;pd 3 @ 0x356
 EXPECT=<<EOF
         :   0x00000356      00f033f9       bl sym.app_uart_get
         :   0x0000035a      0028           cmp r0, 0
@@ -43,7 +44,7 @@ RUN
 
 NAME=ELF: asm.flags.middle + local symbols
 FILE=bins/elf/analysis/example.elf
-CMDS=pd 3 @ 0x356
+CMDS=e asm.bytes=true; pd 3 @ 0x356;
 EXPECT=<<EOF
         :   0x00000356      00f033f9       bl sym.app_uart_get
         :   0x0000035a      0028           cmp r0, 0
@@ -54,6 +55,7 @@ RUN
 NAME=ELF: asm.flags.middle2 + local symbols
 FILE=bins/elf/analysis/example.elf
 CMDS=<<EOF
+e asm.bytes=true
 e asm.flags.middle=0
 pd 3 @ 0x356
 EOF

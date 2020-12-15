@@ -18,6 +18,7 @@ RUN
 NAME=typelinks
 FILE=-
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 wx 41574156415541544989f4555389fd4881eca8030000488b3e64488b042528000000488984249803000031c0e82fb30000488d35d54e0100bf0600000
@@ -46,6 +47,7 @@ RUN
 NAME=typelinks 2
 FILE=-
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 wx 48656c6c341248656c6c6f00000000000000000048656c6c6f0000000000000000009090
@@ -108,6 +110,7 @@ NAME=jni and SoP
 FILE=bins/elf/libverifyPass.so
 CMDS=<<EOF
 e analysis.vars.stackname=true
+e asm.bytes=true
 e asm.lines.bb = false
 aa
 s sym.Java_com_app_ndh_NDHActivity_print
@@ -604,6 +607,7 @@ RUN
 NAME=aht and arm
 FILE=-
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch = arm
 e asm.bits = 32
 wx 082090e5040081e5
@@ -623,6 +627,7 @@ RUN
 NAME=aht and mips
 FILE=-
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=mips
 wx 08007fac040053800800538c
 "td struct foo {int a; int b; int c;};"
@@ -643,6 +648,7 @@ RUN
 NAME=struct offset for dst operand with aht
 FILE=-
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=32
 "td struct foo {int a; int b ; int c;}"
@@ -667,6 +673,7 @@ NAME=struct offset propagate via tl
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=64
 e asm.comments = false
 "td struct bar {int a ; int b; int c;}"
@@ -688,6 +695,7 @@ RUN
 NAME=aat with single struct
 FILE=-
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 e asm.comments = false
@@ -712,6 +720,7 @@ NAME=aat with multiple struct
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=64
 e asm.comments = false
 e asm.flags = false
@@ -741,6 +750,7 @@ RUN
 NAME=Comments and var in struct offset propagation
 FILE=bins/elf/struct_sample
 CMDS=<<EOF
+e asm.bytes=true
 aa
 s main
 "td struct Books {char  title[50];char  author[50]; char  subject[100];};"
@@ -764,6 +774,7 @@ RUN
 NAME=tl with ahr (return value hint)
 FILE=bins/elf/struct_2
 CMDS=<<EOF
+e asm.bytes=true
 aa
 "td struct Test { int a; int  b; char *c;};"
 s main
@@ -784,6 +795,7 @@ RUN
 NAME=Basic union test
 FILE=bins/elf/union_sample
 CMDS=<<EOF
+e asm.bytes=true
 aa
 "td union Books {char  title[50];char  author[50]; char  subject[100];};"
 tu
@@ -1092,6 +1104,7 @@ NAME=Caller to callee propgation (64 bits)
 FILE=bins/elf/arg_down_prop
 CMDS=<<EOF
 e asm.lines = false
+e asm.bytes = true
 e asm.xrefs = false
 aa
 aaft
@@ -1112,6 +1125,7 @@ NAME=Caller to caller propgation (32 bits)
 FILE=bins/elf/arg_down_32
 CMDS=<<EOF
 e asm.lines = false
+e asm.bytes=true
 e asm.xrefs = false
 aa
 aaft
@@ -1635,6 +1649,7 @@ NAME=aht aligned
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=64
 "td struct foo {char gap;int bar __attribute__((__aligned__(4)));};"
 "td struct foo2 {char gap[1];int bar __attribute__((__aligned__(4)));};"

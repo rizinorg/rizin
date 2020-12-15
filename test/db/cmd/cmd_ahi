@@ -49,6 +49,7 @@ NAME=ahi with colors
 FILE=-
 CMDS=<<EOF
 e asm.bits=64
+e asm.bytes=true
 e asm.arch=x86
 e scr.color=1
 wx 4881ec48060000
@@ -117,6 +118,7 @@ NAME=2: ahi none
 FILE=-
 CMDS=<<EOF
 e asm.bits=64
+e asm.bytes=true
 e asm.arch=x86
 wx 4881ec48060000
 pd 1
@@ -130,6 +132,7 @@ NAME=3: ahi none
 FILE=-
 CMDS=<<EOF
 e asm.bits=64
+e asm.bytes=true
 e asm.arch=x86
 ahi 16
 wx 4881ec48060000
@@ -144,6 +147,7 @@ NAME=1: ahi 10
 FILE=-
 CMDS=<<EOF
 e asm.bits=64
+e asm.bytes=true
 e asm.arch=x86
 wx 4881ec48060000
 ahi 10
@@ -158,6 +162,7 @@ NAME=ahi 8
 FILE=-
 CMDS=<<EOF
 e asm.bits=64
+e asm.bytes=true
 e asm.arch=x86
 wx 4881ec48060000
 ahi 8
@@ -172,6 +177,7 @@ NAME=1: ahi 2
 FILE=-
 CMDS=<<EOF
 e asm.bits=64
+e asm.bytes=true
 e asm.arch=x86
 wx 4881ec48060000
 ahi 2
@@ -270,6 +276,7 @@ ARGS=-m 0x100001000
 CMDS=<<EOF
 e io.va
 e asm.sub.rel=false
+e asm.bytes=true
 e asm.leahints=false
 e asm.arch=x86
 e asm.bits=64

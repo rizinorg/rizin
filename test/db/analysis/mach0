@@ -5,6 +5,7 @@ e analysis.loads=true
 e analysis.in=range
 e analysis.from=0x8000
 e analysis.to=0x8000+4K
+e asm.bytes=true
 aac
 afna
 aar
