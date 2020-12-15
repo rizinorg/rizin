@@ -9,7 +9,7 @@ static int task_enqueue(RzCore *core, const char *cmd, bool transient) {
 		eprintf ("This command is disabled in sandbox mode\n");
 		return -1;
 	}
-	RzCoreTask *task = rz_core_task_new (core, true, cmd, NULL, core);
+	RzCoreTask *task = rz_core_cmd_task_new (core, cmd);
 	if (!task) {
 		return -1;
 	}
@@ -24,8 +24,9 @@ static int task_output(RzCore *core, int tid) {
 	}
 	RzCoreTask *task = rz_core_task_get_incref (&core->tasks, tid);
 	if (task) {
-		if (task->res) {
-			rz_cons_println (task->res);
+		const char *res = rz_core_cmd_task_get_result (task);
+		if (res) {
+			rz_cons_println (res);
 		}
 		rz_core_task_decref (task);
 	} else {
@@ -40,7 +41,10 @@ static int task_break(RzCore *core, int tid) {
 		eprintf ("This command is disabled in sandbox mode\n");
 		return -1;
 	}
-	if (tid) {
+	if (!tid) {
+		return -1;
+	}
+	if (!rz_core_task_is_cmd (core, tid)) {
 		return -1;
 	}
 	rz_core_task_break (&core->tasks, tid);
@@ -77,6 +81,9 @@ RZ_IPI RzCmdStatus rz_tasks_delete_handler(RzCore *core, int argc, const char **
 		return RZ_CMD_STATUS_ERROR;
 	}
 	int tid = rz_num_math (core->num, argv[1]);
+	if (!rz_core_task_is_cmd (core, tid)) {
+		return RZ_CMD_STATUS_ERROR;
+	}
 	return rz_core_task_del (&core->tasks, tid)? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
 }
 
@@ -85,7 +92,7 @@ RZ_IPI RzCmdStatus rz_tasks_delete_all_handler(RzCore *core, int argc, const cha
 		eprintf ("This command is disabled in sandbox mode\n");
 		return RZ_CMD_STATUS_ERROR;
 	}
-	rz_core_task_del_all_done (&core->tasks);
+	rz_core_task_del_all_done (core);
 	return RZ_CMD_STATUS_OK;
 }
 
@@ -97,6 +104,9 @@ RZ_IPI RzCmdStatus rz_tasks_wait_handler(RzCore *core, int argc, const char **ar
 	int tid = 0;
 	if (argc == 2) {
 		tid = rz_num_math (core->num, argv[1]);
+	}
+	if (!rz_core_task_is_cmd (core, tid)) {
+		return RZ_CMD_STATUS_ERROR;
 	}
 	rz_core_task_join (&core->tasks, core->tasks.current_task, tid ? tid : -1);
 	return RZ_CMD_STATUS_OK;

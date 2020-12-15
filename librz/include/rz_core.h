@@ -210,7 +210,23 @@ typedef struct {
 
 RZ_API void rz_core_gadget_free (RzCoreGadget *g);
 
+typedef struct rz_core_task_t RzCoreTask;
+
+/**
+ * Scheduler-wide callback to switch any necessary context from cur to next.
+ */
+typedef void (*RzCoreTaskContextSwitch)(RzCoreTask *next, void *user);
+
+/**
+ * Scheduler-wide callback for breaking a task.
+ */
+typedef void (*RzCoreTaskBreak)(RzCoreTask *task, void *user);
+
 typedef struct rz_core_tasks_t {
+	RzCoreTaskContextSwitch ctx_switch;
+	void *ctx_switch_user;
+	RzCoreTaskBreak break_cb;
+	void *break_cb_user;
 	int task_id_next;
 	RzList *tasks;
 	RzList *tasks_queue;
@@ -385,7 +401,6 @@ RZ_API void rz_core_prompt_loop(RzCore *core);
 RZ_API ut64 rz_core_pava(RzCore *core, ut64 addr);
 RZ_API int rz_core_cmd(RzCore *core, const char *cmd, int log);
 RZ_API RzCmdStatus rz_core_cmd_newshell(RzCore *core, const char *cmd, int log);
-RZ_API int rz_core_cmd_task_sync(RzCore *core, const char *cmd, bool log);
 RZ_API char *rz_core_editor(const RzCore *core, const char *file, const char *str);
 RZ_API int rz_core_fgets(char *buf, int len, void *user);
 RZ_API RzFlagItem *rz_core_flag_get_by_spaces(RzFlag *f, ut64 off);
@@ -812,48 +827,53 @@ RZ_API char *cmd_syscall_dostr(RzCore *core, st64 num, ut64 addr);
 
 /* tasks */
 
-typedef void (*RzCoreTaskCallback)(void *user, char *out);
-
 typedef enum {
 	RZ_CORE_TASK_STATE_BEFORE_START,
 	RZ_CORE_TASK_STATE_RUNNING,
 	RZ_CORE_TASK_STATE_SLEEPING,
 	RZ_CORE_TASK_STATE_DONE
-} RTaskState;
+} RzTaskState;
 
-typedef struct rz_core_task_t {
+/**
+ * Main payload of a task, the function that should be executed asynchronously.
+ */
+typedef void (*RzCoreTaskRunner)(RzCoreTaskScheduler *sched, void *user);
+
+/**
+ * Task-specific callback to free/cleanup any runner-specific data.
+ */
+typedef void (*RzCoreTaskRunnerFree)(void *user);
+
+struct rz_core_task_t {
+	RzCoreTaskScheduler *sched;
 	int id;
-	RTaskState state;
+	RzTaskState state;
 	bool transient; // delete when finished
 	int refcount;
 	RzThreadSemaphore *running_sem;
-	void *user;
-	RzCore *core;
 	bool dispatched;
 	RzThreadCond *dispatch_cond;
 	RzThreadLock *dispatch_lock;
 	RzThread *thread;
-	char *cmd;
-	char *res;
-	bool cmd_log;
-	RzConsContext *cons_context;
-	RzCoreTaskCallback cb;
-} RzCoreTask;
+	bool breaked;
+
+	RzCoreTaskRunner runner; // will be NULL for main task
+	RzCoreTaskRunnerFree runner_free;
+	void *runner_user;
+};
 
 typedef void (*RzCoreTaskOneShot)(void *);
 
 RZ_API void rz_core_echo(RzCore *core, const char *msg);
 RZ_API RTable *rz_core_table(RzCore *core);
 
-RZ_API void rz_core_task_scheduler_init (RzCoreTaskScheduler *tasks, RzCore *core);
-RZ_API void rz_core_task_scheduler_fini (RzCoreTaskScheduler *tasks);
-RZ_API RzCoreTask *rz_core_task_get(RzCoreTaskScheduler *scheduler, int id);
+RZ_API void rz_core_task_scheduler_init(RzCoreTaskScheduler *sched,
+		RzCoreTaskContextSwitch ctx_switch, void *ctx_switch_user,
+		RzCoreTaskBreak break_cb, void *break_cb_user);
+RZ_API void rz_core_task_scheduler_fini(RzCoreTaskScheduler *tasks);
 RZ_API RzCoreTask *rz_core_task_get_incref(RzCoreTaskScheduler *scheduler, int id);
-RZ_API void rz_core_task_print(RzCore *core, RzCoreTask *task, int mode);
-RZ_API void rz_core_task_list(RzCore *core, int mode);
 RZ_API int rz_core_task_running_tasks_count(RzCoreTaskScheduler *scheduler);
-RZ_API const char *rz_core_task_status(RzCoreTask *task);
-RZ_API RzCoreTask *rz_core_task_new(RzCore *core, bool create_cons, const char *cmd, RzCoreTaskCallback cb, void *user);
+RZ_API RzCoreTask *rz_core_task_new(RzCoreTaskScheduler *sched, RzCoreTaskRunner runner, RzCoreTaskRunnerFree runner_free, void *runner_user);
 RZ_API void rz_core_task_incref(RzCoreTask *task);
 RZ_API void rz_core_task_decref(RzCoreTask *task);
 RZ_API void rz_core_task_enqueue(RzCoreTaskScheduler *scheduler, RzCoreTask *task);
@@ -867,13 +887,24 @@ RZ_API void rz_core_task_sleep_end(RzCoreTask *task);
 RZ_API void rz_core_task_break(RzCoreTaskScheduler *scheduler, int id);
 RZ_API void rz_core_task_break_all(RzCoreTaskScheduler *scheduler);
 RZ_API int rz_core_task_del(RzCoreTaskScheduler *scheduler, int id);
-RZ_API void rz_core_task_del_all_done(RzCoreTaskScheduler *scheduler);
 RZ_API RzCoreTask *rz_core_task_self(RzCoreTaskScheduler *scheduler);
 RZ_API void rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCoreTask *current, int id);
 typedef void (*inRangeCb) (RzCore *core, ut64 from, ut64 to, int vsize,
 		int count, void *cb_user);
 RZ_API int rz_core_search_value_in_range (RzCore *core, RzInterval search_itv,
 		ut64 vmin, ut64 vmax, int vsize, inRangeCb cb, void *cb_user);
+
+// core-specific tasks
+RZ_API RzCoreTask *rz_core_cmd_task_new(RzCore *core, const char *cmd);
+RZ_API const char *rz_core_cmd_task_get_result(RzCoreTask *task);
+typedef void *(*RzCoreTaskFunction)(RzCore *core, void *user);
+RZ_API RzCoreTask *rz_core_function_task_new(RzCore *core, RzCoreTaskFunction fcn, void *fcn_user);
+RZ_API void *rz_core_function_task_get_result(RzCoreTask *task);
+RZ_API const char *rz_core_task_status(RzCoreTask *task);
+RZ_API void rz_core_task_print(RzCore *core, RzCoreTask *task, int mode, PJ *j);
+RZ_API void rz_core_task_list(RzCore *core, int mode);
+RZ_API bool rz_core_task_is_cmd(RzCore *core, int id);
+RZ_API void rz_core_task_del_all_done(RzCore *core);
 
 RZ_API RzCoreAutocomplete *rz_core_autocomplete_add(RzCoreAutocomplete *parent, const char* cmd, int type, bool lock);
 RZ_API void rz_core_autocomplete_free(RzCoreAutocomplete *obj);
