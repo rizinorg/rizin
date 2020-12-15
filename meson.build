@@ -132,6 +132,12 @@ if get_option('static_runtime')
   endif
 endif
 
+if cc.has_argument('--std=gnu99')
+  add_project_arguments('--std=gnu99', language: ['c', 'cpp'])
+elif cc.has_argument('--std=c99')
+  add_project_arguments('--std=c99', language: ['c', 'cpp'])
+fi
+
 if cc.get_id() == 'clang-cl'
   add_project_arguments('-fcommon', language: 'c')
   add_project_arguments('-D__STDC__=1', language: 'c')
