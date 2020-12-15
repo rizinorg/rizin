@@ -129,4 +129,10 @@ vgcore.*
 librz/include/sdb
 peda-session-*
 /.vs
-subprojects/
+subprojects/capstone-3.0.5
+subprojects/capstone-4.0.2
+subprojects/capstone-next
+subprojects/capstone-bundled
+subprojects/sdb
+subprojects/tree-sitter-0.17.3
+subprojects/packagecache

@@ -5,7 +5,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
 
   capstone_version = get_option('use_capstone_version')
   if capstone_version == 'bundled'
-    capstone_proj = subproject('capstone-v4', default_options: ['default_library=static'])
+    capstone_proj = subproject('capstone-bundled', default_options: ['default_library=static'])
   elif capstone_version == 'next'
     capstone_proj = subproject('capstone-next', default_options: ['default_library=static'])
   elif capstone_version == 'v3'
