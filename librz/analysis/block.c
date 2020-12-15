@@ -958,7 +958,7 @@ typedef struct {
 	RzAnalysisBlock *ret;
 } BlockFromOffsetJmpmidCtx;
 
-static bool block_from_offset_jmpmid_cb(RzAnalysisBlock *block, void *user) {
+static bool block_from_offset_cb(RzAnalysisBlock *block, void *user) {
 	BlockFromOffsetJmpmidCtx *ctx = user;
 	// If an instruction starts exactly at the search addr, return that block immediately
 	if (rz_analysis_block_op_starts_at (block, ctx->addr)) {
@@ -972,12 +972,6 @@ static bool block_from_offset_jmpmid_cb(RzAnalysisBlock *block, void *user) {
 	return true;
 }
 
-static bool bb_from_offset_first_cb(RzAnalysisBlock *block, void *user) {
-	RzAnalysisBlock **ret = user;
-	*ret = block;
-	return false;
-}
-
 /**
  * Find a single block that seems to be the "most relevant" one that contains the given offset.
  * This should only be used when explicitly only a single basic block should be considered, for example
@@ -985,16 +979,9 @@ static bool bb_from_offset_first_cb(RzAnalysisBlock *block, void *user) {
  * Use rz_analysis_get_blocks_in() in all other cases!
  */
 RZ_API RzAnalysisBlock *rz_analysis_find_most_relevant_block_in(RzAnalysis *analysis, ut64 off) {
-	const bool x86 = analysis->cur->arch && !strcmp (analysis->cur->arch, "x86");
-	if (analysis->opt.jmpmid && x86) {
-		BlockFromOffsetJmpmidCtx ctx = { off, NULL };
-		rz_analysis_blocks_foreach_in (analysis, off, block_from_offset_jmpmid_cb, &ctx);
-		return ctx.ret;
-	}
-
-	RzAnalysisBlock *ret = NULL;
-	rz_analysis_blocks_foreach_in (analysis, off, bb_from_offset_first_cb, &ret);
-	return ret;
+	BlockFromOffsetJmpmidCtx ctx = { off, NULL };
+	rz_analysis_blocks_foreach_in (analysis, off, block_from_offset_cb, &ctx);
+	return ctx.ret;
 }
 
 /**
