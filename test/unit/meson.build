@@ -1,5 +1,7 @@
 
 if get_option('enable_tests')
+  subdir('auxiliary')
+
   tests = [
     'addr_interval',
     'analysis_block',
@@ -67,7 +69,8 @@ if get_option('enable_tests')
     'skyline',
     'big',
     'idpool',
-    'idstorage'
+    'idstorage',
+    'subprocess',
   ]
 
   foreach test : tests

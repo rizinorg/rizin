@@ -78,6 +78,20 @@ CHKFNC c explicit_memset
 CHKFNC c clock_nanosleep
 CHKFNC c sigaction
 CHKFNC c clock_gettime
+CHKFNC c pipe
+CHKFNC c execv
+CHKFNC c execve
+CHKFNC c execvp
+CHECK HAVE_EXECL <<EOF
+echo "#include <unistd.h>" > temp.c \
+echo "int main(int argc, char *argv) { void *x = (void *)execl; return 0;}" >> temp.c \
+${CC} temp.c \
+HAVE_EXECL=$? \
+rm -f temp.c
+<<EOF
+
+CHKFNC c system
+CHKFNC c pipe2
 
 IFNOT HAVE_CLOCK_GETTIME {
 	IF HAVE_DECL___GLIBC__ {

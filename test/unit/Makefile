@@ -1,5 +1,6 @@
 BINDIR := bin
 BINS=$(patsubst %.c,$(BINDIR)/%,$(wildcard *.c))
+AUX_BINS=$(patsubst %.c,$(BINDIR)/%,$(wildcard auxiliary/*.c))
 LDFLAGS += $(shell pkg-config --libs rz_core)
 CFLAGS += $(shell pkg-config --cflags rz_core) -g
 ifeq ($(ASAN),1)
@@ -8,10 +9,11 @@ else
 	ASAN_LD_PRELOAD=
 endif
 
-all: $(BINS)
+all: $(BINS) $(AUX_BINS)
 
 $(BINDIR)/%: %.c
 	mkdir -p "$(BINDIR)"
+	mkdir -p "$(BINDIR)"/auxiliary
 	$(CC) $< -o $@ $(CFLAGS) $(LDFLAGS)
 
 run:

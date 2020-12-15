@@ -131,13 +131,6 @@ typedef struct rz_test_run_config_t {
 	ut64 timeout_ms;
 } RzTestRunConfig;
 
-typedef struct rz_test_process_output_t {
-	char *out; // stdout
-	char *err; // stderr
-	int ret; // exit code of the process
-	bool timeout;
-} RzTestProcessOutput;
-
 typedef struct rz_test_asm_test_output_t {
 	char *disasm;
 	ut8 *bytes;
@@ -160,7 +153,7 @@ typedef struct rz_test_test_result_info_t {
 	bool run_failed; // something went seriously wrong (e.g. rizin not found)
 	ut64 time_elapsed;
 	union {
-		RzTestProcessOutput *proc_out; // for test->type == RZ_TEST_TYPE_CMD, RZ_TEST_TYPE_JSON or RZ_TEST_TYPE_FUZZ
+		RzSubprocessOutput *proc_out; // for test->type == RZ_TEST_TYPE_CMD, RZ_TEST_TYPE_JSON or RZ_TEST_TYPE_FUZZ
 		RzAsmTestOutput *asm_out;  // for test->type == RZ_TEST_TYPE_ASM
 	};
 } RzTestResultInfo;
@@ -182,32 +175,19 @@ RZ_API void rz_test_test_database_free(RzTestDatabase *db);
 RZ_API bool rz_test_test_database_load(RzTestDatabase *db, const char *path);
 RZ_API bool rz_test_test_database_load_fuzz(RzTestDatabase *db, const char *path);
 
-typedef struct rz_test_subprocess_t RzTestSubprocess;
-
-RZ_API bool rz_test_subprocess_init(void);
-RZ_API void rz_test_subprocess_fini(void);
-RZ_API void rz_test_subprocess_lock(void);
-RZ_API void rz_test_subprocess_unlock(void);
-RZ_API RzTestSubprocess *rz_test_subprocess_start(
-		const char *file, const char *args[], size_t args_size,
-		const char *envvars[], const char *envvals[], size_t env_size);
-RZ_API bool rz_test_subprocess_wait(RzTestSubprocess *proc, ut64 timeout_ms);
-RZ_API void rz_test_subprocess_free(RzTestSubprocess *proc);
-
-typedef RzTestProcessOutput *(*RzTestCmdRunner)(const char *file, const char *args[], size_t args_size,
+typedef RzSubprocessOutput *(*RzTestCmdRunner)(const char *file, const char *args[], size_t args_size,
 	const char *envvars[], const char *envvals[], size_t env_size, ut64 timeout_ms, void *user);
 
-RZ_API void rz_test_process_output_free(RzTestProcessOutput *out);
-RZ_API RzTestProcessOutput *rz_test_run_cmd_test(RzTestRunConfig *config, RzCmdTest *test, RzTestCmdRunner runner, void *user);
-RZ_API bool rz_test_check_cmd_test(RzTestProcessOutput *out, RzCmdTest *test);
+RZ_API RzSubprocessOutput *rz_test_run_cmd_test(RzTestRunConfig *config, RzCmdTest *test, RzTestCmdRunner runner, void *user);
+RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test);
 RZ_API bool rz_test_check_jq_available(void);
-RZ_API RzTestProcessOutput *rz_test_run_json_test(RzTestRunConfig *config, RzJsonTest *test, RzTestCmdRunner runner, void *user);
-RZ_API bool rz_test_check_json_test(RzTestProcessOutput *out, RzJsonTest *test);
+RZ_API RzSubprocessOutput *rz_test_run_json_test(RzTestRunConfig *config, RzJsonTest *test, RzTestCmdRunner runner, void *user);
+RZ_API bool rz_test_check_json_test(RzSubprocessOutput *out, RzJsonTest *test);
 RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest *test);
 RZ_API bool rz_test_check_asm_test(RzAsmTestOutput *out, RzAsmTest *test);
 RZ_API void rz_test_asm_test_output_free(RzAsmTestOutput *out);
-RZ_API RzTestProcessOutput *rz_test_run_fuzz_test(RzTestRunConfig *config, RzFuzzTest *test, RzTestCmdRunner runner, void *user);
-RZ_API bool rz_test_check_fuzz_test(RzTestProcessOutput *out);
+RZ_API RzSubprocessOutput *rz_test_run_fuzz_test(RzTestRunConfig *config, RzFuzzTest *test, RzTestCmdRunner runner, void *user);
+RZ_API bool rz_test_check_fuzz_test(RzSubprocessOutput *out);
 
 RZ_API void rz_test_test_free(RzTest *test);
 RZ_API char *rz_test_test_name(RzTest *test);
