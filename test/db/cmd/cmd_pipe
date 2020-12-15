@@ -30,5 +30,6 @@ Disassembly of entry0:
 |           0x08049026      sub esp, 0xc
 |           0x08049029      push 0x2a                                  ; '*' ; 42
 \           0x0804902b      call sym.imp._Exit                         ; void _Exit(int status)
+
 EOF
 RUN
