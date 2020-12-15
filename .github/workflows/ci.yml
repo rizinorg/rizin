@@ -110,7 +110,7 @@ jobs:
             os: ubuntu-latest
             build_system: meson
             compiler: gcc
-            meson_options: -Duse_capstone_version=v5
+            meson_options: -Duse_capstone_version=next
             run_tests: false
             enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
             timeout: 45

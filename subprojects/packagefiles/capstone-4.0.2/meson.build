@@ -55,7 +55,7 @@ cs_files = [
   'utils.c',
 ]
 
-capstone_includes = [include_directories('include/capstone')]
+capstone_includes = [include_directories('include'), include_directories('include/capstone')]
 
 libcapstone = library('capstone', cs_files,
   c_args: [
