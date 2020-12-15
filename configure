@@ -607,7 +607,7 @@ if [ $? = 0 ]; then
 else
 	HAVE_EXECVP=0 ; echo no ; fi
 printf "checking for HAVE_EXECL... "
- echo "#include <unistd.h>" > temp.c ; echo "int main(int argc, char *argv) { void *x = (void *)execl; return 0;}" >> temp.c ; ${CC} temp.c ; HAVE_EXECL=$? ; rm -f temp.c
+ echo "#include <unistd.h>" > temp.c ; echo "int main(int argc, char **argv) { void *x = (void *)execl; return 0;}" >> temp.c ; ${CC} temp.c ; HAVE_EXECL=$? ; rm -f temp.c
 if [ "$HAVE_EXECL" = 0 ]; then
 	HAVE_EXECL=1
 	echo yes
