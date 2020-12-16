@@ -3121,7 +3121,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF ("asm.sub.varonly", "true", "Substitute the entire variable expression with the local variable name (e.g. [local10h] instead of [ebp+local10h])");
 	SETBPREF ("asm.sub.reg", "false", "Substitute register names with their associated role name (drp~=)");
 	SETBPREF ("asm.sub.rel", "true", "Substitute pc relative expressions in disasm");
-	SETBPREF ("asm.cmt.fold", "false", "Fold comments, toggle with Vz");
 	SETBPREF ("asm.family", "false", "Show family name in disasm");
 	SETBPREF ("asm.symbol", "false", "Show symbol+delta instead of absolute offset");
 	SETBPREF ("asm.analysis", "false", "Analyze code and refs while disassembling (see analysis.strings)");

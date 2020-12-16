@@ -324,12 +324,10 @@ static const char *help_msg_af[] = {
 	"afa", "", "analyze function arguments in a call (afal honors dbg.funcarg)",
 	"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 	"afb", "[?] [addr]", "List basic blocks of given function",
-	"afbF", "([0|1])", "Toggle the basic-block 'folded' attribute",
 	"afB", " 16", "set current function as thumb (change asm.bits)",
 	"afC[lc]", " ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
 	"afc", "[?] type @[addr]", "set calling convention for function",
 	"afd", "[addr]","show function + delta for given offset",
-	"afF", "[1|0|]", "fold/unfold/toggle",
 	"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
 	"afj", " [tableaddr] [count]", "analyze function jumptable",
 	"afl", "[?] [ls*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
@@ -3946,24 +3944,6 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 		case 'e': // "afbe"
 			analysis_bb_edge (core, input + 3);
 			break;
-		case 'F': // "afbF"
-			{
-			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
-			if (fcn) {
-				RzAnalysisBlock *bb = rz_analysis_fcn_bbget_in (core->analysis, fcn, core->offset);
-				if (bb) {
-					if (input[3]) {
-						int n = atoi (input + 3);
-						bb->folded = n;
-					} else {
-						bb->folded = !bb->folded;
-					}
-				} else {
-					rz_warn_if_reached ();
-				}
-			}
-			}
-			break;
 		case 0:
 		case ' ': // "afb "
 		case 'q': // "afbq"
@@ -4182,15 +4162,6 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 		default:
 			eprintf ("Wrong command. Look at af?\n");
 			break;
-		}
-		break;
-	case 'F': // "afF"
-		{
-			int val = input[2] && rz_num_math (core->num, input + 2);
-			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
-			if (fcn) {
-				fcn->folded = input[2]? val: !fcn->folded;
-			}
 		}
 		break;
 	case '?': // "af?"
