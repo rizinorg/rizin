@@ -1190,20 +1190,9 @@ typedef enum {
 } RzPanelsMode;
 
 typedef enum {
-	PANEL_FUN_SNOW,
-	PANEL_FUN_SAKURA,
-	PANEL_FUN_NOFUN
-} RzPanelsFun;
-
-typedef enum {
 	PANEL_LAYOUT_DEFAULT_STATIC = 0,
 	PANEL_LAYOUT_DEFAULT_DYNAMIC = 1
 } RzPanelsLayout;
-
-typedef struct {
-	int x;
-	int y;
-} RzPanelsSnow;
 
 typedef struct {
 	RzStrBuf *data;
@@ -1229,10 +1218,8 @@ typedef struct rz_panels_t {
 	Sdb *almighty_db;
 	HtPP *mht;
 	RzPanelsMode mode;
-	RzPanelsFun fun;
 	RzPanelsMode prevMode;
 	RzPanelsLayout layout;
-	RzList *snows;
 	char *name;
 } RzPanels;
 
