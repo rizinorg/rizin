@@ -381,7 +381,9 @@ static bool cb_analarch(void *user, void *data) {
 			eprintf ("analysis.arch: cannot find '%s'\n", node->value);
 		} else {
 			rz_config_set (core->config, "analysis.arch", "null");
-			return true;
+			// Safe to return false here because the config var will
+			// just revert to the last set value, which is "null"
+			// due to the line above.
 		}
 	}
 	return false;
