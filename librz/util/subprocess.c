@@ -502,6 +502,15 @@ RZ_API void rz_subprocess_fini(void) {
 	rz_th_lock_free (subprocs_mutex);
 }
 
+static void env_kv_free(HtPPKv *kv) {
+	free (kv->key);
+	free (kv->value);
+}
+
+static void *env_val_dup(const void *v) {
+	return v? strdup (v): NULL;
+}
+
 RZ_API RzSubprocess *rz_subprocess_start(
 		const char *file, const char *args[], size_t args_size,
 		const char *envvars[], const char *envvals[], size_t env_size) {
@@ -562,6 +571,17 @@ RZ_API RzSubprocess *rz_subprocess_start(
 	}
 	proc->stderr_fd = stderr_pipe[0];
 
+	// save current environment and update it with the provided one.
+	// Do this before rz_sys_fork, because after that only async-safe functions
+	// shall be used and setenv is not.
+	HtPP *o_env = ht_pp_new (env_val_dup, env_kv_free, NULL);
+	size_t i;
+	for (i = 0; i < env_size; i++) {
+		char *val = getenv (envvars[i]);
+		ht_pp_insert (o_env, envvars[i], val);
+		rz_sys_setenv (envvars[i], envvals[i]);
+	}
+
 	proc->pid = rz_sys_fork ();
 	if (proc->pid == -1) {
 		// fail
@@ -579,17 +599,18 @@ RZ_API RzSubprocess *rz_subprocess_start(
 		rz_sys_pipe_close (stderr_pipe[1]);
 		rz_sys_pipe_close (stderr_pipe[0]);
 
-		size_t i;
-		for (i = 0; i < env_size; i++) {
-			setenv (envvars[i], envvals[i], 1);
-		}
 		rz_sys_execvp (file, argv);
 		perror ("exec");
 		rz_sys_exit (-1, true);
 	}
+	// restore previous environment in the parent
+	for (i = 0; i < env_size; i++) {
+		char *val = ht_pp_find (o_env, envvars[i], NULL);
+		rz_sys_setenv (envvars[i], val);
+	}
+	ht_pp_free (o_env);
 	free (argv);
 
-	// parent
 	rz_sys_pipe_close (stdin_pipe[0]);
 	rz_sys_pipe_close (stdout_pipe[1]);
 	rz_sys_pipe_close (stderr_pipe[1]);
