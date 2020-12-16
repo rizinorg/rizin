@@ -198,6 +198,9 @@ jobs:
           export ASAN=1
         fi
         ninja -C build test
+      env:
+        ASAN: ${{ matrix.asan }}
+        ASAN_OPTIONS: ${{ matrix.asan_options }}
     - name: Run unit tests (make)
       if: matrix.build_system == 'acr' && matrix.enabled
       run: |
@@ -210,6 +213,9 @@ jobs:
         fi
         cd test
         make unit_tests
+      env:
+        ASAN: ${{ matrix.asan }}
+        ASAN_OPTIONS: ${{ matrix.asan_options }}
     - name: Run tests
       if: matrix.run_tests && matrix.enabled
       run: |

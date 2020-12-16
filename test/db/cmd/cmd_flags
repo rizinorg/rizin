@@ -468,6 +468,7 @@ FILE=bins/elf/analysis/main
 CMDS=<<EOF
 aaa
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=32
 s entry0
 e asm.reflines=false

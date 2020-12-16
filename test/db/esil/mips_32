@@ -1752,6 +1752,7 @@ CMDS=<<EOF
 s 0x00400820
 af
 e asm.emu=true
+e asm.bytes = true
 e emu.write=true
 e analysis.gpfixed=false
 e asm.lines.bb=false

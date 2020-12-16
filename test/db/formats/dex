@@ -249,7 +249,7 @@ RUN
 
 NAME=DEX HelloWorld.dex debug info
 FILE=bins/dex/HelloWorld.dex
-CMDS=e io.va=0; pd 1 @0x00000290|grep Hello.java; pd 1 @0x000002f4|grep World.java; pd 1 @0x00000318|grep World.java;
+CMDS=e io.va=0; e asm.bytes=1; pd 1 @0x00000290|grep Hello.java; pd 1 @0x000002f4|grep World.java; pd 1 @0x00000318|grep World.java;
 EXPECT=<<EOF
             0x00000290      62000400       sget-object v0, Ljava/lang/System;->out Ljava/io/PrintStream; ; Hello.java:9 ; 0x180
             0x000002f4      701008000100   invoke-direct {v1}, Ljava/lang/Object.<init>()V ; 0x8 ; World.java:5
@@ -1405,7 +1405,7 @@ RUN
 
 NAME=DEX test.dex val
 FILE=bins/dex/test.dex
-CMDS=ao~val[1]
+CMDS=e asm.bytes=true; ao~val[1];
 EXPECT=<<EOF
 0x00000021
 EOF
@@ -1413,7 +1413,7 @@ RUN
 
 NAME=DEX test.dex
 FILE=bins/dex/test.dex
-CMDS=pd 1 @ 0x000001c4
+CMDS=e asm.bytes=true; pd 1 @ 0x000001c4;
 EXPECT=<<EOF
             0x000001c4      1234           const/4 v4, 0x3
 EOF

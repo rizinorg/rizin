@@ -86,6 +86,7 @@ RUN
 NAME=tiny coff2
 FILE=bins/coff/coff2.obj
 CMDS=<<EOF
+e asm.bytes=true
 om
 is~text
 s sym.__1FooBar__QAE_XZ
@@ -115,6 +116,7 @@ NAME=patched reloc x86
 ARGS=-e io.cache=1
 FILE=bins/coff/tif_dir.obj
 CMDS=<<EOF
+e asm.bytes=true
 af @ sym._TIFFGetField
 pd 1 @ reloc._TIFFVGetField-1
 axt @ sym._TIFFVGetField
@@ -136,6 +138,7 @@ NAME=patching REL32 amd64
 ARGS=-e io.cache=1
 FILE=bins/coff/coff.obj
 CMDS=<<EOF
+e asm.bytes=true
 pd 2 @ sym.main+6
 EOF
 EXPECT=<<EOF

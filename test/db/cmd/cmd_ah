@@ -185,6 +185,7 @@ RUN
 NAME=ahd with asm.tabs
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
+e asm.bytes=true
 e asm.flags=0
 pd 3
 ahd hello world

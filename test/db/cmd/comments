@@ -89,6 +89,7 @@ NAME=multiline comment
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=32
 CC hello @ 0x200
 CC world @ 0x200
@@ -112,6 +113,7 @@ NAME=cmtright
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=64
 CC hello
 e scr.color=false
@@ -133,6 +135,7 @@ FILE=bins/elf/analysis/main
 CMDS=<<EOF
 aaa
 e asm.cmt.refs = true
+e asm.bytes=true
 f test.flag @ 0x004003e0
 CC test comment @ 0x004003e0
 pd 1 @ 0x0040050f

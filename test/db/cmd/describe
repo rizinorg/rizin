@@ -3,6 +3,7 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e analysis.arch=x86
+e asm.bytes=true
 e asm.bits=32
 "wa mov eax, [0x100]"
 e asm.describe = true
@@ -17,6 +18,7 @@ NAME=asm.describe alignment
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=64
 wa nop
 e asm.describe = true

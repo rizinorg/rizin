@@ -73,6 +73,7 @@ NAME=Cd : data
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=32
 w 909090
 Cd 3
@@ -161,6 +162,7 @@ NAME=Ch : hide bytes in pd
 FILE=malloc://128
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=64
 e scr.color=false
 wx 554889e54883c768

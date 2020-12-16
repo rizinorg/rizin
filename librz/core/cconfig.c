@@ -3006,7 +3006,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("asm.invhex", "false", &cb_asm_invhex, "Show invalid instructions as hexadecimal numbers");
 	SETBPREF ("asm.instr", "true", "Display the disassembled instruction");
 	SETBPREF ("asm.meta", "true", "Display the code/data/format conversions in disasm");
-	SETBPREF ("asm.bytes", "true", "Display the bytes of each instruction");
+	SETBPREF ("asm.bytes", "false", "Display the bytes of each instruction");
 	SETBPREF ("asm.bytes.right", "false", "Display the bytes at the right of the disassembly");
 	SETI ("asm.types", 1, "Display the fcn types in calls (0=no,1=quiet,2=verbose)");
 	SETBPREF ("asm.midcursor", "false", "Cursor in visual disasm mode breaks the instruction");

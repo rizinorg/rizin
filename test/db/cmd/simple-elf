@@ -13,3 +13,20 @@ EXPECT=<<EOF
  1 fd: 3 +0x00000000 0x08048000 - 0x08048071 r-x fmap.LOAD0
 EOF
 RUN
+
+NAME=test where asm.bytes is false
+FILE=bins/elf/analysis/x86-simple
+CMDS=<<EOF
+e asm.bytes=false
+pd 5
+EOF
+EXPECT=<<EOF
+            ;-- entry0:
+            ;-- section..text:
+            0x08048060      call 0x8048065                             ; [01] -r-x section size 18 named .text
+            0x08048065      pop ebx
+            0x08048066      mov eax, 1
+            0x0804806b      mov ebx, 0x2a                              ; '*' ; 42
+            0x08048070      int 0x80
+EOF
+RUN
