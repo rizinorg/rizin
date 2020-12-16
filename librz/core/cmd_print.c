@@ -223,7 +223,6 @@ static const char *help_msg_p[] = {
 	"p", "[kK] [len]", "print key in randomart (K is for mosaic)",
 	"p-", "[?][jh] [mode]", "bar|json|histogram blocks (mode: e?search.in)",
 	"p2", " [len]", "8x8 2bpp-tiles",
-	"p3", " [file]", "print stereogram (3D)",
 	"p6", "[de] [len]", "base64 decode/encode",
 	"p8", "[?][j] [len]", "8bit hexpair list of bytes",
 	"p=", "[?][bep] [N] [L] [b]", "show entropy/printable chars/chars bars",
@@ -5982,26 +5981,6 @@ l = use_blocksize;
 				printraw (core, len, 0);
 			}
 			break;
-		}
-		break;
-	case '3': // "p3" [file]
-		if (input[1] == '?') {
-			eprintf ("Usage: p3 [file] - print 3D stereogram image of current block\n");
-		} else if (input[1] == ' ') {
-			char *data = rz_file_slurp (input + 2, NULL);
-			if (!data) {
-				eprintf ("Could not open '%s'.\n", input + 2);
-				break;
-			}
-			char *res = rz_print_stereogram (data, 78, 20);
-			rz_print_stereogram_print (core->print, res);
-			// if (data) eprintf ("%s\n", data);
-			free (res);
-			free (data);
-		} else {
-			char *res = rz_print_stereogram_bytes (block, core->blocksize);
-			rz_print_stereogram_print (core->print, res);
-			free (res);
 		}
 		break;
 	case 'o': // "po"
