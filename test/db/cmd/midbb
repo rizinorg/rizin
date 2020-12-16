@@ -523,6 +523,7 @@ RUN
 NAME=asm.bb.middle and pdi
 FILE=-
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 e analysis.nopskip=false

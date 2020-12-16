@@ -568,7 +568,7 @@ static const RzCmdDescHelp P_help = {
 	.summary = "Project management",
 };
 static const RzCmdDescArg project_save_args[] = {
-	{ .name = "project.rzdb", .type = RZ_CMD_ARG_TYPE_FILE, },
+	{ .name = "project.rzdb", .type = RZ_CMD_ARG_TYPE_FILE, .optional = true, },
 	{ 0 },
 };
 static const RzCmdDescHelp project_save_help = {

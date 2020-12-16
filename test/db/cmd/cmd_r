@@ -10,6 +10,7 @@ NAME=wx 90 r pd 1
 FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=64
 wx 90
 r

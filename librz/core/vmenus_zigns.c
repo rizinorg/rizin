@@ -164,7 +164,7 @@ RZ_API int rz_core_visual_view_zigns(RzCore *core) {
 			if (rz_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}
-			rz_core_cmd_task_sync (core, cmd, 1);
+			rz_core_cmd0 (core, cmd);
 			rz_cons_set_raw (1);
 			rz_cons_show_cursor (false);
 			if (cmd[0]) {

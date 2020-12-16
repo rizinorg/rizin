@@ -369,6 +369,7 @@ install_headers(include_files, install_dir: rizin_incdir)
 
 rz_util_files = [
   'include/rz_util/pj.h',
+  'include/rz_util/rz_annotated_code.h',
   'include/rz_util/rz_ascii_table.h',
   'include/rz_util/rz_asn1.h',
   'include/rz_util/rz_assert.h',
@@ -413,6 +414,7 @@ rz_util_files = [
   'include/rz_util/rz_strpool.h',
   'include/rz_util/rz_str_constpool.h',
   'include/rz_util/rz_str_util.h',
+  'include/rz_util/rz_subprocess.h',
   'include/rz_util/rz_sys.h',
   'include/rz_util/rz_alloc.h',
   'include/rz_util/rz_time.h',
@@ -422,7 +424,6 @@ rz_util_files = [
   'include/rz_util/rz_utf32.h',
   'include/rz_util/rz_utf8.h',
   'include/rz_util/rz_x509.h',
-  'include/rz_util/rz_annotated_code.h'
 ]
 install_headers(rz_util_files, install_dir: join_paths(rizin_incdir, 'rz_util'))
 

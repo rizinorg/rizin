@@ -14,8 +14,6 @@ static bool autoblocksize = true;
 static int disMode = 0;
 static int hexMode = 0;
 static int printMode = 0;
-static bool snowMode = false;
-static RzList *snows = NULL;
 static int color = 1;
 static int debug = 1;
 static int zoom = 0;
@@ -356,44 +354,6 @@ static ut64 splitPtr = UT64_MAX;
 
 #undef USE_THREADS
 #define USE_THREADS 1
-
-#if USE_THREADS
-
-static void printSnow(RzCore *core) {
-	if (!snows) {
-		snows = rz_list_newf (free);
-	}
-	int i, h, w = rz_cons_get_size (&h);
-	int amount = rz_num_rand (4);
-	if (amount > 0) {
-		for (i = 0; i < amount; i++) {
-			Snow *snow = RZ_NEW (Snow);
-			snow->x = rz_num_rand (w);
-			snow->y = 0;
-			rz_list_append (snows, snow);
-		}
-	}
-	RzListIter *iter, *iter2;
-	Snow *snow;
-	rz_list_foreach_safe (snows, iter, iter2, snow) {
-		int pos = (rz_num_rand (3)) - 1;
-		snow->x += pos;
-		snow->y++;
-		if (snow->x >= w) {
-			rz_list_delete (snows, iter);
-			continue;
-		}
-		if (snow->y > h) {
-			rz_list_delete (snows, iter);
-			continue;
-		}
-		rz_cons_gotoxy (snow->x, snow->y);
-		rz_cons_printf ("*");
-	}
-	// rz_cons_gotoxy (10 , 10);
-	rz_cons_flush ();
-}
-#endif
 
 static void rotateAsmBits(RzCore *core) {
 	RzAnalysisHint *hint = rz_analysis_hint_get (core->analysis, core->offset);
@@ -3287,13 +3247,6 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			}
 			rz_cons_enable_mouse (mouse_state && rz_config_get_i (core->config, "scr.wheel"));
 		}	break;
-		case '(':
-			snowMode = !snowMode;
-			if (!snowMode) {
-				rz_list_free (snows);
-				snows = NULL;
-			}
-			break;
 		case ')':
 			rotateAsmemu (core);
 			break;
@@ -4082,9 +4035,6 @@ static void visual_refresh(RzCore *core) {
 	core->curtab = 0; // which command are we focusing
 	//core->seltab = 0; // user selected tab
 
-	if (snowMode) {
-		printSnow (core);
-	}
 	if (rz_config_get_i (core->config, "scr.scrollbar")) {
 		rz_core_print_scrollbar (core);
 	}
@@ -4273,15 +4223,8 @@ dodo:
 			goto dodo;
 		}
 		if (!skip) {
-			if (snowMode) {
-				ch = rz_cons_readchar_timeout (300);
-				if (ch == -1) {
-					skip = 1;
-					continue;
-				}
-			} else {
-				ch = rz_cons_readchar ();
-			}
+			ch = rz_cons_readchar ();
+
 			if (I->vtmode == 2 && !is_mintty (core->cons)) {
 				// Prevent runaway scrolling
 				if (IS_PRINTABLE (ch) || ch == '\t' || ch == '\n') {

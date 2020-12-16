@@ -34,11 +34,11 @@ Then compile and install with:
 ```
 $ meson build
 $ ninja -C build # or `meson compile -C build`
-$ ninja -C build install # or `meson install -C build`
+$ sudo ninja -C build install # or `sudo meson install -C build`
 $ rizin --
  -- Thank you for using rizin. Have a nice night!
 [0x00000000]>
-# Run "ninja -C build uninstall" without quotes to uninstall rizin
+# Run "sudo ninja -C build uninstall" without quotes to uninstall rizin
 ```
 
 Please have a look at [BUILDING.md][] for more information about building Rizin.

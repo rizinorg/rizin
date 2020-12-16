@@ -26,3 +26,15 @@ a task!
 
 EOF
 RUN
+
+NAME=&j
+FILE=-
+CMDS=<<EOF
+& ?e Hello\nfrom\na task!
+&& 1
+&j
+EOF
+EXPECT=<<EOF
+[{"id":0,"state":"running","transient":false},{"id":1,"state":"done","transient":false,"cmd":"?e Hello\\nfrom\\na task!"}]
+EOF
+RUN

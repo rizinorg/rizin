@@ -1,6 +1,7 @@
 NAME=ELF: ired v800
 FILE=bins/v850/ired_v850
 CMDS=<<EOF
+e asm.bytes=true
 i
 s+4
 pd 3

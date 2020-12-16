@@ -1,6 +1,7 @@
 NAME=load with file without moving anything
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
+e asm.bytes=true
 e cfg.newshell=1
 f i_do_hope_that_no_entity_knocks_over_my_beverage @ 0x080483d8
 Ps .tmp_load_no_move.rzdb
@@ -21,6 +22,7 @@ NAME=load with file using saved absolute file path after project file was moved
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
 e cfg.newshell=1
+e asm.bytes=true
 f i_do_hope_that_no_entity_knocks_over_my_beverage @ 0x080483d8
 Ps .tmp_load_move_project.rzdb
 o--
@@ -44,6 +46,7 @@ RUN
 NAME=load with file using saved relative file path after project file and binary were moved together
 FILE=--
 CMDS=<<EOF
+e asm.bytes=true
 e cfg.newshell=1
 cp bins/elf/crackme0x05 .tmp_load_move_both.bin
 o .tmp_load_move_both.bin
@@ -72,6 +75,7 @@ NAME=load with file using saved relative file path after project file and binary
 FILE=--
 CMDS=<<EOF
 e cfg.newshell=1
+e asm.bytes = true
 mkdir -p .tmp_load_move_both2/.tmp_load_move_both2
 cp bins/elf/crackme0x05 .tmp_load_move_both2/somebin
 o .tmp_load_move_both2/somebin
@@ -99,6 +103,7 @@ RUN
 NAME=load with file using saved raw file path after everything has been messed up, but binary is in cwd
 FILE=--
 CMDS=<<EOF
+e asm.bytes=true
 e cfg.newshell=1
 mkdir -p .tmp_load_move_bin
 cp bins/elf/crackme0x05 .tmp_load_move_bin.bin
@@ -127,6 +132,7 @@ RUN
 NAME=load without file
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
+e asm.bytes=true
 e cfg.newshell=1
 f a_nice_refreshing_un-moisten @ 0x080483d8
 Ps .tmp_load_without_file.rzdb
@@ -162,6 +168,7 @@ NAME=load on top of file
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
 e cfg.newshell=1
+e asm.bytes=true
 f a_nice_refreshing_un-moisten @ 0x080483d8
 Ps .tmp_load_on_top_of_file.rzdb
 o
@@ -305,5 +312,31 @@ EXPECT=<<EOF
 --
 --
 0x00000100    1 48           windowpane
+EOF
+RUN
+
+NAME=remember saved project file during session
+FILE=bins/elf/crackme0x05
+CMDS=<<EOF
+e asm.bytes=true
+e cfg.newshell=1
+Ps .tmp_remember.rzdb
+e prj.file
+f cashews @ 0x080483d8
+Ps
+o--
+e prj.file=
+e prj.file
+Po .tmp_remember.rzdb
+e prj.file
+rm .tmp_remember.rzdb
+pdi 1 @ 0x080483d8
+EOF
+EXPECT=<<EOF
+.tmp_remember.rzdb
+
+.tmp_remember.rzdb
+0x080483d8   cashews:
+0x080483d8                   50  push eax
 EOF
 RUN
