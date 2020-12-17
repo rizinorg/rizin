@@ -5114,11 +5114,7 @@ RZ_API bool rz_core_esil_continue_back(RzCore *core) {
 	}
 
 	// Return to the nearest breakpoint or jump back to the first index if a breakpoint wasn't found
-	if (bp_found) {
-		rz_analysis_esil_trace_restore (esil, idx);
-	} else {
-		rz_analysis_esil_trace_restore (esil, 0);
-	}
+	rz_analysis_esil_trace_restore (esil, idx);
 
 	return true;
 }
