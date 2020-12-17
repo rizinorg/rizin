@@ -1,4 +1,4 @@
-project('rizin', 'c', license: 'LGPL3', meson_version: '>=0.50.1')
+project('rizin', 'c', license: 'LGPL3', meson_version: '>=0.55.0')
 
 py3_exe = import('python').find_installation()
 git_exe = find_program('git', required: false)
