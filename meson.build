@@ -143,31 +143,31 @@ library_cflags = ['-DRZ_PLUGIN_INCORE=1']
 
 rizin_prefix = get_option('prefix')
 rizin_libdir = get_option('libdir')
-rizin_incdir = join_paths(get_option('includedir'), 'librz')
+rizin_incdir = get_option('includedir') / 'librz'
 rizin_datdir = get_option('datadir')
 if host_machine.system() == 'windows'
-  rizin_wwwroot = join_paths(rizin_datdir, 'www')
-  rizin_sdb = join_paths(rizin_datdir)
-  rizin_zigns = join_paths(rizin_datdir, 'zigns')
-  rizin_themes = join_paths(rizin_datdir, 'cons')
-  rizin_fortunes = join_paths(rizin_datdir, 'doc')
-  rizin_flags = join_paths(rizin_datdir, 'flag')
-  rizin_hud = join_paths(rizin_datdir, 'hud')
-  rizin_plugins = join_paths(rizin_libdir, 'plugins')
-  rizin_extras = join_paths(rizin_libdir, 'extras')
-  rizin_bindings = join_paths(rizin_libdir, 'bindings')
+  rizin_wwwroot = rizin_datdir / 'www'
+  rizin_sdb = rizin_datdir
+  rizin_zigns = rizin_datdir / 'zigns'
+  rizin_themes = rizin_datdir / 'cons'
+  rizin_fortunes = rizin_datdir / 'fortunes'
+  rizin_flags = rizin_datdir / 'flag'
+  rizin_hud = rizin_datdir / 'hud'
+  rizin_plugins = rizin_libdir / 'plugins'
+  rizin_extras = rizin_libdir / 'extras'
+  rizin_bindings = rizin_libdir / 'bindings'
 else
-  rizin_datdir_rz = join_paths(rizin_datdir, 'rizin')
-  rizin_wwwroot = join_paths(rizin_datdir_rz, rizin_version, 'www')
-  rizin_sdb = join_paths(rizin_datdir_rz, rizin_version)
-  rizin_zigns = join_paths(rizin_datdir_rz, rizin_version, 'zigns')
-  rizin_themes = join_paths(rizin_datdir_rz, rizin_version, 'cons')
-  rizin_fortunes = join_paths(rizin_datdir, 'doc', 'rizin')
-  rizin_flags = join_paths(rizin_datdir_rz, rizin_version, 'flag')
-  rizin_hud = join_paths(rizin_datdir_rz, rizin_version, 'hud')
-  rizin_plugins = join_paths(rizin_libdir, 'rizin', rizin_version)
-  rizin_extras = join_paths(rizin_libdir, 'rizin-extras', rizin_version)
-  rizin_bindings = join_paths(rizin_libdir, 'rizin-bindings', rizin_version)
+  rizin_datdir_rz = rizin_datdir / 'rizin'
+  rizin_wwwroot = rizin_datdir_rz / rizin_version / 'www'
+  rizin_sdb = rizin_datdir_rz / rizin_version
+  rizin_zigns = rizin_datdir_rz / rizin_version / 'zigns'
+  rizin_themes = rizin_datdir_rz / rizin_version / 'cons'
+  rizin_fortunes = rizin_datdir_rz / rizin_version / 'fortunes'
+  rizin_flags = rizin_datdir_rz / rizin_version / 'flag'
+  rizin_hud = rizin_datdir_rz / rizin_version / 'hud'
+  rizin_plugins = rizin_libdir / 'rizin' / rizin_version
+  rizin_extras = rizin_libdir / 'rizin-extras' / rizin_version
+  rizin_bindings = rizin_libdir / 'rizin-bindings' / rizin_version
 endif
 
 opts_overwrite = [
@@ -226,23 +226,11 @@ use_sys_xxhash = false
 if not sys_xxhash.found()
   sys_xxhash = cc.find_library('xxhash', required: false)
 endif
-
-if sys_xxhash.found() and get_option('use_sys_xxhash')
-  message('Using system xxhash library')
-  use_sys_xxhash = true
-else
-  message('Using bundled xxhash library')
-endif
+use_sys_xxhash = sys_xxhash.found() and get_option('use_sys_xxhash')
 
 # handle openssl library
 sys_openssl = dependency('openssl', required: false)
-use_sys_openssl = false
-if sys_openssl.found() and get_option('use_sys_openssl')
-  message('Using system openssl library')
-  use_sys_openssl = true
-else
-  message('Using bundled openssl code')
-endif
+use_sys_openssl = sys_openssl.found() and get_option('use_sys_openssl')
 
 # handle libuv library
 if get_option('use_libuv')
@@ -253,12 +241,6 @@ if get_option('use_libuv')
   endif
 else
   use_libuv = false
-endif
-
-if use_libuv
-  message('Using libuv')
-else
-  message('Not using libuv, thus using fallback server implementations')
 endif
 
 has_debugger = get_option('debugger')
@@ -296,13 +278,13 @@ if host_machine.system() == 'windows'
   userconf.set('DATADIR_R2', rizin_datdir)
   userconf.set10('HAVE_JEMALLOC', false)
 else
-  userconf.set('LIBDIR', join_paths(rizin_prefix, rizin_libdir))
-  userconf.set('INCLUDEDIR', join_paths(rizin_prefix, rizin_incdir))
+  userconf.set('LIBDIR', rizin_prefix / rizin_libdir)
+  userconf.set('INCLUDEDIR', rizin_prefix / rizin_incdir)
   userconf.set('DATADIR_R2', rizin_datdir_rz)
   userconf.set10('HAVE_JEMALLOC', true)
 endif
-userconf.set('DATADIR', join_paths(rizin_prefix, rizin_datdir))
-userconf.set('WWWROOT', join_paths(rizin_prefix, rizin_wwwroot))
+userconf.set('DATADIR', rizin_prefix / rizin_datdir)
+userconf.set('WWWROOT', rizin_prefix / rizin_wwwroot)
 userconf.set('SDB', rizin_sdb)
 userconf.set('ZIGNS', rizin_zigns)
 userconf.set('THEMES', rizin_themes)
@@ -359,7 +341,7 @@ rz_userconf_h = configure_file(
   input: 'librz/include/rz_userconf.h.acr',
   output: 'rz_userconf.h',
   configuration: userconf,
-  install_dir: join_paths(rizin_incdir)
+  install_dir: rizin_incdir
 )
 
 versionconf = configuration_data()
@@ -377,28 +359,25 @@ rz_version_h = configure_file(
   input: 'librz/include/rz_version.h.in',
   output: 'rz_version.h',
   configuration: versionconf,
-  install_dir: join_paths(rizin_incdir)
+  install_dir: rizin_incdir
 )
 
 # Copy missing header
 run_command(py3_exe, '-c', '__import__("shutil").copyfile("shlr/spp/config.def.h", "shlr/spp/config.h")')
 
 pcconf = configuration_data()
-pcconf.set('PREFIX', get_option('prefix'))
-pcconf.set('LIBDIR', join_paths(get_option('prefix'), get_option('libdir')))
+pcconf.set('PREFIX', rizin_prefix)
 pcconf.set('VERSION', rizin_version)
 libr_pc = configure_file(
   input: 'librz/librz.pc.acr',
   output: 'librz.pc',
   configuration: pcconf,
-  install_dir: join_paths(get_option('libdir'), 'pkgconfig')
+  install_dir: get_option('libdir') / 'pkgconfig'
 )
 
 # handle zlib dependency
 zlib_dep = dependency('zlib', required: false)
 if not zlib_dep.found() or not get_option('use_sys_zlib')
-  message('Use bundled zlib')
-
   zlib_files = [
     'shlr/zip/zlib/adler32.c',
     'shlr/zip/zlib/compress.c',
@@ -428,8 +407,6 @@ if not zlib_dep.found() or not get_option('use_sys_zlib')
     link_with: librzzlib,
     include_directories: zlib_inc
   )
-else
-  message('Use system-provided zlib library')
 endif
 
 
@@ -492,7 +469,7 @@ sdb_inc_files = [
   'shlr/sdb/src/sdb_version.h',
   'shlr/sdb/src/types.h'
 ]
-install_headers(sdb_inc_files, install_dir: join_paths(rizin_incdir, 'sdb'))
+install_headers(sdb_inc_files, install_dir: rizin_incdir / 'sdb')
 
 librzsdb = static_library('rzsdb', sdb_files,
   include_directories: sdb_inc,
@@ -690,3 +667,50 @@ if cli_enabled
     rename: 'main'
   )
 endif
+
+summary({
+  'prefix': rizin_prefix,
+  'libdir': rizin_libdir,
+  'includedir': rizin_incdir,
+  'datadir': rizin_datdir,
+  'wwwroot': rizin_wwwroot,
+  'sdb': rizin_sdb,
+  'zigns': rizin_zigns,
+  'themes': rizin_themes,
+  'flags': rizin_flags,
+  'hud': rizin_hud,
+  'plugins': rizin_plugins,
+  'extras': rizin_extras,
+  'bindings': rizin_bindings,
+}, section: 'Directories')
+
+summary({
+  'Debugger enabled': has_debugger,
+  'System magic library': use_syslib_magic,
+  'System xxhash library': use_sys_xxhash,
+  'System openssl library': use_sys_openssl,
+  'System libuv library': libuv_dep.type_name() != 'internal' and libuv_dep.found(),
+  'System capstone library': capstone_dep.type_name() != 'internal',
+  'System tree-sitter library': tree_sitter_dep.type_name() != 'internal',
+  'System lz4 library': lz4_dep.type_name() != 'internal',
+  'System zlib library': zlib_dep.type_name() != 'internal',
+  'System zip library': zip_dep.type_name() != 'internal',
+  'Use ptrace-wrap': use_ptrace_wrap,
+  'Use RPATH': use_rpath,
+}, section: 'Configuration', bool_yn: true)
+
+summary({
+  'Core Plugins': core_plugins,
+  'Analysis Plugins': analysis_plugins,
+  'Assembler Plugins': asm_plugins,
+  'Breapoint Plugins': bp_plugins,
+  'Binary Plugins': bin_plugins,
+  'BinLdr Plugins': bin_ldr_plugins,
+  'BinXtr Plugins': bin_xtr_plugins,
+  'Crypto Plugins': crypto_plugins,
+  'IO Plugins': io_plugins,
+  'Debug Plugins': debug_plugins,
+  'Egg Plugins': egg_plugins,
+  'Lang Plugins': lang_plugins,
+  'Parse Plugins': parse_plugins,
+}, section: 'Plugins', list_sep: ', ')

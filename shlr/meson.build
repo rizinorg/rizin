@@ -1,8 +1,6 @@
 # handle capstone dependency
 capstone_dep = dependency('capstone', version: '>=3.0.4', required: false)
 if not capstone_dep.found() or not get_option('use_sys_capstone')
-  message('Use bundled capstone')
-
   if get_option('capstone_in_builddir')
     capstone_path = join_paths(meson.current_build_dir(), 'capstone')
   else
@@ -176,8 +174,6 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     link_with: librzcapstone,
     include_directories: capstone_includes
   )
-else
-  message('Use system-provided capstone library')
 endif
 
 
@@ -212,8 +208,6 @@ if not tree_sitter_dep.found() or not get_option('use_sys_tree_sitter')
     link_with: libtree_sitter,
     include_directories: tree_sitter_inc
   )
-else
-  message('Use system-provided tree-sitter library')
 endif
 
 
