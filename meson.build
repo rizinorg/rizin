@@ -677,6 +677,7 @@ summary({
   'sdb': rizin_sdb,
   'zigns': rizin_zigns,
   'themes': rizin_themes,
+  'fortunes': rizin_fortunes,
   'flags': rizin_flags,
   'hud': rizin_hud,
   'plugins': rizin_plugins,
