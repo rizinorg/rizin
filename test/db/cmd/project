@@ -291,7 +291,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=anal
+NAME=analysis
 FILE=-
 CMDS=<<EOF
 e cfg.newshell=1
