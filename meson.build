@@ -460,8 +460,7 @@ endif
 
 sdb_proj = subproject('sdb', default_options: ['default_library=static'])
 sdb_dep = sdb_proj.get_variable('sdb_dep')
-# FIXME: sdb_native_exe should be get
-sdb_exe  = sdb_proj.get_variable('sdb_exe')
+sdb_exe  = sdb_proj.get_variable('sdb_native_exe')
 
 sdb_gen_cmd = [
   sdb_exe,
