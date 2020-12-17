@@ -339,3 +339,16 @@ EXPECT=<<EOF
 03616c6c
 EOF
 RUN
+
+NAME=w_escape
+ARGS=-ecfg.newshell=true
+FILE=-
+CMDS=<<EOF
+wv8\@10
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+Error while executing command: wv8\@10
+EOF
+RUN
