@@ -141,24 +141,11 @@ endif
 
 library_cflags = ['-DRZ_PLUGIN_INCORE=1']
 
+rizin_prefix = get_option('prefix')
+rizin_libdir = get_option('libdir')
+rizin_incdir = join_paths(get_option('includedir'), 'librz')
+rizin_datdir = get_option('datadir')
 if host_machine.system() == 'windows'
-  rizin_prefix = '.'
-  rizin_libdir = 'lib'
-  rizin_incdir = join_paths('include', 'librz')
-  rizin_datdir = 'share'
-
-  opts1 = [
-    'rizin_libdir',
-    'rizin_incdir',
-    'rizin_datdir'
-  ]
-  foreach opt : opts1
-    val = get_option(opt)
-    if val != ''
-      set_variable(opt, val)
-    endif
-  endforeach
-
   rizin_wwwroot = join_paths(rizin_datdir, 'www')
   rizin_sdb = join_paths(rizin_datdir)
   rizin_zigns = join_paths(rizin_datdir, 'zigns')
@@ -166,42 +153,10 @@ if host_machine.system() == 'windows'
   rizin_fortunes = join_paths(rizin_datdir, 'doc')
   rizin_flags = join_paths(rizin_datdir, 'flag')
   rizin_hud = join_paths(rizin_datdir, 'hud')
-
-  opts2 = [
-    'rizin_wwwroot',
-    'rizin_sdb',
-    'rizin_zigns',
-    'rizin_themes',
-    'rizin_fortunes',
-    'rizin_flags',
-    'rizin_hud'
-  ]
-  foreach opt : opts2
-    val = get_option(opt)
-    if val != ''
-      set_variable(opt, val)
-    endif
-  endforeach
-
-  opts3 = [
-    'rizin_plugins',
-    'rizin_extras',
-    'rizin_bindings'
-  ]
   rizin_plugins = join_paths(rizin_libdir, 'plugins')
   rizin_extras = join_paths(rizin_libdir, 'extras')
   rizin_bindings = join_paths(rizin_libdir, 'bindings')
-
-  foreach opt : opts1 + opts2 + opts3
-    val = get_variable(opt)
-    val = '\\\\'.join(val.split('/'))
-    set_variable(opt, val)
-  endforeach
 else
-  rizin_prefix = get_option('prefix')
-  rizin_libdir = get_option('libdir')
-  rizin_incdir = join_paths(get_option('includedir'), 'librz')
-  rizin_datdir = get_option('datadir')
   rizin_datdir_rz = join_paths(rizin_datdir, 'rizin')
   rizin_wwwroot = join_paths(rizin_datdir_rz, rizin_version, 'www')
   rizin_sdb = join_paths(rizin_datdir_rz, rizin_version)
@@ -214,6 +169,25 @@ else
   rizin_extras = join_paths(rizin_libdir, 'rizin-extras', rizin_version)
   rizin_bindings = join_paths(rizin_libdir, 'rizin-bindings', rizin_version)
 endif
+
+opts_overwrite = [
+  'rizin_wwwroot',
+  'rizin_sdb',
+  'rizin_zigns',
+  'rizin_themes',
+  'rizin_fortunes',
+  'rizin_flags',
+  'rizin_hud',
+  'rizin_plugins',
+  'rizin_extras',
+  'rizin_bindings'
+]
+foreach opt : opts_overwrite
+  val = get_option(opt)
+  if val != ''
+    set_variable(opt, val)
+  endif
+endforeach
 
 # load plugin configuration
 subdir('librz')
