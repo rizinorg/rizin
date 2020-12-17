@@ -866,7 +866,7 @@ static const char *rizin_argv[] = {
 	"afb?", "afb", "afb.", "afb+", "afbb", "afbr", "afbi", "afbj", "afbe", "afB", "afbc", "afb=",
 	"afB", "afC", "afCl", "afCc", "afc?", "afc", "afc=", "afcr", "afcrj", "afca", "afcf", "afcfj",
 	"afck", "afcl", "afco", "afcR",
-	"afd", "aff", "afF", "afi",
+	"afd", "aff", "afi",
 	"afl?", "afl", "afl+", "aflc", "aflj", "afll", "afllj", "aflm", "aflq", "aflqj", "afls",
 	"afm", "afM", "afn?", "afna", "afns", "afnsj", "afl=",
 	"afo", "afs", "afS", "aft?", "aft", "afu",
@@ -2464,6 +2464,9 @@ static void ev_iowrite_cb(RzEvent *ev, int type, void *user, void *data) {
 	}
 }
 
+RZ_IPI void rz_core_task_ctx_switch(RzCoreTask *next, void *user);
+RZ_IPI void rz_core_task_break_cb(RzCoreTask *task, void *user);
+
 RZ_API bool rz_core_init(RzCore *core) {
 	core->blocksize = RZ_CORE_BLOCKSIZE;
 	core->block = (ut8 *)calloc (RZ_CORE_BLOCKSIZE + 1, 1);
@@ -2508,7 +2511,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->print->use_comments = false;
 	core->rtr_n = 0;
 	core->blocksize_max = RZ_CORE_BLOCKSIZE_MAX;
-	rz_core_task_scheduler_init (&core->tasks, core);
+	rz_core_task_scheduler_init (&core->tasks, rz_core_task_ctx_switch, NULL, rz_core_task_break_cb, NULL);
 	core->watchers = rz_list_new ();
 	core->watchers->free = (RzListFree)rz_core_cmpwatch_free;
 	core->scriptstack = rz_list_new ();

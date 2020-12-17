@@ -1,6 +1,7 @@
 NAME=Function labels in comments
 FILE=malloc://512
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=16
 e asm.nbytes=2
@@ -19,6 +20,7 @@ RUN
 NAME=Function labels in disasm
 FILE=malloc://512
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=16
 e asm.nbytes=2
@@ -38,6 +40,7 @@ NAME=ANSI injection vuln
 FILE=bins/mach0/ansi
 CMDS=<<EOF
 sp
+e asm.bytes=true
 e asm.lines=0
 e asm.comments=0
 pd 1

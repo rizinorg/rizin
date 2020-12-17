@@ -13,6 +13,7 @@ NAME=jump with compress instruction
 FILE=-
 CMDS=<<EOF
 e asm.arch=riscv
+e asm.bytes=true
 e asm.bits=32
 wx 21a001009d06aa858146
 pd 5
@@ -29,6 +30,7 @@ RUN
 NAME=branch with compress instruction
 FILE=-
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=riscv
 e asm.bits=32
 wx 11c182809d06f5fe
@@ -46,6 +48,7 @@ RUN
 NAME=asm pseudo for riscv
 FILE=bins/elf/analysis/guess-number-riscv64
 CMDS=<<EOF
+e asm.bytes=true
 s 0x00010178
 e asm.pseudo = 1
 pd 5

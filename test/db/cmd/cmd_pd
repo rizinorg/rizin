@@ -2,6 +2,7 @@ NAME=pd varsub-issue
 FILE=bins/mach0/mac-ls2
 CMDS=<<EOF
 s 0x100001232
+e asm.bytes=true
 e asm.sub.var=0
 pd 1
 e asm.sub.var=1
@@ -59,6 +60,7 @@ RUN
 NAME=immstr
 FILE=malloc://128
 CMDS=<<EOF
+e asm.bytes=true
 e asm.bits=64
 e asm.arch=x86
 e analysis.arch=x86
@@ -75,6 +77,7 @@ NAME=pd pseudo=1 cmtright=0
 FILE=malloc://128
 CMDS=<<EOF
 wx 4889e5
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 e asm.pseudo=1
@@ -111,6 +114,7 @@ NAME=pd 1
 FILE=malloc://128
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=64
 wx 90
 e asm.lines.bb=0
@@ -127,6 +131,7 @@ RUN
 NAME=pd double comma
 FILE=malloc://128
 CMDS=<<EOF
+e asm.bytes=true
 e asm.bits=64
 e asm.arch = x86
 e analysis.arch = x86
@@ -142,6 +147,7 @@ RUN
 NAME=pd@x:90
 FILE=malloc://128
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 e asm.lines.bb=0
@@ -155,6 +161,7 @@ RUN
 NAME=asm.sub.names issue
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.bytes=true
 e asm.sub.names=1
 e asm.arch=arm
 e asm.bits=64
@@ -171,6 +178,7 @@ NAME=asm.sub.names issue
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.sub.names=0
+e asm.bytes=true
 e asm.arch=arm
 e asm.bits=64
 wx fa67bba9
@@ -211,6 +219,7 @@ RUN
 NAME=pd pseudo test for issue #7026
 FILE=malloc://8
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 wx 31ed
@@ -231,6 +240,7 @@ NAME=pd pseudo test for issue #7268
 FILE=malloc://8
 CMDS=<<EOF
 e asm.arch=x86
+e asm.bytes=true
 e asm.bits=64
 wx 4889e5
 e asm.pseudo=true
@@ -251,6 +261,7 @@ NAME=pd bits hint
 FILE=-
 ARGS=-a snes
 CMDS=<<EOF
+e asm.bytes=true
 wx a97e00
 ahb 8
 e scr.color=1
@@ -264,6 +275,7 @@ RUN
 NAME=ASCII Recognition
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=32
 e scr.columns = 90
@@ -278,6 +290,7 @@ RUN
 NAME=ASCII Recognition 2
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=32
 e scr.columns = 90
@@ -292,6 +305,7 @@ RUN
 NAME=String capstone
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch = x86
 e asm.arch=x86
 e asm.bits=32
@@ -307,6 +321,7 @@ RUN
 NAME=pD -10
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 wx 90909090909090909090 ; s 10 ; pD -10
@@ -328,6 +343,7 @@ RUN
 NAME=pd -10
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 wx 90909090909090909090 ; s 10 ; pd -10
@@ -349,6 +365,7 @@ RUN
 NAME=pD -9 @ 0x0040050f
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 pD -9 @ 0x0040050f
@@ -364,6 +381,7 @@ RUN
 NAME=pd -3 @ 0x0040050f
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 pd -3 @ 0x0040050f
@@ -523,6 +541,7 @@ RUN
 NAME=pd asm.bytes and asm.lbytes
 FILE=malloc://1024
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 wx 488d85c0f9ffff488985b8f9ffff4585f6
@@ -557,6 +576,7 @@ NAME=pd asm.sub.rel
 FILE=malloc://1024
 ARGS=-m 0x400000
 CMDS=<<EOF
+e asm.bytes=true
 e io.va=true
 e asm.sub.rel=false
 e asm.arch=x86
@@ -648,6 +668,7 @@ RUN
 NAME=pdf fcnline
 FILE=bins/pe/a.exe
 CMDS=<<EOF
+e asm.bytes=true
 e asm.lines.fcn=true
 s 0x004017c0
 af+ 0x004017c0 fcn2.0x004017c0
@@ -676,7 +697,10 @@ RUN
 
 NAME=rz_str_escape anal
 FILE=bins/pe/a.exe
-CMDS=pd 1 @ 0x00401322
+CMDS=<<EOF
+e asm.bytes=true
+pd 1 @ 0x00401322
+EOF
 EXPECT=<<EOF
             0x00401322      c70424043040.  mov dword [esp], 0x403004   ; [0x403004:4]=0xa7025 ; "%p\n"
 EOF
@@ -685,6 +709,7 @@ RUN
 NAME=rz_str_escape io + no 'u' prefix for single-char strings
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
+e asm.bytes=true
 pd 1 @ 0x140001034
 pd 1 @ 0x140001070
 EOF
@@ -696,7 +721,10 @@ RUN
 
 NAME=rz_str_escape analysis addr
 FILE=bins/pe/cmd_adf_sample0.exe
-CMDS=pd 1 @ 0x0040116a
+CMDS=<<EOF
+e asm.bytes=true
+pd 1 @ 0x0040116a
+EOF
 EXPECT=<<EOF
             0x0040116a      6828304000     push 0x403028               ; '(0@' ; "End\r\n"
 EOF
@@ -705,6 +733,7 @@ RUN
 NAME=no rep flag in cmt with gen str flag (lea)
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
+e asm.bytes=true
 e asm.cmt.right=true
 pd 1 @ 0x0001145f
 e asm.cmt.right=false
@@ -724,6 +753,7 @@ CMDS=<<EOF
 f- @ 0x1b5d8
 f NULL_error 56 @ 0x1b5d8
 e asm.cmt.right=true
+e asm.bytes=true
 pd 1 @ 0x0001145f
 e asm.cmt.right=false
 pd 1 @ 0x0001145f
@@ -739,6 +769,7 @@ RUN
 NAME=no rep flag in cmt with gen str flag (push)
 FILE=bins/pe/ConsoleApplication1.exe
 CMDS=<<EOF
+e asm.bytes=true
 e asm.cmt.right=true
 pd 1 @ 0x004010f0
 e asm.cmt.right=false
@@ -755,6 +786,7 @@ RUN
 NAME=flag in cmt with manual flag (push)
 FILE=bins/pe/ConsoleApplication1.exe
 CMDS=<<EOF
+e asm.bytes=true
 f- @ 0x4021b8
 f num_cpu 36 @ 0x4021b8
 e asm.cmt.right=true
@@ -773,6 +805,7 @@ RUN
 NAME=no rep flag in cmt with gen sym flag (mov)
 FILE=bins/pe/ConsoleApplication1.exe
 CMDS=<<EOF
+e asm.bytes=true
 e asm.cmt.right=true
 pd 1 @ 0x004010fa
 e asm.cmt.right=false
@@ -788,6 +821,7 @@ RUN
 NAME=flag in cmt with manual flag (mov)
 FILE=bins/pe/ConsoleApplication1.exe
 CMDS=<<EOF
+e asm.bytes=true
 f- @ 0x402000
 f ptr_GetLastError 0 @ 0x402000
 e asm.cmt.right=true
@@ -822,6 +856,7 @@ RUN
 NAME=ANSI and wide string flag cmts
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
+e asm.bytes=true
 e str.escbslash=false
 e asm.cmt.right=true
 pd 1 @ 0x140001004
@@ -852,7 +887,10 @@ RUN
 
 NAME=no ffffff test for issue #7755
 FILE=bins/pe/testapp-msvc64.exe
-CMDS=pd 1 @ 0x140001040
+CMDS=<<EOF
+e asm.bytes=true
+pd 1 @ 0x140001040
+EOF
 EXPECT=<<EOF
             0x140001040      488d05415001.  lea rax, [0x140016088]     ; u"r2 \u1308\u23f4\u23f4"
 EOF
@@ -916,6 +954,7 @@ NAME=bin.str.enc latin1
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
 e asm.sub.names=false
+e asm.bytes=true
 e asm.noisy=false
 e bin.str.enc=latin1
 pd 1 @ 0x140001058
@@ -993,6 +1032,7 @@ RUN
 NAME=bin.str.enc guess utf16le
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
+e asm.bytes=true
 e asm.sub.names=false
 e asm.noisy=false
 e bin.str.enc=guess
@@ -1076,6 +1116,7 @@ RUN
 NAME=hide flag iff unchanged and string shown
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
+e asm.bytes=true
 e asm.sub.names=false
 e asm.noisy=false
 e str.escbslash=false
@@ -1109,6 +1150,7 @@ NAME=asm.noisy
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
 e asm.sub.names=false
+e asm.bytes=true
 e asm.noisy=true
 e str.escbslash=false
 e asm.cmt.right=true
@@ -1127,6 +1169,7 @@ RUN
 NAME=fcn name cmt alignment
 FILE=bins/pe/ConsoleApplication1.exe
 CMDS=<<EOF
+e asm.bytes=true
 e asm.sub.names=false
 af @ main
 pd 1 @ 0x00401157
@@ -1139,6 +1182,7 @@ RUN
 NAME=call asm.sub.names=false flag cmt
 FILE=bins/pe/ConsoleApplication1.exe
 CMDS=<<EOF
+e asm.bytes=true
 e asm.sub.names=false
 e asm.cmt.right=true
 pd 1 @ 0x004010c6
@@ -1158,6 +1202,7 @@ NAME=asm.cmt.off
 FILE=bins/pe/testapp-msvc64.exe
 CMDS=<<EOF
 e asm.noisy=false
+e asm.bytes=true
 e str.escbslash=false
 e asm.sub.names=true
 e asm.cmt.off=false
@@ -1243,6 +1288,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 wx 9090
+e asm.bytes=true
 e asm.lines.bb=0
 pdJ 2
 EOF
@@ -1254,6 +1300,7 @@ RUN
 NAME=pdJ comments
 FILE=malloc://128
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 wx 90
@@ -1276,6 +1323,7 @@ NAME=pdJ string comment
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 aa
+e asm.bytes=true
 pdJ 1 @ 0x0040050a
 EOF
 EXPECT=<<EOF
@@ -1286,6 +1334,7 @@ RUN
 NAME=pdJ flags
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
+e asm.bytes=true
 s main
 pdJ 1 @ 0x00400506
 aa
@@ -1300,6 +1349,7 @@ RUN
 NAME=pdJ midflags reloc
 FILE=malloc://8
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 f reloc.test @ 0x1
@@ -1338,7 +1388,10 @@ RUN
 
 NAME=pdJ str in opcode
 FILE=bins/java/Hello.class
-CMDS=pdJ 1 @ 0x000002ae
+CMDS=<<EOF
+e asm.bytes=true
+pdJ 1 @ 0x000002ae
+EOF
 EXPECT=<<EOF
 [{"offset":686,"text":"            0x000002ae      120b           ldc \"World\""}]
 EOF
@@ -1348,6 +1401,7 @@ NAME=pdJ asm.cmt.right=0 + html
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
 aaa
+e asm.bytes=true
 e asm.cmt.right=0
 e scr.colors=1
 e scr.html=1
@@ -1362,6 +1416,7 @@ RUN
 NAME=pdJ asm.cmt.right=0 fcn name
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
+e asm.bytes=true
 af@sym.imp.__libc_start_main
 af@0x080485a0
 e asm.pseudo=1
@@ -1382,6 +1437,7 @@ RUN
 NAME=pdJ asm.emu=1 comment
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
+e asm.bytes=true
 e asm.emu=1
 pdJ 1 @ 0x08048566
 EOF
@@ -1393,6 +1449,7 @@ RUN
 NAME=pdJ asm.emu=1 string
 FILE=bins/elf/crackme0x00b
 CMDS=<<EOF
+e asm.bytes=true
 s 0x080484aa
 e asm.emu=1
 e scr.color=0
@@ -1413,6 +1470,7 @@ RUN
 NAME=pdJ asm.xrefs.fold asm.xrefs.max
 FILE=-
 CMDS=<<EOF
+e asm.bytes=true
 s 0
 e asm.arch=x86
 e asm.bits=64
@@ -1523,6 +1581,7 @@ RUN
 NAME=pd, esil, emu.stroff and bin.str.purge
 FILE=bins/elf/analysis/hello-android-mips
 CMDS=<<EOF
+e asm.bytes=true
 e emu.str=true
 s 0x0008049c
 e bin.str.purge=
@@ -1550,6 +1609,7 @@ RUN
 NAME=emu.pre and double pd
 FILE=bins/elf/analysis/hello-android-mips
 CMDS=<<EOF
+e asm.bytes=true
 e emu.pre=true
 e emu.str=true
 f start @ 0x0008049c
@@ -1566,6 +1626,7 @@ RUN
 NAME=pd @B
 FILE=-
 CMDS=<<EOF
+e asm.bytes=true
 e asm.functions=false
 e asm.lines.bb=false
 e asm.comments=false
@@ -1590,6 +1651,7 @@ RUN
 NAME=asm.bb.line
 FILE=bins/elf/analysis/ls2
 CMDS=<<EOF
+e asm.bytes=true
 e scr.utf8=false
 e scr.color=0
 e asm.bb.line=true
@@ -1620,6 +1682,7 @@ RUN
 NAME=pd @a overwrites analysis hints
 FILE=bins/elf/analysis/ls-linux64
 CMDS=<<EOF
+e asm.bytes=true
 e asm.comments=false
 e asm.functions=false
 e asm.lines.bb=false
@@ -1674,6 +1737,7 @@ RUN
 NAME=emu.str dup str/flag cmt fix
 FILE=bins/elf/analysis/ls2
 CMDS=<<EOF
+e asm.bytes=true
 e emu.str=true
 e asm.sub.names=true
 pd 1 @ 0x00402a5f
@@ -1758,6 +1822,7 @@ RUN
 NAME=data ref with no analop.ptr (#9610)
 FILE=bins/firmware/main.bin
 CMDS=<<EOF
+e asm.bytes=true
 f str.hello 12 @ 0x276
 axd str.hello @ 0x260
 pd 1 @ 0x260
@@ -1770,7 +1835,10 @@ RUN
 NAME=@b and @addr should coexist
 FILE=bins/firmware/armthumb.bin
 ARGS=-aarm -b32
-CMDS=pd 1 @b:32 @0xc
+CMDS=<<EOF
+e asm.bytes=true
+pd 1 @b:32 @0xc
+EOF
 EXPECT=<<EOF
             0x0000000c      01207047       ldrbmi r2, [r0, -r1]!
 EOF
@@ -1780,6 +1848,7 @@ NAME=ahb should not be deleted with @b (#9751)
 FILE=bins/firmware/armthumb.bin
 ARGS=-aarm -b32
 CMDS=<<EOF
+e asm.bytes=true
 ahb 16 @0xc
 ah*
 pd 1 @b:32 @0xc
@@ -1796,6 +1865,7 @@ NAME=ahb should not override @b
 FILE=bins/firmware/armthumb.bin
 ARGS=-aarm -b32
 CMDS=<<EOF
+e asm.bytes=true
 ahb 16 @0xc
 pd 5 @b:32
 EOF
@@ -1812,6 +1882,7 @@ NAME=two-operand line highlight; asm.highlight ecHw fix; ec wordhl/linehl
 FILE=bins/elf/redpill
 CMDS=<<EOF
 . scripts/palette.rz
+e asm.bytes=true
 e scr.color=3
 e emu.str=true
 e emu.pre=true
@@ -2019,6 +2090,7 @@ RUN
 NAME=asm.imm.str, asm.cmd.right=false, pd and pdJ
 FILE=bins/elf/echo-bin
 CMDS=<<EOF
+e asm.bytes=true
 e asm.imm.str=true
 e asm.cmt.right=false
 pd 1 @ 0x9b3
@@ -2079,6 +2151,7 @@ RUN
 NAME=pdf show entry0 disasm instead of main
 FILE=bins/elf/ls
 CMDS=<<EOF
+e asm.bytes=true
 aa
 pdf
 EOF
@@ -2103,6 +2176,7 @@ RUN
 NAME=asm.lines.ret, pd and pdJ
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
+e asm.bytes=true
 e asm.lines.ret=1
 s 0x08048414
 pd 2
@@ -2142,6 +2216,7 @@ RUN
 NAME=direct call without fcn + asm.flags.real
 FILE=bins/elf/crackme0x05
 CMDS=<<EOF
+e asm.bytes=true
 e asm.flags.real=false
 pd 1 @ 0x8048566
 e asm.flags.real=true
@@ -2165,6 +2240,7 @@ RUN
 NAME=pd grep chain
 FILE=malloc://8
 CMDS=<<EOF
+e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 wx 90905152539090 ; pd 7 ~&5,push

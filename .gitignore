@@ -129,3 +129,4 @@ vgcore.*
 librz/include/sdb
 peda-session-*
 /.vs
+.cache/

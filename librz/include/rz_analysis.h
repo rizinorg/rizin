@@ -304,7 +304,6 @@ typedef struct rz_analysis_function_t {
 	st64 stack;  // stack frame size
 	int maxstack;
 	int ninstr;
-	bool folded;
 	bool is_pure;
 	bool is_variadic;
 	bool has_changed; // true if function may have changed since last anaysis TODO: set this attribute where necessary
@@ -915,7 +914,6 @@ typedef struct rz_analysis_bb_t {
 	ut64 jump;
 	ut64 fail;
 	bool traced;
-	bool folded;
 	ut32 colorize;
 	ut8 *fingerprint;
 	RzAnalysisDiff *diff;
@@ -1468,6 +1466,15 @@ RZ_API void rz_analysis_block_update_hash(RzAnalysisBlock *block);
 // returns true if a byte in the given basic block was modified
 RZ_API bool rz_analysis_block_was_modified(RzAnalysisBlock *block);
 
+RZ_API RzAnalysisBlock *rz_analysis_find_most_relevant_block_in(RzAnalysis *analysis, ut64 off);
+
+RZ_API ut16 rz_analysis_block_get_op_offset(RzAnalysisBlock *block, size_t i);
+RZ_API ut64 rz_analysis_block_get_op_addr(RzAnalysisBlock *block, size_t i);
+RZ_API ut64 rz_analysis_block_get_op_addr_in(RzAnalysisBlock *bb, ut64 off);
+RZ_API bool rz_analysis_block_set_op_offset(RzAnalysisBlock *block, size_t i, ut16 v);
+RZ_API ut64 rz_analysis_block_get_op_size(RzAnalysisBlock *bb, size_t i);
+RZ_API void rz_analysis_block_analyze_ops(RzAnalysisBlock *block);
+
 // ---------------------------------------
 
 /* function.c */
@@ -1536,7 +1543,6 @@ RZ_API int rz_analysis_archinfo(RzAnalysis *analysis, int query);
 RZ_API bool rz_analysis_use(RzAnalysis *analysis, const char *name);
 RZ_API bool rz_analysis_set_reg_profile(RzAnalysis *analysis);
 RZ_API char *rz_analysis_get_reg_profile(RzAnalysis *analysis);
-RZ_API ut64 rz_analysis_get_bbaddr(RzAnalysis *analysis, ut64 addr);
 RZ_API bool rz_analysis_set_bits(RzAnalysis *analysis, int bits);
 RZ_API bool rz_analysis_set_os(RzAnalysis *analysis, const char *os);
 RZ_API void rz_analysis_set_cpu(RzAnalysis *analysis, const char *cpu);
@@ -1550,14 +1556,6 @@ RZ_API bool rz_analysis_set_triplet(RzAnalysis *analysis, const char *os, const 
 RZ_API void rz_analysis_add_import(RzAnalysis *analysis, const char *imp);
 RZ_API void rz_analysis_remove_import(RzAnalysis *analysis, const char *imp);
 RZ_API void rz_analysis_purge_imports(RzAnalysis *analysis);
-
-/* bb.c */
-RZ_API RzAnalysisBlock *rz_analysis_bb_from_offset(RzAnalysis *analysis, ut64 off);
-RZ_API bool rz_analysis_bb_set_offset(RzAnalysisBlock *bb, int i, ut16 v);
-RZ_API ut16 rz_analysis_bb_offset_inst(RzAnalysisBlock *bb, int i);
-RZ_API ut64 rz_analysis_bb_opaddr_i(RzAnalysisBlock *bb, int i);
-RZ_API ut64 rz_analysis_bb_opaddr_at(RzAnalysisBlock *bb, ut64 addr);
-RZ_API ut64 rz_analysis_bb_size_i(RzAnalysisBlock *bb, int i);
 
 /* op.c */
 RZ_API const char *rz_analysis_stackop_tostring(int s);
@@ -2047,8 +2045,6 @@ RZ_API char *rz_analysis_rtti_demangle_class_name(RzAnalysis *analysis, const ch
 RZ_API void rz_analysis_rtti_print_at_vtable(RzAnalysis *analysis, ut64 addr, int mode);
 RZ_API void rz_analysis_rtti_print_all(RzAnalysis *analysis, int mode);
 RZ_API void rz_analysis_rtti_recover_all(RzAnalysis *analysis);
-
-RZ_API void rz_analysis_colorize_bb(RzAnalysis *analysis, ut64 addr, ut32 color);
 
 RZ_API RzList *rz_analysis_preludes(RzAnalysis *analysis);
 RZ_API bool rz_analysis_is_prelude(RzAnalysis *analysis, const ut8 *data, int len);

@@ -43,6 +43,7 @@ RUN
 NAME=segment comment
 FILE=bins/elf/analysis/core.1159
 CMDS=<<EOF
+e asm.bytes=true
 e asm.cmt.right=true
 pd 1 @ 0x7ffe70f68000
 ?e
