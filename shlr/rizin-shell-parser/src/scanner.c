@@ -4,6 +4,7 @@
 #include <string.h>
 
 #define CMD_IDENTIFIER_MAX_LENGTH 32
+#define ESCAPE_CHAR '\\'
 
 enum TokenType {
 	CMD_IDENTIFIER,
@@ -66,6 +67,9 @@ static bool is_start_of_command(const int32_t ch) {
 }
 
 static bool is_mid_command(const char *res, int len, const int32_t ch) {
+	if (ch == ESCAPE_CHAR) {
+		return true;
+	}
 	if (res[0] == '#') {
 		if (len == 1) {
 			return ch == '!' || ch == '?';
@@ -134,7 +138,6 @@ static bool scan_number(TSLexer *lexer, const bool *valid_symbols) {
 }
 
 bool tree_sitter_rzcmd_external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid_symbols) {
-	// FIXME: /* in the shell should become a multiline comment
 	if (valid_symbols[CONCAT] && is_concat (lexer->lookahead)) {
 		lexer->result_symbol = CONCAT;
 		return true;
@@ -162,9 +165,13 @@ bool tree_sitter_rzcmd_external_scanner_scan(void *payload, TSLexer *lexer, cons
 		res[i_res++] = lexer->lookahead;
 		lexer->advance (lexer, false);
 		while (i_res < CMD_IDENTIFIER_MAX_LENGTH && is_mid_command (res, i_res, lexer->lookahead)) {
+			if (lexer->lookahead == ESCAPE_CHAR) {
+				// ignore escape char and just get the next one, whatever it is
+				lexer->advance (lexer, false);
+			}
 			res[i_res++] = lexer->lookahead;
 			lexer->advance (lexer, false);
-                }
+		}
 		res[i_res] = '\0';
 		if (is_comment (res)) {
 			return false;

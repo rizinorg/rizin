@@ -313,3 +313,23 @@ md /root/
   (arged_command (cmd_identifier)
     (args (arg (arg_identifier))))
   (help_command (cmd_identifier)))
+
+
+=============================
+Escaped char in cmdidentifier
+=============================
+
+aa\ f
+\nff
+aaa\#
+aaa\ 
+pd\@0xdeadbeef
+
+---
+
+(commands
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier)))
