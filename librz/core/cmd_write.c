@@ -121,20 +121,6 @@ static const char *help_msg_wop[] = {
 	NULL
 };
 
-// TODO
-static const char *help_msg_wp[] = {
-	"Usage:", "wp", "[-|rzpatch-file]",
-	"^#", "", "comments",
-	".", "", "execute command",
-	"!", "", "execute command",
-	"", "", "OFFSET { code block }",
-	"", "", "OFFSET \"string\"",
-	"", "", "OFFSET 01020304",
-	"", "", "OFFSET : assembly",
-	"", "", "+ {code}|\"str\"|0210|: asm",
-	NULL
-};
-
 static const char *help_msg_wt[] = {
 	"Usage:", "wt[a] file [size]", " Write 'size' bytes in current block to 'file'",
 	"wta", " [filename]", "append to 'filename'",
