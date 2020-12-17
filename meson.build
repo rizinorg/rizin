@@ -701,17 +701,17 @@ summary({
 }, section: 'Configuration', bool_yn: true)
 
 summary({
-  'Core Plugins': core_plugins,
   'Analysis Plugins': analysis_plugins,
   'Assembler Plugins': asm_plugins,
-  'Breapoint Plugins': bp_plugins,
   'Binary Plugins': bin_plugins,
   'BinLdr Plugins': bin_ldr_plugins,
   'BinXtr Plugins': bin_xtr_plugins,
+  'Breakpoint Plugins': bp_plugins,
+  'Core Plugins': core_plugins,
   'Crypto Plugins': crypto_plugins,
-  'IO Plugins': io_plugins,
   'Debug Plugins': debug_plugins,
   'Egg Plugins': egg_plugins,
+  'IO Plugins': io_plugins,
   'Lang Plugins': lang_plugins,
   'Parse Plugins': parse_plugins,
 }, section: 'Plugins', list_sep: ', ')
