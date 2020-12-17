@@ -64,7 +64,7 @@ RZ_API bool rz_debug_add_checkpoint(RzDebug *dbg) {
 	for (i = 0; i < RZ_REG_TYPE_LAST; i++) {
 		RzRegArena *a = dbg->reg->regset[i].arena;
 		RzRegArena *b = rz_reg_arena_new (a->size);
-		memcpy (b->bytes, a->bytes, b->size);
+		rz_mem_copy (b->bytes, b->size, a->bytes, a->size);
 		checkpoint.arena[i] = b;
 	}
 
