@@ -2553,7 +2553,7 @@ static void disasm_strings(RzCore *core, const char *input, RzAnalysisFunction *
 	line = NULL;
 	s = NULL;
 	if (!strncmp (input, "dsb", 3)) {
-		RzAnalysisBlock *bb = rz_analysis_bb_from_offset (core->analysis, core->offset);
+		RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in (core->analysis, core->offset);
 		if (bb) {
 			line = s = rz_core_cmd_strf (core, "pD %"PFMT64u" @ 0x%08"PFMT64x, bb->size, bb->addr);
 		}
@@ -5122,7 +5122,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		break;
 		case 'b': // "pib"
 		{
-			RzAnalysisBlock *b = rz_analysis_bb_from_offset (core->analysis, core->offset);
+			RzAnalysisBlock *b = rz_analysis_find_most_relevant_block_in (core->analysis, core->offset);
 			if (b) {
 					rz_core_print_disasm_instructions (core, b->size - (core->offset - b->addr), 0);
 			} else {
@@ -5288,7 +5288,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			if (input[2] == '?') {
 				rz_cons_printf ("Usage: pdb[j]  - disassemble basic block\n");
 			} else {
-				RzAnalysisBlock *b = rz_analysis_bb_from_offset (core->analysis, core->offset);
+				RzAnalysisBlock *b = rz_analysis_find_most_relevant_block_in (core->analysis, core->offset);
 				if (b) {
 					ut8 *block = malloc (b->size + 1);
 					if (block) {
@@ -5391,7 +5391,7 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					if (realsz + 4096 < linearsz) {
 						eprintf ("Linear size differs too much from the bbsum, please use pdr instead.\n");
 					} else {
-						ut64 at = f->addr; // TODO: should be min from rz_analysis_fcn_get_range()?
+						ut64 at = f->addr; // TODO: should be rz_analysis_function_min_addr()
 						ut64 sz = RZ_MAX (linearsz, realsz);
 						ut8 *buf = calloc (sz, 1);
 						if (buf) {

@@ -1134,9 +1134,9 @@ static ut64 prevop_addr(RzCore *core, ut64 addr) {
 	// TODO: look in the current basicblock, then in the current function
 	// and search in all functions only as a last chance, to try to speed
 	// up the process.
-	bb = rz_analysis_bb_from_offset (core->analysis, addr - minop);
+	bb = rz_analysis_find_most_relevant_block_in (core->analysis, addr - minop);
 	if (bb) {
-		ut64 res = rz_analysis_bb_opaddr_at (bb, addr - minop);
+		ut64 res = rz_analysis_block_get_op_addr_in (bb, addr - minop);
 		if (res != UT64_MAX) {
 			return res;
 		}
@@ -1180,9 +1180,9 @@ RZ_API bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, ut
 	RzAnalysisBlock *bb;
 	int i;
 	// Check that we're in a bb, otherwise this prevop stuff won't work.
-	bb = rz_analysis_bb_from_offset (core->analysis, start_addr);
+	bb = rz_analysis_find_most_relevant_block_in (core->analysis, start_addr);
 	if (bb) {
-		if (rz_analysis_bb_opaddr_at (bb, start_addr) != UT64_MAX) {
+		if (rz_analysis_block_get_op_addr_in (bb, start_addr) != UT64_MAX) {
 			// Do some analysis looping.
 			for (i = 0; i < numinstrs; i++) {
 				*prev_addr = prevop_addr (core, start_addr);

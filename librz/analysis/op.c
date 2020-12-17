@@ -396,7 +396,7 @@ RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op) {
 		snprintf (ret, sizeof (ret), "%s = %s", r0, a0);
 		break;
 	case RZ_ANALYSIS_OP_TYPE_CJMP:
-		if ((bb = rz_analysis_bb_from_offset (analysis, op->addr))) {
+		if ((bb = rz_analysis_find_most_relevant_block_in (analysis, op->addr))) {
 			cstr = rz_analysis_cond_to_string (bb->cond);
 			snprintf (ret, sizeof (ret), "if (%s) goto 0x%"PFMT64x, cstr, op->jump);
 			free (cstr);
@@ -437,7 +437,7 @@ RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op) {
 		break;
 	case RZ_ANALYSIS_OP_TYPE_CCALL:
 		f = rz_analysis_get_fcn_in (analysis, op->jump, RZ_ANALYSIS_FCN_TYPE_NULL);
-		if ((bb = rz_analysis_bb_from_offset (analysis, op->addr))) {
+		if ((bb = rz_analysis_find_most_relevant_block_in (analysis, op->addr))) {
 			cstr = rz_analysis_cond_to_string (bb->cond);
 			if (f) {
 				snprintf (ret, sizeof (ret), "if (%s) %s()", cstr, f->name);
@@ -515,7 +515,7 @@ RZ_API char *rz_analysis_op_to_string(RzAnalysis *analysis, RzAnalysisOp *op) {
 		memcpy (ret, "ret", 4);
 		break;
 	case RZ_ANALYSIS_OP_TYPE_CRET:
-		if ((bb = rz_analysis_bb_from_offset (analysis, op->addr))) {
+		if ((bb = rz_analysis_find_most_relevant_block_in (analysis, op->addr))) {
 			cstr = rz_analysis_cond_to_string (bb->cond);
 			snprintf (ret, sizeof (ret), "if (%s) ret", cstr);
 			free (cstr);
