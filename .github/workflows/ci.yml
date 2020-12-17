@@ -875,7 +875,7 @@ jobs:
 
   publish-docker-image:
     name: Publish Docker image on Docker Hub
-    # needs: [build-and-test]
+    needs: [build-and-test]
     runs-on: ubuntu-20.04
     if: github.event_name == 'push'
     steps:
