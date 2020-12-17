@@ -936,10 +936,6 @@ static const RzCmdDescHelp we_handler_old_help = {
 	.summary = "Extend write operations (insert bytes instead of replacing)",
 };
 
-static const RzCmdDescHelp wp_handler_old_help = {
-	.summary = "Apply rizin patch file. See wp? fmi",
-};
-
 static const RzCmdDescHelp wu_handler_old_help = {
 	.summary = "Apply unified hex patch (see output of cu)",
 };
@@ -1658,8 +1654,6 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail (wh_handler_old_cd);
 	RzCmdDesc *we_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "we", rz_we_handler_old, &we_handler_old_help);
 	rz_warn_if_fail (we_handler_old_cd);
-	RzCmdDesc *wp_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "wp", rz_wp_handler_old, &wp_handler_old_help);
-	rz_warn_if_fail (wp_handler_old_cd);
 	RzCmdDesc *wu_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "wu", rz_wu_handler_old, &wu_handler_old_help);
 	rz_warn_if_fail (wu_handler_old_cd);
 	RzCmdDesc *wr_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, w_cd, "wr", rz_wr_handler_old, &wr_handler_old_help);

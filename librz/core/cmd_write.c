@@ -1231,28 +1231,6 @@ RZ_IPI int rz_we_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-RZ_IPI int rz_wp_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	if (input[0] == '-' || (input[0] == ' ' && input[1] == '-')) {
-		char *out = rz_core_editor (core, NULL, NULL);
-		if (out) {
-			rz_core_patch (core, out);
-			free (out);
-		}
-	} else {
-		if (input[0] == ' ' && input[1]) {
-			char *data = rz_file_slurp (input + 1, NULL);
-			if (data) {
-				rz_core_patch (core, data);
-				free (data);
-			}
-		} else {
-			rz_core_cmd_help (core, help_msg_wp);
-		}
-	}
-	return 0;
-}
-
 RZ_IPI int rz_wu_handler_old(void *data, const char *input) {
 	// TODO: implement it in an API RzCore.write_unified_hexpatch() is ETOOLONG
 	if (input[0]==' ') {
@@ -2049,9 +2027,6 @@ RZ_IPI int rz_cmd_write(void *data, const char *input) {
 		break;
 	case 'e': // "we"
 		rz_we_handler_old (core, input + 1);
-		break;
-	case 'p': // "wp"
-		rz_wp_handler_old (core, input + 1);
 		break;
 	case 'u': // "wu"
 		rz_wu_handler_old (core, input + 1);

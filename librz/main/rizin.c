@@ -123,7 +123,6 @@ static int main_help(int line) {
 		" -qq          quit after running all -c and -i\n"
 		" -Q           quiet mode (no prompt) and quit faster (quickLeak=true)\n"
 		" -p [p.rzdb]  load project file\n"
-		" -P [file]    apply rapatch file and quit\n"
 		" -r [rz_run]  specify rz_run profile to load (same as -e dbg.profile=X)\n"
 		" -R [rrz_testule] specify custom rz_run directive\n"
 		" -s [addr]    initial seek\n"
@@ -332,7 +331,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	char *cmdn, *tmp;
 	RzCoreFile *fh = NULL;
 	RzIODesc *iod = NULL;
-	const char *patchfile = NULL;
 	const char *prj = NULL;
 	int debug = 0;
 	int zflag = 0;
@@ -440,7 +438,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	bool load_l = true;
 
 	RzGetopt opt;
-	rz_getopt_init (&opt, argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSTzuXt");
+	rz_getopt_init (&opt, argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
 	while ((c = rz_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case '=':
@@ -573,14 +571,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			break;
 		case 'p':
 			prj = *opt.arg ? opt.arg : NULL;
-			break;
-		case 'P':
-			if (RZ_STR_ISEMPTY (opt.arg)) {
-				eprintf ("Cannot open empty rapatch path\n");
-				ret = 1;
-				goto beach;
-			}
-			patchfile = opt.arg;
 			break;
 		case 'Q':
 			quiet = true;
@@ -1362,17 +1352,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_config_set (r->config, "scr.prompt", "false");
 	}
 	r->num->value = 0;
-	if (patchfile) {
-		char *data = rz_file_slurp (patchfile, NULL);
-		if (data) {
-			ret = rz_core_patch (r, data);
-			rz_core_seek (r, 0, true);
-			free (data);
-		} else {
-			eprintf ("[p] Cannot open '%s'\n", patchfile);
-		}
-	}
-	if ((patchfile && !quiet) || !patchfile) {
+	if (!quiet) {
 		if (zerosep) {
 			rz_cons_zero ();
 		}
