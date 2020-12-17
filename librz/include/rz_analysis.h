@@ -304,7 +304,6 @@ typedef struct rz_analysis_function_t {
 	st64 stack;  // stack frame size
 	int maxstack;
 	int ninstr;
-	bool folded;
 	bool is_pure;
 	bool is_variadic;
 	bool has_changed; // true if function may have changed since last anaysis TODO: set this attribute where necessary
@@ -915,7 +914,6 @@ typedef struct rz_analysis_bb_t {
 	ut64 jump;
 	ut64 fail;
 	bool traced;
-	bool folded;
 	ut32 colorize;
 	ut8 *fingerprint;
 	RzAnalysisDiff *diff;

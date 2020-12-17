@@ -4044,21 +4044,6 @@ static void rotateColor(RzCore *core) {
 	rz_config_set_i (core->config, "scr.color", color);
 }
 
-// dupe in visual.c
-static bool toggle_bb(RzCore *core, ut64 addr) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
-	if (fcn) {
-		RzAnalysisBlock *bb = rz_analysis_fcn_bbget_in (core->analysis, fcn, addr);
-		if (bb) {
-			bb->folded = !bb->folded;
-		} else {
-			rz_warn_if_reached ();
-		}
-		return true;
-	}
-	return false;
-}
-
 static char *get_graph_string(RzCore *core, RzAGraph *g) {
 	int c = rz_config_get_i (core->config, "scr.color");
 	int u = rz_config_get_i (core->config, "scr.utf8");
@@ -4360,18 +4345,6 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 		case 'V':
 			if (fcn) {
 				agraph_toggle_callgraph (g);
-			}
-			break;
-		case 'Z':
-			if (okey == 27) { // shift-tab
-				agraph_prev_node (g);
-			} else {
-				RzANode *n = get_anode (g->curnode);
-				if (n) {
-					ut64 addr = rz_num_get (NULL, n->title);
-					toggle_bb (core, addr);
-					g->need_reload_nodes = true;
-				}
 			}
 			break;
 		case 's':

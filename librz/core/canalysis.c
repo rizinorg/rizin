@@ -3027,9 +3027,6 @@ static int fcn_print_detail(RzCore *core, RzAnalysisFunction *fcn) {
 	if (fcn->cc || defaultCC) {
 		rz_cons_printf ("afc %s @ 0x%08"PFMT64x"\n", fcn->cc?fcn->cc: defaultCC, fcn->addr);
 	}
-	if (fcn->folded) {
-		rz_cons_printf ("afF @ 0x%08"PFMT64x"\n", fcn->addr);
-	}
 	if (fcn) {
 		/* show variables  and arguments */
 		rz_core_cmdf (core, "afvb* @ 0x%"PFMT64x"\n", fcn->addr);
