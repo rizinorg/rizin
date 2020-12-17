@@ -379,9 +379,6 @@ static bool cb_analarch(void *user, void *data) {
 		const char *aa = rz_config_get (core->config, "asm.arch");
 		if (!aa || strcmp (aa, node->value)) {
 			eprintf ("analysis.arch: cannot find '%s'\n", node->value);
-		} else {
-			rz_config_set (core->config, "analysis.arch", "null");
-			return true;
 		}
 	}
 	return false;

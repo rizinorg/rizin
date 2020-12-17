@@ -177,4 +177,17 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=analysis.arch != asm.arch
+FILE=--
+CMDS=<<EOF
+## Commented out because of an assertion on asan. Works as expected.
+# e asm.arch=lanai
+# e analysis.arch
+e asm.arch=x86.as
+e analysis.arch
+EOF
+EXPECT=<<EOF
+x86
+EOF
+RUN
 
