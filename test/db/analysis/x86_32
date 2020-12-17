@@ -3023,46 +3023,6 @@ ret
 EOF
 RUN
 
-NAME=af afF
-FILE=malloc://1024
-CMDS=<<EOF
-e analysis.hasnext=0
-e analysis.eobjmp=false
-e asm.arch=x86
-e asm.bits=32
-wx 6a004889e5c3
-af test
-afF
-pd 1 @ test
-EOF
-EXPECT=<<EOF
-/ (fcn) test
-\           0x00000000 (6 byte folded function)
-EOF
-RUN
-
-NAME=af afF graph
-FILE=malloc://1024
-CMDS=<<EOF
-e analysis.hasnext=0
-e analysis.eobjmp=false
-e asm.arch=x86
-e asm.bits=32
-wx 6a004889e5c3
-af test
-afF
-agf
-EOF
-EXPECT=<<EOF
-[0x00000000]>  # test ();
- --------------------------.
-|  0x0                     |
-| / (fcn) test             |
-| (6 byte folded function) |
-`--------------------------'
-EOF
-RUN
-
 NAME=ahc
 FILE=malloc://16
 CMDS=<<EOF

@@ -334,7 +334,6 @@ static const char *help_msg_visual[] = {
 	"wW", "seek cursor to next/prev word",
 	"xX", "show xrefs/refs of current function from/to data/code",
 	"yY", "copy and paste selection",
-	"z", "fold/unfold comments in disassembly",
 	"Z", "shift-tab rotate print modes", // ctoggle zoom mode",
 	"Enter", "follow address of jump/call",
 	NULL
@@ -2250,20 +2249,6 @@ static bool canWrite(RzCore *core, ut64 addr) {
 	return (map && (map->perm & RZ_PERM_W));
 }
 
-static bool toggle_bb(RzCore *core, ut64 addr) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
-	if (fcn) {
-		RzAnalysisBlock *bb = rz_analysis_fcn_bbget_in (core->analysis, fcn, addr);
-		if (bb) {
-			bb->folded = !bb->folded;
-		} else {
-			rz_warn_if_reached ();
-		}
-		return true;
-	}
-	return false;
-}
-
 RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 	ut8 och = arg[0];
 	RzAsmOp op;
@@ -3455,39 +3440,6 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			}
 		}
 		break;
-		case 'z':
-		{
-			RzAnalysisFunction *fcn;
-			if (core->print->cur_enabled) {
-				fcn = rz_analysis_get_fcn_in (core->analysis,
-					core->offset + core->print->cur, RZ_ANALYSIS_FCN_TYPE_NULL);
-			} else {
-				fcn = rz_analysis_get_fcn_in (core->analysis,
-					core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
-			}
-			if (fcn) {
-				fcn->folded = !fcn->folded;
-			} else {
-				rz_config_toggle (core->config, "asm.cmt.fold");
-			}
-		}
-		break;
-		case 'Z': // shift-tab SHIFT-TAB
-			if (och == 27) { // shift-tab
-				if (core->print->cur_enabled && core->printidx == RZ_CORE_VISUAL_MODE_DB) {
-					core->print->cur = 0;
-					core->seltab--;
-					if (core->seltab < 0) {
-						core->seltab = 2;
-					}
-				} else {
-					prevPrintFormat (core);
-				}
-			} else { // "Z"
-				ut64 addr = core->print->cur_enabled? core->offset + core->print->cur: core->offset;
-				toggle_bb (core, addr);
-			}
-			break;
 		case '?':
 			if (visual_help (core) == '?') {
 				rz_core_visual_hud (core);
@@ -4045,43 +3997,29 @@ static void visual_refresh_oneshot(RzCore *core) {
 }
 
 RZ_API void rz_core_visual_disasm_up(RzCore *core, int *cols) {
-	RzAnalysisFunction *f = rz_analysis_get_fcn_in (core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
-	if (f && f->folded) {
-		*cols = core->offset - f->addr; // + f->size;
-		if (*cols < 1) {
-			*cols = 4;
-		}
-	} else {
-		*cols = rz_core_visual_prevopsz (core, core->offset);
-	}
+	*cols = rz_core_visual_prevopsz (core, core->offset);
 }
 
 RZ_API void rz_core_visual_disasm_down(RzCore *core, RzAsmOp *op, int *cols) {
 	int midflags = rz_config_get_i (core->config, "asm.flags.middle");
 	const bool midbb = rz_config_get_i (core->config, "asm.bb.middle");
-	RzAnalysisFunction *f = NULL;
-	f = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 	op->size = 1;
-	if (f && f->folded) {
-		*cols = core->offset - rz_analysis_function_max_addr (f);
-	} else {
-		rz_asm_set_pc (core->rasm, core->offset);
-		*cols = rz_asm_disassemble (core->rasm,
-				op, core->block, 32);
-		if (midflags || midbb) {
-			int skip_bytes_flag = 0, skip_bytes_bb = 0;
-			if (midflags >= RZ_MIDFLAGS_REALIGN) {
-				skip_bytes_flag = rz_core_flag_in_middle (core, core->offset, *cols, &midflags);
-			}
-			if (midbb) {
-				skip_bytes_bb = rz_core_bb_starts_in_middle (core, core->offset, *cols);
-			}
-			if (skip_bytes_flag) {
-				*cols = skip_bytes_flag;
-			}
-			if (skip_bytes_bb && skip_bytes_bb < *cols) {
-				*cols = skip_bytes_bb;
-			}
+	rz_asm_set_pc (core->rasm, core->offset);
+	*cols = rz_asm_disassemble (core->rasm,
+			op, core->block, 32);
+	if (midflags || midbb) {
+		int skip_bytes_flag = 0, skip_bytes_bb = 0;
+		if (midflags >= RZ_MIDFLAGS_REALIGN) {
+			skip_bytes_flag = rz_core_flag_in_middle (core, core->offset, *cols, &midflags);
+		}
+		if (midbb) {
+			skip_bytes_bb = rz_core_bb_starts_in_middle (core, core->offset, *cols);
+		}
+		if (skip_bytes_flag) {
+			*cols = skip_bytes_flag;
+		}
+		if (skip_bytes_bb && skip_bytes_bb < *cols) {
+			*cols = skip_bytes_bb;
 		}
 	}
 	if (*cols < 1) {
