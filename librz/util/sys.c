@@ -1456,7 +1456,7 @@ RZ_API int rz_sys_pipe_close(int fd) {
 // Use this lock to wraps pipe, close, exec*, system to ensure all pipe file
 // descriptors are either created AND set as CLOEXEC or not created at all.
 static RzThreadLock *sys_pipe_mutex;
-bool is_child = false;
+static bool is_child = false;
 
 static void set_child(void) {
 	is_child = true;
@@ -1530,7 +1530,7 @@ static HtUU *fd2close;
 // Use this lock to wraps pipe, close, exec*, system to ensure all pipe file
 // descriptors are either created AND added to fd2close or not created at all.
 static RzThreadLock *sys_pipe_mutex;
-bool is_child = false;
+static bool is_child = false;
 
 static void prepare_atfork(void) {
 	rz_th_lock_enter (sys_pipe_mutex);
