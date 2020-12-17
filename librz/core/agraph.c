@@ -2452,7 +2452,7 @@ static bool get_cgnodes(RzAGraph *g, RzCore *core, RzAnalysisFunction *fcn) {
 		free (title);
 
 		int size = 0;
-		RzAnalysisBlock *bb = rz_analysis_bb_from_offset (core->analysis, ref->addr);
+		RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in (core->analysis, ref->addr);
 		if (bb) {
 			size = bb->size;
 		}
@@ -3368,9 +3368,9 @@ static bool check_changes(RzAGraph *g, int is_interactive, RzCore *core, RzAnaly
 		agraph_set_layout (g);
 	}
 	if (core) {
-		ut64 off = rz_analysis_get_bbaddr (core->analysis, core->offset);
-		if (off != UT64_MAX) {
-			char *title = get_title (off);
+		RzAnalysisBlock *block = rz_analysis_find_most_relevant_block_in (core->analysis, core->offset);
+		if (block) {
+			char *title = get_title (block->addr);
 			RzANode *cur_anode = get_anode (g->curnode);
 			if (fcn && ((is_interactive && !cur_anode) || (cur_anode && strcmp (cur_anode->title, title)))) {
 				g->update_seek_on = rz_agraph_get_node (g, title);
@@ -3519,8 +3519,8 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		ut64 addr = rz_reg_get_value (core->dbg->reg, r);
 		RzANode *acur = get_anode (g->curnode);
 
-		addr = rz_analysis_get_bbaddr (core->analysis, addr);
-		char *title = get_title (addr);
+		RzAnalysisBlock *block = rz_analysis_find_most_relevant_block_in (core->analysis, addr);
+		char *title = get_title (block ? block->addr : addr);
 		if (!acur || strcmp (acur->title, title)) {
 			rz_core_cmd0 (core, "sr PC");
 		}
@@ -3962,8 +3962,8 @@ static void goto_asmqjmps(RzAGraph *g, RzCore *core) {
 }
 
 static void seek_to_node(RzANode *n, RzCore *core) {
-	ut64 off = rz_analysis_get_bbaddr (core->analysis, core->offset);
-	char *title = get_title (off);
+	RzAnalysisBlock *block = rz_analysis_find_most_relevant_block_in (core->analysis, core->offset);
+	char *title = get_title (block ? block->addr : core->offset);
 
 	if (title && strcmp (title, n->title)) {
 		char *cmd = rz_str_newf ("s %s", n->title);
@@ -4042,21 +4042,6 @@ static void rotateColor(RzCore *core) {
 		color = 0;
 	}
 	rz_config_set_i (core->config, "scr.color", color);
-}
-
-// dupe in visual.c
-static bool toggle_bb(RzCore *core, ut64 addr) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
-	if (fcn) {
-		RzAnalysisBlock *bb = rz_analysis_fcn_bbget_in (core->analysis, fcn, addr);
-		if (bb) {
-			bb->folded = !bb->folded;
-		} else {
-			rz_warn_if_reached ();
-		}
-		return true;
-	}
-	return false;
 }
 
 static char *get_graph_string(RzCore *core, RzAGraph *g) {
@@ -4362,18 +4347,6 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 				agraph_toggle_callgraph (g);
 			}
 			break;
-		case 'Z':
-			if (okey == 27) { // shift-tab
-				agraph_prev_node (g);
-			} else {
-				RzANode *n = get_anode (g->curnode);
-				if (n) {
-					ut64 addr = rz_num_get (NULL, n->title);
-					toggle_bb (core, addr);
-					g->need_reload_nodes = true;
-				}
-			}
-			break;
 		case 's':
 			if (!fcn) {
 				break;
@@ -4399,8 +4372,10 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 				break;
 			}
 			ut64 old_off = core->offset;
-			ut64 off = rz_analysis_get_bbaddr (core->analysis, core->offset);
-			rz_core_seek (core, off, false);
+			RzAnalysisBlock *block = rz_analysis_find_most_relevant_block_in (core->analysis, core->offset);
+			if (block) {
+				rz_core_seek (core, block->addr, false);
+			}
 			if ((key == 'x' && !rz_core_visual_refs (core, true, true)) ||
 			    (key == 'X' && !rz_core_visual_refs (core, false, true))) {
 				rz_core_seek (core, old_off, false);

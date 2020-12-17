@@ -166,17 +166,21 @@ RZ_API int rz_reg_fit_arena(RzReg *reg) {
 	return true;
 }
 
-RZ_API RzRegArena *rz_reg_arena_new(int size) {
+RZ_API RzRegArena *rz_reg_arena_new(size_t size) {
 	RzRegArena *arena = RZ_NEW0 (RzRegArena);
-	if (arena) {
-		if (size < 1) {
-			size = 1;
-		}
-		if (!(arena->bytes = calloc (1, size + 8))) {
-			RZ_FREE (arena);
-		} else {
-			arena->size = size;
-		}
+	if (!arena) {
+		RZ_LOG_ERROR ("Failed to allocate RzRegArena.\n");
+		return NULL;
+	}
+
+	arena->size = size;
+	if (size < 1) {
+		return arena;
+	}
+
+	if (!(arena->bytes = calloc (1, size + 8))) {
+		RZ_LOG_ERROR ("Failed to allocate arena bytes.\n");
+		RZ_FREE (arena);
 	}
 	return arena;
 }

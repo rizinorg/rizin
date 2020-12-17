@@ -100,7 +100,6 @@ typedef struct {
 	bool linesright;
 	int tracespace;
 	int cyclespace;
-	int cmtfold;
 	int show_indent;
 	bool show_dwarf;
 	bool show_size;
@@ -735,7 +734,6 @@ static RDisasmState * ds_init(RzCore *core) {
 	ds->show_stackptr = rz_config_get_i (core->config, "asm.stackptr");
 	ds->show_xrefs = rz_config_get_i (core->config, "asm.xrefs");
 	ds->show_cmtrefs = rz_config_get_i (core->config, "asm.cmt.refs");
-	ds->cmtfold = rz_config_get_i (core->config, "asm.cmt.fold");
 	ds->show_cmtoff = rz_config_get (core->config, "asm.cmt.off");
 	if (!ds->show_cmtoff) {
 		ds->show_cmtoff = "nodup";
@@ -2118,23 +2116,12 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		if (ds->show_color) {
 			rz_cons_strcat (ds->pal_comment);
 		}
-		/* print multiline comment */
-		if (ds->cmtfold) {
-			char *p = strdup (ds->comment);
-			char *q = strchr (p, '\n');
-			if (q) {
-				*q = 0;
-				rz_cons_strcat (p);
-				rz_cons_strcat (" ; [z] unfold");
-			}
-			free (p);
-		} else {
-			ds_pre_xrefs (ds, false);
-			if (ds->show_color) {
-				rz_cons_strcat (ds->color_usrcmt);
-			}
-			ds_comment (ds, false, "%s", ds->comment);
+		ds_pre_xrefs (ds, false);
+		if (ds->show_color) {
+			rz_cons_strcat (ds->color_usrcmt);
 		}
+		ds_comment (ds, false, "%s", ds->comment);
+
 		if (ds->show_color) {
 			ds_print_color_reset (ds);
 		}
@@ -5134,7 +5121,6 @@ static void ds_end_line_highlight(RDisasmState *ds) {
 // int l is for lines
 RZ_API int rz_core_print_disasm(RzPrint *p, RzCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes, bool json, PJ *pj, RzAnalysisFunction *pdf) {
 	int continueoninvbreak = (len == l) && invbreak;
-	RzAnalysisFunction *of = NULL;
 	RzAnalysisFunction *f = NULL;
 	bool calc_row_offsets = p->calc_row_offsets;
 	int ret, i, inc = 0, skip_bytes_flag = 0, skip_bytes_bb = 0, idx = 0;
@@ -5285,46 +5271,6 @@ toro:
 		}
 		// f = rz_analysis_get_fcn_in (core->analysis, ds->at, RZ_ANALYSIS_FCN_TYPE_NULL);
 		f = ds->fcn = fcnIn (ds, ds->at, RZ_ANALYSIS_FCN_TYPE_NULL);
-		if (f && f->folded && rz_analysis_function_contains (f, ds->at)) {
-			int delta = (ds->at <= f->addr) ? (ds->at - rz_analysis_function_max_addr (f)) : 0;
-			if (of != f) {
-				char cmt[32];
-				get_bits_comment (core, f, cmt, sizeof (cmt));
-				const char *comment = rz_meta_get_string (core->analysis, RZ_META_TYPE_COMMENT, ds->at);
-				if (comment) {
-					ds_pre_xrefs (ds, true);
-					rz_cons_printf ("; %s\n", comment);
-				}
-				rz_cons_printf ("%s%s%s (fcn) %s%s%s\n",
-					COLOR (ds, color_fline), core->cons->vline[CORNER_TL],
-					COLOR (ds, color_fname), f->name, cmt, COLOR_RESET (ds));
-				ds_setup_print_pre (ds, true, false);
-				ds_print_lines_left (ds);
-				ds_print_offset (ds);
-				rz_cons_printf ("(%" PFMT64d " byte folded function)\n", rz_analysis_function_linear_size (f));
-				//rz_cons_printf ("%s%s%s\n", COLOR (ds, color_fline), core->cons->vline[RDWN_CORNER], COLOR_RESET (ds));
-				if (delta < 0) {
-					delta = -delta;
-				}
-				ds->addr += delta + idx;
-				rz_io_read_at (core->io, ds->addr, buf, len);
-				inc = 0; //delta;
-				idx = 0;
-				of = f;
-				rz_analysis_op_fini (&ds->analop);
-				if (len == l) {
-					break;
-				}
-			} else {
-				ds->lines--;
-				ds->addr += 1;
-				rz_io_read_at (core->io, ds->addr, buf, len);
-				inc = 0; //delta;
-				idx = 0;
-				rz_analysis_op_fini (&ds->analop);
-			}
-			continue;
-		}
 		ds_show_comments_right (ds);
 		// TRY adding here
 		char *link_key = sdb_fmt ("link.%08"PFMT64x, ds->addr + idx);
@@ -5454,13 +5400,6 @@ toro:
 				fcn = rz_analysis_get_function_at (core->analysis, ds->at);
 				if (fcn) {
 					bb = rz_analysis_fcn_bbget_in (core->analysis, fcn, ds->at);
-				}
-			}
-			if (bb) {
-				if (bb->folded) {
-					rz_cons_printf ("[+] Folded BB [..0x%08"PFMT64x"]\n", ds->at + bb->size);
-					inc = bb->size;
-					continue;
 				}
 			}
 		}
