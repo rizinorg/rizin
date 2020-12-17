@@ -140,18 +140,6 @@ static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
     {NULL, 0}
 };
 
-RZ_API int rz_sys_fork(void) {
-#if HAVE_FORK
-#if __WINDOWS__
-	return -1;
-#else
-	return fork ();
-#endif
-#else
-	return -1;
-#endif
-}
-
 #if HAVE_SIGACTION
 RZ_API int rz_sys_sigaction(int *sig, void (*handler) (int)) {
 	struct sigaction sigact = { };
@@ -1458,13 +1446,8 @@ RZ_API int rz_sys_pipe_close(int fd) {
 static RzThreadLock *sys_pipe_mutex;
 static bool is_child = false;
 
-static void set_child(void) {
-	is_child = true;
-}
-
 __attribute__ ((constructor)) static void sys_pipe_constructor(void) {
 	sys_pipe_mutex = rz_th_lock_new (true);
-	pthread_atfork (NULL, NULL, set_child);
 }
 
 __attribute__ ((destructor)) static void sys_pipe_destructor(void) {
@@ -1532,21 +1515,8 @@ static HtUU *fd2close;
 static RzThreadLock *sys_pipe_mutex;
 static bool is_child = false;
 
-static void prepare_atfork(void) {
-	rz_th_lock_enter (sys_pipe_mutex);
-}
-
-static void parent_atfork(void) {
-	rz_th_lock_leave (sys_pipe_mutex);
-}
-
-static void child_atfork(void) {
-	is_child = true;
-}
-
 __attribute__ ((constructor)) static void sys_pipe_constructor(void) {
 	sys_pipe_mutex = rz_th_lock_new (false);
-	pthread_atfork(prepare_atfork, parent_atfork, child_atfork);
 	fd2close = ht_uu_new0 ();
 }
 
@@ -1772,6 +1742,27 @@ RZ_API int rz_sys_system(const char *command) {
 }
 #elif !HAVE_SYSTEM
 RZ_API int rz_sys_system(const char *command) {
+	return -1;
+}
+#endif
+
+#if HAVE_FORK
+RZ_API int rz_sys_fork(void) {
+#if __UNIX__ && HAVE_PIPE && !HAVE_PIPE2
+	parent_lock_enter ();
+#endif
+	pid_t child = fork ();
+#if __UNIX__ && HAVE_PIPE && !HAVE_PIPE2
+	if (child == 0) {
+		is_child = true;
+	} else if (child > 0) {
+		parent_lock_leave ();
+	}
+#endif
+	return child;
+}
+#else
+RZ_API int rz_sys_fork(void) {
 	return -1;
 }
 #endif

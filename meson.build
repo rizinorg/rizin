@@ -340,7 +340,6 @@ userconf.set('EXTRAS', rizin_extras)
 userconf.set('BINDINGS', rizin_bindings)
 userconf.set10('HAVE_OPENSSL', use_sys_openssl)
 userconf.set10('HAVE_LIBUV', use_libuv)
-userconf.set10('HAVE_FORK', true)
 userconf.set10('WANT_DYLINK', true)
 userconf.set10('HAVE_PTRACE', have_ptrace)
 userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
@@ -370,6 +369,7 @@ foreach item : [
     ['execvp', '#include <unistd.h>', []],
     ['execl', '#include <unistd.h>', []],
     ['system', '#include <stdlib.h>', []],
+    ['fork', '#include <unistd.h>', []],
     ['pipe2', '#define _GNU_SOURCE\n#include <fcntl.h>\n#include <unistd.h>', []]
   ]
   func = item[0]
