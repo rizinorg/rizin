@@ -2,6 +2,8 @@
 #include <rz_core.h>
 #include "minunit.h"
 
+#include "mock_io.inl"
+
 #include "test_analysis_block_invars.inl"
 #define check_invariants block_check_invariants
 #define check_leaks block_check_leaks
@@ -17,7 +19,7 @@ static size_t blocks_count(RzAnalysis *analysis) {
 }
 
 
-bool test_r_analysis_block_create() {
+bool test_rz_analysis_block_create() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -52,7 +54,7 @@ bool test_r_analysis_block_create() {
 	mu_end;
 }
 
-bool test_r_analysis_block_contains() {
+bool test_rz_analysis_block_contains() {
 	RzAnalysisBlock dummy = { 0 };
 	dummy.addr = 0x1337;
 	dummy.size = 42;
@@ -64,7 +66,7 @@ bool test_r_analysis_block_contains() {
 	mu_end;
 }
 
-bool test_r_analysis_block_split() {
+bool test_rz_analysis_block_split() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -74,11 +76,11 @@ bool test_r_analysis_block_split() {
 	block->jump = 0xdeadbeef;
 	block->fail = 0xc0ffee;
 	block->ninstr = 5;
-	rz_analysis_bb_set_offset (block, 0, 0);
-	rz_analysis_bb_set_offset (block, 1, 1);
-	rz_analysis_bb_set_offset (block, 2, 2);
-	rz_analysis_bb_set_offset (block, 3, 4);
-	rz_analysis_bb_set_offset (block, 4, 30);
+	rz_analysis_block_set_op_offset (block, 0, 0);
+	rz_analysis_block_set_op_offset (block, 1, 1);
+	rz_analysis_block_set_op_offset (block, 2, 2);
+	rz_analysis_block_set_op_offset (block, 3, 4);
+	rz_analysis_block_set_op_offset (block, 4, 30);
 
 	RzAnalysisBlock *second = rz_analysis_block_split (block, 0x1337);
 	assert_block_invariants (analysis);
@@ -103,13 +105,13 @@ bool test_r_analysis_block_split() {
 	mu_assert_eq (second->fail, 0xc0ffee, "second fail");
 
 	mu_assert_eq (block->ninstr, 2, "first ninstr after split");
-	mu_assert_eq (rz_analysis_bb_offset_inst (block, 0), 0, "first op_pos[0]");
-	mu_assert_eq (rz_analysis_bb_offset_inst (block, 1), 1, "first op_pos[1]");
+	mu_assert_eq (rz_analysis_block_get_op_offset (block, 0), 0, "first op_pos[0]");
+	mu_assert_eq (rz_analysis_block_get_op_offset (block, 1), 1, "first op_pos[1]");
 
 	mu_assert_eq (second->ninstr, 3, "second ninstr after split");
-	mu_assert_eq (rz_analysis_bb_offset_inst (second, 0), 0, "second op_pos[0]");
-	mu_assert_eq (rz_analysis_bb_offset_inst (second, 1), 2, "second op_pos[1]");
-	mu_assert_eq (rz_analysis_bb_offset_inst (second, 2), 28, "second op_pos[2]");
+	mu_assert_eq (rz_analysis_block_get_op_offset (second, 0), 0, "second op_pos[0]");
+	mu_assert_eq (rz_analysis_block_get_op_offset (second, 1), 2, "second op_pos[1]");
+	mu_assert_eq (rz_analysis_block_get_op_offset (second, 2), 28, "second op_pos[2]");
 
 	rz_analysis_block_unref (block);
 	rz_analysis_block_unref (second);
@@ -119,7 +121,7 @@ bool test_r_analysis_block_split() {
 	mu_end;
 }
 
-bool test_r_analysis_block_split_in_function() {
+bool test_rz_analysis_block_split_in_function() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -153,7 +155,7 @@ bool test_r_analysis_block_split_in_function() {
 	mu_end;
 }
 
-bool test_r_analysis_block_merge() {
+bool test_rz_analysis_block_merge() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -165,15 +167,15 @@ bool test_r_analysis_block_merge() {
 	second->fail = 0xc0ffee;
 
 	first->ninstr = 3;
-	rz_analysis_bb_set_offset (first, 0, 0);
-	rz_analysis_bb_set_offset (first, 1, 13);
-	rz_analysis_bb_set_offset (first, 2, 16);
+	rz_analysis_block_set_op_offset (first, 0, 0);
+	rz_analysis_block_set_op_offset (first, 1, 13);
+	rz_analysis_block_set_op_offset (first, 2, 16);
 
 	second->ninstr = 4;
-	rz_analysis_bb_set_offset (second, 0, 0);
-	rz_analysis_bb_set_offset (second, 1, 4);
-	rz_analysis_bb_set_offset (second, 2, 9);
-	rz_analysis_bb_set_offset (second, 3, 30);
+	rz_analysis_block_set_op_offset (second, 0, 0);
+	rz_analysis_block_set_op_offset (second, 1, 4);
+	rz_analysis_block_set_op_offset (second, 2, 9);
+	rz_analysis_block_set_op_offset (second, 3, 30);
 
 	bool success = rz_analysis_block_merge (first, second);
 	assert_block_invariants (analysis);
@@ -185,13 +187,13 @@ bool test_r_analysis_block_merge() {
 	mu_assert_eq (first->fail, 0xc0ffee, "fail after merge");
 
 	mu_assert_eq (first->ninstr, 3+4, "ninstr after merge");
-	mu_assert_eq (rz_analysis_bb_offset_inst (first, 0), 0, "offset 0 after merge");
-	mu_assert_eq (rz_analysis_bb_offset_inst (first, 1), 13, "offset 1 after merge");
-	mu_assert_eq (rz_analysis_bb_offset_inst (first, 2), 16, "offset 2 after merge");
-	mu_assert_eq (rz_analysis_bb_offset_inst (first, 3), 42+0, "offset 3 after merge");
-	mu_assert_eq (rz_analysis_bb_offset_inst (first, 4), 42+4, "offset 4 after merge");
-	mu_assert_eq (rz_analysis_bb_offset_inst (first, 5), 42+9, "offset 5 after merge");
-	mu_assert_eq (rz_analysis_bb_offset_inst (first, 6), 42+30, "offset 6 after merge");
+	mu_assert_eq (rz_analysis_block_get_op_offset (first, 0), 0, "offset 0 after merge");
+	mu_assert_eq (rz_analysis_block_get_op_offset (first, 1), 13, "offset 1 after merge");
+	mu_assert_eq (rz_analysis_block_get_op_offset (first, 2), 16, "offset 2 after merge");
+	mu_assert_eq (rz_analysis_block_get_op_offset (first, 3), 42+0, "offset 3 after merge");
+	mu_assert_eq (rz_analysis_block_get_op_offset (first, 4), 42+4, "offset 4 after merge");
+	mu_assert_eq (rz_analysis_block_get_op_offset (first, 5), 42+9, "offset 5 after merge");
+	mu_assert_eq (rz_analysis_block_get_op_offset (first, 6), 42+30, "offset 6 after merge");
 
 	rz_analysis_block_unref (first);
 	// second must be already freed by the merge!
@@ -201,7 +203,7 @@ bool test_r_analysis_block_merge() {
 	mu_end;
 }
 
-bool test_r_analysis_block_merge_in_function() {
+bool test_rz_analysis_block_merge_in_function() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -234,7 +236,7 @@ bool test_r_analysis_block_merge_in_function() {
 	mu_end;
 }
 
-bool test_r_analysis_block_delete() {
+bool test_rz_analysis_block_delete() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -262,7 +264,7 @@ bool test_r_analysis_block_delete() {
 	mu_end;
 }
 
-bool test_r_analysis_block_set_size() {
+bool test_rz_analysis_block_set_size() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -301,7 +303,7 @@ bool test_r_analysis_block_set_size() {
 	mu_end;
 }
 
-bool test_r_analysis_block_relocate() {
+bool test_rz_analysis_block_relocate() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -366,7 +368,7 @@ bool test_r_analysis_block_relocate() {
 	mu_end;
 }
 
-bool test_r_analysis_block_query() {
+bool test_rz_analysis_block_query() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -483,7 +485,7 @@ bool addr_list_cb(ut64 addr, void *user) {
 	return true;
 }
 
-bool test_r_analysis_block_successors() {
+bool test_rz_analysis_block_successors() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -564,7 +566,7 @@ bool test_r_analysis_block_successors() {
 	mu_end;
 }
 
-bool test_r_analysis_block_automerge() {
+bool test_rz_analysis_block_automerge() {
 	size_t i;
 	for (i = 0; i < SAMPLES; i++) {
 		RzAnalysis *analysis = rz_analysis_new ();
@@ -642,7 +644,7 @@ bool test_r_analysis_block_automerge() {
 	mu_end;
 }
 
-bool test_r_analysis_block_chop_noreturn(void) {
+bool test_rz_analysis_block_chop_noreturn(void) {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_block_invariants (analysis);
 
@@ -663,24 +665,93 @@ bool test_r_analysis_block_chop_noreturn(void) {
 	rz_analysis_block_chop_noreturn (b, 0x111);
 
 	assert_block_invariants (analysis);
+	rz_analysis_free (analysis);
 
 	mu_end;
 }
 
+static const uint8_t example_code[0x18] = {
+	0x48, 0xc7, 0xc0, 0x2a, 0x00, 0x00, 0x00, // mov rax, 0x2a
+	0x48, 0x89, 0xc2, // mov rdx, rax
+	0x48, 0x81, 0xc2, 0x0f, 0x05, 0x00, 0x00, // add rdx, 0x50f
+	0x48, 0xc7, 0xc0, 0x37, 0x13, 0x00, 0x00 // mov rax, 0x1337
+};
+
+bool test_rz_analysis_block_analyze_ops(void) {
+	RzAnalysis *a = rz_analysis_new ();
+	rz_analysis_use (a, "x86");
+	rz_analysis_set_bits (a, 64);
+	IOMock io;
+	io_mock_init (&io, 0x1000, example_code, sizeof (example_code));
+	io_mock_bind (&io, &a->iob);
+
+	// clean block with valid code
+	RzAnalysisBlock *block = rz_analysis_create_block (a, 0x1000, 0x18);
+	mu_assert_eq (block->ninstr, 0, "clean block");
+	rz_analysis_block_analyze_ops (block);
+	mu_assert_eq (block->ninstr, 4, "ninstr");
+	mu_assert_eq (rz_analysis_block_get_op_offset (block, 0), 0, "op offset");
+	mu_assert_eq (rz_analysis_block_get_op_offset (block, 1), 0x7, "op offset");
+	mu_assert_eq (rz_analysis_block_get_op_offset (block, 2), 0xa, "op offset");
+	mu_assert_eq (rz_analysis_block_get_op_offset (block, 3), 0x11, "op offset");
+	mu_assert_eq (rz_analysis_block_get_op_addr (block, 0), 0x1000, "op addr");
+	mu_assert_eq (rz_analysis_block_get_op_addr (block, 1), 0x1007, "op addr");
+	mu_assert_eq (rz_analysis_block_get_op_addr (block, 2), 0x100a, "op addr");
+	mu_assert_eq (rz_analysis_block_get_op_addr (block, 3), 0x1011, "op addr");
+	mu_assert_eq (rz_analysis_block_get_op_size (block, 0), 0x7, "op size");
+	mu_assert_eq (rz_analysis_block_get_op_size (block, 1), 0x3, "op size");
+	mu_assert_eq (rz_analysis_block_get_op_size (block, 2), 0x7, "op size");
+	mu_assert_eq (rz_analysis_block_get_op_size (block, 3), 0x7, "op size");
+	mu_assert_eq (rz_analysis_block_get_op_addr_in (block, 0x1000), 0x1000, "op addr in");
+	mu_assert_eq (rz_analysis_block_get_op_addr_in (block, 0x1001), 0x1000, "op addr in");
+	mu_assert_eq (rz_analysis_block_get_op_addr_in (block, 0x1006), 0x1000, "op addr in");
+	mu_assert_eq (rz_analysis_block_get_op_addr_in (block, 0x1007), 0x1007, "op addr in");
+	mu_assert_eq (rz_analysis_block_get_op_addr_in (block, 0x1008), 0x1007, "op addr in");
+
+	// dirty block with valid code
+	rz_analysis_block_relocate (block, 0x1000, 0x11);
+	rz_analysis_block_analyze_ops (block);
+	mu_assert_eq (block->ninstr, 3, "ninstr");
+	mu_assert_eq (rz_analysis_block_get_op_offset (block, 0), 0, "op offset");
+	mu_assert_eq (rz_analysis_block_get_op_offset (block, 1), 0x7, "op offset");
+	mu_assert_eq (rz_analysis_block_get_op_offset (block, 2), 0xa, "op offset");
+
+	rz_analysis_block_unref (block);
+
+	// clean block with invalid code a the end
+	// when encountering invalid code, analysis should stop.
+	block = rz_analysis_create_block (a, 0x1000, 0x17);
+	mu_assert_eq (block->ninstr, 0, "clean block");
+	rz_analysis_block_analyze_ops (block);
+	mu_assert_eq (block->ninstr, 3, "ninstr");
+	mu_assert_eq (rz_analysis_block_get_op_offset (block, 0), 0, "op offset");
+	mu_assert_eq (rz_analysis_block_get_op_offset (block, 1), 0x7, "op offset");
+	mu_assert_eq (rz_analysis_block_get_op_offset (block, 2), 0xa, "op offset");
+
+	rz_analysis_block_unref (block);
+
+	assert_block_invariants (a);
+	assert_block_leaks (a);
+	rz_analysis_free (a);
+	io_mock_fini (&io);
+	mu_end;
+}
+
 int all_tests() {
-	mu_run_test (test_r_analysis_block_chop_noreturn);
-	mu_run_test (test_r_analysis_block_create);
-	mu_run_test (test_r_analysis_block_contains);
-	mu_run_test (test_r_analysis_block_split);
-	mu_run_test (test_r_analysis_block_split_in_function);
-	mu_run_test (test_r_analysis_block_merge);
-	mu_run_test (test_r_analysis_block_merge_in_function);
-	mu_run_test (test_r_analysis_block_delete);
-	mu_run_test (test_r_analysis_block_set_size);
-	mu_run_test (test_r_analysis_block_relocate);
-	mu_run_test (test_r_analysis_block_query);
-	mu_run_test (test_r_analysis_block_successors);
-	mu_run_test (test_r_analysis_block_automerge);
+	mu_run_test (test_rz_analysis_block_chop_noreturn);
+	mu_run_test (test_rz_analysis_block_create);
+	mu_run_test (test_rz_analysis_block_contains);
+	mu_run_test (test_rz_analysis_block_split);
+	mu_run_test (test_rz_analysis_block_split_in_function);
+	mu_run_test (test_rz_analysis_block_merge);
+	mu_run_test (test_rz_analysis_block_merge_in_function);
+	mu_run_test (test_rz_analysis_block_delete);
+	mu_run_test (test_rz_analysis_block_set_size);
+	mu_run_test (test_rz_analysis_block_relocate);
+	mu_run_test (test_rz_analysis_block_query);
+	mu_run_test (test_rz_analysis_block_successors);
+	mu_run_test (test_rz_analysis_block_automerge);
+	mu_run_test (test_rz_analysis_block_analyze_ops);
 	return tests_passed != tests_run;
 }
 

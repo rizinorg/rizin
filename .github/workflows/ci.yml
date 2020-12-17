@@ -40,34 +40,34 @@ jobs:
         ignore_error: [false]
         include:
           - name: linux-acr-gcc-tests
-            os: ubuntu-latest
+            os: ubuntu-20.04
             build_system: acr
             compiler: gcc
             run_tests: true
             enabled: true
             timeout: 45
           - name: linux-acr-clang-tests
-            os: ubuntu-latest
+            os: ubuntu-20.04
             build_system: acr
             compiler: clang
             run_tests: true
             enabled: ${{ github.event_name != 'pull_request' }}
             timeout: 45
           - name: linux-acr-clang-build
-            os: ubuntu-latest
+            os: ubuntu-20.04
             build_system: acr
             compiler: clang
             enabled: ${{ github.event_name == 'pull_request' }}
             timeout: 45
           - name: linux-meson-gcc-build
-            os: ubuntu-latest
+            os: ubuntu-20.04
             build_system: meson
             compiler: gcc
             enabled: ${{ github.event_name == 'pull_request' }}
             timeout: 45
             cflags: '-Werror -Wno-cpp'
           - name: linux-meson-gcc-tests
-            os: ubuntu-latest
+            os: ubuntu-20.04
             build_system: meson
             compiler: gcc
             run_tests: true
@@ -98,7 +98,7 @@ jobs:
             # NOTE: asan errors ignored for release- branch for now, because there are too many issues that would block the release
             ignore_error: ${{ github.event_name == 'push' && contains(github.ref, 'release-') }}
           - name: capstone-v3
-            os: ubuntu-latest
+            os: ubuntu-20.04
             build_system: meson
             compiler: gcc
             meson_options: -Duse_capstone_version=v3
@@ -107,7 +107,7 @@ jobs:
             timeout: 45
             cflags: '-Werror -Wno-cpp'
           - name: capstone-next
-            os: ubuntu-latest
+            os: ubuntu-20.04
             build_system: meson
             compiler: gcc
             meson_options: -Duse_capstone_version=next
@@ -875,7 +875,7 @@ jobs:
   publish-docker-image:
     name: Publish Docker image on Docker Hub
     needs: [build-and-test]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: github.event_name == 'push'
     steps:
     - uses: actions/checkout@v2

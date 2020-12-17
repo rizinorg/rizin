@@ -352,7 +352,7 @@ static RzList *fcn_get_refs(RzAnalysisFunction *fcn, HtUP *ht) {
 		int i;
 
 		for (i = 0; i < bb->ninstr; i++) {
-			ut64 at = bb->addr + rz_analysis_bb_offset_inst (bb, i);
+			ut64 at = bb->addr + rz_analysis_block_get_op_offset (bb, i);
 			listxrefs (ht, at, list);
 		}
 	}

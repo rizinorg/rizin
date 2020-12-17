@@ -369,7 +369,7 @@ static RzAnalysisBlock *bbget(RzAnalysis *analysis, ut64 addr, bool jumpmid) {
 					bool in_delay_slot = false;
 					int i;
 					for (i = last_instr_idx; i >= 0; i--) {
-						const ut64 off = rz_analysis_bb_offset_inst (bb, i);
+						const ut64 off = rz_analysis_block_get_op_offset (bb, i);
 						const ut64 at = bb->addr + off;
 						if (addr <= at || off >= bb->size) {
 							continue;
@@ -417,7 +417,7 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RzAnalysisBlock *block
 		// Steal vars from this block
 		size_t i;
 		for (i = 0; i < block->ninstr; i++) {
-			const ut64 addr = rz_analysis_bb_opaddr_i (block, i);
+			const ut64 addr = rz_analysis_block_get_op_addr (block, i);
 			RzPVector *vars_used = rz_analysis_function_get_vars_used_at (other_fcn, addr);
 			if (!vars_used) {
 				continue;
@@ -739,7 +739,7 @@ repeat:
 			if (newbbsize > MAX_FCN_SIZE) {
 				gotoBeach (RZ_ANALYSIS_RET_ERROR);
 			}
-			rz_analysis_bb_set_offset (bb, bb->ninstr++, at - bb->addr);
+			rz_analysis_block_set_op_offset (bb, bb->ninstr++, at - bb->addr);
 			rz_analysis_block_set_size (bb, newbbsize);
 			fcn->ninstr++;
 		}
@@ -1595,8 +1595,8 @@ RZ_API RzAnalysisFunction *rz_analysis_get_function_byname(RzAnalysis *a, const 
 /* rename RzAnalysisFunctionBB.add() */
 RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, RZ_BORROW RzAnalysisDiff *diff) {
 	D eprintf ("Add bb\n");
-	if (size == 0) { // empty basic blocks allowed?
-		eprintf ("Warning: empty basic block at 0x%08"PFMT64x" is not allowed. pending discussion.\n", addr);
+	if (size == 0) {
+		eprintf ("Warning: empty basic block at 0x%08"PFMT64x" is not allowed.\n", addr);
 		rz_warn_if_reached ();
 		return false;
 	}
@@ -1612,28 +1612,15 @@ RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 
 		block = NULL;
 	}
 
-	const bool is_x86 = a->cur->arch && !strcmp (a->cur->arch, "x86");
-	// TODO fix this x86-ism
-	if (is_x86) {
-		rz_analysis_fcn_invalidate_read_ahead_cache ();
-		fcn_recurse (a, fcn, addr, size, 1);
-		block = rz_analysis_get_block_at (a, addr);
-		if (block) {
-			rz_analysis_block_set_size (block, size);
-		}
-	} else {
-		block = rz_analysis_create_block (a, addr, size);
-	}
-
+	block = rz_analysis_create_block (a, addr, size);
 	if (!block) {
-		D eprintf ("Warning: rz_analysis_fcn_add_bb failed in fcn 0x%08"PFMT64x" at 0x%08"PFMT64x"\n", fcn->addr, addr);
 		return false;
 	}
 
+	rz_analysis_block_analyze_ops (block);
 	rz_analysis_function_add_block (fcn, block);
 
 	block->jump = jump;
-	block->fail = fail;
 	block->fail = fail;
 	if (diff) {
 		if (!block->diff) {
@@ -1648,6 +1635,7 @@ RZ_API bool rz_analysis_fcn_add_bb(RzAnalysis *a, RzAnalysisFunction *fcn, ut64 
 			}
 		}
 	}
+	rz_analysis_block_unref (block);
 	return true;
 }
 
@@ -2128,7 +2116,7 @@ static void clear_bb_vars(RzAnalysisFunction *fcn, RzAnalysisBlock *bb, ut64 fro
 		return;
 	}
 	for (i = 0; i < bb->ninstr; i++) {
-		const ut64 addr = rz_analysis_bb_opaddr_i (bb, i);
+		const ut64 addr = rz_analysis_block_get_op_addr (bb, i);
 		if (addr < from) {
 			continue;
 		}
@@ -2227,7 +2215,7 @@ RZ_API void rz_analysis_update_analysis_range(RzAnalysis *analysis, ut64 addr, i
 		}
 		rz_list_foreach_safe (bb->fcns, it2, tmp, fcn) {
 			if (align > 1) {
-				if ((end_write < rz_analysis_bb_opaddr_i (bb, bb->ninstr - 1))
+				if ((end_write < rz_analysis_block_get_op_addr (bb, bb->ninstr - 1))
 					&& (!bb->switch_op || end_write < bb->switch_op->addr)) {
 					// Special case when instructions are aligned and we don't
 					// need to worry about a write messing with the jump instructions

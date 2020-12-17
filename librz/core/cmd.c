@@ -3075,7 +3075,7 @@ repeat_arroba:
 			case 'B': // "@B:#" // seek to the last instruction in current bb
 				{
 					int index = (int)rz_num_math (core->num, ptr + 2);
-					RzAnalysisBlock *bb = rz_analysis_bb_from_offset (core->analysis, core->offset);
+					RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in (core->analysis, core->offset);
 					if (bb) {
 						// handle negative indices
 						if (index < 0) {
@@ -3083,8 +3083,8 @@ repeat_arroba:
 						}
 
 						if (index >= 0 && index < bb->ninstr) {
-							ut16 inst_off = rz_analysis_bb_offset_inst (bb, index);
-							rz_core_seek (core, bb->addr + inst_off, true);
+							ut64 inst_addr = rz_analysis_block_get_op_addr (bb, index);
+							rz_core_seek (core, inst_addr, true);
 							cmd_tmpseek = core->tmpseek = true;
 						} else {
 							eprintf ("The current basic block has %d instructions\n", bb->ninstr);
@@ -4633,6 +4633,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_command) {
 	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
 	rz_return_val_if_fail (!ts_node_is_null (command), false);
 	char *command_str = ts_node_sub_string (command, state->input);
+	rz_str_unescape (command_str);
 	RZ_LOG_DEBUG ("arged_command command: '%s'\n", command_str);
 	TSNode args = ts_node_child_by_field_name (node, "args", strlen ("args"));
 	RzCmdStatus res = RZ_CMD_STATUS_INVALID;
@@ -5000,7 +5001,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_nthi_command) {
 
 	ut64 orig_offset = state->core->offset;
 	int index = rz_num_math (core->num, arg_str);
-	RzAnalysisBlock *bb = rz_analysis_bb_from_offset (core->analysis, core->offset);
+	RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in (core->analysis, core->offset);
 	if (bb) {
 		// handle negative indices
 		if (index < 0) {
@@ -5008,7 +5009,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_nthi_command) {
 		}
 
 		if (index >= 0 && index < bb->ninstr) {
-			ut16 inst_off = rz_analysis_bb_offset_inst (bb, index);
+			ut16 inst_off = rz_analysis_block_get_op_offset (bb, index);
 			rz_core_seek (core, bb->addr + inst_off, true);
 		} else {
 			eprintf ("The current basic block has just %d instructions\n", bb->ninstr);
@@ -5451,8 +5452,8 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_instrs_command) {
 
 	int i;
 	for (i = 0; i < bb->ninstr; i++) {
-		ut64 i_addr = rz_analysis_bb_opaddr_i (bb, i);
-		int sz = rz_analysis_bb_size_i (bb, i);
+		ut64 i_addr = rz_analysis_block_get_op_addr (bb, i);
+		int sz = rz_analysis_block_get_op_size (bb, i);
 		rz_core_block_size (core, sz);
 		rz_core_seek (core, i_addr, true);
 		RzCmdStatus cmd_res = handle_ts_command_tmpseek (state, command);

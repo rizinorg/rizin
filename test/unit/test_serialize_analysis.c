@@ -140,7 +140,7 @@ bool test_analysis_switch_op_load() {
 Sdb *blocks_ref_db() {
 	Sdb *db = sdb_new0 ();
 	sdb_set (db, "0x539", "{\"size\":42}", 0);
-	sdb_set (db, "0x4d2", "{\"size\":32,\"jump\":4883,\"fail\":16915,\"traced\":true,\"folded\":true,\"colorize\":16711680,\"fingerprint\":\"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=\",\"diff\":{\"addr\":54123},\"switch_op\":{\"addr\":49232,\"min\":3,\"max\":5,\"def\":7,\"cases\":[]},\"ninstr\":3,\"op_pos\":[4,7],\"stackptr\":43,\"parent_stackptr\":57,\"cmpval\":3735928559,\"cmpreg\":\"rax\"}", 0);
+	sdb_set (db, "0x4d2", "{\"size\":32,\"jump\":4883,\"fail\":16915,\"traced\":true,\"colorize\":16711680,\"fingerprint\":\"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=\",\"diff\":{\"addr\":54123},\"switch_op\":{\"addr\":49232,\"min\":3,\"max\":5,\"def\":7,\"cases\":[]},\"ninstr\":3,\"op_pos\":[4,7],\"stackptr\":43,\"parent_stackptr\":57,\"cmpval\":3735928559,\"cmpreg\":\"rax\"}", 0);
 	return db;
 }
 
@@ -153,7 +153,6 @@ bool test_analysis_block_save() {
 	block->jump = 0x1313;
 	block->fail = 0x4213;
 	block->traced = true;
-	block->folded = true;
 	block->colorize = 0xff0000;
 	block->fingerprint = malloc (block->size);
 	ut8 v;
@@ -212,7 +211,6 @@ bool test_analysis_block_load() {
 	mu_assert_eq (a->jump, UT64_MAX, "jump");
 	mu_assert_eq (a->fail, UT64_MAX, "fail");
 	mu_assert ("traced", !a->traced);
-	mu_assert ("folded", !a->folded);
 	mu_assert_eq (a->colorize, 0, "colorize");
 	mu_assert_null (a->fingerprint, "fingerprint");
 	mu_assert_null (a->diff, "diff");
@@ -228,7 +226,6 @@ bool test_analysis_block_load() {
 	mu_assert_eq (b->jump, 0x1313, "jump");
 	mu_assert_eq (b->fail, 0x4213, "fail");
 	mu_assert ("traced", b->traced);
-	mu_assert ("folded", b->folded);
 	mu_assert_eq (b->colorize, 0xff0000, "colorize");
 	mu_assert_notnull (b->fingerprint, "fingerprint");
 	mu_assert_memeq (b->fingerprint,
@@ -276,7 +273,7 @@ Sdb *functions_ref_db() {
 	Sdb *db = sdb_new0 ();
 	sdb_set (db, "0x4d2", "{\"name\":\"effekt\",\"type\":1,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"pure\":true,\"diff\":{},\"bbs\":[1337]}", 0);
 	sdb_set (db, "0xbeef", "{\"name\":\"eskapist\",\"bits\":32,\"type\":16,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"diff\":{},\"bbs\":[]}", 0);
-	sdb_set (db, "0x539", "{\"name\":\"hirsch\",\"bits\":16,\"type\":0,\"cc\":\"fancycall\",\"stack\":42,\"maxstack\":123,\"ninstr\":13,\"folded\":true,\"bp_frame\":true,\"bp_off\":4,\"fingerprint\":\"AAECAwQFBgcICQoLDA0ODw==\",\"diff\":{\"addr\":4321},\"bbs\":[1337,1234],\"imports\":[\"earth\",\"rise\"],\"labels\":{\"beach\":1400,\"another\":1450,\"year\":1440}}", 0);
+	sdb_set (db, "0x539", "{\"name\":\"hirsch\",\"bits\":16,\"type\":0,\"cc\":\"fancycall\",\"stack\":42,\"maxstack\":123,\"ninstr\":13,\"bp_frame\":true,\"bp_off\":4,\"fingerprint\":\"AAECAwQFBgcICQoLDA0ODw==\",\"diff\":{\"addr\":4321},\"bbs\":[1337,1234],\"imports\":[\"earth\",\"rise\"],\"labels\":{\"beach\":1400,\"another\":1450,\"year\":1440}}", 0);
 	sdb_set (db, "0xdead", "{\"name\":\"agnosie\",\"bits\":32,\"type\":8,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"diff\":{},\"bbs\":[]}", 0);
 	sdb_set (db, "0xc0ffee", "{\"name\":\"lifnej\",\"bits\":32,\"type\":32,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"bp_frame\":true,\"diff\":{},\"bbs\":[]}", 0);
 	sdb_set (db, "0x1092", "{\"name\":\"hiberno\",\"bits\":32,\"type\":2,\"stack\":0,\"maxstack\":0,\"ninstr\":0,\"diff\":{},\"bbs\":[]}", 0);
@@ -300,7 +297,6 @@ bool test_analysis_function_save() {
 	f->maxstack = 123;
 	f->bp_off = 4;
 	f->ninstr = 13;
-	f->folded = true;
 	f->fingerprint_size = 0x10;
 	f->fingerprint = malloc (f->fingerprint_size);
 	ut8 v;
@@ -376,7 +372,6 @@ bool test_analysis_function_load() {
 	mu_assert_eq (f->stack, 42, "stack");
 	mu_assert_eq (f->maxstack, 123, "maxstack");
 	mu_assert_eq (f->ninstr, 13, "ninstr");
-	mu_assert ("folded", f->folded);
 	mu_assert ("pure", !f->is_pure);
 	mu_assert ("noreturn", !f->is_noreturn);
 	mu_assert ("bp_frame", f->bp_frame);
@@ -405,7 +400,6 @@ bool test_analysis_function_load() {
 	mu_assert_eq (f->stack, 0, "stack");
 	mu_assert_eq (f->maxstack, 0, "maxstack");
 	mu_assert_eq (f->ninstr, 0, "ninstr");
-	mu_assert ("folded", !f->folded);
 	mu_assert ("pure", f->is_pure);
 	mu_assert ("noreturn", !f->is_noreturn);
 	mu_assert ("bp_frame", f->bp_frame);
@@ -425,7 +419,6 @@ bool test_analysis_function_load() {
 	mu_assert_eq (f->stack, 0, "stack");
 	mu_assert_eq (f->maxstack, 0, "maxstack");
 	mu_assert_eq (f->ninstr, 0, "ninstr");
-	mu_assert ("folded", !f->folded);
 	mu_assert ("pure", !f->is_pure);
 	mu_assert ("noreturn", !f->is_noreturn);
 	mu_assert ("bp_frame", !f->bp_frame);
@@ -444,7 +437,6 @@ bool test_analysis_function_load() {
 	mu_assert_eq (f->stack, 0, "stack");
 	mu_assert_eq (f->maxstack, 0, "maxstack");
 	mu_assert_eq (f->ninstr, 0, "ninstr");
-	mu_assert ("folded", !f->folded);
 	mu_assert ("pure", !f->is_pure);
 	mu_assert ("noreturn", f->is_noreturn);
 	mu_assert ("bp_frame", f->bp_frame);
