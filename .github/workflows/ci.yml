@@ -516,7 +516,7 @@ jobs:
         path: ./rizin-win-installer
     - name: Create installer
       shell: pwsh
-      run: iscc rizin-win-installer\rizin.iss /DRizinLocation=..\rizin-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=rizin.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
+      run: iscc rizin-win-installer\rizin.iss /DRizinLocation=..\rizin-install\* /DIcoLocation=rizin.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
     - uses: actions/upload-artifact@v2
       with:
         name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
