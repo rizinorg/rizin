@@ -14,8 +14,6 @@ static bool autoblocksize = true;
 static int disMode = 0;
 static int hexMode = 0;
 static int printMode = 0;
-static bool snowMode = false;
-static RzList *snows = NULL;
 static int color = 1;
 static int debug = 1;
 static int zoom = 0;
@@ -336,7 +334,6 @@ static const char *help_msg_visual[] = {
 	"wW", "seek cursor to next/prev word",
 	"xX", "show xrefs/refs of current function from/to data/code",
 	"yY", "copy and paste selection",
-	"z", "fold/unfold comments in disassembly",
 	"Z", "shift-tab rotate print modes", // ctoggle zoom mode",
 	"Enter", "follow address of jump/call",
 	NULL
@@ -356,44 +353,6 @@ static ut64 splitPtr = UT64_MAX;
 
 #undef USE_THREADS
 #define USE_THREADS 1
-
-#if USE_THREADS
-
-static void printSnow(RzCore *core) {
-	if (!snows) {
-		snows = rz_list_newf (free);
-	}
-	int i, h, w = rz_cons_get_size (&h);
-	int amount = rz_num_rand (4);
-	if (amount > 0) {
-		for (i = 0; i < amount; i++) {
-			Snow *snow = RZ_NEW (Snow);
-			snow->x = rz_num_rand (w);
-			snow->y = 0;
-			rz_list_append (snows, snow);
-		}
-	}
-	RzListIter *iter, *iter2;
-	Snow *snow;
-	rz_list_foreach_safe (snows, iter, iter2, snow) {
-		int pos = (rz_num_rand (3)) - 1;
-		snow->x += pos;
-		snow->y++;
-		if (snow->x >= w) {
-			rz_list_delete (snows, iter);
-			continue;
-		}
-		if (snow->y > h) {
-			rz_list_delete (snows, iter);
-			continue;
-		}
-		rz_cons_gotoxy (snow->x, snow->y);
-		rz_cons_printf ("*");
-	}
-	// rz_cons_gotoxy (10 , 10);
-	rz_cons_flush ();
-}
-#endif
 
 static void rotateAsmBits(RzCore *core) {
 	RzAnalysisHint *hint = rz_analysis_hint_get (core->analysis, core->offset);
@@ -1175,9 +1134,9 @@ static ut64 prevop_addr(RzCore *core, ut64 addr) {
 	// TODO: look in the current basicblock, then in the current function
 	// and search in all functions only as a last chance, to try to speed
 	// up the process.
-	bb = rz_analysis_bb_from_offset (core->analysis, addr - minop);
+	bb = rz_analysis_find_most_relevant_block_in (core->analysis, addr - minop);
 	if (bb) {
-		ut64 res = rz_analysis_bb_opaddr_at (bb, addr - minop);
+		ut64 res = rz_analysis_block_get_op_addr_in (bb, addr - minop);
 		if (res != UT64_MAX) {
 			return res;
 		}
@@ -1221,9 +1180,9 @@ RZ_API bool rz_core_prevop_addr(RzCore *core, ut64 start_addr, int numinstrs, ut
 	RzAnalysisBlock *bb;
 	int i;
 	// Check that we're in a bb, otherwise this prevop stuff won't work.
-	bb = rz_analysis_bb_from_offset (core->analysis, start_addr);
+	bb = rz_analysis_find_most_relevant_block_in (core->analysis, start_addr);
 	if (bb) {
-		if (rz_analysis_bb_opaddr_at (bb, start_addr) != UT64_MAX) {
+		if (rz_analysis_block_get_op_addr_in (bb, start_addr) != UT64_MAX) {
 			// Do some analysis looping.
 			for (i = 0; i < numinstrs; i++) {
 				*prev_addr = prevop_addr (core, start_addr);
@@ -2290,20 +2249,6 @@ static bool canWrite(RzCore *core, ut64 addr) {
 	return (map && (map->perm & RZ_PERM_W));
 }
 
-static bool toggle_bb(RzCore *core, ut64 addr) {
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, addr, RZ_ANALYSIS_FCN_TYPE_NULL);
-	if (fcn) {
-		RzAnalysisBlock *bb = rz_analysis_fcn_bbget_in (core->analysis, fcn, addr);
-		if (bb) {
-			bb->folded = !bb->folded;
-		} else {
-			rz_warn_if_reached ();
-		}
-		return true;
-	}
-	return false;
-}
-
 RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 	ut8 och = arg[0];
 	RzAsmOp op;
@@ -3287,13 +3232,6 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			}
 			rz_cons_enable_mouse (mouse_state && rz_config_get_i (core->config, "scr.wheel"));
 		}	break;
-		case '(':
-			snowMode = !snowMode;
-			if (!snowMode) {
-				rz_list_free (snows);
-				snows = NULL;
-			}
-			break;
 		case ')':
 			rotateAsmemu (core);
 			break;
@@ -3502,39 +3440,6 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			}
 		}
 		break;
-		case 'z':
-		{
-			RzAnalysisFunction *fcn;
-			if (core->print->cur_enabled) {
-				fcn = rz_analysis_get_fcn_in (core->analysis,
-					core->offset + core->print->cur, RZ_ANALYSIS_FCN_TYPE_NULL);
-			} else {
-				fcn = rz_analysis_get_fcn_in (core->analysis,
-					core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
-			}
-			if (fcn) {
-				fcn->folded = !fcn->folded;
-			} else {
-				rz_config_toggle (core->config, "asm.cmt.fold");
-			}
-		}
-		break;
-		case 'Z': // shift-tab SHIFT-TAB
-			if (och == 27) { // shift-tab
-				if (core->print->cur_enabled && core->printidx == RZ_CORE_VISUAL_MODE_DB) {
-					core->print->cur = 0;
-					core->seltab--;
-					if (core->seltab < 0) {
-						core->seltab = 2;
-					}
-				} else {
-					prevPrintFormat (core);
-				}
-			} else { // "Z"
-				ut64 addr = core->print->cur_enabled? core->offset + core->print->cur: core->offset;
-				toggle_bb (core, addr);
-			}
-			break;
 		case '?':
 			if (visual_help (core) == '?') {
 				rz_core_visual_hud (core);
@@ -4082,9 +3987,6 @@ static void visual_refresh(RzCore *core) {
 	core->curtab = 0; // which command are we focusing
 	//core->seltab = 0; // user selected tab
 
-	if (snowMode) {
-		printSnow (core);
-	}
 	if (rz_config_get_i (core->config, "scr.scrollbar")) {
 		rz_core_print_scrollbar (core);
 	}
@@ -4095,43 +3997,29 @@ static void visual_refresh_oneshot(RzCore *core) {
 }
 
 RZ_API void rz_core_visual_disasm_up(RzCore *core, int *cols) {
-	RzAnalysisFunction *f = rz_analysis_get_fcn_in (core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
-	if (f && f->folded) {
-		*cols = core->offset - f->addr; // + f->size;
-		if (*cols < 1) {
-			*cols = 4;
-		}
-	} else {
-		*cols = rz_core_visual_prevopsz (core, core->offset);
-	}
+	*cols = rz_core_visual_prevopsz (core, core->offset);
 }
 
 RZ_API void rz_core_visual_disasm_down(RzCore *core, RzAsmOp *op, int *cols) {
 	int midflags = rz_config_get_i (core->config, "asm.flags.middle");
 	const bool midbb = rz_config_get_i (core->config, "asm.bb.middle");
-	RzAnalysisFunction *f = NULL;
-	f = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 	op->size = 1;
-	if (f && f->folded) {
-		*cols = core->offset - rz_analysis_function_max_addr (f);
-	} else {
-		rz_asm_set_pc (core->rasm, core->offset);
-		*cols = rz_asm_disassemble (core->rasm,
-				op, core->block, 32);
-		if (midflags || midbb) {
-			int skip_bytes_flag = 0, skip_bytes_bb = 0;
-			if (midflags >= RZ_MIDFLAGS_REALIGN) {
-				skip_bytes_flag = rz_core_flag_in_middle (core, core->offset, *cols, &midflags);
-			}
-			if (midbb) {
-				skip_bytes_bb = rz_core_bb_starts_in_middle (core, core->offset, *cols);
-			}
-			if (skip_bytes_flag) {
-				*cols = skip_bytes_flag;
-			}
-			if (skip_bytes_bb && skip_bytes_bb < *cols) {
-				*cols = skip_bytes_bb;
-			}
+	rz_asm_set_pc (core->rasm, core->offset);
+	*cols = rz_asm_disassemble (core->rasm,
+			op, core->block, 32);
+	if (midflags || midbb) {
+		int skip_bytes_flag = 0, skip_bytes_bb = 0;
+		if (midflags >= RZ_MIDFLAGS_REALIGN) {
+			skip_bytes_flag = rz_core_flag_in_middle (core, core->offset, *cols, &midflags);
+		}
+		if (midbb) {
+			skip_bytes_bb = rz_core_bb_starts_in_middle (core, core->offset, *cols);
+		}
+		if (skip_bytes_flag) {
+			*cols = skip_bytes_flag;
+		}
+		if (skip_bytes_bb && skip_bytes_bb < *cols) {
+			*cols = skip_bytes_bb;
 		}
 	}
 	if (*cols < 1) {
@@ -4273,15 +4161,8 @@ dodo:
 			goto dodo;
 		}
 		if (!skip) {
-			if (snowMode) {
-				ch = rz_cons_readchar_timeout (300);
-				if (ch == -1) {
-					skip = 1;
-					continue;
-				}
-			} else {
-				ch = rz_cons_readchar ();
-			}
+			ch = rz_cons_readchar ();
+
 			if (I->vtmode == 2 && !is_mintty (core->cons)) {
 				// Prevent runaway scrolling
 				if (IS_PRINTABLE (ch) || ch == '\t' || ch == '\n') {

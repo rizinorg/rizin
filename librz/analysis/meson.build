@@ -1,6 +1,5 @@
 rz_analysis_sources = [
   'analysis.c',
-  'bb.c',
   'block.c',
   'function.c',
   'jmptbl.c',

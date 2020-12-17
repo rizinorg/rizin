@@ -596,10 +596,6 @@ static void __handle_tab_new(RzCore *core);
 static void __handle_tab_new_with_cur_panel(RzCore *core);
 static void __del_panels(RzCore *core);
 
-/* hobby */
-static void __print_snow(RzPanels *panels);
-static void __reset_snow(RzPanels *panels);
-
 /* other */
 static void __panels_process(RzCore *core, RzPanels *panels);
 static bool __handle_console(RzCore *core, RzPanel *panel, const int key);
@@ -1721,29 +1717,17 @@ bool __handle_window_mode(RzCore *core, const int key) {
 	}
 		break;
 	case 'h':
-		(void)__move_to_direction (core, LEFT);
-		if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
-			__reset_snow (panels);
-		}
-		break;
+	        (void)__move_to_direction (core, LEFT);
+	        break;
 	case 'j':
-		(void)__move_to_direction (core, DOWN);
-		if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
-			__reset_snow (panels);
-		}
-		break;
+	        (void)__move_to_direction (core, DOWN);
+	        break;
 	case 'k':
-		(void)__move_to_direction (core, UP);
-		if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
-			__reset_snow (panels);
-		}
-		break;
+	        (void)__move_to_direction (core, UP);
+	        break;
 	case 'l':
-		(void)__move_to_direction (core, RIGHT);
-		if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
-			__reset_snow (panels);
-		}
-		break;
+	        (void)__move_to_direction (core, RIGHT);
+	        break;
 	case 'H':
 		rz_cons_switchbuf (false);
 		__resize_panel_left (panels);
@@ -4094,51 +4078,6 @@ void __esil_step_to(RzCore *core, ut64 end) {
 	rz_core_cmdf (core, "aesu 0x%08"PFMT64x, end);
 }
 
-void __print_snow(RzPanels *panels) {
-	if (!panels->snows) {
-		panels->snows = rz_list_newf (free);
-	}
-	RzPanel *cur = __get_cur_panel (panels);
-	int i, amount = rz_num_rand (4);
-	if (amount > 0) {
-		for (i = 0; i < amount; i++) {
-			RzPanelsSnow *snow = RZ_NEW (RzPanelsSnow);
-			snow->x = rz_num_rand (cur->view->pos.w) + cur->view->pos.x;
-			snow->y = cur->view->pos.y;
-			rz_list_append (panels->snows, snow);
-		}
-	}
-	RzListIter *iter, *iter2;
-	RzPanelsSnow *snow;
-	rz_list_foreach_safe (panels->snows, iter, iter2, snow) {
-		int pos = rz_num_rand (3) - 1;
-		snow->x += pos;
-		snow->y++;
-		if (snow->x >= cur->view->pos.w + cur->view->pos.x || snow->x <= cur->view->pos.x + 1) {
-			rz_list_delete (panels->snows, iter);
-			continue;
-		}
-		if (snow->y >= cur->view->pos.h + cur->view->pos.y - 1) {
-			rz_list_delete (panels->snows, iter);
-			continue;
-		}
-		if (rz_cons_canvas_gotoxy (panels->can, snow->x, snow->y)) {
-			if (panels->fun == PANEL_FUN_SAKURA) {
-				rz_cons_canvas_write (panels->can, Color_BMAGENTA","Color_RESET);
-			} else {
-				rz_cons_canvas_write (panels->can, "*");
-			}
-		}
-	}
-}
-
-void __reset_snow(RzPanels *panels) {
-	RzPanel *cur = __get_cur_panel (panels);
-	rz_list_free (panels->snows);
-	panels->snows = NULL;
-	cur->view->refresh = true;
-}
-
 int __open_menu_cb (void *user) {
 	RzCore* core = (RzCore *)user;
 	RzPanelsMenu *menu = core->panels->panels_menu;
@@ -4816,10 +4755,6 @@ void __panels_refresh(RzCore *core) {
 	rz_cons_canvas_write (can, rz_strbuf_get (title));
 	rz_strbuf_free (title);
 
-	if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
-		__print_snow (panels);
-	}
-
 	if (firstRun) {
 		firstRun = false;
 		rz_config_set_i (core->config, "scr.utf8", utf8);
@@ -5109,7 +5044,6 @@ bool __init(RzCore *core, RzPanels *panels, int w, int h) {
 	panels->rotate_db = sdb_new0 ();
 	panels->almighty_db = sdb_new0 ();
 	panels->mht = ht_pp_new (NULL, (HtPPKvFreeFunc)__mht_free_kv, (HtPPCalcSizeV)strlen);
-	panels->fun = PANEL_FUN_NOFUN;
 	panels->prevMode = PANEL_MODE_DEFAULT;
 	panels->name = NULL;
 
@@ -5327,9 +5261,6 @@ void __handle_tab_key(RzCore *core, bool shift) {
 	}
 	cur = __get_cur_panel (panels);
 	cur->view->refresh = true;
-	if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
-		__reset_snow (panels);
-	}
 }
 
 void __save_panel_pos(RzPanel* panel) {
@@ -5531,9 +5462,6 @@ void __toggle_zoom_mode(RzCore *core) {
 		__set_mode (core, panels->prevMode);
 		panels->prevMode = PANEL_MODE_DEFAULT;
 		__restore_panel_pos (cur);
-		if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
-			__reset_snow (panels);
-		}
 	}
 }
 
@@ -6402,21 +6330,7 @@ repeat:
 	core->cons->event_resize = (RzConsEvent) __do_panels_refreshOneShot;
 	__panels_layout_refresh (core);
 	RzPanel *cur = __get_cur_panel (panels);
-	if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
-		if (panels->mode == PANEL_MODE_MENU) {
-			panels->fun = PANEL_FUN_NOFUN;
-			__reset_snow (panels);
-			goto repeat;
-		}
-		okey = rz_cons_readchar_timeout (300);
-		if (okey == -1) {
-			cur->view->refresh = true;
-			goto repeat;
-		}
-	} else {
-		okey = rz_cons_readchar ();
-	}
-
+	okey = rz_cons_readchar ();
 	key = rz_cons_arrow_to_hjkl (okey);
 	if (__handle_mouse (core, cur, &key)) {
 		if (panels_root->root_state != DEFAULT) {
@@ -6817,16 +6731,6 @@ repeat:
 			panels->can = NULL;
 			int h, w = rz_cons_get_size (&h);
 			panels->can = __create_new_canvas (core, w, h);
-		}
-		break;
-	case '(':
-		if (panels->fun != PANEL_FUN_SNOW && panels->fun != PANEL_FUN_SAKURA) {
-			//TODO: Refactoring the FUN if bored af
-			//panels->fun = PANEL_FUN_SNOW;
-			panels->fun = PANEL_FUN_SAKURA;
-		} else {
-			panels->fun = PANEL_FUN_NOFUN;
-			__reset_snow (panels);
 		}
 		break;
 	case ')':

@@ -239,28 +239,28 @@ static bool cb_analysis_jmptailcall(void *user, void *data) {
 	return true;
 }
 
-static bool cb_analarmthumb(void *user, void *data) {
+static bool cb_analysis_armthumb(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.armthumb = node->i_value;
 	return true;
 }
 
-static bool cb_analdepth(void *user, void *data) {
+static bool cb_analysis_depth(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.depth = node->i_value;
 	return true;
 }
 
-static bool cb_analgraphdepth(void *user, void *data) {
+static bool cb_analysis_graphdepth(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	core->analysis->opt.graph_depth = node->i_value;
 	return true;
 }
 
-static bool cb_analafterjmp(void *user, void *data) {
+static bool cb_analysis_afterjmp(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.afterjmp = node->i_value;
@@ -281,14 +281,14 @@ static bool cb_analysis_endsize(void *user, void *data) {
 	return true;
 }
 
-static bool cb_analvars(void *user, void *data) {
+static bool cb_analysis_vars(void *user, void *data) {
         RzCore *core = (RzCore*) user;
         RzConfigNode *node = (RzConfigNode*) data;
         core->analysis->opt.vars = node->i_value;
         return true;
 }
 
-static bool cb_analvars_stackname(void *user, void *data) {
+static bool cb_analysis_vars_stackname(void *user, void *data) {
 	RzCore *core = (RzCore *)user;
 	RzConfigNode *node = (RzConfigNode *)data;
 	core->analysis->opt.varname_stack = node->i_value;
@@ -302,7 +302,7 @@ static bool cb_analysis_nonull(void *user, void *data) {
         return true;
 }
 
-static bool cb_analstrings(void *user, void *data) {
+static bool cb_analysis_strings(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	if (node->i_value) {
@@ -318,42 +318,42 @@ static bool cb_analysis_ignbithints(void *user, void *data) {
 	return true;
 }
 
-static bool cb_analsleep(void *user, void *data) {
+static bool cb_analysis_sleep(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->sleep = node->i_value;
 	return true;
 }
 
-static bool cb_analmaxrefs(void *user, void *data) {
+static bool cb_analysis_maxrefs(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->maxreflines = node->i_value;
 	return true;
 }
 
-static bool cb_analnorevisit(void *user, void *data) {
+static bool cb_analysis_norevisit(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.norevisit = node->i_value;
 	return true;
 }
 
-static bool cb_analnopskip(void *user, void *data) {
+static bool cb_analysis_nopskip(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.nopskip = node->i_value;
 	return true;
 }
 
-static bool cb_analhpskip(void *user, void *data) {
+static bool cb_analysis_hpskip(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.hpskip = node->i_value;
 	return true;
 }
 
-static void update_analarch_options(RzCore *core, RzConfigNode *node) {
+static void update_analysis_arch_options(RzCore *core, RzConfigNode *node) {
 	RzAnalysisPlugin *h;
 	RzListIter *it;
 	if (core && core->analysis && node) {
@@ -364,11 +364,11 @@ static void update_analarch_options(RzCore *core, RzConfigNode *node) {
 	}
 }
 
-static bool cb_analarch(void *user, void *data) {
+static bool cb_analysis_arch(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	if (*node->value == '?') {
-		update_analarch_options (core, node);
+		update_analysis_arch_options (core, node);
 		print_node_options (node);
 		return false;
 	}
@@ -379,15 +379,12 @@ static bool cb_analarch(void *user, void *data) {
 		const char *aa = rz_config_get (core->config, "asm.arch");
 		if (!aa || strcmp (aa, node->value)) {
 			eprintf ("analysis.arch: cannot find '%s'\n", node->value);
-		} else {
-			rz_config_set (core->config, "analysis.arch", "null");
-			return true;
 		}
 	}
 	return false;
 }
 
-static bool cb_analcpu(void *user, void *data) {
+static bool cb_analysis_cpu(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RzConfigNode *node = (RzConfigNode *) data;
 	rz_analysis_set_cpu (core->analysis, node->value);
@@ -399,14 +396,14 @@ static bool cb_analcpu(void *user, void *data) {
 	return true;
 }
 
-static bool cb_analrecont(void *user, void *data) {
+static bool cb_analysis_recont(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.recont = node->i_value;
 	return true;
 }
 
-static bool cb_analijmp(void *user, void *data) {
+static bool cb_analysis_ijmp(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
 	core->analysis->opt.ijmp = node->i_value;
@@ -2910,39 +2907,39 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("analysis.jmp.retpoline", "true", &cb_analysis_jmpretpoline, "Analyze retpolines, may be slower if not needed");
 	SETICB ("analysis.jmp.tailcall", 0, &cb_analysis_jmptailcall, "Consume a branch as a call if delta is big");
 
-	SETCB ("analysis.armthumb", "false", &cb_analarmthumb, "aae computes arm/thumb changes (lot of false positives ahead)");
-	SETCB ("analysis.jmp.after", "true", &cb_analafterjmp, "Continue analysis after jmp/ujmp");
+	SETCB ("analysis.armthumb", "false", &cb_analysis_armthumb, "aae computes arm/thumb changes (lot of false positives ahead)");
+	SETCB ("analysis.jmp.after", "true", &cb_analysis_afterjmp, "Continue analysis after jmp/ujmp");
 	SETCB ("analysis.endsize", "true", &cb_analysis_endsize, "Adjust function size at the end of the analysis (known to be buggy)");
 	SETCB ("analysis.delay", "true", &cb_analysis_delay, "Enable delay slot analysis if supported by the architecture");
-	SETICB ("analysis.depth", 64, &cb_analdepth, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
-	SETICB ("analysis.graph_depth", 256, &cb_analgraphdepth, "Max depth for path search");
-	SETICB ("analysis.sleep", 0, &cb_analsleep, "Sleep N usecs every so often during analysis. Avoid 100% CPU usage");
+	SETICB ("analysis.depth", 64, &cb_analysis_depth, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
+	SETICB ("analysis.graph_depth", 256, &cb_analysis_graphdepth, "Max depth for path search");
+	SETICB ("analysis.sleep", 0, &cb_analysis_sleep, "Sleep N usecs every so often during analysis. Avoid 100% CPU usage");
 	SETCB ("analysis.ignbithints", "false", &cb_analysis_ignbithints, "Ignore the ahb hints (only obey asm.bits)");
 	SETBPREF ("analysis.calls", "false", "Make basic af analysis walk into calls");
 	SETBPREF ("analysis.autoname", "false", "Speculatively set a name for the functions, may result in some false positives");
 	SETBPREF ("analysis.hasnext", "false", "Continue analysis after each function");
 	SETICB ("analysis.nonull", 0, &cb_analysis_nonull, "Do not analyze regions of N null bytes");
 	SETBPREF ("analysis.esil", "false", "Use the new ESIL code analysis");
-	SETCB ("analysis.strings", "false", &cb_analstrings, "Identify and register strings during analysis (aar only)");
+	SETCB ("analysis.strings", "false", &cb_analysis_strings, "Identify and register strings during analysis (aar only)");
 	SETPREF ("analysis.types.spec", "gcc",  "Set profile for specifying format chars used in type analysis");
 	SETBPREF ("analysis.types.verbose", "false", "Verbose output from type analysis");
 	SETBPREF ("analysis.types.constraint", "false", "Enable constraint types analysis for variables");
-	SETCB ("analysis.vars", "true", &cb_analvars, "Analyze local variables and arguments");
-	SETCB ("analysis.vars.stackname", "false", &cb_analvars_stackname, "Name variables based on their offset on the stack");
+	SETCB ("analysis.vars", "true", &cb_analysis_vars, "Analyze local variables and arguments");
+	SETCB ("analysis.vars.stackname", "false", &cb_analysis_vars_stackname, "Name variables based on their offset on the stack");
 	SETBPREF ("analysis.vinfun", "true",  "Search values in functions (aav) (false by default to only find on non-code)");
 	SETBPREF ("analysis.vinfunrange", "false",  "Search values outside function ranges (requires analysis.vinfun=false)\n");
-	SETCB ("analysis.norevisit", "false", &cb_analnorevisit, "Do not visit function analysis twice (EXPERIMENTAL)");
-	SETCB ("analysis.nopskip", "true", &cb_analnopskip, "Skip nops at the beginning of functions");
-	SETCB ("analysis.hpskip", "false", &cb_analhpskip, "Skip `mov reg, reg` and `lea reg, [reg] at the beginning of functions");
-	n = NODECB ("analysis.arch", RZ_SYS_ARCH, &cb_analarch);
+	SETCB ("analysis.norevisit", "false", &cb_analysis_norevisit, "Do not visit function analysis twice (EXPERIMENTAL)");
+	SETCB ("analysis.nopskip", "true", &cb_analysis_nopskip, "Skip nops at the beginning of functions");
+	SETCB ("analysis.hpskip", "false", &cb_analysis_hpskip, "Skip `mov reg, reg` and `lea reg, [reg] at the beginning of functions");
+	n = NODECB ("analysis.arch", RZ_SYS_ARCH, &cb_analysis_arch);
 	SETDESC (n, "Select the architecture to use");
-	update_analarch_options (core, n);
-	SETCB ("analysis.cpu", RZ_SYS_ARCH, &cb_analcpu, "Specify the analysis.cpu to use");
+	update_analysis_arch_options (core, n);
+	SETCB ("analysis.cpu", RZ_SYS_ARCH, &cb_analysis_cpu, "Specify the analysis.cpu to use");
 	SETPREF ("analysis.prelude", "", "Specify an hexpair to find preludes in code");
-	SETCB ("analysis.recont", "false", &cb_analrecont, "End block after splitting a basic block instead of error"); // testing
-	SETCB ("analysis.jmp.indir", "false", &cb_analijmp, "Follow the indirect jumps in function analysis"); // testing
+	SETCB ("analysis.recont", "false", &cb_analysis_recont, "End block after splitting a basic block instead of error"); // testing
+	SETCB ("analysis.jmp.indir", "false", &cb_analysis_ijmp, "Follow the indirect jumps in function analysis"); // testing
 	SETI ("analysis.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
-	SETICB ("asm.lines.maxref", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
+	SETICB ("asm.lines.maxref", 0, &cb_analysis_maxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
 
 	SETCB ("analysis.jmp.tbl", "true", &cb_analysis_jmptbl, "Analyze jump tables in switch statements");
 
@@ -3121,7 +3118,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF ("asm.sub.varonly", "true", "Substitute the entire variable expression with the local variable name (e.g. [local10h] instead of [ebp+local10h])");
 	SETBPREF ("asm.sub.reg", "false", "Substitute register names with their associated role name (drp~=)");
 	SETBPREF ("asm.sub.rel", "true", "Substitute pc relative expressions in disasm");
-	SETBPREF ("asm.cmt.fold", "false", "Fold comments, toggle with Vz");
 	SETBPREF ("asm.family", "false", "Show family name in disasm");
 	SETBPREF ("asm.symbol", "false", "Show symbol+delta instead of absolute offset");
 	SETBPREF ("asm.analysis", "false", "Analyze code and refs while disassembling (see analysis.strings)");

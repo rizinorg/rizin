@@ -32,3 +32,22 @@ EXPECT=<<EOF
 renamed_strlen
 EOF
 RUN
+
+NAME=an address
+FILE=bins/elf/crackme0x05
+CMDS=<<EOF
+s 0x0804840d
+an
+anj
+an jumptarget
+an
+anj
+EOF
+EXPECT=<<EOF
+0x8048411
+[{"type":"address","offset":134513681}]
+jumptarget
+[{"name":"jumptarget","realname":"jumptarget","type":"flag","offset":134513681}]
+EOF
+EXPECT_ERR=
+RUN

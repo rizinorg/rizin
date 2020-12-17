@@ -1,0 +1,89 @@
+language: generic
+conditions: v1
+
+branches:
+  only:
+  - stable
+  - dev
+  - /^release-.*$/
+  - /^prerelease-.*$/
+
+services:
+  - docker
+
+jobs:
+  fast_finish: true
+  include:
+    # emscripten
+    #  os: linux
+    # - name: WASM
+    #  env: EMSCRIPTEN=1
+    # Linux with GCC on PowerPC
+    - os: linux
+      name: PPC64
+      arch: ppc64le
+      dist: focal
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DRZ_ASSERT_STDOUT=1" RZ_ARM64_AS=aarch64-linux-gnu-as RZ_ARM32_AS=arm-linux-gnueabi-as RZ_X86_AS=x86_64-linux-gnu-as
+      addons:
+        apt:
+          packages:
+            - binutils-aarch64-linux-gnu
+            - binutils-arm-linux-gnueabi
+            - binutils-x86-64-linux-gnu
+    # Linux with GCC on System Z
+    - os: linux
+      name: S390X
+      arch: s390x
+      dist: focal
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DRZ_ASSERT_STDOUT=1" RZ_X86_AS=x86_64-w64-mingw32-as
+      addons:
+        apt:
+          packages:
+            - binutils-mingw-w64-x86-64
+    # Linux with GCC on ARMv8 (64bit)
+    - os: linux
+      name: ARM64
+      arch: arm64
+      dist: focal
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DRZ_ASSERT_STDOUT=1" RZ_ARM32_AS=arm-linux-gnueabi-as RZ_X86_AS=x86_64-linux-gnu-as RZ_PPC_AS=powerpc64le-linux-gnu-as
+      addons:
+        apt:
+          packages:
+            - binutils-arm-linux-gnueabi
+            - binutils-x86-64-linux-gnu
+            - binutils-powerpc64le-linux-gnu
+
+  allow_failures:
+    # Emscripten
+    #- os: linux
+    #  name: WASM
+    #  env: EMSCRIPTEN=1
+    # Linux with GCC on PowerPC
+    - os: linux
+      arch: ppc64le
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DRZ_ASSERT_STDOUT=1" RZ_ARM64_AS=aarch64-linux-gnu-as RZ_ARM32_AS=arm-linux-gnueabi-as RZ_X86_AS=x86_64-linux-gnu-as
+      addons:
+        apt:
+          packages:
+            - binutils-aarch64-linux-gnu
+            - binutils-arm-linux-gnueabi
+            - binutils-x86-64-linux-gnu
+    # Linux with GCC on System Z
+    - os: linux
+      arch: s390x
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc CFLAGS="-DRZ_ASSERT_STDOUT=1" RZ_X86_AS=x86_64-w64-mingw32-as
+      addons:
+        apt:
+          packages:
+            - binutils-mingw-w64-x86-64
+    - os: linux
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0 CFLAGS="-DRZ_ASSERT_STDOUT=1"
+
+cache:
+  - ccache
+
+script:
+  - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)
+  - |
+    pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+    $SHELL travis-script

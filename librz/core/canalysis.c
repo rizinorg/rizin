@@ -1890,12 +1890,11 @@ static int core_analysis_graph_nodes(RzCore *core, RzAnalysisFunction *fcn, int 
 	return nodes;
 }
 
-/* seek basic block that contains address addr or just addr if there's no such
- * basic block */
+/* seek basic block that contains address addr or do nothing if there is no block. */
 RZ_API bool rz_core_analysis_bb_seek(RzCore *core, ut64 addr) {
-	ut64 bbaddr = rz_analysis_get_bbaddr (core->analysis, addr);
-	if (bbaddr != UT64_MAX) {
-		rz_core_seek (core, bbaddr, false);
+	RzAnalysisBlock *block = rz_analysis_find_most_relevant_block_in (core->analysis, addr);
+	if (block) {
+		rz_core_seek (core, block->addr, false);
 		return true;
 	}
 	return false;
@@ -3027,9 +3026,6 @@ static int fcn_print_detail(RzCore *core, RzAnalysisFunction *fcn) {
 	if (fcn->cc || defaultCC) {
 		rz_cons_printf ("afc %s @ 0x%08"PFMT64x"\n", fcn->cc?fcn->cc: defaultCC, fcn->addr);
 	}
-	if (fcn->folded) {
-		rz_cons_printf ("afF @ 0x%08"PFMT64x"\n", fcn->addr);
-	}
 	if (fcn) {
 		/* show variables  and arguments */
 		rz_core_cmdf (core, "afvb* @ 0x%"PFMT64x"\n", fcn->addr);
@@ -3378,7 +3374,7 @@ static RzList *recurse(RzCore *core, RzAnalysisBlock *from, RzAnalysisBlock *des
 }
 
 static RzList *recurse_bb(RzCore *core, ut64 addr, RzAnalysisBlock *dest) {
-	RzAnalysisBlock *bb = rz_analysis_bb_from_offset (core->analysis, addr);
+	RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in (core->analysis, addr);
 	if (bb == dest) {
 		eprintf ("path found!");
 		return NULL;
@@ -3482,7 +3478,7 @@ RZ_API void rz_core_recover_vars(RzCore *core, RzAnalysisFunction *fcn, bool arg
 
 static bool analysis_path_exists(RzCore *core, ut64 from, ut64 to, RzList *bbs, int depth, HtUP *state, HtUP *avoid) {
 	rz_return_val_if_fail (bbs, false);
-	RzAnalysisBlock *bb = rz_analysis_bb_from_offset (core->analysis, from);
+	RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in (core->analysis, from);
 	RzListIter *iter = NULL;
 	RzAnalysisRef *refi;
 
@@ -5634,7 +5630,7 @@ static void analPathFollow(RzCoreAnalPaths *p, ut64 addr, PJ *pj) {
 		return;
 	}
 	if (!dict_get (&p->visited, addr)) {
-		p->cur = rz_analysis_bb_from_offset (p->core->analysis, addr);
+		p->cur = rz_analysis_find_most_relevant_block_in (p->core->analysis, addr);
 		analPaths (p, pj);
 	}
 }
@@ -5686,8 +5682,8 @@ static void analPaths(RzCoreAnalPaths *p, PJ *pj) {
 }
 
 RZ_API void rz_core_analysis_paths(RzCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json) {
-	RzAnalysisBlock *b0 = rz_analysis_bb_from_offset (core->analysis, from);
-	RzAnalysisBlock *b1 = rz_analysis_bb_from_offset (core->analysis, to);
+	RzAnalysisBlock *b0 = rz_analysis_find_most_relevant_block_in (core->analysis, from);
+	RzAnalysisBlock *b1 = rz_analysis_find_most_relevant_block_in (core->analysis, to);
 	PJ *pj = NULL;
 	if (!b0) {
 		eprintf ("Cannot find basic block for 0x%08"PFMT64x"\n", from);
@@ -5813,7 +5809,7 @@ static bool analyze_noreturn_function(RzCore *core, RzAnalysisFunction *f) {
 	RzListIter *iter;
 	RzAnalysisBlock *bb;
 	rz_list_foreach (f->bbs, iter, bb) {
-		ut64 opaddr = rz_analysis_bb_opaddr_i (bb, bb->ninstr - 1);
+		ut64 opaddr = rz_analysis_block_get_op_addr (bb, bb->ninstr - 1);
 		if (opaddr == UT64_MAX) {
 			return false;
 		}
