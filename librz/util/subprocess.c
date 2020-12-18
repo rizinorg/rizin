@@ -383,7 +383,6 @@ RZ_API char *rz_subprocess_err(RzSubprocess *proc) {
 
 #include <errno.h>
 #include <sys/wait.h>
-#include <alloca.h>
 
 struct rz_subprocess_t {
 	pid_t pid;
@@ -507,7 +506,7 @@ extern char **environ;
 static char **create_child_env(const char *envvars[], const char *envvals[], size_t env_size) {
 	char **ep;
 	size_t i, new_env_size = env_size, size = 0;
-	size_t *positions = alloca (sizeof (size_t) * env_size);
+	size_t *positions = RZ_NEWS (size_t, env_size);
 	for (i = 0; i < env_size; i++) {
 		positions[i] = SIZE_MAX;
 	}
