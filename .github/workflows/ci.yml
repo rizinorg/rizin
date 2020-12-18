@@ -68,7 +68,7 @@ jobs:
             timeout: 45
             cflags: '-Werror -Wno-cpp'
           - name: linux-meson-gcc-tests
-            os: ubuntu-latest
+            os: ubuntu-20.04
             build_system: meson
             compiler: gcc
             run_tests: true
