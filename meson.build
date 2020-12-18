@@ -48,7 +48,13 @@ version_commit = '0'
 gittap = ''
 gittip = 'unknown'
 
-if git_exe.found()
+git_dir_exists = run_command(py3_exe, '-c', '__import__("sys").exit(0 if __import__("os").path.isdir(".git") else 1)')
+if git_exe.found() and git_dir_exists.returncode() == 0
+  sdb_src_exists = run_command(py3_exe, '-c', '__import__("sys").exit(0 if __import__("os").listdir("shlr/sdb/") else 1)')
+  if sdb_src_exists.returncode() == 1
+    error('Source code for SDB not found. Did you forget to run `git submodule update --init`?')
+  endif
+
   # Get version_commit
   git_rev_list = run_command(git_exe, '-C', repo, 'rev-list', '--all', '--count')
   if git_rev_list.returncode() == 0

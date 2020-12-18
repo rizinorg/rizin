@@ -214,7 +214,7 @@ RZ_API ut8 *rz_reg_get_bytes(RzReg *reg, int type, int *size);
 RZ_API bool rz_reg_set_bytes(RzReg *reg, int type, const ut8 *buf, const int len);
 RZ_API bool rz_reg_read_regs(RzReg *reg, ut8 *buf, const int len);
 RZ_API int rz_reg_arena_set_bytes(RzReg *reg, const char *str);
-RZ_API RzRegArena *rz_reg_arena_new(int size);
+RZ_API RzRegArena *rz_reg_arena_new(size_t size);
 RZ_API void rz_reg_arena_free(RzRegArena *ra);
 RZ_API int rz_reg_fit_arena(RzReg *reg);
 RZ_API void rz_reg_arena_swap(RzReg *reg, int copy);

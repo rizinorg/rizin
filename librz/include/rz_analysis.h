@@ -1303,12 +1303,12 @@ typedef int (*RzAnalysisEsilLoopCB)(RzAnalysisEsil *esil, RzAnalysisOp *op);
 typedef int (*RzAnalysisEsilTrapCB)(RzAnalysisEsil *esil, int trap_type, int trap_code);
 
 typedef struct rz_analysis_plugin_t {
-	char *name;
-	char *desc;
-	char *license;
-	char *arch;
-	char *author;
-	char *version;
+	const char *name;
+	const char *desc;
+	const char *license;
+	const char *arch;
+	const char *author;
+	const char *version;
 	int bits;
 	int esil; // can do esil or not
 	int fileformat_type;
