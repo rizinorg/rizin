@@ -3,7 +3,7 @@ coverage:
     project:
       default:
         branches:
-          - master
+          - dev
           - 'release-*'
         if_not_found: failure
         if_ci_failed: error
