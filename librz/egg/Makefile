@@ -15,7 +15,6 @@ all: ${LIBSO} ${LIBAR}
 
 P=p/
 include ${STATIC_EGG_PLUGINS}
-include $(STOP)/java/deps.mk
 
 ifneq (${STATIC_OBJ},)
 OBJS+=$(subst ..,${P}..,$(subst egg_,${P}egg_,$(STATIC_OBJ)))
