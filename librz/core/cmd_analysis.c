@@ -47,8 +47,6 @@ static const char *help_msg_aa[] = {
 	"aad", " [len]", "analyze data references to code",
 	"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
 	"aaf", "[e|r|t] ", "analyze all functions (e analysis.hasnext=1;afr @@c:isq) (aafe=aef@@f)",
-	"aaF", " [sym*]", "set analysis.in=block for all the spaces between flags matching glob",
-	"aaFa", " [sym*]", "same as aaF but uses af/a2f instead of af+/afb+ (slower but more accurate)",
 	"aai", "[j]", "show info of all analysis parameters",
 	"aan", "[gr?]", "autoname functions (aang = golang, aanr = noreturn propagation)",
 	"aao", "", "analyze all objc references",
@@ -9598,13 +9596,6 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 	case 'S': // "aaS"
 		rz_core_cmd0 (core, "af @@ sym.*");
 		rz_core_cmd0 (core, "af @@ entry*");
-		break;
-	case 'F': // "aaF" "aaFa"
-		if (!input[1] || input[1] == ' ' || input[1] == 'a') {
-			rz_core_analysis_inflags (core, input + 1);
-		} else {
-			eprintf ("Usage: aaF[a] - analyze functions in flag bounds (aaFa uses af/a2f instead of af+/afb+)\n");
-		}
 		break;
 	case 'n': // "aan"
 		switch (input[1]) {

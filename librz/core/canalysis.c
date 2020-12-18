@@ -1965,10 +1965,6 @@ RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, i
 			return false;
 		}
 	}
-	if (rz_config_get_i (core->config, "analysis.a2f")) {
-		rz_core_cmd0 (core, ".a2f");
-		return 0;
-	}
 	if (use_esil) {
 		return rz_core_analysis_esil_fcn (core, at, from, reftype, depth);
 	}
@@ -5725,84 +5721,6 @@ RZ_API void rz_core_analysis_paths(RzCore *core, ut64 from, ut64 to, bool follow
 
 	dict_fini (&rcap.visited);
 	rz_list_free (rcap.path);
-}
-
-static bool __cb(RzFlagItem *fi, void *user) {
-	rz_list_append (user, rz_str_newf ("0x%08"PFMT64x, fi->offset));
-	return true;
-}
-
-static int __addrs_cmp(void *_a, void *_b) {
-	ut64 a = rz_num_get (NULL, _a);
-	ut64 b = rz_num_get (NULL, _b);
-	if (a > b) {
-		return 1;
-	}
-	if (a < b) {
-		return -1;
-	}
-        return 0;
-}
-
-RZ_API void rz_core_analysis_inflags(RzCore *core, const char *glob) {
-	RzList *addrs = rz_list_newf (free);
-	RzListIter *iter;
-	bool a2f = rz_config_get_i (core->config, "analysis.a2f");
-	char *analysis_in = strdup (rz_config_get (core->config, "analysis.in"));
-	rz_config_set (core->config, "analysis.in", "block");
-	// aaFa = use a2f instead of af+
-	bool simple = (!glob || *glob != 'a');
-	glob = rz_str_trim_head_ro (glob);
-	char *addr;
-	rz_flag_foreach_glob (core->flags, glob, __cb, addrs);
-	// should be sorted already
-	rz_list_sort (addrs, (RzListComparator)__addrs_cmp);
-	rz_list_foreach (addrs, iter, addr) {
-		if (!iter->n || rz_cons_is_breaked ()) {
-			break;
-		}
-		char *addr2 = iter->n->data;
-		if (!addr || !addr2) {
-			break;
-		}
-		ut64 a0 = rz_num_get (NULL, addr);
-		ut64 a1 = rz_num_get (NULL, addr2);
-		if (a0 == a1) {
-			// ignore
-			continue;
-		}
-		if (a0 > a1) {
-			eprintf ("Warning: unsorted flag list 0x%llx 0x%llx\n", a0, a1);
-			continue;
-		}
-		st64 sz = a1 - a0;
-		if (sz < 1 || sz > core->analysis->opt.bb_max_size) {
-			eprintf ("Warning: invalid flag range from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n", a0, a1);
-			continue;
-		}
-		if (simple) {
-			RzFlagItem *fi = rz_flag_get_at (core->flags, a0, 0);
-			rz_core_cmdf (core, "af+ %s fcn.%s", addr, fi? fi->name: addr);
-			rz_core_cmdf (core, "afb+ %s %s %d", addr, addr, (int)sz);
-		} else {
-			rz_core_cmdf (core, "aab@%s!%s-%s\n", addr, addr2, addr);
-			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, rz_num_math (core->num, addr), 0);
-			if (fcn) {
-				eprintf ("%s  %s %"PFMT64d"    # %s\n", addr, "af", sz, fcn->name);
-			} else {
-				if (a2f) {
-					rz_core_cmdf (core, "a2f@%s!%s-%s\n", addr, addr2, addr);
-				} else {
-					rz_core_cmdf (core, "af@%s!%s-%s\n", addr, addr2, addr);
-				}
-				fcn = rz_analysis_get_fcn_in (core->analysis, rz_num_math (core->num, addr), 0);
-				eprintf ("%s  %s %.4"PFMT64d"   # %s\n", addr, "aab", sz, fcn?fcn->name: "");
-			}
-		}
-	}
-	rz_list_free (addrs);
-	rz_config_set (core->config, "analysis.in", analysis_in);
-	free (analysis_in);
 }
 
 static bool analyze_noreturn_function(RzCore *core, RzAnalysisFunction *f) {

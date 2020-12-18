@@ -64,7 +64,6 @@ rz_core_sources = [
   'libs.c',
   #'linux_heap_glibc.c',
   'panels.c',
-  'patch.c',
   'cplugin.c',
   'project.c',
   'rtr.c',
@@ -78,7 +77,6 @@ rz_core_sources = [
   'vmenus_graph.c',
   'vmenus_zigns.c',
   'yank.c',
-  'p/core_a2f.c',
   'p/core_java.c',
   'cannotated_code.c',
   'serialize_core.c'

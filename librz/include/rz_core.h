@@ -470,7 +470,6 @@ RZ_API char* rz_core_add_asmqjmp(RzCore *core, ut64 addr);
 RZ_API void rz_core_analysis_type_init(RzCore *core);
 RZ_API char *rz_core_analysis_hasrefs_to_depth(RzCore *core, ut64 value, PJ *pj, int depth);
 RZ_API void rz_core_link_stroff(RzCore *core, RzAnalysisFunction *fcn);
-RZ_API void rz_core_analysis_inflags (RzCore *core, const char *glob);
 RZ_API bool cmd_analysis_objc (RzCore *core, const char *input, bool auto_analysis);
 RZ_API void rz_core_analysis_cc_init(RzCore *core);
 RZ_API void rz_core_analysis_paths(RzCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json);
@@ -767,8 +766,6 @@ RZ_API int rz_core_search_preludes(RzCore *core, bool log);
 RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen);
 RZ_API RzList* /*<RzIOMap*>*/ rz_core_get_boundaries_prot (RzCore *core, int protection, const char *mode, const char *prefix);
 
-RZ_API int rz_core_patch (RzCore *core, const char *patch);
-
 RZ_API void rz_core_hack_help(const RzCore *core);
 RZ_API int rz_core_hack(RzCore *core, const char *op);
 RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, int append);
@@ -916,7 +913,6 @@ RZ_API void rz_core_analysis_propagate_noreturn(RzCore *core, ut64 addr);
 
 /* PLUGINS */
 extern RzCorePlugin rz_core_plugin_java;
-extern RzCorePlugin rz_core_plugin_a2f;
 
 /* DECOMPILER PRINTING FUNCTIONS */
 /**

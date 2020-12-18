@@ -571,55 +571,6 @@ var var_fh = 0x00177fc7 = (qword)0x0000000000000011
 EOF
 RUN
 
-NAME=a2f jmp after ret
-FILE=malloc://512
-CMDS=<<EOF
-e analysis.hasnext=0
-e asm.arch=x86
-e asm.bits=64
-wx b8010000004839ca7f26b8ffffffff4839ca7c1c498b4838498b5138b8010000004839ca7f0ab8ffffffff4839ca7d025dc34883c7684883c6685dc3
-a2f
-afl~?
-EOF
-EXPECT=<<EOF
-1
-EOF
-RUN
-
-NAME=a2f jmp after ret - _size (symsize)
-FILE=malloc://512
-CMDS=<<EOF
-e analysis.hasnext=0
-e asm.arch=x86
-e asm.bits=64
-wx b8010000004839ca7f26b8ffffffff4839ca7c1c498b4838498b5138b8010000004839ca7f0ab8ffffffff4839ca7d025dc34883c7684883c6685dc3
-a2f
-afl~?
-afl~[2]
-EOF
-EXPECT=<<EOF
-1
-60
-EOF
-RUN
-
-NAME=a2f jmp after ret - realsize (bbs_sum)
-FILE=malloc://512
-CMDS=<<EOF
-e analysis.hasnext=0
-e asm.arch=x86
-e asm.bits=64
-wx b8010000004839ca7f26b8ffffffff4839ca7c1c498b4838498b5138b8010000004839ca7f0ab8ffffffff4839ca7d025dc34883c7684883c6685dc3
-a2f
-afl~?
-afl~[2]
-EOF
-EXPECT=<<EOF
-1
-60
-EOF
-RUN
-
 NAME=aaa with avra
 FILE=bins/elf/class_test
 CMDS=<<EOF

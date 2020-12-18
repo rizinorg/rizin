@@ -2885,7 +2885,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF ("analysis.detectwrites", "false", "Automatically reanalyze function after a write");
 	SETPREF ("analysis.fcnprefix", "fcn",  "Prefix new function names with this");
 	SETCB ("analysis.verbose", "false", &cb_analverbose, "Show RzAnalysis warnings when analyzing code");
-	SETBPREF ("analysis.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), analysis.depth ignored atm");
 	SETCB ("analysis.roregs", "gp,zero", (RzConfigCallback)&cb_analysis_roregs, "Comma separated list of register names to be readonly");
 	SETICB ("analysis.gp", 0, (RzConfigCallback)&cb_analysis_gp, "Set the value of the GP register (MIPS)");
 	SETBPREF ("analysis.gpfixed", "true", "Set gp register to analysis.gp before emulating each instruction in aae");

@@ -123,7 +123,6 @@ static int main_help(int line) {
 		" -qq          quit after running all -c and -i\n"
 		" -Q           quiet mode (no prompt) and quit faster (quickLeak=true)\n"
 		" -p [p.rzdb]  load project file\n"
-		" -P [file]    apply rapatch file and quit\n"
 		" -r [rz_run]  specify rz_run profile to load (same as -e dbg.profile=X)\n"
 		" -R [rrz_testule] specify custom rz_run directive\n"
 		" -s [addr]    initial seek\n"
@@ -332,7 +331,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	char *cmdn, *tmp;
 	RzCoreFile *fh = NULL;
 	RzIODesc *iod = NULL;
-	const char *patchfile = NULL;
 	const char *prj = NULL;
 	int debug = 0;
 	int zflag = 0;
@@ -440,7 +438,7 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	bool load_l = true;
 
 	RzGetopt opt;
-	rz_getopt_init (&opt, argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSTzuXt");
+	rz_getopt_init (&opt, argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:R:r:c:D:vVSTzuXt");
 	while ((c = rz_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case '=':
@@ -573,14 +571,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			break;
 		case 'p':
 			prj = *opt.arg ? opt.arg : NULL;
-			break;
-		case 'P':
-			if (RZ_STR_ISEMPTY (opt.arg)) {
-				eprintf ("Cannot open empty rapatch path\n");
-				ret = 1;
-				goto beach;
-			}
-			patchfile = opt.arg;
 			break;
 		case 'Q':
 			quiet = true;
@@ -1362,102 +1352,90 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_config_set (r->config, "scr.prompt", "false");
 	}
 	r->num->value = 0;
-	if (patchfile) {
-		char *data = rz_file_slurp (patchfile, NULL);
-		if (data) {
-			ret = rz_core_patch (r, data);
-			rz_core_seek (r, 0, true);
-			free (data);
-		} else {
-			eprintf ("[p] Cannot open '%s'\n", patchfile);
+	if (zerosep) {
+		rz_cons_zero ();
+	}
+	if (seek != UT64_MAX) {
+		rz_core_seek (r, seek, true);
+	}
+
+	// no flagspace selected by default the beginning
+	rz_flag_space_set (r->flags, NULL);
+	if (!debug && r->bin && r->bin->cur && r->bin->cur->o && r->bin->cur->o->info) {
+		if (r->bin->cur->o->info->arch) {
+			rz_core_cmd0 (r, "aeip");
 		}
 	}
-	if ((patchfile && !quiet) || !patchfile) {
-		if (zerosep) {
-			rz_cons_zero ();
-		}
-		if (seek != UT64_MAX) {
-			rz_core_seek (r, seek, true);
-		}
+	for (;;) {
+		rz_core_prompt_loop (r);
+		ret = r->num->value;
+		debug = rz_config_get_i (r->config, "cfg.debug");
+		if (ret != -1 && rz_cons_is_interactive ()) {
+			char *question;
+			bool no_question_debug = ret & 1;
+			bool no_question_save = (ret & 2) >> 1;
+			bool y_kill_debug = (ret & 4) >> 2;
+			bool y_save_project = (ret & 8) >> 3;
 
-		// no flagspace selected by default the beginning
-		rz_flag_space_set (r->flags, NULL);
-		if (!debug && r->bin && r->bin->cur && r->bin->cur->o && r->bin->cur->o->info) {
-			if (r->bin->cur->o->info->arch) {
-				rz_core_cmd0 (r, "aeip");
-			}
-		}
-		for (;;) {
-			rz_core_prompt_loop (r);
-			ret = r->num->value;
-			debug = rz_config_get_i (r->config, "cfg.debug");
-			if (ret != -1 && rz_cons_is_interactive ()) {
-				char *question;
-				bool no_question_debug = ret & 1;
-				bool no_question_save = (ret & 2) >> 1;
-				bool y_kill_debug = (ret & 4) >> 2;
-				bool y_save_project = (ret & 8) >> 3;
-
-				if (rz_core_task_running_tasks_count (&r->tasks) > 0) {
-					if (rz_cons_yesno ('y', "There are running background tasks. Do you want to kill them? (Y/n)")) {
-						rz_core_task_break_all (&r->tasks);
-						rz_core_task_join (&r->tasks, r->tasks.main_task, -1);
-					} else {
-						continue;
-					}
-				}
-
-				if (debug) {
-					if (no_question_debug) {
-						if (rz_config_get_i (r->config, "dbg.exitkills") && y_kill_debug){
-							rz_debug_kill (r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
-						}
-					} else {
-						if (rz_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
-							if (rz_config_get_i (r->config, "dbg.exitkills") &&
-									rz_cons_yesno ('y', "Do you want to kill the process? (Y/n)")) {
-								rz_debug_kill (r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
-							} else {
-								rz_debug_detach (r->dbg, r->dbg->pid);
-							}
-						} else {
-							continue;
-						}
-					}
-				}
-
-				prj = rz_config_get (r->config, "prj.file");
-				RzProjectErr prj_err = RZ_PROJECT_ERR_SUCCESS;
-				if (no_question_save) {
-					if (prj && *prj && y_save_project){
-						prj_err = rz_project_save_file (r, prj);
-					}
+			if (rz_core_task_running_tasks_count (&r->tasks) > 0) {
+				if (rz_cons_yesno ('y', "There are running background tasks. Do you want to kill them? (Y/n)")) {
+					rz_core_task_break_all (&r->tasks);
+					rz_core_task_join (&r->tasks, r->tasks.main_task, -1);
 				} else {
-					question = rz_str_newf ("Do you want to save the '%s' project? (Y/n)", prj);
-					if (prj && *prj && rz_cons_yesno ('y', "%s", question)) {
-						prj_err = rz_project_save_file (r, prj);
-					}
-					free (question);
-				}
-				if (prj_err != RZ_PROJECT_ERR_SUCCESS) {
-					eprintf ("Failed to save project: %s\n", rz_project_err_message (prj_err));
 					continue;
 				}
+			}
 
-				if (rz_config_get_i (r->config, "scr.confirmquit")) {
-					if (!rz_cons_yesno ('n', "Do you want to quit? (Y/n)")) {
+			if (debug) {
+				if (no_question_debug) {
+					if (rz_config_get_i (r->config, "dbg.exitkills") && y_kill_debug){
+						rz_debug_kill (r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
+					}
+				} else {
+					if (rz_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
+						if (rz_config_get_i (r->config, "dbg.exitkills") &&
+								rz_cons_yesno ('y', "Do you want to kill the process? (Y/n)")) {
+							rz_debug_kill (r->dbg, r->dbg->pid, r->dbg->tid, 9); // KILL
+						} else {
+							rz_debug_detach (r->dbg, r->dbg->pid);
+						}
+					} else {
 						continue;
 					}
 				}
-			} else {
-				// rz_core_project_save (r, prj);
-				if (debug && rz_config_get_i (r->config, "dbg.exitkills")) {
-					rz_debug_kill (r->dbg, 0, false, 9); // KILL
-				}
-
 			}
-			break;
+
+			prj = rz_config_get (r->config, "prj.file");
+			RzProjectErr prj_err = RZ_PROJECT_ERR_SUCCESS;
+			if (no_question_save) {
+				if (prj && *prj && y_save_project){
+					prj_err = rz_project_save_file (r, prj);
+				}
+			} else {
+				question = rz_str_newf ("Do you want to save the '%s' project? (Y/n)", prj);
+				if (prj && *prj && rz_cons_yesno ('y', "%s", question)) {
+					prj_err = rz_project_save_file (r, prj);
+				}
+				free (question);
+			}
+			if (prj_err != RZ_PROJECT_ERR_SUCCESS) {
+				eprintf ("Failed to save project: %s\n", rz_project_err_message (prj_err));
+				continue;
+			}
+
+			if (rz_config_get_i (r->config, "scr.confirmquit")) {
+				if (!rz_cons_yesno ('n', "Do you want to quit? (Y/n)")) {
+					continue;
+				}
+			}
+		} else {
+			// rz_core_project_save (r, prj);
+			if (debug && rz_config_get_i (r->config, "dbg.exitkills")) {
+				rz_debug_kill (r->dbg, 0, false, 9); // KILL
+			}
+
 		}
+		break;
 	}
 
 	if (mustSaveHistory (r->config)) {
