@@ -47,8 +47,6 @@ static const char *help_msg_aa[] = {
 	"aad", " [len]", "analyze data references to code",
 	"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
 	"aaf", "[e|r|t] ", "analyze all functions (e analysis.hasnext=1;afr @@c:isq) (aafe=aef@@f)",
-	"aaF", " [sym*]", "set analysis.in=block for all the spaces between flags matching glob",
-	"aaFa", " [sym*]", "same as aaF but uses af/a2f instead of af+/afb+ (slower but more accurate)",
 	"aai", "[j]", "show info of all analysis parameters",
 	"aan", "[gr?]", "autoname functions (aang = golang, aanr = noreturn propagation)",
 	"aao", "", "analyze all objc references",
@@ -161,6 +159,7 @@ static const char *help_msg_ae[] = {
 	"ae[aA]", "[f] [count]", "analyse esil accesses (regs, mem..)",
 	"aeC", "[arg0 arg1..] @ addr", "appcall in esil",
 	"aec", "[?]", "continue until ^C",
+	"aecb", "", "continue back until breakpoint",
 	"aecs", "", "continue until syscall",
 	"aecc", "", "continue until call",
 	"aecu", " [addr]", "continue until address",
@@ -5052,6 +5051,42 @@ RZ_API int rz_core_esil_step_back(RzCore *core) {
 	return -1;
 }
 
+RZ_API bool rz_core_esil_continue_back(RzCore *core) {
+	rz_return_val_if_fail (core->analysis->esil && core->analysis->esil->trace, false);
+	RzAnalysisEsil *esil = core->analysis->esil;
+	if (esil->trace->idx == 0) {
+		return true;
+	}
+
+	RzRegItem *ripc = rz_reg_get (esil->analysis->reg, "PC", -1);
+	RzVector *vreg = ht_up_find (esil->trace->registers, ripc->offset | (ripc->arena << 16), NULL);
+	if (!vreg) {
+		RZ_LOG_ERROR ("failed to find PC change vector\n");
+		return false;
+	}
+
+	// Search for the nearest breakpoint in the tracepoints before the current position
+	bool bp_found = false;
+	int idx = 0;
+	RzAnalysisEsilRegChange *reg;
+	rz_vector_foreach_prev (vreg, reg) {
+		if (reg->idx >= esil->trace->idx) {
+			continue;
+		}
+		bp_found = rz_bp_get_in (core->dbg->bp, reg->data, RZ_BP_PROT_EXEC) != NULL;
+		if (bp_found) {
+			idx = reg->idx;
+			eprintf ("hit breakpoint at: 0x%" PFMT64x " idx: %d\n", reg->data, reg->idx);
+			break;
+		}
+	}
+
+	// Return to the nearest breakpoint or jump back to the first index if a breakpoint wasn't found
+	rz_analysis_esil_trace_restore (esil, idx);
+
+	return true;
+}
+
 static void cmd_address_info(RzCore *core, const char *addrstr, int fmt) {
 	ut64 addr, type;
 	if (!addrstr || !*addrstr) {
@@ -6220,6 +6255,12 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 	case 'c': // "aec"
 		if (input[1] == '?') { // "aec?"
 			rz_core_cmd_help (core, help_msg_aec);
+		} else if (input[1] == 'b') { // "aecb"
+			if (!rz_core_esil_continue_back (core)) {
+				eprintf ("cannnot continue back\n");
+			}
+			rz_core_cmd0 (core, ".ar*");
+			break;
 		} else if (input[1] == 's') { // "aecs"
 			const char *pc = rz_reg_get_name (core->analysis->reg, RZ_REG_NAME_PC);
 			for (;;) {
@@ -9555,13 +9596,6 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 	case 'S': // "aaS"
 		rz_core_cmd0 (core, "af @@ sym.*");
 		rz_core_cmd0 (core, "af @@ entry*");
-		break;
-	case 'F': // "aaF" "aaFa"
-		if (!input[1] || input[1] == ' ' || input[1] == 'a') {
-			rz_core_analysis_inflags (core, input + 1);
-		} else {
-			eprintf ("Usage: aaF[a] - analyze functions in flag bounds (aaFa uses af/a2f instead of af+/afb+)\n");
-		}
 		break;
 	case 'n': // "aan"
 		switch (input[1]) {

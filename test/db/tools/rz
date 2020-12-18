@@ -167,14 +167,6 @@ Missing file to open
 EOF
 RUN
 
-NAME=rizin empty -P
-FILE=-
-CMDS=!rizin -P ""
-EXPECT_ERR=<<EOF
-Cannot open empty rapatch path
-EOF
-RUN
-
 NAME=rizin project with explicit file
 FILE=-
 CMDS=<<EOF

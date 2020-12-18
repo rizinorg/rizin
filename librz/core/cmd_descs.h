@@ -98,7 +98,6 @@ RZ_IPI RzCmdStatus rz_write_base64_decode_handler(RzCore *core, int argc, const 
 RZ_IPI RzCmdStatus rz_write_base64_encode_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_wh_handler_old(void *data, const char *input);
 RZ_IPI int rz_we_handler_old(void *data, const char *input);
-RZ_IPI int rz_wp_handler_old(void *data, const char *input);
 RZ_IPI int rz_wu_handler_old(void *data, const char *input);
 RZ_IPI int rz_wr_handler_old(void *data, const char *input);
 RZ_IPI int rz_wA_handler_old(void *data, const char *input);

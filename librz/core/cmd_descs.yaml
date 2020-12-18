@@ -799,10 +799,6 @@
       cname: we_handler_old
       summary: Extend write operations (insert bytes instead of replacing)
       type: RZ_CMD_DESC_TYPE_OLDINPUT
-    - name: wp
-      cname: wp_handler_old
-      summary: Apply rizin patch file. See wp? fmi
-      type: RZ_CMD_DESC_TYPE_OLDINPUT
     - name: wu
       cname: wu_handler_old
       summary: Apply unified hex patch (see output of cu)

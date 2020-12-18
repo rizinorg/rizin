@@ -1,0 +1,9 @@
+NAME=ood and doc
+FILE=bins\pe\hello_world_not_stripped.exe
+CMDS=<<EOF
+(reopen; ood > $_; doc > $_)
+4 .(reopen)
+EOF
+EXPECT=<<EOF
+EOF
+RUN

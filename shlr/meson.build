@@ -1,7 +1,11 @@
 # handle capstone dependency
 capstone_dep = dependency('capstone', version: '>=3.0.4', required: false)
 if not capstone_dep.found() or not get_option('use_sys_capstone')
-  message('Use rizin-provided capstone')
+  if get_option('capstone_in_builddir')
+    capstone_path = join_paths(meson.current_build_dir(), 'capstone')
+  else
+    capstone_path = 'capstone'
+  endif
 
   capstone_version = get_option('use_capstone_version')
   if capstone_version == 'bundled'
@@ -16,19 +20,14 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     error('Wrong capstone version selected. Please use one of the supported versions.')
   endif
   capstone_dep = capstone_proj.get_variable('capstone_dep')
-else
-  message('Use system-provided capstone library')
 endif
 
 
 # handle tree-sitter
 tree_sitter_dep = dependency('tree-sitter', required: false)
 if not tree_sitter_dep.found() or not get_option('use_sys_tree_sitter')
-  message('Use bundled tree-sitter')
   tree_sitter_proj = subproject('tree-sitter', default_options: ['default_library=static'])
   tree_sitter_dep = tree_sitter_proj.get_variable('tree_sitter_dep')
-else
-  message('Use system-provided tree-sitter library')
 endif
 
 
@@ -143,7 +142,6 @@ tcc_dep = declare_dependency(
 # handle lz4 dependency
 lz4_dep = dependency('liblz4', required: false)
 if not lz4_dep.found() or not get_option('use_sys_lz4')
-  message('Use bundled lz4')
   lz4_files = [
     'lz4/lz4.c',
   ]
@@ -159,16 +157,12 @@ if not lz4_dep.found() or not get_option('use_sys_lz4')
     link_with: librzlz4,
     include_directories: lz4_inc
   )
-else
-  message('Use system-provided lz4 library')
 endif
 
 
 # handle zip dependency
 zip_dep = dependency('libzip', required: false)
 if not zip_dep.found() or not get_option('use_sys_zip')
-  message('Use bundled zip')
-
   zip_files = [
     'zip/zip/zip_add.c',
     'zip/zip/zip_add_dir.c',
@@ -266,8 +260,6 @@ if not zip_dep.found() or not get_option('use_sys_zip')
     link_with: librzzip,
     include_directories: zip_inc
   )
-else
-  message('Use system-provided zip library')
 endif
 
 # handle winkd dependency
