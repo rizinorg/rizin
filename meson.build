@@ -418,7 +418,7 @@ endif
 
 r = run_command(py3_exe, check_meson_subproject_py, 'sdb')
 if r.returncode() == 1 and not get_option('no_subprojects_check')
-  error('Subproject sdb is not updated. Please make sure to either run `meson subprojects update`.')
+  error('Subproject sdb is not updated. Please make sure to run `meson subprojects update`.')
 endif
 
 sdb_proj = subproject('sdb', default_options: ['default_library=static'])

@@ -5,13 +5,13 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
   if capstone_version == 'bundled'
     r = run_command(py3_exe, check_meson_subproject_py, 'capstone-bundled')
     if r.returncode() == 1 and not get_option('no_subprojects_check')
-      error('Subproject capstone-bundled is not updated. Please make sure to either run `meson subprojects update`.')
+      error('Subproject capstone-bundled is not updated. Please make sure to run `meson subprojects update`.')
     endif
     capstone_proj = subproject('capstone-bundled', default_options: ['default_library=static'])
   elif capstone_version == 'next'
     r = run_command(py3_exe, check_meson_subproject_py, 'capstone-next')
     if r.returncode() == 1 and not get_option('no_subprojects_check')
-      error('Subproject capstone-next is not updated. Please make sure to either run `meson subprojects update`.')
+      error('Subproject capstone-next is not updated. Please make sure to run `meson subprojects update`.')
     endif
     capstone_proj = subproject('capstone-next', default_options: ['default_library=static'])
   elif capstone_version == 'v3'
