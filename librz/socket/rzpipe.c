@@ -258,11 +258,7 @@ RZ_API RzPipe *rzpipe_open(const char *cmd) {
 		rzpipe_close (rzp);
 		return NULL;
 	}
-#if LIBC_HAVE_FORK
-	rzp->child = fork ();
-#else
-	rzp->child = -1;
-#endif
+	rzp->child = rz_sys_fork ();
 	if (rzp->child == -1) {
 		rzpipe_close (rzp);
 		return NULL;

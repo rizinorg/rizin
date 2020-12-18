@@ -140,18 +140,6 @@ static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
     {NULL, 0}
 };
 
-RZ_API int rz_sys_fork(void) {
-#if HAVE_FORK
-#if __WINDOWS__
-	return -1;
-#else
-	return fork ();
-#endif
-#else
-	return -1;
-#endif
-}
-
 #if HAVE_SIGACTION
 RZ_API int rz_sys_sigaction(int *sig, void (*handler) (int)) {
 	struct sigaction sigact = { };
@@ -1456,6 +1444,7 @@ RZ_API int rz_sys_pipe_close(int fd) {
 // Use this lock to wraps pipe, close, exec*, system to ensure all pipe file
 // descriptors are either created AND set as CLOEXEC or not created at all.
 static RzThreadLock *sys_pipe_mutex;
+static bool is_child = false;
 
 __attribute__ ((constructor)) static void sys_pipe_constructor(void) {
 	sys_pipe_mutex = rz_th_lock_new (true);
@@ -1474,6 +1463,18 @@ static bool set_close_on_exec(int fd) {
 	return fcntl (fd, F_SETFD, flags) != -1;
 }
 
+static void parent_lock_enter(void) {
+	if (!is_child) {
+		rz_th_lock_enter (sys_pipe_mutex);
+	}
+}
+
+static void parent_lock_leave(void) {
+	if (!is_child) {
+		rz_th_lock_leave (sys_pipe_mutex);
+	}
+}
+
 /**
  * \brief Create a pipe and use O_CLOEXEC flag when \p close_on_exec is true
  *
@@ -1483,7 +1484,7 @@ static bool set_close_on_exec(int fd) {
  */
 RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec) {
 	int res = -1;
-	rz_th_lock_enter (sys_pipe_mutex);
+	parent_lock_enter ();
 	if ((res = pipe (pipefd)) == -1) {
 		perror ("pipe");
 		goto err;
@@ -1495,7 +1496,7 @@ RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec) {
 		goto err;
 	}
 err:
-	rz_th_lock_leave (sys_pipe_mutex);
+	parent_lock_leave ();
 	return res;
 }
 
@@ -1512,28 +1513,28 @@ static HtUU *fd2close;
 // Use this lock to wraps pipe, close, exec*, system to ensure all pipe file
 // descriptors are either created AND added to fd2close or not created at all.
 static RzThreadLock *sys_pipe_mutex;
-
-static void prepare_atfork(void) {
-	rz_th_lock_enter (sys_pipe_mutex);
-}
-
-static void parent_atfork(void) {
-	rz_th_lock_leave (sys_pipe_mutex);
-}
-
-static void child_atfork(void) {
-	rz_th_lock_leave (sys_pipe_mutex);
-}
+static bool is_child = false;
 
 __attribute__ ((constructor)) static void sys_pipe_constructor(void) {
 	sys_pipe_mutex = rz_th_lock_new (false);
-	pthread_atfork(prepare_atfork, parent_atfork, child_atfork);
 	fd2close = ht_uu_new0 ();
 }
 
 __attribute__ ((destructor)) static void sys_pipe_destructor(void) {
 	ht_uu_free (fd2close);
 	rz_th_lock_free (sys_pipe_mutex);
+}
+
+static void parent_lock_enter(void) {
+	if (!is_child) {
+		rz_th_lock_enter (sys_pipe_mutex);
+	}
+}
+
+static void parent_lock_leave(void) {
+	if (!is_child) {
+		rz_th_lock_leave (sys_pipe_mutex);
+	}
 }
 
 static bool set_close_on_exec(int fd, bool close_on_exec) {
@@ -1563,7 +1564,7 @@ static void close_fds(void) {
  */
 RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec) {
 	int res = -1;
-	rz_th_lock_enter (sys_pipe_mutex);
+	parent_lock_enter ();
 	if ((res = pipe (pipefd)) == -1) {
 		perror ("pipe");
 		goto err;
@@ -1575,7 +1576,7 @@ RZ_API int rz_sys_pipe(int pipefd[2], bool close_on_exec) {
 		goto err;
 	}
 err:
-	rz_th_lock_leave (sys_pipe_mutex);
+	parent_lock_leave ();
 	return res;
 }
 
@@ -1586,11 +1587,11 @@ err:
  * when an \p rz_sys exec/system is executed later.
  */
 RZ_API int rz_sys_pipe_close(int fd) {
-	rz_th_lock_enter (sys_pipe_mutex);
+	parent_lock_enter ();
 	bool deleted = ht_uu_delete (fd2close, fd);
 	rz_warn_if_fail (deleted);
 	int res = close (fd);
-	rz_th_lock_leave (sys_pipe_mutex);
+	parent_lock_leave ();
 	return res;
 }
 #elif HAVE_PIPE
@@ -1613,17 +1614,17 @@ RZ_API int rz_sys_pipe_close(int fd) {
 
 #if __UNIX__ && HAVE_EXECV && HAVE_PIPE && defined(O_CLOEXEC) && !HAVE_PIPE2
 RZ_API int rz_sys_execv(const char *pathname, char *const argv[]) {
-	rz_th_lock_enter (sys_pipe_mutex);
+	parent_lock_enter ();
 	int res = execv (pathname, argv);
-	rz_th_lock_leave (sys_pipe_mutex);
+	parent_lock_leave ();
 	return res;
 }
 #elif __UNIX__ && HAVE_EXECV && HAVE_PIPE && !HAVE_PIPE2
 RZ_API int rz_sys_execv(const char *pathname, char *const argv[]) {
-	rz_th_lock_enter (sys_pipe_mutex);
+	parent_lock_enter ();
 	close_fds ();
 	int res = execv (pathname, argv);
-	rz_th_lock_leave (sys_pipe_mutex);
+	parent_lock_leave ();
 	return res;
 }
 #elif !HAVE_EXECV
@@ -1634,17 +1635,17 @@ RZ_API int rz_sys_execv(const char *pathname, char *const argv[]) {
 
 #if __UNIX__ && HAVE_EXECVE && HAVE_PIPE && defined(O_CLOEXEC) && !HAVE_PIPE2
 RZ_API int rz_sys_execve(const char *pathname, char *const argv[], char *const envp[]) {
-	rz_th_lock_enter (sys_pipe_mutex);
+	parent_lock_enter ();
 	int res = execve (pathname, argv, envp);
-	rz_th_lock_leave (sys_pipe_mutex);
+	parent_lock_leave ();
 	return res;
 }
 #elif __UNIX__ && HAVE_EXECVE && HAVE_PIPE && !HAVE_PIPE2
 RZ_API int rz_sys_execve(const char *pathname, char *const argv[], char *const envp[]) {
-	rz_th_lock_enter (sys_pipe_mutex);
+	parent_lock_enter ();
 	close_fds ();
 	int res = execve (pathname, argv, envp);
-	rz_th_lock_leave (sys_pipe_mutex);
+	parent_lock_leave ();
 	return res;
 }
 #elif !HAVE_EXECVE
@@ -1655,17 +1656,17 @@ RZ_API int rz_sys_execve(const char *pathname, char *const argv[], char *const e
 
 #if __UNIX__ && HAVE_EXECVP && HAVE_PIPE && defined(O_CLOEXEC) && !HAVE_PIPE2
 RZ_API int rz_sys_execvp(const char *file, char *const argv[]) {
-	rz_th_lock_enter (sys_pipe_mutex);
+	parent_lock_enter ();
 	int res = execvp (file, argv);
-	rz_th_lock_leave (sys_pipe_mutex);
+	parent_lock_leave ();
 	return res;
 }
 #elif __UNIX__ && HAVE_EXECVP && HAVE_PIPE && !HAVE_PIPE2
 RZ_API int rz_sys_execvp(const char *file, char *const argv[]) {
-	rz_th_lock_enter (sys_pipe_mutex);
+	parent_lock_enter ();
 	close_fds ();
 	int res = execvp (file, argv);
-	rz_th_lock_leave (sys_pipe_mutex);
+	parent_lock_leave ();
 	return res;
 }
 #elif !HAVE_EXECVP
@@ -1690,9 +1691,9 @@ RZ_API int rz_sys_execl(const char *pathname, const char *arg, ...) {
 		argv[i] = va_arg (args, char *);
 	}
 	va_end (args);
-	rz_th_lock_enter (sys_pipe_mutex);
+	parent_lock_enter ();
 	int res = execv (pathname, argv);
-	rz_th_lock_leave (sys_pipe_mutex);
+	parent_lock_leave ();
 	return res;
 }
 #elif __UNIX__ && HAVE_EXECL && HAVE_PIPE && !HAVE_PIPE2
@@ -1712,10 +1713,10 @@ RZ_API int rz_sys_execl(const char *pathname, const char *arg, ...) {
 	}
 	va_end (args);
 
-	rz_th_lock_enter (sys_pipe_mutex);
+	parent_lock_enter ();
 	close_fds ();
 	int res = execv (pathname, argv);
-	rz_th_lock_leave (sys_pipe_mutex);
+	parent_lock_leave ();
 	return res;
 }
 #elif !HAVE_EXECL
@@ -1726,21 +1727,42 @@ RZ_API int rz_sys_execl(const char *pathname, const char *arg, ...) {
 
 #if __UNIX__ && HAVE_SYSTEM && HAVE_PIPE && defined(O_CLOEXEC) && !HAVE_PIPE2
 RZ_API int rz_sys_system(const char *command) {
-	rz_th_lock_enter (sys_pipe_mutex);
+	parent_lock_enter ();
 	int res = system (command);
-	rz_th_lock_leave (sys_pipe_mutex);
+	parent_lock_leave ();
 	return res;
 }
 #elif __UNIX__ && HAVE_SYSTEM && HAVE_PIPE && !HAVE_PIPE2
 RZ_API int rz_sys_system(const char *command) {
-	rz_th_lock_enter (sys_pipe_mutex);
+	parent_lock_enter ();
 	close_fds ();
 	int res = system (command);
-	rz_th_lock_leave (sys_pipe_mutex);
+	parent_lock_leave ();
 	return res;
 }
 #elif !HAVE_SYSTEM
 RZ_API int rz_sys_system(const char *command) {
+	return -1;
+}
+#endif
+
+#if HAVE_FORK
+RZ_API int rz_sys_fork(void) {
+#if __UNIX__ && HAVE_PIPE && !HAVE_PIPE2
+	parent_lock_enter ();
+#endif
+	pid_t child = fork ();
+#if __UNIX__ && HAVE_PIPE && !HAVE_PIPE2
+	if (child == 0) {
+		is_child = true;
+	} else if (child > 0) {
+		parent_lock_leave ();
+	}
+#endif
+	return child;
+}
+#else
+RZ_API int rz_sys_fork(void) {
 	return -1;
 }
 #endif

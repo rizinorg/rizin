@@ -263,7 +263,7 @@ RZ_API int rz_sandbox_system(const char *x, int n) {
 		eprintf ("Error parsing command arguments\n");
 		return -1;
 	}
-	int child = fork ();
+	int child = rz_sys_fork ();
 	if (child == -1) {
 		return -1;
 	}
