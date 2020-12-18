@@ -64,6 +64,7 @@ VOLUME ["/mnt"]
 # pip3 install meson ninja
 RUN apt-get update && \
 	apt-get install -y \
+	cmake \
 	gcc \
 	git \
 	python3-pip \
@@ -81,7 +82,7 @@ RUN apt-get update && \
 	meson install -C build && \
 	pip3 uninstall -y meson ninja && \
 	apt-get remove --purge -y \
-	python3-pip gcc &&\
+	python3-pip gcc cmake &&\
 	apt-get autoremove --purge -y && \
 	apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

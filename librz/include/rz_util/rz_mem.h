@@ -46,6 +46,7 @@ RZ_API int rz_mem_eq(ut8 *a, ut8 *b, int len);
 RZ_API void rz_mem_copybits(ut8 *dst, const ut8 *src, int bits);
 RZ_API void rz_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, int bits);
 RZ_API void rz_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize);
+RZ_API void *rz_mem_copy(void *dest, size_t dmax, const void *src, size_t smax);
 RZ_API void rz_mem_swaporcopy(ut8 *dest, const ut8 *src, int len, bool big_endian);
 RZ_API void rz_mem_swapendian(ut8 *dest, const ut8 *orig, int size);
 RZ_API int rz_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len);
