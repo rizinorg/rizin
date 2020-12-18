@@ -539,12 +539,15 @@ static char **create_child_env(const char *envvars[], const char *envvals[], siz
 		char *new_var = rz_str_newf ("%s=%s", envvars[i], envvals[i]);
 		if (positions[i] == SIZE_MAX) {
 			// No env var exists with the same name, add it at the end
+			free (new_env[size]);
 			new_env[size++] = new_var;
 		} else {
 			// Replace the existing env var
+			free (new_env[positions[i]]);
 			new_env[positions[i]] = new_var;
 		}
 	}
+	free (positions);
 	return new_env;
 }
 
