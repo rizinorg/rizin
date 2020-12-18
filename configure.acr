@@ -89,13 +89,6 @@ ${CC} temp.c \
 HAVE_EXECL=$? \
 rm -f temp.c
 <<EOF
-CHECK HAVE_ALLOCA_HDR <<EOF
-echo "#include <alloca.h>" > temp.c \
-echo "int main(int argc, char **argv) { return 0;}" >> temp.c \
-${CC} temp.c \
-HAVE_ALLOCA_HDR=$? \
-rm -f temp.c
-<<EOF
 
 CHKFNC c system
 CHKFNC c pipe2

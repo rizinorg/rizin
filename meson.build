@@ -306,12 +306,8 @@ userconf.set10('WANT_DYLINK', true)
 userconf.set10('HAVE_PTRACE', have_ptrace)
 userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
 userconf.set10('WITH_GPL', true)
-
-has_addr_no_randomize = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
-userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', has_addr_no_randomize)
-
-has_alloca_hdr = cc.has_header('alloca.h')
-userconf.set10('HAVE_ALLOCA_HDR', has_alloca_hdr)
+ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
+userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
 
 if host_machine.system() == 'freebsd'
   add_project_link_arguments('-Wl,--unresolved-symbols,ignore-in-object-files', language: 'c')
@@ -336,7 +332,7 @@ foreach item : [
     ['execl', '#include <unistd.h>', []],
     ['system', '#include <stdlib.h>', []],
     ['fork', '#include <unistd.h>', []],
-    ['pipe2', '#define _GNU_SOURCE\n#include <fcntl.h>\n#include <unistd.h>', []],
+    ['pipe2', '#define _GNU_SOURCE\n#include <fcntl.h>\n#include <unistd.h>', []]
   ]
   func = item[0]
   ok = cc.has_function(func, prefix: item[1], dependencies: item[2])

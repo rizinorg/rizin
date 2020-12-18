@@ -383,9 +383,7 @@ RZ_API char *rz_subprocess_err(RzSubprocess *proc) {
 
 #include <errno.h>
 #include <sys/wait.h>
-#if HAVE_ALLOCA_HDR
 #include <alloca.h>
-#endif
 
 struct rz_subprocess_t {
 	pid_t pid;
