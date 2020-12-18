@@ -7,6 +7,7 @@ pkgconfig_mod = import('pkgconfig')
 # Python scripts used during the build process
 create_tags_rz_py = files('sys/create_tags_rz.py')
 syscall_preprocessing_py = files('sys/syscall_preprocessing.py')
+check_meson_subproject_py = files('sys/check_meson_subproject.py')
 
 # Get rizin version
 rizin_version = 'unknown-error'
@@ -413,6 +414,11 @@ if not zlib_dep.found() or not get_option('use_sys_zlib')
     link_with: librzzlib,
     include_directories: zlib_inc
   )
+endif
+
+r = run_command(py3_exe, check_meson_subproject_py, 'sdb')
+if r.returncode() == 1 and not get_option('no_subprojects_check')
+  error('Subproject sdb is not updated. Please make sure to either run `meson subprojects update`.')
 endif
 
 sdb_proj = subproject('sdb', default_options: ['default_library=static'])
