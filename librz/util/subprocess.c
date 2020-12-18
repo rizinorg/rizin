@@ -383,6 +383,7 @@ RZ_API char *rz_subprocess_err(RzSubprocess *proc) {
 
 #include <errno.h>
 #include <sys/wait.h>
+#include <alloca.h>
 
 struct rz_subprocess_t {
 	pid_t pid;
@@ -502,13 +503,51 @@ RZ_API void rz_subprocess_fini(void) {
 	rz_th_lock_free (subprocs_mutex);
 }
 
-static void env_kv_free(HtPPKv *kv) {
-	free (kv->key);
-	free (kv->value);
-}
+extern char **environ;
+static int subprocess_execvpe(const char *file, char **argv, const char *envvars[], const char *envvals[], size_t env_size) {
+	char **ep;
+	size_t i, new_env_size = env_size, size = 0;
+	size_t *positions = alloca (sizeof (size_t) * env_size);
+	for (i = 0; i < env_size; i++) {
+		positions[i] = SIZE_MAX;
+	}
 
-static void *env_val_dup(const void *v) {
-	return v? strdup (v): NULL;
+	for (ep = environ, i = 0; *ep; ep++, size++) {
+		size_t j;
+
+		for (j = 0; j < env_size; j++) {
+			if (positions[j] != SIZE_MAX) {
+				continue;
+			}
+			size_t namelen = strlen (envvars[j]);
+			if (!strncmp (*ep, envvars[j], namelen) && (*ep)[namelen] == '=') {
+				positions[j] = size;
+				new_env_size--;
+				break;
+			}
+		}
+	}
+
+	char **new_env = alloca (sizeof (char *) * (size + new_env_size + 1));
+	for (i = 0; i <= env_size; i++) {
+		new_env[size + i] = NULL;
+	}
+
+	memcpy (new_env, environ, size * sizeof (char *));
+	for (i = 0; i < env_size; i++) {
+		const size_t varlen = strlen (envvars[i]) + 1 + strlen (envvals[i]);
+		char *new_var = alloca (varlen + 1);
+		snprintf (new_var, varlen + 1, "%s=%s", envvars[i], envvals[i]);
+		if (positions[i] == SIZE_MAX) {
+			// No env var exists with the same name, add it at the end
+			new_env[size++] = new_var;
+		} else {
+			// Replace the existing env var
+			new_env[positions[i]] = new_var;
+		}
+	}
+	environ = new_env;
+	return rz_sys_execvp (file, argv);
 }
 
 RZ_API RzSubprocess *rz_subprocess_start(
@@ -571,17 +610,6 @@ RZ_API RzSubprocess *rz_subprocess_start(
 	}
 	proc->stderr_fd = stderr_pipe[0];
 
-	// save current environment and update it with the provided one.
-	// Do this before rz_sys_fork, because after that only async-safe functions
-	// shall be used and setenv is not.
-	HtPP *o_env = ht_pp_new (env_val_dup, env_kv_free, NULL);
-	size_t i;
-	for (i = 0; i < env_size; i++) {
-		char *val = getenv (envvars[i]);
-		ht_pp_insert (o_env, envvars[i], val);
-		rz_sys_setenv (envvars[i], envvals[i]);
-	}
-
 	proc->pid = rz_sys_fork ();
 	if (proc->pid == -1) {
 		// fail
@@ -599,16 +627,10 @@ RZ_API RzSubprocess *rz_subprocess_start(
 		rz_sys_pipe_close (stderr_pipe[1]);
 		rz_sys_pipe_close (stderr_pipe[0]);
 
-		rz_sys_execvp (file, argv);
+		subprocess_execvpe (file, argv, envvars, envvals, env_size);
 		perror ("exec");
 		rz_sys_exit (-1, true);
 	}
-	// restore previous environment in the parent
-	for (i = 0; i < env_size; i++) {
-		char *val = ht_pp_find (o_env, envvars[i], NULL);
-		rz_sys_setenv (envvars[i], val);
-	}
-	ht_pp_free (o_env);
 	free (argv);
 
 	rz_sys_pipe_close (stdin_pipe[0]);
