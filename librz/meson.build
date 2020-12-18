@@ -198,7 +198,6 @@ bp_plugins = [
 ]
 
 core_plugins = [
-  'a2f',
   'java'
 ]
 
