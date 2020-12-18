@@ -7,6 +7,7 @@ RANLIB ?= ranlib
 EXT_AR ?= a
 
 CFLAGS+=-I$(LIBR)/include
+CFLAGS+=-I$(SHLR)/sdb/src
 CFLAGS+=-Iinclude
 LIBPTRACE_WRAP=libptrace_wrap.${EXT_AR}
 
