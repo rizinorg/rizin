@@ -856,30 +856,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-bin -c
-FILE=bins/java/test.class
-CMDS=!rz-bin -c ${RZ_FILE}
-EXPECT=<<EOF
-0x00000000 [0x000008f9 - 0x00000b99]    672 class 0 test :: groovy/lang/Script
-0x000008f9 method 0      <init>
-0x0000092e method 1      <init>
-0x0000096e method 2      main
-0x000009ae method 3      run
-0x00000aba method 4      $getStaticMetaClass
-0x00000afb method 5      $createCallSiteArray_1
-0x00000b6a method 6      $createCallSiteArray
-0x00000b99 method 7      $getCallSiteArray
-EOF
-RUN
-
-NAME=rz-bin -cq
-FILE=bins/java/test.class
-CMDS=!rz-bin -cq ${RZ_FILE}
-EXPECT=<<EOF
-0x00000000 [0x000008f9 - 0x00000b99] test groovy/lang/Script
-EOF
-RUN
-
 NAME=rz-bin -D swift
 BROKEN=1
 FILE=bins/elf/libc.so.0

@@ -43,22 +43,6 @@ f hit0_0 0x0000058f ; bins/elf/ioli/crackme0x00
 EOF
 RUN
 
-NAME=rz-find -r -X -x with nibbles masked
-FILE=-
-CMDS=!rz-find -r -X -x caf.bab. bins/java/Hello.class
-EXPECT=<<EOF
-f hit0_0 0x00000000 ; bins/java/Hello.class
-EOF
-RUN
-
-NAME=rz-find -r -X -x with bin mask
-FILE=-
-CMDS=!rz-find -r -X -x caf3bab3 -M fff0fff0 bins/java/Hello.class
-EXPECT=<<EOF
-f hit0_0 0x00000000 ; bins/java/Hello.class
-EOF
-RUN
-
 NAME=rz-find -h
 FILE=-
 CMDS=!rz-find -h | grep -c Usage

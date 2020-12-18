@@ -5,7 +5,7 @@
 #include <cxx/demangle.h>
 
 RZ_API void rz_bin_demangle_list(RzBin *bin) {
-	const char *langs[] = { "c++", "java", "objc", "swift", "dlang", "msvc", "rust", NULL };
+	const char *langs[] = { "c++", "objc", "swift", "dlang", "msvc", "rust", NULL };
 	RzBinPlugin *plugin;
 	RzListIter *it;
 	int i;
@@ -39,9 +39,6 @@ RZ_API int rz_bin_demangle_type(const char *str) {
 	if (str && *str) {
 		if (!strcmp (str, "swift")) {
 			return RZ_BIN_NM_SWIFT;
-		}
-		if (!strcmp (str, "java")) {
-			return RZ_BIN_NM_JAVA;
 		}
 		if (!strcmp (str, "objc")) {
 			return RZ_BIN_NM_OBJC;
@@ -122,7 +119,6 @@ RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *def, const char *str, ut
 	}
 	char *demangled = NULL;
 	switch (type) {
-	case RZ_BIN_NM_JAVA: demangled = rz_bin_demangle_java (str); break;
 	case RZ_BIN_NM_RUST: demangled = rz_bin_demangle_rust (bf, str, vaddr); break;
 	case RZ_BIN_NM_OBJC: demangled = rz_bin_demangle_objc (NULL, str); break;
 	case RZ_BIN_NM_SWIFT: demangled = rz_bin_demangle_swift (str, bin? bin->demanglercmd: false); break;
@@ -142,11 +138,6 @@ RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *def, const char *str, ut
 main() {
 	char *out, str[128];
 	strncpy (str, "_Z1hic", sizeof (str)-1);
-	strncpy (str, "main(Ljava/lang/String;I)V", sizeof (str)-1);
-	strncpy (str, "main([Ljava/lang/String;)V", sizeof (str)-1);
-	strncpy (str, "foo([III)Ljava/lang/Integer;", sizeof (str)-1);
-	//out = cplus_demangle_v3 (str, flags);
-	out = rz_bin_demangle_java (str); //, flags);
 	printf ("INPUT (%s)\n", str);
 	printf ("OUTPUT (%s)\n", out);
 }

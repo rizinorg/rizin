@@ -62,8 +62,6 @@ librz/include/rz_userconf.h
 librz/include/rz_version.h
 librz/include/rz_version.h.tmp
 shlr/capstone/
-shlr/java/out
-shlr/java/out.exe
 shlr/sdb/sdb
 shlr/sdb/sdb.exe
 shlr/sdb/src/sdb

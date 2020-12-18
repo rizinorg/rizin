@@ -78,7 +78,6 @@ rz_core_sources = [
   'vmenus_graph.c',
   'vmenus_zigns.c',
   'yank.c',
-  'p/core_java.c',
   'cannotated_code.c',
   'serialize_core.c'
 ]
@@ -115,7 +114,6 @@ rz_core_deps = [
   rz_bp_dep,
   platform_deps,
   gdb_dep,
-  java_dep,
   lrt,
   shell_parser_dep
 ]

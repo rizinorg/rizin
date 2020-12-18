@@ -251,30 +251,6 @@ bochs_dep = declare_dependency(
   include_directories: bochs_inc
 )
 
-
-# handle java dependency
-java_files = [
-  'java/class.c',
-  'java/code.c',
-  'java/dsojson.c',
-  'java/ops.c',
-  #'java/main.c',
-]
-
-java_inc = [platform_inc, include_directories('java')]
-
-librzjava = static_library('rzjava', java_files,
-  dependencies: [rz_util_dep],
-  include_directories: java_inc,
-  implicit_include_directories: false
-)
-
-java_dep = declare_dependency(
-  link_with: librzjava,
-  include_directories: java_inc
-)
-
-
 # handle qnx dependency
 qnx_files = [
   'qnx/src/core.c',

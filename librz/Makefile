@@ -140,7 +140,7 @@ ifeq (${COMPILER},emscripten)
 else
 	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} $(librz_LDFLAGS) -o librz.${EXT_SO}  \
 		.librz/*/*.o \
-		../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/librz_java.${EXT_AR} \
+		../shlr/gdb/lib/libgdbr.${EXT_AR} \
 		../shlr/librz_shlr.${EXT_AR} ../shlr/mpc/libmpc.${EXT_AR} $(E) \
 		../librz/util/librz_util.${EXT_AR}
 endif

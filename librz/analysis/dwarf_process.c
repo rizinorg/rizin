@@ -1442,8 +1442,6 @@ static char *parse_comp_unit_lang(const RzBinDwarfDie *die) {
 
 	switch (val->uconstant)
 	{
-	case DW_LANG_Java:
-		return "java";
 	case DW_LANG_ObjC:
 	/* subideal, TODO research if dwarf gives me enough info to properly separate C++ and ObjC mangling */
 	case DW_LANG_ObjC_plus_plus:

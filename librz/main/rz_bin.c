@@ -515,7 +515,6 @@ static char *__demangleAs(RzBin *bin, int type, const char *file) {
 	char *res = NULL;
 	switch (type) {
 	case RZ_BIN_NM_CXX: res = rz_bin_demangle_cxx (NULL, file, 0); break;
-	case RZ_BIN_NM_JAVA: res = rz_bin_demangle_java (file); break;
 	case RZ_BIN_NM_OBJC: res = rz_bin_demangle_objc (NULL, file); break;
 	case RZ_BIN_NM_SWIFT: res = rz_bin_demangle_swift (file, syscmd); break;
 	case RZ_BIN_NM_MSVC: res = rz_bin_demangle_msvc (file); break;
@@ -863,7 +862,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 				}
 				res = __demangleAs (bin, type, file);
 				if (!res) {
-					eprintf ("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
+					eprintf ("Unknown lang to demangle. Use: cxx, objc, swift\n");
 					rz_core_fini (&core);
 					return 1;
 				}

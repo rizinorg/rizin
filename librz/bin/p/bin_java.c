@@ -154,10 +154,6 @@ static bool check_buffer(RzBuffer *b) {
 	return false;
 }
 
-static int retdemangle(const char *str) {
-	return RZ_BIN_NM_JAVA;
-}
-
 static RzBinAddr *binsym(RzBinFile *bf, int sym) {
 	return rz_bin_java_get_entrypoint (bf->o->bin_obj, sym);
 }

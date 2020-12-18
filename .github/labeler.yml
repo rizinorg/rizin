@@ -134,9 +134,6 @@ rz_test:
   - binrz/rz_test/*
   - test/**/*
 
-java:
-  - shlr/java/**/*
-
 WinDbg:
   - shlr/winkd/**/*
   - librz/io/p/io_winkd.c

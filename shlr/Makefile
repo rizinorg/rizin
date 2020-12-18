@@ -68,7 +68,7 @@ endif
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
-MODS=sdb zip java tcc mpc yxml
+MODS=sdb zip tcc mpc yxml
 MODS+=gdb qnx ar
 # lz4
 ifneq ($(CC),cccl)
@@ -359,7 +359,6 @@ SHLRS+=ar/librz_ar.a
 SHLRS+=bochs/lib/libbochs.a
 SHLRS+=capstone/libcapstone.a
 SHLRS+=gdb/lib/libgdbr.a
-SHLRS+=java/librz_java.a
 SHLRS+=lz4/liblz4.a
 SHLRS+=qnx/lib/libqnxr.a
 SHLRS+=yxml/libyxml.a

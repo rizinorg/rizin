@@ -134,7 +134,6 @@ enum {
 // TODO: Rename to RZ_BIN_LANG_
 enum {
 	RZ_BIN_NM_NONE = 0,
-	RZ_BIN_NM_JAVA = 1,
 	RZ_BIN_NM_C = 1<<1,
 	RZ_BIN_NM_GO = 1<<2,
 	RZ_BIN_NM_CXX = 1<<3,
@@ -785,7 +784,6 @@ RZ_API void rz_bin_mem_free(void *data);
 
 // demangle functions
 RZ_API char *rz_bin_demangle(RzBinFile *binfile, const char *lang, const char *str, ut64 vaddr, bool libs);
-RZ_API char *rz_bin_demangle_java(const char *str);
 RZ_API char *rz_bin_demangle_cxx(RzBinFile *binfile, const char *str, ut64 vaddr);
 RZ_API char *rz_bin_demangle_msvc(const char *str);
 RZ_API char *rz_bin_demangle_swift(const char *s, bool syscmd);
@@ -841,7 +839,6 @@ extern RzBinPlugin rz_bin_plugin_symbols;
 extern RzBinPlugin rz_bin_plugin_mach0;
 extern RzBinPlugin rz_bin_plugin_mach064;
 extern RzBinPlugin rz_bin_plugin_mdmp;
-extern RzBinPlugin rz_bin_plugin_java;
 extern RzBinPlugin rz_bin_plugin_dex;
 extern RzBinPlugin rz_bin_plugin_coff;
 extern RzBinPlugin rz_bin_plugin_ningb;

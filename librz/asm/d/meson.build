@@ -7,7 +7,6 @@ sdb_files = [
   'dalvik',
   'i4004',
   'i8080',
-  'java',
   'LH5801',
   'lm32',
   'm68k',

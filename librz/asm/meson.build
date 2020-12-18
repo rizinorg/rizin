@@ -28,7 +28,6 @@ rz_asm_sources = [
   'p/asm_hppa_gnu.c',
   'p/asm_i4004.c',
   'p/asm_i8080.c',
-  'p/asm_java.c',
   'p/asm_lanai_gnu.c',
   'p/asm_lh5801.c',
   'p/asm_lm32.c',
@@ -225,8 +224,7 @@ rz_asm = library('rz_asm', rz_asm_sources,
     rz_lang_dep,
     rz_flag_dep,
     rz_socket_dep,
-    capstone_dep,
-    java_dep
+    capstone_dep
   ],
   install: true,
   implicit_include_directories: false,

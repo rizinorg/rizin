@@ -13,20 +13,6 @@ e81c000000
 EOF
 RUN
 
-NAME=asm.assembler
-FILE=-
-CMDS=<<EOF
-e asm.arch=x86
-pa call eax
-e asm.assembler=java
-pa bipush 33
-EOF
-EXPECT=<<EOF
-ffd0
-1021
-EOF
-RUN
-
 NAME=att pa
 FILE=--
 CMDS=pa add $33, %rbx @a:x86.as:64 @e:asm.syntax=att

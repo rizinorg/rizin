@@ -99,7 +99,6 @@ static bool demangle_internal(RzCore *core, const char *lang, const char *s) {
 	int type = rz_bin_demangle_type (lang);
 	switch (type) {
 	case RZ_BIN_NM_CXX: res = rz_bin_demangle_cxx (core->bin->cur, s, 0); break;
-	case RZ_BIN_NM_JAVA: res = rz_bin_demangle_java (s); break;
 	case RZ_BIN_NM_OBJC: res = rz_bin_demangle_objc (NULL, s); break;
 	case RZ_BIN_NM_SWIFT: res = rz_bin_demangle_swift (s, core->bin->demanglercmd); break;
 	case RZ_BIN_NM_DLANG: res = rz_bin_demangle_plugin (core->bin, "dlang", s); break;

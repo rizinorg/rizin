@@ -10,7 +10,6 @@ include $(TOP)/librz/config.mk
 
 include p/capstone.mk
 LDFLAGS+=${CS_LDFLAGS}
-include $(STOP)/java/deps.mk
 include $(STOP)/capstone.mk
 
 .PHONY: all plugins

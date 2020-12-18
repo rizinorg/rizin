@@ -46,14 +46,6 @@ RebuildSpp() {
 	Rebuild librz/lang
 }
 
-RebuildJava() {
-	Rebuild shlr/java
-	Rebuild librz/asm
-	Rebuild librz/analysis
-	Rebuild librz/bin
-	Rebuild librz/core
-}
-
 RebuildCapstone() {
 	if [ ! -d shlr/capstone ]; then
 		make -C shlr capstone
@@ -104,10 +96,9 @@ spp)    RebuildSpp ; ;;
 tcc)    RebuildTcc ; ;;
 bin)    RebuildBin ; ;;
 zip)    RebuildZip ; ;;
-java)   RebuildJava ; ;;
 iosdbg) RebuildIOSDebug ; ;;
 capstone|cs) RebuildCapstone ; ;;
 *)
-	echo "Usage: sys/rebuild.sh [gdb|java|capstone|sdb|iosdbg|cs|sdb|bin]"
+	echo "Usage: sys/rebuild.sh [gdb|capstone|sdb|iosdbg|cs|sdb|bin]"
 	;;
 esac

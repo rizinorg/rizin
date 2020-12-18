@@ -15,7 +15,6 @@ CURDIR=p/
 
 include p/capstone.mk
 LDFLAGS+=$(CS_LDFLAGS)
-include $(STOP)/java/deps.mk
 LDFLAGS+=$(LINK)
 
 .PHONY: all plugins libs ${EXTRA_CLEAN}

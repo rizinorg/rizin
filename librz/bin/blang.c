@@ -223,8 +223,6 @@ RZ_API const char *rz_bin_lang_tostring(int lang) {
 		return "swift";
 	case RZ_BIN_NM_GO:
 		return "go";
-	case RZ_BIN_NM_JAVA:
-		return "java";
 	case RZ_BIN_NM_KOTLIN:
 		return "kotlin";
 	case RZ_BIN_NM_C:

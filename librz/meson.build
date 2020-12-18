@@ -17,7 +17,6 @@ analysis_plugins = [
   'hexagon',
   'i4004',
   'i8080',
-  'java',
   'm68k_cs',
   'm680x_cs',
   'malbolge',
@@ -79,7 +78,6 @@ asm_plugins = [
   'hppa_gnu',
   'i4004',
   'i8080',
-  'java',
   'lanai_gnu',
   'lh5801',
   'lm32',
@@ -140,7 +138,6 @@ bin_plugins = [
   'dyldcache',
   'elf',
   'elf64',
-  'java',
   'le',
   'mach0',
   'mach064',
@@ -197,9 +194,7 @@ bp_plugins = [
   'x86'
 ]
 
-core_plugins = [
-  'java'
-]
+core_plugins = []
 
 crypto_plugins = [
   'aes',
