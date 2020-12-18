@@ -7,6 +7,7 @@ on:
     - 'master'
     - 'dev'
     - 'stable'
+    - 'container-*'
   schedule:
     - cron: '0 18 * * 1,3,5' # Three-weekly at 18:00 UTC on Monday, Wednesday, and Friday
   pull_request:
@@ -40,34 +41,34 @@ jobs:
         ignore_error: [false]
         include:
           - name: linux-acr-gcc-tests
-            os: ubuntu-latest
+            os: ubuntu-20.04
             build_system: acr
             compiler: gcc
             run_tests: true
             enabled: true
             timeout: 45
           - name: linux-acr-clang-tests
-            os: ubuntu-latest
+            os: ubuntu-20.04
             build_system: acr
             compiler: clang
             run_tests: true
             enabled: ${{ github.event_name != 'pull_request' }}
             timeout: 45
           - name: linux-acr-clang-build
-            os: ubuntu-latest
+            os: ubuntu-20.04
             build_system: acr
             compiler: clang
             enabled: ${{ github.event_name == 'pull_request' }}
             timeout: 45
           - name: linux-meson-gcc-build
-            os: ubuntu-latest
+            os: ubuntu-20.04
             build_system: meson
             compiler: gcc
             enabled: ${{ github.event_name == 'pull_request' }}
             timeout: 45
             cflags: '-Werror -Wno-cpp'
           - name: linux-meson-gcc-tests
-            os: ubuntu-latest
+            os: ubuntu-20.04
             build_system: meson
             compiler: gcc
             run_tests: true
@@ -98,7 +99,7 @@ jobs:
             # NOTE: asan errors ignored for release- branch for now, because there are too many issues that would block the release
             ignore_error: ${{ github.event_name == 'push' && contains(github.ref, 'release-') }}
           - name: capstone-v3
-            os: ubuntu-latest
+            os: ubuntu-20.04
             build_system: meson
             compiler: gcc
             meson_options: -Duse_capstone_version=v3
@@ -107,7 +108,7 @@ jobs:
             timeout: 45
             cflags: '-Werror -Wno-cpp'
           - name: capstone-v5
-            os: ubuntu-latest
+            os: ubuntu-20.04
             build_system: meson
             compiler: gcc
             meson_options: -Duse_capstone_version=v5
@@ -515,7 +516,7 @@ jobs:
         path: ./rizin-win-installer
     - name: Create installer
       shell: pwsh
-      run: iscc rizin-win-installer\rizin.iss /DRizinLocation=..\rizin-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=rizin.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
+      run: iscc rizin-win-installer\rizin.iss /DRizinLocation=..\rizin-install\* /DIcoLocation=rizin.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
     - uses: actions/upload-artifact@v2
       with:
         name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
@@ -875,16 +876,36 @@ jobs:
   publish-docker-image:
     name: Publish Docker image on Docker Hub
     needs: [build-and-test]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: github.event_name == 'push'
     steps:
     - uses: actions/checkout@v2
       with:
           submodules: recursive
-    - name: Publish to Registry
-      uses: docker/build-push-action@v1
+    - name: Login to DockerHub
+      uses: docker/login-action@v1
       with:
-        repository: ${{ secrets.DOCKER_USERNAME }}/rizin
-        tag_with_ref:  true
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    - name: Docker meta
+      id: docker_meta
+      uses: crazy-max/ghaction-docker-meta@v1
+      with:
+        images: ${{ secrets.DOCKERHUB_USERNAME }}/rizin
+        tag-semver: |
+          {{version}}
+          {{major}}.{{minor}}
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+    - name: Publish to Registry
+      id: docker_build
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./Dockerfile
+        platforms: linux/amd64,linux/arm64,linux/386
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.docker_meta.outputs.tags }}
+        labels: ${{ steps.docker_meta.outputs.labels }}

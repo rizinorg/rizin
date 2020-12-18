@@ -325,12 +325,10 @@ static const char *help_msg_af[] = {
 	"afa", "", "analyze function arguments in a call (afal honors dbg.funcarg)",
 	"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 	"afb", "[?] [addr]", "List basic blocks of given function",
-	"afbF", "([0|1])", "Toggle the basic-block 'folded' attribute",
 	"afB", " 16", "set current function as thumb (change asm.bits)",
 	"afC[lc]", " ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
 	"afc", "[?] type @[addr]", "set calling convention for function",
 	"afd", "[addr]","show function + delta for given offset",
-	"afF", "[1|0|]", "fold/unfold/toggle",
 	"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
 	"afj", " [tableaddr] [count]", "analyze function jumptable",
 	"afl", "[?] [ls*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
@@ -2158,8 +2156,8 @@ static ut64 __opaddr(RzAnalysisBlock *b, ut64 addr) {
 	int i;
 	if (addr >= b->addr && addr < (b->addr + b->size)) {
 		for (i = 0; i < b->ninstr; i++) {
-			ut64 aa = b->addr + rz_analysis_bb_offset_inst (b, i);
-			ut64 ab = b->addr + rz_analysis_bb_offset_inst (b, i + 1);
+			ut64 aa = rz_analysis_block_get_op_addr (b, i);
+			ut64 ab = rz_analysis_block_get_op_addr (b, i + 1);
 			if (addr >= aa && addr < ab) {
 				return aa;
 			}
@@ -2318,7 +2316,7 @@ static void analysis_bb_list(RzCore *core, const char *input) {
 				char *call = ut64join (calls);
 				char *xref = ut64join (calls);
 				char *fcns = fcnjoin (block->fcns);
-				rz_table_add_rowf (table, "xdddsssss",
+				rz_table_add_rowf (table, "xnddsssss",
 					block->addr,
 					block->size,
 					block->traced,
@@ -2487,7 +2485,7 @@ static bool analysis_fcn_list_bb(RzCore *core, const char *input, bool one) {
 				break;
 			case 'r':
 				if (b->jump == UT64_MAX) {
-					ut64 retaddr = rz_analysis_bb_opaddr_i (b, b->ninstr - 1);
+					ut64 retaddr = rz_analysis_block_get_op_addr (b, b->ninstr - 1);
 					if (retaddr == UT64_MAX) {
 						break;
 					}
@@ -3946,24 +3944,6 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 		case 'e': // "afbe"
 			analysis_bb_edge (core, input + 3);
 			break;
-		case 'F': // "afbF"
-			{
-			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
-			if (fcn) {
-				RzAnalysisBlock *bb = rz_analysis_fcn_bbget_in (core->analysis, fcn, core->offset);
-				if (bb) {
-					if (input[3]) {
-						int n = atoi (input + 3);
-						bb->folded = n;
-					} else {
-						bb->folded = !bb->folded;
-					}
-				} else {
-					rz_warn_if_reached ();
-				}
-			}
-			}
-			break;
 		case 0:
 		case ' ': // "afb "
 		case 'q': // "afbq"
@@ -3993,12 +3973,11 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 				ptr = strchr (ptr + 1, ' ');
 				if (ptr) {
 					color = rz_num_math (core->num, ptr + 1);
-					RzAnalysisOp *op = rz_core_op_analysis (core, addr, RZ_ANALYSIS_OP_MASK_ALL);
-					if (op) {
-						rz_analysis_colorize_bb (core->analysis, addr, color);
-						rz_analysis_op_free (op);
+					RzAnalysisBlock *block = rz_analysis_find_most_relevant_block_in (core->analysis, addr);
+					if (block) {
+						block->colorize = color;
 					} else {
-						eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
+						eprintf ("No basic block at 0x%08" PFMT64x "\n", addr);
 					}
 				}
 			}
@@ -4182,15 +4161,6 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 		default:
 			eprintf ("Wrong command. Look at af?\n");
 			break;
-		}
-		break;
-	case 'F': // "afF"
-		{
-			int val = input[2] && rz_num_math (core->num, input + 2);
-			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
-			if (fcn) {
-				fcn->folded = input[2]? val: !fcn->folded;
-			}
 		}
 		break;
 	case '?': // "af?"
@@ -6619,7 +6589,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 				break;
 			}
 		} else if (input[1] == 'b') { // "aeab"
-			RzAnalysisBlock *bb = rz_analysis_bb_from_offset (core->analysis, core->offset);
+			RzAnalysisBlock *bb = rz_analysis_find_most_relevant_block_in (core->analysis, core->offset);
 			if (bb) {
 				switch (input[2]) {
 				case 'j': // "aeabj"

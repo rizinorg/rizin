@@ -362,14 +362,6 @@ RZ_API void rz_analysis_trace_bb(RzAnalysis *analysis, ut64 addr) {
 	}
 }
 
-RZ_API void rz_analysis_colorize_bb(RzAnalysis *analysis, ut64 addr, ut32 color) {
-	RzAnalysisBlock *bbi;
-	bbi = rz_analysis_bb_from_offset (analysis, addr);
-	if (bbi) {
-		bbi->colorize = color;
-	}
-}
-
 RZ_API RzList* rz_analysis_get_fcns (RzAnalysis *analysis) {
 	// avoid received to free this thing
 	analysis->fcns->free = NULL;

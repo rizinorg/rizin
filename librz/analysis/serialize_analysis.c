@@ -13,13 +13,13 @@
  *
  * /
  *   /blocks
- *     0x<addr>={size:<ut64>, jump?:<ut64>, fail?:<ut64>, traced?:true, folded?:true, colorize?:<ut32>,
+ *     0x<addr>={size:<ut64>, jump?:<ut64>, fail?:<ut64>, traced?:true, colorize?:<ut32>,
  *               fingerprint?:"<base64>", diff?: <RzAnalysisDiff>, switch_op?:<RzAnalysisSwitchOp>,
  *               ninstr:<int>, op_pos?:[<ut16>], stackptr:<int>, parent_stackptr:<int>,
  *               cmpval:<ut64>, cmpreg?:<str>}
  *   /functions
  *     0x<addr>={name:<str>, bits?:<int>, type:<int>, cc?:<str>, stack:<int>, maxstack:<int>,
- *               ninstr:<int>, folded?:<bool>, pure?:<bool>, bp_frame?:<bool>, bp_off?:<st64>, noreturn?:<bool>,
+ *               ninstr:<int>, pure?:<bool>, bp_frame?:<bool>, bp_off?:<st64>, noreturn?:<bool>,
  *               fingerprint?:"<base64>", diff?:<RzAnalysisDiff>, bbs:[<ut64>], imports?:[<str>], vars?:[<RzAnalysisVar>],
  *               labels?: {<str>:<ut64>}}
  *   /xrefs
@@ -254,9 +254,6 @@ static void block_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisBlock *bl
 	if (block->traced) {
 		pj_kb (j, "traced", true);
 	}
-	if (block->folded) {
-		pj_kb (j, "folded", true);
-	}
 	if (block->colorize) {
 		pj_kn (j, "colorize", (ut64)block->colorize);
 	}
@@ -329,7 +326,6 @@ enum {
 	BLOCK_FIELD_JUMP,
 	BLOCK_FIELD_FAIL,
 	BLOCK_FIELD_TRACED,
-	BLOCK_FIELD_FOLDED,
 	BLOCK_FIELD_COLORIZE,
 	BLOCK_FIELD_FINGERPRINT,
 	BLOCK_FIELD_DIFF,
@@ -392,12 +388,6 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 				break;
 			}
 			proto.traced = child->num.u_value;
-			break;
-		case BLOCK_FIELD_FOLDED:
-			if (child->type != RZ_JSON_BOOLEAN) {
-				break;
-			}
-			proto.folded = child->num.u_value;
 			break;
 		case BLOCK_FIELD_COLORIZE:
 			if (child->type != RZ_JSON_INTEGER) {
@@ -516,7 +506,6 @@ static bool block_load_cb(void *user, const char *k, const char *v) {
 	block->jump = proto.jump;
 	block->fail = proto.fail;
 	block->traced = proto.traced;
-	block->folded = proto.folded;
 	block->colorize = proto.colorize;
 	block->fingerprint = proto.fingerprint;
 	block->diff = proto.diff;
@@ -551,7 +540,6 @@ RZ_API bool rz_serialize_analysis_blocks_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzA
 	key_parser_add (ctx.parser, "jump", BLOCK_FIELD_JUMP);
 	key_parser_add (ctx.parser, "fail", BLOCK_FIELD_FAIL);
 	key_parser_add (ctx.parser, "traced", BLOCK_FIELD_TRACED);
-	key_parser_add (ctx.parser, "folded", BLOCK_FIELD_FOLDED);
 	key_parser_add (ctx.parser, "colorize", BLOCK_FIELD_COLORIZE);
 	key_parser_add (ctx.parser, "fingerprint", BLOCK_FIELD_FINGERPRINT);
 	key_parser_add (ctx.parser, "diff", BLOCK_FIELD_DIFF);
@@ -886,9 +874,6 @@ static void function_store(RZ_NONNULL Sdb *db, const char *key, RzAnalysisFuncti
 	pj_ki (j, "stack", function->stack);
 	pj_ki (j, "maxstack", function->maxstack);
 	pj_ki (j, "ninstr", function->ninstr);
-	if (function->folded) {
-		pj_kb (j, "folded", true);
-	}
 	if (function->bp_frame) {
 		pj_kb (j, "bp_frame", true);
 	}
@@ -971,7 +956,6 @@ enum {
 	FUNCTION_FIELD_STACK,
 	FUNCTION_FIELD_MAXSTACK,
 	FUNCTION_FIELD_NINSTR,
-	FUNCTION_FIELD_FOLDED,
 	FUNCTION_FIELD_PURE,
 	FUNCTION_FIELD_BP_FRAME,
 	FUNCTION_FIELD_BP_OFF,
@@ -1055,12 +1039,6 @@ static bool function_load_cb(void *user, const char *k, const char *v) {
 				break;
 			}
 			function->ninstr = (int)child->num.s_value;
-			break;
-		case FUNCTION_FIELD_FOLDED:
-			if (child->type != RZ_JSON_BOOLEAN) {
-				break;
-			}
-			function->folded = child->num.u_value ? true : false;
 			break;
 		case FUNCTION_FIELD_PURE:
 			if (child->type != RZ_JSON_BOOLEAN) {
@@ -1231,7 +1209,6 @@ RZ_API bool rz_serialize_analysis_functions_load(RZ_NONNULL Sdb *db, RZ_NONNULL 
 	key_parser_add (ctx.parser, "stack", FUNCTION_FIELD_STACK);
 	key_parser_add (ctx.parser, "maxstack", FUNCTION_FIELD_MAXSTACK);
 	key_parser_add (ctx.parser, "ninstr", FUNCTION_FIELD_NINSTR);
-	key_parser_add (ctx.parser, "folded", FUNCTION_FIELD_FOLDED);
 	key_parser_add (ctx.parser, "pure", FUNCTION_FIELD_PURE);
 	key_parser_add (ctx.parser, "bp_frame", FUNCTION_FIELD_BP_FRAME);
 	key_parser_add (ctx.parser, "bp_off", FUNCTION_FIELD_BP_OFF);
