@@ -89,25 +89,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=wp
-FILE=-
-CMDS=<<EOF
-echo 0x10 "hello" > .rz-wp.test
-echo 0x20 01020304 >> .rz-wp.test
-cat .rz-wp.test
-wp .rz-wp.test
-rm .rz-wp.test
-ps @ 0x10
-p8 3 @ 0x20
-EOF
-EXPECT=<<EOF
-0x10 "hello"
-0x20 01020304
-hello
-010203
-EOF
-RUN
-
 NAME=wu
 FILE=-
 CMDS=<<EOF

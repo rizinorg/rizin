@@ -766,8 +766,6 @@ RZ_API int rz_core_search_preludes(RzCore *core, bool log);
 RZ_API int rz_core_search_prelude(RzCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen);
 RZ_API RzList* /*<RzIOMap*>*/ rz_core_get_boundaries_prot (RzCore *core, int protection, const char *mode, const char *prefix);
 
-RZ_API int rz_core_patch (RzCore *core, const char *patch);
-
 RZ_API void rz_core_hack_help(const RzCore *core);
 RZ_API int rz_core_hack(RzCore *core, const char *op);
 RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, int append);
