@@ -1,12 +1,6 @@
 # handle capstone dependency
 capstone_dep = dependency('capstone', version: '>=3.0.4', required: false)
 if not capstone_dep.found() or not get_option('use_sys_capstone')
-  if get_option('capstone_in_builddir')
-    capstone_path = join_paths(meson.current_build_dir(), 'capstone')
-  else
-    capstone_path = 'capstone'
-  endif
-
   capstone_version = get_option('use_capstone_version')
   if capstone_version == 'bundled'
     capstone_proj = subproject('capstone-bundled', default_options: ['default_library=static'])
