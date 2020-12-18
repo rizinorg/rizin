@@ -702,7 +702,7 @@ jobs:
         path: ./
     - name: Install rizin.exe
       shell: pwsh
-      run: Start-Process -Wait -FilePath .\rizin.exe -ArgumentList "/SP- /SILENT" -PassThru
+      run: Start-Process -Wait -FilePath .\rizin.exe -ArgumentList "/SP- /SILENT /CURRENTUSER" -PassThru
     - name: Check that installed rizin runs
       shell: pwsh
       run: ~\AppData\Local\Programs\rizin\bin\rizin.exe -qcq .\rizin.exe
