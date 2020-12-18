@@ -7,6 +7,8 @@ branches:
   - dev
   - /^release-.*$/
   - /^prerelease-.*$/
+  - /^travis-.*$/
+  - /^import-.*$/
 
 services:
   - docker
@@ -14,10 +16,6 @@ services:
 jobs:
   fast_finish: true
   include:
-    # emscripten
-    #  os: linux
-    # - name: WASM
-    #  env: EMSCRIPTEN=1
     # Linux with GCC on PowerPC
     - os: linux
       name: PPC64
@@ -54,10 +52,6 @@ jobs:
             - binutils-powerpc64le-linux-gnu
 
   allow_failures:
-    # Emscripten
-    #- os: linux
-    #  name: WASM
-    #  env: EMSCRIPTEN=1
     # Linux with GCC on PowerPC
     - os: linux
       arch: ppc64le
@@ -76,8 +70,6 @@ jobs:
         apt:
           packages:
             - binutils-mingw-w64-x86-64
-    - os: linux
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang ASAN=1 ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0 CFLAGS="-DRZ_ASSERT_STDOUT=1"
 
 cache:
   - ccache
@@ -85,5 +77,6 @@ cache:
 script:
   - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)
   - |
-    pip3 install 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
+    pip3 install -U --user meson ninja
+    pip3 install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
     $SHELL travis-script

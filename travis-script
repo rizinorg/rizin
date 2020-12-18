@@ -4,90 +4,45 @@ set -x
 export PATH=${TRAVIS_BUILD_DIR}/install/bin:${PATH}
 export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib/$(uname -m)-linux-gnu:${TRAVIS_BUILD_DIR}/install/lib:${TRAVIS_BUILD_DIR}/install/lib64:${LD_LIBRARY_PATH}
 
-if [ "${EMSCRIPTEN}" = "1" ] ; then
-    git clone https://github.com/emscripten-core/emsdk.git || exit 1
-    cd emsdk || exit 1
-    ./emsdk install latest || exit 1
-    ./emsdk activate latest || exit 1
-    source ./emsdk_env.sh
-    cd ..
-    sys/emscripten.sh
-    exit $?
+echo "Installing with meson + ninja"
+
+OPTS="-Duse_webui=true"
+if [ "${RZ_SYS_CAPSTONE}" != "" ] ; then
+	OPTS="${OPTS} -D use_sys_capstone=${RZ_SYS_CAPSTONE}"
+fi
+if [ "${RZ_SYS_MAGIC}" != "" ] ; then
+	OPTS="${OPTS} -D use_sys_magic=${RZ_SYS_MAGIC}"
+fi
+if [ "${RZ_SYS_ZLIB}" != "" ] ; then
+	OPTS="${OPTS} -D use_sys_zlib=${RZ_SYS_ZLIB}"
+fi
+if [ "${RZ_SYS_ZIP}" != "" ] ; then
+	OPTS="${OPTS} -D use_sys_zip=${RZ_SYS_ZIP}"
+fi
+if [ "${RZ_SYS_LZ4}" != "" ] ; then
+	OPTS="${OPTS} -D use_sys_lz4=${RZ_SYS_LZ4}"
+fi
+if [ "${RZ_SYS_OPENSSL}" != "" ] ; then
+	OPTS="${OPTS} -D use_sys_openssl=${RZ_SYS_OPENSSL}"
+fi
+if [ "${RZ_NEWSHELL}" != "" ] ; then
+	OPTS="${OPTS} -D use_treesitter=${RZ_NEWSHELL}"
+fi
+if [ "${COVERAGE}" == "1" ] ; then
+	OPTS="${OPTS} -Db_coverage=true"
 fi
 
-if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
-    echo "Installing with meson + ninja"
-
-    if [ "`uname`" = Darwin ]; then
-        HOMEBREW_NO_AUTO_UPDATE=1 brew install meson libuv
-        pip3 install --upgrade meson
-    fi
-
-    OPTS="-Duse_webui=true"
-    if [ "${RZ_SYS_CAPSTONE}" != "" ] ; then
-        OPTS="${OPTS} -D use_sys_capstone=${RZ_SYS_CAPSTONE}"
-    fi
-    if [ "${RZ_SYS_MAGIC}" != "" ] ; then
-        OPTS="${OPTS} -D use_sys_magic=${RZ_SYS_MAGIC}"
-    fi
-    if [ "${RZ_SYS_ZLIB}" != "" ] ; then
-        OPTS="${OPTS} -D use_sys_zlib=${RZ_SYS_ZLIB}"
-    fi
-    if [ "${RZ_SYS_ZIP}" != "" ] ; then
-        OPTS="${OPTS} -D use_sys_zip=${RZ_SYS_ZIP}"
-    fi
-    if [ "${RZ_SYS_LZ4}" != "" ] ; then
-        OPTS="${OPTS} -D use_sys_lz4=${RZ_SYS_LZ4}"
-    fi
-    if [ "${RZ_SYS_OPENSSL}" != "" ] ; then
-        OPTS="${OPTS} -D use_sys_openssl=${RZ_SYS_OPENSSL}"
-    fi
-    if [ "${RZ_NEWSHELL}" != "" ] ; then
-        OPTS="${OPTS} -D use_treesitter=${RZ_NEWSHELL}"
-    fi
-    if [ "${COVERAGE}" == "1" ] ; then
-        OPTS="${OPTS} -Db_coverage=true"
-    fi
-    if [ "${ASAN}" == "1" ] ; then
-        # -Db_lundef=false required for issue with clang+meson (see https://github.com/mesonbuild/meson/issues/764)
-        OPTS="${OPTS} -Db_sanitize=address -Db_lundef=false"
-        export CFLAGS="-DASAN=1 ${CFLAGS}"
-    fi
-
-    meson --prefix=${TRAVIS_BUILD_DIR}/install ${OPTS} build || exit 1
-    pushd build
-    ninja || exit 1
-    ninja install || exit 1
-    popd
-    export PKG_CONFIG_PATH=$(pwd)/build/meson-private:${PKG_CONFIG_PATH}
-else
-    echo "Installing with acr + make"
-    if [ "${RZ_PLUGINS_FILE}" != "" ] ; then
-	cp "plugins.${RZ_PLUGINS_FILE}.cfg" plugins.cfg
-    fi
-    if [ "${ASAN}" == "1" ] ; then
-        export CFLAGS="${CFLAGS} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer"
-        export LDFLAGS="${LDFLAGS} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer"
-    fi
-    export PKG_CONFIG_PATH=${TRAVIS_BUILD_DIR}/pkgcfg:${PKG_CONFIG_PATH}
-    ./configure --prefix=${TRAVIS_BUILD_DIR}/install > /dev/null || exit 1
-    make -s -j2 > /dev/null || exit 1
-    make install > /dev/null || exit 1
-fi
+meson --prefix=${TRAVIS_BUILD_DIR}/install ${OPTS} build || exit 1
+ninja -C build || exit 1
+ninja -C build install || exit 1
+export PKG_CONFIG_PATH=$(pwd)/build/meson-private:${PKG_CONFIG_PATH}
 
 if [ "${RZ_TESTS_DISABLE}" != "1" ] ; then
-    export NOREPORT=1
-    cd test
-
-    git clone http://github.com/rizinorg/rz-pipe
-    pip3 install --user "file://$(pwd)/rz-pipe#egg=rzpipe&subdirectory=python"
-
-    VERBOSE=1 RZ_TEST_ARGS=-t1920 make -k all || exit 1
-
-    if [ "${COVERAGE}" == "1" ] ; then
-        cd ../build
-        curl -s https://codecov.io/bash > ./codecov.sh
-        chmod +x ./codecov.sh
-        ./codecov.sh -K -v 2>/dev/null
-    fi
+	export NOREPORT=1
+	git clone https://github.com/rizinorg/rizin-testbins test/bins
+	# Unit tests
+	VERBOSE=1 RZ_TEST_ARGS=-t1920 ninja -C build test || exit 1
+	# Integration tests
+	cd test
+	rz-test -L -o results.json
 fi
