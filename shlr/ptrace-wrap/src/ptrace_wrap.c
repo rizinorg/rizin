@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
+#include <rz_util/rz_sys.h>
 
 static void *th_run(ptrace_wrap_instance *inst);
 
@@ -66,7 +67,7 @@ static void wrap_ptrace(ptrace_wrap_instance *inst) {
 }
 
 static void wrap_fork(ptrace_wrap_instance *inst) {
-	pid_t r = fork();
+	pid_t r = rz_sys_fork();
 	if (r == 0) {
 		inst->request.fork.child_callback (inst->request.fork.child_callback_user);
 	} else {
