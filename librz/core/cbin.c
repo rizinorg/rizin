@@ -738,11 +738,16 @@ RZ_API void rz_core_analysis_type_init(RzCore *core) {
 }
 
 RZ_API void rz_core_analysis_cc_init(RzCore *core) {
-	const char *dir_prefix = rz_config_get (core->config, "dir.prefix");
 	const char *analysis_arch = rz_config_get (core->config, "analysis.arch");
-	int bits = core->analysis->bits;
 	Sdb *cc = core->analysis->sdb_cc;
+	if (!strcmp (analysis_arch, "null")) {
+		sdb_reset (cc);
+		RZ_FREE (cc->path);
+		return;
+	}
 
+	const char *dir_prefix = rz_config_get (core->config, "dir.prefix");
+	int bits = core->analysis->bits;
 	char *dbpath = rz_str_newf (RZ_JOIN_3_PATHS ("%s", RZ_SDB_FCNSIGN, "cc-%s-%d.sdb"),
 		dir_prefix, analysis_arch, bits);
 	char *dbhomepath = rz_str_newf (RZ_JOIN_3_PATHS ("~", RZ_HOME_SDB_FCNSIGN, "cc-%s-%d.sdb"),
