@@ -502,63 +502,6 @@ RZ_API void rz_subprocess_fini(void) {
 	rz_th_lock_free (subprocs_mutex);
 }
 
-extern char **environ;
-static char **create_child_env(const char *envvars[], const char *envvals[], size_t env_size) {
-	char **ep;
-	size_t i, new_env_size = env_size, size = 0;
-	size_t *positions = RZ_NEWS (size_t, env_size);
-	for (i = 0; i < env_size; i++) {
-		positions[i] = SIZE_MAX;
-	}
-
-	for (ep = environ, i = 0; *ep; ep++, size++) {
-		size_t j;
-
-		for (j = 0; j < env_size; j++) {
-			if (positions[j] != SIZE_MAX) {
-				continue;
-			}
-			size_t namelen = strlen (envvars[j]);
-			if (!strncmp (*ep, envvars[j], namelen) && (*ep)[namelen] == '=') {
-				positions[j] = size;
-				new_env_size--;
-				break;
-			}
-		}
-	}
-
-	char **new_env = RZ_NEWS (char *, size + new_env_size + 1);
-	for (i = 0; i < size; i++) {
-		new_env[i] = strdup (environ[i]);
-	}
-	for (i = 0; i <= env_size; i++) {
-		new_env[size + i] = NULL;
-	}
-
-	for (i = 0; i < env_size; i++) {
-		char *new_var = rz_str_newf ("%s=%s", envvars[i], envvals[i]);
-		if (positions[i] == SIZE_MAX) {
-			// No env var exists with the same name, add it at the end
-			free (new_env[size]);
-			new_env[size++] = new_var;
-		} else {
-			// Replace the existing env var
-			free (new_env[positions[i]]);
-			new_env[positions[i]] = new_var;
-		}
-	}
-	free (positions);
-	return new_env;
-}
-
-static void destroy_child_env(char **child_env) {
-	char **ep;
-	for (ep = child_env; *ep; ep++) {
-		free (*ep);
-	}
-	free (child_env);
-}
-
 RZ_API RzSubprocess *rz_subprocess_start(
 		const char *file, const char *args[], size_t args_size,
 		const char *envvars[], const char *envvals[], size_t env_size) {
@@ -619,10 +562,6 @@ RZ_API RzSubprocess *rz_subprocess_start(
 	}
 	proc->stderr_fd = stderr_pipe[0];
 
-	// Let's create the environment for the child in the parent, with malloc,
-	// because we can't use functions that lock after fork
-	char **child_env = create_child_env (envvars, envvals, env_size);
-
 	proc->pid = rz_sys_fork ();
 	if (proc->pid == -1) {
 		// fail
@@ -640,16 +579,17 @@ RZ_API RzSubprocess *rz_subprocess_start(
 		rz_sys_pipe_close (stderr_pipe[1]);
 		rz_sys_pipe_close (stderr_pipe[0]);
 
-		// Use the previously created environment
-		environ = child_env;
-
+		size_t i;
+		for (i = 0; i < env_size; i++) {
+			setenv (envvars[i], envvals[i], 1);
+		}
 		rz_sys_execvp (file, argv);
 		perror ("exec");
 		rz_sys_exit (-1, true);
 	}
-	destroy_child_env (child_env);
 	free (argv);
 
+	// parent
 	rz_sys_pipe_close (stdin_pipe[0]);
 	rz_sys_pipe_close (stdout_pipe[1]);
 	rz_sys_pipe_close (stderr_pipe[1]);
