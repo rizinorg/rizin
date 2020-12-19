@@ -210,7 +210,6 @@ RZ_API int rz_sandbox_system(const char *x, int n) {
 		eprintf ("sandbox: system call disabled\n");
 		return -1;
 	}
-#if LIBC_HAVE_FORK
 #if LIBC_HAVE_SYSTEM
 	if (n) {
 #if APPLE_SDK_IPHONEOS
@@ -231,7 +230,7 @@ RZ_API int rz_sandbox_system(const char *x, int n) {
 #endif
 	}
 	return rz_sys_execl ("/bin/sh", "sh", "-c", x, (const char*)NULL);
-#else
+#elif LIBC_HAVE_FORK
 	#include <spawn.h>
 	if (n && !strchr (x, '|')) {
 		char **argv, *cmd = strdup (x);
@@ -274,9 +273,9 @@ RZ_API int rz_sandbox_system(const char *x, int n) {
 		perror ("execl");
 	}
 	exit (1);
-#endif
-#endif
+#else
 	return -1;
+#endif
 }
 
 RZ_API bool rz_sandbox_creat (const char *path, int mode) {
