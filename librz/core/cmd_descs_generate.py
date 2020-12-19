@@ -337,6 +337,10 @@ class CmdDesc(object):
             print('Another command already has the same cname as %s' % (self.cname,))
             sys.exit(1)
 
+        if self.type in [CD_TYPE_ARGV, CD_TYPE_ARGV_MODES] and self.args is None and self.args_alias is None:
+            print('Specify arguments for command %s' % (self.name,))
+            sys.exit(1)
+
     def get_handler_cname(self):
         if self.type == CD_TYPE_ARGV or self.type == CD_TYPE_ARGV_MODES:
             return 'rz_' + (self.handler or self.cname) + '_handler'
