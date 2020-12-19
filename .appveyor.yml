@@ -4,14 +4,6 @@ version: git-{build}
 # Skip Github tags
 skip_tags: true
 
-# Branches to clone
-branches:
-  only:
-    - dev
-    - /windows-.*/
-    - /.*-windows/
-    - /import-.*/
-
 # Environment variables
 environment:
   NINJA_URL: https://github.com/ninja-build/ninja/releases/download/v1.9.0/ninja-win.zip
