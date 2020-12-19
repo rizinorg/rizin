@@ -506,6 +506,7 @@ bool test_cmd_args(void) {
 	char *h = rz_cmd_get_help (cmd, pa, false);
 	mu_assert_streq (h, "Usage: x <c> [<from> <to> [<n>=5]]   # x summary\n", "arguments are considered");
 	rz_cmd_parsed_args_free (pa);
+	free (h);
 
 	rz_cmd_free (cmd);
 	mu_end;
@@ -535,6 +536,7 @@ bool test_cmd_argv_modes(void) {
 	char *exp_h = "Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...\n"
 		"| z[jq] # z summary\n";
 	mu_assert_streq (h, exp_h, "zj and zq are considered in the help");
+	free (h);
 	rz_cmd_parsed_args_free (pa);
 
 	pa = rz_cmd_parsed_args_newcmd ("z?");
@@ -544,6 +546,7 @@ bool test_cmd_argv_modes(void) {
 		"| zj # z summary (JSON mode)\n"
 		"| zq # z summary (quiet mode)\n";
 	mu_assert_streq (h, exp_h, "zj and zq are considered in the sub help");
+	free (h);
 	rz_cmd_parsed_args_free (pa);
 
 	rz_cmd_free (cmd);
@@ -578,6 +581,7 @@ bool test_cmd_group_argv_modes(void) {
 	char *exp_h = "Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...\n"
 		"| z[jqd] # z group summary\n";
 	mu_assert_streq (h, exp_h, "zd is considered in the help");
+	free (h);
 	rz_cmd_parsed_args_free (pa);
 
 	pa = rz_cmd_parsed_args_newcmd ("z?");
@@ -586,6 +590,7 @@ bool test_cmd_group_argv_modes(void) {
 		"| z[jq] # z summary\n"
 		"| zd    # fake help\n";
 	mu_assert_streq (h, exp_h, "zj/zq and zd are considered in the sub help");
+	free (h);
 	rz_cmd_parsed_args_free (pa);
 
 	rz_cmd_free (cmd);
@@ -631,6 +636,7 @@ bool test_foreach_cmdname(void) {
 		rz_strbuf_fini (&sb);
 	}
 
+	rz_list_free (res);
 	rz_list_free (exp_regular_l);
 
 	rz_cmd_free (cmd);
