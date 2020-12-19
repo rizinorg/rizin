@@ -17,7 +17,7 @@ tasks:
         /usr/local/bin/python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
     - build: |
         cd rizin
-        meson -Db_sanitize=address --prefix=${HOME} build
+        meson --prefix=${HOME} build
         ninja -C build
     - install: |
         cd rizin
@@ -45,4 +45,4 @@ tasks:
         ln -s ${HOME}/rizin-testbins test/bins
         cd test
         # Running the unit tests
-        rz-test -L -o results.json
+        valgrind -- rz-test -L -o results.json
