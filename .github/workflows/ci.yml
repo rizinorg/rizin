@@ -479,7 +479,7 @@ jobs:
         include:
           - name: vs2019_static
             compiler: cl
-            meson_options: --default-library=static -Dstatic_runtime=true
+            meson_options: --default-library=static -Db_vscrt=static_from_buildtype
           - name: clang_cl
             compiler: clang-cl
             meson_options: --default-library=shared

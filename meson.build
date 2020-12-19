@@ -1,4 +1,6 @@
-project('rizin', 'c', license: 'LGPL3', meson_version: '>=0.55.0')
+project('rizin', 'c', license: 'LGPL3', meson_version: '>=0.55.0', default_options: [
+  'b_vscrt=from_buildtype',
+])
 
 py3_exe = import('python').find_installation()
 git_exe = find_program('git', required: false)
@@ -78,7 +80,6 @@ endif
 if get_option('rizin_version_commit') != ''
   version_commit = get_option('rizin_version_commit')
 endif
-
 if get_option('rizin_gittap') != ''
   gittap = get_option('rizin_gittap')
 endif
@@ -128,8 +129,11 @@ endif
 platform_inc = include_directories(platform_inc)
 
 if get_option('static_runtime')
-  if cc.get_id() == 'msvc'
+  if cc.has_argument('/MT')
+    # Use -Db_vscrt=static_from_buildtype to avoid warnings due to multiple /M options
     add_project_arguments('/MT', language: 'c')
+  elif cc.has_link_argument('-static')
+    add_project_link_arguments('-static', language: 'c')
   endif
 endif
 
@@ -141,7 +145,7 @@ if cc.get_id() == 'clang-cl'
 endif
 
 if get_option('default_library') == 'shared'
-  if host_machine.system() != 'windows' or cc.get_id()!='msvc' and cc.get_id()!='clang-cl'
+  if cc.has_argument('-fvisibility=hidden')
     add_project_arguments('-fvisibility=hidden', language: 'c')
   endif
 endif
