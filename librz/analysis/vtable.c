@@ -295,28 +295,29 @@ RZ_API void rz_analysis_list_vtables(RzAnalysis *analysis, int rad) {
 	RzList *vtables = rz_analysis_vtable_search (&context);
 
 	if (rad == 'j') {
-		bool isFirstElement = true;
-		rz_cons_print ("[");
+		PJ *pj = pj_new ();
+		if (!pj) {
+			return;
+		}
+		pj_a (pj);
 		rz_list_foreach (vtables, vtableIter, table) {
-			if (!isFirstElement) {
-				rz_cons_print (",");
-			}
-			bool isFirstMethod = true;
-			rz_cons_printf ("{\"offset\":%"PFMT64d",\"methods\":[", table->saddr);
+			pj_o (pj);
+			pj_kN (pj, "offset", table->saddr);
+			pj_ka (pj, "methods");
 			rz_vector_foreach (&table->methods, curMethod) {
-				if (!isFirstMethod) {
-					rz_cons_print (",");
-				}
 				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (analysis, curMethod->addr, 0);
 				const char *const name = fcn ? fcn->name : NULL;
-				rz_cons_printf ("{\"offset\":%"PFMT64d",\"name\":\"%s\"}",
-						curMethod->addr, name ? name : noMethodName);
-				isFirstMethod = false;
+				pj_o (pj);
+				pj_kN (pj, "offset", curMethod->addr);
+				pj_ks (pj, "name", name ? name : noMethodName);
+				pj_end (pj);
 			}
-			rz_cons_print ("]}");
-			isFirstElement = false;
+			pj_end (pj);
+			pj_end (pj);
 		}
-		rz_cons_println ("]");
+		pj_end (pj);
+		rz_cons_println (pj_string (pj));
+		pj_free (pj);
 	} else if (rad == '*') {
 		rz_list_foreach (vtables, vtableIter, table) {
 			rz_cons_printf ("f vtable.0x%08"PFMT64x" %"PFMT64d" @ 0x%08"PFMT64x"\n",
