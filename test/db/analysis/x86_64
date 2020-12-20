@@ -1446,7 +1446,7 @@ RUN
 NAME=Settings global calling convention
 FILE=bins/pe/msvcfindmain.exe
 CMDS=<<EOF
-afc=pascal
+e analysis.cc=pascal
 aaa
 afi @@F~?pascal
 EOF
@@ -3489,7 +3489,7 @@ e asm.bytes=true
 e asm.comments=0
 e analysis.vars.stackname=true
 s 0x140001080
-afc=ms
+e analysis.cc=ms
 af
 pdf
 EOF
