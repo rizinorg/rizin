@@ -133,6 +133,7 @@ if get_option('static_runtime')
 endif
 
 if cc.get_id() == 'clang-cl'
+  add_project_arguments('-fcommon', language: 'c')
   add_project_arguments('-D__STDC__=1', language: 'c')
   add_project_arguments('-D_CRT_DECLARE_NONSTDC_NAMES ', language: 'c')
   add_project_arguments('-D_CRT_SECURE_NO_WARNINGS', language: 'c')
