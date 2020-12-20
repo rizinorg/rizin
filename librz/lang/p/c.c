@@ -61,7 +61,7 @@ static int lang_c_file(RzLang *lang, const char *file) {
 	free (libpath_esc);
 	free (file_esc);
 	free (cc);
-	if (rz_sandbox_system (buf, 1) != 0) {
+	if (rz_sandbox_system (buf) != 0) {
 		free (buf);
 		return false;
 	}

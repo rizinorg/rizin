@@ -275,7 +275,7 @@ RZ_API int rz_lang_prompt(RzLang *lang) {
 		strncpy (buf, p, sizeof (buf) - 1);
 		if (*buf == '!') {
 			if (buf[1]) {
-				rz_sandbox_system (buf + 1, 1);
+				rz_sandbox_system (buf + 1);
 			} else {
 				char *foo, *code = NULL;
 				do {

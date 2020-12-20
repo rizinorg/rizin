@@ -295,7 +295,7 @@ RZ_API RzPipe *rzpipe_open(const char *cmd) {
 			rz_sys_pipe_close (rzp->output[0]);
 			rzp->input[1] = -1;
 			rzp->output[0] = -1;
-			rc = rz_sandbox_system (cmd, 1);
+			rc = rz_sandbox_system (cmd);
 			if (rc != 0) {
 				eprintf ("return code %d for %s\n", rc, cmd);
 			}
