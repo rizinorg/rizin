@@ -1,8 +1,0 @@
-NAME=partial =h (without /cmd and using curl)
-FILE=--
-CMDS=!scripts\test-webserver.bat
-EXPECT=<<EOF
-EOF
-EXPECT_ERR=<<EOF
-EOF
-RUN
