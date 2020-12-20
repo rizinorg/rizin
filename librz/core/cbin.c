@@ -844,7 +844,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 		rz_core_analysis_type_init (r);
 		rz_core_analysis_cc_init (r);
 		if (info->default_cc && rz_analysis_cc_exist (r->analysis, info->default_cc)) {
-			rz_core_cmdf (r, "k analysis/cc/default.cc=%s", info->default_cc);
+			rz_core_cmdf (r, "e analysis.cc=%s", info->default_cc);
 		}
 	} else if (IS_MODE_SIMPLE (mode)) {
 		rz_cons_printf ("arch %s\n", info->arch);
@@ -894,7 +894,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 				rz_cons_printf ("e asm.cpu=%s\n", info->cpu);
 			}
 			if (info->default_cc) {
-				rz_cons_printf ("k analysis/cc/default.cc=%s", info->default_cc);
+				rz_cons_printf ("e analysis.cc=%s", info->default_cc);
 			}
 			v = rz_analysis_archinfo (r->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 			if (v != -1) {
