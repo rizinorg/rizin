@@ -4,14 +4,6 @@ version: git-{build}
 # Skip Github tags
 skip_tags: true
 
-# Branches to clone
-branches:
-  only:
-    - dev
-    - capstone-meson
-    - /windows-.*/
-    - /.*-windows/
-    - /import-.*/
 
 # Environment variables
 environment:
