@@ -138,23 +138,21 @@ static void remove_cr(char *str) {
 	}
 }
 
-RZ_API RzSubprocess *rz_subprocess_start(
-	const char *file, const char *args[], size_t args_size,
-	const char *envvars[], const char *envvals[], size_t env_size) {
+RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
 	RzSubprocess *proc = NULL;
 	HANDLE stdin_read = NULL;
 	HANDLE stdout_write = NULL;
 	HANDLE stderr_write = NULL;
 
-	char **argv = calloc(args_size + 1, sizeof(char *));
+	char **argv = calloc(opt->args_size + 1, sizeof(char *));
 	if (!argv) {
 		return NULL;
 	}
-	argv[0] = (char *)file;
-	if (args_size) {
-		memcpy(argv + 1, args, sizeof(char *) * args_size);
+	argv[0] = (char *)opt->file;
+	if (opt->args_size) {
+		memcpy(argv + 1, opt->args, sizeof(char *) * opt->args_size);
 	}
-	char *cmdline = rz_str_format_msvc_argv(args_size + 1, argv);
+	char *cmdline = rz_str_format_msvc_argv(opt->args_size + 1, argv);
 	free(argv);
 	if (!cmdline) {
 		return NULL;
@@ -201,11 +199,11 @@ RZ_API RzSubprocess *rz_subprocess_start(
 	start_info.hStdInput = stdin_read;
 	start_info.dwFlags |= STARTF_USESTDHANDLES;
 
-	LPWSTR env = override_env(envvars, envvals, env_size);
+	LPWSTR env = override_env(opt->envvars, opt->envvals, opt->env_size);
 	if (!CreateProcessA(NULL, cmdline,
 		    NULL, NULL, TRUE, CREATE_UNICODE_ENVIRONMENT, env,
 		    NULL, &start_info, &proc_info)) {
-		free(env);
+		fre(env);
 		eprintf("CreateProcess failed: %#x\n", (int)GetLastError());
 		goto error;
 	}
@@ -573,16 +571,14 @@ static void destroy_child_env(char **child_env) {
 	free(child_env);
 }
 
-RZ_API RzSubprocess *rz_subprocess_start(
-	const char *file, const char *args[], size_t args_size,
-	const char *envvars[], const char *envvals[], size_t env_size) {
-	char **argv = calloc(args_size + 2, sizeof(char *));
+RZ_API RzSubprocess *rz_subprocess_start_opt(RzSubprocessOpt *opt) {
+	char **argv = calloc(opt->args_size + 2, sizeof(char *));
 	if (!argv) {
 		return NULL;
 	}
-	argv[0] = (char *)file;
-	if (args_size) {
-		memcpy(argv + 1, args, sizeof(char *) * args_size);
+	argv[0] = (char *)opt->file;
+	if (opt->args_size) {
+		memcpy(argv + 1, opt->args, sizeof(char *) * opt->args_size);
 	}
 	// done by calloc: argv[args_size + 1] = NULL;
 	subprocess_lock();
@@ -592,6 +588,9 @@ RZ_API RzSubprocess *rz_subprocess_start(
 	}
 	proc->killpipe[0] = proc->killpipe[1] = -1;
 	proc->ret = -1;
+	proc->stdin_fd = -1;
+	proc->stdout_fd = -1;
+	proc->stderr_fd = -1;
 	rz_strbuf_init(&proc->out);
 	rz_strbuf_init(&proc->err);
 
@@ -605,37 +604,47 @@ RZ_API RzSubprocess *rz_subprocess_start(
 	}
 
 	int stdin_pipe[2] = { -1, -1 };
-	if (rz_sys_pipe(stdin_pipe, true) == -1) {
-		perror("pipe");
-		goto error;
-	}
-	proc->stdin_fd = stdin_pipe[1];
-
 	int stdout_pipe[2] = { -1, -1 };
-	if (rz_sys_pipe(stdout_pipe, true) == -1) {
-		perror("pipe");
-		goto error;
-	}
-	if (fcntl(stdout_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
-		perror("fcntl");
-		goto error;
-	}
-	proc->stdout_fd = stdout_pipe[0];
-
 	int stderr_pipe[2] = { -1, -1 };
-	if (rz_sys_pipe(stderr_pipe, true) == -1) {
-		perror("pipe");
-		goto error;
+	if (opt->stdin_pipe == RZ_PROCESS_PIPE_CREATE) {
+		if (rz_sys_pipe(stdin_pipe, true) == -1) {
+			perror("pipe");
+			goto error;
+		}
+		proc->stdin_fd = stdin_pipe[1];
 	}
-	if (fcntl(stderr_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
-		perror("fcntl");
-		goto error;
+
+	if (opt->stdout_pipe == RZ_PROCESS_PIPE_CREATE) {
+		if (rz_sys_pipe(stdout_pipe, true) == -1) {
+			perror("pipe");
+			goto error;
+		}
+		if (fcntl(stdout_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
+			perror("fcntl");
+			goto error;
+		}
+		proc->stdout_fd = stdout_pipe[0];
 	}
-	proc->stderr_fd = stderr_pipe[0];
+
+	if (opt->stderr_pipe == RZ_PROCESS_PIPE_CREATE) {
+		if (rz_sys_pipe(stderr_pipe, true) == -1) {
+			perror("pipe");
+			goto error;
+		}
+		if (fcntl(stderr_pipe[0], F_SETFL, O_NONBLOCK) < 0) {
+			perror("fcntl");
+			goto error;
+		}
+		proc->stderr_fd = stderr_pipe[0];
+	} else if (opt->stderr_pipe == RZ_PROCESS_PIPE_STDOUT) {
+		stderr_pipe[0] = stdout_pipe[0];
+		stderr_pipe[1] = stdout_pipe[1];
+		proc->stderr_fd = proc->stdout_fd;
+	}
 
 	// Let's create the environment for the child in the parent, with malloc,
 	// because we can't use functions that lock after fork
-	char **child_env = create_child_env(envvars, envvals, env_size);
+	char **child_env = create_child_env(opt->envvars, opt->envvals, opt->env_size);
 
 	proc->pid = rz_sys_fork();
 	if (proc->pid == -1) {
@@ -644,32 +653,46 @@ RZ_API RzSubprocess *rz_subprocess_start(
 		goto error;
 	} else if (proc->pid == 0) {
 		// child
-		while ((dup2(stdin_pipe[0], STDIN_FILENO) == -1) && (errno == EINTR)) {
+		if (stderr_pipe[1] != -1) {
+			while ((dup2(stderr_pipe[1], STDERR_FILENO) == -1) && (errno == EINTR)) {
+			}
+			if (proc->stderr_fd != proc->stdout_fd) {
+				rz_sys_pipe_close(stderr_pipe[1]);
+				rz_sys_pipe_close(stderr_pipe[0]);
+			}
 		}
-		rz_sys_pipe_close(stdin_pipe[0]);
-		rz_sys_pipe_close(stdin_pipe[1]);
-		while ((dup2(stdout_pipe[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {
+		if (stdout_pipe[1] != -1) {
+			while ((dup2(stdout_pipe[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {
+			}
+			rz_sys_pipe_close(stdout_pipe[1]);
+			rz_sys_pipe_close(stdout_pipe[0]);
 		}
-		rz_sys_pipe_close(stdout_pipe[1]);
-		rz_sys_pipe_close(stdout_pipe[0]);
-		while ((dup2(stderr_pipe[1], STDERR_FILENO) == -1) && (errno == EINTR)) {
+		if (stdin_pipe[0] != -1) {
+			while ((dup2(stdin_pipe[0], STDIN_FILENO) == -1) && (errno == EINTR)) {
+			}
+			rz_sys_pipe_close(stdin_pipe[0]);
+			rz_sys_pipe_close(stdin_pipe[1]);
 		}
-		rz_sys_pipe_close(stderr_pipe[1]);
-		rz_sys_pipe_close(stderr_pipe[0]);
 
 		// Use the previously created environment
 		environ = child_env;
 
-		rz_sys_execvp(file, argv);
+		rz_sys_execvp(opt->file, argv);
 		perror("exec");
 		rz_sys_exit(-1, true);
 	}
 	destroy_child_env(child_env);
 	free(argv);
 
-	rz_sys_pipe_close(stdin_pipe[0]);
-	rz_sys_pipe_close(stdout_pipe[1]);
-	rz_sys_pipe_close(stderr_pipe[1]);
+	if (stdin_pipe[0] != -1) {
+		rz_sys_pipe_close(stdin_pipe[0]);
+	}
+	if (stdout_pipe[1] != -1) {
+		rz_sys_pipe_close(stdout_pipe[1]);
+	}
+	if (stderr_pipe[1] != -1 && proc->stderr_fd != proc->stdout_fd) {
+		rz_sys_pipe_close(stderr_pipe[1]);
+	}
 
 	rz_pvector_push(&subprocs, proc);
 
@@ -685,10 +708,10 @@ error:
 		rz_sys_pipe_close(proc->killpipe[1]);
 	}
 	free(proc);
-	if (stderr_pipe[0] != -1) {
+	if (stderr_pipe[0] != -1 && stderr_pipe[0] != stdout_pipe[0]) {
 		rz_sys_pipe_close(stderr_pipe[0]);
 	}
-	if (stderr_pipe[1] != -1) {
+	if (stderr_pipe[1] != -1 && stderr_pipe[1] != stdout_pipe[1]) {
 		rz_sys_pipe_close(stderr_pipe[1]);
 	}
 	if (stdout_pipe[0] != -1) {
@@ -714,20 +737,23 @@ RZ_API bool rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
 	}
 
 	int r = 0;
+	bool stdout_enabled = proc->stdout_fd != -1;
+	bool stderr_enabled = proc->stderr_fd != -1 && proc->stderr_fd != proc->stdout_fd;
 	bool stdout_eof = false;
 	bool stderr_eof = false;
 	bool child_dead = false;
-	while (!stdout_eof || !stderr_eof || !child_dead) {
+
+	while ((stdout_enabled && !stdout_eof) || (stderr_enabled && !stderr_eof) || !child_dead) {
 		fd_set rfds;
 		FD_ZERO(&rfds);
 		int nfds = 0;
-		if (!stdout_eof) {
+		if (stdout_enabled && !stdout_eof) {
 			FD_SET(proc->stdout_fd, &rfds);
 			if (proc->stdout_fd > nfds) {
 				nfds = proc->stdout_fd;
 			}
 		}
-		if (!stderr_eof) {
+		if (stderr_enabled && !stderr_eof) {
 			FD_SET(proc->stderr_fd, &rfds);
 			if (proc->stderr_fd > nfds) {
 				nfds = proc->stderr_fd;
@@ -762,7 +788,7 @@ RZ_API bool rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
 		}
 
 		bool timedout = true;
-		if (FD_ISSET(proc->stdout_fd, &rfds)) {
+		if (stdout_enabled && FD_ISSET(proc->stdout_fd, &rfds)) {
 			timedout = false;
 			char buf[0x500];
 			ssize_t sz = read(proc->stdout_fd, buf, sizeof(buf));
@@ -774,7 +800,7 @@ RZ_API bool rz_subprocess_wait(RzSubprocess *proc, ut64 timeout_ms) {
 				rz_strbuf_append_n(&proc->out, buf, (int)sz);
 			}
 		}
-		if (FD_ISSET(proc->stderr_fd, &rfds)) {
+		if (stderr_enabled && FD_ISSET(proc->stderr_fd, &rfds)) {
 			timedout = false;
 			char buf[0x500];
 			ssize_t sz = read(proc->stderr_fd, buf, sizeof(buf));
@@ -840,8 +866,12 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	if (proc->stdin_fd != -1) {
 		rz_sys_pipe_close(proc->stdin_fd);
 	}
-	rz_sys_pipe_close(proc->stdout_fd);
-	rz_sys_pipe_close(proc->stderr_fd);
+	if (proc->stdout_fd != -1) {
+		rz_sys_pipe_close(proc->stdout_fd);
+	}
+	if (proc->stderr_fd != -1 && proc->stderr_fd != proc->stdout_fd) {
+		rz_sys_pipe_close(proc->stderr_fd);
+	}
 	free(proc);
 }
 
@@ -865,4 +895,34 @@ RZ_API void rz_subprocess_output_free(RzSubprocessOutput *out) {
 	free(out->out);
 	free(out->err);
 	free(out);
+}
+
+/**
+ * Start a program in a new child process with the specified parameters.
+ *
+ * \param file Name of the program to start. It is also evaluated against PATH
+ * \param args Array of arguments to pass to the new program. It does not include argv[0]
+ * \param args_size Number of arguments in the \p args array
+ * \param envvars Name of environment variables that the newprocess has different from the parent
+ * \param envvals Values of environment variables that the newprocess has
+ * different from the parent. Elements are evaluated in parallel with \p
+ * envvars, so envvals[0] specifies the value of the environment variable named
+ * envvars[0] and so on.
+ * \param env_size Number of environment variables in arrays \p envvars and \p envvals
+ */
+RZ_API RzSubprocess *rz_subprocess_start(
+	const char *file, const char *args[], size_t args_size,
+	const char *envvars[], const char *envvals[], size_t env_size) {
+	RzSubprocessOpt opt = {
+		.file = file,
+		.args = args,
+		.args_size = args_size,
+		.envvars = envvars,
+		.envvals = envvals,
+		.env_size = env_size,
+		.stdin_pipe = RZ_PROCESS_PIPE_CREATE,
+		.stdout_pipe = RZ_PROCESS_PIPE_CREATE,
+		.stderr_pipe = RZ_PROCESS_PIPE_CREATE,
+	};
+	return rz_subprocess_start_opt(&opt);
 }

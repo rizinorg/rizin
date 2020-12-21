@@ -129,14 +129,79 @@ bool test_specialchar_args(void) {
 	mu_end;
 }
 
+bool test_nopipes(void) {
+	rz_subprocess_init();
+	const char *exe_path = get_auxiliary_path("subprocess-helloworld");
+	RzSubprocessOpt opt = { 0 };
+	opt.file = exe_path;
+	opt.stdin_pipe = RZ_PROCESS_PIPE_NONE;
+	opt.stdout_pipe = RZ_PROCESS_PIPE_NONE;
+	opt.stderr_pipe = RZ_PROCESS_PIPE_NONE;
+	RzSubprocess *sp = rz_subprocess_start_opt(&opt);
+	mu_assert_notnull(sp, "the subprocess should be created");
+	rz_subprocess_wait(sp, UT_TIMEOUT);
+	RzSubprocessOutput *spo = rz_subprocess_drain(sp);
+	mu_assert_streq(spo->out, "", "hello world string should be not intercepted on stdout");
+	mu_assert_streq(spo->err, "", "stderr should not be intercepted");
+	mu_assert_eq(spo->ret, 0, "return value is 0");
+	rz_subprocess_output_free(spo);
+	rz_subprocess_free(sp);
+	rz_subprocess_fini();
+	mu_end;
+}
+
+bool test_stdoutonly(void) {
+	rz_subprocess_init();
+	const char *exe_path = get_auxiliary_path("subprocess-helloworld");
+	RzSubprocessOpt opt = { 0 };
+	opt.file = exe_path;
+	opt.stdin_pipe = RZ_PROCESS_PIPE_NONE;
+	opt.stdout_pipe = RZ_PROCESS_PIPE_CREATE;
+	opt.stderr_pipe = RZ_PROCESS_PIPE_NONE;
+	RzSubprocess *sp = rz_subprocess_start_opt(&opt);
+	mu_assert_notnull(sp, "the subprocess should be created");
+	rz_subprocess_wait(sp, UT_TIMEOUT);
+	RzSubprocessOutput *spo = rz_subprocess_drain(sp);
+	mu_assert_streq(spo->out, "Hello World\n", "hello world string should be on stdout");
+	mu_assert_streq(spo->err, "", "stderr should not be intercepted");
+	mu_assert_eq(spo->ret, 0, "return value is 0");
+	rz_subprocess_output_free(spo);
+	rz_subprocess_free(sp);
+	rz_subprocess_fini();
+	mu_end;
+}
+
+bool test_stdoutstderr(void) {
+	rz_subprocess_init();
+	const char *exe_path = get_auxiliary_path("subprocess-helloworld");
+	RzSubprocessOpt opt = { 0 };
+	opt.file = exe_path;
+	opt.stdin_pipe = RZ_PROCESS_PIPE_NONE;
+	opt.stdout_pipe = RZ_PROCESS_PIPE_CREATE;
+	opt.stderr_pipe = RZ_PROCESS_PIPE_STDOUT;
+	RzSubprocess *sp = rz_subprocess_start_opt(&opt);
+	mu_assert_notnull(sp, "the subprocess should be created");
+	rz_subprocess_wait(sp, UT_TIMEOUT);
+	RzSubprocessOutput *spo = rz_subprocess_drain(sp);
+	mu_assert_streq(spo->out, "This is on err\nHello World\n", "hello world and stderr string should be on stdout");
+	mu_assert_streq(spo->err, "", "stderr should not be intercepted");
+	mu_assert_eq(spo->ret, 0, "return value is 0");
+	rz_subprocess_output_free(spo);
+	rz_subprocess_free(sp);
+	rz_subprocess_fini();
+	mu_end;
+}
+
 bool all_tests() {
-	// TODO: use rz_subprocess in cmd_system (!)
 	mu_run_test(test_noargs_noinput_outerr);
 	mu_run_test(test_args);
 	mu_run_test(test_env);
 	mu_run_test(test_stdin);
 	mu_run_test(test_multi);
 	mu_run_test(test_specialchar_args);
+	mu_run_test(test_nopipes);
+	mu_run_test(test_stdoutonly);
+	mu_run_test(test_stdoutstderr);
 	return tests_passed != tests_run;
 }
 
