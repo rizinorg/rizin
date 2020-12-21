@@ -32,7 +32,7 @@ RZ_API int rz_cons_pipe_open(const char *file, int fdn, int append) {
 	char *targetFile = (!strncmp (file, "~/", 2) || !strncmp (file, "~\\", 2))
 		? rz_str_home (file + 2): strdup (file);
 	const int fd_flags = O_BINARY | O_RDWR | O_CREAT | (append? O_APPEND: O_TRUNC);
-	int fd = rz_sandbox_open (targetFile, fd_flags, 0644);
+	int fd = rz_sys_open (targetFile, fd_flags, 0644);
 	if (fd == -1) {
 		eprintf ("rz_cons_pipe_open: Cannot open file '%s'\n", file);
 		free (targetFile);

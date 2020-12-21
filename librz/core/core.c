@@ -2950,13 +2950,6 @@ RZ_API int rz_core_seek_size(RzCore *core, ut64 addr, int bsize) {
 	if (bsize == core->blocksize) {
 		return true;
 	}
-	if (rz_sandbox_enable (0)) {
-		// TODO : restrict to filesize?
-		if (bsize > 1024*32) {
-			eprintf ("Sandbox mode restricts blocksize bigger than 32k\n");
-			return false;
-		}
-	}
 	if (bsize > core->blocksize_max) {
 		eprintf ("Block size %d is too big\n", bsize);
 		return false;
@@ -3370,11 +3363,11 @@ RZ_API char *rz_core_editor(const RzCore *core, const char *file, const char *st
 	bool readonly = false;
 	if (file && *file != '*') {
 		name = strdup (file);
-		fd = rz_sandbox_open (file, O_RDWR, 0644);
+		fd = rz_sys_open (file, O_RDWR, 0644);
 		if (fd == -1) {
-			fd = rz_sandbox_open (file, O_RDWR | O_CREAT, 0644);
+			fd = rz_sys_open (file, O_RDWR | O_CREAT, 0644);
 			if (fd == -1) {
-				fd = rz_sandbox_open (file, O_RDONLY, 0644);
+				fd = rz_sys_open (file, O_RDONLY, 0644);
 				readonly = true;
 			}
 		}

@@ -483,9 +483,6 @@ RZ_API bool rz_socket_listen(RzSocket *s, const char *port, const char *certfile
 		return false;
 	}
 
-	if (rz_sandbox_enable (0)) {
-		return false;
-	}
 #if __WINDOWS__
 	WSADATA wsadata;
 	if (WSAStartup (MAKEWORD (1, 1), &wsadata) == SOCKET_ERROR) {

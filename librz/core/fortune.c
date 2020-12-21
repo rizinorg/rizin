@@ -54,7 +54,6 @@ static char *getrandomline(RzCore *core) {
 }
 
 RZ_API void rz_core_fortune_print_random(RzCore *core) {
-	// TODO: use file.fortunes // can be dangerous in sandbox mode
 	char *line = getrandomline (core);
 	if (!line) {
 		line = getrandomline (core);

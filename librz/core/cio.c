@@ -67,10 +67,10 @@ RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, i
 	int bs = core->blocksize;
 	FILE *fd;
 	if (append) {
-		fd = rz_sandbox_fopen (file, "ab");
+		fd = rz_sys_fopen (file, "ab");
 	} else {
 		rz_sys_truncate (file, 0);
-		fd = rz_sandbox_fopen (file, "wb");
+		fd = rz_sys_fopen (file, "wb");
 	}
 	if (!fd) {
 		eprintf ("Cannot open '%s' for writing\n", file);

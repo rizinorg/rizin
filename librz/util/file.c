@@ -52,9 +52,9 @@ RZ_API bool rz_file_truncate(const char *filename, ut64 newsize) {
 		return false;
 	}
 #if __WINDOWS__
-	fd = rz_sandbox_open (filename, O_RDWR, 0644);
+	fd = rz_sys_open (filename, O_RDWR, 0644);
 #else
-	fd = rz_sandbox_open (filename, O_RDWR | O_SYNC, 0644);
+	fd = rz_sys_open (filename, O_RDWR | O_SYNC, 0644);
 #endif
 	if (fd == -1) {
 		return false;
@@ -411,7 +411,7 @@ RZ_API char *rz_file_slurp(const char *str, RZ_NULLABLE size_t *usz) {
 	if (!rz_file_exists (str)) {
 		return NULL;
 	}
-	FILE *fd = rz_sandbox_fopen (str, "rb");
+	FILE *fd = rz_sys_fopen (str, "rb");
 	if (!fd) {
 		return NULL;
 	}
@@ -508,7 +508,7 @@ RZ_API ut8 *rz_file_slurp_hexpairs(const char *str, int *usz) {
 	ut8 *ret;
 	long sz;
 	int c, bytes = 0;
-	FILE *fd = rz_sandbox_fopen (str, "rb");
+	FILE *fd = rz_sys_fopen (str, "rb");
 	if (!fd) {
 		return NULL;
 	}
@@ -546,7 +546,7 @@ RZ_API ut8 *rz_file_slurp_hexpairs(const char *str, int *usz) {
 RZ_API char *rz_file_slurp_range(const char *str, ut64 off, int sz, int *osz) {
 	char *ret;
 	size_t read_items;
-	FILE *fd = rz_sandbox_fopen (str, "rb");
+	FILE *fd = rz_sys_fopen (str, "rb");
 	if (!fd) {
 		return NULL;
 	}
@@ -750,10 +750,10 @@ RZ_API bool rz_file_hexdump(const char *file, const ut8 *buf, int len, int appen
 		return false;
 	}
 	if (append) {
-		fd = rz_sandbox_fopen (file, "ab");
+		fd = rz_sys_fopen (file, "ab");
 	} else {
 		rz_sys_truncate (file, 0);
-		fd = rz_sandbox_fopen (file, "wb");
+		fd = rz_sys_fopen (file, "wb");
 	}
 	if (!fd) {
 		eprintf ("Cannot open '%s' for writing\n", file);
@@ -790,10 +790,10 @@ RZ_API bool rz_file_dump(const char *file, const ut8 *buf, int len, bool append)
 	rz_return_val_if_fail (!RZ_STR_ISEMPTY (file), false);
 	FILE *fd;
 	if (append) {
-		fd = rz_sandbox_fopen (file, "ab");
+		fd = rz_sys_fopen (file, "ab");
 	} else {
 		rz_sys_truncate (file, 0);
-		fd = rz_sandbox_fopen (file, "wb");
+		fd = rz_sys_fopen (file, "wb");
 	}
 	if (!fd) {
 		eprintf ("Cannot open '%s' for writing\n", file);
@@ -815,9 +815,6 @@ RZ_API bool rz_file_dump(const char *file, const ut8 *buf, int len, bool append)
 
 RZ_API bool rz_file_rm(const char *file) {
 	rz_return_val_if_fail (!RZ_STR_ISEMPTY (file), false);
-	if (rz_sandbox_enable (0)) {
-		return false;
-	}
 	if (rz_file_is_directory (file)) {
 #if __WINDOWS__
 		LPTSTR file_ = rz_sys_conv_utf8_to_win (file);
@@ -843,21 +840,19 @@ RZ_API bool rz_file_rm(const char *file) {
 
 RZ_API char *rz_file_readlink(const char *path) {
 	rz_return_val_if_fail (!RZ_STR_ISEMPTY (path), false);
-	if (!rz_sandbox_enable (0)) {
 #if __UNIX__
-		int ret;
-		char pathbuf[4096] = {0};
-		strncpy (pathbuf, path, sizeof (pathbuf) - 1);
-		repeat:
-		ret = readlink (path, pathbuf, sizeof (pathbuf)-1);
-		if (ret != -1) {
-			pathbuf[ret] = 0;
-			path = pathbuf;
-			goto repeat;
-		}
-		return strdup (pathbuf);
-#endif
+	int ret;
+	char pathbuf[4096] = {0};
+	strncpy (pathbuf, path, sizeof (pathbuf) - 1);
+	repeat:
+	ret = readlink (path, pathbuf, sizeof (pathbuf)-1);
+	if (ret != -1) {
+		pathbuf[ret] = 0;
+		path = pathbuf;
+		goto repeat;
 	}
+	return strdup (pathbuf);
+#endif
 	return NULL;
 }
 
@@ -868,9 +863,6 @@ RZ_API int rz_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int l
 	LPTSTR file_ = NULL;
 	int ret = -1;
 
-	if (rz_sandbox_enable (0)) {
-		return -1;
-	}
 	file_ = rz_sys_conv_utf8_to_win (file);
 	fh = CreateFile (file_, GENERIC_READ|GENERIC_WRITE,
 		FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -892,7 +884,7 @@ err_r_file_mmap_write:
 	}
 	return ret;
 #elif __UNIX__
-	int fd = rz_sandbox_open (file, O_RDWR|O_SYNC, 0644);
+	int fd = rz_sys_open (file, O_RDWR|O_SYNC, 0644);
 	const int pagesize = getpagesize ();
 	int mmlen = len + pagesize;
 	int rest = addr % pagesize;
@@ -922,9 +914,6 @@ RZ_API int rz_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
 	HANDLE fm = NULL, fh = INVALID_HANDLE_VALUE;
 	LPTSTR file_ = NULL;
 	int ret = -1;
-	if (rz_sandbox_enable (0)) {
-		return -1;
-	}
 	file_ = rz_sys_conv_utf8_to_win (file);
 	fh = CreateFile (file_, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
 	if (fh == INVALID_HANDLE_VALUE) {
@@ -953,7 +942,7 @@ err_r_file_mmap_read:
 	free (file_);
 	return ret;
 #elif __UNIX__
-	int fd = rz_sandbox_open (file, O_RDONLY, 0644);
+	int fd = rz_sys_open (file, O_RDONLY, 0644);
 	const int pagesize = 4096;
 	int mmlen = len+pagesize;
 	int rest = addr%pagesize;
@@ -1053,7 +1042,7 @@ RZ_API RMmap *rz_file_mmap(const char *file, bool rw, ut64 base) {
 	if (!rw && !rz_file_exists (file)) {
 		return m;
 	}
-	fd = rz_sandbox_open (file, rw? O_RDWR: O_RDONLY, 0644);
+	fd = rz_sys_open (file, rw? O_RDWR: O_RDONLY, 0644);
 	if (fd == -1 && !rw) {
 		eprintf ("rz_file_mmap: file does not exis.\n");
 		//m->buf = malloc (m->len);
@@ -1146,7 +1135,7 @@ RZ_API int rz_file_mkstemp(RZ_NULLABLE const char *prefix, char **oname) {
 	}
 	if (GetTempFileName (path_, prefix_, 0, name)) {
 		char *name_ = rz_sys_conv_win_to_utf8 (name);
-		h = rz_sandbox_open (name_, O_RDWR|O_EXCL|O_BINARY, 0644);
+		h = rz_sys_open (name_, O_RDWR|O_EXCL|O_BINARY, 0644);
 		if (oname) {
 			if (h != -1) {
 				*oname = name_;

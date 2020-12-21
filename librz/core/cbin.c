@@ -1566,9 +1566,8 @@ static void set_bin_relocs(RzCore *r, RzBinReloc *reloc, ut64 addr, Sdb **db, ch
 	bool keep_lib = rz_config_get_i (r->config, "bin.demangle.libs");
 	const char *lang = rz_config_get (r->config, "bin.lang");
 	bool is_pe = true;
-	int is_sandbox = rz_sandbox_enable (0);
 
-	if (is_pe && !is_sandbox && reloc->import
+	if (is_pe && reloc->import
 			&& reloc->import->name && reloc->import->libname
 			&& rz_str_startswith (reloc->import->name, "Ordinal_")) {
 		char *module = reloc->import->libname;

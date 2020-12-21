@@ -108,9 +108,9 @@ RZ_API void rz_vlog(const char *funcname, const char *filename,
 
 	// Log to file if enabled
 	if (cfg_logfile[0] != 0x00) {
-		FILE *file = rz_sandbox_fopen (cfg_logfile, "a+"); // TODO: Optimize (static? Needs to remake on cfg change though)
+		FILE *file = rz_sys_fopen (cfg_logfile, "a+"); // TODO: Optimize (static? Needs to remake on cfg change though)
 		if (!file) {
-			file = rz_sandbox_fopen (cfg_logfile, "w+");
+			file = rz_sys_fopen (cfg_logfile, "w+");
 		}
 		if (file) {
 			fprintf (file, "%s", output_buf);

@@ -128,7 +128,7 @@ RZ_API void rz_debug_signal_list(RzDebug *dbg, int mode) {
 }
 
 RZ_API int rz_debug_signal_send(RzDebug *dbg, int num) {
-	return rz_sandbox_kill (dbg->pid, num);
+	return rz_sys_kill (dbg->pid, num);
 }
 
 RZ_API void rz_debug_signal_setup(RzDebug *dbg, int num, int opt) {

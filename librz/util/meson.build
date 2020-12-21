@@ -48,7 +48,6 @@ rz_util_sources = [
   'range.c',
   'rbtree.c',
   'intervaltree.c',
-  'sandbox.c',
   'signal.c',
   'skiplist.c',
   'spaces.c',

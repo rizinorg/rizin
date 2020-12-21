@@ -81,7 +81,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		}
 		fd = ret; // TODO: use rz_io_fd api
 		snprintf (procpidpath, sizeof (procpidpath), "/proc/%d/mem", pid);
-		fd = rz_sandbox_open (procpidpath, O_RDWR, 0);
+		fd = rz_sys_open (procpidpath, O_RDWR, 0);
 		if (fd != -1) {
 			RzIOProcpid *riop = RZ_NEW0 (RzIOProcpid);
 			if (!riop) {
