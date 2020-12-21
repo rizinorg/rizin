@@ -393,7 +393,6 @@ static const char *help_msg_afi[] = {
 	"afi.", "", "show function name in current offset",
 	"afi*", "", "function, variables and arguments",
 	"afij", "", "function info in json format",
-	"afil", "", "verbose function info",
 	"afip", "", "show whether the function is pure or not",
 	"afis", "", "show function stats (opcode, meta)",
 	NULL
@@ -2032,12 +2031,6 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 			}
 			printline ("prefix", "%u\n", op.prefix);
 			printline ("id", "%d\n", op.id);
-#if 0
-// no opex here to avoid lot of tests broken..and having json in here is not much useful imho
-			if (opexstr && *opexstr) {
-				printline ("opex", "%s\n", opexstr);
-			}
-#endif
 			printline ("bytes", "%s", "");
 			int minsz = RZ_MIN (len, size);
 			minsz = RZ_MAX (minsz, 0);
@@ -3540,14 +3533,6 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 				}
 			}
 			break;
-		case 'l': // "afil"
-			if (input[3] == '?') {
-				// TODO #7967 help refactor
-				help_msg_afll[1] = "afil";
-				rz_core_cmd_help (core, help_msg_afll);
-				break;
-			}
-			/* fallthrough */
 		case 'i': // "afii"
 			if (input[3] == '-') {
 				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
@@ -3686,9 +3671,6 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 			}
 			break;
 		}
-		case '*': // "afs*"
-			eprintf ("TODO\n");
-			break;
 		case 'j': // "afsj"
 			cmd_afsj (core, input + 2);
 			break;
@@ -3806,9 +3788,6 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 			} else {
 				rz_core_cmd0 (core, "k analysis/cc/default.cc");
 			}
-			break;
-		case 'a': // "afca"
-			eprintf ("Todo\n");
 			break;
 		case 'f': // "afcf" "afcfj"
 			cmd_analysis_fcn_sig (core, input + 3);
@@ -4053,40 +4032,6 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 		}
 		}
 		break;
-#if 0
-	/* this is undocumented and probably have no uses. plz discuss */
-	case 'e': // "afe"
-		{
-		RzAnalysisFunction *fcn;
-		ut64 off = core->offset;
-		char *p, *name = strdup ((input[2]&&input[3])? input + 3: "");
-		if ((p = strchr (name, ' '))) {
-			*p = 0;
-			off = rz_num_math (core->num, p + 1);
-		}
-		fcn = rz_analysis_get_fcn_in (core->analysis, off, RZ_ANALYSIS_FCN_TYPE_FCN | RZ_ANALYSIS_FCN_TYPE_SYM);
-		if (fcn) {
-			RzAnalysisBlock *b;
-			RzListIter *iter;
-			RzAnalysisRef *r;
-			rz_list_foreach (fcn->refs, iter, r) {
-				rz_cons_printf ("0x%08" PFMT64x " -%c 0x%08" PFMT64x "\n", r->at, r->type, r->addr);
-			}
-			rz_list_foreach (fcn->bbs, iter, b) {
-				int ok = 0;
-				if (b->type == RZ_ANALYSIS_BB_TYPE_LAST) ok = 1;
-				if (b->type == RZ_ANALYSIS_BB_TYPE_FOOT) ok = 1;
-				if (b->jump == UT64_MAX && b->fail == UT64_MAX) ok = 1;
-				if (ok) {
-					rz_cons_printf ("0x%08" PFMT64x " -r\n", b->addr);
-					// TODO: check if destination is outside the function boundaries
-				}
-			}
-		} else eprintf ("Cannot find function at 0x%08" PFMT64x "\n", core->offset);
-		free (name);
-		}
-		break;
-#endif
 	case 'x': // "afx"
 		switch (input[2]) {
 		case '\0': // "afx"
@@ -4269,19 +4214,6 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 			free (name);
 		}
 		rz_core_analysis_propagate_noreturn (core, addr);
-#if 0
-		// XXX THIS IS VERY SLOW
-		if (core->analysis->opt.vars) {
-			RzListIter *iter;
-			RzAnalysisFunction *fcni = NULL;
-			rz_list_foreach (core->analysis->fcns, iter, fcni) {
-				if (rz_cons_is_breaked ()) {
-					break;
-				}
-				rz_core_recover_vars (core, fcni, true);
-			}
-		}
-#endif
 		flag_every_function (core);
 	}
 		break;
@@ -5408,39 +5340,6 @@ static void cmd_esil_mem(RzCore *core, const char *input) {
 	rz_core_seek (core, curoff, false);
 }
 
-#if 0
-static ut64 opc = UT64_MAX;
-static ut8 *regstate = NULL;
-
-static void esil_init (RzCore *core) {
-	const char *pc = rz_reg_get_name (core->analysis->reg, RZ_REG_NAME_PC);
-	int noNULL = rz_config_get_i (core->config, "esil.noNULL");
-	opc = rz_reg_getv (core->analysis->reg, pc);
-	if (!opc || opc==UT64_MAX) {
-		opc = core->offset;
-	}
-	if (!core->analysis->esil) {
-		int iotrap = rz_config_get_i (core->config, "esil.iotrap");
-		ut64 stackSize = rz_config_get_i (core->config, "esil.stack.size");
-		unsigned int addrsize = rz_config_get_i (core->config, "esil.addr.size");
-		if (!(core->analysis->esil = rz_analysis_esil_new (stackSize, iotrap, addrsize))) {
-			RZ_FREE (regstate);
-			return;
-		}
-		rz_analysis_esil_setup (core->analysis->esil, core->analysis, 0, 0, noNULL);
-	}
-	free (regstate);
-	regstate = rz_reg_arena_peek (core->analysis->reg);
-}
-
-static void esil_fini(RzCore *core) {
-	const char *pc = rz_reg_get_name (core->analysis->reg, RZ_REG_NAME_PC);
-	rz_reg_arena_poke (core->analysis->reg, regstate);
-	rz_reg_setv (core->analysis->reg, pc, opc);
-	RZ_FREE (regstate);
-}
-#endif
-
 typedef struct {
 	RzList *regs;
 	RzList *regread;
@@ -5934,24 +5833,6 @@ static void rz_analysis_aefa(RzCore *core, const char *arg) {
 	// the logic of identifying args by function types and
 	// show json format and arg name goes into arA
 	rz_core_cmd0 (core, "arA");
-#if 0
-	// get results
-	const char *fcn_type = rz_type_func_ret (core->analysis->sdb_types, fcn->name);
-	const char *key = resolve_fcn_name (core->analysis, fcn->name);
-	RzList *list = rz_core_get_func_args (core, key);
-	if (!rz_list_empty (list)) {
-		eprintf ("HAS signature\n");
-	}
-	int i, nargs = 3; // rz_type_func_args_count (core->analysis->sdb_types, fcn->name);
-	if (nargs > 0) {
-		int i;
-		eprintf ("NARGS %d (%s)\n", nargs, key);
-		for (i = 0; i < nargs; i++) {
-			ut64 v = rz_debug_arg_get (core->dbg, RZ_ANALYSIS_CC_TYPE_STDCALL, i);
-			eprintf ("arg: 0x%08"PFMT64x"\n", v);
-		}
-	}
-#endif
 }
 
 static void __core_analysis_appcall(RzCore *core, const char *input) {
@@ -8050,15 +7931,6 @@ static void cmd_analysis_hint(RzCore *core, const char *input) {
 			eprintf ("Usage: ahe r0,pc,=\n");
 		}
 		break;
-#if 0
-	case 'e': // set endian
-		if (input[1] == ' ') {
-			rz_analysis_hint_set_opcode (core->analysis, core->offset, atoi (input + 1));
-		} else if (input[1] == '-') {
-			rz_analysis_hint_unset_opcode (core->analysis, core->offset);
-		}
-		break;
-#endif
 	case 'p': // "ahp"
 		if (input[1] == ' ') {
 			rz_analysis_hint_set_pointer (core->analysis, core->offset, rz_num_math (core->num, input + 1));
@@ -10476,18 +10348,6 @@ bool go_on = true;
 		rz_reg_setv (core->analysis->reg, sp, spv + s_width); // temporarily set stack ptr to sync with carg.c
 		RzList *list = rz_core_get_func_args (core, fcn_name);
 		if (!rz_list_empty (list)) {
-	#if 0
-			bool warning = false;
-			bool on_stack = false;
-			rz_list_foreach (list, iter, arg) {
-				if (rz_str_startswith (arg->cc_source, "stack")) {
-					on_stack = true;
-				}
-				if (!arg->size) {
-					rz_cons_printf ("%s: unk_size", arg->c_type);
-					warning = true;
-				}
-	#endif
 			rz_list_foreach (list, iter, arg) {
 				nextele = rz_list_iter_get_next (iter);
 				if (!arg->fmt) {
@@ -10768,13 +10628,6 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 		break;
 	default:
 		rz_core_cmd_help (core, help_msg_a);
-#if 0
-		rz_cons_printf ("Examples:\n"
-			" f ts @ `S*~text:0[3]`; f t @ section..text\n"
-			" f ds @ `S*~data:0[3]`; f d @ section..data\n"
-			" .ad t t+ts @ d:ds\n",
-			NULL);
-#endif
 		break;
 	}
 	if (tbs != core->blocksize) {
