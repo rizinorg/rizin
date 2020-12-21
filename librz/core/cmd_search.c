@@ -2377,10 +2377,6 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 				eprintf ("Searching %d %s in [0x%"PFMT64x "-0x%"PFMT64x "]\n",
 					kw? kw->keyword_length: 0, bytestr, itv.addr, rz_itv_end (itv));
 			}
-			if (rz_sandbox_enable (0) && itv.size > 1024 * 64) {
-				eprintf ("Sandbox restricts search range\n");
-				break;
-			}
 			if (!core->search->bckwrds) {
 				RzListIter* it;
 				RzSearchKeyword* kw;

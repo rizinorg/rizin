@@ -946,7 +946,7 @@ RZ_API void rz_cons_flush(void) {
 	rz_cons_highlight (I.highlight);
 
 	// is_html must be a filter, not a write endpoint
-	if (rz_cons_is_interactive () && !rz_sandbox_enable (false)) {
+	if (rz_cons_is_interactive ()) {
 		if (I.linesleep > 0 && I.linesleep < 1000) {
 			int i = 0;
 			int pagesize = RZ_MAX (1, I.pagesize);
@@ -1570,13 +1570,13 @@ RZ_API void rz_cons_set_raw(bool is_raw) {
 #elif __WINDOWS__
 	if (is_raw) {
 		if (I.term_xterm) {
-			rz_sandbox_system ("stty raw -echo");
+			rz_sys_system ("stty raw -echo");
 		} else {
 			SetConsoleMode (h, I.term_raw);
 		}
 	} else {
 		if (I.term_xterm) {
-			rz_sandbox_system ("stty -raw echo");
+			rz_sys_system ("stty -raw echo");
 		} else {
 			SetConsoleMode (h, I.term_buf);
 		}

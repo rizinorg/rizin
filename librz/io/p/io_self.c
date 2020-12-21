@@ -265,9 +265,6 @@ static bool __plugin_open(RzIO *io, const char *file, bool many) {
 
 static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 	int ret, pid = getpid ();
-	if (rz_sandbox_enable (0)) {
-		return NULL;
-	}
 	io->va = true; // nop
 	ret = update_self_regions (io, pid);
 	if (ret) {
@@ -332,19 +329,11 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		/* do nothing here */
 #if !defined(__WINDOWS__)
 	} else if (!strncmp (cmd, "kill", 4)) {
-		if (rz_sandbox_enable (false)) {
-			eprintf ("This is unsafe, so disabled by the sandbox\n");
-			return NULL;
-		}
 		/* do nothing here */
 		kill (getpid (), SIGKILL);
 #endif
 	} else if (!strncmp (cmd, "call ", 5)) {
 		size_t cbptr = 0;
-		if (rz_sandbox_enable (false)) {
-			eprintf ("This is unsafe, so disabled by the sandbox\n");
-			return NULL;
-		}
 		ut64 result = 0;
 		char *argv = strdup (cmd + 5);
 		int argc = rz_str_word_set0 (argv);

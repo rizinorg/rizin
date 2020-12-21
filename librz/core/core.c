@@ -2950,13 +2950,6 @@ RZ_API int rz_core_seek_size(RzCore *core, ut64 addr, int bsize) {
 	if (bsize == core->blocksize) {
 		return true;
 	}
-	if (rz_sandbox_enable (0)) {
-		// TODO : restrict to filesize?
-		if (bsize > 1024*32) {
-			eprintf ("Sandbox mode restricts blocksize bigger than 32k\n");
-			return false;
-		}
-	}
 	if (bsize > core->blocksize_max) {
 		eprintf ("Block size %d is too big\n", bsize);
 		return false;

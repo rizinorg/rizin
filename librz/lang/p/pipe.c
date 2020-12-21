@@ -164,7 +164,7 @@ static int lang_pipe_run(RzLang *lang, const char *code, int len) {
 		perror ("pipe run");
 	} else if (!child) {
 		/* children */
-		rz_sandbox_system (code);
+		rz_sys_system (code);
 		(void) write (input[1], "", 1);
 		rz_sys_pipe_close (input[0]);
 		rz_sys_pipe_close (input[1]);

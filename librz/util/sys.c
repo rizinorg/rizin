@@ -215,9 +215,6 @@ RZ_API int rz_sys_truncate(const char *file, int sz) {
 	close (fd);
 	return true;
 #else
-	if (rz_sandbox_enable (0)) {
-		return false;
-	}
 	return truncate (file, sz) == 0;
 #endif
 }
@@ -417,7 +414,7 @@ static void signal_handler(int signum) {
 	}
 	snprintf (cmd, sizeof(cmd) - 1, crash_handler_cmd, getpid ());
 	rz_sys_backtrace ();
-	exit (rz_sys_cmd (cmd));
+	exit (rz_sys_system (cmd));
 }
 
 static int checkcmd(const char *c) {
@@ -774,7 +771,7 @@ RZ_API int rz_sys_cmdf(const char *fmt, ...) {
 	va_list ap;
 	va_start(ap, fmt);
 	vsnprintf (cmd, sizeof (cmd), fmt, ap);
-	ret = rz_sys_cmd (cmd);
+	ret = rz_sys_system (cmd);
 	va_end (ap);
 	return ret;
 }
@@ -802,13 +799,6 @@ RZ_API int rz_sys_cmdbg (const char *str) {
 #endif
 }
 
-RZ_API int rz_sys_cmd(const char *str) {
-	if (rz_sandbox_enable (0)) {
-		return false;
-	}
-	return rz_sandbox_system (str);
-}
-
 RZ_API char *rz_sys_cmd_str(const char *cmd, const char *input, int *len) {
 	char *output = NULL;
 	if (rz_sys_cmd_str_full (cmd, input, &output, len, NULL)) {
@@ -821,9 +811,6 @@ RZ_API char *rz_sys_cmd_str(const char *cmd, const char *input, int *len) {
 RZ_API bool rz_sys_mkdir(const char *dir) {
 	bool ret;
 
-	if (rz_sandbox_enable (0)) {
-		return false;
-	}
 #if __WINDOWS__
 	LPTSTR dir_ = rz_sys_conv_utf8_to_win (dir);
 

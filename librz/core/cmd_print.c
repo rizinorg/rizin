@@ -4680,12 +4680,10 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		if (input[1] == 'n') {
 			cmd_print_pwn (core);
 		} else if (input[1] == 'd') {
-			if (!rz_sandbox_enable (0)) {
-				char *cwd = rz_sys_getdir ();
-				if (cwd) {
-					rz_cons_println (cwd);
-					free (cwd);
-				}
+			char *cwd = rz_sys_getdir ();
+			if (cwd) {
+				rz_cons_println (cwd);
+				free (cwd);
 			}
 		} else {
 			rz_cons_printf ("| pwd               display current working directory\n");

@@ -354,7 +354,7 @@ static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err)
 		cfmakeraw (&t);
 		tcsetattr (fds, TCSANOW, &t);
 
-		int code = rz_sys_cmd (cmd);
+		int code = rz_sys_system (cmd);
 		restore_saved_fd (saved_stdin, in, STDIN_FILENO);
 		restore_saved_fd (saved_stdout, out, STDOUT_FILENO);
 		exit (code);
@@ -1171,13 +1171,13 @@ RZ_API int rz_run_start(RzRunProfile *p) {
 			close(1);
 			exit (rz_sys_execl ("/bin/sh","/bin/sh", "-c", p->_system, NULL));
 #else
-			exit (rz_sys_cmd (p->_system));
+			exit (rz_sys_system (p->_system));
 #endif
 		} else {
 			if (p->_pidfile) {
 				eprintf ("Warning: pidfile doesnt work with 'system'.\n");
 			}
-			exit (rz_sys_cmd (p->_system));
+			exit (rz_sys_system (p->_system));
 		}
 	}
 	if (p->_program) {

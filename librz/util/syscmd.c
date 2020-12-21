@@ -139,10 +139,6 @@ RZ_API char *rz_syscmd_ls(const char *input) {
 		printfmt = 'q';
 		input++;
 	}
-	if (rz_sandbox_enable (0)) {
-		eprintf ("Sandbox forbids listing directories\n");
-		return NULL;
-	}
 	if (*input && input[0] == ' ') {
 		input++;
 	}
@@ -486,12 +482,10 @@ RZ_API bool rz_syscmd_mv(const char *input) {
 		return false;
 	}
 	input = input + 2;
-	if (!rz_sandbox_enable (0)) {
 #if __WINDOWS__
-		rz_sys_cmdf ("move %s >nul", input);
+	rz_sys_cmdf ("move %s >nul", input);
 #else
-		rz_sys_cmdf ("mv %s", input);
+	rz_sys_cmdf ("mv %s", input);
 #endif
-	}
 	return false;
 }

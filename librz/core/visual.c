@@ -2159,12 +2159,8 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 			rz_core_cmd0 (core, "eco $(eco~...)");
 			break;
 		case 'l': // previously VT
-			if (rz_sandbox_enable (0)) {
-				eprintf ("sandbox not enabled\n");
-			} else {
-				if (rz_cons_is_interactive ()) {
-					rz_core_cmd0 (core, "TT");
-				}
+			if (rz_cons_is_interactive ()) {
+				rz_core_cmd0 (core, "TT");
 			}
 			break;
 		case 'p':

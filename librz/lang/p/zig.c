@@ -36,7 +36,7 @@ static int lang_zig_file(RzLang *lang, const char *file) {
 		cc = strdup ("zig");
 	}
 	char *cmd = rz_str_newf ("zig build-lib --output %s.%s --release-fast %s.zig --library rz_core", name, RZ_LIB_EXT, name);
-	if (rz_sandbox_system (cmd) != 0) {
+	if (rz_sys_system (cmd) != 0) {
 		free (name);
 		free (cmd);
 		free (cc);

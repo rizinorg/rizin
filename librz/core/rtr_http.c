@@ -126,12 +126,6 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 	rz_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 	rz_config_set (core->config, "asm.bytes", "false");
 	rz_config_set (core->config, "scr.interactive", "false");
-	bool restoreSandbox = false;
-	if (rz_config_get_i (core->config, "http.sandbox")) {
-		//(void)rz_config_get_i (core->config, "cfg.sandbox");
-		rz_config_set (core->config, "cfg.sandbox", "true");
-		restoreSandbox = true;
-	}
 	eprintf ("Starting http server...\n");
 	eprintf ("open http://%s:%d/\n", host, atoi (port));
 	eprintf ("rizin -C http://%s:%d/cmd/\n", host, atoi (port));
@@ -327,8 +321,7 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 							rz_str_uri_decode (cmd);
 							rz_config_set (core->config, "scr.interactive", "false");
 
-							if (!rz_sandbox_enable (0) &&
-									(!strcmp (cmd, "=h*") ||
+							if ((!strcmp (cmd, "=h*") ||
 									 !strcmp (cmd, "=h--"))) {
 								out = NULL;
 							} else if (*cmd == ':') {
@@ -351,21 +344,19 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 								rz_socket_http_response (rs, 200, "", 0, headers);
 							}
 
-							if (!rz_sandbox_enable (0)) {
-								if (!strcmp (cmd, "=h*")) {
-									/* do stuff */
-									rz_socket_http_close (rs);
-									free (dir);
-									free (refstr);
-									ret = -2;
-									goto the_end;
-								} else if (!strcmp (cmd, "=h--")) {
-									rz_socket_http_close (rs);
-									free (dir);
-									free (refstr);
-									ret = 0;
-									goto the_end;
-								}
+							if (!strcmp (cmd, "=h*")) {
+								/* do stuff */
+								rz_socket_http_close (rs);
+								free (dir);
+								free (refstr);
+								ret = -2;
+								goto the_end;
+							} else if (!strcmp (cmd, "=h--")) {
+								rz_socket_http_close (rs);
+								free (dir);
+								free (refstr);
+								ret = 0;
+								goto the_end;
 							}
 						}
 					}
@@ -501,9 +492,6 @@ the_end:
 	free (pfile);
 	rz_socket_free (s);
 	rz_config_free (newcfg);
-	if (restoreSandbox) {
-		rz_sandbox_disable (true);
-	}
 	/* refresh settings - run callbacks */
 	rz_config_set (origcfg, "scr.html", rz_config_get (origcfg, "scr.html"));
 	rz_config_set_i (origcfg, "scr.color", rz_config_get_i (origcfg, "scr.color"));
@@ -520,7 +508,6 @@ static RzThreadFunctionRet rz_core_rtr_http_thread (RzThread *th) {
 	if (!ht || !ht->core) {
 		return false;
 	}
-	eprintf ("WARNING: Background webserver requires http.sandbox=false to run properly\n");
 	int ret = rz_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path);
 	RZ_FREE (ht->path);
 	if (ret) {
@@ -536,10 +523,6 @@ static RzThreadFunctionRet rz_core_rtr_http_thread (RzThread *th) {
 
 RZ_API int rz_core_rtr_http(RzCore *core, int launch, int browse, const char *path) {
 	int ret;
-	if (rz_sandbox_enable (0)) {
-		eprintf ("sandbox: connect disabled\n");
-		return 1;
-	}
 	if (launch == '-') {
 		if (httpthread) {
 			eprintf ("Press ^C to stop the webserver\n");

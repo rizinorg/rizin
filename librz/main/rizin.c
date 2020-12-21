@@ -126,7 +126,6 @@ static int main_help(int line) {
 		" -r [rz_run]  specify rz_run profile to load (same as -e dbg.profile=X)\n"
 		" -R [rrz_testule] specify custom rz_run directive\n"
 		" -s [addr]    initial seek\n"
-		" -S           start rizin in sandbox mode\n"
 #if USE_THREADS && ALLOW_THREADED
 		" -t           load rz_bin info in thread\n"
 #endif
@@ -341,7 +340,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 	enum { LOAD_BIN_ALL, LOAD_BIN_NOTHING, LOAD_BIN_STRUCTURES_ONLY } load_bin = LOAD_BIN_ALL;
 	bool run_rc = true;
  	int ret, c, perms = RZ_PERM_RX;
-	bool sandbox = false;
 	ut64 baddr = UT64_MAX;
 	ut64 seek = UT64_MAX;
 	bool do_list_io_plugins = false;
@@ -599,9 +597,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			break;
 		case 's':
 			s_seek = opt.arg;
-			break;
-		case 'S':
-			sandbox = true;
 			break;
 #if USE_THREADS
 		case 't':
@@ -1342,9 +1337,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 			rz_core_fortune_print_random (r);
 			rz_cons_flush ();
 		}
-	}
-	if (sandbox) {
-		rz_config_set (r->config, "cfg.sandbox", "true");
 	}
 	if (quiet) {
 		rz_config_set (r->config, "scr.wheel", "false");

@@ -82,10 +82,6 @@ static RzIODesc *__rap_open(RzIO *io, const char *pathname, int rw, int mode) {
 		*file = 0;
 		file++;
 	}
-	if (rz_sandbox_enable (0)) {
-		eprintf ("sandbox: Cannot use network\n");
-		return NULL;
-	}
 	if (listenmode) {
 		if (p <= 0) {
 			eprintf ("rap: cannot listen here. Try rap://:9999\n");

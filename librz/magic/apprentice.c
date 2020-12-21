@@ -617,10 +617,6 @@ static int apprentice_load(RzMagic *ms, struct rz_magic **magicp, ut32 *nmagicp,
 
 	/* load directory or file */
 	if (stat (fn, &st) == 0 && S_ISDIR (st.st_mode)) {
-		if (rz_sandbox_enable (0) && !rz_sandbox_check_path (fn)) {
-			free (marray);
-			return  -1;
-		}
 #if __WINDOWS__ && !defined(__CYGWIN__)
 		if ((wcpath = rz_utf8_to_utf16 (fn))) {
 			swprintf (dir, _countof (dir), L"%ls\\*.*", wcpath);

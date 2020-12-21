@@ -815,9 +815,6 @@ RZ_API bool rz_file_dump(const char *file, const ut8 *buf, int len, bool append)
 
 RZ_API bool rz_file_rm(const char *file) {
 	rz_return_val_if_fail (!RZ_STR_ISEMPTY (file), false);
-	if (rz_sandbox_enable (0)) {
-		return false;
-	}
 	if (rz_file_is_directory (file)) {
 #if __WINDOWS__
 		LPTSTR file_ = rz_sys_conv_utf8_to_win (file);
@@ -843,21 +840,19 @@ RZ_API bool rz_file_rm(const char *file) {
 
 RZ_API char *rz_file_readlink(const char *path) {
 	rz_return_val_if_fail (!RZ_STR_ISEMPTY (path), false);
-	if (!rz_sandbox_enable (0)) {
 #if __UNIX__
-		int ret;
-		char pathbuf[4096] = {0};
-		strncpy (pathbuf, path, sizeof (pathbuf) - 1);
-		repeat:
-		ret = readlink (path, pathbuf, sizeof (pathbuf)-1);
-		if (ret != -1) {
-			pathbuf[ret] = 0;
-			path = pathbuf;
-			goto repeat;
-		}
-		return strdup (pathbuf);
-#endif
+	int ret;
+	char pathbuf[4096] = {0};
+	strncpy (pathbuf, path, sizeof (pathbuf) - 1);
+	repeat:
+	ret = readlink (path, pathbuf, sizeof (pathbuf)-1);
+	if (ret != -1) {
+		pathbuf[ret] = 0;
+		path = pathbuf;
+		goto repeat;
 	}
+	return strdup (pathbuf);
+#endif
 	return NULL;
 }
 
@@ -868,9 +863,6 @@ RZ_API int rz_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int l
 	LPTSTR file_ = NULL;
 	int ret = -1;
 
-	if (rz_sandbox_enable (0)) {
-		return -1;
-	}
 	file_ = rz_sys_conv_utf8_to_win (file);
 	fh = CreateFile (file_, GENERIC_READ|GENERIC_WRITE,
 		FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -922,9 +914,6 @@ RZ_API int rz_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
 	HANDLE fm = NULL, fh = INVALID_HANDLE_VALUE;
 	LPTSTR file_ = NULL;
 	int ret = -1;
-	if (rz_sandbox_enable (0)) {
-		return -1;
-	}
 	file_ = rz_sys_conv_utf8_to_win (file);
 	fh = CreateFile (file_, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
 	if (fh == INVALID_HANDLE_VALUE) {

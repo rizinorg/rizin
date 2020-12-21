@@ -15,214 +15,8 @@
 #include <priv.h>
 #endif
 
-static bool enabled = false;
-static bool disabled = false;
-
-static bool inHomeWww(const char *path) {
-	rz_return_val_if_fail (path, false);
-	bool ret = false;
-	char *homeWww = rz_str_home (RZ_HOME_WWWROOT RZ_SYS_DIR);
-	if (homeWww) {
-		if (!strncmp (path, homeWww, strlen (homeWww))) {
-			ret = true;
-		}
-		free (homeWww);
-	}
-	return ret;
-}
-
-/**
- * This function verifies that the given path is allowed. Paths are allowed only if they don't
- * contain .. components (which would indicate directory traversal) and they are relative.
- * Paths pointing into the webroot are an exception: For reaching the webroot, .. and absolute
- * path are ok.
- */
-RZ_API bool rz_sandbox_check_path (const char *path) {
-	rz_return_val_if_fail (path, false);
-	size_t root_len;
-	char *p;
-	/* XXX: the sandbox can be bypassed if a directory is symlink */
-	root_len = strlen (RZ_LIBDIR"/rizin");
-	if (!strncmp (path, RZ_LIBDIR"/rizin", root_len)) {
-		return true;
-	}
-	root_len = strlen (RZ_DATDIR"/rizin");
-	if (!strncmp (path, RZ_DATDIR"/rizin", root_len)) {
-		return true;
-	}
-	if (inHomeWww (path)) {
-		return true;
-	}
-	// Accessing stuff inside the webroot is ok even if we need .. or leading / for that
-	root_len = strlen (RZ_WWWROOT);
-	if (RZ_WWWROOT[0] && !strncmp (path, RZ_WWWROOT, root_len) && (
-			RZ_WWWROOT[root_len-1] == '/' || path[root_len] == '/' || path[root_len] == '\0')) {
-		path += strlen (RZ_WWWROOT);
-		while (*path == '/') {
-			path++;
-		}
-	}
-
-	// ./ path is not allowed
-        if (path[0]=='.' && path[1]=='/') {
-		return false;
-	}
-	// Properly check for directory traversal using "..". First, does it start with a .. part?
-	if (path[0] == '.' && path[1] == '.' && (path[2] == '\0' || path[2] == '/')) {
-		return 0;
-	}
-
-	// Or does it have .. in some other position?
-	for (p = strstr (path, "/.."); p; p = strstr(p, "/..")) {
-		if (p[3] == '\0' || p[3] == '/') {
-			return false;
-		}
-	}
-	// Absolute paths are forbidden.
-	if (*path == '/') {
-		return false;
-	}
-#if __UNIX__
-	char ch;
-	if (readlink (path, &ch, 1) != -1) {
-		return false;
-	}
-#endif
-	return true;
-}
-
-RZ_API bool rz_sandbox_disable (bool e) {
-	if (e) {
-#if LIBC_HAVE_PLEDGE
-		if (enabled) {
-			eprintf ("sandbox mode couldn't be disabled when pledged\n");
-			return enabled;
-		}
-#endif
-#if HAVE_CAPSICUM
-		if (enabled) {
-			eprintf ("sandbox mode couldn't be disabled in capability mode\n");
-			return enabled;
-		}
-#endif
-#if LIBC_HAVE_PRIV_SET
-		if (enabled) {
-			eprintf ("sandbox mode couldn't be disabled in priv mode\n");
-			return enabled;
-		}
-#endif
-		disabled = enabled;
-		enabled = false;
-	} else {
-		enabled = disabled;
-		disabled = false;
-	}
-	return enabled;
-}
-
-RZ_API bool rz_sandbox_enable (bool e) {
-	if (enabled) {
-		if (!e) {
-			// eprintf ("Can't disable sandbox\n");
-		}
-		return true;
-	}
-	enabled = e;
-#if LIBC_HAVE_PLEDGE
-	if (enabled && pledge ("stdio rpath tty prot_exec inet", NULL) == -1) {
-		eprintf ("sandbox: pledge call failed\n");
-		return false;
-	}
-#endif
-#if HAVE_CAPSICUM
-	if (enabled) {
-#if __FreeBSD_version >= 1000000
-		cap_rights_t wrt, rdr;
-
-		if (!cap_rights_init (&wrt, CAP_READ, CAP_WRITE)) {
-			eprintf ("sandbox: write descriptor failed\n");
-			return false;
-		}
-
-		if (!cap_rights_init (&rdr, CAP_READ, CAP_EVENT, CAP_FCNTL)) {
-			eprintf ("sandbox: read descriptor failed\n");
-			return false;
-		}
-
-		if (cap_rights_limit (STDIN_FILENO, &rdr) == -1) {
-			eprintf ("sandbox: stdin protection failed\n");
-			return false;
-		}
-
-		if (cap_rights_limit (STDOUT_FILENO, &wrt) == -1) {
-			eprintf ("sandbox: stdout protection failed\n");
-			return false;
-		}
-
-		if (cap_rights_limit (STDERR_FILENO, &wrt) == -1) {
-			eprintf ("sandbox: stderr protection failed\n");
-			return false;
-		}
-#endif
-
-		if (cap_enter () != 0) {
-			eprintf ("sandbox: call_enter failed\n");
-			return false;
-		}
-	}
-#endif
-#if LIBC_HAVE_PRIV_SET
-	if (enabled) {
-		priv_set_t *priv = priv_allocset();
-		const char *const privrules[] = {
-			PRIV_PROC_INFO,
-			PRIV_PROC_SESSION,
-			PRIV_PROC_ZONE,
-			PRIV_NET_OBSERVABILITY
-		};
-
-		size_t i, privrulescnt = sizeof (privrules) / sizeof (privrules[0]);
-		
-		if (!priv) {
-			eprintf ("sandbox: priv_allocset failed\n");
-			return false;
-		}
-		priv_basicset(priv);
-		
-		for (i = 0; i < privrulescnt; i ++) {
-			if (priv_delset (priv, privrules[i]) != 0) {
-				priv_emptyset (priv);
-				priv_freeset (priv);
-				eprintf ("sandbox: priv_delset failed\n");
-				return false;
-			}
-		}
-
-		priv_freeset (priv);
-	}
-#endif
-	return enabled;
-}
-
-RZ_API int rz_sandbox_system(const char *x) {
-	rz_return_val_if_fail (x, -1);
-	if (enabled) {
-		eprintf ("sandbox: system call disabled\n");
-		return -1;
-	}
-	return rz_sys_system (x);
-}
 
 RZ_API bool rz_sandbox_creat (const char *path, int mode) {
-	if (enabled) {
-		return false;
-#if 0
-		if (mode & O_CREAT) return -1;
-		if (mode & O_RDWR) return -1;
-		if (!rz_sandbox_check_path (path))
-			return -1;
-#endif
-	}
 	int fd = open (path, O_CREAT | O_TRUNC | O_WRONLY, mode);
 	if (fd != -1) {
 		close (fd);
@@ -236,16 +30,10 @@ static inline char *expand_home(const char *p) {
 }
 
 RZ_API int rz_sandbox_lseek(int fd, ut64 addr, int whence) {
-	if (enabled) {
-		return -1;
-	}
 	return lseek (fd, (off_t)addr, whence);
 }
 
 RZ_API int rz_sandbox_truncate(int fd, ut64 length) {
-	if (enabled) {
-		return -1;
-	}
 #ifdef _MSC_VER
 	return _chsize_s (fd, length);
 #else
@@ -254,15 +42,15 @@ RZ_API int rz_sandbox_truncate(int fd, ut64 length) {
 }
 
 RZ_API int rz_sandbox_read(int fd, ut8 *buf, int len) {
-	return enabled? -1: read (fd, buf, len);
+	return read (fd, buf, len);
 }
 
 RZ_API int rz_sandbox_write(int fd, const ut8* buf, int len) {
-	return enabled? -1: write (fd, buf, len);
+	return write (fd, buf, len);
 }
 
 RZ_API int rz_sandbox_close(int fd) {
-	return enabled? -1: close (fd);
+	return close (fd);
 }
 
 /* perm <-> mode */
@@ -274,15 +62,6 @@ RZ_API int rz_sandbox_open(const char *path, int perm, int mode) {
 	if (!strcmp (path, "/dev/null")) {
 		path = "NUL";
 	}
-#endif
-	if (enabled) {
-		if ((perm & O_CREAT) || (perm & O_RDWR)
-			|| (!rz_sandbox_check_path (epath))) {
-			free (epath);
-			return -1;
-		}
-	}
-#if __WINDOWS__
 	{
 		DWORD flags = 0;
 		if (perm & O_RANDOM) {
@@ -349,16 +128,6 @@ RZ_API FILE *rz_sandbox_fopen (const char *path, const char *mode) {
 	rz_return_val_if_fail (path && mode, NULL);
 	FILE *ret = NULL;
 	char *epath = NULL;
-	if (enabled) {
-		if (strchr (mode, 'w') || strchr (mode, 'a') || strchr (mode, '+')) {
-			return NULL;
-		}
-		epath = expand_home (path);
-		if (!rz_sandbox_check_path (epath)) {
-			free (epath);
-			return NULL;
-		}
-	}
 	if (!epath) {
 		epath = expand_home (path);
 	}
@@ -388,25 +157,11 @@ RZ_API FILE *rz_sandbox_fopen (const char *path, const char *mode) {
 
 RZ_API int rz_sandbox_chdir(const char *path) {
 	rz_return_val_if_fail (path, -1);
-	if (enabled) {
-		// TODO: check path
-		if (strstr (path, "../")) {
-			return -1;
-		}
-		if (*path == '/') {
-			return -1;
-		}
-		return -1;
-	}
 	return chdir (path);
 }
 
 RZ_API int rz_sandbox_kill(int pid, int sig) {
 	rz_return_val_if_fail (pid != -1, -1);
-	// XXX: fine-tune. maybe we want to enable kill for child?
-	if (enabled) {
-		return -1;
-	}
 #if __UNIX__
 	return kill (pid, sig);
 #endif
@@ -417,11 +172,6 @@ RZ_API HANDLE rz_sandbox_opendir (const char *path, WIN32_FIND_DATAW *entry) {
 	rz_return_val_if_fail (path, NULL);
 	wchar_t dir[MAX_PATH];
 	wchar_t *wcpath = 0;
-	if (rz_sandbox_enable (0)) {
-		if (path && !rz_sandbox_check_path (path)) {
-			return NULL;
-		}
-	}
 	if (!(wcpath = rz_utf8_to_utf16 (path))) {
 		return NULL;
 	}
@@ -432,18 +182,10 @@ RZ_API HANDLE rz_sandbox_opendir (const char *path, WIN32_FIND_DATAW *entry) {
 #else
 RZ_API DIR* rz_sandbox_opendir (const char *path) {
 	rz_return_val_if_fail (path, NULL);
-	if (rz_sandbox_enable (0)) {
-		if (path && !rz_sandbox_check_path (path)) {
-			return NULL;
-		}
-	}
 	return opendir (path);
 }
 #endif
 RZ_API bool rz_sys_stop (void) {
-	if (enabled) {
-		return false;
-	}
 #if __UNIX__
 	return !rz_sandbox_kill (0, SIGTSTP);
 #else
