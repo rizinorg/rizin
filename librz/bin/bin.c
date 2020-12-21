@@ -1006,7 +1006,7 @@ RZ_API void rz_bin_list_archs(RzBin *bin, int mode) {
 	char unk[128];
 	char archline[256];
 	RzBinFile *binfile = rz_bin_cur (bin);
-	RTable *table = rz_table_new ();
+	RzTable *table = rz_table_new ();
 	const char *name = binfile? binfile->file: NULL;
 	int narch = binfile? binfile->narch: 0;
 

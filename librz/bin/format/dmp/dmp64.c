@@ -78,7 +78,7 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 	}
 	ut64 paddr_base = obj->bmp_header->FirstPage;
 	ut64 num_pages = obj->bmp_header->Pages;
-	RBitmap *bitmap = rz_bitmap_new(num_pages);
+	RzBitmap *bitmap = rz_bitmap_new(num_pages);
 	rz_bitmap_set_bytes (bitmap, obj->bitmap, num_pages / 8);
 
 	ut64 num_bitset = 0;
