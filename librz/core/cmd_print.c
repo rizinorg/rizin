@@ -3127,7 +3127,7 @@ static bool cmd_print_blocks(RzCore *core, const char *input) {
 	char mode = input[0];
 	RzList *list = NULL;
 	RzCoreAnalStats *as = NULL;
-	RTable *t = NULL;
+	RzTable *t = NULL;
 	PJ *pj = NULL;
 	if (mode == '?') {
 		rz_core_cmd_help (core, help_msg_p_minus);
@@ -4435,7 +4435,7 @@ static char *__op_refs(RzCore *core, RzAnalysisOp *op, int n) {
 
 static void rz_core_disasm_table(RzCore * core, int l, const char *input) {
 	int i;
-	RTable *t = rz_core_table (core);
+	RzTable *t = rz_core_table (core);
 	char *arg = strchr (input, ' ');
 	if (arg) {
 		input = arg + 1;
@@ -4483,11 +4483,11 @@ static void rz_core_disasm_table(RzCore * core, int l, const char *input) {
 
 static void cmd_pxr(RzCore *core, int len, int mode, int wordsize, const char *arg) {
 	PJ *pj = NULL;
-	RTable *t = NULL;
+	RzTable *t = NULL;
 	if (mode == ',') {
 		t = rz_table_new ();
-		RTableColumnType *n = rz_table_type ("number");
-		RTableColumnType *s = rz_table_type ("string");
+		RzTableColumnType *n = rz_table_type ("number");
+		RzTableColumnType *s = rz_table_type ("string");
 		rz_table_add_column (t, n, "addr", 0);
 		rz_table_add_column (t, n, "value", 0);
 		rz_table_add_column (t, s, "refs", 0);

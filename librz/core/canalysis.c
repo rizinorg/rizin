@@ -3188,9 +3188,9 @@ static int fcn_list_detail(RzCore *core, RzList *fcns) {
 static int fcn_list_table(RzCore *core, const char *q, int fmt) {
 	RzAnalysisFunction *fcn;
 	RzListIter *iter;
-	RTable *t = rz_core_table (core);
-	RTableColumnType *typeString = rz_table_type ("string");
-	RTableColumnType *typeNumber = rz_table_type ("number");
+	RzTable *t = rz_core_table (core);
+	RzTableColumnType *typeString = rz_table_type ("string");
+	RzTableColumnType *typeNumber = rz_table_type ("number");
 	rz_table_add_column (t, typeNumber, "addr", 0);
 	rz_table_add_column (t, typeNumber, "size", 0);
 	rz_table_add_column (t, typeString, "name", 0);
@@ -3298,7 +3298,7 @@ RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char
 			}
 			rz_list_append (flist, info);
 		}
-		RTable *table = rz_core_table (core);
+		RzTable *table = rz_core_table (core);
 		rz_table_visual_list (table, flist, core->offset, core->blocksize,
 			rz_cons_get_size (NULL), rz_config_get_i (core->config, "scr.color"));
 		rz_cons_printf ("\n%s\n", rz_table_tostring (table));

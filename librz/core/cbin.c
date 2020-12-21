@@ -371,7 +371,7 @@ static void _print_strings(RzCore *r, RzList *list, int mode, int va) {
 	bool b64str = rz_config_get_i (r->config, "bin.b64str");
 	int minstr = rz_config_get_i (r->config, "bin.minstr");
 	int maxstr = rz_config_get_i (r->config, "bin.maxstr");
-	RTable *table = rz_core_table (r);
+	RzTable *table = rz_core_table (r);
 	rz_return_if_fail (table);
 	RzBin *bin = r->bin;
 	RzBinObject *obj = rz_bin_cur_object (bin);
@@ -1705,7 +1705,7 @@ static int bin_relocs(RzCore *r, int mode, int va) {
 	bool bin_demangle = rz_config_get_i (r->config, "bin.demangle");
 	bool keep_lib = rz_config_get_i (r->config, "bin.demangle.libs");
 	const char *lang = rz_config_get (r->config, "bin.lang");
-	RTable *table = rz_core_table (r);
+	RzTable *table = rz_core_table (r);
 	rz_return_val_if_fail (table, false);
 	RBIter iter;
 	RzBinReloc *reloc = NULL;
@@ -1975,7 +1975,7 @@ static int bin_imports(RzCore *r, int mode, int va, const char *name) {
 	RzBinInfo *info = rz_bin_get_info (r->bin);
 	int bin_demangle = rz_config_get_i (r->config, "bin.demangle");
 	bool keep_lib = rz_config_get_i (r->config, "bin.demangle.libs");
-	RTable *table = rz_core_table (r);
+	RzTable *table = rz_core_table (r);
 	rz_return_val_if_fail (table, false);
 	RzBinImport *import;
 	RzListIter *iter;
@@ -2276,7 +2276,7 @@ static int bin_symbols(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	bool printHere = (args && *args == '.');
 
 	int i = 0, lastfs = 's';
-	RTable *table = rz_core_table (r);
+	RzTable *table = rz_core_table (r);
 	bool bin_demangle = rz_config_get_i (r->config, "bin.demangle");
 	if (!info) {
 		if (IS_MODE_JSON (mode)) {
@@ -2704,8 +2704,8 @@ static int bin_map_sections_to_segments (RzBin *bin, int mode) {
 	RzList *segments = rz_list_new ();
 	RzList *tmp = rz_bin_get_sections (bin);
 	char *json_output = rz_str_new ("");
-	RTable *table = rz_table_new ();
-	RTableColumnType *typeString = rz_table_type ("string");
+	RzTable *table = rz_table_new ();
+	RzTableColumnType *typeString = rz_table_type ("string");
 
 	rz_table_add_column (table, typeString, "Segment", 0);
 	rz_table_add_column (table, typeString, "Section", 0);
@@ -2756,7 +2756,7 @@ static int bin_sections(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const 
 	RzList *sections;
 	RzListIter *iter;
 	RzListIter *last_processed = NULL;
-	RTable *table = rz_core_table (r);
+	RzTable *table = rz_core_table (r);
 	rz_return_val_if_fail (table, false);
 	int i = 0;
 	int fd = -1;
@@ -2799,7 +2799,7 @@ static int bin_sections(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const 
 			RzListInfo *info = rz_listinfo_new (s->name, pitv, vitv, s->perm, strdup (humansz));
 			rz_list_append (list, info);
 		}
-		RTable *table = rz_core_table (r);
+		RzTable *table = rz_core_table (r);
 		rz_table_visual_list (table, list, r->offset, -1, cols, r->io->va);
 		if (r->table_query) {
 			rz_table_query (table, r->table_query);

@@ -2239,7 +2239,7 @@ static RzList *get_calls(RzAnalysisBlock *block) {
 static void analysis_bb_list(RzCore *core, const char *input) {
 	const int mode = *input;
 	PJ *pj = NULL;
-	RTable *table = NULL;
+	RzTable *table = NULL;
 	RBIter iter;
 	RzAnalysisBlock *block;
 	if (mode == 'j') {
@@ -2248,8 +2248,8 @@ static void analysis_bb_list(RzCore *core, const char *input) {
 		pj_ka (pj, "blocks");
 	} else if (mode == ',' || mode == 't') {
 		table = rz_table_new ();
-		RTableColumnType *s = rz_table_type ("string");
-		RTableColumnType *n = rz_table_type ("number");
+		RzTableColumnType *s = rz_table_type ("string");
+		RzTableColumnType *n = rz_table_type ("number");
 		rz_table_add_column (table, n, "addr", 0);
 		rz_table_add_column (table, n, "size", 0);
 		rz_table_add_column (table, n, "traced", 0);
@@ -2456,7 +2456,7 @@ static bool analysis_fcn_list_bb(RzCore *core, const char *input, bool one) {
 			}
 			rz_list_append (flist, info);
 		}
-		RTable *table = rz_core_table (core);
+		RzTable *table = rz_core_table (core);
 		rz_table_visual_list (table, flist, core->offset, core->blocksize,
 			rz_cons_get_size (NULL), rz_config_get_i (core->config, "scr.color"));
 		rz_cons_printf ("\n%s\n", rz_table_tostring (table));
@@ -2465,7 +2465,7 @@ static bool analysis_fcn_list_bb(RzCore *core, const char *input, bool one) {
 		return true;
 	}
 
-	RTable *t = NULL;
+	RzTable *t = NULL;
 	if (mode == 't') {
 		t = rz_table_new ();
 		rz_table_set_columnsf (t, "xdxx", "addr", "size", "jump", "fail");
@@ -3148,10 +3148,10 @@ static Sdb *__core_cmd_analysis_fcn_stats (RzCore *core, const char *input) {
 	} else if (*input == 't') {
 		SdbList *ls = sdb_foreach_list (db, true);
 		SdbListIter *it;
-		RTable *t = rz_table_new ();
+		RzTable *t = rz_table_new ();
 		SdbKv *kv;
-		RTableColumnType *typeString = rz_table_type ("string");
-		RTableColumnType *typeNumber = rz_table_type ("number");
+		RzTableColumnType *typeString = rz_table_type ("string");
+		RzTableColumnType *typeNumber = rz_table_type ("number");
 		rz_table_add_column (t, typeString, "name", 0);
 		ls_foreach (ls, it, kv) {
 			const char *key = sdbkv_key (kv);
@@ -3211,10 +3211,10 @@ static void __core_cmd_analysis_fcn_allstats(RzCore *core, const char *input) {
 		}
 		ls_free (ls);
 	}
-	RTable *t = rz_table_new ();
+	RzTable *t = rz_table_new ();
 	SdbList *ls = sdb_foreach_list (d, true);
-	RTableColumnType *typeString = rz_table_type ("string");
-	RTableColumnType *typeNumber = rz_table_type ("number");
+	RzTableColumnType *typeString = rz_table_type ("string");
+	RzTableColumnType *typeNumber = rz_table_type ("number");
 	rz_table_add_column (t, typeString, "name", 0);
 	rz_table_add_column (t, typeNumber, "addr", 0);
 	ls_foreach (ls, it, kv) {

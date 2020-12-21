@@ -247,7 +247,7 @@ RZ_API void rz_debug_trace_list (RzDebug *dbg, int mode, ut64 offset) {
 	}
 	if (flag) {
 		rz_list_sort (info_list, cmpaddr);
-		RTable *table = rz_table_new ();
+		RzTable *table = rz_table_new ();
 		table->cons = rz_cons_singleton();
 		RzIO *io = dbg->iob.io;
 		rz_table_visual_list (table, info_list, offset, 1,

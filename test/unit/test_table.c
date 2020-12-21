@@ -5,11 +5,11 @@
 //TODO test rz_str_chop_path
 
 bool test_r_table(void) {
-	RTable *t = rz_table_new ();
+	RzTable *t = rz_table_new ();
 
 	// rz_table_fromcsv (t, csv);
-	RTableColumnType *typeString = rz_table_type ("string");
-	RTableColumnType *typeNumber = rz_table_type ("number");
+	RzTableColumnType *typeString = rz_table_type ("string");
+	RzTableColumnType *typeNumber = rz_table_type ("number");
 
 	rz_table_add_column (t, typeString, "name", 0);
 	rz_table_add_column (t, typeNumber, "address", 0);
@@ -31,8 +31,8 @@ bool test_r_table(void) {
 	mu_end;
 }
 
-RTable *__table_test_data1() {
-	RTable *t = rz_table_new ();
+RzTable *__table_test_data1() {
+	RzTable *t = rz_table_new ();
 
 	rz_table_add_column (t, rz_table_type ("string"), "ascii", 0);
 	rz_table_add_column (t, rz_table_type ("number"), "code", 0);
@@ -45,8 +45,8 @@ RTable *__table_test_data1() {
 }
 
 bool test_r_table_column_type(void) {
-	RTable *t = __table_test_data1 ();
-	RTableColumn *c = rz_list_get_n (t->cols, 1);
+	RzTable *t = __table_test_data1 ();
+	RzTableColumn *c = rz_list_get_n (t->cols, 1);
 	c->type = rz_table_type ("NUMBER");
 	rz_table_sort (t, 1, true);
 	char *s = rz_table_tostring (t);
@@ -62,7 +62,7 @@ bool test_r_table_column_type(void) {
 }
 
 bool test_r_table_tostring(void) {
-	RTable *t = __table_test_data1 ();
+	RzTable *t = __table_test_data1 ();
 	char buf[BUF_LENGTH];
 
 	int i;
@@ -82,7 +82,7 @@ bool test_r_table_tostring(void) {
 }
 
 bool test_r_table_sort1(void) {
-	RTable *t = __table_test_data1 ();
+	RzTable *t = __table_test_data1 ();
 
 	rz_table_sort (t, 1, true);
 	char *strd = rz_table_tostring (t);
@@ -108,7 +108,7 @@ bool test_r_table_sort1(void) {
 }
 
 bool test_r_table_uniq(void) {
-	RTable *t = __table_test_data1 ();
+	RzTable *t = __table_test_data1 ();
 
 	rz_table_uniq (t);
 	char *strd = rz_table_tostring (t);
@@ -150,7 +150,7 @@ bool test_r_table_uniq(void) {
 	mu_end;
 }
 
-static void simple_merge(RTableRow *acc, RTableRow *new_row, int nth) {
+static void simple_merge(RzTableRow *acc, RzTableRow *new_row, int nth) {
 	RzList *lhs = acc->items;
 	RzList *rhs = new_row->items;
 	RzListIter *iter_lhs;
@@ -187,7 +187,7 @@ static void simple_merge(RTableRow *acc, RTableRow *new_row, int nth) {
 }
 
 bool test_r_table_group (void) {
-	RTable *t = __table_test_data1 ();
+	RzTable *t = __table_test_data1 ();
 
 	rz_table_group (t, -1, NULL);
 	char *str = rz_table_tostring (t);
@@ -247,7 +247,7 @@ bool test_r_table_group (void) {
 }
 
 bool test_r_table_columns () {
-	RTable *t = NULL;
+	RzTable *t = NULL;
 #define CREATE_TABLE                                                   \
 	rz_table_free (t);                                              \
 	t = rz_table_new ();                                            \

@@ -1886,7 +1886,7 @@ RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, int mode) {
 	RzList *list = rz_reg_get_list (reg, RZ_REG_TYPE_GPR);
 	RzListIter *iter;
 	RzRegItem *r;
-	RTable *t = rz_core_table (core);
+	RzTable *t = rz_core_table (core);
 
 	if (mode == 'j') {
 		rz_config_set_i (core->config, "scr.color", false);
@@ -2186,7 +2186,7 @@ static void cmd_debug_reg_print_packed_reg(RzCore *core, RzRegItem *item, char e
 	}
 }
 
-static char *__table_format_string(RTable *t, int fmt) {
+static char *__table_format_string(RzTable *t, int fmt) {
 	switch (fmt) {
 	case 'j': return rz_table_tojson (t);
 	case 's': return rz_table_tostring (t);
@@ -2197,10 +2197,10 @@ static char *__table_format_string(RTable *t, int fmt) {
 static void __tableRegList (RzCore *core, RzReg *reg, const char *str) {
 	int i;
 	RzRegItem *e;
-	RTable *t = rz_core_table (core);
-	RTableColumnType *typeString = rz_table_type ("string");
-	RTableColumnType *typeNumber = rz_table_type ("number");
-	RTableColumnType *typeBoolean = rz_table_type ("boolean");
+	RzTable *t = rz_core_table (core);
+	RzTableColumnType *typeString = rz_table_type ("string");
+	RzTableColumnType *typeNumber = rz_table_type ("number");
+	RzTableColumnType *typeBoolean = rz_table_type ("boolean");
 	rz_table_add_column (t, typeNumber, "offset", 0);
 	rz_table_add_column (t, typeNumber, "size", 0);
 	rz_table_add_column (t, typeNumber, "psize", 0);
