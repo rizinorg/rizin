@@ -31,7 +31,7 @@ static int __io_posix_open(const char *file, int perm, int mode) {
 	if (perm & RZ_PERM_W) {
 		fd = rz_sys_open (file, O_RDWR, 0);
 		if (fd == -1 && (perm & RZ_PERM_CREAT)) {
-			fd = open (path, O_CREAT | O_TRUNC | O_WRONLY, 0644);
+			fd = open (file, O_CREAT | O_TRUNC | O_WRONLY, 0644);
 			if (fd != -1) {
 				close (fd);
 			}
