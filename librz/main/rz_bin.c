@@ -564,6 +564,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	RzCore core = {0};
 	RzLib *l = NULL;
 	ut64 at = UT64_MAX;
+	int result = 0;
 
 	rz_core_init (&core);
 	bin = core.bin;
@@ -1133,10 +1134,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			RZ_FREE (tmp);
 		}
 		pdbopts.symbol_store_path = (char *)rz_config_get (core.config, "pdb.symstore");
-		int r = rz_bin_pdb_download (&core, isradjson, &actions_done, &pdbopts);
-		rz_core_file_free (fh);
-		rz_core_fini (&core);
-		return r;
+		result = rz_bin_pdb_download (&core, isradjson, &actions_done, &pdbopts);
 	}
 
 	if ((tmp = rz_sys_getenv ("RZ_BIN_PREFIX"))) {
@@ -1191,5 +1189,5 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	rz_core_fini (&core);
 	rz_lib_free (l);
 
-	return 0;
+	return result;
 }

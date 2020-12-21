@@ -142,6 +142,7 @@ rz_bin = library('rz_bin', rz_bin_sources,
   c_args: ['-DRZ_API_BIN_ONLY=1'] + library_cflags,
   dependencies: [
     rz_util_dep,
+    rz_cons_dep,
     rz_io_dep,
     rz_hash_dep,
     rz_magic_dep,
