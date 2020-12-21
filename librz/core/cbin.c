@@ -2095,7 +2095,7 @@ static int bin_imports(RzCore *r, int mode, int va, const char *name) {
 
 	if (pj) {
 		pj_end (pj);
-		rz_cons_printf ("%s\n", pj_string (pj));
+		rz_cons_print (pj_string (pj));
 		pj_free (pj);
 	}
 

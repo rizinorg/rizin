@@ -629,26 +629,6 @@ RZ_API RzBinFile *rz_bin_file_find_by_name(RzBin *bin, const char *name) {
 	return NULL;
 }
 
-RZ_IPI RzBinFile *rz_bin_file_find_by_name_n(RzBin *bin, const char *name, int idx) {
-	RzListIter *iter;
-	RzBinFile *bf = NULL;
-	int i = 0;
-	if (!bin) {
-		return bf;
-	}
-
-	rz_list_foreach (bin->binfiles, iter, bf) {
-		if (bf && bf->file && !strcmp (bf->file, name)) {
-			if (i == idx) {
-				break;
-			}
-			i++;
-		}
-		bf = NULL;
-	}
-	return bf;
-}
-
 RZ_API bool rz_bin_file_set_cur_by_id(RzBin *bin, ut32 bin_id) {
 	RzBinFile *bf = rz_bin_file_find_by_id (bin, bin_id);
 	return bf? rz_bin_file_set_cur_binfile (bin, bf): false;
