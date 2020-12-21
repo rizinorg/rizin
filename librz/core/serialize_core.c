@@ -39,6 +39,12 @@ RZ_API void rz_serialize_core_save(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 	sdb_set (db, "blocksize", buf, 0);
 }
 
+static const char * const config_exclude[] = {
+	"scr.interactive", // especially relevant for Cutter since it needs this to be false
+	"scr.color",
+	NULL
+};
+
 RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, bool load_bin_io,
 		RZ_NULLABLE const char *prj_file, RZ_NULLABLE RzSerializeResultInfo *res) {
 	Sdb *subdb;
@@ -48,7 +54,7 @@ RZ_API bool rz_serialize_core_load(RZ_NONNULL Sdb *db, RZ_NONNULL RzCore *core, 
 	if (load_bin_io) {
 		SUB ("file", file_load (subdb, core, prj_file, res));
 	}
-	SUB ("config", rz_serialize_config_load (subdb, core->config, res));
+	SUB ("config", rz_serialize_config_load (subdb, core->config, config_exclude, res));
 	SUB ("flags", rz_serialize_flag_load (subdb, core->flags, res));
 	SUB ("analysis", rz_serialize_analysis_load (subdb, core->analysis, res));
 

@@ -5212,6 +5212,9 @@ toro:
 	rz_cons_break_push (NULL, NULL);
 	for (i = idx = ret = 0; addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
+		if (ds->pdf && ds->at >= rz_analysis_function_max_addr (ds->pdf)) {
+			break;
+		}
 		ds->vat = rz_core_pava (core, ds->at);
 		if (rz_cons_is_breaked ()) {
 			RZ_FREE (nbuf);
