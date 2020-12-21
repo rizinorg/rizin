@@ -34,7 +34,7 @@ RZ_API int rz_sandbox_read(int fd, ut8 *buf, int len);
 RZ_API int rz_sandbox_write(int fd, const ut8 *buf, int len);
 RZ_API bool rz_sandbox_enable(bool e);
 RZ_API bool rz_sandbox_disable(bool e);
-RZ_API int rz_sandbox_system(const char *x, int fork);
+RZ_API int rz_sandbox_system(const char *x);
 RZ_API bool rz_sandbox_creat(const char *path, int mode);
 RZ_API int rz_sandbox_open(const char *path, int mode, int perm);
 RZ_API FILE *rz_sandbox_fopen(const char *path, const char *mode);

@@ -358,7 +358,6 @@ typedef struct rz_core_item_t {
 } RzCoreItem;
 
 
-RZ_API RzCoreItem *rz_core_item_at (RzCore *core, ut64 addr);
 RZ_API void rz_core_item_free (RzCoreItem *ci);
 
 RZ_API int rz_core_bind(RzCore *core, RzCoreBind *bnd);

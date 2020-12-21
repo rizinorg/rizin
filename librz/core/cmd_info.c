@@ -138,68 +138,6 @@ static bool demangle(RzCore *core, const char *s) {
 	return true;
 }
 
-static void cmd_info_here(RzCore *core, int mode) {
-	RzCoreItem *item = rz_core_item_at (core, core->offset);
-	if (item) {
-		PJ *pj = pj_new ();
-		pj_o (pj);
-
-		pj_ks (pj, "type", item->type);
-		pj_ks (pj, "perm", rz_str_rwx_i (item->perm));
-		pj_kn (pj, "size", item->size);
-		pj_kn (pj, "addr", item->addr);
-		pj_kn (pj, "next", item->next);
-		pj_kn (pj, "prev", item->prev);
-		if (item->fcnname) {
-			pj_ks (pj, "fcnname", item->fcnname);
-		}
-		if (item->sectname) {
-			pj_ks (pj, "sectname", item->sectname);
-		}
-		if (item->comment) {
-			pj_ks (pj, "comment", item->comment);
-		}
-		RzListIter *iter;
-		RzAnalysisRef *ref;
-		if (item->data) {
-			pj_ks (pj, "data", item->data);
-		}
-		{
-			RzList *refs = rz_analysis_refs_get (core->analysis, core->offset);
-			if (refs && rz_list_length (refs) > 0) {
-				pj_k (pj, "refs");
-				pj_a (pj);
-				rz_list_foreach (refs, iter, ref) {
-					pj_o (pj);
-					pj_ks (pj, "type", rz_analysis_ref_type_tostring (ref->type));
-					pj_kn (pj, "addr", ref->addr);
-					pj_end (pj);
-				}
-				pj_end (pj);
-			}
-		}
-		{
-			RzList *refs = rz_analysis_xrefs_get (core->analysis, core->offset);
-			if (refs && rz_list_length (refs) > 0) {
-				pj_k (pj, "xrefs");
-				pj_a (pj);
-				rz_list_foreach (refs, iter, ref) {
-					pj_o (pj);
-					pj_ks (pj, "type", rz_analysis_ref_type_tostring (ref->type));
-					pj_kn (pj, "addr", ref->addr);
-					pj_end (pj);
-				}
-				pj_end (pj);
-			}
-		}
-		pj_end (pj);
-		char *s = pj_drain (pj);
-		rz_cons_printf ("%s\n", s);
-		free (s);
-		rz_core_item_free (item);
-	}
-}
-
 #define STR(x) (x)? (x): ""
 static void rz_core_file_info(RzCore *core, int mode) {
 	const char *fn = NULL;
@@ -1208,9 +1146,6 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 				mode |= RZ_MODE_ARRAY;
 			}
 			cmd_info_bin (core, va, mode);
-			goto done;
-		case '.': // "i."
-			cmd_info_here (core, input[1]);
 			goto done;
 		default:
 			cmd_info_bin (core, va, mode);

@@ -2176,7 +2176,7 @@ RZ_API int rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd) {
 				close (fds[1]);
 				dup2 (fds[0], 0);
 				//dup2 (1, 2); // stderr goes to stdout
-				rz_sandbox_system (shell_cmd, 0);
+				rz_sys_execl ("/bin/sh", "sh", "-c", shell_cmd, (const char *)NULL);
 				close (stdout_fd);
 			}
 		} else {

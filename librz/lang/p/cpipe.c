@@ -52,7 +52,7 @@ static int lang_cpipe_file(RzLang *lang, const char *file) {
 	free (libpath_esc);
 	free (file_esc);
 	free (cc);
-	if (rz_sandbox_system (buf, 1) == 0) {
+	if (rz_sandbox_system (buf) == 0) {
 		char *o_ld_path = rz_sys_getenv ("LD_LIBRARY_PATH");
 		rz_sys_setenv ("LD_LIBRARY_PATH", RZ_LIBDIR);
 		char *binfile = rz_str_newf ("%s/bin%s", libpath, libname);
