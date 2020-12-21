@@ -414,13 +414,13 @@ static int flag_to_flag(RzCore *core, const char *glob) {
 }
 
 typedef struct {
-	RTable *t;
+	RzTable *t;
 } FlagTableData;
 
 static bool __tableItemCallback(RzFlagItem *flag, void *user) {
 	FlagTableData *ftd = user;
 	if (!RZ_STR_ISEMPTY (flag->name)) {
-		RTable *t = ftd->t;
+		RzTable *t = ftd->t;
 		const char *spaceName = (flag->space && flag->space->name)? flag->space->name: "";
 		const char *addr = sdb_fmt ("0x%08"PFMT64x, flag->offset);
 		rz_table_add_row (t, addr, sdb_fmt ("%"PFMT64d, flag->size), spaceName, flag->name, NULL);
@@ -432,10 +432,10 @@ static void cmd_flag_table(RzCore *core, const char *input) {
 	const char fmt = *input++;
 	const char *q = input;
 	FlagTableData ftd = {0};
-	RTable *t = rz_core_table (core);
+	RzTable *t = rz_core_table (core);
 	ftd.t = t;
-	RTableColumnType *typeString = rz_table_type ("string");
-	RTableColumnType *typeNumber = rz_table_type ("number");
+	RzTableColumnType *typeString = rz_table_type ("string");
+	RzTableColumnType *typeNumber = rz_table_type ("number");
 	rz_table_add_column (t, typeNumber, "addr", 0);
 	rz_table_add_column (t, typeNumber, "size", 0);
 	rz_table_add_column (t, typeString, "space", 0);

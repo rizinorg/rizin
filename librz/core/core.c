@@ -3595,8 +3595,8 @@ RZ_API bool rz_core_autocomplete_remove(RzCoreAutocomplete *parent, const char* 
 	return false;
 }
 
-RZ_API RTable *rz_core_table(RzCore *core) {
-	RTable *table = rz_table_new ();
+RZ_API RzTable *rz_core_table(RzCore *core) {
+	RzTable *table = rz_table_new ();
 	if (table) {
 		table->cons = core->cons;
 	}

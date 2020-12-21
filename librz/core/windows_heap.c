@@ -1166,8 +1166,8 @@ err:
 	return NULL;
 }
 
-static RTable *__new_heapblock_tbl(void) {
-	RTable *tbl = rz_table_new ();
+static RzTable *__new_heapblock_tbl(void) {
+	RzTable *tbl = rz_table_new ();
 	rz_table_add_column (tbl, rz_table_type ("number"), "HeaderAddress", -1);
 	rz_table_add_column (tbl, rz_table_type ("number"), "UserAddress", -1);
 	rz_table_add_column (tbl, rz_table_type ("number"), "Size", -1);
@@ -1192,7 +1192,7 @@ static void w32_list_heaps(RzCore *core, const char format) {
 	PHeapInformation heapInfo = db->HeapInformation;
 	CHECK_INFO (heapInfo);
 	int i;
-	RTable *tbl = rz_table_new ();
+	RzTable *tbl = rz_table_new ();
 	rz_table_add_column (tbl, rz_table_type ("number"), "Address", -1);
 	rz_table_add_column (tbl, rz_table_type ("number"), "Blocks", -1);
 	rz_table_add_column (tbl, rz_table_type ("number"), "Allocated", -1);
@@ -1246,7 +1246,7 @@ static void w32_list_heaps_blocks(RzCore *core, const char format) {
 	CHECK_INFO (heapInfo);
 	HeapBlock *block = malloc (sizeof (HeapBlock));
 	int i;
-	RTable *tbl = __new_heapblock_tbl ();
+	RzTable *tbl = __new_heapblock_tbl ();
 	PJ *pj = pj_new ();
 	pj_a (pj);
 	for (i = 0; i < heapInfo->count; i++) {
@@ -1346,7 +1346,7 @@ static void cmd_debug_map_heap_block_win(RzCore *core, const char *input) {
 				type = "";
 			}
 			PJ *pj = pj_new ();
-			RTable *tbl = __new_heapblock_tbl ();
+			RzTable *tbl = __new_heapblock_tbl ();
 			ut64 headerAddr = off - granularity;
 			switch (input[0]) {
 			case ' ':

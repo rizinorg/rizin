@@ -368,7 +368,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 				}
 				rz_list_append (list, info);
 			}
-			RTable *table = rz_core_table (core);
+			RzTable *table = rz_core_table (core);
 			rz_table_visual_list (table, list, core->offset, core->blocksize,
 				rz_cons_get_size (NULL), rz_config_get_i (core->config, "scr.color"));
 			char *table_text = rz_table_tostring (table);
@@ -521,7 +521,7 @@ static void cmd_omf(RzCore *core, const char *input) {
 }
 
 static void rz_core_cmd_omt(RzCore *core, const char *arg) {
-	RTable *t = rz_table_new ();
+	RzTable *t = rz_table_new ();
 
 	rz_table_set_columnsf (t, "nnnnnnnss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "name", NULL);
 
@@ -850,7 +850,7 @@ static void cmd_open_map(RzCore *core, const char *input) {
 			}
 			rz_list_append (list, info);
 		}
-		RTable *table = rz_core_table (core);
+		RzTable *table = rz_core_table (core);
 		rz_table_visual_list (table, list, core->offset, core->blocksize,
 			rz_cons_get_size (NULL), rz_config_get_i (core->config, "scr.color"));
 		char *tablestr = rz_table_tostring (table);
