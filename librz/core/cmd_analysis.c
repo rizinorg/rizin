@@ -908,7 +908,7 @@ static void type_cmd(RzCore *core, const char *input) {
 		rz_core_analysis_type_match (core, fcn);
 		rz_core_seek (core, seek, true);
 		break;
-	case '?':
+	case '?': // "aft?"
 		rz_core_cmd_help (core, help_msg_aft);
 		break;
 	}
@@ -1416,7 +1416,7 @@ static int var_cmd(RzCore *core, const char *str) {
 		}
 	}
 	switch (str[1]) { // afv[bsr]
-	case '\0':
+	case '\0': // "afv"
 	case '*': // "afv[bsr]*"
 		rz_analysis_var_list_show (core->analysis, fcn, type, str[1], NULL);
 		break;
@@ -6260,10 +6260,10 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 		break;
 	case 'k': // "aek"
 		switch (input[1]) {
-		case '\0':
+		case '\0':  // "aek"
 			input = "123*";
 			/* fall through */
-		case ' ':
+		case ' ': // "aek "
 			if (esil && esil->stats) {
 				char *out = sdb_querys (esil->stats, NULL, 0, input + 2);
 				if (out) {
@@ -6274,7 +6274,7 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 				eprintf ("esil.stats is empty. Run 'aei'\n");
 			}
 			break;
-		case '-':
+		case '-': // "aek-"
 			if (esil) {
 				sdb_reset (esil->stats);
 			}
@@ -6661,11 +6661,11 @@ static void cmd_analysis_opcode(RzCore *core, const char *input) {
 			eprintf ("Use: aod[?a] ([opcode])    describe current, [given] or all mnemonics\n");
 		}
 		break;
-	case '*':
+	case '*': // "ao*"
 		rz_core_analysis_hint_list (core->analysis, input[0]);
 		break;
-	case 0:
-	case ' ': {
+	case 0: // "ao"
+	case ' ': { // "ao "
 			int count = 0;
 			if (input[0]) {
 				l = (int)rz_num_get (core->num, input + 1);
@@ -6683,7 +6683,7 @@ static void cmd_analysis_opcode(RzCore *core, const char *input) {
 			core_analysis_bytes (core, core->block, len, count, 0);
 		}
 		break;
-	case 'f':
+	case 'f': // "aof"
 		{
 			RzAnalysisOp aop = RZ_EMPTY;
 			ut8 data[32];
@@ -6704,7 +6704,7 @@ static void cmd_analysis_opcode(RzCore *core, const char *input) {
 		}
 		break;
 	default:
-	case '?':
+	case '?': // "ao?"
 		rz_core_cmd_help (core, help_msg_ao);
 		break;
 	}
@@ -7121,10 +7121,10 @@ static void cmd_analysis_syscall(RzCore *core, const char *input) {
 			pj_free (pj);
 		}
 		break;
-	case '\0':
+	case '\0': // "as"
 		cmd_syscall_do (core, -1, core->offset);
 		break;
-	case ' ':
+	case ' ': // "as "
 		{
 		const char *sn = rz_str_trim_head_ro (input + 1);
 		st64 num = rz_syscall_get_num (core->analysis->syscall, sn);
@@ -7135,7 +7135,7 @@ static void cmd_analysis_syscall(RzCore *core, const char *input) {
 		}
 		break;
 	default:
-	case '?':
+	case '?': // "as?"
 		rz_core_cmd_help (core, help_msg_as);
 		break;
 	}
@@ -7603,8 +7603,8 @@ static bool cmd_analysis_refs(RzCore *core, const char *input) {
 		}
 		rz_list_free (list);
 	} break;
-	case 'f':
-		if (input[1] == 'f') { // "axff"
+	case 'f': // "axff"
+		if (input[1] == 'f') {
 			RzAnalysisFunction * fcn = rz_analysis_get_fcn_in (core->analysis, addr, 0);
 			RzListIter *iter;
 			PJ *pj = NULL;
@@ -7770,7 +7770,7 @@ static bool cmd_analysis_refs(RzCore *core, const char *input) {
 		}
 	   	break;
 	default:
-	case '?':
+	case '?': // "ax?"
 		rz_core_cmd_help (core, help_msg_ax);
 		break;
 	}
@@ -7779,7 +7779,7 @@ static bool cmd_analysis_refs(RzCore *core, const char *input) {
 }
 static void cmd_analysis_hint(RzCore *core, const char *input) {
 	switch (input[0]) {
-	case '?':
+	case '?': // "ah?"
 		if (input[1]) {
 			ut64 addr = rz_num_math (core->num, input + 1);
 			rz_core_analysis_hint_print (core->analysis, addr, 0);
@@ -8008,7 +8008,7 @@ static void cmd_analysis_hint(RzCore *core, const char *input) {
 			free (off);
 			break;
 		}
-		case ' ': {
+		case ' ': { // "aht "
 			// rz_analysis_hint_set_opcode (core->analysis, core->offset, input + 2);
 			const char *off = NULL;
 			char *type = strdup (rz_str_trim_head_ro (input + 2));
@@ -8087,7 +8087,7 @@ static void cmd_analysis_hint(RzCore *core, const char *input) {
 			rz_analysis_op_fini (&op);
 			free (type);
 		} break;
-		case '?':
+		case '?': // "aht?"
 			rz_core_cmd_help (core, help_msg_aht);
 			break;
 		}
@@ -8290,7 +8290,7 @@ static void cmd_agraph_node(RzCore *core, const char *input) {
 		rz_str_argv_free (args);
 		break;
 	}
-	case '?':
+	case '?': // "agn?"
 	default:
 		rz_core_cmd_help (core, help_msg_agn);
 		break;
@@ -8331,7 +8331,7 @@ static void cmd_agraph_edge(RzCore *core, const char *input) {
 		rz_str_argv_free (args);
 		break;
 	}
-	case '?':
+	case '?':// "age?"
 	default:
 		rz_core_cmd_help (core, help_msg_age);
 		break;
@@ -8407,8 +8407,8 @@ RZ_API void rz_core_agraph_print(RzCore *core, int use_utf, const char *input) {
 		rz_agraph_foreach (core->graph, agraph_print_node, NULL);
 		rz_agraph_foreach_edge (core->graph, agraph_print_edge, NULL);
 		break;
-	case 'J':
-	case 'j': {
+	case 'J': // "aggJ"
+	case 'j': { // "aggj"
 		PJ *pj = pj_new ();
 		if (!pj) {
 			return;
@@ -8422,7 +8422,7 @@ RZ_API void rz_core_agraph_print(RzCore *core, int use_utf, const char *input) {
 		rz_cons_println (pj_string (pj));
 		pj_free (pj);
 	} break;
-	case 'g':
+	case 'g': // "aggg"
 		rz_cons_printf ("graph\n[\n"
 			       "hierarchic 1\n"
 			       "label \"\"\n"
@@ -8561,8 +8561,8 @@ static void rz_core_graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo>*/ *gra
 	case '*': // "ag_*" -
 		print_graph_agg (graph);
 		break;
-	case 'J':
-	case 'j': {
+	case 'J': // "ag_J"
+	case 'j': { // "ag_j"
 		PJ *pj = pj_new ();
 		if (pj) {
 			rz_graph_drawable_to_json (graph, pj, use_offset);
@@ -8570,7 +8570,7 @@ static void rz_core_graph_print(RzCore *core, RzGraph /*<RzGraphNodeInfo>*/ *gra
 			pj_free (pj);
 		}
 	} break;
-	case 'g':
+	case 'g': // "ag_g"
 		rz_cons_printf ("graph\n[\n"
 			       "hierarchic 1\n"
 			       "label \"\"\n"
@@ -8803,31 +8803,31 @@ static void cmd_analysis_graph(RzCore *core, const char *input) {
 		case 't': // "agct"
 		case 'k': // "agck"
 		case 'w': // "agcw"
-		case ' ': {
+		case ' ': { // "agc "
 			core->graph->is_callgraph = true;
 			rz_core_cmdf (core, "ag-; .agc* @ %" PFMT64u "; agg%s;", core->offset, input + 1);
 			core->graph->is_callgraph = false;
 			break;
 			}
-		case 0:
+		case 0: // "agc "
 			core->graph->is_callgraph = true;
 			rz_core_cmd0 (core, "ag-; .agc* $$; agg;");
 			core->graph->is_callgraph = false;
 			break;
-		case 'g': {
+		case 'g': { // "agg"
 			rz_core_analysis_callgraph (core, core->offset, RZ_GRAPH_FORMAT_GMLFCN);
 			break;
 		}
-		case 'd': {
+		case 'd': { // "aggd"
 			rz_core_analysis_callgraph (core, core->offset, RZ_GRAPH_FORMAT_DOT);
 			break;
 		}
-		case 'J':
-		case 'j': {
+		case 'J': // "aggJ"
+		case 'j': { // "aggj"
 			rz_core_analysis_callgraph (core, core->offset, RZ_GRAPH_FORMAT_JSON);
 			break;
 		}
-		case '*': {
+		case '*': { // "agg*"
 			rz_core_analysis_callgraph (core, core->offset, RZ_GRAPH_FORMAT_CMD);
 			break;
 		}
@@ -9396,7 +9396,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 	case 'b': // "aab"
 		cmd_analysis_blocks (core, input + 1);
 		break;
-	case 'f':
+	case 'f':  // "aaf"
 		if (input[1] == 'e') {  // "aafe"
 			rz_core_cmd0 (core, "aef@@f");
 		} else if (input[1] == 'r') {
@@ -9477,7 +9477,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 		case 'g': // "aang"
 			rz_core_analysis_autoname_all_golang_fcns (core);
 			break;
-		case '?':
+		case '?': // "aan?"
 			eprintf ("Usage: aan[rg]\n");
 			eprintf ("aan  : autoname all functions\n");
 			eprintf ("aang : autoname all golang functions\n");
