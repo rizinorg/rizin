@@ -669,7 +669,7 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 				if (oldcwd) {
 					char *newdir = oldcwd;
 					oldcwd = rz_sys_getdir ();
-					if (rz_sandbox_chdir (newdir) == -1) {
+					if (chdir (newdir) == -1) {
 						eprintf ("Cannot chdir to %s\n", newdir);
 						free (oldcwd);
 						oldcwd = newdir;
@@ -685,7 +685,7 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 					if (*homepath) {
 						free (oldcwd);
 						oldcwd = rz_sys_getdir ();
-						if (rz_sandbox_chdir (homepath) == -1) {
+						if (chdir (homepath) == -1) {
 							eprintf ("Cannot chdir to %s\n", homepath);
 						}
 					}
@@ -696,13 +696,13 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 			} else {
 				free (oldcwd);
 				oldcwd = rz_sys_getdir ();
-				if (rz_sandbox_chdir (input + 1) == -1) {
+				if (chdir (input + 1) == -1) {
 					eprintf ("Cannot chdir to %s\n", input + 1);
 				}
 			}
 		} else {
 			char *home = rz_sys_getenv (RZ_SYS_HOME);
-			if (!home || rz_sandbox_chdir (home) == -1) {
+			if (!home || chdir (home) == -1) {
 				eprintf ("Cannot find home.\n");
 			}
 			free (home);

@@ -683,7 +683,7 @@ static char *langFromHashbang(RzCore *core, const char *file) {
 	int fd = rz_sandbox_open (file, O_RDONLY, 0);
 	if (fd != -1) {
 		char firstLine[128] = {0};
-		int len = rz_sandbox_read (fd, (ut8*)firstLine, sizeof (firstLine) - 1);
+		int len = read (fd, (ut8*)firstLine, sizeof (firstLine) - 1);
 		firstLine[len] = 0;
 		if (!strncmp (firstLine, "#!/", 3)) {
 			// I CAN HAS A HASHBANG
@@ -696,10 +696,10 @@ static char *langFromHashbang(RzCore *core, const char *file) {
 				*nl = 0;
 			}
 			nl = strdup (firstLine + 2);
-			rz_sandbox_close (fd);
+			close (fd);
 			return nl;
 		}
-		rz_sandbox_close (fd);
+		close (fd);
 	}
 	return NULL;
 }

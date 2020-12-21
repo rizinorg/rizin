@@ -31,7 +31,10 @@ static int __io_posix_open(const char *file, int perm, int mode) {
 	if (perm & RZ_PERM_W) {
 		fd = rz_sandbox_open (file, O_RDWR, 0);
 		if (fd == -1 && (perm & RZ_PERM_CREAT)) {
-			rz_sandbox_creat (file, 0644);
+			fd = open (path, O_CREAT | O_TRUNC | O_WRONLY, 0644);
+			if (fd != -1) {
+				close (fd);
+			}
 			fd = rz_sandbox_open (file, O_RDWR | O_CREAT, 0);
 		}
 	} else {

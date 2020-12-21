@@ -515,7 +515,8 @@ RZ_API char *rz_sys_getdir(void) {
 }
 
 RZ_API int rz_sys_chdir(const char *s) {
-	return rz_sandbox_chdir (s)==0;
+	rz_return_val_if_fail (s, 0);
+	return chdir (s)==0;
 }
 
 RZ_API bool rz_sys_aslr(int val) {
@@ -526,7 +527,7 @@ RZ_API bool rz_sys_aslr(int val) {
 	snprintf(buf, sizeof (buf), "%d\n", val != 0 ? 2 : 0);
 	int fd = rz_sandbox_open (rva, O_WRONLY, 0644);
 	if (fd != -1) {
-		if (rz_sandbox_write (fd, (ut8 *)buf, sizeof (buf)) != sizeof (buf)) {
+		if (write (fd, (ut8 *)buf, sizeof (buf)) != sizeof (buf)) {
 			eprintf ("Failed to set RVA\n");
 			ret = false;
 		}

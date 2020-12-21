@@ -175,7 +175,7 @@ static int i2c_open(struct gport *port) {
 		return -1;
 	}
 	if (ioctl (file, I2C_SLAVE, GPROBE_I2C_ADDR >> 1) < 0) {
-		rz_sandbox_close (file);
+		close (file);
 		port->fd = -1;
 		return -1;
 	}

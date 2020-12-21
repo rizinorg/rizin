@@ -16,21 +16,8 @@
 #endif
 
 
-RZ_API bool rz_sandbox_creat (const char *path, int mode) {
-	int fd = open (path, O_CREAT | O_TRUNC | O_WRONLY, mode);
-	if (fd != -1) {
-		close (fd);
-		return true;
-	}
-	return false;
-}
-
 static inline char *expand_home(const char *p) {
 	return (*p == '~')? rz_str_home (p): strdup (p);
-}
-
-RZ_API int rz_sandbox_lseek(int fd, ut64 addr, int whence) {
-	return lseek (fd, (off_t)addr, whence);
 }
 
 RZ_API int rz_sandbox_truncate(int fd, ut64 length) {
@@ -39,18 +26,6 @@ RZ_API int rz_sandbox_truncate(int fd, ut64 length) {
 #else
 	return ftruncate (fd, (off_t)length);
 #endif
-}
-
-RZ_API int rz_sandbox_read(int fd, ut8 *buf, int len) {
-	return read (fd, buf, len);
-}
-
-RZ_API int rz_sandbox_write(int fd, const ut8* buf, int len) {
-	return write (fd, buf, len);
-}
-
-RZ_API int rz_sandbox_close(int fd) {
-	return close (fd);
 }
 
 /* perm <-> mode */
@@ -153,11 +128,6 @@ RZ_API FILE *rz_sandbox_fopen (const char *path, const char *mode) {
 	}
 	free (epath);
 	return ret;
-}
-
-RZ_API int rz_sandbox_chdir(const char *path) {
-	rz_return_val_if_fail (path, -1);
-	return chdir (path);
 }
 
 RZ_API int rz_sandbox_kill(int pid, int sig) {

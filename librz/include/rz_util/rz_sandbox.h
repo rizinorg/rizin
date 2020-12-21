@@ -28,14 +28,8 @@ RZ_API HANDLE rz_sandbox_opendir(const char *path, WIN32_FIND_DATAW *entry);
 RZ_API DIR* rz_sandbox_opendir(const char *path);
 #endif
 RZ_API int rz_sandbox_truncate(int fd, ut64 length);
-RZ_API int rz_sandbox_lseek(int fd, ut64 addr, int mode);
-RZ_API int rz_sandbox_close(int fd);
-RZ_API int rz_sandbox_read(int fd, ut8 *buf, int len);
-RZ_API int rz_sandbox_write(int fd, const ut8 *buf, int len);
-RZ_API bool rz_sandbox_creat(const char *path, int mode);
 RZ_API int rz_sandbox_open(const char *path, int mode, int perm);
 RZ_API FILE *rz_sandbox_fopen(const char *path, const char *mode);
-RZ_API int rz_sandbox_chdir(const char *path);
 RZ_API int rz_sandbox_kill(int pid, int sig);
 
 #ifdef __cplusplus
