@@ -636,7 +636,7 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 		} else {
 			close (2);
 		}
-		exit (rz_sandbox_system (cmd, 0));
+		exit (rz_sys_execl ("/bin/sh", "sh", "-c", cmd, (const char*)NULL));
 	default:
 		outputptr = strdup ("");
 		if (!outputptr) {
@@ -788,7 +788,7 @@ RZ_API int rz_sys_cmdbg (const char *str) {
 	if (pid) {
 		return pid;
 	}
-	ret = rz_sandbox_system (str, 0);
+	ret = rz_sys_execl ("/bin/sh", "sh", "-c", str, (const char*)NULL);
 	eprintf ("{exit: %d, pid: %d, cmd: \"%s\"}", ret, pid, str);
 	exit (0);
 	return -1;
@@ -806,7 +806,7 @@ RZ_API int rz_sys_cmd(const char *str) {
 	if (rz_sandbox_enable (0)) {
 		return false;
 	}
-	return rz_sandbox_system (str, 1);
+	return rz_sandbox_system (str);
 }
 
 RZ_API char *rz_sys_cmd_str(const char *cmd, const char *input, int *len) {
@@ -1739,6 +1739,66 @@ RZ_API int rz_sys_system(const char *command) {
 	int res = system (command);
 	parent_lock_leave ();
 	return res;
+}
+#elif !HAVE_SYSTEM && APPLE_SDK_IPHONEOS
+#include <spawn.h>
+RZ_API int rz_sys_system(const char *command) {
+	int argc;
+	char *cmd = strdup (command);
+	char **argv = rz_str_argv (cmd, &argc);
+	if (argv) {
+		char *argv0 = rz_file_path (argv[0]);
+		pid_t pid = 0;
+		int r = posix_spawn (&pid, argv0, NULL, NULL, argv, NULL);
+		int status;
+		int s = waitpid (pid, &status, 0);
+		return WEXITSTATUS (s);
+	}
+}
+#elif !HAVE_SYSTEM && HAVE_FORK
+#include <spawn.h>
+RZ_API int rz_sys_system(const char *command) {
+	if (!strchr (command, '|')) {
+		char **argv, *cmd = strdup (command);
+		int rc, pid, argc;
+		char *isbg = strchr (cmd, '&');
+		// XXX this is hacky
+		if (isbg) {
+			*isbg = 0;
+		}
+		argv = rz_str_argv (cmd, &argc);
+		if (argv) {
+			char *argv0 = rz_file_path (argv[0]);
+			if (!argv0) {
+				eprintf ("Cannot find '%s'\n", argv[0]);
+				return -1;
+			}
+			pid = 0;
+			posix_spawn (&pid, argv0, NULL, NULL, argv, NULL);
+			if (isbg) {
+				// XXX. wait for children
+				rc = 0;
+			} else {
+				rc = waitpid (pid, NULL, 0);
+			}
+			rz_str_argv_free (argv);
+			free (argv0);
+			return rc;
+		}
+		eprintf ("Error parsing command arguments\n");
+		return -1;
+	}
+	int child = rz_sys_fork ();
+	if (child == -1) {
+		return -1;
+	}
+	if (child) {
+		return waitpid (child, NULL, 0);
+	}
+	if (rz_sys_execl ("/bin/sh", "sh", "-c", command, (const char*)NULL) == -1) {
+		perror ("execl");
+	}
+	exit (1);
 }
 #elif !HAVE_SYSTEM
 RZ_API int rz_sys_system(const char *command) {

@@ -204,79 +204,13 @@ RZ_API bool rz_sandbox_enable (bool e) {
 	return enabled;
 }
 
-RZ_API int rz_sandbox_system(const char *x, int n) {
+RZ_API int rz_sandbox_system(const char *x) {
 	rz_return_val_if_fail (x, -1);
 	if (enabled) {
 		eprintf ("sandbox: system call disabled\n");
 		return -1;
 	}
-#if LIBC_HAVE_FORK
-#if LIBC_HAVE_SYSTEM
-	if (n) {
-#if APPLE_SDK_IPHONEOS
-#include <spawn.h>
-		int argc;
-		char *cmd = strdup (x);
-		char **argv = rz_str_argv (cmd, &argc);
-		if (argv) {
-			char *argv0 = rz_file_path (argv[0]);
-			pid_t pid = 0;
-			int r = posix_spawn (&pid, argv0, NULL, NULL, argv, NULL);
-			int status;
-			int s = waitpid (pid, &status, 0);
-			return WEXITSTATUS (s);
-		}
-#else
-		return rz_sys_system (x);
-#endif
-	}
-	return rz_sys_execl ("/bin/sh", "sh", "-c", x, (const char*)NULL);
-#else
-	#include <spawn.h>
-	if (n && !strchr (x, '|')) {
-		char **argv, *cmd = strdup (x);
-		int rc, pid, argc;
-		char *isbg = strchr (cmd, '&');
-		// XXX this is hacky
-		if (isbg) {
-			*isbg = 0;
-		}
-		argv = rz_str_argv (cmd, &argc);
-		if (argv) {
-			char *argv0 = rz_file_path (argv[0]);
-			if (!argv0) {
-				eprintf ("Cannot find '%s'\n", argv[0]);
-				return -1;
-			}
-			pid = 0;
-			posix_spawn (&pid, argv0, NULL, NULL, argv, NULL);
-			if (isbg) {
-				// XXX. wait for children
-				rc = 0;
-			} else {
-				rc = waitpid (pid, NULL, 0);
-			}
-			rz_str_argv_free (argv);
-			free (argv0);
-			return rc;
-		}
-		eprintf ("Error parsing command arguments\n");
-		return -1;
-	}
-	int child = rz_sys_fork ();
-	if (child == -1) {
-		return -1;
-	}
-	if (child) {
-		return waitpid (child, NULL, 0);
-	}
-	if (rz_sys_execl ("/bin/sh", "sh", "-c", x, (const char*)NULL) == -1) {
-		perror ("execl");
-	}
-	exit (1);
-#endif
-#endif
-	return -1;
+	return rz_sys_system (x);
 }
 
 RZ_API bool rz_sandbox_creat (const char *path, int mode) {

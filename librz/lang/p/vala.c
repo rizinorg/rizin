@@ -72,7 +72,7 @@ static int lang_vala_file(RzLang *lang, const char *file, bool silent) {
 		}
 	}
 	free (srcdir);
-	if (rz_sandbox_system (buf, 1) != 0) {
+	if (rz_sandbox_system (buf) != 0) {
 		free (libname);
 		return false;
 	}
@@ -87,7 +87,7 @@ static int lang_vala_file(RzLang *lang, const char *file, bool silent) {
 	// TODO: use CC environ if possible
 	len = snprintf (buf, sizeof (buf), "gcc -fPIC -shared %s.c -o lib%s." RZ_LIB_EXT
 		" $(pkg-config --cflags --libs rz_core gobject-2.0 %s)", name, libname, libs);
-	if (len >= sizeof (buf) || rz_sandbox_system (buf, 1) != 0) {
+	if (len >= sizeof (buf) || rz_sandbox_system (buf) != 0) {
 		free (libname);
 		return false;
 	}
