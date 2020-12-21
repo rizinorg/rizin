@@ -1895,7 +1895,7 @@ RZ_API int rz_sys_open(const char *path, int perm, int mode) {
 	return ret;
 }
 
-RZ_API FILE *rz_sys_fopen (const char *path, const char *mode) {
+RZ_API FILE *rz_sys_fopen(const char *path, const char *mode) {
 	rz_return_val_if_fail (path && mode, NULL);
 	FILE *ret = NULL;
 	char *epath = NULL;
