@@ -5389,14 +5389,16 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					if (realsz + 4096 < linearsz) {
 						eprintf ("Linear size differs too much from the bbsum, please use pdr instead.\n");
 					} else {
-						ut64 at = f->addr; // TODO: should be rz_analysis_function_min_addr()
-						ut64 sz = RZ_MAX (linearsz, realsz);
-						ut8 *buf = calloc (sz, 1);
-						if (buf) {
-							(void)rz_io_read_at (core->io, at, buf, sz);
-							core->num->value = rz_core_print_disasm (core->print, core, at, buf, sz, sz, 0, 1, 0, NULL, f);
-							free (buf);
-							// rz_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, f->_size > 0 ? f->_size: rz_analysis_function_realsize (f), f->addr);
+						ut64 start = f->addr; // For pdf, start disassembling at the entrypoint
+						ut64 end = rz_analysis_function_max_addr (f);
+						if (end > start) {
+							ut64 sz = end - start;
+							ut8 *buf = calloc (sz, 1);
+							if (buf) {
+								(void)rz_io_read_at (core->io, start, buf, sz);
+								core->num->value = rz_core_print_disasm (core->print, core, start, buf, sz, sz, 0, 1, 0, NULL, f);
+								free (buf);
+							}
 						}
 					}
 					pd_result = 0;

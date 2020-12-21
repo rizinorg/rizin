@@ -846,3 +846,18 @@ EXPECT=<<EOF
 05
 EOF
 RUN
+
+NAME=pdf entry0 pe
+FILE=bins/pe/ConsoleApplication1.exe
+ARGS=-A
+CMDS=pdf
+EXPECT=<<EOF
+        :   ;-- eip:
+/ 329: entry0 ();
+|       :   ; var int32_t var_24h @ ebp-0x24
+|       :   ; var int32_t var_19h @ ebp-0x19
+|       :   ; var int32_t var_4h @ ebp-0x4
+|       :   0x0040149e      call fcn.00401836
+|       `=< 0x004014a3      jmp 0x401322
+EOF
+RUN
