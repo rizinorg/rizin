@@ -11,8 +11,8 @@
 
 #define BITMAP_WORD_COUNT(bit) (BITWORD_MULT(bit) >> BITWORD_BITS_SHIFT)
 
-RZ_API RBitmap *rz_bitmap_new(size_t len) {
-	RBitmap *b = RZ_NEW0 (RBitmap);
+RZ_API RzBitmap *rz_bitmap_new(size_t len) {
+	RzBitmap *b = RZ_NEW0 (RzBitmap);
 	if (!b) {
 		return NULL;
 	}
@@ -21,33 +21,33 @@ RZ_API RBitmap *rz_bitmap_new(size_t len) {
 	return b;
 }
 
-RZ_API void rz_bitmap_set_bytes(RBitmap *b, const ut8 *buf, int len) {
+RZ_API void rz_bitmap_set_bytes(RzBitmap *b, const ut8 *buf, int len) {
 	if (b->length < len) {
 		len = b->length;
 	}
 	memcpy (b->bitmap, buf, len);
 }
 
-RZ_API void rz_bitmap_free(RBitmap *b) {
+RZ_API void rz_bitmap_free(RzBitmap *b) {
 	free (b->bitmap);
 	free (b);
 }
 
-RZ_API void rz_bitmap_set(RBitmap *b, size_t bit) {
+RZ_API void rz_bitmap_set(RzBitmap *b, size_t bit) {
 	if (bit < b->length) {
 		b->bitmap[(bit >> BITWORD_BITS_SHIFT)] |=
 			((RBitword)1 << (bit & BITWORD_BITS_MASK));
 	}
 }
 
-RZ_API void rz_bitmap_unset(RBitmap *b, size_t bit) {
+RZ_API void rz_bitmap_unset(RzBitmap *b, size_t bit) {
 	if (bit < b->length) {
 		b->bitmap[(bit >> BITWORD_BITS_SHIFT)] &=
 			~((RBitword)1 << (bit & BITWORD_BITS_MASK));
 	}
 }
 
-RZ_API int rz_bitmap_test(RBitmap *b, size_t bit) {
+RZ_API int rz_bitmap_test(RzBitmap *b, size_t bit) {
 	if (bit < b->length) {
 		RBitword bword = b->bitmap[ (bit >> BITWORD_BITS_SHIFT)];
 		return BITWORD_TEST (bword, (bit & BITWORD_BITS_MASK));
