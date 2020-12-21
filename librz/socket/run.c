@@ -574,7 +574,7 @@ RZ_API bool rz_run_parseline(RzRunProfile *p, const char *b) {
 	} else if (!strcmp (b, "envfile")) {
 		char *p, buf[1024];
 		size_t len;
-		FILE *fd = rz_sandbox_fopen (e, "r");
+		FILE *fd = rz_sys_fopen (e, "r");
 		if (!fd) {
 			eprintf ("Cannot open '%s'\n", e);
 			if (must_free == true) {

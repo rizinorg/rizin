@@ -131,9 +131,9 @@ RZ_API int rz_main_rz_agent(int argc, const char **argv) {
 				int pid = atoi (rs->path + 11);
 				if (pid > 0) {
 #if __WINDOWS__
-					rz_sandbox_kill (pid, 0);
+					rz_sys_kill (pid, 0);
 #else
-					rz_sandbox_kill (pid, SIGKILL);
+					rz_sys_kill (pid, SIGKILL);
 #endif
 				}
 			} else if (!strncmp (rs->path, "/file/open/", 11)) {

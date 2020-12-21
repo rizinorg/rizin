@@ -38,6 +38,7 @@ RZ_API char **rz_sys_get_environ(void);
 RZ_API void rz_sys_set_environ(char **e);
 
 RZ_API int rz_sys_fork(void);
+RZ_API int rz_sys_kill(int pid, int sig);
 // nocleanup = false => exit(); true => _exit()
 RZ_API void rz_sys_exit(int status, bool nocleanup);
 RZ_API bool rz_is_heap (void *p);
@@ -125,8 +126,15 @@ RZ_API char *rz_sys_get_src_dir_w32(void);
 RZ_API bool rz_sys_cmd_str_full_w32(const char *cmd, const char *input, char **output, int *outlen, char **sterr);
 RZ_API bool rz_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE out, HANDLE err);
 #endif
+RZ_API int rz_sys_open(const char *path, int perm, int mode);
+RZ_API FILE *rz_sys_fopen (const char *path, const char *mode);
+RZ_API int rz_sys_truncate_fd(int fd, ut64 length);
 RZ_API int rz_sys_truncate(const char *file, int sz);
-RZ_API int rz_sys_cmd(const char *cmd);
+#if __WINDOWS__
+RZ_API HANDLE rz_sys_opendir(const char *path, WIN32_FIND_DATAW *entry);
+#else
+RZ_API DIR* rz_sys_opendir(const char *path);
+#endif
 RZ_API int rz_sys_cmdbg(const char *cmd);
 RZ_API int rz_sys_cmdf(const char *fmt, ...) RZ_PRINTF_CHECK(1, 2);
 RZ_API char *rz_sys_cmd_str(const char *cmd, const char *input, int *len);

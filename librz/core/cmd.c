@@ -680,7 +680,7 @@ static int lang_run_file(RzCore *core, RzLang *lang, const char *file) {
 }
 
 static char *langFromHashbang(RzCore *core, const char *file) {
-	int fd = rz_sandbox_open (file, O_RDONLY, 0);
+	int fd = rz_sys_open (file, O_RDONLY, 0);
 	if (fd != -1) {
 		char firstLine[128] = {0};
 		int len = read (fd, (ut8*)firstLine, sizeof (firstLine) - 1);
@@ -4113,7 +4113,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 		} else {
 			char buf[1024];
 			char cmd2[1024];
-			FILE *fd = rz_sandbox_fopen (each + 1, "r");
+			FILE *fd = rz_sys_fopen (each + 1, "r");
 			if (fd) {
 				core->rcmd->macro.counter = 0;
 				while (!feof (fd)) {
@@ -5310,7 +5310,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_file_lines_command) {
 	TSNode arg = ts_node_named_child (node, 1);
 	char *arg_str = ts_node_handle_arg(state, node, arg, 1);
 	ut64 orig_offset = core->offset;
-	FILE *fd = rz_sandbox_fopen (arg_str, "r");
+	FILE *fd = rz_sys_fopen (arg_str, "r");
 	if (!fd) {
 		res = RZ_CMD_STATUS_INVALID;
 		goto arg_out;

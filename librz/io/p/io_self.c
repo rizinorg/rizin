@@ -92,7 +92,7 @@ static int update_self_regions(RzIO *io, int pid) {
 	char path[1024], line[1024];
 	char region[100], region2[100], perms[5];
 	snprintf (path, sizeof (path) - 1, "/proc/%d/maps", pid);
-	FILE *fd = rz_sandbox_fopen (path, "r");
+	FILE *fd = rz_sys_fopen (path, "r");
 	if (!fd) {
 		return false;
 	}

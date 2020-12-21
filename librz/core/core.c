@@ -3363,11 +3363,11 @@ RZ_API char *rz_core_editor(const RzCore *core, const char *file, const char *st
 	bool readonly = false;
 	if (file && *file != '*') {
 		name = strdup (file);
-		fd = rz_sandbox_open (file, O_RDWR, 0644);
+		fd = rz_sys_open (file, O_RDWR, 0644);
 		if (fd == -1) {
-			fd = rz_sandbox_open (file, O_RDWR | O_CREAT, 0644);
+			fd = rz_sys_open (file, O_RDWR | O_CREAT, 0644);
 			if (fd == -1) {
-				fd = rz_sandbox_open (file, O_RDONLY, 0644);
+				fd = rz_sys_open (file, O_RDONLY, 0644);
 				readonly = true;
 			}
 		}

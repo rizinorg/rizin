@@ -48,7 +48,7 @@ int binutils_assemble(RzAsm *a, RzAsmOp *op, const char *buf, const char *as, co
 		int len = 0;
 		const ut8 *begin, *end;
 		close (ofd);
-		ofd = rz_sandbox_open (opath, O_BINARY | O_RDONLY, 0644);
+		ofd = rz_sys_open (opath, O_BINARY | O_RDONLY, 0644);
 		if (ofd < 0) {
 			goto skip_ofd;
 		}

@@ -74,7 +74,7 @@ static int lang_zig_init(void *user) {
 
 static int lang_zig_run(RzLang *lang, const char *code, int len) {
 	const char *file = "_tmp.zig";
-	FILE *fd = rz_sandbox_fopen (file, "w");
+	FILE *fd = rz_sys_fopen (file, "w");
 	if (fd) {
 		const char *zig_header = \
 "extern fn puts(&const u8) void;\n" \

@@ -1021,7 +1021,7 @@ static RzList *rz_debug_native_map_get (RzDebug *dbg) {
 #else
 	snprintf (path, sizeof (path), "/proc/%d/maps", dbg->pid);
 #endif
-	fd = rz_sandbox_fopen (path, "r");
+	fd = rz_sys_fopen (path, "r");
 	if (!fd) {
 		perror (sdb_fmt ("Cannot open '%s'", path));
 		return NULL;
@@ -1195,7 +1195,7 @@ static bool rz_debug_native_kill(RzDebug *dbg, int pid, int tid, int sig) {
 		rz_list_free (dbg->threads);
 		dbg->threads = NULL;
 	}
-	if ((rz_sandbox_kill (pid, sig) != -1)) {
+	if ((rz_sys_kill (pid, sig) != -1)) {
 		ret = true;
 	}
 	if (errno == 1) {

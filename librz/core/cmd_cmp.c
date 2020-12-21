@@ -643,7 +643,7 @@ RZ_IPI int rz_cmd_cmp(void *data, const char *input) {
 			eprintf ("Please. use 'cf [file]'\n");
 			return false;
 		}
-		fd = rz_sandbox_fopen (input + 2, "rb");
+		fd = rz_sys_fopen (input + 2, "rb");
 		if (!fd) {
 			eprintf ("Cannot open file '%s'\n", input + 2);
 			return false;

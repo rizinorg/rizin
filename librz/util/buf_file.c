@@ -26,7 +26,7 @@ static bool buf_file_init(RzBuffer *b, const void *user) {
 	if (!priv) {
 		return false;
 	}
-	int fd = rz_sandbox_open (u->file, u->perm, u->mode);
+	int fd = rz_sys_open (u->file, u->perm, u->mode);
 	if (fd == -1) {
 		free (priv);
 		return false;
@@ -73,7 +73,7 @@ static st64 buf_file_seek(RzBuffer *b, st64 addr, int whence) {
 
 static bool buf_file_resize(RzBuffer *b, ut64 newsize) {
 	struct buf_file_priv *priv = get_priv_file (b);
-	return rz_sandbox_truncate (priv->fd, newsize) >= 0;
+	return rz_sys_truncate_fd (priv->fd, newsize) >= 0;
 }
 
 static const RzBufferMethods buffer_file_methods = {

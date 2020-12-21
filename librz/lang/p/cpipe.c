@@ -72,7 +72,7 @@ static int lang_cpipe_init(void *user) {
 }
 
 static int lang_cpipe_run(RzLang *lang, const char *code, int len) {
-	FILE *fd = rz_sandbox_fopen (".tmp.c", "w");
+	FILE *fd = rz_sys_fopen (".tmp.c", "w");
 	if (!fd) {
 		eprintf ("Cannot open .tmp.c\n");
 		return false;

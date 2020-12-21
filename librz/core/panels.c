@@ -5339,7 +5339,7 @@ RZ_API void rz_save_panels_layout(RzCore *core, const char *oname) {
 		pj_kn (pj, "h", panel->view->pos.h);
 		pj_end (pj);
 	}
-	FILE *fd = rz_sandbox_fopen (config_path, "w");
+	FILE *fd = rz_sys_fopen (config_path, "w");
 	if (fd) {
 		char *pjs = pj_drain (pj);
 		fprintf (fd, "%s\n", pjs);

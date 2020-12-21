@@ -29,21 +29,21 @@ static int __io_posix_open(const char *file, int perm, int mode) {
 #if __WINDOWS__
 	// probably unnecessary to have this ifdef nowadays windows is posix enough
 	if (perm & RZ_PERM_W) {
-		fd = rz_sandbox_open (file, O_RDWR, 0);
+		fd = rz_sys_open (file, O_RDWR, 0);
 		if (fd == -1 && (perm & RZ_PERM_CREAT)) {
 			fd = open (path, O_CREAT | O_TRUNC | O_WRONLY, 0644);
 			if (fd != -1) {
 				close (fd);
 			}
-			fd = rz_sandbox_open (file, O_RDWR | O_CREAT, 0);
+			fd = rz_sys_open (file, O_RDWR | O_CREAT, 0);
 		}
 	} else {
-		fd = rz_sandbox_open (file, O_RDONLY | O_BINARY, 0);
+		fd = rz_sys_open (file, O_RDONLY | O_BINARY, 0);
 	}
 #else
 	const size_t posixFlags = (perm & RZ_PERM_W) ? (perm & RZ_PERM_CREAT)
 			? (O_RDWR | O_CREAT) : O_RDWR : O_RDONLY;
-	fd = rz_sandbox_open (file, posixFlags, mode);
+	fd = rz_sys_open (file, posixFlags, mode);
 #endif
 	return fd;
 }
@@ -136,7 +136,7 @@ RzIOMMapFileObj *rz_io_def_mmap_create_new_file(RzIO  *io, const char *filename,
 					? (O_RDWR | O_CREAT)
 					: O_RDWR
 			): O_RDONLY;
-	mmo->fd = rz_sandbox_open (filename, posixFlags, mode);
+	mmo->fd = rz_sys_open (filename, posixFlags, mode);
 	if (mmo->fd == -1) {
 		free (mmo->filename);
 		free (mmo);

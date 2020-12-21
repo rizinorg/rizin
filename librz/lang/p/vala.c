@@ -132,7 +132,7 @@ static int lang_vala_init(void *user) {
 
 static int lang_vala_run(RzLang *lang, const char *code, int len) {
 	bool silent = !strncmp (code, "-s", 2);
-	FILE *fd = rz_sandbox_fopen (".tmp.vala", "w");
+	FILE *fd = rz_sys_fopen (".tmp.vala", "w");
 	if (fd) {
 		if (silent) {
 			code += 2;

@@ -933,7 +933,7 @@ RZ_API void rz_cons_flush(void) {
 		}
 	}
 	if (tee && *tee) {
-		FILE *d = rz_sandbox_fopen (tee, "a+");
+		FILE *d = rz_sys_fopen (tee, "a+");
 		if (d) {
 			if (I.context->buffer_len != fwrite (I.context->buffer, 1, I.context->buffer_len, d)) {
 				eprintf ("rz_cons_flush: fwrite: error (%s)\n", tee);
