@@ -103,10 +103,6 @@ static void do_hash_print(RzHash *ctx, ut64 hash, int dlen, int rad, int ule) {
 			do_hash_hexprint (c, dlen, ule, rad);
 		}
 		break;
-	case 1:
-		printf ("e file.%s=", hname);
-		do_hash_hexprint (c, dlen, ule, rad);
-		break;
 	case 'n':
 		do_hash_hexprint (c, dlen, ule, 'j');
 		break;
@@ -445,7 +441,7 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 	RzIO *io;
 
 	RzGetopt opt;
-	rz_getopt_init (&opt, argc, argv, "p:jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:");
+	rz_getopt_init (&opt, argc, argv, "p:jD:veE:a:i:I:S:s:x:b:nBhf:t:kLqc:");
 	while ((c = rz_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'q': quiet++; break;
@@ -464,7 +460,6 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 		case 'E': encrypt = opt.arg; break;
 		case 'L': algolist (); return 0;
 		case 'e': ule = 1; break;
-		case 'r': rad = 1; break;
 		case 'k': rad = 2; break;
 		case 'p': ptype = opt.arg; break;
 		case 'a': algo = opt.arg; break;
