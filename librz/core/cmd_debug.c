@@ -4662,10 +4662,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	RzDebugTracepoint *trace;
 	RzAnalysisOp *op;
 
-	if (rz_sandbox_enable (0)) {
-		eprintf ("Debugger commands disabled in sandbox mode\n");
-		return 0;
-	}
 	if (!strncmp (input, "ate", 3)) {
 		char str[128];
 		str[0] = 0;
@@ -5257,7 +5253,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				setRarunProfileString (core, input + 3);
 			} else {
 				// TODO use the api
-				rz_sys_cmd ("rz_run -h");
+				rz_sys_system ("rz_run -h");
 			}
 			break;
 		case 'o': // "doo" : reopen in debug mode

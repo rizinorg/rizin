@@ -43,7 +43,7 @@ static int lang_rust_file(RzLang *lang, const char *file) {
 	char *cmd = rz_str_newf ("%s --crate-type dylib %s -o %s/lib%s."RZ_LIB_EXT" -L native=/usr/local/lib/ -l rz_core",
 		cc, file, libpath, libname);
 	free (cc);
-	if (rz_sandbox_system (cmd) != 0) {
+	if (rz_sys_system (cmd) != 0) {
 		free (cmd);
 		return false;
 	}
@@ -71,7 +71,7 @@ static int lang_rust_init(void *user) {
 }
 
 static int lang_rust_run(RzLang *lang, const char *code, int len) {
-	FILE *fd = rz_sandbox_fopen ("_tmp.rs", "w");
+	FILE *fd = rz_sys_fopen ("_tmp.rs", "w");
 	if (fd) {
 		const char *rust_header = \
 "use std::ffi::CStr;\n" \

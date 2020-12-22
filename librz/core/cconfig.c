@@ -1233,15 +1233,6 @@ static bool cb_dirsrc(void *user, void *data) {
 	return true;
 }
 
-static bool cb_cfgsanbox(void *user, void *data) {
-	RzConfigNode *node = (RzConfigNode*) data;
-	int ret = rz_sandbox_enable (node->i_value);
-	if (node->i_value != ret) {
-		eprintf ("Cannot disable sandbox\n");
-	}
-	return (!node->i_value && ret)? 0: 1;
-}
-
 static bool cb_str_escbslash(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
@@ -1528,10 +1519,6 @@ static bool cb_dbgbackend(void *user, void *data) {
 static bool cb_gotolimit(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	if (rz_sandbox_enable (0)) {
-		eprintf ("Cannot change gotolimit\n");
-		return false;
-	}
 	if (core->analysis->esil) {
 		core->analysis->esil_goto_limit = node->i_value;
 	}
@@ -2240,9 +2227,6 @@ static bool cb_scr_bgfill(void *user, void *data) {
 
 static bool cb_scrint(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *) data;
-	if (node->i_value && rz_sandbox_enable (0)) {
-		return false;
-	}
 	rz_cons_singleton ()->context->is_interactive = node->i_value;
 	return true;
 }
@@ -2576,6 +2560,28 @@ static bool cb_analysis_roregs(RzCore *core, RzConfigNode *node) {
 	return true;
 }
 
+static bool cb_analysissyscc(RzCore *core, RzConfigNode *node) {
+	if (core && core->analysis) {
+		if (!strcmp (node->value, "?")) {
+			rz_core_cmd0 (core, "afcl");
+			return false;
+		}
+		rz_analysis_set_syscc_default (core->analysis, node->value);
+	}
+	return true;
+}
+
+static bool cb_analysiscc(RzCore *core, RzConfigNode *node) {
+	if (core && core->analysis) {
+		if (!strcmp (node->value, "?")) {
+			rz_core_cmd0 (core, "afcl");
+			return false;
+		}
+		rz_analysis_set_cc_default (core->analysis, node->value);
+	}
+	return true;
+}
+
 static bool cb_analysis_gp(RzCore *core, RzConfigNode *node) {
 	core->analysis->gp = node->i_value;
 	return true;
@@ -2884,6 +2890,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* analysis */
 	SETBPREF ("analysis.detectwrites", "false", "Automatically reanalyze function after a write");
 	SETPREF ("analysis.fcnprefix", "fcn",  "Prefix new function names with this");
+	const char *analysiscc = rz_analysis_cc_default (core->analysis);
+	SETCB ("analysis.cc", analysiscc? analysiscc: "", (RzConfigCallback)&cb_analysiscc, "Specify default calling convention");
+	const char *analysissyscc = rz_analysis_syscc_default (core->analysis);
+	SETCB ("analysis.syscc", analysissyscc? analysissyscc: "", (RzConfigCallback)&cb_analysissyscc, "Specify default syscall calling convention");
 	SETCB ("analysis.verbose", "false", &cb_analverbose, "Show RzAnalysis warnings when analyzing code");
 	SETCB ("analysis.roregs", "gp,zero", (RzConfigCallback)&cb_analysis_roregs, "Comma separated list of register names to be readonly");
 	SETICB ("analysis.gp", 0, (RzConfigCallback)&cb_analysis_gp, "Set the value of the GP register (MIPS)");
@@ -3219,7 +3229,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF ("cfg.fortunes.clippy", "false", "Use ?E instead of ?e");
 	SETBPREF ("cfg.fortunes.tts", "false", "Speak out the fortune");
 	SETPREF ("cfg.prefixdump", "dump", "Filename prefix for automated dumps");
-	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETBPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
 	p = rz_sys_getenv ("RZ_CFG_OLDSHELL");
@@ -3462,7 +3471,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF ("http.port", "9090", "HTTP server port");
 	SETPREF ("http.maxport", "9999", "Last HTTP server port");
 	SETPREF ("http.ui", "m", "Default webui (enyo, m, p, t)");
-	SETBPREF ("http.sandbox", "true", "Sandbox the HTTP server");
 	SETI ("http.timeout", 3, "Disconnect clients after N seconds of inactivity");
 	SETI ("http.dietime", 0, "Kill server after N seconds with no client");
 	SETBPREF ("http.verbose", "false", "Output server logs to stdout");

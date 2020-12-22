@@ -61,7 +61,7 @@ static int lang_c_file(RzLang *lang, const char *file) {
 	free (libpath_esc);
 	free (file_esc);
 	free (cc);
-	if (rz_sandbox_system (buf) != 0) {
+	if (rz_sys_system (buf) != 0) {
 		free (buf);
 		return false;
 	}
@@ -93,7 +93,7 @@ static int lang_c_init(void *user) {
 }
 
 static int lang_c_run(RzLang *lang, const char *code, int len) {
-	FILE *fd = rz_sandbox_fopen (".tmp.c", "w");
+	FILE *fd = rz_sys_fopen (".tmp.c", "w");
 	if (fd) {
 		fputs ("#include <rz_core.h>\n\nvoid entry(RzCore *core, int argc, const char **argv) {\n", fd);
 		fputs (code, fd);

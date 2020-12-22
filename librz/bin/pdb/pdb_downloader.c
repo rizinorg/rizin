@@ -7,9 +7,9 @@
 
 static bool checkExtract(void) {
 #if __WINDOWS__
-	return rz_sys_cmd ("expand -? >nul") == 0;
+	return rz_sys_system ("expand -? >nul") == 0;
 #else
-	return rz_sys_cmd ("cabextract -v > /dev/null") == 0;
+	return rz_sys_system ("cabextract -v > /dev/null") == 0;
 #endif
 }
 
@@ -112,7 +112,7 @@ static int download(struct SPDBDownloader *pd) {
 
 		if (opt->extract > 0 && res) {
 			eprintf ("Attempting to decompress pdb\n");
-			if (res && ((cmd_ret = rz_sys_cmd (extractor_cmd)) != 0)) {
+			if (res && ((cmd_ret = rz_sys_system (extractor_cmd)) != 0)) {
 				eprintf ("cab extractor exited with error %d\n", cmd_ret);
 				res = 0;
 			}

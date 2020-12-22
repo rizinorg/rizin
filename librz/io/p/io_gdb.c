@@ -77,11 +77,6 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 			pid = strchr (host, ':');
 		}
 	} else {
-		if (rz_sandbox_enable (0)) {
-			eprintf ("sandbox: Cannot use network\n");
-			return NULL;
-		}
-
 		port = strchr (host , ':');
 		if (!port) {
 			eprintf ("Invalid debugger URI. Port missing?\nPlease use either\n"

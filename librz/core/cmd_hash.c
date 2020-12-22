@@ -308,10 +308,6 @@ static void handle_crc64_iso (const ut8 * block, int len) {
 #endif /* #if RZ_HAVE_CRC64_EXTRA */
 
 static int cmd_hash_bang (RzCore *core, const char *input) {
-	if (rz_sandbox_enable (0)) {
-		eprintf ("hashbang disabled in sandbox mode\n");
-		return false;
-	}
 	int ac;
 	char **av = rz_str_argv (input + 1, &ac);
 	if (ac > 0) {

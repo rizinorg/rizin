@@ -680,10 +680,10 @@ static int lang_run_file(RzCore *core, RzLang *lang, const char *file) {
 }
 
 static char *langFromHashbang(RzCore *core, const char *file) {
-	int fd = rz_sandbox_open (file, O_RDONLY, 0);
+	int fd = rz_sys_open (file, O_RDONLY, 0);
 	if (fd != -1) {
 		char firstLine[128] = {0};
-		int len = rz_sandbox_read (fd, (ut8*)firstLine, sizeof (firstLine) - 1);
+		int len = read (fd, (ut8*)firstLine, sizeof (firstLine) - 1);
 		firstLine[len] = 0;
 		if (!strncmp (firstLine, "#!/", 3)) {
 			// I CAN HAS A HASHBANG
@@ -696,10 +696,10 @@ static char *langFromHashbang(RzCore *core, const char *file) {
 				*nl = 0;
 			}
 			nl = strdup (firstLine + 2);
-			rz_sandbox_close (fd);
+			close (fd);
 			return nl;
 		}
-		rz_sandbox_close (fd);
+		close (fd);
 	}
 	return NULL;
 }
@@ -725,14 +725,11 @@ RZ_API bool rz_core_run_script(RzCore *core, const char *file) {
 			free (out);
 		}
 	} else if (rz_str_endswith (file, ".html")) {
-		const bool httpSandbox = rz_config_get_i (core->config, "http.sandbox");
 		char *httpIndex = strdup (rz_config_get (core->config, "http.index"));
-		rz_config_set_i (core->config, "http.sandbox", 0);
 		char *absfile = rz_file_abspath (file);
 		rz_config_set (core->config, "http.index", absfile);
 		free (absfile);
 		rz_core_cmdf (core, "=H");
-		rz_config_set_i (core->config, "http.sandbox", httpSandbox);
 		rz_config_set (core->config, "http.index", httpIndex);
 		free (httpIndex);
 		ret = true;
@@ -1233,10 +1230,6 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 		rz_line_set_hist_callback (core->cons->line, &rz_line_hist_cmd_up, &rz_line_hist_cmd_down);
 		break;
 	case 'o': // "ko"
-		if (rz_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
-			return 0;
-		}
 		if (input[1] == ' ') {
 			char *fn = strdup (input + 2);
 			if (!fn) {
@@ -1271,10 +1264,6 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 		}
 		break;
 	case 'd': // "kd"
-		if (rz_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
-			return 0;
-		}
 		if (input[1] == ' ') {
 			char *fn = strdup (input + 2);
 			char *ns = strchr (fn, ' ');
@@ -1649,10 +1638,6 @@ RZ_IPI int rz_cmd_tasks(void *data, const char *input) {
 		break;
 	}
 	case '&': { // "&&"
-		if (rz_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
-			return 0;
-		}
 		int tid = rz_num_math (core->num, input + 1);
 		rz_core_task_join (&core->tasks, core->tasks.current_task, tid ? tid : -1);
 		break;
@@ -1663,10 +1648,6 @@ RZ_IPI int rz_cmd_tasks(void *data, const char *input) {
 		break;
 	}
 	case '-': // "&-"
-		if (rz_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
-			return 0;
-		}
 		if (input[1] == '*') {
 			rz_core_task_del_all_done (core);
 		} else {
@@ -1916,9 +1897,7 @@ RZ_IPI int rz_cmd_system(void *data, const char *input) {
 		if (input[1] == '?') {
 			rz_cons_printf ("Usage: !=[!]  - enable/disable remote commands\n");
 		} else {
-			if (!rz_sandbox_enable (0)) {
-				RZ_FREE (core->cmdremote);
-			}
+			RZ_FREE (core->cmdremote);
 		}
 		break;
 	case '!': //!!
@@ -1931,10 +1910,6 @@ RZ_IPI int rz_cmd_system(void *data, const char *input) {
 			(void)rz_core_cmdf (core, "\"#!pipe %s\"", cmd);
 			free (cmd);
 		} else {
-			if (rz_sandbox_enable (0)) {
-				eprintf ("This command is disabled in sandbox mode\n");
-				return 0;
-			}
 			if (input[1]) {
 				int olen;
 				char *out = NULL;
@@ -1983,7 +1958,7 @@ RZ_IPI int rz_cmd_system(void *data, const char *input) {
 			char *cmd = rz_core_sysenv_begin (core, input);
 			if (cmd) {
 				void *bed = rz_cons_sleep_begin ();
-				ret = rz_sys_cmd (cmd);
+				ret = rz_sys_system (cmd);
 				rz_cons_sleep_end (bed);
 				rz_core_sysenv_end (core, input);
 				free (cmd);
@@ -2128,10 +2103,6 @@ RZ_API int rz_core_cmd_pipe(RzCore *core, char *rizin_cmd, char *shell_cmd) {
 	int si, olen, ret = -1, pipecolor = -1;
 	char *str, *out = NULL;
 
-	if (rz_sandbox_enable (0)) {
-		eprintf ("Pipes are not allowed in sandbox mode\n");
-		return -1;
-	}
 	si = rz_cons_is_interactive ();
 	rz_config_set_i (core->config, "scr.interactive", 0);
 	if (!rz_config_get_i (core->config, "scr.color.pipe")) {
@@ -2355,15 +2326,10 @@ static int rz_core_cmd_subst(RzCore *core, char *cmd) {
 		rep = 1;
 	}
 	// XXX if output is a pipe then we don't want to be interactive
-	if (rep > 1 && rz_sandbox_enable (0)) {
-		eprintf ("Command repeat sugar disabled in sandbox mode (%s)\n", cmd);
-		goto beach;
-	} else {
-		if (rep > INTERACTIVE_MAX_REP) {
-			if (rz_cons_is_interactive ()) {
-				if (!rz_cons_yesno ('n', "Are you sure to repeat this %"PFMT64d" times? (y/N)", rep)) {
-					goto beach;
-				}
+	if (rep > INTERACTIVE_MAX_REP) {
+		if (rz_cons_is_interactive ()) {
+			if (!rz_cons_yesno ('n', "Are you sure to repeat this %"PFMT64d" times? (y/N)", rep)) {
+				goto beach;
 			}
 		}
 	}
@@ -4147,7 +4113,7 @@ RZ_API int rz_core_cmd_foreach(RzCore *core, const char *cmd, char *each) {
 		} else {
 			char buf[1024];
 			char cmd2[1024];
-			FILE *fd = rz_sandbox_fopen (each + 1, "r");
+			FILE *fd = rz_sys_fopen (each + 1, "r");
 			if (fd) {
 				core->rcmd->macro.counter = 0;
 				while (!feof (fd)) {
@@ -4693,10 +4659,6 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(repeat_command) {
 	free (number_str);
 
 	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
-	if (rep > 1 && rz_sandbox_enable (0)) {
-		eprintf ("Command repeat sugar disabled in sandbox mode (%s)\n", node_string);
-		return RZ_CMD_STATUS_INVALID;
-	}
 	if (rep > INTERACTIVE_MAX_REP && rz_cons_is_interactive ()) {
 		if (!rz_cons_yesno ('n', "Are you sure to repeat this %d times? (y/N)", rep)) {
 			return RZ_CMD_STATUS_INVALID;
@@ -5348,7 +5310,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_file_lines_command) {
 	TSNode arg = ts_node_named_child (node, 1);
 	char *arg_str = ts_node_handle_arg(state, node, arg, 1);
 	ut64 orig_offset = core->offset;
-	FILE *fd = rz_sandbox_fopen (arg_str, "r");
+	FILE *fd = rz_sys_fopen (arg_str, "r");
 	if (!fd) {
 		res = RZ_CMD_STATUS_INVALID;
 		goto arg_out;
@@ -6244,10 +6206,6 @@ RZ_API int rz_core_cmd (RzCore *core, const char *cstr, int log) {
 		goto beach; // false;
 	}
 	if (!strncmp (cstr, "/*", 2)) {
-		if (rz_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
-			goto beach; // false
-		}
 		core->incomment = true;
 	} else if (!strncmp (cstr, "*/", 2)) {
 		core->incomment = false;
@@ -6440,12 +6398,10 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 		return rz_core_cmd_str (core, cmd);
 	}
 	rz_cons_reset ();
-	rz_sandbox_disable (true);
 	if (rz_file_mkstemp ("cmd", &tmp) != -1) {
 		int pipefd = rz_cons_pipe_open (tmp, 1, 0);
 		if (pipefd == -1) {
 			rz_file_rm (tmp);
-			rz_sandbox_disable (false);
 			free (tmp);
 			return rz_core_cmd_str (core, cmd);
 		}
@@ -6460,7 +6416,6 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 		if (rz_file_exists (tmp)) {
 			char *s = rz_file_slurp (tmp, NULL);
 			rz_file_rm (tmp);
-			rz_sandbox_disable (false);
 			free (tmp);
 			free (_cmd);
 			return s? s: strdup ("");
@@ -6469,10 +6424,8 @@ RZ_API char *rz_core_cmd_str_pipe(RzCore *core, const char *cmd) {
 		rz_file_rm (tmp);
 		free (tmp);
 		free (_cmd);
-		rz_sandbox_disable (false);
 		return rz_core_cmd_str (core, cmd);
 	}
-	rz_sandbox_disable (0);
 	return NULL;
 }
 

@@ -565,10 +565,6 @@ static int rz_core_rtr_gdb_run(RzCore *core, int launch, const char *path) {
 
 RZ_API int rz_core_rtr_gdb(RzCore *core, int launch, const char *path) {
 	int ret;
-	if (rz_sandbox_enable (0)) {
-		eprintf ("sandbox: connect disabled\n");
-		return -1;
-	}
 	// TODO: do stuff with launch
 	if (core->gdbserver_up) {
 		eprintf ("gdbserver is already running\n");
@@ -707,11 +703,6 @@ RZ_API void rz_core_rtr_add(RzCore *core, const char *_input) {
 			eprintf ("Error: Missing '/'\n");
 			//c:wreturn;
 		}
-	}
-
-	if (rz_sandbox_enable (0)) {
-		eprintf ("sandbox: connect disabled\n");
-		return;
 	}
 
 	fd = rz_socket_new (false);

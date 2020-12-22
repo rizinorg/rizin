@@ -11,7 +11,7 @@ int procfs_pid_slurp(int pid, char *prop, char *out, size_t len) {
 	if (!filename) {
 		return -1;
 	}
-	fd = rz_sandbox_open (filename, O_RDONLY, 0);
+	fd = rz_sys_open (filename, O_RDONLY, 0);
 	if (fd == -1) {
 		free (filename);
 		return -1;

@@ -61,11 +61,6 @@ RZ_API int rz_core_file_reopen(RzCore *core, const char *args, int perm, int loa
 		new_baddr = rz_config_get_i (core->config, "bin.baddr");
 	}
 
-	if (rz_sandbox_enable (0)) {
-		eprintf ("Cannot reopen in sandbox\n");
-		free (obinfilepath);
-		return false;
-	}
 	if (!core->file) {
 		eprintf ("No file opened to reopen\n");
 		free (ofilepath);

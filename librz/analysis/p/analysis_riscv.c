@@ -358,6 +358,15 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 				op->stackop = RZ_ANALYSIS_STACK_INC;
 				op->stackptr = rz_num_math (NULL, ARG (1));
 			}
+		} else if (!strncmp (name, "addiw", 5)) {
+			rz_strbuf_appendf (&op->esil, "%s,0xffffffff,%s,&,", ARG (2), ARG (1));
+			rz_strbuf_appendf (&op->esil, "+,%s,=,", ARG (0));
+			rz_strbuf_appendf (&op->esil, "31,%s,>>,?{,0xffffffff00000000,%s,|=,}", ARG (0), ARG (0));
+			if (!strcmp (ARG (0), riscv_gpr_names[X_SP]) &&
+				!strcmp (ARG (1), riscv_gpr_names[X_SP])) {
+				op->stackop = RZ_ANALYSIS_STACK_INC;
+				op->stackptr = rz_num_math (NULL, ARG (2));
+			}
 		} else if (!strncmp (name, "addw", 4)) {
 			esilprintf (op, "0xffffffff,%s,&,", ARG (2));
 			rz_strbuf_appendf (&op->esil, "0xffffffff,%s,&,", ARG (1));
@@ -403,6 +412,11 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 			esilprintf (op, "%s000,$$,+,%s,=", ARG (1), ARG (0));
 		} else if (!strncmp (name, "sll", 3)) {
 			esilprintf (op, "%s,%s,<<,%s,=", ARG (2), ARG (1), ARG (0));
+			if (name[3] == 'w' || !strncmp (name, "slliw", 5)) {
+				rz_strbuf_appendf (&op->esil, ",0xffffffff,%s,&=", ARG (0));
+			}
+		} else if (!strncmp (name, "srlw", 4) || !strncmp (name, "srliw", 4)) {
+			esilprintf (op, "%s,0xffffffff,%s,&,>>,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strncmp (name, "srl", 3)) {
 			esilprintf (op, "%s,%s,>>,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strncmp (name, "sra", 3)) {
@@ -415,6 +429,9 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 			esilprintf (op, "%s,%s,=", ARG (1), ARG (0));
 		} else if (!strcmp (name, "lui")) {
 			esilprintf (op, "%s000,%s,=", ARG (1), ARG (0));
+			if (analysis->bits == 64) {
+				rz_strbuf_appendf (&op->esil, ",31,%s,>>,?{,0xffffffff00000000,%s,|=,}", ARG (0), ARG (0));
+			}
 		}
 		// csr instrs
 		// <csr op> rd, rs1, CSR
@@ -453,10 +470,27 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 			esilprintf (op, "%s,%s,+,[8],%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strcmp (name, "lw") || !strcmp (name, "lwu") || !strcmp (name, "lwsp")) {
 			esilprintf (op, "%s,%s,+,[4],%s,=", ARG (2), ARG (1), ARG (0));
+			if ((analysis->bits == 64) && strcmp (name, "lwu")) {
+				rz_strbuf_appendf (&op->esil, ",31,%s,>>,?{,0xffffffff00000000,%s,|=,}", ARG (0), ARG (0));
+			}
 		} else if (!strcmp (name, "lh") || !strcmp (name, "lhu") || !strcmp (name, "lhsp")) {
 			esilprintf (op, "%s,%s,+,[2],%s,=", ARG (2), ARG (1), ARG (0));
+			if (strcmp (name, "lwu")) {
+				if (analysis->bits == 64) {
+					rz_strbuf_appendf (&op->esil, ",15,%s,>>,?{,0xffffffffffff0000,%s,|=,}", ARG (0), ARG (0));
+				} else {
+					rz_strbuf_appendf (&op->esil, ",15,%s,>>,?{,0xffff0000,%s,|=,}", ARG (0), ARG (0));
+				}
+			}
 		} else if (!strcmp (name, "lb") || !strcmp (name, "lbu") || !strcmp (name, "lbsp")) {
 			esilprintf (op, "%s,%s,+,[1],%s,=", ARG (2), ARG (1), ARG (0));
+			if (strcmp (name, "lbu")) {
+				if (analysis->bits == 64) {
+					rz_strbuf_appendf (&op->esil, ",7,%s,>>,?{,0xffffffffffffff00,%s,|=,}", ARG (0), ARG (0));
+				} else {
+					rz_strbuf_appendf (&op->esil, ",7,%s,>>,?{,0xffffff00,%s,|=,}", ARG (0), ARG (0));
+				}
+			}
 		} else if (!strcmp (name, "flq") || !strcmp (name, "flqsp")) {
 			esilprintf (op, "%s,%s,+,[16],%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strcmp (name, "fld") || !strcmp (name, "fldsp")) {
@@ -560,6 +594,8 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		// decide whether it's ret or call
 		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
 		op->type = (rd == 0) ? RZ_ANALYSIS_OP_TYPE_RET: RZ_ANALYSIS_OP_TYPE_UCALL;
+	} else if (is_any ("c.ret")) {
+		op->type = RZ_ANALYSIS_OP_TYPE_RET;
 	} else if (is_any ("c.jalr")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 	} else if (is_any ("c.jr")) {
@@ -576,15 +612,15 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->fail = addr + op->size;
 // math
 	} else if (is_any ("addi", "addw", "addiw", "add", "auipc", "c.addi",
-			   "c.addw", "c.add", "c.addi4spn", "c.addi16sp")) {
+			   "c.addw", "c.add", "c.addiw", "c.addi4spn", "c.addi16sp")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-	} else if (is_any ("c.mv")) {
+	} else if (is_any ("c.mv", "csrrw", "csrrc", "csrrs")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 	} else if (is_any ("subi", "subw", "sub", "c.sub")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 	} else if (is_any ("xori", "xor", "c.xor")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
-	} else if (is_any ("andi", "and", "c.andi")) {
+	} else if (is_any ("andi", "and", "c.andi", "c.and")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_AND;
 	} else if (is_any ("ori", "or", "c.or")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_OR;
@@ -596,15 +632,15 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 	} else if (is_any ("div", "divu", "divw", "divuw")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_DIV;
-	} else if (is_any ("slli", "c.slli")) {
+	} else if (is_any ("sll", "slli", "sllw", "slliw", "c.slli")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
-	} else if (is_any ("srl", "c.srli")) {
+	} else if (is_any ("srl", "srlw", "srliw", "c.srli")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
 	} else if (is_any ("sra", "srai", "c.srai")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_SAR;
 // memory
 	} else if (is_any ("sd", "sb", "sh", "sw", "c.sd", "c.sw",
-			   "c.swsp")) {
+			   "c.swsp", "c.sdsp")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 	} else if (is_any ("ld", "lw", "lwu", "lui", "li",
 			   "lb", "lbu", "lh", "lhu", "la", "lla", "c.ld",
@@ -650,10 +686,18 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"=PC	pc\n"
 		"=A0	a0\n"
 		"=A1	a1\n"
+		"=A2	a2\n"
+		"=A3	a3\n"
+		"=A4	a4\n"
+		"=A5	a5\n"
+		"=A6	a6\n"
+		"=A7	a7\n"
+		"=R0	a0\n"
+		"=R1	a1\n"
 		"=SP	sp\n" // ABI: stack pointer
 		"=LR	ra\n" // ABI: return address
 		"=BP	s0\n" // ABI: frame pointer
-
+		"=SN	a7\n" // ABI: syscall numer
 		"gpr	pc	.32	0	0\n"
 		// RV32I regs (ABI names)
 		// From user-Level ISA Specification, section 2.1
@@ -691,39 +735,39 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	t6	.32	124	0\n" // =x31
 		// RV32F/D regs (ABI names)
 		// From user-Level ISA Specification, section 8.1 and 9.1
-		"gpr	ft0	.64	128	0\n" // =f0
-		"gpr	ft1	.64	136	0\n" // =f1
-		"gpr	ft2	.64	144	0\n" // =f2
-		"gpr	ft3	.64	152	0\n" // =f3
-		"gpr	ft4	.64	160	0\n" // =f4
-		"gpr	ft5	.64	168	0\n" // =f5
-		"gpr	ft6	.64	176	0\n" // =f6
-		"gpr	ft7	.64	184	0\n" // =f7
-		"gpr	fs0	.64	192	0\n" // =f8
-		"gpr	fs1	.64	200	0\n" // =f9
-		"gpr	fa0	.64	208	0\n" // =f10
-		"gpr	fa1	.64	216	0\n" // =f11
-		"gpr	fa2	.64	224	0\n" // =f12
-		"gpr	fa3	.64	232	0\n" // =f13
-		"gpr	fa4	.64	240	0\n" // =f14
-		"gpr	fa5	.64	248	0\n" // =f15
-		"gpr	fa6	.64	256	0\n" // =f16
-		"gpr	fa7	.64	264	0\n" // =f17
-		"gpr	fs2	.64	272	0\n" // =f18
-		"gpr	fs3	.64	280	0\n" // =f19
-		"gpr	fs4	.64	288	0\n" // =f20
-		"gpr	fs5	.64	296	0\n" // =f21
-		"gpr	fs6	.64	304	0\n" // =f22
-		"gpr	fs7	.64	312	0\n" // =f23
-		"gpr	fs8	.64	320	0\n" // =f24
-		"gpr	fs9	.64	328	0\n" // =f25
-		"gpr	fs10	.64	336	0\n" // =f26
-		"gpr	fs11	.64	344	0\n" // =f27
-		"gpr	ft8	.64	352	0\n" // =f28
-		"gpr	ft9	.64	360	0\n" // =f29
-		"gpr	ft10	.64	368	0\n" // =f30
-		"gpr	ft11	.64	376	0\n" // =f31
-		"gpr	fcsr	.32	384	0\n"
+		"fpu	ft0	.64	128	0\n" // =f0
+		"fpu	ft1	.64	136	0\n" // =f1
+		"fpu	ft2	.64	144	0\n" // =f2
+		"fpu	ft3	.64	152	0\n" // =f3
+		"fpu	ft4	.64	160	0\n" // =f4
+		"fpu	ft5	.64	168	0\n" // =f5
+		"fpu	ft6	.64	176	0\n" // =f6
+		"fpu	ft7	.64	184	0\n" // =f7
+		"fpu	fs0	.64	192	0\n" // =f8
+		"fpu	fs1	.64	200	0\n" // =f9
+		"fpu	fa0	.64	208	0\n" // =f10
+		"fpu	fa1	.64	216	0\n" // =f11
+		"fpu	fa2	.64	224	0\n" // =f12
+		"fpu	fa3	.64	232	0\n" // =f13
+		"fpu	fa4	.64	240	0\n" // =f14
+		"fpu	fa5	.64	248	0\n" // =f15
+		"fpu	fa6	.64	256	0\n" // =f16
+		"fpu	fa7	.64	264	0\n" // =f17
+		"fpu	fs2	.64	272	0\n" // =f18
+		"fpu	fs3	.64	280	0\n" // =f19
+		"fpu	fs4	.64	288	0\n" // =f20
+		"fpu	fs5	.64	296	0\n" // =f21
+		"fpu	fs6	.64	304	0\n" // =f22
+		"fpu	fs7	.64	312	0\n" // =f23
+		"fpu	fs8	.64	320	0\n" // =f24
+		"fpu	fs9	.64	328	0\n" // =f25
+		"fpu	fs10	.64	336	0\n" // =f26
+		"fpu	fs11	.64	344	0\n" // =f27
+		"fpu	ft8	.64	352	0\n" // =f28
+		"fpu	ft9	.64	360	0\n" // =f29
+		"fpu	ft10	.64	368	0\n" // =f30
+		"fpu	ft11	.64	376	0\n" // =f31
+		"fpu	fcsr	.32	384	0\n"
 		"flg	nx	.1	3072	0\n"
 		"flg	uf	.1	3073	0\n"
 		"flg	of	.1	3074	0\n"
@@ -740,7 +784,15 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"=BP	s0\n" // ABI: frame pointer
 		"=A0	a0\n"
 		"=A1	a1\n"
-
+		"=A2	a2\n"
+		"=A3	a3\n"
+		"=A4	a4\n"
+		"=A5	a5\n"
+		"=A6	a6\n"
+		"=A7	a7\n"
+		"=R0	a0\n"
+		"=R1	a1\n"
+		"=SN	a7\n" // ABI: syscall numer
 		"gpr	pc	.64	0	0\n"
 		// RV64I regs (ABI names)
 		// From user-Level ISA Specification, section 2.1 and 4.1
@@ -777,39 +829,39 @@ static char *get_reg_profile(RzAnalysis *analysis) {
 		"gpr	t5	.64	240	0\n" // =x30
 		"gpr	t6	.64	248	0\n" // =x31
 		// RV64F/D regs (ABI names)
-		"gpr	ft0	.64	256	0\n" // =f0
-		"gpr	ft1	.64	264	0\n" // =f1
-		"gpr	ft2	.64	272	0\n" // =f2
-		"gpr	ft3	.64	280	0\n" // =f3
-		"gpr	ft4	.64	288	0\n" // =f4
-		"gpr	ft5	.64	296	0\n" // =f5
-		"gpr	ft6	.64	304	0\n" // =f6
-		"gpr	ft7	.64	312	0\n" // =f7
-		"gpr	fs0	.64	320	0\n" // =f8
-		"gpr	fs1	.64	328	0\n" // =f9
-		"gpr	fa0	.64	336	0\n" // =f10
-		"gpr	fa1	.64	344	0\n" // =f11
-		"gpr	fa2	.64	352	0\n" // =f12
-		"gpr	fa3	.64	360	0\n" // =f13
-		"gpr	fa4	.64	368	0\n" // =f14
-		"gpr	fa5	.64	376	0\n" // =f15
-		"gpr	fa6	.64	384	0\n" // =f16
-		"gpr	fa7	.64	392	0\n" // =f17
-		"gpr	fs2	.64	400	0\n" // =f18
-		"gpr	fs3	.64	408	0\n" // =f19
-		"gpr	fs4	.64	416	0\n" // =f20
-		"gpr	fs5	.64	424	0\n" // =f21
-		"gpr	fs6	.64	432	0\n" // =f22
-		"gpr	fs7	.64	440	0\n" // =f23
-		"gpr	fs8	.64	448	0\n" // =f24
-		"gpr	fs9	.64	456	0\n" // =f25
-		"gpr	fs10	.64	464	0\n" // =f26
-		"gpr	fs11	.64	472	0\n" // =f27
-		"gpr	ft8	.64	480	0\n" // =f28
-		"gpr	ft9	.64	488	0\n" // =f29
-		"gpr	ft10	.64	496	0\n" // =f30
-		"gpr	ft11	.64	504	0\n" // =f31
-		"gpr	fcsr	.32	512	0\n"
+		"fpu	ft0	.64	256	0\n" // =f0
+		"fpu	ft1	.64	264	0\n" // =f1
+		"fpu	ft2	.64	272	0\n" // =f2
+		"fpu	ft3	.64	280	0\n" // =f3
+		"fpu	ft4	.64	288	0\n" // =f4
+		"fpu	ft5	.64	296	0\n" // =f5
+		"fpu	ft6	.64	304	0\n" // =f6
+		"fpu	ft7	.64	312	0\n" // =f7
+		"fpu	fs0	.64	320	0\n" // =f8
+		"fpu	fs1	.64	328	0\n" // =f9
+		"fpu	fa0	.64	336	0\n" // =f10
+		"fpu	fa1	.64	344	0\n" // =f11
+		"fpu	fa2	.64	352	0\n" // =f12
+		"fpu	fa3	.64	360	0\n" // =f13
+		"fpu	fa4	.64	368	0\n" // =f14
+		"fpu	fa5	.64	376	0\n" // =f15
+		"fpu	fa6	.64	384	0\n" // =f16
+		"fpu	fa7	.64	392	0\n" // =f17
+		"fpu	fs2	.64	400	0\n" // =f18
+		"fpu	fs3	.64	408	0\n" // =f19
+		"fpu	fs4	.64	416	0\n" // =f20
+		"fpu	fs5	.64	424	0\n" // =f21
+		"fpu	fs6	.64	432	0\n" // =f22
+		"fpu	fs7	.64	440	0\n" // =f23
+		"fpu	fs8	.64	448	0\n" // =f24
+		"fpu	fs9	.64	456	0\n" // =f25
+		"fpu	fs10	.64	464	0\n" // =f26
+		"fpu	fs11	.64	472	0\n" // =f27
+		"fpu	ft8	.64	480	0\n" // =f28
+		"fpu	ft9	.64	488	0\n" // =f29
+		"fpu	ft10	.64	496	0\n" // =f30
+		"fpu	ft11	.64	504	0\n" // =f31
+		"fpu	fcsr	.32	512	0\n"
 		"flg	nx	.1	4096	0\n"
 		"flg	uf	.1	4097	0\n"
 		"flg	of	.1	4098	0\n"

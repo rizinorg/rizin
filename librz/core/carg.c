@@ -194,8 +194,9 @@ RZ_API void rz_core_print_func_args(RzCore *core) {
 			int nargs = 4; // TODO: use a correct value here when available
 			//if (nargs > 0) {
 				int i;
+				const char *cc = rz_analysis_cc_default (core->analysis); // or use "reg" ?
 				for (i = 0; i < nargs; i++) {
-					ut64 v = rz_debug_arg_get (core->dbg, RZ_ANALYSIS_CC_TYPE_STDCALL, i);
+					ut64 v = rz_debug_arg_get (core->dbg, cc, i);
 					print_arg_str (i, "", color);
 					rz_cons_printf ("0x%08" PFMT64x, v);
 					rz_cons_newline ();

@@ -258,7 +258,7 @@ RZ_API char* rz_egg_Cfile_parser(const char *file, const char *arch, const char 
 	// Compile
 	char *cmd = rz_str_newf ("'%s' %s -o '%s.tmp' -S '%s'\n", cEnv->CC, cEnv->CFLAGS, file, file);
 	eprintf ("%s\n", cmd);
-	int rc = rz_sys_cmd (cmd);
+	int rc = rz_sys_system (cmd);
 	free (cmd);
 	if (rc != 0) {
 		goto fail;
@@ -278,7 +278,7 @@ RZ_API char* rz_egg_Cfile_parser(const char *file, const char *arch, const char 
 	// Assemble
 	cmd = rz_str_newf ("'%s' %s -o '%s.o' '%s.s'", cEnv->CC, cEnv->LDFLAGS, file, file);
 	eprintf ("%s\n", cmd);
-	rc = rz_sys_cmd (cmd);
+	rc = rz_sys_system (cmd);
 	free (cmd);
 	if (rc != 0) {
 		goto fail;

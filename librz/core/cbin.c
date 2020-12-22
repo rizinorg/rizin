@@ -844,7 +844,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 		rz_core_analysis_type_init (r);
 		rz_core_analysis_cc_init (r);
 		if (info->default_cc && rz_analysis_cc_exist (r->analysis, info->default_cc)) {
-			rz_core_cmdf (r, "k analysis/cc/default.cc=%s", info->default_cc);
+			rz_core_cmdf (r, "e analysis.cc=%s", info->default_cc);
 		}
 	} else if (IS_MODE_SIMPLE (mode)) {
 		rz_cons_printf ("arch %s\n", info->arch);
@@ -894,7 +894,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 				rz_cons_printf ("e asm.cpu=%s\n", info->cpu);
 			}
 			if (info->default_cc) {
-				rz_cons_printf ("k analysis/cc/default.cc=%s", info->default_cc);
+				rz_cons_printf ("e analysis.cc=%s", info->default_cc);
 			}
 			v = rz_analysis_archinfo (r->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 			if (v != -1) {
@@ -1566,9 +1566,8 @@ static void set_bin_relocs(RzCore *r, RzBinReloc *reloc, ut64 addr, Sdb **db, ch
 	bool keep_lib = rz_config_get_i (r->config, "bin.demangle.libs");
 	const char *lang = rz_config_get (r->config, "bin.lang");
 	bool is_pe = true;
-	int is_sandbox = rz_sandbox_enable (0);
 
-	if (is_pe && !is_sandbox && reloc->import
+	if (is_pe && reloc->import
 			&& reloc->import->name && reloc->import->libname
 			&& rz_str_startswith (reloc->import->name, "Ordinal_")) {
 		char *module = reloc->import->libname;
@@ -2095,7 +2094,7 @@ static int bin_imports(RzCore *r, int mode, int va, const char *name) {
 
 	if (pj) {
 		pj_end (pj);
-		rz_cons_printf ("%s\n", pj_string (pj));
+		rz_cons_print (pj_string (pj));
 		pj_free (pj);
 	}
 

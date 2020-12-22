@@ -44,11 +44,11 @@ int binutils_assemble(RzAsm *a, RzAsmOp *op, const char *buf, const char *as, co
 
 	char cmd[4096];
 	snprintf (cmd, sizeof(cmd), "%s %s %s -o %s", as, cmd_opt, ipath, opath);
-	if (!rz_sys_cmd (cmd)) {
+	if (!rz_sys_system (cmd)) {
 		int len = 0;
 		const ut8 *begin, *end;
 		close (ofd);
-		ofd = rz_sandbox_open (opath, O_BINARY | O_RDONLY, 0644);
+		ofd = rz_sys_open (opath, O_BINARY | O_RDONLY, 0644);
 		if (ofd < 0) {
 			goto skip_ofd;
 		}
