@@ -3674,7 +3674,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("io.unalloc.ch", ".", &cb_io_unalloc_ch, "Char to display if byte is unallocated");
 
 	/* file */
-	SETPREF ("file.desc", "", "User defined file description (used by projects)");
 	SETBPREF ("file.info", "true", "RzBin info loaded");
 	SETPREF ("file.offset", "", "Offset where the file will be mapped at");
 	SETCB ("file.path", "", &cb_filepath, "Path of current file");
