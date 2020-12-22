@@ -91,6 +91,9 @@ Website: [https://www.rizin.re/](https://www.rizin.re/)
 
 IRC: irc.freenode.net #rizin
 
+The platform we use for development and general discussion is a Mattermost
+server hosted at [im.rizin.re](https://im.rizin.re).
+
 [CONTRIBUTING.md]: https://github.com/rizinorg/rizin/blob/dev/CONTRIBUTING.md
 [test/README.md]: https://github.com/rizinorg/rizin/blob/dev/test/README.md
 [BUILDING.md]: https://github.com/rizinorg/rizin/blob/dev/BUILDING.md
