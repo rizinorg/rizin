@@ -87,12 +87,15 @@ although not currently supported could be easily added.
 
 # Community
 
-Website: [https://www.rizin.re/](https://www.rizin.re/)
+Our website and blog: [https://www.rizin.re/](https://www.rizin.re/)
 
-IRC: irc.freenode.net #rizin
+Join our [Mattermost](https://im.rizin.re) community to discuss Rizin, its development, and general topics related to the project.
 
-The platform we use for development and general discussion is a Mattermost
-server hosted at [im.rizin.re](https://im.rizin.re).
+We also provide the following partial bridges to other messaging platforms:
+- [Telegram](https://t.me/rizinorg)
+- IRC: irc.freenode.net 
+  - Community - [#rizin](https://webchat.freenode.net/?channels=#rizin)
+  - Developers - [#rizindev](https://webchat.freenode.net/?channels=#rizindev)
 
 [CONTRIBUTING.md]: https://github.com/rizinorg/rizin/blob/dev/CONTRIBUTING.md
 [test/README.md]: https://github.com/rizinorg/rizin/blob/dev/test/README.md
