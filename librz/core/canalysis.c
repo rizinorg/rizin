@@ -2344,11 +2344,11 @@ RZ_API void rz_core_analysis_callgraph(RzCore *core, ut64 addr, int fmt) {
 	const char *font = rz_config_get (core->config, "graph.font");
 	int is_html = rz_cons_singleton ()->is_html;
 	bool refgraph = rz_config_get_i (core->config, "graph.refs");
-	int first, first2;
 	RzListIter *iter, *iter2;
 	int usenames = rz_config_get_i (core->config, "graph.json.usenames");;
 	RzAnalysisFunction *fcni;
 	RzAnalysisRef *fcnr;
+	PJ *pj;
 
 	ut64 from = rz_config_get_i (core->config, "graph.from");
 	ut64 to = rz_config_get_i (core->config, "graph.to");
@@ -2356,7 +2356,11 @@ RZ_API void rz_core_analysis_callgraph(RzCore *core, ut64 addr, int fmt) {
 	switch (fmt)
 	{
 	case RZ_GRAPH_FORMAT_JSON:
-		rz_cons_printf ("[");
+		pj = pj_new ();
+		if (!pj) {
+			return;
+		}
+		pj_a (pj);
 		break;
 	case RZ_GRAPH_FORMAT_GML:
 	case RZ_GRAPH_FORMAT_GMLFCN:
@@ -2394,7 +2398,6 @@ RZ_API void rz_core_analysis_callgraph(RzCore *core, ut64 addr, int fmt) {
 		}
 		break;
 	}
-	first = 0;
 	ut64 base = UT64_MAX;
 	int iteration = 0;
 repeat:
@@ -2443,18 +2446,16 @@ repeat:
 			break;
 		}
 		case RZ_GRAPH_FORMAT_JSON:
+			pj_o (pj);
 			if (usenames) {
-				rz_cons_printf ("%s{\"name\":\"%s\", "
-						"\"size\":%" PFMT64u ",\"imports\":[",
-						first ? "," : "", fcni->name,
-						rz_analysis_function_linear_size (fcni));
+				pj_ks (pj, "name", fcni->name);
 			} else {
-				rz_cons_printf ("%s{\"name\":\"0x%08" PFMT64x
-						"\", \"size\":%" PFMT64u ",\"imports\":[",
-						first ? "," : "", fcni->addr,
-						rz_analysis_function_linear_size (fcni));
+				char fcni_addr[20];
+				snprintf (fcni_addr, sizeof (fcni_addr) - 1, "0x%08" PFMT64x, fcni->addr);
+				pj_ks (pj, "name", fcni_addr);
 			}
-			first = 1;
+			pj_kn (pj, "size", rz_analysis_function_linear_size (fcni));
+			pj_ka (pj, "imports");
 			break;
 		case RZ_GRAPH_FORMAT_DOT:
 			rz_cons_printf ("  \"0x%08"PFMT64x"\" "
@@ -2463,7 +2464,6 @@ repeat:
 					fcni->addr, fcni->name,
 					fcni->name, fcni->addr);
 		}
-		first2 = 0;
 		rz_list_foreach (calls, iter2, fcnr) {
 			// TODO: display only code or data refs?
 			RzFlagItem *flag = rz_flag_get_i (core->flags, fcnr->addr);
@@ -2504,10 +2504,12 @@ repeat:
 				break;
 			case RZ_GRAPH_FORMAT_JSON:
 				if (usenames) {
-					rz_cons_printf ("%s\"%s\"", first2?",":"", fcnr_name);
+					pj_s (pj, fcnr_name);
 				}
 				else {
-					rz_cons_printf ("%s\"0x%08"PFMT64x"\"", first2?",":"", fcnr->addr);
+					char fcnr_addr[20];
+					snprintf (fcnr_addr, sizeof (fcnr_addr) - 1, "0x%08" PFMT64x, fcnr->addr);
+					pj_s (pj, fcnr_addr);
 				}
 				break;
 			default:
@@ -2523,12 +2525,12 @@ repeat:
 			if (!(flag && flag->name)) {
 				free(fcnr_name);
 			}
-			first2 = 1;
 		}
 		rz_list_free (refs);
 		rz_list_free (calls);
 		if (fmt == RZ_GRAPH_FORMAT_JSON) {
-			rz_cons_printf ("]}");
+			pj_end (pj);
+			pj_end (pj);
 		}
 	}
 	if (iteration == 0 && fmt == RZ_GRAPH_FORMAT_GML) {
@@ -2542,8 +2544,12 @@ repeat:
 	{
 	case RZ_GRAPH_FORMAT_GML:
 	case RZ_GRAPH_FORMAT_GMLFCN:
-	case RZ_GRAPH_FORMAT_JSON:
 		rz_cons_printf ("]\n");
+		break;
+	case RZ_GRAPH_FORMAT_JSON:
+		pj_end (pj);
+		rz_cons_println (pj_string (pj));
+		pj_free (pj);
 		break;
 	case RZ_GRAPH_FORMAT_DOT:
 		rz_cons_printf ("}\n");
