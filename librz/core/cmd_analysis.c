@@ -4838,21 +4838,7 @@ repeat:
 			return 1;
 		}
 	}
-	if (rz_config_get_i (core->config, "cfg.r2wars")) {
-		// this is x86 and r2wars specific, shouldnt hurt outside x86
-		ut64 vECX = rz_reg_getv (core->analysis->reg, "ecx");
-		if (op.prefix  & RZ_ANALYSIS_OP_PREFIX_REP && vECX > 1) {
-			char *tmp = strstr (op.esil.ptr, ",ecx,?{,5,GOTO,}");
-			if (tmp) {
-				tmp[0] = 0;
-			}
-			op.esil.len -= 16;
-		} else {
-			rz_reg_setv (core->analysis->reg, name, addr + op.size);
-		}
-	} else {
-		rz_reg_setv (core->analysis->reg, name, addr + op.size);
-	}
+	rz_reg_setv (core->analysis->reg, name, addr + op.size);
 	if (ret) {
 		rz_analysis_esil_set_pc (esil, addr);
 		const char *e = RZ_STRBUF_SAFEGET (&op.esil);
@@ -5571,14 +5557,6 @@ static bool cmd_aea(RzCore* core, int mode, ut64 addr, int length) {
 				eprintf ("Invalid 0x%08"PFMT64x" instruction %02x %02x\n",
 					addr + ptr, buf[ptr], buf[ptr + 1]);
 				break;
-			}
-			if (rz_config_get_i (core->config, "cfg.r2wars")) {
-				if (aop.prefix  & RZ_ANALYSIS_OP_PREFIX_REP) {
-					char * tmp = strstr (esilstr, ",ecx,?{,5,GOTO,}");
-					if (tmp) {
-						tmp[0] = 0;
-					}
-				}
 			}
 			rz_analysis_esil_parse (esil, esilstr);
 			rz_analysis_esil_stack_free (esil);
