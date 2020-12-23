@@ -3380,7 +3380,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 
 	/* cmd */
-	SETPREF ("cmd.xterm", "xterm -bg black -fg gray -e", "xterm command to spawn with V@");
 	SETCB ("cmd.demangle", "false", &cb_bdc, "run xcrun swift-demangle and similar if available (SLOW)");
 	SETICB ("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");
 	SETPREF ("cmd.bp", "", "Run when a breakpoint is hit");
@@ -3540,7 +3539,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	n = NODECB ("cfg.json.num", "none", &cb_jsonencoding_numbers);
 	SETDESC (n, "Encode numbers from json outputs using the specified option");
 	SETOPTIONS (n, "none", "string", "hex", NULL);
-
 
 	/* scr */
 #if __EMSCRIPTEN__
