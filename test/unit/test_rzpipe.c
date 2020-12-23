@@ -3,6 +3,9 @@
 #include "minunit.h"
 
 static bool test_rzpipe(void) {
+#if __WINDOWS__
+	mu_test_status = MU_TEST_BROKEN;
+#endif
 	RzPipe *r = rzpipe_open ("rizin -q0 -");
 	mu_assert ("rzpipe can spawn", r);
 	char *hello = rzpipe_cmd (r, "?e hello world");
@@ -24,6 +27,4 @@ static int all_tests() {
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests ();
-}
+mu_main (all_tests)

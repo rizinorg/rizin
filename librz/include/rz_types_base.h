@@ -17,6 +17,11 @@
 #define boolt int
 
 #if defined(_MSC_VER)
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif
+
+#if defined(_MSC_VER)
 # define RZ_ALIGNED(x) __declspec(align(x))
 #else
 # define RZ_ALIGNED(x) __attribute__((aligned(x)))
