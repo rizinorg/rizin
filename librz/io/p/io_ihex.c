@@ -54,7 +54,7 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	}
 	rih = fd->data;
 	pathname = fd->name + 7;
-	out = rz_sandbox_fopen (pathname, "w");
+	out = rz_sys_fopen (pathname, "w");
 	if (!out) {
 		eprintf ("Cannot open '%s' for writing\n", pathname);
 		return -1;

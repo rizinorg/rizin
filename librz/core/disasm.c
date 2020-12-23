@@ -4784,8 +4784,9 @@ static void ds_print_esil_analysis(RDisasmState *ds) {
 					} else {
 						ds_comment_middle (ds, "; 0x%"PFMT64x"(", pcv);
 					}
+					const char *cc = rz_analysis_syscc_default (core->analysis);
 					for (i = 0; i < nargs; i++) {
-						ut64 v = rz_debug_arg_get (core->dbg, RZ_ANALYSIS_CC_TYPE_FASTCALL, i);
+						ut64 v = rz_debug_arg_get (core->dbg, cc, i);
 						ds_comment_middle (ds, "%s0x%"PFMT64x, i?", ":"", v);
 					}
 					ds_comment_end (ds, ")");

@@ -62,10 +62,6 @@ static bool __check(RzIO *io, const char *pathname, bool many) {
 }
 
 static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
-	if (rz_sandbox_enable (false)) {
-		eprintf ("Do not permit " FDURI " in sandbox mode.\n");
-		return NULL;
-	}
 	if (!__check (io, pathname, 0)) {
 		return NULL;
 	}

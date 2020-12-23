@@ -527,10 +527,14 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 				if (z) { playMsg (core, n, z);}\
 				rz_core_bin_info (core, x, mode, va, NULL, y);
 		case 'A': // "iA"
-			newline = false;
-			{
-				int mode = (input[1] == 'j')? 'j': 1;
-				rz_bin_list_archs (core->bin, mode);
+			if (input[1] == 'j') {
+				rz_cons_print ("{");
+				rz_bin_list_archs (core->bin, 'j');
+				rz_cons_print ("}");
+				newline = true;
+			} else {
+				rz_bin_list_archs (core->bin, 1);
+				newline = false;
 			}
 			break;
 		case 'E': // "iE"
@@ -849,6 +853,9 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 			}
 			break;
 		case 'i': { // "ii"
+			if (input[1] == 'j') {
+				newline = true;
+			}
 			RzBinObject *obj = rz_bin_cur_object (core->bin);
 			RBININFO ("imports", RZ_CORE_BIN_ACC_IMPORTS, NULL,
 				(obj && obj->imports)? rz_list_length (obj->imports): 0);

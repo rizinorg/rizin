@@ -540,7 +540,7 @@ static void load_1(RzMagic *ms, int action, const char *file, int *errs, struct 
 	}
 	char line[BUFSIZ];
 	size_t lineno = 0;
-	FILE *f = rz_sandbox_fopen (ms->file = file, "r");
+	FILE *f = rz_sys_fopen (ms->file = file, "r");
 	if (!f) {
 		if (errno != ENOENT) {
 			file_error (ms, errno, "cannot read magic file `%s'", file);
@@ -617,10 +617,6 @@ static int apprentice_load(RzMagic *ms, struct rz_magic **magicp, ut32 *nmagicp,
 
 	/* load directory or file */
 	if (stat (fn, &st) == 0 && S_ISDIR (st.st_mode)) {
-		if (rz_sandbox_enable (0) && !rz_sandbox_check_path (fn)) {
-			free (marray);
-			return  -1;
-		}
 #if __WINDOWS__ && !defined(__CYGWIN__)
 		if ((wcpath = rz_utf8_to_utf16 (fn))) {
 			swprintf (dir, _countof (dir), L"%ls\\*.*", wcpath);
@@ -1838,7 +1834,7 @@ static int apprentice_map(RzMagic *ms, struct rz_magic **magicp, ut32 *nmagicp, 
 		goto error2;
 	}
 
-	if ((fd = rz_sandbox_open (dbname, O_RDONLY | O_BINARY, 0)) == -1) {
+	if ((fd = rz_sys_open (dbname, O_RDONLY | O_BINARY, 0)) == -1) {
 		goto error2;
 	}
 
@@ -1940,7 +1936,7 @@ static int apprentice_compile(RzMagic *ms, struct rz_magic **magicp, ut32 *nmagi
 		goto out;
 	}
 
-	if ((fd = rz_sandbox_open(dbname, O_WRONLY|O_CREAT|O_TRUNC|O_BINARY, 0644)) == -1) {
+	if ((fd = rz_sys_open(dbname, O_WRONLY|O_CREAT|O_TRUNC|O_BINARY, 0644)) == -1) {
 		file_error(ms, errno, "cannot open `%s'", dbname);
 		goto out;
 	}

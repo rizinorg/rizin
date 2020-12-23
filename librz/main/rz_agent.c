@@ -19,7 +19,6 @@ static int usage (int v) {
 	"  -a        listen for everyone (localhost by default)\n"
 	"  -d        run in daemon mode (background)\n"
 	"  -h        show this help message\n"
-	"  -s        run in sandbox mode\n"
 	"  -u        enable http Authorization access\n"
 	"  -t        user:password authentication file\n"
 	"  -p [port] specify listening port (defaults to 8080)\n");
@@ -36,7 +35,6 @@ RZ_API int rz_main_rz_agent(int argc, const char **argv) {
 	RzSocketHTTPRequest *rs;
 	int c;
 	int dodaemon = 0;
-	int dosandbox = 0;
 	bool listenlocal = true;
 	const char *port = "8080";
 	const char *httpauthfile = NULL;
@@ -49,9 +47,6 @@ RZ_API int rz_main_rz_agent(int argc, const char **argv) {
 		switch (c) {
 		case 'a':
 			listenlocal = false;
-			break;
-		case 's':
-			dosandbox = 1;
 			break;
 		case 'd':
 			dodaemon = 1;
@@ -116,13 +111,6 @@ RZ_API int rz_main_rz_agent(int argc, const char **argv) {
 	}
 
 	eprintf ("http://localhost:%d/\n", s->port);
-	if (dosandbox && !rz_sandbox_enable (true)) {
-		eprintf ("sandbox: Cannot be enabled.\n");
-		free (pfile);
-		rz_list_free (so.authtokens);
-		rz_socket_free (s);
-		return 1;
-	}
 
 	(void)rz_cons_new ();
 
@@ -143,9 +131,9 @@ RZ_API int rz_main_rz_agent(int argc, const char **argv) {
 				int pid = atoi (rs->path + 11);
 				if (pid > 0) {
 #if __WINDOWS__
-					rz_sandbox_kill (pid, 0);
+					rz_sys_kill (pid, 0);
 #else
-					rz_sandbox_kill (pid, SIGKILL);
+					rz_sys_kill (pid, SIGKILL);
 #endif
 				}
 			} else if (!strncmp (rs->path, "/file/open/", 11)) {

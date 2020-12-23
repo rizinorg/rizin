@@ -184,12 +184,6 @@ enum {
 	RZ_ANALYSIS_FQUALIFIER_VIRTUAL = 5,
 };
 
-/*--------------------Function Conventions-----------*/
-//XXX don't use them in the future
-#define RZ_ANALYSIS_CC_TYPE_STDCALL 0
-#define RZ_ANALYSIS_CC_TYPE_PASCAL 1
-#define RZ_ANALYSIS_CC_TYPE_FASTCALL 'A' // syscall
-#define RZ_ANALYSIS_CC_TYPE_SYSV 8
 #define RZ_ANALYSIS_CC_MAXARG 16
 
 enum {
@@ -1812,6 +1806,9 @@ RZ_API void rz_analysis_cc_set_error(RzAnalysis *analysis, const char *conventio
 RZ_API int rz_analysis_cc_max_arg(RzAnalysis *analysis, const char *cc);
 RZ_API const char *rz_analysis_cc_ret(RzAnalysis *analysis, const char *convention);
 RZ_API const char *rz_analysis_cc_default(RzAnalysis *analysis);
+RZ_API void rz_analysis_set_cc_default(RzAnalysis *analysis, const char *convention);
+RZ_API const char *rz_analysis_syscc_default(RzAnalysis *analysis);
+RZ_API void rz_analysis_set_syscc_default(RzAnalysis *analysis, const char *convention);
 RZ_API const char *rz_analysis_cc_func(RzAnalysis *analysis, const char *func_name);
 RZ_API bool rz_analysis_noreturn_at(RzAnalysis *analysis, ut64 addr);
 

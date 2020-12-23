@@ -27,10 +27,6 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 	if (!__plugin_open (io, file, 0)) {
 		return NULL;
 	}
-	if (rz_sandbox_enable (false)) {
-		eprintf ("sandbox exit\n");
-		return NULL;
-	}
 	if (riobochs) {
 		return riobochs;
 	}

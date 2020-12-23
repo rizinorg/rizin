@@ -371,7 +371,7 @@ static void _print_strings(RzCore *r, RzList *list, int mode, int va) {
 	bool b64str = rz_config_get_i (r->config, "bin.b64str");
 	int minstr = rz_config_get_i (r->config, "bin.minstr");
 	int maxstr = rz_config_get_i (r->config, "bin.maxstr");
-	RTable *table = rz_core_table (r);
+	RzTable *table = rz_core_table (r);
 	rz_return_if_fail (table);
 	RzBin *bin = r->bin;
 	RzBinObject *obj = rz_bin_cur_object (bin);
@@ -844,7 +844,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 		rz_core_analysis_type_init (r);
 		rz_core_analysis_cc_init (r);
 		if (info->default_cc && rz_analysis_cc_exist (r->analysis, info->default_cc)) {
-			rz_core_cmdf (r, "k analysis/cc/default.cc=%s", info->default_cc);
+			rz_core_cmdf (r, "e analysis.cc=%s", info->default_cc);
 		}
 	} else if (IS_MODE_SIMPLE (mode)) {
 		rz_cons_printf ("arch %s\n", info->arch);
@@ -894,7 +894,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 				rz_cons_printf ("e asm.cpu=%s\n", info->cpu);
 			}
 			if (info->default_cc) {
-				rz_cons_printf ("k analysis/cc/default.cc=%s", info->default_cc);
+				rz_cons_printf ("e analysis.cc=%s", info->default_cc);
 			}
 			v = rz_analysis_archinfo (r->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 			if (v != -1) {
@@ -1566,9 +1566,8 @@ static void set_bin_relocs(RzCore *r, RzBinReloc *reloc, ut64 addr, Sdb **db, ch
 	bool keep_lib = rz_config_get_i (r->config, "bin.demangle.libs");
 	const char *lang = rz_config_get (r->config, "bin.lang");
 	bool is_pe = true;
-	int is_sandbox = rz_sandbox_enable (0);
 
-	if (is_pe && !is_sandbox && reloc->import
+	if (is_pe && reloc->import
 			&& reloc->import->name && reloc->import->libname
 			&& rz_str_startswith (reloc->import->name, "Ordinal_")) {
 		char *module = reloc->import->libname;
@@ -1705,7 +1704,7 @@ static int bin_relocs(RzCore *r, int mode, int va) {
 	bool bin_demangle = rz_config_get_i (r->config, "bin.demangle");
 	bool keep_lib = rz_config_get_i (r->config, "bin.demangle.libs");
 	const char *lang = rz_config_get (r->config, "bin.lang");
-	RTable *table = rz_core_table (r);
+	RzTable *table = rz_core_table (r);
 	rz_return_val_if_fail (table, false);
 	RBIter iter;
 	RzBinReloc *reloc = NULL;
@@ -1975,7 +1974,7 @@ static int bin_imports(RzCore *r, int mode, int va, const char *name) {
 	RzBinInfo *info = rz_bin_get_info (r->bin);
 	int bin_demangle = rz_config_get_i (r->config, "bin.demangle");
 	bool keep_lib = rz_config_get_i (r->config, "bin.demangle.libs");
-	RTable *table = rz_core_table (r);
+	RzTable *table = rz_core_table (r);
 	rz_return_val_if_fail (table, false);
 	RzBinImport *import;
 	RzListIter *iter;
@@ -2095,7 +2094,7 @@ static int bin_imports(RzCore *r, int mode, int va, const char *name) {
 
 	if (pj) {
 		pj_end (pj);
-		rz_cons_printf ("%s\n", pj_string (pj));
+		rz_cons_print (pj_string (pj));
 		pj_free (pj);
 	}
 
@@ -2276,7 +2275,7 @@ static int bin_symbols(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	bool printHere = (args && *args == '.');
 
 	int i = 0, lastfs = 's';
-	RTable *table = rz_core_table (r);
+	RzTable *table = rz_core_table (r);
 	bool bin_demangle = rz_config_get_i (r->config, "bin.demangle");
 	if (!info) {
 		if (IS_MODE_JSON (mode)) {
@@ -2704,8 +2703,8 @@ static int bin_map_sections_to_segments (RzBin *bin, int mode) {
 	RzList *segments = rz_list_new ();
 	RzList *tmp = rz_bin_get_sections (bin);
 	char *json_output = rz_str_new ("");
-	RTable *table = rz_table_new ();
-	RTableColumnType *typeString = rz_table_type ("string");
+	RzTable *table = rz_table_new ();
+	RzTableColumnType *typeString = rz_table_type ("string");
 
 	rz_table_add_column (table, typeString, "Segment", 0);
 	rz_table_add_column (table, typeString, "Section", 0);
@@ -2756,7 +2755,7 @@ static int bin_sections(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const 
 	RzList *sections;
 	RzListIter *iter;
 	RzListIter *last_processed = NULL;
-	RTable *table = rz_core_table (r);
+	RzTable *table = rz_core_table (r);
 	rz_return_val_if_fail (table, false);
 	int i = 0;
 	int fd = -1;
@@ -2799,7 +2798,7 @@ static int bin_sections(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const 
 			RzListInfo *info = rz_listinfo_new (s->name, pitv, vitv, s->perm, strdup (humansz));
 			rz_list_append (list, info);
 		}
-		RTable *table = rz_core_table (r);
+		RzTable *table = rz_core_table (r);
 		rz_table_visual_list (table, list, r->offset, -1, cols, r->io->va);
 		if (r->table_query) {
 			rz_table_query (table, r->table_query);

@@ -3309,7 +3309,7 @@ int __rz_shell_cb(void *user) {
 int __system_shell_cb(void *user) {
 	rz_cons_set_raw (0);
 	rz_cons_flush ();
-	rz_sys_cmd ("$SHELL");
+	rz_sys_system ("$SHELL");
 	return 0;
 }
 
@@ -5339,7 +5339,7 @@ RZ_API void rz_save_panels_layout(RzCore *core, const char *oname) {
 		pj_kn (pj, "h", panel->view->pos.h);
 		pj_end (pj);
 	}
-	FILE *fd = rz_sandbox_fopen (config_path, "w");
+	FILE *fd = rz_sys_fopen (config_path, "w");
 	if (fd) {
 		char *pjs = pj_drain (pj);
 		fprintf (fd, "%s\n", pjs);

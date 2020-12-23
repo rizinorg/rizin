@@ -861,7 +861,7 @@ struct rz_core_task_t {
 typedef void (*RzCoreTaskOneShot)(void *);
 
 RZ_API void rz_core_echo(RzCore *core, const char *msg);
-RZ_API RTable *rz_core_table(RzCore *core);
+RZ_API RzTable *rz_core_table(RzCore *core);
 
 RZ_API void rz_core_task_scheduler_init(RzCoreTaskScheduler *sched,
 		RzCoreTaskContextSwitch ctx_switch, void *ctx_switch_user,

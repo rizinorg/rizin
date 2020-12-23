@@ -368,7 +368,7 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 				}
 				rz_list_append (list, info);
 			}
-			RTable *table = rz_core_table (core);
+			RzTable *table = rz_core_table (core);
 			rz_table_visual_list (table, list, core->offset, core->blocksize,
 				rz_cons_get_size (NULL), rz_config_get_i (core->config, "scr.color"));
 			char *table_text = rz_table_tostring (table);
@@ -521,7 +521,7 @@ static void cmd_omf(RzCore *core, const char *input) {
 }
 
 static void rz_core_cmd_omt(RzCore *core, const char *arg) {
-	RTable *t = rz_table_new ();
+	RzTable *t = rz_table_new ();
 
 	rz_table_set_columnsf (t, "nnnnnnnss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "name", NULL);
 
@@ -850,7 +850,7 @@ static void cmd_open_map(RzCore *core, const char *input) {
 			}
 			rz_list_append (list, info);
 		}
-		RTable *table = rz_core_table (core);
+		RzTable *table = rz_core_table (core);
 		rz_table_visual_list (table, list, core->offset, core->blocksize,
 			rz_cons_get_size (NULL), rz_config_get_i (core->config, "scr.color"));
 		char *tablestr = rz_table_tostring (table);
@@ -1539,10 +1539,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 		pj_free (pj);
 		break;
 	case 'L': // "oL"
-		if (rz_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
-			return 0;
-		}
 		if (input[1] == ' ') {
 			if (rz_lib_open (core->lib, input + 2) == -1) {
 				eprintf ("Oops\n");
@@ -1841,10 +1837,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 		if (input[1] == '?') {
 			eprintf ("Usage: oc [file]\n");
 		} else if (input[1] && input[2]) {
-			if (rz_sandbox_enable (0)) {
-				eprintf ("This command is disabled in sandbox mode\n");
-				return 0;
-			}
 			if (core->tasks.current_task != core->tasks.main_task) {
 				eprintf ("This command can only be executed on the main task!\n");
 				return 0;

@@ -3127,7 +3127,7 @@ static bool cmd_print_blocks(RzCore *core, const char *input) {
 	char mode = input[0];
 	RzList *list = NULL;
 	RzCoreAnalStats *as = NULL;
-	RTable *t = NULL;
+	RzTable *t = NULL;
 	PJ *pj = NULL;
 	if (mode == '?') {
 		rz_core_cmd_help (core, help_msg_p_minus);
@@ -4435,7 +4435,7 @@ static char *__op_refs(RzCore *core, RzAnalysisOp *op, int n) {
 
 static void rz_core_disasm_table(RzCore * core, int l, const char *input) {
 	int i;
-	RTable *t = rz_core_table (core);
+	RzTable *t = rz_core_table (core);
 	char *arg = strchr (input, ' ');
 	if (arg) {
 		input = arg + 1;
@@ -4483,11 +4483,11 @@ static void rz_core_disasm_table(RzCore * core, int l, const char *input) {
 
 static void cmd_pxr(RzCore *core, int len, int mode, int wordsize, const char *arg) {
 	PJ *pj = NULL;
-	RTable *t = NULL;
+	RzTable *t = NULL;
 	if (mode == ',') {
 		t = rz_table_new ();
-		RTableColumnType *n = rz_table_type ("number");
-		RTableColumnType *s = rz_table_type ("string");
+		RzTableColumnType *n = rz_table_type ("number");
+		RzTableColumnType *s = rz_table_type ("string");
 		rz_table_add_column (t, n, "addr", 0);
 		rz_table_add_column (t, n, "value", 0);
 		rz_table_add_column (t, s, "refs", 0);
@@ -4680,12 +4680,10 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		if (input[1] == 'n') {
 			cmd_print_pwn (core);
 		} else if (input[1] == 'd') {
-			if (!rz_sandbox_enable (0)) {
-				char *cwd = rz_sys_getdir ();
-				if (cwd) {
-					rz_cons_println (cwd);
-					free (cwd);
-				}
+			char *cwd = rz_sys_getdir ();
+			if (cwd) {
+				rz_cons_println (cwd);
+				free (cwd);
 			}
 		} else {
 			rz_cons_printf ("| pwd               display current working directory\n");
@@ -5391,14 +5389,16 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					if (realsz + 4096 < linearsz) {
 						eprintf ("Linear size differs too much from the bbsum, please use pdr instead.\n");
 					} else {
-						ut64 at = f->addr; // TODO: should be rz_analysis_function_min_addr()
-						ut64 sz = RZ_MAX (linearsz, realsz);
-						ut8 *buf = calloc (sz, 1);
-						if (buf) {
-							(void)rz_io_read_at (core->io, at, buf, sz);
-							core->num->value = rz_core_print_disasm (core->print, core, at, buf, sz, sz, 0, 1, 0, NULL, f);
-							free (buf);
-							// rz_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, f->_size > 0 ? f->_size: rz_analysis_function_realsize (f), f->addr);
+						ut64 start = f->addr; // For pdf, start disassembling at the entrypoint
+						ut64 end = rz_analysis_function_max_addr (f);
+						if (end > start) {
+							ut64 sz = end - start;
+							ut8 *buf = calloc (sz, 1);
+							if (buf) {
+								(void)rz_io_read_at (core->io, start, buf, sz);
+								core->num->value = rz_core_print_disasm (core->print, core, start, buf, sz, sz, 0, 1, 0, NULL, f);
+								free (buf);
+							}
 						}
 					}
 					pd_result = 0;

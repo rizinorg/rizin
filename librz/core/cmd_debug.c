@@ -1886,7 +1886,7 @@ RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, int mode) {
 	RzList *list = rz_reg_get_list (reg, RZ_REG_TYPE_GPR);
 	RzListIter *iter;
 	RzRegItem *r;
-	RTable *t = rz_core_table (core);
+	RzTable *t = rz_core_table (core);
 
 	if (mode == 'j') {
 		rz_config_set_i (core->config, "scr.color", false);
@@ -2186,7 +2186,7 @@ static void cmd_debug_reg_print_packed_reg(RzCore *core, RzRegItem *item, char e
 	}
 }
 
-static char *__table_format_string(RTable *t, int fmt) {
+static char *__table_format_string(RzTable *t, int fmt) {
 	switch (fmt) {
 	case 'j': return rz_table_tojson (t);
 	case 's': return rz_table_tostring (t);
@@ -2197,10 +2197,10 @@ static char *__table_format_string(RTable *t, int fmt) {
 static void __tableRegList (RzCore *core, RzReg *reg, const char *str) {
 	int i;
 	RzRegItem *e;
-	RTable *t = rz_core_table (core);
-	RTableColumnType *typeString = rz_table_type ("string");
-	RTableColumnType *typeNumber = rz_table_type ("number");
-	RTableColumnType *typeBoolean = rz_table_type ("boolean");
+	RzTable *t = rz_core_table (core);
+	RzTableColumnType *typeString = rz_table_type ("string");
+	RzTableColumnType *typeNumber = rz_table_type ("number");
+	RzTableColumnType *typeBoolean = rz_table_type ("boolean");
 	rz_table_add_column (t, typeNumber, "offset", 0);
 	rz_table_add_column (t, typeNumber, "size", 0);
 	rz_table_add_column (t, typeNumber, "psize", 0);
@@ -4662,10 +4662,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	RzDebugTracepoint *trace;
 	RzAnalysisOp *op;
 
-	if (rz_sandbox_enable (0)) {
-		eprintf ("Debugger commands disabled in sandbox mode\n");
-		return 0;
-	}
 	if (!strncmp (input, "ate", 3)) {
 		char str[128];
 		str[0] = 0;
@@ -5257,7 +5253,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				setRarunProfileString (core, input + 3);
 			} else {
 				// TODO use the api
-				rz_sys_cmd ("rz_run -h");
+				rz_sys_system ("rz_run -h");
 			}
 			break;
 		case 'o': // "doo" : reopen in debug mode

@@ -6,7 +6,7 @@ bool test_r_bitmap_set(void) {
 	static const int max_value = (2343 + 1);
 	static const ut32 values [] = { 1,2,3,4,8,34,543,2343 };
 	static const int len = (sizeof(values)/sizeof(ut32));
-	RBitmap *bitmap = rz_bitmap_new(max_value);
+	RzBitmap *bitmap = rz_bitmap_new(max_value);
 	for(i=0; i < len; i++) {
 		rz_bitmap_set(bitmap, values[i]);
 	}

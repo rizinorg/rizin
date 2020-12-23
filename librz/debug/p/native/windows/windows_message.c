@@ -276,8 +276,8 @@ static window *__window_from_handle(HANDLE hwnd) {
 	return win;
 }
 
-static RTable *__create_window_table(void) {
-	RTable *tbl = rz_table_new ();
+static RzTable *__create_window_table(void) {
+	RzTable *tbl = rz_table_new ();
 	if (!tbl) {
 		return NULL;
 	}
@@ -288,7 +288,7 @@ static RTable *__create_window_table(void) {
 	return tbl;
 }
 
-static void __add_window_to_table(RTable *tbl, window *win) {
+static void __add_window_to_table(RzTable *tbl, window *win) {
 	rz_return_if_fail (tbl && win);
 	char *handle = rz_str_newf ("0x%08"PFMT64x"", (ut64)win->h);
 	char *pid = rz_str_newf ("%lu", win->pid);
@@ -319,7 +319,7 @@ RZ_API void rz_w32_identify_window(void) {
 		eprintf ("Error trying to get information from 0x%08"PFMT64x"\n", (ut64)hwnd);
 		return;
 	}
-	RTable *tbl = __create_window_table ();
+	RzTable *tbl = __create_window_table ();
 	if (!tbl) {
 		return;
 	}
@@ -420,7 +420,7 @@ static DWORD __get_msg_type(char *name) {
 }
 
 static void __print_windows(RzDebug *dbg, RzList *windows) {
-	RTable *tbl = __create_window_table ();
+	RzTable *tbl = __create_window_table ();
 	if (!tbl) {
 		return;
 	}

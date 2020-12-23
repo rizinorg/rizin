@@ -403,7 +403,6 @@ rz_util_files = [
   'include/rz_util/rz_range.h',
   'include/rz_util/rz_rbtree.h',
   'include/rz_util/rz_intervaltree.h',
-  'include/rz_util/rz_sandbox.h',
   'include/rz_util/rz_serialize.h',
   'include/rz_util/rz_signal.h',
   'include/rz_util/rz_spaces.h',

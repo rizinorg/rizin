@@ -78,7 +78,7 @@ static int rz_bin_dmp64_init_bmp_pages(struct rz_bin_dmp64_obj_t *obj) {
 	}
 	ut64 paddr_base = obj->bmp_header->FirstPage;
 	ut64 num_pages = obj->bmp_header->Pages;
-	RBitmap *bitmap = rz_bitmap_new(num_pages);
+	RzBitmap *bitmap = rz_bitmap_new(num_pages);
 	rz_bitmap_set_bytes (bitmap, obj->bitmap, num_pages / 8);
 
 	ut64 num_bitset = 0;
@@ -109,7 +109,7 @@ static int rz_bin_dmp64_init_bmp_header(struct rz_bin_dmp64_obj_t *obj) {
 		rz_sys_perror ("RZ_NEW0 (dmp_bmp_header)");
 		return false;
 	}
-	if (rz_buf_read_at (obj->b, sizeof (dmp64_header), (ut8*)obj->bmp_header, sizeof (dmp_bmp_header) - sizeof (ut8*)) < 0) {
+	if (rz_buf_read_at (obj->b, sizeof (dmp64_header), (ut8*)obj->bmp_header, offsetof (dmp_bmp_header, Bitmap)) < 0) {
 		eprintf ("Warning: read bmp_header\n");
 		return false;
 	}
@@ -119,10 +119,10 @@ static int rz_bin_dmp64_init_bmp_header(struct rz_bin_dmp64_obj_t *obj) {
 	}
 	ut64 bitmapsize = obj->bmp_header->Pages / 8;
 	obj->bitmap = calloc (1, bitmapsize);
-	if (rz_buf_read_at (obj->b, sizeof (dmp64_header) + sizeof (dmp_bmp_header) - sizeof (ut8*), obj->bitmap, bitmapsize) < 0) {
+	if (rz_buf_read_at (obj->b, sizeof (dmp64_header) + offsetof (dmp_bmp_header, Bitmap), obj->bitmap, bitmapsize) < 0) {
 		eprintf ("Warning: read bitmap\n");
 		return false;
-	};
+	}
 
 	return true;
 }

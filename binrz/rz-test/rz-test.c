@@ -102,7 +102,7 @@ static bool rz_test_chdir(const char *argv0) {
 }
 
 static bool rz_test_test_run_unit(void) {
-	return rz_sandbox_system ("make -C unit all run") == 0;
+	return rz_sys_system ("make -C unit all run") == 0;
 }
 
 static bool rz_test_chdir_fromtest(const char *test_path) {

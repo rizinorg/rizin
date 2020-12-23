@@ -36,7 +36,7 @@ static int lang_zig_file(RzLang *lang, const char *file) {
 		cc = strdup ("zig");
 	}
 	char *cmd = rz_str_newf ("zig build-lib --output %s.%s --release-fast %s.zig --library rz_core", name, RZ_LIB_EXT, name);
-	if (rz_sandbox_system (cmd) != 0) {
+	if (rz_sys_system (cmd) != 0) {
 		free (name);
 		free (cmd);
 		free (cc);
@@ -74,7 +74,7 @@ static int lang_zig_init(void *user) {
 
 static int lang_zig_run(RzLang *lang, const char *code, int len) {
 	const char *file = "_tmp.zig";
-	FILE *fd = rz_sandbox_fopen (file, "w");
+	FILE *fd = rz_sys_fopen (file, "w");
 	if (fd) {
 		const char *zig_header = \
 "extern fn puts(&const u8) void;\n" \

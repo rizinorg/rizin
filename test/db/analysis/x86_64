@@ -1446,12 +1446,12 @@ RUN
 NAME=Settings global calling convention
 FILE=bins/pe/msvcfindmain.exe
 CMDS=<<EOF
-afc=pascal
+e analysis.cc=pascal
 aaa
 afi @@F~?pascal
 EOF
 EXPECT=<<EOF
-65
+130
 EOF
 RUN
 
@@ -2498,6 +2498,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 4
 cyclomatic-complexity: 0
+cc: amd64
 bits: 64
 type: fcn [NEW]
 num-bbs: 2
@@ -2558,6 +2559,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 6
 cyclomatic-complexity: 1
+cc: amd64
 bits: 64
 type: fcn [NEW]
 num-bbs: 2
@@ -2614,14 +2616,12 @@ diff: type: new
 |       .-> 0x00000004      c1ebfd         shr ebx, 0xfd
 |           0x00000007      bb2c000000     mov ebx, 0x2c               ; ','
 \           0x0000000c      cc             int3
-..
 
 / 16: fcn.00000000 ();
 |           0x00000000      b8210000c1     mov eax, 0xc1000021         ; '!'
 |       `=< 0x00000005      ebfd           jmp 4
 |           0x00000007      bb2c000000     mov ebx, 0x2c               ; ','
 \           0x0000000c      cc             int3
-..
 
 #
 offset: 0x00000000
@@ -2633,6 +2633,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 7
 cyclomatic-complexity: 0
+cc: amd64
 bits: 64
 type: fcn [NEW]
 num-bbs: 2
@@ -2697,14 +2698,12 @@ diff: type: new
 |      ..-> 0x00000004      c1ebfd         shr ebx, 0xfd
 |       :   0x00000007      bb2c000000     mov ebx, 0x2c               ; ','
 \       `=< 0x0000000c      ebf6           jmp 4
-..
 
 / 17: fcn.00000000 ();
 |           0x00000000      b8210000c1     mov eax, 0xc1000021         ; '!'
 |      `==< 0x00000005      ebfd           jmp 4
 |       :   0x00000007      bb2c000000     mov ebx, 0x2c               ; ','
 \       `=< 0x0000000c      ebf6           jmp 4
-..
 
 #
 offset: 0x00000000
@@ -2716,6 +2715,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 7
 cyclomatic-complexity: 0
+cc: amd64
 bits: 64
 type: fcn [NEW]
 num-bbs: 3
@@ -2788,7 +2788,6 @@ diff: type: new
 |      .`=< 0x00000005      ebfd           jmp 4
 |      :    0x00000007      bb2c000000     mov ebx, 0x2c               ; ','
 \      `==< 0x0000000c      ebf7           jmp 5
-..
 
 / 17: fcn.00000000 ();
 |           0x00000000      b8210000c1     mov eax, 0xc1000021         ; '!'
@@ -2796,7 +2795,6 @@ diff: type: new
 |      .`=< 0x00000005      ebfd           jmp 4
 |      :    0x00000007      bb2c000000     mov ebx, 0x2c               ; ','
 \      `==< 0x0000000c      ebf7           jmp 5
-..
 
 #
 offset: 0x00000000
@@ -2808,6 +2806,7 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 9
 cyclomatic-complexity: 0
+cc: amd64
 bits: 64
 type: fcn [NEW]
 num-bbs: 4
@@ -2895,7 +2894,6 @@ diff: type: new
 |      .--> 0x00000009      c1ebfd         shr ebx, 0xfd
 |       :   0x0000000c      bb2c000000     mov ebx, 0x2c               ; ','
 \       `=< 0x00000011      ebf0           jmp 3
-..
 
 / 24: fcn.00000000 ();
 |           0x00000000      0f1f440000     nop dword [rax + rax]
@@ -2903,7 +2901,6 @@ diff: type: new
 |      `==< 0x0000000a      ebfd           jmp 9
 |       :   0x0000000c      bb2c000000     mov ebx, 0x2c               ; ','
 \       `=< 0x00000011      ebf0           jmp 3
-..
 EOF
 RUN
 
@@ -3484,7 +3481,7 @@ e asm.bytes=true
 e asm.comments=0
 e analysis.vars.stackname=true
 s 0x140001080
-afc=ms
+e analysis.cc=ms
 af
 pdf
 EOF
