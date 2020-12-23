@@ -14,40 +14,44 @@
 
 static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
-	rz_strbuf_init (buf);
-	rz_strbuf_append (buf, "{");
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return;
+	}
+	pj_o (pj);
+	pj_ka (pj, "operands");
 	cs_xcore *x = &insn->detail->xcore;
-	rz_strbuf_append (buf, "\"operands\":[");
 	for (i = 0; i < x->op_count; i++) {
-		cs_xcore_op *op = &x->operands[i];
-		if (i > 0) {
-			rz_strbuf_append (buf, ",");
-		}
-		rz_strbuf_append (buf, "{");
+		cs_xcore_op *op = x->operands + i;
+		pj_o (pj);
 		switch (op->type) {
 		case XCORE_OP_REG:
-			rz_strbuf_append (buf, "\"type\":\"reg\"");
-			rz_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
+			pj_ks (pj, "type", "reg");
+			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
 			break;
 		case XCORE_OP_IMM:
-			rz_strbuf_append (buf, "\"type\":\"imm\"");
-			rz_strbuf_appendf (buf, ",\"value\":%"PFMT64d, (st64)op->imm);
+			pj_ks (pj, "type", "imm");
+			pj_ki (pj, "value", op->imm);
 			break;
 		case XCORE_OP_MEM:
-			rz_strbuf_append (buf, "\"type\":\"mem\"");
+			pj_ks (pj, "type", "mem");
 			if (op->mem.base != XCORE_REG_INVALID) {
-				rz_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
+				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
 			}
-			rz_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", (st64)op->mem.disp);
+			pj_ki (pj, "disp", op->mem.disp);
 			break;
 		default:
-			rz_strbuf_append (buf, "\"type\":\"invalid\"");
+			pj_ks (pj, "type", "invalid");
 			break;
 		}
-		rz_strbuf_append (buf, "}");
+		pj_end (pj); /* o operand */
 	}
-	rz_strbuf_append (buf, "]");
-	rz_strbuf_append (buf, "}");
+	pj_end (pj); /* a operands */
+	pj_end (pj);
+
+	rz_strbuf_init (buf);
+	rz_strbuf_append (buf, pj_string (pj));
+	pj_free (pj);
 }
 
 static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
