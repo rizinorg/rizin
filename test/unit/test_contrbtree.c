@@ -63,8 +63,10 @@ bool test_r_rbtree_cont_delete() {
 }
 
 
-int main(int argc, char *argv[]) {
+bool all_tests(void) {
 	mu_run_test (test_r_rbtree_cont_insert);
 	mu_run_test (test_r_rbtree_cont_delete);
 	return tests_run != tests_passed;
 }
+
+mu_main (all_tests)
