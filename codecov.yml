@@ -14,6 +14,7 @@ coverage:
         if_ci_failed: success
         informational: true
 ignore:
+  - "binrz/rz-test"
   - "doc"
   - "man"
   - "mk"
