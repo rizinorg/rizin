@@ -44,7 +44,7 @@ static bool function_check_invariants(RzAnalysis *analysis) {
 #define assert_invariants(analysis) do { if (!check_invariants (analysis)) { return false; } } while (0)
 #define assert_leaks(analysis) do { if (!check_leaks (analysis)) { return false; } } while (0)
 
-bool test_r_analysis_function_relocate() {
+bool test_rz_analysis_function_relocate() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	assert_invariants (analysis);
 
@@ -70,7 +70,7 @@ bool test_r_analysis_function_relocate() {
 	mu_end;
 }
 
-bool test_r_analysis_function_labels() {
+bool test_rz_analysis_function_labels() {
 	RzAnalysis *analysis = rz_analysis_new ();
 
 	RzAnalysisFunction *f = rz_analysis_create_function (analysis, "do_something", 0x1337, 0, NULL);
@@ -125,8 +125,8 @@ bool test_r_analysis_function_labels() {
 }
 
 int all_tests() {
-	mu_run_test (test_r_analysis_function_relocate);
-	mu_run_test (test_r_analysis_function_labels);
+	mu_run_test (test_rz_analysis_function_relocate);
+	mu_run_test (test_rz_analysis_function_labels);
 	return tests_passed != tests_run;
 }
 

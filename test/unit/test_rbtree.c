@@ -80,7 +80,7 @@ bool check(RBNode *tree) {
 	return check1 (tree, 0, 0, true);
 }
 
-bool test_r_rbtree_bound_iterate() {
+bool test_rz_rbtree_bound_iterate() {
 	struct Node key = { 0 };
 	RBIter it;
 	RBNode *tree = NULL;
@@ -137,7 +137,7 @@ bool test_r_rbtree_bound_iterate() {
 	mu_end;
 }
 
-bool test_r_rbtree_bound() {
+bool test_rz_rbtree_bound() {
 	struct Node key = { 0 };
 	RBNode *tree = NULL;
 	struct Node *x;
@@ -202,7 +202,7 @@ static bool insert_delete(int *a, int n, RBNodeSum sum) {
 	return MU_PASSED;
 }
 
-bool test_r_rbtree_insert_delete(void) {
+bool test_rz_rbtree_insert_delete(void) {
 #define N 1000
 	int a[N], i;
 
@@ -224,7 +224,7 @@ bool test_r_rbtree_insert_delete(void) {
 #undef N
 }
 
-bool test_r_rbtree_augmented_insert_delete(void) {
+bool test_rz_rbtree_augmented_insert_delete(void) {
 #define N 1000
 	int a[N], i;
 
@@ -246,7 +246,7 @@ bool test_r_rbtree_augmented_insert_delete(void) {
 #undef N
 }
 
-bool test_r_rbtree_augmented_insert_delete2(void) {
+bool test_rz_rbtree_augmented_insert_delete2(void) {
 #define N 1000
 	RBNode *tree = NULL;
 	struct Node *x;
@@ -275,7 +275,7 @@ bool test_r_rbtree_augmented_insert_delete2(void) {
 #undef N
 }
 
-bool test_r_rbtree_traverse(void) {
+bool test_rz_rbtree_traverse(void) {
 	RBIter it;
 	RBNode *tree = NULL;
 	struct Node *x;
@@ -300,12 +300,12 @@ bool test_r_rbtree_traverse(void) {
 }
 
 int all_tests() {
-	mu_run_test (test_r_rbtree_bound);
-	mu_run_test (test_r_rbtree_bound_iterate);
-	mu_run_test (test_r_rbtree_insert_delete);
-	mu_run_test (test_r_rbtree_traverse);
-	mu_run_test (test_r_rbtree_augmented_insert_delete);
-	mu_run_test (test_r_rbtree_augmented_insert_delete2);
+	mu_run_test (test_rz_rbtree_bound);
+	mu_run_test (test_rz_rbtree_bound_iterate);
+	mu_run_test (test_rz_rbtree_insert_delete);
+	mu_run_test (test_rz_rbtree_traverse);
+	mu_run_test (test_rz_rbtree_augmented_insert_delete);
+	mu_run_test (test_rz_rbtree_augmented_insert_delete2);
 	return tests_passed != tests_run;
 }
 

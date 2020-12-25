@@ -39,7 +39,7 @@ static RzAnalysis *ref_analysis_self_err() {
 	return analysis;
 }
 
-bool test_r_analysis_cc_set() {
+bool test_rz_analysis_cc_set() {
 	RzAnalysis *analysis = ref_analysis ();
 
 	Sdb *ref = ref_db ();
@@ -50,7 +50,7 @@ bool test_r_analysis_cc_set() {
 	mu_end;
 }
 
-bool test_r_analysis_cc_set_self_err() {
+bool test_rz_analysis_cc_set_self_err() {
 	RzAnalysis *analysis = ref_analysis_self_err ();
 
 	Sdb *ref = ref_db_self_err ();
@@ -61,7 +61,7 @@ bool test_r_analysis_cc_set_self_err() {
 	mu_end;
 }
 
-bool test_r_analysis_cc_get() {
+bool test_rz_analysis_cc_get() {
 	RzAnalysis *analysis = ref_analysis ();
 	char *v = rz_analysis_cc_get (analysis, "sectarian");
 	mu_assert_streq (v, "rax sectarian (rdx, rcx, stack);", "get cc");
@@ -74,7 +74,7 @@ bool test_r_analysis_cc_get() {
 	mu_end;
 }
 
-bool test_r_analysis_cc_get_self_err() {
+bool test_rz_analysis_cc_get_self_err() {
 	RzAnalysis *analysis = ref_analysis_self_err ();
 	char *v = rz_analysis_cc_get (analysis, "sectarian");
 	mu_assert_streq (v, "rax rsi.sectarian (rdx, rcx, stack) rdi;", "get cc");
@@ -87,7 +87,7 @@ bool test_r_analysis_cc_get_self_err() {
 	mu_end;
 }
 
-bool test_r_analysis_cc_del() {
+bool test_rz_analysis_cc_del() {
 	RzAnalysis *analysis = ref_analysis ();
 	rz_analysis_cc_del (analysis, "sectarian");
 	Sdb *ref = sdb_new0 ();
@@ -98,11 +98,11 @@ bool test_r_analysis_cc_del() {
 }
 
 bool all_tests() {
-	mu_run_test (test_r_analysis_cc_set);
-	mu_run_test (test_r_analysis_cc_set_self_err);
-	mu_run_test (test_r_analysis_cc_get);
-	mu_run_test (test_r_analysis_cc_get_self_err);
-	mu_run_test (test_r_analysis_cc_del);
+	mu_run_test (test_rz_analysis_cc_set);
+	mu_run_test (test_rz_analysis_cc_set_self_err);
+	mu_run_test (test_rz_analysis_cc_get);
+	mu_run_test (test_rz_analysis_cc_get_self_err);
+	mu_run_test (test_rz_analysis_cc_del);
 	return tests_passed != tests_run;
 }
 
