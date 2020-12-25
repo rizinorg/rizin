@@ -186,13 +186,14 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 	}
 
 	RRebaseInfo *rebase_info = rz_rebase_info_new_from_mach0 (fbuf, main_mach0);
+	RKernelCacheObj *obj = NULL;
 
 	RPrelinkRange *prelink_range = get_prelink_info_range_from_mach0 (main_mach0);
 	if (!prelink_range) {
 		goto beach;
 	}
 
-	RKernelCacheObj *obj = RZ_NEW0 (RKernelCacheObj);
+	obj = RZ_NEW0 (RKernelCacheObj);
 	if (!obj) {
 		RZ_FREE (prelink_range);
 		goto beach;

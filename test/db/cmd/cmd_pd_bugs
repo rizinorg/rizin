@@ -22,6 +22,7 @@ CMDS=wx 80f30988; pi 1
 EXPECT=<<EOF
 invalid
 EOF
+EXPECT_ERR=
 RUN
 
 NAME=pd arm cortex 1
@@ -31,6 +32,7 @@ CMDS=wx 80f30988;pi 1
 EXPECT=<<EOF
 msr psp, r0
 EOF
+EXPECT_ERR=
 RUN
 
 NAME=pd arm cortex 2
@@ -40,6 +42,7 @@ CMDS=e asm.cpu=cortex;wx 80f30988;pi 1
 EXPECT=<<EOF
 msr psp, r0
 EOF
+EXPECT_ERR=
 RUN
 
 NAME=pd call sym bug

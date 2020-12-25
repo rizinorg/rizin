@@ -122,12 +122,12 @@ jobs:
       if: matrix.enabled
       with:
           submodules: recursive
-    - name: Install pkg-config with Homebrew
+    - name: Install pkg-config and cabextract with Homebrew
       if: matrix.os == 'macos-latest' && matrix.enabled
-      run: brew install pkg-config
-    - name: Install python
+      run: brew install pkg-config cabextract
+    - name: Install python and other dependencies
       if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-latest' && matrix.enabled
-      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools
+      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract
     - name: Install meson and ninja
       if: matrix.build_system == 'meson' && matrix.enabled
       run: pip3 install --user meson ninja PyYAML

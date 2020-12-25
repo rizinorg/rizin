@@ -766,7 +766,7 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 					int r = 1;
 					rz_list_foreach (server_l, it, server) {
 						pdbopts.symbol_server = server;
-						r = rz_bin_pdb_download (core, 0, NULL, &pdbopts);
+						r = rz_bin_pdb_download (core, input[3] == 'j', NULL, &pdbopts);
 						if (!r) {
 							break;
 						}
@@ -1171,8 +1171,7 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 done:
 	if (is_array && !is_izzzj) {
 		rz_cons_printf ("}\n");
-	}
-	if (newline) {
+	} else if (newline) {
 		rz_cons_newline ();
 	}
 redone:
