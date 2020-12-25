@@ -1,7 +1,7 @@
 #include <rz_util.h>
 #include "minunit.h"
 
-bool test_r_bitmap_set(void) {
+bool test_rz_bitmap_set(void) {
 	int i;
 	static const int max_value = (2343 + 1);
 	static const ut32 values [] = { 1,2,3,4,8,34,543,2343 };
@@ -26,7 +26,7 @@ bool test_r_bitmap_set(void) {
 }
 
 int all_tests() {
-	mu_run_test(test_r_bitmap_set);
+	mu_run_test(test_rz_bitmap_set);
 	return tests_passed != tests_run;
 }
 

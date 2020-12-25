@@ -22,7 +22,7 @@ static struct {
 	{NULL,NULL,0,0}
 };
 
-bool test_r_diff_buffers_distance(void) {
+bool test_rz_diff_buffers_distance(void) {
 	char msg[128];
 	RzDiff *diff = rz_diff_new ();
 	if (!diff) {
@@ -63,7 +63,7 @@ bool test_r_diff_buffers_distance(void) {
 }
 
 int all_tests() {
-	mu_run_test(test_r_diff_buffers_distance);
+	mu_run_test(test_rz_diff_buffers_distance);
 	return tests_passed != tests_run;
 }
 

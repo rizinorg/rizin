@@ -1,7 +1,7 @@
 #include <rz_cons.h>
 #include "minunit.h"
 
-bool test_r_cons() {
+bool test_rz_cons() {
 	// NOTE: not initializing a value here results in UB
 	ut8 r = 0, g = 0, b = 0, a = 0;
 
@@ -280,7 +280,7 @@ bool test_line_multicompletion(void) {
 }
 
 bool all_tests() {
-	mu_run_test (test_r_cons);
+	mu_run_test (test_rz_cons);
 	mu_run_test (test_cons_to_html);
 	mu_run_test (test_line_nocompletion);
 	mu_run_test (test_line_onecompletion);

@@ -1,7 +1,7 @@
 #include <rz_util.h>
 #include "minunit.h"
 
-bool test_r_hex_from_code() {
+bool test_rz_hex_from_code() {
 	const char *s;
 	char *r;
 	s = "char *s = \"ABCD\";";
@@ -52,7 +52,7 @@ bool test_r_hex_from_code() {
 	mu_end;
 }
 
-bool test_r_hex_from_c() {
+bool test_rz_hex_from_c() {
 	const char *s;
 	char *r;
 	s = "char *s = \"ABCD\";";
@@ -95,7 +95,7 @@ bool test_r_hex_from_c() {
 	mu_end;
 }
 
-bool test_r_hex_from_py() {
+bool test_rz_hex_from_py() {
 	const char *s;
 	char *r;
 	s = "s = \"ABCD\";";
@@ -126,7 +126,7 @@ bool test_r_hex_from_py() {
 	mu_end;
 }
 
-bool test_r_hex_no_code() {
+bool test_rz_hex_no_code() {
 	const char *s;
 	char *r;
 	s = "\"ABCD\"";
@@ -154,10 +154,10 @@ bool test_r_hex_no_code() {
 }
 
 bool all_tests() {
-	mu_run_test (test_r_hex_from_c);
-	mu_run_test (test_r_hex_from_py);
-	mu_run_test (test_r_hex_from_code);
-	mu_run_test (test_r_hex_no_code);
+	mu_run_test (test_rz_hex_from_c);
+	mu_run_test (test_rz_hex_from_py);
+	mu_run_test (test_rz_hex_from_code);
+	mu_run_test (test_rz_hex_no_code);
 	return tests_passed != tests_run;
 }
 

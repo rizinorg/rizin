@@ -1,7 +1,7 @@
 #include <rz_parse.h>
 #include "minunit.h"
 
-bool test_r_parse_ctype(void) {
+bool test_rz_parse_ctype(void) {
 	RzParseCType *ctype = rz_parse_ctype_new ();
 	mu_assert_notnull (ctype, "rz_parse_ctype_new");
 	char *error;
@@ -40,7 +40,7 @@ bool test_r_parse_ctype(void) {
 	mu_end;
 }
 
-bool test_r_parse_ctype_identifier_kind(void) {
+bool test_rz_parse_ctype_identifier_kind(void) {
 	RzParseCType *ctype = rz_parse_ctype_new ();
 	mu_assert_notnull (ctype, "rz_parse_ctype_new");
 	char *error;
@@ -85,8 +85,8 @@ bool test_r_parse_ctype_identifier_kind(void) {
 }
 
 int all_tests() {
-	mu_run_test (test_r_parse_ctype);
-	mu_run_test (test_r_parse_ctype_identifier_kind);
+	mu_run_test (test_rz_parse_ctype);
+	mu_run_test (test_rz_parse_ctype_identifier_kind);
 	return tests_passed != tests_run;
 }
 

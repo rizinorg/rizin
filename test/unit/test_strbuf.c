@@ -1,7 +1,7 @@
 #include <rz_util.h>
 #include "minunit.h"
 
-bool test_r_strbuf_slice(void) {
+bool test_rz_strbuf_slice(void) {
 	RzStrBuf *sa = rz_strbuf_new ("foo,bar,cow");
 	rz_strbuf_slice (sa, 2, 4); // should be from/to instead of from/len ?
 	char *a = rz_strbuf_drain (sa);
@@ -11,7 +11,7 @@ bool test_r_strbuf_slice(void) {
 	mu_end;
 }
 
-bool test_r_strbuf_append(void) {
+bool test_rz_strbuf_append(void) {
 	RzStrBuf *sa = rz_strbuf_new ("foo");
 	rz_strbuf_append (sa, "bar");
 	rz_strbuf_prepend (sa, "pre");
@@ -22,7 +22,7 @@ bool test_r_strbuf_append(void) {
 	mu_end;
 }
 
-bool test_r_strbuf_strong_string(void) {
+bool test_rz_strbuf_strong_string(void) {
 	// small string
 	RzStrBuf *sa = rz_strbuf_new ("");
 	rz_strbuf_set (sa, "food");
@@ -54,7 +54,7 @@ bool test_r_strbuf_strong_string(void) {
 	mu_end;
 }
 
-bool test_r_strbuf_strong_binary(void) {
+bool test_rz_strbuf_strong_binary(void) {
 	RzStrBuf *sa = rz_strbuf_new ("");
 	bool res = rz_strbuf_setbin (sa, (const ut8 *)"food", 4);
 	mu_assert ("setbin success", res);
@@ -85,7 +85,7 @@ bool test_r_strbuf_strong_binary(void) {
 	mu_end;
 }
 
-bool test_r_strbuf_weak_string(void) {
+bool test_rz_strbuf_weak_string(void) {
 	// small string
 	char *myptr = "food";
 	RzStrBuf *sa = rz_strbuf_new ("");
@@ -121,7 +121,7 @@ bool test_r_strbuf_weak_string(void) {
 	mu_end;
 }
 
-bool test_r_strbuf_weak_binary(void) {
+bool test_rz_strbuf_weak_binary(void) {
 	char *myptr = "food";
 	RzStrBuf *sa = rz_strbuf_new ("");
 	bool res = rz_strbuf_setptr (sa, myptr, 4);
@@ -155,7 +155,7 @@ bool test_r_strbuf_weak_binary(void) {
 	mu_end;
 }
 
-bool test_r_strbuf_setbin(void) {
+bool test_rz_strbuf_setbin(void) {
 	RzStrBuf *sa = rz_strbuf_new ("");
 	rz_strbuf_setbin (sa, (const ut8 *)"inbuffffffff", 5);
 	mu_assert_streq (rz_strbuf_get (sa), "inbuf", "setbin str with size");
@@ -184,7 +184,7 @@ bool test_r_strbuf_setbin(void) {
 	mu_end;
 }
 
-bool test_r_strbuf_set(void) {
+bool test_rz_strbuf_set(void) {
 	RzStrBuf sb;
 	rz_strbuf_init (&sb);
 	const char *s = rz_strbuf_set (&sb, "I have packed only the essentials");
@@ -195,7 +195,7 @@ bool test_r_strbuf_set(void) {
 	mu_end;
 }
 
-bool test_r_strbuf_setf(void) {
+bool test_rz_strbuf_setf(void) {
 	RzStrBuf sb;
 	rz_strbuf_init (&sb);
 	const char *s = rz_strbuf_setf (&sb, "One %s for hydration", "water");
@@ -206,7 +206,7 @@ bool test_r_strbuf_setf(void) {
 	mu_end;
 }
 
-bool test_r_strbuf_initf(void) {
+bool test_rz_strbuf_initf(void) {
 	RzStrBuf sb;
 	const char *s = rz_strbuf_initf (&sb, "hmmst, %s was that audial occurence? %d", "wat", 42);
 	mu_assert_notnull (s, "initf return notnull");
@@ -217,16 +217,16 @@ bool test_r_strbuf_initf(void) {
 }
 
 bool all_tests() {
-	mu_run_test (test_r_strbuf_append);
-	mu_run_test (test_r_strbuf_strong_string);
-	mu_run_test (test_r_strbuf_strong_binary);
-	mu_run_test (test_r_strbuf_weak_string);
-	mu_run_test (test_r_strbuf_weak_binary);
-	mu_run_test (test_r_strbuf_slice);
-	mu_run_test (test_r_strbuf_setbin);
-	mu_run_test (test_r_strbuf_set);
-	mu_run_test (test_r_strbuf_setf);
-	mu_run_test (test_r_strbuf_initf);
+	mu_run_test (test_rz_strbuf_append);
+	mu_run_test (test_rz_strbuf_strong_string);
+	mu_run_test (test_rz_strbuf_strong_binary);
+	mu_run_test (test_rz_strbuf_weak_string);
+	mu_run_test (test_rz_strbuf_weak_binary);
+	mu_run_test (test_rz_strbuf_slice);
+	mu_run_test (test_rz_strbuf_setbin);
+	mu_run_test (test_rz_strbuf_set);
+	mu_run_test (test_rz_strbuf_setf);
+	mu_run_test (test_rz_strbuf_initf);
 	return tests_passed != tests_run;
 }
 
