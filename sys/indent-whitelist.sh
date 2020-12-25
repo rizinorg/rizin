@@ -41,7 +41,6 @@ librz/analysis/flirt.c
 librz/analysis/p/analysis_arc.c
 
 librz/config/config.c
-librz/config/t/test.c
 
 librz/fs/fs.c
 librz/fs/file.c
