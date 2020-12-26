@@ -292,7 +292,7 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		out->bytes_size = (size_t)byteslen;
 rip:
 		rz_pvector_pop (&args);
-		// rz_subprocess_free (proc);
+		rz_subprocess_free (proc);
 	}
 	if (test->mode & RZ_ASM_TEST_MODE_DISASSEMBLE) {
 		char *hex = rz_hex_bin2strdup (test->bytes, test->bytes_size);
@@ -317,7 +317,7 @@ rip:
 ship:
 		rz_pvector_pop (&args);
 		rz_pvector_pop (&args);
-		// rz_subprocess_free (proc);
+		rz_subprocess_free (proc);
 	}
 
 beach:
