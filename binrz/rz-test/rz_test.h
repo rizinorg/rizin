@@ -54,6 +54,8 @@ typedef struct rz_test_cmd_test_t {
 	RzCmdTestStringRecord expect;
 	RzCmdTestStringRecord expect_err;
 	RzCmdTestBoolRecord broken;
+	RzCmdTestBoolRecord regex_out;
+	RzCmdTestBoolRecord regex_err;
 	RzCmdTestNumRecord timeout;
 	ut64 run_line;
 	bool load_plugins;
@@ -69,7 +71,9 @@ typedef struct rz_test_cmd_test_t {
 	macro_str ("CMDS", cmds) \
 	macro_str ("EXPECT", expect) \
 	macro_str ("EXPECT_ERR", expect_err) \
-	macro_bool ("BROKEN", broken)
+	macro_bool ("BROKEN", broken) \
+	macro_bool ("REGEX_OUT", regex_out) \
+	macro_bool ("REGEX_ERR", regex_err)
 
 typedef enum rz_test_asm_test_mode_t {
 	RZ_ASM_TEST_MODE_ASSEMBLE = 1,

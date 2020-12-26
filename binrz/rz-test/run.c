@@ -170,11 +170,13 @@ RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test) {
 		return false;
 	}
 	const char *expect_out = test->expect.value;
-	if (expect_out && strcmp (out->out, expect_out) != 0) {
+	const bool regex_out = test->regex_out.value;
+	if (expect_out && ((!regex_out && strcmp (expect_out, out->out)) || (regex_out && 1 != rz_regex_match (expect_out, "en", out->out)))) {
 		return false;
 	}
 	const char *expect_err = test->expect_err.value;
-	if (expect_err && strcmp (out->err, expect_err) != 0) {
+	const bool regex_err = test->regex_err.value;
+	if (expect_err && ((!regex_err && strcmp (expect_err, out->err)) || (regex_err && 1 != rz_regex_match (expect_err, "en", out->err)))) {
 		return false;
 	}
 	return true;

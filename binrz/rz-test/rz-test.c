@@ -682,13 +682,16 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 	case RZ_TEST_TYPE_CMD: {
 		rz_test_run_cmd_test (config, result->test->cmd_test, print_runner, NULL);
 		const char *expect = result->test->cmd_test->expect.value;
-		if (expect && strcmp (result->proc_out->out, expect)) {
+		const char *out = result->proc_out->out;
+		const bool regex_out = result->test->cmd_test->regex_out.value;
+		if (expect && ((!regex_out && strcmp (expect, out)) || (regex_out && 1 != rz_regex_match (expect, "en", out)))) {
 			printf ("-- stdout\n");
-			print_diff (result->proc_out->out, expect, false);
+			print_diff (out, expect, false);
 		}
 		expect = result->test->cmd_test->expect_err.value;
 		const char *err = result->proc_out->err;
-		if (expect && strcmp (err, expect)) {
+		const bool regex_err = result->test->cmd_test->regex_err.value;
+		if (expect && ((!regex_err && strcmp (expect, err)) || (regex_err && 1 != rz_regex_match (expect, "en", err)))) {
 			printf ("-- stderr\n");
 			print_diff (err, expect, false);
 		} else if (*err) {
