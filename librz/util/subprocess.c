@@ -845,7 +845,7 @@ RZ_API void rz_subprocess_output_free(RzSubprocessOutput *out) {
 	if (!out) {
 		return;
 	}
-	free (out->out);
-	free (out->err);
+	RZ_FREE (out->out);
+	RZ_FREE (out->err);
 	free (out);
 }

@@ -353,8 +353,8 @@ RZ_API void rz_test_asm_test_output_free(RzAsmTestOutput *out) {
 	if (!out) {
 		return;
 	}
-	free (out->disasm);
-	free (out->bytes);
+	RZ_FREE (out->disasm);
+	RZ_FREE (out->bytes);
 	free (out);
 }
 
@@ -485,9 +485,11 @@ RZ_API void rz_test_test_result_info_free(RzTestResultInfo *result) {
 		case RZ_TEST_TYPE_JSON:
 		case RZ_TEST_TYPE_FUZZ:
 			rz_subprocess_output_free (result->proc_out);
+			result->proc_out = NULL;
 			break;
 		case RZ_TEST_TYPE_ASM:
 			rz_test_asm_test_output_free (result->asm_out);
+			result->asm_out = NULL;
 			break;
 		}
 	}
