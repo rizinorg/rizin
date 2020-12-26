@@ -150,7 +150,7 @@ do_skip:
 				}
 			}
 		}
-		if (!analysis->iob.is_valid_offset (analysis->iob.io, addr, 1)) {
+		if (!analysis->iob.is_valid_offset (analysis->iob.io, addr, RZ_PERM_X)) {
 			const int size = 4;
 			ptr += size;
 			addr += size;
