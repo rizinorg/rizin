@@ -165,18 +165,30 @@ RZ_API RzSubprocessOutput *rz_test_run_cmd_test(RzTestRunConfig *config, RzCmdTe
 	return out;
 }
 
+RZ_API bool rz_test_cmp_cmd_output(const char *output, const char *expect, const char *regexp) {
+	if (regexp) {
+		RzList *matches = rz_regex_get_match_list (regexp, "en", output);
+		const char *match = rz_list_to_str (matches, '\0');
+		bool equal = (0 == strcmp (expect, match));
+		rz_list_free (matches);
+		RZ_FREE (match);
+		return equal;
+	}
+	return (0 == strcmp (expect, output));
+}
+
 RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test) {
 	if (!out || out->ret != 0 || !out->out || !out->err || out->timeout) {
 		return false;
 	}
 	const char *expect_out = test->expect.value;
-	const bool regex_out = test->regex_out.value;
-	if (expect_out && ((!regex_out && strcmp (expect_out, out->out)) || (regex_out && 1 != rz_regex_match (expect_out, "en", out->out)))) {
+	const char *regexp_out = test->regexp_out.value;
+	if (expect_out && !rz_test_cmp_cmd_output (out->out, expect_out, regexp_out)) {
 		return false;
 	}
 	const char *expect_err = test->expect_err.value;
-	const bool regex_err = test->regex_err.value;
-	if (expect_err && ((!regex_err && strcmp (expect_err, out->err)) || (regex_err && 1 != rz_regex_match (expect_err, "en", out->err)))) {
+	const char *regexp_err = test->regexp_err.value;
+	if (expect_err && !rz_test_cmp_cmd_output (out->err, expect_err, regexp_err)) {
 		return false;
 	}
 	return true;

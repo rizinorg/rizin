@@ -53,9 +53,9 @@ typedef struct rz_test_cmd_test_t {
 	RzCmdTestStringRecord cmds;
 	RzCmdTestStringRecord expect;
 	RzCmdTestStringRecord expect_err;
+	RzCmdTestStringRecord regexp_out;
+	RzCmdTestStringRecord regexp_err;
 	RzCmdTestBoolRecord broken;
-	RzCmdTestBoolRecord regex_out;
-	RzCmdTestBoolRecord regex_err;
 	RzCmdTestNumRecord timeout;
 	ut64 run_line;
 	bool load_plugins;
@@ -71,9 +71,9 @@ typedef struct rz_test_cmd_test_t {
 	macro_str ("CMDS", cmds) \
 	macro_str ("EXPECT", expect) \
 	macro_str ("EXPECT_ERR", expect_err) \
-	macro_bool ("BROKEN", broken) \
-	macro_bool ("REGEX_OUT", regex_out) \
-	macro_bool ("REGEX_ERR", regex_err)
+	macro_str ("REGEXP_OUT", regexp_out) \
+	macro_str ("REGEXP_ERR", regexp_err) \
+	macro_bool ("BROKEN", broken)
 
 typedef enum rz_test_asm_test_mode_t {
 	RZ_ASM_TEST_MODE_ASSEMBLE = 1,
@@ -184,6 +184,7 @@ typedef RzSubprocessOutput *(*RzTestCmdRunner)(const char *file, const char *arg
 
 RZ_API RzSubprocessOutput *rz_test_run_cmd_test(RzTestRunConfig *config, RzCmdTest *test, RzTestCmdRunner runner, void *user);
 RZ_API bool rz_test_check_cmd_test(RzSubprocessOutput *out, RzCmdTest *test);
+RZ_API bool rz_test_cmp_cmd_output(const char *output, const char *expect, const char *regexp);
 RZ_API bool rz_test_check_jq_available(void);
 RZ_API RzSubprocessOutput *rz_test_run_json_test(RzTestRunConfig *config, RzJsonTest *test, RzTestCmdRunner runner, void *user);
 RZ_API bool rz_test_check_json_test(RzSubprocessOutput *out, RzJsonTest *test);

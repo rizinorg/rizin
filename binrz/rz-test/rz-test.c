@@ -590,23 +590,30 @@ static RzThreadFunctionRet worker_th(RzThread *th) {
 	return RZ_TH_STOP;
 }
 
-static void print_diff(const char *actual, const char *expected, bool diffchar) {
+static void print_diff(const char *actual, const char *expected, bool diffchar, const char *regexp) {
 	RzDiff *d = rz_diff_new ();
 #ifdef __WINDOWS__
 	d->diff_cmd = "git diff --no-index";
 #endif
+	const char *output = actual;
+	if (regexp) {
+		RzList *matches = rz_regex_get_match_list (regexp, "en", actual);
+		output = rz_list_to_str (matches, '\0');
+		rz_list_free (matches);
+	}
+
 	if (diffchar) {
-		RzDiffChar *diff = rz_diffchar_new ((const ut8 *)expected, (const ut8 *)actual);
+		RzDiffChar *diff = rz_diffchar_new ((const ut8 *)expected, (const ut8 *)output);
 		if (diff) {
 			rz_diff_free (d);
 			rz_diffchar_print (diff);
 			rz_diffchar_free (diff);
-			return;
+			goto cleanup;
 		}
 		d->diff_cmd = "git diff --no-index --word-diff=porcelain --word-diff-regex=.";
 	}
 	char *uni = rz_diff_buffers_to_string (d, (const ut8 *)expected, (int)strlen (expected),
-	                                      (const ut8 *)actual, (int)strlen (actual));
+	                                      (const ut8 *)output, (int)strlen (output));
 	rz_diff_free (d);
 
 	RzList *lines = rz_str_split_duplist (uni, "\n", false);
@@ -652,6 +659,10 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 	rz_list_free (lines);
 	free (uni);
 	printf ("\n");
+cleanup:
+	if (regexp) {
+		RZ_FREE (output);
+	}
 }
 
 static RzSubprocessOutput *print_runner(const char *file, const char *args[], size_t args_size,
@@ -683,17 +694,17 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 		rz_test_run_cmd_test (config, result->test->cmd_test, print_runner, NULL);
 		const char *expect = result->test->cmd_test->expect.value;
 		const char *out = result->proc_out->out;
-		const bool regex_out = result->test->cmd_test->regex_out.value;
-		if (expect && ((!regex_out && strcmp (expect, out)) || (regex_out && 1 != rz_regex_match (expect, "en", out)))) {
+		const char *regexp_out = result->test->cmd_test->regexp_out.value;
+		if (expect && !rz_test_cmp_cmd_output (out, expect, regexp_out)) {
 			printf ("-- stdout\n");
-			print_diff (out, expect, false);
+			print_diff (out, expect, false, regexp_out);
 		}
 		expect = result->test->cmd_test->expect_err.value;
 		const char *err = result->proc_out->err;
-		const bool regex_err = result->test->cmd_test->regex_err.value;
-		if (expect && ((!regex_err && strcmp (expect, err)) || (regex_err && 1 != rz_regex_match (expect, "en", err)))) {
+		const char *regexp_err = result->test->cmd_test->regexp_err.value;
+		if (expect && !rz_test_cmp_cmd_output (err, expect, regexp_err)) {
 			printf ("-- stderr\n");
-			print_diff (err, expect, false);
+			print_diff (err, expect, false, regexp_err);
 		} else if (*err) {
 			printf ("-- stderr\n%s\n", err);
 		}
@@ -708,7 +719,7 @@ static void print_result_diff(RzTestRunConfig *config, RzTestResultInfo *result)
 			const char *actual = result->asm_out->disasm;
 			if (expect && actual && strcmp (actual, expect)) {
 				printf ("-- disassembly\n");
-				print_diff (actual, expect, false);
+				print_diff (actual, expect, false, NULL);
 			}
 		}
 		// TODO: assembly
@@ -1097,6 +1108,7 @@ static void interact_commands(RzTestResultInfo *result, RzPVector *fixup_results
 static void interact_diffchar(RzTestResultInfo *result) {
 	const char *actual = result->proc_out->out;
 	const char *expected = result->test->cmd_test->expect.value;
+	const char *regexp_out = result->test->cmd_test->regexp_out.value;
 	printf ("-- stdout\n");
-	print_diff (actual, expected, true);
+	print_diff (actual, expected, true, regexp_out);
 }

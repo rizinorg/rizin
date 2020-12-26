@@ -2,6 +2,7 @@
 #define	RZ_REGEX_H
 
 #include <rz_types.h>
+#include <rz_list.h>
 #include <sys/types.h>
 
 typedef struct rz_regex_t {
@@ -57,9 +58,10 @@ typedef struct rz_regmatch_t {
 #define	RZ_REGEX_LARGE		01000	/* force large representation */
 #define	RZ_REGEX_BACKR		02000	/* force use of backref code */
 
-RZ_API RzRegex *rz_regex_new (const char *pattern, const char *cflags);
-RZ_API int rz_regex_run (const char *pattern, const char *flags, const char *text);
-RZ_API int rz_regex_match (const char *pattern, const char *flags, const char *text);
+RZ_API RzRegex *rz_regex_new(const char *pattern, const char *cflags);
+RZ_API int rz_regex_run(const char *pattern, const char *flags, const char *text);
+RZ_API int rz_regex_match(const char *pattern, const char *flags, const char *text);
+RZ_API RzList *rz_regex_get_match_list(const char *pattern, const char *flags, const char *text);
 RZ_API int rz_regex_flags(const char *flags);
 RZ_API int rz_regex_comp(RzRegex*, const char *, int);
 RZ_API size_t rz_regex_error(int, const RzRegex*, char *, size_t);
@@ -68,7 +70,7 @@ RZ_API size_t rz_regex_error(int, const RzRegex*, char *, size_t);
  * a dummy argument name is added.
  */
 RZ_API bool rz_regex_check(const RzRegex *rr, const char *str);
-RZ_API int rz_regex_exec(const RzRegex *, const char *, size_t, RzRegexMatch __pmatch[], int);
+RZ_API int rz_regex_exec(const RzRegex *preg, const char *string, size_t nmatch, RzRegexMatch __pmatch[], int eflags);
 RZ_API void rz_regex_free(RzRegex *);
 RZ_API void rz_regex_fini(RzRegex *);
 
