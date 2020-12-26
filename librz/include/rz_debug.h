@@ -417,12 +417,6 @@ typedef struct rz_debug_pid_t {
 	ut64 pc;
 } RzDebugPid;
 
-/*
- * Radare's debugger has both an external and internal API.
- *
- * TODO(jjd): reconcile external API and extend it for better funcitonality
- * when using R2 as a library.
- */
 #ifdef RZ_API
 RZ_API RzDebug *rz_debug_new(int hard);
 RZ_API RzDebug *rz_debug_free(RzDebug *dbg);

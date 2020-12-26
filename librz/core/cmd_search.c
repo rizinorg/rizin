@@ -597,7 +597,6 @@ static bool maskMatches(int perm, int mask, bool only) {
 	return false;
 }
 
-// TODO(maskray) returns RzList<RzInterval>
 RZ_API RzList *rz_core_get_boundaries_prot(RzCore *core, int perm, const char *mode, const char *prefix) {
 	rz_return_val_if_fail (core, NULL);
 
@@ -3004,7 +3003,7 @@ reread:
 		input++;
 		param.inverse = true;
 		goto reread;
-	case 'b': // "/b" backward search TODO(maskray) add a generic reverse function
+	case 'b': // "/b" backward search
 		if (*(++input) == '?') {
 			eprintf ("Usage: /b<command> [value] backward search, see '/?'\n");
 			goto beach;

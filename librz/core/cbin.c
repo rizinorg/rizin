@@ -1554,7 +1554,6 @@ static char *construct_reloc_name(RZ_NONNULL RzBinReloc *reloc, RZ_NULLABLE cons
 		// addend is the function pointer for the resolving ifunc
 		rz_strbuf_appendf (buf, "ifunc_%"PFMT64x, reloc->addend);
 	} else {
-		// TODO(eddyb) implement constant relocs.
 		rz_strbuf_set (buf, "");
 	}
 
@@ -2022,8 +2021,6 @@ static int bin_imports(RzCore *r, int mode, int va, const char *name) {
 			symname = prname;
 		}
 		if (IS_MODE_SET (mode)) {
-			// TODO(eddyb) symbols that are imports.
-			// Add a dword/qword for PE imports
 			if (libname && strstr (libname, ".dll") && cdsz) {
 				rz_meta_set (r->analysis, RZ_META_TYPE_DATA, addr, cdsz, NULL);
 			}
@@ -2058,7 +2055,6 @@ static int bin_imports(RzCore *r, int mode, int va, const char *name) {
 			pj_end (pj);
 			free (str);
 		} else if (IS_MODE_RAD (mode)) {
-			// TODO(eddyb) symbols that are imports.
 		} else {
 			const char *bind = import->bind? import->bind: "NONE";
 			const char *type = import->type? import->type: "NONE";
