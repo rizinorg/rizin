@@ -1078,7 +1078,7 @@ static void cmd_afvx(RzCore *core, RzAnalysisFunction *fcn, bool json) {
 		list_vars (core, fcn, pj, 'R', NULL);
 		if (json) {
 			pj_k (pj, "writes");
-		} else {	
+		} else {
 			rz_cons_printf ("afvW\n");
 		}
 		list_vars (core, fcn, pj, 'W', NULL);
@@ -1278,14 +1278,14 @@ static int var_cmd(RzCore *core, const char *str) {
 			PJ *pj = NULL;
 			if (str[1] == 'j') {
 				pj = pj_new ();
-			} 
+			}
 			list_vars (core, fcn, pj, str[0], name);
 			if (str[1] == 'j') {
 				pj_end (pj);
 				char *j = pj_drain (pj);
 				rz_cons_printf ("%s\n", j);
 				free (j);
-			} 
+			}
 			return true;
 		} else {
 			eprintf ("afv: Cannot find function in 0x%08"PFMT64x"\n", core->offset);
@@ -2253,7 +2253,7 @@ static void analysis_bb_list(RzCore *core, const char *input) {
 		rz_table_add_column (table, s, "calls", 0);
 		rz_table_add_column (table, s, "xrefs", 0);
 	}
-	
+
 	rz_rbtree_foreach (core->analysis->bb_tree, iter, block, RzAnalysisBlock, _rb) {
 		RzList *xrefs = get_xrefs (block);
 		RzList *calls = get_calls (block);
@@ -2414,8 +2414,7 @@ static bool analysis_fcn_list_bb(RzCore *core, const char *input, bool one) {
 		bbaddr = addr;
 	}
 	if (mode == 'j') {
-		pj = pj_new ();
-		if (!pj) {
+		pj = rz_core_pj_new (core); if (!pj) {
 			return false;
 		}
 		pj_a (pj);
@@ -2436,7 +2435,7 @@ static bool analysis_fcn_list_bb(RzCore *core, const char *input, bool one) {
 	if (fcn->bbs) {
 		rz_list_sort (fcn->bbs, bb_cmp);
 	}
-	if (mode == '=') {	
+	if (mode == '=') {
 		RzList *flist = rz_list_newf ((RzListFree) rz_listinfo_free);
 		if (!flist) {
 			return false;
@@ -5068,7 +5067,7 @@ static void cmd_address_info(RzCore *core, const char *addrstr, int fmt) {
 
 static void cmd_analysis_info(RzCore *core, const char *input) {
 	switch (input[0]) {
-	case '?': // "ai?"" 
+	case '?': // "ai?""
 		rz_core_cmd_help (core, help_msg_ai);
 		break;
 	case ' ': // "ai "
