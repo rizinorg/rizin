@@ -33,6 +33,7 @@ jobs:
           linux-acr-clang-build,
           linux-meson-gcc-build,
           linux-meson-gcc-tests,
+          linux-meson-gcc-tests-codecov,
           macos-meson-clang-tests,
           linux-gcc-tests-asan,
           capstone-v3,
@@ -72,7 +73,16 @@ jobs:
             build_system: meson
             compiler: gcc
             run_tests: true
-            meson_options: -Db_coverage=true -Duse_webui=true
+            meson_options: -Duse_webui=true
+            enabled: true
+            timeout: 45
+            cflags: '-Wno-cpp'
+          - name: linux-meson-gcc-tests-codecov
+            os: ubuntu-20.04
+            build_system: meson
+            compiler: gcc
+            run_tests: true
+            meson_options: -Dbuildtype=debug -Db_coverage=true -Duse_webui=true
             coverage: true
             enabled: true
             timeout: 60
