@@ -263,8 +263,6 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 		rz_pvector_push (&args, offset);
 	}
 
-	RzStrBuf cmd_buf;
-	rz_strbuf_init (&cmd_buf);
 	if (test->mode & RZ_ASM_TEST_MODE_ASSEMBLE) {
 		rz_pvector_push (&args, test->disasm);
 		RzSubprocess *proc = rz_subprocess_start (config->rz_asm_cmd, args.v.a, rz_pvector_len (&args), NULL, NULL, 0);
@@ -324,7 +322,6 @@ ship:
 
 beach:
 	rz_pvector_clear (&args);
-	rz_strbuf_fini (&cmd_buf);
 	return out;
 }
 
