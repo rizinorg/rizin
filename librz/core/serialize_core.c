@@ -181,7 +181,7 @@ static FileRet try_load_file(RZ_NONNULL RzCore *core, const char *file, RZ_NULLA
 		return FILE_DOES_NOT_EXIST;
 	}
 
-	RzCoreFile *fh = rz_core_file_open (core, file, RZ_PERM_R, 0);
+	RzCoreFile *fh = rz_core_file_open (core, file, RZ_PERM_RX, 0);
 	if (!fh) {
 		SERIALIZE_ERR ("failed re-open file \"%s\" referenced by project", file);
 		return FILE_LOAD_FAIL;
