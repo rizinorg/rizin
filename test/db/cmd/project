@@ -340,3 +340,26 @@ EXPECT=<<EOF
 0x080483d8                   50  push eax
 EOF
 RUN
+
+NAME=raw file permissions after reload
+FILE=bins/other/0x3
+CMDS=<<EOF
+e cfg.newshell=1
+om
+Ps .tmp_perms.rzdb
+o--
+?e --
+om
+?e --
+Po .tmp_perms.rzdb
+om
+rm .tmp_perms.rzdb
+EOF
+EXPECT=<<EOF
+ 1 fd: 3 +0x00000000 0x00000000 - 0x00000002 r-x 
+--
+--
+ 1 fd: 3 +0x00000000 0x00000000 - 0x00000002 r-x 
+EOF
+RUN
+
