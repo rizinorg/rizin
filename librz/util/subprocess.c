@@ -825,7 +825,7 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	}
 	rz_sys_pipe_close (proc->stdout_fd);
 	rz_sys_pipe_close (proc->stderr_fd);
-	// free (proc);
+	free (proc);
 }
 
 RZ_API int rz_subprocess_ret(RzSubprocess *proc) {
