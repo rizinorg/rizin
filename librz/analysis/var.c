@@ -6,7 +6,7 @@
 #include <rz_core.h>
 #include <rz_list.h>
 
-#define ACCESS_CMP(x, y) ((x) - ((RzAnalysisVarAccess *)y)->offset)
+#define ACCESS_CMP(x, y) ((st64)((ut64)(x) - (ut64)((RzAnalysisVarAccess *)y)->offset))
 
 RZ_API bool rz_analysis_var_display(RzAnalysis *analysis, RzAnalysisVar *var) {
 	char *fmt = rz_type_format (analysis->sdb_types, var->type);
