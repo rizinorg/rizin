@@ -1,3 +1,11 @@
+NAME=rz-ax -I 3530468537
+FILE=-
+CMDS=!rz-ax -I 3530468537
+EXPECT=<<EOF
+185.172.110.210
+EOF
+RUN
+
 NAME=rz-ax =10 0x46
 FILE=-
 CMDS=!rz-ax =10 0x46
@@ -512,7 +520,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rz-ax -v 
+NAME=rz-ax -v
 FILE=-
 CMDS=!rz-ax -v | grep -c build
 EXPECT=<<EOF
