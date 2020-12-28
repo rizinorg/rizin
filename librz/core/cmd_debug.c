@@ -5287,10 +5287,10 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 					rz_debug_detach (core->dbg, core->dbg->pid);
 				}
 			}
+			// Remove the target's registers from the flag list
+			rz_core_cmd0 (core, ".dr-");
 			// Reopen and rebase the original file
 			rz_core_cmd0 (core, "oo");
-			// Remove registers from the flag list
-			rz_core_cmd0 (core, "~dr-");
 			break;
 		case '?': // "do?"
 		default:

@@ -41,6 +41,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include "rz_regex.h"
+#include "rz_util/rz_str.h"
 
 #include "utils.h"
 #include "regex2.h"
@@ -138,7 +139,7 @@ static char nuls[10];		/* place to point scanner in event of error */
 #define	DROP(n)	(p->slen -= (n))
 
 
-RZ_API int rz_regex_match (const char *pattern, const char *flags, const char *text) {
+RZ_API int rz_regex_match(const char *pattern, const char *flags, const char *text) {
 	int ret;
 	RzRegex rx;
 	int re_flags = rz_regex_flags (flags);
@@ -156,6 +157,34 @@ RZ_API int rz_regex_match (const char *pattern, const char *flags, const char *t
 		return -1;
 	return (regexec (&preg, str, NUM_MATCHES, pmatch, 0))?1:0;
 #endif
+}
+
+RZ_API RzList *rz_regex_get_match_list(const char *pattern, const char *flags, const char *text) {
+	RzList *list = rz_list_newf (free);
+	RzRegex rx;
+	RzRegexMatch match;
+	char *entry;
+	size_t entry_len = 0;
+	int re_flags = rz_regex_flags (flags);
+	if (rz_regex_comp (&rx, pattern, re_flags)) {
+		eprintf ("Failed to compile regexp: %s\n", pattern);
+		return NULL;
+	}
+
+	/* Initialize the boundaries for RZ_REGEX_STARTEND */
+	match.rm_so = 0;
+	match.rm_eo = strlen (text);
+	while (!rz_regex_exec (&rx, text, 1, &match, re_flags | RZ_REGEX_STARTEND)) {
+		entry_len = match.rm_eo - match.rm_so + 1;
+		entry = RZ_NEWS0 (char, entry_len);
+		rz_str_ncpy (entry, text + match.rm_so, entry_len);
+		rz_list_append (list, entry);
+		/* Update the boundaries for RZ_REGEX_STARTEND */
+		match.rm_so = match.rm_eo;
+		match.rm_eo = strlen (text);
+	}
+	rz_regex_fini (&rx);
+	return list;
 }
 
 RZ_API RzRegex *rz_regex_new(const char *pattern, const char *flags) {
