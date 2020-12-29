@@ -47,6 +47,7 @@ jobs:
             run_tests: true
             enabled: true
             timeout: 45
+            cflags: '-O2 -g'
           - name: linux-acr-clang-tests
             os: ubuntu-20.04
             build_system: acr
@@ -54,6 +55,7 @@ jobs:
             run_tests: true
             enabled: ${{ github.event_name != 'pull_request' }}
             timeout: 45
+            cflags: '-O2 -g'
           - name: linux-acr-clang-build
             os: ubuntu-20.04
             build_system: acr
