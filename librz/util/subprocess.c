@@ -816,8 +816,8 @@ RZ_API void rz_subprocess_free(RzSubprocess *proc) {
 	subprocess_lock ();
 	rz_pvector_remove_data (&subprocs, proc);
 	subprocess_unlock ();
-	// rz_strbuf_fini (&proc->out);
-	// rz_strbuf_fini (&proc->err);
+	rz_strbuf_fini (&proc->out);
+	rz_strbuf_fini (&proc->err);
 	rz_sys_pipe_close (proc->killpipe[0]);
 	rz_sys_pipe_close (proc->killpipe[1]);
 	if (proc->stdin_fd != -1) {
@@ -845,7 +845,7 @@ RZ_API void rz_subprocess_output_free(RzSubprocessOutput *out) {
 	if (!out) {
 		return;
 	}
-	RZ_FREE (out->out);
-	RZ_FREE (out->err);
+	free (out->out);
+	free (out->err);
 	free (out);
 }

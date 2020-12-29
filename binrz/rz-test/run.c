@@ -305,7 +305,6 @@ RZ_API RzAsmTestOutput *rz_test_run_asm_test(RzTestRunConfig *config, RzAsmTest 
 rip:
 		rz_pvector_pop (&args);
 		rz_subprocess_free (proc);
-		proc = NULL;
 	}
 	if (test->mode & RZ_ASM_TEST_MODE_DISASSEMBLE) {
 		char *hex = rz_hex_bin2strdup (test->bytes, test->bytes_size);
@@ -331,7 +330,6 @@ ship:
 		rz_pvector_pop (&args);
 		rz_pvector_pop (&args);
 		rz_subprocess_free (proc);
-		proc = NULL;
 	}
 
 beach:
@@ -366,8 +364,8 @@ RZ_API void rz_test_asm_test_output_free(RzAsmTestOutput *out) {
 	if (!out) {
 		return;
 	}
-	RZ_FREE (out->disasm);
-	RZ_FREE (out->bytes);
+	free (out->disasm);
+	free (out->bytes);
 	free (out);
 }
 
@@ -498,11 +496,9 @@ RZ_API void rz_test_test_result_info_free(RzTestResultInfo *result) {
 		case RZ_TEST_TYPE_JSON:
 		case RZ_TEST_TYPE_FUZZ:
 			rz_subprocess_output_free (result->proc_out);
-			result->proc_out = NULL;
 			break;
 		case RZ_TEST_TYPE_ASM:
 			rz_test_asm_test_output_free (result->asm_out);
-			result->asm_out = NULL;
 			break;
 		}
 	}
