@@ -72,7 +72,7 @@ jobs:
             build_system: meson
             compiler: gcc
             run_tests: true
-            meson_options: -Db_coverage=true -Duse_webui=true
+            meson_options: -Dbuildtype=debug -Db_coverage=true -Duse_webui=true
             coverage: true
             enabled: true
             timeout: 60
