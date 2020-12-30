@@ -1447,6 +1447,13 @@ static bool cb_dbg_follow_child(void *user, void *data) {
 	return true;
 }
 
+static bool cb_dbg_create_new_console(void *user, void *data) {
+	RzCore *core = (RzCore*) user;
+	RzConfigNode *node = (RzConfigNode*) data;
+	core->dbg->create_new_console = node->i_value;
+	return true;
+}
+
 static bool cb_dbg_trace_continue(void *user, void *data) {
 	RzCore *core = (RzCore*)user;
 	RzConfigNode *node = (RzConfigNode*)data;
@@ -3337,6 +3344,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("dbg.args", "", &cb_dbg_args, "Set the args of the program to debug");
 	SETCB ("dbg.follow.child", "false", &cb_dbg_follow_child, "Continue tracing the child process on fork. By default the parent process is traced");
 	SETCB ("dbg.trace_continue", "true", &cb_dbg_trace_continue, "Trace every instruction between the initial PC position and the PC position at the end of continue's execution");
+	SETCB ("dbg.create_new_console", "true", &cb_dbg_create_new_console, "Create a new console window for the debugee on debug start");
 	/* debug */
 	SETCB ("dbg.status", "false", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr PC;pi 1;s-'");
 #if DEBUGGER
