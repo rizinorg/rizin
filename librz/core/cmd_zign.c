@@ -685,7 +685,6 @@ static int searchHitCB(RzSignItem *it, RzSearchKeyword *kw, ut64 addr, void *use
 static int fcnMatchCB(RzSignItem *it, RzAnalysisFunction *fcn, RzSignType type, bool seen, void *user) {
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *)user;
 	const char *prefix = getprefix (type);
-	// TODO(nibble): use one counter per metric zign instead of ctx->count
 	ut64 sz = rz_analysis_function_realsize (fcn);
 	apply_flag (ctx->core, it, fcn->addr, sz, ctx->count, prefix, ctx->rad);
 	if (!seen) {

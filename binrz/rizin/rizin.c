@@ -3,47 +3,6 @@
 #include <rz_main.h>
 #include <rz_util.h>
 
-#if EMSCRIPTEN__TODO
-#include <emscripten.h>
-static RzCore *core = NULL;
-
-void *rz_asmjs_new(const char *cmd) {
-	return rz_core_new ();
-}
-
-void rz_asmjs_free(void *core) {
-	rz_core_free (core);
-}
-
-char *rz_asmjs_cmd(void *kore, const char *cmd) {
-	if (kore) {
-		if (!cmd) {
-			rz_core_free (kore);
-		}
-	} else {
-		if (core) {
-			kore = core;
-		} else {
-			kore = core = rz_core_new ();
-		}
-	}
-	return rz_core_cmd_str (kore, cmd);
-}
-
-static void wget_cb(const char *f) {
-	rz_core_cmdf (core, "o %s", f);
-}
-
-void rz_asmjs_openurl(void *kore, const char *url) {
-	const char *file = rz_str_lchr (url, '/');
-	if (kore) {
-		core = kore;
-	}
-	if (file) {
-		emscripten_async_wget (url, file + 1, wget_cb, NULL);
-	}
-}
-#else
 static void rz_cmd(int in, int out, const char *cmd) {
         write (out, cmd, strlen (cmd) + 1);
         write (out, "\n", 1);
@@ -95,5 +54,3 @@ int main(int argc, const char **argv) {
 	}
 	return rz_main_rizin (argc, argv);
 }
-
-#endif

@@ -2280,7 +2280,6 @@ static int addSearchKwCB(RzSignItem *it, void *user) {
 		return 1;
 	}
 	rz_list_append (ss->items, it);
-	// TODO(nibble): change arg data in rz_search_keyword_new to void*
 	RzSearchKeyword *kw = rz_search_keyword_new (bytes->bytes, bytes->size, bytes->mask, bytes->size, (const char *)it);
 	rz_search_kw_add (ss->search, kw);
 	return 1;
