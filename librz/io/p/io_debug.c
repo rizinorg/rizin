@@ -5,6 +5,7 @@
 #include <rz_lib.h>
 #include <rz_util.h>
 #include <rz_cons.h>
+#include <rz_core.h>
 #include <rz_debug.h> /* only used for BSD PTRACE redefinitions */
 #include <string.h>
 
@@ -97,6 +98,7 @@ struct __createprocess_params {
 	LPCTSTR appname;
 	LPTSTR cmdline;
 	PROCESS_INFORMATION *pi;
+	DWORD flags;
 };
 
 static int __createprocess_wrap(void *params) {
@@ -104,11 +106,11 @@ static int __createprocess_wrap(void *params) {
 	// TODO: Add DEBUG_PROCESS to support child process debugging
 	struct __createprocess_params *p = params;
 	return CreateProcess (p->appname, p->cmdline, NULL, NULL, FALSE,
-		CREATE_NEW_CONSOLE | DEBUG_ONLY_THIS_PROCESS,
-		NULL, NULL, &si, p->pi);
+		p->flags, NULL, NULL, &si, p->pi);
 }
 
 static int fork_and_ptraceme(RzIO *io, int bits, const char *cmd) {
+	RzCore *core = io->corebind.core;
 	PROCESS_INFORMATION pi;
 	STARTUPINFO si = { 0 };
 	si.cb = sizeof (si);
@@ -135,8 +137,10 @@ static int fork_and_ptraceme(RzIO *io, int bits, const char *cmd) {
 
 	LPTSTR appname_ = rz_sys_conv_utf8_to_win (argv[0]);
 	LPTSTR cmdline_ = rz_sys_conv_utf8_to_win (cmdline);
+	DWORD flags = DEBUG_ONLY_THIS_PROCESS;
+	flags |= core->dbg->create_new_console ? CREATE_NEW_CONSOLE : 0;
 	free (cmdline);
-	struct __createprocess_params p = {appname_, cmdline_, &pi};
+	struct __createprocess_params p = {appname_, cmdline_, &pi, flags};
 	W32DbgWInst *wrap = (W32DbgWInst *)io->w32dbg_wrap;
 	wrap->params.type = W32_CALL_FUNC;
 	wrap->params.func.func = __createprocess_wrap;

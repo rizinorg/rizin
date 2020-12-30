@@ -248,8 +248,6 @@ typedef enum {
 extern "C" {
 #endif
 
-#define TODO(x) eprintf(__func__"  " x)
-
 // TODO: FS or RZ_SYS_DIR ??
 #undef FS
 #if __WINDOWS__

@@ -268,6 +268,7 @@ typedef struct rz_debug_t {
 	int trace_aftersyscall; /* stop after the syscall (before if disabled) */
 	int trace_clone; /* stop on new threads */
 	int follow_child; /* On fork, trace the child */
+	bool create_new_console; /* Create a new console window for the debugee on debug start */
 	char *glob_libs; /* stop on lib load */
 	char *glob_unlibs; /* stop on lib unload */
 	bool consbreak; /* SIGINT handle for attached processes */
@@ -417,12 +418,6 @@ typedef struct rz_debug_pid_t {
 	ut64 pc;
 } RzDebugPid;
 
-/*
- * Radare's debugger has both an external and internal API.
- *
- * TODO(jjd): reconcile external API and extend it for better funcitonality
- * when using R2 as a library.
- */
 #ifdef RZ_API
 RZ_API RzDebug *rz_debug_new(int hard);
 RZ_API RzDebug *rz_debug_free(RzDebug *dbg);
