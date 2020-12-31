@@ -883,6 +883,9 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 			break;
 		case 'V': // "iV"
 			RBININFO ("versioninfo", RZ_CORE_BIN_ACC_VERSIONINFO, NULL, 0);
+			if (input[1] == 'j') {
+				newline = true;
+			}
 			break;
 		case 'T': // "iT"
 		case 'C': // "iC" // rz_bin -C create // should be deprecated and just use iT (or find a better name)
