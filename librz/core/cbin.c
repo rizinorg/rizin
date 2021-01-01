@@ -377,12 +377,15 @@ static void _print_strings(RzCore *r, RzList *list, int mode, int va) {
 	RzListIter *iter;
 	RzBinString *string;
 	RzBinSection *section;
-	PJ *pj = NULL;
+	PJ *pj;
 
 	bin->minstrlen = minstr;
 	bin->maxstrlen = maxstr;
 	if (IS_MODE_JSON (mode)) {
 		pj = rz_core_pj_new (r);
+		if (!pj) {
+			return;
+		}
 		pj_a (pj);
 	} else if (IS_MODE_RZCMD (mode)) {
 		rz_cons_println ("fs strings");
@@ -390,7 +393,7 @@ static void _print_strings(RzCore *r, RzList *list, int mode, int va) {
 		rz_flag_space_set (r->flags, RZ_FLAGS_FS_STRINGS);
 		rz_cons_break_push (NULL, NULL);
 	} else if (IS_MODE_NORMAL (mode)) {
-		rz_cons_printf ("[Strings]\n");
+		rz_cons_println ("[Strings]");
 		rz_table_set_columnsf (table, "nXXnnsss", "nth", "paddr", "vaddr", "len", "size", "section", "type", "string");
 	}
 	RzBinString b64 = { 0 };
@@ -555,9 +558,8 @@ static void _print_strings(RzCore *r, RzList *list, int mode, int va) {
 	RZ_FREE (b64.string);
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
-		rz_cons_printf ("%s\n", pj_string (pj));
+		rz_cons_print (pj_string (pj));
 		pj_free (pj);
-		pj = NULL;
 	} else if (IS_MODE_SET (mode)) {
 		rz_cons_break_pop ();
 	} else if (IS_MODE_NORMAL (mode)) {
@@ -566,10 +568,9 @@ static void _print_strings(RzCore *r, RzList *list, int mode, int va) {
 		}
 		char *s = rz_table_tostring (table);
 		if (s) {
-			rz_cons_printf ("%s", s);
+			rz_cons_print (s);
 			free (s);
 		}
-
 	}
 	rz_table_free (table);
 }
@@ -642,7 +643,7 @@ static bool bin_strings(RzCore *r, int mode, int va) {
 	if (plugin->info && plugin->name) {
 		if (strcmp (plugin->name, "any") == 0 && !rawstr) {
 			if (IS_MODE_JSON (mode)) {
-				rz_cons_print ("[]\n");
+				rz_cons_print ("[]");
 				return true;
 			}
 			return false;
@@ -791,7 +792,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 	RzBinFile *bf = rz_bin_cur (r->bin);
 	if (!bf) {
 		if (IS_MODE_JSON (mode)) {
-			rz_cons_printf ("{}\n");
+			rz_cons_print ("{}");
 		}
 		return false;
 	}
@@ -801,7 +802,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 
 	if (!info || !obj) {
 		if (IS_MODE_JSON (mode)) {
-			rz_cons_printf ("{}\n");
+			rz_cons_print ("{}");
 			return true;
 		}
 		return false;
@@ -1037,7 +1038,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 		if (IS_MODE_JSON (mode)) {
 			pj_end (pj);
 			pj_end (pj);
-			rz_cons_println (pj_string (pj));
+			rz_cons_print (pj_string (pj));
 			pj_free (pj);
 		}
 	}
@@ -1274,8 +1275,14 @@ RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, int mode) {
 		mode = 'd'; // default
 		break;
 	}
-	PJ *pj = rz_core_pj_new (core);
-	pj_a (pj);
+	PJ *pj = NULL;
+	if (mode == 'j') {
+		pj = rz_core_pj_new (core);
+		if (!pj) {
+			return false;
+		}
+		pj_o (pj);
+	}
 
 	pdb.print_types (&pdb, pj, mode);
 	pdb.print_gvars (&pdb, baddr, pj, mode);
@@ -1283,12 +1290,11 @@ RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, int mode) {
 	rz_parse_pdb_types (core->analysis, &pdb);
 	pdb.finish_pdb_parse (&pdb);
 
-	pj_end (pj);
-
 	if (mode == 'j') {
-		rz_cons_printf ("%s\n", pj_string (pj));
+		pj_end (pj);
+		rz_cons_print (pj_string (pj));
+		pj_free (pj);
 	}
-	pj_free (pj);
 	return true;
 }
 
@@ -1510,7 +1516,7 @@ static int bin_entry(RzCore *r, int mode, ut64 laddr, int va, bool inifin) {
 		}
 	} else if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
-		rz_cons_println (pj_string (pj));
+		rz_cons_print (pj_string (pj));
 		pj_free (pj);
 	} else if (IS_MODE_NORMAL (mode)) {
 		rz_cons_printf ("\n%i entrypoints\n", init_i + fini_i + preinit_i + i);
@@ -1859,7 +1865,7 @@ static int bin_relocs(RzCore *r, int mode, int va) {
 	if (IS_MODE_JSON (mode)) {
 		// close Json output
 		pj_end (pj);
-		rz_cons_println (pj_string (pj));
+		rz_cons_print (pj_string (pj));
 	}
 	if (IS_MODE_NORMAL (mode)) {
 		if (r->table_query) {
@@ -2045,7 +2051,6 @@ static int bin_imports(RzCore *r, int mode, int va, const char *name) {
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			rz_cons_println (symname);
 		} else if (IS_MODE_JSON (mode)) {
-
 			pj_o (pj);
 			pj_ki (pj, "ordinal", import->ordinal);
 			if (import->bind) {
@@ -2535,7 +2540,7 @@ next:
 			pj_end (pj);
 		}
 		const char *js = pj_string (pj);
-		rz_cons_printf ("%s\n", (js && *js)? js: "{}");
+		rz_cons_print ((js && *js)? js: "{}");
 	}
 	pj_free (pj);
 
@@ -3069,7 +3074,7 @@ static int bin_sections(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const 
 		i++;
 		if (printHere) {
 			if (IS_MODE_JSON (mode)) {
-				rz_cons_println (pj_string (pj));
+				rz_cons_print (pj_string (pj));
 				pj_free (pj);
 			}
 			break;
@@ -3087,7 +3092,7 @@ static int bin_sections(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const 
 	}
 	if (IS_MODE_JSON (mode) && !printHere) {
 		pj_end (pj);
-		rz_cons_println (pj_string (pj));
+		rz_cons_print (pj_string (pj));
 		pj_free (pj);
 	} else if (IS_MODE_NORMAL (mode) && at == UT64_MAX && !printHere) {
 		// rz_cons_printf ("\n%i sections\n", i);
@@ -3409,7 +3414,7 @@ static int bin_classes(RzCore *r, int mode) {
 	RzList *cs = rz_bin_get_classes (r->bin);
 	if (!cs) {
 		if (IS_MODE_JSON (mode)) {
-			rz_cons_print ("[]\n");
+			rz_cons_print ("[]");
 			return true;
 		}
 		return false;
@@ -3610,7 +3615,7 @@ static int bin_classes(RzCore *r, int mode) {
 	}
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
-		rz_cons_println (pj_string (pj));
+		rz_cons_print (pj_string (pj));
 		pj_free (pj);
 	}
 
@@ -3731,7 +3736,7 @@ static int bin_mem(RzCore *r, int mode) {
 		pj_a (pj);
 		bin_mem_print (pj, mem, 7, 0, RZ_MODE_JSON);
 		pj_end (pj);
-		rz_cons_println (pj_string (pj));
+		rz_cons_print (pj_string (pj));
 		pj_free (pj);
 		return true;
 	} else if (!(IS_MODE_RZCMD (mode) || IS_MODE_SET (mode))) {
@@ -4108,7 +4113,7 @@ static void bin_pe_resources(RzCore *r, int mode) {
 	}
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
-		rz_cons_println (pj_string (pj));
+		rz_cons_print (pj_string (pj));
 		pj_free (pj);
 	} else if (IS_MODE_RZCMD (mode)) {
 		rz_cons_println ("fs *");
@@ -4166,7 +4171,7 @@ static int bin_signature(RzCore *r, int mode) {
 			pj_k (pj, "signature");
 			pj_j (pj, signature);
 			pj_end (pj);
-			rz_cons_println (pj_string (pj));
+			rz_cons_print (pj_string (pj));
 			pj_free (pj);
 		} else {
 			rz_cons_println (signature);
@@ -4383,13 +4388,12 @@ static bool rz_core_bin_file_print(RzCore *core, RzBinFile *bf, PJ *pj, int mode
 	// TODO: handle mode to print in json and r2 commands
 
 	switch (mode) {
-	case '*':
-		{
-			char *n = __filterShell (name);
-			rz_cons_printf ("oba 0x%08"PFMT64x" %s # %d\n", bf->o->boffset, n, bf->id);
-			free (n);
-		}
+	case '*': {
+		char *n = __filterShell (name);
+		rz_cons_printf ("oba 0x%08"PFMT64x" %s # %d\n", bf->o->boffset, n, bf->id);
+		free (n);
 		break;
+	}
 	case 'q':
 		rz_cons_printf ("%d\n", bf->id);
 		break;
@@ -4454,7 +4458,7 @@ RZ_API int rz_core_bin_list(RzCore *core, int mode) {
 	}
 	if (mode == 'j') {
 		pj_end (pj);
-		rz_cons_println (pj_string (pj));
+		rz_cons_print (pj_string (pj));
 		pj_free (pj);
 	}
 	return count;
