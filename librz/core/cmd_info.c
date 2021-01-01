@@ -298,7 +298,7 @@ static void cmd_info_bin(RzCore *core, int va, int mode) {
 			rz_core_bin_info (core, RZ_CORE_BIN_ACC_INFO, mode, va, NULL, NULL);
 		}
 		if ((mode & RZ_MODE_JSON) && array == 0) {
-			rz_cons_strcat ("}\n");
+			rz_cons_print ("}");
 		}
 	} else {
 		eprintf ("No file selected\n");
@@ -535,7 +535,6 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 				rz_cons_print ("{");
 				rz_bin_list_archs (core->bin, 'j');
 				rz_cons_print ("}");
-				newline = true;
 			} else {
 				rz_bin_list_archs (core->bin, 1);
 				newline = false;
@@ -595,7 +594,7 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 						}
 					}
 					pj_end (pj);
-					rz_cons_printf ("%s\n", pj_string (pj));
+					rz_cons_print (pj_string (pj));
 					pj_free (pj);
 				} else { // "it"
 					if (!equal) {
@@ -857,9 +856,6 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 			}
 			break;
 		case 'i': { // "ii"
-			if (input[1] == 'j') {
-				newline = true;
-			}
 			RzBinObject *obj = rz_bin_cur_object (core->bin);
 			RBININFO ("imports", RZ_CORE_BIN_ACC_IMPORTS, NULL,
 				(obj && obj->imports)? rz_list_length (obj->imports): 0);
@@ -887,9 +883,6 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 			break;
 		case 'V': // "iV"
 			RBININFO ("versioninfo", RZ_CORE_BIN_ACC_VERSIONINFO, NULL, 0);
-			if (input[1] == 'j') {
-				newline = true;
-			}
 			break;
 		case 'T': // "iT"
 		case 'C': // "iC" // rz_bin -C create // should be deprecated and just use iT (or find a better name)
@@ -1177,8 +1170,9 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 	}
 done:
 	if (is_array && !is_izzzj && !is_idpij) {
-		rz_cons_printf ("}\n");
-	} else if (newline) {
+		rz_cons_printf ("}");
+	}
+	if (newline || mode == RZ_MODE_JSON) {
 		rz_cons_newline ();
 	}
 redone:
