@@ -6,6 +6,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rz-ax -I 185.172.110.210
+FILE=-
+CMDS=!rz-ax -I 185.172.110.210
+EXPECT=<<EOF
+0xd26eacb9
+EOF
+RUN
+
 NAME=rz-ax =10 0x46
 FILE=-
 CMDS=!rz-ax =10 0x46
