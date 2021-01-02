@@ -188,6 +188,7 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 
 #define mu_run_test_named(test, name, ...) do { int result; \
 		printf(TBOLD "%s" TRESET " ", name); \
+		mu_test_status = MU_TEST_UNBROKEN; \
 		result = test(__VA_ARGS__); \
 		tests_run++; \
 		tests_passed += result; \

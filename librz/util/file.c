@@ -1113,7 +1113,7 @@ RZ_API char *rz_file_temp (const char *prefix) {
 		prefix = "";
 	}
 	char *path = rz_file_tmpdir ();
-	char *res = rz_str_newf ("%s/%s.%"PFMT64x, path, prefix, rz_time_now ());
+	char *res = rz_str_newf ("%s" RZ_SYS_DIR "%s.%"PFMT64x, path, prefix, rz_time_now ());
 	free (path);
 	return res;
 }
