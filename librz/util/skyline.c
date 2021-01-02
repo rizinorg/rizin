@@ -9,7 +9,7 @@
 	(((addr) < (rz_itv_end (((RzSkylineItem *)(part))->itv)) || !rz_itv_end (((RzSkylineItem *)(part))->itv)) ? -1 : 1)
 
 RZ_API bool rz_skyline_add(RzSkyline *skyline, RzInterval itv, void *user) {
-	rz_return_val_if_fail (skyline && rz_itv_size (itv), false);
+	rz_return_val_if_fail (skyline, false);
 	RzVector *skyline_vec = &skyline->v;
 	RzSkylineItem new_part = { itv, user };
 	const ut64 new_part_end = rz_itv_end (new_part.itv);

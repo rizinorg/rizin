@@ -742,7 +742,7 @@ static int rebasing_and_stripping_io_read(RzIO *io, RzIODesc *fd, ut8 *buf, int 
 		internal_buf_size = RZ_MAX (count, 8);
 		internal_buffer = (ut8 *) malloc (internal_buf_size);
 	}
-	ut64 io_off = io->off;
+	ut64 io_off = fd->plugin->lseek (io, fd, 0, RZ_IO_SEEK_CUR);
 	int result = obj->original_io_read (io, fd, internal_buffer, count);
 	if (result == count) {
 		rebase_buffer (obj, io_off, fd, internal_buffer, count);
