@@ -527,13 +527,13 @@ static char *__demangleAs(RzBin *bin, int type, const char *file) {
 	return res;
 }
 
-static void __listPlugins(RzBin *bin, const char* plugin_name, int rad) {
+static void __listPlugins(RzBin *bin, const char* plugin_name, PJ *pj, int rad) {
 	int format = (rad == RZ_MODE_JSON) ? 'j': rad? 'q': 0;
 	bin->cb_printf = (PrintfCallback)printf;
 	if (plugin_name) {
-		rz_bin_list_plugin (bin, plugin_name, format);
+		rz_bin_list_plugin (bin, plugin_name, pj, format);
 	} else {
-		rz_bin_list (bin, format);
+		rz_bin_list (bin, pj, format);
 	}
 }
 
@@ -547,7 +547,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	ut64 baddr = UT64_MAX;
 	const char *do_demangle = NULL;
 	const char *query = NULL;
-	int c, bits = 0, actions_done = 0, actions = 0;
+	int c, bits = 0, actions = 0;
 	char* create = NULL;
 	bool va = true;
 	ut64 action = RZ_BIN_REQ_UNK;
@@ -837,12 +837,25 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		}
 	}
 
+	PJ *pj = NULL;
+	if (rad == RZ_MODE_JSON) {
+		pj = rz_core_pj_new (&core);
+		if (!pj) {
+			return 1;
+		}
+	}
+
 	if (is_active (RZ_BIN_REQ_LISTPLUGINS)) {
 		const char* plugin_name = NULL;
 		if (opt.ind < argc) {
 			plugin_name = argv[opt.ind];
 		}
-		__listPlugins (bin, plugin_name, rad);
+		__listPlugins (bin, plugin_name, pj, rad);
+		if (rad == RZ_MODE_JSON) {
+			rz_cons_println (pj_string (pj));
+			rz_cons_flush ();
+			pj_free (pj);
+		}
 		rz_core_fini (&core);
 		return 0;
 	}
@@ -1096,11 +1109,10 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 #define isradjson (rad==RZ_MODE_JSON&&actions>0)
 #define run_action(n,x,y) {\
 	if (action&(x)) {\
-		if (isradjson) rz_cons_printf ("%s\"%s\":",actions_done?",":"",n);\
-		if (!rz_core_bin_info (&core, y, rad, va, &filter, chksum)) {\
-			if (isradjson) rz_cons_print ("false");\
+		if (isradjson) pj_k (pj, n);\
+		if (!rz_core_bin_info (&core, y, pj, rad, va, &filter, chksum)) {\
+			if (isradjson) pj_b (pj, false);\
 		};\
-		actions_done++;\
 	}\
 }
 	core.bin = bin;
@@ -1110,17 +1122,16 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	rz_cons_new ()->context->is_interactive = false;
 
 	if (isradjson) {
-		rz_cons_print ("{");
+		pj_o (pj);
 	}
 	// List fatmach0 sub-binaries, etc
 	if (action & RZ_BIN_REQ_LISTARCHS || ((arch || bits || arch_name) &&
 		!rz_bin_select (bin, arch, bits, arch_name))) {
 		if (rad == RZ_MODE_SIMPLEST || rad == RZ_MODE_SIMPLE) {
-			rz_bin_list_archs (bin, 'q');
+			rz_bin_list_archs (bin, pj, 'q');
 		} else {
-			rz_bin_list_archs (bin, (rad == RZ_MODE_JSON)? 'j': 1);
+			rz_bin_list_archs (bin, pj, (rad == RZ_MODE_JSON)? 'j': 1);
 		}
-		actions_done++;
 		free (arch_name);
 	}
 	if (action & RZ_BIN_REQ_PDB_DWNLD) {
@@ -1134,7 +1145,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 			RZ_FREE (tmp);
 		}
 		pdbopts.symbol_store_path = (char *)rz_config_get (core.config, "pdb.symstore");
-		result = rz_bin_pdb_download (&core, isradjson, &actions_done, &pdbopts);
+		result = rz_bin_pdb_download (&core, pj, isradjson, &pdbopts);
 	}
 
 	if ((tmp = rz_sys_getenv ("RZ_BIN_PREFIX"))) {
@@ -1182,8 +1193,10 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		rabin_do_operation (bin, op, rad, output, file);
 	}
 	if (isradjson) {
-		rz_cons_print ("}\n");
+		pj_end (pj);
+		rz_cons_println (pj_string (pj));
 	}
+	pj_free (pj);
 	rz_cons_flush ();
 	rz_core_file_free (fh);
 	rz_core_fini (&core);
