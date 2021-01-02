@@ -154,17 +154,40 @@ bool test_rz_buf_mmap(void) {
 	write (fd, content, length);
 	close (fd);
 
-	b = rz_buf_new_mmap (filename, RZ_PERM_RW);
+	b = rz_buf_new_mmap (filename, O_RDWR, 0);
 	mu_assert_notnull (b, "rz_buf_new_mmap failed");
 
 	if (test_buf (b) != MU_PASSED) {
+		rz_buf_free (b);
 		unlink(filename);
+		free (filename);
 		mu_fail ("test failed");
 	}
 
 	// Cleanup
 	rz_buf_free (b);
 	unlink(filename);
+	free (filename);
+
+	filename = rz_file_temp (NULL);
+	b = rz_buf_new_mmap (filename, O_RDWR | O_CREAT, 0644);
+	mu_assert_notnull (b, "buffer mmaped should be created");
+
+	st64 r = rz_buf_write (b, (const ut8 *)content, length);
+	mu_assert_eq (r, length, "Initial content has been written correctly to created-mmapped file");
+	rz_buf_seek (b, 0, RZ_BUF_SET);
+
+	if (test_buf (b) != MU_PASSED) {
+		rz_buf_free (b);
+		unlink(filename);
+		free (filename);
+		mu_fail ("test failed");
+	}
+
+	rz_buf_free (b);
+	unlink (filename);
+	free (filename);
+
 	mu_end;
 }
 
@@ -174,7 +197,11 @@ bool test_rz_buf_io(void) {
 	const int length = 23;
 
 	RzIO *io = rz_io_new ();
-	RzIODesc *desc = rz_io_open_at (io, "file:///tmp/r-buf-io.test", RZ_PERM_RW | RZ_PERM_CREAT, 0644, 0);
+	char *tmpfile = rz_file_temp (NULL);
+	char *filename = rz_str_newf ("file://%s", tmpfile);
+	free (tmpfile);
+	RzIODesc *desc = rz_io_open_at (io, filename, RZ_PERM_RW | RZ_PERM_CREAT, 0644, 0);
+	free (filename);
 	mu_assert_notnull (desc, "file should be opened for writing");
 
 	bool res = rz_io_write_at (io, 0, (ut8 *)content, length);
@@ -185,6 +212,7 @@ bool test_rz_buf_io(void) {
 
 	b = rz_buf_new_with_io(&bnd, desc->fd);
 	mu_assert_notnull (b, "rz_buf_new_file failed");
+	rz_buf_seek (b, 0, RZ_BUF_SET);
 
 	if (test_buf (b) != MU_PASSED) {
 		mu_fail ("test failed");

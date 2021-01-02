@@ -33,6 +33,7 @@ static bool buf_file_init(RzBuffer *b, const void *user) {
 	}
 	priv->fd = fd;
 	b->priv = priv;
+	b->fd = priv->fd;
 	return true;
 }
 
