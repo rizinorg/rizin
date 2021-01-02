@@ -162,7 +162,7 @@ static bool test_autocmplt_argid(void) {
     mu_assert_eq (r->start, 3, "should autocomplete starting from ./...");
     mu_assert_eq (r->end, buf->length, "should autocomplete ending at end of buffer");
     mu_assert_eq (rz_pvector_len (&r->options), 1, "there is just one file with test_interv");
-    mu_assert_streq (rz_pvector_at (&r->options, 0), "./unit/test_intervaltree.c", "test_intervaltree.c");
+    mu_assert_streq (rz_pvector_at (&r->options, 0), "." RZ_SYS_DIR "unit" RZ_SYS_DIR "test_intervaltree.c", "test_intervaltree.c");
     rz_line_ns_completion_result_free (r);
 
     rz_core_free (core);
@@ -184,7 +184,7 @@ static bool test_autocmplt_quotedarg(void) {
     mu_assert_eq (r->start, 4, "should autocomplete starting from ./...");
     mu_assert_eq (r->end, buf->length, "should autocomplete ending at end of buffer");
     mu_assert_eq (rz_pvector_len (&r->options), 1, "there is just one file with test_interv");
-    mu_assert_streq (rz_pvector_at (&r->options, 0), "./unit/test_intervaltree.c", "test_intervaltree.c");
+    mu_assert_streq (rz_pvector_at (&r->options, 0), "." RZ_SYS_DIR "unit" RZ_SYS_DIR "test_intervaltree.c", "test_intervaltree.c");
     mu_assert_streq (r->end_string, "\" ", "double quotes should be put at the end of the string");
     rz_line_ns_completion_result_free (r);
 
@@ -198,7 +198,7 @@ static bool test_autocmplt_quotedarg(void) {
     mu_assert_eq (r->start, 4, "should autocomplete starting from ./...");
     mu_assert_eq (r->end, buf->length, "should autocomplete ending at end of buffer");
     mu_assert_eq (rz_pvector_len (&r->options), 1, "there is just one file with test_interv");
-    mu_assert_streq (rz_pvector_at (&r->options, 0), "./unit/test_intervaltree.c", "test_intervaltree.c");
+    mu_assert_streq (rz_pvector_at (&r->options, 0), "." RZ_SYS_DIR "unit" RZ_SYS_DIR "test_intervaltree.c", "test_intervaltree.c");
     mu_assert_streq (r->end_string, "' ", "double quotes should be put at the end of the string");
     rz_line_ns_completion_result_free (r);
 
@@ -232,7 +232,7 @@ static bool test_autocmplt_newarg(void) {
     void **it;
     rz_pvector_foreach (&r->options, it) {
         char *f = *(char **)it;
-        mu_assert_true (rz_str_startswith (f, "./file"), "options start with ./file");
+        mu_assert_true (rz_str_startswith (f, "." RZ_SYS_DIR "file"), "options start with ./file");
         int v = atoi (f + strlen ("./file"));
         found[v] = true;
     }
