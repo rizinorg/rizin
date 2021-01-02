@@ -253,7 +253,6 @@ io_plugins = [
   'ihex',
   'mach',
   'malloc',
-  'mmap',
   'null',
   'procpid',
   'ptrace',

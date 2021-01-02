@@ -491,7 +491,6 @@ extern RzIOPlugin rz_io_plugin_http;
 extern RzIOPlugin rz_io_plugin_bfdbg;
 extern RzIOPlugin rz_io_plugin_w32;
 extern RzIOPlugin rz_io_plugin_zip;
-extern RzIOPlugin rz_io_plugin_mmap;
 extern RzIOPlugin rz_io_plugin_default;
 extern RzIOPlugin rz_io_plugin_ihex;
 extern RzIOPlugin rz_io_plugin_self;

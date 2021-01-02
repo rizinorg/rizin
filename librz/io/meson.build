@@ -22,7 +22,6 @@ rz_io_sources = [
   'p/io_ihex.c',
   'p/io_mach.c',
   'p/io_malloc.c',
-  'p/io_mmap.c',
   'p/io_null.c',
   'p/io_procpid.c',
   'p/io_ptrace.c',
