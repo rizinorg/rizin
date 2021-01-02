@@ -45,7 +45,7 @@ void deinit_pdb_downloader(SPDBDownloader *pdb_downloader);
 
 ///
 /// \brief download PDB file
-RZ_API int rz_bin_pdb_download(RzCore *core, int isradjson, int *actions_done, SPDBOptions *options);
+RZ_API int rz_bin_pdb_download(RzCore *core, PJ *pj, int isradjson, SPDBOptions *options);
 
 #ifdef __cplusplus
 }
