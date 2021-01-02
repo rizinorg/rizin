@@ -16,7 +16,7 @@
 #define RZ_IO_UNDOS 64
 
 #define rz_io_map_get_from(map) map->itv.addr
-#define rz_io_map_get_to(map) ( rz_itv_end (map->itv) - 1 )
+#define rz_io_map_get_to(map) ( rz_itv_size (map->itv)? rz_itv_end (map->itv) - 1: 0 )
 
 #if HAVE_PTRACE
 

@@ -856,59 +856,6 @@ RZ_API char *rz_file_readlink(const char *path) {
 	return NULL;
 }
 
-RZ_API int rz_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len) {
-#if __WINDOWS__
-	HANDLE fh = INVALID_HANDLE_VALUE;
-	DWORD written = 0;
-	LPTSTR file_ = NULL;
-	int ret = -1;
-
-	file_ = rz_sys_conv_utf8_to_win (file);
-	fh = CreateFile (file_, GENERIC_READ|GENERIC_WRITE,
-		FILE_SHARE_READ | FILE_SHARE_WRITE,
-		NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
-	if (fh == INVALID_HANDLE_VALUE) {
-		rz_sys_perror ("rz_file_mmap_write/CreateFile");
-		goto err_r_file_mmap_write;
-	}
-	SetFilePointer (fh, addr, NULL, FILE_BEGIN);
-	if (!WriteFile (fh, buf, (DWORD)len,  &written, NULL)) {
-		rz_sys_perror ("rz_file_mmap_write/WriteFile");
-		goto err_r_file_mmap_write;
-	}
-	ret = len;
-err_r_file_mmap_write:
-	free (file_);
-	if (fh != INVALID_HANDLE_VALUE) {
-		CloseHandle (fh);
-	}
-	return ret;
-#elif __UNIX__
-	int fd = rz_sys_open (file, O_RDWR|O_SYNC, 0644);
-	const int pagesize = getpagesize ();
-	int mmlen = len + pagesize;
-	int rest = addr % pagesize;
-        ut8 *mmap_buf;
-	if (fd == -1) {
-		return -1;
-	}
-	if ((st64)addr < 0) {
-		return -1;
-	}
-	mmap_buf = mmap (NULL, mmlen*2, PROT_READ|PROT_WRITE, MAP_SHARED, fd, (off_t)addr - rest);
-	if (((int)(size_t)mmap_buf) == -1) {
-		return -1;
-	}
-	memcpy (mmap_buf+rest, buf, len);
-	msync (mmap_buf+rest, len, MS_INVALIDATE);
-	munmap (mmap_buf, mmlen*2);
-	close (fd);
-	return len;
-#else
-	return -1;
-#endif
-}
-
 #if __WINDOWS__
 static RzMmap *file_mmap(RzMmap *m) {
 	LPTSTR file_ = rz_sys_conv_utf8_to_win (m->filename);

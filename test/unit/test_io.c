@@ -261,7 +261,50 @@ bool test_rz_io_priority2(void) {
 	mu_end;
 }
 
-int all_tests() {
+bool test_rz_io_default(void) {
+	ut8 buf[0x10];
+
+	char *filename = rz_file_temp (NULL);
+	int fd = open(filename, O_RDWR | O_CREAT, 0644);
+	write (fd, "1234567890ABCDEF", 0x10);
+	close (fd);
+
+	char *filename_io = rz_str_newf ("file://%s", filename);
+
+	RzIO *io = rz_io_new ();
+	io->va = true;
+
+	RzIODesc *desc = rz_io_open_at (io, filename, RZ_PERM_R, 0, 0);
+	mu_assert_notnull (desc, "temp file has been opened");
+	rz_io_read_at (io, 0x0, buf, 0x10);
+	mu_assert_memeq (buf, (ut8 *)"1234567890ABCDEF", 0x10, "data has been correctly read");
+
+	RzIODesc *desc2 = rz_io_open_at (io, filename, RZ_PERM_R, 0, 0x30);
+	 mu_assert_notnull (desc2, "temp file has been opened at 0x30");
+	rz_io_read_at (io, 0x30, buf, 0x10);
+	mu_assert_memeq (buf, (ut8 *)"1234567890ABCDEF", 0x10, "data has been correctly read at 0x30");
+
+	RzIODesc *desc3 = rz_io_open_at (io, filename, RZ_PERM_RW, 0, 0x50);
+	 mu_assert_notnull (desc3, "temp file has been opened in RW mode at 0x50");
+	rz_io_read_at (io, 0x50, buf, 0x10);
+	mu_assert_memeq (buf, (ut8 *)"1234567890ABCDEF", 0x10, "data has been correctly read at 0x50");
+	memcpy (buf, "FEDCBA0987654321", 0x10);
+	rz_io_write_at (io, 0x50, buf, 0x10);
+	rz_io_read_at (io, 0x50, buf, 0x10);
+	mu_assert_memeq (buf, (ut8 *)"FEDCBA0987654321", 0x10, "data has been correctly written at 0x50");
+	rz_io_free (io);
+
+	free (filename_io);
+
+	fd = open(filename, O_RDONLY, 0644);
+	read (fd, buf, 0x10);
+	close (fd);
+	mu_assert_memeq (buf, (ut8 *)"FEDCBA0987654321", 0x10, "data has been correctly written at 0x50");
+	rz_file_rm (filename);
+	mu_end;
+}
+
+bool all_tests(void) {
 	mu_run_test(test_rz_io_cache);
 	mu_run_test(test_rz_io_mapsplit);
 	mu_run_test(test_rz_io_mapsplit2);
@@ -271,6 +314,7 @@ int all_tests() {
 	mu_run_test(test_rz_io_priority);
 	mu_run_test(test_rz_io_priority2);
 	mu_run_test(test_va_malloc_zero);
+	mu_run_test(test_rz_io_default);
 	return tests_passed != tests_run;
 }
 

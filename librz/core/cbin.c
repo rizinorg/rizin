@@ -2620,7 +2620,7 @@ static bool io_create_mem_map(RzIO *io, RzBinSection *sec, ut64 at) {
 	RzIODesc *desc = findReusableFile (io, uri, sec->perm);
 	if (desc) {
 		RzIOMap *map = rz_io_map_get (io, at);
-		if (!map) {
+		if (!map && gap) {
 			rz_io_map_add_batch (io, desc->fd, desc->perm, 0LL, at, gap);
 		}
 		reused = true;
@@ -2676,12 +2676,14 @@ static void add_section(RzCore *core, RzBinSection *sec, ut64 addr, int fd) {
 		perm |= RZ_PERM_X;
 	}
 
-	RzIOMap *map = rz_io_map_add_batch (core->io, fd, perm, sec->paddr, addr, size);
-	if (!map) {
-		free (map_name);
-		return;
+	if (size) {
+		RzIOMap *map = rz_io_map_add_batch (core->io, fd, perm, sec->paddr, addr, size);
+		if (!map) {
+			free (map_name);
+			return;
+		}
+		map->name = map_name;
 	}
-	map->name = map_name;
 	return;
 }
 
