@@ -5,7 +5,19 @@
 extern "C" {
 #endif
 
-#include <rz_util/rz_mem.h>
+typedef struct rz_mmap_t {
+	ut8 *buf;
+	ut64 base;
+	ut64 len;
+	int perm;
+	int mode;
+	char *filename;
+	int fd;
+#if __WINDOWS__
+	HANDLE fm;
+#endif
+} RzMmap;
+
 
 /* is */
 RZ_API bool rz_file_is_abspath(const char *file);
@@ -16,10 +28,10 @@ RZ_API bool rz_file_is_regular(const char *str);
 RZ_API bool rz_file_truncate(const char *filename, ut64 newsize);
 RZ_API ut64 rz_file_size(const char *str);
 RZ_API char *rz_file_root(const char *root, const char *path);
-RZ_API RMmap *rz_file_mmap(const char *file, bool rw, ut64 base);
-RZ_API int rz_file_mmap_read(const char *file, ut64 addr, ut8 *buf, int len);
+RZ_API RzMmap *rz_file_mmap(const char *file, int perm, int mode, ut64 base);
 RZ_API int rz_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len);
-RZ_API void rz_file_mmap_free(RMmap *m);
+RZ_API void *rz_file_mmap_resize(RzMmap *m, ut64 newsize);
+RZ_API void rz_file_mmap_free(RzMmap *m);
 RZ_API bool rz_file_chmod(const char *file, const char *mod, int recursive);
 RZ_API char *rz_file_temp(const char *prefix);
 RZ_API char *rz_file_path(const char *bin);
@@ -55,7 +67,6 @@ RZ_API char *rz_file_tmpdir(void);
 RZ_API char *rz_file_readlink(const char *path);
 RZ_API bool rz_file_copy (const char *src, const char *dst);
 RZ_API RzList* rz_file_globsearch (const char *globbed_path, int maxdepth);
-RZ_API RMmap *rz_file_mmap_arch (RMmap *map, const char *filename, int fd);
 
 #ifdef __cplusplus
 }
