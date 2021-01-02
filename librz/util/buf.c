@@ -202,12 +202,12 @@ RZ_API ut64 rz_buf_size(RzBuffer *b) {
 	return buf_get_size (b);
 }
 
-// rename to new?
-RZ_API RzBuffer *rz_buf_new_mmap(const char *filename, int perm) {
+RZ_API RzBuffer *rz_buf_new_mmap(const char *filename, int perm, int mode) {
 	rz_return_val_if_fail (filename, NULL);
 	struct buf_mmap_user u = { 0 };
 	u.filename = filename;
 	u.perm = perm;
+	u.mode = mode;
 	return new_buffer (RZ_BUFFER_MMAP, &u);
 }
 
