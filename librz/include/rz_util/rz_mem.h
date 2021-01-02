@@ -5,19 +5,6 @@
 extern "C" {
 #endif
 
-typedef struct rz_mmap_t {
-	ut8 *buf;
-	ut64 base;
-	int len;
-	int fd;
-	int rw;
-	char *filename;
-#if __WINDOWS__
-	HANDLE fh;
-	HANDLE fm;
-#endif
-} RMmap;
-
 typedef struct rz_mem_pool_t {
 	ut8 **nodes;
 	int ncount;
@@ -55,7 +42,6 @@ RZ_API const ut8 *rz_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *n
 RZ_API int rz_mem_count(const ut8 **addr);
 RZ_API bool rz_mem_is_printable (const ut8 *a, int la);
 RZ_API bool rz_mem_is_zero(const ut8 *b, int l);
-RZ_API void *rz_mem_mmap_resize(RMmap *m, ut64 newsize);
 
 #ifdef __cplusplus
 }
