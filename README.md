@@ -33,8 +33,8 @@ $ git clone --recurse-submodules https://github.com/rizinorg/rizin
 Then compile and install with:
 ```
 $ meson build
-$ ninja -C build                 # or `meson compile -C build`
-$ sudo ninja -C build install    # or `sudo meson install -C build`
+$ ninja -C build
+$ sudo ninja -C build install
 ```
 
 Now you can use `rizin`:
