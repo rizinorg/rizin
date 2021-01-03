@@ -37,8 +37,8 @@ distribution in `/usr`.
 
 ```
 $ meson build
-$ ninja -C build # or `meson compile -C build`
-$ sudo ninja -C build install # or `sudo meson install -C build`
+$ ninja -C build                # or `meson compile -C build`
+$ sudo ninja -C build install   # or `sudo meson install -C build`
 ```
 
 NOTE: when `--prefix=/usr` is not used, meson will set `RPATH` to ensure that
