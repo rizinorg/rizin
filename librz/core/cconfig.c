@@ -3120,7 +3120,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF ("asm.cyclespace", "false", "Indent instructions depending on CPU-cycles");
 	SETBPREF ("asm.cycles", "false", "Show CPU-cycles taken by instruction at disassembly");
 	SETI ("asm.tabs", 6, "Use tabs in disassembly");
-	SETBPREF ("asm.tabs.once", "false", "Only tabulate the opcode, not the arguments");
+	SETBPREF ("asm.tabs.once", "true", "Only tabulate the opcode, not the arguments");
 	SETI ("asm.tabs.off", 0, "tabulate spaces after the offset");
 	SETBPREF ("asm.trace", "false", "Show execution traces for each opcode");
 	SETBPREF ("asm.tracespace", "false", "Indent disassembly with trace.count information");
