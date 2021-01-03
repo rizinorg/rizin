@@ -3275,12 +3275,12 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI ("zign.maxsz", 500, "Maximum zignature length");
 	SETI ("zign.minsz", 16, "Minimum zignature length for matching");
 	SETI ("zign.mincc", 10, "Minimum cyclomatic complexity for matching");
-	SETBPREF ("zign.graph", "true", "Use graph metrics for matching");
-	SETBPREF ("zign.bytes", "true", "Use bytes patterns for matching");
-	SETBPREF ("zign.offset", "false", "Use original offset for matching");
-	SETBPREF ("zign.refs", "true", "Use references for matching");
-	SETBPREF ("zign.hash", "true", "Use Hash for matching");
-	SETBPREF ("zign.types", "true", "Use types for matching");
+	SETBPREF ("zign.match.graph", "true", "Use graph metrics for matching");
+	SETBPREF ("zign.match.bytes", "true", "Use bytes patterns for matching");
+	SETBPREF ("zign.match.offset", "false", "Use original offset for matching");
+	SETBPREF ("zign.match.refs", "true", "Use references for matching");
+	SETBPREF ("zign.match.hash", "true", "Use Hash for matching");
+	SETBPREF ("zign.match.types", "false", "Use types for matching");
 	SETBPREF ("zign.autoload", "false", "Autoload all zignatures located in " RZ_JOIN_2_PATHS ("~", RZ_HOME_ZIGNS));
 	SETPREF ("zign.diff.bthresh", "1.0", "Threshold for diffing zign bytes [0, 1] (see zc?)");
 	SETPREF ("zign.diff.gthresh", "1.0", "Threshold for diffing zign graphs [0, 1] (see zc?)");
