@@ -322,22 +322,21 @@ RZ_API int rz_str_delta(char *p, char a, char b) {
 	return (!_a || !_b)? 0 : (_a - _b);
 }
 
-// In-place split string using ch as a delimiter. Replaces all instances of ch
-// with a null byte. Returns the number of split strings. For example
-// rz_str_split("hello world", ' ') will replace the space with '\0' and
-// return 2.
+/**
+ * \brief Split string \p str in place by using \p ch as a delimiter.
+ * 
+ * Replaces all instances of \p ch in \p str with a NULL byte and it returns
+ * the number of split strings.
+ */
 RZ_API int rz_str_split(char *str, char ch) {
+	rz_return_val_if_fail (str, 0);
 	int i;
 	char *p;
-	if (!str || !*str) {
-		return 0;
-	}
-	/* TODO: sync with r1 code */
 	for (i = 1, p = str; *p; p++) {
 		if (*p == ch) {
 			i++;
 			*p = '\0';
-		} // s/ /\0/g
+		}
 	}
 	return i;
 }
@@ -3201,83 +3200,120 @@ RZ_API bool rz_str_endswith(const char *str, const char *needle) {
 	return !strcmp (str + (slen - nlen), needle);
 }
 
-// Splits the string <str> by string <c> and returns the result in a list.
-RZ_API RzList *rz_str_split_list(char *str, const char *c, int n)  {
+static RzList *str_split_list_common(char *str, const char *c, int n, bool trim, bool dup) {
 	rz_return_val_if_fail (str && c, NULL);
-	RzList *lst = rz_list_newf (NULL);
+	RzList *lst = rz_list_newf (dup? free: NULL);
 	char *aux = str;
 	int i = 0;
-	char  *e = aux;
+	char *e = aux;
+	size_t clen = strlen (c);
 	for (;e;) {
 		e = strstr (aux, c);
-		if (n > 0) {
-			if (++i > n) {
-				rz_list_append (lst, aux);
-				break;
-			}
+		if (n > 0 && ++i > n) {
+			rz_list_append (lst, dup? strdup (aux): aux);
+			break;
 		}
 		if (e) {
-			*e++ =  0;
+			*e =  0;
+			e += clen;
 		}
-		rz_str_trim (aux);
-		rz_list_append (lst, aux);
+		if (trim) {
+			rz_str_trim (aux);
+		}
+		rz_list_append (lst, dup? strdup (aux): aux);
 		aux = e;
 	}
 	return lst;
 }
 
-RZ_API RzList *rz_str_split_duplist(const char *_str, const char *c, bool trim) {
-	rz_return_val_if_fail (_str && c, NULL);
-	RzList *lst = rz_list_newf (free);
-	char *str = strdup (_str);
-	char *aux = str;
-	size_t clen = strlen (c);
-	while (aux) {
-		char *next = strstr (aux, c);
-		if (next) {
-			*next = '\0';
-			next += clen;
-		}
-		if (trim) {
-			rz_str_trim (aux);
-		}
-		rz_list_append (lst, strdup (aux));
-		aux = next;
-	}
-	free (str);
-	return lst;
+/**
+ * \brief Split the string \p str according to the substring \p c and returns a \p RzList with the result.
+ * 
+ * Split a string \p str according to the delimiter specified in \p c and it
+ * considers at most \p n delimiters. The result is a \p RzList with pointers
+ * to the input string \p str. Each token is trimmed as well.
+ * 
+ * \param str Input string to split. It will be modified by this function.
+ * \param c Delimiter string used to split \p str
+ * \param n If > 0 at most this number of delimiters are considered.
+ */
+RZ_API RzList *rz_str_split_list(char *str, const char *c, int n)  {
+	rz_return_val_if_fail (str && c, NULL);
+	return str_split_list_common (str, c, n, true, false);
 }
 
+/**
+ * \brief Split the string \p str according to the substring \p c and returns a \p RzList with the result.
+ * 
+ * Split a string \p str according to the delimiter specified in \p c. It can
+ * optionally trim (aka remove spaces) the tokens. The result is a \p RzList
+ * with newly allocated strings for each token.
+ * 
+ * \param str Input string to split
+ * \param c Delimiter string used to split \p str
+ * \param trim If true each token is considered without trailing/leading whitespaces.
+ */
+RZ_API RzList *rz_str_split_duplist(const char *_str, const char *c, bool trim) {
+	rz_return_val_if_fail (_str && c, NULL);
+	char *str = strdup (_str);
+	RzList *res = str_split_list_common (str, c, 0, trim, true);
+	free (str);
+	return res;
+}
+
+/**
+ * \brief Split the string \p str according to the substring \p c and returns a \p RzList with the result.
+ * 
+ * Split a string \p str according to the delimiter specified in \p c. It can
+ * optionally trim (aka remove spaces) the tokens and/or consider at most \p n
+ * delimiters. The result is a \p RzList with newly allocated strings for each
+ * token.
+ * 
+ * \param str Input string to split
+ * \param c Delimiter string used to split \p str
+ * \param n If > 0 at most this number of delimiters are considered.
+ * \param trim If true each token is considered without trailing/leading whitespaces.
+ */
+RZ_API RzList *rz_str_split_duplist_n(const char *_str, const char *c, int n, bool trim) {
+	rz_return_val_if_fail (_str && c, NULL);
+	char *str = strdup (_str);
+	RzList *res = str_split_list_common (str, c, n, trim, true);
+	free (str);
+	return res;
+}
+
+/**
+ * \brief Split the string \p str in lines and returns the result in an array.
+ * 
+ * Split a string \p str in lines. The number of lines is optionally stored in
+ * \p count, if not NULL. The result is an array of \p count entries, with the
+ * i-th entry containing the index of the first character of the i-th line.
+ * 
+ * \param str Input string to split
+ * \param count Pointer to a size_t variable that can hold the number of lines.
+ */
 RZ_API size_t *rz_str_split_lines(char *str, size_t *count) {
-	int i;
-	size_t lines = 0;
-	if (!str) {
+	rz_return_val_if_fail (str, NULL);
+	RzList *l = str_split_list_common (str, "\n", 0, false, false);
+	if (!l) {
 		return NULL;
 	}
-	size_t *indexes = NULL;
-	// count lines
-	for (i = 0; str[i]; i++) {
-		if (str[i] == '\n') {
-			lines++;
-		}
-	}
-	// allocate and set indexes
-	indexes = calloc (sizeof (count[0]), lines + 1);
-	if (!indexes) {
+	size_t cnt = rz_list_length (l);
+	size_t *res = RZ_NEWS (size_t, cnt);
+	if (!res) {
 		return NULL;
 	}
-	size_t line = 0;
-	indexes[line++] = 0;
-	for (i = 0; str[i]; i++) {
-		if (str[i] == '\n') {
-			str[i] = 0;
-			indexes[line++] = i + 1;
-		}
+	RzListIter *it;
+	char *s;
+	size_t i = 0;
+	rz_list_foreach (l, it, s) {
+		res[i++] = s - str;
 	}
 	if (count) {
-		*count = line;
+		*count = cnt;
 	}
-	return indexes;
+	rz_list_free (l);
+	return res;
 }
 
 RZ_API bool rz_str_isnumber(const char *str) {
