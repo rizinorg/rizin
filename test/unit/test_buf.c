@@ -122,6 +122,7 @@ bool test_rz_buf_file(void) {
 	// Cleanup
 	rz_buf_free (b);
 	unlink (filename);
+	free (filename);
 	mu_end;
 }
 
