@@ -3098,9 +3098,6 @@ static int fcn_print_legacy(RzCore *core, RzAnalysisFunction *fcn) {
 	}
 	rz_cons_printf ("\ncyclomatic-cost: %d", rz_analysis_function_cost (fcn));
 	rz_cons_printf ("\ncyclomatic-complexity: %d", rz_analysis_function_complexity (fcn));
-	if (!RZ_STR_ISEMPTY (fcn->cc)) {
-		rz_cons_printf ("\ncc: %s", fcn->cc);
-	}
 	rz_cons_printf ("\nbits: %d", fcn->bits);
 	rz_cons_printf ("\ntype: %s", rz_analysis_fcntype_tostring (fcn->type));
 	if (fcn->type == RZ_ANALYSIS_FCN_TYPE_FCN || fcn->type == RZ_ANALYSIS_FCN_TYPE_SYM) {
