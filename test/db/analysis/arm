@@ -64,9 +64,9 @@ wx 0149 014a 014b 0000 1111 2222 3333 4444 5555 6666
 pd 3
 EOF
 EXPECT=<<EOF
-            0x00000000      0149           ldr r1, [0x00000008]        ; [0x8:4]=0x22221111 ; 8
-            0x00000002      014a           ldr r2, [0x00000008]        ; [0x8:4]=0x22221111 ; 8
-            0x00000004      014b           ldr r3, [0x0000000c]        ; [0xc:4]=0x44443333 ; 12
+            0x00000000      0149           ldr   r1, [0x00000008]      ; [0x8:4]=0x22221111 ; 8
+            0x00000002      014a           ldr   r2, [0x00000008]      ; [0x8:4]=0x22221111 ; 8
+            0x00000004      014b           ldr   r3, [0x0000000c]      ; [0xc:4]=0x44443333 ; 12
 EOF
 RUN
 
@@ -81,12 +81,12 @@ wx 0249 024a 024b 7944 7a44 7b44 1111 2222 3333 4444 5555 6666 7777
 pd 6
 EOF
 EXPECT=<<EOF
-            0x00000000      0249           ldr r1, [0x0000000c]        ; [0xc:4]=0x22221111 ; 12 ; r1=0x22221111
-            0x00000002      024a           ldr r2, [0x0000000c]        ; [0xc:4]=0x22221111 ; 12 ; r2=0x22221111
-            0x00000004      024b           ldr r3, [0x00000010]        ; [0x10:4]=0x44443333 ; 16 ; r3=0x44443333
-            0x00000006      7944           add r1, pc                  ; r1=0x2222111b
-            0x00000008      7a44           add r2, pc                  ; r2=0x2222111d
-            0x0000000a      7b44           add r3, pc                  ; r3=0x44443341
+            0x00000000      0249           ldr   r1, [0x0000000c]      ; [0xc:4]=0x22221111 ; 12 ; r1=0x22221111
+            0x00000002      024a           ldr   r2, [0x0000000c]      ; [0xc:4]=0x22221111 ; 12 ; r2=0x22221111
+            0x00000004      024b           ldr   r3, [0x00000010]      ; [0x10:4]=0x44443333 ; 16 ; r3=0x44443333
+            0x00000006      7944           add   r1, pc                ; r1=0x2222111b
+            0x00000008      7a44           add   r2, pc                ; r2=0x2222111d
+            0x0000000a      7b44           add   r3, pc                ; r3=0x44443341
 EOF
 RUN
 
@@ -100,7 +100,7 @@ wx 10b5 01a0 00bf 00bf 52616461726532207465737420737472696e6700
 pd 1 @ 0x2
 EOF
 EXPECT=<<EOF
-            0x00000002      01a0           adr r0, 4                   ; "Radare2 test string"
+            0x00000002      01a0           adr   r0, 4                 ; "Radare2 test string"
                                                                        ; 0x8 ; 8
 EOF
 RUN
@@ -126,14 +126,14 @@ pd 1 @a:arm @b:16@2
 EOF
 EXPECT=<<EOF
 mov r0, r0
-            0x00000000      0000a0e1       mov r0, r0
-            0x00000000      0000a0e1       mov r0, r0
-            0x00000000      0000a0e1       mov r0, r0
-            0x00000000      0000           movs r0, r0
-            0x00000000      0000a0e1       mov r0, r0
-            0x00000000      0000           movs r0, r0
+            0x00000000      0000a0e1       mov   r0, r0
+            0x00000000      0000a0e1       mov   r0, r0
+            0x00000000      0000a0e1       mov   r0, r0
+            0x00000000      0000           movs  r0, r0
+            0x00000000      0000a0e1       mov   r0, r0
+            0x00000000      0000           movs  r0, r0
             0x00000002                    unaligned
-        ,=< 0x00000002      a0e1           b 0x346
+        ,=< 0x00000002      a0e1           b     0x346
 EOF
 RUN
 
@@ -147,7 +147,7 @@ wx 10b5 01a0 00bf 00bf 5261646172653220746573740d0a00
 pd 1 @ 0x2
 EOF
 EXPECT=<<EOF
-            0x00000002      01a0           adr r0, 4                   ; "Radare2 test\r\n"
+            0x00000002      01a0           adr   r0, 4                 ; "Radare2 test\r\n"
                                                                        ; 0x8 ; 8
 EOF
 RUN
@@ -281,10 +281,10 @@ EXPECT=<<EOF
 / (fcn) fcn.00000000 16
 // void fcn.00000000 (int32_t arg2);
 |           ; arg int32_t arg2 @ r1
-|           0x00000000      021081e0       add r1, r1, r2              ; arg2
-|           0x00000004      1eff2f01       bxeq lr
-|           0x00000008      0020a0e3       mov r2, 0
-\           0x0000000c      1eff2fe1       bx lr
+|           0x00000000      021081e0       add   r1, r1, r2            ; arg2
+|           0x00000004      1eff2f01       bxeq  lr
+|           0x00000008      0020a0e3       mov   r2, 0
+\           0x0000000c      1eff2fe1       bx    lr
 EOF
 RUN
 
@@ -463,7 +463,7 @@ f sym.callback=0x315
 pd 1
 EOF
 EXPECT=<<EOF
-                 ldr r0, [sym.callback]
+                 ldr   r0, [sym.callback]
 EOF
 RUN
 
@@ -482,8 +482,8 @@ e asm.sub.varmin=0
 pd 1
 EOF
 EXPECT=<<EOF
-                 ldr r0, [0x00000014]
-                 ldr r0, [sym.callback]
+                 ldr   r0, [0x00000014]
+                 ldr   r0, [sym.callback]
 EOF
 RUN
 
@@ -501,10 +501,10 @@ pd 1 @ 0x0000816c
 pd 1 @ 0x000081b0
 EOF
 EXPECT=<<EOF
-                 ldr r0, main
-                 ldr r1, obj.object.6286
-                 ldr r3, sym.__libc_csu_init
-                 ldr r4, obj.completed.6278
+                 ldr   r0, main
+                 ldr   r1, obj.object.6286
+                 ldr   r3, sym.__libc_csu_init
+                 ldr   r4, obj.completed.6278
 EOF
 RUN
 
@@ -654,17 +654,17 @@ EXPECT=<<EOF
 / (fcn) sym.call 44
 |           ; var int32_t var_8h @ fp-0x8
 |           ; arg int32_t arg1 @ r0
-|           0x00010420      00482de9       push {fp, lr}
-|           0x00010424      04b08de2       add fp, sp, 4
-|           0x00010428      08d04de2       sub sp, sp, 8
-|           0x0001042c      08000be5       str r0, [var_8h]            ; 8 ; arg1
-|           0x00010430      14009fe5       ldr r0, [0x0001044c]        ; [0x1044c:4]=0x104f0
-|           0x00010434      08101be5       ldr r1, [var_8h]            ; 8
-|           0x00010438      a2ffffeb       bl sym.imp.printf
-|           0x0001043c      0030a0e3       mov r3, 0
-|           0x00010440      0300a0e1       mov r0, r3
-|           0x00010444      04d04be2       sub sp, fp, 4
-\           0x00010448      0088bde8       pop {fp, pc}
+|           0x00010420      00482de9       push  {fp, lr}
+|           0x00010424      04b08de2       add   fp, sp, 4
+|           0x00010428      08d04de2       sub   sp, sp, 8
+|           0x0001042c      08000be5       str   r0, [var_8h]          ; 8 ; arg1
+|           0x00010430      14009fe5       ldr   r0, [0x0001044c]      ; [0x1044c:4]=0x104f0
+|           0x00010434      08101be5       ldr   r1, [var_8h]          ; 8
+|           0x00010438      a2ffffeb       bl    sym.imp.printf
+|           0x0001043c      0030a0e3       mov   r3, 0
+|           0x00010440      0300a0e1       mov   r0, r3
+|           0x00010444      04d04be2       sub   sp, fp, 4
+\           0x00010448      0088bde8       pop   {fp, pc}
 EOF
 RUN
 
@@ -684,17 +684,17 @@ EXPECT=<<EOF
 |           ; var int32_t var_8h @ fp-0x8
 |           ; arg int argc @ r0
 |           ; arg char **argv @ r1
-|           0x00010450      00482de9       push {fp, lr}
-|           0x00010454      04b08de2       add fp, sp, 4
-|           0x00010458      08d04de2       sub sp, sp, 8
-|           0x0001045c      08000be5       str r0, [var_8h]            ; 8 ; argc
-|           0x00010460      0c100be5       str r1, [var_ch]            ; 0xc ; 12 ; argv
-|           0x00010464      08001be5       ldr r0, [var_8h]            ; 8
-|           0x00010468      ecffffeb       bl sym.call
-|           0x0001046c      0030a0e1       mov r3, r0
-|           0x00010470      0300a0e1       mov r0, r3
-|           0x00010474      04d04be2       sub sp, fp, 4
-\           0x00010478      0088bde8       pop {fp, pc}
+|           0x00010450      00482de9       push  {fp, lr}
+|           0x00010454      04b08de2       add   fp, sp, 4
+|           0x00010458      08d04de2       sub   sp, sp, 8
+|           0x0001045c      08000be5       str   r0, [var_8h]          ; 8 ; argc
+|           0x00010460      0c100be5       str   r1, [var_ch]          ; 0xc ; 12 ; argv
+|           0x00010464      08001be5       ldr   r0, [var_8h]          ; 8
+|           0x00010468      ecffffeb       bl    sym.call
+|           0x0001046c      0030a0e1       mov   r3, r0
+|           0x00010470      0300a0e1       mov   r0, r3
+|           0x00010474      04d04be2       sub   sp, fp, 4
+\           0x00010478      0088bde8       pop   {fp, pc}
 EOF
 RUN
 
@@ -950,15 +950,15 @@ pd 9 @ main
 EOF
 EXPECT=<<EOF
             ;-- main:
-            0x0000050c      80b5           push {r7, lr}
-            0x0000050e      00af           add r7, sp, 0
-            0x00000510      034b           ldr r3, [0x00000520]        ; [0x520:4]=94 ; 1312
-            0x00000512      7b44           add r3, pc                  ; 0x574 ; "Hello world!"
-            0x00000514      1846           mov r0, r3
-            0x00000516      fff75aef       blx sym.imp.puts
-            0x0000051a      0023           movs r3, 0
-            0x0000051c      1846           mov r0, r3
-            0x0000051e      80bd           pop {r7, pc}
+            0x0000050c      80b5           push  {r7, lr}
+            0x0000050e      00af           add   r7, sp, 0
+            0x00000510      034b           ldr   r3, [0x00000520]      ; [0x520:4]=94 ; 1312
+            0x00000512      7b44           add   r3, pc                ; 0x574 ; "Hello world!"
+            0x00000514      1846           mov   r0, r3
+            0x00000516      fff75aef       blx   sym.imp.puts
+            0x0000051a      0023           movs  r3, 0
+            0x0000051c      1846           mov   r0, r3
+            0x0000051e      80bd           pop   {r7, pc}
 EOF
 RUN
 

@@ -425,14 +425,14 @@ va       false
 | 0x00000302      4b             astore_0
 | 0x00000303      1064           bipush 100
 | 0x00000305      3c             istore_1
-| 0x00000306      1215           ldc "tryone"
+| 0x00000306      1215           ldc   "tryone"
 | 0x00000308      4d             astore_2
 | 0x00000309      03             iconst_0
 | 0x0000030a      3e             istore_3
 | 0x0000030b      b20017         getstatic java/lang/System/out Ljava/io/PrintStream;
-| 0x0000030e      bb001d         new java/lang/StringBuilder
+| 0x0000030e      bb001d         new   java/lang/StringBuilder
 | 0x00000311      59             dup
-| 0x00000312      121f           ldc "Attempting print "
+| 0x00000312      121f           ldc   "Attempting print "
 | 0x00000314      b70021         invokespecial java/lang/StringBuilder/<init>(Ljava/lang/String;)V
 | 0x00000317      2c             aload_2
 | 0x00000318      b60024         invokevirtual java/lang/StringBuilder/append(Ljava/lang/String;)Ljava/lang/StringBuilder;
@@ -2820,8 +2820,8 @@ EXPECT=<<EOF
             ;-- _edata:
             ;-- __bss_start:
             ;-- __TMC_END__:
-            0x080496b4      0000           add byte [eax], al          ; [25] -rw- section size 4 named .bss
-            0x080496b6      0000           add byte [eax], al
+            0x080496b4      0000           add   byte [eax], al        ; [25] -rw- section size 4 named .bss
+            0x080496b6      0000           add   byte [eax], al
             ;-- _end:
             0x080496b8      ff             invalid
 EOF
@@ -3805,7 +3805,7 @@ vaddr=0x08048486 paddr=0x00000486 hvaddr=0x08049ed4 hpaddr=0x00000ed4 type=prein
 vaddr=0x0804849f paddr=0x0000049f hvaddr=0x08049ed8 hpaddr=0x00000ed8 type=preinit
             ;-- entry.preinit1:
             ;-- preinit2:
-            0x0804849f      push ebp
+            0x0804849f      push  ebp
 EOF
 RUN
 

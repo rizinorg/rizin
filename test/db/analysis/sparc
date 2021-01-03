@@ -90,41 +90,41 @@ EXPECT=<<EOF
 |           ; arg int fd @ i0
 |           ; arg const char *ptr @ i1
 |           ; arg size_t nbytes @ i2
-|           0x000a0d80      9de3bfa0       save sp, -0x60, sp
-|           0x000a0d84      a0100018       mov i0, l0
-|           0x000a0d88      a210001a       mov i2, l1
-|           0x000a0d8c      b010001a       mov i2, i0
-|           0x000a0d90      a4102000       mov 0, l2
-|       .-> 0x000a0d94      92100019       mov i1, o1
-|     ..--> 0x000a0d98      94100011       mov l1, o2
-|     :::   0x000a0d9c      40012d10       call sym.imp.write          ; ssize_t write(int fd, const char *ptr, size_t nbytes)
-|     :::   0x000a0da0      90100010       mov l0, o0
-|     :::   0x000a0da4      80a22000       cmp o0, 0
+|           0x000a0d80      9de3bfa0       save  sp, -0x60, sp
+|           0x000a0d84      a0100018       mov   i0, l0
+|           0x000a0d88      a210001a       mov   i2, l1
+|           0x000a0d8c      b010001a       mov   i2, i0
+|           0x000a0d90      a4102000       mov   0, l2
+|       .-> 0x000a0d94      92100019       mov   i1, o1
+|     ..--> 0x000a0d98      94100011       mov   l1, o2
+|     :::   0x000a0d9c      40012d10       call  sym.imp.write         ; ssize_t write(int fd, const char *ptr, size_t nbytes)
+|     :::   0x000a0da0      90100010       mov   l0, o0
+|     :::   0x000a0da4      80a22000       cmp   o0, 0
 |    ,====< 0x000a0da8      04400008       ble,pn icc, 0xa0dc8
 |    |:::   0x000a0dac      01000000       nop
-|    |:::   0x000a0db0      a2244008       sub l1, o0, l1
-|    |:::   0x000a0db4      80a46000       cmp l1, 0
-|    |::`=< 0x000a0db8      144ffff7       bg icc, 0xa0d94
-|    |::    0x000a0dbc      b2064008       add i1, o0, i1
-|    |::    0x000a0dc0      81cfe008       rett i7+8
+|    |:::   0x000a0db0      a2244008       sub   l1, o0, l1
+|    |:::   0x000a0db4      80a46000       cmp   l1, 0
+|    |::`=< 0x000a0db8      144ffff7       bg    icc, 0xa0d94
+|    |::    0x000a0dbc      b2064008       add   i1, o0, i1
+|    |::    0x000a0dc0      81cfe008       rett  i7+8
 |    |::    0x000a0dc4      01000000       nop
 |    `--,=< 0x000a0dc8      12400009       bne,pn icc, 0xa0dec
 |     ::|   0x000a0dcc      01000000       nop
-|     ::|   0x000a0dd0      a404a001       add l2, 1, l2
-|     ::|   0x000a0dd4      80a4a003       cmp l2, 3
-|     `===< 0x000a0dd8      044ffff0       ble icc, 0xa0d98
-|      :|   0x000a0ddc      92100019       mov i1, o1
-|      :|   0x000a0de0      b0268011       sub i2, l1, i0
-|      :|   0x000a0de4      81cfe008       rett i7+8
+|     ::|   0x000a0dd0      a404a001       add   l2, 1, l2
+|     ::|   0x000a0dd4      80a4a003       cmp   l2, 3
+|     `===< 0x000a0dd8      044ffff0       ble   icc, 0xa0d98
+|      :|   0x000a0ddc      92100019       mov   i1, o1
+|      :|   0x000a0de0      b0268011       sub   i2, l1, i0
+|      :|   0x000a0de4      81cfe008       rett  i7+8
 |      :|   0x000a0de8      01000000       nop
-|      :`-> 0x000a0dec      40012c9f       call sym.imp.__errno_location
+|      :`-> 0x000a0dec      40012c9f       call  sym.imp.__errno_location
 |      :    0x000a0df0      01000000       nop
-|      :    0x000a0df4      c2020000       ld [o0], g1
-|      :    0x000a0df8      80a06004       cmp g1, 4
-|      `==< 0x000a0dfc      024fffe7       be icc, 0xa0d98
-|           0x000a0e00      92100019       mov i1, o1
-|           0x000a0e04      81cfe008       rett i7+8
-\           0x000a0e08      90103fff       mov -1, o0
+|      :    0x000a0df4      c2020000       ld    [o0], g1
+|      :    0x000a0df8      80a06004       cmp   g1, 4
+|      `==< 0x000a0dfc      024fffe7       be    icc, 0xa0d98
+|           0x000a0e00      92100019       mov   i1, o1
+|           0x000a0e04      81cfe008       rett  i7+8
+\           0x000a0e08      90103fff       mov   -1, o0
 EOF
 RUN
 

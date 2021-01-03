@@ -482,11 +482,11 @@ pd 5
 EOF
 EXPECT=<<EOF
 0x00000296   # 2: in r24, 0x18
-        ,=< 0x00000000      0c94ac00       jmp entry0
-       ,==< 0x00000004      0c94db00       jmp 0x1b6
-      ,===< 0x00000008      0c94db00       jmp 0x1b6
-     ,====< 0x0000000c      0c94db00       jmp 0x1b6
-    ,=====< 0x00000010      0c94db00       jmp 0x1b6
+        ,=< 0x00000000      0c94ac00       jmp   entry0
+       ,==< 0x00000004      0c94db00       jmp   0x1b6
+      ,===< 0x00000008      0c94db00       jmp   0x1b6
+     ,====< 0x0000000c      0c94db00       jmp   0x1b6
+    ,=====< 0x00000010      0c94db00       jmp   0x1b6
 EOF
 RUN
 
@@ -572,10 +572,10 @@ aar
 pd 4 @ 4
 EOF
 EXPECT=<<EOF
-0x00000004      0c94db00       jmp 0x1b6
-0x00000008      0c94db00       jmp 0x1b6
-0x0000000c      0c94db00       jmp 0x1b6
-0x00000010      0c94db00       jmp 0x1b6
+0x00000004      0c94db00       jmp   0x1b6
+0x00000008      0c94db00       jmp   0x1b6
+0x0000000c      0c94db00       jmp   0x1b6
+0x00000010      0c94db00       jmp   0x1b6
 EOF
 RUN
 

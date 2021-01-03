@@ -83,7 +83,7 @@ EXPECT=<<EOF
             0x00000000      hex length=3 delta=0
 0x00000000  3930 39                                  909
 
-            0x00000003      3039           xor byte [ecx], bh
+            0x00000003      3039           xor   byte [ecx], bh
 EOF
 RUN
 
@@ -172,7 +172,7 @@ Ch-
 EOF
 EXPECT=<<EOF
             0x00000000 (2 bytes hidden)
-            0x00000002      89e5           mov ebp, esp
+            0x00000002      89e5           mov   ebp, esp
 EOF
 RUN
 

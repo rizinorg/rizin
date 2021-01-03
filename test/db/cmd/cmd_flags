@@ -481,7 +481,7 @@ pd 1
 EOF
 EXPECT=<<EOF
            .blah:
-               31ed           xor ebp, ebp           ; start.S:67
+               31ed           xor   ebp, ebp         ; start.S:67
 EOF
 RUN
 
