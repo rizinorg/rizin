@@ -41,7 +41,7 @@ RZ_API void rz_line_free(void) {
 	// XXX: prompt out of the heap?
 	free ((void *)I.prompt);
 	I.prompt = NULL;
-	rz_list_free (I.kill_ring);
+	//rz_list_free (I.kill_ring);
 	rz_line_hist_free ();
 	rz_line_completion_fini (&I.completion);
 }
