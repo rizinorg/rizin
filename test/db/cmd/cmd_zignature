@@ -630,7 +630,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=z/ + zign.{bytes,graph}
+NAME=z/ + zign.match.{bytes,graph}
 FILE=bins/elf/analysis/zigs_stripped
 CMDS=<<EOF
 aa
@@ -639,14 +639,14 @@ za sym.print g cc=1 nbbs=1 edges=0 ebbs=1
 e zign.minsz = 0
 e zign.mincc = 0
 fs sign
-e zign.bytes = true
-e zign.graph = false
+e zign.match.bytes = true
+e zign.match.graph = false
 z/
 f~sign.bytes.sym.print?
 f~sign.graph.sym.print?
 f-*
-e zign.bytes = false
-e zign.graph = true
+e zign.match.bytes = false
+e zign.match.graph = true
 z/
 f~sign.bytes.sym.print?
 f~sign.graph.sym.print?
@@ -659,7 +659,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=zc + zign.{bytes,graph}
+NAME=zc + zign.match.{bytes,graph}
 FILE=bins/elf/analysis/zigs_stripped
 CMDS=<<EOF
 aa
@@ -668,14 +668,14 @@ za sym.print g cc=1 nbbs=1 edges=0 ebbs=1
 e zign.minsz = 0
 e zign.mincc = 0
 fs sign
-e zign.bytes = true
-e zign.graph = false
+e zign.match.bytes = true
+e zign.match.graph = false
 z. @ 0x400536
 f~sign.bytes.sym.print?
 f~sign.graph.sym.print?
 f-*
-e zign.bytes = false
-e zign.graph = true
+e zign.match.bytes = false
+e zign.match.graph = true
 z. @ 0x400536
 f~sign.bytes.sym.print?
 f~sign.graph.sym.print?
@@ -1774,7 +1774,7 @@ za main t func.sym.new_function_name.ret=int func.sym.new_function_name.args=2 f
 za main n sym.new_function_name
 s main
 af
-e zign.offset = true
+e zign.match.offset = true
 z.
 afs
 afn
