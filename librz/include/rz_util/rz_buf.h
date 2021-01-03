@@ -45,6 +45,7 @@ struct rz_buf_t {
 	bool readonly;
 	int Oxff_priv;
 	int refctr;
+	int fd;
 };
 
 // XXX: this should not be public
@@ -67,7 +68,7 @@ RZ_API RzBuffer *rz_buf_new_with_buf(RzBuffer *b);
 RZ_API RzBuffer *rz_buf_new_slurp(const char *file);
 RZ_API RzBuffer *rz_buf_new_slice(RzBuffer *b, ut64 offset, ut64 size);
 RZ_API RzBuffer *rz_buf_new_empty(ut64 len);
-RZ_API RzBuffer *rz_buf_new_mmap(const char *file, int flags);
+RZ_API RzBuffer *rz_buf_new_mmap(const char *file, int flags, int mode);
 RZ_API RzBuffer *rz_buf_new_sparse(ut8 Oxff);
 
 /* methods */

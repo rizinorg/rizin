@@ -1,5 +1,6 @@
 #include <tree_sitter/parser.h>
 #include <ctype.h>
+#include <wctype.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -61,7 +62,7 @@ static bool is_special_start(const int32_t ch) {
 }
 
 static bool is_start_of_command(const int32_t ch) {
-	return isalpha (ch) || ch == '$' || ch == '?' || ch == ':' || ch == '+' ||
+	return iswalpha (ch) || ch == '$' || ch == '?' || ch == ':' || ch == '+' ||
 		ch == '=' || ch == '/' || ch == '_' || ch == '#' || ch == '\\' ||
 		ch == '-' || ch == '<' || ch == '&' || is_special_start (ch);
 }
@@ -78,7 +79,7 @@ static bool is_mid_command(const char *res, int len, const int32_t ch) {
 	} else if (res[0] == '<') {
 		return ch == '?';
 	}
-	return isalnum (ch) || ch == '$' || ch == '?' || ch == '.' || ch == '!' ||
+	return iswalnum (ch) || ch == '$' || ch == '?' || ch == '.' || ch == '!' ||
 		ch == ':' || ch == '+' || ch == '=' || ch == '/' || ch == '*' ||
 		ch == '-' || ch == ',' || ch == '&' || ch == '_' ||
 		(is_interpret_cmd (res) && ch == '(') ||
@@ -86,7 +87,7 @@ static bool is_mid_command(const char *res, int len, const int32_t ch) {
 }
 
 static bool is_concat(const int32_t ch) {
-	return ch != '\0' && !isspace(ch) && ch != '#' && ch != '@' &&
+	return ch != '\0' && !iswspace(ch) && ch != '#' && ch != '@' &&
 		ch != '|' && ch != '>' && ch != ';' &&
 		ch != ')' && ch != '`' && ch != '~' && ch != '\\';
 }
@@ -113,16 +114,16 @@ static bool scan_number(TSLexer *lexer, const bool *valid_symbols) {
 	}
 
 	// skip spaces at the beginning
-	while (isspace (lexer->lookahead)) {
+	while (iswspace (lexer->lookahead)) {
 		lexer->advance (lexer, true);
 	}
 
-	if (!isdigit (lexer->lookahead)) {
+	if (!iswdigit (lexer->lookahead)) {
 		return false;
 	}
 	lexer->advance (lexer, false);
 	for (;;) {
-		if (isdigit (lexer->lookahead)) {
+		if (iswdigit (lexer->lookahead)) {
 			lexer->advance (lexer, false);
 		} else if (lexer->lookahead != '>') {
 			return false;
@@ -155,7 +156,7 @@ bool tree_sitter_rzcmd_external_scanner_scan(void *payload, TSLexer *lexer, cons
 		char res[CMD_IDENTIFIER_MAX_LENGTH + 1];
 		int i_res = 0;
 
-		while (isspace (lexer->lookahead)) {
+		while (iswspace (lexer->lookahead)) {
 			lexer->advance (lexer, true);
 		}
 
@@ -164,7 +165,7 @@ bool tree_sitter_rzcmd_external_scanner_scan(void *payload, TSLexer *lexer, cons
 		}
 		res[i_res++] = lexer->lookahead;
 		lexer->advance (lexer, false);
-		while (i_res < CMD_IDENTIFIER_MAX_LENGTH && is_mid_command (res, i_res, lexer->lookahead)) {
+		while (lexer->lookahead && i_res < CMD_IDENTIFIER_MAX_LENGTH && is_mid_command (res, i_res, lexer->lookahead)) {
 			if (lexer->lookahead == ESCAPE_CHAR) {
 				// ignore escape char and just get the next one, whatever it is
 				lexer->advance (lexer, false);
