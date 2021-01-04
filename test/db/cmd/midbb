@@ -15,70 +15,70 @@ pD 0x560eb3-$$
 EOF
 EXPECT=<<EOF
 / 6412: fcn.00560e67 (int32_t arg_0h);
-|           0x00560e67      push esi
-|       ,=< 0x00560e68      jmp 0x560e7d
-        |   0x00560e6d      push ecx
-        |   0x00560e6e      in eax, 0xd6
-        |   0x00560e70      sbb eax, 0x5ceea31
-        |   0x00560e75      push es
-        |   0x00560e76      cmp edx, esp
-        |   0x00560e78      aam 0x1b
-        |   0x00560e7a  ~   add byte [ebp + 0x52505e96], al
-|       `-> 0x00560e7d      pop esi
-|           0x00560e7e      push eax
-|           0x00560e7f      push edx
-|       ,=< 0x00560e80      jmp 0x560e96
-        |   0x00560e85      mov ebx, 0x4fd160dd
-        |   0x00560e8a      in al, dx
-        |   0x00560e8b      mov esp, 0x60bdf441
+|           0x00560e67      push  esi
+|       ,=< 0x00560e68      jmp   0x560e7d
+        |   0x00560e6d      push  ecx
+        |   0x00560e6e      in    eax, 0xd6
+        |   0x00560e70      sbb   eax, 0x5ceea31
+        |   0x00560e75      push  es
+        |   0x00560e76      cmp   edx, esp
+        |   0x00560e78      aam   0x1b
+        |   0x00560e7a  ~   add   byte [ebp + 0x52505e96], al
+|       `-> 0x00560e7d      pop   esi
+|           0x00560e7e      push  eax
+|           0x00560e7f      push  edx
+|       ,=< 0x00560e80      jmp   0x560e96
+        |   0x00560e85      mov   ebx, 0x4fd160dd
+        |   0x00560e8a      in    al, dx
+        |   0x00560e8b      mov   esp, 0x60bdf441
         |   0x00560e90      lodsd eax, dword [esi]
-       ,==< 0x00560e91      ja 0x560ed9
+       ,==< 0x00560e91      ja    0x560ed9
        ||   0x00560e93      aaa
        ||   0x00560e94      sahf
-       ||   0x00560e95  ~   mov edx, 0x14e9310f
+       ||   0x00560e95  ~   mov   edx, 0x14e9310f
 |      |`-> 0x00560e96      rdtsc
-|      |    0x00560e98      jmp 0x560eb1
-       |    0x00560e9d      test al, 0x36
-       |    0x00560e9f      fcom qword [edx + 0x64]
+|      |    0x00560e98      jmp   0x560eb1
+       |    0x00560e9d      test  al, 0x36
+       |    0x00560e9f      fcom  qword [edx + 0x64]
        |    0x00560ea2      xlatb
-       |    0x00560ea3      push 0x27
-       |    0x00560ea5      sub esp, edx
-       |    0x00560ea7      mov eax, dword [0xe8c1cf5d]
-       |,=< 0x00560eac      jle 0x560f29
-       ||   0x00560eae      inc ecx
-       ||   0x00560eaf  ~   mov byte [eax + 0x5a], dl
-|      ||   0x00560eb1      pop edx
-|      ||   0x00560eb2      pop eax
+       |    0x00560ea3      push  0x27
+       |    0x00560ea5      sub   esp, edx
+       |    0x00560ea7      mov   eax, dword [0xe8c1cf5d]
+       |,=< 0x00560eac      jle   0x560f29
+       ||   0x00560eae      inc   ecx
+       ||   0x00560eaf  ~   mov   byte [eax + 0x5a], dl
+|      ||   0x00560eb1      pop   edx
+|      ||   0x00560eb2      pop   eax
 
 / 6412: fcn.00560e67 (int32_t arg_0h);
-|           0x00560e67      push esi
-|       ,=< 0x00560e68      jmp 0x560e7d
-        |   0x00560e6d      push ecx
-        |   0x00560e6e      in eax, 0xd6
-        |   0x00560e70      sbb eax, 0x5ceea31
-        |   0x00560e75      push es
-        |   0x00560e76      cmp edx, esp
-        |   0x00560e78      aam 0x1b
-        |   0x00560e7a      add byte [ebp + 0x52505e96], al
-|       ,=< 0x00560e80      jmp 0x560e96
-        |   0x00560e85      mov ebx, 0x4fd160dd
-        |   0x00560e8a      in al, dx
-        |   0x00560e8b      mov esp, 0x60bdf441
+|           0x00560e67      push  esi
+|       ,=< 0x00560e68      jmp   0x560e7d
+        |   0x00560e6d      push  ecx
+        |   0x00560e6e      in    eax, 0xd6
+        |   0x00560e70      sbb   eax, 0x5ceea31
+        |   0x00560e75      push  es
+        |   0x00560e76      cmp   edx, esp
+        |   0x00560e78      aam   0x1b
+        |   0x00560e7a      add   byte [ebp + 0x52505e96], al
+|       ,=< 0x00560e80      jmp   0x560e96
+        |   0x00560e85      mov   ebx, 0x4fd160dd
+        |   0x00560e8a      in    al, dx
+        |   0x00560e8b      mov   esp, 0x60bdf441
         |   0x00560e90      lodsd eax, dword [esi]
-       ,==< 0x00560e91      ja 0x560ed9
+       ,==< 0x00560e91      ja    0x560ed9
        ||   0x00560e93      aaa
        ||   0x00560e94      sahf
-       ||   0x00560e95      mov edx, 0x14e9310f
-|      |    0x00560e9a      add byte [eax], al
-|      |    0x00560e9c      add byte [eax + 0x6452dc36], ch
+       ||   0x00560e95      mov   edx, 0x14e9310f
+|      |    0x00560e9a      add   byte [eax], al
+|      |    0x00560e9c      add   byte [eax + 0x6452dc36], ch
        |    0x00560ea2      xlatb
-       |    0x00560ea3      push 0x27
-       |    0x00560ea5      sub esp, edx
-       |    0x00560ea7      mov eax, dword [0xe8c1cf5d]
-       |,=< 0x00560eac      jle 0x560f29
-       ||   0x00560eae      inc ecx
-       ||   0x00560eaf      mov byte [eax + 0x5a], dl
-|      ||   0x00560eb2      pop eax
+       |    0x00560ea3      push  0x27
+       |    0x00560ea5      sub   esp, edx
+       |    0x00560ea7      mov   eax, dword [0xe8c1cf5d]
+       |,=< 0x00560eac      jle   0x560f29
+       ||   0x00560eae      inc   ecx
+       ||   0x00560eaf      mov   byte [eax + 0x5a], dl
+|      ||   0x00560eb2      pop   eax
 EOF
 RUN
 
@@ -610,22 +610,22 @@ fm 0x560e97 @ sym.dummy
 pd 3 @ 0x560e95
 EOF
 EXPECT=<<EOF
-            0x00560e7a  ~   0085965e5052   add byte [ebp + 0x52505e96], al
+            0x00560e7a  ~   0085965e5052   add   byte [ebp + 0x52505e96], al
 |           ;-- sym.dummy:
-|           0x00560e7d      5e             pop esi
+|           0x00560e7d      5e             pop   esi
 
-            0x00560e7a  ~   0085965e5052   add byte [ebp + 0x52505e96], al
+            0x00560e7a  ~   0085965e5052   add   byte [ebp + 0x52505e96], al
             ;-- sym.dummy:
-            0x00560e7c      96             xchg eax, esi
-|           0x00560e7d      5e             pop esi
+            0x00560e7c      96             xchg  eax, esi
+|           0x00560e7d      5e             pop   esi
 
-            0x00560e95  ~   ba0f31e914     mov edx, 0x14e9310f
+            0x00560e95  ~   ba0f31e914     mov   edx, 0x14e9310f
 |           ;-- sym.dummy:
 |           0x00560e96      0f31           rdtsc
 
-            0x00560e95  ~   ba0f31e914     mov edx, 0x14e9310f
+            0x00560e95  ~   ba0f31e914     mov   edx, 0x14e9310f
 |           0x00560e96  ~   0f31           rdtsc
 |           ;-- sym.dummy:
-|           0x00560e97      31e9           xor ecx, ebp
+|           0x00560e97      31e9           xor   ecx, ebp
 EOF
 RUN

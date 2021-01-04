@@ -31,16 +31,16 @@ s 0
 pd 8
 EOF
 EXPECT=<<EOF
-            0x00000000      4157           push r15
+            0x00000000      4157           push  r15
 (short)
 0x00000002 = 0x5641
-            0x00000004      4155           push r13
-            0x00000006      4154           push r12
+            0x00000004      4155           push  r13
+            0x00000006      4154           push  r12
 (int)
 0x00000008 = 1442089289
-            0x0000000c      53             push rbx
-            0x0000000d      89fd           mov ebp, edi
-            0x0000000f      4881eca80300.  sub rsp, 0x3a8
+            0x0000000c      53             push  rbx
+            0x0000000d      89fd           mov   ebp, edi
+            0x0000000f      4881eca80300.  sub   rsp, 0x3a8
 EOF
 RUN
 
@@ -121,17 +121,17 @@ pdr~JNI?
 EOF
 EXPECT=<<EOF
 | ; var struct JNINativeInterface @ sp+0x12c
-| 0x00000f74      4b93           str r3, [JNINativeInterface]
-| 0x00000f76      039b           ldr r3, [var_134h]                    ; JNINativeInterface.reserved0
-| 0x00000f7e      d358           ldr r3, [r2, r3]                      ; JNINativeInterface.GetStringUTFChars
-| 0x00000f82      019a           ldr r2, [var_13ch]                    ; JNINativeInterface.reserved0
-| 0x0000100e      d358           ldr r3, [r2, r3]                      ; JNINativeInterface.GetStringLength
-| 0x00001012      019a           ldr r2, [var_13ch]                    ; JNINativeInterface.reserved0
-| 0x00001066      d258           ldr r2, [r2, r3]                      ; JNINativeInterface.NewStringUTF
-| 0x00001114      d258           ldr r2, [r2, r3]                      ; JNINativeInterface.NewStringUTF
-| 0x0000112e      d258           ldr r2, [r2, r3]                      ; JNINativeInterface.NewStringUTF
-| 0x00001144      4b9a           ldr r2, [JNINativeInterface]
-| 0x00001148      9a42           cmp r2, r3                            ; JNINativeInterface.reserved0
+| 0x00000f74      4b93           str   r3, [JNINativeInterface]
+| 0x00000f76      039b           ldr   r3, [var_134h]                  ; JNINativeInterface.reserved0
+| 0x00000f7e      d358           ldr   r3, [r2, r3]                    ; JNINativeInterface.GetStringUTFChars
+| 0x00000f82      019a           ldr   r2, [var_13ch]                  ; JNINativeInterface.reserved0
+| 0x0000100e      d358           ldr   r3, [r2, r3]                    ; JNINativeInterface.GetStringLength
+| 0x00001012      019a           ldr   r2, [var_13ch]                  ; JNINativeInterface.reserved0
+| 0x00001066      d258           ldr   r2, [r2, r3]                    ; JNINativeInterface.NewStringUTF
+| 0x00001114      d258           ldr   r2, [r2, r3]                    ; JNINativeInterface.NewStringUTF
+| 0x0000112e      d258           ldr   r2, [r2, r3]                    ; JNINativeInterface.NewStringUTF
+| 0x00001144      4b9a           ldr   r2, [JNINativeInterface]
+| 0x00001148      9a42           cmp   r2, r3                          ; JNINativeInterface.reserved0
 12
 EOF
 RUN
@@ -619,8 +619,8 @@ pd 2
 EOF
 EXPECT=<<EOF
 
-            0x00000000      082090e5       ldr r2, [r0, foo.c]
-            0x00000004      040081e5       str r0, [r1, foo.b]
+            0x00000000      082090e5       ldr   r2, [r0, foo.c]
+            0x00000004      040081e5       str   r0, [r1, foo.b]
 EOF
 RUN
 
@@ -639,9 +639,9 @@ pd 3
 EOF
 EXPECT=<<EOF
 
-            0x00000000      08007fac       sw ra, foo.c(v1)
-            0x00000004      04005380       lb s3, foo.b(v0)
-            0x00000008      0800538c       lw s3, foo.c(v0)
+            0x00000000      08007fac       sw    ra, foo.c(v1)
+            0x00000004      04005380       lb    s3, foo.b(v0)
+            0x00000008      0800538c       lw    s3, foo.c(v0)
 EOF
 RUN
 
@@ -662,10 +662,10 @@ pd 4
 EOF
 EXPECT=<<EOF
 
-            0x00000000      8b4004         mov eax, dword [eax + foo.b]
-            0x00000003      895104         mov dword [ecx + foo.b], edx
-            0x00000006      8d5008         lea edx, [eax + foo.c]
-            0x00000009      83780800       cmp dword [eax + foo.c], 0
+            0x00000000      8b4004         mov   eax, dword [eax + foo.b]
+            0x00000003      895104         mov   dword [ecx + foo.b], edx
+            0x00000006      8d5008         lea   edx, [eax + foo.c]
+            0x00000009      83780800       cmp   dword [eax + foo.c], 0
 EOF
 RUN
 
@@ -685,10 +685,10 @@ pdf~bar.
 EOF
 EXPECT=<<EOF
 
-|           0x00000007      488b5004       mov rdx, qword [rax + bar.b]
-|           0x0000000b      488b4808       mov rcx, qword [rax + bar.c]
-|           0x0000000f      483b5004       cmp rdx, qword [rax + bar.b]
-|           0x0000001d      48895808       mov qword [rax + bar.c], rbx
+|           0x00000007      488b5004       mov   rdx, qword [rax + bar.b]
+|           0x0000000b      488b4808       mov   rcx, qword [rax + bar.c]
+|           0x0000000f      483b5004       cmp   rdx, qword [rax + bar.b]
+|           0x0000001d      48895808       mov   qword [rax + bar.c], rbx
 EOF
 RUN
 
@@ -709,10 +709,10 @@ pdf~bar.
 EOF
 EXPECT=<<EOF
 
-|           0x00000007      488b5004       mov rdx, qword [rax + bar.b]
-|           0x0000000b      488b4808       mov rcx, qword [rax + bar.c]
-|           0x0000000f      483b5004       cmp rdx, qword [rax + bar.b]
-|           0x0000001d      48895808       mov qword [rax + bar.c], rbx
+|           0x00000007      488b5004       mov   rdx, qword [rax + bar.b]
+|           0x0000000b      488b4808       mov   rcx, qword [rax + bar.c]
+|           0x0000000f      483b5004       cmp   rdx, qword [rax + bar.b]
+|           0x0000001d      48895808       mov   qword [rax + bar.c], rbx
 EOF
 RUN
 
@@ -735,12 +735,12 @@ pdf
 EOF
 EXPECT=<<EOF
 / 33: fcn.00000000 ();
-|           0x00000000      48c7c0000100.  mov rax, 0x100
-|           0x00000007      488b5008       mov rdx, qword [rax + foo.c]
-|           0x0000000b      488b4804       mov rcx, qword [rax + foo.b]
-|           0x0000000f      48c7c0000200.  mov rax, 0x200
-|           0x00000016      488b5008       mov rdx, qword [rax + bar.z]
-|           0x0000001a      488b4804       mov rcx, qword [rax + bar.y]
+|           0x00000000      48c7c0000100.  mov   rax, 0x100
+|           0x00000007      488b5008       mov   rdx, qword [rax + foo.c]
+|           0x0000000b      488b4804       mov   rcx, qword [rax + foo.b]
+|           0x0000000f      48c7c0000200.  mov   rax, 0x200
+|           0x00000016      488b5008       mov   rdx, qword [rax + bar.z]
+|           0x0000001a      488b4804       mov   rcx, qword [rax + bar.y]
 |           0x0000001e      90             nop
 |           0x0000001f      90             nop
 \           0x00000020      c3             ret
@@ -761,13 +761,13 @@ EOF
 EXPECT=<<EOF
 
 |           ; var struct Books @ rbp-0xe0
-|           0x00000684      488d8520ffff.  lea rax, [Books]
-|           0x00000695      488910         mov qword [rax], rdx        ; Books.title
-|           0x00000698      488d8520ffff.  lea rax, [Books]
-|           0x000006ad      488908         mov qword [rax], rcx        ; Books.author
-|           0x000006b0      488d8520ffff.  lea rax, [Books]
-|           0x000006c5      488930         mov qword [rax], rsi        ; Books.subject
-|           0x000006d5      b800000000     mov eax, 0                  ; Books.subject
+|           0x00000684      488d8520ffff.  lea   rax, [Books]
+|           0x00000695      488910         mov   qword [rax], rdx      ; Books.title
+|           0x00000698      488d8520ffff.  lea   rax, [Books]
+|           0x000006ad      488908         mov   qword [rax], rcx      ; Books.author
+|           0x000006b0      488d8520ffff.  lea   rax, [Books]
+|           0x000006c5      488930         mov   qword [rax], rsi      ; Books.subject
+|           0x000006d5      b800000000     mov   eax, 0                ; Books.subject
 EOF
 RUN
 
@@ -786,9 +786,9 @@ pd 3
 EOF
 EXPECT=<<EOF
 
-|           0x000005a8      c70206000000   mov dword [edx], 6          ; Test.a
-|           0x000005ae      8b55f4         mov edx, dword [Test]       ; Test.a
-|           0x000005b1      c74204070000.  mov dword [edx + Test.b], 7
+|           0x000005a8      c70206000000   mov   dword [edx], 6        ; Test.a
+|           0x000005ae      8b55f4         mov   edx, dword [Test]     ; Test.a
+|           0x000005b1      c74204070000.  mov   dword [edx + Test.b], 7
 EOF
 RUN
 
@@ -810,7 +810,7 @@ EXPECT=<<EOF
 Books
 pf [50]z[50]z[100]z title author subject
 var union Books @ rbp-0x70
-|           0x000006d2      488d4590       lea rax, [Books]
+|           0x000006d2      488d4590       lea   rax, [Books]
 EOF
 RUN
 
@@ -1117,7 +1117,7 @@ EXPECT=<<EOF
 ; var char *var_8h @ rbp-0x8
 ; arg char *arg1 @ rdi
 ; arg uint32_t arg2 @ rsi
-0x0000068a      55             push rbp
+0x0000068a      55             push  rbp
 EOF
 RUN
 
@@ -1137,7 +1137,7 @@ EXPECT=<<EOF
 ; var int32_t var_4h @ ebp-0x4
 ; arg char *arg_8h @ ebp+0x8
 ; arg uint32_t arg_ch @ ebp+0xc
-0x0000054d      55             push ebp
+0x0000054d      55             push  ebp
 EOF
 RUN
 
@@ -1669,7 +1669,7 @@ foo3.bar
 foo4.bar
 foo5.bar
 =
-            0x00000000      c74004000000.  mov dword [rax + foo.bar], 0
+            0x00000000      c74004000000.  mov   dword [rax + foo.bar], 0
 EOF
 RUN
 

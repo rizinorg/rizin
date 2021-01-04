@@ -26,9 +26,9 @@ NAME=ELF: asm.flags.middle=0 + local symbols
 FILE=bins/elf/analysis/example.elf
 CMDS=e asm.flags.middle=0;e asm.bytes=true;pd 3 @ 0x356
 EXPECT=<<EOF
-        :   0x00000356      00f033f9       bl sym.app_uart_get
-        :   0x0000035a      0028           cmp r0, 0
-        `=< 0x0000035c      fad1           bne 0x354
+        :   0x00000356      00f033f9       bl    sym.app_uart_get
+        :   0x0000035a      0028           cmp   r0, 0
+        `=< 0x0000035c      fad1           bne   0x354
 EOF
 RUN
 
@@ -36,9 +36,9 @@ NAME=ELF: asm.flags.middle=1 + local symbols
 FILE=bins/elf/analysis/example.elf
 CMDS=e asm.flags.middle=1;e asm.bytes=true;pd 3 @ 0x356
 EXPECT=<<EOF
-        :   0x00000356      00f033f9       bl sym.app_uart_get
-        :   0x0000035a      0028           cmp r0, 0
-        `=< 0x0000035c      fad1           bne 0x354
+        :   0x00000356      00f033f9       bl    sym.app_uart_get
+        :   0x0000035a      0028           cmp   r0, 0
+        `=< 0x0000035c      fad1           bne   0x354
 EOF
 RUN
 
@@ -46,9 +46,9 @@ NAME=ELF: asm.flags.middle + local symbols
 FILE=bins/elf/analysis/example.elf
 CMDS=e asm.bytes=true; pd 3 @ 0x356;
 EXPECT=<<EOF
-        :   0x00000356      00f033f9       bl sym.app_uart_get
-        :   0x0000035a      0028           cmp r0, 0
-        `=< 0x0000035c      fad1           bne 0x354
+        :   0x00000356      00f033f9       bl    sym.app_uart_get
+        :   0x0000035a      0028           cmp   r0, 0
+        `=< 0x0000035c      fad1           bne   0x354
 EOF
 RUN
 
@@ -60,9 +60,9 @@ e asm.flags.middle=0
 pd 3 @ 0x356
 EOF
 EXPECT=<<EOF
-        :   0x00000356      00f033f9       bl sym.app_uart_get
-        :   0x0000035a      0028           cmp r0, 0
-        `=< 0x0000035c      fad1           bne 0x354
+        :   0x00000356      00f033f9       bl    sym.app_uart_get
+        :   0x0000035a      0028           cmp   r0, 0
+        `=< 0x0000035c      fad1           bne   0x354
 EOF
 RUN
 

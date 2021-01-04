@@ -322,10 +322,10 @@ wx 31ed4989d15e4889e2
 pd 4
 EOF
 EXPECT=<<EOF
-  0x00000000      31ed           xor ebp, ebp
-  0x00000002      49             dec ecx
-  0x00000003      89d1           mov ecx, edx
-  0x00000005      5e             pop esi
+  0x00000000      31ed           xor   ebp, ebp
+  0x00000002      49             dec   ecx
+  0x00000003      89d1           mov   ecx, edx
+  0x00000005      5e             pop   esi
 EOF
 RUN
 
@@ -342,11 +342,11 @@ wx 31ed4989d15e4889e2
 pd 4
 EOF
 EXPECT=<<EOF
-  0x00000000      31ed           xor ebp, ebp
-  0x00000002      49             dec ecx
-  0x00000003      89d1           mov ecx, edx
+  0x00000000      31ed           xor   ebp, ebp
+  0x00000002      49             dec   ecx
+  0x00000003      89d1           mov   ecx, edx
   ;-- mid.flag:
-  0x00000005      5e             pop esi
+  0x00000005      5e             pop   esi
 EOF
 RUN
 
@@ -363,11 +363,11 @@ wx 31ed4989d15e4889e2
 pd 4
 EOF
 EXPECT=<<EOF
-  0x00000000      31ed           xor ebp, ebp
-  0x00000002      49             dec ecx
-  0x00000003  ~   89d1           mov ecx, edx
+  0x00000000      31ed           xor   ebp, ebp
+  0x00000002      49             dec   ecx
+  0x00000003  ~   89d1           mov   ecx, edx
   ;-- mid.flag:
-  0x00000004      d15e48         rcr dword [esi + 0x48], 1
+  0x00000004      d15e48         rcr   dword [esi + 0x48], 1
 EOF
 RUN
 
@@ -385,12 +385,12 @@ f mid.flag2 = 9
 pd 6
 EOF
 EXPECT=<<EOF
-  0x00000000  ~   66b8eb05       mov ax, 0x5eb                         ; 1515
+  0x00000000  ~   66b8eb05       mov   ax, 0x5eb                       ; 1515
   ;-- mid.flag:
-  0x00000002      eb05           jmp mid.flag2
-  0x00000004      31c0           xor eax, eax
-  0x00000006      74f9           je 1
-  0x00000008  ~   e890909090     call 0x9090909d
+  0x00000002      eb05           jmp   mid.flag2
+  0x00000004      31c0           xor   eax, eax
+  0x00000006      74f9           je    1
+  0x00000008  ~   e890909090     call  0x9090909d
   ;-- mid.flag2:
   0x00000009      90             nop
 EOF

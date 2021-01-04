@@ -9,9 +9,9 @@ wx b8010000004839ca7f00
 pD -10 @ 0xa
 EOF
 EXPECT=<<EOF
-            0x00000000      b801000000     mov eax, 1
-            0x00000005      4839ca         cmp rdx, rcx
-        ,=< 0x00000008      7f00           jg 0xa
+            0x00000000      b801000000     mov   eax, 1
+            0x00000005      4839ca         cmp   rdx, rcx
+        ,=< 0x00000008      7f00           jg    0xa
 EOF
 RUN
 
@@ -26,9 +26,9 @@ wx b8010000004839ca7f00
 pD -10 @ 10
 EOF
 EXPECT=<<EOF
-            0x00000000      b801000000     mov eax, 1
-            0x00000005      4839ca         cmp rdx, rcx
-        ,=< 0x00000008      7f00           jg 0xa
+            0x00000000      b801000000     mov   eax, 1
+            0x00000005      4839ca         cmp   rdx, rcx
+        ,=< 0x00000008      7f00           jg    0xa
 EOF
 RUN
 
@@ -43,7 +43,7 @@ wx b8010000004839ca7f00
 pD 5
 EOF
 EXPECT=<<EOF
-            0x00000000      b801000000     mov eax, 1
+            0x00000000      b801000000     mov   eax, 1
 EOF
 RUN
 

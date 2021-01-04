@@ -16,7 +16,7 @@ e asm.calls = false
 pd 1 @ 0x0040128d
 EOF
 EXPECT=<<EOF
-               call dword [sym.imp.msvcrt.dll___set_app_type]
+               call  dword [sym.imp.msvcrt.dll___set_app_type]
 EOF
 RUN
 

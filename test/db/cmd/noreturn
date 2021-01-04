@@ -96,16 +96,16 @@ EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x40048d
 / 41: int main (int argc, char **argv, char **envp);
 |           ; var int64_t var_4h @ rbp-0x4
-|           0x00400566      55             push rbp
-|           0x00400567      4889e5         mov rbp, rsp
-|           0x0040056a      4883ec10       sub rsp, 0x10
-|           0x0040056e      837dfc00       cmp dword [var_4h], 0
-|       ,=< 0x00400572      740a           je 0x40057e
-|       |   0x00400574      bf00000000     mov edi, 0
-|       |   0x00400579      e8d2feffff     call sym.imp.exit           ; void exit(int status)
-|       `-> 0x0040057e      bf20064000     mov edi, str.hello          ; 0x400620 ; "hello"
-|           0x00400583      e8a8feffff     call sym.imp.puts           ; int puts(const char *s)
-|           0x00400588      b800000000     mov eax, 0
+|           0x00400566      55             push  rbp
+|           0x00400567      4889e5         mov   rbp, rsp
+|           0x0040056a      4883ec10       sub   rsp, 0x10
+|           0x0040056e      837dfc00       cmp   dword [var_4h], 0
+|       ,=< 0x00400572      740a           je    0x40057e
+|       |   0x00400574      bf00000000     mov   edi, 0
+|       |   0x00400579      e8d2feffff     call  sym.imp.exit          ; void exit(int status)
+|       `-> 0x0040057e      bf20064000     mov   edi, str.hello        ; 0x400620 ; "hello"
+|           0x00400583      e8a8feffff     call  sym.imp.puts          ; int puts(const char *s)
+|           0x00400588      b800000000     mov   eax, 0
 |           0x0040058d      c9             leave
 \           0x0040058e      c3             ret
 EOF
