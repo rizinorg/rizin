@@ -5567,7 +5567,7 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 					}
 				}
 				if (isValidMatch) {
-					cb (core, addr, value, vsize, hitctr, cb_user);
+					cb (core, addr, value, vsize, cb_user);
 					if (analStrings && stringAt (core, addr)) {
 						add_string_ref (mycore, addr, value);
 					}

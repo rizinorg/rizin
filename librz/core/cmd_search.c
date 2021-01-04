@@ -160,6 +160,7 @@ struct search_parameters {
 	RzList *boundaries;
 	const char *mode;
 	const char *cmd_hit;
+	PJ *pj;
 	int outmode; // 0 or RZ_MODE_RIZINCMD or RZ_MODE_JSON
 	bool inverse;
 	bool aes_search;
@@ -424,7 +425,6 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		char *s = NULL, *str = NULL, *p = NULL;
 		extra = (param->outmode == RZ_MODE_JSON)? 3: 1;
 		const char *type = "hexpair";
-		bool escaped = false;
 		ut8 *buf = malloc (keyword_len);
 		if (!buf) {
 			return 0;
@@ -440,25 +440,19 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 			type = "string";
 			rz_io_read_at (core->io, addr - prectx, (ut8 *) buf, len + (ctx * 2));
 			pre = getstring (buf, prectx);
-			wrd = rz_str_utf16_encode (buf + prectx, len);
 			pos = getstring (buf + prectx + len, ctx);
 			if (!pos) {
 				pos = strdup ("");
 			}
-			free (buf);
 			if (param->outmode == RZ_MODE_JSON) {
-				char *pre_esc = rz_str_escape (pre);
-				char *pos_esc = rz_str_escape (pos);
-				s = rz_str_newf ("%s%s%s", pre_esc, wrd, pos_esc);
-				escaped = true;
-				free (pre_esc);
-				free (pos_esc);
-			} else if (use_color) {
-				s = rz_str_newf (".%s"Color_YELLOW "%s"Color_RESET "%s.", pre, wrd, pos);
+				wrd = getstring (buf + prectx, len);
+				s = rz_str_newf ("%s%s%s", pre, wrd, pos);
 			} else {
-				// s = rz_str_newf ("\"%s"Color_INVERT"%s"Color_RESET"%s\"", pre, wrd, pos);
-				s = rz_str_newf ("\"%s%s%s\"", pre, wrd, pos);
+				wrd = rz_str_utf16_encode (buf + prectx, len);
+				s = rz_str_newf (use_color ? ".%s"Color_YELLOW "%s"Color_RESET "%s."
+					: "\"%s%s%s\"", pre, wrd, pos);
 			}
+			free (buf);
 			free (pre);
 			free (wrd);
 			free (pos);
@@ -495,15 +489,11 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		}
 
 		if (param->outmode == RZ_MODE_JSON) {
-			if (core->search->nhits >= 1) {
-				rz_cons_printf (",");
-			}
-			char *es = escaped ? s : rz_str_escape (s);
-			rz_cons_printf ("{\"offset\":%"PFMT64d ",\"type\":\"%s\",\"data\":\"%s\"}",
-					base_addr + addr, type, es);
-			if (!escaped) {
-				free (es);
-			}
+			pj_o (param->pj);
+			pj_kN (param->pj, "offset", base_addr + addr);
+			pj_ks (param->pj, "type", type);
+			pj_ks (param->pj, "data", s);
+			pj_end (param->pj);
 		} else {
 			rz_cons_printf ("0x%08"PFMT64x " %s%d_%d %s\n",
 				base_addr + addr, searchprefix, kw->kwidx, kw->count, s);
@@ -513,11 +503,10 @@ static int _cb_hit(RzSearchKeyword *kw, void *user, ut64 addr) {
 		free (str);
 	} else if (kw) {
 		if (param->outmode == RZ_MODE_JSON) {
-			if (core->search->nhits >= 1) {
-				rz_cons_printf (",");
-			}
-			rz_cons_printf ("{\"offset\": %"PFMT64d ",\"len\":%d}",
-				base_addr + addr, keyword_len);
+			pj_o (param->pj);
+			pj_kN (param->pj, "offset", base_addr + addr);
+			pj_ki (param->pj, "len", keyword_len);
+			pj_end (param->pj);
 		} else {
 			if (searchflags) {
 				rz_cons_printf ("%s%d_%d\n", searchprefix, kw->kwidx, kw->count);
@@ -1145,7 +1134,7 @@ ret:
 	return hitlist;
 }
 
-static void print_rop(RzCore *core, RzList *hitlist, char mode, bool *json_first) {
+static void print_rop(RzCore *core, RzList *hitlist, PJ *pj, int mode) {
 	const char *otype;
 	RzCoreAsmHit *hit = NULL;
 	RzListIter *iter;
@@ -1172,15 +1161,13 @@ static void print_rop(RzCore *core, RzList *hitlist, char mode, bool *json_first
 
 	switch (mode) {
 	case 'j':
-		// Handle comma between gadgets
-		if (*json_first) {
-			*json_first = 0;
-		} else {
-			rz_cons_strcat (",");
-		}
-		rz_cons_printf ("{\"opcodes\":[");
+		pj_o (pj);
+		pj_ka (pj, "opcodes");
 		rz_list_foreach (hitlist, iter, hit) {
 			ut8 *buf = malloc (hit->len);
+			if (!buf) {
+				return;
+			}
 			rz_io_read_at (core->io, hit->addr, buf, hit->len);
 			rz_asm_set_pc (core->rasm, hit->addr);
 			rz_asm_disassemble (core->rasm, &asmop, buf, hit->len);
@@ -1190,22 +1177,26 @@ static void print_rop(RzCore *core, RzList *hitlist, char mode, bool *json_first
 				char *opstr_n = rz_str_newf (" %s", RZ_STRBUF_SAFEGET (&analop.esil));
 				rz_list_append (ropList, (void *) opstr_n);
 			}
-			rz_cons_printf ("{\"offset\":%"PFMT64d ",\"size\":%d,"
-				"\"opcode\":\"%s\",\"type\":\"%s\"}%s",
-				hit->addr, hit->len, rz_asm_op_get_asm (&asmop),
-				rz_analysis_optype_to_string (analop.type),
-				iter->n? ",": "");
+			pj_o (pj);
+			pj_kN (pj, "offset", hit->addr);
+			pj_ki (pj, "size", hit->len);
+			pj_ks (pj, "opcode", rz_asm_op_get_asm (&asmop));
+			pj_ks (pj, "type", rz_analysis_optype_to_string (analop.type));
+			pj_end (pj);
 			free (buf);
 		}
+		pj_end (pj);
 		if (db && hit) {
 			const ut64 addr = ((RzCoreAsmHit *) hitlist->head->data)->addr;
 			// rz_cons_printf ("Gadget size: %d\n", (int)size);
 			const char *key = sdb_fmt ("0x%08"PFMT64x, addr);
 			rop_classify (core, db, ropList, key, size);
-			rz_cons_printf ("],\"retaddr\":%"PFMT64d ",\"size\":%d}", hit->addr, size);
-		} else if (hit) {
-			rz_cons_printf ("],\"retaddr\":%"PFMT64d ",\"size\":%d}", hit->addr, size);
 		}
+		if (hit) {
+			pj_kN (pj, "retaddr", hit->addr);
+			pj_ki (pj, "size", size);
+		}
+		pj_end (pj);
 		break;
 	case 'q':
 		// Print gadgets in a 'linear manner', each sequence
@@ -1315,7 +1306,6 @@ static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, cons
 	RzListIter *itermap = NULL;
 	char *tok, *gregexp = NULL;
 	char *grep_arg = NULL;
-	bool json_first = true;
 	char *rx = NULL;
 	int delta = 0;
 	ut8 *buf;
@@ -1387,7 +1377,7 @@ static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, cons
 		}
 	}
 	if (param->outmode == RZ_MODE_JSON) {
-		rz_cons_printf ("[");
+		pj_a (param->pj);
 	}
 	rz_cons_break_push (NULL, NULL);
 
@@ -1543,11 +1533,11 @@ static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, cons
 					}
 					if ((mode == 'q') && subchain) {
 						do {
-							print_rop (core, hitlist, mode, &json_first);
+							print_rop (core, hitlist, NULL, mode);
 							hitlist->head = hitlist->head->n;
 						} while (hitlist->head->n);
 					} else {
-						print_rop (core, hitlist, mode, &json_first);
+						print_rop (core, hitlist, param->pj, mode);
 					}
 					rz_list_free (hitlist);
 					if (max_count > 0) {
@@ -1570,7 +1560,7 @@ static int rz_core_search_rop(RzCore *core, RzInterval search_itv, int opt, cons
 	rz_cons_break_pop ();
 
 	if (param->outmode == RZ_MODE_JSON) {
-		rz_cons_printf ("]\n");
+		pj_end (param->pj);
 	}
 bad:
 	rz_list_free (rx_list);
@@ -1603,11 +1593,9 @@ static void do_esil_search(RzCore *core, struct search_parameters *param, const 
 	if (input[0] != 'E') {
 		return;
 	}
-	PJ *pj = NULL;
 	if (input[1] == 'j') { // "/Ej"
-		// BUGGY and dupe not using pj, param->outmode = RZ_MODE_JSON;
-		pj = pj_new ();
-		pj_a (pj);
+		pj_a (param->pj);
+		param->outmode = RZ_MODE_JSON;
 		input++;
 	}
 	if (input[1] != ' ') { // "/E?"
@@ -1683,7 +1671,7 @@ static void do_esil_search(RzCore *core, struct search_parameters *param, const 
 				if (nres) {
 					eprintf ("hits: %d\r", kw.count);
 					hit_happens = true;
-					if (!pj) {
+					if (param->outmode != RZ_MODE_JSON) {
 						if (!_cb_hit (&kw, param, addr)) {
 							free (res);
 							break;
@@ -1705,11 +1693,11 @@ static void do_esil_search(RzCore *core, struct search_parameters *param, const 
 			free (res);
 
 			if (hit_happens) {
-				if (pj) {
-					pj_o (pj);
-					pj_kn (pj, "addr", addr);
-					pj_kn (pj, "value", nres);
-					pj_end (pj);
+				if (param->outmode == RZ_MODE_JSON) {
+					pj_o (param->pj);
+					pj_kn (param->pj, "addr", addr);
+					pj_kn (param->pj, "value", nres);
+					pj_end (param->pj);
 				}
 				hit_combo++;
 				if (hit_combo > hit_combo_limit) {
@@ -1724,11 +1712,8 @@ static void do_esil_search(RzCore *core, struct search_parameters *param, const 
 		rz_cons_break_pop ();
 	}
 	rz_cons_clear_line (1);
-	if (pj) {
-		pj_end (pj);
-		char *s = pj_drain (pj);
-		rz_cons_printf ("%s\n", s);
-		free (s);
+	if (param->outmode == RZ_MODE_JSON) {
+		pj_end (param->pj);
 	}
 }
 
@@ -1980,7 +1965,6 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 	int mode = 0;
 	int kwidx = core->search->n_kws;
 	int i, ret, count = 0;
-	bool firstItem = true;
 
 	while (*input && *input != ' ') {
 		switch (*input) {
@@ -2043,7 +2027,7 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 		return true;
 	}
 	if (mode == 'j') {
-		rz_cons_printf ("[");
+		pj_a (param->pj);
 	}
 	input = rz_str_trim_head_ro (input);
 	rz_cons_break_push (NULL, NULL);
@@ -2103,9 +2087,11 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 					char *opstr = rz_core_op_str (core, at);
 					switch (mode) {
 					case 'j':
-						rz_cons_printf ("%s{\"addr\":%"PFMT64d ",\"size\":%d,\"opstr\":\"%s\"}",
-							firstItem? "": ",",
-							at, ret, opstr);
+						pj_o (param->pj);
+						pj_kN (param->pj, "addr", at);
+						pj_ki (param->pj, "size", ret);
+						pj_ks (param->pj, "opstr", opstr);
+						pj_end (param->pj);
 						break;
 					case 'q':
 						rz_cons_printf ("0x%08"PFMT64x "\n", at);
@@ -2136,7 +2122,6 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 					if (search->maxhits && count >= search->maxhits) {
 						goto done;
 					}
-					firstItem = false;
 				}
 				int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
 				if (inc < 0) {
@@ -2149,7 +2134,7 @@ static bool do_analysis_search(RzCore *core, struct search_parameters *param, co
 	}
 done:
 	if (mode == 'j') {
-		rz_cons_println ("]\n");
+		pj_end (param->pj);
 	}
 	rz_cons_break_pop ();
 	return false;
@@ -2250,7 +2235,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 	maxhits = (int) rz_config_get_i (core->config, "search.maxhits");
 	filter = (int) rz_config_get_i (core->config, "asm.sub.names");
 	if (param->outmode == RZ_MODE_JSON) {
-		rz_cons_print ("[");
+		pj_a (param->pj);
 	}
 	rz_cons_break_push (NULL, NULL);
 	if (everyByte) {
@@ -2281,12 +2266,11 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 				}
 				switch (param->outmode) {
 				case RZ_MODE_JSON:
-					if (count > 0) {
-						rz_cons_printf (",");
-					}
-					rz_cons_printf (
-						"{\"offset\":%"PFMT64d ",\"len\":%d,\"code\":\"%s\"}",
-						hit->addr, hit->len, hit->code);
+					pj_o (param->pj);
+					pj_kN (param->pj, "offset", hit->addr);
+					pj_ki (param->pj, "len", hit->len);
+					pj_ks (param->pj, "code", hit->code);
+					pj_end (param->pj);
 					break;
 				case RZ_MODE_RIZINCMD:
 					rz_cons_printf ("f %s%d_%i = 0x%08"PFMT64x "\n",
@@ -2322,7 +2306,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 		}
 	}
 	if (param->outmode == RZ_MODE_JSON) {
-		rz_cons_printf ("]");
+		pj_end (param->pj);
 	}
 	rz_cons_break_pop ();
 }
@@ -2333,7 +2317,7 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 	RzSearch *search = core->search;
 
 	if (param->outmode == RZ_MODE_JSON) {
-		rz_cons_printf ("[");
+		pj_a (param->pj);
 	}
 	RzListIter *iter;
 	RzIOMap *map;
@@ -2439,14 +2423,13 @@ static void do_string_search(RzCore *core, RzInterval search_itv, struct search_
 	}
 
 	if (param->outmode == RZ_MODE_JSON) {
-		rz_cons_printf ("]");
+		pj_end (param->pj);
 	}
 }
 
-static void rop_kuery(void *data, const char *input) {
+static void rop_kuery(void *data, const char *input, PJ *pj) {
 	RzCore *core = (RzCore *) data;
 	Sdb *db_rop = sdb_ns (core->sdb, "rop", false);
-	bool json_first = true;
 	SdbListIter *sdb_iter, *it;
 	SdbList *sdb_list;
 	SdbNs *ns;
@@ -2468,7 +2451,8 @@ static void rop_kuery(void *data, const char *input) {
 		}
 		break;
 	case 'j':
-		rz_cons_print ("{\"gadgets\":[");
+		pj_o (pj);
+		pj_ka (pj, "gadgets");
 		ls_foreach (db_rop->ns, it, ns) {
 			sdb_list = sdb_foreach_list (ns->sdb, false);
 			ls_foreach (sdb_list, sdb_iter, kv) {
@@ -2480,20 +2464,20 @@ static void rop_kuery(void *data, const char *input) {
 					tok = strdup ("NOP");
 					flag = true;
 				}
-				if (json_first) {
-					json_first = false;
-				} else {
-					rz_cons_print (",");
-				}
-				rz_cons_printf ("{\"address\":%s, \"size\":%s, \"type\":\"%s\", \"effect\":\"%s\"}",
-					sdbkv_key (kv), size, ns->name, tok);
+				pj_o (pj);
+				pj_ks (pj, "address", sdbkv_key (kv));
+				pj_ks (pj, "size", size);
+				pj_ks (pj, "type", ns->name);
+				pj_ks (pj, "effect", tok);
+				pj_end (pj);
 				free (dup);
 				if (flag) {
 					free (tok);
 				}
 			}
 		}
-		rz_cons_printf ("]}\n");
+		pj_end (pj);
+		pj_end (pj);
 		break;
 	case ' ':
 		if (!strcmp (input + 1, "nop")) {
@@ -2601,7 +2585,7 @@ static bool isArm(RzCore *core) {
 	return false;
 }
 
-void _CbInRangeSearchV(RzCore *core, ut64 from, ut64 to, int vsize, int count, void *user) {
+void _CbInRangeSearchV(RzCore *core, ut64 from, ut64 to, int vsize, void *user) {
 	struct search_parameters *param = user;
 	bool isarm = isArm (core);
 	// this is expensive operation that could be cached but is a callback
@@ -2615,11 +2599,10 @@ void _CbInRangeSearchV(RzCore *core, ut64 from, ut64 to, int vsize, int count, v
 	if (param->outmode != RZ_MODE_JSON) {
 		rz_cons_printf ("0x%"PFMT64x ": 0x%"PFMT64x"\n", from, to);
 	} else {
-		if (count >= 1) {
-			rz_cons_printf (",");
-		}
-		rz_cons_printf ("{\"offset\":%"PFMT64d ",\"value\":%"PFMT64d "}",
-				from, to);
+		pj_o (param->pj);
+		pj_kN (param->pj, "offset", from);
+		pj_kN (param->pj, "value", to);
+		pj_end (param->pj);
 	}
 	rz_core_cmdf (core, "f %s.value.0x%08"PFMT64x" %d = 0x%08"PFMT64x" \n", prefix, to, vsize, to); // flag at value of hit
 	rz_core_cmdf (core, "f %s.offset.0x%08"PFMT64x" %d = 0x%08"PFMT64x " \n", prefix, from, vsize, from); // flag at offset of hit
@@ -2996,6 +2979,7 @@ RZ_IPI int rz_cmd_search(void *data, const char *input) {
 		param.outmode = RZ_MODE_JSON;
 		param_offset++;
 	}
+	param.pj = rz_core_pj_new (core);
 
 reread:
 	switch (*input) {
@@ -3058,7 +3042,7 @@ reread:
 			if (input[2] == '?') {
 				rz_core_cmd_help (core, help_msg_slash_Rk);
 			} else {
-				rop_kuery (core, input + 2);
+				rop_kuery (core, input + 2, param.pj);
 			}
 		} else {
 			Sdb *gadgetSdb = sdb_ns (core->sdb, "gadget_sdb", false);
@@ -3080,7 +3064,6 @@ reread:
 					ut64 addr;
 					int opsz;
 					int mode = 0;
-					bool json_first = true;
 
 					// Options, like JSON, linear, ...
 					if (input + 1) {
@@ -3099,7 +3082,7 @@ reread:
 						rz_list_append (hitlist, hit);
 					} while (*(s = strchr (s, ')') + 1) != '\0');
 
-					print_rop (core, hitlist, mode, &json_first);
+					print_rop (core, hitlist, param.pj, mode);
 					rz_list_free (hitlist);
 				}
 			}
@@ -3369,7 +3352,7 @@ reread:
 			RzListIter *iter;
 			RzIOMap *map;
 			if (param.outmode == RZ_MODE_JSON) {
-				rz_cons_printf ("[");
+				pj_a (param.pj);
 			}
 			rz_core_magic_reset (core);
 			int maxHits = rz_config_get_i (core->config, "search.maxhits");
@@ -3383,7 +3366,7 @@ reread:
 					if (rz_cons_is_breaked ()) {
 						break;
 					}
-					ret = rz_core_magic_at (core, file, addr, 99, false, param.outmode == RZ_MODE_JSON, &hits);
+					ret = rz_core_magic_at (core, file, addr, 99, false, param.outmode == RZ_MODE_JSON ? param.pj : NULL, &hits);
 					if (ret == -1) {
 						// something went terribly wrong.
 						break;
@@ -3397,7 +3380,7 @@ reread:
 				rz_cons_break_pop ();
 			}
 			if (param.outmode == RZ_MODE_JSON) {
-				rz_cons_printf ("]");
+				pj_end (param.pj);
 			}
 		} else {
 			eprintf ("Usage: /m [file]\n");
@@ -3439,7 +3422,7 @@ reread:
 			const char *num_str = input + param_offset + 1;
 			if (vsize && input[2] && num_str) {
 				if (param.outmode == RZ_MODE_JSON) {
-					rz_cons_printf ("[");
+					pj_a (param.pj);
 				}
 				char *w = strchr (num_str, ' ');
 				if (w) {
@@ -3461,7 +3444,7 @@ reread:
 					}
 				}
 				if (param.outmode == RZ_MODE_JSON) {
-					rz_cons_printf ("]");
+					pj_end (param.pj);
 				}
 			}
 			if (err) {
@@ -3891,8 +3874,9 @@ beach:
 	core->in_search = false;
 	rz_flag_space_pop (core->flags);
 	if (param.outmode == RZ_MODE_JSON) {
-		rz_cons_newline ();
+		rz_cons_println (pj_string (param.pj));
 	}
+	pj_free (param.pj);
 	rz_list_free (param.boundaries);
 	rz_search_kw_reset (search);
 	return ret;
