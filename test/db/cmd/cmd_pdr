@@ -8,7 +8,7 @@ e asm.lines.fcn=false
 wx 48c7c01000000075084805b8000000eb064805e60000004889c7c3
 af
 e asm.emu=true
-pdr~add rax[6]
+pdr~add   rax[6]
 EOF
 EXPECT=<<EOF
 0xc8
@@ -27,7 +27,7 @@ af
 e asm.lines.fcn=false
 e asm.emu=true
 e analysis.gp=0xabc
-pdr~addu t0[7]
+pdr~addu  t0[7]
 EOF
 EXPECT=<<EOF
 0x17b8
