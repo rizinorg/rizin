@@ -5,10 +5,11 @@ e asm.arch=x86
 e asm.bits=64
 e asm.bytes=true
 e asm.lines.fcn=false
+e asm.tabs=0
 wx 48c7c01000000075084805b8000000eb064805e60000004889c7c3
 af
 e asm.emu=true
-pdr~add   rax[6]
+pdr~add rax[6]
 EOF
 EXPECT=<<EOF
 0xc8
@@ -25,9 +26,10 @@ e analysis.gpfixed=false
 wx 10000824cc009c270500281500000000200c082521401c010a00000800000000300c082521401c010800e003
 af
 e asm.lines.fcn=false
+e asm.tabs=0
 e asm.emu=true
 e analysis.gp=0xabc
-pdr~addu  t0[7]
+pdr~addu t0[7]
 EOF
 EXPECT=<<EOF
 0x17b8
