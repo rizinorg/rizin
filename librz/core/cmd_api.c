@@ -466,15 +466,11 @@ static void get_minmax_argc(RzCmdDesc *cd, int *min_argc, int *max_argc) {
 		}
 		(*min_argc)++;
 		(*max_argc)++;
-		switch (arg->type) {
-		case RZ_CMD_ARG_TYPE_CMD_LAST:
-		case RZ_CMD_ARG_TYPE_STRING_LAST:
+		if (arg->flags & RZ_CMD_ARG_FLAG_LAST) {
 			return;
-		case RZ_CMD_ARG_TYPE_ARRAY_STRING:
+		} else if (arg->flags & RZ_CMD_ARG_FLAG_ARRAY) {
 			*max_argc = INT_MAX;
 			return;
-		default:
-			break;
 		}
 		arg++;
 	}
@@ -484,12 +480,9 @@ static void get_minmax_argc(RzCmdDesc *cd, int *min_argc, int *max_argc) {
 			continue;
 		}
 		(*max_argc)++;
-		switch (arg->type) {
-		case RZ_CMD_ARG_TYPE_ARRAY_STRING:
+		if (arg->flags & RZ_CMD_ARG_FLAG_ARRAY) {
 			*max_argc = INT_MAX;
 			return;
-		default:
-			break;
 		}
 		arg++;
 	}
@@ -511,7 +504,7 @@ static RzOutputMode cd_suffix2mode(RzCmdDesc *cd, const char *cmdid) {
  * For example:
  * `cmdid pd 10` would be considered as having 2 arguments, "pd" and "10".
  * However, if <cmdid> was defined to have as argument
- * RZ_CMD_ARG_TYPE_CMD_LAST, we want to group "pd" and "10" in one single
+ * RZ_CMD_ARG_FLAG_LAST, we want to group "pd" and "10" in one single
  * argument "pd 10" and pass that to <cmdid> handler.
  */
 static void args_preprocessing(RzCmdDesc *cd, RzCmdParsedArgs *args) {
@@ -519,19 +512,19 @@ static void args_preprocessing(RzCmdDesc *cd, RzCmdParsedArgs *args) {
 	size_t i, j;
 	for (arg = cd->help->args, i = 1; arg && arg->name && i < args->argc - 1; arg++, i++) {
 		char *tmp;
-		switch (arg->type) {
-		case RZ_CMD_ARG_TYPE_CMD_LAST:
-			for (j = i; j < args->argc; j++) {
-				char *s = rz_cmd_escape_arg (args->argv[j], RZ_CMD_ESCAPE_ONE_ARG);
-				if (strcmp (s, args->argv[j])) {
-					free (args->argv[j]);
-					args->argv[j] = s;
-				} else {
-					free (s);
+		if (arg->flags & RZ_CMD_ARG_FLAG_LAST) {
+			if (arg->type == RZ_CMD_ARG_TYPE_CMD) {
+				for (j = i; j < args->argc; j++) {
+					char *s = rz_cmd_escape_arg (args->argv[j], RZ_CMD_ESCAPE_ONE_ARG);
+					if (strcmp (s, args->argv[j])) {
+						free (args->argv[j]);
+						args->argv[j] = s;
+					} else {
+						free (s);
+					}
 				}
 			}
-			// fallthrough
-		case RZ_CMD_ARG_TYPE_STRING_LAST:
+
 			tmp = rz_str_array_join ((const char **)&args->argv[i], args->argc - i, " ");
 			if (!tmp) {
 				return;
@@ -542,8 +535,6 @@ static void args_preprocessing(RzCmdDesc *cd, RzCmdParsedArgs *args) {
 			args->argv[i] = tmp;
 			args->argc = i + 1;
 			return;
-		default:
-			break;
 		}
 	}
 }
@@ -772,26 +763,22 @@ static size_t fill_args(RzStrBuf *sb, RzCmdDesc *cd) {
 			len++;
 			n_optionals++;
 		}
-		switch (arg->type) {
-		case RZ_CMD_ARG_TYPE_ARRAY_STRING:
+		if (arg->flags & RZ_CMD_ARG_FLAG_ARRAY) {
 			has_array = true;
 			rz_strbuf_appendf (sb, "<%s0>", arg->name);
 			len += strlen (arg->name) + 3;
 			rz_strbuf_appendf (sb, " [<%s1> ...]", arg->name);
 			len += strlen (arg->name) + 10;
-			break;
-		case RZ_CMD_ARG_TYPE_OPTION:
+		} else if (arg->flags & RZ_CMD_ARG_FLAG_OPTION) {
 			rz_strbuf_appendf (sb, "-%s", arg->name);
 			len += strlen (arg->name) + 1;
-			break;
-		default:
+		} else {
 			rz_strbuf_appendf (sb, "<%s>", arg->name);
 			len += strlen (arg->name) + 2;
 			if (arg->default_value) {
 				rz_strbuf_appendf (sb, "=%s", arg->default_value);
 				len += strlen (arg->default_value) + 1;
 			}
-			break;
 		}
 	}
 	for (; n_optionals > 0; n_optionals--) {

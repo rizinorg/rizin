@@ -18,7 +18,7 @@ static const RzCmdDescHelp cmd_help = {
 	.args = cmd_args,
 };
 static const RzCmdDescArg cmd_last_args[] = {
-	{ .name = "c", .type = RZ_CMD_ARG_TYPE_CMD_LAST },
+	{ .name = "c", .type = RZ_CMD_ARG_TYPE_CMD, .flags = RZ_CMD_ARG_FLAG_LAST },
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_last_help = {
@@ -27,7 +27,7 @@ static const RzCmdDescHelp cmd_last_help = {
 };
 static const RzCmdDescArg cmd_last_opt_args[] = {
 	{ .name = "c1", .type = RZ_CMD_ARG_TYPE_CMD },
-	{ .name = "c2", .type = RZ_CMD_ARG_TYPE_CMD_LAST, .optional = true },
+	{ .name = "c2", .type = RZ_CMD_ARG_TYPE_CMD, .flags = RZ_CMD_ARG_FLAG_LAST, .optional = true },
 	{ 0 },
 };
 static const RzCmdDescHelp cmd_last_opt_help = {
