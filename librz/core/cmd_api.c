@@ -1073,7 +1073,7 @@ static char *get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args, bool use
 	switch (cd->type) {
 	case RZ_CMD_DESC_TYPE_GROUP:
 		if (detail > 1 && cd->d.group_data.exec_cd) {
-			return get_help (cmd, cd->d.group_data.exec_cd, args, use_color, detail - 1);
+			return get_help (cmd, cd->d.group_data.exec_cd, args, use_color, detail);
 		}
 		if (detail == 1) {
 			// show the group help only when doing <cmd>?
