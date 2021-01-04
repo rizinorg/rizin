@@ -340,6 +340,9 @@ RZ_API ut64 rz_io_map_next_available(RzIO* io, ut64 addr, ut64 size, ut64 load_a
 	void **it;
 	rz_pvector_foreach (&io->maps, it) {
 		RzIOMap *map = *it;
+		if (!rz_itv_size (map->itv)) {
+			break;
+		}
 		ut64 to = rz_itv_end (map->itv);
 		next_addr = RZ_MAX (next_addr, to + (load_align - (to % load_align)) % load_align);
 		// XXX - This does not handle when file overflow 0xFFFFFFFF000 -> 0x00000FFF
