@@ -177,7 +177,6 @@ bool test_cmd_descriptor_group(void) {
 	free (h);
 
 	rz_cmd_free (cmd);
-	rz_cmd_parsed_args_free (pa);
 	mu_end;
 }
 
