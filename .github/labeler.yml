@@ -34,74 +34,71 @@ rz_ax:
   - binrz/rz_ax/*
   - librz/main/rz_ax.c
 
-RAnal:
-  - librz/anal/**/*
+RzAnalysis:
+  - librz/analysis/**/*
 
-RAsm-Assembler:
+RzAsm-Assembler:
   - librz/asm/**/*ass*
   - librz/asm/asm_x86_nz.c
 
-RAsm-Disassembler:
+RzAsm-Disassembler:
   - librz/asm/**/*dis*
 
-RBin:
+RzBin:
   - librz/bin/**/*
 
-RBreakpoint:
+RzBreakpoint:
   - librz/bp/**/*
 
-RConfig:
+RzConfig:
   - librz/config/**/*
 
-RCons:
+RzCons:
   - librz/cons/**/*
 
-RCore:
+RzCore:
   - librz/core/**/*
 
-RCrypto:
+RzCrypto:
   - librz/crypto/**/*
 
-RDebug:
+RzDebug:
   - librz/debug/**/*
 
-REgg:
+RzEgg:
   - librz/egg/**/*
 
-RFlag:
+RzFlag:
   - librz/flag/**/*
 
-RFS:
-  - librz/fs/**/*
-
-RHash:
+RzHash:
   - librz/hash/**/*
 
-RIO:
+RzIO:
   - librz/io/**/*
 
-RLang:
+RzLang:
   - librz/lang/**/*
 
-RMagic:
+RzMagic:
   - librz/magic/**/*
 
-RParse:
+RzParse:
   - librz/parse/**/*
 
 RReg:
   - librz/reg/**/*
 
-RSearch:
+RzSearch:
   - librz/search/**/*
 
-RSocket:
+RzSocket:
   - librz/socket/**/*
 
-RSyscall:
+RzSyscall:
   - librz/syscall/**/*
 
-RUtil:
+RzUtil:
   - librz/util/**/*
 
 API:
@@ -117,7 +114,7 @@ documentation:
   - doc/**/*
 
 ESIL:
-  - librz/anal/esil*
+  - librz/analysis/esil*
 
 gdb:
   - shlr/gdb/**/*
@@ -140,9 +137,6 @@ java:
 WinDbg:
   - shlr/winkd/**/*
   - librz/io/p/io_winkd.c
-
-webui:
-  - shlr/www/**/*
 
 visual:
   - librz/core/visual.c
