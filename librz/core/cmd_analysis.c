@@ -9093,7 +9093,7 @@ static bool archIsThumbable(RzCore *core) {
 	return false;
 }
 
-static void _CbInRangeAav(RzCore *core, ut64 from, ut64 to, int vsize, int count, void *user) {
+static void _CbInRangeAav(RzCore *core, ut64 from, ut64 to, int vsize, void *user) {
 	bool asterisk = user != NULL;
 	int arch_align = rz_analysis_archinfo (core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 	bool vinfun = rz_config_get_i (core->config, "analysis.vinfun");
