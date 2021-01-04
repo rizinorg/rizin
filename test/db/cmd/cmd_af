@@ -24,7 +24,7 @@ f.foobar=0x100001216
 pd 20~foo
 EOF
 EXPECT=<<EOF
-|       ,=< 0x10000120f      7f05           jg .foobar                 ; main.foobar
+|       ,=< 0x10000120f      7f05           jg    .foobar              ; main.foobar
 |       |    .foobar:
 EOF
 RUN
@@ -112,28 +112,28 @@ pdf
 EOF
 EXPECT=<<EOF
 / 53: sym.register_tm_clones ();
-|           0x08048410      mov eax, obj.completed.6891
-|           0x08048415      sub eax, obj.completed.6891
-|           0x0804841a      sar eax, 2
-|           0x0804841d      mov edx, eax
-|           0x0804841f      shr edx, 0x1f
-|           0x08048422      add eax, edx
-|           0x08048424      sar eax, 1
-|       ,=< 0x08048426      je 0x8048448
-|       |   0x08048428      mov edx, 0
-|       |   0x0804842d      test edx, edx
-|      ,==< 0x0804842f      je 0x8048448
-|      ||   0x08048431      push ebp
-|      ||   0x08048432      mov ebp, esp
-|      ||   0x08048434      sub esp, 0x10
-|      ||   0x08048437      push eax
-|      ||   0x08048438      push obj.completed.6891
-|      ||   0x0804843d      call edx
-|      ||   0x0804843f      add esp, 0x10
+|           0x08048410      mov   eax, obj.completed.6891
+|           0x08048415      sub   eax, obj.completed.6891
+|           0x0804841a      sar   eax, 2
+|           0x0804841d      mov   edx, eax
+|           0x0804841f      shr   edx, 0x1f
+|           0x08048422      add   eax, edx
+|           0x08048424      sar   eax, 1
+|       ,=< 0x08048426      je    0x8048448
+|       |   0x08048428      mov   edx, 0
+|       |   0x0804842d      test  edx, edx
+|      ,==< 0x0804842f      je    0x8048448
+|      ||   0x08048431      push  ebp
+|      ||   0x08048432      mov   ebp, esp
+|      ||   0x08048434      sub   esp, 0x10
+|      ||   0x08048437      push  eax
+|      ||   0x08048438      push  obj.completed.6891
+|      ||   0x0804843d      call  edx
+|      ||   0x0804843f      add   esp, 0x10
 |      ||   0x08048442      leave
 |      ||   0x08048443      ret
 ..
-\      ``-> 0x08048448      ret
+\      ``-> 0x08048448      lea     esi, [esi]
 EOF
 RUN
 
@@ -168,31 +168,30 @@ size: 13
 0x004017c0 0x004017cd 00:0000 13 j 0x004017dd f 0x004017cd
 
 / 13: fcn2.0x004017c0 ();
-|           0x004017c0      51             push ecx
-|           0x004017c1      89e1           mov ecx, esp
-|           0x004017c3      83c108         add ecx, 8
-|           0x004017c6      3d00100000     cmp eax, 0x1000
-\       ,=< 0x004017cb      7210           jb 0x4017dd
+|           0x004017c0      51             push  ecx
+|           0x004017c1      89e1           mov   ecx, esp
+|           0x004017c3      83c108         add   ecx, 8
+|           0x004017c6      3d00100000     cmp   eax, 0x1000
+\       ,=< 0x004017cb      7210           jb    0x4017dd
 
 size: 6
 0x004017c0 0x004017c6 00:0000 6 j 0x004017dd f 0x004017cd
 
 / 6: fcn2.0x004017c0 ();
-|           0x004017c0      51             push ecx
-|           0x004017c1      89e1           mov ecx, esp
-\           0x004017c3      83c108         add ecx, 8
+|           0x004017c0      51             push  ecx
+|           0x004017c1      89e1           mov   ecx, esp
+\           0x004017c3      83c108         add   ecx, 8
 
 size: 11
 0x004017c0 0x004017cb 00:0000 11 j 0x004017dd f 0x004017cd
 
 / 11: fcn2.0x004017c0 ();
-|           0x004017c0      51             push ecx
-|           0x004017c1      89e1           mov ecx, esp
-|           0x004017c3      83c108         add ecx, 8
-\           0x004017c6      3d00100000     cmp eax, 0x1000
+|           0x004017c0      51             push  ecx
+|           0x004017c1      89e1           mov   ecx, esp
+|           0x004017c3      83c108         add   ecx, 8
+\           0x004017c6      3d00100000     cmp   eax, 0x1000
 EOF
-EXPECT_ERR=<<EOF
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=afb+ with wrong size
@@ -222,34 +221,34 @@ size: 9
 0x004017c0 0x004017c9 00:0000 9 j 0x004017dd f 0x004017cd
 
 / 9: fcn2.0x004017c0 ();
-|           0x004017c0      51             push ecx
-|           0x004017c1      89e1           mov ecx, esp
-|           0x004017c3      83c108         add ecx, 8
+|           0x004017c0      51             push  ecx
+|           0x004017c1      89e1           mov   ecx, esp
+|           0x004017c3      83c108         add   ecx, 8
 ..
 
 / 9: fcn2.0x004017c0 ();
-| 0x004017c0      51             push ecx
-| 0x004017c1      89e1           mov ecx, esp
-| 0x004017c3      83c108         add ecx, 8
+| 0x004017c0      51             push  ecx
+| 0x004017c1      89e1           mov   ecx, esp
+| 0x004017c3      83c108         add   ecx, 8
 | 0x004017c6      3d             invalid
-\ 0x004017c7      0010           add byte [eax], dl
+\ 0x004017c7      0010           add   byte [eax], dl
 | ----------- true: 0x004017dd  false: 0x004017cd
 
 size: 12
 0x004017c0 0x004017cc 00:0000 12 j 0x004017dd f 0x004017cd
 
 / 12: fcn2.0x004017c0 ();
-|           0x004017c0      51             push ecx
-|           0x004017c1      89e1           mov ecx, esp
-|           0x004017c3      83c108         add ecx, 8
-|           0x004017c6      3d00100000     cmp eax, 0x1000
+|           0x004017c0      51             push  ecx
+|           0x004017c1      89e1           mov   ecx, esp
+|           0x004017c3      83c108         add   ecx, 8
+|           0x004017c6      3d00100000     cmp   eax, 0x1000
 ..
 
 / 12: fcn2.0x004017c0 ();
-| 0x004017c0      51             push ecx
-| 0x004017c1      89e1           mov ecx, esp
-| 0x004017c3      83c108         add ecx, 8
-| 0x004017c6      3d00100000     cmp eax, 0x1000
+| 0x004017c0      51             push  ecx
+| 0x004017c1      89e1           mov   ecx, esp
+| 0x004017c3      83c108         add   ecx, 8
+| 0x004017c6      3d00100000     cmp   eax, 0x1000
 | 0x004017cb      72             invalid
 | ----------- true: 0x004017dd  false: 0x004017cd
 EOF

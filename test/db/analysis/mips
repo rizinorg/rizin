@@ -62,8 +62,8 @@ s 0x00002494
 pd 1
 EOF
 EXPECT=<<EOF
-            0x000023f0      208084df       ld a0, -0x7fe0(gp)          ; [0x37020:8]=0x10a0 segment.DYNAMIC
-            0x00002494      488099df       ld t9, -0x7fb8(gp)          ; [0x37048:8]=0x134f0
+            0x000023f0      208084df       ld    a0, -0x7fe0(gp)       ; [0x37020:8]=0x10a0 segment.DYNAMIC
+            0x00002494      488099df       ld    t9, -0x7fb8(gp)       ; [0x37048:8]=0x134f0
 EOF
 RUN
 
@@ -76,7 +76,7 @@ f--
 pd 1
 EOF
 EXPECT=<<EOF
-            0x120004460      208084df       ld a0, -0x7fe0(gp)         ; [0x1200ee290:8]=0x120005074
+            0x120004460      208084df       ld    a0, -0x7fe0(gp)      ; [0x1200ee290:8]=0x120005074
 EOF
 RUN
 
@@ -143,7 +143,7 @@ e asm.pseudo=true
 pd 1 @main+0x18
 EOF
 EXPECT=<<EOF
-            0x000805b8      21f0a003       move fp, sp
+            0x000805b8      21f0a003       move  fp, sp
             0x000805b8      21f0a003       fp = sp
 EOF
 RUN
@@ -160,7 +160,7 @@ e asm.pseudo=true
 pd 1
 EOF
 EXPECT=<<EOF
-            0x80100000      0000beaf       sw fp, (sp)
+            0x80100000      0000beaf       sw    fp, (sp)
             0x80100000      0000beaf       [sp + 0] = fp
 EOF
 RUN
@@ -221,13 +221,13 @@ pdf
 EOF
 EXPECT=<<EOF
 (fcn) fcn.00000000 32
-0x00000000      0800040c   jal 0x100020
+0x00000000      0800040c   jal   0x100020
 0x00000004      00000000   nop
 0x00000008      00000000   nop
 0x0000000c      00000000   nop
 0x00000010      00000000   nop
 0x00000014      00000000   nop
-0x00000018      40040408   j 0x101100
+0x00000018      40040408   j     0x101100
 0x0000001c      00000000   nop
 EOF
 RUN
@@ -252,17 +252,17 @@ afl
 EOF
 EXPECT=<<EOF
 (fcn) fcn.80100000 32
-0x80100000      0800040c   jal fcn.80100020
+0x80100000      0800040c   jal   fcn.80100020
 0x80100004      00000000   nop
 0x80100008      00000000   nop
 0x8010000c      00000000   nop
 0x80100010      00000000   nop
 0x80100014      00000000   nop
-0x80100018      40040408   j 0x80101100
+0x80100018      40040408   j     0x80101100
 0x8010001c      00000000   nop
   ; CALL XREF from fcn.80100000 @ 0x80100000
 (fcn) fcn.80100020 8
-0x80100020      0800e003   jr ra
+0x80100020      0800e003   jr    ra
 0x80100024      00000000   nop
 0x80100000    1 32           fcn.80100000
 0x80100020    1 8            fcn.80100020
@@ -288,8 +288,8 @@ pdf
 EOF
 EXPECT=<<EOF
 (fcn) fcn.80100000 8
-0x80100000      0800e003   jr ra
-0x80100004      0a184400   movz v1, v0, a0
+0x80100000      0800e003   jr    ra
+0x80100004      0a184400   movz  v1, v0, a0
 EOF
 RUN
 
@@ -308,8 +308,8 @@ pdf
 EOF
 EXPECT=<<EOF
 (fcn) fcn.00000000 8
-          0x00000000      0800e003   jr ra
-          0x00000004      0a184400   movz v1, v0, a0
+          0x00000000      0800e003   jr    ra
+          0x00000004      0a184400   movz  v1, v0, a0
 EOF
 RUN
 
@@ -336,11 +336,11 @@ EXPECT=<<EOF
 (fcn) fcn.80100000 32
 0x80100000      e0ffbd27   addiu sp, sp, -0x20
 0x80100004      00000000   nop
-0x80100008      01000010   b 0x80100010
+0x80100008      01000010   b     0x80100010
 0x8010000c      00000000   nop
-0x80100010      fdff0915   bne t0, t1, 0x80100008
-0x80100014      0a184400   movz v1, v0, a0
-0x80100018      0800e003   jr ra
+0x80100010      fdff0915   bne   t0, t1, 0x80100008
+0x80100014      0a184400   movz  v1, v0, a0
+0x80100018      0800e003   jr    ra
 0x8010001c      2000bd27   addiu sp, sp, 0x20
 EOF
 RUN
@@ -369,11 +369,11 @@ EXPECT=<<EOF
 (fcn) fcn.80100000 32
 0x80100000      e0ffbd27   addiu sp, sp, -0x20
 0x80100004      00000000   nop
-0x80100008      01000010   b 0x80100010
+0x80100008      01000010   b     0x80100010
 0x8010000c      00000000   nop
 0x80100010      00000000   nop
-0x80100014      0a184400   movz v1, v0, a0
-0x80100018      0800e003   jr ra
+0x80100014      0a184400   movz  v1, v0, a0
+0x80100018      0800e003   jr    ra
 0x8010001c      2000bd27   addiu sp, sp, 0x20
 EOF
 RUN
@@ -403,9 +403,9 @@ EXPECT=<<EOF
 0x80100004      00000000   nop
 0x80100008      00000000   nop
 0x8010000c      00000000   nop
-0x80100010      fdff0915   bne t0, t1, 0x80100008
-0x80100014      0a184400   movz v1, v0, a0
-0x80100018      0800e003   jr ra
+0x80100010      fdff0915   bne   t0, t1, 0x80100008
+0x80100014      0a184400   movz  v1, v0, a0
+0x80100018      0800e003   jr    ra
 0x8010001c      2000bd27   addiu sp, sp, 0x20
 EOF
 RUN
@@ -435,12 +435,12 @@ EXPECT=<<EOF
 0x80100004      00000000   nop
 0x80100008      00000000   nop
 0x8010000c      00000000   nop
-0x80100010      fdff0915   bne t0, t1, 0x80100008
+0x80100010      fdff0915   bne   t0, t1, 0x80100008
 0x80100014      00000000   nop
-0x80100018      01000010   b 0x80100020
+0x80100018      01000010   b     0x80100020
 0x8010001c      00000000   nop
-0x80100020      0a184400   movz v1, v0, a0
-0x80100024      0800e003   jr ra
+0x80100020      0a184400   movz  v1, v0, a0
+0x80100024      0800e003   jr    ra
 0x80100028      2000bd27   addiu sp, sp, 0x20
 EOF
 RUN
@@ -472,44 +472,44 @@ EXPECT=<<EOF
 (fcn) fcn.8060b500 80
 ; arg int32_t arg1 @ a0
 ; arg int32_t arg2 @ a1
-0x8060b500      002e0500   sll a1, a1, 0x18
-0x8060b504      032e0500   sra a1, a1, 0x18
-0x8060b508      0f008010   beqz a0, 0x8060b548
-0x8060b50c      21100000   move v0, zero
-0x8060b510      492d1808   j 0x8060b524
-0x8060b514      00008290   lbu v0, (a0)
-0x8060b518      0800e003   jr ra
-0x8060b51c      21108000   move v0, a0
-0x8060b520      00008290   lbu v0, (a0)
-0x8060b524      07004010   beqz v0, 0x8060b544
+0x8060b500      002e0500   sll   a1, a1, 0x18
+0x8060b504      032e0500   sra   a1, a1, 0x18
+0x8060b508      0f008010   beqz  a0, 0x8060b548
+0x8060b50c      21100000   move  v0, zero
+0x8060b510      492d1808   j     0x8060b524
+0x8060b514      00008290   lbu   v0, (a0)
+0x8060b518      0800e003   jr    ra
+0x8060b51c      21108000   move  v0, a0
+0x8060b520      00008290   lbu   v0, (a0)
+0x8060b524      07004010   beqz  v0, 0x8060b544
 0x8060b528      00000000   nop
-0x8060b52c      00160200   sll v0, v0, 0x18
-0x8060b530      03160200   sra v0, v0, 0x18
-0x8060b534      f8ff4510   beq v0, a1, 0x8060b518
+0x8060b52c      00160200   sll   v0, v0, 0x18
+0x8060b530      03160200   sra   v0, v0, 0x18
+0x8060b534      f8ff4510   beq   v0, a1, 0x8060b518
 0x8060b538      00000000   nop
-0x8060b53c      482d1808   j 0x8060b520
+0x8060b53c      482d1808   j     0x8060b520
 0x8060b540      01008424   addiu a0, a0, 1
-0x8060b544      21100000   move v0, zero
-0x8060b548      0800e003   jr ra
+0x8060b544      21100000   move  v0, zero
+0x8060b548      0800e003   jr    ra
 0x8060b54c      00000000   nop
 (fcn) fcn.8060b550 36
 ; arg int32_t arg1 @ a0
 ; arg int32_t arg2 @ a1
-0x8060b550      0000a290   lbu v0, (a1)
-0x8060b554      05004010   beqz v0, 0x8060b56c
+0x8060b550      0000a290   lbu   v0, (a1)
+0x8060b554      05004010   beqz  v0, 0x8060b56c
 0x8060b558      0100a524   addiu a1, a1, 1
-0x8060b55c      000082a0   sb v0, (a0)
-0x8060b560      0000a290   lbu v0, (a1)
-0x8060b564      552d1808   j 0x8060b554
+0x8060b55c      000082a0   sb    v0, (a0)
+0x8060b560      0000a290   lbu   v0, (a1)
+0x8060b564      552d1808   j     0x8060b554
 0x8060b568      01008424   addiu a0, a0, 1
-0x8060b56c      0800e003   jr ra
-0x8060b570      000080a0   sb zero, (a0)
+0x8060b56c      0800e003   jr    ra
+0x8060b570      000080a0   sb    zero, (a0)
 0x8060b574      00000000   nop
 (fcn) fcn.8060b578 20
 0x8060b578      e0ffbd27   addiu sp, sp, -0x20
-0x8060b57c      542d180c   jal fcn.8060b550
+0x8060b57c      542d180c   jal   fcn.8060b550
 0x8060b580      00000000   nop
-0x8060b584      0800e003   jr ra
+0x8060b584      0800e003   jr    ra
 0x8060b588      2000bd27   addiu sp, sp, 0x20
 0x8060b58c      00000000   nop
 EOF
@@ -608,44 +608,44 @@ EXPECT=<<EOF
 (fcn) fcn.8060b500 80
 ; arg int32_t arg1 @ a0
 ; arg int32_t arg2 @ a1
-0x8060b500      002e0500   sll a1, a1, 0x18
-0x8060b504      032e0500   sra a1, a1, 0x18
-0x8060b508      0f008010   beqz a0, 0x8060b548
-0x8060b50c      21100000   move v0, zero
-0x8060b510      492d1808   j 0x8060b524
-0x8060b514      00008290   lbu v0, (a0)
-0x8060b518      0800e003   jr ra
-0x8060b51c      21108000   move v0, a0
-0x8060b520      00008290   lbu v0, (a0)
-0x8060b524      07004010   beqz v0, 0x8060b544
+0x8060b500      002e0500   sll   a1, a1, 0x18
+0x8060b504      032e0500   sra   a1, a1, 0x18
+0x8060b508      0f008010   beqz  a0, 0x8060b548
+0x8060b50c      21100000   move  v0, zero
+0x8060b510      492d1808   j     0x8060b524
+0x8060b514      00008290   lbu   v0, (a0)
+0x8060b518      0800e003   jr    ra
+0x8060b51c      21108000   move  v0, a0
+0x8060b520      00008290   lbu   v0, (a0)
+0x8060b524      07004010   beqz  v0, 0x8060b544
 0x8060b528      00000000   nop
-0x8060b52c      00160200   sll v0, v0, 0x18
-0x8060b530      03160200   sra v0, v0, 0x18
-0x8060b534      f8ff4510   beq v0, a1, 0x8060b518
+0x8060b52c      00160200   sll   v0, v0, 0x18
+0x8060b530      03160200   sra   v0, v0, 0x18
+0x8060b534      f8ff4510   beq   v0, a1, 0x8060b518
 0x8060b538      00000000   nop
-0x8060b53c      482d1808   j 0x8060b520
+0x8060b53c      482d1808   j     0x8060b520
 0x8060b540      01008424   addiu a0, a0, 1
-0x8060b544      21100000   move v0, zero
-0x8060b548      0800e003   jr ra
+0x8060b544      21100000   move  v0, zero
+0x8060b548      0800e003   jr    ra
 0x8060b54c      00000000   nop
 (fcn) fcn.8060b550 36
 ; arg int32_t arg1 @ a0
 ; arg int32_t arg2 @ a1
-0x8060b550      0000a290   lbu v0, (a1)
-0x8060b554      05004010   beqz v0, 0x8060b56c
+0x8060b550      0000a290   lbu   v0, (a1)
+0x8060b554      05004010   beqz  v0, 0x8060b56c
 0x8060b558      0100a524   addiu a1, a1, 1
-0x8060b55c      000082a0   sb v0, (a0)
-0x8060b560      0000a290   lbu v0, (a1)
-0x8060b564      552d1808   j 0x8060b554
+0x8060b55c      000082a0   sb    v0, (a0)
+0x8060b560      0000a290   lbu   v0, (a1)
+0x8060b564      552d1808   j     0x8060b554
 0x8060b568      01008424   addiu a0, a0, 1
-0x8060b56c      0800e003   jr ra
-0x8060b570      000080a0   sb zero, (a0)
+0x8060b56c      0800e003   jr    ra
+0x8060b570      000080a0   sb    zero, (a0)
 0x8060b574      00000000   nop
 (fcn) fcn.8060b578 20
 0x8060b578      e0ffbd27   addiu sp, sp, -0x20
-0x8060b57c      542d180c   jal fcn.8060b550
+0x8060b57c      542d180c   jal   fcn.8060b550
 0x8060b580      00000000   nop
-0x8060b584      0800e003   jr ra
+0x8060b584      0800e003   jr    ra
 0x8060b588      2000bd27   addiu sp, sp, 0x20
 0x8060b58c      00000000   nop
 EOF
@@ -679,44 +679,44 @@ EXPECT=<<EOF
 / (fcn) fcn.8060b500 80
 | ; arg int32_t arg1 @ a0
 | ; arg int32_t arg2 @ a1
-| 0x8060b500      002e0500   sll a1, a1, 0x18
-| 0x8060b504      032e0500   sra a1, a1, 0x18
-| 0x8060b508      0f008010   beqz a0, 0x8060b548
-| 0x8060b50c      21100000   move v0, zero
-| 0x8060b510      492d1808   j 0x8060b524
-| 0x8060b514      00008290   lbu v0, (a0)
-| 0x8060b518      0800e003   jr ra
-| 0x8060b51c      21108000   move v0, a0
-| 0x8060b520      00008290   lbu v0, (a0)
-| 0x8060b524      07004010   beqz v0, 0x8060b544
+| 0x8060b500      002e0500   sll   a1, a1, 0x18
+| 0x8060b504      032e0500   sra   a1, a1, 0x18
+| 0x8060b508      0f008010   beqz  a0, 0x8060b548
+| 0x8060b50c      21100000   move  v0, zero
+| 0x8060b510      492d1808   j     0x8060b524
+| 0x8060b514      00008290   lbu   v0, (a0)
+| 0x8060b518      0800e003   jr    ra
+| 0x8060b51c      21108000   move  v0, a0
+| 0x8060b520      00008290   lbu   v0, (a0)
+| 0x8060b524      07004010   beqz  v0, 0x8060b544
 | 0x8060b528      00000000   nop
-| 0x8060b52c      00160200   sll v0, v0, 0x18
-| 0x8060b530      03160200   sra v0, v0, 0x18
-| 0x8060b534      f8ff4510   beq v0, a1, 0x8060b518
+| 0x8060b52c      00160200   sll   v0, v0, 0x18
+| 0x8060b530      03160200   sra   v0, v0, 0x18
+| 0x8060b534      f8ff4510   beq   v0, a1, 0x8060b518
 | 0x8060b538      00000000   nop
-| 0x8060b53c      482d1808   j 0x8060b520
+| 0x8060b53c      482d1808   j     0x8060b520
 | 0x8060b540      01008424   addiu a0, a0, 1
-| 0x8060b544      21100000   move v0, zero
-| 0x8060b548      0800e003   jr ra
+| 0x8060b544      21100000   move  v0, zero
+| 0x8060b548      0800e003   jr    ra
 \ 0x8060b54c      00000000   nop
 / (fcn) fcn.8060b550 36
 | ; arg int32_t arg1 @ a0
 | ; arg int32_t arg2 @ a1
-| 0x8060b550      0000a290   lbu v0, (a1)
-| 0x8060b554      05004010   beqz v0, 0x8060b56c
+| 0x8060b550      0000a290   lbu   v0, (a1)
+| 0x8060b554      05004010   beqz  v0, 0x8060b56c
 | 0x8060b558      0100a524   addiu a1, a1, 1
-| 0x8060b55c      000082a0   sb v0, (a0)
-| 0x8060b560      0000a290   lbu v0, (a1)
-| 0x8060b564      552d1808   j 0x8060b554
+| 0x8060b55c      000082a0   sb    v0, (a0)
+| 0x8060b560      0000a290   lbu   v0, (a1)
+| 0x8060b564      552d1808   j     0x8060b554
 | 0x8060b568      01008424   addiu a0, a0, 1
-| 0x8060b56c      0800e003   jr ra
-\ 0x8060b570      000080a0   sb zero, (a0)
+| 0x8060b56c      0800e003   jr    ra
+\ 0x8060b570      000080a0   sb    zero, (a0)
   0x8060b574      00000000   nop
 / (fcn) fcn.8060b578 20
 | 0x8060b578      e0ffbd27   addiu sp, sp, -0x20
-| 0x8060b57c      542d180c   jal fcn.8060b550
+| 0x8060b57c      542d180c   jal   fcn.8060b550
 | 0x8060b580      00000000   nop
-| 0x8060b584      0800e003   jr ra
+| 0x8060b584      0800e003   jr    ra
 \ 0x8060b588      2000bd27   addiu sp, sp, 0x20
   0x8060b58c      00000000   nop
 EOF
@@ -730,15 +730,15 @@ e asm.bytes = true
 pd 10
 EOF
 EXPECT=<<EOF
-            0x00402088      8f84814c       lw a0, -main(gp)            ; [0x43522c:4]=0x402558 sym.main
-            0x0040208c      8fa50000       lw a1, (sp)
+            0x00402088      8f84814c       lw    a0, -main(gp)         ; [0x43522c:4]=0x402558 sym.main
+            0x0040208c      8fa50000       lw    a1, (sp)
             0x00402090      27a60004       addiu a2, sp, 4
             0x00402094      2401fff8       addiu at, zero, -8
-            0x00402098      03a1e824       and sp, sp, at
+            0x00402098      03a1e824       and   sp, sp, at
             0x0040209c      27bdffe0       addiu sp, sp, -0x20
-            0x004020a0      8f878230       lw a3, -sym._init(gp)       ; [0x435310:4]=0x401ff4 sym._init
-            0x004020a4      8f888114       lw t0, -sym._fini(gp)       ; [0x4351f4:4]=0x41eca0 sym._fini
-            0x004020a8      afa80010       sw t0, 0x10(sp)
-            0x004020ac      afa20014       sw v0, 0x14(sp)
+            0x004020a0      8f878230       lw    a3, -sym._init(gp)    ; [0x435310:4]=0x401ff4 sym._init
+            0x004020a4      8f888114       lw    t0, -sym._fini(gp)    ; [0x4351f4:4]=0x41eca0 sym._fini
+            0x004020a8      afa80010       sw    t0, 0x10(sp)
+            0x004020ac      afa20014       sw    v0, 0x14(sp)
 EOF
 RUN

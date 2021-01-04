@@ -66,10 +66,10 @@ pd 4
 ?=
 EOF
 EXPECT=<<EOF
-            0x00000000      0000           add byte [eax], al
-            0x00000002      0000           add byte [eax], al
-            0x00000004      0000           add byte [eax], al
-            0x00000006      0000           add byte [eax], al
+            0x00000000      0000           add   byte [eax], al
+            0x00000002      0000           add   byte [eax], al
+            0x00000004      0000           add   byte [eax], al
+            0x00000006      0000           add   byte [eax], al
 0x8
 EOF
 RUN

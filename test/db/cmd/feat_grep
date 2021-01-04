@@ -285,7 +285,7 @@ e asm.bytes = true
 pd 40~0x004005fe
 EOF
 EXPECT=<<EOF
-        `-> 0x004005fe      4883c408       add rsp, 8
+        `-> 0x004005fe      4883c408       add   rsp, 8
 EOF
 RUN
 
