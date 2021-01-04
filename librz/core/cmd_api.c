@@ -62,6 +62,7 @@ static const struct argv_modes_t {
 	{ "q", " (quiet mode)", RZ_OUTPUT_MODE_QUIET },
 	{ "k", " (sdb mode)", RZ_OUTPUT_MODE_SDB },
 	{ "l", " (verbose mode)", RZ_OUTPUT_MODE_LONG },
+	{ "J", " (verbose JSON mode)", RZ_OUTPUT_MODE_LONG_JSON },
 	{ "t", " (table mode)", RZ_OUTPUT_MODE_TABLE },
 };
 

@@ -524,28 +524,30 @@ bool test_cmd_argv_modes(void) {
 
 	RzCmd *cmd = rz_cmd_new (false);
 	RzCmdDesc *root = rz_cmd_get_root (cmd);
-	RzCmdDesc *z_cd = rz_cmd_desc_argv_modes_new (cmd, root, "z", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET, z_modes_handler, &z_help);
+	RzCmdDesc *z_cd = rz_cmd_desc_argv_modes_new (cmd, root, "z", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_LONG_JSON, z_modes_handler, &z_help);
 
 	mu_assert_ptreq (rz_cmd_get_desc (cmd, "z"), z_cd, "z is found");
 	mu_assert_ptreq (rz_cmd_get_desc (cmd, "zj"), z_cd, "zj is handled by z");
 	mu_assert_ptreq (rz_cmd_get_desc (cmd, "zq"), z_cd, "zq is handled by z");
+	mu_assert_ptreq (rz_cmd_get_desc (cmd, "zJ"), z_cd, "zJ is handled by z");
 	mu_assert_null (rz_cmd_get_desc (cmd, "z*"), "z* was not defined");
 
 	RzCmdParsedArgs *pa = rz_cmd_parsed_args_newcmd ("?");
 	char *h = rz_cmd_get_help (cmd, pa, false);
 	char *exp_h = "Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...\n"
-		"| z[jq] # z summary\n";
-	mu_assert_streq (h, exp_h, "zj and zq are considered in the help");
+		"| z[jqJ] # z summary\n";
+	mu_assert_streq (h, exp_h, "zj, zJ and zq are considered in the help");
 	free (h);
 	rz_cmd_parsed_args_free (pa);
 
 	pa = rz_cmd_parsed_args_newcmd ("z?");
 	h = rz_cmd_get_help (cmd, pa, false);
-	exp_h = "Usage: z[jq]   # z summary\n"
+	exp_h = "Usage: z[jqJ]   # z summary\n"
 		"| z  # z summary\n"
 		"| zj # z summary (JSON mode)\n"
-		"| zq # z summary (quiet mode)\n";
-	mu_assert_streq (h, exp_h, "zj and zq are considered in the sub help");
+		"| zq # z summary (quiet mode)\n"
+		"| zJ # z summary (verbose JSON mode)\n";
+	mu_assert_streq (h, exp_h, "zj, zJ and zq are considered in the sub help");
 	free (h);
 	rz_cmd_parsed_args_free (pa);
 
