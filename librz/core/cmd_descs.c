@@ -117,7 +117,7 @@ static const RzCmdDescDetail hash_bang_details[] = {
 
 static const RzCmdDescArg hash_bang_args[] = {
 	{ .name = "interpreter-name", .type = RZ_CMD_ARG_TYPE_STRING, .optional = true, .no_space = true, },
-	{ .name = "arg", .type = RZ_CMD_ARG_TYPE_ARRAY_STRING, .optional = true, },
+	{ .name = "arg", .type = RZ_CMD_ARG_TYPE_STRING, .flags = RZ_CMD_ARG_FLAG_ARRAY, .optional = true, },
 	{ 0 },
 };
 static const RzCmdDescHelp hash_bang_help = {
@@ -141,7 +141,7 @@ static const RzCmdDescHelp and__help = {
 	.summary = "Manage tasks",
 };
 static const RzCmdDescArg tasks_args[] = {
-	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD_LAST, .optional = true, },
+	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD, .flags = RZ_CMD_ARG_FLAG_LAST, .optional = true, },
 	{ 0 },
 };
 static const RzCmdDescHelp tasks_help = {
@@ -150,7 +150,7 @@ static const RzCmdDescHelp tasks_help = {
 };
 
 static const RzCmdDescArg tasks_transient_args[] = {
-	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD_LAST, },
+	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD, .flags = RZ_CMD_ARG_FLAG_LAST, },
 	{ 0 },
 };
 static const RzCmdDescHelp tasks_transient_help = {
@@ -238,7 +238,7 @@ static const RzCmdDescHelp dot__help = {
 	.summary = "Interpret commands",
 };
 static const RzCmdDescArg interpret_args[] = {
-	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD_LAST, .optional = true, .no_space = true, },
+	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD, .flags = RZ_CMD_ARG_FLAG_LAST, .optional = true, .no_space = true, },
 	{ 0 },
 };
 static const RzCmdDescHelp interpret_help = {
@@ -292,7 +292,7 @@ static const RzCmdDescHelp interpret_pipe_help = {
 
 static const RzCmdDescArg interpret_system_args[] = {
 	{ .name = "bin", .type = RZ_CMD_ARG_TYPE_FILE, .no_space = true, },
-	{ .name = "arg", .type = RZ_CMD_ARG_TYPE_ARRAY_STRING, .optional = true, },
+	{ .name = "arg", .type = RZ_CMD_ARG_TYPE_STRING, .flags = RZ_CMD_ARG_FLAG_ARRAY, .optional = true, },
 	{ 0 },
 };
 static const RzCmdDescHelp interpret_system_help = {
@@ -304,7 +304,7 @@ static const RzCmdDescHelp interpret_system_help = {
 
 static const RzCmdDescArg interpret_macro_args[] = {
 	{ .name = "macro-name", .type = RZ_CMD_ARG_TYPE_MACRO, .no_space = true, },
-	{ .name = "macro-arg", .type = RZ_CMD_ARG_TYPE_ARRAY_STRING, .optional = true, },
+	{ .name = "macro-arg", .type = RZ_CMD_ARG_TYPE_STRING, .flags = RZ_CMD_ARG_FLAG_ARRAY, .optional = true, },
 	{ .name = ")", .type = RZ_CMD_ARG_TYPE_FAKE, },
 	{ 0 },
 };
@@ -323,7 +323,7 @@ static const RzCmdDescHelp equal__help = {
 
 static const RzCmdDescArg remote_args[] = {
 	{ .name = "fd", .type = RZ_CMD_ARG_TYPE_NUM, .optional = true, },
-	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD_LAST, },
+	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD, .flags = RZ_CMD_ARG_FLAG_LAST, },
 	{ 0 },
 };
 static const RzCmdDescHelp remote_help = {
@@ -335,7 +335,7 @@ static const RzCmdDescHelp remote_help = {
 
 static const RzCmdDescArg remote_send_args[] = {
 	{ .name = "fd", .type = RZ_CMD_ARG_TYPE_NUM, .optional = true, },
-	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD_LAST, },
+	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD, .flags = RZ_CMD_ARG_FLAG_LAST, },
 	{ 0 },
 };
 static const RzCmdDescHelp remote_send_help = {
@@ -344,7 +344,7 @@ static const RzCmdDescHelp remote_send_help = {
 };
 
 static const RzCmdDescArg io_system_run_args[] = {
-	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD_LAST, .optional = true, },
+	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD, .flags = RZ_CMD_ARG_FLAG_LAST, .optional = true, },
 	{ 0 },
 };
 static const RzCmdDescHelp io_system_run_help = {
@@ -398,7 +398,7 @@ static const RzCmdDescHelp remote_mode_disable_help = {
 
 static const RzCmdDescArg remote_rap_args[] = {
 	{ .name = "[host:]port", .type = RZ_CMD_ARG_TYPE_STRING, },
-	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD_LAST, .optional = true, },
+	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD, .flags = RZ_CMD_ARG_FLAG_LAST, .optional = true, },
 	{ 0 },
 };
 static const RzCmdDescHelp remote_rap_help = {
@@ -421,7 +421,7 @@ static const RzCmdDescHelp equal_H_handler_old_help = {
 
 static const RzCmdDescArg remote_tcp_args[] = {
 	{ .name = "[host:]port", .type = RZ_CMD_ARG_TYPE_STRING, },
-	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD_LAST, .optional = true, },
+	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD, .flags = RZ_CMD_ARG_FLAG_LAST, .optional = true, },
 	{ 0 },
 };
 static const RzCmdDescHelp remote_tcp_help = {
@@ -540,7 +540,7 @@ static const RzCmdDescHelp cmd_kuery_help = {
 };
 
 static const RzCmdDescArg ls_args[] = {
-	{ .name = "arg", .type = RZ_CMD_ARG_TYPE_ARRAY_STRING, .optional = true, },
+	{ .name = "arg", .type = RZ_CMD_ARG_TYPE_STRING, .flags = RZ_CMD_ARG_FLAG_ARRAY, .optional = true, },
 	{ 0 },
 };
 static const RzCmdDescHelp ls_help = {
@@ -620,7 +620,7 @@ static const RzCmdDescHelp uniq_help = {
 };
 
 static const RzCmdDescArg uname_args[] = {
-	{ .name = "r", .type = RZ_CMD_ARG_TYPE_OPTION, .optional = true, },
+	{ .name = "r", .type = RZ_CMD_ARG_TYPE_STRING, .flags = RZ_CMD_ARG_FLAG_OPTION, .optional = true, },
 	{ 0 },
 };
 static const RzCmdDescHelp uname_help = {
@@ -640,7 +640,7 @@ static const RzCmdDescHelp w_help = {
 	.summary = "Write commands",
 };
 static const RzCmdDescArg write_args[] = {
-	{ .name = "string", .type = RZ_CMD_ARG_TYPE_STRING_LAST, },
+	{ .name = "string", .type = RZ_CMD_ARG_TYPE_STRING, .flags = RZ_CMD_ARG_FLAG_LAST, },
 	{ 0 },
 };
 static const RzCmdDescHelp write_help = {
@@ -1109,7 +1109,7 @@ static const char *zign_add_type_choices[] = { "a", "b", "c", "n", "g", "o", "r"
 static const RzCmdDescArg zign_add_args[] = {
 	{ .name = "zigname", .type = RZ_CMD_ARG_TYPE_STRING, },
 	{ .name = "type", .type = RZ_CMD_ARG_TYPE_CHOICES, .choices = zign_add_type_choices, },
-	{ .name = "param", .type = RZ_CMD_ARG_TYPE_ARRAY_STRING, },
+	{ .name = "param", .type = RZ_CMD_ARG_TYPE_STRING, .flags = RZ_CMD_ARG_FLAG_ARRAY, },
 	{ 0 },
 };
 static const RzCmdDescHelp zign_add_help = {

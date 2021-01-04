@@ -69,7 +69,8 @@
       optional: true
       no_space: true
     - name: arg
-      type: RZ_CMD_ARG_TYPE_ARRAY_STRING
+      type: RZ_CMD_ARG_TYPE_STRING
+      flags: RZ_CMD_ARG_FLAG_ARRAY
       optional: true
   details:
     - name: Examples
@@ -102,7 +103,8 @@
       summary: List all tasks / Run <cmd> in a new background task
       args:
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD_LAST
+          type: RZ_CMD_ARG_TYPE_CMD
+          flags: RZ_CMD_ARG_FLAG_LAST
           optional: true
       modes:
         - RZ_OUTPUT_MODE_STANDARD
@@ -112,7 +114,8 @@
       summary: Run <cmd> in a new transient background task (auto-delete when it is finished)
       args:
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD_LAST
+          type: RZ_CMD_ARG_TYPE_CMD
+          flags: RZ_CMD_ARG_FLAG_LAST
     - name: "&="
       cname: tasks_output
       summary: Show output of task <n>
@@ -188,7 +191,8 @@
         command as rizin commands
       args:
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD_LAST
+          type: RZ_CMD_ARG_TYPE_CMD
+          flags: RZ_CMD_ARG_FLAG_LAST
           optional: true
           no_space: true
     - name: ". "
@@ -227,7 +231,8 @@
           type: RZ_CMD_ARG_TYPE_FILE
           no_space: true
         - name: arg
-          type: RZ_CMD_ARG_TYPE_ARRAY_STRING
+          type: RZ_CMD_ARG_TYPE_STRING
+          flags: RZ_CMD_ARG_FLAG_ARRAY
           optional: true
     - name: .(
       cname: interpret_macro
@@ -237,7 +242,8 @@
           type: RZ_CMD_ARG_TYPE_MACRO
           no_space: true
         - name: macro-arg
-          type: RZ_CMD_ARG_TYPE_ARRAY_STRING
+          type: RZ_CMD_ARG_TYPE_STRING
+          flags: RZ_CMD_ARG_FLAG_ARRAY
           optional: true
         - name: )
           type: RZ_CMD_ARG_TYPE_FAKE
@@ -257,7 +263,8 @@
           type: RZ_CMD_ARG_TYPE_NUM
           optional: true
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD_LAST
+          type: RZ_CMD_ARG_TYPE_CMD
+          flags: RZ_CMD_ARG_FLAG_LAST
     - name: =<
       cname: remote_send
       summary: Send output of local <cmd> to remote <fd>
@@ -266,13 +273,15 @@
           type: RZ_CMD_ARG_TYPE_NUM
           optional: true
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD_LAST
+          type: RZ_CMD_ARG_TYPE_CMD
+          flags: RZ_CMD_ARG_FLAG_LAST
     - name: =!
       cname: io_system_run
       summary: Run <cmd> via rz_io_system
       args:
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD_LAST
+          type: RZ_CMD_ARG_TYPE_CMD
+          flags: RZ_CMD_ARG_FLAG_LAST
           optional: true
     - name: =+
       cname: remote_add
@@ -308,7 +317,8 @@
         - name: "[host:]port"
           type: RZ_CMD_ARG_TYPE_STRING
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD_LAST
+          type: RZ_CMD_ARG_TYPE_CMD
+          flags: RZ_CMD_ARG_FLAG_LAST
           optional: true
     - name: =g
       cname: equal_g_handler_old
@@ -329,7 +339,8 @@
         - name: "[host:]port"
           type: RZ_CMD_ARG_TYPE_STRING
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD_LAST
+          type: RZ_CMD_ARG_TYPE_CMD
+          flags: RZ_CMD_ARG_FLAG_LAST
           optional: true
     - name: "=&:"
       cname: remote_rap_bg
@@ -455,7 +466,8 @@
   summary: List files and directories
   args:
     - name: arg
-      type: RZ_CMD_ARG_TYPE_ARRAY_STRING
+      type: RZ_CMD_ARG_TYPE_STRING
+      flags: RZ_CMD_ARG_FLAG_ARRAY
       optional: true
 - name: m
   cname: cmd_m
@@ -522,7 +534,8 @@
   summary: Provide system info
   args:
     - name: r
-      type: RZ_CMD_ARG_TYPE_OPTION
+      type: RZ_CMD_ARG_TYPE_STRING
+      flags: RZ_CMD_ARG_FLAG_OPTION
       optional: true
 - name: V
   cname: cmd_visual
@@ -540,7 +553,8 @@
       summary: Write string
       args:
         - name: string
-          type: RZ_CMD_ARG_TYPE_STRING_LAST
+          type: RZ_CMD_ARG_TYPE_STRING
+          flags: RZ_CMD_ARG_FLAG_LAST
     - name: wB
       summary: Set or unset bits with given value
       subcommands:
@@ -938,7 +952,8 @@
                 - h
                 - v
             - name: param
-              type: RZ_CMD_ARG_TYPE_ARRAY_STRING
+              type: RZ_CMD_ARG_TYPE_STRING
+              flags: RZ_CMD_ARG_FLAG_ARRAY
           details:
             - name: Zignature types
               entries:
