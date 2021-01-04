@@ -326,6 +326,191 @@ RZ_API void rz_core_echo(RzCore *core, const char *input) {
 	}
 }
 
+RZ_IPI int rz_eval_color(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
+	switch (input[0]) {
+	case 'd': // "ecd"
+		rz_cons_pal_init (core->cons->context);
+		break;
+	case '?':
+		rz_core_cmd_help (core, help_msg_ec);
+		break;
+	case 'o': // "eco"
+		if (input[1] == 'j') {
+			nextpal (core, 'j');
+		} else if (input[1] == ' ') {
+			cmd_load_theme (core, input + 2);
+		} else if (input[1] == 'o') {
+			cmd_load_theme (core, rz_core_get_theme ());
+		} else if (input[1] == 'c' || input[1] == '.') {
+			rz_cons_printf ("%s\n", rz_core_get_theme ());
+		} else if (input[1] == '?') {
+			rz_core_cmd_help (core, help_msg_eco);
+		} else if (input[1] == 'q') {
+			RzList *themes_list = rz_core_list_themes (core);
+			RzListIter *th_iter;
+			const char *th;
+			rz_list_foreach (themes_list, th_iter, th) {
+				rz_cons_printf ("%s\n", th);
+			}
+		} else {
+			RzList *themes_list = rz_core_list_themes (core);
+			RzListIter *th_iter;
+			const char *th;
+			rz_list_foreach (themes_list, th_iter, th) {
+				if (curtheme && !strcmp (curtheme, th)) {
+					rz_cons_printf ("> %s\n", th);
+				} else {
+					rz_cons_printf ("  %s\n", th);
+				}
+			}
+		}
+		break;
+	case 's': rz_cons_pal_show (); break; // "ecs"
+	case '*': rz_cons_pal_list (1, NULL); break; // "ec*"
+	case 'h': // echo
+		if (input[1] == 'o') {
+			rz_core_echo (core, input + 2);
+		} else {
+			rz_cons_pal_list ('h', NULL);
+		}
+		break;
+	case 'j': // "ecj"
+		rz_cons_pal_list ('j', NULL);
+		break;
+	case 'c': // "ecc"
+		rz_cons_pal_list ('c', input + 1);
+		break;
+	case '\0': // "ec"
+		rz_cons_pal_list (0, NULL);
+		break;
+	case 'r': // "ecr"
+		rz_cons_pal_random ();
+		break;
+	case 'n': // "ecn"
+		nextpal (core, 'n');
+		break;
+	case 'p': // "ecp"
+		nextpal (core, 'p');
+		break;
+	case 'H': { // "ecH"
+		char *color_code = NULL;
+		char *word = NULL;
+		int argc = 0;
+		int delta = (input[1])? 2: 1;
+		char** argv = rz_str_argv (rz_str_trim_head_ro (input + delta), &argc);
+		switch (input[1]) {
+		case '?': {
+			const char *helpmsg[] = {
+				"Usage ecH[iw-?]","","",
+				"ecHi","[color]","highlight current instruction with 'color' background",
+				"ecHw","[word] [color]","highlight 'word ' in current instruction with 'color' background",
+				"ecH","","list all the highlight rules",
+				"ecH.","","show highlight rule in current offset",
+				"ecH-","*","remove all the highlight hints",
+				"ecH-","","remove all highlights on current instruction",
+				NULL
+			};
+			rz_core_cmd_help (core, helpmsg);
+			}
+			rz_str_argv_free (argv);
+			return false;
+		case '-': // ecH-
+			if (input[2] == '*') {
+				rz_meta_del (core->analysis, RZ_META_TYPE_HIGHLIGHT, 0, UT64_MAX);
+			} else {
+				rz_meta_del (core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, 1);
+				// rz_meta_set_string (core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, "");
+			}
+			rz_str_argv_free (argv);
+			return false;
+		case '.':
+			rz_meta_print_list_in_function (core->analysis, RZ_META_TYPE_HIGHLIGHT, 0, core->offset);
+			rz_str_argv_free (argv);
+			return false;
+		case '\0':
+			rz_meta_print_list_all (core->analysis, RZ_META_TYPE_HIGHLIGHT, 0);
+			rz_str_argv_free (argv);
+			return false;
+		case 'j':
+			rz_meta_print_list_all (core->analysis, RZ_META_TYPE_HIGHLIGHT, 'j');
+			rz_str_argv_free (argv);
+			return false;
+		case '*':
+			rz_meta_print_list_all (core->analysis, RZ_META_TYPE_HIGHLIGHT, '*');
+			rz_str_argv_free (argv);
+			return false;
+		case ' ':
+		case 'i': // "ecHi"
+			if (argc) {
+				char *dup = rz_str_newf ("bgonly %s", argv[0]);
+				color_code = rz_cons_pal_parse (dup, NULL);
+				RZ_FREE (dup);
+				if (!color_code) {
+					eprintf ("Unknown color %s\n", argv[0]);
+					rz_str_argv_free (argv);
+					return true;
+				}
+			}
+			break;
+		case 'w': // "ecHw"
+			if (!argc) {
+				eprintf ("Usage: ecHw word [color]\n");
+				rz_str_argv_free (argv);
+				return true;
+			}
+			word = strdup (argv[0]);
+			if (argc > 1) {
+				char *dup = rz_str_newf ("bgonly %s", argv[1]);
+				color_code = rz_cons_pal_parse (dup, NULL);
+				RZ_FREE (dup);
+				if (!color_code) {
+					eprintf ("Unknown color %s\n", argv[1]);
+					rz_str_argv_free (argv);
+					free (word);
+					return true;
+				}
+			}
+			break;
+		default:
+			eprintf ("See ecH?\n");
+			rz_str_argv_free (argv);
+			return true;
+		}
+		rz_meta_set_string (core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, "");
+		const char *str = rz_meta_get_string (core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset);
+		char *dup = rz_str_newf ("%s \"%s%s\"", str?str:"", word?word:"", color_code?color_code:rz_cons_singleton ()->context->pal.wordhl);
+		rz_meta_set_string (core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, dup);
+		rz_str_argv_free (argv);
+		RZ_FREE (word);
+		RZ_FREE (dup);
+		break;
+	}
+	default: {
+		char *p = strdup (input + 1);
+		char *q = strchr (p, '=');
+		if (!q) {
+			q = strchr (p, ' ');
+		}
+		if (q) {
+			// Set color
+			*q++ = 0;
+			if (rz_cons_pal_set (p, q)) {
+				rz_cons_pal_update_event ();
+			}
+		} else {
+			char color[32];
+			RzColor rcolor = rz_cons_pal_get (p);
+			rz_cons_rgb_str (color, sizeof (color), &rcolor);
+			eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, color);
+		}
+		free (p);
+		break;
+	}
+	}
+	return 0;
+}
+
 RZ_IPI int rz_cmd_eval(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	switch (input[0]) {
@@ -397,185 +582,7 @@ RZ_IPI int rz_cmd_eval(void *data, const char *input) {
 		rz_config_list (core->config, NULL, 'q');
 		break;
 	case 'c': // "ec"
-		switch (input[1]) {
-		case 'd': // "ecd"
-			rz_cons_pal_init (core->cons->context);
-			break;
-		case '?':
-			rz_core_cmd_help (core, help_msg_ec);
-			break;
-		case 'o': // "eco"
-			if (input[2] == 'j') {
-				nextpal (core, 'j');
-			} else if (input[2] == ' ') {
-				cmd_load_theme (core, input + 3);
-			} else if (input[2] == 'o') {
-				cmd_load_theme (core, rz_core_get_theme ());
-			} else if (input[2] == 'c' || input[2] == '.') {
-				rz_cons_printf ("%s\n", rz_core_get_theme ());
-			} else if (input[2] == '?') {
-				rz_core_cmd_help (core, help_msg_eco);
-			} else if (input[2] == 'q') {
-				RzList *themes_list = rz_core_list_themes (core);
-				RzListIter *th_iter;
-				const char *th;
-				rz_list_foreach (themes_list, th_iter, th) {
-					rz_cons_printf ("%s\n", th);
-				}
-			} else {
-				RzList *themes_list = rz_core_list_themes (core);
-				RzListIter *th_iter;
-				const char *th;
-				rz_list_foreach (themes_list, th_iter, th) {
-					if (curtheme && !strcmp (curtheme, th)) {
-						rz_cons_printf ("> %s\n", th);
-					} else {
-						rz_cons_printf ("  %s\n", th);
-					}
-				}
-			}
-			break;
-		case 's': rz_cons_pal_show (); break; // "ecs"
-		case '*': rz_cons_pal_list (1, NULL); break; // "ec*"
-		case 'h': // echo
-			if (input[2] == 'o') {
-				rz_core_echo (core, input + 3);
-			} else {
-				rz_cons_pal_list ('h', NULL);
-			}
-			break;
-		case 'j': // "ecj"
-			rz_cons_pal_list ('j', NULL);
-			break;
-		case 'c': // "ecc"
-			rz_cons_pal_list ('c', input + 2);
-			break;
-		case '\0': // "ec"
-			rz_cons_pal_list (0, NULL);
-			break;
-		case 'r': // "ecr"
-			rz_cons_pal_random ();
-			break;
-		case 'n': // "ecn"
-			nextpal (core, 'n');
-			break;
-		case 'p': // "ecp"
-			nextpal (core, 'p');
-			break;
-		case 'H': { // "ecH"
-			char *color_code = NULL;
-			char *word = NULL;
-			int argc = 0;
-			int delta = (input[2])? 3: 2;
-			char** argv = rz_str_argv (rz_str_trim_head_ro (input + delta), &argc);
-			switch (input[2]) {
-			case '?': {
-				const char *helpmsg[] = {
-					"Usage ecH[iw-?]","","",
-					"ecHi","[color]","highlight current instruction with 'color' background",
-					"ecHw","[word] [color]","highlight 'word ' in current instruction with 'color' background",
-					"ecH","","list all the highlight rules",
-					"ecH.","","show highlight rule in current offset",
-					"ecH-","*","remove all the highlight hints",
-					"ecH-","","remove all highlights on current instruction",
-					NULL
-				};
-				rz_core_cmd_help (core, helpmsg);
-				}
-				rz_str_argv_free (argv);
-				return false;
-			case '-': // ecH-
-				if (input[3] == '*') {
-					rz_meta_del (core->analysis, RZ_META_TYPE_HIGHLIGHT, 0, UT64_MAX);
-				} else {
-					rz_meta_del (core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, 1);
-					// rz_meta_set_string (core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, "");
-				}
-				rz_str_argv_free (argv);
-				return false;
-			case '.':
-				rz_meta_print_list_in_function (core->analysis, RZ_META_TYPE_HIGHLIGHT, 0, core->offset);
-				rz_str_argv_free (argv);
-				return false;
-			case '\0':
-				rz_meta_print_list_all (core->analysis, RZ_META_TYPE_HIGHLIGHT, 0);
-				rz_str_argv_free (argv);
-				return false;
-			case 'j':
-				rz_meta_print_list_all (core->analysis, RZ_META_TYPE_HIGHLIGHT, 'j');
-				rz_str_argv_free (argv);
-				return false;
-			case '*':
-				rz_meta_print_list_all (core->analysis, RZ_META_TYPE_HIGHLIGHT, '*');
-				rz_str_argv_free (argv);
-				return false;
-			case ' ':
-			case 'i': // "ecHi"
-				if (argc) {
-					char *dup = rz_str_newf ("bgonly %s", argv[0]);
-					color_code = rz_cons_pal_parse (dup, NULL);
-					RZ_FREE (dup);
-					if (!color_code) {
-						eprintf ("Unknown color %s\n", argv[0]);
-						rz_str_argv_free (argv);
-						return true;
-					}
-				}
-				break;
-			case 'w': // "ecHw"
-				if (!argc) {
-					eprintf ("Usage: ecHw word [color]\n");
-					rz_str_argv_free (argv);
-					return true;
-				}
-				word = strdup (argv[0]);
-				if (argc > 1) {
-					char *dup = rz_str_newf ("bgonly %s", argv[1]);
-					color_code = rz_cons_pal_parse (dup, NULL);
-					RZ_FREE (dup);
-					if (!color_code) {
-						eprintf ("Unknown color %s\n", argv[1]);
-						rz_str_argv_free (argv);
-						free (word);
-						return true;
-					}
-				}
-				break;
-			default:
-				eprintf ("See ecH?\n");
-				rz_str_argv_free (argv);
-				return true;
-			}
-			rz_meta_set_string (core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, "");
-			const char *str = rz_meta_get_string (core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset);
-			char *dup = rz_str_newf ("%s \"%s%s\"", str?str:"", word?word:"", color_code?color_code:rz_cons_singleton ()->context->pal.wordhl);
-			rz_meta_set_string (core->analysis, RZ_META_TYPE_HIGHLIGHT, core->offset, dup);
-			rz_str_argv_free (argv);
-			RZ_FREE (word);
-			RZ_FREE (dup);
-			break;
-			  }
-		default: {
-				 char *p = strdup (input + 2);
-				 char *q = strchr (p, '=');
-				 if (!q) {
-					 q = strchr (p, ' ');
-				 }
-				 if (q) {
-					 // Set color
-					 *q++ = 0;
-					 if (rz_cons_pal_set (p, q)) {
-						 rz_cons_pal_update_event ();
-					 }
-				 } else {
-					 char color[32];
-					 RzColor rcolor = rz_cons_pal_get (p);
-					 rz_cons_rgb_str (color, sizeof (color), &rcolor);
-					 eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, color);
-				 }
-				 free (p);
-			 }
-		}
+		rz_eval_color (core, input + 1);
 		break;
 	case 'd': // "ed"
 		if (input[1] == '?') {
@@ -659,4 +666,136 @@ RZ_IPI int rz_cmd_eval(void *data, const char *input) {
 		break;
 	}
 	return 0;
+}
+
+RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **argv) {
+	if (argc == 1) {
+		rz_config_list (core->config, NULL, 0);
+		return RZ_CMD_STATUS_OK;
+	}
+
+	int i;
+	for (i = 1; i < argc; i++) {
+		RzList *l = rz_str_split_duplist_n (argv[i], "=", 2, false);
+		if (!l) {
+			return RZ_CMD_STATUS_ERROR;
+		}
+		size_t llen = rz_list_length (l);
+		if (!llen) {
+			return RZ_CMD_STATUS_ERROR;
+		}
+		char *key = rz_list_get_n (l, 0);
+
+		if (llen == 1 && rz_str_endswith (key, ".")) {
+			// no value was set, only key with ".". List possible sub-keys.
+			rz_config_list (core->config, key, false);
+		} else if (llen == 1) {
+			// no value was set, show the value of the key
+			rz_cons_printf ("%s\n", rz_config_get (core->config, key));
+		} else if (llen == 2) {
+			char *value = rz_list_get_n (l, 1);
+			rz_config_set (core->config, key, value);
+		}
+
+		rz_list_free (l);
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_eval_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	switch (mode) {
+	case RZ_OUTPUT_MODE_STANDARD:
+		rz_config_list (core->config, argv[1], 2);
+		break;
+	case RZ_OUTPUT_MODE_JSON:
+		rz_config_list (core->config, argv[1], 'j');
+		break;
+	case RZ_OUTPUT_MODE_RIZIN:
+		rz_config_list (core->config, argv[1], 1);
+		break;
+	case RZ_OUTPUT_MODE_QUIET:
+		rz_config_list (core->config, argv[1], 'q');
+		break;
+	case RZ_OUTPUT_MODE_LONG:
+		rz_config_list (core->config, argv[1], 'v');
+		break;
+	case RZ_OUTPUT_MODE_LONG_JSON: {
+		char *a = rz_str_newf ("j%s", argc > 1? argv[1]: "");
+		rz_config_list (core->config, a, 'v');
+		free (a);
+		break;
+	}
+	default:
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_eval_reset_handler(RzCore *core, int argc, const char **argv) {
+	return rz_core_config_init (core)? RZ_CMD_STATUS_OK: RZ_CMD_STATUS_ERROR;
+}
+
+RZ_IPI RzCmdStatus rz_eval_bool_invert_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_config_toggle (core->config, argv[1])) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_eval_editor_handler(RzCore *core, int argc, const char **argv) {
+	const char *val = rz_config_get (core->config, argv[1]);
+	if (!val) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	char *p = rz_core_editor (core, NULL, val);
+	if (!p) {
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_str_replace_char (p, '\n', ';');
+	rz_config_set (core->config, argv[1], p);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_editor_rizinrc_handler(RzCore *core, int argc, const char **argv) {
+	char *file = rz_str_home (".rizinrc");
+	if (rz_cons_is_interactive ()) {
+		rz_file_touch (file);
+		char *res = rz_cons_editor (file, NULL);
+		if (res) {
+		}
+	}
+	if (rz_cons_yesno ('y', "Reload? (Y/n)")) {
+		rz_core_run_script (core, file);
+	}
+	free (file);
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_eval_readonly_handler(RzCore *core, int argc, const char **argv) {
+	if (!rz_config_readonly (core->config, argv[1])) {
+		eprintf ("rz_config: cannot make eval '%s' readonly.\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_eval_spaces_handler(RzCore *core, int argc, const char **argv) {
+	rz_config_list (core->config, argv[1], 's');
+	return RZ_CMD_STATUS_OK;
+}
+
+RZ_IPI RzCmdStatus rz_eval_type_handler(RzCore *core, int argc, const char **argv) {
+	RzConfigNode *node = rz_config_node_get (core->config, argv[1]);
+	if (!node) {
+		eprintf ("rz_config: cannot find eval '%s'.\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+
+	const char *type = rz_config_node_type (node);
+	if (!type) {
+		eprintf ("rz_config: cannot find type of eval '%s'.\n", argv[1]);
+		return RZ_CMD_STATUS_ERROR;
+	}
+	rz_cons_println (type);
+	return RZ_CMD_STATUS_OK;
 }
