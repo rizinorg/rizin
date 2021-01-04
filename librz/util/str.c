@@ -599,7 +599,7 @@ RZ_API const char *rz_sub_str_lchr(const char *str, int start, int end, char chr
 
 /* find the first char chr in the substring str[start:end] with end not included */
 RZ_API const char *rz_sub_str_rchr(const char *str, int start, int end, char chr) {
-	while (str[start] != chr && start < end) {
+	while (str[start] && str[start] != chr && start < end) {
 		start++;
 	}
 	return str[start] == chr ? str + start : NULL;
