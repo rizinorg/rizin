@@ -6,6 +6,7 @@ static RzCmdDescArg xd_args[] = {
     { .name = "F2", .type = RZ_CMD_ARG_TYPE_FCN },
     { .name = "e3", .type = RZ_CMD_ARG_TYPE_ENV },
     { .name = "Z4", .type = RZ_CMD_ARG_TYPE_ZIGN_SPACE },
+    { .name = "E5", .type = RZ_CMD_ARG_TYPE_EVAL_FULL },
     { 0 },
 };
 
@@ -278,6 +279,41 @@ static bool test_autocmplt_fcn(void) {
     mu_end;
 }
 
+static bool test_autocmplt_eval(void) {
+    RzCore *core = fake_core_new ();
+    mu_assert_notnull (core, "core should be created");
+    RzLineBuffer *buf = &core->cons->line->buffer;
+
+    const char *s = "xd 1 2 3 4 cfg.newsh";
+    strcpy (buf->data, s);
+    buf->length = strlen (s);
+    buf->index = buf->length;
+    RzLineNSCompletionResult *r = rz_core_autocomplete_newshell (core, buf, RZ_LINE_PROMPT_DEFAULT);
+
+    mu_assert_notnull (r, "r should not be null");
+    mu_assert_eq (r->start, strlen ("xd 1 2 3 4 "), "should autocomplete the last arg");
+    mu_assert_eq (r->end, buf->length, "should autocomplete ending at end of buffer");
+    mu_assert_eq (rz_pvector_len (&r->options), 2, "there are 2 config evals starting with cfg.newsh");
+    mu_assert_streq (rz_pvector_at (&r->options, 0), "cfg.newshell", "cfg.newshell found");
+    mu_assert_streq (rz_pvector_at (&r->options, 1), "cfg.newshell.autocompletion", "cfg.newshell found");
+    rz_line_ns_completion_result_free (r);
+
+    s = "xd 1 2 3 4 search.in=io.maps.r";
+    strcpy (buf->data, s);
+    buf->length = strlen (s);
+    buf->index = buf->length;
+    r = rz_core_autocomplete_newshell (core, buf, RZ_LINE_PROMPT_DEFAULT);
+
+    mu_assert_notnull (r, "r should not be null");
+    mu_assert_eq (r->start, strlen ("xd 1 2 3 4 search.in="), "should autocomplete the last arg");
+    mu_assert_eq (r->end, buf->length, "should autocomplete ending at end of buffer");
+    mu_assert_eq (rz_pvector_len (&r->options), 4, "there are 4 options values for config eval search.in");
+    rz_line_ns_completion_result_free (r);
+
+    rz_core_free (core);
+    mu_end;
+}
+
 bool all_tests() {
 	mu_run_test (test_autocmplt_cmdid);
 	mu_run_test (test_autocmplt_newcommand);
@@ -285,6 +321,7 @@ bool all_tests() {
 	mu_run_test (test_autocmplt_quotedarg);
 	mu_run_test (test_autocmplt_newarg);
 	mu_run_test (test_autocmplt_fcn);
+	mu_run_test (test_autocmplt_eval);
 	return tests_passed != tests_run;
 }
 
