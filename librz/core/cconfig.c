@@ -3434,7 +3434,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* http */
 	SETBPREF ("http.log", "true", "Show HTTP requests processed");
-	SETPREF ("http.sync", "", "Remote HTTP server to sync events with");
 	SETBPREF ("http.colon", "false", "Only accept the : command");
 	SETPREF ("http.logfile", "", "Specify a log file instead of stderr for http requests");
 	SETBPREF ("http.cors", "false", "Enable CORS");
@@ -3475,7 +3474,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 #endif
 	SETPREF ("http.port", "9090", "HTTP server port");
 	SETPREF ("http.maxport", "9999", "Last HTTP server port");
-	SETPREF ("http.ui", "m", "Default webui (enyo, m, p, t)");
 	SETI ("http.timeout", 3, "Disconnect clients after N seconds of inactivity");
 	SETI ("http.dietime", 0, "Kill server after N seconds with no client");
 	SETBPREF ("http.verbose", "false", "Output server logs to stdout");
@@ -3483,7 +3481,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF ("http.upload", "false", "Enable file uploads to /up/<filename>");
 	SETPREF ("http.uri", "", "Address of HTTP proxy");
 	SETBPREF ("http.auth", "false", "Enable/Disable HTTP Authentification");
-	SETPREF ("http.authtok", "r2admin:r2admin", "HTTP Authentification user:password token");
 	p = rz_sys_getenv ("RZ_HTTP_AUTHFILE");
 	SETPREF ("http.authfile", p? p : "", "HTTP Authentification user file");
 	tmpdir = rz_file_tmpdir ();
