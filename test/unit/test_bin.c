@@ -4,7 +4,7 @@
 
 //TODO test rz_str_chop_path
 
-bool test_r_bin(void) {
+bool test_rz_bin(void) {
 	RzBin *bin = rz_bin_new ();
 	RzIO *io = rz_io_new ();
 	rz_io_bind (io, &bin->iob);
@@ -24,10 +24,8 @@ bool test_r_bin(void) {
 
 
 bool all_tests() {
-	mu_run_test(test_r_bin);
+	mu_run_test(test_rz_bin);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
-}
+mu_main (all_tests)

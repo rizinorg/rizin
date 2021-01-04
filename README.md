@@ -33,13 +33,20 @@ $ git clone --recurse-submodules https://github.com/rizinorg/rizin
 Then compile and install with:
 ```
 $ meson build
-$ ninja -C build # or `meson compile -C build`
-$ sudo ninja -C build install # or `sudo meson install -C build`
+$ ninja -C build
+$ sudo ninja -C build install
+```
+
+Now you can use `rizin`:
+```
 $ rizin --
  -- Thank you for using rizin. Have a nice night!
 [0x00000000]>
-# Run "sudo ninja -C build uninstall" without quotes to uninstall rizin
+
 ```
+
+To uninstall rizin, execute `sudo ninja -C build uninstall`.
+
 
 Please have a look at [BUILDING.md][] for more information about building Rizin.
 

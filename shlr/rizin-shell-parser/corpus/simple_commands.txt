@@ -333,3 +333,18 @@ pd\@0xdeadbeef
   (arged_command (cmd_identifier))
   (arged_command (cmd_identifier))
   (arged_command (cmd_identifier)))
+
+===========
+UTF-8 chars
+===========
+
+rz-find -S واسع bins/pe/testapp-msvc64.exe
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args
+      (arg (arg_identifier))
+      (arg (arg_identifier))
+      (arg (arg_identifier)))))

@@ -4,7 +4,7 @@
 - [ ] I've read the [guidelines for contributing](https://github.com/rizinorg/rizin/blob/master/DEVELOPERS.md) to this repository
 - [ ] I made sure to follow the project's [coding style](https://github.com/rizinorg/rizin/blob/master/DEVELOPERS.md#code-style)
 - [ ] I've added tests that prove my fix is effective or that my feature works (if possible)
-- [ ] I've updated the documentation and the [rizin book](https://github.com/rizinorg/rizinbook) with the relevant information (if needed)
+- [ ] I've updated the documentation and the [rizin book](https://github.com/rizinorg/book) with the relevant information (if needed)
 
 **Detailed description**
 

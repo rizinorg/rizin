@@ -75,6 +75,11 @@ if get_option('enable_tests')
     'subprocess',
   ]
 
+  unit_test_env = environment()
+  if test_env_common_path != []
+    unit_test_env.prepend('PATH', test_env_common_path)
+  endif
+
   foreach test : tests
     exe = executable('test_@0@'.format(test), 'test_@0@.c'.format(test),
       include_directories: [platform_inc],
@@ -106,6 +111,6 @@ if get_option('enable_tests')
       install_rpath: rpath_exe,
       implicit_include_directories: false
     )
-    test(test, exe, workdir: join_paths(meson.current_source_dir(), '..'))
+    test(test, exe, workdir: join_paths(meson.current_source_dir(), '..'), env: unit_test_env)
   endforeach
 endif

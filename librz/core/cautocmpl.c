@@ -133,6 +133,9 @@ static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s,
 	}
 	char *basedir = rz_file_dirname (input);
 	const char *basename = rz_file_basename (input + 1);
+#if __WINDOWS__
+	rz_str_replace_ch (basedir, '/', '\\', true);
+#endif
 
 	RzList *l = rz_sys_dir (basedir);
 	RzListIter *iter;

@@ -1,7 +1,7 @@
 #include <rz_util.h>
 #include "minunit.h"
 
-static bool test_r_big_from_to_int(void) {
+static bool test_rz_big_from_to_int(void) {
 	RNumBig *a = rz_big_new ();
 
 	mu_assert_eq (0, rz_big_to_int (a), "Failed rz_big_to_int");
@@ -16,7 +16,7 @@ static bool test_r_big_from_to_int(void) {
 	mu_end;
 }
 
-static bool test_r_big_from_to_hexstr(void) {
+static bool test_rz_big_from_to_hexstr(void) {
 	RNumBig *a = rz_big_new ();
 	char *str;
 
@@ -36,7 +36,7 @@ static bool test_r_big_from_to_hexstr(void) {
 	mu_end;
 }
 
-static bool test_r_big_assign(void) {
+static bool test_rz_big_assign(void) {
 	RNumBig *a = rz_big_new ();
 	RNumBig *b = rz_big_new ();
 
@@ -53,7 +53,7 @@ static bool test_r_big_assign(void) {
 	mu_end;
 }
 
-static bool test_r_big_cmp(void) {
+static bool test_rz_big_cmp(void) {
 	RNumBig *a = rz_big_new ();
 	RNumBig *b = rz_big_new ();
 
@@ -93,7 +93,7 @@ static bool test_r_big_cmp(void) {
 	mu_end;
 }
 
-static bool test_r_big_add(void) {
+static bool test_rz_big_add(void) {
 	RNumBig *a = rz_big_new ();
 	RNumBig *b = rz_big_new ();
 	RNumBig *c = rz_big_new ();
@@ -130,7 +130,7 @@ static bool test_r_big_add(void) {
 	mu_end;
 }
 
-static bool test_r_big_sub(void) {
+static bool test_rz_big_sub(void) {
 	RNumBig *a = rz_big_new ();
 	RNumBig *b = rz_big_new ();
 	RNumBig *c = rz_big_new ();
@@ -186,7 +186,7 @@ static bool test_r_big_sub(void) {
 	mu_end;
 }
 
-static bool test_r_big_mul(void) {
+static bool test_rz_big_mul(void) {
 	RNumBig *a = rz_big_new ();
 	RNumBig *b = rz_big_new ();
 	RNumBig *c = rz_big_new ();
@@ -248,7 +248,7 @@ static bool test_r_big_mul(void) {
 	mu_end;
 }
 
-static bool test_r_big_div(void) {
+static bool test_rz_big_div(void) {
 	RNumBig *a = rz_big_new ();
 	RNumBig *b = rz_big_new ();
 	RNumBig *c = rz_big_new ();
@@ -292,7 +292,7 @@ static bool test_r_big_div(void) {
 	mu_end;
 }
 
-static bool test_r_big_divmod(void) {
+static bool test_rz_big_divmod(void) {
 	RNumBig *a = rz_big_new ();
 	RNumBig *b = rz_big_new ();
 	RNumBig *c = rz_big_new ();
@@ -312,7 +312,7 @@ static bool test_r_big_divmod(void) {
 	mu_end;
 }
 
-static bool test_r_big_mod(void) {
+static bool test_rz_big_mod(void) {
 	RNumBig *a = rz_big_new ();
 	RNumBig *b = rz_big_new ();
 	RNumBig *c = rz_big_new ();
@@ -328,7 +328,7 @@ static bool test_r_big_mod(void) {
 	mu_end;
 }
 
-static bool test_r_big_and(void) {
+static bool test_rz_big_and(void) {
 	RNumBig *a = rz_big_new ();
 	RNumBig *b = rz_big_new ();
 	RNumBig *c = rz_big_new ();
@@ -345,7 +345,7 @@ static bool test_r_big_and(void) {
 	mu_end;
 }
 
-static bool test_r_big_or(void) {
+static bool test_rz_big_or(void) {
 	RNumBig *a = rz_big_new ();
 	RNumBig *b = rz_big_new ();
 	RNumBig *c = rz_big_new ();
@@ -362,7 +362,7 @@ static bool test_r_big_or(void) {
 	mu_end;
 }
 
-static bool test_r_big_xor(void) {
+static bool test_rz_big_xor(void) {
 	RNumBig *a = rz_big_new ();
 	RNumBig *b = rz_big_new ();
 	RNumBig *c = rz_big_new ();
@@ -379,7 +379,7 @@ static bool test_r_big_xor(void) {
 	mu_end;
 }
 
-static bool test_r_big_inc(void) {
+static bool test_rz_big_inc(void) {
 	RNumBig *a = rz_big_new ();
 
 	rz_big_from_int (a, -1);
@@ -392,7 +392,7 @@ static bool test_r_big_inc(void) {
 	mu_end;
 }
 
-static bool test_r_big_dec(void) {
+static bool test_rz_big_dec(void) {
 	RNumBig *a = rz_big_new ();
 
 	rz_big_from_int (a, 1);
@@ -405,7 +405,7 @@ static bool test_r_big_dec(void) {
 	mu_end;
 }
 
-static bool test_r_big_is_zero(void) {
+static bool test_rz_big_is_zero(void) {
 	RNumBig *a = rz_big_new ();
 
 	rz_big_from_int (a, 1);
@@ -418,7 +418,7 @@ static bool test_r_big_is_zero(void) {
 	mu_end;
 }
 
-static bool test_r_big_lshift(void) {
+static bool test_rz_big_lshift(void) {
 	RNumBig *a = rz_big_new ();
 	RNumBig *c = rz_big_new ();
 
@@ -432,7 +432,7 @@ static bool test_r_big_lshift(void) {
 	mu_end;
 }
 
-static bool test_r_big_rshift(void) {
+static bool test_rz_big_rshift(void) {
 	RNumBig *a = rz_big_new ();
 	RNumBig *c = rz_big_new ();
 
@@ -446,7 +446,7 @@ static bool test_r_big_rshift(void) {
 	mu_end;
 }
 
-static bool test_r_big_powm(void) {
+static bool test_rz_big_powm(void) {
 	RNumBig *a = rz_big_new ();
 	RNumBig *b = rz_big_new ();
 	RNumBig *c = rz_big_new ();
@@ -464,7 +464,7 @@ static bool test_r_big_powm(void) {
 	mu_end;
 }
 
-static bool test_r_big_isqrt(void) {
+static bool test_rz_big_isqrt(void) {
 	RNumBig *a = rz_big_new ();
 	RNumBig *c = rz_big_new ();
 
@@ -508,29 +508,27 @@ static bool test_r_big_isqrt(void) {
 }
 
 static int all_tests(void) {
-	mu_run_test (test_r_big_from_to_int);
-	mu_run_test (test_r_big_from_to_hexstr);
-	mu_run_test (test_r_big_assign);
-	mu_run_test (test_r_big_cmp);
-	mu_run_test (test_r_big_add);
-	mu_run_test (test_r_big_sub);
-	mu_run_test (test_r_big_mul);
-	mu_run_test (test_r_big_div);
-	mu_run_test (test_r_big_divmod);
-	mu_run_test (test_r_big_mod);
-	mu_run_test (test_r_big_and);
-	mu_run_test (test_r_big_or);
-	mu_run_test (test_r_big_xor);
-	mu_run_test (test_r_big_inc);
-	mu_run_test (test_r_big_dec);
-	mu_run_test (test_r_big_is_zero);
-	mu_run_test (test_r_big_lshift);
-	mu_run_test (test_r_big_rshift);
-	mu_run_test (test_r_big_powm);
-	mu_run_test (test_r_big_isqrt);
+	mu_run_test (test_rz_big_from_to_int);
+	mu_run_test (test_rz_big_from_to_hexstr);
+	mu_run_test (test_rz_big_assign);
+	mu_run_test (test_rz_big_cmp);
+	mu_run_test (test_rz_big_add);
+	mu_run_test (test_rz_big_sub);
+	mu_run_test (test_rz_big_mul);
+	mu_run_test (test_rz_big_div);
+	mu_run_test (test_rz_big_divmod);
+	mu_run_test (test_rz_big_mod);
+	mu_run_test (test_rz_big_and);
+	mu_run_test (test_rz_big_or);
+	mu_run_test (test_rz_big_xor);
+	mu_run_test (test_rz_big_inc);
+	mu_run_test (test_rz_big_dec);
+	mu_run_test (test_rz_big_is_zero);
+	mu_run_test (test_rz_big_lshift);
+	mu_run_test (test_rz_big_rshift);
+	mu_run_test (test_rz_big_powm);
+	mu_run_test (test_rz_big_isqrt);
 	return tests_passed != tests_run;
 }
 
-int main (int argc, char **argv) {
-	return all_tests ();
-}
+mu_main (all_tests)

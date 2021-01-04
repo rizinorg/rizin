@@ -1,7 +1,7 @@
 #include <rz_util.h>
 #include "minunit.h"
 
-bool test_r_id_storage_add0(void) {
+bool test_rz_id_storage_add0(void) {
 	char *str = "lol";
 	RzIDStorage *ids = rz_id_storage_new (5, 23);
 	ut32 id;
@@ -12,7 +12,7 @@ bool test_r_id_storage_add0(void) {
 	mu_end;
 }
 
-bool test_r_id_storage_add1(void) {
+bool test_rz_id_storage_add1(void) {
 	char *str = "lol";
 	RzIDStorage *ids = rz_id_storage_new (0, 4);
 	ut32 id;
@@ -26,7 +26,7 @@ bool test_r_id_storage_add1(void) {
 	mu_end;
 }
 
-bool test_r_id_storage_set(void) {
+bool test_rz_id_storage_set(void) {
 	char *str = "lol";
 	RzIDStorage *ids = rz_id_storage_new (5, 23);
 	rz_id_storage_set (ids, str, 1);
@@ -36,7 +36,7 @@ bool test_r_id_storage_set(void) {
 	mu_end;
 }
 
-bool test_r_id_storage_delete(void) {
+bool test_rz_id_storage_delete(void) {
 	RzIDStorage *ids = rz_id_storage_new (5, 23);
 	ut32 id;
 	rz_id_storage_add (ids, "lol", &id);
@@ -47,7 +47,7 @@ bool test_r_id_storage_delete(void) {
 	mu_end;
 }
 
-bool test_r_id_storage_take0(void) {
+bool test_rz_id_storage_take0(void) {
 	char *str = "lol";
 	RzIDStorage *ids = rz_id_storage_new (5, 23);
 	ut32 id;
@@ -58,7 +58,7 @@ bool test_r_id_storage_take0(void) {
 	mu_end;
 }
 
-bool test_r_id_storage_take1(void) {
+bool test_rz_id_storage_take1(void) {
 	char *str = "lol";
 	RzIDStorage *ids = rz_id_storage_new (5, 23);
 	ut32 id;
@@ -72,15 +72,13 @@ bool test_r_id_storage_take1(void) {
 
 
 int all_tests() {
-	mu_run_test (test_r_id_storage_add0);
-	mu_run_test (test_r_id_storage_add1);
-	mu_run_test (test_r_id_storage_set);
-	mu_run_test (test_r_id_storage_delete);
-	mu_run_test (test_r_id_storage_take0);
-	mu_run_test (test_r_id_storage_take1);
+	mu_run_test (test_rz_id_storage_add0);
+	mu_run_test (test_rz_id_storage_add1);
+	mu_run_test (test_rz_id_storage_set);
+	mu_run_test (test_rz_id_storage_delete);
+	mu_run_test (test_rz_id_storage_take0);
+	mu_run_test (test_rz_id_storage_take1);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests ();
-}
+mu_main (all_tests)

@@ -128,7 +128,7 @@ platform_inc = include_directories(platform_inc)
 
 if get_option('static_runtime')
   if cc.get_id() == 'msvc'
-    add_project_arguments('/MT', language: 'c')
+    add_project_arguments('/MTd', language: 'c')
   endif
 endif
 
@@ -544,6 +544,36 @@ if use_rpath
   message('RPATH will be used to link libraries and executables')
   rpath_exe = '$ORIGIN/../' + get_option('libdir')
   rpath_lib = '$ORIGIN'
+endif
+# NOTE: this is to workaround an issue on Windows where unit tests don't use
+# the right libraries, resulting in tests not being run properly
+test_env_common_path = []
+build_root = meson.current_build_dir()
+if host_machine.system() == 'windows'
+  test_env_common_path += [
+    build_root / 'librz' / 'analysis',
+    build_root / 'librz' / 'asm',
+    build_root / 'librz' / 'bin',
+    build_root / 'librz' / 'bp',
+    build_root / 'librz' / 'config',
+    build_root / 'librz' / 'cons',
+    build_root / 'librz' / 'core',
+    build_root / 'librz' / 'crypto',
+    build_root / 'librz' / 'debug',
+    build_root / 'librz' / 'egg',
+    build_root / 'librz' / 'flag',
+    build_root / 'librz' / 'hash',
+    build_root / 'librz' / 'io',
+    build_root / 'librz' / 'lang',
+    build_root / 'librz' / 'magic',
+    build_root / 'librz' / 'main',
+    build_root / 'librz' / 'parse',
+    build_root / 'librz' / 'reg',
+    build_root / 'librz' / 'search',
+    build_root / 'librz' / 'socket',
+    build_root / 'librz' / 'syscall',
+    build_root / 'librz' / 'util',
+  ]
 endif
 
 subdir('librz/util')

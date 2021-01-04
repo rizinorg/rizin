@@ -9,7 +9,7 @@
 
 #endif //__linux__
 
-bool test_r_debug_use(void) {
+bool test_rz_debug_use(void) {
 	RzDebug *dbg;
 	bool res;
 
@@ -23,7 +23,7 @@ bool test_r_debug_use(void) {
 	mu_end;
 }
 
-bool test_r_debug_reg_offset(void) {
+bool test_rz_debug_reg_offset(void) {
 #if __linux__
 #ifdef __x86_64__
 #define FPREGS struct user_fpregs_struct
@@ -53,11 +53,9 @@ bool test_r_debug_reg_offset(void) {
 }
 
 int all_tests() {
-	mu_run_test (test_r_debug_use);
-	mu_run_test (test_r_debug_reg_offset);
+	mu_run_test (test_rz_debug_use);
+	mu_run_test (test_rz_debug_reg_offset);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests ();
-}
+mu_main (all_tests)

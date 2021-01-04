@@ -3,9 +3,19 @@
 // You may use the code in this tech note for any purpose,
 // with the understanding that it comes with NO WARRANTY.
 
-#ifndef TERMCOLOR_H
-#define TERMCOLOR_H
+#ifndef _MINUNIT_H_
+#define _MINUNIT_H_
 
+#if __WINDOWS__
+#define TRED
+#define TGREEN
+#define TYELLOW
+#define TBLUE
+#define TMAGENTA
+#define TCYAN
+#define TBOLD
+#define TRESET
+#else
 #define TRED     "\x1b[31m"
 #define TGREEN   "\x1b[32m"
 #define TYELLOW  "\x1b[33m"
@@ -178,6 +188,7 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 
 #define mu_run_test_named(test, name, ...) do { int result; \
 		printf(TBOLD "%s" TRESET " ", name); \
+		mu_test_status = MU_TEST_UNBROKEN; \
 		result = test(__VA_ARGS__); \
 		tests_run++; \
 		tests_passed += result; \
@@ -190,3 +201,9 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 int tests_run = 0;
 int tests_passed = 0;
 int mu_test_status = MU_TEST_UNBROKEN;
+
+#define mu_main(fcn) int main(int argc, char **argv) { \
+	return fcn (); \
+}
+
+#endif

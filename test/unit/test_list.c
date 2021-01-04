@@ -2,7 +2,7 @@
 #include "minunit.h"
 #define BUF_LENGTH 100
 
-bool test_r_list_size(void) {
+bool test_rz_list_size(void) {
 	// Test that rz_list adding and deleting works correctly.
 	int i;
 	RzList* list = rz_list_new ();
@@ -24,7 +24,7 @@ bool test_r_list_size(void) {
 	mu_end;
 }
 
-bool test_r_list_values(void) {
+bool test_rz_list_values(void) {
 	RzList* list = rz_list_new ();
 	intptr_t test1 = 0x12345;
 	intptr_t test2 = 0x88888;
@@ -38,7 +38,7 @@ bool test_r_list_values(void) {
 	mu_end;
 }
 
-bool test_r_list_join(void) {
+bool test_rz_list_join(void) {
 	RzList* list1 = rz_list_new ();
 	RzList* list2 = rz_list_new ();
 	intptr_t test1 = 0x12345;
@@ -54,14 +54,14 @@ bool test_r_list_join(void) {
 }
 
 
-bool test_r_list_free(void) {
+bool test_rz_list_free(void) {
 	RzList* list = rz_list_newf ((void*)0x9999);
 	mu_assert_eq((int)(intptr_t)list->free, 0x9999, "rz_list_newf function gets set properly");
 	rz_list_free (list);
 	mu_end;
 }
 
-bool test_r_list_del_n(void) {
+bool test_rz_list_del_n(void) {
 	RzList* list = rz_list_new ();
 	intptr_t test1 = 0x12345;
 	intptr_t test2 = 0x88888;
@@ -77,7 +77,7 @@ bool test_r_list_del_n(void) {
 	mu_end;
 }
 
-bool test_r_list_sort(void) {
+bool test_rz_list_sort(void) {
 	RzList* list = rz_list_new ();
 	char* test1 = "AAAA";
 	char* test2 = "BBBB";
@@ -97,7 +97,7 @@ bool test_r_list_sort(void) {
 }
 
 
-bool test_r_list_sort2(void) {
+bool test_rz_list_sort2(void) {
 	RzList* list = rz_list_new ();
 	char* test1 = "AAAA";
 	char* test2 = "BBBB";
@@ -123,7 +123,7 @@ static int cmp_range(const void *a, const void *b) {
 	return ra - rb;
 }
 
-bool test_r_list_sort3(void) {
+bool test_rz_list_sort3(void) {
 	RzList* list = rz_list_new ();
 	int test1 = 33508;
 	int test2 = 33480;
@@ -143,7 +143,7 @@ bool test_r_list_sort3(void) {
 }
 
 
-bool test_r_list_length(void) {
+bool test_rz_list_length(void) {
 	RzList* list = rz_list_new ();
 	RzList* list2 = rz_list_new ();
 	RzListIter *iter;
@@ -201,7 +201,7 @@ bool test_r_list_length(void) {
 }
 
 
-bool test_r_list_sort5(void) {
+bool test_rz_list_sort5(void) {
 	RzList* list = rz_list_new ();
 	int i = 0;
 	char *upper[] = {"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"};
@@ -225,7 +225,7 @@ static int pintcmp(int* a, int* b) {
 	return (int)(*a > *b) - (int)(*b > *a);
 }
 
-bool test_r_list_mergesort_pint() {
+bool test_rz_list_mergesort_pint() {
 	// 47 items
 	int data[] = {-440, -468, -444, -80, -568, -564, -396, -404, -436, -420,
 		-428, -388, -356, -324, -292, -464, -260, -252, -204, -196, -212, -76,
@@ -258,7 +258,7 @@ bool test_r_list_mergesort_pint() {
 }
 
 
-bool test_r_list_sort4(void) {
+bool test_rz_list_sort4(void) {
 	RzList* list = rz_list_new ();
 	char* test1 = "AAAA";
 	char* test2 = "BBBB";
@@ -335,7 +335,7 @@ bool test_r_list_sort4(void) {
 	mu_end;
 }
 
-bool test_r_list_append_prepend(void) {
+bool test_rz_list_append_prepend(void) {
 
 	char *test[] = {
 		"HEAD 00",
@@ -378,7 +378,7 @@ bool test_r_list_append_prepend(void) {
 	mu_end;
 }
 
-bool test_r_list_set_get(void) {
+bool test_rz_list_set_get(void) {
 
 	char *test[] = { "aa", "bb", "cc", "dd", "ee", "ff" };
 
@@ -408,7 +408,7 @@ bool test_r_list_set_get(void) {
 	mu_end;
 }
 
-bool test_r_list_reverse(void) {
+bool test_rz_list_reverse(void) {
 
 	char *test[] = { "aa", "bb", "cc", "dd", "ee", "ff" };
 
@@ -434,7 +434,7 @@ bool test_r_list_reverse(void) {
 	mu_end;
 }
 
-bool test_r_list_clone(void) {
+bool test_rz_list_clone(void) {
 
 	char *test[] = { "aa", "bb", "cc", "dd", "ee", "ff" };
 
@@ -464,25 +464,23 @@ bool test_r_list_clone(void) {
 }
 
 int all_tests() {
-	mu_run_test(test_r_list_size);
-	mu_run_test(test_r_list_values);
-	mu_run_test(test_r_list_join);
-	mu_run_test(test_r_list_free);
-	mu_run_test(test_r_list_del_n);
-	mu_run_test(test_r_list_sort);
-	mu_run_test(test_r_list_sort2);
-	mu_run_test(test_r_list_sort3);
-	mu_run_test(test_r_list_sort4);
-	mu_run_test(test_r_list_sort5);
-	mu_run_test(test_r_list_mergesort_pint);
-	mu_run_test(test_r_list_length);
-	mu_run_test(test_r_list_append_prepend);
-	mu_run_test(test_r_list_set_get);
-	mu_run_test(test_r_list_reverse);
-	mu_run_test(test_r_list_clone);
+	mu_run_test(test_rz_list_size);
+	mu_run_test(test_rz_list_values);
+	mu_run_test(test_rz_list_join);
+	mu_run_test(test_rz_list_free);
+	mu_run_test(test_rz_list_del_n);
+	mu_run_test(test_rz_list_sort);
+	mu_run_test(test_rz_list_sort2);
+	mu_run_test(test_rz_list_sort3);
+	mu_run_test(test_rz_list_sort4);
+	mu_run_test(test_rz_list_sort5);
+	mu_run_test(test_rz_list_mergesort_pint);
+	mu_run_test(test_rz_list_length);
+	mu_run_test(test_rz_list_append_prepend);
+	mu_run_test(test_rz_list_set_get);
+	mu_run_test(test_rz_list_reverse);
+	mu_run_test(test_rz_list_clone);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
-}
+mu_main (all_tests)

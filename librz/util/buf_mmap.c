@@ -5,13 +5,14 @@
 struct buf_mmap_user {
 	const char *filename;
 	int perm;
+	int mode;
 };
 
 // "subclass"" of buf_bytes_priv
 struct buf_mmap_priv {
 	// NOTE: this needs to be first, so that bytes operations will work without changes
 	struct buf_bytes_priv bytes_priv;
-	RMmap *mmap;
+	RzMmap *mmap;
 };
 
 static inline struct buf_mmap_priv *get_priv_mmap(RzBuffer *b) {
@@ -27,7 +28,7 @@ static bool buf_mmap_init(RzBuffer *b, const void *user) {
 		return false;
 	}
 
-	priv->mmap = rz_file_mmap (u->filename, u->perm & RZ_PERM_W, 0);
+	priv->mmap = rz_file_mmap (u->filename, u->perm, u->mode, 0);
 	if (!priv->mmap) {
 		free (priv);
 		return false;
@@ -36,6 +37,7 @@ static bool buf_mmap_init(RzBuffer *b, const void *user) {
 	priv->bytes_priv.length = priv->mmap->len;
 	priv->bytes_priv.offset = 0;
 	b->priv = priv;
+	b->fd = priv->mmap->fd;
 	return true;
 }
 
@@ -49,7 +51,7 @@ static bool buf_mmap_fini(RzBuffer *b) {
 static bool buf_mmap_resize(RzBuffer *b, ut64 newsize) {
 	struct buf_mmap_priv *priv = get_priv_mmap (b);
 	if (newsize > priv->mmap->len) {
-		ut8 *t = rz_mem_mmap_resize (priv->mmap, newsize);
+		ut8 *t = rz_file_mmap_resize (priv->mmap, newsize);
 		if (!t) {
 			return false;
 		}
