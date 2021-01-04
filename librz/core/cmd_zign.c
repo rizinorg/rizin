@@ -580,7 +580,7 @@ struct ctxSearchCB {
 	bool rad;
 	int count;
 	const char *prefix;
-	const RzAnalysisBlock *wrap_bb;
+	const RzAnalysisBlock *wrapper_bb;
 };
 
 static void apply_name(RzCore *core, RzAnalysisFunction *fcn, RzSignItem *it, bool rad) {
@@ -675,13 +675,15 @@ static int searchHitCB(RzSignItem *it, RzSearchKeyword *kw, ut64 addr, void *use
 	apply_flag (ctx->core, it, addr, kw->keyword_length, kw->count, ctx->prefix, ctx->rad);
 	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (ctx->core->analysis, addr, 0);
 	// TODO: create fcn if it does not exist
-	if (fcn && ctx->wrap_bb && ctx->wrap_bb->jump == addr) {
+	if (fcn && ctx->wrapper_bb && ctx->wrapper_bb->jump == addr) {
+		ut64 wrapper_size = ctx->wrapper_bb->size;
+		ctx->wrapper_bb = NULL;
 		RzAnalysisFunction *newfcn = rz_analysis_create_function (ctx->core->analysis, NULL, addr, RZ_ANALYSIS_FCN_TYPE_FCN, NULL);
-		int size = rz_analysis_function_realsize (fcn) - ctx->wrap_bb->size;
+		ut64 size = rz_analysis_function_realsize (fcn) - wrapper_size;
 		int flen = rz_analysis_fcn (ctx->core->analysis, newfcn, addr, size, RZ_ANALYSIS_REF_TYPE_CALL);
 		/* rz_analysis_fcn() returns RZ_ANALYSIS_RET_ERROR if BBs already exist */
 		if (flen == RZ_ANALYSIS_RET_ERROR) {
-			rz_analysis_function_resize (fcn, ctx->wrap_bb->size);
+			rz_analysis_function_resize (fcn, wrapper_size);
 		} else {
 			rz_analysis_function_delete (newfcn);
 			newfcn = NULL;
@@ -822,7 +824,7 @@ static bool search(RzCore *core, bool rad, bool only_func) {
 	const char *mode = rz_config_get (core->config, "search.in");
 	bool useBytes = rz_config_get_i (core->config, "zign.match.bytes");
 	const char *zign_prefix = rz_config_get (core->config, "zign.prefix");
-	int maxsz = rz_config_get_i (core->config, "zign.maxsz");
+	ut64 maxsz = rz_config_get_i (core->config, "zign.maxsz");
 
 	struct ctxSearchCB metsearch_ctx = { core, rad, 0, NULL };
 	RzSignSearchMetrics sm;
@@ -872,8 +874,8 @@ static bool search(RzCore *core, bool rad, bool only_func) {
 			}
 			if (useBytes && only_func) {
 				eprintf ("Matching func %d / %d (hits %d)\n", count, rz_list_length (core->analysis->fcns), bytes_search_ctx.count);
-				int fcnlen = rz_analysis_function_realsize (fcni);
-				int len = RZ_MIN (core->io->addrbytes * fcnlen, maxsz);
+				ut64 fcnlen = rz_analysis_function_realsize (fcni);
+				ut64 len = RZ_MIN (core->io->addrbytes * fcnlen, maxsz);
 				if (rz_list_length (fcni->bbs) > 1) {
 					const RzAnalysisBlock *bb = NULL;
 					bb = rz_list_first (fcni->bbs);
@@ -881,11 +883,12 @@ static bool search(RzCore *core, bool rad, bool only_func) {
 						bb = rz_analysis_get_block_at (core->analysis, fcni->addr);
 					}
 					if (bb && bb->jump != UT64_MAX && bb->fail == UT64_MAX) {
-						len = RZ_MIN (core->io->addrbytes * (fcnlen - bb->size), maxsz);
-						bytes_search_ctx.wrap_bb = bb;
+						ut64 bb_size = bb->size;
+						len = RZ_MIN (core->io->addrbytes * (fcnlen - bb_size), maxsz);
+						bytes_search_ctx.wrapper_bb = bb;
 						retval &= searchRange2 (core, ss, bb->jump, bb->jump + len, rad, &bytes_search_ctx);
-						len = RZ_MIN (core->io->addrbytes * bb->size, maxsz);
-						bytes_search_ctx.wrap_bb = NULL;
+						len = RZ_MIN (core->io->addrbytes * bb_size, maxsz);
+						bytes_search_ctx.wrapper_bb = NULL;
 					}
 				}
 				retval &= searchRange2 (core, ss, fcni->addr, fcni->addr + len, rad, &bytes_search_ctx);
