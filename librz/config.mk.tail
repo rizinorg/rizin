@@ -1,39 +1,39 @@
 # config.mk.tail
 
-LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+LIBRZ:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 # neat???!? trick to support path with spaces
 null:=
 SPACE:=$(null) $(null)
 
-ifeq ($(LIBR),)
-ifeq ($(R2DIR),)
-$(error ERROR: Cannot find R2DIR. Please define this variable)
+ifeq ($(LIBRZ),)
+ifeq ($(RZDIR),)
+$(error ERROR: Cannot find RZDIR. Please define this variable)
 else
-LIBR=$(R2DIR)/librz
-MSVC=$(R2DIR)/msvc
+LIBRZ=$(RZDIR)/librz
+MSVC=$(RZDIR)/msvc
 endif
 endif
 
-SHLR:=$(LIBR)/../shlr
+SHLR:=$(LIBRZ)/../shlr
 
-#include $(LIBR)/../config-user.mk
-include $(LIBR)/../global.mk
-include $(LIBR)/../mk/${COMPILER}.mk
+#include $(LIBRZ)/../config-user.mk
+include $(LIBRZ)/../global.mk
+include $(LIBRZ)/../mk/${COMPILER}.mk
 
 CFLAGS+=${CFLAGS_APPEND}
 CFLAGS+=${CPPFLAGS}
 
 ifeq (1,1)
 #$(WITHPIC),1)
-LINK+=$(subst rz_,-L$(LIBR)/,$(RZ_DEPS))
+LINK+=$(subst rz_,-L$(LIBRZ)/,$(RZ_DEPS))
 LINK+=$(subst rz_,-lrz_,$(RZ_DEPS))
-LINK+=$(subst rz_,-L$(LIBR)/,$(BINDEPS))
+LINK+=$(subst rz_,-L$(LIBRZ)/,$(BINDEPS))
 LINK+=$(subst rz_,-lrz_,$(BINDEPS))
 CFLAGS+=${PIC_CFLAGS}
 LINK+=${PIC_CFLAGS}
 else
 ifneq ($(RZ_DEPS),)
-LINK+=$(shell echo ${RZ_DEPS} | sed -e 's:rz_\([^ ]\+\):$(LIBR)/\1/libr_\1.${EXT_AR}:g')
+LINK+=$(shell echo ${RZ_DEPS} | sed -e 's:rz_\([^ ]\+\):$(LIBRZ)/\1/librz_\1.${EXT_AR}:g')
 endif
 endif
 

@@ -10,7 +10,7 @@ print_var()
 }
 
 env -0 | while IFS='=' read -r -d '' n v; do
-    if [[ "${n}" =~ ^TRAVIS* || "${n}" =~ ^R2* || "${n}" =~ SAN_* || "%{n}" =~ CODECOV_* || "%{n}" =~ VCS_* || "%{n}" =~ CI_* ]]; then
+    if [[ "${n}" =~ ^TRAVIS* || "${n}" =~ ^RZ* || "${n}" =~ SAN_* || "%{n}" =~ CODECOV_* || "%{n}" =~ VCS_* || "%{n}" =~ CI_* ]]; then
         print_var "${n}" "${v}"
     fi
 done

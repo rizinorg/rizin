@@ -233,7 +233,6 @@ static int init_pdb7_root_stream(RzPdb *pdb, int *root_page_list, int pages_amou
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// R2: ugly indentation
 // static void init_parsed_pdb_stream(SParsedPDBStream *pdb_stream, FILE *fp, int *pages,
 // int pages_amount, int index, int size,
 // int page_size, f_load pLoad)

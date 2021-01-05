@@ -9,18 +9,18 @@ AR?=$(CC_AR)
 RANLIB?=ranlib
 LIBNAME=libgdbr
 LIBFILE=$(LIBNAME).$(EXT_SO)
-CFLAGS+=-I$(LIBR)/include $(PIC_CFLAGS)
-CFLAGS+=-Iinclude -I${LIBR}/include
+CFLAGS+=-I$(LIBRZ)/include $(PIC_CFLAGS)
+CFLAGS+=-Iinclude -I${(LIBRZ)}/include
 MAJOR=0
 MINOR=1
 LD=$(CC)
 ifeq ($(LD),cccl)
-LDFLAGS+=-L${LIBR}/socket -llibrz_socket
-LDFLAGS+=-L${LIBR}/util -llibrz_util
+LDFLAGS+=-L${(LIBRZ)}/socket -llibrz_socket
+LDFLAGS+=-L${(LIBRZ)}/util -llibrz_util
 EXT_AR?=lib
 else
-LDFLAGS+=-L${LIBR}/socket -lrz_socket
-LDFLAGS+=-L${LIBR}/util -lrz_util
+LDFLAGS+=-L${(LIBRZ)}/socket -lrz_socket
+LDFLAGS+=-L${(LIBRZ)}/util -lrz_util
 EXT_AR?=a
 endif
 
@@ -81,7 +81,7 @@ unit: lib
 	$(LD) $(TEST_D)/unit.o -o $(TEST_D)/unit -L$(LIB) -lgdbr -lglib-2.0
 
 run_unit: unit
-	LD_LIBRARY_PATH=./lib ./test/unit
+	LD_(LIBRZ)ARY_PATH=./lib ./test/unit
 
 client: lib
 	$(CC) $(CFLAGS) $(INCLUDES) -c $(CLIENT) -o $(TEST_D)/client.o

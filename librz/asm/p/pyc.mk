@@ -1,4 +1,4 @@
-PYC_ROOT=$(LIBR)/asm/arch/pyc
+PYC_ROOT=$(LIBRZ)/asm/arch/pyc
 OBJ_PYC=asm_pyc.o
 OBJ_PYC+=$(PYC_ROOT)/opcode_10.o
 OBJ_PYC+=$(PYC_ROOT)/opcode_11.o

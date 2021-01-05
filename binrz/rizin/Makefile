@@ -16,7 +16,7 @@ ENTITL=rizin.xcent
 #LDFLAGS+=-flto
 
 CFLAGS_INCLUDES+=-I$(SHLR)/sdb/src
-CFLAGS_INCLUDES+=-I$(LIBR)/include
+CFLAGS_INCLUDES+=-I$(LIBRZ)/include
 
 ifeq (${COMPILER},emscripten)
 # https://kripken.github.io/emscripten-site/docs/optimizing/Optimizing-Code.html
