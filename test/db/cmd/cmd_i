@@ -4559,6 +4559,6 @@ wx 7500 6900 3d25 7325 7325 7300 2573 2c00 2b25 7325 7325 7300 2d25 7325 7325 73
 izz~^0
 EOF
 EXPECT=<<EOF
-0   0x00000000 0x00000000 24  50           utf16le ui┽╳╳s猥,┫╳╳s┭╳╳s慣彰档睯n慣彰慤 blocks=Basic Latin,Box Drawing,CJK Unified Ideographs
+0   0x00000004 0x00000004 7   8            ascii =%s%s%s
 EOF
 RUN
