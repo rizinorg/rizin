@@ -45,7 +45,7 @@ case "$1" in
 	docker rmi rizin/rizin:latest 2> /dev/null
 	;;
 -d)
-	R2FLAGS=-d $0 $2
+	RZFLAGS=-d $0 $2
 	;;
 -u)
 	docker build -t rizin/rizin:latest .

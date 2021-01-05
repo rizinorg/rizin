@@ -182,6 +182,9 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 	case 'j': // "obj"
 	case '*': // "ob*"
 		rz_core_bin_list (core, input[1]);
+		if (input[1] == 'j') {
+			rz_cons_newline ();
+		}
 		break;
 	case '.': // "ob."
 		{

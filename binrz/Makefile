@@ -12,7 +12,7 @@ ifeq ($(WANT_RZ_TEST),1)
     BINS+=rz-test
 endif
 
-LIBR2=$(call libname-version,librz.$(EXT_SO),${LIBVERSION})
+LIBRZ=$(call libname-version,librz.$(EXT_SO),${LIBVERSION})
 
 all: preload
 	@for BINARY in $(BINS) ; do $(MAKE) -C $${BINARY} all || exit 1; done
@@ -36,8 +36,8 @@ install:
 ifeq ($(WITHPIC),1)
 	${INSTALL_LIB} "preload/librz.$(EXT_SO)" "${DESTDIR}${LIBDIR}"
 	-cd "${DESTDIR}${LIBDIR}" && \
-		mv librz.$(EXT_SO) $(LIBR2) && \
-		ln -fs $(LIBR2) librz.$(EXT_SO)
+		mv librz.$(EXT_SO) $(LIBRZ) && \
+		ln -fs $(LIBRZ) librz.$(EXT_SO)
 endif
 
 ios_sign ios-sign ios-sdk-sign:
@@ -54,8 +54,8 @@ symstall install-symlink:
 	cd .. && mkdir -p "${DESTDIR}${DATADIR}/rizin/${VERSION}/"
 	-cd .. && ln -fs "${BTOP}/preload/librz.$(EXT_SO)" "${DESTDIR}${LIBDIR}/librz.$(EXT_SO)"
 	-cd .. && cd "${DESTDIR}${LIBDIR}" && \
-		mv librz.$(EXT_SO) $(LIBR2) && \
-		ln -fs $(LIBR2) librz.$(EXT_SO)
+		mv librz.$(EXT_SO) $(LIBRZ) && \
+		ln -fs $(LIBRZ) librz.$(EXT_SO)
 
 deinstall uninstall:
 	-cd .. ; \

@@ -1,5 +1,5 @@
 OBJ_H8300=asm_h8300.o
-H8300_ROOT=$(LIBR)/asm/arch/h8300
+H8300_ROOT=$(LIBRZ)/asm/arch/h8300
 OBJ_H8300+=$(H8300_ROOT)/h8300_disas.o
 CFLAGS+=-I$(H8300_ROOT)
 

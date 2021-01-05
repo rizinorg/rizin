@@ -94,7 +94,7 @@ static const char *help_msg_ab[] = {
 	"ab.", "", "same as: ab $$",
 	"aba", " [addr]", "analyze esil accesses in basic block (see aea?)",
 	"abb", " [length]", "analyze N bytes and extract basic blocks",
-	"abj", " [addr]", "display basic block information in JSON (alias to afbj)",
+	"abj", " [addr]", "display basic block information in JSON",
 	"abl", "[,qj]", "list all basic blocks",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
 	"abt[?]", " [addr] [num]", "find num paths from current offset to addr",
@@ -355,7 +355,7 @@ static const char *help_msg_afb[] = {
 	"afb+", " fcn_at bbat bbsz [jump] [fail] ([diff])", "add basic block by hand",
 	"afbc", " [addr] [color(ut32)]", "set a color for the bb at a given address",
 	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
-	"afbi", "", "print current basic block information",
+	"afbi", "[j]", "print current basic block information",
 	"afbj", " [addr]", "show basic blocks information in json",
 	"afbr", "", "Show addresses of instructions which leave the function",
 	"afbt", "", "Show basic blocks of current function in a table",
@@ -669,6 +669,7 @@ static const char *help_msg_ar[] = {
 	"aro", "", "Show old (previous) register values",
 	"arp", "[?] <file>", "Load register profile from file",
 	"ars", "", "Stack register state",
+	"arS", "", "Show the size of the register profile",
 	"art", "", "List all register types",
 	"arw", " <hexnum>", "Set contents of the register arena",
 	NULL
@@ -2381,10 +2382,77 @@ static void analysis_bb_list(RzCore *core, const char *input) {
 	}
 }
 
+static void print_bb(PJ *pj, RzAnalysisBlock *b, const RzAnalysisFunction *fcn, const ut64 addr) {
+	RzListIter *iter2;
+	RzAnalysisBlock *b2;
+	int outputs = (b->jump != UT64_MAX) + (b->fail != UT64_MAX);
+	int inputs = 0;
+	rz_list_foreach (fcn->bbs, iter2, b2) {
+		inputs += (b2->jump == b->addr) + (b2->fail == b->addr);
+	}
+	ut64 opaddr = __opaddr (b, addr);
+	if (pj) {
+		pj_o (pj);
+		if (b->jump != UT64_MAX) {
+			pj_kn (pj, "jump", b->jump);
+		}
+		if (b->fail != UT64_MAX) {
+			pj_kn (pj, "fail", b->fail);
+		}
+		if (b->switch_op) {
+			pj_k (pj, "switch_op");
+			pj_o (pj);
+			pj_kn (pj, "addr", b->switch_op->addr);
+			pj_kn (pj, "min_val", b->switch_op->min_val);
+			pj_kn (pj, "def_val", b->switch_op->def_val);
+			pj_kn (pj, "max_val", b->switch_op->max_val);
+			pj_k (pj, "cases");
+			pj_a (pj);
+			{
+			RzListIter *case_op_iter;
+			RzAnalysisCaseOp *case_op;
+			rz_list_foreach (b->switch_op->cases, case_op_iter, case_op) {
+				pj_o (pj);
+				pj_kn (pj, "addr", case_op->addr);
+				pj_kn (pj, "jump", case_op->jump);
+				pj_kn (pj, "value", case_op->value);
+				pj_end (pj);
+			}
+			}
+			pj_end (pj);
+			pj_end (pj);
+		}
+		pj_kn (pj, "opaddr", opaddr);
+		pj_kn (pj, "addr", b->addr);
+		pj_ki (pj, "size", b->size);
+		pj_ki (pj, "inputs", inputs);
+		pj_ki (pj, "outputs", outputs);
+		pj_ki (pj, "ninstr", b->ninstr);
+		pj_kb (pj, "traced", b->traced);
+		pj_end (pj);
+	} else {
+		if (b->switch_op) {
+			RzList *unique_cases = rz_list_uniq (b->switch_op->cases, casecmp);
+			outputs += rz_list_length (unique_cases);
+			rz_list_free (unique_cases);
+		}
+		if (b->jump != UT64_MAX) {
+			rz_cons_printf ("jump: 0x%08"PFMT64x"\n", b->jump);
+		}
+		if (b->fail != UT64_MAX) {
+			rz_cons_printf ("fail: 0x%08"PFMT64x"\n", b->fail);
+		}
+		rz_cons_printf ("opaddr: 0x%08"PFMT64x"\n", opaddr);
+		rz_cons_printf ("addr: 0x%08" PFMT64x "\nsize: %" PFMT64d "\ninputs: %d\noutputs: %d\nninstr: %d\ntraced: %s\n",
+			b->addr, b->size, inputs, outputs, b->ninstr, rz_str_bool (b->traced));
+	}
+}
+
 static bool analysis_fcn_list_bb(RzCore *core, const char *input, bool one) {
 	RzDebugTracepoint *tp = NULL;
 	RzListIter *iter;
 	RzAnalysisBlock *b;
+
 	int mode = 0;
 	ut64 addr, bbaddr = UT64_MAX;
 	PJ *pj = NULL;
@@ -2462,168 +2530,78 @@ static bool analysis_fcn_list_bb(RzCore *core, const char *input, bool one) {
 		t = rz_table_new ();
 		rz_table_set_columnsf (t, "xdxx", "addr", "size", "jump", "fail");
 	}
-	if (fcn->bbs) {
-		rz_list_foreach (fcn->bbs, iter, b) {
-			if (one) {
-				if (bbaddr != UT64_MAX && (bbaddr < b->addr || bbaddr >= (b->addr + b->size))) {
-					continue;
+	rz_list_foreach (fcn->bbs, iter, b) {
+		if (one) {
+			if (bbaddr != UT64_MAX && (bbaddr < b->addr || bbaddr >= (b->addr + b->size))) {
+				continue;
+			}
+		}
+		switch (mode) {
+		case 't':
+			rz_table_add_rowf (t, "xdxx", b->addr, b->size, b->jump, b->fail);
+			break;
+		case 'r':
+			if (b->jump == UT64_MAX) {
+				ut64 retaddr = rz_analysis_block_get_op_addr (b, b->ninstr - 1);
+				if (retaddr == UT64_MAX) {
+					break;
+				}
+
+				if (!strcmp (input, "*")) {
+					rz_cons_printf ("db 0x%08"PFMT64x"\n", retaddr);
+				} else if (!strcmp (input, "-*")) {
+					rz_cons_printf ("db-0x%08"PFMT64x"\n", retaddr);
+				} else {
+					rz_cons_printf ("0x%08"PFMT64x"\n", retaddr);
 				}
 			}
-			switch (mode) {
-			case 't': // afbt
-				rz_table_add_rowf (t, "xdxx", b->addr, b->size, b->jump, b->fail);
-				break;
-			case 'r': // afbr
-				if (b->jump == UT64_MAX) {
-					ut64 retaddr = rz_analysis_block_get_op_addr (b, b->ninstr - 1);
-					if (retaddr == UT64_MAX) {
-						break;
-					}
-
-					if (!strcmp (input, "*")) {
-						rz_cons_printf ("db 0x%08"PFMT64x"\n", retaddr);
-					} else if (!strcmp (input, "-*")) {
-						rz_cons_printf ("db-0x%08"PFMT64x"\n", retaddr);
-					} else {
-						rz_cons_printf ("0x%08"PFMT64x"\n", retaddr);
-					}
+			break;
+		case '*':
+			rz_cons_printf ("f bb.%05" PFMT64x " = 0x%08" PFMT64x "\n",
+				b->addr & 0xFFFFF, b->addr);
+			break;
+		case 'q':
+			rz_cons_printf ("0x%08" PFMT64x "\n", b->addr);
+			break;
+		case 'j':
+			print_bb (pj, b, fcn, addr);
+			break;
+		case 'i':
+			if (*input == 'j') { // "afbij"
+				pj = rz_core_pj_new (core);
+				if (!pj) {
+					return false;
 				}
-				break;
-			case '*': // afb*
-				rz_cons_printf ("f bb.%05" PFMT64x " = 0x%08" PFMT64x "\n",
-					b->addr & 0xFFFFF, b->addr);
-				break;
-			case 'q': // afbq
-				rz_cons_printf ("0x%08" PFMT64x "\n", b->addr);
-				break;
-			case 'j': // afbj
-				//rz_cons_printf ("%" PFMT64u "%s", b->addr, iter->n? ",": "");
-				{
-				RzListIter *iter2;
-				RzAnalysisBlock *b2;
-				int inputs = 0;
-				int outputs = 0;
-				rz_list_foreach (fcn->bbs, iter2, b2) {
-					if (b2->jump == b->addr) {
-						inputs++;
-					}
-					if (b2->fail == b->addr) {
-						inputs++;
-					}
-				}
-				if (b->jump != UT64_MAX) {
-					outputs ++;
-				}
-				if (b->fail != UT64_MAX) {
-					outputs ++;
-				}
-				pj_o (pj);
-
-				if (b->jump != UT64_MAX) {
-					pj_kn (pj, "jump", b->jump);
-				}
-				if (b->fail != UT64_MAX) {
-					pj_kn (pj, "fail", b->fail);
-				}
-				if (b->switch_op) {
-					pj_k (pj, "switch_op");
-					pj_o (pj);
-					pj_kn (pj, "addr", b->switch_op->addr);
-					pj_kn (pj, "min_val", b->switch_op->min_val);
-					pj_kn (pj, "def_val", b->switch_op->def_val);
-					pj_kn (pj, "max_val", b->switch_op->max_val);
-					pj_k (pj, "cases");
-					pj_a (pj);
-					{
-						RzListIter *case_op_iter;
-						RzAnalysisCaseOp *case_op;
-						rz_list_foreach (b->switch_op->cases, case_op_iter, case_op) {
-							pj_o (pj);
-							pj_kn (pj, "addr", case_op->addr);
-							pj_kn (pj, "jump", case_op->jump);
-							pj_kn (pj, "value", case_op->value);
-							pj_end (pj);
-						}
-					}
-					pj_end (pj);
-					pj_end (pj);
-				}
-				{
-					ut64 opaddr = __opaddr (b, addr);
-					pj_kn (pj, "opaddr", opaddr);
-				}
-				pj_kn (pj, "addr", b->addr);
-				pj_ki (pj, "size", b->size);
-				pj_ki (pj, "inputs", inputs);
-				pj_ki (pj, "outputs", outputs);
-				pj_ki (pj, "ninstr", b->ninstr);
-				pj_kb (pj, "traced", b->traced);
-				pj_end (pj);
-				}
-				break;
-			case 'i': // afbi
-				{
-				RzListIter *iter2;
-				RzAnalysisBlock *b2;
-				int inputs = 0;
-				int outputs = 0;
-				rz_list_foreach (fcn->bbs, iter2, b2) {
-					if (b2->jump == b->addr) {
-						inputs++;
-					}
-					if (b2->fail == b->addr) {
-						inputs++;
-					}
-				}
-				if (b->jump != UT64_MAX) {
-					outputs ++;
-				}
-				if (b->fail != UT64_MAX) {
-					outputs ++;
-				}
-				if (b->switch_op) {
-					RzList *unique_cases = rz_list_uniq (b->switch_op->cases, casecmp);
-					outputs += rz_list_length (unique_cases);
-					rz_list_free (unique_cases);
-				}
-				if (b->jump != UT64_MAX) {
-					rz_cons_printf ("jump: 0x%08"PFMT64x"\n", b->jump);
-				}
-				if (b->fail != UT64_MAX) {
-					rz_cons_printf ("fail: 0x%08"PFMT64x"\n", b->fail);
-				}
-				{
-					ut64 opaddr = __opaddr (b, addr);
-					rz_cons_printf ("opaddr: 0x%08"PFMT64x"\n", opaddr);
-				}
-				rz_cons_printf ("addr: 0x%08" PFMT64x "\nsize: %" PFMT64d "\ninputs: %d\noutputs: %d\nninstr: %d\ntraced: %s\n",
-					b->addr, b->size, inputs, outputs, b->ninstr, rz_str_bool (b->traced));
-				}
-				break;
-			default:
-				tp = rz_debug_trace_get (core->dbg, b->addr);
-				rz_cons_printf ("0x%08" PFMT64x " 0x%08" PFMT64x " %02X:%04X %" PFMT64d,
-					b->addr, b->addr + b->size,
-					tp? tp->times: 0, tp? tp->count: 0,
-					b->size);
-				if (b->jump != UT64_MAX) {
-					rz_cons_printf (" j 0x%08" PFMT64x, b->jump);
-				}
-				if (b->fail != UT64_MAX) {
-					rz_cons_printf (" f 0x%08" PFMT64x, b->fail);
-				}
-				if (b->switch_op) {
-					RzAnalysisCaseOp *cop;
-					RzListIter *iter;
-					RzList *unique_cases = rz_list_uniq (b->switch_op->cases, casecmp);
-					rz_list_foreach (unique_cases, iter, cop) {
-						rz_cons_printf (" s 0x%08" PFMT64x, cop->addr);
-					}
-					rz_list_free (unique_cases);
-				}
-				rz_cons_newline ();
-				break;
+				print_bb (pj, b, fcn, addr);
+				rz_cons_println (pj_string (pj));
+				pj_free (pj);
+			} else {
+				print_bb (NULL, b, fcn, addr);
 			}
+			break;
+		default:
+			tp = rz_debug_trace_get (core->dbg, b->addr);
+			rz_cons_printf ("0x%08" PFMT64x " 0x%08" PFMT64x " %02X:%04X %" PFMT64d,
+				b->addr, b->addr + b->size,
+				tp? tp->times: 0, tp? tp->count: 0,
+				b->size);
+			if (b->jump != UT64_MAX) {
+				rz_cons_printf (" j 0x%08" PFMT64x, b->jump);
+			}
+			if (b->fail != UT64_MAX) {
+				rz_cons_printf (" f 0x%08" PFMT64x, b->fail);
+			}
+			if (b->switch_op) {
+				RzAnalysisCaseOp *cop;
+				RzListIter *iter;
+				RzList *unique_cases = rz_list_uniq (b->switch_op->cases, casecmp);
+				rz_list_foreach (unique_cases, iter, cop) {
+					rz_cons_printf (" s 0x%08" PFMT64x, cop->addr);
+				}
+				rz_list_free (unique_cases);
+			}
+			rz_cons_newline ();
+			break;
 		}
 	}
 	if (mode == 't') { // afbt
@@ -9115,7 +9093,7 @@ static bool archIsThumbable(RzCore *core) {
 	return false;
 }
 
-static void _CbInRangeAav(RzCore *core, ut64 from, ut64 to, int vsize, int count, void *user) {
+static void _CbInRangeAav(RzCore *core, ut64 from, ut64 to, int vsize, void *user) {
 	bool asterisk = user != NULL;
 	int arch_align = rz_analysis_archinfo (core->analysis, RZ_ANALYSIS_ARCHINFO_ALIGN);
 	bool vinfun = rz_config_get_i (core->config, "analysis.vinfun");
@@ -10437,20 +10415,24 @@ RZ_IPI int rz_cmd_analysis(void *data, const char *input) {
 				analysis_bb_list (core, input + 2);
 			}
 			break;
-		case 'j': // "abj"
-			analysis_fcn_list_bb (core, input + 1, false);
+		case 'j': { // "abj"
+			ut64 addr = core->offset;
+			if (input[2] && input[2] != '.') {
+				addr = rz_num_math (core->num, input + 2);
+			}
+			rz_core_cmdf (core, "afbij @ 0x%"PFMT64x, addr);
 			break;
+		}
 		case 0:
-		case ' ': // "ab "
+		case ' ': { // "ab "
 			// find block
-			{
 			ut64 addr = core->offset;
 			if (input[1] && input[1] != '.') {
 				addr = rz_num_math (core->num, input + 1);
 			}
 			rz_core_cmdf (core, "afbi @ 0x%"PFMT64x, addr);
-			}
 			break;
+		}
 		default:
 			rz_core_cmd_help (core, help_msg_ab);
 			break;

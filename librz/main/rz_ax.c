@@ -576,16 +576,14 @@ dotherax:
 		return true;
 	} else if (flags & (1 << 23)) { // -I
 		if (strchr (str, '.')) {
-			ut32 ip32 = 0;
-			ut8 *ip = (ut8*)&ip32;
-			sscanf (str, "%hhd.%hhd.%hhd.%hhd", &ip[0], &ip[1], &ip[2], &ip[3]);
+			ut8 ip[4];
+			sscanf (str, "%hhd.%hhd.%hhd.%hhd", ip, ip + 1, ip + 2, ip + 3);
+			ut32 ip32 = ip[0] | (ip[1] << 8) | (ip[2] << 16) | (ip[3] << 24);
 			printf ("0x%08x\n", ip32);
 		} else {
 			ut32 ip32 = (ut32)rz_num_math (NULL, str);
-			ut8 *ip = (ut8*)&ip32;
-			char ipaddr[32];
-			snprintf (ipaddr, sizeof (ipaddr), "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
-			printf ("%s\n", ipaddr);
+			ut8 ip[4] = { ip32 & 0xff, (ip32 >> 8) & 0xff, (ip32 >> 16) & 0xff, ip32 >> 24 };
+			printf ("%d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
 		}
 		return true;
 	}
@@ -643,6 +641,7 @@ RZ_API int rz_main_rz_ax(int argc, const char **argv) {
 			char *argv_i = strdup (argv[i]);
 			rz_str_unescape (argv_i);
 			rax (num, argv_i, 0, i == argc - 1, &flags, &fm);
+			free (argv_i);
 		}
 	}
 	rz_num_free (num);

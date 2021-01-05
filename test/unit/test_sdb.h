@@ -25,4 +25,4 @@ static inline void print_sdb(Sdb *sdb) {
 	if (expected) { mu_assert_streq (actual, expected, message); } \
 } while(0)
 
-#endif //R2DB_TEST_UTILS_H
+#endif // TEST_SDB_H

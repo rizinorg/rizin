@@ -78,6 +78,9 @@ RZ_API int rz_io_cache_invalidate(RzIO *io, ut64 from, ut64 to) {
 			io->cached = cached;
 			c->written = false;
 			rz_pvector_remove_data (&io->cache, c);
+			free (c->data);
+			free (c->odata);
+			free (c);
 			invalidated++;
 		}
 	}

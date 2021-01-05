@@ -233,7 +233,6 @@ static int init_pdb7_root_stream(RzPdb *pdb, int *root_page_list, int pages_amou
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// R2: ugly indentation
 // static void init_parsed_pdb_stream(SParsedPDBStream *pdb_stream, FILE *fp, int *pages,
 // int pages_amount, int index, int size,
 // int page_size, f_load pLoad)
@@ -1100,6 +1099,7 @@ static void print_types_json(const RzPdb *pdb, PJ *pj, const RzList *types) {
 	rz_return_if_fail (pdb && types && pj);
 
 	RzListIter *it = rz_list_iterator (types);
+
 	pj_ka (pj, "types");
 
 	while (rz_list_iter_next (it)) {

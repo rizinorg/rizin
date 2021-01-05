@@ -25,5 +25,5 @@ ${CORE_TARGET_JAVA}: ${CORE_OBJ_JAVA}
 		${CORE_OBJ_JAVA} ${CORE_SHARED2_JAVA} \
 		$(SHLR)/java/librz_java.$(EXT_AR) \
 		$(SHLR)/sdb/src/libsdb.$(EXT_AR) \
-		-L$(LIBR)/crypto -lrz_crypto
+		-L$(LIBRZ)/crypto -lrz_crypto
 endif
