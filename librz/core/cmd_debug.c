@@ -1422,7 +1422,7 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, int mode
 	int action = RZ_CORE_BIN_ACC_ALL & ~RZ_CORE_BIN_ACC_INFO;
 	if (symbols_only || filter->name) {
 		action = RZ_CORE_BIN_ACC_SYMBOLS;
-	} else if (mode == RZ_MODE_SET || mode == RZ_MODE_RADARE) {
+	} else if (mode == RZ_MODE_SET || mode == RZ_MODE_RIZINCMD) {
 		action &= ~RZ_CORE_BIN_ACC_ENTRIES & ~RZ_CORE_BIN_ACC_MAIN;
 	}
 	rz_core_bin_info (core, action, mode, 1, filter, NULL);
@@ -1557,7 +1557,7 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 					mode = RZ_MODE_SET;
 					break;
 				case '*':
-					mode = RZ_MODE_RADARE;
+					mode = RZ_MODE_RIZINCMD;
 					break;
 				case 'j':
 					mode = RZ_MODE_JSON;
