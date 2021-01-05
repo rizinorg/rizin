@@ -1,7 +1,7 @@
 NAME=AFL - crash #2
 FILE=-
 CMDS=<<EOF
-e scr.null =true
+e scr.null=true
 ibbbbbbbk
 EOF
 EXPECT=<<EOF
@@ -21,7 +21,7 @@ RUN
 NAME=AFL - crash #4
 FILE=-
 CMDS=<<EOF
-e scr.null =true
+e scr.null=true
 *455%R*:**************
 EOF
 EXPECT=<<EOF

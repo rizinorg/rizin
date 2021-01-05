@@ -246,7 +246,7 @@ NAME=graph title
 FILE=-
 CMDS=<<EOF
 agn title1 body1
-e graph.title=This is the graph title
+e graph.title="This is the graph title"
 agg
 EOF
 EXPECT=<<EOF

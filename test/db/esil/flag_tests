@@ -1,8 +1,8 @@
 NAME=64bit Integer comparison [-1 == 1 (op1 < op2)]
 FILE=-
 CMDS=<<EOF
-e asm.arch = x86
-e asm.bits = 64
+e asm.arch=x86
+e asm.bits=64
 "ae 1,-1,==,63,$o,of,:=,63,$s,sf,:=,64,$b,cf,:=,$z,zf,:="
 "aer?cf"
 "aer?sf"
@@ -20,8 +20,8 @@ RUN
 NAME=64bit Integer comparison [1 == -1 (op1 > op2)]
 FILE=-
 CMDS=<<EOF
-e asm.arch = x86
-e asm.bits = 64
+e asm.arch=x86
+e asm.bits=64
 "ae -1,1,==,63,$o,of,:=,63,$s,sf,:=,64,$b,cf,:=,$z,zf,:="
 "aer?cf"
 "aer?sf"
@@ -39,8 +39,8 @@ RUN
 NAME=32bit Integer addition with overflow [0x80000000 + 0x80000000]
 FILE=-
 CMDS=<<EOF
-e asm.arch = x86
-e asm.bits = 64
+e asm.arch=x86
+e asm.bits=64
 "ae 0x80000000,eax,:=,0x80000000,ebx,:=,eax,ebx,+=,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:="
 "aer?cf"
 "aer?sf"
@@ -58,8 +58,8 @@ RUN
 NAME=32bit Integer Addition [0x90000000 + 0x70000000]
 FILE=-
 CMDS=<<EOF
-e asm.arch = x86
-e asm.bits = 64
+e asm.arch=x86
+e asm.bits=64
 "ae 0x70000000,eax,:=,0x90000000,ebx,:=,eax,ebx,+=,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:="
 "aer?cf"
 "aer?sf"
@@ -77,8 +77,8 @@ RUN
 NAME=32bit Integer Addition [0x70000000 + 0x90000000]
 FILE=-
 CMDS=<<EOF
-e asm.arch = x86
-e asm.bits = 64
+e asm.arch=x86
+e asm.bits=64
 "ae 0x90000000,eax,:=,0x70000000,ebx,:=,eax,ebx,+=,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:="
 "aer?cf"
 "aer?sf"
@@ -96,8 +96,8 @@ RUN
 NAME=signed compare check. a > b [2 > 1]
 FILE=-
 CMDS=<<EOF
-e asm.arch = x86
-e asm.bits = 64
+e asm.arch=x86
+e asm.bits=64
 "ae 2,eax,=,1,ebx,=,ebx,eax,>,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:=,sf,of,^,zf,|,!,==,$z,NUM"
 EOF
 EXPECT=<<EOF
@@ -108,8 +108,8 @@ RUN
 NAME=signed compare check. a < b [2 < 1]
 FILE=-
 CMDS=<<EOF
-e asm.arch = x86
-e asm.bits = 64
+e asm.arch=x86
+e asm.bits=64
 "ae 2,eax,:=,1,ebx,:=,ebx,eax,==,ebx,eax,<,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:=,sf,of,!=,==,$z,NUM"
 EOF
 EXPECT=<<EOF
@@ -120,8 +120,8 @@ RUN
 NAME=unsigned compare check. a < b [-1 < 1]
 FILE=-
 CMDS=<<EOF
-e asm.arch = x86
-e asm.bits = 64
+e asm.arch=x86
+e asm.bits=64
 "ae -1,eax,:=,1,ebx,:=,ebx,eax,==,ebx,eax,<,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:=,cf,zf,|,!,==,$z,NUM"
 EOF
 EXPECT=<<EOF
@@ -132,8 +132,8 @@ RUN
 NAME=unsigned compare check. a > b [-1 > 1]
 FILE=-
 CMDS=<<EOF
-e asm.arch = x86
-e asm.bits = 64
+e asm.arch=x86
+e asm.bits=64
 "ae -1,eax,=,1,ebx,=,ebx,eax,>,31,$o,of,:=,31,$s,sf,:=,31,$c,cf,:=,$z,zf,:=,cf,==,$z,NUM"
 EOF
 EXPECT=<<EOF

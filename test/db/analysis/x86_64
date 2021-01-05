@@ -973,8 +973,8 @@ NAME=ahe
 FILE=malloc://512
 CMDS=<<EOF
 e asm.bits=64
-e asm.arch = x86
-e analysis.arch = x86
+e asm.arch=x86
+e analysis.arch=x86
 ao~?
 ahe test
 ao~esil
@@ -1306,9 +1306,9 @@ NAME=auto string memory reference (iopa)
 FILE=malloc://8096
 CMDS=<<EOF
 e asm.sub.rel=false
-e asm.arch = x86
+e asm.arch=x86
 e asm.bits=64
-e scr.color = false
+e scr.color=false
 e io.va=0
 e asm.lines.bb=0
 e asm.bytes=0
@@ -1328,9 +1328,9 @@ NAME=auto string memory reference (io.va)
 FILE=malloc://8096
 CMDS=<<EOF
 e asm.sub.rel=false
-e asm.arch = x86
+e asm.arch=x86
 e asm.bits=64
-e scr.color = false
+e scr.color=false
 e io.va=1
 e asm.lines.bb=0
 e asm.bytes=0
@@ -1756,8 +1756,8 @@ FILE=-
 CMDS=<<EOF
 e asm.bytes=true
 e asm.bits=64
-e asm.arch = x86
-e analysis.arch = x86
+e asm.arch=x86
+e analysis.arch=x86
 e asm.calls=false
 wx 554889e5534881ec3810000048830c24004881c42010000064488b042528000000488945e831c04885ff4889fb909090909090c3 @ 10
 aa
@@ -1984,10 +1984,10 @@ RUN
 NAME=axt capstone x86
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
-e asm.arch = x86
-e analysis.arch = x86
+e asm.arch=x86
+e analysis.arch=x86
 e scr.color=false
-e scr.wheel = false
+e scr.wheel=false
 aa
 axt @ str.Hello_World
 EOF
@@ -1999,10 +1999,10 @@ RUN
 NAME=axt capstone x86: IOLI0
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
-e asm.arch = x86
-e analysis.arch = x86
+e asm.arch=x86
+e analysis.arch=x86
 e scr.color=false
-e scr.wheel = false
+e scr.wheel=false
 aa
 axt @ str.Password:
 EOF
@@ -2106,10 +2106,10 @@ RUN
 NAME=axf string ref capstone x86
 FILE=bins/elf/ioli/crackme0x03
 CMDS=<<EOF
-e asm.arch = x86
-e analysis.arch = x86
-e scr.color = false
-e scr.wheel = false
+e asm.arch=x86
+e analysis.arch=x86
+e scr.color=false
+e scr.wheel=false
 aa
 axt str.Sdvvzrug_RN
 s str.Sdvvzrug_RN
@@ -2408,7 +2408,7 @@ FILE=malloc://10000
 CMDS=<<EOF
 e asm.arch=8051
 e asm.lines.bb=false
-e asm.bytes = true
+e asm.bytes=true
 e asm.lines.fcn=false
 wx 307401000022
 aa
@@ -3339,7 +3339,7 @@ CMDS=<<EOF
 e asm.bytes=true
 s main
 af
-e asm.lines = false
+e asm.lines=false
 pdf~case
 EOF
 EXPECT=<<EOF
@@ -3555,7 +3555,7 @@ RUN
 NAME=x86_64 retpoline disabled jmptbl
 FILE=bins/elf/retpoline
 CMDS=<<EOF
-e analysis.jmp.retpoline = false
+e analysis.jmp.retpoline=false
 s 0x780
 af
 pdr~- case[2]

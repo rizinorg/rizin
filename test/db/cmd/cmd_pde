@@ -1,8 +1,8 @@
 NAME=pde x86
 FILE=bins/pe/ioli/w32/crackme0x00.exe
 CMDS=<<EOF
-e asm.bytes = false
-e asm.comments = false
+e asm.bytes=false
+e asm.comments=false
 s main
 aei
 aeim
@@ -44,7 +44,7 @@ RUN
 NAME=pde arm
 FILE=bins/elf/analysis/hello-arm32
 CMDS=<<EOF
-e asm.bytes = false
+e asm.bytes=false
 pdeq
 EOF
 EXPECT=<<EOF
@@ -71,8 +71,8 @@ RUN
 NAME=pde mips
 FILE=bins/elf/mipsloop
 CMDS=<<EOF
-e asm.comments = false
-e asm.bytes = false
+e asm.comments=false
+e asm.bytes=false
 pde 12
 EOF
 EXPECT=<<EOF
@@ -99,8 +99,8 @@ RUN
 NAME=pde ppc
 FILE=bins/elf/hello.ppc
 CMDS=<<EOF
-e asm.comments = false
-e asm.bytes = false
+e asm.comments=false
+e asm.bytes=false
 pde
 EOF
 EXPECT=<<EOF

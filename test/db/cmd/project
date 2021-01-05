@@ -75,7 +75,7 @@ NAME=load with file using saved relative file path after project file and binary
 FILE=--
 CMDS=<<EOF
 e cfg.newshell=1
-e asm.bytes = true
+e asm.bytes=true
 mkdir -p .tmp_load_move_both2/.tmp_load_move_both2
 cp bins/elf/crackme0x05 .tmp_load_move_both2/somebin
 o .tmp_load_move_both2/somebin

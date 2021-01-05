@@ -176,7 +176,7 @@ RUN
 NAME=oob consider baddr
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
-e bin.baddr = 0xf00000
+e bin.baddr=0xf00000
 k old_v=`ieq`
 oob
 iI~baddr[1]
@@ -196,8 +196,8 @@ NAME=oob consider laddr 32bit
 FILE=bins/mach0/fatmach0-3true
 ARGS=-a x86 -b 32
 CMDS=<<EOF
-e bin.laddr = 0x5000
-e bin.baddr = -1
+e bin.laddr=0x5000
+e bin.baddr=-1
 oob
 iI~laddr[1]
 iI~baddr[1]
@@ -212,8 +212,8 @@ NAME=oob consider laddr 64bit
 FILE=bins/mach0/fatmach0-3true
 ARGS=-a x86 -b 64
 CMDS=<<EOF
-e bin.laddr = 0x5000
-e bin.baddr = -1
+e bin.laddr=0x5000
+e bin.baddr=-1
 oob
 iI~laddr[1]
 iI~baddr[1]
