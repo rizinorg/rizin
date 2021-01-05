@@ -532,7 +532,7 @@ static const RzCmdDescArg eval_bool_invert_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp eval_bool_invert_help = {
-	.summary = "Invert the boolean value of config variable <var>",
+	.summary = "Invert the boolean value of config variable <key>",
 	.args = eval_bool_invert_args,
 };
 
@@ -549,7 +549,7 @@ static const RzCmdDescArg eval_editor_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp eval_editor_help = {
-	.summary = "Open editor to change the value of config variable <var>",
+	.summary = "Open editor to change the value of config variable <key>",
 	.args = eval_editor_args,
 };
 
@@ -566,7 +566,7 @@ static const RzCmdDescArg eval_readonly_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp eval_readonly_help = {
-	.summary = "Set config variable <var> as read-only",
+	.summary = "Set config variable <key> as read-only",
 	.args = eval_readonly_args,
 };
 
@@ -584,7 +584,7 @@ static const RzCmdDescArg eval_type_args[] = {
 	{ 0 },
 };
 static const RzCmdDescHelp eval_type_help = {
-	.summary = "Show type of given config variable <var>",
+	.summary = "Show type of given config variable <key>",
 	.args = eval_type_args,
 };
 
