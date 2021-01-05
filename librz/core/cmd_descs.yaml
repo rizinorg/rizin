@@ -432,7 +432,7 @@
       args: []
     - name: e!
       cname: eval_bool_invert
-      summary: Invert the boolean value of config variable <var>
+      summary: Invert the boolean value of config variable <key>
       args:
         - name: key
           type: RZ_CMD_ARG_TYPE_EVAL_KEY
@@ -443,7 +443,7 @@
       args: []
     - name: ee
       cname: eval_editor
-      summary: Open editor to change the value of config variable <var>
+      summary: Open editor to change the value of config variable <key>
       args:
         - name: key
           type: RZ_CMD_ARG_TYPE_EVAL_KEY
@@ -453,7 +453,7 @@
       args: []
     - name: er
       cname: eval_readonly
-      summary: Set config variable <var> as read-only
+      summary: Set config variable <key> as read-only
       args:
         - name: key
           type: RZ_CMD_ARG_TYPE_EVAL_KEY
@@ -466,7 +466,7 @@
           optional: true
     - name: et
       cname: eval_type
-      summary: Show type of given config variable <var>
+      summary: Show type of given config variable <key>
       args:
         - name: key
           type: RZ_CMD_ARG_TYPE_EVAL_KEY
