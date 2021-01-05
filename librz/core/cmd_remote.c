@@ -32,19 +32,6 @@ static const char *help_msg_equal[] = {
 	NULL
 };
 
-static const char *help_msg_equalh[] = {
-	"Usage:", " =[hH] [...]", " # http server",
-	"http server:", "", "",
-	"=h", " port", "listen for http connections (rizin -qc=H /bin/ls)",
-	"=h-", "", "stop background webserver",
-	"=h--", "", "stop foreground webserver",
-	"=h*", "", "restart current webserver",
-	"=h&", " port", "start http server in background",
-	"=H", " port", "launch browser and listen for http",
-	"=H&", " port", "launch browser and listen for http in background",
-	NULL
-};
-
 static const char *help_msg_equalg[] = {
 	"Usage:", " =[g] [...]", " # gdb server",
 	"gdbserver:", "", "",
