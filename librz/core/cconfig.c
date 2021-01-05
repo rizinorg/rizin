@@ -2848,7 +2848,7 @@ static bool cb_dbg_verbose(void *user, void *data) {
 
 RZ_API int rz_core_config_init(RzCore *core) {
 	int i;
-	char buf[128], *p, *tmpdir;
+	char buf[128], *p;
 	RzConfigNode *n;
 	RzConfig *cfg = core->config = rz_config_new (core);
 	if (!cfg) {
@@ -3434,12 +3434,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* http */
 	SETBPREF ("http.log", "true", "Show HTTP requests processed");
-	SETBPREF ("http.colon", "false", "Only accept the : command");
 	SETPREF ("http.logfile", "", "Specify a log file instead of stderr for http requests");
-	SETBPREF ("http.cors", "false", "Enable CORS");
-	SETPREF ("http.referer", "", "CSFR protection if set");
-	SETBPREF ("http.dirlist", "false", "Enable directory listing");
-	SETPREF ("http.allow", "", "Only accept clients from the comma separated IP list");
 #if __WINDOWS__
 	rz_config_set (cfg, "http.browser", "start");
 #else
@@ -3460,33 +3455,11 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI ("http.maxsize", 0, "Maximum file size for upload");
 	SETPREF ("http.index", "index.html", "Main html file to check in directory");
 	SETPREF ("http.bind", "localhost", "Server address");
-	SETPREF ("http.homeroot", RZ_JOIN_2_PATHS ("~", RZ_HOME_WWWROOT), "http home root directory");
-#if __WINDOWS__
-	{
-		char *wwwroot = rz_str_newf ("%s\\share\\www", rz_sys_prefix (NULL));
-		SETPREF ("http.root", wwwroot, "http root directory");
-		free (wwwroot);
-	}
-#elif __ANDROID__
-	SETPREF ("http.root", "/data/data/org.rizin.rizininstaller/www", "http root directory");
-#else
-	SETPREF ("http.root", RZ_WWWROOT, "http root directory");
-#endif
 	SETPREF ("http.port", "9090", "HTTP server port");
 	SETPREF ("http.maxport", "9999", "Last HTTP server port");
-	SETI ("http.timeout", 3, "Disconnect clients after N seconds of inactivity");
 	SETI ("http.dietime", 0, "Kill server after N seconds with no client");
-	SETBPREF ("http.verbose", "false", "Output server logs to stdout");
-	SETBPREF ("http.upget", "false", "/up/ answers GET requests, in addition to POST");
 	SETBPREF ("http.upload", "false", "Enable file uploads to /up/<filename>");
-	SETPREF ("http.uri", "", "Address of HTTP proxy");
 	SETBPREF ("http.auth", "false", "Enable/Disable HTTP Authentification");
-	p = rz_sys_getenv ("RZ_HTTP_AUTHFILE");
-	SETPREF ("http.authfile", p? p : "", "HTTP Authentification user file");
-	tmpdir = rz_file_tmpdir ();
-	rz_config_set (cfg, "http.uproot", tmpdir);
-	free (tmpdir);
-	rz_config_desc (cfg, "http.uproot", "Path where files are uploaded");
 
 	/* tcp */
 	SETBPREF ("tcp.islocal", "false", "Bind a loopback for tcp command server");

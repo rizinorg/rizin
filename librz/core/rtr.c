@@ -162,7 +162,6 @@ static void activateDieTime(RzCore *core) {
 	}
 }
 
-#include "rtr_http.c"
 #include "rtr_shell.c"
 
 static int write_reg_val(char *buf, ut64 sz, ut64 reg, int regsize, bool bigendian) {

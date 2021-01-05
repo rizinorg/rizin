@@ -410,14 +410,6 @@ static const RzCmdDescHelp equal_g_handler_old_help = {
 	.summary = "Start the gdbserver",
 };
 
-static const RzCmdDescHelp equal_h_handler_old_help = {
-	.summary = "Start the http webserver",
-};
-
-static const RzCmdDescHelp equal_H_handler_old_help = {
-	.summary = "Start the http webserver (and launch the web browser)",
-};
-
 
 static const RzCmdDescArg remote_tcp_args[] = {
 	{ .name = "[host:]port", .type = RZ_CMD_ARG_TYPE_STRING, },
@@ -1541,10 +1533,6 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail (remote_rap_cd);
 	RzCmdDesc *equal_g_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, equal__cd, "=g", rz_equal_g_handler_old, &equal_g_handler_old_help);
 	rz_warn_if_fail (equal_g_handler_old_cd);
-	RzCmdDesc *equal_h_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, equal__cd, "=h", rz_equal_h_handler_old, &equal_h_handler_old_help);
-	rz_warn_if_fail (equal_h_handler_old_cd);
-	RzCmdDesc *equal_H_handler_old_cd = rz_cmd_desc_oldinput_new (core->rcmd, equal__cd, "=H", rz_equal_H_handler_old, &equal_H_handler_old_help);
-	rz_warn_if_fail (equal_H_handler_old_cd);
 	RzCmdDesc *remote_tcp_cd = rz_cmd_desc_argv_new (core->rcmd, equal__cd, "=t", rz_remote_tcp_handler, &remote_tcp_help);
 	rz_warn_if_fail (remote_tcp_cd);
 	RzCmdDesc *remote_rap_bg_cd = rz_cmd_desc_argv_new (core->rcmd, equal__cd, "=&:", rz_remote_rap_bg_handler, &remote_rap_bg_help);

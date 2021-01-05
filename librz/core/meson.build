@@ -66,7 +66,6 @@ rz_core_sources = [
   'cplugin.c',
   'project.c',
   'rtr.c',
-  #'rtr_http.c',
   #'rtr_shell.c',
   'task.c',
   'vasm.c',

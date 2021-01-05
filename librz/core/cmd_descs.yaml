@@ -314,14 +314,6 @@
       cname: equal_g_handler_old
       summary: Start the gdbserver
       type: RZ_CMD_DESC_TYPE_OLDINPUT
-    - name: =h
-      cname: equal_h_handler_old
-      summary: Start the http webserver
-      type: RZ_CMD_DESC_TYPE_OLDINPUT
-    - name: =H
-      cname: equal_H_handler_old
-      summary: Start the http webserver (and launch the web browser)
-      type: RZ_CMD_DESC_TYPE_OLDINPUT
     - name: =t
       cname: remote_tcp
       summary: Start the tcp server

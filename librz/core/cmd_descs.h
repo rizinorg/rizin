@@ -43,8 +43,6 @@ RZ_IPI RzCmdStatus rz_remote_mode_enable_handler(RzCore *core, int argc, const c
 RZ_IPI RzCmdStatus rz_remote_mode_disable_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_remote_rap_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_equal_g_handler_old(void *data, const char *input);
-RZ_IPI int rz_equal_h_handler_old(void *data, const char *input);
-RZ_IPI int rz_equal_H_handler_old(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_remote_tcp_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_remote_rap_bg_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_cmd_help(void *data, const char *input);

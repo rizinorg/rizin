@@ -72,27 +72,6 @@ RZ_IPI int rz_equal_g_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-RZ_IPI int rz_equal_h_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	if (input[0] == '?') {
-		rz_core_cmd_help (core, help_msg_equalh);
-	} else {
-		rz_core_rtr_http (core, getArg (input[0], 'h'), 'h', input);
-	}
-	return 0;
-}
-
-RZ_IPI int rz_equal_H_handler_old(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	if (input[0] == '?') {
-		rz_core_cmd_help (core, help_msg_equalh);
-	} else {
-		const char *arg = rz_str_trim_head_ro (input);
-		rz_core_rtr_http (core, getArg (input[0], 'H'), 'H', arg);
-	}
-	return 0;
-}
-
 RZ_IPI int rz_cmd_remote(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	switch (*input) {
@@ -131,12 +110,6 @@ RZ_IPI int rz_cmd_remote(void *data, const char *input) {
 		break;
 	case 'g': // "=g"
 		rz_equal_g_handler_old (core, input + 1);
-		break;
-	case 'h': // "=h"
-		rz_equal_h_handler_old (core, input + 1);
-		break;
-	case 'H': // "=H"
-		rz_equal_H_handler_old (core, input + 1);
 		break;
 	case '?': // "=?"
 		rz_core_cmd_help (core, help_msg_equal);

@@ -72,7 +72,6 @@ export RZPM_USRPLUGIN_DIR="$RZ_USER_PLUGINS"
 [ -z "${RZPM_PLUGDIR}" ] && RZPM_PLUGDIR="${RZDATAHOME}/plugins"
 
 # www
-export RZPM_SYSWWWROOT="`rizin -qc 'e http.root' --`"
 export RZPM_HOMEWWWROOT="${RZDATAHOME}/www/"
 export RZPM_WWWROOT="${RZPM_HOMEWWWROOT}"
 
