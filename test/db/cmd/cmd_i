@@ -4530,7 +4530,6 @@ LnJvZGF0YQ==
 EOF
 RUN
 
-
 NAME=izjencodinghex
 FILE=bins/elf/analysis/hello-utf-16
 CMDS=<<EOF
@@ -4542,7 +4541,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-
 NAME=izjencodingarray
 FILE=bins/elf/analysis/hello-utf-16
 CMDS=<<EOF
@@ -4551,5 +4549,16 @@ izj~{[0].type}
 EOF
 EXPECT=<<EOF
 [117,116,102,049,054,108,101]
+EOF
+RUN
+
+NAME=izz libcap (#298)
+FILE=-
+CMDS=<<EOF
+wx 7500 6900 3d25 7325 7325 7300 2573 2c00 2b25 7325 7325 7300 2d25 7325 7325 7300 6361 705f 6368 6f77 6e00 6361 705f 6461
+izz~^0
+EOF
+EXPECT=<<EOF
+0   0x00000000 0x00000000 24  50           utf16le ui┽╳╳s猥,┫╳╳s┭╳╳s慣彰档睯n慣彰慤 blocks=Basic Latin,Box Drawing,CJK Unified Ideographs
 EOF
 RUN
