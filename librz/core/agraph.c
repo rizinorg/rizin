@@ -3239,7 +3239,6 @@ static void agraph_follow_innodes(RzAGraph *g, bool in) {
 	if (!an) {
 		return;
 	}
-	RzGraphNode *gn = an->gnode;
 	const RzList *list = in? an->gnode->in_nodes: an->gnode->out_nodes;
 	int nth = -1;
 	if (rz_list_length (list) == 0) {
@@ -3247,6 +3246,7 @@ static void agraph_follow_innodes(RzAGraph *g, bool in) {
 	}
 	rz_cons_gotoxy (0, 2);
 	rz_cons_printf (in? "Input nodes:\n": "Output nodes:\n");
+	RzGraphNode *gn = an->gnode;
 	RzList *options = rz_list_newf (NULL);
 	RzList *gnodes = in? an->gnode->in_nodes: an->gnode->out_nodes;
 	rz_list_foreach (gnodes, iter, gn) {
