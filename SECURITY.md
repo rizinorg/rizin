@@ -15,8 +15,7 @@ For your convenience, we accept reports written in one of the languages listed o
 
 If you have not received a reply to your email within 48 hours, or have not heard from the security team for the past week, there are a few steps you can take (in order):
 
-- Directly contact [Itay Cohen](https://www.megabeets.net/about.html#contact) from the Security Team
-- Directly contact at least one other member for [Rizin Security Team](https://rizin.re/teams/security/)
+- Directly contact at least one member from [Rizin Security Team](https://rizin.re/teams/security/)
 - Inform the team over the [public chats](https://rizin.re/#community) that you sent a message regarding a security issue.
 
 **Important:** Don't disclose any information regarding the issue itself in the public chats.
