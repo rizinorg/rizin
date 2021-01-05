@@ -3910,7 +3910,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 	return count;
 }
 
-static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisRefType type, int count, int rad, int cfg_debug, bool cfg_analysis_strings) {
+static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisRefType type, PJ *pj, int rad, int cfg_debug, bool cfg_analysis_strings) {
 	// Validate the reference. If virtual addressing is enabled, we
 	// allow only references to virtual addresses in order to reduce
 	// the number of false positives. In debugger mode, the reference
@@ -3950,11 +3950,9 @@ static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisRefType ty
 			rz_analysis_xrefs_set (core->analysis, at, xref_to, type);
 		}
 	} else if (rad == 'j') {
-		// Output JSON
-		if (count > 0) {
-			rz_cons_printf (",");
-		}
-		rz_cons_printf ("\"0x%"PFMT64x"\":\"0x%"PFMT64x"\"", xref_to, at);
+		char *key = sdb_fmt ("0x%"PFMT64x, xref_to);
+		char *value = sdb_fmt ("0x%"PFMT64x, at);
+		pj_ks (pj, key, value);
 	} else {
 		int len = 0;
 		// Display in rizin commands format
@@ -3980,7 +3978,7 @@ static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisRefType ty
 	return true;
 }
 
-RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, int rad) {
+RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *pj, int rad) {
 	int cfg_debug = rz_config_get_i (core->config, "cfg.debug");
 	bool cfg_analysis_strings = rz_config_get_i (core->config, "analysis.strings");
 	ut64 at;
@@ -4042,32 +4040,32 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, int r
 			}
 			// find references
 			if ((st64)op.val > asm_sub_varmin && op.val != UT64_MAX && op.val != UT32_MAX) {
-				if (found_xref (core, op.addr, op.val, RZ_ANALYSIS_REF_TYPE_DATA, count, rad, cfg_debug, cfg_analysis_strings)) {
+				if (found_xref (core, op.addr, op.val, RZ_ANALYSIS_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 			}
 			// find references
 			if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
-				if (found_xref (core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_DATA, count, rad, cfg_debug, cfg_analysis_strings)) {
+				if (found_xref (core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 			}
 			// find references
 			if (op.addr > 512 && op.disp > 512 && op.disp && op.disp != UT64_MAX) {
-				if (found_xref (core, op.addr, op.disp, RZ_ANALYSIS_REF_TYPE_DATA, count, rad, cfg_debug, cfg_analysis_strings)) {
+				if (found_xref (core, op.addr, op.disp, RZ_ANALYSIS_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 			}
 			switch (op.type) {
 			case RZ_ANALYSIS_OP_TYPE_JMP:
 			case RZ_ANALYSIS_OP_TYPE_CJMP:
-				if (found_xref (core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, count, rad, cfg_debug, cfg_analysis_strings)) {
+				if (found_xref (core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, pj, rad, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 				break;
 			case RZ_ANALYSIS_OP_TYPE_CALL:
 			case RZ_ANALYSIS_OP_TYPE_CCALL:
-				if (found_xref (core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CALL, count, rad, cfg_debug, cfg_analysis_strings)) {
+				if (found_xref (core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CALL, pj, rad, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 				break;
@@ -4077,7 +4075,8 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, int r
 			case RZ_ANALYSIS_OP_TYPE_IRJMP:
 			case RZ_ANALYSIS_OP_TYPE_MJMP:
 			case RZ_ANALYSIS_OP_TYPE_UCJMP:
-				if (found_xref (core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CODE, count++, rad, cfg_debug, cfg_analysis_strings)) {
+				count++;
+				if (found_xref (core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CODE, pj, rad, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 				break;
@@ -4086,7 +4085,7 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, int r
 			case RZ_ANALYSIS_OP_TYPE_RCALL:
 			case RZ_ANALYSIS_OP_TYPE_IRCALL:
 			case RZ_ANALYSIS_OP_TYPE_UCCALL:
-				if (found_xref (core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CALL, count, rad, cfg_debug, cfg_analysis_strings)) {
+				if (found_xref (core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CALL, pj, rad, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 				break;
