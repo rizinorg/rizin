@@ -390,7 +390,7 @@ static bool test_rz_annotation_free_and_is_annotation_type_functions(void) {
 	// Making all types of annotations
 	RzCodeAnnotation offset = make_code_annotation (58, 64, RZ_CODE_ANNOTATION_TYPE_OFFSET, 4447, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	RzCodeAnnotation syntax_highlight = make_code_annotation (1, 5, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_DATATYPE);
-	RzCodeAnnotation local_variable = make_variable_annotation (1, 2, RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "RADARE2");
+	RzCodeAnnotation local_variable = make_variable_annotation (1, 2, RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "RIZIN");
 	RzCodeAnnotation function_parameter = make_variable_annotation (4, 10, RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "Cutter");
 	RzCodeAnnotation function_name = make_reference_annotation (10, 12, RZ_CODE_ANNOTATION_TYPE_FUNCTION_NAME, 123513, "test_function");
 	RzCodeAnnotation global_variable = make_reference_annotation (10, 12, RZ_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, 1234234, NULL);

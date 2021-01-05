@@ -1080,7 +1080,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	}
 	if (query) {
 		if (rad) {
-			rz_core_bin_export_info (&core, RZ_MODE_RADARE);
+			rz_core_bin_export_info (&core, RZ_MODE_RIZINCMD);
 			rz_cons_flush ();
 		} else {
 			if (!strcmp (query, "-")) {
