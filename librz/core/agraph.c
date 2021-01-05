@@ -4927,7 +4927,9 @@ RZ_API RzAGraph *create_agraph_from_graph(const RzGraph/*<RzGraphNodeInfo>*/ *gr
 	}
 	result_agraph->need_reload_nodes = false;
 	// Cache lookup to build edges
-	HtPP /*<RzGraphNode *node, RzANode *anode>*/ *hashmap = ht_pp_new0 ();
+	HtPPOptions pointer_options = { 0 };
+	HtPP /*<RzGraphNode *node, RzANode *anode>*/ *hashmap = ht_pp_new_opt (&pointer_options);
+
 	if (!hashmap) {
 		rz_agraph_free (result_agraph);
 		return NULL;
