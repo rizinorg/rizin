@@ -17,7 +17,6 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 	const char *homeroot = rz_config_get (core->config, "http.homeroot");
 	const char *port = rz_config_get (core->config, "http.port");
 	const char *allow = rz_config_get (core->config, "http.allow");
-	const char *httpui = rz_config_get (core->config, "http.ui");
 	const char *httpauthfile = rz_config_get (core->config, "http.authfile");
 	char *pfile = NULL;
 
@@ -37,15 +36,6 @@ static int rz_core_rtr_http_run(RzCore *core, int launch, int browse, const char
 		port = path;
 		rz_config_set (core->config, "http.port", port);
 		path = NULL;
-	} else {
-		if (core->file && (!path || !*path)) {
-			if (!strcmp (httpui, "p")
-			|| !strcmp (httpui, "m")
-			|| !strcmp (httpui, "enyo")
-			|| !strcmp (httpui, "t")) {
-				path = httpui;
-			}
-		}
 	}
 
 	if (!strcmp (port, "0")) {
@@ -478,14 +468,12 @@ the_end:
 		const char *port = rz_config_get (core->config, "http.port");
 		const char *cors = rz_config_get (core->config, "http.cors");
 		const char *allow = rz_config_get (core->config, "http.allow");
-		const char *httpui = rz_config_get (core->config, "http.ui");
 		core->config = origcfg;
 		rz_config_set_i (core->config, "http.timeout", timeout);
 		rz_config_set (core->config, "http.bind", host);
 		rz_config_set (core->config, "http.port", port);
 		rz_config_set (core->config, "http.cors", cors);
 		rz_config_set (core->config, "http.allow", allow);
-		rz_config_set (core->config, "http.ui", httpui);
 	}
 	rz_cons_break_pop ();
 	core->http_up = false;
