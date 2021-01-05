@@ -54,7 +54,7 @@ Please have a look at [BUILDING.md][] for more information about building Rizin.
 
 We very much welcome any kind of contributions, from typos, to documentation, to
 refactoring, up to completely new features you may think of. Before
-contributing, we would like you to read the file [CONTRIBUTING.md][]. so that we
+contributing, we would like you to read the file [CONTRIBUTING.md][], so that we
 can all be on the same page.
 
 ## Tests
