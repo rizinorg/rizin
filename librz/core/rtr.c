@@ -105,13 +105,6 @@ RZ_API int rz_core_rtr_http_stop(RzCore *u) {
 	return 0;
 }
 
-#if __UNIX__
-static void dietime(int sig) {
-	eprintf ("It's Die Time!\n");
-	exit (0);
-}
-#endif
-
 #include "rtr_shell.c"
 
 static int write_reg_val(char *buf, ut64 sz, ut64 reg, int regsize, bool bigendian) {
