@@ -81,7 +81,7 @@ static void print_string(RzBinFile *bf, RzBinString *string, int raw, PJ *pj) {
 			io->cb_printf ("%s\n", string->string);
 		}
 		break;
-	case RZ_MODE_RADARE: {
+	case RZ_MODE_RIZINCMD: {
 		char *f_name, *nstr;
 		f_name = strdup (string->string);
 		rz_name_filter (f_name, 512);

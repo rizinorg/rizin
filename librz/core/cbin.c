@@ -17,7 +17,7 @@
 #define IS_MODE_SIMPLE(mode) ((mode) & RZ_MODE_SIMPLE)
 #define IS_MODE_SIMPLEST(mode) ((mode) & RZ_MODE_SIMPLEST)
 #define IS_MODE_JSON(mode) ((mode) & RZ_MODE_JSON)
-#define IS_MODE_RAD(mode) ((mode) & RZ_MODE_RADARE)
+#define IS_MODE_RZCMD(mode) ((mode) & RZ_MODE_RIZINCMD)
 #define IS_MODE_EQUAL(mode) ((mode) & RZ_MODE_EQUAL)
 #define IS_MODE_NORMAL(mode) (!(mode))
 #define IS_MODE_CLASSDUMP(mode) ((mode) & RZ_MODE_CLASSDUMP)
@@ -166,7 +166,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 	}
 	SdbListIter *iter;
 	SdbKv *kv;
-	if (IS_MODE_RAD (mode)) {
+	if (IS_MODE_RZCMD (mode)) {
 		rz_cons_printf ("fs format\n");
 	} else if (IS_MODE_SET (mode)) {
 		rz_flag_space_push (core->flags, "format");
@@ -181,7 +181,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		if ((flagname = strstr (dup, ".offset"))) {
 			*flagname = 0;
 			flagname = dup;
-			if (IS_MODE_RAD (mode)) {
+			if (IS_MODE_RZCMD (mode)) {
 				rz_cons_printf ("f %s @ %s\n", flagname, v);
 			} else if (IS_MODE_SET (mode)) {
 				ut64 nv = rz_num_math (core->num, v);
@@ -191,7 +191,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 			offset = strdup (v);
 		}
 		if ((flagname = strstr (dup, ".cparse"))) {
-			if (IS_MODE_RAD (mode)) {
+			if (IS_MODE_RZCMD (mode)) {
 				rz_cons_printf ("\"td %s\"\n", v);
 			} else if (IS_MODE_SET (mode)) {
 				char *code = rz_str_newf ("%s;", v);
@@ -221,7 +221,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 				offset = strdup ("0");
 			}
 			flagname = dup;
-			if (IS_MODE_RAD (mode)) {
+			if (IS_MODE_RZCMD (mode)) {
 				rz_cons_printf ("pf.%s %s\n", flagname, v);
 			} else if (IS_MODE_SET (mode)) {
 				sdb_set (core->print->formats, flagname, v, 0);
@@ -244,7 +244,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 			const char *off = sdb_const_get (db, offset_key, 0);
 			free (offset_key);
 			if (off) {
-				if (IS_MODE_RAD (mode)) {
+				if (IS_MODE_RZCMD (mode)) {
 					rz_cons_printf ("Cf %d %s @ %s\n", fmtsize, v, off);
 				} else if (IS_MODE_SET (mode)) {
 					ut64 addr = rz_num_get (NULL, off);
@@ -264,7 +264,7 @@ RZ_API void rz_core_bin_export_info(RzCore *core, int mode) {
 		if ((flagname = strstr (dup, ".size"))) {
 			*flagname = 0;
 			flagname = dup;
-			if (IS_MODE_RAD (mode)) {
+			if (IS_MODE_RZCMD (mode)) {
 				rz_cons_printf ("fl %s %s\n", flagname, v);
 			} else if (IS_MODE_SET (mode)) {
 				RzFlagItem *fi = rz_flag_get (core->flags, flagname);
@@ -385,7 +385,7 @@ static void _print_strings(RzCore *r, RzList *list, int mode, int va) {
 	if (IS_MODE_JSON (mode)) {
 		pj = rz_core_pj_new (r);
 		pj_a (pj);
-	} else if (IS_MODE_RAD (mode)) {
+	} else if (IS_MODE_RZCMD (mode)) {
 		rz_cons_println ("fs strings");
 	} else if (IS_MODE_SET (mode) && rz_config_get_i (r->config, "bin.strings")) {
 		rz_flag_space_set (r->flags, RZ_FLAGS_FS_STRINGS);
@@ -482,7 +482,7 @@ static void _print_strings(RzCore *r, RzList *list, int mode, int va) {
 				}
 			}
 			pj_end (pj);
-		} else if (IS_MODE_RAD (mode)) {
+		} else if (IS_MODE_RZCMD (mode)) {
 			char *f_name = strdup (string->string);
 			rz_name_filter (f_name, RZ_FLAG_NAME_SIZE);
 			char *str = (r->bin->prefix)
@@ -866,7 +866,7 @@ static int bin_info(RzCore *r, int mode, ut64 laddr) {
 		if (v != -1) {
 			rz_cons_printf ("pcalign %d\n", v);
 		}
-	} else if (IS_MODE_RAD (mode)) {
+	} else if (IS_MODE_RZCMD (mode)) {
 		if (info->type && !strcmp (info->type, "fs")) {
 			rz_cons_printf ("e file.type=fs\n");
 			rz_cons_printf ("m /root %s 0\n", info->arch);
@@ -1341,7 +1341,7 @@ static int bin_main(RzCore *r, int mode, int va) {
 		rz_flag_set (r->flags, "main", addr, r->blocksize);
 	} else if (IS_MODE_SIMPLE (mode)) {
 		rz_cons_printf ("%"PFMT64d, addr);
-	} else if (IS_MODE_RAD (mode)) {
+	} else if (IS_MODE_RZCMD (mode)) {
 		rz_cons_printf ("fs symbols\n");
 		rz_cons_printf ("f main @ 0x%08"PFMT64x"\n", addr);
 	} else if (IS_MODE_JSON (mode)) {
@@ -1375,7 +1375,7 @@ static int bin_entry(RzCore *r, int mode, ut64 laddr, int va, bool inifin) {
 	int i = 0, init_i = 0, fini_i = 0, preinit_i = 0;
 	ut64 baddr = rz_bin_get_baddr (r->bin);
 
-	if (IS_MODE_RAD (mode)) {
+	if (IS_MODE_RZCMD (mode)) {
 		rz_cons_printf ("fs symbols\n");
 	} else if (IS_MODE_JSON (mode)) {
 		rz_cons_printf ("[");
@@ -1444,7 +1444,7 @@ static int bin_entry(RzCore *r, int mode, ut64 laddr, int va, bool inifin) {
 			rz_cons_printf ("\"%s\":%" PFMT64u ","
 				"\"type\":\"%s\"}",
 				hpaddr_key, hpaddr, type);
-		} else if (IS_MODE_RAD (mode)) {
+		} else if (IS_MODE_RZCMD (mode)) {
 			char *name = NULL;
 			if (entry->type == RZ_BIN_ENTRY_TYPE_INIT) {
 				name = rz_str_newf ("entry.init%i", init_i);
@@ -1669,7 +1669,7 @@ static void add_metadata(RzCore *r, RzBinReloc *reloc, ut64 addr, int mode) {
 	}
 	if (IS_MODE_SET (mode)) {
 		rz_meta_set (r->analysis, RZ_META_TYPE_DATA, reloc->vaddr, cdsz, NULL);
-	} else if (IS_MODE_RAD (mode)) {
+	} else if (IS_MODE_RZCMD (mode)) {
 		rz_cons_printf ("Cd %d @ 0x%08" PFMT64x "\n", cdsz, addr);
 	}
 }
@@ -1721,7 +1721,7 @@ static int bin_relocs(RzCore *r, int mode, int va) {
 		relocs = rz_bin_get_relocs (r->bin);
 	}
 
-	if (IS_MODE_RAD (mode)) {
+	if (IS_MODE_RZCMD (mode)) {
 		rz_cons_println ("fs relocs");
 	} else if (IS_MODE_NORMAL (mode)) {
 		rz_cons_println ("[Relocations]");
@@ -1747,7 +1747,7 @@ static int bin_relocs(RzCore *r, int mode, int va) {
 			add_metadata (r, reloc, addr, mode);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			rz_cons_printf ("0x%08"PFMT64x"  %s\n", addr, reloc->import ? reloc->import->name : "");
-		} else if (IS_MODE_RAD (mode)) {
+		} else if (IS_MODE_RZCMD (mode)) {
 			char *name = reloc->import
 				? strdup (reloc->import->name)
 				: (reloc->symbol ? strdup (reloc->symbol->name) : NULL);
@@ -1994,7 +1994,7 @@ static int bin_imports(RzCore *r, int mode, int va, const char *name) {
 	if (IS_MODE_JSON (mode)) {
 		pj = rz_core_pj_new (r);
 		pj_a (pj);
-	} else if (IS_MODE_RAD (mode)) {
+	} else if (IS_MODE_RZCMD (mode)) {
 		rz_cons_println ("fs imports");
 	} else if (IS_MODE_NORMAL (mode)) {
 		rz_cons_println ("[Imports]");
@@ -2054,7 +2054,7 @@ static int bin_imports(RzCore *r, int mode, int va, const char *name) {
 			pj_kn (pj, "plt", addr);
 			pj_end (pj);
 			free (str);
-		} else if (IS_MODE_RAD (mode)) {
+		} else if (IS_MODE_RZCMD (mode)) {
 		} else {
 			const char *bind = import->bind? import->bind: "NONE";
 			const char *type = import->type? import->type: "NONE";
@@ -2293,13 +2293,13 @@ static int bin_symbols(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	} else if (IS_MODE_SET (mode)) {
 		rz_flag_space_set (r->flags, RZ_FLAGS_FS_SYMBOLS);
 	} else if (at == UT64_MAX && exponly) {
-		if (IS_MODE_RAD (mode)) {
+		if (IS_MODE_RZCMD (mode)) {
 			rz_cons_printf ("fs exports\n");
 		} else if (IS_MODE_NORMAL (mode)) {
 			rz_cons_printf (printHere ? "" : "[Exports]\n");
 		}
 	} else if (at == UT64_MAX && !exponly) {
-		if (IS_MODE_RAD (mode)) {
+		if (IS_MODE_RZCMD (mode)) {
 			rz_cons_printf ("fs symbols\n");
 		} else if (IS_MODE_NORMAL (mode)) {
 			rz_cons_printf (printHere ? "" : "[Symbols]\n");
@@ -2422,7 +2422,7 @@ static int bin_symbols(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			const char *name = sn.demname? sn.demname: rz_symbol_name;
 			rz_cons_printf ("%s\n", name);
-		} else if (IS_MODE_RAD (mode)) {
+		} else if (IS_MODE_RZCMD (mode)) {
 			/* Skip special symbols because we do not flag them and
 			 * they shouldn't be printed in the rad format either */
 			if (is_special_symbol (symbol)) {
@@ -2812,7 +2812,7 @@ static int bin_sections(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const 
 	}
 	if (IS_MODE_JSON (mode) && !printHere) {
 		rz_cons_printf ("[");
-	} else if (IS_MODE_RAD (mode) && at == UT64_MAX) {
+	} else if (IS_MODE_RZCMD (mode) && at == UT64_MAX) {
 		rz_cons_printf ("fs %ss\n", type);
 	} else if (IS_MODE_NORMAL (mode) && at == UT64_MAX && !printHere) {
 		rz_cons_printf ("[%s]\n", print_segments ? "Segments" : "Sections");
@@ -2904,7 +2904,7 @@ static int bin_sections(RzCore *r, int mode, ut64 laddr, int va, ut64 at, const 
 		if (!bits) {
 			bits = RZ_SYS_BITS;
 		}
-		if (IS_MODE_RAD (mode)) {
+		if (IS_MODE_RZCMD (mode)) {
 			char *n = __filterQuotedShell (section->name);
 			rz_cons_printf ("\"f %s.%s 1 0x%08"PFMT64x"\"\n", type, n, section->vaddr);
 			free (n);
@@ -3114,7 +3114,7 @@ static int bin_fields(RzCore *r, int mode, int va) {
 	}
 	if (IS_MODE_JSON (mode)) {
 		rz_cons_print ("[");
-	} else if (IS_MODE_RAD (mode)) {
+	} else if (IS_MODE_RZCMD (mode)) {
 		rz_cons_println ("fs header");
 	} else if (IS_MODE_NORMAL (mode)) {
 		rz_cons_println ("[Header fields]");
@@ -3122,7 +3122,7 @@ static int bin_fields(RzCore *r, int mode, int va) {
 	rz_list_foreach (fields, iter, field) {
 		ut64 addr = rva (bin, field->paddr, field->vaddr, va);
 
-		if (IS_MODE_RAD (mode)) {
+		if (IS_MODE_RZCMD (mode)) {
 			char *n = __filterQuotedShell (field->name);
 			rz_name_filter (n, -1);
 			rz_cons_printf ("\"f header.%s 1 0x%08"PFMT64x"\"\n", n, addr);
@@ -3409,7 +3409,7 @@ static int bin_classes(RzCore *r, int mode) {
 			return false;
 		}
 		rz_flag_space_set (r->flags, RZ_FLAGS_FS_CLASSES);
-	} else if (IS_MODE_RAD (mode) && !IS_MODE_CLASSDUMP (mode)) {
+	} else if (IS_MODE_RZCMD (mode) && !IS_MODE_CLASSDUMP (mode)) {
 		rz_cons_println ("fs classes");
 	}
 
@@ -3466,7 +3466,7 @@ static int bin_classes(RzCore *r, int mode) {
 			if (c) {
 				RzBinFile *bf = rz_bin_cur (r->bin);
 				if (bf && bf->o) {
-					if (IS_MODE_RAD (mode)) {
+					if (IS_MODE_RZCMD (mode)) {
 						classdump_c (r, c);
 					} else if (bf->o->lang == RZ_BIN_NM_JAVA || (bf->o->info && bf->o->info->lang && strstr (bf->o->info->lang, "dalvik"))) {
 						classdump_java (r, c);
@@ -3477,7 +3477,7 @@ static int bin_classes(RzCore *r, int mode) {
 					classdump_objc (r, c);
 				}
 			}
-		} else if (IS_MODE_RAD (mode)) {
+		} else if (IS_MODE_RZCMD (mode)) {
 			char *n = __filterShell (name);
 			rz_cons_printf ("\"f class.%s = 0x%"PFMT64x"\"\n", n, at_min);
 			free (n);
@@ -3598,7 +3598,7 @@ static int bin_size(RzCore *r, int mode) {
 	ut64 size = rz_bin_get_size (r->bin);
 	if (IS_MODE_SIMPLE (mode) || IS_MODE_JSON (mode)) {
 		rz_cons_printf ("%"PFMT64u"\n", size);
-	} else if (IS_MODE_RAD (mode)) {
+	} else if (IS_MODE_RZCMD (mode)) {
 		rz_cons_printf ("f bin_size @ %"PFMT64u"\n", size);
 	} else if (IS_MODE_SET (mode)) {
 		rz_core_cmdf (r, "f bin_size @ %"PFMT64u"\n", size);
@@ -3630,7 +3630,7 @@ static int bin_libs(RzCore *r, int mode) {
 		if (IS_MODE_SET (mode)) {
 			// Nothing to set.
 			// TODO: load libraries with iomaps?
-		} else if (IS_MODE_RAD (mode)) {
+		} else if (IS_MODE_RZCMD (mode)) {
 			rz_cons_printf ("\"CCa entry0 %s\"\n", lib);
 		} else if (IS_MODE_JSON (mode)) {
 			pj_s (pj, lib);
@@ -3690,7 +3690,7 @@ static int bin_mem(RzCore *r, int mode) {
 		return false;
 	}
 	if (!IS_MODE_JSON (mode)) {
-		if (!(IS_MODE_RAD (mode) || IS_MODE_SET (mode))) {
+		if (!(IS_MODE_RZCMD (mode) || IS_MODE_SET (mode))) {
 			rz_cons_println ("[Memory]\n");
 		}
 	}
@@ -3706,7 +3706,7 @@ static int bin_mem(RzCore *r, int mode) {
 		bin_mem_print (mem, 7, 0, RZ_MODE_JSON);
 		rz_cons_println ("]");
 		return true;
-	} else if (!(IS_MODE_RAD (mode) || IS_MODE_SET (mode))) {
+	} else if (!(IS_MODE_RZCMD (mode) || IS_MODE_SET (mode))) {
 		bin_mem_print (mem, 7, 0, mode);
 	}
 	return true;
@@ -4034,7 +4034,7 @@ static void bin_pe_resources(RzCore *r, int mode) {
 	}
 	if (IS_MODE_SET (mode)) {
 		rz_flag_space_set (r->flags, RZ_FLAGS_FS_RESOURCES);
-	} else if (IS_MODE_RAD (mode)) {
+	} else if (IS_MODE_RZCMD (mode)) {
 		rz_cons_printf ("fs resources\n");
 	} else if (IS_MODE_JSON (mode)) {
 		pj = rz_core_pj_new (r);
@@ -4060,7 +4060,7 @@ static void bin_pe_resources(RzCore *r, int mode) {
 		if (IS_MODE_SET (mode)) {
 			const char *name = sdb_fmt ("resource.%d", index);
 			rz_flag_set (r->flags, name, vaddr, size);
-		} else if (IS_MODE_RAD (mode)) {
+		} else if (IS_MODE_RZCMD (mode)) {
 			rz_cons_printf ("f resource.%d %d 0x%08"PFMT64x"\n", index, size, vaddr);
 		} else if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
@@ -4095,7 +4095,7 @@ static void bin_pe_resources(RzCore *r, int mode) {
 		pj_end (pj);
 		rz_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
-	} else if (IS_MODE_RAD (mode)) {
+	} else if (IS_MODE_RZCMD (mode)) {
 		rz_cons_println ("fs *");
 	}
 }
@@ -4429,7 +4429,7 @@ RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode) {
 	int i, len = 0;
 
 	RzStrBuf *buf = rz_strbuf_new ("");
-	if (IS_MODE_SET (mode) || IS_MODE_RAD (mode)) {
+	if (IS_MODE_SET (mode) || IS_MODE_RZCMD (mode)) {
 		if (!flags) {
 			goto out;
 		}

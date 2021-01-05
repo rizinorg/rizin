@@ -316,7 +316,6 @@ struct rz_core_t {
 	bool fixedarch; // will be true when using @a:
 	bool fixedblock;
 	char *table_query;
-	int sync_index; // used for http.sync and T=
 	struct rz_core_t *c2;
 	RzCoreAutocomplete *autocomplete;
 	int autocomplete_type;

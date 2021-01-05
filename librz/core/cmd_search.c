@@ -160,7 +160,7 @@ struct search_parameters {
 	RzList *boundaries;
 	const char *mode;
 	const char *cmd_hit;
-	int outmode; // 0 or RZ_MODE_RADARE or RZ_MODE_JSON
+	int outmode; // 0 or RZ_MODE_RIZINCMD or RZ_MODE_JSON
 	bool inverse;
 	bool aes_search;
 	bool privkey_search;
@@ -2238,7 +2238,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 		param->outmode = RZ_MODE_JSON;
 		break;
 	case '*':
-		param->outmode = RZ_MODE_RADARE;
+		param->outmode = RZ_MODE_RIZINCMD;
 		break;
 	default:
 		break;
@@ -2288,7 +2288,7 @@ static void do_asm_search(RzCore *core, struct search_parameters *param, const c
 						"{\"offset\":%"PFMT64d ",\"len\":%d,\"code\":\"%s\"}",
 						hit->addr, hit->len, hit->code);
 					break;
-				case RZ_MODE_RADARE:
+				case RZ_MODE_RIZINCMD:
 					rz_cons_printf ("f %s%d_%i = 0x%08"PFMT64x "\n",
 						searchprefix, kwidx, count, hit->addr);
 					break;
@@ -3433,7 +3433,7 @@ reread:
 				param.outmode = RZ_MODE_JSON;
 				param_offset++;
 			} else if (strchr (input + 1, '*')) {
-				param.outmode = RZ_MODE_RADARE;
+				param.outmode = RZ_MODE_RIZINCMD;
 			}
 			int err = 1, vsize = atoi (input + 1);
 			const char *num_str = input + param_offset + 1;
@@ -3543,7 +3543,7 @@ reread:
 				ignorecase = true;
 			}
 		} else {
-			param.outmode = RZ_MODE_RADARE;
+			param.outmode = RZ_MODE_RIZINCMD;
 		}
 
 		size_t shift = 1 + ignorecase;

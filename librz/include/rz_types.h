@@ -18,7 +18,7 @@
 #undef __WINDOWS__
 
 #define RZ_MODE_PRINT 0x000
-#define RZ_MODE_RADARE 0x001
+#define RZ_MODE_RIZINCMD 0x001
 #define RZ_MODE_SET 0x002
 #define RZ_MODE_SIMPLE 0x004
 #define RZ_MODE_JSON 0x008
