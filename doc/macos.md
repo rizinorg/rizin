@@ -1,18 +1,9 @@
+NOTE: This document might be outdated. Keeping this for reference for the signing process.
+
 macOS
 ===
 
-macOS Users need to follow some extra steps to get the rizin program signed and ready to debug other applications without running it as root. Same happens for iOS users, read `doc/ios` for more information.
-
-Installation
-------------
-
-To compile for macOS automatically, do it this way:
-
-	$ sys/install.sh
-
-By default it is installed in /usr/local, you can specify a different prefix like this:
-
-	$ sys/install.sh /custom/prefix
+macOS Users need to follow some extra steps to get the rizin program signed and ready to debug other applications without running it as root.
 
 Code Signing
 ------------

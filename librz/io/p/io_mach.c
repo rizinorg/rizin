@@ -390,15 +390,6 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 			kill (pid, SIGKILL);
 			eprintf ("Child killed\n");
 		}
-#if 0
-		/* this is broken, referer gets set in the riodesc after this function returns the riodesc
-		 * the pid > 0 check  doesn't seem to be reasonable to me too
-		 * what was this intended to check anyway ? */
-		if (pid > 0 && io->referer && !strncmp (io->referer, "dbg://", 6)) {
-			eprintf ("Child killed\n");
-			kill (pid, SIGKILL);
-		}
-#endif
 		switch (errno) {
 		case EPERM:
 			eprintf ("Operation not permitted\n");
