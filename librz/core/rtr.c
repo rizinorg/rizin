@@ -54,26 +54,6 @@ RZ_API void rz_core_wait(RzCore *core) {
 	rz_th_wait (rapthread);
 }
 
-static void http_logf(RzCore *core, const char *fmt, ...) {
-	bool http_log_enabled = rz_config_get_i (core->config, "http.log");
-	va_list ap;
-	va_start (ap, fmt);
-	if (http_log_enabled) {
-		const char *http_log_file = rz_config_get (core->config, "http.logfile");
-		if (http_log_file && *http_log_file) {
-			char * msg = calloc (4096, 1);
-			if (msg) {
-				vsnprintf (msg, 4095, fmt, ap);
-				rz_file_dump (http_log_file, (const ut8*)msg, -1, true);
-				free (msg);
-			}
-		} else {
-			vfprintf (stderr, fmt, ap);
-		}
-	}
-	va_end (ap);
-}
-
 static char *rtrcmd (TextLog T, const char *str) {
 	char *res, *ptr2;
 	char *ptr = rz_str_uri_encode (str);
@@ -125,42 +105,12 @@ RZ_API int rz_core_rtr_http_stop(RzCore *u) {
 	return 0;
 }
 
-static char *rtr_dir_files(const char *path) {
-	char *ptr = strdup ("<html><body>\n");
-	const char *file;
-	RzListIter *iter;
-	// list files
-	RzList *files = rz_sys_dir (path);
-	eprintf ("Listing directory %s\n", path);
-	rz_list_foreach (files, iter, file) {
-		if (file[0] == '.') {
-			continue;
-		}
-		ptr = rz_str_appendf (ptr, "<a href=\"%s%s\">%s</a><br />\n",
-			path, file, file);
-	}
-	rz_list_free (files);
-	return rz_str_append (ptr, "</body></html>\n");
-}
-
 #if __UNIX__
 static void dietime(int sig) {
 	eprintf ("It's Die Time!\n");
 	exit (0);
 }
 #endif
-
-static void activateDieTime(RzCore *core) {
-	int dt = rz_config_get_i (core->config, "http.dietime");
-	if (dt > 0) {
-#if __UNIX__
-		rz_sys_signal (SIGALRM, dietime);
-		alarm (dt);
-#else
-		eprintf ("http.dietime only works on *nix systems\n");
-#endif
-	}
-}
 
 #include "rtr_shell.c"
 
