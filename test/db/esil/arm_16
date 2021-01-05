@@ -978,7 +978,7 @@ BROKEN=1
 FILE=bins/elf/BLE_Beacon2.NRF51822_OTA.bin
 ARGS=-aarm -b16 -easm.os=s110 -m 0x16000
 CMDS=<<EOF
-e bin.baddr = 0x16000;
+e bin.baddr=0x16000;
 aae $s @ 0x00016000
 fs
 EOF
@@ -1050,7 +1050,7 @@ RUN
 NAME=test-thumb-load
 FILE=malloc://0x200
 CMDS=<<EOF
-e asm.bytes = true
+e asm.bytes=true
 e asm.arch=arm
 e asm.bits=16
 wb 054b

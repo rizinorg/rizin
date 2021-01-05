@@ -11,7 +11,7 @@ RUN
 NAME=@@c:/c fs:
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
-e search.in = bin.sections
+e search.in=bin.sections
 ?v $$ @@c:/ad fs:[ra
 EOF
 EXPECT=<<EOF
@@ -22,7 +22,7 @@ RUN
 NAME=@@c:/c/a fs:
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
-e search.in = bin.sections
+e search.in=bin.sections
 ?v $$ @@c:/ao fs:[ra
 EOF
 EXPECT=<<EOF

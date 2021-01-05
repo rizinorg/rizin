@@ -119,7 +119,7 @@ NAME= Instruction descriptions for TriCore
 FILE=bins/tricore/return_0.elf
 CMDS=<<EOF
 e asm.bytes=true
-e asm.describe = 1
+e asm.describe=1
 s 0x80000004
 pd 30
 EOF

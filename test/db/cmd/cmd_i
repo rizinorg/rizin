@@ -2795,7 +2795,7 @@ RUN
 NAME=section comment
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
-e asm.bytes = false
+e asm.bytes=false
 pd 1 @ 0x080495a8
 EOF
 EXPECT=<<EOF
@@ -4578,7 +4578,7 @@ RUN
 NAME=izjencoding
 FILE=bins/elf/analysis/hello-utf-16
 CMDS=<<EOF
-e cfg.json.str = base64
+e cfg.json.str=base64
 izj~{[0].section}
 EOF
 EXPECT=<<EOF
@@ -4589,7 +4589,7 @@ RUN
 NAME=izjencodinghex
 FILE=bins/elf/analysis/hello-utf-16
 CMDS=<<EOF
-e cfg.json.str = hex
+e cfg.json.str=hex
 izj~{[0].string}
 EOF
 EXPECT=<<EOF
@@ -4600,7 +4600,7 @@ RUN
 NAME=izjencodingarray
 FILE=bins/elf/analysis/hello-utf-16
 CMDS=<<EOF
-e cfg.json.str = array
+e cfg.json.str=array
 izj~{[0].type}
 EOF
 EXPECT=<<EOF

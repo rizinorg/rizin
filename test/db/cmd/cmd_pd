@@ -133,8 +133,8 @@ FILE=malloc://128
 CMDS=<<EOF
 e asm.bytes=true
 e asm.bits=64
-e asm.arch = x86
-e analysis.arch = x86
+e asm.arch=x86
+e analysis.arch=x86
 wx b8ffffffff
 e asm.lines.bb=0
 pd 1
@@ -278,7 +278,7 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
 e asm.bits=32
-e scr.columns = 90
+e scr.columns=90
 wx ba3d000000
 pd 1
 EOF
@@ -293,7 +293,7 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
 e asm.bits=32
-e scr.columns = 90
+e scr.columns=90
 wx c6852fffffff61
 pd 1
 EOF
@@ -306,10 +306,10 @@ NAME=String capstone
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 e asm.bytes=true
-e asm.arch = x86
+e asm.arch=x86
 e asm.arch=x86
 e asm.bits=32
-e scr.columns = 90
+e scr.columns=90
 aa
 pd 1 @ 0x0040050a
 EOF
@@ -545,15 +545,15 @@ e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
 wx 488d85c0f9ffff488985b8f9ffff4585f6
-e asm.lines.bb = false
-e asm.lbytes = true
-e asm.nbytes = 6
+e asm.lines.bb=false
+e asm.lbytes=true
+e asm.nbytes=6
 pd 3
-e asm.nbytes = 10
+e asm.nbytes=10
 pd 3
-e asm.lbytes = false
+e asm.lbytes=false
 pd 3
-e asm.nbytes = 6
+e asm.nbytes=6
 pd 3
 EOF
 EXPECT=<<EOF
@@ -1499,7 +1499,7 @@ RUN
 NAME=pd0~{} - crash
 FILE=-
 CMDS=<<EOF
-e scr.null =true
+e scr.null=true
 pd0~{}
 EOF
 EXPECT=<<EOF
@@ -1509,7 +1509,7 @@ RUN
 NAME=pI - crash
 FILE=-
 CMDS=<<EOF
-e scr.null =true
+e scr.null=true
 pI 0x200
 EOF
 EXPECT=<<EOF
@@ -1519,7 +1519,7 @@ RUN
 NAME=pC - crash
 FILE=-
 CMDS=<<EOF
-e scr.null =true
+e scr.null=true
 pC 0x200
 EOF
 EXPECT=<<EOF

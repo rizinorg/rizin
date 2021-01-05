@@ -1,7 +1,7 @@
 NAME=pD@x:90
 FILE=-
 CMDS=<<EOF
-e asm.arch = x86
+e asm.arch=x86
 e asm.bits= 32
 e asm.bytes=true
 pD@x:90
@@ -14,7 +14,7 @@ RUN
 NAME=pd@x:90
 FILE=-
 CMDS=<<EOF
-e asm.arch = x86
+e asm.arch=x86
 e asm.bits= 32
 e asm.bytes=true
 pd@x:90
@@ -27,9 +27,9 @@ RUN
 NAME=pd@x:90909090
 FILE=-
 CMDS=<<EOF
-e asm.bytes = true
-e asm.arch = x86
-e asm.bits = 32
+e asm.bytes=true
+e asm.arch=x86
+e asm.bits=32
 pd@x:90909090
 EOF
 EXPECT=<<EOF
@@ -43,8 +43,8 @@ RUN
 NAME=pd@x:909090
 FILE=-
 CMDS=<<EOF
-e asm.bytes = true
-e asm.arch = x86
+e asm.bytes=true
+e asm.arch=x86
 e asm.bits= 32
 pd@x:909090
 EOF

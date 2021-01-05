@@ -676,7 +676,7 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 
 	int i;
 	for (i = 1; i < argc; i++) {
-		RzList *l = rz_str_split_duplist_n (argv[i], "=", 2, false);
+		RzList *l = rz_str_split_duplist_n (argv[i], "=", 1, false);
 		if (!l) {
 			return RZ_CMD_STATUS_ERROR;
 		}

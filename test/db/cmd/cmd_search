@@ -132,10 +132,10 @@ RUN
 NAME=/ search from/to (seek 0)
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
-e io.va = false
+e io.va=false
 s 0
-e search.from = 0
-e search.to = 0x00000050
+e search.from=0
+e search.to=0x00000050
 / ELF
 EOF
 EXPECT=<<EOF
@@ -146,11 +146,11 @@ RUN
 NAME=/ search from/to (seek beyond data)
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
-e scr.color = false
-e io.va = false
+e scr.color=false
+e io.va=false
 s 0x1000
-e search.from = 0
-e search.to = 0x50
+e search.from=0
+e search.to=0x50
 / ELF
 EOF
 EXPECT=<<EOF
@@ -233,10 +233,10 @@ RUN
 NAME=/a search from/to (seek 0)
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
-e io.va = false
+e io.va=false
 s 0
-e search.from = 0
-e search.to = 0x50
+e search.from=0
+e search.to=0x50
 /a xor al, 0x80
 EOF
 EXPECT=<<EOF
@@ -248,10 +248,10 @@ RUN
 NAME=/a search from/to (seek 0)
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
-e io.va = false
+e io.va=false
 s 0
-e search.from = 0
-e search.to = 0x50
+e search.from=0
+e search.to=0x50
 /a xor al, 0x80
 EOF
 EXPECT=<<EOF
@@ -320,10 +320,10 @@ RUN
 NAME=/a search from/to (seek beyond data)
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
-e io.va = false
+e io.va=false
 s 0x1000
-e search.from = 0
-e search.to = 0x00000050
+e search.from=0
+e search.to=0x00000050
 /a xor al, 0x80
 EOF
 EXPECT=<<EOF
@@ -335,10 +335,10 @@ RUN
 NAME=/x search from/to (seek beyond data)
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
-e io.va = false
+e io.va=false
 s 0x1000
-e search.from = 0
-e search.to = 0x00000050
+e search.from=0
+e search.to=0x00000050
 /x 3480
 EOF
 EXPECT=<<EOF
@@ -350,8 +350,8 @@ RUN
 NAME=/A search
 FILE=malloc://1024
 CMDS=<<EOF
-e asm.arch = x86
-e analysis.arch = x86
+e asm.arch=x86
+e analysis.arch=x86
 e asm.bits=32
 "wa add esp,8;pop ebx; pop ebp; ret"
 /at ret
@@ -364,10 +364,10 @@ RUN
 NAME=/A search from/to (seek 0)
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
-e io.va = false
+e io.va=false
 s 0
-e search.from = 0
-e search.to = 0x00000050
+e search.from=0
+e search.to=0x00000050
 /at xor
 EOF
 EXPECT=<<EOF
@@ -379,10 +379,10 @@ RUN
 NAME=/A search from/to (seek beyond data)
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
-e io.va = false
+e io.va=false
 s 0x1000
-e search.from = 0
-e search.to = 0x00000050
+e search.from=0
+e search.to=0x00000050
 /at xor
 EOF
 EXPECT=<<EOF
@@ -464,8 +464,8 @@ RUN
 NAME=/c/ search instructions extended regex
 FILE=bins/pe/standard.exe
 CMDS=<<EOF
-e asm.arch = x86
-e analysis.arch = x86
+e asm.arch=x86
+e analysis.arch=x86
 e asm.bits=32
 "/ad/ ror (bh|...), (cl|.)"
 q
@@ -480,10 +480,10 @@ RUN
 NAME=/m search from/to (seek 0)
 FILE=bins/pe/standard.exe
 CMDS=<<EOF
-e io.va = false
+e io.va=false
 s 0
-e search.from = 0
-e search.to = 0x10
+e search.from=0
+e search.to=0x10
 /m
 EOF
 EXPECT=<<EOF
@@ -494,10 +494,10 @@ RUN
 NAME=/m search from/to (seek beyond data)
 FILE=bins/pe/standard.exe
 CMDS=<<EOF
-e io.va = false
+e io.va=false
 s 0x1000
-e search.from = 0
-e search.to = 0x10
+e search.from=0
+e search.to=0x10
 /m
 EOF
 EXPECT=<<EOF
@@ -527,8 +527,8 @@ FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
 s 0
-e search.from = 0
-e search.to = 0x200
+e search.from=0
+e search.to=0x200
 /x 41424344
 EOF
 EXPECT=<<EOF
@@ -541,8 +541,8 @@ FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
 s 0x1000
-e search.from = 0
-e search.to = 0x200
+e search.from=0
+e search.to=0x200
 /x 41424344
 EOF
 EXPECT=<<EOF
@@ -553,7 +553,7 @@ RUN
 NAME=/m search seek
 FILE=bins/pe/standard.exe
 CMDS=<<EOF
-e io.va = false
+e io.va=false
 s 0x1000
 /m~[0]
 s
@@ -590,9 +590,9 @@ FILE=bins/elf/analysis/x86-simple
 CMDS=<<EOF
 aeim
 aeip
-e search.in = raw
-e search.from = 0x08048060
-e search.to = 0x0804806b
+e search.in=raw
+e search.from=0x08048060
+e search.to=0x0804806b
 /s
 EOF
 EXPECT=<<EOF
@@ -647,7 +647,7 @@ RUN
 NAME=/x search seek
 FILE=bins/pe/standard.exe
 CMDS=<<EOF
-e io.va = false
+e io.va=false
 s 0x1000
 /x 9090cd80
 s
@@ -679,8 +679,8 @@ FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
 b 0x100
-e search.from = 0x50
-e search.to = 0x150
+e search.from=0x50
+e search.to=0x150
 /x 41424344
 EOF
 EXPECT=<<EOF
@@ -693,8 +693,8 @@ FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
 b 0x100
-e search.from = 0x50
-e search.to = 0x90
+e search.from=0x50
+e search.to=0x90
 /x 41424344
 EOF
 EXPECT=<<EOF
@@ -706,8 +706,8 @@ FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
 b 0x100
-e search.from = 0x100
-e search.to = 0x104
+e search.from=0x100
+e search.to=0x104
 /x 41424344
 EOF
 EXPECT=<<EOF
@@ -720,8 +720,8 @@ FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
 b 0x100
-e search.from = 0x101
-e search.to = 0x104
+e search.from=0x101
+e search.to=0x104
 /x 41424344
 EOF
 EXPECT=<<EOF
@@ -733,8 +733,8 @@ FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
 b 0x100
-e search.from = 0x100
-e search.to = 0x103
+e search.from=0x100
+e search.to=0x103
 /x 41424344
 EOF
 EXPECT=<<EOF
@@ -768,8 +768,8 @@ NAME=backward search hex
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
-e search.from = 0x50
-e search.to = 0x150
+e search.from=0x50
+e search.to=0x150
 b 0x100
 /bx 41424344
 EOF
@@ -782,8 +782,8 @@ NAME=backward search hex
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
-e search.from = 0x110
-e search.to = 0x150
+e search.from=0x110
+e search.to=0x150
 b 0x100
 /bx 41424344
 EOF
@@ -795,8 +795,8 @@ NAME=backward search hex
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
-e search.from = 0x100
-e search.to = 0x104
+e search.from=0x100
+e search.to=0x104
 b 0x100
 /bx 41424344
 EOF
@@ -809,8 +809,8 @@ NAME=backward search hex
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
-e search.from = 0x100
-e search.to = 0x103
+e search.from=0x100
+e search.to=0x103
 b 0x100
 /bx 41424344
 EOF
@@ -822,8 +822,8 @@ NAME=backward search hex
 FILE=malloc://1024
 CMDS=<<EOF
 w ABCD @ 0x100
-e search.from = 0x101
-e search.to = 0x104
+e search.from=0x101
+e search.to=0x104
 b 0x100
 /bx 41424344
 EOF
@@ -921,9 +921,9 @@ NAME=search range /c in arm
 FILE=bins/arm/elf/hello_world
 CMDS=<<EOF
 af @ sym.main
-e search.in = raw
-e search.from = 0x0000050c
-e search.to = 0x00000510
+e search.in=raw
+e search.from=0x0000050c
+e search.to=0x00000510
 /ac add
 EOF
 EXPECT=<<EOF
@@ -935,9 +935,9 @@ NAME=search range /ce in arm
 FILE=bins/arm/elf/hello_world
 CMDS=<<EOF
 af @ sym.main
-e search.in = raw
-e search.from = 0x00000512
-e search.to = 0x00000516
+e search.in=raw
+e search.from=0x00000512
+e search.to=0x00000516
 /ae r3,r0,=
 EOF
 EXPECT=<<EOF

@@ -21,8 +21,8 @@ NAME=t/basic
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 b 0x100
-e search.from = 0x08048301
-e search.to = 0x8048390
+e search.from=0x08048301
+e search.to=0x8048390
 /x b4960408ffd0c9c3
 EOF
 EXPECT=<<EOF
@@ -34,8 +34,8 @@ NAME=t/basic
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 b 100
-e search.from = 0x08048301
-e search.to = 0x8048390
+e search.from=0x08048301
+e search.to=0x8048390
 /x b4960408ffd0c9c3
 EOF
 EXPECT=<<EOF

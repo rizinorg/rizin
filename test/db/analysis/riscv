@@ -50,7 +50,7 @@ FILE=bins/elf/analysis/guess-number-riscv64
 CMDS=<<EOF
 e asm.bytes=true
 s 0x00010178
-e asm.pseudo = 1
+e asm.pseudo=1
 pd 5
 EOF
 EXPECT=<<EOF

@@ -26,8 +26,8 @@ RUN
 NAME=pe relocs [r2]
 FILE=bins/pe/base.exe
 CMDS=<<EOF
-e asm.functions = false
-e asm.flags = false
+e asm.functions=false
+e asm.flags=false
 pd 1@0x401820~!imp
 EOF
 EXPECT=<<EOF

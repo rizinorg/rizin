@@ -73,7 +73,7 @@ RUN
 NAME=thumb ldr+add pc-rel analysis
 FILE=malloc://32
 CMDS=<<EOF
-e asm.bytes = true
+e asm.bytes=true
 e asm.arch=arm
 e asm.bits=16
 e asm.emu=1
@@ -93,7 +93,7 @@ RUN
 NAME=thumb adr pc-rel analysis
 FILE=malloc://32
 CMDS=<<EOF
-e asm.bytes = true
+e asm.bytes=true
 e asm.arch=arm
 e asm.bits=16
 wx 10b5 01a0 00bf 00bf 52616461726532207465737420737472696e6700
@@ -109,7 +109,7 @@ NAME=pd bits override for arm
 FILE=malloc://32
 CMDS=<<EOF
 e asm.arch=arm
-e asm.bytes = true
+e asm.bytes=true
 e asm.bits=32
 wa mov r0, r0
 pi 1
@@ -140,7 +140,7 @@ RUN
 NAME=thumb adr pc-rel analysis with newline
 FILE=malloc://32
 CMDS=<<EOF
-e asm.bytes = true
+e asm.bytes=true
 e asm.arch=arm
 e asm.bits=16
 wx 10b5 01a0 00bf 00bf 5261646172653220746573740d0a00
@@ -269,7 +269,7 @@ RUN
 NAME=arm32 bxeq lr
 FILE=malloc://512
 CMDS=<<EOF
-e asm.bytes = true
+e asm.bytes=true
 e asm.calls=false
 e asm.arch=arm
 e asm.bits=32
@@ -323,7 +323,7 @@ NAME=ELF ARM: thumb/arm switch
 FILE=bins/elf/analysis/libstagefright_soft_g711dec.so
 CMDS=<<EOF
 af
-e asm.bytes = true
+e asm.bytes=true
 afi~size
 afi~size
 EOF
@@ -943,7 +943,7 @@ NAME=arm aae with bit switch
 FILE=bins/arm/elf/hello_world
 CMDS=<<EOF
 aei
-e asm.bytes = true
+e asm.bytes=true
 e asm.bits=32
 aae 20 @ main
 pd 9 @ main
