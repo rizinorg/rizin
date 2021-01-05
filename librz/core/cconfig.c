@@ -3435,31 +3435,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* http */
 	SETBPREF ("http.log", "true", "Show HTTP requests processed");
 	SETPREF ("http.logfile", "", "Specify a log file instead of stderr for http requests");
-#if __WINDOWS__
-	rz_config_set (cfg, "http.browser", "start");
-#else
-	if (rz_file_exists ("/usr/bin/openURL")) { // iOS ericautils
-		rz_config_set (cfg, "http.browser", "/usr/bin/openURL");
-	} else if (rz_file_exists ("/system/bin/toolbox")) {
-		rz_config_set (cfg, "http.browser",
-				"LD_LIBRARY_PATH=/system/lib am start -a android.intent.action.VIEW -d");
-	} else if (rz_file_exists ("/usr/bin/xdg-open")) {
-		rz_config_set (cfg, "http.browser", "xdg-open");
-	} else if (rz_file_exists ("/usr/bin/open")) {
-		rz_config_set (cfg, "http.browser", "open");
-	} else {
-		rz_config_set (cfg, "http.browser", "firefox");
-	}
-	rz_config_desc (cfg, "http.browser", "Command to open HTTP URLs");
-#endif
-	SETI ("http.maxsize", 0, "Maximum file size for upload");
 	SETPREF ("http.index", "index.html", "Main html file to check in directory");
 	SETPREF ("http.bind", "localhost", "Server address");
 	SETPREF ("http.port", "9090", "HTTP server port");
-	SETPREF ("http.maxport", "9999", "Last HTTP server port");
 	SETI ("http.dietime", 0, "Kill server after N seconds with no client");
-	SETBPREF ("http.upload", "false", "Enable file uploads to /up/<filename>");
-	SETBPREF ("http.auth", "false", "Enable/Disable HTTP Authentification");
 
 	/* tcp */
 	SETBPREF ("tcp.islocal", "false", "Bind a loopback for tcp command server");
