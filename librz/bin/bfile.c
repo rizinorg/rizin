@@ -169,7 +169,7 @@ static int string_scan_range(RzList *list, RzBinFile *bf, int min,
 				if (is_wide32) {
 					str_type = RZ_STRING_TYPE_WIDE32;
 				} else {
-					bool is_wide = needle + rc + 2 < to && !w[0] && w[1] && !w[2];
+					bool is_wide = needle + rc + 4 < to && !w[0] && w[1] && !w[2] && w[3] && !w[4];
 					str_type = is_wide? RZ_STRING_TYPE_WIDE: RZ_STRING_TYPE_ASCII;
 				}
 			} else {
