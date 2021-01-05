@@ -1,5 +1,5 @@
 OBJ_RSP=asm_rsp.o
-RSP_ROOT=$(LIBR)/asm/arch/rsp
+RSP_ROOT=$(LIBRZ)/asm/arch/rsp
 OBJ_RSP+=$(RSP_ROOT)/rsp_idec.o
 CFLAGS+=-I$(RSP_ROOT)
 

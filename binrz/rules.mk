@@ -59,7 +59,7 @@ endif
 
 all: ${BEXE} ${BINS}
 
-ifeq ($(WITH_LIBR),1)
+ifeq ($(WITH_LIBRZ),1)
 ${BINS}: ${OBJS}
 	${CC} ${CFLAGS} $@.c ${OBJS} ../../librz/librz.a -o $@ $(LDFLAGS)
 

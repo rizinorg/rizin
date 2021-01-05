@@ -8,7 +8,7 @@ LIB_PATH=$(SHLR)/gdb/
 CFLAGS+=-I$(SHLR)/gdb/include/
 LDFLAGS+=$(SHLR)/gdb/lib/libgdbr.$(EXT_AR)
 
-include $(LIBR)/socket/deps.mk
+include $(LIBRZ)/socket/deps.mk
 
 ifeq (${WITHPIC},0)
 LINKFLAGS=../../socket/librz_socket.a

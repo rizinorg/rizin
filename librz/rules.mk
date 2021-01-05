@@ -12,12 +12,12 @@ CFLAGS+=-g
 LINK+=-g
 endif
 
-LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+LIBRZ:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 # /librz
 
 ALL?=
-CFLAGS+=-I$(LIBR)
-CFLAGS+=-I$(LIBR)/include
+CFLAGS+=-I$(LIBRZ)
+CFLAGS+=-I$(LIBRZ)/include
 
 -include $(SHLR)/sdb.mk
 
@@ -87,14 +87,14 @@ $(LIBSO): $(EXTRA_TARGETS) ${WFD} ${OBJS} ${SHARED_OBJ}
 	    echo "LD $(LIBSO)" || \
 	    echo "\"${CC_LIB} ${LIBNAME} ${OBJS} ${SHARED_OBJ} ${LINK} ${LDFLAGS}\"" ; \
 	    ${CC_LIB} ${LIBNAME} ${CFLAGS} ${OBJS} ${SHARED_OBJ} ${LINK} ${LDFLAGS} || exit 1; \
-	    [ -f "$(LIBR)/stripsyms.sh" ] && sh $(LIBR)/stripsyms.sh ${LIBSO} ${NAME} ; \
+	    [ -f "$(LIBRZ)/stripsyms.sh" ] && sh $(LIBRZ)/stripsyms.sh ${LIBSO} ${NAME} ; \
 	  break ; \
 	fi ; done
 else
 $(LIBSO): ;
 endif
 
-ifeq ($(WITH_LIBR),1)
+ifeq ($(WITH_(LIBRZ)),1)
 $(LIBAR): ${OBJS}
 	@[ "${SILENT}" = 1 ] && echo "CC_AR $(LIBAR)" || true
 	rm -f $(LIBAR)

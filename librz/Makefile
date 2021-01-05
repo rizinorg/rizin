@@ -45,12 +45,12 @@ endif
 ifneq ($(LIBS8),)
 	$(MAKE) $(LIBS8)
 endif
-ifeq ($(WITH_LIBR),1)
+ifeq ($(WITH_LIBRZ),1)
 	$(MAKE) librz.${EXT_AR}
 	$(MAKE) librz.${EXT_SO}
 endif
 
-ifeq ($(WITH_LIBR),1)
+ifeq ($(WITH_LIBRZ),1)
 
 ifeq ($(CC),emcc)
 MLFLAGS=
@@ -147,13 +147,13 @@ endif
 
 else
 
-# WITH_LIBR=0
+# WITH_LIBRZ=0
 
 librz.${EXT_SO}:
-	$(MAKE) librz.${EXT_SO} WITH_LIBR=1
+	$(MAKE) librz.${EXT_SO} WITH_LIBRZ=1
 
 librz.${EXT_AR}:
-	$(MAKE) librz.${EXT_AR} WITH_LIBR=1
+	$(MAKE) librz.${EXT_AR} WITH_LIBRZ=1
 endif
 
 ../shlr/librz_shlr.${EXT_AR}:

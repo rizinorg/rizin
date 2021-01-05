@@ -30,7 +30,7 @@ ARG_WITHOUT WANT_DYLINK dylink disable support for dynamic loading of plugins ;
 ARG_WITHOUT HAVE_FORK fork disable fork ;
 ARG_WITHOUT WANT_PTRACE_WRAP ptrace-wrap disable ptrace-wrap build ;
 
-ARG_WITH WITH_LIBR librz build librz.a and librz.dylib ;
+ARG_WITH WITH_LIBRZ librz build librz.a and librz.dylib ;
 
 ARG_WITH WITH_CAPSTONE syscapstone force to use system-wide capstone ;
 IF WITH_CAPSTONE {

@@ -282,12 +282,12 @@ userconf.set('PREFIX', rizin_prefix)
 if host_machine.system() == 'windows'
   userconf.set('LIBDIR', rizin_libdir)
   userconf.set('INCLUDEDIR', rizin_incdir)
-  userconf.set('DATADIR_R2', rizin_datdir)
+  userconf.set('DATADIR_RZ', rizin_datdir)
   userconf.set10('HAVE_JEMALLOC', false)
 else
   userconf.set('LIBDIR', rizin_prefix / rizin_libdir)
   userconf.set('INCLUDEDIR', rizin_prefix / rizin_incdir)
-  userconf.set('DATADIR_R2', rizin_datdir_rz)
+  userconf.set('DATADIR_RZ', rizin_datdir_rz)
   userconf.set10('HAVE_JEMALLOC', true)
 endif
 userconf.set('DATADIR', rizin_prefix / rizin_datdir)
