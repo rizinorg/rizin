@@ -668,7 +668,7 @@ RZ_API int rz_analysis_op_reg_delta(RzAnalysis *analysis, ut64 addr, const char 
 	ut8 buf[32];
 	analysis->iob.read_at (analysis->iob.io, addr, buf, sizeof (buf));
 	RzAnalysisOp op;
-	rz_analysis_op_init(&op);
+	rz_analysis_op_init (&op);
 	if (rz_analysis_op (analysis, &op, addr, buf, sizeof (buf), RZ_ANALYSIS_OP_MASK_ALL) > 0) {
 		if (op.dst && op.dst->reg && op.dst->reg->name && (!name || !strcmp (op.dst->reg->name, name))) {
 			if (op.src[0]) {
@@ -676,6 +676,6 @@ RZ_API int rz_analysis_op_reg_delta(RzAnalysis *analysis, ut64 addr, const char 
 			}
 		}
 	}
-	rz_analysis_op_fini(&op);
+	rz_analysis_op_fini (&op);
 	return delta;
 }
