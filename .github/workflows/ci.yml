@@ -256,7 +256,7 @@ jobs:
   build-centos7:
     name: Build on CentOS 7
     runs-on: ubuntu-latest
-    if: contains(github.head_ref, 'centos') || contains(github.ref, 'release-') || github.event_name == 'schedule'
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'centos') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     container: centos:7
     steps:
     - name: Install tools
@@ -286,7 +286,7 @@ jobs:
 
   build-debian:
     name: Build on old Debian ${{ matrix.container }}
-    if: contains(github.head_ref, 'debian') || contains(github.ref, 'release-') || github.event_name == 'schedule'
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'debian') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     strategy:
         matrix:
             container:
@@ -345,7 +345,7 @@ jobs:
     name: Build static
     # FIXME: ignore error until all tests properly pass
     continue-on-error: true
-    if: contains(github.head_ref, 'static') || contains(github.ref, 'release-') || github.event_name == 'schedule'
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'static') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
@@ -375,7 +375,7 @@ jobs:
 
   create-tarball:
     name: Create source tarball
-    if: contains(github.head_ref, 'extras') || contains(github.ref, 'release-')
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-')
     needs: [build-and-test]
     runs-on: ubuntu-latest
     steps:
@@ -406,7 +406,7 @@ jobs:
 
   build-deb:
     name: Build deb package for ${{ matrix.container }}
-    if: github.event_name == 'push' && contains(github.ref, 'release-')
+    if: contains(github.head_ref, 'dist') || (github.event_name == 'push' && contains(github.ref, 'release-'))
     needs: [build-and-test]
     runs-on: ubuntu-latest
     container: ${{ matrix.container }}
@@ -450,7 +450,7 @@ jobs:
   build-osx-pkg:
     name: Build OSX package
     runs-on: macos-latest
-    if: contains(github.head_ref, 'osx') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
     - uses: actions/checkout@v2
@@ -458,10 +458,12 @@ jobs:
           submodules: recursive
     - name: Install pkg-config with Homebrew
       run: brew install pkg-config
+    - name: Install meson and ninja
+      run: pip3 install meson ninja PyYAML
     - name: Create OSX package
       run: |
-        ./sys/osx-pkg.sh
-        mv sys/osx-pkg/rizin-*.pkg sys/osx-pkg/rizin.pkg
+        ./dist/osx/build_osx_package.sh
+        mv rizin-*.pkg rizin.pkg
     - name: Upload .pkg file
       uses: actions/upload-artifact@v2
       with:
@@ -471,7 +473,7 @@ jobs:
   build-windows:
     name: Build Windows zip/installer ${{ matrix.name }}
     runs-on: windows-latest
-    if: contains(github.head_ref, 'windows') || (github.event_name == 'push' && contains(github.ref, 'release-'))
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'windows') || (github.event_name == 'push' && contains(github.ref, 'release-'))
     needs: [build-and-test]
     strategy:
       fail-fast: false
@@ -523,40 +525,10 @@ jobs:
         name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
         path: rizin-win-installer\Output\rizin.exe
 
-  build-ios-cydia:
-    name: Build iOS Cydia packages
-    runs-on: macos-latest
-    if: contains(github.head_ref, 'ios') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
-    needs: [build-and-test]
-    steps:
-    - uses: actions/checkout@v2
-      with:
-          submodules: recursive
-    - name: Extract rizin version
-      shell: bash
-      run: echo "##[set-output name=branch;]$(python sys/version.py)"
-      id: extract_version
-    - name: Install pkg-config/ldid2 with Homebrew
-      run: brew install pkg-config ldid
-    - name: Create cydia32 package
-      run: ./sys/ios-cydia32.sh
-    - name: List sys/cydia
-      run: ls -lahR ./sys/cydia
-    - uses: actions/upload-artifact@v2
-      with:
-        name: rizin-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm
-        path: ./sys/cydia/rizin/rizin-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
-    - name: Create cydia package
-      run: ./sys/ios-cydia.sh
-    - uses: actions/upload-artifact@v2
-      with:
-        name: rizin_${{ steps.extract_version.outputs.branch }}_iphoneos-arm
-        path: ./sys/cydia/rizin/rizin_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
-
   build-android:
     name: Build Android ${{ matrix.name }} package
     runs-on: ubuntu-latest
-    if: contains(github.head_ref, 'android') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'android') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     strategy:
       fail-fast: false
@@ -585,7 +557,7 @@ jobs:
 
   build-extras:
     name: Build rizin extras and rzpipe
-    if: contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.event_name == 'schedule'
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     needs: [create-tarball]
     runs-on: ubuntu-latest
     env:
@@ -732,7 +704,6 @@ jobs:
       build-android,
       test-osx-pkg,
       test-windows-clang_cl,
-      build-ios-cydia,
       build-extras
     ]
     steps:
