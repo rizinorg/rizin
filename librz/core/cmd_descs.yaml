@@ -447,10 +447,6 @@
       args:
         - name: key
           type: RZ_CMD_ARG_TYPE_EVAL_KEY
-    - name: ed
-      cname: editor_rizinrc
-      summary: Open editor to change ~/.rizinrc
-      args: []
     - name: er
       cname: eval_readonly
       summary: Set config variable <key> as read-only
