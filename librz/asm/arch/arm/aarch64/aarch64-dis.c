@@ -3312,7 +3312,7 @@ print_insn_aarch64 (bfd_vma pc,
 	      if (get_sym_code_type (info, n, &type))
 		{
 		  last_sym = n;
-		  found = TRUE;
+		  //found = TRUE;
 		  break;
 		}
 	    }
