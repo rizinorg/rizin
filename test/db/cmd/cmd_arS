@@ -1,0 +1,10 @@
+NAME=arS
+FILE=bins/elf/analysis/x86-simple
+CMDS=<<EOF
+aa
+arS
+EOF
+EXPECT=<<EOF
+64
+EOF
+RUN
