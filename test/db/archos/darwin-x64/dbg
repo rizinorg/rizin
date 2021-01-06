@@ -5,7 +5,7 @@ CMDS=<<EOF
 db main
 dc
 dr rip
-pi 3 @ main
+pi 3
 doc
 EOF
 EXPECT=<<EOF

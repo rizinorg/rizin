@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/sh -e +x
 #
 # Helper script for the build process to apply entitlements
 
