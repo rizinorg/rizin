@@ -37,7 +37,8 @@ typedef enum {
 	RZ_OUTPUT_MODE_QUIET = 1 << 3,
 	RZ_OUTPUT_MODE_SDB = 1 << 4,
 	RZ_OUTPUT_MODE_LONG = 1 << 5,
-	RZ_OUTPUT_MODE_TABLE = 1 << 6,
+	RZ_OUTPUT_MODE_LONG_JSON = 1 << 6,
+	RZ_OUTPUT_MODE_TABLE = 1 << 7,
 } RzOutputMode;
 
 #define RZ_IN /* do not use, implicit */

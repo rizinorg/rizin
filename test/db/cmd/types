@@ -111,7 +111,7 @@ FILE=bins/elf/libverifyPass.so
 CMDS=<<EOF
 e analysis.vars.stackname=true
 e asm.bytes=true
-e asm.lines.bb = false
+e asm.lines.bb=false
 aa
 s sym.Java_com_app_ndh_NDHActivity_print
 to bins/headers/jni.h
@@ -608,8 +608,8 @@ NAME=aht and arm
 FILE=-
 CMDS=<<EOF
 e asm.bytes=true
-e asm.arch = arm
-e asm.bits = 32
+e asm.arch=arm
+e asm.bits=32
 wx 082090e5040081e5
 "td struct foo {int a; int b; int c;};"
 aht foo.c @ 0x00000000
@@ -675,7 +675,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bytes=true
 e asm.bits=64
-e asm.comments = false
+e asm.comments=false
 "td struct bar {int a ; int b; int c;}"
 wx 48C7C058190000488B5004488B4808483B500448BBEFBEADDE00000000488958089090C3
 af
@@ -698,7 +698,7 @@ CMDS=<<EOF
 e asm.bytes=true
 e asm.arch=x86
 e asm.bits=64
-e asm.comments = false
+e asm.comments=false
 "td struct bar {int a ; int b; int c;}"
 wx 48C7C058190000488B5004488B4808483B500448BBEFBEADDE00000000488958089090C3
 tl bar = 0x1958
@@ -722,8 +722,8 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bytes=true
 e asm.bits=64
-e asm.comments = false
-e asm.flags = false
+e asm.comments=false
+e asm.flags=false
 "td struct bar {int x; int y; int z;};"
 "td struct foo {int a; int b; int c;};"
 wx 48C7C000010000488B5008488B480448C7C000020000488B5008488B48049090C3
@@ -1103,9 +1103,9 @@ RUN
 NAME=Caller to callee propgation (64 bits)
 FILE=bins/elf/arg_down_prop
 CMDS=<<EOF
-e asm.lines = false
-e asm.bytes = true
-e asm.xrefs = false
+e asm.lines=false
+e asm.bytes=true
+e asm.xrefs=false
 aa
 aaft
 s sym.funcarg
@@ -1124,9 +1124,9 @@ RUN
 NAME=Caller to caller propgation (32 bits)
 FILE=bins/elf/arg_down_32
 CMDS=<<EOF
-e asm.lines = false
+e asm.lines=false
 e asm.bytes=true
-e asm.xrefs = false
+e asm.xrefs=false
 aa
 aaft
 s sym.funcarg
@@ -1372,7 +1372,7 @@ RUN
 NAME=constrained type
 FILE=bins/elf/constr_type
 CMDS=<<EOF
-e analysis.types.constraint = true
+e analysis.types.constraint=true
 aaa
 s sym.single_cond
 pd 1~4h

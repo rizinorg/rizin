@@ -1,7 +1,7 @@
 NAME=z80: Basic search for functions
 FILE=malloc://1024
 CMDS=<<EOF
-e asm.arch = z80
+e asm.arch=z80
 wx 01210000010000CFC30D0002033CCD1500C904050600C8ED400030FDC90708
 af @ 1
 afl

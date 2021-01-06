@@ -25,7 +25,7 @@ NAME=bug 3788 #3: cmd.hit
 FILE=bins/vsf/c64-rambo2-norom.vsf
 CMDS=<<EOF
 s 0
-e cmd.hit = px 16
+e cmd.hit="px 16"
 /x ac6c6c68
 EOF
 EXPECT=<<EOF

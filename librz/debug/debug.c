@@ -973,7 +973,7 @@ RZ_API int rz_debug_step(RzDebug *dbg, int steps) {
 			dbg->session->maxcnum++;
 			dbg->session->bp = 0;
 			if (!rz_debug_trace_ins_before (dbg)) {
-				eprintf ("trace_ins_before: failed");
+				eprintf ("trace_ins_before: failed\n");
 			}
 		}
 
@@ -989,7 +989,7 @@ RZ_API int rz_debug_step(RzDebug *dbg, int steps) {
 
 		if (dbg->session && dbg->recoil_mode == RZ_DBG_RECOIL_NONE) {
 			if (!rz_debug_trace_ins_after (dbg)) {
-				eprintf ("trace_ins_after: failed");
+				eprintf ("trace_ins_after: failed\n");
 			}
 			dbg->session->reasontype = dbg->reason.type;
 			dbg->session->bp = bp;

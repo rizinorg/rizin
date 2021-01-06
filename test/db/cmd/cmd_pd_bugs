@@ -101,7 +101,7 @@ FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
 s 0x5e50
 e asm.bits=64
-e asm.bytes = true
+e asm.bytes=true
 af; afn rip
 pd 1 @ 0x5f16~:0
 e asm.lines.bb=0

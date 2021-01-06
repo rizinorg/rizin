@@ -1205,7 +1205,7 @@ FILE=bins/other/tmctf_re100
 ARGS=-a x86 -b 32
 CMDS=<<EOF
 e io.va=true
-e io.cache = true
+e io.cache=true
 s 0x278
 aei
 aeim

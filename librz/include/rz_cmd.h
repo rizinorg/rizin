@@ -36,19 +36,33 @@ typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_FAKE, ///< This is not considered a real argument, just used to show something in the help. Name of arg is shown as-is and it is not counted.
 	RZ_CMD_ARG_TYPE_NUM, ///< Argument that can be interpreted by RzNum (numbers, flags, operations, etc.)
 	RZ_CMD_ARG_TYPE_STRING, ///< Argument that can be an arbitrary string
-	RZ_CMD_ARG_TYPE_STRING_LAST, ///< Argument that can be an arbitrary string with spaces (if present, it must be last in the list)
 	RZ_CMD_ARG_TYPE_ENV, ///< Argument can be the name of an existing rizin variable
 	RZ_CMD_ARG_TYPE_ZIGN, ///< Argument can be the name of an existing zignature
 	RZ_CMD_ARG_TYPE_ZIGN_SPACE, ///< Argument can be the name of an existing zignature space
 	RZ_CMD_ARG_TYPE_CHOICES, ///< Argument can be one of the provided choices
-	RZ_CMD_ARG_TYPE_ARRAY_STRING, ///< Argument is an array of arbitrary strings (if present, must be last in the list)
 	RZ_CMD_ARG_TYPE_FCN, ///< Argument can be the name of an existing function
 	RZ_CMD_ARG_TYPE_FILE, ///< Argument is a filename
 	RZ_CMD_ARG_TYPE_OPTION, ///< Argument is an option, prefixed with `-`. It is present or not. No argument.
 	RZ_CMD_ARG_TYPE_CMD, ///< Argument is an rizin command
-	RZ_CMD_ARG_TYPE_CMD_LAST, ///< Argument is an rizin command and it can also contain spaces (if present, must be last in the list)
 	RZ_CMD_ARG_TYPE_MACRO, ///< Argument is the name of a pre-defined macro
+	RZ_CMD_ARG_TYPE_EVAL_KEY, ///< Argument is the name of a evaluable variable (e.g. `et` command)
+	RZ_CMD_ARG_TYPE_EVAL_FULL, ///< Argument is the name+(optional)value of a evaluable variable (e.g. `e` command)
 } RzCmdArgType;
+
+/**
+ * Argument can contain spaces when it is the last of a command and it would
+ * be considered as a single argument by the command handler.
+ */
+#define RZ_CMD_ARG_FLAG_LAST (1 << 0)
+/**
+ * Argument is an array of elements. It must be the last in the list of
+ * arguments of a command.
+ */
+#define RZ_CMD_ARG_FLAG_ARRAY (1 << 1)
+/**
+ * Argument is an option, prefixed with `-`. It is present or not.
+ */
+#define RZ_CMD_ARG_FLAG_OPTION (1 << 2)
 
 typedef enum rz_cmd_escape_t {
 	RZ_CMD_ESCAPE_ONE_ARG, ///< The string should be escaped so that it appears as one single argument
@@ -191,6 +205,10 @@ typedef struct rz_cmd_desc_arg_t {
 	 * Type of the argument.
 	 */
 	RzCmdArgType type;
+	/**
+	 * Flag of the argument, used to modify the behaviour of this argument. See RZ_CMD_ARG_FLAG_ values.
+	 */
+	int flags;
 	/**
 	 * Default value for the argument, if it is not specified. This field
 	 * shall be used only when /p optional is true.

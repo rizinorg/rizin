@@ -228,6 +228,58 @@ static void autocmplt_cmd_arg_choices(RzLineNSCompletionResult *res, const char 
 	}
 }
 
+static void autocmplt_cmd_arg_eval_key(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	RzListIter *iter;
+	RzConfigNode *bt;
+	rz_list_foreach (core->config->nodes, iter, bt) {
+		if (!strncmp (bt->name, s, len)) {
+			rz_line_ns_completion_result_add (res, bt->name);
+		}
+	}
+}
+
+static void autocmplt_cmd_arg_eval_full(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	char *eq = (char *)rz_sub_str_rchr (s, 0, len, '=');
+	if (!eq) {
+		// autocomplete only the key
+		res->end_string = "";
+		return autocmplt_cmd_arg_eval_key (core, res, s, len);
+	}
+
+	char *k = rz_str_ndup (s, eq - s);
+	char *v = NULL;
+	RzConfigNode *node = rz_config_node_get (core->config, k);
+	if (!node) {
+		goto err;
+	}
+
+	v = rz_str_ndup (eq + 1, len - (eq - s) - 1);
+	len = strlen (v);
+
+	res->start += strlen (k) + 1;
+
+	if (node->options && rz_list_length (node->options)) {
+		RzListIter *iter;
+		char *opt;
+		rz_list_foreach (node->options, iter, opt) {
+			if (!strncmp (opt, v, len)) {
+				rz_line_ns_completion_result_add (res, opt);
+			}
+		}
+	} else if (rz_config_node_is_bool (node)) {
+		if (!strncmp ("true", v, len)) {
+			rz_line_ns_completion_result_add (res, "true");
+		}
+		if (!strncmp ("false", v, len)) {
+			rz_line_ns_completion_result_add (res, "false");
+		}
+	}
+
+err:
+	free (v);
+	free (k);
+}
+
 static bool is_arg_type(const char *type) {
 	return !strcmp (type, "concatenation") || !strcmp (type, "arg") ||
 		!strcmp (type, "args") || !strcmp (type, "arg_identifier") ||
@@ -320,6 +372,12 @@ static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const
 		break;
 	case RZ_CMD_ARG_TYPE_NUM:
 		autocmplt_cmd_arg_num (core, res, s, len);
+		break;
+	case RZ_CMD_ARG_TYPE_EVAL_KEY:
+		autocmplt_cmd_arg_eval_key (core, res, s, len);
+		break;
+	case RZ_CMD_ARG_TYPE_EVAL_FULL:
+		autocmplt_cmd_arg_eval_full (core, res, s, len);
 		break;
 	default:
 		break;

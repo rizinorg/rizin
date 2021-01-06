@@ -27,8 +27,8 @@ RUN
 NAME=cmd.hit for /h sha256
 FILE=bins/firmware/main.bin
 CMDS=<<EOF
-e cmd.hit = p8 1
-e search.in =raw
+e cmd.hit="p8 1"
+e search.in=raw
 /h sha256 83264abaf298b9238ca63cb2fd9ff0f41a7a1520ee2a17c56df459fc806de1d6 512
 EOF
 EXPECT=<<EOF
