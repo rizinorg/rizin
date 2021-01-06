@@ -19,7 +19,6 @@ static const char *help_msg_e[] = {
 	"e!", "a", "invert the boolean value of 'a' var",
 	"ec", " [k] [color]", "set color for given key (prompt, offset, ...)",
 	"ee", "var", "open editor to change the value of var",
-	"ed", "", "open editor to change the ~/.rizinrc",
 	"ej", "", "list config vars in JSON",
 	"env", " [k[=v]]", "get/set environment variable",
 	"er", " [key]", "set config key as readonly. no way back",
@@ -584,33 +583,6 @@ RZ_IPI int rz_cmd_eval(void *data, const char *input) {
 	case 'c': // "ec"
 		rz_eval_color (core, input + 1);
 		break;
-	case 'd': // "ed"
-		if (input[1] == '?') {
-			eprintf ("Usage: ed[-][?] - edit ~/.rizinrc with cfg.editor\n");
-			eprintf ("NOTE: ~ is HOME and this can be changed with %%HOME=/tmp\n");
-			eprintf ("  ed    : ${cfg.editor} ~/.rizinrc\n");
-			eprintf ("  ed-   : rm ~/.rizinrc\n");
-		} else if (input[1] == '-') {
-			char *file = rz_str_home (".rizinrc");
-			rz_cons_printf ("rm %s\n", file);
-			// rz_file_rm (file);
-			free (file);
-		} else {
-			char *file = rz_str_home (".rizinrc");
-			if (rz_cons_is_interactive ()) {
-				rz_file_touch (file);
-				char * res = rz_cons_editor (file, NULL);
-				if (res) {
-					if (rz_cons_yesno ('y', "Reload? (Y/n)")) {
-						rz_core_run_script (core, file);
-					}
-				}
-			} else {
-				rz_core_run_script (core, file);
-			}
-			free (file);
-		}
-		break;
 	case 'e': // "ee"
 		if (input[1] == ' ') {
 			char *p;
@@ -764,21 +736,6 @@ RZ_IPI RzCmdStatus rz_eval_editor_handler(RzCore *core, int argc, const char **a
 	}
 	rz_str_replace_char (p, '\n', ';');
 	rz_config_set (core->config, argv[1], p);
-	return RZ_CMD_STATUS_OK;
-}
-
-RZ_IPI RzCmdStatus rz_editor_rizinrc_handler(RzCore *core, int argc, const char **argv) {
-	char *file = rz_str_home (".rizinrc");
-	if (rz_cons_is_interactive ()) {
-		rz_file_touch (file);
-		char *res = rz_cons_editor (file, NULL);
-		if (res) {
-		}
-	}
-	if (rz_cons_yesno ('y', "Reload? (Y/n)")) {
-		rz_core_run_script (core, file);
-	}
-	free (file);
 	return RZ_CMD_STATUS_OK;
 }
 

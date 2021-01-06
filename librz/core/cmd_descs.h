@@ -61,7 +61,6 @@ RZ_IPI RzCmdStatus rz_eval_reset_handler(RzCore *core, int argc, const char **ar
 RZ_IPI RzCmdStatus rz_eval_bool_invert_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI int rz_eval_color(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_eval_editor_handler(RzCore *core, int argc, const char **argv);
-RZ_IPI RzCmdStatus rz_editor_rizinrc_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_eval_readonly_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_eval_spaces_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_eval_type_handler(RzCore *core, int argc, const char **argv);

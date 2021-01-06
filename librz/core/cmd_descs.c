@@ -553,14 +553,6 @@ static const RzCmdDescHelp eval_editor_help = {
 	.args = eval_editor_args,
 };
 
-static const RzCmdDescArg editor_rizinrc_args[] = {
-	{ 0 },
-};
-static const RzCmdDescHelp editor_rizinrc_help = {
-	.summary = "Open editor to change ~/.rizinrc",
-	.args = editor_rizinrc_args,
-};
-
 static const RzCmdDescArg eval_readonly_args[] = {
 	{ .name = "key", .type = RZ_CMD_ARG_TYPE_EVAL_KEY, },
 	{ 0 },
@@ -1685,8 +1677,6 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail (eval_color_cd);
 	RzCmdDesc *eval_editor_cd = rz_cmd_desc_argv_new (core->rcmd, e_cd, "ee", rz_eval_editor_handler, &eval_editor_help);
 	rz_warn_if_fail (eval_editor_cd);
-	RzCmdDesc *editor_rizinrc_cd = rz_cmd_desc_argv_new (core->rcmd, e_cd, "ed", rz_editor_rizinrc_handler, &editor_rizinrc_help);
-	rz_warn_if_fail (editor_rizinrc_cd);
 	RzCmdDesc *eval_readonly_cd = rz_cmd_desc_argv_new (core->rcmd, e_cd, "er", rz_eval_readonly_handler, &eval_readonly_help);
 	rz_warn_if_fail (eval_readonly_cd);
 	RzCmdDesc *eval_spaces_cd = rz_cmd_desc_argv_new (core->rcmd, e_cd, "es", rz_eval_spaces_handler, &eval_spaces_help);
