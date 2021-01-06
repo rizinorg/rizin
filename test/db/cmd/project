@@ -75,7 +75,7 @@ NAME=load with file using saved relative file path after project file and binary
 FILE=--
 CMDS=<<EOF
 e cfg.newshell=1
-e asm.bytes = true
+e asm.bytes=true
 mkdir -p .tmp_load_move_both2/.tmp_load_move_both2
 cp bins/elf/crackme0x05 .tmp_load_move_both2/somebin
 o .tmp_load_move_both2/somebin
@@ -340,3 +340,26 @@ EXPECT=<<EOF
 0x080483d8                   50  push eax
 EOF
 RUN
+
+NAME=raw file permissions after reload
+FILE=bins/other/0x3
+CMDS=<<EOF
+e cfg.newshell=1
+om
+Ps .tmp_perms.rzdb
+o--
+?e --
+om
+?e --
+Po .tmp_perms.rzdb
+om
+rm .tmp_perms.rzdb
+EOF
+EXPECT=<<EOF
+ 1 fd: 3 +0x00000000 0x00000000 - 0x00000002 r-x 
+--
+--
+ 1 fd: 3 +0x00000000 0x00000000 - 0x00000002 r-x 
+EOF
+RUN
+

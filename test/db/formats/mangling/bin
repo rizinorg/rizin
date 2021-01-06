@@ -80,7 +80,7 @@ NAME=C++ demangle relocs
 FILE=bins/elf/libstdc++.so.6
 CMDS=e asm.bytes=true;pd 1 @0x00091004; 
 EXPECT=<<EOF
-            0x00091004      488b159d880f.  mov rdx, qword [reloc.vtable_for_std::bad_alloc] ; new:57 ; [0x1898a8:8]=0
+            0x00091004      488b159d880f.  mov   rdx, qword [reloc.vtable_for_std::bad_alloc] ; new:57 ; [0x1898a8:8]=0
 EOF
 RUN
 
@@ -107,7 +107,7 @@ NAME=demangle obj in pd
 FILE=bins/elf/ch25.bin
 CMDS=e asm.bytes=true; pd 1 @0x08048aac;
 EXPECT=<<EOF
-            0x08048aac      c7042460b004.  mov dword [esp], obj.std::cerr ; sym..bss
+            0x08048aac      c7042460b004.  mov   dword [esp], obj.std::cerr ; sym..bss
                                                                        ; [0x804b060:4]=0
 EOF
 RUN
@@ -132,9 +132,9 @@ e asm.demangle=false
 .(pd_calls)
 EOF
 EXPECT=<<EOF
-            0x0804921a      call sym.__x86.get_pc_thunk.si
-            0x08049249      call method QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*) ; method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
-            0x08049278      call sym QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>) ; sym.imp.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
+            0x0804921a      call  sym.__x86.get_pc_thunk.si
+            0x08049249      call  method QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*) ; method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
+            0x08049278      call  sym QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>) ; sym.imp.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
 
             0x0804921a      call sym.__x86.get_pc_thunk.si
             ; method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
@@ -142,13 +142,13 @@ EXPECT=<<EOF
             ; sym.imp.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
             0x08049278      call sym QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>)
 
-|           0x0804921a      call sym.__x86.get_pc_thunk.si
-|           0x08049249      call method QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*) ; method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
-|           0x08049278      call sym QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>) ; sym.imp.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
+|           0x0804921a      call  sym.__x86.get_pc_thunk.si
+|           0x08049249      call  method QFlags<Qt::WindowType>::QFlags(int QFlags<Qt::WindowType>::Private::*) ; method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
+|           0x08049278      call  sym QLabel::QLabel(QString const&, QWidget*, QFlags<Qt::WindowType>) ; sym.imp.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
 
-|           0x0804921a      call sym.__x86.get_pc_thunk.si
-|           0x08049249      call method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
-|           0x08049278      call sym.imp.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
+|           0x0804921a      call  sym.__x86.get_pc_thunk.si
+|           0x08049249      call  method.QFlags_Qt::WindowType_.QFlags_int_QFlags_Qt::WindowType_::Private::
+|           0x08049278      call  sym.imp.QLabel::QLabel_QString_const___QWidget___QFlags_Qt::WindowType
 EOF
 RUN
 
@@ -181,7 +181,7 @@ EXPECT=<<EOF
             ; CALL XREF from QString::~QString() @ 0x80493e5 ; method.QString._QString
             ; CALL XREF from sym._fini @ 0x80495d4
 / 4: sym.__x86.get_pc_thunk.bx ();
-|           0x08049140      mov ebx, dword [esp]
+|           0x08049140      mov   ebx, dword [esp]
 
 [0x08049140]>  # sym.__x86.get_pc_thunk.bx ();
  --------------------------------------------------------------.
@@ -205,13 +205,13 @@ EXPECT=<<EOF
             ; CALL XREF from method.QString._QString @ 0x80493e5
             ; CALL XREF from sym._fini @ 0x80495d4
 / 4: sym.__x86.get_pc_thunk.bx ();
-|           0x08049140      mov ebx, dword [esp]
+|           0x08049140      mov   ebx, dword [esp]
 
 |           ; CODE XREFS from QtPrivate::RefCount::deref() @ 0x8049371, 0x804937e
-|           0x08049390      mov ebx, dword [var_4h]
+|           0x08049390      mov   ebx, dword [var_4h]
 
 |           ; CODE XREFS from method.QtPrivate::RefCount.deref @ 0x8049371, 0x804937e
-|           0x08049390      mov ebx, dword [var_4h]
+|           0x08049390      mov   ebx, dword [var_4h]
 EOF
 RUN
 
@@ -233,13 +233,13 @@ EXPECT=<<EOF
             ; CALL XREF from std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::basic_string<char*, void>(char*, char*, std::allocator<char> const&) @ +0x66 ; sym.std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::basic_string_char___void__char___char___std::allocator_char__const
             ; CALL XREF from void std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_construct<char*>(char*, char*, std::forward_iterator_tag) @ +0x116 ; sym.void_std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::_M_construct_char___char___char___std::forward_iterator_tag
 / 6: sym.imp._Unwind_Resume ();
-\           0x00000f10      jmp dword [ebx + 0x70]
+\           0x00000f10      jmp   dword [ebx + 0x70]
 
             ; CALL XREF from main @ +0x222
             ; CALL XREF from fcn.00001717 @ +0xbb
             ; CALL XREF from sym.std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::basic_string_char___void__char___char___std::allocator_char__const @ +0x66
             ; CALL XREF from sym.void_std::__cxx11::basic_string_char__std::char_traits_char___std::allocator_char___::_M_construct_char___char___char___std::forward_iterator_tag @ +0x116
 / 6: sym.imp._Unwind_Resume ();
-\           0x00000f10      jmp dword [ebx + 0x70]
+\           0x00000f10      jmp   dword [ebx + 0x70]
 EOF
 RUN

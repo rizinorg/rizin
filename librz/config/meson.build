@@ -1,5 +1,4 @@
 rz_config_sources = [
-  'callback.c',
   'config.c',
   'hold.c',
   'serialize_config.c'

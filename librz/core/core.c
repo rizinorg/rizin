@@ -295,7 +295,6 @@ static bool __isMapped(RzCore *core, ut64 addr, int perm) {
 				}
 			}
 		}
-
 		return false;
 	}
 
@@ -572,7 +571,6 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			free (bptr);
 			free (out);
 			return ret;
-			break;
 		case '{': // ${ev} eval var
 			bptr = strdup (str + 2);
 			ptr = strchr (bptr, '}');
@@ -864,7 +862,7 @@ static const char *rizin_argv[] = {
 	"af?", "af", "afr", "af+", "af-",
 	"afa", "afan",
 	"afb?", "afb", "afb.", "afb+", "afbb", "afbr", "afbi", "afbj", "afbe", "afB", "afbc", "afb=",
-	"afB", "afC", "afCl", "afCc", "afc?", "afc", "afc=", "afcr", "afcrj", "afca", "afcf", "afcfj",
+	"afB", "afC", "afCl", "afCc", "afc?", "afc", "afcr", "afcrj", "afca", "afcf", "afcfj",
 	"afck", "afcl", "afco", "afcR",
 	"afd", "aff", "afi",
 	"afl?", "afl", "afl+", "aflc", "aflj", "afll", "afllj", "aflm", "aflq", "aflqj", "afls",
@@ -2950,13 +2948,6 @@ RZ_API int rz_core_seek_size(RzCore *core, ut64 addr, int bsize) {
 	if (bsize == core->blocksize) {
 		return true;
 	}
-	if (rz_sandbox_enable (0)) {
-		// TODO : restrict to filesize?
-		if (bsize > 1024*32) {
-			eprintf ("Sandbox mode restricts blocksize bigger than 32k\n");
-			return false;
-		}
-	}
 	if (bsize > core->blocksize_max) {
 		eprintf ("Block size %d is too big\n", bsize);
 		return false;
@@ -3370,11 +3361,11 @@ RZ_API char *rz_core_editor(const RzCore *core, const char *file, const char *st
 	bool readonly = false;
 	if (file && *file != '*') {
 		name = strdup (file);
-		fd = rz_sandbox_open (file, O_RDWR, 0644);
+		fd = rz_sys_open (file, O_RDWR, 0644);
 		if (fd == -1) {
-			fd = rz_sandbox_open (file, O_RDWR | O_CREAT, 0644);
+			fd = rz_sys_open (file, O_RDWR | O_CREAT, 0644);
 			if (fd == -1) {
-				fd = rz_sandbox_open (file, O_RDONLY, 0644);
+				fd = rz_sys_open (file, O_RDONLY, 0644);
 				readonly = true;
 			}
 		}

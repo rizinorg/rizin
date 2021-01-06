@@ -70,7 +70,7 @@ BOOL StartStopService(LPCTSTR lpServiceName, BOOL bStop) {
 static BOOL InitDriver(VOID) {
 	const int genericFlags = GENERIC_READ | GENERIC_WRITE;
 	const int shareFlags = FILE_SHARE_READ | FILE_SHARE_WRITE;
-	gHandleDriver = CreateFile (TEXT (R2K_DEVICE), genericFlags, shareFlags,
+	gHandleDriver = CreateFile (TEXT (RZK_DEVICE), genericFlags, shareFlags,
 		NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_DIRECTORY, 0);
 	return (gHandleDriver != INVALID_HANDLE_VALUE);
 }

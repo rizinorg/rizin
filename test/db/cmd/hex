@@ -67,7 +67,7 @@ RUN
 NAME=binmask seek search (mips)
 FILE=malloc://1024
 CMDS=<<EOF
-e asm.arch = mips
+e asm.arch=mips
 e scr.color=false
 "wx 2080998f00000000d4a22527"
 e search.from=0
@@ -85,7 +85,7 @@ RUN
 NAME=binmask seek search (mips)
 FILE=malloc://1024
 CMDS=<<EOF
-e asm.arch = mips
+e asm.arch=mips
 e scr.color=false
 "wx 2080998f00000000d4a22527"
 e search.from=0

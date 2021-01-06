@@ -31,7 +31,7 @@ bool check_invariants(RzIntervalNode *node) {
 	return true;
 }
 
-bool test_r_interval_tree_insert_at() {
+bool test_rz_interval_tree_insert_at() {
 	RzIntervalTree tree;
 	rz_interval_tree_init (&tree, NULL);
 
@@ -100,7 +100,7 @@ static void free_cb(void *data) {
 	entry->freed++;
 }
 
-bool test_r_interval_tree_in(bool end_inclusive, bool intervals) {
+bool test_rz_interval_tree_in(bool end_inclusive, bool intervals) {
 	RzIntervalTree tree;
 	rz_interval_tree_init (&tree, NULL);
 
@@ -154,13 +154,13 @@ bool test_r_interval_tree_in(bool end_inclusive, bool intervals) {
 	return true;
 }
 
-#define TEST_IN(name, end_inclusive, intervals) bool name() { if(!test_r_interval_tree_in (end_inclusive, intervals)) return false; mu_end; }
-TEST_IN (test_r_interval_tree_in_end_exclusive_point, false, false)
-TEST_IN (test_r_interval_tree_in_end_inclusive_point, true, false)
-TEST_IN (test_r_interval_tree_in_end_exclusive_interval, false, true)
-TEST_IN (test_r_interval_tree_in_end_inclusive_interval, true, true)
+#define TEST_IN(name, end_inclusive, intervals) bool name() { if(!test_rz_interval_tree_in (end_inclusive, intervals)) return false; mu_end; }
+TEST_IN (test_rz_interval_tree_in_end_exclusive_point, false, false)
+TEST_IN (test_rz_interval_tree_in_end_inclusive_point, true, false)
+TEST_IN (test_rz_interval_tree_in_end_exclusive_interval, false, true)
+TEST_IN (test_rz_interval_tree_in_end_inclusive_interval, true, true)
 
-bool test_r_interval_tree_all_at() {
+bool test_rz_interval_tree_all_at() {
 	RzIntervalTree tree;
 	rz_interval_tree_init (&tree, NULL);
 	TestEntry entries[N];
@@ -196,7 +196,7 @@ bool test_r_interval_tree_all_at() {
 	mu_end;
 }
 
-bool test_r_interval_tree_node_at_data() {
+bool test_rz_interval_tree_node_at_data() {
 	RzIntervalTree tree;
 	rz_interval_tree_init (&tree, NULL);
 	TestEntry entries[N];
@@ -218,7 +218,7 @@ bool test_r_interval_tree_node_at_data() {
 	mu_end;
 }
 
-bool test_r_interval_tree_delete() {
+bool test_rz_interval_tree_delete() {
 	RzIntervalTree tree;
 	rz_interval_tree_init (&tree, free_cb);
 	TestEntry entries[N];
@@ -264,7 +264,7 @@ bool test_r_interval_tree_delete() {
 	mu_end;
 }
 
-bool test_r_interval_tree_resize(bool end_only) {
+bool test_rz_interval_tree_resize(bool end_only) {
 	RzIntervalTree tree;
 	rz_interval_tree_init (&tree, free_cb);
 	TestEntry entries[N];
@@ -310,25 +310,25 @@ bool test_r_interval_tree_resize(bool end_only) {
 	mu_end;
 }
 
-bool test_r_interval_tree_resize_start_and_end() {
-	return test_r_interval_tree_resize (false);
+bool test_rz_interval_tree_resize_start_and_end() {
+	return test_rz_interval_tree_resize (false);
 }
 
-bool test_r_interval_tree_resize_end_only() {
-	return test_r_interval_tree_resize (true);
+bool test_rz_interval_tree_resize_end_only() {
+	return test_rz_interval_tree_resize (true);
 }
 
 int all_tests() {
-	mu_run_test (test_r_interval_tree_insert_at);
-	mu_run_test (test_r_interval_tree_in_end_exclusive_point);
-	mu_run_test (test_r_interval_tree_in_end_inclusive_point);
-	mu_run_test (test_r_interval_tree_in_end_exclusive_interval);
-	mu_run_test (test_r_interval_tree_in_end_inclusive_interval);
-	mu_run_test (test_r_interval_tree_all_at);
-	mu_run_test (test_r_interval_tree_node_at_data);
-	mu_run_test (test_r_interval_tree_delete);
-	mu_run_test (test_r_interval_tree_resize_start_and_end);
-	mu_run_test (test_r_interval_tree_resize_end_only);
+	mu_run_test (test_rz_interval_tree_insert_at);
+	mu_run_test (test_rz_interval_tree_in_end_exclusive_point);
+	mu_run_test (test_rz_interval_tree_in_end_inclusive_point);
+	mu_run_test (test_rz_interval_tree_in_end_exclusive_interval);
+	mu_run_test (test_rz_interval_tree_in_end_inclusive_interval);
+	mu_run_test (test_rz_interval_tree_all_at);
+	mu_run_test (test_rz_interval_tree_node_at_data);
+	mu_run_test (test_rz_interval_tree_delete);
+	mu_run_test (test_rz_interval_tree_resize_start_and_end);
+	mu_run_test (test_rz_interval_tree_resize_end_only);
 	return tests_passed != tests_run;
 }
 

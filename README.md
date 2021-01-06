@@ -33,13 +33,20 @@ $ git clone --recurse-submodules https://github.com/rizinorg/rizin
 Then compile and install with:
 ```
 $ meson build
-$ ninja -C build # or `meson compile -C build`
-$ sudo ninja -C build install # or `sudo meson install -C build`
+$ ninja -C build
+$ sudo ninja -C build install
+```
+
+Now you can use `rizin`:
+```
 $ rizin --
  -- Thank you for using rizin. Have a nice night!
 [0x00000000]>
-# Run "sudo ninja -C build uninstall" without quotes to uninstall rizin
+
 ```
+
+To uninstall rizin, execute `sudo ninja -C build uninstall`.
+
 
 Please have a look at [BUILDING.md][] for more information about building Rizin.
 
@@ -47,7 +54,7 @@ Please have a look at [BUILDING.md][] for more information about building Rizin.
 
 We very much welcome any kind of contributions, from typos, to documentation, to
 refactoring, up to completely new features you may think of. Before
-contributing, we would like you to read the file [CONTRIBUTING.md][]. so that we
+contributing, we would like you to read the file [CONTRIBUTING.md][], so that we
 can all be on the same page.
 
 ## Tests
@@ -87,9 +94,15 @@ although not currently supported could be easily added.
 
 # Community
 
-Website: [https://www.rizin.re/](https://www.rizin.re/)
+Our website and blog: [https://www.rizin.re/](https://www.rizin.re/)
 
-IRC: irc.freenode.net #rizin
+Join our [Mattermost](https://im.rizin.re) community to discuss Rizin, its development, and general topics related to the project.
+
+We also provide the following partial bridges to other messaging platforms:
+- [Telegram](https://t.me/rizinorg)
+- IRC: irc.freenode.net 
+  - Community - [#rizin](https://webchat.freenode.net/?channels=#rizin)
+  - Developers - [#rizindev](https://webchat.freenode.net/?channels=#rizindev)
 
 [CONTRIBUTING.md]: https://github.com/rizinorg/rizin/blob/dev/CONTRIBUTING.md
 [test/README.md]: https://github.com/rizinorg/rizin/blob/dev/test/README.md

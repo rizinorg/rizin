@@ -184,7 +184,7 @@ static int rzfind_open_file(RzfindOptions *ro, const char *file, const ut8 *data
 
 	if (ro->identify) {
 		char *cmd = rz_str_newf ("rizin -e search.show=false -e search.maxhits=1 -nqcpm \"%s\"", efile);
-		rz_sandbox_system (cmd);
+		rz_sys_system (cmd);
 		free (cmd);
 		free (efile);
 		return 0;

@@ -4,6 +4,7 @@ packages:
     - devel/pkgconf
     - devel/gmake
     - devel/llvm
+    - archivers/cabextract
     - ftp/wget
     - lang/python
 environment:

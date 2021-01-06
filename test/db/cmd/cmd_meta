@@ -179,7 +179,7 @@ CL-*
 pd 1
 EOF
 EXPECT=<<EOF
-0x10000308      7c290b78       mr r9, r1 ; foo.c:123
-0x10000308      7c290b78       mr r9, r1
+0x10000308      7c290b78       mr    r9, r1 ; foo.c:123
+0x10000308      7c290b78       mr    r9, r1
 EOF
 RUN

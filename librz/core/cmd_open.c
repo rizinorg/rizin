@@ -182,6 +182,9 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 	case 'j': // "obj"
 	case '*': // "ob*"
 		rz_core_bin_list (core, input[1]);
+		if (input[1] == 'j') {
+			rz_cons_newline ();
+		}
 		break;
 	case '.': // "ob."
 		{
@@ -1539,10 +1542,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 		pj_free (pj);
 		break;
 	case 'L': // "oL"
-		if (rz_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
-			return 0;
-		}
 		if (input[1] == ' ') {
 			if (rz_lib_open (core->lib, input + 2) == -1) {
 				eprintf ("Oops\n");
@@ -1841,10 +1840,6 @@ RZ_IPI int rz_cmd_open(void *data, const char *input) {
 		if (input[1] == '?') {
 			eprintf ("Usage: oc [file]\n");
 		} else if (input[1] && input[2]) {
-			if (rz_sandbox_enable (0)) {
-				eprintf ("This command is disabled in sandbox mode\n");
-				return 0;
-			}
 			if (core->tasks.current_task != core->tasks.main_task) {
 				eprintf ("This command can only be executed on the main task!\n");
 				return 0;

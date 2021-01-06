@@ -7,5 +7,5 @@ RZ_DEPS+=rz_reg rz_search rz_syscall rz_socket rz_magic rz_crypto
 else
 # only works
 WITH_LIBS=0
-WITH_LIBR=1
+WITH_LIBRZ=1
 endif

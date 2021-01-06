@@ -316,7 +316,6 @@ struct rz_core_t {
 	bool fixedarch; // will be true when using @a:
 	bool fixedblock;
 	char *table_query;
-	int sync_index; // used for http.sync and T=
 	struct rz_core_t *c2;
 	RzCoreAutocomplete *autocomplete;
 	int autocomplete_type;
@@ -726,11 +725,11 @@ typedef struct rz_core_bin_filter_t {
 	const char *name;
 } RzCoreBinFilter;
 
-RZ_API int rz_core_bin_info (RzCore *core, int action, int mode, int va, RzCoreBinFilter *filter, const char *chksum);
+RZ_API int rz_core_bin_info (RzCore *core, int action, PJ *pj, int mode, int va, RzCoreBinFilter *filter, const char *chksum);
 RZ_API int rz_core_bin_set_arch_bits (RzCore *r, const char *name, const char * arch, ut16 bits);
 RZ_API int rz_core_bin_update_arch_bits (RzCore *r);
 RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode);
-RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, int mode);
+RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode);
 
 /* rtr */
 RZ_API int rz_core_rtr_cmds (RzCore *core, const char *port);
@@ -885,8 +884,7 @@ RZ_API void rz_core_task_break_all(RzCoreTaskScheduler *scheduler);
 RZ_API int rz_core_task_del(RzCoreTaskScheduler *scheduler, int id);
 RZ_API RzCoreTask *rz_core_task_self(RzCoreTaskScheduler *scheduler);
 RZ_API void rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCoreTask *current, int id);
-typedef void (*inRangeCb) (RzCore *core, ut64 from, ut64 to, int vsize,
-		int count, void *cb_user);
+typedef void (*inRangeCb) (RzCore *core, ut64 from, ut64 to, int vsize, void *cb_user);
 RZ_API int rz_core_search_value_in_range (RzCore *core, RzInterval search_itv,
 		ut64 vmin, ut64 vmax, int vsize, inRangeCb cb, void *cb_user);
 

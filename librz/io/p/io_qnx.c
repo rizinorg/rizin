@@ -101,10 +101,6 @@ static RzIODesc *__open (RzIO *io, const char *file, int rw, int mode) {
 		*p = 0;
 	}
 
-	if (rz_sandbox_enable (0)) {
-		eprintf ("sandbox: Cannot use network\n");
-		return NULL;
-	}
 	rioq = RZ_NEW0 (RzIOQnx);
 	qnxr_init (&rioq->desc);
 	int i_port = atoi (port);

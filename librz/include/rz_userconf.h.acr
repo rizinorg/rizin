@@ -28,7 +28,7 @@
 #define RZ_PLUGINS "@PLUGINS@"
 #define RZ_EXTRAS "@EXTRAS@"
 #define RZ_BINDINGS "@BINDINGS@"
-#define RZ_DATDIR_R2 "@DATADIR_R2@"
+#define RZ_DATDIR_RZ "@DATADIR_RZ@"
 #define RZ_SDB "@SDB@"
 #define RZ_ZIGNS "@ZIGNS@"
 #define RZ_THEMES "@THEMES@"
@@ -55,7 +55,7 @@
 #define RZ_EXTRAS "lib/rizin-extras/" RZ_VERSION
 #define RZ_BINDINGS "lib/rizin-bindings/" RZ_VERSION
 #endif
-#define RZ_DATDIR_R2        RZ_JOIN_2_PATHS ("share", "rizin")
+#define RZ_DATDIR_RZ        RZ_JOIN_2_PATHS ("share", "rizin")
 #define RZ_SDB              RZ_JOIN_3_PATHS ("share", "rizin", RZ_VERSION)
 #define RZ_ZIGNS            RZ_JOIN_4_PATHS ("share", "rizin", RZ_VERSION, "zigns")
 #define RZ_THEMES           RZ_JOIN_4_PATHS ("share", "rizin", RZ_VERSION, "cons")
@@ -89,7 +89,7 @@
 
 #define RZ_HOME_RC          RZ_JOIN_2_PATHS (RZ_HOME_CONFIGDIR, "rizinrc")
 #define RZ_HOME_RC_DIR      RZ_JOIN_2_PATHS (RZ_HOME_CONFIGDIR, "rizinrc.d")
-#define RZ_GLOBAL_RC        RZ_JOIN_2_PATHS (RZ_DATDIR_R2, "rizinrc")
+#define RZ_GLOBAL_RC        RZ_JOIN_2_PATHS (RZ_DATDIR_RZ, "rizinrc")
 
 #define HAVE_LIB_MAGIC @HAVE_LIB_MAGIC@
 #define USE_LIB_MAGIC @USE_LIB_MAGIC@

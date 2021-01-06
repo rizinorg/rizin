@@ -149,8 +149,8 @@ NAME=$j (malloc)
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
-e asm.arch = x86
-e analysis.arch = x86
+e asm.arch=x86
+e analysis.arch=x86
 wa jmp 0x30
 ?v $j
 wa jz 0x01
@@ -171,8 +171,8 @@ NAME=$f (malloc)
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
-e asm.arch = x86
-e analysis.arch = x86
+e asm.arch=x86
+e analysis.arch=x86
 wx eb2e
 ?v $f
 wx 0f84fbffffff
@@ -209,8 +209,8 @@ NAME=$l (malloc)
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.bits=32
-e asm.arch = x86
-e analysis.arch = x86
+e asm.arch=x86
+e analysis.arch=x86
 wa xor eax, eax
 ?v $l
 wa mov esp, 0x1
@@ -250,7 +250,7 @@ RUN
 NAME=$e (malloc) 2
 FILE=malloc://1024
 CMDS=<<EOF
-e asm.bits = 0x20
+e asm.bits=0x20
 ?v ${asm.bits}
 EOF
 EXPECT=<<EOF
@@ -332,8 +332,8 @@ NAME=$b (x86-simple)
 FILE=bins/elf/analysis/x86-simple
 CMDS=<<EOF
 e asm.bits=32
-e asm.arch = x86
-e analysis.arch = x86
+e asm.arch=x86
+e analysis.arch=x86
 b 123
 ?v $b
 ? $b

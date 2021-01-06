@@ -1233,15 +1233,6 @@ static bool cb_dirsrc(void *user, void *data) {
 	return true;
 }
 
-static bool cb_cfgsanbox(void *user, void *data) {
-	RzConfigNode *node = (RzConfigNode*) data;
-	int ret = rz_sandbox_enable (node->i_value);
-	if (node->i_value != ret) {
-		eprintf ("Cannot disable sandbox\n");
-	}
-	return (!node->i_value && ret)? 0: 1;
-}
-
 static bool cb_str_escbslash(void *user, void *data) {
 	RzCore *core = (RzCore*) user;
 	RzConfigNode *node = (RzConfigNode*) data;
@@ -1456,6 +1447,13 @@ static bool cb_dbg_follow_child(void *user, void *data) {
 	return true;
 }
 
+static bool cb_dbg_create_new_console(void *user, void *data) {
+	RzCore *core = (RzCore*) user;
+	RzConfigNode *node = (RzConfigNode*) data;
+	core->dbg->create_new_console = node->i_value;
+	return true;
+}
+
 static bool cb_dbg_trace_continue(void *user, void *data) {
 	RzCore *core = (RzCore*)user;
 	RzConfigNode *node = (RzConfigNode*)data;
@@ -1528,10 +1526,6 @@ static bool cb_dbgbackend(void *user, void *data) {
 static bool cb_gotolimit(void *user, void *data) {
 	RzCore *core = (RzCore *) user;
 	RzConfigNode *node = (RzConfigNode*) data;
-	if (rz_sandbox_enable (0)) {
-		eprintf ("Cannot change gotolimit\n");
-		return false;
-	}
 	if (core->analysis->esil) {
 		core->analysis->esil_goto_limit = node->i_value;
 	}
@@ -2240,9 +2234,6 @@ static bool cb_scr_bgfill(void *user, void *data) {
 
 static bool cb_scrint(void *user, void *data) {
 	RzConfigNode *node = (RzConfigNode *) data;
-	if (node->i_value && rz_sandbox_enable (0)) {
-		return false;
-	}
 	rz_cons_singleton ()->context->is_interactive = node->i_value;
 	return true;
 }
@@ -2576,6 +2567,28 @@ static bool cb_analysis_roregs(RzCore *core, RzConfigNode *node) {
 	return true;
 }
 
+static bool cb_analysissyscc(RzCore *core, RzConfigNode *node) {
+	if (core && core->analysis) {
+		if (!strcmp (node->value, "?")) {
+			rz_core_cmd0 (core, "afcl");
+			return false;
+		}
+		rz_analysis_set_syscc_default (core->analysis, node->value);
+	}
+	return true;
+}
+
+static bool cb_analysiscc(RzCore *core, RzConfigNode *node) {
+	if (core && core->analysis) {
+		if (!strcmp (node->value, "?")) {
+			rz_core_cmd0 (core, "afcl");
+			return false;
+		}
+		rz_analysis_set_cc_default (core->analysis, node->value);
+	}
+	return true;
+}
+
 static bool cb_analysis_gp(RzCore *core, RzConfigNode *node) {
 	core->analysis->gp = node->i_value;
 	return true;
@@ -2884,6 +2897,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	/* analysis */
 	SETBPREF ("analysis.detectwrites", "false", "Automatically reanalyze function after a write");
 	SETPREF ("analysis.fcnprefix", "fcn",  "Prefix new function names with this");
+	const char *analysiscc = rz_analysis_cc_default (core->analysis);
+	SETCB ("analysis.cc", analysiscc? analysiscc: "", (RzConfigCallback)&cb_analysiscc, "Specify default calling convention");
+	const char *analysissyscc = rz_analysis_syscc_default (core->analysis);
+	SETCB ("analysis.syscc", analysissyscc? analysissyscc: "", (RzConfigCallback)&cb_analysissyscc, "Specify default syscall calling convention");
 	SETCB ("analysis.verbose", "false", &cb_analverbose, "Show RzAnalysis warnings when analyzing code");
 	SETCB ("analysis.roregs", "gp,zero", (RzConfigCallback)&cb_analysis_roregs, "Comma separated list of register names to be readonly");
 	SETICB ("analysis.gp", 0, (RzConfigCallback)&cb_analysis_gp, "Set the value of the GP register (MIPS)");
@@ -2978,7 +2995,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI ("dbg.glibc.fc_offset", 0x148, "First chunk offset from brk_start");
 #endif
 	SETBPREF ("dbg.glibc.demangle", "false", "Demangle linked-lists pointers introduced in glibc 2.32");
-	SETPREF ("dbg.libc.dbglib", "", "Set libc debug library file");
 
 	SETBPREF ("esil.prestep", "true", "Step before esil evaluation in `de` commands");
 	SETPREF ("esil.fillstack", "", "Initialize ESIL stack with (random, debrujn, sequence, zeros, ...)");
@@ -3103,8 +3119,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF ("asm.stackptr", "false", "Show stack pointer at disassembly");
 	SETBPREF ("asm.cyclespace", "false", "Indent instructions depending on CPU-cycles");
 	SETBPREF ("asm.cycles", "false", "Show CPU-cycles taken by instruction at disassembly");
-	SETI ("asm.tabs", 0, "Use tabs in disassembly");
-	SETBPREF ("asm.tabs.once", "false", "Only tabulate the opcode, not the arguments");
+	SETI ("asm.tabs", 6, "Use tabs in disassembly");
+	SETBPREF ("asm.tabs.once", "true", "Only tabulate the opcode, not the arguments");
 	SETI ("asm.tabs.off", 0, "tabulate spaces after the offset");
 	SETBPREF ("asm.trace", "false", "Show execution traces for each opcode");
 	SETBPREF ("asm.tracespace", "false", "Indent disassembly with trace.count information");
@@ -3199,7 +3215,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF ("prj.file", "", "Path of the currently opened project");
 
 	/* cfg */
-	SETBPREF ("cfg.r2wars", "false", "Enable some tweaks for the r2wars game");
 	SETBPREF ("cfg.plugins", "true", "Load plugins at startup");
 	SETCB ("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
 	SETICB ("time.zone", 0, &cb_timezone, "Time zone, in hours relative to GMT: +2, -1,..");
@@ -3219,7 +3234,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF ("cfg.fortunes.clippy", "false", "Use ?E instead of ?e");
 	SETBPREF ("cfg.fortunes.tts", "false", "Speak out the fortune");
 	SETPREF ("cfg.prefixdump", "dump", "Filename prefix for automated dumps");
-	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETBPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
 	p = rz_sys_getenv ("RZ_CFG_OLDSHELL");
@@ -3261,12 +3275,12 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI ("zign.maxsz", 500, "Maximum zignature length");
 	SETI ("zign.minsz", 16, "Minimum zignature length for matching");
 	SETI ("zign.mincc", 10, "Minimum cyclomatic complexity for matching");
-	SETBPREF ("zign.graph", "true", "Use graph metrics for matching");
-	SETBPREF ("zign.bytes", "true", "Use bytes patterns for matching");
-	SETBPREF ("zign.offset", "false", "Use original offset for matching");
-	SETBPREF ("zign.refs", "true", "Use references for matching");
-	SETBPREF ("zign.hash", "true", "Use Hash for matching");
-	SETBPREF ("zign.types", "true", "Use types for matching");
+	SETBPREF ("zign.match.graph", "true", "Use graph metrics for matching");
+	SETBPREF ("zign.match.bytes", "true", "Use bytes patterns for matching");
+	SETBPREF ("zign.match.offset", "false", "Use original offset for matching");
+	SETBPREF ("zign.match.refs", "true", "Use references for matching");
+	SETBPREF ("zign.match.hash", "true", "Use Hash for matching");
+	SETBPREF ("zign.match.types", "false", "Use types for matching");
 	SETBPREF ("zign.autoload", "false", "Autoload all zignatures located in " RZ_JOIN_2_PATHS ("~", RZ_HOME_ZIGNS));
 	SETPREF ("zign.diff.bthresh", "1.0", "Threshold for diffing zign bytes [0, 1] (see zc?)");
 	SETPREF ("zign.diff.gthresh", "1.0", "Threshold for diffing zign graphs [0, 1] (see zc?)");
@@ -3330,6 +3344,7 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("dbg.args", "", &cb_dbg_args, "Set the args of the program to debug");
 	SETCB ("dbg.follow.child", "false", &cb_dbg_follow_child, "Continue tracing the child process on fork. By default the parent process is traced");
 	SETCB ("dbg.trace_continue", "true", &cb_dbg_trace_continue, "Trace every instruction between the initial PC position and the PC position at the end of continue's execution");
+	SETCB ("dbg.create_new_console", "true", &cb_dbg_create_new_console, "Create a new console window for the debugee on debug start");
 	/* debug */
 	SETCB ("dbg.status", "false", &cb_dbgstatus, "Set cmd.prompt to '.dr*' or '.dr*;drd;sr PC;pi 1;s-'");
 #if DEBUGGER
@@ -3372,7 +3387,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 
 	/* cmd */
-	SETPREF ("cmd.xterm", "xterm -bg black -fg gray -e", "xterm command to spawn with V@");
 	SETCB ("cmd.demangle", "false", &cb_bdc, "run xcrun swift-demangle and similar if available (SLOW)");
 	SETICB ("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");
 	SETPREF ("cmd.bp", "", "Run when a breakpoint is hit");
@@ -3420,7 +3434,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* http */
 	SETBPREF ("http.log", "true", "Show HTTP requests processed");
-	SETPREF ("http.sync", "", "Remote HTTP server to sync events with");
 	SETBPREF ("http.colon", "false", "Only accept the : command");
 	SETPREF ("http.logfile", "", "Specify a log file instead of stderr for http requests");
 	SETBPREF ("http.cors", "false", "Enable CORS");
@@ -3461,8 +3474,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 #endif
 	SETPREF ("http.port", "9090", "HTTP server port");
 	SETPREF ("http.maxport", "9999", "Last HTTP server port");
-	SETPREF ("http.ui", "m", "Default webui (enyo, m, p, t)");
-	SETBPREF ("http.sandbox", "true", "Sandbox the HTTP server");
 	SETI ("http.timeout", 3, "Disconnect clients after N seconds of inactivity");
 	SETI ("http.dietime", 0, "Kill server after N seconds with no client");
 	SETBPREF ("http.verbose", "false", "Output server logs to stdout");
@@ -3470,7 +3481,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF ("http.upload", "false", "Enable file uploads to /up/<filename>");
 	SETPREF ("http.uri", "", "Address of HTTP proxy");
 	SETBPREF ("http.auth", "false", "Enable/Disable HTTP Authentification");
-	SETPREF ("http.authtok", "r2admin:r2admin", "HTTP Authentification user:password token");
 	p = rz_sys_getenv ("RZ_HTTP_AUTHFILE");
 	SETPREF ("http.authfile", p? p : "", "HTTP Authentification user file");
 	tmpdir = rz_file_tmpdir ();
@@ -3533,7 +3543,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	n = NODECB ("cfg.json.num", "none", &cb_jsonencoding_numbers);
 	SETDESC (n, "Encode numbers from json outputs using the specified option");
 	SETOPTIONS (n, "none", "string", "hex", NULL);
-
 
 	/* scr */
 #if __EMSCRIPTEN__
@@ -3666,8 +3675,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("io.unalloc.ch", ".", &cb_io_unalloc_ch, "Char to display if byte is unallocated");
 
 	/* file */
-	SETPREF ("file.desc", "", "User defined file description (used by projects)");
-	SETPREF ("file.md5", "", "MD5 sum of current file");
 	SETBPREF ("file.info", "true", "RzBin info loaded");
 	SETPREF ("file.offset", "", "Offset where the file will be mapped at");
 	SETCB ("file.path", "", &cb_filepath, "Path of current file");
@@ -3675,7 +3682,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETPREF ("file.type", "", "Type of current file");
 	SETI ("file.loadalign", 1024, "Alignment of load addresses");
 	SETI ("file.openmany", 1, "Maximum number of files opened at once");
-	SETPREF ("file.location", "", "Is the file 'local', 'remote', or 'memory'");
 	/* magic */
 	SETI ("magic.depth", 100, "Recursivity depth in magic description strings");
 

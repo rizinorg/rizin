@@ -19,9 +19,7 @@ static int cmd_Quit(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	if (input[0] == '!') {
 		if (input[1] == '!') {
-			if (!rz_sandbox_enable (false)) {
-				exit (0);
-			}
+			exit (0);
 			return -2;
 		}
 		rz_config_set (core->config, "scr.histsave", "false");

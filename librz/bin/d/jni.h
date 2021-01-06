@@ -25,7 +25,7 @@
 #define JNI_H_
 
 
-#if __R2TINYC__
+#if __RZTINYC__
 typedef char* va_list;
 #else
 #include <stdarg.h>

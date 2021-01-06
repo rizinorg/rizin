@@ -4161,8 +4161,6 @@ dsmap {
 }
 #endif
 
-#define P(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
-
 static void disasm_until_ret(RzCore *core, ut64 addr, char type_print, const char *arg) {
 	int p = 0;
 	const bool show_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
@@ -4680,12 +4678,10 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 		if (input[1] == 'n') {
 			cmd_print_pwn (core);
 		} else if (input[1] == 'd') {
-			if (!rz_sandbox_enable (0)) {
-				char *cwd = rz_sys_getdir ();
-				if (cwd) {
-					rz_cons_println (cwd);
-					free (cwd);
-				}
+			char *cwd = rz_sys_getdir ();
+			if (cwd) {
+				rz_cons_println (cwd);
+				free (cwd);
 			}
 		} else {
 			rz_cons_printf ("| pwd               display current working directory\n");
@@ -5391,14 +5387,16 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 					if (realsz + 4096 < linearsz) {
 						eprintf ("Linear size differs too much from the bbsum, please use pdr instead.\n");
 					} else {
-						ut64 at = f->addr; // TODO: should be rz_analysis_function_min_addr()
-						ut64 sz = RZ_MAX (linearsz, realsz);
-						ut8 *buf = calloc (sz, 1);
-						if (buf) {
-							(void)rz_io_read_at (core->io, at, buf, sz);
-							core->num->value = rz_core_print_disasm (core->print, core, at, buf, sz, sz, 0, 1, 0, NULL, f);
-							free (buf);
-							// rz_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, f->_size > 0 ? f->_size: rz_analysis_function_realsize (f), f->addr);
+						ut64 start = f->addr; // For pdf, start disassembling at the entrypoint
+						ut64 end = rz_analysis_function_max_addr (f);
+						if (end > start) {
+							ut64 sz = end - start;
+							ut8 *buf = calloc (sz, 1);
+							if (buf) {
+								(void)rz_io_read_at (core->io, start, buf, sz);
+								core->num->value = rz_core_print_disasm (core->print, core, start, buf, sz, sz, 0, 1, 0, NULL, f);
+								free (buf);
+							}
 						}
 					}
 					pd_result = 0;
@@ -5813,11 +5811,14 @@ l = use_blocksize;
 				);
 		} else if (input[1] == 'j') { // "pmj"
 			const char *filename = rz_str_trim_head_ro (input + 2);
-			rz_core_magic (core, filename, true, true);
+			PJ *pj = rz_core_pj_new (core);
+			rz_core_magic (core, filename, true, pj);
+			rz_cons_println (pj_string (pj));
+			pj_free (pj);
 		} else {
-			// XXX: need cmd_magic header for rz_core_magic
+			// XXX: need cmd_magic header for r_core_magic
 			const char *filename = rz_str_trim_head_ro (input + 1);
-			rz_core_magic (core, filename, true, false);
+			rz_core_magic (core, filename, true, NULL);
 		}
 		break;
 	case 'u': // "pu"

@@ -3,9 +3,6 @@
 #define LIBGDBR_H
 
 #include <stdint.h>
-#ifdef _MSC_VER
-typedef unsigned int ssize_t;
-#endif
 
 #include "arch.h"
 #include "rz_types_base.h"

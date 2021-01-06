@@ -28,6 +28,7 @@ static bool buf_io_init(RzBuffer *b, const void *user) {
 	priv->iob = u->iob;
 	priv->fd = u->fd;
 	b->priv = priv;
+	b->fd = priv->fd;
 	return true;
 }
 

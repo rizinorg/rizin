@@ -233,7 +233,9 @@ RZ_API void rz_config_list(RzConfig *cfg, const char *str, int rad) {
 		break;
 	case 'q':
 		rz_list_foreach (cfg->nodes, iter, node) {
-			cfg->cb_printf ("%s\n", node->name);
+			if (!str || (str && (!strncmp (str, node->name, len)))) {
+				cfg->cb_printf ("%s\n", node->name);
+			}
 		}
 		break;
 	case 'J':
@@ -303,18 +305,26 @@ RZ_API const char* rz_config_get(RzConfig *cfg, const char *name) {
 		}
 		return node->value;
 	} else {
-		eprintf ("rz_config_get: variable '%s' not found\n", name);
+		RZ_LOG_DEBUG ("rz_config_get: variable '%s' not found\n", name);
 	}
 	return NULL;
 }
 
 RZ_API bool rz_config_toggle(RzConfig *cfg, const char *name) {
 	RzConfigNode *node = rz_config_node_get (cfg, name);
-	if (node && rz_config_node_is_bool (node)) {
-		(void)rz_config_set_i (cfg, name, !node->i_value);
-		return true;
+	if (!node) {
+		return false;
 	}
-	return false;
+	if (!rz_config_node_is_bool (node)) {
+		RZ_LOG_DEBUG ("(error: '%s' is not a boolean variable)\n", name);
+		return false;
+	}
+	if (rz_config_node_is_ro (node)) {
+		RZ_LOG_DEBUG ("(error: '%s' config key is read only)\n", name);
+		return false;
+	}
+	(void)rz_config_set_i (cfg, name, !node->i_value);
+	return true;
 }
 
 RZ_API ut64 rz_config_get_i(RzConfig *cfg, const char *name) {

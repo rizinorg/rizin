@@ -473,7 +473,7 @@ RZ_API int rz_line_hist_load(const char *file) {
 	if (!path) {
 		return false;
 	}
-	if (!(fd = rz_sandbox_fopen (path, "r"))) {
+	if (!(fd = rz_sys_fopen (path, "r"))) {
 		free (path);
 		return false;
 	}
@@ -503,7 +503,7 @@ RZ_API int rz_line_hist_save(const char *file) {
 			}
 			*p = RZ_SYS_DIR[0];
 		}
-		fd = rz_sandbox_fopen (path, "w");
+		fd = rz_sys_fopen (path, "w");
 		if (fd != NULL) {
 			if (I.history.data) {
 				for (i = 0; i < I.history.index; i++) {
@@ -621,8 +621,11 @@ static void selection_widget_down(int steps) {
 	}
 }
 
-static void print_rline_task(void *core) {
-	rz_cons_clear_line (0);
+static void print_rline_task(void *_core) {
+	RzCore *core =(RzCore *)_core;
+	if (core->cons->context->color_mode) {
+		rz_cons_clear_line (0);
+	}
 	rz_cons_printf ("%s%s%s", Color_RESET, I.prompt,  I.buffer.data);
 	rz_cons_flush ();
 }
@@ -963,7 +966,7 @@ static inline void delete_till_end(void) {
 }
 
 static void __print_prompt(void) {
-        RzCons *cons = rz_cons_singleton ();
+    RzCons *cons = rz_cons_singleton ();
 	int columns = rz_cons_get_size (NULL) - 2;
 	int chars = RZ_MAX (1, strlen (I.buffer.data));
 	int len, i, cols = RZ_MAX (1, columns - rz_str_ansi_len (I.prompt) - 2);
@@ -971,8 +974,12 @@ static void __print_prompt(void) {
                 rz_cons_gotoxy (0,  cons->rows);
                 rz_cons_flush ();
 	}
-	rz_cons_clear_line (0);
-	printf ("\r%s%s", Color_RESET, I.prompt);
+	if (cons->context->color_mode > 0) {
+		rz_cons_clear_line (0);
+		printf ("\r%s%s", Color_RESET, I.prompt);
+	} else {
+		printf ("\r%s", I.prompt);
+	}
 	fwrite (I.buffer.data, 1, RZ_MIN (cols, chars), stdout);
 	printf ("\r%s", I.prompt);
 	if (I.buffer.index > cols) {
@@ -1399,7 +1406,7 @@ RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user) {
 		buf[0] = ch;
 #endif
 #endif
-		if (I.echo) {
+		if (I.echo && cons->context->color_mode) {
 			rz_cons_clear_line (0);
 		}
 		(void)rz_cons_get_size (&rows);

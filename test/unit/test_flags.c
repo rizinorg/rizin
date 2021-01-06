@@ -1,7 +1,7 @@
 #include <rz_flag.h>
 #include "minunit.h"
 
-bool test_r_flag_get_set(void) {
+bool test_rz_flag_get_set(void) {
 	RzFlag *flags;
 	RzFlagItem *fi;
 
@@ -25,7 +25,7 @@ bool test_r_flag_get_set(void) {
 	mu_end;
 }
 
-bool test_r_flag_by_spaces(void) {
+bool test_rz_flag_by_spaces(void) {
 	RzFlag *flags;
 	RzFlagItem *fi;
 
@@ -58,7 +58,7 @@ bool test_r_flag_by_spaces(void) {
 	mu_end;
 }
 
-bool test_r_flag_get_at() {
+bool test_rz_flag_get_at() {
 	RzFlag *flag = rz_flag_new ();
 
 	rz_flag_space_set (flag, "sp1");
@@ -128,13 +128,11 @@ bool test_r_flag_get_at() {
 	mu_end;
 }
 
-int all_tests() {
-	mu_run_test (test_r_flag_get_set);
-	mu_run_test (test_r_flag_by_spaces);
-	mu_run_test (test_r_flag_get_at);
+int all_tests(void) {
+	mu_run_test (test_rz_flag_get_set);
+	mu_run_test (test_rz_flag_by_spaces);
+	mu_run_test (test_rz_flag_get_at);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
-}
+mu_main (all_tests)

@@ -748,6 +748,7 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 	rz_list_free (line_list);
 	rz_bin_dwarf_free_debug_abbrev (da);
 	rz_io_free (io);
+	rz_bin_free (bin);
 	mu_end;
 }
 
@@ -1291,6 +1292,4 @@ bool all_tests() {
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests ();
-}
+mu_main (all_tests)

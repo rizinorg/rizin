@@ -1,5 +1,5 @@
-#ifndef __IO_R2k_WINDOWS_H__
-#define __IO_R2k_WINDOWS_H__
+#ifndef __IO_RZK_WINDOWS_H__
+#define __IO_RZK_WINDOWS_H__
 
 #include <rz_io.h>
 #include <rz_lib.h>
@@ -34,7 +34,7 @@ typedef struct _RTL_PROCESS_MODULES {
 	RTL_PROCESS_MODULE_INFORMATION Modules[1];
 } RTL_PROCESS_MODULES, *PRTL_PROCESS_MODULES;
 
-#define R2K_DEVICE "\\\\.\\rzk\\"
+#define RZK_DEVICE "\\\\.\\rzk\\"
 
 #define IOCTL_CODE(DeviceType, Function, Method, Access) \
 	(((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method))

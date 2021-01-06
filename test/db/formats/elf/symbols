@@ -183,11 +183,11 @@ FILE=bins/elf/special-sym-with-dot.bin
 CMDS=e asm.bytes=true; pd 5 @ 0x464;
 EXPECT=<<EOF
             ;-- main:
-            0x00000464      80b5           push {r7, lr}
-            0x00000466      6f46           mov r7, sp
-            0x00000468      82b0           sub sp, 8
-            0x0000046a      69ec1623       stcl p3, c2, [sb], -0x58
-            0x0000046e      0548           ldr r0, [0x00000484]        ; [0x484:4]=28 ; 1156
+            0x00000464      80b5           push  {r7, lr}
+            0x00000466      6f46           mov   r7, sp
+            0x00000468      82b0           sub   sp, 8
+            0x0000046a      69ec1623       stcl  p3, c2, [sb], -0x58
+            0x0000046e      0548           ldr   r0, [0x00000484]      ; [0x484:4]=28 ; 1156
 EOF
 RUN
 

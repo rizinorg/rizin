@@ -215,17 +215,17 @@ FILE=bins/mdmp/hello.dmp
 CMDS=e asm.bytes=true;pd 12 @[0x004061cc];
 EXPECT=<<EOF
             ;-- vfprintf:
-            0x773e7430      8bff           mov edi, edi
-            0x773e7432      55             push rbp
-            0x773e7433      8bec           mov ebp, esp
-            0x773e7435      ff7510         push qword [rbp + 0x10]
-            0x773e7438      6a00           push 0
-            0x773e743a      ff750c         push qword [rbp + 0xc]
-            0x773e743d      ff7508         push qword [rbp + 8]
-            0x773e7440      68fdcc3777     push 0x7737ccfd
-            0x773e7445      e800feffff     call 0x773e724a
-            0x773e744a      83c414         add esp, 0x14
-            0x773e744d      5d             pop rbp
+            0x773e7430      8bff           mov   edi, edi
+            0x773e7432      55             push  rbp
+            0x773e7433      8bec           mov   ebp, esp
+            0x773e7435      ff7510         push  qword [rbp + 0x10]
+            0x773e7438      6a00           push  0
+            0x773e743a      ff750c         push  qword [rbp + 0xc]
+            0x773e743d      ff7508         push  qword [rbp + 8]
+            0x773e7440      68fdcc3777     push  0x7737ccfd
+            0x773e7445      e800feffff     call  0x773e724a
+            0x773e744a      83c414         add   esp, 0x14
+            0x773e744d      5d             pop   rbp
             0x773e744e      c3             ret
 EOF
 RUN
@@ -234,7 +234,7 @@ NAME=: 32bit - strings count
 FILE=bins/mdmp/hello.dmp
 CMDS=iz~?
 EXPECT=<<EOF
-10281
+10277
 EOF
 RUN
 
@@ -348,14 +348,14 @@ FILE=bins/mdmp/hello64.dmp
 CMDS=e asm.bytes=true; pd 9 @[0x004083ac];
 EXPECT=<<EOF
             ;-- vfprintf:
-            0x7fefdb0a1a4      4883ec38       sub rsp, 0x38
-            0x7fefdb0a1a8      4c89442420     mov qword [rsp + 0x20], r8
-            0x7fefdb0a1ad      4c8bc2         mov r8, rdx
-            0x7fefdb0a1b0      488bd1         mov rdx, rcx
-            0x7fefdb0a1b3      488d0dea7ffa.  lea rcx, [0x7fefdab21a4]
-            0x7fefdb0a1ba      4533c9         xor r9d, r9d
-            0x7fefdb0a1bd      e87efdffff     call 0x7fefdb09f40
-            0x7fefdb0a1c2      4883c438       add rsp, 0x38
+            0x7fefdb0a1a4      4883ec38       sub   rsp, 0x38
+            0x7fefdb0a1a8      4c89442420     mov   qword [rsp + 0x20], r8
+            0x7fefdb0a1ad      4c8bc2         mov   r8, rdx
+            0x7fefdb0a1b0      488bd1         mov   rdx, rcx
+            0x7fefdb0a1b3      488d0dea7ffa.  lea   rcx, [0x7fefdab21a4]
+            0x7fefdb0a1ba      4533c9         xor   r9d, r9d
+            0x7fefdb0a1bd      e87efdffff     call  0x7fefdb09f40
+            0x7fefdb0a1c2      4883c438       add   rsp, 0x38
             0x7fefdb0a1c6      c3             ret
 EOF
 RUN
@@ -364,7 +364,7 @@ NAME=: 64bit - strings count
 FILE=bins/mdmp/hello64.dmp
 CMDS=iz~?
 EXPECT=<<EOF
-22898
+22901
 EOF
 RUN
 

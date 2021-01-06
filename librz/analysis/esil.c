@@ -538,11 +538,8 @@ RZ_API int rz_analysis_esil_reg_read(RzAnalysisEsil *esil, const char *regname, 
 	return ret;
 }
 
-// sign extension operator for use in idiv, imul, movsx* 
-// and other instructions involving signed values, extends n bit value to 64 bit value
-// example : >"ae 8,0x81,~" ( <src bit width>,<value>,~ )
-// output  : 0xffffffffffffff81
-static bool esil_signext(RzAnalysisEsil *esil) {
+RZ_API int rz_analysis_esil_signext(RzAnalysisEsil *esil, bool assign) {
+	bool ret = false;
 	ut64 src, dst;
 
 	char *p_src = rz_analysis_esil_pop (esil);
@@ -554,8 +551,6 @@ static bool esil_signext(RzAnalysisEsil *esil) {
 		ERR ("esil_of: empty stack");
 		free (p_src);
 		return false;
-	} else {
-		free (p_src);
 	}
 
 	char *p_dst = rz_analysis_esil_pop (esil);
@@ -570,9 +565,9 @@ static bool esil_signext(RzAnalysisEsil *esil) {
 	} else {
 		free (p_dst);
 	}
-	
+
 	//Make sure the other bits are 0
-	src &= UT64_MAX >> (64 - dst); 
+	src &= UT64_MAX >> (64 - dst);
 
 	ut64 m = 0;
 	if (dst < 64) {
@@ -580,7 +575,31 @@ static bool esil_signext(RzAnalysisEsil *esil) {
 	}
 
 	// dst = (dst & ((1U << src_bit) - 1)); // clear upper bits
-	return rz_analysis_esil_pushnum (esil, ((src ^ m) - m));
+	if (assign) {
+		ret = rz_analysis_esil_reg_write (esil, p_src, ((src ^ m) - m));
+	} else {
+		ret = rz_analysis_esil_pushnum (esil, ((src ^ m) - m));
+	}
+
+	free (p_src);
+	return ret;
+}
+
+// sign extension operator for use in idiv, imul, movsx*
+// and other instructions involving signed values, extends n bit value to 64 bit value
+// example : >"ae 8,0x81,~" ( <src bit width>,<value>,~ )
+// output  : 0xffffffffffffff81
+static bool esil_signext(RzAnalysisEsil *esil) {
+	return rz_analysis_esil_signext(esil, false);
+}
+
+// sign extension assignement
+// example : > "ae 0x81,a0,="
+//           > "ae 8,a0,~="   ( <src bit width>,register,~= )
+// output  : > ar a0
+//           0xffffff81
+static bool esil_signexteq(RzAnalysisEsil *esil) {
+	return rz_analysis_esil_signext(esil, true);
 }
 
 static bool esil_zf(RzAnalysisEsil *esil) {
@@ -3212,6 +3231,7 @@ static void rz_analysis_esil_setup_ops(RzAnalysisEsil *esil) {
 	OP ("$r", esil_rs, 1, 0, OT_UNK);
 	OP ("$$", esil_address, 1, 0, OT_UNK);
 	OP ("~", esil_signext, 1, 2, OT_MATH);
+	OP ("~=", esil_signexteq, 0, 2, OT_MATH);
 	OP ("==", esil_cmp, 0, 2, OT_MATH);
 	OP ("<", esil_smaller, 1, 2, OT_MATH);
 	OP (">", esil_bigger, 1, 2, OT_MATH);

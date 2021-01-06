@@ -38,7 +38,7 @@ bool test_config_load() {
 
 	Sdb *db = ref_db ();
 	sdb_set (db, "sneaky", "not part of config", 0);
-	bool loaded = rz_serialize_config_load (db, config, NULL);
+	bool loaded = rz_serialize_config_load (db, config, NULL, NULL);
 	sdb_free (db);
 	mu_assert ("load success", loaded);
 
@@ -50,12 +50,36 @@ bool test_config_load() {
 	mu_end;
 }
 
+bool test_config_load_exclude() {
+	static const char * const exclude[] = {
+		"somestring",
+		"someint",
+		NULL
+	};
+	RzConfig *config = rz_config_new (NULL);
+	rz_config_set (config, "somestring", "someoldvalue");
+	rz_config_set_i (config, "someint", 123);
+	rz_config_set_i (config, "somebiggerint", 0);
+	rz_config_lock (config, true);
+
+	Sdb *db = ref_db ();
+	bool loaded = rz_serialize_config_load (db, config, exclude, NULL);
+	sdb_free (db);
+	mu_assert ("load success", loaded);
+
+	mu_assert_eq (rz_list_length (config->nodes), 3, "count after load");
+	mu_assert_streq (rz_config_get (config, "somestring"), "someoldvalue", "excluded config string");
+	mu_assert_eq_fmt (rz_config_get_i (config, "someint"), (ut64)123, "excluded config int", "%"PFMT64u);
+	mu_assert_eq_fmt (rz_config_get_i (config, "somebiggerint"), (ut64)0x1337, "loaded config bigger int", "0x%"PFMT64x);
+	rz_config_free (config);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test (test_config_save);
 	mu_run_test (test_config_load);
+	mu_run_test (test_config_load_exclude);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
-}
+mu_main (all_tests)

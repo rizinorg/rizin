@@ -26,39 +26,40 @@ static bool buf_file_init(RzBuffer *b, const void *user) {
 	if (!priv) {
 		return false;
 	}
-	int fd = rz_sandbox_open (u->file, u->perm, u->mode);
+	int fd = rz_sys_open (u->file, u->perm, u->mode);
 	if (fd == -1) {
 		free (priv);
 		return false;
 	}
 	priv->fd = fd;
 	b->priv = priv;
+	b->fd = priv->fd;
 	return true;
 }
 
 static bool buf_file_fini(RzBuffer *b) {
 	struct buf_file_priv *priv = get_priv_file (b);
-	rz_sandbox_close (priv->fd);
+	close (priv->fd);
 	RZ_FREE (b->priv);
 	return true;
 }
 
 static ut64 buf_file_get_size(RzBuffer *b) {
 	struct buf_file_priv *priv = get_priv_file (b);
-	int pos = rz_sandbox_lseek (priv->fd, 0, SEEK_CUR);
-	int res = rz_sandbox_lseek (priv->fd, 0, SEEK_END);
-	rz_sandbox_lseek (priv->fd, pos, SEEK_SET);
+	int pos = lseek (priv->fd, 0, SEEK_CUR);
+	int res = lseek (priv->fd, 0, SEEK_END);
+	lseek (priv->fd, (off_t)pos, SEEK_SET);
 	return (ut64)res;
 }
 
 static st64 buf_file_read(RzBuffer *b, ut8 *buf, ut64 len) {
 	struct buf_file_priv *priv = get_priv_file (b);
-	return rz_sandbox_read (priv->fd, buf, len);
+	return read (priv->fd, buf, len);
 }
 
 static st64 buf_file_write(RzBuffer *b, const ut8 *buf, ut64 len) {
 	struct buf_file_priv *priv = get_priv_file (b);
-	return rz_sandbox_write (priv->fd, buf, len);
+	return write (priv->fd, buf, len);
 }
 
 static st64 buf_file_seek(RzBuffer *b, st64 addr, int whence) {
@@ -68,12 +69,12 @@ static st64 buf_file_seek(RzBuffer *b, st64 addr, int whence) {
 	case RZ_BUF_SET: whence = SEEK_SET; break;
 	case RZ_BUF_END: whence = SEEK_END; break;
 	}
-	return rz_sandbox_lseek (priv->fd, addr, whence);
+	return lseek (priv->fd, (off_t)addr, whence);
 }
 
 static bool buf_file_resize(RzBuffer *b, ut64 newsize) {
 	struct buf_file_priv *priv = get_priv_file (b);
-	return rz_sandbox_truncate (priv->fd, newsize) >= 0;
+	return rz_sys_truncate_fd (priv->fd, newsize) >= 0;
 }
 
 static const RzBufferMethods buffer_file_methods = {

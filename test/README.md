@@ -150,9 +150,7 @@ static bool all_tests() {
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
-}
+mu_main (all_tests)
 ```
 
 Minunit provides various functions to check the actual output of a function with

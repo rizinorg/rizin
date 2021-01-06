@@ -24,6 +24,9 @@ a version of `meson` that is recent enough, we suggest to install it directly
 from `pip` with `pip install meson`. If necessary, also install `ninja` with
 `pip install ninja`.
 
+If you are trying to build Rizin to create a package for a distribution,
+take a look at [doc/PACKAGERS.md][].
+
 ## *NIX systems
 
 ### Build system-wide, in `/usr/local`
@@ -34,8 +37,8 @@ distribution in `/usr`.
 
 ```
 $ meson build
-$ ninja -C build # or `meson compile -C build`
-$ sudo ninja -C build install # or `sudo meson install -C build`
+$ ninja -C build                # or `meson compile -C build`
+$ sudo ninja -C build install   # or `sudo meson install -C build`
 ```
 
 NOTE: when `--prefix=/usr` is not used, meson will set `RPATH` to ensure that
@@ -190,3 +193,5 @@ $ sudo ninja -C build install # or `sudo meson install -C build`. `sudo` may not
 If you are a developer, it might not be necessary to run the `install` step
 (the second step from above) every time you build Rizin. You can directly use
 `rizin` from `./build/binrz/rizin/rizin.`
+
+[doc/PACKAGERS.md]: https://github.com/rizinorg/rizin/blob/dev/doc/PACKAGERS.md

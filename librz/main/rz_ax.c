@@ -140,6 +140,7 @@ static int help(void) {
 		"  -F      stdin slurp code hex ;  rz_ax -F < shellcode.[c/py/js]\n"
 		"  -h      help                 ;  rz_ax -h\n"
 		"  -i      dump as C byte array ;  rz_ax -i < bytes\n"
+		"  -I      IP address <-> LONG  ;  rz_ax -I 3530468537\n"
 		"  -k      keep base            ;  rz_ax -k 33+3 -> 36\n"
 		"  -K      randomart            ;  rz_ax -K 0x34 1020304050\n"
 		"  -L      bin -> hex(bignum)   ;  rz_ax -L 111111111 # 0x1ff\n"
@@ -209,6 +210,7 @@ static int rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) {
 			case 'L': flags ^= 1 << 19; break;
 			case 'i': flags ^= 1 << 21; break;
 			case 'o': flags ^= 1 << 22; break;
+			case 'I': flags ^= 1 << 23; break;
 			case 'v': return rz_main_version_print ("rz_ax");
 			case '\0':
 				*_flags = flags;
@@ -339,7 +341,6 @@ dotherax:
 				printf ("\n");
 			}
 		}
-		fflush (stdout);
 		return true;
 	} else if (flags & (1 << 17)) { // -B (bin -> str)
 		int i = 0;
@@ -369,7 +370,6 @@ dotherax:
 			n = (st64) (st8) n;
 		}
 		printf ("%" PFMT64d "\n", n);
-		fflush (stdout);
 		return true;
 	} else if (flags & (1 << 15)) { // -N
 		ut64 n = rz_num_math (num, str);
@@ -399,7 +399,6 @@ dotherax:
 				printf ("\n");
 			}
 		}
-		fflush (stdout);
 		return true;
 	} else if (flags & (1 << 10)) { // -u
 		char buf[8];
@@ -543,14 +542,14 @@ dotherax:
 		if (i % byte_per_col == 0) {
 			printf("\n  ");
 		}
-		printf ("0x%02x\n", (ut8) str[len-1]);
+		printf ("0x%02x\n", (ut8) str[len - 1]);
 		printf ("};\n");
 		printf ("unsigned int buf_len = %d;\n", len);
 		return true;
 	} else if (flags & (1 << 22)) { // -o
 		// check -r
 		// flags & (1 << 18)
-		char *asnum, *modified_str;
+		char *modified_str;
 
 		// To distinguish octal values.
 		if (*str != '0') {
@@ -566,12 +565,25 @@ dotherax:
 			return false;
 		}
 
-		asnum = rz_num_as_string (NULL, n, false);
+		char *asnum = rz_num_as_string (NULL, n, false);
 		if (asnum) {
 			printf ("%s", asnum);
 			free (asnum);
 		} else {
-			printf("No String Possible");
+			eprintf ("No String Possible\n");
+			return false;
+		}
+		return true;
+	} else if (flags & (1 << 23)) { // -I
+		if (strchr (str, '.')) {
+			ut8 ip[4];
+			sscanf (str, "%hhd.%hhd.%hhd.%hhd", ip, ip + 1, ip + 2, ip + 3);
+			ut32 ip32 = ip[0] | (ip[1] << 8) | (ip[2] << 16) | (ip[3] << 24);
+			printf ("0x%08x\n", ip32);
+		} else {
+			ut32 ip32 = (ut32)rz_num_math (NULL, str);
+			ut8 ip[4] = { ip32 & 0xff, (ip32 >> 8) & 0xff, (ip32 >> 16) & 0xff, ip32 >> 24 };
+			printf ("%d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
 		}
 		return true;
 	}
@@ -629,6 +641,7 @@ RZ_API int rz_main_rz_ax(int argc, const char **argv) {
 			char *argv_i = strdup (argv[i]);
 			rz_str_unescape (argv_i);
 			rax (num, argv_i, 0, i == argc - 1, &flags, &fm);
+			free (argv_i);
 		}
 	}
 	rz_num_free (num);

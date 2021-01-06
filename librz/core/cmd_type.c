@@ -1274,38 +1274,25 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 	case 'o': // "to"
 		if (input[1] == '?') {
 			rz_core_cmd_help (core, help_msg_to);
-		} else if (!rz_sandbox_enable (0)) {
-			if (input[1] == ' ') {
-				const char *dir = rz_config_get (core->config, "dir.types");
-				const char *filename = input + 2;
-				char *homefile = NULL;
-				if (*filename == '~') {
-					if (filename[1] && filename[2]) {
-						homefile = rz_str_home (filename + 2);
-						filename = homefile;
-					}
+			break;
+		}
+		if (input[1] == ' ') {
+			const char *dir = rz_config_get (core->config, "dir.types");
+			const char *filename = input + 2;
+			char *homefile = NULL;
+			if (*filename == '~') {
+				if (filename[1] && filename[2]) {
+					homefile = rz_str_home (filename + 2);
+					filename = homefile;
 				}
-				if (!strcmp (filename, "-")) {
-					char *tmp = rz_core_editor (core, "*.h", "");
-					if (tmp) {
-						char *error_msg = NULL;
-						char *out = rz_parse_c_string (core->analysis, tmp, &error_msg);
-						if (out) {
-							//		rz_cons_strcat (out);
-							rz_analysis_save_parsed_type (core->analysis, out);
-							free (out);
-						}
-						if (error_msg) {
-							fprintf (stderr, "%s", error_msg);
-							free (error_msg);
-						}
-						free (tmp);
-					}
-				} else {
+			}
+			if (!strcmp (filename, "-")) {
+				char *tmp = rz_core_editor (core, "*.h", "");
+				if (tmp) {
 					char *error_msg = NULL;
-					char *out = rz_parse_c_file (core->analysis, filename, dir, &error_msg);
+					char *out = rz_parse_c_string (core->analysis, tmp, &error_msg);
 					if (out) {
-						//rz_cons_strcat (out);
+						//		rz_cons_strcat (out);
 						rz_analysis_save_parsed_type (core->analysis, out);
 						free (out);
 					}
@@ -1313,47 +1300,58 @@ RZ_IPI int rz_cmd_type(void *data, const char *input) {
 						fprintf (stderr, "%s", error_msg);
 						free (error_msg);
 					}
-				}
-				free (homefile);
-			} else if (input[1] == 'u') {
-				// "tou" "touch"
-				char *arg = strchr (input, ' ');
-				if (arg) {
-					rz_file_touch (arg + 1);
-				} else {
-					eprintf ("Usage: touch [filename]");
-				}
-			} else if (input[1] == 's') {
-				const char *dbpath = input + 3;
-				if (rz_file_exists (dbpath)) {
-					Sdb *db_tmp = sdb_new (0, dbpath, 0);
-					sdb_merge (TDB, db_tmp);
-					sdb_close (db_tmp);
-					sdb_free (db_tmp);
-				}
-			}  else if (input[1] == 'e') { // "toe"
-				char *str = rz_core_cmd_strf (core , "tc %s", input + 2);
-				char *tmp = rz_core_editor (core, "*.h", str);
-				if (tmp) {
-					char *error_msg = NULL;
-					char *out = rz_parse_c_string (core->analysis, tmp, &error_msg);
-					if (out) {
-						// remove previous types and save new edited types
-						sdb_reset (TDB);
-						rz_parse_c_reset (core->parser);
-						rz_analysis_save_parsed_type (core->analysis, out);
-						free (out);
-					}
-					if (error_msg) {
-						eprintf ("%s\n", error_msg);
-						free (error_msg);
-					}
 					free (tmp);
 				}
-				free (str);
+			} else {
+				char *error_msg = NULL;
+				char *out = rz_parse_c_file (core->analysis, filename, dir, &error_msg);
+				if (out) {
+					//rz_cons_strcat (out);
+					rz_analysis_save_parsed_type (core->analysis, out);
+					free (out);
+				}
+				if (error_msg) {
+					fprintf (stderr, "%s", error_msg);
+					free (error_msg);
+				}
 			}
-		} else {
-			eprintf ("Sandbox: system call disabled\n");
+			free (homefile);
+		} else if (input[1] == 'u') {
+			// "tou" "touch"
+			char *arg = strchr (input, ' ');
+			if (arg) {
+				rz_file_touch (arg + 1);
+			} else {
+				eprintf ("Usage: touch [filename]");
+			}
+		} else if (input[1] == 's') {
+			const char *dbpath = input + 3;
+			if (rz_file_exists (dbpath)) {
+				Sdb *db_tmp = sdb_new (0, dbpath, 0);
+				sdb_merge (TDB, db_tmp);
+				sdb_close (db_tmp);
+				sdb_free (db_tmp);
+			}
+		}  else if (input[1] == 'e') { // "toe"
+			char *str = rz_core_cmd_strf (core , "tc %s", input + 2);
+			char *tmp = rz_core_editor (core, "*.h", str);
+			if (tmp) {
+				char *error_msg = NULL;
+				char *out = rz_parse_c_string (core->analysis, tmp, &error_msg);
+				if (out) {
+					// remove previous types and save new edited types
+					sdb_reset (TDB);
+					rz_parse_c_reset (core->parser);
+					rz_analysis_save_parsed_type (core->analysis, out);
+					free (out);
+				}
+				if (error_msg) {
+					eprintf ("%s\n", error_msg);
+					free (error_msg);
+				}
+				free (tmp);
+			}
+			free (str);
 		}
 		break;
 	// td - parse string with cparse engine and load types from it

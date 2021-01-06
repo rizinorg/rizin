@@ -7,9 +7,9 @@
 
 static bool checkExtract(void) {
 #if __WINDOWS__
-	return rz_sys_cmd ("expand -? >nul") == 0;
+	return rz_sys_system ("expand -? >nul") == 0;
 #else
-	return rz_sys_cmd ("cabextract -v > /dev/null") == 0;
+	return rz_sys_system ("cabextract -v > /dev/null") == 0;
 #endif
 }
 
@@ -112,7 +112,7 @@ static int download(struct SPDBDownloader *pd) {
 
 		if (opt->extract > 0 && res) {
 			eprintf ("Attempting to decompress pdb\n");
-			if (res && ((cmd_ret = rz_sys_cmd (extractor_cmd)) != 0)) {
+			if (res && ((cmd_ret = rz_sys_system (extractor_cmd)) != 0)) {
 				eprintf ("cab extractor exited with error %d\n", cmd_ret);
 				res = 0;
 			}
@@ -170,7 +170,7 @@ static bool is_valid_guid(const char *guid) {
 	return i >= 33; // len of GUID and age
 }
 
-int rz_bin_pdb_download(RzCore *core, int isradjson, int *actions_done, SPDBOptions *options) {
+int rz_bin_pdb_download(RzCore *core, PJ *pj, int isradjson, SPDBOptions *options) {
 	int ret;
 	SPDBDownloaderOpt opt;
 	SPDBDownloader pdb_downloader;
@@ -200,15 +200,14 @@ int rz_bin_pdb_download(RzCore *core, int isradjson, int *actions_done, SPDBOpti
 
 	init_pdb_downloader (&opt, &pdb_downloader);
 	ret = pdb_downloader.download ? pdb_downloader.download (&pdb_downloader) : 0;
-	if (isradjson && actions_done) {
-		printf ("%s\"pdb\":{\"file\":\"%s\",\"download\":%s}",
-		        *actions_done ? "," : "", opt.dbg_file, ret ? "true" : "false");
+	if (isradjson) {
+		pj_ko (pj, "pdb");
+		pj_ks (pj, "file", opt.dbg_file);
+		pj_kb (pj, "download", (bool) ret);
+		pj_end (pj);
 	} else {
-		printf ("PDB \"%s\" download %s\n",
+		rz_cons_printf ("PDB \"%s\" download %s\n",
 		        opt.dbg_file, ret ? "success" : "failed");
-	}
-	if (actions_done) {
-		(*actions_done)++;
 	}
 	deinit_pdb_downloader (&pdb_downloader);
 

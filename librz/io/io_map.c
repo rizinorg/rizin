@@ -21,7 +21,7 @@ void io_map_calculate_skyline(RzIO *io) {
 }
 
 RzIOMap* io_map_new(RzIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
-	if (!size || !io || !io->map_ids) {
+	if (!io || !io->map_ids) {
 		return NULL;
 	}
 	RzIOMap* map = RZ_NEW0 (RzIOMap);
@@ -31,7 +31,7 @@ RzIOMap* io_map_new(RzIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size
 	}
 	map->fd = fd;
 	map->delta = delta;
-	if ((UT64_MAX - size + 1) < addr) {
+	if (size && (UT64_MAX - size + 1) < addr) {
 		/// XXX: this is leaking a map!!!
 		io_map_new (io, fd, perm, delta - addr, 0LL, size + addr);
 		size = -(st64)addr;
@@ -55,7 +55,7 @@ RZ_API bool rz_io_map_remap(RzIO *io, ut32 id, ut64 addr) {
 	if (map) {
 		ut64 size = map->itv.size;
 		map->itv.addr = addr;
-		if (UT64_MAX - size + 1 < addr) {
+		if (size && UT64_MAX - size + 1 < addr) {
 			map->itv.size = -addr;
 			rz_io_map_new (io, map->fd, map->perm, map->delta - addr, 0, size + addr);
 		}
@@ -154,7 +154,7 @@ RZ_API RzIOMap* rz_io_map_get_paddr(RzIO* io, ut64 paddr) {
 	void **it;
 	rz_pvector_foreach_prev (&io->maps, it) {
 		RzIOMap *map = *it;
-		if (map->delta <= paddr && paddr <= map->delta + map->itv.size - 1) {
+		if (map->delta <= paddr && paddr <= map->delta + (map->itv.size? map->itv.size - 1: 0)) {
 			return map;
 		}
 	}
@@ -340,6 +340,9 @@ RZ_API ut64 rz_io_map_next_available(RzIO* io, ut64 addr, ut64 size, ut64 load_a
 	void **it;
 	rz_pvector_foreach (&io->maps, it) {
 		RzIOMap *map = *it;
+		if (!rz_itv_size (map->itv)) {
+			break;
+		}
 		ut64 to = rz_itv_end (map->itv);
 		next_addr = RZ_MAX (next_addr, to + (load_align - (to % load_align)) % load_align);
 		// XXX - This does not handle when file overflow 0xFFFFFFFF000 -> 0x00000FFF
@@ -389,11 +392,11 @@ RZ_API RzList* rz_io_map_get_for_fd(RzIO* io, int fd) {
 
 RZ_API bool rz_io_map_resize(RzIO *io, ut32 id, ut64 newsize) {
 	RzIOMap *map;
-	if (!newsize || !(map = rz_io_map_resolve (io, id))) {
+	if (!(map = rz_io_map_resolve (io, id))) {
 		return false;
 	}
 	ut64 addr = map->itv.addr;
-	if (UT64_MAX - newsize + 1 < addr) {
+	if (newsize && UT64_MAX - newsize + 1 < addr) {
 		map->itv.size = -addr;
 		rz_io_map_new (io, map->fd, map->perm, map->delta - addr, 0, newsize + addr);
 		return true;

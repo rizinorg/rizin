@@ -4,30 +4,31 @@ if get_option('enable_tests')
 
   tests = [
     'addr_interval',
+    'agraph',
     'analysis_block',
     'analysis_cc',
+    'analysis_class_graph',
     'analysis_function',
     'analysis_hints',
     'analysis_types',
     'analysis_meta',
     'analysis_var',
     'analysis_xrefs',
-    'analysis_class_graph',
     'annotated_code',
     'autocmplt',
     'base64',
+    'big',
     'bin',
     'binheap',
     'bitmap',
     'buf',
-    'ovf',
     'cmd',
-    'core_cmd',
-    'core_task',
-    'rzpipe',
     'cons',
     'contrbtree',
+    'core_cmd',
+    'core_task',
     'debruijn',
+    'debug',
     'debug_session',
     'diff',
     'dwarf',
@@ -40,40 +41,48 @@ if get_option('enable_tests')
     'glob',
     'graph',
     'hex',
+    'id_storage',
+    'idpool',
+    'idstorage',
     'intervaltree',
     'io',
     'json',
     'list',
+    'ovf',
     'parse_ctype',
     'pdb',
     'pj',
     'queue',
+    'reg',
+    'rzpipe',
     'rz_test',
-    'rbtree',
     'serialize_analysis',
     'serialize_config',
     'serialize_flag',
     'serialize_spaces',
+    'rbtree',
     'sign',
     'skiplist',
+    'skyline',
     'spaces',
     'sparse',
     'stack',
     'str',
     'strbuf',
+    'subprocess',
     'table',
     'task',
     'tree',
     'uleb128',
     'unum',
     'util',
-    'vector',
-    'skyline',
-    'big',
-    'idpool',
-    'idstorage',
-    'subprocess',
+    'vector'
   ]
+
+  unit_test_env = environment()
+  if test_env_common_path != []
+    unit_test_env.prepend('PATH', test_env_common_path)
+  endif
 
   foreach test : tests
     exe = executable('test_@0@'.format(test), 'test_@0@.c'.format(test),
@@ -106,6 +115,6 @@ if get_option('enable_tests')
       install_rpath: rpath_exe,
       implicit_include_directories: false
     )
-    test(test, exe, workdir: join_paths(meson.current_source_dir(), '..'))
+    test(test, exe, workdir: join_paths(meson.current_source_dir(), '..'), env: unit_test_env)
   endforeach
 endif

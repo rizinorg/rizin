@@ -92,7 +92,7 @@ static int update_self_regions(RzIO *io, int pid) {
 	char path[1024], line[1024];
 	char region[100], region2[100], perms[5];
 	snprintf (path, sizeof (path) - 1, "/proc/%d/maps", pid);
-	FILE *fd = rz_sandbox_fopen (path, "r");
+	FILE *fd = rz_sys_fopen (path, "r");
 	if (!fd) {
 		return false;
 	}
@@ -265,9 +265,6 @@ static bool __plugin_open(RzIO *io, const char *file, bool many) {
 
 static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 	int ret, pid = getpid ();
-	if (rz_sandbox_enable (0)) {
-		return NULL;
-	}
 	io->va = true; // nop
 	ret = update_self_regions (io, pid);
 	if (ret) {
@@ -332,19 +329,11 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		/* do nothing here */
 #if !defined(__WINDOWS__)
 	} else if (!strncmp (cmd, "kill", 4)) {
-		if (rz_sandbox_enable (false)) {
-			eprintf ("This is unsafe, so disabled by the sandbox\n");
-			return NULL;
-		}
 		/* do nothing here */
 		kill (getpid (), SIGKILL);
 #endif
 	} else if (!strncmp (cmd, "call ", 5)) {
 		size_t cbptr = 0;
-		if (rz_sandbox_enable (false)) {
-			eprintf ("This is unsafe, so disabled by the sandbox\n");
-			return NULL;
-		}
 		ut64 result = 0;
 		char *argv = strdup (cmd + 5);
 		int argc = rz_str_word_set0 (argv);

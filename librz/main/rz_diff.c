@@ -54,6 +54,7 @@ typedef struct {
 	int threshold;
 	bool verbose;
 	RzList *evals;
+	PJ *pj;
 } RzdiffOptions;
 
 static RzCore *opencore(RzdiffOptions *ro, const char *f) {
@@ -208,20 +209,16 @@ static int cb(RzDiff *d, void *user, RzDiffOp *op) {
 		if (ro->disasm) {
 			eprintf ("JSON (-j) + disasm (-D) not yet implemented\n");
 		}
-		if (ro->json_started) {
-			printf (",\n");
+		{
+			PJ *pj = ro->pj;
+			pj_o (pj);
+			pj_kn (pj, "addr", op->a_off);
+			char *hex_from = rz_hex_bin2strdup (op->a_buf, op->a_len);
+			pj_ks (pj, "from", hex_from);
+			char *hex_to = rz_hex_bin2strdup (op->b_buf, op->b_len);
+			pj_ks (pj, "to", hex_to);
+			pj_end (pj);
 		}
-		ro->json_started = true;
-		printf ("{\"offset\":%"PFMT64d ",", op->a_off);
-		printf ("\"from\":\"");
-		for (i = 0; i < op->a_len; i++) {
-			printf ("%02x", op->a_buf[i]);
-		}
-		printf ("\", \"to\":\"");
-		for (i = 0; i < op->b_len; i++) {
-			printf ("%02x", op->b_buf[i]);
-		}
-		printf ("\"}");
 		return 1;
 	case 0:
 	default:
@@ -687,18 +684,22 @@ static void dump_cols_hexii(ut8 *a, int as, ut8 *b, int bs, int w) {
 	}
 }
 
-static void handle_sha256(const ut8 *block, int len) {
+static char *handle_sha256(const ut8 *block, int len) {
 	int i = 0;
+	char *p = malloc (128);
 	RzHash *ctx = rz_hash_new (true, RZ_HASH_SHA256);
 	const ut8 *c = rz_hash_do_sha256 (ctx, block, len);
 	if (!c) {
 		rz_hash_free (ctx);
-		return;
+		free (p);
+		return NULL;
 	}
+	char *r = p;
 	for (i = 0; i < RZ_HASH_SIZE_SHA256; i++) {
-		printf ("%02x", c[i]);
+		snprintf (r + (i * 2), 3, "%02x", c[i]);
 	}
 	rz_hash_free (ctx);
+	return p;
 }
 
 static ut8 *slurp(RzdiffOptions *ro, RzCore **c, const char *file, size_t *sz) {
@@ -927,10 +928,22 @@ static void rzdiff_options_init(RzdiffOptions *ro) {
 	ro->mode = MODE_DIFF;
 	ro->gmode = GRAPH_DEFAULT_MODE;
 }
+
 static void rzdiff_options_fini(RzdiffOptions *ro) {
 	rz_list_free (ro->evals);
 	rz_core_free (ro->core);
 	rz_cons_free ();
+}
+
+static void fileobj(RzdiffOptions *ro, const char *ro_file, const ut8 *buf, size_t sz) {
+	PJ *pj = ro->pj;
+	pj_o (pj);
+	pj_ks (pj, "filename", ro_file);
+	pj_kn (pj, "size", sz);
+	char *hasha = handle_sha256 (buf, (int)sz);
+	pj_ks (pj, "sha256", hasha);
+	free (hasha);
+	pj_end (pj);
 }
 
 RZ_API int rz_main_rz_diff(int argc, const char **argv) {
@@ -1059,6 +1072,7 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 			break;
 		case 'j':
 			ro.diffmode = 'j';
+			ro.pj = pj_new ();
 			break;
 		case 'z':
 			ro.mode = MODE_DIFF_STRS;
@@ -1233,12 +1247,12 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 		d = rz_diff_new ();
 		rz_diff_set_delta (d, delta);
 		if (ro.diffmode == 'j') {
-			printf ("{\"files\":[{\"filename\":\"%s\", \"size\":%"PFMT64u", \"sha256\":\"", ro.file, sza);
-			handle_sha256 (bufa, (int)sza);
-			printf ("\"},\n{\"filename\":\"%s\", \"size\":%"PFMT64u", \"sha256\":\"", ro.file2, szb);
-			handle_sha256 (bufb, (int)szb);
-			printf ("\"}],\n");
-			printf ("\"changes\":[");
+			pj_o (ro.pj);
+			pj_ka (ro.pj, "files");
+			fileobj (&ro, ro.file, bufa, sza);
+			fileobj (&ro, ro.file2, bufb, szb);
+			pj_end (ro.pj);
+			pj_ka (ro.pj, "changes");
 		}
 		if (ro.diffmode == 'B') {
 			(void) write (1, "\xd1\xff\xd1\xff\x04", 5);
@@ -1258,7 +1272,7 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 			rz_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
 		}
 		if (ro.diffmode == 'j') {
-			printf ("]\n");
+			pj_end (ro.pj);
 		}
 		rz_diff_free (d);
 		break;
@@ -1287,11 +1301,16 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 	rz_cons_free ();
 
 	if (ro.diffmode == 'j' && ro.showcount) {
-		printf (",\"count\":%d}\n", ro.count);
+		pj_kd (ro.pj, "count", ro.count);
 	} else if (ro.showcount && ro.diffmode != 'j') {
 		printf ("%d\n", ro.count);
-	} else if (!ro.showcount && ro.diffmode == 'j') {
-		printf ("}\n");
+	}
+	if (ro.pj) {
+		pj_end (ro.pj);
+		char *s = pj_drain (ro.pj);
+		printf ("%s\n", s);
+		free (s);
+		ro.pj = NULL;
 	}
 	free (bufa);
 	free (bufb);

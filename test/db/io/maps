@@ -154,10 +154,10 @@ px 16
 EOF
 EXPECT=<<EOF
             ;-- entry0:
-            0x08048054      b32a           mov bl, 0x2a
-            0x08048056      31c0           xor eax, eax
-            0x08048058      40             inc eax
-            0x08048059      cd80           int 0x80
+            0x08048054      b32a           mov   bl, 0x2a
+            0x08048056      31c0           xor   eax, eax
+            0x08048058      40             inc   eax
+            0x08048059      cd80           int   0x80
   0x0804805b   unmapped
   0x0804805c   unmapped
 

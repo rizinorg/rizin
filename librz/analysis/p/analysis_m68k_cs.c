@@ -61,52 +61,57 @@ static inline void handle_jump_instruction(RzAnalysisOp *op, ut64 addr, cs_m68k 
 
 static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
-	rz_strbuf_init (buf);
-	rz_strbuf_append (buf, "{");
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return;
+	}
+	pj_o (pj);
 	cs_m68k *x = &insn->detail->m68k;
-	rz_strbuf_append (buf, "\"operands\":[");
+	pj_ka (pj, "operands");
 	for (i = 0; i < x->op_count; i++) {
 		cs_m68k_op *op = &x->operands[i];
-		if (i > 0) {
-			rz_strbuf_append (buf, ",");
-		}
-		rz_strbuf_append (buf, "{");
+		pj_o (pj);
 		switch (op->type) {
-		case M68K_OP_REG:
-			rz_strbuf_append (buf, "\"type\":\"reg\"");
-			rz_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
+			case M68K_OP_REG:
+			pj_ks (pj, "type", "reg");
+			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
 			break;
 		case M68K_OP_IMM:
-			rz_strbuf_append (buf, "\"type\":\"imm\"");
-			rz_strbuf_appendf (buf, ",\"value\":%" PFMT64d, (st64)op->imm);
+			pj_ks (pj, "type", "imm");
+			pj_kN (pj, "value", (st64)op->imm);
 			break;
 		case M68K_OP_MEM:
-			rz_strbuf_append (buf, "\"type\":\"mem\"");
+			pj_ks (pj, "type", "mem");
 			if (op->mem.base_reg != M68K_REG_INVALID) {
-				rz_strbuf_appendf (buf, ",\"base_reg\":\"%s\"", cs_reg_name (handle, op->mem.base_reg));
+				pj_ks (pj, "base_reg", cs_reg_name (handle, op->mem.base_reg));
 			}
 			if (op->mem.index_reg != M68K_REG_INVALID) {
-				rz_strbuf_appendf (buf, ",\"base_reg\":\"%s\"", cs_reg_name (handle, op->mem.index_reg));
+				pj_ks (pj, "index_reg", cs_reg_name (handle, op->mem.index_reg));
 			}
 			if (op->mem.in_base_reg != M68K_REG_INVALID) {
-				rz_strbuf_appendf (buf, ",\"base_reg\":\"%s\"", cs_reg_name (handle, op->mem.in_base_reg));
+				pj_ks (pj, "in_base_reg", cs_reg_name (handle, op->mem.in_base_reg));
 			}
-			rz_strbuf_appendf (buf, ",\"in_disp\":%" PFMT64d, (st64)op->mem.in_disp);
-			rz_strbuf_appendf (buf, ",\"out_disp\":%" PFMT64d, (st64)op->mem.out_disp);
-			rz_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", (st64)op->mem.disp);
-			rz_strbuf_appendf (buf, ",\"scale\":%"PFMT64d"", (st64)op->mem.scale);
-			rz_strbuf_appendf (buf, ",\"bitfield\":%"PFMT64d"", (st64)op->mem.bitfield);
-			rz_strbuf_appendf (buf, ",\"width\":%"PFMT64d"", (st64)op->mem.width);
-			rz_strbuf_appendf (buf, ",\"offset\":%"PFMT64d"", (st64)op->mem.offset);
-			rz_strbuf_appendf (buf, ",\"index_size\":%"PFMT64d"", (st64)op->mem.index_size);
+			pj_kN (pj, "in_disp", op->mem.in_disp);
+			pj_kN (pj, "out_disp", op->mem.out_disp);
+			pj_ki (pj, "disp", op->mem.disp);
+			pj_ki (pj, "scale", op->mem.scale);
+			pj_ki (pj, "bitfield", op->mem.bitfield);
+			pj_ki (pj, "width", op->mem.width);
+			pj_ki (pj, "offset", op->mem.offset);
+			pj_ki (pj, "index_size", op->mem.index_size);
 			break;
 		default:
-			rz_strbuf_append (buf, "\"type\":\"invalid\"");
+			pj_ks (pj, "type", "invalid");
 			break;
 		}
-		rz_strbuf_append (buf, "}");
+		pj_end (pj); /* o operand */
 	}
-	rz_strbuf_append (buf, "]}");
+	pj_end (pj); /* a operands */
+	pj_end (pj);
+
+	rz_strbuf_init (buf);
+	rz_strbuf_append (buf, pj_string (pj));
+	pj_free (pj);
 }
 
 static int parse_reg_name(RzRegItem *reg, csh handle, cs_insn *insn, int reg_num) {

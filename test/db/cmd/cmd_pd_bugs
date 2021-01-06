@@ -22,6 +22,7 @@ CMDS=wx 80f30988; pi 1
 EXPECT=<<EOF
 invalid
 EOF
+EXPECT_ERR=
 RUN
 
 NAME=pd arm cortex 1
@@ -31,6 +32,7 @@ CMDS=wx 80f30988;pi 1
 EXPECT=<<EOF
 msr psp, r0
 EOF
+EXPECT_ERR=
 RUN
 
 NAME=pd arm cortex 2
@@ -40,6 +42,7 @@ CMDS=e asm.cpu=cortex;wx 80f30988;pi 1
 EXPECT=<<EOF
 msr psp, r0
 EOF
+EXPECT_ERR=
 RUN
 
 NAME=pd call sym bug
@@ -71,7 +74,7 @@ e asm.bytes=0
 e asm.comments=0
 EOF
 EXPECT=<<EOF
-            0x00005f16      e835ffffff     call fcn.00005e50
+            0x00005f16      e835ffffff     call  fcn.00005e50
 EOF
 RUN
 
@@ -98,7 +101,7 @@ FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
 s 0x5e50
 e asm.bits=64
-e asm.bytes = true
+e asm.bytes=true
 af; afn rip
 pd 1 @ 0x5f16~:0
 e asm.lines.bb=0
@@ -106,7 +109,7 @@ e asm.bytes=0
 e asm.comments=0
 EOF
 EXPECT=<<EOF
-            0x00005f16      e835ffffff     call fcn.00005e50
+            0x00005f16      e835ffffff     call  fcn.00005e50
 EOF
 RUN
 
@@ -121,7 +124,7 @@ e asm.comments=false
 pD@x:8d15d0830408
 EOF
 EXPECT=<<EOF
-  0x00000000      8d15d0830408   lea edx, [0x80483d0]
+  0x00000000      8d15d0830408   lea   edx, [0x80483d0]
 EOF
 RUN
 
@@ -173,8 +176,8 @@ EXPECT=<<EOF
             ;-- section..text:
             ;-- .text:
             ;-- _start:
-            0x004005c0      31ed           xor ebp, ebp                ; [14] -r-x section size 584 named .text
-            0x004005c2      4989d1         mov r9, rdx
+            0x004005c0      31ed           xor   ebp, ebp              ; [14] -r-x section size 584 named .text
+            0x004005c2      4989d1         mov   r9, rdx
 xor ebp, ebp
 mov r9, rdx
 EOF
@@ -193,8 +196,8 @@ pd 2
 EOF
 EXPECT=<<EOF
 0: test ();
-          0x00000000      0000           add byte [rax], al
-          0x00000002      0000           add byte [rax], al
+          0x00000000      0000           add   byte [rax], al
+          0x00000002      0000           add   byte [rax], al
 EOF
 RUN
 
@@ -211,8 +214,8 @@ pd 2
 EOF
 EXPECT=<<EOF
 / 0: test ();
-  0x00000000      0000           add byte [rax], al
-  0x00000002      0000           add byte [rax], al
+  0x00000000      0000           add   byte [rax], al
+  0x00000002      0000           add   byte [rax], al
 EOF
 RUN
 
@@ -226,6 +229,6 @@ pd 1
 EOF
 EXPECT=<<EOF
             0x080484c8  ;-- check:
-            0x080484c8      55             push ebp
+            0x080484c8      55             push  ebp
 EOF
 RUN

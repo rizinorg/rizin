@@ -156,6 +156,42 @@ bool test_rz_str_split(void) {
 	mu_assert_streq (hello, "hello", "first string in split");
 	mu_assert_streq (world, "world", "second string in split");
 	free (hi);
+
+	char *ho = strdup ("helloworld");
+	r = rz_str_split (ho, ' ');
+	mu_assert_eq (r, 1, "split on space");
+	free (ho);
+	mu_end;
+}
+
+bool test_rz_str_split_list(void) {
+	char s[] = "Hello=World=And  =  Everyone";
+	RzList *l = rz_str_split_duplist_n (s, "=", 0, false);
+	mu_assert_eq (rz_list_length (l), 4, "string has been split in 4 items");
+	mu_assert_streq (rz_list_get_n (l, 0), "Hello", "first item");
+	mu_assert_streq (rz_list_get_n (l, 1), "World", "second item");
+	mu_assert_streq (rz_list_get_n (l, 2), "And  ", "third item");
+	mu_assert_streq (rz_list_get_n (l, 3), "  Everyone", "fourth item");
+	rz_list_free (l);
+
+	char s2[] = "Hello=World=Everyone";
+	RzList *l2 = rz_str_split_duplist_n (s2, "=", 1, false);
+	mu_assert_eq (rz_list_length (l2), 2, "string has been split in 2 items");
+	mu_assert_streq (rz_list_get_n (l2, 0), "Hello", "first item");
+	mu_assert_streq (rz_list_get_n (l2, 1), "World=Everyone", "second item");
+	rz_list_free (l2);
+	mu_end;
+}
+
+bool test_rz_str_split_lines(void) {
+	char s[] = "Hello\nWorld\nThis is me.";
+	size_t count;
+	size_t *act = rz_str_split_lines (s, &count);
+	mu_assert_eq (count, 3, "there are 3 lines");
+	mu_assert_eq (act[0], 0, "first line is at 0");
+	mu_assert_eq (act[1], 6, "second line is at 6");
+	mu_assert_eq (act[2], 12, "third line is at 12");
+	free (act);
 	mu_end;
 }
 
@@ -556,16 +592,17 @@ bool test_rz_str_encoded_json(void) {
 	char *invalidJsonString = "This is my \xe2 sample © string\n";
 	size_t len = strlen (invalidJsonString);
 
-	const char *array = rz_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_ARRAY);
-	mu_assert_streq (array, "084,104,105,115,032,105,115,032,109,121,032,226,032,115,097,109,112,108,101,032,194,169,032,115,116,114,105,110,103,010", "string as array of uchar");
-	const char *hex = rz_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_HEX);
-	mu_assert_streq (hex, "54686973206973206D7920E22073616D706C6520C2A920737472696E670A", "string as hexpairs");
-	const char *b64 = rz_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_BASE64);
-	mu_assert_streq (b64, "VGhpcyBpcyBteSDiIHNhbXBsZSDCqSBzdHJpbmcK", "string as base64 encoded");
-	const char *stripped = rz_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_STRIP);
-	mu_assert_streq (stripped, "This is my  sample © string\\n", "string with bad chars stripped");
-	const char *none = rz_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_DEFAULT);
-	mu_assert_streq (none, "This is my \\xe2 sample © string\\n", "default encoding");
+	char *array = rz_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_ARRAY);
+	mu_assert_streq_free (array, "084,104,105,115,032,105,115,032,109,121,032,226,032,115,097,109,112,108,101,032,194,169,032,115,116,114,105,110,103,010", "string as array of uchar");
+	char *hex = rz_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_HEX);
+	mu_assert_streq_free (hex, "54686973206973206D7920E22073616D706C6520C2A920737472696E670A", "string as hexpairs");
+	char *b64 = rz_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_BASE64);
+	mu_assert_streq_free (b64, "VGhpcyBpcyBteSDiIHNhbXBsZSDCqSBzdHJpbmcK", "string as base64 encoded");
+	char *stripped = rz_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_STRIP);
+	mu_assert_streq_free (stripped, "This is my  sample © string\\n", "string with bad chars stripped");
+	char *none = rz_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_DEFAULT);
+	mu_assert_streq_free (none, "This is my \\xe2 sample © string\\n", "default encoding");
+
 	mu_end;
 }
 
@@ -581,6 +618,8 @@ bool all_tests () {
 	mu_run_test (test_rz_str_trim);
 	mu_run_test (test_rz_str_case);
 	mu_run_test (test_rz_str_split);
+	mu_run_test (test_rz_str_split_list);
+	mu_run_test (test_rz_str_split_lines);
 	mu_run_test (test_rz_str_tokenize);
 	mu_run_test (test_rz_str_char_count);
 	mu_run_test (test_rz_str_word_count);
@@ -604,6 +643,4 @@ bool all_tests () {
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
-}
+mu_main (all_tests)

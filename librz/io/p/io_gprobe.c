@@ -165,17 +165,17 @@ static int i2c_open(struct gport *port) {
 
 	snprintf (filename, sizeof (filename), "/dev/i2c/%d", i2cbus);
 	filename[sizeof (filename) - 1] = '\0';
-	int file = rz_sandbox_open (filename, O_RDWR, 0);
+	int file = rz_sys_open (filename, O_RDWR, 0);
 
 	if (file < 0 && (errno == ENOENT || errno == ENOTDIR)) {
 		sprintf (filename, "/dev/i2c-%d", i2cbus);
-		file = rz_sandbox_open (filename, O_RDWR, 0);
+		file = rz_sys_open (filename, O_RDWR, 0);
 	}
 	if (file < 0) {
 		return -1;
 	}
 	if (ioctl (file, I2C_SLAVE, GPROBE_I2C_ADDR >> 1) < 0) {
-		rz_sandbox_close (file);
+		close (file);
 		port->fd = -1;
 		return -1;
 	}
@@ -340,7 +340,7 @@ static int sp_open (struct gport *port) {
 #else
 	struct termios tty = {0};
 
-	if ((port->fd = rz_sandbox_open (port->name, O_NONBLOCK | O_NOCTTY | O_RDWR, 0)) < 0) {
+	if ((port->fd = rz_sys_open (port->name, O_NONBLOCK | O_NOCTTY | O_RDWR, 0)) < 0) {
 		return -1;
 	}
 

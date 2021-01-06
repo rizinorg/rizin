@@ -337,6 +337,7 @@ static const char *help_msg_dr[] = {
 	"drrj", "", "Show registers references (telescoping) in JSON format",
 	// TODO: 'drs' to swap register arenas and display old register valuez
 	"drs", "[?]", "Stack register states",
+	"drS", "", "Show the size of the register profile",
 	"drt", "[?]", "Show all register types",
 	"drw"," <hexnum>", "Set contents of the register arena",
 	"drx", "[?]", "Show debug registers",
@@ -1405,7 +1406,7 @@ static int rz_debug_heap(RzCore *core, const char *input) {
 	return true;
 }
 
-static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, int mode, bool symbols_only, RzCoreBinFilter *filter) {
+static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, PJ *pj, int mode, bool symbols_only, RzCoreBinFilter *filter) {
 	int fd;
 	if ((fd = rz_io_fd_open (core->io, file, RZ_PERM_R, 0)) == -1) {
 		return false;
@@ -1422,10 +1423,10 @@ static bool get_bin_info(RzCore *core, const char *file, ut64 baseaddr, int mode
 	int action = RZ_CORE_BIN_ACC_ALL & ~RZ_CORE_BIN_ACC_INFO;
 	if (symbols_only || filter->name) {
 		action = RZ_CORE_BIN_ACC_SYMBOLS;
-	} else if (mode == RZ_MODE_SET || mode == RZ_MODE_RADARE) {
+	} else if (mode == RZ_MODE_SET || mode == RZ_MODE_RIZINCMD) {
 		action &= ~RZ_CORE_BIN_ACC_ENTRIES & ~RZ_CORE_BIN_ACC_MAIN;
 	}
-	rz_core_bin_info (core, action, mode, 1, filter, NULL);
+	rz_core_bin_info (core, action, pj, mode, 1, filter, NULL);
 	RzBinFile *bf = rz_bin_cur (core->bin);
 	rz_bin_file_delete (core->bin, bf->id);
 	rz_bin_file_set_cur_binfile (core->bin, obf);
@@ -1552,15 +1553,20 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 					symbols_only = false;
 					input++;
 				}
+				PJ *pj = NULL;
 				switch (input[1]) {
 				case 's':
 					mode = RZ_MODE_SET;
 					break;
 				case '*':
-					mode = RZ_MODE_RADARE;
+					mode = RZ_MODE_RIZINCMD;
 					break;
 				case 'j':
 					mode = RZ_MODE_JSON;
+					pj = rz_core_pj_new (core);
+					if (!pj) {
+						return false;
+					}
 					break;
 				case 'q':
 					mode = input[2] == 'q' ? input++, RZ_MODE_SIMPLEST : RZ_MODE_SIMPLE;
@@ -1614,7 +1620,7 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 								             file, map->size, baddr, RZ_SYS_DEVNULL);
 							}
 						}
-						get_bin_info (core, file, baddr, mode, symbols_only, &filter);
+						get_bin_info (core, file, baddr, pj, mode, symbols_only, &filter);
 						if (newfile) {
 							if (!rz_file_rm (newfile)) {
 								eprintf ("Error when removing %s\n", newfile);
@@ -1623,9 +1629,13 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 						}
 					} else {
 						rz_bin_set_baddr (core->bin, map->addr);
-						rz_core_bin_info (core, RZ_CORE_BIN_ACC_SYMBOLS, (input[1]=='*'), true, &filter, NULL);
+						rz_core_bin_info (core, RZ_CORE_BIN_ACC_SYMBOLS, pj, (input[1]=='*'), true, &filter, NULL);
 						rz_bin_set_baddr (core->bin, baddr);
 					}
+				}
+				if (mode == RZ_MODE_JSON) {
+					rz_cons_println (pj_string (pj));
+					pj_free (pj);
 				}
 				free (ptr);
 			}
@@ -1657,7 +1667,7 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 						filter.name = (char *) closest_symbol->name;
 
 						rz_bin_set_baddr (core->bin, map->addr);
-						rz_core_bin_info (core, RZ_CORE_BIN_ACC_SYMBOLS, false, true, &filter, NULL);
+						rz_core_bin_info (core, RZ_CORE_BIN_ACC_SYMBOLS, NULL, false, true, &filter, NULL);
 					}
 				}
 			}
@@ -4662,10 +4672,6 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	RzDebugTracepoint *trace;
 	RzAnalysisOp *op;
 
-	if (rz_sandbox_enable (0)) {
-		eprintf ("Debugger commands disabled in sandbox mode\n");
-		return 0;
-	}
 	if (!strncmp (input, "ate", 3)) {
 		char str[128];
 		str[0] = 0;
@@ -5039,10 +5045,8 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 	case 'L': // "dL"
 		switch (input[1]) {
 		case 'q':
-			rz_debug_plugin_list (core->dbg, 'q');
-			break;
 		case 'j':
-			rz_debug_plugin_list (core->dbg, 'j');
+			rz_debug_plugin_list (core->dbg, input[1]);
 			break;
 		case '?':
 			rz_core_cmd_help (core, help_msg_dL);
@@ -5257,7 +5261,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				setRarunProfileString (core, input + 3);
 			} else {
 				// TODO use the api
-				rz_sys_cmd ("rz_run -h");
+				rz_sys_system ("rz_run -h");
 			}
 			break;
 		case 'o': // "doo" : reopen in debug mode
@@ -5291,10 +5295,10 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 					rz_debug_detach (core->dbg, core->dbg->pid);
 				}
 			}
+			// Remove the target's registers from the flag list
+			rz_core_cmd0 (core, ".dr-");
 			// Reopen and rebase the original file
 			rz_core_cmd0 (core, "oo");
-			// Remove registers from the flag list
-			rz_core_cmd0 (core, "~dr-");
 			break;
 		case '?': // "do?"
 		default:

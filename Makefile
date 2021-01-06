@@ -132,8 +132,6 @@ windist:
 	rm -rf "${WINDIST}/libs"
 	rm -rf ${WINDIST}/plugins/*
 	@echo "${C}[WINDIST] Copying web interface${R}"
-	mkdir -p "${WINDIST}/www"
-	cp -rf shlr/www/* "${WINDIST}/www"
 	mkdir -p "${WINDIST}/share/rizin/${VERSION}/magic"
 	cp -f librz/magic/d/default/* "${WINDIST}/share/rizin/${VERSION}/magic"
 	mkdir -p "${WINDIST}/share/rizin/${VERSION}/syscall"
@@ -218,7 +216,7 @@ install-doc-symlink:
 	for FILE in $(shell cd doc ; ls) ; do \
 		ln -fs "$(PWD)/doc/$$FILE" "${DESTDIR}${DOCDIR}" ; done
 
-install love: install-doc install-man install-www install-pkgconfig
+install love: install-doc install-man install-pkgconfig
 	cd librz && ${MAKE} install
 	cd binrz && ${MAKE} install
 	cd shlr && ${MAKE} install
@@ -236,19 +234,6 @@ install love: install-doc install-man install-www install-pkgconfig
 	mkdir -p "${DESTDIR}${DATADIR}/rizin/${VERSION}/"
 	$(SHELL) sys/ldconfig.sh
 	$(SHELL) ./configure-plugins --rm-static $(DESTDIR)$(LIBDIR)/rizin/last/
-
-install-www:
-	rm -rf "${DESTDIR}${WWWROOT}"
-	rm -rf "${DESTDIR}${LIBDIR}/rizin/${VERSION}/www" # old dir
-	mkdir -p "${DESTDIR}${WWWROOT}"
-	cp -rf shlr/www/* "${DESTDIR}${WWWROOT}"
-
-symstall-www:
-	rm -rf "${DESTDIR}${WWWROOT}"
-	rm -rf "${DESTDIR}${LIBDIR}/rizin/${VERSION}/www" # old dir
-	mkdir -p "${DESTDIR}${WWWROOT}"
-	for FILE in $(shell cd shlr/www ; ls) ; do \
-		ln -fs "$(PWD)/shlr/www/$$FILE" "$(DESTDIR)$(WWWROOT)" ; done
 
 install-pkgconfig pkgconfig-install:
 	@${INSTALL_DIR} "${DESTDIR}${LIBDIR}/pkgconfig"
@@ -268,7 +253,7 @@ symstall-sdb:
 		${MAKE} install-symlink ); \
 	done
 
-symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink symstall-www symstall-sdb
+symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink symstall-sdb
 	cd librz && ${MAKE} install-symlink
 	cd binrz && ${MAKE} install-symlink
 	cd shlr && ${MAKE} install-symlink

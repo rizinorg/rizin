@@ -6,6 +6,7 @@
 #define DB analysis->sdb_cc
 
 RZ_API void rz_analysis_cc_del(RzAnalysis *analysis, const char *name) {
+	rz_return_if_fail (analysis && name);
 	size_t i;
 	RzStrBuf sb;
 	sdb_unset (DB, rz_strbuf_initf (&sb, "%s", name), 0);
@@ -20,6 +21,7 @@ RZ_API void rz_analysis_cc_del(RzAnalysis *analysis, const char *name) {
 }
 
 RZ_API bool rz_analysis_cc_set(RzAnalysis *analysis, const char *expr) {
+	rz_return_val_if_fail (analysis && expr, false);
 	char *e = strdup (expr);
 	char *p = strchr (e, '(');
 	if (!p) {
@@ -69,6 +71,7 @@ RZ_API bool rz_analysis_cc_set(RzAnalysis *analysis, const char *expr) {
 }
 
 RZ_API char *rz_analysis_cc_get(RzAnalysis *analysis, const char *name) {
+	rz_return_val_if_fail (analysis && name, NULL);
 	int i;
 	// get cc by name and print the expr
 	if (rz_str_cmp (sdb_const_get (DB, name, 0), "cc", -1)) {
@@ -138,6 +141,7 @@ RZ_API const char *rz_analysis_cc_self(RzAnalysis *analysis, const char *convent
 }
 
 RZ_API void rz_analysis_cc_set_self(RzAnalysis *analysis, const char *convention, const char *self) {
+	rz_return_if_fail (analysis && convention && self);
 	if (!rz_analysis_cc_exist (analysis, convention)) {
 		return;
 	}
@@ -194,6 +198,21 @@ RZ_API const char *rz_analysis_cc_ret(RzAnalysis *analysis, const char *conventi
 RZ_API const char *rz_analysis_cc_default(RzAnalysis *analysis) {
 	rz_return_val_if_fail (analysis, NULL);
 	return sdb_const_get (DB, "default.cc", 0);
+}
+
+RZ_API void rz_analysis_set_cc_default(RzAnalysis *analysis, const char *cc) {
+	rz_return_if_fail (analysis && cc);
+	sdb_set (DB, "default.cc", cc, 0);
+}
+
+RZ_API const char *rz_analysis_syscc_default(RzAnalysis *analysis) {
+	rz_return_val_if_fail (analysis, NULL);
+	return sdb_const_get (DB, "default.syscc", 0);
+}
+
+RZ_API void rz_analysis_set_syscc_default(RzAnalysis *analysis, const char *cc) {
+	rz_return_if_fail (analysis && cc);
+	sdb_set (DB, "default.syscc", cc, 0);
 }
 
 RZ_API const char *rz_analysis_cc_func(RzAnalysis *analysis, const char *func_name) {
