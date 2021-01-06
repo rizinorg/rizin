@@ -17,20 +17,20 @@ After Mac OS X 10.6, binaries that need permissions to debug require to be signe
 1. Select the following menu item:
 1. Keychain Access->Certificate Assistant->Create a Certificate...
 1. Set the following settings
-1. Name = org.rizin.rizin
+1. Name = org.rizinorg.rizin
 1. Identity Type = Self Signed Root
 1. Certificate Type = Code Signing
 1. Click Create
 1. Click Continue
 1. Click Done
 1. Click on the "My Certificates"
-1. Double click on your new org.rizin.rizin certificate
+1. Double click on your new org.rizinorg.rizin certificate
 1. Turn down the "Trust" disclosure triangle, scroll to the "Code Signing" trust pulldown menu and select "Always Trust" and authenticate as needed using your username and password.
-1. Drag the new "org.rizin.rizin" code signing certificate (not the public or private keys of the same name) from the "login" keychain to the "System" keychain in the Keychains pane on the left hand side of the main Keychain Access window. This will move this certificate to the "System" keychain. You'll have to authorize a few more times, set it to be "Always trusted" when asked.
-1. In the Keychain Access GUI, click and drag "org.rizin.rizin" in the "System" keychain onto the desktop. The drag will create a "~/Desktop/org.rizin.rizin.cer" file used in the next step.
+1. Drag the new "org.rizinorg.rizin" code signing certificate (not the public or private keys of the same name) from the "login" keychain to the "System" keychain in the Keychains pane on the left hand side of the main Keychain Access window. This will move this certificate to the "System" keychain. You'll have to authorize a few more times, set it to be "Always trusted" when asked.
+1. In the Keychain Access GUI, click and drag "org.rizinorg.rizin" in the "System" keychain onto the desktop. The drag will create a "~/Desktop/org.rizinorg.rizin.cer" file used in the next step.
 1. Switch to Terminal, and run the following:
-1. $ sudo security add-trust -d -r trustRoot -p basic -p codeSign -k /Library/Keychains/System.keychain ~/Desktop/org.rizin.rizin.cer
-1. $ rm -f ~/Desktop/org.rizin.rizin.cer
+1. $ sudo security add-trust -d -r trustRoot -p basic -p codeSign -k /Library/Keychains/System.keychain ~/Desktop/org.rizinorg.rizin.cer
+1. $ rm -f ~/Desktop/org.rizinorg.rizin.cer
 1. Quit Keychain Access
 1. Reboot
 1. Run sys/install.sh (or follow the next steps if you want to install and sign rizin manually)
@@ -74,7 +74,7 @@ To create a macOS .pkg just run the following command:
 Uninstall
 ---------
 
-To uninstall the .pkg downloaded from the rizin website or the one you have generated with `sys/osx-pkg.sh`, run the following as root:
+To uninstall the .pkg downloaded from the rizin website or the one you have generated with `dist/osx/build_osx_package.sh`, run the following as root:
 
-	$ pkgutil --only-files --files org.rizin.rizin | sed 's/^/\//' | tr '\n' '\0' | xargs -o -n 1 -0 rm -i
+	$ pkgutil --only-files --files org.rizinorg.rizin | sed 's/^/\//' | tr '\n' '\0' | xargs -o -n 1 -0 rm -i
 

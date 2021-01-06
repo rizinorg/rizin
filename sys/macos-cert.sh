@@ -2,14 +2,14 @@
 # Credits to https://github.com/derekparker/delve/blob/master/scripts/gencert.sh
 
 # Check if the certificate is already present in the system keychain
-security find-certificate -Z -p -c "org.rizin.rizin" /Library/Keychains/System.keychain > /dev/null 2>&1
+security find-certificate -Z -p -c "org.rizinorg.rizin" /Library/Keychains/System.keychain > /dev/null 2>&1
 EXIT_CODE=$?
 if [ $EXIT_CODE -eq 0 ]; then
 	# Certificate has already been generated and installed
 	exit 0
 fi
 
-CERT="org.rizin.rizin"
+CERT="org.rizinorg.rizin"
 
 # Create the certificate template
 cat <<EOF >$CERT.tmpl
@@ -20,7 +20,7 @@ default_md         = sha512      # MD to use
 prompt             = no          # Prompt for DN
 distinguished_name = codesign_dn # DN template
 [ codesign_dn ]
-commonName         = "org.rizin.rizin"
+commonName         = "org.rizinorg.rizin"
 [ codesign_reqext ]
 keyUsage           = critical,digitalSignature
 extendedKeyUsage   = critical,codeSigning

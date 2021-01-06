@@ -733,7 +733,7 @@ summary({
   'System magic library': use_syslib_magic,
   'System xxhash library': use_sys_xxhash,
   'System openssl library': use_sys_openssl,
-  'System libuv library': libuv_dep.type_name() != 'internal' and libuv_dep.found(),
+  'System libuv library': use_libuv,
   'System capstone library': capstone_dep.type_name() != 'internal',
   'System tree-sitter library': tree_sitter_dep.type_name() != 'internal',
   'System lz4 library': lz4_dep.type_name() != 'internal',

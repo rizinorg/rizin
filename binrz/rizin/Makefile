@@ -7,8 +7,8 @@ BINDEPS+=rz_magic rz_socket rz_flag rz_egg rz_crypto rz_util
 include ../../config-user.mk
 
 # Apple Sign #
-CERTID?=org.rizin.rizin
-BUNDLE=org.rizin.rizin
+CERTID?=org.rizinorg.rizin
+BUNDLE=org.rizinorg.rizin
 MACSDK=macosx10.10
 ENTITL=rizin.xcent
 #ENTITL=rizin_ios.xml
@@ -34,7 +34,7 @@ FOOD_LIBS=$(addprefix ../../librz/,$(subst rz_,,$(BINDEPS)))
 SIGN_LIBS=$(addsuffix /librz_*.dylib,$(FOOD_LIBS))
 
 include ../rules.mk
-#IOS_CERTID?=org.rizin.rizin
+#IOS_CERTID?=org.rizinorg.rizin
 
 ios:
 	$(MAKE) -C ../../librz/io

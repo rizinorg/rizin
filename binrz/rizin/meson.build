@@ -66,6 +66,6 @@ if host_machine.system() == 'darwin'
 
   meson.add_install_script(meson.current_source_dir() / 'macos_sign.sh',
     entitlements,
-    get_option('prefix') / get_option('bindir') / rizin_name,
+    get_option('bindir') / rizin_name,
   )
 endif

@@ -7,10 +7,10 @@ SRC="$2"
 if [ "$#" -ne 2 ]; then
         DST="$3"
 
-        rm -f "$DST"
-        cp -a "$SRC" "$DST"
+        rm -f "${DST}"
+        cp -a "${SRC}" "${DST}"
 else
-        DST="$SRC"
+        DST="${MESON_INSTALL_DESTDIR_PREFIX}/${SRC}"
 fi
 
-codesign --entitlements "$ENTITLEMENT" --force -s - "$DST"
+codesign --entitlements "${ENTITLEMENT}" --force -s - "${DST}"

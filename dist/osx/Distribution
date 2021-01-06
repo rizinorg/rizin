@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <installer-gui-script minSpecVersion="2">
-    <title>Radare</title>
+    <title>Rizin</title>
     <license file="COPYING.LESSER" mime-type="text/plain"/>
     <pkg-ref id="org.rizinorg.rizin">
         <bundle-version/>
@@ -16,11 +16,11 @@
             <line choice="org.rizinorg.rizin"/>
         </line>
     </choices-outline>
-    <choice id="default" customLocation="usr"/>
+    <choice id="default" customLocation="usr/local"/>
     <choice id="org.rizinorg.rizin" visible="false">
         <pkg-ref id="org.rizinorg.rizin"/>
     </choice>
-    <pkg-ref id="org.rizinorg.rizin" version="0" onConclusion="none" installKBytes="51182">#rizin.pkg</pkg-ref>
+    <pkg-ref id="org.rizinorg.rizin" version="0">rizin.pkg</pkg-ref>
     <welcome file="welcome.rtf" mime-type="text/enriched"/>
-    <background file="rizin-logo.png" mime-type="image/png" alignment="bottomleft"/>
+    <background file="rizin-logo.png" mime-type="image/png" alignment="center"/>
 </installer-gui-script>
