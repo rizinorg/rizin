@@ -4,11 +4,10 @@
 
 RZ_API ut64 rz_debug_arg_get (RzDebug *dbg, const char *cc, int num) {
 	rz_return_val_if_fail (dbg, UT64_MAX);
-	if (!cc) {
-		cc = rz_analysis_syscc_default (dbg->analysis);
-	}
 	if (dbg->analysis) {
-		const char *cc = rz_analysis_syscc_default (dbg->analysis);
+		if (!cc) {
+			cc = rz_analysis_syscc_default (dbg->analysis);
+		}
 		if (!RZ_STR_ISEMPTY (cc)) {
 			if (!strcmp (cc, "stdcall") || !strcmp (cc, "pascal")) {
 				ut64 sp = rz_debug_reg_get (dbg, "SP");
