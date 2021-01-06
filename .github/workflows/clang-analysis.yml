@@ -7,7 +7,7 @@ on:
     - 'stable'
   pull_request:
     branches:
-    - dev
+    - 'dev'
     - 'release-*'
 
 jobs:
@@ -40,15 +40,21 @@ jobs:
     - name: Install git
       run: sudo apt --assume-yes install git
 
+    - name: Install npm
+      run: sudo apt --assume-yes install npm
+
+    - name: Install microsoft/sarif-multitool
+      run: npm install @microsoft/sarif-multitool
+
     - name: Analysis
       run: |
         export PATH=${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
-        scan-build-11 -sarif -o reports "meson build && ninja -C build"
+        scan-build-11 -sarif -o reports "meson build && meson compile -C build"
 
-    - name: Move reports
-      run: mv reports/*/*.sarif reports/
+    - name: Merge all files
+      run: npx @microsoft/sarif-multitool merge reports/**/*.sarif
 
     - name: Upload SARIF file
       uses: github/codeql-action/upload-sarif@v1
       with:
-        sarif_file: reports
+        sarif_file: merged.sarif
