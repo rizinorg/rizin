@@ -136,7 +136,7 @@ if cc.has_argument('--std=gnu99')
   add_project_arguments('--std=gnu99', language: ['c', 'cpp'])
 elif cc.has_argument('--std=c99')
   add_project_arguments('--std=c99', language: ['c', 'cpp'])
-fi
+endif
 
 if cc.get_id() == 'clang-cl'
   add_project_arguments('-fcommon', language: 'c')
