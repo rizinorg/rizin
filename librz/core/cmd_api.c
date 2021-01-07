@@ -509,7 +509,7 @@ static RzOutputMode cd_suffix2mode(RzCmdDesc *cd, const char *cmdid) {
  * argument "pd 10" and pass that to <cmdid> handler.
  */
 static void args_preprocessing(RzCmdDesc *cd, RzCmdParsedArgs *args) {
-	const RzCmdDescArg *arg = cd->help->args;
+	const RzCmdDescArg *arg;
 	size_t i, j;
 	for (arg = cd->help->args, i = 1; arg && arg->name && i < args->argc - 1; arg++, i++) {
 		char *tmp;
