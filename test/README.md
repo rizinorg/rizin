@@ -115,13 +115,43 @@ Example commands tests for the other `db/` folders:
 	EOF
 	RUN
 
+It is also possible to match specific parts of the output in `EXPECT` and `EXPECT_ERR` using
+regex(with `REGEXP_OUT` and `REGEXP_ERR` respectively) in case some of the test's output is dynamic:
+
+	NAME=bp rebase
+	FILE=bins/elf/analysis/pie
+	ARGS=-d
+	CMDS=<<EOF
+	aa
+	db main
+	db~main
+	doc
+	db~main
+	EOF
+	REGEXP_OUT=([a-zA-Z="]+\s+)
+	EXPECT=<<EOF
+	x sw break enabled valid cmd="" cond="" name="main" pie"
+	x sw break enabled valid cmd="" cond="" name="main" pie"
+	EOF
+	RUN
+
+Without the regex that filtered out the non-deterministic file path and addresses, the expected output would have been the following:
+
+```
+0x566495c5 - 0x566495c6 1 --x sw break enabled valid cmd="" cond="" name="main" module="/home/user/rizin/test/bins/elf/analysis/pie"
+0x000005c5 - 0x000005c6 1 --x sw break enabled valid cmd="" cond="" name="main" module="/home/user/rizin/test/bins/elf/analysis/pie"
+```
+
 * **NAME** is the name of the test, it must be unique
 * **FILE** is the path of the file used for the test
 * **ARGS** (optional) are the command line argument passed to rizin (e.g -b 16)
 * **CMDS** are the commands to be executed by the test
-* **EXPECT** is the expected output of the test
+* **EXPECT** is the expected output of the test from stdout
+* **EXPECT_ERR** (optional) is the expected output of the test from stderr. Can be specified in addition or instead of `EXPECT`
 * **BROKEN** (optional) is 1 if the tests is expected to be fail, 0 or unspecified otherwise
 * **TIMEOUT** (optional) is the number of seconds to wait before considering the test timeout
+* **REGEXP_OUT** (optional) apply given regex on stdout before comparing the ouput to `EXPECT` (e.g. `REGEXP_OUT=([a-zA-Z]+)`)
+* **REGEXP_ERR** (optional) apply given regex on stderr before comparing the ouput to `EXPECT_ERR`
 
 You must end the test by adding RUN keyword
 
