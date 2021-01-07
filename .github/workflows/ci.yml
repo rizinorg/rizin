@@ -168,7 +168,7 @@ jobs:
         if [ "$ASAN" == "true" ]; then
           export CFLAGS="-DASAN=1 ${CFLAGS}"
         fi
-        meson --prefix=${HOME} ${{ matrix.meson_options }} build && ninja -C build
+        meson --prefix=${HOME} ${{ matrix.meson_options }} build && ninja -C build -v
       env:
         ASAN: ${{ matrix.asan }}
         CC: ${{ matrix.compiler }}
@@ -188,7 +188,7 @@ jobs:
         export PATH=${HOME}/bin:${HOME}/Library/Python/3.8/bin:${HOME}/Library/Python/3.9/bin:${HOME}/.local/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
-        ninja -C build install
+        ninja -C build install -v
     - name: Run unit tests (meson)
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
@@ -253,11 +253,11 @@ jobs:
         name: test-results-${{ matrix.name }}
         path: test/results.json
 
-  build-centos7:
-    name: Build on CentOS 7
+  build-centos6:
+    name: Build on CentOS 6
     runs-on: ubuntu-latest
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'centos') || contains(github.ref, 'release-') || github.event_name == 'schedule'
-    container: centos:7
+    container: centos:6
     steps:
     - name: Install tools
       run: yum install -y patch unzip git gcc make
@@ -697,7 +697,7 @@ jobs:
     if: github.event_name == 'push' && contains(github.ref, 'release-')
     needs: [
       build-and-test,
-      build-centos7,
+      build-centos6,
       build-debian,
       build-static,
       test-deb,
