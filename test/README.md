@@ -127,7 +127,7 @@ db~main
 doc
 db~main
 EOF
-REGEXP_OUT=([a-zA-Z="]+\s+)
+REGEXP_FILTER_OUT=([a-zA-Z="]+\s+)
 EXPECT=<<EOF
 x sw break enabled valid cmd="" cond="" name="main" pie"
 x sw break enabled valid cmd="" cond="" name="main" pie"
@@ -149,8 +149,8 @@ Without the regex that filtered out the non-deterministic file path and addresse
 * **EXPECT_ERR** (optional) is the expected output of the test from stderr. Can be specified in addition or instead of `EXPECT`
 * **BROKEN** (optional) is 1 if the tests is expected to be fail, 0 or unspecified otherwise
 * **TIMEOUT** (optional) is the number of seconds to wait before considering the test timeout
-* **REGEXP_OUT** (optional) apply given regex on stdout before comparing the ouput to `EXPECT` (e.g. `REGEXP_OUT=([a-zA-Z]+)`)
-* **REGEXP_ERR** (optional) apply given regex on stderr before comparing the ouput to `EXPECT_ERR`
+* **REGEXP_FILTER_OUT** (optional) apply given regex on stdout before comparing the ouput to `EXPECT` (e.g. `REGEXP_FILTER_OUT=([a-zA-Z]+)`)
+* **REGEXP_FILTER_ERR** (optional) apply given regex on stderr before comparing the ouput to `EXPECT_ERR`
 
 You must end the test by adding RUN keyword
 
