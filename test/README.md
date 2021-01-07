@@ -114,8 +114,8 @@ EXPECT=<<EOF
 EOF
 RUN
 ```
-It is also possible to match specific parts of the output in `EXPECT` and `EXPECT_ERR` using
-regex (with `REGEXP_OUT` and `REGEXP_ERR` respectively) in case some of the test's output is dynamic:
+It is also possible to match specific parts of the output in `EXPECT` and `EXPECT_ERR` using regex (with
+`REGEXP_FILTER_OUT` and `REGEXP_FILTER_ERR` respectively) in case some of the test's output is dynamic:
 ```sh
 NAME=bp rebase
 FILE=bins/elf/analysis/pie
