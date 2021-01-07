@@ -45,52 +45,51 @@ to build Rizin).
 # Failure Levels
 
 A test can have one of the following results:
-* success: The test passed, and that was expected.
-* fixed: The test passed, but failure was expeced.
-* broken: Failure was expected, and happened.
-* failed: The test failed unexpectedly. This is a regression.
+* **success**: The test passed, and that was expected.
+* **fixed**: The test passed, but failure was expected.
+* **broken**: Failure was expected, and happened.
+* **failed**: The test failed unexpectedly. This is a regression.
 
 # Writing Assembly tests
 
-Example tests for `db/asm/*`:
+Tests for the assembly and disassembly (in `db/asm/*`) have a different format:
+General format:
+```
+type "assembly" opcode [offset]
+```
+where type can be any of:
+* **a** meaning "assemble"
+* **d** meaning "disassemble"
+* **B** meaning "broken"
+* **E** stands for cfg.bigendian=true
 
-	General format:
-	type "assembly" opcode [offset]
+#### offset
 
-		type:
-			* a stands for assemble
-			* d stands for disassemble
-			* B stands for broken
-			* E stands for cfg.bigendian=true
+Some architectures are going to assemble an instruction differently depending
+on the offset it's written to. Optional.
 
-		offset:
-			Some architectures are going to assemble an instruction differently depending
-			on the offset it's written to. Optional.
+Examples:
+```
+a "ret" c3
+d "ret" c3
+a "nop" 90 # Assembly is correct
+dB "nopppp" 90 # Disassembly test is broken
+```
 
-	Examples:
-	a "ret" c3
-	d "ret" c3
-	a "nop" 90 # Assembly is correct
-	dB "nopppp" 90 # Disassembly test is broken
+You can merge lines:
+```
+adB "nop" 90
+```
+acts the same as
+```
+aB "nop" 90
+dB "nop" 90
+```
+The filename is very important. It is used to tell rizin which architecture to use: `arch[[_cpu]_bits]`.
 
-	You can merge lines:
-
-	adB "nop" 90
-
-	acts the same as
-
-	aB "nop" 90
-	dB "nop" 90
-
-        The filename is very important. It is used to tell rizin which architecture to use.
-
-        Format:
-        arch[[_cpu]_bits]
-
-	Example:
-	x86_32 means -a x86 -b 32
-        arm_v7_64 means what it means
-
+Examples:
+- `x86_32` means `-a x86 -b 32`
+- `arm_v7_64` means `-a arm -b 64`
 
 # Writing JSON tests
 
