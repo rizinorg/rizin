@@ -116,7 +116,7 @@ Example commands tests for the other `db/` folders:
 	RUN
 
 It is also possible to match specific parts of the output in `EXPECT` and `EXPECT_ERR` using
-regex(with `REGEXP_OUT` and `REGEXP_ERR` respectively) in case some of the test's output is dynamic:
+regex (with `REGEXP_OUT` and `REGEXP_ERR` respectively) in case some of the test's output is dynamic:
 
 	NAME=bp rebase
 	FILE=bins/elf/analysis/pie
