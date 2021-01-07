@@ -213,6 +213,7 @@ RZ_API void rz_analysis_block_set_size(RzAnalysisBlock *block, ut64 size) {
 RZ_API bool rz_analysis_block_relocate(RzAnalysisBlock *block, ut64 addr, ut64 size) {
 	if (block->addr == addr) {
 		rz_analysis_block_set_size (block, size);
+		rz_analysis_block_update_hash (block);
 		return true;
 	}
 	if (rz_analysis_get_block_at (block->analysis, addr)) {
@@ -765,6 +766,7 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 
 	// Chop the block. Resize and remove all destination addrs
 	rz_analysis_block_set_size (block, addr - block->addr);
+	rz_analysis_block_update_hash (block);
 	block->jump = UT64_MAX;
 	block->fail = UT64_MAX;
 	rz_analysis_switch_op_free (block->switch_op);
