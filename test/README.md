@@ -98,42 +98,42 @@ The JSON tests `db/json` are executed on 3 standard files (1 ELF, 1 MachO, 1 PE)
 # Commands tests
 
 Example commands tests for the other `db/` folders:
-
-	NAME=test_db
-	FILE=bins/elf/ls
-	CMDS=<<EOF
-	pd 4
-	EOF
-	EXPECT=<<EOF
-            ;-- main:
-            ;-- entry0:
-            ;-- func.100001174:
-            0x100001174      55             Push rbp
-            0x100001175      4889e5         Mov  rbp, rsp
-            0x100001178      4157           Push r15
-	EOF
-	RUN
-
+```sh
+NAME=test_db
+FILE=bins/elf/ls
+CMDS=<<EOF
+pd 4
+EOF
+EXPECT=<<EOF
+        ;-- main:
+        ;-- entry0:
+        ;-- func.100001174:
+        0x100001174      55             Push rbp
+        0x100001175      4889e5         Mov  rbp, rsp
+        0x100001178      4157           Push r15
+EOF
+RUN
+```
 It is also possible to match specific parts of the output in `EXPECT` and `EXPECT_ERR` using
 regex (with `REGEXP_OUT` and `REGEXP_ERR` respectively) in case some of the test's output is dynamic:
-
-	NAME=bp rebase
-	FILE=bins/elf/analysis/pie
-	ARGS=-d
-	CMDS=<<EOF
-	aa
-	db main
-	db~main
-	doc
-	db~main
-	EOF
-	REGEXP_OUT=([a-zA-Z="]+\s+)
-	EXPECT=<<EOF
-	x sw break enabled valid cmd="" cond="" name="main" pie"
-	x sw break enabled valid cmd="" cond="" name="main" pie"
-	EOF
-	RUN
-
+```sh
+NAME=bp rebase
+FILE=bins/elf/analysis/pie
+ARGS=-d
+CMDS=<<EOF
+aa
+db main
+db~main
+doc
+db~main
+EOF
+REGEXP_OUT=([a-zA-Z="]+\s+)
+EXPECT=<<EOF
+x sw break enabled valid cmd="" cond="" name="main" pie"
+x sw break enabled valid cmd="" cond="" name="main" pie"
+EOF
+RUN
+```
 Without the regex that filtered out the non-deterministic file path and addresses, the expected output would have been the following:
 
 ```
