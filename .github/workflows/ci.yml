@@ -253,11 +253,11 @@ jobs:
         name: test-results-${{ matrix.name }}
         path: test/results.json
 
-  build-centos6:
-    name: Build on CentOS 6
+  build-centos7:
+    name: Build on CentOS 7
     runs-on: ubuntu-latest
     if: contains(github.head_ref, 'centos') || contains(github.ref, 'release-') || github.event_name == 'schedule'
-    container: centos:6
+    container: centos:7
     steps:
     - name: Install tools
       run: yum install -y patch unzip git gcc make
@@ -725,7 +725,7 @@ jobs:
     if: github.event_name == 'push' && contains(github.ref, 'release-')
     needs: [
       build-and-test,
-      build-centos6,
+      build-centos7,
       build-debian,
       build-static,
       test-deb,
