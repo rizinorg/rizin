@@ -638,7 +638,7 @@ typedef struct rz_cons_t {
 #define Color_BBLUE      "\x1b[94m"
 #define Color_BBGBLUE    "\x1b[104m"
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || (defined(__GNUC__) && __GNUC__ < 5)
 #define RZCOLOR(a, r, g, b, bgr, bgg, bgb, id16) {0, a, r, g, b, bgr, bgg, bgb, id16}
 #else
 #define RZCOLOR(a, r, g, b, bgr, bgg, bgb, id16) (RzColor) {0, a, r, g, b, bgr, bgg, bgb, id16}
