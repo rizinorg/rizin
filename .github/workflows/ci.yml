@@ -217,6 +217,9 @@ jobs:
       env:
         ASAN: ${{ matrix.asan }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
+    - name: Setup tmate session
+      if: matrix.os == 'macos-latest' && matrix.enabled
+      uses: mxschmitt/action-tmate@v3
     - name: Run tests
       if: matrix.run_tests && matrix.enabled
       run: |
