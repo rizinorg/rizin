@@ -201,12 +201,11 @@ RZ_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 						int op = 0, rs = 0, rt = 0, rd = 0, sa = 0, fn = 0;
 						bool invalid = false;
 						switch (ops[i].args) {
-						case 3: {
-								rs = getreg (w2);
-								rt = getreg (w3);
-								rd = getreg (w1);
-								fn = ops[i].n;
-							}
+						case 3:
+							rs = getreg (w2);
+							rt = getreg (w3);
+							rd = getreg (w1);
+							fn = ops[i].n;
 							break;
 						case -3:
 							if (ops[i].n > -1) {
@@ -221,31 +220,26 @@ RZ_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 								fn = (-1 * ops[i].n);
 							}
 							break;
-						case 2: {
-								rs = getreg (w1);
-								rt = getreg (w2);
-								fn = ops[i].n;
-							}
+						case 2:
+							rs = getreg (w1);
+							rt = getreg (w2);
+							fn = ops[i].n;
 							break;
-						case 1: {
-								rs = getreg (w1);
-								fn = ops[i].n;
-								break;
-							}
-						case -2: {
-								rs = getreg (w2);
-								rd = getreg (w1);
-								fn = ops[i].n;
-							}
+						case 1:
+							rs = getreg (w1);
+							fn = ops[i].n;
 							break;
-						case -1: {
-								rd = getreg (w1);
-								fn = ops[i].n;
-							}
+						case -2:
+							rs = getreg (w2);
+							rd = getreg (w1);
+							fn = ops[i].n;
 							break;
-						case 0: {
-								fn = ops[i].n;
-							}
+						case -1:
+							rd = getreg (w1);
+							fn = ops[i].n;
+							break;
+						case 0:
+							fn = ops[i].n;
 							break;
 						default:
 							invalid = true;
@@ -262,18 +256,16 @@ RZ_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 						bool invalid = false;
 						int op = 0, rs = 0, rt = 0, imm = 0, is_branch = ops[i].type == 'B';
 						switch (ops[i].args) {
-						case 2: {
-								op = ops[i].n;
-								rt = getreg (w1);
-								imm = getreg (w2);
-							}
+						case 2:
+							op = ops[i].n;
+							rt = getreg (w1);
+							imm = getreg (w2);
 							break;
-						case 3: {
-								op = ops[i].n;
-								rs = getreg (w2);
-								rt = getreg (w1);
-								imm = getreg (w3);
-							}
+						case 3:
+							op = ops[i].n;
+							rs = getreg (w2);
+							rt = getreg (w1);
+							imm = getreg (w3);
 							break;
 						case -2:
 							if (ops[i].n > 0) {
