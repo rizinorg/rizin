@@ -292,6 +292,7 @@ jobs:
             container:
                 - debian:wheezy
                 - debian:jessie
+                - debian:stretch
 
     runs-on: ubuntu-latest
     container: ${{ matrix.container }}
@@ -300,7 +301,6 @@ jobs:
     - name: Fix containers (Wheezy)
       if: matrix.container == 'debian:wheezy'
       run: |
-          sed -i '/deb http:\/\/deb.debian.org\/debian wheezy-updates main/d' /etc/apt/sources.list
           echo "deb http://archive.debian.org/debian wheezy main" > /etc/apt/sources.list
           echo "deb http://archive.debian.org/debian-security wheezy/updates main" >> /etc/apt/sources.list
           echo "Acquire::Check-Valid-Until no;" > /etc/apt/apt.conf.d/99no-check-valid-until
