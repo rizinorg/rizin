@@ -239,8 +239,10 @@ bool test_line_multicompletion(void) {
 	// Make test reproducible everywhere
 	cons->force_columns = 80;
 	cons->force_rows = 23;
+	rz_line_free ();
 	RzLine *line = rz_line_new ();
 	line->ns_completion.run = multicompletion_run;
+	cons->line = line;
 
 	strcpy (line->buffer.data, "pd");
 	line->buffer.length = strlen ("pd");
@@ -274,7 +276,6 @@ bool test_line_multicompletion(void) {
 	mu_assert_notnull (buf, "buf is not null");
 	mu_assert_streq (buf, exp_buf, "options are shown correctly");
 
-	rz_line_free ();
 	rz_cons_free ();
 	mu_end;
 }
