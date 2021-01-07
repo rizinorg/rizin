@@ -1239,20 +1239,27 @@ static int var_cmd(RzCore *core, const char *str) {
 		var_help (core, *str);
 		return res;
 	}
-	if (str[0] == 'j') {
-		// "afvj"
-		rz_cons_printf ("{\"sp\":");
-		rz_core_cmd0 (core, "afvsj");
-		rz_cons_printf (",\"bp\":");
-		rz_core_cmd0 (core, "afvbj");
-		rz_cons_printf (",\"reg\":");
-		rz_core_cmd0 (core, "afvrj");
-		rz_cons_printf ("}\n");
+	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, -1);
+	PJ *pj = NULL;
+	if (str[0] == 'j') { // "afvj"
+		pj = rz_core_pj_new (core);
+		if (!pj) {
+			return false;
+		}
+		pj_o (pj);
+		pj_k (pj, "sp");
+		rz_analysis_var_list_show (core->analysis, fcn, 's', 'j', pj);
+		pj_k (pj, "bp");
+		rz_analysis_var_list_show (core->analysis, fcn, 'b', 'j', pj);
+		pj_k (pj, "reg");
+		rz_analysis_var_list_show (core->analysis, fcn, 'r', 'j', pj);
+		pj_end (pj);
+		rz_cons_println (pj_string (pj));
+		pj_free (pj);
 		return true;
 	}
 	char *p = strdup (str);
 	char *ostr = p;
-	RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, -1);
 	/* Variable access CFvs = set fun var */
 	switch (str[0]) {
 	case '-': // "afv-"
@@ -1276,16 +1283,17 @@ static int var_cmd(RzCore *core, const char *str) {
 			if (name) {
 				name = rz_str_trim_head_ro (name);
 			}
-			PJ *pj = NULL;
 			if (str[1] == 'j') {
-				pj = pj_new ();
+				pj = rz_core_pj_new (core);
+				if (!pj) {
+					return false;
+				}
 			}
 			list_vars (core, fcn, pj, str[0], name);
 			if (str[1] == 'j') {
 				pj_end (pj);
-				char *j = pj_drain (pj);
-				rz_cons_printf ("%s\n", j);
-				free (j);
+				rz_cons_println (pj_string (pj));
+				pj_free (pj);
 			}
 			return true;
 		} else {
@@ -1420,15 +1428,14 @@ static int var_cmd(RzCore *core, const char *str) {
 	case '*': // "afv[bsr]*"
 		rz_analysis_var_list_show (core->analysis, fcn, type, str[1], NULL);
 		break;
-	case 'j': { // "afv[bsr]j"
-		PJ *pj = pj_new ();
+	case 'j':  // "afv[bsr]j"
+		pj = rz_core_pj_new (core);
 		if (!pj) {
-			return -1;
+			return false;
 		}
 		rz_analysis_var_list_show (core->analysis, fcn, type, str[1], pj);
 		rz_cons_println (pj_string (pj));
 		pj_free (pj);
-	}
 		break;
 	case '.': // "afv[bsr]."
 		rz_analysis_var_list_show (core->analysis, fcn, core->offset, 0, NULL);
@@ -1730,7 +1737,7 @@ static void core_analysis_bytes(RzCore *core, const ut8 *buf, int len, int nops,
 	}
 	switch (fmt) {
 	case 'j': {
-		pj = pj_new ();
+		pj = rz_core_pj_new (core);
 		if (!pj) {
 			break;
 		}
@@ -3200,7 +3207,7 @@ static void __core_cmd_analysis_fcn_allstats(RzCore *core, const char *input) {
 		SdbKv *kv;
 		char *names[100];
 		int i;
-		for (i = 0;i<100;i++) {
+		for (i = 0; i < 100; i++) {
 			names[i] = NULL;
 		}
 		ls_foreach (ls, it, kv) {
@@ -3238,7 +3245,7 @@ static void __core_cmd_analysis_fcn_allstats(RzCore *core, const char *input) {
 	}
 	rz_table_query (t, (*input)?input + 1: "");
 	char *ts = isJson? rz_table_tojson(t): rz_table_tostring (t);
-	rz_cons_printf ("%s", ts);
+	rz_cons_printf ("%s%s", ts, isJson ? "\n" : "");
 	free (ts);
 	rz_table_free (t);
 	rz_core_seek (core, oseek, true);
@@ -3321,7 +3328,7 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 		}
 		RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, addr, 0);
 		if (input[2] == 'j') { // afdj
-			PJ *pj = pj_new ();
+			PJ *pj = rz_core_pj_new (core);
 			if (!pj) {
 				return false;
 			}
@@ -3444,7 +3451,7 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 		case 'j': // "afoj"
 			{
 				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
-				PJ *pj = pj_new ();
+				PJ *pj = rz_core_pj_new (core);
 				if (!pj) {
 					return false;
 				}
@@ -3776,47 +3783,50 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 		}
 		case 'r': {	// "afcr"
 			int i;
-			RzStrBuf *json_buf = rz_strbuf_new ("{");
+			PJ *pj;
 			bool json = input[3] == 'j';
+			if (json) {
+				pj = rz_core_pj_new (core);
+				if (!pj) {
+					return false;
+				}
+				pj_o (pj);
+			}
 
 			char *cmd = rz_str_newf ("cc.%s.ret", fcn->cc);
 			const char *regname = sdb_const_get (core->analysis->sdb_cc, cmd, 0);
 			if (regname) {
 				if (json) {
-					rz_strbuf_appendf (json_buf, "\"ret\":\"%s\"", regname);
+					pj_ks (pj, "ret", regname);
 				} else {
 					rz_cons_printf ("%s: %s\n", cmd, regname);
 				}
 			}
 			free (cmd);
-
-			bool isFirst = true;
+			if (json) {
+				pj_ka (pj, "args");
+			}
 			for (i = 0; i < RZ_ANALYSIS_CC_MAXARG; i++) {
 				cmd = rz_str_newf ("cc.%s.arg%d", fcn->cc, i);
 				regname = sdb_const_get (core->analysis->sdb_cc, cmd, 0);
 				if (regname) {
 					if (json) {
-						if (isFirst) {
-							rz_strbuf_appendf (json_buf, ",\"args\":[\"%s\"", regname);
-							isFirst = false;
-						} else {
-							rz_strbuf_appendf (json_buf, ",\"%s\"", regname);
-						}
+						pj_s (pj, regname);
 					} else {
 						rz_cons_printf ("%s: %s\n", cmd, regname);
 					}
 				}
 				free (cmd);
 			}
-			if (!isFirst) {
-				rz_strbuf_append (json_buf, "]");
+			if (json) {
+				pj_end (pj);
 			}
 
 			cmd = rz_str_newf ("cc.%s.self", fcn->cc);
 			regname = sdb_const_get (core->analysis->sdb_cc, cmd, 0);
 			if (regname) {
 				if (json) {
-					rz_strbuf_appendf (json_buf, ",\"self\":\"%s\"", regname);
+					pj_ks (pj, "self", regname);
 				} else {
 					rz_cons_printf ("%s: %s\n", cmd, regname);
 				}
@@ -3826,16 +3836,16 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 			regname = sdb_const_get (core->analysis->sdb_cc, cmd, 0);
 			if (regname) {
 				if (json) {
-					rz_strbuf_appendf (json_buf, ",\"error\":\"%s\"", regname);
+					pj_ks (pj, "error", regname);
 				} else {
 					rz_cons_printf ("%s: %s\n", cmd, regname);
 				}
 			}
 			free (cmd);
-
-			rz_strbuf_append (json_buf, "}");
 			if (json) {
-				rz_cons_printf ("%s\n", rz_strbuf_drain (json_buf));
+				pj_end (pj);
+				rz_cons_println (pj_string (pj));
+				pj_free (pj);
 			}
 		} break;
 		case 'R': { // "afcR"
@@ -4191,9 +4201,15 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 
 // size: 0: bits; -1: any; >0: exact size
 static void __analysis_reg_list(RzCore *core, int type, int bits, char mode) {
+	PJ *pj = NULL;
 	if (mode == 'i') {
 		rz_core_debug_ri (core, core->analysis->reg, 0);
 		return;
+	} else if (mode == 'j') {
+		pj = rz_core_pj_new (core);
+		if (!pj) {
+			return;
+		}
 	}
 	RzReg *hack = core->dbg->reg;
 	const char *use_color;
@@ -4219,26 +4235,14 @@ static void __analysis_reg_list(RzCore *core, int type, int bits, char mode) {
 			if (!strcmp (core->analysis->cur->arch, "arm") && bits == 16) {
 				bits = 32;
 			}
-			/* workaround for 6502 */
-			if (!strcmp (core->analysis->cur->arch, "6502") && bits == 8) {
-				mode2 = mode == 'j' ? 'J' : mode;
+			/* workaround for 6502 and avr*/
+			if ((!strcmp (core->analysis->cur->arch, "6502") && bits == 8)
+				|| (!strcmp (core->analysis->cur->arch, "avr") && bits == 8)) {
 				if (mode == 'j') {
-					rz_cons_printf ("{");
+					mode2 = 'J';
+					pj_o (pj);
 				}
-				rz_debug_reg_list (core->dbg, RZ_REG_TYPE_GPR, 16, mode2, use_color); // XXX detect which one is current usage
-				if (mode == 'j') {
-					rz_cons_printf (",");
-				}
-			}
-			if (!strcmp (core->analysis->cur->arch, "avr") && bits == 8) {
-				mode2 = mode == 'j' ? 'J' : mode;
-				if (mode == 'j') {
-					rz_cons_printf ("{");
-				}
-				rz_debug_reg_list (core->dbg, RZ_REG_TYPE_GPR, 16, mode2, use_color); // XXX detect which one is current usage
-				if (mode == 'j') {
-					rz_cons_printf (",");
-				}
+				rz_debug_reg_list (core->dbg, RZ_REG_TYPE_GPR, 16, pj, mode2, use_color); // XXX detect which one is current usage
 			}
 		}
 	}
@@ -4252,14 +4256,19 @@ static void __analysis_reg_list(RzCore *core, int type, int bits, char mode) {
 				pcbits = reg->size;
 			}
 			if (pcbits) {
-				rz_debug_reg_list (core->dbg, RZ_REG_TYPE_GPR, pcbits, mode, use_color); // XXX detect which one is current usage
+				rz_debug_reg_list (core->dbg, RZ_REG_TYPE_GPR, pcbits, NULL, mode, use_color); // XXX detect which one is current usage
 			}
 		}
 	}
-	rz_debug_reg_list (core->dbg, type, bits, mode2, use_color);
-	if (mode2 == 'J') {
-		rz_cons_print ("}\n");
+	rz_debug_reg_list (core->dbg, type, bits, pj, mode2, use_color);
+	if (mode == 'j') {
+		if (mode2 == 'J') {
+			pj_end (pj);
+		}
+		rz_cons_println (pj_string (pj));
+		pj_free (pj);
 	}
+
 	core->dbg->reg = hack;
 }
 
@@ -4537,11 +4546,11 @@ void cmd_analysis_reg(RzCore *core, const char *str) {
 		}
 		break;
 	case 'd': // "ard"
-		rz_debug_reg_list (core->dbg, RZ_REG_TYPE_GPR, bits, 3, use_color); // XXX detect which one is current usage
+		rz_debug_reg_list (core->dbg, RZ_REG_TYPE_GPR, bits, NULL, 3, use_color); // XXX detect which one is current usage
 		break;
 	case 'o': // "aro"
 		rz_reg_arena_swap (core->dbg->reg, false);
-		rz_debug_reg_list (core->dbg, RZ_REG_TYPE_GPR, bits, 0, use_color); // XXX detect which one is current usage
+		rz_debug_reg_list (core->dbg, RZ_REG_TYPE_GPR, bits, NULL, 0, use_color); // XXX detect which one is current usage
 		rz_reg_arena_swap (core->dbg->reg, false);
 		break;
 	case '=': // "ar="
@@ -4591,7 +4600,7 @@ void cmd_analysis_reg(RzCore *core, const char *str) {
 	case '*': // "ar*"
 	case 'R': // "arR"
 	case 'j': // "arj"
-	case 'i': // "arj"
+	case 'i': // "ari"
 	case '\0': // "ar"
 		__analysis_reg_list (core, type, size, str[0]);
 		break;
@@ -8891,6 +8900,7 @@ RZ_API int rz_core_analysis_refs(RzCore *core, const char *input) {
 	int cfg_debug = rz_config_get_i (core->config, "cfg.debug");
 	ut64 from, to;
 	int rad;
+	PJ *pj = NULL;
 	if (*input == '?') {
 		rz_core_cmd_help (core, help_msg_aar);
 		return 0;
@@ -8899,6 +8909,12 @@ RZ_API int rz_core_analysis_refs(RzCore *core, const char *input) {
 	if (*input == 'j' || *input == '*') {
 		rad = *input;
 		input++;
+		if (rad == 'j') {
+			pj = rz_core_pj_new (core);
+			if (!pj) {
+				return 0;
+			}
+		}
 	} else {
 		rad = 0;
 	}
@@ -8922,9 +8938,8 @@ RZ_API int rz_core_analysis_refs(RzCore *core, const char *input) {
 				return 0;
 			}
 			if (rad == 'j') {
-				rz_cons_printf ("{");
+				pj_o (pj);
 			}
-			int nth = 0;
 			rz_list_foreach (list, iter, map) {
 				from = map->itv.addr;
 				to = rz_itv_end (map->itv);
@@ -8937,17 +8952,19 @@ RZ_API int rz_core_analysis_refs(RzCore *core, const char *input) {
 					eprintf ("Skipping huge range\n");
 				} else {
 					if (rad == 'j') {
-						rz_cons_printf ("%s\"mapid\":\"%d\",\"refs\":{", nth? ",": "", map->id);
+						pj_ki (pj, "mapid", map->id);
+						pj_ko (pj, "refs");
 					}
-					rz_core_analysis_search_xrefs (core, from, to, rad);
+					rz_core_analysis_search_xrefs (core, from, to, pj, rad);
 					if (rad == 'j') {
-						rz_cons_printf ("}");
+						pj_end (pj);
 					}
-					nth++;
 				}
 			}
 			if (rad == 'j') {
-				rz_cons_printf ("}\n");
+				pj_end (pj);
+				rz_cons_println (pj_string (pj));
+				pj_free (pj);
 			}
 			free (ptr);
 			rz_list_free (list);
@@ -8971,11 +8988,13 @@ RZ_API int rz_core_analysis_refs(RzCore *core, const char *input) {
 		return false;
 	}
 	if (rad == 'j') {
-		rz_cons_printf ("{");
+		pj_o (pj);
 	}
-	bool res = rz_core_analysis_search_xrefs (core, from, to, rad);
+	bool res = rz_core_analysis_search_xrefs (core, from, to, pj, rad);
 	if (rad == 'j') {
-		rz_cons_printf ("}\n");
+		pj_end (pj);
+		rz_cons_println (pj_string (pj));
+		pj_free (pj);
 	}
 	return res;
 }
