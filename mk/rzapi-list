@@ -1,6 +1,6 @@
 #!/bin/sh
 if [ -z "$1" ]; then
-  echo "Usage: rapi-list [modname]  # modname can be 'r_asm', 'r_bin' ..."
+  echo "Usage: rzapi-list [modname]  # modname can be 'rz_asm', 'rz_bin' ..."
   exit 1
 fi
 
