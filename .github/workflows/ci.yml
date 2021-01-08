@@ -332,6 +332,11 @@ jobs:
     - name: Install with make
       run: make install
       working-directory: rizin
+    - name: Run unit tests
+      run: cd test && make unit_tests
+      working-directory: rizin
+      env:
+        PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
     - name: Install test dependencies
       run: python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rz-pipe&subdirectory=python'
     - name: Run tests
