@@ -1,17 +1,18 @@
 NAME=basic debug
 FILE=bins/mach0/hello-osx-x86_64
+BROKEN=1
 ARGS=-d
 CMDS=<<EOF
 db main
 dc
 dr rip
 pi 3
-doc
 EOF
 EXPECT=<<EOF
 0x100000f0c
 push rbp
 mov rbp, rsp
 lea rdi, str.Hello_World
+Hello World
 EOF
 RUN
