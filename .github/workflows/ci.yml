@@ -474,7 +474,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: rizin.pkg
-        path: sys/osx-pkg/rizin.pkg
+        path: ./rizin.pkg
 
   build-windows:
     name: Build Windows zip/installer ${{ matrix.name }}
