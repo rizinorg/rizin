@@ -703,7 +703,7 @@ jobs:
     if: github.event_name == 'push' && contains(github.ref, 'release-')
     needs: [
       build-and-test,
-      build-centos6,
+      build-centos7,
       build-debian,
       build-static,
       test-deb,
