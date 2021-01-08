@@ -126,6 +126,7 @@ RZ_API char *rz_sys_get_src_dir_w32(void);
 RZ_API bool rz_sys_cmd_str_full_w32(const char *cmd, const char *input, char **output, int *outlen, char **sterr);
 RZ_API bool rz_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE out, HANDLE err);
 #endif
+RZ_API int rz_sys_open_perms(int rizin_perms);
 RZ_API int rz_sys_open(const char *path, int perm, int mode);
 RZ_API FILE *rz_sys_fopen(const char *path, const char *mode);
 RZ_API int rz_sys_truncate_fd(int fd, ut64 length);
