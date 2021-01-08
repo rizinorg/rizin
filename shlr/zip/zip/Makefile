@@ -3,23 +3,7 @@ include ../../../librz/config.mk
 include ../../../mk/platform.mk
 include ../../../mk/${COMPILER}.mk
 
-ifneq (,$(findstring cygwin,${OSTYPE}))
-CFLAGS+=-D__CYGWIN__=1
-EXT_SO=dll
-SOVER=${EXT_SO}
-LDFLAGS+=-shared
-LDFLAGS_SHARED?=-shared
-else
-ifneq (,$(findstring mingw,${OSTYPE})$(findstring msys,${OSTYPE}))
-CFLAGS+=-DMINGW32=1
-EXT_SO=dll
-SOVER=${EXT_SO}
-LDFLAGS+=-shared
-LDFLAGS_SHARED?=-shared
-else
 CFLAGS+=-fPIC
-endif
-endif
 ifeq (${OSTYPE},windows)
 EXT_SO=dll
 CFLAGS+=-D_WIN32=1

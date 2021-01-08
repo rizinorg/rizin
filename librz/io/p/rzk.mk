@@ -2,7 +2,7 @@ OBJ_RZK = io_rzk.o
 ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux android))
 OBJ_RZK += io_rzk_linux.o
 endif
-ifeq (${OSTYPE},$(filter $(OSTYPE),windows mingw32 mingw64 cygwin))
+ifeq (${OSTYPE},$(filter $(OSTYPE),windows))
 OBJ_RZK += io_rzk_windows.o
 endif
 
