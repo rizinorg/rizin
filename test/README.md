@@ -145,11 +145,11 @@ Without the regex that filtered out the non-deterministic file path and addresse
 * **FILE** is the path of the file used for the test
 * **ARGS** (optional) are the command line argument passed to rizin (e.g -b 16)
 * **CMDS** are the commands to be executed by the test
-* **EXPECT** is the expected output of the test from stdout
+* **EXPECT** is the expected output of the test from stdout. If `REGEXP_FILTER_OUT` is used, `EXPECT` matches only the filtered output.
 * **EXPECT_ERR** (optional) is the expected output of the test from stderr. Can be specified in addition or instead of `EXPECT`
 * **BROKEN** (optional) is 1 if the tests is expected to be fail, 0 or unspecified otherwise
 * **TIMEOUT** (optional) is the number of seconds to wait before considering the test timeout
-* **REGEXP_FILTER_OUT** (optional) apply given regex on stdout before comparing the ouput to `EXPECT` (e.g. `REGEXP_FILTER_OUT=([a-zA-Z]+)`)
+* **REGEXP_FILTER_OUT** (optional) apply given regex on stdout before comparing the ouput to `EXPECT` (e.g. `REGEXP_FILTER_OUT=([a-zA-Z]+)`). This is similar to piping stdout to `grep -E "<regex>"` and then comparing the matched text with `EXPECT`.
 * **REGEXP_FILTER_ERR** (optional) apply given regex on stderr before comparing the ouput to `EXPECT_ERR`
 
 You must end the test by adding RUN keyword
