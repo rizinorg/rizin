@@ -10,7 +10,7 @@ static bool rz_io_ar_plugin_open(RzIO *io, const char *file, bool many) {
 	return !strncmp ("ar://", file, 5) || !strncmp ("lib://", file, 6);
 }
 
-static RzIODesc *rz_io_ar_open(RzIO *io, const char *file, int rw, int mode) {
+static RzIODesc *rz_io_ar_open(RzIO *io, const char *file, int perm, int mode) {
 	RzIODesc *res = NULL;
 	char *url = strdup (file);
 	char *arname = strstr (url, "://") + 3;
@@ -20,9 +20,9 @@ static RzIODesc *rz_io_ar_open(RzIO *io, const char *file, int rw, int mode) {
 		filename += 2;
 	}
 
-	RzArFp *arf = ar_open_file (arname, filename);
+	RzArFp *arf = ar_open_file (arname, rz_sys_open_perms (perm), filename);
 	if (arf) {
-		res = rz_io_desc_new (io, &rz_io_plugin_ar, filename, rw, mode, arf);
+		res = rz_io_desc_new (io, &rz_io_plugin_ar, filename, perm, mode, arf);
 	}
 	free (url);
 	return res;

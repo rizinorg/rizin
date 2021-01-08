@@ -220,16 +220,14 @@ static int ar_parse_header(RzArFp *arf, filetable *tbl, ut64 arsize) {
  * Open an ar/lib file by name. If filename is NULL, then archive files will be
  * listed.
  */
-RZ_API RzArFp *ar_open_file(const char *arname, const char *filename) {
-	RzBuffer *b = rz_buf_new_file (arname, O_RDWR, 0);
+RZ_API RzArFp *ar_open_file(const char *arname, int perm, const char *filename) {
+	RzBuffer *b = rz_buf_new_file (arname, perm, 0);
 	if (!b) {
 		rz_sys_perror (__FUNCTION__);
 		return NULL;
 	}
 
-	rz_buf_seek (b, 0, RZ_BUF_END);
-	ut64 arsize = rz_buf_tell (b);
-	rz_buf_seek (b, 0, RZ_BUF_SET);
+	ut64 arsize = rz_buf_size (b);
 
 	if (!ar_check_magic (b)) {
 		rz_buf_free (b);

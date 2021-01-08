@@ -1824,6 +1824,33 @@ RZ_API int rz_sys_truncate(const char *file, int sz) {
 #endif
 }
 
+/**
+ * \brief Convert rizin permissions (RZ_PERM_*) to posix permissions that can be passed to \b rz_sys_open .
+ *
+ * \b rz_sys_open accepts posix permissions for now, not the arch-independent
+ * ones provided by RZ_PERM_*. This function is an helper to convert from rizin
+ * permissions to posix ones.
+ */
+RZ_API int rz_sys_open_perms(int rizin_perms) {
+	int res = 0;
+	if ((rizin_perms & RZ_PERM_R) && (rizin_perms & RZ_PERM_W)) {
+		res |= O_RDWR;
+		// NOTE: O_CREAT is added here because Rizin for now assumes Write means
+		// ability to create a file as well.
+		res |= O_CREAT;
+	} else if (rizin_perms & RZ_PERM_R) {
+		res |= O_RDONLY;
+	} else if (rizin_perms & RZ_PERM_W) {
+		res |= O_WRONLY;
+		// NOTE: O_CREAT is added here because Rizin for now assumes Write means
+		// ability to create a file as well.
+		res |= O_CREAT;
+	}
+	if (rizin_perms & RZ_PERM_CREAT) {
+		res |= O_CREAT;
+	}
+	return res;
+}
 
 /* perm <-> mode */
 RZ_API int rz_sys_open(const char *path, int perm, int mode) {
