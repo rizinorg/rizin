@@ -55,27 +55,6 @@ static void disable_fd_cache(int fd) {
 #endif
 }
 
-static int rizinperms2open(int perm) {
-	int res = 0;
-	if ((perm & RZ_PERM_R) && (perm & RZ_PERM_W)) {
-		res |= O_RDWR;
-		// NOTE: O_CREAT is added here because Rizin for now assumes Write means
-		// ability to create a file as well.
-		res |= O_CREAT;
-	} else if (perm & RZ_PERM_R) {
-		res |= O_RDONLY;
-	} else if (perm & RZ_PERM_W) {
-		res |= O_WRONLY;
-		// NOTE: O_CREAT is added here because Rizin for now assumes Write means
-		// ability to create a file as well.
-		res |= O_CREAT;
-	}
-	if (perm & RZ_PERM_CREAT) {
-		res |= O_CREAT;
-	}
-	return res;
-}
-
 RzIOMMapFileObj *rz_io_def_mmap_create_new_file(RzIO  *io, const char *filename, int perm, int mode) {
 	rz_return_val_if_fail (io && filename, NULL);
 	RzIOMMapFileObj *mmo = RZ_NEW0 (RzIOMMapFileObj);
@@ -90,7 +69,7 @@ RzIOMMapFileObj *rz_io_def_mmap_create_new_file(RzIO  *io, const char *filename,
 		filename += strlen ("nocache://");
 	}
 	mmo->filename = strdup (filename);
-	mmo->perm = rizinperms2open (perm);
+	mmo->perm = rz_sys_open_perms (perm);
 	mmo->mode = mode;
 	if (!mmo->nocache) {
 		mmo->buf = rz_buf_new_mmap (mmo->filename, mmo->perm, mmo->mode);
