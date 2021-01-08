@@ -151,13 +151,6 @@ RZ_API int rz_regex_match(const char *pattern, const char *flags, const char *te
 	ret = rz_regex_exec (&rx, text, 0, 0, re_flags);
 	rz_regex_fini (&rx);
 	return ret? 0: 1;
-#if 0
-	regex_t preg;
-	regmatch_t pmatch[NUM_MATCHES];
-	if (regcomp(&preg, reg, REG_EXTENDED))
-		return -1;
-	return (regexec (&preg, str, NUM_MATCHES, pmatch, 0))?1:0;
-#endif
 }
 
 RZ_API RzList *rz_regex_get_match_list(const char *pattern, const char *flags, const char *text) {
