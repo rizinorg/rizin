@@ -195,6 +195,9 @@ jobs:
         security authorizationdb read system.privilege.taskport > taskport.plist
         /usr/libexec/PlistBuddy -c 'Set :authenticate-user false' ./taskport.plist
         sudo security authorizationdb write system.privilege.taskport < taskport.plist
+    - name: Setup tmate session
+      if: matrix.os == 'macos-latest' && matrix.enabled
+      uses: mxschmitt/action-tmate@v3
     - name: Run unit tests (meson)
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
