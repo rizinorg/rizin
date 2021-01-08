@@ -78,7 +78,7 @@ jobs:
             timeout: 60
             cflags: '-Werror -Wno-cpp'
           - name: macos-meson-clang-tests
-            os: macos-latest
+            os: macos-11.0
             build_system: meson
             compiler: clang
             run_tests: true
@@ -123,10 +123,10 @@ jobs:
       with:
           submodules: recursive
     - name: Install pkg-config and cabextract with Homebrew
-      if: matrix.os == 'macos-latest' && matrix.enabled
+      if: matrix.os == 'macos-11.0' && matrix.enabled
       run: brew install pkg-config cabextract
     - name: Install python and other dependencies
-      if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-latest' && matrix.enabled
+      if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-11.0' && matrix.enabled
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract
     - name: Install meson and ninja
       if: matrix.build_system == 'meson' && matrix.enabled
@@ -218,7 +218,7 @@ jobs:
         ASAN: ${{ matrix.asan }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
     - name: Setup tmate session
-      if: matrix.os == 'macos-latest' && matrix.enabled
+      if: matrix.os == 'macos-11.0' && matrix.enabled
       uses: mxschmitt/action-tmate@v3
     - name: Run tests
       if: matrix.run_tests && matrix.enabled
@@ -452,7 +452,7 @@ jobs:
 
   build-osx-pkg:
     name: Build OSX package
-    runs-on: macos-latest
+    runs-on: macos-11.0
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
@@ -637,7 +637,7 @@ jobs:
 
   test-osx-pkg:
     name: Test OSX pkg
-    runs-on: macos-latest
+    runs-on: macos-11.0
     needs: [build-osx-pkg]
     steps:
     - name: Install pkg-config with Homebrew
