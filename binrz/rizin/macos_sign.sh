@@ -13,5 +13,4 @@ else
         DST="${MESON_INSTALL_DESTDIR_PREFIX}/${SRC}"
 fi
 
-echo "DST = ${DST}"
 codesign --entitlements "${ENTITLEMENT}" --force -s - "${DST}"
