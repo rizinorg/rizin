@@ -81,7 +81,7 @@ jobs:
             os: macos-latest
             build_system: meson
             compiler: clang
-            run_tests: true
+            run_tests: false
             meson_options: -Duse_webui=true
             enabled: true
             timeout: 60
