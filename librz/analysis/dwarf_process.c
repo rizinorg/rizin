@@ -204,14 +204,13 @@ static ut64 get_die_size(const RzBinDwarfDie *die) {
  * @return st32 -1 if error else 0
  */
 static st32 parse_array_type(Context *ctx, ut64 idx, RzStrBuf *strbuf) {
-	const RzBinDwarfDie *die = &ctx->all_dies[idx];
+	const RzBinDwarfDie *die = &ctx->all_dies[idx++];
 
 	if (die->has_children) {
 		int child_depth = 1;
-		const RzBinDwarfDie *child_die = &ctx->all_dies[++idx];
 		size_t j;
 		for (j = idx; child_depth > 0 && j < ctx->count; j++) {
-			child_die = &ctx->all_dies[j];
+			const RzBinDwarfDie *child_die = &ctx->all_dies[j];
 			// right now we skip non direct descendats of the structure
 			// can be also DW_TAG_suprogram for class methods or tag for templates
 			if (child_depth == 1 && child_die->tag == DW_TAG_subrange_type) {
@@ -1142,18 +1141,17 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RzBinDwarfAtt
 }
 
 static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args, RzList/*<Variable*>*/ *variables) {
-	const RzBinDwarfDie *die = &ctx->all_dies[idx];
+	const RzBinDwarfDie *die = &ctx->all_dies[idx++];
 
 	if (die->has_children) {
 		int child_depth = 1;
-		const RzBinDwarfDie *child_die = &ctx->all_dies[++idx];
 
 		bool get_linkage_name = prefer_linkage_name (ctx->lang);
 		bool has_linkage_name = false;
 		int argNumber = 1;
 		size_t j;
 		for (j = idx; child_depth > 0 && j < ctx->count; j++) {
-			child_die = &ctx->all_dies[j];
+			const RzBinDwarfDie *child_die = &ctx->all_dies[j];
 			RzStrBuf type;
 			rz_strbuf_init (&type);
 			const char *name = NULL;

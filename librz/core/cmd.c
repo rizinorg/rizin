@@ -2280,7 +2280,7 @@ static int rz_core_cmd_subst(RzCore *core, char *cmd) {
 		goto beach;
 	}
 	if (*icmd && !strchr (icmd, '"')) {
-		char *hash = icmd;
+		char *hash;
 		for (hash = icmd + 1; *hash; hash++) {
 			if (*hash == '\\') {
 				hash++;

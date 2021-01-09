@@ -298,7 +298,7 @@ tree-sitter/libtree-sitter.$(EXT_AR): tree-sitter/lib/src/lib.o
 	$(RANLIB) $@
 
 tree-sitter/lib/src/lib.o:
-	$(CC) $(NEWSHELL_CFLAGS) -c tree-sitter/lib/src/lib.c -o $@ -Itree-sitter/lib/include -Itree-sitter/lib/src $(CFLAGS)
+	$(CC) -c tree-sitter/lib/src/lib.c -o $@ -Itree-sitter/lib/include -Itree-sitter/lib/src $(CFLAGS)
 
 tree-sitter-sync:
 	rm -rf tree-sitter tree-sitter.vc
@@ -315,7 +315,7 @@ rizin-shell-parser/libshell-parser.$(EXT_AR): rizin-shell-parser/src/parser.o ri
 	$(RANLIB) $@
 
 rizin-shell-parser/src/parser.o: rizin-shell-parser/src/parser.c
-	$(CC) $(NEWSHELL_CFLAGS) -c rizin-shell-parser/src/parser.c -o $@ -Irizin-shell-parser/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
+	$(CC) -c rizin-shell-parser/src/parser.c -o $@ -Irizin-shell-parser/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
 
 rizin-shell-parser/src/scanner.o: rizin-shell-parser/src/scanner.c
 	$(CC) -c rizin-shell-parser/src/scanner.c -o $@ -Irizin-shell-parser/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)

@@ -2,7 +2,7 @@
 
 #include <rz_cons.h>
 
-#define RCOLOR_AT(i) (RzColor *) (((ut8 *) &(rz_cons_singleton ()->context->cpal)) + keys[i].coff)
+#define RZCOLOR_AT(i) (RzColor *) (((ut8 *) &(rz_cons_singleton ()->context->cpal)) + keys[i].coff)
 #define COLOR_AT(i) (char **) (((ut8 *) &(rz_cons_singleton ()->context->pal)) + keys[i].off)
 
 static struct {
@@ -72,10 +72,10 @@ static struct {
 	{ "graph.current", rz_offsetof (RzConsPrintablePalette, graph_current), rz_offsetof (RzConsPalette, graph_current) },
 	{ "graph.traced", rz_offsetof (RzConsPrintablePalette, graph_traced), rz_offsetof (RzConsPalette, graph_traced) },
 
-        { "graph.diff.unknown", rz_offsetof (RzConsPrintablePalette, graph_diff_unknown), rz_offsetof (RzConsPalette, graph_diff_unknown) },
-        { "graph.diff.new", rz_offsetof (RzConsPrintablePalette, graph_diff_new), rz_offsetof (RzConsPalette, graph_diff_new) },
-        { "graph.diff.match", rz_offsetof (RzConsPrintablePalette, graph_diff_match), rz_offsetof (RzConsPalette, graph_diff_match) },
-        { "graph.diff.unmatch", rz_offsetof (RzConsPrintablePalette, graph_diff_unmatch), rz_offsetof (RzConsPalette, graph_diff_unmatch) },
+	{ "graph.diff.unknown", rz_offsetof (RzConsPrintablePalette, graph_diff_unknown), rz_offsetof (RzConsPalette, graph_diff_unknown) },
+	{ "graph.diff.new", rz_offsetof (RzConsPrintablePalette, graph_diff_new), rz_offsetof (RzConsPalette, graph_diff_new) },
+	{ "graph.diff.match", rz_offsetof (RzConsPrintablePalette, graph_diff_match), rz_offsetof (RzConsPalette, graph_diff_match) },
+	{ "graph.diff.unmatch", rz_offsetof (RzConsPrintablePalette, graph_diff_unmatch), rz_offsetof (RzConsPalette, graph_diff_unmatch) },
 
 	{ "gui.cflow", rz_offsetof (RzConsPrintablePalette, gui_cflow), rz_offsetof (RzConsPalette, gui_cflow) },
 	{ "gui.dataoffset", rz_offsetof (RzConsPrintablePalette, gui_dataoffset), rz_offsetof (RzConsPalette, gui_dataoffset) },
@@ -211,16 +211,16 @@ RZ_API void rz_cons_pal_init(RzConsContext *ctx) {
 	ctx->cpal.wordhl             = (RzColor) RzColor_BGRED;
 	// No good choice for fallback ansi16 color
 #if __WINDOWS__
-	ctx->cpal.linehl             = (RzColor) RCOLOR (ALPHA_BG, 0x00, 0x00, 0x50, 0x00, 0x00, 0x00, 4);
+	ctx->cpal.linehl             = (RzColor) RZCOLOR (ALPHA_BG, 0x00, 0x00, 0x50, 0x00, 0x00, 0x00, 4);
 #else
-	ctx->cpal.linehl             = (RzColor) RCOLOR (ALPHA_BG, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 4);
+	ctx->cpal.linehl             = (RzColor) RZCOLOR (ALPHA_BG, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 4);
 #endif
 
 	ctx->cpal.func_var           = (RzColor) RzColor_WHITE;
 	ctx->cpal.func_var_type      = (RzColor) RzColor_BLUE;
 	ctx->cpal.func_var_addr      = (RzColor) RzColor_CYAN;
 
-	ctx->cpal.widget_bg          = (RzColor) RCOLOR (ALPHA_BG, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00, 0);
+	ctx->cpal.widget_bg          = (RzColor) RZCOLOR (ALPHA_BG, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00, 0);
 	ctx->cpal.widget_sel         = (RzColor) RzColor_BGRED;
 
 	ctx->cpal.graph_box          = (RzColor) RzColor_NULL;
@@ -270,7 +270,7 @@ RZ_API void rz_cons_pal_random(void) {
 	int i;
 	RzColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
-		rcolor = RCOLOR_AT (i);
+		rcolor = RZCOLOR_AT (i);
 		*rcolor = rz_cons_color_random (ALPHA_FG);
 	}
 	rz_cons_pal_update_event ();
@@ -535,7 +535,7 @@ RZ_API void rz_cons_pal_list(int rad, const char *arg) {
 		rz_cons_print ("{");
 	}
 	for (i = 0; keys[i].name; i++) {
-		RzColor *rcolor = RCOLOR_AT (i);
+		RzColor *rcolor = RZCOLOR_AT (i);
 		color = COLOR_AT (i);
 		switch (rad) {
 		case 'j':
@@ -616,7 +616,7 @@ RZ_API int rz_cons_pal_set(const char *key, const char *val) {
 	RzColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
-			rcolor = RCOLOR_AT (i);
+			rcolor = RZCOLOR_AT (i);
 			rz_cons_pal_parse (val, rcolor);
 			return true;
 		}
@@ -631,7 +631,7 @@ RZ_API RzColor rz_cons_pal_get(const char *key) {
 	RzColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
-			rcolor = RCOLOR_AT (i);
+			rcolor = RZCOLOR_AT (i);
 			return rcolor? *rcolor: (RzColor) RzColor_NULL;
 		}
 	}
@@ -640,7 +640,7 @@ RZ_API RzColor rz_cons_pal_get(const char *key) {
 
 /* Get the RzColor at specified index */
 RZ_API RzColor rz_cons_pal_get_i(int index) {
-	return *(RCOLOR_AT (index));
+	return *(RZCOLOR_AT (index));
 }
 
 /* Get color name at index */

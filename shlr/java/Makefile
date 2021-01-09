@@ -23,9 +23,6 @@ all:
 endif
 
 CFLAGS+=${PIC_CFLAGS}
-ifneq (,$(findstring mingw32,${OSTYPE}))
-CFLAGS+=-DMINGW32=1
-endif
 CFLAGS+=-g
 
 CFLAGS+=-I../../librz/include
