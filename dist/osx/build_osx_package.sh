@@ -9,7 +9,7 @@ OSXPKGDIR=/tmp/osxpkgtmp
 
 rm -rf buildtmp
 mkdir buildtmp
-meson buildtmp --buildtype=release -Duse_libuv=false -Dlocal=disabled --prefix=/usr/local
+meson buildtmp --buildtype=release -Duse_libuv=false -Denable_tests=false -Dlocal=disabled --prefix=/usr/local
 rm -rf "${RIZININSTALL}"
 DESTDIR="${RIZININSTALL}" ninja -C buildtmp install
 rm -rf buildtmp
