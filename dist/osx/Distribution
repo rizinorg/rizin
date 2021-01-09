@@ -1,26 +1,19 @@
-<?xml version="1.0" encoding="utf-8" standalone="no"?>
-<installer-gui-script minSpecVersion="2">
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="1">
     <title>Rizin</title>
     <license file="COPYING.LESSER" mime-type="text/plain"/>
-    <pkg-ref id="org.rizinorg.rizin">
-        <bundle-version/>
-    </pkg-ref>
-    <options customize="never" require-scripts="false" hostArchitectures="i386,x86_64"/>
-    <volume-check>
-        <allowed-os-versions>
-            <os-version min="10.7"/>
-        </allowed-os-versions>
-    </volume-check>
+    <pkg-ref id="org.rizinorg.rizin"/>
+    <options customize="never" require-scripts="false"/>
     <choices-outline>
         <line choice="default">
             <line choice="org.rizinorg.rizin"/>
         </line>
     </choices-outline>
-    <choice id="default" customLocation="usr/local"/>
+    <choice id="default"/>
     <choice id="org.rizinorg.rizin" visible="false">
         <pkg-ref id="org.rizinorg.rizin"/>
     </choice>
-    <pkg-ref id="org.rizinorg.rizin" version="0">rizin.pkg</pkg-ref>
+    <pkg-ref id="org.rizinorg.rizin" version="0" onConclusion="none">rizin.pkg</pkg-ref>
     <welcome file="welcome.rtf" mime-type="text/enriched"/>
     <background file="rizin-logo.png" mime-type="image/png" alignment="center"/>
 </installer-gui-script>
