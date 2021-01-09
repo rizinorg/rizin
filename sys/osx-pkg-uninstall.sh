@@ -1,5 +1,5 @@
 #!/bin/sh
-PKG=org.rizinorg.rizin
+PKG=re.rizin.rizin
 cd /
 
 pkgutil --files ${PKG} > /dev/null || exit 1

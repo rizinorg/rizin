@@ -2,18 +2,18 @@
 <installer-gui-script minSpecVersion="1">
     <title>Rizin</title>
     <license file="COPYING.LESSER" mime-type="text/plain"/>
-    <pkg-ref id="org.rizinorg.rizin"/>
+    <pkg-ref id="re.rizin.rizin"/>
     <options customize="never" require-scripts="false"/>
     <choices-outline>
         <line choice="default">
-            <line choice="org.rizinorg.rizin"/>
+            <line choice="re.rizin.rizin"/>
         </line>
     </choices-outline>
     <choice id="default"/>
-    <choice id="org.rizinorg.rizin" visible="false">
-        <pkg-ref id="org.rizinorg.rizin"/>
+    <choice id="re.rizin.rizin" visible="false">
+        <pkg-ref id="re.rizin.rizin"/>
     </choice>
-    <pkg-ref id="org.rizinorg.rizin" version="0" onConclusion="none">rizin.pkg</pkg-ref>
+    <pkg-ref id="re.rizin.rizin" version="0" onConclusion="none">rizin.pkg</pkg-ref>
     <welcome file="welcome.rtf" mime-type="text/enriched"/>
     <background file="rizin-logo.png" mime-type="image/png" alignment="center"/>
 </installer-gui-script>
