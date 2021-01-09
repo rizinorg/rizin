@@ -195,7 +195,8 @@ RZ_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 					strcpy (w3, tmp);
 				}
 				switch (ops[i].type) {
-				case 'R': {
+				case 'R':
+					{
 						// reg order diff per instruction 'group' - ordered to number of likelyhood to call (add > mfhi)
 						int op = 0, rs = 0, rt = 0, rd = 0, sa = 0, fn = 0;
 						bool invalid = false;
@@ -251,7 +252,8 @@ RZ_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 					}
 					break;
 				case 'I':
-				case 'B': {
+				case 'B':
+					{
 						bool invalid = false;
 						int op = 0, rs = 0, rt = 0, imm = 0, is_branch = ops[i].type == 'B';
 						switch (ops[i].args) {
