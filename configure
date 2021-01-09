@@ -702,15 +702,6 @@ HAVE_LIBUV="0"; fi
 else
 HAVE_LIBUV="0"; fi
 if [ "$USEROSTYPE" = "auto" ]; then
-if [ "$HOST_OS" = "mingw32_nt-6.2" ]; then
-USEROSTYPE="mingw32"
-else
-if [ "$HOST_OS" = "mingw32_nt" ]; then
-USEROSTYPE="mingw32"
-else
-if [ "$HOST_OS" = "wsl" ]; then
-USEROSTYPE="wsl"
-else
 if [ "$HOST_OS" = "linux" ]; then
 USEROSTYPE="gnulinux"
 else
@@ -738,7 +729,7 @@ if [ "$HOST_OS" = "darwin" ]; then
 USEROSTYPE="darwin"
 else
 if [ "$HOST_OS" = "haiku" ]; then
-USEROSTYPE="haiku"; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi
+USEROSTYPE="haiku"; fi; fi; fi; fi; fi; fi; fi; fi; fi; fi;
 if [ "$LIBVERSION" = "xxx" ]; then
 LIBVERSION="$VERSION"; fi
 if [ "$USEROSTYPE" = "gnulinux" ]; then
@@ -757,10 +748,6 @@ if [ "$USEROSTYPE" = "android" ]; then
 HAVE_PTRACE="1"
 USE_PTRACE_WRAP="1"
 else
-if [ "$USEROSTYPE" = "mingw32" ]; then
-HAVE_PTRACE="0"
-USE_PTRACE_WRAP="0"
-else
 if [ "$USEROSTYPE" = "solaris" ]; then
 HAVE_PTRACE="0"
 USE_PTRACE_WRAP="0"
@@ -770,7 +757,7 @@ HAVE_PTRACE="0"
 USE_PTRACE_WRAP="0"
 else
 HAVE_PTRACE="1"
-USE_PTRACE_WRAP="0"; fi; fi; fi; fi; fi; fi
+USE_PTRACE_WRAP="0"; fi; fi; fi; fi; fi
 if [ "$DEBUGGER" = "0" ]; then
 HAVE_PTRACE="0"; fi
 if [ "$WANT_PTRACE_WRAP" = "0" ]; then
