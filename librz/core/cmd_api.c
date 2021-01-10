@@ -1897,9 +1897,9 @@ static void cmd_foreach_cmdname(RzCmd *cmd, RzCmdDesc *cd, RzCmdForeachNameCb cb
  * Only command names that can actually execute something are iterated. Help
  * commands (e.g. ?, h?, etc.) are ignored.
  *
- * /param cmd Reference to RzCmd
- * /param cb Callback function that is called for each command name.
- * /param user Additional user data that is passed to the callback \p cb.
+ * \param cmd Reference to RzCmd
+ * \param cb Callback function that is called for each command name.
+ * \param user Additional user data that is passed to the callback \p cb.
  */
 RZ_API void rz_cmd_foreach_cmdname(RzCmd *cmd, RzCmdForeachNameCb cb, void *user) {
 	RzCmdDesc *cd = rz_cmd_get_root (cmd);
