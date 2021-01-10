@@ -669,7 +669,6 @@ static const char *help_msg_ar[] = {
 	"aro", "", "Show old (previous) register values",
 	"arp", "[?] <file>", "Load register profile from file",
 	"ars", "", "Stack register state",
-	"arS", "", "Show the size of the register profile",
 	"art", "", "List all register types",
 	"arw", " <hexnum>", "Set contents of the register arena",
 	NULL
@@ -4421,12 +4420,6 @@ void cmd_analysis_reg(RzCore *core, const char *str) {
 			break;
 		}
 		break;
-	case 'S': { // "arS"
-		int sz;
-		ut8 *buf = rz_reg_get_bytes (core->analysis->reg, RZ_REG_TYPE_GPR, &sz);
-		rz_cons_printf ("%d\n", sz);
-		free (buf);
-		} break;
 	case 'b': { // "arb" WORK IN PROGRESS // DEBUG COMMAND
 		int len, type = RZ_REG_TYPE_GPR;
 		arg = strchr (str, ' ');
