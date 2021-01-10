@@ -296,7 +296,7 @@ bool test_cmd_call_desc(void) {
 	rz_cmd_parsed_args_free (a);
 
 	a = rz_cmd_parsed_args_new ("px", 1, px_args);
-	mu_assert_eq(rz_cmd_call_parsed_args (cmd, a), RZ_CMD_STATUS_NOTEXISTINGCMD, "px was not called because not existent");
+	mu_assert_eq(rz_cmd_call_parsed_args (cmd, a), RZ_CMD_STATUS_NONEXISTINGCMD, "px was not called because it does not exist");
 	rz_cmd_parsed_args_free (a);
 
 	a = rz_cmd_parsed_args_new ("wv8", 1, wv8_args);

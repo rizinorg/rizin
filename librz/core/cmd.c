@@ -4646,7 +4646,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_command) {
 			eprintf ("%s", help_msg);
 			free (help_msg);
 		}
-	} else if (res == RZ_CMD_STATUS_NOTEXISTINGCMD) {
+	} else if (res == RZ_CMD_STATUS_NONEXISTINGCMD) {
 		const char *cmdname = rz_cmd_parsed_args_cmd (pr_args);
 		eprintf ("Command '%s' does not exist.\n", cmdname);
 		if (rz_str_endswith (cmdname, "?") && pr_args->argc > 1) {
