@@ -542,7 +542,7 @@ static void args_preprocessing(RzCmdDesc *cd, RzCmdParsedArgs *args) {
 
 static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args) {
 	if (!rz_cmd_desc_has_handler (cd)) {
-		return RZ_CMD_STATUS_INVALID;
+		return RZ_CMD_STATUS_NOTEXISTINGCMD;
 	}
 
 	args_preprocessing(cd, args);
@@ -563,7 +563,7 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 	case RZ_CMD_DESC_TYPE_ARGV_MODES:
 		mode = cd_suffix2mode (cd, rz_cmd_parsed_args_cmd (args));
 		if (!mode) {
-			return RZ_CMD_STATUS_INVALID;
+			return RZ_CMD_STATUS_NOTEXISTINGCMD;
 		}
 		if (args->argc < cd->d.argv_modes_data.min_argc || args->argc > cd->d.argv_modes_data.max_argc) {
 			return RZ_CMD_STATUS_WRONG_ARGS;
@@ -587,7 +587,7 @@ static RzCmdStatus call_cd(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args) {
 	switch (cd->type) {
 	case RZ_CMD_DESC_TYPE_GROUP:
 		if (!cd->d.group_data.exec_cd) {
-			return RZ_CMD_STATUS_INVALID;
+			return RZ_CMD_STATUS_NOTEXISTINGCMD;
 		}
 		return call_cd (cmd, cd->d.group_data.exec_cd, args);
 	case RZ_CMD_DESC_TYPE_ARGV:
@@ -627,7 +627,7 @@ RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args) {
 
 	RzCmdDesc *cd = rz_cmd_get_desc (cmd, rz_cmd_parsed_args_cmd (args));
 	if (!cd) {
-		return RZ_CMD_STATUS_INVALID;
+		return RZ_CMD_STATUS_NOTEXISTINGCMD;
 	}
 
 	return call_cd (cmd, cd, args);

@@ -24,7 +24,8 @@ typedef enum rz_cmd_status_t {
 	RZ_CMD_STATUS_OK = 0, ///< command handler exited in the right way
 	RZ_CMD_STATUS_WRONG_ARGS, ///< command handler could not handle the arguments passed to it
 	RZ_CMD_STATUS_ERROR, ///< command handler had issues while running (e.g. allocation error, etc.)
-	RZ_CMD_STATUS_INVALID, ///< command could not be executed (e.g. shell level error, not existing command, bad expression, etc.)
+	RZ_CMD_STATUS_INVALID, ///< command could not be executed (e.g. shell level error, bad expression, etc.)
+	RZ_CMD_STATUS_NOTEXISTINGCMD, ///< command does not exist
 	RZ_CMD_STATUS_EXIT, ///< command handler asks to exit the prompt loop
 } RzCmdStatus;
 
@@ -430,6 +431,7 @@ static inline int rz_cmd_status2int(RzCmdStatus s) {
 	case RZ_CMD_STATUS_ERROR:
 	case RZ_CMD_STATUS_WRONG_ARGS:
 	case RZ_CMD_STATUS_INVALID:
+	case RZ_CMD_STATUS_NOTEXISTINGCMD:
 		return -1;
 	case RZ_CMD_STATUS_EXIT:
 	default:

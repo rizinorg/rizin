@@ -4635,6 +4635,9 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_command) {
 	if (res == RZ_CMD_STATUS_WRONG_ARGS) {
 		const char *cmdname = rz_cmd_parsed_args_cmd (pr_args);
 		eprintf ("Wrong number of arguments passed to `%s`, see its help with `%s?`\n", cmdname, cmdname);
+	} else if (res == RZ_CMD_STATUS_NOTEXISTINGCMD) {
+		const char *cmdname = rz_cmd_parsed_args_cmd (pr_args);
+		eprintf ("Command '%s' does not exist.\n", cmdname);
 	} else if (res == RZ_CMD_STATUS_ERROR) {
 		const char *cmdname = rz_cmd_parsed_args_cmd (pr_args);
 		RZ_LOG_DEBUG ("Something wrong during the execution of `%s` command.\n", cmdname);
