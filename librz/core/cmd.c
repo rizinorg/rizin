@@ -4638,6 +4638,9 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_command) {
 		RzCmdDesc *cd = rz_cmd_get_desc (state->core->rcmd, cmdname);
 		if (cd) {
 			char *cmdname_help = rz_str_newf ("%s?", cmdname);
+			if (!cmdname_help) {
+				goto err;
+			}
 			RzCmdParsedArgs *help_pra = rz_cmd_parsed_args_newcmd (cmdname_help);
 			char *help_msg = rz_cmd_get_help (state->core->rcmd, help_pra, true);
 			eprintf ("%s", help_msg);
@@ -4777,19 +4780,6 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_command) {
 	return res;
 }
 
-static char *remove_end_questions(const char *s) {
-	if (!*s) {
-		return strdup (s);
-	}
-	char *op = strdup (s);
-	char *p = op + strlen (s) - 1;
-	while (p > op && *p == '?') {
-		*p = '\0';
-		p--;
-	}
-	return op;
-}
-
 DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_command) {
 	size_t node_str_len = strlen (node_string);
 	if (node_str_len >= 2 && !strcmp (node_string + node_str_len - 2, "?*")) {
@@ -4832,16 +4822,6 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_command) {
 			rz_cons_printf ("%s", help_msg);
 			free (help_msg);
 			res = RZ_CMD_STATUS_OK;
-		} else {
-			char *help_name = rz_cmd_parsed_args_cmd (pr_args);
-			RzCmdDesc *cd = rz_cmd_get_desc (state->core->rcmd, help_name);
-			if (cd && cd->type == RZ_CMD_DESC_TYPE_OLDINPUT) {
-				res = rz_cmd_call_parsed_args (state->core->rcmd, pr_args);
-			} else {
-				char *cmdname = remove_end_questions (help_name);
-				eprintf ("Command '%s' does not exist.\n", cmdname);
-				free (cmdname);
-			}
 		}
 	err_else:
 		rz_cmd_parsed_args_free (pr_args);
