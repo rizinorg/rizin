@@ -395,7 +395,9 @@ static inline void *rz_new_copy(int size, void *data) {
 #define typeof(arg) __typeof__(arg)
 #endif
 
-#if 1
+// There is a bug of using "offsetof()" in the structure
+// initialization in GCC < 5.0 versions
+#if !(defined(__GNUC__) && __GNUC__ < 5)
 #define rz_offsetof(type, member) offsetof(type, member)
 #else
 #if __SDB_WINDOWS__

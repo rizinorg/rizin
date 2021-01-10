@@ -36,15 +36,10 @@ CZ=gzip -f
 endif
 PWD=$(shell pwd)
 
-# For echo without quotes
-Q='
-ESC=
 ifeq ($(BUILD_OS),windows)
 ifeq ($(OSTYPE),mingw32)
 ifneq (,$(findstring mingw32-make,$(MAKE)))
 ifneq ($(APPVEYOR),True)
-	Q=
-	ESC=^
 	LC_ALL=C
 	export LC_ALL
 endif
@@ -73,18 +68,18 @@ endif
 
 librz/include/rz_version.h:
 	@echo Generating rz_version.h file
-	@echo $(Q)#ifndef RZ_VERSION_H$(Q) > $@.tmp
-	@echo $(Q)#define RZ_VERSION_H 1$(Q) >> $@.tmp
-	@echo $(Q)#define RZ_VERSION_COMMIT $(RZ_VC)$(Q) >> $@.tmp
-	@echo $(Q)#define RZ_VERSION $(ESC)"$(RZ_VERSION)$(ESC)"$(Q) >> $@.tmp
-	@echo $(Q)#define RZ_VERSION_MAJOR $(RZ_VERSION_MAJOR)$(Q) >> $@.tmp
-	@echo $(Q)#define RZ_VERSION_MINOR $(RZ_VERSION_MINOR)$(Q) >> $@.tmp
-	@echo $(Q)#define RZ_VERSION_PATCH $(RZ_VERSION_PATCH)$(Q) >> $@.tmp
-	@echo $(Q)#define RZ_VERSION_NUMBER $(RZ_VERSION_NUMBER)$(Q) >> $@.tmp
-	@echo $(Q)#define RZ_GITTAP $(ESC)"$(GIT_TAP)$(ESC)"$(Q) >> $@.tmp
-	@echo $(Q)#define RZ_GITTIP $(ESC)"$(GIT_TIP)$(ESC)"$(Q) >> $@.tmp
-	@echo $(Q)#define RZ_BIRTH $(ESC)"$(GIT_NOW)$(BUILDSEC)$(ESC)"$(Q) >> $@.tmp
-	@echo $(Q)#endif$(Q) >> $@.tmp
+	@echo '#ifndef RZ_VERSION_H' > $@.tmp
+	@echo '#define RZ_VERSION_H 1' >> $@.tmp
+	@echo '#define RZ_VERSION_COMMIT $(RZ_VC)' >> $@.tmp
+	@echo '#define RZ_VERSION "$(RZ_VERSION)"' >> $@.tmp
+	@echo '#define RZ_VERSION_MAJOR $(RZ_VERSION_MAJOR)' >> $@.tmp
+	@echo '#define RZ_VERSION_MINOR $(RZ_VERSION_MINOR)' >> $@.tmp
+	@echo '#define RZ_VERSION_PATCH $(RZ_VERSION_PATCH)' >> $@.tmp
+	@echo '#define RZ_VERSION_NUMBER $(RZ_VERSION_NUMBER)' >> $@.tmp
+	@echo '#define RZ_GITTAP "$(GIT_TAP)"' >> $@.tmp
+	@echo '#define RZ_GITTIP "$(GIT_TIP)"' >> $@.tmp
+	@echo '#define RZ_BIRTH "$(GIT_NOW)$(BUILDSEC)"' >> $@.tmp
+	@echo '#endif' >> $@.tmp
 	@mv -f $@.tmp $@
 	@rm -f $@.tmp
 

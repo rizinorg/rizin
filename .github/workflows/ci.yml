@@ -253,11 +253,11 @@ jobs:
         name: test-results-${{ matrix.name }}
         path: test/results.json
 
-  build-centos6:
-    name: Build on CentOS 6
+  build-centos7:
+    name: Build on CentOS 7
     runs-on: ubuntu-latest
     if: contains(github.head_ref, 'centos') || contains(github.ref, 'release-') || github.event_name == 'schedule'
-    container: centos:6
+    container: centos:7
     steps:
     - name: Install tools
       run: yum install -y patch unzip git gcc make
@@ -292,6 +292,7 @@ jobs:
             container:
                 - debian:wheezy
                 - debian:jessie
+                - debian:stretch
 
     runs-on: ubuntu-latest
     container: ${{ matrix.container }}
@@ -300,7 +301,6 @@ jobs:
     - name: Fix containers (Wheezy)
       if: matrix.container == 'debian:wheezy'
       run: |
-          sed -i '/deb http:\/\/deb.debian.org\/debian wheezy-updates main/d' /etc/apt/sources.list
           echo "deb http://archive.debian.org/debian wheezy main" > /etc/apt/sources.list
           echo "deb http://archive.debian.org/debian-security wheezy/updates main" >> /etc/apt/sources.list
           echo "Acquire::Check-Valid-Until no;" > /etc/apt/apt.conf.d/99no-check-valid-until
@@ -332,8 +332,13 @@ jobs:
     - name: Install with make
       run: make install
       working-directory: rizin
+    - name: Run unit tests
+      run: cd test && make unit_tests
+      working-directory: rizin
+      env:
+        PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
     - name: Install test dependencies
-      run: python3 -m pip install --user 'git+https://github.com/rizinorg/rizin-rzpipe#egg=rzpipe&subdirectory=python'
+      run: python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rz-pipe&subdirectory=python'
     - name: Run tests
       # FIXME: debug tests fail on debian for now, let's ignore all tests for the moment
       run: cd test && make || exit 0
@@ -725,7 +730,7 @@ jobs:
     if: github.event_name == 'push' && contains(github.ref, 'release-')
     needs: [
       build-and-test,
-      build-centos6,
+      build-centos7,
       build-debian,
       build-static,
       test-deb,

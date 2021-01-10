@@ -41,9 +41,7 @@ endif
 # CC CFLAGS CC_LIB CC_AR LINK
 
 # Debug
-ifneq ($(OSTYPE),mingw32)
 CFLAGS+=-g
-endif
 CFLAGS+=-Wall
 
 # libgmp

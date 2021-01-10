@@ -100,7 +100,7 @@ FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 ood
 EOF
-REGEXP_ERR=([a-zA-Z-]+\s+)
+REGEXP_FILTER_ERR=([a-zA-Z-]+\s+)
 EXPECT_ERR=<<EOF
 Process with PID attach File -helloworld-gcc  reopened in read-write mode
 EOF
