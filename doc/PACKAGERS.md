@@ -109,5 +109,11 @@ Try to create packages that do not conflict with existing `radare2` packages.
 This may require removing some shared files from the Rizin package (like the
 esil man page).
 
+Existing packages
+-----------------
+
+OSX: execute `dist/osx/build_osx_package.sh` on a MacOS system to create a .pkg installer in the base directory, named `rizin-${VERSION}.pkg`.
+
+
 [BUILDING.md]: https://github.com/rizinorg/rizin/blob/dev/BUILDING.md
 [meson_options.txt]: https://github.com/rizinorg/rizin/blob/dev/meson_options.txt
