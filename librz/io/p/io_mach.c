@@ -396,7 +396,7 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 			break;
 		case EINVAL:
 			perror ("ptrace: Cannot attach");
-			eprintf ("Possibly unsigned rizin. Please see doc/macos.md\n");
+			eprintf ("Possibly unsigned rizin.\n");
 			eprintf ("ERRNO: %d (EINVAL)\n", errno);
 			break;
 		default:
