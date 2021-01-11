@@ -1427,7 +1427,7 @@ static bool find_e_opts(RzCore *core, RzLineCompletion *completion, RzLineBuffer
 	const char *pattern = "e (.*)=";
 	RzRegex *rx = rz_regex_new (pattern, "e");
 	const size_t nmatch = 2;
-	RzRegexMatch pmatch[2];
+	RzRegexMatch pmatch[2] = {0};
 	bool ret = false;
 
 	if (rz_regex_exec (rx, buf->data, nmatch, pmatch, 1)) {
