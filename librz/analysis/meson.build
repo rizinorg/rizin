@@ -43,7 +43,7 @@ analysis_plugins_list = [
   'xap',
   'xcore_cs',
 ]
-if capstone_dep.version().split('.')[0].to_int() > 4
+if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 4
   analysis_plugins_list += 'riscv_cs'
 endif
 
@@ -232,7 +232,7 @@ rz_analysis_sources = [
   '../asm/arch/luac/v53/opcode_53.c'
 ]
 
-if capstone_dep.version().split('.')[0].to_int() > 4
+if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 4
   rz_analysis_sources += 'p/analysis_riscv_cs.c'
 endif
 

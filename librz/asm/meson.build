@@ -53,7 +53,8 @@ asm_plugins_list = [
   'xap',
   'xcore_cs',
 ]
-if capstone_dep.version().split('.')[0].to_int() > 4
+
+if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 4
   asm_plugins_list += 'riscv_cs'
 endif
 
@@ -234,7 +235,7 @@ rz_asm_sources = [
   'arch/z80/z80.c',
 ]
 
-if capstone_dep.version().split('.')[0].to_int() > 4
+if capstone_dep.version() == 'next' or capstone_dep.version().split('.')[0].to_int() > 4
   rz_asm_sources += 'p/asm_riscv_cs.c'
 endif
 

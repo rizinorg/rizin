@@ -176,30 +176,12 @@ cmake_package_relative_path = run_command(py3_exe, cmake_package_prefix_dir_py, 
 capstone_dep = dependency('capstone', version: '>=3.0.4', required: get_option('use_sys_capstone'), static: is_static_build)
 if not capstone_dep.found()
   capstone_version = get_option('use_capstone_version')
-  if capstone_version == 'bundled'
-    r = run_command(py3_exe, check_meson_subproject_py, 'capstone-bundled', check: false)
+  if fs.is_file('subprojects/capstone-' + capstone_version + '.wrap')
+    r = run_command(py3_exe, check_meson_subproject_py, 'capstone-' + capstone_version, check: false)
     if r.returncode() == 1 and get_option('subprojects_check')
       error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
     endif
-    capstone_proj = subproject('capstone-bundled', default_options: ['default_library=static'])
-  elif capstone_version == 'next'
-    r = run_command(py3_exe, check_meson_subproject_py, 'capstone-next', check: false)
-    if r.returncode() == 1 and get_option('subprojects_check')
-      error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
-    endif
-    capstone_proj = subproject('capstone-next', default_options: ['default_library=static'])
-  elif capstone_version == 'v3'
-    r = run_command(py3_exe, check_meson_subproject_py, 'capstone-v3', check: false)
-    if r.returncode() == 1 and get_option('subprojects_check')
-      error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
-    endif
-    capstone_proj = subproject('capstone-v3', default_options: ['default_library=static'])
-  elif capstone_version == 'v4'
-    r = run_command(py3_exe, check_meson_subproject_py, 'capstone-v4', check: false)
-    if r.returncode() == 1 and get_option('subprojects_check')
-      error('Subprojects are not updated. Please run `git clean -dxff subprojects/` to delete all local subprojects directories. If you want to compile against current subprojects then set option `subprojects_check=false`.')
-    endif
-    capstone_proj = subproject('capstone-v4', default_options: ['default_library=static'])
+    capstone_proj = subproject('capstone-' + capstone_version, default_options: ['default_library=static'])
   else
     error('Wrong capstone version selected. Please use one of the supported versions.')
   endif
