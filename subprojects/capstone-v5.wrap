@@ -1,0 +1,6 @@
+[wrap-file]
+source_url = https://github.com/capstone-engine/capstone/releases/download/5.0-post1/capstone-5.0-post1.tar.xz
+source_filename = capstone-5.0-post1.tar.xz
+source_hash = a27d70a06854289d56cb58ed6de081c540a23faf7c0ef12ff8bdf90b2801f0c5
+patch_directory = capstone-5.0-post1
+directory = capstone-5.0-post1
