@@ -617,7 +617,6 @@ RZ_API RZ_OWN char *rz_type_func_guess(Sdb *TDB, RZ_NONNULL char *func_name) {
 	while (slen > 4 && (offset + 3 < slen) && str[offset + 3] == '.') {
 		offset += 4;
 	}
-	slen -= offset;
 	str += offset;
 	// strip common prefixes from standard lib functions
 	if (!strncmp (str, "__isoc99_", 9)) {
