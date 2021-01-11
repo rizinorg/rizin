@@ -294,8 +294,8 @@ RZ_API void *rz_list_pop(RzList *list) {
 		}
 		data = iter->data;
 		free (iter);
+		list->length--;
 	}
-	list->length--;
 	return data;
 }
 
@@ -314,8 +314,8 @@ RZ_API void *rz_list_pop_head(RzList *list) {
 		}
 		data = iter->data;
 		free (iter);
+		list->length--;
 	}
-	list->length--;
 	return data;
 }
 
