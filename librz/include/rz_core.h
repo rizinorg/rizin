@@ -393,8 +393,6 @@ RZ_API void rz_core_config_update(RzCore *core);
 RZ_API void rz_core_parse_rizinrc(RzCore *r);
 RZ_API int rz_core_prompt(RzCore *core, int sync);
 RZ_API int rz_core_prompt_exec(RzCore *core);
-RZ_API int rz_core_lines_initcache (RzCore *core, ut64 start_addr, ut64 end_addr);
-RZ_API int rz_core_lines_currline (RzCore *core);
 RZ_API void rz_core_prompt_loop(RzCore *core);
 RZ_API ut64 rz_core_pava(RzCore *core, ut64 addr);
 RZ_API int rz_core_cmd(RzCore *core, const char *cmd, int log);

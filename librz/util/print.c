@@ -122,25 +122,6 @@ RZ_API void rz_print_columns(RzPrint *p, const ut8 *buf, int len, int height) {
 	}
 }
 
-RZ_API int rz_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off) {
-	int imax = lines_cache_sz;
-	int imin = 0;
-	int imid = 0;
-
-	while (imin <= imax) {
-		imid = imin + ((imax - imin) / 2);
-		if (lines_cache[imid] == off) {
-			return imid + 1;
-		}
-		if (lines_cache[imid] < off) {
-			imin = imid + 1;
-		} else {
-			imax = imid - 1;
-		}
-	}
-	return imin;
-}
-
 RZ_API bool rz_print_is_interrupted(void) {
 	if (is_interrupted_cb) {
 		return is_interrupted_cb ();
@@ -202,7 +183,6 @@ RZ_API RzPrint* rz_print_new(void) {
 	p->reg = NULL;
 	p->get_register = NULL;
 	p->get_register_value = NULL;
-	p->lines_cache = NULL;
 	p->calc_row_offsets = true;
 	p->row_offsets_sz = 0;
 	p->row_offsets = NULL;
@@ -227,7 +207,6 @@ RZ_API RzPrint* rz_print_free(RzPrint *p) {
 		free (p->zoom);
 		p->zoom = NULL;
 	}
-	RZ_FREE (p->lines_cache);
 	RZ_FREE (p->row_offsets);
 	free (p);
 	return NULL;
@@ -1354,58 +1333,8 @@ RZ_API void rz_print_bytes(RzPrint *p, const ut8 *buf, int len, const char *fmt)
 	}
 }
 
-RZ_API void rz_print_raw(RzPrint *p, ut64 addr, const ut8 *buf, int len, int offlines) {
-	if (offlines == 2) {
-		int i, j, cols = p->cols * 4;
-		char ch;
-		for (i = 0; i < len; i += cols) {
-			p->cb_printf ("0x%08"PFMT64x"  ", addr + i);
-			for (j = 0; j < cols; j++) {
-				if ((i + j) >= len) {
-					break;
-				}
-				ch = buf[i + j];
-				if (p->cur_enabled) {
-					rz_print_cursor (p, i + j, 1, 1);
-					p->cb_printf ("%c", IS_PRINTABLE (ch)? ch: ' ');
-					rz_print_cursor (p, i + j, 1, 0);
-				} else {
-					p->cb_printf ("%c", IS_PRINTABLE (ch)? ch: ' ');
-				}
-			}
-			p->cb_printf ("\n");
-		}
-	} else if (offlines) {
-		const ut8 *o, *q;
-		ut64 off;
-		int i, linenum_abs, mustbreak = 0, linenum = 1;
-		o = q = buf;
-		i = 0;
-		do {
-			off = addr + (int) (size_t) (q - buf);
-			linenum_abs = rz_util_lines_getline (p->lines_cache, p->lines_cache_sz, off);
-			if (p->lines_cache_sz > 0 && p->lines_abs) {
-				p->cb_printf ("%d 0x%08" PFMT64x " ", linenum_abs, off);
-			} else {
-				p->cb_printf ("+%d 0x%08" PFMT64x " ", linenum, off);
-			}
-			for (; i < len && *q && *q != '\n'; q++, i++) {
-				// just loop
-			}
-			if ((i + 1) >= len || !*q) {
-				mustbreak = 1;
-			}
-			if ((q - o) > 0) {
-				p->write (o, (int) (size_t) (q - o));
-			}
-			p->cb_printf ("\n");
-			linenum++;
-			o = ++q;
-			i++;
-		} while (!mustbreak);
-	} else {
-		p->write (buf, len);
-	}
+RZ_API void rz_print_raw(RzPrint *p, ut64 addr, const ut8 *buf, int len) {
+	p->write (buf, len);
 }
 
 RZ_API void rz_print_c(RzPrint *p, const ut8 *str, int len) {

@@ -2727,48 +2727,6 @@ static bool cb_analysis_cpp_abi(void *user, void *data) {
 	return false;
 }
 
-static bool cb_linesto(void *user, void *data) {
-	RzCore *core = (RzCore*) user;
-	RzConfigNode *node = (RzConfigNode*) data;
-	ut64 from = (ut64)rz_config_get_i (core->config, "lines.from");
-	int io_sz = rz_io_size (core->io);
-	ut64 to = rz_num_math (core->num, node->value);
-	if (to == 0) {
-		core->print->lines_cache_sz = -1; //rz_core_lines_initcache (core, from, to);
-		return true;
-	}
-	if (to > from + io_sz) {
-		eprintf ("ERROR: \"lines.to\" can't exceed addr 0x%08"PFMT64x
-			" 0x%08"PFMT64x" %d\n", from, to, io_sz);
-		return true;
-	}
-	if (to > from) {
-		core->print->lines_cache_sz = rz_core_lines_initcache (core, from, to);
-		//if (core->print->lines_cache_sz == -1) { eprintf ("ERROR: Can't allocate memory\n"); }
-	} else {
-		eprintf ("Invalid range 0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", from, to);
-	}
-	return true;
-}
-
-static bool cb_linesabs(void *user, void *data) {
-	RzCore *core = (RzCore*) user;
-	RzConfigNode *node = (RzConfigNode*) data;
-	core->print->lines_abs = node->i_value;
-	if (core->print->lines_abs && core->print->lines_cache_sz <= 0) {
-		ut64 from = (ut64)rz_config_get_i (core->config, "lines.from");
-		const char *to_str = rz_config_get (core->config, "lines.to");
-		ut64 to = rz_num_math (core->num, (to_str && *to_str) ? to_str : "$s");
-		core->print->lines_cache_sz = rz_core_lines_initcache (core, from, to);
-		if (core->print->lines_cache_sz == -1) {
-			eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
-		} else {
-			eprintf ("Found %d lines\n", core->print->lines_cache_sz-1);
-		}
-	}
-	return true;
-}
-
 static bool cb_malloc(void *user, void *data) {
  	RzCore *core = (RzCore*) user;
  	RzConfigNode *node = (RzConfigNode*) data;
@@ -3716,10 +3674,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		"dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x",
 		"analysis.fcn", "analysis.bb",
 	NULL);
-	/* lines */
-	SETI ("lines.from", 0, "Start address for line seek");
-	SETCB ("lines.to", "$s", &cb_linesto, "End address for line seek");
-	SETCB ("lines.abs", "false", &cb_linesabs, "Enable absolute line numbers");
 
 	rz_config_lock (cfg, true);
 	return true;
