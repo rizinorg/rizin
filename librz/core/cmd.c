@@ -4642,9 +4642,17 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_command) {
 				goto err;
 			}
 			RzCmdParsedArgs *help_pra = rz_cmd_parsed_args_newcmd (cmdname_help);
+			if (!help_pra) {
+				goto err;
+			}
 			char *help_msg = rz_cmd_get_help (state->core->rcmd, help_pra, true);
+			if (!help_msg) {
+				goto help_pra_err;
+			}
 			eprintf ("%s", help_msg);
 			free (help_msg);
+help_pra_err:
+			rz_cmd_parsed_args_free (help_pra);
 		}
 	} else if (res == RZ_CMD_STATUS_NONEXISTINGCMD) {
 		const char *cmdname = rz_cmd_parsed_args_cmd (pr_args);
