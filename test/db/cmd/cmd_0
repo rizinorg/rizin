@@ -382,13 +382,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=prl 0
-FILE=bins/elf/analysis/hello-arm32
-CMDS=prl 0
-EXPECT=<<EOF
-EOF
-RUN
-
 NAME=prg 0
 FILE=bins/elf/analysis/hello-arm32
 CMDS=prg 0
