@@ -60,7 +60,7 @@ directories used by Rizin, have a look at options `rizin_sdb`, `rizin_zigns`,
 etc. in [meson_options.txt][].
 
 Rizin uses the Capstone disassembly engine and supports versions 3, 4, and 5.
-By default we use a custom version of Capstone based on v4 and statically link
+By default we use a custom version of Capstone based on v5 and statically link
 it into the Rizin executables.  Some distributions might prefer that a system
 version of Capstone be dynamically linked at runtime. To do this, use the
 `-Duse_sys_capstone=enabled` command line option when running `meson`.
