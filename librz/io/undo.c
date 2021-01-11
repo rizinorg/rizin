@@ -12,19 +12,11 @@
 RZ_API int rz_io_undo_init(RzIO *io) {
 	/* seek undo */
 	rz_io_sundo_reset (io);
-
-	/* write undo */
-	io->undo.w_init = 0;
-	io->undo.w_enable = 0;
-	io->undo.w_enable = 0;
-	io->undo.w_list = rz_list_new ();
-
 	return true;
 }
 
-RZ_API void rz_io_undo_enable(RzIO *io, int s, int w) {
+RZ_API void rz_io_undo_enable(RzIO *io, bool s) {
 	io->undo.s_enable = s;
-	io->undo.w_enable = w;
 }
 
 /* undo seekz */
@@ -185,122 +177,4 @@ RZ_API RzList *rz_io_sundo_list(RzIO *io, int mode) {
 		break;
 	}
 	return list;
-}
-
-/* undo writez */
-
-RZ_API void rz_io_wundo_new(RzIO *io, ut64 off, const ut8 *data, int len) {
-	RzIOUndoWrite *uw;
-	if (!io->undo.w_enable) {
-		return;
-	}
-	/* undo write changes */
-	uw = RZ_NEW0 (RzIOUndoWrite);
-	if (!uw) {
-		return;
-	}
-	uw->set = true;
-	uw->off = off;
-	uw->len = len;
-	uw->n = (ut8*) malloc (len);
-	if (!uw->n) {
-		free (uw);
-		return;
-	}
-	memcpy (uw->n, data, len);
-	uw->o = (ut8*) malloc (len);
-	if (!uw->o) {
-		RZ_FREE (uw);
-		return;
-	}
-	memset (uw->o, 0xff, len);
-	rz_io_read_at (io, off, uw->o, len);
-	rz_list_append (io->undo.w_list, uw);
-}
-
-RZ_API void rz_io_wundo_clear(RzIO *io) {
-	// XXX memory leak
-	io->undo.w_list = rz_list_new ();
-}
-
-// rename to rz_io_undo_length ?
-RZ_API int rz_io_wundo_size(RzIO *io) {
-	return rz_list_length (io->undo.w_list);
-}
-
-// TODO: Deprecate or so? iterators must be language-wide, but helpers are useful
-RZ_API void rz_io_wundo_list(RzIO *io) {
-#define BW 8 /* byte wrap */
-	RzListIter *iter;
-	RzIOUndoWrite *u;
-	int i = 0, j, len;
-
-	if (io->undo.w_init) {
-		rz_list_foreach (io->undo.w_list, iter, u) {
-			io->cb_printf ("%02d %c %d %08" PFMT64x ": ", i, u->set ? '+' : '-', u->len, u->off);
-			len = (u->len > BW) ? BW : u->len;
-			for (j = 0; j < len; j++) {
-				io->cb_printf ("%02x ", u->o[j]);
-			}
-			if (len == BW) {
-				io->cb_printf (".. ");
-			}
-			io->cb_printf ("=> ");
-			for (j = 0; j < len; j++) {
-				io->cb_printf ("%02x ", u->n[j]);
-			}
-			if (len == BW) {
-				io->cb_printf (".. ");
-			}
-			io->cb_printf ("\n");
-			i++;
-		}
-	}
-}
-
-RZ_API int rz_io_wundo_apply(RzIO *io, RzIOUndoWrite *u, int set) {
-	int orig = io->undo.w_enable;
-	io->undo.w_enable = 0;
-	if (set) {
-		rz_io_write_at (io, u->off, u->n, u->len);
-		u->set = true;
-	} else {
-		rz_io_write_at (io, u->off, u->o, u->len);
-		u->set = false;
-	}
-	io->undo.w_enable = orig;
-	return 0;
-}
-
-RZ_API void rz_io_wundo_apply_all(RzIO *io, int set) {
-	RzListIter *iter;
-	RzIOUndoWrite *u;
-
-	rz_list_foreach_prev (io->undo.w_list, iter, u) {
-		rz_io_wundo_apply (io, u, set); //UNDO_WRITE_UNSET);
-		eprintf ("%s 0x%08"PFMT64x"\n", set?"redo":"undo", u->off);
-	}
-}
-
-/* sets or unsets the writes done */
-/* if ( set == 0 ) unset(n) */
-RZ_API int rz_io_wundo_set(RzIO *io, int n, int set) {
-	RzListIter *iter;
-	RzIOUndoWrite *u = NULL;
-	int i = 0;
-	if (io->undo.w_init) {
-		rz_list_foreach_prev (io->undo.w_list, iter, u) {
-			if (i++ == n) {
-				break;
-			}
-		}
-		if (u) {
-			rz_io_wundo_apply (io, u, set);
-			return true;
-		}
-		eprintf ("invalid undo-write index\n");
-	} else {
-		eprintf ("no writes done\n");
-	}
-	return false;
 }

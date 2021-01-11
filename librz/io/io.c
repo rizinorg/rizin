@@ -674,7 +674,6 @@ RZ_API int rz_io_fini(RzIO* io) {
 	rz_io_map_fini (io);
 	ls_free (io->plugins);
 	rz_io_cache_fini (io);
-	rz_list_free (io->undo.w_list);
 	if (io->runprofile) {
 		RZ_FREE (io->runprofile);
 	}

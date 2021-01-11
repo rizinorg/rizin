@@ -2589,7 +2589,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_event_hook (core->io->event, RZ_EVENT_IO_WRITE, ev_iowrite_cb, core);
 	core->io->ff = 1;
 	core->search = rz_search_new (RZ_SEARCH_KEYWORD);
-	rz_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
+	rz_io_undo_enable (core->io, 1); // TODO: configurable via eval
 	core->flags = rz_flag_new ();
 	core->flags->cb_printf = rz_cons_printf;
 	core->graph = rz_agraph_new (rz_cons_canvas_new (1, 1));

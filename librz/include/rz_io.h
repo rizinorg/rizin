@@ -57,26 +57,12 @@ typedef struct rz_io_undos_t {
 } RzIOUndos;
 
 typedef struct rz_io_undo_t {
-	int s_enable;
-	int w_enable;
-	/* write stuff */
-	RzList *w_list;
-	int w_init;
-	/* seek stuff */
+	bool s_enable;
 	int idx;
 	int undos; /* available undos */
 	int redos; /* available redos */
 	RzIOUndos seek[RZ_IO_UNDOS];
-	/*int fd[RZ_IO_UNDOS]; // XXX: Must be RzIODesc* */
 } RzIOUndo;
-
-typedef struct rz_io_undo_w_t {
-	int set;
-	ut64 off;
-	ut8 *o;   /* old data */
-	ut8 *n;   /* new data */
-	int len;  /* length */
-} RzIOUndoWrite;
 
 typedef struct rz_io_t {
 	struct rz_io_desc_t *desc; // XXX deprecate... we should use only the fd integer, not hold a weak pointer
@@ -363,23 +349,13 @@ RZ_API RzIOPlugin *rz_io_plugin_get_default(RzIO *io, const char *filename, bool
 // track seeks and writes
 // TODO: needs cleanup..kinda big?
 RZ_API int rz_io_undo_init(RzIO *io);
-RZ_API void rz_io_undo_enable(RzIO *io, int seek, int write);
+RZ_API void rz_io_undo_enable(RzIO *io, bool seek);
 /* seek undo */
 RZ_API RzIOUndos *rz_io_sundo(RzIO *io, ut64 offset);
 RZ_API RzIOUndos *rz_io_sundo_redo(RzIO *io);
 RZ_API void rz_io_sundo_push(RzIO *io, ut64 off, int cursor);
 RZ_API void rz_io_sundo_reset(RzIO *io);
 RZ_API RzList *rz_io_sundo_list(RzIO *io, int mode);
-/* write undo */
-RZ_API void rz_io_wundo_new(RzIO *io, ut64 off, const ut8 *data, int len);
-RZ_API void rz_io_wundo_apply_all(RzIO *io, int set);
-RZ_API int rz_io_wundo_apply(RzIO *io, struct rz_io_undo_w_t *u, int set);
-RZ_API void rz_io_wundo_clear(RzIO *io);
-RZ_API int rz_io_wundo_size(RzIO *io);
-RZ_API void rz_io_wundo_list(RzIO *io);
-RZ_API int rz_io_wundo_set_t(RzIO *io, RzIOUndoWrite *u, int set) ;
-RZ_API void rz_io_wundo_set_all(RzIO *io, int set);
-RZ_API int rz_io_wundo_set(RzIO *io, int n, int set);
 
 //desc.c
 RZ_API RzIODesc *rz_io_desc_new (RzIO *io, RzIOPlugin *plugin, const char *uri, int flags, int mode, void *data);
