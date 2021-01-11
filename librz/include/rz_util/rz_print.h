@@ -103,9 +103,6 @@ typedef struct rz_print_t {
 	RzRegItem* (*get_register)(RzReg *reg, const char *name, int type);
 	ut64 (*get_register_value)(RzReg *reg, RzRegItem *item);
 	bool (*exists_var)(struct rz_print_t *print, ut64 func_addr, char *str);
-	ut64* lines_cache;
-	int lines_cache_sz;
-	int lines_abs;
 	bool esc_bslash;
 	bool wide_offsets;
 	const char *strconv_mode;
@@ -157,7 +154,7 @@ RZ_API void rz_print_fill(RzPrint *p, const ut8 *arr, int size, ut64 addr, int s
 RZ_API void rz_print_byte(RzPrint *p, const char *fmt, int idx, ut8 ch);
 RZ_API const char *rz_print_byte_color(RzPrint *p, int ch);
 RZ_API void rz_print_c(RzPrint *p, const ut8 *str, int len);
-RZ_API void rz_print_raw(RzPrint *p, ut64 addr, const ut8* buf, int len, int offlines);
+RZ_API void rz_print_raw(RzPrint *p, ut64 addr, const ut8* buf, int len);
 RZ_API bool rz_print_have_cursor(RzPrint *p, int cur, int len);
 RZ_API bool rz_print_cursor_pointer(RzPrint *p, int cur, int len);
 RZ_API void rz_print_cursor(RzPrint *p, int cur, int len, int set);

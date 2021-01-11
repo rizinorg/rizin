@@ -324,14 +324,49 @@ typedef enum rz_cmd_desc_type_t {
 	RZ_CMD_DESC_TYPE_ARGV_MODES,
 } RzCmdDescType;
 
+/**
+ * Command Descriptor structure. It represents a command that can be executed
+ * by the user on the shell or a part of the command help (e.g. groups of
+ * commands). Anything that appears under `?` has an associated command
+ * descriptor.
+ */
 typedef struct rz_cmd_desc_t {
+	/**
+	 * Type of the command descriptor. There are several types of commands:
+	 * those that are still using the old-style and parses the input string
+	 * themselves, those that accept argc/argv, etc.
+	 */
 	RzCmdDescType type;
+	/**
+	 * Base name of the command. This is used to retrieve the \p RzCmdDesc when
+	 * a user executes a command. It can match multiple user-called commands.
+	 * For example a command that accepts STANDARD and JSON \p modes is called
+	 * for both `<name>` and `<name>j`.
+	 */
 	char *name;
+	/**
+	 * Parent of this command descriptor.
+	 *
+	 * Commands are organized in a tree, with the root being shown when doing
+	 * `?`. This relationship is used when showing commands helps.
+	 */
 	struct rz_cmd_desc_t *parent;
+	/**
+	 * Number of children command descriptors of this node.
+	 */
 	int n_children;
+	/**
+	 * Vector of childrens command descriptors.
+	 */
 	RzPVector children;
+	/**
+	 * Reference to the help structure of this command descriptor.
+	 */
 	const RzCmdDescHelp *help;
 
+	/**
+	 * Type-specific fields.
+	 */
 	union {
 		struct {
 			RzCmdCb cb;
@@ -346,7 +381,7 @@ typedef struct rz_cmd_desc_t {
 		} group_data;
 		struct {
 			RzCmdArgvModesCb cb;
-			int modes;
+			int modes; ///< A combination of RzOutputMode values
 			int min_argc;
 			int max_argc;
 		} argv_modes_data;

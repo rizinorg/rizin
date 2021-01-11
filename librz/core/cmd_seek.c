@@ -30,7 +30,6 @@ static const char *help_msg_s[] = {
 	"sf", " function", "Seek to address of specified function",
 	"sf.", "", "Seek to the beginning of current function",
 	"sg/sG", "", "Seek begin (sg) or end (sG) of section or file",
-	"sl", "[?] [+-]line", "Seek to line",
 	"sn/sp", " ([nkey])", "Seek to next/prev location, as specified by scr.nkey",
 	"so", " [N]", "Seek to N next opcode(s)",
 	"sr", " pc", "Seek to register",
@@ -46,33 +45,11 @@ static const char *help_msg_sC[] = {
 	NULL
 };
 
-static const char *help_msg_sl[] = {
-	"Usage:", "sl+ or sl- or slc", "",
-	"sl", " [line]", "Seek to absolute line",
-	"sl", "[+-][line]", "Seek to relative line",
-	"slc", "", "Clear line cache",
-	"sll", "", "Show total number of lines",
-	"sleep", " [seconds]", "Sleep for an specific amount of time",
-	NULL
-};
-
 static const char *help_msg_ss[] = {
 	"Usage: ss", "", " # Seek silently (not recorded in the seek history)",
 	"s?", "", "Works with all s subcommands",
 	NULL
 };
-
-static void __init_seek_line(RzCore *core) {
-	ut64 from, to;
-
-	rz_config_bump (core->config, "lines.to");
-	from = rz_config_get_i (core->config, "lines.from");
-	const char *to_str = rz_config_get (core->config, "lines.to");
-	to = rz_num_math (core->num, (to_str && *to_str) ? to_str : "$s");
-	if (rz_core_lines_initcache (core, from, to) == -1) {
-		eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
-	}
-}
 
 static void printPadded(RzCore *core, int pad) {
 	if (pad < 1) {
@@ -83,114 +60,6 @@ static void printPadded(RzCore *core, int pad) {
 	rz_cons_printf ("%s\n", off);
 	free (off);
 	free (fmt);
-}
-
-static void __get_current_line(RzCore *core) {
-	if (core->print->lines_cache_sz > 0) {
-		int curr = rz_util_lines_getline (core->print->lines_cache, core->print->lines_cache_sz, core->offset);
-		rz_cons_printf ("%d\n", curr);
-	}
-}
-
-static void __seek_line_absolute(RzCore *core, int numline) {
-	if (numline < 1 || numline > core->print->lines_cache_sz - 1) {
-		eprintf ("ERROR: Line must be between 1 and %d\n", core->print->lines_cache_sz - 1);
-	} else {
-		rz_core_seek (core, core->print->lines_cache[numline - 1], true);
-	}
-}
-
-static void __seek_line_relative(RzCore *core, int numlines) {
-	int curr = rz_util_lines_getline (core->print->lines_cache, core->print->lines_cache_sz, core->offset);
-	if (numlines > 0 && curr + numlines >= core->print->lines_cache_sz - 1) {
-		eprintf ("ERROR: Line must be < %d\n", core->print->lines_cache_sz - 1);
-	} else if (numlines < 0 && curr + numlines < 1) {
-		eprintf ("ERROR: Line must be > 1\n");
-	} else {
-		rz_core_seek (core, core->print->lines_cache[curr + numlines - 1], true);
-	}
-}
-
-static void __clean_lines_cache(RzCore *core) {
-	core->print->lines_cache_sz = -1;
-	RZ_FREE (core->print->lines_cache);
-}
-
-RZ_API int rz_core_lines_currline(RzCore *core) {  // make priv8 again
-	int imin = 0;
-	int imax = core->print->lines_cache_sz;
-	int imid = 0;
-
-	while (imin <= imax) {
-		imid = imin + ((imax - imin) / 2);
-		if (core->print->lines_cache[imid] == core->offset) {
-			return imid;
-		} else if (core->print->lines_cache[imid] < core->offset) {
-			imin = imid + 1;
-		} else {
-			imax = imid - 1;
-		}
-	}
-	return imin;
-}
-
-RZ_API int rz_core_lines_initcache(RzCore *core, ut64 start_addr, ut64 end_addr) {
-	int i, bsz = core->blocksize;
-	ut64 off = start_addr;
-	ut64 baddr;
-	if (start_addr == UT64_MAX || end_addr == UT64_MAX) {
-		return -1;
-	}
-
-	free (core->print->lines_cache);
-	core->print->lines_cache = RZ_NEWS0 (ut64, bsz);
-	if (!core->print->lines_cache) {
-		return -1;
-	}
-
-	baddr = rz_config_get_i (core->config, "bin.baddr");
-
-	int line_count = start_addr? 0: 1;
-	core->print->lines_cache[0] = start_addr? 0: baddr;
-	char *buf = malloc (bsz);
-	if (!buf) {
-		return -1;
-	}
-	rz_cons_break_push (NULL, NULL);
-	while (off < end_addr) {
-		if (rz_cons_is_breaked ()) {
-			break;
-		}
-		rz_io_read_at (core->io, off, (ut8 *) buf, bsz);
-		for (i = 0; i < bsz; i++) {
-			if (buf[i] != '\n') {
-				continue;
-			}
-			if ((line_count + 1) >= bsz) {
-				break;
-			}
-			core->print->lines_cache[line_count] = start_addr? off + i + 1: off + i + 1 + baddr;
-			line_count++;
-			if (line_count % bsz == 0) {
-				ut64 *tmp = realloc (core->print->lines_cache,
-					(line_count + bsz) * sizeof (ut64));
-				if (tmp) {
-					core->print->lines_cache = tmp;
-				} else {
-					RZ_FREE (core->print->lines_cache);
-					goto beach;
-				}
-			}
-		}
-		off += bsz;
-	}
-	free (buf);
-	rz_cons_break_pop ();
-	return line_count;
-beach:
-	free (buf);
-	rz_cons_break_pop ();
-	return -1;
 }
 
 static void seek_to_register(RzCore *core, const char *input, bool is_silent) {
@@ -733,56 +602,6 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 			rz_core_seek (core, map->itv.addr + map->itv.size + 2, true);
 		} else {
 			rz_core_seek (core, rz_io_fd_size (core->io, core->file->fd), true);
-		}
-	}
-	break;
-	case 'l': // "sl"
-	{
-		int sl_arg = rz_num_math (core->num, input + 1);
-		switch (input[1]) {
-		case 'e': // "sleep"
-			{
-				const char *arg = strchr (input, ' ');
-				if (arg) {
-					void *bed = rz_cons_sleep_begin ();
-					rz_sys_sleep (atoi (arg + 1));
-					rz_cons_sleep_end (bed);
-				} else {
-					eprintf ("Usage: sleep [seconds]\n");
-				}
-			}
-			break;
-		case '\0': // "sl"
-			if (!core->print->lines_cache) {
-				__init_seek_line (core);
-			}
-			__get_current_line (core);
-			break;
-		case ' ': // "sl "
-			if (!core->print->lines_cache) {
-				__init_seek_line (core);
-			}
-			__seek_line_absolute (core, sl_arg);
-			break;
-		case '+': // "sl+"
-		case '-': // "sl-"
-			if (!core->print->lines_cache) {
-				__init_seek_line (core);
-			}
-			__seek_line_relative (core, sl_arg);
-			break;
-		case 'c': // "slc"
-			__clean_lines_cache (core);
-			break;
-		case 'l': // "sll"
-			if (!core->print->lines_cache) {
-				__init_seek_line (core);
-			}
-			eprintf ("%d lines\n", core->print->lines_cache_sz - 1);
-			break;
-		case '?': // "sl?"
-			rz_core_cmd_help (core, help_msg_sl);
-			break;
 		}
 	}
 	break;

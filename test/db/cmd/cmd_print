@@ -595,20 +595,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=print raw lines
-FILE=bins/other/projects/resetc64
-CMDS=<<EOF
-sl 5
-prl 1~[0]
-e lines.abs=true
-prl 1~[0]
-EOF
-EXPECT=<<EOF
-+1
-5
-EOF
-RUN
-
 NAME=pib from beginning of bb
 FILE=bins/elf/analysis/x64-loop
 CMDS=<<EOF
