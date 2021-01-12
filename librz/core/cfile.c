@@ -649,21 +649,24 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 		rz_io_use_fd (r->io, desc->fd);
 		// Restore original desc
 	}
+	binfile = rz_bin_cur (r->bin);
 	if (cf && binfile && desc) {
 		binfile->fd = desc->fd;
 	}
-	binfile = rz_bin_cur (r->bin);
-	if (r->bin->cur && r->bin->cur->o && r->bin->cur->o->plugin && r->bin->cur->o->plugin->strfilter) {
-		char msg[2];
-		msg[0] = r->bin->cur->o->plugin->strfilter;
-		msg[1] = 0;
-		rz_config_set (r->config, "bin.str.filter", msg);
-	}
 	//rz_core_bin_set_env (r, binfile);
 	plugin = rz_bin_file_cur_plugin (binfile);
-	if (plugin && plugin->name) {
-		load_scripts_for (r, plugin->name);
+	if (plugin) {
+		if (plugin->strfilter) {
+			char msg[2];
+			msg[0] = plugin->strfilter;
+			msg[1] = 0;
+			rz_config_set (r->config, "bin.str.filter", msg);
+		}
+		if (plugin->name) {
+			load_scripts_for (r, plugin->name);
+		}
 	}
+
 	cmd_load = rz_config_get (r->config, "cmd.load");
 	if (cmd_load && *cmd_load) {
 		rz_core_cmd (r, cmd_load, 0);
