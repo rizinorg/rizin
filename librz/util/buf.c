@@ -401,7 +401,6 @@ RZ_API char *rz_buf_get_string(RzBuffer *b, ut64 addr) {
 	while (r > 0) {
 		const ut8 *needle = rz_mem_mem (res + sz, r, (ut8 *)"\x00", 1);
 		if (needle) {
-			sz += (needle - (res + sz));
 			null_found = true;
 			break;
 		}
