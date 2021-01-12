@@ -381,6 +381,7 @@ jobs:
       run: |
         export PATH=${HOME}/.local/bin:${PATH}
         ninja -C build test
+      working-directory: rizin
     - name: Run tests
       run: |
         export PATH=${HOME}/.local/bin:${PATH}
