@@ -13,6 +13,8 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #include <rz_asm.h>
 #include <rz_analysis.h>
 
+#include "../../asm/arch/avr/disasm.h"
+
 static RDESContext desctx;
 
 typedef struct _cpu_const_tag {
@@ -1669,10 +1671,11 @@ INVALID_OP:
 static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	CPU_MODEL *cpu;
 	ut64 offset;
+	int size = -1;
+	char mnemonic[32] = {0};
 
-	// init op
 	if (!op) {
-		return 2;
+		return avr_decode (mnemonic, addr, buf, len);
 	}
 
 	// select cpu info
@@ -1698,7 +1701,16 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	// process opcode
 	avr_op_analyze (analysis, op, addr, buf, len, cpu);
 
-	return op->size;
+	if ((size = avr_decode (mnemonic, addr, buf, len)) > 0) {
+		if (*mnemonic == '.') {
+			op->mnemonic = strdup("invalid");
+		} else {
+			op->mnemonic = strdup(mnemonic);
+		}
+		op->size = size;
+	}
+
+	return size;
 }
 
 static bool avr_custom_des (RzAnalysisEsil *esil) {
