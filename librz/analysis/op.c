@@ -127,7 +127,7 @@ RZ_API int rz_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, con
 		if (analysis->verbose) {
 			eprintf ("Warning: unhandled RZ_ANALYSIS_OP_MASK_DISASM in rz_analysis_op\n");
 		}
-        }
+	}
 	if (mask & RZ_ANALYSIS_OP_MASK_HINT) {
 		RzAnalysisHint *hint = rz_analysis_hint_get (analysis, addr);
 		if (hint) {
