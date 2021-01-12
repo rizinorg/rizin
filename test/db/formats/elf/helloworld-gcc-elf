@@ -343,7 +343,7 @@ NAME=pdn 10
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 e asm.bytes=true
-e scr.color = 0
+e scr.color=0
 pDi 10
 EOF
 EXPECT=<<EOF

@@ -100,7 +100,7 @@ bool test_buf(RzBuffer *b) {
 	return MU_PASSED;
 }
 
-bool test_r_buf_file(void) {
+bool test_rz_buf_file(void) {
 	RzBuffer *b;
 	char *filename = "r2-XXXXXX";
 	const char *content = "Something To\nSay Here..";
@@ -122,10 +122,11 @@ bool test_r_buf_file(void) {
 	// Cleanup
 	rz_buf_free (b);
 	unlink (filename);
+	free (filename);
 	mu_end;
 }
 
-bool test_r_buf_bytes(void) {
+bool test_rz_buf_bytes(void) {
 	RzBuffer *b;
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
@@ -142,7 +143,7 @@ bool test_r_buf_bytes(void) {
 	mu_end;
 }
 
-bool test_r_buf_mmap(void) {
+bool test_rz_buf_mmap(void) {
 	RzBuffer *b;
 	char *filename = "r2-XXXXXX";
 	const char *content = "Something To\nSay Here..";
@@ -154,27 +155,54 @@ bool test_r_buf_mmap(void) {
 	write (fd, content, length);
 	close (fd);
 
-	b = rz_buf_new_mmap (filename, RZ_PERM_RW);
+	b = rz_buf_new_mmap (filename, O_RDWR, 0);
 	mu_assert_notnull (b, "rz_buf_new_mmap failed");
 
 	if (test_buf (b) != MU_PASSED) {
+		rz_buf_free (b);
 		unlink(filename);
+		free (filename);
 		mu_fail ("test failed");
 	}
 
 	// Cleanup
 	rz_buf_free (b);
 	unlink(filename);
+	free (filename);
+
+	filename = rz_file_temp (NULL);
+	b = rz_buf_new_mmap (filename, O_RDWR | O_CREAT, 0644);
+	mu_assert_notnull (b, "buffer mmaped should be created");
+
+	st64 r = rz_buf_write (b, (const ut8 *)content, length);
+	mu_assert_eq (r, length, "Initial content has been written correctly to created-mmapped file");
+	rz_buf_seek (b, 0, RZ_BUF_SET);
+
+	if (test_buf (b) != MU_PASSED) {
+		rz_buf_free (b);
+		unlink(filename);
+		free (filename);
+		mu_fail ("test failed");
+	}
+
+	rz_buf_free (b);
+	unlink (filename);
+	free (filename);
+
 	mu_end;
 }
 
-bool test_r_buf_io(void) {
+bool test_rz_buf_io(void) {
 	RzBuffer *b;
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
 
 	RzIO *io = rz_io_new ();
-	RzIODesc *desc = rz_io_open_at (io, "file:///tmp/r-buf-io.test", RZ_PERM_RW | RZ_PERM_CREAT, 0644, 0);
+	char *tmpfile = rz_file_temp (NULL);
+	char *filename = rz_str_newf ("file://%s", tmpfile);
+	free (tmpfile);
+	RzIODesc *desc = rz_io_open_at (io, filename, RZ_PERM_RW | RZ_PERM_CREAT, 0644, 0);
+	free (filename);
 	mu_assert_notnull (desc, "file should be opened for writing");
 
 	bool res = rz_io_write_at (io, 0, (ut8 *)content, length);
@@ -185,6 +213,7 @@ bool test_r_buf_io(void) {
 
 	b = rz_buf_new_with_io(&bnd, desc->fd);
 	mu_assert_notnull (b, "rz_buf_new_file failed");
+	rz_buf_seek (b, 0, RZ_BUF_SET);
 
 	if (test_buf (b) != MU_PASSED) {
 		mu_fail ("test failed");
@@ -197,7 +226,7 @@ bool test_r_buf_io(void) {
 	mu_end;
 }
 
-bool test_r_buf_sparse(void) {
+bool test_rz_buf_sparse(void) {
 	RzBuffer *b;
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
@@ -217,7 +246,7 @@ bool test_r_buf_sparse(void) {
 	mu_end;
 }
 
-bool test_r_buf_sparse2(void) {
+bool test_rz_buf_sparse2(void) {
 	RzBuffer *b = rz_buf_new_sparse (0xff);
 	rz_buf_write (b, (ut8 *)"aaaa", 4);
 	rz_buf_write (b, (ut8 *)"bbbbb", 5);
@@ -263,7 +292,7 @@ bool test_r_buf_sparse2(void) {
 	mu_end;
 }
 
-bool test_r_buf_bytes_steal(void) {
+bool test_rz_buf_bytes_steal(void) {
 	RzBuffer *b;
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
@@ -279,7 +308,7 @@ bool test_r_buf_bytes_steal(void) {
 	mu_end;
 }
 
-bool test_r_buf_format(void) {
+bool test_rz_buf_format(void) {
 	RzBuffer *b = rz_buf_new ();
 	uint16_t a[] = {0xdead, 0xbeef, 0xcafe, 0xbabe};
 	ut8 buf[4 * sizeof (uint16_t)];
@@ -298,7 +327,7 @@ bool test_r_buf_format(void) {
 	mu_end;
 }
 
-bool test_r_buf_with_buf(void) {
+bool test_rz_buf_with_buf(void) {
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
 	RzBuffer *buf = rz_buf_new_with_bytes ((ut8 *)content, length);
@@ -316,7 +345,7 @@ bool test_r_buf_with_buf(void) {
 	mu_end;
 }
 
-bool test_r_buf_slice(void) {
+bool test_rz_buf_slice(void) {
 	const char *content = "AAAAAAAAAASomething To\nSay Here..BBBBBBBBBB";
 	const int length = strlen (content);
 	RzBuffer *buf = rz_buf_new_with_bytes ((ut8 *)content, length);
@@ -351,7 +380,7 @@ bool test_r_buf_slice(void) {
 	mu_end;
 }
 
-bool test_r_buf_get_string(void) {
+bool test_rz_buf_get_string(void) {
 	ut8 *ch = malloc (128);
 	memset (ch, 'A', 127);
 	ch[127] = '\0';
@@ -370,7 +399,7 @@ bool test_r_buf_get_string(void) {
 	mu_end;
 }
 
-bool test_r_buf_get_string_nothing(void) {
+bool test_rz_buf_get_string_nothing(void) {
 	RzBuffer *b = rz_buf_new_with_bytes ((ut8 *)"\x33\x22", 2);
 	char *s = rz_buf_get_string (b, 0);
 	mu_assert_null (s, "there is no string in the buffer (no null terminator)");
@@ -382,7 +411,7 @@ bool test_r_buf_get_string_nothing(void) {
 	mu_end;
 }
 
-bool test_r_buf_slice_too_big(void) {
+bool test_rz_buf_slice_too_big(void) {
 	RzBuffer *buf = rz_buf_new_with_bytes ((ut8 *)"AAAA", 4);
 	RzBuffer *sl = rz_buf_new_slice (buf, 1, 5);
 	ut64 sz = rz_buf_size (sl);
@@ -400,22 +429,20 @@ bool test_r_buf_slice_too_big(void) {
 }
 
 int all_tests() {
-	mu_run_test (test_r_buf_file);
-	mu_run_test (test_r_buf_bytes);
-	mu_run_test (test_r_buf_mmap);
-	mu_run_test (test_r_buf_with_buf);
-	mu_run_test (test_r_buf_slice);
-	mu_run_test (test_r_buf_io);
-	mu_run_test (test_r_buf_sparse);
-	mu_run_test (test_r_buf_sparse2);
-	mu_run_test (test_r_buf_bytes_steal);
-	mu_run_test (test_r_buf_format);
-	mu_run_test (test_r_buf_get_string);
-	mu_run_test (test_r_buf_get_string_nothing);
-	mu_run_test (test_r_buf_slice_too_big);
+	mu_run_test (test_rz_buf_file);
+	mu_run_test (test_rz_buf_bytes);
+	mu_run_test (test_rz_buf_mmap);
+	mu_run_test (test_rz_buf_with_buf);
+	mu_run_test (test_rz_buf_slice);
+	mu_run_test (test_rz_buf_io);
+	mu_run_test (test_rz_buf_sparse);
+	mu_run_test (test_rz_buf_sparse2);
+	mu_run_test (test_rz_buf_bytes_steal);
+	mu_run_test (test_rz_buf_format);
+	mu_run_test (test_rz_buf_get_string);
+	mu_run_test (test_rz_buf_get_string_nothing);
+	mu_run_test (test_rz_buf_slice_too_big);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
-}
+mu_main (all_tests)

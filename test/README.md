@@ -45,52 +45,51 @@ to build Rizin).
 # Failure Levels
 
 A test can have one of the following results:
-* success: The test passed, and that was expected.
-* fixed: The test passed, but failure was expeced.
-* broken: Failure was expected, and happened.
-* failed: The test failed unexpectedly. This is a regression.
+* **success**: The test passed, and that was expected.
+* **fixed**: The test passed, but failure was expected.
+* **broken**: Failure was expected, and happened.
+* **failed**: The test failed unexpectedly. This is a regression.
 
 # Writing Assembly tests
 
-Example tests for `db/asm/*`:
+Tests for the assembly and disassembly (in `db/asm/*`) have a different format:
+General format:
+```
+type "assembly" opcode [offset]
+```
+where type can be any of:
+* **a** meaning "assemble"
+* **d** meaning "disassemble"
+* **B** meaning "broken"
+* **E** stands for cfg.bigendian=true
 
-	General format:
-	type "assembly" opcode [offset]
+#### offset
 
-		type:
-			* a stands for assemble
-			* d stands for disassemble
-			* B stands for broken
-			* E stands for cfg.bigendian=true
+Some architectures are going to assemble an instruction differently depending
+on the offset it's written to. Optional.
 
-		offset:
-			Some architectures are going to assemble an instruction differently depending
-			on the offset it's written to. Optional.
+Examples:
+```
+a "ret" c3
+d "ret" c3
+a "nop" 90 # Assembly is correct
+dB "nopppp" 90 # Disassembly test is broken
+```
 
-	Examples:
-	a "ret" c3
-	d "ret" c3
-	a "nop" 90 # Assembly is correct
-	dB "nopppp" 90 # Disassembly test is broken
+You can merge lines:
+```
+adB "nop" 90
+```
+acts the same as
+```
+aB "nop" 90
+dB "nop" 90
+```
+The filename is very important. It is used to tell rizin which architecture to use: `arch[[_cpu]_bits]`.
 
-	You can merge lines:
-
-	adB "nop" 90
-
-	acts the same as
-
-	aB "nop" 90
-	dB "nop" 90
-
-        The filename is very important. It is used to tell rizin which architecture to use.
-
-        Format:
-        arch[[_cpu]_bits]
-
-	Example:
-	x86_32 means -a x86 -b 32
-        arm_v7_64 means what it means
-
+Examples:
+- `x86_32` means `-a x86 -b 32`
+- `arm_v7_64` means `-a arm -b 64`
 
 # Writing JSON tests
 
@@ -99,29 +98,59 @@ The JSON tests `db/json` are executed on 3 standard files (1 ELF, 1 MachO, 1 PE)
 # Commands tests
 
 Example commands tests for the other `db/` folders:
+```sh
+NAME=test_db
+FILE=bins/elf/ls
+CMDS=<<EOF
+pd 4
+EOF
+EXPECT=<<EOF
+        ;-- main:
+        ;-- entry0:
+        ;-- func.100001174:
+        0x100001174      55             Push rbp
+        0x100001175      4889e5         Mov  rbp, rsp
+        0x100001178      4157           Push r15
+EOF
+RUN
+```
+It is also possible to match specific parts of the output in `EXPECT` and `EXPECT_ERR` using regex (with
+`REGEXP_FILTER_OUT` and `REGEXP_FILTER_ERR` respectively) in case some of the test's output is dynamic:
+```sh
+NAME=bp rebase
+FILE=bins/elf/analysis/pie
+ARGS=-d
+CMDS=<<EOF
+aa
+db main
+db~main
+doc
+db~main
+EOF
+REGEXP_FILTER_OUT=([a-zA-Z="]+\s+)
+EXPECT=<<EOF
+x sw break enabled valid cmd="" cond="" name="main" pie"
+x sw break enabled valid cmd="" cond="" name="main" pie"
+EOF
+RUN
+```
+Without the regex that filtered out the non-deterministic file path and addresses, the expected output would have been the following:
 
-	NAME=test_db
-	FILE=bins/elf/ls
-	CMDS=<<EOF
-	pd 4
-	EOF
-	EXPECT=<<EOF
-            ;-- main:
-            ;-- entry0:
-            ;-- func.100001174:
-            0x100001174      55             Push rbp
-            0x100001175      4889e5         Mov  rbp, rsp
-            0x100001178      4157           Push r15
-	EOF
-	RUN
+```
+0x566495c5 - 0x566495c6 1 --x sw break enabled valid cmd="" cond="" name="main" module="/home/user/rizin/test/bins/elf/analysis/pie"
+0x000005c5 - 0x000005c6 1 --x sw break enabled valid cmd="" cond="" name="main" module="/home/user/rizin/test/bins/elf/analysis/pie"
+```
 
 * **NAME** is the name of the test, it must be unique
 * **FILE** is the path of the file used for the test
 * **ARGS** (optional) are the command line argument passed to rizin (e.g -b 16)
 * **CMDS** are the commands to be executed by the test
-* **EXPECT** is the expected output of the test
+* **EXPECT** is the expected output of the test from stdout. If `REGEXP_FILTER_OUT` is used, `EXPECT` matches only the filtered output.
+* **EXPECT_ERR** (optional) is the expected output of the test from stderr. Can be specified in addition or instead of `EXPECT`
 * **BROKEN** (optional) is 1 if the tests is expected to be fail, 0 or unspecified otherwise
 * **TIMEOUT** (optional) is the number of seconds to wait before considering the test timeout
+* **REGEXP_FILTER_OUT** (optional) apply given regex on stdout before comparing the ouput to `EXPECT` (e.g. `REGEXP_FILTER_OUT=([a-zA-Z]+)`). This is similar to piping stdout to `grep -E "<regex>"` and then comparing the matched text with `EXPECT`.
+* **REGEXP_FILTER_ERR** (optional) apply given regex on stderr before comparing the ouput to `EXPECT_ERR`
 
 You must end the test by adding RUN keyword
 
@@ -150,9 +179,7 @@ static bool all_tests() {
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
-}
+mu_main (all_tests)
 ```
 
 Minunit provides various functions to check the actual output of a function with

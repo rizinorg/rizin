@@ -361,7 +361,7 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		} else if (!strncmp (name, "addiw", 5)) {
 			rz_strbuf_appendf (&op->esil, "%s,0xffffffff,%s,&,", ARG (2), ARG (1));
 			rz_strbuf_appendf (&op->esil, "+,%s,=,", ARG (0));
-			rz_strbuf_appendf (&op->esil, "31,%s,>>,?{,0xffffffff00000000,%s,|=,}", ARG (0), ARG (0));
+			rz_strbuf_appendf (&op->esil, "32,%s,~=", ARG (0));
 			if (!strcmp (ARG (0), riscv_gpr_names[X_SP]) &&
 				!strcmp (ARG (1), riscv_gpr_names[X_SP])) {
 				op->stackop = RZ_ANALYSIS_STACK_INC;
@@ -371,7 +371,7 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 			esilprintf (op, "0xffffffff,%s,&,", ARG (2));
 			rz_strbuf_appendf (&op->esil, "0xffffffff,%s,&,", ARG (1));
 			rz_strbuf_appendf (&op->esil, "+,%s,=,", ARG (0));
-			rz_strbuf_appendf (&op->esil, "31,%s,>>,?{,0xffffffff00000000,%s,|=,}", ARG (0), ARG (0));
+			rz_strbuf_appendf (&op->esil, "32,%s,~=", ARG (0));
 		} else if (!strncmp (name, "add", 3)) {
 			esilprintf (op, "%s,%s,+,%s,=", ARG (2), ARG (1), ARG (0));
 			if (name[3] == 'i' && !strcmp (ARG (0), riscv_gpr_names[X_SP]) &&
@@ -383,7 +383,7 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 			esilprintf (op, "0xffffffff,%s,&,", ARG (2));
 			rz_strbuf_appendf (&op->esil, "0xffffffff,%s,&,", ARG (1));
 			rz_strbuf_appendf (&op->esil, "-,%s,=,", ARG (0));
-			rz_strbuf_appendf (&op->esil, "31,%s,>>,?{,0xffffffff00000000,%s,|=,}", ARG (0), ARG (0));
+			rz_strbuf_appendf (&op->esil, "32,%s,~=", ARG (0));
 		} else if (!strncmp (name, "sub", 3)) {
 			esilprintf (op, "%s,%s,-,%s,=", ARG (2), ARG (1), ARG (0));
 			if (name[3] == 'i' && !strcmp (ARG (0), riscv_gpr_names[X_SP]) &&
@@ -395,7 +395,7 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 			esilprintf (op, "0xffffffff,%s,&,", ARG (2));
 			rz_strbuf_appendf (&op->esil, "0xffffffff,%s,&,", ARG (1));
 			rz_strbuf_appendf (&op->esil, "*,%s,=,", ARG (0));
-			rz_strbuf_appendf (&op->esil, "31,%s,>>,?{,0xffffffff00000000,%s,|=,}", ARG (0), ARG (0));
+			rz_strbuf_appendf (&op->esil, "32,%s,~=", ARG (0));
 		} else if (!strncmp (name, "mul", 3)) {
 			esilprintf (op, "%s,%s,*,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strncmp (name, "div", 3)) {
@@ -413,12 +413,15 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		} else if (!strncmp (name, "sll", 3)) {
 			esilprintf (op, "%s,%s,<<,%s,=", ARG (2), ARG (1), ARG (0));
 			if (name[3] == 'w' || !strncmp (name, "slliw", 5)) {
-				rz_strbuf_appendf (&op->esil, ",0xffffffff,%s,&=", ARG (0));
+				rz_strbuf_appendf (&op->esil, ",32,%s,~=", ARG (0));
 			}
-		} else if (!strncmp (name, "srlw", 4) || !strncmp (name, "srliw", 4)) {
+		} else if (!strcmp (name, "srlw") || !strcmp (name, "srliw")) {
 			esilprintf (op, "%s,0xffffffff,%s,&,>>,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strncmp (name, "srl", 3)) {
 			esilprintf (op, "%s,%s,>>,%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strcmp (name, "sraiw")) {
+			esilprintf (op, "%s,%s,>>>>,%s,=,", ARG (2), ARG (1), ARG (0));
+			rz_strbuf_appendf (&op->esil, "%s,64,-,%s,~=", ARG (2), ARG(0));
 		} else if (!strncmp (name, "sra", 3)) {
 			esilprintf (op, "%s,%s,>>>>,%s,=", ARG (2), ARG (1), ARG (0));
 		}
@@ -430,7 +433,7 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		} else if (!strcmp (name, "lui")) {
 			esilprintf (op, "%s000,%s,=", ARG (1), ARG (0));
 			if (analysis->bits == 64) {
-				rz_strbuf_appendf (&op->esil, ",31,%s,>>,?{,0xffffffff00000000,%s,|=,}", ARG (0), ARG (0));
+				rz_strbuf_appendf (&op->esil, ",32,%s,~=", ARG (0));
 			}
 		}
 		// csr instrs
@@ -471,25 +474,17 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		} else if (!strcmp (name, "lw") || !strcmp (name, "lwu") || !strcmp (name, "lwsp")) {
 			esilprintf (op, "%s,%s,+,[4],%s,=", ARG (2), ARG (1), ARG (0));
 			if ((analysis->bits == 64) && strcmp (name, "lwu")) {
-				rz_strbuf_appendf (&op->esil, ",31,%s,>>,?{,0xffffffff00000000,%s,|=,}", ARG (0), ARG (0));
+				rz_strbuf_appendf (&op->esil, ",32,%s,~=", ARG (0));
 			}
 		} else if (!strcmp (name, "lh") || !strcmp (name, "lhu") || !strcmp (name, "lhsp")) {
 			esilprintf (op, "%s,%s,+,[2],%s,=", ARG (2), ARG (1), ARG (0));
 			if (strcmp (name, "lwu")) {
-				if (analysis->bits == 64) {
-					rz_strbuf_appendf (&op->esil, ",15,%s,>>,?{,0xffffffffffff0000,%s,|=,}", ARG (0), ARG (0));
-				} else {
-					rz_strbuf_appendf (&op->esil, ",15,%s,>>,?{,0xffff0000,%s,|=,}", ARG (0), ARG (0));
-				}
+				rz_strbuf_appendf (&op->esil, ",16,%s,~=", ARG (0));
 			}
 		} else if (!strcmp (name, "lb") || !strcmp (name, "lbu") || !strcmp (name, "lbsp")) {
 			esilprintf (op, "%s,%s,+,[1],%s,=", ARG (2), ARG (1), ARG (0));
 			if (strcmp (name, "lbu")) {
-				if (analysis->bits == 64) {
-					rz_strbuf_appendf (&op->esil, ",7,%s,>>,?{,0xffffffffffffff00,%s,|=,}", ARG (0), ARG (0));
-				} else {
-					rz_strbuf_appendf (&op->esil, ",7,%s,>>,?{,0xffffff00,%s,|=,}", ARG (0), ARG (0));
-				}
+				rz_strbuf_appendf (&op->esil, ",8,%s,~=", ARG (0));
 			}
 		} else if (!strcmp (name, "flq") || !strcmp (name, "flqsp")) {
 			esilprintf (op, "%s,%s,+,[16],%s,=", ARG (2), ARG (1), ARG (0));
@@ -616,7 +611,7 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 	} else if (is_any ("c.mv", "csrrw", "csrrc", "csrrs")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
-	} else if (is_any ("subi", "subw", "sub", "c.sub")) {
+	} else if (is_any ("subi", "subw", "sub", "c.sub", "c.subw")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 	} else if (is_any ("xori", "xor", "c.xor")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_XOR;
@@ -636,7 +631,7 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->type = RZ_ANALYSIS_OP_TYPE_SHL;
 	} else if (is_any ("srl", "srlw", "srliw", "c.srli")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_SHR;
-	} else if (is_any ("sra", "srai", "c.srai")) {
+	} else if (is_any ("sra", "srai", "sraiw", "c.srai")) {
 		op->type = RZ_ANALYSIS_OP_TYPE_SAR;
 // memory
 	} else if (is_any ("sd", "sb", "sh", "sw", "c.sd", "c.sw",

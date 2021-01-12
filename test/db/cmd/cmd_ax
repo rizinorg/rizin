@@ -43,7 +43,7 @@ NAME=axjstrencoding
 FILE=bins/elf/analysis/hello-utf-16
 CMDS=<<EOF
 aa
-e cfg.json.str = base64
+e cfg.json.str=base64
 s sym.imp.wprintf
 axj~{[1].name}
 EOF
@@ -56,7 +56,7 @@ NAME=axjnumencoding
 FILE=bins/elf/analysis/hello-utf-16
 CMDS=<<EOF
 aa
-e cfg.json.num = hex
+e cfg.json.num=hex
 s sym.imp.wprintf
 axj~{[0].addr}
 EOF

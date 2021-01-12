@@ -1121,10 +1121,16 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 	size_tmp = (cnk->size >> 3) << 3;
 	ut64 prev_chunk_addr;
 	ut64 prev_chunk_size;
+	PJ *pj;
 
 	switch (format_out) {
 	case 'j':
-		rz_cons_printf ("{\"chunks\":[");
+		pj = rz_core_pj_new (core);
+		if (!pj) {
+			return;
+		}
+		pj_o (pj);
+		pj_ka (pj, "chunks");
 		break;
 	case '*':
 		rz_cons_printf ("fs+heap.allocated\n");
@@ -1138,7 +1144,6 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 		top_title = rz_str_newf ("Top chunk @ 0x%"PFMT64x"\n", (ut64)main_arena->GH(top));
 	}
 
-	const char *comma = "";
 	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->GH(top)) {
 		if (size_tmp < min_size || next_chunk + size_tmp > main_arena->GH(top)) {
 			const char *status = "corrupted";
@@ -1151,9 +1156,13 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 				(ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
 				break;
 			case 'j':
-				rz_cons_printf ("%s{\"addr\":%"PFMT64d",\"size\":%"PFMT64d",\"status\":\"%s\",\"fd\":%"PFMT64d",\"bk\":%"PFMT64d"}",
-						comma, (ut64)next_chunk, (ut64)cnk->size, status, (ut64)cnk->fd, (ut64)cnk->bk);
-				comma = ",";
+				pj_o (pj);
+				pj_kn (pj, "addr", next_chunk);
+				pj_kn (pj, "size", cnk->size);
+				pj_ks (pj, "status", status);
+				pj_kN (pj, "fd", cnk->fd);
+				pj_kN (pj, "bk", cnk->bk);
+				pj_end (pj);
 				break;
 			case '*':
 				rz_cons_printf ("fs heap.corrupted\n");
@@ -1293,9 +1302,11 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 			PRINTF_GA ("][%s]",status);
 			break;
 		case 'j':
-			rz_cons_printf ("%s{\"addr\":0x%"PFMT64x",\"size\":0x%"PFMT64x",\"status\":\"%s\"}",
-					comma, prev_chunk_addr, prev_chunk_size, status);
-			comma = ",";
+			pj_o (pj);
+			pj_kn (pj, "addr", prev_chunk_addr);
+			pj_kn (pj, "size", prev_chunk_size);
+			pj_ks (pj, "status", status);
+			pj_end (pj);
 			break;
 		case '*':
 			rz_cons_printf ("fs heap.%s\n", status);
@@ -1328,11 +1339,13 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 		PRINT_GA ("]\n");
 		break;
 	case 'j':
-		rz_cons_printf ("],");
-		rz_cons_printf ("\"top\":0x%"PFMT64x",", (ut64)main_arena->GH(top));
-		rz_cons_printf ("\"brk\":0x%"PFMT64x",", (ut64)brk_start);
-		rz_cons_printf ("\"end\":0x%"PFMT64x, (ut64)brk_end);
-		rz_cons_printf ("}\n");
+		pj_end (pj);
+		pj_kn (pj, "top", main_arena->GH(top));
+		pj_kn (pj, "brk", brk_start);
+		pj_kn (pj, "end", brk_end);
+		pj_end (pj);
+		rz_cons_print (pj_string (pj));
+		pj_free (pj);
 		break;
 	case '*':
 		rz_cons_printf ("fs-\n");
@@ -1649,7 +1662,6 @@ static int GH(cmd_dbg_map_heap_glibc)(RzCore *core, const char *input) {
 			format = 'j';
 		}
 		if (GH(rz_resolve_main_arena) (core, &m_arena)) {
-
 			input += 1;
 			if (!strcmp (input, "\0")) {
 				if (core->offset != core->prompt_offset) {

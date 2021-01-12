@@ -603,9 +603,7 @@ task_t pid_to_task (int pid) {
 					eprintf ("Reason: 0x%x: %s\n", err,
 							(char *)MACH_ERROR_STRING (err));
 				}
-				eprintf ("You probably need to run as root or sign "
-					"the binary.\n Read doc/ios.md || doc/macos.md\n"
-					" make -C binrz/rizin ios-sign || macos-sign\n");
+				eprintf ("You probably need to run as root\n");
 				return 0;
 			}
 		}

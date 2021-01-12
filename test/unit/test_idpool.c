@@ -2,12 +2,12 @@
 #include "minunit.h"
 
 
-static bool test_r_id_pool_broken_parameters(void) {
+static bool test_rz_id_pool_broken_parameters(void) {
 	mu_assert_ptreq (rz_id_pool_new (42, 3), NULL, "broken parameters");
 	mu_end;
 }
 
-static bool test_r_id_pool_start_id(void) {
+static bool test_rz_id_pool_start_id(void) {
 	RzIDPool *pool = rz_id_pool_new (3, 42);
 	ut32 grabbed;
 	rz_id_pool_grab_id (pool, &grabbed);
@@ -16,7 +16,7 @@ static bool test_r_id_pool_start_id(void) {
 	mu_end;
 }
 
-static bool test_r_id_pool_id_reuse0(void) {
+static bool test_rz_id_pool_id_reuse0(void) {
 	RzIDPool *pool = rz_id_pool_new (3, 42);
 	ut32 grabbed[3];
 	rz_id_pool_grab_id (pool, &grabbed[0]);
@@ -28,7 +28,7 @@ static bool test_r_id_pool_id_reuse0(void) {
 	mu_end;
 }
 
-static bool test_r_id_pool_id_reuse1(void) {
+static bool test_rz_id_pool_id_reuse1(void) {
 	RzIDPool *pool = rz_id_pool_new (3, 42);
 	ut32 grabbed[3];
 	rz_id_pool_grab_id (pool, &grabbed[0]);
@@ -40,7 +40,7 @@ static bool test_r_id_pool_id_reuse1(void) {
 	mu_end;
 }
 
-static bool test_r_id_pool_id_unique(void) {
+static bool test_rz_id_pool_id_unique(void) {
 	RzIDPool *pool = rz_id_pool_new (3, 42);
 	ut32 grabbed[2];
 	rz_id_pool_grab_id (pool, &grabbed[0]);
@@ -50,7 +50,7 @@ static bool test_r_id_pool_id_unique(void) {
 	mu_end;
 }
 
-static bool test_r_id_pool_id_end_of_pool(void) {
+static bool test_rz_id_pool_id_end_of_pool(void) {
 	RzIDPool *pool = rz_id_pool_new (0, 1);
 	ut32 grabbed;
 	rz_id_pool_grab_id (pool, &grabbed);
@@ -61,7 +61,7 @@ static bool test_r_id_pool_id_end_of_pool(void) {
 	mu_end;
 }
 
-static bool test_r_id_pool_initial_pattern(void) {
+static bool test_rz_id_pool_initial_pattern(void) {
 	RzIDPool *pool = rz_id_pool_new (3, 42);
 	ut32 grabbed[3];
 	rz_id_pool_grab_id (pool, &grabbed[0]);
@@ -73,16 +73,14 @@ static bool test_r_id_pool_initial_pattern(void) {
 }
 
 static int all_tests(void) {
-	mu_run_test (test_r_id_pool_broken_parameters);
-	mu_run_test (test_r_id_pool_start_id);
-	mu_run_test (test_r_id_pool_id_reuse0);
-	mu_run_test (test_r_id_pool_id_reuse1);
-	mu_run_test (test_r_id_pool_id_unique);
-	mu_run_test (test_r_id_pool_id_end_of_pool);
-	mu_run_test (test_r_id_pool_initial_pattern);
+	mu_run_test (test_rz_id_pool_broken_parameters);
+	mu_run_test (test_rz_id_pool_start_id);
+	mu_run_test (test_rz_id_pool_id_reuse0);
+	mu_run_test (test_rz_id_pool_id_reuse1);
+	mu_run_test (test_rz_id_pool_id_unique);
+	mu_run_test (test_rz_id_pool_id_end_of_pool);
+	mu_run_test (test_rz_id_pool_initial_pattern);
 	return tests_passed != tests_run;
 }
 
-int main (int argc, char **argv) {
-	return all_tests ();
-}
+mu_main (all_tests)

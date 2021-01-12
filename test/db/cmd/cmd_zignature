@@ -329,8 +329,8 @@ FILE=malloc://1024
 CMDS=<<EOF
 wx 00112233445566778899aabbccddeeff
 za foo b 1122
-e zign.minsz = 0
-e zign.mincc = 0
+e zign.minsz=0
+e zign.mincc=0
 fs *
 e search.align=2
 z/
@@ -351,8 +351,8 @@ CMDS=<<EOF
 wx 00112233445566778899aabbccddeeff
 za a b 11223344
 za b b bbccddee
-e zign.minsz = 0
-e zign.mincc = 0
+e zign.minsz=0
+e zign.mincc=0
 fs *
 f~?
 e search.in=raw
@@ -384,12 +384,12 @@ FILE=malloc://1024
 CMDS=<<EOF
 wx 00112233445566778899aabbccddeeff
 za foo b 11223344
-e zign.minsz = 0
+e zign.minsz=0
 fs *
 z/
 f~?
 f-*
-e zign.minsz = 5
+e zign.minsz=5
 z/
 f~?
 EOF
@@ -417,7 +417,7 @@ NAME=zaf
 FILE=bins/elf/analysis/zigs
 CMDS=<<EOF
 aaa
-e zign.mincc = 0
+e zign.mincc=0
 zs zigs
 zaf main
 z
@@ -440,7 +440,7 @@ NAME=zaf at offset
 FILE=bins/elf/analysis/zigs
 CMDS=<<EOF
 aaa
-e zign.mincc = 0
+e zign.mincc=0
 zs zigs
 zaf @ main
 z
@@ -463,7 +463,7 @@ NAME=zaf (root zignspace)
 FILE=bins/elf/analysis/zigs
 CMDS=<<EOF
 aaa
-e zign.mincc = 0
+e zign.mincc=0
 zaf main
 z
 EOF
@@ -484,7 +484,7 @@ NAME=zaf zigname
 FILE=bins/elf/analysis/zigs
 CMDS=<<EOF
 aaa
-e zign.mincc = 0
+e zign.mincc=0
 zs zigs
 zaf main foobar
 z
@@ -507,7 +507,7 @@ NAME=zaf zigname (root zignspace)
 FILE=bins/elf/analysis/zigs
 CMDS=<<EOF
 aaa
-e zign.mincc = 0
+e zign.mincc=0
 zaf main foobar
 z
 EOF
@@ -570,7 +570,7 @@ FILE=bins/elf/analysis/zigs_stripped
 CMDS=<<EOF
 aa
 za sym.print g cc=1 nbbs=1 edges=0 ebbs=1
-e zign.mincc = 0
+e zign.mincc=0
 z. @@f:fcn*
 ?v sign.graph.sym.print_0
 EOF
@@ -584,11 +584,11 @@ FILE=bins/elf/analysis/zigs_stripped
 CMDS=<<EOF
 aa
 za sym.print g cc=1 nbbs=1 edges=0 ebbs=1
-e zign.mincc = 0
+e zign.mincc=0
 z. @@f:fcn*
 ?v sign.graph.sym.print_0
 f-*
-e zign.mincc = 10
+e zign.mincc=10
 z. @@f:fcn*
 ?v sign.graph.sym.print_0
 EOF
@@ -603,7 +603,7 @@ FILE=bins/elf/analysis/zigs_stripped
 CMDS=<<EOF
 aa
 za sym.print_metric g cc=1 nbbs=1 edges=0 ebbs=1
-e zign.mincc = 0
+e zign.mincc=0
 z/
 ?v sign.graph.sym.print_metric_4
 EOF
@@ -618,8 +618,8 @@ CMDS=<<EOF
 aa
 za sym.print b 5548....48......48......48......48....bf........b8........e8........90c9c3
 za sym.print g cc=1 nbbs=1 edges=0 ebbs=1
-e zign.minsz = 0
-e zign.mincc = 0
+e zign.minsz=0
+e zign.mincc=0
 z/
 ?v sign.bytes.sym.print_0
 ?v sign.graph.sym.print_4
@@ -630,23 +630,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=z/ + zign.{bytes,graph}
+NAME=z/ + zign.match.{bytes,graph}
 FILE=bins/elf/analysis/zigs_stripped
 CMDS=<<EOF
 aa
 za sym.print b 5548....48......48......48......48....bf........b8........e8........90c9c3
 za sym.print g cc=1 nbbs=1 edges=0 ebbs=1
-e zign.minsz = 0
-e zign.mincc = 0
+e zign.minsz=0
+e zign.mincc=0
 fs sign
-e zign.bytes = true
-e zign.graph = false
+e zign.match.bytes=true
+e zign.match.graph=false
 z/
 f~sign.bytes.sym.print?
 f~sign.graph.sym.print?
 f-*
-e zign.bytes = false
-e zign.graph = true
+e zign.match.bytes=false
+e zign.match.graph=true
 z/
 f~sign.bytes.sym.print?
 f~sign.graph.sym.print?
@@ -659,23 +659,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=zc + zign.{bytes,graph}
+NAME=zc + zign.match.{bytes,graph}
 FILE=bins/elf/analysis/zigs_stripped
 CMDS=<<EOF
 aa
 za sym.print b 5548....48......48......48......48....bf........b8........e8........90c9c3
 za sym.print g cc=1 nbbs=1 edges=0 ebbs=1
-e zign.minsz = 0
-e zign.mincc = 0
+e zign.minsz=0
+e zign.mincc=0
 fs sign
-e zign.bytes = true
-e zign.graph = false
+e zign.match.bytes=true
+e zign.match.graph=false
 z. @ 0x400536
 f~sign.bytes.sym.print?
 f~sign.graph.sym.print?
 f-*
-e zign.bytes = false
-e zign.graph = true
+e zign.match.bytes=false
+e zign.match.graph=true
 z. @ 0x400536
 f~sign.bytes.sym.print?
 f~sign.graph.sym.print?
@@ -1030,7 +1030,7 @@ NAME=zb bad count
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 s 0x00410210
-e zign.maxsz = 32
+e zign.maxsz=32
 af
 za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
 za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
@@ -1044,7 +1044,7 @@ NAME=zb negative count
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 s 0x00410210
-e zign.maxsz = 32
+e zign.maxsz=32
 af
 za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
 za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
@@ -1058,7 +1058,7 @@ NAME=zb single exact match
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 s 0x00410210
-e zign.maxsz = 32
+e zign.maxsz=32
 af
 za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
 za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
@@ -1073,7 +1073,7 @@ NAME=zb match 5 by default
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 s 0x00410210
-e zign.maxsz = 32
+e zign.maxsz=32
 af
 za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
 za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
@@ -1102,7 +1102,7 @@ NAME=zb match 6 of 6 with 100 count
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 s 0x00410210
-e zign.maxsz = 32
+e zign.maxsz=32
 af
 za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
 za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
@@ -1132,7 +1132,7 @@ NAME=zb ignore masked bytes
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 s 0x00410210
-e zign.maxsz = 32
+e zign.maxsz=32
 af
 za sym.perf1 b 415541544989fc55534883ec08e800000000488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 za sym.perf2 b 415541544989fc55534883ec08e8ffffffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
@@ -1148,7 +1148,7 @@ NAME=zb count 1
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 s 0x00410210
-e zign.maxsz = 32
+e zign.maxsz=32
 af
 za sym.right g cc=16 nbbs=28 edges=44 ebbs=1 bbsum=407
 za sym.right b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
@@ -1247,7 +1247,7 @@ NAME=x86-64 r_sign_fcn_bytes bounds check
 FILE=bins/elf/libc.so.6
 CMDS=<<EOF
 s 0x0593a0
-e zign.maxsz = 41
+e zign.maxsz=41
 af
 zaf
 z* ~za sym._IO_printf b
@@ -1297,7 +1297,7 @@ NAME=80386 r_sign_fcn_bytes bounds check
 FILE=bins/elf/fcn_in_test.elf
 CMDS=<<EOF
 s 0x00001120
-e zign.maxsz = 32
+e zign.maxsz=32
 af
 zaf
 z* ~za sym.__do_global_dtors_aux b
@@ -1351,7 +1351,7 @@ FILE=bins/elf/libc.so.0
 CMDS=<<EOF
 s 0x00051490
 af
-e zign.maxsz = 41
+e zign.maxsz=41
 zaf
 z* ~za sym.fpathconf b
 EOF
@@ -1403,7 +1403,7 @@ FILE=bins/elf/busybox-powerpc
 CMDS=<<EOF
 s 0x1000016c
 af
-e zign.maxsz = 30
+e zign.maxsz=30
 zaf
 z* ~za fcn.1000016c b
 EOF
@@ -1450,7 +1450,7 @@ FILE=bins/elf/libverifyPass.so
 CMDS=<<EOF
 s 0x00001844
 af
-e zign.maxsz = 42
+e zign.maxsz=42
 zaf
 z* ~za fcn.00001844 b
 EOF
@@ -1501,7 +1501,7 @@ NAME=ARM aarch64 r_sign_fcn_bytes bounds check
 FILE=bins/elf/switch-hello-world.elf
 CMDS=<<EOF
 s 0x00016e9c
-e zign.maxsz = 94
+e zign.maxsz=94
 af
 zaf
 z* ~za sym._vfprintf_r b
@@ -1515,7 +1515,7 @@ NAME=zbr bad count
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 aa
-e zign.maxsz = 32
+e zign.maxsz=32
 za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
 za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 zbr sym.exact NOTNUMBER
@@ -1528,7 +1528,7 @@ NAME=zbr negative count
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 aa
-e zign.maxsz = 32
+e zign.maxsz=32
 za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
 za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 zbr sym.exact -3
@@ -1541,7 +1541,7 @@ NAME=zbr zero count
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 aa
-e zign.maxsz = 32
+e zign.maxsz=32
 za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
 za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 zbr sym.exact 0
@@ -1554,7 +1554,7 @@ NAME=zbr single match
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 aa
-e zign.maxsz = 32
+e zign.maxsz=32
 za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
 za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 zbr sym.exact 1~[5]
@@ -1568,7 +1568,7 @@ NAME=zbr exact match
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 aa
-e zign.maxsz = 32
+e zign.maxsz=32
 za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
 za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 zbr sym.exact 1
@@ -1582,7 +1582,7 @@ NAME=zbr try match 5 but only 4
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 aa
-e zign.maxsz = 32
+e zign.maxsz=32
 za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
 za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 zbr sym.exact ~[5]
@@ -1599,7 +1599,7 @@ NAME=zbr match 5 by default
 FILE=bins/elf/ls
 CMDS=<<EOF
 aa
-e zign.maxsz = 32
+e zign.maxsz=32
 za main b 41574156415541545589fd534889f34883ec58488b3e64488b04252800000048
 za main g cc=429 nbbs=300 edges=437 ebbs=8 bbsum=6739
 zbr main ~[5]
@@ -1617,7 +1617,7 @@ NAME=zbr ignore masked bytes
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 aa
-e zign.maxsz = 32
+e zign.maxsz=32
 za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
 za sym.exact b 415541544989fc55534883ec08e8aaaaaaaa488baaaaaaaaaa4889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
 zbr sym.exact 1
@@ -1631,7 +1631,7 @@ NAME=zb zign.threshold
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 s 0x00410210
-e zign.maxsz = 32
+e zign.maxsz=32
 af
 za sym.1 g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
 za sym.1 b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
@@ -1643,13 +1643,13 @@ za sym.4 g cc=12 nbbs=17 edges=30 ebbs=1 bbsum=307
 za sym.4 b 4883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffff00000000ff000000000000ffffffffffffff
 za sym.5 g cc=10 nbbs=14 edges=22 ebbs=1 bbsum=284
 za sym.5 b 08e89e02ffff488b2d77952a004889c38b450048:ffff00000000ff000000000000ffffffffffffff
-e zign.threshold = .99
+e zign.threshold=.99
 zb ~[5]
-e zign.threshold = .9
+e zign.threshold=.9
 zb ~[5]
-e zign.threshold = .8
+e zign.threshold=.8
 zb ~[5]
-e zign.threshold = .7
+e zign.threshold=.7
 zb ~[5]
 EOF
 EXPECT=<<EOF
@@ -1670,16 +1670,16 @@ NAME=zbr zign.threshold
 FILE=bins/elf/ls
 CMDS=<<EOF
 aa
-e zign.maxsz = 32
+e zign.maxsz=32
 za main b 41574156415541545589fd534889f34883ec58488b3e64488b04252800000048
 za main g cc=429 nbbs=300 edges=437 ebbs=8 bbsum=6739
-e zign.threshold = 1.0
+e zign.threshold=1.0
 zbr main~[5]
-e zign.threshold = 0.5
+e zign.threshold=0.5
 zbr main~[5]
-e zign.threshold = 0.3
+e zign.threshold=0.3
 zbr main~[5]
-e zign.threshold = 0.12
+e zign.threshold=0.12
 zbr main 30~[5]
 EOF
 EXPECT=<<EOF
@@ -1695,8 +1695,8 @@ NAME=zbr invalid threshold
 FILE=bins/elf/ls
 CMDS=<<EOF
 aa
-e zign.maxsz = 32
-e zign.threshold = 99.0
+e zign.maxsz=32
+e zign.threshold=99.0
 za main b 41574156415541545589fd534889f34883ec58488b3e64488b04252800000048
 za main g cc=429 nbbs=300 edges=437 ebbs=8 bbsum=6739
 zbr main ~[5]
@@ -1714,8 +1714,8 @@ NAME=zb invalid threshold
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
 s 0x00410210
-e zign.threshold = 99.0
-e zign.maxsz = 32
+e zign.threshold=99.0
+e zign.maxsz=32
 af
 za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
 za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
@@ -1774,7 +1774,7 @@ za main t func.sym.new_function_name.ret=int func.sym.new_function_name.args=2 f
 za main n sym.new_function_name
 s main
 af
-e zign.offset = true
+e zign.match.offset=true
 z.
 afs
 afn

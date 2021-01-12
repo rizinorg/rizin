@@ -1,12 +1,12 @@
 NAME=io.cache: minimal usage
 FILE=malloc://1024
 CMDS=<<EOF
-e io.cache=1
+e io.cache=true
 wx 010203
 p8 3
 wcr
 # Test write works after disabling the cache.
-e io.cache=0
+e io.cache=false
 wx 040506
 p8 3
 EOF
@@ -19,7 +19,7 @@ RUN
 NAME=io.cache: Writing after end of file
 FILE=bins/other/0x3
 CMDS=<<EOF
-e io.cache=1
+e io.cache=true
 w hello
 x 5
 EOF
@@ -38,7 +38,7 @@ p8
 w no-cache
 p8
 
-e io.cache=1
+e io.cache=true
 w cache-mode
 p8
 
@@ -78,7 +78,7 @@ b 15
 p8
 w no-cache
 p8
-e io.cache=1
+e io.cache=true
 w cache-mode
 p8
 # Reseting cache restores original data.
@@ -113,7 +113,7 @@ RUN
 NAME=io.cache: Reading behind cache written area
 FILE=malloc://32
 CMDS=<<EOF
-e io.cache = true
+e io.cache=true
 px 32
 s +1
 px 31
@@ -142,7 +142,7 @@ RUN
 NAME=io.cache: cache write, cache undo
 FILE=malloc://1024
 CMDS=<<EOF
-e io.cache=1
+e io.cache=true
 w a
 w b @ 1
 p8 2
@@ -158,7 +158,7 @@ RUN
 NAME=io.cache: cache reset
 FILE=malloc://32
 CMDS=<<EOF
-e io.cache=1
+e io.cache=true
 wx 90
 wcr
 wx 90

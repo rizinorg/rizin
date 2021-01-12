@@ -22,7 +22,7 @@ void add_to_list(RTreeNode *n, RTreeVisitor *vis) {
 		mu_assert ("lists must have same elements", (!ita && !ite)); \
 	} while (0)
 
-bool test_r_tree() {
+bool test_rz_tree() {
 	RTreeVisitor calc = { 0 };
 	RTreeVisitor lister = { 0 };
 	RTree *t = rz_tree_new();
@@ -101,10 +101,8 @@ bool test_r_tree() {
 }
 
 int all_tests() {
-	mu_run_test(test_r_tree);
+	mu_run_test(test_rz_tree);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
-}
+mu_main (all_tests)

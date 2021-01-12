@@ -6,7 +6,7 @@ INSTALL_DST="/tmp/rzios"
 USE_SIMULATOR=0
 #SIMULATOR_ARCHS="i386+x86_64"
 SIMULATOR_ARCHS="x86_64"
-PACKAGE_RADARE=0
+PACKAGE_RIZIN=0
 EMBED_BITCODE=1
 CFLAGS="-O2 -miphoneos-version-min=10.0"
 DOSH=0
@@ -251,7 +251,7 @@ if [ "${#ARCHS}" -gt 0 ]; then
 		echo "Building for $CPU"
 		sleep 1
 		iosBuild
-		if [ "${PACKAGE_RADARE}" = 1 ]; then
+		if [ "${PACKAGE_RIZIN}" = 1 ]; then
 			iosPackage
 		fi
 	fi

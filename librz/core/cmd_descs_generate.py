@@ -55,10 +55,11 @@ DECL_DESC_HELP_DETAILS_TEMPLATE = 'static const RzCmdDescDetail {cname}[{size}];
 
 DESC_HELP_ARG_CHOICES = 'static const char *{cname}[] = {{ {choices} }};'
 DESC_HELP_ARG_UNION_CHOICES = '.choices = {choices}, '
+DESC_HELP_ARG_TEMPLATE_FLAGS = '.flags = {flags}, '
 DESC_HELP_ARG_TEMPLATE_OPTIONAL = '.optional = {optional}, '
 DESC_HELP_ARG_TEMPLATE_NO_SPACE = '.no_space = {no_space}, '
 DESC_HELP_ARG_TEMPLATE_DEFAULT_VALUE = '.default_value = {default_value}, '
-DESC_HELP_ARG_TEMPLATE = '\t{{ .name = {name}, .type = {type}, {optional}{no_space}{default_value}{union}}}'
+DESC_HELP_ARG_TEMPLATE = '\t{{ .name = {name}, .type = {type}, {flags}{optional}{no_space}{default_value}{union}}}'
 DESC_HELP_ARGS_TEMPLATE = '''static const RzCmdDescArg {cname}[] = {{
 {args}
 }};
@@ -155,6 +156,7 @@ class Arg(object):
         self.cd = cd
         # RzCmdDescArg fields
         self.name = c['name']
+        self.flags = c.get('flags')
         self.optional = c.get('optional')
         self.no_space = c.get('no_space')
         self.type = c['type']
@@ -175,12 +177,14 @@ class Arg(object):
         return ''
 
     def __str__(self):
+        flags = DESC_HELP_ARG_TEMPLATE_FLAGS.format(flags=self.flags) if self.flags is not None else ''
         optional = DESC_HELP_ARG_TEMPLATE_OPTIONAL.format(optional='true' if self.optional else 'false') if self.optional is not None else ''
         no_space = DESC_HELP_ARG_TEMPLATE_NO_SPACE.format(no_space='true' if self.no_space else 'false') if self.no_space is not None else ''
         default_value = DESC_HELP_ARG_TEMPLATE_DEFAULT_VALUE.format(default_value=strornull(self.default_value)) if self.default_value is not None else ''
         return DESC_HELP_ARG_TEMPLATE.format(
             name=strornull(self.name),
             type=self.type,
+            flags=flags,
             optional=optional,
             no_space=no_space,
             default_value=default_value,
@@ -335,6 +339,10 @@ class CmdDesc(object):
 
         if self.cname in CmdDesc.c_cds:
             print('Another command already has the same cname as %s' % (self.cname,))
+            sys.exit(1)
+
+        if self.type in [CD_TYPE_ARGV, CD_TYPE_ARGV_MODES] and self.args is None and self.args_alias is None:
+            print('Specify arguments for command %s' % (self.name,))
             sys.exit(1)
 
     def get_handler_cname(self):

@@ -477,6 +477,8 @@ static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
 	RzVector *vmem = rz_vector_new (sizeof (RzDebugChangeMem), NULL, NULL);
 	if (!vmem) {
 		eprintf ("Error: failed to allocate RzVector vmem.\n");
+		free (json_str);
+		rz_json_free (reg_json);
 		return false;
 	}
 	ht_up_insert (memory, sdb_atoi (addr), vmem);
@@ -498,6 +500,8 @@ static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
 		rz_vector_push (vmem, &mem);
 	}
 
+	free (json_str);
+	rz_json_free (reg_json);
 	return true;
 }
 
@@ -576,6 +580,8 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 	// Extract RzRegArena's from "registers"
 	const RJson *regs_json = rz_json_get (chkpt_json, "registers");
 	if (!regs_json || regs_json->type != RZ_JSON_ARRAY) {
+		free (json_str);
+		rz_json_free (chkpt_json);
 		return true;
 	}
 	for (child = regs_json->children.first; child; child = child->next) {
@@ -647,6 +653,8 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 		rz_list_append (checkpoint.snaps, snap);
 	}
 end:
+	free (json_str);
+	rz_json_free (chkpt_json);
 	rz_vector_push (checkpoints, &checkpoint);
 	return true;
 }

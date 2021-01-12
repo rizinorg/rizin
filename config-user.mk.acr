@@ -18,7 +18,7 @@ USE_RPATH=@USE_RPATH@
 HAVE_JEMALLOC=@HAVE_JEMALLOC@
 HAVE_FORK=@HAVE_FORK@
 WANT_DYLINK=@WANT_DYLINK@
-WITH_LIBR=@WITH_LIBR@
+WITH_LIBRZ=@WITH_LIBRZ@
 WANT_RZ_TEST=@WANT_RZ_TEST@
 
 MKPLUGINS=
@@ -94,8 +94,6 @@ GIT_TIP:=$(shell (git rev-parse HEAD 2>/dev/null || echo HEAD ))
 GIT_TAP:=$(shell (git describe --tags 2>/dev/null || echo ${VERSION} ))
 
 CLOCK_LDFLAGS+=@CLOCK_LDFLAGS@
-
-NEWSHELL_CFLAGS=@NEWSHELL_CFLAGS@
 
 # cache compiler flags at configure time #
 CFLAGS+=@CFLAGS@

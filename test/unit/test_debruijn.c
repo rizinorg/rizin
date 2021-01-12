@@ -1,7 +1,7 @@
 #include <rz_util.h>
 #include "minunit.h"
 
-bool test_r_debruijn_pattern(void) {
+bool test_rz_debruijn_pattern(void) {
 	char* pattern = rz_debruijn_pattern (256, 0, NULL /*default charset*/);
 	mu_assert_eq ((int)strlen(pattern), 256, "pattern length");
 	mu_assert_streq (pattern, "AAABAACAADAAEAAFAAGAAHAAIAAJAAKAALAAMAANAAOAAPAAQAARAASAATAAUAAVAAWAAXAAYAAZAAaAAbAAcAAdAAeAAfAAgAAhAAiAAjAAkAAlAAmAAnAAoAApAAqAArAAsAAtAAuAAvAAwAAxAAyAAzAA1AA2AA3AA4AA5AA6AA7AA8AA9AA0ABBABCABDABEABFABGABHABIABJABKABLABMABNABOABPABQABRABSABTABUABVABWABXABY", "pattern of 256 length");
@@ -9,7 +9,7 @@ bool test_r_debruijn_pattern(void) {
 	mu_end;
 }
 
-bool test_r_debruijn_offset(void) {
+bool test_rz_debruijn_offset(void) {
 	// From ropasaurusrex.
 	ut64 offset = 0x41417641;
 	mu_assert_eq (rz_debruijn_offset (offset, false /*little endian*/), 140, "debruijn offset - little endian");
@@ -19,11 +19,9 @@ bool test_r_debruijn_offset(void) {
 }
 
 int all_tests() {
-	mu_run_test(test_r_debruijn_pattern);
-	mu_run_test(test_r_debruijn_offset);
+	mu_run_test(test_rz_debruijn_pattern);
+	mu_run_test(test_rz_debruijn_offset);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
-}
+mu_main (all_tests)

@@ -36,7 +36,7 @@ aae
 pd 1~push
 EOF
 EXPECT=<<EOF
-  0x00015e24      push {r4, r5, r6, r7, lr}
-  0x00015e24      push {r4, r5, r6, r7, lr}
+  0x00015e24      push  {r4, r5, r6, r7, lr}
+  0x00015e24      push  {r4, r5, r6, r7, lr}
 EOF
 RUN

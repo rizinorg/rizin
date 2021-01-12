@@ -18,7 +18,7 @@
 #undef __WINDOWS__
 
 #define RZ_MODE_PRINT 0x000
-#define RZ_MODE_RADARE 0x001
+#define RZ_MODE_RIZINCMD 0x001
 #define RZ_MODE_SET 0x002
 #define RZ_MODE_SIMPLE 0x004
 #define RZ_MODE_JSON 0x008
@@ -37,7 +37,8 @@ typedef enum {
 	RZ_OUTPUT_MODE_QUIET = 1 << 3,
 	RZ_OUTPUT_MODE_SDB = 1 << 4,
 	RZ_OUTPUT_MODE_LONG = 1 << 5,
-	RZ_OUTPUT_MODE_TABLE = 1 << 6,
+	RZ_OUTPUT_MODE_LONG_JSON = 1 << 6,
+	RZ_OUTPUT_MODE_TABLE = 1 << 7,
 } RzOutputMode;
 
 #define RZ_IN /* do not use, implicit */
@@ -248,8 +249,6 @@ typedef enum {
 extern "C" {
 #endif
 
-#define TODO(x) eprintf(__func__"  " x)
-
 // TODO: FS or RZ_SYS_DIR ??
 #undef FS
 #if __WINDOWS__
@@ -396,7 +395,9 @@ static inline void *rz_new_copy(int size, void *data) {
 #define typeof(arg) __typeof__(arg)
 #endif
 
-#if 1
+// There is a bug of using "offsetof()" in the structure
+// initialization in GCC < 5.0 versions
+#if !(defined(__GNUC__) && __GNUC__ < 5)
 #define rz_offsetof(type, member) offsetof(type, member)
 #else
 #if __SDB_WINDOWS__

@@ -480,21 +480,15 @@ RZ_API void rz_bin_free(RzBin *bin) {
 	}
 }
 
-static bool rz_bin_print_plugin_details(RzBin *bin, RzBinPlugin *bp, int json) {
+static bool rz_bin_print_plugin_details(RzBin *bin, RzBinPlugin *bp, PJ *pj, int json) {
 	if (json == 'q') {
 		bin->cb_printf ("%s\n", bp->name);
 	} else if (json) {
-		PJ *pj = pj_new ();
-		if (!pj) {
-			return false;
-		}
 		pj_o (pj);
 		pj_ks (pj, "name", bp->name);
 		pj_ks (pj, "description", bp->desc);
 		pj_ks (pj, "license", bp->license ? bp->license : "???");
 		pj_end (pj);
-		bin->cb_printf ("%s\n", pj_string (pj));
-		pj_free (pj);
 	} else {
 		bin->cb_printf ("Name: %s\n", bp->name);
 		bin->cb_printf ("Description: %s\n", bp->desc);
@@ -535,7 +529,7 @@ static void __printXtrPluginDetails(RzBin *bin, RzBinXtrPlugin *bx, int json) {
 	}
 }
 
-RZ_API bool rz_bin_list_plugin(RzBin *bin, const char* name, int json) {
+RZ_API bool rz_bin_list_plugin(RzBin *bin, const char* name, PJ *pj, int json) {
 	RzListIter *it;
 	RzBinPlugin *bp;
 	RzBinXtrPlugin *bx;
@@ -546,7 +540,7 @@ RZ_API bool rz_bin_list_plugin(RzBin *bin, const char* name, int json) {
 		if (!rz_str_cmp (name, bp->name, strlen (name))) {
 			continue;
 		}
-		return rz_bin_print_plugin_details (bin, bp, json);
+		return rz_bin_print_plugin_details (bin, bp, pj, json);
 	}
 	rz_list_foreach (bin->binxtrs, it, bx) {
 		if (!rz_str_cmp (name, bx->name, strlen (name))) {
@@ -560,7 +554,7 @@ RZ_API bool rz_bin_list_plugin(RzBin *bin, const char* name, int json) {
 	return false;
 }
 
-RZ_API void rz_bin_list(RzBin *bin, int format) {
+RZ_API void rz_bin_list(RzBin *bin, PJ *pj, int format) {
 	RzListIter *it;
 	RzBinPlugin *bp;
 	RzBinXtrPlugin *bx;
@@ -574,10 +568,6 @@ RZ_API void rz_bin_list(RzBin *bin, int format) {
 			bin->cb_printf ("%s\n", bx->name);
 		}
 	} else if (format) {
-		PJ *pj = pj_new ();
-		if (!pj) {
-			return;
-		}
 		pj_o (pj);
 		pj_ka (pj, "bin");
 		rz_list_foreach (bin->plugins, it, bp) {
@@ -607,8 +597,6 @@ RZ_API void rz_bin_list(RzBin *bin, int format) {
 		}
 		pj_end (pj);
 		pj_end (pj);
-		bin->cb_printf ("%s\n", pj_string (pj));
-		pj_free (pj);
 	} else {
 		rz_list_foreach (bin->plugins, it, bp) {
 			bin->cb_printf ("bin  %-11s %s (%s) %s %s\n",
@@ -959,20 +947,15 @@ RZ_API bool rz_bin_select_bfid (RzBin *bin, ut32 bf_id) {
 	return bf? rz_bin_file_set_obj (bin, bf, NULL): false;
 }
 
-static void list_xtr_archs(RzBin *bin, int mode) {
+static void list_xtr_archs(RzBin *bin, PJ *pj, int mode) {
 	RzBinFile *binfile = rz_bin_cur (bin);
 	if (binfile->xtr_data) {
 		RzListIter *iter_xtr;
 		RzBinXtrData *xtr_data;
 		int bits, i = 0;
 		char *arch, *machine;
-		PJ *pj;
 
 		if (mode == 'j') {
-			pj = pj_new ();
-			if (!pj) {
-				return;
-			}
 			pj_ka (pj, "bins");
 		}
 
@@ -1010,13 +993,11 @@ static void list_xtr_archs(RzBin *bin, int mode) {
 
 		if (mode == 'j') {
 			pj_end (pj);
-			bin->cb_printf ("%s", pj_string (pj));
-			pj_free (pj);
 		}
 	}
 }
 
-RZ_API void rz_bin_list_archs(RzBin *bin, int mode) {
+RZ_API void rz_bin_list_archs(RzBin *bin, PJ *pj, int mode) {
 	rz_return_if_fail (bin);
 
 	char unk[128];
@@ -1027,7 +1008,7 @@ RZ_API void rz_bin_list_archs(RzBin *bin, int mode) {
 
 	//are we with xtr format?
 	if (binfile && binfile->curxtr) {
-		list_xtr_archs (bin, mode);
+		list_xtr_archs (bin, pj, mode);
 		return;
 	}
 	Sdb *binfile_sdb = binfile? binfile->sdb: NULL;
@@ -1046,12 +1027,7 @@ RZ_API void rz_bin_list_archs(RzBin *bin, int mode) {
 	}
 	RzTable *table = rz_table_new ();
 	const char *fmt = "dXnss";
-	PJ *pj;
 	if (mode == 'j') {
-		pj = pj_new ();
-		if (!pj) {
-			return;
-		}
 		pj_ka (pj, "bins");
 	}
 	RzBinObject *obj = nbinfile->o;
@@ -1161,10 +1137,6 @@ RZ_API void rz_bin_list_archs(RzBin *bin, int mode) {
 	}
 	if (mode == 'j') {
 		pj_end (pj);
-		const char *s = pj_string (pj);
-		if (s) {
-			bin->cb_printf ("%s", s);
-		}
 	}
 	rz_table_free (table);
 }

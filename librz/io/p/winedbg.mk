@@ -4,7 +4,7 @@ STATIC_OBJ+=${OBJ_WINEDBG}
 TARGET_WINEDBG=io_winedbg.${EXT_SO}
 ALL_TARGETS+=${TARGET_WINEDBG}
 
-include $(LIBR)/socket/deps.mk
+include $(LIBRZ)/socket/deps.mk
 
 ifeq (${WITHPIC},0)
 LINKFLAGS=../../socket/librz_socket.a

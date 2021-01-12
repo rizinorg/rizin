@@ -54,6 +54,7 @@ RZ_API const char *rz_str_lastbut(const char *s, char ch, const char *but);
 RZ_API int rz_str_split(char *str, char ch);
 RZ_API RzList *rz_str_split_list(char *str, const char *c, int n);
 RZ_API RzList *rz_str_split_duplist(const char *str, const char *c, bool trim);
+RZ_API RzList *rz_str_split_duplist_n(const char *str, const char *c, int n, bool trim);
 RZ_API size_t *rz_str_split_lines(char *str, size_t *count);
 RZ_API char* rz_str_replace(char *str, const char *key, const char *val, int g);
 RZ_API char *rz_str_replace_icase(char *str, const char *key, const char *val, int g, int keep_case);

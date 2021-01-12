@@ -81,7 +81,7 @@ static void print_string(RzBinFile *bf, RzBinString *string, int raw, PJ *pj) {
 			io->cb_printf ("%s\n", string->string);
 		}
 		break;
-	case RZ_MODE_RADARE: {
+	case RZ_MODE_RIZINCMD: {
 		char *f_name, *nstr;
 		f_name = strdup (string->string);
 		rz_name_filter (f_name, 512);
@@ -169,7 +169,7 @@ static int string_scan_range(RzList *list, RzBinFile *bf, int min,
 				if (is_wide32) {
 					str_type = RZ_STRING_TYPE_WIDE32;
 				} else {
-					bool is_wide = needle + rc + 2 < to && !w[0] && w[1] && !w[2];
+					bool is_wide = needle + rc + 4 < to && !w[0] && w[1] && !w[2] && w[3] && !w[4];
 					str_type = is_wide? RZ_STRING_TYPE_WIDE: RZ_STRING_TYPE_ASCII;
 				}
 			} else {
@@ -357,7 +357,7 @@ static int string_scan_range(RzList *list, RzBinFile *bf, int min,
 		pj_end (pj);
 		RzIO *io = bin->iob.io;
 		if (io) {
-			io->cb_printf ("%s\n", pj_string (pj));
+			io->cb_printf ("%s", pj_string (pj));
 		}
 		pj_free (pj);
 	}

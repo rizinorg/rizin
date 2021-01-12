@@ -1076,16 +1076,6 @@
     "type": "help_command",
     "named": true,
     "fields": {
-      "args": {
-        "multiple": false,
-        "required": false,
-        "types": [
-          {
-            "type": "args",
-            "named": true
-          }
-        ]
-      },
       "command": {
         "multiple": false,
         "required": true,

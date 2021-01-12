@@ -11,7 +11,9 @@ typedef enum optype_t {
 	ARM_GPR = 1,
 	ARM_CONSTANT = 2,
 	ARM_FP = 4,
-	ARM_MEM_OPT = 8
+	ARM_MEM_OPT = 8,
+	ARM_SHIFT = 16,
+	ARM_EXTEND = 32
 } OpType;
 
 typedef enum regtype_t {
@@ -24,11 +26,18 @@ typedef enum regtype_t {
 } RegType;
 
 typedef enum shifttype_t {
-	ARM_NO_SHIFT = -1,
 	ARM_LSL = 0,
 	ARM_LSR = 1,
 	ARM_ASR = 2,
-	ARM_ROR = 3
+	ARM_ROR = 3,
+	ARM_UXTB,
+	ARM_UXTH,
+	ARM_UXTW,
+	ARM_UXTX,
+	ARM_SXTB,
+	ARM_SXTH,
+	ARM_SXTW,
+	ARM_SXTX
 } ShiftType;
 
 typedef enum logicalop_t {
@@ -48,11 +57,13 @@ typedef struct operand_t {
 		};
 		struct {
 			ut64 immediate;
-			int sign;
+			bool sign;
+			bool preindex;
 		};
 		struct {
 			ut64 shift_amount;
 			ShiftType shift;
+			bool amount_present;
 		};
 		struct {
 			ut32 mem_option;
@@ -67,9 +78,12 @@ typedef struct Opcode_t {
 	ut32 op[3];
 	size_t op_len;
 	ut8 opcode[3];
+	bool writeback;
 	int operands_count;
 	Operand operands[MAX_OPERANDS];
 } ArmOp;
+
+#define check_cond(cond) if (!(cond)) { return data; }
 
 static int get_mem_option(char *token) {
 	// values 4, 8, 12, are unused. XXX to adjust
@@ -181,6 +195,19 @@ static ut32 decodeBitMasksWithSize(ut32 imm, ut8 reg_size) {
 	return encoding;
 }
 
+static inline ut32 encode1reg(ArmOp *op) {
+	return op->operands[0].reg << 24;
+}
+
+static inline ut32 encode2regs(ArmOp *op) {
+	return (op->operands[1].reg & 0x7) << 29 | (op->operands[1].reg & 0x18) << 13
+		| encode1reg (op);
+}
+
+static inline ut32 encodeImm9(ut32 n) {
+	return (n & 0x1f0) << 4 | (n & 0xf) << 20;
+}
+
 static ut32 mov(ArmOp *op) {
 	int k = 0;
 	ut32 data = UT32_MAX;
@@ -228,13 +255,13 @@ static ut32 mov(ArmOp *op) {
                 ut32 imm = op->operands[1].immediate << 1;
                 data = k | ((imm & 0xf) << 28) | ((imm & 0x1f0) << 12) ;
             }
-			data |=  op->operands[0].reg << 24;
+			data |= encode1reg (op);
         }
 		return data;
 	}
 
 	data = k;
-	data |= (op->operands[0].reg << 24); // arg(0)
+	data |= encode1reg (op); // arg(0)
 	data |= ((op->operands[1].immediate & 7) << 29); // arg(1)
 	data |= (((op->operands[1].immediate >> 3) & 0xff) << 16); // arg(1)
 	data |= ((op->operands[1].immediate >> 10) << 7); // arg(1)
@@ -265,7 +292,7 @@ static ut32 cb(ArmOp *op) {
     }
     //printf ("%s %d, %llu\n", op->mnemonic, op->operands[0].reg, op->operands[1].immediate);
     ut32 imm = op->operands[1].immediate;
-	data = k | (op->operands[0].reg << 24) | ((imm & 0x1c) << 27) | ((imm & 0x1fe0) << 11);
+	data = k | encode1reg (op) | ((imm & 0x1c) << 27) | ((imm & 0x1fe0) << 11);
     data = data | ((imm & 0x1fe000) >> 5);
 
 	return data;
@@ -288,7 +315,7 @@ static ut32 cmp(ArmOp *op) {
 
 	data = k | (op->operands[0].reg & 0x18) << 13 | op->operands[0].reg << 29 | op->operands[1].reg << 8;
 
-	if (op->operands[2].shift != ARM_NO_SHIFT) {
+	if (op->operands[2].type != ARM_SHIFT) {
 		data |= op->operands[2].shift_amount << 18 | op->operands[2].shift << 14;
 	}
 	return data;
@@ -313,7 +340,7 @@ static ut32 regsluop(ArmOp *op, int k) {
 		return data;
 	}
 
-	data = k | op->operands[0].reg << 24 | op->operands[1].reg << 29 | (op->operands[1].reg & 56) << 13;
+	data = k | encode2regs (op);
 
 	if (n < 0) {
 		n *= -1;
@@ -349,7 +376,7 @@ static ut32 reglsop(ArmOp *op, int k) {
 	}
 	if (op->operands[2].type & ARM_GPR) {
 		k += 0x00682000;
-		data = k | op->operands[0].reg << 24 | op->operands[1].reg << 29 | (op->operands[1].reg & 56) << 13;
+		data = k | encode2regs (op);
 		data |= op->operands[2].reg << 8;
 	} else {
 		int n = op->operands[2].immediate;
@@ -360,7 +387,7 @@ static ut32 reglsop(ArmOp *op, int k) {
 		if (n == 0 || (n > 0 && countTrailingZeros(n) >= 4)) {
 			k ++;
 		}
-		data = k | op->operands[0].reg << 24 | op->operands[1].reg << 29 | (op->operands[1].reg & 56) << 13;
+		data = k | encode2regs (op);
 
 		if (n < 0) {
 			n *= -1;
@@ -394,72 +421,117 @@ static ut32 reglsop(ArmOp *op, int k) {
 	return data;
 }
 
-// Byte load/store ops
-static ut32 bytelsop(ArmOp *op, int k) {
+// load/store ops
+static ut32 lsop(ArmOp *op, int k, ut64 addr) {
 	ut32 data = UT32_MAX;
-
-	if (op->operands[0].reg_type & ARM_REG64) {
-		return data;
+	int op_count = op->operands_count;
+	if (k == 0x00000098) { // ldrsw
+		if (op->operands[0].type & ARM_GPR
+			&& op->operands[1].type & ARM_CONSTANT) { // (literal)
+			st64 offset = op->operands[1].immediate - addr;
+			check_cond (op->operands[0].reg_type & ARM_REG64);
+			check_cond (!(offset & 0x3));
+			check_cond (-0x100000 <= offset && offset < 0x100000);
+			offset >>= 2;
+			data = k | (offset & 0x7f800) >> 3 | (offset & 0x7f8) << 13
+				| (offset & 0x7) << 29 | encode1reg (op);
+			return data;
+		}
+		k = 0x000080b8;
 	}
-	if (op->operands[1].reg_type & ARM_REG32) {
-		return data;
+	check_cond (op->operands[0].type == ARM_GPR);
+	check_cond (op->operands[1].type == ARM_GPR);
+	check_cond (op->operands[1].reg_type & ARM_REG64);
+	k |= encode2regs (op);
+	if (!strcmp (op->mnemonic, "ldrb") || !strcmp (op->mnemonic, "ldrh")
+		|| !strcmp (op->mnemonic, "strb") || !strcmp (op->mnemonic, "strh")) {
+		check_cond (op->operands[0].reg_type & ARM_REG32);
+	} else if (!strcmp (op->mnemonic, "ldrsw")) {
+		check_cond (op->operands[0].reg_type & ARM_REG64);
+	} else { // ldrsh, ldrsb
+		if (op->operands[0].reg_type & ARM_REG32) {
+			k |= 0x00004000;
+		}
 	}
+	char width = op->mnemonic[strlen (op->mnemonic) - 1];
 	if (op->operands[2].type & ARM_GPR) {
-		if ((k & 0xf) != 8) {
-			k--;
+		k |= 0x00482000;
+		if (op->operands[3].type == ARM_EXTEND) {
+			switch (op->operands[3].shift) {
+			case ARM_SXTW:
+				k |= 0x00800000;
+			// fall through
+			case ARM_UXTW:
+				check_cond (op->operands[2].reg_type & ARM_REG32);
+				break;
+			case ARM_SXTX:
+				k |= 0x00a00000;
+				check_cond (op->operands[2].reg_type & ARM_REG64);
+				break;
+			default:
+				return data;
+			}
+		} else if (op->operands[3].type == ARM_SHIFT) {
+			check_cond (op->operands[3].shift == ARM_LSL);
+			check_cond (op->operands[2].reg_type & ARM_REG64);
+			k |= 0x00200000;
 		}
-		k += 0x00682000;
-		data = k | op->operands[0].reg << 24 | op->operands[1].reg << 29 | (op->operands[1].reg & 56) << 13;
-		data |= op->operands[2].reg << 8;
+		if (op->operands[3].type == ARM_EXTEND || op->operands[3].type == ARM_SHIFT) {
+			if (width == 'b') {
+				check_cond (op->operands[3].shift_amount == 0);
+				if (op->operands[3].amount_present) {
+					k |= 0x00100000;
+				}
+			} else if (width == 'h') {
+				switch (op->operands[3].shift_amount) {
+				case 1:
+					k |= 0x00100000;
+				// fall through
+				case 0:
+					break;
+				default:
+					return data;
+				}
+			} else { // w
+				switch (op->operands[3].shift_amount) {
+				case 2:
+					k |= 0x00100000;
+				// fall through
+				case 0:
+					break;
+				default:
+					return data;
+				}
+			}
+		} else { // lsl 0 by default
+			check_cond (op->operands[2].reg_type & ARM_REG64);
+			k |= 0x00200000;
+		}
+		data = k | op->operands[2].reg << 8;
 		return data;
 	}
-
-	int n = op->operands[2].immediate;
-	if (n > 0xfff || n < -0x100) {
-		return UT32_MAX;
-	}
-	// Half ops
-	int halfop = false;
-	if ((k & 0xf) == 8) {
-		halfop = true;
-		if (n == 0 || (countTrailingZeros(n) && n > 0)) {
-			k++;
+	check_cond (op_count == 2 || op->operands[2].type == ARM_CONSTANT);
+	check_cond (!op->writeback || op->operands[2].preindex);
+	int n = op_count == 2 ? 0 : op->operands[2].immediate;
+	if (!op->writeback && (op_count == 2 || op->operands[2].preindex)) { // unsigned offset
+		check_cond (n >= 0);
+		if (width == 'b') {
+			check_cond (n <= 0xfff);
+		} else if (width == 'h') {
+			check_cond (n <= 0x1ffe && !(n & 1))
+			n >>= 1;
+		} else { // w
+			check_cond (n <= 0x3ffc && !(n & 3));
+			n >>= 2;
 		}
-	} else {
-		if (n < 0) {
-			k--;
-		}
+		data = k | (n & 0x3f) << 18 | (n & 0xfc0) << 2 | 1;
+		return data;
 	}
-
-	data = k | op->operands[0].reg << 24 | op->operands[1].reg << 29 | (op->operands[1].reg & 56) << 13;
-
-	int imm = n;
-	int low_shift = 20;
-	int high_shift = 8;
-	int top_shift = 10;
-	if (n < 0) {
-		imm = 0xfff + (n + 1);
+	check_cond (-0x100 <= n && n < 0x100)
+	if (op->operands[2].preindex) {
+		k |= 0x00080000;
 	}
-	if (halfop) {
-		if (imm & 0x1 || n < 0) {
-			data |= (0xf & imm) << low_shift ;
-			data |= (0x7 & (imm >> 4)) << high_shift;
-			data |= (0x7 & (imm >> 6)) << top_shift;
-		} else {
-			data |= (0xf & imm) << (low_shift - 3);
-			data |= (0x7 & (imm >> 4)) << (high_shift + 13);
-			data |= (0x7 & (imm >> 7)) << (top_shift  - 2);
-		}
-	} else {
-		if (n < 0) {
-			data |= (0xf & imm) << 20;
-			data |= (0x1f & (imm >> 4)) << 8;
-		} else {
-			data |= (0xf & imm) << 18;
-			data |= (0x3 & (imm >> 4)) << 22;
-			data |= (0x7 & (imm >> 6)) << 8;
-		}
-	}
+	data = k | encodeImm9 (n) | 0x00040000;
 	return data;
 }
 
@@ -532,7 +604,7 @@ static ut32 bdot(ArmOp *op, ut64 addr, int k) {
 	return data;
 }
 
-static ut32 mem_barrier (ArmOp *op, ut64 addr, int k) {
+static ut32 mem_barrier(ArmOp *op, ut64 addr, int k) {
 	ut32 data = UT32_MAX;
 	data = k;
 	if (!strncmp (op->mnemonic, "isb", 3)) {
@@ -683,7 +755,7 @@ static ut32 logical(ArmOp *op, bool invert, LogicalOp opc) {
 
 		if (op->operands_count == 4) {
 			Operand shift_op = op->operands[3];
-			if (shift_op.shift != ARM_NO_SHIFT) {
+			if (shift_op.type == ARM_SHIFT) {
 				data |= (shift_op.shift_amount & 0x3f) << 10;
 				data |= (shift_op.shift & 0x3) << 22;
 			}
@@ -703,7 +775,7 @@ static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
 	ut64 at = 0LL;
 	ut32 data = k;
 	if (op->operands[0].type == ARM_GPR) {
-		data += ((op->operands[0].reg & 0xff) << 24);
+		data |= encode1reg (op);
 	} else {
 		eprintf ("Usage: adrp x0, addr\n");
 		return UT32_MAX;
@@ -740,7 +812,7 @@ static ut32 adr(ArmOp *op, int addr) {
 		at /= 4;
 	}
 	data = 0x00000030;
-	data += 0x01000000 * op->operands[0].reg;
+	data |= encode1reg (op);
 	ut8 b0 = at;
 	ut8 b1 = (at >> 3) & 0xff;
 	ut8 b2 = (at >> (8 + 7)) & 0xff;
@@ -761,10 +833,7 @@ static ut32 stp(ArmOp *op, int k) {
 	}
 
 	data = k;
-	data += op->operands[0].reg << 24;
-	data += op->operands[1].reg << 18;
-	data += (op->operands[2].reg & 0x7) << 29;
-	data += (op->operands[2].reg >> 3) << 16;
+	data |= encode2regs (op);
 	data += (op->operands[3].immediate & 0x8) << 20;
 	data += (op->operands[3].immediate >> 4) << 8;
 	return data;
@@ -782,7 +851,7 @@ static ut32 exception(ArmOp *op, ut32 k) {
 	return data;
 }
 
-static ut32 arithmetic (ArmOp *op, int k) {
+static ut32 arithmetic(ArmOp *op, int k) {
 	ut32 data = UT32_MAX;
 	if (op->operands_count < 3) {
 		return data;
@@ -797,7 +866,7 @@ static ut32 arithmetic (ArmOp *op, int k) {
 	}
 
 	data = k;
-	data += op->operands[0].reg << 24;
+	data += encode1reg (op);
 	data += (op->operands[1].reg & 7) << (24 + 5);
 	data += (op->operands[1].reg >> 3) << 16;
 	if (op->operands[2].type & ARM_GPR) {
@@ -820,6 +889,35 @@ static ut32 neg(ArmOp *op) {
 	return arithmetic (op, 0xd1); // sub reg0, xzr, reg1
 }
 
+static ut32 bitfield(ArmOp *op, int k) {
+	ut32 data = UT32_MAX;
+	check_cond (op->operands_count == 4);
+	check_cond (op->operands[0].type == ARM_GPR);
+	check_cond (op->operands[1].type == ARM_GPR);
+	check_cond (op->operands[0].reg_type == op->operands[1].reg_type);
+	check_cond (op->operands[2].type == ARM_CONSTANT);
+	check_cond (op->operands[3].type == ARM_CONSTANT);
+	int bits = (op->operands[0].reg_type & ARM_REG64) ? 64 : 32;
+	// unalias
+	if (!strcmp (op->mnemonic, "sbfx") || !strcmp (op->mnemonic, "ubfx")) {
+		op->operands[3].immediate += op->operands[2].immediate - 1;
+	} else if (!strcmp (op->mnemonic, "sbfiz") || !strcmp (op->mnemonic, "ubfiz")) {
+		check_cond (op->operands[2].immediate < bits);
+		int temp = bits - op->operands[2].immediate;
+		check_cond (op->operands[3].immediate <= temp);
+		op->operands[2].immediate = temp & (bits - 1);
+		op->operands[3].immediate--;
+	}
+	check_cond (op->operands[2].immediate < bits);
+	check_cond (op->operands[3].immediate < bits);
+	if (bits == 64) {
+		k |= 0x00004080;
+	}
+	k |= op->operands[2].immediate << 8 | op->operands[3].immediate << 18;
+	data = k | encode2regs (op);
+	return data;
+}
+
 static bool parseOperands(char* str, ArmOp *op) {
 	char *t = strdup (str);
 	int operand = 0;
@@ -828,6 +926,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 	int imm_count = 0;
 	int mem_opt = 0;
 	int msr_op_index = 0;
+	size_t index_bound = strcspn (t, "]");
 	if (!token) {
 		return false;
 	}
@@ -848,7 +947,6 @@ static bool parseOperands(char* str, ArmOp *op) {
 		}
 		op->operands[operand].type = ARM_NOTYPE;
 		op->operands[operand].reg_type = ARM_UNDEFINED;
-		op->operands[operand].shift = ARM_NO_SHIFT;
 
 		//parse MSR (immediate) operand 1
 		if (strcmp (op->mnemonic, "msr") == 0 && operand == 1) {
@@ -887,22 +985,86 @@ static bool parseOperands(char* str, ArmOp *op) {
 		}
 
 		if (!strncmp (token, "lsl", 3)) {
+			op->operands[operand].type = ARM_SHIFT;
 			op->operands[operand].shift = ARM_LSL;
 		} else if (!strncmp (token, "lsr", 3)) {
+			op->operands[operand].type = ARM_SHIFT;
 			op->operands[operand].shift = ARM_LSR;
 		} else if (!strncmp (token, "asr", 3)) {
+			op->operands[operand].type = ARM_SHIFT;
 			op->operands[operand].shift = ARM_ASR;
 		} else if (!strncmp (token, "ror", 3)) {
+			op->operands[operand].type = ARM_SHIFT;
 			op->operands[operand].shift = ARM_ROR;
+		} else if (!strncmp (token, "uxtb", 4)) {
+			op->operands[operand].type = ARM_EXTEND;
+			op->operands[operand].shift = ARM_UXTB;
+		} else if (!strncmp (token, "uxth", 4)) {
+			op->operands[operand].type = ARM_EXTEND;
+			op->operands[operand].shift = ARM_UXTH;
+		} else if (!strncmp (token, "uxtw", 4)) {
+			op->operands[operand].type = ARM_EXTEND;
+			op->operands[operand].shift = ARM_UXTW;
+		} else if (!strncmp (token, "uxtx", 4)) {
+			op->operands[operand].type = ARM_EXTEND;
+			op->operands[operand].shift = ARM_UXTX;
+		} else if (!strncmp (token, "sxtb", 4)) {
+			op->operands[operand].type = ARM_EXTEND;
+			op->operands[operand].shift = ARM_SXTB;
+		} else if (!strncmp (token, "sxth", 4)) {
+			op->operands[operand].type = ARM_EXTEND;
+			op->operands[operand].shift = ARM_SXTH;
+		} else if (!strncmp (token, "sxtw", 4)) {
+			op->operands[operand].type = ARM_EXTEND;
+			op->operands[operand].shift = ARM_SXTW;
+		} else if (!strncmp (token, "sxtx", 4)) {
+			op->operands[operand].type = ARM_EXTEND;
+			op->operands[operand].shift = ARM_SXTX;
 		}
-		if (strlen (token) > 4 && op->operands[operand].shift != ARM_NO_SHIFT) {
+		if (op->operands[operand].type == ARM_SHIFT) {
 			op->operands_count ++;
-			op->operands[operand].shift_amount = rz_num_math (NULL, token + 4);
+			token += 3;
+			while (*token && *token == ' ') {
+				token++;
+			}
+			if (*token == '#') {
+				token++;
+			}
+			if (!*token || !isdigit(*token)) {
+				return false;
+			}
+			op->operands[operand].shift_amount = rz_num_math (NULL, token);
+			op->operands[operand].amount_present = true;
 			if (op->operands[operand].shift_amount > 63) {
 				free (t);
 				return false;
 			}
 			operand ++;
+			token = next;
+			continue;
+		}
+		if (op->operands[operand].type == ARM_EXTEND) {
+			op->operands_count++;
+			token += 4;
+			while (*token && *token == ' ') {
+				token++;
+			}
+			bool present = false;
+			if (*token == '#') {
+				present = true;
+				++token;
+			}
+			if (!*token || !isdigit(*token)) {
+				if (present) {
+					return false;
+				}
+				op->operands[operand].shift_amount = 0;
+				op->operands[operand].amount_present = false;
+			} else {
+				op->operands[operand].shift_amount = rz_num_math (NULL, token);
+				op->operands[operand].amount_present = true;
+			}
+			operand++;
 			token = next;
 			continue;
 		}
@@ -1001,6 +1163,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			op->operands_count ++;
 			op->operands[operand].type = ARM_CONSTANT;
 			op->operands[operand].immediate = rz_num_math (NULL, token + 1);
+			op->operands[operand].preindex = token - t < index_bound;
 			imm_count++;
 			break;
 		case '-':
@@ -1010,6 +1173,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			op->operands_count ++;
 			op->operands[operand].type = ARM_CONSTANT;
 			op->operands[operand].immediate = rz_num_math (NULL, token);
+			op->operands[operand].preindex = token - t < index_bound;
 			imm_count++;
 			break;
 		}
@@ -1036,6 +1200,7 @@ static bool parseOpcode(const char *str, ArmOp *op) {
 	space[0] = '\0';
 	op->mnemonic = in;
 	space ++;
+	op->writeback = strstr (space, "]!") != NULL;
 	return parseOperands (space, op);
 }
 
@@ -1098,31 +1263,31 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		return *op != -1;
 	}
 	if (!strncmp (str, "ldrb", 4)) {
-		*op = bytelsop (&ops, 0x00004039);
+		*op = lsop (&ops, 0x00004038, -1);
 		return *op != -1;
 	}
 	if (!strncmp (str, "ldrh", 4)) {
-		*op = bytelsop (&ops, 0x00004078);
+		*op = lsop (&ops, 0x00004078, -1);
 		return *op != -1;
 	}
 	if (!strncmp (str, "ldrsh", 5)) {
-		*op = bytelsop (&ops, 0x0000c078);
+		*op = lsop (&ops, 0x00008078, -1);
 		return *op != -1;
 	}
 	if (!strncmp (str, "ldrsw", 5)) {
-		*op = bytelsop (&ops, 0x000080b8);
+		*op = lsop (&ops, 0x00000098, addr);
 		return *op != -1;
 	}
 	if (!strncmp (str, "ldrsb", 5)) {
-		*op = bytelsop (&ops, 0x0000c039);
+		*op = lsop (&ops, 0x00008038, -1);
 		return *op != -1;
 	}
 	if (!strncmp (str, "strb", 4)) {
-		*op = bytelsop (&ops, 0x00000039);
+		*op = lsop (&ops, 0x00000038, -1);
 		return *op != -1;
 	}
 	if (!strncmp (str, "strh", 4)) {
-		*op = bytelsop (&ops, 0x00000078);
+		*op = lsop (&ops, 0x00000078, -1);
 		return *op != -1;
 	}
 	if (!strncmp (str, "ldr", 3)) {
@@ -1288,6 +1453,16 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	if (!strncmp (str, "isb", 3)) {
 		*op = mem_barrier (&ops, addr, 0xdf3f03d5);
 		return *op != -1;
+	}
+	if (!strncmp (str, "sbfiz ", 6) || !strncmp (str, "sbfm ", 5)
+		|| !strncmp (str, "sbfx ", 5)) {
+		*op = bitfield (&ops, 0x00000013);
+		return *op != UT32_MAX;
+	}
+	if (!strncmp (str, "ubfiz ", 6) || !strncmp (str, "ubfm ", 5)
+		|| !strncmp (str, "ubfx ", 5)) {
+		*op = bitfield (&ops, 0x00000053);
+		return *op != UT32_MAX;
 	}
 	return false;
 }

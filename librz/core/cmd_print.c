@@ -90,7 +90,6 @@ static const char* help_msg_pr[] = {
 	"Usage: pr[glx]", "[size]", "print N raw bytes",
 	"prc", "[=fep..]", "print bytes as colors in palette",
 	"prg", "[?]", "print raw GUNZIPped block",
-	"prl", "", "print raw with lines offsets",
 	"prx", "", "printable chars with real offset (hyew)",
 	"prz", "", "print raw zero terminated string",
 	NULL
@@ -2482,7 +2481,7 @@ static void cmd_print_op(RzCore *core, const char *input) {
 	}
 }
 
-static void printraw(RzCore *core, int len, int mode) {
+static void printraw(RzCore *core, int len) {
 	int obsz = core->blocksize;
 	int restore_obsz = 0;
 	if (len != obsz) {
@@ -2492,7 +2491,7 @@ static void printraw(RzCore *core, int len, int mode) {
 			restore_obsz = 1;
 		}
 	}
-	rz_print_raw (core->print, core->offset, core->block, len, mode);
+	rz_print_raw (core->print, core->offset, core->block, len);
 	if (restore_obsz) {
 		(void) rz_core_block_size (core, obsz);
 	}
@@ -4161,8 +4160,6 @@ dsmap {
 }
 #endif
 
-#define P(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
-
 static void disasm_until_ret(RzCore *core, ut64 addr, char type_print, const char *arg) {
 	int p = 0;
 	const bool show_color = core->print->flags & RZ_PRINT_FLAGS_COLOR;
@@ -5813,11 +5810,14 @@ l = use_blocksize;
 				);
 		} else if (input[1] == 'j') { // "pmj"
 			const char *filename = rz_str_trim_head_ro (input + 2);
-			rz_core_magic (core, filename, true, true);
+			PJ *pj = rz_core_pj_new (core);
+			rz_core_magic (core, filename, true, pj);
+			rz_cons_println (pj_string (pj));
+			pj_free (pj);
 		} else {
-			// XXX: need cmd_magic header for rz_core_magic
+			// XXX: need cmd_magic header for r_core_magic
 			const char *filename = rz_str_trim_head_ro (input + 1);
-			rz_core_magic (core, filename, true, false);
+			rz_core_magic (core, filename, true, NULL);
 		}
 		break;
 	case 'u': // "pu"
@@ -5952,33 +5952,22 @@ l = use_blocksize;
 			}
 			break;
 		/* TODO: compact */
-		case 'l': // "prl"
-			if (l != 0) {
-				printraw (core, len, 1);
-			}
-			break;
 		case 'x': // "prx"
-#if 0
-			if (l != 0) {
-				printraw (core, len, 2);
-			}
-#else
 			{
 				int a = rz_config_get_i (core->config, "hex.bytes");
 				rz_config_set_i (core->config, "hex.bytes", false);
 				rz_core_cmdf (core, "px%s", input + 1);
 				rz_config_set_i (core->config, "hex.bytes", a);
 			}
-#endif
 			break;
 		case 'z': // "prz"
 			if (l != 0) {
-				printraw (core, strlen ((const char *) core->block), 0);
+				printraw (core, strlen ((const char *) core->block));
 			}
 			break;
 		default:
 			if (l != 0) {
-				printraw (core, len, 0);
+				printraw (core, len);
 			}
 			break;
 		}

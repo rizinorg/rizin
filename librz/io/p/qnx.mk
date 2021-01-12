@@ -8,7 +8,7 @@ LIB_PATH=$(SHLR)/qnx/
 CFLAGS+=-I$(SHLR)/qnx/include/
 LDFLAGS+=$(SHLR)/qnx/lib/libqnxr.$(EXT_AR)
 
-include $(LIBR)/socket/deps.mk
+include $(LIBRZ)/socket/deps.mk
 
 ifeq (${WITHPIC},0)
 LINKFLAGS=../../socket/librz_socket.a

@@ -295,7 +295,6 @@ static bool __isMapped(RzCore *core, ut64 addr, int perm) {
 				}
 			}
 		}
-
 		return false;
 	}
 
@@ -572,7 +571,6 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			free (bptr);
 			free (out);
 			return ret;
-			break;
 		case '{': // ${ev} eval var
 			bptr = strdup (str + 2);
 			ptr = strchr (bptr, '}');
@@ -972,7 +970,7 @@ static const char *rizin_argv[] = {
 	"pk?", "pk", "pK?", "pK",
 	"pm?", "pm",
 	"pq?", "pq", "pqi", "pqz",
-	"pr?", "pr", "prc", "prl", "prx", "prg?", "prg", "prgi", "prgo", "prz",
+	"pr?", "pr", "prc", "prx", "prg?", "prg", "prgi", "prgo", "prz",
 	"ps?", "ps", "psb", "psi", "psj", "psp", "pss", "psu", "psw", "psW", "psx", "psz", "ps+",
 	"pt?", "pt", "pt.", "ptd", "pth", "ptn",
 	"pu?", "pu", "puw", "pU",
@@ -987,7 +985,7 @@ static const char *rizin_argv[] = {
 	"r?", "r", "r-", "r+", "rh",
 	"s?", "s", "s:", "s-", "s-*", "s--", "s+", "s++", "sj", "s*", "s=", "s!", "s/", "s/x", "s.", "sa", "sb",
 	"sC?", "sC", "sC*",
-	"sf", "sf.", "sg", "sG", "sl?", "sl", "sl+", "sl-", "slc", "sll", "sn", "sp", "so", "sr", "ss",
+	"sf", "sf.", "sg", "sG", "sl?", "sn", "sp", "so", "sr", "ss",
 	"t?", "t", "tj", "t*", "t-", "t-*", "ta", "tb", "tc", "te?", "te", "tej", "teb", "tec",
 	"td?", "td", "td-", "tf", "tk", "tl", "tn", "to", "tos", "tp", "tpx", "ts?", "ts", "tsj", "ts*", "tsc", "tss",
 	"tu?", "tu", "tuj", "tu*", "tuc", "tt?", "tt", "ttj", "ttc",
@@ -1429,7 +1427,7 @@ static bool find_e_opts(RzCore *core, RzLineCompletion *completion, RzLineBuffer
 	const char *pattern = "e (.*)=";
 	RzRegex *rx = rz_regex_new (pattern, "e");
 	const size_t nmatch = 2;
-	RzRegexMatch pmatch[2];
+	RzRegexMatch pmatch[2] = {0};
 	bool ret = false;
 
 	if (rz_regex_exec (rx, buf->data, nmatch, pmatch, 1)) {
@@ -3276,10 +3274,9 @@ reaccept:
 				if (cmd == 'G') {
 					// silly http emulation over rap://
 					char line[256] = {0};
-					char *cmd = line;
 					rz_socket_read_block (c, (ut8*)line, sizeof (line));
 					if (!strncmp (line, "ET /cmd/", 8)) {
-						cmd = line + 8;
+						char *cmd = line + 8;
 						char *http = strstr (cmd, "HTTP");
 						if (http) {
 							*http = 0;

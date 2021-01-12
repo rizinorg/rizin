@@ -2,7 +2,7 @@ NAME=cmd.hit sugar for /x
 FILE=malloc://1024
 CMDS=<<EOF
 wx 90 @ 10
-e cmd.hit=wx 91
+e cmd.hit="wx 91"
 /x 90
 p8 1 @ 10
 EOF
@@ -19,8 +19,8 @@ w hello @ 10
 psz @@/j hello
 EOF
 EXPECT=<<EOF
-[{"offset":10,"type":"string","data":"hello"}hello
-]
+hello
+[{"offset":10,"type":"string","data":"hello"}]
 EOF
 RUN
 
@@ -92,7 +92,7 @@ RUN
 NAME=cmd.hit for /!x
 FILE=malloc://1024
 CMDS=<<EOF
-e cmd.hit = p8 1
+e cmd.hit="p8 1"
 wx 90 @ 10
 /!x 00
 EOF
@@ -105,7 +105,7 @@ RUN
 NAME=cmd.hit for /!
 FILE=malloc://1024
 CMDS=<<EOF
-e cmd.hit = p8 1
+e cmd.hit="p8 1"
 w AAAAAAAAAAB
 /! A
 EOF
@@ -118,7 +118,7 @@ RUN
 NAME=cmd.hit for /+
 FILE=malloc://1024
 CMDS=<<EOF
-e cmd.hit = p8 3
+e cmd.hit="p8 3"
 w ABCDEF
 /+ ABC
 EOF
@@ -131,7 +131,7 @@ RUN
 NAME=cmd.hit for //
 FILE=malloc://1024
 CMDS=<<EOF
-e cmd.hit = p8 1
+e cmd.hit="p8 1"
 w AAAAAAAAAAB
 /! A
 //
@@ -189,7 +189,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-e cmd.hit=pi 4
+e cmd.hit="pi 4"
 "wa add esp,8;pop ebx; pop ebp; ret"
 /a add esp, 8
 EOF
@@ -205,9 +205,9 @@ RUN
 NAME=cmd.hit for /A
 FILE=malloc://1024
 CMDS=<<EOF
-e asm.arch = x86
-e analysis.arch = x86
-e cmd.hit = pi 1
+e asm.arch=x86
+e analysis.arch=x86
+e cmd.hit="pi 1"
 e asm.bits=32
 "wa add esp,8;pop ebx; pop ebp; ret"
 /at pop
@@ -223,10 +223,10 @@ RUN
 NAME=cmd.hit for /bx
 FILE=malloc://1024
 CMDS=<<EOF
-e cmd.hit = p8 4
+e cmd.hit="p8 4"
 w ABCD @ 0x100
-e search.from = 0x100
-e search.to = 0x104
+e search.from=0x100
+e search.to=0x104
 b 0x100
 /bx 41424344
 EOF
@@ -240,9 +240,9 @@ NAME=cmd.hit for /B
 FILE=malloc://1024
 CMDS=<<EOF
 wx cffa edfe
-e cmd.hit = px 1
-e search.from = 0
-e search.to = 0x10
+e cmd.hit="px 1"
+e search.from=0
+e search.to=0x10
 /mb
 EOF
 EXPECT=<<EOF
@@ -253,9 +253,9 @@ RUN
 NAME=cmd.hit for /i
 FILE=malloc://1024
 CMDS=<<EOF
-e cmd.hit = ps
-e search.from = 0
-e search.to = 0x10
+e cmd.hit=ps
+e search.from=0
+e search.to=0x10
 w AAAAAAAAAAB
 /i aaaaaaaaaab
 EOF
@@ -268,9 +268,9 @@ RUN
 NAME=cmd.hit for /r
 FILE=bins/elf/analysis/ls-linux64
 CMDS=<<EOF
-e cmd.hit = pi 1
-e search.from = 0x00005c20
-e search.to = 0x00005c49
+e cmd.hit="pi 1"
+e search.from=0x00005c20
+e search.to=0x00005c49
 /r sym.imp.__libc_start_main
 EOF
 EXPECT=<<EOF
@@ -282,9 +282,9 @@ RUN
 NAME=from/to for /r
 FILE=bins/elf/analysis/ls-linux64
 CMDS=<<EOF
-e cmd.hit = pi 1
-e search.from = 0x00005c20
-e search.to = 0x00005c44
+e cmd.hit="pi 1"
+e search.from=0x00005c20
+e search.to=0x00005c44
 /r sym.imp.__cxa_finalize
 EOF
 EXPECT=<<EOF
@@ -296,7 +296,7 @@ FILE=bins/elf/analysis/x86-simple
 CMDS=<<EOF
 aeim
 aeip
-e cmd.hit = pi 1
+e cmd.hit="pi 1"
 /as
 EOF
 EXPECT=<<EOF
@@ -311,10 +311,10 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 wx 01
-e cmd.hit = pi 1
-e search.in =raw
-e search.from = 0x00000000
-e search.to = 0x00000004
+e cmd.hit="pi 1"
+e search.in=raw
+e search.from=0x00000000
+e search.to=0x00000004
 /v1 1
 EOF
 EXPECT=<<EOF
@@ -327,10 +327,10 @@ NAME=from/to /v not in range
 FILE=-
 CMDS=<<EOF
 wx 01
-e cmd.hit = pi 1
-e search.in =raw
-e search.from = 0x00000000
-e search.to = 0x00000000
+e cmd.hit="pi 1"
+e search.in=raw
+e search.from=0x00000000
+e search.to=0x00000000
 /v1 1
 EOF
 EXPECT=<<EOF
@@ -344,8 +344,8 @@ CMDS=<<EOF
 wx 05
 e cmd.hit = pi 1
 e search.in =raw
-e search.from = 0x00000000
-e search.to = 0x00000004
+e search.from=0x00000000
+e search.to=0x00000004
 /V1 1 5
 EOF
 EXPECT=<<EOF
@@ -358,10 +358,10 @@ NAME=from/to /V not in range
 FILE=-
 CMDS=<<EOF
 wx 05
-e cmd.hit = pi 1
-e search.in =raw
-e search.from = 0x00000000
-e search.to = 0x00000000
+e cmd.hit=pi 1
+e search.in=raw
+e search.from=0x00000000
+e search.to=0x00000000
 /V1 1 5
 EOF
 EXPECT=<<EOF

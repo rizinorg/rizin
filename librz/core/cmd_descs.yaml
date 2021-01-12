@@ -69,7 +69,8 @@
       optional: true
       no_space: true
     - name: arg
-      type: RZ_CMD_ARG_TYPE_ARRAY_STRING
+      type: RZ_CMD_ARG_TYPE_STRING
+      flags: RZ_CMD_ARG_FLAG_ARRAY
       optional: true
   details:
     - name: Examples
@@ -102,7 +103,8 @@
       summary: List all tasks / Run <cmd> in a new background task
       args:
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD_LAST
+          type: RZ_CMD_ARG_TYPE_CMD
+          flags: RZ_CMD_ARG_FLAG_LAST
           optional: true
       modes:
         - RZ_OUTPUT_MODE_STANDARD
@@ -112,7 +114,8 @@
       summary: Run <cmd> in a new transient background task (auto-delete when it is finished)
       args:
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD_LAST
+          type: RZ_CMD_ARG_TYPE_CMD
+          flags: RZ_CMD_ARG_FLAG_LAST
     - name: "&="
       cname: tasks_output
       summary: Show output of task <n>
@@ -188,7 +191,8 @@
         command as rizin commands
       args:
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD_LAST
+          type: RZ_CMD_ARG_TYPE_CMD
+          flags: RZ_CMD_ARG_FLAG_LAST
           optional: true
           no_space: true
     - name: ". "
@@ -227,7 +231,8 @@
           type: RZ_CMD_ARG_TYPE_FILE
           no_space: true
         - name: arg
-          type: RZ_CMD_ARG_TYPE_ARRAY_STRING
+          type: RZ_CMD_ARG_TYPE_STRING
+          flags: RZ_CMD_ARG_FLAG_ARRAY
           optional: true
     - name: .(
       cname: interpret_macro
@@ -237,7 +242,8 @@
           type: RZ_CMD_ARG_TYPE_MACRO
           no_space: true
         - name: macro-arg
-          type: RZ_CMD_ARG_TYPE_ARRAY_STRING
+          type: RZ_CMD_ARG_TYPE_STRING
+          flags: RZ_CMD_ARG_FLAG_ARRAY
           optional: true
         - name: )
           type: RZ_CMD_ARG_TYPE_FAKE
@@ -257,7 +263,8 @@
           type: RZ_CMD_ARG_TYPE_NUM
           optional: true
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD_LAST
+          type: RZ_CMD_ARG_TYPE_CMD
+          flags: RZ_CMD_ARG_FLAG_LAST
     - name: =<
       cname: remote_send
       summary: Send output of local <cmd> to remote <fd>
@@ -266,13 +273,15 @@
           type: RZ_CMD_ARG_TYPE_NUM
           optional: true
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD_LAST
+          type: RZ_CMD_ARG_TYPE_CMD
+          flags: RZ_CMD_ARG_FLAG_LAST
     - name: =!
       cname: io_system_run
       summary: Run <cmd> via rz_io_system
       args:
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD_LAST
+          type: RZ_CMD_ARG_TYPE_CMD
+          flags: RZ_CMD_ARG_FLAG_LAST
           optional: true
     - name: =+
       cname: remote_add
@@ -308,7 +317,8 @@
         - name: "[host:]port"
           type: RZ_CMD_ARG_TYPE_STRING
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD_LAST
+          type: RZ_CMD_ARG_TYPE_CMD
+          flags: RZ_CMD_ARG_FLAG_LAST
           optional: true
     - name: =g
       cname: equal_g_handler_old
@@ -329,7 +339,8 @@
         - name: "[host:]port"
           type: RZ_CMD_ARG_TYPE_STRING
         - name: cmd
-          type: RZ_CMD_ARG_TYPE_CMD_LAST
+          type: RZ_CMD_ARG_TYPE_CMD
+          flags: RZ_CMD_ARG_FLAG_LAST
           optional: true
     - name: "=&:"
       cname: remote_rap_bg
@@ -373,10 +384,88 @@
   summary: Debugger commands
   type: RZ_CMD_DESC_TYPE_OLDINPUT
 - name: e
-  cname: cmd_eval
   summary: List/get/set config evaluable vars
-  type: RZ_CMD_DESC_TYPE_OLDINPUT
   subcommands:
+    - name: e
+      cname: eval_getset
+      summary: Get/Set value of config variable <key>
+      args_str: " <key>[=<val|?>] [<key>[=<val|?>] ...]]"
+      args:
+        - name: key=value
+          type: RZ_CMD_ARG_TYPE_EVAL_FULL
+          flags: RZ_CMD_ARG_FLAG_ARRAY
+      details:
+        - name: Examples
+          entries:
+            - text: e
+              arg_str: " asm.bytes"
+              comment: "Show current value of config variable `asm.bytes`"
+            - text: e
+              arg_str: " asm.bytes=true"
+              comment: "Set config variable `asm.bytes` to `true`"
+            - text: e
+              arg_str: " search.in=?"
+              comment: "Show all possible values for config variable `search.in`"
+            - text: e
+              arg_str: " search.in=??"
+              comment: "Show all possible values for config variable `search.in` together with description"
+            - text: e
+              arg_str: " asm.bytes=true asm.offset=false"
+              comment: "Set asm.bytes to true and asm.offset to false"
+    - name: el
+      cname: eval_list
+      summary: List config variables with their descriptions
+      modes:
+        - RZ_OUTPUT_MODE_STANDARD
+        - RZ_OUTPUT_MODE_RIZIN
+        - RZ_OUTPUT_MODE_JSON
+        - RZ_OUTPUT_MODE_QUIET
+        - RZ_OUTPUT_MODE_LONG
+        - RZ_OUTPUT_MODE_LONG_JSON
+      args:
+        - name: key
+          type: RZ_CMD_ARG_TYPE_EVAL_KEY
+          optional: true
+    - name: e-
+      cname: eval_reset
+      summary: Reset config variables
+      args: []
+    - name: e!
+      cname: eval_bool_invert
+      summary: Invert the boolean value of config variable <key>
+      args:
+        - name: key
+          type: RZ_CMD_ARG_TYPE_EVAL_KEY
+    - name: ec
+      cname: eval_color
+      summary: Set color for given key (prompt, offset, ...)
+      type: RZ_CMD_DESC_TYPE_OLDINPUT
+      args: []
+    - name: ee
+      cname: eval_editor
+      summary: Open editor to change the value of config variable <key>
+      args:
+        - name: key
+          type: RZ_CMD_ARG_TYPE_EVAL_KEY
+    - name: er
+      cname: eval_readonly
+      summary: Set config variable <key> as read-only
+      args:
+        - name: key
+          type: RZ_CMD_ARG_TYPE_EVAL_KEY
+    - name: es
+      cname: eval_spaces
+      summary: List all config variable spaces or sub-keys/sub-spaces if a <key> is provided
+      args:
+        - name: key
+          type: RZ_CMD_ARG_TYPE_EVAL_KEY
+          optional: true
+    - name: et
+      cname: eval_type
+      summary: Show type of given config variable <key>
+      args:
+        - name: key
+          type: RZ_CMD_ARG_TYPE_EVAL_KEY
     - name: env
       cname: env
       summary: Get/set environment variables
@@ -402,7 +491,7 @@
             - text: "env"
               arg_str: " SHELL"
               comment: Same as `%SHELL`
-        - name: environment
+        - name: Environment
           entries:
             - text: "RZ_FILE"
               comment: "currently opened file name"
@@ -455,7 +544,8 @@
   summary: List files and directories
   args:
     - name: arg
-      type: RZ_CMD_ARG_TYPE_ARRAY_STRING
+      type: RZ_CMD_ARG_TYPE_STRING
+      flags: RZ_CMD_ARG_FLAG_ARRAY
       optional: true
 - name: m
   cname: cmd_m
@@ -522,7 +612,8 @@
   summary: Provide system info
   args:
     - name: r
-      type: RZ_CMD_ARG_TYPE_OPTION
+      type: RZ_CMD_ARG_TYPE_STRING
+      flags: RZ_CMD_ARG_FLAG_OPTION
       optional: true
 - name: V
   cname: cmd_visual
@@ -540,7 +631,8 @@
       summary: Write string
       args:
         - name: string
-          type: RZ_CMD_ARG_TYPE_STRING_LAST
+          type: RZ_CMD_ARG_TYPE_STRING
+          flags: RZ_CMD_ARG_FLAG_LAST
     - name: wB
       summary: Set or unset bits with given value
       subcommands:
@@ -938,7 +1030,8 @@
                 - h
                 - v
             - name: param
-              type: RZ_CMD_ARG_TYPE_ARRAY_STRING
+              type: RZ_CMD_ARG_TYPE_STRING
+              flags: RZ_CMD_ARG_FLAG_ARRAY
           details:
             - name: Zignature types
               entries:

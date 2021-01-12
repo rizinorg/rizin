@@ -268,6 +268,7 @@ typedef struct rz_debug_t {
 	int trace_aftersyscall; /* stop after the syscall (before if disabled) */
 	int trace_clone; /* stop on new threads */
 	int follow_child; /* On fork, trace the child */
+	bool create_new_console; /* Create a new console window for the debugee on debug start */
 	char *glob_libs; /* stop on lib load */
 	char *glob_unlibs; /* stop on lib unload */
 	bool consbreak; /* SIGINT handle for attached processes */
@@ -417,12 +418,6 @@ typedef struct rz_debug_pid_t {
 	ut64 pc;
 } RzDebugPid;
 
-/*
- * Radare's debugger has both an external and internal API.
- *
- * TODO(jjd): reconcile external API and extend it for better funcitonality
- * when using R2 as a library.
- */
 #ifdef RZ_API
 RZ_API RzDebug *rz_debug_new(int hard);
 RZ_API RzDebug *rz_debug_free(RzDebug *dbg);
@@ -518,7 +513,7 @@ RZ_API int rz_debug_desc_list(RzDebug *dbg, int rad);
 
 /* registers */
 RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write);
-RZ_API bool rz_debug_reg_list(RzDebug *dbg, int type, int size, int rad, const char *use_color);
+RZ_API bool rz_debug_reg_list(RzDebug *dbg, int type, int size, PJ *pj, int rad, const char *use_color);
 RZ_API int rz_debug_reg_set(RzDebug *dbg, const char *name, ut64 num);
 RZ_API ut64 rz_debug_reg_get(RzDebug *dbg, const char *name);
 RZ_API ut64 rz_debug_reg_get_err(RzDebug *dbg, const char *name, int *err, utX *value);

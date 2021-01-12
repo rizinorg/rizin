@@ -316,7 +316,6 @@ struct rz_core_t {
 	bool fixedarch; // will be true when using @a:
 	bool fixedblock;
 	char *table_query;
-	int sync_index; // used for http.sync and T=
 	struct rz_core_t *c2;
 	RzCoreAutocomplete *autocomplete;
 	int autocomplete_type;
@@ -394,8 +393,6 @@ RZ_API void rz_core_config_update(RzCore *core);
 RZ_API void rz_core_parse_rizinrc(RzCore *r);
 RZ_API int rz_core_prompt(RzCore *core, int sync);
 RZ_API int rz_core_prompt_exec(RzCore *core);
-RZ_API int rz_core_lines_initcache (RzCore *core, ut64 start_addr, ut64 end_addr);
-RZ_API int rz_core_lines_currline (RzCore *core);
 RZ_API void rz_core_prompt_loop(RzCore *core);
 RZ_API ut64 rz_core_pava(RzCore *core, ut64 addr);
 RZ_API int rz_core_cmd(RzCore *core, const char *cmd, int log);
@@ -577,7 +574,7 @@ RZ_API void rz_core_analysis_undefine(RzCore *core, ut64 off);
 RZ_API void rz_core_analysis_hint_print(RzAnalysis* a, ut64 addr, int mode);
 RZ_API void rz_core_analysis_hint_list(RzAnalysis *a, int mode);
 RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, int mode);
-RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, int rad);
+RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *pj, int rad);
 RZ_API int rz_core_analysis_data(RzCore *core, ut64 addr, int count, int depth, int wordsize);
 RZ_API void rz_core_analysis_datarefs(RzCore *core, ut64 addr);
 RZ_API void rz_core_analysis_coderefs(RzCore *core, ut64 addr);
@@ -726,11 +723,11 @@ typedef struct rz_core_bin_filter_t {
 	const char *name;
 } RzCoreBinFilter;
 
-RZ_API int rz_core_bin_info (RzCore *core, int action, int mode, int va, RzCoreBinFilter *filter, const char *chksum);
+RZ_API int rz_core_bin_info (RzCore *core, int action, PJ *pj, int mode, int va, RzCoreBinFilter *filter, const char *chksum);
 RZ_API int rz_core_bin_set_arch_bits (RzCore *r, const char *name, const char * arch, ut16 bits);
 RZ_API int rz_core_bin_update_arch_bits (RzCore *r);
 RZ_API char *rz_core_bin_method_flags_str(ut64 flags, int mode);
-RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, int mode);
+RZ_API bool rz_core_pdb_info(RzCore *core, const char *file, PJ *pj, int mode);
 
 /* rtr */
 RZ_API int rz_core_rtr_cmds (RzCore *core, const char *port);
@@ -885,8 +882,7 @@ RZ_API void rz_core_task_break_all(RzCoreTaskScheduler *scheduler);
 RZ_API int rz_core_task_del(RzCoreTaskScheduler *scheduler, int id);
 RZ_API RzCoreTask *rz_core_task_self(RzCoreTaskScheduler *scheduler);
 RZ_API void rz_core_task_join(RzCoreTaskScheduler *scheduler, RzCoreTask *current, int id);
-typedef void (*inRangeCb) (RzCore *core, ut64 from, ut64 to, int vsize,
-		int count, void *cb_user);
+typedef void (*inRangeCb) (RzCore *core, ut64 from, ut64 to, int vsize, void *cb_user);
 RZ_API int rz_core_search_value_in_range (RzCore *core, RzInterval search_itv,
 		ut64 vmin, ut64 vmax, int vsize, inRangeCb cb, void *cb_user);
 

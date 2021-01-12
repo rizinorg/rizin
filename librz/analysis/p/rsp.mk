@@ -1,5 +1,5 @@
 OBJ_RSP=analysis_rsp.o
-#RSP_ROOT=$(LIBR)/asm/arch/rsp
+#RSP_ROOT=$(LIBRZ)/asm/arch/rsp
 CFLAGS+=-I../asm/arch/rsp
 
 STATIC_OBJ+=${OBJ_RSP}

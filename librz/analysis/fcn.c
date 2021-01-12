@@ -122,6 +122,7 @@ RZ_API int rz_analysis_function_resize(RzAnalysisFunction *fcn, int newsize) {
 		}
 		if (bb->addr + bb->size >= eof) {
 			rz_analysis_block_set_size (bb, eof - bb->addr);
+			rz_analysis_block_update_hash (bb);
 		}
 		if (bb->jump != UT64_MAX && bb->jump >= eof) {
 			bb->jump = UT64_MAX;
