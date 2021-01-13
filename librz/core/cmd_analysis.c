@@ -3782,7 +3782,7 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 		}
 		case 'r': {	// "afcr"
 			int i;
-			PJ *pj;
+			PJ *pj = NULL;
 			bool json = input[3] == 'j';
 			if (json) {
 				pj = rz_core_pj_new (core);
