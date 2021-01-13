@@ -507,6 +507,7 @@ static void update_asmcpu_options(RzCore *core, RzConfigNode *node) {
 			for (i = 0; i < n; i++) {
 				const char *word = rz_str_word_get0 (c, i);
 				if (word && *word) {
+					node->options->free = free;
 					SETOPTIONS (node, strdup (word), NULL);
 				}
 			}
