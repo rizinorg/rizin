@@ -322,11 +322,11 @@ rip:
 		if (rz_subprocess_ret (proc) != 0) {
 			goto ship;
 		}
-		free (hex);
 		char *disasm = rz_subprocess_out (proc);
 		rz_str_trim (disasm);
 		out->disasm = disasm;
 ship:
+		free (hex);
 		rz_pvector_pop (&args);
 		rz_pvector_pop (&args);
 		rz_subprocess_free (proc);
