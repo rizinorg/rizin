@@ -229,7 +229,6 @@ static const char *__core_visual_print_command(RzCore *core) {
 
 static bool __core_visual_gogo(RzCore *core, int ch) {
 	RzIOMap *map;
-	int ret = -1;
 	switch (ch) {
 	case 'g':
 		if (core->io->va) {
@@ -238,12 +237,11 @@ static bool __core_visual_gogo(RzCore *core, int ch) {
 				map = rz_pvector_at (&core->io->maps, rz_pvector_len (&core->io->maps) - 1);
 			}
 			if (map) {
-				rz_core_seek (core, rz_itv_begin (map->itv), true);
+				rz_core_seek_and_save (core, rz_itv_begin (map->itv), true);
 			}
 		} else {
-			rz_core_seek (core, 0, true);
+			rz_core_seek_and_save (core, 0, true);
 		}
-		rz_io_sundo_push (core->io, core->offset, rz_print_get_cursor (core->print));
 		return true;
 	case 'G':
 		map = rz_io_map_get (core->io, core->offset);
@@ -258,10 +256,7 @@ static bool __core_visual_gogo(RzCore *core, int ch) {
 			}
 			(void)p->consbind.get_size (&scr_rows);
 			ut64 scols = rz_config_get_i (core->config, "hex.cols");
-			ret = rz_core_seek (core, rz_itv_end (map->itv) - (scr_rows - 2) * scols, true);
-		}
-		if (ret != -1) {
-			rz_io_sundo_push (core->io, core->offset, rz_print_get_cursor (core->print));
+			rz_core_seek_and_save (core, rz_itv_end (map->itv) - (scr_rows - 2) * scols, true);
 		}
 		return true;
 	}
@@ -488,7 +483,6 @@ RZ_API void rz_core_visual_jump(RzCore *core, ut8 ch) {
 	off = rz_core_get_asmqjmps (core, chbuf);
 	if (off != UT64_MAX) {
 		int delta = RZ_ABS ((st64) off - (st64) core->offset);
-		rz_io_sundo_push (core->io, core->offset, rz_print_get_cursor (core->print));
 		if (core->print->cur_enabled && delta < 100) {
 			core->print->cur = delta;
 		} else {
@@ -970,7 +964,7 @@ static void findNextWord(RzCore *core) {
 				core->print->ocur = -1;
 				rz_core_visual_showcursor (core, true);
 			} else {
-				rz_core_seek (core, core->offset + i + 1, true);
+				rz_core_seek_and_save (core, core->offset + i + 1, true);
 			}
 			return;
 		}
@@ -1067,8 +1061,7 @@ RZ_API void rz_core_visual_show_char(RzCore *core, char ch) {
 	rz_sys_sleep (1);
 }
 
-RZ_API void rz_core_visual_seek_animation(RzCore *core, ut64 addr) {
-	rz_core_seek (core, addr, true);
+static void visual_seek_animation(RzCore *core, ut64 addr) {
 	if (rz_config_get_i (core->config, "scr.feedback") < 1) {
 		return;
 	}
@@ -1087,6 +1080,23 @@ RZ_API void rz_core_visual_seek_animation(RzCore *core, ut64 addr) {
 	}
 	rz_cons_flush ();
 	rz_sys_usleep (90000);
+}
+
+RZ_API void rz_core_visual_seek_animation(RzCore *core, ut64 addr) {
+	rz_core_seek_and_save (core, addr, true);
+	visual_seek_animation (core, addr);
+}
+
+RZ_API void rz_core_visual_seek_animation_redo(RzCore *core) {
+	if (rz_core_seek_redo (core)) {
+		visual_seek_animation (core, core->offset);
+	}
+}
+
+RZ_API void rz_core_visual_seek_animation_undo(RzCore *core) {
+	if (rz_core_seek_undo (core)) {
+		visual_seek_animation (core, core->offset);
+	}
 }
 
 static void setprintmode(RzCore *core, int n) {
@@ -1307,8 +1317,7 @@ static int follow_ref(RzCore *core, RzList *xrefs, int choice, int xref) {
 			core->print->cur = 0;
 		}
 		ut64 addr = refi->addr;
-		rz_io_sundo_push (core->io, core->offset, -1);
-		rz_core_seek (core, addr, true);
+		rz_core_seek_and_save (core, addr, true);
 		return 1;
 	}
 	return 0;
@@ -1909,7 +1918,7 @@ static bool fix_cursor(RzCore *core) {
 		if ((!cur_is_visible && !is_close) || (!cur_is_visible && p->cur == 0)) {
 			// when the cursor is not visible and it's far from the
 			// last visible byte, just seek there.
-			rz_core_seek_delta (core, p->cur);
+			rz_core_seek_delta (core, p->cur, false);
 			reset_print_cur (p);
 		} else if ((!cur_is_visible && is_close) || !off_is_visible) {
 			RzAsmOp op;
@@ -1918,7 +1927,7 @@ static bool fix_cursor(RzCore *core) {
 			if (sz < 1) {
 				sz = 1;
 			}
-			rz_core_seek_delta (core, sz);
+			rz_core_seek_delta (core, sz, false);
 			p->cur = RZ_MAX (p->cur - sz, 0);
 			if (p->ocur != -1) {
 				p->ocur = RZ_MAX (p->ocur - sz, 0);
@@ -1941,7 +1950,7 @@ static bool fix_cursor(RzCore *core) {
 				sz = 1;
 			}
 		}
-		rz_core_seek_delta (core, -sz);
+		rz_core_seek_delta (core, -sz, false);
 		p->cur += sz;
 		if (p->ocur != -1) {
 			p->ocur += sz;
@@ -2342,15 +2351,12 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 						if (core->print->cur_enabled) {
 							int delta = RZ_ABS ((st64) op->jump - (st64) offset);
 							if (op->jump < core->offset || op->jump >= core->print->screen_bounds) {
-								rz_io_sundo_push (core->io, offset, rz_print_get_cursor (core->print));
 								rz_core_visual_seek_animation (core, op->jump);
 								core->print->cur = 0;
 							} else {
-								rz_io_sundo_push (core->io, offset, rz_print_get_cursor (core->print));
 								core->print->cur = delta;
 							}
 						} else {
-							rz_io_sundo_push (core->io, offset, 0);
 							rz_core_visual_seek_animation (core, op->jump);
 						}
 					}
@@ -2647,10 +2653,10 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			visual_closetab (core);
 			break;
 		case 'n':
-			rz_core_seek_next (core, rz_config_get (core->config, "scr.nkey"));
+			rz_core_seek_next (core, rz_config_get (core->config, "scr.nkey"), true);
 			break;
 		case 'N':
-			rz_core_seek_previous (core, rz_config_get (core->config, "scr.nkey"));
+			rz_core_seek_prev (core, rz_config_get (core->config, "scr.nkey"), true);
 			break;
 		case 'i':
 		case 'I':
@@ -2754,7 +2760,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			  {
 				  RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 				  if (fcn) {
-					  rz_core_seek (core, fcn->addr, false);
+					  rz_core_seek_and_save (core, fcn->addr, false);
 				  } else {
 					  __core_visual_gogo (core, 'g');
 				  }
@@ -2829,7 +2835,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					if (ch == 'h') {
 						distance = -distance;
 					}
-					rz_core_seek_delta (core, distance);
+					rz_core_seek_delta (core, distance, false);
 				}
 			}
 			break;
@@ -2851,7 +2857,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					if (ch == 'H') {
 						distance = -distance;
 					}
-					rz_core_seek_delta (core, distance * 2);
+					rz_core_seek_delta (core, distance * 2, false);
 				}
 			}
 			break;
@@ -2879,7 +2885,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 						ami = rz_meta_get_at (core->analysis, core->offset, RZ_META_TYPE_STRING, &amisize);
 					}
 					if (ami) {
-						rz_core_seek_delta (core, amisize);
+						rz_core_seek_delta (core, amisize, false);
 					} else {
 						int distance = numbuf_pull ();
 						if (distance > 1) {
@@ -2961,7 +2967,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 						} else if (!strcmp (__core_visual_print_command (core), "prc")) {
 							cols = rz_config_get_i (core->config, "hex.cols");
 						}
-						rz_core_seek_delta (core, -cols);
+						rz_core_seek_delta (core, -cols, false);
 					}
 				}
 			}
@@ -3137,7 +3143,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 		{
 			RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, RZ_ANALYSIS_FCN_TYPE_NULL);
 			if (fcn) {
-				rz_core_seek (core, fcn->addr, true);
+				rz_core_seek_and_save (core, fcn->addr, true);
 			}
 		}
 		break;
@@ -3275,8 +3281,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					rz_core_dump (core, buf, from, size, false);
 				}
 			} else {
-				rz_core_seek (core, core->offset + core->blocksize, false);
-				rz_io_sundo_push (core->io, core->offset, rz_print_get_cursor (core->print));
+				rz_core_seek_and_save (core, core->offset + core->blocksize, false);
 			}
 			break;
 		case '<': // "V<"
@@ -3301,12 +3306,11 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					}
 				}
 			} else {
-				rz_core_seek (core, core->offset - core->blocksize, false);
-				rz_io_sundo_push (core->io, core->offset, rz_print_get_cursor (core->print));
+				rz_core_seek_and_save (core, core->offset - core->blocksize, false);
 			}
 			break;
 		case '.': // "V."
-			rz_io_sundo_push (core->io, core->offset, rz_print_get_cursor (core->print));
+			rz_core_seek_save (core);
 			if (core->print->cur_enabled) {
 				rz_config_set_i (core->config, "stack.delta", 0);
 				rz_core_seek (core, core->offset + core->print->cur, true);
@@ -3417,25 +3421,11 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			}
 			break;
 		case 'u':
-		{
-			RzIOUndos *undo = rz_io_sundo (core->io, core->offset);
-			if (undo) {
-				rz_core_visual_seek_animation (core, undo->off);
-				core->print->cur = undo->cursor;
-			} else {
-				eprintf ("Cannot undo\n");
-			}
-		}
-		break;
+			rz_core_visual_seek_animation_undo (core);
+			break;
 		case 'U':
-		{
-			RzIOUndos *undo = rz_io_sundo_redo (core->io);
-			if (undo) {
-				rz_core_visual_seek_animation (core, undo->off);
-				reset_print_cur (core->print);
-			}
-		}
-		break;
+			rz_core_visual_seek_animation_redo (core);
+			break;
 		case '?':
 			if (visual_help (core) == '?') {
 				rz_core_visual_hud (core);
@@ -3466,22 +3456,6 @@ RZ_API void rz_core_visual_title(RzCore *core, int color) {
 	int pc, hexcols = rz_config_get_i (core->config, "hex.cols");
 	if (autoblocksize) {
 		switch (core->printidx) {
-#if 0
-		case RZ_CORE_VISUAL_MODE_PXR: // prc
-		case RZ_CORE_VISUAL_MODE_PRC: // prc
-			rz_core_block_size (core, (int)(core->cons->rows * hexcols * 3.5));
-			break;
-		case RZ_CORE_VISUAL_MODE_PXa: // pxa
-		case RZ_CORE_VISUAL_MODE_PW: // XXX pw
-			rz_core_block_size (core, (int)(core->cons->rows * hexcols));
-			break;
-		case RZ_CORE_VISUAL_MODE_PC: // XXX pc
-			rz_core_block_size (core, (int)(core->cons->rows * hexcols * 4));
-			break;
-		case RZ_CORE_VISUAL_MODE_PXA: // pxA
-			rz_core_block_size (core, hexcols * core->cons->rows * 8);
-			break;
-#endif
 		case RZ_CORE_VISUAL_MODE_PX: // x
 			if (currentFormat == 3 || currentFormat == 9 || currentFormat == 5) { // prx
 				rz_core_block_size (core, (int)(core->cons->rows * hexcols * 4));

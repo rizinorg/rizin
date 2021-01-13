@@ -57,7 +57,6 @@ typedef struct rz_io_undos_t {
 } RzIOUndos;
 
 typedef struct rz_io_undo_t {
-	bool s_enable;
 	int idx;
 	int undos; /* available undos */
 	int redos; /* available redos */
@@ -345,12 +344,6 @@ RZ_API RzIOPlugin *rz_io_plugin_resolve(RzIO *io, const char *filename, bool man
 RZ_API RzIOPlugin *rz_io_plugin_resolve_fd(RzIO *io, int fd);
 RZ_API RzIOPlugin *rz_io_plugin_get_default(RzIO *io, const char *filename, bool many);
 
-/* undo api */
-// track seeks and writes
-// TODO: needs cleanup..kinda big?
-RZ_API int rz_io_undo_init(RzIO *io);
-RZ_API void rz_io_undo_enable(RzIO *io, bool seek);
-/* seek undo */
 RZ_API RzIOUndos *rz_io_sundo(RzIO *io, ut64 offset);
 RZ_API RzIOUndos *rz_io_sundo_redo(RzIO *io);
 RZ_API void rz_io_sundo_push(RzIO *io, ut64 off, int cursor);

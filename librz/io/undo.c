@@ -2,27 +2,8 @@
 
 #include <rz_io.h>
 
-#if 0
-* TODO:
-* - make path of indirections shortr (io->undo.foo is slow) */
-* - Plugin changes in write and seeks
-* - Per-fd history log
-#endif
-
-RZ_API int rz_io_undo_init(RzIO *io) {
-	/* seek undo */
-	rz_io_sundo_reset (io);
-	return true;
-}
-
-RZ_API void rz_io_undo_enable(RzIO *io, bool s) {
-	io->undo.s_enable = s;
-}
-
-/* undo seekz */
-
 RZ_API RzIOUndos *rz_io_sundo(RzIO *io, ut64 offset) {
-	if (!io->undo.s_enable || !io->undo.undos) {
+	if (!io->undo.undos) {
 		return NULL;
 	}
 
@@ -52,7 +33,7 @@ RZ_API RzIOUndos *rz_io_sundo_redo(RzIO *io) {
 	RzIOUndos *undo;
 	RzIOMap *map;
 
-	if (!io->undo.s_enable || !io->undo.redos) {
+	if (!io->undo.redos) {
 		return NULL;
 	}
 
@@ -72,9 +53,6 @@ RZ_API RzIOUndos *rz_io_sundo_redo(RzIO *io) {
 
 RZ_API void rz_io_sundo_push(RzIO *io, ut64 off, int cursor) {
 	RzIOUndos *undo;
-	if (!io->undo.s_enable) {
-		return;
-	}
 	// don't push duplicate seek
 	if (io->undo.undos > 0) {
 		undo = &io->undo.seek[(io->undo.idx - 1 + RZ_IO_UNDOS) % RZ_IO_UNDOS];
@@ -110,9 +88,6 @@ RZ_API RzList *rz_io_sundo_list(RzIO *io, int mode) {
 
 	if (mode == '!') {
 		mode = 0;
-	}
-	if (!io->undo.s_enable) {
-		return NULL;
 	}
 	undos = io->undo.undos;
 	redos = io->undo.redos;

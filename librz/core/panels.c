@@ -1527,7 +1527,7 @@ void __fix_cursor_up(RzCore *core) {
 	if (sz < 1) {
 		sz = 1;
 	}
-	rz_core_seek_delta (core, -sz);
+	rz_core_seek_delta (core, -sz, false);
 	print->cur += sz;
 	if (print->ocur != -1) {
 		print->ocur += sz;
@@ -1547,7 +1547,7 @@ void __fix_cursor_down(RzCore *core) {
 			if (sz < 1) {
 				sz = 1;
 			}
-			rz_core_seek_delta (core, sz);
+			rz_core_seek_delta (core, sz, false);
 			print->cur = RZ_MAX (print->cur - sz, 0);
 			if (print->ocur != -1) {
 				print->ocur = RZ_MAX (print->ocur - sz, 0);
@@ -3683,7 +3683,7 @@ void __direction_disassembly_cb(void *user, int direction) {
 			__set_panel_addr (core, cur, core->offset);
 		} else {
 			rz_core_visual_disasm_up (core, &cols);
-			rz_core_seek_delta (core, -cols);
+			rz_core_seek_delta (core, -cols, false);
 			__set_panel_addr (core, cur, core->offset);
 		}
 		return;
@@ -5928,11 +5928,8 @@ void __undo_seek(RzCore *core) {
 	if (!__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
 		return;
 	}
-	RzIOUndos *undo = rz_io_sundo (core->io, core->offset);
-	if (undo) {
-		rz_core_visual_seek_animation (core, undo->off);
-		__set_panel_addr (core, cur, core->offset);
-	}
+	rz_core_visual_seek_animation_undo (core);
+	__set_panel_addr (core, cur, core->offset);
 }
 
 void __set_filter(RzCore *core, RzPanel *panel) {
@@ -5962,11 +5959,8 @@ void __redo_seek(RzCore *core) {
 	if (!__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
 		return;
 	}
-	RzIOUndos *undo = rz_io_sundo_redo (core->io);
-	if (undo) {
-		rz_core_visual_seek_animation (core, undo->off);
-		__set_panel_addr (core, cur, core->offset);
-	}
+	rz_core_visual_seek_animation_redo (core);
+	__set_panel_addr (core, cur, core->offset);
 }
 
 void __rotate_asmemu(RzCore *core, RzPanel *p) {
@@ -6571,13 +6565,13 @@ repeat:
 		break;
 	case 'n':
 		if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
-			rz_core_seek_next (core, rz_config_get (core->config, "scr.nkey"));
+			rz_core_seek_next (core, rz_config_get (core->config, "scr.nkey"), true);
 			__set_panel_addr (core, cur, core->offset);
 		}
 		break;
 	case 'N':
 		if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
-			rz_core_seek_previous (core, rz_config_get (core->config, "scr.nkey"));
+			rz_core_seek_prev (core, rz_config_get (core->config, "scr.nkey"), true);
 			__set_panel_addr (core, cur, core->offset);
 		}
 		break;
@@ -6628,7 +6622,6 @@ repeat:
 			if (hl) {
 				ut64 addr = rz_num_math (core->num, hl);
 				__set_panel_addr (core, cur, addr);
-				// rz_io_sundo_push (core->io, addr, false); // doesnt seems to work
 			}
 		}
 		break;

@@ -4,32 +4,32 @@
 #define RZ_CORE_H
 
 #include <rz_main.h>
-#include "rz_socket.h"
-#include "rz_types.h"
-#include "rz_magic.h"
-#include "rz_agraph.h"
-#include "rz_io.h"
-#include "rz_lib.h"
-#include "rz_diff.h"
-#include "rz_egg.h"
-#include "rz_lang.h"
-#include "rz_asm.h"
-#include "rz_parse.h"
-#include "rz_analysis.h"
-#include "rz_cmd.h"
-#include "rz_cons.h"
-#include "rz_search.h"
-#include "rz_sign.h"
-#include "rz_debug.h"
-#include "rz_flag.h"
-#include "rz_config.h"
-#include "rz_bin.h"
-#include "rz_hash.h"
-#include "rz_util.h"
-#include "rz_util/rz_print.h"
-#include "rz_crypto.h"
-#include "rz_bind.h"
-#include "rz_util/rz_annotated_code.h"
+#include <rz_socket.h>
+#include <rz_types.h>
+#include <rz_magic.h>
+#include <rz_agraph.h>
+#include <rz_io.h>
+#include <rz_lib.h>
+#include <rz_diff.h>
+#include <rz_egg.h>
+#include <rz_lang.h>
+#include <rz_asm.h>
+#include <rz_parse.h>
+#include <rz_analysis.h>
+#include <rz_cmd.h>
+#include <rz_cons.h>
+#include <rz_search.h>
+#include <rz_sign.h>
+#include <rz_debug.h>
+#include <rz_flag.h>
+#include <rz_config.h>
+#include <rz_bin.h>
+#include <rz_hash.h>
+#include <rz_util.h>
+#include <rz_util/rz_print.h>
+#include <rz_crypto.h>
+#include <rz_bind.h>
+#include <rz_util/rz_annotated_code.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -93,15 +93,6 @@ typedef enum {
 	RZ_CORE_VISUAL_MODE_CD = 4
 } RzCoreVisualMode;
 
-/*
-#define RZ_CORE_VISUAL_MODE_PC    4
-#define RZ_CORE_VISUAL_MODE_PXA   5
-#define RZ_CORE_VISUAL_MODE_PSS   6
-#define RZ_CORE_VISUAL_MODE_PRC   7
-#define RZ_CORE_VISUAL_MODE_PXa   8
-#define RZ_CORE_VISUAL_MODE_PXR   9
-*/
-
 typedef struct rz_core_rtr_host_t {
 	int proto;
 	char host[512];
@@ -115,11 +106,16 @@ typedef enum {
 	AUTOCOMPLETE_MS
 } RAutocompleteType;
 
-typedef struct {
-	ut64 addr;
-	const char *glob;
-	ut64 minstamp;
-} RzCoreUndoCondition;
+/**
+ * Represent an entry in the seek history.
+ * This is the "full state" of that point in time.
+ */
+typedef struct rz_core_seek_undo_t {
+	ut64 offset; ///< Value of core->offset at the given time in history
+	int cursor; ///< Position of the cursor at the given time in history
+	bool is_current; ///< True if this is the current seek value
+	int idx; ///< Position of the item relative to the current seek item (0 current seek, < 0 for undos, > 0 for redos)
+} RzCoreSeekItem;
 
 typedef struct rz_core_file_t {
 	int dbg;
@@ -128,7 +124,6 @@ typedef struct rz_core_file_t {
 	const struct rz_core_t *core;
 	ut8 alive;
 } RzCoreFile;
-
 
 typedef struct rz_core_times_t {
 	ut64 loadlibs_init_time;
@@ -239,6 +234,18 @@ typedef struct rz_core_tasks_t {
 	bool oneshot_running;
 } RzCoreTaskScheduler;
 
+/**
+ * Keep track of the seek history, by allowing undo/redo behaviour. Each seek
+ * is saved in the undos stack (unless cfg.seek.silent is set), so you can go
+ * back to where you previously were. Once an undo is done, the previously set
+ * address is put in the redos stack, so it is possible to go back and forth.
+ * Once a new seek is performed, all redos are lost.
+ */
+typedef struct rz_core_seek_history_t {
+	RzVector undos; ///< Stack of RzCoreSeekItems, allowing to "go back in time"
+	RzVector redos; ///< Stack of RzCoreSeekItems, allowing to re-do an action that was undone.
+} RzCoreSeekHistory;
+
 struct rz_core_t {
 	RzBin *bin;
 	RzConfig *config;
@@ -327,6 +334,7 @@ struct rz_core_t {
 	RzList *ropchain;
 	bool use_tree_sitter_rzcmd;
 	bool use_newshell_autocompletion;
+	RzCoreSeekHistory seek_history;
 
 	bool marks_init;
 	ut64 marks[UT8_MAX + 1];
@@ -414,16 +422,24 @@ RZ_API RzCmdStatus rz_core_cmd_lines_newshell(RzCore *core, const char *lines);
 RZ_API int rz_core_cmd_command(RzCore *core, const char *command);
 RZ_API bool rz_core_run_script (RzCore *core, const char *file);
 RZ_API bool rz_core_seek(RzCore *core, ut64 addr, bool rb);
+RZ_API bool rz_core_seek_and_save(RzCore *core, ut64 addr, bool rb);
+RZ_API bool rz_core_seek_opt(RzCore *core, ut64 addr, bool rb, bool save);
+RZ_API bool rz_core_seek_save(RzCore *core);
+RZ_API bool rz_core_seek_undo(RzCore *core);
+RZ_API bool rz_core_seek_redo(RzCore *core);
+RZ_API void rz_core_seek_reset(RzCore *core);
+RZ_API RzList *rz_core_seek_list(RzCore *core);
+RZ_API int rz_core_seek_base(RzCore *core, const char *hex, bool save);
+RZ_API void rz_core_seek_prev(RzCore *core, const char *type, bool save);
+RZ_API void rz_core_seek_next(RzCore *core, const char *type, bool save);
+RZ_API int rz_core_seek_align(RzCore *core, ut64 align, bool save);
+RZ_API int rz_core_seek_delta(RzCore *core, st64 delta, bool save);
+RZ_API bool rz_core_seek_analysis_bb(RzCore *core, ut64 addr, bool save);
 RZ_API bool rz_core_visual_bit_editor(RzCore *core);
-RZ_API int rz_core_seek_base (RzCore *core, const char *hex);
-RZ_API void rz_core_seek_previous (RzCore *core, const char *type);
-RZ_API void rz_core_seek_next (RzCore *core, const char *type);
-RZ_API int rz_core_seek_align(RzCore *core, ut64 align, int count);
 RZ_API void rz_core_arch_bits_at(RzCore *core, ut64 addr, RZ_OUT RZ_NULLABLE int *bits, RZ_OUT RZ_BORROW RZ_NULLABLE const char **arch);
 RZ_API void rz_core_seek_arch_bits(RzCore *core, ut64 addr);
 RZ_API int rz_core_block_read(RzCore *core);
 RZ_API int rz_core_block_size(RzCore *core, int bsize);
-RZ_API int rz_core_seek_size(RzCore *core, ut64 addr, int bsize);
 RZ_API int rz_core_is_valid_offset (RzCore *core, ut64 offset);
 RZ_API int rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist);
 RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type);
@@ -447,7 +463,9 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 RZ_API bool rz_core_visual_panels_root(RzCore *core, RzPanelsRoot *panels_root);
 RZ_API void rz_core_visual_browse(RzCore *core, const char *arg);
 RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg);
-RZ_API void rz_core_visual_seek_animation (RzCore *core, ut64 addr);
+RZ_API void rz_core_visual_seek_animation(RzCore *core, ut64 addr);
+RZ_API void rz_core_visual_seek_animation_redo(RzCore *core);
+RZ_API void rz_core_visual_seek_animation_undo(RzCore *core);
 RZ_API void rz_core_visual_asm(RzCore *core, ut64 addr);
 RZ_API void rz_core_visual_colors(RzCore *core);
 RZ_API int rz_core_visual_xrefs_x(RzCore *core);
@@ -505,7 +523,6 @@ RZ_API bool rz_core_file_close_all_but(RzCore *core);
 RZ_API int rz_core_file_list(RzCore *core, int mode);
 RZ_API int rz_core_file_binlist(RzCore *core);
 RZ_API bool rz_core_file_bin_raise(RzCore *core, ut32 num);
-RZ_API int rz_core_seek_delta(RzCore *core, st64 addr);
 RZ_API bool rz_core_extend_at(RzCore *core, ut64 addr, int size);
 RZ_API bool rz_core_write_at(RzCore *core, ut64 addr, const ut8 *buf, int size);
 RZ_API int rz_core_write_op(RzCore *core, const char *arg, char op);
@@ -587,7 +604,6 @@ RZ_API bool rz_core_esil_cmd(RzAnalysisEsil *esil, const char *cmd, ut64 a1, ut6
 RZ_API int rz_core_esil_step(RzCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver);
 RZ_API int rz_core_esil_step_back(RzCore *core);
 RZ_API ut64 rz_core_analysis_get_bbaddr(RzCore *core, ut64 addr);
-RZ_API bool rz_core_analysis_bb_seek(RzCore *core, ut64 addr);
 RZ_API int rz_core_analysis_fcn(RzCore *core, ut64 at, ut64 from, int reftype, int depth);
 RZ_API char *rz_core_analysis_fcn_autoname(RzCore *core, ut64 addr, int dump, int mode);
 RZ_API void rz_core_analysis_autoname_all_fcns(RzCore *core);
@@ -748,8 +764,6 @@ RZ_API void rz_core_visual_config(RzCore *core);
 RZ_API void rz_core_visual_mounts(RzCore *core);
 RZ_API void rz_core_visual_analysis(RzCore *core, const char *input);
 RZ_API void rz_core_visual_debugtraces(RzCore *core, const char *input);
-RZ_API void rz_core_seek_next(RzCore *core, const char *type);
-RZ_API void rz_core_seek_previous(RzCore *core, const char *type);
 RZ_API void rz_core_visual_define(RzCore *core, const char *arg, int distance);
 RZ_API int rz_core_visual_trackflags(RzCore *core);
 RZ_API int rz_core_visual_view_graph(RzCore *core);
