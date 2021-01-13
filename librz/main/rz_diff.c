@@ -17,15 +17,15 @@ enum {
 };
 
 enum {
-        GRAPH_DEFAULT_MODE,
-        GRAPH_SDB_MODE,
-        GRAPH_JSON_MODE,
-        GRAPH_JSON_DIS_MODE,
-        GRAPH_TINY_MODE,
-        GRAPH_INTERACTIVE_MODE,
-        GRAPH_DOT_MODE,
-        GRAPH_STAR_MODE,
-        GRAPH_GML_MODE
+	GRAPH_DEFAULT_MODE,
+	GRAPH_SDB_MODE,
+	GRAPH_JSON_MODE,
+	GRAPH_JSON_DIS_MODE,
+	GRAPH_TINY_MODE,
+	GRAPH_INTERACTIVE_MODE,
+	GRAPH_DOT_MODE,
+	GRAPH_STAR_MODE,
+	GRAPH_GML_MODE
 };
 
 typedef struct {
@@ -38,7 +38,6 @@ typedef struct {
 	int useva;
 	int delta;
 	int showbare;
-	bool json_started;
 	int diffmode;
 	int diffops;
 	int mode;
@@ -989,7 +988,7 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 			break;
 		case 'm':{
 		        const char *tmp = opt.arg;
-		        switch(tmp[0]) {
+		        switch (tmp[0]) {
 	                case 'i': ro.gmode = GRAPH_INTERACTIVE_MODE; break;
 	                case 'k': ro.gmode = GRAPH_SDB_MODE; break;
 	                case 'j': ro.gmode = GRAPH_JSON_MODE; break;
@@ -1091,7 +1090,7 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 	ro.file = (opt.ind < argc)? argv[opt.ind]: NULL;
 	ro.file2 = (opt.ind + 1 < argc)? argv[opt.ind + 1]: NULL;
 
-	if (RZ_STR_ISEMPTY (ro.file) || RZ_STR_ISEMPTY(ro.file2)) {
+	if (RZ_STR_ISEMPTY (ro.file) || RZ_STR_ISEMPTY (ro.file2)) {
 		eprintf ("Cannot open empty path\n");
 		return 1;
 	}
@@ -1171,6 +1170,7 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 				__print_diff_graph (c, rz_num_math (c->num, addr), ro.gmode);
 			}
 			free (words);
+			free (second);
 		} else if (ro.mode == MODE_CODE) {
 			if (ro.zignatures) {
 				rz_core_cmd0 (c, "z~?");
@@ -1308,7 +1308,7 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 	if (ro.pj) {
 		pj_end (ro.pj);
 		char *s = pj_drain (ro.pj);
-		printf ("%s\n", s);
+		rz_cons_println (s);
 		free (s);
 		ro.pj = NULL;
 	}
