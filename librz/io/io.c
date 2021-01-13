@@ -111,7 +111,6 @@ RZ_API RzIO* rz_io_init(RzIO* io) {
 	rz_io_map_init (io);
 	rz_io_cache_init (io);
 	rz_io_plugin_init (io);
-	rz_io_sundo_reset (io);
 	io->event = rz_event_new (io);
 	return io;
 }

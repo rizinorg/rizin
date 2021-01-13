@@ -344,12 +344,6 @@ RZ_API RzIOPlugin *rz_io_plugin_resolve(RzIO *io, const char *filename, bool man
 RZ_API RzIOPlugin *rz_io_plugin_resolve_fd(RzIO *io, int fd);
 RZ_API RzIOPlugin *rz_io_plugin_get_default(RzIO *io, const char *filename, bool many);
 
-RZ_API RzIOUndos *rz_io_sundo(RzIO *io, ut64 offset);
-RZ_API RzIOUndos *rz_io_sundo_redo(RzIO *io);
-RZ_API void rz_io_sundo_push(RzIO *io, ut64 off, int cursor);
-RZ_API void rz_io_sundo_reset(RzIO *io);
-RZ_API RzList *rz_io_sundo_list(RzIO *io, int mode);
-
 //desc.c
 RZ_API RzIODesc *rz_io_desc_new (RzIO *io, RzIOPlugin *plugin, const char *uri, int flags, int mode, void *data);
 RZ_API RzIODesc *rz_io_desc_open (RzIO *io, const char *uri, int flags, int mode);
