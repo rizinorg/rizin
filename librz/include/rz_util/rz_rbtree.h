@@ -112,10 +112,10 @@ RZ_API bool rz_rbtree_cont_delete(RContRBTree *tree, void *data, RContRBCmp cmp,
 RZ_API void *rz_rbtree_cont_find(RContRBTree *tree, void *data, RContRBCmp cmp, void *user);
 
 #define rz_rbtree_cont_foreach(tree, it, dat) \
-	for ((it) = rz_rbtree_first (&tree->root->node); rz_rbtree_iter_has(&it) && (dat = rz_rbtree_iter_get (&it, RContRBNode, node)->data); rz_rbtree_iter_next (&(it)))
+	for ((it) = rz_rbtree_first ((tree)->root ? &(tree)->root->node : NULL); rz_rbtree_iter_has(&it) && (dat = rz_rbtree_iter_get (&it, RContRBNode, node)->data); rz_rbtree_iter_next (&(it)))
 
 #define rz_rbtree_cont_foreach_prev(tree, it, dat) \
-	for ((it) = rz_rbtree_last (&tree->root->node); rz_rbtree_iter_has(&it) && (dat = rz_rbtree_iter_get (&it, RContRBNode, node)->data); rz_rbtree_iter_prev (&(it)))
+	for ((it) = rz_rbtree_last ((tree)->root ? &(tree)->root->node : NULL); rz_rbtree_iter_has(&it) && (dat = rz_rbtree_iter_get (&it, RContRBNode, node)->data); rz_rbtree_iter_prev (&(it)))
 
 RZ_API void rz_rbtree_cont_free(RContRBTree *tree);
 
