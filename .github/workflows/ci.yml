@@ -360,31 +360,44 @@ jobs:
     continue-on-error: true
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'static') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     runs-on: ubuntu-20.04
+    container: alpine:edge
     steps:
-    - uses: actions/checkout@v2
-      with:
-          submodules: recursive
-    - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v2
-      with:
-          repository: rizinorg/rizin-testbins
-          path: test/bins
-    - name: Install static
+    - name: Install dependencies
+      run: apk add --no-cache git gcc g++ linux-headers cmake wget unzip py3-wheel py3-setuptools py3-pip meson ninja
+    - name: Checkout rizin
       run: |
-        ./sys/static.sh
-        sudo make symstall
+        git clone https://github.com/${{ github.repository }}
+        cd rizin
+        git fetch origin ${{ github.ref }}
+        git checkout -b local_branch FETCH_HEAD
+        git submodule init
+        git submodule update
+    - name: Checkout our Testsuite Binaries
+      run: git clone https://github.com/rizinorg/rizin-testbins test/bins
+      working-directory: rizin
+    - name: Compile with meson
+      run: |
+        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
+        ninja -C build && ninja -C build install
+      working-directory: rizin
+    - name: Run unit tests
+      run: |
+        export PATH=${HOME}/.local/bin:${PATH}
+        ninja -C build test
+      working-directory: rizin
     - name: Run tests
       run: |
+        export PATH=${HOME}/.local/bin:${PATH}
         rizin -v
         rz-test -v
         cd test
-        make
+        rz-test -L -o results.json
+      working-directory: rizin
     - name: Upload test results
       uses: actions/upload-artifact@v2
       with:
         name: test-results-static
         path: test/results.json
-
 
   create-tarball:
     name: Create source tarball
