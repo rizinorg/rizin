@@ -7,6 +7,17 @@ static int simple_cmp(void *incoming, void *in, void *user) {
 	return v[0] - v[1];
 }
 
+bool test_rz_rbtree_cont_foreach_empty() {
+	RContRBTree *tree = rz_rbtree_cont_new ();
+	RBIter alf;
+	void *v;
+	rz_rbtree_cont_foreach (tree, alf, v) {
+		mu_assert ("not reachable", false);
+	}
+	rz_rbtree_cont_free (tree);
+	mu_end;
+}
+
 bool test_rz_rbtree_cont_insert() {
 	RContRBTree *tree = rz_rbtree_cont_new();
 	ut32 i;
@@ -66,6 +77,7 @@ bool test_rz_rbtree_cont_delete() {
 bool all_tests(void) {
 	mu_run_test (test_rz_rbtree_cont_insert);
 	mu_run_test (test_rz_rbtree_cont_delete);
+	mu_run_test (test_rz_rbtree_cont_foreach_empty);
 	return tests_run != tests_passed;
 }
 
