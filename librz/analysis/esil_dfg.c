@@ -187,13 +187,14 @@ static bool _edf_reg_set (RzAnalysisEsilDFG *dfg, const char *reg, RzGraphNode *
 		free (_reg);
 		return false;
 	}
-	free (_reg);
 	EsilDFGRegVar *rv = RZ_NEW0 (EsilDFGRegVar);
 	if (!rv) {
+		free (_reg);
 		return false;
 	}
 
 	const ut64 v = sdb_num_get (dfg->regs, _reg, NULL);
+	free (_reg);
 	rv->from = (v & (UT64_MAX ^ UT32_MAX)) >> 32;
 	rv->to = v & UT32_MAX;
 	rz_queue_enqueue (dfg->todo, rv);
