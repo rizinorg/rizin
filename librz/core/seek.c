@@ -18,7 +18,6 @@ static void add_seek_history(RzCore *core) {
 	RzVector *vredo = &core->seek_history.redos;
 	RzCoreSeekItem item;
 	get_current_seek_state (core, &item);
-	// TODO: check double entries
 	rz_vector_push (vundo, &item);
 	rz_vector_clear (vredo);
 }
