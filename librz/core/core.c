@@ -2477,8 +2477,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->ev = rz_event_new (core);
 	core->max_cmd_depth = RZ_CONS_CMD_DEPTH + 1;
 	core->sdb = sdb_new (NULL, "rzkv.sdb", 0); // XXX: path must be in home?
-	rz_vector_init (&core->seek_history.undos, sizeof (RzCoreSeekItem), NULL, NULL);
-	rz_vector_init (&core->seek_history.redos, sizeof (RzCoreSeekItem), NULL, NULL);
+	rz_core_seek_reset (core);
 	core->lastsearch = NULL;
 	core->cmdfilter = NULL;
 	core->switch_file_view = 0;
