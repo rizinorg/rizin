@@ -98,7 +98,7 @@ if (a == b) {
   from user, etc.), and should be handled in the usual way through if-else.
 
 ```c
-int check(RCore *c, int a, int b) {
+int check(RzCore *c, int a, int b) {
 	rz_return_val_if_fail (c, false);
 	rz_return_val_if_fail (a >= 0, b >= 1, false);
 

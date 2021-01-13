@@ -4635,6 +4635,31 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_command) {
 	if (res == RZ_CMD_STATUS_WRONG_ARGS) {
 		const char *cmdname = rz_cmd_parsed_args_cmd (pr_args);
 		eprintf ("Wrong number of arguments passed to `%s`, see its help with `%s?`\n", cmdname, cmdname);
+		RzCmdDesc *cd = rz_cmd_get_desc (state->core->rcmd, cmdname);
+		if (cd) {
+			char *cmdname_help = rz_str_newf ("%s?", cmdname);
+			if (!cmdname_help) {
+				goto err;
+			}
+			RzCmdParsedArgs *help_pra = rz_cmd_parsed_args_newcmd (cmdname_help);
+			if (!help_pra) {
+				goto err;
+			}
+			char *help_msg = rz_cmd_get_help (state->core->rcmd, help_pra, true);
+			if (!help_msg) {
+				goto help_pra_err;
+			}
+			eprintf ("%s", help_msg);
+			free (help_msg);
+help_pra_err:
+			rz_cmd_parsed_args_free (help_pra);
+		}
+	} else if (res == RZ_CMD_STATUS_NONEXISTINGCMD) {
+		const char *cmdname = rz_cmd_parsed_args_cmd (pr_args);
+		eprintf ("Command '%s' does not exist.\n", cmdname);
+		if (rz_str_endswith (cmdname, "?") && pr_args->argc > 1) {
+			eprintf ("Did you want to see the help? Try `%s` without any argument.\n", cmdname);
+		}
 	} else if (res == RZ_CMD_STATUS_ERROR) {
 		const char *cmdname = rz_cmd_parsed_args_cmd (pr_args);
 		RZ_LOG_DEBUG ("Something wrong during the execution of `%s` command.\n", cmdname);
@@ -4805,8 +4830,6 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_command) {
 			rz_cons_printf ("%s", help_msg);
 			free (help_msg);
 			res = RZ_CMD_STATUS_OK;
-		} else {
-			res = rz_cmd_call_parsed_args (state->core->rcmd, pr_args);
 		}
 	err_else:
 		rz_cmd_parsed_args_free (pr_args);

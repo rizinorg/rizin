@@ -487,7 +487,6 @@ install_headers(sdb_inc_files, install_dir: rizin_incdir / 'sdb')
 librzsdb = static_library('rzsdb', sdb_files,
   include_directories: sdb_inc,
   implicit_include_directories: false,
-  c_args: host_machine.system() == 'windows' ? '-DSDB_API=__declspec(dllexport)' : [],
 )
 
 sdb_dep = declare_dependency(
