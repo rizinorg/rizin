@@ -651,9 +651,10 @@ static bool __holdMouseState(RzCore *core) {
 	return m;
 }
 
-static void backup_current_addr(RzCore *core, ut64 *addr, ut64 *bsze, ut64 *newaddr) {
+static void backup_current_addr(RzCore *core, ut64 *addr, ut64 *bsze, ut64 *newaddr, int *cur) {
 	*addr = core->offset;
 	*bsze = core->blocksize;
+	*cur = core->print->cur_enabled? core->print->cur: 0;
 	if (core->print->cur_enabled) {
 		if (core->print->ocur != -1) {
 			int newsz = core->print->cur - core->print->ocur;
@@ -663,16 +664,17 @@ static void backup_current_addr(RzCore *core, ut64 *addr, ut64 *bsze, ut64 *newa
 			*newaddr = core->offset + core->print->cur;
 		}
 		rz_core_seek (core, *newaddr, true);
+		core->print->cur = 0;
 	}
 }
 
-static void restore_current_addr(RzCore *core, ut64 addr, ut64 bsze, ut64 newaddr) {
+static void restore_current_addr(RzCore *core, ut64 addr, ut64 bsze, ut64 newaddr, int cur) {
 	bool restore_seek = true;
+	bool cursor_moved = false;
 	if (core->offset != newaddr) {
-		bool cursor_moved = false;
 		// when new address is in the screen bounds, just move
 		// the cursor if enabled and restore seek
-		if (core->print->cur != -1 && core->print->screen_bounds > 1) {
+		if (core->print->cur_enabled && core->print->screen_bounds > 1) {
 			if (core->offset >= addr &&
 			    core->offset < core->print->screen_bounds) {
 				core->print->ocur = -1;
@@ -691,13 +693,16 @@ static void restore_current_addr(RzCore *core, ut64 addr, ut64 bsze, ut64 newadd
 		if (restore_seek) {
 			rz_core_seek (core, addr, true);
 			rz_core_block_size (core, bsze);
+			if (!cursor_moved) {
+				core->print->cur = cur;
+			}
 		}
 	}
 }
 
 RZ_API void rz_core_visual_prompt_input(RzCore *core) {
 	ut64 addr, bsze, newaddr = 0LL;
-	int ret, h;
+	int ret, h, cur;
 	(void) rz_cons_get_size (&h);
 	bool mouse_state = __holdMouseState(core);
 	rz_cons_gotoxy (0, h);
@@ -706,11 +711,11 @@ RZ_API void rz_core_visual_prompt_input(RzCore *core) {
 	rz_cons_show_cursor (true);
 	core->vmode = false;
 
-	backup_current_addr (core, &addr, &bsze, &newaddr);
+	backup_current_addr (core, &addr, &bsze, &newaddr, &cur);
 	do {
 		ret = rz_core_visual_prompt (core);
 	} while (ret);
-	restore_current_addr (core, addr, bsze, newaddr);
+	restore_current_addr (core, addr, bsze, newaddr, cur);
 
 	rz_cons_show_cursor (false);
 	core->vmode = true;
@@ -1264,26 +1269,25 @@ RZ_API int rz_line_hist_offset_down(RzLine *line) {
 }
 
 RZ_API void rz_core_visual_offset(RzCore *core) {
-	ut64 addr, bsze, newaddr = 0LL;
 	char buf[256];
 
-	backup_current_addr (core, &addr, &bsze, &newaddr);
 	core->cons->line->prompt_type = RZ_LINE_PROMPT_OFFSET;
 	rz_line_set_hist_callback (core->cons->line,
 		&rz_line_hist_offset_up,
 		&rz_line_hist_offset_down);
 	rz_line_set_prompt ("[offset]> ");
-	strcpy (buf, "s ");
-	if (rz_cons_fgets (buf + 2, sizeof (buf) - 2, 0, NULL) > 0) {
-		if (!strcmp (buf + 2, "g") || !strcmp (buf + 2, "G")) {
-			__core_visual_gogo (core, buf[2]);
+	if (rz_cons_fgets (buf, sizeof (buf) - 1, 0, NULL) > 0) {
+		if (!strcmp (buf, "g") || !strcmp (buf, "G")) {
+			__core_visual_gogo (core, buf[0]);
 		} else {
-			if (buf[2] == '.') {
-				buf[1] = '.';
+			if (buf[0] == '.') {
+				rz_core_seek_base (core, buf + 1, true);
+			} else {
+				ut64 addr = rz_num_math (core->num, buf);
+				rz_core_seek_and_save (core, addr, true);
 			}
-			rz_core_cmd0 (core, buf);
-			restore_current_addr (core, addr, bsze, newaddr);
 		}
+		reset_print_cur (core->print);
 	}
 	rz_line_set_hist_callback (core->cons->line, &rz_line_hist_cmd_up, &rz_line_hist_cmd_down);
 	core->cons->line->prompt_type = RZ_LINE_PROMPT_DEFAULT;
