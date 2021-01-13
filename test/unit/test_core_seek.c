@@ -199,12 +199,55 @@ bool test_core_seek_undo_redo(void) {
 	mu_end;
 }
 
+bool test_core_seek_dupped(void) {
+	RzList *l;
+	RzCoreSeekItem *csu;
+	RzCore *core = rz_core_new ();
+	rz_core_seek_and_save (core, 0x100, false);
+	rz_core_seek_and_save (core, 0x200, false);
+	rz_core_seek_and_save (core, 0x300, false);
+
+	l = rz_core_seek_list (core);
+	mu_assert_eq (rz_list_length (l), 4, "4 elements in the list");
+	rz_list_free (l);
+
+	rz_core_seek_and_save (core, 0x300, false);
+	rz_core_seek_and_save (core, 0x300, false);
+	l = rz_core_seek_list (core);
+	mu_assert_eq (rz_list_length (l), 4, "4 elements still in the list (no dup in last entry)");
+	rz_list_free (l);
+
+	rz_core_seek (core, 0x400, false);
+	l = rz_core_seek_list (core);
+	mu_assert_eq (rz_list_length (l), 4, "4 elements still in the list (silent seek done)");
+	rz_list_free (l);
+
+	rz_core_seek_and_save (core, 0x500, false);
+	l = rz_core_seek_list (core);
+	mu_assert_eq (rz_list_length (l), 5, "5 elements in history after save_and_seek 0x500");
+	csu = (RzCoreSeekItem *)rz_list_get_n (l, 0);
+	mu_assert_eq (csu->offset, 0, "1st is 0 seek");
+	csu = (RzCoreSeekItem *)rz_list_get_n (l, 1);
+	mu_assert_eq (csu->offset, 0x100, "2nd is 0x100 seek");
+	csu = (RzCoreSeekItem *)rz_list_get_n (l, 2);
+	mu_assert_eq (csu->offset, 0x200, "3rd is 0x200 seek");
+	csu = (RzCoreSeekItem *)rz_list_get_n (l, 3);
+	mu_assert_eq (csu->offset, 0x400, "4th is 0x400 seek (0x300 was not saved because we moved away from it withhout saving)");
+	csu = (RzCoreSeekItem *)rz_list_get_n (l, 4);
+	mu_assert_eq (csu->offset, 0x500, "5th is 0x300 seek");
+	rz_list_free (l);
+
+	rz_core_free (core);
+	mu_end;
+}
+
 int all_tests () {
 	mu_run_test (test_core_seek);
 	mu_run_test (test_core_seek_prev_next);
 	mu_run_test (test_core_seek_list);
 	mu_run_test (test_core_seek_list_undo);
 	mu_run_test (test_core_seek_undo_redo);
+	mu_run_test (test_core_seek_dupped);
 	return tests_passed != tests_run;
 }
 
