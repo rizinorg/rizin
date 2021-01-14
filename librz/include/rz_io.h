@@ -13,8 +13,6 @@
 #define RZ_IO_SEEK_CUR	1
 #define RZ_IO_SEEK_END	2
 
-#define RZ_IO_UNDOS 64
-
 #define rz_io_map_get_from(map) map->itv.addr
 #define rz_io_map_get_to(map) ( rz_itv_size (map->itv)? rz_itv_end (map->itv) - 1: 0 )
 
@@ -51,18 +49,6 @@ extern "C" {
 
 RZ_LIB_VERSION_HEADER(rz_io);
 
-typedef struct rz_io_undos_t {
-	ut64 off;
-	int cursor;
-} RzIOUndos;
-
-typedef struct rz_io_undo_t {
-	int idx;
-	int undos; /* available undos */
-	int redos; /* available redos */
-	RzIOUndos seek[RZ_IO_UNDOS];
-} RzIOUndo;
-
 typedef struct rz_io_t {
 	struct rz_io_desc_t *desc; // XXX deprecate... we should use only the fd integer, not hold a weak pointer
 	ut64 off;
@@ -85,7 +71,6 @@ typedef struct rz_io_t {
 	RzSkyline cache_skyline;
 	ut8 *write_mask;
 	int write_mask_len;
-	RzIOUndo undo;
 	SdbList *plugins;
 	char *runprofile;
 	char *envprofile;
@@ -137,7 +122,6 @@ typedef struct rz_io_plugin_t {
 	const char *uris;
 	int (*listener)(RzIODesc *io);
 	int (*init)(void);
-	RzIOUndo undo;
 	bool isdbg;
 	// int (*is_file_opened)(RzIO *io, RzIODesc *fd, const char *);
 	char *(*system)(RzIO *io, RzIODesc *fd, const char *);
