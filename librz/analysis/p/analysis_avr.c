@@ -1921,6 +1921,7 @@ static int esil_avr_fini(RzAnalysisEsil *esil) {
 static bool set_reg_profile(RzAnalysis *analysis) {
 	const char *p =
 		"=PC	pcl\n"
+		"=SN	r24\n"
 		"=SP	sp\n"
 		"=BP    y\n"
 // explained in http://www.nongnu.org/avr-libc/user-manual/FAQ.html
