@@ -1911,7 +1911,7 @@ RZ_API int rz_core_analysis_esil_fcn(RzCore *core, ut64 at, ut64 from, int refty
 		}
 		esil = RZ_STRBUF_SAFEGET (&op->esil);
 		eprintf ("0x%08"PFMT64x" %d %s\n", at, op->size, esil);
-		at += op->size;
+		// at += op->size;
 		// esilIsRet()
 		// esilIsCall()
 		// esilIsJmp()
