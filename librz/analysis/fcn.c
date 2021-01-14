@@ -454,7 +454,6 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RzAnalysisBlock *block
 	block->parent_stackptr -= ctx->stack_diff;
 	rz_analysis_function_add_block (our_fcn, block);
 	// TODO: add block->ninstr from our_fcn considering delay slots
-	our_fcn += block->ninstr;
 	rz_analysis_block_unref (block);
 	return true;
 }
