@@ -1597,6 +1597,18 @@ OPCODE_DESC opcodes[] = {
 	INST_LAST
 };
 
+static void set_invalid_op(RzAnalysisOp *op, ut64 addr) {
+	// Unknown or invalid instruction.
+	op->family = RZ_ANALYSIS_OP_FAMILY_UNKNOWN;
+	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
+	op->addr = addr;
+	op->nopcode = 1;
+	op->cycles = 1;
+	op->size = 2;
+	// set an esil trap to prevent the execution of it
+	rz_strbuf_set (&op->esil, "1,$");
+}
+
 static OPCODE_DESC* avr_op_analyze(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, CPU_MODEL *cpu) {
 	OPCODE_DESC *opcode_desc;
 	if (len < 2) {
@@ -1647,24 +1659,8 @@ static OPCODE_DESC* avr_op_analyze(RzAnalysis *analysis, RzAnalysisOp *op, ut64 
 		}
 	}
 
-	// ignore reserved opcodes (if they have not been caught by the previous loop)
-	if ((ins & 0xff00) == 0xff00 && (ins & 0xf) > 7) {
-		goto INVALID_OP;
-	}
-
 INVALID_OP:
-	// An unknown or invalid option has appeared.
-	//  -- Throw pokeball!
-	op->family = RZ_ANALYSIS_OP_FAMILY_UNKNOWN;
-	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
-	op->addr = addr;
-	op->nopcode = 1;
-	op->cycles = 1;
-	op->size = 2;
-	// launch esil trap (for communicating upper layers about this weird
-	// and stinky situation
-	rz_strbuf_set (&op->esil, "1,$");
-
+	set_invalid_op (op, addr);
 	return NULL;
 }
 
@@ -1674,8 +1670,18 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	int size = -1;
 	char mnemonic[32] = {0};
 
-	if (!op) {
-		return avr_decode (mnemonic, addr, buf, len);
+	set_invalid_op (op, addr);
+
+	size = avr_decode (mnemonic, addr, buf, len);
+	if (!strcmp (mnemonic, "invalid") ||
+		!strcmp (mnemonic, "truncated")) {
+		op->eob = true;
+		op->mnemonic = strdup(mnemonic);
+		size = -2;
+	}
+
+	if (!op || size < 0) {
+		return size;
 	}
 
 	// select cpu info
@@ -1701,14 +1707,8 @@ static int avr_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	// process opcode
 	avr_op_analyze (analysis, op, addr, buf, len, cpu);
 
-	if ((size = avr_decode (mnemonic, addr, buf, len)) > 0) {
-		if (*mnemonic == '.') {
-			op->mnemonic = strdup("invalid");
-		} else {
-			op->mnemonic = strdup(mnemonic);
-		}
-		op->size = size;
-	}
+	op->mnemonic = strdup(mnemonic);
+	op->size = size;
 
 	return size;
 }
