@@ -1042,12 +1042,13 @@ static RzList *construct_rop_gadget(RzCore *core, ut64 addr, ut8 *buf, int bufle
 	}
 	while (nb_instr < max_instr) {
 		ht_uu_insert (localbadstart, idx, 1);
-		rz_analysis_op (core->analysis, &aop, addr, buf + idx, buflen - idx, RZ_ANALYSIS_OP_MASK_DISASM);
 
-		if (nb_instr == 0 && (is_end_gadget (&aop, 0) || aop.type == RZ_ANALYSIS_OP_TYPE_NOP)) {
+		int error = rz_analysis_op (core->analysis, &aop, addr, buf + idx, buflen - idx, RZ_ANALYSIS_OP_MASK_DISASM);
+		if (error < 0 || (nb_instr == 0 && (is_end_gadget (&aop, 0) || aop.type == RZ_ANALYSIS_OP_TYPE_NOP))) {
 			valid = false;
 			goto ret;
 		}
+
 		const int opsz = aop.size;
 		// opsz = rz_strbuf_length (asmop.buf);
 		char *opst = aop.mnemonic;
@@ -1055,7 +1056,7 @@ static RzList *construct_rop_gadget(RzCore *core, ut64 addr, ut8 *buf, int bufle
 			RZ_LOG_WARN ("Analysis plugin %s did not return disassembly\n", core->analysis->cur->name);
 			RzAsmOp asmop;
 			rz_asm_set_pc (core->rasm, addr);
-			if (!rz_asm_disassemble (core->rasm, &asmop, buf + idx, buflen - idx)) {
+			if (rz_asm_disassemble (core->rasm, &asmop, buf + idx, buflen - idx) < 0) {
 				valid = false;
 				goto ret;
 			}
