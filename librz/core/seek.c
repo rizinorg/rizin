@@ -31,7 +31,11 @@ static bool seek_check_save(RzCore *core, ut64 addr, bool rb, bool save) {
 }
 
 /**
+ * \brief Save current core offset in the seek history.
  *
+ * The saving can be disabled if eval var cfg.seek.silent is set to true.
+ *
+ * \param core RzCore reference
  */
 RZ_API bool rz_core_seek_save(RzCore *core) {
 	if (!rz_config_get_i (core->config, "cfg.seek.silent")) {
@@ -42,7 +46,11 @@ RZ_API bool rz_core_seek_save(RzCore *core) {
 }
 
 /**
+ * \brief Save current core offset in seek history and seek to \p addr .
  *
+ * \param core RzCore reference
+ * \param addr Address where to move to
+ * \param rb If true read the block
  */
 RZ_API bool rz_core_seek_and_save(RzCore *core, ut64 addr, bool rb) {
 	if (addr != core->offset) {
@@ -52,7 +60,11 @@ RZ_API bool rz_core_seek_and_save(RzCore *core, ut64 addr, bool rb) {
 }
 
 /**
+ * \brief Seek to \p addr.
  *
+ * \param core RzCore reference
+ * \param addr Address where to move to
+ * \param rb If true read the block
  */
 RZ_API bool rz_core_seek(RzCore *core, ut64 addr, bool rb) {
 	core->offset = rz_io_seek (core->io, addr, RZ_IO_SEEK_SET);
@@ -72,14 +84,23 @@ RZ_API bool rz_core_seek(RzCore *core, ut64 addr, bool rb) {
 }
 
 /**
- * 
+ * \brief Seek to \p addr and optionally save the current offset in seek history.
+ *
+ * \param core RzCore reference
+ * \param addr Address where to move to
+ * \param rb If true read the block
+ * \param save If true save the current state in seek history before seeking
  */
 RZ_API bool rz_core_seek_opt(RzCore *core, ut64 addr, bool rb, bool save) {
 	return seek_check_save (core, addr, rb, save);
 }
 
 /**
+ * \brief Seek relative to current offset and optionally save the current offset in seek history.
  *
+ * \param core RzCore reference
+ * \param delta Delta address added to the current offset
+ * \param save If true save the current state in seek history before seeking
  */
 RZ_API int rz_core_seek_delta(RzCore *core, st64 delta, bool save) {
 	ut64 newaddr;
@@ -94,7 +115,11 @@ RZ_API int rz_core_seek_delta(RzCore *core, st64 delta, bool save) {
 }
 
 /**
+ * \brief Seek to a new address composed of current offset with last hex digits replaced with those of \p hex
  *
+ * \param core RzCore reference
+ * \param hex New final part of the address (in hex)
+ * \param save If true save the current state in seek history before seeking
  */
 RZ_API int rz_core_seek_base(RzCore *core, const char *hex, bool save) {
 	ut64 addr = rz_num_tail (core->num, core->offset, hex);
@@ -122,7 +147,11 @@ static bool seek_flag_offset(RzFlagItem *fi, void *user) {
 }
 
 /**
+ * \brief Seek to the next \p type of item from current offset
  *
+ * \param core RzCore reference
+ * \param type Type of next "item" to seek to (could be "opc", "fun", "hit", "flag")
+ * \param save If true save the current state in seek history before seeking
  */
 RZ_API void rz_core_seek_next(RzCore *core, const char *type, bool save) {
 	RzListIter *iter;
@@ -155,7 +184,11 @@ RZ_API void rz_core_seek_next(RzCore *core, const char *type, bool save) {
 }
 
 /**
+ * \brief Seek to the previous \p type of item from current offset
  *
+ * \param core RzCore reference
+ * \param type Type of previous "item" to seek to (could be "opc", "fun", "hit", "flag")
+ * \param save If true save the current state in seek history before seeking
  */
 RZ_API void rz_core_seek_prev(RzCore *core, const char *type, bool save) {
 	RzListIter *iter;
@@ -183,7 +216,11 @@ RZ_API void rz_core_seek_prev(RzCore *core, const char *type, bool save) {
 }
 
 /**
+ * \brief Seek to current offset aligned to \p align
  *
+ * \param core RzCore reference
+ * \param align Value to align the current offset
+ * \param save If true save the current state in seek history before seeking
  */
 RZ_API int rz_core_seek_align(RzCore *core, ut64 align, bool save) {
 	if (!align) {
@@ -194,8 +231,11 @@ RZ_API int rz_core_seek_align(RzCore *core, ut64 align, bool save) {
 }
 
 /**
- * Seek basic block that contains address addr or do nothing if there is no
- * block.
+ * \brief Seek to basic block that contains address \p addr
+ *
+ * \param core RzCore reference
+ * \param addr Address that needs to be in the basicblock
+ * \param save If true save the current state in seek history before seeking
  */
 RZ_API bool rz_core_seek_analysis_bb(RzCore *core, ut64 addr, bool save) {
 	RzAnalysisBlock *block = rz_analysis_find_most_relevant_block_in (core->analysis, addr);
@@ -206,6 +246,9 @@ RZ_API bool rz_core_seek_analysis_bb(RzCore *core, ut64 addr, bool save) {
 	return false;
 }
 
+/**
+ * Undo the last entry in the seek history
+ */
 RZ_API bool rz_core_seek_undo(RzCore *core) {
 	if (rz_vector_empty (&core->seek_history.undos)) {
 		return false;
@@ -218,6 +261,9 @@ RZ_API bool rz_core_seek_undo(RzCore *core) {
 	return true;
 }
 
+/**
+ * Redo the last undone entry in the seek history
+ */
 RZ_API bool rz_core_seek_redo(RzCore *core) {
 	if (rz_vector_empty (&core->seek_history.redos)) {
 		return false;
@@ -230,6 +276,9 @@ RZ_API bool rz_core_seek_redo(RzCore *core) {
 	return true;
 }
 
+/**
+ * Remove all seek history entries
+ */
 RZ_API void rz_core_seek_reset(RzCore *core) {
 	rz_vector_fini (&core->seek_history.undos);
 	rz_vector_fini (&core->seek_history.redos);
@@ -250,6 +299,14 @@ static RzCoreSeekItem *dup_seek_history_item(RzCoreSeekItem *item, int i) {
 	return res;
 }
 
+/**
+ * \brief Return the seek history.
+ *
+ * The list is composed of some items with negative idx which are Undos items
+ * (potentially 0), then there is an item with is_current=true that is the
+ * current state, followed by some items with positive idx which are Redos
+ * items.
+ */
 RZ_API RzList *rz_core_seek_list(RzCore *core) {
 	RzList *res = rz_list_newf ((RzListFree)free);
 	RzCoreSeekItem *it;
