@@ -374,9 +374,9 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 					if (undo->is_current) {
 						rz_cons_printf ("# Current seek @ 0x%" PFMT64x "\n", undo->offset);
 					} else if (current_met) {
-						rz_cons_printf ("f redo_%d @ 0x%" PFMT64x "\n", RZ_ABS (undo->idx), undo->offset);
+						rz_cons_printf ("f redo_%d @ 0x%" PFMT64x "\n", RZ_ABS (undo->idx - 1), undo->offset);
 					} else {
-						rz_cons_printf ("f undo_%d @ 0x%" PFMT64x "\n", RZ_ABS (undo->idx), undo->offset);
+						rz_cons_printf ("f undo_%d @ 0x%" PFMT64x "\n", RZ_ABS (undo->idx + 1), undo->offset);
 					}
 				}
 				free (name);

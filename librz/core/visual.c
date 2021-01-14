@@ -1221,51 +1221,48 @@ RZ_API ut64 rz_core_prevop_addr_force(RzCore *core, ut64 start_addr, int numinst
 	return start_addr;
 }
 
-RZ_API int rz_line_hist_offset_up(RzLine *line) {
-	RzCore *core = line->user;
-	RzIOUndo *undo = &core->io->undo;
-	if (line->offset_hist_index <= -undo->undos) {
-		return false;
-	}
-	line->offset_hist_index--;
-	ut64 off = undo->seek[undo->idx + line->offset_hist_index].off;
+static bool fill_hist_offset(RzCore *core, RzLine *line, RzCoreSeekItem *csi) {
+	ut64 off = csi->offset;
 	RzFlagItem *f = rz_flag_get_at (core->flags, off, false);
-	char *command;
+	char *command = NULL;
 	if (f && f->offset == off && f->offset > 0) {
 		command = rz_str_newf ("%s", f->name);
 	} else {
 		command = rz_str_newf ("0x%"PFMT64x, off);
 	}
+	if (!command) {
+		return false;
+	}
+
 	strncpy (line->buffer.data, command, RZ_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
 	free (command);
 	return true;
 }
 
+RZ_API int rz_line_hist_offset_up(RzLine *line) {
+	RzCore *core = (RzCore *)line->user;
+	RzCoreSeekItem *csi = rz_core_seek_peek (core, line->offset_hist_index - 1);
+	if (!csi) {
+		return false;
+	}
+
+	line->offset_hist_index--;
+	bool res = fill_hist_offset (core, line, csi);
+	rz_core_seek_item_free (csi);
+	return res;
+}
+
 RZ_API int rz_line_hist_offset_down(RzLine *line) {
-	RzCore *core = line->user;
-	RzIOUndo *undo = &core->io->undo;
-	if (line->offset_hist_index >= undo->redos) {
+	RzCore *core = (RzCore *)line->user;
+	RzCoreSeekItem *csi = rz_core_seek_peek (core, line->offset_hist_index + 1);
+	if (!csi) {
 		return false;
 	}
 	line->offset_hist_index++;
-	if (line->offset_hist_index == undo->redos) {
-		line->buffer.data[0] = '\0';
-		line->buffer.index = line->buffer.length = 0;
-		return false;
-	}
-	ut64 off = undo->seek[undo->idx + line->offset_hist_index].off;
-	RzFlagItem *f = rz_flag_get_at (core->flags, off, false);
-	char *command;
-	if (f && f->offset == off && f->offset > 0) {
-		command = rz_str_newf ("%s", f->name);
-	} else {
-		command = rz_str_newf ("0x%"PFMT64x, off);
-	}
-	strncpy (line->buffer.data, command, RZ_LINE_BUFSIZE - 1);
-	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
-	free (command);
-	return true;
+	bool res = fill_hist_offset (core, line, csi);
+	rz_core_seek_item_free (csi);
+	return res;
 }
 
 RZ_API void rz_core_visual_offset(RzCore *core) {

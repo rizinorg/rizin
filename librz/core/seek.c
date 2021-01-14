@@ -2,6 +2,10 @@
 
 #include <rz_core.h>
 
+RZ_API void rz_core_seek_item_free(RzCoreSeekItem *item) {
+	free (item);
+}
+
 static void get_current_seek_state(RzCore *core, RzCoreSeekItem *elem) {
 	elem->offset = core->offset;
 	elem->cursor = core->print->cur_enabled ? rz_print_get_cursor (core->print) : 0;
@@ -276,15 +280,16 @@ RZ_API bool rz_core_seek_redo(RzCore *core) {
 	return true;
 }
 
-/**
- * Remove all seek history entries
- */
-RZ_API void rz_core_seek_reset(RzCore *core) {
-	rz_vector_fini (&core->seek_history.undos);
-	rz_vector_fini (&core->seek_history.redos);
-	rz_vector_init (&core->seek_history.undos, sizeof (RzCoreSeekItem), NULL, NULL);
-	rz_vector_init (&core->seek_history.redos, sizeof (RzCoreSeekItem), NULL, NULL);
-	return;
+static RzCoreSeekItem *get_current_item(RzCore *core) {
+	RzCoreSeekItem *res = RZ_NEW0 (RzCoreSeekItem);
+	if (!res) {
+		return NULL;
+	}
+	res->offset = core->offset;
+	res->cursor = core->print->cur_enabled? rz_print_get_cursor (core->print): 0;
+	res->is_current = true;
+	res->idx = 0;
+	return res;
 }
 
 static RzCoreSeekItem *dup_seek_history_item(RzCoreSeekItem *item, int i) {
@@ -300,36 +305,81 @@ static RzCoreSeekItem *dup_seek_history_item(RzCoreSeekItem *item, int i) {
 }
 
 /**
+ * \brief Return a element in the undo/redo list.
+ *
+ * The element is not removed from the list nor it is restored as the current
+ * state. Useful if you want to inspect the undo history. The object shall be
+ * freed by the caller.
+ *
+ * \param core Reference to RzCore
+ * \param idx Index of the element. 0 references the current seek, <0 are undos, >0 redos
+ */
+RZ_API RzCoreSeekItem *rz_core_seek_peek(RzCore *core, int idx) {
+	if (idx == 0) {
+		return get_current_item (core);
+	} else if (idx < 0) {
+		RzVector *vundo = &core->seek_history.undos;
+		size_t i = RZ_ABS (idx) - 1;
+		size_t len = rz_vector_len (vundo);
+		if (i >= len) {
+			return NULL;
+		}
+		RzCoreSeekItem *vel = (RzCoreSeekItem *)rz_vector_index_ptr (vundo, len - i - 1);
+		return dup_seek_history_item (vel, idx);
+	} else {
+		RzVector *vredo = &core->seek_history.redos;
+		size_t i = RZ_ABS (idx) - 1;
+		size_t len = rz_vector_len (vredo);
+		if (i >= len) {
+			return NULL;
+		}
+		RzCoreSeekItem *vel = (RzCoreSeekItem *)rz_vector_index_ptr (vredo, len - i - 1);
+		return dup_seek_history_item (vel, idx);
+	}
+}
+
+/**
+ * Remove all seek history entries
+ */
+RZ_API void rz_core_seek_reset(RzCore *core) {
+	rz_vector_fini (&core->seek_history.undos);
+	rz_vector_fini (&core->seek_history.redos);
+	rz_vector_init (&core->seek_history.undos, sizeof (RzCoreSeekItem), NULL, NULL);
+	rz_vector_init (&core->seek_history.redos, sizeof (RzCoreSeekItem), NULL, NULL);
+	return;
+}
+
+/**
  * \brief Return the seek history.
  *
  * The list is composed of some items with negative idx which are Undos items
- * (potentially 0), then there is an item with is_current=true that is the
+ * (potentially none), then there is an item with is_current=true that is the
  * current state, followed by some items with positive idx which are Redos
  * items.
  */
 RZ_API RzList *rz_core_seek_list(RzCore *core) {
-	RzList *res = rz_list_newf ((RzListFree)free);
+	RzList *res = rz_list_newf ((RzListFree)rz_core_seek_item_free);
+	if (!res) {
+		return NULL;
+	}
+
 	RzCoreSeekItem *it;
 	int i = -rz_vector_len (&core->seek_history.undos);
 	rz_vector_foreach (&core->seek_history.undos, it) {
-		RzCoreSeekItem *dup = dup_seek_history_item (it, ++i);
+		RzCoreSeekItem *dup = dup_seek_history_item (it, i++);
 		if (!dup) {
 			goto err;
 		}
 		rz_list_append (res, dup);
 	}
 
-	RzCoreSeekItem *cur = RZ_NEW0 (RzCoreSeekItem);
+	RzCoreSeekItem *cur = get_current_item (core);
 	if (!cur) {
 	    goto err;
 	}
-	cur->offset = core->offset;
-	cur->cursor = core->print->cur_enabled? rz_print_get_cursor (core->print): 0;
-	cur->is_current = true;
-	cur->idx = 0;
 	rz_list_append (res, cur);
 
-	i = 0;
+	i = 1;
 	rz_vector_foreach_prev (&core->seek_history.redos, it) {
 		RzCoreSeekItem *dup = dup_seek_history_item (it, i++);
 		if (!dup) {
