@@ -21,6 +21,10 @@ static void add_seek_history(RzCore *core) {
 	RzVector *vundo = &core->seek_history.undos;
 	RzVector *vredo = &core->seek_history.redos;
 	RzCoreSeekItem item;
+	ut64 histsize = rz_config_get_i (core->config, "cfg.seek.histsize");
+	if (histsize != 0 && rz_vector_len (vundo) >= histsize) {
+		rz_vector_remove_at (vundo, 0, NULL);
+	}
 	get_current_seek_state (core, &item);
 	rz_vector_push (vundo, &item);
 	rz_vector_clear (vredo);

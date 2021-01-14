@@ -1,8 +1,6 @@
 #include <rz_core.h>
 #include "minunit.h"
 
-// TODO: shall we save the address after seeking to it?
-
 bool test_core_seek (void) {
 	RzCore *core = rz_core_new ();
 	mu_assert_eq (core->offset, 0, "seek starts at 0");

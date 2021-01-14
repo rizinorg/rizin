@@ -26,6 +26,7 @@ s 0x100
 s* ; ?v $$ ; ?e
 EOF
 EXPECT=<<EOF
+# Current seek @ 0x0
 f undo_62 @ 0x25
 f undo_61 @ 0x26
 f undo_60 @ 0x27
@@ -89,10 +90,12 @@ f undo_3 @ 0x60
 f undo_2 @ 0x61
 f undo_1 @ 0x62
 f undo_0 @ 0x63
+# Current seek @ 0x64
 0x64
 
-{"offset":99}
-{"offset":100,"current":true}
+{"offset":99,"cursor":0,"current":false}
+{"offset":100,"cursor":0,"current":true}
+# Current seek @ 0x25
 f redo_0 @ 0x26
 f redo_1 @ 0x27
 f redo_2 @ 0x28
@@ -221,6 +224,7 @@ f undo_3 @ 0x60
 f undo_2 @ 0x61
 f undo_1 @ 0x62
 f undo_0 @ 0x63
+# Current seek @ 0x64
 0x64
 
 f undo_12 @ 0x25
@@ -236,7 +240,7 @@ f undo_3 @ 0x2e
 f undo_2 @ 0x2f
 f undo_1 @ 0x30
 f undo_0 @ 0x31
-# Current undo/redo position.
+# Current seek @ 0x32
 f redo_0 @ 0x33
 f redo_1 @ 0x34
 f redo_2 @ 0x35
@@ -289,9 +293,9 @@ f redo_48 @ 0x63
 f redo_49 @ 0x64
 0x32
 
-{"offset":49}
-{"offset":50,"current":true}
-{"offset":51}
+{"offset":49,"cursor":0,"current":false}
+{"offset":50,"cursor":0,"current":true}
+{"offset":51,"cursor":0,"current":false}
 f undo_13 @ 0x25
 f undo_12 @ 0x26
 f undo_11 @ 0x27
@@ -306,6 +310,7 @@ f undo_3 @ 0x2f
 f undo_2 @ 0x30
 f undo_1 @ 0x31
 f undo_0 @ 0x32
+# Current seek @ 0x100
 0x100
 
 EOF
