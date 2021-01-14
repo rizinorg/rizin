@@ -2311,6 +2311,28 @@ static void config_visual_hit(RzCore *core, const char *name, int editor) {
 	}
 }
 
+static void show_config_options(RzCore *core, const char *opt) {
+	RzConfigNode *node = rz_config_node_get (core->config, opt);
+	if (node && !rz_list_empty (node->options)) {
+		int h, w = rz_cons_get_size (&h);
+		const char *item;
+		RzListIter *iter;
+		RzStrBuf *sb = rz_strbuf_new (" Options: ");
+		rz_list_foreach (node->options, iter, item) {
+			rz_strbuf_appendf (sb, "%s%s", iter->p? ", ": "", item);
+			if (rz_strbuf_length (sb) + 5 >= w) {
+				char *s = rz_strbuf_drain (sb);
+				rz_cons_println (s);
+				free (s);
+				sb = rz_strbuf_new ("");
+			}
+		}
+		char *s = rz_strbuf_drain (sb);
+		rz_cons_println (s);
+		free (s);
+	}
+}
+
 RZ_API void rz_core_visual_config(RzCore *core) {
 	char *fs = NULL, *fs2 = NULL, *desc = NULL;
 	int i, j, ch, hit, show;
@@ -2360,7 +2382,7 @@ RZ_API void rz_core_visual_config(RzCore *core) {
 				option--;
 				continue;
 			}
-			rz_cons_printf ("\n Sel:%s \n\n", fs);
+			rz_cons_printf ("\n Sel: %s \n\n", fs);
 			break;
 		case 1: // flag selection
 			rz_cons_printf ("[EvalSpace < Variables: %s]\n\n", fs);
@@ -2386,10 +2408,11 @@ RZ_API void rz_core_visual_config(RzCore *core) {
 				option = i-1;
 				continue;
 			}
-			if (fs2 != NULL) {
+			if (fs2) {
 				// TODO: Break long lines.
-				rz_cons_printf ("\n Selected: %s (%s)\n\n",
-					fs2, desc);
+				rz_cons_printf ("\n Selected: %s (%s)\n", fs2, desc);
+				show_config_options (core, fs2);
+				rz_cons_newline ();
 			}
 		}
 

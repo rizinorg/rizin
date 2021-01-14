@@ -2290,13 +2290,11 @@ RzList *MACH0_(get_segments)(RzBinFile *bf) {
 
 // XXX this function is called so many times
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
+	rz_return_val_if_fail (bin, NULL);
 	struct section_t *sections;
-	char segname[32], sectname[32], raw_segname[17];
+	char sectname[64], raw_segname[17];
 	size_t i, j, to;
 
-	if (!bin) {
-		return NULL;
-	}
 	/* for core files */
 	if (bin->nsects < 1 && bin->nsegs > 0) {
 		struct MACH0_(segment_command) *seg;
@@ -2341,11 +2339,7 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 		sections[i].flags = bin->sects[i].flags;
 		rz_str_ncpy (sectname, bin->sects[i].sectname, 17);
 		rz_str_filter (sectname, -1);
-		// hack to support multiple sections with same name
-		// snprintf (segname, sizeof (segname), "%d", i);
-		memcpy (raw_segname, bin->sects[i].segname, 16);
-		raw_segname[16] = 0;
-		snprintf (segname, sizeof (segname), "%zd.%s", i, raw_segname);
+		rz_str_ncpy (raw_segname, bin->sects[i].segname, 16);
 		for (j = 0; j < bin->nsegs; j++) {
 			if (sections[i].addr >= bin->segs[j].vmaddr &&
 				sections[i].addr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
@@ -2353,11 +2347,8 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 				break;
 			}
 		}
-		// XXX: if two sections have the same name are merged :O
-		// XXX: append section index in flag name maybe?
-		// XXX: do not load out of bound sections?
-		// XXX: load segments instead of sections? what about PAGEZERO and ...
-		snprintf (sections[i].name, sizeof (sections[i].name), "%s.%s", segname, sectname);
+		snprintf (sections[i].name, sizeof (sections[i].name),
+			"%d.%s.%s", (int)i, raw_segname, sectname);
 		sections[i].last = 0;
 	}
 	sections[i].last = 1;
@@ -4043,7 +4034,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 	}
 	for (n = 0; n < mh->ncmds; n++) {
 		READWORD ();
-		int lcType = word;
+		ut32 lcType = word;
 		const char *pf_definition = cmd_to_pf_definition (lcType);
 		if (pf_definition) {
 			cb_printf ("pf.%s @ 0x%08"PFMT64x"\n", pf_definition, pvaddr - 4);
@@ -4092,7 +4083,7 @@ void MACH0_(mach_headerfields)(RzBinFile *bf) {
 		}
 		case LC_MAIN:
 			{
-				ut8 data[64];
+				ut8 data[64] = {0};
 				rz_buf_read_at (buf, addr, data, sizeof (data));
 #if RZ_BIN_MACH064
 				ut64 ep = rz_read_ble64 (&data, false); //  bin->big_endian);

@@ -1121,7 +1121,7 @@ static void GH(print_heap_segment)(RzCore *core, MallocState *main_arena,
 	size_tmp = (cnk->size >> 3) << 3;
 	ut64 prev_chunk_addr;
 	ut64 prev_chunk_size;
-	PJ *pj;
+	PJ *pj = NULL;
 
 	switch (format_out) {
 	case 'j':

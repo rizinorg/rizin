@@ -2348,13 +2348,12 @@ RZ_API void rz_core_analysis_callgraph(RzCore *core, ut64 addr, int fmt) {
 	int usenames = rz_config_get_i (core->config, "graph.json.usenames");;
 	RzAnalysisFunction *fcni;
 	RzAnalysisRef *fcnr;
-	PJ *pj;
+	PJ *pj = NULL;
 
 	ut64 from = rz_config_get_i (core->config, "graph.from");
 	ut64 to = rz_config_get_i (core->config, "graph.to");
 
-	switch (fmt)
-	{
+	switch (fmt) {
 	case RZ_GRAPH_FORMAT_JSON:
 		pj = pj_new ();
 		if (!pj) {
@@ -2540,8 +2539,7 @@ repeat:
 	if (iteration == 0 && fmt == RZ_GRAPH_FORMAT_GMLFCN) {
 		iteration++;
 	}
-	switch(fmt)
-	{
+	switch(fmt) {
 	case RZ_GRAPH_FORMAT_GML:
 	case RZ_GRAPH_FORMAT_GMLFCN:
 		rz_cons_printf ("]\n");

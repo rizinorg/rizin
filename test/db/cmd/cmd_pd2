@@ -1,3 +1,36 @@
+NAME=Cd 4096
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+Cd 4096
+pd 2~?
+EOF
+EXPECT=<<EOF
+18
+EOF
+RUN
+
+NAME=Cd 4096 asm.meta=false
+FILE=-
+CMDS=<<EOF
+e asm.meta=false
+e asm.arch=x86
+e asm.bits=64
+Cd 4096
+pd 2~?
+pd 1~?
+pd 2
+EOF
+EXPECT=<<EOF
+3
+2
+.data: 4096
+            0x00000000      .hex  00000000000000000000000000000000...
+            0x00001000      invalid
+EOF
+RUN
+
 NAME=Cd4+pdi2
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
