@@ -398,7 +398,6 @@ static size_t get_operator_code(const char *buf, RzList *names_l, bool memorize)
 			return 0;
 		}
 		rz_list_append (names_l, str_info);
-		buf += i;
 		read_len += i;
 		break;
 	}
