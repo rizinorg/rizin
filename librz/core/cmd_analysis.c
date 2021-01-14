@@ -3782,7 +3782,7 @@ static int cmd_analysis_fcn(RzCore *core, const char *input) {
 		}
 		case 'r': {	// "afcr"
 			int i;
-			PJ *pj;
+			PJ *pj = NULL;
 			bool json = input[3] == 'j';
 			if (json) {
 				pj = rz_core_pj_new (core);
@@ -6629,7 +6629,7 @@ static void cmd_analysis_opcode(RzCore *core, const char *input) {
 		}
 		break;
 	case 'f': // "aof"
-		{
+		if (strlen (input + 1) > 1) {
 			RzAnalysisOp aop = RZ_EMPTY;
 			ut8 data[32];
 			rz_io_read_at (core->io, core->offset, data, sizeof (data));

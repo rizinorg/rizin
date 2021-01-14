@@ -181,14 +181,7 @@ static int _rv_ins_cmp (void *incoming, void *in, void *user) {
 
 static bool _edf_reg_set (RzAnalysisEsilDFG *dfg, const char *reg, RzGraphNode *node) {
 	rz_return_val_if_fail (dfg && !dfg->malloc_failed && reg, false);
-	const ut32 _reg_strlen = 4 + strlen (reg);
-	char *_reg = RZ_NEWS0 (char, _reg_strlen + 1);
-	if (!_reg) {
-		// no need for assert here, it's not a bug if malloc fails
-		return false;
-	}
-	strncat (_reg, "reg.", _reg_strlen);
-	strncat (_reg, reg, _reg_strlen);
+	char *_reg = rz_str_newf ("reg.%s", reg);
 	if (!sdb_num_exists (dfg->regs, _reg)) {
 		//no assert to prevent memleaks
 		free (_reg);
@@ -317,25 +310,13 @@ static int _rv_find_cmp (void *incoming, void *in, void *user) {
 
 static RzGraphNode *_edf_origin_reg_get(RzAnalysisEsilDFG *dfg, const char *reg) {
 	rz_return_val_if_fail (dfg && reg, NULL);
-	const ut32 _reg_strlen = 4 + strlen (reg);
-	char *_reg = RZ_NEWS0 (char, _reg_strlen + 1);
-	if (!_reg) {
-		return NULL;
-	}
-	strncat (_reg, "reg.", _reg_strlen);
-	strncat (_reg, reg, _reg_strlen);
+	char *_reg = rz_str_newf ("reg.%s", reg);
 	if (!sdb_num_exists (dfg->regs, _reg)) {
 		free (_reg);
 		return NULL;
 	}
 	free (_reg);
-	const ut32 origin_reg_strlen = 4 + strlen (reg);
-	char *origin_reg = RZ_NEWS0 (char, origin_reg_strlen + 1);
-	if (!origin_reg) {
-		return NULL;
-	}
-	strncat (origin_reg, "ori.", origin_reg_strlen);
-	strncat (origin_reg, reg, origin_reg_strlen);
+	char *origin_reg = rz_str_newf ("ori.%s", reg);
 	RzGraphNode *origin_reg_node = sdb_ptr_get (dfg->regs, origin_reg, 0);
 	if (origin_reg_node) {
 		free (origin_reg);
@@ -355,13 +336,7 @@ static RzGraphNode *_edf_origin_reg_get(RzAnalysisEsilDFG *dfg, const char *reg)
 
 static RzGraphNode *_edf_reg_get(RzAnalysisEsilDFG *dfg, const char *reg) {
 	rz_return_val_if_fail (dfg && reg, NULL);
-	const ut32 _reg_strlen = 4 + strlen (reg);
-	char *_reg = RZ_NEWS0 (char, _reg_strlen + 1);
-	if (!_reg) {
-		return NULL;
-	}
-	strncat (_reg, "reg.", _reg_strlen);
-	strncat (_reg, reg, _reg_strlen);
+	char *_reg = rz_str_newf ("reg.%s", reg);
 	if (!sdb_num_exists (dfg->regs, _reg)) {
 		free (_reg);
 		return NULL;
@@ -468,13 +443,7 @@ beach:
 
 static bool _edf_var_set (RzAnalysisEsilDFG *dfg, const char *var, RzGraphNode *node) {
 	rz_return_val_if_fail (dfg && var, false);
-	const ut32 _var_strlen = 4 + strlen (var);
-	char *_var = RZ_NEWS0 (char, _var_strlen + 1);
-	if (!_var) {
-		return false;
-	}
-	strncat (_var, "var.", _var_strlen);
-	strncat (_var, var, _var_strlen);
+	char *_var = rz_str_newf ("var.%s", var);
 	const bool ret = !sdb_ptr_set (dfg->regs, _var, node, 0);
 	free (_var);
 	return ret;
@@ -483,13 +452,7 @@ static bool _edf_var_set (RzAnalysisEsilDFG *dfg, const char *var, RzGraphNode *
 
 static RzGraphNode *_edf_var_get (RzAnalysisEsilDFG *dfg, const char *var) {
 	rz_return_val_if_fail (dfg && var, NULL);
-	const ut32 _var_strlen = 4 + strlen (var);
-	char *_var = RZ_NEWS0 (char, _var_strlen + 1);
-	if (!_var) {
-		return NULL;
-	}
-	strncat (_var, "var.", _var_strlen);
-	strncat (_var, var, _var_strlen);
+	char *_var = rz_str_newf ("var.%s", var);
 	RzGraphNode *ret = sdb_ptr_get (dfg->regs, _var, NULL);
 	free (_var);
 	return ret;
@@ -896,10 +859,7 @@ RZ_API RzAnalysisEsilDFG *rz_analysis_esil_dfg_new(RzReg *regs) {
 		const ut32 from = ri->offset;
 		const ut32 to = from + ri->size - 1;
 		const ut64 v = to | (((ut64)from) << 32);
-		const ut32 reg_strlen = 4 + strlen (ri->name) + 1;
-		char *reg = RZ_NEWS0 (char, reg_strlen);
-		strncat (reg, "reg.", reg_strlen);
-		strncat (reg, ri->name, reg_strlen);
+		char *reg = rz_str_newf ("reg.%s", ri->name);
 		sdb_num_set (dfg->regs, reg, v, 0);
 		free (reg);
 	}

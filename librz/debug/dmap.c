@@ -80,7 +80,7 @@ RZ_API void rz_debug_map_list(RzDebug *dbg, ut64 addr, const char *input) {
 	int i;
 	RzListIter *iter;
 	RzDebugMap *map;
-	PJ *pj;
+	PJ *pj = NULL;
 	if (!dbg) {
 		return;
 	}
@@ -139,7 +139,7 @@ RZ_API void rz_debug_map_list(RzDebug *dbg, ut64 addr, const char *input) {
 		}
 	}
 
-	if (input[0] == 'j') { // "dmj" add JSON closing array brace
+	if (pj) { // "dmj" add JSON closing array brace
 		pj_end (pj);
 		dbg->cb_printf ("%s\n", pj_string (pj));
 		pj_free (pj);

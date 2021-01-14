@@ -4,71 +4,10 @@
 #include "rz_lib.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h>
+#include "../io_memory.h"
 
-typedef struct {
-	int fd;
-	ut8 *buf;
-	ut32 size;
-} RzIOMalloc;
-
-#define RzIOTCP_FD(x) (((RzIOMalloc*)(x)->data)->fd)
-#define RzIOTCP_SZ(x) (((RzIOMalloc*)(x)->data)->size)
-#define RzIOTCP_BUF(x) (((RzIOMalloc*)(x)->data)->buf)
-
-static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
-	if (!fd || !fd->data) {
-		return -1;
-	}
-	if (io->off + count > RzIOTCP_SZ (fd)) {
-		return -1;
-	}
-	memcpy (RzIOTCP_BUF (fd)+io->off, buf, count);
-	return count;
-}
-
-static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
-	unsigned int sz;
-	if (!fd || !fd->data) {
-		return -1;
-	}
-	sz = RzIOTCP_SZ (fd);
-	if (io->off >= sz) {
-		return -1;
-	}
-	if (io->off + count >= sz) {
-		count = sz - io->off;
-	}
-	memcpy (buf, RzIOTCP_BUF (fd) + io->off, count);
-	return count;
-}
-
-static int __close(RzIODesc *fd) {
-	RzIOMalloc *riom;
-	if (!fd || !fd->data) {
-		return -1;
-	}
-	riom = fd->data;
-	RZ_FREE (riom->buf);
-	RZ_FREE (fd->data);
-	return 0;
-}
-
-static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
-	switch (whence) {
-	case SEEK_SET: return offset;
-	case SEEK_CUR: return io->off + offset;
-	case SEEK_END: return RzIOTCP_SZ (fd);
-	}
-	return offset;
-}
-
-static bool __plugin_open(RzIO *io, const char *pathname, bool many) {
+static bool __check(RzIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "tcp://", 6));
-}
-
-static inline int getmalfd (RzIOMalloc *mal) {
-	return (UT32_MAX >> 1) & (int)(size_t)mal->buf;
 }
 
 static ut8 *tcpme (const char *pathname, int *code, int *len) {
@@ -124,35 +63,20 @@ static ut8 *tcpme (const char *pathname, int *code, int *len) {
 }
 
 static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
-	ut8 *out;
-	int rlen, code;
-	if (__plugin_open (io, pathname, 0)) {
-		out = tcpme (pathname, &code, &rlen);
-		if (out && rlen > 0) {
-			RzIOMalloc *mal = RZ_NEW0 (RzIOMalloc);
-			if (!mal) {
-				free (out);
-				return NULL;
-			}
-			mal->size = rlen;
-			mal->buf = malloc (mal->size + 1);
-			if (!mal->buf) {
-				free (mal);
-				free (out);
-				return NULL;
-			}
-			if (mal->buf != NULL) {
-				mal->fd = getmalfd (mal);
-				memcpy (mal->buf, out, mal->size);
-				free (out);
-				rw = 7;
-				return rz_io_desc_new (io, &rz_io_plugin_tcp,
-					pathname, rw, mode, mal);
-			}
-			eprintf ("Cannot allocate (%s) %d byte(s)\n", pathname + 9, mal->size);
-			free (mal);
+	if (__check (io, pathname, 0)) {
+		int rlen, code;
+		RzIOMalloc *mal = RZ_NEW0 (RzIOMalloc);
+		if (!mal) {
+			return NULL;
 		}
-		free (out);
+		mal->offset = 0;
+		mal->buf = tcpme (pathname, &code, &rlen);
+		if (mal->buf && rlen > 0) {
+			mal->size = rlen;
+			return rz_io_desc_new (io, &rz_io_plugin_tcp, pathname, rw, mode, mal);
+		}
+		eprintf ("No TCP segment\n");
+		free (mal);
 	}
 	return NULL;
 }
@@ -163,11 +87,11 @@ RzIOPlugin rz_io_plugin_tcp = {
 	.uris = "tcp://",
 	.license = "LGPL3",
 	.open = __open,
-	.close = __close,
-	.read = __read,
-	.check = __plugin_open,
-	.lseek = __lseek,
-	.write = __write,
+	.close = io_memory_close,
+	.read = io_memory_read,
+	.check = __check,
+	.lseek = io_memory_lseek,
+	.write = io_memory_write,
 };
 
 #ifndef RZ_PLUGIN_INCORE
