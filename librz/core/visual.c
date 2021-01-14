@@ -2916,8 +2916,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 					ut64 addr = UT64_MAX;
 					if (isDisasmPrint (core->printidx)) {
 						if (core->print->screen_bounds == core->offset) {
-							ut64 addr = core->print->screen_bounds;
-							addr += rz_asm_disassemble (core->rasm, &op, core->block, 32);
+							rz_asm_disassemble (core->rasm, &op, core->block, 32);
 						}
 						if (addr == core->offset || addr == UT64_MAX) {
 							addr = core->offset + 48;
