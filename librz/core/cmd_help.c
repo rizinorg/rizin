@@ -125,7 +125,7 @@ static const char *help_msg_question_e[] = {
 	"?eg", " 10 20", "move cursor to column 10, row 20",
 	"?en", " nonl", "echo message without ending newline",
 	"?ep", " 10 20 30", "draw a pie char with given portion sizes",
-	"?es", " msg", "speak message using the text-to-speech program (e cfg.tts)",
+	"?es", " msg", "speak message using the text-to-speech program",
 	"?et", " msg", "change terminal title",
 	NULL
 };
