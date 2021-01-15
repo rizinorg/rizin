@@ -14,7 +14,7 @@ return strdup (
 	"=R0	a0\n"
 	"=R1	a1\n"
 	"=SN	a7\n" // ABI: syscall numer
-	"gpr	zero	.32	0	0\n" // seems to be allocated in the arena too
+	"gpr	zero	.64	0	0\n" // seems to be allocated in the arena too
 	// RV64I regs (ABI names)
 	// From user-Level ISA Specification, section 2.1 and 4.1
 	// "zero" has been left out as it ignores writes and always reads as zero

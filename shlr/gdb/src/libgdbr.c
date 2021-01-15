@@ -56,12 +56,13 @@ bool gdbr_set_architecture(libgdbr_t *g, int arch, int bits) {
 		return true;
 	}
 
-	const char *regprofile = gdbr_get_reg_profile (arch, bits);
+	char *regprofile = gdbr_get_reg_profile (arch, bits);
 	if (!regprofile) {
 		eprintf ("cannot find gdb reg_profile\n");
 		return false;
 	}
 	if (!gdbr_set_reg_profile (g, regprofile)) {
+		free (regprofile);
 		return false;
 	}
 	g->target.arch = arch;
@@ -71,7 +72,7 @@ bool gdbr_set_architecture(libgdbr_t *g, int arch, int bits) {
 	return true;
 }
 
-const char *gdbr_get_reg_profile(int arch, int bits) {
+char *gdbr_get_reg_profile(int arch, int bits) {
 	switch (arch) {
 	case RZ_SYS_ARCH_X86:
 		if (bits == 32) {
@@ -100,7 +101,12 @@ const char *gdbr_get_reg_profile(int arch, int bits) {
 #include "reg/lm32.h"
 		break;
 	case RZ_SYS_ARCH_RISCV:
-#include "reg/riscv.h"
+		if (bits == 64) {
+#include "reg/riscv64.h"
+		} else {
+			eprintf ("%s: unsupported riscv bits: %d\n", __func__, bits);
+			return NULL;
+		}
 		break;
 	case RZ_SYS_ARCH_MIPS:
 #include "reg/mips.h"
