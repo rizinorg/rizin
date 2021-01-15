@@ -3671,8 +3671,8 @@ static int read_image_debug_directory_entry(RzBuffer *b, ut64 addr, PE_(image_de
 }
 
 int PE_(rz_bin_pe_get_debug_data)(struct PE_(rz_bin_pe_obj_t)* bin, SDebugInfo* res) {
-	PE_(image_debug_directory_entry) img_dbg_dir_entry;
-	PE_(image_data_directory) * dbg_dir;
+	PE_(image_debug_directory_entry) img_dbg_dir_entry = {0};
+	PE_(image_data_directory) * dbg_dir = NULL;
 	PE_DWord dbg_dir_offset;
 	ut8* dbg_data = 0;
 	int result = 0;
