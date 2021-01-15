@@ -230,6 +230,6 @@ CMDS=<<EOF
 ???~Usage
 EOF
 EXPECT=<<EOF
-Usage: ?[?[?]] expression
+Usage: ?[?[?]] expression   
 EOF
 RUN
