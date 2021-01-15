@@ -140,7 +140,7 @@ RZ_API void *rz_vector_shrink(RzVector *vec);
 
 #define rz_vector_foreach_prev(vec, it) \
 	if (!rz_vector_empty (vec)) \
-		for (it = (void *)((char *)(vec)->a + (((vec)->len - 1)* (vec)->elem_size)); (char *)it != (char *)(vec)->a; it = (void *)((char *)it - (vec)->elem_size))
+		for (it = (void *)((char *)(vec)->a + (((vec)->len - 1)* (vec)->elem_size)); (char *)it != (char *)(vec)->a - (vec)->elem_size; it = (void *)((char *)it - (vec)->elem_size))
 
 #define rz_vector_enumerate(vec, it, i) \
 	if (!rz_vector_empty (vec)) \

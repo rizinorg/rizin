@@ -137,14 +137,17 @@ EOF
 EXPECT=<<EOF
 0x100
 f undo_0 @ 0x0
+# Current seek @ 0x100
 
 0x200
 f undo_1 @ 0x0
 f undo_0 @ 0x100
+# Current seek @ 0x200
 
 0x300
 f undo_1 @ 0x0
 f undo_0 @ 0x100
+# Current seek @ 0x300
 EOF
 RUN
 
@@ -170,14 +173,17 @@ EOF
 EXPECT=<<EOF
 0x100
 f undo_0 @ 0x0
+# Current seek @ 0x100
 
 0x200
 f undo_1 @ 0x0
 f undo_0 @ 0x100
+# Current seek @ 0x200
 
 0x300
 f undo_1 @ 0x0
 f undo_0 @ 0x100
+# Current seek @ 0x300
 EOF
 RUN
 

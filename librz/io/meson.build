@@ -7,7 +7,6 @@ rz_io_sources = [
   'io_desc.c',
   'io_plugin.c',
   'ioutils.c',
-  'undo.c',
   'p_cache.c',
   'serialize_io.c',
   'p/io_ar.c',
