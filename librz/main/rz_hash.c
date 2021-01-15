@@ -71,23 +71,30 @@ static void do_hash_seed(const char *seed) {
 	}
 }
 
-static void do_hash_hexprint(const ut8 *c, int len, int ule, int rad) {
+static void do_hash_hexprint(const ut8 *c, int len, int ule, PJ *pj, int rad) {
 	int i;
+	char *buf = malloc (len * 2 + 1);
+	if (!buf) {
+		return;
+	}
 	if (ule) {
-		for (i = len - 1; i >= 0; i--) {
-			printf ("%02x", c[i]);
+		for (i = 0; i < len; i++) {
+			snprintf (buf + i * 2, (len - i) * 2 + 1, "%02x", c[len - i - 1]);
 		}
 	} else {
 		for (i = 0; i < len; i++) {
-			printf ("%02x", c[i]);
+			snprintf (buf + i * 2, (len - i) * 2 + 1, "%02x", c[i]);
 		}
 	}
-	if (rad != 'j') {
-		printf ("\n");
+	if (rad == 'j') {
+		pj_ks (pj, "hash", buf);
+	} else {
+		printf ("%s%s", buf, rad == 'n' ? "" : "\n");
 	}
+	free (buf);
 }
 
-static void do_hash_print(RzHash *ctx, ut64 hash, int dlen, int rad, int ule) {
+static void do_hash_print(RzHash *ctx, ut64 hash, int dlen, PJ *pj, int rad, int ule) {
 	char *o;
 	const ut8 *c = ctx->digest;
 	const char *hname = rz_hash_name (hash);
@@ -100,16 +107,17 @@ static void do_hash_print(RzHash *ctx, ut64 hash, int dlen, int rad, int ule) {
 		if (dlen == RZ_HASH_SIZE_ENTROPY) {
 			printf("%.8f\n", ctx->entropy);
 		} else {
-			do_hash_hexprint (c, dlen, ule, rad);
+			do_hash_hexprint (c, dlen, ule, pj, rad);
 		}
 		break;
 	case 'n':
-		do_hash_hexprint (c, dlen, ule, 'j');
+		do_hash_hexprint (c, dlen, ule, pj, rad);
 		break;
 	case 'j':
-		printf ("{\"name\":\"%s\",\"hash\":\"", hname);
-		do_hash_hexprint (c, dlen, ule, rad);
-		printf ("\"}");
+		pj_o (pj);
+		pj_ks (pj, "name", hname);
+		do_hash_hexprint (c, dlen, ule, pj, rad);
+		pj_end (pj);
 		break;
 	default:
 		o = rz_print_randomart (c, dlen, from);
@@ -119,7 +127,7 @@ static void do_hash_print(RzHash *ctx, ut64 hash, int dlen, int rad, int ule) {
 	}
 }
 
-static int do_hash_internal(RzHash *ctx, ut64 hash, const ut8 *buf, int len, int rad, int print, int le) {
+static int do_hash_internal(RzHash *ctx, ut64 hash, const ut8 *buf, int len, PJ *pj, int rad, int print, int le) {
 	if (len < 0) {
 		return 0;
 	}
@@ -130,7 +138,7 @@ static int do_hash_internal(RzHash *ctx, ut64 hash, const ut8 *buf, int len, int
 	if (iterations > 0) {
 		rz_hash_do_spice (ctx, hash, iterations, _s);
 	}
-	do_hash_print (ctx, hash, dlen, rad, le);
+	do_hash_print (ctx, hash, dlen, pj, rad, le);
 	return 1;
 }
 
@@ -140,7 +148,6 @@ static int do_hash(const char *file, const char *algo, RzIO *io, int bsize, int 
 	ut8 *buf;
 	int ret = 0;
 	ut64 i;
-	bool first = true;
 	if (algobit == RZ_HASH_NONE) {
 		eprintf ("rz-hash: Invalid hashing algorithm specified\n");
 		return 1;
@@ -171,11 +178,18 @@ static int do_hash(const char *file, const char *algo, RzIO *io, int bsize, int 
 	if (!buf) {
 		return 1;
 	}
+
+	PJ *pj = NULL;
+	if (rad == 'j') {
+		pj = pj_new ();
+		if (!pj) {
+			free (buf);
+			return 1;
+		}
+		pj_a (pj);
+	}
 	ctx = rz_hash_new (true, algobit);
 
-	if (rad == 'j') {
-		printf ("[");
-	}
 	if (incremental) {
 		for (i = 1; i < RZ_HASH_ALL; i <<= 1) {
 			if (algobit & i) {
@@ -183,15 +197,15 @@ static int do_hash(const char *file, const char *algo, RzIO *io, int bsize, int 
 				int dlen = rz_hash_size (hashbit);
 				rz_hash_do_begin (ctx, i);
 				if (s.buf && s.prefix) {
-					do_hash_internal (ctx, hashbit, s.buf, s.len, rad, 0, ule);
+					do_hash_internal (ctx, hashbit, s.buf, s.len, pj, rad, 0, ule);
 				}
 				for (j = from; j < to; j += bsize) {
 					int len = ((j + bsize) > to)? (to - j): bsize;
 					rz_io_pread_at (io, j, buf, len);
-					do_hash_internal (ctx, hashbit, buf, len, rad, 0, ule);
+					do_hash_internal (ctx, hashbit, buf, len, pj, rad, 0, ule);
 				}
 				if (s.buf && !s.prefix) {
-					do_hash_internal (ctx, hashbit, s.buf, s.len, rad, 0, ule);
+					do_hash_internal (ctx, hashbit, s.buf, s.len, pj, rad, 0, ule);
 				}
 				rz_hash_do_end (ctx, i);
 				if (iterations > 0) {
@@ -200,17 +214,10 @@ static int do_hash(const char *file, const char *algo, RzIO *io, int bsize, int 
 				if (!*rz_hash_name (i)) {
 					continue;
 				}
-				if (rad == 'j') {
-					if (first) {
-						first = false;
-					} else {
-						printf (",");
-					}
-				}
 				if (!quiet && rad != 'j') {
 					printf ("%s: ", file);
 				}
-				do_hash_print (ctx, i, dlen, quiet? 'n': rad, ule);
+				do_hash_print (ctx, i, dlen, pj, quiet? 'n': rad, ule);
 				if (quiet == 1) {
 					printf (" %s\n", file);
 				} else {
@@ -244,16 +251,18 @@ static int do_hash(const char *file, const char *algo, RzIO *io, int bsize, int 
 					if (to > fsize) {
 						to = fsize;
 					}
-					do_hash_internal (ctx, hashbit, buf, nsize, rad, 1, ule);
+					do_hash_internal (ctx, hashbit, buf, nsize, pj, rad, 1, ule);
 				}
-				do_hash_internal (ctx, hashbit, NULL, 0, rad, 1, ule);
+				do_hash_internal (ctx, hashbit, NULL, 0, pj, rad, 1, ule);
 				from = ofrom;
 				to = oto;
 			}
 		}
 	}
 	if (rad == 'j') {
-		printf ("]\n");
+		pj_end (pj);
+		printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	}
 
 	compare_hashes (ctx, compare, rz_hash_size (algobit), &ret);
@@ -263,7 +272,7 @@ static int do_hash(const char *file, const char *algo, RzIO *io, int bsize, int 
 }
 
 static int do_help(int line) {
-	printf ("Usage: rz-hash [-rBhLkv] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...\n");
+	printf ("Usage: rz-hash [-BhjkLqrv] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...\n");
 	if (line) {
 		return 0;
 	}
@@ -278,6 +287,7 @@ static int do_help(int line) {
 		" -f from     start hashing at given address\n"
 		" -i num      repeat hash N iterations\n"
 		" -I iv       use give initialization vector (IV) (hexa or s:string)\n"
+		" -j          output in json\n"
 		" -S seed     use given seed (hexa or s:string) use ^ to prefix (key for -E)\n"
 		"             (- will slurp the key from stdin, the @ prefix points to a file\n"
 		" -k          show hash using the openssh's randomkey algorithm\n"
@@ -635,16 +645,29 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 				free (iv);
 				return 1;
 			}
+			PJ *pj = NULL;
+			if (rad == 'j') {
+				pj = pj_new ();
+				if (!pj) {
+					return 1;
+				}
+				pj_a (pj);
+			}
 			for (i = 1; i < RZ_HASH_ALL; i <<= 1) {
 				if (algobit & i) {
 					ut64 hashbit = i & algobit;
 					ctx = rz_hash_new (true, hashbit);
 					from = 0;
 					to = strsz;
-					do_hash_internal (ctx, hashbit, (const ut8 *) str, strsz, rad, 1, ule);
+					do_hash_internal (ctx, hashbit, (const ut8 *) str, strsz, pj, rad, 1, ule);
 					compare_hashes (ctx, compareBin, rz_hash_size (algobit), &ret);
 					rz_hash_free (ctx);
 				}
+			}
+			if (rad == 'j') {
+				pj_end (pj);
+				printf ("%s\n", pj_string (pj));
+				pj_free (pj);
 			}
 			if (_s) {
 				if (str != hashstr) {
@@ -706,6 +729,7 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 					rz_io_pwrite_at (io, 0, buf, sz);
 				}
 				free (uri);
+				free (buf);
 			} else {
 				if (rz_file_is_directory (argv[i])) {
 					eprintf ("rz-hash: Cannot hash directories\n");
