@@ -6281,6 +6281,29 @@ char *get_word_from_canvas_for_menu(RzCore *core, RzPanels *panels, int x, int y
 	return ret;
 }
 
+// copypasted from visual.c
+static void nextOpcode(RzCore *core) {
+	RzAnalysisOp *aop = rz_core_analysis_op (core, core->offset + core->print->cur, RZ_ANALYSIS_OP_MASK_BASIC);
+	RzPrint *p = core->print;
+	if (aop) {
+		p->cur += aop->size;
+		rz_analysis_op_free (aop);
+	} else {
+		p->cur += 4;
+	}
+}
+
+static void prevOpcode(RzCore *core) {
+	RzPrint *p = core->print;
+	ut64 addr, oaddr = core->offset + core->print->cur;
+	if (rz_core_prevop_addr (core, oaddr, 1, &addr)) {
+		const int delta = oaddr - addr;
+		p->cur -= delta;
+	} else {
+		p->cur -= 4;
+	}
+}
+
 void __panels_process(RzCore *core, RzPanels *panels) {
 	if (!panels) {
 		return;
@@ -6497,46 +6520,76 @@ repeat:
 		__replace_cmd (core, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
 		break;
 	case 'j':
-		rz_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			cur->model->directionCb (core, (int)DOWN);
-		}
-		break;
-	case 'k':
-		rz_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			cur->model->directionCb (core, (int)UP);
-		}
-		break;
-	case 'K':
-		rz_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
-				cur->model->directionCb (core, (int)UP);
-			}
-		}
-		break;
-	case 'J':
-		rz_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
+		if (core->print->cur_enabled) {
+			nextOpcode (core);
+		} else {
+			rz_cons_switchbuf (false);
+			if (cur->model->directionCb) {
 				cur->model->directionCb (core, (int)DOWN);
 			}
 		}
 		break;
+	case 'k':
+		if (core->print->cur_enabled) {
+			prevOpcode (core);
+		} else {
+			rz_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				cur->model->directionCb (core, (int)UP);
+			}
+		}
+		break;
+	case 'K':
+		if (core->print->cur_enabled) {
+			size_t i;
+			for (i = 0; i < 4; i++) {
+				prevOpcode (core);
+			}
+		} else {
+			rz_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
+					cur->model->directionCb (core, (int)UP);
+				}
+			}
+		}
+		break;
+	case 'J':
+		if (core->print->cur_enabled) {
+			size_t i;
+			for (i = 0; i < 4; i++) {
+				nextOpcode (core);
+			}
+		} else {
+			rz_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
+					cur->model->directionCb (core, (int)DOWN);
+				}
+			}
+		}
+		break;
 	case 'H':
-		rz_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			for (i = 0; i < __get_cur_panel (panels)->view->pos.w / 3; i++) {
-				cur->model->directionCb (core, (int)LEFT);
+		if (core->print->cur_enabled) {
+			core->print->cur -= 5;
+		} else {
+			rz_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				for (i = 0; i < __get_cur_panel (panels)->view->pos.w / 3; i++) {
+					cur->model->directionCb (core, (int)LEFT);
+				}
 			}
 		}
 		break;
 	case 'L':
-		rz_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			for (i = 0; i < __get_cur_panel (panels)->view->pos.w / 3; i++) {
-				cur->model->directionCb (core, (int)RIGHT);
+		if (core->print->cur_enabled) {
+			core->print->cur += 5;
+		} else {
+			rz_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				for (i = 0; i < __get_cur_panel (panels)->view->pos.w / 3; i++) {
+					cur->model->directionCb (core, (int)RIGHT);
+				}
 			}
 		}
 		break;
@@ -6626,15 +6679,23 @@ repeat:
 		}
 		break;
 	case 'h':
-		rz_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			cur->model->directionCb (core, (int)LEFT);
+		if (core->print->cur_enabled) {
+			core->print->cur--;
+		} else {
+			rz_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				cur->model->directionCb (core, (int)LEFT);
+			}
 		}
 		break;
 	case 'l':
-		rz_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			cur->model->directionCb (core, (int)RIGHT);
+		if (core->print->cur_enabled) {
+			core->print->cur++;
+		} else {
+			rz_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				cur->model->directionCb (core, (int)RIGHT);
+			}
 		}
 		break;
 	case 'V':
