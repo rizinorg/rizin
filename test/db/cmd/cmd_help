@@ -223,3 +223,13 @@ EXPECT=<<EOF
 3
 EOF
 RUN
+
+NAME="help help"
+FILE=-
+CMDS=<<EOF
+???~Usage
+EOF
+EXPECT=<<EOF
+Usage: ?[?[?]] expression
+EOF
+RUN
