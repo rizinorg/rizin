@@ -34,14 +34,17 @@
 
 #define MU_BUF_SIZE 5120
 
-void sprint_mem(char *out, const ut8 *buf, size_t len) {
+void snprint_mem(char *out, size_t out_size, const ut8 *buf, size_t len) {
 	size_t i;
 	*out = '\0';
 	for (i = 0; i < len; i++) {
+		size_t out_len;
 		if (i > 0) {
-			sprintf(out + strlen(out), " ");
+			out_len = strlen (out);
+			snprintf (out + out_len, out_size - out_len, " ");
 		}
-		sprintf (out + strlen(out), "%02x", buf[i]);
+		out_len = strlen (out);
+		snprintf (out + out_len, out_size - out_len, "%02x", buf[i]);
 	}
 }
 
@@ -179,12 +182,16 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 
 #define mu_assert_memeq(actual, expected, len, message) do { \
 		char _meqstr[MU_BUF_SIZE]; \
+		size_t _meqstr_len; \
 		const ut8 *act__ = (actual); \
 		const ut8 *exp__ = (expected); \
 		snprintf (_meqstr, MU_BUF_SIZE, "%s: expected ", message); \
-		sprint_mem(_meqstr + strlen(_meqstr), (exp__), (len)); \
-		sprintf(_meqstr + strlen(_meqstr), ", got "); \
-		sprint_mem(_meqstr + strlen(_meqstr), (act__), (len)); \
+		_meqstr_len = strlen (_meqstr); \
+		snprint_mem (_meqstr + _meqstr_len, MU_BUF_SIZE - _meqstr_len, (exp__), (len)); \
+		_meqstr_len = strlen (_meqstr); \
+		snprintf (_meqstr + _meqstr_len, MU_BUF_SIZE - _meqstr_len, ", got "); \
+		_meqstr_len = strlen (_meqstr); \
+		snprint_mem (_meqstr + _meqstr_len, MU_BUF_SIZE - _meqstr_len, (act__), (len)); \
 		mu_assert(_meqstr, memcmp((exp__), (act__), (len)) == 0); \
 } while(0)
 
