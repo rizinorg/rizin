@@ -25,7 +25,6 @@ static const char *help_msg_search_esil[] = {
 static const char *help_msg_slash_m[] = {
 	"/m", "", "search for known magic patterns",
 	"/m", " [file]", "same as above but using the given magic file",
-	"/me", " ", "like ?e similar to IRC's /me",
 	"/mb", "", "search recognized RzBin headers",
 	NULL
 };
@@ -3336,7 +3335,7 @@ reread:
 	} break;
 	case 'm': // "/m"
 		dosearch = false;
-		if (input[1] == '?') { // "/me"
+		if (input[1] == '?') { // "/m?"
 			rz_core_cmd_help (core, help_msg_slash_m);
 		} else if (input[1] == 'b') { // "/mb"
 			bool bin_verbose = rz_config_get_i (core->config, "bin.verbose");
@@ -3344,8 +3343,6 @@ reread:
 			// TODO : iter maps?
 			cmd_search_bin (core, search_itv);
 			rz_config_set_i (core->config, "bin.verbose", bin_verbose);
-		} else if (input[1] == 'e') { // "/me"
-			rz_cons_printf ("* rizin thinks%s\n", input + 2);
 		} else if (input[1] == ' ' || input[1] == '\0' || param.outmode == RZ_MODE_JSON) {
 			int ret;
 			const char *file = input[param_offset - 1]? input + param_offset: NULL;
