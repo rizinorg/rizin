@@ -13,8 +13,6 @@
 #define RZ_IO_SEEK_CUR	1
 #define RZ_IO_SEEK_END	2
 
-#define RZ_IO_UNDOS 64
-
 #define rz_io_map_get_from(map) map->itv.addr
 #define rz_io_map_get_to(map) ( rz_itv_size (map->itv)? rz_itv_end (map->itv) - 1: 0 )
 
@@ -51,33 +49,6 @@ extern "C" {
 
 RZ_LIB_VERSION_HEADER(rz_io);
 
-typedef struct rz_io_undos_t {
-	ut64 off;
-	int cursor;
-} RzIOUndos;
-
-typedef struct rz_io_undo_t {
-	int s_enable;
-	int w_enable;
-	/* write stuff */
-	RzList *w_list;
-	int w_init;
-	/* seek stuff */
-	int idx;
-	int undos; /* available undos */
-	int redos; /* available redos */
-	RzIOUndos seek[RZ_IO_UNDOS];
-	/*int fd[RZ_IO_UNDOS]; // XXX: Must be RzIODesc* */
-} RzIOUndo;
-
-typedef struct rz_io_undo_w_t {
-	int set;
-	ut64 off;
-	ut8 *o;   /* old data */
-	ut8 *n;   /* new data */
-	int len;  /* length */
-} RzIOUndoWrite;
-
 typedef struct rz_io_t {
 	struct rz_io_desc_t *desc; // XXX deprecate... we should use only the fd integer, not hold a weak pointer
 	ut64 off;
@@ -100,7 +71,6 @@ typedef struct rz_io_t {
 	RzSkyline cache_skyline;
 	ut8 *write_mask;
 	int write_mask_len;
-	RzIOUndo undo;
 	SdbList *plugins;
 	char *runprofile;
 	char *envprofile;
@@ -152,7 +122,6 @@ typedef struct rz_io_plugin_t {
 	const char *uris;
 	int (*listener)(RzIODesc *io);
 	int (*init)(void);
-	RzIOUndo undo;
 	bool isdbg;
 	// int (*is_file_opened)(RzIO *io, RzIODesc *fd, const char *);
 	char *(*system)(RzIO *io, RzIODesc *fd, const char *);
@@ -358,28 +327,6 @@ RZ_API int rz_io_plugin_write_at(RzIODesc *desc, ut64 addr, const ut8 *buf, int 
 RZ_API RzIOPlugin *rz_io_plugin_resolve(RzIO *io, const char *filename, bool many);
 RZ_API RzIOPlugin *rz_io_plugin_resolve_fd(RzIO *io, int fd);
 RZ_API RzIOPlugin *rz_io_plugin_get_default(RzIO *io, const char *filename, bool many);
-
-/* undo api */
-// track seeks and writes
-// TODO: needs cleanup..kinda big?
-RZ_API int rz_io_undo_init(RzIO *io);
-RZ_API void rz_io_undo_enable(RzIO *io, int seek, int write);
-/* seek undo */
-RZ_API RzIOUndos *rz_io_sundo(RzIO *io, ut64 offset);
-RZ_API RzIOUndos *rz_io_sundo_redo(RzIO *io);
-RZ_API void rz_io_sundo_push(RzIO *io, ut64 off, int cursor);
-RZ_API void rz_io_sundo_reset(RzIO *io);
-RZ_API RzList *rz_io_sundo_list(RzIO *io, int mode);
-/* write undo */
-RZ_API void rz_io_wundo_new(RzIO *io, ut64 off, const ut8 *data, int len);
-RZ_API void rz_io_wundo_apply_all(RzIO *io, int set);
-RZ_API int rz_io_wundo_apply(RzIO *io, struct rz_io_undo_w_t *u, int set);
-RZ_API void rz_io_wundo_clear(RzIO *io);
-RZ_API int rz_io_wundo_size(RzIO *io);
-RZ_API void rz_io_wundo_list(RzIO *io);
-RZ_API int rz_io_wundo_set_t(RzIO *io, RzIOUndoWrite *u, int set) ;
-RZ_API void rz_io_wundo_set_all(RzIO *io, int set);
-RZ_API int rz_io_wundo_set(RzIO *io, int n, int set);
 
 //desc.c
 RZ_API RzIODesc *rz_io_desc_new (RzIO *io, RzIOPlugin *plugin, const char *uri, int flags, int mode, void *data);

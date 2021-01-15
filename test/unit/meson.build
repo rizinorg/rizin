@@ -26,6 +26,7 @@ if get_option('enable_tests')
     'cons',
     'contrbtree',
     'core_cmd',
+    'core_seek',
     'core_task',
     'debruijn',
     'debug',

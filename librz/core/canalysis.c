@@ -1894,7 +1894,7 @@ static int core_analysis_graph_nodes(RzCore *core, RzAnalysisFunction *fcn, int 
 RZ_API bool rz_core_analysis_bb_seek(RzCore *core, ut64 addr) {
 	RzAnalysisBlock *block = rz_analysis_find_most_relevant_block_in (core->analysis, addr);
 	if (block) {
-		rz_core_seek (core, block->addr, false);
+		rz_core_seek_and_save (core, block->addr, false);
 		return true;
 	}
 	return false;
