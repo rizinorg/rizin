@@ -1527,7 +1527,7 @@ void __fix_cursor_up(RzCore *core) {
 	if (sz < 1) {
 		sz = 1;
 	}
-	rz_core_seek_delta (core, -sz);
+	rz_core_seek_delta (core, -sz, false);
 	print->cur += sz;
 	if (print->ocur != -1) {
 		print->ocur += sz;
@@ -1547,7 +1547,7 @@ void __fix_cursor_down(RzCore *core) {
 			if (sz < 1) {
 				sz = 1;
 			}
-			rz_core_seek_delta (core, sz);
+			rz_core_seek_delta (core, sz, false);
 			print->cur = RZ_MAX (print->cur - sz, 0);
 			if (print->ocur != -1) {
 				print->ocur = RZ_MAX (print->ocur - sz, 0);
@@ -3683,7 +3683,7 @@ void __direction_disassembly_cb(void *user, int direction) {
 			__set_panel_addr (core, cur, core->offset);
 		} else {
 			rz_core_visual_disasm_up (core, &cols);
-			rz_core_seek_delta (core, -cols);
+			rz_core_seek_delta (core, -cols, false);
 			__set_panel_addr (core, cur, core->offset);
 		}
 		return;
@@ -5928,11 +5928,8 @@ void __undo_seek(RzCore *core) {
 	if (!__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
 		return;
 	}
-	RzIOUndos *undo = rz_io_sundo (core->io, core->offset);
-	if (undo) {
-		rz_core_visual_seek_animation (core, undo->off);
-		__set_panel_addr (core, cur, core->offset);
-	}
+	rz_core_visual_seek_animation_undo (core);
+	__set_panel_addr (core, cur, core->offset);
 }
 
 void __set_filter(RzCore *core, RzPanel *panel) {
@@ -5962,11 +5959,8 @@ void __redo_seek(RzCore *core) {
 	if (!__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
 		return;
 	}
-	RzIOUndos *undo = rz_io_sundo_redo (core->io);
-	if (undo) {
-		rz_core_visual_seek_animation (core, undo->off);
-		__set_panel_addr (core, cur, core->offset);
-	}
+	rz_core_visual_seek_animation_redo (core);
+	__set_panel_addr (core, cur, core->offset);
 }
 
 void __rotate_asmemu(RzCore *core, RzPanel *p) {
@@ -6287,6 +6281,29 @@ char *get_word_from_canvas_for_menu(RzCore *core, RzPanels *panels, int x, int y
 	return ret;
 }
 
+// copypasted from visual.c
+static void nextOpcode(RzCore *core) {
+	RzAnalysisOp *aop = rz_core_analysis_op (core, core->offset + core->print->cur, RZ_ANALYSIS_OP_MASK_BASIC);
+	RzPrint *p = core->print;
+	if (aop) {
+		p->cur += aop->size;
+		rz_analysis_op_free (aop);
+	} else {
+		p->cur += 4;
+	}
+}
+
+static void prevOpcode(RzCore *core) {
+	RzPrint *p = core->print;
+	ut64 addr, oaddr = core->offset + core->print->cur;
+	if (rz_core_prevop_addr (core, oaddr, 1, &addr)) {
+		const int delta = oaddr - addr;
+		p->cur -= delta;
+	} else {
+		p->cur -= 4;
+	}
+}
+
 void __panels_process(RzCore *core, RzPanels *panels) {
 	if (!panels) {
 		return;
@@ -6503,46 +6520,76 @@ repeat:
 		__replace_cmd (core, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
 		break;
 	case 'j':
-		rz_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			cur->model->directionCb (core, (int)DOWN);
-		}
-		break;
-	case 'k':
-		rz_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			cur->model->directionCb (core, (int)UP);
-		}
-		break;
-	case 'K':
-		rz_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
-				cur->model->directionCb (core, (int)UP);
-			}
-		}
-		break;
-	case 'J':
-		rz_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
+		if (core->print->cur_enabled) {
+			nextOpcode (core);
+		} else {
+			rz_cons_switchbuf (false);
+			if (cur->model->directionCb) {
 				cur->model->directionCb (core, (int)DOWN);
 			}
 		}
 		break;
+	case 'k':
+		if (core->print->cur_enabled) {
+			prevOpcode (core);
+		} else {
+			rz_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				cur->model->directionCb (core, (int)UP);
+			}
+		}
+		break;
+	case 'K':
+		if (core->print->cur_enabled) {
+			size_t i;
+			for (i = 0; i < 4; i++) {
+				prevOpcode (core);
+			}
+		} else {
+			rz_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
+					cur->model->directionCb (core, (int)UP);
+				}
+			}
+		}
+		break;
+	case 'J':
+		if (core->print->cur_enabled) {
+			size_t i;
+			for (i = 0; i < 4; i++) {
+				nextOpcode (core);
+			}
+		} else {
+			rz_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
+					cur->model->directionCb (core, (int)DOWN);
+				}
+			}
+		}
+		break;
 	case 'H':
-		rz_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			for (i = 0; i < __get_cur_panel (panels)->view->pos.w / 3; i++) {
-				cur->model->directionCb (core, (int)LEFT);
+		if (core->print->cur_enabled) {
+			core->print->cur -= 5;
+		} else {
+			rz_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				for (i = 0; i < __get_cur_panel (panels)->view->pos.w / 3; i++) {
+					cur->model->directionCb (core, (int)LEFT);
+				}
 			}
 		}
 		break;
 	case 'L':
-		rz_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			for (i = 0; i < __get_cur_panel (panels)->view->pos.w / 3; i++) {
-				cur->model->directionCb (core, (int)RIGHT);
+		if (core->print->cur_enabled) {
+			core->print->cur += 5;
+		} else {
+			rz_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				for (i = 0; i < __get_cur_panel (panels)->view->pos.w / 3; i++) {
+					cur->model->directionCb (core, (int)RIGHT);
+				}
 			}
 		}
 		break;
@@ -6571,13 +6618,13 @@ repeat:
 		break;
 	case 'n':
 		if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
-			rz_core_seek_next (core, rz_config_get (core->config, "scr.nkey"));
+			rz_core_seek_next (core, rz_config_get (core->config, "scr.nkey"), true);
 			__set_panel_addr (core, cur, core->offset);
 		}
 		break;
 	case 'N':
 		if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
-			rz_core_seek_previous (core, rz_config_get (core->config, "scr.nkey"));
+			rz_core_seek_prev (core, rz_config_get (core->config, "scr.nkey"), true);
 			__set_panel_addr (core, cur, core->offset);
 		}
 		break;
@@ -6628,20 +6675,27 @@ repeat:
 			if (hl) {
 				ut64 addr = rz_num_math (core->num, hl);
 				__set_panel_addr (core, cur, addr);
-				// rz_io_sundo_push (core->io, addr, false); // doesnt seems to work
 			}
 		}
 		break;
 	case 'h':
-		rz_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			cur->model->directionCb (core, (int)LEFT);
+		if (core->print->cur_enabled) {
+			core->print->cur--;
+		} else {
+			rz_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				cur->model->directionCb (core, (int)LEFT);
+			}
 		}
 		break;
 	case 'l':
-		rz_cons_switchbuf (false);
-		if (cur->model->directionCb) {
-			cur->model->directionCb (core, (int)RIGHT);
+		if (core->print->cur_enabled) {
+			core->print->cur++;
+		} else {
+			rz_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				cur->model->directionCb (core, (int)RIGHT);
+			}
 		}
 		break;
 	case 'V':

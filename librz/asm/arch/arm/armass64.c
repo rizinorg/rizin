@@ -100,8 +100,8 @@ static int get_mem_option(char *token) {
 	return -1;
 }
 
-static int countLeadingZeros(ut32 x) {
-	int count = 0;
+static int countLeadingZeros(ut64 x) {
+	int count = 64;
 	while (x) {
 		x >>= 1;
 		--count;
@@ -109,15 +109,11 @@ static int countLeadingZeros(ut32 x) {
 	return count;
 }
 
-static int countTrailingZeros(ut32 x) {
+static int countTrailingZeros(ut64 x) {
 	int count = 0;
-	while (x > 0) {
-		if ((x & 1) == 1) {
-			break;
-		} else {
-			count ++;
-			x = x >> 1;
-		}
+	while (x && !(x & 1)) {
+		count++;
+		x >>= 1;
 	}
 	return count;
 }
@@ -142,28 +138,42 @@ static int calcNegOffset(int n, int shift) {
 	return 0xff & (0xff - a);
 }
 
-static int countLeadingOnes(ut32 x) {
+static int countLeadingOnes(ut64 x) {
 	return countLeadingZeros (~x);
 }
 
-static int countTrailingOnes(ut32 x) {
+static int countTrailingOnes(ut64 x) {
 	return countTrailingZeros (~x);
 }
 
-static bool isMask(ut32 value) {
+static bool isMask(ut64 value) {
   return value && ((value + 1) & value) == 0;
 }
 
-static bool isShiftedMask (ut32 value) {
+static bool isShiftedMask (ut64 value) {
   return value && isMask ((value - 1) | value);
 }
 
-static ut32 decodeBitMasksWithSize(ut32 imm, ut8 reg_size) {
+// https://llvm.org/doxygen/AArch64AddressingModes_8h_source.html
+static ut32 encodeBitMasksWithSize(ut64 imm, ut32 reg_size) {
+	if (imm == 0 || imm == UT64_MAX || (reg_size != 64
+		&& (imm >> reg_size != 0 || imm == (~0ULL >> (64 - reg_size))))) {
+		return UT32_MAX;
+	}
 	// get element size
-	int size = reg_size;
+	ut32 size = reg_size;
+	do {
+		size >>= 1;
+		ut64 mask = (1ull << size) - 1;
+		if ((imm & mask) != ((imm >> size) & mask)) {
+			size <<= 1;
+			break;
+		}
+	} while (size > 2);
 	// determine rot to make element be 0^m 1^n
 	ut32 cto, i;
-	ut32 mask = ((ut64) - 1LL) >> (64 - size);
+	ut64 mask = UT64_MAX >> (64 - size);
+	imm &= mask;
 
 	if (isShiftedMask (imm)) {
 		i = countTrailingZeros (imm);
@@ -191,7 +201,7 @@ static ut32 decodeBitMasksWithSize(ut32 imm, ut8 reg_size) {
 	nimms |= (cto - 1);
 	// Extract and toggle seventh bit to make N field.
 	ut32 n = ((nimms >> 6) & 1) ^ 1;
-	ut64 encoding = (n << 12) | (immr << 6) | (nimms & 0x3f);
+	ut32 encoding = (n << 12) | (immr << 6) | (nimms & 0x3f);
 	return encoding;
 }
 
@@ -209,62 +219,89 @@ static inline ut32 encodeImm9(ut32 n) {
 }
 
 static ut32 mov(ArmOp *op) {
-	int k = 0;
+	ut32 k = 0;
 	ut32 data = UT32_MAX;
-	if (!strncmp (op->mnemonic, "movz", 4)) {
-		if (op->operands[0].reg_type & ARM_REG64) {
-			k = 0x80d2;
-		} else if (op->operands[0].reg_type & ARM_REG32) {
-			k = 0x8052;
+	check_cond (op->operands_count >= 2);
+	check_cond (op->operands[0].type == ARM_GPR);
+	int bits = (op->operands[0].reg_type & ARM_REG64) ? 64 : 32;
+	if (bits == 64) {
+		k = 0x0080;
+	}
+	k |= encode1reg (op);
+	if (!strcmp (op->mnemonic, "mov")) {
+		check_cond (op->operands_count == 2);
+		if (op->operands[1].type == ARM_GPR) {
+			check_cond (bits == ((op->operands[1].reg_type & ARM_REG64) ? 64 : 32));
+			if (op->operands[0].reg_type & ARM_SP || op->operands[1].reg_type & ARM_SP) { // alias of add
+				k |= 0x0011;
+				data = k | encode2regs (op);
+				return data;
+			}
+			k |= 0xe003002a; // alias of orr
+			data = k | op->operands[1].reg << 8;
+			return data;
 		}
-	} else if (!strncmp (op->mnemonic, "movk", 4)) {
-		if (op->operands[0].reg_type & ARM_REG32) {
-			k = 0x8072;
-		} else if (op->operands[0].reg_type & ARM_REG64) {
-			k = 0x80f2;
+		check_cond (op->operands[1].type & ARM_CONSTANT);
+		ut64 imm = op->operands[1].immediate;
+		ut64 imm_inverse = ~imm;
+		if (bits == 32) {
+			check_cond (imm <= 0xffffffff || imm_inverse <= 0xffffffff);
+			imm &= 0xffffffff;
+			imm_inverse &= 0xffffffff;
 		}
-	} else if (!strncmp (op->mnemonic, "movn", 4)) {
-		if (op->operands[0].reg_type & ARM_REG32) {
-			k = 0x8012;
-		} else if (op->operands[0].reg_type & ARM_REG64) {
-			k = 0x8092;
+		int shift;
+		ut64 mask = 0xffff;
+		for (shift = 0; shift < bits; shift += 16, mask <<= 16) {
+			if (imm == (imm & mask)) { // movz
+				data = k | 0x00008052;
+				imm >>= shift;
+				data |= (imm & 7) << 29 | (imm & 0x7f8) << 13 | (imm & 0xf800) >> 3;
+				data |= shift << 9;
+				return data;
+			}
 		}
-	} else if (!strncmp (op->mnemonic, "mov", 3)) {
-		//printf ("%d - %d [%d]\n", op->operands[0].type, op->operands[1].type, ARM_GPR);
-		if (op->operands[0].reg_type & ARM_REG64) {
-            if (op->operands[1].reg_type & ARM_REG64) {
-                k = 0xe00300aa;
-            } else if (op->operands[1].type & ARM_CONSTANT) {
-                k = 0x80d2;
-            } else {
-                return data;
-            }
-        } else if (op->operands[0].reg_type & ARM_REG32) {
-            if (op->operands[1].reg_type & ARM_REG32) {
-                k = 0xe003002a;
-            } else if (op->operands[1].type & ARM_CONSTANT) {
-                k = 0x8052;
-            } else {
-                return data;
-            }
-        }
-		if (op->operands[0].type & ARM_GPR) {
-            if (op->operands[1].type & ARM_GPR) {
-                data = k | op->operands[1].reg << 8;
-            } else if (op->operands[1].type & ARM_CONSTANT) {
-                ut32 imm = op->operands[1].immediate << 1;
-                data = k | ((imm & 0xf) << 28) | ((imm & 0x1f0) << 12) ;
-            }
-			data |= encode1reg (op);
-        }
+		mask = 0xffff;
+		for (shift = 0; shift < bits; shift += 16, mask <<= 16) {
+			if (imm_inverse == (imm_inverse & mask)) { // movn
+				data = k | 0x00008012;
+				imm_inverse >>= shift;
+				data |= (imm_inverse & 7) << 29 | (imm_inverse & 0x7f8) << 13 | (imm_inverse & 0xf800) >> 3;
+				data |= shift << 9;
+				return data;
+			}
+		}
+		ut32 bitmask = encodeBitMasksWithSize (op->operands[1].immediate, bits); // orr
+		check_cond (bitmask != UT32_MAX);
+		data = k | 0xe0030032;
+		data |= (bitmask & 0x3f) << 18 | (bitmask & 0x1fc0) << 2;
 		return data;
 	}
-
+	if (!strcmp (op->mnemonic, "movz")) {
+		k |= 0x8052;
+	} else if (!strcmp (op->mnemonic, "movk")) {
+		k |= 0x8072;
+	} else if (!strcmp (op->mnemonic, "movn")) {
+		k |= 0x8012;
+	} else {
+		return data;
+	}
+	check_cond (op->operands[1].type == ARM_CONSTANT);
+	ut64 imm = op->operands[1].immediate;
+	check_cond (imm <= 0xffff);
+	int shift = 0;
+	if (op->operands_count >= 3) {
+		check_cond (op->operands_count == 3);
+		check_cond (op->operands[2].type == ARM_SHIFT);
+		check_cond (op->operands[2].shift == ARM_LSL);
+		shift = op->operands[2].shift_amount;
+		check_cond (!(shift & 0xf));
+		check_cond (shift < bits);
+	}
 	data = k;
-	data |= encode1reg (op); // arg(0)
-	data |= ((op->operands[1].immediate & 7) << 29); // arg(1)
-	data |= (((op->operands[1].immediate >> 3) & 0xff) << 16); // arg(1)
-	data |= ((op->operands[1].immediate >> 10) << 7); // arg(1)
+	data |= (imm & 7) << 29; // arg(1)
+	data |= (imm & 0x7f8) << 13; // arg(1)
+	data |= (imm & 0xf800) >> 3; // arg(1)
+	data |= shift << 9; // arg(2)
 	return data;
 }
 
@@ -734,11 +771,11 @@ static ut32 logical(ArmOp *op, bool invert, LogicalOp opc) {
 		data |= (opc & 3) << 29;
 
 		ut32 imm_orig = op->operands[2].immediate;
-		ut32 imm = decodeBitMasksWithSize (invert? ~imm_orig: imm_orig, is64bit? 64: 32);
-		if (imm == UT32_MAX) {
+		ut32 imm_mask = encodeBitMasksWithSize (invert? ~imm_orig: imm_orig, is64bit? 64: 32);
+		if (imm_mask == UT32_MAX) {
 			return UT32_MAX;
 		}
-		data |= (imm & 0x1fff) << 10;
+		data |= (imm_mask & 0x1fff) << 10;
 	} else if (op2_type == ARM_GPR) {
 		if (reg_type & ARM_REG64) {
 			data = 0x8a000000;
@@ -1102,6 +1139,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			} else if (!strncmp(token + 1, "sp", 2)) {
 				// WSP
 				op->operands[operand].reg = 31;
+				op->operands[operand].reg_type |= ARM_SP;
 			} else {
 				op->operands[operand].reg = rz_num_math (NULL, token + 1);
 			}

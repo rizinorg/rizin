@@ -8,7 +8,7 @@ RZ_DEPS+=rz_cons
 RZ_DEPS+=rz_crypto
 STATIC_OBJS=$(subst ..,p/..,$(subst io_,p/io_,$(STATIC_OBJ)))
 OBJS=${STATIC_OBJS}
-OBJS+=io.o io_plugin.o io_map.o io_desc.o io_cache.o p_cache.o undo.o ioutils.o io_fd.o serialize_io.o
+OBJS+=io.o io_plugin.o io_map.o io_desc.o io_cache.o p_cache.o ioutils.o io_fd.o io_memory.o serialize_io.o
 
 CFLAGS+=-Wall -DRZ_PLUGIN_INCORE
 

@@ -11,7 +11,7 @@ OBJS+=fortune.o hack.o vasm.o cbin.o rtr.o cmd_api.o cmd_descs.o
 OBJS+=carg.o canalysis.o cautocmpl.o project.o gdiff.o casm.o disasm.o cplugin.o
 OBJS+=vmenus.o vmenus_graph.o vmenus_zigns.o zdiff.o
 OBJS+=task.o panels.o vmarks.o analysis_tp.o analysis_objc.o blaze.o
-OBJS+=cannotated_code.o serialize_core.o
+OBJS+=cannotated_code.o serialize_core.o seek.o
 
 CFLAGS+=-I../../shlr/heap/include
 CFLAGS+=-I../../shlr/tree-sitter/lib/include -I../../shlr/rizin-shell-parser/src/tree_parser

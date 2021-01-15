@@ -2311,6 +2311,28 @@ static void config_visual_hit(RzCore *core, const char *name, int editor) {
 	}
 }
 
+static void show_config_options(RzCore *core, const char *opt) {
+	RzConfigNode *node = rz_config_node_get (core->config, opt);
+	if (node && !rz_list_empty (node->options)) {
+		int h, w = rz_cons_get_size (&h);
+		const char *item;
+		RzListIter *iter;
+		RzStrBuf *sb = rz_strbuf_new (" Options: ");
+		rz_list_foreach (node->options, iter, item) {
+			rz_strbuf_appendf (sb, "%s%s", iter->p? ", ": "", item);
+			if (rz_strbuf_length (sb) + 5 >= w) {
+				char *s = rz_strbuf_drain (sb);
+				rz_cons_println (s);
+				free (s);
+				sb = rz_strbuf_new ("");
+			}
+		}
+		char *s = rz_strbuf_drain (sb);
+		rz_cons_println (s);
+		free (s);
+	}
+}
+
 RZ_API void rz_core_visual_config(RzCore *core) {
 	char *fs = NULL, *fs2 = NULL, *desc = NULL;
 	int i, j, ch, hit, show;
@@ -2360,7 +2382,7 @@ RZ_API void rz_core_visual_config(RzCore *core) {
 				option--;
 				continue;
 			}
-			rz_cons_printf ("\n Sel:%s \n\n", fs);
+			rz_cons_printf ("\n Sel: %s \n\n", fs);
 			break;
 		case 1: // flag selection
 			rz_cons_printf ("[EvalSpace < Variables: %s]\n\n", fs);
@@ -2386,10 +2408,11 @@ RZ_API void rz_core_visual_config(RzCore *core) {
 				option = i-1;
 				continue;
 			}
-			if (fs2 != NULL) {
+			if (fs2) {
 				// TODO: Break long lines.
-				rz_cons_printf ("\n Selected: %s (%s)\n\n",
-					fs2, desc);
+				rz_cons_printf ("\n Selected: %s (%s)\n", fs2, desc);
+				show_config_options (core, fs2);
+				rz_cons_newline ();
 			}
 		}
 
@@ -3281,83 +3304,6 @@ beach:
 	core->cons->event_resize = olde;
 	level = 0;
 	rz_config_set_i (core->config, "asm.bytes", asmbytes);
-}
-
-struct seek_flag_offset_t {
-	ut64 offset;
-	ut64 *next;
-	bool is_next;
-};
-
-static bool seek_flag_offset(RzFlagItem *fi, void *user) {
-	struct seek_flag_offset_t *u = (struct seek_flag_offset_t *)user;
-	if (u->is_next) {
-		if (fi->offset < *u->next && fi->offset > u->offset) {
-			*u->next = fi->offset;
-		}
-	} else {
-		if (fi->offset > *u->next && fi->offset < u->offset) {
-			*u->next = fi->offset;
-		}
-	}
-	return true;
-}
-
-RZ_API void rz_core_seek_next(RzCore *core, const char *type) {
-	RzListIter *iter;
-	ut64 next = UT64_MAX;
-	if (strstr (type, "opc")) {
-		RzAnalysisOp aop;
-		if (rz_analysis_op (core->analysis, &aop, core->offset, core->block, core->blocksize, RZ_ANALYSIS_OP_MASK_BASIC)) {
-			next = core->offset + aop.size;
-		} else {
-			eprintf ("Invalid opcode\n");
-		}
-	} else if (strstr (type, "fun")) {
-		RzAnalysisFunction *fcni;
-		rz_list_foreach (core->analysis->fcns, iter, fcni) {
-			if (fcni->addr < next && fcni->addr > core->offset) {
-				next = fcni->addr;
-			}
-		}
-	} else if (strstr (type, "hit")) {
-		const char *pfx = rz_config_get (core->config, "search.prefix");
-		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = true };
-		rz_flag_foreach_prefix (core->flags, pfx, -1, seek_flag_offset, &u);
-	} else { // flags
-		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = true };
-		rz_flag_foreach (core->flags, seek_flag_offset, &u);
-	}
-	if (next != UT64_MAX) {
-		rz_core_seek (core, next, true);
-	}
-}
-
-RZ_API void rz_core_seek_previous (RzCore *core, const char *type) {
-	RzListIter *iter;
-	ut64 next = 0;
-	if (strstr (type, "opc")) {
-		eprintf ("TODO: rz_core_seek_previous (opc)\n");
-	} else
-	if (strstr (type, "fun")) {
-		RzAnalysisFunction *fcni;
-		rz_list_foreach (core->analysis->fcns, iter, fcni) {
-			if (fcni->addr > next && fcni->addr < core->offset) {
-				next = fcni->addr;
-			}
-		}
-	} else
-	if (strstr (type, "hit")) {
-		const char *pfx = rz_config_get (core->config, "search.prefix");
-		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = false };
-		rz_flag_foreach_prefix (core->flags, pfx, -1, seek_flag_offset, &u);
-	} else { // flags
-		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = false };
-		rz_flag_foreach (core->flags, seek_flag_offset, &u);
-	}
-	if (next != 0) {
-		rz_core_seek (core, next, true);
-	}
 }
 
 //define the data at offset according to the type (byte, word...) n times

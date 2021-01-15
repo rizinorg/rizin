@@ -56,11 +56,6 @@ RZ_API int rz_core_setup_debugger (RzCore *r, const char *debugbackend, bool att
 	return true;
 }
 
-RZ_API int rz_core_seek_base (RzCore *core, const char *hex) {
-	ut64 addr = rz_num_tail (core->num, core->offset, hex);
-	return rz_core_seek (core, addr, true);
-}
-
 RZ_API bool rz_core_dump(RzCore *core, const char *file, ut64 addr, ut64 size, int append) {
 	ut64 i;
 	ut8 *buf;
@@ -370,44 +365,6 @@ RZ_API void rz_core_seek_arch_bits(RzCore *core, ut64 addr) {
 	}
 }
 
-RZ_API bool rz_core_seek(RzCore *core, ut64 addr, bool rb) {
-	core->offset = rz_io_seek (core->io, addr, RZ_IO_SEEK_SET);
-	if (rb) {
-		rz_core_block_read (core);
-	}
-	if (core->binat) {
-		RzBinFile *bf = rz_bin_file_at (core->bin, core->offset);
-		if (bf) {
-			core->bin->cur = bf;
-			rz_bin_select_bfid (core->bin, bf->id);
-			// XXX rz_core_cmdf (core, "obb %d", bf->id);
-		} else {
-			core->bin->cur = NULL;
-		}
-	}
-	return core->offset == addr;
-}
-
-RZ_API int rz_core_seek_delta(RzCore *core, st64 addr) {
-	ut64 tmp = core->offset;
-	if (addr == 0) {
-		return true;
-	}
-	if (addr > 0LL) {
-		/* TODO: check end of file */
-		addr += tmp;
-	} else {
-		/* check < 0 */
-		if (-addr > tmp) {
-			addr = 0;
-		} else {
-			addr += tmp;
-		}
-	}
-	core->offset = addr;
-	return rz_core_seek (core, addr, true);
-}
-
 // TODO: kill this wrapper
 RZ_API bool rz_core_write_at(RzCore *core, ut64 addr, const ut8 *buf, int size) {
 	rz_return_val_if_fail (core && buf && addr != UT64_MAX, false);
@@ -457,16 +414,8 @@ RZ_API int rz_core_shift_block(RzCore *core, ut64 addr, ut64 b_size, st64 dist) 
 		if (file_sz == UT64_MAX) {
 			file_sz = 0;
 		}
-#if 0
-		bstart = rz_io_seek (core->io, addr, RZ_IO_SEEK_SET);
-		fend = rz_io_seek (core->io, 0, RZ_IO_SEEK_END);
-		if (fend < 1) {
-			fend = 0;
-		}
-#else
 		bstart = 0;
 		fend = file_sz;
-#endif
 		fstart = file_sz - fend;
 		b_size = fend > bstart ? fend - bstart: 0;
 	}
