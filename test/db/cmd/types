@@ -74,6 +74,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=typelinks- test for tlj json
+FILE=-
+CMDS=<<EOF
+wx 41574156415541544989f4555389fd4881eca8030000488b3e64488b042528000000488984249803000031c0e82fb30000488d35d54e0100bf0600000
+s 2
+tl short
+s +6
+tl int
+tlj
+EOF
+EXPECT=<<EOF
+[{"0x00000002":"short"},{"0x00000008":"int"}]
+EOF
+RUN
+
 NAME=List type links
 CMDS=<<EOF
 tl int = 0x4
