@@ -3317,16 +3317,17 @@ RZ_API size_t *rz_str_split_lines(char *str, size_t *count) {
 }
 
 RZ_API bool rz_str_isnumber(const char *str) {
-	if (!str || !*str) {
+	if (!str || (!IS_DIGIT (*str) && *str != '-')) {
 		return false;
 	}
-	bool isnum = IS_DIGIT (*str) || *str == '-';
-	while (isnum && *++str) {
+
+	while (*++str) {
 		if (!IS_DIGIT (*str)) {
-			isnum = false;
+			return false;
 		}
 	}
-	return isnum;
+
+	return true;
 }
 
 /* TODO: optimize to start searching by the end of the string */
