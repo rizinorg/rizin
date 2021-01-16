@@ -3246,9 +3246,9 @@ static void agraph_follow_innodes(RzAGraph *g, bool in) {
 	}
 	rz_cons_gotoxy (0, 2);
 	rz_cons_printf (in? "Input nodes:\n": "Output nodes:\n");
-	RzGraphNode *gn = an->gnode;
 	RzList *options = rz_list_newf (NULL);
 	RzList *gnodes = in? an->gnode->in_nodes: an->gnode->out_nodes;
+	RzGraphNode *gn;
 	rz_list_foreach (gnodes, iter, gn) {
 		RzANode *an = get_anode (gn);
 		RzGraphNode *gnn = agraph_get_title (g, an, in);

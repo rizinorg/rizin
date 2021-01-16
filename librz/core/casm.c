@@ -708,16 +708,8 @@ static RzList *rz_core_asm_back_disassemble (RzCore *core, ut64 addr, int len, u
 			last_num_invalid = 0;
 		// disassembly underlap
 		} else if (current_buf_pos + current_instr_len < next_buf_pos) {
-			ut32 purge_results = 0;
-			ut8 is_valid = true;
-			purge_results =  prune_hits_in_addr_range(hits, current_instr_addr, current_instr_len, /* is_valid */ true);
-			add_hit_to_sorted_hits(hits, current_instr_addr, current_instr_len, is_valid);
-
-			if (hit_count < purge_results) {
-				hit_count = 0;
-			} else {
-				hit_count -= purge_results;
-			}
+			prune_hits_in_addr_range(hits, current_instr_addr, current_instr_len, true);
+			add_hit_to_sorted_hits(hits, current_instr_addr, current_instr_len, true);
 
 			next_buf_pos = current_buf_pos;
 			handle_forward_disassemble(core, hits, buf, len - extra_padding, current_buf_pos+current_instr_len, current_instr_addr+current_instr_len, addr);
