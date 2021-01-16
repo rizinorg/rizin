@@ -80,7 +80,7 @@ RUN
 
 NAME=2: rz-asm
 FILE=-
-CMDS=!rz-asm -a x86 -b 64 -d "5589e583ec2083f8000f8507000000b800000000eb05b80100000083c4205dc3" 
+CMDS=!rz-asm -a x86 -b 64 -d "5589e583ec2083f8000f8507000000b800000000eb05b80100000083c4205dc3"
 EXPECT=<<EOF
 push rbp
 mov ebp, esp
@@ -98,7 +98,7 @@ RUN
 
 NAME=rz-asm #1167
 FILE=-
-CMDS=!rz-asm -a x86 -b 64 "cmp rax,rbx" 
+CMDS=!rz-asm -a x86 -b 64 "cmp rax,rbx"
 EXPECT=<<EOF
 4839d8
 EOF
@@ -106,7 +106,7 @@ RUN
 
 NAME=rz-asm #1167 2
 FILE=-
-CMDS=!rz-asm -a x86 -b 64 "test rax, rbx" 
+CMDS=!rz-asm -a x86 -b 64 "test rax, rbx"
 EXPECT=<<EOF
 4885d8
 EOF
@@ -115,7 +115,7 @@ RUN
 NAME=rz-asm #1167 3
 FILE=-
 BROKEN=1
-CMDS=!rz-asm -s att -a x86.as -b 64 "test %rbx, %rax" 
+CMDS=!rz-asm -s att -a x86.as -b 64 "test %rbx, %rax"
 EXPECT=<<EOF
 4885d8
 EOF
@@ -124,7 +124,7 @@ RUN
 NAME=rz-asm #1167 4
 FILE=-
 BROKEN=1
-CMDS=!rz-asm -s intel -a x86.as -b 64 "test rax, rbx" 
+CMDS=!rz-asm -s intel -a x86.as -b 64 "test rax, rbx"
 EXPECT=<<EOF
 4885d8
 EOF
@@ -141,7 +141,7 @@ RUN
 
 NAME=rz-asm #1167 6
 FILE=-
-CMDS=!rz-asm -s intel -a x86.as -b 64 "add rbx, 33" 
+CMDS=!rz-asm -s intel -a x86.as -b 64 "add rbx, 33"
 EXPECT=<<EOF
 4883c321
 EOF
@@ -221,7 +221,7 @@ RUN
 
 NAME=rz-asm #9197
 FILE=-
-CMDS=!rz-asm -a arm -b 64 "ldur x1, [x29, -8]" 
+CMDS=!rz-asm -a arm -b 64 "ldur x1, [x29, -8]"
 EXPECT=<<EOF
 a1835ff8
 EOF
@@ -277,7 +277,7 @@ RUN
 
 NAME=rz-asm -F pseudo
 FILE=-
-CMDS=!rz-asm -a x86 -b 32 -o 0xa -F x86.pseudo -D 31ed 
+CMDS=!rz-asm -a x86 -b 32 -o 0xa -F x86.pseudo -D 31ed
 EXPECT=<<EOF
 0x0000000a   2                     31ed  ebp = 0
 EOF
@@ -454,6 +454,7 @@ EOF
 RUN
 
 NAME=rz-asm -k
+BROKEN=1
 FILE=-
 CMDS=!rz-asm -k darwin 0x90
 EXPECT=<<EOF
