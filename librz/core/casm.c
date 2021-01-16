@@ -168,6 +168,7 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 					rz_asm_disassemble (core->rasm, &op, buf + addrbytes * idx,
 					      core->blocksize - addrbytes * idx);
 					hit->code = rz_str_new (rz_strbuf_get (&op.buf_asm));
+					rz_asm_op_fini (&op);
 					idx = (matchcount)? tidx + 1: idx + 1;
 					matchcount = 0;
 					rz_list_append (hits, hit);
@@ -192,10 +193,12 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 					      core->blocksize - addrbytes * idx))) {
 					idx = (matchcount)? tidx + 1: idx + 1;
 					matchcount = 0;
+					rz_asm_op_fini (&op);
 					continue;
 				}
 				//opsz = op.size;
 				opst = strdup (rz_strbuf_get (&op.buf_asm));
+				rz_asm_op_fini (&op);
 			}
 			if (opst) {
 				matches = strcmp (opst, "invalid") && strcmp (opst, "unaligned");
@@ -705,16 +708,8 @@ static RzList *rz_core_asm_back_disassemble (RzCore *core, ut64 addr, int len, u
 			last_num_invalid = 0;
 		// disassembly underlap
 		} else if (current_buf_pos + current_instr_len < next_buf_pos) {
-			ut32 purge_results = 0;
-			ut8 is_valid = true;
-			purge_results =  prune_hits_in_addr_range(hits, current_instr_addr, current_instr_len, /* is_valid */ true);
-			add_hit_to_sorted_hits(hits, current_instr_addr, current_instr_len, is_valid);
-
-			if (hit_count < purge_results) {
-				hit_count = 0;
-			} else {
-				hit_count -= purge_results;
-			}
+			prune_hits_in_addr_range(hits, current_instr_addr, current_instr_len, true);
+			add_hit_to_sorted_hits(hits, current_instr_addr, current_instr_len, true);
 
 			next_buf_pos = current_buf_pos;
 			handle_forward_disassemble(core, hits, buf, len - extra_padding, current_buf_pos+current_instr_len, current_instr_addr+current_instr_len, addr);

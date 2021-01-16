@@ -1678,14 +1678,13 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 		SdbList *sls = sdb_foreach_list (core->print->formats, false);
 		SdbListIter *iter;
 		SdbKv *kv;
-		int j = 0;
 		ls_foreach (sls, iter, kv) {
 			int len = strlen (buf->data + chr);
 			int minlen = RZ_MIN (len,  strlen (sdbkv_key (kv)));
 			if (!len || !strncmp (buf->data + chr, sdbkv_key (kv), minlen)) {
 				char *p = strchr (buf->data + chr, '.');
 				if (p) {
-					j += autocomplete_pfele (core, completion, sdbkv_key (kv), pfx, j, p + 1);
+					autocomplete_pfele (core, completion, sdbkv_key (kv), pfx, 0, p + 1);
 					break;
 				} else {
 					char *s = rz_str_newf ("pf%s.%s", pfx, sdbkv_key (kv));
@@ -2477,6 +2476,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->ev = rz_event_new (core);
 	core->max_cmd_depth = RZ_CONS_CMD_DEPTH + 1;
 	core->sdb = sdb_new (NULL, "rzkv.sdb", 0); // XXX: path must be in home?
+	rz_core_seek_reset (core);
 	core->lastsearch = NULL;
 	core->cmdfilter = NULL;
 	core->switch_file_view = 0;
@@ -2589,7 +2589,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_event_hook (core->io->event, RZ_EVENT_IO_WRITE, ev_iowrite_cb, core);
 	core->io->ff = 1;
 	core->search = rz_search_new (RZ_SEARCH_KEYWORD);
-	rz_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
 	core->flags = rz_flag_new ();
 	core->flags->cb_printf = rz_cons_printf;
 	core->graph = rz_agraph_new (rz_cons_canvas_new (1, 1));
@@ -2939,7 +2938,7 @@ RZ_API int rz_core_prompt_exec(RzCore *r) {
 	return ret;
 }
 
-RZ_API int rz_core_seek_size(RzCore *core, ut64 addr, int bsize) {
+RZ_API int rz_core_block_size(RzCore *core, int bsize) {
 	ut8 *bump;
 	int ret = false;
 	if (bsize < 0) {
@@ -2952,7 +2951,6 @@ RZ_API int rz_core_seek_size(RzCore *core, ut64 addr, int bsize) {
 		eprintf ("Block size %d is too big\n", bsize);
 		return false;
 	}
-	core->offset = addr;
 	if (bsize < 1) {
 		bsize = 1;
 	} else if (core->blocksize_max && bsize>core->blocksize_max) {
@@ -2969,42 +2967,9 @@ RZ_API int rz_core_seek_size(RzCore *core, ut64 addr, int bsize) {
 		core->block = bump;
 		core->blocksize = bsize;
 		memset (core->block, 0xff, core->blocksize);
-		rz_core_block_read (core);
+		rz_core_seek (core, core->offset, true);
 	}
 	return ret;
-}
-
-RZ_API int rz_core_block_size(RzCore *core, int bsize) {
-	return rz_core_seek_size (core, core->offset, bsize);
-}
-
-RZ_API int rz_core_seek_align(RzCore *core, ut64 align, int times) {
-	int inc = (times >= 0)? 1: -1;
-	ut64 seek = core->offset;
-	if (!align) {
-		return false;
-	}
-	int diff = core->offset % align;
-	if (!times) {
-		diff = -diff;
-	} else if (diff) {
-		if (inc > 0) {
-			diff += align-diff;
-		} else {
-			diff = -diff;
-		}
-		if (times) {
-			times -= inc;
-		}
-	}
-	while ((times*inc) > 0) {
-		times -= inc;
-		diff += (align * inc);
-	}
-	if (diff < 0 && -diff > seek) {
-		seek = diff = 0;
-	}
-	return rz_core_seek (core, seek + diff, true);
 }
 
 RZ_API char *rz_core_op_str(RzCore *core, ut64 addr) {

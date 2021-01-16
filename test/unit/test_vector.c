@@ -398,6 +398,8 @@ static bool test_vector_pop(void) {
 	mu_assert_eq (e, 0, "rz_vector_pop (last) into");
 	mu_assert_eq (v.len, 0UL, "rz_vector_pop (last) => len");
 
+	rz_vector_pop (&v, &e);
+
 	rz_vector_clear (&v);
 
 	mu_end;
@@ -615,6 +617,17 @@ static bool test_vector_foreach(void) {
 
 	for (i = 0; i < 5; i++) {
 		mu_assert_eq (acc[i], i + 1, "acc");
+	}
+
+	int acc_prev[5] = {0};
+	i = 5;
+	rz_vector_foreach_prev (&v, it) {
+		mu_assert_eq (acc_prev[*it], 0, "unset acc_prev element");
+		acc_prev[*it] = i++;
+	}
+
+	for (i = 0; i < 5; i++) {
+		mu_assert_eq (acc_prev[i], 10 - i - 1, "acc_prev");
 	}
 
 	rz_vector_clear (&v);
@@ -1044,6 +1057,19 @@ static bool test_pvector_foreach(void) {
 
 	for (i = 0; i < 5; i++) {
 		mu_assert_eq (acc[i], i + 1, "acc");
+	}
+
+	int acc_prev[5] = {0};
+	i = 5;
+	rz_pvector_foreach_prev (&v, it) {
+		void *e = *it;
+		int ev = (int)((size_t)e);
+		mu_assert_eq (acc_prev[ev], 0, "unset acc_prev element");
+		acc_prev[ev] = i++;
+	}
+
+	for (i = 0; i < 5; i++) {
+		mu_assert_eq (acc_prev[i], 10 - i - 1, "acc_prev");
 	}
 
 	rz_pvector_clear (&v);

@@ -3246,9 +3246,9 @@ static void agraph_follow_innodes(RzAGraph *g, bool in) {
 	}
 	rz_cons_gotoxy (0, 2);
 	rz_cons_printf (in? "Input nodes:\n": "Output nodes:\n");
-	RzGraphNode *gn = an->gnode;
 	RzList *options = rz_list_newf (NULL);
 	RzList *gnodes = in? an->gnode->in_nodes: an->gnode->out_nodes;
+	RzGraphNode *gn;
 	rz_list_foreach (gnodes, iter, gn) {
 		RzANode *an = get_anode (gn);
 		RzGraphNode *gnn = agraph_get_title (g, an, in);
@@ -3954,8 +3954,7 @@ static void goto_asmqjmps(RzAGraph *g, RzCore *core) {
 			rz_core_seek (core, addr, false);
 			agraph_update_seek (g, addr_node, true);
 		} else {
-			rz_io_sundo_push (core->io, core->offset, 0);
-			rz_core_seek (core, addr, false);
+			rz_core_seek_and_save (core, addr, false);
 		}
 		free (title);
 	}
@@ -4494,10 +4493,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			if (!fcn) {
 				break;
 			}
-			RzIOUndos *undo = rz_io_sundo (core->io, core->offset);
-			if (undo) {
-				rz_core_seek (core, undo->off, false);
-			} else {
+			if (!rz_core_seek_undo (core)) {
 				eprintf ("Cannot undo\n");
 			}
 			if (rz_config_get_i (core->config, "graph.few")) {
@@ -4510,10 +4506,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			if (!fcn) {
 				break;
 			}
-			RzIOUndos *undo = rz_io_sundo_redo (core->io);
-			if (undo) {
-				rz_core_seek (core, undo->off, false);
-			} else {
+			if (!rz_core_seek_redo (core)) {
 				eprintf ("Cannot redo\n");
 			}
 			break;
@@ -4612,10 +4605,10 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			g->is_dis = !g->is_dis;
 			break;
 		case 'n':
-			rz_core_seek_next (core, rz_config_get (core->config, "scr.nkey"));
+			rz_core_seek_next (core, rz_config_get (core->config, "scr.nkey"), true);
 			break;
 		case 'N':
-			rz_core_seek_previous (core, rz_config_get (core->config, "scr.nkey"));
+			rz_core_seek_prev (core, rz_config_get (core->config, "scr.nkey"), true);
 			break;
 		case 'Y':
 			agraph_toggle_tiny (g);

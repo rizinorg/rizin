@@ -68,6 +68,7 @@ rz_core_sources = [
   'rtr.c',
   #'rtr_http.c',
   #'rtr_shell.c',
+  'seek.c',
   'task.c',
   'vasm.c',
   'visual.c',
