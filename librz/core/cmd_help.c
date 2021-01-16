@@ -977,15 +977,6 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			free (arg);
 			break;
 		}
-		case 's': { // "?es"
-			char *msg = strdup (input + 2);
-			rz_str_trim (msg);
-			char *p = strchr (msg, '&');
-			if (p) *p = 0;
-			rz_sys_tts (msg, p != NULL);
-			free (msg);
-			break;
-		}
 		case 'c': // "?ec" column
 			rz_cons_column (rz_num_math (core->num, input + 2));
 			break;

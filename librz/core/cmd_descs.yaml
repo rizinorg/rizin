@@ -1443,8 +1443,6 @@
           comment: "Disable scr.html and scr.color"
         - text: "<cmd> |H"
           comment: "Enable scr.html, respect scr.color"
-        - text: "<cmd> |T"
-          comment: "Use scr.tts to speak out the stdout"
         - text: "<cmd> |"
           arg_str: " <program>"
           comment: "Pipe output of command to program"

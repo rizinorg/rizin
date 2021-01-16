@@ -1498,7 +1498,6 @@ static const RzCmdDescHelp redirection_help = {
 static const RzCmdDescDetailEntry pipe_empty_detail_entries[] = {
 	{ .text = "<cmd> |", .arg_str = NULL, .comment = "Disable scr.html and scr.color" },
 	{ .text = "<cmd> |H", .arg_str = NULL, .comment = "Enable scr.html, respect scr.color" },
-	{ .text = "<cmd> |T", .arg_str = NULL, .comment = "Use scr.tts to speak out the stdout" },
 	{ .text = "<cmd> |", .arg_str = " <program>", .comment = "Pipe output of command to program" },
 	{ .text = "<cmd> |.", .arg_str = NULL, .comment = "Alias for .<cmd>" },
 	{ 0 },
