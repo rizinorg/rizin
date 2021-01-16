@@ -168,6 +168,7 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 					rz_asm_disassemble (core->rasm, &op, buf + addrbytes * idx,
 					      core->blocksize - addrbytes * idx);
 					hit->code = rz_str_new (rz_strbuf_get (&op.buf_asm));
+					rz_asm_op_fini (&op);
 					idx = (matchcount)? tidx + 1: idx + 1;
 					matchcount = 0;
 					rz_list_append (hits, hit);
@@ -192,10 +193,12 @@ RZ_API RzList *rz_core_asm_strsearch(RzCore *core, const char *input, ut64 from,
 					      core->blocksize - addrbytes * idx))) {
 					idx = (matchcount)? tidx + 1: idx + 1;
 					matchcount = 0;
+					rz_asm_op_fini (&op);
 					continue;
 				}
 				//opsz = op.size;
 				opst = strdup (rz_strbuf_get (&op.buf_asm));
+				rz_asm_op_fini (&op);
 			}
 			if (opst) {
 				matches = strcmp (opst, "invalid") && strcmp (opst, "unaligned");

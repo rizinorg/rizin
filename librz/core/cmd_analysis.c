@@ -6946,6 +6946,7 @@ static void cmd_analysis_syscall(RzCore *core, const char *input) {
 					si = rz_syscall_get (core->analysis->syscall, n, -1);
 					if (si) {
 						rz_cons_printf (".equ SYS_%s %s\n", si->name, syscallNumber (n));
+						rz_syscall_item_free (si);
 					}
 					else eprintf ("Unknown syscall number\n");
 				} else {
@@ -6970,6 +6971,7 @@ static void cmd_analysis_syscall(RzCore *core, const char *input) {
 					si = rz_syscall_get (core->analysis->syscall, n, -1);
 					if (si) {
 						rz_cons_printf ("#define SYS_%s %s\n", si->name, syscallNumber (n));
+						rz_syscall_item_free (si);
 					}
 					else eprintf ("Unknown syscall number\n");
 				} else {
@@ -6997,9 +6999,10 @@ static void cmd_analysis_syscall(RzCore *core, const char *input) {
 		if (input[1] == ' ') {
 			if (!isalpha ((ut8)input[2]) && (n = rz_num_math (num, input + 2)) >= 0 ) {
 				si = rz_syscall_get (core->analysis->syscall, n, -1);
-				if (si)
+				if (si) {
 					rz_cons_println (si->name);
-				else eprintf ("Unknown syscall number\n");
+					rz_syscall_item_free (si);
+				} else eprintf ("Unknown syscall number\n");
 			} else {
 				n = rz_syscall_get_num (core->analysis->syscall, input + 2);
 				if (n != -1) {
