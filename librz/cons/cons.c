@@ -1570,13 +1570,13 @@ RZ_API void rz_cons_set_raw(bool is_raw) {
 #elif __WINDOWS__
 	if (is_raw) {
 		if (I.term_xterm) {
-			rz_sys_system ("stty raw -echo");
+			rz_sys_system_ ("stty raw -echo");
 		} else {
 			SetConsoleMode (h, I.term_raw);
 		}
 	} else {
 		if (I.term_xterm) {
-			rz_sys_system ("stty -raw echo");
+			rz_sys_system_ ("stty -raw echo");
 		} else {
 			SetConsoleMode (h, I.term_buf);
 		}
