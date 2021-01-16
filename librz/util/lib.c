@@ -11,8 +11,8 @@ static bool __has_debug = false;
 
 /* XXX : this must be registered in runtime */
 static const char *rz_lib_types[] = {
-	"io", "dbg", "lang", "asm", "analysis", "parse", "bin", "bin_xtr",
-	"bp", "syscall", "fastcall", "crypto", "core", "egg", "fs", NULL
+	"io", "dbg", "lang", "asm", "analysis", "parse", "bin", "bin_xtr", "bin_ldr",
+	"bp", "syscall", "fastcall", "crypto", "core", "egg", NULL
 };
 
 static const char *__lib_types_get(int idx) {
