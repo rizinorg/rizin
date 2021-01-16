@@ -1678,14 +1678,13 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 		SdbList *sls = sdb_foreach_list (core->print->formats, false);
 		SdbListIter *iter;
 		SdbKv *kv;
-		int j = 0;
 		ls_foreach (sls, iter, kv) {
 			int len = strlen (buf->data + chr);
 			int minlen = RZ_MIN (len,  strlen (sdbkv_key (kv)));
 			if (!len || !strncmp (buf->data + chr, sdbkv_key (kv), minlen)) {
 				char *p = strchr (buf->data + chr, '.');
 				if (p) {
-					j += autocomplete_pfele (core, completion, sdbkv_key (kv), pfx, j, p + 1);
+					autocomplete_pfele (core, completion, sdbkv_key (kv), pfx, 0, p + 1);
 					break;
 				} else {
 					char *s = rz_str_newf ("pf%s.%s", pfx, sdbkv_key (kv));
