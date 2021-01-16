@@ -5275,7 +5275,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 				setRarunProfileString (core, input + 3);
 			} else {
 				// TODO use the api
-				rz_sys_system ("rz_run -h");
+				rz_sys_system_ ("rz_run -h");
 			}
 			break;
 		case 'o': // "doo" : reopen in debug mode

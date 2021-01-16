@@ -11,7 +11,7 @@ static void fwd(int sig) {
 
 static void rz_run_tty(void) {
 	/* TODO: Implement in native code */
-	rz_sys_system ("tty");
+	rz_sys_system_ ("tty");
 	close (1);
 	dup2 (2, 1);
 	rz_sys_signal (SIGINT, fwd);
