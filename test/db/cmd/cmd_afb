@@ -19,14 +19,14 @@ CMDS=<<EOF
 e cfg.json.num=hex
 af
 ab
-s+1
+sd +1
 ab~opaddr
-s+1
+sd +1
 ab~opaddr
 abj~{}
-s+1
+sd +1
 ab~opaddr
-s+1
+sd +1
 ab~opaddr
 EOF
 EXPECT=<<EOF
