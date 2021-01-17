@@ -135,19 +135,19 @@ static void __break_signal(int sig) {
 static inline void __cons_write_ll(const char *buf, int len) {
 #if __WINDOWS__
 	if (I.vtmode) {
-		(void) write (I.fdout, buf, len);
+		rz_xwrite (I.fdout, buf, len);
 	} else {
 		if (I.fdout == 1) {
 			rz_cons_w32_print (buf, len, false);
 		} else {
-			(void) write (I.fdout, buf, len);
+			rz_xwrite (I.fdout, buf, len);
 		}
 	}
 #else
 	if (I.fdout < 1) {
 		I.fdout = 1;
 	}
-	(void) write (I.fdout, buf, len);
+	rz_xwrite (I.fdout, buf, len);
 #endif
 }
 
@@ -1364,13 +1364,13 @@ static bool __xterm_get_size(void) {
 		return false;
 	}
 	int rows, columns;
-	(void)write (I.fdout, "\x1b[999;999H", sizeof ("\x1b[999;999H"));
+	rz_xwrite (I.fdout, "\x1b[999;999H", sizeof ("\x1b[999;999H"));
 	rows = __xterm_get_cur_pos (&columns);
 	if (rows) {
 		I.rows = rows;
 		I.columns = columns;
 	} // otherwise reuse previous values
-	(void)write (I.fdout, RZ_CONS_CURSOR_RESTORE, sizeof (RZ_CONS_CURSOR_RESTORE));
+	rz_xwrite (I.fdout, RZ_CONS_CURSOR_RESTORE, sizeof (RZ_CONS_CURSOR_RESTORE));
 	return true;
 }
 
@@ -1518,7 +1518,7 @@ RZ_API void rz_cons_show_cursor(int cursor) {
 #if __WINDOWS__
 	if (I.vtmode) {
 #endif
-		(void) write (1, cursor ? "\x1b[?25h" : "\x1b[?25l", 6);
+		rz_xwrite (1, cursor ? "\x1b[?25h" : "\x1b[?25l", 6);
 #if __WINDOWS__
 	} else {
 		static HANDLE hStdout = NULL;
@@ -1699,7 +1699,7 @@ RZ_API void rz_cons_zero(void) {
 	if (I.line) {
 		I.line->zerosep = true;
 	}
-	(void)write (1, "", 1);
+	rz_xwrite (1, "", 1);
 }
 
 RZ_API void rz_cons_highlight(const char *word) {
@@ -1939,6 +1939,6 @@ RZ_API void rz_cons_cmd_help(const char *help[], bool use_color) {
 
 RZ_API void rz_cons_clear_buffer(void) {
 	if (I.vtmode) {
-		(void)write (1, "\x1b" "c\x1b[3J", 6);
+		rz_xwrite (1, "\x1b" "c\x1b[3J", 6);
 	}
 }

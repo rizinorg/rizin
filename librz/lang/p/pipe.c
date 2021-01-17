@@ -165,7 +165,7 @@ static int lang_pipe_run(RzLang *lang, const char *code, int len) {
 	} else if (!child) {
 		/* children */
 		rz_sys_xsystem (code);
-		(void) write (input[1], "", 1);
+		rz_xwrite (input[1], "", 1);
 		rz_sys_pipe_close (input[0]);
 		rz_sys_pipe_close (input[1]);
 		rz_sys_pipe_close (output[0]);
@@ -199,11 +199,11 @@ static int lang_pipe_run(RzLang *lang, const char *code, int len) {
 			res = lang->cmd_str ((RzCore*)lang->user, buf);
 			//eprintf ("%d %s\n", ret, buf);
 			if (res) {
-				(void) write (input[1], res, strlen (res) + 1);
+				rz_xwrite (input[1], res, strlen (res) + 1);
 				free (res);
 			} else {
 				eprintf ("rz_lang_pipe: NULL reply for (%s)\n", buf);
-				(void) write (input[1], "", 1); // NULL byte
+				rz_xwrite (input[1], "", 1); // NULL byte
 			}
 		}
 		rz_cons_break_pop ();

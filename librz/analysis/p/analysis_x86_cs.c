@@ -3287,7 +3287,7 @@ static int x86_int_0x80(RzAnalysisEsil *esil, int interrupt) {
 	case 3:
 		{
 			char *dst = calloc (1, (size_t)edx);
-			(void)read ((ut32)ebx, dst, (size_t)edx);
+			rz_xread ((ut32)ebx, dst, (size_t)edx);
 			rz_analysis_esil_mem_write (esil, ecx, (ut8 *)dst, (int)edx);
 			free (dst);
 			return true;
@@ -3296,7 +3296,7 @@ static int x86_int_0x80(RzAnalysisEsil *esil, int interrupt) {
 		{
 			char *src = malloc ((size_t)edx);
 			rz_analysis_esil_mem_read (esil, ecx, (ut8 *)src, (int)edx);
-			write ((ut32)ebx, src, (size_t)edx);
+			rz_xwrite ((ut32)ebx, src, (size_t)edx);
 			free (src);
 			return true;
 		}

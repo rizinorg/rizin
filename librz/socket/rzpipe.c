@@ -300,7 +300,7 @@ RZ_API RzPipe *rzpipe_open(const char *cmd) {
 				eprintf ("return code %d for %s\n", rc, cmd);
 			}
 			// trigger the blocking read
-			write (1, "\xff", 1);
+			rz_xwrite (1, "\xff", 1);
 			rz_sys_pipe_close (rzp->output[1]);
 			close (0);
 			close (1);

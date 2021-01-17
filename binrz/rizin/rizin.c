@@ -4,27 +4,27 @@
 #include <rz_util.h>
 
 static void rz_cmd(int in, int out, const char *cmd) {
-	write (out, cmd, strlen (cmd) + 1);
-	write (out, "\n", 1);
+	rz_xwrite (out, cmd, strlen (cmd) + 1);
+	rz_xwrite (out, "\n", 1);
 	int bufsz = (1024 * 64);
 	unsigned char *buf = malloc (bufsz);
 	if (!buf) {
 		return;
 	}
 	while (1) {
-		read (in, buf, bufsz);
+		rz_xread (in, buf, bufsz);
 		buf[bufsz - 1] = '\0';
 		int len = strlen ((const char *)buf);
 		if (len < 1) {
 			break;
 		}
-		write (1, buf, len);
+		rz_xwrite (1, buf, len);
 		if (len != bufsz) {
 			break;
 		}
 	}
 	free (buf);
-	write (1, "\n", 1);
+	rz_xwrite (1, "\n", 1);
 }
 
 static int rz_main_rzpipe(int argc, const char **argv) {

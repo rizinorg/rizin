@@ -14,7 +14,7 @@ static void __fill_tail(int cols, int lines) {
 		lines--;
 		white[cols] = '\n';
 		while (lines-- > 0) {
-			write (1, white, cols);
+			rz_xwrite (1, white, cols);
 		}
 	}
 }
@@ -29,7 +29,7 @@ RZ_API void rz_cons_w32_clear(void) {
 		return;
 	}
 	if (I->is_wine == 1) {
-		write (1, "\033[0;0H\033[0m\033[2J", 6 + 4 + 4);
+		rz_xwrite (1, "\033[0;0H\033[0m\033[2J", 6 + 4 + 4);
 	}
 	if (!hStdout) {
 		hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
@@ -59,7 +59,7 @@ RZ_API void rz_cons_w32_gotoxy(int fd, int x, int y) {
 		return;
 	}
 	if (I->is_wine == 1) {
-		write (fd, "\x1b[0;0H", 6);
+		rz_xwrite (fd, "\x1b[0;0H", 6);
 	}
 	if (!*hConsole) {
 		*hConsole = GetStdHandle (fd == 1 ? STD_OUTPUT_HANDLE : STD_ERROR_HANDLE);
@@ -150,7 +150,7 @@ static int rz_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
 			}
 			if (ll > 0) {
 				raw_ll = bytes_utf8len (str, ll);
-				write (fd, str, raw_ll);
+				rz_xwrite (fd, str, raw_ll);
 				linelen += ll;
 			}
 			esc = 0;
@@ -160,10 +160,10 @@ static int rz_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
 				char white[1024];
 				if (wlen > 0 && wlen < sizeof (white)) {
 					memset (white, ' ', sizeof (white));
-					write (fd, white, wlen-1);
+					rz_xwrite (fd, white, wlen-1);
 				}
 			}
-			write (fd, "\n\r", 2);
+			rz_xwrite (fd, "\n\r", 2);
 			// reset colors for next line
 			SetConsoleTextAttribute (hConsole, 1 | 2 | 4 | 8);
 			linelen = 0;
@@ -181,10 +181,10 @@ static int rz_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
 					//wlen = 5;
 					if (wlen > 0) {
 						memset (white, ' ', sizeof (white));
-						write (fd, white, wlen);
+						rz_xwrite (fd, white, wlen);
 					}
 				}
-				write (fd, "\n\r", 2);
+				rz_xwrite (fd, "\n\r", 2);
 				//write (fd, "\r\n", 2);
 				//lines--;
 				linelen = 0;
@@ -201,7 +201,7 @@ static int rz_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
 			}
 			if (ll > 0) {
 				raw_ll = bytes_utf8len (str, ll);
-				write (fd, str, raw_ll);
+				rz_xwrite (fd, str, raw_ll);
 				linelen += ll;
 			}
 			esc = 1;
@@ -387,14 +387,14 @@ static int rz_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
 		if (wlen > 0) {
 			char white[1024];
 			memset (white, ' ', sizeof (white));
-			write (fd, white, wlen);
+			rz_xwrite (fd, white, wlen);
 		}
 		/* fill tail */
 		__fill_tail (cols, lines);
 	} else {
 		int ll = (size_t)(ptr - str);
 		if (ll > 0) {
-			write (fd, str, ll);
+			rz_xwrite (fd, str, ll);
 			linelen += ll;
 		}
 	}

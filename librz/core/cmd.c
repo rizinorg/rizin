@@ -1524,7 +1524,7 @@ RZ_IPI int rz_cmd_resize(void *data, const char *input) {
 		}
 		break;
 	case 'e':
-		write (1, Color_RESET_TERMINAL, strlen (Color_RESET_TERMINAL));
+		rz_xwrite (1, Color_RESET_TERMINAL, strlen (Color_RESET_TERMINAL));
 		return true;
 	case '?': // "r?"
 	default:

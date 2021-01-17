@@ -872,9 +872,9 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 		rz_cons_set_raw (false);
 #if __UNIX__
 		// TODO: keep flags :?
-		(void)freopen ("/dev/tty", "rb", stdin);
-		(void)freopen ("/dev/tty", "w", stdout);
-		(void)freopen ("/dev/tty", "w", stderr);
+		rz_xfreopen ("/dev/tty", "rb", stdin);
+		rz_xfreopen ("/dev/tty", "w", stdout);
+		rz_xfreopen ("/dev/tty", "w", stderr);
 #else
 		eprintf ("Cannot reopen stdin without UNIX\n");
 		free (buf);

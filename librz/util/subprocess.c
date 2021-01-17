@@ -410,7 +410,7 @@ static void subprocess_unlock(void) {
 
 static void handle_sigchld(int sig) {
 	ut8 b = 1;
-	write (sigchld_pipe[1], &b, 1);
+	rz_xwrite (sigchld_pipe[1], &b, 1);
 }
 
 static RzThreadFunctionRet sigchld_th(RzThread *th) {
@@ -456,7 +456,7 @@ static RzThreadFunctionRet sigchld_th(RzThread *th) {
 				proc->ret = -1;
 			}
 			ut8 r = 0;
-			write (proc->killpipe[1], &r, 1);
+			rz_xwrite (proc->killpipe[1], &r, 1);
 			subprocess_unlock ();
 		}
 	}
@@ -493,7 +493,7 @@ RZ_API bool rz_subprocess_init(void) {
 RZ_API void rz_subprocess_fini(void) {
 	rz_sys_signal (SIGCHLD, SIG_IGN);
 	ut8 b = 0;
-	write (sigchld_pipe[1], &b, 1);
+	rz_xwrite (sigchld_pipe[1], &b, 1);
 	rz_sys_pipe_close (sigchld_pipe [1]);
 	rz_th_wait (sigchld_thread);
 	rz_sys_pipe_close (sigchld_pipe [0]);
@@ -791,7 +791,7 @@ RZ_API void rz_subprocess_kill(RzSubprocess *proc) {
 }
 
 RZ_API void rz_subprocess_stdin_write(RzSubprocess *proc, const ut8 *buf, size_t buf_size) {
-	write (proc->stdin_fd, buf, buf_size);
+	rz_xwrite (proc->stdin_fd, buf, buf_size);
 	rz_sys_pipe_close (proc->stdin_fd);
 	proc->stdin_fd = -1;
 }

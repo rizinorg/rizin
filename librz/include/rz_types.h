@@ -678,6 +678,9 @@ static inline void rz_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, 
 #define RZ_V_NOT(op, fail_ret) \
 	if ((op) == (fail_ret)) \
 		eprintf (#op" at %s:%d failed: %s\n", __FILE__, __LINE__, strerror (errno))
+#define rz_xwrite(fd, buf, count) RZ_V_NOT (write (fd, buf, count), -1)
+#define rz_xread(fd, buf, count) RZ_V_NOT (read (fd, buf, count), -1)
+#define rz_xfreopen(pathname, mode, stream) RZ_V_NOT (freopen (pathname, mode, stream), NULL)
 
 #ifndef container_of
 # ifdef _MSC_VER
