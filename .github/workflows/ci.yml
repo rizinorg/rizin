@@ -402,33 +402,33 @@ jobs:
   create-tarball:
     name: Create source tarball
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-')
-    needs: [build-and-test]
     runs-on: ubuntu-latest
+    outputs:
+        version: ${{ steps.extract_version.outputs.version }}
     steps:
+    - name: Install python and other dependencies
+      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip
+    - name: Install meson and ninja
+      run: pip3 install --user meson ninja PyYAML
     - uses: actions/checkout@v2
       with:
           submodules: recursive
     - name: Extract rizin version
       shell: bash
-      run: echo "##[set-output name=branch;]$(python sys/version.py)"
+      run: echo "##[set-output name=version;]$(python sys/version.py)"
       id: extract_version
-    - name: Download capstone
-      run: |
-        ./configure
-        make -C shlr capstone
-        rm -rf shlr/capstone/.git
-        git clean -dxf .
-        rm -rf .git
     - name: Create archive
       run: |
-        cd ..
-        cp -r rizin rizin-${{ steps.extract_version.outputs.branch}}
-        tar cvzf rizin-src.tar.gz rizin-${{ steps.extract_version.outputs.branch}}
-        mv rizin-src.tar.gz rizin/
+        export PATH=${HOME}/.local/bin:${PATH}
+        meson rewrite kwargs set project / version ${{ steps.extract_version.outputs.version }}
+        meson build
+        cd build
+        meson dist --include-subprojects --no-tests
+        ls -l meson-dist
     - uses: actions/upload-artifact@v2
       with:
         name: rizin-src
-        path: rizin-src.tar.gz
+        path: build/meson-dist/rizin-*.tar.xz
 
   build-deb:
     name: Build deb package for ${{ matrix.container }}
@@ -581,21 +581,62 @@ jobs:
         name: rizin-android-${{ matrix.name }}
         path: /tmp/rizin-android-${{ matrix.name }}.tar.gz
 
-  build-extras:
-    name: Build rizin extras and rzpipe
-    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.event_name == 'schedule'
+#  build-extras:
+#    name: Build rizin extras and rzpipe
+#    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.event_name == 'schedule'
+#    needs: [create-tarball]
+#    runs-on: ubuntu-latest
+#    env:
+#      TESTS: 'armthumb baleful bcl ba2 blackfin blessr2 keystone-lib keystone lang-duktape mc6809 microblaze msil pcap ppcdisasm psosvm swf unicorn-lib unicorn vc4 x86udis x86bea x86tab x86olly x86zyan z80-nc'
+#      RZPIPE_TESTS: 'rzpipe-go rzpipe-js rzpipe-py'
+#    steps:
+#    - uses: actions/download-artifact@v2
+#      with:
+#        name: rizin-src.tar.xz
+#        path: ./
+#    - name: Extract source tarball
+#      run: mkdir rizin && tar -C rizin --strip-components=1 -xvf rizin-src.tar.xz
+#    - name: Install dependencies
+#      run: sudo apt-get --assume-yes install wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja
+#    - name: Install rizin
+#      run: |
+#        export PATH=$PATH:/usr/local/bin
+#        meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
+#      working-directory: rizin
+#    - name: Init rz-pm
+#      run: rz-pm init && rz-pm update
+#    - name: Compile and install plugins
+#      run: |
+#        set -e
+#        for p in $TESTS ; do
+#          echo $p
+#          rz-pm -i $p
+#        done
+#        set +e
+#    - name: Compile and install rzpipe
+#      run: |
+#        set -e
+#        for p in $RZPIPE_TESTS ; do
+#          echo $p
+#          rz-pm -i $p
+#        done
+#        set +e
+
+  build-rzpipe:
+    name: Build rizin rzpipe
+    if: contains(github.head_ref, 'dist') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     needs: [create-tarball]
     runs-on: ubuntu-latest
     env:
-      TESTS: 'armthumb baleful bcl ba2 blackfin blessr2 keystone-lib keystone lang-duktape mc6809 microblaze msil pcap ppcdisasm psosvm swf unicorn-lib unicorn vc4 x86udis x86bea x86tab x86olly x86zyan z80-nc'
-      RZPIPE_TESTS: 'rzpipe-go rzpipe-js rzpipe-py'
+      RZPIPE_TESTS: 'rz-pipe-py rz-pipe-go'
     steps:
     - uses: actions/download-artifact@v2
       with:
         name: rizin-src
-        path: ./
     - name: Extract source tarball
-      run: mkdir rizin && tar -C rizin --strip-components=1 -xvf rizin-src.tar.gz
+      run: |
+          mkdir rizin && pwd && ls -l
+          tar -C rizin --strip-components=1 -xvf rizin-${{ needs.create-tarball.outputs.version }}.tar.xz
     - name: Install dependencies
       run: sudo apt-get --assume-yes install wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja
     - name: Install rizin
@@ -605,14 +646,6 @@ jobs:
       working-directory: rizin
     - name: Init rz-pm
       run: rz-pm init && rz-pm update
-    - name: Compile and install plugins
-      run: |
-        set -e
-        for p in $TESTS ; do
-          echo $p
-          rz-pm -i $p
-        done
-        set +e
     - name: Compile and install rzpipe
       run: |
         set -e
@@ -730,7 +763,7 @@ jobs:
       build-android,
       test-osx-pkg,
       test-windows-clang_cl,
-      build-extras
+      build-rzpipe
     ]
     steps:
     - uses: actions/checkout@v2
@@ -759,7 +792,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rizin-src/rizin-src.tar.gz
+          asset_path: ./rizin-src/rizin-src.tar.xz
           asset_name: rizin-src-${{ steps.extract_version.outputs.branch }}.tar.gz
           asset_content_type: application/zip
     - name: Upload rizin debian:buster package
