@@ -1,0 +1,19 @@
+NAME=continue backwards
+FILE=bins/pe/hello_world/hello_world_od64bit.exe
+CMDS=<<EOF
+e dbg.create_new_console=false
+ood
+db main
+dc
+dc
+dr rflags,rax,rcx
+dts+
+20ds
+dr rflags,rax,rcx
+dcb
+dr rflags,rax,rcx
+doc
+EOF
+REGEXP_FILTER_OUT=(^0x[0-9A-Za-z]+)
+EXPECT=0x000002000x7fffa35059f80x000000010x000002060x000000010x7fffa35044b80x000002000x7fffa35059f80x00000001
+RUN
