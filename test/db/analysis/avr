@@ -610,6 +610,7 @@ RUN
 
 NAME=avr stop analysis when invalid instruction is found
 FILE=bins/firmware/arduino_avr.bin
+ARGS=-e asm.os=linux
 CMDS=<<EOF
 e asm.arch=avr
 aaa
