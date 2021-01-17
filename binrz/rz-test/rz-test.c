@@ -597,7 +597,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar, 
 #endif
 	const char *output = actual;
 	if (regexp) {
-		RzList *matches = rz_regex_get_match_list (regexp, "en", actual);
+		RzList *matches = rz_regex_get_match_list (regexp, "e", actual);
 		output = rz_list_to_str (matches, '\0');
 		rz_list_free (matches);
 	}
