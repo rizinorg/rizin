@@ -550,11 +550,11 @@ static int riscv_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 			esilprintf (op, "%s,%s,!=,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strncmp (name, "sle", 3)) {
 			esilprintf (op, "%s,%s,<=,%s,=", ARG (2), ARG (1), ARG (0));
-		} else if (!strncmp (name, "slt", 3)) {
+		} else if (!strncmp (name, "slt", 3) || !strcmp (name, "sltu")) {
 			esilprintf (op, "%s,%s,<,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strncmp (name, "sge", 3)) {
 			esilprintf (op, "%s,%s,>=,%s,=", ARG (2), ARG (1), ARG (0));
-		} else if (!strncmp (name, "sgt", 3)) {
+		} else if (!strncmp (name, "sgt", 3) || !strcmp (name, "sgtu")) {
 			esilprintf (op, "%s,%s,>,%s,=", ARG (2), ARG (1), ARG (0));
 		}
 		// debug
