@@ -181,7 +181,7 @@ RZ_API int cmd_write_hexpair(RzCore* core, const char* pairs) {
 			core->num->value = 1;
 		}
 		if (rz_config_get_i (core->config, "cfg.wseek")) {
-			rz_core_seek_delta (core, len);
+			rz_core_seek_delta (core, len, true);
 		}
 		rz_core_block_read (core);
 	} else {
@@ -436,7 +436,7 @@ RZ_IPI int rz_wo_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-#define WSEEK(x,y) if (wseek)rz_core_seek_delta (x,y)
+#define WSEEK(x,y) if (wseek)rz_core_seek_delta (x,y,true)
 static void rz_cmd_write_value(RzCore *core, const char *input) {
 	int type = 0;
 	ut64 off = 0LL;
@@ -499,7 +499,6 @@ static void rz_cmd_write_value(RzCore *core, const char *input) {
 		}
 		break;
 	}
-	rz_core_block_read (core);
 }
 
 static RzCmdStatus common_wv_handler(RzCore *core, int argc, const char **argv, int type) {
@@ -540,7 +539,7 @@ static RzCmdStatus common_wv_handler(RzCore *core, int argc, const char **argv, 
 	if (!rz_io_write (core->io, buf, type)) {
 		cmd_write_fail (core);
 	} else if (wseek) {
-		rz_core_seek_delta (core, type);
+		rz_core_seek_delta (core, type, true);
 	}
 
 	rz_core_block_read (core);
@@ -1425,6 +1424,7 @@ static void w_handler_common(RzCore *core, const char *input) {
 	if (!rz_core_write_at (core, core->offset, (const ut8 *)str, len)) {
 		cmd_write_fail (core);
 	}
+	free (str);
 	WSEEK (core, len);
 	rz_core_block_read (core);
 }
@@ -1721,7 +1721,7 @@ RZ_IPI int rz_wx_handler_old(void *data, const char *input) {
 		{
 			int len = cmd_write_hexpair (core, input + 1);
 			if (len > 0) {
-				rz_core_seek_delta (core, len);
+				rz_core_seek_delta (core, len, true);
 				core->num->value = len;
 			} else {
 				core->num->value = 0;

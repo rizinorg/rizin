@@ -1093,7 +1093,7 @@ RZ_API char *rz_cmd_get_help(RzCmd *cmd, RzCmdParsedArgs *args, bool use_color) 
 	char *cmdid = strdup (rz_cmd_parsed_args_cmd (args));
 	char *cmdid_p = cmdid + strlen (cmdid) - 1;
 	size_t detail = 0;
-	while (cmdid_p >= cmdid && *cmdid_p == '?') {
+	while (cmdid_p >= cmdid && *cmdid_p == '?' && detail < 2) {
 		*cmdid_p = '\0';
 		cmdid_p--;
 		detail++;

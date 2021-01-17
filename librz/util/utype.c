@@ -578,87 +578,103 @@ RZ_API const char *rz_type_func_args_name(Sdb *TDB, RZ_NONNULL const char *func_
 
 #define MIN_MATCH_LEN 4
 
+static inline bool is_function(const char *name) {
+	return name && !strcmp("func", name);
+}
+
 static RZ_OWN char *type_func_try_guess(Sdb *TDB, RZ_NONNULL char *name) {
-	const char *res;
-	if (rz_str_nlen (name, MIN_MATCH_LEN) < MIN_MATCH_LEN) {
+	if (strlen(name) < MIN_MATCH_LEN) {
 		return NULL;
 	}
-	if ((res = sdb_const_get (TDB, name, NULL))) {
-		bool is_func = res && !strcmp ("func", res);
-		if (is_func) {
-			return strdup (name);
-		}
+
+	const char *res = sdb_const_get(TDB, name, NULL);
+	if (is_function(res)) {
+		return strdup(name);
 	}
+
 	return NULL;
+}
+
+static inline bool is_auto_named(char *func_name, size_t slen) {
+	return slen > 4 && (rz_str_startswith (func_name, "fcn.") || rz_str_startswith (func_name, "loc."));
+}
+
+static inline bool has_rz_prefixes(char *func_name, int offset, size_t slen) {
+	return slen > 4 && (offset + 3 < slen) && func_name[offset + 3] == '.';
+}
+
+static char *strip_rz_prefixes(char *func_name, size_t slen) {
+	// strip r2 prefixes (sym, sym.imp, etc')
+	int offset = 0;
+
+	while (has_rz_prefixes(func_name, offset, slen)) {
+		offset += 4;
+	}
+
+	return func_name + offset;
+}
+
+static char *strip_common_prefixes_stdlib(char *func_name) {
+	// strip common prefixes from standard lib functions
+	if (rz_str_startswith (func_name, "__isoc99_")) {
+		func_name += 9;
+	} else if (rz_str_startswith (func_name, "__libc_") && !strstr(func_name, "_main")) {
+		func_name += 7;
+	} else if (rz_str_startswith (func_name, "__GI_")) {
+		func_name += 5;
+	}
+
+	return func_name;
+}
+
+static char *strip_dll_prefix(char *func_name) {
+	char *tmp = strstr(func_name, "dll_");
+	if (tmp) {
+		return tmp + 3;
+	}
+
+	return func_name;
+}
+
+static void clean_function_name(char *func_name) {
+	char *last = (char *)rz_str_lchr (func_name, '_');
+	if (!last || !rz_str_isnumber(last + 1)) {
+		return;
+	}
+
+	*last = '\0';
 }
 
 // TODO:
 // - symbol names are long and noisy, some of them might not be matched due
 //	 to additional information added around name
 RZ_API RZ_OWN char *rz_type_func_guess(Sdb *TDB, RZ_NONNULL char *func_name) {
-	int offset = 0;
 	char *str = func_name;
 	char *result = NULL;
-	char *first;
 	rz_return_val_if_fail (TDB, false);
 	rz_return_val_if_fail (func_name, false);
 
 	size_t slen = strlen (str);
-	if (slen < MIN_MATCH_LEN) {
+	if (slen < MIN_MATCH_LEN || is_auto_named(str, slen)) {
 		return NULL;
 	}
 
-	if (slen > 4) { // were name-matching so ignore autonamed
-		if (!strncmp (str, "fcn.", 4) || !strncmp (str, "loc.", 4)) {
-			return NULL;
-		}
-	}
-	// strip r2 prefixes (sym, sym.imp, etc')
-	while (slen > 4 && (offset + 3 < slen) && str[offset + 3] == '.') {
-		offset += 4;
-	}
-	slen -= offset;
-	str += offset;
-	// strip common prefixes from standard lib functions
-	if (!strncmp (str, "__isoc99_", 9)) {
-		str += 9;
-	} else if (!strncmp (str, "__libc_", 7) && !strstr(str,"_main")) {
-		str += 7;
-	} else if (!strncmp (str, "__GI_", 5)) {
-		str += 5;
-	}
+	str = strip_rz_prefixes(str, slen);
+	str = strip_common_prefixes_stdlib(str);
+	str = strip_dll_prefix(str);
+
 	if ((result = type_func_try_guess (TDB, str))) {
 		return result;
 	}
 
+	str = strdup (str);
+	clean_function_name(str);
+
 	if (*str == '_' && (result = type_func_try_guess (TDB, str + 1))) {
+		free (str);
 		return result;
 	}
-	str = strdup (str);
-	// Remove func-number from module_func-number
-	// sym._ExitProcess_4 ==> ExitProcess
-	char *l = (char *)rz_str_lchr (str, '_');
-	if (l) {
-		char *tmp = l + 1;
-		char *first = strchr (str, '_');
-		while (tmp && IS_DIGIT (*tmp)) {
-			tmp++;
-		}
-		if (tmp && first && !*tmp) {
-			*l = '\0';
-			if (*str == '_' && (result = type_func_try_guess (TDB, str + 1))) {
-				free (str);
-				return result;
-			}
-		}
-	}
-	// some names are in format module.dll_function_number, try to remove those
-	// also try module.dll_function and function_number
-	if ((first = strstr (str, "dll_"))) {
-		result = type_func_try_guess (TDB, first + 4);
-		goto out;
-	}
-out:
+
 	free (str);
 	return result;
 }

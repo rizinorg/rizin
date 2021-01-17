@@ -182,8 +182,6 @@ static void GH(jemalloc_get_chunks)(RzCore *core, const char *input) {
 				return;
 			}
 
-			input += 1;
-
 			if (GH(rz_resolve_jemalloc) (core, "je_arenas", &sym)) {
 				rz_io_read_at (core->io, sym, (ut8 *)&arenas, sizeof (GHT));
 				for (;;) {

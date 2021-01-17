@@ -554,6 +554,9 @@ static int _resolve_arch(libgdbr_t *g, char *xml_data) {
 		if (strstr (xml_data, "com.apple.debugserver.arm64")) {
 			g->target.arch = RZ_SYS_ARCH_ARM;
 			g->target.bits = 64;
+		} else if (strstr (xml_data, "org.gnu.gdb.riscv")) {
+			g->target.arch = RZ_SYS_ARCH_RISCV;
+			g->target.bits = 64;
 		} else if (strstr (xml_data, "org.gnu.gdb.mips")) {
 			// openocd mips?
 			g->target.arch = RZ_SYS_ARCH_MIPS;

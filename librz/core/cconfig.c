@@ -507,6 +507,7 @@ static void update_asmcpu_options(RzCore *core, RzConfigNode *node) {
 			for (i = 0; i < n; i++) {
 				const char *word = rz_str_word_get0 (c, i);
 				if (word && *word) {
+					node->options->free = free;
 					SETOPTIONS (node, strdup (word), NULL);
 				}
 			}
@@ -3192,6 +3193,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF ("cfg.fortunes.clippy", "false", "Use ?E instead of ?e");
 	SETPREF ("cfg.prefixdump", "dump", "Filename prefix for automated dumps");
 	SETBPREF ("cfg.wseek", "false", "Seek after write");
+	SETICB ("cfg.seek.histsize", 63, NULL, "Maximum size of the seek history");
+	SETCB ("cfg.seek.silent", "false", NULL, "When true, seek movements are not logged in seek history");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
 	p = rz_sys_getenv ("RZ_CFG_OLDSHELL");
 	SETCB ("cfg.newshell", p? "false": "true", &cb_newshell, "Use new commands parser");

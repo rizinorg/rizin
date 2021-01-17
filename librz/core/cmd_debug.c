@@ -1264,8 +1264,12 @@ show_help:
 		rz_core_cmd_help (core, help_msg_dmm);
 		return;
 	}
-	PJ *pj = pj_new ();
+	PJ *pj = NULL;
 	if (mode == 'j') {
+		pj = rz_core_pj_new (core);
+		if (!pj) {
+			return;
+		}
 		pj_a (pj);
 	}
 	// TODO: honor mode
@@ -1318,7 +1322,7 @@ show_help:
 beach:
 	if (mode == 'j') {
 		pj_end (pj);
-		rz_cons_printf ("%s\n", pj_string (pj));
+		rz_cons_println (pj_string (pj));
 	}
 	pj_free (pj);
 	rz_list_free (list);
@@ -2073,7 +2077,10 @@ static void cmd_reg_profile(RzCore *core, char from, const char *str) { // "arp"
 			RzListIter *iter;
 			RzRegItem *r;
 			int i;
-			PJ *pj = pj_new ();
+			PJ *pj = rz_core_pj_new (core);
+			if (!pj) {
+				return;
+			}
 			pj_o (pj);
 			pj_k (pj, "alias_info");
 			pj_a (pj);
@@ -2280,7 +2287,10 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 				r = rz_reg_get (core->dbg->reg, name , -1);
 				if (r) {
 					if (json_out) {
-						PJ *pj = pj_new ();
+						PJ *pj = rz_core_pj_new (core);
+						if (!pj) {
+							return;
+						}
 						pj_o (pj);
 						if (r->comment) {
 							pj_ks (pj, r->name, r->comment);
@@ -2353,7 +2363,10 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 				i = 0;
 				PJ *pj = NULL;
 				if (json_out) {
-					pj = pj_new ();
+					pj = rz_core_pj_new (core);
+					if (!pj) {
+						return;
+					}
 					pj_a (pj);
 				}
 				rz_list_foreach (rs->regs, iter, r) {
@@ -2754,7 +2767,7 @@ static void cmd_debug_reg(RzCore *core, const char *str) {
 			rad = str[1];
 			str++;
 			if (rad == 'j' && !str[1]) {
-				PJ *pj = pj_new ();
+				PJ *pj = rz_core_pj_new (core);
 				if (!pj) {
 					break;
 				}
@@ -3077,7 +3090,7 @@ static void asciiart_backtrace(RzCore *core, RzList *frames) {
 	}
 }
 
-static void get_backtrace_info(RzCore* core, RzDebugFrame* frame, ut64 addr, char** flagdesc, char** flagdesc2, char** pcstr, char** spstr, bool hex_format) {
+static void get_backtrace_info(RzCore* core, RzDebugFrame* frame, ut64 addr, char** flagdesc, char** flagdesc2, char** pcstr, char** spstr) {
 	RzFlagItem *f = rz_flag_get_at (core->flags, frame->addr, true);
 	*flagdesc = NULL;
 	*flagdesc2 = NULL;
@@ -3117,7 +3130,7 @@ static void get_backtrace_info(RzCore* core, RzDebugFrame* frame, ut64 addr, cha
 		free (*flagdesc2);
 		*flagdesc2 = NULL;
 	}
-	if (hex_format) {
+	if (pcstr && spstr) {
 		if (core->dbg->bits & RZ_SYS_BITS_64) {
 			*pcstr = rz_str_newf ("0x%-16" PFMT64x, frame->addr);
 			*spstr = rz_str_newf ("0x%-16" PFMT64x, frame->sp);
@@ -3127,17 +3140,6 @@ static void get_backtrace_info(RzCore* core, RzDebugFrame* frame, ut64 addr, cha
 		} else {
 			*pcstr = rz_str_newf ("0x%" PFMT64x, frame->addr);
 			*spstr = rz_str_newf ("0x%" PFMT64x, frame->sp);
-		}
-	} else {
-		if (core->dbg->bits & RZ_SYS_BITS_64) {
-			*pcstr = rz_str_newf ("%" PFMT64d, frame->addr);
-			*spstr = rz_str_newf ("%" PFMT64d, frame->sp);
-		} else if (core->dbg->bits & RZ_SYS_BITS_32) {
-			*pcstr = rz_str_newf ("%" PFMT64d, frame->addr);
-			*spstr = rz_str_newf ("%" PFMT64d, frame->sp);
-		} else {
-			*pcstr = rz_str_newf ("%" PFMT64d, frame->addr);
-			*spstr = rz_str_newf ("%" PFMT64d, frame->sp);
 		}
 	}
 }
@@ -3337,7 +3339,6 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 	RzDebugFrame *frame;
 	RzListIter *iter;
 	const char *p;
-	bool hex_format;
 	bool watch = false;
 	RzList *list;
 	ut64 addr, idx;
@@ -3444,36 +3445,42 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 				eprintf ("Cannot unset tracepoint\n");
 			}
 			break;
-		case 'j': // "dbtj"
+		case 'j': { // "dbtj"
+			PJ *pj = rz_core_pj_new (core);
+			if (!pj) {
+				return;
+			}
 			addr = UT64_MAX;
 			if (input[2] == ' ' && input[3]) {
 				addr = rz_num_math (core->num, input + 2);
 			}
 			i = 0;
 			list = rz_debug_frames (core->dbg, addr);
-			hex_format = false;
-			rz_cons_printf ("[");
+			pj_a (pj);
 			rz_list_foreach (list, iter, frame) {
-				char *flagdesc, *flagdesc2, *pcstr, *spstr;
-				get_backtrace_info (core, frame, addr, &flagdesc, &flagdesc2, &pcstr, &spstr, hex_format);
+				char *flagdesc, *flagdesc2, *desc;
+				get_backtrace_info (core, frame, addr, &flagdesc, &flagdesc2, NULL, NULL);
 				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, frame->addr, 0);
-				rz_cons_printf ("%s{\"idx\":%d,\"pc\":%s,\"sp\":%s,\"frame_size\":%d,"
-						"\"fname\":\"%s\",\"desc\":\"%s%s\"}", (i ? " ," : ""),
-						i,
-						pcstr, spstr,
-						(int)frame->size,
-						fcn ? fcn->name : "",
-						flagdesc ? flagdesc : "",
-						flagdesc2 ? flagdesc2 : "");
+				desc = rz_str_newf ("%s%s", rz_str_get (flagdesc), rz_str_get (flagdesc2));
+				pj_o (pj);
+				pj_ki (pj, "idx", i);
+				pj_kn (pj, "pc", frame->addr);
+				pj_kn (pj, "sp", frame->sp);
+				pj_ki (pj, "frame_size", frame->size);
+				pj_ks (pj, "fname", fcn ? fcn->name : "");
+				pj_ks (pj, "desc", desc);
+				pj_end (pj);
 				i++;
 				free (flagdesc);
 				free (flagdesc2);
-				free (pcstr);
-				free (spstr);
+				free (desc);
 			}
-			rz_cons_printf ("]\n");
+			pj_end (pj);
+			rz_cons_println (pj_string (pj));
+			pj_free (pj);
 			rz_list_free (list);
 			break;
+		}
 		case '=': // dbt=
 			addr = UT64_MAX;
 			if (input[2] == ' ' && input[3]) {
@@ -3529,10 +3536,9 @@ static void rz_core_cmd_bp(RzCore *core, const char *input) {
 			}
 			i = 0;
 			list = rz_debug_frames (core->dbg, addr);
-			hex_format = true;
 			rz_list_foreach (list, iter, frame) {
 				char *flagdesc, *flagdesc2, *pcstr, *spstr;
-				get_backtrace_info (core, frame, addr, &flagdesc, &flagdesc2, &pcstr, &spstr, hex_format);
+				get_backtrace_info (core, frame, addr, &flagdesc, &flagdesc2, &pcstr, &spstr);
 				RzAnalysisFunction *fcn = rz_analysis_get_fcn_in (core->analysis, frame->addr, 0);
 				rz_cons_printf ("%d  %s sp: %s  %-5d"
 						"[%s]  %s %s\n", i++,
