@@ -224,13 +224,13 @@ RZ_API bool rz_cons_is_utf8(void) {
 		close (fd);
 		return false;
 	}
-	write (1, "\xc3\x89\xc3\xa9", 4);
+	rz_xwrite (1, "\xc3\x89\xc3\xa9", 4);
 	if (cursor_position (fd, &row2, &col2)) {
 		close (fd);
 		return false;
 	}
 	close (fd);
-	write (1, "\r    \r", 6);
+	rz_xwrite (1, "\r    \r", 6);
 	return ((col2-col)==2);
 #endif
 	return ret;

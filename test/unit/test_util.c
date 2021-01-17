@@ -134,7 +134,7 @@ bool test_file_slurp(void) {
 
 	f = open (test_file, O_WRONLY, S_IRWXU);
 	mu_assert_neq (f, -1, "cannot reopen empty file");
-	write (f, some_words, strlen (some_words));
+	rz_xwrite (f, some_words, strlen (some_words));
 	close (f);
 
 	content = rz_file_slurp (test_file, &s);

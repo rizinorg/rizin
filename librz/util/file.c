@@ -917,7 +917,7 @@ static RzMmap *file_mmap(RzMmap *m) {
 		return NULL;
 	}
 	lseek (m->fd, (off_t)0, SEEK_SET);
-	read (m->fd, m->buf, m->len);
+	rz_xread (m->fd, m->buf, m->len);
 	return m;
 }
 #endif

@@ -66,9 +66,9 @@ void alloc_console(void) {
 	coninfo.dwSize.Y = 4096;
 	SetConsoleScreenBufferSize (hStdin, coninfo.dwSize);
 
-	freopen ("conin$", "r", stdin);
-	freopen ("conout$", "w", stdout);
-	freopen ("conout$", "w", stderr);
+	rz_xfreopen ("conin$", "r", stdin);
+	rz_xfreopen ("conout$", "w", stdout);
+	rz_xfreopen ("conout$", "w", stderr);
 }
 
 static void start_rz(void) {

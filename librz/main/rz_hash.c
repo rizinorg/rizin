@@ -410,7 +410,7 @@ static int encrypt_or_decrypt_file(const char *algo, int direction, const char *
 				int result_size = 0;
 				ut8 *result = rz_crypto_get_output (cry, &result_size);
 				if (result) {
-					(void)write (1, result, result_size);
+					rz_xwrite (1, result, result_size);
 					free (result);
 				}
 				free (buf);
