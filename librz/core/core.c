@@ -2925,11 +2925,6 @@ RZ_API int rz_core_prompt_exec(RzCore *r) {
 	int ret = rz_core_cmd (r, r->cmdqueue, true);
 	r->rc = r->num->value;
 	//int ret = rz_core_cmd (r, r->cmdqueue, true);
-	if (r->cons && r->cons->use_tts) {
-		const char *buf = rz_cons_get_buffer();
-		rz_sys_tts (buf, true);
-		r->cons->use_tts = false;
-	}
 	rz_cons_echo (NULL);
 	rz_cons_flush ();
 	if (r->cons && r->cons->line && r->cons->line->zerosep) {

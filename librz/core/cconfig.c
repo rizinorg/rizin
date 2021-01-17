@@ -3191,7 +3191,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("cfg.fortunes", "true", &cb_cfg_fortunes, "If enabled show tips at start");
 	SETCB ("cfg.fortunes.file", "tips", &cb_cfg_fortunes_file, "Type of fortunes to show (tips, fun)");
 	SETBPREF ("cfg.fortunes.clippy", "false", "Use ?E instead of ?e");
-	SETBPREF ("cfg.fortunes.tts", "false", "Speak out the fortune");
 	SETPREF ("cfg.prefixdump", "dump", "Filename prefix for automated dumps");
 	SETBPREF ("cfg.wseek", "false", "Seek after write");
 	SETICB ("cfg.seek.histsize", 63, NULL, "Maximum size of the seek history");
@@ -3561,7 +3560,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF ("scr.prompt.file", "false", "Show user prompt file (used by rizin -q)");
 	SETBPREF ("scr.prompt.flag", "false", "Show flag name in the prompt");
 	SETBPREF ("scr.prompt.sect", "false", "Show section name in the prompt");
-	SETBPREF ("scr.tts", "false", "Use tts if available by a command (see ic)");
 	SETCB ("scr.hist.block", "true", &cb_scr_histblock, "Use blocks for histogram");
 	SETCB ("scr.prompt", "true", &cb_scrprompt, "Show user prompt (used by rizin -q)");
 	SETCB ("scr.tee", "", &cb_teefile, "Pipe output to file of this name");

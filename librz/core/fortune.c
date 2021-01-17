@@ -64,9 +64,6 @@ RZ_API void rz_core_fortune_print_random(RzCore *core) {
 		} else {
 			rz_cons_printf (" -- %s\n", line);
 		}
-		if (rz_config_get_i (core->config, "cfg.fortunes.tts")) {
-			rz_sys_tts (line, true);
-		}
 		free (line);
 	}
 }
