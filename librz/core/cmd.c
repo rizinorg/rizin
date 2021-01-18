@@ -265,7 +265,6 @@ static const char *help_msg_vertical_bar[] = {
 	"", "[cmd] |?", "show this help",
 	"", "[cmd] |", "disable scr.html and scr.color",
 	"", "[cmd] |H", "enable scr.html, respect scr.color",
-	"", "[cmd] |T", "use scr.tts to speak out the stdout",
 	"", "[cmd] | [program]", "pipe output of command to program",
 	"", "[cmd] |.", "alias for .[cmd]",
 	NULL
@@ -2663,10 +2662,6 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 				} else if (!strncmp (ptr + 1, "H", 1)) { // "|H"
 					scr_html = rz_config_get_i (core->config, "scr.html");
 					rz_config_set_i (core->config, "scr.html", true);
-				} else if (!strcmp (ptr + 1, "T")) { // "|T"
-					scr_color = rz_config_get_i (core->config, "scr.color");
-					rz_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
-					core->cons->use_tts = true;
 				} else if (!strcmp (ptr + 1, ".")) { // "|."
 					ret = *cmd ? rz_core_cmdf (core, ".%s", cmd) : 0;
 					rz_list_free (tmpenvs);
@@ -2854,7 +2849,6 @@ escape_pipe:
 		if (scr_color != -1) {
 			rz_config_set_i (core->config, "scr.color", scr_color);
 		}
-		core->cons->use_tts = false;
 		rz_list_free (tmpenvs);
 		return ret;
 	}
@@ -4784,7 +4778,6 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_command) {
 	if (scr_html != -1) {
 		rz_config_set_i (state->core->config, "scr.html", scr_html);
 	}
-	state->core->cons->use_tts = false;
 	return res;
 }
 
@@ -5951,18 +5944,6 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(pipe_command) {
 	state->core->num->value = value;
 	free (first_str);
 	free (second_str);
-	return res;
-}
-
-DEFINE_HANDLE_TS_FCN_AND_SYMBOL(scr_tts_command) {
-	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
-	int scr_color = rz_config_get_i (state->core->config, "scr.color");
-	rz_config_set_i (state->core->config, "scr.color", COLOR_MODE_DISABLED);
-	state->core->cons->use_tts = true;
-	RzCmdStatus res = handle_ts_command (state, command);
-	if (scr_color != -1) {
-		rz_config_set_i (state->core->config, "scr.color", scr_color);
-	}
 	return res;
 }
 
