@@ -1272,25 +1272,6 @@ RZ_API int rz_sys_getpid(void) {
 #endif
 }
 
-RZ_API bool rz_sys_tts(const char *txt, bool bg) {
-	int i;
-	rz_return_val_if_fail (txt, false);
-	const char *says[] = {
-		"say", "termux-tts-speak", NULL
-	};
-	for (i = 0; says[i]; i++) {
-		char *sayPath = rz_file_path (says[i]);
-		if (sayPath) {
-			char *line = rz_str_replace (strdup (txt), "'", "\"", 1);
-			rz_sys_cmdf ("\"%s\" '%s'%s", sayPath, line, bg? " &": "");
-			free (line);
-			free (sayPath);
-			return true;
-		}
-	}
-	return false;
-}
-
 RZ_API const char *rz_sys_prefix(const char *pfx) {
 	static char *prefix = NULL;
 	if (!prefix) {

@@ -25,19 +25,6 @@ p8 10 |H
       (args (arg (arg_identifier))))))
 
 ======================
-Use sctr.ts
-======================
-
-p8 10 |T
-
----
-
-(commands
-  (scr_tts_command
-    (arged_command (cmd_identifier)
-      (args (arg (arg_identifier))))))
-
-======================
 Pipe to another command
 ======================
 

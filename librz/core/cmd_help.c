@@ -125,7 +125,6 @@ static const char *help_msg_question_e[] = {
 	"?eg", " 10 20", "move cursor to column 10, row 20",
 	"?en", " nonl", "echo message without ending newline",
 	"?ep", " 10 20 30", "draw a pie char with given portion sizes",
-	"?es", " msg", "speak message using the text-to-speech program (e cfg.tts)",
 	"?et", " msg", "change terminal title",
 	NULL
 };
@@ -975,15 +974,6 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			}
 			rz_print_portionbar (core->print, portions, n);
 			free (arg);
-			break;
-		}
-		case 's': { // "?es"
-			char *msg = strdup (input + 2);
-			rz_str_trim (msg);
-			char *p = strchr (msg, '&');
-			if (p) *p = 0;
-			rz_sys_tts (msg, p != NULL);
-			free (msg);
 			break;
 		}
 		case 'c': // "?ec" column
