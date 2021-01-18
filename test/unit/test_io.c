@@ -266,7 +266,7 @@ bool test_rz_io_default(void) {
 
 	char *filename = rz_file_temp (NULL);
 	int fd = open(filename, O_RDWR | O_CREAT, 0644);
-	write (fd, "1234567890ABCDEF", 0x10);
+	rz_xwrite (fd, "1234567890ABCDEF", 0x10);
 	close (fd);
 
 	char *filename_io = rz_str_newf ("file://%s", filename);
@@ -297,7 +297,7 @@ bool test_rz_io_default(void) {
 	free (filename_io);
 
 	fd = open(filename, O_RDONLY, 0644);
-	read (fd, buf, 0x10);
+	rz_xread (fd, buf, 0x10);
 	close (fd);
 	mu_assert_memeq (buf, (ut8 *)"FEDCBA0987654321", 0x10, "data has been correctly written at 0x50");
 	rz_file_rm (filename);

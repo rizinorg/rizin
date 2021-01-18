@@ -675,6 +675,13 @@ static inline void rz_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, 
 		(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
 }
 
+#define RZ_V_NOT(op, fail_ret) \
+	if ((op) == (fail_ret)) \
+		RZ_LOG_WARN (#op" at %s:%d failed: %s\n", __FILE__, __LINE__, strerror (errno))
+#define rz_xwrite(fd, buf, count) RZ_V_NOT (write (fd, buf, count), -1)
+#define rz_xread(fd, buf, count) RZ_V_NOT (read (fd, buf, count), -1)
+#define rz_xfreopen(pathname, mode, stream) RZ_V_NOT (freopen (pathname, mode, stream), NULL)
+
 #ifndef container_of
 # ifdef _MSC_VER
 #  define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))

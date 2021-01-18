@@ -3309,7 +3309,7 @@ int __rz_shell_cb(void *user) {
 int __system_shell_cb(void *user) {
 	rz_cons_set_raw (0);
 	rz_cons_flush ();
-	rz_sys_system ("$SHELL");
+	rz_sys_xsystem ("$SHELL");
 	return 0;
 }
 

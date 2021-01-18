@@ -79,6 +79,7 @@ RZ_API int rz_sys_system(const char *command);
 #else
 #define rz_sys_system system
 #endif
+#define rz_sys_xsystem(cmd) RZ_V_NOT (rz_sys_system (cmd), -1)
 
 RZ_API int rz_sys_crash_handler(const char *cmd);
 RZ_API const char *rz_sys_arch_str(int arch);

@@ -109,7 +109,7 @@ bool test_rz_buf_file(void) {
 	// Prepare file
 	int fd = rz_file_mkstemp ("", &filename);
 	mu_assert_neq ((ut64)fd, (ut64)-1, "mkstemp failed...");
-	write (fd, content, length);
+	rz_xwrite (fd, content, length);
 	close (fd);
 
 	b = rz_buf_new_file (filename, O_RDWR, 0);
@@ -152,7 +152,7 @@ bool test_rz_buf_mmap(void) {
 	// Prepare file
 	int fd = rz_file_mkstemp ("", &filename);
 	mu_assert_neq ((long long)fd, -1LL, "mkstemp failed...");
-	write (fd, content, length);
+	rz_xwrite (fd, content, length);
 	close (fd);
 
 	b = rz_buf_new_mmap (filename, O_RDWR, 0);

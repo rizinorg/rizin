@@ -991,7 +991,7 @@ static RzList *rz_debug_native_map_get (RzDebug *dbg) {
 	char path[1024];
 	/* TODO: On solaris parse /proc/%d/map */
 	snprintf (path, sizeof(path) - 1, "pmap %d >&2", ps.tid);
-	rz_sys_system (path);
+	rz_sys_xsystem (path);
 #else
 	RzDebugMap *map;
 	int i, perm, unk = 0;

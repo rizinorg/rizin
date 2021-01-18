@@ -23,7 +23,7 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 
 	char *asm_buf = rz_str_newf ("[BITS %i]\nORG 0x%"PFMT64x"\n%s\n", a->bits, a->pc, buf);
 	if (asm_buf) {
-		(void)write (ifd, asm_buf, strlen (asm_buf));
+		rz_xwrite (ifd, asm_buf, strlen (asm_buf));
 		free (asm_buf);
 	}
 
