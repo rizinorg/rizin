@@ -167,7 +167,7 @@ RZ_API RzSubprocessOutput *rz_test_run_cmd_test(RzTestRunConfig *config, RzCmdTe
 
 RZ_API bool rz_test_cmp_cmd_output(const char *output, const char *expect, const char *regexp) {
 	if (regexp) {
-		RzList *matches = rz_regex_get_match_list (regexp, "en", output);
+		RzList *matches = rz_regex_get_match_list (regexp, "e", output);
 		const char *match = rz_list_to_str (matches, '\0');
 		bool equal = (0 == strcmp (expect, match));
 		rz_list_free (matches);
