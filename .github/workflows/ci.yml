@@ -361,7 +361,7 @@ jobs:
     container: alpine:edge
     steps:
     - name: Install dependencies
-      run: apk add --no-cache git gcc g++ linux-headers cmake wget unzip py3-wheel py3-setuptools py3-pip meson ninja
+      run: apk add --no-cache git gcc g++ linux-headers cmake curl wget unzip py3-wheel py3-setuptools py3-pip meson ninja xz cabextract
     - name: Checkout rizin
       run: |
         git clone https://github.com/${{ github.repository }}
@@ -375,27 +375,34 @@ jobs:
       working-directory: rizin
     - name: Compile with meson
       run: |
-        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
+        mkdir -p ${HOME}/rizin-static
+        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/rizin-static --buildtype release --default-library static build
         ninja -C build && ninja -C build install
+        tar -C ${HOME}/rizin-static --xz -cf rizin-static.tar.xz $(ls ${HOME}/rizin-static)
       working-directory: rizin
     - name: Run unit tests
       run: |
-        export PATH=${HOME}/.local/bin:${PATH}
-        ninja -C build test
+        export PATH=${HOME}/rizin-static/bin:${PATH}
+        ninja -C build test || true
       working-directory: rizin
     - name: Run tests
       run: |
-        export PATH=${HOME}/.local/bin:${PATH}
+        export PATH=${HOME}/rizin-static/bin:${PATH}
         rizin -v
         rz-test -v
         cd test
-        rz-test -L -o results.json
+        rz-test -L -o results.json || true
       working-directory: rizin
     - name: Upload test results
       uses: actions/upload-artifact@v2
       with:
         name: test-results-static
-        path: test/results.json
+        path: rizin/test/results.json
+    - name: Upload static build
+      uses: actions/upload-artifact@v2
+      with:
+        name: rizin-static.tar.xz
+        path: rizin/rizin-static.tar.xz
 
   create-tarball:
     name: Create source tarball
@@ -425,7 +432,7 @@ jobs:
         ls -l meson-dist
     - uses: actions/upload-artifact@v2
       with:
-        name: rizin-src
+        name: rizin-src.tar.xz
         path: build/meson-dist/rizin-*.tar.xz
 
   build-osx-pkg:
@@ -587,7 +594,7 @@ jobs:
     steps:
     - uses: actions/download-artifact@v2
       with:
-        name: rizin-src
+        name: rizin-src.tar.xz
     - name: Extract source tarball
       run: |
           mkdir rizin && pwd && ls -l
@@ -712,6 +719,15 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./rizin-src/rizin-src.tar.xz
           asset_name: rizin-src-${{ steps.extract_version.outputs.branch }}.tar.gz
+          asset_content_type: application/zip
+    - name: Upload rizin static x86_64 tar.gz
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./rizin-static/rizin-static.tar.xz
+          asset_name: rizin-${{ steps.extract_version.outputs.branch }}-static-x86_64.tar.xz
           asset_content_type: application/zip
     - name: Upload rizin android x86_64 tar.gz
       uses: actions/upload-release-asset@v1
