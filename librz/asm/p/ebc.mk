@@ -1,4 +1,4 @@
-EBC_ROOT=$(LIBR)/asm/arch/ebc
+EBC_ROOT=$(LIBRZ)/asm/arch/ebc
 OBJ_EBC=asm_ebc.o
 OBJ_EBC+=$(EBC_ROOT)/ebc_disas.o
 CFLAGS+=-I$(EBC_ROOT)

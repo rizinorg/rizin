@@ -18,7 +18,7 @@
 #undef __WINDOWS__
 
 #define RZ_MODE_PRINT 0x000
-#define RZ_MODE_RADARE 0x001
+#define RZ_MODE_RIZINCMD 0x001
 #define RZ_MODE_SET 0x002
 #define RZ_MODE_SIMPLE 0x004
 #define RZ_MODE_JSON 0x008
@@ -37,7 +37,8 @@ typedef enum {
 	RZ_OUTPUT_MODE_QUIET = 1 << 3,
 	RZ_OUTPUT_MODE_SDB = 1 << 4,
 	RZ_OUTPUT_MODE_LONG = 1 << 5,
-	RZ_OUTPUT_MODE_TABLE = 1 << 6,
+	RZ_OUTPUT_MODE_LONG_JSON = 1 << 6,
+	RZ_OUTPUT_MODE_TABLE = 1 << 7,
 } RzOutputMode;
 
 #define RZ_IN /* do not use, implicit */
@@ -394,7 +395,9 @@ static inline void *rz_new_copy(int size, void *data) {
 #define typeof(arg) __typeof__(arg)
 #endif
 
-#if 1
+// There is a bug of using "offsetof()" in the structure
+// initialization in GCC < 5.0 versions
+#if !(defined(__GNUC__) && __GNUC__ < 5)
 #define rz_offsetof(type, member) offsetof(type, member)
 #else
 #if __SDB_WINDOWS__
@@ -552,41 +555,42 @@ static inline void *rz_new_copy(int size, void *data) {
 #define RZ_SYS_ENDIAN_BIG 2
 #define RZ_SYS_ENDIAN_BI 3
 
-enum {
+typedef enum {
 	RZ_SYS_ARCH_NONE = 0,
-	RZ_SYS_ARCH_X86 = 0x1,
-	RZ_SYS_ARCH_ARM = 0x2,
-	RZ_SYS_ARCH_PPC = 0x4,
-	RZ_SYS_ARCH_M68K = 0x8,
-	RZ_SYS_ARCH_JAVA = 0x10,
-	RZ_SYS_ARCH_MIPS = 0x20,
-	RZ_SYS_ARCH_SPARC = 0x40,
-	RZ_SYS_ARCH_XAP = 0x80,
-	RZ_SYS_ARCH_MSIL = 0x100,
-	RZ_SYS_ARCH_OBJD = 0x200,
-	RZ_SYS_ARCH_BF = 0x400,
-	RZ_SYS_ARCH_SH = 0x800,
-	RZ_SYS_ARCH_AVR = 0x1000,
-	RZ_SYS_ARCH_DALVIK = 0x2000,
-	RZ_SYS_ARCH_Z80 = 0x4000,
-	RZ_SYS_ARCH_ARC = 0x8000,
-	RZ_SYS_ARCH_I8080 = 0x10000,
-	RZ_SYS_ARCH_RAR = 0x20000,
-	RZ_SYS_ARCH_8051 = 0x40000,
-	RZ_SYS_ARCH_TMS320 = 0x80000,
-	RZ_SYS_ARCH_EBC = 0x100000,
-	RZ_SYS_ARCH_H8300 = 0x200000,
-	RZ_SYS_ARCH_CR16 = 0x400000,
-	RZ_SYS_ARCH_V850 = 0x800000,
-	RZ_SYS_ARCH_SYSZ = 0x1000000,
-	RZ_SYS_ARCH_XCORE = 0x2000000,
-	RZ_SYS_ARCH_PROPELLER = 0x4000000,
-	RZ_SYS_ARCH_MSP430 = 0x8000000LL, // 1<<27
-	RZ_SYS_ARCH_CRIS =  0x10000000LL, // 1<<28
-	RZ_SYS_ARCH_HPPA =  0x20000000LL, // 1<<29
-	RZ_SYS_ARCH_V810 =  0x40000000LL, // 1<<30
-	RZ_SYS_ARCH_LM32 =  0x80000000LL, // 1<<31
-};
+	RZ_SYS_ARCH_X86,
+	RZ_SYS_ARCH_ARM,
+	RZ_SYS_ARCH_PPC,
+	RZ_SYS_ARCH_M68K,
+	RZ_SYS_ARCH_JAVA,
+	RZ_SYS_ARCH_MIPS,
+	RZ_SYS_ARCH_SPARC,
+	RZ_SYS_ARCH_XAP,
+	RZ_SYS_ARCH_MSIL,
+	RZ_SYS_ARCH_OBJD,
+	RZ_SYS_ARCH_BF,
+	RZ_SYS_ARCH_SH,
+	RZ_SYS_ARCH_AVR,
+	RZ_SYS_ARCH_DALVIK,
+	RZ_SYS_ARCH_Z80,
+	RZ_SYS_ARCH_ARC,
+	RZ_SYS_ARCH_I8080,
+	RZ_SYS_ARCH_RAR,
+	RZ_SYS_ARCH_8051,
+	RZ_SYS_ARCH_TMS320,
+	RZ_SYS_ARCH_EBC,
+	RZ_SYS_ARCH_H8300,
+	RZ_SYS_ARCH_CR16,
+	RZ_SYS_ARCH_V850,
+	RZ_SYS_ARCH_SYSZ,
+	RZ_SYS_ARCH_XCORE,
+	RZ_SYS_ARCH_PROPELLER,
+	RZ_SYS_ARCH_MSP430,
+	RZ_SYS_ARCH_CRIS,
+	RZ_SYS_ARCH_HPPA,
+	RZ_SYS_ARCH_V810,
+	RZ_SYS_ARCH_LM32,
+	RZ_SYS_ARCH_RISCV
+} RzSysArch;
 
 #if HAVE_CLOCK_NANOSLEEP && CLOCK_MONOTONIC && (__linux__ || (__FreeBSD__ && __FreeBSD_version >= 1101000) || (__NetBSD__ && __NetBSD_Version__ >= 700000000))
 #define HAS_CLOCK_NANOSLEEP 1
@@ -670,6 +674,13 @@ static inline void rz_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, 
 	((void (*)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *))(fcn))
 		(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
 }
+
+#define RZ_V_NOT(op, fail_ret) \
+	if ((op) == (fail_ret)) \
+		RZ_LOG_WARN (#op" at %s:%d failed: %s\n", __FILE__, __LINE__, strerror (errno))
+#define rz_xwrite(fd, buf, count) RZ_V_NOT (write (fd, buf, count), -1)
+#define rz_xread(fd, buf, count) RZ_V_NOT (read (fd, buf, count), -1)
+#define rz_xfreopen(pathname, mode, stream) RZ_V_NOT (freopen (pathname, mode, stream), NULL)
 
 #ifndef container_of
 # ifdef _MSC_VER

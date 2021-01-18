@@ -6,7 +6,7 @@ int pids_cmdline(int pid, char *cmdline) {
         fd = open(cmdline, O_RDONLY);
         cmdline[0] = '\0';
         if (fd != -1) {
-                read(fd, cmdline, 1024);
+                rz_xread (fd, cmdline, 1024);
                 cmdline[1024] = '\0';
                 close(fd);
         }

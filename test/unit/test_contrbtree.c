@@ -7,7 +7,18 @@ static int simple_cmp(void *incoming, void *in, void *user) {
 	return v[0] - v[1];
 }
 
-bool test_r_rbtree_cont_insert() {
+bool test_rz_rbtree_cont_foreach_empty() {
+	RContRBTree *tree = rz_rbtree_cont_new ();
+	RBIter alf;
+	void *v;
+	rz_rbtree_cont_foreach (tree, alf, v) {
+		mu_assert ("not reachable", false);
+	}
+	rz_rbtree_cont_free (tree);
+	mu_end;
+}
+
+bool test_rz_rbtree_cont_insert() {
 	RContRBTree *tree = rz_rbtree_cont_new();
 	ut32 i;
 	for (i = 0; i < 2000; i++) {
@@ -41,7 +52,7 @@ static int strbuf_num_cmp1(void *incoming, void *in, void *user) {
 	return (int)(v[0] - v[1]);
 }
 
-bool test_r_rbtree_cont_delete() {
+bool test_rz_rbtree_cont_delete() {
 	RContRBTree *tree = rz_rbtree_cont_newf ((RContRBFree)rz_strbuf_free);
 	rz_rbtree_cont_insert(tree, rz_strbuf_new("13"), strbuf_num_cmp0, NULL);
 	rz_rbtree_cont_insert(tree, rz_strbuf_new("0x9090"), strbuf_num_cmp0, NULL);
@@ -63,8 +74,11 @@ bool test_r_rbtree_cont_delete() {
 }
 
 
-int main(int argc, char *argv[]) {
-	mu_run_test (test_r_rbtree_cont_insert);
-	mu_run_test (test_r_rbtree_cont_delete);
+bool all_tests(void) {
+	mu_run_test (test_rz_rbtree_cont_insert);
+	mu_run_test (test_rz_rbtree_cont_delete);
+	mu_run_test (test_rz_rbtree_cont_foreach_empty);
 	return tests_run != tests_passed;
 }
+
+mu_main (all_tests)

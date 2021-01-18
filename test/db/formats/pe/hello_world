@@ -8,7 +8,7 @@ EOF
 EXPECT=<<EOF
             ;-- main:
             ;-- section..text:
-            0x00401000      55             push ebp                    ; [00] -r-x section size 8192 named .text
+            0x00401000      55             push  ebp                   ; [00] -r-x section size 8192 named .text
 EOF
 RUN
 
@@ -22,7 +22,7 @@ EOF
 EXPECT=<<EOF
             ;-- main:
             ;-- section..text:
-            0x140001000      4883ec28       sub rsp, 0x28              ; [00] -r-x section size 8192 named .text
+            0x140001000      4883ec28       sub   rsp, 0x28            ; [00] -r-x section size 8192 named .text
 EOF
 RUN
 
@@ -36,7 +36,7 @@ EOF
 EXPECT=<<EOF
             ;-- main:
             ;-- section..text:
-            0x00401000      68f0204000     push str.Hello__World       ; 0x4020f0 ; "Hello, World!" ; [00] -r-x section size 4096 named .text
+            0x00401000      68f0204000     push  str.Hello__World      ; 0x4020f0 ; "Hello, World!" ; [00] -r-x section size 4096 named .text
 EOF
 RUN
 
@@ -50,7 +50,7 @@ EOF
 EXPECT=<<EOF
             ;-- main:
             ;-- section..text:
-            0x140001000      4883ec28       sub rsp, 0x28              ; [00] -r-x section size 4096 named .text
+            0x140001000      4883ec28       sub   rsp, 0x28            ; [00] -r-x section size 4096 named .text
 EOF
 RUN
 
@@ -63,7 +63,7 @@ pd 1
 EOF
 EXPECT=<<EOF
             ;-- main:
-            0x00401380      68304b4000     push str.Hello__World       ; 0x404b30 ; "Hello, World!"
+            0x00401380      68304b4000     push  str.Hello__World      ; 0x404b30 ; "Hello, World!"
 EOF
 RUN
 
@@ -76,7 +76,7 @@ pd 1
 EOF
 EXPECT=<<EOF
             ;-- main:
-            0x140001410      4883ec28       sub rsp, 0x28
+            0x140001410      4883ec28       sub   rsp, 0x28
 EOF
 RUN
 
@@ -90,7 +90,7 @@ EOF
 EXPECT=<<EOF
             ;-- main:
             ;-- section..text:
-            0x00401000      55             push ebp                    ; [00] -r-x section size 4096 named .text
+            0x00401000      55             push  ebp                   ; [00] -r-x section size 4096 named .text
 EOF
 RUN
 
@@ -104,7 +104,7 @@ EOF
 EXPECT=<<EOF
             ;-- main:
             ;-- section..text:
-            0x140001000      4883ec28       sub rsp, 0x28              ; [00] -r-x section size 4096 named .text
+            0x140001000      4883ec28       sub   rsp, 0x28            ; [00] -r-x section size 4096 named .text
 EOF
 RUN
 
@@ -117,7 +117,7 @@ pd 1
 EOF
 EXPECT=<<EOF
             ;-- main:
-            0x00401380      55             push ebp
+            0x00401380      55             push  ebp
 EOF
 RUN
 
@@ -130,6 +130,6 @@ pd 1
 EOF
 EXPECT=<<EOF
             ;-- main:
-            0x140001330      4883ec28       sub rsp, 0x28
+            0x140001330      4883ec28       sub   rsp, 0x28
 EOF
 RUN

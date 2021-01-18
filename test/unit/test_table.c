@@ -4,7 +4,7 @@
 
 //TODO test rz_str_chop_path
 
-bool test_r_table(void) {
+bool test_rz_table(void) {
 	RzTable *t = rz_table_new ();
 
 	// rz_table_fromcsv (t, csv);
@@ -44,7 +44,7 @@ RzTable *__table_test_data1() {
 	return t;
 }
 
-bool test_r_table_column_type(void) {
+bool test_rz_table_column_type(void) {
 	RzTable *t = __table_test_data1 ();
 	RzTableColumn *c = rz_list_get_n (t->cols, 1);
 	c->type = rz_table_type ("NUMBER");
@@ -61,7 +61,7 @@ bool test_r_table_column_type(void) {
 	mu_end;
 }
 
-bool test_r_table_tostring(void) {
+bool test_rz_table_tostring(void) {
 	RzTable *t = __table_test_data1 ();
 	char buf[BUF_LENGTH];
 
@@ -81,7 +81,7 @@ bool test_r_table_tostring(void) {
 	mu_end;
 }
 
-bool test_r_table_sort1(void) {
+bool test_rz_table_sort1(void) {
 	RzTable *t = __table_test_data1 ();
 
 	rz_table_sort (t, 1, true);
@@ -107,7 +107,7 @@ bool test_r_table_sort1(void) {
 	mu_end;
 }
 
-bool test_r_table_uniq(void) {
+bool test_rz_table_uniq(void) {
 	RzTable *t = __table_test_data1 ();
 
 	rz_table_uniq (t);
@@ -186,7 +186,7 @@ static void simple_merge(RzTableRow *acc, RzTableRow *new_row, int nth) {
 	}
 }
 
-bool test_r_table_group (void) {
+bool test_rz_table_group (void) {
 	RzTable *t = __table_test_data1 ();
 
 	rz_table_group (t, -1, NULL);
@@ -246,7 +246,7 @@ bool test_r_table_group (void) {
 	mu_end;
 }
 
-bool test_r_table_columns () {
+bool test_rz_table_columns () {
 	RzTable *t = NULL;
 #define CREATE_TABLE                                                   \
 	rz_table_free (t);                                              \
@@ -311,16 +311,14 @@ bool test_r_table_columns () {
 }
 
 bool all_tests() {
-	mu_run_test(test_r_table);
-	mu_run_test(test_r_table_column_type);
-	mu_run_test(test_r_table_tostring);
-	mu_run_test(test_r_table_sort1);
-	mu_run_test(test_r_table_uniq);
-	mu_run_test(test_r_table_group);
-	mu_run_test (test_r_table_columns);
+	mu_run_test(test_rz_table);
+	mu_run_test(test_rz_table_column_type);
+	mu_run_test(test_rz_table_tostring);
+	mu_run_test(test_rz_table_sort1);
+	mu_run_test(test_rz_table_uniq);
+	mu_run_test(test_rz_table_group);
+	mu_run_test (test_rz_table_columns);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
-}
+mu_main (all_tests)

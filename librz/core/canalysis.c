@@ -1894,7 +1894,7 @@ static int core_analysis_graph_nodes(RzCore *core, RzAnalysisFunction *fcn, int 
 RZ_API bool rz_core_analysis_bb_seek(RzCore *core, ut64 addr) {
 	RzAnalysisBlock *block = rz_analysis_find_most_relevant_block_in (core->analysis, addr);
 	if (block) {
-		rz_core_seek (core, block->addr, false);
+		rz_core_seek_and_save (core, block->addr, false);
 		return true;
 	}
 	return false;
@@ -1911,7 +1911,7 @@ RZ_API int rz_core_analysis_esil_fcn(RzCore *core, ut64 at, ut64 from, int refty
 		}
 		esil = RZ_STRBUF_SAFEGET (&op->esil);
 		eprintf ("0x%08"PFMT64x" %d %s\n", at, op->size, esil);
-		at += op->size;
+		// at += op->size;
 		// esilIsRet()
 		// esilIsCall()
 		// esilIsJmp()
@@ -2348,13 +2348,12 @@ RZ_API void rz_core_analysis_callgraph(RzCore *core, ut64 addr, int fmt) {
 	int usenames = rz_config_get_i (core->config, "graph.json.usenames");;
 	RzAnalysisFunction *fcni;
 	RzAnalysisRef *fcnr;
-	PJ *pj;
+	PJ *pj = NULL;
 
 	ut64 from = rz_config_get_i (core->config, "graph.from");
 	ut64 to = rz_config_get_i (core->config, "graph.to");
 
-	switch (fmt)
-	{
+	switch (fmt) {
 	case RZ_GRAPH_FORMAT_JSON:
 		pj = pj_new ();
 		if (!pj) {
@@ -2540,8 +2539,7 @@ repeat:
 	if (iteration == 0 && fmt == RZ_GRAPH_FORMAT_GMLFCN) {
 		iteration++;
 	}
-	switch(fmt)
-	{
+	switch(fmt) {
 	case RZ_GRAPH_FORMAT_GML:
 	case RZ_GRAPH_FORMAT_GMLFCN:
 		rz_cons_printf ("]\n");
@@ -3098,9 +3096,6 @@ static int fcn_print_legacy(RzCore *core, RzAnalysisFunction *fcn) {
 	}
 	rz_cons_printf ("\ncyclomatic-cost: %d", rz_analysis_function_cost (fcn));
 	rz_cons_printf ("\ncyclomatic-complexity: %d", rz_analysis_function_complexity (fcn));
-	if (!RZ_STR_ISEMPTY (fcn->cc)) {
-		rz_cons_printf ("\ncc: %s", fcn->cc);
-	}
 	rz_cons_printf ("\nbits: %d", fcn->bits);
 	rz_cons_printf ("\ntype: %s", rz_analysis_fcntype_tostring (fcn->type));
 	if (fcn->type == RZ_ANALYSIS_FCN_TYPE_FCN || fcn->type == RZ_ANALYSIS_FCN_TYPE_SYM) {
@@ -3913,7 +3908,7 @@ RZ_API int rz_core_analysis_search(RzCore *core, ut64 from, ut64 to, ut64 ref, i
 	return count;
 }
 
-static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisRefType type, int count, int rad, int cfg_debug, bool cfg_analysis_strings) {
+static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisRefType type, PJ *pj, int rad, int cfg_debug, bool cfg_analysis_strings) {
 	// Validate the reference. If virtual addressing is enabled, we
 	// allow only references to virtual addresses in order to reduce
 	// the number of false positives. In debugger mode, the reference
@@ -3953,11 +3948,9 @@ static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisRefType ty
 			rz_analysis_xrefs_set (core->analysis, at, xref_to, type);
 		}
 	} else if (rad == 'j') {
-		// Output JSON
-		if (count > 0) {
-			rz_cons_printf (",");
-		}
-		rz_cons_printf ("\"0x%"PFMT64x"\":\"0x%"PFMT64x"\"", xref_to, at);
+		char *key = sdb_fmt ("0x%"PFMT64x, xref_to);
+		char *value = sdb_fmt ("0x%"PFMT64x, at);
+		pj_ks (pj, key, value);
 	} else {
 		int len = 0;
 		// Display in rizin commands format
@@ -3983,7 +3976,7 @@ static bool found_xref(RzCore *core, ut64 at, ut64 xref_to, RzAnalysisRefType ty
 	return true;
 }
 
-RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, int rad) {
+RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, PJ *pj, int rad) {
 	int cfg_debug = rz_config_get_i (core->config, "cfg.debug");
 	bool cfg_analysis_strings = rz_config_get_i (core->config, "analysis.strings");
 	ut64 at;
@@ -4045,32 +4038,32 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, int r
 			}
 			// find references
 			if ((st64)op.val > asm_sub_varmin && op.val != UT64_MAX && op.val != UT32_MAX) {
-				if (found_xref (core, op.addr, op.val, RZ_ANALYSIS_REF_TYPE_DATA, count, rad, cfg_debug, cfg_analysis_strings)) {
+				if (found_xref (core, op.addr, op.val, RZ_ANALYSIS_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 			}
 			// find references
 			if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
-				if (found_xref (core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_DATA, count, rad, cfg_debug, cfg_analysis_strings)) {
+				if (found_xref (core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 			}
 			// find references
 			if (op.addr > 512 && op.disp > 512 && op.disp && op.disp != UT64_MAX) {
-				if (found_xref (core, op.addr, op.disp, RZ_ANALYSIS_REF_TYPE_DATA, count, rad, cfg_debug, cfg_analysis_strings)) {
+				if (found_xref (core, op.addr, op.disp, RZ_ANALYSIS_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 			}
 			switch (op.type) {
 			case RZ_ANALYSIS_OP_TYPE_JMP:
 			case RZ_ANALYSIS_OP_TYPE_CJMP:
-				if (found_xref (core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, count, rad, cfg_debug, cfg_analysis_strings)) {
+				if (found_xref (core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CODE, pj, rad, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 				break;
 			case RZ_ANALYSIS_OP_TYPE_CALL:
 			case RZ_ANALYSIS_OP_TYPE_CCALL:
-				if (found_xref (core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CALL, count, rad, cfg_debug, cfg_analysis_strings)) {
+				if (found_xref (core, op.addr, op.jump, RZ_ANALYSIS_REF_TYPE_CALL, pj, rad, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 				break;
@@ -4080,7 +4073,8 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, int r
 			case RZ_ANALYSIS_OP_TYPE_IRJMP:
 			case RZ_ANALYSIS_OP_TYPE_MJMP:
 			case RZ_ANALYSIS_OP_TYPE_UCJMP:
-				if (found_xref (core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CODE, count++, rad, cfg_debug, cfg_analysis_strings)) {
+				count++;
+				if (found_xref (core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CODE, pj, rad, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 				break;
@@ -4089,7 +4083,7 @@ RZ_API int rz_core_analysis_search_xrefs(RzCore *core, ut64 from, ut64 to, int r
 			case RZ_ANALYSIS_OP_TYPE_RCALL:
 			case RZ_ANALYSIS_OP_TYPE_IRCALL:
 			case RZ_ANALYSIS_OP_TYPE_UCCALL:
-				if (found_xref (core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CALL, count, rad, cfg_debug, cfg_analysis_strings)) {
+				if (found_xref (core, op.addr, op.ptr, RZ_ANALYSIS_REF_TYPE_CALL, pj, rad, cfg_debug, cfg_analysis_strings)) {
 					count++;
 				}
 				break;
@@ -5570,7 +5564,7 @@ RZ_API int rz_core_search_value_in_range(RzCore *core, RzInterval search_itv, ut
 					}
 				}
 				if (isValidMatch) {
-					cb (core, addr, value, vsize, hitctr, cb_user);
+					cb (core, addr, value, vsize, cb_user);
 					if (analStrings && stringAt (core, addr)) {
 						add_string_ref (mycore, addr, value);
 					}

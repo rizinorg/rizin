@@ -53,15 +53,39 @@ bool test_rz_file_dirname(void) {
 	mu_end;
 }
 
+bool test_rz_file_mmap(void) {
+	char *filename = rz_file_temp (NULL);
+	RzMmap *m = rz_file_mmap (filename, O_RDWR | O_CREAT, 0644, 0xdead0000);
+	mu_assert_notnull (m, "filename should be created");
+	mu_assert_streq (m->filename, filename, "filename of mmaped area should ok");
+	mu_assert_eq (m->len, 0, "mmaped file should be empty");
+	mu_assert_eq (m->base, 0xdead0000, "base address is right");
+	mu_assert_eq (m->perm, O_RDWR | O_CREAT, "mmaped perm should be ok");
+	rz_file_mmap_resize (m, 0x10);
+	mu_assert_eq (m->len, 0x10, "mmaped file should be empty");
+	mu_assert_eq (m->base, 0xdead0000, "base address is right");
+	strcpy ((char *)m->buf, "1234567890ABCDEF");
+	rz_file_mmap_free (m);
+
+	m = rz_file_mmap (filename, O_RDONLY, 0644, 0xdead0000);
+	mu_assert_eq (m->len, 0x10, "mmaped file should be empty");
+	mu_assert_eq (m->base, 0xdead0000, "base address is right");
+	mu_assert_streq ((char *)m->buf, "1234567890ABCDEF", "previous data has been written to file");
+	rz_file_mmap_free (m);
+
+	rz_file_rm (filename);
+	free (filename);
+	mu_end;
+}
+
 int all_tests() {
 	size_t i;
 	for (i = 0; i < RELPATH_CASES_COUNT; i++) {
 		mu_run_test (test_rz_file_relpath, relpath_cases[i].base, relpath_cases[i].path, relpath_cases[i].expect);
 	}
 	mu_run_test (test_rz_file_dirname);
+	mu_run_test (test_rz_file_mmap);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests ();
-}
+mu_main (all_tests)

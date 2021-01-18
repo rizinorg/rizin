@@ -507,6 +507,7 @@ static void update_asmcpu_options(RzCore *core, RzConfigNode *node) {
 			for (i = 0; i < n; i++) {
 				const char *word = rz_str_word_get0 (c, i);
 				if (word && *word) {
+					node->options->free = free;
 					SETOPTIONS (node, strdup (word), NULL);
 				}
 			}
@@ -2727,48 +2728,6 @@ static bool cb_analysis_cpp_abi(void *user, void *data) {
 	return false;
 }
 
-static bool cb_linesto(void *user, void *data) {
-	RzCore *core = (RzCore*) user;
-	RzConfigNode *node = (RzConfigNode*) data;
-	ut64 from = (ut64)rz_config_get_i (core->config, "lines.from");
-	int io_sz = rz_io_size (core->io);
-	ut64 to = rz_num_math (core->num, node->value);
-	if (to == 0) {
-		core->print->lines_cache_sz = -1; //rz_core_lines_initcache (core, from, to);
-		return true;
-	}
-	if (to > from + io_sz) {
-		eprintf ("ERROR: \"lines.to\" can't exceed addr 0x%08"PFMT64x
-			" 0x%08"PFMT64x" %d\n", from, to, io_sz);
-		return true;
-	}
-	if (to > from) {
-		core->print->lines_cache_sz = rz_core_lines_initcache (core, from, to);
-		//if (core->print->lines_cache_sz == -1) { eprintf ("ERROR: Can't allocate memory\n"); }
-	} else {
-		eprintf ("Invalid range 0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", from, to);
-	}
-	return true;
-}
-
-static bool cb_linesabs(void *user, void *data) {
-	RzCore *core = (RzCore*) user;
-	RzConfigNode *node = (RzConfigNode*) data;
-	core->print->lines_abs = node->i_value;
-	if (core->print->lines_abs && core->print->lines_cache_sz <= 0) {
-		ut64 from = (ut64)rz_config_get_i (core->config, "lines.from");
-		const char *to_str = rz_config_get (core->config, "lines.to");
-		ut64 to = rz_num_math (core->num, (to_str && *to_str) ? to_str : "$s");
-		core->print->lines_cache_sz = rz_core_lines_initcache (core, from, to);
-		if (core->print->lines_cache_sz == -1) {
-			eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
-		} else {
-			eprintf ("Found %d lines\n", core->print->lines_cache_sz-1);
-		}
-	}
-	return true;
-}
-
 static bool cb_malloc(void *user, void *data) {
  	RzCore *core = (RzCore*) user;
  	RzConfigNode *node = (RzConfigNode*) data;
@@ -3119,8 +3078,8 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF ("asm.stackptr", "false", "Show stack pointer at disassembly");
 	SETBPREF ("asm.cyclespace", "false", "Indent instructions depending on CPU-cycles");
 	SETBPREF ("asm.cycles", "false", "Show CPU-cycles taken by instruction at disassembly");
-	SETI ("asm.tabs", 0, "Use tabs in disassembly");
-	SETBPREF ("asm.tabs.once", "false", "Only tabulate the opcode, not the arguments");
+	SETI ("asm.tabs", 6, "Use tabs in disassembly");
+	SETBPREF ("asm.tabs.once", "true", "Only tabulate the opcode, not the arguments");
 	SETI ("asm.tabs.off", 0, "tabulate spaces after the offset");
 	SETBPREF ("asm.trace", "false", "Show execution traces for each opcode");
 	SETBPREF ("asm.tracespace", "false", "Indent disassembly with trace.count information");
@@ -3232,9 +3191,10 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETCB ("cfg.fortunes", "true", &cb_cfg_fortunes, "If enabled show tips at start");
 	SETCB ("cfg.fortunes.file", "tips", &cb_cfg_fortunes_file, "Type of fortunes to show (tips, fun)");
 	SETBPREF ("cfg.fortunes.clippy", "false", "Use ?E instead of ?e");
-	SETBPREF ("cfg.fortunes.tts", "false", "Speak out the fortune");
 	SETPREF ("cfg.prefixdump", "dump", "Filename prefix for automated dumps");
 	SETBPREF ("cfg.wseek", "false", "Seek after write");
+	SETICB ("cfg.seek.histsize", 63, NULL, "Maximum size of the seek history");
+	SETCB ("cfg.seek.silent", "false", NULL, "When true, seek movements are not logged in seek history");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
 	p = rz_sys_getenv ("RZ_CFG_OLDSHELL");
 	SETCB ("cfg.newshell", p? "false": "true", &cb_newshell, "Use new commands parser");
@@ -3275,12 +3235,12 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETI ("zign.maxsz", 500, "Maximum zignature length");
 	SETI ("zign.minsz", 16, "Minimum zignature length for matching");
 	SETI ("zign.mincc", 10, "Minimum cyclomatic complexity for matching");
-	SETBPREF ("zign.graph", "true", "Use graph metrics for matching");
-	SETBPREF ("zign.bytes", "true", "Use bytes patterns for matching");
-	SETBPREF ("zign.offset", "false", "Use original offset for matching");
-	SETBPREF ("zign.refs", "true", "Use references for matching");
-	SETBPREF ("zign.hash", "true", "Use Hash for matching");
-	SETBPREF ("zign.types", "true", "Use types for matching");
+	SETBPREF ("zign.match.graph", "true", "Use graph metrics for matching");
+	SETBPREF ("zign.match.bytes", "true", "Use bytes patterns for matching");
+	SETBPREF ("zign.match.offset", "false", "Use original offset for matching");
+	SETBPREF ("zign.match.refs", "true", "Use references for matching");
+	SETBPREF ("zign.match.hash", "true", "Use Hash for matching");
+	SETBPREF ("zign.match.types", "false", "Use types for matching");
 	SETBPREF ("zign.autoload", "false", "Autoload all zignatures located in " RZ_JOIN_2_PATHS ("~", RZ_HOME_ZIGNS));
 	SETPREF ("zign.diff.bthresh", "1.0", "Threshold for diffing zign bytes [0, 1] (see zc?)");
 	SETPREF ("zign.diff.gthresh", "1.0", "Threshold for diffing zign graphs [0, 1] (see zc?)");
@@ -3434,7 +3394,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 
 	/* http */
 	SETBPREF ("http.log", "true", "Show HTTP requests processed");
-	SETPREF ("http.sync", "", "Remote HTTP server to sync events with");
 	SETBPREF ("http.colon", "false", "Only accept the : command");
 	SETPREF ("http.logfile", "", "Specify a log file instead of stderr for http requests");
 	SETBPREF ("http.cors", "false", "Enable CORS");
@@ -3475,7 +3434,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 #endif
 	SETPREF ("http.port", "9090", "HTTP server port");
 	SETPREF ("http.maxport", "9999", "Last HTTP server port");
-	SETPREF ("http.ui", "m", "Default webui (enyo, m, p, t)");
 	SETI ("http.timeout", 3, "Disconnect clients after N seconds of inactivity");
 	SETI ("http.dietime", 0, "Kill server after N seconds with no client");
 	SETBPREF ("http.verbose", "false", "Output server logs to stdout");
@@ -3483,7 +3441,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF ("http.upload", "false", "Enable file uploads to /up/<filename>");
 	SETPREF ("http.uri", "", "Address of HTTP proxy");
 	SETBPREF ("http.auth", "false", "Enable/Disable HTTP Authentification");
-	SETPREF ("http.authtok", "r2admin:r2admin", "HTTP Authentification user:password token");
 	p = rz_sys_getenv ("RZ_HTTP_AUTHFILE");
 	SETPREF ("http.authfile", p? p : "", "HTTP Authentification user file");
 	tmpdir = rz_file_tmpdir ();
@@ -3603,7 +3560,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 	SETBPREF ("scr.prompt.file", "false", "Show user prompt file (used by rizin -q)");
 	SETBPREF ("scr.prompt.flag", "false", "Show flag name in the prompt");
 	SETBPREF ("scr.prompt.sect", "false", "Show section name in the prompt");
-	SETBPREF ("scr.tts", "false", "Use tts if available by a command (see ic)");
 	SETCB ("scr.hist.block", "true", &cb_scr_histblock, "Use blocks for histogram");
 	SETCB ("scr.prompt", "true", &cb_scrprompt, "Show user prompt (used by rizin -q)");
 	SETCB ("scr.tee", "", &cb_teefile, "Pipe output to file of this name");
@@ -3719,10 +3675,6 @@ RZ_API int rz_core_config_init(RzCore *core) {
 		"dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x",
 		"analysis.fcn", "analysis.bb",
 	NULL);
-	/* lines */
-	SETI ("lines.from", 0, "Start address for line seek");
-	SETCB ("lines.to", "$s", &cb_linesto, "End address for line seek");
-	SETCB ("lines.abs", "false", &cb_linesabs, "Enable absolute line numbers");
 
 	rz_config_lock (cfg, true);
 	return true;

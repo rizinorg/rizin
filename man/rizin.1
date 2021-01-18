@@ -24,8 +24,6 @@
 .Sh DESCRIPTION
 rizin is a commandline hexadecimal editor.
 .Pp
-"rz" is the alias program name for rizin.
-.Pp
 This manpage is not updated yet. Feel free to contribute.
 .Pp
 The options are:
@@ -37,7 +35,7 @@ Equivalent of 'rizin malloc://512'
 .It Fl 0
 Print \\x00 after initialization and after every command executed
 .It Fl 2
-Close stderr before starting RCore
+Close stderr before starting RzCore
 .It Fl a Ar arch
 force asm.arch (x86, ppc, arm, mips, bf, java, ...)
 .It Fl A
@@ -83,7 +81,7 @@ Quiet mode (no prompt) and quit after running the commands specified with -i or 
 .It Fl qq
 Quit before showing the prompt. Right after all the -e -c and -i arguments are evaluated.
 .It Fl Q
-Same as q, but exiting without freeing RCore, this produces leaks at exit time, but saves some precious ms to run the testsuite in fast mode.
+Same as q, but exiting without freeing RzCore, this produces leaks at exit time, but saves some precious ms to run the testsuite in fast mode.
 .It Fl p Ar prj
 Set project file
 .It Fl r Ar rz-run

@@ -50,7 +50,9 @@ bool test_filter_regs(void) {
 	mu_end;
 }
 
-int main(int argc, char **argv) {
+bool all_tests(void) {
 	mu_run_test (test_filter_regs);
 	return tests_passed != tests_run;
 }
+
+mu_main (all_tests)

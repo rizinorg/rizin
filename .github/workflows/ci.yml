@@ -189,6 +189,12 @@ jobs:
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         ninja -C build install
+    - name: Disable user authentication for debugging (MacOS)
+      if: matrix.os == 'macos-latest' && matrix.enabled
+      run: |
+        security authorizationdb read system.privilege.taskport > taskport.plist
+        /usr/libexec/PlistBuddy -c 'Set :authenticate-user false' ./taskport.plist
+        sudo security authorizationdb write system.privilege.taskport < taskport.plist
     - name: Run unit tests (meson)
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
@@ -253,11 +259,11 @@ jobs:
         name: test-results-${{ matrix.name }}
         path: test/results.json
 
-  build-centos6:
-    name: Build on CentOS 6
+  build-centos7:
+    name: Build on CentOS 7
     runs-on: ubuntu-latest
-    if: contains(github.head_ref, 'centos') || contains(github.ref, 'release-') || github.event_name == 'schedule'
-    container: centos:6
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'centos') || contains(github.ref, 'release-') || github.event_name == 'schedule'
+    container: centos:7
     steps:
     - name: Install tools
       run: yum install -y patch unzip git gcc make
@@ -286,12 +292,13 @@ jobs:
 
   build-debian:
     name: Build on old Debian ${{ matrix.container }}
-    if: contains(github.head_ref, 'debian') || contains(github.ref, 'release-') || github.event_name == 'schedule'
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'debian') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     strategy:
         matrix:
             container:
                 - debian:wheezy
                 - debian:jessie
+                - debian:stretch
 
     runs-on: ubuntu-latest
     container: ${{ matrix.container }}
@@ -300,7 +307,6 @@ jobs:
     - name: Fix containers (Wheezy)
       if: matrix.container == 'debian:wheezy'
       run: |
-          sed -i '/deb http:\/\/deb.debian.org\/debian wheezy-updates main/d' /etc/apt/sources.list
           echo "deb http://archive.debian.org/debian wheezy main" > /etc/apt/sources.list
           echo "deb http://archive.debian.org/debian-security wheezy/updates main" >> /etc/apt/sources.list
           echo "Acquire::Check-Valid-Until no;" > /etc/apt/apt.conf.d/99no-check-valid-until
@@ -332,8 +338,13 @@ jobs:
     - name: Install with make
       run: make install
       working-directory: rizin
+    - name: Run unit tests
+      run: cd test && make unit_tests
+      working-directory: rizin
+      env:
+        PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
     - name: Install test dependencies
-      run: python3 -m pip install --user 'git+https://github.com/rizinorg/rizin-rzpipe#egg=rzpipe&subdirectory=python'
+      run: python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rz-pipe&subdirectory=python'
     - name: Run tests
       # FIXME: debug tests fail on debian for now, let's ignore all tests for the moment
       run: cd test && make || exit 0
@@ -345,68 +356,81 @@ jobs:
     name: Build static
     # FIXME: ignore error until all tests properly pass
     continue-on-error: true
-    if: contains(github.head_ref, 'static') || contains(github.ref, 'release-') || github.event_name == 'schedule'
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'static') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     runs-on: ubuntu-20.04
+    container: alpine:edge
     steps:
-    - uses: actions/checkout@v2
-      with:
-          submodules: recursive
-    - name: Checkout our Testsuite Binaries
-      uses: actions/checkout@v2
-      with:
-          repository: rizinorg/rizin-testbins
-          path: test/bins
-    - name: Install static
+    - name: Install dependencies
+      run: apk add --no-cache git gcc g++ linux-headers cmake wget unzip py3-wheel py3-setuptools py3-pip meson ninja
+    - name: Checkout rizin
       run: |
-        ./sys/static.sh
-        sudo make symstall
+        git clone https://github.com/${{ github.repository }}
+        cd rizin
+        git fetch origin ${{ github.ref }}
+        git checkout -b local_branch FETCH_HEAD
+        git submodule init
+        git submodule update
+    - name: Checkout our Testsuite Binaries
+      run: git clone https://github.com/rizinorg/rizin-testbins test/bins
+      working-directory: rizin
+    - name: Compile with meson
+      run: |
+        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
+        ninja -C build && ninja -C build install
+      working-directory: rizin
+    - name: Run unit tests
+      run: |
+        export PATH=${HOME}/.local/bin:${PATH}
+        ninja -C build test
+      working-directory: rizin
     - name: Run tests
       run: |
+        export PATH=${HOME}/.local/bin:${PATH}
         rizin -v
         rz-test -v
         cd test
-        make
+        rz-test -L -o results.json
+      working-directory: rizin
     - name: Upload test results
       uses: actions/upload-artifact@v2
       with:
         name: test-results-static
         path: test/results.json
 
-
   create-tarball:
     name: Create source tarball
-    if: contains(github.head_ref, 'extras') || contains(github.ref, 'release-')
-    needs: [build-and-test]
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-')
     runs-on: ubuntu-latest
+    outputs:
+        version: ${{ steps.extract_version.outputs.version }}
     steps:
+    - name: Install python and other dependencies
+      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-pip
+    - name: Install meson and ninja
+      run: pip3 install --user meson ninja PyYAML
     - uses: actions/checkout@v2
       with:
           submodules: recursive
     - name: Extract rizin version
       shell: bash
-      run: echo "##[set-output name=branch;]$(python sys/version.py)"
+      run: echo "##[set-output name=version;]$(python sys/version.py)"
       id: extract_version
-    - name: Download capstone
-      run: |
-        ./configure
-        make -C shlr capstone
-        rm -rf shlr/capstone/.git
-        git clean -dxf .
-        rm -rf .git
     - name: Create archive
       run: |
-        cd ..
-        cp -r rizin rizin-${{ steps.extract_version.outputs.branch}}
-        tar cvzf rizin-src.tar.gz rizin-${{ steps.extract_version.outputs.branch}}
-        mv rizin-src.tar.gz rizin/
+        export PATH=${HOME}/.local/bin:${PATH}
+        meson rewrite kwargs set project / version ${{ steps.extract_version.outputs.version }}
+        meson build
+        cd build
+        meson dist --include-subprojects --no-tests
+        ls -l meson-dist
     - uses: actions/upload-artifact@v2
       with:
         name: rizin-src
-        path: rizin-src.tar.gz
+        path: build/meson-dist/rizin-*.tar.xz
 
   build-deb:
     name: Build deb package for ${{ matrix.container }}
-    if: github.event_name == 'push' && contains(github.ref, 'release-')
+    if: contains(github.head_ref, 'dist') || (github.event_name == 'push' && contains(github.ref, 'release-'))
     needs: [build-and-test]
     runs-on: ubuntu-latest
     container: ${{ matrix.container }}
@@ -450,7 +474,7 @@ jobs:
   build-osx-pkg:
     name: Build OSX package
     runs-on: macos-latest
-    if: contains(github.head_ref, 'osx') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'osx') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     steps:
     - uses: actions/checkout@v2
@@ -458,20 +482,22 @@ jobs:
           submodules: recursive
     - name: Install pkg-config with Homebrew
       run: brew install pkg-config
+    - name: Install meson and ninja
+      run: pip3 install meson ninja PyYAML
     - name: Create OSX package
       run: |
-        ./sys/osx-pkg.sh
-        mv sys/osx-pkg/rizin-*.pkg sys/osx-pkg/rizin.pkg
+        ./dist/osx/build_osx_package.sh
+        mv rizin-*.pkg rizin.pkg
     - name: Upload .pkg file
       uses: actions/upload-artifact@v2
       with:
         name: rizin.pkg
-        path: sys/osx-pkg/rizin.pkg
+        path: ./rizin.pkg
 
   build-windows:
     name: Build Windows zip/installer ${{ matrix.name }}
     runs-on: windows-latest
-    if: contains(github.head_ref, 'windows') || (github.event_name == 'push' && contains(github.ref, 'release-'))
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'windows') || (github.event_name == 'push' && contains(github.ref, 'release-'))
     needs: [build-and-test]
     strategy:
       fail-fast: false
@@ -523,40 +549,10 @@ jobs:
         name: rizin_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
         path: rizin-win-installer\Output\rizin.exe
 
-  build-ios-cydia:
-    name: Build iOS Cydia packages
-    runs-on: macos-latest
-    if: contains(github.head_ref, 'ios') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
-    needs: [build-and-test]
-    steps:
-    - uses: actions/checkout@v2
-      with:
-          submodules: recursive
-    - name: Extract rizin version
-      shell: bash
-      run: echo "##[set-output name=branch;]$(python sys/version.py)"
-      id: extract_version
-    - name: Install pkg-config/ldid2 with Homebrew
-      run: brew install pkg-config ldid
-    - name: Create cydia32 package
-      run: ./sys/ios-cydia32.sh
-    - name: List sys/cydia
-      run: ls -lahR ./sys/cydia
-    - uses: actions/upload-artifact@v2
-      with:
-        name: rizin-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm
-        path: ./sys/cydia/rizin/rizin-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
-    - name: Create cydia package
-      run: ./sys/ios-cydia.sh
-    - uses: actions/upload-artifact@v2
-      with:
-        name: rizin_${{ steps.extract_version.outputs.branch }}_iphoneos-arm
-        path: ./sys/cydia/rizin/rizin_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
-
   build-android:
     name: Build Android ${{ matrix.name }} package
     runs-on: ubuntu-latest
-    if: contains(github.head_ref, 'android') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
+    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'android') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
     needs: [build-and-test]
     strategy:
       fail-fast: false
@@ -583,21 +579,62 @@ jobs:
         name: rizin-android-${{ matrix.name }}
         path: /tmp/rizin-android-${{ matrix.name }}.tar.gz
 
-  build-extras:
-    name: Build rizin extras and rzpipe
-    if: contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.event_name == 'schedule'
+#  build-extras:
+#    name: Build rizin extras and rzpipe
+#    if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.event_name == 'schedule'
+#    needs: [create-tarball]
+#    runs-on: ubuntu-latest
+#    env:
+#      TESTS: 'armthumb baleful bcl ba2 blackfin blessr2 keystone-lib keystone lang-duktape mc6809 microblaze msil pcap ppcdisasm psosvm swf unicorn-lib unicorn vc4 x86udis x86bea x86tab x86olly x86zyan z80-nc'
+#      RZPIPE_TESTS: 'rzpipe-go rzpipe-js rzpipe-py'
+#    steps:
+#    - uses: actions/download-artifact@v2
+#      with:
+#        name: rizin-src.tar.xz
+#        path: ./
+#    - name: Extract source tarball
+#      run: mkdir rizin && tar -C rizin --strip-components=1 -xvf rizin-src.tar.xz
+#    - name: Install dependencies
+#      run: sudo apt-get --assume-yes install wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja
+#    - name: Install rizin
+#      run: |
+#        export PATH=$PATH:/usr/local/bin
+#        meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
+#      working-directory: rizin
+#    - name: Init rz-pm
+#      run: rz-pm init && rz-pm update
+#    - name: Compile and install plugins
+#      run: |
+#        set -e
+#        for p in $TESTS ; do
+#          echo $p
+#          rz-pm -i $p
+#        done
+#        set +e
+#    - name: Compile and install rzpipe
+#      run: |
+#        set -e
+#        for p in $RZPIPE_TESTS ; do
+#          echo $p
+#          rz-pm -i $p
+#        done
+#        set +e
+
+  build-rzpipe:
+    name: Build rizin rzpipe
+    if: contains(github.head_ref, 'dist') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     needs: [create-tarball]
     runs-on: ubuntu-latest
     env:
-      TESTS: 'armthumb baleful bcl ba2 blackfin blessr2 keystone-lib keystone lang-duktape mc6809 microblaze msil pcap ppcdisasm psosvm swf unicorn-lib unicorn vc4 x86udis x86bea x86tab x86olly x86zyan z80-nc'
-      RZPIPE_TESTS: 'rzpipe-go rzpipe-js rzpipe-py'
+      RZPIPE_TESTS: 'rz-pipe-py rz-pipe-go'
     steps:
     - uses: actions/download-artifact@v2
       with:
         name: rizin-src
-        path: ./
     - name: Extract source tarball
-      run: mkdir rizin && tar -C rizin --strip-components=1 -xvf rizin-src.tar.gz
+      run: |
+          mkdir rizin && pwd && ls -l
+          tar -C rizin --strip-components=1 -xvf rizin-${{ needs.create-tarball.outputs.version }}.tar.xz
     - name: Install dependencies
       run: sudo apt-get --assume-yes install wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja
     - name: Install rizin
@@ -607,14 +644,6 @@ jobs:
       working-directory: rizin
     - name: Init rz-pm
       run: rz-pm init && rz-pm update
-    - name: Compile and install plugins
-      run: |
-        set -e
-        for p in $TESTS ; do
-          echo $p
-          rz-pm -i $p
-        done
-        set +e
     - name: Compile and install rzpipe
       run: |
         set -e
@@ -725,15 +754,14 @@ jobs:
     if: github.event_name == 'push' && contains(github.ref, 'release-')
     needs: [
       build-and-test,
-      build-centos6,
+      build-centos7,
       build-debian,
       build-static,
       test-deb,
       build-android,
       test-osx-pkg,
       test-windows-clang_cl,
-      build-ios-cydia,
-      build-extras
+      build-rzpipe
     ]
     steps:
     - uses: actions/checkout@v2
@@ -762,7 +790,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rizin-src/rizin-src.tar.gz
+          asset_path: ./rizin-src/rizin-src.tar.xz
           asset_name: rizin-src-${{ steps.extract_version.outputs.branch }}.tar.gz
           asset_content_type: application/zip
     - name: Upload rizin debian:buster package

@@ -414,7 +414,7 @@ NAME=ppc-elf
 FILE=bins/elf/analysis/elf-ppc-execstack
 CMDS=<<EOF
 e asm.flags=false
-e asm.bytes = true
+e asm.bytes=true
 pid 4
 EOF
 EXPECT=<<EOF
@@ -430,7 +430,7 @@ FILE=bins/elf/analysis/elf-ppc-execstack
 CMDS=<<EOF
 ?e
 e asm.flags=true
-e asm.bytes = true
+e asm.bytes=true
 pid 1
 af
 afi~name[1]

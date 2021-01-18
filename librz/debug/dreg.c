@@ -84,7 +84,7 @@ RZ_API int rz_debug_reg_sync(RzDebug *dbg, int type, int write) {
 	return true;
 }
 
-RZ_API bool rz_debug_reg_list(RzDebug *dbg, int type, int size, int rad, const char *use_color) {
+RZ_API bool rz_debug_reg_list(RzDebug *dbg, int type, int size, PJ *pj, int rad, const char *use_color) {
 	int delta, cols, n = 0;
 	const char *fmt, *fmt2, *kwhites;
 	RzPrint *pr = NULL;
@@ -123,12 +123,7 @@ RZ_API bool rz_debug_reg_list(RzDebug *dbg, int type, int size, int rad, const c
 	if (dbg->regcols) {
 		cols = dbg->regcols;
 	}
-	PJ *pj = NULL;
 	if (isJson) {
-		pj = pj_new ();
-		if (!pj) {
-			return false;
-		}
 		pj_o (pj);
 	}
 	// with the new field "arena" into reg items why need
@@ -287,8 +282,6 @@ RZ_API bool rz_debug_reg_list(RzDebug *dbg, int type, int size, int rad, const c
 beach:
 	if (isJson) {
 		pj_end (pj);
-		dbg->cb_printf ("%s\n", pj_string (pj));
-		pj_free (pj);
 	} else if (n > 0 && (rad == 2 || rad == '=') && ((n%cols))) {
 		dbg->cb_printf ("\n");
 	}

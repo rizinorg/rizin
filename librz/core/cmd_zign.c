@@ -779,14 +779,14 @@ static void search_add_to_types(RzCore *c, RzSignSearchMetrics *sm, RzSignType t
 
 static bool fill_search_metrics(RzSignSearchMetrics *sm, RzCore *c, void *user) {
 	unsigned int i = 0;
-	search_add_to_types (c, sm, RZ_SIGN_GRAPH, "zign.graph", &i);
-	search_add_to_types (c, sm, RZ_SIGN_OFFSET, "zign.offset", &i);
-	search_add_to_types (c, sm, RZ_SIGN_REFS, "zign.refs", &i);
-	search_add_to_types (c, sm, RZ_SIGN_BBHASH, "zign.hash", &i);
-	search_add_to_types (c, sm, RZ_SIGN_TYPES, "zign.types", &i);
+	search_add_to_types (c, sm, RZ_SIGN_GRAPH, "zign.match.graph", &i);
+	search_add_to_types (c, sm, RZ_SIGN_OFFSET, "zign.match.offset", &i);
+	search_add_to_types (c, sm, RZ_SIGN_REFS, "zign.match.refs", &i);
+	search_add_to_types (c, sm, RZ_SIGN_BBHASH, "zign.match.hash", &i);
+	search_add_to_types (c, sm, RZ_SIGN_TYPES, "zign.match.types", &i);
 #if 0
 	// untested
-	search_add_to_types(c, sm, RZ_SIGN_VARS, "zign.vars", &i);
+	search_add_to_types(c, sm, RZ_SIGN_VARS, "zign.match.vars", &i);
 #endif
 	sm->mincc = rz_config_get_i (c->config, "zign.mincc");
 	sm->analysis = c->analysis;
@@ -806,7 +806,7 @@ static bool search(RzCore *core, bool rad, bool only_func) {
 
 	struct ctxSearchCB bytes_search_ctx = { core, rad, 0, "bytes" };
 	const char *mode = rz_config_get (core->config, "search.in");
-	bool useBytes = rz_config_get_i (core->config, "zign.bytes");
+	bool useBytes = rz_config_get_i (core->config, "zign.match.bytes");
 	const char *zign_prefix = rz_config_get (core->config, "zign.prefix");
 	int maxsz = rz_config_get_i (core->config, "zign.maxsz");
 
@@ -949,11 +949,11 @@ static bool do_bestmatch_fcn(RzCore *core, const char *zigname, int count) {
 		return false;
 	}
 
-	if (!rz_config_get_i (core->config, "zign.bytes")) {
+	if (!rz_config_get_i (core->config, "zign.match.bytes")) {
 		rz_sign_bytes_free (it->bytes);
 		it->bytes = NULL;
 	}
-	if (!rz_config_get_i (core->config, "zign.graph")) {
+	if (!rz_config_get_i (core->config, "zign.match.graph")) {
 		rz_sign_graph_free (it->graph);
 		it->graph = NULL;
 	}
@@ -1014,7 +1014,7 @@ static bool do_bestmatch_sig(RzCore *core, int count) {
 		return false;
 	}
 
-	if (rz_config_get_i (core->config, "zign.bytes")) {
+	if (rz_config_get_i (core->config, "zign.match.bytes")) {
 		rz_sign_addto_item (core->analysis, item, fcn, RZ_SIGN_BYTES);
 		RzSignBytes *b = item->bytes;
 		int minsz = rz_config_get_i (core->config, "zign.minsz");
@@ -1024,7 +1024,7 @@ static bool do_bestmatch_sig(RzCore *core, int count) {
 			return false;
 		}
 	}
-	if (rz_config_get_i (core->config, "zign.graph")) {
+	if (rz_config_get_i (core->config, "zign.match.graph")) {
 		rz_sign_addto_item (core->analysis, item, fcn, RZ_SIGN_GRAPH);
 	}
 
@@ -1147,7 +1147,7 @@ static int cmdCheck(void *data, const char *input) {
 
 	const char *zign_prefix = rz_config_get (core->config, "zign.prefix");
 	int minsz = rz_config_get_i (core->config, "zign.minsz");
-	bool useBytes = rz_config_get_i (core->config, "zign.bytes");
+	bool useBytes = rz_config_get_i (core->config, "zign.match.bytes");
 
 	struct ctxSearchCB metsearch_ctx = { core, rad, 0, NULL };
 	RzSignSearchMetrics sm;

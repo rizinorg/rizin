@@ -1,7 +1,7 @@
 #include <rz_reg.h>
 #include "minunit.h"
 
-bool test_r_reg_set_name(void) {
+bool test_rz_reg_set_name(void) {
 	RzReg *reg;
 
 	reg = rz_reg_new ();
@@ -15,7 +15,7 @@ bool test_r_reg_set_name(void) {
 	mu_end;
 }
 
-bool test_r_reg_set_profile_string(void) {
+bool test_rz_reg_set_profile_string(void) {
 	RzReg *reg;
 
 	reg = rz_reg_new ();
@@ -38,7 +38,7 @@ bool test_r_reg_set_profile_string(void) {
 	mu_end;
 }
 
-bool test_r_reg_get_value_gpr(void) {
+bool test_rz_reg_get_value_gpr(void) {
 	RzReg *reg;
 	ut64 value;
 
@@ -89,7 +89,7 @@ bool test_r_reg_get_value_gpr(void) {
 	mu_end;
 }
 
-bool test_r_reg_get_value_flag(void) {
+bool test_rz_reg_get_value_flag(void) {
 	RzReg *reg;
 	RzRegItem *r;
 	ut64 value;
@@ -138,7 +138,7 @@ bool test_r_reg_get_value_flag(void) {
 	mu_end;
 }
 
-bool test_r_reg_get(void) {
+bool test_rz_reg_get(void) {
 	RzReg *reg;
 	RzRegItem *r;
 
@@ -167,7 +167,7 @@ bool test_r_reg_get(void) {
 	mu_end;
 }
 
-bool test_r_reg_get_list(void) {
+bool test_rz_reg_get_list(void) {
 	RzReg *reg;
 	RzList *l;
 	int mask;
@@ -192,7 +192,7 @@ bool test_r_reg_get_list(void) {
 	mu_end;
 }
 
-bool test_r_reg_get_pack(void) {
+bool test_rz_reg_get_pack(void) {
 	RzReg *reg;
 	RzRegItem *r;
 	ut64 value;
@@ -235,16 +235,14 @@ bool test_r_reg_get_pack(void) {
 }
 
 int all_tests() {
-	mu_run_test (test_r_reg_set_name);
-	mu_run_test (test_r_reg_set_profile_string);
-	mu_run_test (test_r_reg_get_value_gpr);
-	mu_run_test (test_r_reg_get_value_flag);
-	mu_run_test (test_r_reg_get);
-	mu_run_test (test_r_reg_get_list);
-	mu_run_test (test_r_reg_get_pack);
+	mu_run_test (test_rz_reg_set_name);
+	mu_run_test (test_rz_reg_set_profile_string);
+	mu_run_test (test_rz_reg_get_value_gpr);
+	mu_run_test (test_rz_reg_get_value_flag);
+	mu_run_test (test_rz_reg_get);
+	mu_run_test (test_rz_reg_get_list);
+	mu_run_test (test_rz_reg_get_pack);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
-}
+mu_main (all_tests)

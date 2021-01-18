@@ -1,9 +1,9 @@
 NAME=afcl: x86-64
 FILE=--
 CMDS=<<EOF
-e asm.bits = 32
-e asm.arch = x86
-e asm.bits = 64
+e asm.bits=32
+e asm.arch=x86
+e asm.bits=64
 afcl
 EOF
 EXPECT=<<EOF
@@ -30,9 +30,9 @@ NAME=afcl: x86-32
 FILE=--
 BROKEN=1
 CMDS=<<EOF
-e asm.bits = 64
-e asm.arch = x86
-e asm.bits = 32
+e asm.bits=64
+e asm.arch=x86
+e asm.bits=32
 afcl
 EOF
 EXPECT=<<EOF
@@ -66,9 +66,9 @@ RUN
 NAME=afcl: arm-64
 FILE=--
 CMDS=<<EOF
-e asm.bits = 32
-e asm.arch = arm
-e asm.bits = 64
+e asm.bits=32
+e asm.arch=arm
+e asm.bits=64
 afcl
 EOF
 EXPECT=<<EOF
@@ -92,9 +92,9 @@ NAME=afcl: arm-32
 FILE=--
 BROKEN=1
 CMDS=<<EOF
-e asm.bits = 64
-e asm.arch = arm
-e asm.bits = 32
+e asm.bits=64
+e asm.arch=arm
+e asm.bits=32
 afcl
 EOF
 EXPECT=<<EOF
@@ -116,9 +116,9 @@ NAME=afcl: arm-16
 FILE=--
 BROKEN=1
 CMDS=<<EOF
-e asm.bits = 64
-e asm.arch = arm
-e asm.bits = 16
+e asm.bits=64
+e asm.arch=arm
+e asm.bits=16
 afcl
 EOF
 EXPECT=<<EOF
@@ -139,9 +139,9 @@ RUN
 NAME=afcl: mips-32
 FILE=--
 CMDS=<<EOF
-e asm.bits = 64
-e asm.arch = mips
-e asm.bits = 32
+e asm.bits=64
+e asm.arch=mips
+e asm.bits=32
 afcl
 EOF
 EXPECT=<<EOF

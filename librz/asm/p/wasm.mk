@@ -1,4 +1,4 @@
-WASM_ROOT=$(LIBR)/asm/arch/wasm
+WASM_ROOT=$(LIBRZ)/asm/arch/wasm
 OBJ_WASM=asm_wasm.o
 OBJ_WASM+=$(WASM_ROOT)/wasm.o
 CFLAGS+=-I$(WASM_ROOT)

@@ -376,10 +376,6 @@
         {
           "type": "SYMBOL",
           "name": "pipe_command"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "scr_tts_command"
         }
       ]
     },
@@ -530,27 +526,6 @@
           {
             "type": "STRING",
             "value": "|H"
-          }
-        ]
-      }
-    },
-    "scr_tts_command": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "FIELD",
-            "name": "command",
-            "content": {
-              "type": "SYMBOL",
-              "name": "_simple_command"
-            }
-          },
-          {
-            "type": "STRING",
-            "value": "|T"
           }
         ]
       }
@@ -1529,38 +1504,17 @@
             }
           },
           {
-            "type": "SEQ",
-            "members": [
-              {
-                "type": "FIELD",
-                "name": "command",
-                "content": {
-                  "type": "ALIAS",
-                  "content": {
-                    "type": "SYMBOL",
-                    "name": "_help_command"
-                  },
-                  "named": true,
-                  "value": "cmd_identifier"
-                }
+            "type": "FIELD",
+            "name": "command",
+            "content": {
+              "type": "ALIAS",
+              "content": {
+                "type": "SYMBOL",
+                "name": "_help_command"
               },
-              {
-                "type": "FIELD",
-                "name": "args",
-                "content": {
-                  "type": "CHOICE",
-                  "members": [
-                    {
-                      "type": "SYMBOL",
-                      "name": "args"
-                    },
-                    {
-                      "type": "BLANK"
-                    }
-                  ]
-                }
-              }
-            ]
+              "named": true,
+              "value": "cmd_identifier"
+            }
           }
         ]
       }
@@ -1603,8 +1557,42 @@
         {
           "type": "SYMBOL",
           "name": "_last_command"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_simple_arged_command_question"
         }
       ]
+    },
+    "_simple_arged_command_question": {
+      "type": "PREC_LEFT",
+      "value": 1,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "FIELD",
+            "name": "command",
+            "content": {
+              "type": "ALIAS",
+              "content": {
+                "type": "SYMBOL",
+                "name": "_help_command"
+              },
+              "named": true,
+              "value": "cmd_identifier"
+            }
+          },
+          {
+            "type": "FIELD",
+            "name": "args",
+            "content": {
+              "type": "SYMBOL",
+              "name": "args"
+            }
+          }
+        ]
+      }
     },
     "_simple_arged_command": {
       "type": "PREC_LEFT",

@@ -3321,6 +3321,11 @@ char* PE_(rz_bin_pe_get_arch)(struct PE_(rz_bin_pe_obj_t)* bin) {
 	case PE_IMAGE_FILE_MACHINE_ARM64:
 		arch = strdup ("arm");
 		break;
+	case PE_IMAGE_FILE_MACHINE_RISCV32:
+	case PE_IMAGE_FILE_MACHINE_RISCV64:
+	case PE_IMAGE_FILE_MACHINE_RISCV128:
+		arch = strdup ("riscv");
+		break;
 	default:
 		arch = strdup ("x86");
 	}
@@ -3666,8 +3671,8 @@ static int read_image_debug_directory_entry(RzBuffer *b, ut64 addr, PE_(image_de
 }
 
 int PE_(rz_bin_pe_get_debug_data)(struct PE_(rz_bin_pe_obj_t)* bin, SDebugInfo* res) {
-	PE_(image_debug_directory_entry) img_dbg_dir_entry;
-	PE_(image_data_directory) * dbg_dir;
+	PE_(image_debug_directory_entry) img_dbg_dir_entry = {0};
+	PE_(image_data_directory) * dbg_dir = NULL;
 	PE_DWord dbg_dir_offset;
 	ut8* dbg_data = 0;
 	int result = 0;
@@ -3782,25 +3787,26 @@ struct rz_bin_pe_import_t* PE_(rz_bin_pe_get_imports)(struct PE_(rz_bin_pe_obj_t
 	}
 	off = bin->delay_import_directory_offset;
 	if (off < bin->size && off > 0) {
-		int didi = 0;
 		if (off + sizeof(PE_(image_delay_import_directory)) > bin->size) {
 			goto beach;
 		}
-		int r = read_image_delay_import_directory (bin->b, off + didi * sizeof (curr_delay_import_dir),
-			&curr_delay_import_dir);
-		if (r != sizeof (curr_delay_import_dir)) {
-			goto beach;
-		}
-		if (!curr_delay_import_dir.Attributes) {
-			dll_name_offset = bin_pe_rva_to_paddr (bin,
-				curr_delay_import_dir.Name - PE_(rz_bin_pe_get_image_base)(bin));
-			import_func_name_offset = curr_delay_import_dir.DelayImportNameTable -
-			PE_(rz_bin_pe_get_image_base)(bin);
-		} else {
-			dll_name_offset = bin_pe_rva_to_paddr (bin, curr_delay_import_dir.Name);
-			import_func_name_offset = curr_delay_import_dir.DelayImportNameTable;
-		}
-		while ((curr_delay_import_dir.Name != 0) && (curr_delay_import_dir.DelayImportAddressTable !=0)) {
+		int didi;
+		for (didi = 0;; didi++) {
+			int r = read_image_delay_import_directory (bin->b, off + didi * sizeof (curr_delay_import_dir),
+				&curr_delay_import_dir);
+			if (r != sizeof (curr_delay_import_dir)) {
+				goto beach;
+			}
+			if ((curr_delay_import_dir.Name == 0) || (curr_delay_import_dir.DelayImportAddressTable == 0)) {
+				break;
+			}
+			if (!curr_delay_import_dir.Attributes) {
+				dll_name_offset = bin_pe_rva_to_paddr (bin, curr_delay_import_dir.Name - PE_(rz_bin_pe_get_image_base)(bin));
+				import_func_name_offset = curr_delay_import_dir.DelayImportNameTable - PE_(rz_bin_pe_get_image_base)(bin);
+			} else {
+				dll_name_offset = bin_pe_rva_to_paddr (bin, curr_delay_import_dir.Name);
+				import_func_name_offset = curr_delay_import_dir.DelayImportNameTable;
+			}
 			if (dll_name_offset > bin->size || dll_name_offset + PE_NAME_LENGTH > bin->size) {
 				goto beach;
 			}
@@ -3808,17 +3814,10 @@ struct rz_bin_pe_import_t* PE_(rz_bin_pe_get_imports)(struct PE_(rz_bin_pe_obj_t
 			if (rr < 5) {
 				goto beach;
 			}
-
 			dll_name[PE_NAME_LENGTH] = '\0';
 			if (!bin_pe_parse_imports (bin, &imports, &nimp, dll_name, import_func_name_offset,
 				curr_delay_import_dir.DelayImportAddressTable)) {
 				break;
-			}
-			didi++;
-			r = read_image_delay_import_directory (bin->b, off + didi * sizeof (curr_delay_import_dir),
-				&curr_delay_import_dir);
-			if (r != sizeof (curr_delay_import_dir)) {
-				goto beach;
 			}
 		}
 	}
@@ -3996,6 +3995,9 @@ char* PE_(rz_bin_pe_get_machine)(struct PE_(rz_bin_pe_obj_t)* bin) {
 		case PE_IMAGE_FILE_MACHINE_THUMB: machine = "Thumb"; break;
 		case PE_IMAGE_FILE_MACHINE_TRICORE: machine = "Tricore"; break;
 		case PE_IMAGE_FILE_MACHINE_WCEMIPSV2: machine = "WCE Mips V2"; break;
+		case PE_IMAGE_FILE_MACHINE_RISCV32: machine = "RISC-V 32-bit"; break;
+		case PE_IMAGE_FILE_MACHINE_RISCV64: machine = "RISC-V 64-bit"; break;
+		case PE_IMAGE_FILE_MACHINE_RISCV128: machine = "RISC-V 128-bit"; break;
 		default: machine = "unknown";
 		}
 	}

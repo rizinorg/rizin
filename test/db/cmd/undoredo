@@ -62,60 +62,70 @@ s* ; ?v $$ ; ?e
 EOF
 EXPECT=<<EOF
 No seeks.
+# Current seek @ 0x0
 0x0
 
 But try undo/redo.
+# Current seek @ 0x0
+# Current seek @ 0x0
 
 First seeks.
 f undo_0 @ 0x0
+# Current seek @ 0x10
 0x10
 f undo_1 @ 0x0
 f undo_0 @ 0x10
+# Current seek @ 0x20
 0x20
 f undo_2 @ 0x0
 f undo_1 @ 0x10
 f undo_0 @ 0x20
+# Current seek @ 0x30
 0x30
 f undo_3 @ 0x0
 f undo_2 @ 0x10
 f undo_1 @ 0x20
 f undo_0 @ 0x30
+# Current seek @ 0x40
 0x40
 
 Undo all seeks (and some more).
 f undo_2 @ 0x0
 f undo_1 @ 0x10
 f undo_0 @ 0x20
-# Current undo/redo position.
+# Current seek @ 0x30
 f redo_0 @ 0x40
 0x30
 
 f undo_1 @ 0x0
 f undo_0 @ 0x10
-# Current undo/redo position.
+# Current seek @ 0x20
 f redo_0 @ 0x30
 f redo_1 @ 0x40
 0x20
 
 f undo_0 @ 0x0
-# Current undo/redo position.
+# Current seek @ 0x10
 f redo_0 @ 0x20
 f redo_1 @ 0x30
 f redo_2 @ 0x40
 0x10
 
+# Current seek @ 0x0
 f redo_0 @ 0x10
 f redo_1 @ 0x20
 f redo_2 @ 0x30
 f redo_3 @ 0x40
 0x0
 
+# Current seek @ 0x0
 f redo_0 @ 0x10
 f redo_1 @ 0x20
 f redo_2 @ 0x30
 f redo_3 @ 0x40
 0x0
 
+# Current seek @ 0x0
 f redo_0 @ 0x10
 f redo_1 @ 0x20
 f redo_2 @ 0x30
@@ -124,7 +134,7 @@ f redo_3 @ 0x40
 
 Then redo them (and some more).
 f undo_0 @ 0x0
-# Current undo/redo position.
+# Current seek @ 0x10
 f redo_0 @ 0x20
 f redo_1 @ 0x30
 f redo_2 @ 0x40
@@ -132,7 +142,7 @@ f redo_2 @ 0x40
 
 f undo_1 @ 0x0
 f undo_0 @ 0x10
-# Current undo/redo position.
+# Current seek @ 0x20
 f redo_0 @ 0x30
 f redo_1 @ 0x40
 0x20
@@ -140,7 +150,7 @@ f redo_1 @ 0x40
 f undo_2 @ 0x0
 f undo_1 @ 0x10
 f undo_0 @ 0x20
-# Current undo/redo position.
+# Current seek @ 0x30
 f redo_0 @ 0x40
 0x30
 
@@ -148,24 +158,27 @@ f undo_3 @ 0x0
 f undo_2 @ 0x10
 f undo_1 @ 0x20
 f undo_0 @ 0x30
+# Current seek @ 0x40
 0x40
 
 f undo_3 @ 0x0
 f undo_2 @ 0x10
 f undo_1 @ 0x20
 f undo_0 @ 0x30
+# Current seek @ 0x40
 0x40
 
 f undo_3 @ 0x0
 f undo_2 @ 0x10
 f undo_1 @ 0x20
 f undo_0 @ 0x30
+# Current seek @ 0x40
 0x40
 
 Undo some seeks and then seek somewhere else.
 f undo_1 @ 0x0
 f undo_0 @ 0x10
-# Current undo/redo position.
+# Current seek @ 0x20
 f redo_0 @ 0x30
 f redo_1 @ 0x40
 0x20
@@ -173,23 +186,28 @@ f redo_1 @ 0x40
 f undo_2 @ 0x0
 f undo_1 @ 0x10
 f undo_0 @ 0x20
+# Current seek @ 0x50
 0x50
 
 f undo_2 @ 0x0
 f undo_1 @ 0x10
 f undo_0 @ 0x20
+# Current seek @ 0x50
 0x50
 
 Undo all seeks again and perform a single seek with undo/redo.
+# Current seek @ 0x0
 f redo_0 @ 0x10
 f redo_1 @ 0x20
 f redo_2 @ 0x50
 0x0
 
 f undo_0 @ 0x0
+# Current seek @ 0x100
 0x100
 
 f undo_0 @ 0x0
+# Current seek @ 0x100
 0x100
 
 EOF
@@ -217,16 +235,16 @@ s+
 sj
 EOF
 EXPECT=<<EOF
-[{"offset":0,"current":true}]
-[{"offset":0},{"offset":10,"current":true}]
-[{"offset":0},{"offset":10,"current":true},{"offset":20}]
-[{"offset":0,"current":true},{"offset":10},{"offset":20}]
+[{"offset":0,"cursor":0,"current":true}]
+[{"offset":0,"cursor":0,"current":false},{"offset":10,"cursor":0,"current":true}]
+[{"offset":0,"cursor":0,"current":false},{"offset":10,"cursor":0,"current":true},{"offset":20,"cursor":0,"current":false}]
+[{"offset":0,"cursor":0,"current":true},{"offset":10,"cursor":0,"current":false},{"offset":20,"cursor":0,"current":false}]
 undo at the start of list
-[{"offset":0,"current":true},{"offset":10},{"offset":20}]
+[{"offset":0,"cursor":0,"current":true},{"offset":10,"cursor":0,"current":false},{"offset":20,"cursor":0,"current":false}]
 redo to the end
-[{"offset":0},{"offset":10},{"offset":20,"current":true}]
+[{"offset":0,"cursor":0,"current":false},{"offset":10,"cursor":0,"current":false},{"offset":20,"cursor":0,"current":true}]
 one more past the end
-[{"offset":0},{"offset":10},{"offset":20,"current":true}]
+[{"offset":0,"cursor":0,"current":false},{"offset":10,"cursor":0,"current":false},{"offset":20,"cursor":0,"current":true}]
 EOF
 RUN
 
@@ -250,11 +268,11 @@ sj
 EOF
 EXPECT=<<EOF
 should produce two identical results
-[{"offset":0},{"offset":10},{"offset":11,"current":true}]
-[{"offset":0},{"offset":10},{"offset":11,"current":true}]
+[{"offset":0,"cursor":0,"current":false},{"offset":10,"cursor":0,"current":false},{"offset":11,"cursor":0,"current":true}]
+[{"offset":0,"cursor":0,"current":false},{"offset":10,"cursor":0,"current":false},{"offset":11,"cursor":0,"current":true}]
 0 0, or 22 23 but not 0 22
-[{"offset":0},{"offset":10},{"offset":11},{"offset":21},{"offset":22,"current":true}]
-[{"offset":0},{"offset":10},{"offset":11},{"offset":21},{"offset":23,"current":true}]
+[{"offset":0,"cursor":0,"current":false},{"offset":10,"cursor":0,"current":false},{"offset":11,"cursor":0,"current":false},{"offset":21,"cursor":0,"current":false},{"offset":22,"cursor":0,"current":true}]
+[{"offset":0,"cursor":0,"current":false},{"offset":10,"cursor":0,"current":false},{"offset":11,"cursor":0,"current":false},{"offset":21,"cursor":0,"current":false},{"offset":23,"cursor":0,"current":true}]
 EOF
 RUN
 
@@ -276,12 +294,12 @@ s 0x02
 s*~:-6..
 EOF
 EXPECT=<<EOF
-[{"offset":0},{"offset":1},{"offset":2,"current":true}]
-f undo_5 @ 0x3b
+[{"offset":0,"cursor":0,"current":false},{"offset":1,"cursor":0,"current":false},{"offset":2,"cursor":0,"current":true}]
 f undo_4 @ 0x3c
 f undo_3 @ 0x3d
 f undo_2 @ 0x3e
 f undo_1 @ 0x0
 f undo_0 @ 0x1
+# Current seek @ 0x2
 EOF
 RUN

@@ -58,7 +58,7 @@ bool hint_equals(const RzAnalysisHint *a, const RzAnalysisHint *b) {
 		mu_assert ("hint", hint_equals (actual, expected)); \
 } while (0)
 
-bool test_r_analysis_addr_hints() {
+bool test_rz_analysis_addr_hints() {
 	RzAnalysis *analysis = rz_analysis_new ();
 	RzAnalysisHint *hint = rz_analysis_hint_get (analysis, 0x1337);
 	assert_hint_eq (hint, &empty_hint);
@@ -217,7 +217,7 @@ bool test_r_analysis_addr_hints() {
 }
 
 #define RANGED_TEST(name, val, resetval, assert_val) \
-bool test_r_analysis_hints_##name() { \
+bool test_rz_analysis_hints_##name() { \
 	RzAnalysis *analysis = rz_analysis_new (); \
 	\
 	ut64 hint_addr = 0xdead; \
@@ -334,12 +334,10 @@ RANGED_TEST(arch, "6502", NULL, mu_assert_nullable_streq)
 RANGED_TEST(bits, 16, 0, mu_assert_eq)
 
 bool all_tests() {
-	mu_run_test(test_r_analysis_addr_hints);
-	mu_run_test(test_r_analysis_hints_arch);
-	mu_run_test(test_r_analysis_hints_bits);
+	mu_run_test(test_rz_analysis_addr_hints);
+	mu_run_test(test_rz_analysis_hints_arch);
+	mu_run_test(test_rz_analysis_hints_bits);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
-}
+mu_main (all_tests)

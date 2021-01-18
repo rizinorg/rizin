@@ -3,9 +3,19 @@
 // You may use the code in this tech note for any purpose,
 // with the understanding that it comes with NO WARRANTY.
 
-#ifndef TERMCOLOR_H
-#define TERMCOLOR_H
+#ifndef _MINUNIT_H_
+#define _MINUNIT_H_
 
+#if __WINDOWS__
+#define TRED
+#define TGREEN
+#define TYELLOW
+#define TBLUE
+#define TMAGENTA
+#define TCYAN
+#define TBOLD
+#define TRESET
+#else
 #define TRED     "\x1b[31m"
 #define TGREEN   "\x1b[32m"
 #define TYELLOW  "\x1b[33m"
@@ -22,14 +32,19 @@
 #define MU_TEST_UNBROKEN 0
 #define MU_TEST_BROKEN 1
 
-void sprint_mem(char *out, const ut8 *buf, size_t len) {
+#define MU_BUF_SIZE 5120
+
+void snprint_mem(char *out, size_t out_size, const ut8 *buf, size_t len) {
 	size_t i;
 	*out = '\0';
 	for (i = 0; i < len; i++) {
+		size_t out_len;
 		if (i > 0) {
-			sprintf(out + strlen(out), " ");
+			out_len = strlen (out);
+			snprintf (out + out_len, out_size - out_len, " ");
 		}
-		sprintf (out + strlen(out), "%02x", buf[i]);
+		out_len = strlen (out);
+		snprintf (out + out_len, out_size - out_len, "%02x", buf[i]);
 	}
 }
 
@@ -69,8 +84,8 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 #define mu_assert_true(actual, message) do { \
 		bool act__ = (actual); \
 		if (!(act__)) { \
-			char _meqstr[2048]; \
-			sprintf (_meqstr, "%s: expected true, got false", (message)); \
+			char _meqstr[MU_BUF_SIZE]; \
+			snprintf (_meqstr, MU_BUF_SIZE, "%s: expected true, got false", (message)); \
 			mu_assert (_meqstr, false); \
 		} \
 	} while (0)
@@ -79,8 +94,8 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 	do { \
 		bool act__ = (actual); \
 		if ((act__)) { \
-			char _meqstr[2048]; \
-			sprintf (_meqstr, "%s: expected false, got true", (message)); \
+			char _meqstr[MU_BUF_SIZE]; \
+			snprintf (_meqstr, MU_BUF_SIZE, "%s: expected false, got true", (message)); \
 			mu_assert (_meqstr, false); \
 		} \
 	} while (0)
@@ -89,47 +104,47 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 		ut64 act__ = (ut64)(actual); \
 		ut64 exp__ = (ut64)(expected); \
 		if ((exp__) != (act__)) { \
-			char _meqstr[2048]; \
-			sprintf(_meqstr, "%s: expected %" PFMT64d ", got %" PFMT64d ".", (message), (ut64)(exp__), (ut64)(act__)); \
+			char _meqstr[MU_BUF_SIZE]; \
+			snprintf (_meqstr, MU_BUF_SIZE, "%s: expected %" PFMT64d ", got %" PFMT64d ".", (message), (ut64)(exp__), (ut64)(act__)); \
 			mu_assert(_meqstr, false); \
 		} \
 	} while(0)
 
 #define mu_assert_neq(actual, expected, message) do { \
-		char _meqstr[2048]; \
+		char _meqstr[MU_BUF_SIZE]; \
 		ut64 act__ = (ut64)(actual); \
 		ut64 exp__ = (ut64)(expected); \
-		sprintf(_meqstr, "%s: expected not %" PFMT64d ", got %" PFMT64d ".", (message), (exp__), (act__)); \
+		snprintf (_meqstr, MU_BUF_SIZE, "%s: expected not %" PFMT64d ", got %" PFMT64d ".", (message), (exp__), (act__)); \
 		mu_assert(_meqstr, (exp__) != (act__)); \
 	} while(0)
 
 #define mu_assert_ptreq(actual, expected, message) do {	\
-		char _meqstr[2048]; \
+		char _meqstr[MU_BUF_SIZE]; \
 		const void *act__ = (actual); \
 		const void *exp__ = (expected); \
-		sprintf (_meqstr, "%s: expected %p, got %p.", (message), (exp__), (act__)); \
+		snprintf (_meqstr, MU_BUF_SIZE, "%s: expected %p, got %p.", (message), (exp__), (act__)); \
 		mu_assert (_meqstr, (exp__) == (act__)); \
 	} while (0)
 
 #define mu_assert_ptrneq(actual, expected, message) do { \
-		char _meqstr[2048]; \
+		char _meqstr[MU_BUF_SIZE]; \
 		const void *act__ = (actual); \
 		const void *exp__ = (expected); \
-		sprintf (_meqstr, "%s: expected not %p, got %p.", (message), (exp__), (act__)); \
+		snprintf (_meqstr, MU_BUF_SIZE, "%s: expected not %p, got %p.", (message), (exp__), (act__)); \
 		mu_assert (_meqstr, (exp__) != (act__)); \
 	} while (0)
 
 #define mu_assert_null(actual, message) do {			\
-		char _meqstr[2048];					\
+		char _meqstr[MU_BUF_SIZE];					\
 		const void *act__ = (actual); \
-		sprintf(_meqstr, "%s: expected to be NULL but it wasn't.", (message)); \
+		snprintf (_meqstr, MU_BUF_SIZE, "%s: expected to be NULL but it wasn't.", (message)); \
 		mu_assert(_meqstr, (act__) == NULL);		\
 	} while(0)
 
 #define mu_assert_notnull(actual, message) do {				\
-		char _meqstr[2048];					\
+		char _meqstr[MU_BUF_SIZE];					\
 		const void *act__ = (actual); \
-		sprintf(_meqstr, "%s: expected to not be NULL but it was.", (message)); \
+		snprintf (_meqstr, MU_BUF_SIZE, "%s: expected to not be NULL but it was.", (message)); \
 		mu_assert(_meqstr, (act__) != NULL);			\
 	} while(0)
 
@@ -137,17 +152,17 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 		ut64 act__ = (ut64)(actual); \
 		ut64 exp__ = (ut64)(expected); \
 		if ((exp__) != (act__)) { \
-			char _meqstr[2048]; \
-			sprintf(_meqstr, "%s: expected "fmt", got "fmt".", (message), (exp__), (act__)); \
+			char _meqstr[MU_BUF_SIZE]; \
+			snprintf (_meqstr, MU_BUF_SIZE, "%s: expected "fmt", got "fmt".", (message), (exp__), (act__)); \
 			mu_assert(_meqstr, false); \
 		} \
 	} while(0)
 
 #define mu_assert_streq(actual, expected, message) do { \
-		char _meqstr[2048]; \
+		char _meqstr[MU_BUF_SIZE]; \
 		const char *act__ = (actual); \
 		const char *exp__ = (expected); \
-		sprintf(_meqstr, "%s: expected %s, got %s.", (message), (exp__), (act__)); \
+		snprintf (_meqstr, MU_BUF_SIZE, "%s: expected %s, got %s.", (message), (exp__), (act__)); \
 		mu_assert(_meqstr, strcmp((exp__), (act__)) == 0); \
 } while(0)
 
@@ -158,26 +173,31 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 } while (0)
 
 #define mu_assert_nullable_streq(actual, expected, message) do { \
-		char _meqstr[2048]; \
+		char _meqstr[MU_BUF_SIZE]; \
 		const char *act__ = (actual); \
 		const char *exp__ = (expected); \
-		sprintf(_meqstr, "%s: expected %s, got %s.", (message), (exp__ ? exp__ : "NULL"), (act__ ? act__ : "NULL")); \
+		snprintf (_meqstr, MU_BUF_SIZE, "%s: expected %s, got %s.", (message), (exp__ ? exp__ : "NULL"), (act__ ? act__ : "NULL")); \
 		mu_assert(_meqstr, ((act__) == NULL && (exp__) == NULL) || ((act__) != NULL && (exp__) != NULL && strcmp((exp__), (act__)) == 0)); \
 } while(0)
 
 #define mu_assert_memeq(actual, expected, len, message) do { \
-		char _meqstr[2048]; \
+		char _meqstr[MU_BUF_SIZE]; \
+		size_t _meqstr_len; \
 		const ut8 *act__ = (actual); \
 		const ut8 *exp__ = (expected); \
-		sprintf(_meqstr, "%s: expected ", message); \
-		sprint_mem(_meqstr + strlen(_meqstr), (exp__), (len)); \
-		sprintf(_meqstr + strlen(_meqstr), ", got "); \
-		sprint_mem(_meqstr + strlen(_meqstr), (act__), (len)); \
+		snprintf (_meqstr, MU_BUF_SIZE, "%s: expected ", message); \
+		_meqstr_len = strlen (_meqstr); \
+		snprint_mem (_meqstr + _meqstr_len, MU_BUF_SIZE - _meqstr_len, (exp__), (len)); \
+		_meqstr_len = strlen (_meqstr); \
+		snprintf (_meqstr + _meqstr_len, MU_BUF_SIZE - _meqstr_len, ", got "); \
+		_meqstr_len = strlen (_meqstr); \
+		snprint_mem (_meqstr + _meqstr_len, MU_BUF_SIZE - _meqstr_len, (act__), (len)); \
 		mu_assert(_meqstr, memcmp((exp__), (act__), (len)) == 0); \
 } while(0)
 
 #define mu_run_test_named(test, name, ...) do { int result; \
 		printf(TBOLD "%s" TRESET " ", name); \
+		mu_test_status = MU_TEST_UNBROKEN; \
 		result = test(__VA_ARGS__); \
 		tests_run++; \
 		tests_passed += result; \
@@ -190,3 +210,9 @@ void sprint_mem(char *out, const ut8 *buf, size_t len) {
 int tests_run = 0;
 int tests_passed = 0;
 int mu_test_status = MU_TEST_UNBROKEN;
+
+#define mu_main(fcn) int main(int argc, char **argv) { \
+	return fcn (); \
+}
+
+#endif

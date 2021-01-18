@@ -170,7 +170,7 @@ static bool is_valid_guid(const char *guid) {
 	return i >= 33; // len of GUID and age
 }
 
-int rz_bin_pdb_download(RzCore *core, int isradjson, int *actions_done, SPDBOptions *options) {
+int rz_bin_pdb_download(RzCore *core, PJ *pj, int isradjson, SPDBOptions *options) {
 	int ret;
 	SPDBDownloaderOpt opt;
 	SPDBDownloader pdb_downloader;
@@ -201,22 +201,13 @@ int rz_bin_pdb_download(RzCore *core, int isradjson, int *actions_done, SPDBOpti
 	init_pdb_downloader (&opt, &pdb_downloader);
 	ret = pdb_downloader.download ? pdb_downloader.download (&pdb_downloader) : 0;
 	if (isradjson) {
-		PJ *pj = pj_new ();
-		if (!pj) {
-			return 1;
-		}
 		pj_ko (pj, "pdb");
 		pj_ks (pj, "file", opt.dbg_file);
 		pj_kb (pj, "download", (bool) ret);
 		pj_end (pj);
-		rz_cons_printf ("%s%s", actions_done && *actions_done ? "," : "", pj_string (pj));
-		pj_free (pj);
 	} else {
 		rz_cons_printf ("PDB \"%s\" download %s\n",
 		        opt.dbg_file, ret ? "success" : "failed");
-	}
-	if (actions_done) {
-		(*actions_done)++;
 	}
 	deinit_pdb_downloader (&pdb_downloader);
 

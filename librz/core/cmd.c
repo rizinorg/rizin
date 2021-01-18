@@ -265,7 +265,6 @@ static const char *help_msg_vertical_bar[] = {
 	"", "[cmd] |?", "show this help",
 	"", "[cmd] |", "disable scr.html and scr.color",
 	"", "[cmd] |H", "enable scr.html, respect scr.color",
-	"", "[cmd] |T", "use scr.tts to speak out the stdout",
 	"", "[cmd] | [program]", "pipe output of command to program",
 	"", "[cmd] |.", "alias for .[cmd]",
 	NULL
@@ -1104,7 +1103,7 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 	Sdb *s = core->sdb;
 
 	char *cur_pos = NULL, *cur_cmd = NULL, *next_cmd = NULL;
-	char *temp_pos = NULL, *temp_cmd = NULL, *temp_storage = NULL;
+	char *temp_pos = NULL, *temp_cmd = NULL;
 
 	switch (input[0]) {
 
@@ -1133,36 +1132,34 @@ RZ_IPI int rz_cmd_kuery(void *data, const char *input) {
 
 			free (next_cmd);
 			next_cmd = rz_str_newf ("analysis/%s/*", cur_cmd);
-			temp_storage = sdb_querys (s, NULL, 0, next_cmd);
+			char *query_result = sdb_querys (s, NULL, 0, next_cmd);
 
-			if (!temp_storage) {
-				out += cur_pos - out + 1;
+			if (!query_result) {
+				out = cur_pos + 1;
 				continue;
 			}
 
-			while (*temp_storage) {
-				temp_pos = strchr (temp_storage, '\n');
+			char *temp = query_result;
+			while (*temp) {
+				temp_pos = strchr (temp, '\n');
 				if (!temp_pos) {
 					break;
 				}
-				temp_cmd = rz_str_ndup (temp_storage, temp_pos - temp_storage);
+				temp_cmd = rz_str_ndup (temp, temp_pos - temp);
 				pj_s (pj, temp_cmd);
-				temp_storage += temp_pos - temp_storage + 1;
+				temp = temp_pos + 1;
 			}
-			out += cur_pos - out + 1;
+			out = cur_pos + 1;
+			free (query_result);
 		}
 		pj_end (pj);
 		pj_end (pj);
 		pj_end (pj);
-		char *a = pj_drain (pj);
-		if (a) {
-			rz_cons_println (a);
-			free (a);
-		}
+		rz_cons_println (pj_string (pj));
+		pj_free (pj);
 		RZ_FREE (next_cmd);
 		free (next_cmd);
 		free (cur_cmd);
-		free (temp_storage);
 		break;
 
 	case ' ':
@@ -1526,7 +1523,7 @@ RZ_IPI int rz_cmd_resize(void *data, const char *input) {
 		}
 		break;
 	case 'e':
-		write (1, Color_RESET_TERMINAL, strlen (Color_RESET_TERMINAL));
+		rz_xwrite (1, Color_RESET_TERMINAL, strlen (Color_RESET_TERMINAL));
 		return true;
 	case '?': // "r?"
 	default:
@@ -2282,7 +2279,7 @@ static int rz_core_cmd_subst(RzCore *core, char *cmd) {
 		goto beach;
 	}
 	if (*icmd && !strchr (icmd, '"')) {
-		char *hash = icmd;
+		char *hash;
 		for (hash = icmd + 1; *hash; hash++) {
 			if (*hash == '\\') {
 				hash++;
@@ -2665,10 +2662,6 @@ static int rz_core_cmd_subst_i(RzCore *core, char *cmd, char *colon, bool *tmpse
 				} else if (!strncmp (ptr + 1, "H", 1)) { // "|H"
 					scr_html = rz_config_get_i (core->config, "scr.html");
 					rz_config_set_i (core->config, "scr.html", true);
-				} else if (!strcmp (ptr + 1, "T")) { // "|T"
-					scr_color = rz_config_get_i (core->config, "scr.color");
-					rz_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
-					core->cons->use_tts = true;
 				} else if (!strcmp (ptr + 1, ".")) { // "|."
 					ret = *cmd ? rz_core_cmdf (core, ".%s", cmd) : 0;
 					rz_list_free (tmpenvs);
@@ -2856,7 +2849,6 @@ escape_pipe:
 		if (scr_color != -1) {
 			rz_config_set_i (core->config, "scr.color", scr_color);
 		}
-		core->cons->use_tts = false;
 		rz_list_free (tmpenvs);
 		return ret;
 	}
@@ -4637,6 +4629,31 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(arged_command) {
 	if (res == RZ_CMD_STATUS_WRONG_ARGS) {
 		const char *cmdname = rz_cmd_parsed_args_cmd (pr_args);
 		eprintf ("Wrong number of arguments passed to `%s`, see its help with `%s?`\n", cmdname, cmdname);
+		RzCmdDesc *cd = rz_cmd_get_desc (state->core->rcmd, cmdname);
+		if (cd) {
+			char *cmdname_help = rz_str_newf ("%s?", cmdname);
+			if (!cmdname_help) {
+				goto err;
+			}
+			RzCmdParsedArgs *help_pra = rz_cmd_parsed_args_newcmd (cmdname_help);
+			if (!help_pra) {
+				goto err;
+			}
+			char *help_msg = rz_cmd_get_help (state->core->rcmd, help_pra, true);
+			if (!help_msg) {
+				goto help_pra_err;
+			}
+			eprintf ("%s", help_msg);
+			free (help_msg);
+help_pra_err:
+			rz_cmd_parsed_args_free (help_pra);
+		}
+	} else if (res == RZ_CMD_STATUS_NONEXISTINGCMD) {
+		const char *cmdname = rz_cmd_parsed_args_cmd (pr_args);
+		eprintf ("Command '%s' does not exist.\n", cmdname);
+		if (rz_str_endswith (cmdname, "?") && pr_args->argc > 1) {
+			eprintf ("Did you want to see the help? Try `%s` without any argument.\n", cmdname);
+		}
 	} else if (res == RZ_CMD_STATUS_ERROR) {
 		const char *cmdname = rz_cmd_parsed_args_cmd (pr_args);
 		RZ_LOG_DEBUG ("Something wrong during the execution of `%s` command.\n", cmdname);
@@ -4761,7 +4778,6 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(redirect_command) {
 	if (scr_html != -1) {
 		rz_config_set_i (state->core->config, "scr.html", scr_html);
 	}
-	state->core->cons->use_tts = false;
 	return res;
 }
 
@@ -4807,8 +4823,6 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(help_command) {
 			rz_cons_printf ("%s", help_msg);
 			free (help_msg);
 			res = RZ_CMD_STATUS_OK;
-		} else {
-			res = rz_cmd_call_parsed_args (state->core->rcmd, pr_args);
 		}
 	err_else:
 		rz_cmd_parsed_args_free (pr_args);
@@ -5930,18 +5944,6 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(pipe_command) {
 	state->core->num->value = value;
 	free (first_str);
 	free (second_str);
-	return res;
-}
-
-DEFINE_HANDLE_TS_FCN_AND_SYMBOL(scr_tts_command) {
-	TSNode command = ts_node_child_by_field_name (node, "command", strlen ("command"));
-	int scr_color = rz_config_get_i (state->core->config, "scr.color");
-	rz_config_set_i (state->core->config, "scr.color", COLOR_MODE_DISABLED);
-	state->core->cons->use_tts = true;
-	RzCmdStatus res = handle_ts_command (state, command);
-	if (scr_color != -1) {
-		rz_config_set_i (state->core->config, "scr.color", scr_color);
-	}
 	return res;
 }
 

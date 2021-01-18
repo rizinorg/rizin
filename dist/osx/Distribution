@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="1">
+    <title>Rizin</title>
+    <license file="COPYING.LESSER" mime-type="text/plain"/>
+    <pkg-ref id="re.rizin.rizin"/>
+    <options customize="never" require-scripts="false"/>
+    <choices-outline>
+        <line choice="default">
+            <line choice="re.rizin.rizin"/>
+        </line>
+    </choices-outline>
+    <choice id="default"/>
+    <choice id="re.rizin.rizin" visible="false">
+        <pkg-ref id="re.rizin.rizin"/>
+    </choice>
+    <pkg-ref id="re.rizin.rizin" version="0" onConclusion="none">rizin.pkg</pkg-ref>
+    <welcome file="welcome.rtf" mime-type="text/enriched"/>
+    <background file="rizin-logo.png" mime-type="image/png" alignment="center"/>
+</installer-gui-script>

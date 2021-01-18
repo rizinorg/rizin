@@ -122,6 +122,7 @@ RZ_API int rz_analysis_function_resize(RzAnalysisFunction *fcn, int newsize) {
 		}
 		if (bb->addr + bb->size >= eof) {
 			rz_analysis_block_set_size (bb, eof - bb->addr);
+			rz_analysis_block_update_hash (bb);
 		}
 		if (bb->jump != UT64_MAX && bb->jump >= eof) {
 			bb->jump = UT64_MAX;
@@ -453,7 +454,6 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RzAnalysisBlock *block
 	block->parent_stackptr -= ctx->stack_diff;
 	rz_analysis_function_add_block (our_fcn, block);
 	// TODO: add block->ninstr from our_fcn considering delay slots
-	our_fcn += block->ninstr;
 	rz_analysis_block_unref (block);
 	return true;
 }

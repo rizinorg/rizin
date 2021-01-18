@@ -108,6 +108,7 @@ RZ_API bool rz_debug_trace_ins_before(RzDebug *dbg) {
 }
 
 RZ_API bool rz_debug_trace_ins_after(RzDebug *dbg) {
+	rz_return_val_if_fail (dbg->cur_op, false);
 	RzListIter *it;
 	RzAnalysisValue *val;
 
@@ -121,6 +122,10 @@ RZ_API bool rz_debug_trace_ins_after(RzDebug *dbg) {
 		switch (val->type) {
 		case RZ_ANALYSIS_VAL_REG:
 		{
+			if (!val->reg) {
+				RZ_LOG_ERROR("invalid register, unable to trace register state\n");
+				continue;
+			}
 			ut64 data = rz_reg_get_value (dbg->reg, val->reg);
 
 			// add reg write

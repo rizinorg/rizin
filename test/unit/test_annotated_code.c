@@ -138,7 +138,7 @@ static RzAnnotatedCode *get_all_context_annotated_code(void) {
 	return code;
 }
 
-static bool test_r_annotated_code_new(void) {
+static bool test_rz_annotated_code_new(void) {
 	//Testing RAnnoatedCode->code
 	char *test_string = strdup ("How are you?");
 	RzAnnotatedCode *code = rz_annotated_code_new (test_string);
@@ -151,7 +151,7 @@ static bool test_r_annotated_code_new(void) {
 	mu_end;
 }
 
-static bool test_r_annotated_code_free(void) {
+static bool test_rz_annotated_code_free(void) {
 	char *test_string = strdup ("How are you?");
 	RzAnnotatedCode *code = rz_annotated_code_new (test_string);
 
@@ -182,7 +182,7 @@ static bool test_equal(RzCodeAnnotation *first, RzCodeAnnotation *second) { // F
 	return false;
 }
 
-static bool test_r_annotated_code_add_annotation(void) {
+static bool test_rz_annotated_code_add_annotation(void) {
 	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	RzAnnotatedCode *code = rz_annotated_code_new (test_string);
 	RzVector /*<RzCodeAnnotation>*/ *test_annotations;
@@ -205,7 +205,7 @@ static bool test_r_annotated_code_add_annotation(void) {
 	mu_end;
 }
 
-static bool test_r_annotated_code_annotations_in(void) {
+static bool test_rz_annotated_code_annotations_in(void) {
 	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	RzAnnotatedCode *code = rz_annotated_code_new (test_string);
 	RzVector /*<RzCodeAnnotation>*/ *test_annotations;
@@ -235,7 +235,7 @@ static bool test_r_annotated_code_annotations_in(void) {
 	mu_end;
 }
 
-static bool test_r_annotated_code_annotations_range(void) {
+static bool test_rz_annotated_code_annotations_range(void) {
 	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	RzAnnotatedCode *code = rz_annotated_code_new (test_string);
 	RzVector /*<RzCodeAnnotation>*/ *test_annotations;
@@ -267,7 +267,7 @@ static bool test_r_annotated_code_annotations_range(void) {
 	mu_end;
 }
 
-static bool test_r_annotated_code_line_offsets(void) {
+static bool test_rz_annotated_code_line_offsets(void) {
 
 	RzAnnotatedCode *code = get_hello_world ();
 	RzVector *offsets = rz_annotated_code_line_offsets (code);
@@ -291,7 +291,7 @@ static bool test_r_annotated_code_line_offsets(void) {
 	mu_end;
 }
 
-static bool test_r_core_annotated_code_print_json(void) {
+static bool test_rz_core_annotated_code_print_json(void) {
 	RzAnnotatedCode *code = get_hello_world ();
 	char *actual;
 	char *expected = "{\"code\":\"\\nvoid main(void)\\n{\\n    sym.imp.puts(\\\"Hello, World!\\\");\\n    return;\\n}\\n\",\"annotations\":[{\"start\":1,\"end\":5,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"datatype\"},{\"start\":6,\"end\":10,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"function_name\"},{\"start\":11,\"end\":15,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"keyword\"},{\"start\":23,\"end\":35,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"function_name\"},{\"start\":36,\"end\":51,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"constant_variable\"},{\"start\":23,\"end\":52,\"type\":\"offset\",\"offset\":4440},{\"start\":58,\"end\":64,\"type\":\"offset\",\"offset\":4447},{\"start\":58,\"end\":64,\"type\":\"syntax_highlight\",\"syntax_highlight\":\"keyword\"},{\"start\":58,\"end\":64,\"type\":\"offset\",\"offset\":4447}]}\n";
@@ -311,7 +311,7 @@ static bool test_r_core_annotated_code_print_json(void) {
 /**
  * @brief Tests JSON output for all context related annotations
  */
-static bool test_r_core_annotated_code_print_json_context_annotations(void) {
+static bool test_rz_core_annotated_code_print_json_context_annotations(void) {
 	RzAnnotatedCode *code = get_all_context_annotated_code ();
 	char *expected = "{\"code\":\"\\nfunc-name\\nconst-var\\n   global-var(\\\"Hello, local-var\\\");\\n    function-param\\n}\\n\",\"annotations\":[{\"start\":1,\"end\":10,\"type\":\"function_name\",\"name\":\"func-name\",\"offset\":1234},{\"start\":10,\"end\":19,\"type\":\"constant_variable\",\"offset\":12345},{\"start\":23,\"end\":33,\"type\":\"global_variable\",\"offset\":123456},{\"start\":42,\"end\":51,\"type\":\"local_variable\",\"name\":\"local-var\"},{\"start\":59,\"end\":73,\"type\":\"function_parameter\",\"name\":\"function-param\"}]}\n";
 	rz_cons_new ();
@@ -325,7 +325,7 @@ static bool test_r_core_annotated_code_print_json_context_annotations(void) {
 	mu_end;
 }
 
-static bool test_r_core_annotated_code_print(void) {
+static bool test_rz_core_annotated_code_print(void) {
 	RzAnnotatedCode *code = get_hello_world ();
 	char *actual;
 	//Checking without line offset
@@ -365,7 +365,7 @@ static bool test_r_core_annotated_code_print(void) {
 	mu_end;
 }
 
-static bool test_r_core_annotated_code_print_comment_cmds(void) {
+static bool test_rz_core_annotated_code_print_comment_cmds(void) {
 	RzAnnotatedCode *code = get_hello_world ();
 	char *actual;
 	char *expected = "CCu base64:c3ltLmltcC5wdXRzKCJIZWxsbywgV29ybGQhIik= @ 0x1158\n"
@@ -386,11 +386,11 @@ static bool test_r_core_annotated_code_print_comment_cmds(void) {
 /**
  * @brief Tests functions rz_annotation_is_variable(), rz_annotation_is_reference(), and rz_annotation_free()
  */
-static bool test_r_annotation_free_and_is_annotation_type_functions(void) {
+static bool test_rz_annotation_free_and_is_annotation_type_functions(void) {
 	// Making all types of annotations
 	RzCodeAnnotation offset = make_code_annotation (58, 64, RZ_CODE_ANNOTATION_TYPE_OFFSET, 4447, RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD);
 	RzCodeAnnotation syntax_highlight = make_code_annotation (1, 5, RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT, 123, RZ_SYNTAX_HIGHLIGHT_TYPE_DATATYPE);
-	RzCodeAnnotation local_variable = make_variable_annotation (1, 2, RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "RADARE2");
+	RzCodeAnnotation local_variable = make_variable_annotation (1, 2, RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "RIZIN");
 	RzCodeAnnotation function_parameter = make_variable_annotation (4, 10, RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE, "Cutter");
 	RzCodeAnnotation function_name = make_reference_annotation (10, 12, RZ_CODE_ANNOTATION_TYPE_FUNCTION_NAME, 123513, "test_function");
 	RzCodeAnnotation global_variable = make_reference_annotation (10, 12, RZ_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE, 1234234, NULL);
@@ -424,20 +424,18 @@ static bool test_r_annotation_free_and_is_annotation_type_functions(void) {
 }
 
 static int all_tests(void) {
-	mu_run_test (test_r_annotated_code_new);
-	mu_run_test (test_r_annotated_code_free);
-	mu_run_test (test_r_annotated_code_add_annotation);
-	mu_run_test (test_r_annotated_code_annotations_in);
-	mu_run_test (test_r_annotated_code_annotations_range);
-	mu_run_test (test_r_annotated_code_line_offsets);
-	mu_run_test (test_r_core_annotated_code_print_json);
-	mu_run_test (test_r_core_annotated_code_print_json_context_annotations);
-	mu_run_test (test_r_core_annotated_code_print);
-	mu_run_test (test_r_core_annotated_code_print_comment_cmds);
-	mu_run_test (test_r_annotation_free_and_is_annotation_type_functions);
+	mu_run_test (test_rz_annotated_code_new);
+	mu_run_test (test_rz_annotated_code_free);
+	mu_run_test (test_rz_annotated_code_add_annotation);
+	mu_run_test (test_rz_annotated_code_annotations_in);
+	mu_run_test (test_rz_annotated_code_annotations_range);
+	mu_run_test (test_rz_annotated_code_line_offsets);
+	mu_run_test (test_rz_core_annotated_code_print_json);
+	mu_run_test (test_rz_core_annotated_code_print_json_context_annotations);
+	mu_run_test (test_rz_core_annotated_code_print);
+	mu_run_test (test_rz_core_annotated_code_print_comment_cmds);
+	mu_run_test (test_rz_annotation_free_and_is_annotation_type_functions);
 	return tests_passed != tests_run;
 }
 
-int main (int argc, char **argv) {
-	return all_tests ();
-}
+mu_main (all_tests)

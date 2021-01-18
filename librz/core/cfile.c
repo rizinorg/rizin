@@ -576,12 +576,18 @@ typedef struct {
 } RzCoreFileData;
 
 static bool filecb(void *user, void *data, ut32 id) {
-	RzCoreFileData *fd = user;
+	RzCoreFileData *filedata = user;
 	RzIODesc *desc = (RzIODesc *)data;
-	if (!strcmp (desc->name, fd->name)) {
-		fd->found = true;
+	if (!strcmp (desc->name, filedata->name)) {
+		filedata->found = true;
 	}
 	return true;
+}
+
+static bool file_is_loaded(RzCore *core, const char *lib) {
+	RzCoreFileData filedata = {lib, false};
+	rz_id_storage_foreach (core->io->files, filecb, &filedata);
+	return filedata.found;
 }
 
 typedef struct {
@@ -649,21 +655,24 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 		rz_io_use_fd (r->io, desc->fd);
 		// Restore original desc
 	}
+	binfile = rz_bin_cur (r->bin);
 	if (cf && binfile && desc) {
 		binfile->fd = desc->fd;
 	}
-	binfile = rz_bin_cur (r->bin);
-	if (r->bin->cur && r->bin->cur->o && r->bin->cur->o->plugin && r->bin->cur->o->plugin->strfilter) {
-		char msg[2];
-		msg[0] = r->bin->cur->o->plugin->strfilter;
-		msg[1] = 0;
-		rz_config_set (r->config, "bin.str.filter", msg);
-	}
 	//rz_core_bin_set_env (r, binfile);
 	plugin = rz_bin_file_cur_plugin (binfile);
-	if (plugin && plugin->name) {
-		load_scripts_for (r, plugin->name);
+	if (plugin) {
+		if (plugin->strfilter) {
+			char msg[2];
+			msg[0] = plugin->strfilter;
+			msg[1] = 0;
+			rz_config_set (r->config, "bin.str.filter", msg);
+		}
+		if (plugin->name) {
+			load_scripts_for (r, plugin->name);
+		}
 	}
+
 	cmd_load = rz_config_get (r->config, "cmd.load");
 	if (cmd_load && *cmd_load) {
 		rz_core_cmd (r, cmd_load, 0);
@@ -728,13 +737,10 @@ RZ_API bool rz_core_bin_load(RzCore *r, const char *filenameuri, ut64 baddr) {
 		RzListIter *iter;
 		RzList *libs = rz_bin_get_libs (r->bin);
 		rz_list_foreach (libs, iter, lib) {
-			eprintf ("[bin.libs] Opening %s\n", lib);
-			RzCoreFileData filedata = {lib, false};
-			rz_id_storage_foreach (r->io->files, filecb, &filedata);
-			if (filedata.found) {
-				eprintf ("Already opened\n");
+			if (file_is_loaded (r, lib)) {
 				continue;
 			}
+			eprintf ("[bin.libs] Opening %s\n", lib);
 			ut64 baddr = rz_io_map_location (r->io, 0x200000);
 			if (baddr != UT64_MAX) {
 				rz_core_file_loadlib (r, lib, baddr);

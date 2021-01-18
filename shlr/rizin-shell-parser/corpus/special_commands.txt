@@ -140,6 +140,7 @@ System commands
 !ls
 !!
 !!ls
+!rz-find -S واسع bins/pe/testapp-msvc64.exe
 
 ---
 
@@ -149,7 +150,13 @@ System commands
     (args (arg (arg_identifier))))
   (arged_command (system_identifier))
   (arged_command (system_identifier)
-    (args (arg (arg_identifier)))))
+    (args (arg (arg_identifier))))
+  (arged_command (system_identifier)
+    (args
+      (arg (arg_identifier))
+      (arg (arg_identifier))
+      (arg (arg_identifier))
+      (arg (arg_identifier)))))
 
 
 ===================

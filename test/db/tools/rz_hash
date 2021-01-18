@@ -50,7 +50,7 @@ NAME=rz-hash -h
 FILE=-
 CMDS=!rz-hash~Usage
 EXPECT=<<EOF
-Usage: rz-hash [-rBhLkv] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...
+Usage: rz-hash [-BhjkLqrv] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...
 EOF
 RUN
 
@@ -976,5 +976,21 @@ FILE=-
 CMDS=!rz-hash -a md5 "" bins/elf/analysis/hello-linux-x86_64
 EXPECT_ERR=<<EOF
 Cannot open empty path
+EOF
+RUN
+
+NAME=rz-hash -j file
+FILE=-
+CMDS=!rz-hash -j -a md4,md5 bins/elf/analysis/hello-linux-x86_64
+EXPECT=<<EOF
+[{"name":"md5","hash":"c957bd5bd6204470256bc15248ccafd4"},{"name":"md4","hash":"d4d61472a12d59be3a85e07ff9065658"}]
+EOF
+RUN
+
+NAME=rz-hash -j string
+FILE=-
+CMDS=!rz-hash -j -a sha1,sha256 -s 233
+EXPECT=<<EOF
+[{"name":"sha1","hash":"52fdb9f68c503e11d168fe52035901864c0a4861"},{"name":"sha256","hash":"c0509a487a18b003ba05e505419ebb63e57a29158073e381f57160b5c5b86426"}]
 EOF
 RUN

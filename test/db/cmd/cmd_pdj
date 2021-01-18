@@ -22,7 +22,7 @@ EXPECT=<<EOF
   },
   {
     "offset": 4294972376,
-    "text": "            0x1000013d8      55             push rbp"
+    "text": "            0x1000013d8      55             push  rbp"
   }
 ]
 [
@@ -40,7 +40,7 @@ EXPECT=<<EOF
   },
   {
     "offset": 4294972376,
-    "text": "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x1000013d8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;55&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push&nbsp;rbp"
+    "text": "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x1000013d8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;55&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;push&nbsp;&nbsp;rbp"
   }
 ]
 EOF

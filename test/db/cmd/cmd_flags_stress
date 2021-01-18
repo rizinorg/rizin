@@ -37,6 +37,6 @@ EOF
 EXPECT=<<EOF
 0x00000000 1 bar
             ;-- bar:
-            0x00000000      0000           add byte [rax], al
+            0x00000000      0000           add   byte [rax], al
 EOF
 RUN

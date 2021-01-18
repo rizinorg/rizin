@@ -8,7 +8,7 @@ LIB_PATH=$(SHLR)/bochs/
 CFLAGS+=-I$(SHLR)/bochs/include/
 LDFLAGS+=$(SHLR)/bochs/lib/libbochs.$(EXT_AR)
 
-include $(LIBR)/socket/deps.mk
+include $(LIBRZ)/socket/deps.mk
 
 ifeq (${WITHPIC},0)
 LINKFLAGS=../../socket/librz_socket.a

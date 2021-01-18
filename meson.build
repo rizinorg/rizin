@@ -132,6 +132,12 @@ if get_option('static_runtime')
   endif
 endif
 
+if cc.has_argument('--std=gnu99')
+  add_project_arguments('--std=gnu99', language: ['c', 'cpp'])
+elif cc.has_argument('--std=c99')
+  add_project_arguments('--std=c99', language: ['c', 'cpp'])
+endif
+
 if cc.get_id() == 'clang-cl'
   add_project_arguments('-fcommon', language: 'c')
   add_project_arguments('-D__STDC__=1', language: 'c')
@@ -282,12 +288,12 @@ userconf.set('PREFIX', rizin_prefix)
 if host_machine.system() == 'windows'
   userconf.set('LIBDIR', rizin_libdir)
   userconf.set('INCLUDEDIR', rizin_incdir)
-  userconf.set('DATADIR_R2', rizin_datdir)
+  userconf.set('DATADIR_RZ', rizin_datdir)
   userconf.set10('HAVE_JEMALLOC', false)
 else
   userconf.set('LIBDIR', rizin_prefix / rizin_libdir)
   userconf.set('INCLUDEDIR', rizin_prefix / rizin_incdir)
-  userconf.set('DATADIR_R2', rizin_datdir_rz)
+  userconf.set('DATADIR_RZ', rizin_datdir_rz)
   userconf.set10('HAVE_JEMALLOC', true)
 endif
 userconf.set('DATADIR', rizin_prefix / rizin_datdir)
@@ -481,7 +487,6 @@ install_headers(sdb_inc_files, install_dir: rizin_incdir / 'sdb')
 librzsdb = static_library('rzsdb', sdb_files,
   include_directories: sdb_inc,
   implicit_include_directories: false,
-  c_args: host_machine.system() == 'windows' ? '-DSDB_API=__declspec(dllexport)' : [],
 )
 
 sdb_dep = declare_dependency(
@@ -544,6 +549,36 @@ if use_rpath
   message('RPATH will be used to link libraries and executables')
   rpath_exe = '$ORIGIN/../' + get_option('libdir')
   rpath_lib = '$ORIGIN'
+endif
+# NOTE: this is to workaround an issue on Windows where unit tests don't use
+# the right libraries, resulting in tests not being run properly
+test_env_common_path = []
+build_root = meson.current_build_dir()
+if host_machine.system() == 'windows'
+  test_env_common_path += [
+    build_root / 'librz' / 'analysis',
+    build_root / 'librz' / 'asm',
+    build_root / 'librz' / 'bin',
+    build_root / 'librz' / 'bp',
+    build_root / 'librz' / 'config',
+    build_root / 'librz' / 'cons',
+    build_root / 'librz' / 'core',
+    build_root / 'librz' / 'crypto',
+    build_root / 'librz' / 'debug',
+    build_root / 'librz' / 'egg',
+    build_root / 'librz' / 'flag',
+    build_root / 'librz' / 'hash',
+    build_root / 'librz' / 'io',
+    build_root / 'librz' / 'lang',
+    build_root / 'librz' / 'magic',
+    build_root / 'librz' / 'main',
+    build_root / 'librz' / 'parse',
+    build_root / 'librz' / 'reg',
+    build_root / 'librz' / 'search',
+    build_root / 'librz' / 'socket',
+    build_root / 'librz' / 'syscall',
+    build_root / 'librz' / 'util',
+  ]
 endif
 
 subdir('librz/util')
@@ -697,7 +732,7 @@ summary({
   'System magic library': use_syslib_magic,
   'System xxhash library': use_sys_xxhash,
   'System openssl library': use_sys_openssl,
-  'System libuv library': libuv_dep.type_name() != 'internal' and libuv_dep.found(),
+  'System libuv library': use_libuv,
   'System capstone library': capstone_dep.type_name() != 'internal',
   'System tree-sitter library': tree_sitter_dep.type_name() != 'internal',
   'System lz4 library': lz4_dep.type_name() != 'internal',

@@ -15,7 +15,7 @@ static void callback_test(RzEvent *ev, int type, void *user, void *data) {
 	acc->last_data = data;
 }
 
-bool test_r_event(void) {
+bool test_rz_event(void) {
 	RzEvent *ev = rz_event_new ((void *)0x1337);
 	mu_assert_notnull (ev, "rz_event_new ()");
 	mu_assert_ptreq (ev->user, (void *)0x1337, "ev->user");
@@ -67,10 +67,8 @@ bool test_r_event(void) {
 }
 
 int all_tests() {
-	mu_run_test (test_r_event);
+	mu_run_test (test_rz_event);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
-}
+mu_main (all_tests)

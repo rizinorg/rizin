@@ -17,15 +17,15 @@ enum {
 };
 
 enum {
-        GRAPH_DEFAULT_MODE,
-        GRAPH_SDB_MODE,
-        GRAPH_JSON_MODE,
-        GRAPH_JSON_DIS_MODE,
-        GRAPH_TINY_MODE,
-        GRAPH_INTERACTIVE_MODE,
-        GRAPH_DOT_MODE,
-        GRAPH_STAR_MODE,
-        GRAPH_GML_MODE
+	GRAPH_DEFAULT_MODE,
+	GRAPH_SDB_MODE,
+	GRAPH_JSON_MODE,
+	GRAPH_JSON_DIS_MODE,
+	GRAPH_TINY_MODE,
+	GRAPH_INTERACTIVE_MODE,
+	GRAPH_DOT_MODE,
+	GRAPH_STAR_MODE,
+	GRAPH_GML_MODE
 };
 
 typedef struct {
@@ -38,7 +38,6 @@ typedef struct {
 	int useva;
 	int delta;
 	int showbare;
-	bool json_started;
 	int diffmode;
 	int diffops;
 	int mode;
@@ -387,15 +386,15 @@ static int bcb(RzDiff *d, void *user, RzDiffOp *op) {
 	// we append data
 	if (op->b_len <= 246) {
 		ut8 data = op->b_len;
-		(void) write (1, &data, 1);
+		rz_xwrite (1, &data, 1);
 	} else if (op->b_len <= USHRT_MAX) {
 		USLen = (ut16) op->b_len;
 		ut8 data = 247;
-		(void) write (1, &data, 1);
+		rz_xwrite (1, &data, 1);
 		print_bytes (&USLen, sizeof (USLen), true);
 	} else if (op->b_len <= INT_MAX) {
 		ut8 data = 248;
-		(void) write (1, &data, 1);
+		rz_xwrite (1, &data, 1);
 		ILen = (int) op->b_len;
 		print_bytes (&ILen, sizeof (ILen), true);
 	} else {
@@ -989,7 +988,7 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 			break;
 		case 'm':{
 		        const char *tmp = opt.arg;
-		        switch(tmp[0]) {
+		        switch (tmp[0]) {
 	                case 'i': ro.gmode = GRAPH_INTERACTIVE_MODE; break;
 	                case 'k': ro.gmode = GRAPH_SDB_MODE; break;
 	                case 'j': ro.gmode = GRAPH_JSON_MODE; break;
@@ -1091,7 +1090,7 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 	ro.file = (opt.ind < argc)? argv[opt.ind]: NULL;
 	ro.file2 = (opt.ind + 1 < argc)? argv[opt.ind + 1]: NULL;
 
-	if (RZ_STR_ISEMPTY (ro.file) || RZ_STR_ISEMPTY(ro.file2)) {
+	if (RZ_STR_ISEMPTY (ro.file) || RZ_STR_ISEMPTY (ro.file2)) {
 		eprintf ("Cannot open empty path\n");
 		return 1;
 	}
@@ -1171,6 +1170,7 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 				__print_diff_graph (c, rz_num_math (c->num, addr), ro.gmode);
 			}
 			free (words);
+			free (second);
 		} else if (ro.mode == MODE_CODE) {
 			if (ro.zignatures) {
 				rz_core_cmd0 (c, "z~?");
@@ -1255,7 +1255,7 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 			pj_ka (ro.pj, "changes");
 		}
 		if (ro.diffmode == 'B') {
-			(void) write (1, "\xd1\xff\xd1\xff\x04", 5);
+			rz_xwrite (1, "\xd1\xff\xd1\xff\x04", 5);
 		}
 		if (ro.diffmode == 'U') {
 			char *res = rz_diff_buffers_unified (d, bufa, (int)sza, bufb, (int)szb);
@@ -1266,7 +1266,7 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 		} else if (ro.diffmode == 'B') {
 			rz_diff_set_callback (d, &bcb, &ro);
 			rz_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
-			(void) write (1, "\x00", 1);
+			rz_xwrite (1, "\x00", 1);
 		} else {
 			rz_diff_set_callback (d, &cb, &ro); // (void *)(size_t)diffmode);
 			rz_diff_buffers (d, bufa, (ut32)sza, bufb, (ut32)szb);
@@ -1308,7 +1308,7 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 	if (ro.pj) {
 		pj_end (ro.pj);
 		char *s = pj_drain (ro.pj);
-		printf ("%s\n", s);
+		rz_cons_println (s);
 		free (s);
 		ro.pj = NULL;
 	}

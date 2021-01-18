@@ -728,6 +728,7 @@ RZ_API int rz_sys_cmd_str_full(const char *cmd, const char *input, char **output
 		} else {
 			free (outputptr);
 		}
+		free (mysterr);
 		return ret;
 	}
 	return false;
@@ -1271,25 +1272,6 @@ RZ_API int rz_sys_getpid(void) {
 #endif
 }
 
-RZ_API bool rz_sys_tts(const char *txt, bool bg) {
-	int i;
-	rz_return_val_if_fail (txt, false);
-	const char *says[] = {
-		"say", "termux-tts-speak", NULL
-	};
-	for (i = 0; says[i]; i++) {
-		char *sayPath = rz_file_path (says[i]);
-		if (sayPath) {
-			char *line = rz_str_replace (strdup (txt), "'", "\"", 1);
-			rz_sys_cmdf ("\"%s\" '%s'%s", sayPath, line, bg? " &": "");
-			free (line);
-			free (sayPath);
-			return true;
-		}
-	}
-	return false;
-}
-
 RZ_API const char *rz_sys_prefix(const char *pfx) {
 	static char *prefix = NULL;
 	if (!prefix) {
@@ -1823,6 +1805,33 @@ RZ_API int rz_sys_truncate(const char *file, int sz) {
 #endif
 }
 
+/**
+ * \brief Convert rizin permissions (RZ_PERM_*) to posix permissions that can be passed to \b rz_sys_open .
+ *
+ * \b rz_sys_open accepts posix permissions for now, not the arch-independent
+ * ones provided by RZ_PERM_*. This function is an helper to convert from rizin
+ * permissions to posix ones.
+ */
+RZ_API int rz_sys_open_perms(int rizin_perms) {
+	int res = 0;
+	if ((rizin_perms & RZ_PERM_R) && (rizin_perms & RZ_PERM_W)) {
+		res |= O_RDWR;
+		// NOTE: O_CREAT is added here because Rizin for now assumes Write means
+		// ability to create a file as well.
+		res |= O_CREAT;
+	} else if (rizin_perms & RZ_PERM_R) {
+		res |= O_RDONLY;
+	} else if (rizin_perms & RZ_PERM_W) {
+		res |= O_WRONLY;
+		// NOTE: O_CREAT is added here because Rizin for now assumes Write means
+		// ability to create a file as well.
+		res |= O_CREAT;
+	}
+	if (rizin_perms & RZ_PERM_CREAT) {
+		res |= O_CREAT;
+	}
+	return res;
+}
 
 /* perm <-> mode */
 RZ_API int rz_sys_open(const char *path, int perm, int mode) {

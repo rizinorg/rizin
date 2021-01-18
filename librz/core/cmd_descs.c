@@ -8,6 +8,7 @@
 
 static const RzCmdDescDetail hash_bang_details[2];
 static const RzCmdDescDetail pointer_details[2];
+static const RzCmdDescDetail eval_getset_details[2];
 static const RzCmdDescDetail env_details[3];
 static const RzCmdDescDetail wB_details[2];
 static const RzCmdDescDetail wv_details[2];
@@ -46,6 +47,13 @@ static const RzCmdDescArg remote_rap_args[3];
 static const RzCmdDescArg remote_tcp_args[3];
 static const RzCmdDescArg remote_rap_bg_args[2];
 static const RzCmdDescArg push_escaped_args[2];
+static const RzCmdDescArg eval_getset_args[2];
+static const RzCmdDescArg eval_list_args[2];
+static const RzCmdDescArg eval_bool_invert_args[2];
+static const RzCmdDescArg eval_editor_args[2];
+static const RzCmdDescArg eval_readonly_args[2];
+static const RzCmdDescArg eval_spaces_args[2];
+static const RzCmdDescArg eval_type_args[2];
 static const RzCmdDescArg env_args[3];
 static const RzCmdDescArg ls_args[2];
 static const RzCmdDescArg project_save_args[2];
@@ -117,7 +125,7 @@ static const RzCmdDescDetail hash_bang_details[] = {
 
 static const RzCmdDescArg hash_bang_args[] = {
 	{ .name = "interpreter-name", .type = RZ_CMD_ARG_TYPE_STRING, .optional = true, .no_space = true, },
-	{ .name = "arg", .type = RZ_CMD_ARG_TYPE_ARRAY_STRING, .optional = true, },
+	{ .name = "arg", .type = RZ_CMD_ARG_TYPE_STRING, .flags = RZ_CMD_ARG_FLAG_ARRAY, .optional = true, },
 	{ 0 },
 };
 static const RzCmdDescHelp hash_bang_help = {
@@ -141,7 +149,7 @@ static const RzCmdDescHelp and__help = {
 	.summary = "Manage tasks",
 };
 static const RzCmdDescArg tasks_args[] = {
-	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD_LAST, .optional = true, },
+	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD, .flags = RZ_CMD_ARG_FLAG_LAST, .optional = true, },
 	{ 0 },
 };
 static const RzCmdDescHelp tasks_help = {
@@ -150,7 +158,7 @@ static const RzCmdDescHelp tasks_help = {
 };
 
 static const RzCmdDescArg tasks_transient_args[] = {
-	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD_LAST, },
+	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD, .flags = RZ_CMD_ARG_FLAG_LAST, },
 	{ 0 },
 };
 static const RzCmdDescHelp tasks_transient_help = {
@@ -238,7 +246,7 @@ static const RzCmdDescHelp dot__help = {
 	.summary = "Interpret commands",
 };
 static const RzCmdDescArg interpret_args[] = {
-	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD_LAST, .optional = true, .no_space = true, },
+	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD, .flags = RZ_CMD_ARG_FLAG_LAST, .optional = true, .no_space = true, },
 	{ 0 },
 };
 static const RzCmdDescHelp interpret_help = {
@@ -292,7 +300,7 @@ static const RzCmdDescHelp interpret_pipe_help = {
 
 static const RzCmdDescArg interpret_system_args[] = {
 	{ .name = "bin", .type = RZ_CMD_ARG_TYPE_FILE, .no_space = true, },
-	{ .name = "arg", .type = RZ_CMD_ARG_TYPE_ARRAY_STRING, .optional = true, },
+	{ .name = "arg", .type = RZ_CMD_ARG_TYPE_STRING, .flags = RZ_CMD_ARG_FLAG_ARRAY, .optional = true, },
 	{ 0 },
 };
 static const RzCmdDescHelp interpret_system_help = {
@@ -304,7 +312,7 @@ static const RzCmdDescHelp interpret_system_help = {
 
 static const RzCmdDescArg interpret_macro_args[] = {
 	{ .name = "macro-name", .type = RZ_CMD_ARG_TYPE_MACRO, .no_space = true, },
-	{ .name = "macro-arg", .type = RZ_CMD_ARG_TYPE_ARRAY_STRING, .optional = true, },
+	{ .name = "macro-arg", .type = RZ_CMD_ARG_TYPE_STRING, .flags = RZ_CMD_ARG_FLAG_ARRAY, .optional = true, },
 	{ .name = ")", .type = RZ_CMD_ARG_TYPE_FAKE, },
 	{ 0 },
 };
@@ -323,7 +331,7 @@ static const RzCmdDescHelp equal__help = {
 
 static const RzCmdDescArg remote_args[] = {
 	{ .name = "fd", .type = RZ_CMD_ARG_TYPE_NUM, .optional = true, },
-	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD_LAST, },
+	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD, .flags = RZ_CMD_ARG_FLAG_LAST, },
 	{ 0 },
 };
 static const RzCmdDescHelp remote_help = {
@@ -335,7 +343,7 @@ static const RzCmdDescHelp remote_help = {
 
 static const RzCmdDescArg remote_send_args[] = {
 	{ .name = "fd", .type = RZ_CMD_ARG_TYPE_NUM, .optional = true, },
-	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD_LAST, },
+	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD, .flags = RZ_CMD_ARG_FLAG_LAST, },
 	{ 0 },
 };
 static const RzCmdDescHelp remote_send_help = {
@@ -344,7 +352,7 @@ static const RzCmdDescHelp remote_send_help = {
 };
 
 static const RzCmdDescArg io_system_run_args[] = {
-	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD_LAST, .optional = true, },
+	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD, .flags = RZ_CMD_ARG_FLAG_LAST, .optional = true, },
 	{ 0 },
 };
 static const RzCmdDescHelp io_system_run_help = {
@@ -398,7 +406,7 @@ static const RzCmdDescHelp remote_mode_disable_help = {
 
 static const RzCmdDescArg remote_rap_args[] = {
 	{ .name = "[host:]port", .type = RZ_CMD_ARG_TYPE_STRING, },
-	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD_LAST, .optional = true, },
+	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD, .flags = RZ_CMD_ARG_FLAG_LAST, .optional = true, },
 	{ 0 },
 };
 static const RzCmdDescHelp remote_rap_help = {
@@ -421,7 +429,7 @@ static const RzCmdDescHelp equal_H_handler_old_help = {
 
 static const RzCmdDescArg remote_tcp_args[] = {
 	{ .name = "[host:]port", .type = RZ_CMD_ARG_TYPE_STRING, },
-	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD_LAST, .optional = true, },
+	{ .name = "cmd", .type = RZ_CMD_ARG_TYPE_CMD, .flags = RZ_CMD_ARG_FLAG_LAST, .optional = true, },
 	{ 0 },
 };
 static const RzCmdDescHelp remote_tcp_help = {
@@ -476,9 +484,102 @@ static const RzCmdDescHelp cmd_debug_help = {
 	.summary = "Debugger commands",
 };
 
-static const RzCmdDescHelp cmd_eval_help = {
+static const RzCmdDescHelp e_help = {
 	.summary = "List/get/set config evaluable vars",
 };
+static const RzCmdDescDetailEntry eval_getset_Examples_detail_entries[] = {
+	{ .text = "e", .arg_str = " asm.bytes", .comment = "Show current value of config variable `asm.bytes`" },
+	{ .text = "e", .arg_str = " asm.bytes=true", .comment = "Set config variable `asm.bytes` to `true`" },
+	{ .text = "e", .arg_str = " search.in=?", .comment = "Show all possible values for config variable `search.in`" },
+	{ .text = "e", .arg_str = " search.in=??", .comment = "Show all possible values for config variable `search.in` together with description" },
+	{ .text = "e", .arg_str = " asm.bytes=true asm.offset=false", .comment = "Set asm.bytes to true and asm.offset to false" },
+	{ 0 },
+};
+static const RzCmdDescDetail eval_getset_details[] = {
+	{ .name = "Examples", .entries = eval_getset_Examples_detail_entries },
+	{ 0 },
+};
+static const RzCmdDescArg eval_getset_args[] = {
+	{ .name = "key=value", .type = RZ_CMD_ARG_TYPE_EVAL_FULL, .flags = RZ_CMD_ARG_FLAG_ARRAY, },
+	{ 0 },
+};
+static const RzCmdDescHelp eval_getset_help = {
+	.summary = "Get/Set value of config variable <key>",
+	.args_str = " <key>[=<val|?>] [<key>[=<val|?>] ...]]",
+	.details = eval_getset_details,
+	.args = eval_getset_args,
+};
+
+static const RzCmdDescArg eval_list_args[] = {
+	{ .name = "key", .type = RZ_CMD_ARG_TYPE_EVAL_KEY, .optional = true, },
+	{ 0 },
+};
+static const RzCmdDescHelp eval_list_help = {
+	.summary = "List config variables with their descriptions",
+	.args = eval_list_args,
+};
+
+static const RzCmdDescArg eval_reset_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp eval_reset_help = {
+	.summary = "Reset config variables",
+	.args = eval_reset_args,
+};
+
+static const RzCmdDescArg eval_bool_invert_args[] = {
+	{ .name = "key", .type = RZ_CMD_ARG_TYPE_EVAL_KEY, },
+	{ 0 },
+};
+static const RzCmdDescHelp eval_bool_invert_help = {
+	.summary = "Invert the boolean value of config variable <key>",
+	.args = eval_bool_invert_args,
+};
+
+static const RzCmdDescArg eval_color_args[] = {
+	{ 0 },
+};
+static const RzCmdDescHelp eval_color_help = {
+	.summary = "Set color for given key (prompt, offset, ...)",
+	.args = eval_color_args,
+};
+
+static const RzCmdDescArg eval_editor_args[] = {
+	{ .name = "key", .type = RZ_CMD_ARG_TYPE_EVAL_KEY, },
+	{ 0 },
+};
+static const RzCmdDescHelp eval_editor_help = {
+	.summary = "Open editor to change the value of config variable <key>",
+	.args = eval_editor_args,
+};
+
+static const RzCmdDescArg eval_readonly_args[] = {
+	{ .name = "key", .type = RZ_CMD_ARG_TYPE_EVAL_KEY, },
+	{ 0 },
+};
+static const RzCmdDescHelp eval_readonly_help = {
+	.summary = "Set config variable <key> as read-only",
+	.args = eval_readonly_args,
+};
+
+static const RzCmdDescArg eval_spaces_args[] = {
+	{ .name = "key", .type = RZ_CMD_ARG_TYPE_EVAL_KEY, .optional = true, },
+	{ 0 },
+};
+static const RzCmdDescHelp eval_spaces_help = {
+	.summary = "List all config variable spaces or sub-keys/sub-spaces if a <key> is provided",
+	.args = eval_spaces_args,
+};
+
+static const RzCmdDescArg eval_type_args[] = {
+	{ .name = "key", .type = RZ_CMD_ARG_TYPE_EVAL_KEY, },
+	{ 0 },
+};
+static const RzCmdDescHelp eval_type_help = {
+	.summary = "Show type of given config variable <key>",
+	.args = eval_type_args,
+};
+
 static const RzCmdDescDetailEntry env_Examples_detail_entries[] = {
 	{ .text = "%", .arg_str = NULL, .comment = "List all environment variables" },
 	{ .text = "%", .arg_str = "SHELL", .comment = "Print value of SHELL variable" },
@@ -487,7 +588,7 @@ static const RzCmdDescDetailEntry env_Examples_detail_entries[] = {
 	{ 0 },
 };
 
-static const RzCmdDescDetailEntry env_environment_detail_entries[] = {
+static const RzCmdDescDetailEntry env_Environment_detail_entries[] = {
 	{ .text = "RZ_FILE", .arg_str = NULL, .comment = "currently opened file name" },
 	{ .text = "RZ_OFFSET", .arg_str = NULL, .comment = "10base offset 64bit value" },
 	{ .text = "RZ_BYTES", .arg_str = NULL, .comment = "TODO: variable with bytes in curblock" },
@@ -507,7 +608,7 @@ static const RzCmdDescDetailEntry env_environment_detail_entries[] = {
 };
 static const RzCmdDescDetail env_details[] = {
 	{ .name = "Examples", .entries = env_Examples_detail_entries },
-	{ .name = "environment", .entries = env_environment_detail_entries },
+	{ .name = "Environment", .entries = env_Environment_detail_entries },
 	{ 0 },
 };
 
@@ -540,7 +641,7 @@ static const RzCmdDescHelp cmd_kuery_help = {
 };
 
 static const RzCmdDescArg ls_args[] = {
-	{ .name = "arg", .type = RZ_CMD_ARG_TYPE_ARRAY_STRING, .optional = true, },
+	{ .name = "arg", .type = RZ_CMD_ARG_TYPE_STRING, .flags = RZ_CMD_ARG_FLAG_ARRAY, .optional = true, },
 	{ 0 },
 };
 static const RzCmdDescHelp ls_help = {
@@ -620,7 +721,7 @@ static const RzCmdDescHelp uniq_help = {
 };
 
 static const RzCmdDescArg uname_args[] = {
-	{ .name = "r", .type = RZ_CMD_ARG_TYPE_OPTION, .optional = true, },
+	{ .name = "r", .type = RZ_CMD_ARG_TYPE_STRING, .flags = RZ_CMD_ARG_FLAG_OPTION, .optional = true, },
 	{ 0 },
 };
 static const RzCmdDescHelp uname_help = {
@@ -640,7 +741,7 @@ static const RzCmdDescHelp w_help = {
 	.summary = "Write commands",
 };
 static const RzCmdDescArg write_args[] = {
-	{ .name = "string", .type = RZ_CMD_ARG_TYPE_STRING_LAST, },
+	{ .name = "string", .type = RZ_CMD_ARG_TYPE_STRING, .flags = RZ_CMD_ARG_FLAG_LAST, },
 	{ 0 },
 };
 static const RzCmdDescHelp write_help = {
@@ -1109,7 +1210,7 @@ static const char *zign_add_type_choices[] = { "a", "b", "c", "n", "g", "o", "r"
 static const RzCmdDescArg zign_add_args[] = {
 	{ .name = "zigname", .type = RZ_CMD_ARG_TYPE_STRING, },
 	{ .name = "type", .type = RZ_CMD_ARG_TYPE_CHOICES, .choices = zign_add_type_choices, },
-	{ .name = "param", .type = RZ_CMD_ARG_TYPE_ARRAY_STRING, },
+	{ .name = "param", .type = RZ_CMD_ARG_TYPE_STRING, .flags = RZ_CMD_ARG_FLAG_ARRAY, },
 	{ 0 },
 };
 static const RzCmdDescHelp zign_add_help = {
@@ -1397,7 +1498,6 @@ static const RzCmdDescHelp redirection_help = {
 static const RzCmdDescDetailEntry pipe_empty_detail_entries[] = {
 	{ .text = "<cmd> |", .arg_str = NULL, .comment = "Disable scr.html and scr.color" },
 	{ .text = "<cmd> |H", .arg_str = NULL, .comment = "Enable scr.html, respect scr.color" },
-	{ .text = "<cmd> |T", .arg_str = NULL, .comment = "Use scr.tts to speak out the stdout" },
 	{ .text = "<cmd> |", .arg_str = " <program>", .comment = "Pipe output of command to program" },
 	{ .text = "<cmd> |.", .arg_str = NULL, .comment = "Alias for .<cmd>" },
 	{ 0 },
@@ -1565,8 +1665,24 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 	rz_warn_if_fail (cmd_meta_cd);
 	RzCmdDesc *cmd_debug_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "d", rz_cmd_debug, &cmd_debug_help);
 	rz_warn_if_fail (cmd_debug_cd);
-	RzCmdDesc *cmd_eval_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "e", rz_cmd_eval, &cmd_eval_help);
-	rz_warn_if_fail (cmd_eval_cd);	RzCmdDesc *env_cd = rz_cmd_desc_argv_new (core->rcmd, cmd_eval_cd, "env", rz_env_handler, &env_help);
+	RzCmdDesc *e_cd = rz_cmd_desc_group_new (core->rcmd, root_cd, "e", rz_eval_getset_handler, &eval_getset_help, &e_help);
+	rz_warn_if_fail (e_cd);	RzCmdDesc *eval_list_cd = rz_cmd_desc_argv_modes_new (core->rcmd, e_cd, "el", RZ_OUTPUT_MODE_STANDARD | RZ_OUTPUT_MODE_RIZIN | RZ_OUTPUT_MODE_JSON | RZ_OUTPUT_MODE_QUIET | RZ_OUTPUT_MODE_LONG | RZ_OUTPUT_MODE_LONG_JSON, rz_eval_list_handler, &eval_list_help);
+	rz_warn_if_fail (eval_list_cd);
+	RzCmdDesc *eval_reset_cd = rz_cmd_desc_argv_new (core->rcmd, e_cd, "e-", rz_eval_reset_handler, &eval_reset_help);
+	rz_warn_if_fail (eval_reset_cd);
+	RzCmdDesc *eval_bool_invert_cd = rz_cmd_desc_argv_new (core->rcmd, e_cd, "e!", rz_eval_bool_invert_handler, &eval_bool_invert_help);
+	rz_warn_if_fail (eval_bool_invert_cd);
+	RzCmdDesc *eval_color_cd = rz_cmd_desc_oldinput_new (core->rcmd, e_cd, "ec", rz_eval_color, &eval_color_help);
+	rz_warn_if_fail (eval_color_cd);
+	RzCmdDesc *eval_editor_cd = rz_cmd_desc_argv_new (core->rcmd, e_cd, "ee", rz_eval_editor_handler, &eval_editor_help);
+	rz_warn_if_fail (eval_editor_cd);
+	RzCmdDesc *eval_readonly_cd = rz_cmd_desc_argv_new (core->rcmd, e_cd, "er", rz_eval_readonly_handler, &eval_readonly_help);
+	rz_warn_if_fail (eval_readonly_cd);
+	RzCmdDesc *eval_spaces_cd = rz_cmd_desc_argv_new (core->rcmd, e_cd, "es", rz_eval_spaces_handler, &eval_spaces_help);
+	rz_warn_if_fail (eval_spaces_cd);
+	RzCmdDesc *eval_type_cd = rz_cmd_desc_argv_new (core->rcmd, e_cd, "et", rz_eval_type_handler, &eval_type_help);
+	rz_warn_if_fail (eval_type_cd);
+	RzCmdDesc *env_cd = rz_cmd_desc_argv_new (core->rcmd, e_cd, "env", rz_env_handler, &env_help);
 	rz_warn_if_fail (env_cd);
 	RzCmdDesc *cmd_flag_cd = rz_cmd_desc_oldinput_new (core->rcmd, root_cd, "f", rz_cmd_flag, &cmd_flag_help);
 	rz_warn_if_fail (cmd_flag_cd);

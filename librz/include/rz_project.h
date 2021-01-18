@@ -1,6 +1,6 @@
 
-#ifndef R2_PROJECT_H
-#define R2_PROJECT_H
+#ifndef RZ_PROJECT_H
+#define RZ_PROJECT_H
 
 #include <rz_util/rz_serialize.h>
 #include <rz_core.h>

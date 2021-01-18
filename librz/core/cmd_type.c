@@ -158,7 +158,7 @@ static const char *help_msg_ts[] = {
 	"tsc", "<name>", "List all/given loaded structs in C output format with newlines",
 	"tsd", "", "List all loaded structs in C output format without newlines",
 	"tss", " [type]", "Display size of struct",
-	"ts?", "", "show this help",
+	"ts", "[?]", "show this help",
 	NULL
 };
 

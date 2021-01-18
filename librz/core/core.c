@@ -970,7 +970,7 @@ static const char *rizin_argv[] = {
 	"pk?", "pk", "pK?", "pK",
 	"pm?", "pm",
 	"pq?", "pq", "pqi", "pqz",
-	"pr?", "pr", "prc", "prl", "prx", "prg?", "prg", "prgi", "prgo", "prz",
+	"pr?", "pr", "prc", "prx", "prg?", "prg", "prgi", "prgo", "prz",
 	"ps?", "ps", "psb", "psi", "psj", "psp", "pss", "psu", "psw", "psW", "psx", "psz", "ps+",
 	"pt?", "pt", "pt.", "ptd", "pth", "ptn",
 	"pu?", "pu", "puw", "pU",
@@ -985,7 +985,7 @@ static const char *rizin_argv[] = {
 	"r?", "r", "r-", "r+", "rh",
 	"s?", "s", "s:", "s-", "s-*", "s--", "s+", "s++", "sj", "s*", "s=", "s!", "s/", "s/x", "s.", "sa", "sb",
 	"sC?", "sC", "sC*",
-	"sf", "sf.", "sg", "sG", "sl?", "sl", "sl+", "sl-", "slc", "sll", "sn", "sp", "so", "sr", "ss",
+	"sf", "sf.", "sg", "sG", "sl?", "sn", "sp", "so", "sr", "ss",
 	"t?", "t", "tj", "t*", "t-", "t-*", "ta", "tb", "tc", "te?", "te", "tej", "teb", "tec",
 	"td?", "td", "td-", "tf", "tk", "tl", "tn", "to", "tos", "tp", "tpx", "ts?", "ts", "tsj", "ts*", "tsc", "tss",
 	"tu?", "tu", "tuj", "tu*", "tuc", "tt?", "tt", "ttj", "ttc",
@@ -1427,7 +1427,7 @@ static bool find_e_opts(RzCore *core, RzLineCompletion *completion, RzLineBuffer
 	const char *pattern = "e (.*)=";
 	RzRegex *rx = rz_regex_new (pattern, "e");
 	const size_t nmatch = 2;
-	RzRegexMatch pmatch[2];
+	RzRegexMatch pmatch[2] = {0};
 	bool ret = false;
 
 	if (rz_regex_exec (rx, buf->data, nmatch, pmatch, 1)) {
@@ -1678,14 +1678,13 @@ RZ_API void rz_core_autocomplete(RZ_NULLABLE RzCore *core, RzLineCompletion *com
 		SdbList *sls = sdb_foreach_list (core->print->formats, false);
 		SdbListIter *iter;
 		SdbKv *kv;
-		int j = 0;
 		ls_foreach (sls, iter, kv) {
 			int len = strlen (buf->data + chr);
 			int minlen = RZ_MIN (len,  strlen (sdbkv_key (kv)));
 			if (!len || !strncmp (buf->data + chr, sdbkv_key (kv), minlen)) {
 				char *p = strchr (buf->data + chr, '.');
 				if (p) {
-					j += autocomplete_pfele (core, completion, sdbkv_key (kv), pfx, j, p + 1);
+					autocomplete_pfele (core, completion, sdbkv_key (kv), pfx, 0, p + 1);
 					break;
 				} else {
 					char *s = rz_str_newf ("pf%s.%s", pfx, sdbkv_key (kv));
@@ -2477,6 +2476,7 @@ RZ_API bool rz_core_init(RzCore *core) {
 	core->ev = rz_event_new (core);
 	core->max_cmd_depth = RZ_CONS_CMD_DEPTH + 1;
 	core->sdb = sdb_new (NULL, "rzkv.sdb", 0); // XXX: path must be in home?
+	rz_core_seek_reset (core);
 	core->lastsearch = NULL;
 	core->cmdfilter = NULL;
 	core->switch_file_view = 0;
@@ -2589,7 +2589,6 @@ RZ_API bool rz_core_init(RzCore *core) {
 	rz_event_hook (core->io->event, RZ_EVENT_IO_WRITE, ev_iowrite_cb, core);
 	core->io->ff = 1;
 	core->search = rz_search_new (RZ_SEARCH_KEYWORD);
-	rz_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
 	core->flags = rz_flag_new ();
 	core->flags->cb_printf = rz_cons_printf;
 	core->graph = rz_agraph_new (rz_cons_canvas_new (1, 1));
@@ -2926,11 +2925,6 @@ RZ_API int rz_core_prompt_exec(RzCore *r) {
 	int ret = rz_core_cmd (r, r->cmdqueue, true);
 	r->rc = r->num->value;
 	//int ret = rz_core_cmd (r, r->cmdqueue, true);
-	if (r->cons && r->cons->use_tts) {
-		const char *buf = rz_cons_get_buffer();
-		rz_sys_tts (buf, true);
-		r->cons->use_tts = false;
-	}
 	rz_cons_echo (NULL);
 	rz_cons_flush ();
 	if (r->cons && r->cons->line && r->cons->line->zerosep) {
@@ -2939,7 +2933,7 @@ RZ_API int rz_core_prompt_exec(RzCore *r) {
 	return ret;
 }
 
-RZ_API int rz_core_seek_size(RzCore *core, ut64 addr, int bsize) {
+RZ_API int rz_core_block_size(RzCore *core, int bsize) {
 	ut8 *bump;
 	int ret = false;
 	if (bsize < 0) {
@@ -2952,7 +2946,6 @@ RZ_API int rz_core_seek_size(RzCore *core, ut64 addr, int bsize) {
 		eprintf ("Block size %d is too big\n", bsize);
 		return false;
 	}
-	core->offset = addr;
 	if (bsize < 1) {
 		bsize = 1;
 	} else if (core->blocksize_max && bsize>core->blocksize_max) {
@@ -2969,42 +2962,9 @@ RZ_API int rz_core_seek_size(RzCore *core, ut64 addr, int bsize) {
 		core->block = bump;
 		core->blocksize = bsize;
 		memset (core->block, 0xff, core->blocksize);
-		rz_core_block_read (core);
+		rz_core_seek (core, core->offset, true);
 	}
 	return ret;
-}
-
-RZ_API int rz_core_block_size(RzCore *core, int bsize) {
-	return rz_core_seek_size (core, core->offset, bsize);
-}
-
-RZ_API int rz_core_seek_align(RzCore *core, ut64 align, int times) {
-	int inc = (times >= 0)? 1: -1;
-	ut64 seek = core->offset;
-	if (!align) {
-		return false;
-	}
-	int diff = core->offset % align;
-	if (!times) {
-		diff = -diff;
-	} else if (diff) {
-		if (inc > 0) {
-			diff += align-diff;
-		} else {
-			diff = -diff;
-		}
-		if (times) {
-			times -= inc;
-		}
-	}
-	while ((times*inc) > 0) {
-		times -= inc;
-		diff += (align * inc);
-	}
-	if (diff < 0 && -diff > seek) {
-		seek = diff = 0;
-	}
-	return rz_core_seek (core, seek + diff, true);
 }
 
 RZ_API char *rz_core_op_str(RzCore *core, ut64 addr) {
@@ -3274,10 +3234,9 @@ reaccept:
 				if (cmd == 'G') {
 					// silly http emulation over rap://
 					char line[256] = {0};
-					char *cmd = line;
 					rz_socket_read_block (c, (ut8*)line, sizeof (line));
 					if (!strncmp (line, "ET /cmd/", 8)) {
-						cmd = line + 8;
+						char *cmd = line + 8;
 						char *http = strstr (cmd, "HTTP");
 						if (http) {
 							*http = 0;

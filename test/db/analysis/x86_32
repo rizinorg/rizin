@@ -26,9 +26,9 @@ pdb
 EOF
 EXPECT=<<EOF
 / 337: entry0 (int32_t arg_40h, int32_t arg_44h);
-|           0x006453a1      e8d8170000     call fcn.00646b7e
-|           0x006453a6      8d642444       lea esp, [arg_44h]
-|       ,=< 0x006453aa      0f85a6300000   jne 0x648456
+|           0x006453a1      e8d8170000     call  fcn.00646b7e
+|           0x006453a6      8d642444       lea   esp, [arg_44h]
+|       ,=< 0x006453aa      0f85a6300000   jne   0x648456
 EOF
 RUN
 
@@ -71,7 +71,7 @@ aac
 pd 1 @ 0x004017f6
 EOF
 EXPECT=<<EOF
-|           0x004017f6      e8c5040000     call sub.KERNEL32.dll_IsProcessorFeaturePresent ; BOOL IsProcessorFeaturePresent(DWORD ProcessorFeature)
+|           0x004017f6      e8c5040000     call  sub.KERNEL32.dll_IsProcessorFeaturePresent ; BOOL IsProcessorFeaturePresent(DWORD ProcessorFeature)
 EOF
 RUN
 
@@ -90,9 +90,9 @@ RUN
 NAME=aaa with maxbbsz
 FILE=bins/pe/flare_notepad.ex
 CMDS=<<EOF
-e analysis.bb.maxsize = 2048
+e analysis.bb.maxsize=2048
 aaa
-pdf~ret?
+pdf~?ret
 EOF
 EXPECT=<<EOF
 1
@@ -185,17 +185,17 @@ EXPECT=<<EOF
 |           ; arg int32_t arg_ch @ ebp+0xc
 |           ; arg int32_t arg1 @ ecx
 |           ; arg int32_t arg2 @ edx
-|           0x08048421      894de4         mov dword [var_1ch], ecx    ; arg1
-|           0x08048424      8955e0         mov dword [var_20h], edx    ; arg2
-|           0x08048427      8b55e4         mov edx, dword [var_1ch]
-|           0x0804842a      8b45e0         mov eax, dword [var_20h]
-|           0x0804842f      8945f4         mov dword [var_ch], eax
-|           0x08048432      8b45e0         mov eax, dword [var_20h]
-|           0x08048435      2b450c         sub eax, dword [arg_ch]
-|           0x08048438      8945f0         mov dword [var_10h], eax
-|           0x0804843b      ff7508         push dword [arg_8h]
-|           0x0804843e      ff75f0         push dword [var_10h]
-|           0x08048441      ff75f4         push dword [var_ch]
+|           0x08048421      894de4         mov   dword [var_1ch], ecx  ; arg1
+|           0x08048424      8955e0         mov   dword [var_20h], edx  ; arg2
+|           0x08048427      8b55e4         mov   edx, dword [var_1ch]
+|           0x0804842a      8b45e0         mov   eax, dword [var_20h]
+|           0x0804842f      8945f4         mov   dword [var_ch], eax
+|           0x08048432      8b45e0         mov   eax, dword [var_20h]
+|           0x08048435      2b450c         sub   eax, dword [arg_ch]
+|           0x08048438      8945f0         mov   dword [var_10h], eax
+|           0x0804843b      ff7508         push  dword [arg_8h]
+|           0x0804843e      ff75f0         push  dword [var_10h]
+|           0x08048441      ff75f4         push  dword [var_ch]
 EOF
 RUN
 
@@ -384,8 +384,8 @@ e asm.lines.bb=false
 pd 20~write,exit
 EOF
 EXPECT=<<EOF
-  0x00000014      int 0x80 ; 4 = write (1, "Hello, world!.", 14)
-  0x0000001b      int 0x80 ; 1 = exit (1)
+  0x00000014      int   0x80 ; 4 = write (1, "Hello, world!.", 14)
+  0x0000001b      int   0x80 ; 1 = exit (1)
 EOF
 RUN
 
@@ -405,7 +405,7 @@ s 0x00402ade
 pd 4~printf
 EOF
 EXPECT=<<EOF
-  0x00402ae8      call dword [sym.imp.msvcrt.dll_printf] ; 0x402d48 ; esp=0x177ff8 ; eip=0x2d08 reloc.msvcrt.dll_printf
+  0x00402ae8      call  dword [sym.imp.msvcrt.dll_printf] ; 0x402d48 ; esp=0x177ff8 ; eip=0x2d08 reloc.msvcrt.dll_printf
                     ; int printf("  - RT_MANIFEST resource located\n")
 EOF
 RUN
@@ -1389,7 +1389,7 @@ s 0x0003a4af
 pd 1
 EOF
 EXPECT=<<EOF
-            0x0003a4af      ff15f33a1800   call qword [reloc.free]     ; [0x1bdfa8:8]=0
+            0x0003a4af      ff15f33a1800   call  qword [reloc.free]    ; [0x1bdfa8:8]=0
 EOF
 RUN
 
@@ -2757,18 +2757,18 @@ FILE=bins/elf/fcn_in_test.elf
 CMDS=e asm.lines=false;e asm.comments=false;e asm.bytes=true;af @ main; pdr @ 0x1180
 EXPECT=<<EOF
 ;-- start2:
-0x00001180      31c0           xor eax, eax
-0x00001182      eb06           jmp loc.start
+0x00001180      31c0           xor   eax, eax
+0x00001182      eb06           jmp   loc.start
 | ----------- true: 0x0000118a
 18: int main (int argc, char **argv, char **envp);
-0x00001184      31c0           xor eax, eax
-0x00001186      75f8           jne loc.start2
+0x00001184      31c0           xor   eax, eax
+0x00001186      75f8           jne   loc.start2
 | ----------- true: 0x00001180  false: 0x00001188
-0x00001188      ebf6           jmp loc.start2
+0x00001188      ebf6           jmp   loc.start2
 | ----------- true: 0x00001180
 ;-- start:
-0x0000118a      89c0           mov eax, eax
-0x0000118c      50             push eax
+0x0000118a      89c0           mov   eax, eax
+0x0000118c      50             push  eax
 0x0000118d      90             nop
 0x0000118e      90             nop
 0x0000118f      90             nop
@@ -2793,8 +2793,8 @@ RUN
 NAME=arj x86 32 bits
 FILE=malloc://0x100
 CMDS=<<EOF
-e asm.arch = x86
-e analysis.arch = x86
+e asm.arch=x86
+e analysis.arch=x86
 e asm.bits=32
 arj
 EOF
@@ -3123,44 +3123,44 @@ EXPECT=<<EOF
 │           ; arg int32_t arg_4h @ esp+0x50
 │           ; arg int32_t arg_1ch @ esp+0x68
 │           ; arg int32_t arg_2ch @ esp+0x78
-│           0x00000000      xor eax, eax
-│           0x00000002      cmp esi, edx
-│       ┌─< 0x00000004      jb 0x50
-│      ┌──< 0x00000006      jmp 0x7a
+│           0x00000000      xor   eax, eax
+│           0x00000002      cmp   esi, edx
+│       ┌─< 0x00000004      jb    0x50
+│      ┌──< 0x00000006      jmp   0x7a
        ││   0x00000008      nop
-       ││   0x00000009      lea esi, [esi]
-│     ┌───> 0x00000010      lea edi, [esi + 1]
-│     ╎││   0x00000013      xor edx, edx
-│     ╎││   0x00000015      mov eax, ebp
-│     ╎││   0x00000017      div ecx
-│     ╎││   0x00000019      xor edx, edx
-│     ╎││   0x0000001b      mov dword [arg_1ch], eax
-│     ╎││   0x0000001f      mov eax, edi
-│     ╎││   0x00000021      div ecx
-│     ╎││   0x00000023      cmp dword [arg_1ch], eax
-│    ┌────< 0x00000027      jbe 0x90
-│    │╎││   0x00000029      mov edx, dword [ebx + 0x208]
-│    │╎││   0x0000002f      mov eax, dword [edx]
-│    │╎││   0x00000031      mov edx, dword [eax + 0x14]
-│    │╎││   0x00000034      cmp edx, dword [eax + 0x18]
-│   ┌─────< 0x00000037      jae 0xa6
-│   ││╎││   0x00000039      mov byte [edx], 9
-│   ││╎││   0x0000003c      add edx, 1
-│   ││╎││   0x0000003f      mov dword [eax + 0x14], edx
-│   ││╎││   0x00000042      mov eax, esi
-│   ││╎││   0x00000044      xor edx, edx
-│   ││╎││   0x00000046      add esi, ecx
-│   ││╎││   0x00000048      div ecx
-│   ││╎││   0x0000004a      sub esi, edx
-│   ││╎││   0x0000004c      cmp ebp, esi
-│  ┌──────< 0x0000004e      jbe 0x7a
-│  │││╎│└─> 0x00000050      mov ecx, dword [ebx + 0x58c]
-│  │││╎│    0x00000056      test ecx, ecx
-│  │││└───< 0x00000058      jne 0x10
-│  │││ │    0x0000005a      add esi, 1
-│  │││ │    0x0000005d      mov edx, dword [ebx + 0x208]
-│  │││ │    0x00000063      mov eax, dword [edx]
-│  │││ │    0x00000065      mov edx, dword [eax + 0x14]
+       ││   0x00000009      lea   esi, [esi]
+│     ┌───> 0x00000010      lea   edi, [esi + 1]
+│     ╎││   0x00000013      xor   edx, edx
+│     ╎││   0x00000015      mov   eax, ebp
+│     ╎││   0x00000017      div   ecx
+│     ╎││   0x00000019      xor   edx, edx
+│     ╎││   0x0000001b      mov   dword [arg_1ch], eax
+│     ╎││   0x0000001f      mov   eax, edi
+│     ╎││   0x00000021      div   ecx
+│     ╎││   0x00000023      cmp   dword [arg_1ch], eax
+│    ┌────< 0x00000027      jbe   0x90
+│    │╎││   0x00000029      mov   edx, dword [ebx + 0x208]
+│    │╎││   0x0000002f      mov   eax, dword [edx]
+│    │╎││   0x00000031      mov   edx, dword [eax + 0x14]
+│    │╎││   0x00000034      cmp   edx, dword [eax + 0x18]
+│   ┌─────< 0x00000037      jae   0xa6
+│   ││╎││   0x00000039      mov   byte [edx], 9
+│   ││╎││   0x0000003c      add   edx, 1
+│   ││╎││   0x0000003f      mov   dword [eax + 0x14], edx
+│   ││╎││   0x00000042      mov   eax, esi
+│   ││╎││   0x00000044      xor   edx, edx
+│   ││╎││   0x00000046      add   esi, ecx
+│   ││╎││   0x00000048      div   ecx
+│   ││╎││   0x0000004a      sub   esi, edx
+│   ││╎││   0x0000004c      cmp   ebp, esi
+│  ┌──────< 0x0000004e      jbe   0x7a
+│  │││╎│└─> 0x00000050      mov   ecx, dword [ebx + 0x58c]
+│  │││╎│    0x00000056      test  ecx, ecx
+│  │││└───< 0x00000058      jne   0x10
+│  │││ │    0x0000005a      add   esi, 1
+│  │││ │    0x0000005d      mov   edx, dword [ebx + 0x208]
+│  │││ │    0x00000063      mov   eax, dword [edx]
+│  │││ │    0x00000065      mov   edx, dword [eax + 0x14]
 EOF
 RUN
 
@@ -3188,44 +3188,44 @@ EXPECT=<<EOF
 |           ; arg int32_t arg_4h @ esp+0x50
 |           ; arg int32_t arg_1ch @ esp+0x68
 |           ; arg int32_t arg_2ch @ esp+0x78
-|           0x00000000      xor eax, eax
-|           0x00000002      cmp esi, edx
-|       ,=< 0x00000004      jb 0x50
-|      ,==< 0x00000006      jmp 0x7a
+|           0x00000000      xor   eax, eax
+|           0x00000002      cmp   esi, edx
+|       ,=< 0x00000004      jb    0x50
+|      ,==< 0x00000006      jmp   0x7a
        ||   0x00000008      nop
-       ||   0x00000009      lea esi, [esi]
-|     .---> 0x00000010      lea edi, [esi + 1]
-|     :||   0x00000013      xor edx, edx
-|     :||   0x00000015      mov eax, ebp
-|     :||   0x00000017      div ecx
-|     :||   0x00000019      xor edx, edx
-|     :||   0x0000001b      mov dword [arg_1ch], eax
-|     :||   0x0000001f      mov eax, edi
-|     :||   0x00000021      div ecx
-|     :||   0x00000023      cmp dword [arg_1ch], eax
-|    ,====< 0x00000027      jbe 0x90
-|    |:||   0x00000029      mov edx, dword [ebx + 0x208]
-|    |:||   0x0000002f      mov eax, dword [edx]
-|    |:||   0x00000031      mov edx, dword [eax + 0x14]
-|    |:||   0x00000034      cmp edx, dword [eax + 0x18]
-|   ,=====< 0x00000037      jae 0xa6
-|   ||:||   0x00000039      mov byte [edx], 9
-|   ||:||   0x0000003c      add edx, 1
-|   ||:||   0x0000003f      mov dword [eax + 0x14], edx
-|   ||:||   0x00000042      mov eax, esi
-|   ||:||   0x00000044      xor edx, edx
-|   ||:||   0x00000046      add esi, ecx
-|   ||:||   0x00000048      div ecx
-|   ||:||   0x0000004a      sub esi, edx
-|   ||:||   0x0000004c      cmp ebp, esi
-|  ,======< 0x0000004e      jbe 0x7a
-|  |||:|`-> 0x00000050      mov ecx, dword [ebx + 0x58c]
-|  |||:|    0x00000056      test ecx, ecx
-|  |||`===< 0x00000058      jne 0x10
-|  ||| |    0x0000005a      add esi, 1
-|  ||| |    0x0000005d      mov edx, dword [ebx + 0x208]
-|  ||| |    0x00000063      mov eax, dword [edx]
-|  ||| |    0x00000065      mov edx, dword [eax + 0x14]
+       ||   0x00000009      lea   esi, [esi]
+|     .---> 0x00000010      lea   edi, [esi + 1]
+|     :||   0x00000013      xor   edx, edx
+|     :||   0x00000015      mov   eax, ebp
+|     :||   0x00000017      div   ecx
+|     :||   0x00000019      xor   edx, edx
+|     :||   0x0000001b      mov   dword [arg_1ch], eax
+|     :||   0x0000001f      mov   eax, edi
+|     :||   0x00000021      div   ecx
+|     :||   0x00000023      cmp   dword [arg_1ch], eax
+|    ,====< 0x00000027      jbe   0x90
+|    |:||   0x00000029      mov   edx, dword [ebx + 0x208]
+|    |:||   0x0000002f      mov   eax, dword [edx]
+|    |:||   0x00000031      mov   edx, dword [eax + 0x14]
+|    |:||   0x00000034      cmp   edx, dword [eax + 0x18]
+|   ,=====< 0x00000037      jae   0xa6
+|   ||:||   0x00000039      mov   byte [edx], 9
+|   ||:||   0x0000003c      add   edx, 1
+|   ||:||   0x0000003f      mov   dword [eax + 0x14], edx
+|   ||:||   0x00000042      mov   eax, esi
+|   ||:||   0x00000044      xor   edx, edx
+|   ||:||   0x00000046      add   esi, ecx
+|   ||:||   0x00000048      div   ecx
+|   ||:||   0x0000004a      sub   esi, edx
+|   ||:||   0x0000004c      cmp   ebp, esi
+|  ,======< 0x0000004e      jbe   0x7a
+|  |||:|`-> 0x00000050      mov   ecx, dword [ebx + 0x58c]
+|  |||:|    0x00000056      test  ecx, ecx
+|  |||`===< 0x00000058      jne   0x10
+|  ||| |    0x0000005a      add   esi, 1
+|  ||| |    0x0000005d      mov   edx, dword [ebx + 0x208]
+|  ||| |    0x00000063      mov   eax, dword [edx]
+|  ||| |    0x00000065      mov   edx, dword [eax + 0x14]
 EOF
 RUN
 
@@ -3241,7 +3241,7 @@ w hello @ 0x100
 pd 1
 EOF
 EXPECT=<<EOF
-        ,=< 0x00000000      e9fb000000     jmp 0x100
+        ,=< 0x00000000      e9fb000000     jmp   0x100
 EOF
 RUN
 
@@ -3250,8 +3250,8 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.bytes=true
 e asm.bits=32
-e asm.arch = x86
-e analysis.arch = x86
+e asm.arch=x86
+e analysis.arch=x86
 e analysis.vars.stackname=true
 e asm.calls=false
 wx 83ec108b44241899f77c241c8b44241401d08944240c8b44242099f77c24288b44240c01d0894424088b5424148b44240c8d0c028b44242c99f7f98b44240801d0894424048b54240c8b44240801c28b44240401d083c410c38d4c240483e4f0ff71fc5589e55183ec046a076a066a056a046a036a026a01e883ffffff83c41c83ec08506844850408e847feffff83c410b8000000008b4dfcc98d61fcc36690669066909055575653e887feffff81c3371b000083ec0c8b6c24208db30cffffffe8d3fdffff8d8308ffffff29c6c1fe0285f6742531ff8db60000000083ec04ff74242cff74242c55ff94bb08ffffff83c70183c41039f775e383c40c5b5e5f
@@ -3273,34 +3273,34 @@ EXPECT=<<EOF
 |           ; arg int32_t arg_10h @ esp+0x20
 |           ; arg int32_t arg_18h @ esp+0x28
 |           ; arg int32_t arg_1ch @ esp+0x2c
-|           0x00000000      83ec10         sub esp, 0x10
-|           0x00000003      8b442418       mov eax, dword [arg_8h]
+|           0x00000000      83ec10         sub   esp, 0x10
+|           0x00000003      8b442418       mov   eax, dword [arg_8h]
 |           0x00000007      99             cdq
-|           0x00000008      f77c241c       idiv dword [arg_ch]
-|           0x0000000c      8b442414       mov eax, dword [arg_4h]
-|           0x00000010      01d0           add eax, edx
-|           0x00000012      8944240c       mov dword [var_4h], eax
-|           0x00000016      8b442420       mov eax, dword [arg_10h]
+|           0x00000008      f77c241c       idiv  dword [arg_ch]
+|           0x0000000c      8b442414       mov   eax, dword [arg_4h]
+|           0x00000010      01d0           add   eax, edx
+|           0x00000012      8944240c       mov   dword [var_4h], eax
+|           0x00000016      8b442420       mov   eax, dword [arg_10h]
 |           0x0000001a      99             cdq
-|           0x0000001b      f77c2428       idiv dword [arg_18h]
-|           0x0000001f      8b44240c       mov eax, dword [var_4h]
-|           0x00000023      01d0           add eax, edx
-|           0x00000025      89442408       mov dword [var_8h], eax
-|           0x00000029      8b542414       mov edx, dword [arg_4h]
-|           0x0000002d      8b44240c       mov eax, dword [var_4h]
-|           0x00000031      8d0c02         lea ecx, [edx + eax]
-|           0x00000034      8b44242c       mov eax, dword [arg_1ch]
+|           0x0000001b      f77c2428       idiv  dword [arg_18h]
+|           0x0000001f      8b44240c       mov   eax, dword [var_4h]
+|           0x00000023      01d0           add   eax, edx
+|           0x00000025      89442408       mov   dword [var_8h], eax
+|           0x00000029      8b542414       mov   edx, dword [arg_4h]
+|           0x0000002d      8b44240c       mov   eax, dword [var_4h]
+|           0x00000031      8d0c02         lea   ecx, [edx + eax]
+|           0x00000034      8b44242c       mov   eax, dword [arg_1ch]
 |           0x00000038      99             cdq
-|           0x00000039      f7f9           idiv ecx
-|           0x0000003b      8b442408       mov eax, dword [var_8h]
-|           0x0000003f      01d0           add eax, edx
-|           0x00000041      89442404       mov dword [var_ch], eax
-|           0x00000045      8b54240c       mov edx, dword [var_4h]
-|           0x00000049      8b442408       mov eax, dword [var_8h]
-|           0x0000004d      01c2           add edx, eax
-|           0x0000004f      8b442404       mov eax, dword [var_ch]
-|           0x00000053      01d0           add eax, edx
-|           0x00000055      83c410         add esp, 0x10
+|           0x00000039      f7f9           idiv  ecx
+|           0x0000003b      8b442408       mov   eax, dword [var_8h]
+|           0x0000003f      01d0           add   eax, edx
+|           0x00000041      89442404       mov   dword [var_ch], eax
+|           0x00000045      8b54240c       mov   edx, dword [var_4h]
+|           0x00000049      8b442408       mov   eax, dword [var_8h]
+|           0x0000004d      01c2           add   edx, eax
+|           0x0000004f      8b442404       mov   eax, dword [var_ch]
+|           0x00000053      01d0           add   eax, edx
+|           0x00000055      83c410         add   esp, 0x10
 \           0x00000058      c3             ret
 EOF
 RUN

@@ -127,7 +127,7 @@ RZ_API int rz_analysis_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, con
 		if (analysis->verbose) {
 			eprintf ("Warning: unhandled RZ_ANALYSIS_OP_MASK_DISASM in rz_analysis_op\n");
 		}
-        }
+	}
 	if (mask & RZ_ANALYSIS_OP_MASK_HINT) {
 		RzAnalysisHint *hint = rz_analysis_hint_get (analysis, addr);
 		if (hint) {
@@ -663,17 +663,19 @@ RZ_API int rz_analysis_op_hint(RzAnalysisOp *op, RzAnalysisHint *hint) {
 
 // returns the '33' in 'rax + 33'
 // returns value for the given register name in specific address / range
-// imho this should not iterate, should be just a helper to get that value
 RZ_API int rz_analysis_op_reg_delta(RzAnalysis *analysis, ut64 addr, const char *name) {
+	int delta = 0;
 	ut8 buf[32];
 	analysis->iob.read_at (analysis->iob.io, addr, buf, sizeof (buf));
-	RzAnalysisOp op = { 0 };
+	RzAnalysisOp op;
+	rz_analysis_op_init (&op);
 	if (rz_analysis_op (analysis, &op, addr, buf, sizeof (buf), RZ_ANALYSIS_OP_MASK_ALL) > 0) {
 		if (op.dst && op.dst->reg && op.dst->reg->name && (!name || !strcmp (op.dst->reg->name, name))) {
 			if (op.src[0]) {
-				return op.src[0]->delta;
+				delta = op.src[0]->delta;
 			}
 		}
 	}
-	return 0;
+	rz_analysis_op_fini (&op);
+	return delta;
 }

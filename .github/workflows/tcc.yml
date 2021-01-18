@@ -1,9 +1,18 @@
-name: Radare2 CI - build with TinyCC compiler
+name: TinyCC build
 
 on:
+  push:
+    branches:
+    - 'dev'
+    - 'stable'
+    - 'container-*'
   schedule:
-    # “At 00:00 on every Tuesday, Thursday, and Saturday”
-    - cron:  '0 13 * * 2,4,6'
+    - cron: '0 18 * * 1,3,5' # Three-weekly at 18:00 UTC on Monday, Wednesday, and Friday
+  pull_request:
+    branches:
+    - 'dev'
+    - 'stable'
+    - 'release-*'
 
 jobs:
   build:
@@ -24,6 +33,8 @@ jobs:
           sudo make install
 
     - uses: actions/checkout@v2
+      with:
+          submodules: recursive
     - name: Checkout our Testsuite Binaries
       uses: actions/checkout@v2
       with:
@@ -50,4 +61,4 @@ jobs:
         rizin -v
         rz-test -v
         cd test
-        make
+        rz-test -L -o results.json || true

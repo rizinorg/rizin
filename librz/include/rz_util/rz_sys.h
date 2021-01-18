@@ -79,6 +79,7 @@ RZ_API int rz_sys_system(const char *command);
 #else
 #define rz_sys_system system
 #endif
+#define rz_sys_xsystem(cmd) RZ_V_NOT (rz_sys_system (cmd), -1)
 
 RZ_API int rz_sys_crash_handler(const char *cmd);
 RZ_API const char *rz_sys_arch_str(int arch);
@@ -126,6 +127,7 @@ RZ_API char *rz_sys_get_src_dir_w32(void);
 RZ_API bool rz_sys_cmd_str_full_w32(const char *cmd, const char *input, char **output, int *outlen, char **sterr);
 RZ_API bool rz_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE out, HANDLE err);
 #endif
+RZ_API int rz_sys_open_perms(int rizin_perms);
 RZ_API int rz_sys_open(const char *path, int perm, int mode);
 RZ_API FILE *rz_sys_fopen(const char *path, const char *mode);
 RZ_API int rz_sys_truncate_fd(int fd, ut64 length);
@@ -141,7 +143,6 @@ RZ_API char *rz_sys_cmd_str(const char *cmd, const char *input, int *len);
 RZ_API char *rz_sys_cmd_strf(const char *cmd, ...) RZ_PRINTF_CHECK(1, 2);
 //#define rz_sys_cmd_str(cmd, input, len) rz_sys_cmd_str_full(cmd, input, len, 0)
 RZ_API void rz_sys_backtrace(void);
-RZ_API bool rz_sys_tts(const char *txt, bool bg);
 
 #if __WINDOWS__
 #  define rz_sys_breakpoint() { __debugbreak  (); }

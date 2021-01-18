@@ -1,7 +1,7 @@
 #include <rz_cons.h>
 #include "minunit.h"
 
-bool test_r_cons() {
+bool test_rz_cons() {
 	// NOTE: not initializing a value here results in UB
 	ut8 r = 0, g = 0, b = 0, a = 0;
 
@@ -239,8 +239,10 @@ bool test_line_multicompletion(void) {
 	// Make test reproducible everywhere
 	cons->force_columns = 80;
 	cons->force_rows = 23;
+	rz_line_free ();
 	RzLine *line = rz_line_new ();
 	line->ns_completion.run = multicompletion_run;
+	cons->line = line;
 
 	strcpy (line->buffer.data, "pd");
 	line->buffer.length = strlen ("pd");
@@ -274,13 +276,12 @@ bool test_line_multicompletion(void) {
 	mu_assert_notnull (buf, "buf is not null");
 	mu_assert_streq (buf, exp_buf, "options are shown correctly");
 
-	rz_line_free ();
 	rz_cons_free ();
 	mu_end;
 }
 
 bool all_tests() {
-	mu_run_test (test_r_cons);
+	mu_run_test (test_rz_cons);
 	mu_run_test (test_cons_to_html);
 	mu_run_test (test_line_nocompletion);
 	mu_run_test (test_line_onecompletion);
@@ -288,6 +289,4 @@ bool all_tests() {
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests ();
-}
+mu_main (all_tests)

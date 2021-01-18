@@ -7,17 +7,17 @@ AR?=ar
 RANLIB?=ranlib
 LIBNAME=libqnxr
 LIBFILE=$(LIBNAME).$(EXT_SO)
-CFLAGS+=-I$(LIBR)/include $(PIC_CFLAGS)
-CFLAGS+=-Iinclude -I${LIBR}/include
+CFLAGS+=-I$(LIBRZ)/include $(PIC_CFLAGS)
+CFLAGS+=-Iinclude -I${LIBRZ}/include
 MAJOR=0
 MINOR=1
 LD=$(CC)
 ifeq ($(LD),cccl)
-LDFLAGS+=-L${LIBR}/socket -llibrz_socket
-LDFLAGS+=-L${LIBR}/util -llibrz_util
+LDFLAGS+=-L${LIBRZ}/socket -llibrz_socket
+LDFLAGS+=-L${LIBRZ}/util -llibrz_util
 else
-LDFLAGS+=-L${LIBR}/socket -lrz_socket
-LDFLAGS+=-L${LIBR}/util -lrz_util
+LDFLAGS+=-L${LIBRZ}/socket -lrz_socket
+LDFLAGS+=-L${LIBRZ}/util -lrz_util
 endif
 ifeq ($(OSTYPE),darwin)
 LDFLAGS_SHARED=-dynamiclib

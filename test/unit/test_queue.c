@@ -1,7 +1,7 @@
 #include <rz_util.h>
 #include "minunit.h"
 
-bool test_r_queue_add_remove(void) {
+bool test_rz_queue_add_remove(void) {
 	int i, j;
 	// Create queue with max size 5.
 	RQueue* queue = rz_queue_new (5);
@@ -23,7 +23,7 @@ bool test_r_queue_add_remove(void) {
 	mu_end;
 }
 
-bool test_r_queue_zero_size(void) {
+bool test_rz_queue_zero_size(void) {
 	// Create queue with max size 0.
 	RQueue* queue = rz_queue_new (0);
 	mu_assert_eq ((int)(intptr_t)queue, (int)(intptr_t)NULL,
@@ -32,11 +32,9 @@ bool test_r_queue_zero_size(void) {
 }
 
 int all_tests() {
-	mu_run_test(test_r_queue_add_remove);
-	mu_run_test(test_r_queue_zero_size);
+	mu_run_test(test_rz_queue_add_remove);
+	mu_run_test(test_rz_queue_zero_size);
 	return tests_passed != tests_run;
 }
 
-int main(int argc, char **argv) {
-	return all_tests();
-}
+mu_main (all_tests)

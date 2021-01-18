@@ -62,6 +62,7 @@ static const struct argv_modes_t {
 	{ "q", " (quiet mode)", RZ_OUTPUT_MODE_QUIET },
 	{ "k", " (sdb mode)", RZ_OUTPUT_MODE_SDB },
 	{ "l", " (verbose mode)", RZ_OUTPUT_MODE_LONG },
+	{ "J", " (verbose JSON mode)", RZ_OUTPUT_MODE_LONG_JSON },
 	{ "t", " (table mode)", RZ_OUTPUT_MODE_TABLE },
 };
 
@@ -466,15 +467,11 @@ static void get_minmax_argc(RzCmdDesc *cd, int *min_argc, int *max_argc) {
 		}
 		(*min_argc)++;
 		(*max_argc)++;
-		switch (arg->type) {
-		case RZ_CMD_ARG_TYPE_CMD_LAST:
-		case RZ_CMD_ARG_TYPE_STRING_LAST:
+		if (arg->flags & RZ_CMD_ARG_FLAG_LAST) {
 			return;
-		case RZ_CMD_ARG_TYPE_ARRAY_STRING:
+		} else if (arg->flags & RZ_CMD_ARG_FLAG_ARRAY) {
 			*max_argc = INT_MAX;
 			return;
-		default:
-			break;
 		}
 		arg++;
 	}
@@ -484,12 +481,9 @@ static void get_minmax_argc(RzCmdDesc *cd, int *min_argc, int *max_argc) {
 			continue;
 		}
 		(*max_argc)++;
-		switch (arg->type) {
-		case RZ_CMD_ARG_TYPE_ARRAY_STRING:
+		if (arg->flags & RZ_CMD_ARG_FLAG_ARRAY) {
 			*max_argc = INT_MAX;
 			return;
-		default:
-			break;
 		}
 		arg++;
 	}
@@ -511,27 +505,27 @@ static RzOutputMode cd_suffix2mode(RzCmdDesc *cd, const char *cmdid) {
  * For example:
  * `cmdid pd 10` would be considered as having 2 arguments, "pd" and "10".
  * However, if <cmdid> was defined to have as argument
- * RZ_CMD_ARG_TYPE_CMD_LAST, we want to group "pd" and "10" in one single
+ * RZ_CMD_ARG_FLAG_LAST, we want to group "pd" and "10" in one single
  * argument "pd 10" and pass that to <cmdid> handler.
  */
 static void args_preprocessing(RzCmdDesc *cd, RzCmdParsedArgs *args) {
-	const RzCmdDescArg *arg = cd->help->args;
+	const RzCmdDescArg *arg;
 	size_t i, j;
 	for (arg = cd->help->args, i = 1; arg && arg->name && i < args->argc - 1; arg++, i++) {
 		char *tmp;
-		switch (arg->type) {
-		case RZ_CMD_ARG_TYPE_CMD_LAST:
-			for (j = i; j < args->argc; j++) {
-				char *s = rz_cmd_escape_arg (args->argv[j], RZ_CMD_ESCAPE_ONE_ARG);
-				if (strcmp (s, args->argv[j])) {
-					free (args->argv[j]);
-					args->argv[j] = s;
-				} else {
-					free (s);
+		if (arg->flags & RZ_CMD_ARG_FLAG_LAST) {
+			if (arg->type == RZ_CMD_ARG_TYPE_CMD) {
+				for (j = i; j < args->argc; j++) {
+					char *s = rz_cmd_escape_arg (args->argv[j], RZ_CMD_ESCAPE_ONE_ARG);
+					if (strcmp (s, args->argv[j])) {
+						free (args->argv[j]);
+						args->argv[j] = s;
+					} else {
+						free (s);
+					}
 				}
 			}
-			// fallthrough
-		case RZ_CMD_ARG_TYPE_STRING_LAST:
+
 			tmp = rz_str_array_join ((const char **)&args->argv[i], args->argc - i, " ");
 			if (!tmp) {
 				return;
@@ -542,15 +536,13 @@ static void args_preprocessing(RzCmdDesc *cd, RzCmdParsedArgs *args) {
 			args->argv[i] = tmp;
 			args->argc = i + 1;
 			return;
-		default:
-			break;
 		}
 	}
 }
 
 static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args) {
 	if (!rz_cmd_desc_has_handler (cd)) {
-		return RZ_CMD_STATUS_INVALID;
+		return RZ_CMD_STATUS_NONEXISTINGCMD;
 	}
 
 	args_preprocessing(cd, args);
@@ -571,7 +563,7 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 	case RZ_CMD_DESC_TYPE_ARGV_MODES:
 		mode = cd_suffix2mode (cd, rz_cmd_parsed_args_cmd (args));
 		if (!mode) {
-			return RZ_CMD_STATUS_INVALID;
+			return RZ_CMD_STATUS_NONEXISTINGCMD;
 		}
 		if (args->argc < cd->d.argv_modes_data.min_argc || args->argc > cd->d.argv_modes_data.max_argc) {
 			return RZ_CMD_STATUS_WRONG_ARGS;
@@ -595,7 +587,7 @@ static RzCmdStatus call_cd(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args) {
 	switch (cd->type) {
 	case RZ_CMD_DESC_TYPE_GROUP:
 		if (!cd->d.group_data.exec_cd) {
-			return RZ_CMD_STATUS_INVALID;
+			return RZ_CMD_STATUS_NONEXISTINGCMD;
 		}
 		return call_cd (cmd, cd->d.group_data.exec_cd, args);
 	case RZ_CMD_DESC_TYPE_ARGV:
@@ -635,7 +627,7 @@ RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args) {
 
 	RzCmdDesc *cd = rz_cmd_get_desc (cmd, rz_cmd_parsed_args_cmd (args));
 	if (!cd) {
-		return RZ_CMD_STATUS_INVALID;
+		return RZ_CMD_STATUS_NONEXISTINGCMD;
 	}
 
 	return call_cd (cmd, cd, args);
@@ -772,26 +764,22 @@ static size_t fill_args(RzStrBuf *sb, RzCmdDesc *cd) {
 			len++;
 			n_optionals++;
 		}
-		switch (arg->type) {
-		case RZ_CMD_ARG_TYPE_ARRAY_STRING:
+		if (arg->flags & RZ_CMD_ARG_FLAG_ARRAY) {
 			has_array = true;
 			rz_strbuf_appendf (sb, "<%s0>", arg->name);
 			len += strlen (arg->name) + 3;
 			rz_strbuf_appendf (sb, " [<%s1> ...]", arg->name);
 			len += strlen (arg->name) + 10;
-			break;
-		case RZ_CMD_ARG_TYPE_OPTION:
+		} else if (arg->flags & RZ_CMD_ARG_FLAG_OPTION) {
 			rz_strbuf_appendf (sb, "-%s", arg->name);
 			len += strlen (arg->name) + 1;
-			break;
-		default:
+		} else {
 			rz_strbuf_appendf (sb, "<%s>", arg->name);
 			len += strlen (arg->name) + 2;
 			if (arg->default_value) {
 				rz_strbuf_appendf (sb, "=%s", arg->default_value);
 				len += strlen (arg->default_value) + 1;
 			}
-			break;
 		}
 	}
 	for (; n_optionals > 0; n_optionals--) {
@@ -1073,7 +1061,7 @@ static char *get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args, bool use
 	switch (cd->type) {
 	case RZ_CMD_DESC_TYPE_GROUP:
 		if (detail > 1 && cd->d.group_data.exec_cd) {
-			return get_help (cmd, cd->d.group_data.exec_cd, args, use_color, detail - 1);
+			return get_help (cmd, cd->d.group_data.exec_cd, args, use_color, detail);
 		}
 		if (detail == 1) {
 			// show the group help only when doing <cmd>?
@@ -1105,7 +1093,7 @@ RZ_API char *rz_cmd_get_help(RzCmd *cmd, RzCmdParsedArgs *args, bool use_color) 
 	char *cmdid = strdup (rz_cmd_parsed_args_cmd (args));
 	char *cmdid_p = cmdid + strlen (cmdid) - 1;
 	size_t detail = 0;
-	while (cmdid_p >= cmdid && *cmdid_p == '?') {
+	while (cmdid_p >= cmdid && *cmdid_p == '?' && detail < 2) {
 		*cmdid_p = '\0';
 		cmdid_p--;
 		detail++;
@@ -1909,9 +1897,9 @@ static void cmd_foreach_cmdname(RzCmd *cmd, RzCmdDesc *cd, RzCmdForeachNameCb cb
  * Only command names that can actually execute something are iterated. Help
  * commands (e.g. ?, h?, etc.) are ignored.
  *
- * /param cmd Reference to RzCmd
- * /param cb Callback function that is called for each command name.
- * /param user Additional user data that is passed to the callback \p cb.
+ * \param cmd Reference to RzCmd
+ * \param cb Callback function that is called for each command name.
+ * \param user Additional user data that is passed to the callback \p cb.
  */
 RZ_API void rz_cmd_foreach_cmdname(RzCmd *cmd, RzCmdForeachNameCb cb, void *user) {
 	RzCmdDesc *cd = rz_cmd_get_root (cmd);

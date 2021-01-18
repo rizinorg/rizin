@@ -168,7 +168,6 @@ module.exports = grammar({
             $.html_disable_command,
             $.html_enable_command,
             $.pipe_command,
-            $.scr_tts_command,
         ),
 
         grep_command: $ => seq(
@@ -205,10 +204,6 @@ module.exports = grammar({
         html_enable_command: $ => prec.right(1, seq(
             field('command', $._simple_command),
             '|H'
-        )),
-        scr_tts_command: $ => prec.right(1, seq(
-            field('command', $._simple_command),
-            '|T'
         )),
         pipe_command: $ => seq($._simple_command, '|', $.pipe_second_command),
         pipe_second_command: $ => /[^|\r\n;]+/,
@@ -273,10 +268,7 @@ module.exports = grammar({
         ),
         help_command: $ => prec.left(1, choice(
             field('command', alias($.question_mark_identifier, $.cmd_identifier)),
-            seq(
-                field('command', alias($._help_command, $.cmd_identifier)),
-                field('args', optional($.args)),
-            ),
+            field('command', alias($._help_command, $.cmd_identifier)),
         )),
         arged_command: $ => choice(
             $._simple_arged_command,
@@ -288,7 +280,13 @@ module.exports = grammar({
             $._env_command,
             $._pf_arged_command,
             $._last_command,
+            $._simple_arged_command_question,
         ),
+
+        _simple_arged_command_question: $ => prec.left(1, seq(
+            field('command', alias($._help_command, $.cmd_identifier)),
+            field('args', $.args),
+        )),
 
         _simple_arged_command: $ => prec.left(1, seq(
             field('command', $.cmd_identifier),

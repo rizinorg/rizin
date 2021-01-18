@@ -1,5 +1,5 @@
-#ifndef __IO_R2K_LINUX_H__
-#define __IO_R2K_LINUX_H__
+#ifndef __IO_RZK_LINUX_H__
+#define __IO_RZK_LINUX_H__
 
 #include <rz_io.h>
 #include <rz_lib.h>

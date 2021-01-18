@@ -111,7 +111,6 @@ RZ_API RzIO* rz_io_init(RzIO* io) {
 	rz_io_map_init (io);
 	rz_io_cache_init (io);
 	rz_io_plugin_init (io);
-	rz_io_undo_init (io);
 	io->event = rz_event_new (io);
 	return io;
 }
@@ -150,9 +149,10 @@ RZ_API RzIODesc *rz_io_open_nomap(RzIO *io, const char *uri, int perm, int mode)
 RZ_API RzIODesc* rz_io_open(RzIO* io, const char* uri, int perm, int mode) {
 	rz_return_val_if_fail (io, NULL);
 	RzIODesc* desc = rz_io_open_nomap (io, uri, perm, mode);
-	if (desc) {
-		rz_io_map_new (io, desc->fd, desc->perm, 0LL, 0LL, rz_io_desc_size (desc));
+	if (!desc) {
+		return NULL;
 	}
+	rz_io_map_new (io, desc->fd, desc->perm, 0LL, 0LL, rz_io_desc_size (desc));
 	return desc;
 }
 
@@ -404,6 +404,11 @@ RZ_API bool rz_io_resize(RzIO* io, ut64 newsize) {
 		RzIOMap *current_map;
 		RzListIter *iter;
 		ut64 fd_size = rz_io_fd_size (io, io->desc->fd);
+		bool ret = rz_io_desc_resize (io->desc, newsize);
+		if (!ret) {
+			rz_list_free (maps);
+			return false;
+		}
 		rz_list_foreach (maps, iter, current_map) {
 			// we just resize map of the same size of its fd
 			if (current_map->itv.size == fd_size) {
@@ -411,7 +416,7 @@ RZ_API bool rz_io_resize(RzIO* io, ut64 newsize) {
 			}
 		}
 		rz_list_free (maps);
-		return rz_io_desc_resize (io->desc, newsize);
+		return true;
 	}
 	return false;
 }
@@ -668,7 +673,6 @@ RZ_API int rz_io_fini(RzIO* io) {
 	rz_io_map_fini (io);
 	ls_free (io->plugins);
 	rz_io_cache_fini (io);
-	rz_list_free (io->undo.w_list);
 	if (io->runprofile) {
 		RZ_FREE (io->runprofile);
 	}

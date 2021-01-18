@@ -30,7 +30,6 @@ static const char *help_msg_s[] = {
 	"sf", " function", "Seek to address of specified function",
 	"sf.", "", "Seek to the beginning of current function",
 	"sg/sG", "", "Seek begin (sg) or end (sG) of section or file",
-	"sl", "[?] [+-]line", "Seek to line",
 	"sn/sp", " ([nkey])", "Seek to next/prev location, as specified by scr.nkey",
 	"so", " [N]", "Seek to N next opcode(s)",
 	"sr", " pc", "Seek to register",
@@ -46,33 +45,11 @@ static const char *help_msg_sC[] = {
 	NULL
 };
 
-static const char *help_msg_sl[] = {
-	"Usage:", "sl+ or sl- or slc", "",
-	"sl", " [line]", "Seek to absolute line",
-	"sl", "[+-][line]", "Seek to relative line",
-	"slc", "", "Clear line cache",
-	"sll", "", "Show total number of lines",
-	"sleep", " [seconds]", "Sleep for an specific amount of time",
-	NULL
-};
-
 static const char *help_msg_ss[] = {
 	"Usage: ss", "", " # Seek silently (not recorded in the seek history)",
 	"s?", "", "Works with all s subcommands",
 	NULL
 };
-
-static void __init_seek_line(RzCore *core) {
-	ut64 from, to;
-
-	rz_config_bump (core->config, "lines.to");
-	from = rz_config_get_i (core->config, "lines.from");
-	const char *to_str = rz_config_get (core->config, "lines.to");
-	to = rz_num_math (core->num, (to_str && *to_str) ? to_str : "$s");
-	if (rz_core_lines_initcache (core, from, to) == -1) {
-		eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
-	}
-}
 
 static void printPadded(RzCore *core, int pad) {
 	if (pad < 1) {
@@ -85,131 +62,17 @@ static void printPadded(RzCore *core, int pad) {
 	free (fmt);
 }
 
-static void __get_current_line(RzCore *core) {
-	if (core->print->lines_cache_sz > 0) {
-		int curr = rz_util_lines_getline (core->print->lines_cache, core->print->lines_cache_sz, core->offset);
-		rz_cons_printf ("%d\n", curr);
-	}
-}
-
-static void __seek_line_absolute(RzCore *core, int numline) {
-	if (numline < 1 || numline > core->print->lines_cache_sz - 1) {
-		eprintf ("ERROR: Line must be between 1 and %d\n", core->print->lines_cache_sz - 1);
-	} else {
-		rz_core_seek (core, core->print->lines_cache[numline - 1], true);
-	}
-}
-
-static void __seek_line_relative(RzCore *core, int numlines) {
-	int curr = rz_util_lines_getline (core->print->lines_cache, core->print->lines_cache_sz, core->offset);
-	if (numlines > 0 && curr + numlines >= core->print->lines_cache_sz - 1) {
-		eprintf ("ERROR: Line must be < %d\n", core->print->lines_cache_sz - 1);
-	} else if (numlines < 0 && curr + numlines < 1) {
-		eprintf ("ERROR: Line must be > 1\n");
-	} else {
-		rz_core_seek (core, core->print->lines_cache[curr + numlines - 1], true);
-	}
-}
-
-static void __clean_lines_cache(RzCore *core) {
-	core->print->lines_cache_sz = -1;
-	RZ_FREE (core->print->lines_cache);
-}
-
-RZ_API int rz_core_lines_currline(RzCore *core) {  // make priv8 again
-	int imin = 0;
-	int imax = core->print->lines_cache_sz;
-	int imid = 0;
-
-	while (imin <= imax) {
-		imid = imin + ((imax - imin) / 2);
-		if (core->print->lines_cache[imid] == core->offset) {
-			return imid;
-		} else if (core->print->lines_cache[imid] < core->offset) {
-			imin = imid + 1;
-		} else {
-			imax = imid - 1;
-		}
-	}
-	return imin;
-}
-
-RZ_API int rz_core_lines_initcache(RzCore *core, ut64 start_addr, ut64 end_addr) {
-	int i, bsz = core->blocksize;
-	ut64 off = start_addr;
-	ut64 baddr;
-	if (start_addr == UT64_MAX || end_addr == UT64_MAX) {
-		return -1;
-	}
-
-	free (core->print->lines_cache);
-	core->print->lines_cache = RZ_NEWS0 (ut64, bsz);
-	if (!core->print->lines_cache) {
-		return -1;
-	}
-
-	baddr = rz_config_get_i (core->config, "bin.baddr");
-
-	int line_count = start_addr? 0: 1;
-	core->print->lines_cache[0] = start_addr? 0: baddr;
-	char *buf = malloc (bsz);
-	if (!buf) {
-		return -1;
-	}
-	rz_cons_break_push (NULL, NULL);
-	while (off < end_addr) {
-		if (rz_cons_is_breaked ()) {
-			break;
-		}
-		rz_io_read_at (core->io, off, (ut8 *) buf, bsz);
-		for (i = 0; i < bsz; i++) {
-			if (buf[i] != '\n') {
-				continue;
-			}
-			if ((line_count + 1) >= bsz) {
-				break;
-			}
-			core->print->lines_cache[line_count] = start_addr? off + i + 1: off + i + 1 + baddr;
-			line_count++;
-			if (line_count % bsz == 0) {
-				ut64 *tmp = realloc (core->print->lines_cache,
-					(line_count + bsz) * sizeof (ut64));
-				if (tmp) {
-					core->print->lines_cache = tmp;
-				} else {
-					RZ_FREE (core->print->lines_cache);
-					goto beach;
-				}
-			}
-		}
-		off += bsz;
-	}
-	free (buf);
-	rz_cons_break_pop ();
-	return line_count;
-beach:
-	free (buf);
-	rz_cons_break_pop ();
-	return -1;
-}
-
 static void seek_to_register(RzCore *core, const char *input, bool is_silent) {
 	ut64 off;
 	if (core->bin->is_debugger) {
 		off = rz_debug_reg_get (core->dbg, input);
-		if (!is_silent) {
-			rz_io_sundo_push (core->io, core->offset, rz_print_get_cursor (core->print));
-		}
-		rz_core_seek (core, off, true);
+		rz_core_seek_opt (core, off, true, !is_silent);
 	} else {
 		RzReg *orig = core->dbg->reg;
 		core->dbg->reg = core->analysis->reg;
 		off = rz_debug_reg_get (core->dbg, input);
 		core->dbg->reg = orig;
-		if (!is_silent) {
-			rz_io_sundo_push (core->io, core->offset, rz_print_get_cursor (core->print));
-		}
-		rz_core_seek (core, off, true);
+		rz_core_seek_opt (core, off, true, !is_silent);
 	}
 }
 
@@ -236,7 +99,7 @@ static int cmd_sort(void *data, const char *input) { // "sort"
 	return 0;
 }
 
-static int cmd_seek_opcode_backward(RzCore *core, int numinstr) {
+static int cmd_seek_opcode_backward(RzCore *core, int numinstr, bool silent) {
 	int i, val = 0;
 	// N previous instructions
 	ut64 addr = core->offset;
@@ -269,14 +132,17 @@ static int cmd_seek_opcode_backward(RzCore *core, int numinstr) {
 			addr = prev_addr;
 		}
 	}
-	rz_core_seek (core, addr, true);
+	rz_core_seek_opt (core, addr, true, !silent);
 	val += ret;
 	return val;
 }
 
-static int cmd_seek_opcode_forward (RzCore *core, int n) {
+static int cmd_seek_opcode_forward (RzCore *core, int n, bool silent) {
 	// N forward instructions
 	int i, ret, val = 0;
+	if (!silent) {
+		rz_core_seek_save (core);
+	}
 	for (val = i = 0; i < n; i++) {
 		RzAnalysisOp op;
 		ret = rz_analysis_op (core->analysis, &op, core->offset, core->block,
@@ -284,14 +150,14 @@ static int cmd_seek_opcode_forward (RzCore *core, int n) {
 		if (ret < 1) {
 			ret = 1;
 		}
-		rz_core_seek_delta (core, ret);
+		rz_core_seek_delta (core, ret, false);
 		rz_analysis_op_fini (&op);
 		val += ret;
 	}
 	return val;
 }
 
-static void cmd_seek_opcode(RzCore *core, const char *input) {
+static void cmd_seek_opcode(RzCore *core, const char *input, bool silent) {
 	if (input[0] == '?') {
 		eprintf ("Usage: so [-][n]\n");
 		return;
@@ -304,8 +170,8 @@ static void cmd_seek_opcode(RzCore *core, const char *input) {
 		n = 1;
 	}
 	int val = (n < 0)
-		? cmd_seek_opcode_backward (core, -n)
-		: cmd_seek_opcode_forward (core, n);
+		? cmd_seek_opcode_backward (core, -n, silent)
+		: cmd_seek_opcode_forward (core, n, silent);
 	core->num->value = val;
 }
 
@@ -374,11 +240,7 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 			bool seeked = false;
 			rz_interval_tree_foreach (&core->analysis->meta, it, meta) {
 				if (meta->type == RZ_META_TYPE_COMMENT && !strcmp (meta->str, input + 2)) {
-					if (!silent) {
-						rz_io_sundo_push (core->io, core->offset, rz_print_get_cursor (core->print));
-					}
-					rz_core_seek (core, off, true);
-					rz_core_block_read (core);
+					rz_core_seek_opt (core, off, true, !silent);
 					seeked = true;
 					break;
 				}
@@ -399,11 +261,7 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 			}
 			break;
 		}
-		if (!silent) {
-			rz_io_sundo_push (core->io, core->offset, rz_print_get_cursor (core->print));
-		}
-		rz_core_seek (core, addr, true);
-		rz_core_block_read (core);
+		rz_core_seek_opt (core, addr, true, !silent);
 	}
 	break;
 	case '/': // "s/"
@@ -454,111 +312,83 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 		for (input++; *input == '.'; input++) {
 			;
 		}
-		rz_core_seek_base (core, input);
-		rz_io_sundo_push (core->io, core->offset, rz_print_get_cursor (core->print));
+		rz_core_seek_base (core, input, !silent);
 		break;
 	case 'j':  // "sj"
-		{
-			RzList /*<ut64 *>*/ *addrs = rz_list_newf (free);
-			RzList /*<char *>*/ *names = rz_list_newf (free);
-			RzList *list = rz_io_sundo_list (core->io, '!');
-			ut64 lsz = 0;
-			ut64 i;
-			RzListIter *iter;
-			RzIOUndos *undo;
-			if (list) {
-				rz_list_foreach (list, iter, undo) {
-					char *name = NULL;
-
-					RzFlagItem *f = rz_flag_get_at (core->flags, undo->off, true);
-					if (f) {
-						if (f->offset != undo->off) {
-							name = rz_str_newf ("%s+%d", f->name,
-									(int)(undo->off- f->offset));
-						} else {
-							name = strdup (f->name);
-						}
-					}
-					if (!name) {
-						name = strdup ("");
-					}
-					ut64 *val = malloc (sizeof (ut64));
-					if (!val) {
-						free (name);
-						break;
-					}
-					*val = undo->off;
-					rz_list_append (addrs, val);
-					rz_list_append (names, strdup (name));
-					lsz++;
-					free (name);
-				}
-				rz_list_free (list);
-			}
-			PJ *pj = pj_new ();
-			pj_a (pj);
-			for (i = 0; i < lsz; i++) {
-				ut64 *addr = rz_list_get_n (addrs, i);
-				const char *name = rz_list_get_n (names, i);
-				pj_o (pj);
-				pj_kn (pj, "offset", *addr);
-				if (name && *name) {
-					pj_ks (pj, "name", name);
-				}
-				if (core->io->undo.undos == i) {
-					pj_kb (pj, "current", true);
-				}
-				pj_end (pj);
-			}
-			pj_end (pj);
-			char *s = pj_drain (pj);
-			rz_cons_printf ("%s\n", s);
-			free (s);
-			rz_list_free (addrs);
-			rz_list_free (names);
-		}
-		break;
 	case '*': // "s*"
 	case '=': // "s="
 	case '!': // "s!"
 		{
-			char mode = input[0];
-			if (input[1] == '=') {
-				mode = 0;
+			int mode = input[0];
+			RzList *list = rz_core_seek_list (core);
+			RzListIter *iter;
+			RzCoreSeekItem *undo;
+			PJ *pj = NULL;
+			if (mode == 'j') {
+				pj = rz_core_pj_new (core);
+				pj_a (pj);
 			}
-			RzList *list = rz_io_sundo_list (core->io, mode);
-			if (list) {
-				RzListIter *iter;
-				RzIOUndos *undo;
-				rz_list_foreach (list, iter, undo) {
-					char *name = NULL;
-
-					RzFlagItem *f = rz_flag_get_at (core->flags, undo->off, true);
-					if (f) {
-						if (f->offset != undo->off) {
-							name = rz_str_newf ("%s + %d\n", f->name,
-									(int)(undo->off - f->offset));
-						} else {
-							name = strdup (f->name);
-						}
-					}
-					if (mode) {
-						rz_cons_printf ("0x%"PFMT64x" %s\n", undo->off, name? name: "");
+			bool current_met = false;
+			rz_list_foreach (list, iter, undo) {
+				RzFlagItem *f = rz_flag_get_at (core->flags, undo->offset, true);
+				char *name = NULL;
+				if (f) {
+					if (f->offset != undo->offset) {
+						name = rz_str_newf ("%s+%" PFMT64d, f->name, undo->offset - f->offset);
 					} else {
-						if (!name) {
-							name = rz_str_newf ("0x%"PFMT64x, undo->off);
-						}
-						rz_cons_printf ("%s%s", name, iter->n? " > ":"");
+						name = strdup (f->name);
 					}
-					free (name);
 				}
-				rz_list_free (list);
-				if (!mode) {
-					rz_cons_newline ();
+				current_met |= undo->is_current;
+				if (mode == 'j') {
+					pj_o (pj);
+					pj_kn (pj, "offset", undo->offset);
+					pj_kn (pj, "cursor", undo->cursor);
+					if (name) {
+						pj_ks (pj, "name", name);
+					}
+					pj_kb (pj, "current", undo->is_current);
+					pj_end (pj);
+				} else if (mode == '=') {
+					if (!name) {
+						name = rz_str_newf ("0x%" PFMT64x, undo->offset);
+					}
+					const char *sep = "";
+					if (iter->n && current_met) {
+						sep = " < ";
+					} else if (iter->n) {
+						sep = " > ";
+					} else {
+						sep = "\n";
+					}
+					rz_cons_printf ("%s%s", name, sep);
+				} else if (mode == '!') {
+					const char *comment = "";
+					if (undo->is_current) {
+						comment = " # current seek";
+					} else if (current_met) {
+						comment = " # redo";
+					}
+					rz_cons_printf ("0x%" PFMT64x " %s%s\n", undo->offset, name? name: "", comment);
+				} else if (mode == '*') {
+					if (undo->is_current) {
+						rz_cons_printf ("# Current seek @ 0x%" PFMT64x "\n", undo->offset);
+					} else if (current_met) {
+						rz_cons_printf ("f redo_%d @ 0x%" PFMT64x "\n", RZ_ABS (undo->idx - 1), undo->offset);
+					} else {
+						rz_cons_printf ("f undo_%d @ 0x%" PFMT64x "\n", RZ_ABS (undo->idx + 1), undo->offset);
+					}
 				}
+				free (name);
 			}
+			if (mode == 'j') {
+				pj_end (pj);
+				char *s = pj_drain (pj);
+				rz_cons_printf ("%s\n", s);
+				free (s);
+			}
+			break;
 		}
-		break;
 	case '+': // "s+"
 		if (input[1] != '\0') {
 			int delta = off;
@@ -569,34 +399,18 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 					delta /= mult;
 				}
 			}
-			// int delta = (input[1] == '+')? core->blocksize: off;
-			if (!silent) {
-				rz_io_sundo_push (core->io, core->offset,
-					rz_print_get_cursor (core->print));
-			}
-			rz_core_seek_delta (core, delta);
-			rz_core_block_read (core);
+			rz_core_seek_delta (core, delta, !silent);
 		} else {
-			RzIOUndos *undo = rz_io_sundo_redo (core->io);
-			if (undo) {
-				rz_core_seek (core, undo->off, false);
-				rz_core_block_read (core);
-			}
+			rz_core_seek_redo (core);
 		}
 		break;
 	case '-': // "s-"
 		switch (input[1]) {
 		case '*': // "s-*"
-			rz_io_sundo_reset (core->io);
+			rz_core_seek_reset (core);
 			break;
 		case 0: // "s-"
-			{
-				RzIOUndos *undo = rz_io_sundo (core->io, core->offset);
-				if (undo) {
-					rz_core_seek (core, undo->off, false);
-					rz_core_block_read (core);
-				}
-			}
+			rz_core_seek_undo (core);
 			break;
 		case '-': // "s--"
 		default:
@@ -609,36 +423,25 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 						delta /= mult;
 					}
 				}
-				if (!silent) {
-					rz_io_sundo_push (core->io, core->offset,
-							rz_print_get_cursor (core->print));
-				}
-				rz_core_seek_delta (core, delta);
-				rz_core_block_read (core);
+				rz_core_seek_delta (core, delta, !silent);
 			}
 		break;
 		}
 		break;
 	case 'n': // "sn"
 		{
-			if (!silent) {
-				rz_io_sundo_push (core->io, core->offset, rz_print_get_cursor (core->print));
-			}
 			const char *nkey = (input[1] == ' ')
 				? input + 2
 				: rz_config_get (core->config, "scr.nkey");
-			rz_core_seek_next (core, nkey);
+			rz_core_seek_next (core, nkey, !silent);
 		}
 		break;
 	case 'p': // "sp"
 		{
-			if (!silent) {
-				rz_io_sundo_push (core->io, core->offset, rz_print_get_cursor (core->print));
-			}
 			const char *nkey = (input[1] == ' ')
 				? input + 2
 				: rz_config_get (core->config, "scr.nkey");
-			rz_core_seek_previous (core, nkey);
+			rz_core_seek_prev (core, nkey, !silent);
 		}
 		break;
 	case 'a': // "sa"
@@ -655,19 +458,13 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 			rz_cmd_call (core->rcmd, cmd);
 			free (cmd);
 		}
-		if (!silent) {
-			rz_io_sundo_push (core->io, core->offset, rz_print_get_cursor (core->print));
-		}
-		rz_core_seek_align (core, off, 0);
+		rz_core_seek_align (core, off, !silent);
 		break;
 	case 'b': // "sb"
 		if (off == 0) {
 			off = core->offset;
 		}
-		if (!silent) {
-			rz_io_sundo_push (core->io, core->offset, rz_print_get_cursor (core->print));
-		}
-		rz_core_analysis_bb_seek (core, off);
+		rz_core_seek_analysis_bb (core, off, !silent);
 		break;
 	case 'f': { // "sf"
 		RzAnalysisFunction *fcn;
@@ -675,19 +472,19 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 		case '\0': // "sf"
 			fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 			if (fcn) {
-				rz_core_seek (core, rz_analysis_function_max_addr (fcn), true);
+				rz_core_seek_opt (core, rz_analysis_function_max_addr (fcn), true, !silent);
 			}
 			break;
 		case ' ': // "sf "
 			fcn = rz_analysis_get_function_byname (core->analysis, input + 2);
 			if (fcn) {
-				rz_core_seek (core, fcn->addr, true);
+				rz_core_seek_opt (core, fcn->addr, true, !silent);
 			}
 			break;
 		case '.': // "sf."
 			fcn = rz_analysis_get_fcn_in (core->analysis, core->offset, 0);
 			if (fcn) {
-				rz_core_seek (core, fcn->addr, true);
+				rz_core_seek_opt (core, fcn->addr, true, !silent);
 			}
 			break;
 		}
@@ -706,7 +503,7 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 		case '\0':
 		case '+':
 		case '-':
-			cmd_seek_opcode (core, input + 1);
+			cmd_seek_opcode (core, input + 1, silent);
 			break;
 		default:
 			return -1;	// invalid command
@@ -716,9 +513,9 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 	{
 		RzIOMap *map  = rz_io_map_get (core->io, core->offset);
 		if (map) {
-			rz_core_seek (core, map->itv.addr, true);
+			rz_core_seek_opt (core, map->itv.addr, true, !silent);
 		} else {
-			rz_core_seek (core, 0, true);
+			rz_core_seek_opt (core, 0, true, !silent);
 		}
 	}
 	break;
@@ -730,59 +527,9 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 		RzIOMap *map = rz_io_map_get (core->io, core->offset);
 		// XXX: this +2 is a hack. must fix gap between sections
 		if (map) {
-			rz_core_seek (core, map->itv.addr + map->itv.size + 2, true);
+			rz_core_seek_opt (core, map->itv.addr + map->itv.size + 2, true, !silent);
 		} else {
-			rz_core_seek (core, rz_io_fd_size (core->io, core->file->fd), true);
-		}
-	}
-	break;
-	case 'l': // "sl"
-	{
-		int sl_arg = rz_num_math (core->num, input + 1);
-		switch (input[1]) {
-		case 'e': // "sleep"
-			{
-				const char *arg = strchr (input, ' ');
-				if (arg) {
-					void *bed = rz_cons_sleep_begin ();
-					rz_sys_sleep (atoi (arg + 1));
-					rz_cons_sleep_end (bed);
-				} else {
-					eprintf ("Usage: sleep [seconds]\n");
-				}
-			}
-			break;
-		case '\0': // "sl"
-			if (!core->print->lines_cache) {
-				__init_seek_line (core);
-			}
-			__get_current_line (core);
-			break;
-		case ' ': // "sl "
-			if (!core->print->lines_cache) {
-				__init_seek_line (core);
-			}
-			__seek_line_absolute (core, sl_arg);
-			break;
-		case '+': // "sl+"
-		case '-': // "sl-"
-			if (!core->print->lines_cache) {
-				__init_seek_line (core);
-			}
-			__seek_line_relative (core, sl_arg);
-			break;
-		case 'c': // "slc"
-			__clean_lines_cache (core);
-			break;
-		case 'l': // "sll"
-			if (!core->print->lines_cache) {
-				__init_seek_line (core);
-			}
-			eprintf ("%d lines\n", core->print->lines_cache_sz - 1);
-			break;
-		case '?': // "sl?"
-			rz_core_cmd_help (core, help_msg_sl);
-			break;
+			rz_core_seek_opt (core, rz_io_fd_size (core->io, core->file->fd), true, !silent);
 		}
 	}
 	break;
@@ -796,11 +543,7 @@ RZ_IPI int rz_cmd_seek(void *data, const char *input) {
 		{
 			ut64 n = rz_num_math (core->num, input);
 			if (n) {
-				if (!silent) {
-					rz_io_sundo_push (core->io, core->offset, rz_print_get_cursor (core->print));
-				}
-				rz_core_seek (core, n, true);
-				rz_core_block_read (core);
+				rz_core_seek_opt (core, n, true, !silent);
 			}
 		}
 		break;
