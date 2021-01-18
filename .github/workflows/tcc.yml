@@ -61,4 +61,4 @@ jobs:
         rizin -v
         rz-test -v
         cd test
-        rz-test -L -o results.json
+        rz-test -L -o results.json || true
