@@ -143,7 +143,6 @@ RZ_API char *rz_sys_cmd_str(const char *cmd, const char *input, int *len);
 RZ_API char *rz_sys_cmd_strf(const char *cmd, ...) RZ_PRINTF_CHECK(1, 2);
 //#define rz_sys_cmd_str(cmd, input, len) rz_sys_cmd_str_full(cmd, input, len, 0)
 RZ_API void rz_sys_backtrace(void);
-RZ_API bool rz_sys_tts(const char *txt, bool bg);
 
 #if __WINDOWS__
 #  define rz_sys_breakpoint() { __debugbreak  (); }

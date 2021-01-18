@@ -168,7 +168,6 @@ module.exports = grammar({
             $.html_disable_command,
             $.html_enable_command,
             $.pipe_command,
-            $.scr_tts_command,
         ),
 
         grep_command: $ => seq(
@@ -205,10 +204,6 @@ module.exports = grammar({
         html_enable_command: $ => prec.right(1, seq(
             field('command', $._simple_command),
             '|H'
-        )),
-        scr_tts_command: $ => prec.right(1, seq(
-            field('command', $._simple_command),
-            '|T'
         )),
         pipe_command: $ => seq($._simple_command, '|', $.pipe_second_command),
         pipe_second_command: $ => /[^|\r\n;]+/,

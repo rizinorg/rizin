@@ -539,7 +539,6 @@ typedef struct rz_cons_t {
 	ut64 timeout; // must come from rz_time_now_mono()
 	bool grep_color;
 	bool grep_highlight;
-	bool use_tts;
 	bool filter;
 	char* (*rgbstr)(char *str, size_t sz, ut64 addr);
 	bool click_set;
