@@ -1001,77 +1001,11 @@ enum {
 	RZ_ANALYSIS_ESIL_PARM_NUM,
 };
 
-/* Constructs to convert from ESIL to REIL */
-#define FOREACHOP(GENERATE)                     \
-/* No Operation */               GENERATE(NOP)  \
-/* Unknown/Undefined */          GENERATE(UNK)  \
-/* Conditional Jump */           GENERATE(JCC)  \
-/* Store Value to register */    GENERATE(STR)  \
-/* Store value to memory */      GENERATE(STM)  \
-/* Load value from memory */     GENERATE(LDM)  \
-/* Addition */                   GENERATE(ADD)  \
-/* Subtraction */                GENERATE(SUB)  \
-/* Negation */                   GENERATE(NEG)  \
-/* Multiplication */             GENERATE(MUL)  \
-/* Division */                   GENERATE(DIV)  \
-/* Modulo */                     GENERATE(MOD)  \
-/* Signed Multiplication */      GENERATE(SMUL) \
-/* Sugned Division */            GENERATE(SDIV) \
-/* Signed Modulus */             GENERATE(SMOD) \
-/* Shift Left */                 GENERATE(SHL)  \
-/* Shift Right */                GENERATE(SHR)  \
-/* Binary and */                 GENERATE(AND)  \
-/* Binary or */                  GENERATE(OR)   \
-/* Binary xor */                 GENERATE(XOR)  \
-/* Binary not */                 GENERATE(NOT)  \
-/* Equation */                   GENERATE(EQ)   \
-/* Less Than */                  GENERATE(LT)
-
-#define MAKE_ENUM(OP) REIL_##OP,
-#define REIL_OP_STRING(STRING) #STRING,
-
-typedef enum {
-	FOREACHOP(MAKE_ENUM)
-} RzAnalysisReilOpcode;
-
-typedef enum {
-	ARG_REG,           // CPU Register
-	ARG_TEMP,          // Temporary register used by REIL
-	ARG_CONST,         // Constant value
-	ARG_ESIL_INTERNAL, // Used to resolve ESIL internal flags
-	ARG_NONE           // Operand not used by the instruction
-} RzAnalysisReilArgType;
-
-// Arguments to a REIL instruction.
-typedef struct rz_analysis_reil_arg {
-	RzAnalysisReilArgType type; // Type of the argument
-	ut8 size;              // Size of the argument in bytes
-	char name[32];         // Name of the argument
-} RzAnalysisReilArg;
-
 typedef struct rz_analysis_ref_char {
 	char *str;
 	char *cols;
 } RzAnalysisRefStr;
 
-// Instruction arg1, arg2, arg3
-typedef struct rz_analysis_reil_inst {
-	RzAnalysisReilOpcode opcode;
-	RzAnalysisReilArg *arg[3];
-} RzAnalysisReilInst;
-
-typedef struct rz_analysis_reil {
-	char old[32]; // Used to compute flags.
-	char cur[32];
-	ut8 lastsz;
-	ut64 reilNextTemp;   // Used to store the index of the next REIL temp register to be used.
-	ut64 addr;           // Used for instruction sequencing. Check esil2reil.c for details.
-	ut8 seq_num;         // Incremented and used when noInc is set to 1.
-	int skip;
-	int cmd_count;
-	char if_buf[64];
-	char pc[8];
-} RzAnalysisReil;
 
 // must be a char
 #define ESIL_INTERNAL_PREFIX '$'
@@ -1186,7 +1120,6 @@ typedef struct rz_analysis_esil_t {
 	Sdb *stats;
 	RzAnalysisEsilTrace *trace;
 	RzAnalysisEsilCallbacks cb;
-	RzAnalysisReil *Reil;
 	// this is so cursed, can we please remove external commands from esil internals.
 	// Function pointers are fine, but not commands
 	char *cmd_step; // rizin (external) command to run before a step is performed
@@ -1982,9 +1915,6 @@ RZ_API bool rz_analysis_function_delete_label_at(RzAnalysisFunction *fcn, ut64 a
 /* limits */
 RZ_API void rz_analysis_set_limits(RzAnalysis *analysis, ut64 from, ut64 to);
 RZ_API void rz_analysis_unset_limits(RzAnalysis *analysis);
-
-/* ESIL to REIL */
-RZ_API int rz_analysis_esil_to_reil_setup (RzAnalysisEsil *esil, RzAnalysis *analysis, int romem, int stats);
 
 /* no-return stuff */
 RZ_API void rz_analysis_noreturn_list(RzAnalysis *analysis, int mode);
