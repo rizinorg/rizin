@@ -5418,7 +5418,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_instrs_command) {
 	ut64 orig_offset = core->offset;
 	int bs = core->blocksize;
 	RzList *bbl = rz_analysis_get_blocks_in (core->analysis, core->offset);
-	if (!bbl) {
+	if (!bbl || rz_list_empty (bbl)) {
 		eprintf ("No basic block contains current address\n");
 		return RZ_CMD_STATUS_INVALID;
 	}
