@@ -5,14 +5,11 @@
 
 #if (defined(_WIN32) || defined(_WIN64)) && !defined(__GNUC__)
 #define MACRO_LOG_FUNC __FUNCTION__
-#define MACRO_WEAK_SYM
 // TODO: Windows weak symbols?
 #elif defined(__EMSCRIPTEN__) // TODO: test upon Emscripten's version once it supports weak symbols
 #define MACRO_LOG_FUNC __func__
-#define MACRO_WEAK_SYM
 #else
 #define MACRO_LOG_FUNC __func__
-#define MACRO_WEAK_SYM __attribute__ ((weak))
 #endif
 
 typedef enum rz_log_level {
@@ -75,10 +72,10 @@ RZ_API void rz_log_del_callback(RLogCallback cbfunc);
 /* Define rz_log as weak so it can be 'overwritten' externally
    This allows another method of output redirection on POSIX (Windows?)
    You can override this function to handle all logging logic / output yourself */
-RZ_API MACRO_WEAK_SYM void rz_log(const char *funcname, const char *filename,
+RZ_API void rz_log(const char *funcname, const char *filename,
 	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) RZ_PRINTF_CHECK(6, 7);
 
-RZ_API MACRO_WEAK_SYM void rz_vlog(const char *funcname, const char *filename,
+RZ_API void rz_vlog(const char *funcname, const char *filename,
 	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, va_list args);
 
 #ifdef __cplusplus
