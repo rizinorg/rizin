@@ -354,8 +354,6 @@ jobs:
 
   build-static:
     name: Build static
-    # FIXME: ignore error until all tests properly pass
-    continue-on-error: true
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'static') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     runs-on: ubuntu-20.04
     container: alpine:edge
@@ -383,7 +381,7 @@ jobs:
     - name: Run unit tests
       run: |
         export PATH=${HOME}/rizin-static/bin:${PATH}
-        ninja -C build test || true
+        ninja -C build test
       working-directory: rizin
     - name: Run tests
       run: |
