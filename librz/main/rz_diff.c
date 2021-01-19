@@ -1105,8 +1105,10 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 			eprintf ("Cannot open '%s'\n", rz_str_get (ro.file));
 		}
 		c2 = opencore (&ro, ro.file2);
-		if (!c || !c2) {
+		if (!c2) {
 			eprintf ("Cannot open '%s'\n", rz_str_get (ro.file2));
+		}
+		if (!c || !c2) {
 			return 1;
 		}
 		c->c2 = c2;
