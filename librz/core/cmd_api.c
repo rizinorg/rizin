@@ -1851,6 +1851,35 @@ RZ_API bool rz_cmd_desc_remove(RzCmd *cmd, RzCmdDesc *cd) {
 	return true;
 }
 
+/**
+ * \brief Get a reference to the i-th argument of a command descriptor.
+ *
+ * Get a reference to the i-th argument of a command. This function is useful
+ * to know which RzCmdDescArg an argument actually belongs to. In particular,
+ * it deals with arguments with special flags like \p RZ_CMD_ARG_FLAG_LAST or
+ * \p RZ_CMD_ARG_FLAG_ARRAY, where even if there is just one RzCmdDescArg,
+ * everything is considered as part of the same RzCmdDescArg.
+ */
+RZ_API const RzCmdDescArg *rz_cmd_desc_get_arg(RzCmd *cmd, const RzCmdDesc *cd, size_t i) {
+	const RzCmdDescArg *arg = cd->help->args;
+	size_t j = 0;
+	while (arg && arg->name) {
+		if (arg->type == RZ_CMD_ARG_TYPE_FAKE) {
+			arg++;
+			continue;
+		}
+		if (i == j) {
+			return arg;
+		}
+		if ((arg->flags & RZ_CMD_ARG_FLAG_LAST) || (arg->flags & RZ_CMD_ARG_FLAG_ARRAY)) {
+			return arg;
+		}
+		arg++;
+		j++;
+	}
+	return NULL;
+}
+
 static void cmd_foreach_cmdname(RzCmd *cmd, RzCmdDesc *cd, RzCmdForeachNameCb cb, void *user) {
 	if (!cd) {
 		return;
