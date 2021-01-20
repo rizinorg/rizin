@@ -34,6 +34,16 @@ static RzCmdDescHelp p_help = {
     .args = xe_args,
 };
 
+static RzCmdDescArg s_args[] = {
+    { .name = "v1", .type = RZ_CMD_ARG_TYPE_RZNUM, .flags = RZ_CMD_ARG_FLAG_LAST },
+    { 0 },
+};
+
+static RzCmdDescHelp s_help = {
+    .summary = "s summary",
+    .args = s_args,
+};
+
 static RzCmdStatus x_handler(RzCore *core, int argc, const char **argv) {
     return RZ_CMD_STATUS_OK;
 }
@@ -57,6 +67,8 @@ static RzCore *fake_core_new(void) {
     mu_assert_notnull (xe, "xe");
     RzCmdDesc *p = rz_cmd_desc_argv_new (cmd, root, "p", x_handler, &p_help);
     mu_assert_notnull (p, "p");
+    RzCmdDesc *s = rz_cmd_desc_argv_new (cmd, root, "s", x_handler, &s_help);
+    mu_assert_notnull (s, "s");
     core->rcmd = cmd;
     rz_core_cmd (core, "", 0);
     return core;
@@ -124,10 +136,11 @@ static bool test_autocmplt_newcommand(void) {
     mu_assert_notnull (r, "r should be returned");
     mu_assert_eq (r->start, 0, "should autocomplete starting from 0");
     mu_assert_eq (r->end, 0, "should autocomplete ending at 0");
-    mu_assert_eq (rz_pvector_len (&r->options), 3, "there are 2 commands available");
+    mu_assert_eq (rz_pvector_len (&r->options), 4, "there are 4 commands available");
     mu_assert_streq (rz_pvector_at (&r->options, 0), "xd", "one is xd");
     mu_assert_streq (rz_pvector_at (&r->options, 1), "xe", "one is xe");
     mu_assert_streq (rz_pvector_at (&r->options, 2), "p", "one is p");
+    mu_assert_streq (rz_pvector_at (&r->options, 3), "s", "one is s");
     rz_line_ns_completion_result_free (r);
 
     strcpy (buf->data, "p @@c:");
@@ -138,10 +151,11 @@ static bool test_autocmplt_newcommand(void) {
     mu_assert_notnull (r, "result should be there");
     mu_assert_eq (r->start, buf->length, "start should be ok");
     mu_assert_eq (r->end, buf->length, "end should be ok");
-    mu_assert_eq (rz_pvector_len (&r->options), 3, "there are 2 commands available");
+    mu_assert_eq (rz_pvector_len (&r->options), 4, "there are 4 commands available");
     mu_assert_streq (rz_pvector_at (&r->options, 0), "xd", "one is xd");
     mu_assert_streq (rz_pvector_at (&r->options, 1), "xe", "one is xe");
     mu_assert_streq (rz_pvector_at (&r->options, 2), "p", "one is p");
+    mu_assert_streq (rz_pvector_at (&r->options, 3), "s", "one is s");
     rz_line_ns_completion_result_free (r);
 
     rz_core_free (core);
@@ -314,6 +328,75 @@ static bool test_autocmplt_eval(void) {
     mu_end;
 }
 
+static bool test_autocmplt_seek(void) {
+    RzCore *core = fake_core_new ();
+    mu_assert_notnull (core, "core should be created");
+
+    RzLineBuffer *buf = &core->cons->line->buffer;
+
+    const char *s = "s ";
+    strcpy (buf->data, s);
+    buf->length = strlen (s);
+    buf->index = buf->length;
+    RzLineNSCompletionResult *r = rz_core_autocomplete_newshell (core, buf, RZ_LINE_PROMPT_DEFAULT);
+
+    mu_assert_notnull (r, "r should not be null");
+    mu_assert_eq (r->start, strlen ("s "), "should autocomplete the last arg");
+    mu_assert_eq (r->end, buf->length, "should autocomplete ending at end of buffer");
+    mu_assert_eq (rz_pvector_len (&r->options), 162, "there are 162 rznum vars on loading");
+    rz_line_ns_completion_result_free (r);
+
+    rz_flag_set (core->flags, "flag1", 0x1000, 1);
+    rz_flag_set (core->flags, "flag2", 0x2000, 1);
+    rz_flag_set (core->flags, "test3", 0x3000, 1);
+    rz_flag_set (core->flags, "test4", 0x4000, 1);
+
+    s = "s fl";
+    strcpy (buf->data, s);
+    buf->length = strlen (s);
+    buf->index = buf->length;
+    r = rz_core_autocomplete_newshell (core, buf, RZ_LINE_PROMPT_DEFAULT);
+
+    mu_assert_notnull (r, "r should not be null");
+    mu_assert_eq (r->start, strlen ("s "), "should autocomplete the last arg");
+    mu_assert_eq (r->end, buf->length, "should autocomplete ending at end of buffer");
+    mu_assert_eq (rz_pvector_len (&r->options), 2, "there are 2 rznum vars starting with fl");
+    mu_assert_streq (rz_pvector_at (&r->options, 0), "flag1", "flag1 found");
+    mu_assert_streq (rz_pvector_at (&r->options, 1), "flag2", "flag2 found");
+    rz_line_ns_completion_result_free (r);
+
+    s = "s flag1 + tes";
+    strcpy (buf->data, s);
+    buf->length = strlen (s);
+    buf->index = buf->length;
+    r = rz_core_autocomplete_newshell (core, buf, RZ_LINE_PROMPT_DEFAULT);
+
+    mu_assert_notnull (r, "r should not be null");
+    mu_assert_eq (r->start, strlen ("s flag1 + "), "should autocomplete the last arg");
+    mu_assert_eq (r->end, buf->length, "should autocomplete ending at end of buffer");
+    mu_assert_eq (rz_pvector_len (&r->options), 2, "there are 2 rznum vars starting with tes");
+    mu_assert_streq (rz_pvector_at (&r->options, 0), "test3", "test3 found");
+    mu_assert_streq (rz_pvector_at (&r->options, 1), "test4", "test4 found");
+    rz_line_ns_completion_result_free (r);
+
+    s = "s flag1+tes";
+    strcpy (buf->data, s);
+    buf->length = strlen (s);
+    buf->index = buf->length;
+    r = rz_core_autocomplete_newshell (core, buf, RZ_LINE_PROMPT_DEFAULT);
+
+    mu_assert_notnull (r, "r should not be null");
+    mu_assert_eq (r->start, strlen ("s flag1+"), "should autocomplete the last arg");
+    mu_assert_eq (r->end, buf->length, "should autocomplete ending at end of buffer");
+    mu_assert_eq (rz_pvector_len (&r->options), 2, "there are 2 rznum vars starting with tes");
+    mu_assert_streq (rz_pvector_at (&r->options, 0), "test3", "test3 found");
+    mu_assert_streq (rz_pvector_at (&r->options, 1), "test4", "test4 found");
+    rz_line_ns_completion_result_free (r);
+
+    rz_core_free (core);
+    mu_end;
+}
+
 bool all_tests() {
 	mu_run_test (test_autocmplt_cmdid);
 	mu_run_test (test_autocmplt_newcommand);
@@ -322,6 +405,7 @@ bool all_tests() {
 	mu_run_test (test_autocmplt_newarg);
 	mu_run_test (test_autocmplt_fcn);
 	mu_run_test (test_autocmplt_eval);
+	mu_run_test (test_autocmplt_seek);
 	return tests_passed != tests_run;
 }
 
