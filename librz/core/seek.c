@@ -388,7 +388,14 @@ RZ_API void rz_core_seek_reset(RzCore *core) {
 	rz_vector_fini (&core->seek_history.redos);
 	rz_vector_init (&core->seek_history.undos, sizeof (RzCoreSeekItem), NULL, NULL);
 	rz_vector_init (&core->seek_history.redos, sizeof (RzCoreSeekItem), NULL, NULL);
-	return;
+}
+
+/**
+ * Free seek history data
+ */
+RZ_API void rz_core_seek_free(RzCore *core) {
+	rz_vector_fini (&core->seek_history.undos);
+	rz_vector_fini (&core->seek_history.redos);
 }
 
 /**
