@@ -1107,7 +1107,7 @@ typedef struct rz_analysis_esil_t {
 	ut8 lastsz; //in bits //used for signature-flag
 	/* native ops and custom ops */
 	HtPP *ops;
-	char *current_opstr;
+	RzStrBuf current_opstr;
 	RzIDStorage *sources;
 	SdbMini *interrupts;
 	//this is a disgusting workaround, because we have no ht-like storage without magic keys, that you cannot use, with int-keys
