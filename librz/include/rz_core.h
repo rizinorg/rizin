@@ -432,6 +432,7 @@ RZ_API bool rz_core_seek_save(RzCore *core);
 RZ_API bool rz_core_seek_undo(RzCore *core);
 RZ_API bool rz_core_seek_redo(RzCore *core);
 RZ_API void rz_core_seek_reset(RzCore *core);
+RZ_API void rz_core_seek_free(RzCore *core);
 RZ_API RzList *rz_core_seek_list(RzCore *core);
 RZ_API RzCoreSeekItem *rz_core_seek_peek(RzCore *core, int idx);
 RZ_API int rz_core_seek_base(RzCore *core, const char *hex, bool save);
