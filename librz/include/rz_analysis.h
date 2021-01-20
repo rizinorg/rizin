@@ -1031,12 +1031,6 @@ typedef struct rz_analysis_esil_interrupt_handler_t {
 	void (*fini)(void *user);
 } RzAnalysisEsilInterruptHandler;
 
-typedef struct rz_analysis_esil_interrupt_t {
-	RzAnalysisEsilInterruptHandler *handler;
-	void *user;
-	ut32 src_id;
-} RzAnalysisEsilInterrupt;
-
 typedef struct rz_analysis_esil_change_reg_t {
 	int idx;
 	ut64 data;
@@ -1109,9 +1103,7 @@ typedef struct rz_analysis_esil_t {
 	HtPP *ops;
 	char *current_opstr;
 	RzIDStorage *sources;
-	SdbMini *interrupts;
-	//this is a disgusting workaround, because we have no ht-like storage without magic keys, that you cannot use, with int-keys
-	RzAnalysisEsilInterrupt *intr0;
+	HtUP *interrupts;
 	/* deep esil parsing fills this */
 	Sdb *stats;
 	RzAnalysisEsilTrace *trace;
@@ -1132,6 +1124,13 @@ typedef struct rz_analysis_esil_t {
 } RzAnalysisEsil;
 
 #undef ESIL
+
+typedef struct rz_analysis_esil_interrupt_t {
+	RzAnalysisEsilInterruptHandler *handler;
+	void *user;
+	ut32 src_id;
+	RzAnalysisEsil *esil;
+} RzAnalysisEsilInterrupt;
 
 enum {
 	RZ_ANALYSIS_ESIL_OP_TYPE_UNKNOWN = 0x1,
