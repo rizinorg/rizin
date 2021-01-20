@@ -766,6 +766,47 @@ bool test_arg_flags(void) {
 	mu_end;
 }
 
+bool test_get_arg(void) {
+	RzCmdDescArg z_args[] = {
+		{ .name = "a1", .type = RZ_CMD_ARG_TYPE_STRING },
+		{ .name = "a2", .type = RZ_CMD_ARG_TYPE_CMD, .flags = RZ_CMD_ARG_FLAG_LAST },
+		{ 0 }
+	};
+	RzCmdDescHelp z_help = { 0 };
+	z_help.summary = "z summary";
+	z_help.args = z_args;
+	RzCmdDescArg x_args[] = {
+		{ .name = "b1", .type = RZ_CMD_ARG_TYPE_STRING },
+		{ .name = "b2", .type = RZ_CMD_ARG_TYPE_STRING },
+		{ .name = "b3", .type = RZ_CMD_ARG_TYPE_STRING },
+		{ 0 }
+	};
+	RzCmdDescHelp x_help = { 0 };
+	x_help.summary = "x summary";
+	x_help.args = x_args;
+	RzCmd *cmd = rz_cmd_new (false);
+	RzCmdDesc *root = rz_cmd_get_root (cmd);
+	RzCmdDesc *z_cd = rz_cmd_desc_argv_new (cmd, root, "z", z_last_handler, &z_help);
+	RzCmdDesc *x_cd = rz_cmd_desc_argv_new (cmd, root, "x", x_array_handler, &x_help);
+
+	const RzCmdDescArg *a1 = rz_cmd_desc_get_arg (cmd, z_cd, 0);
+	mu_assert_streq (a1->name, "a1", "0th arg of z is a1");
+	const RzCmdDescArg *a2 = rz_cmd_desc_get_arg (cmd, z_cd, 1);
+	mu_assert_streq (a2->name, "a2", "1th arg of z is a2");
+	const RzCmdDescArg *an = rz_cmd_desc_get_arg (cmd, z_cd, 10);
+	mu_assert_streq (an->name, "a2", "10th arg of z is a2");
+
+	const RzCmdDescArg *b1 = rz_cmd_desc_get_arg (cmd, x_cd, 0);
+	mu_assert_streq (b1->name, "b1", "0th arg of x is b1");
+	const RzCmdDescArg *b2 = rz_cmd_desc_get_arg (cmd, x_cd, 1);
+	mu_assert_streq (b2->name, "b2", "1th arg of x is b2");
+	const RzCmdDescArg *bn = rz_cmd_desc_get_arg (cmd, x_cd, 10);
+	mu_assert_null (bn, "10th arg of x does not exist");
+
+	rz_cmd_free (cmd);
+	mu_end;
+}
+
 int all_tests() {
 	mu_run_test (test_parsed_args_noargs);
 	mu_run_test (test_parsed_args_onearg);
@@ -792,6 +833,7 @@ int all_tests() {
 	mu_run_test (test_double_quoted_arg_escaping);
 	mu_run_test (test_single_quoted_arg_escaping);
 	mu_run_test (test_arg_flags);
+	mu_run_test (test_get_arg);
 	return tests_passed != tests_run;
 }
 
