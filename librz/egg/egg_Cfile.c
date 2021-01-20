@@ -285,8 +285,8 @@ RZ_API char* rz_egg_Cfile_parser(const char *file, const char *arch, const char 
 	}
 
 	// Link
-	printf ("rz_bin -o '%s.text' -O d/S/'%s' '%s.o'\n", file, cEnv->TEXT, file);
-	output = rz_sys_cmd_strf ("rz_bin -o '%s.text' -O d/S/'%s' '%s'.o",
+	printf ("rz-bin -o '%s.text' -O d/S/'%s' '%s.o'\n", file, cEnv->TEXT, file);
+	output = rz_sys_cmd_strf ("rz-bin -o '%s.text' -O d/S/'%s' '%s'.o",
 		   		file, cEnv->TEXT, file);
 	if (!output) {
 		eprintf ("Linkage failed!\n");

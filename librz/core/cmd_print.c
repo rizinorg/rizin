@@ -128,7 +128,7 @@ static const char *help_msg_at[] = {
 	"*/", "", "end multiline comment",
 	".", "cmd", "execute output of command as rizin script",
 	".:", "8080", "wait for commands on port 8080",
-	".!", "rz_bin -re $FILE", "run command output as rizin script",
+	".!", "rz-bin -re $FILE", "run command output as rizin script",
 	"*", "", "output of command in rizin script format (CC*)",
 	"j", "", "output of command in JSON format (pdj)",
 	"~", "?", "count number of lines (like wc -l)",
