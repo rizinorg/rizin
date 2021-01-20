@@ -113,11 +113,11 @@ e asm.arch=x86
 e asm.segoff=1
 e asm.bits=16
 pi 1
-s+3
+sd +3
 e asm.segoff=0
 e asm.bits=32
 pi 1
-s+5
+sd +5
 e asm.bits=64
 pi 1
 EOF

@@ -9472,7 +9472,8 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 				}
 				int c = rz_config_get_i (core->config, "analysis.calls");
 				rz_config_set_i (core->config, "analysis.calls", 1);
-				rz_core_cmd0 (core, "s $S");
+				ut64 t = rz_num_math (core->num, "$S");
+				rz_core_seek (core, t, true);
 				if (rz_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
@@ -9600,7 +9601,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 					rz_config_set (core->config, "analysis.types.constraint", "true");
 					rz_print_rowlog_done (core->print, oldstr);
 				}
-				rz_core_cmd0 (core, "s-");
+				rz_core_cmd0 (core, "sHu");
 				if (dh_orig) {
 					rz_core_cmdf (core, "dL %s", dh_orig);
 					rz_core_task_yield (&core->tasks);

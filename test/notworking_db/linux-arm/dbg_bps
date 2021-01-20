@@ -5,7 +5,7 @@ CMDS=<<EOF
 e scr.color=0
 e scr.null=true
 s entry0
-s +8
+sd +8
 db $$
 dc
 dc

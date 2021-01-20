@@ -385,7 +385,7 @@ CMDS=<<EOF
 s entry0
 dr rip=$$
 4aes
-s..f1
+s. f1
 as
 EOF
 EXPECT=<<EOF
@@ -399,7 +399,7 @@ CMDS=<<EOF
 s entry0
 dr rip=$$
 4ds
-s..f1
+s. f1
 as
 EOF
 EXPECT=<<EOF

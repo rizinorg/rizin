@@ -11,7 +11,7 @@ FILE=bins/pe/b.exe
 CMDS=<<EOF
 s 0x0040200b
 p8 10
-s +1
+sd +1
 p8 10
 EOF
 EXPECT=<<EOF

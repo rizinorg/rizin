@@ -2196,7 +2196,7 @@ RZ_API void rz_core_visual_browse(RzCore *core, const char *input) {
 			rz_core_visual_refs (core, false, true);
 			break;
 		case 'h': // seek history
-			rz_core_cmdf (core, "s!~...");
+			rz_core_cmdf (core, "sH~...");
 			break;
 		case '_':
 			rz_core_visual_hudstuff (core);
@@ -3310,15 +3310,14 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 			}
 			break;
 		case '.': // "V."
-			rz_core_seek_save (core);
 			if (core->print->cur_enabled) {
 				rz_config_set_i (core->config, "stack.delta", 0);
-				rz_core_seek (core, core->offset + core->print->cur, true);
+				rz_core_seek_and_save (core, core->offset + core->print->cur, true);
 				core->print->cur = 0;
 			} else {
 				ut64 addr = rz_debug_reg_get (core->dbg, "PC");
 				if (addr && addr != UT64_MAX) {
-					rz_core_seek (core, addr, true);
+					rz_core_seek_and_save (core, addr, true);
 					rz_core_cmdf (core, "ar `arn PC`=0x%"PFMT64x, addr);
 				} else {
 					ut64 entry = rz_num_get (core->num, "entry0");
@@ -3338,7 +3337,7 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 						}
 					}
 					if (entry != UT64_MAX) {
-						rz_core_seek (core, entry, true);
+						rz_core_seek_and_save (core, entry, true);
 					}
 				}
 			}
@@ -4080,8 +4079,8 @@ dodo:
 
 			if (cmdvhex && *cmdvhex) {
 				snprintf (debugstr, sizeof (debugstr),
-					"?0;f tmp;ssr %s;%s;?1;%s;?1;"
-					"ss tmp;f-tmp;pd $r", reg, cmdvhex,
+					"?0;f tmp;sr %s@e:cfg.seek.silent=true;%s;?1;%s;?1;"
+					"s tmp@e:cfg.seek.silent=true;f- tmp;pd $r", reg, cmdvhex,
 					ref? "drr": "dr=");
 				debugstr[sizeof (debugstr) - 1] = 0;
 			} else {
@@ -4089,9 +4088,9 @@ dodo:
 				const char sign = (delta < 0)? '+': '-';
 				const int absdelta = RZ_ABS (delta);
 				snprintf (debugstr, sizeof (debugstr),
-					"diq;?0;f tmp;ssr %s;%s %d@$$%c%d;"
+					"diq;?0;f tmp;sr %s@e:cfg.seek.silent=true;%s %d@$$%c%d;"
 					"?1;%s;"
-					"?1;ss tmp;f-tmp;afal;pd $r",
+					"?1;s tmp@e:cfg.seek.silent=true;f- tmp;afal;pd $r",
 					reg, pxa? "pxa": pxw, size, sign, absdelta,
 					ref? "drr": "dr=");
 			}
