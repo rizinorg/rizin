@@ -355,9 +355,11 @@ static int string_scan_range(RzList *list, RzBinFile *bf, int min,
 	free (buf);
 	if (pj) {
 		pj_end (pj);
-		RzIO *io = bin->iob.io;
-		if (io) {
-			io->cb_printf ("%s", pj_string (pj));
+		if (bin) {
+			RzIO *io = bin->iob.io;
+			if (io) {
+				io->cb_printf ("%s", pj_string (pj));
+			}
 		}
 		pj_free (pj);
 	}

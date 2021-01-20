@@ -4,7 +4,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 woe 1 255
-s+11
+sd +11
 b 8
 pxr8
 pxr4

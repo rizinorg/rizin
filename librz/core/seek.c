@@ -20,13 +20,18 @@ static void set_current_seek_state(RzCore *core, RzCoreSeekItem *elem) {
 static void add_seek_history(RzCore *core) {
 	RzVector *vundo = &core->seek_history.undos;
 	RzVector *vredo = &core->seek_history.redos;
-	RzCoreSeekItem item;
+	RzCoreSeekItem *item = &core->seek_history.saved_item;
 	ut64 histsize = rz_config_get_i (core->config, "cfg.seek.histsize");
+	if (!rz_vector_empty (vundo)) {
+		RzCoreSeekItem *last = rz_vector_index_ptr (vundo, rz_vector_len (vundo) - 1);
+		if (item->offset == last->offset && item->cursor == last->cursor) {
+			return;
+		}
+	}
 	if (histsize != 0 && rz_vector_len (vundo) >= histsize) {
 		rz_vector_remove_at (vundo, 0, NULL);
 	}
-	get_current_seek_state (core, &item);
-	rz_vector_push (vundo, &item);
+	rz_vector_push (vundo, item);
 	rz_vector_clear (vredo);
 }
 
@@ -39,31 +44,63 @@ static bool seek_check_save(RzCore *core, ut64 addr, bool rb, bool save) {
 }
 
 /**
- * \brief Save current core offset in the seek history.
+ * \brief Mark current state (offset+cursor) as the next state to save in history
  *
- * The saving can be disabled if eval var cfg.seek.silent is set to true.
+ * The saving can be disabled if eval var cfg.seek.silent is set to true. The
+ * state saved here is actually saved in history once \p rz_core_seek_and_save
+ * is called (or other functions with the \p save argument set to true).
  *
  * \param core RzCore reference
  */
-RZ_API bool rz_core_seek_save(RzCore *core) {
+RZ_API bool rz_core_seek_mark(RzCore *core) {
 	if (!rz_config_get_i (core->config, "cfg.seek.silent")) {
-		add_seek_history (core);
+		get_current_seek_state (core, &core->seek_history.saved_item);
+		core->seek_history.saved_set = true;
 		return true;
 	}
+	core->seek_history.saved_set = false;
+	return false;
+}
+
+static bool need_add2history(RzCore *core, ut64 addr) {
+	RzCoreSeekHistory *hist = &core->seek_history;
+	return hist->saved_set && (addr != hist->saved_item.offset || hist->saved_item.cursor != 0);
+}
+
+static bool seek_save(RzCore *core, ut64 addr) {
+	if (need_add2history (core, addr)) {
+		add_seek_history (core);
+		core->seek_history.saved_set = false;
+		return true;
+	}
+	core->seek_history.saved_set = false;
 	return false;
 }
 
 /**
- * \brief Save current core offset in seek history and seek to \p addr .
+ * \brief Save last marked position, if any, in the seek history.
+ *
+ * \param core RzCore reference
+ */
+RZ_API bool rz_core_seek_save(RzCore *core) {
+	return seek_save (core, core->offset);
+}
+
+/**
+ * \brief Save currently marked state in seek history and seek to \p addr .
+ *
+ * If \p rz_core_seek_mark is used to mark a position, that position will be
+ * saved in the history, otherwise the current state is used.
  *
  * \param core RzCore reference
  * \param addr Address where to move to
  * \param rb If true read the block
  */
 RZ_API bool rz_core_seek_and_save(RzCore *core, ut64 addr, bool rb) {
-	if (addr != core->offset) {
-		rz_core_seek_save (core);
+	if (!core->seek_history.saved_set) {
+		rz_core_seek_mark (core);
 	}
+	seek_save (core, addr);
 	return rz_core_seek (core, addr, rb);
 }
 
@@ -110,7 +147,7 @@ RZ_API bool rz_core_seek_opt(RzCore *core, ut64 addr, bool rb, bool save) {
  * \param delta Delta address added to the current offset
  * \param save If true save the current state in seek history before seeking
  */
-RZ_API int rz_core_seek_delta(RzCore *core, st64 delta, bool save) {
+RZ_API bool rz_core_seek_delta(RzCore *core, st64 delta, bool save) {
 	ut64 newaddr;
 	if (delta > 0 && UT64_ADD_OVFCHK (core->offset, (ut64) (delta))) {
 		newaddr = UT64_MAX;
@@ -161,7 +198,7 @@ static bool seek_flag_offset(RzFlagItem *fi, void *user) {
  * \param type Type of next "item" to seek to (could be "opc", "fun", "hit", "flag")
  * \param save If true save the current state in seek history before seeking
  */
-RZ_API void rz_core_seek_next(RzCore *core, const char *type, bool save) {
+RZ_API bool rz_core_seek_next(RzCore *core, const char *type, bool save) {
 	RzListIter *iter;
 	ut64 next = UT64_MAX;
 	if (strstr (type, "opc")) {
@@ -186,9 +223,10 @@ RZ_API void rz_core_seek_next(RzCore *core, const char *type, bool save) {
 		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = true };
 		rz_flag_foreach (core->flags, seek_flag_offset, &u);
 	}
-	if (next != UT64_MAX) {
-		seek_check_save (core, next, true, save);
+	if (next == UT64_MAX) {
+		return false;
 	}
+	return seek_check_save (core, next, true, save);
 }
 
 /**
@@ -198,7 +236,7 @@ RZ_API void rz_core_seek_next(RzCore *core, const char *type, bool save) {
  * \param type Type of previous "item" to seek to (could be "opc", "fun", "hit", "flag")
  * \param save If true save the current state in seek history before seeking
  */
-RZ_API void rz_core_seek_prev(RzCore *core, const char *type, bool save) {
+RZ_API bool rz_core_seek_prev(RzCore *core, const char *type, bool save) {
 	RzListIter *iter;
 	ut64 next = 0;
 	if (strstr (type, "opc")) {
@@ -218,9 +256,10 @@ RZ_API void rz_core_seek_prev(RzCore *core, const char *type, bool save) {
 		struct seek_flag_offset_t u = { .offset = core->offset, .next = &next, .is_next = false };
 		rz_flag_foreach (core->flags, seek_flag_offset, &u);
 	}
-	if (next != 0) {
-		seek_check_save (core, next, true, save);
+	if (next == 0) {
+		return false;
 	}
+	return seek_check_save (core, next, true, save);
 }
 
 /**
@@ -230,7 +269,7 @@ RZ_API void rz_core_seek_prev(RzCore *core, const char *type, bool save) {
  * \param align Value to align the current offset
  * \param save If true save the current state in seek history before seeking
  */
-RZ_API int rz_core_seek_align(RzCore *core, ut64 align, bool save) {
+RZ_API bool rz_core_seek_align(RzCore *core, ut64 align, bool save) {
 	if (!align) {
 		return false;
 	}
@@ -289,8 +328,7 @@ static RzCoreSeekItem *get_current_item(RzCore *core) {
 	if (!res) {
 		return NULL;
 	}
-	res->offset = core->offset;
-	res->cursor = core->print->cur_enabled? rz_print_get_cursor (core->print): 0;
+	get_current_seek_state (core, res);
 	res->is_current = true;
 	res->idx = 0;
 	return res;

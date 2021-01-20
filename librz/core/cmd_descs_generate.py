@@ -53,7 +53,7 @@ DESC_HELP_DETAILS_TEMPLATE = '''static const RzCmdDescDetail {cname}[] = {{
 '''
 DECL_DESC_HELP_DETAILS_TEMPLATE = 'static const RzCmdDescDetail {cname}[{size}];'
 
-DESC_HELP_ARG_CHOICES = 'static const char *{cname}[] = {{ {choices} }};'
+DESC_HELP_ARG_CHOICES = 'static const char *{cname}[] = {{ {choices} }};\n'
 DESC_HELP_ARG_UNION_CHOICES = '.choices = {choices}, '
 DESC_HELP_ARG_TEMPLATE_FLAGS = '.flags = {flags}, '
 DESC_HELP_ARG_TEMPLATE_OPTIONAL = '.optional = {optional}, '
@@ -195,7 +195,7 @@ class Arg(object):
         if self.type == 'RZ_CMD_ARG_TYPE_CHOICES':
             return DESC_HELP_ARG_CHOICES.format(
                 cname=self._get_choices_cname(),
-                choices=', '.join(['"%s"' % (x,) for x in self.choices])
+                choices=', '.join(['"%s"' % (x,) if x != 'NULL' else x for x in self.choices + ['NULL']])
             )
         else:
             return ''

@@ -138,22 +138,22 @@ TODO:
 				if (cmdidx == 1) {
 					free (rtrcmd (T, "so")); break;
 				} else {
-					free (rtrcmd (T, "s+16")); break;
+					free (rtrcmd (T, "sd +16")); break;
 				}
 				break;
-			case 'k': free (rtrcmd (T, "s-16")); break;
-			case 'h': free (rtrcmd (T, "s-1")); break;
-			case 'l': free (rtrcmd (T, "s+1")); break;
+			case 'k': free (rtrcmd (T, "sd -16")); break;
+			case 'h': free (rtrcmd (T, "sd -1")); break;
+			case 'l': free (rtrcmd (T, "sd +1")); break;
 			case 'J':
 				if (cmdidx == 1) {
 					free (rtrcmd (T, "4so"));
 				} else {
-					free (rtrcmd (T, "s+32"));
+					free (rtrcmd (T, "sd +32"));
 				}
 				break;
-			case 'K': free (rtrcmd (T, "s-32")); break;
-			case 'H': free (rtrcmd (T, "s-2")); break;
-			case 'L': free (rtrcmd (T, "s+2")); break;
+			case 'K': free (rtrcmd (T, "sd -32")); break;
+			case 'H': free (rtrcmd (T, "sd -2")); break;
+			case 'L': free (rtrcmd (T, "sd +2")); break;
 			case '+': free (rtrcmd (T, "b+1")); break;
 			case '*': free (rtrcmd (T, "b+16")); break;
 			case '-': free (rtrcmd (T, "b-1")); break;

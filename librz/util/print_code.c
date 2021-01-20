@@ -104,16 +104,16 @@ RZ_API void rz_print_code(RzPrint *p, ut64 addr, const ut8 *buf, int len, char l
 		p->cb_printf ("wx ");
 		for (i = 0; !rz_print_is_interrupted () && i < len; i++) {
 			if (i && !(i % 16)) {
-				p->cb_printf (";s+16\nwx ");
+				p->cb_printf (";sd +16\nwx ");
 			}
 			p->cb_printf ("%02x", buf[i]);
 		}
 		if (i && !(i % 16)) {
-			p->cb_printf (";s+16\n");
+			p->cb_printf (";sd +16\n");
 		} else {
-			p->cb_printf (";s+%d\n", (i % 16));
+			p->cb_printf (";sd +%d\n", (i % 16));
 		}
-		p->cb_printf ("s-%d\n", len);
+		p->cb_printf ("sd -%d\n", len);
 		break;
 	case 'A': // "pcA"
 		/* implemented in core because of disasm :( */

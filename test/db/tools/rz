@@ -59,8 +59,8 @@ FILE=-
 CMDS=<<EOF
 wx 01
 s 1
-s-
-s+
+sHu
+sHr
 pb 8
 EOF
 EXPECT=<<EOF
@@ -70,7 +70,7 @@ RUN
 
 NAME=seek undo/redo
 FILE=-
-CMDS=wx 01; s 1; s-; s+; pb 8
+CMDS=wx 01; s 1; sHu; sHr; pb 8
 EXPECT=<<EOF
 00000000
 EOF

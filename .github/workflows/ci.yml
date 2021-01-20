@@ -354,14 +354,12 @@ jobs:
 
   build-static:
     name: Build static
-    # FIXME: ignore error until all tests properly pass
-    continue-on-error: true
     if: contains(github.head_ref, 'dist') || contains(github.head_ref, 'static') || contains(github.ref, 'release-') || github.event_name == 'schedule'
     runs-on: ubuntu-20.04
     container: alpine:edge
     steps:
     - name: Install dependencies
-      run: apk add --no-cache git gcc g++ linux-headers cmake wget unzip py3-wheel py3-setuptools py3-pip meson ninja
+      run: apk add --no-cache git gcc g++ linux-headers cmake curl wget unzip py3-wheel py3-setuptools py3-pip meson ninja xz cabextract
     - name: Checkout rizin
       run: |
         git clone https://github.com/${{ github.repository }}
@@ -375,27 +373,34 @@ jobs:
       working-directory: rizin
     - name: Compile with meson
       run: |
-        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
+        mkdir -p ${HOME}/rizin-static
+        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/rizin-static --buildtype release --default-library static build
         ninja -C build && ninja -C build install
+        tar -C ${HOME}/rizin-static --xz -cf rizin-static.tar.xz $(ls ${HOME}/rizin-static)
       working-directory: rizin
     - name: Run unit tests
       run: |
-        export PATH=${HOME}/.local/bin:${PATH}
+        export PATH=${HOME}/rizin-static/bin:${PATH}
         ninja -C build test
       working-directory: rizin
     - name: Run tests
       run: |
-        export PATH=${HOME}/.local/bin:${PATH}
+        export PATH=${HOME}/rizin-static/bin:${PATH}
         rizin -v
         rz-test -v
         cd test
-        rz-test -L -o results.json
+        rz-test -L -o results.json || true
       working-directory: rizin
     - name: Upload test results
       uses: actions/upload-artifact@v2
       with:
         name: test-results-static
-        path: test/results.json
+        path: rizin/test/results.json
+    - name: Upload static build
+      uses: actions/upload-artifact@v2
+      with:
+        name: rizin-static.tar.xz
+        path: rizin/rizin-static.tar.xz
 
   create-tarball:
     name: Create source tarball
@@ -425,51 +430,8 @@ jobs:
         ls -l meson-dist
     - uses: actions/upload-artifact@v2
       with:
-        name: rizin-src
+        name: rizin-src.tar.xz
         path: build/meson-dist/rizin-*.tar.xz
-
-  build-deb:
-    name: Build deb package for ${{ matrix.container }}
-    if: contains(github.head_ref, 'dist') || (github.event_name == 'push' && contains(github.ref, 'release-'))
-    needs: [build-and-test]
-    runs-on: ubuntu-latest
-    container: ${{ matrix.container }}
-    strategy:
-      fail-fast: false
-      matrix:
-        name: [debian-buster, ubuntu-1804]
-        include:
-          - name: debian-buster
-            container: debian:buster
-          - name: ubuntu-1804
-            container: ubuntu:18.04
-    steps:
-    - name: Install tools
-      run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config xz-utils
-    - name: Checkout rizin
-      run: |
-        git clone https://github.com/${{ github.repository }}
-        cd rizin
-        git fetch origin ${{ github.ref }}
-        git checkout -b local_branch FETCH_HEAD
-        git submodule init
-        git submodule update
-    - name: Preparing the deb package
-      run: |
-        sys/debian.sh
-        mv rizin_*_amd64.deb rizin_amd64.deb
-        mv rizin-dev_*_amd64.deb rizin-dev_amd64.deb
-      working-directory: rizin
-    - name: Upload deb file
-      uses: actions/upload-artifact@v2
-      with:
-        name: rizin-${{ matrix.name }}-deb
-        path: rizin/rizin_amd64.deb
-    - name: Upload -dev deb file
-      uses: actions/upload-artifact@v2
-      with:
-        name: rizin-dev-${{ matrix.name }}-deb
-        path: rizin/rizin-dev_amd64.deb
 
   build-osx-pkg:
     name: Build OSX package
@@ -630,7 +592,7 @@ jobs:
     steps:
     - uses: actions/download-artifact@v2
       with:
-        name: rizin-src
+        name: rizin-src.tar.xz
     - name: Extract source tarball
       run: |
           mkdir rizin && pwd && ls -l
@@ -652,42 +614,6 @@ jobs:
           rz-pm -i $p
         done
         set +e
-
-  test-deb:
-    name: Test deb packages for ${{ matrix.container }}
-    runs-on: ubuntu-latest
-    needs: [build-deb]
-    container: ${{ matrix.container }}
-    strategy:
-      fail-fast: false
-      matrix:
-        name: [debian-buster, ubuntu-1804]
-        include:
-          - name: debian-buster
-            container: debian:buster
-          - name: ubuntu-1804
-            container: ubuntu:18.04
-    steps:
-    - name: Install tools
-      run: apt-get update && apt-get install --yes gcc pkg-config
-    - uses: actions/download-artifact@v2
-      with:
-        name: rizin-${{ matrix.name }}-deb
-        path: ./
-    - uses: actions/download-artifact@v2
-      with:
-        name: rizin-dev-${{ matrix.name }}-deb
-        path: ./
-    - name: Install rizin debs
-      run: apt-get update && apt-get install ./rizin*.deb
-    - name: Check that installed rizin runs
-      run: rizin -qcq /bin/ls
-    - name: Check that libraries can be used
-      shell: bash
-      run: |
-        echo -e "#include <rz_util.h>\nint main(int argc, char **argv) { return rz_str_newf (\"%s\", argv[0]) != NULL? 0: 1; }" > test.c
-        gcc -o test test.c $(pkg-config --libs --cflags rz_util)
-        ./test
 
   test-osx-pkg:
     name: Test OSX pkg
@@ -757,7 +683,6 @@ jobs:
       build-centos7,
       build-debian,
       build-static,
-      test-deb,
       build-android,
       test-osx-pkg,
       test-windows-clang_cl,
@@ -793,41 +718,14 @@ jobs:
           asset_path: ./rizin-src/rizin-src.tar.xz
           asset_name: rizin-src-${{ steps.extract_version.outputs.branch }}.tar.gz
           asset_content_type: application/zip
-    - name: Upload rizin debian:buster package
+    - name: Upload rizin static x86_64 tar.gz
       uses: actions/upload-release-asset@v1
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rizin-debian-buster-deb/rizin_amd64.deb
-          asset_name: rizin-debian-buster_${{ steps.extract_version.outputs.branch }}_amd64.deb
-          asset_content_type: application/zip
-    - name: Upload rizin-dev debian:buster package
-      uses: actions/upload-release-asset@v1
-      env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rizin-dev-debian-buster-deb/rizin-dev_amd64.deb
-          asset_name: rizin-dev-debian-buster_${{ steps.extract_version.outputs.branch }}_amd64.deb
-          asset_content_type: application/zip
-    - name: Upload rizin ubuntu:18.04 package
-      uses: actions/upload-release-asset@v1
-      env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rizin-ubuntu-1804-deb/rizin_amd64.deb
-          asset_name: rizin-ubuntu-1804_${{ steps.extract_version.outputs.branch }}_amd64.deb
-          asset_content_type: application/zip
-    - name: Upload rizin-dev ubuntu:18.04 package
-      uses: actions/upload-release-asset@v1
-      env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rizin-dev-ubuntu-1804-deb/rizin-dev_amd64.deb
-          asset_name: rizin-dev-ubuntu-1804_${{ steps.extract_version.outputs.branch }}_amd64.deb
+          asset_path: ./rizin-static/rizin-static.tar.xz
+          asset_name: rizin-${{ steps.extract_version.outputs.branch }}-static-x86_64.tar.xz
           asset_content_type: application/zip
     - name: Upload rizin android x86_64 tar.gz
       uses: actions/upload-release-asset@v1

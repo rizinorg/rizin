@@ -324,7 +324,7 @@ NAME=wci should commit all the changes
 FILE=malloc://512
 CMDS=<<EOF
 e io.cache=true
-(wxseek ;  wx 909090;  s+ 3)
+(wxseek ;  wx 909090;  sd +3)
 3.(wxseek)
 wci
 wc
@@ -348,7 +348,7 @@ ps 2
 wx 9090
 p8 2
 e io.pcache=0
-s +1
+sd +1
 s 0
 ps 2
 EOF

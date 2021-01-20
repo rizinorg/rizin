@@ -865,7 +865,7 @@ CMDS=<<EOF
 s 0x080489b9
 iE.
 s 0x080489a6
-s+5
+sd +5
 isj.
 EOF
 EXPECT=<<EOF

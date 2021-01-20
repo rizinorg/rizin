@@ -8,10 +8,10 @@ s
 s 034
 s
 s 0
-s+2
-s -1
+sd +2
+sd -1
 s
-s+0x4
+sd +0x4
 s
 EOF
 EXPECT=<<EOF
