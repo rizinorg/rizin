@@ -155,6 +155,7 @@ static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s,
 		}
 	}
 	rz_list_free (l);
+	free (basedir);
 	free (input);
 }
 
@@ -556,13 +557,10 @@ RZ_API RzLineNSCompletionResult *rz_core_autocomplete_newshell(RzCore *core, RzL
 
 	TSTree *tree = ts_parser_parse_string (parser, NULL, buf->data, buf->length);
 	TSNode root = ts_tree_root_node (tree);
-	RZ_LOG_DEBUG ("root = '%s'\n", ts_node_string (root));
-
 	TSNode node = ts_node_named_descendant_for_byte_range (root, buf->index - 1, buf->index);
 	if (ts_node_is_null (node)) {
 		goto err;
 	}
-	RZ_LOG_DEBUG ("cur_node = '%s'\n", ts_node_string (node));
 
 	// the autocompletion works in 2 steps:
 	// 1) it finds the proper type to autocomplete (sometimes it guesses)
