@@ -35,7 +35,8 @@ typedef enum rz_cmd_status_t {
  */
 typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_FAKE, ///< This is not considered a real argument, just used to show something in the help. Name of arg is shown as-is and it is not counted.
-	RZ_CMD_ARG_TYPE_NUM, ///< Argument that can be interpreted by RzNum (numbers, flags, operations, etc.)
+	RZ_CMD_ARG_TYPE_NUM, ///< Argument is a number
+	RZ_CMD_ARG_TYPE_RZNUM, ///< Argument that can be interpreted by RzNum (numbers, flags, operations, etc.)
 	RZ_CMD_ARG_TYPE_STRING, ///< Argument that can be an arbitrary string
 	RZ_CMD_ARG_TYPE_ENV, ///< Argument can be the name of an existing rizin variable
 	RZ_CMD_ARG_TYPE_ZIGN, ///< Argument can be the name of an existing zignature

@@ -2,13 +2,13 @@ NAME=seekop
 FILE=bins//mach0/ired-arm64
 CMDS=<<EOF
 s
-so+3
+so +3
 s
-so-3
+so -3
 s
-so+2
+so +2
 s
-so-2
+so -2
 s
 EOF
 EXPECT=<<EOF
@@ -23,7 +23,7 @@ RUN
 NAME=s0x
 FILE=-
 CMDS=<<EOF
-s0x33
+s 0x33
 s
 EOF
 EXPECT=<<EOF
@@ -92,7 +92,7 @@ s $$
 s $$
 s $$
 s $$
-s*~?
+sH*~?
 EOF
 EXPECT=<<EOF
 1
@@ -107,7 +107,7 @@ b 64
 wb 38
 s 64
 wb deadbeef
-s-32
+sd -32
 px
 EOF
 EXPECT=<<EOF
@@ -124,15 +124,15 @@ FILE=-
 CMDS=<<EOF
 s 0x100
 s
-s*
+sH*
 ?e
 s 0x200
 s
-s*
+sH*
 ?e
-ss 0x300
+s 0x300 @e:cfg.seek.silent=true
 s
-s*
+sH*
 EOF
 EXPECT=<<EOF
 0x100
@@ -160,15 +160,15 @@ dr eax=0x200
 dr ebx=0x300
 s 0x100
 s
-s*
+sH*
 ?e
 sr eax
 s
-s*
+sH*
 ?e
-ssr ebx
+sr ebx @e:cfg.seek.silent=true
 s
-s*
+sH*
 EOF
 EXPECT=<<EOF
 0x100
@@ -338,7 +338,7 @@ FILE=bins/elf/vim
 CMDS=<<EOF
 s 0x543a0
 af
-s+3
+sd +3
 sb
 ?v $$
 EOF

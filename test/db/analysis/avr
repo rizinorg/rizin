@@ -42,7 +42,7 @@ BROKEN=1
 CMDS=<<EOF
 s 0x506
 pd 2~!1
-s+2
+sd +2
 pd 1
 EOF
 EXPECT=<<EOF

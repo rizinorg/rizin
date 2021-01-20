@@ -244,6 +244,8 @@ typedef struct rz_core_tasks_t {
 typedef struct rz_core_seek_history_t {
 	RzVector undos; ///< Stack of RzCoreSeekItems, allowing to "go back in time"
 	RzVector redos; ///< Stack of RzCoreSeekItems, allowing to re-do an action that was undone.
+	bool saved_set; ///< When true, the \p saved field is set
+	RzCoreSeekItem saved_item; ///< Position to save in history
 } RzCoreSeekHistory;
 
 struct rz_core_t {
@@ -425,6 +427,7 @@ RZ_API void rz_core_seek_item_free(RzCoreSeekItem *item);
 RZ_API bool rz_core_seek(RzCore *core, ut64 addr, bool rb);
 RZ_API bool rz_core_seek_and_save(RzCore *core, ut64 addr, bool rb);
 RZ_API bool rz_core_seek_opt(RzCore *core, ut64 addr, bool rb, bool save);
+RZ_API bool rz_core_seek_mark(RzCore *core);
 RZ_API bool rz_core_seek_save(RzCore *core);
 RZ_API bool rz_core_seek_undo(RzCore *core);
 RZ_API bool rz_core_seek_redo(RzCore *core);
@@ -432,10 +435,10 @@ RZ_API void rz_core_seek_reset(RzCore *core);
 RZ_API RzList *rz_core_seek_list(RzCore *core);
 RZ_API RzCoreSeekItem *rz_core_seek_peek(RzCore *core, int idx);
 RZ_API int rz_core_seek_base(RzCore *core, const char *hex, bool save);
-RZ_API void rz_core_seek_prev(RzCore *core, const char *type, bool save);
-RZ_API void rz_core_seek_next(RzCore *core, const char *type, bool save);
-RZ_API int rz_core_seek_align(RzCore *core, ut64 align, bool save);
-RZ_API int rz_core_seek_delta(RzCore *core, st64 delta, bool save);
+RZ_API bool rz_core_seek_prev(RzCore *core, const char *type, bool save);
+RZ_API bool rz_core_seek_next(RzCore *core, const char *type, bool save);
+RZ_API bool rz_core_seek_align(RzCore *core, ut64 align, bool save);
+RZ_API bool rz_core_seek_delta(RzCore *core, st64 delta, bool save);
 RZ_API bool rz_core_seek_analysis_bb(RzCore *core, ut64 addr, bool save);
 RZ_API bool rz_core_visual_bit_editor(RzCore *core);
 RZ_API void rz_core_arch_bits_at(RzCore *core, ut64 addr, RZ_OUT RZ_NULLABLE int *bits, RZ_OUT RZ_BORROW RZ_NULLABLE const char **arch);

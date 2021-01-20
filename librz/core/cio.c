@@ -46,7 +46,7 @@ RZ_API int rz_core_setup_debugger (RzCore *r, const char *debugbackend, bool att
 	prompt = rz_config_get (r->config, "cmd.prompt");
 	if (prompt && !strcmp (prompt, "")) {
 		if (rz_config_get_i (r->config, "dbg.status")) {
-			rz_config_set (r->config, "cmd.prompt", ".dr*;drd;sr PC;pi 1;s-");
+			rz_config_set (r->config, "cmd.prompt", ".dr*;drd;sr PC;pi 1;sHu");
 		} else {
 			rz_config_set (r->config, "cmd.prompt", ".dr*");
 		}

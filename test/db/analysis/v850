@@ -362,7 +362,7 @@ NAME=v850 random pseudo
 FILE=bins/elf/ld-2.27.so
 BROKEN=1
 CMDS=<<EOF
-s+128
+sd +128
 e asm.arch=v850
 e asm.parser=v850.pseudo
 e asm.pseudo=true

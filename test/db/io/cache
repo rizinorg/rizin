@@ -115,12 +115,12 @@ FILE=malloc://32
 CMDS=<<EOF
 e io.cache=true
 px 32
-s +1
+sd +1
 px 31
-s -1
+sd -1
 wx 90
 px 32
-s +1
+sd +1
 px 31
 EOF
 EXPECT=<<EOF
