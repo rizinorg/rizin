@@ -496,9 +496,6 @@ RZ_API void rz_analysis_rtti_msvc_print_base_class_descriptor(RVTableContext *co
 }
 
 static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *context, ut64 atAddress, int mode, bool strict) {
-	bool use_json = mode == 'j';
-	PJ *pj;
-
 	ut64 colRefAddr = atAddress - context->word_size;
 	ut64 colAddr;
 	if (!context->read_addr(context->analysis, colRefAddr, &colAddr)) {
@@ -552,6 +549,8 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	}
 
 	// print
+	bool use_json = mode == 'j';
+	PJ *pj = NULL;
 	if (use_json) {
 		pj = pj_new();
 		if (!pj) {
