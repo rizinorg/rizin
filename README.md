@@ -89,7 +89,7 @@ Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs.
 ## Scripting
 
 We provide a way to interact with Rizin from Python, Haskell, OCaml,
-Ruby, Rust and Go languages through [rzpipe](https://github.com/rizinorg/rz-pipe).
+Ruby, Rust, and Go languages through [rzpipe](https://github.com/rizinorg/rz-pipe).
 Other languages although not currently supported could be easily added.
 
 # Community
