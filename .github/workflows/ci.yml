@@ -14,6 +14,7 @@ on:
     branches:
     - master
     - dev
+    - stable
     - 'release-*'
 
 jobs:
@@ -22,7 +23,6 @@ jobs:
   build-and-test:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.ignore_error }}
     timeout-minutes: ${{ matrix.timeout }}
     strategy:
       fail-fast: false
@@ -38,7 +38,6 @@ jobs:
           capstone-v3,
           capstone-v5
         ]
-        ignore_error: [false]
         include:
           - name: linux-acr-gcc-tests
             os: ubuntu-20.04
@@ -96,8 +95,6 @@ jobs:
             run_tests: true
             enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'asan') || contains(github.head_ref, 'import')}}
             timeout: 100
-            # NOTE: asan errors ignored for release- branch for now, because there are too many issues that would block the release
-            ignore_error: ${{ github.event_name == 'push' && (contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') }}
           - name: capstone-v3
             os: ubuntu-20.04
             build_system: meson
@@ -446,10 +443,11 @@ jobs:
         cd build
         meson dist --include-subprojects --no-tests
         ls -l meson-dist
+        mv rizin-${{ steps.extract_version.outputs.version }}.tar.xz rizin-src.tar.xz
     - uses: actions/upload-artifact@v2
       with:
         name: rizin-src.tar.xz
-        path: build/meson-dist/rizin-*.tar.xz
+        path: build/meson-dist/rizin-src.tar.xz
 
   build-osx-pkg:
     name: Build OSX package
@@ -733,8 +731,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rizin-src/rizin-src.tar.xz
-          asset_name: rizin-src-${{ steps.extract_version.outputs.branch }}.tar.gz
+          asset_path: ./rizin-src.tar.xz/rizin-src.tar.xz
+          asset_name: rizin-src-${{ steps.extract_version.outputs.branch }}.tar.xz
           asset_content_type: application/zip
     - name: Upload rizin static x86_64 tar.gz
       uses: actions/upload-release-asset@v1
@@ -742,7 +740,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rizin-static/rizin-static.tar.xz
+          asset_path: ./rizin-static.tar.xz/rizin-static.tar.xz
           asset_name: rizin-${{ steps.extract_version.outputs.branch }}-static-x86_64.tar.xz
           asset_content_type: application/zip
     - name: Upload rizin android x86_64 tar.gz
@@ -798,24 +796,6 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./rizin_installer-clang_cl-${{ steps.extract_version.outputs.branch }}/rizin.exe
           asset_name: rizin_installer-${{ steps.extract_version.outputs.branch }}.exe
-          asset_content_type: application/zip
-    - name: Upload rizin iOS arm32 cydia package
-      uses: actions/upload-release-asset@v1
-      env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rizin-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm/rizin-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
-          asset_name: rizin-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
-          asset_content_type: application/zip
-    - name: Upload rizin iOS aarch64 cydia package
-      uses: actions/upload-release-asset@v1
-      env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./rizin_${{ steps.extract_version.outputs.branch }}_iphoneos-arm/rizin_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
-          asset_name: rizin-aarch64_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
           asset_content_type: application/zip
 
   publish-docker-image:
