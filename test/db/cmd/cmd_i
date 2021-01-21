@@ -2962,7 +2962,7 @@ nth paddr      vaddr      bind   type   size lib name
 25  ---------- 0x080496b4 LOCAL  SECT   0        .bss
 26  ---------- 0x00000000 LOCAL  SECT   0        .comment
 27  ---------- 0x00000000 LOCAL  FILE   0        init.c
-28  ---------- 0x00000000 LOCAL  FILE   0
+28  ---------- 0x00000000 LOCAL  FILE   0        
 29  ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
 30  0x000005a4 0x080495a4 LOCAL  OBJ    0        __JCR_LIST__
 31  0x00000340 0x08048340 LOCAL  FUNC   0        deregister_tm_clones
@@ -2976,7 +2976,7 @@ nth paddr      vaddr      bind   type   size lib name
 39  ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
 40  0x00000598 0x08048598 LOCAL  OBJ    0        __FRAME_END__
 41  0x000005a4 0x080495a4 LOCAL  OBJ    0        __JCR_END__
-42  ---------- 0x00000000 LOCAL  FILE   0
+42  ---------- 0x00000000 LOCAL  FILE   0        
 43  0x000005a0 0x080495a0 LOCAL  NOTYPE 0        __init_array_end
 44  0x000005a8 0x080495a8 LOCAL  OBJ    0        _DYNAMIC
 45  0x0000059c 0x0804959c LOCAL  NOTYPE 0        __init_array_start
@@ -3302,7 +3302,7 @@ nth paddr      vaddr      bind   type   size lib name
 25  ---------- 0x00600910 LOCAL  SECT   0        .bss
 26  ---------- 0x00000000 LOCAL  SECT   0        .comment
 27  ---------- 0x00000000 LOCAL  FILE   0        init.c
-28  ---------- 0x00000000 LOCAL  FILE   0
+28  ---------- 0x00000000 LOCAL  FILE   0        
 29  ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
 30  0x000006f0 0x006006f0 LOCAL  OBJ    0        __JCR_LIST__
 31  0x00000440 0x00400440 LOCAL  FUNC   0        deregister_tm_clones
@@ -3316,7 +3316,7 @@ nth paddr      vaddr      bind   type   size lib name
 39  ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
 40  0x000006d8 0x004006d8 LOCAL  OBJ    0        __FRAME_END__
 41  0x000006f0 0x006006f0 LOCAL  OBJ    0        __JCR_END__
-42  ---------- 0x00000000 LOCAL  FILE   0
+42  ---------- 0x00000000 LOCAL  FILE   0        
 43  0x000006e8 0x006006e8 LOCAL  NOTYPE 0        __init_array_end
 44  0x000006f8 0x006006f8 LOCAL  OBJ    0        _DYNAMIC
 45  0x000006e0 0x006006e0 LOCAL  NOTYPE 0        __init_array_start
