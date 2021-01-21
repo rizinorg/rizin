@@ -711,7 +711,7 @@ RZ_API RzFlagItem *rz_flag_set_next(RzFlag *f, const char *name, ut64 off, ut32 
  * The realname of the item will be the same as the name.
  * NULL is returned in case of any errors during the process. */
 RZ_API RzFlagItem *rz_flag_set(RzFlag *f, const char *name, ut64 off, ut32 size) {
-	rz_return_val_if_fail(f && name && *name, NULL);
+	rz_return_val_if_fail(f && name && *name && off != UT64_MAX, NULL);
 
 	bool is_new = false;
 	char *itemname = filter_item_name(name);

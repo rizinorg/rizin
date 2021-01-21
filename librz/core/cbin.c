@@ -2350,7 +2350,7 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 					rz_flag_item_set_realname(fi, n);
 					fi->demangled = (bool)(size_t)sn.demname;
 				} else {
-					if (fn) {
+					if (fn && addr != UT64_MAX) {
 						eprintf("[Warning] Can't find flag (%s)\n", fn);
 					}
 				}
