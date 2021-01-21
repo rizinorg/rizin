@@ -789,6 +789,8 @@ RZ_API void rz_core_task_print(RzCore *core, RzCoreTask *task, int mode, PJ *j) 
 		case RZ_CORE_TASK_STATE_DONE:
 			state = "done";
 			break;
+		default:
+			state = "invalid";
 		}
 		pj_ks(j, "state", state);
 		pj_kb(j, "transient", task->transient);

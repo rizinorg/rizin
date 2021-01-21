@@ -1030,7 +1030,7 @@ static void adjust_class(const RzAGraph *g, int is_left, RzList **classes, Sdb *
 	const RzGraphNode *gn;
 	const RzListIter *it;
 	const RzANode *an;
-	int dist, v, is_first = true;
+	int dist = INT_MAX, v, is_first = true;
 
 	graph_foreach_anode (classes[c], it, gn, an) {
 		const RzGraphNode *sibling;
