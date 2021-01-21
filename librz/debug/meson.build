@@ -33,23 +33,23 @@ rz_debug_sources = [
 ]
 
 rz_debug_deps = [
-  rz_util_dep,
-  rz_hash_dep,
-  rz_reg_dep,
-  rz_syscall_dep,
-  rz_analysis_dep,
-  rz_flag_dep,
-  rz_io_dep,
-  rz_bp_dep,
-  rz_search_dep,
-  rz_cons_dep,
-  rz_lang_dep,
-  rz_egg_dep,
-  winkd_dep,
   qnx_dep,
   gdb_dep,
   bochs_dep,
-  rz_socket_dep
+  winkd_dep,
+  rz_egg_dep,
+  rz_analysis_dep,
+  rz_io_dep,
+  rz_parse_dep,
+  rz_crypto_dep,
+  rz_hash_dep,
+  rz_socket_dep,
+  rz_reg_dep,
+  rz_bp_dep,
+  rz_syscall_dep,
+  rz_flag_dep,
+  rz_cons_dep,
+  rz_util_dep,
 ]
 
 if host_machine.system() == 'linux' or host_machine.system() == 'android'

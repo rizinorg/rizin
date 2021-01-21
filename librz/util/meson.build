@@ -86,7 +86,7 @@ rz_util_sources = [
   'subprocess.c',
 ]
 
-rz_util_deps = [ldl, mth, spp_dep, pth, utl, sdb_dep, zlib_dep, platform_deps]
+rz_util_deps = [ldl, lrt, mth, spp_dep, pth, utl, sdb_dep, zlib_dep, platform_deps]
 if host_machine.system().startswith('freebsd') or host_machine.system().startswith('netbsd') or host_machine.system().startswith('haiku')
   # backtrace_symbols_fd requires -lexecinfo
   rz_util_deps += [cc.find_library('execinfo')]
