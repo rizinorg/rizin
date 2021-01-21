@@ -1,9 +1,9 @@
 # How to report issues
 
 Before reporting an issue with GitHub, be sure that:
-* you are using the latest released version of Rizin or the latest git version
-* you are using a clean installation
-* the issue was not already reported
+* You are using the latest released version of Rizin or the latest git version
+* You are using a clean installation
+* The issue was not already reported
 
 When the above conditions are satisfied, feel free to submit an issue while
 trying to be as precise as possible. If you can, provide the problematic binary,
@@ -56,7 +56,7 @@ $ git rebase -i dev
 ```
 Follow git instructions when conflicts arise.
 
-#### Step 5: publish your updated local branch.
+#### Step 5: Publish your updated local branch.
 ```sh
 $ git push -f
 ```
