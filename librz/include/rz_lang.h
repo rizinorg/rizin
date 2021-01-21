@@ -10,8 +10,8 @@ extern "C" {
 
 RZ_LIB_VERSION_HEADER(rz_lang);
 
-typedef char* (*RzCoreCmdStrCallback)(void* core, const char *s);
-typedef int (*RzCoreCmdfCallback)(void* core, const char *s, ...);
+typedef char *(*RzCoreCmdStrCallback)(void *core, const char *s);
+typedef int (*RzCoreCmdfCallback)(void *core, const char *s, ...);
 
 typedef struct rz_lang_t {
 	struct rz_lang_plugin_t *cur;

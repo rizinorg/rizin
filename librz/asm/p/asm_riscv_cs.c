@@ -10,13 +10,13 @@ static csh cd = 0;
 #include "cs_mnemonics.c"
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	cs_insn* insn;
-	int mode = (a->bits == 64)? CS_MODE_RISCV64 : CS_MODE_RISCV32;
+	cs_insn *insn;
+	int mode = (a->bits == 64) ? CS_MODE_RISCV64 : CS_MODE_RISCV32;
 	op->size = 4;
 	if (cd != 0) {
-		cs_close (&cd);
+		cs_close(&cd);
 	}
-	int ret = cs_open (CS_ARCH_RISCV, mode, &cd);
+	int ret = cs_open(CS_ARCH_RISCV, mode, &cd);
 	if (ret) {
 		goto fin;
 	}
@@ -28,9 +28,9 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 	cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 #endif
-	int n = cs_disasm (cd, (ut8*)buf, len, a->pc, 1, &insn);
+	int n = cs_disasm(cd, (ut8 *)buf, len, a->pc, 1, &insn);
 	if (n < 1) {
-		rz_asm_op_set_asm (op, "invalid");
+		rz_asm_op_set_asm(op, "invalid");
 		op->size = 2;
 		goto beach;
 	}
@@ -38,14 +38,14 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		goto beach;
 	}
 	op->size = insn->size;
-	char *str = rz_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
+	char *str = rz_str_newf("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
 	if (str) {
-		rz_str_replace_char (str, '$', 0);
+		rz_str_replace_char(str, '$', 0);
 		// remove the '$'<registername> in the string
-		rz_asm_op_set_asm (op, str);
-		free (str);
+		rz_asm_op_set_asm(op, str);
+		free(str);
 	}
-	cs_free (insn, n);
+	cs_free(insn, n);
 beach:
 	// cs_close (&cd);
 fin:
@@ -58,7 +58,7 @@ RzAsmPlugin rz_asm_plugin_riscv_cs = {
 	.license = "BSD",
 	.arch = "riscv",
 	.cpus = "",
-	.bits = 32|64,
+	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
 	.mnemonics = mnemonics,

@@ -14,19 +14,19 @@ static unsigned long Offset = 0;
 static RzStrBuf *buf_global = NULL;
 static unsigned char bytes[4];
 
-static int sparc_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
+static int sparc_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
 	int delta = (memaddr - Offset);
 	if (delta < 0) {
-		return -1;      // disable backward reads
+		return -1; // disable backward reads
 	}
 	if ((delta + length) > 4) {
 		return -1;
 	}
-	memcpy (myaddr, bytes, length);
+	memcpy(myaddr, bytes, length);
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 
@@ -45,11 +45,11 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	buf_global = &op->buf_asm;
 	Offset = a->pc;
 	// disasm inverted
-	rz_mem_swapendian (bytes, buf, 4); // TODO handle thumb
+	rz_mem_swapendian(bytes, buf, 4); // TODO handle thumb
 
-	rz_strbuf_set (&op->buf_asm, "");
+	rz_strbuf_set(&op->buf_asm, "");
 	/* prepare disassembler */
-	memset (&disasm_obj,'\0', sizeof (struct disassemble_info));
+	memset(&disasm_obj, '\0', sizeof(struct disassemble_info));
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &sparc_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
@@ -59,16 +59,16 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = stdout;
 	disasm_obj.mach = ((a->bits == 64)
-			   ? bfd_mach_sparc_v9b
-			   : 0);
+			? bfd_mach_sparc_v9b
+			: 0);
 
-	op->size = print_insn_sparc ((bfd_vma)Offset, &disasm_obj);
+	op->size = print_insn_sparc((bfd_vma)Offset, &disasm_obj);
 
-	if (!strncmp (rz_strbuf_get (&op->buf_asm), "unknown", 7)) {
-		rz_asm_op_set_asm (op, "invalid");
+	if (!strncmp(rz_strbuf_get(&op->buf_asm), "unknown", 7)) {
+		rz_asm_op_set_asm(op, "invalid");
 	}
 	if (op->size == -1) {
-		rz_asm_op_set_asm (op, "(data)");
+		rz_asm_op_set_asm(op, "(data)");
 	}
 	return op->size;
 }
@@ -76,7 +76,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 RzAsmPlugin rz_asm_plugin_sparc_gnu = {
 	.name = "sparc.gnu",
 	.arch = "sparc",
-	.bits = 32|64,
+	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_BIG | RZ_SYS_ENDIAN_LITTLE,
 	.license = "GPL3",
 	.desc = "Scalable Processor Architecture",

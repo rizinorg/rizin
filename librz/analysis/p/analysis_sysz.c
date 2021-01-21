@@ -10,65 +10,65 @@
 #error Old Capstone not supported
 #endif
 
-#define esilprintf(op, fmt, ...) rz_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)
-#define INSOP(n) insn->detail->sysz.operands[n]
+#define esilprintf(op, fmt, ...) rz_strbuf_setf(&op->esil, fmt, ##__VA_ARGS__)
+#define INSOP(n)                 insn->detail->sysz.operands[n]
 
 static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
-	PJ *pj = pj_new ();
+	PJ *pj = pj_new();
 	if (!pj) {
 		return;
 	}
-	pj_o (pj);
-	pj_ka (pj, "operands");
+	pj_o(pj);
+	pj_ka(pj, "operands");
 	cs_sysz *x = &insn->detail->sysz;
 	for (i = 0; i < x->op_count; i++) {
 		cs_sysz_op *op = x->operands + i;
-		pj_o (pj);
+		pj_o(pj);
 		switch (op->type) {
 		case SYSZ_OP_REG:
-			pj_ks (pj, "type", "reg");
-			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
+			pj_ks(pj, "type", "reg");
+			pj_ks(pj, "value", cs_reg_name(handle, op->reg));
 			break;
 		case SYSZ_OP_IMM:
-			pj_ks (pj, "type", "imm");
-			pj_kN (pj, "value", op->imm);
+			pj_ks(pj, "type", "imm");
+			pj_kN(pj, "value", op->imm);
 			break;
 		case SYSZ_OP_MEM:
-			pj_ks (pj, "type", "mem");
+			pj_ks(pj, "type", "mem");
 			if (op->mem.base != SYSZ_REG_INVALID) {
-				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
+				pj_ks(pj, "base", cs_reg_name(handle, op->mem.base));
 			}
-			pj_kN (pj, "disp", op->mem.disp);
+			pj_kN(pj, "disp", op->mem.disp);
 			break;
 		default:
-			pj_ks (pj, "type", "invalid");
+			pj_ks(pj, "type", "invalid");
 			break;
 		}
-		pj_end (pj); /* o operand */
+		pj_end(pj); /* o operand */
 	}
-	pj_end (pj); /* a operands */
-	pj_end (pj);
+	pj_end(pj); /* a operands */
+	pj_end(pj);
 
-	rz_strbuf_init (buf);
-	rz_strbuf_append (buf, pj_string (pj));
-	pj_free (pj);
+	rz_strbuf_init(buf);
+	rz_strbuf_append(buf, pj_string(pj));
+	pj_free(pj);
 }
 
 static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	csh handle;
 	cs_insn *insn;
 	int mode = CS_MODE_BIG_ENDIAN;
-	int ret = cs_open (CS_ARCH_SYSZ, mode, &handle);
+	int ret = cs_open(CS_ARCH_SYSZ, mode, &handle);
 	if (ret == CS_ERR_OK) {
-		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
+		cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
 		// capstone-next
-		int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
+		int n = cs_disasm(handle, (const ut8 *)buf, len, addr, 1, &insn);
 		if (n < 1) {
 			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		} else {
 			if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-				opex (&op->opex, handle, insn);
+				opex(&op->opex, handle, insn);
 			}
 			op->size = insn->size;
 			switch (insn->id) {
@@ -131,7 +131,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 			case SYSZ_INS_JG:
 				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 				op->jump = INSOP(0).imm;
-				op->fail = addr+op->size;
+				op->fail = addr + op->size;
 				break;
 			case SYSZ_INS_J:
 				op->type = RZ_ANALYSIS_OP_TYPE_JMP;
@@ -140,8 +140,8 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 				break;
 			}
 		}
-		cs_free (insn, n);
-		cs_close (&handle);
+		cs_free(insn, n);
+		cs_close(&handle);
 	}
 	return op->size;
 }
@@ -180,9 +180,8 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	r12	.32	48	0\n"
 		"gpr	r13	.32	52	0\n"
 		"gpr	r14	.32	56	0\n"
-		"gpr	r15	.32	60	0\n"
-	;
-	return rz_reg_set_profile_string (analysis->reg, p);
+		"gpr	r15	.32	60	0\n";
+	return rz_reg_set_profile_string(analysis->reg, p);
 }
 
 static int archinfo(RzAnalysis *analysis, int q) {
@@ -203,7 +202,7 @@ RzAnalysisPlugin rz_analysis_plugin_sysz = {
 	.esil = false,
 	.license = "BSD",
 	.arch = "sysz",
-	.bits = 32|64,
+	.bits = 32 | 64,
 	.op = &analop,
 	.archinfo = archinfo,
 	.set_reg_profile = &set_reg_profile,

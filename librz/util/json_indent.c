@@ -2,25 +2,25 @@
 
 #include <rz_util.h>
 
-
-static void doIndent(int idt, char** o, const char *tab) {
+static void doIndent(int idt, char **o, const char *tab) {
 	int i;
 	char *x;
 	for (i = 0; i < idt; i++) {
-		for (x = (char*) tab; *x; x++) {
+		for (x = (char *)tab; *x; x++) {
 			*(*o)++ = *x;
 		}
 	}
 }
 
-#define EMIT_ESC(s, code) do {			\
-	if (color) {				\
-		const char *p = code;			\
-		while (*p) {			\
-			*(s)++ = *p++;		\
-		}				\
-	}					\
-} while (0);
+#define EMIT_ESC(s, code) \
+	do { \
+		if (color) { \
+			const char *p = code; \
+			while (*p) { \
+				*(s)++ = *p++; \
+			} \
+		} \
+	} while (0);
 
 enum {
 	JC_FALSE, // 31m
@@ -39,7 +39,7 @@ static const char *origColors[] = {
 };
 // static const char colors
 
-RZ_API char* rz_print_json_path(const char* s, int pos) {
+RZ_API char *rz_print_json_path(const char *s, int pos) {
 	int indent = 0;
 #define DSZ 128
 	const char *words[DSZ] = { NULL };
@@ -52,7 +52,7 @@ RZ_API char* rz_print_json_path(const char* s, int pos) {
 	}
 	int arrpos = 0;
 	const char *os = s;
-	int osz = (1 + strlen (s)) * 20;
+	int osz = (1 + strlen(s)) * 20;
 	if (osz < 1) {
 		return NULL;
 	}
@@ -87,7 +87,7 @@ RZ_API char* rz_print_json_path(const char* s, int pos) {
 			break;
 		case ',':
 			if (isarr) {
-				arrpos ++;
+				arrpos++;
 				if (indent < DSZ) {
 					indexs[indent - 1] = arrpos;
 					lengths[indent - 1] = (s - os);
@@ -101,7 +101,7 @@ RZ_API char* rz_print_json_path(const char* s, int pos) {
 				arrpos = 0;
 			}
 			if (indent > 128) {
-				eprintf ("JSON indentation is too deep\n");
+				eprintf("JSON indentation is too deep\n");
 				indent = 0;
 			} else {
 				indent++;
@@ -128,9 +128,9 @@ RZ_API char* rz_print_json_path(const char* s, int pos) {
 			if (cur > pos) {
 				break;
 			}
-			eprintf ("0x%08"PFMT64x"  %d  [%d]\n", cur, i, indexs[i]);
+			eprintf("0x%08" PFMT64x "  %d  [%d]\n", cur, i, indexs[i]);
 		} else {
-			char *a = rz_str_ndup (words[i], lengths[i]);
+			char *a = rz_str_ndup(words[i], lengths[i]);
 			ut64 cur = words[i] - os - 1;
 			if (cur < opos) {
 				continue;
@@ -139,33 +139,33 @@ RZ_API char* rz_print_json_path(const char* s, int pos) {
 			if (cur > pos) {
 				break;
 			}
-			char *q = strchr (a, '"');
+			char *q = strchr(a, '"');
 			if (q) {
 				*q = 0;
 			}
-			eprintf ("0x%08"PFMT64x"  %d  %s\n", cur, i, a);
-			free (a);
+			eprintf("0x%08" PFMT64x "  %d  %s\n", cur, i, a);
+			free(a);
 		}
 	}
 	// TODO return something
 	return NULL;
 }
 
-RZ_API char* rz_print_json_human(const char* s) {
+RZ_API char *rz_print_json_human(const char *s) {
 	int indent = 0;
 	const char *tab = "  ";
-	const int indentSize = strlen (tab);
+	const int indentSize = strlen(tab);
 	int instr = 0;
 	char *o, *OE, *tmp;
 	if (!s) {
 		return NULL;
 	}
-	int osz = (1 + strlen (s)) * 20;
+	int osz = (1 + strlen(s)) * 20;
 	if (osz < 1) {
 		return NULL;
 	}
 
-	char *O = malloc (osz);
+	char *O = malloc(osz);
 	if (!O) {
 		return NULL;
 	}
@@ -175,12 +175,12 @@ RZ_API char* rz_print_json_human(const char* s) {
 			int delta = o - O;
 			osz += 0x1000 + (indent * indentSize);
 			if (osz < 1) {
-				free (O);
+				free(O);
 				return NULL;
 			}
-			tmp = realloc (O, osz);
+			tmp = realloc(O, osz);
 			if (!tmp) {
-				free (O);
+				free(O);
 				return NULL;
 			}
 			O = tmp;
@@ -220,25 +220,25 @@ RZ_API char* rz_print_json_human(const char* s) {
 			break;
 		case ',':
 			*o++ = '\n';
-			doIndent (indent - 1, &o, tab);
+			doIndent(indent - 1, &o, tab);
 			break;
 		case '{':
 		case '[':
 			if (indent > 0) {
-				*o++ = (indent != -1)? '\n': ' ';
+				*o++ = (indent != -1) ? '\n' : ' ';
 			}
 			if (indent > 128) {
-				eprintf ("JSON indentation is too deep\n");
+				eprintf("JSON indentation is too deep\n");
 				indent = 0;
 			} else {
 				indent++;
 			}
-			doIndent (indent - 1, &o, tab);
+			doIndent(indent - 1, &o, tab);
 			break;
 		case '}':
 		case ']':
 			indent--;
-			doIndent (indent - 1, &o, tab);
+			doIndent(indent - 1, &o, tab);
 			break;
 		default:
 			if (!instr) {
@@ -250,22 +250,22 @@ RZ_API char* rz_print_json_human(const char* s) {
 	return O;
 }
 
-RZ_API char* rz_print_json_indent(const char* s, bool color, const char* tab, const char **palette) {
+RZ_API char *rz_print_json_indent(const char *s, bool color, const char *tab, const char **palette) {
 	int indent = 0;
-	const int indentSize = strlen (tab);
+	const int indentSize = strlen(tab);
 	int instr = 0;
 	bool isValue = false;
 	char *o, *OE, *tmp;
 	if (!s) {
 		return NULL;
 	}
-	const char **colors = palette ? palette: origColors;
-	int osz = (1 + strlen (s)) * 20;
+	const char **colors = palette ? palette : origColors;
+	int osz = (1 + strlen(s)) * 20;
 	if (osz < 1) {
 		return NULL;
 	}
 
-	char *O = malloc (osz);
+	char *O = malloc(osz);
 	if (!O) {
 		return NULL;
 	}
@@ -275,12 +275,12 @@ RZ_API char* rz_print_json_indent(const char* s, bool color, const char* tab, co
 			int delta = o - O;
 			osz += 0x1000 + (indent * indentSize);
 			if (osz < 1) {
-				free (O);
+				free(O);
 				return NULL;
 			}
-			tmp = realloc (O, osz);
+			tmp = realloc(O, osz);
 			if (!tmp) {
-				free (O);
+				free(O);
 				return NULL;
 			}
 			O = tmp;
@@ -296,12 +296,12 @@ RZ_API char* rz_print_json_indent(const char* s, bool color, const char* tab, co
 			if (instr) {
 				if (isValue) {
 					// TODO: do not emit color in every char
-					EMIT_ESC (o, colors[JC_VAL]);
+					EMIT_ESC(o, colors[JC_VAL]);
 				} else {
-					EMIT_ESC (o, colors[JC_KEY]);
+					EMIT_ESC(o, colors[JC_KEY]);
 				}
 			} else {
-				EMIT_ESC (o, colors[JC_RESET]);
+				EMIT_ESC(o, colors[JC_RESET]);
 			}
 			*o++ = *s;
 			continue;
@@ -326,42 +326,42 @@ RZ_API char* rz_print_json_indent(const char* s, bool color, const char* tab, co
 		case ':':
 			*o++ = *s;
 			*o++ = ' ';
-			s = rz_str_trim_head_ro (s + 1);
-			if (!strncmp (s, "true", 4)) {
-				EMIT_ESC (o, colors[JC_TRUE]);
-			} else if (!strncmp (s, "false", 5)) {
-				EMIT_ESC (o, colors[JC_FALSE]);
+			s = rz_str_trim_head_ro(s + 1);
+			if (!strncmp(s, "true", 4)) {
+				EMIT_ESC(o, colors[JC_TRUE]);
+			} else if (!strncmp(s, "false", 5)) {
+				EMIT_ESC(o, colors[JC_FALSE]);
 			}
 			s--;
 			isValue = true;
 			break;
 		case ',':
-			EMIT_ESC (o, colors[JC_RESET]);
+			EMIT_ESC(o, colors[JC_RESET]);
 			*o++ = *s;
 			*o++ = '\n';
 			isValue = false;
-			doIndent (indent, &o, tab);
+			doIndent(indent, &o, tab);
 			break;
 		case '{':
 		case '[':
 			isValue = false;
 			*o++ = *s;
-			*o++ = (indent != -1)? '\n': ' ';
+			*o++ = (indent != -1) ? '\n' : ' ';
 			if (indent > 128) {
-				eprintf ("JSON indentation is too deep\n");
+				eprintf("JSON indentation is too deep\n");
 				indent = 0;
 			} else {
 				indent++;
 			}
-			doIndent (indent, &o, tab);
+			doIndent(indent, &o, tab);
 			break;
 		case '}':
 		case ']':
-			EMIT_ESC (o, colors[JC_RESET]);
+			EMIT_ESC(o, colors[JC_RESET]);
 			isValue = false;
 			*o++ = '\n';
 			indent--;
-			doIndent (indent, &o, tab);
+			doIndent(indent, &o, tab);
 			*o++ = *s;
 			break;
 		default:

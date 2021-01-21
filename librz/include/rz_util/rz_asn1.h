@@ -10,7 +10,7 @@ extern "C" {
 #define ASN1_JSON_NULL  "null"
 #define ASN1_JSON_EMPTY "{}"
 
-#define ASN1_OID_LEN  64
+#define ASN1_OID_LEN 64
 
 /* Masks */
 #define ASN1_CLASS    0xC0 /* Bits 8 and 7 */
@@ -20,14 +20,14 @@ extern "C" {
 #define ASN1_LENSHORT 0x7F /* Bits 7 - 1 */
 
 /* Classes */
-#define CLASS_UNIVERSAL    0x00 /* 0 = Universal (defined by ITU X.680) */
-#define CLASS_APPLICATION  0x40 /* 1 = Application */
-#define CLASS_CONTEXT      0x80 /* 2 = Context-specific */
-#define CLASS_PRIVATE      0xC0 /* 3 = Private */
+#define CLASS_UNIVERSAL   0x00 /* 0 = Universal (defined by ITU X.680) */
+#define CLASS_APPLICATION 0x40 /* 1 = Application */
+#define CLASS_CONTEXT     0x80 /* 2 = Context-specific */
+#define CLASS_PRIVATE     0xC0 /* 3 = Private */
 
 /* Forms */
-#define FORM_PRIMITIVE     0x00 /* 0 = primitive */
-#define FORM_CONSTRUCTED   0x20 /* 1 = constructed */
+#define FORM_PRIMITIVE   0x00 /* 0 = primitive */
+#define FORM_CONSTRUCTED 0x20 /* 1 = constructed */
 
 /* Tags */
 #define TAG_EOC             0x00 /*  0: End-of-contents octets */
@@ -84,29 +84,27 @@ typedef struct rz_asn1_object_t {
 	ASN1List list; /* List of objects contained in the sector */
 } RASN1Object;
 
+RZ_API RASN1Object *rz_asn1_create_object(const ut8 *buffer, ut32 length, const ut8 *start_pointer);
+RZ_API RASN1Binary *rz_asn1_create_binary(const ut8 *buffer, ut32 length);
+RZ_API RASN1String *rz_asn1_create_string(const char *string, bool allocated, ut32 length);
+RZ_API RASN1String *rz_asn1_stringify_bits(const ut8 *buffer, ut32 length);
+RZ_API RASN1String *rz_asn1_stringify_utctime(const ut8 *buffer, ut32 length);
+RZ_API RASN1String *rz_asn1_stringify_time(const ut8 *buffer, ut32 length);
+RZ_API RASN1String *rz_asn1_stringify_integer(const ut8 *buffer, ut32 length);
+RZ_API RASN1String *rz_asn1_stringify_string(const ut8 *buffer, ut32 length);
+RZ_API RASN1String *rz_asn1_stringify_bytes(const ut8 *buffer, ut32 length);
+RZ_API RASN1String *rz_asn1_stringify_boolean(const ut8 *buffer, ut32 length);
+RZ_API RASN1String *rz_asn1_stringify_oid(const ut8 *buffer, ut32 length);
 
-RZ_API RASN1Object *rz_asn1_create_object (const ut8 *buffer, ut32 length, const ut8 *start_pointer);
-RZ_API RASN1Binary *rz_asn1_create_binary (const ut8 *buffer, ut32 length);
-RZ_API RASN1String *rz_asn1_create_string (const char *string, bool allocated, ut32 length);
-RZ_API RASN1String *rz_asn1_stringify_bits (const ut8 *buffer, ut32 length);
-RZ_API RASN1String *rz_asn1_stringify_utctime (const ut8 *buffer, ut32 length);
-RZ_API RASN1String *rz_asn1_stringify_time (const ut8 *buffer, ut32 length);
-RZ_API RASN1String *rz_asn1_stringify_integer (const ut8 *buffer, ut32 length);
-RZ_API RASN1String *rz_asn1_stringify_string (const ut8 *buffer, ut32 length);
-RZ_API RASN1String *rz_asn1_stringify_bytes (const ut8 *buffer, ut32 length);
-RZ_API RASN1String *rz_asn1_stringify_boolean (const ut8 *buffer, ut32 length);
-RZ_API RASN1String *rz_asn1_stringify_oid (const ut8* buffer, ut32 length);
-
-RZ_API void rz_asn1_free_object (RASN1Object *object);
+RZ_API void rz_asn1_free_object(RASN1Object *object);
 // RZ_API void rz_asn1_print_object (RASN1Object *object, ut32 depth);
-RZ_API char *rz_asn1_to_string (RASN1Object *object, ut32 depth, RzStrBuf *sb);
-RZ_API void rz_asn1_free_string (RASN1String *string);
-RZ_API void rz_asn1_free_binary (RASN1Binary *string);
-RZ_API void asn1_setformat (int fmt);
+RZ_API char *rz_asn1_to_string(RASN1Object *object, ut32 depth, RzStrBuf *sb);
+RZ_API void rz_asn1_free_string(RASN1String *string);
+RZ_API void rz_asn1_free_binary(RASN1Binary *string);
+RZ_API void asn1_setformat(int fmt);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* RZ_ASN1_H */
-

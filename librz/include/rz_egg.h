@@ -12,18 +12,18 @@ extern "C" {
 
 RZ_LIB_VERSION_HEADER(rz_egg);
 
-#define RZ_EGG_INCDIR_ENV "EGG_INCDIR"
+#define RZ_EGG_INCDIR_ENV  "EGG_INCDIR"
 #define RZ_EGG_INCDIR_PATH "/lib/rizin/" RZ_VERSION "/egg"
 
 // rename to RzEggShellcode
 #define RZ_EGG_PLUGIN_SHELLCODE 0
-#define RZ_EGG_PLUGIN_ENCODER 1
+#define RZ_EGG_PLUGIN_ENCODER   1
 
 typedef struct rz_egg_plugin_t {
 	const char *name;
 	const char *desc;
 	int type;
-	RzBuffer* (*build) (void *egg);
+	RzBuffer *(*build)(void *egg);
 } RzEggPlugin;
 
 typedef struct rz_egg_lang_t {
@@ -60,14 +60,14 @@ typedef struct rz_egg_lang_t {
 	char *ifelse_table[32][32];
 	// used to solve if-else problem in a not so ugly way
 	int ndstval;
-	int skipline;// BOOL
+	int skipline; // BOOL
 	int quoteline;
 	int quotelinevar;
 	int stackframe;
 	int stackfixed;
 	int oc;
 	int mode;
- 	int inlinectr;
+	int inlinectr;
 	struct {
 		char *name;
 		char *body;
@@ -124,28 +124,28 @@ rizin -q - <<EOF
 EOF
 #endif
 
-#define RZ_EGG_OS_LINUX 0x5ca62a43
-#define RZ_EGG_OS_OSX 0x0ad593a1
-#define RZ_EGG_OS_DARWIN 0xd86d1ae2
+#define RZ_EGG_OS_LINUX   0x5ca62a43
+#define RZ_EGG_OS_OSX     0x0ad593a1
+#define RZ_EGG_OS_DARWIN  0xd86d1ae2
 #define RZ_EGG_OS_WATCHOS 0x14945c70
-#define RZ_EGG_OS_IOS 0x0ad58830
-#define RZ_EGG_OS_MACOS 0x5cb23c16
-#define RZ_EGG_OS_W32 0x0ad5fbb3
+#define RZ_EGG_OS_IOS     0x0ad58830
+#define RZ_EGG_OS_MACOS   0x5cb23c16
+#define RZ_EGG_OS_W32     0x0ad5fbb3
 #define RZ_EGG_OS_WINDOWS 0x05b7de9a
-#define RZ_EGG_OS_BEOS 0x506108be
+#define RZ_EGG_OS_BEOS    0x506108be
 #define RZ_EGG_OS_FREEBSD 0x73a72944
 
 #if __APPLE__
-#define RZ_EGG_OS_DEFAULT RZ_EGG_OS_OSX
-#define RZ_EGG_OS_NAME "darwin"
+#define RZ_EGG_OS_DEFAULT     RZ_EGG_OS_OSX
+#define RZ_EGG_OS_NAME        "darwin"
 #define RZ_EGG_FORMAT_DEFAULT "mach0"
 #elif __WINDOWS__
-#define RZ_EGG_OS_DEFAULT RZ_EGG_OS_W32
-#define RZ_EGG_OS_NAME "windows"
+#define RZ_EGG_OS_DEFAULT     RZ_EGG_OS_W32
+#define RZ_EGG_OS_NAME        "windows"
 #define RZ_EGG_FORMAT_DEFAULT "pe"
 #else
-#define RZ_EGG_OS_DEFAULT RZ_EGG_OS_LINUX
-#define RZ_EGG_OS_NAME "linux"
+#define RZ_EGG_OS_DEFAULT     RZ_EGG_OS_LINUX
+#define RZ_EGG_OS_NAME        "linux"
 #define RZ_EGG_FORMAT_DEFAULT "elf"
 #endif
 
@@ -154,7 +154,7 @@ typedef struct rz_egg_emit_t {
 	int size; /* in bytes.. 32bit arch is 4, 64bit is 8 .. */
 	const char *retvar;
 	//const char *syscall_body;
-	const char* (*regs)(RzEgg *egg, int idx);
+	const char *(*regs)(RzEgg *egg, int idx);
 	void (*init)(RzEgg *egg);
 	void (*call)(RzEgg *egg, const char *addr, int ptr);
 	void (*jmp)(RzEgg *egg, const char *addr, int ptr);
@@ -181,13 +181,13 @@ typedef struct rz_egg_emit_t {
 } RzEggEmit;
 
 #ifdef RZ_API
-RZ_API RzEgg *rz_egg_new (void);
+RZ_API RzEgg *rz_egg_new(void);
 RZ_API void rz_egg_lang_init(RzEgg *egg);
 RZ_API void rz_egg_lang_free(RzEgg *egg);
-RZ_API char *rz_egg_to_string (RzEgg *egg);
-RZ_API void rz_egg_free (RzEgg *egg);
-RZ_API int rz_egg_add (RzEgg *a, RzEggPlugin *foo);
-RZ_API void rz_egg_reset (RzEgg *egg);
+RZ_API char *rz_egg_to_string(RzEgg *egg);
+RZ_API void rz_egg_free(RzEgg *egg);
+RZ_API int rz_egg_add(RzEgg *a, RzEggPlugin *foo);
+RZ_API void rz_egg_reset(RzEgg *egg);
 RZ_API int rz_egg_setup(RzEgg *egg, const char *arch, int bits, int endian, const char *os);
 RZ_API int rz_egg_include(RzEgg *egg, const char *file, int format);
 RZ_API void rz_egg_load(RzEgg *egg, const char *code, int format);
@@ -198,12 +198,12 @@ RZ_API int rz_egg_raw(RzEgg *egg, const ut8 *b, int len);
 RZ_API int rz_egg_encode(RzEgg *egg, const char *name);
 RZ_API int rz_egg_shellcode(RzEgg *egg, const char *name);
 #define rz_egg_get_shellcodes(x) x->plugins
-RZ_API void rz_egg_option_set (RzEgg *egg, const char *k, const char *v);
-RZ_API char *rz_egg_option_get (RzEgg *egg, const char *k);
+RZ_API void rz_egg_option_set(RzEgg *egg, const char *k, const char *v);
+RZ_API char *rz_egg_option_get(RzEgg *egg, const char *k);
 RZ_API void rz_egg_if(RzEgg *egg, const char *reg, char cmp, int v);
 RZ_API void rz_egg_printf(RzEgg *egg, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 RZ_API int rz_egg_compile(RzEgg *egg);
-RZ_API int rz_egg_padding (RzEgg *egg, const char *pad);
+RZ_API int rz_egg_padding(RzEgg *egg, const char *pad);
 RZ_API bool rz_egg_assemble(RzEgg *egg);
 RZ_API bool rz_egg_assemble_asm(RzEgg *egg, char **asm_list);
 RZ_API void rz_egg_pattern(RzEgg *egg, int size);
@@ -219,13 +219,13 @@ RZ_API int rz_egg_patch(RzEgg *egg, int off, const ut8 *b, int l);
 RZ_API void rz_egg_finalize(RzEgg *egg);
 
 /* rz_egg_Cfile.c */
-RZ_API char* rz_egg_Cfile_parser(const char *file, const char *arch, const char *os, int bits);
+RZ_API char *rz_egg_Cfile_parser(const char *file, const char *arch, const char *os, int bits);
 
 /* lang.c */
 RZ_API char *rz_egg_mkvar(RzEgg *egg, char *out, const char *_str, int delta);
 RZ_API int rz_egg_lang_parsechar(RzEgg *egg, char c);
-RZ_API void rz_egg_lang_include_path (RzEgg *egg, const char *path);
-RZ_API void rz_egg_lang_include_init (RzEgg *egg);
+RZ_API void rz_egg_lang_include_path(RzEgg *egg, const char *path);
+RZ_API void rz_egg_lang_include_init(RzEgg *egg);
 
 /* plugin pointers */
 extern RzEggPlugin rz_egg_plugin_xor;

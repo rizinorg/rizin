@@ -4,8 +4,8 @@
 #include <rz_lib.h>
 
 static struct rz_bp_arch_t rz_bp_plugin_sh_bps[] = {
-	{ 32, 2, 0, (const ut8*)"\x20\xc3" }, //Little endian bp
-	{ 32, 2, 1, (const ut8*)"\xc3\x20" }, //Big endian bp
+	{ 32, 2, 0, (const ut8 *)"\x20\xc3" }, //Little endian bp
+	{ 32, 2, 1, (const ut8 *)"\xc3\x20" }, //Big endian bp
 	{ 0, 0, 0, NULL },
 };
 

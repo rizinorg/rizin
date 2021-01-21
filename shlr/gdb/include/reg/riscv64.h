@@ -1,4 +1,4 @@
-return strdup (
+return strdup(
 	"=PC	pc\n"
 	"=SP	sp\n" // ABI: stack pointer
 	"=LR	ra\n" // ABI: return address
@@ -49,5 +49,4 @@ return strdup (
 	"gpr	t4	.64	232	0\n" // =x29
 	"gpr	t5	.64	240	0\n" // =x30
 	"gpr	t6	.64	248	0\n" // =x31
-	"gpr	pc	.64	248	0\n"
-);
+	"gpr	pc	.64	248	0\n");

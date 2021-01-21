@@ -5,12 +5,12 @@
 #include <rz_debug.h>
 
 static int __rap_step(RzDebug *dbg) {
-	rz_io_system (dbg->iob.io, "ds");
+	rz_io_system(dbg->iob.io, "ds");
 	return true;
 }
 
 static int __rap_reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
-	rz_io_system (dbg->iob.io, "dr");
+	rz_io_system(dbg->iob.io, "dr");
 	return 0;
 }
 
@@ -19,7 +19,7 @@ static int __rap_reg_write(RzDebug *dbg, int type, const ut8 *buf, int size) {
 }
 
 static int __rap_continue(RzDebug *dbg, int pid, int tid, int sig) {
-	rz_io_system (dbg->iob.io, "dc");
+	rz_io_system(dbg->iob.io, "dc");
 	return true;
 }
 
@@ -29,38 +29,38 @@ static int __rap_wait(RzDebug *dbg, int pid) {
 }
 
 static int __rap_attach(RzDebug *dbg, int pid) {
-// XXX TODO PID must be a socket here !!1
+	// XXX TODO PID must be a socket here !!1
 	RzIODesc *d = dbg->iob.io->desc;
 	if (d && d->plugin && d->plugin->name) {
-		if (!strcmp ("rap", d->plugin->name)) {
-			eprintf ("SUCCESS: rap attach with inferior rap rio worked\n");
+		if (!strcmp("rap", d->plugin->name)) {
+			eprintf("SUCCESS: rap attach with inferior rap rio worked\n");
 		} else {
-			eprintf ("ERROR: Underlying IO descriptor is not a rap one..\n");
+			eprintf("ERROR: Underlying IO descriptor is not a rap one..\n");
 		}
 	}
 	return true;
 }
 
 static int __rap_detach(RzDebug *dbg, int pid) {
-// XXX TODO PID must be a socket here !!1
-//	close (pid);
+	// XXX TODO PID must be a socket here !!1
+	//	close (pid);
 	//XXX Maybe we should continue here?
 	return true;
 }
 
 static char *__rap_reg_profile(RzDebug *dbg) {
-	char *out, *tf = rz_file_temp ("rap.XXXXXX");
-	int fd = rz_cons_pipe_open (tf, 1, 0);
-	rz_io_system (dbg->iob.io, "drp");
-	rz_cons_flush ();
-	rz_cons_pipe_close (fd);
-	out = rz_file_slurp (tf, NULL);
-	rz_file_rm (tf);
-	free (tf);
+	char *out, *tf = rz_file_temp("rap.XXXXXX");
+	int fd = rz_cons_pipe_open(tf, 1, 0);
+	rz_io_system(dbg->iob.io, "drp");
+	rz_cons_flush();
+	rz_cons_pipe_close(fd);
+	out = rz_file_slurp(tf, NULL);
+	rz_file_rm(tf);
+	free(tf);
 	return out;
 }
 
-static int __rap_breakpoint (RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
+static int __rap_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 	//rz_io_system (dbg->iob.io, "db");
 	return false;
 }

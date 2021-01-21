@@ -7,39 +7,39 @@
 
 typedef struct boot_img_hdr BootImage;
 
-#define BOOT_MAGIC "ANDROID!"
-#define BOOT_MAGIC_SIZE 8
-#define BOOT_NAME_SIZE 16
-#define BOOT_ARGS_SIZE 512
+#define BOOT_MAGIC           "ANDROID!"
+#define BOOT_MAGIC_SIZE      8
+#define BOOT_NAME_SIZE       16
+#define BOOT_ARGS_SIZE       512
 #define BOOT_EXTRA_ARGS_SIZE 1024
 
 #define ADD_REMAINDER(val, aln) ((val) + ((aln) != 0 ? ((val) % (aln)) : 0))
-#define ROUND_DOWN(val, aln) ((aln) != 0 ? (((val) / (aln)) * (aln)) : (val))
+#define ROUND_DOWN(val, aln)    ((aln) != 0 ? (((val) / (aln)) * (aln)) : (val))
 
-RZ_PACKED (
-struct boot_img_hdr {
-	ut8 magic[BOOT_MAGIC_SIZE];
+RZ_PACKED(
+	struct boot_img_hdr {
+		ut8 magic[BOOT_MAGIC_SIZE];
 
-	ut32 kernel_size;  /* size in bytes */
-	ut32 kernel_addr;  /* physical load addr */
+		ut32 kernel_size; /* size in bytes */
+		ut32 kernel_addr; /* physical load addr */
 
-	ut32 ramdisk_size; /* size in bytes */
-	ut32 ramdisk_addr; /* physical load addr */
+		ut32 ramdisk_size; /* size in bytes */
+		ut32 ramdisk_addr; /* physical load addr */
 
-	ut32 second_size;  /* size in bytes */
-	ut32 second_addr;  /* physical load addr */
+		ut32 second_size; /* size in bytes */
+		ut32 second_addr; /* physical load addr */
 
-	ut32 tags_addr;    /* physical addr for kernel tags */
-	ut32 page_size;    /* flash page size we assume */
-	ut32 unused[2];    /* future expansion: should be 0 */
-	ut8 name[BOOT_NAME_SIZE]; /* asciiz product name */
-	ut8 cmdline[BOOT_ARGS_SIZE];
-	ut32 id[8]; /* timestamp / checksum / sha1 / etc */
+		ut32 tags_addr; /* physical addr for kernel tags */
+		ut32 page_size; /* flash page size we assume */
+		ut32 unused[2]; /* future expansion: should be 0 */
+		ut8 name[BOOT_NAME_SIZE]; /* asciiz product name */
+		ut8 cmdline[BOOT_ARGS_SIZE];
+		ut32 id[8]; /* timestamp / checksum / sha1 / etc */
 
-	/* Supplemental command line data; kept here to maintain
+		/* Supplemental command line data; kept here to maintain
 	 * binary compatibility with older versions of mkbootimg */
-	ut8 extra_cmdline[BOOT_EXTRA_ARGS_SIZE];
-});
+		ut8 extra_cmdline[BOOT_EXTRA_ARGS_SIZE];
+	});
 
 typedef struct {
 	Sdb *kv;
@@ -50,26 +50,26 @@ typedef struct {
 static int bootimg_header_load(BootImageObj *obj, Sdb *db) {
 	char *n;
 	int i;
-	if (rz_buf_size (obj->buf) < sizeof (BootImage)) {
+	if (rz_buf_size(obj->buf) < sizeof(BootImage)) {
 		return false;
 	}
 	// TODO make it endian-safe (void)rz_buf_fread_at (buf, 0, (ut8*)bi, "IIiiiiiiiiiiii", 1);
 	BootImage *bi = &obj->bi;
-	(void) rz_buf_read_at (obj->buf, 0, (ut8 *)bi, sizeof (BootImage));
-	if ((n = rz_str_ndup ((char *) bi->name, BOOT_NAME_SIZE))) {
-		sdb_set (db, "name", n, 0);
-		free (n);
+	(void)rz_buf_read_at(obj->buf, 0, (ut8 *)bi, sizeof(BootImage));
+	if ((n = rz_str_ndup((char *)bi->name, BOOT_NAME_SIZE))) {
+		sdb_set(db, "name", n, 0);
+		free(n);
 	}
-	if ((n = rz_str_ndup ((char *) bi->cmdline, BOOT_ARGS_SIZE))) {
-		sdb_set (db, "cmdline", n, 0);
-		free (n);
+	if ((n = rz_str_ndup((char *)bi->cmdline, BOOT_ARGS_SIZE))) {
+		sdb_set(db, "cmdline", n, 0);
+		free(n);
 	}
 	for (i = 0; i < 8; i++) {
-		sdb_num_set (db, "id", (ut64) bi->id[i], 0);
+		sdb_num_set(db, "id", (ut64)bi->id[i], 0);
 	}
-	if ((n = rz_str_ndup ((char *) bi->extra_cmdline, BOOT_EXTRA_ARGS_SIZE))) {
-		sdb_set (db, "extra_cmdline", n, 0);
-		free (n);
+	if ((n = rz_str_ndup((char *)bi->extra_cmdline, BOOT_EXTRA_ARGS_SIZE))) {
+		sdb_set(db, "extra_cmdline", n, 0);
+		free(n);
 	}
 	return true;
 }
@@ -81,38 +81,38 @@ static Sdb *get_sdb(RzBinFile *bf) {
 		return NULL;
 	}
 	ao = o->bin_obj;
-	return ao? ao->kv: NULL;
+	return ao ? ao->kv : NULL;
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	BootImageObj *bio = RZ_NEW0 (BootImageObj);
+	BootImageObj *bio = RZ_NEW0(BootImageObj);
 	if (!bio) {
 		return false;
 	}
-	bio->kv = sdb_new0 ();
+	bio->kv = sdb_new0();
 	if (!bio->kv) {
-		free (bio);
+		free(bio);
 		return false;
 	}
-	bio->buf = rz_buf_ref (buf);
-	if (!bootimg_header_load (bio, bio->kv)) {
-		free (bio);
+	bio->buf = rz_buf_ref(buf);
+	if (!bootimg_header_load(bio, bio->kv)) {
+		free(bio);
 		return false;
 	}
-	sdb_ns_set (sdb, "info", bio->kv);
+	sdb_ns_set(sdb, "info", bio->kv);
 	*bin_obj = bio;
 	return true;
 }
 
 static void destroy(RzBinFile *bf) {
 	BootImageObj *bio = bf->o->bin_obj;
-	rz_buf_free (bio->buf);
-	RZ_FREE (bf->o->bin_obj);
+	rz_buf_free(bio->buf);
+	RZ_FREE(bf->o->bin_obj);
 }
 
 static ut64 baddr(RzBinFile *bf) {
 	BootImageObj *bio = bf->o->bin_obj;
-	return bio? bio->bi.kernel_addr: 0;
+	return bio ? bio->bi.kernel_addr : 0;
 }
 
 static RzList *strings(RzBinFile *bf) {
@@ -124,31 +124,31 @@ static RzBinInfo *info(RzBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	ret = RZ_NEW0 (RzBinInfo);
+	ret = RZ_NEW0(RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
 
 	ret->lang = NULL;
-	ret->file = bf->file? strdup (bf->file): NULL;
-	ret->type = strdup ("Android Boot Image");
-	ret->os = strdup ("android");
-	ret->subsystem = strdup ("unknown");
-	ret->machine = strdup ("arm");
-	ret->arch = strdup ("arm");
+	ret->file = bf->file ? strdup(bf->file) : NULL;
+	ret->type = strdup("Android Boot Image");
+	ret->os = strdup("android");
+	ret->subsystem = strdup("unknown");
+	ret->machine = strdup("arm");
+	ret->arch = strdup("arm");
 	ret->has_va = 1;
 	ret->has_pi = 0;
 	ret->bits = 16;
 	ret->big_endian = 0;
 	ret->dbg_info = 0;
-	ret->rclass = strdup ("image");
+	ret->rclass = strdup("image");
 	return ret;
 }
 
 static bool check_buffer(RzBuffer *buf) {
 	ut8 tmp[13];
-	int r = rz_buf_read_at (buf, 0, tmp, sizeof (tmp));
-	return r > 12 && !strncmp ((const char *)tmp, "ANDROID!", 8);
+	int r = rz_buf_read_at(buf, 0, tmp, sizeof(tmp));
+	return r > 12 && !strncmp((const char *)tmp, "ANDROID!", 8);
 }
 
 static RzList *entries(RzBinFile *bf) {
@@ -160,15 +160,15 @@ static RzList *entries(RzBinFile *bf) {
 	BootImage *bi = &bio->bi;
 	RzList *ret;
 
-	if (!(ret = rz_list_newf (free))) {
+	if (!(ret = rz_list_newf(free))) {
 		return NULL;
 	}
-	if (!(ptr = RZ_NEW0 (RzBinAddr))) {
+	if (!(ptr = RZ_NEW0(RzBinAddr))) {
 		return ret;
 	}
 	ptr->paddr = bi->page_size;
 	ptr->vaddr = bi->kernel_addr;
-	rz_list_append (ret, ptr);
+	rz_list_append(ret, ptr);
 	return ret;
 }
 
@@ -181,63 +181,63 @@ static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *ptr = NULL;
 
-	if (!(ret = rz_list_new ())) {
+	if (!(ret = rz_list_new())) {
 		return NULL;
 	}
 	ret->free = free;
 
-	if (!(ptr = RZ_NEW0 (RzBinSection))) {
+	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup ("header");
-	ptr->size = sizeof (BootImage);
+	ptr->name = strdup("header");
+	ptr->size = sizeof(BootImage);
 	ptr->vsize = bi->page_size;
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
 	ptr->perm = RZ_PERM_R; // r--
 	ptr->add = true;
-	rz_list_append (ret, ptr);
+	rz_list_append(ret, ptr);
 
-	if (!(ptr = RZ_NEW0 (RzBinSection))) {
+	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup ("kernel");
+	ptr->name = strdup("kernel");
 	ptr->size = bi->kernel_size;
-	ptr->vsize = ADD_REMAINDER (ptr->size, bi->page_size);
+	ptr->vsize = ADD_REMAINDER(ptr->size, bi->page_size);
 	ptr->paddr = bi->page_size;
 	ptr->vaddr = bi->kernel_addr;
 	ptr->perm = RZ_PERM_R; // r--
 	ptr->add = true;
-	rz_list_append (ret, ptr);
+	rz_list_append(ret, ptr);
 
 	if (bi->ramdisk_size > 0) {
 		ut64 base = bi->kernel_size + 2 * bi->page_size - 1;
-		if (!(ptr = RZ_NEW0 (RzBinSection))) {
+		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup ("ramdisk");
+		ptr->name = strdup("ramdisk");
 		ptr->size = bi->ramdisk_size;
-		ptr->vsize = ADD_REMAINDER (bi->ramdisk_size, bi->page_size);
-		ptr->paddr = ROUND_DOWN (base, bi->page_size);
+		ptr->vsize = ADD_REMAINDER(bi->ramdisk_size, bi->page_size);
+		ptr->paddr = ROUND_DOWN(base, bi->page_size);
 		ptr->vaddr = bi->ramdisk_addr;
 		ptr->perm = RZ_PERM_RX; // r-x
 		ptr->add = true;
-		rz_list_append (ret, ptr);
+		rz_list_append(ret, ptr);
 	}
 
 	if (bi->second_size > 0) {
 		ut64 base = bi->kernel_size + bi->ramdisk_size + 2 * bi->page_size - 1;
-		if (!(ptr = RZ_NEW0 (RzBinSection))) {
+		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup ("second");
+		ptr->name = strdup("second");
 		ptr->size = bi->second_size;
-		ptr->vsize = ADD_REMAINDER (bi->second_size, bi->page_size);
-		ptr->paddr = ROUND_DOWN (base, bi->page_size);
+		ptr->vsize = ADD_REMAINDER(bi->second_size, bi->page_size);
+		ptr->paddr = ROUND_DOWN(base, bi->page_size);
 		ptr->vaddr = bi->second_addr;
 		ptr->perm = RZ_PERM_RX; // r-x
 		ptr->add = true;
-		rz_list_append (ret, ptr);
+		rz_list_append(ret, ptr);
 	}
 
 	return ret;

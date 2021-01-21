@@ -17,7 +17,7 @@ static bool aes_cbc_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode,
 	st.key_size = keylen;
 	st.rounds = 6 + (int)(keylen / 4);
 	st.columns = (int)(keylen / 4);
-	memcpy (st.key, key, keylen);
+	memcpy(st.key, key, keylen);
 	cry->dir = direction;
 	return true;
 }
@@ -30,37 +30,37 @@ static bool aes_cbc_set_iv(RzCrypto *cry, const ut8 *iv_src, int ivlen) {
 	if (ivlen != BLOCK_SIZE) {
 		return false;
 	}
-	memcpy (iv, iv_src, BLOCK_SIZE);
+	memcpy(iv, iv_src, BLOCK_SIZE);
 	iv_set = 1;
 	return true;
 }
 
 static bool aes_cbc_use(const char *algo) {
-	return algo && !strcmp (algo, "aes-cbc");
+	return algo && !strcmp(algo, "aes-cbc");
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	if (!iv_set) {
-		eprintf ("IV not set. Use -I [iv]\n");
+		eprintf("IV not set. Use -I [iv]\n");
 		return false;
 	}
 	const int diff = (BLOCK_SIZE - (len % BLOCK_SIZE)) % BLOCK_SIZE;
 	const int size = len + diff;
 	const int blocks = size / BLOCK_SIZE;
 
-	ut8 *const obuf = calloc (1, size);
+	ut8 *const obuf = calloc(1, size);
 	if (!obuf) {
 		return false;
 	}
 
-	ut8 *const ibuf = calloc (1, size);
+	ut8 *const ibuf = calloc(1, size);
 	if (!ibuf) {
-		free (obuf);
+		free(obuf);
 		return false;
 	}
 
-	memset (ibuf, 0, size);
-	memcpy (ibuf, buf, len);
+	memset(ibuf, 0, size);
+	memcpy(ibuf, buf, len);
 
 	if (diff) {
 		ibuf[len] = 8; // 0b1000;
@@ -72,12 +72,12 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 			for (j = 0; j < BLOCK_SIZE; j++) {
 				ibuf[i * BLOCK_SIZE + j] ^= iv[j];
 			}
-			aes_encrypt (&st, ibuf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
-			memcpy (iv, obuf + BLOCK_SIZE * i, BLOCK_SIZE);
+			aes_encrypt(&st, ibuf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
+			memcpy(iv, obuf + BLOCK_SIZE * i, BLOCK_SIZE);
 		}
 	} else if (cry->dir == 1) {
 		for (i = 0; i < blocks; i++) {
-			aes_decrypt (&st, ibuf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
+			aes_decrypt(&st, ibuf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
 			for (j = 0; j < BLOCK_SIZE; j++) {
 				obuf[i * BLOCK_SIZE + j] ^= iv[j];
 			}
@@ -85,14 +85,14 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 		}
 	}
 
-	rz_crypto_append (cry, obuf, size);
-	free (obuf);
-	free (ibuf);
+	rz_crypto_append(cry, obuf, size);
+	free(obuf);
+	free(ibuf);
 	return true;
 }
 
 static bool final(RzCrypto *cry, const ut8 *buf, int len) {
-	return update (cry, buf, len);
+	return update(cry, buf, len);
 }
 
 RzCryptoPlugin rz_crypto_plugin_aes_cbc = {

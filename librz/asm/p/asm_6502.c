@@ -8,15 +8,15 @@
 #include "../arch/6502/6502dis.c"
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	int dlen = _6502Disass (a->pc, op, buf, len);
-	return op->size = RZ_MAX (dlen, 0);
+	int dlen = _6502Disass(a->pc, op, buf, len);
+	return op->size = RZ_MAX(dlen, 0);
 }
 
 RzAsmPlugin rz_asm_plugin_6502 = {
 	.name = "6502",
 	.desc = "6502/NES/C64/Tamagotchi/T-1000 CPU",
 	.arch = "6502",
-	.bits = 8|16,
+	.bits = 8 | 16,
 	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.license = "LGPL3",
 	.disassemble = &disassemble,

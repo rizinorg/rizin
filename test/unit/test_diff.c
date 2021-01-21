@@ -2,7 +2,8 @@
 #include <rz_diff.h>
 #include "minunit.h"
 
-#define R(a,b,c,d) {(const ut8*)a, (const ut8*)b, (int)c, (int)d}
+#define R(a, b, c, d) \
+	{ (const ut8 *)a, (const ut8 *)b, (int)c, (int)d }
 static struct {
 	const ut8 *a;
 	const ut8 *b;
@@ -19,12 +20,12 @@ static struct {
 	R("foo", "foobar", 3, 3),
 	R("wallaby", "wallet", 5, 3),
 	R("identity", "identity", 0, 0),
-	{NULL,NULL,0,0}
+	{ NULL, NULL, 0, 0 }
 };
 
 bool test_rz_diff_buffers_distance(void) {
 	char msg[128];
-	RzDiff *diff = rz_diff_new ();
+	RzDiff *diff = rz_diff_new();
 	if (!diff) {
 		return false;
 	}
@@ -34,10 +35,10 @@ bool test_rz_diff_buffers_distance(void) {
 	// Levenshtein edit distance (deletion/insertion/substitution)
 	diff->type = '\0';
 	for (i = 0; tests[i].a; i++) {
-		size_t la = strlen ((const char *)tests[i].a), lb = strlen ((const char *)tests[i].b);
-		rz_diff_buffers_distance (diff, tests[i].a, la, tests[i].b, lb, &distance, NULL);
-		snprintf (msg, sizeof msg, "original %s/%s distance", tests[i].a, tests[i].b);
-		mu_assert_eq (distance, tests[i].dis_distance, msg);
+		size_t la = strlen((const char *)tests[i].a), lb = strlen((const char *)tests[i].b);
+		rz_diff_buffers_distance(diff, tests[i].a, la, tests[i].b, lb, &distance, NULL);
+		snprintf(msg, sizeof msg, "original %s/%s distance", tests[i].a, tests[i].b);
+		mu_assert_eq(distance, tests[i].dis_distance, msg);
 	}
 
 	// Broken rz_diff_buffers_distance_levenshtein, uncomment and see why it is incorrect
@@ -52,13 +53,13 @@ bool test_rz_diff_buffers_distance(void) {
 	// Eugene W. Myers' O(ND) diff algorithm, deletion/insertion edit distance
 	diff->type = 'm';
 	for (i = 0; tests[i].a; i++) {
-		size_t la = strlen ((const char *)tests[i].a), lb = strlen ((const char *)tests[i].b);
-		rz_diff_buffers_distance (diff, tests[i].a, la, tests[i].b, lb, &distance, NULL);
-		snprintf (msg, sizeof msg, "myers %s/%s distance", tests[i].a, tests[i].b);
-		mu_assert_eq (distance, tests[i].di_distance, msg);
+		size_t la = strlen((const char *)tests[i].a), lb = strlen((const char *)tests[i].b);
+		rz_diff_buffers_distance(diff, tests[i].a, la, tests[i].b, lb, &distance, NULL);
+		snprintf(msg, sizeof msg, "myers %s/%s distance", tests[i].a, tests[i].b);
+		mu_assert_eq(distance, tests[i].di_distance, msg);
 	}
 
-	rz_diff_free (diff);
+	rz_diff_free(diff);
 	mu_end;
 }
 
@@ -67,4 +68,4 @@ int all_tests() {
 	return tests_passed != tests_run;
 }
 
-mu_main (all_tests)
+mu_main(all_tests)

@@ -6,12 +6,12 @@
 #define OR1K_DISAS_H
 
 /** Default mask for opcode */
-#define INSN_OPCODE_MASK (0x3fULL * 0x4000000)
+#define INSN_OPCODE_MASK  (0x3fULL * 0x4000000)
 #define INSN_OPCODE_SHIFT 26
 
 /** Empty mask for unused operands */
 #define INSN_EMPTY_SHIFT 0
-#define INSN_EMPTY_MASK 0
+#define INSN_EMPTY_MASK  0
 
 /** Mask for N operand */
 #define INSN_N_MASK 0x3ffffff
@@ -169,7 +169,7 @@ static inline int is_type_descriptor_defined(insn_type_t type) {
 }
 
 static inline insn_type_t type_of_opcode(insn_t *descr, insn_extra_t *extra_descr) {
-	rz_return_val_if_fail (descr, INSN_END);
+	rz_return_val_if_fail(descr, INSN_END);
 
 	if (extra_descr == NULL) {
 		return descr->type;

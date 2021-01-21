@@ -13,16 +13,16 @@
 #define I386_SSE_NUM_REGS (I386_NUM_GREGS + I386_NUM_FREGS + I386_NUM_XREGS)
 
 #define I387_NUM_XMM_REGS 8
-#define I387_ST0_REGNUM I386_ST0_REGNUM
+#define I387_ST0_REGNUM   I386_ST0_REGNUM
 #define I387_FCTRL_REGNUM (I387_ST0_REGNUM + 8)
 #define I387_FSTAT_REGNUM (I387_FCTRL_REGNUM + 1)
-#define I387_FTAG_REGNUM (I387_FCTRL_REGNUM + 2)
+#define I387_FTAG_REGNUM  (I387_FCTRL_REGNUM + 2)
 #define I387_FISEG_REGNUM (I387_FCTRL_REGNUM + 3)
 #define I387_FIOFF_REGNUM (I387_FCTRL_REGNUM + 4)
 #define I387_FOSEG_REGNUM (I387_FCTRL_REGNUM + 5)
 #define I387_FOOFF_REGNUM (I387_FCTRL_REGNUM + 6)
-#define I387_FOP_REGNUM (I387_FCTRL_REGNUM + 7)
-#define I387_XMM0_REGNUM (I387_ST0_REGNUM + 16)
+#define I387_FOP_REGNUM   (I387_FCTRL_REGNUM + 7)
+#define I387_XMM0_REGNUM  (I387_ST0_REGNUM + 16)
 #define I387_MXCSR_REGNUM (I387_XMM0_REGNUM + I387_NUM_XMM_REGS)
 
 /* These correspond to the DSMSG_* versions in dsmsgs.h. */
@@ -35,52 +35,52 @@ enum {
 };
 
 enum i386_regnum {
-	I386_EAX_REGNUM,    /* %eax */
-	I386_ECX_REGNUM,    /* %ecx */
-	I386_EDX_REGNUM,    /* %edx */
-	I386_EBX_REGNUM,    /* %ebx */
-	I386_ESP_REGNUM,    /* %esp */
-	I386_EBP_REGNUM,    /* %ebp */
-	I386_ESI_REGNUM,    /* %esi */
-	I386_EDI_REGNUM,    /* %edi */
-	I386_EIP_REGNUM,    /* %eip */
+	I386_EAX_REGNUM, /* %eax */
+	I386_ECX_REGNUM, /* %ecx */
+	I386_EDX_REGNUM, /* %edx */
+	I386_EBX_REGNUM, /* %ebx */
+	I386_ESP_REGNUM, /* %esp */
+	I386_EBP_REGNUM, /* %ebp */
+	I386_ESI_REGNUM, /* %esi */
+	I386_EDI_REGNUM, /* %edi */
+	I386_EIP_REGNUM, /* %eip */
 	I386_EFLAGS_REGNUM, /* %eflags */
-	I386_CS_REGNUM,     /* %cs */
-	I386_SS_REGNUM,     /* %ss */
-	I386_DS_REGNUM,     /* %ds */
-	I386_ES_REGNUM,     /* %es */
-	I386_FS_REGNUM,     /* %fs */
-	I386_GS_REGNUM,     /* %gs */
-	I386_ST0_REGNUM     /* %st(0) */
+	I386_CS_REGNUM, /* %cs */
+	I386_SS_REGNUM, /* %ss */
+	I386_DS_REGNUM, /* %ds */
+	I386_ES_REGNUM, /* %es */
+	I386_FS_REGNUM, /* %fs */
+	I386_GS_REGNUM, /* %gs */
+	I386_ST0_REGNUM /* %st(0) */
 };
 
 static int i386nto_gregset_reg_offset[] = {
-	7 * 4,  /* %eax */
-	6 * 4,  /* %ecx */
-	5 * 4,  /* %edx */
-	4 * 4,  /* %ebx */
+	7 * 4, /* %eax */
+	6 * 4, /* %ecx */
+	5 * 4, /* %edx */
+	4 * 4, /* %ebx */
 	11 * 4, /* %esp */
-	2 * 4,  /* %epb */
-	1 * 4,  /* %esi */
-	0 * 4,  /* %edi */
-	8 * 4,  /* %eip */
+	2 * 4, /* %epb */
+	1 * 4, /* %esi */
+	0 * 4, /* %edi */
+	8 * 4, /* %eip */
 	10 * 4, /* %eflags */
-	9 * 4,  /* %cs */
+	9 * 4, /* %cs */
 	12 * 4, /* %ss */
-	-1      /* filler */
+	-1 /* filler */
 };
 
 /* Pdebug returns errno values on Neutrino that do not correspond to right
    errno values on host side.  */
 
 #define NTO_ENAMETOOLONG 78
-#define NTO_ELIBACC 83
-#define NTO_ELIBBAD 84
-#define NTO_ELIBSCN 85
-#define NTO_ELIBMAX 86
-#define NTO_ELIBEXEC 87
-#define NTO_EILSEQ 88
-#define NTO_ENOSYS 89
+#define NTO_ELIBACC      83
+#define NTO_ELIBBAD      84
+#define NTO_ELIBSCN      85
+#define NTO_ELIBMAX      86
+#define NTO_ELIBEXEC     87
+#define NTO_EILSEQ       88
+#define NTO_ENOSYS       89
 
 #if defined(__linux__) || defined(__WINDOWS__) || defined(__APPLE__) || defined(__CYGWIN__) || defined(MINGW32) || defined(__NetBSD__)
 
@@ -89,32 +89,32 @@ struct errnomap_t {
 	int other;
 };
 
-int errnoconvert (int x) {
+int errnoconvert(int x) {
 	struct errnomap_t errnomap[] = {
 #if defined(__linux__)
-		{NTO_ENAMETOOLONG, ENAMETOOLONG},
-		{NTO_ELIBACC, ELIBACC},
-		{NTO_ELIBBAD, ELIBBAD},
-		{NTO_ELIBSCN, ELIBSCN},
-		{NTO_ELIBMAX, ELIBMAX},
-		{NTO_ELIBEXEC, ELIBEXEC},
-		{NTO_EILSEQ, EILSEQ},
-		{NTO_ENOSYS, ENOSYS}
+		{ NTO_ENAMETOOLONG, ENAMETOOLONG },
+		{ NTO_ELIBACC, ELIBACC },
+		{ NTO_ELIBBAD, ELIBBAD },
+		{ NTO_ELIBSCN, ELIBSCN },
+		{ NTO_ELIBMAX, ELIBMAX },
+		{ NTO_ELIBEXEC, ELIBEXEC },
+		{ NTO_EILSEQ, EILSEQ },
+		{ NTO_ENOSYS, ENOSYS }
 #elif defined(__CYGWIN__)
-		{NTO_ENAMETOOLONG, ENAMETOOLONG},
-		{NTO_ENOSYS, ENOSYS}
+		{ NTO_ENAMETOOLONG, ENAMETOOLONG },
+		{ NTO_ENOSYS, ENOSYS }
 #elif defined(__MINGW32__) || defined(MINGW32) || defined(__NetBSD__)
 		/* The closest mappings from mingw's errno.h.  */
-		{NTO_ENAMETOOLONG, ENAMETOOLONG},
-		{NTO_ELIBACC, ESRCH},
-		{NTO_ELIBBAD, ESRCH},
-		{NTO_ELIBSCN, ENOEXEC},
-		{NTO_ELIBMAX, EPERM},
-		{NTO_ELIBEXEC, ENOEXEC},
-		{NTO_EILSEQ, EILSEQ},
-		{NTO_ENOSYS, ENOSYS}
+		{ NTO_ENAMETOOLONG, ENAMETOOLONG },
+		{ NTO_ELIBACC, ESRCH },
+		{ NTO_ELIBBAD, ESRCH },
+		{ NTO_ELIBSCN, ENOEXEC },
+		{ NTO_ELIBMAX, EPERM },
+		{ NTO_ELIBEXEC, ENOEXEC },
+		{ NTO_EILSEQ, EILSEQ },
+		{ NTO_ENOSYS, ENOSYS }
 #else
-		{0}
+		{ 0 }
 #endif
 	};
 	int i;
@@ -126,20 +126,20 @@ int errnoconvert (int x) {
 }
 
 #else
-int errnoconvert (int x) {
+int errnoconvert(int x) {
 	return x;
 }
 #endif /* __QNXNTO__ */
 
 LONGEST
-extract_signed_integer (const ut8 *addr, int len, int be) {
+extract_signed_integer(const ut8 *addr, int len, int be) {
 	LONGEST retval;
 	const ut8 *p;
 	const ut8 *startaddr = addr;
 	const ut8 *endaddr = startaddr + len;
 
 	if (len > (int)sizeof(LONGEST))
-		eprintf (
+		eprintf(
 			"This operation is not available on integers of more than %d byte(s)\n",
 			(int)sizeof(LONGEST));
 
@@ -162,14 +162,14 @@ extract_signed_integer (const ut8 *addr, int len, int be) {
 }
 
 ULONGEST
-extract_unsigned_integer (const ut8 *addr, int len, int be) {
+extract_unsigned_integer(const ut8 *addr, int len, int be) {
 	ULONGEST retval;
 	const ut8 *p;
 	const ut8 *startaddr = addr;
 	const ut8 *endaddr = startaddr + len;
 
 	if (len > (int)sizeof(LONGEST))
-		eprintf (
+		eprintf(
 			"This operation is not available on integers of more than %d byte(s)\n",
 			(int)sizeof(LONGEST));
 
@@ -186,7 +186,7 @@ extract_unsigned_integer (const ut8 *addr, int len, int be) {
 	return retval;
 }
 
-int i386nto_regset_id (int regno) {
+int i386nto_regset_id(int regno) {
 	if (regno == -1)
 		return NTO_REG_END;
 	if (regno < I386_NUM_GREGS)
@@ -199,20 +199,20 @@ int i386nto_regset_id (int regno) {
 	return -1;
 }
 
-int i386nto_reg_offset (int regnum) {
-	if (regnum >= 0 && regnum < ARRAY_SIZE (i386nto_gregset_reg_offset))
+int i386nto_reg_offset(int regnum) {
+	if (regnum >= 0 && regnum < ARRAY_SIZE(i386nto_gregset_reg_offset))
 		return i386nto_gregset_reg_offset[regnum];
 
 	return -1;
 }
 
-int i386nto_register_area (int regno, int regset, ut32 *off) {
+int i386nto_register_area(int regno, int regset, ut32 *off) {
 	*off = 0;
 	if (regset == NTO_REG_GENERAL) {
 		if (regno == -1)
 			return NUM_GPREGS * 4;
 
-		*off = i386nto_reg_offset (regno);
+		*off = i386nto_reg_offset(regno);
 		if (*off == -1)
 			return 0;
 		return 4;
@@ -296,7 +296,7 @@ registers.  */
 	return -1;
 }
 
-ptid_t ptid_build (st32 pid, st64 tid) {
+ptid_t ptid_build(st32 pid, st64 tid) {
 	ptid_t ptid;
 	ptid.pid = pid;
 	ptid.tid = tid;
@@ -304,6 +304,6 @@ ptid_t ptid_build (st32 pid, st64 tid) {
 	return ptid;
 }
 
-int ptid_equal (ptid_t ptid1, ptid_t ptid2) {
+int ptid_equal(ptid_t ptid1, ptid_t ptid2) {
 	return ptid1.pid == ptid2.pid && ptid1.tid == ptid2.tid;
 }

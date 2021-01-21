@@ -19,7 +19,7 @@ static bool the_end(void *p) {
 #endif
 #endif
 	if (cd) {
-		cs_close (&cd);
+		cs_close(&cd);
 		cd = 0;
 	}
 	return true;
@@ -36,11 +36,11 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	int mode, ret;
 	ut64 off = a->pc;
 
-	mode =  (a->bits == 64)? CS_MODE_64:
-		(a->bits == 32)? CS_MODE_32:
-		(a->bits == 16)? CS_MODE_16: 0;
+	mode = (a->bits == 64) ? CS_MODE_64 : (a->bits == 32) ? CS_MODE_32
+		: (a->bits == 16)                             ? CS_MODE_16
+							      : 0;
 	if (cd && mode != omode) {
-		cs_close (&cd);
+		cs_close(&cd);
 		cd = 0;
 	}
 	if (op) {
@@ -48,29 +48,29 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 	omode = mode;
 	if (cd == 0) {
-		ret = cs_open (CS_ARCH_X86, mode, &cd);
+		ret = cs_open(CS_ARCH_X86, mode, &cd);
 		if (ret) {
 			return 0;
 		}
 	}
 	if (a->features && *a->features) {
-		cs_option (cd, CS_OPT_DETAIL, CS_OPT_ON);
+		cs_option(cd, CS_OPT_DETAIL, CS_OPT_ON);
 	} else {
-		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
+		cs_option(cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
 	// always unsigned immediates (kernel addresses)
 	// maybe rizin should have an option for this too?
 #if CS_API_MAJOR >= 4
-	cs_option (cd, CS_OPT_UNSIGNED, CS_OPT_ON);
+	cs_option(cd, CS_OPT_UNSIGNED, CS_OPT_ON);
 #endif
 	if (a->syntax == RZ_ASM_SYNTAX_MASM) {
 #if CS_API_MAJOR >= 4
-		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_MASM);
+		cs_option(cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_MASM);
 #endif
 	} else if (a->syntax == RZ_ASM_SYNTAX_ATT) {
-		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
+		cs_option(cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_ATT);
 	} else {
-		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
+		cs_option(cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
 	}
 	if (!op) {
 		return true;
@@ -81,48 +81,48 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	{
 		size_t size = len;
 		if (!insn || cd < 1) {
-			insn = cs_malloc (cd);
+			insn = cs_malloc(cd);
 		}
 		if (!insn) {
-			cs_free (insn, n);
+			cs_free(insn, n);
 			return 0;
 		}
-		memset (insn, 0, insn->size);
+		memset(insn, 0, insn->size);
 		insn->size = 1;
-		n = cs_disasm_iter (cd, (const uint8_t**)&buf, &size, (uint64_t*)&off, insn);
+		n = cs_disasm_iter(cd, (const uint8_t **)&buf, &size, (uint64_t *)&off, insn);
 	}
 #else
-	n = cs_disasm (cd, (const ut8*)buf, len, off, 1, &insn);
+	n = cs_disasm(cd, (const ut8 *)buf, len, off, 1, &insn);
 #endif
 	if (op) {
 		op->size = 0;
 	}
 	if (a->features && *a->features) {
-		if (!check_features (a, insn)) {
+		if (!check_features(a, insn)) {
 			op->size = insn->size;
-			rz_asm_op_set_asm (op, "illegal");
+			rz_asm_op_set_asm(op, "illegal");
 		}
 	}
 	if (op->size == 0 && n > 0 && insn->size > 0) {
 		char *ptrstr;
 		op->size = insn->size;
-		char *buf_asm = sdb_fmt ("%s%s%s",
-				insn->mnemonic, insn->op_str[0]?" ":"",
-				insn->op_str);
-		ptrstr = strstr (buf_asm, "ptr ");
+		char *buf_asm = sdb_fmt("%s%s%s",
+			insn->mnemonic, insn->op_str[0] ? " " : "",
+			insn->op_str);
+		ptrstr = strstr(buf_asm, "ptr ");
 		if (ptrstr) {
-			memmove (ptrstr, ptrstr + 4, strlen (ptrstr + 4) + 1);
+			memmove(ptrstr, ptrstr + 4, strlen(ptrstr + 4) + 1);
 		}
-		rz_asm_op_set_asm (op, buf_asm);
+		rz_asm_op_set_asm(op, buf_asm);
 	} else {
-		decompile_vm (a, op, buf, len);
+		decompile_vm(a, op, buf, len);
 	}
 	if (a->syntax == RZ_ASM_SYNTAX_JZ) {
-		char *buf_asm = rz_strbuf_get (&op->buf_asm);
-		if (!strncmp (buf_asm, "je ", 3)) {
-			memcpy (buf_asm, "jz", 2);
-		} else if (!strncmp (buf_asm, "jne ", 4)) {
-			memcpy (buf_asm, "jnz", 3);
+		char *buf_asm = rz_strbuf_get(&op->buf_asm);
+		if (!strncmp(buf_asm, "je ", 3)) {
+			memcpy(buf_asm, "jz", 2);
+		} else if (!strncmp(buf_asm, "jne ", 4)) {
+			memcpy(buf_asm, "jnz", 3);
 		}
 	}
 #if 0
@@ -149,7 +149,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	/* do nothing because it should be allocated once and freed in the_end */
 #else
 	if (insn) {
-		cs_free (insn, n);
+		cs_free(insn, n);
 	}
 #endif
 	return op->size;
@@ -160,14 +160,14 @@ RzAsmPlugin rz_asm_plugin_x86_cs = {
 	.desc = "Capstone X86 disassembler",
 	.license = "BSD",
 	.arch = "x86",
-	.bits = 16|32|64,
+	.bits = 16 | 32 | 64,
 	.endian = RZ_SYS_ENDIAN_LITTLE,
 	.fini = the_end,
 	.mnemonics = mnemonics,
 	.disassemble = &disassemble,
 	.features = "vm,3dnow,aes,adx,avx,avx2,avx512,bmi,bmi2,cmov,"
-		"f16c,fma,fma4,fsgsbase,hle,mmx,rtm,sha,sse1,sse2,"
-		"sse3,sse41,sse42,sse4a,ssse3,pclmul,xop"
+		    "f16c,fma,fma4,fsgsbase,hle,mmx,rtm,sha,sse1,sse2,"
+		    "sse3,sse41,sse42,sse4a,ssse3,pclmul,xop"
 };
 
 static int check_features(RzAsm *a, cs_insn *insn) {
@@ -187,11 +187,11 @@ static int check_features(RzAsm *a, cs_insn *insn) {
 		if (id == X86_GRP_MODE64) {
 			continue;
 		}
-		name = cs_group_name (cd, id);
+		name = cs_group_name(cd, id);
 		if (!name) {
 			return 1;
 		}
-		if (!strstr (a->features, name)) {
+		if (!strstr(a->features, name)) {
 			return 0;
 		}
 	}
@@ -200,7 +200,7 @@ static int check_features(RzAsm *a, cs_insn *insn) {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct *rizin_plugin_function(void) {
-	RzLibStruct *rp = RZ_NEW0 (RzLibStruct);
+	RzLibStruct *rp = RZ_NEW0(RzLibStruct);
 	if (rp) {
 		rp->type = RZ_LIB_TYPE_ASM;
 		rp->data = &rz_asm_plugin_x86_cs;

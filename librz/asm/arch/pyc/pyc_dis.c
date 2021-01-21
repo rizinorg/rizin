@@ -32,7 +32,7 @@ int rz_pyc_disasm(RzAsmOp *opstruct, const ut8 *code, RzList *cobjs, RzList *int
 		ut8 op = code[i];
 		i++;
 		char *name = ops->opcodes[op].op_name;
-		rz_strbuf_set (&opstruct->buf_asm, name);
+		rz_strbuf_set(&opstruct->buf_asm, name);
 		if (!name) {
 			return 0;
 		}
@@ -52,10 +52,10 @@ int rz_pyc_disasm(RzAsmOp *opstruct, const ut8 *code, RzList *cobjs, RzList *int
 					extended_arg = oparg << 8;
 				}
 			}
-			const char *arg = parse_arg (&ops->opcodes[op], oparg, names, consts, varnames, interned_table, freevars, cellvars, ops->opcode_arg_fmt);
+			const char *arg = parse_arg(&ops->opcodes[op], oparg, names, consts, varnames, interned_table, freevars, cellvars, ops->opcode_arg_fmt);
 			if (arg != NULL) {
-				rz_strbuf_appendf (&opstruct->buf_asm, "%20s", arg);
-				free ((char *)arg);
+				rz_strbuf_appendf(&opstruct->buf_asm, "%20s", arg);
+				free((char *)arg);
 			}
 		} else if (ops->bits == 8) {
 			i += 1;
@@ -77,12 +77,12 @@ static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RzList *names, R
 
 	// version-specific formatter for certain opcodes
 	rz_list_foreach (opcode_arg_fmt, i, fmt)
-		if (!strcmp (fmt->op_name, op->op_name)) {
-			return fmt->formatter (oparg);
+		if (!strcmp(fmt->op_name, op->op_name)) {
+			return fmt->formatter(oparg);
 		}
 
 	if (op->type & HASCONST) {
-		t = (pyc_object *)rz_list_get_n (consts, oparg);
+		t = (pyc_object *)rz_list_get_n(consts, oparg);
 		if (t == NULL) {
 			return NULL;
 		}
@@ -90,68 +90,68 @@ static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RzList *names, R
 		case TYPE_CODE_v0:
 		case TYPE_CODE_v1:
 			tmp_cobj = t->data;
-			arg = rz_str_newf ("CodeObject(%s) from %s", (char *)tmp_cobj->name->data, (char *)tmp_cobj->filename->data);
+			arg = rz_str_newf("CodeObject(%s) from %s", (char *)tmp_cobj->name->data, (char *)tmp_cobj->filename->data);
 			break;
 		case TYPE_TUPLE:
 		case TYPE_SET:
 		case TYPE_FROZENSET:
 		case TYPE_LIST:
 		case TYPE_SMALL_TUPLE:
-			arg = generic_array_obj_to_string (t->data);
+			arg = generic_array_obj_to_string(t->data);
 			break;
 		case TYPE_STRING:
 		case TYPE_INTERNED:
 		case TYPE_STRINGREF:
-			arg = rz_str_newf ("'%s'", (char *)t->data);
+			arg = rz_str_newf("'%s'", (char *)t->data);
 			break;
 		default:
-			arg = rz_str_new (t->data);
+			arg = rz_str_new(t->data);
 		}
 	}
 	if (op->type & HASNAME) {
-		t = (pyc_object *)rz_list_get_n (names, oparg);
+		t = (pyc_object *)rz_list_get_n(names, oparg);
 		if (t == NULL) {
 			return NULL;
 		}
-		arg = rz_str_new (t->data);
+		arg = rz_str_new(t->data);
 	}
 	if ((op->type & HASJREL) || (op->type & HASJABS)) {
-		arg = rz_str_newf ("%u", oparg);
+		arg = rz_str_newf("%u", oparg);
 	}
 	if (op->type & HASLOCAL) {
-		t = (pyc_object *)rz_list_get_n (varnames, oparg);
+		t = (pyc_object *)rz_list_get_n(varnames, oparg);
 		if (!t)
 			return NULL;
-		arg = rz_str_new (t->data);
+		arg = rz_str_new(t->data);
 	}
 	if (op->type & HASCOMPARE) {
-		arg = rz_str_new (cmp_op[oparg]);
+		arg = rz_str_new(cmp_op[oparg]);
 	}
 	if (op->type & HASFREE) {
 		if (!cellvars || !freevars) {
-			arg = rz_str_newf ("%u", oparg);
+			arg = rz_str_newf("%u", oparg);
 			return arg;
 		}
 
-		if (oparg < rz_list_length (cellvars)) {
-			t = (pyc_object *)rz_list_get_n (cellvars, oparg);
-		} else if ((oparg - rz_list_length (cellvars)) < rz_list_length (freevars)) {
-			t = (pyc_object *)rz_list_get_n (freevars, oparg);
+		if (oparg < rz_list_length(cellvars)) {
+			t = (pyc_object *)rz_list_get_n(cellvars, oparg);
+		} else if ((oparg - rz_list_length(cellvars)) < rz_list_length(freevars)) {
+			t = (pyc_object *)rz_list_get_n(freevars, oparg);
 		} else {
-			arg = rz_str_newf ("%u", oparg);
+			arg = rz_str_newf("%u", oparg);
 			return arg;
 		}
 		if (!t) {
 			return NULL;
 		}
 
-		arg = rz_str_new (t->data);
+		arg = rz_str_new(t->data);
 	}
 	if (op->type & HASNARGS) {
-		arg = rz_str_newf ("%u", oparg);
+		arg = rz_str_newf("%u", oparg);
 	}
 	if (op->type & HASVARGS) {
-		arg = rz_str_newf ("%u", oparg);
+		arg = rz_str_newf("%u", oparg);
 	}
 
 	return arg;
@@ -161,19 +161,19 @@ static char *generic_array_obj_to_string(RzList *l) {
 	RzListIter *iter = NULL;
 	pyc_object *e = NULL;
 
-	RzStrBuf *rbuf = rz_strbuf_new (NULL);
+	RzStrBuf *rbuf = rz_strbuf_new(NULL);
 
 	rz_list_foreach (l, iter, e) {
-		rz_strbuf_append (rbuf, e->data);
-		rz_strbuf_append (rbuf, ",");
+		rz_strbuf_append(rbuf, e->data);
+		rz_strbuf_append(rbuf, ",");
 	}
 
-	char *buf = rz_strbuf_get (rbuf);
+	char *buf = rz_strbuf_get(rbuf);
 
 	/* remove last , */
-	buf[strlen (buf) - 1] = '\0';
-	char *r = rz_str_newf ("(%s)", buf);
+	buf[strlen(buf) - 1] = '\0';
+	char *r = rz_str_newf("(%s)", buf);
 
-	rz_strbuf_free (rbuf);
+	rz_strbuf_free(rbuf);
 	return r;
 }

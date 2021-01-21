@@ -71,22 +71,22 @@ const ut64 cleanup_masks[] = {
 };
 
 static void pcache_kv_free(HtUPKv *kv) {
-	free (kv->value);
+	free(kv->value);
 }
 
 RZ_API bool rz_io_desc_cache_init(RzIODesc *desc) {
 	if (!desc || desc->cache) {
 		return false;
 	}
-	return (desc->cache = ht_up_new (NULL, pcache_kv_free, NULL)) ? true : false;
+	return (desc->cache = ht_up_new(NULL, pcache_kv_free, NULL)) ? true : false;
 }
 
 RZ_API int rz_io_desc_cache_write(RzIODesc *desc, ut64 paddr, const ut8 *buf, int len) {
 	RzIODescCache *cache;
-	ut64 caddr, desc_sz = rz_io_desc_size (desc);
+	ut64 caddr, desc_sz = rz_io_desc_size(desc);
 	int cbaddr, written = 0;
 	if ((len < 1) || !desc || (desc_sz <= paddr) ||
-	    !desc->io || (!desc->cache && !rz_io_desc_cache_init (desc))) {
+		!desc->io || (!desc->cache && !rz_io_desc_cache_init(desc))) {
 		return 0;
 	}
 	if (len > desc_sz) {
@@ -99,14 +99,14 @@ RZ_API int rz_io_desc_cache_write(RzIODesc *desc, ut64 paddr, const ut8 *buf, in
 	cbaddr = paddr % RZ_IO_DESC_CACHE_SIZE;
 	while (written < len) {
 		//get an existing desc-cache, if it exists
-		if (!(cache = (RzIODescCache *)ht_up_find (desc->cache, caddr, NULL))) {
+		if (!(cache = (RzIODescCache *)ht_up_find(desc->cache, caddr, NULL))) {
 			//create new desc-cache
-			cache = RZ_NEW0 (RzIODescCache);
+			cache = RZ_NEW0(RzIODescCache);
 			if (!cache) {
 				return 0;
 			}
 			//feed ht with the new desc-cache
-			ht_up_insert (desc->cache, caddr, cache);
+			ht_up_insert(desc->cache, caddr, cache);
 		}
 		//check if the remaining data fits into the cache
 		if ((len - written) > (RZ_IO_DESC_CACHE_SIZE - cbaddr)) {
@@ -133,14 +133,14 @@ RZ_API int rz_io_desc_cache_write(RzIODesc *desc, ut64 paddr, const ut8 *buf, in
 		cbaddr = 0;
 	}
 	RzEventIOWrite iow = { paddr, buf, len };
-	rz_event_send (desc->io->event, RZ_EVENT_IO_WRITE, &iow);
+	rz_event_send(desc->io->event, RZ_EVENT_IO_WRITE, &iow);
 	return written;
 }
 
 RZ_API int rz_io_desc_cache_read(RzIODesc *desc, ut64 paddr, ut8 *buf, int len) {
 	RzIODescCache *cache;
 	ut8 *ptr = buf;
-	ut64 caddr, desc_sz = rz_io_desc_size (desc);
+	ut64 caddr, desc_sz = rz_io_desc_size(desc);
 	int cbaddr, amount = 0;
 	if ((len < 1) || !desc || (desc_sz <= paddr) || !desc->io || !desc->cache) {
 		return 0;
@@ -155,7 +155,7 @@ RZ_API int rz_io_desc_cache_read(RzIODesc *desc, ut64 paddr, ut8 *buf, int len) 
 	cbaddr = paddr % RZ_IO_DESC_CACHE_SIZE;
 	while (amount < len) {
 		// get an existing desc-cache, if it exists
-		if (!(cache = (RzIODescCache *)ht_up_find (desc->cache, caddr, NULL))) {
+		if (!(cache = (RzIODescCache *)ht_up_find(desc->cache, caddr, NULL))) {
 			amount += (RZ_IO_DESC_CACHE_SIZE - cbaddr);
 			ptr += (RZ_IO_DESC_CACHE_SIZE - cbaddr);
 			goto beach;
@@ -178,7 +178,7 @@ RZ_API int rz_io_desc_cache_read(RzIODesc *desc, ut64 paddr, ut8 *buf, int len) 
 				cbaddr++;
 			} while (len > amount);
 		}
-beach:
+	beach:
 		caddr++;
 		cbaddr = 0;
 	}
@@ -186,12 +186,12 @@ beach:
 }
 
 static void __riocache_free(void *user) {
-	RzIOCache *cache = (RzIOCache *) user;
+	RzIOCache *cache = (RzIOCache *)user;
 	if (cache) {
-		free (cache->data);
-		free (cache->odata);
+		free(cache->data);
+		free(cache->odata);
 	}
-	free (cache);
+	free(cache);
 }
 
 static bool __desc_cache_list_cb(void *user, const ut64 k, const void *v) {
@@ -207,13 +207,13 @@ static bool __desc_cache_list_cb(void *user, const ut64 k, const void *v) {
 	for (i = byteaddr = 0; byteaddr < RZ_IO_DESC_CACHE_SIZE; byteaddr++) {
 		if (dcache->cached & (0x1LL << byteaddr)) {
 			if (!cache) {
-				cache = RZ_NEW0 (RzIOCache);
+				cache = RZ_NEW0(RzIOCache);
 				if (!cache) {
 					return false;
 				}
-				cache->data = malloc (RZ_IO_DESC_CACHE_SIZE - byteaddr);
+				cache->data = malloc(RZ_IO_DESC_CACHE_SIZE - byteaddr);
 				if (!cache->data) {
-					free (cache);
+					free(cache);
 					return false;
 				}
 				cache->itv.addr = blockaddr + byteaddr;
@@ -221,15 +221,15 @@ static bool __desc_cache_list_cb(void *user, const ut64 k, const void *v) {
 			cache->data[i] = dcache->cdata[byteaddr];
 			i++;
 		} else if (cache) {
-			ut8 *data = realloc (cache->data, i);
+			ut8 *data = realloc(cache->data, i);
 			if (!data) {
-				__riocache_free ((void *) cache);
+				__riocache_free((void *)cache);
 				return false;
 			}
 			cache->data = data;
 			cache->itv.size = i;
 			i = 0;
-			rz_list_push (writes, cache);
+			rz_list_push(writes, cache);
 			cache = NULL;
 		}
 	}
@@ -239,7 +239,7 @@ static bool __desc_cache_list_cb(void *user, const ut64 k, const void *v) {
 		cache->to = blockaddr + RZ_IO_DESC_CACHE_SIZE;
 #endif
 		cache->itv.size = i;
-		rz_list_push (writes, cache);
+		rz_list_push(writes, cache);
 	}
 	return true;
 }
@@ -248,11 +248,11 @@ RZ_API RzList *rz_io_desc_cache_list(RzIODesc *desc) {
 	if (!desc || !desc->io || !desc->io->desc || !desc->io->p_cache || !desc->cache) {
 		return NULL;
 	}
-	RzList *writes = rz_list_newf ((RzListFree)__riocache_free);
+	RzList *writes = rz_list_newf((RzListFree)__riocache_free);
 	if (!writes) {
 		return NULL;
 	}
-	ht_up_foreach (desc->cache, __desc_cache_list_cb, writes);
+	ht_up_foreach(desc->cache, __desc_cache_list_cb, writes);
 	RzIODesc *current = desc->io->desc;
 	desc->io->desc = desc;
 	desc->io->p_cache = false;
@@ -260,13 +260,13 @@ RZ_API RzList *rz_io_desc_cache_list(RzIODesc *desc) {
 	RzIOCache *c;
 	RzListIter *iter;
 	rz_list_foreach (writes, iter, c) {
-		const ut64 itvSize = rz_itv_size (c->itv);
-		c->odata = calloc (1, itvSize);
+		const ut64 itvSize = rz_itv_size(c->itv);
+		c->odata = calloc(1, itvSize);
 		if (!c->odata) {
-			rz_list_free (writes);
+			rz_list_free(writes);
 			return NULL;
 		}
-		rz_io_pread_at (desc->io, rz_itv_begin (c->itv), c->odata, itvSize);
+		rz_io_pread_at(desc->io, rz_itv_begin(c->itv), c->odata, itvSize);
 	}
 	desc->io->p_cache = true;
 	desc->io->desc = current;
@@ -276,7 +276,7 @@ RZ_API RzList *rz_io_desc_cache_list(RzIODesc *desc) {
 static bool __desc_cache_commit_cb(void *user, const ut64 k, const void *v) {
 	RzIODesc *desc = (RzIODesc *)user;
 	int byteaddr, i;
-	ut8 buf[RZ_IO_DESC_CACHE_SIZE] = {0};
+	ut8 buf[RZ_IO_DESC_CACHE_SIZE] = { 0 };
 	if (!desc || !desc->io) {
 		return false;
 	}
@@ -287,12 +287,12 @@ static bool __desc_cache_commit_cb(void *user, const ut64 k, const void *v) {
 			buf[i] = dcache->cdata[byteaddr];
 			i++;
 		} else if (i > 0) {
-			rz_io_pwrite_at (desc->io, blockaddr + byteaddr - i, buf, i);
+			rz_io_pwrite_at(desc->io, blockaddr + byteaddr - i, buf, i);
 			i = 0;
 		}
 	}
 	if (i > 0) {
-		rz_io_pwrite_at (desc->io, blockaddr + RZ_IO_DESC_CACHE_SIZE - i, buf, i);
+		rz_io_pwrite_at(desc->io, blockaddr + RZ_IO_DESC_CACHE_SIZE - i, buf, i);
 	}
 	return true;
 }
@@ -308,8 +308,8 @@ RZ_API bool rz_io_desc_cache_commit(RzIODesc *desc) {
 	current = desc->io->desc;
 	desc->io->desc = desc;
 	desc->io->p_cache = false;
-	ht_up_foreach (desc->cache, __desc_cache_commit_cb, desc);
-	ht_up_free (desc->cache);
+	ht_up_foreach(desc->cache, __desc_cache_commit_cb, desc);
+	ht_up_free(desc->cache);
 	desc->cache = NULL;
 	desc->io->p_cache = true;
 	desc->io->desc = current;
@@ -325,9 +325,9 @@ static bool __desc_cache_cleanup_cb(void *user, const ut64 k, const void *v) {
 	}
 	RzIODescCache *cache = (RzIODescCache *)v;
 	blockaddr = RZ_IO_DESC_CACHE_SIZE * k;
-	size = rz_io_desc_size (desc);
+	size = rz_io_desc_size(desc);
 	if (size <= blockaddr) {
-		ht_up_delete (desc->cache, k);
+		ht_up_delete(desc->cache, k);
 		return true;
 	}
 	if (size <= (blockaddr + RZ_IO_DESC_CACHE_SIZE - 1)) {
@@ -340,25 +340,25 @@ static bool __desc_cache_cleanup_cb(void *user, const ut64 k, const void *v) {
 
 RZ_API void rz_io_desc_cache_cleanup(RzIODesc *desc) {
 	if (desc && desc->cache) {
-		ht_up_foreach (desc->cache, __desc_cache_cleanup_cb, desc);
+		ht_up_foreach(desc->cache, __desc_cache_cleanup_cb, desc);
 	}
 }
 
-static bool __desc_fini_cb (void *user, void *data, ut32 id) {
+static bool __desc_fini_cb(void *user, void *data, ut32 id) {
 	RzIODesc *desc = (RzIODesc *)data;
 	if (desc->cache) {
-		ht_up_free (desc->cache);
+		ht_up_free(desc->cache);
 		desc->cache = NULL;
 	}
 	return true;
 }
 
 RZ_API void rz_io_desc_cache_fini(RzIODesc *desc) {
-	__desc_fini_cb (NULL, (void *) desc, 0);
+	__desc_fini_cb(NULL, (void *)desc, 0);
 }
 
 RZ_API void rz_io_desc_cache_fini_all(RzIO *io) {
 	if (io && io->files) {
-		rz_id_storage_foreach (io->files, __desc_fini_cb, NULL);
+		rz_id_storage_foreach(io->files, __desc_fini_cb, NULL);
 	}
 }

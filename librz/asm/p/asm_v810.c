@@ -16,9 +16,9 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (len < 2) {
 		return -1;
 	}
-	int ret = v810_decode_command (buf, len, &cmd);
+	int ret = v810_decode_command(buf, len, &cmd);
 	if (ret > 0) {
-		rz_asm_op_set_asm (op, sdb_fmt ("%s %s", cmd.instr, cmd.operands));
+		rz_asm_op_set_asm(op, sdb_fmt("%s %s", cmd.instr, cmd.operands));
 	}
 	return op->size = ret;
 }

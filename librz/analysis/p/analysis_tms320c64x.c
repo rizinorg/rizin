@@ -16,52 +16,51 @@
 #define CAPSTONE_HAS_TMS320C64X 0
 #endif
 
-
 #if CAPSTONE_HAS_TMS320C64X
 
 #define INSOP(n) insn->detail->tms320c64x.operands[n]
-#define INSCC insn->detail->tms320c64x.cc
+#define INSCC    insn->detail->tms320c64x.cc
 
 static void opex(RzStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
-	PJ *pj = pj_new ();
+	PJ *pj = pj_new();
 	if (!pj) {
 		return;
 	}
-	pj_o (pj);
-	pj_ka (pj, "operands");
+	pj_o(pj);
+	pj_ka(pj, "operands");
 	cs_tms320c64x *x = &insn->detail->tms320c64x;
 	for (i = 0; i < x->op_count; i++) {
 		cs_tms320c64x_op *op = x->operands + i;
-		pj_o (pj);
+		pj_o(pj);
 		switch (op->type) {
 		case TMS320C64X_OP_REG:
-			pj_ks (pj, "type", "reg");
-			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
+			pj_ks(pj, "type", "reg");
+			pj_ks(pj, "value", cs_reg_name(handle, op->reg));
 			break;
 		case TMS320C64X_OP_IMM:
-			pj_ks (pj, "type", "imm");
-			pj_ki (pj, "value", op->imm);
+			pj_ks(pj, "type", "imm");
+			pj_ki(pj, "value", op->imm);
 			break;
 		case TMS320C64X_OP_MEM:
-			pj_ks (pj, "type", "mem");
+			pj_ks(pj, "type", "mem");
 			if (op->mem.base != SPARC_REG_INVALID) {
-				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
+				pj_ks(pj, "base", cs_reg_name(handle, op->mem.base));
 			}
-			pj_kN (pj, "disp", (st64)op->mem.disp);
+			pj_kN(pj, "disp", (st64)op->mem.disp);
 			break;
 		default:
-			pj_ks (pj, "type", "invalid");
+			pj_ks(pj, "type", "invalid");
 			break;
 		}
-		pj_end (pj); /* o operand */
+		pj_end(pj); /* o operand */
 	}
-	pj_end (pj); /* a operands */
-	pj_end (pj);
+	pj_end(pj); /* a operands */
+	pj_end(pj);
 
-	rz_strbuf_init (buf);
-	rz_strbuf_append (buf, pj_string (pj));
-	pj_free (pj);
+	rz_strbuf_init(buf);
+	rz_strbuf_append(buf, pj_string(pj));
+	pj_free(pj);
 }
 
 static int tms320c64x_analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
@@ -71,24 +70,24 @@ static int tms320c64x_analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const u
 	int mode = 0, n, ret;
 
 	if (mode != omode) {
-		cs_close (&handle);
+		cs_close(&handle);
 		handle = 0;
 		omode = mode;
 	}
 	if (handle == 0) {
-		ret = cs_open (CS_ARCH_TMS320C64X, mode, &handle);
+		ret = cs_open(CS_ARCH_TMS320C64X, mode, &handle);
 		if (ret != CS_ERR_OK) {
 			return -1;
 		}
-		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
+		cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
 	// capstone-next
-	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
+	n = cs_disasm(handle, (const ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 	} else {
 		if (mask & RZ_ANALYSIS_OP_MASK_OPEX) {
-			opex (&op->opex, handle, insn);
+			opex(&op->opex, handle, insn);
 		}
 		op->size = insn->size;
 		op->id = insn->id;
@@ -108,7 +107,7 @@ static int tms320c64x_analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const u
 			break;
 		case TMS320C64X_INS_SWAP2:
 		case TMS320C64X_INS_SWAP4:
-		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
+			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 			break;
 		case TMS320C64X_INS_BNOP:
@@ -181,7 +180,7 @@ static int tms320c64x_analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const u
 			op->type = RZ_ANALYSIS_OP_TYPE_ADD;
 			break;
 		}
-		cs_free (insn, n);
+		cs_free(insn, n);
 	}
 	return op->size;
 }

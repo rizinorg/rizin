@@ -22,17 +22,17 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	}
 #endif
 	char cmd_opt[4096];
-	snprintf (cmd_opt, sizeof (cmd_opt), "%s %s",
+	snprintf(cmd_opt, sizeof(cmd_opt), "%s %s",
 		bits == 16 ? "-mthumb" : "",
 		a->big_endian ? "-EB" : "-EL");
-	return binutils_assemble (a, op, buf, as,
+	return binutils_assemble(a, op, buf, as,
 		bits == 64 ? ASSEMBLER64 : ASSEMBLER32,
 		bits <= 32 ? ".syntax unified\n" : "", cmd_opt);
 }
 
 RzAsmPlugin rz_asm_plugin_arm_as = {
 	.name = "arm.as",
-	.desc = "as ARM Assembler (use "ASSEMBLER32" and "ASSEMBLER64" environment)",
+	.desc = "as ARM Assembler (use " ASSEMBLER32 " and " ASSEMBLER64 " environment)",
 	.arch = "arm",
 	.author = "pancake",
 	.license = "LGPL3",

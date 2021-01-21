@@ -7,34 +7,34 @@ static csh cd = 0;
 #include "cs_mnemonics.c"
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	cs_insn* insn;
+	cs_insn *insn;
 	int n = -1, ret = -1;
 	int mode = CS_MODE_BIG_ENDIAN;
 	if (a->cpu && *a->cpu) {
-		if (!strcmp (a->cpu, "v9")) {
+		if (!strcmp(a->cpu, "v9")) {
 			mode |= CS_MODE_V9;
 		}
 	}
 	if (op) {
-		memset (op, 0, sizeof (RzAsmOp));
+		memset(op, 0, sizeof(RzAsmOp));
 		op->size = 4;
 	}
 	if (cd != 0) {
-		cs_close (&cd);
+		cs_close(&cd);
 	}
-	ret = cs_open (CS_ARCH_SPARC, mode, &cd);
+	ret = cs_open(CS_ARCH_SPARC, mode, &cd);
 	if (ret) {
 		goto fin;
 	}
-	cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
+	cs_option(cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	if (!op) {
 		return 0;
 	}
 	if (a->big_endian) {
-		n = cs_disasm (cd, buf, len, a->pc, 1, &insn);
+		n = cs_disasm(cd, buf, len, a->pc, 1, &insn);
 	}
 	if (n < 1) {
-		rz_asm_op_set_asm (op, "invalid");
+		rz_asm_op_set_asm(op, "invalid");
 		op->size = 4;
 		ret = -1;
 		goto beach;
@@ -45,16 +45,16 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		goto beach;
 	}
 	op->size = insn->size;
-	char *buf_asm = sdb_fmt ("%s%s%s",
-		insn->mnemonic, insn->op_str[0]? " ": "",
+	char *buf_asm = sdb_fmt("%s%s%s",
+		insn->mnemonic, insn->op_str[0] ? " " : "",
 		insn->op_str);
-	rz_str_replace_char (buf_asm, '%', 0);
-	rz_asm_op_set_asm (op, buf_asm);
+	rz_str_replace_char(buf_asm, '%', 0);
+	rz_asm_op_set_asm(op, buf_asm);
 	// TODO: remove the '$'<registername> in the string
-	cs_free (insn, n);
-	beach:
-	// cs_close (&cd);
-	fin:
+	cs_free(insn, n);
+beach:
+// cs_close (&cd);
+fin:
 	return ret;
 }
 
@@ -64,7 +64,7 @@ RzAsmPlugin rz_asm_plugin_sparc_cs = {
 	.license = "BSD",
 	.arch = "sparc",
 	.cpus = "v9",
-	.bits = 32|64,
+	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_BIG | RZ_SYS_ENDIAN_LITTLE,
 	.disassemble = &disassemble,
 	.mnemonics = mnemonics

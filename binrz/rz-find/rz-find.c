@@ -3,6 +3,5 @@
 #include <rz_main.h>
 
 int main(int argc, const char **argv) {
-	return rz_main_rz_find (argc, argv);
+	return rz_main_rz_find(argc, argv);
 }
-

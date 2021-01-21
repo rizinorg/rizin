@@ -17,14 +17,14 @@ typedef struct rz_pdb_t {
 	bool (*pdb_parse)(struct rz_pdb_t *pdb);
 	void (*finish_pdb_parse)(struct rz_pdb_t *pdb);
 	void (*print_types)(const struct rz_pdb_t *pdb, PJ *pj, int mode);
-//	FILE *fp;
+	//	FILE *fp;
 	PrintfCallback cb_printf;
 	struct RZ_PDB7_ROOT_STREAM *root_stream;
 	void *stream_map;
 	RzList *pdb_streams;
 	RzList *pdb_streams2;
 	RzBuffer *buf; // mmap of file
-//	int curr;
+	//	int curr;
 
 	void (*print_gvars)(struct rz_pdb_t *pdb, ut64 img_base, PJ *pj, int format);
 } RzPdb;

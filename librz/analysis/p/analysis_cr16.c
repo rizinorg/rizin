@@ -10,12 +10,11 @@
 #include <cr16_disas.h>
 
 static int cr16_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr,
-		const ut8 *buf, int len, RzAnalysisOpMask mask)
-{
+	const ut8 *buf, int len, RzAnalysisOpMask mask) {
 	int ret;
 	struct cr16_cmd cmd;
 
-	memset(&cmd, 0, sizeof (cmd));
+	memset(&cmd, 0, sizeof(cmd));
 
 	ret = op->size = cr16_decode_command(buf, &cmd, len);
 

@@ -4,7 +4,7 @@
 #include "../i/private.h"
 
 RZ_API char *rz_bin_demangle_objc(RzBinFile *bf, const char *sym) {
-	rz_return_val_if_fail ((!bf || (bf && bf->o && bf->o->classes)) && sym, NULL);
+	rz_return_val_if_fail((!bf || (bf && bf->o && bf->o->classes)) && sym, NULL);
 	char *ret = NULL;
 	char *clas = NULL;
 	char *name = NULL;
@@ -16,35 +16,35 @@ RZ_API char *rz_bin_demangle_objc(RzBinFile *bf, const char *sym) {
 		bf = NULL;
 	}
 	/* classes */
-	if (!strncmp (sym, "_OBJC_Class_", 12)) {
+	if (!strncmp(sym, "_OBJC_Class_", 12)) {
 		const char *className = sym + 12;
-		ret = rz_str_newf ("class %s", className);
+		ret = rz_str_newf("class %s", className);
 		if (bf) {
-			rz_bin_file_add_class (bf, className, NULL, RZ_BIN_CLASS_PUBLIC);
+			rz_bin_file_add_class(bf, className, NULL, RZ_BIN_CLASS_PUBLIC);
 		}
 		return ret;
 	}
-	if (!strncmp (sym, "_OBJC_CLASS_$_", 14)) {
+	if (!strncmp(sym, "_OBJC_CLASS_$_", 14)) {
 		const char *className = sym + 14;
-		ret = rz_str_newf ("class %s", className);
+		ret = rz_str_newf("class %s", className);
 		if (bf) {
-			rz_bin_file_add_class (bf, className, NULL, RZ_BIN_CLASS_PUBLIC);
+			rz_bin_file_add_class(bf, className, NULL, RZ_BIN_CLASS_PUBLIC);
 		}
 		return ret;
 	}
 	/* fields */
-	if (!strncmp (sym, "_OBJC_IVAR_$_", 13)) {
-		clas = strdup (sym + 13);
-		char *p = strchr (clas, '.');
+	if (!strncmp(sym, "_OBJC_IVAR_$_", 13)) {
+		clas = strdup(sym + 13);
+		char *p = strchr(clas, '.');
 		type = "field";
 		if (p) {
 			*p = 0;
-			name = strdup (p + 1);
+			name = strdup(p + 1);
 		} else {
 			name = NULL;
 		}
 		if (bf) {
-			rz_bin_file_add_field (bf, clas, name);
+			rz_bin_file_add_field(bf, clas, name);
 		}
 	}
 	/* methods */
@@ -55,21 +55,21 @@ RZ_API char *rz_bin_demangle_objc(RzBinFile *bf, const char *sym) {
 			type = "public";
 		}
 		if (type) {
-			free (clas);
-			clas = strdup (sym + 2);
-			name = strchr (clas, ' ');
+			free(clas);
+			clas = strdup(sym + 2);
+			name = strchr(clas, ' ');
 			if (name) {
 				*name++ = 0;
-				name = strdup (name);
-				if (!name){
-					free (clas);
+				name = strdup(name);
+				if (!name) {
+					free(clas);
 					return NULL;
 				}
 				for (i = 0; name[i]; i++) {
-					if (name[i]==']') {
+					if (name[i] == ']') {
 						name[i] = 0;
 					}
-					if (name[i]==':') {
+					if (name[i] == ':') {
 						nargs++;
 						name[i] = 0;
 					}
@@ -78,21 +78,21 @@ RZ_API char *rz_bin_demangle_objc(RzBinFile *bf, const char *sym) {
 		}
 	}
 	if (sym[0] == '_' && sym[1] && sym[2] == '_') { // gnu style
-		free (clas);
-		clas = strdup (sym + 3);
-		args = strstr (clas, "__");
+		free(clas);
+		clas = strdup(sym + 3);
+		args = strstr(clas, "__");
 		if (!args) {
-			free (clas);
+			free(clas);
 			if (name != clas) {
-				free (name);
+				free(name);
 			}
 			return NULL;
 		}
 		*args = 0;
-		free (name);
-		name = strdup (args + 2);
+		free(name);
+		name = strdup(args + 2);
 		if (!name) {
-			free (clas);
+			free(clas);
 			return NULL;
 		}
 		args = NULL;
@@ -109,32 +109,32 @@ RZ_API char *rz_bin_demangle_objc(RzBinFile *bf, const char *sym) {
 		}
 	}
 	if (type) {
-		if (!strcmp (type, "field")) {
-			ret = rz_str_newf ("field int %s::%s", clas, name);
+		if (!strcmp(type, "field")) {
+			ret = rz_str_newf("field int %s::%s", clas, name);
 		} else {
 			if (nargs) {
 				const char *arg = "int";
-				args = malloc (((strlen (arg) + 4) * nargs) + 1);
+				args = malloc(((strlen(arg) + 4) * nargs) + 1);
 				args[0] = 0;
-				for (i = 0;i < nargs; i++) {
-					strcat (args, arg);
+				for (i = 0; i < nargs; i++) {
+					strcat(args, arg);
 					if (i + 1 < nargs) {
-						strcat (args, ", ");
+						strcat(args, ", ");
 					}
 				}
 			} else {
-				args = strdup ("");
+				args = strdup("");
 			}
 			if (type && name && *name) {
-				ret = rz_str_newf ("%s int %s::%s(%s)", type, clas, name, args);
+				ret = rz_str_newf("%s int %s::%s(%s)", type, clas, name, args);
 				if (bf) {
-					rz_bin_file_add_method (bf, clas, name, nargs);
+					rz_bin_file_add_method(bf, clas, name, nargs);
 				}
 			}
 		}
 	}
-	free (clas);
-	free (args);
-	free (name);
+	free(clas);
+	free(args);
+	free(name);
 	return ret;
 }

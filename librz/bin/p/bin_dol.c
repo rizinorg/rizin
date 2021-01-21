@@ -23,71 +23,72 @@
 #define N_TEXT 7
 #define N_DATA 11
 
-RZ_PACKED (
-typedef struct {
-	ut32 text_paddr[N_TEXT];
-	ut32 data_paddr[N_DATA];
-	ut32 text_vaddr[N_TEXT];
-	ut32 data_vaddr[N_DATA];
-	ut32 text_size[N_TEXT];
-	ut32 data_size[N_DATA];
-	ut32 bss_addr;
-	ut32 bss_size;
-	ut32 entrypoint;
-	ut32 padding[10];
-	// 0x100 -- start of data section
-}) DolHeader;
+RZ_PACKED(
+	typedef struct {
+		ut32 text_paddr[N_TEXT];
+		ut32 data_paddr[N_DATA];
+		ut32 text_vaddr[N_TEXT];
+		ut32 data_vaddr[N_DATA];
+		ut32 text_size[N_TEXT];
+		ut32 data_size[N_DATA];
+		ut32 bss_addr;
+		ut32 bss_size;
+		ut32 entrypoint;
+		ut32 padding[10];
+		// 0x100 -- start of data section
+	})
+DolHeader;
 
 static bool check_buffer(RzBuffer *buf) {
 	ut8 tmp[6];
-	int r = rz_buf_read_at (buf, 0, tmp, sizeof (tmp));
-	bool one = r == sizeof (tmp) && !memcmp (tmp, "\x00\x00\x01\x00\x00\x00", sizeof (tmp));
+	int r = rz_buf_read_at(buf, 0, tmp, sizeof(tmp));
+	bool one = r == sizeof(tmp) && !memcmp(tmp, "\x00\x00\x01\x00\x00\x00", sizeof(tmp));
 	if (one) {
-		int r = rz_buf_read_at (buf, 6, tmp, sizeof (tmp));
+		int r = rz_buf_read_at(buf, 6, tmp, sizeof(tmp));
 		if (r != 6) {
 			return false;
 		}
-		return sizeof (tmp) && !memcmp (tmp, "\x00\x00\x00\x00\x00\x00", sizeof (tmp));
+		return sizeof(tmp) && !memcmp(tmp, "\x00\x00\x00\x00\x00\x00", sizeof(tmp));
 	}
 	return false;
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	if (rz_buf_size (buf) < sizeof (DolHeader)) {
+	if (rz_buf_size(buf) < sizeof(DolHeader)) {
 		return false;
 	}
-	DolHeader *dol = RZ_NEW0 (DolHeader);
+	DolHeader *dol = RZ_NEW0(DolHeader);
 	if (!dol) {
 		return false;
 	}
-	char *lowername = strdup (bf->file);
+	char *lowername = strdup(bf->file);
 	if (!lowername) {
 		goto dol_err;
 	}
-	rz_str_case (lowername, 0);
-	char *ext = strstr (lowername, ".dol");
+	rz_str_case(lowername, 0);
+	char *ext = strstr(lowername, ".dol");
 	if (!ext || ext[4] != 0) {
 		goto lowername_err;
 	}
-	free (lowername);
-	rz_buf_fread_at (bf->buf, 0, (void *) dol, "67I", 1);
+	free(lowername);
+	rz_buf_fread_at(bf->buf, 0, (void *)dol, "67I", 1);
 	*bin_obj = dol;
 	return true;
 
 lowername_err:
-	free (lowername);
+	free(lowername);
 dol_err:
-	free (dol);
+	free(dol);
 	return false;
 }
 
 static RzList *sections(RzBinFile *bf) {
-	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 	int i;
 	RzList *ret;
 	RzBinSection *s;
 	DolHeader *dol = bf->o->bin_obj;
-	if (!(ret = rz_list_new ())) {
+	if (!(ret = rz_list_new())) {
 		return NULL;
 	}
 
@@ -96,68 +97,68 @@ static RzList *sections(RzBinFile *bf) {
 		if (!dol->text_paddr[i] || !dol->text_vaddr[i]) {
 			continue;
 		}
-		s = RZ_NEW0 (RzBinSection);
-		s->name = rz_str_newf ("text_%d", i);
+		s = RZ_NEW0(RzBinSection);
+		s->name = rz_str_newf("text_%d", i);
 		s->paddr = dol->text_paddr[i];
 		s->vaddr = dol->text_vaddr[i];
 		s->size = dol->text_size[i];
 		s->vsize = s->size;
-		s->perm = rz_str_rwx ("r-x");
+		s->perm = rz_str_rwx("r-x");
 		s->add = true;
-		rz_list_append (ret, s);
+		rz_list_append(ret, s);
 	}
 	/* data sections */
 	for (i = 0; i < N_DATA; i++) {
 		if (!dol->data_paddr[i] || !dol->data_vaddr[i]) {
 			continue;
 		}
-		s = RZ_NEW0 (RzBinSection);
-		s->name = rz_str_newf ("data_%d", i);
+		s = RZ_NEW0(RzBinSection);
+		s->name = rz_str_newf("data_%d", i);
 		s->paddr = dol->data_paddr[i];
 		s->vaddr = dol->data_vaddr[i];
 		s->size = dol->data_size[i];
 		s->vsize = s->size;
-		s->perm = rz_str_rwx ("r--");
+		s->perm = rz_str_rwx("r--");
 		s->add = true;
-		rz_list_append (ret, s);
+		rz_list_append(ret, s);
 	}
 	/* bss section */
-	s = RZ_NEW0 (RzBinSection);
-	s->name = strdup ("bss");
+	s = RZ_NEW0(RzBinSection);
+	s->name = strdup("bss");
 	s->paddr = 0;
 	s->vaddr = dol->bss_addr;
 	s->size = dol->bss_size;
 	s->vsize = s->size;
-	s->perm = rz_str_rwx ("rw-");
+	s->perm = rz_str_rwx("rw-");
 	s->add = true;
-	rz_list_append (ret, s);
+	rz_list_append(ret, s);
 
 	return ret;
 }
 
 static RzList *entries(RzBinFile *bf) {
-	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
-	RzList *ret = rz_list_new ();
-	RzBinAddr *addr = RZ_NEW0 (RzBinAddr);
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+	RzList *ret = rz_list_new();
+	RzBinAddr *addr = RZ_NEW0(RzBinAddr);
 	DolHeader *dol = bf->o->bin_obj;
-	addr->vaddr = (ut64) dol->entrypoint;
+	addr->vaddr = (ut64)dol->entrypoint;
 	addr->paddr = addr->vaddr & 0xFFFF;
-	rz_list_append (ret, addr);
+	rz_list_append(ret, addr);
 	return ret;
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
-	rz_return_val_if_fail (bf && bf->buf, NULL);
-	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
+	rz_return_val_if_fail(bf && bf->buf, NULL);
+	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
-	ret->file = strdup (bf->file);
+	ret->file = strdup(bf->file);
 	ret->big_endian = true;
-	ret->type = strdup ("ROM");
-	ret->machine = strdup ("Nintendo Wii");
-	ret->os = strdup ("wii-ios");
-	ret->arch = strdup ("ppc");
+	ret->type = strdup("ROM");
+	ret->machine = strdup("Nintendo Wii");
+	ret->os = strdup("wii-ios");
+	ret->arch = strdup("ppc");
 	ret->has_va = true;
 	ret->bits = 32;
 

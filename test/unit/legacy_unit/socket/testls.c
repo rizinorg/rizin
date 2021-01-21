@@ -8,11 +8,11 @@ int main() {
 
 	sp = rz_socket_proc_open(args);
 
-	for(;;){
-		if (rz_socket_proc_ready(sp, 0,0) < 0)
+	for (;;) {
+		if (rz_socket_proc_ready(sp, 0, 0) < 0)
 			break;
 		ret = rz_socket_proc_gets(sp, buf, 128);
-		if (ret>0)
+		if (ret > 0)
 			printf("%d=\"%s\"\n", ret, buf);
 		else {
 			printf("%d=\n", ret);

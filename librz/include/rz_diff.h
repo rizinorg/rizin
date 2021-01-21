@@ -11,8 +11,8 @@ extern "C" {
 
 RZ_LIB_VERSION_HEADER(rz_diff);
 
-#define Color_INSERT Color_BGREEN
-#define Color_DELETE Color_BRED
+#define Color_INSERT   Color_BGREEN
+#define Color_DELETE   Color_BRED
 #define Color_BGINSERT "\x1b[48;5;22m"
 #define Color_BGDELETE "\x1b[48;5;52m"
 #define Color_HLINSERT Color_BGINSERT Color_INSERT

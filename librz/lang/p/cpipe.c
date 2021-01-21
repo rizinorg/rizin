@@ -11,20 +11,20 @@ static int lang_cpipe_file(RzLang *lang, const char *file) {
 	char *a, *cc, *p, name[512];
 	const char *libpath, *libname;
 
-	if (strlen (file) > (sizeof (name)-10)) {
+	if (strlen(file) > (sizeof(name) - 10)) {
 		return false;
 	}
-	if (!strstr (file, ".c")) {
-		sprintf (name, "%s.c", file);
+	if (!strstr(file, ".c")) {
+		sprintf(name, "%s.c", file);
 	} else {
-		strcpy (name, file);
+		strcpy(name, file);
 	}
-	if (!rz_file_exists (name)) {
-		eprintf ("file not found (%s)\n", name);
+	if (!rz_file_exists(name)) {
+		eprintf("file not found (%s)\n", name);
 		return false;
 	}
 
-	a = (char*)rz_str_lchr (name, '/');
+	a = (char *)rz_str_lchr(name, '/');
 	if (a) {
 		*a = 0;
 		libpath = name;
@@ -33,36 +33,36 @@ static int lang_cpipe_file(RzLang *lang, const char *file) {
 		libpath = ".";
 		libname = name;
 	}
-	p = strstr (name, ".c");
+	p = strstr(name, ".c");
 	if (p) {
 		*p = 0;
 	}
-	cc = rz_sys_getenv ("CC");
-	if (RZ_STR_ISEMPTY (cc)) {
-		free (cc);
-		cc = strdup ("gcc");
+	cc = rz_sys_getenv("CC");
+	if (RZ_STR_ISEMPTY(cc)) {
+		free(cc);
+		cc = strdup("gcc");
 	}
-	char *file_esc = rz_str_escape_sh (file);
-	char *libpath_esc = rz_str_escape_sh (libpath);
-	char *libname_esc = rz_str_escape_sh (libname);
-	char *buf = rz_str_newf ("%s \"%s\" -o \"%s/bin%s\""
-		" $(PKG_CONFIG_PATH=%s pkg-config --cflags --libs rz_socket)",
+	char *file_esc = rz_str_escape_sh(file);
+	char *libpath_esc = rz_str_escape_sh(libpath);
+	char *libname_esc = rz_str_escape_sh(libname);
+	char *buf = rz_str_newf("%s \"%s\" -o \"%s/bin%s\""
+				" $(PKG_CONFIG_PATH=%s pkg-config --cflags --libs rz_socket)",
 		cc, file_esc, libpath_esc, libname_esc, RZ_LIBDIR "/pkgconfig");
-	free (libname_esc);
-	free (libpath_esc);
-	free (file_esc);
-	free (cc);
-	if (rz_sys_system (buf) == 0) {
-		char *o_ld_path = rz_sys_getenv ("LD_LIBRARY_PATH");
-		rz_sys_setenv ("LD_LIBRARY_PATH", RZ_LIBDIR);
-		char *binfile = rz_str_newf ("%s/bin%s", libpath, libname);
-		lang_pipe_run (lang, binfile, -1);
-		rz_file_rm (binfile);
-		rz_sys_setenv ("LD_LIBRARY_PATH", o_ld_path);
-		free (o_ld_path);
-		free (binfile);
+	free(libname_esc);
+	free(libpath_esc);
+	free(file_esc);
+	free(cc);
+	if (rz_sys_system(buf) == 0) {
+		char *o_ld_path = rz_sys_getenv("LD_LIBRARY_PATH");
+		rz_sys_setenv("LD_LIBRARY_PATH", RZ_LIBDIR);
+		char *binfile = rz_str_newf("%s/bin%s", libpath, libname);
+		lang_pipe_run(lang, binfile, -1);
+		rz_file_rm(binfile);
+		rz_sys_setenv("LD_LIBRARY_PATH", o_ld_path);
+		free(o_ld_path);
+		free(binfile);
 	}
-	free (buf);
+	free(buf);
 	return 0;
 }
 
@@ -72,20 +72,21 @@ static int lang_cpipe_init(void *user) {
 }
 
 static int lang_cpipe_run(RzLang *lang, const char *code, int len) {
-	FILE *fd = rz_sys_fopen (".tmp.c", "w");
+	FILE *fd = rz_sys_fopen(".tmp.c", "w");
 	if (!fd) {
-		eprintf ("Cannot open .tmp.c\n");
+		eprintf("Cannot open .tmp.c\n");
 		return false;
 	}
-	fputs ("#include <rz_socket.h>\n\n"
-		"#define RZP(x,y...) rzpipe_cmdf(r2p,x,##y)\n"
-		"int main() {\n"
-		"  RzPipe *r2p = rzpipe_open(NULL);", fd);
-	fputs (code, fd);
-	fputs ("\n}\n", fd);
-	fclose (fd);
-	lang_cpipe_file (lang, ".tmp.c");
-	rz_file_rm (".tmp.c");
+	fputs("#include <rz_socket.h>\n\n"
+	      "#define RZP(x,y...) rzpipe_cmdf(r2p,x,##y)\n"
+	      "int main() {\n"
+	      "  RzPipe *r2p = rzpipe_open(NULL);",
+		fd);
+	fputs(code, fd);
+	fputs("\n}\n", fd);
+	fclose(fd);
+	lang_cpipe_file(lang, ".tmp.c");
+	rz_file_rm(".tmp.c");
 	return true;
 }
 
@@ -95,9 +96,9 @@ static RzLangPlugin rz_lang_plugin_cpipe = {
 	.desc = "rzpipe scripting in C",
 	.license = "LGPL",
 	.run = lang_cpipe_run,
-	.init = (void*)lang_cpipe_init,
+	.init = (void *)lang_cpipe_init,
 	.fini = NULL,
-	.run_file = (void*)lang_cpipe_file,
+	.run_file = (void *)lang_cpipe_file,
 };
 #else
 #ifdef _MSC_VER

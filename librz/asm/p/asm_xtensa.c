@@ -17,15 +17,15 @@ static ut64 offset = 0;
 static RzStrBuf *buf_global = NULL;
 static ut8 bytes[INSN_BUFFER_SIZE];
 
-static int xtensa_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
+static int xtensa_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	if (length > INSN_BUFFER_SIZE) {
 		length = INSN_BUFFER_SIZE;
 	}
-	memcpy (myaddr, bytes, length);
+	memcpy(myaddr, bytes, length);
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 
@@ -43,11 +43,11 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (len > INSN_BUFFER_SIZE) {
 		len = INSN_BUFFER_SIZE;
 	}
-	memcpy (bytes, buf, len); // TODO handle thumb
+	memcpy(bytes, buf, len); // TODO handle thumb
 
 	/* prepare disassembler */
-	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	disasm_obj.disassembler_options=(a->bits==64)?"64":"";
+	memset(&disasm_obj, '\0', sizeof(struct disassemble_info));
+	disasm_obj.disassembler_options = (a->bits == 64) ? "64" : "";
 	disasm_obj.buffer = bytes;
 	disasm_obj.buffer_length = len;
 	disasm_obj.read_memory_func = &xtensa_buffer_read_memory;
@@ -58,9 +58,9 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = stdout;
 
-	op->size = print_insn_xtensa ((bfd_vma)offset, &disasm_obj);
+	op->size = print_insn_xtensa((bfd_vma)offset, &disasm_obj);
 	if (op->size == -1) {
-		rz_asm_op_set_asm (op, "(data)");
+		rz_asm_op_set_asm(op, "(data)");
 	}
 	return op->size;
 }

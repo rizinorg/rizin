@@ -13,8 +13,8 @@ typedef struct rz_core_t RzCore;
 
 //RZ_LIB_VERSION_HEADER (rz_cmd);
 
-#define MACRO_LIMIT 1024
-#define MACRO_LABELS 20
+#define MACRO_LIMIT   1024
+#define MACRO_LABELS  20
 #define RZ_CMD_MAXLEN 4096
 
 /**
@@ -74,10 +74,10 @@ typedef enum rz_cmd_escape_t {
 	RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG, ///< The string should be escaped so that it can be wrapped in '....'
 } RzCmdEscape;
 
-typedef int (*RzCmdCb) (void *user, const char *input);
-typedef RzCmdStatus (*RzCmdArgvCb) (RzCore *core, int argc, const char **argv);
-typedef RzCmdStatus (*RzCmdArgvModesCb) (RzCore *core, int argc, const char **argv, RzOutputMode mode);
-typedef int (*RzCmdNullCb) (void *user);
+typedef int (*RzCmdCb)(void *user, const char *input);
+typedef RzCmdStatus (*RzCmdArgvCb)(RzCore *core, int argc, const char **argv);
+typedef RzCmdStatus (*RzCmdArgvModesCb)(RzCore *core, int argc, const char **argv, RzOutputMode mode);
+typedef int (*RzCmdNullCb)(void *user);
 
 /**
  * argc/argv data created from parsing the input command string.
@@ -106,7 +106,7 @@ typedef struct rz_cmd_macro_t {
 	ut64 *brk_value;
 	ut64 _brk_value;
 	int brk;
-// 	int (*cmd)(void *user, const char *cmd);
+	// 	int (*cmd)(void *user, const char *cmd);
 	RzCoreCmd cmd;
 	PrintfCallback cb_printf;
 	void *user;
@@ -431,7 +431,7 @@ typedef struct rz_core_plugin_t {
 	RzCmdCb fini;
 } RzCorePlugin;
 
-typedef bool (*RzCmdForeachNameCb) (RzCmd *cmd, const char *name, void *user);
+typedef bool (*RzCmdForeachNameCb)(RzCmd *cmd, const char *name, void *user);
 
 #ifdef RZ_API
 RZ_API int rz_core_plugin_init(RzCmd *cmd);

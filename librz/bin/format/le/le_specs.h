@@ -34,7 +34,7 @@ typedef enum {
 	LE_RT_FD = 21, /* DBCS uniq/font driver */
 } LE_resource_type;
 
-// This bit signifies that additional information is contained in the linear EXE module 
+// This bit signifies that additional information is contained in the linear EXE module
 // and will be used in the future for parameter type checking.
 #define ENTRY_PARAMETER_TYPING_PRESENT 0x80
 
@@ -47,31 +47,35 @@ typedef struct LE_entry_bundle_header_s {
 #define ENTRY_EXPORTED         0x01
 #define ENTRY_PARAM_COUNT_MASK 0xF8
 
-RZ_PACKED (typedef union LE_entry_bundle_entry_u {
-	RZ_PACKED (struct {
-		ut8 flags;   // First bit set if exported, mask with 0xF8 to get parameters count
+RZ_PACKED(typedef union LE_entry_bundle_entry_u {
+	RZ_PACKED(struct {
+		ut8 flags; // First bit set if exported, mask with 0xF8 to get parameters count
 		ut16 offset; // This is the offset in the object for the entry point defined at this ordinal number.
-	}) entry_16;
-	RZ_PACKED (struct {
-		ut8 flags;   // First bit set if exported, mask with 0xF8 to get parameters count
+	})
+	entry_16;
+	RZ_PACKED(struct {
+		ut8 flags; // First bit set if exported, mask with 0xF8 to get parameters count
 		ut16 offset; // This is the offset in the object for the entry point defined at this ordinal number.
 		ut16 callgate_sel; // The callgate selector for references to ring 2 entry points.
-	}) callgate;
-	RZ_PACKED (struct {
-		ut8 flags;   // First bit set if exported, mask with 0xF8 to get parameters count
+	})
+	callgate;
+	RZ_PACKED(struct {
+		ut8 flags; // First bit set if exported, mask with 0xF8 to get parameters count
 		ut32 offset; // This is the offset in the object for the entry point defined at this ordinal number.
-	}) entry_32;
-	RZ_PACKED (struct {
+	})
+	entry_32;
+	RZ_PACKED(struct {
 		ut8 flags; // First bit set if import by ordinal
 		ut16 import_ord; // This is the index into the Import Module Name Table for this forwarder.
 		ut32 offset; // If import by ordinal, is the ordinal number into the Entry Table of the target module, else is the offset into the Procedure Names Table of the target module.
-	}) forwarder;
-}) LE_entry_bundle_entry;
-
+	})
+	forwarder;
+})
+LE_entry_bundle_entry;
 
 #define F_SOURCE_TYPE_MASK 0xF
-#define F_SOURCE_ALIAS 0x10
-#define F_SOURCE_LIST 0x20
+#define F_SOURCE_ALIAS     0x10
+#define F_SOURCE_LIST      0x20
 
 typedef enum {
 	BYTEFIXUP,
@@ -86,12 +90,12 @@ typedef enum {
 } LE_fixup_source_type;
 
 #define F_TARGET_TYPE_MASK 0x3
-#define F_TARGET_ADDITIVE 0x4
-#define F_TARGET_CHAIN 0x8
-#define F_TARGET_OFF32 0x10 // Else 16
-#define F_TARGET_ADD32 0x20 // Else 16
-#define F_TARGET_ORD16 0x40 // Else 8
-#define F_TARGET_ORD8 0x80 // Else 16
+#define F_TARGET_ADDITIVE  0x4
+#define F_TARGET_CHAIN     0x8
+#define F_TARGET_OFF32     0x10 // Else 16
+#define F_TARGET_ADD32     0x20 // Else 16
+#define F_TARGET_ORD16     0x40 // Else 8
+#define F_TARGET_ORD8      0x80 // Else 16
 
 typedef enum {
 	INTERNAL,
@@ -105,23 +109,23 @@ typedef struct LE_fixup_record_header_s {
 	ut8 target;
 } LE_fixup_record_header;
 
-#define O_READABLE     1
-#define O_WRITABLE     1 << 1
-#define O_EXECUTABLE   1 << 2
-#define O_RESOURCE     1 << 3
-#define O_DISCARTABLE  1 << 4
-#define O_SHARED       1 << 5
-#define O_PRELOAD      1 << 6
-#define O_INVALID      1 << 7
-#define O_ZEROED       1 << 8
-#define O_RESIDENT     1 << 9
-#define O_CONTIGUOUS   O_RESIDENT | O_ZEROED
-#define O_LOCKABLE     1 << 10
-#define O_RESERVED     1 << 11
-#define O_ALIASED      1 << 12
-#define O_BIG_BIT      1 << 13
-#define O_CODE         1 << 14
-#define O_IO_PRIV      1 << 15
+#define O_READABLE    1
+#define O_WRITABLE    1 << 1
+#define O_EXECUTABLE  1 << 2
+#define O_RESOURCE    1 << 3
+#define O_DISCARTABLE 1 << 4
+#define O_SHARED      1 << 5
+#define O_PRELOAD     1 << 6
+#define O_INVALID     1 << 7
+#define O_ZEROED      1 << 8
+#define O_RESIDENT    1 << 9
+#define O_CONTIGUOUS  O_RESIDENT | O_ZEROED
+#define O_LOCKABLE    1 << 10
+#define O_RESERVED    1 << 11
+#define O_ALIASED     1 << 12
+#define O_BIG_BIT     1 << 13
+#define O_CODE        1 << 14
+#define O_IO_PRIV     1 << 15
 
 typedef struct LE_object_entry_s {
 	ut32 virtual_size;
@@ -145,22 +149,22 @@ typedef struct LE_object_page_entry_s {
 	ut16 flags;
 } LE_object_page_entry;
 
-#define M_PP_LIB_INIT           1 << 2
-#define M_SYS_DLL               1 << 3 // No internal fixups
-#define M_INTERNAL_FIXUP        1 << 4
-#define M_EXTERNAL_FIXUP        1 << 5
-#define M_PM_WINDOWING_INCOMP   1 << 8 // Fullscreen only
-#define M_PM_WINDOWING_COMPAT   1 << 9
-#define M_USES_PM_WINDOWING     M_PM_WINDOWING_INCOMP | M_PM_WINDOWING_COMPAT
-#define M_NOT_LOADABLE          1 << 13
-#define M_TYPE_MASK             0x38000
-#define M_TYPE_EXE              0
-#define M_TYPE_DLL              0x08000
-#define M_TYPE_PM_DLL           0x10000
-#define M_TYPE_PDD              0x20000 // Physical Device Driver
-#define M_TYPE_VDD              0x28000 // Virtual Device Driver
-#define M_MP_UNSAFE             1 << 19
-#define M_PP_LIB_TERM           1 << 30
+#define M_PP_LIB_INIT         1 << 2
+#define M_SYS_DLL             1 << 3 // No internal fixups
+#define M_INTERNAL_FIXUP      1 << 4
+#define M_EXTERNAL_FIXUP      1 << 5
+#define M_PM_WINDOWING_INCOMP 1 << 8 // Fullscreen only
+#define M_PM_WINDOWING_COMPAT 1 << 9
+#define M_USES_PM_WINDOWING   M_PM_WINDOWING_INCOMP | M_PM_WINDOWING_COMPAT
+#define M_NOT_LOADABLE        1 << 13
+#define M_TYPE_MASK           0x38000
+#define M_TYPE_EXE            0
+#define M_TYPE_DLL            0x08000
+#define M_TYPE_PM_DLL         0x10000
+#define M_TYPE_PDD            0x20000 // Physical Device Driver
+#define M_TYPE_VDD            0x28000 // Virtual Device Driver
+#define M_MP_UNSAFE           1 << 19
+#define M_PP_LIB_TERM         1 << 30
 
 typedef struct LE_image_header_s { /* New 32-bit .EXE header */
 	ut8 magic[2]; /* Magic number MAGIC */

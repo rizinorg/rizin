@@ -12,24 +12,23 @@
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	RzBinJavaObj *obj = NULL;
 	RzBin *bin = a->binb.bin;
-	RzBinPlugin *plugin = bin && bin->cur && bin->cur->o ?
-		bin->cur->o->plugin : NULL;
+	RzBinPlugin *plugin = bin && bin->cur && bin->cur->o ? bin->cur->o->plugin : NULL;
 	if (plugin && plugin->name) {
-		if (!strcmp (plugin->name, "java")) { // XXX slow
+		if (!strcmp(plugin->name, "java")) { // XXX slow
 			obj = bin->cur->o->bin_obj; //o;
 			//eprintf("Handling: %s disasm.\n", b->cur.file);
 		}
 	}
 	char buf_asm[256];
-	op->size = rz_java_disasm (obj, a->pc, buf, len, buf_asm, sizeof (buf_asm));
-	rz_strbuf_set (&op->buf_asm, buf_asm);
+	op->size = rz_java_disasm(obj, a->pc, buf, len, buf_asm, sizeof(buf_asm));
+	rz_strbuf_set(&op->buf_asm, buf_asm);
 	return op->size;
 }
 
 static int assemble(RzAsm *a, RzAsmOp *op, const char *input) {
 	// TODO: get class info from bin if possible
 	// XXX wrong usage of strbuf_get here
-	return op->size = rz_java_assemble (a->pc, (ut8*)rz_strbuf_get (&op->buf), input);
+	return op->size = rz_java_assemble(a->pc, (ut8 *)rz_strbuf_get(&op->buf), input);
 }
 
 RzAsmPlugin rz_asm_plugin_java = {

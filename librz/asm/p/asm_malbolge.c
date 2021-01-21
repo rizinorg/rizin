@@ -22,8 +22,8 @@ static const char *mal_dis(ut64 c, const ut8 *buf, ut64 len) {
 }
 
 static int __disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	const char *opstr = mal_dis (a->pc, buf, len);
-	return op->size = opstr? 1: 0;
+	const char *opstr = mal_dis(a->pc, buf, len);
+	return op->size = opstr ? 1 : 0;
 }
 
 RzAsmPlugin rz_asm_plugin_malbolge = {

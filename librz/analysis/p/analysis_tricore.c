@@ -70,7 +70,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	BIV	.32	152	0\n"
 		"gpr	BTV	.32	156	0\n"
 		"gpr	pc	.32	160	0\n";
-	return rz_reg_set_profile_string (analysis->reg, p);
+	return rz_reg_set_profile_string(analysis->reg, p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_tricore = {

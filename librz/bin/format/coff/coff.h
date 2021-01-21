@@ -9,13 +9,13 @@
 #include <rz_bin.h>
 #include <ht_up.h>
 
-#define COFF_IS_BIG_ENDIAN 1
+#define COFF_IS_BIG_ENDIAN    1
 #define COFF_IS_LITTLE_ENDIAN 0
 
 #include "coff_specs.h"
 
 struct rz_bin_coff_obj {
-	struct coff_hdr	hdr;
+	struct coff_hdr hdr;
 	struct coff_opt_hdr opt_hdr;
 	struct coff_scn_hdr *scn_hdrs;
 	struct coff_symbol *symbols;
@@ -33,9 +33,9 @@ struct rz_bin_coff_obj {
 };
 
 bool rz_coff_supported_arch(const ut8 *buf); /* Reads two bytes from buf. */
-struct rz_bin_coff_obj* rz_bin_coff_new_buf(RzBuffer *buf, bool verbose);
+struct rz_bin_coff_obj *rz_bin_coff_new_buf(RzBuffer *buf, bool verbose);
 void rz_bin_coff_free(struct rz_bin_coff_obj *obj);
 RzBinAddr *rz_coff_get_entry(struct rz_bin_coff_obj *obj);
-char *rz_coff_symbol_name (struct rz_bin_coff_obj *obj, void *ptr);
+char *rz_coff_symbol_name(struct rz_bin_coff_obj *obj, void *ptr);
 
 #endif /* COFF_H */

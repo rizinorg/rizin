@@ -16,22 +16,22 @@ static MachoPointers findLastCommand(RzBinFile *bf) {
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	int i = 0;
 	ut64 off;
-	MachoPointers mp = {0};
+	MachoPointers mp = { 0 };
 	mp.ncmds = bin->hdr.ncmds;
 	mp.ncmds_off = 0x10;
 	mp.sizeofcmds = bin->hdr.sizeofcmds;
 	mp.sizeofcmds_off = 0x14;
-	
+
 	for (i = 0, off = 0x20 + bin->header_at; i < mp.ncmds; i++) {
-		ut32 loadc[2] = {0};
-		rz_buf_read_at (bin->b, off, (ut8*)&loadc, sizeof (loadc));
+		ut32 loadc[2] = { 0 };
+		rz_buf_read_at(bin->b, off, (ut8 *)&loadc, sizeof(loadc));
 		//rz_buf_seek (bin->b, off, RZ_BUF_SET);
-		int len = loadc[1]; // rz_buf_read_le32 (loadc[1]); // bin->b); // 
+		int len = loadc[1]; // rz_buf_read_le32 (loadc[1]); // bin->b); //
 		if (len < 1) {
-			eprintf ("Error: read (lc) at 0x%08"PFMT64x"\n", off);
+			eprintf("Error: read (lc) at 0x%08" PFMT64x "\n", off);
 			break;
 		}
-		int size = rz_read_ble32 (&loadc[1], bin->big_endian);
+		int size = rz_read_ble32(&loadc[1], bin->big_endian);
 		off += size;
 	}
 	mp.lastcmd_off = off;
@@ -48,31 +48,31 @@ static const uint8_t sample_dylib[56] = {
 };
 
 static bool MACH0_(write_addlib)(RzBinFile *bf, const char *lib) {
-	MachoPointers mp = findLastCommand (bf);
+	MachoPointers mp = findLastCommand(bf);
 	size_t size_of_lib = 56;
 
 	ut32 ncmds = mp.ncmds + 1;
-	rz_buf_write_at (bf->buf, mp.ncmds_off, (const ut8*)&ncmds, sizeof (ncmds));
+	rz_buf_write_at(bf->buf, mp.ncmds_off, (const ut8 *)&ncmds, sizeof(ncmds));
 
 	ut32 sizeofcmds = mp.sizeofcmds + size_of_lib; // , &ncmds, sizeof (ncmds));
-	rz_buf_write_at (bf->buf, mp.sizeofcmds_off, (ut8*)&sizeofcmds, sizeof (sizeofcmds));
+	rz_buf_write_at(bf->buf, mp.sizeofcmds_off, (ut8 *)&sizeofcmds, sizeof(sizeofcmds));
 
-	size_t lib_len = strlen (lib);
+	size_t lib_len = strlen(lib);
 	if (lib_len > 22) {
-		eprintf ("Warning: Adjusting cmdsize too long libname\n");
+		eprintf("Warning: Adjusting cmdsize too long libname\n");
 		size_of_lib += lib_len + 1 - 22;
 		size_of_lib += 8 - (size_of_lib % 8);
 	}
 
 	const size_t sample_dylib_name_off = 24;
-	rz_buf_write_at (bf->buf, mp.lastcmd_off, sample_dylib, 56);
-	rz_buf_write_at (bf->buf, mp.lastcmd_off + 4, (const ut8*)&size_of_lib, 4);
-	rz_buf_write_at (bf->buf, mp.lastcmd_off + sample_dylib_name_off, (const ut8*)lib, lib_len + 1);
+	rz_buf_write_at(bf->buf, mp.lastcmd_off, sample_dylib, 56);
+	rz_buf_write_at(bf->buf, mp.lastcmd_off + 4, (const ut8 *)&size_of_lib, 4);
+	rz_buf_write_at(bf->buf, mp.lastcmd_off + sample_dylib_name_off, (const ut8 *)lib, lib_len + 1);
 	return true;
 }
 
 static bool addlib(RzBinFile *bf, const char *lib) {
-	return MACH0_(write_addlib) (bf, lib);
+	return MACH0_(write_addlib)(bf, lib);
 }
 
 #if !RZ_BIN_MACH064

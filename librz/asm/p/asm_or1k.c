@@ -17,7 +17,7 @@ struct operands {
 };
 
 static int insn_to_str(RzAsm *a, char **line, insn_t *descr, insn_extra_t *extra, ut32 insn) {
-	struct operands o = {0};
+	struct operands o = { 0 };
 	char *name;
 	insn_type_t type = type_of_opcode(descr, extra);
 	insn_type_descr_t *type_descr = &types[INSN_X];
@@ -37,7 +37,7 @@ static int insn_to_str(RzAsm *a, char **line, insn_t *descr, insn_extra_t *extra
 	o.i = get_operand_value(insn, type_descr, INSN_OPER_I);
 	o.l = get_operand_value(insn, type_descr, INSN_OPER_L);
 
-	name = extra? extra->name: descr->name;
+	name = extra ? extra->name : descr->name;
 
 	if (!name || !type_descr->format) {
 		/* this should not happen, give up */
@@ -51,7 +51,7 @@ static int insn_to_str(RzAsm *a, char **line, insn_t *descr, insn_extra_t *extra
 		break;
 	case INSN_N:
 		*line = sdb_fmt(type_descr->format, name,
-				(sign_extend(o.n, get_operand_mask(type_descr, INSN_OPER_N)) << 2) +
+			(sign_extend(o.n, get_operand_mask(type_descr, INSN_OPER_N)) << 2) +
 				a->pc);
 		break;
 	case INSN_K:
@@ -92,11 +92,11 @@ static int insn_to_str(RzAsm *a, char **line, insn_t *descr, insn_extra_t *extra
 		break;
 	case INSN_IABI:
 		*line = sdb_fmt(type_descr->format, name,
-				o.ra, o.rb, (o.k1 << 11) | o.k2);
+			o.ra, o.rb, (o.k1 << 11) | o.k2);
 		break;
 	case INSN_KABK:
 		*line = sdb_fmt(type_descr->format, name,
-				o.ra, o.rb, (o.k1 << 11) | o.k2);
+			o.ra, o.rb, (o.k1 << 11) | o.k2);
 		break;
 	default:
 		*line = sdb_fmt("invalid");
@@ -115,7 +115,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 	if (len < 4) {
 		line = sdb_fmt("invalid");
-		rz_strbuf_set (&op->buf_asm, line);
+		rz_strbuf_set(&op->buf_asm, line);
 		return op->size;
 	}
 
@@ -128,7 +128,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	/* make sure instruction descriptor table is not overflowed */
 	if (opcode_idx >= insns_count) {
 		line = sdb_fmt("invalid");
-		rz_strbuf_set (&op->buf_asm, line);
+		rz_strbuf_set(&op->buf_asm, line);
 		return op->size;
 	}
 
@@ -136,7 +136,7 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	insn_descr = &or1k_insns[opcode_idx];
 	if (insn_descr->type == INSN_INVAL) {
 		line = sdb_fmt("invalid");
-		rz_strbuf_set (&op->buf_asm, line);
+		rz_strbuf_set(&op->buf_asm, line);
 		return op->size;
 	}
 
@@ -144,15 +144,15 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	 * are not enough to decode instruction */
 	if (!insn_descr->name && insn_descr->extra) {
 		if ((extra_descr = find_extra_descriptor(insn_descr->extra, insn)) != NULL) {
-			insn_to_str (a, &line, insn_descr, extra_descr, insn);
+			insn_to_str(a, &line, insn_descr, extra_descr, insn);
 		} else {
 			line = "invalid";
 		}
-		rz_strbuf_set (&op->buf_asm, line);
+		rz_strbuf_set(&op->buf_asm, line);
 	} else {
 		/* otherwise basic descriptor is enough */
 		insn_to_str(a, &line, insn_descr, NULL, insn);
-		rz_strbuf_set (&op->buf_asm, line);
+		rz_strbuf_set(&op->buf_asm, line);
 	}
 	return op->size;
 }
@@ -169,5 +169,6 @@ RzAsmPlugin rz_asm_plugin_or1k = {
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {
-	.type = RZ_LIB_TYPE_ASM, .data = &rz_asm_plugin_or1k, .version = RZ_VERSION};
+	.type = RZ_LIB_TYPE_ASM, .data = &rz_asm_plugin_or1k, .version = RZ_VERSION
+};
 #endif

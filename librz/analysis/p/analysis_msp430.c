@@ -11,14 +11,14 @@ static int msp430_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 	int ret;
 	struct msp430_cmd cmd;
 
-	memset (&cmd, 0, sizeof (cmd));
+	memset(&cmd, 0, sizeof(cmd));
 	//op->id = ???;
 	op->size = -1;
 	op->nopcode = 1;
 	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 	op->family = RZ_ANALYSIS_OP_FAMILY_CPU;
 
-	ret = op->size = msp430_decode_command (buf, len, &cmd);
+	ret = op->size = msp430_decode_command(buf, len, &cmd);
 
 	if (ret < 0) {
 		return ret;
@@ -31,16 +31,19 @@ static int msp430_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut
 		switch (cmd.opcode) {
 		case MSP430_RRA:
 		case MSP430_RRC:
-			op->type = RZ_ANALYSIS_OP_TYPE_ROR; break;
+			op->type = RZ_ANALYSIS_OP_TYPE_ROR;
+			break;
 		case MSP430_PUSH:
-			op->type = RZ_ANALYSIS_OP_TYPE_PUSH; break;
+			op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
+			break;
 		case MSP430_CALL:
 			op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 			op->fail = addr + op->size;
-			op->jump = rz_read_at_le16 (buf, 2);
+			op->jump = rz_read_at_le16(buf, 2);
 			break;
 		case MSP430_RETI:
-			op->type = RZ_ANALYSIS_OP_TYPE_RET; break;
+			op->type = RZ_ANALYSIS_OP_TYPE_RET;
+			break;
 		}
 		break;
 	case MSP430_TWOOP:

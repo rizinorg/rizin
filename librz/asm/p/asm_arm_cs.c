@@ -32,11 +32,11 @@ static bool check_features(RzAsm *a, cs_insn *insn) {
 				continue;
 			}
 		}
-		const char *name = cs_group_name (cd, id);
+		const char *name = cs_group_name(cd, id);
 		if (!name) {
 			return true;
 		}
-		if (!strstr (a->features, name)) {
+		if (!strstr(a->features, name)) {
 			return false;
 		}
 	}
@@ -80,16 +80,15 @@ static const char *cc_name(arm_cc cc) {
 
 static void disass_itblock(RzAsm *a, cs_insn *insn) {
 	size_t i, size;
-	size = rz_str_nlen (insn->mnemonic, 5);
-	ht_uu_update (ht_itblock, a->pc, size);
+	size = rz_str_nlen(insn->mnemonic, 5);
+	ht_uu_update(ht_itblock, a->pc, size);
 	for (i = 1; i < size; i++) {
 		switch (insn->mnemonic[i]) {
 		case 0x74: //'t'
-			ht_uu_update (ht_it, a->pc + (i * insn->size), insn->detail->arm.cc);
+			ht_uu_update(ht_it, a->pc + (i * insn->size), insn->detail->arm.cc);
 			break;
 		case 0x65: //'e'
-			ht_uu_update (ht_it, a->pc + (i * insn->size), (insn->detail->arm.cc % 2)?
-				insn->detail->arm.cc + 1:insn->detail->arm.cc - 1);
+			ht_uu_update(ht_it, a->pc + (i * insn->size), (insn->detail->arm.cc % 2) ? insn->detail->arm.cc + 1 : insn->detail->arm.cc - 1);
 			break;
 		default:
 			break;
@@ -100,12 +99,12 @@ static void disass_itblock(RzAsm *a, cs_insn *insn) {
 static void check_itblock(RzAsm *a, cs_insn *insn) {
 	size_t x;
 	bool found;
-	ut64 itlen = ht_uu_find (ht_itblock, a->pc, &found);
+	ut64 itlen = ht_uu_find(ht_itblock, a->pc, &found);
 	if (found) {
 		for (x = 1; x < itlen; x++) {
-			ht_uu_delete (ht_it, a->pc + (x*insn->size));
+			ht_uu_delete(ht_it, a->pc + (x * insn->size));
 		}
-		ht_uu_delete (ht_itblock, a->pc);
+		ht_uu_delete(ht_itblock, a->pc);
 	}
 }
 
@@ -113,64 +112,59 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	static int omode = -1;
 	static int obits = 32;
 	bool disp_hash = a->immdisp;
-	cs_insn* insn = NULL;
+	cs_insn *insn = NULL;
 	cs_mode mode = 0;
 	int ret, n = 0;
 	bool found = false;
 	ut64 itcond;
 
-	mode |= (a->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
-	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	mode |= (a->bits == 16) ? CS_MODE_THUMB : CS_MODE_ARM;
+	mode |= (a->big_endian) ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 	if (mode != omode || a->bits != obits) {
-		cs_close (&cd);
+		cs_close(&cd);
 		cd = 0; // unnecessary
 		omode = mode;
 		obits = a->bits;
 	}
 
 	if (a->cpu) {
-		if (strstr (a->cpu, "cortex")) {
+		if (strstr(a->cpu, "cortex")) {
 			mode |= CS_MODE_MCLASS;
 		}
 		if (a->bits != 64) {
-			if (strstr (a->cpu, "v8")) {
+			if (strstr(a->cpu, "v8")) {
 				mode |= CS_MODE_V8;
 			}
 		}
 	}
 	if (a->features && a->bits != 64) {
-		if (strstr (a->features, "v8")) {
+		if (strstr(a->features, "v8")) {
 			mode |= CS_MODE_V8;
 		}
 	}
 	if (op) {
 		op->size = 4;
-		rz_strbuf_set (&op->buf_asm, "");
+		rz_strbuf_set(&op->buf_asm, "");
 	}
 	if (!cd || mode != omode) {
-		ret = (a->bits == 64)?
-			cs_open (CS_ARCH_ARM64, mode, &cd):
-			cs_open (CS_ARCH_ARM, mode, &cd);
+		ret = (a->bits == 64) ? cs_open(CS_ARCH_ARM64, mode, &cd) : cs_open(CS_ARCH_ARM, mode, &cd);
 		if (ret) {
 			ret = -1;
 			goto beach;
 		}
 	}
-	cs_option (cd, CS_OPT_SYNTAX, (a->syntax == RZ_ASM_SYNTAX_REGNUM)
-			? CS_OPT_SYNTAX_NOREGNAME
-			: CS_OPT_SYNTAX_DEFAULT);
-	cs_option (cd, CS_OPT_DETAIL, (a->features && *a->features)
-		? CS_OPT_ON: CS_OPT_OFF);
-	cs_option (cd, CS_OPT_DETAIL, CS_OPT_ON);
+	cs_option(cd, CS_OPT_SYNTAX, (a->syntax == RZ_ASM_SYNTAX_REGNUM) ? CS_OPT_SYNTAX_NOREGNAME : CS_OPT_SYNTAX_DEFAULT);
+	cs_option(cd, CS_OPT_DETAIL, (a->features && *a->features) ? CS_OPT_ON : CS_OPT_OFF);
+	cs_option(cd, CS_OPT_DETAIL, CS_OPT_ON);
 	if (!buf) {
 		goto beach;
 	}
-	int haa = hackyArmAsm (a, op, buf, len);
+	int haa = hackyArmAsm(a, op, buf, len);
 	if (haa > 0) {
 		return haa;
 	}
 
-	n = cs_disasm (cd, buf, RZ_MIN (4, len), a->pc, 1, &insn);
+	n = cs_disasm(cd, buf, RZ_MIN(4, len), a->pc, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		ret = -1;
 		goto beach;
@@ -179,43 +173,43 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		op->size = 0;
 	}
 	if (a->features && *a->features) {
-		if (!check_features (a, insn) && op) {
+		if (!check_features(a, insn) && op) {
 			op->size = insn->size;
-			rz_strbuf_set (&op->buf_asm, "illegal");
+			rz_strbuf_set(&op->buf_asm, "illegal");
 		}
 	}
 	if (op && !op->size) {
 		op->size = insn->size;
 		if (insn->id == ARM_INS_IT) {
-			disass_itblock (a, insn);
+			disass_itblock(a, insn);
 		} else {
-			check_itblock (a, insn);
+			check_itblock(a, insn);
 		}
-		itcond = ht_uu_find (ht_it,  a->pc, &found);
+		itcond = ht_uu_find(ht_it, a->pc, &found);
 		if (found) {
 			insn->detail->arm.cc = itcond;
 			insn->detail->arm.update_flags = 0;
-			char *tmpstr = rz_str_newf ("%s%s",
-				cs_insn_name (cd, insn->id),
-				cc_name (itcond));
-			rz_str_cpy (insn->mnemonic, tmpstr);
-			free (tmpstr);
+			char *tmpstr = rz_str_newf("%s%s",
+				cs_insn_name(cd, insn->id),
+				cc_name(itcond));
+			rz_str_cpy(insn->mnemonic, tmpstr);
+			free(tmpstr);
 		}
-		char *buf_asm = sdb_fmt ("%s%s%s",
+		char *buf_asm = sdb_fmt("%s%s%s",
 			insn->mnemonic,
-			insn->op_str[0]?" ":"",
+			insn->op_str[0] ? " " : "",
 			insn->op_str);
 		if (!disp_hash) {
-			rz_str_replace_char (buf_asm, '#', 0);
+			rz_str_replace_char(buf_asm, '#', 0);
 		}
-		rz_strbuf_set (&op->buf_asm, buf_asm);
+		rz_strbuf_set(&op->buf_asm, buf_asm);
 	}
-	cs_free (insn, n);
-	beach:
-	cs_close (&cd);
+	cs_free(insn, n);
+beach:
+	cs_close(&cd);
 	if (op) {
-		if (!*rz_strbuf_get (&op->buf_asm)) {
-			rz_strbuf_set (&op->buf_asm, "invalid");
+		if (!*rz_strbuf_get(&op->buf_asm)) {
+			rz_strbuf_set(&op->buf_asm, "invalid");
 		}
 		return op->size;
 	}
@@ -227,13 +221,13 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	int opsize;
 	ut32 opcode;
 	if (a->bits == 64) {
-		if (!arm64ass (buf, a->pc, &opcode)) {
+		if (!arm64ass(buf, a->pc, &opcode)) {
 			return -1;
 		}
 	} else {
-		opcode = armass_assemble (buf, a->pc, is_thumb);
+		opcode = armass_assemble(buf, a->pc, is_thumb);
 		if (a->bits != 32 && a->bits != 16) {
-			eprintf ("Error: ARM assembler only supports 16 or 32 bits\n");
+			eprintf("Error: ARM assembler only supports 16 or 32 bits\n");
 			return -1;
 		}
 	}
@@ -243,47 +237,47 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	ut8 opbuf[4];
 	if (is_thumb) {
 		const int o = opcode >> 16;
-		opsize = o > 0? 4: 2;
+		opsize = o > 0 ? 4 : 2;
 		if (opsize == 4) {
 			if (a->big_endian) {
-				rz_write_le16 (opbuf, opcode >> 16);
-				rz_write_le16 (opbuf + 2, opcode & UT16_MAX);
+				rz_write_le16(opbuf, opcode >> 16);
+				rz_write_le16(opbuf + 2, opcode & UT16_MAX);
 			} else {
-				rz_write_be32 (opbuf, opcode);
+				rz_write_be32(opbuf, opcode);
 			}
 		} else if (opsize == 2) {
 			if (a->big_endian) {
-				rz_write_le16 (opbuf, opcode & UT16_MAX);
+				rz_write_le16(opbuf, opcode & UT16_MAX);
 			} else {
-				rz_write_be16 (opbuf, opcode & UT16_MAX);
+				rz_write_be16(opbuf, opcode & UT16_MAX);
 			}
 		}
 	} else {
 		opsize = 4;
 		if (a->big_endian) {
-			rz_write_le32 (opbuf, opcode);
+			rz_write_le32(opbuf, opcode);
 		} else {
-			rz_write_be32 (opbuf, opcode);
+			rz_write_be32(opbuf, opcode);
 		}
 	}
-	rz_strbuf_setbin (&op->buf, opbuf, opsize);
-// XXX. thumb endian assembler needs no swap
+	rz_strbuf_setbin(&op->buf, opbuf, opsize);
+	// XXX. thumb endian assembler needs no swap
 	return opsize;
 }
 
-static bool init(void* user) {
+static bool init(void *user) {
 	if (!ht_it) {
-		ht_it = ht_uu_new0 ();
+		ht_it = ht_uu_new0();
 	}
 	if (!ht_itblock) {
-		ht_itblock = ht_uu_new0 ();
+		ht_itblock = ht_uu_new0();
 	}
 	return 0;
 }
 
-static bool fini(void* user) {
-	ht_uu_free (ht_it);
-	ht_uu_free (ht_itblock);
+static bool fini(void *user) {
+	ht_uu_free(ht_it);
+	ht_uu_free(ht_itblock);
 	ht_it = NULL;
 	ht_itblock = NULL;
 	return 0;
@@ -311,7 +305,6 @@ RzAsmPlugin rz_asm_plugin_arm_cs = {
 	"mulops,crc,dpvfp,v6m"
 #endif
 };
-
 
 #ifndef RZ_PLUGIN_INCORE
 RZ_API RzLibStruct rizin_plugin = {

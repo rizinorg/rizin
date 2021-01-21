@@ -27,7 +27,7 @@
  */
 #define MAX_CHILDREN_SHOW 7
 
-#define MIN_SUMMARY_WIDTH 6
+#define MIN_SUMMARY_WIDTH    6
 #define MAX_RIGHT_ALIGHNMENT 20
 
 // NOTE: this should be in sync with SPECIAL_CHARACTERS in
@@ -68,11 +68,11 @@ static const struct argv_modes_t {
 
 static int value = 0;
 
-#define NCMDS (sizeof (cmd->cmds)/sizeof(*cmd->cmds))
-RZ_LIB_VERSION (rz_cmd);
+#define NCMDS (sizeof(cmd->cmds) / sizeof(*cmd->cmds))
+RZ_LIB_VERSION(rz_cmd);
 
 static bool cmd_desc_set_parent(RzCmdDesc *cd, RzCmdDesc *parent) {
-	rz_return_val_if_fail (cd && !cd->parent, false);
+	rz_return_val_if_fail(cd && !cd->parent, false);
 	if (parent) {
 		switch (parent->type) {
 		case RZ_CMD_DESC_TYPE_OLDINPUT:
@@ -82,33 +82,33 @@ static bool cmd_desc_set_parent(RzCmdDesc *cd, RzCmdDesc *parent) {
 		case RZ_CMD_DESC_TYPE_ARGV:
 		case RZ_CMD_DESC_TYPE_ARGV_MODES:
 		case RZ_CMD_DESC_TYPE_FAKE:
-			rz_warn_if_reached ();
+			rz_warn_if_reached();
 			return false;
 		}
 	}
 	if (parent) {
 		cd->parent = parent;
-		rz_pvector_push (&parent->children, cd);
+		rz_pvector_push(&parent->children, cd);
 		parent->n_children++;
 	}
 	return true;
 }
 
 static void cmd_desc_unset_parent(RzCmdDesc *cd) {
-	rz_return_if_fail (cd && cd->parent);
+	rz_return_if_fail(cd && cd->parent);
 	RzCmdDesc *parent = cd->parent;
-	rz_pvector_remove_data (&parent->children, cd);
+	rz_pvector_remove_data(&parent->children, cd);
 	parent->n_children--;
 	cd->parent = NULL;
 }
 
 static void cmd_desc_remove_from_ht_cmds(RzCmd *cmd, RzCmdDesc *cd) {
 	void **it_cd;
-	bool res = ht_pp_delete (cmd->ht_cmds, cd->name);
-	rz_return_if_fail (res);
-	rz_cmd_desc_children_foreach (cd, it_cd) {
+	bool res = ht_pp_delete(cmd->ht_cmds, cd->name);
+	rz_return_if_fail(res);
+	rz_cmd_desc_children_foreach(cd, it_cd) {
 		RzCmdDesc *child_cd = *it_cd;
-		cmd_desc_remove_from_ht_cmds (cmd, child_cd);
+		cmd_desc_remove_from_ht_cmds(cmd, child_cd);
 	}
 }
 
@@ -117,31 +117,31 @@ static void cmd_desc_free(RzCmdDesc *cd) {
 		return;
 	}
 
-	rz_pvector_clear (&cd->children);
-	free (cd->name);
-	free (cd);
+	rz_pvector_clear(&cd->children);
+	free(cd->name);
+	free(cd);
 }
 
 static RzCmdDesc *create_cmd_desc(RzCmd *cmd, RzCmdDesc *parent, RzCmdDescType type, const char *name, const RzCmdDescHelp *help, bool ht_insert) {
-	RzCmdDesc *res = RZ_NEW0 (RzCmdDesc);
+	RzCmdDesc *res = RZ_NEW0(RzCmdDesc);
 	if (!res) {
 		return NULL;
 	}
 	res->type = type;
-	res->name = strdup (name);
+	res->name = strdup(name);
 	if (!res->name) {
 		goto err;
 	}
 	res->n_children = 0;
-	res->help = help? help: &not_defined_help;
-	rz_pvector_init (&res->children, (RzPVectorFree)cmd_desc_free);
-	if (ht_insert && !ht_pp_insert (cmd->ht_cmds, name, res)) {
+	res->help = help ? help : &not_defined_help;
+	rz_pvector_init(&res->children, (RzPVectorFree)cmd_desc_free);
+	if (ht_insert && !ht_pp_insert(cmd->ht_cmds, name, res)) {
 		goto err;
 	}
-	cmd_desc_set_parent (res, parent);
+	cmd_desc_set_parent(res, parent);
 	return res;
 err:
-	cmd_desc_free (res);
+	cmd_desc_free(res);
 	return NULL;
 }
 
@@ -153,21 +153,21 @@ RZ_API void rz_cmd_alias_init(RzCmd *cmd) {
 
 RZ_API RzCmd *rz_cmd_new(bool has_cons) {
 	int i;
-	RzCmd *cmd = RZ_NEW0 (RzCmd);
+	RzCmd *cmd = RZ_NEW0(RzCmd);
 	if (!cmd) {
 		return cmd;
 	}
 	cmd->has_cons = has_cons;
-	cmd->lcmds = rz_list_new ();
+	cmd->lcmds = rz_list_new();
 	for (i = 0; i < NCMDS; i++) {
 		cmd->cmds[i] = NULL;
 	}
 	cmd->nullcallback = cmd->data = NULL;
-	cmd->ht_cmds = ht_pp_new0 ();
-	cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, RZ_CMD_DESC_TYPE_GROUP, "", &root_help, true);
-	rz_core_plugin_init (cmd);
-	rz_cmd_macro_init (&cmd->macro);
-	rz_cmd_alias_init (cmd);
+	cmd->ht_cmds = ht_pp_new0();
+	cmd->root_cmd_desc = create_cmd_desc(cmd, NULL, RZ_CMD_DESC_TYPE_GROUP, "", &root_help, true);
+	rz_core_plugin_init(cmd);
+	rz_cmd_macro_init(&cmd->macro);
+	rz_cmd_alias_init(cmd);
 	return cmd;
 }
 
@@ -176,21 +176,21 @@ RZ_API RzCmd *rz_cmd_free(RzCmd *cmd) {
 	if (!cmd) {
 		return NULL;
 	}
-	ht_up_free (cmd->ts_symbols_ht);
-	rz_cmd_alias_free (cmd);
-	rz_cmd_macro_fini (&cmd->macro);
-	ht_pp_free (cmd->ht_cmds);
+	ht_up_free(cmd->ts_symbols_ht);
+	rz_cmd_alias_free(cmd);
+	rz_cmd_macro_fini(&cmd->macro);
+	ht_pp_free(cmd->ht_cmds);
 	// dinitialize plugin commands
-	rz_core_plugin_fini (cmd);
-	rz_list_free (cmd->plist);
-	rz_list_free (cmd->lcmds);
+	rz_core_plugin_fini(cmd);
+	rz_list_free(cmd->plist);
+	rz_list_free(cmd->lcmds);
 	for (i = 0; i < NCMDS; i++) {
 		if (cmd->cmds[i]) {
-			RZ_FREE (cmd->cmds[i]);
+			RZ_FREE(cmd->cmds[i]);
 		}
 	}
-	cmd_desc_free (cmd->root_cmd_desc);
-	free (cmd);
+	cmd_desc_free(cmd->root_cmd_desc);
+	free(cmd);
 	return NULL;
 }
 
@@ -200,8 +200,8 @@ RZ_API RzCmdDesc *rz_cmd_get_root(RzCmd *cmd) {
 
 static RzOutputMode suffix2mode(const char *suffix) {
 	size_t i;
-	for (i = 0; i < RZ_ARRAY_SIZE (argv_modes); i++) {
-		if (!strcmp (suffix, argv_modes[i].suffix)) {
+	for (i = 0; i < RZ_ARRAY_SIZE(argv_modes); i++) {
+		if (!strcmp(suffix, argv_modes[i].suffix)) {
 			return argv_modes[i].mode;
 		}
 	}
@@ -212,8 +212,8 @@ static bool is_valid_argv_modes(RzCmdDesc *cd, char last_letter) {
 	if (!cd || cd->type != RZ_CMD_DESC_TYPE_ARGV_MODES || last_letter == '\0') {
 		return false;
 	}
-	char suffix[] = {last_letter, '\0'};
-	return cd->d.argv_modes_data.modes & suffix2mode (suffix);
+	char suffix[] = { last_letter, '\0' };
+	return cd->d.argv_modes_data.modes & suffix2mode(suffix);
 }
 
 RZ_API RzCmdDesc *rz_cmd_desc_get_exec(RzCmdDesc *cd) {
@@ -229,22 +229,22 @@ RZ_API RzCmdDesc *rz_cmd_desc_get_exec(RzCmdDesc *cd) {
 }
 
 RZ_API RzCmdDesc *rz_cmd_get_desc(RzCmd *cmd, const char *cmd_identifier) {
-	rz_return_val_if_fail (cmd && cmd_identifier, NULL);
-	char *cmdid = strdup (cmd_identifier);
-	char *end_cmdid = cmdid + strlen (cmdid);
+	rz_return_val_if_fail(cmd && cmd_identifier, NULL);
+	char *cmdid = strdup(cmd_identifier);
+	char *end_cmdid = cmdid + strlen(cmdid);
 	RzCmdDesc *res = NULL;
 	bool is_exact_match = true;
-	char last_letter = '\0', o_last_letter = end_cmdid > cmdid? *(end_cmdid - 1): '\0';
+	char last_letter = '\0', o_last_letter = end_cmdid > cmdid ? *(end_cmdid - 1) : '\0';
 	// match longer commands first
 	while (*cmdid) {
-		RzCmdDesc *cd = ht_pp_find (cmd->ht_cmds, cmdid, NULL);
+		RzCmdDesc *cd = ht_pp_find(cmd->ht_cmds, cmdid, NULL);
 		if (cd) {
 			switch (cd->type) {
 			case RZ_CMD_DESC_TYPE_ARGV:
 			case RZ_CMD_DESC_TYPE_GROUP:
 			case RZ_CMD_DESC_TYPE_FAKE:
 			case RZ_CMD_DESC_TYPE_ARGV_MODES:
-				if (!is_exact_match && !is_valid_argv_modes (rz_cmd_desc_get_exec (cd), last_letter)) {
+				if (!is_exact_match && !is_valid_argv_modes(rz_cmd_desc_get_exec(cd), last_letter)) {
 					break;
 				}
 				res = cd;
@@ -264,7 +264,7 @@ RZ_API RzCmdDesc *rz_cmd_get_desc(RzCmd *cmd, const char *cmd_identifier) {
 		*(--end_cmdid) = '\0';
 	}
 out:
-	free (cmdid);
+	free(cmdid);
 	return res;
 }
 
@@ -275,37 +275,37 @@ RZ_API char **rz_cmd_alias_keys(RzCmd *cmd, int *sz) {
 	return cmd->aliases.keys;
 }
 
-RZ_API void rz_cmd_alias_free (RzCmd *cmd) {
+RZ_API void rz_cmd_alias_free(RzCmd *cmd) {
 	int i; // find
 	for (i = 0; i < cmd->aliases.count; i++) {
-		free (cmd->aliases.keys[i]);
-		free (cmd->aliases.values[i]);
+		free(cmd->aliases.keys[i]);
+		free(cmd->aliases.values[i]);
 	}
 	cmd->aliases.count = 0;
-	RZ_FREE (cmd->aliases.keys);
-	RZ_FREE (cmd->aliases.values);
-	free (cmd->aliases.remote);
+	RZ_FREE(cmd->aliases.keys);
+	RZ_FREE(cmd->aliases.values);
+	free(cmd->aliases.remote);
 }
 
-RZ_API bool rz_cmd_alias_del (RzCmd *cmd, const char *k) {
+RZ_API bool rz_cmd_alias_del(RzCmd *cmd, const char *k) {
 	int i; // find
 	for (i = 0; i < cmd->aliases.count; i++) {
-		if (!k || !strcmp (k, cmd->aliases.keys[i])) {
-			RZ_FREE (cmd->aliases.values[i]);
+		if (!k || !strcmp(k, cmd->aliases.keys[i])) {
+			RZ_FREE(cmd->aliases.values[i]);
 			cmd->aliases.count--;
 			if (cmd->aliases.count > 0) {
 				if (i > 0) {
-					free (cmd->aliases.keys[i]);
+					free(cmd->aliases.keys[i]);
 					cmd->aliases.keys[i] = cmd->aliases.keys[0];
-					free (cmd->aliases.values[i]);
+					free(cmd->aliases.values[i]);
 					cmd->aliases.values[i] = cmd->aliases.values[0];
 				}
-				memmove (cmd->aliases.values,
+				memmove(cmd->aliases.values,
 					cmd->aliases.values + 1,
-					cmd->aliases.count * sizeof (void*));
-				memmove (cmd->aliases.keys,
+					cmd->aliases.count * sizeof(void *));
+				memmove(cmd->aliases.keys,
 					cmd->aliases.keys + 1,
-					cmd->aliases.count * sizeof (void*));
+					cmd->aliases.count * sizeof(void *));
 			}
 			return true;
 		}
@@ -314,10 +314,10 @@ RZ_API bool rz_cmd_alias_del (RzCmd *cmd, const char *k) {
 }
 
 // XXX: use a hashtable or any other standard data structure
-RZ_API int rz_cmd_alias_set (RzCmd *cmd, const char *k, const char *v, int remote) {
+RZ_API int rz_cmd_alias_set(RzCmd *cmd, const char *k, const char *v, int remote) {
 	void *tofree = NULL;
-	if (!strncmp (v, "base64:", 7)) {
-		ut8 *s = rz_base64_decode_dyn (v + 7, -1);
+	if (!strncmp(v, "base64:", 7)) {
+		ut8 *s = rz_base64_decode_dyn(v + 7, -1);
 		if (s) {
 			tofree = s;
 			v = (const char *)s;
@@ -325,39 +325,39 @@ RZ_API int rz_cmd_alias_set (RzCmd *cmd, const char *k, const char *v, int remot
 	}
 	int i;
 	for (i = 0; i < cmd->aliases.count; i++) {
-		int matches = !strcmp (k, cmd->aliases.keys[i]);
+		int matches = !strcmp(k, cmd->aliases.keys[i]);
 		if (matches) {
-			free (cmd->aliases.values[i]);
-			cmd->aliases.values[i] = strdup (v);
-			free (tofree);
+			free(cmd->aliases.values[i]);
+			cmd->aliases.values[i] = strdup(v);
+			free(tofree);
 			return 1;
 		}
 	}
 
 	i = cmd->aliases.count++;
-	char **K = (char **)realloc (cmd->aliases.keys,
-				     sizeof (char *) * cmd->aliases.count);
+	char **K = (char **)realloc(cmd->aliases.keys,
+		sizeof(char *) * cmd->aliases.count);
 	if (K) {
 		cmd->aliases.keys = K;
-		int *R = (int *)realloc (cmd->aliases.remote,
-				sizeof (int) * cmd->aliases.count);
+		int *R = (int *)realloc(cmd->aliases.remote,
+			sizeof(int) * cmd->aliases.count);
 		if (R) {
 			cmd->aliases.remote = R;
-			char **V = (char **)realloc (cmd->aliases.values,
-					sizeof (char *) * cmd->aliases.count);
+			char **V = (char **)realloc(cmd->aliases.values,
+				sizeof(char *) * cmd->aliases.count);
 			if (V) {
 				cmd->aliases.values = V;
-				cmd->aliases.keys[i] = strdup (k);
-				cmd->aliases.values[i] = strdup (v);
+				cmd->aliases.keys[i] = strdup(k);
+				cmd->aliases.values[i] = strdup(v);
 				cmd->aliases.remote[i] = remote;
 			}
 		}
 	}
-	free (tofree);
+	free(tofree);
 	return 0;
 }
 
-RZ_API char *rz_cmd_alias_get (RzCmd *cmd, const char *k, int remote) {
+RZ_API char *rz_cmd_alias_get(RzCmd *cmd, const char *k, int remote) {
 	int matches, i;
 	if (!cmd || !k) {
 		return NULL;
@@ -366,11 +366,11 @@ RZ_API char *rz_cmd_alias_get (RzCmd *cmd, const char *k, int remote) {
 		matches = 0;
 		if (remote) {
 			if (cmd->aliases.remote[i]) {
-				matches = !strncmp (k, cmd->aliases.keys[i],
-					strlen (cmd->aliases.keys[i]));
+				matches = !strncmp(k, cmd->aliases.keys[i],
+					strlen(cmd->aliases.keys[i]));
 			}
 		} else {
-			matches = !strcmp (k, cmd->aliases.keys[i]);
+			matches = !strcmp(k, cmd->aliases.keys[i]);
 		}
 		if (matches) {
 			return cmd->aliases.values[i];
@@ -388,17 +388,17 @@ RZ_API int rz_cmd_add(RzCmd *c, const char *cmd, RzCmdCb cb) {
 	int idx = (ut8)cmd[0];
 	RzCmdItem *item = c->cmds[idx];
 	if (!item) {
-		item = RZ_NEW0 (RzCmdItem);
+		item = RZ_NEW0(RzCmdItem);
 		c->cmds[idx] = item;
 	}
-	strncpy (item->cmd, cmd, sizeof (item->cmd)-1);
+	strncpy(item->cmd, cmd, sizeof(item->cmd) - 1);
 	item->callback = cb;
 	return true;
 }
 
 RZ_API int rz_cmd_del(RzCmd *cmd, const char *command) {
 	int idx = (ut8)command[0];
-	RZ_FREE (cmd->cmds[idx]);
+	RZ_FREE(cmd->cmds[idx]);
 	return 0;
 }
 
@@ -407,41 +407,41 @@ RZ_API int rz_cmd_call(RzCmd *cmd, const char *input) {
 	int ret = -1;
 	RzListIter *iter;
 	RzCorePlugin *cp;
-	rz_return_val_if_fail (cmd && input, -1);
+	rz_return_val_if_fail(cmd && input, -1);
 	if (!*input) {
 		if (cmd->nullcallback) {
-			ret = cmd->nullcallback (cmd->data);
+			ret = cmd->nullcallback(cmd->data);
 		}
 	} else {
 		char *nstr = NULL;
-		const char *ji = rz_cmd_alias_get (cmd, input, 1);
+		const char *ji = rz_cmd_alias_get(cmd, input, 1);
 		if (ji) {
 			if (*ji == '$') {
-				rz_cons_strcat (ji + 1);
+				rz_cons_strcat(ji + 1);
 				return true;
 			} else {
-				nstr = rz_str_newf ("=! %s", input);
+				nstr = rz_str_newf("=! %s", input);
 				input = nstr;
 			}
 		}
 		rz_list_foreach (cmd->plist, iter, cp) {
-			if (cp->call (cmd->data, input)) {
-				free (nstr);
+			if (cp->call(cmd->data, input)) {
+				free(nstr);
 				return true;
 			}
 		}
 		if (!*input) {
-			free (nstr);
+			free(nstr);
 			return -1;
 		}
 		c = cmd->cmds[((ut8)input[0]) & 0xff];
 		if (c && c->callback) {
-			const char *inp = (*input)? input + 1: "";
-			ret = c->callback (cmd->data, inp);
+			const char *inp = (*input) ? input + 1 : "";
+			ret = c->callback(cmd->data, inp);
 		} else {
 			ret = -1;
 		}
-		free (nstr);
+		free(nstr);
 	}
 	return ret;
 }
@@ -493,7 +493,7 @@ static RzOutputMode cd_suffix2mode(RzCmdDesc *cd, const char *cmdid) {
 	if (cd->type != RZ_CMD_DESC_TYPE_ARGV_MODES) {
 		return 0;
 	}
-	return suffix2mode (cmdid + strlen (cd->name));
+	return suffix2mode(cmdid + strlen(cd->name));
 }
 
 /**
@@ -516,22 +516,22 @@ static void args_preprocessing(RzCmdDesc *cd, RzCmdParsedArgs *args) {
 		if (arg->flags & RZ_CMD_ARG_FLAG_LAST) {
 			if (arg->type == RZ_CMD_ARG_TYPE_CMD) {
 				for (j = i; j < args->argc; j++) {
-					char *s = rz_cmd_escape_arg (args->argv[j], RZ_CMD_ESCAPE_ONE_ARG);
-					if (strcmp (s, args->argv[j])) {
-						free (args->argv[j]);
+					char *s = rz_cmd_escape_arg(args->argv[j], RZ_CMD_ESCAPE_ONE_ARG);
+					if (strcmp(s, args->argv[j])) {
+						free(args->argv[j]);
 						args->argv[j] = s;
 					} else {
-						free (s);
+						free(s);
 					}
 				}
 			}
 
-			tmp = rz_str_array_join ((const char **)&args->argv[i], args->argc - i, " ");
+			tmp = rz_str_array_join((const char **)&args->argv[i], args->argc - i, " ");
 			if (!tmp) {
 				return;
 			}
 			for (j = i; j < args->argc; j++) {
-				free (args->argv[j]);
+				free(args->argv[j]);
 			}
 			args->argv[i] = tmp;
 			args->argc = i + 1;
@@ -541,7 +541,7 @@ static void args_preprocessing(RzCmdDesc *cd, RzCmdParsedArgs *args) {
 }
 
 static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args) {
-	if (!rz_cmd_desc_has_handler (cd)) {
+	if (!rz_cmd_desc_has_handler(cd)) {
 		return RZ_CMD_STATUS_NONEXISTINGCMD;
 	}
 
@@ -549,8 +549,8 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 
 	int i;
 	const char *s;
-	rz_cmd_parsed_args_foreach_arg (args, i, s) {
-		RZ_LOG_DEBUG ("processed parsed_arg %d: '%s'\n", i, s);
+	rz_cmd_parsed_args_foreach_arg(args, i, s) {
+		RZ_LOG_DEBUG("processed parsed_arg %d: '%s'\n", i, s);
 	}
 
 	RzOutputMode mode;
@@ -559,16 +559,16 @@ static RzCmdStatus argv_call_cb(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args
 		if (args->argc < cd->d.argv_data.min_argc || args->argc > cd->d.argv_data.max_argc) {
 			return RZ_CMD_STATUS_WRONG_ARGS;
 		}
-		return cd->d.argv_data.cb (cmd->data, args->argc, (const char **)args->argv);
+		return cd->d.argv_data.cb(cmd->data, args->argc, (const char **)args->argv);
 	case RZ_CMD_DESC_TYPE_ARGV_MODES:
-		mode = cd_suffix2mode (cd, rz_cmd_parsed_args_cmd (args));
+		mode = cd_suffix2mode(cd, rz_cmd_parsed_args_cmd(args));
 		if (!mode) {
 			return RZ_CMD_STATUS_NONEXISTINGCMD;
 		}
 		if (args->argc < cd->d.argv_modes_data.min_argc || args->argc > cd->d.argv_modes_data.max_argc) {
 			return RZ_CMD_STATUS_WRONG_ARGS;
 		}
-		return cd->d.argv_modes_data.cb (cmd->data, args->argc, (const char **)args->argv, mode);
+		return cd->d.argv_modes_data.cb(cmd->data, args->argc, (const char **)args->argv, mode);
 	default:
 		return RZ_CMD_STATUS_INVALID;
 	}
@@ -580,8 +580,8 @@ static RzCmdStatus call_cd(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args) {
 
 	int i;
 	const char *s;
-	rz_cmd_parsed_args_foreach_arg (args, i, s) {
-		RZ_LOG_DEBUG ("parsed_arg %d: '%s'\n", i, s);
+	rz_cmd_parsed_args_foreach_arg(args, i, s) {
+		RZ_LOG_DEBUG("parsed_arg %d: '%s'\n", i, s);
 	}
 
 	switch (cd->type) {
@@ -589,17 +589,17 @@ static RzCmdStatus call_cd(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args) {
 		if (!cd->d.group_data.exec_cd) {
 			return RZ_CMD_STATUS_NONEXISTINGCMD;
 		}
-		return call_cd (cmd, cd->d.group_data.exec_cd, args);
+		return call_cd(cmd, cd->d.group_data.exec_cd, args);
 	case RZ_CMD_DESC_TYPE_ARGV:
 	case RZ_CMD_DESC_TYPE_ARGV_MODES:
-		return argv_call_cb (cmd, cd, args);
+		return argv_call_cb(cmd, cd, args);
 	case RZ_CMD_DESC_TYPE_OLDINPUT:
-		exec_string = rz_cmd_parsed_args_execstr (args);
-		res = int2cmdstatus (cd->d.oldinput_data.cb (cmd->data, exec_string + strlen (cd->name)));
-		RZ_FREE (exec_string);
+		exec_string = rz_cmd_parsed_args_execstr(args);
+		res = int2cmdstatus(cd->d.oldinput_data.cb(cmd->data, exec_string + strlen(cd->name)));
+		RZ_FREE(exec_string);
 		return res;
 	default:
-		RZ_LOG_ERROR ("RzCmdDesc type not handled\n");
+		RZ_LOG_ERROR("RzCmdDesc type not handled\n");
 		return RZ_CMD_STATUS_INVALID;
 	}
 }
@@ -613,96 +613,96 @@ RZ_API RzCmdStatus rz_cmd_call_parsed_args(RzCmd *cmd, RzCmdParsedArgs *args) {
 	// RzCmdDesc tree
 	RzListIter *iter;
 	RzCorePlugin *cp;
-	char *exec_string = rz_cmd_parsed_args_execstr (args);
+	char *exec_string = rz_cmd_parsed_args_execstr(args);
 	rz_list_foreach (cmd->plist, iter, cp) {
-		if (cp->call && cp->call (cmd->data, exec_string)) {
+		if (cp->call && cp->call(cmd->data, exec_string)) {
 			res = RZ_CMD_STATUS_OK;
 			break;
 		}
 	}
-	RZ_FREE (exec_string);
+	RZ_FREE(exec_string);
 	if (res == RZ_CMD_STATUS_OK) {
 		return res;
 	}
 
-	RzCmdDesc *cd = rz_cmd_get_desc (cmd, rz_cmd_parsed_args_cmd (args));
+	RzCmdDesc *cd = rz_cmd_get_desc(cmd, rz_cmd_parsed_args_cmd(args));
 	if (!cd) {
 		return RZ_CMD_STATUS_NONEXISTINGCMD;
 	}
 
-	return call_cd (cmd, cd, args);
+	return call_cd(cmd, cd, args);
 }
 
 static size_t strlen0(const char *s) {
-	return s? strlen (s): 0;
+	return s ? strlen(s) : 0;
 }
 
 static size_t strbuf_append_calc(RzStrBuf *sb, const char *s) {
-	rz_strbuf_append (sb, s);
-	return strlen (s);
+	rz_strbuf_append(sb, s);
+	return strlen(s);
 }
 
 static void fill_modes_children_chars(RzStrBuf *sb, RzCmdDesc *cd) {
 	// RZ_CMD_DESC_TYPE_ARGV_MODES does not have actual children for
 	// the output modes, so we consider it separately
 	size_t i;
-	for (i = 0; i < RZ_ARRAY_SIZE (argv_modes); i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE(argv_modes); i++) {
 		if (cd->d.argv_modes_data.modes & argv_modes[i].mode) {
-			rz_strbuf_append (sb, argv_modes[i].suffix);
+			rz_strbuf_append(sb, argv_modes[i].suffix);
 		}
 	}
 }
 
 static size_t fill_children_chars(RzStrBuf *sb, RzCmdDesc *cd) {
 	if (cd->help->options) {
-		return strbuf_append_calc (sb, cd->help->options);
+		return strbuf_append_calc(sb, cd->help->options);
 	}
 
 	RzStrBuf csb;
-	rz_strbuf_init (&csb);
+	rz_strbuf_init(&csb);
 
 	void **it;
 	bool has_other_commands = false;
-	RzCmdDesc *exec_cd = rz_cmd_desc_get_exec (cd);
+	RzCmdDesc *exec_cd = rz_cmd_desc_get_exec(cd);
 	if (exec_cd) {
 		switch (exec_cd->type) {
 		case RZ_CMD_DESC_TYPE_ARGV_MODES:
-			fill_modes_children_chars (&csb, exec_cd);
+			fill_modes_children_chars(&csb, exec_cd);
 			break;
 		default:
 			break;
 		}
 	}
-	rz_cmd_desc_children_foreach (cd, it) {
+	rz_cmd_desc_children_foreach(cd, it) {
 		RzCmdDesc *child = *(RzCmdDesc **)it;
-		if (rz_str_startswith (child->name, cd->name) && strlen (child->name) == strlen (cd->name) + 1) {
-			rz_strbuf_appendf (&csb, "%c", child->name[strlen (cd->name)]);
-		} else if (strcmp (child->name, cd->name)) {
+		if (rz_str_startswith(child->name, cd->name) && strlen(child->name) == strlen(cd->name) + 1) {
+			rz_strbuf_appendf(&csb, "%c", child->name[strlen(cd->name)]);
+		} else if (strcmp(child->name, cd->name)) {
 			has_other_commands = true;
 		}
 	}
 
-	if (rz_strbuf_is_empty (&csb) || rz_strbuf_length (&csb) >= MAX_CHILDREN_SHOW) {
-		rz_strbuf_fini (&csb);
-		rz_strbuf_set (&csb, "?");
+	if (rz_strbuf_is_empty(&csb) || rz_strbuf_length(&csb) >= MAX_CHILDREN_SHOW) {
+		rz_strbuf_fini(&csb);
+		rz_strbuf_set(&csb, "?");
 		has_other_commands = false;
 	}
 
 	if (has_other_commands) {
-		rz_strbuf_append (&csb, "?");
+		rz_strbuf_append(&csb, "?");
 	}
 
-	if (!cd->n_children || rz_cmd_desc_has_handler (cd)) {
-		rz_strbuf_prepend (&csb, "[");
-		rz_strbuf_append (&csb, "]");
+	if (!cd->n_children || rz_cmd_desc_has_handler(cd)) {
+		rz_strbuf_prepend(&csb, "[");
+		rz_strbuf_append(&csb, "]");
 	} else {
-		rz_strbuf_prepend (&csb, "<");
-		rz_strbuf_append (&csb, ">");
+		rz_strbuf_prepend(&csb, "<");
+		rz_strbuf_append(&csb, ">");
 	}
-	size_t res = rz_strbuf_length (&csb);
-	char *s = rz_strbuf_drain_nofree (&csb);
-	rz_strbuf_append (sb, s);
-	free (s);
+	size_t res = rz_strbuf_length(&csb);
+	char *s = rz_strbuf_drain_nofree(&csb);
+	rz_strbuf_append(sb, s);
+	free(s);
 	return res;
 }
 
@@ -714,28 +714,28 @@ static void fill_wrapped_comment(RzCmd *cmd, RzStrBuf *sb, const char *comment, 
 	int rows, cols;
 	bool is_interactive = false;
 	if (cmd->has_cons) {
-		cols = rz_cons_get_size (&rows);
-		is_interactive = rz_cons_is_interactive ();
+		cols = rz_cons_get_size(&rows);
+		is_interactive = rz_cons_is_interactive();
 	}
-	if (is_interactive && cols > 0 && cols - columns > MIN_SUMMARY_WIDTH && !RZ_STR_ISEMPTY (comment)) {
-		char *text = strdup (comment);
-		RzList *wrapped_text = rz_str_wrap (text, cols - columns - 2);
+	if (is_interactive && cols > 0 && cols - columns > MIN_SUMMARY_WIDTH && !RZ_STR_ISEMPTY(comment)) {
+		char *text = strdup(comment);
+		RzList *wrapped_text = rz_str_wrap(text, cols - columns - 2);
 		RzListIter *it;
 		const char *line;
 		bool first = true;
 		rz_list_foreach (wrapped_text, it, line) {
 			if (!first) {
-				rz_strbuf_appendf (sb, "\n%*s", (int)(columns + 2), "");
+				rz_strbuf_appendf(sb, "\n%*s", (int)(columns + 2), "");
 			} else {
-				rz_strbuf_append (sb, "# ");
+				rz_strbuf_append(sb, "# ");
 				first = false;
 			}
-			rz_strbuf_append (sb, line);
+			rz_strbuf_append(sb, line);
 		}
-		rz_list_free (wrapped_text);
-		free (text);
-	} else if (!RZ_STR_ISEMPTY (comment)) {
-		rz_strbuf_appendf (sb, "# %s", comment);
+		rz_list_free(wrapped_text);
+		free(text);
+	} else if (!RZ_STR_ISEMPTY(comment)) {
+		rz_strbuf_appendf(sb, "# %s", comment);
 	}
 }
 
@@ -746,44 +746,44 @@ static size_t fill_args(RzStrBuf *sb, RzCmdDesc *cd) {
 	bool has_array = false;
 	for (arg = cd->help->args; arg && arg->name; arg++) {
 		if (arg->type == RZ_CMD_ARG_TYPE_FAKE) {
-			rz_strbuf_append (sb, arg->name);
-			len += strlen (arg->name);
+			rz_strbuf_append(sb, arg->name);
+			len += strlen(arg->name);
 			continue;
 		}
 
 		if (has_array) {
-			rz_warn_if_reached ();
+			rz_warn_if_reached();
 			break;
 		}
 		if (!arg->no_space) {
-			rz_strbuf_append (sb, " ");
+			rz_strbuf_append(sb, " ");
 			len++;
 		}
 		if (arg->optional) {
-			rz_strbuf_append (sb, "[");
+			rz_strbuf_append(sb, "[");
 			len++;
 			n_optionals++;
 		}
 		if (arg->flags & RZ_CMD_ARG_FLAG_ARRAY) {
 			has_array = true;
-			rz_strbuf_appendf (sb, "<%s0>", arg->name);
-			len += strlen (arg->name) + 3;
-			rz_strbuf_appendf (sb, " [<%s1> ...]", arg->name);
-			len += strlen (arg->name) + 10;
+			rz_strbuf_appendf(sb, "<%s0>", arg->name);
+			len += strlen(arg->name) + 3;
+			rz_strbuf_appendf(sb, " [<%s1> ...]", arg->name);
+			len += strlen(arg->name) + 10;
 		} else if (arg->flags & RZ_CMD_ARG_FLAG_OPTION) {
-			rz_strbuf_appendf (sb, "-%s", arg->name);
-			len += strlen (arg->name) + 1;
+			rz_strbuf_appendf(sb, "-%s", arg->name);
+			len += strlen(arg->name) + 1;
 		} else {
-			rz_strbuf_appendf (sb, "<%s>", arg->name);
-			len += strlen (arg->name) + 2;
+			rz_strbuf_appendf(sb, "<%s>", arg->name);
+			len += strlen(arg->name) + 2;
 			if (arg->default_value) {
-				rz_strbuf_appendf (sb, "=%s", arg->default_value);
-				len += strlen (arg->default_value) + 1;
+				rz_strbuf_appendf(sb, "=%s", arg->default_value);
+				len += strlen(arg->default_value) + 1;
 			}
 		}
 	}
 	for (; n_optionals > 0; n_optionals--) {
-		rz_strbuf_append (sb, "]");
+		rz_strbuf_append(sb, "]");
 		len++;
 	}
 	return len;
@@ -791,13 +791,13 @@ static size_t fill_args(RzStrBuf *sb, RzCmdDesc *cd) {
 
 static void fill_usage_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_color) {
 	const char *pal_label_color = "",
-		*pal_args_color = "",
-		*pal_input_color = "",
-		*pal_help_color = "",
-		*pal_reset = "";
+		   *pal_args_color = "",
+		   *pal_input_color = "",
+		   *pal_help_color = "",
+		   *pal_reset = "";
 
 	if (cmd->has_cons && use_color) {
-		RzCons *cons = rz_cons_singleton ();
+		RzCons *cons = rz_cons_singleton();
 		pal_label_color = cons->context->pal.label;
 		pal_args_color = cons->context->pal.args;
 		pal_input_color = cons->context->pal.input;
@@ -806,76 +806,76 @@ static void fill_usage_strbuf(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, bool use_
 	}
 
 	size_t columns = 0;
-	rz_strbuf_append (sb, pal_label_color);
-	columns += strbuf_append_calc (sb, "Usage: ");
-	rz_strbuf_append (sb, pal_reset);
+	rz_strbuf_append(sb, pal_label_color);
+	columns += strbuf_append_calc(sb, "Usage: ");
+	rz_strbuf_append(sb, pal_reset);
 	if (cd->help->usage) {
-		columns += strbuf_append_calc (sb, cd->help->usage);
-		rz_strbuf_append (sb, pal_reset);
+		columns += strbuf_append_calc(sb, cd->help->usage);
+		rz_strbuf_append(sb, pal_reset);
 	} else {
-		rz_strbuf_append (sb, pal_input_color);
-		columns += strbuf_append_calc (sb, cd->name);
-		if (show_children_shortcut (cd)) {
-			rz_strbuf_append (sb, pal_reset);
-			columns += fill_children_chars (sb, cd);
+		rz_strbuf_append(sb, pal_input_color);
+		columns += strbuf_append_calc(sb, cd->name);
+		if (show_children_shortcut(cd)) {
+			rz_strbuf_append(sb, pal_reset);
+			columns += fill_children_chars(sb, cd);
 		}
-		rz_strbuf_append (sb, pal_args_color);
+		rz_strbuf_append(sb, pal_args_color);
 		if (cd->help->args_str) {
-			columns += strbuf_append_calc (sb, cd->help->args_str);
+			columns += strbuf_append_calc(sb, cd->help->args_str);
 		} else {
-			columns += fill_args (sb, cd);
+			columns += fill_args(sb, cd);
 		}
-		rz_strbuf_append (sb, pal_reset);
+		rz_strbuf_append(sb, pal_reset);
 	}
 	if (cd->help->summary) {
-		columns += strbuf_append_calc (sb, "   ");
-		rz_strbuf_append (sb, pal_help_color);
-		fill_wrapped_comment (cmd, sb, cd->help->summary, columns);
-		rz_strbuf_append (sb, pal_reset);
+		columns += strbuf_append_calc(sb, "   ");
+		rz_strbuf_append(sb, pal_help_color);
+		fill_wrapped_comment(cmd, sb, cd->help->summary, columns);
+		rz_strbuf_append(sb, pal_reset);
 	}
-	rz_strbuf_append (sb, "\n");
+	rz_strbuf_append(sb, "\n");
 }
 
 static size_t calc_padding_len(RzCmdDesc *cd, const char *name) {
-	size_t name_len = strlen (name);
+	size_t name_len = strlen(name);
 	size_t args_len = 0;
 	size_t children_length = 0;
-	if (show_children_shortcut (cd)) {
+	if (show_children_shortcut(cd)) {
 		RzStrBuf sb;
-		rz_strbuf_init (&sb);
-		fill_children_chars (&sb, cd);
-		children_length += rz_strbuf_length (&sb);
-		rz_strbuf_fini (&sb);
+		rz_strbuf_init(&sb);
+		fill_children_chars(&sb, cd);
+		children_length += rz_strbuf_length(&sb);
+		rz_strbuf_fini(&sb);
 	}
 	if (cd->help->args_str) {
-		args_len = strlen0 (cd->help->args_str);
+		args_len = strlen0(cd->help->args_str);
 	} else {
 		RzStrBuf sb;
-		rz_strbuf_init (&sb);
-		fill_args (&sb, cd);
-		args_len = rz_strbuf_length (&sb);
-		rz_strbuf_fini (&sb);
+		rz_strbuf_init(&sb);
+		fill_args(&sb, cd);
+		args_len = rz_strbuf_length(&sb);
+		rz_strbuf_fini(&sb);
 	}
 	return name_len + args_len + children_length;
 }
 
 static void update_minmax_len(RzCmdDesc *cd, size_t *max_len, size_t *min_len) {
-	size_t val = calc_padding_len (cd, cd->name);
-	*max_len = val > *max_len? val: *max_len;
-	*min_len = val < *min_len? val: *min_len;
+	size_t val = calc_padding_len(cd, cd->name);
+	*max_len = val > *max_len ? val : *max_len;
+	*min_len = val < *min_len ? val : *min_len;
 }
 
 static void do_print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, const char *name, const char *summary, bool show_children, size_t max_len, bool use_color) {
-	size_t str_len = calc_padding_len (cd, name);
-	int padding = str_len < max_len? max_len - str_len: 0;
+	size_t str_len = calc_padding_len(cd, name);
+	int padding = str_len < max_len ? max_len - str_len : 0;
 	const char *pal_args_color = "",
-		*pal_opt_color = "",
-		*pal_help_color = "",
-		*pal_input_color = "",
-		*pal_reset = "";
+		   *pal_opt_color = "",
+		   *pal_help_color = "",
+		   *pal_input_color = "",
+		   *pal_reset = "";
 
 	if (cmd->has_cons && use_color) {
-		RzCons *cons = rz_cons_singleton ();
+		RzCons *cons = rz_cons_singleton();
 		pal_args_color = cons->context->pal.args;
 		pal_opt_color = cons->context->pal.reset;
 		pal_help_color = cons->context->pal.help;
@@ -884,76 +884,76 @@ static void do_print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, const c
 	}
 
 	size_t columns = 0;
-	columns += strbuf_append_calc (sb, "| ");
-	rz_strbuf_append (sb, pal_input_color);
-	columns += strbuf_append_calc (sb, name);
-	if (show_children && show_children_shortcut (cd)) {
-		rz_strbuf_append (sb, pal_opt_color);
-		columns += fill_children_chars (sb, cd);
+	columns += strbuf_append_calc(sb, "| ");
+	rz_strbuf_append(sb, pal_input_color);
+	columns += strbuf_append_calc(sb, name);
+	if (show_children && show_children_shortcut(cd)) {
+		rz_strbuf_append(sb, pal_opt_color);
+		columns += fill_children_chars(sb, cd);
 	}
-	rz_strbuf_append (sb, pal_args_color);
+	rz_strbuf_append(sb, pal_args_color);
 	if (cd->help->args_str) {
-		columns += strbuf_append_calc (sb, cd->help->args_str);
+		columns += strbuf_append_calc(sb, cd->help->args_str);
 	} else {
-		columns += fill_args (sb, cd);
+		columns += fill_args(sb, cd);
 	}
-	rz_strbuf_appendf (sb, " %*s", padding, "");
+	rz_strbuf_appendf(sb, " %*s", padding, "");
 	columns += padding + 1;
-	rz_strbuf_append (sb, pal_help_color);
+	rz_strbuf_append(sb, pal_help_color);
 
-	fill_wrapped_comment (cmd, sb, summary, columns);
-	rz_strbuf_appendf (sb, "%s\n", pal_reset);
+	fill_wrapped_comment(cmd, sb, summary, columns);
+	rz_strbuf_appendf(sb, "%s\n", pal_reset);
 }
 
 static void print_child_help(RzCmd *cmd, RzStrBuf *sb, RzCmdDesc *cd, size_t max_len, bool use_color) {
-	do_print_child_help (cmd, sb, cd, cd->name, cd->help->summary? cd->help->summary: "", true, max_len, use_color);
+	do_print_child_help(cmd, sb, cd, cd->name, cd->help->summary ? cd->help->summary : "", true, max_len, use_color);
 }
 
 static char *group_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
-	RzStrBuf *sb = rz_strbuf_new (NULL);
-	fill_usage_strbuf (cmd, sb, cd, use_color);
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	fill_usage_strbuf(cmd, sb, cd, use_color);
 
 	void **it_cd;
 	size_t max_len = 0, min_len = SIZE_MAX;
 
-	rz_cmd_desc_children_foreach (cd, it_cd) {
+	rz_cmd_desc_children_foreach(cd, it_cd) {
 		RzCmdDesc *child = *(RzCmdDesc **)it_cd;
-		update_minmax_len (child, &max_len, &min_len);
+		update_minmax_len(child, &max_len, &min_len);
 	}
 	if (max_len - min_len > MAX_RIGHT_ALIGHNMENT) {
 		max_len = min_len + MAX_RIGHT_ALIGHNMENT;
 	}
 
-	rz_cmd_desc_children_foreach (cd, it_cd) {
+	rz_cmd_desc_children_foreach(cd, it_cd) {
 		RzCmdDesc *child = *(RzCmdDesc **)it_cd;
-		print_child_help (cmd, sb, child, max_len, use_color);
+		print_child_help(cmd, sb, child, max_len, use_color);
 	}
-	return rz_strbuf_drain (sb);
+	return rz_strbuf_drain(sb);
 }
 
 static char *argv_modes_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
-	RzStrBuf *sb = rz_strbuf_new (NULL);
-	fill_usage_strbuf (cmd, sb, cd, use_color);
+	RzStrBuf *sb = rz_strbuf_new(NULL);
+	fill_usage_strbuf(cmd, sb, cd, use_color);
 
 	size_t max_len = 0, min_len = SIZE_MAX;
-	update_minmax_len (cd, &max_len, &min_len);
+	update_minmax_len(cd, &max_len, &min_len);
 	max_len++; // consider the suffix letter
 	if (max_len - min_len > MAX_RIGHT_ALIGHNMENT) {
 		max_len = min_len + MAX_RIGHT_ALIGHNMENT;
 	}
 
 	size_t i;
-	for (i = 0; i < RZ_ARRAY_SIZE (argv_modes); i++) {
+	for (i = 0; i < RZ_ARRAY_SIZE(argv_modes); i++) {
 		if (cd->d.argv_modes_data.modes & argv_modes[i].mode) {
-			char *name = rz_str_newf ("%s%s", cd->name, argv_modes[i].suffix);
-			char *summary = rz_str_newf ("%s%s", cd->help->summary, argv_modes[i].summary_suffix);
-			do_print_child_help (cmd, sb, cd, name, summary, false, max_len, use_color);
-			free (name);
-			free (summary);
+			char *name = rz_str_newf("%s%s", cd->name, argv_modes[i].suffix);
+			char *summary = rz_str_newf("%s%s", cd->help->summary, argv_modes[i].summary_suffix);
+			do_print_child_help(cmd, sb, cd, name, summary, false, max_len, use_color);
+			free(name);
+			free(summary);
 		}
 	}
 
-	return rz_strbuf_drain (sb);
+	return rz_strbuf_drain(sb);
 }
 
 static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color) {
@@ -961,12 +961,12 @@ static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color
 		return;
 	}
 	const char *pal_help_color = "",
-		*pal_input_color = "",
-		*pal_label_color = "",
-		*pal_args_color = "",
-		*pal_reset = "";
+		   *pal_input_color = "",
+		   *pal_label_color = "",
+		   *pal_args_color = "",
+		   *pal_reset = "";
 	if (cmd->has_cons && use_color) {
-		RzCons *cons = rz_cons_singleton ();
+		RzCons *cons = rz_cons_singleton();
 		pal_help_color = cons->context->pal.help;
 		pal_input_color = cons->context->pal.input;
 		pal_label_color = cons->context->pal.label;
@@ -977,12 +977,12 @@ static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color
 	const RzCmdDescDetail *detail_it = cd->help->details;
 	while (detail_it->name) {
 		if (!RZ_STR_ISEMPTY(detail_it->name)) {
-			rz_strbuf_appendf (sb, "\n%s%s:%s\n", pal_label_color, detail_it->name, pal_reset);
+			rz_strbuf_appendf(sb, "\n%s%s:%s\n", pal_label_color, detail_it->name, pal_reset);
 		}
 		const RzCmdDescDetailEntry *entry_it = detail_it->entries;
 		size_t max_len = 0, min_len = SIZE_MAX;
 		while (entry_it->text) {
-			size_t len = strlen (entry_it->text) + strlen0 (entry_it->arg_str);
+			size_t len = strlen(entry_it->text) + strlen0(entry_it->arg_str);
 			if (max_len < len) {
 				max_len = len;
 			}
@@ -997,18 +997,18 @@ static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color
 
 		entry_it = detail_it->entries;
 		while (entry_it->text) {
-			size_t len = strlen (entry_it->text) + strlen0 (entry_it->arg_str);
+			size_t len = strlen(entry_it->text) + strlen0(entry_it->arg_str);
 			int padding = len < max_len ? max_len - len : 0;
 			const char *arg_str = entry_it->arg_str ? entry_it->arg_str : "";
-			rz_strbuf_appendf (sb, "| %s%s%s%s %*s%s",
+			rz_strbuf_appendf(sb, "| %s%s%s%s %*s%s",
 				pal_input_color, entry_it->text,
 				pal_args_color, arg_str,
 				padding, "",
 				pal_help_color);
-			size_t columns = strlen ("| ") + strlen (entry_it->text) +
-				strlen (" ") + strlen (arg_str) + padding;
+			size_t columns = strlen("| ") + strlen(entry_it->text) +
+				strlen(" ") + strlen(arg_str) + padding;
 			fill_wrapped_comment(cmd, sb, entry_it->comment, columns);
-			rz_strbuf_appendf (sb, "%s\n", pal_reset);
+			rz_strbuf_appendf(sb, "%s\n", pal_reset);
 			entry_it++;
 		}
 		detail_it++;
@@ -1016,28 +1016,28 @@ static void fill_details(RzCmd *cmd, RzCmdDesc *cd, RzStrBuf *sb, bool use_color
 }
 
 static char *argv_get_help(RzCmd *cmd, RzCmdDesc *cd, size_t detail, bool use_color) {
-	RzStrBuf *sb = rz_strbuf_new (NULL);
+	RzStrBuf *sb = rz_strbuf_new(NULL);
 
-	fill_usage_strbuf (cmd, sb, cd, use_color);
+	fill_usage_strbuf(cmd, sb, cd, use_color);
 
 	switch (detail) {
 	case 1:
-		return rz_strbuf_drain (sb);
+		return rz_strbuf_drain(sb);
 	case 2:
 		if (cd->help->description) {
-			rz_strbuf_appendf (sb, "\n%s\n", cd->help->description);
+			rz_strbuf_appendf(sb, "\n%s\n", cd->help->description);
 		}
-		fill_details (cmd, cd, sb, use_color);
-		return rz_strbuf_drain (sb);
+		fill_details(cmd, cd, sb, use_color);
+		return rz_strbuf_drain(sb);
 	default:
-		rz_strbuf_free (sb);
+		rz_strbuf_free(sb);
 		return NULL;
 	}
 }
 
 static char *fake_get_help(RzCmd *cmd, RzCmdDesc *cd, bool use_color) {
 	// abuse detail=2 of the argv help as they show essentially the same info
-	return argv_get_help (cmd, cd, 2, use_color);
+	return argv_get_help(cmd, cd, 2, use_color);
 }
 
 static char *oldinput_get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *a) {
@@ -1046,14 +1046,14 @@ static char *oldinput_get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *a) {
 	}
 
 	const char *s = NULL;
-	rz_cons_push ();
-	RzCmdStatus status = rz_cmd_call_parsed_args (cmd, a);
+	rz_cons_push();
+	RzCmdStatus status = rz_cmd_call_parsed_args(cmd, a);
 	if (status == RZ_CMD_STATUS_OK) {
-		rz_cons_filter ();
-		s = rz_cons_get_buffer ();
+		rz_cons_filter();
+		s = rz_cons_get_buffer();
 	}
-	char *res = strdup (s? s: "");
-	rz_cons_pop ();
+	char *res = strdup(s ? s : "");
+	rz_cons_pop();
 	return res;
 }
 
@@ -1061,37 +1061,37 @@ static char *get_help(RzCmd *cmd, RzCmdDesc *cd, RzCmdParsedArgs *args, bool use
 	switch (cd->type) {
 	case RZ_CMD_DESC_TYPE_GROUP:
 		if (detail > 1 && cd->d.group_data.exec_cd) {
-			return get_help (cmd, cd->d.group_data.exec_cd, args, use_color, detail);
+			return get_help(cmd, cd->d.group_data.exec_cd, args, use_color, detail);
 		}
 		if (detail == 1) {
 			// show the group help only when doing <cmd>?
-			return group_get_help (cmd, cd, use_color);
+			return group_get_help(cmd, cd, use_color);
 		}
-		return argv_get_help (cmd, cd, detail, use_color);
+		return argv_get_help(cmd, cd, detail, use_color);
 	case RZ_CMD_DESC_TYPE_ARGV:
-		return argv_get_help (cmd, cd, detail, use_color);
+		return argv_get_help(cmd, cd, detail, use_color);
 	case RZ_CMD_DESC_TYPE_ARGV_MODES:
 		if (detail == 1) {
-			return argv_modes_get_help (cmd, cd, use_color);
+			return argv_modes_get_help(cmd, cd, use_color);
 		}
-		return argv_get_help (cmd, cd, detail, use_color);
+		return argv_get_help(cmd, cd, detail, use_color);
 	case RZ_CMD_DESC_TYPE_FAKE:
 		if (detail != 1) {
 			return NULL;
 		}
-		return fake_get_help (cmd, cd, use_color);
+		return fake_get_help(cmd, cd, use_color);
 	case RZ_CMD_DESC_TYPE_OLDINPUT:
-		return oldinput_get_help (cmd, cd, args);
+		return oldinput_get_help(cmd, cd, args);
 	case RZ_CMD_DESC_TYPE_INNER:
-		rz_warn_if_reached ();
+		rz_warn_if_reached();
 		return NULL;
 	}
 	return NULL;
 }
 
 RZ_API char *rz_cmd_get_help(RzCmd *cmd, RzCmdParsedArgs *args, bool use_color) {
-	char *cmdid = strdup (rz_cmd_parsed_args_cmd (args));
-	char *cmdid_p = cmdid + strlen (cmdid) - 1;
+	char *cmdid = strdup(rz_cmd_parsed_args_cmd(args));
+	char *cmdid_p = cmdid + strlen(cmdid) - 1;
 	size_t detail = 0;
 	while (cmdid_p >= cmdid && *cmdid_p == '?' && detail < 2) {
 		*cmdid_p = '\0';
@@ -1101,33 +1101,33 @@ RZ_API char *rz_cmd_get_help(RzCmd *cmd, RzCmdParsedArgs *args, bool use_color) 
 
 	if (detail == 0) {
 		// there should be at least one `?`
-		free (cmdid);
+		free(cmdid);
 		return NULL;
 	}
 
-	RzCmdDesc *cd = cmdid_p >= cmdid? rz_cmd_get_desc (cmd, cmdid): rz_cmd_get_root (cmd);
-	free (cmdid);
+	RzCmdDesc *cd = cmdid_p >= cmdid ? rz_cmd_get_desc(cmd, cmdid) : rz_cmd_get_root(cmd);
+	free(cmdid);
 	if (!cd || !cd->help) {
 		return NULL;
 	}
 
-	return get_help (cmd, cd, args, use_color, detail);
+	return get_help(cmd, cd, args, use_color, detail);
 }
 
 /** macro.c **/
 
 RZ_API RzCmdMacroItem *rz_cmd_macro_item_new(void) {
-	return RZ_NEW0 (RzCmdMacroItem);
+	return RZ_NEW0(RzCmdMacroItem);
 }
 
 RZ_API void rz_cmd_macro_item_free(RzCmdMacroItem *item) {
 	if (!item) {
 		return;
 	}
-	free (item->name);
-	free (item->args);
-	free (item->code);
-	free (item);
+	free(item->name);
+	free(item->args);
+	free(item->code);
+	free(item);
 }
 
 RZ_API void rz_cmd_macro_init(RzCmdMacro *mac) {
@@ -1138,11 +1138,11 @@ RZ_API void rz_cmd_macro_init(RzCmdMacro *mac) {
 	mac->num = NULL;
 	mac->user = NULL;
 	mac->cmd = NULL;
-	mac->macros = rz_list_newf ((RzListFree)rz_cmd_macro_item_free);
+	mac->macros = rz_list_newf((RzListFree)rz_cmd_macro_item_free);
 }
 
 RZ_API void rz_cmd_macro_fini(RzCmdMacro *mac) {
-	rz_list_free (mac->macros);
+	rz_list_free(mac->macros);
 	mac->macros = NULL;
 }
 
@@ -1161,44 +1161,44 @@ RZ_API int rz_cmd_macro_add(RzCmdMacro *mac, const char *oname) {
 	int lidx;
 
 	if (!*oname) {
-		rz_cmd_macro_list (mac);
+		rz_cmd_macro_list(mac);
 		return 0;
 	}
 
-	name = strdup (oname);
+	name = strdup(oname);
 	if (!name) {
-		perror ("strdup");
+		perror("strdup");
 		return 0;
 	}
 
-	pbody = strchr (name, ';');
+	pbody = strchr(name, ';');
 	if (!pbody) {
-		eprintf ("Invalid macro body\n");
-		free (name);
+		eprintf("Invalid macro body\n");
+		free(name);
 		return false;
 	}
 	*pbody = '\0';
 	pbody++;
 
-	if (*name && name[1] && name[strlen (name)-1]==')') {
-		eprintf ("rz_cmd_macro_add: missing macro body?\n");
-		free (name);
+	if (*name && name[1] && name[strlen(name) - 1] == ')') {
+		eprintf("rz_cmd_macro_add: missing macro body?\n");
+		free(name);
 		return -1;
 	}
 
 	macro = NULL;
-	ptr = strchr (name, ' ');
+	ptr = strchr(name, ' ');
 	if (ptr) {
-		*ptr='\0';
-		args = ptr +1;
+		*ptr = '\0';
+		args = ptr + 1;
 	}
 	macro_update = 0;
 	rz_list_foreach (mac->macros, iter, m) {
-		if (!strcmp (name, m->name)) {
+		if (!strcmp(name, m->name)) {
 			macro = m;
 			// keep macro->name
-			free (macro->code);
-			free (macro->args);
+			free(macro->code);
+			free(macro->args);
 			macro_update = 1;
 			break;
 		}
@@ -1207,26 +1207,26 @@ RZ_API int rz_cmd_macro_add(RzCmdMacro *mac, const char *oname) {
 		*ptr = ' ';
 	}
 	if (!macro) {
-		macro = rz_cmd_macro_item_new ();
+		macro = rz_cmd_macro_item_new();
 		if (!macro) {
-			free (name);
+			free(name);
 			return 0;
 		}
-		macro->name = strdup (name);
+		macro->name = strdup(name);
 	}
 
-	macro->codelen = (pbody[0])? strlen (pbody)+2 : 4096;
-	macro->code = (char *)malloc (macro->codelen);
+	macro->codelen = (pbody[0]) ? strlen(pbody) + 2 : 4096;
+	macro->code = (char *)malloc(macro->codelen);
 	*macro->code = '\0';
 	macro->nargs = 0;
 	if (!args) {
 		args = "";
 	}
-	macro->args = strdup (args);
-	ptr = strchr (macro->name, ' ');
+	macro->args = strdup(args);
+	ptr = strchr(macro->name, ' ');
 	if (ptr != NULL) {
 		*ptr = '\0';
-		macro->nargs = rz_str_word_set0 (ptr+1);
+		macro->nargs = rz_str_word_set0(ptr + 1);
 	}
 
 	for (lidx = 0; pbody[lidx]; lidx++) {
@@ -1236,36 +1236,36 @@ RZ_API int rz_cmd_macro_add(RzCmdMacro *mac, const char *oname) {
 			pbody[lidx] = '\0';
 		}
 	}
-	strncpy (macro->code, pbody, macro->codelen);
-	macro->code[macro->codelen-1] = 0;
+	strncpy(macro->code, pbody, macro->codelen);
+	macro->code[macro->codelen - 1] = 0;
 	if (macro_update == 0) {
-		rz_list_append (mac->macros, macro);
+		rz_list_append(mac->macros, macro);
 	}
-	free (name);
+	free(name);
 	return 0;
 }
 
 RZ_API int rz_cmd_macro_rm(RzCmdMacro *mac, const char *_name) {
 	RzListIter *iter;
 	RzCmdMacroItem *m;
-	char *name = strdup (_name);
+	char *name = strdup(_name);
 	if (!name) {
 		return false;
 	}
-	char *ptr = strchr (name, ')');
+	char *ptr = strchr(name, ')');
 	if (ptr) {
 		*ptr = '\0';
 	}
 	bool ret = false;
 	rz_list_foreach (mac->macros, iter, m) {
-		if (!strcmp (m->name, name)) {
-			rz_list_delete (mac->macros, iter);
-			eprintf ("Macro '%s' removed.\n", name);
+		if (!strcmp(m->name, name)) {
+			rz_list_delete(mac->macros, iter);
+			eprintf("Macro '%s' removed.\n", name);
 			ret = true;
 			break;
 		}
 	}
-	free (name);
+	free(name);
 	return ret;
 }
 
@@ -1275,15 +1275,15 @@ RZ_API void rz_cmd_macro_list(RzCmdMacro *mac) {
 	int j, idx = 0;
 	RzListIter *iter;
 	rz_list_foreach (mac->macros, iter, m) {
-		mac->cb_printf ("%d (%s %s; ", idx, m->name, m->args);
-		for (j=0; m->code[j]; j++) {
+		mac->cb_printf("%d (%s %s; ", idx, m->name, m->args);
+		for (j = 0; m->code[j]; j++) {
 			if (m->code[j] == '\n') {
-				mac->cb_printf ("; ");
+				mac->cb_printf("; ");
 			} else {
-				mac->cb_printf ("%c", m->code[j]);
+				mac->cb_printf("%c", m->code[j]);
 			}
 		}
-		mac->cb_printf (")\n");
+		mac->cb_printf(")\n");
 		idx++;
 	}
 }
@@ -1294,15 +1294,15 @@ RZ_API void rz_cmd_macro_meta(RzCmdMacro *mac) {
 	int j;
 	RzListIter *iter;
 	rz_list_foreach (mac->macros, iter, m) {
-		mac->cb_printf ("(%s %s, ", m->name, m->args);
-		for (j=0; m->code[j]; j++) {
+		mac->cb_printf("(%s %s, ", m->name, m->args);
+		for (j = 0; m->code[j]; j++) {
 			if (m->code[j] == '\n') {
-				mac->cb_printf ("; ");
+				mac->cb_printf("; ");
 			} else {
-				mac->cb_printf ("%c", m->code[j]);
+				mac->cb_printf("%c", m->code[j]);
 			}
 		}
-		mac->cb_printf (")\n");
+		mac->cb_printf(")\n");
 	}
 }
 
@@ -1324,49 +1324,48 @@ RZ_API int rz_cmd_macro_cmd_args(RzCmdMacro *mac, const char *ptr, const char *a
 	char *pcmd, cmd[RZ_CMD_MAXLEN];
 	const char *arg = args;
 
-	for (*cmd=i=j=0; j<RZ_CMD_MAXLEN && ptr[j]; i++,j++) {
-		if (ptr[j]=='$') {
-			if (ptr[j+1]>='0' && ptr[j+1]<='9') {
+	for (*cmd = i = j = 0; j < RZ_CMD_MAXLEN && ptr[j]; i++, j++) {
+		if (ptr[j] == '$') {
+			if (ptr[j + 1] >= '0' && ptr[j + 1] <= '9') {
 				int wordlen;
-				int w = ptr[j+1]-'0';
-				const char *word = rz_str_word_get0 (arg, w);
+				int w = ptr[j + 1] - '0';
+				const char *word = rz_str_word_get0(arg, w);
 				if (word && *word) {
-					wordlen = strlen (word);
-					if ((i + wordlen + 1) >= sizeof (cmd)) {
+					wordlen = strlen(word);
+					if ((i + wordlen + 1) >= sizeof(cmd)) {
 						return -1;
 					}
-					memcpy (cmd+i, word, wordlen+1);
-					i += wordlen-1;
+					memcpy(cmd + i, word, wordlen + 1);
+					i += wordlen - 1;
 					j++;
 				} else {
-					eprintf ("Undefined argument %d\n", w);
+					eprintf("Undefined argument %d\n", w);
 				}
-			} else
-			if (ptr[j+1]=='@') {
+			} else if (ptr[j + 1] == '@') {
 				char off[32];
 				int offlen;
-				offlen = snprintf (off, sizeof (off), "%d",
+				offlen = snprintf(off, sizeof(off), "%d",
 					mac->counter);
-				if ((i + offlen + 1) >= sizeof (cmd)) {
+				if ((i + offlen + 1) >= sizeof(cmd)) {
 					return -1;
 				}
-				memcpy (cmd+i, off, offlen+1);
-				i += offlen-1;
+				memcpy(cmd + i, off, offlen + 1);
+				i += offlen - 1;
 				j++;
 			} else {
 				cmd[i] = ptr[j];
-				cmd[i+1] = '\0';
+				cmd[i + 1] = '\0';
 			}
 		} else {
 			cmd[i] = ptr[j];
-			cmd[i+1] = '\0';
+			cmd[i + 1] = '\0';
 		}
 	}
 	for (pcmd = cmd; *pcmd && (*pcmd == ' ' || *pcmd == '\t'); pcmd++) {
 		;
 	}
 	//eprintf ("-pre %d\n", (int)mac->num->value);
-	int xx = (*pcmd==')')? 0: mac->cmd (mac->user, pcmd);
+	int xx = (*pcmd == ')') ? 0 : mac->cmd(mac->user, pcmd);
 	//eprintf ("-pos %p %d\n", mac->num, (int)mac->num->value);
 	return xx;
 }
@@ -1376,21 +1375,21 @@ RZ_API char *rz_cmd_macro_label_process(RzCmdMacro *mac, RzCmdMacroLabel *labels
 	for (; *ptr == ' '; ptr++) {
 		;
 	}
-	if (ptr[strlen (ptr)-1]==':' && !strchr (ptr, ' ')) {
+	if (ptr[strlen(ptr) - 1] == ':' && !strchr(ptr, ' ')) {
 		/* label detected */
-		if (ptr[0]=='.') {
-		//	eprintf("---> GOTO '%s'\n", ptr+1);
+		if (ptr[0] == '.') {
+			//	eprintf("---> GOTO '%s'\n", ptr+1);
 			/* goto */
-			for (i=0;i<*labels_n;i++) {
-		//	eprintf("---| chk '%s'\n", labels[i].name);
-				if (!strcmp (ptr+1, labels[i].name)) {
+			for (i = 0; i < *labels_n; i++) {
+				//	eprintf("---| chk '%s'\n", labels[i].name);
+				if (!strcmp(ptr + 1, labels[i].name)) {
 					return labels[i].ptr;
-			}
+				}
 			}
 			return NULL;
 		} else
-		/* conditional goto */
-		if (ptr[0]=='?' && ptr[1]=='!' && ptr[2] != '?') {
+			/* conditional goto */
+			if (ptr[0] == '?' && ptr[1] == '!' && ptr[2] != '?') {
 			if (mac->num && mac->num->value != 0) {
 				char *label = ptr + 3;
 				for (; *label == ' ' || *label == '.'; label++) {
@@ -1398,16 +1397,16 @@ RZ_API char *rz_cmd_macro_label_process(RzCmdMacro *mac, RzCmdMacroLabel *labels
 				}
 				//		eprintf("===> GOTO %s\n", label);
 				/* goto label ptr+3 */
-				for (i=0;i<*labels_n;i++) {
-					if (!strcmp (label, labels[i].name)) {
+				for (i = 0; i < *labels_n; i++) {
+					if (!strcmp(label, labels[i].name)) {
 						return labels[i].ptr;
 					}
 				}
 				return NULL;
 			}
 		} else
-		/* conditional goto */
-		if (ptr[0]=='?' && ptr[1]=='?' && ptr[2] != '?') {
+			/* conditional goto */
+			if (ptr[0] == '?' && ptr[1] == '?' && ptr[2] != '?') {
 			if (mac->num->value == 0) {
 				char *label = ptr + 3;
 				for (; label[0] == ' ' || label[0] == '.'; label++) {
@@ -1415,30 +1414,30 @@ RZ_API char *rz_cmd_macro_label_process(RzCmdMacro *mac, RzCmdMacroLabel *labels
 				}
 				//		eprintf("===> GOTO %s\n", label);
 				/* goto label ptr+3 */
-				for (i=0; i<*labels_n; i++) {
-					if (!strcmp (label, labels[i].name)) {
+				for (i = 0; i < *labels_n; i++) {
+					if (!strcmp(label, labels[i].name)) {
 						return labels[i].ptr;
 					}
 				}
 				return NULL;
 			}
 		} else {
-			for (i=0; i<*labels_n; i++) {
-		//	eprintf("---| chk '%s'\n", labels[i].name);
-				if (!strcmp (ptr+1, labels[i].name)) {
+			for (i = 0; i < *labels_n; i++) {
+				//	eprintf("---| chk '%s'\n", labels[i].name);
+				if (!strcmp(ptr + 1, labels[i].name)) {
 					i = 0;
 					break;
 				}
 			}
 			/* Add label */
-		//	eprintf("===> ADD LABEL(%s)\n", ptr);
+			//	eprintf("===> ADD LABEL(%s)\n", ptr);
 			if (i == 0) {
-				strncpy (labels[*labels_n].name, ptr, 64);
-				labels[*labels_n].ptr = ptr+strlen (ptr)+1;
+				strncpy(labels[*labels_n].name, ptr, 64);
+				labels[*labels_n].ptr = ptr + strlen(ptr) + 1;
 				*labels_n = *labels_n + 1;
 			}
 		}
-		return ptr + strlen (ptr)+1;
+		return ptr + strlen(ptr) + 1;
 	}
 	return ptr;
 }
@@ -1455,49 +1454,49 @@ RZ_API int rz_cmd_macro_call(RzCmdMacro *mac, const char *name) {
 	int labels_n = 0;
 	struct rz_cmd_macro_label_t labels[MACRO_LABELS];
 
-	str = strdup (name);
+	str = strdup(name);
 	if (!str) {
-		perror ("strdup");
+		perror("strdup");
 		return false;
 	}
-	ptr = strchr (str, ')');
+	ptr = strchr(str, ')');
 	if (!ptr) {
-		eprintf ("Missing end ')' parenthesis.\n");
-		free (str);
+		eprintf("Missing end ')' parenthesis.\n");
+		free(str);
 		return false;
 	} else {
 		*ptr = '\0';
 	}
 
-	args = strchr (str, ' ');
+	args = strchr(str, ' ');
 	if (args) {
 		*args = '\0';
 		args++;
-		nargs = rz_str_word_set0 (args);
+		nargs = rz_str_word_set0(args);
 	}
 
 	macro_level++;
 	if (macro_level > MACRO_LIMIT) {
-		eprintf ("Maximum macro recursivity reached.\n");
+		eprintf("Maximum macro recursivity reached.\n");
 		macro_level--;
-		free (str);
+		free(str);
 		return 0;
 	}
-	ptr = strchr (str, ';');
+	ptr = strchr(str, ';');
 	if (ptr) {
 		*ptr = 0;
 	}
 
-	rz_cons_break_push (NULL, NULL);
+	rz_cons_break_push(NULL, NULL);
 	rz_list_foreach (mac->macros, iter, m) {
-		if (!strcmp (str, m->name)) {
+		if (!strcmp(str, m->name)) {
 			char *ptr = m->code;
-			char *end = strchr (ptr, '\n');
+			char *end = strchr(ptr, '\n');
 			if (m->nargs != 0 && nargs != m->nargs) {
-				eprintf ("Macro '%s' expects %d args, not %d\n", m->name, m->nargs, nargs);
-				macro_level --;
-				free (str);
-				rz_cons_break_pop ();
+				eprintf("Macro '%s' expects %d args, not %d\n", m->name, m->nargs, nargs);
+				macro_level--;
+				free(str);
+				rz_cons_break_pop();
 				return false;
 			}
 			mac->brk = 0;
@@ -1505,39 +1504,39 @@ RZ_API int rz_cmd_macro_call(RzCmdMacro *mac, const char *name) {
 				if (end) {
 					*end = '\0';
 				}
-				if (rz_cons_is_breaked ()) {
-					eprintf ("Interrupted at (%s)\n", ptr);
+				if (rz_cons_is_breaked()) {
+					eprintf("Interrupted at (%s)\n", ptr);
 					if (end) {
 						*end = '\n';
 					}
-					free (str);
-					rz_cons_break_pop ();
+					free(str);
+					rz_cons_break_pop();
 					return false;
 				}
-				rz_cons_flush ();
+				rz_cons_flush();
 				/* Label handling */
-				ptr2 = rz_cmd_macro_label_process (mac, &(labels[0]), &labels_n, ptr);
+				ptr2 = rz_cmd_macro_label_process(mac, &(labels[0]), &labels_n, ptr);
 				if (!ptr2) {
-					eprintf ("Oops. invalid label name\n");
+					eprintf("Oops. invalid label name\n");
 					break;
 				} else if (ptr != ptr2) {
 					ptr = ptr2;
 					if (end) {
 						*end = '\n';
 					}
-					end = strchr (ptr, '\n');
+					end = strchr(ptr, '\n');
 					continue;
 				}
 				/* Command execution */
 				if (*ptr) {
 					mac->num->value = value;
-					int r = rz_cmd_macro_cmd_args (mac, ptr, args, nargs);
+					int r = rz_cmd_macro_cmd_args(mac, ptr, args, nargs);
 					// TODO: handle quit? r == 0??
 					// quit, exits the macro. like a break
 					value = mac->num->value;
 					if (r < 0) {
-						free (str);
-						rz_cons_break_pop ();
+						free(str);
+						rz_cons_break_pop();
 						return r;
 					}
 				}
@@ -1545,33 +1544,33 @@ RZ_API int rz_cmd_macro_call(RzCmdMacro *mac, const char *name) {
 					*end = '\n';
 					ptr = end + 1;
 				} else {
-					macro_level --;
-					free (str);
+					macro_level--;
+					free(str);
 					goto out_clean;
 				}
 
 				/* Fetch next command */
-				end = strchr (ptr, '\n');
+				end = strchr(ptr, '\n');
 			} while (!mac->brk);
 			if (mac->brk) {
 				macro_level--;
-				free (str);
+				free(str);
 				goto out_clean;
 			}
 		}
 	}
-	eprintf ("No macro named '%s'\n", str);
+	eprintf("No macro named '%s'\n", str);
 	macro_level--;
-	free (str);
+	free(str);
 out_clean:
-	rz_cons_break_pop ();
+	rz_cons_break_pop();
 	return true;
 }
 
 RZ_API int rz_cmd_macro_break(RzCmdMacro *mac, const char *value) {
 	mac->brk = 1;
 	mac->brk_value = NULL;
-	mac->_brk_value = (ut64)rz_num_math (mac->num, value);
+	mac->_brk_value = (ut64)rz_num_math(mac->num, value);
 	if (value && *value) {
 		mac->brk_value = &mac->_brk_value;
 	}
@@ -1581,25 +1580,25 @@ RZ_API int rz_cmd_macro_break(RzCmdMacro *mac, const char *value) {
 /* RzCmdParsedArgs */
 
 RZ_API RzCmdParsedArgs *rz_cmd_parsed_args_new(const char *cmd, int n_args, char **args) {
-	rz_return_val_if_fail (cmd && n_args >= 0, NULL);
-	RzCmdParsedArgs *res = RZ_NEW0 (RzCmdParsedArgs);
+	rz_return_val_if_fail(cmd && n_args >= 0, NULL);
+	RzCmdParsedArgs *res = RZ_NEW0(RzCmdParsedArgs);
 	res->has_space_after_cmd = true;
 	res->argc = n_args + 1;
-	res->argv = RZ_NEWS0 (char *, res->argc);
+	res->argv = RZ_NEWS0(char *, res->argc);
 	res->argv[0] = strdup(cmd);
 	int i;
 	for (i = 1; i < res->argc; i++) {
-		res->argv[i] = strdup (args[i - 1]);
+		res->argv[i] = strdup(args[i - 1]);
 	}
 	return res;
 }
 
 RZ_API RzCmdParsedArgs *rz_cmd_parsed_args_newcmd(const char *cmd) {
-	return rz_cmd_parsed_args_new (cmd, 0, NULL);
+	return rz_cmd_parsed_args_new(cmd, 0, NULL);
 }
 
 RZ_API RzCmdParsedArgs *rz_cmd_parsed_args_newargs(int n_args, char **args) {
-	return rz_cmd_parsed_args_new ("", n_args, args);
+	return rz_cmd_parsed_args_new("", n_args, args);
 }
 
 RZ_API void rz_cmd_parsed_args_free(RzCmdParsedArgs *a) {
@@ -1609,50 +1608,50 @@ RZ_API void rz_cmd_parsed_args_free(RzCmdParsedArgs *a) {
 
 	int i;
 	for (i = 0; i < a->argc; i++) {
-		free (a->argv[i]);
+		free(a->argv[i]);
 	}
-	free (a->argv);
-	free (a);
+	free(a->argv);
+	free(a);
 }
 
 static void free_array(char **arr, int n) {
 	int i;
 	for (i = 0; i < n; i++) {
-		free (arr[i]);
+		free(arr[i]);
 	}
-	free (arr);
+	free(arr);
 }
 
 RZ_API bool rz_cmd_parsed_args_setargs(RzCmdParsedArgs *a, int n_args, char **args) {
-	rz_return_val_if_fail (a && a->argv && a->argv[0], false);
-	char **tmp = RZ_NEWS0 (char *, n_args + 1);
+	rz_return_val_if_fail(a && a->argv && a->argv[0], false);
+	char **tmp = RZ_NEWS0(char *, n_args + 1);
 	if (!tmp) {
 		return false;
 	}
-	tmp[0] = strdup (a->argv[0]);
+	tmp[0] = strdup(a->argv[0]);
 	int i;
 	for (i = 1; i < n_args + 1; i++) {
-		tmp[i] = strdup (args[i - 1]);
+		tmp[i] = strdup(args[i - 1]);
 		if (!tmp[i]) {
 			goto err;
 		}
 	}
-	free_array (a->argv, a->argc);
+	free_array(a->argv, a->argc);
 	a->argv = tmp;
 	a->argc = n_args + 1;
 	return true;
 err:
-	free_array (tmp, n_args + 1);
+	free_array(tmp, n_args + 1);
 	return false;
 }
 
 RZ_API bool rz_cmd_parsed_args_setcmd(RzCmdParsedArgs *a, const char *cmd) {
-	rz_return_val_if_fail (a && a->argv && a->argv[0], false);
-	char *tmp = strdup (cmd);
+	rz_return_val_if_fail(a && a->argv && a->argv[0], false);
+	char *tmp = strdup(cmd);
 	if (!tmp) {
 		return false;
 	}
-	free (a->argv[0]);
+	free(a->argv[0]);
 	a->argv[0] = tmp;
 	return true;
 }
@@ -1661,61 +1660,61 @@ static void parsed_args_iterateargs(RzCmdParsedArgs *a, RzStrBuf *sb) {
 	int i;
 	for (i = 1; i < a->argc; i++) {
 		if (i > 1) {
-			rz_strbuf_append (sb, " ");
+			rz_strbuf_append(sb, " ");
 		}
-		rz_strbuf_append (sb, a->argv[i]);
+		rz_strbuf_append(sb, a->argv[i]);
 	}
 }
 
 RZ_API char *rz_cmd_parsed_args_argstr(RzCmdParsedArgs *a) {
-	rz_return_val_if_fail (a && a->argv && a->argv[0], NULL);
-	RzStrBuf *sb = rz_strbuf_new ("");
-	parsed_args_iterateargs (a, sb);
-	return rz_strbuf_drain (sb);
+	rz_return_val_if_fail(a && a->argv && a->argv[0], NULL);
+	RzStrBuf *sb = rz_strbuf_new("");
+	parsed_args_iterateargs(a, sb);
+	return rz_strbuf_drain(sb);
 }
 
 RZ_API char *rz_cmd_parsed_args_execstr(RzCmdParsedArgs *a) {
-	rz_return_val_if_fail (a && a->argv && a->argv[0], NULL);
-	RzStrBuf *sb = rz_strbuf_new (a->argv[0]);
+	rz_return_val_if_fail(a && a->argv && a->argv[0], NULL);
+	RzStrBuf *sb = rz_strbuf_new(a->argv[0]);
 	if (a->argc > 1 && a->has_space_after_cmd) {
-		rz_strbuf_append (sb, " ");
+		rz_strbuf_append(sb, " ");
 	}
-	parsed_args_iterateargs (a, sb);
-	return rz_strbuf_drain (sb);
+	parsed_args_iterateargs(a, sb);
+	return rz_strbuf_drain(sb);
 }
 
 RZ_API const char *rz_cmd_parsed_args_cmd(RzCmdParsedArgs *a) {
-	rz_return_val_if_fail (a && a->argv && a->argv[0], NULL);
+	rz_return_val_if_fail(a && a->argv && a->argv[0], NULL);
 	return a->argv[0];
 }
 
 /* RzCmdDescriptor */
 
 static RzCmdDesc *argv_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdArgvCb cb, const RzCmdDescHelp *help, bool ht_insert) {
-	RzCmdDesc *res = create_cmd_desc (cmd, parent, RZ_CMD_DESC_TYPE_ARGV, name, help, ht_insert);
+	RzCmdDesc *res = create_cmd_desc(cmd, parent, RZ_CMD_DESC_TYPE_ARGV, name, help, ht_insert);
 	if (!res) {
 		return NULL;
 	}
 
 	res->d.argv_data.cb = cb;
-	get_minmax_argc (res, &res->d.argv_data.min_argc, &res->d.argv_data.max_argc);
+	get_minmax_argc(res, &res->d.argv_data.min_argc, &res->d.argv_data.max_argc);
 	return res;
 }
 
 RZ_API RzCmdDesc *rz_cmd_desc_argv_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdArgvCb cb, const RzCmdDescHelp *help) {
-	rz_return_val_if_fail (cmd && parent && name && help && help->args, NULL);
-	return argv_new (cmd, parent, name, cb, help, true);
+	rz_return_val_if_fail(cmd && parent && name && help && help->args, NULL);
+	return argv_new(cmd, parent, name, cb, help, true);
 }
 
-static RzCmdDesc *argv_modes_new(RzCmd* cmd, RzCmdDesc *parent, const char *name, int modes, RzCmdArgvModesCb cb, const RzCmdDescHelp *help, bool ht_insert) {
-	RzCmdDesc *res = create_cmd_desc (cmd, parent, RZ_CMD_DESC_TYPE_ARGV_MODES, name, help, ht_insert);
+static RzCmdDesc *argv_modes_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, int modes, RzCmdArgvModesCb cb, const RzCmdDescHelp *help, bool ht_insert) {
+	RzCmdDesc *res = create_cmd_desc(cmd, parent, RZ_CMD_DESC_TYPE_ARGV_MODES, name, help, ht_insert);
 	if (!res) {
 		return NULL;
 	}
 
 	res->d.argv_modes_data.cb = cb;
 	res->d.argv_modes_data.modes = modes;
-	get_minmax_argc (res, &res->d.argv_modes_data.min_argc, &res->d.argv_modes_data.max_argc);
+	get_minmax_argc(res, &res->d.argv_modes_data.min_argc, &res->d.argv_modes_data.max_argc);
 	return res;
 }
 
@@ -1731,13 +1730,13 @@ static RzCmdDesc *argv_modes_new(RzCmd* cmd, RzCmdDesc *parent, const char *name
  * \param help Help structure used to describe the command when using `?` and `??`
  */
 RZ_API RzCmdDesc *rz_cmd_desc_argv_modes_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, int modes, RzCmdArgvModesCb cb, const RzCmdDescHelp *help) {
-	rz_return_val_if_fail (cmd && parent && name && help && help->args && modes, NULL);
-	return argv_modes_new (cmd, parent, name, modes, cb, help, true);
+	rz_return_val_if_fail(cmd && parent && name && help && help->args && modes, NULL);
+	return argv_modes_new(cmd, parent, name, modes, cb, help, true);
 }
 
 RZ_API RzCmdDesc *rz_cmd_desc_inner_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, const RzCmdDescHelp *help) {
-	rz_return_val_if_fail (cmd && parent && name && help, NULL);
-	return create_cmd_desc (cmd, parent, RZ_CMD_DESC_TYPE_INNER, name, help, false);
+	rz_return_val_if_fail(cmd && parent && name && help, NULL);
+	return create_cmd_desc(cmd, parent, RZ_CMD_DESC_TYPE_INNER, name, help, false);
 }
 
 /**
@@ -1752,18 +1751,18 @@ RZ_API RzCmdDesc *rz_cmd_desc_inner_new(RzCmd *cmd, RzCmdDesc *parent, const cha
  * \param group_help Help structure used to describe the group
  */
 RZ_API RzCmdDesc *rz_cmd_desc_group_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdArgvCb cb, const RzCmdDescHelp *help, const RzCmdDescHelp *group_help) {
-	rz_return_val_if_fail (cmd && parent && name && group_help, NULL);
-	RzCmdDesc *res = create_cmd_desc (cmd, parent, RZ_CMD_DESC_TYPE_GROUP, name, group_help, true);
+	rz_return_val_if_fail(cmd && parent && name && group_help, NULL);
+	RzCmdDesc *res = create_cmd_desc(cmd, parent, RZ_CMD_DESC_TYPE_GROUP, name, group_help, true);
 	if (!res) {
 		return NULL;
 	}
 
 	RzCmdDesc *exec_cd = NULL;
 	if (cb && help) {
-		rz_return_val_if_fail (help->args, NULL);
-		exec_cd = argv_new (cmd, res, name, cb, help, false);
+		rz_return_val_if_fail(help->args, NULL);
+		exec_cd = argv_new(cmd, res, name, cb, help, false);
 		if (!exec_cd) {
-			rz_cmd_desc_remove (cmd, res);
+			rz_cmd_desc_remove(cmd, res);
 			return NULL;
 		}
 	}
@@ -1787,15 +1786,15 @@ RZ_API RzCmdDesc *rz_cmd_desc_group_new(RzCmd *cmd, RzCmdDesc *parent, const cha
  * \param group_help Help structure used to describe the group
  */
 RZ_API RzCmdDesc *rz_cmd_desc_group_modes_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, int modes, RzCmdArgvModesCb cb, const RzCmdDescHelp *help, const RzCmdDescHelp *group_help) {
-	rz_return_val_if_fail (cmd && parent && name && group_help && modes && cb && help && help->args, NULL);
-	RzCmdDesc *res = create_cmd_desc (cmd, parent, RZ_CMD_DESC_TYPE_GROUP, name, group_help, true);
+	rz_return_val_if_fail(cmd && parent && name && group_help && modes && cb && help && help->args, NULL);
+	RzCmdDesc *res = create_cmd_desc(cmd, parent, RZ_CMD_DESC_TYPE_GROUP, name, group_help, true);
 	if (!res) {
 		return NULL;
 	}
 
-	RzCmdDesc *exec_cd = argv_modes_new (cmd, res, name, modes, cb, help, false);
+	RzCmdDesc *exec_cd = argv_modes_new(cmd, res, name, modes, cb, help, false);
 	if (!exec_cd) {
-		rz_cmd_desc_remove (cmd, res);
+		rz_cmd_desc_remove(cmd, res);
 		return NULL;
 	}
 
@@ -1804,8 +1803,8 @@ RZ_API RzCmdDesc *rz_cmd_desc_group_modes_new(RzCmd *cmd, RzCmdDesc *parent, con
 }
 
 RZ_API RzCmdDesc *rz_cmd_desc_oldinput_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, RzCmdCb cb, const RzCmdDescHelp *help) {
-	rz_return_val_if_fail (cmd && parent && name && cb, NULL);
-	RzCmdDesc *res = create_cmd_desc (cmd, parent, RZ_CMD_DESC_TYPE_OLDINPUT, name, help, true);
+	rz_return_val_if_fail(cmd && parent && name && cb, NULL);
+	RzCmdDesc *res = create_cmd_desc(cmd, parent, RZ_CMD_DESC_TYPE_OLDINPUT, name, help, true);
 	if (!res) {
 		return NULL;
 	}
@@ -1814,17 +1813,17 @@ RZ_API RzCmdDesc *rz_cmd_desc_oldinput_new(RzCmd *cmd, RzCmdDesc *parent, const 
 }
 
 RZ_API RzCmdDesc *rz_cmd_desc_fake_new(RzCmd *cmd, RzCmdDesc *parent, const char *name, const RzCmdDescHelp *help) {
-	rz_return_val_if_fail (cmd && parent && name && help, NULL);
-	return create_cmd_desc (cmd, parent, RZ_CMD_DESC_TYPE_FAKE, name, help, true);
+	rz_return_val_if_fail(cmd && parent && name && help, NULL);
+	return create_cmd_desc(cmd, parent, RZ_CMD_DESC_TYPE_FAKE, name, help, true);
 }
 
 RZ_API RzCmdDesc *rz_cmd_desc_parent(RzCmdDesc *cd) {
-	rz_return_val_if_fail (cd, NULL);
+	rz_return_val_if_fail(cd, NULL);
 	return cd->parent;
 }
 
 RZ_API bool rz_cmd_desc_has_handler(RzCmdDesc *cd) {
-	rz_return_val_if_fail (cd, false);
+	rz_return_val_if_fail(cd, false);
 	switch (cd->type) {
 	case RZ_CMD_DESC_TYPE_ARGV:
 		return cd->d.argv_data.cb;
@@ -1836,18 +1835,18 @@ RZ_API bool rz_cmd_desc_has_handler(RzCmdDesc *cd) {
 	case RZ_CMD_DESC_TYPE_INNER:
 		return false;
 	case RZ_CMD_DESC_TYPE_GROUP:
-		return cd->d.group_data.exec_cd && rz_cmd_desc_has_handler (cd->d.group_data.exec_cd);
+		return cd->d.group_data.exec_cd && rz_cmd_desc_has_handler(cd->d.group_data.exec_cd);
 	}
 	return false;
 }
 
 RZ_API bool rz_cmd_desc_remove(RzCmd *cmd, RzCmdDesc *cd) {
-	rz_return_val_if_fail (cmd && cd, false);
+	rz_return_val_if_fail(cmd && cd, false);
 	if (cd->parent) {
-		cmd_desc_unset_parent (cd);
+		cmd_desc_unset_parent(cd);
 	}
-	cmd_desc_remove_from_ht_cmds (cmd, cd);
-	cmd_desc_free (cd);
+	cmd_desc_remove_from_ht_cmds(cmd, cd);
+	cmd_desc_free(cd);
 	return true;
 }
 
@@ -1890,31 +1889,31 @@ static void cmd_foreach_cmdname(RzCmd *cmd, RzCmdDesc *cd, RzCmdForeachNameCb cb
 
 	switch (cd->type) {
 	case RZ_CMD_DESC_TYPE_ARGV:
-		if (rz_cmd_desc_has_handler (cd)) {
-			cb (cmd, cd->name, user);
+		if (rz_cmd_desc_has_handler(cd)) {
+			cb(cmd, cd->name, user);
 		}
 		break;
 	case RZ_CMD_DESC_TYPE_ARGV_MODES:
-		for (i = 0; i < RZ_ARRAY_SIZE (argv_modes); i++) {
+		for (i = 0; i < RZ_ARRAY_SIZE(argv_modes); i++) {
 			if (cd->d.argv_modes_data.modes & argv_modes[i].mode) {
-				char *name = rz_str_newf ("%s%s", cd->name, argv_modes[i].suffix);
-				cb (cmd, name, user);
-				free (name);
+				char *name = rz_str_newf("%s%s", cd->name, argv_modes[i].suffix);
+				cb(cmd, name, user);
+				free(name);
 			}
 		}
 		break;
 	case RZ_CMD_DESC_TYPE_FAKE:
 		break;
 	case RZ_CMD_DESC_TYPE_OLDINPUT:
-		if (rz_cmd_desc_has_handler (cd)) {
-			cb (cmd, cd->name, user);
+		if (rz_cmd_desc_has_handler(cd)) {
+			cb(cmd, cd->name, user);
 		}
 		// fallthrough
 	case RZ_CMD_DESC_TYPE_INNER:
 	case RZ_CMD_DESC_TYPE_GROUP:
-		rz_cmd_desc_children_foreach (cd, it_cd) {
+		rz_cmd_desc_children_foreach(cd, it_cd) {
 			RzCmdDesc *child = *it_cd;
-			cmd_foreach_cmdname (cmd, child, cb, user);
+			cmd_foreach_cmdname(cmd, child, cb, user);
 		}
 		break;
 	}
@@ -1931,16 +1930,16 @@ static void cmd_foreach_cmdname(RzCmd *cmd, RzCmdDesc *cd, RzCmdForeachNameCb cb
  * \param user Additional user data that is passed to the callback \p cb.
  */
 RZ_API void rz_cmd_foreach_cmdname(RzCmd *cmd, RzCmdForeachNameCb cb, void *user) {
-	RzCmdDesc *cd = rz_cmd_get_root (cmd);
-	cmd_foreach_cmdname (cmd, cd, cb, user);
+	RzCmdDesc *cd = rz_cmd_get_root(cmd);
+	cmd_foreach_cmdname(cmd, cd, cb, user);
 }
 
 static char *escape_special_chars(const char *s, const char *special_chars) {
-	size_t s_len = strlen (s);
-	char *d = RZ_NEWS (char, s_len * 2 + 1);
+	size_t s_len = strlen(s);
+	char *d = RZ_NEWS(char, s_len * 2 + 1);
 	int i, j = 0;
 	for (i = 0; i < s_len; i++) {
-		if (strchr (special_chars, s[i])) {
+		if (strchr(special_chars, s[i])) {
 			d[j++] = '\\';
 		}
 		d[j++] = s[i];
@@ -1950,11 +1949,11 @@ static char *escape_special_chars(const char *s, const char *special_chars) {
 }
 
 static char *unescape_special_chars(const char *s, const char *special_chars) {
-	char *dst = RZ_NEWS (char, strlen (s) + 1);
+	char *dst = RZ_NEWS(char, strlen(s) + 1);
 	int i, j = 0;
 
 	for (i = 0; s[i]; i++) {
-		if (s[i] != '\\' || !strchr (special_chars, s[i + 1])) {
+		if (s[i] != '\\' || !strchr(special_chars, s[i + 1])) {
 			dst[j++] = s[i];
 			continue;
 		}
@@ -1973,17 +1972,17 @@ static char *unescape_special_chars(const char *s, const char *special_chars) {
 RZ_API char *rz_cmd_escape_arg(const char *arg, RzCmdEscape esc) {
 	switch (esc) {
 	case RZ_CMD_ESCAPE_ONE_ARG:
-		return escape_special_chars (arg, SPECIAL_CHARS_REGULAR_SINGLE);
+		return escape_special_chars(arg, SPECIAL_CHARS_REGULAR_SINGLE);
 	case RZ_CMD_ESCAPE_MULTI_ARG:
-		return escape_special_chars (arg, SPECIAL_CHARS_REGULAR);
+		return escape_special_chars(arg, SPECIAL_CHARS_REGULAR);
 	case RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG:
-		return escape_special_chars (arg, SPECIAL_CHARS_DOUBLE_QUOTED);
+		return escape_special_chars(arg, SPECIAL_CHARS_DOUBLE_QUOTED);
 	case RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG:
-		return escape_special_chars (arg, SPECIAL_CHARS_SINGLE_QUOTED);
+		return escape_special_chars(arg, SPECIAL_CHARS_SINGLE_QUOTED);
 	case RZ_CMD_ESCAPE_PF_ARG:
-		return escape_special_chars (arg, SPECIAL_CHARS_PF);
+		return escape_special_chars(arg, SPECIAL_CHARS_PF);
 	}
-	rz_return_val_if_reached (strdup(arg));
+	rz_return_val_if_reached(strdup(arg));
 }
 
 /**
@@ -1993,15 +1992,15 @@ RZ_API char *rz_cmd_escape_arg(const char *arg, RzCmdEscape esc) {
 RZ_API char *rz_cmd_unescape_arg(const char *arg, RzCmdEscape esc) {
 	switch (esc) {
 	case RZ_CMD_ESCAPE_ONE_ARG:
-		return unescape_special_chars (arg, SPECIAL_CHARS_REGULAR_SINGLE);
+		return unescape_special_chars(arg, SPECIAL_CHARS_REGULAR_SINGLE);
 	case RZ_CMD_ESCAPE_MULTI_ARG:
-		return unescape_special_chars (arg, SPECIAL_CHARS_REGULAR);
+		return unescape_special_chars(arg, SPECIAL_CHARS_REGULAR);
 	case RZ_CMD_ESCAPE_DOUBLE_QUOTED_ARG:
-		return unescape_special_chars (arg, SPECIAL_CHARS_DOUBLE_QUOTED);
+		return unescape_special_chars(arg, SPECIAL_CHARS_DOUBLE_QUOTED);
 	case RZ_CMD_ESCAPE_SINGLE_QUOTED_ARG:
-		return unescape_special_chars (arg, SPECIAL_CHARS_SINGLE_QUOTED);
+		return unescape_special_chars(arg, SPECIAL_CHARS_SINGLE_QUOTED);
 	case RZ_CMD_ESCAPE_PF_ARG:
-		return unescape_special_chars (arg, SPECIAL_CHARS_PF);
+		return unescape_special_chars(arg, SPECIAL_CHARS_PF);
 	}
-	rz_return_val_if_reached (strdup(arg));
+	rz_return_val_if_reached(strdup(arg));
 }

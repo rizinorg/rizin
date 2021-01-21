@@ -21,12 +21,12 @@ struct rz_bin_dmp64_obj_t {
 	ut64 dtb;
 	RzList *pages;
 
-	RzBuffer* b;
+	RzBuffer *b;
 	int size;
 	Sdb *kv;
 };
 
 void rz_bin_dmp64_free(struct rz_bin_dmp64_obj_t *obj);
-struct rz_bin_dmp64_obj_t *rz_bin_dmp64_new_buf(RzBuffer* buf);
+struct rz_bin_dmp64_obj_t *rz_bin_dmp64_new_buf(RzBuffer *buf);
 
 #endif /* DMP64_H */

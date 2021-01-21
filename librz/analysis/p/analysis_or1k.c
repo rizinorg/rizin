@@ -17,7 +17,7 @@ struct operands {
 	ut32 l;
 };
 
-static ut32 cpu[32] = {0}; /* register contents */
+static ut32 cpu[32] = { 0 }; /* register contents */
 static ut32 cpu_enable; /* allows to treat only registers with known value as
 	valid */
 
@@ -34,11 +34,11 @@ static ut64 n_oper_to_addr(ut32 n, ut32 mask, ut64 addr) {
 	/* sign extension returns 32b unsigned N, then it is multiplied by 4, made
 	 * signed to support negative offsets, added to address and made unsigned
 	 * again */
-	return (ut64) ((st64) ((st32) (sign_extend(n, mask) << 2)) + addr);
+	return (ut64)((st64)((st32)(sign_extend(n, mask) << 2)) + addr);
 }
 
 static int insn_to_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 insn) {
-	struct operands o = {0};
+	struct operands o = { 0 };
 	insn_type_t type = type_of_opcode(descr, extra);
 	insn_type_descr_t *type_descr = &types[INSN_X];
 
@@ -58,21 +58,21 @@ static int insn_to_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, insn_t *descr,
 		o.n = get_operand_value(insn, type_descr, INSN_OPER_N);
 		op->eob = true;
 		op->jump = n_oper_to_addr(o.n, get_operand_mask(type_descr, INSN_OPER_N),
-				addr);
+			addr);
 		op->delay = 1;
 		break;
 	case 0x01: /* l.jal */
 		o.n = get_operand_value(insn, type_descr, INSN_OPER_N);
 		op->eob = true;
 		op->jump = n_oper_to_addr(o.n, get_operand_mask(type_descr, INSN_OPER_N),
-				addr);
+			addr);
 		op->delay = 1;
 		break;
 	case 0x03: /* l.bnf */
 		o.n = get_operand_value(insn, type_descr, INSN_OPER_N);
 		op->cond = RZ_ANALYSIS_COND_NE;
 		op->jump = n_oper_to_addr(o.n, get_operand_mask(type_descr, INSN_OPER_N),
-				addr);
+			addr);
 		op->fail = addr + 8;
 		op->delay = 1;
 		break;
@@ -80,7 +80,7 @@ static int insn_to_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, insn_t *descr,
 		o.n = get_operand_value(insn, type_descr, INSN_OPER_N);
 		op->cond = RZ_ANALYSIS_COND_EQ;
 		op->jump = n_oper_to_addr(o.n, get_operand_mask(type_descr, INSN_OPER_N),
-				addr);
+			addr);
 		op->fail = addr + 8;
 		op->delay = 1;
 		break;
@@ -177,8 +177,7 @@ static int or1k_op(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *data, 
 		if (extra_descr != NULL) {
 			insn_to_op(a, op, addr, insn_descr, extra_descr, insn);
 		}
-	}
-	else {
+	} else {
 		/* otherwise basic descriptor is enough */
 		insn_to_op(a, op, addr, insn_descr, NULL, insn);
 	}

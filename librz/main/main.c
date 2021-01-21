@@ -20,13 +20,13 @@ static RzMain foo[] = {
 	{ NULL, NULL }
 };
 
-RZ_API RzMain *rz_main_new (const char *name) {
+RZ_API RzMain *rz_main_new(const char *name) {
 	int i = 0;
 	while (foo[i].name) {
-		if (!strcmp (name, foo[i].name)) {
-			RzMain *m = RZ_NEW0 (RzMain);
+		if (!strcmp(name, foo[i].name)) {
+			RzMain *m = RZ_NEW0(RzMain);
 			if (m) {
-				m->name = strdup (foo[i].name);
+				m->name = strdup(foo[i].name);
 				m->main = foo[i].main;
 			}
 			return m;
@@ -37,17 +37,17 @@ RZ_API RzMain *rz_main_new (const char *name) {
 }
 
 RZ_API void rz_main_free(RzMain *m) {
-	free (m);
+	free(m);
 }
 
 RZ_API int rz_main_run(RzMain *m, int argc, const char **argv) {
-	rz_return_val_if_fail (m && m->main, -1);
-	return m->main (argc, argv);
+	rz_return_val_if_fail(m && m->main, -1);
+	return m->main(argc, argv);
 }
 
 RZ_API int rz_main_version_print(const char *progname) {
-	char *s = rz_str_version (progname);
-	printf ("%s\n", s);
-	free (s);
+	char *s = rz_str_version(progname);
+	printf("%s\n", s);
+	free(s);
 	return 0;
 }

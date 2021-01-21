@@ -36,10 +36,10 @@ RZ_API int rz_utf32_decode(const ut8 *ptr, int ptrlen, RzRune *ch, bool bigendia
 
 /* Convert an UTF-32LE buf into a unicode RzRune */
 RZ_API int rz_utf32le_decode(const ut8 *ptr, int ptrlen, RzRune *ch) {
-	return rz_utf32_decode (ptr, ptrlen, ch, false);
+	return rz_utf32_decode(ptr, ptrlen, ch, false);
 }
 
 /* Convert an UTF-32BE buf into a unicode RzRune */
 RZ_API int rz_utf32be_decode(const ut8 *ptr, int ptrlen, RzRune *ch) {
-	return rz_utf32_decode (ptr, ptrlen, ch, true);
+	return rz_utf32_decode(ptr, ptrlen, ch, true);
 }

@@ -246,130 +246,130 @@ static char *msg_types_arr[] = {
 	NULL
 };
 
-void __free_window (void *ptr) {
+void __free_window(void *ptr) {
 	window *win = ptr;
-	free (win->name);
-	free (win);
+	free(win->name);
+	free(win);
 }
 
 static window *__window_from_handle(HANDLE hwnd) {
-	rz_return_val_if_fail (hwnd, NULL);
-	window *win = RZ_NEW0 (window);
+	rz_return_val_if_fail(hwnd, NULL);
+	window *win = RZ_NEW0(window);
 	if (!win) {
 		return NULL;
 	}
 	win->h = hwnd;
-	win->tid = GetWindowThreadProcessId (hwnd, &win->pid);
-	win->proc = GetClassLongPtrW (hwnd, GCLP_WNDPROC);
-	const size_t sz = MAX_CLASS_NAME * sizeof (WCHAR);
-	wchar_t *tmp = malloc (sz);
+	win->tid = GetWindowThreadProcessId(hwnd, &win->pid);
+	win->proc = GetClassLongPtrW(hwnd, GCLP_WNDPROC);
+	const size_t sz = MAX_CLASS_NAME * sizeof(WCHAR);
+	wchar_t *tmp = malloc(sz);
 	if (!tmp) {
-		free (win);
+		free(win);
 		return NULL;
 	}
-	GetClassNameW (hwnd, tmp, MAX_CLASS_NAME);
-	win->name = rz_utf16_to_utf8 (tmp);
-	free (tmp);
+	GetClassNameW(hwnd, tmp, MAX_CLASS_NAME);
+	win->name = rz_utf16_to_utf8(tmp);
+	free(tmp);
 	if (!win->name) {
-		win->name = strdup ("");
+		win->name = strdup("");
 	}
 	return win;
 }
 
 static RzTable *__create_window_table(void) {
-	RzTable *tbl = rz_table_new ();
+	RzTable *tbl = rz_table_new();
 	if (!tbl) {
 		return NULL;
 	}
-	rz_table_add_column (tbl, rz_table_type ("number"), "Handle", ST32_MAX);
-	rz_table_add_column (tbl, rz_table_type ("number"), "PID", ST32_MAX);
-	rz_table_add_column (tbl, rz_table_type ("number"), "TID", ST32_MAX);
-	rz_table_add_column (tbl, rz_table_type ("string"), "Class Name", ST32_MAX);
+	rz_table_add_column(tbl, rz_table_type("number"), "Handle", ST32_MAX);
+	rz_table_add_column(tbl, rz_table_type("number"), "PID", ST32_MAX);
+	rz_table_add_column(tbl, rz_table_type("number"), "TID", ST32_MAX);
+	rz_table_add_column(tbl, rz_table_type("string"), "Class Name", ST32_MAX);
 	return tbl;
 }
 
 static void __add_window_to_table(RzTable *tbl, window *win) {
-	rz_return_if_fail (tbl && win);
-	char *handle = rz_str_newf ("0x%08"PFMT64x"", (ut64)win->h);
-	char *pid = rz_str_newf ("%lu", win->pid);
-	char *tid = rz_str_newf ("%lu", win->tid);
-	rz_table_add_row (tbl, handle, pid, tid, win->name, NULL);
-	free (handle);
-	free (tid);
-	free (pid);
+	rz_return_if_fail(tbl && win);
+	char *handle = rz_str_newf("0x%08" PFMT64x "", (ut64)win->h);
+	char *pid = rz_str_newf("%lu", win->pid);
+	char *tid = rz_str_newf("%lu", win->tid);
+	rz_table_add_row(tbl, handle, pid, tid, win->name, NULL);
+	free(handle);
+	free(tid);
+	free(pid);
 }
 
 RZ_API void rz_w32_identify_window(void) {
-	while (!rz_cons_yesno ('y', "Move cursor to the window to be identified. Ready?"));
+	while (!rz_cons_yesno('y', "Move cursor to the window to be identified. Ready?"))
+		;
 	POINT p;
-	GetCursorPos (&p);
-	HANDLE hwnd = WindowFromPoint (p);
+	GetCursorPos(&p);
+	HANDLE hwnd = WindowFromPoint(p);
 	window *win = NULL;
 	if (hwnd) {
-		if (rz_cons_yesno ('y', "Try to get the child?")) {
-			HANDLE child = ChildWindowFromPoint (hwnd, p);
+		if (rz_cons_yesno('y', "Try to get the child?")) {
+			HANDLE child = ChildWindowFromPoint(hwnd, p);
 			hwnd = child ? child : hwnd;
 		}
-		win = __window_from_handle (hwnd);
+		win = __window_from_handle(hwnd);
 	} else {
-		eprintf ("No window found\n");
+		eprintf("No window found\n");
 		return;
 	}
 	if (!win) {
-		eprintf ("Error trying to get information from 0x%08"PFMT64x"\n", (ut64)hwnd);
+		eprintf("Error trying to get information from 0x%08" PFMT64x "\n", (ut64)hwnd);
 		return;
 	}
-	RzTable *tbl = __create_window_table ();
+	RzTable *tbl = __create_window_table();
 	if (!tbl) {
 		return;
 	}
-	__add_window_to_table (tbl, win);
-	char *tbl_str = rz_table_tofancystring (tbl);
-	rz_cons_print (tbl_str);
-	free (tbl_str);
-	rz_table_free (tbl);
+	__add_window_to_table(tbl, win);
+	char *tbl_str = rz_table_tofancystring(tbl);
+	rz_cons_print(tbl_str);
+	free(tbl_str);
+	rz_table_free(tbl);
 }
 
 static BOOL CALLBACK __enum_childs(
-	_In_ HWND   hwnd,
-	_In_ LPARAM lParam
-) {
+	_In_ HWND hwnd,
+	_In_ LPARAM lParam) {
 	RzList *windows = (RzList *)lParam;
-	window *win = __window_from_handle (hwnd);
+	window *win = __window_from_handle(hwnd);
 	if (!win) {
 		return false;
 	}
-	rz_list_push (windows, win);
+	rz_list_push(windows, win);
 	return true;
 }
 
 static RzList *__get_windows(RzDebug *dbg) {
-	RzList *windows = rz_list_newf ((RzListFree)__free_window);
+	RzList *windows = rz_list_newf((RzListFree)__free_window);
 	HWND hCurWnd = NULL;
 	do {
-		hCurWnd = FindWindowEx (NULL, hCurWnd, NULL, NULL);
+		hCurWnd = FindWindowEx(NULL, hCurWnd, NULL, NULL);
 		DWORD dwProcessID = 0;
-		GetWindowThreadProcessId (hCurWnd, &dwProcessID);
+		GetWindowThreadProcessId(hCurWnd, &dwProcessID);
 		if (dbg->pid == dwProcessID) {
-			EnumChildWindows (hCurWnd, __enum_childs, (LPARAM)windows);
-			window *win = __window_from_handle (hCurWnd);
+			EnumChildWindows(hCurWnd, __enum_childs, (LPARAM)windows);
+			window *win = __window_from_handle(hCurWnd);
 			if (!win) {
-				rz_list_free (windows);
+				rz_list_free(windows);
 				return NULL;
 			}
-			rz_list_push (windows, win);
+			rz_list_push(windows, win);
 		}
 	} while (hCurWnd != NULL);
 	return windows;
 }
 
 static ut64 __get_dispatchmessage_offset(RzDebug *dbg) {
-	RzList *modlist = rz_debug_modules_list (dbg);
+	RzList *modlist = rz_debug_modules_list(dbg);
 	RzListIter *it;
 	RzDebugMap *mod;
 	bool found = false;
 	rz_list_foreach (modlist, it, mod) {
-		if (!strnicmp (mod->name, "user32.dll", sizeof ("user32.dll"))) {
+		if (!strnicmp(mod->name, "user32.dll", sizeof("user32.dll"))) {
 			found = true;
 			break;
 		}
@@ -377,121 +377,121 @@ static ut64 __get_dispatchmessage_offset(RzDebug *dbg) {
 	if (!found) {
 		return 0;
 	}
-	char *res = dbg->corebind.cmdstr (dbg->corebind.core, "f~DispatchMessageW");
+	char *res = dbg->corebind.cmdstr(dbg->corebind.core, "f~DispatchMessageW");
 	if (!*res) {
-		free (res);
+		free(res);
 		return 0;
 	}
-	char *line = strtok (res, "\n");
+	char *line = strtok(res, "\n");
 	ut64 offset = 0;
-	do  {
-		char *sym = strrchr (line, ' ');
-		if (sym && rz_str_startswith (sym + 1, "sym.imp")) {
-			offset = rz_num_math (NULL, line);
-			dbg->iob.read_at (dbg->iob.io, offset, (ut8 *)&offset, sizeof (offset));
+	do {
+		char *sym = strrchr(line, ' ');
+		if (sym && rz_str_startswith(sym + 1, "sym.imp")) {
+			offset = rz_num_math(NULL, line);
+			dbg->iob.read_at(dbg->iob.io, offset, (ut8 *)&offset, sizeof(offset));
 			break;
 		}
-	} while ((line = strtok (NULL, "\n")));
-	free (res);
+	} while ((line = strtok(NULL, "\n")));
+	free(res);
 	return offset;
 }
 
 static void __init_msg_types(Sdb **msg_types) {
-	*msg_types = sdb_new0 ();
+	*msg_types = sdb_new0();
 	int i;
 	char *cur_type;
 	for (i = 0; (cur_type = msg_types_arr[i]); i++) {
-		sdb_query (*msg_types, cur_type);
+		sdb_query(*msg_types, cur_type);
 	}
 }
 
 static DWORD __get_msg_type(char *name) {
 	static Sdb *msg_types = NULL;
 	if (!msg_types) {
-		__init_msg_types (&msg_types);
+		__init_msg_types(&msg_types);
 	}
 	ut32 found;
-	const char *type_str = sdb_const_get (msg_types, name, &found);
+	const char *type_str = sdb_const_get(msg_types, name, &found);
 	if (found) {
-		int type = rz_num_math (NULL, type_str);
+		int type = rz_num_math(NULL, type_str);
 		return type;
 	}
 	return 0;
 }
 
 static void __print_windows(RzDebug *dbg, RzList *windows) {
-	RzTable *tbl = __create_window_table ();
+	RzTable *tbl = __create_window_table();
 	if (!tbl) {
 		return;
 	}
 	RzListIter *it;
 	window *win;
 	rz_list_foreach (windows, it, win) {
-		__add_window_to_table (tbl, win);
+		__add_window_to_table(tbl, win);
 	}
-	char *t = rz_table_tofancystring (tbl);
-	dbg->cb_printf (t);
-	free (t);
-	rz_table_free (tbl);
+	char *t = rz_table_tofancystring(tbl);
+	dbg->cb_printf(t);
+	free(t);
+	rz_table_free(tbl);
 }
 
 RZ_API void rz_w32_print_windows(RzDebug *dbg) {
-	RzList *windows = __get_windows (dbg);
+	RzList *windows = __get_windows(dbg);
 	if (windows) {
 		if (!windows->length) {
-			dbg->cb_printf ("No windows for this process.\n");
+			dbg->cb_printf("No windows for this process.\n");
 			return;
 		}
-		__print_windows (dbg, windows);
+		__print_windows(dbg, windows);
 	}
-	rz_list_free (windows);
+	rz_list_free(windows);
 }
 
 RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *input) {
-	rz_return_val_if_fail (dbg && input, false);
-	char *name = strdup (input);
-	rz_str_trim (name);
-	char *window_id = strchr (name, ' ');
+	rz_return_val_if_fail(dbg && input, false);
+	char *name = strdup(input);
+	rz_str_trim(name);
+	char *window_id = strchr(name, ' ');
 	if (window_id) {
 		*window_id = 0;
 		window_id++;
 	}
-	DWORD type = __get_msg_type (name);
+	DWORD type = __get_msg_type(name);
 	if (!type) {
-		free (name);
+		free(name);
 		return false;
 	}
 	ut64 offset = 0;
 	if (window_id) {
-		RzList *windows = __get_windows (dbg);
+		RzList *windows = __get_windows(dbg);
 		if (windows && !windows->length) {
-			dbg->cb_printf ("No windows for this process.\n");
+			dbg->cb_printf("No windows for this process.\n");
 		}
-		ut64 win_h = rz_num_math (NULL, window_id);
+		ut64 win_h = rz_num_math(NULL, window_id);
 		RzListIter *it;
 		window *win;
 		rz_list_foreach (windows, it, win) {
-			if ((ut64)win->h == win_h || !strnicmp (win->name, window_id, strlen (window_id))) {
+			if ((ut64)win->h == win_h || !strnicmp(win->name, window_id, strlen(window_id))) {
 				offset = win->proc;
 				break;
 			}
 		}
 		if (!offset) {
-			dbg->cb_printf ("Window not found, try these:\n");
-			__print_windows (dbg, windows);
+			dbg->cb_printf("Window not found, try these:\n");
+			__print_windows(dbg, windows);
 		}
-		rz_list_free (windows);
+		rz_list_free(windows);
 	} else {
-		offset = __get_dispatchmessage_offset (dbg);
+		offset = __get_dispatchmessage_offset(dbg);
 	}
 	if (!offset) {
-		free (name);
+		free(name);
 		return false;
 	}
-	rz_debug_bp_add (dbg, offset, 0, 0, 0, NULL, 0);
+	rz_debug_bp_add(dbg, offset, 0, 0, 0, NULL, 0);
 	char *cond;
 	if (window_id) {
-		cond = rz_str_newf ("?= `ae %lu,edx,-`", type);
+		cond = rz_str_newf("?= `ae %lu,edx,-`", type);
 	} else {
 		char *reg;
 		if (dbg->bits == RZ_SYS_BITS_64) {
@@ -499,9 +499,9 @@ RZ_API bool rz_w32_add_winmsg_breakpoint(RzDebug *dbg, const char *input) {
 		} else {
 			reg = "ecx";
 		}
-		cond = rz_str_newf ("?= `ae %lu,%s,%d,+,[4],-`", type, reg, dbg->bits);
+		cond = rz_str_newf("?= `ae %lu,%s,%d,+,[4],-`", type, reg, dbg->bits);
 	}
-	dbg->corebind.cmdf (dbg->corebind.core, "\"dbC 0x%"PFMT64x" %s\"", offset, cond);
-	free (name);
+	dbg->corebind.cmdf(dbg->corebind.core, "\"dbC 0x%" PFMT64x " %s\"", offset, cond);
+	free(name);
 	return true;
 }

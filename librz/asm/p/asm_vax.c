@@ -19,7 +19,7 @@ static RzStrBuf *buf_global = NULL;
 static const ut8 *bytes = NULL;
 static int bytes_size = 0;
 
-static int vax_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
+static int vax_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	int delta = (memaddr - Offset);
 	if (delta < 0) {
 		return -1; // disable backward reads
@@ -27,11 +27,11 @@ static int vax_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 lengt
 	if (delta > length) {
 		return -1;
 	}
-	memcpy (myaddr, bytes + delta, RZ_MIN (length, bytes_size));
+	memcpy(myaddr, bytes + delta, RZ_MIN(length, bytes_size));
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 
@@ -53,8 +53,8 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	Offset = a->pc;
 
 	/* prepare disassembler */
-	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	disasm_obj.buffer = (ut8*)bytes;
+	memset(&disasm_obj, '\0', sizeof(struct disassemble_info));
+	disasm_obj.buffer = (ut8 *)bytes;
 	disasm_obj.read_memory_func = &vax_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
@@ -62,10 +62,10 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.endian = BFD_ENDIAN_LITTLE;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = stdout;
-	op->size = print_insn_vax ((bfd_vma)Offset, &disasm_obj);
+	op->size = print_insn_vax((bfd_vma)Offset, &disasm_obj);
 
 	if (op->size == -1) {
-		rz_asm_op_set_asm (op, "(data)");
+		rz_asm_op_set_asm(op, "(data)");
 	}
 	return op->size;
 }

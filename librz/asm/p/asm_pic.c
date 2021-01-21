@@ -11,15 +11,15 @@ static int asm_pic_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *b, int l) {
 	int res = -1;
 	char opbuf[128];
 	const char *opstr = opbuf;
-	strcpy (opbuf, "invalid");
-	if (a->cpu && strcasecmp (a->cpu, "baseline") == 0) {
-		res = pic_baseline_disassemble (op, opbuf, b, l);
-	} else if (a->cpu && strcasecmp (a->cpu, "midrange") == 0) {
-		res = pic_midrange_disassemble (op, opbuf, b, l);
-	} else if (a->cpu && strcasecmp (a->cpu, "pic18") == 0) {
-		res = pic_pic18_disassemble (op, opbuf, b, l);
+	strcpy(opbuf, "invalid");
+	if (a->cpu && strcasecmp(a->cpu, "baseline") == 0) {
+		res = pic_baseline_disassemble(op, opbuf, b, l);
+	} else if (a->cpu && strcasecmp(a->cpu, "midrange") == 0) {
+		res = pic_midrange_disassemble(op, opbuf, b, l);
+	} else if (a->cpu && strcasecmp(a->cpu, "pic18") == 0) {
+		res = pic_pic18_disassemble(op, opbuf, b, l);
 	}
-	rz_asm_op_set_asm (op, opstr);
+	rz_asm_op_set_asm(op, opstr);
 	return op->size = res;
 }
 

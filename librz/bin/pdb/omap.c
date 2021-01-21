@@ -6,8 +6,8 @@
 
 static int parse_omap_entry(char *data, int data_size, int *read_bytes, SOmapEntry *omap_entry) {
 	int curr_read_bytes = *read_bytes;
-	memcpy (omap_entry, data, sizeof (SOmapEntry));
-	*read_bytes += sizeof (SOmapEntry);
+	memcpy(omap_entry, data, sizeof(SOmapEntry));
+	*read_bytes += sizeof(SOmapEntry);
 	return (*read_bytes - curr_read_bytes);
 }
 
@@ -18,43 +18,43 @@ void parse_omap_stream(void *stream, RZ_STREAM_FILE *stream_file) {
 	SOmapEntry *omap_entry = 0;
 	SOmapStream *omap_stream = 0;
 
-	stream_file_get_size (stream_file, &data_size);
-	data = (char *) malloc (data_size);
+	stream_file_get_size(stream_file, &data_size);
+	data = (char *)malloc(data_size);
 	if (!data) {
 		return;
 	}
-	stream_file_get_data (stream_file, data);
+	stream_file_get_data(stream_file, data);
 
-	omap_stream = (SOmapStream *) stream;
+	omap_stream = (SOmapStream *)stream;
 	omap_stream->froms = 0;
-	omap_stream->omap_entries = rz_list_new ();
+	omap_stream->omap_entries = rz_list_new();
 	ptmp = data;
 	while (read_bytes < data_size) {
-		omap_entry = (SOmapEntry *) malloc (sizeof(SOmapEntry));
+		omap_entry = (SOmapEntry *)malloc(sizeof(SOmapEntry));
 		if (!omap_entry) {
 			break;
 		}
-		curr_read_bytes = parse_omap_entry (ptmp, data_size, &read_bytes, omap_entry);
+		curr_read_bytes = parse_omap_entry(ptmp, data_size, &read_bytes, omap_entry);
 		if (!curr_read_bytes) {
-			free (omap_entry);
+			free(omap_entry);
 			break;
 		}
 		ptmp += curr_read_bytes;
-		rz_list_append (omap_stream->omap_entries, omap_entry);
+		rz_list_append(omap_stream->omap_entries, omap_entry);
 	}
 
-	free (data);
+	free(data);
 }
 
 void free_omap_stream(void *stream) {
-	SOmapStream *omap_stream = (SOmapStream *) stream;
+	SOmapStream *omap_stream = (SOmapStream *)stream;
 	SOmapEntry *omap_entry = NULL;
-	RzListIter *it = rz_list_iterator (omap_stream->omap_entries);
-	while (rz_list_iter_next (it)) {
-		omap_entry = (SOmapEntry *) rz_list_iter_get (it);
-		free (omap_entry);
+	RzListIter *it = rz_list_iterator(omap_stream->omap_entries);
+	while (rz_list_iter_next(it)) {
+		omap_entry = (SOmapEntry *)rz_list_iter_get(it);
+		free(omap_entry);
 	}
-	rz_list_free (omap_stream->omap_entries);
+	rz_list_free(omap_stream->omap_entries);
 }
 
 // inclusive indices
@@ -87,7 +87,7 @@ static int binary_search(unsigned int *A, int key, int imin, int imax) {
 }
 
 int omap_remap(void *stream, int address) {
-	SOmapStream *omap_stream = (SOmapStream *) stream;
+	SOmapStream *omap_stream = (SOmapStream *)stream;
 	SOmapEntry *omap_entry = 0;
 	RzListIter *it = 0;
 	int i = 0;
@@ -98,23 +98,23 @@ int omap_remap(void *stream, int address) {
 		return address;
 	}
 
-	len = rz_list_length (omap_stream->omap_entries);
+	len = rz_list_length(omap_stream->omap_entries);
 
 	if (omap_stream->froms == 0) {
-		omap_stream->froms = (unsigned int *) malloc (4 * len);
+		omap_stream->froms = (unsigned int *)malloc(4 * len);
 		if (!omap_stream->froms) {
 			return -1;
 		}
-		it = rz_list_iterator (omap_stream->omap_entries);
-		while (rz_list_iter_next (it)) {
-			omap_entry = (SOmapEntry *) rz_list_iter_get (it);
+		it = rz_list_iterator(omap_stream->omap_entries);
+		while (rz_list_iter_next(it)) {
+			omap_entry = (SOmapEntry *)rz_list_iter_get(it);
 			omap_stream->froms[i] = omap_entry->from;
 			i++;
 		}
 	}
 
 	// mb (len -1) ???
-	pos = binary_search (omap_stream->froms, address, 0, (len));
+	pos = binary_search(omap_stream->froms, address, 0, (len));
 
 	if (pos == -1) {
 		return -1;
@@ -123,7 +123,7 @@ int omap_remap(void *stream, int address) {
 	if (omap_stream->froms[pos] != address) {
 		pos -= 1;
 	}
-	omap_entry = (SOmapEntry *) rz_list_get_n (omap_stream->omap_entries, pos);
+	omap_entry = (SOmapEntry *)rz_list_get_n(omap_stream->omap_entries, pos);
 	if (!omap_entry) {
 		return -1;
 	}

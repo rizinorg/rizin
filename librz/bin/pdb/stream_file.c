@@ -28,15 +28,15 @@ static void stream_file_read_pages(RZ_STREAM_FILE *stream_file, int start_indx, 
 		stream_file->error = READ_PAGE_FAIL;
 		return;
 	}
-	end_indx = RZ_MIN (end_indx, stream_file->pages_amount);
+	end_indx = RZ_MIN(end_indx, stream_file->pages_amount);
 
 	for (i = start_indx; i < end_indx; i++) {
 		page_offset = stream_file->pages[i] * stream_file->page_size;
 		if (page_offset < 1) {
 			return;
 		}
-		rz_buf_seek (stream_file->buf, page_offset, RZ_BUF_SET);
-		rz_buf_read_at (stream_file->buf, page_offset,
+		rz_buf_seek(stream_file->buf, page_offset, RZ_BUF_SET);
+		rz_buf_read_at(stream_file->buf, page_offset,
 			(ut8 *)res, stream_file->page_size);
 		res += stream_file->page_size;
 	}
@@ -47,25 +47,25 @@ static void stream_file_read_pages(RZ_STREAM_FILE *stream_file, int start_indx, 
 void stream_file_read(RZ_STREAM_FILE *stream_file, int size, char *res) {
 	int pn_start, off_start, pn_end, off_end;
 	if (size == -1) {
-		char *pdata = (char *) malloc(stream_file->pages_amount * stream_file->page_size);
+		char *pdata = (char *)malloc(stream_file->pages_amount * stream_file->page_size);
 		if (pdata) {
 			GET_PAGE(pn_start, off_start, stream_file->pos, stream_file->page_size);
 			(void)off_end; // hack to remove unused warning
-			stream_file_read_pages (stream_file, 0, stream_file->pages_amount, pdata);
+			stream_file_read_pages(stream_file, 0, stream_file->pages_amount, pdata);
 			stream_file->pos = stream_file->end;
-			memcpy (res, pdata + off_start, stream_file->end - off_start);
-			free (pdata);
+			memcpy(res, pdata + off_start, stream_file->end - off_start);
+			free(pdata);
 		}
 	} else {
 		GET_PAGE(pn_start, off_start, stream_file->pos, stream_file->page_size);
 		GET_PAGE(pn_end, off_end, stream_file->pos + size, stream_file->page_size);
 		(void)off_end; // hack to remove unused warning
-		char *pdata = (char *) calloc(stream_file->page_size * (pn_end + 1 - pn_start), 1);
+		char *pdata = (char *)calloc(stream_file->page_size * (pn_end + 1 - pn_start), 1);
 		if (pdata) {
 			stream_file_read_pages(stream_file, pn_start, pn_end + 1, pdata);
 			stream_file->pos += size;
 			memcpy(res, pdata + off_start, size);
-			free (pdata);
+			free(pdata);
 		}
 	}
 }
@@ -100,10 +100,10 @@ int stream_file_tell(RZ_STREAM_FILE *stream_file) {
 
 ///////////////////////////////////////////////////////////////////////////////
 void stream_file_get_data(RZ_STREAM_FILE *stream_file, char *data) {
-	int pos = stream_file_tell (stream_file);
-	stream_file_seek (stream_file, 0, 0);
-	stream_file_read (stream_file, -1, data);
-	stream_file_seek (stream_file, pos, 0);
+	int pos = stream_file_tell(stream_file);
+	stream_file_seek(stream_file, 0, 0);
+	stream_file_read(stream_file, -1, data);
+	stream_file_seek(stream_file, pos, 0);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

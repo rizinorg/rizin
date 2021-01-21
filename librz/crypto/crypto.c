@@ -3,7 +3,7 @@
 #include "rz_crypto.h"
 #include "config.h"
 
-RZ_LIB_VERSION (rz_crypto);
+RZ_LIB_VERSION(rz_crypto);
 
 static const struct {
 	const char *name;
@@ -70,16 +70,16 @@ RZ_API RzCrypto *rz_crypto_init(RzCrypto *cry, int hard) {
 		cry->user = NULL;
 		if (hard) {
 			// first call initializes the output_* variables
-			rz_crypto_get_output (cry, NULL);
-			cry->plugins = rz_list_newf (NULL);
+			rz_crypto_get_output(cry, NULL);
+			cry->plugins = rz_list_newf(NULL);
 			for (i = 0; crypto_static_plugins[i]; i++) {
-				RzCryptoPlugin *p = RZ_NEW0 (RzCryptoPlugin);
+				RzCryptoPlugin *p = RZ_NEW0(RzCryptoPlugin);
 				if (!p) {
-					free (cry);
+					free(cry);
 					return NULL;
 				}
-				memcpy (p, crypto_static_plugins[i], sizeof (RzCryptoPlugin));
-				rz_crypto_add (cry, p);
+				memcpy(p, crypto_static_plugins[i], sizeof(RzCryptoPlugin));
+				rz_crypto_add(cry, p);
 			}
 		}
 	}
@@ -88,36 +88,36 @@ RZ_API RzCrypto *rz_crypto_init(RzCrypto *cry, int hard) {
 
 RZ_API int rz_crypto_add(RzCrypto *cry, RzCryptoPlugin *h) {
 	// add a check ?
-	rz_list_append (cry->plugins, h);
+	rz_list_append(cry->plugins, h);
 	return true;
 }
 
 RZ_API int rz_crypto_del(RzCrypto *cry, RzCryptoPlugin *h) {
-	rz_list_delete_data (cry->plugins, h);
+	rz_list_delete_data(cry->plugins, h);
 	return true;
 }
 
 RZ_API struct rz_crypto_t *rz_crypto_new(void) {
-	RzCrypto *cry = RZ_NEW0 (RzCrypto);
-	return rz_crypto_init (cry, true);
+	RzCrypto *cry = RZ_NEW0(RzCrypto);
+	return rz_crypto_init(cry, true);
 }
 
 RZ_API struct rz_crypto_t *rz_crypto_as_new(struct rz_crypto_t *cry) {
-	RzCrypto *c = RZ_NEW0 (RzCrypto);
+	RzCrypto *c = RZ_NEW0(RzCrypto);
 	if (c) {
-		rz_crypto_init (c, false); // soft init
-		memcpy (&c->plugins, &cry->plugins, sizeof (cry->plugins));
+		rz_crypto_init(c, false); // soft init
+		memcpy(&c->plugins, &cry->plugins, sizeof(cry->plugins));
 	}
 	return c;
 }
 
 RZ_API struct rz_crypto_t *rz_crypto_free(RzCrypto *cry) {
 	// TODO: call the destructor function of the plugin to destroy the *user pointer if needed
-	rz_list_free (cry->plugins);
-	free (cry->output);
-	free (cry->key);
-	free (cry->iv);
-	free (cry);
+	rz_list_free(cry->plugins);
+	free(cry->output);
+	free(cry->key);
+	free(cry->iv);
+	free(cry);
 	return NULL;
 }
 
@@ -125,45 +125,41 @@ RZ_API bool rz_crypto_use(RzCrypto *cry, const char *algo) {
 	RzListIter *iter;
 	RzCryptoPlugin *h;
 	rz_list_foreach (cry->plugins, iter, h) {
-		if (h && h->use && h->use (algo)) {
+		if (h && h->use && h->use(algo)) {
 			cry->h = h;
-			cry->key_len = h->get_key_size (cry);
-			cry->key = calloc (1, cry->key_len);
+			cry->key_len = h->get_key_size(cry);
+			cry->key = calloc(1, cry->key_len);
 			return cry->key != NULL;
 		}
 	}
 	return false;
 }
 
-RZ_API bool rz_crypto_set_key(RzCrypto *cry, const ut8* key, int keylen, int mode, int direction) {
+RZ_API bool rz_crypto_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	if (keylen < 0) {
-		keylen = strlen ((const char *)key);
+		keylen = strlen((const char *)key);
 	}
 	if (!cry || !cry->h || !cry->h->set_key) {
 		return false;
 	}
-	return cry->h->set_key (cry, key, keylen, mode, direction);
+	return cry->h->set_key(cry, key, keylen, mode, direction);
 }
 
 RZ_API int rz_crypto_get_key_size(RzCrypto *cry) {
-	return (cry && cry->h && cry->h->get_key_size)?
-		cry->h->get_key_size (cry): 0;
+	return (cry && cry->h && cry->h->get_key_size) ? cry->h->get_key_size(cry) : 0;
 }
 
 RZ_API bool rz_crypto_set_iv(RzCrypto *cry, const ut8 *iv, int ivlen) {
-	return (cry && cry->h && cry->h->set_iv)?
-		cry->h->set_iv(cry, iv, ivlen): 0;
+	return (cry && cry->h && cry->h->set_iv) ? cry->h->set_iv(cry, iv, ivlen) : 0;
 }
 
 // return the number of bytes written in the output buffer
 RZ_API int rz_crypto_update(RzCrypto *cry, const ut8 *buf, int len) {
-	return (cry && cry->h && cry->h->update)?
-		cry->h->update (cry, buf, len): 0;
+	return (cry && cry->h && cry->h->update) ? cry->h->update(cry, buf, len) : 0;
 }
 
 RZ_API int rz_crypto_final(RzCrypto *cry, const ut8 *buf, int len) {
-	return (cry && cry->h && cry->h->final)?
-		cry->h->final (cry, buf, len): 0;
+	return (cry && cry->h && cry->h->final) ? cry->h->final(cry, buf, len) : 0;
 }
 
 // TODO: internal api?? used from plugins? TODO: use rz_buf here
@@ -171,11 +167,11 @@ RZ_API int rz_crypto_append(RzCrypto *cry, const ut8 *buf, int len) {
 	if (!cry || !buf) {
 		return -1;
 	}
-	if (cry->output_len+len > cry->output_size) {
+	if (cry->output_len + len > cry->output_size) {
 		cry->output_size += 4096 + len;
-		cry->output = realloc (cry->output, cry->output_size);
+		cry->output = realloc(cry->output, cry->output_size);
 	}
-	memcpy (cry->output + cry->output_len, buf, len);
+	memcpy(cry->output + cry->output_len, buf, len);
 	cry->output_len += len;
 	return cry->output_len;
 }
@@ -184,19 +180,19 @@ RZ_API ut8 *rz_crypto_get_output(RzCrypto *cry, int *size) {
 	if (cry->output_size < 1) {
 		return NULL;
 	}
-	ut8 *buf = calloc (1, cry->output_size);
+	ut8 *buf = calloc(1, cry->output_size);
 	if (!buf) {
 		return NULL;
 	}
 	if (size) {
 		*size = cry->output_len;
-		memcpy (buf, cry->output, *size);
+		memcpy(buf, cry->output, *size);
 	} else {
 		/* initialize */
 		const int size = 4096;
-		cry->output = realloc (buf, size);
+		cry->output = realloc(buf, size);
 		if (!cry->output) {
-			free (buf);
+			free(buf);
 			return NULL;
 		}
 		cry->output_len = 0;

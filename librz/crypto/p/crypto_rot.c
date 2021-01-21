@@ -5,7 +5,7 @@
 
 int mod(int a, int b) {
 	if (b < 0) {
-		return mod (-a, -b);
+		return mod(-a, -b);
 	}
 	int ret = a % b;
 	if (ret < 0) {
@@ -16,8 +16,8 @@ int mod(int a, int b) {
 
 static bool rot_init(ut8 *rotkey, const ut8 *key, int keylen) {
 	if (rotkey && key && keylen > 0) {
-		int i = atoi ((const char *)key);
-		*rotkey = (ut8)mod (i, 26);
+		int i = atoi((const char *)key);
+		*rotkey = (ut8)mod(i, 26);
 		return true;
 	}
 	return false;
@@ -32,7 +32,7 @@ static void rot_crypt(ut8 key, const ut8 *inbuf, ut8 *outbuf, int buflen) {
 		}
 		outbuf[i] += key;
 		outbuf[i] -= (inbuf[i] >= 'a' && inbuf[i] <= 'z') ? 'a' : 'A';
-		outbuf[i] = mod (outbuf[i], 26);
+		outbuf[i] = mod(outbuf[i], 26);
 		outbuf[i] += (inbuf[i] >= 'a' && inbuf[i] <= 'z') ? 'a' : 'A';
 	}
 }
@@ -44,10 +44,10 @@ static void rot_decrypt(ut8 key, const ut8 *inbuf, ut8 *outbuf, int buflen) {
 		if ((inbuf[i] < 'a' || inbuf[i] > 'z') && (inbuf[i] < 'A' || inbuf[i] > 'Z')) {
 			continue;
 		}
-		outbuf[i] += 26;	//adding so that subtracting does not make it negative
+		outbuf[i] += 26; //adding so that subtracting does not make it negative
 		outbuf[i] -= key;
 		outbuf[i] -= (inbuf[i] >= 'a' && inbuf[i] <= 'z') ? 'a' : 'A';
-		outbuf[i] = mod (outbuf[i], 26);
+		outbuf[i] = mod(outbuf[i], 26);
 		outbuf[i] += (inbuf[i] >= 'a' && inbuf[i] <= 'z') ? 'a' : 'A';
 	}
 }
@@ -57,7 +57,7 @@ static int flag = 0;
 
 static bool rot_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	flag = direction;
-	return rot_init (&rot_key, key, keylen);
+	return rot_init(&rot_key, key, keylen);
 }
 
 static int rot_get_key_size(RzCrypto *cry) {
@@ -66,26 +66,26 @@ static int rot_get_key_size(RzCrypto *cry) {
 }
 
 static bool rot_use(const char *algo) {
-	return !strcmp (algo, "rot");
+	return !strcmp(algo, "rot");
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
-	ut8 *obuf = calloc (1, len);
+	ut8 *obuf = calloc(1, len);
 	if (!obuf) {
 		return false;
 	}
 	if (flag == 0) {
-		rot_crypt (rot_key, buf, obuf, len);
+		rot_crypt(rot_key, buf, obuf, len);
 	} else if (flag == 1) {
-		rot_decrypt (rot_key, buf, obuf, len);
+		rot_decrypt(rot_key, buf, obuf, len);
 	}
-	rz_crypto_append (cry, obuf, len);
-	free (obuf);
+	rz_crypto_append(cry, obuf, len);
+	free(obuf);
 	return true;
 }
 
 static bool final(RzCrypto *cry, const ut8 *buf, int len) {
-	return update (cry, buf, len);
+	return update(cry, buf, len);
 }
 
 RzCryptoPlugin rz_crypto_plugin_rot = {
@@ -104,4 +104,3 @@ RZ_API RzLibStruct rizin_plugin = {
 	.version = RZ_VERSION
 };
 #endif
-

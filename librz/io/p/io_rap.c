@@ -6,70 +6,70 @@
 #include <rz_socket.h>
 #include <sys/types.h>
 
-#define RzIORAP_FD(x) (((x)->data)?(((RzIORap*)((x)->data))->client):NULL)
-#define RzIORAP_IS_LISTEN(x) (((RzIORap*)((x)->data))->listener)
-#define RzIORAP_IS_VALID(x) ((x) && ((x)->data) && ((x)->plugin == &rz_io_plugin_rap))
+#define RzIORAP_FD(x)        (((x)->data) ? (((RzIORap *)((x)->data))->client) : NULL)
+#define RzIORAP_IS_LISTEN(x) (((RzIORap *)((x)->data))->listener)
+#define RzIORAP_IS_VALID(x)  ((x) && ((x)->data) && ((x)->plugin == &rz_io_plugin_rap))
 
 static int __rap_write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
-	RzSocket *s = RzIORAP_FD (fd);
-	return rz_socket_rap_client_write (s, buf, count);
+	RzSocket *s = RzIORAP_FD(fd);
+	return rz_socket_rap_client_write(s, buf, count);
 }
 
 static bool __rap_accept(RzIO *io, RzIODesc *desc, int fd) {
-	RzIORap *rap = desc? desc->data: NULL;
+	RzIORap *rap = desc ? desc->data : NULL;
 	if (rap && fd != -1) {
-		rap->client = rz_socket_new_from_fd (fd);
+		rap->client = rz_socket_new_from_fd(fd);
 		return true;
 	}
 	return false;
 }
 
 static int __rap_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
-	RzSocket *s = RzIORAP_FD (fd);
-	return rz_socket_rap_client_read (s, buf, count);
+	RzSocket *s = RzIORAP_FD(fd);
+	return rz_socket_rap_client_read(s, buf, count);
 }
 
 static int __rap_close(RzIODesc *fd) {
 	int ret = -1;
-	if (RzIORAP_IS_VALID (fd)) {
-		if (RzIORAP_FD (fd) != NULL) {
+	if (RzIORAP_IS_VALID(fd)) {
+		if (RzIORAP_FD(fd) != NULL) {
 			RzIORap *r = fd->data;
 			if (r && fd->fd != -1) {
 				if (r->fd) {
-					(void)rz_socket_close (r->fd);
+					(void)rz_socket_close(r->fd);
 				}
 				if (r->client) {
-					ret = rz_socket_close (r->client);
+					ret = rz_socket_close(r->client);
 				}
-				RZ_FREE (r);
+				RZ_FREE(r);
 			}
 		}
 	} else {
-		eprintf ("__rap_close: fdesc is not a rz_io_rap plugin\n");
+		eprintf("__rap_close: fdesc is not a rz_io_rap plugin\n");
 	}
 	return ret;
 }
 
 static ut64 __rap_lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
-	RzSocket *s = RzIORAP_FD (fd);
-	return rz_socket_rap_client_seek (s, offset, whence);
+	RzSocket *s = RzIORAP_FD(fd);
+	return rz_socket_rap_client_seek(s, offset, whence);
 }
 
 static bool __rap_plugin_open(RzIO *io, const char *pathname, bool many) {
-	return rz_str_startswith (pathname, "rap://") || rz_str_startswith (pathname, "raps://");
+	return rz_str_startswith(pathname, "rap://") || rz_str_startswith(pathname, "raps://");
 }
 
 static RzIODesc *__rap_open(RzIO *io, const char *pathname, int rw, int mode) {
 	int i, p, listenmode;
 	char *file, *port;
 
-	if (!__rap_plugin_open (io, pathname, 0)) {
+	if (!__rap_plugin_open(io, pathname, 0)) {
 		return NULL;
 	}
-	bool is_ssl = (!strncmp (pathname, "raps://", 7));
-	const char *host = pathname + (is_ssl? 7: 6);
-	if (!(port = strchr (host, ':'))) {
-		eprintf ("rap: wrong uri\n");
+	bool is_ssl = (!strncmp(pathname, "raps://", 7));
+	const char *host = pathname + (is_ssl ? 7 : 6);
+	if (!(port = strchr(host, ':'))) {
+		eprintf("rap: wrong uri\n");
 		return NULL;
 	}
 	listenmode = (*host == ':');
@@ -77,92 +77,92 @@ static RzIODesc *__rap_open(RzIO *io, const char *pathname, int rw, int mode) {
 	if (!*port) {
 		return NULL;
 	}
-	p = atoi (port);
-	if ((file = strchr (port + 1, '/'))) {
+	p = atoi(port);
+	if ((file = strchr(port + 1, '/'))) {
 		*file = 0;
 		file++;
 	}
 	if (listenmode) {
 		if (p <= 0) {
-			eprintf ("rap: cannot listen here. Try rap://:9999\n");
+			eprintf("rap: cannot listen here. Try rap://:9999\n");
 			return NULL;
 		}
 		//TODO: Handle ^C signal (SIGINT, exit); // ???
-		eprintf ("rap: listening at port %s ssl %s\n", port, (is_ssl)?"on":"off");
-		RzIORap *rior = RZ_NEW0 (RzIORap);
+		eprintf("rap: listening at port %s ssl %s\n", port, (is_ssl) ? "on" : "off");
+		RzIORap *rior = RZ_NEW0(RzIORap);
 		rior->listener = true;
-		rior->client = rior->fd = rz_socket_new (is_ssl);
+		rior->client = rior->fd = rz_socket_new(is_ssl);
 		if (!rior->fd) {
-			free (rior);
+			free(rior);
 			return NULL;
 		}
 		if (is_ssl) {
 			if (file && *file) {
-				if (!rz_socket_listen (rior->fd, port, file)) {
-					rz_socket_free (rior->fd);
-					free (rior);
+				if (!rz_socket_listen(rior->fd, port, file)) {
+					rz_socket_free(rior->fd);
+					free(rior);
 					return NULL;
 				}
 			} else {
-				free (rior);
+				free(rior);
 				return NULL;
 			}
 		} else {
-			if (!rz_socket_listen (rior->fd, port, NULL)) {
-				rz_socket_free (rior->fd);
-				free (rior);
+			if (!rz_socket_listen(rior->fd, port, NULL)) {
+				rz_socket_free(rior->fd);
+				free(rior);
 				return NULL;
 			}
 		}
-		return rz_io_desc_new (io, &rz_io_plugin_rap,
+		return rz_io_desc_new(io, &rz_io_plugin_rap,
 			pathname, rw, mode, rior);
 	}
-	RzSocket *s = rz_socket_new (is_ssl);
+	RzSocket *s = rz_socket_new(is_ssl);
 	if (!s) {
-		eprintf ("Cannot create new socket\n");
+		eprintf("Cannot create new socket\n");
 		return NULL;
 	}
-	eprintf ("Connecting to %s, port %s\n", host, port);
-	if (!rz_socket_connect (s, host, port, RZ_SOCKET_PROTO_TCP, 0)) {
-		eprintf ("Cannot connect to '%s' (%d)\n", host, p);
-		rz_socket_free (s);
+	eprintf("Connecting to %s, port %s\n", host, port);
+	if (!rz_socket_connect(s, host, port, RZ_SOCKET_PROTO_TCP, 0)) {
+		eprintf("Cannot connect to '%s' (%d)\n", host, p);
+		rz_socket_free(s);
 		return NULL;
 	}
-	eprintf ("Connected to: %s at port %s\n", host, port);
-	RzIORap *rior = RZ_NEW0 (RzIORap);
+	eprintf("Connected to: %s at port %s\n", host, port);
+	RzIORap *rior = RZ_NEW0(RzIORap);
 	if (!rior) {
-		rz_socket_free (s);
+		rz_socket_free(s);
 		return NULL;
 	}
 	rior->listener = false;
 	rior->client = rior->fd = s;
 	if (file && *file) {
-		i = rz_socket_rap_client_open (s, file, rw);
+		i = rz_socket_rap_client_open(s, file, rw);
 		if (i == -1) {
-			free (rior);
-			rz_socket_free (s);
+			free(rior);
+			rz_socket_free(s);
 			return NULL;
 		}
 		if (i > 0) {
-			eprintf ("rap connection was successful. open %d\n", i);
+			eprintf("rap connection was successful. open %d\n", i);
 			// io->corebind.cmd (io->corebind.core, "e io.va=0");
-			io->corebind.cmd (io->corebind.core, ".=!i*");
-			io->corebind.cmd (io->corebind.core, ".=!f*");
-			io->corebind.cmd (io->corebind.core, ".=!om*");
+			io->corebind.cmd(io->corebind.core, ".=!i*");
+			io->corebind.cmd(io->corebind.core, ".=!f*");
+			io->corebind.cmd(io->corebind.core, ".=!om*");
 		}
 	}
-	return rz_io_desc_new (io, &rz_io_plugin_rap,
+	return rz_io_desc_new(io, &rz_io_plugin_rap,
 		pathname, rw, mode, rior);
 }
 
 static int __rap_listener(RzIODesc *fd) {
-	return (RzIORAP_IS_VALID (fd))? RzIORAP_IS_LISTEN (fd): 0; // -1 ?
+	return (RzIORAP_IS_VALID(fd)) ? RzIORAP_IS_LISTEN(fd) : 0; // -1 ?
 }
 
 static char *__rap_system(RzIO *io, RzIODesc *fd, const char *command) {
-	RzSocket *s = RzIORAP_FD (fd);
+	RzSocket *s = RzIORAP_FD(fd);
 	// TODO: bind core into RzSocket instead of pass the one from io?
-	return rz_socket_rap_client_command (s, command, &io->corebind);
+	return rz_socket_rap_client_command(s, command, &io->corebind);
 #if 0
 	int ret, reslen = 0, cmdlen = 0;
 	unsigned int i;
@@ -265,7 +265,7 @@ static char *__rap_system(RzIO *io, RzIODesc *fd, const char *command) {
 	}
 #endif
 #endif
-	
+
 	return NULL;
 }
 

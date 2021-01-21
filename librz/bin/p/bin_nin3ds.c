@@ -12,12 +12,12 @@ static struct n3ds_firm_hdr loaded_header;
 
 static bool check_buffer(RzBuffer *b) {
 	ut8 magic[4];
-	rz_buf_read_at (b, 0, magic, sizeof (magic));
-	return (!memcmp (magic, "FIRM", 4));
+	rz_buf_read_at(b, 0, magic, sizeof(magic));
+	return (!memcmp(magic, "FIRM", 4));
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
-	if (rz_buf_read_at (b, 0, (ut8*)&loaded_header, sizeof (loaded_header)) == sizeof (loaded_header)) {
+	if (rz_buf_read_at(b, 0, (ut8 *)&loaded_header, sizeof(loaded_header)) == sizeof(loaded_header)) {
 		*bin_obj = &loaded_header;
 		return true;
 	}
@@ -31,7 +31,7 @@ static RzList *sections(RzBinFile *bf) {
 	};
 	int i, corrupt = false;
 
-	if (!(ret = rz_list_new ())) {
+	if (!(ret = rz_list_new())) {
 		return NULL;
 	}
 
@@ -39,12 +39,12 @@ static RzList *sections(RzBinFile *bf) {
 	for (i = 0; i < 4; i++) {
 		/* Check if section is used */
 		if (loaded_header.sections[i].size) {
-			sections[i] = RZ_NEW0 (RzBinSection);
+			sections[i] = RZ_NEW0(RzBinSection);
 			/* Firmware Type ('0'=ARM9/'1'=ARM11) */
 			if (loaded_header.sections[i].type == 0x0) {
-				sections[i]->name = strdup ("arm9");
+				sections[i]->name = strdup("arm9");
 			} else if (loaded_header.sections[i].type == 0x1) {
-				sections[i]->name = strdup ("arm11");
+				sections[i]->name = strdup("arm11");
 			} else {
 				corrupt = true;
 				break;
@@ -53,7 +53,7 @@ static RzList *sections(RzBinFile *bf) {
 			sections[i]->vsize = loaded_header.sections[i].size;
 			sections[i]->paddr = loaded_header.sections[i].offset;
 			sections[i]->vaddr = loaded_header.sections[i].address;
-			sections[i]->perm = rz_str_rwx ("rwx");
+			sections[i]->perm = rz_str_rwx("rwx");
 			sections[i]->add = true;
 		}
 	}
@@ -62,14 +62,14 @@ static RzList *sections(RzBinFile *bf) {
 	for (i = 0; i < 4; i++) {
 		if (sections[i]) {
 			if (corrupt) {
-				free (sections[i]);
+				free(sections[i]);
 			} else {
-				rz_list_append (ret, sections[i]);
+				rz_list_append(ret, sections[i]);
 			}
 		}
 	}
 	if (corrupt) {
-		rz_list_free (ret);
+		rz_list_free(ret);
 		return NULL;
 	}
 
@@ -77,7 +77,7 @@ static RzList *sections(RzBinFile *bf) {
 }
 
 static RzList *entries(RzBinFile *bf) {
-	RzList *ret = rz_list_new ();
+	RzList *ret = rz_list_new();
 	RzBinAddr *ptr9 = NULL, *ptr11 = NULL;
 
 	if (bf && bf->buf) {
@@ -85,42 +85,42 @@ static RzList *entries(RzBinFile *bf) {
 			return NULL;
 		}
 		ret->free = free;
-		if (!(ptr9 = RZ_NEW0 (RzBinAddr))) {
-			rz_list_free (ret);
+		if (!(ptr9 = RZ_NEW0(RzBinAddr))) {
+			rz_list_free(ret);
 			return NULL;
 		}
-		if (!(ptr11 = RZ_NEW0 (RzBinAddr))) {
-			rz_list_free (ret);
-			free (ptr9);
+		if (!(ptr11 = RZ_NEW0(RzBinAddr))) {
+			rz_list_free(ret);
+			free(ptr9);
 			return NULL;
 		}
 
 		/* ARM9 entry point */
 		ptr9->vaddr = loaded_header.arm9_ep;
-		rz_list_append (ret, ptr9);
+		rz_list_append(ret, ptr9);
 
 		/* ARM11 entry point */
 		ptr11->vaddr = loaded_header.arm11_ep;
-		rz_list_append (ret, ptr11);
+		rz_list_append(ret, ptr11);
 	}
 	return ret;
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
-	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
+	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
 
 	if (!bf || !bf->buf) {
-		free (ret);
+		free(ret);
 		return NULL;
 	}
 
-	ret->type = strdup ("FIRM");
-	ret->machine = strdup ("Nintendo 3DS");
-	ret->os = strdup ("n3ds");
-	ret->arch = strdup ("arm");
+	ret->type = strdup("FIRM");
+	ret->machine = strdup("Nintendo 3DS");
+	ret->os = strdup("n3ds");
+	ret->arch = strdup("arm");
 	ret->has_va = true;
 	ret->bits = 32;
 

@@ -17,8 +17,8 @@ static bool xor_init(struct xor_state *const state, const ut8 *key, int keylen) 
 		return false;
 	}
 	state->key_size = keylen;
-	state->key = malloc (keylen);
-	memcpy (state->key, key, keylen);
+	state->key = malloc(keylen);
+	memcpy(state->key, key, keylen);
 	return true;
 }
 
@@ -27,13 +27,13 @@ static bool xor_init(struct xor_state *const state, const ut8 *key, int keylen) 
  */
 
 static void xor_crypt(struct xor_state *const state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
-	int i;//index for input
+	int i; //index for input
 	for (i = 0; i < buflen; i++) {
-		outbuf[i] = inbuf[i] ^ state->key[(i%state->key_size)];
+		outbuf[i] = inbuf[i] ^ state->key[(i % state->key_size)];
 	}
 }
 static bool xor_set_key(RzCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
-	return xor_init (&st, key, keylen);
+	return xor_init(&st, key, keylen);
 }
 
 static int xor_get_key_size(RzCrypto *cry) {
@@ -41,22 +41,22 @@ static int xor_get_key_size(RzCrypto *cry) {
 }
 
 static bool xor_use(const char *algo) {
-	return !strcmp (algo, "xor");
+	return !strcmp(algo, "xor");
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
-	ut8 *obuf = calloc (1, len);
+	ut8 *obuf = calloc(1, len);
 	if (!obuf) {
 		return false;
 	}
-	xor_crypt (&st, buf, obuf, len);
-	rz_crypto_append (cry, obuf, len);
-	free (obuf);
+	xor_crypt(&st, buf, obuf, len);
+	rz_crypto_append(cry, obuf, len);
+	free(obuf);
 	return true;
 }
 
 static bool final(RzCrypto *cry, const ut8 *buf, int len) {
-	return update (cry, buf, len);
+	return update(cry, buf, len);
 }
 
 RzCryptoPlugin rz_crypto_plugin_xor = {

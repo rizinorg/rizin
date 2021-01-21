@@ -37,9 +37,9 @@
 #include "mconfig.h"
 #include <rz_magic.h>
 
-#include <stdio.h>	/* Include that here, to make sure __P gets defined */
+#include <stdio.h> /* Include that here, to make sure __P gets defined */
 #include <errno.h>
-#include <fcntl.h>	/* For open and flags */
+#include <fcntl.h> /* For open and flags */
 #include <inttypes.h> // TODO: use utX
 #include <rz_regex.h>
 #include <sys/types.h>
@@ -58,7 +58,7 @@ int file_pipe2file(struct rz_magic_set *, int, const void *, size_t);
 int file_printf(struct rz_magic_set *, const char *, ...);
 int file_reset(struct rz_magic_set *);
 int file_tryelf(struct rz_magic_set *, int, const unsigned char *, size_t);
-int file_zmagic(struct rz_magic_set *, int, const char *, const ut8*, size_t);
+int file_zmagic(struct rz_magic_set *, int, const char *, const ut8 *, size_t);
 int file_ascmagic(struct rz_magic_set *, const unsigned char *, size_t);
 int file_is_tar(struct rz_magic_set *, const unsigned char *, size_t);
 int file_softmagic(struct rz_magic_set *, const unsigned char *, size_t, int);

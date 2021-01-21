@@ -5,56 +5,56 @@
 
 #define DEFAULT_XOR_KEY "0xFF"
 
-static RzBuffer *build (RzEgg *egg) {
+static RzBuffer *build(RzEgg *egg) {
 	RzBuffer *buf, *sc;
 	ut8 aux[32], nkey;
 	const char *default_key = DEFAULT_XOR_KEY;
-	char *key = rz_egg_option_get (egg, "key");
+	char *key = rz_egg_option_get(egg, "key");
 	int i;
 
 	if (!key || !*key) {
-		free (key);
-		key = strdup (default_key);
-		eprintf ("XOR key not provided. Using (%s) as the key\n", key);
+		free(key);
+		key = strdup(default_key);
+		eprintf("XOR key not provided. Using (%s) as the key\n", key);
 	}
-	nkey = rz_num_math (NULL, key);
+	nkey = rz_num_math(NULL, key);
 	if (nkey == 0) {
-		eprintf ("Invalid key (%s)\n", key);
-		free (key);
+		eprintf("Invalid key (%s)\n", key);
+		free(key);
 		return false;
 	}
 	if (nkey != (nkey & 0xff)) {
 		nkey &= 0xff;
-		eprintf ("xor key wrapped to (%d)\n", nkey);
+		eprintf("xor key wrapped to (%d)\n", nkey);
 	}
-	if (rz_buf_size (egg->bin) > 240) { // XXX
-		eprintf ("shellcode is too long :(\n");
-		free (key);
+	if (rz_buf_size(egg->bin) > 240) { // XXX
+		eprintf("shellcode is too long :(\n");
+		free(key);
 		return NULL;
 	}
 	sc = egg->bin; // hack
-	if (!rz_buf_size (sc)) {
-		eprintf ("No shellcode found!\n");
-		free (key);
+	if (!rz_buf_size(sc)) {
+		eprintf("No shellcode found!\n");
+		free(key);
 		return NULL;
 	}
 
-	for (i = 0; i<rz_buf_size (sc); i++) {
+	for (i = 0; i < rz_buf_size(sc); i++) {
 		// eprintf ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
-		if ((rz_buf_read8_at (sc, i) ^ nkey)==0) {
-			eprintf ("This xor key generates null bytes. Try again.\n");
-			free (key);
+		if ((rz_buf_read8_at(sc, i) ^ nkey) == 0) {
+			eprintf("This xor key generates null bytes. Try again.\n");
+			free(key);
 			return NULL;
 		}
 	}
-	buf = rz_buf_new ();
-	sc = rz_buf_new ();
+	buf = rz_buf_new();
+	sc = rz_buf_new();
 
 	// TODO: alphanumeric? :D
 	// This is the x86-32/64 xor encoder
-	rz_buf_append_buf (sc, egg->bin);
+	rz_buf_append_buf(sc, egg->bin);
 	if (egg->arch == RZ_SYS_ARCH_X86) {
-		#define STUBLEN 18
+#define STUBLEN 18
 		ut8 stub[STUBLEN] =
 			"\xe8\xff\xff\xff\xff" // call $$+4
 			"\xc1" // ffc1 = inc ecx
@@ -66,24 +66,24 @@ static RzBuffer *build (RzEgg *egg) {
 			"\xe2\xf9"; // loop loop0
 		// ecx = length
 		aux[0] = 0x6a; // push length
-		aux[1] = rz_buf_size (sc);
+		aux[1] = rz_buf_size(sc);
 		aux[2] = 0x59; // pop ecx
 		// ebx = key
 		aux[3] = 0x6a; // push key
 		aux[4] = nkey;
 		aux[5] = 0x5b; // pop ebx
-		rz_buf_set_bytes (buf, aux, 6);
+		rz_buf_set_bytes(buf, aux, 6);
 
-		rz_buf_append_bytes (buf, stub, STUBLEN);
+		rz_buf_append_bytes(buf, stub, STUBLEN);
 
-		for (i = 0; i<rz_buf_size (sc); i++) {
-			ut8 v = rz_buf_read8_at (sc, i) ^ nkey;
-			rz_buf_write_at (sc, i, &v, sizeof (v));
+		for (i = 0; i < rz_buf_size(sc); i++) {
+			ut8 v = rz_buf_read8_at(sc, i) ^ nkey;
+			rz_buf_write_at(sc, i, &v, sizeof(v));
 		}
-		rz_buf_append_buf (buf, sc);
+		rz_buf_append_buf(buf, sc);
 	}
-	rz_buf_free (sc);
-	free (key);
+	rz_buf_free(sc);
+	free(key);
 	return buf;
 }
 
