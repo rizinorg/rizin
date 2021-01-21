@@ -1307,7 +1307,7 @@ show_help:
 				rz_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
 					filtered_name, map->addr);
 				rz_cons_printf ("oba 0x%08"PFMT64x" %s\n", map->addr, escaped_path);
-				// rz_cons_printf (".!rz_bin -rsB 0x%08"PFMT64x" \"%s\"\n", map->addr, escaped_path);
+				// rz_cons_printf (".!rz-bin -rsB 0x%08"PFMT64x" \"%s\"\n", map->addr, escaped_path);
 				free (escaped_path);
 				free (filtered_name);
 			}
@@ -1727,11 +1727,11 @@ static int cmd_debug_map(RzCore *core, const char *input) {
 					/* TODO: do not spawn. use RzBin API */
 					if (sectname) {
 						char *sect = rz_str_escape (sectname);
-						res  = rz_sys_cmd_strf ("env RZ_BIN_PREFIX=\"%s\" rz_bin %s-B 0x%08"
+						res  = rz_sys_cmd_strf ("env RZ_BIN_PREFIX=\"%s\" rz-bin %s-B 0x%08"
 							PFMT64x" -S \"%s\" | grep \"%s\"", name, mode, baddr, filesc, sect);
 						free (sect);
 					} else {
-						res = rz_sys_cmd_strf ("env RZ_BIN_PREFIX=\"%s\" rz_bin %s-B 0x%08"
+						res = rz_sys_cmd_strf ("env RZ_BIN_PREFIX=\"%s\" rz-bin %s-B 0x%08"
 							PFMT64x" -S \"%s\"", name, mode, baddr, filesc);
 					}
 					free (filesc);

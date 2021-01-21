@@ -8,7 +8,7 @@
 #include "../bin/pdb/pdb_downloader.h"
 
 static const char *help_msg_i[] = {
-	"Usage: i", "", "Get info from opened file (see rz_bin's manpage)",
+	"Usage: i", "", "Get info from opened file (see rz-bin's manpage)",
 	"Output mode:", "", "",
 	"'*'", "", "Output in rizin commands",
 	"'j'", "", "Output in json",
@@ -607,10 +607,10 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 		case 'O': // "iO"
 			switch (input[1]) {
 			case ' ':
-			        rz_sys_cmdf ("rz_bin -O \"%s\" \"%s\"", rz_str_trim_head_ro (input + 1), desc->name);
+			        rz_sys_cmdf ("rz-bin -O \"%s\" \"%s\"", rz_str_trim_head_ro (input + 1), desc->name);
 			        break;
 			default:
-			        rz_sys_cmdf ("rz_bin -O help");
+			        rz_sys_cmdf ("rz-bin -O help");
 			        break;
 			}
 			return 0;
@@ -851,7 +851,7 @@ RZ_IPI int rz_cmd_info(void *data, const char *input) {
 			RBININFO ("versioninfo", RZ_CORE_BIN_ACC_VERSIONINFO, NULL);
 			break;
 		case 'T': // "iT"
-		case 'C': // "iC" // rz_bin -C create // should be deprecated and just use iT (or find a better name)
+		case 'C': // "iC" // rz-bin -C create // should be deprecated and just use iT (or find a better name)
 			RBININFO ("signature", RZ_CORE_BIN_ACC_SIGNATURE, NULL);
 			break;
 		case 'z': // "iz"

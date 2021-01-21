@@ -4263,7 +4263,7 @@ RZ_API int rz_core_visual_graph(RzCore *core, RzAGraph *g, RzAnalysisFunction *_
 			rz_core_cmd0 (core, "so;.aeg*");
 			break;
 		case '2':
-			rz_core_cmd0 (core, "so-1;.aeg*");
+			rz_core_cmd0 (core, "so -1;.aeg*");
 			break;
 		case '=':
 		{         // TODO: edit

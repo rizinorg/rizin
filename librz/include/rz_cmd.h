@@ -35,7 +35,8 @@ typedef enum rz_cmd_status_t {
  */
 typedef enum rz_cmd_arg_type_t {
 	RZ_CMD_ARG_TYPE_FAKE, ///< This is not considered a real argument, just used to show something in the help. Name of arg is shown as-is and it is not counted.
-	RZ_CMD_ARG_TYPE_NUM, ///< Argument that can be interpreted by RzNum (numbers, flags, operations, etc.)
+	RZ_CMD_ARG_TYPE_NUM, ///< Argument is a number
+	RZ_CMD_ARG_TYPE_RZNUM, ///< Argument that can be interpreted by RzNum (numbers, flags, operations, etc.)
 	RZ_CMD_ARG_TYPE_STRING, ///< Argument that can be an arbitrary string
 	RZ_CMD_ARG_TYPE_ENV, ///< Argument can be the name of an existing rizin variable
 	RZ_CMD_ARG_TYPE_ZIGN, ///< Argument can be the name of an existing zignature
@@ -487,6 +488,7 @@ RZ_API RzCmdDesc *rz_cmd_desc_get_exec(RzCmdDesc *cd);
 RZ_API bool rz_cmd_desc_has_handler(RzCmdDesc *cd);
 RZ_API bool rz_cmd_desc_remove(RzCmd *cmd, RzCmdDesc *cd);
 RZ_API void rz_cmd_foreach_cmdname(RzCmd *cmd, RzCmdForeachNameCb cb, void *user);
+RZ_API const RzCmdDescArg *rz_cmd_desc_get_arg(RzCmd *cmd, const RzCmdDesc *cd, size_t i);
 
 #define rz_cmd_desc_children_foreach(root, it_cd) rz_pvector_foreach (&root->children, it_cd)
 

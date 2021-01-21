@@ -5418,7 +5418,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(iter_instrs_command) {
 	ut64 orig_offset = core->offset;
 	int bs = core->blocksize;
 	RzList *bbl = rz_analysis_get_blocks_in (core->analysis, core->offset);
-	if (!bbl) {
+	if (!bbl || rz_list_empty (bbl)) {
 		eprintf ("No basic block contains current address\n");
 		return RZ_CMD_STATUS_INVALID;
 	}
@@ -6493,6 +6493,13 @@ static void cmd_descriptor_init(RzCore *core) {
 			x = x->sub[*p];
 		}
 	}
+}
+
+RZ_IPI RzCmdStatus rz_sleep_handler(RzCore *core, int argc, const char **argv) {
+	void *bed = rz_cons_sleep_begin ();
+	rz_sys_sleep (atoi (argv[1] + 1));
+	rz_cons_sleep_end (bed);
+	return RZ_CMD_STATUS_OK;
 }
 
 static int core_cmd0_wrapper(void *core, const char *cmd) {

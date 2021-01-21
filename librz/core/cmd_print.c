@@ -128,7 +128,7 @@ static const char *help_msg_at[] = {
 	"*/", "", "end multiline comment",
 	".", "cmd", "execute output of command as rizin script",
 	".:", "8080", "wait for commands on port 8080",
-	".!", "rz_bin -re $FILE", "run command output as rizin script",
+	".!", "rz-bin -re $FILE", "run command output as rizin script",
 	"*", "", "output of command in rizin script format (CC*)",
 	"j", "", "output of command in JSON format (pdj)",
 	"~", "?", "count number of lines (like wc -l)",
@@ -2995,129 +2995,129 @@ static void cmd_print_pv(RzCore *core, const char *input, bool useBytes) {
 		}
 		break;
 	case '*': { // "pv*"
-			  for (i = 0; i < repeat; i++) {
-				  const bool be = core->print->big_endian;
-				ut64 at = core->offset + (i * n);
-				ut8 *b = block + (i * n);
-				  switch (n) {
-				  case 1:
-					  rz_cons_printf ("f pval.0x%08"PFMT64x"=%d\n", at, rz_read_ble8 (b));
-					  break;
-				  case 2:
-					  rz_cons_printf ("f pval.0x%08"PFMT64x"=%d\n", at, rz_read_ble16 (b, be));
-					  break;
-				  case 4:
-					  rz_cons_printf ("f pval.0x%08"PFMT64x"=%d\n", at, rz_read_ble32 (b, be));
-					  break;
-				  case 8:
-				default:
-					  rz_cons_printf ("f pval.0x%08"PFMT64x"=%"PFMT64d"\n", at, rz_read_ble64 (b, be));
-					  break;
-				  }
-			  }
+		for (i = 0; i < repeat; i++) {
+			const bool be = core->print->big_endian;
+			ut64 at = core->offset + (i * n);
+			ut8 *b = block + (i * n);
+			switch (n) {
+			case 1:
+				rz_cons_printf ("f pval.0x%08"PFMT64x"=%d\n", at, rz_read_ble8 (b));
+				break;
+			case 2:
+				rz_cons_printf ("f pval.0x%08"PFMT64x"=%d\n", at, rz_read_ble16 (b, be));
+				break;
+			case 4:
+				rz_cons_printf ("f pval.0x%08"PFMT64x"=%d\n", at, rz_read_ble32 (b, be));
+				break;
+			case 8:
+			default:
+				rz_cons_printf ("f pval.0x%08"PFMT64x"=%"PFMT64d"\n", at, rz_read_ble64 (b, be));
+				break;
+			}
 		}
 		break;
+	}
 	case 'j': { // "pvj"
-			  rz_cons_printf ("[");
-			  ut64 at = core->offset;
-			  ut64 oldAt = at;
-			  for (i = 0; i < repeat; i++) {
-				  if (i > 0) {
-					  rz_cons_printf (",");
-				  }
-				  rz_core_seek (core, at, false);
-				  char *str = rz_core_cmd_str (core, "ps");
-				  rz_str_trim (str);
-				  char *p = str;
-				  if (p) {
-					  while (*p) {
-						  if (*p == '\\' && p[1] == 'x') {
-							  memmove (p, p + 4, strlen (p + 4) + 1);
-						  }
-						  p++;
-					  }
-				  }
-				  // rz_num_get is gonna use a dangling pointer since the internal
-				  // token that RNum holds ([$$]) has been already freed by rz_core_cmd_str
-				  // rz_num_math reload a new token so the dangling pointer is gone
-				  switch (n) {
-				  case 1:
-					  pj_fmt (rz_cons_printf, "{'value':%i,'string':%s}",
-							  rz_read_ble8 (block), str);
-					  break;
-				  case 2:
-					  pj_fmt (rz_cons_printf, "{'value':%i,'string':%s}",
-							  rz_read_ble16 (block, core->print->big_endian), str);
-					  break;
-				  case 4:
-					  pj_fmt (rz_cons_printf, "{'value':%n,'string':%s}",
-							  (ut64)rz_read_ble32 (block, core->print->big_endian), str);
-					  break;
-				  case 8:
-					  pj_fmt (rz_cons_printf, "{'value':%n,'string':%s}",
-							  rz_read_ble64 (block, core->print->big_endian), str);
-					  break;
-				  default:
-					  pj_fmt (rz_cons_printf, "{'value':%n,'string':%s}",
-							  rz_read_ble64 (block, core->print->big_endian), str);
-					  break;
-				  }
-				  free (str);
-				  at += n;
-			  }
-			  rz_cons_printf ("]\n");
-			  rz_core_seek (core, oldAt, false);
-			  break;
-		  }
+		PJ *pj = rz_core_pj_new (core);
+		if (!pj) {
+			return;
+		}
+		pj_a (pj);
+		ut64 at = core->offset;
+		ut64 oldAt = at;
+		for (i = 0; i < repeat; i++) {
+			rz_core_seek (core, at, false);
+			char *str = rz_core_cmd_str (core, "ps");
+			rz_str_trim (str);
+			char *p = str;
+			if (p) {
+				while (*p) {
+					if (*p == '\\' && p[1] == 'x') {
+						memmove (p, p + 4, strlen (p + 4) + 1);
+					}
+					p++;
+				}
+			}
+			// rz_num_get is going to use a dangling pointer since the internal
+			// token that RzNum holds ([$$]) has been already freed by rz_core_cmd_str
+			// rz_num_math reloads a new token so the dangling pointer is gone
+			pj_o (pj);
+			pj_k (pj, "value");
+			switch (n) {
+			case 1:
+				pj_i (pj, rz_read_ble8 (block));
+				break;
+			case 2:
+				pj_i (pj, rz_read_ble16 (block, core->print->big_endian));
+				break;
+			case 4:
+				pj_n (pj, (ut64)rz_read_ble32 (block, core->print->big_endian));
+				break;
+			case 8:
+			default:
+				pj_n (pj, rz_read_ble64 (block, core->print->big_endian));
+				break;
+			}
+			pj_ks (pj, "string", str);
+			pj_end (pj);
+			free (str);
+			at += n;
+		}
+		pj_end (pj);
+		rz_cons_println (pj_string (pj));
+		pj_free (pj);
+		rz_core_seek (core, oldAt, false);
+		break;
+	}
 	case '?': // "pv?"
-		  rz_core_cmd_help (core, help_msg_pv);
-		  break;
+		rz_core_cmd_help (core, help_msg_pv);
+		break;
 	default:
-		  do {
-			  repeat--;
-			  if (block + 8 >= block_end) {
-				  eprintf ("Truncated. TODO: use rz_io_read apis insgtead of depending on blocksize\n");
-				  break;
-			  }
-			  ut64 v;
-			  if (!fixed_size) {
-				  n = 0;
-			  }
-			  switch (n) {
-				  case 1:
-					  v = rz_read_ble8 (block);
-					  rz_cons_printf ("0x%02" PFMT64x "\n", v);
-					  block += 1;
-					  break;
-				  case 2:
-					  v = rz_read_ble16 (block, core->print->big_endian);
-					  rz_cons_printf ("0x%04" PFMT64x "\n", v);
-					  block += 2;
-					  break;
-				  case 4:
-					  v = rz_read_ble32 (block, core->print->big_endian);
-					  rz_cons_printf ("0x%08" PFMT64x "\n", v);
-					  block += 4;
-					  break;
-				  case 8:
-					  v = rz_read_ble64 (block, core->print->big_endian);
-					  rz_cons_printf ("0x%016" PFMT64x "\n", v);
-					  block += 8;
-					  break;
-				  default:
-					  v = rz_read_ble64 (block, core->print->big_endian);
-					  switch (core->rasm->bits / 8) {
-						  case 1: rz_cons_printf ("0x%02" PFMT64x "\n", v & UT8_MAX); break;
-						  case 2: rz_cons_printf ("0x%04" PFMT64x "\n", v & UT16_MAX); break;
-						  case 4: rz_cons_printf ("0x%08" PFMT64x "\n", v & UT32_MAX); break;
-						  case 8: rz_cons_printf ("0x%016" PFMT64x "\n", v & UT64_MAX); break;
-						  default: break;
-					  }
-					  block += core->rasm->bits / 8;
-					  break;
-			  }
-		  } while (repeat > 0);
-		  break;
+		do {
+			repeat--;
+			if (block + 8 >= block_end) {
+				eprintf ("Truncated. TODO: use rz_io_read apis insgtead of depending on blocksize\n");
+				break;
+			}
+			ut64 v;
+			if (!fixed_size) {
+				n = 0;
+			}
+			switch (n) {
+				case 1:
+					v = rz_read_ble8 (block);
+					rz_cons_printf ("0x%02" PFMT64x "\n", v);
+					block += 1;
+					break;
+				case 2:
+					v = rz_read_ble16 (block, core->print->big_endian);
+					rz_cons_printf ("0x%04" PFMT64x "\n", v);
+					block += 2;
+					break;
+				case 4:
+					v = rz_read_ble32 (block, core->print->big_endian);
+					rz_cons_printf ("0x%08" PFMT64x "\n", v);
+					block += 4;
+					break;
+				case 8:
+					v = rz_read_ble64 (block, core->print->big_endian);
+					rz_cons_printf ("0x%016" PFMT64x "\n", v);
+					block += 8;
+					break;
+				default:
+					v = rz_read_ble64 (block, core->print->big_endian);
+					switch (core->rasm->bits / 8) {
+						case 1: rz_cons_printf ("0x%02" PFMT64x "\n", v & UT8_MAX); break;
+						case 2: rz_cons_printf ("0x%04" PFMT64x "\n", v & UT16_MAX); break;
+						case 4: rz_cons_printf ("0x%08" PFMT64x "\n", v & UT32_MAX); break;
+						case 8: rz_cons_printf ("0x%016" PFMT64x "\n", v & UT64_MAX); break;
+						default: break;
+					}
+					block += core->rasm->bits / 8;
+					break;
+			}
+		} while (repeat > 0);
+		break;
 	}
 }
 
@@ -4377,29 +4377,25 @@ static void print_json_string(RzCore *core, const char* block, int len, const ch
 		default: type = "unknown"; break;
 		}
 	}
-#if 0
-	PJ *pj = pj_new ();
+	PJ *pj = rz_core_pj_new (core);
+	if (!pj) {
+		return;
+	}
 	pj_o (pj);
+	pj_k (pj, "string");
 	// TODO: add pj_kd for data to pass key(string) and value(data,len) instead of pj_ks which null terminates
-	pj_ks (pj, "string", str);
+	char *str = rz_str_utf16_encode (block, len); // XXX just block + len should be fine, pj takes care of this
+	pj_raw (pj, "\"");
+	pj_raw (pj, str);
+	free (str);
+	pj_raw (pj, "\"");
 	pj_kn (pj, "offset", core->offset);
 	pj_ks (pj, "section", section_name);
-	pj_ki (pj, "legnth", len);
-	rz_cons_printf (",\"length\":%d", len);
+	pj_ki (pj, "length", len);
 	pj_ks (pj, "type", type);
 	pj_end (pj);
-	rz_cons_printf ("%s\n", pj_string (pj));
+	rz_cons_println (pj_string (pj));
 	pj_free (pj);
-#else
-	rz_cons_printf ("{\"string\":");
-	char *str = rz_str_utf16_encode (block, len); // XXX just block + len should be fine, pj takes care of this
-	rz_cons_printf ("\"%s\"", str);
-	free (str);
-	rz_cons_printf (",\"offset\":%"PFMT64u, core->offset);
-	rz_cons_printf (",\"section\":\"%s\"", section_name);
-	rz_cons_printf (",\"length\":%d", len);
-	rz_cons_printf (",\"type\":\"%s\"}", type);
-#endif
 }
 
 static char *__op_refs(RzCore *core, RzAnalysisOp *op, int n) {
@@ -5573,7 +5569,6 @@ l = use_blocksize;
 					len = RZ_MIN (len, core->blocksize);
 				}
 				print_json_string (core, (const char *) core->block, len, NULL);
-				rz_cons_newline ();
 			}
 			break;
 		case 'i': // "psi"
@@ -5671,7 +5666,6 @@ l = use_blocksize;
 					s[j] = '\0';
 					if (input[2] == 'j') { // pszj
 						print_json_string (core, (const char *) s, j, NULL);
-						rz_cons_newline ();
 					} else {
 						rz_cons_println (s);
 					}
@@ -5686,7 +5680,6 @@ l = use_blocksize;
 				if (mylen < core->blocksize) {
 					if (input[2] == 'j') { // pspj
 						print_json_string (core, (const char *) core->block + 1, mylen, NULL);
-						rz_cons_newline ();
 					} else {
 						rz_print_string (core->print, core->offset,
 							core->block + 1, mylen, RZ_PRINT_STRING_ZEROEND);
@@ -5701,7 +5694,6 @@ l = use_blocksize;
 			if (l > 0) {
 				if (input[2] == 'j') { // pswj
 					print_json_string (core, (const char *) core->block, len, "wide");
-					rz_cons_newline ();
 				} else {
 					rz_print_string (core->print, core->offset, core->block, len,
 						RZ_PRINT_STRING_WIDE | RZ_PRINT_STRING_ZEROEND);
@@ -5712,7 +5704,6 @@ l = use_blocksize;
 			if (l > 0) {
 				if (input[2] == 'j') { // psWj
 					print_json_string (core, (const char *) core->block, len, "wide32");
-					rz_cons_newline ();
 				} else {
 					rz_print_string (core->print, core->offset, core->block, len,
 						RZ_PRINT_STRING_WIDE32 | RZ_PRINT_STRING_ZEROEND);
@@ -5740,7 +5731,6 @@ l = use_blocksize;
 				}
 				if (json) { // psuj
 					print_json_string (core, (const char *) core->block, len, "utf16");
-					rz_cons_newline ();
 				} else {
 					char *str = rz_str_utf16_encode ((const char *) core->block, len);
 					rz_cons_println (str);
@@ -5782,7 +5772,6 @@ l = use_blocksize;
 					}
 				} else if (json) {
 					print_json_string (core, (const char *) core->block + 1, len, NULL);
-					rz_cons_newline ();
 				} else {
 					rz_print_string (core->print, core->offset, core->block + 1,
 					                len, RZ_PRINT_STRING_ZEROEND);
@@ -5815,7 +5804,7 @@ l = use_blocksize;
 			rz_cons_println (pj_string (pj));
 			pj_free (pj);
 		} else {
-			// XXX: need cmd_magic header for r_core_magic
+			// XXX: need cmd_magic header for rz_core_magic
 			const char *filename = rz_str_trim_head_ro (input + 1);
 			rz_core_magic (core, filename, true, NULL);
 		}

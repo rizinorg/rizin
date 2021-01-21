@@ -155,6 +155,7 @@ static void autocmplt_cmd_arg_file(RzLineNSCompletionResult *res, const char *s,
 		}
 	}
 	rz_list_free (l);
+	free (basedir);
 	free (input);
 }
 
@@ -187,8 +188,50 @@ static bool offset_prompt_add_flag(RzFlagItem *fi, void *user) {
 	return true;
 }
 
-static void autocmplt_cmd_arg_num(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+static void autocmplt_cmd_arg_fcn(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	RzListIter *iter;
+	RzAnalysisFunction *fcn;
+	rz_list_foreach (core->analysis->fcns, iter, fcn) {
+		char *name = rz_core_analysis_fcn_name (core, fcn);
+		if (!strncmp (name, s, len)) {
+			rz_line_ns_completion_result_add (res, name);
+		}
+		free (name);
+	}
+}
+
+static void autocmplt_cmd_arg_help_var(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	const char **vars = rz_core_get_help_vars (core);
+	while (*vars) {
+		if (!strncmp (*vars, s, len)) {
+			rz_line_ns_completion_result_add (res, *vars);
+		}
+		vars++;
+	}
+}
+
+static bool is_op_ch(char ch) {
+	return ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' ||
+		ch == '>' || ch == '<';
+}
+
+static void autocmplt_cmd_arg_rznum(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
+	if (len > 0) {
+		// If the argument is composed of a complex expression with some
+		// operator, autocomplete only the last part
+		const char *p;
+		size_t plen;
+		for (p = s, plen = len; *p && plen > 0; p++, plen--) {
+			if (is_op_ch (*p)) {
+				res->start += p + 1 - s;
+				s = p + 1;
+				len = plen - 1;
+			}
+		}
+	}
+	autocmplt_cmd_arg_fcn (core, res, s, len);
 	rz_flag_foreach_prefix (core->flags, s, len, offset_prompt_add_flag, res);
+	autocmplt_cmd_arg_help_var (core, res, s, len);
 }
 
 static void autocmplt_cmd_arg_zign_space(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
@@ -204,18 +247,6 @@ static void autocmplt_cmd_arg_zign_space(RzCore *core, RzLineNSCompletionResult 
 
 	if (len == 0) {
 		rz_line_ns_completion_result_add (res, "*");
-	}
-}
-
-static void autocmplt_cmd_arg_fcn(RzCore *core, RzLineNSCompletionResult *res, const char *s, size_t len) {
-	RzListIter *iter;
-	RzAnalysisFunction *fcn;
-	rz_list_foreach (core->analysis->fcns, iter, fcn) {
-		char *name = rz_core_analysis_fcn_name (core, fcn);
-		if (!strncmp (name, s, len)) {
-			rz_line_ns_completion_result_add (res, name);
-		}
-		free (name);
 	}
 }
 
@@ -343,10 +374,8 @@ static size_t get_arg_number(TSNode arg) {
  * command \p cd . This is based on the type of argument a command may accept.
  */
 static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const RzCmdDesc *cd, size_t i_arg, const char *s, size_t len) {
-	const RzCmdDescArg *arg = cd->help->args;
-	size_t i;
-	for (i = 0; i < i_arg && arg && arg->name; i++, arg++);
-	if (!arg || !arg->name) {
+	const RzCmdDescArg *arg = rz_cmd_desc_get_arg (core->rcmd, cd, i_arg);
+	if (!arg) {
 		return;
 	}
 
@@ -370,8 +399,8 @@ static void autocmplt_cmd_arg(RzCore *core, RzLineNSCompletionResult *res, const
 	case RZ_CMD_ARG_TYPE_MACRO:
 		autocmplt_cmd_arg_macro (core, res, s, len);
 		break;
-	case RZ_CMD_ARG_TYPE_NUM:
-		autocmplt_cmd_arg_num (core, res, s, len);
+	case RZ_CMD_ARG_TYPE_RZNUM:
+		autocmplt_cmd_arg_rznum (core, res, s, len);
 		break;
 	case RZ_CMD_ARG_TYPE_EVAL_KEY:
 		autocmplt_cmd_arg_eval_key (core, res, s, len);
@@ -408,10 +437,8 @@ static bool fill_autocmplt_data_cmdarg(struct autocmplt_data_t *ad, ut32 start, 
 
 	ad->i_arg = get_arg_number (node);
 
-	const RzCmdDescArg *arg = ad->cd->help->args;
-	size_t i;
-	for (i = 0; i < ad->i_arg && arg && arg->name; i++, arg++);
-	if (!arg || !arg->name) {
+	const RzCmdDescArg *arg = rz_cmd_desc_get_arg (core->rcmd, ad->cd, ad->i_arg);
+	if (!arg) {
 		return false;
 	}
 
@@ -515,7 +542,7 @@ RZ_API RzLineNSCompletionResult *rz_core_autocomplete_newshell(RzCore *core, RzL
 	if (prompt_type == RZ_LINE_PROMPT_OFFSET) {
 		res = rz_line_ns_completion_result_new (0, buf->length, NULL);
 		int n = strlen (buf->data);
-		autocmplt_cmd_arg_num (core, res, buf->data, n);
+		autocmplt_cmd_arg_rznum (core, res, buf->data, n);
 		return res;
 	} else if (prompt_type == RZ_LINE_PROMPT_FILE) {
 		res = rz_line_ns_completion_result_new (0, buf->length, NULL);
@@ -530,13 +557,10 @@ RZ_API RzLineNSCompletionResult *rz_core_autocomplete_newshell(RzCore *core, RzL
 
 	TSTree *tree = ts_parser_parse_string (parser, NULL, buf->data, buf->length);
 	TSNode root = ts_tree_root_node (tree);
-	RZ_LOG_DEBUG ("root = '%s'\n", ts_node_string (root));
-
 	TSNode node = ts_node_named_descendant_for_byte_range (root, buf->index - 1, buf->index);
 	if (ts_node_is_null (node)) {
 		goto err;
 	}
-	RZ_LOG_DEBUG ("cur_node = '%s'\n", ts_node_string (node));
 
 	// the autocompletion works in 2 steps:
 	// 1) it finds the proper type to autocomplete (sometimes it guesses)

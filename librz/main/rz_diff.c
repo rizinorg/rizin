@@ -423,7 +423,7 @@ static int bcb(RzDiff *d, void *user, RzDiffOp *op) {
 }
 
 static int show_help(int v) {
-	printf ("Usage: rz-diff [-abBcCdjrspOxuUvV] [-A[A]] [-g sym] [-m graph_mode][-t %%] [file] [file]\n");
+	printf ("Usage: rz-diff [-abBcCdeGhijnrOpqsSxuUvVzZ] [-A[A]] [-g sym] [-m graph_mode][-t %%] [file] [file]\n");
 	if (v) {
 		printf (
 			"  -a [arch]  specify architecture plugin to use (x86, arm, ..)\n"
@@ -1105,8 +1105,10 @@ RZ_API int rz_main_rz_diff(int argc, const char **argv) {
 			eprintf ("Cannot open '%s'\n", rz_str_get (ro.file));
 		}
 		c2 = opencore (&ro, ro.file2);
-		if (!c || !c2) {
+		if (!c2) {
 			eprintf ("Cannot open '%s'\n", rz_str_get (ro.file2));
+		}
+		if (!c || !c2) {
 			return 1;
 		}
 		c->c2 = c2;
