@@ -22,7 +22,6 @@ jobs:
   build-and-test:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.ignore_error }}
     timeout-minutes: ${{ matrix.timeout }}
     strategy:
       fail-fast: false
@@ -38,7 +37,6 @@ jobs:
           capstone-v3,
           capstone-v5
         ]
-        ignore_error: [false]
         include:
           - name: linux-acr-gcc-tests
             os: ubuntu-20.04
@@ -96,8 +94,6 @@ jobs:
             run_tests: true
             enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'asan') || contains(github.head_ref, 'import')}}
             timeout: 100
-            # NOTE: asan errors ignored for release- branch for now, because there are too many issues that would block the release
-            ignore_error: ${{ github.event_name == 'push' && (contains(github.ref, 'release-') || github.ref == 'refs/heads/stable') }}
           - name: capstone-v3
             os: ubuntu-20.04
             build_system: meson
