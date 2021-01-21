@@ -155,6 +155,7 @@ endif
 library_cflags = ['-DRZ_PLUGIN_INCORE=1']
 
 rizin_prefix = get_option('prefix')
+rizin_bindir = get_option('bindir')
 rizin_libdir = get_option('libdir')
 rizin_incdir = get_option('includedir') / 'librz'
 rizin_datdir = get_option('datadir')
@@ -712,6 +713,7 @@ endif
 
 summary({
   'prefix': rizin_prefix,
+  'bindir': rizin_bindir,
   'libdir': rizin_libdir,
   'includedir': rizin_incdir,
   'datadir': rizin_datdir,
