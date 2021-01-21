@@ -126,6 +126,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=avr rjmp - simple
+FILE=malloc://16384
+ARGS=-s 0x3434 -a avr
+CMDS=<<EOF
+e asm.cpu=ATmega8
+wx ffcf
+pi 1
+ao 1~^jump[1]
+EOF
+EXPECT=<<EOF
+rjmp 0x3434
+0x00003434
+EOF
+RUN
+
 NAME=avr rjmp - relative jump backward at 0x1000
 FILE=malloc://8192
 ARGS=-s 0x1000 -a avr
