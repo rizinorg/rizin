@@ -124,6 +124,10 @@ RZ_API RzLineNSCompletionResult *rz_line_ns_completion_result_new(size_t start, 
 		return NULL;
 	}
 	rz_pvector_init (&res->options, (RzPVectorFree)free);
+	HtPPOptions opt = { 0 };
+	opt.cmp = (HtPPListComparator)strcmp;
+	opt.hashfn = (HtPPHashFunction)sdb_hash;
+	res->options_ht = ht_pp_new_opt (&opt);
 	res->start = start;
 	res->end = end;
 	if (!end_string) {
@@ -138,6 +142,7 @@ RZ_API RzLineNSCompletionResult *rz_line_ns_completion_result_new(size_t start, 
  */
 RZ_API void rz_line_ns_completion_result_free(RzLineNSCompletionResult *res) {
 	if (res) {
+		ht_pp_free (res->options_ht);
 		rz_pvector_fini (&res->options);
 		free (res);
 	}
@@ -147,7 +152,11 @@ RZ_API void rz_line_ns_completion_result_free(RzLineNSCompletionResult *res) {
  * Add a new option to the list of possible autocomplete-able values.
  */
 RZ_API void rz_line_ns_completion_result_add(RzLineNSCompletionResult *res, const char *option) {
-	rz_pvector_push (&res->options, strdup (option));
+	if (!ht_pp_find (res->options_ht, option, NULL)) {
+		char *dup = strdup (option);
+		rz_pvector_push (&res->options, dup);
+		ht_pp_insert (res->options_ht, dup, dup);
+	}
 }
 
 #include "dietline.c"

@@ -432,6 +432,7 @@ RZ_API bool rz_core_seek_save(RzCore *core);
 RZ_API bool rz_core_seek_undo(RzCore *core);
 RZ_API bool rz_core_seek_redo(RzCore *core);
 RZ_API void rz_core_seek_reset(RzCore *core);
+RZ_API void rz_core_seek_free(RzCore *core);
 RZ_API RzList *rz_core_seek_list(RzCore *core);
 RZ_API RzCoreSeekItem *rz_core_seek_peek(RzCore *core, int idx);
 RZ_API int rz_core_seek_base(RzCore *core, const char *hex, bool save);
@@ -802,6 +803,7 @@ RZ_API char *rz_str_widget_list(void *user, RzList *list, int rows, int cur, Pri
 RZ_API PJ *rz_core_pj_new(RzCore *core);
 /* help */
 RZ_API void rz_core_cmd_help(const RzCore *core, const char * help[]);
+RZ_API const char **rz_core_get_help_vars(RzCore *core);
 
 /* analysis stats */
 
