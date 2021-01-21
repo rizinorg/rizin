@@ -45,26 +45,26 @@ jobs:
             build_system: acr
             compiler: gcc
             run_tests: true
-            enabled: true
+            enabled: false
             timeout: 45
           - name: linux-acr-clang-tests
             os: ubuntu-20.04
             build_system: acr
             compiler: clang
             run_tests: true
-            enabled: ${{ github.event_name != 'pull_request' }}
+            enabled: false
             timeout: 45
           - name: linux-acr-clang-build
             os: ubuntu-20.04
             build_system: acr
             compiler: clang
-            enabled: ${{ github.event_name == 'pull_request' }}
+            enabled: false
             timeout: 45
           - name: linux-meson-gcc-build
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
-            enabled: ${{ github.event_name == 'pull_request' }}
+            enabled: false
             timeout: 45
             cflags: '-Werror -Wno-cpp'
           - name: linux-meson-gcc-tests
@@ -74,14 +74,14 @@ jobs:
             run_tests: true
             meson_options: -Db_coverage=true -Duse_webui=true
             coverage: true
-            enabled: true
+            enabled: false
             timeout: 60
             cflags: '-Werror -Wno-cpp'
           - name: macos-meson-clang-tests
             os: macos-latest
             build_system: meson
             compiler: clang
-            run_tests: true
+            run_tests: false
             meson_options: -Duse_webui=true
             enabled: true
             timeout: 60
@@ -94,7 +94,7 @@ jobs:
             asan: true
             asan_options: 'detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1'
             run_tests: true
-            enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'asan') || contains(github.head_ref, 'import')}}
+            enabled: false
             timeout: 100
             # NOTE: asan errors ignored for release- branch for now, because there are too many issues that would block the release
             ignore_error: ${{ github.event_name == 'push' && contains(github.ref, 'release-') }}
@@ -104,7 +104,7 @@ jobs:
             compiler: gcc
             meson_options: -Duse_capstone_version=v3
             run_tests: false
-            enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
+            enabled: false
             timeout: 45
             cflags: '-Werror -Wno-cpp'
           - name: capstone-v5
@@ -113,7 +113,7 @@ jobs:
             compiler: gcc
             meson_options: -Duse_capstone_version=v5
             run_tests: false
-            enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
+            enabled: false
             timeout: 45
             cflags: '-Werror -Wno-cpp'
 
