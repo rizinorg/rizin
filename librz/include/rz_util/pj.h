@@ -42,12 +42,12 @@ RZ_API char *pj_drain(PJ *j);
 /* encode the pj data as a string */
 RZ_API const char *pj_string(PJ *pj);
 // RZ_API void pj_print(PJ *j, PrintfCallback cb);
+RZ_API void pj_raw(PJ *j, const char *k);
 
 /* nesting */
 //RZ_API PJ *pj_begin(char type, PrintfCallback cb);
 /* close the current json list or array */
 RZ_API PJ *pj_end(PJ *j);
-RZ_API char *pj_fmt(PrintfCallback p, const char *fmt, ...);
 /* object, array */
 /* open new json list { */
 RZ_API PJ *pj_o(PJ *j);
