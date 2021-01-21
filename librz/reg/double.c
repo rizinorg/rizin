@@ -20,17 +20,17 @@ RZ_API double rz_reg_get_double(RzReg *reg, RzRegItem *item) {
 	if (!reg || !item) {
 		return 0LL;
 	}
-	off = BITS2BYTES (item->offset);
+	off = BITS2BYTES(item->offset);
 	regset = &reg->regset[item->arena];
 	switch (item->size) {
 	case 64:
 		if (regset->arena->size - off - 1 >= 0) {
-			memcpy (&vld, regset->arena->bytes + off, sizeof (double));
+			memcpy(&vld, regset->arena->bytes + off, sizeof(double));
 			ret = vld;
 		}
 		break;
 	default:
-		eprintf ("rz_reg_set_double: Bit size %d not supported\n", item->size);
+		eprintf("rz_reg_set_double: Bit size %d not supported\n", item->size);
 		return 0.0f;
 	}
 	return ret;
@@ -40,7 +40,7 @@ RZ_API bool rz_reg_set_double(RzReg *reg, RzRegItem *item, double value) {
 	ut8 *src;
 
 	if (!item) {
-		eprintf ("rz_reg_set_value: item is NULL\n");
+		eprintf("rz_reg_set_value: item is NULL\n");
 		return false;
 	}
 	switch (item->size) {
@@ -49,16 +49,16 @@ RZ_API bool rz_reg_set_double(RzReg *reg, RzRegItem *item, double value) {
 		src = (ut8 *)&value;
 		break;
 	default:
-		eprintf ("rz_reg_set_double: Bit size %d not supported\n", item->size);
+		eprintf("rz_reg_set_double: Bit size %d not supported\n", item->size);
 		return false;
 	}
-	if (reg->regset[item->arena].arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size) >= 0) {
-		rz_mem_copybits (reg->regset[item->arena].arena->bytes +
-				BITS2BYTES (item->offset),
+	if (reg->regset[item->arena].arena->size - BITS2BYTES(item->offset) - BITS2BYTES(item->size) >= 0) {
+		rz_mem_copybits(reg->regset[item->arena].arena->bytes +
+				BITS2BYTES(item->offset),
 			src, item->size);
 		return true;
 	}
-	eprintf ("rz_reg_set_value: Cannot set %s to %lf\n", item->name, value);
+	eprintf("rz_reg_set_value: Cannot set %s to %lf\n", item->name, value);
 	return false;
 }
 
@@ -71,7 +71,7 @@ RZ_API long double rz_reg_get_longdouble(RzReg *reg, RzRegItem *item) {
 	if (!reg || !item) {
 		return 0LL;
 	}
-	off = BITS2BYTES (item->offset);
+	off = BITS2BYTES(item->offset);
 	regset = &reg->regset[item->arena];
 	switch (item->size) {
 	case 80:
@@ -79,12 +79,12 @@ RZ_API long double rz_reg_get_longdouble(RzReg *reg, RzRegItem *item) {
 	case 128:
 	case 256:
 		if (regset->arena->size - off - 1 >= 0) {
-			memcpy (&vld, regset->arena->bytes + off, sizeof (long double));
+			memcpy(&vld, regset->arena->bytes + off, sizeof(long double));
 			ret = vld;
 		}
 		break;
 	default:
-		eprintf ("rz_reg_get_longdouble: Bit size %d not supported\n", item->size);
+		eprintf("rz_reg_get_longdouble: Bit size %d not supported\n", item->size);
 		return 0.0f;
 	}
 	return ret;
@@ -94,7 +94,7 @@ RZ_API bool rz_reg_set_longdouble(RzReg *reg, RzRegItem *item, long double value
 	ut8 *src = NULL;
 
 	if (!item) {
-		eprintf ("rz_reg_set_value: item is NULL\n");
+		eprintf("rz_reg_set_value: item is NULL\n");
 		return false;
 	}
 	switch (item->size) {
@@ -105,17 +105,17 @@ RZ_API bool rz_reg_set_longdouble(RzReg *reg, RzRegItem *item, long double value
 		src = (ut8 *)&value;
 		break;
 	default:
-		eprintf ("rz_reg_set_longdouble: Bit size %d not supported\n", item->size);
+		eprintf("rz_reg_set_longdouble: Bit size %d not supported\n", item->size);
 		return false;
 	}
-	if (reg->regset[item->arena].arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size) >= 0) {
-		rz_mem_copybits (reg->regset[item->arena].arena->bytes +
-				BITS2BYTES (item->offset),
+	if (reg->regset[item->arena].arena->size - BITS2BYTES(item->offset) - BITS2BYTES(item->size) >= 0) {
+		rz_mem_copybits(reg->regset[item->arena].arena->bytes +
+				BITS2BYTES(item->offset),
 			src, item->size);
 		return true;
 	}
 
-	eprintf ("rz_reg_set_value: Cannot set %s to %" LDBLFMT "\n", item->name, CASTLDBL value);
+	eprintf("rz_reg_set_value: Cannot set %s to %" LDBLFMT "\n", item->name, CASTLDBL value);
 	return false;
 }
 

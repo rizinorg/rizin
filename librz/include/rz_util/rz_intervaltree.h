@@ -64,7 +64,7 @@ RZ_API RzIntervalNode *rz_interval_tree_node_at_data(RzIntervalTree *tree, ut64 
 
 // Same as rz_interval_tree_node_at, but directly returns the contained value or NULL
 static inline void *rz_interval_tree_at(RzIntervalTree *tree, ut64 start) {
-	RzIntervalNode *node = rz_interval_tree_node_at (tree, start);
+	RzIntervalNode *node = rz_interval_tree_node_at(tree, start);
 	return node ? node->data : NULL;
 }
 
@@ -84,14 +84,13 @@ RZ_API bool rz_interval_tree_all_intersect(RzIntervalTree *tree, ut64 start, ut6
 typedef RBIter RzIntervalTreeIter;
 
 static inline RzIntervalNode *rz_interval_tree_iter_get(RzIntervalTreeIter *it) {
-	return rz_rbtree_iter_get (it, RzIntervalNode, node);
+	return rz_rbtree_iter_get(it, RzIntervalNode, node);
 }
 
 #define rz_interval_tree_foreach(tree, it, dat) \
-	for ((it) = rz_rbtree_first (&(tree)->root->node); rz_rbtree_iter_has (&it) && (dat = rz_interval_tree_iter_get (&it)->data); rz_rbtree_iter_next (&(it)))
+	for ((it) = rz_rbtree_first(&(tree)->root->node); rz_rbtree_iter_has(&it) && (dat = rz_interval_tree_iter_get(&it)->data); rz_rbtree_iter_next(&(it)))
 
 #define rz_interval_tree_foreach_prev(tree, it, dat) \
-	for ((it) = rz_rbtree_last (&(tree)->root->node); rz_rbtree_iter_has (&it) && (dat = rz_rbtree_iter_get (&it, RzIntervalNode, node)->data); rz_rbtree_iter_prev (&(it)))
-
+	for ((it) = rz_rbtree_last(&(tree)->root->node); rz_rbtree_iter_has(&it) && (dat = rz_rbtree_iter_get(&it, RzIntervalNode, node)->data); rz_rbtree_iter_prev(&(it)))
 
 #endif //RZ_INTERVALTREE_H

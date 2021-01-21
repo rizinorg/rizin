@@ -18,22 +18,22 @@ RZ_API char *rz_bin_demangle_cxx(RzBinFile *bf, const char *str, ut64 vaddr) {
 		"imp.",
 		NULL
 	};
-	char *tmpstr = strdup (str);
+	char *tmpstr = strdup(str);
 	char *p = tmpstr;
 
 	if (p[0] == p[1] && *p == '_') {
 		p++;
 	}
 	for (i = 0; prefixes[i]; i++) {
-		int plen = strlen (prefixes[i]);
-		if (!strncmp (p, prefixes[i], plen)) {
+		int plen = strlen(prefixes[i]);
+		if (!strncmp(p, prefixes[i], plen)) {
 			p += plen;
 			break;
 		}
 	}
 	// remove CXXABI suffix
-	char *cxxabi = strstr (p, "@@CXXABI");
-	char *glibcxx = strstr (p, "@GLIBCXX");
+	char *cxxabi = strstr(p, "@@CXXABI");
+	char *glibcxx = strstr(p, "@GLIBCXX");
 	if (cxxabi) {
 		*cxxabi = '\0';
 	} else if (glibcxx) {
@@ -44,20 +44,20 @@ RZ_API char *rz_bin_demangle_cxx(RzBinFile *bf, const char *str, ut64 vaddr) {
 		}
 	}
 #if WITH_GPL
-	char *out = cplus_demangle_v3 (p, flags);
+	char *out = cplus_demangle_v3(p, flags);
 #else
 	/* TODO: implement a non-gpl alternative to c++v3 demangler */
 	char *out = NULL;
 #endif
-	free (tmpstr);
+	free(tmpstr);
 	if (out) {
-		char *sign = (char *)strchr (out, '(');
+		char *sign = (char *)strchr(out, '(');
 		if (sign) {
 			char *str = out;
 			char *ptr = NULL;
 			char *nerd = NULL;
 			for (;;) {
-				ptr = strstr (str, "::");
+				ptr = strstr(str, "::");
 				if (!ptr || ptr > sign) {
 					break;
 				}
@@ -67,11 +67,11 @@ RZ_API char *rz_bin_demangle_cxx(RzBinFile *bf, const char *str, ut64 vaddr) {
 			if (nerd && *nerd) {
 				*nerd = 0;
 				if (bf) {
-					RzBinSymbol *sym = rz_bin_file_add_method (bf, out, nerd + 2, 0);
+					RzBinSymbol *sym = rz_bin_file_add_method(bf, out, nerd + 2, 0);
 					if (sym) {
 						if (sym->vaddr != 0 && sym->vaddr != vaddr) {
 							if (bf && bf->rbin && bf->rbin->verbose) {
-								eprintf ("Dupped method found: %s\n", sym->name);
+								eprintf("Dupped method found: %s\n", sym->name);
 							}
 						}
 						if (sym->vaddr == 0) {

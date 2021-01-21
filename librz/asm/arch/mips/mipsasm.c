@@ -77,9 +77,9 @@ static struct {
 };
 
 static int mips_r(ut8 *b, int op, int rs, int rt, int rd, int sa, int fun) {
-//^this will keep the below mips_r fuctions working
-// diff instructions use a diff arg order (add is rd, rs, rt - sll is rd, rt, sa - sllv is rd, rt, rs
-//static int mips_r (ut8 *b, int op, int rd, int rs, int rt, int sa, int fun) {
+	//^this will keep the below mips_r fuctions working
+	// diff instructions use a diff arg order (add is rd, rs, rt - sll is rd, rt, sa - sllv is rd, rt, rs
+	//static int mips_r (ut8 *b, int op, int rd, int rs, int rt, int sa, int fun) {
 	if (rs < 0 || rt < 0 || rd < 0 || sa < 0) {
 		return -1;
 	}
@@ -104,7 +104,7 @@ static int mips_i(ut8 *b, int op, int rs, int rt, int imm, int is_branch) {
 	}
 	b[3] = ((op << 2) & 0xfc) | ((rs >> 3) & 3);
 	b[2] = (rs << 5) | (rt);
-	b[1] = (imm >> 8)  & 0xff;
+	b[1] = (imm >> 8) & 0xff;
 	b[0] = imm & 0xff;
 	return 4;
 }
@@ -113,7 +113,7 @@ static int mips_j(ut8 *b, int op, int addr) {
 	addr /= 4;
 	b[3] = ((op << 2) & 0xfc) | ((addr >> 24) & 3);
 	b[2] = (addr >> 16) & 0xff;
-	b[1] = (addr >> 8)  & 0xff;
+	b[1] = (addr >> 8) & 0xff;
 	b[0] = addr & 0xff;
 	return 4;
 }
@@ -121,40 +121,40 @@ static int mips_j(ut8 *b, int op, int addr) {
 static int getreg(const char *p) {
 	int n;
 	if (!p || !*p) {
-		eprintf ("Missing argument\n");
+		eprintf("Missing argument\n");
 		return -1;
 	}
 	/* check if it's a register */
 	for (n = 0; regs[n]; n++) {
-		if (!strcmp (p, regs[n])) {
+		if (!strcmp(p, regs[n])) {
 			return n;
 		}
 	}
 	/* try to convert it into a number */
 	if (p[0] == '-') {
-		n = (int) rz_num_get (NULL, &p[1]);
+		n = (int)rz_num_get(NULL, &p[1]);
 		n = -n;
 	} else {
-		n = (int) rz_num_get (NULL, p);
+		n = (int)rz_num_get(NULL, p);
 	}
 	if (n != 0 || p[0] == '0') {
 		return n;
 	}
-	eprintf ("Invalid reg name (%s) at pos %d\n", p, n);
+	eprintf("Invalid reg name (%s) at pos %d\n", p, n);
 	return -1;
 }
 
 RZ_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 	int i, hasp;
 	char w0[32], w1[32], w2[32], w3[32];
-	char *s = strdup (str);
+	char *s = strdup(str);
 	if (!s) {
 		return -1;
 	}
 
-	rz_str_replace_char (s, ',', ' ');
-	hasp = rz_str_replace_char (s, '(', ' ');
-	rz_str_replace_char (s, ')', ' ');
+	rz_str_replace_char(s, ',', ' ');
+	hasp = rz_str_replace_char(s, '(', ' ');
+	rz_str_replace_char(s, ')', ' ');
 
 	*out = 0;
 	*w0 = 0;
@@ -162,37 +162,37 @@ RZ_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 	*w2 = 0;
 	*w3 = 0;
 
-	if (!strncmp (s, "jalr", 4) && !strchr (s, ',')) {
+	if (!strncmp(s, "jalr", 4) && !strchr(s, ',')) {
 		char opstr[32];
-		const char *arg = strchr (s, ' ');
+		const char *arg = strchr(s, ' ');
 		if (arg) {
-			snprintf (opstr, sizeof (opstr), "jalr ra ra %s", arg + 1);
-			free (s);
-			s = strdup (opstr);
+			snprintf(opstr, sizeof(opstr), "jalr ra ra %s", arg + 1);
+			free(s);
+			s = strdup(opstr);
 			if (!s) {
 				return -1;
 			}
 		}
 	}
 
-	sscanf (s, "%31s", w0);
+	sscanf(s, "%31s", w0);
 	if (*w0) {
 		for (i = 0; ops[i].name; i++) {
-			if (!strcmp (ops[i].name, w0)) {
+			if (!strcmp(ops[i].name, w0)) {
 				switch (ops[i].args) {
-				case 3: sscanf (s, "%31s %31s %31s %31s", w0, w1, w2, w3); break;
-				case -3: sscanf (s, "%31s %31s %31s %31s", w0, w1, w2, w3); break;
-				case 2: sscanf (s, "%31s %31s %31s", w0, w1, w2); break;
-				case -2: sscanf (s, "%31s %31s %31s", w0, w1, w2); break;
-				case 1: sscanf (s, "%31s %31s", w0, w1); break;
-				case -1: sscanf (s, "%31s %31s", w0, w1); break;
-				case 0: sscanf (s, "%31s", w0); break;
+				case 3: sscanf(s, "%31s %31s %31s %31s", w0, w1, w2, w3); break;
+				case -3: sscanf(s, "%31s %31s %31s %31s", w0, w1, w2, w3); break;
+				case 2: sscanf(s, "%31s %31s %31s", w0, w1, w2); break;
+				case -2: sscanf(s, "%31s %31s %31s", w0, w1, w2); break;
+				case 1: sscanf(s, "%31s %31s", w0, w1); break;
+				case -1: sscanf(s, "%31s %31s", w0, w1); break;
+				case 0: sscanf(s, "%31s", w0); break;
 				}
 				if (hasp) {
 					char tmp[32];
-					strcpy (tmp, w2);
-					strcpy (w2, w3);
-					strcpy (w3, tmp);
+					strcpy(tmp, w2);
+					strcpy(w2, w3);
+					strcpy(w3, tmp);
 				}
 				switch (ops[i].type) {
 				case 'R': {
@@ -201,40 +201,40 @@ RZ_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 					bool invalid = false;
 					switch (ops[i].args) {
 					case 3:
-						rs = getreg (w2);
-						rt = getreg (w3);
-						rd = getreg (w1);
+						rs = getreg(w2);
+						rt = getreg(w3);
+						rd = getreg(w1);
 						fn = ops[i].n;
 						break;
 					case -3:
 						if (ops[i].n > -1) {
-							rt = getreg (w2);
-							rd = getreg (w1);
-							sa = getreg (w3);
+							rt = getreg(w2);
+							rd = getreg(w1);
+							sa = getreg(w3);
 							fn = ops[i].n;
 						} else {
-							rs = getreg (w3);
-							rt = getreg (w2);
-							rd = getreg (w1);
+							rs = getreg(w3);
+							rt = getreg(w2);
+							rd = getreg(w1);
 							fn = (-1 * ops[i].n);
 						}
 						break;
 					case 2:
-						rs = getreg (w1);
-						rt = getreg (w2);
+						rs = getreg(w1);
+						rt = getreg(w2);
 						fn = ops[i].n;
 						break;
 					case 1:
-						rs = getreg (w1);
+						rs = getreg(w1);
 						fn = ops[i].n;
 						break;
 					case -2:
-						rs = getreg (w2);
-						rd = getreg (w1);
+						rs = getreg(w2);
+						rd = getreg(w1);
 						fn = ops[i].n;
 						break;
 					case -1:
-						rd = getreg (w1);
+						rd = getreg(w1);
 						fn = ops[i].n;
 						break;
 					case 0:
@@ -245,8 +245,8 @@ RZ_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 						break;
 					}
 					if (!invalid) {
-						free (s);
-						return mips_r (out, op, rs, rt, rd, sa, fn);
+						free(s);
+						return mips_r(out, op, rs, rt, rd, sa, fn);
 					}
 					break;
 				}
@@ -257,35 +257,35 @@ RZ_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 					switch (ops[i].args) {
 					case 2:
 						op = ops[i].n;
-						rt = getreg (w1);
-						imm = getreg (w2);
+						rt = getreg(w1);
+						imm = getreg(w2);
 						break;
 					case 3:
 						op = ops[i].n;
-						rs = getreg (w2);
-						rt = getreg (w1);
-						imm = getreg (w3);
+						rs = getreg(w2);
+						rt = getreg(w1);
+						imm = getreg(w3);
 						break;
 					case -2:
 						if (ops[i].n > 0) {
 							op = ops[i].n;
-							rs = getreg (w1);
-							imm = getreg (w2);
+							rs = getreg(w1);
+							imm = getreg(w2);
 						} else {
 							op = (-1 * ops[i].n);
-							rs = getreg (w1);
+							rs = getreg(w1);
 							rt = ops[i].x;
-							imm = getreg (w2);
+							imm = getreg(w2);
 						}
 						break;
 					case -1:
 						if (ops[i].n > 0) {
 							op = ops[i].n;
-							imm = getreg (w1);
+							imm = getreg(w1);
 						} else {
 							op = (-1 * ops[i].n);
 							rt = ops[i].x;
-							imm = getreg (w1);
+							imm = getreg(w1);
 						}
 						break;
 					default:
@@ -293,27 +293,27 @@ RZ_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 						break;
 					}
 					if (!invalid) {
-						free (s);
-						return mips_i (out, op, rs, rt, imm, is_branch);
+						free(s);
+						return mips_i(out, op, rs, rt, imm, is_branch);
 					}
 					break;
 				}
 				case 'J':
 					if (ops[i].args == 1) {
-						free (s);
-						return mips_j (out, ops[i].n, getreg (w1));
+						free(s);
+						return mips_j(out, ops[i].n, getreg(w1));
 					}
 					break;
 				case 'N': // nop
-					memset (out, 0, 4);
-					free (s);
+					memset(out, 0, 4);
+					free(s);
 					return 4;
 				}
-				free (s);
+				free(s);
 				return -1;
 			}
 		}
 	}
-	free (s);
+	free(s);
 	return -1;
 }

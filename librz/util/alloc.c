@@ -3,9 +3,9 @@
 #include <rz_util.h>
 #include <rz_util/rz_alloc.h>
 
-RZ_API void rz_alloc_init (void) {
+RZ_API void rz_alloc_init(void) {
 #if RZ_MALLOC_WRAPPER
-	rz_alloc_hooks (malloc, calloc, realloc, free);
+	rz_alloc_hooks(malloc, calloc, realloc, free);
 #endif
 }
 
@@ -18,7 +18,7 @@ RZ_API RRealloc *rz_realloc = realloc;
 RZ_API RFree *rz_free = free;
 
 RZ_API void rz_alloc_hooks(RMalloc m, RCalloc c, RRealloc r, RFree f) {
-	rz_return_if_fail (m && c && r && f);
+	rz_return_if_fail(m && c && r && f);
 	rz_malloc = m;
 	rz_calloc = c;
 	rz_realloc = r;
@@ -33,7 +33,7 @@ static RRealloc *_r_realloc = realloc;
 static RFree *_r_free = free;
 
 RZ_API void rz_alloc_hooks(RMalloc m, RCalloc c, RRealloc r, RFree f) {
-	rz_return_if_fail (m && c && r && f);
+	rz_return_if_fail(m && c && r && f);
 	_r_malloc = m;
 	_r_calloc = c;
 	_r_realloc = r;
@@ -41,34 +41,34 @@ RZ_API void rz_alloc_hooks(RMalloc m, RCalloc c, RRealloc r, RFree f) {
 }
 
 RZ_API void *rz_malloc(size_t sz) {
-	return _r_malloc (sz);
+	return _r_malloc(sz);
 }
 
 RZ_API void *rz_calloc(size_t count, size_t sz) {
-	return _r_calloc (count, sz);
+	return _r_calloc(count, sz);
 }
 
 RZ_API void *rz_realloc(void *p, size_t sz) {
-	return _r_realloc (p, sz);
+	return _r_realloc(p, sz);
 }
 
 RZ_API void rz_free(void *p) {
-	return _r_free (p);
+	return _r_free(p);
 }
 #endif
 #endif
 
-RZ_API void* rz_malloc_aligned(size_t size, size_t alignment) {
-	int offset = alignment - 1 + sizeof (void*);
-	void* p1 = _r_malloc (size + offset);
+RZ_API void *rz_malloc_aligned(size_t size, size_t alignment) {
+	int offset = alignment - 1 + sizeof(void *);
+	void *p1 = _r_malloc(size + offset);
 	if (!p1) {
 		return NULL;
 	}
-	void **p2 = (void**)(((size_t)(p1) + offset) & ~(alignment - 1));
+	void **p2 = (void **)(((size_t)(p1) + offset) & ~(alignment - 1));
 	p2[-1] = p1;
 	return p2;
 }
 
 RZ_API void rz_free_aligned(void *p) {
-	_r_free (((void**)p)[-1]);
+	_r_free(((void **)p)[-1]);
 }

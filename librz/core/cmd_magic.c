@@ -18,85 +18,87 @@ static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth
 	const char *str;
 	int delta = 0, adelta = 0, ret;
 	ut64 curoffset = core->offset;
-	int maxHits = rz_config_get_i (core->config, "search.maxhits");
+	int maxHits = rz_config_get_i(core->config, "search.maxhits");
 	if (maxHits > 0 && *hits >= maxHits) {
 		return 0;
 	}
 #define NAH 32
 
-	if (--depth<0) {
+	if (--depth < 0) {
 		ret = 0;
 		goto seek_exit;
 	}
 	if (addr != core->offset) {
 #if 1
-		if (addr >= core->offset && (addr+NAH) < (core->offset + core->blocksize)) {
+		if (addr >= core->offset && (addr + NAH) < (core->offset + core->blocksize)) {
 			delta = addr - core->offset;
 		} else {
-			rz_core_seek (core, addr, true);
+			rz_core_seek(core, addr, true);
 		}
 #endif
 	}
 	if (core->search->align) {
 		int mod = addr % core->search->align;
 		if (mod) {
-			eprintf ("Unaligned search at %d\n", mod);
+			eprintf("Unaligned search at %d\n", mod);
 			ret = mod;
 			goto seek_exit;
 		}
 	}
-	if (((addr&7)==0) && ((addr&(7<<8))==0))
+	if (((addr & 7) == 0) && ((addr & (7 << 8)) == 0))
 		if (!pj) { // update search display
-			eprintf ("0x%08" PFMT64x " [%d matches found]\r", addr, *hits);
+			eprintf("0x%08" PFMT64x " [%d matches found]\r", addr, *hits);
 		}
 	if (file) {
-		if (*file == ' ') file++;
-		if (!*file) file = NULL;
+		if (*file == ' ')
+			file++;
+		if (!*file)
+			file = NULL;
 	}
 	if (file && ofile && file != ofile) {
-		if (strcmp (file, ofile)) {
-			rz_magic_free (ck);
+		if (strcmp(file, ofile)) {
+			rz_magic_free(ck);
 			ck = NULL;
 		}
 	}
 	if (!ck) {
 		// TODO: Move RzMagic into RzCore
-		rz_magic_free (ck);
+		rz_magic_free(ck);
 		// allocate once
-		ck = rz_magic_new (0);
+		ck = rz_magic_new(0);
 		if (file) {
-			free (ofile);
-			ofile = strdup (file);
-			if (!rz_magic_load (ck, file)) {
-				eprintf ("failed rz_magic_load (\"%s\") %s\n", file, rz_magic_error (ck));
+			free(ofile);
+			ofile = strdup(file);
+			if (!rz_magic_load(ck, file)) {
+				eprintf("failed rz_magic_load (\"%s\") %s\n", file, rz_magic_error(ck));
 				ck = NULL;
 				ret = -1;
 				goto seek_exit;
 			}
 		} else {
-			const char *magicpath = rz_config_get (core->config, "dir.magic");
-			if (!rz_magic_load (ck, magicpath)) {
+			const char *magicpath = rz_config_get(core->config, "dir.magic");
+			if (!rz_magic_load(ck, magicpath)) {
 				ck = NULL;
-				eprintf ("failed rz_magic_load (dir.magic) %s\n", rz_magic_error (ck));
+				eprintf("failed rz_magic_load (dir.magic) %s\n", rz_magic_error(ck));
 				ret = -1;
 				goto seek_exit;
 			}
 		}
 	}
-//repeat:
+	//repeat:
 	//if (v) rz_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, file? file: "", addr);
 	if (delta + 2 > core->blocksize) {
-		eprintf ("EOB\n");
+		eprintf("EOB\n");
 		ret = -1;
 		goto seek_exit;
 	}
-	str = rz_magic_buffer (ck, core->block+delta, core->blocksize - delta);
+	str = rz_magic_buffer(ck, core->block + delta, core->blocksize - delta);
 	if (str) {
 		const char *cmdhit;
 #if USE_LIB_MAGIC
-		if (!v && (!strcmp (str, "data") || strstr(str, "ASCII") || strstr(str, "ISO") || strstr(str, "no line terminator"))) {
+		if (!v && (!strcmp(str, "data") || strstr(str, "ASCII") || strstr(str, "ISO") || strstr(str, "no line terminator"))) {
 #else
-		if (!v && (!strcmp (str, "data"))) {
+		if (!v && (!strcmp(str, "data"))) {
 #endif
 			int mod = core->search->align;
 			if (mod < 1) {
@@ -108,36 +110,36 @@ static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth
 			ret = mod + 1;
 			goto seek_exit;
 		}
-		p = strdup (str);
+		p = strdup(str);
 		fmt = p;
 		// processing newlinez
-		for (q=p; *q; q++) {
-			if (q[0]=='\\' && q[1]=='n') {
+		for (q = p; *q; q++) {
+			if (q[0] == '\\' && q[1] == 'n') {
 				*q = '\n';
-				strcpy (q + 1, q + ((q[2] == ' ')? 3: 2));
+				strcpy(q + 1, q + ((q[2] == ' ') ? 3 : 2));
 			}
 		}
 		(*hits)++;
-		cmdhit = rz_config_get (core->config, "cmd.hit");
+		cmdhit = rz_config_get(core->config, "cmd.hit");
 		if (cmdhit && *cmdhit) {
-			rz_core_cmd0 (core, cmdhit);
+			rz_core_cmd0(core, cmdhit);
 		}
 		{
-			const char *searchprefix = rz_config_get (core->config, "search.prefix");
-			const char *flag = sdb_fmt ("%s%d_%d", searchprefix, 0, kw_count++);
-			rz_flag_set (core->flags, flag, addr + adelta, 1);
+			const char *searchprefix = rz_config_get(core->config, "search.prefix");
+			const char *flag = sdb_fmt("%s%d_%d", searchprefix, 0, kw_count++);
+			rz_flag_set(core->flags, flag, addr + adelta, 1);
 		}
 		// TODO: This must be a callback .. move this into RSearch?
 		if (!pj) {
-			rz_cons_printf ("0x%08"PFMT64x" %d %s\n", addr + adelta, magicdepth-depth, p);
+			rz_cons_printf("0x%08" PFMT64x " %d %s\n", addr + adelta, magicdepth - depth, p);
 		} else {
-			pj_o (pj);
-			pj_kN (pj, "offset", addr + adelta);
-			pj_ki (pj, "depth", magicdepth - depth);
-			pj_ks (pj, "info", p);
-			pj_end (pj);
+			pj_o(pj);
+			pj_kN(pj, "offset", addr + adelta);
+			pj_ki(pj, "depth", magicdepth - depth);
+			pj_ks(pj, "info", p);
+			pj_end(pj);
 		}
-		rz_cons_clear_line (1);
+		rz_cons_clear_line(1);
 		//eprintf ("0x%08"PFMT64x" 0x%08"PFMT64x" %d %s\n", addr+adelta, addr+adelta, magicdepth-depth, p);
 		// walking children
 		for (q = p; *q; q++) {
@@ -145,58 +147,56 @@ static int rz_core_magic_at(RzCore *core, const char *file, ut64 addr, int depth
 			case ' ':
 				fmt = q + 1;
 				break;
-			case '@':
-				{
-					ut64 addr = 0LL;
-					*q = 0;
-					if (!strncmp (q + 1, "0x", 2)) {
-						sscanf (q + 3, "%"PFMT64x, &addr);
-					} else {
-						sscanf (q + 1, "%"PFMT64d, &addr);
-					}
-					if (!fmt || !*fmt) {
-						fmt = file;
-					}
-					rz_core_magic_at (core, fmt, addr, depth, 1, pj, hits);
-					*q = '@';
+			case '@': {
+				ut64 addr = 0LL;
+				*q = 0;
+				if (!strncmp(q + 1, "0x", 2)) {
+					sscanf(q + 3, "%" PFMT64x, &addr);
+				} else {
+					sscanf(q + 1, "%" PFMT64d, &addr);
 				}
-				break;
+				if (!fmt || !*fmt) {
+					fmt = file;
+				}
+				rz_core_magic_at(core, fmt, addr, depth, 1, pj, hits);
+				*q = '@';
+			} break;
 			}
 		}
-		free (p);
-		rz_magic_free (ck);
+		free(p);
+		rz_magic_free(ck);
 		ck = NULL;
-//		return adelta+1;
+		//		return adelta+1;
 	}
-	adelta ++;
-	delta ++;
+	adelta++;
+	delta++;
 #if 0
 	rz_magic_free (ck);
 	ck = NULL;
 #endif
-{
-	int mod = core->search->align;
-	if (mod) {
-		ret = mod; //adelta%addr + deR_ABS(mod-adelta)+1;
-		goto seek_exit;
+	{
+		int mod = core->search->align;
+		if (mod) {
+			ret = mod; //adelta%addr + deR_ABS(mod-adelta)+1;
+			goto seek_exit;
+		}
 	}
-}
 	ret = adelta; //found;
 
 seek_exit:
-	rz_core_seek (core, curoffset, true);
+	rz_core_seek(core, curoffset, true);
 	return ret;
 }
 
 static void rz_core_magic(RzCore *core, const char *file, int v, PJ *pj) {
 	ut64 addr = core->offset;
 	int hits = 0;
-	magicdepth = rz_config_get_i (core->config, "magic.depth"); // TODO: do not use global var here
-	rz_core_magic_at (core, file, addr, magicdepth, v, pj, &hits);
+	magicdepth = rz_config_get_i(core->config, "magic.depth"); // TODO: do not use global var here
+	rz_core_magic_at(core, file, addr, magicdepth, v, pj, &hits);
 	if (pj) {
-		rz_cons_newline ();
+		rz_cons_newline();
 	}
 	if (addr != core->offset) {
-		rz_core_seek (core, addr, true);
+		rz_core_seek(core, addr, true);
 	}
 }

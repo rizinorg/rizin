@@ -28,7 +28,7 @@ RZ_API ut8 rz_hash_hamdist(const ut8 *buf, int len) {
 	x = y = i = 0;
 	for (i = 0; i < len; i++) {
 		y = buf[i];
-		x = hamdist (x, y);
+		x = hamdist(x, y);
 	}
 	return x;
 }

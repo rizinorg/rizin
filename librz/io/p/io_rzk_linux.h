@@ -11,7 +11,7 @@
 #include <sys/mman.h>
 #include <errno.h>
 
-#define MAX_PHYS_ADDR   128
+#define MAX_PHYS_ADDR 128
 
 /*
  * Backend Id (be_id):
@@ -91,36 +91,36 @@ struct rzk_proc_info {
 #define PRINT_PROC_INFO     0x9
 
 #ifdef _IOC_TYPECHECK
-#define rzk_data_size struct rzk_data
+#define rzk_data_size        struct rzk_data
 #define rzk_kernel_maps_size struct rzk_kernel_maps
 #define rzk_control_reg_size struct rzk_control_reg
-#define rzk_proc_info_size struct rzk_proc_info
+#define rzk_proc_info_size   struct rzk_proc_info
 #else
-#define rzk_data_size sizeof (struct rzk_data)
-#define rzk_kernel_maps_size sizeof (struct rzk_kernel_maps)
-#define rzk_control_reg_size sizeof (struct rzk_control_reg)
-#define rzk_proc_info_size sizeof (struct rzk_proc_info)
+#define rzk_data_size        sizeof(struct rzk_data)
+#define rzk_kernel_maps_size sizeof(struct rzk_kernel_maps)
+#define rzk_control_reg_size sizeof(struct rzk_control_reg)
+#define rzk_proc_info_size   sizeof(struct rzk_proc_info)
 #endif
 
-#define IOCTL_READ_KERNEL_MEMORY  _IOR (RZ_TYPE, READ_KERNEL_MEMORY, rzk_data_size)
-#define IOCTL_WRITE_KERNEL_MEMORY _IOR (RZ_TYPE, WRITE_KERNEL_MEMORY, rzk_data_size)
-#define IOCTL_READ_PROCESS_ADDR   _IOR (RZ_TYPE, READ_PROCESS_ADDR, rzk_data_size)
-#define IOCTL_WRITE_PROCESS_ADDR  _IOR (RZ_TYPE, WRITE_PROCESS_ADDR, rzk_data_size)
-#define IOCTL_READ_PHYSICAL_ADDR  _IOR (RZ_TYPE, READ_PHYSICAL_ADDR, rzk_data_size)
-#define IOCTL_WRITE_PHYSICAL_ADDR _IOR (RZ_TYPE, WRITE_PHYSICAL_ADDR, rzk_data_size)
-#define IOCTL_GET_KERNEL_MAP      _IOR (RZ_TYPE, GET_KERNEL_MAP, rzk_kernel_maps_size)
-#define IOCTL_READ_CONTROL_REG    _IOR (RZ_TYPE, READ_CONTROL_REG, rzk_control_reg_size)
-#define IOCTL_PRINT_PROC_INFO     _IOR (RZ_TYPE, PRINT_PROC_INFO, rzk_data_size) // Bad hack. Incorrect size, but since module does not use _IOC_SIZE, it won't matter if size parameter is wrong
+#define IOCTL_READ_KERNEL_MEMORY  _IOR(RZ_TYPE, READ_KERNEL_MEMORY, rzk_data_size)
+#define IOCTL_WRITE_KERNEL_MEMORY _IOR(RZ_TYPE, WRITE_KERNEL_MEMORY, rzk_data_size)
+#define IOCTL_READ_PROCESS_ADDR   _IOR(RZ_TYPE, READ_PROCESS_ADDR, rzk_data_size)
+#define IOCTL_WRITE_PROCESS_ADDR  _IOR(RZ_TYPE, WRITE_PROCESS_ADDR, rzk_data_size)
+#define IOCTL_READ_PHYSICAL_ADDR  _IOR(RZ_TYPE, READ_PHYSICAL_ADDR, rzk_data_size)
+#define IOCTL_WRITE_PHYSICAL_ADDR _IOR(RZ_TYPE, WRITE_PHYSICAL_ADDR, rzk_data_size)
+#define IOCTL_GET_KERNEL_MAP      _IOR(RZ_TYPE, GET_KERNEL_MAP, rzk_kernel_maps_size)
+#define IOCTL_READ_CONTROL_REG    _IOR(RZ_TYPE, READ_CONTROL_REG, rzk_control_reg_size)
+#define IOCTL_PRINT_PROC_INFO     _IOR(RZ_TYPE, PRINT_PROC_INFO, rzk_data_size) // Bad hack. Incorrect size, but since module does not use _IOC_SIZE, it won't matter if size parameter is wrong
 
-#define VM_READ 0x1
-#define VM_WRITE 0x2
-#define VM_EXEC 0x4
+#define VM_READ     0x1
+#define VM_WRITE    0x2
+#define VM_EXEC     0x4
 #define VM_MAYSHARE 0x80
 
 extern struct io_rzk_linux rzk_struct;
 
-int ReadMemory (RzIO *io, RzIODesc *iodesc, int ioctl_n, size_t pid, size_t address, ut8 *buf, int len);
-int WriteMemory (RzIO *io, RzIODesc *iodesc, int ioctl_n, size_t pid, ut64 address, const ut8 *buf, int len);
+int ReadMemory(RzIO *io, RzIODesc *iodesc, int ioctl_n, size_t pid, size_t address, ut8 *buf, int len);
+int WriteMemory(RzIO *io, RzIODesc *iodesc, int ioctl_n, size_t pid, ut64 address, const ut8 *buf, int len);
 int run_ioctl_command(RzIO *io, RzIODesc *iodesc, const char *buf);
 
 #endif

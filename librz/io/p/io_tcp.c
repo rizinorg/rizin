@@ -7,76 +7,76 @@
 #include "../io_memory.h"
 
 static bool __check(RzIO *io, const char *pathname, bool many) {
-	return (!strncmp (pathname, "tcp://", 6));
+	return (!strncmp(pathname, "tcp://", 6));
 }
 
-static ut8 *tcpme (const char *pathname, int *code, int *len) {
+static ut8 *tcpme(const char *pathname, int *code, int *len) {
 	pathname += 6;
 	*code = 404;
 #if __UNIX__
-	rz_sys_signal (SIGINT, SIG_IGN);
+	rz_sys_signal(SIGINT, SIG_IGN);
 #endif
 	if (*pathname == ':') {
 		/* listen and wait for connection */
-		RzSocket *sl = rz_socket_new (false);
-		if (!rz_socket_listen (sl, pathname + 1, NULL)) {
-			eprintf ("Cannot listen\n");
-			rz_socket_free (sl);
+		RzSocket *sl = rz_socket_new(false);
+		if (!rz_socket_listen(sl, pathname + 1, NULL)) {
+			eprintf("Cannot listen\n");
+			rz_socket_free(sl);
 			return NULL;
 		}
-		RzSocket *sc = rz_socket_accept (sl);
-		ut8 *res = rz_socket_slurp (sc, len);
-		rz_socket_free (sc);
-		rz_socket_free (sl);
+		RzSocket *sc = rz_socket_accept(sl);
+		ut8 *res = rz_socket_slurp(sc, len);
+		rz_socket_free(sc);
+		rz_socket_free(sl);
 		if (res) {
 			*code = 200;
 			return res;
 		}
 	} else {
 		/* connect and slurp the end point */
-		char *host = strdup (pathname);
+		char *host = strdup(pathname);
 		if (!host) {
 			return NULL;
 		}
-		char *port = strchr (host, ':');
+		char *port = strchr(host, ':');
 		if (port) {
 			*port++ = 0;
-			RzSocket *s = rz_socket_new (false);
-			if (rz_socket_connect (s, host, port, RZ_SOCKET_PROTO_TCP, 0)) {
-				ut8 *res = rz_socket_slurp (s, len);
+			RzSocket *s = rz_socket_new(false);
+			if (rz_socket_connect(s, host, port, RZ_SOCKET_PROTO_TCP, 0)) {
+				ut8 *res = rz_socket_slurp(s, len);
 				if (*len < 1) {
-					RZ_FREE (res);
+					RZ_FREE(res);
 				} else {
 					*code = 200;
 				}
-				rz_socket_free (s);
-				free (host);
+				rz_socket_free(s);
+				free(host);
 				return res;
 			}
-			rz_socket_free (s);
+			rz_socket_free(s);
 		} else {
-			eprintf ("Missing port.\n");
+			eprintf("Missing port.\n");
 		}
-		free (host);
+		free(host);
 	}
 	return NULL;
 }
 
 static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
-	if (__check (io, pathname, 0)) {
+	if (__check(io, pathname, 0)) {
 		int rlen, code;
-		RzIOMalloc *mal = RZ_NEW0 (RzIOMalloc);
+		RzIOMalloc *mal = RZ_NEW0(RzIOMalloc);
 		if (!mal) {
 			return NULL;
 		}
 		mal->offset = 0;
-		mal->buf = tcpme (pathname, &code, &rlen);
+		mal->buf = tcpme(pathname, &code, &rlen);
 		if (mal->buf && rlen > 0) {
 			mal->size = rlen;
-			return rz_io_desc_new (io, &rz_io_plugin_tcp, pathname, rw, mode, mal);
+			return rz_io_desc_new(io, &rz_io_plugin_tcp, pathname, rw, mode, mal);
 		}
-		eprintf ("No TCP segment\n");
-		free (mal);
+		eprintf("No TCP segment\n");
+		free(mal);
 	}
 	return NULL;
 }

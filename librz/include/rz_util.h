@@ -24,7 +24,7 @@
 #endif
 #ifdef _MSC_VER
 #include <windows.h>
-int gettimeofday (struct timeval* p, void* tz);
+int gettimeofday(struct timeval *p, void *tz);
 #endif
 #include "rz_util/rz_event.h"
 #include "rz_util/rz_assert.h"

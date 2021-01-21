@@ -15,8 +15,7 @@ typedef enum EManglingType {
 } EManglingType;
 
 ///////////////////////////////////////////////////////////////////////////////
-static EManglingType get_mangling_type(char *sym)
-{
+static EManglingType get_mangling_type(char *sym) {
 	EManglingType mangling_type = eManglingUnsupported;
 	if (sym == 0) {
 		mangling_type = eManglingUnknown;
@@ -37,11 +36,10 @@ get_mangling_type_err:
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-EDemanglerErr create_demangler(SDemangler **demangler)
-{
+EDemanglerErr create_demangler(SDemangler **demangler) {
 	EDemanglerErr err = eDemanglerErrOK;
 
-	*demangler = (SDemangler *) malloc(sizeof(SDemangler));
+	*demangler = (SDemangler *)malloc(sizeof(SDemangler));
 
 	if (!*demangler) {
 		err = eDemanglerErrMemoryAllocation;
@@ -56,20 +54,19 @@ create_demagler_err:
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-EDemanglerErr init_demangler(SDemangler *demangler, char *sym)
-{
+EDemanglerErr init_demangler(SDemangler *demangler, char *sym) {
 	EManglingType mangling_type = eManglingUnsupported;
 	EDemanglerErr err = eDemanglerErrOK;
 
 	// !!! sequence in this array need to be same as in EManglingType enum !!!
 	demangle_func demangle_funcs[] = {
-		microsoft_demangle,	// Microsoft demangling function
-		0,					// Unsupported demangling
-		0					// Unknown demangling
+		microsoft_demangle, // Microsoft demangling function
+		0, // Unsupported demangling
+		0 // Unknown demangling
 	};
 
 	if (demangler == 0) {
-		err =  eDemanglerErrMemoryAllocation;
+		err = eDemanglerErrMemoryAllocation;
 		goto init_demangler_err;
 	}
 
@@ -97,8 +94,7 @@ init_demangler_err:
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void free_demangler(SDemangler *demangler)
-{
+void free_demangler(SDemangler *demangler) {
 	RZ_FREE(demangler->symbol);
 	RZ_FREE(demangler);
 }

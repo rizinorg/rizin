@@ -4,21 +4,21 @@
 #include <rz_lib.h>
 #include "../arch/mcore/mcore.h"
 
-static mcore_handle handle = {0};
+static mcore_handle handle = { 0 };
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	mcore_t* instr = NULL;
+	mcore_t *instr = NULL;
 	char tmp[256];
-	if (!op || mcore_init (&handle, buf, len)) {
+	if (!op || mcore_init(&handle, buf, len)) {
 		return -1;
 	}
 	op->size = 2;
-	if ((instr = mcore_next (&handle))) {
-		mcore_snprint (tmp, sizeof (tmp), a->pc, instr);
-		mcore_free (instr);
-		rz_asm_op_set_asm (op, tmp);
+	if ((instr = mcore_next(&handle))) {
+		mcore_snprint(tmp, sizeof(tmp), a->pc, instr);
+		mcore_free(instr);
+		rz_asm_op_set_asm(op, tmp);
 	} else {
-		rz_asm_op_set_asm (op, "invalid");
+		rz_asm_op_set_asm(op, "invalid");
 	}
 	return op->size;
 }

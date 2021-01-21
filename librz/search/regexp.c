@@ -7,7 +7,7 @@ RZ_API int rz_search_regexp_update(RzSearch *s, ut64 from, const ut8 *buf, int l
 	RzSearchKeyword *kw;
 	RzListIter *iter;
 	RzRegexMatch match;
-	RzRegex compiled = {0};
+	RzRegex compiled = { 0 };
 	const int old_nhits = s->nhits;
 	int ret = 0;
 
@@ -18,16 +18,16 @@ RZ_API int rz_search_regexp_update(RzSearch *s, ut64 from, const ut8 *buf, int l
 			reflags |= RZ_REGEX_ICASE;
 		}
 
-		if (rz_regex_comp (&compiled, (char *)kw->bin_keyword, reflags)) {
-			eprintf ("Cannot compile '%s' regexp\n", kw->bin_keyword);
+		if (rz_regex_comp(&compiled, (char *)kw->bin_keyword, reflags)) {
+			eprintf("Cannot compile '%s' regexp\n", kw->bin_keyword);
 			return -1;
 		}
 
 		match.rm_so = 0;
 		match.rm_eo = len;
 
-		while (!rz_regex_exec (&compiled, (char *)buf, 1, &match, RZ_REGEX_STARTEND)) {
-			int t = rz_search_hit_new (s, kw, from + match.rm_so);
+		while (!rz_regex_exec(&compiled, (char *)buf, 1, &match, RZ_REGEX_STARTEND)) {
+			int t = rz_search_hit_new(s, kw, from + match.rm_so);
 			if (!t) {
 				ret = -1;
 				goto beach;
@@ -42,7 +42,7 @@ RZ_API int rz_search_regexp_update(RzSearch *s, ut64 from, const ut8 *buf, int l
 	}
 
 beach:
-	rz_regex_fini (&compiled);
+	rz_regex_fini(&compiled);
 	if (!ret) {
 		ret = s->nhits - old_nhits;
 	}

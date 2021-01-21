@@ -8,12 +8,12 @@ typedef struct {
 	ut64 offset;
 } RzIONull;
 
-static int __write(RzIO* io, RzIODesc* fd, const ut8* buf, int count) {
-	RzIONull* null;
+static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
+	RzIONull *null;
 	if (!fd || !fd->data || !buf) {
 		return -1;
 	}
-	null = (RzIONull*) fd->data;
+	null = (RzIONull *)fd->data;
 	if ((null->offset + count) > null->size) {
 		int ret = null->size - null->offset;
 		return ret;
@@ -22,9 +22,9 @@ static int __write(RzIO* io, RzIODesc* fd, const ut8* buf, int count) {
 	return count;
 }
 
-static bool __resize(RzIO* io, RzIODesc* fd, ut64 count) {
+static bool __resize(RzIO *io, RzIODesc *fd, ut64 count) {
 	if (fd && fd->data) {
-		RzIONull* null = (RzIONull*) fd->data;
+		RzIONull *null = (RzIONull *)fd->data;
 		null->size = count;
 		if (null->offset >= count) {
 			if (count) {
@@ -38,34 +38,34 @@ static bool __resize(RzIO* io, RzIODesc* fd, ut64 count) {
 	return false;
 }
 
-static int __read(RzIO* io, RzIODesc* fd, ut8* buf, int count) {
-	RzIONull* null;
+static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
+	RzIONull *null;
 	if (!fd || !fd->data || !buf) {
 		return -1;
 	}
-	null = (RzIONull*) fd->data;
+	null = (RzIONull *)fd->data;
 	if ((null->offset + count) > null->size) {
 		int ret = null->size - null->offset;
-		memset (buf, 0x00, ret);
+		memset(buf, 0x00, ret);
 		null->offset = null->size;
 		return ret;
 	}
-	memset (buf, 0x00, count);
+	memset(buf, 0x00, count);
 	null->offset += count;
 	return count;
 }
 
-static int __close(RzIODesc* fd) {
-	RZ_FREE (fd->data);
+static int __close(RzIODesc *fd) {
+	RZ_FREE(fd->data);
 	return 0;
 }
 
-static ut64 __lseek(RzIO* io, RzIODesc* fd, ut64 offset, int whence) {
-	RzIONull* null;
+static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
+	RzIONull *null;
 	if (!fd || !fd->data) {
 		return offset;
 	}
-	null = (RzIONull*) fd->data;
+	null = (RzIONull *)fd->data;
 	switch (whence) {
 	case SEEK_SET:
 		if (offset >= null->size) {
@@ -83,18 +83,18 @@ static ut64 __lseek(RzIO* io, RzIODesc* fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static bool __plugin_open(RzIO* io, const char* pathname, bool many) {
-	return (!strncmp (pathname, "null://", 7));
+static bool __plugin_open(RzIO *io, const char *pathname, bool many) {
+	return (!strncmp(pathname, "null://", 7));
 }
 
-static RzIODesc* __open(RzIO* io, const char* pathname, int rw, int mode) {
-	RzIONull* null;
-	if (__plugin_open (io, pathname,0)) {
-		if (!strncmp (pathname, "null://", 7) && strlen (pathname + 7)) {
-			null = RZ_NEW0 (RzIONull);
-			null->size = rz_num_math (NULL, pathname + 7) + 1;         //???
+static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
+	RzIONull *null;
+	if (__plugin_open(io, pathname, 0)) {
+		if (!strncmp(pathname, "null://", 7) && strlen(pathname + 7)) {
+			null = RZ_NEW0(RzIONull);
+			null->size = rz_num_math(NULL, pathname + 7) + 1; //???
 			null->offset = 0LL;
-			return rz_io_desc_new (io, &rz_io_plugin_null, pathname, rw, mode, null);
+			return rz_io_desc_new(io, &rz_io_plugin_null, pathname, rw, mode, null);
 		}
 	}
 	return NULL;

@@ -7,11 +7,11 @@
 
 #if !RZ_FLAG_ZONE_USE_SDB
 
-static RzFlagZoneItem *rz_flag_zone_get (RzFlag *f, const char *name) {
+static RzFlagZoneItem *rz_flag_zone_get(RzFlag *f, const char *name) {
 	RzListIter *iter;
 	RzFlagZoneItem *zi;
 	rz_list_foreach (DB, iter, zi) {
-		if (!strcmp (name, zi->name)) {
+		if (!strcmp(name, zi->name)) {
 			return zi;
 		}
 	}
@@ -19,11 +19,11 @@ static RzFlagZoneItem *rz_flag_zone_get (RzFlag *f, const char *name) {
 }
 #endif
 
-static RzFlagZoneItem *rz_flag_zone_get_inrange (RzFlag *f, ut64 from, ut64 to) {
+static RzFlagZoneItem *rz_flag_zone_get_inrange(RzFlag *f, ut64 from, ut64 to) {
 	RzListIter *iter;
 	RzFlagZoneItem *zi;
 	rz_list_foreach (DB, iter, zi) {
-		if (RZ_BETWEEN (from, zi->from, to)) {
+		if (RZ_BETWEEN(from, zi->from, to)) {
 			return zi;
 		}
 	}
@@ -31,29 +31,29 @@ static RzFlagZoneItem *rz_flag_zone_get_inrange (RzFlag *f, ut64 from, ut64 to) 
 }
 
 RZ_API bool rz_flag_zone_add(RzFlag *f, const char *name, ut64 addr) {
-	rz_return_val_if_fail (f && name && *name, false);
+	rz_return_val_if_fail(f && name && *name, false);
 #if RZ_FLAG_ZONE_USE_SDB
 	RzFlagZoneItem zi = { 0, 0, (const char *)name };
 	if (!DB) {
 		return false;
 	}
-	const char *bound = sdb_const_get (DB, name, NULL);
+	const char *bound = sdb_const_get(DB, name, NULL);
 	if (bound) {
-		sdb_fmt_tobin (bound, "qq", &zi);
+		sdb_fmt_tobin(bound, "qq", &zi);
 		if (addr < zi.from) {
 			zi.from = addr;
 		}
 		if (addr > zi.to) {
 			zi.to = addr;
 		}
-		char *newBounds = sdb_fmt_tostr (&zi, "qq");
-		sdb_set (DB, name, newBounds, 0);
-		free (newBounds);
+		char *newBounds = sdb_fmt_tostr(&zi, "qq");
+		sdb_set(DB, name, newBounds, 0);
+		free(newBounds);
 	} else {
-		sdb_set (DB, name, sdb_fmt ("%"PFMT64d",%"PFMT64d, addr, addr), 0);
+		sdb_set(DB, name, sdb_fmt("%" PFMT64d ",%" PFMT64d, addr, addr), 0);
 	}
 #else
-	RzFlagZoneItem *zi = rz_flag_zone_get (f, name);
+	RzFlagZoneItem *zi = rz_flag_zone_get(f, name);
 	if (zi) {
 		if (addr < zi->from) {
 			zi->from = addr;
@@ -63,12 +63,12 @@ RZ_API bool rz_flag_zone_add(RzFlag *f, const char *name, ut64 addr) {
 		}
 	} else {
 		if (!DB) {
-			rz_flag_zone_reset (f);
+			rz_flag_zone_reset(f);
 		}
-		zi = RZ_NEW0 (RzFlagZoneItem);
-		zi->name = strdup (name);
+		zi = RZ_NEW0(RzFlagZoneItem);
+		zi->name = strdup(name);
 		zi->from = zi->to = addr;
-		rz_list_append (DB, zi);
+		rz_list_append(DB, zi);
 	}
 #endif
 	return true;
@@ -76,23 +76,23 @@ RZ_API bool rz_flag_zone_add(RzFlag *f, const char *name, ut64 addr) {
 
 RZ_API bool rz_flag_zone_reset(RzFlag *f) {
 #if RZ_FLAG_ZONE_USE_SDB
-	return sdb_reset (DB);
+	return sdb_reset(DB);
 #else
-	rz_list_free (f->zones);
-	f->zones = rz_list_newf (rz_flag_zone_item_free);
+	rz_list_free(f->zones);
+	f->zones = rz_list_newf(rz_flag_zone_item_free);
 	return true;
 #endif
 }
 
 RZ_API bool rz_flag_zone_del(RzFlag *f, const char *name) {
 #if RZ_FLAG_ZONE_USE_SDB
-	return sdb_unset (DB, name, 0);
+	return sdb_unset(DB, name, 0);
 #else
 	RzListIter *iter;
 	RzFlagZoneItem *zi;
 	rz_list_foreach (DB, iter, zi) {
-		if (!strcmp (name, zi->name)) {
-			rz_list_delete (DB, iter);
+		if (!strcmp(name, zi->name)) {
+			rz_list_delete(DB, iter);
 			return true;
 		}
 	}
@@ -111,9 +111,9 @@ typedef struct rz_flag_zone_context_t {
 } RzFlagZoneContext;
 
 static bool cb(void *user, const char *name, const char *from_to) {
-	RzFlagZoneContext *zc = (RzFlagZoneContext*)user;
+	RzFlagZoneContext *zc = (RzFlagZoneContext *)user;
 	RzFlagZoneItem zi = { 0, 0, name };
-	sdb_fmt_tobin (from_to, "qq", &zi);
+	sdb_fmt_tobin(from_to, "qq", &zi);
 	if (zi.from > zc->addr) {
 		if (zc->h == UT64_MAX) {
 			zc->h = zi.from;
@@ -164,17 +164,17 @@ static bool cb(void *user, const char *name, const char *from_to) {
 RZ_API bool rz_flag_zone_around(RzFlag *f, ut64 addr, const char **prev, const char **next) {
 	RzFlagZoneContext ctx = { f, addr, 0, UT64_MAX, prev, next };
 	*prev = *next = NULL;
-	sdb_foreach (DB, cb, &ctx);
+	sdb_foreach(DB, cb, &ctx);
 	return true;
 }
 
 static bool cb_list(void *user, const char *name, const char *from_to) {
-	eprintf ("%s%s  %s\n", name, rz_str_pad (' ', 10 - strlen (name)), from_to);
+	eprintf("%s%s  %s\n", name, rz_str_pad(' ', 10 - strlen(name)), from_to);
 	return true;
 }
 
 RZ_API bool rz_flag_zone_list(RzFlag *f, int mode) {
-	sdb_foreach (DB, cb_list, NULL);
+	sdb_foreach(DB, cb_list, NULL);
 	return true;
 }
 
@@ -182,8 +182,8 @@ RZ_API bool rz_flag_zone_list(RzFlag *f, int mode) {
 
 RZ_API void rz_flag_zone_item_free(void *a) {
 	RzFlagZoneItem *zi = a;
-	free (zi->name);
-	free (zi);
+	free(zi->name);
+	free(zi);
 }
 
 RZ_API bool rz_flag_zone_around(RzFlag *f, ut64 addr, const char **prev, const char **next) {
@@ -242,14 +242,14 @@ RZ_API bool rz_flag_zone_around(RzFlag *f, ut64 addr, const char **prev, const c
 }
 
 RZ_API RzList *rz_flag_zone_barlist(RzFlag *f, ut64 from, ut64 bsize, int rows) {
-	RzList *list = rz_list_newf (NULL);
+	RzList *list = rz_list_newf(NULL);
 	int i;
 	for (i = 0; i < rows; i++) {
-		RzFlagZoneItem *zi = rz_flag_zone_get_inrange (f, from, from + bsize);
+		RzFlagZoneItem *zi = rz_flag_zone_get_inrange(f, from, from + bsize);
 		if (zi) {
-			rz_list_append (list, zi->name);
+			rz_list_append(list, zi->name);
 		} else {
-			rz_list_append (list, "");
+			rz_list_append(list, "");
 		}
 		from += bsize;
 	}
@@ -261,12 +261,12 @@ RZ_API bool rz_flag_zone_list(RzFlag *f, int mode) {
 	RzFlagZoneItem *zi;
 	rz_list_foreach (DB, iter, zi) {
 		if (mode == '*') {
-			f->cb_printf ("fz %s @ 0x08%"PFMT64x"\n", zi->name, zi->from);
-			f->cb_printf ("f %s %"PFMT64d" 0x08%"PFMT64x"\n", zi->name,
+			f->cb_printf("fz %s @ 0x08%" PFMT64x "\n", zi->name, zi->from);
+			f->cb_printf("f %s %" PFMT64d " 0x08%" PFMT64x "\n", zi->name,
 				zi->to - zi->from, zi->from);
 		} else {
-			f->cb_printf ("0x08%"PFMT64x"  0x%08"PFMT64x"  %s\n",
-					zi->from, zi->to, zi->name);
+			f->cb_printf("0x08%" PFMT64x "  0x%08" PFMT64x "  %s\n",
+				zi->from, zi->to, zi->name);
 		}
 	}
 	return true;
@@ -279,26 +279,34 @@ RZ_API bool rz_flag_zone_list(RzFlag *f, int mode) {
 
 int main() {
 	const char *a, *b;
-	RzFlagZone *fz = rz_flag_zone_new ();
+	RzFlagZone *fz = rz_flag_zone_new();
 
-	FZ(add)(fz, "main", 0x80000);
-	FZ(add)(fz, "network", 0x85000);
-	FZ(add)(fz, "libc", 0x90000);
+	FZ(add)
+	(fz, "main", 0x80000);
+	FZ(add)
+	(fz, "network", 0x85000);
+	FZ(add)
+	(fz, "libc", 0x90000);
 
-	FZ(add)(fz, "network", 0x000);
+	FZ(add)
+	(fz, "network", 0x000);
 
-	FZ(around)(fz, 0x83000, &a, &b);
-	printf ("%s %s\n", a, b);
+	FZ(around)
+	(fz, 0x83000, &a, &b);
+	printf("%s %s\n", a, b);
 
-	FZ(around)(fz, 0x50000, &a, &b);
-	printf ("%s %s\n", a, b);
+	FZ(around)
+	(fz, 0x50000, &a, &b);
+	printf("%s %s\n", a, b);
 
-	FZ(around)(fz, 0x500000, &a, &b);
-	printf ("%s %s\n", a, b);
+	FZ(around)
+	(fz, 0x500000, &a, &b);
+	printf("%s %s\n", a, b);
 
-	FZ(list)(fz);
+	FZ(list)
+	(fz);
 
-	rz_flag_zone_free (fz);
+	rz_flag_zone_free(fz);
 	return 0;
 }
 #endif

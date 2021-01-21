@@ -9,8 +9,8 @@
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	struct cr16_cmd cmd;
-	int ret = cr16_decode_command (buf, &cmd, len);
-	rz_strbuf_set (&op->buf_asm, sdb_fmt ("%s %s", cmd.instr, cmd.operands));
+	int ret = cr16_decode_command(buf, &cmd, len);
+	rz_strbuf_set(&op->buf_asm, sdb_fmt("%s %s", cmd.instr, cmd.operands));
 	return op->size = ret;
 }
 

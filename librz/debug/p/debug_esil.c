@@ -15,7 +15,7 @@ static int is_io_esil(RzDebug *dbg) {
 #endif
 
 static int __esil_step_over(RzDebug *dbg) {
-	eprintf ("TODO: ESIL STEP OVER\n");
+	eprintf("TODO: ESIL STEP OVER\n");
 	return true;
 }
 
@@ -23,25 +23,25 @@ static int __esil_step(RzDebug *dbg) {
 	int oplen;
 	ut8 buf[64];
 	ut64 pc = 0LL; // getreg("pc")
-	RzAnalysisOp op = {0};
+	RzAnalysisOp op = { 0 };
 
 	rz_debug_reg_sync(dbg, RZ_REG_TYPE_GPR, false);
-	pc = rz_debug_reg_get (dbg, "PC");
-	eprintf ("PC = 0x%" PFMT64x "\n", pc);
-/// XXX. hack to trick vaddr issue
-//pc = 0x100001478;
+	pc = rz_debug_reg_get(dbg, "PC");
+	eprintf("PC = 0x%" PFMT64x "\n", pc);
+	/// XXX. hack to trick vaddr issue
+	//pc = 0x100001478;
 	//memset (buf, 0, sizeof (buf));
-	dbg->iob.read_at (dbg->iob.io, pc, buf, 64);
-	eprintf ("READ 0x%08"PFMT64x" %02x %02x %02x\n", pc, buf[0], buf[1], buf[2]);
-	oplen = rz_analysis_op (dbg->analysis, &op, pc, buf, sizeof (buf), RZ_ANALYSIS_OP_MASK_ESIL);
+	dbg->iob.read_at(dbg->iob.io, pc, buf, 64);
+	eprintf("READ 0x%08" PFMT64x " %02x %02x %02x\n", pc, buf[0], buf[1], buf[2]);
+	oplen = rz_analysis_op(dbg->analysis, &op, pc, buf, sizeof(buf), RZ_ANALYSIS_OP_MASK_ESIL);
 	if (oplen > 0) {
-		if (*RZ_STRBUF_SAFEGET (&op.esil)) {
-			eprintf ("ESIL: %s\n", RZ_STRBUF_SAFEGET (&op.esil));
-			rz_analysis_esil_parse (dbg->analysis->esil, RZ_STRBUF_SAFEGET (&op.esil));
+		if (*RZ_STRBUF_SAFEGET(&op.esil)) {
+			eprintf("ESIL: %s\n", RZ_STRBUF_SAFEGET(&op.esil));
+			rz_analysis_esil_parse(dbg->analysis->esil, RZ_STRBUF_SAFEGET(&op.esil));
 		}
 	}
-	rz_analysis_op_fini (&op);
-	eprintf ("TODO: ESIL STEP\n");
+	rz_analysis_op_fini(&op);
+	eprintf("TODO: ESIL STEP\n");
 	return true;
 }
 
@@ -53,12 +53,12 @@ static int __esil_init(RzDebug *dbg) {
 }
 
 static int __esil_continue(RzDebug *dbg, int pid, int tid, int sig) {
-	eprintf ("TODO continue\n");
+	eprintf("TODO continue\n");
 	return true;
 }
 
 static int __esil_continue_syscall(RzDebug *dbg, int pid, int num) {
-	eprintf ("TODO: esil continue until syscall\n");
+	eprintf("TODO: esil continue until syscall\n");
 	return true;
 }
 
@@ -68,7 +68,7 @@ static int __esil_wait(RzDebug *dbg, int pid) {
 }
 
 static int __esil_attach(RzDebug *dbg, int pid) {
-	eprintf ("OK attach\n");
+	eprintf("OK attach\n");
 	return true;
 #if 0
 	if (!is_io_esil (dbg))
@@ -90,8 +90,8 @@ static int __esil_detach(RzDebug *dbg, int pid) {
 }
 
 static char *__esil_reg_profile(RzDebug *dbg) {
-	if (!strcmp (dbg->arch, "bf")) {
-		return strdup (
+	if (!strcmp(dbg->arch, "bf")) {
+		return strdup(
 			"=PC	pc\n"
 			"=SP	esp\n"
 			"=BP	ptr\n"
@@ -105,13 +105,12 @@ static char *__esil_reg_profile(RzDebug *dbg) {
 			"gpr	inp	.32	20	0\n"
 			"gpr	inpi	.32	24	0\n"
 			"gpr	mem	.32	28	0\n"
-			"gpr	memi	.32	32	0\n"
-		      );
+			"gpr	memi	.32	32	0\n");
 	}
-	return rz_analysis_get_reg_profile (dbg->analysis);
+	return rz_analysis_get_reg_profile(dbg->analysis);
 }
 
-static int __esil_breakpoint (RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
+static int __esil_breakpoint(RzBreakpoint *bp, RzBreakpointItem *b, bool set) {
 	//rz_io_system (dbg->iob.io, "db");
 	return false;
 }
@@ -122,16 +121,16 @@ static bool __esil_kill(RzDebug *dbg, int pid, int tid, int sig) {
 }
 
 static int __esil_stop(RzDebug *dbg) {
-	eprintf ("ESIL: stop\n");
+	eprintf("ESIL: stop\n");
 	return true;
 }
 
-static int __reg_read (RzDebug *dbg, int type, ut8 *buf, int size) {
+static int __reg_read(RzDebug *dbg, int type, ut8 *buf, int size) {
 	int sz;
 	/* do nothing */
-	ut8 *bytes = rz_reg_get_bytes (dbg->reg, type, &sz);
-	memcpy (buf, bytes, RZ_MIN (size, sz));
-	free (bytes);
+	ut8 *bytes = rz_reg_get_bytes(dbg->reg, type, &sz);
+	memcpy(buf, bytes, RZ_MIN(size, sz));
+	free(bytes);
 	return size;
 }
 

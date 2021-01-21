@@ -44,30 +44,30 @@
 
 #include "utils.h"
 
-static char *regatoi(const RzRegex*, char *, int);
+static char *regatoi(const RzRegex *, char *, int);
 
 static struct rerr {
 	int code;
 	char *name;
 	char *explain;
 } rerrs[] = {
-	{ RZ_REGEX_NOMATCH,	"RZ_REGEX_NOMATCH",	"regexec() failed to match" },
-	{ RZ_REGEX_BADPAT,	"RZ_REGEX_BADPAT",	"invalid regular expression" },
-	{ RZ_REGEX_ECOLLATE,	"RZ_REGEX_ECOLLATE",	"invalid collating element" },
-	{ RZ_REGEX_ECTYPE,	"RZ_REGEX_ECTYPE",	"invalid character class" },
-	{ RZ_REGEX_EESCAPE,	"RZ_REGEX_EESCAPE",	"trailing backslash (\\)" },
-	{ RZ_REGEX_ESUBREG,	"RZ_REGEX_ESUBREG",	"invalid backreference number" },
-	{ RZ_REGEX_EBRACK,	"RZ_REGEX_EBRACK",	"brackets ([ ]) not balanced" },
-	{ RZ_REGEX_EPAREN,	"RZ_REGEX_EPAREN",	"parentheses not balanced" },
-	{ RZ_REGEX_EBRACE,	"RZ_REGEX_EBRACE",	"braces not balanced" },
-	{ RZ_REGEX_BADBR,	"RZ_REGEX_BADBR",	"invalid repetition count(s)" },
-	{ RZ_REGEX_ERANGE,	"RZ_REGEX_ERANGE",	"invalid character range" },
-	{ RZ_REGEX_ESPACE,	"RZ_REGEX_ESPACE",	"out of memory" },
-	{ RZ_REGEX_BADRPT,	"RZ_REGEX_BADRPT",	"repetition-operator operand invalid" },
-	{ RZ_REGEX_EMPTY,	"RZ_REGEX_EMPTY",	"empty (sub)expression" },
-	{ RZ_REGEX_ASSERT,	"RZ_REGEX_ASSERT",	"\"can't happen\" -- you found a bug" },
-	{ RZ_REGEX_INVARG,	"RZ_REGEX_INVARG",	"invalid argument to regex routine" },
-	{ 0,		"",		"*** unknown regexp error code ***" }
+	{ RZ_REGEX_NOMATCH, "RZ_REGEX_NOMATCH", "regexec() failed to match" },
+	{ RZ_REGEX_BADPAT, "RZ_REGEX_BADPAT", "invalid regular expression" },
+	{ RZ_REGEX_ECOLLATE, "RZ_REGEX_ECOLLATE", "invalid collating element" },
+	{ RZ_REGEX_ECTYPE, "RZ_REGEX_ECTYPE", "invalid character class" },
+	{ RZ_REGEX_EESCAPE, "RZ_REGEX_EESCAPE", "trailing backslash (\\)" },
+	{ RZ_REGEX_ESUBREG, "RZ_REGEX_ESUBREG", "invalid backreference number" },
+	{ RZ_REGEX_EBRACK, "RZ_REGEX_EBRACK", "brackets ([ ]) not balanced" },
+	{ RZ_REGEX_EPAREN, "RZ_REGEX_EPAREN", "parentheses not balanced" },
+	{ RZ_REGEX_EBRACE, "RZ_REGEX_EBRACE", "braces not balanced" },
+	{ RZ_REGEX_BADBR, "RZ_REGEX_BADBR", "invalid repetition count(s)" },
+	{ RZ_REGEX_ERANGE, "RZ_REGEX_ERANGE", "invalid character range" },
+	{ RZ_REGEX_ESPACE, "RZ_REGEX_ESPACE", "out of memory" },
+	{ RZ_REGEX_BADRPT, "RZ_REGEX_BADRPT", "repetition-operator operand invalid" },
+	{ RZ_REGEX_EMPTY, "RZ_REGEX_EMPTY", "empty (sub)expression" },
+	{ RZ_REGEX_ASSERT, "RZ_REGEX_ASSERT", "\"can't happen\" -- you found a bug" },
+	{ RZ_REGEX_INVARG, "RZ_REGEX_INVARG", "invalid argument to regex routine" },
+	{ 0, "", "*** unknown regexp error code ***" }
 };
 
 /*
@@ -76,11 +76,10 @@ static struct rerr {
  */
 /* ARGSUSED */
 size_t
-rz_regex_error(int errcode, const RzRegex *preg, char *errbuf, size_t errbuf_size)
-{
+rz_regex_error(int errcode, const RzRegex *preg, char *errbuf, size_t errbuf_size) {
 	struct rerr *r;
 	size_t len;
-	int target = errcode &~ RZ_REGEX_ITOA;
+	int target = errcode & ~RZ_REGEX_ITOA;
 	char *s;
 	char convbuf[50];
 
@@ -93,11 +92,11 @@ rz_regex_error(int errcode, const RzRegex *preg, char *errbuf, size_t errbuf_siz
 			}
 		}
 
-		if (errcode&RZ_REGEX_ITOA) {
+		if (errcode & RZ_REGEX_ITOA) {
 			if (r->code != 0) {
-				STRLCPY (convbuf, r->name, sizeof (convbuf)-1);
+				STRLCPY(convbuf, r->name, sizeof(convbuf) - 1);
 			} else {
-				snprintf (convbuf, sizeof convbuf, "RZ_REGEX_0x%x", target);
+				snprintf(convbuf, sizeof convbuf, "RZ_REGEX_0x%x", target);
 			}
 			s = convbuf;
 		} else {
@@ -117,12 +116,11 @@ rz_regex_error(int errcode, const RzRegex *preg, char *errbuf, size_t errbuf_siz
  - regatoi - internal routine to implement RZ_REGEX_ATOI
  */
 static char *
-regatoi(const RzRegex *preg, char *localbuf, int localbufsize)
-{
+regatoi(const RzRegex *preg, char *localbuf, int localbufsize) {
 	struct rerr *r;
 
 	for (r = rerrs; r->code != 0; r++) {
-		if (strcmp (r->name, preg->re_endp) == 0) {
+		if (strcmp(r->name, preg->re_endp) == 0) {
 			break;
 		}
 	}
@@ -131,5 +129,5 @@ regatoi(const RzRegex *preg, char *localbuf, int localbufsize)
 	}
 
 	(void)snprintf(localbuf, localbufsize, "%d", r->code);
-	return(localbuf);
+	return (localbuf);
 }

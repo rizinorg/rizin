@@ -3,47 +3,47 @@
 
 static ut64 parse_size(char *s, char **end) {
 	if (*s == '.') {
-		return strtoul (s + 1, end, 10);
+		return strtoul(s + 1, end, 10);
 	}
-	char *has_dot = strchr (s, '.');
+	char *has_dot = strchr(s, '.');
 	if (has_dot) {
 		*has_dot++ = 0;
-		ut64 a = strtoul (s, end, 0) << 3;
-		ut64 b = strtoul (has_dot, end, 0);
+		ut64 a = strtoul(s, end, 0) << 3;
+		ut64 b = strtoul(has_dot, end, 0);
 		return a + b;
 	}
-	return strtoul (s, end, 0) << 3;
+	return strtoul(s, end, 0) << 3;
 }
 
 gdb_reg_t *parse_def(char **tok) {
 	char *end;
-	gdb_reg_t *r = RZ_NEW0 (gdb_reg_t);
+	gdb_reg_t *r = RZ_NEW0(gdb_reg_t);
 	if (!r) {
 		return NULL;
 	}
 
-	strcpy (r->name, tok[1]);
-	r->size = parse_size (tok[2], &end);
+	strcpy(r->name, tok[1]);
+	r->size = parse_size(tok[2], &end);
 	if (*end != '\0' || !r->size) {
-		free (r);
+		free(r);
 		return NULL;
 	}
-	if (!strcmp (tok[3], "?")) {
-		free (r);
+	if (!strcmp(tok[3], "?")) {
+		free(r);
 		return NULL;
 	} else {
-		r->offset = parse_size (tok[3], &end);
+		r->offset = parse_size(tok[3], &end);
 	}
 	return r;
 }
 
 #define PARSER_MAX_TOKENS 8
-gdb_reg_t *arch_parse_reg_profile(const char * reg_profile) {
+gdb_reg_t *arch_parse_reg_profile(const char *reg_profile) {
 	char *tok[PARSER_MAX_TOKENS];
 	char tmp[128];
 	int i, j, l;
 	const char *p = reg_profile;
-	RzList *gdb_regs_list = rz_list_newf (free);
+	RzList *gdb_regs_list = rz_list_newf(free);
 	RzListIter *iter;
 	gdb_reg_t *reg;
 
@@ -76,14 +76,14 @@ gdb_reg_t *arch_parse_reg_profile(const char * reg_profile) {
 			if (*p == '#') {
 				// Place the rest of the line in the token if a comment is encountered
 				for (i = 0; *p != '\n'; p++) {
-					if (i < sizeof (tmp) - 1) {
+					if (i < sizeof(tmp) - 1) {
 						tmp[i++] = *p;
 					}
 				}
 			} else {
 				// Save all characters up to a space/tab
 				// Use isgraph instead of isprint because the latter considers ' ' printable
-				for (i = 0; isgraph ((const unsigned char)*p) && i < sizeof (tmp) - 1;) {
+				for (i = 0; isgraph((const unsigned char)*p) && i < sizeof(tmp) - 1;) {
 					tmp[i++] = *p++;
 				}
 			}
@@ -93,7 +93,7 @@ gdb_reg_t *arch_parse_reg_profile(const char * reg_profile) {
 				break;
 			}
 			// Save the token
-			tok[j++] = strdup (tmp);
+			tok[j++] = strdup(tmp);
 		}
 		// Empty line, eww
 		if (j) {
@@ -101,37 +101,37 @@ gdb_reg_t *arch_parse_reg_profile(const char * reg_profile) {
 			char *first = tok[0];
 			// Check whether it's defining an alias or a register
 			if (*first != '=') {
-				reg = parse_def (tok);
+				reg = parse_def(tok);
 				// Warn the user if something went wrong
 				if (!reg) {
-					eprintf ("gdb_regs: Parse error @ line %d\n", l);
+					eprintf("gdb_regs: Parse error @ line %d\n", l);
 					for (i = 0; i < j; i++) {
-						free (tok[i]);
+						free(tok[i]);
 					}
 					// Clean up
-					rz_list_free (gdb_regs_list);
+					rz_list_free(gdb_regs_list);
 					return NULL;
 				}
-				rz_list_append (gdb_regs_list, reg);
+				rz_list_append(gdb_regs_list, reg);
 			}
 			// Clean up
 			for (i = 0; i < j; i++) {
-				free (tok[i]);
+				free(tok[i]);
 			}
 		}
 	} while (*p++);
 
-	gdb_reg_t *gdb_regs = malloc ((rz_list_length (gdb_regs_list) + 1) * sizeof (gdb_reg_t));
+	gdb_reg_t *gdb_regs = malloc((rz_list_length(gdb_regs_list) + 1) * sizeof(gdb_reg_t));
 	if (!gdb_regs) {
 		return NULL;
 	}
 	i = 0;
 	rz_list_foreach (gdb_regs_list, iter, reg) {
-		memcpy (reg, gdb_regs + i, sizeof (gdb_reg_t));
+		memcpy(reg, gdb_regs + i, sizeof(gdb_reg_t));
 		i++;
 	}
-	memset (gdb_regs + i, 0, sizeof (gdb_reg_t));
+	memset(gdb_regs + i, 0, sizeof(gdb_reg_t));
 
-	rz_list_free (gdb_regs_list);
+	rz_list_free(gdb_regs_list);
 	return gdb_regs;
 }

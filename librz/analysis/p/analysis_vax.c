@@ -87,12 +87,12 @@ RzAnalysisPlugin rz_analysis_plugin_vax = {
 	.esil = true,
 	.bits = 8 | 32,
 	.op = &vax_op,
-	#if 0
+#if 0
 	.archinfo = archinfo,
 	.set_reg_profile = &set_reg_profile,
 	.esil_init = esil_vax_init,
 	.esil_fini = esil_vax_fini,
-	#endif
+#endif
 };
 
 #ifndef RZ_PLUGIN_INCORE

@@ -83,7 +83,7 @@ static int hack_handle_ldst(ut32 insn, RzAnalysisOp *op) {
 				return op->size = 4;
 			}
 		}
-	// Load/store register pair
+		// Load/store register pair
 	} else if ((op0 & 0x3) == 2) {
 		const ut8 opc = (insn >> 30) & 0x3;
 		const bool V = (insn >> 26) & 0x1;
@@ -107,7 +107,7 @@ static int hack_handle_dp_imm(ut32 insn, RzAnalysisOp *op) {
 		const bool S = (insn >> 29) & 0x1;
 		const bool o2 = (insn >> 22) & 0x1;
 		if (sf && !S && !o2) {
-			if (op_ ) {
+			if (op_) {
 				// subg
 				op->type = RZ_ANALYSIS_OP_TYPE_SUB;
 				return op->size = 4;
@@ -147,20 +147,20 @@ static inline int hackyArmAnal(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, 
 	int ret = -1;
 	// Hacky support for ARMv8.3 and ARMv8.5
 	if (a->bits == 64 && len >= 4) {
-		ut32 insn = rz_read_ble32 (buf, a->big_endian);
+		ut32 insn = rz_read_ble32(buf, a->big_endian);
 		int insn_class = (insn >> 25) & 0xf;
 		// xpaci // e#43c1da
-		if (!memcmp (buf + 1, "\x43\xc1\xda", 3)) {
+		if (!memcmp(buf + 1, "\x43\xc1\xda", 3)) {
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 			return op->size = 4;
 		}
 		// retaa
-		if (!memcmp (buf, "\xff\x0b\x5f\xd6", 4)) {
+		if (!memcmp(buf, "\xff\x0b\x5f\xd6", 4)) {
 			op->type = RZ_ANALYSIS_OP_TYPE_RET;
 			return op->size = 4;
 		}
 		// retab
-		if (!memcmp (buf, "\xff\x0f\x5f\xd6", 4)) {
+		if (!memcmp(buf, "\xff\x0f\x5f\xd6", 4)) {
 			op->type = RZ_ANALYSIS_OP_TYPE_RET;
 			return op->size = 4;
 		}
@@ -170,18 +170,18 @@ static inline int hackyArmAnal(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, 
 		case 5:
 		case 13:
 			// irg, subp, gmi, subps
-			ret = hack_handle_dp_reg (insn, op);
+			ret = hack_handle_dp_reg(insn, op);
 			break;
 		// Data Processing -- Immediate
 		case 8:
 		case 9:
 			// addg, subg
-			ret = hack_handle_dp_imm (insn, op);
+			ret = hack_handle_dp_imm(insn, op);
 			break;
 		case 10:
 		case 11:
 			// bti
-			ret = hack_handle_br_exc_sys (insn, op);
+			ret = hack_handle_br_exc_sys(insn, op);
 			break;
 		// Loads and Stores
 		case 4:
@@ -189,7 +189,7 @@ static inline int hackyArmAnal(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, 
 		case 12:
 		case 14:
 			// stg, stzgm, ldg, stzg, st2g, stgm, stz2g, ldgm, stgp
-			ret = hack_handle_ldst (insn, op);
+			ret = hack_handle_ldst(insn, op);
 			break;
 		default:
 			break;
@@ -198,7 +198,6 @@ static inline int hackyArmAnal(RzAnalysis *a, RzAnalysisOp *op, const ut8 *buf, 
 		if (ret > 0) {
 			op->family = RZ_ANALYSIS_OP_FAMILY_SECURITY;
 		}
-
 	}
 	return ret;
 }

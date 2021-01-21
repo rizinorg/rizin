@@ -2,19 +2,19 @@
 
 #include <rz_util.h>
 
-static const char b91[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
-							'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-							'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd',
-							'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-							'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
-							'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7',
-							'8', '9', '!', '#', '$', '%', '&', '(', ')', '*',
-							'+', ',', '.', '/', ':', ';', '<', '=', '>', '?',
-							'@', '[', ']', '^', '_', '`', '{', '|', '}', '~', '"'};
+static const char b91[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+	'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+	'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd',
+	'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+	'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
+	'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7',
+	'8', '9', '!', '#', '$', '%', '&', '(', ')', '*',
+	'+', ',', '.', '/', ':', ';', '<', '=', '>', '?',
+	'@', '[', ']', '^', '_', '`', '{', '|', '}', '~', '"' };
 
 int get_char_index(const char c) {
 	int i;
-	for (i = 0; i < 91; i++ ) {
+	for (i = 0; i < 91; i++) {
 		if (b91[i] == c) {
 			return i;
 		}
@@ -22,14 +22,14 @@ int get_char_index(const char c) {
 	return -1;
 }
 
-RZ_API int rz_base91_decode(ut8* bout, const char *bin, int len) {
+RZ_API int rz_base91_decode(ut8 *bout, const char *bin, int len) {
 	int in, out;
 	int v = -1;
 	int b = 0;
 	int n = 0;
 	int c;
 	if (len < 0) {
-		len = strlen (bin);
+		len = strlen(bin);
 	}
 	for (in = out = 0; in < len; in++) {
 		c = get_char_index(bin[in]);
@@ -41,7 +41,7 @@ RZ_API int rz_base91_decode(ut8* bout, const char *bin, int len) {
 		} else {
 			v += c * 91;
 			b |= (v << n);
-			if ((v&8191) > 88) {
+			if ((v & 8191) > 88) {
 				n += 13;
 			} else {
 				n += 14;
@@ -57,7 +57,7 @@ RZ_API int rz_base91_decode(ut8* bout, const char *bin, int len) {
 			v = -1;
 		}
 	}
-	if (v+1) {
+	if (v + 1) {
 		bout[out++] = (b | v << n) & 255;
 	}
 	return out;
@@ -69,7 +69,7 @@ RZ_API int rz_base91_encode(char *bout, const ut8 *bin, int len) {
 	int b = 0;
 	int n = 0;
 	if (len < 0) {
-		len = strlen ((const char *)bin);
+		len = strlen((const char *)bin);
 	}
 	for (in = out = 0; in < len; in++) {
 		b |= (bin[in] << n);

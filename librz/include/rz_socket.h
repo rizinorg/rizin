@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-RZ_LIB_VERSION_HEADER (rz_socket);
+RZ_LIB_VERSION_HEADER(rz_socket);
 
 #if __UNIX__
 #include <netinet/in.h>
@@ -35,9 +35,9 @@ RZ_LIB_VERSION_HEADER (rz_socket);
 #define MSG_DONTWAIT 0
 #endif
 #ifndef SD_BOTH
-#define SD_RECEIVE  0
-#define SD_SEND 1
-#define SD_BOTH 2
+#define SD_RECEIVE 0
+#define SD_SEND    1
+#define SD_BOTH    2
 #endif
 
 #if _MSC_VER
@@ -65,7 +65,7 @@ typedef struct rz_socket_t {
 #endif
 	bool is_ssl;
 	int proto;
-	int local;	// TODO: merge ssl with local -> flags/options
+	int local; // TODO: merge ssl with local -> flags/options
 	int port;
 	struct sockaddr_in sa;
 #if HAVE_LIB_SSL
@@ -82,10 +82,10 @@ typedef struct rz_socket_http_options {
 	bool httpauth;
 } RzSocketHTTPOptions;
 
-#define RZ_SOCKET_PROTO_TCP IPPROTO_TCP
-#define RZ_SOCKET_PROTO_UDP IPPROTO_UDP
-#define RZ_SOCKET_PROTO_UNIX 0x1337
-#define RZ_SOCKET_PROTO_NONE 0
+#define RZ_SOCKET_PROTO_TCP     IPPROTO_TCP
+#define RZ_SOCKET_PROTO_UDP     IPPROTO_UDP
+#define RZ_SOCKET_PROTO_UNIX    0x1337
+#define RZ_SOCKET_PROTO_NONE    0
 #define RZ_SOCKET_PROTO_DEFAULT RZ_SOCKET_PROTO_TCP
 
 #ifdef RZ_API
@@ -94,10 +94,10 @@ RZ_API RzSocket *rz_socket_new(bool is_ssl);
 RZ_API bool rz_socket_spawn(RzSocket *s, const char *cmd, unsigned int timeout);
 RZ_API bool rz_socket_connect(RzSocket *s, const char *host, const char *port, int proto, unsigned int timeout);
 RZ_API int rz_socket_connect_serial(RzSocket *sock, const char *path, int speed, int parity);
-#define rz_socket_connect_tcp(a, b, c, d) rz_socket_connect (a, b, c, RZ_SOCKET_PROTO_TCP, d)
-#define rz_socket_connect_udp(a, b, c, d) rz_socket_connect (a, b, c, RZ_SOCKET_PROTO_UDP, d)
+#define rz_socket_connect_tcp(a, b, c, d) rz_socket_connect(a, b, c, RZ_SOCKET_PROTO_TCP, d)
+#define rz_socket_connect_udp(a, b, c, d) rz_socket_connect(a, b, c, RZ_SOCKET_PROTO_UDP, d)
 #if __UNIX__
-#define rz_socket_connect_unix(a, b) rz_socket_connect (a, b, b, RZ_SOCKET_PROTO_UNIX, 0)
+#define rz_socket_connect_unix(a, b) rz_socket_connect(a, b, b, RZ_SOCKET_PROTO_UNIX, 0)
 #else
 #define rz_socket_connect_unix(a, b) (false)
 #endif
@@ -180,7 +180,7 @@ enum {
 typedef struct rz_socket_rap_server_t {
 	RzSocket *fd;
 	char *port;
-	ut8 buf[RAP_PACKET_MAX + 32];	// This should be used as a static buffer for everything done by the server
+	ut8 buf[RAP_PACKET_MAX + 32]; // This should be used as a static buffer for everything done by the server
 	rap_server_open open;
 	rap_server_seek seek;
 	rap_server_read read;
@@ -188,7 +188,7 @@ typedef struct rz_socket_rap_server_t {
 	rap_server_cmd system;
 	rap_server_cmd cmd;
 	rap_server_close close;
-	void *user;	// Always first arg for callbacks
+	void *user; // Always first arg for callbacks
 } RzSocketRapServer;
 
 RZ_API RzSocketRapServer *rz_socket_rap_server_new(bool is_ssl, const char *port);

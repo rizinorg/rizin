@@ -36,23 +36,22 @@ typedef struct {
 
 static int art_header_load(ArtObj *ao, Sdb *db) {
 	/* TODO: handle read errors here */
-	if (rz_buf_size (ao->buf) < sizeof (ARTHeader)) {
+	if (rz_buf_size(ao->buf) < sizeof(ARTHeader)) {
 		return false;
 	}
 	ARTHeader *art = &ao->art;
-	(void) rz_buf_fread_at (ao->buf, 0, (ut8 *) art, "IIiiiiiiiiiiii", 1);
-	sdb_set (db, "img.base", sdb_fmt ("0x%x", art->image_base), 0);
-	sdb_set (db, "img.size", sdb_fmt ("0x%x", art->image_size), 0);
-	sdb_set (db, "art.checksum", sdb_fmt ("0x%x", art->checksum), 0);
-	sdb_set (db, "art.version", sdb_fmt ("%c%c%c",
-			art->version[0], art->version[1], art->version[2]), 0);
-	sdb_set (db, "oat.begin", sdb_fmt ("0x%x", art->oat_file_begin), 0);
-	sdb_set (db, "oat.end", sdb_fmt ("0x%x", art->oat_file_end), 0);
-	sdb_set (db, "oat_data.begin", sdb_fmt ("0x%x", art->oat_data_begin), 0);
-	sdb_set (db, "oat_data.end", sdb_fmt ("0x%x", art->oat_data_end), 0);
-	sdb_set (db, "patch_delta", sdb_fmt ("0x%x", art->patch_delta), 0);
-	sdb_set (db, "image_roots", sdb_fmt ("0x%x", art->image_roots), 0);
-	sdb_set (db, "compile_pic", sdb_fmt ("0x%x", art->compile_pic), 0);
+	(void)rz_buf_fread_at(ao->buf, 0, (ut8 *)art, "IIiiiiiiiiiiii", 1);
+	sdb_set(db, "img.base", sdb_fmt("0x%x", art->image_base), 0);
+	sdb_set(db, "img.size", sdb_fmt("0x%x", art->image_size), 0);
+	sdb_set(db, "art.checksum", sdb_fmt("0x%x", art->checksum), 0);
+	sdb_set(db, "art.version", sdb_fmt("%c%c%c", art->version[0], art->version[1], art->version[2]), 0);
+	sdb_set(db, "oat.begin", sdb_fmt("0x%x", art->oat_file_begin), 0);
+	sdb_set(db, "oat.end", sdb_fmt("0x%x", art->oat_file_end), 0);
+	sdb_set(db, "oat_data.begin", sdb_fmt("0x%x", art->oat_data_begin), 0);
+	sdb_set(db, "oat_data.end", sdb_fmt("0x%x", art->oat_data_end), 0);
+	sdb_set(db, "patch_delta", sdb_fmt("0x%x", art->patch_delta), 0);
+	sdb_set(db, "image_roots", sdb_fmt("0x%x", art->image_roots), 0);
+	sdb_set(db, "compile_pic", sdb_fmt("0x%x", art->compile_pic), 0);
 	return true;
 }
 
@@ -62,20 +61,20 @@ static Sdb *get_sdb(RzBinFile *bf) {
 		return NULL;
 	}
 	ArtObj *ao = o->bin_obj;
-	return ao? ao->kv: NULL;
+	return ao ? ao->kv : NULL;
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	ArtObj *ao = RZ_NEW0 (ArtObj);
+	ArtObj *ao = RZ_NEW0(ArtObj);
 	if (ao) {
-		ao->kv = sdb_new0 ();
+		ao->kv = sdb_new0();
 		if (!ao->kv) {
-			free (ao);
+			free(ao);
 			return false;
 		}
-		ao->buf = rz_buf_ref (buf);
-		art_header_load (ao, ao->kv);
-		sdb_ns_set (sdb, "info", ao->kv);
+		ao->buf = rz_buf_ref(buf);
+		art_header_load(ao, ao->kv);
+		sdb_ns_set(sdb, "info", ao->kv);
 		*bin_obj = ao;
 		return true;
 	}
@@ -84,13 +83,13 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 
 static void destroy(RzBinFile *bf) {
 	ArtObj *obj = bf->o->bin_obj;
-	rz_buf_free (obj->buf);
-	free (obj);
+	rz_buf_free(obj->buf);
+	free(obj);
 }
 
 static ut64 baddr(RzBinFile *bf) {
 	ArtObj *ao = bf->o->bin_obj;
-	return ao? ao->art.image_base: 0;
+	return ao ? ao->art.image_base : 0;
 }
 
 static RzList *strings(RzBinFile *bf) {
@@ -98,25 +97,25 @@ static RzList *strings(RzBinFile *bf) {
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
-	rz_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
-	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
+	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
+	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
 	ArtObj *ao = bf->o->bin_obj;
 	ret->lang = NULL;
-	ret->file = bf->file? strdup (bf->file): NULL;
-	ret->type = strdup ("ART");
+	ret->file = bf->file ? strdup(bf->file) : NULL;
+	ret->type = strdup("ART");
 
-	ret->bclass = malloc (5);
-	memcpy (ret->bclass, &ao->art.version, 4);
+	ret->bclass = malloc(5);
+	memcpy(ret->bclass, &ao->art.version, 4);
 	ret->bclass[3] = 0;
 
-	ret->rclass = strdup ("program");
-	ret->os = strdup ("android");
-	ret->subsystem = strdup ("unknown");
-	ret->machine = strdup ("arm");
-	ret->arch = strdup ("arm");
+	ret->rclass = strdup("program");
+	ret->os = strdup("android");
+	ret->subsystem = strdup("unknown");
+	ret->machine = strdup("arm");
+	ret->arch = strdup("arm");
 	ret->has_va = 1;
 	ret->has_lit = true;
 	ret->has_pi = ao->art.compile_pic;
@@ -128,17 +127,17 @@ static RzBinInfo *info(RzBinFile *bf) {
 
 static bool check_buffer(RzBuffer *buf) {
 	char tmp[4];
-	int r = rz_buf_read_at (buf, 0, (ut8 *)tmp, sizeof (tmp));
-	return r == 4 && !strncmp (tmp, "art\n", 4);
+	int r = rz_buf_read_at(buf, 0, (ut8 *)tmp, sizeof(tmp));
+	return r == 4 && !strncmp(tmp, "art\n", 4);
 }
 
 static RzList *entries(RzBinFile *bf) {
-	RzList *ret = rz_list_newf (free);
+	RzList *ret = rz_list_newf(free);
 	if (ret) {
-		RzBinAddr *ptr = RZ_NEW0 (RzBinAddr);
+		RzBinAddr *ptr = RZ_NEW0(RzBinAddr);
 		if (ptr) {
 			ptr->paddr = ptr->vaddr = 0;
-			rz_list_append (ret, ptr);
+			rz_list_append(ret, ptr);
 		}
 	}
 	return ret;
@@ -153,58 +152,58 @@ static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *ptr = NULL;
 
-	if (!(ret = rz_list_new ())) {
+	if (!(ret = rz_list_new())) {
 		return NULL;
 	}
 	ret->free = free;
 
-	if (!(ptr = RZ_NEW0 (RzBinSection))) {
+	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup ("load");
-	ptr->size = rz_buf_size (bf->buf);
+	ptr->name = strdup("load");
+	ptr->size = rz_buf_size(bf->buf);
 	ptr->vsize = art.image_size; // TODO: align?
 	ptr->paddr = 0;
 	ptr->vaddr = art.image_base;
 	ptr->perm = RZ_PERM_R; // r--
 	ptr->add = true;
-	rz_list_append (ret, ptr);
+	rz_list_append(ret, ptr);
 
-	if (!(ptr = RZ_NEW0 (RzBinSection))) {
+	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup ("bitmap");
+	ptr->name = strdup("bitmap");
 	ptr->size = art.bitmap_size;
 	ptr->vsize = art.bitmap_size;
 	ptr->paddr = art.bitmap_offset;
 	ptr->vaddr = art.image_base + art.bitmap_offset;
 	ptr->perm = RZ_PERM_RX; // r-x
 	ptr->add = true;
-	rz_list_append (ret, ptr);
+	rz_list_append(ret, ptr);
 
-	if (!(ptr = RZ_NEW0 (RzBinSection))) {
+	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup ("oat");
+	ptr->name = strdup("oat");
 	ptr->paddr = art.bitmap_offset;
 	ptr->vaddr = art.oat_file_begin;
 	ptr->size = art.oat_file_end - art.oat_file_begin;
 	ptr->vsize = ptr->size;
 	ptr->perm = RZ_PERM_RX; // r-x
 	ptr->add = true;
-	rz_list_append (ret, ptr);
+	rz_list_append(ret, ptr);
 
-	if (!(ptr = RZ_NEW0 (RzBinSection))) {
+	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup ("oat_data");
+	ptr->name = strdup("oat_data");
 	ptr->paddr = art.bitmap_offset;
 	ptr->vaddr = art.oat_data_begin;
 	ptr->size = art.oat_data_end - art.oat_data_begin;
 	ptr->vsize = ptr->size;
 	ptr->perm = RZ_PERM_R; // r--
 	ptr->add = true;
-	rz_list_append (ret, ptr);
+	rz_list_append(ret, ptr);
 
 	return ret;
 }

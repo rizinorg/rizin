@@ -6,14 +6,14 @@
 static bool get_line(RzBinFile *bf, ut64 addr, char *file, int len, int *line) {
 	if (bf->sdb_addrinfo) {
 		char offset[64];
-		char *offset_ptr = sdb_itoa (addr, offset, 16);
-		char *ret = sdb_get (bf->sdb_addrinfo, offset_ptr, 0);
+		char *offset_ptr = sdb_itoa(addr, offset, 16);
+		char *ret = sdb_get(bf->sdb_addrinfo, offset_ptr, 0);
 		if (ret) {
-			char *p = strchr (ret, '|');
+			char *p = strchr(ret, '|');
 			if (p) {
 				*p = '\0';
-				strncpy (file, ret, len);
-				*line = atoi (p + 1);
+				strncpy(file, ret, len);
+				*line = atoi(p + 1);
 				return true;
 			}
 		}

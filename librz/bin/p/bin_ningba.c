@@ -9,52 +9,52 @@
 
 static bool check_buffer(RzBuffer *b) {
 	ut8 lict[156];
-	rz_return_val_if_fail (b, false);
-	rz_buf_read_at (b, 4, (ut8*)lict, sizeof (lict));
-	return !memcmp (lict, lic_gba, 156);
+	rz_return_val_if_fail(b, false);
+	rz_buf_read_at(b, 4, (ut8 *)lict, sizeof(lict));
+	return !memcmp(lict, lic_gba, 156);
 }
 
-static bool load_buffer(RzBinFile * bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	return check_buffer (buf);
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	return check_buffer(buf);
 }
 
 static RzList *entries(RzBinFile *bf) {
-	RzList *ret = rz_list_newf (free);
+	RzList *ret = rz_list_newf(free);
 	RzBinAddr *ptr = NULL;
 
 	if (bf && bf->buf) {
 		if (!ret) {
 			return NULL;
 		}
-		if (!(ptr = RZ_NEW0 (RzBinAddr))) {
+		if (!(ptr = RZ_NEW0(RzBinAddr))) {
 			return ret;
 		}
 		ptr->paddr = ptr->vaddr = 0x8000000;
-		rz_list_append (ret, ptr);
+		rz_list_append(ret, ptr);
 	}
 	return ret;
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
 	ut8 rom_info[16];
-	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
+	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 
 	if (!ret) {
 		return NULL;
 	}
 
 	if (!bf || !bf->buf) {
-		free (ret);
+		free(ret);
 		return NULL;
 	}
 
 	ret->lang = NULL;
-	rz_buf_read_at (bf->buf, 0xa0, rom_info, 16);
-	ret->file = rz_str_ndup ((const char *) rom_info, 12);
-	ret->type = rz_str_ndup ((char *) &rom_info[12], 4);
-	ret->machine = strdup ("GameBoy Advance");
-	ret->os = strdup ("any");
-	ret->arch = strdup ("arm");
+	rz_buf_read_at(bf->buf, 0xa0, rom_info, 16);
+	ret->file = rz_str_ndup((const char *)rom_info, 12);
+	ret->type = rz_str_ndup((char *)&rom_info[12], 4);
+	ret->machine = strdup("GameBoy Advance");
+	ret->os = strdup("any");
+	ret->arch = strdup("arm");
 	ret->has_va = 1;
 	ret->bits = 32;
 	ret->big_endian = 0;
@@ -64,13 +64,13 @@ static RzBinInfo *info(RzBinFile *bf) {
 
 static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
-	RzBinSection *s = RZ_NEW0 (RzBinSection);
-	ut64 sz = rz_buf_size (bf->buf);
-	if (!(ret = rz_list_new ())) {
-		free (s);
+	RzBinSection *s = RZ_NEW0(RzBinSection);
+	ut64 sz = rz_buf_size(bf->buf);
+	if (!(ret = rz_list_new())) {
+		free(s);
 		return NULL;
 	}
-	s->name = strdup ("ROM");
+	s->name = strdup("ROM");
 	s->paddr = 0;
 	s->vaddr = 0x8000000;
 	s->size = sz;
@@ -78,7 +78,7 @@ static RzList *sections(RzBinFile *bf) {
 	s->perm = RZ_PERM_RX;
 	s->add = true;
 
-	rz_list_append (ret, s);
+	rz_list_append(ret, s);
 	return ret;
 }
 

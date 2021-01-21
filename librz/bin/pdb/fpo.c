@@ -3,8 +3,7 @@
 #include "stream_file.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-static int parse_fpo_data(char *data, int data_size, int *read_bytes, SFPO_DATA *fpo_data)
-{
+static int parse_fpo_data(char *data, int data_size, int *read_bytes, SFPO_DATA *fpo_data) {
 	int curr_read_bytes = *read_bytes;
 
 	READ4(*read_bytes, data_size, fpo_data->ul_off_start, data, ut32);
@@ -19,19 +18,17 @@ static int parse_fpo_data(char *data, int data_size, int *read_bytes, SFPO_DATA 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int parse_fpo_data_v2(char *data, int data_size, int *read_bytes, SFPO_DATA_V2 *fpo_data)
-{
+static int parse_fpo_data_v2(char *data, int data_size, int *read_bytes, SFPO_DATA_V2 *fpo_data) {
 	int curr_read_bytes = *read_bytes;
 
-	memcpy (fpo_data, data, sizeof(SFPO_DATA_V2));
-	*read_bytes += sizeof (SFPO_DATA_V2);
+	memcpy(fpo_data, data, sizeof(SFPO_DATA_V2));
+	*read_bytes += sizeof(SFPO_DATA_V2);
 
 	return (*read_bytes - curr_read_bytes);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void parse_fpo_stream(void *stream, RZ_STREAM_FILE *stream_file)
-{
+void parse_fpo_stream(void *stream, RZ_STREAM_FILE *stream_file) {
 	int data_size;
 	char *data = 0, *ptmp = 0;
 	int curr_read_bytes = 0, read_bytes = 0;
@@ -39,14 +36,14 @@ void parse_fpo_stream(void *stream, RZ_STREAM_FILE *stream_file)
 	SFPOStream *fpo_stream = 0;
 
 	stream_file_get_size(stream_file, &data_size);
-	data = (char *) malloc(data_size);
+	data = (char *)malloc(data_size);
 	stream_file_get_data(stream_file, data);
 
-	fpo_stream = (SFPOStream *) stream;
-	fpo_stream->fpo_data_list = rz_list_new ();
+	fpo_stream = (SFPOStream *)stream;
+	fpo_stream->fpo_data_list = rz_list_new();
 	ptmp = data;
 	while (read_bytes < data_size) {
-		fpo_data = (SFPO_DATA *) malloc(sizeof(SFPO_DATA));
+		fpo_data = (SFPO_DATA *)malloc(sizeof(SFPO_DATA));
 		curr_read_bytes = parse_fpo_data(ptmp, data_size, &read_bytes, fpo_data);
 		ptmp += curr_read_bytes;
 
@@ -55,77 +52,74 @@ void parse_fpo_stream(void *stream, RZ_STREAM_FILE *stream_file)
 			break;
 		}
 
-		rz_list_append (fpo_stream->fpo_data_list, fpo_data);
+		rz_list_append(fpo_stream->fpo_data_list, fpo_data);
 	}
 
 	free(data);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void free_fpo_stream(void *stream)
-{
-	SFPOStream *fpo_stream = (SFPOStream *) stream;
+void free_fpo_stream(void *stream) {
+	SFPOStream *fpo_stream = (SFPOStream *)stream;
 	RzListIter *it = 0;
 	SFPO_DATA *fpo_data = 0;
 
 	it = rz_list_iterator(fpo_stream->fpo_data_list);
 	while (rz_list_iter_next(it)) {
-		fpo_data = (SFPO_DATA *) rz_list_iter_get(it);
+		fpo_data = (SFPO_DATA *)rz_list_iter_get(it);
 		free(fpo_data);
 	}
-	rz_list_free (fpo_stream->fpo_data_list);
+	rz_list_free(fpo_stream->fpo_data_list);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void free_fpo_new_stream(void *stream)
-{
-	SFPONewStream *fpo_stream = (SFPONewStream *) stream;
+void free_fpo_new_stream(void *stream) {
+	SFPONewStream *fpo_stream = (SFPONewStream *)stream;
 	RzListIter *it = 0;
 	SFPO_DATA_V2 *fpo_data = 0;
 
 	it = rz_list_iterator(fpo_stream->fpo_data_list);
 	while (rz_list_iter_next(it)) {
-		fpo_data = (SFPO_DATA_V2 *) rz_list_iter_get(it);
+		fpo_data = (SFPO_DATA_V2 *)rz_list_iter_get(it);
 		free(fpo_data);
 	}
-	rz_list_free (fpo_stream->fpo_data_list);
+	rz_list_free(fpo_stream->fpo_data_list);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void parse_fpo_new_stream(void *stream, RZ_STREAM_FILE *stream_file)
-{
+void parse_fpo_new_stream(void *stream, RZ_STREAM_FILE *stream_file) {
 	int data_size;
 	char *data = 0, *ptmp = 0;
 	int curr_read_bytes = 0, read_bytes = 0;
 	SFPO_DATA_V2 *fpo_data = 0;
 	SFPONewStream *fpo_stream = 0;
 
-	stream_file_get_size (stream_file, &data_size);
-	data = (char *) malloc (data_size);
+	stream_file_get_size(stream_file, &data_size);
+	data = (char *)malloc(data_size);
 	if (!data) {
 		return;
 	}
-	stream_file_get_data (stream_file, data);
+	stream_file_get_data(stream_file, data);
 
-	fpo_stream = (SFPONewStream *) stream;
-	fpo_stream->fpo_data_list = rz_list_new ();
+	fpo_stream = (SFPONewStream *)stream;
+	fpo_stream->fpo_data_list = rz_list_new();
 	ptmp = data;
 	while (read_bytes < data_size) {
-		fpo_data = (SFPO_DATA_V2 *) malloc (sizeof(SFPO_DATA_V2));
+		fpo_data = (SFPO_DATA_V2 *)malloc(sizeof(SFPO_DATA_V2));
 		if (!fpo_data) {
-			free (data);
+			free(data);
 			return;
 		}
-		curr_read_bytes = parse_fpo_data_v2 (ptmp, data_size, &read_bytes, fpo_data);
+		curr_read_bytes = parse_fpo_data_v2(ptmp, data_size, &read_bytes, fpo_data);
 		ptmp += curr_read_bytes;
 
 		if (!curr_read_bytes) {
-			free (fpo_data);
+			free(fpo_data);
 			break;
 		}
 
-		rz_list_append (fpo_stream->fpo_data_list, fpo_data);
+		rz_list_append(fpo_stream->fpo_data_list, fpo_data);
 	}
 
-	free (data);
+	free(data);
 }

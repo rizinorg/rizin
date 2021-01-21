@@ -3,35 +3,35 @@
 
 #include "rz_log.h"
 
-#define RZ_STATIC_ASSERT(x)\
-	switch (0) {\
-	case 0:\
-	case (x):;\
+#define RZ_STATIC_ASSERT(x) \
+	switch (0) { \
+	case 0: \
+	case (x):; \
 	}
 
 RZ_API void rz_assert_log(RLogLevel level, const char *fmt, ...) RZ_PRINTF_CHECK(2, 3);
 
-#if defined (__GNUC__) && defined (__cplusplus)
-#define RZ_FUNCTION ((const char*) (__PRETTY_FUNCTION__))
-#elif defined(__STDC__) && defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
-#define RZ_FUNCTION ((const char*) (__func__))
-#elif defined (__GNUC__) || (defined(_MSC_VER) && (_MSC_VER > 1300))
-#define RZ_FUNCTION ((const char*) (__FUNCTION__))
+#if defined(__GNUC__) && defined(__cplusplus)
+#define RZ_FUNCTION ((const char *)(__PRETTY_FUNCTION__))
+#elif defined(__STDC__) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#define RZ_FUNCTION ((const char *)(__func__))
+#elif defined(__GNUC__) || (defined(_MSC_VER) && (_MSC_VER > 1300))
+#define RZ_FUNCTION ((const char *)(__FUNCTION__))
 #else
 #warning Do not know how to get function name in this setup
-#define RZ_FUNCTION ((const char*) ("???"))
+#define RZ_FUNCTION ((const char *)("???"))
 #endif
 
 #define rz_warn_if_reached() \
 	do { \
-		rz_assert_log (RZ_LOGLVL_WARN, "(%s:%d):%s%s code should not be reached\n", \
+		rz_assert_log(RZ_LOGLVL_WARN, "(%s:%d):%s%s code should not be reached\n", \
 			__FILE__, __LINE__, RZ_FUNCTION, RZ_FUNCTION[0] ? ":" : ""); \
 	} while (0)
 
 #define rz_warn_if_fail(expr) \
 	do { \
 		if (!(expr)) { \
-			rz_assert_log (RZ_LOGLVL_WARN, "WARNING (%s:%d):%s%s runtime check failed: (%s)\n", \
+			rz_assert_log(RZ_LOGLVL_WARN, "WARNING (%s:%d):%s%s runtime check failed: (%s)\n", \
 				__FILE__, __LINE__, RZ_FUNCTION, RZ_FUNCTION[0] ? ":" : "", #expr); \
 		} \
 	} while (0)
@@ -50,17 +50,29 @@ RZ_API void rz_assert_log(RLogLevel level, const char *fmt, ...) RZ_PRINTF_CHECK
 
 #if RZ_CHECKS_LEVEL == 0
 
-#define rz_return_if_fail(expr) do { ; } while(0)
-#define rz_return_val_if_fail(expr, val) do { ; } while(0)
-#define rz_return_if_reached() do { ; } while(0)
-#define rz_return_val_if_reached(val) do { ; } while(0)
+#define rz_return_if_fail(expr) \
+	do { \
+		; \
+	} while (0)
+#define rz_return_val_if_fail(expr, val) \
+	do { \
+		; \
+	} while (0)
+#define rz_return_if_reached() \
+	do { \
+		; \
+	} while (0)
+#define rz_return_val_if_reached(val) \
+	do { \
+		; \
+	} while (0)
 
 #elif RZ_CHECKS_LEVEL == 1 || RZ_CHECKS_LEVEL == 2 // RZ_CHECKS_LEVEL
 
 #if RZ_CHECKS_LEVEL == 1
 #define H_LOG_(loglevel, fmt, ...)
 #else
-#define H_LOG_(loglevel, fmt, ...) rz_assert_log (loglevel, fmt, __VA_ARGS__)
+#define H_LOG_(loglevel, fmt, ...) rz_assert_log(loglevel, fmt, __VA_ARGS__)
 #endif
 
 /**
@@ -84,7 +96,7 @@ RZ_API void rz_assert_log(RLogLevel level, const char *fmt, ...) RZ_PRINTF_CHECK
 #define rz_return_if_fail(expr) \
 	do { \
 		if (!(expr)) { \
-			H_LOG_ (RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d)\n", RZ_FUNCTION, #expr, __LINE__); \
+			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d)\n", RZ_FUNCTION, #expr, __LINE__); \
 			return; \
 		} \
 	} while (0)
@@ -92,20 +104,20 @@ RZ_API void rz_assert_log(RLogLevel level, const char *fmt, ...) RZ_PRINTF_CHECK
 #define rz_return_val_if_fail(expr, val) \
 	do { \
 		if (!(expr)) { \
-			H_LOG_ (RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d)\n", RZ_FUNCTION, #expr, __LINE__); \
+			H_LOG_(RZ_LOGLVL_WARN, "%s: assertion '%s' failed (line %d)\n", RZ_FUNCTION, #expr, __LINE__); \
 			return (val); \
 		} \
 	} while (0)
 
 #define rz_return_if_reached() \
 	do { \
-		H_LOG_ (RZ_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE__, RZ_FUNCTION); \
+		H_LOG_(RZ_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE__, RZ_FUNCTION); \
 		return; \
 	} while (0)
 
 #define rz_return_val_if_reached(val) \
 	do { \
-		H_LOG_ (RZ_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE__, RZ_FUNCTION); \
+		H_LOG_(RZ_LOGLVL_ERROR, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE__, RZ_FUNCTION); \
 		return (val); \
 	} while (0)
 
@@ -113,10 +125,22 @@ RZ_API void rz_assert_log(RLogLevel level, const char *fmt, ...) RZ_PRINTF_CHECK
 
 #include <assert.h>
 
-#define rz_return_if_fail(expr) do { assert (expr); } while(0)
-#define rz_return_val_if_fail(expr, val) do { assert (expr); } while(0)
-#define rz_return_if_reached() do { assert (false); } while(0)
-#define rz_return_val_if_reached(val) do { assert (false); } while(0)
+#define rz_return_if_fail(expr) \
+	do { \
+		assert(expr); \
+	} while (0)
+#define rz_return_val_if_fail(expr, val) \
+	do { \
+		assert(expr); \
+	} while (0)
+#define rz_return_if_reached() \
+	do { \
+		assert(false); \
+	} while (0)
+#define rz_return_val_if_reached(val) \
+	do { \
+		assert(false); \
+	} while (0)
 
 #endif // RZ_CHECKS_LEVEL
 

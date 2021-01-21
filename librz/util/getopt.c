@@ -7,12 +7,12 @@
 
 #include <rz_util.h>
 
-#define	BADCH	(int)'?'
-#define	BADARG	(int)':'
-#define	EMSG	""
+#define BADCH  (int)'?'
+#define BADARG (int)':'
+#define EMSG   ""
 
 RZ_API void rz_getopt_init(RzGetopt *opt, int argc, const char **argv, const char *ostr) {
-	memset (opt, 0, sizeof (RzGetopt));
+	memset(opt, 0, sizeof(RzGetopt));
 	opt->err = 1;
 	opt->ind = 1;
 	opt->opt = 0;
@@ -40,7 +40,7 @@ RZ_API int rz_getopt_next(RzGetopt *opt) {
 		}
 	}
 	/* option letter okay? */
-	if ((opt->opt = (int)*place++) == (int)':' || !(oli = strchr (opt->ostr, opt->opt))) {
+	if ((opt->opt = (int)*place++) == (int)':' || !(oli = strchr(opt->ostr, opt->opt))) {
 		/*
 		 * if the user didn't specify '-' as an option,
 		 * assume it means -1.
@@ -52,20 +52,20 @@ RZ_API int rz_getopt_next(RzGetopt *opt) {
 			opt->ind++;
 		}
 		if (opt->err && *opt->ostr != ':') {
-			(void)eprintf ("%s: illegal option -- %c\n", opt->argv[0], opt->opt);
+			(void)eprintf("%s: illegal option -- %c\n", opt->argv[0], opt->opt);
 		}
 		return BADCH;
 	}
 	if (*++oli == ':') { /* need argument */
 		if (*place) { /* no white space */
 			opt->arg = place;
-		} else if (opt->argc <= ++opt->ind) {  /* no arg */
+		} else if (opt->argc <= ++opt->ind) { /* no arg */
 			place = EMSG;
 			if (*opt->ostr == ':') {
 				return BADARG;
 			}
 			if (opt->err) {
-				(void)eprintf ("%s: option requires an argument -- %c\n", opt->argv[0], opt->opt);
+				(void)eprintf("%s: option requires an argument -- %c\n", opt->argv[0], opt->opt);
 			}
 			return BADCH;
 		} else { /* white space */

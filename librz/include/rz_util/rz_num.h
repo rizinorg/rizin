@@ -13,12 +13,29 @@ typedef struct {
 } RNumCalcValue;
 
 typedef enum {
-	RNCNAME, RNCNUMBER, RNCEND, RNCINC, RNCDEC,
-	RNCPLUS='+', RNCMINUS='-', RNCMUL='*', RNCDIV='/', RNCMOD='%',
+	RNCNAME,
+	RNCNUMBER,
+	RNCEND,
+	RNCINC,
+	RNCDEC,
+	RNCPLUS = '+',
+	RNCMINUS = '-',
+	RNCMUL = '*',
+	RNCDIV = '/',
+	RNCMOD = '%',
 	//RNCXOR='^', RNCOR='|', RNCAND='&',
-	RNCNEG='~', RNCAND='&', RNCORR='|', RNCXOR='^',
-	RNCPRINT=';', RNCASSIGN='=', RNCLEFTP='(', RNCRIGHTP=')',
-	RNCSHL='<', RNCSHR = '>', RNCROL = '#', RNCROR = '$'
+	RNCNEG = '~',
+	RNCAND = '&',
+	RNCORR = '|',
+	RNCXOR = '^',
+	RNCPRINT = ';',
+	RNCASSIGN = '=',
+	RNCLEFTP = '(',
+	RNCRIGHTP = ')',
+	RNCSHL = '<',
+	RNCSHR = '>',
+	RNCROL = '#',
+	RNCROR = '$'
 } RNumCalcToken;
 
 typedef struct rz_num_calc_t {
@@ -37,7 +54,7 @@ typedef struct rz_num_calc_t {
 typedef struct rz_num_t {
 	ut64 (*callback)(struct rz_num_t *userptr, const char *str, int *ok);
 	const char *(*cb_from_value)(struct rz_num_t *userptr, ut64 value, int *ok);
-//	RNumCallback callback;
+	//	RNumCallback callback;
 	ut64 value;
 	double fvalue;
 	void *userptr;
@@ -58,7 +75,7 @@ RZ_API ut64 rz_num_chs(int cylinder, int head, int sector, int sectorsize);
 RZ_API int rz_num_is_valid_input(RNum *num, const char *input_value);
 RZ_API ut64 rz_num_get_input_value(RNum *num, const char *input_value);
 RZ_API const char *rz_num_get_name(RNum *num, ut64 n);
-RZ_API char* rz_num_as_string(RNum *___, ut64 n, bool printable_only);
+RZ_API char *rz_num_as_string(RNum *___, ut64 n, bool printable_only);
 RZ_API ut64 rz_num_tail(RNum *num, ut64 addr, const char *hex);
 RZ_API ut64 rz_num_tail_base(RNum *num, ut64 addr, ut64 off);
 RZ_API void rz_num_minmax_swap(ut64 *a, ut64 *b);
@@ -66,7 +83,7 @@ RZ_API void rz_num_minmax_swap_i(int *a, int *b); // XXX this can be a cpp macro
 RZ_API ut64 rz_num_math(RNum *num, const char *str);
 RZ_API ut64 rz_num_get(RNum *num, const char *str);
 RZ_API int rz_num_to_bits(char *out, ut64 num);
-RZ_API int rz_num_to_trits(char *out, ut64 num);	//Rename this please
+RZ_API int rz_num_to_trits(char *out, ut64 num); //Rename this please
 RZ_API int rz_num_rand(int max);
 RZ_API void rz_num_irand(void);
 RZ_API ut16 rz_num_ntohs(ut16 foo);

@@ -6,12 +6,12 @@
 
 #define BFVM_SCREEN_ADDR 0x50000
 #define BFVM_SCREEN_SIZE 4096
-#define BFVM_INPUT_ADDR 0x10000
-#define BFVM_INPUT_SIZE 4096
-#define BFVM_DATA_ADDR 0xd00000
-#define BFVM_DATA_SIZE 4096
-#define BFVM_CODE_ADDR 0
-#define BFVM_CODE_SIZE 4096 /* XXX */
+#define BFVM_INPUT_ADDR  0x10000
+#define BFVM_INPUT_SIZE  4096
+#define BFVM_DATA_ADDR   0xd00000
+#define BFVM_DATA_SIZE   4096
+#define BFVM_CODE_ADDR   0
+#define BFVM_CODE_SIZE   4096 /* XXX */
 
 typedef struct bfvm_cpu_t {
 	ut64 eip;

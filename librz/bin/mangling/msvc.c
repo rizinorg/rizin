@@ -7,13 +7,13 @@ RZ_API char *rz_bin_demangle_msvc(const char *str) {
 	char *out = NULL;
 	SDemangler *mangler = 0;
 
-	create_demangler (&mangler);
+	create_demangler(&mangler);
 	if (!mangler) {
 		return NULL;
 	}
-	if (init_demangler (mangler, (char *)str) == eDemanglerErrOK) {
-		mangler->demangle (mangler, &out/*demangled_name*/);
+	if (init_demangler(mangler, (char *)str) == eDemanglerErrOK) {
+		mangler->demangle(mangler, &out /*demangled_name*/);
 	}
-	free_demangler (mangler);
+	free_demangler(mangler);
 	return out;
 }

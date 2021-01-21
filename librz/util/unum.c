@@ -5,7 +5,7 @@
 #endif
 
 #include <errno.h>
-#include <math.h>  /* for ceill */
+#include <math.h> /* for ceill */
 #include <rz_util.h>
 #define RZ_NUM_USE_CALC 1
 
@@ -17,32 +17,32 @@ static void rz_srand(int seed) {
 	// no-op
 	(void)seed;
 #else
-	srand (seed);
+	srand(seed);
 #endif
 }
 
 static int rz_rand(int mod) {
 #if HAVE_ARC4RANDOM_UNIFORM
-	return (int)arc4random_uniform (mod);
+	return (int)arc4random_uniform(mod);
 #else
-	return rand () % mod;
+	return rand() % mod;
 #endif
 }
 
 RZ_API void rz_num_irand(void) {
-	rz_srand (rz_time_now ());
+	rz_srand(rz_time_now());
 }
 
 RZ_API int rz_num_rand(int max) {
 	static bool rand_initialized = false;
 	if (!rand_initialized) {
-		rz_num_irand ();
+		rz_num_irand();
 		rand_initialized = true;
 	}
 	if (!max) {
 		max = 1;
 	}
-	return rz_rand (max);
+	return rz_rand(max);
 }
 
 RZ_API void rz_num_minmax_swap(ut64 *a, ut64 *b) {
@@ -62,7 +62,7 @@ RZ_API void rz_num_minmax_swap_i(int *a, int *b) {
 }
 
 RZ_API RNum *rz_num_new(RNumCallback cb, RNumCallback2 cb2, void *ptr) {
-	RNum *num = RZ_NEW0 (RNum);
+	RNum *num = RZ_NEW0(RNum);
 	if (!num) {
 		return NULL;
 	}
@@ -74,7 +74,7 @@ RZ_API RNum *rz_num_new(RNumCallback cb, RNumCallback2 cb2, void *ptr) {
 }
 
 RZ_API void rz_num_free(RNum *num) {
-	free (num);
+	free(num);
 }
 
 #define KB (1ULL << 10)
@@ -99,31 +99,44 @@ RZ_API char *rz_num_units(char *buf, size_t len, ut64 num) {
 	char unit;
 	const char *fmt_str;
 	if (!buf) {
-		buf = malloc (len + 1);
+		buf = malloc(len + 1);
 		if (!buf) {
 			return NULL;
 		}
 	}
 	fnum = num;
-	if (num >= EB) { unit = 'E'; fnum /= EB; } else
-	if (num >= PB) { unit = 'P'; fnum /= PB; } else
-	if (num >= TB) { unit = 'T'; fnum /= TB; } else
-	if (num >= GB) { unit = 'G'; fnum /= GB; } else
-	if (num >= MB) { unit = 'M'; fnum /= MB; } else
-	if (num >= KB) { unit = 'K'; fnum /= KB; } else {
+	if (num >= EB) {
+		unit = 'E';
+		fnum /= EB;
+	} else if (num >= PB) {
+		unit = 'P';
+		fnum /= PB;
+	} else if (num >= TB) {
+		unit = 'T';
+		fnum /= TB;
+	} else if (num >= GB) {
+		unit = 'G';
+		fnum /= GB;
+	} else if (num >= MB) {
+		unit = 'M';
+		fnum /= MB;
+	} else if (num >= KB) {
+		unit = 'K';
+		fnum /= KB;
+	} else {
 		unit = '\0';
 	}
-	fmt_str = ((double)ceill (fnum) == (double)fnum)
+	fmt_str = ((double)ceill(fnum) == (double)fnum)
 		? "%.0" LDBLFMT "%c"
 		: "%.1" LDBLFMT "%c";
-	snprintf (buf, len, fmt_str, fnum, unit);
+	snprintf(buf, len, fmt_str, fnum, unit);
 	return buf;
 }
 
 RZ_API const char *rz_num_get_name(RNum *num, ut64 n) {
 	if (num->cb_from_value) {
 		int ok = 0;
-		const char *msg = num->cb_from_value (num, n, &ok);
+		const char *msg = num->cb_from_value(num, n, &ok);
 		if (msg && *msg) {
 			return msg;
 		}
@@ -157,17 +170,17 @@ RZ_API ut64 rz_num_get(RNum *num, const char *str) {
 	if (!str) {
 		return 0;
 	}
-	for (; *str == ' '; ) {
+	for (; *str == ' ';) {
 		str++;
 	}
 	if (!*str) {
 		return 0;
 	}
-	if (!strncmp (str, "1u", 2)) { // '1' is captured by op :(
+	if (!strncmp(str, "1u", 2)) { // '1' is captured by op :(
 		if (num && num->value == UT64_MAX) {
 			num->value = 0;
 		}
-		switch (atoi (str + 2)) {
+		switch (atoi(str + 2)) {
 		case 64: return (ut64)UT64_MAX;
 		case 32: return (ut64)UT32_MAX;
 		case 16: return (ut64)UT16_MAX;
@@ -177,7 +190,7 @@ RZ_API ut64 rz_num_get(RNum *num, const char *str) {
 	/* resolve string with an external callback */
 	if (num && num->callback) {
 		ok = 0;
-		ret = num->callback (num->userptr, str, &ok);
+		ret = num->callback(num->userptr, str, &ok);
 		if (ok) {
 			return ret;
 		}
@@ -189,62 +202,62 @@ RZ_API ut64 rz_num_get(RNum *num, const char *str) {
 		}
 	}
 
-	len = strlen (str);
+	len = strlen(str);
 	if (len > 3 && str[4] == ':') {
-		if (sscanf (str, "%04x", &s) == 1) {
-			if (sscanf (str + 5, "%04x", &a) == 1) {
-				return (ut64) ((s<<4) + a);
+		if (sscanf(str, "%04x", &s) == 1) {
+			if (sscanf(str + 5, "%04x", &a) == 1) {
+				return (ut64)((s << 4) + a);
 			}
 		}
 	} else if (len > 6 && str[6] == ':') {
-		if (sscanf (str, "0x%04x:0x%04x", &s, &a) == 2) {
-			return (ut64) ((s << 4) + a);
+		if (sscanf(str, "0x%04x:0x%04x", &s, &a) == 2) {
+			return (ut64)((s << 4) + a);
 		}
-		if (sscanf (str, "0x%04x:%04x", &s, &a) == 2) {
-			return (ut64) ((s << 4) + a);
+		if (sscanf(str, "0x%04x:%04x", &s, &a) == 2) {
+			return (ut64)((s << 4) + a);
 		}
 	}
 	if (str[0] == '0' && str[1] == 'b') {
 		ret = 0;
-		for (j = 0, i = strlen (str) - 1; i > 0; i--, j++) {
+		for (j = 0, i = strlen(str) - 1; i > 0; i--, j++) {
 			if (str[i] == '1') {
-				ret|=1 << j;
+				ret |= 1 << j;
 			} else if (str[i] != '0') {
 				break;
 			}
 		}
-		sscanf (str, "0x%"PFMT64x, &ret);
+		sscanf(str, "0x%" PFMT64x, &ret);
 	} else if (str[0] == '\'') {
 		ret = str[1] & 0xff;
-	// needs refactoring
-	} else if (!strncmp (str, "0xff..", 6) || !strncmp (str, "0xFF..", 6)) {
-		ret = rz_num_tailff (num, str + 6);
-	// needs refactoring
-	} else if (!strncmp (str, "0o", 2)) {
-		if (sscanf (str + 2, "%"PFMT64o, &ret) != 1) {
-			error (num, "invalid octal number");
+		// needs refactoring
+	} else if (!strncmp(str, "0xff..", 6) || !strncmp(str, "0xFF..", 6)) {
+		ret = rz_num_tailff(num, str + 6);
+		// needs refactoring
+	} else if (!strncmp(str, "0o", 2)) {
+		if (sscanf(str + 2, "%" PFMT64o, &ret) != 1) {
+			error(num, "invalid octal number");
 		}
-	} else if (!strncmp (str, "0xf..", 5) || !strncmp (str, "0xF..", 5)) {
-		ret = rz_num_tailff (num, str + 5);
-	} else if (str[0] == '0' && tolower (str[1]) == 'x') {
-		const char *lodash = strchr (str + 2, '_');
+	} else if (!strncmp(str, "0xf..", 5) || !strncmp(str, "0xF..", 5)) {
+		ret = rz_num_tailff(num, str + 5);
+	} else if (str[0] == '0' && tolower(str[1]) == 'x') {
+		const char *lodash = strchr(str + 2, '_');
 		if (lodash) {
 			// Support 0x1000_f000_4000
 			// TODO: Only take underscores separated every 4 chars starting at the end
-			char *s = strdup (str + 2);
+			char *s = strdup(str + 2);
 			if (s) {
-				rz_str_replace_char (s, '_', 0);
+				rz_str_replace_char(s, '_', 0);
 				errno = 0;
-				ret = strtoull (s, NULL, 16);
-				free (s);
+				ret = strtoull(s, NULL, 16);
+				free(s);
 			}
 		} else {
 			errno = 0;
-			ret = strtoull (str + 2, NULL, 16);
+			ret = strtoull(str + 2, NULL, 16);
 			// sscanf (str+2, "%"PFMT64x, &ret);
 		}
 		if (errno == ERANGE) {
-			error (num, "number won't fit into 64 bits");
+			error(num, "number won't fit into 64 bits");
 		}
 	} else {
 		char *endptr;
@@ -252,28 +265,26 @@ RZ_API ut64 rz_num_get(RNum *num, const char *str) {
 		int chars_read = len_num;
 		bool zero_read = false;
 		lch = str[len > 0 ? len - 1 : 0];
-		if (*str == '0' && IS_DIGIT (*(str + 1)) && lch != 'b' && lch != 'h') {
+		if (*str == '0' && IS_DIGIT(*(str + 1)) && lch != 'b' && lch != 'h') {
 			lch = 'o';
 			len_num++;
 		}
 		switch (lch) {
 		case 'h': // hexa
-			if (!sscanf (str, "%"PFMT64x"%n", &ret, &chars_read)
-			    || chars_read != len_num) {
-				error (num, "invalid hex number");
+			if (!sscanf(str, "%" PFMT64x "%n", &ret, &chars_read) || chars_read != len_num) {
+				error(num, "invalid hex number");
 			}
 			break;
 		case 'o': // octal
-			if (!sscanf (str, "%"PFMT64o"%n", &ret, &chars_read)
-			    || chars_read != len_num) {
-				error (num, "invalid octal number");
+			if (!sscanf(str, "%" PFMT64o "%n", &ret, &chars_read) || chars_read != len_num) {
+				error(num, "invalid octal number");
 			}
 			break;
 		case 'b': // binary
 			ret = 0;
 			ok = true;
-			if (strlen (str) <= 65) { // 64 bit + the 'b' suffix
-				for (j = 0, i = strlen (str) - 2; i >= 0; i--, j++) {
+			if (strlen(str) <= 65) { // 64 bit + the 'b' suffix
+				for (j = 0, i = strlen(str) - 2; i >= 0; i--, j++) {
 					if (str[i] == '1') {
 						ret |= (1ULL << j);
 					} else if (str[i] != '0') {
@@ -287,14 +298,14 @@ RZ_API ut64 rz_num_get(RNum *num, const char *str) {
 				// eprintf ("Binary number is too large to fit in ut64\n");
 			}
 			if (!ok || !len_num) {
-				error (num, "invalid binary number");
+				error(num, "invalid binary number");
 			}
 			break;
 		case 't': // ternary
 			ret = 0;
 			ok = true;
 			ut64 x = 1;
-			for (i = strlen (str) - 2; i >= 0; i--) {
+			for (i = strlen(str) - 2; i >= 0; i--) {
 				if (str[i] < '0' || '2' < str[i]) {
 					ok = false;
 					break;
@@ -303,64 +314,67 @@ RZ_API ut64 rz_num_get(RNum *num, const char *str) {
 				x *= 3;
 			}
 			if (!ok || !len_num) {
-				error (num, "invalid ternary number");
+				error(num, "invalid ternary number");
 			}
 			break;
-		case 'K': case 'k':
-			if (strchr (str, '.')) {
+		case 'K':
+		case 'k':
+			if (strchr(str, '.')) {
 				double d = 0;
-				if (sscanf (str, "%lf%n", &d, &chars_read)) {
+				if (sscanf(str, "%lf%n", &d, &chars_read)) {
 					ret = (ut64)(d * KB);
 				} else {
 					zero_read = true;
 				}
 			} else {
-				if (sscanf (str, "%"PFMT64d"%n", &ret, &chars_read)) {
+				if (sscanf(str, "%" PFMT64d "%n", &ret, &chars_read)) {
 					ret *= KB;
 				} else {
 					zero_read = true;
 				}
 			}
 			if (zero_read || chars_read != len_num) {
-				error (num, "invalid kilobyte number");
+				error(num, "invalid kilobyte number");
 			}
 			break;
-		case 'M': case 'm':
-			if (strchr (str, '.')) {
+		case 'M':
+		case 'm':
+			if (strchr(str, '.')) {
 				double d = 0;
-				if (sscanf (str, "%lf%n", &d, &chars_read)) {
+				if (sscanf(str, "%lf%n", &d, &chars_read)) {
 					ret = (ut64)(d * MB);
 				} else {
 					zero_read = true;
 				}
 			} else {
-				if (sscanf (str, "%"PFMT64d"%n", &ret, &chars_read)) {
+				if (sscanf(str, "%" PFMT64d "%n", &ret, &chars_read)) {
 					ret *= MB;
 				} else {
 					zero_read = true;
 				}
 			}
 			if (zero_read || chars_read != len_num) {
-				error (num, "invalid megabyte number");
+				error(num, "invalid megabyte number");
 			}
 			break;
-		case 'G': case 'g':
-			if (strchr (str, '.')) {
+		case 'G':
+		case 'g':
+			if (strchr(str, '.')) {
 				double d = 0;
-				if (sscanf (str, "%lf%n", &d, &chars_read)) {
+				if (sscanf(str, "%lf%n", &d, &chars_read)) {
 					ret = (ut64)(d * GB);
 				} else {
 					zero_read = true;
 				}
 			} else {
-				if (sscanf (str, "%"PFMT64d"%n", &ret, &chars_read)) {
+				if (sscanf(str, "%" PFMT64d "%n", &ret, &chars_read)) {
 					ret *= GB;
 				} else {
 					zero_read = true;
 				}
 			}
 			if (zero_read || chars_read != len_num) {
-				error (num, "invalid gigabyte number");
+				error(num, "invalid gigabyte number");
 			}
 			break;
 		default:
@@ -372,12 +386,12 @@ RZ_API ut64 rz_num_get(RNum *num, const char *str) {
 #endif
 #endif
 			errno = 0;
-			ret = strtoull (str, &endptr, 10);
+			ret = strtoull(str, &endptr, 10);
 			if (errno == ERANGE) {
-				error (num, "number won't fit into 64 bits");
+				error(num, "number won't fit into 64 bits");
 			}
-			if (!IS_DIGIT (*str) || (*endptr && *endptr != lch)) {
-				error (num, "unknown symbol");
+			if (!IS_DIGIT(*str) || (*endptr && *endptr != lch)) {
+				error(num, "unknown symbol");
 			}
 			break;
 		}
@@ -395,7 +409,8 @@ static ut64 rz_num_op(RNum *num, char op, ut64 a, ut64 b) {
 	case '-': return a - b;
 	case '*': return a * b;
 	case '/':
-		if (!b && num) num->dbz = 1;
+		if (!b && num)
+			num->dbz = 1;
 		return b ? a / b : 0;
 	case '&': return a & b;
 	case '|': return a | b;
@@ -408,15 +423,17 @@ RZ_API static ut64 rz_num_math_internal(RNum *num, char *s) {
 	ut64 ret = 0LL;
 	char *p = s;
 	int i, nop, op = 0;
-	for (i=0; s[i]; i++) {
-		if (rz_num_is_op (s[i])) {
-			nop = s[i]; s[i] = '\0';
-			ret = rz_num_op (num, op, ret, rz_num_get (num, p));
-			op = s[i] = nop; p = s + i + 1;
+	for (i = 0; s[i]; i++) {
+		if (rz_num_is_op(s[i])) {
+			nop = s[i];
+			s[i] = '\0';
+			ret = rz_num_op(num, op, ret, rz_num_get(num, p));
+			op = s[i] = nop;
+			p = s + i + 1;
 			break;
 		}
 	}
-	return rz_num_op (op, ret, rz_num_get (num, p));
+	return rz_num_op(op, ret, rz_num_get(num, p));
 }
 #endif /* !RZ_NUM_USE_CALC */
 
@@ -431,9 +448,9 @@ RZ_API ut64 rz_num_math(RNum *num, const char *str) {
 	if (num) {
 		num->dbz = 0;
 	}
-	ret = rz_num_calc (num, str, &err);
+	ret = rz_num_calc(num, str, &err);
 	if (err) {
-		eprintf ("rz_num_calc error: (%s) in (%s)\n", err, str);
+		eprintf("rz_num_calc error: (%s) in (%s)\n", err, str);
 	}
 	if (num) {
 		num->value = ret;
@@ -445,62 +462,64 @@ RZ_API ut64 rz_num_math(RNum *num, const char *str) {
 	int len;
 	char *p, *s, *os;
 	char *group;
-	if (!str) return 0LL;
+	if (!str)
+		return 0LL;
 
-	len = strlen (str) + 1;
-	os = malloc (len + 1);
+	len = strlen(str) + 1;
+	os = malloc(len + 1);
 
 	s = os;
-	memcpy (s, str, len);
-	for (; *s == ' '; s++);
+	memcpy(s, str, len);
+	for (; *s == ' '; s++)
+		;
 	p = s;
 
 	do {
-		group = strchr (p, '(');
+		group = strchr(p, '(');
 		if (group) {
 			group[0] = '\0';
-			ret = rz_num_op (op, ret, rz_num_math_internal (num, p));
-			for (; p<group; p += 1) {
-				if (rz_num_is_op (*p)) {
+			ret = rz_num_op(op, ret, rz_num_math_internal(num, p));
+			for (; p < group; p += 1) {
+				if (rz_num_is_op(*p)) {
 					op = *p;
 					break;
 				}
 			}
 			group[0] = '(';
 			p = group + 1;
-			if (rz_str_delta (p, '(', ')') < 0) {
-				char *p2 = strchr (p, '(');
+			if (rz_str_delta(p, '(', ')') < 0) {
+				char *p2 = strchr(p, '(');
 				if (p2 != NULL) {
 					*p2 = '\0';
-					ret = rz_num_op (op, ret, rz_num_math_internal (num, p));
-					ret = rz_num_op (op, ret, rz_num_math (num, p2 + 1));
+					ret = rz_num_op(op, ret, rz_num_math_internal(num, p));
+					ret = rz_num_op(op, ret, rz_num_math(num, p2 + 1));
 					p = p2 + 1;
 					continue;
 				}
-				eprintf ("something really bad has happened! can't find '('\n");
+				eprintf("something really bad has happened! can't find '('\n");
 			} else {
-				ret = rz_num_op (op, ret, rz_num_math_internal (num, p));
+				ret = rz_num_op(op, ret, rz_num_math_internal(num, p));
 			}
 		} else {
-			ret = rz_num_op (op, ret, rz_num_math_internal (num, p));
+			ret = rz_num_op(op, ret, rz_num_math_internal(num, p));
 		}
 	} while (0);
 
 	if (num) {
 		num->value = ret;
 	}
-	free (os);
+	free(os);
 	return ret;
 #endif
 }
 
 RZ_API int rz_num_is_float(RNum *num, const char *str) {
-	return (IS_DIGIT (*str) && (strchr (str, '.') || str[strlen (str) - 1] == 'f'));
+	return (IS_DIGIT(*str) && (strchr(str, '.') || str[strlen(str) - 1] == 'f'));
 }
 
 RZ_API double rz_num_get_float(RNum *num, const char *str) {
 	double d = 0.0f;
-	(void) sscanf (str, "%lf", &d);
+	(void)sscanf(str, "%lf", &d);
 	return d;
 }
 
@@ -523,7 +542,7 @@ RZ_API int rz_num_to_bits(char *out, ut64 num) {
 		int realsize = 0;
 		int hasbit = 0;
 		for (i = 0; i < size; i++) {
-			char bit = ((num >> (size - i - 1)) & 1) ? '1': '0';
+			char bit = ((num >> (size - i - 1)) & 1) ? '1' : '0';
 			if (hasbit || bit == '1') {
 				out[pos++] = bit; // size - 1 - i] = bit;
 			}
@@ -546,7 +565,7 @@ RZ_API int rz_num_to_trits(char *out, ut64 num) {
 	}
 	int i;
 	for (i = 0; num; i++, num /= 3) {
-		out[i] = (char) ('0' + num % 3);
+		out[i] = (char)('0' + num % 3);
 	}
 	if (i == 0) {
 		out[0] = '0';
@@ -554,7 +573,7 @@ RZ_API int rz_num_to_trits(char *out, ut64 num) {
 	}
 	out[i] = '\0';
 
-	rz_str_reverse (out);
+	rz_str_reverse(out);
 	return true;
 }
 
@@ -566,65 +585,65 @@ RZ_API ut64 rz_num_chs(int cylinder, int head, int sector, int sectorsize) {
 }
 
 RZ_API int rz_num_conditional(RNum *num, const char *str) {
-	char *lgt, *t, *p, *s = strdup (str);
+	char *lgt, *t, *p, *s = strdup(str);
 	int res = 0;
 	ut64 n, a, b;
 	p = s;
 	do {
-		t = strchr (p, ',');
+		t = strchr(p, ',');
 		if (t) {
 			*t = 0;
 		}
-		lgt = strchr (p, '<');
+		lgt = strchr(p, '<');
 		if (lgt) {
 			*lgt = 0;
-			a = rz_num_math (num, p);
+			a = rz_num_math(num, p);
 			if (lgt[1] == '=') {
-				b = rz_num_math (num, lgt + 2);
+				b = rz_num_math(num, lgt + 2);
 				if (a > b) {
 					goto fail;
 				}
 			} else {
-				b = rz_num_math (num, lgt + 1);
+				b = rz_num_math(num, lgt + 1);
 				if (a >= b) {
 					goto fail;
 				}
 			}
 		} else {
-			lgt = strchr (p, '>');
+			lgt = strchr(p, '>');
 			if (lgt) {
 				*lgt = 0;
-				a = rz_num_math (num, p);
+				a = rz_num_math(num, p);
 				if (lgt[1] == '=') {
-					b = rz_num_math (num, lgt + 2);
+					b = rz_num_math(num, lgt + 2);
 					if (a < b) {
 						goto fail;
 					}
 				} else {
-					b = rz_num_math (num, lgt + 1);
+					b = rz_num_math(num, lgt + 1);
 					if (a <= b) {
 						goto fail;
 					}
 				}
 			} else {
-				lgt = strchr (p, '=');
+				lgt = strchr(p, '=');
 				if (lgt && lgt > p) {
 					lgt--;
 					if (*lgt == '!') {
-						rz_str_replace_char (p, '!', ' ');
-						rz_str_replace_char (p, '=', '-');
-						n = rz_num_math (num, p);
+						rz_str_replace_char(p, '!', ' ');
+						rz_str_replace_char(p, '=', '-');
+						n = rz_num_math(num, p);
 						if (!n) {
 							goto fail;
 						}
 					}
 				}
-				lgt = strstr (p, "==");
+				lgt = strstr(p, "==");
 				if (lgt) {
 					*lgt = ' ';
 				}
-				rz_str_replace_char (p, '=', '-');
-				n = rz_num_math (num, p);
+				rz_str_replace_char(p, '=', '-');
+				n = rz_num_math(num, p);
 				if (n) {
 					goto fail;
 				}
@@ -634,51 +653,51 @@ RZ_API int rz_num_conditional(RNum *num, const char *str) {
 	} while (t);
 	res = 1;
 fail:
-	free (s);
+	free(s);
 	return res;
 }
 
 RZ_API int rz_num_is_valid_input(RNum *num, const char *input_value) {
-	ut64 value = input_value ? rz_num_math (num, input_value) : 0;
+	ut64 value = input_value ? rz_num_math(num, input_value) : 0;
 	return !(value == 0 && input_value && *input_value != '0') || !(value == 0 && input_value && *input_value != '@');
 }
 
 RZ_API ut64 rz_num_get_input_value(RNum *num, const char *input_value) {
-	ut64 value = input_value ? rz_num_math (num, input_value) : 0;
+	ut64 value = input_value ? rz_num_math(num, input_value) : 0;
 	return value;
 }
 
-#define NIBBLE_TO_HEX(n) (((n) & 0xf) > 9 ? 'a' + ((n) & 0xf) - 10 : '0' + ((n) & 0xf))
-static int escape_char(char* dst, char byte) {
+#define NIBBLE_TO_HEX(n) (((n)&0xf) > 9 ? 'a' + ((n)&0xf) - 10 : '0' + ((n)&0xf))
+static int escape_char(char *dst, char byte) {
 	const char escape_map[] = "abtnvfr";
 	if (byte >= 7 && byte <= 13) {
 		*(dst++) = '\\';
-		*(dst++) = escape_map [byte - 7];
+		*(dst++) = escape_map[byte - 7];
 		*dst = 0;
 		return 2;
 	} else if (byte) {
 		*(dst++) = '\\';
 		*(dst++) = 'x';
-		*(dst++) = NIBBLE_TO_HEX (byte >> 4);
-		*(dst++) = NIBBLE_TO_HEX (byte);
+		*(dst++) = NIBBLE_TO_HEX(byte >> 4);
+		*(dst++) = NIBBLE_TO_HEX(byte);
 		*dst = 0;
 		return 4;
 	}
 	return 0;
 }
 
-RZ_API char* rz_num_as_string(RNum *___, ut64 n, bool printable_only) {
+RZ_API char *rz_num_as_string(RNum *___, ut64 n, bool printable_only) {
 	char str[34]; // 8 byte * 4 chars in \x?? format
 	int stri, ret = 0, off = 0;
-	int len = sizeof (ut64);
+	int len = sizeof(ut64);
 	ut64 num = n;
-	str[stri=0] = 0;
+	str[stri = 0] = 0;
 	while (len--) {
 		char ch = (num & 0xff);
 		if (ch >= 32 && ch < 127) {
 			str[stri++] = ch;
 			str[stri] = 0;
-		} else if (!printable_only && (off = escape_char (str + stri, ch)) != 0) {
+		} else if (!printable_only && (off = escape_char(str + stri, ch)) != 0) {
 			stri += off;
 		} else {
 			if (ch) {
@@ -689,10 +708,10 @@ RZ_API char* rz_num_as_string(RNum *___, ut64 n, bool printable_only) {
 		num >>= 8;
 	}
 	if (ret) {
-		return strdup (str);
+		return strdup(str);
 	}
 	if (!printable_only) {
-		return strdup ("\\0");
+		return strdup("\\0");
 	}
 	return NULL;
 }
@@ -701,16 +720,16 @@ RZ_API bool rz_is_valid_input_num_value(RNum *num, const char *input_value) {
 	if (!input_value) {
 		return false;
 	}
-	ut64 value = rz_num_math (num, input_value);
+	ut64 value = rz_num_math(num, input_value);
 	return !(value == 0 && *input_value != '0');
 }
 
 RZ_API ut64 rz_get_input_num_value(RNum *num, const char *str) {
-	return (str && *str)? rz_num_math (num, str) : 0;
+	return (str && *str) ? rz_num_math(num, str) : 0;
 }
 
 static inline ut64 __nth_nibble(ut64 n, ut32 i) {
-	int sz = (sizeof (n) << 1) - 1;
+	int sz = (sizeof(n) << 1) - 1;
 	int s = (sz - i) * 4;
 	return (n >> s) & 0xf;
 }
@@ -720,9 +739,9 @@ RZ_API ut64 rz_num_tail_base(RNum *num, ut64 addr, ut64 off) {
 	bool ready = false;
 	ut64 res = 0;
 	for (i = 0; i < 16; i++) {
-		ut64 o = __nth_nibble (off, i);
+		ut64 o = __nth_nibble(off, i);
 		if (!ready) {
-			bool iseq = __nth_nibble (addr, i) == o;
+			bool iseq = __nth_nibble(addr, i) == o;
 			if (i == 0 && !iseq) {
 				return UT64_MAX;
 			}
@@ -746,19 +765,19 @@ RZ_API ut64 rz_num_tail(RNum *num, ut64 addr, const char *hex) {
 	while (*hex && (*hex == ' ' || *hex == '.')) {
 		hex++;
 	}
-	i = strlen (hex) * 4;
-	p = malloc (strlen (hex) + 10);
+	i = strlen(hex) * 4;
+	p = malloc(strlen(hex) + 10);
 	if (p) {
-		strcpy (p, "0x");
-		strcpy (p + 2, hex);
-		if (isxdigit ((ut8)hex[0])) {
-			n = rz_num_math (num, p);
+		strcpy(p, "0x");
+		strcpy(p + 2, hex);
+		if (isxdigit((ut8)hex[0])) {
+			n = rz_num_math(num, p);
 		} else {
-			eprintf ("Invalid argument\n");
-			free (p);
+			eprintf("Invalid argument\n");
+			free(p);
 			return addr;
 		}
-		free (p);
+		free(p);
 	}
 	mask = UT64_MAX << i;
 	return (addr & mask) | n;
@@ -770,44 +789,44 @@ static ut64 rz_num_tailff(RNum *num, const char *hex) {
 	while (*hex && (*hex == ' ' || *hex == '.')) {
 		hex++;
 	}
-	int i = strlen (hex) * 4;
-	char *p = malloc (strlen (hex) + 10);
+	int i = strlen(hex) * 4;
+	char *p = malloc(strlen(hex) + 10);
 	if (p) {
-		strcpy (p, "0x");
-		strcpy (p + 2, hex);
-		if (isxdigit ((ut8)hex[0])) {
-			n = rz_num_get (num, p);
+		strcpy(p, "0x");
+		strcpy(p + 2, hex);
+		if (isxdigit((ut8)hex[0])) {
+			n = rz_num_get(num, p);
 		} else {
-			eprintf ("Invalid argument\n");
-			free (p);
+			eprintf("Invalid argument\n");
+			free(p);
 			return UT64_MAX;
 		}
-		free (p);
+		free(p);
 	}
-	ut64 left = ((UT64_MAX >>i) << i);
+	ut64 left = ((UT64_MAX >> i) << i);
 	return left | n;
 }
 
 RZ_API int rz_num_between(RNum *num, const char *input_value) {
 	int i;
 	ut64 ns[3];
-	char * const str = strdup (input_value);
-	RzList *nums = rz_num_str_split_list (str);
-	int len = rz_list_length (nums);
+	char *const str = strdup(input_value);
+	RzList *nums = rz_num_str_split_list(str);
+	int len = rz_list_length(nums);
 	if (len < 3) {
-		free (str);
-		rz_list_free (nums);
+		free(str);
+		rz_list_free(nums);
 		return -1;
 	}
 	if (len > 3) {
 		len = 3;
 	}
 	for (i = 0; i < len; i++) {
-		ns[i] = rz_num_math (num, rz_list_pop_head (nums));
+		ns[i] = rz_num_math(num, rz_list_pop_head(nums));
 	}
-	free (str);
-	rz_list_free (nums);
-	return num->value = RZ_BETWEEN (ns[0], ns[1], ns[2]);
+	free(str);
+	rz_list_free(nums);
+	return num->value = RZ_BETWEEN(ns[0], ns[1], ns[2]);
 }
 
 RZ_API bool rz_num_is_op(const char c) {
@@ -825,11 +844,10 @@ RZ_API int rz_num_str_len(const char *str) {
 	while (str[i] != '\0') {
 		switch (st) {
 		case 0: // number
-			while (!rz_num_is_op (str[i]) && str[i] != ' '
-			  && str[i] != '\0') {
+			while (!rz_num_is_op(str[i]) && str[i] != ' ' && str[i] != '\0') {
 				i++;
 				if (str[i] == '(') {
-				  i += rz_num_str_len (str+i);
+					i += rz_num_str_len(str + i);
 				}
 			}
 			len = i;
@@ -839,7 +857,7 @@ RZ_API int rz_num_str_len(const char *str) {
 			while (str[i] != '\0' && str[i] == ' ') {
 				i++;
 			}
-			if (!rz_num_is_op (str[i])) {
+			if (!rz_num_is_op(str[i])) {
 				return len;
 			}
 			if (str[i] == ')') {
@@ -858,9 +876,9 @@ RZ_API int rz_num_str_len(const char *str) {
 
 RZ_API int rz_num_str_split(char *str) {
 	int i = 0, count = 0;
-	const int len = strlen (str);
+	const int len = strlen(str);
 	while (i < len) {
-		i += rz_num_str_len (str + i);
+		i += rz_num_str_len(str + i);
 		str[i] = '\0';
 		i++;
 		count++;
@@ -869,28 +887,28 @@ RZ_API int rz_num_str_split(char *str) {
 }
 
 RZ_API RzList *rz_num_str_split_list(char *str) {
-	int i, count = rz_num_str_split (str);
-	RzList *list = rz_list_new ();
+	int i, count = rz_num_str_split(str);
+	RzList *list = rz_list_new();
 	for (i = 0; i < count; i++) {
-		rz_list_append (list, str);
-		str += strlen (str) + 1;
+		rz_list_append(list, str);
+		str += strlen(str) + 1;
 	}
 	return list;
 }
 
 RZ_API void *rz_num_dup(ut64 n) {
-	ut64 *hn = malloc (sizeof (ut64));
+	ut64 *hn = malloc(sizeof(ut64));
 	if (!hn) {
 		return NULL;
 	}
 	*hn = n;
-	return (void*)hn;
+	return (void *)hn;
 }
 
 RZ_API double rz_num_cos(double a) {
-	return cos (a);
+	return cos(a);
 }
 
 RZ_API double rz_num_sin(double a) {
-	return sin (a);
+	return sin(a);
 }

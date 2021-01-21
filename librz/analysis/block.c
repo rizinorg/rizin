@@ -7,15 +7,15 @@
 
 #include <assert.h>
 
-#define unwrap(rbnode) container_of (rbnode, RzAnalysisBlock, _rb)
+#define unwrap(rbnode) container_of(rbnode, RzAnalysisBlock, _rb)
 
 static void __max_end(RBNode *node) {
-	RzAnalysisBlock *block = unwrap (node);
+	RzAnalysisBlock *block = unwrap(node);
 	block->_max_end = block->addr + block->size;
 	int i;
 	for (i = 0; i < 2; i++) {
 		if (node->child[i]) {
-			ut64 end = unwrap (node->child[i])->_max_end;
+			ut64 end = unwrap(node->child[i])->_max_end;
 			if (end > block->_max_end) {
 				block->_max_end = end;
 			}
@@ -25,7 +25,7 @@ static void __max_end(RBNode *node) {
 
 static int __bb_addr_cmp(const void *incoming, const RBNode *in_tree, void *user) {
 	ut64 incoming_addr = *(ut64 *)incoming;
-	const RzAnalysisBlock *in_tree_block = container_of (in_tree, const RzAnalysisBlock, _rb);
+	const RzAnalysisBlock *in_tree_block = container_of(in_tree, const RzAnalysisBlock, _rb);
 	if (incoming_addr < in_tree_block->addr) {
 		return -1;
 	}
@@ -38,14 +38,14 @@ static int __bb_addr_cmp(const void *incoming, const RBNode *in_tree, void *user
 #define D if (analysis && analysis->verbose)
 
 RZ_API void rz_analysis_block_ref(RzAnalysisBlock *bb) {
-	assert (bb->ref > 0); // 0-refd must already be freed.
+	assert(bb->ref > 0); // 0-refd must already be freed.
 	bb->ref++;
 }
 
 #define DFLT_NINSTR 3
 
 static RzAnalysisBlock *block_new(RzAnalysis *a, ut64 addr, ut64 size) {
-	RzAnalysisBlock *block = RZ_NEW0 (RzAnalysisBlock);
+	RzAnalysisBlock *block = RZ_NEW0(RzAnalysisBlock);
 	if (!block) {
 		return NULL;
 	}
@@ -55,14 +55,14 @@ static RzAnalysisBlock *block_new(RzAnalysis *a, ut64 addr, ut64 size) {
 	block->ref = 1;
 	block->jump = UT64_MAX;
 	block->fail = UT64_MAX;
-	block->op_pos = RZ_NEWS0 (ut16, DFLT_NINSTR);
+	block->op_pos = RZ_NEWS0(ut16, DFLT_NINSTR);
 	block->op_pos_size = DFLT_NINSTR;
 	block->stackptr = 0;
 	block->parent_stackptr = INT_MAX;
 	block->cmpval = UT64_MAX;
-	block->fcns = rz_list_new ();
+	block->fcns = rz_list_new();
 	if (size) {
-		rz_analysis_block_update_hash (block);
+		rz_analysis_block_update_hash(block);
 	}
 	return block;
 }
@@ -71,32 +71,32 @@ static void block_free(RzAnalysisBlock *block) {
 	if (!block) {
 		return;
 	}
-	rz_analysis_cond_free (block->cond);
-	free (block->fingerprint);
-	rz_analysis_diff_free (block->diff);
-	free (block->op_bytes);
-	rz_analysis_switch_op_free (block->switch_op);
-	rz_list_free (block->fcns);
-	free (block->op_pos);
-	free (block->parent_reg_arena);
-	free (block);
+	rz_analysis_cond_free(block->cond);
+	free(block->fingerprint);
+	rz_analysis_diff_free(block->diff);
+	free(block->op_bytes);
+	rz_analysis_switch_op_free(block->switch_op);
+	rz_list_free(block->fcns);
+	free(block->op_pos);
+	free(block->parent_reg_arena);
+	free(block);
 }
 
 void __block_free_rb(RBNode *node, void *user) {
-	RzAnalysisBlock *block = unwrap (node);
-	block_free (block);
+	RzAnalysisBlock *block = unwrap(node);
+	block_free(block);
 }
 
 RZ_API RzAnalysisBlock *rz_analysis_get_block_at(RzAnalysis *analysis, ut64 addr) {
-	RBNode *node = rz_rbtree_find (analysis->bb_tree, &addr, __bb_addr_cmp, NULL);
-	return node? unwrap (node): NULL;
+	RBNode *node = rz_rbtree_find(analysis->bb_tree, &addr, __bb_addr_cmp, NULL);
+	return node ? unwrap(node) : NULL;
 }
 
 // This is a special case of what rz_interval_node_all_in() does
 static bool all_in(RzAnalysisBlock *node, ut64 addr, RzAnalysisBlockCb cb, void *user) {
 	while (node && addr < node->addr) {
 		// less than the current node, but might still be contained further down
-		node = unwrap (node->_rb.child[0]);
+		node = unwrap(node->_rb.child[0]);
 	}
 	if (!node) {
 		return true;
@@ -105,35 +105,35 @@ static bool all_in(RzAnalysisBlock *node, ut64 addr, RzAnalysisBlockCb cb, void 
 		return true;
 	}
 	if (addr < node->addr + node->size) {
-		if (!cb (node, user)) {
+		if (!cb(node, user)) {
 			return false;
 		}
 	}
 	// This can be done more efficiently by building the stack manually
-	if (!all_in (unwrap (node->_rb.child[0]), addr, cb, user)) {
+	if (!all_in(unwrap(node->_rb.child[0]), addr, cb, user)) {
 		return false;
 	}
-	if (!all_in (unwrap (node->_rb.child[1]), addr, cb, user)) {
+	if (!all_in(unwrap(node->_rb.child[1]), addr, cb, user)) {
 		return false;
 	}
 	return true;
 }
 
 RZ_API bool rz_analysis_blocks_foreach_in(RzAnalysis *analysis, ut64 addr, RzAnalysisBlockCb cb, void *user) {
-	return all_in (analysis->bb_tree ? unwrap (analysis->bb_tree) : NULL, addr, cb, user);
+	return all_in(analysis->bb_tree ? unwrap(analysis->bb_tree) : NULL, addr, cb, user);
 }
 
 static bool block_list_cb(RzAnalysisBlock *block, void *user) {
 	RzList *list = user;
-	rz_analysis_block_ref (block);
-	rz_list_push (list, block);
+	rz_analysis_block_ref(block);
+	rz_list_push(list, block);
 	return true;
 }
 
 RZ_API RzList *rz_analysis_get_blocks_in(RzAnalysis *analysis, ut64 addr) {
-	RzList *list = rz_list_newf ((RzListFree)rz_analysis_block_unref);
+	RzList *list = rz_list_newf((RzListFree)rz_analysis_block_unref);
 	if (list) {
-		rz_analysis_blocks_foreach_in (analysis, addr, block_list_cb, list);
+		rz_analysis_blocks_foreach_in(analysis, addr, block_list_cb, list);
 	}
 	return list;
 }
@@ -142,7 +142,7 @@ static void all_intersect(RzAnalysisBlock *node, ut64 addr, ut64 size, RzAnalysi
 	ut64 end = addr + size;
 	while (node && end <= node->addr) {
 		// less than the current node, but might still be contained further down
-		node = unwrap (node->_rb.child[0]);
+		node = unwrap(node->_rb.child[0]);
 	}
 	if (!node) {
 		return;
@@ -151,44 +151,44 @@ static void all_intersect(RzAnalysisBlock *node, ut64 addr, ut64 size, RzAnalysi
 		return;
 	}
 	if (addr < node->addr + node->size) {
-		cb (node, user);
+		cb(node, user);
 	}
 	// This can be done more efficiently by building the stack manually
-	all_intersect (unwrap (node->_rb.child[0]), addr, size, cb, user);
-	all_intersect (unwrap (node->_rb.child[1]), addr, size, cb, user);
+	all_intersect(unwrap(node->_rb.child[0]), addr, size, cb, user);
+	all_intersect(unwrap(node->_rb.child[1]), addr, size, cb, user);
 }
 
 RZ_API void rz_analysis_blocks_foreach_intersect(RzAnalysis *analysis, ut64 addr, ut64 size, RzAnalysisBlockCb cb, void *user) {
-	all_intersect (analysis->bb_tree ? unwrap (analysis->bb_tree) : NULL, addr, size, cb, user);
+	all_intersect(analysis->bb_tree ? unwrap(analysis->bb_tree) : NULL, addr, size, cb, user);
 }
 
 RZ_API RzList *rz_analysis_get_blocks_intersect(RzAnalysis *analysis, ut64 addr, ut64 size) {
-	RzList *list = rz_list_newf ((RzListFree)rz_analysis_block_unref);
+	RzList *list = rz_list_newf((RzListFree)rz_analysis_block_unref);
 	if (!list) {
 		return NULL;
 	}
-	rz_analysis_blocks_foreach_intersect (analysis, addr, size, block_list_cb, list);
+	rz_analysis_blocks_foreach_intersect(analysis, addr, size, block_list_cb, list);
 	return list;
 }
 
 RZ_API RzAnalysisBlock *rz_analysis_create_block(RzAnalysis *analysis, ut64 addr, ut64 size) {
-	if (rz_analysis_get_block_at (analysis, addr)) {
+	if (rz_analysis_get_block_at(analysis, addr)) {
 		return NULL;
 	}
-	RzAnalysisBlock *block = block_new (analysis, addr, size);
+	RzAnalysisBlock *block = block_new(analysis, addr, size);
 	if (!block) {
 		return NULL;
 	}
-	rz_rbtree_aug_insert (&analysis->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max_end);
+	rz_rbtree_aug_insert(&analysis->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max_end);
 	return block;
 }
 
 RZ_API void rz_analysis_delete_block(RzAnalysisBlock *bb) {
-	rz_analysis_block_ref (bb);
-	while (!rz_list_empty (bb->fcns)) {
-		rz_analysis_function_remove_block (rz_list_first (bb->fcns), bb);
+	rz_analysis_block_ref(bb);
+	while (!rz_list_empty(bb->fcns)) {
+		rz_analysis_function_remove_block(rz_list_first(bb->fcns), bb);
 	}
-	rz_analysis_block_unref (bb);
+	rz_analysis_block_unref(bb);
 }
 
 RZ_API void rz_analysis_block_set_size(RzAnalysisBlock *block, ut64 size) {
@@ -207,16 +207,16 @@ RZ_API void rz_analysis_block_set_size(RzAnalysisBlock *block, ut64 size) {
 
 	// Do the actual resize
 	block->size = size;
-	rz_rbtree_aug_update_sum (block->analysis->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max_end);
+	rz_rbtree_aug_update_sum(block->analysis->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max_end);
 }
 
 RZ_API bool rz_analysis_block_relocate(RzAnalysisBlock *block, ut64 addr, ut64 size) {
 	if (block->addr == addr) {
-		rz_analysis_block_set_size (block, size);
-		rz_analysis_block_update_hash (block);
+		rz_analysis_block_set_size(block, size);
+		rz_analysis_block_update_hash(block);
 		return true;
 	}
-	if (rz_analysis_get_block_at (block->analysis, addr)) {
+	if (rz_analysis_get_block_at(block->analysis, addr)) {
 		// Two blocks at the same addr is illegle you know...
 		return false;
 	}
@@ -244,29 +244,29 @@ RZ_API bool rz_analysis_block_relocate(RzAnalysisBlock *block, ut64 addr, ut64 s
 		}
 	}
 
-	rz_rbtree_aug_delete (&block->analysis->bb_tree, &block->addr, __bb_addr_cmp, NULL, NULL, NULL, __max_end);
+	rz_rbtree_aug_delete(&block->analysis->bb_tree, &block->addr, __bb_addr_cmp, NULL, NULL, NULL, __max_end);
 	block->addr = addr;
 	block->size = size;
-	rz_analysis_block_update_hash (block);
-	rz_rbtree_aug_insert (&block->analysis->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max_end);
+	rz_analysis_block_update_hash(block);
+	rz_rbtree_aug_insert(&block->analysis->bb_tree, &block->addr, &block->_rb, __bb_addr_cmp, NULL, __max_end);
 	return true;
 }
 
 RZ_API RzAnalysisBlock *rz_analysis_block_split(RzAnalysisBlock *bbi, ut64 addr) {
 	RzAnalysis *analysis = bbi->analysis;
-	rz_return_val_if_fail (bbi && addr >= bbi->addr && addr < bbi->addr + bbi->size && addr != UT64_MAX, 0);
+	rz_return_val_if_fail(bbi && addr >= bbi->addr && addr < bbi->addr + bbi->size && addr != UT64_MAX, 0);
 	if (addr == bbi->addr) {
-		rz_analysis_block_ref (bbi); // ref to be consistent with splitted return refcount
+		rz_analysis_block_ref(bbi); // ref to be consistent with splitted return refcount
 		return bbi;
 	}
 
-	if (rz_analysis_get_block_at (bbi->analysis, addr)) {
+	if (rz_analysis_get_block_at(bbi->analysis, addr)) {
 		// can't have two bbs at the same addr
 		return NULL;
 	}
 
 	// create the second block
-	RzAnalysisBlock *bb = block_new (analysis, addr, bbi->addr + bbi->size - addr);
+	RzAnalysisBlock *bb = block_new(analysis, addr, bbi->addr + bbi->size - addr);
 	if (!bb) {
 		return NULL;
 	}
@@ -275,36 +275,36 @@ RZ_API RzAnalysisBlock *rz_analysis_block_split(RzAnalysisBlock *bbi, ut64 addr)
 	bb->parent_stackptr = bbi->stackptr;
 
 	// resize the first block
-	rz_analysis_block_set_size (bbi, addr - bbi->addr);
+	rz_analysis_block_set_size(bbi, addr - bbi->addr);
 	bbi->jump = addr;
 	bbi->fail = UT64_MAX;
-	rz_analysis_block_update_hash (bbi);
+	rz_analysis_block_update_hash(bbi);
 
 	// insert the second block into the tree
-	rz_rbtree_aug_insert (&analysis->bb_tree, &bb->addr, &bb->_rb, __bb_addr_cmp, NULL, __max_end);
+	rz_rbtree_aug_insert(&analysis->bb_tree, &bb->addr, &bb->_rb, __bb_addr_cmp, NULL, __max_end);
 
 	// insert the second block into all functions of the first
 	RzListIter *iter;
 	RzAnalysisFunction *fcn;
 	rz_list_foreach (bbi->fcns, iter, fcn) {
-		rz_analysis_function_add_block (fcn, bb);
+		rz_analysis_function_add_block(fcn, bb);
 	}
 
 	// recalculate offset of instructions in both bb and bbi
 	int i;
 	i = 0;
-	while (i < bbi->ninstr && rz_analysis_block_get_op_offset (bbi, i) < bbi->size) {
+	while (i < bbi->ninstr && rz_analysis_block_get_op_offset(bbi, i) < bbi->size) {
 		i++;
 	}
 	int new_bbi_instr = i;
-	if (bb->addr - bbi->addr == rz_analysis_block_get_op_offset (bbi, i)) {
+	if (bb->addr - bbi->addr == rz_analysis_block_get_op_offset(bbi, i)) {
 		bb->ninstr = 0;
 		while (i < bbi->ninstr) {
-			ut16 off_op = rz_analysis_block_get_op_offset (bbi, i);
+			ut16 off_op = rz_analysis_block_get_op_offset(bbi, i);
 			if (off_op >= bbi->size + bb->size) {
 				break;
 			}
-			rz_analysis_block_set_op_offset (bb, bb->ninstr, off_op - bbi->size);
+			rz_analysis_block_set_op_offset(bb, bb->ninstr, off_op - bbi->size);
 			bb->ninstr++;
 			i++;
 		}
@@ -314,42 +314,42 @@ RZ_API RzAnalysisBlock *rz_analysis_block_split(RzAnalysisBlock *bbi, ut64 addr)
 }
 
 RZ_API bool rz_analysis_block_merge(RzAnalysisBlock *a, RzAnalysisBlock *b) {
-	if (!rz_analysis_block_is_contiguous (a, b)) {
+	if (!rz_analysis_block_is_contiguous(a, b)) {
 		return false;
 	}
 
 	// check if function lists are identical
-	if (rz_list_length (a->fcns) != rz_list_length (b->fcns)) {
+	if (rz_list_length(a->fcns) != rz_list_length(b->fcns)) {
 		return false;
 	}
 	RzAnalysisFunction *fcn;
 	RzListIter *iter;
 	rz_list_foreach (a->fcns, iter, fcn) {
-		if (!rz_list_contains (b->fcns, fcn)) {
+		if (!rz_list_contains(b->fcns, fcn)) {
 			return false;
 		}
 	}
 
 	// Keep a ref to b, but remove all references of b from its functions
-	rz_analysis_block_ref (b);
-	while (!rz_list_empty (b->fcns)) {
-		rz_analysis_function_remove_block (rz_list_first (b->fcns), b);
+	rz_analysis_block_ref(b);
+	while (!rz_list_empty(b->fcns)) {
+		rz_analysis_function_remove_block(rz_list_first(b->fcns), b);
 	}
 
 	// merge ops from b into a
 	size_t i;
 	for (i = 0; i < b->ninstr; i++) {
-		rz_analysis_block_set_op_offset (a, a->ninstr++, a->size + rz_analysis_block_get_op_offset (b, i));
+		rz_analysis_block_set_op_offset(a, a->ninstr++, a->size + rz_analysis_block_get_op_offset(b, i));
 	}
 
 	// merge everything else into a
 	a->size += b->size;
 	a->jump = b->jump;
 	a->fail = b->fail;
-	rz_analysis_block_update_hash (a);
+	rz_analysis_block_update_hash(a);
 
 	// kill b completely
-	rz_rbtree_aug_delete (&a->analysis->bb_tree, &b->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
+	rz_rbtree_aug_delete(&a->analysis->bb_tree, &b->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
 
 	// invalidate ranges of a's functions
 	rz_list_foreach (a->fcns, iter, fcn) {
@@ -363,33 +363,34 @@ RZ_API void rz_analysis_block_unref(RzAnalysisBlock *bb) {
 	if (!bb) {
 		return;
 	}
-	assert (bb->ref > 0);
+	assert(bb->ref > 0);
 	bb->ref--;
-	assert (bb->ref >= rz_list_length (bb->fcns)); // all of the block's functions must hold a reference to it
+	assert(bb->ref >= rz_list_length(bb->fcns)); // all of the block's functions must hold a reference to it
 	if (bb->ref < 1) {
 		RzAnalysis *analysis = bb->analysis;
-		assert (!bb->fcns || rz_list_empty (bb->fcns));
-		rz_rbtree_aug_delete (&analysis->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
+		assert(!bb->fcns || rz_list_empty(bb->fcns));
+		rz_rbtree_aug_delete(&analysis->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
 	}
 }
 
 RZ_API bool rz_analysis_block_successor_addrs_foreach(RzAnalysisBlock *block, RzAnalysisAddrCb cb, void *user) {
-#define CB_ADDR(addr) do { \
+#define CB_ADDR(addr) \
+	do { \
 		if (addr == UT64_MAX) { \
 			break; \
 		} \
-		if (!cb (addr, user)) { \
+		if (!cb(addr, user)) { \
 			return false; \
 		} \
-	} while(0);
+	} while (0);
 
-	CB_ADDR (block->jump);
-	CB_ADDR (block->fail);
+	CB_ADDR(block->jump);
+	CB_ADDR(block->fail);
 	if (block->switch_op && block->switch_op->cases) {
 		RzListIter *iter;
 		RzAnalysisCaseOp *caseop;
 		rz_list_foreach (block->switch_op->cases, iter, caseop) {
-			CB_ADDR (caseop->jump);
+			CB_ADDR(caseop->jump);
 		}
 	}
 
@@ -399,22 +400,22 @@ RZ_API bool rz_analysis_block_successor_addrs_foreach(RzAnalysisBlock *block, Rz
 
 typedef struct rz_analysis_block_recurse_context_t {
 	RzAnalysis *analysis;
-	RzPVector/*<RzAnalysisBlock>*/ to_visit;
+	RzPVector /*<RzAnalysisBlock>*/ to_visit;
 	HtUP *visited;
 } RzAnalysisBlockRecurseContext;
 
 static bool block_recurse_successor_cb(ut64 addr, void *user) {
 	RzAnalysisBlockRecurseContext *ctx = user;
-	if (ht_up_find_kv (ctx->visited, addr, NULL)) {
+	if (ht_up_find_kv(ctx->visited, addr, NULL)) {
 		// already visited
 		return true;
 	}
-	ht_up_insert (ctx->visited, addr, NULL);
-	RzAnalysisBlock *block = rz_analysis_get_block_at (ctx->analysis, addr);
+	ht_up_insert(ctx->visited, addr, NULL);
+	RzAnalysisBlock *block = rz_analysis_get_block_at(ctx->analysis, addr);
 	if (!block) {
 		return true;
 	}
-	rz_pvector_push (&ctx->to_visit, block);
+	rz_pvector_push(&ctx->to_visit, block);
 	return true;
 }
 
@@ -422,27 +423,27 @@ RZ_API bool rz_analysis_block_recurse(RzAnalysisBlock *block, RzAnalysisBlockCb 
 	bool breaked = false;
 	RzAnalysisBlockRecurseContext ctx;
 	ctx.analysis = block->analysis;
-	rz_pvector_init (&ctx.to_visit, NULL);
-	ctx.visited = ht_up_new0 ();
+	rz_pvector_init(&ctx.to_visit, NULL);
+	ctx.visited = ht_up_new0();
 	if (!ctx.visited) {
 		goto beach;
 	}
 
-	ht_up_insert (ctx.visited, block->addr, NULL);
-	rz_pvector_push (&ctx.to_visit, block);
+	ht_up_insert(ctx.visited, block->addr, NULL);
+	rz_pvector_push(&ctx.to_visit, block);
 
-	while (!rz_pvector_empty (&ctx.to_visit)) {
-		RzAnalysisBlock *cur = rz_pvector_pop (&ctx.to_visit);
-		breaked = !cb (cur, user);
+	while (!rz_pvector_empty(&ctx.to_visit)) {
+		RzAnalysisBlock *cur = rz_pvector_pop(&ctx.to_visit);
+		breaked = !cb(cur, user);
 		if (breaked) {
 			break;
 		}
-		rz_analysis_block_successor_addrs_foreach (cur, block_recurse_successor_cb, &ctx);
+		rz_analysis_block_successor_addrs_foreach(cur, block_recurse_successor_cb, &ctx);
 	}
 
 beach:
-	ht_up_free (ctx.visited);
-	rz_pvector_clear (&ctx.to_visit);
+	ht_up_free(ctx.visited);
+	rz_pvector_clear(&ctx.to_visit);
 	return !breaked;
 }
 
@@ -450,28 +451,28 @@ RZ_API bool rz_analysis_block_recurse_followthrough(RzAnalysisBlock *block, RzAn
 	bool breaked = false;
 	RzAnalysisBlockRecurseContext ctx;
 	ctx.analysis = block->analysis;
-	rz_pvector_init (&ctx.to_visit, NULL);
-	ctx.visited = ht_up_new0 ();
+	rz_pvector_init(&ctx.to_visit, NULL);
+	ctx.visited = ht_up_new0();
 	if (!ctx.visited) {
 		goto beach;
 	}
 
-	ht_up_insert (ctx.visited, block->addr, NULL);
-	rz_pvector_push (&ctx.to_visit, block);
+	ht_up_insert(ctx.visited, block->addr, NULL);
+	rz_pvector_push(&ctx.to_visit, block);
 
-	while (!rz_pvector_empty (&ctx.to_visit)) {
-		RzAnalysisBlock *cur = rz_pvector_pop (&ctx.to_visit);
-		bool b = !cb (cur, user);
+	while (!rz_pvector_empty(&ctx.to_visit)) {
+		RzAnalysisBlock *cur = rz_pvector_pop(&ctx.to_visit);
+		bool b = !cb(cur, user);
 		if (b) {
 			breaked = true;
 		} else {
-			rz_analysis_block_successor_addrs_foreach (cur, block_recurse_successor_cb, &ctx);
+			rz_analysis_block_successor_addrs_foreach(cur, block_recurse_successor_cb, &ctx);
 		}
 	}
 
 beach:
-	ht_up_free (ctx.visited);
-	rz_pvector_clear (&ctx.to_visit);
+	ht_up_free(ctx.visited);
+	rz_pvector_clear(&ctx.to_visit);
 	return !breaked;
 }
 
@@ -482,90 +483,90 @@ typedef struct {
 
 RZ_API bool rz_analysis_block_recurse_depth_first(RzAnalysisBlock *block, RzAnalysisBlockCb cb, RZ_NULLABLE RzAnalysisBlockCb on_exit, void *user) {
 	bool breaked = false;
-	HtUP *visited = ht_up_new0 ();
+	HtUP *visited = ht_up_new0();
 	if (!visited) {
 		goto beach;
 	}
 	RzAnalysis *analysis = block->analysis;
 	RzVector path;
-	rz_vector_init (&path, sizeof (RecurseDepthFirstCtx), NULL, NULL);
+	rz_vector_init(&path, sizeof(RecurseDepthFirstCtx), NULL, NULL);
 	RzAnalysisBlock *cur_bb = block;
 	RecurseDepthFirstCtx ctx = { cur_bb, NULL };
-	rz_vector_push (&path, &ctx);
-	ht_up_insert (visited, cur_bb->addr, NULL);
-	breaked = !cb (cur_bb, user);
+	rz_vector_push(&path, &ctx);
+	ht_up_insert(visited, cur_bb->addr, NULL);
+	breaked = !cb(cur_bb, user);
 	if (breaked) {
 		goto beach;
 	}
 	do {
-		RecurseDepthFirstCtx *cur_ctx = rz_vector_index_ptr (&path, path.len - 1);
+		RecurseDepthFirstCtx *cur_ctx = rz_vector_index_ptr(&path, path.len - 1);
 		cur_bb = cur_ctx->bb;
-		if (cur_bb->jump != UT64_MAX && !ht_up_find_kv (visited, cur_bb->jump, NULL)) {
-			cur_bb = rz_analysis_get_block_at (analysis, cur_bb->jump);
-		} else if (cur_bb->fail != UT64_MAX && !ht_up_find_kv (visited, cur_bb->fail, NULL)) {
-			cur_bb = rz_analysis_get_block_at (analysis, cur_bb->fail);
+		if (cur_bb->jump != UT64_MAX && !ht_up_find_kv(visited, cur_bb->jump, NULL)) {
+			cur_bb = rz_analysis_get_block_at(analysis, cur_bb->jump);
+		} else if (cur_bb->fail != UT64_MAX && !ht_up_find_kv(visited, cur_bb->fail, NULL)) {
+			cur_bb = rz_analysis_get_block_at(analysis, cur_bb->fail);
 		} else {
 			RzAnalysisCaseOp *cop = NULL;
 			if (cur_bb->switch_op && !cur_ctx->switch_it) {
 				cur_ctx->switch_it = cur_bb->switch_op->cases->head;
-				cop = rz_list_first (cur_bb->switch_op->cases);
+				cop = rz_list_first(cur_bb->switch_op->cases);
 			} else if (cur_ctx->switch_it) {
-				while ((cur_ctx->switch_it = rz_list_iter_get_next (cur_ctx->switch_it))) {
-					cop = rz_list_iter_get_data (cur_ctx->switch_it);
-					if (!ht_up_find_kv (visited, cop->jump, NULL)) {
+				while ((cur_ctx->switch_it = rz_list_iter_get_next(cur_ctx->switch_it))) {
+					cop = rz_list_iter_get_data(cur_ctx->switch_it);
+					if (!ht_up_find_kv(visited, cop->jump, NULL)) {
 						break;
 					}
 					cop = NULL;
 				}
 			}
-			cur_bb = cop ? rz_analysis_get_block_at (analysis, cop->jump) : NULL;
+			cur_bb = cop ? rz_analysis_get_block_at(analysis, cop->jump) : NULL;
 		}
 		if (cur_bb) {
 			RecurseDepthFirstCtx ctx = { cur_bb, NULL };
-			rz_vector_push (&path, &ctx);
-			ht_up_insert (visited, cur_bb->addr, NULL);
-			bool breaked = !cb (cur_bb, user);
+			rz_vector_push(&path, &ctx);
+			ht_up_insert(visited, cur_bb->addr, NULL);
+			bool breaked = !cb(cur_bb, user);
 			if (breaked) {
 				break;
 			}
 		} else {
 			if (on_exit) {
-				on_exit (cur_ctx->bb, user);
+				on_exit(cur_ctx->bb, user);
 			}
-			rz_vector_pop (&path, NULL);
+			rz_vector_pop(&path, NULL);
 		}
-	} while (!rz_vector_empty (&path));
+	} while (!rz_vector_empty(&path));
 
 beach:
-	ht_up_free (visited);
-	rz_vector_clear (&path);
+	ht_up_free(visited);
+	rz_vector_clear(&path);
 	return !breaked;
 }
 
 static bool recurse_list_cb(RzAnalysisBlock *block, void *user) {
 	RzList *list = user;
-	rz_analysis_block_ref (block);
-	rz_list_push (list, block);
+	rz_analysis_block_ref(block);
+	rz_list_push(list, block);
 	return true;
 }
 
 RZ_API RzList *rz_analysis_block_recurse_list(RzAnalysisBlock *block) {
-	RzList *ret = rz_list_newf ((RzListFree)rz_analysis_block_unref);
+	RzList *ret = rz_list_newf((RzListFree)rz_analysis_block_unref);
 	if (ret) {
-		rz_analysis_block_recurse (block, recurse_list_cb, ret);
+		rz_analysis_block_recurse(block, recurse_list_cb, ret);
 	}
 	return ret;
 }
 
 RZ_API void rz_analysis_block_add_switch_case(RzAnalysisBlock *block, ut64 switch_addr, ut64 case_value, ut64 case_addr) {
 	if (!block->switch_op) {
-		block->switch_op = rz_analysis_switch_op_new (switch_addr, 0, 0, 0);
+		block->switch_op = rz_analysis_switch_op_new(switch_addr, 0, 0, 0);
 	}
-	rz_analysis_switch_op_add_case (block->switch_op, case_addr, case_value, case_addr);
+	rz_analysis_switch_op_add_case(block->switch_op, case_addr, case_value, case_addr);
 }
 
 RZ_API bool rz_analysis_block_op_starts_at(RzAnalysisBlock *bb, ut64 addr) {
-	if (!rz_analysis_block_contains (bb, addr)) {
+	if (!rz_analysis_block_contains(bb, addr)) {
 		return false;
 	}
 	ut64 off = addr - bb->addr;
@@ -574,7 +575,7 @@ RZ_API bool rz_analysis_block_op_starts_at(RzAnalysisBlock *bb, ut64 addr) {
 	}
 	size_t i;
 	for (i = 0; i < bb->ninstr; i++) {
-		ut16 inst_off = rz_analysis_block_get_op_offset (bb, i);
+		ut16 inst_off = rz_analysis_block_get_op_offset(bb, i);
 		if (off == inst_off) {
 			return true;
 		}
@@ -586,26 +587,25 @@ typedef struct {
 	RzAnalysis *analysis;
 	RzAnalysisBlock *cur_parent;
 	ut64 dst;
-	RzPVector/*<RzAnalysisBlock>*/ *next_visit; // accumulate block of the next level in the tree
-	HtUP/*<RzAnalysisBlock>*/ *visited; // maps addrs to their previous block (or NULL for entry)
+	RzPVector /*<RzAnalysisBlock>*/ *next_visit; // accumulate block of the next level in the tree
+	HtUP /*<RzAnalysisBlock>*/ *visited; // maps addrs to their previous block (or NULL for entry)
 } PathContext;
 
 static bool shortest_path_successor_cb(ut64 addr, void *user) {
 	PathContext *ctx = user;
-	if (ht_up_find_kv (ctx->visited, addr, NULL)) {
+	if (ht_up_find_kv(ctx->visited, addr, NULL)) {
 		// already visited
 		return true;
 	}
-	ht_up_insert (ctx->visited, addr, ctx->cur_parent);
-	RzAnalysisBlock *block = rz_analysis_get_block_at (ctx->analysis, addr);
+	ht_up_insert(ctx->visited, addr, ctx->cur_parent);
+	RzAnalysisBlock *block = rz_analysis_get_block_at(ctx->analysis, addr);
 	if (block) {
-		rz_pvector_push (ctx->next_visit, block);
+		rz_pvector_push(ctx->next_visit, block);
 	}
 	return addr != ctx->dst; // break if we found our destination
 }
 
-
-RZ_API RZ_NULLABLE RzList/*<RzAnalysisBlock *>*/ *rz_analysis_block_shortest_path(RzAnalysisBlock *block, ut64 dst) {
+RZ_API RZ_NULLABLE RzList /*<RzAnalysisBlock *>*/ *rz_analysis_block_shortest_path(RzAnalysisBlock *block, ut64 dst) {
 	RzList *ret = NULL;
 	PathContext ctx;
 	ctx.analysis = block->analysis;
@@ -613,89 +613,89 @@ RZ_API RZ_NULLABLE RzList/*<RzAnalysisBlock *>*/ *rz_analysis_block_shortest_pat
 
 	// two vectors to swap cur_visit/next_visit
 	RzPVector visit_a;
-	rz_pvector_init (&visit_a, NULL);
+	rz_pvector_init(&visit_a, NULL);
 	RzPVector visit_b;
-	rz_pvector_init (&visit_b, NULL);
+	rz_pvector_init(&visit_b, NULL);
 	ctx.next_visit = &visit_a;
 	RzPVector *cur_visit = &visit_b; // cur visit is the current level in the tree
 
-	ctx.visited = ht_up_new0 ();
+	ctx.visited = ht_up_new0();
 	if (!ctx.visited) {
 		goto beach;
 	}
 
-	ht_up_insert (ctx.visited, block->addr, NULL);
-	rz_pvector_push (cur_visit, block);
+	ht_up_insert(ctx.visited, block->addr, NULL);
+	rz_pvector_push(cur_visit, block);
 
 	// BFS
-	while (!rz_pvector_empty (cur_visit)) {
+	while (!rz_pvector_empty(cur_visit)) {
 		void **it;
 		rz_pvector_foreach (cur_visit, it) {
 			RzAnalysisBlock *cur = *it;
 			ctx.cur_parent = cur;
-			rz_analysis_block_successor_addrs_foreach (cur, shortest_path_successor_cb, &ctx);
+			rz_analysis_block_successor_addrs_foreach(cur, shortest_path_successor_cb, &ctx);
 		}
 		RzPVector *tmp = cur_visit;
 		cur_visit = ctx.next_visit;
 		ctx.next_visit = tmp;
-		rz_pvector_clear (ctx.next_visit);
+		rz_pvector_clear(ctx.next_visit);
 	}
 
 	// reconstruct the path
 	bool found = false;
-	RzAnalysisBlock *prev = ht_up_find (ctx.visited, dst, &found);
-	RzAnalysisBlock *dst_block = rz_analysis_get_block_at (block->analysis, dst);
+	RzAnalysisBlock *prev = ht_up_find(ctx.visited, dst, &found);
+	RzAnalysisBlock *dst_block = rz_analysis_get_block_at(block->analysis, dst);
 	if (found && dst_block) {
-		ret = rz_list_newf ((RzListFree)rz_analysis_block_unref);
-		rz_analysis_block_ref (dst_block);
-		rz_list_prepend (ret, dst_block);
+		ret = rz_list_newf((RzListFree)rz_analysis_block_unref);
+		rz_analysis_block_ref(dst_block);
+		rz_list_prepend(ret, dst_block);
 		while (prev) {
-			rz_analysis_block_ref (prev);
-			rz_list_prepend (ret, prev);
-			prev = ht_up_find (ctx.visited, prev->addr, NULL);
+			rz_analysis_block_ref(prev);
+			rz_list_prepend(ret, prev);
+			prev = ht_up_find(ctx.visited, prev->addr, NULL);
 		}
 	}
 
 beach:
-	ht_up_free (ctx.visited);
-	rz_pvector_clear (&visit_a);
-	rz_pvector_clear (&visit_b);
+	ht_up_free(ctx.visited);
+	rz_pvector_clear(&visit_a);
+	rz_pvector_clear(&visit_b);
 	return ret;
 }
 
 RZ_API bool rz_analysis_block_was_modified(RzAnalysisBlock *block) {
-	rz_return_val_if_fail (block, false);
+	rz_return_val_if_fail(block, false);
 	if (!block->analysis->iob.read_at) {
 		return false;
 	}
-	ut8 *buf = malloc (block->size);
+	ut8 *buf = malloc(block->size);
 	if (!buf) {
 		return false;
 	}
-	if (!block->analysis->iob.read_at (block->analysis->iob.io, block->addr, buf, block->size)) {
-		free (buf);
+	if (!block->analysis->iob.read_at(block->analysis->iob.io, block->addr, buf, block->size)) {
+		free(buf);
 		return false;
 	}
-	ut32 cur_hash = rz_hash_xxhash (buf, block->size);
-	free (buf);
+	ut32 cur_hash = rz_hash_xxhash(buf, block->size);
+	free(buf);
 	return block->bbhash != cur_hash;
 }
 
 RZ_API void rz_analysis_block_update_hash(RzAnalysisBlock *block) {
-	rz_return_if_fail (block);
+	rz_return_if_fail(block);
 	if (!block->analysis->iob.read_at) {
 		return;
 	}
-	ut8 *buf = malloc (block->size);
+	ut8 *buf = malloc(block->size);
 	if (!buf) {
 		return;
 	}
-	if (!block->analysis->iob.read_at (block->analysis->iob.io, block->addr, buf, block->size)) {
-		free (buf);
+	if (!block->analysis->iob.read_at(block->analysis->iob.io, block->addr, buf, block->size)) {
+		free(buf);
 		return;
 	}
-	block->bbhash = rz_hash_xxhash (buf, block->size);
-	free (buf);
+	block->bbhash = rz_hash_xxhash(buf, block->size);
+	free(buf);
 }
 
 typedef struct {
@@ -705,26 +705,26 @@ typedef struct {
 
 static void noreturn_successor_free(HtUPKv *kv) {
 	NoreturnSuccessor *succ = kv->value;
-	rz_analysis_block_unref (succ->block);
-	free (succ);
+	rz_analysis_block_unref(succ->block);
+	free(succ);
 }
 
 static bool noreturn_successors_cb(RzAnalysisBlock *block, void *user) {
 	HtUP *succs = user;
-	NoreturnSuccessor *succ = RZ_NEW0 (NoreturnSuccessor);
+	NoreturnSuccessor *succ = RZ_NEW0(NoreturnSuccessor);
 	if (!succ) {
 		return false;
 	}
-	rz_analysis_block_ref (block);
+	rz_analysis_block_ref(block);
 	succ->block = block;
 	succ->reachable = false; // reset for first iteration
-	ht_up_insert (succs, block->addr, succ);
+	ht_up_insert(succs, block->addr, succ);
 	return true;
 }
 
 static bool noreturn_successors_reachable_cb(RzAnalysisBlock *block, void *user) {
 	HtUP *succs = user;
-	NoreturnSuccessor *succ = ht_up_find (succs, block->addr, NULL);
+	NoreturnSuccessor *succ = ht_up_find(succs, block->addr, NULL);
 	if (succ) {
 		succ->reachable = true;
 	}
@@ -734,8 +734,8 @@ static bool noreturn_successors_reachable_cb(RzAnalysisBlock *block, void *user)
 static bool noreturn_remove_unreachable_cb(void *user, const ut64 k, const void *v) {
 	RzAnalysisFunction *fcn = user;
 	NoreturnSuccessor *succ = (NoreturnSuccessor *)v;
-	if (!succ->reachable && rz_list_contains (succ->block->fcns, fcn)) {
-		rz_analysis_function_remove_block (fcn, succ->block);
+	if (!succ->reachable && rz_list_contains(succ->block->fcns, fcn)) {
+		rz_analysis_function_remove_block(fcn, succ->block);
 	}
 	succ->reachable = false; // reset for next iteration
 	return true;
@@ -744,64 +744,64 @@ static bool noreturn_remove_unreachable_cb(void *user, const ut64 k, const void 
 static bool noreturn_get_blocks_cb(void *user, const ut64 k, const void *v) {
 	RzList *blocks = user;
 	NoreturnSuccessor *succ = (NoreturnSuccessor *)v;
-	rz_analysis_block_ref (succ->block);
-	rz_list_push (blocks, succ->block);
+	rz_analysis_block_ref(succ->block);
+	rz_list_push(blocks, succ->block);
 	return true;
 }
 
 RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, ut64 addr) {
-	rz_return_val_if_fail (block, NULL);
-	if (!rz_analysis_block_contains (block, addr) || addr == block->addr) {
+	rz_return_val_if_fail(block, NULL);
+	if (!rz_analysis_block_contains(block, addr) || addr == block->addr) {
 		return block;
 	}
-	rz_analysis_block_ref (block);
+	rz_analysis_block_ref(block);
 
 	// Cache all recursive successors of block here.
 	// These are the candidates that we might have to remove from functions later.
-	HtUP *succs = ht_up_new (NULL, noreturn_successor_free, NULL); // maps block addr (ut64) => NoreturnSuccessor *
+	HtUP *succs = ht_up_new(NULL, noreturn_successor_free, NULL); // maps block addr (ut64) => NoreturnSuccessor *
 	if (!succs) {
 		return block;
 	}
-	rz_analysis_block_recurse (block, noreturn_successors_cb, succs);
+	rz_analysis_block_recurse(block, noreturn_successors_cb, succs);
 
 	// Chop the block. Resize and remove all destination addrs
-	rz_analysis_block_set_size (block, addr - block->addr);
-	rz_analysis_block_update_hash (block);
+	rz_analysis_block_set_size(block, addr - block->addr);
+	rz_analysis_block_update_hash(block);
 	block->jump = UT64_MAX;
 	block->fail = UT64_MAX;
-	rz_analysis_switch_op_free (block->switch_op);
+	rz_analysis_switch_op_free(block->switch_op);
 	block->switch_op = NULL;
 
 	// Now, for each fcn, check which of our successors are still reachable in the function remove and the ones that are not.
 	RzListIter *it;
 	RzAnalysisFunction *fcn;
 	// We need to clone the list because block->fcns will get modified in the loop
-	RzList *fcns_cpy = rz_list_clone (block->fcns);
+	RzList *fcns_cpy = rz_list_clone(block->fcns);
 	rz_list_foreach (fcns_cpy, it, fcn) {
-		RzAnalysisBlock *entry = rz_analysis_get_block_at (block->analysis, fcn->addr);
-		if (entry && rz_list_contains (entry->fcns, fcn)) {
-			rz_analysis_block_recurse (entry, noreturn_successors_reachable_cb, succs);
+		RzAnalysisBlock *entry = rz_analysis_get_block_at(block->analysis, fcn->addr);
+		if (entry && rz_list_contains(entry->fcns, fcn)) {
+			rz_analysis_block_recurse(entry, noreturn_successors_reachable_cb, succs);
 		}
-		ht_up_foreach (succs, noreturn_remove_unreachable_cb, fcn);
+		ht_up_foreach(succs, noreturn_remove_unreachable_cb, fcn);
 	}
-	rz_list_free (fcns_cpy);
+	rz_list_free(fcns_cpy);
 
 	// This last step isn't really critical, but nice to have.
 	// Prepare to merge blocks with their predecessors if possible
 	RzList merge_blocks;
-	rz_list_init (&merge_blocks);
+	rz_list_init(&merge_blocks);
 	merge_blocks.free = (RzListFree)rz_analysis_block_unref;
-	ht_up_foreach (succs, noreturn_get_blocks_cb, &merge_blocks);
+	ht_up_foreach(succs, noreturn_get_blocks_cb, &merge_blocks);
 
 	// Free/unref BEFORE doing the merge!
 	// Some of the blocks might not be valid anymore later!
-	rz_analysis_block_unref (block);
-	ht_up_free (succs);
+	rz_analysis_block_unref(block);
+	ht_up_free(succs);
 
 	ut64 block_addr = block->addr; // save the addr to identify the block. the automerge might free it so we must not use the pointer!
 
 	// Do the actual merge
-	rz_analysis_block_automerge (&merge_blocks);
+	rz_analysis_block_automerge(&merge_blocks);
 
 	// No try to recover the pointer to the block if it still exists
 	RzAnalysisBlock *ret = NULL;
@@ -813,7 +813,7 @@ RZ_API RzAnalysisBlock *rz_analysis_block_chop_noreturn(RzAnalysisBlock *block, 
 		}
 	}
 
-	rz_list_purge (&merge_blocks);
+	rz_list_purge(&merge_blocks);
 	return ret;
 }
 
@@ -835,21 +835,21 @@ static bool count_successors_cb(ut64 addr, void *user) {
 static bool automerge_predecessor_successor_cb(ut64 addr, void *user) {
 	AutomergeCtx *ctx = user;
 	ctx->cur_succ_count++;
-	RzAnalysisBlock *block = ht_up_find (ctx->blocks, addr, NULL);
+	RzAnalysisBlock *block = ht_up_find(ctx->blocks, addr, NULL);
 	if (!block) {
 		// we shouldn't merge this one so GL_DONT_CARE
 		return true;
 	}
 	bool found;
-	RzAnalysisBlock *pred = ht_up_find (ctx->predecessors, (ut64)block, &found);
+	RzAnalysisBlock *pred = ht_up_find(ctx->predecessors, (ut64)block, &found);
 	if (found) {
 		if (pred) {
 			// only one predecessor found so far, but we are the second so there are multiple now
-			ht_up_update (ctx->predecessors, (ut64) block, NULL);
+			ht_up_update(ctx->predecessors, (ut64)block, NULL);
 		} // else: already found multiple predecessors, nothing to do
 	} else {
 		// no predecessor found yet, this is the only one until now
-		ht_up_insert (ctx->predecessors, (ut64) block, ctx->cur_pred);
+		ht_up_insert(ctx->predecessors, (ut64)block, ctx->cur_pred);
 	}
 	return true;
 }
@@ -861,14 +861,14 @@ static bool automerge_get_predecessors_cb(void *user, const ut64 k, const void *
 	RzAnalysisBlock *block;
 	rz_list_foreach (fcn->bbs, it, block) {
 		bool already_visited;
-		ht_up_find (ctx->visited_blocks, (ut64)block, &already_visited);
+		ht_up_find(ctx->visited_blocks, (ut64)block, &already_visited);
 		if (already_visited) {
 			continue;
 		}
 		ctx->cur_pred = block;
 		ctx->cur_succ_count = 0;
-		rz_analysis_block_successor_addrs_foreach (block, automerge_predecessor_successor_cb, ctx);
-		ht_up_insert (ctx->visited_blocks, (ut64)block, (void *)ctx->cur_succ_count);
+		rz_analysis_block_successor_addrs_foreach(block, automerge_predecessor_successor_cb, ctx);
+		ht_up_insert(ctx->visited_blocks, (ut64)block, (void *)ctx->cur_succ_count);
 	}
 	return true;
 }
@@ -876,15 +876,15 @@ static bool automerge_get_predecessors_cb(void *user, const ut64 k, const void *
 // Try to find the contiguous predecessors of all given blocks and merge them if possible,
 // i.e. if there are no other blocks that have this block as one of their successors
 RZ_API void rz_analysis_block_automerge(RzList *blocks) {
-	rz_return_if_fail (blocks);
+	rz_return_if_fail(blocks);
 	AutomergeCtx ctx = {
-		.predecessors = ht_up_new0 (),
-		.visited_blocks = ht_up_new0 (),
-		.blocks = ht_up_new0 ()
+		.predecessors = ht_up_new0(),
+		.visited_blocks = ht_up_new0(),
+		.blocks = ht_up_new0()
 	};
 
-	HtUP *relevant_fcns = ht_up_new0 (); // all the functions that contain some of our blocks (ht abused as a set)
-	RzList *fixup_candidates = rz_list_new (); // used further down
+	HtUP *relevant_fcns = ht_up_new0(); // all the functions that contain some of our blocks (ht abused as a set)
+	RzList *fixup_candidates = rz_list_new(); // used further down
 	if (!ctx.predecessors || !ctx.visited_blocks || !ctx.blocks || !relevant_fcns || !fixup_candidates) {
 		goto beach;
 	}
@@ -896,22 +896,22 @@ RZ_API void rz_analysis_block_automerge(RzList *blocks) {
 		RzListIter *fit;
 		RzAnalysisFunction *fcn;
 		rz_list_foreach (block->fcns, fit, fcn) {
-			ht_up_insert (relevant_fcns, (ut64)fcn, NULL);
+			ht_up_insert(relevant_fcns, (ut64)fcn, NULL);
 		}
-		ht_up_insert (ctx.blocks, block->addr, block);
+		ht_up_insert(ctx.blocks, block->addr, block);
 	}
 
 	// Get the single predecessors we might want to merge with
-	ht_up_foreach (relevant_fcns, automerge_get_predecessors_cb, &ctx);
+	ht_up_foreach(relevant_fcns, automerge_get_predecessors_cb, &ctx);
 
 	// Now finally do the merging
 	RzListIter *tmp;
 	rz_list_foreach_safe (blocks, it, tmp, block) {
-		RzAnalysisBlock *predecessor = ht_up_find (ctx.predecessors, (ut64)block, NULL);
+		RzAnalysisBlock *predecessor = ht_up_find(ctx.predecessors, (ut64)block, NULL);
 		if (!predecessor) {
 			continue;
 		}
-		size_t pred_succs_count = (size_t)ht_up_find (ctx.visited_blocks, (ut64)predecessor, NULL);
+		size_t pred_succs_count = (size_t)ht_up_find(ctx.visited_blocks, (ut64)predecessor, NULL);
 		if (pred_succs_count != 1) {
 			// we can only merge this predecessor if it has exactly one successor
 			continue;
@@ -923,36 +923,36 @@ RZ_API void rz_analysis_block_automerge(RzList *blocks) {
 		RzListIter *bit;
 		RzAnalysisBlock *clock;
 		for (bit = it->n; bit && (clock = bit->data, 1); bit = bit->n) {
-			RzAnalysisBlock *fixup_pred = ht_up_find (ctx.predecessors, (ut64)clock, NULL);
+			RzAnalysisBlock *fixup_pred = ht_up_find(ctx.predecessors, (ut64)clock, NULL);
 			if (fixup_pred == block) {
-				rz_list_push (fixup_candidates, clock);
+				rz_list_push(fixup_candidates, clock);
 			}
 		}
 
-		if (rz_analysis_block_merge (predecessor, block)) { // rz_analysis_block_merge() does checks like contiguous, to that's fine
+		if (rz_analysis_block_merge(predecessor, block)) { // rz_analysis_block_merge() does checks like contiguous, to that's fine
 			// block was merged into predecessor, it is now freed!
 			// Update number of successors of the predecessor
 			ctx.cur_succ_count = 0;
-			rz_analysis_block_successor_addrs_foreach (predecessor, count_successors_cb, &ctx);
-			ht_up_update (ctx.visited_blocks, (ut64)predecessor, (void *)ctx.cur_succ_count);
+			rz_analysis_block_successor_addrs_foreach(predecessor, count_successors_cb, &ctx);
+			ht_up_update(ctx.visited_blocks, (ut64)predecessor, (void *)ctx.cur_succ_count);
 			rz_list_foreach (fixup_candidates, bit, clock) {
 				// Make sure all previous pointers to block now go to predecessor
-				ht_up_update (ctx.predecessors, (ut64)clock, predecessor);
+				ht_up_update(ctx.predecessors, (ut64)clock, predecessor);
 			}
 			// Remove it from the list
-			rz_list_split_iter (blocks, it);
-			free (it);
+			rz_list_split_iter(blocks, it);
+			free(it);
 		}
 
-		rz_list_purge (fixup_candidates);
+		rz_list_purge(fixup_candidates);
 	}
 
 beach:
-	ht_up_free (ctx.predecessors);
-	ht_up_free (ctx.visited_blocks);
-	ht_up_free (ctx.blocks);
-	ht_up_free (relevant_fcns);
-	rz_list_free (fixup_candidates);
+	ht_up_free(ctx.predecessors);
+	ht_up_free(ctx.visited_blocks);
+	ht_up_free(ctx.blocks);
+	ht_up_free(relevant_fcns);
+	rz_list_free(fixup_candidates);
 }
 
 typedef struct {
@@ -963,7 +963,7 @@ typedef struct {
 static bool block_from_offset_cb(RzAnalysisBlock *block, void *user) {
 	BlockFromOffsetJmpmidCtx *ctx = user;
 	// If an instruction starts exactly at the search addr, return that block immediately
-	if (rz_analysis_block_op_starts_at (block, ctx->addr)) {
+	if (rz_analysis_block_op_starts_at(block, ctx->addr)) {
 		ctx->ret = block;
 		return false;
 	}
@@ -982,7 +982,7 @@ static bool block_from_offset_cb(RzAnalysisBlock *block, void *user) {
  */
 RZ_API RzAnalysisBlock *rz_analysis_find_most_relevant_block_in(RzAnalysis *analysis, ut64 off) {
 	BlockFromOffsetJmpmidCtx ctx = { off, NULL };
-	rz_analysis_blocks_foreach_in (analysis, off, block_from_offset_cb, &ctx);
+	rz_analysis_blocks_foreach_in(analysis, off, block_from_offset_cb, &ctx);
 	return ctx.ret;
 }
 
@@ -1000,7 +1000,7 @@ RZ_API ut16 rz_analysis_block_get_op_offset(RzAnalysisBlock *block, size_t i) {
  * @return the absolute address of the i-th instruction in block or UT64_MAX if i is invalid.
  */
 RZ_API ut64 rz_analysis_block_get_op_addr(RzAnalysisBlock *block, size_t i) {
-	ut16 offset = rz_analysis_block_get_op_offset (block, i);
+	ut16 offset = rz_analysis_block_get_op_offset(block, i);
 	if (offset == UT16_MAX) {
 		return UT64_MAX;
 	}
@@ -1015,7 +1015,7 @@ RZ_API bool rz_analysis_block_set_op_offset(RzAnalysisBlock *block, size_t i, ut
 	if (i > 0 && v > 0) {
 		if (i >= block->op_pos_size) {
 			size_t new_pos_size = i * 2;
-			ut16 *tmp_op_pos = realloc (block->op_pos, new_pos_size * sizeof (*block->op_pos));
+			ut16 *tmp_op_pos = realloc(block->op_pos, new_pos_size * sizeof(*block->op_pos));
 			if (!tmp_op_pos) {
 				return false;
 			}
@@ -1035,13 +1035,13 @@ RZ_API ut64 rz_analysis_block_get_op_addr_in(RzAnalysisBlock *bb, ut64 off) {
 	ut16 delta, delta_off, last_delta;
 	int i;
 
-	if (!rz_analysis_block_contains (bb, off)) {
+	if (!rz_analysis_block_contains(bb, off)) {
 		return UT64_MAX;
 	}
 	last_delta = 0;
 	delta_off = off - bb->addr;
 	for (i = 0; i < bb->ninstr; i++) {
-		delta = rz_analysis_block_get_op_offset (bb, i);
+		delta = rz_analysis_block_get_op_offset(bb, i);
 		if (delta > delta_off) {
 			return bb->addr + last_delta;
 		}
@@ -1057,9 +1057,9 @@ RZ_API ut64 rz_analysis_block_get_op_size(RzAnalysisBlock *bb, size_t i) {
 	if (i >= bb->ninstr) {
 		return UT64_MAX;
 	}
-	ut16 idx_cur = rz_analysis_block_get_op_offset (bb, i);
-	ut16 idx_next = rz_analysis_block_get_op_offset (bb, i + 1);
-	return idx_next != UT16_MAX? idx_next - idx_cur: bb->size - idx_cur;
+	ut16 idx_cur = rz_analysis_block_get_op_offset(bb, i);
+	ut16 idx_next = rz_analysis_block_get_op_offset(bb, i + 1);
+	return idx_next != UT16_MAX ? idx_next - idx_cur : bb->size - idx_cur;
 }
 
 /**
@@ -1068,7 +1068,7 @@ RZ_API ut64 rz_analysis_block_get_op_size(RzAnalysisBlock *bb, size_t i) {
  * it is primarily useful when creating or editing blocks after full function analysis.
  */
 RZ_API void rz_analysis_block_analyze_ops(RzAnalysisBlock *block) {
-	rz_return_if_fail (block);
+	rz_return_if_fail(block);
 	RzAnalysis *a = block->analysis;
 	if (!a->iob.read_at) {
 		return;
@@ -1076,35 +1076,35 @@ RZ_API void rz_analysis_block_analyze_ops(RzAnalysisBlock *block) {
 	if (block->addr + block->size <= block->addr) {
 		return;
 	}
-	ut8 *buf = malloc (block->size);
+	ut8 *buf = malloc(block->size);
 	if (!buf) {
 		return;
 	}
-	if (!a->iob.read_at (a->iob.io, block->addr, buf, block->size)) {
-		free (buf);
+	if (!a->iob.read_at(a->iob.io, block->addr, buf, block->size)) {
+		free(buf);
 		return;
 	}
 	ut64 addr = block->addr;
 	size_t i = 0;
 	while (addr < block->addr + block->size) {
 		RzAnalysisOp op;
-		if (rz_analysis_op (block->analysis, &op, addr,
-				buf + (addr - block->addr), block->addr + block->size - addr, 0) <= 0) {
-			rz_analysis_op_fini (&op);
+		if (rz_analysis_op(block->analysis, &op, addr,
+			    buf + (addr - block->addr), block->addr + block->size - addr, 0) <= 0) {
+			rz_analysis_op_fini(&op);
 			break;
 		}
 		if (i > 0) {
 			ut64 off = addr - block->addr;
 			if (off >= UT16_MAX) {
-				rz_analysis_op_fini (&op);
+				rz_analysis_op_fini(&op);
 				break;
 			}
-			rz_analysis_block_set_op_offset (block, i, (ut16)off);
+			rz_analysis_block_set_op_offset(block, i, (ut16)off);
 		}
 		i++;
 		addr += op.size > 0 ? op.size : 1;
-		rz_analysis_op_fini (&op);
+		rz_analysis_op_fini(&op);
 	}
 	block->ninstr = i;
-	free (buf);
+	free(buf);
 }

@@ -19,7 +19,7 @@ mv core_test.so ~/.config/rizin/plugins
 #define RZ_IPI static
 
 static int rz_cmd_test_call(void) {
-	eprintf ("Dummy!\n");
+	eprintf("Dummy!\n");
 	return false;
 }
 

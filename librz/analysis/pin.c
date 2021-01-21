@@ -29,35 +29,35 @@ static void pin_write(RzAnalysis *a) {
 #define DB a->sdb_pins
 
 RZ_API void rz_analysis_pin_init(RzAnalysis *a) {
-	sdb_free (DB);
+	sdb_free(DB);
 	DB = sdb_new0();
-//	sdb_ptr_set (DB, "strlen", pin_strlen, 0);
-//	sdb_ptr_set (DB, "write", pin_write, 0);
+	//	sdb_ptr_set (DB, "strlen", pin_strlen, 0);
+	//	sdb_ptr_set (DB, "write", pin_write, 0);
 }
 
 RZ_API void rz_analysis_pin_fini(RzAnalysis *a) {
-	if (sdb_free (DB)) {
+	if (sdb_free(DB)) {
 		DB = NULL;
 	}
 }
 
 RZ_API void rz_analysis_pin(RzAnalysis *a, ut64 addr, const char *name) {
 	char buf[64];
-	const char *key = sdb_itoa (addr, buf, 16);
-	sdb_set (DB, key, name, 0);
+	const char *key = sdb_itoa(addr, buf, 16);
+	sdb_set(DB, key, name, 0);
 }
 
 RZ_API void rz_analysis_pin_unset(RzAnalysis *a, ut64 addr) {
 	char buf[64];
-	const char *key = sdb_itoa (addr, buf, 16);
-	sdb_unset (DB, key, 0);
+	const char *key = sdb_itoa(addr, buf, 16);
+	sdb_unset(DB, key, 0);
 }
 
 RZ_API const char *rz_analysis_pin_call(RzAnalysis *a, ut64 addr) {
 	char buf[64];
-	const char *key = sdb_itoa (addr, buf, 16);
+	const char *key = sdb_itoa(addr, buf, 16);
 	if (key) {
-		return sdb_const_get (DB, key, NULL);
+		return sdb_const_get(DB, key, NULL);
 #if 0
 		const char *name;
 		if (name) {
@@ -74,17 +74,17 @@ RZ_API const char *rz_analysis_pin_call(RzAnalysis *a, ut64 addr) {
 }
 
 static bool cb_list(void *user, const char *k, const char *v) {
-	RzAnalysis *a = (RzAnalysis*)user;
+	RzAnalysis *a = (RzAnalysis *)user;
 	if (*k == '0') {
 		// bind
-		a->cb_printf ("%s = %s\n", k, v);
+		a->cb_printf("%s = %s\n", k, v);
 	} else {
 		// ptr
-		a->cb_printf ("PIN %s\n", k);
+		a->cb_printf("PIN %s\n", k);
 	}
 	return true;
 }
 
 RZ_API void rz_analysis_pin_list(RzAnalysis *a) {
-	sdb_foreach (DB, cb_list, a);
+	sdb_foreach(DB, cb_list, a);
 }

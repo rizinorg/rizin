@@ -21,7 +21,7 @@ typedef struct rz_rb_node_t {
 	bool red;
 } RBNode;
 
-typedef RBNode* RBTree;
+typedef RBNode *RBTree;
 
 // incoming < in_tree  => return < 0
 // incoming == in_tree => return == 0
@@ -82,7 +82,7 @@ RZ_API RBIter rz_rbtree_upper_bound_backward(RBNode *root, void *data, RBCompara
 
 // struct Node { int key; RBNode rb; };
 // rz_rbtree_iter_get (it, struct Node, rb)
-#define rz_rbtree_iter_get(it, struc, rb) (container_of ((it)->path[(it)->len-1], struc, rb))
+#define rz_rbtree_iter_get(it, struc, rb) (container_of((it)->path[(it)->len - 1], struc, rb))
 // If the iterator still contains elements, including the current
 #define rz_rbtree_iter_has(it) ((it)->len)
 // Move forward
@@ -92,18 +92,17 @@ RZ_API void rz_rbtree_iter_prev(RBIter *it);
 
 // Iterate all elements of the forward iterator
 #define rz_rbtree_iter_while(it, data, struc, rb) \
-	for (; rz_rbtree_iter_has(&it) && (data = rz_rbtree_iter_get (&it, struc, rb)); rz_rbtree_iter_next (&(it)))
+	for (; rz_rbtree_iter_has(&it) && (data = rz_rbtree_iter_get(&it, struc, rb)); rz_rbtree_iter_next(&(it)))
 
 // Iterate all elements of the backward iterator
 #define rz_rbtree_iter_while_prev(it, data, struc, rb) \
-	for (; rz_rbtree_iter_has(&it) && (data = rz_rbtree_iter_get (&it, struc, rb)); rz_rbtree_iter_prev (&(it)))
+	for (; rz_rbtree_iter_has(&it) && (data = rz_rbtree_iter_get(&it, struc, rb)); rz_rbtree_iter_prev(&(it)))
 
 #define rz_rbtree_foreach(root, it, data, struc, rb) \
-	for ((it) = rz_rbtree_first (root); rz_rbtree_iter_has(&it) && (data = rz_rbtree_iter_get (&it, struc, rb)); rz_rbtree_iter_next (&(it)))
+	for ((it) = rz_rbtree_first(root); rz_rbtree_iter_has(&it) && (data = rz_rbtree_iter_get(&it, struc, rb)); rz_rbtree_iter_next(&(it)))
 
 #define rz_rbtree_foreach_prev(root, it, data, struc, rb) \
-	for ((it) = rz_rbtree_last (root); rz_rbtree_iter_has(&it) && (data = rz_rbtree_iter_get (&it, struc, rb)); rz_rbtree_iter_prev (&(it)))
-
+	for ((it) = rz_rbtree_last(root); rz_rbtree_iter_has(&it) && (data = rz_rbtree_iter_get(&it, struc, rb)); rz_rbtree_iter_prev(&(it)))
 
 RZ_API RContRBTree *rz_rbtree_cont_new(void);
 RZ_API RContRBTree *rz_rbtree_cont_newf(RContRBFree f);
@@ -112,10 +111,10 @@ RZ_API bool rz_rbtree_cont_delete(RContRBTree *tree, void *data, RContRBCmp cmp,
 RZ_API void *rz_rbtree_cont_find(RContRBTree *tree, void *data, RContRBCmp cmp, void *user);
 
 #define rz_rbtree_cont_foreach(tree, it, dat) \
-	for ((it) = rz_rbtree_first ((tree)->root ? &(tree)->root->node : NULL); rz_rbtree_iter_has(&it) && (dat = rz_rbtree_iter_get (&it, RContRBNode, node)->data); rz_rbtree_iter_next (&(it)))
+	for ((it) = rz_rbtree_first((tree)->root ? &(tree)->root->node : NULL); rz_rbtree_iter_has(&it) && (dat = rz_rbtree_iter_get(&it, RContRBNode, node)->data); rz_rbtree_iter_next(&(it)))
 
 #define rz_rbtree_cont_foreach_prev(tree, it, dat) \
-	for ((it) = rz_rbtree_last ((tree)->root ? &(tree)->root->node : NULL); rz_rbtree_iter_has(&it) && (dat = rz_rbtree_iter_get (&it, RContRBNode, node)->data); rz_rbtree_iter_prev (&(it)))
+	for ((it) = rz_rbtree_last((tree)->root ? &(tree)->root->node : NULL); rz_rbtree_iter_has(&it) && (dat = rz_rbtree_iter_get(&it, RContRBNode, node)->data); rz_rbtree_iter_prev(&(it)))
 
 RZ_API void rz_rbtree_cont_free(RContRBTree *tree);
 

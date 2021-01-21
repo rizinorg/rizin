@@ -9,7 +9,7 @@
 #else
 #define CAPSTONE_HAS_M68K 0
 #ifdef _MSC_VER
-#pragma message ("Cannot find capstone-m68k support")
+#pragma message("Cannot find capstone-m68k support")
 #else
 #warning Cannot find capstone-m68k support
 #endif
@@ -28,59 +28,59 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	const char *buf_asm = NULL;
 	static int omode = -1;
 	static int obits = 32;
-	cs_insn* insn = NULL;
+	cs_insn *insn = NULL;
 	int ret = 0, n = 0;
-	cs_mode mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
+	cs_mode mode = a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 	if (mode != omode || a->bits != obits) {
-		cs_close (&cd);
+		cs_close(&cd);
 		cd = 0; // unnecessary
 		omode = mode;
 		obits = a->bits;
 	}
 
 	// replace this with the asm.features?
-	if (a->cpu && strstr (a->cpu, "68000")) {
+	if (a->cpu && strstr(a->cpu, "68000")) {
 		mode |= CS_MODE_M68K_000;
 	}
-	if (a->cpu && strstr (a->cpu, "68010")) {
+	if (a->cpu && strstr(a->cpu, "68010")) {
 		mode |= CS_MODE_M68K_010;
 	}
-	if (a->cpu && strstr (a->cpu, "68020")) {
+	if (a->cpu && strstr(a->cpu, "68020")) {
 		mode |= CS_MODE_M68K_020;
 	}
-	if (a->cpu && strstr (a->cpu, "68030")) {
+	if (a->cpu && strstr(a->cpu, "68030")) {
 		mode |= CS_MODE_M68K_030;
 	}
-	if (a->cpu && strstr (a->cpu, "68040")) {
+	if (a->cpu && strstr(a->cpu, "68040")) {
 		mode |= CS_MODE_M68K_040;
 	}
-	if (a->cpu && strstr (a->cpu, "68060")) {
+	if (a->cpu && strstr(a->cpu, "68060")) {
 		mode |= CS_MODE_M68K_060;
 	}
 	if (op) {
 		op->size = 4;
 	}
 	if (cd == 0) {
-		ret = cs_open (CS_ARCH_M68K, mode, &cd);
+		ret = cs_open(CS_ARCH_M68K, mode, &cd);
 		if (ret) {
 			ret = -1;
 			goto beach;
 		}
 	}
 	if (a->features && *a->features) {
-		cs_option (cd, CS_OPT_DETAIL, CS_OPT_ON);
+		cs_option(cd, CS_OPT_DETAIL, CS_OPT_ON);
 	} else {
-		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
+		cs_option(cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
 	if (!buf) {
 		goto beach;
 	}
 
-	ut8 mybuf[M68K_LONGEST_INSTRUCTION] = {0};
-	int mylen = RZ_MIN (M68K_LONGEST_INSTRUCTION, len);
-	memcpy (mybuf, buf, mylen);
+	ut8 mybuf[M68K_LONGEST_INSTRUCTION] = { 0 };
+	int mylen = RZ_MIN(M68K_LONGEST_INSTRUCTION, len);
+	memcpy(mybuf, buf, mylen);
 
-	n = cs_disasm (cd, mybuf, mylen, a->pc, 1, &insn);
+	n = cs_disasm(cd, mybuf, mylen, a->pc, 1, &insn);
 	if (n < 1) {
 		ret = -1;
 		goto beach;
@@ -88,12 +88,12 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	if (op) {
 		op->size = 0;
 	}
-	if (insn->size<1) {
+	if (insn->size < 1) {
 		ret = -1;
 		goto beach;
 	}
 	if (a->features && *a->features) {
-		if (!check_features (a, insn)) {
+		if (!check_features(a, insn)) {
 			if (op) {
 				op->size = insn->size;
 				buf_asm = "illegal";
@@ -102,22 +102,22 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 	if (op && !op->size) {
 		op->size = insn->size;
-		buf_asm = sdb_fmt ("%s%s%s", insn->mnemonic, insn->op_str[0]?" ":"", insn->op_str);
+		buf_asm = sdb_fmt("%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
 	}
 	if (op && buf_asm) {
-		char *p = rz_str_replace (strdup (buf_asm), "$", "0x", true);
+		char *p = rz_str_replace(strdup(buf_asm), "$", "0x", true);
 		if (p) {
-			rz_str_replace_char (p, '#', 0);
-			rz_asm_op_set_asm (op, p);
-			free (p);
+			rz_str_replace_char(p, '#', 0);
+			rz_asm_op_set_asm(op, p);
+			free(p);
 		}
 	}
-	cs_free (insn, n);
+	cs_free(insn, n);
 beach:
 	//cs_close (&cd);
 	if (op && buf_asm) {
-		if (!strncmp (buf_asm, "dc.w", 4)) {
-			rz_asm_op_set_asm (op, "invalid");
+		if (!strncmp(buf_asm, "dc.w", 4)) {
+			rz_asm_op_set_asm(op, "invalid");
 		}
 		return op->size;
 	}

@@ -8,7 +8,7 @@
 #include "../arch/whitespace/wsdis.c"
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	return wsdis (op, buf, len);
+	return wsdis(op, buf, len);
 }
 
 RzAsmPlugin rz_asm_plugin_ws = {

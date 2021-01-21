@@ -105,137 +105,137 @@
 #define DEBUG 0
 
 /*arch flags*/
-#define IDASIG__ARCH__386        0       // Intel 80x86
-#define IDASIG__ARCH__Z80        1       // 8085, Z80
-#define IDASIG__ARCH__I860       2       // Intel 860
-#define IDASIG__ARCH__8051       3       // 8051
-#define IDASIG__ARCH__TMS        4       // Texas Instruments TMS320C5x
-#define IDASIG__ARCH__6502       5       // 6502
-#define IDASIG__ARCH__PDP        6       // PDP11
-#define IDASIG__ARCH__68K        7       // Motoroal 680x0
-#define IDASIG__ARCH__JAVA       8       // Java
-#define IDASIG__ARCH__6800       9       // Motorola 68xx
-#define IDASIG__ARCH__ST7        10      // SGS-Thomson ST7
-#define IDASIG__ARCH__MC6812     11      // Motorola 68HC12
-#define IDASIG__ARCH__MIPS       12      // MIPS
-#define IDASIG__ARCH__ARM        13      // Advanced RISC Machines
-#define IDASIG__ARCH__TMSC6      14      // Texas Instruments TMS320C6x
-#define IDASIG__ARCH__PPC        15      // PowerPC
-#define IDASIG__ARCH__80196      16      // Intel 80196
-#define IDASIG__ARCH__Z8         17      // Z8
-#define IDASIG__ARCH__SH         18      // Renesas (formerly Hitachi) SuperH
-#define IDASIG__ARCH__NET        19      // Microsoft Visual Studio.Net
-#define IDASIG__ARCH__AVR        20      // Atmel 8-bit RISC processor(s)
-#define IDASIG__ARCH__H8         21      // Hitachi H8/300, H8/2000
-#define IDASIG__ARCH__PIC        22      // Microchip's PIC
-#define IDASIG__ARCH__SPARC      23      // SPARC
-#define IDASIG__ARCH__ALPHA      24      // DEC Alpha
-#define IDASIG__ARCH__HPPA       25      // Hewlett-Packard PA-RISC
-#define IDASIG__ARCH__H8500      26      // Hitachi H8/500
-#define IDASIG__ARCH__TRICORE    27      // Tasking Tricore
-#define IDASIG__ARCH__DSP56K     28      // Motorola DSP5600x
-#define IDASIG__ARCH__C166       29      // Siemens C166 family
-#define IDASIG__ARCH__ST20       30      // SGS-Thomson ST20
-#define IDASIG__ARCH__IA64       31      // Intel Itanium IA64
-#define IDASIG__ARCH__I960       32      // Intel 960
-#define IDASIG__ARCH__F2MC       33      // Fujistu F2MC-16
-#define IDASIG__ARCH__TMS320C54  34      // Texas Instruments TMS320C54xx
-#define IDASIG__ARCH__TMS320C55  35      // Texas Instruments TMS320C55xx
-#define IDASIG__ARCH__TRIMEDIA   36      // Trimedia
-#define IDASIG__ARCH__M32R       37      // Mitsubishi 32bit RISC
-#define IDASIG__ARCH__NEC_78K0   38      // NEC 78K0
-#define IDASIG__ARCH__NEC_78K0S  39      // NEC 78K0S
-#define IDASIG__ARCH__M740       40      // Mitsubishi 8bit
-#define IDASIG__ARCH__M7700      41      // Mitsubishi 16bit
-#define IDASIG__ARCH__ST9        42      // ST9+
-#define IDASIG__ARCH__FR         43      // Fujitsu FR Family
-#define IDASIG__ARCH__MC6816     44      // Motorola 68HC16
-#define IDASIG__ARCH__M7900      45      // Mitsubishi 7900
-#define IDASIG__ARCH__TMS320C3   46      // Texas Instruments TMS320C3
-#define IDASIG__ARCH__KR1878     47      // Angstrem KR1878
-#define IDASIG__ARCH__AD218X     48      // Analog Devices ADSP 218X
-#define IDASIG__ARCH__OAKDSP     49      // Atmel OAK DSP
-#define IDASIG__ARCH__TLCS900    50      // Toshiba TLCS-900
-#define IDASIG__ARCH__C39        51      // Rockwell C39
-#define IDASIG__ARCH__CR16       52      // NSC CR16
-#define IDASIG__ARCH__MN102L00   53      // Panasonic MN10200
-#define IDASIG__ARCH__TMS320C1X  54      // Texas Instruments TMS320C1x
-#define IDASIG__ARCH__NEC_V850X  55      // NEC V850 and V850ES/E1/E2
-#define IDASIG__ARCH__SCR_ADPT   56      // Processor module adapter for processor modules written in scripting languages
-#define IDASIG__ARCH__EBC        57      // EFI Bytecode
-#define IDASIG__ARCH__MSP430     58      // Texas Instruments MSP430
-#define IDASIG__ARCH__SPU        59      // Cell Broadband Engine Synergistic Processor Unit
-#define IDASIG__ARCH__DALVIK     60      // Android Dalvik Virtual Machine
+#define IDASIG__ARCH__386       0 // Intel 80x86
+#define IDASIG__ARCH__Z80       1 // 8085, Z80
+#define IDASIG__ARCH__I860      2 // Intel 860
+#define IDASIG__ARCH__8051      3 // 8051
+#define IDASIG__ARCH__TMS       4 // Texas Instruments TMS320C5x
+#define IDASIG__ARCH__6502      5 // 6502
+#define IDASIG__ARCH__PDP       6 // PDP11
+#define IDASIG__ARCH__68K       7 // Motoroal 680x0
+#define IDASIG__ARCH__JAVA      8 // Java
+#define IDASIG__ARCH__6800      9 // Motorola 68xx
+#define IDASIG__ARCH__ST7       10 // SGS-Thomson ST7
+#define IDASIG__ARCH__MC6812    11 // Motorola 68HC12
+#define IDASIG__ARCH__MIPS      12 // MIPS
+#define IDASIG__ARCH__ARM       13 // Advanced RISC Machines
+#define IDASIG__ARCH__TMSC6     14 // Texas Instruments TMS320C6x
+#define IDASIG__ARCH__PPC       15 // PowerPC
+#define IDASIG__ARCH__80196     16 // Intel 80196
+#define IDASIG__ARCH__Z8        17 // Z8
+#define IDASIG__ARCH__SH        18 // Renesas (formerly Hitachi) SuperH
+#define IDASIG__ARCH__NET       19 // Microsoft Visual Studio.Net
+#define IDASIG__ARCH__AVR       20 // Atmel 8-bit RISC processor(s)
+#define IDASIG__ARCH__H8        21 // Hitachi H8/300, H8/2000
+#define IDASIG__ARCH__PIC       22 // Microchip's PIC
+#define IDASIG__ARCH__SPARC     23 // SPARC
+#define IDASIG__ARCH__ALPHA     24 // DEC Alpha
+#define IDASIG__ARCH__HPPA      25 // Hewlett-Packard PA-RISC
+#define IDASIG__ARCH__H8500     26 // Hitachi H8/500
+#define IDASIG__ARCH__TRICORE   27 // Tasking Tricore
+#define IDASIG__ARCH__DSP56K    28 // Motorola DSP5600x
+#define IDASIG__ARCH__C166      29 // Siemens C166 family
+#define IDASIG__ARCH__ST20      30 // SGS-Thomson ST20
+#define IDASIG__ARCH__IA64      31 // Intel Itanium IA64
+#define IDASIG__ARCH__I960      32 // Intel 960
+#define IDASIG__ARCH__F2MC      33 // Fujistu F2MC-16
+#define IDASIG__ARCH__TMS320C54 34 // Texas Instruments TMS320C54xx
+#define IDASIG__ARCH__TMS320C55 35 // Texas Instruments TMS320C55xx
+#define IDASIG__ARCH__TRIMEDIA  36 // Trimedia
+#define IDASIG__ARCH__M32R      37 // Mitsubishi 32bit RISC
+#define IDASIG__ARCH__NEC_78K0  38 // NEC 78K0
+#define IDASIG__ARCH__NEC_78K0S 39 // NEC 78K0S
+#define IDASIG__ARCH__M740      40 // Mitsubishi 8bit
+#define IDASIG__ARCH__M7700     41 // Mitsubishi 16bit
+#define IDASIG__ARCH__ST9       42 // ST9+
+#define IDASIG__ARCH__FR        43 // Fujitsu FR Family
+#define IDASIG__ARCH__MC6816    44 // Motorola 68HC16
+#define IDASIG__ARCH__M7900     45 // Mitsubishi 7900
+#define IDASIG__ARCH__TMS320C3  46 // Texas Instruments TMS320C3
+#define IDASIG__ARCH__KR1878    47 // Angstrem KR1878
+#define IDASIG__ARCH__AD218X    48 // Analog Devices ADSP 218X
+#define IDASIG__ARCH__OAKDSP    49 // Atmel OAK DSP
+#define IDASIG__ARCH__TLCS900   50 // Toshiba TLCS-900
+#define IDASIG__ARCH__C39       51 // Rockwell C39
+#define IDASIG__ARCH__CR16      52 // NSC CR16
+#define IDASIG__ARCH__MN102L00  53 // Panasonic MN10200
+#define IDASIG__ARCH__TMS320C1X 54 // Texas Instruments TMS320C1x
+#define IDASIG__ARCH__NEC_V850X 55 // NEC V850 and V850ES/E1/E2
+#define IDASIG__ARCH__SCR_ADPT  56 // Processor module adapter for processor modules written in scripting languages
+#define IDASIG__ARCH__EBC       57 // EFI Bytecode
+#define IDASIG__ARCH__MSP430    58 // Texas Instruments MSP430
+#define IDASIG__ARCH__SPU       59 // Cell Broadband Engine Synergistic Processor Unit
+#define IDASIG__ARCH__DALVIK    60 // Android Dalvik Virtual Machine
 
 /*file_types flags*/
-#define IDASIG__FILE__DOS_EXE_OLD    0x00000001
-#define IDASIG__FILE__DOS_COM_OLD    0x00000002
-#define IDASIG__FILE__BIN            0x00000004
-#define IDASIG__FILE__DOSDRV         0x00000008
-#define IDASIG__FILE__NE             0x00000010
-#define IDASIG__FILE__INTELHEX       0x00000020
-#define IDASIG__FILE__MOSHEX         0x00000040
-#define IDASIG__FILE__LX             0x00000080
-#define IDASIG__FILE__LE             0x00000100
-#define IDASIG__FILE__NLM            0x00000200
-#define IDASIG__FILE__COFF           0x00000400
-#define IDASIG__FILE__PE             0x00000800
-#define IDASIG__FILE__OMF            0x00001000
-#define IDASIG__FILE__SREC           0x00002000
-#define IDASIG__FILE__ZIP            0x00004000
-#define IDASIG__FILE__OMFLIB         0x00008000
-#define IDASIG__FILE__AR             0x00010000
-#define IDASIG__FILE__LOADER         0x00020000
-#define IDASIG__FILE__ELF            0x00040000
-#define IDASIG__FILE__W32RUN         0x00080000
-#define IDASIG__FILE__AOUT           0x00100000
-#define IDASIG__FILE__PILOT          0x00200000
-#define IDASIG__FILE__DOS_EXE        0x00400000
-#define IDASIG__FILE__DOS_COM        0x00800000
-#define IDASIG__FILE__AIXAR          0x01000000
+#define IDASIG__FILE__DOS_EXE_OLD 0x00000001
+#define IDASIG__FILE__DOS_COM_OLD 0x00000002
+#define IDASIG__FILE__BIN         0x00000004
+#define IDASIG__FILE__DOSDRV      0x00000008
+#define IDASIG__FILE__NE          0x00000010
+#define IDASIG__FILE__INTELHEX    0x00000020
+#define IDASIG__FILE__MOSHEX      0x00000040
+#define IDASIG__FILE__LX          0x00000080
+#define IDASIG__FILE__LE          0x00000100
+#define IDASIG__FILE__NLM         0x00000200
+#define IDASIG__FILE__COFF        0x00000400
+#define IDASIG__FILE__PE          0x00000800
+#define IDASIG__FILE__OMF         0x00001000
+#define IDASIG__FILE__SREC        0x00002000
+#define IDASIG__FILE__ZIP         0x00004000
+#define IDASIG__FILE__OMFLIB      0x00008000
+#define IDASIG__FILE__AR          0x00010000
+#define IDASIG__FILE__LOADER      0x00020000
+#define IDASIG__FILE__ELF         0x00040000
+#define IDASIG__FILE__W32RUN      0x00080000
+#define IDASIG__FILE__AOUT        0x00100000
+#define IDASIG__FILE__PILOT       0x00200000
+#define IDASIG__FILE__DOS_EXE     0x00400000
+#define IDASIG__FILE__DOS_COM     0x00800000
+#define IDASIG__FILE__AIXAR       0x01000000
 
 /*os_types flags*/
-#define IDASIG__OS__MSDOS      0x01
-#define IDASIG__OS__WIN        0x02
-#define IDASIG__OS__OS2        0x04
-#define IDASIG__OS__NETWARE    0x08
-#define IDASIG__OS__UNIX       0x10
-#define IDASIG__OS__OTHER      0x20
+#define IDASIG__OS__MSDOS   0x01
+#define IDASIG__OS__WIN     0x02
+#define IDASIG__OS__OS2     0x04
+#define IDASIG__OS__NETWARE 0x08
+#define IDASIG__OS__UNIX    0x10
+#define IDASIG__OS__OTHER   0x20
 
 /*app types flags*/
-#define IDASIG__APP__CONSOLE            0x0001
-#define IDASIG__APP__GRAPHICS           0x0002
-#define IDASIG__APP__EXE                0x0004
-#define IDASIG__APP__DLL                0x0008
-#define IDASIG__APP__DRV                0x0010
-#define IDASIG__APP__SINGLE_THREADED    0x0020
-#define IDASIG__APP__MULTI_THREADED     0x0040
-#define IDASIG__APP__16_BIT             0x0080
-#define IDASIG__APP__32_BIT             0x0100
-#define IDASIG__APP__64_BIT             0x0200
+#define IDASIG__APP__CONSOLE         0x0001
+#define IDASIG__APP__GRAPHICS        0x0002
+#define IDASIG__APP__EXE             0x0004
+#define IDASIG__APP__DLL             0x0008
+#define IDASIG__APP__DRV             0x0010
+#define IDASIG__APP__SINGLE_THREADED 0x0020
+#define IDASIG__APP__MULTI_THREADED  0x0040
+#define IDASIG__APP__16_BIT          0x0080
+#define IDASIG__APP__32_BIT          0x0100
+#define IDASIG__APP__64_BIT          0x0200
 
 /*feature flags*/
-#define IDASIG__FEATURE__STARTUP          0x01
-#define IDASIG__FEATURE__CTYPE_CRC        0x02
-#define IDASIG__FEATURE__2BYTE_CTYPE      0x04
-#define IDASIG__FEATURE__ALT_CTYPE_CRC    0x08
-#define IDASIG__FEATURE__COMPRESSED       0x10
+#define IDASIG__FEATURE__STARTUP       0x01
+#define IDASIG__FEATURE__CTYPE_CRC     0x02
+#define IDASIG__FEATURE__2BYTE_CTYPE   0x04
+#define IDASIG__FEATURE__ALT_CTYPE_CRC 0x08
+#define IDASIG__FEATURE__COMPRESSED    0x10
 
 /*parsing flags*/
-#define IDASIG__PARSE__MORE_PUBLIC_NAMES            0x01
-#define IDASIG__PARSE__READ_TAIL_BYTES              0x02
-#define IDASIG__PARSE__READ_REFERENCED_FUNCTIONS    0x04
-#define IDASIG__PARSE__MORE_MODULES_WITH_SAME_CRC   0x08
-#define IDASIG__PARSE__MORE_MODULES                 0x10
+#define IDASIG__PARSE__MORE_PUBLIC_NAMES          0x01
+#define IDASIG__PARSE__READ_TAIL_BYTES            0x02
+#define IDASIG__PARSE__READ_REFERENCED_FUNCTIONS  0x04
+#define IDASIG__PARSE__MORE_MODULES_WITH_SAME_CRC 0x08
+#define IDASIG__PARSE__MORE_MODULES               0x10
 
 /*functions flags*/
-#define IDASIG__FUNCTION__LOCAL                     0x02 // describes a static function
-#define IDASIG__FUNCTION__UNRESOLVED_COLLISION      0x08 // describes a collision that wasn't resolved
+#define IDASIG__FUNCTION__LOCAL                0x02 // describes a static function
+#define IDASIG__FUNCTION__UNRESOLVED_COLLISION 0x08 // describes a collision that wasn't resolved
 
 typedef struct idasig_v5_t {
-/* newer header only add fields, that's why we'll always read a v5 header first */
-	ut8 magic[6];  /* should be set to IDASGN */
-	ut8 version;   /*from 5 to 9*/
+	/* newer header only add fields, that's why we'll always read a v5 header first */
+	ut8 magic[6]; /* should be set to IDASGN */
+	ut8 version; /*from 5 to 9*/
 	ut8 arch;
 	ut32 file_types;
 	ut16 os_types;
@@ -243,7 +243,7 @@ typedef struct idasig_v5_t {
 	ut16 features;
 	ut16 old_n_functions;
 	ut16 crc16;
-	ut8 ctype[12];  // XXX: how to use it
+	ut8 ctype[12]; // XXX: how to use it
 	ut8 library_name_len;
 	ut16 ctypes_crc16;
 } idasig_v5_t;
@@ -279,7 +279,6 @@ static int header_size = 0;
    n_functions      : number of functions
    pattern_size     : number of the leading pattern bytes
  */
-
 
 // XXX need more infos on compression of version 5 sigs
 // rz_inflate doesn't work with them
@@ -347,7 +346,7 @@ ut16 crc16(const unsigned char *data_p, size_t length) {
 	crc = ~crc;
 	data = crc;
 	crc = (crc << 8) | ((data >> 8) & 0xff);
-	return (ut16) (crc);
+	return (ut16)(crc);
 }
 
 // this is ugly, but we can't afford to change the return size of read_byte
@@ -361,7 +360,7 @@ static ut8 read_byte(RzBuffer *b) {
 	if (buf_eof || buf_err) {
 		return 0;
 	}
-	if ((length = rz_buf_read (b, &r, 1)) != 1) {
+	if ((length = rz_buf_read(b, &r, 1)) != 1) {
 		if (length == -1) {
 			buf_err = true;
 		}
@@ -374,38 +373,38 @@ static ut8 read_byte(RzBuffer *b) {
 }
 
 static ut16 read_short(RzBuffer *b) {
-	ut16 r = (read_byte (b) << 8);
-	r += read_byte (b);
+	ut16 r = (read_byte(b) << 8);
+	r += read_byte(b);
 	return r;
 }
 
 static ut32 read_word(RzBuffer *b) {
-	ut32 r = (read_short (b) << 16);
-	r += read_short (b);
+	ut32 r = (read_short(b) << 16);
+	r += read_short(b);
 	return r;
 }
 
 static ut16 read_max_2_bytes(RzBuffer *b) {
-	ut16 r = read_byte (b);
+	ut16 r = read_byte(b);
 	return (r & 0x80)
-		? ((r & 0x7f) << 8) + read_byte (b)
+		? ((r & 0x7f) << 8) + read_byte(b)
 		: r;
 }
 
 static ut32 read_multiple_bytes(RzBuffer *b) {
-	ut32 r = read_byte (b);
+	ut32 r = read_byte(b);
 	if ((r & 0x80) != 0x80) {
 		return r;
 	}
 	if ((r & 0xc0) != 0xc0) {
-		return ((r & 0x7f) << 8) + read_byte (b);
+		return ((r & 0x7f) << 8) + read_byte(b);
 	}
 	if ((r & 0xe0) != 0xe0) {
-		r = ((r & 0x3f) << 24) + (read_byte (b) << 16);
-		r += read_short (b);
+		r = ((r & 0x3f) << 24) + (read_byte(b) << 16);
+		r += read_short(b);
 		return r;
 	}
-	return read_word (b);
+	return read_word(b);
 }
 
 static void module_free(RzFlirtModule *module) {
@@ -413,35 +412,35 @@ static void module_free(RzFlirtModule *module) {
 		return;
 	}
 	if (module->public_functions) {
-		module->public_functions->free = (RzListFree) free;
-		rz_list_free (module->public_functions);
+		module->public_functions->free = (RzListFree)free;
+		rz_list_free(module->public_functions);
 	}
 	if (module->tail_bytes) {
-		module->tail_bytes->free = (RzListFree) free;
-		rz_list_free (module->tail_bytes);
+		module->tail_bytes->free = (RzListFree)free;
+		rz_list_free(module->tail_bytes);
 	}
 	if (module->referenced_functions) {
-		module->referenced_functions->free = (RzListFree) free;
-		rz_list_free (module->referenced_functions);
+		module->referenced_functions->free = (RzListFree)free;
+		rz_list_free(module->referenced_functions);
 	}
-	free (module);
+	free(module);
 }
 
 static void node_free(RzFlirtNode *node) {
 	if (!node) {
 		return;
 	}
-	free (node->variant_bool_array);
-	free (node->pattern_bytes);
+	free(node->variant_bool_array);
+	free(node->pattern_bytes);
 	if (node->module_list) {
 		node->module_list->free = (RzListFree)module_free;
-		rz_list_free (node->module_list);
+		rz_list_free(node->module_list);
 	}
 	if (node->child_list) {
-		node->child_list->free = (RzListFree) node_free;
-		rz_list_free (node->child_list);
+		node->child_list->free = (RzListFree)node_free;
+		rz_list_free(node->child_list);
 	}
-	free (node);
+	free(node);
 }
 
 static void print_module(const RzAnalysis *analysis, const RzFlirtModule *module) {
@@ -449,56 +448,55 @@ static void print_module(const RzAnalysis *analysis, const RzFlirtModule *module
 	RzFlirtFunction *func, *ref_func;
 	RzFlirtTailByte *tail_byte;
 
-	analysis->cb_printf ("%02X %04X %04X ", module->crc_length, module->crc16, module->length);
+	analysis->cb_printf("%02X %04X %04X ", module->crc_length, module->crc16, module->length);
 	rz_list_foreach (module->public_functions, pub_func_it, func) {
 		if (func->is_local || func->is_collision) {
-			analysis->cb_printf ("(");
+			analysis->cb_printf("(");
 			if (func->is_local) {
-				analysis->cb_printf ("l");
+				analysis->cb_printf("l");
 			}
 			if (func->is_collision) {
-				analysis->cb_printf ("!");
+				analysis->cb_printf("!");
 			}
-			analysis->cb_printf (")");
+			analysis->cb_printf(")");
 		}
-		analysis->cb_printf ("%04X:%s", func->offset, func->name);
+		analysis->cb_printf("%04X:%s", func->offset, func->name);
 		if (pub_func_it->n) {
-			analysis->cb_printf (" ");
+			analysis->cb_printf(" ");
 		}
 	}
 	if (module->tail_bytes) {
 		rz_list_foreach (module->tail_bytes, tail_byte_it, tail_byte) {
-			analysis->cb_printf (" (%04X: %02X)", tail_byte->offset, tail_byte->value);
+			analysis->cb_printf(" (%04X: %02X)", tail_byte->offset, tail_byte->value);
 		}
 	}
 	if (module->referenced_functions) {
-		analysis->cb_printf (" (REF ");
+		analysis->cb_printf(" (REF ");
 		rz_list_foreach (module->referenced_functions, ref_func_it, ref_func) {
-			analysis->cb_printf ("%04X: %s", ref_func->offset, ref_func->name);
+			analysis->cb_printf("%04X: %s", ref_func->offset, ref_func->name);
 			if (ref_func_it->n) {
-				analysis->cb_printf (" ");
+				analysis->cb_printf(" ");
 			}
 		}
-		analysis->cb_printf (")");
+		analysis->cb_printf(")");
 	}
-	analysis->cb_printf ("\n");
+	analysis->cb_printf("\n");
 }
-
 
 static void print_node_pattern(const RzAnalysis *analysis, const RzFlirtNode *node) {
 	int i;
 	for (i = 0; i < node->length; i++) {
 		if (node->variant_bool_array[i]) {
-			analysis->cb_printf ("..");
+			analysis->cb_printf("..");
 		} else {
-			analysis->cb_printf ("%02X", node->pattern_bytes[i]);
+			analysis->cb_printf("%02X", node->pattern_bytes[i]);
 		}
 	}
-	analysis->cb_printf (":\n");
+	analysis->cb_printf(":\n");
 }
 
 static void print_indentation(const RzAnalysis *analysis, int indent) {
-	analysis->cb_printf ("%s", rz_str_pad (' ', indent));
+	analysis->cb_printf("%s", rz_str_pad(' ', indent));
 }
 
 static void print_node(const RzAnalysis *analysis, const RzFlirtNode *node, int indent) {
@@ -509,26 +507,26 @@ static void print_node(const RzAnalysis *analysis, const RzFlirtNode *node, int 
 	RzFlirtModule *module;
 
 	if (node->pattern_bytes) { // avoid printing the root node
-		print_indentation (analysis, indent);
-		print_node_pattern (analysis, node);
+		print_indentation(analysis, indent);
+		print_node_pattern(analysis, node);
 	}
 	if (node->child_list) {
 		rz_list_foreach (node->child_list, child_it, child) {
-			print_node (analysis, child, indent + 1);
+			print_node(analysis, child, indent + 1);
 		}
 	} else if (node->module_list) {
 		i = 0;
 		rz_list_foreach (node->module_list, module_it, module) {
-			print_indentation (analysis, indent + 1);
-			analysis->cb_printf ("%d. ", i);
-			print_module (analysis, module);
+			print_indentation(analysis, indent + 1);
+			analysis->cb_printf("%d. ", i);
+			print_module(analysis, module);
 			i++;
 		}
 	}
 }
 
 static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module,
-                               ut8 *b, ut64 address, ut32 buf_size) {
+	ut8 *b, ut64 address, ut32 buf_size) {
 	/* Returns true if module matches b, according to the signatures infos.
 	* Return false otherwise.
 	* The buffer starts from the first byte after the pattern */
@@ -538,13 +536,13 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 	RzFlirtTailByte *tail_byte;
 
 	if (32 + module->crc_length < buf_size &&
-	module->crc16 != crc16 (b + 32, module->crc_length)) {
+		module->crc16 != crc16(b + 32, module->crc_length)) {
 		return false;
 	}
 	if (module->tail_bytes) {
 		rz_list_foreach (module->tail_bytes, tail_byte_it, tail_byte) {
 			if (32 + module->crc_length + tail_byte->offset < buf_size &&
-			b[32 + module->crc_length + tail_byte->offset] != tail_byte->value) {
+				b[32 + module->crc_length + tail_byte->offset] != tail_byte->value) {
 				return false;
 			}
 		}
@@ -556,7 +554,7 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 		// Once the first module function is found, we need to go through the module->public_functions
 		// list to identify the others. See flirt doc for more information
 
-		next_module_function = rz_analysis_get_function_at ((RzAnalysis *) analysis, address + flirt_func->offset);
+		next_module_function = rz_analysis_get_function_at((RzAnalysis *)analysis, address + flirt_func->offset);
 		if (next_module_function) {
 			char *name;
 			int name_offs = 0;
@@ -575,29 +573,28 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 				next_flirt_func_it = next_flirt_func_it->n;
 			}
 			// resize function if needed
-			next_module_function_size = rz_analysis_function_linear_size (next_module_function);
+			next_module_function_size = rz_analysis_function_linear_size(next_module_function);
 			if (next_module_function_size < flirt_fcn_size) {
 				RzListIter *iter;
 				RzListIter *iter_tmp;
 				RzAnalysisFunction *fcn;
 				rz_list_foreach_safe (analysis->fcns, iter, iter_tmp, fcn) {
 					if (fcn != next_module_function &&
-							fcn->addr >= next_module_function->addr + next_module_function_size &&
-							fcn->addr < next_module_function->addr + flirt_fcn_size) {
+						fcn->addr >= next_module_function->addr + next_module_function_size &&
+						fcn->addr < next_module_function->addr + flirt_fcn_size) {
 						RzListIter *iter_bb;
 						RzAnalysisBlock *block;
 						rz_list_foreach (fcn->bbs, iter_bb, block) {
-							rz_analysis_function_add_block (next_module_function, block);
+							rz_analysis_function_add_block(next_module_function, block);
 						}
 						next_module_function->ninstr += fcn->ninstr;
-						rz_analysis_function_delete (fcn);
+						rz_analysis_function_delete(fcn);
 					}
 				}
-				rz_analysis_function_resize (next_module_function, flirt_fcn_size);
-				next_module_function_size = rz_analysis_function_linear_size (next_module_function);
-				rz_analysis_trim_jmprefs ((RzAnalysis *)analysis, next_module_function);
+				rz_analysis_function_resize(next_module_function, flirt_fcn_size);
+				next_module_function_size = rz_analysis_function_linear_size(next_module_function);
+				rz_analysis_trim_jmprefs((RzAnalysis *)analysis, next_module_function);
 			}
-
 
 			while (flirt_func->name[name_offs] == '?') { // skip '?' chars
 				name_offs++;
@@ -605,13 +602,13 @@ static int module_match_buffer(RzAnalysis *analysis, const RzFlirtModule *module
 			if (!flirt_func->name[name_offs]) {
 				continue;
 			}
-			name = rz_name_filter2 (flirt_func->name + name_offs);
-			free (next_module_function->name);
-			next_module_function->name = rz_str_newf ("flirt.%s", name);
-			analysis->flb.set (analysis->flb.f, next_module_function->name,
+			name = rz_name_filter2(flirt_func->name + name_offs);
+			free(next_module_function->name);
+			next_module_function->name = rz_str_newf("flirt.%s", name);
+			analysis->flb.set(analysis->flb.f, next_module_function->name,
 				next_module_function->addr, next_module_function_size);
-			analysis->cb_printf ("Found %s\n", next_module_function->name);
-			free (name);
+			analysis->cb_printf("Found %s\n", next_module_function->name);
+			free(name);
 		}
 	}
 	return true;
@@ -639,16 +636,16 @@ static int node_match_buffer(RzAnalysis *analysis, const RzFlirtNode *node, ut8 
 	RzFlirtNode *child;
 	RzFlirtModule *module;
 
-	if (node_pattern_match (node, b + buf_idx, buf_size - buf_idx)) {
+	if (node_pattern_match(node, b + buf_idx, buf_size - buf_idx)) {
 		if (node->child_list) {
 			rz_list_foreach (node->child_list, node_child_it, child) {
-				if (node_match_buffer (analysis, child, b, address, buf_size, buf_idx + node->length)) {
+				if (node_match_buffer(analysis, child, b, address, buf_size, buf_idx + node->length)) {
 					return true;
 				}
 			}
 		} else if (node->module_list) {
 			rz_list_foreach (node->module_list, module_it, module) {
-				if (module_match_buffer (analysis, module, b, address, buf_size)) {
+				if (module_match_buffer(analysis, module, b, address, buf_size)) {
 					return true;
 				}
 			}
@@ -663,12 +660,12 @@ static int node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_no
 	* and the analyzed functions in anal
 	* Returns false on error. */
 
-	if (rz_list_length (analysis->fcns) == 0) {
-		analysis->cb_printf ("There are no analyzed functions. Have you run 'aa'?\n");
+	if (rz_list_length(analysis->fcns) == 0) {
+		analysis->cb_printf("There are no analyzed functions. Have you run 'aa'?\n");
 		return true;
 	}
 
-	analysis->flb.push_fs (analysis->flb.f, "flirt");
+	analysis->flb.push_fs(analysis->flb.f, "flirt");
 	RzListIter *it_func;
 	RzAnalysisFunction *func;
 	rz_list_foreach (analysis->fcns, it_func, func) {
@@ -676,26 +673,26 @@ static int node_match_functions(RzAnalysis *analysis, const RzFlirtNode *root_no
 			continue;
 		}
 
-		ut64 func_size = rz_analysis_function_linear_size (func);
-		ut8 *func_buf = malloc (func_size);
+		ut64 func_size = rz_analysis_function_linear_size(func);
+		ut8 *func_buf = malloc(func_size);
 		if (!func_buf) {
 			continue;
 		}
-		if (!analysis->iob.read_at (analysis->iob.io, func->addr, func_buf, (int)func_size)) {
-			eprintf ("Couldn't read function %s at 0x%"PFMT64x"\n", func->name, func->addr);
-			free (func_buf);
+		if (!analysis->iob.read_at(analysis->iob.io, func->addr, func_buf, (int)func_size)) {
+			eprintf("Couldn't read function %s at 0x%" PFMT64x "\n", func->name, func->addr);
+			free(func_buf);
 			continue;
 		}
 		RzListIter *node_child_it;
 		RzFlirtNode *child;
 		rz_list_foreach (root_node->child_list, node_child_it, child) {
-			if (node_match_buffer (analysis, child, func_buf, func->addr, func_size, 0)) {
+			if (node_match_buffer(analysis, child, func_buf, func->addr, func_size, 0)) {
 				break;
 			}
 		}
-		free (func_buf);
+		free(func_buf);
 	}
-	analysis->flb.pop_fs (analysis->flb.f);
+	analysis->flb.pop_fs(analysis->flb.f);
 
 	return true;
 }
@@ -706,12 +703,12 @@ static ut8 read_module_tail_bytes(RzFlirtModule *module, RzBuffer *b) {
 	int i;
 	ut8 number_of_tail_bytes;
 	RzFlirtTailByte *tail_byte = NULL;
-	if (!(module->tail_bytes = rz_list_newf ((RzListFree) free))) {
+	if (!(module->tail_bytes = rz_list_newf((RzListFree)free))) {
 		goto err_exit;
 	}
 
 	if (version >= 8) { // this counter was introduced in version 8
-		number_of_tail_bytes = read_byte (b); // XXX are we sure it's not read_multiple_bytes?
+		number_of_tail_bytes = read_byte(b); // XXX are we sure it's not read_multiple_bytes?
 		if (buf_eof || buf_err) {
 			goto err_exit;
 		}
@@ -719,37 +716,37 @@ static ut8 read_module_tail_bytes(RzFlirtModule *module, RzBuffer *b) {
 		number_of_tail_bytes = 1;
 	}
 	for (i = 0; i < number_of_tail_bytes; i++) {
-		tail_byte = RZ_NEW0 (RzFlirtTailByte);
+		tail_byte = RZ_NEW0(RzFlirtTailByte);
 		if (!tail_byte) {
 			return false;
 		}
 		if (version >= 9) {
 			/*/!\ XXX don't trust ./zipsig output because it will write a version 9 header, but keep the old version offsets*/
-			tail_byte->offset = read_multiple_bytes (b);
+			tail_byte->offset = read_multiple_bytes(b);
 			if (buf_eof || buf_err) {
 				goto err_exit;
 			}
 		} else {
-			tail_byte->offset = read_max_2_bytes (b);
+			tail_byte->offset = read_max_2_bytes(b);
 			if (buf_eof || buf_err) {
 				goto err_exit;
 			}
 		}
-		tail_byte->value = read_byte (b);
+		tail_byte->value = read_byte(b);
 		if (buf_eof || buf_err) {
 			goto err_exit;
 		}
-		rz_list_append (module->tail_bytes, tail_byte);
+		rz_list_append(module->tail_bytes, tail_byte);
 #if DEBUG
-		eprintf ("READ TAIL BYTE: %04X: %02X\n", tail_byte->offset, tail_byte->value);
+		eprintf("READ TAIL BYTE: %04X: %02X\n", tail_byte->offset, tail_byte->value);
 #endif
 	}
 
 	return true;
 
 err_exit:
-	free (tail_byte);
-	rz_list_free (module->tail_bytes);
+	free(tail_byte);
+	rz_list_free(module->tail_bytes);
 	return false;
 }
 
@@ -761,10 +758,10 @@ static ut8 read_module_referenced_functions(RzFlirtModule *module, RzBuffer *b) 
 	ut32 ref_function_name_length;
 	RzFlirtFunction *ref_function = NULL;
 
-	module->referenced_functions = rz_list_new ();
+	module->referenced_functions = rz_list_new();
 
 	if (version >= 8) { // this counter was introduced in version 8
-		number_of_referenced_functions = read_byte (b); // XXX are we sure it's not read_multiple_bytes?
+		number_of_referenced_functions = read_byte(b); // XXX are we sure it's not read_multiple_bytes?
 		if (buf_eof || buf_err) {
 			goto err_exit;
 		}
@@ -773,37 +770,37 @@ static ut8 read_module_referenced_functions(RzFlirtModule *module, RzBuffer *b) 
 	}
 
 	for (i = 0; i < number_of_referenced_functions; i++) {
-		ref_function = RZ_NEW0 (RzFlirtFunction);
+		ref_function = RZ_NEW0(RzFlirtFunction);
 		if (!ref_function) {
 			goto err_exit;
 		}
 		if (version >= 9) {
-			ref_function->offset = read_multiple_bytes (b);
+			ref_function->offset = read_multiple_bytes(b);
 			if (buf_eof || buf_err) {
 				goto err_exit;
 			}
 		} else {
-			ref_function->offset = read_max_2_bytes (b);
+			ref_function->offset = read_max_2_bytes(b);
 			if (buf_eof || buf_err) {
 				goto err_exit;
 			}
 		}
-		ref_function_name_length = read_byte (b);
+		ref_function_name_length = read_byte(b);
 		if (buf_eof || buf_err) {
 			goto err_exit;
 		}
 		if (!ref_function_name_length) {
 			// not sure why it's not read_multiple_bytes() in the first place
-			ref_function_name_length = read_multiple_bytes (b); // XXX might be read_max_2_bytes, need more data
+			ref_function_name_length = read_multiple_bytes(b); // XXX might be read_max_2_bytes, need more data
 			if (buf_eof || buf_err) {
 				goto err_exit;
 			}
 		}
-		if ((int) ref_function_name_length < 0 || ref_function_name_length >= RZ_FLIRT_NAME_MAX) {
+		if ((int)ref_function_name_length < 0 || ref_function_name_length >= RZ_FLIRT_NAME_MAX) {
 			goto err_exit;
 		}
 		for (j = 0; j < ref_function_name_length; j++) {
-			ref_function->name[j] = read_byte (b);
+			ref_function->name[j] = read_byte(b);
 			if (buf_eof || buf_err) {
 				goto err_exit;
 			}
@@ -814,16 +811,16 @@ static ut8 read_module_referenced_functions(RzFlirtModule *module, RzBuffer *b) 
 		} else {
 			ref_function->name[ref_function_name_length] = '\0';
 		}
-		rz_list_append (module->referenced_functions, ref_function);
+		rz_list_append(module->referenced_functions, ref_function);
 #if DEBUG
-		eprintf ("(REF: %04X: %s)\n", ref_function->offset, ref_function->name);
+		eprintf("(REF: %04X: %s)\n", ref_function->offset, ref_function->name);
 #endif
 	}
 
 	return true;
 
 err_exit:
-	free (ref_function);
+	free(ref_function);
 	return false;
 }
 
@@ -835,24 +832,24 @@ static ut8 read_module_public_functions(RzFlirtModule *module, RzBuffer *b, ut8 
 	ut8 current_byte;
 	RzFlirtFunction *function = NULL;
 
-	module->public_functions = rz_list_new ();
+	module->public_functions = rz_list_new();
 
 	do {
-		function = RZ_NEW0 (RzFlirtFunction);
-		if (version >= 9) {   // seems like version 9 introduced some larger offsets
-			offset += read_multiple_bytes (b); // offsets are dependent of the previous ones
+		function = RZ_NEW0(RzFlirtFunction);
+		if (version >= 9) { // seems like version 9 introduced some larger offsets
+			offset += read_multiple_bytes(b); // offsets are dependent of the previous ones
 			if (buf_eof || buf_err) {
 				goto err_exit;
 			}
 		} else {
-			offset += read_max_2_bytes (b); // offsets are dependent of the previous ones
+			offset += read_max_2_bytes(b); // offsets are dependent of the previous ones
 			if (buf_eof || buf_err) {
 				goto err_exit;
 			}
 		}
 		function->offset = offset;
 
-		current_byte = read_byte (b);
+		current_byte = read_byte(b);
 		if (buf_eof || buf_err) {
 			goto err_exit;
 		}
@@ -867,11 +864,11 @@ static ut8 read_module_public_functions(RzFlirtModule *module, RzBuffer *b, ut8 
 			if (current_byte & 0x01 || current_byte & 0x04) { // appears as 'd' or '?' in dumpsig
 #if DEBUG
 				// XXX investigate
-				eprintf ("INVESTIGATE PUBLIC NAME FLAG: %02X @ %04X\n", current_byte,
-					rz_buf_tell (b) + header_size);
+				eprintf("INVESTIGATE PUBLIC NAME FLAG: %02X @ %04X\n", current_byte,
+					rz_buf_tell(b) + header_size);
 #endif
 			}
-			current_byte = read_byte (b);
+			current_byte = read_byte(b);
 			if (buf_eof || buf_err) {
 				goto err_exit;
 			}
@@ -879,33 +876,33 @@ static ut8 read_module_public_functions(RzFlirtModule *module, RzBuffer *b, ut8 
 
 		for (i = 0; current_byte >= 0x20 && i < RZ_FLIRT_NAME_MAX; i++) {
 			function->name[i] = current_byte;
-			current_byte = read_byte (b);
+			current_byte = read_byte(b);
 			if (buf_eof || buf_err) {
 				goto err_exit;
 			}
 		}
 
 		if (i == RZ_FLIRT_NAME_MAX) {
-			eprintf ("Function name too long\n");
+			eprintf("Function name too long\n");
 			function->name[RZ_FLIRT_NAME_MAX - 1] = '\0';
 		} else {
 			function->name[i] = '\0';
 		}
 
 #if DEBUG
-		eprintf ("%04X:%s ", function->offset, function->name);
+		eprintf("%04X:%s ", function->offset, function->name);
 #endif
 		*flags = current_byte;
-		rz_list_append (module->public_functions, function);
+		rz_list_append(module->public_functions, function);
 	} while (*flags & IDASIG__PARSE__MORE_PUBLIC_NAMES);
 #if DEBUG
-	eprintf ("\n");
+	eprintf("\n");
 #endif
 
 	return true;
 
 err_exit:
-	free (function);
+	free(function);
 	return false;
 }
 
@@ -916,25 +913,27 @@ static ut8 parse_leaf(const RzAnalysis *analysis, RzBuffer *b, RzFlirtNode *node
 	ut16 crc16;
 	RzFlirtModule *module = NULL;
 
-	node->module_list = rz_list_new ();
+	node->module_list = rz_list_new();
 	do { // loop for all modules having the same prefix
 
-		crc_length = read_byte (b); if (buf_eof || buf_err) {
+		crc_length = read_byte(b);
+		if (buf_eof || buf_err) {
 			goto err_exit;
 		}
-		crc16 = read_short (b); if (buf_eof || buf_err) {
+		crc16 = read_short(b);
+		if (buf_eof || buf_err) {
 			goto err_exit;
 		}
 #if DEBUG
 		if (crc_length == 0x00 && crc16 != 0x0000) {
-			eprintf ("WARNING non zero crc of zero length @ %04X\n",
-				rz_buf_tell (b) + header_size);
+			eprintf("WARNING non zero crc of zero length @ %04X\n",
+				rz_buf_tell(b) + header_size);
 		}
-		eprintf ("crc_len: %02X crc16: %04X\n", crc_length, crc16);
+		eprintf("crc_len: %02X crc16: %04X\n", crc_length, crc16);
 #endif
 
 		do { // loop for all modules having the same crc
-			module = RZ_NEW0 (RzFlirtModule);
+			module = RZ_NEW0(RzFlirtModule);
 			if (!module) {
 				goto err_exit;
 			}
@@ -944,53 +943,53 @@ static ut8 parse_leaf(const RzAnalysis *analysis, RzBuffer *b, RzFlirtNode *node
 
 			if (version >= 9) { // seems like version 9 introduced some larger length
 				/*/!\ XXX don't trust ./zipsig output because it will write a version 9 header, but keep the old version offsets*/
-				module->length = read_multiple_bytes (b); // should be < 0x8000
+				module->length = read_multiple_bytes(b); // should be < 0x8000
 				if (buf_eof || buf_err) {
 					goto err_exit;
 				}
 			} else {
-				module->length = read_max_2_bytes (b); // should be < 0x8000
+				module->length = read_max_2_bytes(b); // should be < 0x8000
 				if (buf_eof || buf_err) {
 					goto err_exit;
 				}
 			}
 #if DEBUG
-			eprintf ("module_length: %04X\n", module->length);
+			eprintf("module_length: %04X\n", module->length);
 #endif
 
-			if (!read_module_public_functions (module, b, &flags)) {
+			if (!read_module_public_functions(module, b, &flags)) {
 				goto err_exit;
 			}
 
 			if (flags & IDASIG__PARSE__READ_TAIL_BYTES) { // we need to read some tail bytes because in this leaf we have functions with same crc
-				if (!read_module_tail_bytes (module, b)) {
+				if (!read_module_tail_bytes(module, b)) {
 					goto err_exit;
 				}
 			}
 			if (flags & IDASIG__PARSE__READ_REFERENCED_FUNCTIONS) { // we need to read some referenced functions
-				if (!read_module_referenced_functions (module, b)) {
+				if (!read_module_referenced_functions(module, b)) {
 					goto err_exit;
 				}
 			}
 
-			rz_list_append (node->module_list, module);
+			rz_list_append(node->module_list, module);
 		} while (flags & IDASIG__PARSE__MORE_MODULES_WITH_SAME_CRC);
 	} while (flags & IDASIG__PARSE__MORE_MODULES); // same prefix but different crc
 
 	return true;
 
 err_exit:
-	module_free (module);
+	module_free(module);
 	return false;
 }
 
 static ut8 read_node_length(RzFlirtNode *node, RzBuffer *b) {
-	node->length = read_byte (b);
+	node->length = read_byte(b);
 	if (buf_eof || buf_err) {
 		return false;
 	}
 #if DEBUG
-	eprintf ("node length: %02X\n", node->length);
+	eprintf("node length: %02X\n", node->length);
 #endif
 	return true;
 }
@@ -1000,17 +999,17 @@ static ut8 read_node_variant_mask(RzFlirtNode *node, RzBuffer *b) {
 	/*read the non-variant bytes following.*/
 	/*returns false on parsing error*/
 	if (node->length < 0x10) {
-		node->variant_mask = read_max_2_bytes (b);
+		node->variant_mask = read_max_2_bytes(b);
 		if (buf_eof || buf_err) {
 			return false;
 		}
 	} else if (node->length <= 0x20) {
-		node->variant_mask = read_multiple_bytes (b);
+		node->variant_mask = read_multiple_bytes(b);
 		if (buf_eof || buf_err) {
 			return false;
 		}
 	} else if (node->length <= 0x40) { // it shouldn't be more than 64 bytes
-		node->variant_mask = ((ut64)read_multiple_bytes (b) << 32) + read_multiple_bytes (b);
+		node->variant_mask = ((ut64)read_multiple_bytes(b) << 32) + read_multiple_bytes(b);
 		if (buf_eof || buf_err) {
 			return false;
 		}
@@ -1024,14 +1023,14 @@ static bool read_node_bytes(RzFlirtNode *node, RzBuffer *b) {
 	/*returns false on parsing error*/
 	int i;
 	ut64 current_mask_bit = 0;
-	if ((int) node->length < 0) {
+	if ((int)node->length < 0) {
 		return false;
 	}
 	current_mask_bit = 1ULL << (node->length - 1);
-	if (!(node->pattern_bytes = malloc (node->length))) {
+	if (!(node->pattern_bytes = malloc(node->length))) {
 		return false;
 	}
-	if (!(node->variant_bool_array = malloc (node->length))) {
+	if (!(node->variant_bool_array = malloc(node->length))) {
 		return false;
 	}
 	for (i = 0; i < node->length; i++, current_mask_bit >>= 1) {
@@ -1039,7 +1038,7 @@ static bool read_node_bytes(RzFlirtNode *node, RzBuffer *b) {
 		if (node->variant_mask & current_mask_bit) {
 			node->pattern_bytes[i] = 0x00;
 		} else {
-			node->pattern_bytes[i] = read_byte (b);
+			node->pattern_bytes[i] = read_byte(b);
 			if (buf_eof || buf_err) {
 				return false;
 			}
@@ -1052,214 +1051,231 @@ static ut8 parse_tree(const RzAnalysis *analysis, RzBuffer *b, RzFlirtNode *root
 	/*parse a signature pattern tree or sub-tree*/
 	/*returns false on parsing error*/
 	RzFlirtNode *node = NULL;
-	int i, tree_nodes = read_multiple_bytes (b); // confirmed it's not read_byte(), XXX could it be read_max_2_bytes() ???
+	int i, tree_nodes = read_multiple_bytes(b); // confirmed it's not read_byte(), XXX could it be read_max_2_bytes() ???
 	if (buf_eof || buf_err) {
 		return false;
 	}
 	if (tree_nodes == 0) { // if there's no tree nodes remaining, that means we are on the leaf
-		return parse_leaf (analysis, b, root_node);
+		return parse_leaf(analysis, b, root_node);
 	}
-	root_node->child_list = rz_list_new ();
+	root_node->child_list = rz_list_new();
 
 	for (i = 0; i < tree_nodes; i++) {
-		if (!(node = RZ_NEW0 (RzFlirtNode))) {
+		if (!(node = RZ_NEW0(RzFlirtNode))) {
 			goto err_exit;
 		}
-		if (!read_node_length (node, b)) {
+		if (!read_node_length(node, b)) {
 			goto err_exit;
 		}
-		if (!read_node_variant_mask (node, b)) {
+		if (!read_node_variant_mask(node, b)) {
 			goto err_exit;
 		}
-		if (!read_node_bytes (node, b)) {
+		if (!read_node_bytes(node, b)) {
 			goto err_exit;
 		}
-		rz_list_append (root_node->child_list, node);
-		if (!parse_tree (analysis, b, node)) {
+		rz_list_append(root_node->child_list, node);
+		if (!parse_tree(analysis, b, node)) {
 			goto err_exit; // parse child nodes
 		}
 	}
 	return true;
 err_exit:
-	node_free (node);
+	node_free(node);
 	return false;
 }
 
 #if DEBUG
-#define PRINT_ARCH(define, str) if (arch == define) { eprintf (" %s", str); return; }
+#define PRINT_ARCH(define, str) \
+	if (arch == define) { \
+		eprintf(" %s", str); \
+		return; \
+	}
 static void print_arch(ut8 arch) {
-	PRINT_ARCH (IDASIG__ARCH__386, "386");
-	PRINT_ARCH (IDASIG__ARCH__Z80, "Z80");
-	PRINT_ARCH (IDASIG__ARCH__I860, "I860");
-	PRINT_ARCH (IDASIG__ARCH__8051, "8051");
-	PRINT_ARCH (IDASIG__ARCH__TMS, "TMS");
-	PRINT_ARCH (IDASIG__ARCH__6502, "6502");
-	PRINT_ARCH (IDASIG__ARCH__PDP, "PDP");
-	PRINT_ARCH (IDASIG__ARCH__68K, "68K");
-	PRINT_ARCH (IDASIG__ARCH__JAVA, "JAVA");
-	PRINT_ARCH (IDASIG__ARCH__6800, "6800");
-	PRINT_ARCH (IDASIG__ARCH__ST7, "ST7");
-	PRINT_ARCH (IDASIG__ARCH__MC6812, "MC6812");
-	PRINT_ARCH (IDASIG__ARCH__MIPS, "MIPS");
-	PRINT_ARCH (IDASIG__ARCH__ARM, "ARM");
-	PRINT_ARCH (IDASIG__ARCH__TMSC6, "TMSC6");
-	PRINT_ARCH (IDASIG__ARCH__PPC, "PPC");
-	PRINT_ARCH (IDASIG__ARCH__80196, "80196");
-	PRINT_ARCH (IDASIG__ARCH__Z8, "Z8");
-	PRINT_ARCH (IDASIG__ARCH__SH, "SH");
-	PRINT_ARCH (IDASIG__ARCH__NET, "NET");
-	PRINT_ARCH (IDASIG__ARCH__AVR, "AVR");
-	PRINT_ARCH (IDASIG__ARCH__H8, "H8");
-	PRINT_ARCH (IDASIG__ARCH__PIC, "PIC");
-	PRINT_ARCH (IDASIG__ARCH__SPARC, "SPARC");
-	PRINT_ARCH (IDASIG__ARCH__ALPHA, "ALPHA");
-	PRINT_ARCH (IDASIG__ARCH__HPPA, "HPPA");
-	PRINT_ARCH (IDASIG__ARCH__H8500, "H8500");
-	PRINT_ARCH (IDASIG__ARCH__TRICORE, "TRICORE");
-	PRINT_ARCH (IDASIG__ARCH__DSP56K, "DSP56K");
-	PRINT_ARCH (IDASIG__ARCH__C166, "C166");
-	PRINT_ARCH (IDASIG__ARCH__ST20, "ST20");
-	PRINT_ARCH (IDASIG__ARCH__IA64, "IA64");
-	PRINT_ARCH (IDASIG__ARCH__I960, "I960");
-	PRINT_ARCH (IDASIG__ARCH__F2MC, "F2MC");
-	PRINT_ARCH (IDASIG__ARCH__TMS320C54, "TMS320C54");
-	PRINT_ARCH (IDASIG__ARCH__TMS320C55, "TMS320C55");
-	PRINT_ARCH (IDASIG__ARCH__TRIMEDIA, "TRIMEDIA");
-	PRINT_ARCH (IDASIG__ARCH__M32R, "M32R");
-	PRINT_ARCH (IDASIG__ARCH__NEC_78K0, "NEC_78K0");
-	PRINT_ARCH (IDASIG__ARCH__NEC_78K0S, "NEC_78K0S");
-	PRINT_ARCH (IDASIG__ARCH__M740, "M740");
-	PRINT_ARCH (IDASIG__ARCH__M7700, "M7700");
-	PRINT_ARCH (IDASIG__ARCH__ST9, "ST9");
-	PRINT_ARCH (IDASIG__ARCH__FR, "FR");
-	PRINT_ARCH (IDASIG__ARCH__MC6816, "MC6816");
-	PRINT_ARCH (IDASIG__ARCH__M7900, "M7900");
-	PRINT_ARCH (IDASIG__ARCH__TMS320C3, "TMS320C3");
-	PRINT_ARCH (IDASIG__ARCH__KR1878, "KR1878");
-	PRINT_ARCH (IDASIG__ARCH__AD218X, "AD218X");
-	PRINT_ARCH (IDASIG__ARCH__OAKDSP, "OAKDSP");
-	PRINT_ARCH (IDASIG__ARCH__TLCS900, "TLCS900");
-	PRINT_ARCH (IDASIG__ARCH__C39, "C39");
-	PRINT_ARCH (IDASIG__ARCH__CR16, "CR16");
-	PRINT_ARCH (IDASIG__ARCH__MN102L00, "MN102L00");
-	PRINT_ARCH (IDASIG__ARCH__TMS320C1X, "TMS320C1X");
-	PRINT_ARCH (IDASIG__ARCH__NEC_V850X, "NEC_V850X");
-	PRINT_ARCH (IDASIG__ARCH__SCR_ADPT, "SCR_ADPT");
-	PRINT_ARCH (IDASIG__ARCH__EBC, "EBC");
-	PRINT_ARCH (IDASIG__ARCH__MSP430, "MSP430");
-	PRINT_ARCH (IDASIG__ARCH__SPU, "SPU");
-	PRINT_ARCH (IDASIG__ARCH__DALVIK, "DALVIK");
+	PRINT_ARCH(IDASIG__ARCH__386, "386");
+	PRINT_ARCH(IDASIG__ARCH__Z80, "Z80");
+	PRINT_ARCH(IDASIG__ARCH__I860, "I860");
+	PRINT_ARCH(IDASIG__ARCH__8051, "8051");
+	PRINT_ARCH(IDASIG__ARCH__TMS, "TMS");
+	PRINT_ARCH(IDASIG__ARCH__6502, "6502");
+	PRINT_ARCH(IDASIG__ARCH__PDP, "PDP");
+	PRINT_ARCH(IDASIG__ARCH__68K, "68K");
+	PRINT_ARCH(IDASIG__ARCH__JAVA, "JAVA");
+	PRINT_ARCH(IDASIG__ARCH__6800, "6800");
+	PRINT_ARCH(IDASIG__ARCH__ST7, "ST7");
+	PRINT_ARCH(IDASIG__ARCH__MC6812, "MC6812");
+	PRINT_ARCH(IDASIG__ARCH__MIPS, "MIPS");
+	PRINT_ARCH(IDASIG__ARCH__ARM, "ARM");
+	PRINT_ARCH(IDASIG__ARCH__TMSC6, "TMSC6");
+	PRINT_ARCH(IDASIG__ARCH__PPC, "PPC");
+	PRINT_ARCH(IDASIG__ARCH__80196, "80196");
+	PRINT_ARCH(IDASIG__ARCH__Z8, "Z8");
+	PRINT_ARCH(IDASIG__ARCH__SH, "SH");
+	PRINT_ARCH(IDASIG__ARCH__NET, "NET");
+	PRINT_ARCH(IDASIG__ARCH__AVR, "AVR");
+	PRINT_ARCH(IDASIG__ARCH__H8, "H8");
+	PRINT_ARCH(IDASIG__ARCH__PIC, "PIC");
+	PRINT_ARCH(IDASIG__ARCH__SPARC, "SPARC");
+	PRINT_ARCH(IDASIG__ARCH__ALPHA, "ALPHA");
+	PRINT_ARCH(IDASIG__ARCH__HPPA, "HPPA");
+	PRINT_ARCH(IDASIG__ARCH__H8500, "H8500");
+	PRINT_ARCH(IDASIG__ARCH__TRICORE, "TRICORE");
+	PRINT_ARCH(IDASIG__ARCH__DSP56K, "DSP56K");
+	PRINT_ARCH(IDASIG__ARCH__C166, "C166");
+	PRINT_ARCH(IDASIG__ARCH__ST20, "ST20");
+	PRINT_ARCH(IDASIG__ARCH__IA64, "IA64");
+	PRINT_ARCH(IDASIG__ARCH__I960, "I960");
+	PRINT_ARCH(IDASIG__ARCH__F2MC, "F2MC");
+	PRINT_ARCH(IDASIG__ARCH__TMS320C54, "TMS320C54");
+	PRINT_ARCH(IDASIG__ARCH__TMS320C55, "TMS320C55");
+	PRINT_ARCH(IDASIG__ARCH__TRIMEDIA, "TRIMEDIA");
+	PRINT_ARCH(IDASIG__ARCH__M32R, "M32R");
+	PRINT_ARCH(IDASIG__ARCH__NEC_78K0, "NEC_78K0");
+	PRINT_ARCH(IDASIG__ARCH__NEC_78K0S, "NEC_78K0S");
+	PRINT_ARCH(IDASIG__ARCH__M740, "M740");
+	PRINT_ARCH(IDASIG__ARCH__M7700, "M7700");
+	PRINT_ARCH(IDASIG__ARCH__ST9, "ST9");
+	PRINT_ARCH(IDASIG__ARCH__FR, "FR");
+	PRINT_ARCH(IDASIG__ARCH__MC6816, "MC6816");
+	PRINT_ARCH(IDASIG__ARCH__M7900, "M7900");
+	PRINT_ARCH(IDASIG__ARCH__TMS320C3, "TMS320C3");
+	PRINT_ARCH(IDASIG__ARCH__KR1878, "KR1878");
+	PRINT_ARCH(IDASIG__ARCH__AD218X, "AD218X");
+	PRINT_ARCH(IDASIG__ARCH__OAKDSP, "OAKDSP");
+	PRINT_ARCH(IDASIG__ARCH__TLCS900, "TLCS900");
+	PRINT_ARCH(IDASIG__ARCH__C39, "C39");
+	PRINT_ARCH(IDASIG__ARCH__CR16, "CR16");
+	PRINT_ARCH(IDASIG__ARCH__MN102L00, "MN102L00");
+	PRINT_ARCH(IDASIG__ARCH__TMS320C1X, "TMS320C1X");
+	PRINT_ARCH(IDASIG__ARCH__NEC_V850X, "NEC_V850X");
+	PRINT_ARCH(IDASIG__ARCH__SCR_ADPT, "SCR_ADPT");
+	PRINT_ARCH(IDASIG__ARCH__EBC, "EBC");
+	PRINT_ARCH(IDASIG__ARCH__MSP430, "MSP430");
+	PRINT_ARCH(IDASIG__ARCH__SPU, "SPU");
+	PRINT_ARCH(IDASIG__ARCH__DALVIK, "DALVIK");
 }
 
-#define PRINT_FLAG(define, str) if (flags & define) { eprintf (" %s", str); }
+#define PRINT_FLAG(define, str) \
+	if (flags & define) { \
+		eprintf(" %s", str); \
+	}
 static void print_file_types(ut32 flags) {
-	PRINT_FLAG (IDASIG__FILE__DOS_EXE_OLD, "DOS_EXE_OLD");
-	PRINT_FLAG (IDASIG__FILE__DOS_COM_OLD, "DOS_COM_OLD");
-	PRINT_FLAG (IDASIG__FILE__BIN, "BIN");
-	PRINT_FLAG (IDASIG__FILE__DOSDRV, "DOSDRV");
-	PRINT_FLAG (IDASIG__FILE__NE, "NE");
-	PRINT_FLAG (IDASIG__FILE__INTELHEX, "INTELHEX");
-	PRINT_FLAG (IDASIG__FILE__MOSHEX, "MOSHEX");
-	PRINT_FLAG (IDASIG__FILE__LX, "LX");
-	PRINT_FLAG (IDASIG__FILE__LE, "LE");
-	PRINT_FLAG (IDASIG__FILE__NLM, "NLM");
-	PRINT_FLAG (IDASIG__FILE__COFF, "COFF");
-	PRINT_FLAG (IDASIG__FILE__PE, "PE");
-	PRINT_FLAG (IDASIG__FILE__OMF, "OMF");
-	PRINT_FLAG (IDASIG__FILE__SREC, "SREC");
-	PRINT_FLAG (IDASIG__FILE__ZIP, "ZIP");
-	PRINT_FLAG (IDASIG__FILE__OMFLIB, "OMFLIB");
-	PRINT_FLAG (IDASIG__FILE__AR, "AR");
-	PRINT_FLAG (IDASIG__FILE__LOADER, "LOADER");
-	PRINT_FLAG (IDASIG__FILE__ELF, "ELF");
-	PRINT_FLAG (IDASIG__FILE__W32RUN, "W32RUN");
-	PRINT_FLAG (IDASIG__FILE__AOUT, "AOUT");
-	PRINT_FLAG (IDASIG__FILE__PILOT, "PILOT");
-	PRINT_FLAG (IDASIG__FILE__DOS_EXE, "EXE");
-	PRINT_FLAG (IDASIG__FILE__AIXAR, "AIXAR");
+	PRINT_FLAG(IDASIG__FILE__DOS_EXE_OLD, "DOS_EXE_OLD");
+	PRINT_FLAG(IDASIG__FILE__DOS_COM_OLD, "DOS_COM_OLD");
+	PRINT_FLAG(IDASIG__FILE__BIN, "BIN");
+	PRINT_FLAG(IDASIG__FILE__DOSDRV, "DOSDRV");
+	PRINT_FLAG(IDASIG__FILE__NE, "NE");
+	PRINT_FLAG(IDASIG__FILE__INTELHEX, "INTELHEX");
+	PRINT_FLAG(IDASIG__FILE__MOSHEX, "MOSHEX");
+	PRINT_FLAG(IDASIG__FILE__LX, "LX");
+	PRINT_FLAG(IDASIG__FILE__LE, "LE");
+	PRINT_FLAG(IDASIG__FILE__NLM, "NLM");
+	PRINT_FLAG(IDASIG__FILE__COFF, "COFF");
+	PRINT_FLAG(IDASIG__FILE__PE, "PE");
+	PRINT_FLAG(IDASIG__FILE__OMF, "OMF");
+	PRINT_FLAG(IDASIG__FILE__SREC, "SREC");
+	PRINT_FLAG(IDASIG__FILE__ZIP, "ZIP");
+	PRINT_FLAG(IDASIG__FILE__OMFLIB, "OMFLIB");
+	PRINT_FLAG(IDASIG__FILE__AR, "AR");
+	PRINT_FLAG(IDASIG__FILE__LOADER, "LOADER");
+	PRINT_FLAG(IDASIG__FILE__ELF, "ELF");
+	PRINT_FLAG(IDASIG__FILE__W32RUN, "W32RUN");
+	PRINT_FLAG(IDASIG__FILE__AOUT, "AOUT");
+	PRINT_FLAG(IDASIG__FILE__PILOT, "PILOT");
+	PRINT_FLAG(IDASIG__FILE__DOS_EXE, "EXE");
+	PRINT_FLAG(IDASIG__FILE__AIXAR, "AIXAR");
 }
 
 static void print_os_types(ut16 flags) {
-	PRINT_FLAG (IDASIG__OS__MSDOS, "MSDOS");
-	PRINT_FLAG (IDASIG__OS__WIN, "WIN");
-	PRINT_FLAG (IDASIG__OS__OS2, "OS2");
-	PRINT_FLAG (IDASIG__OS__NETWARE, "NETWARE");
-	PRINT_FLAG (IDASIG__OS__UNIX, "UNIX");
+	PRINT_FLAG(IDASIG__OS__MSDOS, "MSDOS");
+	PRINT_FLAG(IDASIG__OS__WIN, "WIN");
+	PRINT_FLAG(IDASIG__OS__OS2, "OS2");
+	PRINT_FLAG(IDASIG__OS__NETWARE, "NETWARE");
+	PRINT_FLAG(IDASIG__OS__UNIX, "UNIX");
 }
 
 static void print_app_types(ut16 flags) {
-	PRINT_FLAG (IDASIG__APP__CONSOLE, "CONSOLE");
-	PRINT_FLAG (IDASIG__APP__GRAPHICS, "GRAPHICS");
-	PRINT_FLAG (IDASIG__APP__EXE, "EXE");
-	PRINT_FLAG (IDASIG__APP__DLL, "DLL");
-	PRINT_FLAG (IDASIG__APP__DRV, "DRV");
-	PRINT_FLAG (IDASIG__APP__SINGLE_THREADED, "SINGLE_THREADED");
-	PRINT_FLAG (IDASIG__APP__MULTI_THREADED, "MULTI_THREADED");
-	PRINT_FLAG (IDASIG__APP__16_BIT, "16_BIT");
-	PRINT_FLAG (IDASIG__APP__32_BIT, "32_BIT");
-	PRINT_FLAG (IDASIG__APP__64_BIT, "64_BIT");
+	PRINT_FLAG(IDASIG__APP__CONSOLE, "CONSOLE");
+	PRINT_FLAG(IDASIG__APP__GRAPHICS, "GRAPHICS");
+	PRINT_FLAG(IDASIG__APP__EXE, "EXE");
+	PRINT_FLAG(IDASIG__APP__DLL, "DLL");
+	PRINT_FLAG(IDASIG__APP__DRV, "DRV");
+	PRINT_FLAG(IDASIG__APP__SINGLE_THREADED, "SINGLE_THREADED");
+	PRINT_FLAG(IDASIG__APP__MULTI_THREADED, "MULTI_THREADED");
+	PRINT_FLAG(IDASIG__APP__16_BIT, "16_BIT");
+	PRINT_FLAG(IDASIG__APP__32_BIT, "32_BIT");
+	PRINT_FLAG(IDASIG__APP__64_BIT, "64_BIT");
 }
 
 static void print_features(ut16 flags) {
-	PRINT_FLAG (IDASIG__FEATURE__STARTUP, "STARTUP");
-	PRINT_FLAG (IDASIG__FEATURE__CTYPE_CRC, "CTYPE_CRC");
-	PRINT_FLAG (IDASIG__FEATURE__2BYTE_CTYPE, "2BYTE_CTYPE");
-	PRINT_FLAG (IDASIG__FEATURE__ALT_CTYPE_CRC, "ALT_CTYPE_CRC");
-	PRINT_FLAG (IDASIG__FEATURE__COMPRESSED, "COMPRESSED");
+	PRINT_FLAG(IDASIG__FEATURE__STARTUP, "STARTUP");
+	PRINT_FLAG(IDASIG__FEATURE__CTYPE_CRC, "CTYPE_CRC");
+	PRINT_FLAG(IDASIG__FEATURE__2BYTE_CTYPE, "2BYTE_CTYPE");
+	PRINT_FLAG(IDASIG__FEATURE__ALT_CTYPE_CRC, "ALT_CTYPE_CRC");
+	PRINT_FLAG(IDASIG__FEATURE__COMPRESSED, "COMPRESSED");
 }
 
 static void print_header(idasig_v5_t *header) {
 	/*eprintf("magic: %s\n", header->magic);*/
-	eprintf ("version: %d\n", header->version);
-	eprintf ("arch:"); print_arch (header->arch); eprintf ("\n");
-	eprintf ("file_types:"); print_file_types (header->file_types); eprintf ("\n");
-	eprintf ("os_types:"); print_os_types (header->os_types); eprintf ("\n");
-	eprintf ("app_types:"); print_app_types (header->app_types); eprintf ("\n");
-	eprintf ("features:"); print_features (header->features); eprintf ("\n");
-	eprintf ("old_n_functions: %04x\n", header->old_n_functions);
-	eprintf ("crc16: %04x\n", header->crc16);
-	eprintf ("ctype: %s\n", header->ctype);
-	eprintf ("library_name_len: %d\n", header->library_name_len);
-	eprintf ("ctypes_crc16: %04x\n", header->ctypes_crc16);
+	eprintf("version: %d\n", header->version);
+	eprintf("arch:");
+	print_arch(header->arch);
+	eprintf("\n");
+	eprintf("file_types:");
+	print_file_types(header->file_types);
+	eprintf("\n");
+	eprintf("os_types:");
+	print_os_types(header->os_types);
+	eprintf("\n");
+	eprintf("app_types:");
+	print_app_types(header->app_types);
+	eprintf("\n");
+	eprintf("features:");
+	print_features(header->features);
+	eprintf("\n");
+	eprintf("old_n_functions: %04x\n", header->old_n_functions);
+	eprintf("crc16: %04x\n", header->crc16);
+	eprintf("ctype: %s\n", header->ctype);
+	eprintf("library_name_len: %d\n", header->library_name_len);
+	eprintf("ctypes_crc16: %04x\n", header->ctypes_crc16);
 }
 #endif
 
 static int parse_header(RzBuffer *buf, idasig_v5_t *header) {
-	rz_buf_seek (buf, 0, RZ_BUF_SET);
-	if (rz_buf_read (buf, header->magic, sizeof(header->magic)) != sizeof(header->magic)) {
+	rz_buf_seek(buf, 0, RZ_BUF_SET);
+	if (rz_buf_read(buf, header->magic, sizeof(header->magic)) != sizeof(header->magic)) {
 		return false;
 	}
-	if (rz_buf_read (buf, &header->version, sizeof(header->version)) != sizeof(header->version)) {
+	if (rz_buf_read(buf, &header->version, sizeof(header->version)) != sizeof(header->version)) {
 		return false;
 	}
-	if (rz_buf_read (buf, &header->arch, sizeof(header->arch)) != sizeof(header->arch)) {
+	if (rz_buf_read(buf, &header->arch, sizeof(header->arch)) != sizeof(header->arch)) {
 		return false;
 	}
-	if (rz_buf_read (buf, (unsigned char *)&header->file_types, sizeof(header->file_types)) != sizeof(header->file_types)) {
+	if (rz_buf_read(buf, (unsigned char *)&header->file_types, sizeof(header->file_types)) != sizeof(header->file_types)) {
 		return false;
 	}
-	if (rz_buf_read (buf, (unsigned char *)&header->os_types, sizeof(header->os_types)) != sizeof(header->os_types)) {
+	if (rz_buf_read(buf, (unsigned char *)&header->os_types, sizeof(header->os_types)) != sizeof(header->os_types)) {
 		return false;
 	}
-	if (rz_buf_read (buf, (unsigned char *)&header->app_types, sizeof(header->app_types)) != sizeof(header->app_types)) {
+	if (rz_buf_read(buf, (unsigned char *)&header->app_types, sizeof(header->app_types)) != sizeof(header->app_types)) {
 		return false;
 	}
-	if (rz_buf_read (buf, (unsigned char *)&header->features, sizeof(header->features)) != sizeof(header->features)) {
+	if (rz_buf_read(buf, (unsigned char *)&header->features, sizeof(header->features)) != sizeof(header->features)) {
 		return false;
 	}
-	if (rz_buf_read (buf, (unsigned char *)&header->old_n_functions, sizeof(header->old_n_functions)) != sizeof(header->old_n_functions)) {
+	if (rz_buf_read(buf, (unsigned char *)&header->old_n_functions, sizeof(header->old_n_functions)) != sizeof(header->old_n_functions)) {
 		return false;
 	}
-	if (rz_buf_read (buf, (unsigned char *)&header->crc16, sizeof(header->crc16)) != sizeof(header->crc16)) {
+	if (rz_buf_read(buf, (unsigned char *)&header->crc16, sizeof(header->crc16)) != sizeof(header->crc16)) {
 		return false;
 	}
-	if (rz_buf_read (buf, header->ctype, sizeof(header->ctype)) != sizeof(header->ctype)) {
+	if (rz_buf_read(buf, header->ctype, sizeof(header->ctype)) != sizeof(header->ctype)) {
 		return false;
 	}
-	if (rz_buf_read (buf, (unsigned char *)&header->library_name_len, sizeof(header->library_name_len)) != sizeof(header->library_name_len)) {
+	if (rz_buf_read(buf, (unsigned char *)&header->library_name_len, sizeof(header->library_name_len)) != sizeof(header->library_name_len)) {
 		return false;
 	}
-	if (rz_buf_read (buf, (unsigned char *)&header->ctypes_crc16, sizeof(header->ctypes_crc16)) != sizeof(header->ctypes_crc16)) {
+	if (rz_buf_read(buf, (unsigned char *)&header->ctypes_crc16, sizeof(header->ctypes_crc16)) != sizeof(header->ctypes_crc16)) {
 		return false;
 	}
 
@@ -1267,7 +1283,7 @@ static int parse_header(RzBuffer *buf, idasig_v5_t *header) {
 }
 
 static int parse_v6_v7_header(RzBuffer *buf, idasig_v6_v7_t *header) {
-	if (rz_buf_read (buf, (unsigned char *)&header->n_functions, sizeof (header->n_functions)) != sizeof (header->n_functions)) {
+	if (rz_buf_read(buf, (unsigned char *)&header->n_functions, sizeof(header->n_functions)) != sizeof(header->n_functions)) {
 		return false;
 	}
 
@@ -1275,7 +1291,7 @@ static int parse_v6_v7_header(RzBuffer *buf, idasig_v6_v7_t *header) {
 }
 
 static int parse_v8_v9_header(RzBuffer *buf, idasig_v8_v9_t *header) {
-	if (rz_buf_read (buf, (unsigned char *)&header->pattern_size, sizeof (header->pattern_size)) != sizeof (header->pattern_size)) {
+	if (rz_buf_read(buf, (unsigned char *)&header->pattern_size, sizeof(header->pattern_size)) != sizeof(header->pattern_size)) {
 		return false;
 	}
 
@@ -1283,7 +1299,7 @@ static int parse_v8_v9_header(RzBuffer *buf, idasig_v8_v9_t *header) {
 }
 
 static int parse_v10_header(RzBuffer *buf, idasig_v10_t *header) {
-	if (rz_buf_read (buf, (unsigned char *)&header->unknown, sizeof (header->unknown)) != sizeof (header->unknown)) {
+	if (rz_buf_read(buf, (unsigned char *)&header->unknown, sizeof(header->unknown)) != sizeof(header->unknown)) {
 		return false;
 	}
 
@@ -1305,54 +1321,54 @@ static RzFlirtNode *flirt_parse(const RzAnalysis *analysis, RzBuffer *flirt_buf)
 	buf_eof = false;
 	buf_err = false;
 
-	if (!(version = rz_sign_is_flirt (flirt_buf))) {
+	if (!(version = rz_sign_is_flirt(flirt_buf))) {
 		goto exit;
 	}
 
 	if (version < 5 || version > 10) {
-		eprintf ("Unsupported flirt signature version\n");
+		eprintf("Unsupported flirt signature version\n");
 		goto exit;
 	}
 
-	if (!(header = RZ_NEW0 (idasig_v5_t))) {
+	if (!(header = RZ_NEW0(idasig_v5_t))) {
 		goto exit;
 	}
 
-	parse_header (flirt_buf, header);
+	parse_header(flirt_buf, header);
 
 	if (version >= 6) {
-		if (!(v6_v7 = RZ_NEW0 (idasig_v6_v7_t))) {
+		if (!(v6_v7 = RZ_NEW0(idasig_v6_v7_t))) {
 			goto exit;
 		}
-		if (!parse_v6_v7_header (flirt_buf, v6_v7)) {
+		if (!parse_v6_v7_header(flirt_buf, v6_v7)) {
 			goto exit;
 		}
 
 		if (version >= 8) {
-			if (!(v8_v9 = RZ_NEW0 (idasig_v8_v9_t))) {
+			if (!(v8_v9 = RZ_NEW0(idasig_v8_v9_t))) {
 				goto exit;
 			}
-			if (!parse_v8_v9_header (flirt_buf, v8_v9)) {
+			if (!parse_v8_v9_header(flirt_buf, v8_v9)) {
 				goto exit;
 			}
 
 			if (version >= 10) {
-				if (!(v10 = RZ_NEW0 (idasig_v10_t))) {
+				if (!(v10 = RZ_NEW0(idasig_v10_t))) {
 					goto exit;
 				}
-				if (!parse_v10_header (flirt_buf, v10)) {
+				if (!parse_v10_header(flirt_buf, v10)) {
 					goto exit;
 				}
 			}
 		}
 	}
 
-	name = malloc (header->library_name_len + 1);
+	name = malloc(header->library_name_len + 1);
 	if (!name) {
 		goto exit;
 	}
 
-	if (rz_buf_read (flirt_buf, name, header->library_name_len) != header->library_name_len) {
+	if (rz_buf_read(flirt_buf, name, header->library_name_len) != header->library_name_len) {
 		goto exit;
 	}
 
@@ -1360,51 +1376,51 @@ static RzFlirtNode *flirt_parse(const RzAnalysis *analysis, RzBuffer *flirt_buf)
 
 	// analysis->cb_printf  ("Loading: %s\n", name);
 #if DEBUG
-	print_header (header);
-	header_size = rz_buf_tell (flirt_buf);
+	print_header(header);
+	header_size = rz_buf_tell(flirt_buf);
 #endif
 
-	size = rz_buf_size (flirt_buf) - rz_buf_tell (flirt_buf);
-	buf = malloc (size);
-	if (rz_buf_read (flirt_buf, buf, size) != size) {
+	size = rz_buf_size(flirt_buf) - rz_buf_tell(flirt_buf);
+	buf = malloc(size);
+	if (rz_buf_read(flirt_buf, buf, size) != size) {
 		goto exit;
 	}
 
 	if (header->features & IDASIG__FEATURE__COMPRESSED) {
 		if (version == 5) {
-			eprintf ("Sorry we do not support the signatures version 5 compression.\n");
+			eprintf("Sorry we do not support the signatures version 5 compression.\n");
 			goto exit;
 		}
-		if (!(decompressed_buf = rz_inflate (buf, size, NULL, &decompressed_size))) {
-			eprintf ("Decompressing failed.\n");
+		if (!(decompressed_buf = rz_inflate(buf, size, NULL, &decompressed_size))) {
+			eprintf("Decompressing failed.\n");
 			goto exit;
 		}
 
-		RZ_FREE (buf);
+		RZ_FREE(buf);
 		buf = decompressed_buf;
 		size = decompressed_size;
 	}
 
-	if (!(node = RZ_NEW0 (RzFlirtNode))) {
+	if (!(node = RZ_NEW0(RzFlirtNode))) {
 		goto exit;
 	}
-	rz_buf = rz_buf_new_with_pointers (buf, size, false);
+	rz_buf = rz_buf_new_with_pointers(buf, size, false);
 #if DEBUG
-	rz_file_dump ("sig_dump", rz_buf->buf, rz_buf_size (rz_buf));
+	rz_file_dump("sig_dump", rz_buf->buf, rz_buf_size(rz_buf));
 #endif
-	if (parse_tree (analysis, rz_buf, node)) {
+	if (parse_tree(analysis, rz_buf, node)) {
 		ret = node;
 	} else {
-		free (node);
+		free(node);
 	}
 exit:
-	free (buf);
-	rz_buf_free (rz_buf);
-	free (header);
-	free (v6_v7);
-	free (v8_v9);
-	free (v10);
-	free (name);
+	free(buf);
+	rz_buf_free(rz_buf);
+	free(header);
+	free(v6_v7);
+	free(v8_v9);
+	free(v10);
+	free(name);
 	return ret;
 }
 
@@ -1412,23 +1428,23 @@ RZ_API int rz_sign_is_flirt(RzBuffer *buf) {
 	/*if buf is a flirt signature, returns signature version, otherwise returns false*/
 	int ret = false;
 
-	idasig_v5_t *header = RZ_NEW0 (idasig_v5_t);
-	if (rz_buf_read (buf, header->magic, sizeof(header->magic)) != sizeof(header->magic)) {
+	idasig_v5_t *header = RZ_NEW0(idasig_v5_t);
+	if (rz_buf_read(buf, header->magic, sizeof(header->magic)) != sizeof(header->magic)) {
 		goto exit;
 	}
 
-	if (strncmp ((const char *) header->magic, "IDASGN", 6)) {
+	if (strncmp((const char *)header->magic, "IDASGN", 6)) {
 		goto exit;
 	}
 
-	if (rz_buf_read (buf, &header->version, sizeof(header->version)) != sizeof(header->version)) {
+	if (rz_buf_read(buf, &header->version, sizeof(header->version)) != sizeof(header->version)) {
 		goto exit;
 	}
 
 	ret = header->version;
 
 exit:
-	free (header);
+	free(header);
 
 	return ret;
 }
@@ -1438,19 +1454,19 @@ RZ_API void rz_sign_flirt_dump(const RzAnalysis *analysis, const char *flirt_fil
 	RzBuffer *flirt_buf;
 	RzFlirtNode *node;
 
-	if (!(flirt_buf = rz_buf_new_slurp (flirt_file))) {
-		eprintf ("Can't open %s\n", flirt_file);
+	if (!(flirt_buf = rz_buf_new_slurp(flirt_file))) {
+		eprintf("Can't open %s\n", flirt_file);
 		return;
 	}
 
-	node = flirt_parse (analysis, flirt_buf);
-	rz_buf_free (flirt_buf);
+	node = flirt_parse(analysis, flirt_buf);
+	rz_buf_free(flirt_buf);
 	if (node) {
-		print_node (analysis, node, -1);
-		node_free (node);
+		print_node(analysis, node, -1);
+		node_free(node);
 		return;
 	} else {
-		eprintf ("We encountered an error while parsing the file. Sorry.\n");
+		eprintf("We encountered an error while parsing the file. Sorry.\n");
 		return;
 	}
 }
@@ -1460,21 +1476,21 @@ RZ_API void rz_sign_flirt_scan(RzAnalysis *analysis, const char *flirt_file) {
 	RzBuffer *flirt_buf;
 	RzFlirtNode *node;
 
-	if (!(flirt_buf = rz_buf_new_slurp (flirt_file))) {
-		eprintf ("Can't open %s\n", flirt_file);
+	if (!(flirt_buf = rz_buf_new_slurp(flirt_file))) {
+		eprintf("Can't open %s\n", flirt_file);
 		return;
 	}
 
-	node = flirt_parse (analysis, flirt_buf);
-	rz_buf_free (flirt_buf);
+	node = flirt_parse(analysis, flirt_buf);
+	rz_buf_free(flirt_buf);
 	if (node) {
-		if (!node_match_functions (analysis, node)) {
-			eprintf ("Error while scanning the file %s\n", flirt_file);
+		if (!node_match_functions(analysis, node)) {
+			eprintf("Error while scanning the file %s\n", flirt_file);
 		}
-		node_free (node);
+		node_free(node);
 		return;
 	} else {
-		eprintf ("We encountered an error while parsing the file %s. Sorry.\n", flirt_file);
+		eprintf("We encountered an error while parsing the file %s. Sorry.\n", flirt_file);
 		return;
 	}
 }

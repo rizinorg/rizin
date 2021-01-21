@@ -1,4 +1,4 @@
-return strdup (
+return strdup(
 	"=PC	pc\n"
 	"=SP	x2\n"
 	"=BP	x4\n"
@@ -44,5 +44,4 @@ return strdup (
 	"gpr	x28	.64	224	0\n"
 	"gpr	x29	.64	232	0\n"
 	"gpr	x30	.64	240	0\n"
-	"gpr	x31	.64	248	0\n"
-	);
+	"gpr	x31	.64	248	0\n");

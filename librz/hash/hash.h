@@ -1,10 +1,10 @@
 int hash_par(unsigned char *buffer, ut64 len);
 ut16 hash_xorpair(const ut8 *b, ut64 len);
-ut8  hash_xor(const ut8 *b, ut64 len);
-ut8  hash_mod255(const ut8 *b, ut64 len);
+ut8 hash_xor(const ut8 *b, ut64 len);
+ut8 hash_mod255(const ut8 *b, ut64 len);
 ut32 hash_wrt54gv5v6(const ut8 *pStart, ut64 len);
 ut16 hash_bootp(const ut8 *data, ut64 len);
-ut8  hash_hamdist(const ut8 *buf, ut64 len);
+ut8 hash_hamdist(const ut8 *buf, ut64 len);
 float hash_entropy(const ut8 *data, ut64 size);
 int hash_pcprint(unsigned char *buffer, ut64 len);
 float get_px(ut8 x, ut8 const *data, ut64 size);

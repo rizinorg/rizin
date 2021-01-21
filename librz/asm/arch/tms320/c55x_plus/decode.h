@@ -19,7 +19,7 @@ static char *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_le
 
 static char *decode_regis(char *reg_arg, st32 hash_code, ut32 ins_bits, ut32 *ret_ins_bits, int *err_code);
 
-static char* get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_len, char *reg_arg, ut32 *ret_ins_bits, ut32 *ret_reg_len, ut32 magic_value, ut32 ins_pos, ut32 ins_len, ut8 two_ins, int *err_code);
+static char *get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_len, char *reg_arg, ut32 *ret_ins_bits, ut32 *ret_reg_len, ut32 magic_value, ut32 ins_pos, ut32 ins_len, ut8 two_ins, int *err_code);
 
 #endif
 

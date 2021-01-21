@@ -12,8 +12,8 @@ typedef struct rz_mem_pool_factory_t {
 } RPoolFactory;
 
 RZ_API RPoolFactory *rz_poolfactory_instance(void);
-RZ_API void rz_poolfactory_init (int limit);
-RZ_API RPoolFactory* rz_poolfactory_new(int limit);
+RZ_API void rz_poolfactory_init(int limit);
+RZ_API RPoolFactory *rz_poolfactory_new(int limit);
 RZ_API void *rz_poolfactory_alloc(RPoolFactory *pf, int nodesize);
 RZ_API void rz_poolfactory_stats(RPoolFactory *pf);
 RZ_API void rz_poolfactory_free(RPoolFactory *pf);

@@ -24,14 +24,14 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	}
 
 	char header[4096];
-	snprintf (header, sizeof (header), "%s.code%i\n", // .org 0x%"PFMT64x"\n"
+	snprintf(header, sizeof(header), "%s.code%i\n", // .org 0x%"PFMT64x"\n"
 		syntaxstr, a->bits);
-	return binutils_assemble (a, op, buf, as, ASSEMBLER, header, "");
+	return binutils_assemble(a, op, buf, as, ASSEMBLER, header, "");
 }
 
 RzAsmPlugin rz_asm_plugin_x86_as = {
 	.name = "x86.as",
-	.desc = "Intel X86 GNU Assembler (Use "ASSEMBLER" env)",
+	.desc = "Intel X86 GNU Assembler (Use " ASSEMBLER " env)",
 	.arch = "x86",
 	.license = "LGPL3",
 	// NOTE: 64bits is not supported on OSX's nasm :(

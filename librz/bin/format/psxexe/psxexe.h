@@ -1,8 +1,8 @@
 #ifndef PSXEXE_H
 #define PSXEXE_H
 
-#define PSXEXE_ID "PS-X EXE"
-#define PSXEXE_ID_LEN 8
+#define PSXEXE_ID                 "PS-X EXE"
+#define PSXEXE_ID_LEN             8
 #define PSXEXE_TEXTSECTION_OFFSET 0x800
 
 #include <rz_types.h>

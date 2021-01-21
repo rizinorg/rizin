@@ -5,12 +5,12 @@
 
 RZ_LIB_VERSION(rz_lang);
 
-#include "p/pipe.c"  // hardcoded
-#include "p/vala.c"  // hardcoded
-#include "p/rust.c"  // hardcoded
-#include "p/zig.c"   // hardcoded
-#include "p/spp.c"  // hardcoded
-#include "p/c.c"     // hardcoded
+#include "p/pipe.c" // hardcoded
+#include "p/vala.c" // hardcoded
+#include "p/rust.c" // hardcoded
+#include "p/zig.c" // hardcoded
+#include "p/spp.c" // hardcoded
+#include "p/c.c" // hardcoded
 #include "p/lib.c"
 #if __UNIX__
 #include "p/cpipe.c" // hardcoded
@@ -18,41 +18,41 @@ RZ_LIB_VERSION(rz_lang);
 
 static RzLang *__lang = NULL;
 
-RZ_API void rz_lang_plugin_free (RzLangPlugin *p) {
+RZ_API void rz_lang_plugin_free(RzLangPlugin *p) {
 	if (p && p->fini) {
-		p->fini (__lang);
+		p->fini(__lang);
 	}
 }
 
 RZ_API RzLang *rz_lang_new(void) {
-	RzLang *lang = RZ_NEW0 (RzLang);
+	RzLang *lang = RZ_NEW0(RzLang);
 	if (!lang) {
 		return NULL;
 	}
 	lang->user = NULL;
-	lang->langs = rz_list_new ();
+	lang->langs = rz_list_new();
 	if (!lang->langs) {
-		rz_lang_free (lang);
+		rz_lang_free(lang);
 		return NULL;
 	}
 	lang->langs->free = (RzListFree)rz_lang_plugin_free;
-	lang->defs = rz_list_new ();
+	lang->defs = rz_list_new();
 	if (!lang->defs) {
-		rz_lang_free (lang);
+		rz_lang_free(lang);
 		return NULL;
 	}
 	lang->defs->free = (RzListFree)rz_lang_def_free;
 	lang->cb_printf = (PrintfCallback)printf;
 #if __UNIX__
-	rz_lang_add (lang, &rz_lang_plugin_c);
-	rz_lang_add (lang, &rz_lang_plugin_cpipe);
+	rz_lang_add(lang, &rz_lang_plugin_c);
+	rz_lang_add(lang, &rz_lang_plugin_cpipe);
 #endif
-	rz_lang_add (lang, &rz_lang_plugin_vala);
-	rz_lang_add (lang, &rz_lang_plugin_rust);
-	rz_lang_add (lang, &rz_lang_plugin_zig);
-	rz_lang_add (lang, &rz_lang_plugin_spp);
-	rz_lang_add (lang, &rz_lang_plugin_pipe);
-	rz_lang_add (lang, &rz_lang_plugin_lib);
+	rz_lang_add(lang, &rz_lang_plugin_vala);
+	rz_lang_add(lang, &rz_lang_plugin_rust);
+	rz_lang_add(lang, &rz_lang_plugin_zig);
+	rz_lang_add(lang, &rz_lang_plugin_spp);
+	rz_lang_add(lang, &rz_lang_plugin_pipe);
+	rz_lang_add(lang, &rz_lang_plugin_lib);
 
 	return lang;
 }
@@ -60,11 +60,11 @@ RZ_API RzLang *rz_lang_new(void) {
 RZ_API void rz_lang_free(RzLang *lang) {
 	if (lang) {
 		__lang = NULL;
-		rz_lang_undef (lang, NULL);
-		rz_list_free (lang->langs);
-		rz_list_free (lang->defs);
+		rz_lang_undef(lang, NULL);
+		rz_list_free(lang->langs);
+		rz_list_free(lang->defs);
 		// TODO: remove langs plugins
-		free (lang);
+		free(lang);
 	}
 }
 
@@ -80,26 +80,26 @@ RZ_API bool rz_lang_define(RzLang *lang, const char *type, const char *name, voi
 	RzLangDef *def;
 	RzListIter *iter;
 	rz_list_foreach (lang->defs, iter, def) {
-		if (!rz_str_casecmp (name, def->name)) {
+		if (!rz_str_casecmp(name, def->name)) {
 			def->value = value;
-			return  true;
+			return true;
 		}
 	}
-	def = RZ_NEW0 (RzLangDef);
+	def = RZ_NEW0(RzLangDef);
 	if (!def) {
 		return false;
 	}
-	def->type = strdup (type);
-	def->name = strdup (name);
+	def->type = strdup(type);
+	def->name = strdup(name);
 	def->value = value;
-	rz_list_append (lang->defs, def);
+	rz_list_append(lang->defs, def);
 	return true;
 }
 
-RZ_API void rz_lang_def_free (RzLangDef *def) {
-	free (def->name);
-	free (def->type);
-	free (def);
+RZ_API void rz_lang_def_free(RzLangDef *def) {
+	free(def->name);
+	free(def->type);
+	free(def);
 }
 
 RZ_API void rz_lang_undef(RzLang *lang, const char *name) {
@@ -108,30 +108,30 @@ RZ_API void rz_lang_undef(RzLang *lang, const char *name) {
 		RzListIter *iter;
 		/* No _safe loop necessary because we return immediately after the delete. */
 		rz_list_foreach (lang->defs, iter, def) {
-			if (!name || !rz_str_casecmp (name, def->name)) {
-				rz_list_delete (lang->defs, iter);
+			if (!name || !rz_str_casecmp(name, def->name)) {
+				rz_list_delete(lang->defs, iter);
 				break;
 			}
 		}
 	} else {
-		rz_list_free (lang->defs);
+		rz_list_free(lang->defs);
 		lang->defs = NULL;
 	}
 }
 
 RZ_API bool rz_lang_setup(RzLang *lang) {
 	if (lang && lang->cur && lang->cur->setup) {
-		return lang->cur->setup (lang);
+		return lang->cur->setup(lang);
 	}
 	return false;
 }
 
 RZ_API bool rz_lang_add(RzLang *lang, RzLangPlugin *foo) {
-	if (foo && (!rz_lang_get_by_name (lang, foo->name))) {
+	if (foo && (!rz_lang_get_by_name(lang, foo->name))) {
 		if (foo->init) {
-			foo->init (lang);
+			foo->init(lang);
 		}
-		rz_list_append (lang->langs, foo);
+		rz_list_append(lang->langs, foo);
 		return true;
 	}
 	return false;
@@ -146,36 +146,37 @@ RZ_API bool rz_lang_list(RzLang *lang) {
 	}
 	rz_list_foreach (lang->langs, iter, h) {
 		const char *license = h->license
-			? h->license : "???";
-		lang->cb_printf ("%s: (%s) %s\n",
+			? h->license
+			: "???";
+		lang->cb_printf("%s: (%s) %s\n",
 			h->name, license, h->desc);
 	}
 	return true;
 }
 
-RZ_API RzLangPlugin *rz_lang_get_by_extension (RzLang *lang, const char *ext) {
+RZ_API RzLangPlugin *rz_lang_get_by_extension(RzLang *lang, const char *ext) {
 	RzListIter *iter;
 	RzLangPlugin *h;
-	const char *p = rz_str_lchr (ext, '.');
+	const char *p = rz_str_lchr(ext, '.');
 	if (p) {
 		ext = p + 1;
 	}
 	rz_list_foreach (lang->langs, iter, h) {
-		if (!rz_str_casecmp (h->ext, ext)) {
+		if (!rz_str_casecmp(h->ext, ext)) {
 			return h;
 		}
 	}
 	return NULL;
 }
 
-RZ_API RzLangPlugin *rz_lang_get_by_name (RzLang *lang, const char *name) {
+RZ_API RzLangPlugin *rz_lang_get_by_name(RzLang *lang, const char *name) {
 	RzListIter *iter;
 	RzLangPlugin *h;
 	rz_list_foreach (lang->langs, iter, h) {
-		if (!rz_str_casecmp (h->name, name)) {
+		if (!rz_str_casecmp(h->name, name)) {
 			return h;
 		}
-		if (h->alias && !rz_str_casecmp (h->alias, name)) {
+		if (h->alias && !rz_str_casecmp(h->alias, name)) {
 			return h;
 		}
 	}
@@ -183,7 +184,7 @@ RZ_API RzLangPlugin *rz_lang_get_by_name (RzLang *lang, const char *name) {
 }
 
 RZ_API bool rz_lang_use(RzLang *lang, const char *name) {
-	RzLangPlugin *h = rz_lang_get_by_name (lang, name);
+	RzLangPlugin *h = rz_lang_get_by_name(lang, name);
 	if (h) {
 		lang->cur = h;
 		return true;
@@ -194,20 +195,20 @@ RZ_API bool rz_lang_use(RzLang *lang, const char *name) {
 // TODO: store in rz_lang and use it from the plugin?
 RZ_API bool rz_lang_set_argv(RzLang *lang, int argc, char **argv) {
 	if (lang->cur && lang->cur->set_argv) {
-		return lang->cur->set_argv (lang, argc, argv);
+		return lang->cur->set_argv(lang, argc, argv);
 	}
 	return false;
 }
 
 RZ_API int rz_lang_run(RzLang *lang, const char *code, int len) {
 	if (lang->cur && lang->cur->run) {
-		return lang->cur->run (lang, code, len);
+		return lang->cur->run(lang, code, len);
 	}
 	return false;
 }
 
 RZ_API int rz_lang_run_string(RzLang *lang, const char *code) {
-	return rz_lang_run (lang, code, strlen (code));
+	return rz_lang_run(lang, code, strlen(code));
 }
 
 RZ_API int rz_lang_run_file(RzLang *lang, const char *file) {
@@ -216,16 +217,16 @@ RZ_API int rz_lang_run_file(RzLang *lang, const char *file) {
 		if (!lang->cur->run_file) {
 			if (lang->cur->run) {
 				size_t len;
-				char *code = rz_file_slurp (file, &len);
+				char *code = rz_file_slurp(file, &len);
 				if (!code) {
-					eprintf ("Could not open '%s'.\n", file);
+					eprintf("Could not open '%s'.\n", file);
 					return 0;
 				}
-				ret = lang->cur->run (lang, code, (int)len);
-				free (code);
+				ret = lang->cur->run(lang, code, (int)len);
+				free(code);
 			}
 		} else {
-			ret = lang->cur->run_file (lang, file);
+			ret = lang->cur->run_file(lang, file);
 		}
 	}
 	return ret;
@@ -241,25 +242,25 @@ RZ_API int rz_lang_prompt(RzLang *lang) {
 	}
 
 	if (lang->cur->prompt) {
-		if (lang->cur->prompt (lang)) {
+		if (lang->cur->prompt(lang)) {
 			return true;
 		}
 	}
 	/* init line */
-	RzLine *line = rz_line_singleton ();
+	RzLine *line = rz_line_singleton();
 	RzLineHistory hist = line->history;
-	RzLineHistory histnull = {0};
+	RzLineHistory histnull = { 0 };
 	RzLineCompletion oc = line->completion;
-	RzLineCompletion ocnull = {0};
-	char *prompt = strdup (line->prompt);
+	RzLineCompletion ocnull = { 0 };
+	char *prompt = strdup(line->prompt);
 	line->completion = ocnull;
 	line->history = histnull;
 
 	/* foo */
 	for (;;) {
-		rz_cons_flush ();
-		snprintf (buf, sizeof (buf)-1, "%s> ", lang->cur->name);
-		rz_line_set_prompt (buf);
+		rz_cons_flush();
+		snprintf(buf, sizeof(buf) - 1, "%s> ", lang->cur->name);
+		rz_line_set_prompt(buf);
 #if 0
 		printf ("%s> ", lang->cur->name);
 		fflush (stdout);
@@ -267,40 +268,40 @@ RZ_API int rz_lang_prompt(RzLang *lang) {
 		if (feof (stdin)) break;
 		rz_str_trim_tail (buf);
 #endif
-		p = rz_line_readline ();
+		p = rz_line_readline();
 		if (!p) {
 			break;
 		}
-		rz_line_hist_add (p);
-		strncpy (buf, p, sizeof (buf) - 1);
+		rz_line_hist_add(p);
+		strncpy(buf, p, sizeof(buf) - 1);
 		if (*buf == '!') {
 			if (buf[1]) {
-				rz_sys_xsystem (buf + 1);
+				rz_sys_xsystem(buf + 1);
 			} else {
 				char *foo, *code = NULL;
 				do {
-					foo = rz_cons_editor (NULL, code);
-					rz_lang_run (lang, foo, 0);
-					free (code);
+					foo = rz_cons_editor(NULL, code);
+					rz_lang_run(lang, foo, 0);
+					free(code);
 					code = foo;
-				} while (rz_cons_yesno ('y', "Edit again? (Y/n)"));
-				free (foo);
+				} while (rz_cons_yesno('y', "Edit again? (Y/n)"));
+				free(foo);
 			}
 			continue;
 		}
-		if (!memcmp (buf, ". ", 2)) {
-			char *file = rz_file_abspath (buf+2);
+		if (!memcmp(buf, ". ", 2)) {
+			char *file = rz_file_abspath(buf + 2);
 			if (file) {
-				rz_lang_run_file (lang, file);
-				free (file);
+				rz_lang_run_file(lang, file);
+				free(file);
 			}
 			continue;
 		}
-		if (!strcmp (buf, "q")) {
-			free (prompt);
+		if (!strcmp(buf, "q")) {
+			free(prompt);
 			return true;
 		}
-		if (!strcmp (buf, "?")) {
+		if (!strcmp(buf, "?")) {
 			RzLangDef *def;
 			RzListIter *iter;
 			eprintf("  ?        - show this help message\n"
@@ -308,26 +309,26 @@ RZ_API int rz_lang_prompt(RzLang *lang) {
 				"  !command - run system command\n"
 				"  . file   - interpret file\n"
 				"  q        - quit prompt\n");
-			eprintf ("%s example:\n", lang->cur->name);
+			eprintf("%s example:\n", lang->cur->name);
 			if (lang->cur->help) {
-				eprintf ("%s", *lang->cur->help);
+				eprintf("%s", *lang->cur->help);
 			}
-			if (!rz_list_empty (lang->defs)) {
-				eprintf ("variables:\n");
+			if (!rz_list_empty(lang->defs)) {
+				eprintf("variables:\n");
 			}
 			rz_list_foreach (lang->defs, iter, def) {
-				eprintf ("  %s %s\n", def->type, def->name);
+				eprintf("  %s %s\n", def->type, def->name);
 			}
 		} else {
-			rz_lang_run (lang, buf, strlen (buf));
+			rz_lang_run(lang, buf, strlen(buf));
 		}
 	}
 	// XXX: leaking history
-	rz_line_set_prompt (prompt);
+	rz_line_set_prompt(prompt);
 	line->completion = oc;
 	line->history = hist;
-	clearerr (stdin);
-	printf ("\n");
-	free (prompt);
+	clearerr(stdin);
+	printf("\n");
+	free(prompt);
 	return true;
 }

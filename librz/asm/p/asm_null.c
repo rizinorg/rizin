@@ -8,7 +8,7 @@
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	int opsz = 0;
-	rz_strbuf_set (&op->buf_asm, "");
+	rz_strbuf_set(&op->buf_asm, "");
 	op->size = opsz;
 	return opsz;
 }

@@ -51,23 +51,23 @@
 
 static bool check_buffer(RzBuffer *b) {
 	ut8 buf[8];
-	if (rz_buf_read_at (b, 0, buf, sizeof (buf)) != sizeof (buf)) {
+	if (rz_buf_read_at(b, 0, buf, sizeof(buf)) != sizeof(buf)) {
 		return false;
 	}
-	if (rz_buf_size (b) >= 32 && !memcmp (buf, "MENUET0", 7)) {
+	if (rz_buf_size(b) >= 32 && !memcmp(buf, "MENUET0", 7)) {
 		switch (buf[7]) {
 		case '0':
 		case '1':
 		case '2':
 			return true;
 		}
-		eprintf ("Unsupported MENUET version header\n");
+		eprintf("Unsupported MENUET version header\n");
 	}
 	return false;
 }
 
-static bool load_buffer (RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb){
-	return check_buffer (b);
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
+	return check_buffer(b);
 }
 
 static ut64 baddr(RzBinFile *bf) {
@@ -76,94 +76,94 @@ static ut64 baddr(RzBinFile *bf) {
 
 static ut64 menuetEntry(const ut8 *buf, int buf_size) {
 	switch (MENUET_VERSION(buf)) {
-	case '0': return rz_read_ble32 (buf + 12, false);
-	case '1': return rz_read_ble32 (buf + 12, false);
-	case '2': return rz_read_ble32 (buf + 44, false);
+	case '0': return rz_read_ble32(buf + 12, false);
+	case '1': return rz_read_ble32(buf + 12, false);
+	case '2': return rz_read_ble32(buf + 44, false);
 	}
 	return UT64_MAX;
 }
 
-static RzList* entries(RzBinFile *bf) {
-	RzList* ret;
-	ut8 buf[64] = {0};
+static RzList *entries(RzBinFile *bf) {
+	RzList *ret;
+	ut8 buf[64] = { 0 };
 	RzBinAddr *ptr = NULL;
-	const int buf_size = RZ_MIN (sizeof (buf), rz_buf_size (bf->buf));
+	const int buf_size = RZ_MIN(sizeof(buf), rz_buf_size(bf->buf));
 
-	rz_buf_read_at (bf->buf, 0, buf, buf_size);
-	ut64 entry = menuetEntry (buf, buf_size);
+	rz_buf_read_at(bf->buf, 0, buf, buf_size);
+	ut64 entry = menuetEntry(buf, buf_size);
 	if (entry == UT64_MAX) {
 		return NULL;
 	}
-	if (!(ret = rz_list_new ())) {
+	if (!(ret = rz_list_new())) {
 		return NULL;
 	}
 	ret->free = free;
-	if ((ptr = RZ_NEW0 (RzBinAddr))) {
-		ptr->paddr = rz_read_ble32 (buf + 12, false);
-		ptr->vaddr = ptr->paddr + baddr (bf);
-		rz_list_append (ret, ptr);
+	if ((ptr = RZ_NEW0(RzBinAddr))) {
+		ptr->paddr = rz_read_ble32(buf + 12, false);
+		ptr->vaddr = ptr->paddr + baddr(bf);
+		rz_list_append(ret, ptr);
 	}
 	return ret;
 }
 
-static RzList* sections(RzBinFile *bf) {
+static RzList *sections(RzBinFile *bf) {
 	RzList *ret = NULL;
 	RzBinSection *ptr = NULL;
-	ut8 buf[64] = {0};
-	const int buf_size = RZ_MIN (sizeof (buf), rz_buf_size (bf->buf));
+	ut8 buf[64] = { 0 };
+	const int buf_size = RZ_MIN(sizeof(buf), rz_buf_size(bf->buf));
 
-	rz_buf_read_at (bf->buf, 0, buf, buf_size);
+	rz_buf_read_at(bf->buf, 0, buf, buf_size);
 	if (!bf->o->info) {
 		return NULL;
 	}
 
-	if (!(ret = rz_list_newf (free))) {
+	if (!(ret = rz_list_newf(free))) {
 		return NULL;
 	}
 	// add text segment
-	if (!(ptr = RZ_NEW0 (RzBinSection))) {
+	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup ("text");
-	ptr->size = rz_read_ble32 (buf + 16, false);
+	ptr->name = strdup("text");
+	ptr->size = rz_read_ble32(buf + 16, false);
 	ptr->vsize = ptr->size + (ptr->size % 4096);
-	ptr->paddr = rz_read_ble32 (buf + 12, false);
-	ptr->vaddr = ptr->paddr + baddr (bf);
+	ptr->paddr = rz_read_ble32(buf + 12, false);
+	ptr->vaddr = ptr->paddr + baddr(bf);
 	ptr->perm = RZ_PERM_RX; // r-x
 	ptr->add = true;
-	rz_list_append (ret, ptr);
+	rz_list_append(ret, ptr);
 
 	if (MENUET_VERSION(buf)) {
 		/* add data section */
-		if (!(ptr = RZ_NEW0 (RzBinSection))) {
+		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup ("idata");
-		const ut32 idata_start = rz_read_ble32 (buf + 40, false);
-		const ut32 idata_end = rz_read_ble32 (buf + 44, false);
+		ptr->name = strdup("idata");
+		const ut32 idata_start = rz_read_ble32(buf + 40, false);
+		const ut32 idata_end = rz_read_ble32(buf + 44, false);
 		ptr->size = idata_end - idata_start;
 		ptr->vsize = ptr->size + (ptr->size % 4096);
-		ptr->paddr = rz_read_ble32 (buf + 40, false);
-		ptr->vaddr = ptr->paddr + baddr (bf);
+		ptr->paddr = rz_read_ble32(buf + 40, false);
+		ptr->vaddr = ptr->paddr + baddr(bf);
 		ptr->perm = RZ_PERM_R; // r--
 		ptr->add = true;
-		rz_list_append (ret, ptr);
+		rz_list_append(ret, ptr);
 	}
 
 	return ret;
 }
 
-static RzBinInfo* info(RzBinFile *bf) {
-	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
+static RzBinInfo *info(RzBinFile *bf) {
+	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 	if (ret) {
-		ret->file = strdup (bf->file);
-		ret->bclass = strdup ("program");
-		ret->rclass = strdup ("menuet");
-		ret->os = strdup ("MenuetOS");
-		ret->arch = strdup ("x86");
-		ret->machine = strdup (ret->arch);
-		ret->subsystem = strdup ("kolibri");
-		ret->type = strdup ("EXEC");
+		ret->file = strdup(bf->file);
+		ret->bclass = strdup("program");
+		ret->rclass = strdup("menuet");
+		ret->os = strdup("MenuetOS");
+		ret->arch = strdup("x86");
+		ret->machine = strdup(ret->arch);
+		ret->subsystem = strdup("kolibri");
+		ret->type = strdup("EXEC");
 		ret->bits = 32;
 		ret->has_va = true;
 		ret->big_endian = 0;
@@ -174,32 +174,32 @@ static RzBinInfo* info(RzBinFile *bf) {
 }
 
 static ut64 size(RzBinFile *bf) {
-	ut8 buf[4] = {0};
+	ut8 buf[4] = { 0 };
 	if (!bf->o->info) {
-		bf->o->info = info (bf);
+		bf->o->info = info(bf);
 	}
 	if (!bf->o->info) {
 		return 0;
 	}
-	rz_buf_read_at (bf->buf, 16, buf, 4);
-	return (ut64)rz_read_ble32 (buf, false);
+	rz_buf_read_at(bf->buf, 16, buf, 4);
+	return (ut64)rz_read_ble32(buf, false);
 }
 
 #if !RZ_BIN_P9
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
-static RzBuffer* create(RzBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
-	RzBuffer *buf = rz_buf_new ();
-#define B(x,y) rz_buf_append_bytes(buf,(const ut8*)(x),y)
-#define D(x) rz_buf_append_ut32(buf,x)
-	B ("MENUET01", 8);
-	D (1); // header version
-	D (32); // program start
-	D (0x1000); // program image size
-	D (0x1000); // ESP
-	D (0); // no parameters
-	D (0); // no path
-	B (code, codelen);
+static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
+	RzBuffer *buf = rz_buf_new();
+#define B(x, y) rz_buf_append_bytes(buf, (const ut8 *)(x), y)
+#define D(x)    rz_buf_append_ut32(buf, x)
+	B("MENUET01", 8);
+	D(1); // header version
+	D(32); // program start
+	D(0x1000); // program image size
+	D(0x1000); // ESP
+	D(0); // no parameters
+	D(0); // no path
+	B(code, codelen);
 	return buf;
 }
 

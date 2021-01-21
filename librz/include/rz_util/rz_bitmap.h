@@ -3,10 +3,10 @@
 
 #if RZ_SYS_BITS == 4
 #define BITWORD_BITS_SHIFT 5
-#define RBitword ut32
+#define RBitword           ut32
 #else
 #define BITWORD_BITS_SHIFT 6
-#define RBitword ut64
+#define RBitword           ut64
 #endif
 
 #ifdef __cplusplus

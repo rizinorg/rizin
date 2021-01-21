@@ -12,10 +12,10 @@
 #if __WINDOWS__
 #undef HAVE_PTHREAD
 #define HAVE_PTHREAD 0
-#define RZ_TH_TID HANDLE
+#define RZ_TH_TID    HANDLE
 #define RZ_TH_LOCK_T CRITICAL_SECTION
 #define RZ_TH_COND_T CONDITION_VARIABLE
-#define RZ_TH_SEM_T HANDLE
+#define RZ_TH_SEM_T  HANDLE
 //HANDLE
 
 #elif HAVE_PTHREAD
@@ -39,16 +39,18 @@
 #endif
 #include <pthread_np.h>
 #endif
-#define RZ_TH_TID pthread_t
+#define RZ_TH_TID    pthread_t
 #define RZ_TH_LOCK_T pthread_mutex_t
 #define RZ_TH_COND_T pthread_cond_t
-#define RZ_TH_SEM_T sem_t *
+#define RZ_TH_SEM_T  sem_t *
 
 #else
 #error Threading library only supported for pthread and w32
 #endif
 
-typedef enum { RZ_TH_FREED = -1, RZ_TH_STOP = 0, RZ_TH_REPEAT = 1 } RzThreadFunctionRet;
+typedef enum { RZ_TH_FREED = -1,
+	RZ_TH_STOP = 0,
+	RZ_TH_REPEAT = 1 } RzThreadFunctionRet;
 #define RZ_TH_FUNCTION(x) RzThreadFunctionRet (*x)(struct rz_th_t *)
 
 #ifdef __cplusplus
@@ -71,11 +73,11 @@ typedef struct rz_th_t {
 	RZ_TH_TID tid;
 	RzThreadLock *lock;
 	RZ_TH_FUNCTION(fun);
-	void *user;    // user pointer
+	void *user; // user pointer
 	int running;
-	int breaked;   // thread aims to be interrupted
-	int delay;     // delay the startup of the thread N seconds
-	int ready;     // thread is properly setup
+	int breaked; // thread aims to be interrupted
+	int delay; // delay the startup of the thread N seconds
+	int ready; // thread is properly setup
 } RzThread;
 
 typedef struct rz_th_pool_t {

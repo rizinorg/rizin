@@ -17,15 +17,15 @@ typedef struct {
 	void *elems;
 } OMF_multi_datas;
 
-typedef struct OMF_DATA{
+typedef struct OMF_DATA {
 	ut64 paddr; // offset in file
 	ut64 size;
 	ut32 offset;
 	ut16 seg_idx;
-	struct OMF_DATA	*next;
+	struct OMF_DATA *next;
 } OMF_data;
 
-// sections return by the plugin are the addr of datas because sections are 
+// sections return by the plugin are the addr of datas because sections are
 // separate on non contiguous block on the omf file
 typedef struct {
 	ut32 name_idx;

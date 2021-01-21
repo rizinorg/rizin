@@ -32,10 +32,14 @@ RZ_API struct tm *rz_localtime_r(const time_t *time, struct tm *res);
 
 #if RZ_TIME_PROFILE_ENABLED
 #define RZ_TIME_PROFILE_BEGIN ut64 __now__ = rz_time_now_mono()
-#define RZ_TIME_PROFILE_END eprintf ("%s %"PFMT64d"\n", __FUNCTION__, rz_time_now_mono() - __now__)
+#define RZ_TIME_PROFILE_END   eprintf("%s %" PFMT64d "\n", __FUNCTION__, rz_time_now_mono() - __now__)
 #else
-#define RZ_TIME_PROFILE_BEGIN do{}while(0)
-#define RZ_TIME_PROFILE_END do{}while(0)
+#define RZ_TIME_PROFILE_BEGIN \
+	do { \
+	} while (0)
+#define RZ_TIME_PROFILE_END \
+	do { \
+	} while (0)
 #endif
 
 #endif

@@ -5,15 +5,15 @@
 #include <sys/types.h>
 #include <limits.h>
 
-#define cut8 const unsigned char
-#define ut64 unsigned long long
-#define st64 long long
-#define ut32 unsigned int
-#define st32 int
-#define ut16 unsigned short
-#define st16 short
-#define ut8 unsigned char
-#define st8 signed char
+#define cut8  const unsigned char
+#define ut64  unsigned long long
+#define st64  long long
+#define ut32  unsigned int
+#define st32  int
+#define ut16  unsigned short
+#define st16  short
+#define ut8   unsigned char
+#define st8   signed char
 #define boolt int
 
 #if defined(_MSC_VER)
@@ -22,9 +22,9 @@ typedef SSIZE_T ssize_t;
 #endif
 
 #if defined(_MSC_VER)
-# define RZ_ALIGNED(x) __declspec(align(x))
+#define RZ_ALIGNED(x) __declspec(align(x))
 #else
-# define RZ_ALIGNED(x) __attribute__((aligned(x)))
+#define RZ_ALIGNED(x) __attribute__((aligned(x)))
 #endif
 
 typedef RZ_ALIGNED(1) ut16 uut16;
@@ -66,8 +66,12 @@ typedef struct _utX {
 
 #include <stdbool.h>
 
-#define RZ_EMPTY { 0 }
-#define RZ_EMPTY2 {{ 0 }}
+#define RZ_EMPTY \
+	{ 0 }
+#define RZ_EMPTY2 \
+	{ \
+		{ 0 } \
+	}
 
 /* limits */
 #undef UT64_MAX
@@ -78,77 +82,78 @@ typedef struct _utX {
 #undef UT32_MIN
 #undef UT16_MIN
 #undef UT8_MIN
-#define ST64_MAX ((st64)0x7FFFFFFFFFFFFFFFULL)
-#define ST64_MIN ((st64)(-ST64_MAX-1))
-#define UT64_MAX 0xFFFFFFFFFFFFFFFFULL
-#define UT64_GT0 0x8000000000000000ULL
-#define UT64_LT0 0x7FFFFFFFFFFFFFFFULL
-#define UT64_MIN 0ULL
-#define UT64_32U 0xFFFFFFFF00000000ULL
-#define UT64_16U 0xFFFFFFFFFFFF0000ULL
-#define UT64_8U  0xFFFFFFFFFFFFFF00ULL
-#define UT32_MIN 0U
-#define UT16_MIN 0U
-#define UT32_GT0 0x80000000U
-#define UT32_LT0 0x7FFFFFFFU
-#define ST32_MAX 0x7FFFFFFF
-#define ST32_MIN (-ST32_MAX-1)
-#define UT32_MAX 0xFFFFFFFFU
-#define UT32_MIN 0U
-#define ST16_MAX 0x7FFF
-#define ST16_MIN (-ST16_MAX-1)
-#define UT16_GT0 0x8000U
-#define UT16_MAX 0xFFFFU
-#define ST8_MAX  0x7F
-#define ST8_MIN  (-ST8_MAX - 1)
-#define UT8_GT0  0x80U
-#define UT8_MAX  0xFFU
-#define UT8_MIN  0x00U
+#define ST64_MAX  ((st64)0x7FFFFFFFFFFFFFFFULL)
+#define ST64_MIN  ((st64)(-ST64_MAX - 1))
+#define UT64_MAX  0xFFFFFFFFFFFFFFFFULL
+#define UT64_GT0  0x8000000000000000ULL
+#define UT64_LT0  0x7FFFFFFFFFFFFFFFULL
+#define UT64_MIN  0ULL
+#define UT64_32U  0xFFFFFFFF00000000ULL
+#define UT64_16U  0xFFFFFFFFFFFF0000ULL
+#define UT64_8U   0xFFFFFFFFFFFFFF00ULL
+#define UT32_MIN  0U
+#define UT16_MIN  0U
+#define UT32_GT0  0x80000000U
+#define UT32_LT0  0x7FFFFFFFU
+#define ST32_MAX  0x7FFFFFFF
+#define ST32_MIN  (-ST32_MAX - 1)
+#define UT32_MAX  0xFFFFFFFFU
+#define UT32_MIN  0U
+#define ST16_MAX  0x7FFF
+#define ST16_MIN  (-ST16_MAX - 1)
+#define UT16_GT0  0x8000U
+#define UT16_MAX  0xFFFFU
+#define ST8_MAX   0x7F
+#define ST8_MIN   (-ST8_MAX - 1)
+#define UT8_GT0   0x80U
+#define UT8_MAX   0xFFU
+#define UT8_MIN   0x00U
 #define ASCII_MIN 32
 #define ASCII_MAX 127
 
 #if SSIZE_MAX == ST32_MAX
 #define SZT_MAX  UT32_MAX
 #define SZT_MIN  UT32_MIN
-#define SSZT_MAX  ST32_MAX
-#define SSZT_MIN  ST32_MIN
+#define SSZT_MAX ST32_MAX
+#define SSZT_MIN ST32_MIN
 #else
 #define SZT_MAX  UT64_MAX
 #define SZT_MIN  UT64_MIN
-#define SSZT_MAX  ST64_MAX
-#define SSZT_MIN  ST64_MIN
+#define SSZT_MAX ST64_MAX
+#define SSZT_MIN ST64_MIN
 #endif
 
-#define UT64_ALIGN(x) (x + (x - (x % sizeof (ut64))))
-#define UT32_ALIGN(x) (x + (x - (x % sizeof (ut32))))
-#define UT16_ALIGN(x) (x + (x - (x % sizeof (ut16))))
+#define UT64_ALIGN(x) (x + (x - (x % sizeof(ut64))))
+#define UT32_ALIGN(x) (x + (x - (x % sizeof(ut32))))
+#define UT16_ALIGN(x) (x + (x - (x % sizeof(ut16))))
 
 #define UT32_LO(x) ((ut32)((x)&UT32_MAX))
-#define UT32_HI(x) ((ut32)(((ut64)(x))>>32)&UT32_MAX)
+#define UT32_HI(x) ((ut32)(((ut64)(x)) >> 32) & UT32_MAX)
 
-#define RZ_BETWEEN(x,y,z) (((y)>=(x)) && ((y)<=(z)))
-#define RZ_ROUND(x,y) ((x)%(y))?(x)+((y)-((x)%(y))):(x)
-#define RZ_DIM(x,y,z) (((x)<(y))?(y):((x)>(z))?(z):(x))
+#define RZ_BETWEEN(x, y, z) (((y) >= (x)) && ((y) <= (z)))
+#define RZ_ROUND(x, y)      ((x) % (y)) ? (x) + ((y) - ((x) % (y))) : (x)
+#define RZ_DIM(x, y, z)     (((x) < (y)) ? (y) : ((x) > (z)) ? (z) \
+							     : (x))
 #ifndef RZ_MAX_DEFINED
-#define RZ_MAX(x,y) (((x)>(y))?(x):(y))
+#define RZ_MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define RZ_MAX_DEFINED
 #endif
 #ifndef RZ_MIN_DEFINED
-#define RZ_MIN(x,y) (((x)>(y))?(y):(x))
+#define RZ_MIN(x, y) (((x) > (y)) ? (y) : (x))
 #define RZ_MIN_DEFINED
 #endif
-#define RZ_ABS(x) (((x)<0)?-(x):(x))
-#define RZ_BTW(x,y,z) (((x)>=(y))&&((y)<=(z)))?y:x
+#define RZ_ABS(x)       (((x) < 0) ? -(x) : (x))
+#define RZ_BTW(x, y, z) (((x) >= (y)) && ((y) <= (z))) ? y : x
 
 #include "rz_types_overflow.h"
 
 /* copied from bithacks.h */
-#define B_IS_SET(x, n)   (((x) & (1ULL << (n)))? 1: 0)
-#define B_SET(x, n)      ((x) |= (1ULL << (n)))
-#define B_EVEN(x)        (((x) & 1) == 0)
-#define B_ODD(x)         (!B_EVEN((x)))
-#define B_UNSET(x, n)    ((x) &= ~(1ULL << (n)))
-#define B_TOGGLE(x, n)   ((x) ^= (1ULL << (n)))
+#define B_IS_SET(x, n) (((x) & (1ULL << (n))) ? 1 : 0)
+#define B_SET(x, n)    ((x) |= (1ULL << (n)))
+#define B_EVEN(x)      (((x)&1) == 0)
+#define B_ODD(x)       (!B_EVEN((x)))
+#define B_UNSET(x, n)  ((x) &= ~(1ULL << (n)))
+#define B_TOGGLE(x, n) ((x) ^= (1ULL << (n)))
 
 #define B11111 31
 #define B11110 30
@@ -166,32 +171,32 @@ typedef struct _utX {
 #define B10010 18
 #define B10001 17
 #define B10000 16
-#define B1111 15
-#define B1110 14
-#define B1101 13
-#define B1100 12
-#define B1011 11
-#define B1010 10
-#define B1001 9
-#define B1000 8
-#define B0111 7
-#define B0110 6
-#define B0101 5
-#define B0100 4
-#define B0011 3
-#define B0010 2
-#define B0001 1
-#define B0000 0
+#define B1111  15
+#define B1110  14
+#define B1101  13
+#define B1100  12
+#define B1011  11
+#define B1010  10
+#define B1001  9
+#define B1000  8
+#define B0111  7
+#define B0110  6
+#define B0101  5
+#define B0100  4
+#define B0011  3
+#define B0010  2
+#define B0001  1
+#define B0000  0
 #undef B
-#define B4(a,b,c,d) ((a<<12)|(b<<8)|(c<<4)|(d))
+#define B4(a, b, c, d) ((a << 12) | (b << 8) | (c << 4) | (d))
 
 /* portable non-c99 inf/nan types */
 #if !defined(INFINITY)
-#define INFINITY (1.0f/0.0f)
+#define INFINITY (1.0f / 0.0f)
 #endif
 
 #if !defined(NAN)
-#define NAN (0.0f/0.0f)
+#define NAN (0.0f / 0.0f)
 #endif
 
 /* A workaround against libc headers redefinition of __attribute__:
@@ -206,11 +211,11 @@ typedef struct _utX {
 #endif
 
 #ifdef _MSC_VER
-#define RZ_PACKED( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
+#define RZ_PACKED(__Declaration__) __pragma(pack(push, 1)) __Declaration__ __pragma(pack(pop))
 #undef INFINITY
 #undef NAN
 #elif defined(__GNUC__) || defined(__TINYC__)
-#define RZ_PACKED( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+#define RZ_PACKED(__Declaration__) __Declaration__ __attribute__((__packed__))
 #endif
 
 #if APPLE_SDK_IPHONESIMULATOR
@@ -221,9 +226,9 @@ typedef struct _utX {
 #endif
 
 #define HEAPTYPE(x) \
-	static x* x##_new(x n) {\
-		x *m = malloc(sizeof (x));\
-		return m? *m = n, m: m; \
+	static x *x##_new(x n) { \
+		x *m = malloc(sizeof(x)); \
+		return m ? *m = n, m : m; \
 	}
 
 #endif // RZ_TYPES_BASE_H

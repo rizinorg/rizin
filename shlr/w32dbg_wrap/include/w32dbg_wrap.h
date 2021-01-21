@@ -40,7 +40,7 @@ typedef struct {
 } W32DbgWInst;
 
 #define w32dbgw_ret(inst) inst->params.ret
-#define w32dbgw_err(inst) (SetLastError (inst->params.err), inst->params.err)
+#define w32dbgw_err(inst) (SetLastError(inst->params.err), inst->params.err)
 
 W32DbgWInst *w32dbg_wrap_new(void);
 int w32dbg_wrap_wait_ret(W32DbgWInst *inst);

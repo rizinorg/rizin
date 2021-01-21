@@ -9,30 +9,30 @@
 static char *get_filetype(RzBuffer *b) {
 	ut8 buf[4096] = { 0 };
 	char *res = NULL;
-	RzMagic *ck = rz_magic_new (0);
+	RzMagic *ck = rz_magic_new(0);
 	if (!ck) {
 		return NULL;
 	}
 	const char *tmp = NULL;
 	// TODO: dir.magic not honored here
-	rz_magic_load (ck, RZ_SDB_MAGIC);
-	rz_buf_read_at (b, 0, buf, sizeof (buf));
-	tmp = rz_magic_buffer (ck, buf, sizeof (buf));
+	rz_magic_load(ck, RZ_SDB_MAGIC);
+	rz_buf_read_at(b, 0, buf, sizeof(buf));
+	tmp = rz_magic_buffer(ck, buf, sizeof(buf));
 	if (tmp) {
-		res = strdup (tmp);
+		res = strdup(tmp);
 	}
-	rz_magic_free (ck);
+	rz_magic_free(ck);
 	return res;
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
-	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
+	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
 	ret->lang = "";
-	ret->file = bf->file? strdup (bf->file): NULL;
-	ret->type = get_filetype (bf->buf);
+	ret->file = bf->file ? strdup(bf->file) : NULL;
+	ret->type = get_filetype(bf->buf);
 	ret->has_pi = 0;
 	ret->has_canary = 0;
 	ret->has_retguard = -1;
@@ -50,7 +50,7 @@ static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loada
 }
 
 static void destroy(RzBinFile *bf) {
-	rz_buf_free (bf->o->bin_obj);
+	rz_buf_free(bf->o->bin_obj);
 }
 
 static ut64 baddr(RzBinFile *bf) {

@@ -3,13 +3,13 @@
 #include <rz_util.h>
 
 RZ_API RzStack *rz_stack_new(ut32 n) {
-	RzStack *s = RZ_NEW0 (RzStack);
+	RzStack *s = RZ_NEW0(RzStack);
 	if (!s) {
 		return NULL;
 	}
-	s->elems = RZ_NEWS0 (void *, n);
+	s->elems = RZ_NEWS0(void *, n);
 	if (!s->elems) {
-		free (s);
+		free(s);
 		return NULL;
 	}
 	s->n_elems = n;
@@ -18,7 +18,7 @@ RZ_API RzStack *rz_stack_new(ut32 n) {
 }
 
 RZ_API RzStack *rz_stack_newf(ut32 n, RzStackFree f) {
-	RzStack *s = rz_stack_new (n);
+	RzStack *s = rz_stack_new(n);
 	if (s) {
 		s->free = f;
 	}
@@ -30,11 +30,11 @@ RZ_API void rz_stack_free(RzStack *s) {
 		if (s->free) {
 			int i;
 			for (i = 0; i <= s->top; i++) {
-				s->free (s->elems[i]);
+				s->free(s->elems[i]);
 			}
 		}
-		free (s->elems);
-		free (s);
+		free(s->elems);
+		free(s);
 	}
 }
 
@@ -42,7 +42,7 @@ RZ_API bool rz_stack_push(RzStack *s, void *el) {
 	if (s->top == s->n_elems - 1) {
 		/* reallocate the stack */
 		s->n_elems *= 2;
-		void **elems = realloc (s->elems, s->n_elems * sizeof (void *));
+		void **elems = realloc(s->elems, s->n_elems * sizeof(void *));
 		if (!elems) {
 			return false;
 		}
@@ -73,5 +73,5 @@ RZ_API size_t rz_stack_size(RzStack *s) {
 }
 
 RZ_API void *rz_stack_peek(RzStack *s) {
-	return rz_stack_is_empty (s)? NULL: s->elems[s->top];
+	return rz_stack_is_empty(s) ? NULL : s->elems[s->top];
 }

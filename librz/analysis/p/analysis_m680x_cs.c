@@ -12,7 +12,7 @@
 
 #if !CAPSTONE_HAS_M680X
 #ifdef _MSC_VER
-#pragma message ("Cannot find support for m680x in capstone")
+#pragma message("Cannot find support for m680x in capstone")
 #else
 #warning Cannot find capstone-m680x support
 #endif
@@ -26,31 +26,31 @@ static int m680xmode(const char *str) {
 		return CS_MODE_M680X_6800;
 	}
 	// replace this with the asm.features?
-	if (str && strstr (str, "6800")) {
+	if (str && strstr(str, "6800")) {
 		return CS_MODE_M680X_6800;
 	}
-	if (str && strstr (str, "6801")) {
+	if (str && strstr(str, "6801")) {
 		return CS_MODE_M680X_6801;
-	} else if (str && strstr (str, "6805")) {
+	} else if (str && strstr(str, "6805")) {
 		return CS_MODE_M680X_6805;
-	} else if (str && strstr (str, "6808")) {
+	} else if (str && strstr(str, "6808")) {
 		return CS_MODE_M680X_6808;
-	} else if (str && strstr (str, "6809")) {
+	} else if (str && strstr(str, "6809")) {
 		return CS_MODE_M680X_6809;
-	} else if (str && strstr (str, "6811")) {
+	} else if (str && strstr(str, "6811")) {
 		return CS_MODE_M680X_6811;
 	}
-//
-	if (str && strstr (str, "cpu12")) {
+	//
+	if (str && strstr(str, "cpu12")) {
 		return CS_MODE_M680X_CPU12;
 	}
-	if (str && strstr (str, "6301")) {
+	if (str && strstr(str, "6301")) {
 		return CS_MODE_M680X_6301;
 	}
-	if (str && strstr (str, "6309")) {
+	if (str && strstr(str, "6309")) {
 		return CS_MODE_M680X_6309;
 	}
-	if (str && strstr (str, "hcs08")) {
+	if (str && strstr(str, "hcs08")) {
 		return CS_MODE_M680X_HCS08;
 	}
 	return CS_MODE_M680X_6800;
@@ -64,32 +64,32 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 	static csh handle = 0;
 	static int omode = -1;
 	static int obits = 32;
-	cs_insn* insn;
+	cs_insn *insn;
 
-	int mode = m680xmode (a->cpu);
+	int mode = m680xmode(a->cpu);
 
 	if (mode != omode || a->bits != obits) {
-		cs_close (&handle);
+		cs_close(&handle);
 		handle = 0;
 		omode = mode;
 		obits = a->bits;
 	}
 	op->size = 4;
 	if (handle == 0) {
-		ret = cs_open (CS_ARCH_M680X, mode, &handle);
+		ret = cs_open(CS_ARCH_M680X, mode, &handle);
 		if (ret != CS_ERR_OK) {
 			goto fin;
 		}
-		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
+		cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
-	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
+	n = cs_disasm(handle, (ut8 *)buf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		op->size = 2;
 		opsize = -1;
 		goto beach;
 	}
-	if (!memcmp (buf, "\xff\xff", RZ_MIN (len, 2))) {
+	if (!memcmp(buf, "\xff\xff", RZ_MIN(len, 2))) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		op->size = 2;
 		opsize = -1;
@@ -508,7 +508,7 @@ static int analop(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, in
 		break;
 	}
 beach:
-	cs_free (insn, n);
+	cs_free(insn, n);
 	//cs_close (&handle);
 fin:
 	return opsize;
@@ -516,7 +516,7 @@ fin:
 
 // XXX
 static bool set_reg_profile(RzAnalysis *analysis) {
-	const char *p = \
+	const char *p =
 		"=PC    pc\n"
 		"=SP    sp\n"
 		"=A0    a0\n"
@@ -525,7 +525,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	sp	.16	48	0\n"
 		"gpr	a0	.16	48	0\n"
 		"gpr	a1	.16	48	0\n";
-	return rz_reg_set_profile_string (analysis->reg, p);
+	return rz_reg_set_profile_string(analysis->reg, p);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_m680x_cs = {

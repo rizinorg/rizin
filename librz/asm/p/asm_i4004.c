@@ -6,8 +6,8 @@
 #include <rz_lib.h>
 #include "../arch/i4004/i4004dis.c"
 
-static int disassemble (RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	return i4004dis (op,buf,len);
+static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
+	return i4004dis(op, buf, len);
 }
 
 RzAsmPlugin rz_asm_plugin_i4004 = {

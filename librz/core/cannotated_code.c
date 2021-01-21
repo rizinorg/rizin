@@ -6,51 +6,51 @@
 #include <rz_vector.h>
 
 RZ_API void rz_core_annotated_code_print_json(RzAnnotatedCode *code) {
-	PJ *pj = pj_new ();
+	PJ *pj = pj_new();
 	if (!pj) {
 		return;
 	}
 
-	pj_o (pj);
-	pj_ks (pj, "code", code->code);
+	pj_o(pj);
+	pj_ks(pj, "code", code->code);
 
-	pj_k (pj, "annotations");
-	pj_a (pj);
+	pj_k(pj, "annotations");
+	pj_a(pj);
 
 	char *type_str;
 	RzCodeAnnotation *annotation;
-	rz_vector_foreach (&code->annotations, annotation) {
-		pj_o (pj);
-		pj_kn (pj, "start", (ut64)annotation->start);
-		pj_kn (pj, "end", (ut64)annotation->end);
+	rz_vector_foreach(&code->annotations, annotation) {
+		pj_o(pj);
+		pj_kn(pj, "start", (ut64)annotation->start);
+		pj_kn(pj, "end", (ut64)annotation->end);
 		switch (annotation->type) {
 		case RZ_CODE_ANNOTATION_TYPE_OFFSET:
-			pj_ks (pj, "type", "offset");
-			pj_kn (pj, "offset", annotation->offset.offset);
+			pj_ks(pj, "type", "offset");
+			pj_kn(pj, "offset", annotation->offset.offset);
 			break;
 		case RZ_CODE_ANNOTATION_TYPE_FUNCTION_NAME:
-			pj_ks (pj, "type", "function_name");
-			pj_ks (pj, "name", annotation->reference.name);
-			pj_kn (pj, "offset", annotation->reference.offset);
+			pj_ks(pj, "type", "function_name");
+			pj_ks(pj, "name", annotation->reference.name);
+			pj_kn(pj, "offset", annotation->reference.offset);
 			break;
 		case RZ_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE:
-			pj_ks (pj, "type", "global_variable");
-			pj_kn (pj, "offset", annotation->reference.offset);
+			pj_ks(pj, "type", "global_variable");
+			pj_kn(pj, "offset", annotation->reference.offset);
 			break;
 		case RZ_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE:
-			pj_ks (pj, "type", "constant_variable");
-			pj_kn (pj, "offset", annotation->reference.offset);
+			pj_ks(pj, "type", "constant_variable");
+			pj_kn(pj, "offset", annotation->reference.offset);
 			break;
 		case RZ_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE:
-			pj_ks (pj, "type", "local_variable");
-			pj_ks (pj, "name", annotation->variable.name);
+			pj_ks(pj, "type", "local_variable");
+			pj_ks(pj, "name", annotation->variable.name);
 			break;
 		case RZ_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER:
-			pj_ks (pj, "type", "function_parameter");
-			pj_ks (pj, "name", annotation->variable.name);
+			pj_ks(pj, "type", "function_parameter");
+			pj_ks(pj, "name", annotation->variable.name);
 			break;
 		case RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT:
-			pj_ks (pj, "type", "syntax_highlight");
+			pj_ks(pj, "type", "syntax_highlight");
 			type_str = NULL;
 			switch (annotation->syntax_highlight.type) {
 			case RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD:
@@ -79,25 +79,25 @@ RZ_API void rz_core_annotated_code_print_json(RzAnnotatedCode *code) {
 				break;
 			}
 			if (type_str) {
-				pj_ks (pj, "syntax_highlight", type_str);
+				pj_ks(pj, "syntax_highlight", type_str);
 			}
 			break;
 		}
-		pj_end (pj);
+		pj_end(pj);
 	}
-	pj_end (pj);
+	pj_end(pj);
 
-	pj_end (pj);
-	rz_cons_printf ("%s\n", pj_string (pj));
-	pj_free (pj);
+	pj_end(pj);
+	rz_cons_printf("%s\n", pj_string(pj));
+	pj_free(pj);
 }
 
 #define PALETTE(x) (cons && cons->context->pal.x) ? cons->context->pal.x
-#define PRINT_COLOR(x)                             \
-	do {                                       \
-		if (cons->context->color_mode) {   \
-			rz_cons_printf ("%s", (x)); \
-		}                                  \
+#define PRINT_COLOR(x) \
+	do { \
+		if (cons->context->color_mode) { \
+			rz_cons_printf("%s", (x)); \
+		} \
 	} while (0)
 
 /**
@@ -123,38 +123,38 @@ static void print_offset_in_binary_line_bar(RzAnnotatedCode *code, ut64 offset, 
 	}
 	width -= 8;
 
-	RzCons *cons = rz_cons_singleton ();
-	rz_cons_printf ("    ");
+	RzCons *cons = rz_cons_singleton();
+	rz_cons_printf("    ");
 	if (offset == UT64_MAX) {
-		rz_cons_print ("          ");
+		rz_cons_print("          ");
 		while (width > 0) {
-			rz_cons_print (" ");
+			rz_cons_print(" ");
 			width--;
 		}
 	} else {
-		PRINT_COLOR (PALETTE (offset)
-			     : Color_GREEN);
-		rz_cons_printf (fmt[width], offset);
-		PRINT_COLOR (Color_RESET);
+		PRINT_COLOR(PALETTE(offset)
+			    : Color_GREEN);
+		rz_cons_printf(fmt[width], offset);
+		PRINT_COLOR(Color_RESET);
 	}
-	rz_cons_printf ("    |");
+	rz_cons_printf("    |");
 }
 
 RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector *line_offsets) {
 	if (code->annotations.len == 0) {
-		rz_cons_printf ("%s\n", code->code);
+		rz_cons_printf("%s\n", code->code);
 		return;
 	}
 
 	size_t cur = 0;
 	size_t line_idx = 0;
-	size_t len = strlen (code->code);
+	size_t len = strlen(code->code);
 
 	size_t offset_width = 0;
 	if (line_offsets) {
 		ut64 *offset;
 		ut64 offset_max = 0;
-		rz_vector_foreach (line_offsets, offset) {
+		rz_vector_foreach(line_offsets, offset) {
 			if (*offset != UT64_MAX && *offset > offset_max) {
 				offset_max = *offset;
 			}
@@ -168,9 +168,9 @@ RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector *line_o
 		}
 	}
 
-	RzCons *cons = rz_cons_singleton ();
+	RzCons *cons = rz_cons_singleton();
 	RzCodeAnnotation *annotation;
-	rz_vector_foreach (&code->annotations, annotation) {
+	rz_vector_foreach(&code->annotations, annotation) {
 		if (annotation->type != RZ_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT) {
 			continue;
 		}
@@ -181,23 +181,23 @@ RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector *line_o
 		const char *color = Color_RESET;
 		switch (annotation->syntax_highlight.type) {
 		case RZ_SYNTAX_HIGHLIGHT_TYPE_COMMENT:
-			color = PALETTE (comment)
+			color = PALETTE(comment)
 			    : Color_WHITE;
 			break;
 		case RZ_SYNTAX_HIGHLIGHT_TYPE_KEYWORD:
-			color = PALETTE (pop)
+			color = PALETTE(pop)
 			    : Color_MAGENTA;
 			break;
 		case RZ_SYNTAX_HIGHLIGHT_TYPE_DATATYPE:
-			color = PALETTE (func_var_type)
+			color = PALETTE(func_var_type)
 			    : Color_BLUE;
 			break;
 		case RZ_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME:
-			color = PALETTE (fname)
+			color = PALETTE(fname)
 			    : Color_RED;
 			break;
 		case RZ_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE:
-			color = PALETTE (num)
+			color = PALETTE(num)
 			    : Color_YELLOW;
 		default:
 			break;
@@ -211,33 +211,33 @@ RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector *line_o
 			if (line_offsets && (cur == 0 || code->code[cur - 1] == '\n')) {
 				ut64 offset = 0;
 				if (line_idx < line_offsets->len) {
-					offset = *(ut64 *)rz_vector_index_ptr (line_offsets, line_idx);
+					offset = *(ut64 *)rz_vector_index_ptr(line_offsets, line_idx);
 				}
-				print_offset_in_binary_line_bar (code, offset, offset_width);
+				print_offset_in_binary_line_bar(code, offset, offset_width);
 				line_idx++;
 			}
-			rz_cons_printf ("%c", code->code[cur]);
+			rz_cons_printf("%c", code->code[cur]);
 		}
 
 		// (3/3)
 		// everything in between the "start" and the "end" inclusive should be highlighted
-		PRINT_COLOR (color);
+		PRINT_COLOR(color);
 		for (; cur < annotation->end && cur < len; cur++) {
 			// if we are starting a new line and we are printing with offsets
 			// we need to prepare the bar with offsets on the left handside before that
 			if (line_offsets && (cur == 0 || code->code[cur - 1] == '\n')) {
 				ut64 offset = 0;
 				if (line_idx < line_offsets->len) {
-					offset = *(ut64 *)rz_vector_index_ptr (line_offsets, line_idx);
+					offset = *(ut64 *)rz_vector_index_ptr(line_offsets, line_idx);
 				}
-				PRINT_COLOR (Color_RESET);
-				print_offset_in_binary_line_bar (code, offset, offset_width);
-				PRINT_COLOR (color);
+				PRINT_COLOR(Color_RESET);
+				print_offset_in_binary_line_bar(code, offset, offset_width);
+				PRINT_COLOR(color);
 				line_idx++;
 			}
-			rz_cons_printf ("%c", code->code[cur]);
+			rz_cons_printf("%c", code->code[cur]);
 		}
-		PRINT_COLOR (Color_RESET);
+		PRINT_COLOR(Color_RESET);
 	}
 	// the rest of the decompiled code should be printed
 	// without any highlighting since we don't have any annotations left
@@ -247,40 +247,40 @@ RZ_API void rz_core_annotated_code_print(RzAnnotatedCode *code, RzVector *line_o
 		if (line_offsets && (cur == 0 || code->code[cur - 1] == '\n')) {
 			ut64 offset = 0;
 			if (line_idx < line_offsets->len) {
-				offset = *(ut64 *)rz_vector_index_ptr (line_offsets, line_idx);
+				offset = *(ut64 *)rz_vector_index_ptr(line_offsets, line_idx);
 			}
-			print_offset_in_binary_line_bar (code, offset, offset_width);
+			print_offset_in_binary_line_bar(code, offset, offset_width);
 			line_idx++;
 		}
-		rz_cons_printf ("%c", code->code[cur]);
+		rz_cons_printf("%c", code->code[cur]);
 	}
 }
 
 static bool foreach_offset_annotation(void *user, const ut64 offset, const void *val) {
 	RzAnnotatedCode *code = user;
 	const RzCodeAnnotation *annotation = val;
-	char *b64statement = rz_base64_encode_dyn (code->code + annotation->start, annotation->end - annotation->start);
-	rz_cons_printf ("CCu base64:%s @ 0x%" PFMT64x "\n", b64statement, annotation->offset.offset);
-	free (b64statement);
+	char *b64statement = rz_base64_encode_dyn(code->code + annotation->start, annotation->end - annotation->start);
+	rz_cons_printf("CCu base64:%s @ 0x%" PFMT64x "\n", b64statement, annotation->offset.offset);
+	free(b64statement);
 	return true;
 }
 
 RZ_API void rz_core_annotated_code_print_comment_cmds(RzAnnotatedCode *code) {
 	RzCodeAnnotation *annotation;
-	HtUP *ht = ht_up_new0 ();
-	rz_vector_foreach (&code->annotations, annotation) {
+	HtUP *ht = ht_up_new0();
+	rz_vector_foreach(&code->annotations, annotation) {
 		if (annotation->type != RZ_CODE_ANNOTATION_TYPE_OFFSET) {
 			continue;
 		}
 		// choose the "best" annotation at a single offset
-		RzCodeAnnotation *prev_annot = ht_up_find (ht, annotation->offset.offset, NULL);
+		RzCodeAnnotation *prev_annot = ht_up_find(ht, annotation->offset.offset, NULL);
 		if (prev_annot) {
 			if (annotation->end - annotation->start < prev_annot->end - prev_annot->start) {
 				continue;
 			}
 		}
-		ht_up_update (ht, annotation->offset.offset, annotation);
+		ht_up_update(ht, annotation->offset.offset, annotation);
 	}
-	ht_up_foreach (ht, foreach_offset_annotation, code);
-	ht_up_free (ht);
+	ht_up_foreach(ht, foreach_offset_annotation, code);
+	ht_up_free(ht);
 }

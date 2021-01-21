@@ -9,20 +9,20 @@
 #if __UNIX__
 static bool chmodr(const char *, int recursive);
 static bool parsemode(const char *);
-static void recurse(const char *path, int rec, bool (*fn)(const char *,int));
+static void recurse(const char *path, int rec, bool (*fn)(const char *, int));
 
 static char oper = '=';
 static mode_t mode = 0;
 #endif
 
-RZ_API bool rz_file_chmod (const char *file, const char *mod, int recursive) {
+RZ_API bool rz_file_chmod(const char *file, const char *mod, int recursive) {
 #if __UNIX__
 	oper = '=';
 	mode = 0;
-	if (!parsemode (mod)) {
+	if (!parsemode(mod)) {
 		return false;
 	}
-	return chmodr (file, recursive);
+	return chmodr(file, recursive);
 #else
 	return false;
 #endif
@@ -33,7 +33,7 @@ RZ_API bool rz_file_chmod (const char *file, const char *mod, int recursive) {
 static bool chmodr(const char *path, int rflag) {
 	struct stat st;
 
-	if (stat (path, &st) == -1) {
+	if (stat(path, &st) == -1) {
 		return false;
 	}
 
@@ -48,12 +48,12 @@ static bool chmodr(const char *path, int rflag) {
 		st.st_mode = mode;
 		break;
 	}
-	if (chmod (path, st.st_mode) == -1) {
-		eprintf ("chmod %s:", path);
+	if (chmod(path, st.st_mode) == -1) {
+		eprintf("chmod %s:", path);
 		return false;
 	}
 	if (rflag) {
-		recurse (path, rflag, chmodr);
+		recurse(path, rflag, chmodr);
 	}
 	return true;
 }
@@ -102,7 +102,7 @@ static bool parsemode(const char *str) {
 		return true;
 	}
 	for (p = str; *p; p++) {
-		switch(*p) {
+		switch (*p) {
 		/* masks */
 		case 'u':
 			mask |= S_IRWXU;
@@ -114,7 +114,7 @@ static bool parsemode(const char *str) {
 			mask |= S_IRWXO;
 			break;
 		case 'a':
-			mask |= S_IRWXU|S_IRWXG|S_IRWXO;
+			mask |= S_IRWXU | S_IRWXG | S_IRWXO;
 			break;
 		/* opers */
 		case '+':
@@ -124,20 +124,20 @@ static bool parsemode(const char *str) {
 			break;
 		/* modes */
 		case 'r':
-			mode |= S_IRUSR|S_IRGRP|S_IROTH;
+			mode |= S_IRUSR | S_IRGRP | S_IROTH;
 			break;
 		case 'w':
-			mode |= S_IWUSR|S_IWGRP|S_IWOTH;
+			mode |= S_IWUSR | S_IWGRP | S_IWOTH;
 			break;
 		case 'x':
-			mode |= S_IXUSR|S_IXGRP|S_IXOTH;
+			mode |= S_IXUSR | S_IXGRP | S_IXOTH;
 			break;
 		case 's':
-			mode |= S_ISUID|S_ISGID;
+			mode |= S_ISUID | S_ISGID;
 			break;
 		/* error */
 		default:
-			eprintf ("%s: invalid mode\n", str);
+			eprintf("%s: invalid mode\n", str);
 			return false;
 		}
 	}
@@ -148,45 +148,45 @@ static bool parsemode(const char *str) {
 }
 
 static char *agetcwd(void) {
-        char *buf = malloc (4096);
+	char *buf = malloc(4096);
 	if (!buf) {
 		return NULL;
 	}
-	if (!getcwd (buf, 4096)) {
-		eprintf ("getcwd:");
+	if (!getcwd(buf, 4096)) {
+		eprintf("getcwd:");
 	}
 	return buf;
 }
 
-static void recurse(const char *path, int rec, bool (*fn)(const char *,int)) {
-        char *cwd;
-        struct dirent *d;
-        struct stat st;
-        DIR *dp;
+static void recurse(const char *path, int rec, bool (*fn)(const char *, int)) {
+	char *cwd;
+	struct dirent *d;
+	struct stat st;
+	DIR *dp;
 
-	if (lstat (path, &st) == -1 || !S_ISDIR (st.st_mode)) {
+	if (lstat(path, &st) == -1 || !S_ISDIR(st.st_mode)) {
 		return;
-	} else if (!(dp = opendir (path))) {
-		eprintf ("opendir %s:", path);
-		return;
-	}
-        cwd = agetcwd();
-        if (chdir (path) == -1) {
-                eprintf ("chdir %s:", path);
-		closedir (dp);
-		free (cwd);
+	} else if (!(dp = opendir(path))) {
+		eprintf("opendir %s:", path);
 		return;
 	}
-	while ((d = readdir (dp))) {
-		if (strcmp (d->d_name, ".") && strcmp (d->d_name, "..")) {
-			fn (d->d_name, 1);
+	cwd = agetcwd();
+	if (chdir(path) == -1) {
+		eprintf("chdir %s:", path);
+		closedir(dp);
+		free(cwd);
+		return;
+	}
+	while ((d = readdir(dp))) {
+		if (strcmp(d->d_name, ".") && strcmp(d->d_name, "..")) {
+			fn(d->d_name, 1);
 		}
 	}
 
-	closedir (dp);
-	if (chdir (cwd) == -1) {
-		eprintf ("chdir %s:", cwd);
+	closedir(dp);
+	if (chdir(cwd) == -1) {
+		eprintf("chdir %s:", cwd);
 	}
-	free (cwd);
+	free(cwd);
 }
 #endif

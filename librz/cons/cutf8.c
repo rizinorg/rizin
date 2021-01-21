@@ -9,18 +9,18 @@
 #include <termios.h>
 #include <errno.h>
 
-#define RD_EOF   (-1)
-#define RD_EIO   (-2)
+#define RD_EOF (-1)
+#define RD_EIO (-2)
 
 /* select utf8 terminal detection method */
-#define UTF8_DETECT_ENV 1
+#define UTF8_DETECT_ENV    1
 #define UTF8_DETECT_LOCALE 0
 #define UTF8_DETECT_CURSOR 0
 
 #if UTF8_DETECT_CURSOR
 static inline int rd(const int fd) {
-	unsigned char   buffer[4];
-	ssize_t         n;
+	unsigned char buffer[4];
+	ssize_t n;
 
 	for (;;) {
 		n = read(fd, buffer, 1);
@@ -65,7 +65,7 @@ int current_tty(void) {
 	}
 
 	do {
-		fd = open (dev, O_RDWR | O_NOCTTY);
+		fd = open(dev, O_RDWR | O_NOCTTY);
 	} while (fd == -1 && errno == EINTR);
 	if (fd == -1) {
 		return -1;
@@ -80,7 +80,7 @@ int current_tty(void) {
  * Actual errno will be unchanged.
  */
 static int cursor_position(const int tty, int *const rowptr, int *const colptr) {
-	struct termios  saved, temporary;
+	struct termios saved, temporary;
 	int ret, res, rows, cols, saved_errno;
 
 	/* Bad tty? */
@@ -90,7 +90,7 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 	saved_errno = errno;
 
 	/* Save current terminal settings. */
-	res = tcgetattr (tty, &saved);
+	res = tcgetattr(tty, &saved);
 	if (res == -1) {
 		ret = errno;
 		errno = saved_errno;
@@ -98,7 +98,7 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 	}
 
 	/* Get current terminal settings for basis, too. */
-	res = tcgetattr (tty, &temporary);
+	res = tcgetattr(tty, &temporary);
 	if (res == -1) {
 		ret = errno;
 		errno = saved_errno;
@@ -123,7 +123,7 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 		}
 
 		/* Request cursor coordinates from the terminal. */
-		ret = write (tty, "\033[6n", 4);
+		ret = write(tty, "\033[6n", 4);
 		if (ret)
 			break;
 
@@ -162,7 +162,7 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 		/* Parse cols. */
 		cols = 0;
 		res = rd(tty);
-		if (res==-1)
+		if (res == -1)
 			break;
 		while (IS_DIGIT(res)) {
 			cols = 10 * cols + res - '0';
@@ -182,7 +182,7 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 	} while (0);
 
 	/* Restore saved terminal settings. */
-	res = tcsetattr (tty, TCSANOW, &saved);
+	res = tcsetattr(tty, TCSANOW, &saved);
 	if (res == -1 && !ret)
 		ret = errno;
 
@@ -197,11 +197,11 @@ RZ_API bool rz_cons_is_utf8(void) {
 	const char *keys[] = { "LC_ALL", "LC_CTYPE", "LANG", NULL };
 	const char **key = keys;
 	for (; *key; key++) {
-		char *val = rz_sys_getenv (*key);
+		char *val = rz_sys_getenv(*key);
 		if (val) {
-			rz_str_case (val, false);
-			ret = strstr (val, "utf-8") || strstr (val, "utf8");
-			free (val);
+			rz_str_case(val, false);
+			ret = strstr(val, "utf-8") || strstr(val, "utf8");
+			free(val);
 			break;
 		}
 	}
@@ -209,7 +209,7 @@ RZ_API bool rz_cons_is_utf8(void) {
 #if UTF8_DETECT_LOCALE
 #include <locale.h>
 	const char *ctype = setlocale(LC_CTYPE, NULL);
-	if ( (ctype != NULL) && (ctype = strchr(ctype, '.')) && ctype++ &&
+	if ((ctype != NULL) && (ctype = strchr(ctype, '.')) && ctype++ &&
 		(rz_str_casecmp(ctype, "UTF-8") == 0 || rz_str_casecmp(ctype, "UTF8") == 0)) {
 		return true;
 	}
@@ -217,28 +217,28 @@ RZ_API bool rz_cons_is_utf8(void) {
 #if UTF8_DETECT_CURSOR
 	int row = 0, col = 0;
 	int row2 = 0, col2 = 0;
-	int fd = current_tty ();
+	int fd = current_tty();
 	if (fd == -1)
 		return false;
 	if (cursor_position(fd, &row, &col)) {
-		close (fd);
+		close(fd);
 		return false;
 	}
-	rz_xwrite (1, "\xc3\x89\xc3\xa9", 4);
-	if (cursor_position (fd, &row2, &col2)) {
-		close (fd);
+	rz_xwrite(1, "\xc3\x89\xc3\xa9", 4);
+	if (cursor_position(fd, &row2, &col2)) {
+		close(fd);
 		return false;
 	}
-	close (fd);
-	rz_xwrite (1, "\r    \r", 6);
-	return ((col2-col)==2);
+	close(fd);
+	rz_xwrite(1, "\r    \r", 6);
+	return ((col2 - col) == 2);
 #endif
 	return ret;
 }
 #else
 RZ_API bool rz_cons_is_utf8(void) {
 #if __WINDOWS__
-	return GetConsoleOutputCP () == CP_UTF8;
+	return GetConsoleOutputCP() == CP_UTF8;
 #else
 	return true;
 #endif

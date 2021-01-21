@@ -16,10 +16,10 @@ static size_t countChar(const ut8 *buf, int len, char ch) {
 	return i;
 }
 
-static int getid (char ch) {
+static int getid(char ch) {
 	const char *keys = "[]<>+-,.";
-	const char *cidx = strchr (keys, ch);
-	return cidx? cidx - keys + 1: 0;
+	const char *cidx = strchr(keys, ch);
+	return cidx ? cidx - keys + 1 : 0;
 }
 
 #define BUFSIZE_INC 32
@@ -29,15 +29,15 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 		return 1;
 	}
 	/* Ayeeee! What's inside op? Do we have an initialized RzAnalysisOp? Are we going to have a leak here? :-( */
-	memset (op, 0, sizeof (RzAnalysisOp)); /* We need to refactorize this. Something like rz_analysis_op_init would be more appropriate */
-	rz_strbuf_init (&op->esil);
+	memset(op, 0, sizeof(RzAnalysisOp)); /* We need to refactorize this. Something like rz_analysis_op_init would be more appropriate */
+	rz_strbuf_init(&op->esil);
 	op->size = 1;
-	op->id = getid (buf[0]);
+	op->id = getid(buf[0]);
 	switch (buf[0]) {
 	case '[':
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->fail = addr+1;
-		buf = rz_mem_dup ((void *)buf, len);
+		op->fail = addr + 1;
+		buf = rz_mem_dup((void *)buf, len);
 		if (!buf) {
 			break;
 		}
@@ -51,13 +51,14 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 				}
 				if (*p == ']') {
 					lev--;
-					if (lev==-1) {
-						dst = addr + (size_t)(p-buf);
-						dst ++;
+					if (lev == -1) {
+						dst = addr + (size_t)(p - buf);
+						dst++;
 						op->jump = dst;
-						rz_strbuf_setf (&op->esil,
-								"$$,brk,=[1],brk,++=,"
-								"ptr,[1],!,?{,0x%"PFMT64x",pc,=,brk,--=,}", dst);
+						rz_strbuf_setf(&op->esil,
+							"$$,brk,=[1],brk,++=,"
+							"ptr,[1],!,?{,0x%" PFMT64x ",pc,=,brk,--=,}",
+							dst);
 						goto beach;
 					}
 				}
@@ -67,10 +68,10 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 				}
 				if (i == len - 1 && analysis->read_at) {
 					int new_buf_len = len + 1 + BUFSIZE_INC;
-					ut8 *new_buf = calloc (new_buf_len, 1);
+					ut8 *new_buf = calloc(new_buf_len, 1);
 					if (new_buf) {
-						free ((ut8 *)buf);
-						(void)analysis->read_at (analysis, addr, new_buf, new_buf_len);
+						free((ut8 *)buf);
+						(void)analysis->read_at(analysis, addr, new_buf, new_buf_len);
 						buf = new_buf;
 						p = buf + i;
 						len += BUFSIZE_INC;
@@ -80,41 +81,42 @@ static int bf_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *b
 				i++;
 			}
 		}
-beach:
-		free ((ut8 *)buf);
+	beach:
+		free((ut8 *)buf);
 		break;
-	case ']': op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
+	case ']':
+		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 		// XXX This is wrong esil
-		rz_strbuf_set (&op->esil, "brk,--=,brk,[1],pc,=");
+		rz_strbuf_set(&op->esil, "brk,--=,brk,[1],pc,=");
 		break;
 	case '>':
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		op->size = countChar (buf, len, '>');
-		rz_strbuf_setf (&op->esil, "%d,ptr,+=", op->size);
+		op->size = countChar(buf, len, '>');
+		rz_strbuf_setf(&op->esil, "%d,ptr,+=", op->size);
 		break;
 	case '<':
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		op->size = countChar (buf, len, '<');
-		rz_strbuf_setf (&op->esil, "%d,ptr,-=", op->size);
+		op->size = countChar(buf, len, '<');
+		rz_strbuf_setf(&op->esil, "%d,ptr,-=", op->size);
 		break;
 	case '+':
-		op->size = countChar (buf, len, '+');
+		op->size = countChar(buf, len, '+');
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-		rz_strbuf_setf (&op->esil, "%d,ptr,+=[1]", op->size);
+		rz_strbuf_setf(&op->esil, "%d,ptr,+=[1]", op->size);
 		break;
 	case '-':
 		op->type = RZ_ANALYSIS_OP_TYPE_SUB;
-		op->size = countChar (buf, len, '-');
-		rz_strbuf_setf (&op->esil, "%d,ptr,-=[1]", op->size);
+		op->size = countChar(buf, len, '-');
+		rz_strbuf_setf(&op->esil, "%d,ptr,-=[1]", op->size);
 		break;
 	case '.':
 		// print element in stack to screen
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
-		rz_strbuf_set (&op->esil, "ptr,[1],scr,=[1],scr,++=");
+		rz_strbuf_set(&op->esil, "ptr,[1],scr,=[1],scr,++=");
 		break;
 	case ',':
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
-		rz_strbuf_set (&op->esil, "kbd,[1],ptr,=[1],kbd,++=");
+		rz_strbuf_set(&op->esil, "kbd,[1],ptr,=[1],kbd,++=");
 		break;
 	case 0x00:
 	case 0xff:
@@ -122,14 +124,14 @@ beach:
 		break;
 	default:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
-		rz_strbuf_set (&op->esil, ",");
+		rz_strbuf_set(&op->esil, ",");
 		break;
 	}
 	return op->size;
 }
 
 static char *get_reg_profile(RzAnalysis *analysis) {
-	return strdup (
+	return strdup(
 		"=PC	pc\n"
 		"=BP	brk\n"
 		"=SP	ptr\n"

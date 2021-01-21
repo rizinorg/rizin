@@ -18,10 +18,10 @@ typedef struct rz_mem_pool_t {
 RZ_API ut64 rz_mem_get_num(const ut8 *b, int size);
 
 /* MEMORY POOL */
-RZ_API RMemoryPool* rz_mem_pool_deinit(RMemoryPool *pool);
+RZ_API RMemoryPool *rz_mem_pool_deinit(RMemoryPool *pool);
 RZ_API RMemoryPool *rz_mem_pool_new(int nodesize, int poolsize, int poolcount);
 RZ_API RMemoryPool *rz_mem_pool_free(RMemoryPool *pool);
-RZ_API void* rz_mem_pool_alloc(RMemoryPool *pool);
+RZ_API void *rz_mem_pool_alloc(RMemoryPool *pool);
 RZ_API void *rz_mem_dup(const void *s, int l);
 RZ_API void *rz_mem_alloc(int sz);
 RZ_API void rz_mem_free(void *);
@@ -40,7 +40,7 @@ RZ_API int rz_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, in
 RZ_API const ut8 *rz_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen);
 RZ_API const ut8 *rz_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *needle, int nlen, int align);
 RZ_API int rz_mem_count(const ut8 **addr);
-RZ_API bool rz_mem_is_printable (const ut8 *a, int la);
+RZ_API bool rz_mem_is_printable(const ut8 *a, int la);
 RZ_API bool rz_mem_is_zero(const ut8 *b, int l);
 
 #ifdef __cplusplus

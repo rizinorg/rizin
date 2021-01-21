@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 #include "rz_util.h"
 
-int test_flist () {
+int test_flist() {
 	int i;
-	void **it = rz_flist_new (3);
+	void **it = rz_flist_new(3);
 	char *pos = NULL;
 
-	for (i=0;i<9999;i++) {
-		rz_flist_set (it, i, "foo");
+	for (i = 0; i < 9999; i++) {
+		rz_flist_set(it, i, "foo");
 	}
 
-	rz_flist_delete (it, 1);
+	rz_flist_delete(it, 1);
 
-	rz_flist_foreach (it, pos) {
+	rz_flist_foreach(it, pos) {
 		printf("%s\n", pos);
 	}
 
@@ -24,4 +24,3 @@ int test_flist () {
 int main() {
 	return test_flist();
 }
-
