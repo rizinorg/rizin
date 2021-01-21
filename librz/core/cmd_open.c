@@ -387,10 +387,10 @@ static void cmd_open_bin(RzCore *core, const char *input) {
 
 // TODO: discuss the output format
 static void map_list(RzIO *io, int mode, RzPrint *print, int fd) {
-	PJ *pj;
 	if (!io || !print || !print->cb_printf) {
 		return;
 	}
+	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = pj_new();
 		if (!pj) {
