@@ -38,6 +38,7 @@ if host_machine.system() == 'darwin'
     build_always_stale: true,
     command: [
       macos_sign_sh,
+      'false',
       entitlements,
       rizin_exe.full_path(),
     ],
@@ -47,7 +48,8 @@ if host_machine.system() == 'darwin'
   )
 
   meson.add_install_script(meson.current_source_dir() / 'macos_sign.sh',
+    'true',
     entitlements,
-    rizin_prefix / rizin_bindir / 'rizin',
+    rizin_bindir / 'rizin',
   )
 endif
