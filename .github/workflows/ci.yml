@@ -359,7 +359,7 @@ jobs:
       env:
         PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
     - name: Install test dependencies
-      run: python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rz-pipe&subdirectory=python'
+      run: python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
     - name: Run tests
       # FIXME: debug tests fail on Debian for now, let's ignore all tests for the moment
       run: |
