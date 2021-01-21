@@ -3,7 +3,7 @@
 #include <rz_util.h>
 #include <rz_util/rz_print.h>
 
-static void pj_raw(PJ *j, const char *msg) {
+RZ_API void pj_raw(PJ *j, const char *msg) {
 	rz_return_if_fail (j && msg);
 	if (*msg) {
 		rz_strbuf_append (&j->sb, msg);
@@ -323,80 +323,3 @@ RZ_API PJ *pj_i(PJ *j, int i) {
 	return j;
 }
 
-RZ_API char *pj_fmt(PrintfCallback p, const char *fmt, ...) {
-	va_list ap;
-	va_start (ap, fmt);
-
-	char ch[2] = { 0 };
-	PJ *j = pj_new ();
-	while (*fmt) {
-		j->is_first = true;
-		ch[0] = *fmt;
-		switch (*fmt) {
-		case '\\':
-			fmt++;
-			switch (*fmt) {
-			// TODO: add \x, and \e
-			case 'e':
-				pj_raw (j, "\x1b");
-				break;
-			case 'r':
-				pj_raw (j, "\r");
-				break;
-			case 'n':
-				pj_raw (j, "\n");
-				break;
-			case 'b':
-				pj_raw (j, "\b");
-				break;
-			}
-			break;
-		case '\'':
-			pj_raw (j, "\"");
-			break;
-		case '%':
-			fmt++;
-			switch (*fmt) {
-			case 'b':
-				pj_b (j, va_arg (ap, int));
-				break;
-			case 's':
-				pj_s (j, va_arg (ap, const char *));
-				break;
-			case 'S': {
-				const char *s = va_arg (ap, const char *);
-				char *es = rz_base64_encode_dyn (s, -1);
-				pj_s (j, es);
-				free (es);
-			} break;
-			case 'n':
-				pj_n (j, va_arg (ap, ut64));
-				break;
-			case 'd':
-				pj_d (j, va_arg (ap, double));
-				break;
-			case 'i':
-				pj_i (j, va_arg (ap, int));
-				break;
-			default:
-				eprintf ("Invalid format\n");
-				break;
-			}
-			break;
-		default:
-			ch[0] = *fmt;
-			pj_raw (j, ch);
-			break;
-		}
-		fmt++;
-	}
-	char *ret = NULL;
-	if (p) {
-		p ("%s", rz_strbuf_get (&j->sb));
-		pj_free (j);
-	} else {
-		ret = pj_drain (j);
-	}
-	va_end (ap);
-	return ret;
-}
