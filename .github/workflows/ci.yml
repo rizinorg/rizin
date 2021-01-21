@@ -612,7 +612,7 @@ jobs:
     - name: Extract source tarball
       run: |
           mkdir rizin && pwd && ls -l
-          tar -C rizin --strip-components=1 -xvf rizin-${{ needs.create-tarball.outputs.version }}.tar.xz
+          tar -C rizin --strip-components=1 -xvf rizin-src.tar.xz
     - name: Install dependencies
       run: sudo apt-get --assume-yes install wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja
     - name: Install rizin
