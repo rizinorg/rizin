@@ -16,7 +16,7 @@ print("Importing symbols from libSystem...")
 rz.cmd(".=!i*")
 rz.cmd(".=!ie* libSystem.B.dylib")
 print("Finding syscalls...")
-funcs = rz.cmd("pdj 2 @@ sym.fun.*")
+funcs = rz.cmd("pdj 2 @@f:sym.fun.*")
 
 for doc in funcs.split("\n"):
     if len(doc) > 1:

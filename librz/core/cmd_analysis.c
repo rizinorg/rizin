@@ -39,21 +39,21 @@ static const char *help_msg_a[] = {
 
 static const char *help_msg_aa[] = {
 	"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
-	"aa", " ", "alias for 'af@@ sym.*;af@entry0;afva'", //;.afna @@ fcn.*'",
+	"aa", " ", "alias for 'af @@f:sym.*;af@entry0;afva'",
 	"aaa", "[?]", "autoname functions after aa (see afna)",
 	"aab", "", "abb across bin.sections.rx",
-	"aac", " [len]", "analyze function calls (af @@ `pi len~call[1]`)",
+	"aac", " [len]", "analyze function calls (af @@=`pi len~call[1]`)",
 	"aac*", " [len]", "flag function calls without performing a complete analysis",
 	"aad", " [len]", "analyze data references to code",
 	"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
-	"aaf", "[e|r|t] ", "analyze all functions (e analysis.hasnext=1;afr @@c:isq) (aafe=aef@@f)",
+	"aaf", "[e|r|t] ", "analyze all functions (e analysis.hasnext=1;afr @@c:isq) (aafe=aef@@F)",
 	"aai", "[j]", "show info of all analysis parameters",
 	"aan", "[gr?]", "autoname functions (aang = golang, aanr = noreturn propagation)",
 	"aao", "", "analyze all objc references",
 	"aap", "", "find and analyze function preludes",
 	"aar", "[?] [len]", "analyze len bytes of instructions for references",
-	"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
-	"aaS", "", "analyze all flags starting with sym. (af @@ sym.*)",
+	"aas", " [len]", "analyze symbols (af @@= isq~[0]`)",
+	"aaS", "", "analyze all flags starting with sym. (af @@f:sym.*)",
 	"aat", " [fcn]", "Analyze all/given function to convert immediate to linked structure offsets (see tl?)",
 	"aaT", " [len]", "analyze code after trap-sleds",
 	"aau", " [len]", "list mem areas (larger than len bytes) not covered by functions",
@@ -931,7 +931,7 @@ static void find_refs(RzCore *core, const char *glob) {
 		return;
 	}
 	eprintf ("Finding references of flags matching '%s'...\n", glob);
-	snprintf (cmd, sizeof (cmd) - 1, ".(findstref) @@= `f~%s[0]`", glob);
+	snprintf (cmd, sizeof (cmd) - 1, ".(findstref) @@=`f~%s[0]`", glob);
 	rz_core_cmd0 (core, "(findstref;f here=$$;s entry0;/r here;f-here)");
 	rz_core_cmd0 (core, cmd);
 	rz_core_cmd0 (core, "(-findstref)");
@@ -9322,7 +9322,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 		break;
 	case 'f':  // "aaf"
 		if (input[1] == 'e') {  // "aafe"
-			rz_core_cmd0 (core, "aef@@f");
+			rz_core_cmd0 (core, "aef@@F");
 		} else if (input[1] == 'r') {
 			ut64 cur = core->offset;
 			bool hasnext = rz_config_get_i (core->config, "analysis.hasnext");
@@ -9349,7 +9349,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 			rz_config_set_i (core->config, "analysis.hasnext", analHasnext);
 		} else {
 			rz_cons_printf ("Usage: aaf[e|r|t] - analyze all functions again\n");
-			rz_cons_printf (" aafe = aef@@f\n");
+			rz_cons_printf (" aafe = aef@@F\n");
 			rz_cons_printf ("aafr [len] = analyze all consecutive functions in section\n");
 			rz_cons_printf (" aaft = recursive type matching in all functions\n");
 			rz_cons_printf (" aaf  = afr@@c:isq\n");
@@ -9387,11 +9387,11 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 		break;
 	case 's': // "aas"
 		rz_core_cmd0 (core, "af @@= `isq~[0]`");
-		rz_core_cmd0 (core, "af @@ entry*");
+		rz_core_cmd0 (core, "af @@f:entry*");
 		break;
 	case 'S': // "aaS"
-		rz_core_cmd0 (core, "af @@ sym.*");
-		rz_core_cmd0 (core, "af @@ entry*");
+		rz_core_cmd0 (core, "af @@f:sym.*");
+		rz_core_cmd0 (core, "af @@f:entry*");
 		break;
 	case 'n': // "aan"
 		switch (input[1]) {
@@ -9459,8 +9459,8 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 					oldstr = rz_print_rowlog (core->print, "Find function and symbol names from golang binaries (aang)");
 					rz_print_rowlog_done (core->print, oldstr);
 					rz_core_analysis_autoname_all_golang_fcns (core);
-					oldstr = rz_print_rowlog (core->print, "Analyze all flags starting with sym.go. (aF @@ sym.go.*)");
-					rz_core_cmd0 (core, "aF @@ sym.go.*");
+					oldstr = rz_print_rowlog (core->print, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
+					rz_core_cmd0 (core, "aF @@f:sym.go.*");
 					rz_print_rowlog_done (core->print, oldstr);
 				}
 				rz_core_task_yield (&core->tasks);
