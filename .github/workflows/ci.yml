@@ -443,7 +443,7 @@ jobs:
         cd build
         meson dist --include-subprojects --no-tests
         ls -l meson-dist
-        mv rizin-${{ steps.extract_version.outputs.version }}.tar.xz rizin-src.tar.xz
+        mv meson-dist/rizin-${{ steps.extract_version.outputs.version }}.tar.xz meson-dist/rizin-src.tar.xz
     - uses: actions/upload-artifact@v2
       with:
         name: rizin-src.tar.xz
