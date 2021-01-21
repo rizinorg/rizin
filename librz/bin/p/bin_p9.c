@@ -7,15 +7,15 @@
 #include "../format/p9/p9bin.h"
 
 static bool check_buffer(RzBuffer *buf) {
-	return rz_bin_p9_get_arch (buf, NULL, NULL);
+	return rz_bin_p9_get_arch(buf, NULL, NULL);
 }
 
-static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb){
-	return check_buffer (b);
+static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
+	return check_buffer(b);
 }
 
 static void destroy(RzBinFile *bf) {
-	rz_buf_free (bf->o->bin_obj);
+	rz_buf_free(bf->o->bin_obj);
 }
 
 static ut64 baddr(RzBinFile *bf) {
@@ -30,14 +30,14 @@ static RzList *entries(RzBinFile *bf) {
 	RzList *ret;
 	RzBinAddr *ptr = NULL;
 
-	if (!(ret = rz_list_new ())) {
+	if (!(ret = rz_list_new())) {
 		return NULL;
 	}
 	ret->free = free;
-	if ((ptr = RZ_NEW0 (RzBinAddr))) {
+	if ((ptr = RZ_NEW0(RzBinAddr))) {
 		ptr->paddr = 8 * 4;
-		ptr->vaddr = 8 * 4;// + baddr (bf);
-		rz_list_append (ret, ptr);
+		ptr->vaddr = 8 * 4; // + baddr (bf);
+		rz_list_append(ret, ptr);
 	}
 	return ret;
 }
@@ -50,87 +50,87 @@ static RzList *sections(RzBinFile *bf) {
 		return NULL;
 	}
 
-	if (!(ret = rz_list_newf ((RzListFree)free))) {
+	if (!(ret = rz_list_newf((RzListFree)free))) {
 		return NULL;
 	}
-	if (rz_buf_size (bf->buf) < 28) {
-		rz_list_free (ret);
+	if (rz_buf_size(bf->buf) < 28) {
+		rz_list_free(ret);
 		return NULL;
 	}
 	// add text segment
-	textsize = rz_buf_read_le32_at (bf->buf, 4);
-	if (!(ptr = RZ_NEW0 (RzBinSection))) {
-		rz_list_free (ret);
+	textsize = rz_buf_read_le32_at(bf->buf, 4);
+	if (!(ptr = RZ_NEW0(RzBinSection))) {
+		rz_list_free(ret);
 		return NULL;
 	}
-	ptr->name = strdup ("text");
+	ptr->name = strdup("text");
 	ptr->size = textsize;
 	ptr->vsize = textsize + (textsize % 4096);
 	ptr->paddr = 8 * 4;
 	ptr->vaddr = ptr->paddr;
 	ptr->perm = RZ_PERM_RX; // r-x
 	ptr->add = true;
-	rz_list_append (ret, ptr);
+	rz_list_append(ret, ptr);
 	// add data segment
-	datasize = rz_buf_read_le32_at (bf->buf, 8);
+	datasize = rz_buf_read_le32_at(bf->buf, 8);
 	if (datasize > 0) {
-		if (!(ptr = RZ_NEW0 (RzBinSection))) {
+		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup ("data");
+		ptr->name = strdup("data");
 		ptr->size = datasize;
 		ptr->vsize = datasize + (datasize % 4096);
 		ptr->paddr = textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
 		ptr->perm = RZ_PERM_RW;
 		ptr->add = true;
-		rz_list_append (ret, ptr);
+		rz_list_append(ret, ptr);
 	}
 	// ignore bss or what
 	// add syms segment
-	symssize = rz_buf_read_le32_at (bf->buf, 16);
+	symssize = rz_buf_read_le32_at(bf->buf, 16);
 	if (symssize) {
-		if (!(ptr = RZ_NEW0 (RzBinSection))) {
+		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup ("syms");
+		ptr->name = strdup("syms");
 		ptr->size = symssize;
 		ptr->vsize = symssize + (symssize % 4096);
 		ptr->paddr = datasize + textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
 		ptr->perm = RZ_PERM_R; // r--
 		ptr->add = true;
-		rz_list_append (ret, ptr);
+		rz_list_append(ret, ptr);
 	}
 	// add spsz segment
-	spszsize = rz_buf_read_le32_at (bf->buf, 24);
+	spszsize = rz_buf_read_le32_at(bf->buf, 24);
 	if (spszsize) {
-		if (!(ptr = RZ_NEW0 (RzBinSection))) {
+		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup ("spsz");
+		ptr->name = strdup("spsz");
 		ptr->size = spszsize;
 		ptr->vsize = spszsize + (spszsize % 4096);
 		ptr->paddr = symssize + datasize + textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
 		ptr->perm = RZ_PERM_R; // r--
 		ptr->add = true;
-		rz_list_append (ret, ptr);
+		rz_list_append(ret, ptr);
 	}
 	// add pcsz segment
-	pcszsize = rz_buf_read_le32_at (bf->buf, 24);
+	pcszsize = rz_buf_read_le32_at(bf->buf, 24);
 	if (pcszsize) {
-		if (!(ptr = RZ_NEW0 (RzBinSection))) {
+		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup ("pcsz");
+		ptr->name = strdup("pcsz");
 		ptr->size = pcszsize;
 		ptr->vsize = pcszsize + (pcszsize % 4096);
 		ptr->paddr = spszsize + symssize + datasize + textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
 		ptr->perm = RZ_PERM_R; // r--
 		ptr->add = true;
-		rz_list_append (ret, ptr);
+		rz_list_append(ret, ptr);
 	}
 	return ret;
 }
@@ -152,20 +152,20 @@ static RzBinInfo *info(RzBinFile *bf) {
 	RzBinInfo *ret = NULL;
 	int bits = 32, bina, big_endian = 0;
 
-	if (!(bina = rz_bin_p9_get_arch (bf->buf, &bits, &big_endian))) {
+	if (!(bina = rz_bin_p9_get_arch(bf->buf, &bits, &big_endian))) {
 		return NULL;
 	}
-	if (!(ret = RZ_NEW0 (RzBinInfo))) {
+	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup (bf->file);
-	ret->bclass = strdup ("program");
-	ret->rclass = strdup ("p9");
-	ret->os = strdup ("Plan9");
-	ret->arch = strdup (rz_sys_arch_str (bina));
-	ret->machine = strdup (ret->arch);
-	ret->subsystem = strdup ("plan9");
-	ret->type = strdup ("EXEC (executable file)");
+	ret->file = strdup(bf->file);
+	ret->bclass = strdup("program");
+	ret->rclass = strdup("p9");
+	ret->os = strdup("Plan9");
+	ret->arch = strdup(rz_sys_arch_str(bina));
+	ret->machine = strdup(ret->arch);
+	ret->subsystem = strdup("plan9");
+	ret->type = strdup("EXEC (executable file)");
 	ret->bits = bits;
 	ret->has_va = true;
 	ret->big_endian = big_endian;
@@ -179,19 +179,19 @@ static ut64 size(RzBinFile *bf) {
 		return 0;
 	}
 	if (!bf->o->info) {
-		bf->o->info = info (bf);
+		bf->o->info = info(bf);
 	}
 	if (!bf->o->info) {
 		return 0;
 	}
 	// TODO: reuse section list
-	if (rz_buf_size (bf->buf) < 28) {
+	if (rz_buf_size(bf->buf) < 28) {
 		return 0;
 	}
-	text = rz_buf_read_le32_at (bf->buf, 4);
-	data = rz_buf_read_le32_at (bf->buf, 8);
-	syms = rz_buf_read_le32_at (bf->buf, 16);
-	spsz = rz_buf_read_le32_at (bf->buf, 24);
+	text = rz_buf_read_le32_at(bf->buf, 4);
+	data = rz_buf_read_le32_at(bf->buf, 8);
+	syms = rz_buf_read_le32_at(bf->buf, 16);
+	spsz = rz_buf_read_le32_at(bf->buf, 24);
 	return text + data + syms + spsz + (6 * 4);
 }
 
@@ -199,20 +199,20 @@ static ut64 size(RzBinFile *bf) {
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
 static RzBuffer *create(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt) {
-	RzBuffer *buf = rz_buf_new ();
-#define B(x, y) rz_buf_append_bytes (buf, (const ut8 *) (x), y)
-#define D(x) rz_buf_append_ut32 (buf, x)
-	D (I_MAGIC); // i386 only atm
-	D (codelen);
-	D (datalen);
-	D (4096); // bss
-	D (0); // syms
-	D (8 * 4); // entry
-	D (4096); // spsz
-	D (4096); // pcsz
-	B (code, codelen);
+	RzBuffer *buf = rz_buf_new();
+#define B(x, y) rz_buf_append_bytes(buf, (const ut8 *)(x), y)
+#define D(x)    rz_buf_append_ut32(buf, x)
+	D(I_MAGIC); // i386 only atm
+	D(codelen);
+	D(datalen);
+	D(4096); // bss
+	D(0); // syms
+	D(8 * 4); // entry
+	D(4096); // spsz
+	D(4096); // pcsz
+	B(code, codelen);
 	if (datalen > 0) {
-		B (data, datalen);
+		B(data, datalen);
 	}
 	return buf;
 }

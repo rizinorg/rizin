@@ -12,8 +12,7 @@ RZ_API int rz_utf16_decode(const ut8 *ptr, int ptrlen, RzRune *ch, bool bigendia
 	int low = !high;
 	if (ptrlen > 3 && (ptr[high] & 0xdc) == 0xd8 && (ptr[high + 2] & 0xdc) == 0xdc) {
 		if (ch) {
-			*ch = ((ptr[high] & 3) << 24 | ptr[low] << 16 | (ptr[high + 2] & 3) << 8 | ptr[low + 2])
-			      + 0x10000;
+			*ch = ((ptr[high] & 3) << 24 | ptr[low] << 16 | (ptr[high + 2] & 3) << 8 | ptr[low + 2]) + 0x10000;
 		}
 		return 4;
 	}
@@ -34,12 +33,12 @@ RZ_API int rz_utf16_decode(const ut8 *ptr, int ptrlen, RzRune *ch, bool bigendia
 
 /* Convert an UTF-16LE buf into a unicode RzRune */
 RZ_API int rz_utf16le_decode(const ut8 *ptr, int ptrlen, RzRune *ch) {
-	return rz_utf16_decode (ptr, ptrlen, ch, false);
+	return rz_utf16_decode(ptr, ptrlen, ch, false);
 }
 
 /* Convert an UTF-16BE buf into a unicode RzRune */
 RZ_API int rz_utf16be_decode(const ut8 *ptr, int ptrlen, RzRune *ch) {
-	return rz_utf16_decode (ptr, ptrlen, ch, true);
+	return rz_utf16_decode(ptr, ptrlen, ch, true);
 }
 
 /* Convert a unicode RzRune into a UTF-16LE buf */

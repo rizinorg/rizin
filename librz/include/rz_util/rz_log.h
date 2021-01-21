@@ -29,27 +29,27 @@ typedef enum rz_log_level {
 #define RZ_DEFAULT_LOGLVL RZ_LOGLVL_ERROR
 #endif
 
-typedef void (*RLogCallback) (const char *output, const char *funcname, const char *filename,
+typedef void (*RLogCallback)(const char *output, const char *funcname, const char *filename,
 	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) RZ_PRINTF_CHECK(7, 8);
 
-#define RZ_VLOG(lvl, tag, fmtstr, args) rz_vlog (MACRO_LOG_FUNC, __FILE__, \
+#define RZ_VLOG(lvl, tag, fmtstr, args) rz_vlog(MACRO_LOG_FUNC, __FILE__, \
 	__LINE__, lvl, tag, fmtstr, args);
 
-#define RZ_LOG(lvl, tag, fmtstr, ...) rz_log (MACRO_LOG_FUNC, __FILE__, \
+#define RZ_LOG(lvl, tag, fmtstr, ...) rz_log(MACRO_LOG_FUNC, __FILE__, \
 	__LINE__, lvl, tag, fmtstr, ##__VA_ARGS__);
-#define RZ_LOG_SILLY(fmtstr, ...) rz_log (MACRO_LOG_FUNC, __FILE__, \
+#define RZ_LOG_SILLY(fmtstr, ...) rz_log(MACRO_LOG_FUNC, __FILE__, \
 	__LINE__, RZ_LOGLVL_SILLY, NULL, fmtstr, ##__VA_ARGS__);
-#define RZ_LOG_DEBUG(fmtstr, ...) rz_log (MACRO_LOG_FUNC, __FILE__, \
+#define RZ_LOG_DEBUG(fmtstr, ...) rz_log(MACRO_LOG_FUNC, __FILE__, \
 	__LINE__, RZ_LOGLVL_DEBUG, NULL, fmtstr, ##__VA_ARGS__);
-#define RZ_LOG_VERBOSE(fmtstr, ...) rz_log (MACRO_LOG_FUNC, __FILE__, \
+#define RZ_LOG_VERBOSE(fmtstr, ...) rz_log(MACRO_LOG_FUNC, __FILE__, \
 	__LINE__, RZ_LOGLVL_VERBOSE, NULL, fmtstr, ##__VA_ARGS__);
-#define RZ_LOG_INFO(fmtstr, ...) rz_log (MACRO_LOG_FUNC, __FILE__, \
+#define RZ_LOG_INFO(fmtstr, ...) rz_log(MACRO_LOG_FUNC, __FILE__, \
 	__LINE__, RZ_LOGLVL_INFO, NULL, fmtstr, ##__VA_ARGS__);
-#define RZ_LOG_WARN(fmtstr, ...) rz_log (MACRO_LOG_FUNC, __FILE__, \
+#define RZ_LOG_WARN(fmtstr, ...) rz_log(MACRO_LOG_FUNC, __FILE__, \
 	__LINE__, RZ_LOGLVL_WARN, NULL, fmtstr, ##__VA_ARGS__);
-#define RZ_LOG_ERROR(fmtstr, ...) rz_log (MACRO_LOG_FUNC, __FILE__, \
+#define RZ_LOG_ERROR(fmtstr, ...) rz_log(MACRO_LOG_FUNC, __FILE__, \
 	__LINE__, RZ_LOGLVL_ERROR, NULL, fmtstr, ##__VA_ARGS__);
-#define RZ_LOG_FATAL(fmtstr, ...) rz_log (MACRO_LOG_FUNC, __FILE__, \
+#define RZ_LOG_FATAL(fmtstr, ...) rz_log(MACRO_LOG_FUNC, __FILE__, \
 	__LINE__, RZ_LOGLVL_FATAL, NULL, fmtstr, ##__VA_ARGS__);
 
 #ifdef __cplusplus

@@ -68,11 +68,11 @@ RZ_API void rz_oids_free(ROIDStorage *storage);
 RZ_API bool rz_oids_add(ROIDStorage *storage, void *data, ut32 *id, ut32 *od);
 RZ_API void *rz_oids_take(ROIDStorage *storage, ut32 id);
 RZ_API void *rz_oids_otake(ROIDStorage *st, ut32 od);
-RZ_API bool rz_oids_foreach(ROIDStorage* storage, RzIDStorageForeachCb cb, void* user);
-RZ_API bool rz_oids_foreach_prev(ROIDStorage* storage, RzIDStorageForeachCb cb, void* user);
-RZ_API bool rz_oids_insert(ROIDStorage *storage, void *data, ut32 *id, ut32 *od, void *user); 
+RZ_API bool rz_oids_foreach(ROIDStorage *storage, RzIDStorageForeachCb cb, void *user);
+RZ_API bool rz_oids_foreach_prev(ROIDStorage *storage, RzIDStorageForeachCb cb, void *user);
+RZ_API bool rz_oids_insert(ROIDStorage *storage, void *data, ut32 *id, ut32 *od, void *user);
 RZ_API bool rz_oids_sort(ROIDStorage *storage, void *user);
-RZ_API ut32 rz_oids_find (ROIDStorage *storage, void *incoming, void *user);
+RZ_API ut32 rz_oids_find(ROIDStorage *storage, void *incoming, void *user);
 RZ_API void *rz_oids_last(ROIDStorage *storage);
 RZ_API void *rz_oids_first(ROIDStorage *storage);
 

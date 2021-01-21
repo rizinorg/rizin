@@ -8,14 +8,14 @@
 #include "../arch/riscv/riscv.c"
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	return op->size = riscv_dis (a, op, buf, len);
+	return op->size = riscv_dis(a, op, buf, len);
 }
 
 RzAsmPlugin rz_asm_plugin_riscv = {
 	.name = "riscv",
 	.desc = "RISC-V",
 	.arch = "riscv",
-	.bits = 32|64,
+	.bits = 32 | 64,
 	.endian = RZ_SYS_ENDIAN_LITTLE | RZ_SYS_ENDIAN_BIG,
 	.license = "GPL",
 	.disassemble = &disassemble,

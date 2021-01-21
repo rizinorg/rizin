@@ -7,14 +7,13 @@
 
 static bool load(RzBin *bin) {
 	if (!bin || !bin->cur) {
-	    return false;
+		return false;
 	}
 	if (!bin->file) {
-	   	bin->file = bin->cur->file;
+		bin->file = bin->cur->file;
 	}
-	return bin->cur->xtr_obj? true : false;
+	return bin->cur->xtr_obj ? true : false;
 }
-
 
 RzBinLdrPlugin rz_bin_ldr_plugin_ldr_linux = {
 	.name = "ldr.linux",

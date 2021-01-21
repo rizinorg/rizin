@@ -92,11 +92,11 @@ static inline RzSpace *rz_spaces_current(RzSpaces *sp) {
 }
 
 static inline const char *rz_spaces_current_name(RzSpaces *sp) {
-	return sp->current? sp->current->name: "*";
+	return sp->current ? sp->current->name : "*";
 }
 
 static inline bool rz_spaces_is_empty(RzSpaces *sp) {
-	RBIter it = rz_rbtree_first (sp->spaces);
+	RBIter it = rz_rbtree_first(sp->spaces);
 	return it.len == 0;
 }
 

@@ -13,11 +13,11 @@ RZ_API void rz_bin_demangle_list(RzBin *bin) {
 		return;
 	}
 	for (i = 0; langs[i]; i++) {
-		bin->cb_printf ("%s\n", langs[i]);
+		bin->cb_printf("%s\n", langs[i]);
 	}
 	rz_list_foreach (bin->plugins, it, plugin) {
 		if (plugin->demangle) {
-			bin->cb_printf ("%s\n", plugin->name);
+			bin->cb_printf("%s\n", plugin->name);
 		}
 	}
 }
@@ -27,8 +27,8 @@ RZ_API char *rz_bin_demangle_plugin(RzBin *bin, const char *name, const char *st
 	RzListIter *it;
 	if (bin && name && str) {
 		rz_list_foreach (bin->plugins, it, plugin) {
-			if (plugin->demangle && !strncmp (plugin->name, name, strlen (plugin->name))) {
-				return plugin->demangle (str);
+			if (plugin->demangle && !strncmp(plugin->name, name, strlen(plugin->name))) {
+				return plugin->demangle(str);
 			}
 		}
 	}
@@ -37,25 +37,25 @@ RZ_API char *rz_bin_demangle_plugin(RzBin *bin, const char *name, const char *st
 
 RZ_API int rz_bin_demangle_type(const char *str) {
 	if (str && *str) {
-		if (!strcmp (str, "swift")) {
+		if (!strcmp(str, "swift")) {
 			return RZ_BIN_NM_SWIFT;
 		}
-		if (!strcmp (str, "java")) {
+		if (!strcmp(str, "java")) {
 			return RZ_BIN_NM_JAVA;
 		}
-		if (!strcmp (str, "objc")) {
+		if (!strcmp(str, "objc")) {
 			return RZ_BIN_NM_OBJC;
 		}
-		if (!strcmp (str, "cxx") || !strcmp (str, "c++")) {
+		if (!strcmp(str, "cxx") || !strcmp(str, "c++")) {
 			return RZ_BIN_NM_CXX;
 		}
-		if (!strcmp (str, "dlang")) {
+		if (!strcmp(str, "dlang")) {
 			return RZ_BIN_NM_DLANG;
 		}
-		if (!strcmp (str, "msvc")) {
+		if (!strcmp(str, "msvc")) {
 			return RZ_BIN_NM_MSVC;
 		}
-		if (!strcmp (str, "rust")) {
+		if (!strcmp(str, "rust")) {
 			return RZ_BIN_NM_RUST;
 		}
 	}
@@ -67,24 +67,24 @@ RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *def, const char *str, ut
 	if (!str || !*str) {
 		return NULL;
 	}
-	RzBin *bin = bf? bf->rbin: NULL;
-	RzBinObject *o = bf? bf->o: NULL;
+	RzBin *bin = bf ? bf->rbin : NULL;
+	RzBinObject *o = bf ? bf->o : NULL;
 	RzListIter *iter;
 	const char *lib = NULL;
-	if (!strncmp (str, "reloc.", 6)) {
+	if (!strncmp(str, "reloc.", 6)) {
 		str += 6;
 	}
-	if (!strncmp (str, "sym.", 4)) {
+	if (!strncmp(str, "sym.", 4)) {
 		str += 4;
 	}
-	if (!strncmp (str, "imp.", 4)) {
+	if (!strncmp(str, "imp.", 4)) {
 		str += 4;
 	}
 	if (o) {
 		bool found = false;
 		rz_list_foreach (o->libs, iter, lib) {
-			size_t len = strlen (lib);
-			if (!rz_str_ncasecmp (str, lib, len)) {
+			size_t len = strlen(lib);
+			if (!rz_str_ncasecmp(str, lib, len)) {
 				str += len;
 				if (*str == '_') {
 					str++;
@@ -96,8 +96,8 @@ RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *def, const char *str, ut
 		if (!found) {
 			lib = NULL;
 		}
-		size_t len = strlen (bin->file);
-		if (!rz_str_ncasecmp (str, bin->file, len)) {
+		size_t len = strlen(bin->file);
+		if (!rz_str_ncasecmp(str, bin->file, len)) {
 			lib = bin->file;
 			str += len;
 			if (*str == '_') {
@@ -105,12 +105,12 @@ RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *def, const char *str, ut
 			}
 		}
 	}
-	if (!strncmp (str, "__", 2)) {
+	if (!strncmp(str, "__", 2)) {
 		if (str[2] == 'T') {
 			type = RZ_BIN_NM_SWIFT;
 		} else {
 			type = RZ_BIN_NM_CXX;
-		//	str++;
+			//	str++;
 		}
 	}
 	// if str is sym. or imp. when str+=4 str points to the end so just return
@@ -118,21 +118,21 @@ RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *def, const char *str, ut
 		return NULL;
 	}
 	if (type == -1) {
-		type = rz_bin_lang_type (bf, def, str);
+		type = rz_bin_lang_type(bf, def, str);
 	}
 	char *demangled = NULL;
 	switch (type) {
-	case RZ_BIN_NM_JAVA: demangled = rz_bin_demangle_java (str); break;
-	case RZ_BIN_NM_RUST: demangled = rz_bin_demangle_rust (bf, str, vaddr); break;
-	case RZ_BIN_NM_OBJC: demangled = rz_bin_demangle_objc (NULL, str); break;
-	case RZ_BIN_NM_SWIFT: demangled = rz_bin_demangle_swift (str, bin? bin->demanglercmd: false); break;
-	case RZ_BIN_NM_CXX: demangled = rz_bin_demangle_cxx (bf, str, vaddr); break;
-	case RZ_BIN_NM_MSVC: demangled = rz_bin_demangle_msvc (str); break;
-	case RZ_BIN_NM_DLANG: demangled = rz_bin_demangle_plugin (bin, "dlang", str); break;
+	case RZ_BIN_NM_JAVA: demangled = rz_bin_demangle_java(str); break;
+	case RZ_BIN_NM_RUST: demangled = rz_bin_demangle_rust(bf, str, vaddr); break;
+	case RZ_BIN_NM_OBJC: demangled = rz_bin_demangle_objc(NULL, str); break;
+	case RZ_BIN_NM_SWIFT: demangled = rz_bin_demangle_swift(str, bin ? bin->demanglercmd : false); break;
+	case RZ_BIN_NM_CXX: demangled = rz_bin_demangle_cxx(bf, str, vaddr); break;
+	case RZ_BIN_NM_MSVC: demangled = rz_bin_demangle_msvc(str); break;
+	case RZ_BIN_NM_DLANG: demangled = rz_bin_demangle_plugin(bin, "dlang", str); break;
 	}
 	if (libs && demangled && lib) {
-		char *d = rz_str_newf ("%s_%s", lib, demangled);
-		free (demangled);
+		char *d = rz_str_newf("%s_%s", lib, demangled);
+		free(demangled);
 		demangled = d;
 	}
 	return demangled;
@@ -141,13 +141,13 @@ RZ_API char *rz_bin_demangle(RzBinFile *bf, const char *def, const char *str, ut
 #ifdef TEST
 main() {
 	char *out, str[128];
-	strncpy (str, "_Z1hic", sizeof (str)-1);
-	strncpy (str, "main(Ljava/lang/String;I)V", sizeof (str)-1);
-	strncpy (str, "main([Ljava/lang/String;)V", sizeof (str)-1);
-	strncpy (str, "foo([III)Ljava/lang/Integer;", sizeof (str)-1);
+	strncpy(str, "_Z1hic", sizeof(str) - 1);
+	strncpy(str, "main(Ljava/lang/String;I)V", sizeof(str) - 1);
+	strncpy(str, "main([Ljava/lang/String;)V", sizeof(str) - 1);
+	strncpy(str, "foo([III)Ljava/lang/Integer;", sizeof(str) - 1);
 	//out = cplus_demangle_v3 (str, flags);
-	out = rz_bin_demangle_java (str); //, flags);
-	printf ("INPUT (%s)\n", str);
-	printf ("OUTPUT (%s)\n", out);
+	out = rz_bin_demangle_java(str); //, flags);
+	printf("INPUT (%s)\n", str);
+	printf("OUTPUT (%s)\n", out);
 }
 #endif

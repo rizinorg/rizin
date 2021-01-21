@@ -21,51 +21,50 @@ static unsigned int disarm_branch_offset(unsigned int pc, unsigned int insoff) {
 	return add + pc + 8;
 }
 
-#define IS_BRANCH(x)  (((x) & ARM_BRANCH_I_MASK) == ARM_BRANCH_I)
-#define IS_BRANCHL(x) (IS_BRANCH (x) && ((x) & ARM_BRANCH_LINK) == ARM_BRANCH_LINK)
+#define IS_BRANCH(x)  (((x)&ARM_BRANCH_I_MASK) == ARM_BRANCH_I)
+#define IS_BRANCHL(x) (IS_BRANCH(x) && ((x)&ARM_BRANCH_LINK) == ARM_BRANCH_LINK)
 #define IS_RETURN(x)  (((x) & (ARM_DTM_I_MASK | ARM_DTM_LOAD | (1 << 15))) == (ARM_DTM_I | ARM_DTM_LOAD | (1 << 15)))
 // if ( (inst & ( ARM_DTX_I_MASK | ARM_DTX_LOAD  | ( ARM_DTX_RD_MASK ) ) ) == ( ARM_DTX_LOAD | ARM_DTX_I | ( ARM_PC << 12 ) ) )
-#define IS_UNKJMP(x)  ((((ARM_DTX_RD_MASK))) == (ARM_DTX_LOAD | ARM_DTX_I | (ARM_PC << 12)))
-#define IS_LOAD(x)    (((x) & ARM_DTX_LOAD) == (ARM_DTX_LOAD))
-#define IS_CONDAL(x)  (((x) & ARM_COND_MASK) == ARM_COND_AL)
-#define IS_EXITPOINT(x) (IS_BRANCH (x) || IS_RETURN (x) || IS_UNKJMP (x))
+#define IS_UNKJMP(x)    ((((ARM_DTX_RD_MASK))) == (ARM_DTX_LOAD | ARM_DTX_I | (ARM_PC << 12)))
+#define IS_LOAD(x)      (((x)&ARM_DTX_LOAD) == (ARM_DTX_LOAD))
+#define IS_CONDAL(x)    (((x)&ARM_COND_MASK) == ARM_COND_AL)
+#define IS_EXITPOINT(x) (IS_BRANCH(x) || IS_RETURN(x) || IS_UNKJMP(x))
 
 #define API static
 
 static int op_thumb(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len) {
 	int op_code;
-	ut16 *_ins = (ut16 *) data;
+	ut16 *_ins = (ut16 *)data;
 	ut16 ins = *_ins;
-	ut32 *_ins32 = (ut32 *) data;
+	ut32 *_ins32 = (ut32 *)data;
 	ut32 ins32 = *_ins32;
 
-	struct winedbg_arm_insn *arminsn = arm_new ();
-	arm_set_thumb (arminsn, true);
-	arm_set_input_buffer (arminsn, data);
-	arm_set_pc (arminsn, addr);
+	struct winedbg_arm_insn *arminsn = arm_new();
+	arm_set_thumb(arminsn, true);
+	arm_set_input_buffer(arminsn, data);
+	arm_set_pc(arminsn, addr);
 	op->delay = 0;
-	op->size = arm_disasm_one_insn (arminsn);
+	op->size = arm_disasm_one_insn(arminsn);
 	op->jump = arminsn->jmp;
 	op->fail = arminsn->fail;
-	arm_free (arminsn);
+	arm_free(arminsn);
 
 	// TODO: handle 32bit instructions (branches are not correctly decoded //
 
 	/* CMP */
-	if (((ins & B4 (B1110, 0, 0, 0)) == B4 (B0010, 0, 0, 0))
-	    && (1 == (ins & B4 (1, B1000, 0, 0)) >> 11)) { // dp3
+	if (((ins & B4(B1110, 0, 0, 0)) == B4(B0010, 0, 0, 0)) && (1 == (ins & B4(1, B1000, 0, 0)) >> 11)) { // dp3
 		op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 		return op->size;
 	}
-	if ((ins & B4 (B1111, B1100, 0, 0)) == B4 (B0100, 0, 0, 0)) {
-		op_code = (ins & B4 (0, B0011, B1100, 0)) >> 6;
-		if (op_code == 8 || op_code == 10) {  // dp5
+	if ((ins & B4(B1111, B1100, 0, 0)) == B4(B0100, 0, 0, 0)) {
+		op_code = (ins & B4(0, B0011, B1100, 0)) >> 6;
+		if (op_code == 8 || op_code == 10) { // dp5
 			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 			return op->size;
 		}
 	}
-	if ((ins & B4 (B1111, B1100, 0, 0)) == B4 (B0100, B0100, 0, 0)) {
-		op_code = (ins & B4 (0, B0011, 0, 0)) >> 8;  // dp8
+	if ((ins & B4(B1111, B1100, 0, 0)) == B4(B0100, B0100, 0, 0)) {
+		op_code = (ins & B4(0, B0011, 0, 0)) >> 8; // dp8
 		if (op_code == 1) {
 			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 			return op->size;
@@ -74,61 +73,61 @@ static int op_thumb(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	if (ins == 0xbf) {
 		// TODO: add support for more NOP instructions
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
-	} else if (((op_code = ((ins & B4 (B1111, B1000, 0, 0)) >> 11)) >= 12 &&
-	            op_code <= 17)) {
+	} else if (((op_code = ((ins & B4(B1111, B1000, 0, 0)) >> 11)) >= 12 &&
+			   op_code <= 17)) {
 		if (op_code % 2) {
 			op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		}
-	} else if ((ins & B4 (B1111, 0, 0, 0)) == B4 (B0101, 0, 0, 0)) {
-		op_code = (ins & B4 (0, B1110, 0, 0)) >> 9;
+	} else if ((ins & B4(B1111, 0, 0, 0)) == B4(B0101, 0, 0, 0)) {
+		op_code = (ins & B4(0, B1110, 0, 0)) >> 9;
 		if (op_code % 2) {
 			op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		} else {
 			op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 		}
-	} else if ((ins & B4 (B1111, 0, 0, 0)) == B4 (B1101, 0, 0, 0)) {
+	} else if ((ins & B4(B1111, 0, 0, 0)) == B4(B1101, 0, 0, 0)) {
 		// BNE..
-		int delta = (ins & B4 (0, 0, B1111, B1111));
+		int delta = (ins & B4(0, 0, B1111, B1111));
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		op->jump = addr + 4 + (delta << 1);
 		op->fail = addr + 4;
-	} else if ((ins & B4 (B1111, B1000, 0, 0)) == B4 (B1110, 0, 0, 0)) {
+	} else if ((ins & B4(B1111, B1000, 0, 0)) == B4(B1110, 0, 0, 0)) {
 		// B
-		int delta = (ins & B4 (0, 0, B1111, B1111));
+		int delta = (ins & B4(0, 0, B1111, B1111));
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		op->jump = addr + 4 + (delta << 1);
 		op->fail = addr + 4;
-	} else if ((ins & B4 (B1111, B1111, B1000, 0)) ==
-	           B4 (B0100, B0111, B1000, 0)) {
+	} else if ((ins & B4(B1111, B1111, B1000, 0)) ==
+		B4(B0100, B0111, B1000, 0)) {
 		// BLX
 		op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
 		op->fail = addr + 4;
-	} else if ((ins & B4 (B1111, B1111, B1000, 0)) ==
-	           B4 (B0100, B0111, 0, 0)) {
+	} else if ((ins & B4(B1111, B1111, B1000, 0)) ==
+		B4(B0100, B0111, 0, 0)) {
 		// BX
 		op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
 		op->fail = addr + 4;
-	} else if ((ins & B4 (B1111, B1000, 0, 0)) == B4 (B1111, 0, 0, 0)) {
+	} else if ((ins & B4(B1111, B1000, 0, 0)) == B4(B1111, 0, 0, 0)) {
 		// BL The long branch with link, it's in 2 instructions:
 		// prefix: 11110[offset]
 		// suffix: 11111[offset] (11101[offset] for blx)
 		ut16 nextins = (ins32 & 0xFFFF0000) >> 16;
-		ut32 high = (ins & B4 (0, B0111, B1111, B1111)) << 12;
-		if (ins & B4 (0, B0100, 0, 0)) {
-			high |= B4 (B1111, B1000, 0, 0) << 16;
+		ut32 high = (ins & B4(0, B0111, B1111, B1111)) << 12;
+		if (ins & B4(0, B0100, 0, 0)) {
+			high |= B4(B1111, B1000, 0, 0) << 16;
 		}
-		int delta = high + ((nextins & B4 (0, B0111, B1111, B1111)) * 2);
-		op->jump = (int) (addr + 4 + (delta));
+		int delta = high + ((nextins & B4(0, B0111, B1111, B1111)) * 2);
+		op->jump = (int)(addr + 4 + (delta));
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 		op->fail = addr + 4;
-	} else if ((ins & B4 (B1111, B1111, 0, 0)) == B4 (B1011, B1110, 0, 0)) {
+	} else if ((ins & B4(B1111, B1111, 0, 0)) == B4(B1011, B1110, 0, 0)) {
 		op->type = RZ_ANALYSIS_OP_TYPE_TRAP;
-		op->val = (ut64) (ins >> 8);
-	} else if ((ins & B4 (B1111, B1111, 0, 0)) == B4 (B1101, B1111, 0, 0)) {
+		op->val = (ut64)(ins >> 8);
+	} else if ((ins & B4(B1111, B1111, 0, 0)) == B4(B1101, B1111, 0, 0)) {
 		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
-		op->val = (ut64) (ins >> 8);
+		op->val = (ut64)(ins >> 8);
 	}
 	return op->size;
 }
@@ -166,19 +165,19 @@ static int op_cond(const ut8 *data) {
 }
 
 static int arm_op32(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len) {
-	const ut8 *b = (ut8 *) data;
+	const ut8 *b = (ut8 *)data;
 	ut8 ndata[4];
 	ut32 branch_dst_addr, i = 0;
-	ut32 *code = (ut32 *) data;
+	ut32 *code = (ut32 *)data;
 	struct winedbg_arm_insn *arminsn;
 
 	if (!data) {
 		return 0;
 	}
-	arminsn = arm_new ();
-	arm_set_thumb (arminsn, false);
-	arm_set_input_buffer (arminsn, data);
-	arm_set_pc (arminsn, addr);
+	arminsn = arm_new();
+	arm_set_thumb(arminsn, false);
+	arm_set_input_buffer(arminsn, data);
+	arm_set_pc(arminsn, addr);
 	op->addr = addr;
 	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 
@@ -190,16 +189,16 @@ static int arm_op32(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		ndata[3] = data[0];
 	}
 	if (analysis->bits == 16) {
-		arm_free (arminsn);
-		return op_thumb (analysis, op, addr, data, len);
+		arm_free(arminsn);
+		return op_thumb(analysis, op, addr, data, len);
 	}
 	op->size = 4;
-	op->cond = op_cond (data);
+	op->cond = op_cond(data);
 	if (b[2] == 0x8f && b[3] == 0xe2) {
 		op->type = RZ_ANALYSIS_OP_TYPE_ADD;
-#define ROR(x, y) ((int) ((x) >> (y)) | (((x) << (32 - (y)))))
-		op->ptr = addr + ROR (b[0], (b[1] & 0xf) << 1) + 8;
-	} else if (b[2] >= 0x9c && b[2] <= 0x9f) {  // load instruction
+#define ROR(x, y) ((int)((x) >> (y)) | (((x) << (32 - (y)))))
+		op->ptr = addr + ROR(b[0], (b[1] & 0xf) << 1) + 8;
+	} else if (b[2] >= 0x9c && b[2] <= 0x9f) { // load instruction
 		char ch = b[3] & 0xf;
 		switch (ch) {
 		case 5:
@@ -215,21 +214,30 @@ static int arm_op32(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		case 9: op->type = RZ_ANALYSIS_OP_TYPE_LOAD; break;
 		}
 	} else // 0x000037b8  00:0000   0             800000ef  svc 0x00000080
-	if (b[2] == 0xa0 && b[3] == 0xe1) {
+		if (b[2] == 0xa0 && b[3] == 0xe1) {
 		int n = (b[0] << 16) + b[1];
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		switch (n) {
 		case 0:
-		case 0x0110: case 0x0220: case 0x0330: case 0x0440:
-		case 0x0550: case 0x0660: case 0x0770: case 0x0880:
-		case 0x0990: case 0x0aa0: case 0x0bb0: case 0x0cc0:
+		case 0x0110:
+		case 0x0220:
+		case 0x0330:
+		case 0x0440:
+		case 0x0550:
+		case 0x0660:
+		case 0x0770:
+		case 0x0880:
+		case 0x0990:
+		case 0x0aa0:
+		case 0x0bb0:
+		case 0x0cc0:
 			op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 			break;
 		}
 	} else if (b[3] == 0xef) {
 		op->type = RZ_ANALYSIS_OP_TYPE_SWI;
 		op->val = (b[0] | (b[1] << 8) | (b[2] << 2));
-	} else if ((b[3] & 0xf) == 5) {  // [reg,0xa4]
+	} else if ((b[3] & 0xf) == 5) { // [reg,0xa4]
 #if 0
 		0x00000000      a4a09fa4 ldrge sl, [pc], 0xa4
 		0x00000000      a4a09fa5 ldrge sl, [pc, 0xa4]
@@ -271,9 +279,9 @@ static int arm_op32(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		op->stackop = RZ_ANALYSIS_STACK_INC;
 		op->val = -b[0];
 	} else if ((code[i] == 0x1eff2fe1) ||
-	           (code[i] == 0xe12fff1e)) {  // bx lr
+		(code[i] == 0xe12fff1e)) { // bx lr
 		op->type = RZ_ANALYSIS_OP_TYPE_RET;
-	} else if ((code[i] & ARM_DTX_LOAD)) {  // IS_LOAD(code[i])) {
+	} else if ((code[i] & ARM_DTX_LOAD)) { // IS_LOAD(code[i])) {
 		ut32 ptr = 0;
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 		if (b[2] == 0x1b) {
@@ -285,7 +293,7 @@ static int arm_op32(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 			// ut32 oaddr = addr+8+b[0];
 			// XXX TODO ret = rizin_read_at(oaddr, (ut8*)&ptr, 4);
 			if (analysis->bits == 32) {
-				b = (ut8 *) &ptr;
+				b = (ut8 *)&ptr;
 				op->ptr = b[0] + (b[1] << 8) + (b[2] << 16) + (b[3] << 24);
 				// XXX data_xrefs_add(oaddr, op->ptr, 1);
 				// TODO change data type to pointer
@@ -295,32 +303,31 @@ static int arm_op32(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 		}
 	}
 
-	if (IS_LOAD (code[i])) {
+	if (IS_LOAD(code[i])) {
 		op->type = RZ_ANALYSIS_OP_TYPE_LOAD;
 		op->refptr = 4;
 	}
 	if (((((code[i] & 0xff) >= 0x10 && (code[i] & 0xff) < 0x20)) &&
-	     ((code[i] & 0xffffff00) == 0xe12fff00)) ||
-	    IS_EXITPOINT (code[i])) {
+		    ((code[i] & 0xffffff00) == 0xe12fff00)) ||
+		IS_EXITPOINT(code[i])) {
 		// if (IS_EXITPOINT (code[i])) {
 		b = data;
-		branch_dst_addr = disarm_branch_offset (
-			addr, b[0] | (b[1] << 8) |
-			(b[2] << 16));                // code[i]&0x00FFFFFF);
+		branch_dst_addr = disarm_branch_offset(
+			addr, b[0] | (b[1] << 8) | (b[2] << 16)); // code[i]&0x00FFFFFF);
 		op->ptr = 0;
 		if ((((code[i] & 0xff) >= 0x10 && (code[i] & 0xff) < 0x20)) &&
-		    ((code[i] & 0xffffff00) == 0xe12fff00)) {
+			((code[i] & 0xffffff00) == 0xe12fff00)) {
 			op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
-		} else if (IS_BRANCHL (code[i])) {
-			if (IS_BRANCH (code[i])) {
+		} else if (IS_BRANCHL(code[i])) {
+			if (IS_BRANCH(code[i])) {
 				op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 				op->jump = branch_dst_addr;
 				op->fail = addr + 4;
 			} else {
 				op->type = RZ_ANALYSIS_OP_TYPE_RET;
 			}
-		} else if (IS_BRANCH (code[i])) {
-			if (IS_CONDAL (code[i])) {
+		} else if (IS_BRANCH(code[i])) {
+			if (IS_CONDAL(code[i])) {
 				op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 				op->jump = branch_dst_addr;
 				op->fail = UT64_MAX;
@@ -337,10 +344,9 @@ static int arm_op32(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	}
 	// op->jump = arminsn->jmp;
 	// op->fail = arminsn->fail;
-	arm_free (arminsn);
+	arm_free(arminsn);
 	return op->size;
 }
-
 
 static ut64 getaddr(ut64 addr, const ut8 *d) {
 	if (d[2] >> 7) {
@@ -354,9 +360,9 @@ static ut64 getaddr(ut64 addr, const ut8 *d) {
 
 static int arm_op64(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *d, int len) {
 	if (d[3] == 0) {
-		return -1;      // invalid
+		return -1; // invalid
 	}
-	int haa = hackyArmAnal (analysis, op, d, len);
+	int haa = hackyArmAnal(analysis, op, d, len);
 	if (haa > 0) {
 		return haa;
 	}
@@ -383,7 +389,7 @@ static int arm_op64(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0x94: // bl A
 	case 0x97: // bl A
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		op->jump = getaddr (addr, d);
+		op->jump = getaddr(addr, d);
 		op->fail = addr + 4;
 		break;
 	case 0x54: // beq A
@@ -394,7 +400,7 @@ static int arm_op64(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 	case 0x17: // b A
 	case 0x14: // b A
 		op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-		op->jump = getaddr (addr, d);
+		op->jump = getaddr(addr, d);
 		op->fail = addr + 4;
 		break;
 	}
@@ -403,9 +409,9 @@ static int arm_op64(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8
 
 static int arm_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
 	if (analysis->bits == 64) {
-		return arm_op64 (analysis, op, addr, data, len);
+		return arm_op64(analysis, op, addr, data, len);
 	}
-	return arm_op32 (analysis, op, addr, data, len);
+	return arm_op32(analysis, op, addr, data, len);
 }
 
 static bool set_reg_profile(RzAnalysis *analysis) {
@@ -440,7 +446,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 		"gpr	r16	.32	64	0\n"
 		"gpr	r17	.32	68	0\n"
 		"gpr	cpsr	.32	72	0\n";
-	return rz_reg_set_profile_string (analysis->reg, p32);
+	return rz_reg_set_profile_string(analysis->reg, p32);
 }
 
 static int archinfo(RzAnalysis *analysis, int q) {

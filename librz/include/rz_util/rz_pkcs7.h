@@ -85,9 +85,9 @@ typedef struct {
 } SpcIndirectDataContent;
 
 RZ_API RCMS *rz_pkcs7_parse_cms(const ut8 *buffer, ut32 length);
-RZ_API void rz_pkcs7_free_cms(RCMS* container);
-RZ_API char *rz_pkcs7_cms_to_string(RCMS* container);
-RZ_API PJ *rz_pkcs7_cms_json(RCMS* container);
+RZ_API void rz_pkcs7_free_cms(RCMS *container);
+RZ_API char *rz_pkcs7_cms_to_string(RCMS *container);
+RZ_API PJ *rz_pkcs7_cms_json(RCMS *container);
 RZ_API SpcIndirectDataContent *rz_pkcs7_parse_spcinfo(RCMS *cms);
 RZ_API void rz_pkcs7_free_spcinfo(SpcIndirectDataContent *spcinfo);
 

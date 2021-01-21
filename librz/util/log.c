@@ -14,13 +14,13 @@ static bool cfg_logsrcinfo = false; // Print out debug source info with the outp
 static bool cfg_logcolors = false; // Output colored log text based on level
 static char cfg_logfile[LOG_CONFIGSTR_SIZE] = ""; // Output text to filename
 static const char *level_tags[] = { // Log level to tag string lookup array
-	[RZ_LOGLVL_SILLY]     = "SILLY",
-	[RZ_LOGLVL_VERBOSE]   = "VERBOSE",
-	[RZ_LOGLVL_DEBUG]     = "DEBUG",
-	[RZ_LOGLVL_INFO]      = "INFO",
-	[RZ_LOGLVL_WARN]      = "WARNING",
-	[RZ_LOGLVL_ERROR]     = "ERROR",
-	[RZ_LOGLVL_FATAL]     = "FATAL"
+	[RZ_LOGLVL_SILLY] = "SILLY",
+	[RZ_LOGLVL_VERBOSE] = "VERBOSE",
+	[RZ_LOGLVL_DEBUG] = "DEBUG",
+	[RZ_LOGLVL_INFO] = "INFO",
+	[RZ_LOGLVL_WARN] = "WARNING",
+	[RZ_LOGLVL_ERROR] = "ERROR",
+	[RZ_LOGLVL_FATAL] = "FATAL"
 };
 
 // cconfig.c configuration callback functions below
@@ -33,8 +33,8 @@ RZ_API void rz_log_set_traplevel(RLogLevel level) {
 }
 
 RZ_API void rz_log_set_file(const char *filename) {
-	int value_len = rz_str_nlen (filename, LOG_CONFIGSTR_SIZE) + 1;
-	strncpy (cfg_logfile, filename, value_len);
+	int value_len = rz_str_nlen(filename, LOG_CONFIGSTR_SIZE) + 1;
+	strncpy(cfg_logfile, filename, value_len);
 }
 
 RZ_API void rz_log_set_srcinfo(bool show_info) {
@@ -51,10 +51,10 @@ RZ_API void rz_log_set_colors(bool show_info) {
  */
 RZ_API void rz_log_add_callback(RLogCallback cbfunc) {
 	if (!log_cbs) {
-		log_cbs = rz_list_new ();
+		log_cbs = rz_list_new();
 	}
-	if (!rz_list_contains (log_cbs, cbfunc)) {
-		rz_list_append (log_cbs, cbfunc);
+	if (!rz_list_contains(log_cbs, cbfunc)) {
+		rz_list_append(log_cbs, cbfunc);
 	}
 }
 
@@ -64,19 +64,19 @@ RZ_API void rz_log_add_callback(RLogCallback cbfunc) {
  */
 RZ_API void rz_log_del_callback(RLogCallback cbfunc) {
 	if (log_cbs) {
-		rz_list_delete_data (log_cbs, cbfunc);
+		rz_list_delete_data(log_cbs, cbfunc);
 	}
 }
 
 RZ_API void rz_vlog(const char *funcname, const char *filename,
 	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, va_list args) {
 	va_list args_copy;
-	va_copy (args_copy, args);
+	va_copy(args_copy, args);
 
 	if (level < cfg_loglvl && level < cfg_logtraplvl) {
 		// Don't print if output level is lower than current level
 		// Don't ignore fatal/trap errors
-		va_end (args_copy);
+		va_end(args_copy);
 		return;
 	}
 
@@ -85,46 +85,46 @@ RZ_API void rz_vlog(const char *funcname, const char *filename,
 	// Build output string with src info, and formatted output
 	char output_buf[LOG_OUTPUTBUF_SIZE] = ""; // Big buffer for building the output string
 	if (!tag) {
-		tag = RZ_BETWEEN (0, level, RZ_ARRAY_SIZE (level_tags) - 1)? level_tags[level]: "";
+		tag = RZ_BETWEEN(0, level, RZ_ARRAY_SIZE(level_tags) - 1) ? level_tags[level] : "";
 	}
-	int offset = snprintf (output_buf, LOG_OUTPUTBUF_SIZE, "%s: ", tag);
+	int offset = snprintf(output_buf, LOG_OUTPUTBUF_SIZE, "%s: ", tag);
 	if (cfg_logsrcinfo) {
-		offset += snprintf (output_buf + offset, LOG_OUTPUTBUF_SIZE - offset, "%s in %s:%i: ", funcname, filename, lineno);
+		offset += snprintf(output_buf + offset, LOG_OUTPUTBUF_SIZE - offset, "%s in %s:%i: ", funcname, filename, lineno);
 	}
-	vsnprintf (output_buf + offset, LOG_OUTPUTBUF_SIZE - offset, fmtstr, args);
+	vsnprintf(output_buf + offset, LOG_OUTPUTBUF_SIZE - offset, fmtstr, args);
 
 	// Actually print out the string with our callbacks
-	if (log_cbs && rz_list_length (log_cbs) > 0) {
+	if (log_cbs && rz_list_length(log_cbs) > 0) {
 		RzListIter *it;
 		RLogCallback cb;
 
 		rz_list_foreach (log_cbs, it, cb) {
-			cb (output_buf, funcname, filename, lineno, level, NULL, fmtstr, args_copy);
+			cb(output_buf, funcname, filename, lineno, level, NULL, fmtstr, args_copy);
 		}
 	} else {
-		fprintf (stderr, "%s", output_buf);
+		fprintf(stderr, "%s", output_buf);
 	}
-	va_end (args_copy);
+	va_end(args_copy);
 
 	// Log to file if enabled
 	if (cfg_logfile[0] != 0x00) {
-		FILE *file = rz_sys_fopen (cfg_logfile, "a+"); // TODO: Optimize (static? Needs to remake on cfg change though)
+		FILE *file = rz_sys_fopen(cfg_logfile, "a+"); // TODO: Optimize (static? Needs to remake on cfg change though)
 		if (!file) {
-			file = rz_sys_fopen (cfg_logfile, "w+");
+			file = rz_sys_fopen(cfg_logfile, "w+");
 		}
 		if (file) {
-			fprintf (file, "%s", output_buf);
-			fclose (file);
+			fprintf(file, "%s", output_buf);
+			fclose(file);
 		} else {
-			eprintf ("%s failed to write to file: %s\n", MACRO_LOG_FUNC, cfg_logfile);
+			eprintf("%s failed to write to file: %s\n", MACRO_LOG_FUNC, cfg_logfile);
 		}
 	}
 
 	if (level >= cfg_logtraplvl && level != RZ_LOGLVL_NONE) {
-		fflush (stdout); // We're about to exit HARD, flush buffers before dying
-		fflush (stderr);
+		fflush(stdout); // We're about to exit HARD, flush buffers before dying
+		fflush(stderr);
 		// TODO: call rz_cons_flush if librz_cons is being used
-		rz_sys_breakpoint (); // *oof*
+		rz_sys_breakpoint(); // *oof*
 	}
 }
 
@@ -142,7 +142,7 @@ RZ_API void rz_log(const char *funcname, const char *filename,
 	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) {
 	va_list args;
 
-	va_start (args, fmtstr);
-	rz_vlog (funcname, filename, lineno, level, tag, fmtstr, args);
-	va_end (args);
+	va_start(args, fmtstr);
+	rz_vlog(funcname, filename, lineno, level, tag, fmtstr, args);
+	va_end(args);
 }

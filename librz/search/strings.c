@@ -10,18 +10,18 @@ enum {
 
 static char *encodings[3] = { "ascii", "cp850", NULL };
 //static int encoding = ENCODING_ASCII; // default
-	//encoding = resolve_encoding(config_get("cfg.encoding"));
+//encoding = resolve_encoding(config_get("cfg.encoding"));
 
 RZ_API int rz_search_get_encoding(const char *name) {
 	int i;
 	if (!name || !*name) {
 		return ENCODING_ASCII;
 	}
-	ut32 lename = strlen (name);
+	ut32 lename = strlen(name);
 	for (i = 0; encodings[i]; i++) {
-		ut32 sz = RZ_MIN (strlen (encodings[i]), lename);
-		if (!rz_str_ncasecmp (name, encodings[i], sz)) {
-			return i; 
+		ut32 sz = RZ_MIN(strlen(encodings[i]), lename);
+		if (!rz_str_ncasecmp(name, encodings[i], sz)) {
+			return i;
 		}
 	}
 	return ENCODING_ASCII;
@@ -70,14 +70,14 @@ RZ_API int rz_search_strings_update(RzSearch *s, ut64 from, const ut8 *buf, int 
 		for (i = 0; i < len; i++) {
 			char ch = buf[i];
 			// non-cp850 encoded
-			if (IS_PRINTABLE(ch) || IS_WHITESPACE(ch) || is_encoded (0, ch)) {
+			if (IS_PRINTABLE(ch) || IS_WHITESPACE(ch) || is_encoded(0, ch)) {
 				str[matches] = ch;
-				if (matches < sizeof (str)) {
+				if (matches < sizeof(str)) {
 					matches++;
 				}
 			} else {
 				/* wide char check \x??\x00\x??\x00 */
-				if (matches && i + 2 < len && buf[i+2]=='\0' && buf[i]=='\0' && buf[i+1]!='\0') {
+				if (matches && i + 2 < len && buf[i + 2] == '\0' && buf[i] == '\0' && buf[i + 1] != '\0') {
 					// widechar = 1;
 					return 1; // widechar
 				}
@@ -85,16 +85,16 @@ RZ_API int rz_search_strings_update(RzSearch *s, ut64 from, const ut8 *buf, int 
 				if (matches >= s->string_min && (s->string_max == 0 || matches <= s->string_max)) {
 					str[matches] = '\0';
 					int len = strlen(str);
-					if (len>2) {
+					if (len > 2) {
 						if (widechar) {
-							ut64 off = (ut64)from+i-(len*2)+1;
-							rz_search_hit_new (s, kw, off);
+							ut64 off = (ut64)from + i - (len * 2) + 1;
+							rz_search_hit_new(s, kw, off);
 						} else {
-							ut64 off = (ut64)from+i-matches;
-							rz_search_hit_new (s, kw, off);
+							ut64 off = (ut64)from + i - matches;
+							rz_search_hit_new(s, kw, off);
 						}
 					}
-					fflush (stdout);
+					fflush(stdout);
 				}
 				matches = 0;
 				widechar = 0;

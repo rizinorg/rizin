@@ -23,16 +23,16 @@ static char *pre_features = NULL;
 static int mips_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
 	int delta = (memaddr - Offset);
 	if (delta < 0) {
-		return -1;      // disable backward reads
+		return -1; // disable backward reads
 	}
 	if ((delta + length) > 4) {
 		return -1;
 	}
-	memcpy (myaddr, bytes + delta, length);
+	memcpy(myaddr, bytes + delta, length);
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 
@@ -50,37 +50,37 @@ static int disassemble(struct rz_asm_t *a, struct rz_asm_op_t *op, const ut8 *bu
 	}
 	buf_global = &op->buf_asm;
 	Offset = a->pc;
-	memcpy (bytes, buf, 4); // TODO handle thumb
+	memcpy(bytes, buf, 4); // TODO handle thumb
 
 	if ((a->cpu != pre_cpu) && (a->features != pre_features)) {
-		free (disasm_obj.disassembler_options);
-		memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	}	
+		free(disasm_obj.disassembler_options);
+		memset(&disasm_obj, '\0', sizeof(struct disassemble_info));
+	}
 
 	/* prepare disassembler */
 	if (a->cpu && (!pre_cpu || !strcmp(a->cpu, pre_cpu))) {
-		if (!rz_str_casecmp (a->cpu, "mips64r2")) {
+		if (!rz_str_casecmp(a->cpu, "mips64r2")) {
 			disasm_obj.mach = bfd_mach_mipsisa64r2;
-		} else if (!rz_str_casecmp (a->cpu, "mips32r2")) {
+		} else if (!rz_str_casecmp(a->cpu, "mips32r2")) {
 			disasm_obj.mach = bfd_mach_mipsisa32r2;
-		} else if (!rz_str_casecmp (a->cpu, "mips64")) {
+		} else if (!rz_str_casecmp(a->cpu, "mips64")) {
 			disasm_obj.mach = bfd_mach_mipsisa64;
-		} else if (!rz_str_casecmp (a->cpu, "mips32")) {
+		} else if (!rz_str_casecmp(a->cpu, "mips32")) {
 			disasm_obj.mach = bfd_mach_mipsisa32;
 		}
-		pre_cpu = rz_str_dup (pre_cpu, a->cpu);
+		pre_cpu = rz_str_dup(pre_cpu, a->cpu);
 	}
 
-	if (a->features && (!pre_features || !strcmp (a->features, pre_features))) {
-		free (disasm_obj.disassembler_options);
-		if (strstr (a->features, "n64")) {
-			disasm_obj.disassembler_options = rz_str_new ("abi=n64");
-		} else if (strstr (a->features, "n32")) {
-			disasm_obj.disassembler_options = rz_str_new ("abi=n32");
-		} else if (strstr (a->features, "o32")) {
-			disasm_obj.disassembler_options = rz_str_new ("abi=o32");
+	if (a->features && (!pre_features || !strcmp(a->features, pre_features))) {
+		free(disasm_obj.disassembler_options);
+		if (strstr(a->features, "n64")) {
+			disasm_obj.disassembler_options = rz_str_new("abi=n64");
+		} else if (strstr(a->features, "n32")) {
+			disasm_obj.disassembler_options = rz_str_new("abi=n32");
+		} else if (strstr(a->features, "o32")) {
+			disasm_obj.disassembler_options = rz_str_new("abi=o32");
 		}
-		pre_features = rz_str_dup (pre_features, a->features);
+		pre_features = rz_str_dup(pre_features, a->features);
 	}
 
 	mips_mode = a->bits;
@@ -96,17 +96,17 @@ static int disassemble(struct rz_asm_t *a, struct rz_asm_op_t *op, const ut8 *bu
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = stdout;
 	op->size = (disasm_obj.endian == BFD_ENDIAN_LITTLE)
-		? print_insn_little_mips ((bfd_vma)Offset, &disasm_obj)
-		: print_insn_big_mips ((bfd_vma)Offset, &disasm_obj);
+		? print_insn_little_mips((bfd_vma)Offset, &disasm_obj)
+		: print_insn_big_mips((bfd_vma)Offset, &disasm_obj);
 	if (op->size == -1) {
-		rz_strbuf_set (&op->buf_asm, "(data)");
+		rz_strbuf_set(&op->buf_asm, "(data)");
 	}
 	return op->size;
 }
 
 static int assemble(RzAsm *a, RzAsmOp *op, const char *str) {
-	ut8 *opbuf = (ut8*)rz_strbuf_get (&op->buf);
-	int ret = mips_assemble (str, a->pc, opbuf);
+	ut8 *opbuf = (ut8 *)rz_strbuf_get(&op->buf);
+	int ret = mips_assemble(str, a->pc, opbuf);
 	if (a->big_endian) {
 		ut8 tmp = opbuf[0];
 		opbuf[0] = opbuf[3];

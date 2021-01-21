@@ -3,11 +3,11 @@
 #include <rz_analysis.h>
 
 static RzAnalysisSwitchOp *__switch_op_new(void) {
-	RzAnalysisSwitchOp * swop = RZ_NEW0 (RzAnalysisSwitchOp);
+	RzAnalysisSwitchOp *swop = RZ_NEW0(RzAnalysisSwitchOp);
 	if (swop) {
-		swop->cases = rz_list_new ();
+		swop->cases = rz_list_new();
 		if (!swop->cases) {
-			free (swop);
+			free(swop);
 			return NULL;
 		}
 		swop->cases->free = (void *)free;
@@ -17,7 +17,7 @@ static RzAnalysisSwitchOp *__switch_op_new(void) {
 }
 
 RZ_API RzAnalysisSwitchOp *rz_analysis_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val, ut64 def_val) {
-	RzAnalysisSwitchOp *swop = __switch_op_new ();
+	RzAnalysisSwitchOp *swop = __switch_op_new();
 	if (swop) {
 		swop->addr = addr;
 		swop->min_val = min_val;
@@ -27,8 +27,8 @@ RZ_API RzAnalysisSwitchOp *rz_analysis_switch_op_new(ut64 addr, ut64 min_val, ut
 	return swop;
 }
 
-RZ_API RzAnalysisCaseOp * rz_analysis_case_op_new(ut64 addr, ut64 val, ut64 jump) {
-	RzAnalysisCaseOp *c = RZ_NEW0 (RzAnalysisCaseOp);
+RZ_API RzAnalysisCaseOp *rz_analysis_case_op_new(ut64 addr, ut64 val, ut64 jump) {
+	RzAnalysisCaseOp *c = RZ_NEW0(RzAnalysisCaseOp);
 	if (c) {
 		c->addr = addr;
 		c->value = val;
@@ -37,18 +37,18 @@ RZ_API RzAnalysisCaseOp * rz_analysis_case_op_new(ut64 addr, ut64 val, ut64 jump
 	return c;
 }
 
-RZ_API void rz_analysis_switch_op_free(RzAnalysisSwitchOp * swop) {
+RZ_API void rz_analysis_switch_op_free(RzAnalysisSwitchOp *swop) {
 	if (swop) {
-		rz_list_free (swop->cases);
-		free (swop);
+		rz_list_free(swop->cases);
+		free(swop);
 	}
 }
 
-RZ_API RzAnalysisCaseOp* rz_analysis_switch_op_add_case(RzAnalysisSwitchOp * swop, ut64 addr, ut64 value, ut64 jump) {
-	rz_return_val_if_fail (swop && addr != UT64_MAX, NULL);
-	RzAnalysisCaseOp * caseop = rz_analysis_case_op_new (addr, value, jump);
+RZ_API RzAnalysisCaseOp *rz_analysis_switch_op_add_case(RzAnalysisSwitchOp *swop, ut64 addr, ut64 value, ut64 jump) {
+	rz_return_val_if_fail(swop && addr != UT64_MAX, NULL);
+	RzAnalysisCaseOp *caseop = rz_analysis_case_op_new(addr, value, jump);
 	if (caseop) {
-		rz_list_append (swop->cases, caseop);
+		rz_list_append(swop->cases, caseop);
 	}
 	return caseop;
 }

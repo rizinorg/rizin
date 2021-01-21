@@ -7,7 +7,7 @@
 
 /* int c; ret = hex_to_byte(&c, 'c'); */
 RZ_API bool rz_hex_to_byte(ut8 *val, ut8 c) {
-	if (IS_DIGIT (c)) {
+	if (IS_DIGIT(c)) {
 		*val = (ut8)(*val) * 16 + (c - '0');
 	} else if (c >= 'A' && c <= 'F') {
 		*val = (ut8)(*val) * 16 + (c - 'A' + 10);
@@ -20,18 +20,18 @@ RZ_API bool rz_hex_to_byte(ut8 *val, ut8 c) {
 }
 
 RZ_API char *rz_hex_from_py_str(char *out, const char *code) {
-	if (!strncmp (code, "'''", 3)) {
+	if (!strncmp(code, "'''", 3)) {
 		const char *s = code + 2;
-		return rz_hex_from_c_str (out, &s);
+		return rz_hex_from_c_str(out, &s);
 	}
-	return rz_hex_from_c_str (out, &code);
+	return rz_hex_from_c_str(out, &code);
 }
 
 static const char *skip_comment_py(const char *code) {
 	if (*code != '#') {
 		return code;
 	}
-	char *end = strchr (code, '\n');
+	char *end = strchr(code, '\n');
 	if (end) {
 		code = end;
 	}
@@ -40,30 +40,30 @@ static const char *skip_comment_py(const char *code) {
 
 RZ_API char *rz_hex_from_py_array(char *out, const char *code) {
 	const char abc[] = "0123456789abcdef";
-	if (*code != '[' || !strchr (code, ']')) {
+	if (*code != '[' || !strchr(code, ']')) {
 		return NULL;
 	}
 	code++;
 	for (; *code; code++) {
-		char *comma = strchr (code, ',');
+		char *comma = strchr(code, ',');
 		if (!comma) {
-			comma = strchr (code, ']');
+			comma = strchr(code, ']');
 		}
 		if (!comma) {
 			break;
 		}
-		char * _word = rz_str_ndup (code, comma - code);
+		char *_word = rz_str_ndup(code, comma - code);
 		const char *word = _word;
 		while (*word == ' ' || *word == '\t' || *word == '\n') {
 			word++;
-			word = skip_comment_py (word);
+			word = skip_comment_py(word);
 		}
-		if (IS_DIGIT (*word)) {
-			ut8 n = (ut8)rz_num_math (NULL, word);
+		if (IS_DIGIT(*word)) {
+			ut8 n = (ut8)rz_num_math(NULL, word);
 			*out++ = abc[(n >> 4) & 0xf];
 			*out++ = abc[n & 0xf];
 		}
-		free (_word);
+		free(_word);
 		code = comma;
 		if (*code == ']') {
 			break;
@@ -72,31 +72,30 @@ RZ_API char *rz_hex_from_py_array(char *out, const char *code) {
 	return out;
 }
 
-RZ_API char* rz_hex_from_py(const char *code) {
+RZ_API char *rz_hex_from_py(const char *code) {
 	if (!code) {
 		return NULL;
 	}
-	char * const ret = malloc (strlen (code) * 3);
+	char *const ret = malloc(strlen(code) * 3);
 	if (!ret) {
 		return NULL;
 	}
 	*ret = '\0';
 	char *out = ret;
-	const char *tmp_code = strchr (code, '=');
+	const char *tmp_code = strchr(code, '=');
 	if (tmp_code) {
 		code = tmp_code;
 	}
-	for (; *code && *code != '[' && *code != '\''
-	  && *code != '"'; code++) {
-		code = skip_comment_py (code);
+	for (; *code && *code != '[' && *code != '\'' && *code != '"'; code++) {
+		code = skip_comment_py(code);
 	}
 	if (*code == '[') {
-		out = rz_hex_from_py_array (out, code);
+		out = rz_hex_from_py_array(out, code);
 	} else if (*code == '"' || *code == '\'') {
-		out = rz_hex_from_py_str (out, code);
+		out = rz_hex_from_py_str(out, code);
 	}
 	if (!out) {
-		free (ret);
+		free(ret);
 		return NULL;
 	}
 	*out = '\0';
@@ -115,23 +114,32 @@ RZ_API char *rz_hex_from_c_str(char *out, const char **code) {
 		if (*iter == '\\') {
 			iter++;
 			switch (iter[0]) {
-			case 'e': *out++='1';*out++='b';break;
-			case 'r': *out++='0';*out++='d';break;
-			case 'n': *out++='0';*out++='a';break;
+			case 'e':
+				*out++ = '1';
+				*out++ = 'b';
+				break;
+			case 'r':
+				*out++ = '0';
+				*out++ = 'd';
+				break;
+			case 'n':
+				*out++ = '0';
+				*out++ = 'a';
+				break;
 			case 'x': {
 				ut8 c1 = iter[1];
 				ut8 c2 = iter[2];
 				iter += 2;
 				if (c1 == '\0' || c2 == '\0') {
 					return NULL;
-				} else if (strchr (abc, c1) && strchr (abc, c2)) {
-					*out++ = tolower (c1);
-					*out++ = tolower (c2);
+				} else if (strchr(abc, c1) && strchr(abc, c2)) {
+					*out++ = tolower(c1);
+					*out++ = tolower(c2);
 				} else {
 					return NULL;
 				}
 				break;
-			  }
+			}
 			default:
 				if (iter[0] == end_char) {
 					*out++ = abc[*iter >> 4];
@@ -149,15 +157,15 @@ RZ_API char *rz_hex_from_c_str(char *out, const char **code) {
 }
 
 const char *skip_comment_c(const char *code) {
-	if (!strncmp (code, "/*", 2)) {
-		char *end = strstr (code, "*/");
+	if (!strncmp(code, "/*", 2)) {
+		char *end = strstr(code, "*/");
 		if (end) {
 			code = end + 2;
 		} else {
-			eprintf ("Missing closing comment\n");
+			eprintf("Missing closing comment\n");
 		}
-	} else if (!strncmp (code, "//", 2)) {
-		char *end = strchr (code, '\n');
+	} else if (!strncmp(code, "//", 2)) {
+		char *end = strchr(code, '\n');
 		if (end) {
 			code = end + 2;
 		}
@@ -172,23 +180,23 @@ RZ_API char *rz_hex_from_c_array(char *out, const char *code) {
 	}
 	code++;
 	for (; *code; code++) {
-		const char *comma = strchr (code, ',');
+		const char *comma = strchr(code, ',');
 		if (!comma) {
-			comma = strchr (code, '}');
+			comma = strchr(code, '}');
 		}
-		char * _word = rz_str_ndup (code, comma - code);
+		char *_word = rz_str_ndup(code, comma - code);
 		const char *word = _word;
-		word = skip_comment_c (word);
+		word = skip_comment_c(word);
 		while (*word == ' ' || *word == '\t' || *word == '\n') {
 			word++;
-			word = skip_comment_c (word);
+			word = skip_comment_c(word);
 		}
-		if (IS_DIGIT (*word)) {
-			ut8 n = (ut8)rz_num_math (NULL, word);
+		if (IS_DIGIT(*word)) {
+			ut8 n = (ut8)rz_num_math(NULL, word);
 			*out++ = abc[(n >> 4) & 0xf];
 			*out++ = abc[n & 0xf];
 		}
-		free (_word);
+		free(_word);
 		code = comma;
 		if (*code == '}') {
 			break;
@@ -206,59 +214,58 @@ RZ_API char *rz_hex_from_c(const char *code) {
 	if (!code) {
 		return NULL;
 	}
-	char * const ret = malloc (strlen (code) * 3);
+	char *const ret = malloc(strlen(code) * 3);
 	if (!ret) {
 		return NULL;
 	}
 	*ret = '\0';
 	char *out = ret;
-	const char *tmp_code = strchr (code, '=');
+	const char *tmp_code = strchr(code, '=');
 	if (tmp_code) {
 		code = tmp_code;
 	}
 	for (; *code != '\0' && *code != '{' && *code != '"'; code++) {
-		code = skip_comment_c (code);
+		code = skip_comment_c(code);
 	}
 	if (*code == '{') {
-		out = rz_hex_from_c_array (out, code);
+		out = rz_hex_from_c_array(out, code);
 	} else if (*code == '"') {
 		const char *s1, *s2;
 		s1 = code;
 		do {
 			code = s1;
-			out = rz_hex_from_c_str (out, &code);
+			out = rz_hex_from_c_str(out, &code);
 			if (!out) {
 				break;
 			}
-			s1 = strchr (code + 1, '"');
-			s2 = strchr (code + 1, ';');
+			s1 = strchr(code + 1, '"');
+			s2 = strchr(code + 1, ';');
 		} while (s1 && s2 && (s1 <= s2));
 	}
 	if (!out) {
-		free (ret);
+		free(ret);
 		return NULL;
 	}
 	*out = '\0';
 	return ret;
 }
 
-
 RZ_API char *rz_hex_from_js(const char *code) {
-	char * s1 = strchr (code, '\'');
-	char * s2 = strchr (code, '"');
+	char *s1 = strchr(code, '\'');
+	char *s2 = strchr(code, '"');
 
 	/* there are no strings in the input */
 	if (!(s1 || s2)) {
 		return NULL;
 	}
 
-	char * start, * end;
+	char *start, *end;
 	if (s1 < s2) {
 		start = s1;
-		end = strchr (start + 1, '\'');
+		end = strchr(start + 1, '\'');
 	} else {
 		start = s2;
-		end = strchr (start + 1, '"');
+		end = strchr(start + 1, '"');
 	}
 
 	/* the string isn't properly terminated */
@@ -266,37 +273,37 @@ RZ_API char *rz_hex_from_js(const char *code) {
 		return NULL;
 	}
 
-	char * str = rz_str_ndup (start + 1, end - start - 1);
+	char *str = rz_str_ndup(start + 1, end - start - 1);
 
 	/* assuming base64 input, output will always be shorter */
-	ut8 *b64d = malloc (end - start);
+	ut8 *b64d = malloc(end - start);
 	if (!b64d) {
-		free (str);
+		free(str);
 		return NULL;
 	}
 
-	rz_base64_decode (b64d, str, end - start - 1);
+	rz_base64_decode(b64d, str, end - start - 1);
 	if (!b64d) {
-		free (str);
-		free (b64d);
+		free(str);
+		free(b64d);
 		return NULL;
 	}
 
 	// TODO: use rz_str_bin2hex
-	int i, len = strlen ((const char *)b64d);
-	char * out = malloc (len * 2 + 1);
+	int i, len = strlen((const char *)b64d);
+	char *out = malloc(len * 2 + 1);
 	if (!out) {
-		free (str);
-		free (b64d);
+		free(str);
+		free(b64d);
 		return NULL;
 	}
 	for (i = 0; i < len; i++) {
-		sprintf (&out[i * 2], "%02x", b64d[i]);
+		sprintf(&out[i * 2], "%02x", b64d[i]);
 	}
 	out[len * 2] = '\0';
 
-	free (str);
-	free (b64d);
+	free(str);
+	free(b64d);
 	return out;
 }
 
@@ -310,41 +317,41 @@ RZ_API char *rz_hex_no_code(const char *code) {
 	if (!code) {
 		return NULL;
 	}
-	char * const ret = calloc (1, strlen (code) * 3);
+	char *const ret = calloc(1, strlen(code) * 3);
 	if (!ret) {
 		return NULL;
 	}
 	*ret = '\0';
 	char *out = ret;
-	out = rz_hex_from_c_str (out, &code);
-	code = strchr (code + 1, '"');
+	out = rz_hex_from_c_str(out, &code);
+	code = strchr(code + 1, '"');
 	if (!out) {
-		free (ret);
+		free(ret);
 		return NULL;
 	}
 	*out = '\0';
 	while (out && code) {
 		*out = '\0';
-		out = rz_hex_from_c_str (out, &code);
-		code = strchr (code + 1, '"');
+		out = rz_hex_from_c_str(out, &code);
+		code = strchr(code + 1, '"');
 	}
 	return ret;
 }
 
 RZ_API char *rz_hex_from_code(const char *code) {
-	if (!strchr (code, '=')) {
-		return rz_hex_no_code (code);
+	if (!strchr(code, '=')) {
+		return rz_hex_no_code(code);
 	}
 	/* C language */
-	if (strstr (code, "char") || strstr (code, "int")) {
-		return rz_hex_from_c (code);
+	if (strstr(code, "char") || strstr(code, "int")) {
+		return rz_hex_from_c(code);
 	}
 	/* JavaScript */
-	if (strstr (code, "var")) {
-		return rz_hex_from_js (code);
+	if (strstr(code, "var")) {
+		return rz_hex_from_js(code);
 	}
-        /* Python */
-	return rz_hex_from_py (code);
+	/* Python */
+	return rz_hex_from_py(code);
 }
 
 /* int byte = hexpair2bin("A0"); */
@@ -353,13 +360,13 @@ RZ_API int rz_hex_pair2bin(const char *arg) {
 	ut8 *ptr, c = 0, d = 0;
 	ut32 j = 0;
 
-	for (ptr = (ut8*)arg; ;ptr = ptr + 1) {
-		if (!*ptr || *ptr==' ' || j==2) {
+	for (ptr = (ut8 *)arg;; ptr = ptr + 1) {
+		if (!*ptr || *ptr == ' ' || j == 2) {
 			break;
 		}
 		d = c;
-		if (*ptr != '.' && rz_hex_to_byte (&c, *ptr)) {
-			eprintf ("Invalid hexa string at char '%c' (%s).\n",
+		if (*ptr != '.' && rz_hex_to_byte(&c, *ptr)) {
+			eprintf("Invalid hexa string at char '%c' (%s).\n",
 				*ptr, arg);
 			return -1;
 		}
@@ -377,9 +384,9 @@ RZ_API int rz_hex_bin2str(const ut8 *in, int len, char *out) {
 	if (len < 0) {
 		return 0;
 	}
-	for (idx = i = 0; i < len; i++, idx += 2)  {
-		snprintf (tmp, sizeof (tmp), "%02x", in[i]);
-		memcpy (out + idx, tmp, 2);
+	for (idx = i = 0; i < len; i++, idx += 2) {
+		snprintf(tmp, sizeof(tmp), "%02x", in[i]);
+		memcpy(out + idx, tmp, 2);
 	}
 	out[idx] = 0;
 	return len;
@@ -392,13 +399,13 @@ RZ_API char *rz_hex_bin2strdup(const ut8 *in, int len) {
 	if ((len + 1) * 2 < len) {
 		return NULL;
 	}
-	out = malloc ((len + 1) * 2);
+	out = malloc((len + 1) * 2);
 	if (!out) {
 		return NULL;
 	}
-	for (i = idx = 0; i < len; i++, idx += 2)  {
-		snprintf (tmp, sizeof (tmp), "%02x", in[i]);
-		memcpy (out+idx, tmp, 2);
+	for (i = idx = 0; i < len; i++, idx += 2) {
+		snprintf(tmp, sizeof(tmp), "%02x", in[i]);
+		memcpy(out + idx, tmp, 2);
 	}
 	out[idx] = 0;
 	return out;
@@ -414,7 +421,7 @@ RZ_API int rz_hex_str2bin(const char *in, ut8 *out) {
 			in += 2;
 		}
 		/* read hex digits */
-		while (!rz_hex_to_byte (out ? &out[nibbles/2] : &tmp, *in)) {
+		while (!rz_hex_to_byte(out ? &out[nibbles / 2] : &tmp, *in)) {
 			nibbles++;
 			in++;
 		}
@@ -423,16 +430,16 @@ RZ_API int rz_hex_str2bin(const char *in, ut8 *out) {
 		}
 		/* comments */
 		if (*in == '#' || (*in == '/' && in[1] == '/')) {
-			if ((in = strchr (in, '\n'))) {
+			if ((in = strchr(in, '\n'))) {
 				in++;
 			}
 			continue;
 		} else if (*in == '/' && in[1] == '*') {
-			if ((in = strstr (in, "*/"))) {
+			if ((in = strstr(in, "*/"))) {
 				in += 2;
 			}
 			continue;
-		} else if (!IS_WHITESPACE (*in) && *in != '\n') {
+		} else if (!IS_WHITESPACE(*in) && *in != '\n') {
 			/* this is not a valid string */
 			return 0;
 		}
@@ -442,9 +449,9 @@ RZ_API int rz_hex_str2bin(const char *in, ut8 *out) {
 
 	if (nibbles % 2) {
 		if (out) {
-			rz_hex_to_byte (&out[nibbles / 2], '0');
+			rz_hex_to_byte(&out[nibbles / 2], '0');
 		}
-		return -(nibbles+1) / 2;
+		return -(nibbles + 1) / 2;
 	}
 
 	return nibbles / 2;
@@ -452,29 +459,32 @@ RZ_API int rz_hex_str2bin(const char *in, ut8 *out) {
 
 RZ_API int rz_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 	ut8 *ptr;
-	int len, ilen = strlen (in)+1;
+	int len, ilen = strlen(in) + 1;
 	int has_nibble = 0;
-	memcpy (out, in, ilen);
+	memcpy(out, in, ilen);
 	for (ptr = out; *ptr; ptr++) {
 		if (*ptr == '.') {
 			*ptr = '0';
 		}
 	}
-	len = rz_hex_str2bin ((char*)out, out);
-	if (len<0) { has_nibble = 1; len = -(len+1); }
+	len = rz_hex_str2bin((char *)out, out);
+	if (len < 0) {
+		has_nibble = 1;
+		len = -(len + 1);
+	}
 	if (len != -1) {
-		memcpy (mask, in, ilen);
+		memcpy(mask, in, ilen);
 		if (has_nibble) {
-			memcpy (mask + ilen, "f0", 3);
+			memcpy(mask + ilen, "f0", 3);
 		}
 		for (ptr = mask; *ptr; ptr++) {
-			if (IS_HEXCHAR (*ptr)) {
+			if (IS_HEXCHAR(*ptr)) {
 				*ptr = 'f';
 			} else if (*ptr == '.') {
 				*ptr = '0';
 			}
 		}
-		len = rz_hex_str2bin ((char*)mask, mask);
+		len = rz_hex_str2bin((char *)mask, mask);
 		if (len < 0) {
 			len++;
 		}
@@ -488,35 +498,35 @@ RZ_API st64 rz_hex_bin_truncate(ut64 in, int n) {
 		if ((in & UT8_GT0)) {
 			return UT64_8U | in;
 		}
-		return in&UT8_MAX;
+		return in & UT8_MAX;
 	case 2:
 		if ((in & UT16_GT0)) {
 			return UT64_16U | in;
 		}
-		return in&UT16_MAX;
+		return in & UT16_MAX;
 	case 4:
 		if ((in & UT32_GT0)) {
 			return UT64_32U | in;
 		}
-		return in&UT32_MAX;
+		return in & UT32_MAX;
 	case 8:
-		return in&UT64_MAX;
+		return in & UT64_MAX;
 	}
 	return in;
 }
 
 // Check if str contains only hexadecimal characters and return length of bytes
-RZ_API int rz_hex_str_is_valid(const char* str) {
+RZ_API int rz_hex_str_is_valid(const char *str) {
 	int i;
 	int len = 0;
-	if (!strncmp (str, "0x", 2)) {
+	if (!strncmp(str, "0x", 2)) {
 		str += 2;
 	}
 	for (i = 0; str[i] != '\0'; i++) {
-		if (IS_HEXCHAR (str[i])) {
+		if (IS_HEXCHAR(str[i])) {
 			len++;
 		}
-		if (IS_HEXCHAR (str[i]) || IS_WHITESPACE (str[i])) {
+		if (IS_HEXCHAR(str[i]) || IS_WHITESPACE(str[i])) {
 			continue;
 		}
 		return -1; //if we're here, then str isn't valid

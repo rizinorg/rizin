@@ -46,24 +46,24 @@ static int file_vprintf(RzMagic *ms, const char *fmt, va_list ap) {
 	char cbuf[4096];
 	char *buf, *newstr;
 
-	va_copy (ap2, ap);
-	int len = vsnprintf (cbuf, sizeof (cbuf), fmt, ap2);
-	va_end (ap2);
+	va_copy(ap2, ap);
+	int len = vsnprintf(cbuf, sizeof(cbuf), fmt, ap2);
+	va_end(ap2);
 	if (len < 0) {
 		goto out;
 	}
-	if (len > sizeof (cbuf)) {
-		buf = malloc (len + 1);
-		va_copy (ap2, ap);
-		(void)vsnprintf (buf, len + 1, fmt, ap2);
-		va_end (ap2);
+	if (len > sizeof(cbuf)) {
+		buf = malloc(len + 1);
+		va_copy(ap2, ap);
+		(void)vsnprintf(buf, len + 1, fmt, ap2);
+		va_end(ap2);
 	} else {
 		int nullbyte = len;
-		if (nullbyte > 0 && nullbyte == sizeof (cbuf)) {
+		if (nullbyte > 0 && nullbyte == sizeof(cbuf)) {
 			nullbyte--;
 		}
 		cbuf[nullbyte] = 0;
-		buf = strdup (cbuf);
+		buf = strdup(cbuf);
 	}
 	if (!buf) {
 		return -1;
@@ -71,20 +71,20 @@ static int file_vprintf(RzMagic *ms, const char *fmt, va_list ap) {
 
 	int buflen = len;
 	if (ms->o.buf) {
-		int obuflen = strlen (ms->o.buf);
+		int obuflen = strlen(ms->o.buf);
 		len = obuflen + buflen + 1;
-		newstr = malloc (len);
+		newstr = malloc(len);
 		if (!newstr) {
-			free (buf);
+			free(buf);
 			return -1;
 		}
-		memcpy (newstr, ms->o.buf, obuflen);
-		memcpy (newstr + obuflen, buf, buflen);
+		memcpy(newstr, ms->o.buf, obuflen);
+		memcpy(newstr + obuflen, buf, buflen);
 		newstr[len - 1] = 0;
-		free (buf);
-		free (ms->o.buf);
+		free(buf);
+		free(ms->o.buf);
 		if (len < 0) {
-			free (newstr);
+			free(newstr);
 			goto out;
 		}
 		buf = newstr;
@@ -92,7 +92,7 @@ static int file_vprintf(RzMagic *ms, const char *fmt, va_list ap) {
 	ms->o.buf = buf;
 	return 0;
 out:
-	file_error (ms, errno, "vasprintf failed");
+	file_error(ms, errno, "vasprintf failed");
 	return -1;
 }
 
@@ -103,9 +103,9 @@ int file_printf(RzMagic *ms, const char *fmt, ...) {
 	va_list ap;
 	int ret;
 
-	va_start (ap, fmt);
-	ret = file_vprintf (ms, fmt, ap);
-	va_end (ap);
+	va_start(ap, fmt);
+	ret = file_vprintf(ms, fmt, ap);
+	va_end(ap);
 	return ret;
 }
 
@@ -121,12 +121,12 @@ static void file_error_core(RzMagic *ms, int error, const char *f, va_list va, u
 	if (lineno != 0) {
 		free(ms->o.buf);
 		ms->o.buf = NULL;
-		(void)file_printf (ms, "line %u: ", lineno);
+		(void)file_printf(ms, "line %u: ", lineno);
 	}
 	// OPENBSDBUG
-        file_vprintf (ms, f, va);
+	file_vprintf(ms, f, va);
 	if (error > 0) {
-		(void)file_printf (ms, " (%s)", strerror (error));
+		(void)file_printf(ms, " (%s)", strerror(error));
 	}
 	ms->haderr++;
 	ms->error = error;
@@ -135,9 +135,9 @@ static void file_error_core(RzMagic *ms, int error, const char *f, va_list va, u
 /*VARARGS*/
 void file_error(RzMagic *ms, int error, const char *f, ...) {
 	va_list va;
-	va_start (va, f);
-	file_error_core (ms, error, f, va, 0);
-	va_end (va);
+	va_start(va, f);
+	file_error_core(ms, error, f, va, 0);
+	va_end(va);
 }
 
 /*
@@ -146,21 +146,21 @@ void file_error(RzMagic *ms, int error, const char *f, ...) {
 /*VARARGS*/
 void file_magerror(RzMagic *ms, const char *f, ...) {
 	va_list va;
-	va_start (va, f);
-	file_error_core (ms, 0, f, va, ms->line);
-	va_end (va);
+	va_start(va, f);
+	file_error_core(ms, 0, f, va, ms->line);
+	va_end(va);
 }
 
 void file_oomem(RzMagic *ms, size_t len) {
-	file_error (ms, errno, "cannot allocate %zu bytes", len);
+	file_error(ms, errno, "cannot allocate %zu bytes", len);
 }
 
 void file_badseek(RzMagic *ms) {
-	file_error (ms, errno, "error seeking");
+	file_error(ms, errno, "error seeking");
 }
 
 void file_badread(RzMagic *ms) {
-	file_error (ms, errno, "error reading");
+	file_error(ms, errno, "error reading");
 }
 
 int file_buffer(RzMagic *ms, int fd, const char *inname, const void *buf, size_t nb) {
@@ -171,13 +171,13 @@ int file_buffer(RzMagic *ms, int fd, const char *inname, const void *buf, size_t
 	mime = ms->flags & RZ_MAGIC_MIME;
 	if (nb == 0) {
 		if ((!mime || (mime & RZ_MAGIC_MIME_TYPE)) &&
-			file_printf (ms, mime ? "application/x-empty" : "empty") == -1) {
+			file_printf(ms, mime ? "application/x-empty" : "empty") == -1) {
 			return -1;
 		}
 		return 1;
 	} else if (nb == 1) {
 		if ((!mime || (mime & RZ_MAGIC_MIME_TYPE)) &&
-			file_printf (ms, mime ? "application/octet-stream" : "very short file (no magic)") == -1) {
+			file_printf(ms, mime ? "application/octet-stream" : "very short file (no magic)") == -1) {
 			return -1;
 		}
 		return 1;
@@ -188,25 +188,25 @@ int file_buffer(RzMagic *ms, int fd, const char *inname, const void *buf, size_t
 	if ((ms->flags & RZ_MAGIC_NO_CHECK_COMPRESS) != 0 ||
 	    (m = file_zmagic(ms, fd, inname, buf, nb)) == 0) {
 #endif
-	    /* Check if we have a tar file */
-	    if ((ms->flags & RZ_MAGIC_NO_CHECK_TAR) != 0 ||
+	/* Check if we have a tar file */
+	if ((ms->flags & RZ_MAGIC_NO_CHECK_TAR) != 0 ||
 		(m = file_is_tar(ms, buf, nb)) == 0) {
 		/* try tests in /etc/magic (or surrogate magic file) */
 		if ((ms->flags & RZ_MAGIC_NO_CHECK_SOFT) != 0 ||
-		    (m = file_softmagic(ms, buf, nb, BINTEST)) == 0) {
-		    /* try known keywords, check whether it is ASCII */
-		    if ((ms->flags & RZ_MAGIC_NO_CHECK_ASCII) != 0 ||
-			(m = file_ascmagic(ms, buf, nb)) == 0) {
-			/* abandon hope, all ye who remain here */
-			if ((!mime || (mime & RZ_MAGIC_MIME_TYPE))) {
-		//		if (mime)
-					file_printf (ms, "application/octet-stream");
-				return -1;
+			(m = file_softmagic(ms, buf, nb, BINTEST)) == 0) {
+			/* try known keywords, check whether it is ASCII */
+			if ((ms->flags & RZ_MAGIC_NO_CHECK_ASCII) != 0 ||
+				(m = file_ascmagic(ms, buf, nb)) == 0) {
+				/* abandon hope, all ye who remain here */
+				if ((!mime || (mime & RZ_MAGIC_MIME_TYPE))) {
+					//		if (mime)
+					file_printf(ms, "application/octet-stream");
+					return -1;
+				}
+				m = 1;
 			}
-			m = 1;
-		    }
 		}
-	    }
+	}
 #if 0
 	}
 #endif
@@ -217,24 +217,24 @@ int file_reset(RzMagic *ms) {
 	if (!ms) {
 		return 0;
 	}
-	free (ms->o.buf);
+	free(ms->o.buf);
 	ms->o.buf = NULL;
 	ms->haderr = 0;
 	ms->error = -1;
 	if (!ms->mlist) {
-		file_error (ms, 0, "no magic files loaded! ");
+		file_error(ms, 0, "no magic files loaded! ");
 		return -1;
 	}
 	return 0;
 }
 
-#define OCTALIFY(n, o)	\
+#define OCTALIFY(n, o) \
 	/*LINTED*/ \
 	(void)(*(n)++ = '\\', \
-	*(n)++ = (((ut32)*(o) >> 6) & 3) + '0', \
-	*(n)++ = (((ut32)*(o) >> 3) & 7) + '0', \
-	*(n)++ = (((ut32)*(o) >> 0) & 7) + '0', \
-	(o)++)
+		*(n)++ = (((ut32) * (o) >> 6) & 3) + '0', \
+		*(n)++ = (((ut32) * (o) >> 3) & 7) + '0', \
+		*(n)++ = (((ut32) * (o) >> 0) & 7) + '0', \
+		(o)++)
 
 const char *file_getbuffer(RzMagic *ms) {
 	char *pbuf, *op, *np;
@@ -249,25 +249,25 @@ const char *file_getbuffer(RzMagic *ms) {
 	}
 
 	if (!ms->o.buf) {
-		eprintf ("ms->o.buf = NULL\n");
+		eprintf("ms->o.buf = NULL\n");
 		return NULL;
 	}
 
 	/* * 4 is for octal representation, + 1 is for NUL */
-	len = strlen (ms->o.buf);
+	len = strlen(ms->o.buf);
 	if (len > (SIZE_MAX - 1) / 4) {
-		file_oomem (ms, len);
+		file_oomem(ms, len);
 		return NULL;
 	}
 	psize = len * 4 + 1;
-	if (!(pbuf = realloc (ms->o.pbuf, psize))) {
-		file_oomem (ms, psize);
+	if (!(pbuf = realloc(ms->o.pbuf, psize))) {
+		file_oomem(ms, psize);
 		return NULL;
 	}
 	ms->o.pbuf = pbuf;
 
 #if 1
-//defined(HAVE_WCHAR_H) && defined(HAVE_MBRTOWC) && defined(HAVE_WCWIDTH)
+	//defined(HAVE_WCHAR_H) && defined(HAVE_MBRTOWC) && defined(HAVE_WCWIDTH)
 	{
 		mbstate_t state;
 		wchar_t nextchar;
@@ -282,9 +282,9 @@ const char *file_getbuffer(RzMagic *ms) {
 
 		while (op < eop) {
 			bytesconsumed = mbrtowc(&nextchar, op,
-			    (size_t)(eop - op), &state);
+				(size_t)(eop - op), &state);
 			if (bytesconsumed == (size_t)(-1) ||
-			    bytesconsumed == (size_t)(-2)) {
+				bytesconsumed == (size_t)(-2)) {
 				mb_conv = 0;
 				break;
 			}
@@ -295,7 +295,7 @@ const char *file_getbuffer(RzMagic *ms) {
 				np += bytesconsumed;
 			} else {
 				while (bytesconsumed-- > 0) {
-					OCTALIFY (np, op);
+					OCTALIFY(np, op);
 				}
 			}
 		}
@@ -308,10 +308,10 @@ const char *file_getbuffer(RzMagic *ms) {
 	}
 #endif
 	for (np = ms->o.pbuf, op = ms->o.buf; *op; op++) {
-		if (isprint ((ut8)*op)) {
-			*np++ = *op;	
+		if (isprint((ut8)*op)) {
+			*np++ = *op;
 		} else {
-			OCTALIFY (np, op);
+			OCTALIFY(np, op);
 		}
 	}
 	*np = '\0';
@@ -320,11 +320,10 @@ const char *file_getbuffer(RzMagic *ms) {
 
 int file_check_mem(RzMagic *ms, unsigned int level) {
 	if (level >= ms->c.len) {
-		size_t len = (ms->c.len += 20) * sizeof (*ms->c.li);
-		ms->c.li = (!ms->c.li) ? malloc (len) :
-		    realloc (ms->c.li, len);
+		size_t len = (ms->c.len += 20) * sizeof(*ms->c.li);
+		ms->c.li = (!ms->c.li) ? malloc(len) : realloc(ms->c.li, len);
 		if (!ms->c.li) {
-			file_oomem (ms, len);
+			file_oomem(ms, len);
 			return -1;
 		}
 	}

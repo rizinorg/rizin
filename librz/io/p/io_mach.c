@@ -8,7 +8,7 @@
 
 #if __APPLE__ && DEBUGGER
 
-static int __get_pid (RzIODesc *desc);
+static int __get_pid(RzIODesc *desc);
 #define EXCEPTION_PORT 0
 
 // NOTE: mach/mach_vm is not available for iOS
@@ -35,9 +35,9 @@ static int __get_pid (RzIODesc *desc);
 #include <errno.h>
 
 #define MACH_ERROR_STRING(ret) \
-	(mach_error_string (ret) ? mach_error_string (ret) : "(unknown)")
+	(mach_error_string(ret) ? mach_error_string(ret) : "(unknown)")
 
-#define RZ_MACH_MAGIC rz_str_hash ("mach")
+#define RZ_MACH_MAGIC rz_str_hash("mach")
 
 typedef struct {
 	task_t task;
@@ -68,20 +68,20 @@ static task_t task_for_pid_workaround(int pid) {
 	if (pid == -1) {
 		return MACH_PORT_NULL;
 	}
-	kr = processor_set_default (myhost, &psDefault);
+	kr = processor_set_default(myhost, &psDefault);
 	if (kr != KERN_SUCCESS) {
 		return MACH_PORT_NULL;
 	}
-	kr = host_processor_set_priv (myhost, psDefault, &psDefault_control);
+	kr = host_processor_set_priv(myhost, psDefault, &psDefault_control);
 	if (kr != KERN_SUCCESS) {
-//		eprintf ("host_processor_set_priv failed with error 0x%x\n", kr);
+		//		eprintf ("host_processor_set_priv failed with error 0x%x\n", kr);
 		//mach_error ("host_processor_set_priv",kr);
 		return MACH_PORT_NULL;
 	}
 	numTasks = 0;
-	kr = processor_set_tasks (psDefault_control, &tasks, &numTasks);
+	kr = processor_set_tasks(psDefault_control, &tasks, &numTasks);
 	if (kr != KERN_SUCCESS) {
-//		eprintf ("processor_set_tasks failed with error %x\n", kr);
+		//		eprintf ("processor_set_tasks failed with error %x\n", kr);
 		return MACH_PORT_NULL;
 	}
 	if (pid == 0) {
@@ -90,7 +90,7 @@ static task_t task_for_pid_workaround(int pid) {
 	}
 	for (i = 0; i < numTasks; i++) {
 		int pid2 = -1;
-		pid_for_task (i, &pid2);
+		pid_for_task(i, &pid2);
 		if (pid == pid2) {
 			return tasks[i];
 		}
@@ -100,7 +100,7 @@ static task_t task_for_pid_workaround(int pid) {
 
 static task_t task_for_pid_ios9pangu(int pid) {
 	task_t task = MACH_PORT_NULL;
-	host_get_special_port (mach_host_self (), HOST_LOCAL_NODE, 4, &task);
+	host_get_special_port(mach_host_self(), HOST_LOCAL_NODE, 4, &task);
 	return task;
 }
 
@@ -110,7 +110,7 @@ static task_t pid_to_task(RzIODesc *fd, int pid) {
 	static int old_pid = -1;
 	kern_return_t kr;
 
-	RzIODescData *iodd = fd? (RzIODescData *)fd->data: NULL;
+	RzIODescData *iodd = fd ? (RzIODescData *)fd->data : NULL;
 	RzIOMach *riom = NULL;
 	if (iodd) {
 		riom = iodd->data;
@@ -126,17 +126,17 @@ static task_t pid_to_task(RzIODesc *fd, int pid) {
 		}
 		//we changed the process pid so deallocate a ref from the old_task
 		//since we are going to get a new task
-		kr = mach_port_deallocate (mach_task_self (), old_task);
+		kr = mach_port_deallocate(mach_task_self(), old_task);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("pid_to_task: fail to deallocate port\n");
+			eprintf("pid_to_task: fail to deallocate port\n");
 			return 0;
 		}
 	}
-	int err = task_for_pid (mach_task_self (), (pid_t)pid, &task);
-	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
-		task = task_for_pid_workaround (pid);
+	int err = task_for_pid(mach_task_self(), (pid_t)pid, &task);
+	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID(task)) {
+		task = task_for_pid_workaround(pid);
 		if (task == MACH_PORT_NULL) {
-			task = task_for_pid_ios9pangu (pid);
+			task = task_for_pid_ios9pangu(pid);
 			if (task != MACH_PORT_NULL) {
 				//eprintf ("Failed to get task %d for pid %d.\n", (int)task, (int)pid);
 				//eprintf ("Missing priviledges? 0x%x: %s\n", err, MACH_ERROR_STRING (err));
@@ -151,8 +151,8 @@ static task_t pid_to_task(RzIODesc *fd, int pid) {
 
 static bool task_is_dead(RzIODesc *fd, int pid) {
 	unsigned int count = 0;
-	kern_return_t kr = mach_port_get_refs (mach_task_self (),
-		pid_to_task (fd, pid), MACH_PORT_RIGHT_SEND, &count);
+	kern_return_t kr = mach_port_get_refs(mach_task_self(),
+		pid_to_task(fd, pid), MACH_PORT_RIGHT_SEND, &count);
 	return (kr != KERN_SUCCESS || !count);
 }
 
@@ -161,12 +161,12 @@ static ut64 the_lower = UT64_MAX;
 static ut64 getNextValid(RzIO *io, RzIODesc *fd, ut64 addr) {
 	struct vm_region_submap_info_64 info;
 	vm_address_t address = MACH_VM_MIN_ADDRESS;
-	vm_size_t size = (vm_size_t) 0;
-	vm_size_t osize = (vm_size_t) 0;
+	vm_size_t size = (vm_size_t)0;
+	vm_size_t osize = (vm_size_t)0;
 	natural_t depth = 0;
 	kern_return_t kr;
-	int tid = __get_pid (fd);
-	task_t task = pid_to_task (fd, tid);
+	int tid = __get_pid(fd);
+	task_t task = pid_to_task(fd, tid);
 	ut64 lower = addr;
 #if __arm64__ || __aarch64__
 	size = osize = 16384; // acording to frida
@@ -174,15 +174,15 @@ static ut64 getNextValid(RzIO *io, RzIODesc *fd, ut64 addr) {
 	size = osize = 4096;
 #endif
 	if (the_lower != UT64_MAX) {
-		return RZ_MAX (addr, the_lower);
+		return RZ_MAX(addr, the_lower);
 	}
 
 	for (;;) {
 		mach_msg_type_number_t info_count;
 		info_count = VM_REGION_SUBMAP_INFO_COUNT_64;
-		memset (&info, 0, sizeof (info));
-		kr = vm_region_recurse_64 (task, &address, &size,
-			&depth, (vm_region_recurse_info_t) &info, &info_count);
+		memset(&info, 0, sizeof(info));
+		kr = vm_region_recurse_64(task, &address, &size,
+			&depth, (vm_region_recurse_info_t)&info, &info_count);
 		if (kr != KERN_SUCCESS) {
 			break;
 		}
@@ -217,13 +217,13 @@ static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, int len) {
 	if (!io || !desc || !buf || !dd) {
 		return -1;
 	}
-	if (dd ->magic != rz_str_hash ("mach")) {
+	if (dd->magic != rz_str_hash("mach")) {
 		return -1;
 	}
-	memset (buf, 0xff, len);
-	int pid = __get_pid (desc);
-	task_t task = pid_to_task (desc, pid);
-	if (task_is_dead (desc, pid)) {
+	memset(buf, 0xff, len);
+	int pid = __get_pid(desc);
+	task_t task = pid_to_task(desc, pid);
+	if (task_is_dead(desc, pid)) {
 		return -1;
 	}
 	if (pid == 0) {
@@ -231,14 +231,14 @@ static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, int len) {
 			return len;
 		}
 	}
-	copied = getNextValid (io, desc, io->off) - io->off;
+	copied = getNextValid(io, desc, io->off) - io->off;
 	if (copied < 0) {
 		copied = 0;
 	}
 	while (copied < len) {
-		blen = RZ_MIN ((len - copied), blocksize);
+		blen = RZ_MIN((len - copied), blocksize);
 		//blen = len;
-		err = vm_read_overwrite (task,
+		err = vm_read_overwrite(task,
 			(ut64)io->off + copied, blen,
 			(pointer_t)buf + copied, &size);
 		switch (err) {
@@ -247,8 +247,8 @@ static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, int len) {
 			break;
 		case KERN_INVALID_ADDRESS:
 			if (blocksize == 1) {
-				memset (buf+copied, 0xff, len-copied);
-				return size+copied;
+				memset(buf + copied, 0xff, len - copied);
+				return size + copied;
 			}
 			blocksize = 1;
 			blen = 1;
@@ -260,7 +260,7 @@ static int __read(RzIO *io, RzIODesc *desc, ut8 *buf, int len) {
 		}
 		if (size == 0) {
 			if (blocksize == 1) {
-				memset (buf + copied, 0xff, len - copied);
+				memset(buf + copied, 0xff, len - copied);
 				return len;
 			}
 			blocksize = 1;
@@ -279,37 +279,38 @@ static int tsk_getperm(RzIO *io, task_t task, vm_address_t addr) {
 	mach_msg_type_number_t info_count = VM_REGION_BASIC_INFO_COUNT_64;
 	vm_region_flavor_t flavor = VM_REGION_BASIC_INFO_64;
 	vm_region_basic_info_data_64_t info;
-	kr = vm_region_64 (task, &addr, &vmsize, flavor, (vm_region_info_t)&info, &info_count, &object);
+	kr = vm_region_64(task, &addr, &vmsize, flavor, (vm_region_info_t)&info, &info_count, &object);
 	return (kr != KERN_SUCCESS ? 0 : info.protection);
 }
 
 static int tsk_pagesize(RzIODesc *desc) {
-	int tid = __get_pid (desc);
-	task_t task = pid_to_task (desc, tid);
+	int tid = __get_pid(desc);
+	task_t task = pid_to_task(desc, tid);
 	static vm_size_t pagesize = 0;
 	return pagesize
 		? pagesize
-		: (host_page_size (task, &pagesize) == KERN_SUCCESS)
-			? pagesize : 4096;
+		: (host_page_size(task, &pagesize) == KERN_SUCCESS)
+		? pagesize
+		: 4096;
 }
 
 static vm_address_t tsk_getpagebase(RzIODesc *desc, ut64 addr) {
-	vm_address_t pagesize = tsk_pagesize (desc);
+	vm_address_t pagesize = tsk_pagesize(desc);
 	return (addr & ~(pagesize - 1));
 }
 
 static bool tsk_setperm(RzIO *io, task_t task, vm_address_t addr, int len, int perm) {
 	kern_return_t kr;
-	kr = vm_protect (task, addr, len, 0, perm);
+	kr = vm_protect(task, addr, len, 0, perm);
 	if (kr != KERN_SUCCESS) {
-		perror ("tsk_setperm");
+		perror("tsk_setperm");
 		return false;
 	}
 	return true;
 }
 
 static bool tsk_write(task_t task, vm_address_t addr, const ut8 *buf, int len) {
-	kern_return_t kr = vm_write (task, addr, (vm_offset_t)buf, (mach_msg_type_number_t)len);
+	kern_return_t kr = vm_write(task, addr, (vm_offset_t)buf, (mach_msg_type_number_t)len);
 	if (kr != KERN_SUCCESS) {
 		return false;
 	}
@@ -322,36 +323,35 @@ static int mach_write_at(RzIO *io, RzIODesc *desc, const void *buf, int len, ut6
 	vm_size_t pagesize;
 	vm_size_t total_size;
 	int operms = 0;
-	int pid = __get_pid (desc);
+	int pid = __get_pid(desc);
 	if (!desc || pid < 0) {
 		return 0;
 	}
-	task_t task = pid_to_task (desc, pid);
+	task_t task = pid_to_task(desc, pid);
 
-	if (len < 1 || task_is_dead (desc, task)) {
+	if (len < 1 || task_is_dead(desc, task)) {
 		return 0;
 	}
-	pageaddr = tsk_getpagebase (desc, addr);
-	pagesize = tsk_pagesize (desc);
+	pageaddr = tsk_getpagebase(desc, addr);
+	pagesize = tsk_pagesize(desc);
 	total_size = (len > pagesize)
 		? pagesize * (1 + (len / pagesize))
 		: pagesize;
-	if (tsk_write (task, vaddr, buf, len)) {
+	if (tsk_write(task, vaddr, buf, len)) {
 		return len;
 	}
-	operms = tsk_getperm (io, task, pageaddr);
-	if (!tsk_setperm (io, task, pageaddr, total_size, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY)) {
-		eprintf ("io.mach: Cannot set page perms for %d byte(s) at 0x%08"
-			PFMT64x"\n", (int)pagesize, (ut64)pageaddr);
+	operms = tsk_getperm(io, task, pageaddr);
+	if (!tsk_setperm(io, task, pageaddr, total_size, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY)) {
+		eprintf("io.mach: Cannot set page perms for %d byte(s) at 0x%08" PFMT64x "\n", (int)pagesize, (ut64)pageaddr);
 		return -1;
 	}
-	if (!tsk_write (task, vaddr, buf, len)) {
-		eprintf ("io.mach: Cannot write on memory\n");
+	if (!tsk_write(task, vaddr, buf, len)) {
+		eprintf("io.mach: Cannot write on memory\n");
 		len = -1;
 	}
 	if (operms) {
-		if (!tsk_setperm (io, task, pageaddr, total_size, operms)) {
-			eprintf ("io.mach: Cannot restore page perms\n");
+		if (!tsk_setperm(io, task, pageaddr, total_size, operms)) {
+			eprintf("io.mach: Cannot restore page perms\n");
 			return -1;
 		}
 	}
@@ -359,11 +359,11 @@ static int mach_write_at(RzIO *io, RzIODesc *desc, const void *buf, int len, ut6
 }
 
 static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int len) {
-	return mach_write_at (io, fd, buf, len, io->off);
+	return mach_write_at(io, fd, buf, len, io->off);
 }
 
 static bool __plugin_open(RzIO *io, const char *file, bool many) {
-	return (!strncmp (file, "attach://", 9) || !strncmp (file, "mach://", 7));
+	return (!strncmp(file, "attach://", 9) || !strncmp(file, "mach://", 7));
 }
 
 static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
@@ -373,62 +373,62 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 	char *pidpath, *endptr;
 	int pid;
 	task_t task;
-	if (!__plugin_open (io, file, false) && !__plugin_open (io, (const char *)&file[1], false)) {
+	if (!__plugin_open(io, file, false) && !__plugin_open(io, (const char *)&file[1], false)) {
 		return NULL;
 	}
 	pidfile = file + (file[0] == 'a' ? 9 : (file[0] == 's' ? 8 : 7));
-	pid = (int)strtol (pidfile, &endptr, 10);
+	pid = (int)strtol(pidfile, &endptr, 10);
 	if (endptr == pidfile || pid < 0) {
 		return NULL;
 	}
-	task = pid_to_task (NULL, pid);
+	task = pid_to_task(NULL, pid);
 	if (task == -1) {
 		return NULL;
 	}
 	if (!task) {
-		if (pid > 0 && !strncmp (file, "smach://", 8)) {
-			kill (pid, SIGKILL);
-			eprintf ("Child killed\n");
+		if (pid > 0 && !strncmp(file, "smach://", 8)) {
+			kill(pid, SIGKILL);
+			eprintf("Child killed\n");
 		}
 		switch (errno) {
 		case EPERM:
-			eprintf ("Operation not permitted\n");
+			eprintf("Operation not permitted\n");
 			break;
 		case EINVAL:
-			perror ("ptrace: Cannot attach");
-			eprintf ("Possibly unsigned rizin.\n");
-			eprintf ("ERRNO: %d (EINVAL)\n", errno);
+			perror("ptrace: Cannot attach");
+			eprintf("Possibly unsigned rizin.\n");
+			eprintf("ERRNO: %d (EINVAL)\n", errno);
 			break;
 		default:
-			eprintf ("unknown error in debug_attach\n");
+			eprintf("unknown error in debug_attach\n");
 			break;
 		}
 		return NULL;
 	}
-	RzIODescData *iodd = RZ_NEW0 (RzIODescData);
+	RzIODescData *iodd = RZ_NEW0(RzIODescData);
 	if (iodd) {
 		iodd->pid = pid;
 		iodd->tid = pid;
 		iodd->data = NULL;
 	}
-	riom = RZ_NEW0 (RzIOMach);
+	riom = RZ_NEW0(RzIOMach);
 	if (!riom) {
-		RZ_FREE (iodd);
+		RZ_FREE(iodd);
 		return NULL;
 	}
 	riom->task = task;
-	iodd->magic = rz_str_hash ("mach");
+	iodd->magic = rz_str_hash("mach");
 	iodd->data = riom;
 	// sleep 1s to get proper path (program name instead of ls) (racy)
 	pidpath = pid
-		? rz_sys_pid_to_path (pid)
-		: strdup ("kernel");
-	if (!strncmp (file, "smach://", 8)) {
-		ret = rz_io_desc_new (io, &rz_io_plugin_mach, &file[1],
-			       rw | RZ_PERM_X, mode, iodd);
+		? rz_sys_pid_to_path(pid)
+		: strdup("kernel");
+	if (!strncmp(file, "smach://", 8)) {
+		ret = rz_io_desc_new(io, &rz_io_plugin_mach, &file[1],
+			rw | RZ_PERM_X, mode, iodd);
 	} else {
-		ret = rz_io_desc_new (io, &rz_io_plugin_mach, file,
-			       rw | RZ_PERM_X, mode, iodd);
+		ret = rz_io_desc_new(io, &rz_io_plugin_mach, file,
+			rw | RZ_PERM_X, mode, iodd);
 	}
 	ret->name = pidpath;
 	return ret;
@@ -460,12 +460,12 @@ static int __close(RzIODesc *fd) {
 	if (iodd->magic != RZ_MACH_MAGIC) {
 		return false;
 	}
-	task_t task = pid_to_task (fd, iodd->pid);
-	kr = mach_port_deallocate (mach_task_self (), task);
+	task_t task = pid_to_task(fd, iodd->pid);
+	kr = mach_port_deallocate(mach_task_self(), task);
 	if (kr != KERN_SUCCESS) {
-		perror ("__close io_mach");
+		perror("__close io_mach");
 	}
-	RZ_FREE (fd->data);
+	RZ_FREE(fd->data);
 	return kr == KERN_SUCCESS;
 }
 
@@ -478,43 +478,43 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 
-	task_t task = pid_to_task (fd, iodd->tid);
+	task_t task = pid_to_task(fd, iodd->tid);
 	/* XXX ugly hack for testing purposes */
-	if (!strcmp (cmd, "")) {
+	if (!strcmp(cmd, "")) {
 		return NULL;
 	}
-	if (!strncmp (cmd, "perm", 4)) {
-		int perm = rz_str_rwx (cmd + 4);
+	if (!strncmp(cmd, "perm", 4)) {
+		int perm = rz_str_rwx(cmd + 4);
 		if (perm) {
-			int pagesize = tsk_pagesize (fd);
-			tsk_setperm (io, task, io->off, pagesize, perm);
+			int pagesize = tsk_pagesize(fd);
+			tsk_setperm(io, task, io->off, pagesize, perm);
 		} else {
-			eprintf ("Usage: =!perm [rwx]\n");
+			eprintf("Usage: =!perm [rwx]\n");
 		}
 		return NULL;
 	}
-	if (!strncmp (cmd, "pid", 3)) {
+	if (!strncmp(cmd, "pid", 3)) {
 		RzIODescData *iodd = fd->data;
 		RzIOMach *riom = iodd->data;
 		const char *pidstr = cmd + 3;
 		int pid = -1;
 		if (*pidstr) {
-			pid = __get_pid (fd);
+			pid = __get_pid(fd);
 			//return NULL;
 		} else {
-			eprintf ("%d\n", iodd->pid);
+			eprintf("%d\n", iodd->pid);
 			return NULL;
 		}
-		if (!strcmp (pidstr, "0")) {
+		if (!strcmp(pidstr, "0")) {
 			pid = 0;
 		} else {
-			pid = atoi (pidstr);
+			pid = atoi(pidstr);
 			if (!pid) {
 				pid = -1;
 			}
 		}
 		if (pid != -1) {
-			task_t task = pid_to_task (fd, pid);
+			task_t task = pid_to_task(fd, pid);
 			if (task != -1) {
 				riom->task = task;
 				iodd->pid = pid;
@@ -522,14 +522,14 @@ static char *__system(RzIO *io, RzIODesc *fd, const char *cmd) {
 				return NULL;
 			}
 		}
-		eprintf ("io_mach_system: Invalid pid %d\n", pid);
+		eprintf("io_mach_system: Invalid pid %d\n", pid);
 	} else {
-		eprintf ("Try: '=!pid' or '=!perm'\n");
+		eprintf("Try: '=!pid' or '=!perm'\n");
 	}
 	return NULL;
 }
 
-static int __get_pid (RzIODesc *desc) {
+static int __get_pid(RzIODesc *desc) {
 	// dupe for ? rz_io_desc_get_pid (desc);
 	if (!desc || !desc->data) {
 		return -1;

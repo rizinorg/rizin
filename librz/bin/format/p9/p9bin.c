@@ -4,7 +4,7 @@
 #include <rz_asm.h>
 
 int rz_bin_p9_get_arch(RzBuffer *b, int *bits, int *big_endian) {
-	st32 a = (st32) rz_buf_read_be32_at (b, 0);
+	st32 a = (st32)rz_buf_read_be32_at(b, 0);
 	if (bits) {
 		*bits = 32;
 	}
@@ -40,7 +40,7 @@ int rz_bin_p9_get_arch(RzBuffer *b, int *bits, int *big_endian) {
 		return RZ_ASM_ARCH_ARM;
 	case Q_MAGIC:
 		return RZ_ASM_ARCH_PPC;
-	//case A_MAGIC: // 68020
+		//case A_MAGIC: // 68020
 	}
 	return 0;
 }

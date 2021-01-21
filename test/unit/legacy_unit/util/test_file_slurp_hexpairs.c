@@ -6,9 +6,10 @@ int main(int argc, char *argv[]) {
 	ut8 *ret = rz_file_slurp_hexpairs("hexpairs.txt", &size);
 
 	if (ret) {
-		for (i=0;i<size;i++)
+		for (i = 0; i < size; i++)
 			putchar(ret[i]);
-	} else printf("Error processing the file.\n");
+	} else
+		printf("Error processing the file.\n");
 
 	return 0;
 }

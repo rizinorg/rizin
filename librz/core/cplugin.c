@@ -20,29 +20,29 @@ RZ_API int rz_core_plugin_fini(RzCmd *cmd) {
 	}
 	rz_list_foreach (cmd->plist, iter, plugin) {
 		if (plugin && plugin->fini) {
-			plugin->fini (cmd, NULL);
+			plugin->fini(cmd, NULL);
 		}
 	}
 	/* empty the list */
-	rz_list_free (cmd->plist);
+	rz_list_free(cmd->plist);
 	cmd->plist = NULL;
 	return true;
 }
 
 RZ_API int rz_core_plugin_add(RzCmd *cmd, RzCorePlugin *plugin) {
-	if (!cmd || (plugin && plugin->init && !plugin->init (cmd, NULL))) {
+	if (!cmd || (plugin && plugin->init && !plugin->init(cmd, NULL))) {
 		return false;
 	}
-	rz_list_append (cmd->plist, plugin);
+	rz_list_append(cmd->plist, plugin);
 	return true;
 }
 
 RZ_API int rz_core_plugin_init(RzCmd *cmd) {
 	int i;
-	cmd->plist = rz_list_newf (NULL); // memleak or dblfree
+	cmd->plist = rz_list_newf(NULL); // memleak or dblfree
 	for (i = 0; cmd_static_plugins[i]; i++) {
-		if (!rz_core_plugin_add (cmd, cmd_static_plugins[i])) {
-			eprintf ("Error loading cmd plugin\n");
+		if (!rz_core_plugin_add(cmd, cmd_static_plugins[i])) {
+			eprintf("Error loading cmd plugin\n");
 			return false;
 		}
 	}
@@ -53,7 +53,7 @@ RZ_API int rz_core_plugin_check(RzCmd *cmd, const char *a0) {
 	RzListIter *iter;
 	RzCorePlugin *cp;
 	rz_list_foreach (cmd->plist, iter, cp) {
-		if (cp->call (NULL, a0)) {
+		if (cp->call(NULL, a0)) {
 			return true;
 		}
 	}

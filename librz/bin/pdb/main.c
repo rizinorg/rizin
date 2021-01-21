@@ -17,22 +17,21 @@ static void print_usage(void) {
 int main(int argc, char **argv) {
 	RzPdb pdb;
 
-	static struct option long_options[] =
-	{
-		{"pdb_file", required_argument, 0, 'f'},
-		{"print_types", no_argument, 0, 't'},
-		{"print_globals", required_argument, 0, 'g'},
-		{"help", no_argument, 0, 'h'},
-		{0, 0, 0, 0}
+	static struct option long_options[] = {
+		{ "pdb_file", required_argument, 0, 'f' },
+		{ "print_types", no_argument, 0, 't' },
+		{ "print_globals", required_argument, 0, 'g' },
+		{ "help", no_argument, 0, 'h' },
+		{ 0, 0, 0, 0 }
 	};
 
 	int option_index = 0;
 	int c = 0;
 	char *pdb_file = 0;
 
-	while(1) {
-		c = getopt_long (argc, argv, ":f:tg:h",
-						 long_options, &option_index);
+	while (1) {
+		c = getopt_long(argc, argv, ":f:tg:h",
+			long_options, &option_index);
 
 		if (c == -1)
 			break;
@@ -40,7 +39,7 @@ int main(int argc, char **argv) {
 		switch (c) {
 		case 'f':
 			pdb_file = optarg;
-			strcpy (&pdb.file_name, optarg);
+			strcpy(&pdb.file_name, optarg);
 			if (!init_pdb_parser(&pdb)) {
 				printf("initialization error of pdb parser\n");
 				return 0;

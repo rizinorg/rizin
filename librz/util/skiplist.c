@@ -11,31 +11,31 @@
 
 #define SKIPLIST_MAX_DEPTH 31
 
-static RzSkipListNode *rz_skiplist_node_new (void *data, int level) {
-	RzSkipListNode *res = RZ_NEW0 (RzSkipListNode);
+static RzSkipListNode *rz_skiplist_node_new(void *data, int level) {
+	RzSkipListNode *res = RZ_NEW0(RzSkipListNode);
 	if (!res) {
 		return NULL;
 	}
-	res->forward = RZ_NEWS0 (RzSkipListNode *, level + 1);
-	if (!res->forward)  {
-		free (res);
+	res->forward = RZ_NEWS0(RzSkipListNode *, level + 1);
+	if (!res->forward) {
+		free(res);
 		return NULL;
 	}
 	res->data = data;
 	return res;
 }
 
-static void rz_skiplist_node_free (RzSkipList *list, RzSkipListNode *node) {
+static void rz_skiplist_node_free(RzSkipList *list, RzSkipListNode *node) {
 	if (node) {
 		if (list->freefn && node->data) {
-			list->freefn (node->data);
+			list->freefn(node->data);
 		}
-		free (node->forward);
-		free (node);
+		free(node->forward);
+		free(node);
 	}
 }
 
-static void init_head (RzSkipListNode *head) {
+static void init_head(RzSkipListNode *head) {
 	int i;
 	for (i = 0; i <= SKIPLIST_MAX_DEPTH; i++) {
 		head->forward[i] = head;
@@ -54,8 +54,7 @@ static RzSkipListNode *find_insertpoint(RzSkipList *list, void *data, RzSkipList
 
 	for (i = list->list_level; i >= 0; i--) {
 		if (by_data) {
-			while (x->forward[i] != list->head
-				&& list->compare (x->forward[i]->data, data) < 0) {
+			while (x->forward[i] != list->head && list->compare(x->forward[i]->data, data) < 0) {
 				x = x->forward[i];
 			}
 		} else {
@@ -71,12 +70,12 @@ static RzSkipListNode *find_insertpoint(RzSkipList *list, void *data, RzSkipList
 	return x;
 }
 
-static bool delete_element(RzSkipList* list, void* data, bool by_data) {
+static bool delete_element(RzSkipList *list, void *data, bool by_data) {
 	int i;
 	RzSkipListNode *update[SKIPLIST_MAX_DEPTH + 1], *x;
 
 	// locate delete points in the lists of all levels
-	x = find_insertpoint (list, data, update, by_data);
+	x = find_insertpoint(list, data, update, by_data);
 	// do nothing if the element is not present in the list
 	if (x == list->head || list->compare(x->data, data) != 0) {
 		return false;
@@ -90,7 +89,7 @@ static bool delete_element(RzSkipList* list, void* data, bool by_data) {
 		}
 		update[i]->forward[i] = x->forward[i];
 	}
-	rz_skiplist_node_free (list, x);
+	rz_skiplist_node_free(list, x);
 
 	// update the level of the list
 	while ((list->list_level > 0) &&
@@ -105,19 +104,19 @@ static bool delete_element(RzSkipList* list, void* data, bool by_data) {
 // a function that returns 0 on equality between two elements, and -1 or 1
 // when unequal (for sorting).
 // Returns a new heap-allocated skiplist.
-RZ_API RzSkipList* rz_skiplist_new(RzListFree freefn, RzListComparator comparefn) {
-	RzSkipList *list = RZ_NEW0 (RzSkipList);
+RZ_API RzSkipList *rz_skiplist_new(RzListFree freefn, RzListComparator comparefn) {
+	RzSkipList *list = RZ_NEW0(RzSkipList);
 	if (!list) {
 		return NULL;
 	}
 
-	list->head = rz_skiplist_node_new (NULL, SKIPLIST_MAX_DEPTH);
+	list->head = rz_skiplist_node_new(NULL, SKIPLIST_MAX_DEPTH);
 	if (!list->head) {
-		free (list);
+		free(list);
 		return NULL;
 	}
 
-	init_head (list->head);
+	init_head(list->head);
 	list->list_level = 0;
 	list->size = 0;
 	list->freefn = freefn;
@@ -135,9 +134,9 @@ RZ_API void rz_skiplist_purge(RzSkipList *list) {
 	while (n != list->head) {
 		RzSkipListNode *x = n;
 		n = n->forward[0];
-		rz_skiplist_node_free (list, x);
+		rz_skiplist_node_free(list, x);
 	}
-	init_head (list->head);
+	init_head(list->head);
 	list->size = 0;
 	list->list_level = 0;
 }
@@ -147,27 +146,27 @@ RZ_API void rz_skiplist_free(RzSkipList *list) {
 	if (!list) {
 		return;
 	}
-	rz_skiplist_purge (list);
-	rz_skiplist_node_free (list, list->head);
-	free (list);
+	rz_skiplist_purge(list);
+	rz_skiplist_node_free(list, list->head);
+	free(list);
 }
 
 // Inserts an element to the skiplist, and returns a pointer to the element's
 // node.
-RZ_API RzSkipListNode* rz_skiplist_insert(RzSkipList* list, void* data) {
+RZ_API RzSkipListNode *rz_skiplist_insert(RzSkipList *list, void *data) {
 	RzSkipListNode *update[SKIPLIST_MAX_DEPTH + 1];
 	RzSkipListNode *x;
 	int i, x_level, new_level;
 
 	// locate insertion points in the lists of all levels
-	x = find_insertpoint (list, data, update, true);
+	x = find_insertpoint(list, data, update, true);
 	// check whether the element is already in the list
 	if (x != list->head && !list->compare(x->data, data)) {
 		return x;
 	}
 
 	// randomly choose the number of levels the new node will be put in
-	for (x_level = 0; rand () < RAND_MAX / 2 && x_level < SKIPLIST_MAX_DEPTH; x_level++) {
+	for (x_level = 0; rand() < RAND_MAX / 2 && x_level < SKIPLIST_MAX_DEPTH; x_level++) {
 		;
 	}
 
@@ -181,7 +180,7 @@ RZ_API RzSkipListNode* rz_skiplist_insert(RzSkipList* list, void* data) {
 		new_level = x_level;
 	}
 
-	x = rz_skiplist_node_new (data, x_level);
+	x = rz_skiplist_node_new(data, x_level);
 	if (!x) {
 		return NULL;
 	}
@@ -199,35 +198,34 @@ RZ_API RzSkipListNode* rz_skiplist_insert(RzSkipList* list, void* data) {
 }
 
 // Delete node with data as it's payload.
-RZ_API bool rz_skiplist_delete(RzSkipList* list, void* data) {
-	return delete_element (list, data, true);
+RZ_API bool rz_skiplist_delete(RzSkipList *list, void *data) {
+	return delete_element(list, data, true);
 }
 
 // Delete the given RzSkipListNode from the skiplist
 RZ_API bool rz_skiplist_delete_node(RzSkipList *list, RzSkipListNode *node) {
-	return delete_element (list, node, false);
+	return delete_element(list, node, false);
 }
 
-RZ_API RzSkipListNode* rz_skiplist_find(RzSkipList* list, void* data) {
-	RzSkipListNode* x = find_insertpoint (list, data, NULL, true);
-	if (x != list->head && list->compare (x->data, data) == 0) {
+RZ_API RzSkipListNode *rz_skiplist_find(RzSkipList *list, void *data) {
+	RzSkipListNode *x = find_insertpoint(list, data, NULL, true);
+	if (x != list->head && list->compare(x->data, data) == 0) {
 		return x;
 	}
 	return NULL;
 }
 
-RZ_API RzSkipListNode* rz_skiplist_find_geq(RzSkipList* list, void* data) {
-	RzSkipListNode* x = find_insertpoint (list, data, NULL, true);
+RZ_API RzSkipListNode *rz_skiplist_find_geq(RzSkipList *list, void *data) {
+	RzSkipListNode *x = find_insertpoint(list, data, NULL, true);
 	return x != list->head ? x : NULL;
 }
 
-RZ_API RzSkipListNode* rz_skiplist_find_leq(RzSkipList* list, void* data) {
+RZ_API RzSkipListNode *rz_skiplist_find_leq(RzSkipList *list, void *data) {
 	RzSkipListNode *x = list->head;
 	int i;
 
 	for (i = list->list_level; i >= 0; i--) {
-		while (x->forward[i] != list->head 
-			&& list->compare (x->forward[i]->data, data) <= 0) {
+		while (x->forward[i] != list->head && list->compare(x->forward[i]->data, data) <= 0) {
 			x = x->forward[i];
 		}
 	}
@@ -240,10 +238,10 @@ RZ_API void rz_skiplist_join(RzSkipList *l1, RzSkipList *l2) {
 	void *data;
 
 	rz_skiplist_foreach (l2, it, data) {
-		rz_skiplist_insert (l1, data);
+		rz_skiplist_insert(l1, data);
 	}
 
-	rz_skiplist_purge (l2);
+	rz_skiplist_purge(l2);
 }
 
 // Returns the first data element in the list, if present, NULL otherwise
@@ -272,14 +270,13 @@ RZ_API void *rz_skiplist_get_n(RzSkipList *list, int n) {
 	return NULL;
 }
 
-
-RZ_API void* rz_skiplist_get_geq(RzSkipList* list, void* data) {
-	RzSkipListNode *x = rz_skiplist_find_geq (list, data);
+RZ_API void *rz_skiplist_get_geq(RzSkipList *list, void *data) {
+	RzSkipListNode *x = rz_skiplist_find_geq(list, data);
 	return x ? x->data : NULL;
 }
 
-RZ_API void* rz_skiplist_get_leq(RzSkipList* list, void* data) {
-	RzSkipListNode *x = rz_skiplist_find_leq (list, data);
+RZ_API void *rz_skiplist_get_leq(RzSkipList *list, void *data) {
+	RzSkipListNode *x = rz_skiplist_find_leq(list, data);
 	return x ? x->data : NULL;
 }
 
@@ -293,12 +290,12 @@ RZ_API bool rz_skiplist_empty(RzSkipList *list) {
 // NOTE: the data will be shared between the two lists. The user of this
 //       function should choose which list will "own" the data pointers.
 RZ_API RzList *rz_skiplist_to_list(RzSkipList *list) {
-	RzList *res = rz_list_new ();
+	RzList *res = rz_list_new();
 	RzSkipListNode *n;
 	void *data;
 
 	rz_skiplist_foreach (list, n, data) {
-		rz_list_append (res, data);
+		rz_list_append(res, data);
 	}
 
 	return res;

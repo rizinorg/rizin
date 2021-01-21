@@ -25,60 +25,60 @@ void parse_gdata_stream(void *stream, RZ_STREAM_FILE *stream_file) {
 	unsigned short len = 0;
 	unsigned short leaf_type = 0;
 	char *data = 0;
-	SGDATAStream *data_stream = (SGDATAStream *) stream;
+	SGDATAStream *data_stream = (SGDATAStream *)stream;
 	SGlobal *global = 0;
 
-	data_stream->globals_list = rz_list_new ();
+	data_stream->globals_list = rz_list_new();
 	while (1) {
-		stream_file_read (stream_file, 2, (char *)&len);
+		stream_file_read(stream_file, 2, (char *)&len);
 		if (len == 0) {
 			break;
 		}
-		data = (char *) malloc (len);
+		data = (char *)malloc(len);
 		if (!data) {
 			return;
 		}
-		stream_file_read (stream_file, len, data);
+		stream_file_read(stream_file, len, data);
 
-		leaf_type = *(unsigned short *) (data);
+		leaf_type = *(unsigned short *)(data);
 		if ((leaf_type == 0x110E) || (leaf_type == 0x1009)) {
-			global = (SGlobal *) malloc(sizeof(SGlobal));
+			global = (SGlobal *)malloc(sizeof(SGlobal));
 			if (!global) {
-				free (data);
+				free(data);
 				return;
 			}
 			global->leaf_type = leaf_type;
-			parse_global (data + 2, len, global);
-			rz_list_append (data_stream->globals_list, global);
+			parse_global(data + 2, len, global);
+			rz_list_append(data_stream->globals_list, global);
 		}
-		free (data);
+		free(data);
 	}
 
 	// TODO: for more fast access
-//	for g in self.globals:
-//        if not hasattr(g, 'symtype'): continue
-//        if g.symtype == 0:
-//            if g.name.startswith("_"):
-//                self.vars[g.name[1:]] = g
-//            else:
-//                self.vars[g.name] = g
-//        elif g.symtype == 2:
-//            self.funcs[g.name] = g
+	//	for g in self.globals:
+	//        if not hasattr(g, 'symtype'): continue
+	//        if g.symtype == 0:
+	//            if g.name.startswith("_"):
+	//                self.vars[g.name[1:]] = g
+	//            else:
+	//                self.vars[g.name] = g
+	//        elif g.symtype == 2:
+	//            self.funcs[g.name] = g
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 void free_gdata_stream(void *stream) {
-	SGDATAStream *data_stream = (SGDATAStream *) stream;
+	SGDATAStream *data_stream = (SGDATAStream *)stream;
 	SGlobal *global = 0;
 	RzListIter *it = 0;
 
 	it = rz_list_iterator(data_stream->globals_list);
 	while (rz_list_iter_next(it)) {
-		global = (SGlobal *) rz_list_iter_get(it);
+		global = (SGlobal *)rz_list_iter_get(it);
 		if (global->name.name) {
-			free (global->name.name);
+			free(global->name.name);
 		}
-		free (global);
+		free(global);
 	}
-	rz_list_free (data_stream->globals_list);
+	rz_list_free(data_stream->globals_list);
 }

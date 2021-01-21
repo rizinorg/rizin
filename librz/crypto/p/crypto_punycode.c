@@ -16,24 +16,24 @@ static int punycode_get_key_size(RzCrypto *cry) {
 }
 
 static bool punycode_use(const char *algo) {
-	return !strcmp (algo, "punycode");
+	return !strcmp(algo, "punycode");
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	char *obuf;
 	int olen;
 	if (flag) {
-		obuf = rz_punycode_decode ((const char *)buf, len, &olen);
+		obuf = rz_punycode_decode((const char *)buf, len, &olen);
 	} else {
-		obuf = rz_punycode_encode (buf, len, &olen);
+		obuf = rz_punycode_encode(buf, len, &olen);
 	}
-	rz_crypto_append (cry, (ut8*)obuf, olen);
-	free (obuf);
+	rz_crypto_append(cry, (ut8 *)obuf, olen);
+	free(obuf);
 	return true;
 }
 
-static bool final(RzCrypto *cry, const ut8* buf, int len) {
-	return update (cry, buf, len);
+static bool final(RzCrypto *cry, const ut8 *buf, int len) {
+	return update(cry, buf, len);
 }
 
 RzCryptoPlugin rz_crypto_plugin_punycode = {

@@ -8,15 +8,15 @@
 
 #define ARC_REG_ILINK1 0x1d
 #define ARC_REG_ILINK2 0x1e
-#define ARC_REG_BLINK 0x1f
-#define ARC_REG_LIMM 0x3e
-#define ARC_REG_PCL 0x3f
+#define ARC_REG_BLINK  0x1f
+#define ARC_REG_LIMM   0x3e
+#define ARC_REG_PCL    0x3f
 
 /* the CPU fields that we decode get stored in this struct */
 typedef struct arc_fields_t {
-	ut8 opcode;    /* major opcode */
+	ut8 opcode; /* major opcode */
 	ut8 subopcode; /* sub opcode */
-	ut8 format;    /* operand format */
+	ut8 format; /* operand format */
 	ut8 format2;
 	ut8 cond;
 	ut16 a; /* destination register */
@@ -26,14 +26,14 @@ typedef struct arc_fields_t {
 	ut8 mode_zz;
 	ut8 mode_m;
 	ut8 mode_n; /* Delay slot flag */
-	st64 imm;   /* data stored in the opcode */
-	st64 limm;  /* data stored immediately following the opcode */
+	st64 imm; /* data stored in the opcode */
+	st64 limm; /* data stored immediately following the opcode */
 } arc_fields;
 
 static void arccompact_dump_fields(ut64 addr, ut32 words[2], arc_fields *f) {
 #if DEBUG
 	/* Quick and dirty debug print */
-	eprintf ("DEBUG: 0x%04llx: %08x op=0x%x subop=0x%x format=0x%x fields.a=0x%x fields.b=0x%x fields.c=0x%x imm=%i limm=%lli\n",
+	eprintf("DEBUG: 0x%04llx: %08x op=0x%x subop=0x%x format=0x%x fields.a=0x%x fields.b=0x%x fields.c=0x%x imm=%i limm=%lli\n",
 		addr, words[0], f->opcode, f->subopcode, f->format, f->a, f->b, f->c, f->imm, f->limm);
 #endif
 }
@@ -57,14 +57,14 @@ static int sign_ext(int bits, int imm) {
 	return imm;
 }
 
-#define SIGN_EXT_S7(imm) sign_ext (7, imm);
-#define SIGN_EXT_S8(imm) sign_ext (8, imm);
-#define SIGN_EXT_S9(imm) sign_ext (9, imm);
-#define SIGN_EXT_S10(imm) sign_ext (10, imm);
-#define SIGN_EXT_S12(imm) sign_ext (12, imm);
-#define SIGN_EXT_S13(imm) sign_ext (13, imm);
-#define SIGN_EXT_S21(imm) sign_ext (21, imm);
-#define SIGN_EXT_S25(imm) sign_ext (25, imm);
+#define SIGN_EXT_S7(imm)  sign_ext(7, imm);
+#define SIGN_EXT_S8(imm)  sign_ext(8, imm);
+#define SIGN_EXT_S9(imm)  sign_ext(9, imm);
+#define SIGN_EXT_S10(imm) sign_ext(10, imm);
+#define SIGN_EXT_S12(imm) sign_ext(12, imm);
+#define SIGN_EXT_S13(imm) sign_ext(13, imm);
+#define SIGN_EXT_S21(imm) sign_ext(21, imm);
+#define SIGN_EXT_S25(imm) sign_ext(25, imm);
 
 static int map_cond2rizin(ut8 cond) {
 	switch (cond) {
@@ -102,12 +102,12 @@ static void arcompact_jump(RzAnalysisOp *op, ut64 addr, ut64 jump, ut8 delay) {
 }
 
 static void arcompact_jump_cond(RzAnalysisOp *op, ut64 addr, ut64 jump, ut8 delay, ut8 cond) {
-	arcompact_jump (op, addr, jump, delay);
-	op->cond = map_cond2rizin (cond);
+	arcompact_jump(op, addr, jump, delay);
+	op->cond = map_cond2rizin(cond);
 }
 
 static void arcompact_branch(RzAnalysisOp *op, ut64 addr, st64 offset, ut8 delay) {
-	arcompact_jump (op, addr, (addr & ~3) + offset, delay);
+	arcompact_jump(op, addr, (addr & ~3) + offset, delay);
 }
 
 static void map_zz2refptr(RzAnalysisOp *op, ut8 mode_zz) {
@@ -148,7 +148,7 @@ static int arcompact_genops_jmp(RzAnalysisOp *op, ut64 addr, arc_fields *f, ut64
 		if (f->c == ARC_REG_LIMM) {
 			/* limm */
 			op->type = basic_type;
-			arcompact_jump (op, addr, f->limm, f->mode_n);
+			arcompact_jump(op, addr, f->limm, f->mode_n);
 			return op->size;
 		}
 		if (f->c == ARC_REG_ILINK1 || f->c == ARC_REG_ILINK2 || f->c == ARC_REG_BLINK) {
@@ -162,37 +162,37 @@ static int arcompact_genops_jmp(RzAnalysisOp *op, ut64 addr, arc_fields *f, ut64
 		return op->size;
 	case 1: /* unconditional jumps via u6 imm */
 		op->type = basic_type;
-		arcompact_jump (op, addr, f->c, f->mode_n);
+		arcompact_jump(op, addr, f->c, f->mode_n);
 		return op->size;
 	case 2: /* unconditional jumps via s12 imm */
 		op->type = basic_type;
 		f->imm = (f->a << 6 | f->c);
-		f->imm = SIGN_EXT_S12 (f->imm);
-		arcompact_jump (op, addr, f->imm, f->mode_n);
+		f->imm = SIGN_EXT_S12(f->imm);
+		arcompact_jump(op, addr, f->imm, f->mode_n);
 		return op->size;
 	case 3: /* conditional jumps */
 		if (f->mode_m == 0) {
 			if (f->c == ARC_REG_LIMM) {
 				op->type = type_cjmp;
-				arcompact_jump_cond (op, addr, f->limm, f->mode_n, f->cond);
+				arcompact_jump_cond(op, addr, f->limm, f->mode_n, f->cond);
 				return op->size;
 			}
 			if (f->c == ARC_REG_ILINK1 || f->c == ARC_REG_ILINK2 || f->c == ARC_REG_BLINK) {
 				/* ilink1, ilink2, blink */
 				/* Note: not valid for basic_type == CALL */
 				op->type = RZ_ANALYSIS_OP_TYPE_CRET;
-				op->cond = map_cond2rizin (f->cond);
+				op->cond = map_cond2rizin(f->cond);
 				op->delay = f->mode_n;
 				return op->size;
 			}
 
-			op->cond = map_cond2rizin (f->cond);
+			op->cond = map_cond2rizin(f->cond);
 			op->type = type_ucjmp;
 			return op->size;
 		}
 
 		op->type = type_cjmp;
-		arcompact_jump_cond (op, addr, f->c, f->mode_n, f->cond);
+		arcompact_jump_cond(op, addr, f->c, f->mode_n, f->cond);
 		return op->size;
 	}
 
@@ -201,7 +201,7 @@ static int arcompact_genops_jmp(RzAnalysisOp *op, ut64 addr, arc_fields *f, ut64
 }
 
 static int arcompact_genops(RzAnalysisOp *op, ut64 addr, ut32 words[2]) {
-	arc_fields fields = {0};
+	arc_fields fields = { 0 };
 
 	fields.format = (words[0] & 0x00c00000) >> 22;
 	fields.subopcode = (words[0] & 0x003f0000) >> 16;
@@ -231,7 +231,7 @@ static int arcompact_genops(RzAnalysisOp *op, ut64 addr, ut32 words[2]) {
 		fields.imm = fields.c;
 	} else if (fields.format == 2) {
 		/* REG_S12IMM */
-		fields.imm = SIGN_EXT_S12 (fields.c | fields.a << 6);
+		fields.imm = SIGN_EXT_S12(fields.c | fields.a << 6);
 	}
 
 	switch (fields.subopcode) {
@@ -276,10 +276,10 @@ static int arcompact_genops(RzAnalysisOp *op, ut64 addr, ut32 words[2]) {
 	case 0x0a: /* move */
 		if (fields.format == 2) {
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
-			op->val = SIGN_EXT_S12 (fields.a << 6 | fields.c);
+			op->val = SIGN_EXT_S12(fields.a << 6 | fields.c);
 		} else if (fields.format == 3) {
 			fields.cond = fields.a & 0x1f;
-			op->cond = map_cond2rizin (fields.cond);
+			op->cond = map_cond2rizin(fields.cond);
 			op->type = RZ_ANALYSIS_OP_TYPE_CMOV;
 			if ((fields.a & 0x20)) {
 				/* its a move from imm u6 */
@@ -307,14 +307,14 @@ static int arcompact_genops(RzAnalysisOp *op, ut64 addr, ut32 words[2]) {
 	/* fall through */
 	case 0x20: /* Jump */
 		fields.mode_m = (words[0] & 0x20) >> 5;
-		arcompact_genops_jmp (op, addr, &fields, RZ_ANALYSIS_OP_TYPE_JMP);
+		arcompact_genops_jmp(op, addr, &fields, RZ_ANALYSIS_OP_TYPE_JMP);
 		break;
 	case 0x23: /* jump and link with delay slot */
 		fields.mode_n = 1;
 	/* fall through */
 	case 0x22: /* jump and link */
 		fields.mode_m = (words[0] & 0x20) >> 5;
-		arcompact_genops_jmp (op, addr, &fields, RZ_ANALYSIS_OP_TYPE_CALL);
+		arcompact_genops_jmp(op, addr, &fields, RZ_ANALYSIS_OP_TYPE_CALL);
 		break;
 	case 0x1e: /* Reserved */
 	case 0x1f: /* Reserved */
@@ -340,7 +340,7 @@ static int arcompact_genops(RzAnalysisOp *op, ut64 addr, ut32 words[2]) {
 		/* TODO: describe it to rizin better? */
 		switch (fields.format) {
 		case 2: /* Loop Set Up (Unconditional) */
-			fields.imm = SIGN_EXT_S13 ((fields.c | (fields.a << 6)) << 1);
+			fields.imm = SIGN_EXT_S13((fields.c | (fields.a << 6)) << 1);
 			op->jump = (addr & ~3) + fields.imm;
 			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 			op->fail = addr + op->size;
@@ -348,7 +348,7 @@ static int arcompact_genops(RzAnalysisOp *op, ut64 addr, ut32 words[2]) {
 		case 3: /* Loop Set Up (Conditional) */
 			fields.imm = fields.c << 1;
 			fields.cond = fields.a & 0x1f;
-			op->cond = map_cond2rizin (fields.a & 0x1f);
+			op->cond = map_cond2rizin(fields.a & 0x1f);
 			op->jump = (addr & ~3) + fields.imm;
 			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 			op->fail = addr + op->size;
@@ -441,7 +441,7 @@ static int arcompact_genops(RzAnalysisOp *op, ut64 addr, ut32 words[2]) {
 		break;
 	}
 
-	arccompact_dump_fields (addr, words, &fields);
+	arccompact_dump_fields(addr, words, &fields);
 	return op->size;
 }
 
@@ -472,18 +472,18 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 	op->delay = 0;
 
 	if (analysis->big_endian) {
-		words[0] = rz_read_be32 (&data[0]);
-		words[1] = rz_read_be32 (&data[4]);
+		words[0] = rz_read_be32(&data[0]);
+		words[1] = rz_read_be32(&data[4]);
 	} else {
-		words[0] = rz_read_me32_arc (&data[0]);
-		words[1] = rz_read_me32_arc (&data[4]);
+		words[0] = rz_read_me32_arc(&data[0]);
+		words[1] = rz_read_me32_arc(&data[4]);
 	}
 
 	fields.opcode = (words[0] & 0xf8000000) >> 27;
 
-	op->size = (fields.opcode >= 0x0c)? 2: 4;
+	op->size = (fields.opcode >= 0x0c) ? 2 : 4;
 	op->nopcode = op->size;
-// eprintf ("%x\n", fields.opcode);
+	// eprintf ("%x\n", fields.opcode);
 
 	switch (fields.opcode) {
 	case 0:
@@ -496,19 +496,19 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 
 		if (fields.format == 0) {
 			/* Branch Conditionally 0x00 [0x0] */
-			fields.limm = SIGN_EXT_S21 (fields.limm);
+			fields.limm = SIGN_EXT_S21(fields.limm);
 			fields.cond = (words[0] & 0x1f);
-			op->cond = map_cond2rizin (fields.cond);
+			op->cond = map_cond2rizin(fields.cond);
 			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 		} else {
 			/* Branch Unconditional Far 0x00 [0x1] */
 			fields.limm |= (fields.c & 0x0f) << 21;
 			/* the  & 0xf clearly shows we don't overflow */
 			/* TODO: don't generate code to show this */
-			fields.limm = SIGN_EXT_S25 (fields.limm);
+			fields.limm = SIGN_EXT_S25(fields.limm);
 			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
 		}
-		arcompact_branch (op, addr, fields.limm, fields.mode_n);
+		arcompact_branch(op, addr, fields.limm, fields.mode_n);
 		break;
 	case 1:
 		fields.format = (words[0] & 0x00010000) >> 16;
@@ -519,7 +519,7 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 			fields.subopcode = (words[0] & 0x0f);
 			fields.b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >> 9;
 			fields.c = (words[0] & 0x00000fc0) >> 6;
-			fields.imm = SIGN_EXT_S9 ((words[0] & 0x00fe0000) >> 16 | (words[0] & 0x8000) >> 7);
+			fields.imm = SIGN_EXT_S9((words[0] & 0x00fe0000) >> 16 | (words[0] & 0x8000) >> 7);
 			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 
 			if (fields.format2 == 0) {
@@ -533,7 +533,7 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 				/* Branch on Compare/Bit Test Register-Immediate, 0x01, [0x1, 0x1] */
 				/* TODO: cond codes and imm u6 (using the "br" mapping) */
 			}
-			arcompact_branch (op, addr, fields.imm, fields.mode_n);
+			arcompact_branch(op, addr, fields.imm, fields.mode_n);
 		} else {
 			fields.format2 = (words[0] & 0x00020000) >> 17;
 			fields.a = (words[0] & 0x07fc0000) >> 18;
@@ -543,25 +543,25 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 
 			if (fields.format2 == 0) {
 				/* Branch and Link Conditionally, 0x01, [0x0, 0x0] */
-				fields.imm = SIGN_EXT_S21 (fields.imm);
+				fields.imm = SIGN_EXT_S21(fields.imm);
 				fields.cond = (words[0] & 0x1f);
-				op->cond = map_cond2rizin (fields.cond);
+				op->cond = map_cond2rizin(fields.cond);
 				op->type = RZ_ANALYSIS_OP_TYPE_CCALL;
 			} else {
 				/* Branch and Link Unconditional Far, 0x01, [0x0, 0x1] */
 				fields.imm |= (fields.c & 0x0f) << 21;
 				/* the  & 0xf clearly shows we don't overflow */
 				/* TODO: don't generate code to show this */
-				fields.imm = SIGN_EXT_S25 (fields.imm);
+				fields.imm = SIGN_EXT_S25(fields.imm);
 				op->type = RZ_ANALYSIS_OP_TYPE_CALL;
 			}
-			arcompact_branch (op, addr, fields.imm, fields.mode_n);
+			arcompact_branch(op, addr, fields.imm, fields.mode_n);
 		}
 		break;
 	case 2: /* Load Register with Offset, 0x02 */
 		fields.a = (words[0] & 0x0000003f);
 		fields.b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >> 9;
-		fields.imm = SIGN_EXT_S9 ((words[0] & 0x00ff0000) >> 16 | (words[0] & 0x8000) >> 7);
+		fields.imm = SIGN_EXT_S9((words[0] & 0x00ff0000) >> 16 | (words[0] & 0x8000) >> 7);
 		/* fields.mode_aa = (words[0] & 0x600) >> 9; */
 		fields.mode_zz = (words[0] & 0x180) >> 7;
 
@@ -572,7 +572,7 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 			op->type = RZ_ANALYSIS_OP_TYPE_ILL;
 		}
 
-		map_zz2refptr (op, fields.mode_zz);
+		map_zz2refptr(op, fields.mode_zz);
 
 		if (fields.b == ARC_REG_LIMM) {
 			op->size = 8;
@@ -587,13 +587,13 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 	case 3: /* Store Register with Offset, 0x03 */
 		fields.c = (words[0] & 0xfc0) >> 6;
 		fields.b = (words[0] & 0x07000000) >> 24 | (words[0] & 0x7000) >> 9;
-		fields.imm = SIGN_EXT_S9 ((words[0] & 0x00ff0000) >> 16 | (words[0] & 0x8000) >> 7);
+		fields.imm = SIGN_EXT_S9((words[0] & 0x00ff0000) >> 16 | (words[0] & 0x8000) >> 7);
 		/* ut8 mode_aa = (words[0] & 0x18) >> 3; */
 		fields.mode_zz = (words[0] & 0x6) >> 1;
 
 		op->type = RZ_ANALYSIS_OP_TYPE_STORE;
 
-		map_zz2refptr (op, fields.mode_zz);
+		map_zz2refptr(op, fields.mode_zz);
 
 		if (fields.b == ARC_REG_LIMM) {
 			op->size = 8;
@@ -612,7 +612,7 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 		break;
 	case 4: /* General Operations */
 		op->type = RZ_ANALYSIS_OP_TYPE_MOV;
-		return arcompact_genops (op, addr, words);
+		return arcompact_genops(op, addr, words);
 	case 5:
 	case 6:
 	case 7:
@@ -718,19 +718,19 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 			switch (fields.c) {
 			case 0: /* J_S [r]*/
 				op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
-				arcompact_jump (op, 0, 0, 0);
+				arcompact_jump(op, 0, 0, 0);
 				break;
 			case 1: /* J_S.D [r] */
 				op->type = RZ_ANALYSIS_OP_TYPE_UJMP;
-				arcompact_jump (op, 0, 0, 1);
+				arcompact_jump(op, 0, 0, 1);
 				break;
 			case 2: /* JL_S [r] */
 				op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
-				arcompact_jump (op, 0, 0, 0);
+				arcompact_jump(op, 0, 0, 0);
 				break;
 			case 3: /* JL_S.D [r] */
 				op->type = RZ_ANALYSIS_OP_TYPE_UCALL;
-				arcompact_jump (op, 0, 0, 1);
+				arcompact_jump(op, 0, 0, 1);
 				break;
 			case 4:
 			case 5: /* Reserved - instruction error */
@@ -800,9 +800,9 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 		case 0xc:
 			op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 			break;
-		case 0xd:  /* Sign extend byte */
-		case 0xe:  /* Sign extend word */
-		case 0xf:  /* Zero extend byte */
+		case 0xd: /* Sign extend byte */
+		case 0xe: /* Sign extend word */
+		case 0xf: /* Zero extend byte */
 		case 0x10: /* Zero extend word */
 		case 0x13: /* Negate */
 			op->type = RZ_ANALYSIS_OP_TYPE_CPL;
@@ -918,7 +918,7 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 		case 6: /* POP Register from Stack, 0x18, [0x06, 0x00-0x1F] */
 			fields.c = (words[0] & 0x001f0000) >> 16;
 			switch (fields.c) {
-			case 1:    /* Pop register from stack */
+			case 1: /* Pop register from stack */
 			case 0x11: /* Pop blink from stack */
 				op->type = RZ_ANALYSIS_OP_TYPE_POP;
 				break;
@@ -930,7 +930,7 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 		case 7: /* PUSH Register to Stack, 0x18, [0x07, 0x00-0x1F] */
 			fields.c = (words[0] & 0x001f0000) >> 16;
 			switch (fields.c) {
-			case 1:    /* Push register to stack */
+			case 1: /* Push register to stack */
 			case 0x11: /* Push blink to stack */
 				op->type = RZ_ANALYSIS_OP_TYPE_PUSH;
 				break;
@@ -975,14 +975,14 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 		break;
 	case 0x1d: /* Branch on Compare Register with Zero, 0x1D, [0x00 - 0x01] */
 		/* fields.subopcode = (words[0] & 0x00800000) >> (16+7); */
-		fields.imm = SIGN_EXT_S8 ((words[0] & 0x007f0000) >> (16 - 1));
+		fields.imm = SIGN_EXT_S8((words[0] & 0x007f0000) >> (16 - 1));
 		/* fields.subopcode? reg NE: reg EQ; */
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		arcompact_branch (op, addr, fields.imm, 0);
+		arcompact_branch(op, addr, fields.imm, 0);
 		break;
 	case 0x1e: /* Branch Conditionally, 0x1E, [0x00 - 0x03] */
 		fields.subopcode = (words[0] & 0x06000000) >> (16 + 9);
-		fields.imm = SIGN_EXT_S10 ((words[0] & 0x01ff0000) >> (16 - 1));
+		fields.imm = SIGN_EXT_S10((words[0] & 0x01ff0000) >> (16 - 1));
 		switch (fields.subopcode) {
 		case 0: /* B_S */
 			op->type = RZ_ANALYSIS_OP_TYPE_JMP;
@@ -997,19 +997,19 @@ static int arcompact_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const
 			break;
 		case 3: /* Bcc_S */
 			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-			fields.imm = SIGN_EXT_S7 ((words[0] & 0x003f0000) >> (16 - 1));
+			fields.imm = SIGN_EXT_S7((words[0] & 0x003f0000) >> (16 - 1));
 			/* TODO: cond codes (looks like it is the BR table again?) */
 			break;
 		}
-		arcompact_branch (op, addr, fields.imm, 0);
+		arcompact_branch(op, addr, fields.imm, 0);
 		break;
 	case 0x1f: /* Branch and Link Unconditionally, 0x1F */
-		fields.imm = SIGN_EXT_S13 ((words[0] & 0x07ff0000) >> (16 - 2));
+		fields.imm = SIGN_EXT_S13((words[0] & 0x07ff0000) >> (16 - 2));
 		op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-		arcompact_branch (op, addr, fields.imm, 0);
+		arcompact_branch(op, addr, fields.imm, 0);
 		break;
 	}
-	arccompact_dump_fields (addr, words, &fields);
+	arccompact_dump_fields(addr, words, &fields);
 	return op->size;
 }
 
@@ -1017,19 +1017,19 @@ static int arc_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	const ut8 *b = (ut8 *)data;
 
 	if (analysis->bits == 16) {
-		return arcompact_op (analysis, op, addr, data, len);
+		return arcompact_op(analysis, op, addr, data, len);
 	}
 
 	/* ARCtangent A4 */
 	op->size = 4;
 	op->fail = addr + 4;
-	ut8 basecode = (len > 3)? ((b[3] & 0xf8) >> 3): 0;
+	ut8 basecode = (len > 3) ? ((b[3] & 0xf8) >> 3) : 0;
 	switch (basecode) {
 	case 0x04: /* Branch */
 	case 0x05: /* Branch with Link */
 	case 0x06: /* Loop */
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-		op->jump = addr + 4 + ((rz_read_le32 (&data[0]) & 0x07ffff80) >> (7 - 2));
+		op->jump = addr + 4 + ((rz_read_le32(&data[0]) & 0x07ffff80) >> (7 - 2));
 		break;
 	case 0x07: /* Conditional Jump and Jump with Link */
 		op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
@@ -1134,7 +1134,7 @@ static bool set_reg_profile(RzAnalysis *analysis) {
 	/* TODO: */
 	/* Should I add the Auxiliary Register Set? */
 	/* it contains the flag bits, amongst other things */
-	return rz_reg_set_profile_string (analysis->reg, p16);
+	return rz_reg_set_profile_string(analysis->reg, p16);
 }
 
 RzAnalysisPlugin rz_analysis_plugin_arc = {

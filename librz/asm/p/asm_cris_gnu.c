@@ -20,24 +20,23 @@ http://developer.axis.com/old/documentation/hw/etraxfs/iop_howto/iop_howto.pdf
 
 #include "disas-asm.h"
 
-
 static unsigned long Offset = 0;
 static RzStrBuf *buf_global = NULL;
 static unsigned char bytes[8];
 
-static int cris_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
+static int cris_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	int delta = (memaddr - Offset);
 	if (delta < 0) {
-		return -1;      // disable backward reads
+		return -1; // disable backward reads
 	}
 	if ((delta + length) > 8) {
 		return -1;
 	}
-	memcpy (myaddr, bytes + delta, length);
+	memcpy(myaddr, bytes + delta, length);
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 
@@ -48,15 +47,15 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
 DECLARE_GENERIC_FPRINTF_FUNC()
 
-bfd_boolean cris_parse_disassembler_options (disassemble_info *info, int distype);
+bfd_boolean cris_parse_disassembler_options(disassemble_info *info, int distype);
 
 // TODO: refactor the gnu code to have a getter instead of exposing so many disasm entrypoints
-int print_insn_crisv10_v32_with_register_prefix (bfd_vma vma, disassemble_info *info);
-int print_insn_crisv10_v32_without_register_prefix (bfd_vma vma, disassemble_info *info);
-int print_insn_cris_with_register_prefix (bfd_vma vma, disassemble_info *info);
-int print_insn_cris_without_register_prefix (bfd_vma vma, disassemble_info *info);
-int print_insn_crisv32_with_register_prefix (bfd_vma vma, disassemble_info *info);
-int print_insn_crisv32_without_register_prefix (bfd_vma vma, disassemble_info *info);
+int print_insn_crisv10_v32_with_register_prefix(bfd_vma vma, disassemble_info *info);
+int print_insn_crisv10_v32_without_register_prefix(bfd_vma vma, disassemble_info *info);
+int print_insn_cris_with_register_prefix(bfd_vma vma, disassemble_info *info);
+int print_insn_cris_without_register_prefix(bfd_vma vma, disassemble_info *info);
+int print_insn_crisv32_with_register_prefix(bfd_vma vma, disassemble_info *info);
+int print_insn_crisv32_without_register_prefix(bfd_vma vma, disassemble_info *info);
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
@@ -66,11 +65,11 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	}
 	buf_global = &op->buf_asm;
 	Offset = a->pc;
-	memcpy (bytes, buf, RZ_MIN (len, 8)); // TODO handle thumb
+	memcpy(bytes, buf, RZ_MIN(len, 8)); // TODO handle thumb
 
 	/* prepare disassembler */
-	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	disasm_obj.disassembler_options=(a->bits==64)?"64":"";
+	memset(&disasm_obj, '\0', sizeof(struct disassemble_info));
+	disasm_obj.disassembler_options = (a->bits == 64) ? "64" : "";
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &cris_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
@@ -86,43 +85,43 @@ static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		// 1: v10-v32
 		// 2: v32
 		mode = 0;
-		if (strstr (a->cpu,  "v10")) {
+		if (strstr(a->cpu, "v10")) {
 			mode = 1;
 		}
-		if (strstr (a->cpu,  "v32")) {
+		if (strstr(a->cpu, "v32")) {
 			mode = 2;
 		}
 	} else {
 		mode = 2;
 	}
-	(void)cris_parse_disassembler_options (&disasm_obj, mode);
+	(void)cris_parse_disassembler_options(&disasm_obj, mode);
 	if (a->syntax == RZ_ASM_SYNTAX_ATT) {
 		switch (mode) {
 		case 0:
-			op->size = print_insn_cris_with_register_prefix ((bfd_vma)Offset, &disasm_obj);
+			op->size = print_insn_cris_with_register_prefix((bfd_vma)Offset, &disasm_obj);
 			break;
 		case 1:
-			op->size = print_insn_crisv10_v32_with_register_prefix ((bfd_vma)Offset, &disasm_obj);
+			op->size = print_insn_crisv10_v32_with_register_prefix((bfd_vma)Offset, &disasm_obj);
 			break;
 		default:
-			op->size = print_insn_crisv32_with_register_prefix ((bfd_vma)Offset, &disasm_obj);
+			op->size = print_insn_crisv32_with_register_prefix((bfd_vma)Offset, &disasm_obj);
 			break;
 		}
 	} else {
 		switch (mode) {
 		case 0:
-			op->size = print_insn_cris_without_register_prefix ((bfd_vma)Offset, &disasm_obj);
+			op->size = print_insn_cris_without_register_prefix((bfd_vma)Offset, &disasm_obj);
 			break;
 		case 1:
-			op->size = print_insn_crisv10_v32_without_register_prefix ((bfd_vma)Offset, &disasm_obj);
+			op->size = print_insn_crisv10_v32_without_register_prefix((bfd_vma)Offset, &disasm_obj);
 			break;
 		default:
-			op->size = print_insn_crisv32_without_register_prefix ((bfd_vma)Offset, &disasm_obj);
+			op->size = print_insn_crisv32_without_register_prefix((bfd_vma)Offset, &disasm_obj);
 			break;
 		}
 	}
 	if (op->size == -1) {
-		rz_strbuf_set (&op->buf_asm, "(data)");
+		rz_strbuf_set(&op->buf_asm, "(data)");
 	}
 	return op->size;
 }

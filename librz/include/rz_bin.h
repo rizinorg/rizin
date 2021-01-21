@@ -16,7 +16,7 @@ typedef struct rz_bin_t RzBin;
 extern "C" {
 #endif
 
-RZ_LIB_VERSION_HEADER (rz_bin);
+RZ_LIB_VERSION_HEADER(rz_bin);
 
 #define RZ_BIN_DBG_STRIPPED 0x01
 #define RZ_BIN_DBG_STATIC   0x02
@@ -32,95 +32,95 @@ RZ_LIB_VERSION_HEADER (rz_bin);
 #define RZ_BIN_ENTRY_TYPE_PREINIT 5
 
 #define RZ_BIN_SIZEOF_STRINGS 512
-#define RZ_BIN_MAX_ARCH 1024
+#define RZ_BIN_MAX_ARCH       1024
 
-#define RZ_BIN_REQ_ALL       UT64_MAX
-#define RZ_BIN_REQ_UNK       0x000000
-#define RZ_BIN_REQ_ENTRIES   0x000001
-#define RZ_BIN_REQ_IMPORTS   0x000002
-#define RZ_BIN_REQ_SYMBOLS   0x000004
-#define RZ_BIN_REQ_SECTIONS  0x000008
-#define RZ_BIN_REQ_INFO      0x000010
-#define RZ_BIN_REQ_OPERATION 0x000020
-#define RZ_BIN_REQ_HELP      0x000040
-#define RZ_BIN_REQ_STRINGS   0x000080
-#define RZ_BIN_REQ_FIELDS    0x000100
-#define RZ_BIN_REQ_LIBS      0x000200
-#define RZ_BIN_REQ_SRCLINE   0x000400
-#define RZ_BIN_REQ_MAIN      0x000800
-#define RZ_BIN_REQ_EXTRACT   0x001000
-#define RZ_BIN_REQ_RELOCS    0x002000
-#define RZ_BIN_REQ_LISTARCHS 0x004000
-#define RZ_BIN_REQ_CREATE    0x008000
-#define RZ_BIN_REQ_CLASSES   0x010000
-#define RZ_BIN_REQ_DWARF     0x020000
-#define RZ_BIN_REQ_SIZE      0x040000
-#define RZ_BIN_REQ_PDB       0x080000
-#define RZ_BIN_REQ_PDB_DWNLD 0x100000
-#define RZ_BIN_REQ_DLOPEN    0x200000
-#define RZ_BIN_REQ_EXPORTS   0x400000
-#define RZ_BIN_REQ_VERSIONINFO 0x800000
-#define RZ_BIN_REQ_PACKAGE   0x1000000
-#define RZ_BIN_REQ_HEADER    0x2000000
-#define RZ_BIN_REQ_LISTPLUGINS 0x4000000
-#define RZ_BIN_REQ_RESOURCES 0x8000000
-#define RZ_BIN_REQ_INITFINI  0x10000000
-#define RZ_BIN_REQ_SEGMENTS  0x20000000
-#define RZ_BIN_REQ_HASHES    0x40000000
-#define RZ_BIN_REQ_SIGNATURE 0x80000000
-#define RZ_BIN_REQ_TRYCATCH 0x100000000
+#define RZ_BIN_REQ_ALL              UT64_MAX
+#define RZ_BIN_REQ_UNK              0x000000
+#define RZ_BIN_REQ_ENTRIES          0x000001
+#define RZ_BIN_REQ_IMPORTS          0x000002
+#define RZ_BIN_REQ_SYMBOLS          0x000004
+#define RZ_BIN_REQ_SECTIONS         0x000008
+#define RZ_BIN_REQ_INFO             0x000010
+#define RZ_BIN_REQ_OPERATION        0x000020
+#define RZ_BIN_REQ_HELP             0x000040
+#define RZ_BIN_REQ_STRINGS          0x000080
+#define RZ_BIN_REQ_FIELDS           0x000100
+#define RZ_BIN_REQ_LIBS             0x000200
+#define RZ_BIN_REQ_SRCLINE          0x000400
+#define RZ_BIN_REQ_MAIN             0x000800
+#define RZ_BIN_REQ_EXTRACT          0x001000
+#define RZ_BIN_REQ_RELOCS           0x002000
+#define RZ_BIN_REQ_LISTARCHS        0x004000
+#define RZ_BIN_REQ_CREATE           0x008000
+#define RZ_BIN_REQ_CLASSES          0x010000
+#define RZ_BIN_REQ_DWARF            0x020000
+#define RZ_BIN_REQ_SIZE             0x040000
+#define RZ_BIN_REQ_PDB              0x080000
+#define RZ_BIN_REQ_PDB_DWNLD        0x100000
+#define RZ_BIN_REQ_DLOPEN           0x200000
+#define RZ_BIN_REQ_EXPORTS          0x400000
+#define RZ_BIN_REQ_VERSIONINFO      0x800000
+#define RZ_BIN_REQ_PACKAGE          0x1000000
+#define RZ_BIN_REQ_HEADER           0x2000000
+#define RZ_BIN_REQ_LISTPLUGINS      0x4000000
+#define RZ_BIN_REQ_RESOURCES        0x8000000
+#define RZ_BIN_REQ_INITFINI         0x10000000
+#define RZ_BIN_REQ_SEGMENTS         0x20000000
+#define RZ_BIN_REQ_HASHES           0x40000000
+#define RZ_BIN_REQ_SIGNATURE        0x80000000
+#define RZ_BIN_REQ_TRYCATCH         0x100000000
 #define RZ_BIN_REQ_SECTIONS_MAPPING 0x200000000
 
 /* RzBinSymbol->method_flags : */
-#define RZ_BIN_METH_CLASS 0x0000000000000001L
-#define RZ_BIN_METH_STATIC 0x0000000000000002L
-#define RZ_BIN_METH_PUBLIC 0x0000000000000004L
-#define RZ_BIN_METH_PRIVATE 0x0000000000000008L
-#define RZ_BIN_METH_PROTECTED 0x0000000000000010L
-#define RZ_BIN_METH_INTERNAL 0x0000000000000020L
-#define RZ_BIN_METH_OPEN 0x0000000000000040L
-#define RZ_BIN_METH_FILEPRIVATE 0x0000000000000080L
-#define RZ_BIN_METH_FINAL 0x0000000000000100L
-#define RZ_BIN_METH_VIRTUAL 0x0000000000000200L
-#define RZ_BIN_METH_CONST 0x0000000000000400L
-#define RZ_BIN_METH_MUTATING 0x0000000000000800L
-#define RZ_BIN_METH_ABSTRACT 0x0000000000001000L
-#define RZ_BIN_METH_SYNCHRONIZED 0x0000000000002000L
-#define RZ_BIN_METH_NATIVE 0x0000000000004000L
-#define RZ_BIN_METH_BRIDGE 0x0000000000008000L
-#define RZ_BIN_METH_VARARGS 0x0000000000010000L
-#define RZ_BIN_METH_SYNTHETIC 0x0000000000020000L
-#define RZ_BIN_METH_STRICT 0x0000000000040000L
-#define RZ_BIN_METH_MIRANDA 0x0000000000080000L
-#define RZ_BIN_METH_CONSTRUCTOR 0x0000000000100000L
+#define RZ_BIN_METH_CLASS                 0x0000000000000001L
+#define RZ_BIN_METH_STATIC                0x0000000000000002L
+#define RZ_BIN_METH_PUBLIC                0x0000000000000004L
+#define RZ_BIN_METH_PRIVATE               0x0000000000000008L
+#define RZ_BIN_METH_PROTECTED             0x0000000000000010L
+#define RZ_BIN_METH_INTERNAL              0x0000000000000020L
+#define RZ_BIN_METH_OPEN                  0x0000000000000040L
+#define RZ_BIN_METH_FILEPRIVATE           0x0000000000000080L
+#define RZ_BIN_METH_FINAL                 0x0000000000000100L
+#define RZ_BIN_METH_VIRTUAL               0x0000000000000200L
+#define RZ_BIN_METH_CONST                 0x0000000000000400L
+#define RZ_BIN_METH_MUTATING              0x0000000000000800L
+#define RZ_BIN_METH_ABSTRACT              0x0000000000001000L
+#define RZ_BIN_METH_SYNCHRONIZED          0x0000000000002000L
+#define RZ_BIN_METH_NATIVE                0x0000000000004000L
+#define RZ_BIN_METH_BRIDGE                0x0000000000008000L
+#define RZ_BIN_METH_VARARGS               0x0000000000010000L
+#define RZ_BIN_METH_SYNTHETIC             0x0000000000020000L
+#define RZ_BIN_METH_STRICT                0x0000000000040000L
+#define RZ_BIN_METH_MIRANDA               0x0000000000080000L
+#define RZ_BIN_METH_CONSTRUCTOR           0x0000000000100000L
 #define RZ_BIN_METH_DECLARED_SYNCHRONIZED 0x0000000000200000L
 
-#define RZ_BIN_BIND_LOCAL_STR "LOCAL"
-#define RZ_BIN_BIND_GLOBAL_STR "GLOBAL"
-#define RZ_BIN_BIND_WEAK_STR "WEAK"
-#define RZ_BIN_BIND_NUM_STR "NUM"
-#define RZ_BIN_BIND_LOOS_STR "LOOS"
-#define RZ_BIN_BIND_HIOS_STR "HIOS"
-#define RZ_BIN_BIND_LOPROC_STR "LOPROC"
-#define RZ_BIN_BIND_HIPROC_STR "HIPROC"
+#define RZ_BIN_BIND_LOCAL_STR   "LOCAL"
+#define RZ_BIN_BIND_GLOBAL_STR  "GLOBAL"
+#define RZ_BIN_BIND_WEAK_STR    "WEAK"
+#define RZ_BIN_BIND_NUM_STR     "NUM"
+#define RZ_BIN_BIND_LOOS_STR    "LOOS"
+#define RZ_BIN_BIND_HIOS_STR    "HIOS"
+#define RZ_BIN_BIND_LOPROC_STR  "LOPROC"
+#define RZ_BIN_BIND_HIPROC_STR  "HIPROC"
 #define RZ_BIN_BIND_UNKNOWN_STR "UNKNOWN"
 
-#define RZ_BIN_TYPE_NOTYPE_STR "NOTYPE"
-#define RZ_BIN_TYPE_OBJECT_STR "OBJ"
-#define RZ_BIN_TYPE_FUNC_STR "FUNC"
-#define RZ_BIN_TYPE_METH_STR "METH"
-#define RZ_BIN_TYPE_STATIC_STR "STATIC"
-#define RZ_BIN_TYPE_SECTION_STR "SECT"
-#define RZ_BIN_TYPE_FILE_STR "FILE"
-#define RZ_BIN_TYPE_COMMON_STR "COMMON"
-#define RZ_BIN_TYPE_TLS_STR "TLS"
-#define RZ_BIN_TYPE_NUM_STR "NUM"
-#define RZ_BIN_TYPE_LOOS_STR "LOOS"
-#define RZ_BIN_TYPE_HIOS_STR "HIOS"
-#define RZ_BIN_TYPE_LOPROC_STR "LOPROC"
-#define RZ_BIN_TYPE_HIPROC_STR "HIPROC"
+#define RZ_BIN_TYPE_NOTYPE_STR      "NOTYPE"
+#define RZ_BIN_TYPE_OBJECT_STR      "OBJ"
+#define RZ_BIN_TYPE_FUNC_STR        "FUNC"
+#define RZ_BIN_TYPE_METH_STR        "METH"
+#define RZ_BIN_TYPE_STATIC_STR      "STATIC"
+#define RZ_BIN_TYPE_SECTION_STR     "SECT"
+#define RZ_BIN_TYPE_FILE_STR        "FILE"
+#define RZ_BIN_TYPE_COMMON_STR      "COMMON"
+#define RZ_BIN_TYPE_TLS_STR         "TLS"
+#define RZ_BIN_TYPE_NUM_STR         "NUM"
+#define RZ_BIN_TYPE_LOOS_STR        "LOOS"
+#define RZ_BIN_TYPE_HIOS_STR        "HIOS"
+#define RZ_BIN_TYPE_LOPROC_STR      "LOPROC"
+#define RZ_BIN_TYPE_HIPROC_STR      "HIPROC"
 #define RZ_BIN_TYPE_SPECIAL_SYM_STR "SPCL"
-#define RZ_BIN_TYPE_UNKNOWN_STR "UNK"
+#define RZ_BIN_TYPE_UNKNOWN_STR     "UNK"
 
 enum {
 	RZ_BIN_SYM_ENTRY,
@@ -135,16 +135,16 @@ enum {
 enum {
 	RZ_BIN_NM_NONE = 0,
 	RZ_BIN_NM_JAVA = 1,
-	RZ_BIN_NM_C = 1<<1,
-	RZ_BIN_NM_GO = 1<<2,
-	RZ_BIN_NM_CXX = 1<<3,
-	RZ_BIN_NM_OBJC = 1<<4,
-	RZ_BIN_NM_SWIFT = 1<<5,
-	RZ_BIN_NM_DLANG = 1<<6,
-	RZ_BIN_NM_MSVC = 1<<7,
-	RZ_BIN_NM_RUST = 1<<8,
-	RZ_BIN_NM_KOTLIN = 1<<9,
-	RZ_BIN_NM_BLOCKS = 1<<31,
+	RZ_BIN_NM_C = 1 << 1,
+	RZ_BIN_NM_GO = 1 << 2,
+	RZ_BIN_NM_CXX = 1 << 3,
+	RZ_BIN_NM_OBJC = 1 << 4,
+	RZ_BIN_NM_SWIFT = 1 << 5,
+	RZ_BIN_NM_DLANG = 1 << 6,
+	RZ_BIN_NM_MSVC = 1 << 7,
+	RZ_BIN_NM_RUST = 1 << 8,
+	RZ_BIN_NM_KOTLIN = 1 << 9,
+	RZ_BIN_NM_BLOCKS = 1 << 31,
 	RZ_BIN_NM_ANY = -1,
 };
 
@@ -217,7 +217,7 @@ typedef struct rz_bin_info_t {
 	char *debug_file_name;
 	const char *lang;
 	char *default_cc;
-	RzList/*<RzBinFileHash>*/ *file_hashes;
+	RzList /*<RzBinFileHash>*/ *file_hashes;
 	int bits;
 	int has_va;
 	int has_pi; // pic/pie
@@ -246,21 +246,21 @@ typedef struct rz_bin_object_t {
 	ut64 boffset;
 	ut64 size;
 	ut64 obj_size;
-	RzList/*<RzBinSection>*/ *sections;
-	RzList/*<RzBinImport>*/ *imports;
-	RzList/*<RzBinSymbol>*/ *symbols;
-	RzList/*<??>*/ *entries;
-	RzList/*<??>*/ *fields;
-	RzList/*<??>*/ *libs;
-	RBNode/*<RzBinReloc>*/ *relocs;
-	RzList/*<??>*/ *strings;
-	RzList/*<RzBinClass>*/ *classes;
+	RzList /*<RzBinSection>*/ *sections;
+	RzList /*<RzBinImport>*/ *imports;
+	RzList /*<RzBinSymbol>*/ *symbols;
+	RzList /*<??>*/ *entries;
+	RzList /*<??>*/ *fields;
+	RzList /*<??>*/ *libs;
+	RBNode /*<RzBinReloc>*/ *relocs;
+	RzList /*<??>*/ *strings;
+	RzList /*<RzBinClass>*/ *classes;
 	HtPP *classes_ht;
 	HtPP *methods_ht;
-	RzList/*<RzBinDwarfRow>*/ *lines;
+	RzList /*<RzBinDwarfRow>*/ *lines;
 	HtUP *strings_db;
-	RzList/*<??>*/ *mem;	//RzBinMem maybe?
-	RzList/*<BinMap*/ *maps;
+	RzList /*<??>*/ *mem; //RzBinMem maybe?
+	RzList /*<BinMap*/ *maps;
 	char *regstate;
 	RzBinInfo *info;
 	RzBinAddr *binsym[RZ_BIN_SYM_LAST];
@@ -320,10 +320,10 @@ struct rz_bin_t {
 	int rawstr;
 	Sdb *sdb;
 	RzIDStorage *ids;
-	RzList/*<RzBinPlugin>*/ *plugins;
-	RzList/*<RzBinXtrPlugin>*/ *binxtrs;
-	RzList/*<RzBinLdrPlugin>*/ *binldrs;
-	RzList/*<RzBinFile>*/ *binfiles;
+	RzList /*<RzBinPlugin>*/ *plugins;
+	RzList /*<RzBinXtrPlugin>*/ *binxtrs;
+	RzList /*<RzBinLdrPlugin>*/ *binldrs;
+	RzList /*<RzBinFile>*/ *binfiles;
 	PrintfCallback cb_printf;
 	int loadany;
 	RzIOBind iob;
@@ -426,7 +426,7 @@ typedef struct rz_bin_plugin_t {
 	char *license;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-	Sdb * (*get_sdb)(RzBinFile *obj);
+	Sdb *(*get_sdb)(RzBinFile *obj);
 	bool (*load_buffer)(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb);
 	ut64 (*size)(RzBinFile *bin); // return ut64 maybe? meh
 	void (*destroy)(RzBinFile *bf);
@@ -434,34 +434,34 @@ typedef struct rz_bin_plugin_t {
 	bool (*check_buffer)(RzBuffer *buf);
 	ut64 (*baddr)(RzBinFile *bf);
 	ut64 (*boffset)(RzBinFile *bf);
-	RzBinAddr* (*binsym)(RzBinFile *bf, int num);
-	RzList/*<RzBinAddr>*/* (*entries)(RzBinFile *bf);
-	RzList/*<RzBinSection>*/* (*sections)(RzBinFile *bf);
-	RZ_BORROW RzList/*<RzBinDwarfRow>*/* (*lines)(RzBinFile *bf);
-	RzList/*<RzBinSymbol>*/* (*symbols)(RzBinFile *bf);
-	RzList/*<RzBinImport>*/* (*imports)(RzBinFile *bf);
-	RzList/*<RzBinString>*/* (*strings)(RzBinFile *bf);
-	RzBinInfo/*<RzBinInfo>*/* (*info)(RzBinFile *bf);
-	RzList/*<RzBinField>*/* (*fields)(RzBinFile *bf);
-	RzList/*<char *>*/* (*libs)(RzBinFile *bf);
-	RzList/*<RzBinReloc>*/* (*relocs)(RzBinFile *bf);
-	RzList/*<RzBinTrycatch>*/* (*trycatch)(RzBinFile *bf);
-	RzList/*<RzBinClass>*/* (*classes)(RzBinFile *bf);
-	RzList/*<RzBinMem>*/* (*mem)(RzBinFile *bf);
-	RzList/*<RzBinReloc>*/* (*patch_relocs)(RzBin *bin);
-	RzList/*<RzBinMap>*/* (*maps)(RzBinFile *bf);
-	RzList/*<RzBinFileHash>*/* (*hashes)(RzBinFile *bf);
+	RzBinAddr *(*binsym)(RzBinFile *bf, int num);
+	RzList /*<RzBinAddr>*/ *(*entries)(RzBinFile *bf);
+	RzList /*<RzBinSection>*/ *(*sections)(RzBinFile *bf);
+	RZ_BORROW RzList /*<RzBinDwarfRow>*/ *(*lines)(RzBinFile *bf);
+	RzList /*<RzBinSymbol>*/ *(*symbols)(RzBinFile *bf);
+	RzList /*<RzBinImport>*/ *(*imports)(RzBinFile *bf);
+	RzList /*<RzBinString>*/ *(*strings)(RzBinFile *bf);
+	RzBinInfo /*<RzBinInfo>*/ *(*info)(RzBinFile *bf);
+	RzList /*<RzBinField>*/ *(*fields)(RzBinFile *bf);
+	RzList /*<char *>*/ *(*libs)(RzBinFile *bf);
+	RzList /*<RzBinReloc>*/ *(*relocs)(RzBinFile *bf);
+	RzList /*<RzBinTrycatch>*/ *(*trycatch)(RzBinFile *bf);
+	RzList /*<RzBinClass>*/ *(*classes)(RzBinFile *bf);
+	RzList /*<RzBinMem>*/ *(*mem)(RzBinFile *bf);
+	RzList /*<RzBinReloc>*/ *(*patch_relocs)(RzBin *bin);
+	RzList /*<RzBinMap>*/ *(*maps)(RzBinFile *bf);
+	RzList /*<RzBinFileHash>*/ *(*hashes)(RzBinFile *bf);
 	void (*header)(RzBinFile *bf);
-	char* (*signature)(RzBinFile *bf, bool json);
+	char *(*signature)(RzBinFile *bf, bool json);
 	int (*demangle_type)(const char *str);
 	struct rz_bin_dbginfo_t *dbginfo;
 	struct rz_bin_write_t *write;
 	int (*get_offset)(RzBinFile *bf, int type, int idx);
-	char* (*get_name)(RzBinFile *bf, int type, int idx, bool simplified);
+	char *(*get_name)(RzBinFile *bf, int type, int idx, bool simplified);
 	ut64 (*get_vaddr)(RzBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr);
-	RzBuffer* (*create)(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt);
-	char* (*demangle)(const char *str);
-	char* (*regstate)(RzBinFile *bf);
+	RzBuffer *(*create)(RzBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RzBinArchOptions *opt);
+	char *(*demangle)(const char *str);
+	char *(*regstate)(RzBinFile *bf);
 	int (*file_type)(RzBinFile *bf);
 	/* default value if not specified by user */
 	int minstrlen;
@@ -501,18 +501,17 @@ typedef struct rz_bin_class_t {
 	int visibility;
 } RzBinClass;
 
-#define RzBinSectionName rz_offsetof(RzBinSection, name)
+#define RzBinSectionName   rz_offsetof(RzBinSection, name)
 #define RzBinSectionOffset rz_offsetof(RzBinSection, offset)
 
-#define REBASE_PADDR(o, l, type_t)\
+#define REBASE_PADDR(o, l, type_t) \
 	do { \
-		RzListIter *_it;\
-		type_t *_el;\
+		RzListIter *_it; \
+		type_t *_el; \
 		rz_list_foreach ((l), _it, _el) { \
-			_el->paddr += (o)->loadaddr;\
-		}\
+			_el->paddr += (o)->loadaddr; \
+		} \
 	} while (0)
-
 
 typedef struct rz_bin_symbol_t {
 	/* heap-allocated */
@@ -524,7 +523,7 @@ typedef struct rz_bin_symbol_t {
 	const char *forwarder;
 	const char *bind;
 	const char *type;
-  	const char *rtype;
+	const char *rtype;
 	bool is_imported;
 	/* only used by java */
 	const char *visibility_str;
@@ -603,7 +602,7 @@ typedef struct rz_bin_mem_t {
 	ut64 addr;
 	int size;
 	int perms;
-	RzList *mirrors;		//for mirror access; stuff here should only create new maps not new fds
+	RzList *mirrors; //for mirror access; stuff here should only create new maps not new fds
 } RzBinMem;
 
 typedef struct rz_bin_map_t {
@@ -743,7 +742,6 @@ RZ_API const char *rz_bin_string_type(int type);
 RZ_API const char *rz_bin_entry_type_string(int etype);
 
 RZ_API bool rz_bin_file_object_new_from_xtr_data(RzBin *bin, RzBinFile *bf, ut64 baseaddr, ut64 loadaddr, RzBinXtrData *data);
-
 
 // RzBinFile lifecycle
 // RZ_IPI RzBinFile *rz_bin_file_new(RzBin *bin, const char *file, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr);

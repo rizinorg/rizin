@@ -1,49 +1,45 @@
 #include <rz_diff.h>
 
-int cb(struct rz_diff_t *d, void *user, struct rz_diff_op_t *op)
-{
+int cb(struct rz_diff_t *d, void *user, struct rz_diff_op_t *op) {
 	int i;
 
-	printf(" 0x%08"PFMT64x"  ", op->a_off);
-	for(i = 0;i<op->a_len;i++)
+	printf(" 0x%08" PFMT64x "  ", op->a_off);
+	for (i = 0; i < op->a_len; i++)
 		printf("%02x", op->a_buf[i]);
 	printf(" => ");
-	for(i = 0;i<op->b_len;i++)
+	for (i = 0; i < op->b_len; i++)
 		printf("%02x", op->b_buf[i]);
-	printf("  0x%08"PFMT64x"\n", op->b_off);
+	printf("  0x%08" PFMT64x "\n", op->b_off);
 	return 1;
 }
 
-int test_equal()
-{
+int test_equal() {
 	struct rz_diff_t *d;
 	char *bufa = "helloworld";
 	char *bufb = "heprswarld";
 
 	printf("Diffing '%s' vs '%s'\n", bufa, bufb);
-	d = rz_diff_new (0, 0);
+	d = rz_diff_new(0, 0);
 	rz_diff_set_delta(d, 0);
 	rz_diff_set_callback(d, &cb, NULL);
-	rz_diff_buffers(d, (ut8*)bufa, strlen(bufa), (ut8*)bufb, strlen((char*)bufb));
+	rz_diff_buffers(d, (ut8 *)bufa, strlen(bufa), (ut8 *)bufb, strlen((char *)bufb));
 	return 1;
 }
 
-int test_diff()
-{
+int test_diff() {
 	struct rz_diff_t *d;
 	char *bufa = "hello";
 	char *bufb = "hellpworld";
 
 	printf("Truncated diffing '%s' vs '%s'\n", bufa, bufb);
-	d = rz_diff_new (0, 0);
+	d = rz_diff_new(0, 0);
 	rz_diff_set_delta(d, 0);
 	rz_diff_set_callback(d, &cb, NULL);
-	rz_diff_buffers(d, (ut8*)bufa, strlen(bufa), (ut8*)bufb, strlen(bufb));
+	rz_diff_buffers(d, (ut8 *)bufa, strlen(bufa), (ut8 *)bufb, strlen(bufb));
 	return 1;
 }
 
-int test_delta()
-{
+int test_delta() {
 	struct rz_diff_t *d;
 	char *bufa = "hello";
 	char *bufb = "heprpworld";
@@ -52,22 +48,21 @@ int test_delta()
 	d = rz_diff_new(0, 0);
 	rz_diff_set_delta(d, 1);
 	rz_diff_set_callback(d, &cb, NULL);
-	rz_diff_buffers(d, (ut8*)bufa, strlen(bufa), (ut8*)bufb, strlen(bufb));
+	rz_diff_buffers(d, (ut8 *)bufa, strlen(bufa), (ut8 *)bufb, strlen(bufb));
 	return 1;
 }
 
-int test_distance()
-{
+int test_distance() {
 	char *bufa = "hello";
 	char *bufb = "heprpworld";
 	ut32 distance = 0;
 	double similarity = 0;
 
 	printf("Similarity: '%s' vs '%s'\n", bufa, bufb);
-	rz_diff_buffers_distance(NULL, (ut8*)bufa, strlen(bufa), (ut8*)bufb, strlen(bufb),
+	rz_diff_buffers_distance(NULL, (ut8 *)bufa, strlen(bufa), (ut8 *)bufb, strlen(bufb),
 		&distance, &similarity);
 	printf("Levenshtein distance = %i\nSimilarity = %f\n",
-			distance, similarity);
+		distance, similarity);
 	return 1;
 }
 
@@ -90,8 +85,7 @@ int test_lines(char *file1, char *file2)
 }
 #endif
 
-int main()
-{
+int main() {
 	test_equal();
 	printf("--\n");
 	test_equal();
@@ -102,8 +96,7 @@ int main()
 	printf("--\n");
 	test_distance();
 	printf("--\n");
-//	test_lines("file1", "file2");
-
+	//	test_lines("file1", "file2");
 
 	return 0;
 }

@@ -11,8 +11,8 @@ typedef struct dwarf_parse_context_t {
 	const RzBinDwarfDie *all_dies;
 	const ut64 count;
 	Sdb *sdb;
-	HtUP/*<ut64 offset, DwarfDie *die>*/ *die_map;
-	HtUP/*<offset, RzBinDwarfLocList*>*/  *locations;
+	HtUP /*<ut64 offset, DwarfDie *die>*/ *die_map;
+	HtUP /*<offset, RzBinDwarfLocList*>*/ *locations;
 	char *lang; // for demangling
 } Context;
 
@@ -51,16 +51,16 @@ typedef struct dwarf_variable_t {
 } Variable;
 
 static void variable_free(Variable *var) {
-	free (var->name);
-	free (var->location);
-	free (var->type);
-	free (var);
+	free(var->name);
+	free(var->location);
+	free(var->type);
+	free(var);
 }
 
 /* return -1 if attr isn't found */
 static inline st32 find_attr_idx(const RzBinDwarfDie *die, st32 attr_name) {
 	st32 i;
-	rz_return_val_if_fail (die, -1);
+	rz_return_val_if_fail(die, -1);
 	for (i = 0; i < die->count; i++) {
 		if (die->attr_values[i].attr_name == attr_name) {
 			return i;
@@ -72,7 +72,7 @@ static inline st32 find_attr_idx(const RzBinDwarfDie *die, st32 attr_name) {
 /* return NULL if attr isn't found */
 static RzBinDwarfAttrValue *find_attr(const RzBinDwarfDie *die, st32 attr_name) {
 	st32 i;
-	rz_return_val_if_fail (die, NULL);
+	rz_return_val_if_fail(die, NULL);
 	for (i = 0; i < die->count; i++) {
 		if (die->attr_values[i].attr_name == attr_name) {
 			return &die->attr_values[i];
@@ -90,28 +90,28 @@ static RzBinDwarfAttrValue *find_attr(const RzBinDwarfDie *die, st32 attr_name) 
  * @param c
  */
 static bool strbuf_rev_prepend_char(RzStrBuf *sb, const char *s, int c) {
-	rz_return_val_if_fail (sb && s, false);
-	size_t l = strlen (s);
+	rz_return_val_if_fail(sb && s, false);
+	size_t l = strlen(s);
 	// fast path if no chars to append
 	if (l == 0) {
 		return true;
 	}
 	size_t newlen = l + sb->len;
-	char *ns = malloc (newlen + 1);
+	char *ns = malloc(newlen + 1);
 	bool ret = false;
 	char *sb_str = sb->ptr ? sb->ptr : sb->buf;
-	char *pivot = strrchr (sb_str, c);
+	char *pivot = strrchr(sb_str, c);
 	if (!pivot) {
 		return false;
 	}
 	size_t idx = pivot - sb_str;
 	if (ns) {
-		memcpy (ns, sb_str, idx);
-		memcpy (ns + idx, s, l);
-		memcpy (ns + idx + l, sb_str + idx, sb->len - idx);
+		memcpy(ns, sb_str, idx);
+		memcpy(ns + idx, s, l);
+		memcpy(ns + idx + l, sb_str + idx, sb->len - idx);
 		ns[newlen] = 0;
-		ret = rz_strbuf_set (sb, ns) != NULL;
-		free (ns);
+		ret = rz_strbuf_set(sb, ns) != NULL;
+		free(ns);
 	}
 	return ret;
 }
@@ -124,35 +124,35 @@ static bool strbuf_rev_prepend_char(RzStrBuf *sb, const char *s, int c) {
  * @param needle
  */
 static bool strbuf_rev_append_char(RzStrBuf *sb, const char *s, const char *needle) {
-	rz_return_val_if_fail (sb && s, false);
-	size_t l = strlen (s);
+	rz_return_val_if_fail(sb && s, false);
+	size_t l = strlen(s);
 	// fast path if no chars to append
 	if (l == 0) {
 		return true;
 	}
 	bool ret = false;
 	char *sb_str = sb->ptr ? sb->ptr : sb->buf;
-	char *pivot = strstr (sb_str, needle);
+	char *pivot = strstr(sb_str, needle);
 	if (!pivot) {
 		return false;
 	}
-	pivot += strlen (needle);
+	pivot += strlen(needle);
 	size_t idx = pivot - sb_str;
 	size_t newlen = l + sb->len;
-	char *ns = malloc (newlen + 1);
+	char *ns = malloc(newlen + 1);
 	if (ns) {
-		memcpy (ns, sb_str, idx);
-		memcpy (ns + idx, s, l);
-		memcpy (ns + idx + l, sb_str + idx, sb->len - idx);
+		memcpy(ns, sb_str, idx);
+		memcpy(ns + idx, s, l);
+		memcpy(ns + idx + l, sb_str + idx, sb->len - idx);
 		ns[newlen] = 0;
-		ret = rz_strbuf_set (sb, ns) != NULL;
-		free (ns);
+		ret = rz_strbuf_set(sb, ns) != NULL;
+		free(ns);
 	}
 	return ret;
 }
 
 static inline char *create_type_name_from_offset(ut64 offset) {
-	return rz_str_newf ("type_0x%" PFMT64x, offset);
+	return rz_str_newf("type_0x%" PFMT64x, offset);
 }
 
 /**
@@ -163,12 +163,12 @@ static inline char *create_type_name_from_offset(ut64 offset) {
  */
 static char *get_die_name(const RzBinDwarfDie *die) {
 	char *name = NULL;
-	st32 name_attr_idx = find_attr_idx (die, DW_AT_name);
+	st32 name_attr_idx = find_attr_idx(die, DW_AT_name);
 
 	if (name_attr_idx != -1 && die->attr_values[name_attr_idx].string.content) {
-		name = strdup (die->attr_values[name_attr_idx].string.content);
+		name = strdup(die->attr_values[name_attr_idx].string.content);
 	} else {
-		name = create_type_name_from_offset (die->offset);
+		name = create_type_name_from_offset(die->offset);
 	}
 	return name;
 }
@@ -181,12 +181,12 @@ static char *get_die_name(const RzBinDwarfDie *die) {
  */
 static ut64 get_die_size(const RzBinDwarfDie *die) {
 	ut64 size = 0;
-	st32 byte_size_idx = find_attr_idx (die, DW_AT_byte_size);
+	st32 byte_size_idx = find_attr_idx(die, DW_AT_byte_size);
 
 	if (byte_size_idx != -1) {
 		size = die->attr_values[byte_size_idx].uconstant * CHAR_BIT;
 	} else {
-		st32 bit_size_idx = find_attr_idx (die, DW_AT_bit_size);
+		st32 bit_size_idx = find_attr_idx(die, DW_AT_bit_size);
 
 		if (bit_size_idx != -1) {
 			size = die->attr_values[bit_size_idx].uconstant;
@@ -220,7 +220,7 @@ static st32 parse_array_type(Context *ctx, ut64 idx, RzStrBuf *strbuf) {
 					switch (value->attr_name) {
 					case DW_AT_upper_bound:
 					case DW_AT_count:
-						rz_strbuf_appendf (strbuf, "[%" PFMT64d "]", value->uconstant + 1);
+						rz_strbuf_appendf(strbuf, "[%" PFMT64d "]", value->uconstant + 1);
 						break;
 
 					default:
@@ -253,9 +253,9 @@ static st32 parse_array_type(Context *ctx, ut64 idx, RzStrBuf *strbuf) {
  * TODO make cache for type entries, one type is usually referenced
  * multiple times which means it's parsed multiple times instead of once
  */
-static st32 parse_type (Context *ctx, const ut64 offset, RzStrBuf *strbuf, ut64 *size) {
-	rz_return_val_if_fail (strbuf, -1);
-	RzBinDwarfDie *die = ht_up_find (ctx->die_map, offset, NULL);
+static st32 parse_type(Context *ctx, const ut64 offset, RzStrBuf *strbuf, ut64 *size) {
+	rz_return_val_if_fail(strbuf, -1);
+	RzBinDwarfDie *die = ht_up_find(ctx->die_map, offset, NULL);
 	if (!die) {
 		return -1;
 	}
@@ -265,25 +265,25 @@ static st32 parse_type (Context *ctx, const ut64 offset, RzStrBuf *strbuf, ut64 
 	char *name = NULL;
 	// get size of first type DIE that has size
 	if (size && *size == 0) {
-		*size = get_die_size (die);
+		*size = get_die_size(die);
 	}
 	switch (die->tag) {
 	// this should be recursive search for the type until you find base/user defined type
 	case DW_TAG_pointer_type:
-		type_idx = find_attr_idx (die, DW_AT_type);
+		type_idx = find_attr_idx(die, DW_AT_type);
 		if (type_idx == -1) {
-			rz_strbuf_append (strbuf, "void");
-			rz_strbuf_append (strbuf, " *");
+			rz_strbuf_append(strbuf, "void");
+			rz_strbuf_append(strbuf, " *");
 		} else {
-			tag = parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size);
+			tag = parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
 			if (tag == DW_TAG_subroutine_type) {
-				strbuf_rev_prepend_char (strbuf, "(*)", '(');
+				strbuf_rev_prepend_char(strbuf, "(*)", '(');
 			} else if (tag == DW_TAG_pointer_type) {
-				if (!strbuf_rev_append_char (strbuf, "*", "(*")) {
-					strbuf_rev_prepend_char (strbuf, "*", '*');
+				if (!strbuf_rev_append_char(strbuf, "*", "(*")) {
+					strbuf_rev_prepend_char(strbuf, "*", '*');
 				}
 			} else {
-				rz_strbuf_append (strbuf, " *");
+				rz_strbuf_append(strbuf, " *");
 			}
 		}
 		break;
@@ -295,63 +295,63 @@ static st32 parse_type (Context *ctx, const ut64 offset, RzStrBuf *strbuf, ut64 
 	case DW_TAG_enumeration_type:
 	case DW_TAG_union_type:
 	case DW_TAG_class_type:
-		name = get_die_name (die);
-		rz_strbuf_append (strbuf, name);
-		free (name);
+		name = get_die_name(die);
+		rz_strbuf_append(strbuf, name);
+		free(name);
 		break;
 	case DW_TAG_subroutine_type:
-		type_idx = find_attr_idx (die, DW_AT_type);
+		type_idx = find_attr_idx(die, DW_AT_type);
 		if (type_idx == -1) {
-			rz_strbuf_append (strbuf, "void");
+			rz_strbuf_append(strbuf, "void");
 		} else {
-			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
 		}
-		rz_strbuf_append (strbuf, " (");
+		rz_strbuf_append(strbuf, " (");
 		if (die->has_children) { // has parameters
 		}
-		rz_strbuf_append (strbuf, ")");
+		rz_strbuf_append(strbuf, ")");
 		break;
 	case DW_TAG_array_type:
-		type_idx = find_attr_idx (die, DW_AT_type);
+		type_idx = find_attr_idx(die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
 		}
-		parse_array_type (ctx, die - ctx->all_dies, strbuf);
+		parse_array_type(ctx, die - ctx->all_dies, strbuf);
 		break;
 	case DW_TAG_const_type:
-		type_idx = find_attr_idx (die, DW_AT_type);
+		type_idx = find_attr_idx(die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
 		}
-		rz_strbuf_append (strbuf, " const");
+		rz_strbuf_append(strbuf, " const");
 		break;
 	case DW_TAG_volatile_type:
-		type_idx = find_attr_idx (die, DW_AT_type);
+		type_idx = find_attr_idx(die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
 		}
-		rz_strbuf_append (strbuf, " volatile");
+		rz_strbuf_append(strbuf, " volatile");
 		break;
 	case DW_TAG_restrict_type:
-		type_idx = find_attr_idx (die, DW_AT_type);
+		type_idx = find_attr_idx(die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
 		}
-		rz_strbuf_append (strbuf, " restrict");
+		rz_strbuf_append(strbuf, " restrict");
 		break;
 	case DW_TAG_rvalue_reference_type:
-		type_idx = find_attr_idx (die, DW_AT_type);
+		type_idx = find_attr_idx(die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
 		}
-		rz_strbuf_append (strbuf, " &&");
+		rz_strbuf_append(strbuf, " &&");
 		break;
 	case DW_TAG_reference_type:
-		type_idx = find_attr_idx (die, DW_AT_type);
+		type_idx = find_attr_idx(die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type(ctx, die->attr_values[type_idx].reference, strbuf, size);
 		}
-		rz_strbuf_append (strbuf, " &");
+		rz_strbuf_append(strbuf, " &");
 		break;
 	default:
 		break;
@@ -368,8 +368,8 @@ static st32 parse_type (Context *ctx, const ut64 offset, RzStrBuf *strbuf, ut64 
  * @param result ptr to result member to fill up
  * @return RzAnalysisStructMember* ptr to parsed Member
  */
-static RzAnalysisStructMember *parse_struct_member (Context *ctx, ut64 idx, RzAnalysisStructMember *result) {
-	rz_return_val_if_fail (result, NULL);
+static RzAnalysisStructMember *parse_struct_member(Context *ctx, ut64 idx, RzAnalysisStructMember *result) {
+	rz_return_val_if_fail(result, NULL);
 	const RzBinDwarfDie *die = &ctx->all_dies[idx];
 
 	char *name = NULL;
@@ -377,20 +377,20 @@ static RzAnalysisStructMember *parse_struct_member (Context *ctx, ut64 idx, RzAn
 	ut64 offset = 0;
 	ut64 size = 0;
 	RzStrBuf strbuf;
-	rz_strbuf_init (&strbuf);
+	rz_strbuf_init(&strbuf);
 	size_t i;
 	for (i = 0; i < die->count; i++) {
 		RzBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
-			name = get_die_name (die);
+			name = get_die_name(die);
 			if (!name) {
 				goto cleanup;
 			}
 			break;
 		case DW_AT_type:
-			parse_type (ctx, value->reference, &strbuf, &size);
-			type = rz_strbuf_drain_nofree (&strbuf);
+			parse_type(ctx, value->reference, &strbuf, &size);
+			type = rz_strbuf_drain_nofree(&strbuf);
 			if (!type || !*type) {
 				goto cleanup;
 			}
@@ -433,8 +433,8 @@ static RzAnalysisStructMember *parse_struct_member (Context *ctx, ut64 idx, RzAn
 	result->size = size;
 	return result;
 cleanup:
-	free (name);
-	free (type);
+	free(name);
+	free(type);
 	return NULL;
 }
 
@@ -459,7 +459,7 @@ static RzAnalysisEnumCase *parse_enumerator(Context *ctx, ut64 idx, RzAnalysisEn
 		RzBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
-			name = get_die_name (die);
+			name = get_die_name(die);
 			if (!name) {
 				goto cleanup;
 			}
@@ -477,7 +477,7 @@ static RzAnalysisEnumCase *parse_enumerator(Context *ctx, ut64 idx, RzAnalysisEn
 	result->val = (int)val;
 	return result;
 cleanup:
-	free (name);
+	free(name);
 	return NULL;
 }
 
@@ -499,31 +499,31 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 		kind = RZ_ANALYSIS_BASE_TYPE_KIND_STRUCT;
 	}
 
-	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (kind);
+	RzAnalysisBaseType *base_type = rz_analysis_base_type_new(kind);
 	if (!base_type) {
 		return;
 	}
 
-	base_type->name = get_die_name (die);
+	base_type->name = get_die_name(die);
 	if (!base_type->name) {
 		goto cleanup;
 	}
 
 	// if it is definition of previous declaration (TODO Fix, big ugly hotfix addition)
-	st32 spec_attr_idx = find_attr_idx (die, DW_AT_specification);
+	st32 spec_attr_idx = find_attr_idx(die, DW_AT_specification);
 	if (spec_attr_idx != -1) {
-		RzBinDwarfDie *decl_die = ht_up_find (ctx->die_map, die->attr_values[spec_attr_idx].reference, NULL);
+		RzBinDwarfDie *decl_die = ht_up_find(ctx->die_map, die->attr_values[spec_attr_idx].reference, NULL);
 		if (!decl_die) {
 			goto cleanup;
 		}
-		st32 name_attr_idx = find_attr_idx (decl_die, DW_AT_name);
+		st32 name_attr_idx = find_attr_idx(decl_die, DW_AT_name);
 		if (name_attr_idx != -1) {
-			free (base_type->name);
-			base_type->name = get_die_name (decl_die);
+			free(base_type->name);
+			base_type->name = get_die_name(decl_die);
 		}
 	}
 
-	base_type->size = get_die_size (die);
+	base_type->size = get_die_size(die);
 
 	RzAnalysisStructMember member = { 0 };
 	// Parse out all members, can this in someway be extracted to a function?
@@ -536,11 +536,11 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 			// we take only direct descendats of the structure
 			// can be also DW_TAG_suprogram for class methods or tag for templates
 			if (child_depth == 1 && child_die->tag == DW_TAG_member) {
-				RzAnalysisStructMember *result = parse_struct_member (ctx, j, &member);
+				RzAnalysisStructMember *result = parse_struct_member(ctx, j, &member);
 				if (!result) {
 					goto cleanup;
 				} else {
-					void *element = rz_vector_push (&base_type->struct_data.members, &member);
+					void *element = rz_vector_push(&base_type->struct_data.members, &member);
 					if (!element) {
 						goto cleanup;
 					}
@@ -554,9 +554,9 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 			}
 		}
 	}
-	rz_analysis_save_base_type (ctx->analysis, base_type);
+	rz_analysis_save_base_type(ctx->analysis, base_type);
 cleanup:
-	rz_analysis_base_type_free (base_type);
+	rz_analysis_base_type_free(base_type);
 }
 
 /**
@@ -569,23 +569,23 @@ cleanup:
 static void parse_enum_type(Context *ctx, ut64 idx) {
 	const RzBinDwarfDie *die = &ctx->all_dies[idx];
 
-	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANALYSIS_BASE_TYPE_KIND_ENUM);
+	RzAnalysisBaseType *base_type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_ENUM);
 	if (!base_type) {
 		return;
 	}
 
-	base_type->name = get_die_name (die);
+	base_type->name = get_die_name(die);
 	if (!base_type->name) {
 		goto cleanup;
 	}
-	base_type->size = get_die_size (die);
+	base_type->size = get_die_size(die);
 
-	st32 type_attr_idx = find_attr_idx (die, DW_AT_type);
+	st32 type_attr_idx = find_attr_idx(die, DW_AT_type);
 	if (type_attr_idx != -1) {
 		RzStrBuf strbuf;
-		rz_strbuf_init (&strbuf);
-		parse_type (ctx, die->attr_values[type_attr_idx].reference, &strbuf, &base_type->size);
-		base_type->type = rz_strbuf_drain_nofree (&strbuf);
+		rz_strbuf_init(&strbuf);
+		parse_type(ctx, die->attr_values[type_attr_idx].reference, &strbuf, &base_type->size);
+		base_type->type = rz_strbuf_drain_nofree(&strbuf);
 	}
 
 	RzAnalysisEnumCase cas;
@@ -597,13 +597,13 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 			const RzBinDwarfDie *child_die = &ctx->all_dies[j];
 			// we take only direct descendats of the structure
 			if (child_depth == 1 && child_die->tag == DW_TAG_enumerator) {
-				RzAnalysisEnumCase *result = parse_enumerator (ctx, j, &cas);
+				RzAnalysisEnumCase *result = parse_enumerator(ctx, j, &cas);
 				if (!result) {
 					goto cleanup;
 				} else {
-					void *element = rz_vector_push (&base_type->enum_data.cases, &cas);
+					void *element = rz_vector_push(&base_type->enum_data.cases, &cas);
 					if (!element) {
-						enum_type_case_free (result, NULL);
+						enum_type_case_free(result, NULL);
 						goto cleanup;
 					}
 				}
@@ -617,9 +617,9 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 			}
 		}
 	}
-	rz_analysis_save_base_type (ctx->analysis, base_type);
+	rz_analysis_save_base_type(ctx->analysis, base_type);
 cleanup:
-	rz_analysis_base_type_free (base_type);
+	rz_analysis_base_type_free(base_type);
 }
 
 /**
@@ -638,21 +638,21 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 	char *type = NULL;
 	ut64 size = 0;
 	RzStrBuf strbuf;
-	rz_strbuf_init (&strbuf);
+	rz_strbuf_init(&strbuf);
 	size_t i;
 
 	for (i = 0; i < die->count; i++) {
 		RzBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
-			name = get_die_name (die);
+			name = get_die_name(die);
 			if (!name) {
 				goto cleanup;
 			}
 			break;
 		case DW_AT_type:
-			parse_type (ctx, value->reference, &strbuf, &size);
-			type = rz_strbuf_drain_nofree (&strbuf);
+			parse_type(ctx, value->reference, &strbuf, &size);
+			type = rz_strbuf_drain_nofree(&strbuf);
 			if (!type) {
 				goto cleanup;
 			}
@@ -664,20 +664,20 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 	if (!name) { // type has to have a name for now
 		goto cleanup;
 	}
-	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANALYSIS_BASE_TYPE_KIND_TYPEDEF);
+	RzAnalysisBaseType *base_type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_TYPEDEF);
 	if (!base_type) {
 		goto cleanup;
 	}
 	base_type->name = name;
 	base_type->type = type;
-	rz_analysis_save_base_type (ctx->analysis, base_type);
-	rz_analysis_base_type_free (base_type);
-	rz_strbuf_fini (&strbuf);
+	rz_analysis_save_base_type(ctx->analysis, base_type);
+	rz_analysis_base_type_free(base_type);
+	rz_strbuf_fini(&strbuf);
 	return;
 cleanup:
-	free (name);
-	free (type);
-	rz_strbuf_fini (&strbuf);
+	free(name);
+	free(type);
+	rz_strbuf_fini(&strbuf);
 }
 
 static void parse_atomic_type(Context *ctx, ut64 idx) {
@@ -692,9 +692,9 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
 			if (!value->string.content) {
-				name = create_type_name_from_offset (die->offset);
+				name = create_type_name_from_offset(die->offset);
 			} else {
-				name = strdup (value->string.content);
+				name = strdup(value->string.content);
 			}
 			if (!name) {
 				return;
@@ -714,22 +714,22 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 	if (!name) { // type has to have a name for now
 		return;
 	}
-	RzAnalysisBaseType *base_type = rz_analysis_base_type_new (RZ_ANALYSIS_BASE_TYPE_KIND_ATOMIC);
+	RzAnalysisBaseType *base_type = rz_analysis_base_type_new(RZ_ANALYSIS_BASE_TYPE_KIND_ATOMIC);
 	if (!base_type) {
 		return;
 	}
 	base_type->name = name;
 	base_type->size = size;
-	rz_analysis_save_base_type (ctx->analysis, base_type);
-	rz_analysis_base_type_free (base_type);
+	rz_analysis_save_base_type(ctx->analysis, base_type);
+	rz_analysis_base_type_free(base_type);
 }
 
 static const char *get_specification_die_name(const RzBinDwarfDie *die) {
-	st32 linkage_name_attr_idx = find_attr_idx (die, DW_AT_linkage_name);
+	st32 linkage_name_attr_idx = find_attr_idx(die, DW_AT_linkage_name);
 	if (linkage_name_attr_idx != -1 && die->attr_values[linkage_name_attr_idx].string.content) {
 		return die->attr_values[linkage_name_attr_idx].string.content;
 	}
-	st32 name_attr_idx = find_attr_idx (die, DW_AT_name);
+	st32 name_attr_idx = find_attr_idx(die, DW_AT_name);
 	if (name_attr_idx != -1 && die->attr_values[name_attr_idx].string.content) {
 		return die->attr_values[name_attr_idx].string.content;
 	}
@@ -737,31 +737,31 @@ static const char *get_specification_die_name(const RzBinDwarfDie *die) {
 }
 
 static void get_spec_die_type(Context *ctx, RzBinDwarfDie *die, RzStrBuf *ret_type) {
-	st32 attr_idx = find_attr_idx (die, DW_AT_type);
+	st32 attr_idx = find_attr_idx(die, DW_AT_type);
 	if (attr_idx != -1) {
 		ut64 size = 0;
-		parse_type (ctx, die->attr_values[attr_idx].reference, ret_type, &size);
+		parse_type(ctx, die->attr_values[attr_idx].reference, ret_type, &size);
 	}
 }
 
 /* For some languages linkage name is more informative like C++,
    but for Rust it's rubbish and the normal name is fine */
 static bool prefer_linkage_name(char *lang) {
-	if (!strcmp (lang, "rust")) {
+	if (!strcmp(lang, "rust")) {
 		return false;
-	} else if (!strcmp (lang, "ada")) {
+	} else if (!strcmp(lang, "ada")) {
 		return false;
 	}
 	return true;
 }
 
 static void parse_abstract_origin(Context *ctx, ut64 offset, RzStrBuf *type, const char **name) {
-	RzBinDwarfDie *die = ht_up_find (ctx->die_map, offset, NULL);
+	RzBinDwarfDie *die = ht_up_find(ctx->die_map, offset, NULL);
 	if (die) {
 		size_t i;
 		ut64 size = 0;
 		bool has_linkage_name = false;
-		bool get_linkage_name = prefer_linkage_name (ctx->lang);
+		bool get_linkage_name = prefer_linkage_name(ctx->lang);
 		for (i = 0; i < die->count; i++) {
 			const RzBinDwarfAttrValue *val = &die->attr_values[i];
 			switch (val->attr_name) {
@@ -776,7 +776,7 @@ static void parse_abstract_origin(Context *ctx, ut64 offset, RzStrBuf *type, con
 				has_linkage_name = true;
 				break;
 			case DW_AT_type:
-				parse_type (ctx, val->reference, type, &size);
+				parse_type(ctx, val->reference, type, &size);
 				break;
 			default:
 				break;
@@ -789,37 +789,37 @@ static void parse_abstract_origin(Context *ctx, ut64 offset, RzStrBuf *type, con
 static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num, VariableLocationKind *kind) {
 	*kind = LOCATION_REGISTER;
 	switch (reg_num) {
-		case 0: return "rax";
-		case 1: return "rdx";
-		case 2: return "rcx";
-		case 3: return "rbx";
-		case 4: return "rsi";
-		case 5: return "rdi";
-		case 6:
-			*kind = LOCATION_BP;
-			return "rbp";
-		case 7:
-			*kind = LOCATION_SP;
-			return "rsp";
-		case 8: return "r8";
-		case 9: return "r9";
-		case 10: return "r10";
-		case 11: return "r11";
-		case 12: return "r12";
-		case 13: return "r13";
-		case 14: return "r14";
-		case 15: return "r15";
-		case 17: return "xmm0";
-		case 18: return "xmm1";
-		case 19: return "xmm2";
-		case 20: return "xmm3";
-		case 21: return "xmm4";
-		case 22: return "xmm5";
-		case 23: return "xmm6";
-		case 24: return "xmm7";
-		default:
-			*kind = LOCATION_UNKNOWN;
-			return "unsupported_reg";
+	case 0: return "rax";
+	case 1: return "rdx";
+	case 2: return "rcx";
+	case 3: return "rbx";
+	case 4: return "rsi";
+	case 5: return "rdi";
+	case 6:
+		*kind = LOCATION_BP;
+		return "rbp";
+	case 7:
+		*kind = LOCATION_SP;
+		return "rsp";
+	case 8: return "r8";
+	case 9: return "r9";
+	case 10: return "r10";
+	case 11: return "r11";
+	case 12: return "r12";
+	case 13: return "r13";
+	case 14: return "r14";
+	case 15: return "r15";
+	case 17: return "xmm0";
+	case 18: return "xmm1";
+	case 19: return "xmm2";
+	case 20: return "xmm3";
+	case 21: return "xmm4";
+	case 22: return "xmm5";
+	case 23: return "xmm6";
+	case 24: return "xmm7";
+	default:
+		*kind = LOCATION_UNKNOWN;
+		return "unsupported_reg";
 	}
 }
 
@@ -827,30 +827,30 @@ static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num, VariableLocationKin
 static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, VariableLocationKind *kind) {
 	*kind = LOCATION_REGISTER;
 	switch (reg_num) {
-		case 0: return "eax";
-		case 1: return "edx";
-		case 2: return "ecx";
-		case 3: return "ebx";
-		case 4:
-			*kind = LOCATION_SP;
-			return "esp";
-		case 5:
-			*kind = LOCATION_BP;
-			return "ebp";
-		case 6: return "esi";
-		case 7: return "edi";
-		case 21: return "xmm0";
-		case 22: return "xmm1";
-		case 23: return "xmm2";
-		case 24: return "xmm3";
-		case 25: return "xmm4";
-		case 26: return "xmm5";
-		case 27: return "xmm6";
-		case 28: return "xmm7";
-		default:
-			rz_warn_if_reached ();
-			*kind = LOCATION_UNKNOWN;
-			return "unsupported_reg";
+	case 0: return "eax";
+	case 1: return "edx";
+	case 2: return "ecx";
+	case 3: return "ebx";
+	case 4:
+		*kind = LOCATION_SP;
+		return "esp";
+	case 5:
+		*kind = LOCATION_BP;
+		return "ebp";
+	case 6: return "esi";
+	case 7: return "edi";
+	case 21: return "xmm0";
+	case 22: return "xmm1";
+	case 23: return "xmm2";
+	case 24: return "xmm3";
+	case 25: return "xmm4";
+	case 26: return "xmm5";
+	case 27: return "xmm6";
+	case 28: return "xmm7";
+	default:
+		rz_warn_if_reached();
+		*kind = LOCATION_UNKNOWN;
+		return "unsupported_reg";
 	}
 }
 
@@ -858,66 +858,66 @@ static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, VariableLocationKind *
 static const char *map_dwarf_reg_to_ppc64_reg(ut64 reg_num, VariableLocationKind *kind) {
 	*kind = LOCATION_REGISTER;
 	switch (reg_num) {
-		case 0: return "r0";
-		case 1:
-			*kind = LOCATION_SP;
-			return "r1";
-		case 2: return "r2";
-		case 3: return "r3";
-		case 4: return "r4";
-		case 5: return "r5";
-		case 6: return "r6";
-		case 7: return "r7";
-		case 8: return "r8";
-		case 9: return "r8";
-		case 10: return "r9";
-		case 11: return "r10";
-		case 12: return "r11";
-		case 13: return "r12";
-		case 14: return "r13";
-		case 15: return "r15";
-		case 16: return "r16";
-		case 17: return "r17";
-		case 18: return "r18";
-		case 19: return "r19";
-		case 20: return "r20";
-		case 21: return "r21";
-		case 22: return "r22";
-		case 23: return "r23";
-		case 24: return "r24";
-		case 25: return "r25";
-		case 26: return "r26";
-		case 27: return "r27";
-		case 28: return "r28";
-		case 29: return "r29";
-		case 30: return "r30";
-		case 31: return "r31";
-		default:
-			rz_warn_if_reached ();
-			*kind = LOCATION_UNKNOWN;
-			return "unsupported_reg";
+	case 0: return "r0";
+	case 1:
+		*kind = LOCATION_SP;
+		return "r1";
+	case 2: return "r2";
+	case 3: return "r3";
+	case 4: return "r4";
+	case 5: return "r5";
+	case 6: return "r6";
+	case 7: return "r7";
+	case 8: return "r8";
+	case 9: return "r8";
+	case 10: return "r9";
+	case 11: return "r10";
+	case 12: return "r11";
+	case 13: return "r12";
+	case 14: return "r13";
+	case 15: return "r15";
+	case 16: return "r16";
+	case 17: return "r17";
+	case 18: return "r18";
+	case 19: return "r19";
+	case 20: return "r20";
+	case 21: return "r21";
+	case 22: return "r22";
+	case 23: return "r23";
+	case 24: return "r24";
+	case 25: return "r25";
+	case 26: return "r26";
+	case 27: return "r27";
+	case 28: return "r28";
+	case 29: return "r29";
+	case 30: return "r30";
+	case 31: return "r31";
+	default:
+		rz_warn_if_reached();
+		*kind = LOCATION_UNKNOWN;
+		return "unsupported_reg";
 	}
 }
 
 /* returns string literal register name!
    TODO add more arches                 */
 static const char *get_dwarf_reg_name(char *arch, int reg_num, VariableLocationKind *kind, int bits) {
-	if (!strcmp (arch, "x86")) {
+	if (!strcmp(arch, "x86")) {
 		if (bits == 64) {
-			return map_dwarf_reg_to_x86_64_reg (reg_num, kind);
+			return map_dwarf_reg_to_x86_64_reg(reg_num, kind);
 		} else {
-			return map_dwarf_reg_to_x86_reg (reg_num, kind);
+			return map_dwarf_reg_to_x86_reg(reg_num, kind);
 		}
-	} else if (!strcmp (arch, "ppc")) {
+	} else if (!strcmp(arch, "ppc")) {
 		if (bits == 64) {
-			return map_dwarf_reg_to_ppc64_reg (reg_num, kind);
+			return map_dwarf_reg_to_ppc64_reg(reg_num, kind);
 		}
 	}
 	*kind = LOCATION_UNKNOWN;
 	return "unsupported_reg";
 }
 
-static RzBinDwarfLocRange *find_largest_loc_range (RzList *loc_list) {
+static RzBinDwarfLocRange *find_largest_loc_range(RzList *loc_list) {
 	RzBinDwarfLocRange *largest = NULL;
 	ut64 max_range_size = 0;
 	RzListIter *iter;
@@ -925,7 +925,7 @@ static RzBinDwarfLocRange *find_largest_loc_range (RzList *loc_list) {
 	rz_list_foreach (loc_list, iter, range) {
 		ut64 diff = range->end - range->start;
 		if (diff > max_range_size) {
-			max_range_size = diff ;
+			max_range_size = diff;
 			largest = range;
 		}
 	}
@@ -933,7 +933,7 @@ static RzBinDwarfLocRange *find_largest_loc_range (RzList *loc_list) {
 }
 
 /* TODO move a lot of the parsing here into dwarf.c and do only processing here */
-static VariableLocation *parse_dwarf_location (Context *ctx, const RzBinDwarfAttrValue *loc, const RzBinDwarfAttrValue *frame_base) {
+static VariableLocation *parse_dwarf_location(Context *ctx, const RzBinDwarfAttrValue *loc, const RzBinDwarfAttrValue *frame_base) {
 	/* reg5 - val is in register 5
 	fbreg <leb> - offset from frame base
 	regx <leb> - contents is in register X
@@ -948,12 +948,12 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RzBinDwarfAtt
 	RzBinDwarfBlock block;
 	if (loc->kind == DW_AT_KIND_LOCLISTPTR || loc->kind == DW_AT_KIND_REFERENCE || loc->kind == DW_AT_KIND_CONSTANT) {
 		ut64 offset = loc->reference;
-		RzBinDwarfLocList *range_list = ht_up_find (ctx->locations, offset, NULL);
+		RzBinDwarfLocList *range_list = ht_up_find(ctx->locations, offset, NULL);
 		if (!range_list) { /* for some reason offset isn't there, wrong parsing or malformed dwarf */
 			return NULL;
 		}
 		/* use the largest range as a variable */
-		RzBinDwarfLocRange *range = find_largest_loc_range (range_list->list);
+		RzBinDwarfLocRange *range = find_largest_loc_range(range_list->list);
 		if (!range) {
 			return NULL;
 		}
@@ -972,17 +972,17 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RzBinDwarfAtt
 	for (i = 0; i < block.length; i++) {
 		switch (block.data[i]) {
 		case DW_OP_fbreg: {
-		/* TODO sometimes CFA is referenced, but we don't parse that yet
+			/* TODO sometimes CFA is referenced, but we don't parse that yet
 		   just an offset involving framebase of a function*/
 			if (i == block.length - 1) {
 				return NULL;
 			}
 			const ut8 *dump = &block.data[++i];
-			offset = rz_sleb128 (&dump, &block.data[loc->block.length]);
+			offset = rz_sleb128(&dump, &block.data[loc->block.length]);
 			if (frame_base) {
 				/* recursive parsing, but frame_base should be only one, but someone
 				   could make malicious resource exhaustion attack, so a depth counter might be cool? */
-				VariableLocation *location = parse_dwarf_location (ctx, frame_base, NULL);
+				VariableLocation *location = parse_dwarf_location(ctx, frame_base, NULL);
 				if (location) {
 					location->offset += offset;
 					return location;
@@ -1028,7 +1028,7 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RzBinDwarfAtt
 			/* Will mostly be used for SP based arguments */
 			/* TODO I need to find binaries that uses this so I can test it out*/
 			reg_num = block.data[i] - DW_OP_reg0; // get the reg number
-			reg_name = get_dwarf_reg_name (ctx->analysis->cpu, reg_num, &kind, ctx->analysis->bits);
+			reg_name = get_dwarf_reg_name(ctx->analysis->cpu, reg_num, &kind, ctx->analysis->bits);
 		} break;
 		case DW_OP_breg0:
 		case DW_OP_breg1:
@@ -1069,10 +1069,10 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RzBinDwarfAtt
 			signed LEB128 offset from the specified register.  */
 			reg_num = block.data[i] - DW_OP_breg0; // get the reg number
 			const ut8 *buffer = &block.data[++i];
-			offset = rz_sleb128 (&buffer, &block.data[block.length]);
+			offset = rz_sleb128(&buffer, &block.data[block.length]);
 			/* TODO do a proper expression parsing, move by the amount of bytes sleb reads */
 			i += buffer - &block.data[0];
-			reg_name = get_dwarf_reg_name (ctx->analysis->cpu, reg_num, &kind, ctx->analysis->bits);
+			reg_name = get_dwarf_reg_name(ctx->analysis->cpu, reg_num, &kind, ctx->analysis->bits);
 		} break;
 		case DW_OP_bregx: {
 			if (i == block.length - 1) {
@@ -1082,12 +1082,12 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RzBinDwarfAtt
 			/* I need to find binaries that uses this so I can test it out*/
 			const ut8 *buffer = &block.data[++i];
 			const ut8 *buf_end = &block.data[block.length];
-			buffer = rz_uleb128 (buffer, buf_end - buffer, &reg_num, NULL);
+			buffer = rz_uleb128(buffer, buf_end - buffer, &reg_num, NULL);
 			if (buffer == buf_end) {
 				return NULL;
 			}
-			offset = rz_sleb128 (&buffer, buf_end);
-			reg_name = get_dwarf_reg_name (ctx->analysis->cpu, reg_num, &kind, ctx->analysis->bits);
+			offset = rz_sleb128(&buffer, buf_end);
+			reg_name = get_dwarf_reg_name(ctx->analysis->cpu, reg_num, &kind, ctx->analysis->bits);
 		} break;
 		case DW_OP_addr: {
 			/* The DW_OP_addr operation has a single operand that encodes a machine address and whose
@@ -1100,19 +1100,19 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RzBinDwarfAtt
 			}
 			switch (addr_size) {
 			case 1:
-				address = rz_read_ble8 (dump);
+				address = rz_read_ble8(dump);
 				break;
 			case 2:
-				address = rz_read_ble16 (dump, ctx->analysis->big_endian);
+				address = rz_read_ble16(dump, ctx->analysis->big_endian);
 				break;
 			case 4:
-				address = rz_read_ble32 (dump, ctx->analysis->big_endian);
+				address = rz_read_ble32(dump, ctx->analysis->big_endian);
 				break;
 			case 8:
-				address = rz_read_ble64 (dump, ctx->analysis->big_endian);
+				address = rz_read_ble64(dump, ctx->analysis->big_endian);
 				break;
 			default:
-				rz_warn_if_reached (); /* weird addr_size */
+				rz_warn_if_reached(); /* weird addr_size */
 				return NULL;
 			}
 			kind = LOCATION_GLOBAL; // address
@@ -1129,7 +1129,7 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RzBinDwarfAtt
 	if (kind == LOCATION_UNKNOWN) {
 		return NULL;
 	}
-	VariableLocation *location = RZ_NEW0 (VariableLocation);
+	VariableLocation *location = RZ_NEW0(VariableLocation);
 	if (location) {
 		location->reg_name = reg_name;
 		location->reg_num = reg_num;
@@ -1140,23 +1140,23 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RzBinDwarfAtt
 	return location;
 }
 
-static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args, RzList/*<Variable*>*/ *variables) {
+static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args, RzList /*<Variable*>*/ *variables) {
 	const RzBinDwarfDie *die = &ctx->all_dies[idx++];
 
 	if (die->has_children) {
 		int child_depth = 1;
 
-		bool get_linkage_name = prefer_linkage_name (ctx->lang);
+		bool get_linkage_name = prefer_linkage_name(ctx->lang);
 		bool has_linkage_name = false;
 		int argNumber = 1;
 		size_t j;
 		for (j = idx; child_depth > 0 && j < ctx->count; j++) {
 			const RzBinDwarfDie *child_die = &ctx->all_dies[j];
 			RzStrBuf type;
-			rz_strbuf_init (&type);
+			rz_strbuf_init(&type);
 			const char *name = NULL;
 			if (child_die->tag == DW_TAG_formal_parameter || child_die->tag == DW_TAG_variable) {
-				Variable *var = RZ_NEW0 (Variable);
+				Variable *var = RZ_NEW0(Variable);
 				size_t i;
 				for (i = 0; i < child_die->count; i++) {
 					const RzBinDwarfAttrValue *val = &child_die->attr_values[i];
@@ -1172,14 +1172,14 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args,
 						has_linkage_name = true;
 						break;
 					case DW_AT_type:
-						parse_type (ctx, val->reference, &type, NULL);
+						parse_type(ctx, val->reference, &type, NULL);
 						break;
 					// abstract origin is supposed to have omitted information
 					case DW_AT_abstract_origin:
-						parse_abstract_origin (ctx, val->reference, &type, &name);
+						parse_abstract_origin(ctx, val->reference, &type, &name);
 						break;
 					case DW_AT_location:
-						var->location = parse_dwarf_location (ctx, val, find_attr (die, DW_AT_frame_base));
+						var->location = parse_dwarf_location(ctx, val, find_attr(die, DW_AT_frame_base));
 						break;
 					default:
 						break;
@@ -1189,29 +1189,29 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args,
 					/* arguments sometimes have only type, create generic argX */
 					if (type.len) {
 						if (!name) {
-							var->name = rz_str_newf ("arg%d", argNumber);
+							var->name = rz_str_newf("arg%d", argNumber);
 						} else {
-							var->name = strdup (name);
+							var->name = strdup(name);
 						}
-						rz_strbuf_appendf (args, "%s %s,", rz_strbuf_get (&type), var->name);
-						var->type = strdup (rz_strbuf_get (&type));
-						rz_list_append (variables, var);
+						rz_strbuf_appendf(args, "%s %s,", rz_strbuf_get(&type), var->name);
+						var->type = strdup(rz_strbuf_get(&type));
+						rz_list_append(variables, var);
 					} else {
-						variable_free (var);
+						variable_free(var);
 					}
 					argNumber++;
 				} else { /* DW_TAG_variable */
 					if (name && type.len) {
-						var->name = strdup (name);
-						var->type = strdup (rz_strbuf_get (&type));
-						rz_list_append (variables, var);
+						var->name = strdup(name);
+						var->type = strdup(rz_strbuf_get(&type));
+						rz_list_append(variables, var);
 					} else {
-						variable_free (var);
+						variable_free(var);
 					}
-					rz_strbuf_fini (&type);
+					rz_strbuf_fini(&type);
 				}
 			} else if (child_depth == 1 && child_die->tag == DW_TAG_unspecified_parameters) {
-				rz_strbuf_appendf (args, "va_args ...,");
+				rz_strbuf_appendf(args, "va_args ...,");
 			}
 			if (child_die->has_children) {
 				child_depth++;
@@ -1219,38 +1219,38 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RzStrBuf *args,
 			if (child_die->abbrev_code == 0) { /* sibling list is terminated by null entry */
 				child_depth--;
 			}
-			rz_strbuf_fini (&type);
+			rz_strbuf_fini(&type);
 		}
 		if (args->len > 0) {
-			rz_strbuf_slice (args, 0, args->len - 1);
+			rz_strbuf_slice(args, 0, args->len - 1);
 		}
 	}
 	return 0;
 }
 
-static void sdb_save_dwarf_function(Function *dwarf_fcn, RzList/*<Variable*>*/ *variables, Sdb *sdb) {
-	char *sname = rz_str_sanitize_sdb_key (dwarf_fcn->name);
-	sdb_set (sdb, sname, "fcn", 0);
+static void sdb_save_dwarf_function(Function *dwarf_fcn, RzList /*<Variable*>*/ *variables, Sdb *sdb) {
+	char *sname = rz_str_sanitize_sdb_key(dwarf_fcn->name);
+	sdb_set(sdb, sname, "fcn", 0);
 
-	char *addr_key = rz_str_newf ("fcn.%s.addr", sname);
-	char *addr_val = rz_str_newf ("0x%" PFMT64x "", dwarf_fcn->addr);
-	sdb_set (sdb, addr_key, addr_val, 0);
-	free (addr_key);
-	free (addr_val);
+	char *addr_key = rz_str_newf("fcn.%s.addr", sname);
+	char *addr_val = rz_str_newf("0x%" PFMT64x "", dwarf_fcn->addr);
+	sdb_set(sdb, addr_key, addr_val, 0);
+	free(addr_key);
+	free(addr_val);
 
 	/* so we can have name without sanitization */
-	char *name_key = rz_str_newf ("fcn.%s.name", sname);
-	char *name_val = rz_str_newf ("%s", dwarf_fcn->name);
-	sdb_set (sdb, name_key, name_val, 0);
-	free (name_key);
-	free (name_val);
+	char *name_key = rz_str_newf("fcn.%s.name", sname);
+	char *name_val = rz_str_newf("%s", dwarf_fcn->name);
+	sdb_set(sdb, name_key, name_val, 0);
+	free(name_key);
+	free(name_val);
 
-	char *signature_key = rz_str_newf ("fcn.%s.sig", sname);
-	sdb_set (sdb, signature_key, dwarf_fcn->signature, 0);
-	free (signature_key);
+	char *signature_key = rz_str_newf("fcn.%s.sig", sname);
+	sdb_set(sdb, signature_key, dwarf_fcn->signature, 0);
+	free(signature_key);
 
 	RzStrBuf vars;
-	rz_strbuf_init (&vars);
+	rz_strbuf_init(&vars);
 	RzListIter *iter;
 	Variable *var;
 	rz_list_foreach (variables, iter, var) {
@@ -1264,53 +1264,53 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RzList/*<Variable*>*/ *
 		case LOCATION_BP: {
 			/* value = "type, storage, additional info based on storage (offset)" */
 
-			rz_strbuf_appendf (&vars, "%s,", var->name);
-			key = rz_str_newf ("fcn.%s.var.%s", sname, var->name);
-			val = rz_str_newf ("%s,%" PFMT64d ",%s", "b", var->location->offset, var->type);
-			sdb_set (sdb, key, val, 0);
+			rz_strbuf_appendf(&vars, "%s,", var->name);
+			key = rz_str_newf("fcn.%s.var.%s", sname, var->name);
+			val = rz_str_newf("%s,%" PFMT64d ",%s", "b", var->location->offset, var->type);
+			sdb_set(sdb, key, val, 0);
 		} break;
 		case LOCATION_SP: {
 			/* value = "type, storage, additional info based on storage (offset)" */
 
-			rz_strbuf_appendf (&vars, "%s,", var->name);
-			key = rz_str_newf ("fcn.%s.var.%s", sname, var->name);
-			val = rz_str_newf ("%s,%" PFMT64d ",%s", "s", var->location->offset, var->type);
-			sdb_set (sdb, key, val, 0);
+			rz_strbuf_appendf(&vars, "%s,", var->name);
+			key = rz_str_newf("fcn.%s.var.%s", sname, var->name);
+			val = rz_str_newf("%s,%" PFMT64d ",%s", "s", var->location->offset, var->type);
+			sdb_set(sdb, key, val, 0);
 		} break;
 		case LOCATION_GLOBAL: {
 			/* value = "type, storage, additional info based on storage (address)" */
 
-			rz_strbuf_appendf (&vars, "%s,", var->name);
-			key = rz_str_newf ("fcn.%s.var.%s", sname, var->name);
-			val = rz_str_newf ("%s,%" PFMT64u ",%s", "g", var->location->address, var->type);
-			sdb_set (sdb, key, val, 0);
+			rz_strbuf_appendf(&vars, "%s,", var->name);
+			key = rz_str_newf("fcn.%s.var.%s", sname, var->name);
+			val = rz_str_newf("%s,%" PFMT64u ",%s", "g", var->location->address, var->type);
+			sdb_set(sdb, key, val, 0);
 		} break;
 		case LOCATION_REGISTER: {
 			/* value = "type, storage, additional info based on storage (register name)" */
 
-			rz_strbuf_appendf (&vars, "%s,", var->name);
-			key = rz_str_newf ("fcn.%s.var.%s", sname, var->name);
-			val = rz_str_newf ("%s,%s,%s", "r", var->location->reg_name, var->type);
-			sdb_set (sdb, key, val, 0);
+			rz_strbuf_appendf(&vars, "%s,", var->name);
+			key = rz_str_newf("fcn.%s.var.%s", sname, var->name);
+			val = rz_str_newf("%s,%s,%s", "r", var->location->reg_name, var->type);
+			sdb_set(sdb, key, val, 0);
 		} break;
 
 		default:
 			/* else location is unknown (optimized out), skip the var */
 			break;
 		}
-		free (key);
-		free (val);
+		free(key);
+		free(val);
 	}
 	if (vars.len > 0) { /* remove the extra , */
-		rz_strbuf_slice (&vars, 0, vars.len - 1); /* leaks? */
+		rz_strbuf_slice(&vars, 0, vars.len - 1); /* leaks? */
 	}
-	char *vars_key = rz_str_newf ("fcn.%s.vars", sname);
-	char *vars_val = rz_str_newf ("%s", rz_strbuf_get (&vars));
-	sdb_set (sdb, vars_key, vars_val, 0);
-	free (vars_key);
-	free (vars_val);
-	rz_strbuf_fini (&vars);
-	free (sname);
+	char *vars_key = rz_str_newf("fcn.%s.vars", sname);
+	char *vars_val = rz_str_newf("%s", rz_strbuf_get(&vars));
+	sdb_set(sdb, vars_key, vars_val, 0);
+	free(vars_key);
+	free(vars_val);
+	rz_strbuf_fini(&vars);
+	free(sname);
 }
 
 /**
@@ -1325,10 +1325,10 @@ static void parse_function(Context *ctx, ut64 idx) {
 
 	Function fcn = { 0 };
 	bool has_linkage_name = false;
-	bool get_linkage_name = prefer_linkage_name (ctx->lang);
+	bool get_linkage_name = prefer_linkage_name(ctx->lang);
 	RzStrBuf ret_type;
-	rz_strbuf_init (&ret_type);
-	if (find_attr_idx (die, DW_AT_declaration) != -1) {
+	rz_strbuf_init(&ret_type);
+	if (find_attr_idx(die, DW_AT_declaration) != -1) {
 		return; /* just declaration skip */
 	}
 	size_t i;
@@ -1352,14 +1352,14 @@ static void parse_function(Context *ctx, ut64 idx) {
 			break;
 		case DW_AT_specification: /* reference to declaration DIE with more info */
 		{
-			RzBinDwarfDie *spec_die = ht_up_find (ctx->die_map, val->reference, NULL);
+			RzBinDwarfDie *spec_die = ht_up_find(ctx->die_map, val->reference, NULL);
 			if (spec_die) {
-				fcn.name = get_specification_die_name (spec_die); /* I assume that if specification has a name, this DIE hasn't */
-				get_spec_die_type (ctx, spec_die, &ret_type);
+				fcn.name = get_specification_die_name(spec_die); /* I assume that if specification has a name, this DIE hasn't */
+				get_spec_die_type(ctx, spec_die, &ret_type);
 			}
 		} break;
 		case DW_AT_type:
-			parse_type (ctx, val->reference, &ret_type, NULL);
+			parse_type(ctx, val->reference, &ret_type, NULL);
 			break;
 		case DW_AT_virtuality:
 			fcn.is_method = true; /* method specific attr */
@@ -1392,32 +1392,32 @@ static void parse_function(Context *ctx, ut64 idx) {
 		goto cleanup;
 	}
 	RzStrBuf args;
-	rz_strbuf_init (&args);
+	rz_strbuf_init(&args);
 	/* TODO do the same for arguments in future so we can use their location */
-	RzList/*<Variable*>*/  *variables = rz_list_new ();
-	parse_function_args_and_vars (ctx, idx, &args, variables);
+	RzList /*<Variable*>*/ *variables = rz_list_new();
+	parse_function_args_and_vars(ctx, idx, &args, variables);
 
 	if (ret_type.len == 0) { /* DW_AT_type is omitted in case of `void` ret type */
-		rz_strbuf_append (&ret_type, "void");
+		rz_strbuf_append(&ret_type, "void");
 	}
-	rz_warn_if_fail (ctx->lang);
-	char *new_name = ctx->analysis->binb.demangle (NULL, ctx->lang, fcn.name, fcn.addr, false);
-	fcn.name = new_name ? new_name : strdup (fcn.name);
-	fcn.signature = rz_str_newf ("%s %s(%s);", rz_strbuf_get (&ret_type), fcn.name, rz_strbuf_get (&args));
-	sdb_save_dwarf_function (&fcn, variables, ctx->sdb);
+	rz_warn_if_fail(ctx->lang);
+	char *new_name = ctx->analysis->binb.demangle(NULL, ctx->lang, fcn.name, fcn.addr, false);
+	fcn.name = new_name ? new_name : strdup(fcn.name);
+	fcn.signature = rz_str_newf("%s %s(%s);", rz_strbuf_get(&ret_type), fcn.name, rz_strbuf_get(&args));
+	sdb_save_dwarf_function(&fcn, variables, ctx->sdb);
 
-	free ((char *)fcn.signature);
-	free ((char *)fcn.name);
+	free((char *)fcn.signature);
+	free((char *)fcn.name);
 
 	RzListIter *iter;
 	Variable *var;
 	rz_list_foreach (variables, iter, var) {
-		variable_free (var);
+		variable_free(var);
 	}
-	rz_list_free (variables);
-	rz_strbuf_fini (&args);
+	rz_list_free(variables);
+	rz_strbuf_fini(&args);
 cleanup:
-	rz_strbuf_fini (&ret_type);
+	rz_strbuf_fini(&ret_type);
 }
 
 /**
@@ -1427,19 +1427,18 @@ cleanup:
  * @return char* string literal language represantation for demangling BinDemangle
  */
 static char *parse_comp_unit_lang(const RzBinDwarfDie *die) {
-	rz_return_val_if_fail (die, NULL);
+	rz_return_val_if_fail(die, NULL);
 
-	int idx = find_attr_idx (die, DW_AT_language);
+	int idx = find_attr_idx(die, DW_AT_language);
 	char *lang = "cxx"; // default fallback
 	if (idx == -1) {
 		/* What to do now, it should have  one?, just assume C++ */
 		return lang;
 	}
 	const RzBinDwarfAttrValue *val = &die->attr_values[idx];
-	rz_warn_if_fail (val->kind == DW_AT_KIND_CONSTANT);
+	rz_warn_if_fail(val->kind == DW_AT_KIND_CONSTANT);
 
-	switch (val->uconstant)
-	{
+	switch (val->uconstant) {
 	case DW_LANG_Java:
 		return "java";
 	case DW_LANG_ObjC:
@@ -1487,30 +1486,30 @@ static char *parse_comp_unit_lang(const RzBinDwarfDie *die) {
  * @param idx index of the current entry
  */
 static void parse_type_entry(Context *ctx, ut64 idx) {
-	rz_return_if_fail (ctx);
+	rz_return_if_fail(ctx);
 
 	const RzBinDwarfDie *die = &ctx->all_dies[idx];
 	switch (die->tag) {
 	case DW_TAG_structure_type:
 	case DW_TAG_union_type:
 	case DW_TAG_class_type:
-		parse_structure_type (ctx, idx);
+		parse_structure_type(ctx, idx);
 		break;
 	case DW_TAG_enumeration_type:
-		parse_enum_type (ctx, idx);
+		parse_enum_type(ctx, idx);
 		break;
 	case DW_TAG_typedef:
-		parse_typedef (ctx, idx);
+		parse_typedef(ctx, idx);
 		break;
 	case DW_TAG_base_type:
-		parse_atomic_type (ctx, idx);
+		parse_atomic_type(ctx, idx);
 		break;
 	case DW_TAG_subprogram:
-		parse_function (ctx, idx);
+		parse_function(ctx, idx);
 		break;
 	case DW_TAG_compile_unit:
 		/* used for name demangling */
-		ctx->lang = parse_comp_unit_lang (die);
+		ctx->lang = parse_comp_unit_lang(die);
 	default:
 		break;
 	}
@@ -1524,8 +1523,8 @@ static void parse_type_entry(Context *ctx, ut64 idx) {
  * @param ctx
  */
 RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzAnalysisDwarfContext *ctx) {
-	rz_return_if_fail (ctx && analysis);
-	Sdb *dwarf_sdb =  sdb_ns (analysis->sdb, "dwarf", 1);
+	rz_return_if_fail(ctx && analysis);
+	Sdb *dwarf_sdb = sdb_ns(analysis->sdb, "dwarf", 1);
 	size_t i, j;
 	const RzBinDwarfDebugInfo *info = ctx->info;
 	for (i = 0; i < info->count; i++) {
@@ -1540,15 +1539,15 @@ RZ_API void rz_analysis_dwarf_process_info(const RzAnalysis *analysis, RzAnalysi
 			.lang = NULL
 		};
 		for (j = 0; j < unit->count; j++) {
-			parse_type_entry (&dw_context, j);
+			parse_type_entry(&dw_context, j);
 		}
 	}
 }
 
 bool filter_sdb_function_names(void *user, const char *k, const char *v) {
-	(void) user;
-	(void) k;
-	return !strcmp (v, "fcn");
+	(void)user;
+	(void)k;
+	return !strcmp(v, "fcn");
 }
 
 /**
@@ -1559,81 +1558,81 @@ bool filter_sdb_function_names(void *user, const char *k, const char *v) {
  * @param dwarf_sdb
  */
 RZ_API void rz_analysis_dwarf_integrate_functions(RzAnalysis *analysis, RzFlag *flags, Sdb *dwarf_sdb) {
-	rz_return_if_fail (analysis && dwarf_sdb);
+	rz_return_if_fail(analysis && dwarf_sdb);
 
 	/* get all entries with value == func */
-	SdbList *sdb_list = sdb_foreach_list_filter (dwarf_sdb, filter_sdb_function_names, false);
+	SdbList *sdb_list = sdb_foreach_list_filter(dwarf_sdb, filter_sdb_function_names, false);
 	SdbListIter *it;
 	SdbKv *kv;
 	/* iterate all function entries */
 	ls_foreach (sdb_list, it, kv) {
 		char *func_sname = kv->base.key;
 
-		char *addr_key = rz_str_newf ("fcn.%s.addr", func_sname);
-		ut64 faddr = sdb_num_get (dwarf_sdb, addr_key, 0);
-		free (addr_key);
+		char *addr_key = rz_str_newf("fcn.%s.addr", func_sname);
+		ut64 faddr = sdb_num_get(dwarf_sdb, addr_key, 0);
+		free(addr_key);
 
 		/* if the function is analyzed so we can edit */
-		RzAnalysisFunction *fcn = rz_analysis_get_function_at (analysis, faddr);
+		RzAnalysisFunction *fcn = rz_analysis_get_function_at(analysis, faddr);
 		if (fcn) {
 			/* prepend dwarf debug info stuff with dbg. */
-			char *real_name_key = rz_str_newf ("fcn.%s.name", func_sname);
-			char *real_name = sdb_get (dwarf_sdb, real_name_key, 0);
-			free (real_name_key);
+			char *real_name_key = rz_str_newf("fcn.%s.name", func_sname);
+			char *real_name = sdb_get(dwarf_sdb, real_name_key, 0);
+			free(real_name_key);
 
-			char *dwf_name = rz_str_newf ("dbg.%s", real_name);
-			free (real_name);
+			char *dwf_name = rz_str_newf("dbg.%s", real_name);
+			free(real_name);
 
-			rz_analysis_function_rename (fcn, dwf_name);
-			free (dwf_name);
+			rz_analysis_function_rename(fcn, dwf_name);
+			free(dwf_name);
 
-			char *tmp = rz_str_newf ("fcn.%s.sig", func_sname);
-			char *fcnstr = sdb_get (dwarf_sdb, tmp, 0);
-			free (tmp);
+			char *tmp = rz_str_newf("fcn.%s.sig", func_sname);
+			char *fcnstr = sdb_get(dwarf_sdb, tmp, 0);
+			free(tmp);
 			/* Apply signature as a comment at a function address */
-			rz_meta_set_string (analysis, RZ_META_TYPE_COMMENT, faddr, fcnstr);
-			free (fcnstr);
+			rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, faddr, fcnstr);
+			free(fcnstr);
 		}
-		char *var_names_key = rz_str_newf ("fcn.%s.vars", func_sname);
-		char *vars = sdb_get (dwarf_sdb, var_names_key, NULL);
+		char *var_names_key = rz_str_newf("fcn.%s.vars", func_sname);
+		char *vars = sdb_get(dwarf_sdb, var_names_key, NULL);
 		char *var_name;
-		sdb_aforeach (var_name, vars) {
-			char *var_key = rz_str_newf ("fcn.%s.var.%s", func_sname, var_name);
-			char *var_data = sdb_get (dwarf_sdb, var_key, NULL);
+		sdb_aforeach(var_name, vars) {
+			char *var_key = rz_str_newf("fcn.%s.var.%s", func_sname, var_name);
+			char *var_data = sdb_get(dwarf_sdb, var_key, NULL);
 			if (!var_data) {
 				goto loop_end;
 			}
 			char *extra = NULL;
-			char *kind = sdb_anext (var_data, &extra);
+			char *kind = sdb_anext(var_data, &extra);
 			char *type = NULL;
-			extra = sdb_anext (extra, &type);
+			extra = sdb_anext(extra, &type);
 			st64 offset = 0;
 			if (*kind != 'r') {
-				offset = strtol (extra, NULL, 10);
+				offset = strtol(extra, NULL, 10);
 			}
 			if (*kind == 'g') { /* global, fixed addr TODO add size to variables? */
-				char *global_name = rz_str_newf ("global_%s", var_name);
-				rz_flag_unset_off (flags, offset);
-				rz_flag_set_next (flags, global_name, offset, 4);
-				free (global_name);
+				char *global_name = rz_str_newf("global_%s", var_name);
+				rz_flag_unset_off(flags, offset);
+				rz_flag_set_next(flags, global_name, offset, 4);
+				free(global_name);
 			} else if (*kind == 's' && fcn) {
-				rz_analysis_function_set_var (fcn, offset - fcn->maxstack, *kind, type, 4, false, var_name);
+				rz_analysis_function_set_var(fcn, offset - fcn->maxstack, *kind, type, 4, false, var_name);
 			} else if (*kind == 'r' && fcn) {
-				RzRegItem *i = rz_reg_get (analysis->reg, extra, -1);
+				RzRegItem *i = rz_reg_get(analysis->reg, extra, -1);
 				if (!i) {
 					goto loop_end;
 				}
-				rz_analysis_function_set_var (fcn, i->index, *kind, type, 4, false, var_name);
+				rz_analysis_function_set_var(fcn, i->index, *kind, type, 4, false, var_name);
 			} else if (fcn) { /* kind == 'b' */
-				rz_analysis_function_set_var (fcn, offset - fcn->bp_off, *kind, type, 4, false, var_name);
+				rz_analysis_function_set_var(fcn, offset - fcn->bp_off, *kind, type, 4, false, var_name);
 			}
-			free (var_key);
-			free (var_data);
+			free(var_key);
+			free(var_data);
 		loop_end:
-			sdb_aforeach_next (var_name);
+			sdb_aforeach_next(var_name);
 		}
-		free (var_names_key);
-		free (vars);
+		free(var_names_key);
+		free(vars);
 	}
-	ls_free (sdb_list);
+	ls_free(sdb_list);
 }

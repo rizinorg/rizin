@@ -7,24 +7,24 @@
 #include "../arch/snes/snesdis.c"
 #include "asm_snes.h"
 
-static struct snes_asm_flags* snesflags = NULL;
+static struct snes_asm_flags *snesflags = NULL;
 
-static bool snes_asm_init (void* user) {
+static bool snes_asm_init(void *user) {
 	if (!snesflags) {
-		snesflags = malloc (sizeof (struct snes_asm_flags));
+		snesflags = malloc(sizeof(struct snes_asm_flags));
 	}
-	memset(snesflags,0,sizeof (struct snes_asm_flags));
+	memset(snesflags, 0, sizeof(struct snes_asm_flags));
 	return 0;
 }
 
-static bool snes_asm_fini (void* user) {
+static bool snes_asm_fini(void *user) {
 	free(snesflags);
 	snesflags = NULL;
 	return 0;
 }
 
 static int dis(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	int dlen = snesDisass (snesflags->M, snesflags->X, a->pc, op, buf, len);
+	int dlen = snesDisass(snesflags->M, snesflags->X, a->pc, op, buf, len);
 	if (dlen < 0) {
 		dlen = 0;
 	}
@@ -51,7 +51,7 @@ RzAsmPlugin rz_asm_plugin_snes = {
 	.name = "snes",
 	.desc = "SuperNES CPU",
 	.arch = "snes",
-	.bits = 8|16,
+	.bits = 8 | 16,
 	.init = snes_asm_init,
 	.fini = snes_asm_fini,
 	.endian = RZ_SYS_ENDIAN_LITTLE,

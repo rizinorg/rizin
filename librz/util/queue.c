@@ -2,17 +2,17 @@
 
 #include <rz_util.h>
 
-RZ_API RQueue *rz_queue_new (int n) {
+RZ_API RQueue *rz_queue_new(int n) {
 	if (n <= 0) {
 		return NULL;
 	}
-	RQueue *q = RZ_NEW0 (RQueue);
+	RQueue *q = RZ_NEW0(RQueue);
 	if (!q) {
 		return NULL;
 	}
-	q->elems = RZ_NEWS0 (void *, n);
-	if (!q->elems){
-		free (q);
+	q->elems = RZ_NEWS0(void *, n);
+	if (!q->elems) {
+		free(q);
 		return NULL;
 	}
 	q->front = 0;
@@ -23,12 +23,12 @@ RZ_API RQueue *rz_queue_new (int n) {
 }
 
 RZ_API void rz_queue_free(RQueue *q) {
-	free (q->elems);
-	free (q);
+	free(q->elems);
+	free(q);
 }
 
 static int is_full(RQueue *q) {
-	 return q->size == q->capacity;
+	return q->size == q->capacity;
 }
 
 static int increase_capacity(RQueue *q) {
@@ -49,7 +49,7 @@ static int increase_capacity(RQueue *q) {
 		tmp_front = (tmp_front + 1) % q->capacity;
 	}
 
-	free (q->elems);
+	free(q->elems);
 	q->elems = newelems;
 	q->front = 0;
 	q->rear = i;
@@ -59,7 +59,7 @@ static int increase_capacity(RQueue *q) {
 
 RZ_API int rz_queue_enqueue(RQueue *q, void *el) {
 	if (is_full(q)) {
-		int res = increase_capacity (q);
+		int res = increase_capacity(q);
 		if (!res) {
 			return false;
 		}
@@ -74,7 +74,7 @@ RZ_API int rz_queue_enqueue(RQueue *q, void *el) {
 RZ_API void *rz_queue_dequeue(RQueue *q) {
 	void *res;
 
-	if (rz_queue_is_empty (q)) {
+	if (rz_queue_is_empty(q)) {
 		return NULL;
 	}
 	res = q->elems[q->front];

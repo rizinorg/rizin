@@ -188,7 +188,7 @@ static const struct { ut32 from, to; } nonprintable_ranges[] = {
 	{ 0x2B735, 0x2B73F }, { 0x2B81E, 0x2F7FF }, { 0x2FA1E, 0xF0000 },
 	{ 0xFFFFE, 0xFFFFF }, { 0x10FFFE, 0x10FFFF }, { 0x110000, 0xFFFFFFFF }
 };
-static const int nonprintable_ranges_count = sizeof (nonprintable_ranges) / sizeof (nonprintable_ranges[0]);
+static const int nonprintable_ranges_count = sizeof(nonprintable_ranges) / sizeof(nonprintable_ranges[0]);
 
 static const int lastUtfBlock = 281;
 
@@ -483,7 +483,7 @@ RZ_API const char *rz_utf_block_name(int idx) {
 	return rz_utf_blocks[idx].name;
 }
 
-#define rz_utf_blocks_count (sizeof (rz_utf_blocks) / sizeof (rz_utf_blocks[0]))
+#define rz_utf_blocks_count (sizeof(rz_utf_blocks) / sizeof(rz_utf_blocks[0]))
 
 /* Convert an UTF-8 buf into a unicode RzRune */
 RZ_API int rz_utf8_decode(const ut8 *ptr, int ptrlen, RzRune *ch) {
@@ -495,17 +495,17 @@ RZ_API int rz_utf8_decode(const ut8 *ptr, int ptrlen, RzRune *ch) {
 			*ch = (ut32)ptr[0];
 		}
 		return 1;
-	} else if (ptrlen>1 && (ptr[0]&0xe0) == 0xc0 && (ptr[1]&0xc0) == 0x80) {
+	} else if (ptrlen > 1 && (ptr[0] & 0xe0) == 0xc0 && (ptr[1] & 0xc0) == 0x80) {
 		if (ch) {
 			*ch = (ptr[0] & 0x1f) << 6 | (ptr[1] & 0x3f);
 		}
 		return 2;
-	} else if (ptrlen>2 && (ptr[0]&0xf0) == 0xe0 && (ptr[1]&0xc0) == 0x80 && (ptr[2]&0xc0) == 0x80) {
+	} else if (ptrlen > 2 && (ptr[0] & 0xf0) == 0xe0 && (ptr[1] & 0xc0) == 0x80 && (ptr[2] & 0xc0) == 0x80) {
 		if (ch) {
 			*ch = (ptr[0] & 0xf) << 12 | (ptr[1] & 0x3f) << 6 | (ptr[2] & 0x3f);
 		}
 		return 3;
-	} else if (ptrlen>3 && (ptr[0]&0xf8) == 0xf0 && (ptr[1]&0xc0) == 0x80 && (ptr[2]&0xc0) == 0x80 && (ptr[3]&0xc0) == 0x80) {
+	} else if (ptrlen > 3 && (ptr[0] & 0xf8) == 0xf0 && (ptr[1] & 0xc0) == 0x80 && (ptr[2] & 0xc0) == 0x80 && (ptr[3] & 0xc0) == 0x80) {
 		if (ch) {
 			*ch = (ptr[0] & 7) << 18 | (ptr[1] & 0x3f) << 12 | (ptr[2] & 0x3f) << 6 | (ptr[3] & 0x3f);
 		}
@@ -519,23 +519,20 @@ RZ_API int rz_utf8_encode(ut8 *ptr, const RzRune ch) {
 	if (ch < 0x80) {
 		ptr[0] = (ut8)ch;
 		return 1;
-	}
-	else if (ch < 0x800) {
+	} else if (ch < 0x800) {
 		ptr[0] = 0xc0 | (ch >> 6);
 		ptr[1] = 0x80 | (ch & 0x3f);
 		return 2;
-	}
-	else if (ch < 0x10000) {
+	} else if (ch < 0x10000) {
 		ptr[0] = 0xe0 | (ch >> 12);
 		ptr[1] = 0x80 | ((ch >> 6) & 0x3f);
 		ptr[2] = 0x80 | (ch & 0x3f);
 		return 3;
-	}
-	else if (ch < 0x200000) {
+	} else if (ch < 0x200000) {
 		ptr[0] = 0xf0 | (ch >> 18);
 		ptr[1] = 0x80 | ((ch >> 12) & 0x3f);
 		ptr[2] = 0x80 | ((ch >> 6) & 0x3f);
-		ptr[3] = 0x80 | (ch & 0x3f );
+		ptr[3] = 0x80 | (ch & 0x3f);
 		return 4;
 	}
 	return 0;
@@ -549,8 +546,8 @@ RZ_API int rz_utf8_encode_str(const RzRune *str, ut8 *dst, const int dst_length)
 		return -1;
 	}
 
-	for (i = 0; i < sizeof (str) - 1 && str[i] && pos < dst_length - 1; i++) {
-		pos += rz_utf8_encode (&dst[pos], str[i]);
+	for (i = 0; i < sizeof(str) - 1 && str[i] && pos < dst_length - 1; i++) {
+		pos += rz_utf8_encode(&dst[pos], str[i]);
 	}
 
 	dst[pos++] = '\0';
@@ -569,7 +566,7 @@ RZ_API int rz_utf8_size(const ut8 *ptr) {
 		3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, // 0xE0-0xEF
 		4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, // 0xF0-0xFF
 	};
-	return (ptr[0]&0x80) ? utf8_size[ptr[0]^0x80] : 1;
+	return (ptr[0] & 0x80) ? utf8_size[ptr[0] ^ 0x80] : 1;
 }
 
 RZ_API int rz_utf8_strlen(const ut8 *str) {
@@ -592,7 +589,7 @@ RZ_API int rz_isprint(const RzRune c) {
 		{ 0x0000, 0x001F }, { 0x007F, 0x009F }, { 0x034F, 0x034F },
 		could do a linear search, but that's a lot slower than a few compare
 		*/
-		return !( c <= 0x1F || ( c >= 0x7F && c <= 0x9F));
+		return !(c <= 0x1F || (c >= 0x7F && c <= 0x9F));
 	}
 
 	const int last = nonprintable_ranges_count;
@@ -624,10 +621,10 @@ RZ_API char *rz_utf16_to_utf8_l(const wchar_t *wc, int len) {
 	char *rutf8 = NULL;
 	int csize;
 
-	if ((csize = WideCharToMultiByte (CP_UTF8, 0, wc, len, NULL, 0, NULL, NULL))) {
+	if ((csize = WideCharToMultiByte(CP_UTF8, 0, wc, len, NULL, 0, NULL, NULL))) {
 		++csize;
-		if ((rutf8 = malloc (csize))) {
-			WideCharToMultiByte (CP_UTF8, 0, wc, len, rutf8, csize, NULL, NULL);
+		if ((rutf8 = malloc(csize))) {
+			WideCharToMultiByte(CP_UTF8, 0, wc, len, rutf8, csize, NULL, NULL);
 			if (len != -1) {
 				rutf8[csize - 1] = '\0';
 			}
@@ -643,10 +640,10 @@ RZ_API wchar_t *rz_utf8_to_utf16_l(const char *cstring, int len) {
 	wchar_t *rutf16 = NULL;
 	int wcsize;
 
-	if ((wcsize = MultiByteToWideChar (CP_UTF8, 0, cstring, len, NULL, 0))) {
+	if ((wcsize = MultiByteToWideChar(CP_UTF8, 0, cstring, len, NULL, 0))) {
 		++wcsize;
-		if ((rutf16 = (wchar_t *) calloc (wcsize, sizeof (wchar_t)))) {
-			MultiByteToWideChar (CP_UTF8, 0, cstring, len, rutf16, wcsize);
+		if ((rutf16 = (wchar_t *)calloc(wcsize, sizeof(wchar_t)))) {
+			MultiByteToWideChar(CP_UTF8, 0, cstring, len, rutf16, wcsize);
 			if (len != -1) {
 				rutf16[wcsize - 1] = L'\0';
 			}
@@ -661,24 +658,24 @@ RZ_API char *rz_utf8_to_acp_l(const char *str, int len) {
 	}
 	char *acp = NULL;
 	int wcsize, csize;
-	if ((wcsize = MultiByteToWideChar (CP_UTF8, 0, str, len, NULL, 0))) {
+	if ((wcsize = MultiByteToWideChar(CP_UTF8, 0, str, len, NULL, 0))) {
 		wchar_t *rutf16;
 		++wcsize;
-		if ((rutf16 = (wchar_t *)calloc (wcsize, sizeof (wchar_t)))) {
-			MultiByteToWideChar (CP_UTF8, 0, str, len, rutf16, wcsize);
+		if ((rutf16 = (wchar_t *)calloc(wcsize, sizeof(wchar_t)))) {
+			MultiByteToWideChar(CP_UTF8, 0, str, len, rutf16, wcsize);
 			if (len != -1) {
 				rutf16[wcsize - 1] = L'\0';
 			}
-			if ((csize = WideCharToMultiByte (CP_ACP, 0, rutf16, wcsize, NULL, 0, NULL, NULL))) {
+			if ((csize = WideCharToMultiByte(CP_ACP, 0, rutf16, wcsize, NULL, 0, NULL, NULL))) {
 				++csize;
-				if ((acp = malloc (csize))) {
-					WideCharToMultiByte (CP_ACP, 0, rutf16, wcsize, acp, csize, NULL, NULL);
+				if ((acp = malloc(csize))) {
+					WideCharToMultiByte(CP_ACP, 0, rutf16, wcsize, acp, csize, NULL, NULL);
 					if (len != -1) {
 						acp[csize - 1] = '\0';
 					}
 				}
 			}
-			free (rutf16);
+			free(rutf16);
 		}
 	}
 	return acp;
@@ -689,16 +686,16 @@ RZ_API char *rz_acp_to_utf8_l(const char *str, int len) {
 		return NULL;
 	}
 	int wcsize;
-	if ((wcsize = MultiByteToWideChar (CP_ACP, 0, str, len, NULL, 0))) {
+	if ((wcsize = MultiByteToWideChar(CP_ACP, 0, str, len, NULL, 0))) {
 		wchar_t *rutf16;
 		++wcsize;
-		if ((rutf16 = (wchar_t *) calloc (wcsize, sizeof (wchar_t)))) {
-			MultiByteToWideChar (CP_ACP, 0, str, len, rutf16, wcsize);
+		if ((rutf16 = (wchar_t *)calloc(wcsize, sizeof(wchar_t)))) {
+			MultiByteToWideChar(CP_ACP, 0, str, len, rutf16, wcsize);
 			if (len != -1) {
 				rutf16[wcsize - 1] = L'\0';
 			}
-			char *ret = rz_utf16_to_utf8_l (rutf16, wcsize);
-			free (rutf16);
+			char *ret = rz_utf16_to_utf8_l(rutf16, wcsize);
+			free(rutf16);
 			return ret;
 		}
 	}
@@ -736,18 +733,18 @@ RZ_API int *rz_utf_block_list(const ut8 *str, int len, int **freq_list) {
 		return NULL;
 	}
 	if (len < 0) {
-		len = strlen ((const char *)str);
+		len = strlen((const char *)str);
 	}
-	static int block_freq[rz_utf_blocks_count] = {0};
-	int *list = RZ_NEWS (int, len + 1);
+	static int block_freq[rz_utf_blocks_count] = { 0 };
+	int *list = RZ_NEWS(int, len + 1);
 	if (!list) {
 		return NULL;
 	}
 	int *freq_list_ptr = NULL;
 	if (freq_list) {
-		*freq_list = RZ_NEWS (int, len + 1);
+		*freq_list = RZ_NEWS(int, len + 1);
 		if (!*freq_list) {
-			free (list);
+			free(list);
 			return NULL;
 		}
 		freq_list_ptr = *freq_list;
@@ -758,12 +755,12 @@ RZ_API int *rz_utf_block_list(const ut8 *str, int len, int **freq_list) {
 	RzRune ch;
 	while (str_ptr < str_end) {
 		int block_idx;
-		int ch_bytes = rz_utf8_decode (str_ptr, str_end - str_ptr, &ch);
+		int ch_bytes = rz_utf8_decode(str_ptr, str_end - str_ptr, &ch);
 		if (!ch_bytes) {
 			block_idx = rz_utf_blocks_count - 1;
 			ch_bytes = 1;
 		} else {
-			block_idx = rz_utf_block_idx (ch);
+			block_idx = rz_utf_block_idx(ch);
 		}
 		if (!block_freq[block_idx]) {
 			*list_ptr = block_idx;

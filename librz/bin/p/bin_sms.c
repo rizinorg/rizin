@@ -16,14 +16,14 @@ static ut32 cb = 0;
 static bool check_buffer(RzBuffer *b) {
 	ut32 *off, offs[] = { 0x2000, 0x4000, 0x8000, 0x9000, 0 };
 	ut8 signature[8];
-	for (off = (ut32*)&offs; *off; off++) {
-		rz_buf_read_at (b, *off - 16, (ut8*)&signature, 8);
-		if (!strncmp ((const char *)signature, "TMR SEGA", 8)) {
+	for (off = (ut32 *)&offs; *off; off++) {
+		rz_buf_read_at(b, *off - 16, (ut8 *)&signature, 8);
+		if (!strncmp((const char *)signature, "TMR SEGA", 8)) {
 			cb = *off - 16;
 			return true; // int)(*off - 16);
 		}
 		if (*off == 0x8000) {
-			if (!strncmp ((const char *)signature, "SDSC", 4)) {
+			if (!strncmp((const char *)signature, "SDSC", 4)) {
 				cb = *off - 16;
 				return true; // (int)(*off - 16);
 			}
@@ -33,54 +33,54 @@ static bool check_buffer(RzBuffer *b) {
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	return check_buffer (buf);
+	return check_buffer(buf);
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
-	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
+	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 	if (!ret || !bf || !bf->buf) {
-		free (ret);
+		free(ret);
 		return NULL;
 	}
-	ret->file = strdup (bf->file);
-	ret->type = strdup ("ROM");
-	ret->machine = strdup ("SEGA MasterSystem");
-	ret->os = strdup ("sms");
-	ret->arch = strdup ("z80");
+	ret->file = strdup(bf->file);
+	ret->type = strdup("ROM");
+	ret->machine = strdup("SEGA MasterSystem");
+	ret->os = strdup("sms");
+	ret->arch = strdup("z80");
 	ret->has_va = 1;
 	ret->bits = 8;
-	if (!check_buffer (bf->buf)) {
-		eprintf ("Cannot find magic SEGA copyright\n");
-		free (ret);
+	if (!check_buffer(bf->buf)) {
+		eprintf("Cannot find magic SEGA copyright\n");
+		free(ret);
 		return NULL;
 	}
-	SMS_Header hdr = {{0}};
-	rz_buf_read_at (bf->buf, cb, (ut8*)&hdr, sizeof (hdr));
-	hdr.CheckSum = rz_read_le16 (&hdr.CheckSum);
+	SMS_Header hdr = { { 0 } };
+	rz_buf_read_at(bf->buf, cb, (ut8 *)&hdr, sizeof(hdr));
+	hdr.CheckSum = rz_read_le16(&hdr.CheckSum);
 
-	eprintf ("Checksum: 0x%04x\n", (ut32)hdr.CheckSum); // use endian safe apis here
-	eprintf ("ProductCode: %02d%02X%02X\n", (hdr.Version >> 4), hdr.ProductCode[1],
+	eprintf("Checksum: 0x%04x\n", (ut32)hdr.CheckSum); // use endian safe apis here
+	eprintf("ProductCode: %02d%02X%02X\n", (hdr.Version >> 4), hdr.ProductCode[1],
 		hdr.ProductCode[0]);
 	switch (hdr.RegionRomSize >> 4) {
 	case 3:
-		eprintf ("Console: Sega Master System\n");
-		eprintf ("Region: Japan\n");
+		eprintf("Console: Sega Master System\n");
+		eprintf("Region: Japan\n");
 		break;
 	case 4:
-		eprintf ("Console: Sega Master System\n");
-		eprintf ("Region: Export\n");
+		eprintf("Console: Sega Master System\n");
+		eprintf("Region: Export\n");
 		break;
 	case 5:
-		eprintf ("Console: Game Gear\n");
-		eprintf ("Region: Japan\n");
+		eprintf("Console: Game Gear\n");
+		eprintf("Region: Japan\n");
 		break;
 	case 6:
-		eprintf ("Console: Game Gear\n");
-		eprintf ("Region: Export\n");
+		eprintf("Console: Game Gear\n");
+		eprintf("Region: Export\n");
 		break;
 	case 7:
-		eprintf ("Console: Game Gear\n");
-		eprintf ("Region: International\n");
+		eprintf("Console: Game Gear\n");
+		eprintf("Region: International\n");
 		break;
 	}
 	int romsize = 0;
@@ -95,7 +95,7 @@ static RzBinInfo *info(RzBinFile *bf) {
 	case 0x1: romsize = 512; break;
 	case 0x2: romsize = 1024; break;
 	}
-	eprintf ("RomSize: %dKB\n", romsize);
+	eprintf("RomSize: %dKB\n", romsize);
 	return ret;
 }
 

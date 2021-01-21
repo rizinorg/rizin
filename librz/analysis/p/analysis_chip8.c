@@ -7,9 +7,9 @@
 #include <rz_analysis.h>
 
 static int chip8_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *data, int len, RzAnalysisOpMask mask) {
-	ut16 opcode = rz_read_be16 (data);
-//	uint8_t x = (opcode >> 8) & 0x0F;
-//	uint8_t y = (opcode >> 4) & 0x0F;
+	ut16 opcode = rz_read_be16(data);
+	//	uint8_t x = (opcode >> 8) & 0x0F;
+	//	uint8_t y = (opcode >> 4) & 0x0F;
 	uint8_t nibble = opcode & 0x0F;
 	uint16_t nnn = opcode & 0x0FFF;
 	uint8_t kk = opcode & 0xFF;
@@ -99,7 +99,7 @@ static int chip8_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 		break;
 	case 0xE000:
 		if (kk == 0x9E || kk == 0xA1) {
-			rz_meta_set_string (analysis, RZ_META_TYPE_COMMENT, addr, "KEYPAD");
+			rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, addr, "KEYPAD");
 			op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
 			op->jump = addr + op->size * 2;
 			op->fail = addr + op->size;
@@ -111,7 +111,7 @@ static int chip8_anop(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const u
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 			break;
 		case 0x0A:
-			rz_meta_set_string (analysis, RZ_META_TYPE_COMMENT, addr, "KEYPAD");
+			rz_meta_set_string(analysis, RZ_META_TYPE_COMMENT, addr, "KEYPAD");
 			op->type = RZ_ANALYSIS_OP_TYPE_MOV;
 			break;
 		case 0x15:

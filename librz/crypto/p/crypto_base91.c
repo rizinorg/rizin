@@ -16,7 +16,7 @@ static int base91_get_key_size(RzCrypto *cry) {
 }
 
 static bool base91_use(const char *algo) {
-	return algo && !strcmp (algo, "base91");
+	return algo && !strcmp(algo, "base91");
 }
 
 static bool update(RzCrypto *cry, const ut8 *buf, int len) {
@@ -24,22 +24,22 @@ static bool update(RzCrypto *cry, const ut8 *buf, int len) {
 	if (!cry || !buf || len < 1) {
 		return false;
 	}
-	ut8 *obuf = malloc (olen);
+	ut8 *obuf = malloc(olen);
 	if (!obuf) {
 		return false;
 	}
 	if (cry->dir == 0) {
-		olen = rz_base91_encode ((char *)obuf, (const ut8 *)buf, len);
+		olen = rz_base91_encode((char *)obuf, (const ut8 *)buf, len);
 	} else if (cry->dir == 1) {
-		olen = rz_base91_decode (obuf, (const char *)buf, len);
+		olen = rz_base91_decode(obuf, (const char *)buf, len);
 	}
-	rz_crypto_append (cry, obuf, olen);
-	free (obuf);
+	rz_crypto_append(cry, obuf, olen);
+	free(obuf);
 	return true;
 }
 
 static bool final(RzCrypto *cry, const ut8 *buf, int len) {
-	return update (cry, buf, len);
+	return update(cry, buf, len);
 }
 
 RzCryptoPlugin rz_crypto_plugin_base91 = {

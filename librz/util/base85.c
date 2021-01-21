@@ -32,7 +32,7 @@
 
 static int getc_nospace(FILE *f) {
 	int c;
-	while (isspace (c = getc (f))) {
+	while (isspace(c = getc(f))) {
 		;
 	}
 	return c;
@@ -40,7 +40,7 @@ static int getc_nospace(FILE *f) {
 
 static void putc_wrap(char c, int wrap, int *len) {
 	if (wrap && *len >= wrap) {
-		putchar ('\n');
+		putchar('\n');
 		*len = 0;
 	}
 	putchar(c);
@@ -52,11 +52,9 @@ static void encode_tuple(unsigned long tuple, int count, int wrap, int *plen, in
 	char out[5];
 	if (tuple == 0 && count == 4) {
 		putc_wrap('z', wrap, plen);
-	}
-	else if (tuple == 0x20202020 && count == 4 && y_abbr) {
+	} else if (tuple == 0x20202020 && count == 4 && y_abbr) {
 		putc_wrap('y', wrap, plen);
-	}
-	else {
+	} else {
 		for (i = 0; i < 5; i++) {
 			out[i] = tuple % 85 + '!';
 			tuple /= 85;
@@ -79,8 +77,8 @@ RZ_API void rz_base85_encode(FILE *fp, int delims, int wrap, int y_abbr) {
 	int c, count = 0, len = 0;
 	unsigned long tuple = 0;
 	if (delims) {
-		putc_wrap ('<', wrap, &len);
-		putc_wrap ('~', wrap, &len);
+		putc_wrap('<', wrap, &len);
+		putc_wrap('~', wrap, &len);
 	}
 	for (;;) {
 		c = getc(fp);
@@ -100,41 +98,41 @@ RZ_API void rz_base85_encode(FILE *fp, int delims, int wrap, int y_abbr) {
 		count = 0;
 	}
 	if (delims) {
-		putc_wrap ('~', wrap, &len);
-		putc_wrap ('>', wrap, &len);
+		putc_wrap('~', wrap, &len);
+		putc_wrap('>', wrap, &len);
 	}
 }
 
 RZ_API bool rz_base85_decode(FILE *fp, int delims, int ignore_garbage) {
 	int c, count = 0, end = 0;
-	unsigned long tuple = 0, pows[] = {85*85*85*85, 85*85*85, 85*85, 85, 1};
+	unsigned long tuple = 0, pows[] = { 85 * 85 * 85 * 85, 85 * 85 * 85, 85 * 85, 85, 1 };
 	while (delims) {
-		c = getc_nospace (fp);
+		c = getc_nospace(fp);
 		if (c == '<') {
-			c = getc_nospace (fp);
+			c = getc_nospace(fp);
 			if (c == '~') {
 				break;
 			}
-			ungetc (c, fp);
+			ungetc(c, fp);
 		} else if (c == EOF) {
-			eprintf ("ascii85: missing <~");
+			eprintf("ascii85: missing <~");
 			return false;
 		}
 	}
 	for (;;) {
 		c = getc_nospace(fp);
 		if (c == 'z' && count == 0) {
-			rz_base85_decode_tuple (0, 5);
+			rz_base85_decode_tuple(0, 5);
 			continue;
 		}
 		if (c == 'y' && count == 0) {
-			rz_base85_decode_tuple (0x20202020, 5);
+			rz_base85_decode_tuple(0x20202020, 5);
 			continue;
 		}
 		if (c == '~' && delims) {
-			c = getc_nospace (fp);
+			c = getc_nospace(fp);
 			if (c != '>') {
-				eprintf ("ascii85: ~ without >\n");
+				eprintf("ascii85: ~ without >\n");
 				return false;
 			}
 			c = EOF;
@@ -142,11 +140,11 @@ RZ_API bool rz_base85_decode(FILE *fp, int delims, int ignore_garbage) {
 		}
 		if (c == EOF) {
 			if (delims && !end) {
-				eprintf ("ascii85: missing ~>");
+				eprintf("ascii85: missing ~>");
 				return false;
 			}
 			if (count > 0) {
-				tuple += pows[count-1];
+				tuple += pows[count - 1];
 				rz_base85_decode_tuple(tuple, count);
 			}
 			break;
@@ -155,7 +153,7 @@ RZ_API bool rz_base85_decode(FILE *fp, int delims, int ignore_garbage) {
 			if (ignore_garbage) {
 				continue;
 			}
-			eprintf ("ascii85: invalid character '%c'\n", c);
+			eprintf("ascii85: invalid character '%c'\n", c);
 			return false;
 		}
 		tuple += (c - '!') * pows[count++];

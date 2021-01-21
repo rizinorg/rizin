@@ -4,8 +4,8 @@
 #include <rz_lib.h>
 
 static struct rz_bp_arch_t rz_bp_plugin_x86_bps[] = {
-	{ 0, 1, 0, (const ut8*)"\xcc" }, // valid for 16, 32, 64
-	{ 0, 2, 0, (const ut8*)"\xcd\x03" },
+	{ 0, 1, 0, (const ut8 *)"\xcc" }, // valid for 16, 32, 64
+	{ 0, 2, 0, (const ut8 *)"\xcd\x03" },
 	{ 0, 0, 0, NULL },
 };
 

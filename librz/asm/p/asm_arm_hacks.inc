@@ -21,9 +21,9 @@ static char *hack_handle_dp_imm(ut32 insn) {
 			const ut8 uimm4 = (insn >> 10) & 0xf;
 			const ut8 Xn = (insn >> 5) & 0x1f;
 			const ut8 Xd = (insn >> 0) & 0x1f;
-			buf_asm = rz_str_newf ("%s x%d, x%d, #0x%x, #0x%x",
+			buf_asm = rz_str_newf("%s x%d, x%d, #0x%x, #0x%x",
 				mnemonic, Xd, Xn, uimm6, uimm4);
-			buf_asm = rz_str_replace (buf_asm, "x31", "sp", 1);
+			buf_asm = rz_str_replace(buf_asm, "x31", "sp", 1);
 			return buf_asm;
 		}
 	}
@@ -44,16 +44,16 @@ static char *hack_handle_br_exc_sys(ut32 insn) {
 		if (CRm == 4 && (op2 & 1) == 0) {
 			switch (op2) {
 			case 0:
-				buf_asm = rz_str_newf ("%s", mnemonic);
+				buf_asm = rz_str_newf("%s", mnemonic);
 				break;
 			case 2:
-				buf_asm = rz_str_newf ("%s c", mnemonic);
+				buf_asm = rz_str_newf("%s c", mnemonic);
 				break;
 			case 4:
-				buf_asm = rz_str_newf ("%s j", mnemonic);
+				buf_asm = rz_str_newf("%s j", mnemonic);
 				break;
 			case 6:
-				buf_asm = rz_str_newf ("%s jc", mnemonic);
+				buf_asm = rz_str_newf("%s jc", mnemonic);
 				break;
 			}
 		}
@@ -90,16 +90,16 @@ static char *hack_handle_dp_reg(ut32 insn) {
 			const ut8 Xm = (insn >> 16) & 0x1f;
 			const ut8 Xn = (insn >> 5) & 0x1f;
 			const ut8 Xd = (insn >> 0) & 0x1f;
-			if (Xm == 31 && !strcmp (mnemonic, "irg")) {
+			if (Xm == 31 && !strcmp(mnemonic, "irg")) {
 				// Xm is xzr, discard it
-				buf_asm = rz_str_newf ("%s x%d, x%d", mnemonic, Xd, Xn);
-			} else if (!strcmp (mnemonic, "subps") && S == 1 && Xd == 0x1f) {
+				buf_asm = rz_str_newf("%s x%d, x%d", mnemonic, Xd, Xn);
+			} else if (!strcmp(mnemonic, "subps") && S == 1 && Xd == 0x1f) {
 				// ccmp is an alias for subps when S == '1' && Xd == '11111'
-				buf_asm = rz_str_newf ("cmpp x%d, x%d", Xn, Xm);
+				buf_asm = rz_str_newf("cmpp x%d, x%d", Xn, Xm);
 			} else {
-				buf_asm = rz_str_newf ("%s x%d, x%d, x%d", mnemonic, Xd, Xn, Xm);
+				buf_asm = rz_str_newf("%s x%d, x%d, x%d", mnemonic, Xd, Xn, Xm);
 			}
-			buf_asm = rz_str_replace (buf_asm, "x31", "sp", 1);
+			buf_asm = rz_str_replace(buf_asm, "x31", "sp", 1);
 			return buf_asm;
 		}
 	}
@@ -141,19 +141,19 @@ static char *hack_handle_ldst(ut32 insn) {
 
 			switch (op2) {
 			case 1:
-				buf_asm = rz_str_newf ("%s x%d, [x%d], #0x%x",
+				buf_asm = rz_str_newf("%s x%d, [x%d], #0x%x",
 					mnemonic, Xt, Xn, imm9);
 				break;
 			case 2:
-				buf_asm = rz_str_newf ("%s x%d, [x%d, #0x%x]",
+				buf_asm = rz_str_newf("%s x%d, [x%d, #0x%x]",
 					mnemonic, Xt, Xn, imm9);
 				break;
 			case 3:
-				buf_asm = rz_str_newf ("%s x%d, [x%d, #0x%x]!",
+				buf_asm = rz_str_newf("%s x%d, [x%d, #0x%x]!",
 					mnemonic, Xt, Xn, imm9);
 				break;
 			}
-			buf_asm = rz_str_replace (buf_asm, "x31", "sp", 1);
+			buf_asm = rz_str_replace(buf_asm, "x31", "sp", 1);
 			return buf_asm;
 		} else if (op2 == 0) {
 			switch (opc) {
@@ -174,16 +174,16 @@ static char *hack_handle_ldst(ut32 insn) {
 				break;
 			}
 			if (ignore_imm9) {
-				buf_asm = rz_str_newf ("%s x%d, [x%d]",
+				buf_asm = rz_str_newf("%s x%d, [x%d]",
 					mnemonic, Xt, Xn);
 			} else {
-				buf_asm = rz_str_newf ("%s x%d, [x%d, #0x%x]",
+				buf_asm = rz_str_newf("%s x%d, [x%d, #0x%x]",
 					mnemonic, Xt, Xn, imm9);
 			}
-			buf_asm = rz_str_replace (buf_asm, "x31", "sp", 1);
+			buf_asm = rz_str_replace(buf_asm, "x31", "sp", 1);
 			return buf_asm;
 		}
-	// Load/store register pair
+		// Load/store register pair
 	} else if ((op0 & 0x3) == 2) {
 		const ut8 opc = (insn >> 30) & 0x3;
 		const bool V = (insn >> 26) & 0x1;
@@ -196,21 +196,21 @@ static char *hack_handle_ldst(ut32 insn) {
 			const ut8 Xt = (insn >> 0) & 0x1f;
 			switch (op2) {
 			case 1:
-				buf_asm = rz_str_newf ("stgp x%d, x%d, [x%d], #0x%x",
+				buf_asm = rz_str_newf("stgp x%d, x%d, [x%d], #0x%x",
 					Xt, Xt2, Xn, imm7);
 				break;
 			case 2:
-				buf_asm = rz_str_newf ("stgp x%d, x%d, [x%d, #0x%x]",
+				buf_asm = rz_str_newf("stgp x%d, x%d, [x%d, #0x%x]",
 					Xt, Xt2, Xn, imm7);
 				break;
 			case 3:
-				buf_asm = rz_str_newf ("stgp x%d, x%d, [x%d, #0x%x]!",
+				buf_asm = rz_str_newf("stgp x%d, x%d, [x%d, #0x%x]!",
 					Xt, Xt2, Xn, imm7);
 				break;
 			default:
 				return NULL;
 			}
-			buf_asm = rz_str_replace (buf_asm, "x31", "sp", 1);
+			buf_asm = rz_str_replace(buf_asm, "x31", "sp", 1);
 			return buf_asm;
 		}
 	}
@@ -219,28 +219,28 @@ static char *hack_handle_ldst(ut32 insn) {
 
 static int hackyArmAsm(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	char *buf_asm = NULL;
-    // Hacky support for ARMv8.5
+	// Hacky support for ARMv8.5
 	if (a->bits == 64 && len >= 4) {
-		ut32 insn = rz_read_ble32 (buf, a->big_endian);
+		ut32 insn = rz_read_ble32(buf, a->big_endian);
 		int insn_class = (insn >> 25) & 0xf;
 		switch (insn_class) {
 		// Data Processing -- Register
 		case 5:
 		case 13:
 			// irg, subp, gmi, subps
-			buf_asm = hack_handle_dp_reg (insn);
+			buf_asm = hack_handle_dp_reg(insn);
 			break;
 		// Data Processing -- Immediate
 		case 8:
 		case 9:
 			// addg, subg
-			buf_asm = hack_handle_dp_imm (insn);
+			buf_asm = hack_handle_dp_imm(insn);
 			break;
 		// Branches, Exception generating, and System instructions
 		case 10:
 		case 11:
 			// bti
-			buf_asm = hack_handle_br_exc_sys (insn);
+			buf_asm = hack_handle_br_exc_sys(insn);
 			break;
 		// Loads and Stores
 		case 4:
@@ -248,7 +248,7 @@ static int hackyArmAsm(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		case 12:
 		case 14:
 			// stg, stzgm, ldg, stzg, st2g, stgm, stz2g, ldgm, stgp
-			buf_asm = hack_handle_ldst (insn);
+			buf_asm = hack_handle_ldst(insn);
 			break;
 		default:
 			break;
@@ -256,10 +256,10 @@ static int hackyArmAsm(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 
 		if (buf_asm) {
 			if (!a->immdisp) {
-				rz_str_replace_char (buf_asm, '#', 0);
+				rz_str_replace_char(buf_asm, '#', 0);
 			}
-			rz_strbuf_set (&op->buf_asm, buf_asm);
-			free (buf_asm);
+			rz_strbuf_set(&op->buf_asm, buf_asm);
+			free(buf_asm);
 			return op->size = 4;
 		}
 	}

@@ -12,15 +12,15 @@ static int assemble(RzAsm *a, RzAsmOp *op, const char *buf) {
 	char *as = "";
 #endif
 	char cmd_opt[4096];
-	snprintf (cmd_opt, sizeof (cmd_opt), "-mregnames -a%d %s",
+	snprintf(cmd_opt, sizeof(cmd_opt), "-mregnames -a%d %s",
 		a->bits, a->big_endian ? "-be" : "-le");
-	return binutils_assemble (a, op, buf,
+	return binutils_assemble(a, op, buf,
 		as, ASSEMBLER, "", cmd_opt);
 }
 
 RzAsmPlugin rz_asm_plugin_ppc_as = {
 	.name = "ppc.as",
-	.desc = "as PPC Assembler (use "ASSEMBLER" environment)",
+	.desc = "as PPC Assembler (use " ASSEMBLER " environment)",
 	.arch = "ppc",
 	.author = "eagleoflqj",
 	.license = "LGPL3",

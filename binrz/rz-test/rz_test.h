@@ -5,7 +5,7 @@
 
 #include <rz_util.h>
 
-#if defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 #define RZ_TEST_OS "freebsd"
 #elif defined(__linux__)
 #define RZ_TEST_OS "linux"
@@ -25,7 +25,7 @@
 #define RZ_TEST_ARCH "unknown"
 #endif
 
-#define RZ_TEST_ARCH_OS RZ_TEST_OS"-"RZ_TEST_ARCH
+#define RZ_TEST_ARCH_OS RZ_TEST_OS "-" RZ_TEST_ARCH
 
 typedef struct rz_test_cmd_test_string_record {
 	char *value;
@@ -61,6 +61,10 @@ typedef struct rz_test_cmd_test_t {
 	bool load_plugins;
 } RzCmdTest;
 
+// A temporary workaround while clang-format bug is not fixed:
+// https://bugs.llvm.org/show_bug.cgi?id=46240
+
+// clang-format off
 #define RZ_CMD_TEST_FOREACH_RECORD_NOP(name, field)
 #define RZ_CMD_TEST_FOREACH_RECORD(macro_str, macro_bool, macro_int) \
 	macro_str ("NAME", name) \
@@ -74,6 +78,7 @@ typedef struct rz_test_cmd_test_t {
 	macro_str ("REGEXP_FILTER_OUT", regexp_out) \
 	macro_str ("REGEXP_FILTER_ERR", regexp_err) \
 	macro_bool ("BROKEN", broken)
+// clang-format on
 
 typedef enum rz_test_asm_test_mode_t {
 	RZ_ASM_TEST_MODE_ASSEMBLE = 1,
@@ -158,7 +163,7 @@ typedef struct rz_test_test_result_info_t {
 	ut64 time_elapsed;
 	union {
 		RzSubprocessOutput *proc_out; // for test->type == RZ_TEST_TYPE_CMD, RZ_TEST_TYPE_JSON or RZ_TEST_TYPE_FUZZ
-		RzAsmTestOutput *asm_out;  // for test->type == RZ_TEST_TYPE_ASM
+		RzAsmTestOutput *asm_out; // for test->type == RZ_TEST_TYPE_ASM
 	};
 } RzTestResultInfo;
 

@@ -1,6 +1,6 @@
 Language: Cpp
 MaxEmptyLinesToKeep: 1
-SpaceBeforeParens: Always
+SpaceBeforeParens: ControlStatements
 SpaceInEmptyParentheses: false
 SpacesInContainerLiterals: true
 BasedOnStyle: LLVM
@@ -8,7 +8,7 @@ ContinuationIndentWidth: 8
 IndentCaseLabels: false
 IndentFunctionDeclarationAfterType: false
 IndentWidth: 8
-UseTab: Always
+UseTab: ForContinuationAndIndentation
 ColumnLimit: 0
 BreakBeforeBraces: Attach
 BreakBeforeTernaryOperators: true
@@ -17,8 +17,10 @@ AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: Inline
 AllowShortLoopsOnASingleLine: false
 AlignAfterOpenBracket: DontAlign
+AlignEscapedNewlines: DontAlign
+AlignConsecutiveMacros: true
 AlignTrailingComments: false
 AlignOperands: false
 Cpp11BracedListStyle: false
-ForEachMacros: ['r_list_foreach', 'ls_foreach', 'fcn_tree_foreach_intersect', 'r_skiplist_foreach', 'graph_foreach_anode']
+ForEachMacros: ['rz_list_foreach', 'rz_list_foreach_safe', 'rz_pvector_foreach', 'rz_rbtree_foreach', 'rz_interval_tree_foreach', 'ls_foreach', 'rz_skiplist_foreach', 'graph_foreach_anode']
 SortIncludes: false

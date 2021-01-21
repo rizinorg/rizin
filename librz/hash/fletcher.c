@@ -39,24 +39,24 @@ RZ_API ut16 rz_hash_fletcher16(const ut8 *data, size_t len) {
 RZ_API ut32 rz_hash_fletcher32(const ut8 *data, size_t len) {
 	ut32 c0, c1;
 	size_t i;
-	ut8 word[sizeof (ut16)];
+	ut8 word[sizeof(ut16)];
 	for (c0 = c1 = 0; len >= 360; len -= 360) {
-		for (i = 0; i < 360; i+=2) {
+		for (i = 0; i < 360; i += 2) {
 			size_t left = 360 - i;
-			memset (word, 0, sizeof (word));
-			memcpy (word, data, RZ_MIN (sizeof (word), left));
-			c0 += rz_read_le16 (word);
+			memset(word, 0, sizeof(word));
+			memcpy(word, data, RZ_MIN(sizeof(word), left));
+			c0 += rz_read_le16(word);
 			c1 += c0;
 			data += 2;
 		}
 		c0 %= UT16_MAX;
 		c1 %= UT16_MAX;
 	}
-	for (i = 0; i < len; i+=2) {
+	for (i = 0; i < len; i += 2) {
 		size_t left = len - i;
-		memset (word, 0, sizeof (word));
-		memcpy (word, data, RZ_MIN (sizeof (word), left));
-		c0 += rz_read_le16 (word);
+		memset(word, 0, sizeof(word));
+		memcpy(word, data, RZ_MIN(sizeof(word), left));
+		c0 += rz_read_le16(word);
 		c1 += c0;
 		data += 2;
 	}
@@ -71,14 +71,14 @@ RZ_API ut64 rz_hash_fletcher64(const ut8 *addr, size_t len) {
 	ut32 lo32 = 0;
 	ut32 hi32 = 0;
 
-	ut8 word[sizeof (ut32)];
+	ut8 word[sizeof(ut32)];
 	while (p32 < p32end) {
 		size_t left = p32end - p32;
-		memset (word, 0, sizeof (word));
-		memcpy (word, p32, RZ_MIN (sizeof (word), left));
-		ut32 w = rz_read_le32 (word);
+		memset(word, 0, sizeof(word));
+		memcpy(word, p32, RZ_MIN(sizeof(word), left));
+		ut32 w = rz_read_le32(word);
 		lo32 += w;
-		p32 += sizeof (ut32);
+		p32 += sizeof(ut32);
 		hi32 += lo32;
 	}
 	return ((ut64)hi32 << 32) | lo32;

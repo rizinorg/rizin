@@ -12,8 +12,8 @@
 #include "kd.h"
 
 #define O_FLAG_XPVAD 1
-#define WIND_DBG if (false)
-#define O_(n) ctx->os_profile->f[n]
+#define WIND_DBG     if (false)
+#define O_(n)        ctx->os_profile->f[n]
 #include "profiles.h"
 
 Profile *p_table[] = {
@@ -61,13 +61,13 @@ Profile *winkd_get_profile(int bits, int build, int sp) {
 	return NULL;
 }
 
-#define LOG_REQ(r) {							\
-		eprintf ("Request : %08x\nProcessor : %08x\nReturn : %08x\n",\
-			(r)->req,					\
-			(r)->cpu,					\
-			(r)->ret					\
-		);							\
-}
+#define LOG_REQ(r) \
+	{ \
+		eprintf("Request : %08x\nProcessor : %08x\nReturn : %08x\n", \
+			(r)->req, \
+			(r)->cpu, \
+			(r)->ret); \
+	}
 
 struct _WindCtx {
 	io_desc_t *desc;
@@ -86,22 +86,22 @@ struct _WindCtx {
 };
 
 bool winkd_lock_enter(WindCtx *ctx) {
-	rz_cons_break_push (winkd_break, ctx);
-	rz_th_lock_enter (ctx->dontmix);
+	rz_cons_break_push(winkd_break, ctx);
+	rz_th_lock_enter(ctx->dontmix);
 	return true;
 }
 
 bool winkd_lock_tryenter(WindCtx *ctx) {
-	if (!rz_th_lock_tryenter (ctx->dontmix)) {
+	if (!rz_th_lock_tryenter(ctx->dontmix)) {
 		return false;
 	}
-	rz_cons_break_push (winkd_break, ctx);
+	rz_cons_break_push(winkd_break, ctx);
 	return true;
 }
 
 bool winkd_lock_leave(WindCtx *ctx) {
-	rz_cons_break_pop ();
-	rz_th_lock_leave (ctx->dontmix);
+	rz_cons_break_pop();
+	rz_th_lock_leave(ctx->dontmix);
 	return true;
 }
 
@@ -135,7 +135,7 @@ bool winkd_set_target(WindCtx *ctx, uint32_t pid) {
 	WindProc *p;
 	RzListIter *it;
 	if (pid) {
-		RzList *l = winkd_list_process (ctx);
+		RzList *l = winkd_list_process(ctx);
 		rz_list_foreach (l, it, p) {
 			if (p->uniqueid == pid) {
 				ctx->target = p;
@@ -152,7 +152,7 @@ uint32_t winkd_get_target(WindCtx *ctx) {
 	if (!ctx || !ctx->desc || !ctx->syncd) {
 		return 0;
 	}
-	return ctx->target? ctx->target->uniqueid: 0;
+	return ctx->target ? ctx->target->uniqueid : 0;
 }
 
 ut64 winkd_get_target_base(WindCtx *ctx) {
@@ -162,7 +162,7 @@ ut64 winkd_get_target_base(WindCtx *ctx) {
 		return 0;
 	}
 
-	if (!winkd_read_at_uva (ctx, (uint8_t *) &base,
+	if (!winkd_read_at_uva(ctx, (uint8_t *)&base,
 		    ctx->target->peb + O_(P_ImageBaseAddress), 4 << ctx->is_x64)) {
 		return 0;
 	}
@@ -171,11 +171,11 @@ ut64 winkd_get_target_base(WindCtx *ctx) {
 }
 
 WindCtx *winkd_ctx_new(io_desc_t *desc) {
-	WindCtx *ctx = calloc (1, sizeof(WindCtx));
+	WindCtx *ctx = calloc(1, sizeof(WindCtx));
 	if (!ctx) {
 		return NULL;
 	}
-	ctx->dontmix = rz_th_lock_new (true);
+	ctx->dontmix = rz_th_lock_new(true);
 	ctx->desc = desc;
 	return ctx;
 }
@@ -184,17 +184,17 @@ void winkd_ctx_free(WindCtx **ctx) {
 	if (!ctx || !*ctx) {
 		return;
 	}
-	rz_list_free ((*ctx)->plist_cache);
-	rz_list_free ((*ctx)->tlist_cache);
+	rz_list_free((*ctx)->plist_cache);
+	rz_list_free((*ctx)->tlist_cache);
 	io_desc_t *desc = (*ctx)->desc;
-	desc->iob->close (desc->fp);
-	RZ_FREE (desc);
-	rz_th_lock_free ((*ctx)->dontmix);
-	RZ_FREE (*ctx);
+	desc->iob->close(desc->fp);
+	RZ_FREE(desc);
+	rz_th_lock_free((*ctx)->dontmix);
+	RZ_FREE(*ctx);
 }
 
-#define PKT_REQ(p) ((kd_req_t *) (((kd_packet_t *) p)->data))
-#define PKT_STC(p) ((kd_stc_64 *) (((kd_packet_t *) p)->data))
+#define PKT_REQ(p) ((kd_req_t *)(((kd_packet_t *)p)->data))
+#define PKT_STC(p) ((kd_stc_64 *)(((kd_packet_t *)p)->data))
 
 #if 0
 static void dump_stc(kd_packet_t *p) {
@@ -227,25 +227,25 @@ static int do_io_reply(WindCtx *ctx, kd_packet_t *pkt) {
 	int ret;
 	ioc.req = 0x3430;
 	ioc.ret = KD_RET_ENOENT;
-	winkd_lock_enter (ctx);
+	winkd_lock_enter(ctx);
 	id = pkt->id;
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_FILE_IO,
-		(ctx->seq_id ^= 1), (uint8_t *)&ioc, sizeof (kd_ioc_t), NULL, 0);
+	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_FILE_IO,
+		(ctx->seq_id ^= 1), (uint8_t *)&ioc, sizeof(kd_ioc_t), NULL, 0);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 	WIND_DBG eprintf("Waiting for io_reply ack...\n");
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
+	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 	id = 0;
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 	WIND_DBG eprintf("Ack received, restore flow\n");
 	return true;
 error:
 	id = 0;
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 	return 0;
 }
 
@@ -256,10 +256,10 @@ int winkd_wait_packet(WindCtx *ctx, const uint32_t type, kd_packet_t **p) {
 
 	do {
 		if (pkt) {
-			RZ_FREE (pkt);
+			RZ_FREE(pkt);
 		}
 		// Try to read a whole packet
-		ret = kd_read_packet (ctx->desc, &pkt);
+		ret = kd_read_packet(ctx->desc, &pkt);
 		if (ret != KD_E_OK || !pkt) {
 			break;
 		}
@@ -270,65 +270,66 @@ int winkd_wait_packet(WindCtx *ctx, const uint32_t type, kd_packet_t **p) {
 
 		// eprintf ("Received %08x\n", pkt->type);
 		if (pkt->type != type) {
-			WIND_DBG eprintf ("We were not waiting for this... %08x\n", pkt->type);
+			WIND_DBG eprintf("We were not waiting for this... %08x\n", pkt->type);
 		}
 		if (pkt->leader == KD_PACKET_DATA && pkt->type == KD_PACKET_TYPE_STATE_CHANGE64) {
 			// dump_stc (pkt);
-			WIND_DBG eprintf ("State64\n");
+			WIND_DBG eprintf("State64\n");
 		}
 		if (pkt->leader == KD_PACKET_DATA && pkt->type == KD_PACKET_TYPE_FILE_IO) {
-			WIND_DBG eprintf ("Replying IO\n");
-			do_io_reply (ctx, pkt);
+			WIND_DBG eprintf("Replying IO\n");
+			do_io_reply(ctx, pkt);
 		}
 
 		// Check for RESEND
 		// The host didn't like our request
 		if (pkt->leader == KD_PACKET_CTRL && pkt->type == KD_PACKET_TYPE_RESEND) {
-			rz_sys_backtrace ();
-			WIND_DBG eprintf ("Waoh. You probably sent a malformed packet !\n");
+			rz_sys_backtrace();
+			WIND_DBG eprintf("Waoh. You probably sent a malformed packet !\n");
 			ret = KD_E_MALFORMED;
 			break;
 		}
 	} while (pkt->type != type && retries--);
 
 	if (ret != KD_E_OK) {
-		free (pkt);
+		free(pkt);
 		return ret;
 	}
 
 	if (p) {
 		*p = pkt;
 	} else {
-		free (pkt);
+		free(pkt);
 	}
 
 	return KD_E_OK;
 }
 
 // http://dfrws.org/2007/proceedings/p62-dolan-gavitt.pdf
-RZ_PACKED (
+RZ_PACKED(
 	typedef struct {
-	char tag[4];
-	uint32_t start_vpn;
-	uint32_t end_vpn;
-	uint32_t parent;
-	uint32_t left;
-	uint32_t right;
-	uint32_t flags;
-}) mmvad_short;
+		char tag[4];
+		uint32_t start_vpn;
+		uint32_t end_vpn;
+		uint32_t parent;
+		uint32_t left;
+		uint32_t right;
+		uint32_t flags;
+	})
+mmvad_short;
 
 int winkd_walk_vadtree(WindCtx *ctx, ut64 address, ut64 parent) {
 	mmvad_short entry = { { 0 } };
 	ut64 start, end;
 	int prot;
 
-	if (winkd_read_at (ctx, (uint8_t *) &entry, address - 0x4, sizeof(mmvad_short)) != sizeof (mmvad_short)) {
-		eprintf ("0x%"PFMT64x " Could not read the node!\n", (ut64) address);
+	if (winkd_read_at(ctx, (uint8_t *)&entry, address - 0x4, sizeof(mmvad_short)) != sizeof(mmvad_short)) {
+		eprintf("0x%" PFMT64x " Could not read the node!\n", (ut64)address);
 		return 0;
 	}
 
 	if (parent != UT64_MAX && entry.parent != parent) {
-		eprintf ("Wrong parent!\n");
+		eprintf("Wrong parent!\n");
 		return 0;
 	}
 
@@ -336,14 +337,14 @@ int winkd_walk_vadtree(WindCtx *ctx, ut64 address, ut64 parent) {
 	end = ((entry.end_vpn + 1) << 12) - 1;
 	prot = (entry.flags >> 24) & 0x1F;
 
-	eprintf ("Start 0x%016"PFMT64x " End 0x%016"PFMT64x " Prot 0x%08"PFMT64x "\n",
-		(ut64) start, (ut64) end, (ut64) prot);
+	eprintf("Start 0x%016" PFMT64x " End 0x%016" PFMT64x " Prot 0x%08" PFMT64x "\n",
+		(ut64)start, (ut64)end, (ut64)prot);
 
 	if (entry.left) {
-		winkd_walk_vadtree (ctx, entry.left, address);
+		winkd_walk_vadtree(ctx, entry.left, address);
 	}
 	if (entry.right) {
-		winkd_walk_vadtree (ctx, entry.right, address);
+		winkd_walk_vadtree(ctx, entry.right, address);
 	}
 
 	return 1;
@@ -363,20 +364,20 @@ RzList *winkd_list_process(WindCtx *ctx) {
 
 	ptr = 0;
 	// Grab the PsActiveProcessHead from _KDDEBUGGER_DATA64
-	winkd_read_at (ctx, (uint8_t *) &ptr, ctx->dbg_addr + K_PsActiveProcessHead,
+	winkd_read_at(ctx, (uint8_t *)&ptr, ctx->dbg_addr + K_PsActiveProcessHead,
 		4 << ctx->is_x64);
 
 	base = ptr;
-	WIND_DBG eprintf("Process list head : 0x%016"PFMT64x "\n", ptr);
+	WIND_DBG eprintf("Process list head : 0x%016" PFMT64x "\n", ptr);
 
 	// Walk the LIST_ENTRY
-	winkd_read_at (ctx, (uint8_t *) &ptr, ptr, 4 << ctx->is_x64);
+	winkd_read_at(ctx, (uint8_t *)&ptr, ptr, 4 << ctx->is_x64);
 
 	// Check for empty list
 	if (ptr == 0) {
 		return NULL;
 	}
-	ret = rz_list_newf (free);
+	ret = rz_list_newf(free);
 
 	do {
 		uint8_t buf[17];
@@ -384,14 +385,14 @@ RzList *winkd_list_process(WindCtx *ctx) {
 
 		next = 0;
 		// Read the ActiveProcessLinks entry
-		winkd_read_at (ctx, (uint8_t *) &next, ptr, 4 << ctx->is_x64);
+		winkd_read_at(ctx, (uint8_t *)&next, ptr, 4 << ctx->is_x64);
 
 		// This points to the 'ActiveProcessLinks' list, adjust the ptr so that it point to the
 		// EPROCESS base
 		ptr -= O_(E_ActiveProcessLinks);
 
 		// Read the short name
-		winkd_read_at (ctx, (uint8_t *) &buf, ptr + O_(E_ImageFileName), 16);
+		winkd_read_at(ctx, (uint8_t *)&buf, ptr + O_(E_ImageFileName), 16);
 		buf[16] = '\0';
 
 		ut64 vadroot = 0;
@@ -399,21 +400,21 @@ RzList *winkd_list_process(WindCtx *ctx) {
 		ut64 peb = 0;
 		ut64 dir_base_table = 0;
 
-		winkd_read_at (ctx, (uint8_t *) &vadroot, ptr + O_(E_VadRoot), 4 << ctx->is_x64);
-		winkd_read_at (ctx, (uint8_t *) &uniqueid, ptr + O_(E_UniqueProcessId), 4 << ctx->is_x64);
-		winkd_read_at (ctx, (uint8_t *) &peb, ptr + O_(E_Peb), 4 << ctx->is_x64);
-		winkd_read_at (ctx, (uint8_t *) &dir_base_table, ptr + O_(P_DirectoryTableBase), 4 << ctx->is_x64);
+		winkd_read_at(ctx, (uint8_t *)&vadroot, ptr + O_(E_VadRoot), 4 << ctx->is_x64);
+		winkd_read_at(ctx, (uint8_t *)&uniqueid, ptr + O_(E_UniqueProcessId), 4 << ctx->is_x64);
+		winkd_read_at(ctx, (uint8_t *)&peb, ptr + O_(E_Peb), 4 << ctx->is_x64);
+		winkd_read_at(ctx, (uint8_t *)&dir_base_table, ptr + O_(P_DirectoryTableBase), 4 << ctx->is_x64);
 
-		WindProc *proc = calloc (1, sizeof(WindProc));
+		WindProc *proc = calloc(1, sizeof(WindProc));
 
-		strcpy (proc->name, (const char *) buf);
+		strcpy(proc->name, (const char *)buf);
 		proc->eprocess = ptr;
 		proc->vadroot = vadroot;
 		proc->uniqueid = uniqueid;
 		proc->dir_base_table = dir_base_table;
 		proc->peb = peb;
 
-		rz_list_append (ret, proc);
+		rz_list_append(ret, proc);
 
 		// winkd_walk_vadtree(ctx, vadroot, -1);
 		ptr = next;
@@ -428,11 +429,11 @@ int winkd_write_at_uva(WindCtx *ctx, const uint8_t *buf, ut64 offset, int count)
 	ut64 pa;
 	ut32 totwritten = 0;
 	while (totwritten < count) {
-		if (!winkd_va_to_pa (ctx, offset, &pa)) {
+		if (!winkd_va_to_pa(ctx, offset, &pa)) {
 			return 0;
 		}
 		ut32 restOfPage = 0x1000 - (offset & 0xfff);
-		int written = winkd_write_at_phys (ctx, buf + totwritten, pa, RZ_MIN (count - totwritten, restOfPage));
+		int written = winkd_write_at_phys(ctx, buf + totwritten, pa, RZ_MIN(count - totwritten, restOfPage));
 		if (!written) {
 			break;
 		}
@@ -446,11 +447,11 @@ int winkd_read_at_uva(WindCtx *ctx, uint8_t *buf, ut64 offset, int count) {
 	ut64 pa;
 	ut32 totread = 0;
 	while (totread < count) {
-		if (!winkd_va_to_pa (ctx, offset, &pa)) {
+		if (!winkd_va_to_pa(ctx, offset, &pa)) {
 			return 0;
 		}
 		ut32 restOfPage = 0x1000 - (offset & 0xfff);
-		int read = winkd_read_at_phys (ctx, buf + totread, pa, RZ_MIN (count - totread, restOfPage));
+		int read = winkd_read_at_phys(ctx, buf + totread, pa, RZ_MIN(count - totread, restOfPage));
 		if (!read) {
 			break;
 		}
@@ -469,33 +470,33 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 	}
 
 	if (!ctx->target) {
-		eprintf ("No target process\n");
+		eprintf("No target process\n");
 		return NULL;
 	}
 
 	ptr = ctx->target->peb;
 	if (!ptr) {
-		eprintf ("No PEB\n");
+		eprintf("No PEB\n");
 		return NULL;
 	}
 
 	ut64 ldroff = ctx->is_x64 ? 0x18 : 0xC;
 
 	// Grab the _PEB_LDR_DATA from PEB
-	winkd_read_at_uva (ctx, (uint8_t *) &ptr, ctx->target->peb + ldroff, 4 << ctx->is_x64);
+	winkd_read_at_uva(ctx, (uint8_t *)&ptr, ctx->target->peb + ldroff, 4 << ctx->is_x64);
 
-	WIND_DBG eprintf("_PEB_LDR_DATA : 0x%016"PFMT64x "\n", ptr);
+	WIND_DBG eprintf("_PEB_LDR_DATA : 0x%016" PFMT64x "\n", ptr);
 
 	// LIST_ENTRY InMemoryOrderModuleList
 	ut64 mlistoff = ctx->is_x64 ? 0x20 : 0x14;
 
 	base = ptr + mlistoff;
 
-	winkd_read_at_uva (ctx, (uint8_t *) &ptr, base, 4 << ctx->is_x64);
+	winkd_read_at_uva(ctx, (uint8_t *)&ptr, base, 4 << ctx->is_x64);
 
-	WIND_DBG eprintf ("InMemoryOrderModuleList : 0x%016"PFMT64x "\n", ptr);
+	WIND_DBG eprintf("InMemoryOrderModuleList : 0x%016" PFMT64x "\n", ptr);
 
-	ret = rz_list_newf (free);
+	ret = rz_list_newf(free);
 
 	const ut64 baseoff = ctx->is_x64 ? 0x30 : 0x18;
 	const ut64 sizeoff = ctx->is_x64 ? 0x40 : 0x20;
@@ -504,45 +505,45 @@ RzList *winkd_list_modules(WindCtx *ctx) {
 	do {
 
 		ut64 next = 0;
-		winkd_read_at_uva (ctx, (uint8_t *) &next, ptr, 4 << ctx->is_x64);
-		WIND_DBG eprintf ("_LDR_DATA_TABLE_ENTRY : 0x%016"PFMT64x "\n", next);
+		winkd_read_at_uva(ctx, (uint8_t *)&next, ptr, 4 << ctx->is_x64);
+		WIND_DBG eprintf("_LDR_DATA_TABLE_ENTRY : 0x%016" PFMT64x "\n", next);
 
 		if (!next) {
-			eprintf ("Corrupted InMemoryOrderModuleList found at: 0x%"PFMT64x"\n", ptr);
+			eprintf("Corrupted InMemoryOrderModuleList found at: 0x%" PFMT64x "\n", ptr);
 			break;
 		}
 
 		ptr -= (4 << ctx->is_x64) * 2;
 
-		WindModule *mod = RZ_NEW0 (WindModule);
+		WindModule *mod = RZ_NEW0(WindModule);
 		if (!mod) {
 			break;
 		}
-		winkd_read_at_uva (ctx, (uint8_t *) &mod->addr, ptr + baseoff, 4 << ctx->is_x64);
-		winkd_read_at_uva (ctx, (uint8_t *) &mod->size, ptr + sizeoff, 4 << ctx->is_x64);
+		winkd_read_at_uva(ctx, (uint8_t *)&mod->addr, ptr + baseoff, 4 << ctx->is_x64);
+		winkd_read_at_uva(ctx, (uint8_t *)&mod->size, ptr + sizeoff, 4 << ctx->is_x64);
 
 		ut16 length;
-		winkd_read_at_uva (ctx, (uint8_t *) &length, ptr + nameoff, sizeof (ut16));
+		winkd_read_at_uva(ctx, (uint8_t *)&length, ptr + nameoff, sizeof(ut16));
 
 		ut64 bufferaddr = 0;
-		winkd_read_at_uva (ctx, (uint8_t *) &bufferaddr, ptr + nameoff + sizeof (ut32), 4 << ctx->is_x64);
+		winkd_read_at_uva(ctx, (uint8_t *)&bufferaddr, ptr + nameoff + sizeof(ut32), 4 << ctx->is_x64);
 
-		wchar_t *unname = calloc ((ut64)length + 2, 1);
+		wchar_t *unname = calloc((ut64)length + 2, 1);
 		if (!unname) {
 			break;
 		}
 
-		winkd_read_at_uva (ctx, (uint8_t *)unname, bufferaddr, length);
+		winkd_read_at_uva(ctx, (uint8_t *)unname, bufferaddr, length);
 
-		mod->name = calloc ((ut64)length + 1, 1);
+		mod->name = calloc((ut64)length + 1, 1);
 		if (!mod->name) {
 			break;
 		}
-		wcstombs (mod->name, unname, length);
-		free (unname);
+		wcstombs(mod->name, unname, length);
+		free(unname);
 		ptr = next;
 
-		rz_list_append (ret, mod);
+		rz_list_append(ret, mod);
 
 	} while (ptr != base);
 
@@ -562,32 +563,32 @@ RzList *winkd_list_threads(WindCtx *ctx) {
 	}
 
 	if (!ctx->target) {
-		eprintf ("No target process\n");
+		eprintf("No target process\n");
 		return NULL;
 	}
 
 	ptr = ctx->target->eprocess;
 	if (!ptr) {
-		eprintf ("No _EPROCESS\n");
+		eprintf("No _EPROCESS\n");
 		return NULL;
 	}
 
 	// Grab the ThreadListHead from _EPROCESS
-	winkd_read_at (ctx, (uint8_t *) &ptr, ptr + O_(E_ThreadListHead), 4 << ctx->is_x64);
+	winkd_read_at(ctx, (uint8_t *)&ptr, ptr + O_(E_ThreadListHead), 4 << ctx->is_x64);
 	if (!ptr) {
 		return NULL;
 	}
 
 	base = ptr;
 
-	ret = rz_list_newf (free);
+	ret = rz_list_newf(free);
 
 	do {
 		ut64 next = 0;
 
-		winkd_read_at (ctx, (uint8_t *) &next, ptr, 4 << ctx->is_x64);
+		winkd_read_at(ctx, (uint8_t *)&next, ptr, 4 << ctx->is_x64);
 		if (!next) {
-			eprintf ("Corrupted ThreadListEntry found at: 0x%"PFMT64x"\n", ptr);
+			eprintf("Corrupted ThreadListEntry found at: 0x%" PFMT64x "\n", ptr);
 			break;
 		}
 
@@ -595,19 +596,19 @@ RzList *winkd_list_threads(WindCtx *ctx) {
 		ptr -= O_(ET_ThreadListEntry);
 
 		ut64 entrypoint = 0;
-		winkd_read_at (ctx, (uint8_t *) &entrypoint, ptr + O_(ET_Win32StartAddress), 4 << ctx->is_x64);
+		winkd_read_at(ctx, (uint8_t *)&entrypoint, ptr + O_(ET_Win32StartAddress), 4 << ctx->is_x64);
 
 		ut64 uniqueid = 0;
-		winkd_read_at (ctx, (uint8_t *) &uniqueid, ptr + O_(ET_Cid) + O_(C_UniqueThread), 4 << ctx->is_x64);
+		winkd_read_at(ctx, (uint8_t *)&uniqueid, ptr + O_(ET_Cid) + O_(C_UniqueThread), 4 << ctx->is_x64);
 		if (uniqueid) {
-			WindThread *thread = calloc (1, sizeof(WindThread));
+			WindThread *thread = calloc(1, sizeof(WindThread));
 			thread->uniqueid = uniqueid;
 			thread->status = 's';
 			thread->runnable = true;
 			thread->ethread = ptr;
 			thread->entrypoint = entrypoint;
 
-			rz_list_append (ret, thread);
+			rz_list_append(ret, thread);
 		}
 
 		ptr = next;
@@ -618,9 +619,9 @@ RzList *winkd_list_threads(WindCtx *ctx) {
 	return ret;
 }
 
-#define PTE_VALID       0x0001
-#define PTE_LARGEPAGE   0x0080
-#define PTE_PROTOTYPE   0x0400
+#define PTE_VALID     0x0001
+#define PTE_LARGEPAGE 0x0080
+#define PTE_PROTOTYPE 0x0400
 
 // http://blogs.msdn.com/b/ntdebugging/archive/2010/02/05/understanding-pte-part-1-let-s-get-physical.aspx
 // http://blogs.msdn.com/b/ntdebugging/archive/2010/04/14/understanding-pte-part2-flags-and-large-pages.aspx
@@ -634,7 +635,7 @@ bool winkd_va_to_pa(WindCtx *ctx, ut64 va, ut64 *pa) {
 		return 0;
 	}
 
-	WIND_DBG eprintf("VA   : %016"PFMT64x "\n", va);
+	WIND_DBG eprintf("VA   : %016" PFMT64x "\n", va);
 
 	if (ctx->is_x64) {
 		pti = (va >> 12) & 0x1ff;
@@ -662,47 +663,45 @@ bool winkd_va_to_pa(WindCtx *ctx, ut64 va, ut64 *pa) {
 	tmp = ctx->target->dir_base_table;
 	tmp &= ~0x1f;
 
-	WIND_DBG eprintf("CR3  : %016"PFMT64x "\n", tmp);
+	WIND_DBG eprintf("CR3  : %016" PFMT64x "\n", tmp);
 
 	if (ctx->is_x64) {
 		// PML4 lookup
-		if (!winkd_read_at_phys (ctx, (uint8_t *) &tmp, tmp + pml4i * 8, 8)) {
+		if (!winkd_read_at_phys(ctx, (uint8_t *)&tmp, tmp + pml4i * 8, 8)) {
 			return false;
 		}
 		tmp &= mask;
-		WIND_DBG eprintf("PML4 : %016"PFMT64x "\n", tmp);
+		WIND_DBG eprintf("PML4 : %016" PFMT64x "\n", tmp);
 	}
 
 	if (ctx->pae) {
 		// PDPT lookup
-		if (!winkd_read_at_phys (ctx, (uint8_t *) &tmp, tmp + pdpi * 8, 8)) {
+		if (!winkd_read_at_phys(ctx, (uint8_t *)&tmp, tmp + pdpi * 8, 8)) {
 			return false;
 		}
 		tmp &= mask;
-		WIND_DBG eprintf("PDPE : %016"PFMT64x "\n", tmp);
+		WIND_DBG eprintf("PDPE : %016" PFMT64x "\n", tmp);
 	}
 
 	// PDT lookup
-	if (!winkd_read_at_phys (ctx, (uint8_t *) &tmp, tmp + pdi * (4 << ctx->pae), 4 << ctx->pae)) {
+	if (!winkd_read_at_phys(ctx, (uint8_t *)&tmp, tmp + pdi * (4 << ctx->pae), 4 << ctx->pae)) {
 		return false;
 	}
-	WIND_DBG eprintf("PDE  : %016"PFMT64x "\n", tmp);
+	WIND_DBG eprintf("PDE  : %016" PFMT64x "\n", tmp);
 
 	// Large page entry
 	// The page size differs between pae and non-pae systems, the former points to 2MB pages while
 	// the latter points to 4MB pages
 	if (tmp & PTE_LARGEPAGE) {
-		*pa = ctx->pae?
-		      (tmp & (~0x1fffff)) | (va & 0x1fffff):
-		      (tmp & (~0x3fffff)) | (va & 0x3fffff);
+		*pa = ctx->pae ? (tmp & (~0x1fffff)) | (va & 0x1fffff) : (tmp & (~0x3fffff)) | (va & 0x3fffff);
 		return true;
 	}
 
 	// PT lookup
-	if (!winkd_read_at_phys (ctx, (uint8_t *) &tmp, (tmp & mask) + pti * (4 << ctx->pae), 4 << ctx->pae)) {
+	if (!winkd_read_at_phys(ctx, (uint8_t *)&tmp, (tmp & mask) + pti * (4 << ctx->pae), 4 << ctx->pae)) {
 		return false;
 	}
-	WIND_DBG eprintf("PTE  : %016"PFMT64x "\n", tmp);
+	WIND_DBG eprintf("PTE  : %016" PFMT64x "\n", tmp);
 
 	if (tmp & PTE_VALID) {
 		*pa = (tmp & mask) | (va & 0xfff);
@@ -711,7 +710,7 @@ bool winkd_va_to_pa(WindCtx *ctx, ut64 va, ut64 *pa) {
 
 	if (tmp & PTE_PROTOTYPE) {
 		// TODO : prototype PTE support
-		eprintf ("Prototype PTE lookup is currently missing!\n");
+		eprintf("Prototype PTE lookup is currently missing!\n");
 	}
 
 	return false;
@@ -731,89 +730,89 @@ bool winkd_read_ver(WindCtx *ctx) {
 	req.req = 0x3146;
 	req.cpu = ctx->cpu;
 
-	winkd_lock_enter (ctx);
+	winkd_lock_enter(ctx);
 
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
-		(ctx->seq_id ^= 1), (uint8_t *)&req, sizeof (kd_req_t), NULL, 0);
+	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
+		(ctx->seq_id ^= 1), (uint8_t *)&req, sizeof(kd_req_t), NULL, 0);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
+	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
+	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 
-	kd_req_t *rr = PKT_REQ (pkt);
+	kd_req_t *rr = PKT_REQ(pkt);
 
 	if (rr->ret) {
 		WIND_DBG eprintf("%s : req returned %08x\n", __FUNCTION__, rr->ret);
-		free (pkt);
+		free(pkt);
 		return 0;
 	}
 
 	WIND_DBG {
-		eprintf ("Major : %i Minor %i\n", rr->rz_ver.major, rr->rz_ver.minor);
-		eprintf ("Protocol version : %i.%i\n", rr->rz_ver.proto_major, rr->rz_ver.proto_minor);
-		eprintf ("Flags : %08x\n", rr->rz_ver.flags);
-		eprintf ("Machine : %08x\n", rr->rz_ver.machine);
-		eprintf ("Module list : %016"PFMT64x "\n", (ut64) rr->rz_ver.mod_addr);
-		eprintf ("Debug block : %016"PFMT64x "\n", (ut64) rr->rz_ver.dbg_addr);
+		eprintf("Major : %i Minor %i\n", rr->rz_ver.major, rr->rz_ver.minor);
+		eprintf("Protocol version : %i.%i\n", rr->rz_ver.proto_major, rr->rz_ver.proto_minor);
+		eprintf("Flags : %08x\n", rr->rz_ver.flags);
+		eprintf("Machine : %08x\n", rr->rz_ver.machine);
+		eprintf("Module list : %016" PFMT64x "\n", (ut64)rr->rz_ver.mod_addr);
+		eprintf("Debug block : %016" PFMT64x "\n", (ut64)rr->rz_ver.dbg_addr);
 	}
 
 	if (rr->rz_ver.machine != KD_MACH_I386 && rr->rz_ver.machine != KD_MACH_AMD64) {
-		eprintf ("Unsupported target host\n");
-		free (pkt);
+		eprintf("Unsupported target host\n");
+		free(pkt);
 		return 0;
 	}
 
 	if (!(rr->rz_ver.flags & DBGKD_VERS_FLAG_DATA)) {
-		eprintf ("No _KDDEBUGGER_DATA64 pointer has been supplied by the debugee!\n");
-		free (pkt);
+		eprintf("No _KDDEBUGGER_DATA64 pointer has been supplied by the debugee!\n");
+		free(pkt);
 		return 0;
 	}
 
 	ctx->is_x64 = (rr->rz_ver.machine == KD_MACH_AMD64);
 
 	ut64 ptr = 0;
-	if (!winkd_read_at (ctx, (uint8_t *) &ptr, rr->rz_ver.dbg_addr, 4 << ctx->is_x64)) {
-		free (pkt);
+	if (!winkd_read_at(ctx, (uint8_t *)&ptr, rr->rz_ver.dbg_addr, 4 << ctx->is_x64)) {
+		free(pkt);
 		return false;
 	}
 
 	ctx->dbg_addr = ptr;
 
-	WIND_DBG eprintf("_KDDEBUGGER_DATA64 at 0x%016"PFMT64x "\n", ctx->dbg_addr);
+	WIND_DBG eprintf("_KDDEBUGGER_DATA64 at 0x%016" PFMT64x "\n", ctx->dbg_addr);
 
 	// Thanks to this we don't have to find a way to read the cr4
 	uint16_t pae_enabled;
-	if (!winkd_read_at (ctx, (uint8_t *) &pae_enabled, ctx->dbg_addr + K_PaeEnabled, sizeof(uint16_t))) {
-		free (pkt);
+	if (!winkd_read_at(ctx, (uint8_t *)&pae_enabled, ctx->dbg_addr + K_PaeEnabled, sizeof(uint16_t))) {
+		free(pkt);
 		return false;
 	}
 
 	// Grab the CmNtCSDVersion field to extract the Service Pack number
-	winkd_read_at (ctx, (uint8_t *) &ptr, ctx->dbg_addr + K_CmNtCSDVersion, 8);
-	winkd_read_at (ctx, (uint8_t *) &ptr, ptr, 4 << ctx->is_x64);
+	winkd_read_at(ctx, (uint8_t *)&ptr, ctx->dbg_addr + K_CmNtCSDVersion, 8);
+	winkd_read_at(ctx, (uint8_t *)&ptr, ptr, 4 << ctx->is_x64);
 
 	ctx->pae = pae_enabled & 1;
-	ctx->os_profile = winkd_get_profile (32 << ctx->is_x64, rr->rz_ver.minor, (ptr >> 8) & 0xff);
+	ctx->os_profile = winkd_get_profile(32 << ctx->is_x64, rr->rz_ver.minor, (ptr >> 8) & 0xff);
 	if (!ctx->os_profile) {
-		eprintf ("Could not find a suitable profile for the target OS\n");
-		free (pkt);
+		eprintf("Could not find a suitable profile for the target OS\n");
+		free(pkt);
 		return false;
 	}
-	free (pkt);
+	free(pkt);
 	return true;
 error:
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 	return 0;
 }
 
@@ -829,12 +828,12 @@ int winkd_sync(WindCtx *ctx) {
 		return 1;
 	}
 
-	winkd_lock_enter (ctx);
+	winkd_lock_enter(ctx);
 
 	if (ctx->desc->iob->type == KD_IO_NET) {
 		// Read a KD packet to initialize KDNet interface
 		// The first packet will always be type of KD_PACKET_TYPE_UNUSED
-		ret = kd_read_packet (ctx->desc, &s);
+		ret = kd_read_packet(ctx->desc, &s);
 		if (ret != KD_E_OK) {
 			ret = 0;
 			goto end;
@@ -842,21 +841,21 @@ int winkd_sync(WindCtx *ctx) {
 	}
 
 	// Send the breakin packet
-	if (iob_write (ctx->desc, (const uint8_t *)"b", 1) != 1) {
+	if (iob_write(ctx->desc, (const uint8_t *)"b", 1) != 1) {
 		ret = 0;
 		goto end;
 	}
 
 	if (ctx->desc->iob->type == KD_IO_PIPE) {
 		// Reset the host
-		ret = kd_send_ctrl_packet (ctx->desc, KD_PACKET_TYPE_RESET, 0);
+		ret = kd_send_ctrl_packet(ctx->desc, KD_PACKET_TYPE_RESET, 0);
 		if (ret != KD_E_OK) {
 			ret = 0;
 			goto end;
 		}
 
 		// Wait for the response
-		ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_RESET, NULL);
+		ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_RESET, NULL);
 		if (ret != KD_E_OK) {
 			ret = 0;
 			goto end;
@@ -864,7 +863,7 @@ int winkd_sync(WindCtx *ctx) {
 	}
 
 	// Syncronize with the first KD_PACKET_TYPE_STATE_CHANGE64 packet
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_STATE_CHANGE64, &s);
+	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_CHANGE64, &s);
 	if (ret != KD_E_OK) {
 		ret = 0;
 		goto end;
@@ -873,24 +872,24 @@ int winkd_sync(WindCtx *ctx) {
 	// Reset the sequence id
 	ctx->seq_id = 0x80800001;
 
-	kd_stc_64 *stc64 = (kd_stc_64*)s->data;
+	kd_stc_64 *stc64 = (kd_stc_64 *)s->data;
 	ctx->cpu = stc64->cpu;
 	ctx->cpu_count = stc64->cpu_count;
 	ctx->target = NULL;
-	rz_list_free (ctx->plist_cache);
+	rz_list_free(ctx->plist_cache);
 	ctx->plist_cache = NULL;
-	rz_list_free (ctx->tlist_cache);
+	rz_list_free(ctx->tlist_cache);
 	ctx->tlist_cache = NULL;
 	ctx->pae = 0;
 	// We're ready to go
 	ctx->syncd = 1;
 
-	free (s);
-	eprintf ("Sync done! (%i cpus found)\n", ctx->cpu_count);
+	free(s);
+	eprintf("Sync done! (%i cpus found)\n", ctx->cpu_count);
 	ret = 1;
 
 end:
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 	return ret;
 }
 
@@ -910,14 +909,14 @@ int winkd_continue(WindCtx *ctx) {
 	// behave like suggested by ReactOS source
 	req.rz_cont.tf = 0x400;
 
-	winkd_lock_enter (ctx);
+	winkd_lock_enter(ctx);
 
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
-		(ctx->seq_id ^= 1), (uint8_t *)&req, sizeof (kd_req_t), NULL, 0);
+	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
+		(ctx->seq_id ^= 1), (uint8_t *)&req, sizeof(kd_req_t), NULL, 0);
 	if (ret == KD_E_OK) {
-		ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
+		ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 		if (ret == KD_E_OK) {
-			rz_list_free (ctx->plist_cache);
+			rz_list_free(ctx->plist_cache);
 			ctx->plist_cache = NULL;
 			ret = true;
 			goto end;
@@ -926,7 +925,7 @@ int winkd_continue(WindCtx *ctx) {
 	ret = false;
 
 end:
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 	return ret;
 }
 
@@ -946,39 +945,39 @@ bool winkd_write_reg(WindCtx *ctx, const uint8_t *buf, int size) {
 
 	WIND_DBG eprintf("Regwrite() size: %x\n", size);
 
-	winkd_lock_enter (ctx);
+	winkd_lock_enter(ctx);
 
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
-		(ctx->seq_id ^= 1), (uint8_t *)&req, sizeof (kd_req_t), buf, size);
+	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
+		(ctx->seq_id ^= 1), (uint8_t *)&req, sizeof(kd_req_t), buf, size);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
+	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
+	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 
-	kd_req_t *rr = PKT_REQ (pkt);
+	kd_req_t *rr = PKT_REQ(pkt);
 
 	if (rr->ret) {
 		WIND_DBG eprintf("%s: req returned %08x\n", __FUNCTION__, rr->ret);
-		free (pkt);
+		free(pkt);
 		return 0;
 	}
 
-	free (pkt);
+	free(pkt);
 
 	return size;
 error:
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 	return 0;
 }
 
@@ -991,7 +990,7 @@ int winkd_read_reg(WindCtx *ctx, uint8_t *buf, int size) {
 		return 0;
 	}
 
-	memset (&req, 0, sizeof(kd_req_t));
+	memset(&req, 0, sizeof(kd_req_t));
 
 	req.req = DbgKdGetContextApi;
 	req.cpu = ctx->cpu;
@@ -1000,43 +999,43 @@ int winkd_read_reg(WindCtx *ctx, uint8_t *buf, int size) {
 
 	// Don't wait on the lock in read_reg since it's frequently called. Otherwise the user
 	// will be forced to interrupt exit read_reg constantly while another task is in progress
-	if (!winkd_lock_tryenter (ctx)) {
+	if (!winkd_lock_tryenter(ctx)) {
 		goto error;
 	}
 
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1), (uint8_t *)&req,
-		sizeof (kd_req_t), NULL, 0);
+	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1), (uint8_t *)&req,
+		sizeof(kd_req_t), NULL, 0);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
+	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
+	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 
-	kd_req_t *rr = PKT_REQ (pkt);
+	kd_req_t *rr = PKT_REQ(pkt);
 
 	if (rr->ret) {
 		WIND_DBG eprintf("%s: req returned %08x\n", __FUNCTION__, rr->ret);
-		free (pkt);
+		free(pkt);
 		return 0;
 	}
 
-	memcpy (buf, rr->data, RZ_MIN (size, pkt->length - sizeof (*rr)));
+	memcpy(buf, rr->data, RZ_MIN(size, pkt->length - sizeof(*rr)));
 
-	free (pkt);
+	free(pkt);
 
 	return size;
 error:
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 	return 0;
 }
 
@@ -1049,38 +1048,38 @@ int winkd_query_mem(WindCtx *ctx, const ut64 addr, int *address_space, int *flag
 		return 0;
 	}
 
-	memset (&req, 0, sizeof(kd_req_t));
+	memset(&req, 0, sizeof(kd_req_t));
 
 	req.req = DbgKdQueryMemoryApi;
 	req.cpu = ctx->cpu;
 
 	req.rz_query_mem.addr = addr;
-	req.rz_query_mem.address_space = 0;	// Tells the kernel that 'addr' is a virtual address
+	req.rz_query_mem.address_space = 0; // Tells the kernel that 'addr' is a virtual address
 
-	winkd_lock_enter (ctx);
+	winkd_lock_enter(ctx);
 
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1), (uint8_t *)&req,
-		sizeof (kd_req_t), NULL, 0);
+	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1), (uint8_t *)&req,
+		sizeof(kd_req_t), NULL, 0);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
+	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
+	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 
-	kd_req_t *rr = PKT_REQ (pkt);
+	kd_req_t *rr = PKT_REQ(pkt);
 
 	if (rr->ret) {
-		free (pkt);
+		free(pkt);
 		return 0;
 	}
 
@@ -1091,13 +1090,12 @@ int winkd_query_mem(WindCtx *ctx, const ut64 addr, int *address_space, int *flag
 		*flags = rr->rz_query_mem.flags;
 	}
 
-	free (pkt);
+	free(pkt);
 
 	return ret;
 error:
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 	return 0;
-
 }
 
 int winkd_bkpt(WindCtx *ctx, const ut64 addr, const int set, const int hw, int *handle) {
@@ -1111,7 +1109,7 @@ int winkd_bkpt(WindCtx *ctx, const ut64 addr, const int set, const int hw, int *
 		return 0;
 	}
 
-	req.req = set? DbgKdWriteBreakPointApi: DbgKdRestoreBreakPointApi;
+	req.req = set ? DbgKdWriteBreakPointApi : DbgKdRestoreBreakPointApi;
 	req.cpu = ctx->cpu;
 
 	if (set) {
@@ -1120,45 +1118,46 @@ int winkd_bkpt(WindCtx *ctx, const ut64 addr, const int set, const int hw, int *
 		req.rz_del_bp.handle = *handle;
 	}
 
-	winkd_lock_enter (ctx);
+	winkd_lock_enter(ctx);
 
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1), (uint8_t *)&req,
-		sizeof (kd_req_t), NULL, 0);
+	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1), (uint8_t *)&req,
+		sizeof(kd_req_t), NULL, 0);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
+	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
+	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 
-	kd_req_t *rr = PKT_REQ (pkt);
+	kd_req_t *rr = PKT_REQ(pkt);
 
 	if (rr->ret) {
-		free (pkt);
+		free(pkt);
 		return 0;
 	}
 	*handle = rr->rz_set_bp.handle;
 	ret = !!rr->ret;
-	free (pkt);
+	free(pkt);
 	return ret;
 error:
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 	return 0;
 }
 
 int winkd_read_at_phys(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int count) {
 	kd_req_t req = {
 		0
-	}, *rr;
+	},
+		 *rr;
 	kd_packet_t *pkt;
 	int ret;
 
@@ -1168,53 +1167,51 @@ int winkd_read_at_phys(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int 
 	req.req = DbgKdReadPhysicalMemoryApi;
 	req.cpu = ctx->cpu;
 	req.rz_mem.addr = offset;
-	req.rz_mem.length = RZ_MIN (count, KD_MAX_PAYLOAD);
-	req.rz_mem.read = 0;	// Default caching option
+	req.rz_mem.length = RZ_MIN(count, KD_MAX_PAYLOAD);
+	req.rz_mem.read = 0; // Default caching option
 
 	// Don't wait on the lock in read_reg since it's frequently called. Otherwise the user
 	// will be forced to interrupt exit read_at_phys constantly while another task is in progress
-	if (!winkd_lock_tryenter (ctx)) {
+	if (!winkd_lock_tryenter(ctx)) {
 		goto error;
 	}
 
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1),
-		(uint8_t *)&req, sizeof (kd_req_t), NULL, 0);
+	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE, (ctx->seq_id ^= 1),
+		(uint8_t *)&req, sizeof(kd_req_t), NULL, 0);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
+	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
+	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 
-	rr = PKT_REQ (pkt);
+	rr = PKT_REQ(pkt);
 
 	if (rr->ret) {
-		free (pkt);
+		free(pkt);
 		return 0;
 	}
 
-	memcpy (buf, rr->data, rr->rz_mem.read);
+	memcpy(buf, rr->data, rr->rz_mem.read);
 	ret = rr->rz_mem.read;
-	free (pkt);
+	free(pkt);
 	return ret;
 error:
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 	return 0;
 }
 
 int winkd_read_at(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int count) {
-	kd_req_t *rr, req = {
-		0
-	};
+	kd_req_t *rr, req = { 0 };
 	kd_packet_t *pkt;
 	int ret;
 
@@ -1224,45 +1221,45 @@ int winkd_read_at(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int count
 	req.req = DbgKdReadVirtualMemoryApi;
 	req.cpu = ctx->cpu;
 	req.rz_mem.addr = offset;
-	req.rz_mem.length = RZ_MIN (count, KD_MAX_PAYLOAD);
+	req.rz_mem.length = RZ_MIN(count, KD_MAX_PAYLOAD);
 
 	// Don't wait on the lock in read_at since it's frequently called, including each
 	// time "enter" is pressed. Otherwise the user will be forced to interrupt exit
 	// read_registers constantly while another task is in progress
-	if (!winkd_lock_tryenter (ctx)) {
+	if (!winkd_lock_tryenter(ctx)) {
 		goto error;
 	}
 
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
-		(ctx->seq_id ^= 1), (uint8_t *)&req, sizeof (kd_req_t), NULL, 0);
+	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
+		(ctx->seq_id ^= 1), (uint8_t *)&req, sizeof(kd_req_t), NULL, 0);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
+	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
+	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
 	if (ret != KD_E_OK) {
 		return 0;
 	}
 
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 
-	rr = PKT_REQ (pkt);
+	rr = PKT_REQ(pkt);
 
 	if (rr->ret) {
-		free (pkt);
+		free(pkt);
 		return 0;
 	}
 
-	memcpy (buf, rr->data, rr->rz_mem.read);
+	memcpy(buf, rr->data, rr->rz_mem.read);
 	ret = rr->rz_mem.read;
-	free (pkt);
+	free(pkt);
 	return ret;
 error:
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 	return 0;
 }
 
@@ -1270,52 +1267,53 @@ int winkd_write_at(WindCtx *ctx, const uint8_t *buf, const ut64 offset, const in
 	kd_packet_t *pkt;
 	kd_req_t req = {
 		0
-	}, *rr;
+	},
+		 *rr;
 	int payload, ret;
 
 	if (!ctx || !ctx->desc || !ctx->syncd) {
 		return 0;
 	}
 
-	payload = RZ_MIN (count, KD_MAX_PAYLOAD - sizeof(kd_req_t));
+	payload = RZ_MIN(count, KD_MAX_PAYLOAD - sizeof(kd_req_t));
 	req.req = DbgKdWriteVirtualMemoryApi;
 	req.cpu = ctx->cpu;
 	req.rz_mem.addr = offset;
 	req.rz_mem.length = payload;
 
-	winkd_lock_enter (ctx);
+	winkd_lock_enter(ctx);
 
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
+	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
 		(ctx->seq_id ^= 1), (uint8_t *)&req,
-		sizeof (kd_req_t), buf, payload);
+		sizeof(kd_req_t), buf, payload);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
+	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
+	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 
-	rr = PKT_REQ (pkt);
+	rr = PKT_REQ(pkt);
 
 	if (rr->ret) {
-		free (pkt);
+		free(pkt);
 		return 0;
 	}
 
 	ret = rr->rz_mem.read;
-	free (pkt);
+	free(pkt);
 	return ret;
 error:
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 	return 0;
 }
 
@@ -1329,48 +1327,48 @@ int winkd_write_at_phys(WindCtx *ctx, const uint8_t *buf, const ut64 offset, con
 		return 0;
 	}
 
-	payload = RZ_MIN (count, KD_MAX_PAYLOAD - sizeof(kd_req_t));
+	payload = RZ_MIN(count, KD_MAX_PAYLOAD - sizeof(kd_req_t));
 
-	memset (&req, 0, sizeof(kd_req_t));
+	memset(&req, 0, sizeof(kd_req_t));
 
 	req.req = DbgKdWritePhysicalMemoryApi;
 	req.cpu = ctx->cpu;
 
 	req.rz_mem.addr = offset;
 	req.rz_mem.length = payload;
-	req.rz_mem.read = 0;	// Default caching option
+	req.rz_mem.read = 0; // Default caching option
 
-	winkd_lock_enter (ctx);
+	winkd_lock_enter(ctx);
 
-	ret = kd_send_data_packet (ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
-		(ctx->seq_id ^= 1), (uint8_t *)&req, sizeof (kd_req_t), buf, payload);
+	ret = kd_send_data_packet(ctx->desc, KD_PACKET_TYPE_STATE_MANIPULATE,
+		(ctx->seq_id ^= 1), (uint8_t *)&req, sizeof(kd_req_t), buf, payload);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
+	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_ACKNOWLEDGE, NULL);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	ret = winkd_wait_packet (ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
+	ret = winkd_wait_packet(ctx, KD_PACKET_TYPE_STATE_MANIPULATE, &pkt);
 	if (ret != KD_E_OK) {
 		goto error;
 	}
 
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 
-	kd_req_t *rr = PKT_REQ (pkt);
+	kd_req_t *rr = PKT_REQ(pkt);
 
 	if (rr->ret) {
-		free (pkt);
+		free(pkt);
 		return 0;
 	}
 	ret = rr->rz_mem.read;
-	free (pkt);
+	free(pkt);
 	return ret;
 error:
-	winkd_lock_leave (ctx);
+	winkd_lock_leave(ctx);
 	return 0;
 }
 
@@ -1378,19 +1376,19 @@ void winkd_break(void *arg) {
 	// This command shouldn't be wrapped by locks since it can always be sent and we don't
 	// want break queued up after another background task
 	WindCtx *ctx = (WindCtx *)arg;
-	(void)iob_write (ctx->desc, (const uint8_t *)"b", 1);
+	(void)iob_write(ctx->desc, (const uint8_t *)"b", 1);
 }
 
 int winkd_break_read(WindCtx *ctx) {
 #if __WINDOWS__ && !defined(_MSC_VER)
 	static BOOL WINAPI (*w32_CancelIoEx)(HANDLE, LPOVERLAPPED) = NULL;
 	if (!w32_CancelIoEx) {
-		w32_CancelIoEx = (BOOL WINAPI (*)(HANDLE, LPOVERLAPPED))
-				 GetProcAddress (GetModuleHandle (TEXT ("kernel32")),
-			"CancelIoEx");
+		w32_CancelIoEx = (BOOL WINAPI(*)(HANDLE, LPOVERLAPPED))
+			GetProcAddress(GetModuleHandle(TEXT("kernel32")),
+				"CancelIoEx");
 	}
 	if (w32_CancelIoEx) {
-		w32_CancelIoEx (ctx->desc, NULL);
+		w32_CancelIoEx(ctx->desc, NULL);
 	}
 #endif
 	return 1;

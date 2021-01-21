@@ -8,7 +8,7 @@
 #include <sys/types.h>
 
 /* --------------------------------------------------------- */
-#define RZP(x) ((RzPipe*)(x)->data)
+#define RZP(x) ((RzPipe *)(x)->data)
 
 // TODO: add rzpipe_assert
 
@@ -23,29 +23,29 @@ static int __write(RzIO *io, RzIODesc *fd, const ut8 *buf, int count) {
 	bufn = bufnum;
 	*bufn = 0;
 	for (i = 0; i < count; i++) {
-		int bufn_sz = sizeof (bufnum) - (bufn - bufnum);
-		snprintf (bufn, bufn_sz, "%s%d", i ? "," : "", buf[i]);
-		bufn += strlen (bufn);
+		int bufn_sz = sizeof(bufnum) - (bufn - bufnum);
+		snprintf(bufn, bufn_sz, "%s%d", i ? "," : "", buf[i]);
+		bufn += strlen(bufn);
 	}
-	int len = snprintf (fmt, sizeof (fmt),
+	int len = snprintf(fmt, sizeof(fmt),
 		"{\"op\":\"write\",\"address\":%" PFMT64d ",\"data\":[%s]}",
 		io->off, bufnum);
-	if (len >= sizeof (fmt)) {
-		eprintf ("rzpipe_write: error, fmt string has been truncated\n");
+	if (len >= sizeof(fmt)) {
+		eprintf("rzpipe_write: error, fmt string has been truncated\n");
 		return -1;
 	}
-	rv = rzpipe_write (RZP (fd), fmt);
+	rv = rzpipe_write(RZP(fd), fmt);
 	if (rv < 1) {
-		eprintf ("rzpipe_write: error\n");
+		eprintf("rzpipe_write: error\n");
 		return -1;
 	}
-	res = rzpipe_read (RZP (fd));
+	res = rzpipe_read(RZP(fd));
 	/* TODO: parse json back */
-	r = strstr (res, "result");
+	r = strstr(res, "result");
 	if (r) {
-		count = atoi (r + 6 + 1);
+		count = atoi(r + 6 + 1);
 	}
-	free (res);
+	free(res);
 	return rescount;
 }
 
@@ -60,25 +60,25 @@ static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 	if (count > 1024) {
 		count = 1024;
 	}
-	snprintf (fmt, sizeof (fmt),
-		"{\"op\":\"read\",\"address\":%"PFMT64d",\"count\":%d}",
+	snprintf(fmt, sizeof(fmt),
+		"{\"op\":\"read\",\"address\":%" PFMT64d ",\"count\":%d}",
 		io->off, count);
-	rv = rzpipe_write (RZP (fd), fmt);
+	rv = rzpipe_write(RZP(fd), fmt);
 	if (rv < 1) {
-		eprintf ("rzpipe_write: error\n");
+		eprintf("rzpipe_write: error\n");
 		return -1;
 	}
-	res = rzpipe_read (RZP (fd));
+	res = rzpipe_read(RZP(fd));
 
 	/* TODO: parse json back */
-	r = strstr (res, "result");
+	r = strstr(res, "result");
 	if (r) {
-		rescount = atoi (r + 6 + 2);
+		rescount = atoi(r + 6 + 2);
 	}
-	r = strstr (res, "data");
+	r = strstr(res, "data");
 	if (r) {
-		char *arr = strchr (r, ':');
-		if (!arr || arr[1]!='[') {
+		char *arr = strchr(r, ':');
+		if (!arr || arr[1] != '[') {
 			goto beach;
 		}
 		arr += 2;
@@ -101,7 +101,7 @@ static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 			case ',':
 			case ']':
 				if (num[0]) {
-					buf[bufi++] = atoi (num);
+					buf[bufi++] = atoi(num);
 					num[numi = 0] = 0;
 				}
 				break;
@@ -116,7 +116,7 @@ static int __read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 		}
 	}
 beach:
-	free (res);
+	free(res);
 	return rescount;
 }
 
@@ -124,7 +124,7 @@ static int __close(RzIODesc *fd) {
 	if (!fd || !fd->data) {
 		return -1;
 	}
-	rzpipe_close (fd->data);
+	rzpipe_close(fd->data);
 	fd->data = NULL;
 	return 0;
 }
@@ -139,41 +139,42 @@ static ut64 __lseek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 }
 
 static bool __check(RzIO *io, const char *pathname, bool many) {
-	return (!strncmp (pathname, "rzpipe://", 9));
+	return (!strncmp(pathname, "rzpipe://", 9));
 }
 
 static RzIODesc *__open(RzIO *io, const char *pathname, int rw, int mode) {
 	RzPipe *rzp = NULL;
-	if (__check (io, pathname, 0)) {
-		rzp = rzpipe_open (pathname + 9);
+	if (__check(io, pathname, 0)) {
+		rzp = rzpipe_open(pathname + 9);
 	}
-	return rzp? rz_io_desc_new (io, &rz_io_plugin_rzpipe,
-		pathname, rw, mode, rzp): NULL;
+	return rzp ? rz_io_desc_new(io, &rz_io_plugin_rzpipe,
+			     pathname, rw, mode, rzp)
+		   : NULL;
 }
 
 static char *__system(RzIO *io, RzIODesc *fd, const char *msg) {
-	rz_return_val_if_fail (io && fd && msg, NULL);
-	PJ *pj = pj_new ();
-	pj_o (pj);
-	pj_ks (pj, "op", "system");
-	pj_ks (pj, "cmd", msg);
-	pj_end (pj);
-	const char *fmt = pj_string (pj);
-	int rv = rzpipe_write (RZP (fd), fmt);
-	pj_free (pj);
+	rz_return_val_if_fail(io && fd && msg, NULL);
+	PJ *pj = pj_new();
+	pj_o(pj);
+	pj_ks(pj, "op", "system");
+	pj_ks(pj, "cmd", msg);
+	pj_end(pj);
+	const char *fmt = pj_string(pj);
+	int rv = rzpipe_write(RZP(fd), fmt);
+	pj_free(pj);
 	if (rv < 1) {
-		eprintf ("rzpipe_write: error\n");
+		eprintf("rzpipe_write: error\n");
 		return NULL;
 	}
-	char *res = rzpipe_read (RZP (fd));
+	char *res = rzpipe_read(RZP(fd));
 	//eprintf ("%s\n", res);
 	/* TODO: parse json back */
-	char *r = strstr (res, "result");
+	char *r = strstr(res, "result");
 	if (r) {
-		int rescount = atoi (r + 6 + 1);
-		eprintf ("RESULT %d\n", rescount);
+		int rescount = atoi(r + 6 + 1);
+		eprintf("RESULT %d\n", rescount);
 	}
-	free (res);
+	free(res);
 	return NULL;
 }
 

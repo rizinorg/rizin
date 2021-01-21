@@ -17,15 +17,15 @@
 #undef __UNIX__
 #undef __WINDOWS__
 
-#define RZ_MODE_PRINT 0x000
-#define RZ_MODE_RIZINCMD 0x001
-#define RZ_MODE_SET 0x002
-#define RZ_MODE_SIMPLE 0x004
-#define RZ_MODE_JSON 0x008
-#define RZ_MODE_ARRAY 0x010
-#define RZ_MODE_SIMPLEST 0x020
+#define RZ_MODE_PRINT     0x000
+#define RZ_MODE_RIZINCMD  0x001
+#define RZ_MODE_SET       0x002
+#define RZ_MODE_SIMPLE    0x004
+#define RZ_MODE_JSON      0x008
+#define RZ_MODE_ARRAY     0x010
+#define RZ_MODE_SIMPLEST  0x020
 #define RZ_MODE_CLASSDUMP 0x040
-#define RZ_MODE_EQUAL 0x080
+#define RZ_MODE_EQUAL     0x080
 
 /**
  * \brief Enum to describe the way data are printed
@@ -41,13 +41,13 @@ typedef enum {
 	RZ_OUTPUT_MODE_TABLE = 1 << 7,
 } RzOutputMode;
 
-#define RZ_IN /* do not use, implicit */
-#define RZ_OUT /* parameter is written, not read */
-#define RZ_INOUT /* parameter is read and written */
-#define RZ_OWN /* pointer ownership is transferred */
-#define RZ_BORROW /* pointer ownership is not transferred, it must not be freed by the receiver */
-#define RZ_NONNULL /* pointer can not be null */
-#define RZ_NULLABLE /* pointer can be null */
+#define RZ_IN        /* do not use, implicit */
+#define RZ_OUT       /* parameter is written, not read */
+#define RZ_INOUT     /* parameter is read and written */
+#define RZ_OWN       /* pointer ownership is transferred */
+#define RZ_BORROW    /* pointer ownership is not transferred, it must not be freed by the receiver */
+#define RZ_NONNULL   /* pointer can not be null */
+#define RZ_NULLABLE  /* pointer can be null */
 #define RZ_DEPRECATE /* should not be used in new code and should/will be removed in the future */
 #define RZ_IFNULL(x) /* default value for the pointer when null */
 #ifdef __GNUC__
@@ -73,17 +73,17 @@ typedef enum {
 #endif
 
 // used in debug, io, bin, analysis, ...
-#define RZ_PERM_R	4
-#define RZ_PERM_W	2
-#define RZ_PERM_X	1
-#define RZ_PERM_RW	(RZ_PERM_R|RZ_PERM_W)
-#define RZ_PERM_RX	(RZ_PERM_R|RZ_PERM_X)
-#define RZ_PERM_RWX	(RZ_PERM_R|RZ_PERM_W|RZ_PERM_X)
-#define RZ_PERM_WX	(RZ_PERM_W|RZ_PERM_X)
-#define RZ_PERM_SHAR	8
-#define RZ_PERM_PRIV	16
-#define RZ_PERM_ACCESS	32
-#define RZ_PERM_CREAT	64
+#define RZ_PERM_R      4
+#define RZ_PERM_W      2
+#define RZ_PERM_X      1
+#define RZ_PERM_RW     (RZ_PERM_R | RZ_PERM_W)
+#define RZ_PERM_RX     (RZ_PERM_R | RZ_PERM_X)
+#define RZ_PERM_RWX    (RZ_PERM_R | RZ_PERM_W | RZ_PERM_X)
+#define RZ_PERM_WX     (RZ_PERM_W | RZ_PERM_X)
+#define RZ_PERM_SHAR   8
+#define RZ_PERM_PRIV   16
+#define RZ_PERM_ACCESS 32
+#define RZ_PERM_CREAT  64
 
 // HACK to fix capstone-android-mips build
 #undef mips
@@ -114,7 +114,7 @@ typedef enum {
 
 #if defined(__OpenBSD__)
 #include <sys/param.h>
-#undef MAXCOMLEN	/* redefined in zipint.h */
+#undef MAXCOMLEN /* redefined in zipint.h */
 #endif
 
 /* release >= 5.9 */
@@ -131,61 +131,63 @@ typedef enum {
 #endif
 
 #ifdef __GNUC__
-#  define UNUSED_FUNCTION(x) __attribute__((__unused__)) UNUSED_ ## x
+#define UNUSED_FUNCTION(x) __attribute__((__unused__)) UNUSED_##x
 #else
-#  define UNUSED_FUNCTION(x) UNUSED_ ## x
+#define UNUSED_FUNCTION(x) UNUSED_##x
 #endif
 
 #ifdef __EMSCRIPTEN__
-# define __UNIX__ 1
+#define __UNIX__ 1
 #endif
 
 #ifdef __HAIKU__
-# define __UNIX__ 1
+#define __UNIX__ 1
 #endif
 
-#if defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 #define __KFBSD__ 1
 #else
 #define __KFBSD__ 0
 #endif
 
 #ifdef _MSC_VER
-  #define restrict
-  #define strcasecmp stricmp
-  #define strncasecmp strnicmp
-  #define __WINDOWS__ 1
+#define restrict
+#define strcasecmp  stricmp
+#define strncasecmp strnicmp
+#define __WINDOWS__ 1
 
-  #include <time.h>
-  static inline struct tm *gmtime_r(const time_t *t, struct tm *r) { return (gmtime_s(r, t))? NULL : r; }
+#include <time.h>
+static inline struct tm *gmtime_r(const time_t *t, struct tm *r) {
+	return (gmtime_s(r, t)) ? NULL : r;
+}
 #endif
 
 #if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__)
-  #define __BSD__ 0
-  #define __UNIX__ 1
+#define __BSD__  0
+#define __UNIX__ 1
 #endif
 #if __KFBSD__ || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__DragonFly__)
-  #define __BSD__ 1
-  #define __UNIX__ 1
+#define __BSD__  1
+#define __UNIX__ 1
 #endif
 #if __WINDOWS__ || _WIN32
-  #ifdef _MSC_VER
-  /* Must be included before windows.h */
-  #include <winsock2.h>
-  #include <ws2tcpip.h>
-  #ifndef WIN32_LEAN_AND_MEAN
-  #define WIN32_LEAN_AND_MEAN
-  #endif
-  #endif
-  typedef int socklen_t;
-  #undef USE_SOCKETS
-  #define __WINDOWS__ 1
-  #undef __UNIX__
-  #undef __BSD__
+#ifdef _MSC_VER
+/* Must be included before windows.h */
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#endif
+typedef int socklen_t;
+#undef USE_SOCKETS
+#define __WINDOWS__ 1
+#undef __UNIX__
+#undef __BSD__
 #endif
 #if __WINDOWS__ || _WIN32
-  #define __addr_t_defined
-  #include <windows.h>
+#define __addr_t_defined
+#include <windows.h>
 #endif
 
 #if defined(__APPLE__) && (__arm__ || __arm64__ || __aarch64__)
@@ -195,38 +197,38 @@ typedef enum {
 #endif
 
 #ifdef __GNUC__
-  #define FUNC_ATTR_MALLOC __attribute__((malloc))
-  #define FUNC_ATTR_ALLOC_SIZE(x) __attribute__((alloc_size(x)))
-  #define FUNC_ATTR_ALLOC_SIZE_PROD(x,y) __attribute__((alloc_size(x,y)))
-  #define FUNC_ATTR_ALLOC_ALIGN(x) __attribute__((alloc_align(x)))
-  #define FUNC_ATTR_PURE __attribute__ ((pure))
-  #define FUNC_ATTR_CONST __attribute__((const))
-  #define FUNC_ATTR_USED __attribute__((used))
-  #define FUNC_ATTR_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
-  #define FUNC_ATTR_ALWAYS_INLINE __attribute__((always_inline))
+#define FUNC_ATTR_MALLOC                __attribute__((malloc))
+#define FUNC_ATTR_ALLOC_SIZE(x)         __attribute__((alloc_size(x)))
+#define FUNC_ATTR_ALLOC_SIZE_PROD(x, y) __attribute__((alloc_size(x, y)))
+#define FUNC_ATTR_ALLOC_ALIGN(x)        __attribute__((alloc_align(x)))
+#define FUNC_ATTR_PURE                  __attribute__((pure))
+#define FUNC_ATTR_CONST                 __attribute__((const))
+#define FUNC_ATTR_USED                  __attribute__((used))
+#define FUNC_ATTR_WARN_UNUSED_RESULT    __attribute__((warn_unused_result))
+#define FUNC_ATTR_ALWAYS_INLINE         __attribute__((always_inline))
 
-  #ifdef __clang__
-    // clang only
-  #elif defined(__INTEL_COMPILER)
-    // intel only
-  #else
-    // gcc only
-  #endif
+#ifdef __clang__
+// clang only
+#elif defined(__INTEL_COMPILER)
+// intel only
 #else
-  #define FUNC_ATTR_MALLOC
-  #define FUNC_ATTR_ALLOC_SIZE(x)
-  #define FUNC_ATTR_ALLOC_SIZE_PROD(x,y)
-  #define FUNC_ATTR_ALLOC_ALIGN(x)
-  #define FUNC_ATTR_PURE
-  #define FUNC_ATTR_CONST
-  #define FUNC_ATTR_USED
-  #define FUNC_ATTR_WARN_UNUSED_RESULT
-  #define FUNC_ATTR_ALWAYS_INLINE
+// gcc only
+#endif
+#else
+#define FUNC_ATTR_MALLOC
+#define FUNC_ATTR_ALLOC_SIZE(x)
+#define FUNC_ATTR_ALLOC_SIZE_PROD(x, y)
+#define FUNC_ATTR_ALLOC_ALIGN(x)
+#define FUNC_ATTR_PURE
+#define FUNC_ATTR_CONST
+#define FUNC_ATTR_USED
+#define FUNC_ATTR_WARN_UNUSED_RESULT
+#define FUNC_ATTR_ALWAYS_INLINE
 #endif
 
 /* printf format check attributes */
 #if defined(__clang__) || defined(__GNUC__)
-#define RZ_PRINTF_CHECK(fmt, dots) __attribute__ ((format (printf, fmt, dots)))
+#define RZ_PRINTF_CHECK(fmt, dots) __attribute__((format(printf, fmt, dots)))
 #else
 #define RZ_PRINTF_CHECK(fmt, dots)
 #endif
@@ -252,22 +254,22 @@ extern "C" {
 // TODO: FS or RZ_SYS_DIR ??
 #undef FS
 #if __WINDOWS__
-#define FS "\\"
-#define RZ_SYS_DIR "\\"
+#define FS            "\\"
+#define RZ_SYS_DIR    "\\"
 #define RZ_SYS_ENVSEP ";"
-#define RZ_SYS_HOME "USERPROFILE"
-#define RZ_SYS_TMP "TEMP"
+#define RZ_SYS_HOME   "USERPROFILE"
+#define RZ_SYS_TMP    "TEMP"
 #else
-#define FS "/"
-#define RZ_SYS_DIR "/"
+#define FS            "/"
+#define RZ_SYS_DIR    "/"
 #define RZ_SYS_ENVSEP ":"
-#define RZ_SYS_HOME "HOME"
-#define RZ_SYS_TMP "TMPDIR"
+#define RZ_SYS_HOME   "HOME"
+#define RZ_SYS_TMP    "TMPDIR"
 #endif
 
-#define RZ_JOIN_2_PATHS(p1, p2) p1 RZ_SYS_DIR p2
-#define RZ_JOIN_3_PATHS(p1, p2, p3) p1 RZ_SYS_DIR p2 RZ_SYS_DIR p3
-#define RZ_JOIN_4_PATHS(p1, p2, p3, p4) p1 RZ_SYS_DIR p2 RZ_SYS_DIR p3 RZ_SYS_DIR p4
+#define RZ_JOIN_2_PATHS(p1, p2)             p1 RZ_SYS_DIR p2
+#define RZ_JOIN_3_PATHS(p1, p2, p3)         p1 RZ_SYS_DIR p2 RZ_SYS_DIR p3
+#define RZ_JOIN_4_PATHS(p1, p2, p3, p4)     p1 RZ_SYS_DIR p2 RZ_SYS_DIR p3 RZ_SYS_DIR p4
 #define RZ_JOIN_5_PATHS(p1, p2, p3, p4, p5) p1 RZ_SYS_DIR p2 RZ_SYS_DIR p3 RZ_SYS_DIR p4 RZ_SYS_DIR p5
 
 #ifndef __packed
@@ -277,10 +279,14 @@ extern "C" {
 typedef int (*PrintfCallback)(const char *str, ...) RZ_PRINTF_CHECK(1, 2);
 
 /* compile-time introspection helpers */
-#define CTO(y,z) ((size_t) &((y*)0)->z)
-#define CTA(x,y,z) (x+CTO(y,z))
-#define CTI(x,y,z) (*((size_t*)(CTA(x,y,z))))
-#define CTS(x,y,z,t,v) {t* _=(t*)CTA(x,y,z);*_=v;}
+#define CTO(y, z)    ((size_t) & ((y *)0)->z)
+#define CTA(x, y, z) (x + CTO(y, z))
+#define CTI(x, y, z) (*((size_t *)(CTA(x, y, z))))
+#define CTS(x, y, z, t, v) \
+	{ \
+		t *_ = (t *)CTA(x, y, z); \
+		*_ = v; \
+	}
 
 #ifdef RZ_IPI
 #undef RZ_IPI
@@ -297,59 +303,60 @@ typedef int (*PrintfCallback)(const char *str, ...) RZ_PRINTF_CHECK(1, 2);
 #undef RZ_API
 #endif
 #if RZ_SWIG
-  #define RZ_API export
+#define RZ_API export
 #elif RZ_INLINE
-  #define RZ_API inline
+#define RZ_API inline
 #else
-  #if defined(__GNUC__) && __GNUC__ >= 4
-    #define RZ_API __attribute__((visibility("default")))
-  #elif defined(_MSC_VER)
-    #define RZ_API __declspec(dllexport)
-  #else
-    #define RZ_API
-  #endif
+#if defined(__GNUC__) && __GNUC__ >= 4
+#define RZ_API __attribute__((visibility("default")))
+#elif defined(_MSC_VER)
+#define RZ_API __declspec(dllexport)
+#else
+#define RZ_API
+#endif
 #endif
 
 #define RZ_LIB_VERSION_HEADER(x) \
-RZ_API const char *x##_version(void)
+	RZ_API const char *x##_version(void)
 #define RZ_LIB_VERSION(x) \
-RZ_API const char *x##_version(void) { return "" RZ_GITTAP; }
+	RZ_API const char *x##_version(void) { return "" RZ_GITTAP; }
 
-#define BITS2BYTES(x) (((x)/8)+(((x)%8)?1:0))
-#define ZERO_FILL(x) memset (&x, 0, sizeof (x))
-#define RZ_NEWS0(x,y) (x*)calloc(y,sizeof(x))
-#define RZ_NEWS(x,y) (x*)malloc(sizeof(x)*(y))
-#define RZ_NEW0(x) (x*)calloc(1,sizeof(x))
-#define RZ_NEW(x) (x*)malloc(sizeof(x))
-#define RZ_NEWCOPY(x,y) (x*)rz_new_copy(sizeof(x), y)
+#define BITS2BYTES(x)    (((x) / 8) + (((x) % 8) ? 1 : 0))
+#define ZERO_FILL(x)     memset(&x, 0, sizeof(x))
+#define RZ_NEWS0(x, y)   (x *)calloc(y, sizeof(x))
+#define RZ_NEWS(x, y)    (x *)malloc(sizeof(x) * (y))
+#define RZ_NEW0(x)       (x *)calloc(1, sizeof(x))
+#define RZ_NEW(x)        (x *)malloc(sizeof(x))
+#define RZ_NEWCOPY(x, y) (x *)rz_new_copy(sizeof(x), y)
 
 static inline void *rz_new_copy(int size, void *data) {
 	void *a = malloc(size);
 	if (a) {
-		memcpy (a, data, size);
+		memcpy(a, data, size);
 	}
 	return a;
 }
 // TODO: Make RZ_NEW_COPY be 1 arg, not two
-#define RZ_NEW_COPY(x,y) x=(void*)malloc(sizeof(y));memcpy(x,y,sizeof(y))
-#define RZ_MEM_ALIGN(x) ((void *)(size_t)(((ut64)(size_t)x) & 0xfffffffffffff000LL))
-#define RZ_ARRAY_SIZE(x) (sizeof (x) / sizeof ((x)[0]))
-#define RZ_PTR_MOVE(d,s) d=s;s=NULL;
+#define RZ_NEW_COPY(x, y) \
+	x = (void *)malloc(sizeof(y)); \
+	memcpy(x, y, sizeof(y))
+#define RZ_MEM_ALIGN(x)  ((void *)(size_t)(((ut64)(size_t)x) & 0xfffffffffffff000LL))
+#define RZ_ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+#define RZ_PTR_MOVE(d, s) \
+	d = s; \
+	s = NULL;
 
-#define RZ_PTR_ALIGN(v,t) \
-	((char *)(((size_t)(v) ) \
-	& ~(t - 1)))
-#define RZ_PTR_ALIGN_NEXT(v,t) \
-	((char *)(((size_t)(v) + (t - 1)) \
-	& ~(t - 1)))
+#define RZ_PTR_ALIGN(v, t) \
+	((char *)(((size_t)(v)) & ~(t - 1)))
+#define RZ_PTR_ALIGN_NEXT(v, t) \
+	((char *)(((size_t)(v) + (t - 1)) & ~(t - 1)))
 
-#define RZ_BIT_SET(x,y) (((ut8*)x)[y>>4] |= (1<<(y&0xf)))
-#define RZ_BIT_UNSET(x,y) (((ut8*)x)[y>>4] &= ~(1<<(y&0xf)))
-#define RZ_BIT_TOGGLE(x, y) ( RZ_BIT_CHK (x, y) ? \
-		RZ_BIT_UNSET (x, y): RZ_BIT_SET (x, y))
+#define RZ_BIT_SET(x, y)    (((ut8 *)x)[y >> 4] |= (1 << (y & 0xf)))
+#define RZ_BIT_UNSET(x, y)  (((ut8 *)x)[y >> 4] &= ~(1 << (y & 0xf)))
+#define RZ_BIT_TOGGLE(x, y) (RZ_BIT_CHK(x, y) ? RZ_BIT_UNSET(x, y) : RZ_BIT_SET(x, y))
 
 //#define RZ_BIT_CHK(x,y) ((((const ut8*)x)[y>>4] & (1<<(y&0xf))))
-#define RZ_BIT_CHK(x,y) (*(x) & (1<<(y)))
+#define RZ_BIT_CHK(x, y) (*(x) & (1 << (y)))
 
 /* try for C99, but provide backwards compatibility */
 #if defined(_MSC_VER) && (_MSC_VER <= 1800)
@@ -360,14 +367,14 @@ static inline void *rz_new_copy(int size, void *data) {
 
 #if PERROR_WITH_FILELINE
 /* make error messages useful by prepending file, line, and function name */
-#define _perror(str,file,line,func) \
-  { \
-	  char buf[256]; \
-	  snprintf(buf,sizeof(buf),"[%s:%d %s] %s",file,line,func,str); \
-	  rz_sys_perror_str(buf); \
-  }
-#define perror(x) _perror(x,__FILE__,__LINE__,__func__)
-#define rz_sys_perror(x) _perror(x,__FILE__,__LINE__,__func__)
+#define _perror(str, file, line, func) \
+	{ \
+		char buf[256]; \
+		snprintf(buf, sizeof(buf), "[%s:%d %s] %s", file, line, func, str); \
+		rz_sys_perror_str(buf); \
+	}
+#define perror(x)        _perror(x, __FILE__, __LINE__, __func__)
+#define rz_sys_perror(x) _perror(x, __FILE__, __LINE__, __func__)
 #else
 #define rz_sys_perror(x) rz_sys_perror_str(x);
 #endif
@@ -387,7 +394,7 @@ static inline void *rz_new_copy(int size, void *data) {
 #endif
 
 #ifndef HAVE_EPRINTF
-#define eprintf(...) fprintf(stderr,__VA_ARGS__)
+#define eprintf(...) fprintf(stderr, __VA_ARGS__)
 #define HAVE_EPRINTF 1
 #endif
 
@@ -401,14 +408,17 @@ static inline void *rz_new_copy(int size, void *data) {
 #define rz_offsetof(type, member) offsetof(type, member)
 #else
 #if __SDB_WINDOWS__
-#define rz_offsetof(type, member) ((unsigned long) (ut64)&((type*)0)->member)
+#define rz_offsetof(type, member) ((unsigned long)(ut64) & ((type *)0)->member)
 #else
-#define rz_offsetof(type, member) ((unsigned long) &((type*)0)->member)
+#define rz_offsetof(type, member) ((unsigned long)&((type *)0)->member)
 #endif
 #endif
 
-
-#define RZ_FREE(x) { free((void *)x); x = NULL; }
+#define RZ_FREE(x) \
+	{ \
+		free((void *)x); \
+		x = NULL; \
+	}
 
 #if __WINDOWS__
 #define HAVE_REGEXP 0
@@ -452,108 +462,108 @@ static inline void *rz_new_copy(int size, void *data) {
 #endif
 
 #if __APPLE__
-# if __i386__
-# define RZ_SYS_BASE ((ut64)0x1000)
-# elif __x86_64__
-# define RZ_SYS_BASE ((ut64)0x100000000)
-# else
-# define RZ_SYS_BASE ((ut64)0x1000)
-# endif
+#if __i386__
+#define RZ_SYS_BASE ((ut64)0x1000)
+#elif __x86_64__
+#define RZ_SYS_BASE ((ut64)0x100000000)
+#else
+#define RZ_SYS_BASE ((ut64)0x1000)
+#endif
 #elif __WINDOWS__
-# define RZ_SYS_BASE ((ut64)0x01001000)
+#define RZ_SYS_BASE ((ut64)0x01001000)
 #else // linux, bsd, ...
-# if __arm__ || __arm64__
-# define RZ_SYS_BASE ((ut64)0x4000)
-# else
-# define RZ_SYS_BASE ((ut64)0x8048000)
-# endif
+#if __arm__ || __arm64__
+#define RZ_SYS_BASE ((ut64)0x4000)
+#else
+#define RZ_SYS_BASE ((ut64)0x8048000)
+#endif
 #endif
 
 /* arch */
 #if __i386__
-#define RZ_SYS_ARCH "x86"
-#define RZ_SYS_BITS RZ_SYS_BITS_32
+#define RZ_SYS_ARCH   "x86"
+#define RZ_SYS_BITS   RZ_SYS_BITS_32
 #define RZ_SYS_ENDIAN 0
 #elif __EMSCRIPTEN__
-#define RZ_SYS_ARCH "wasm"
-#define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+#define RZ_SYS_ARCH   "wasm"
+#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
 #define RZ_SYS_ENDIAN 0
 #elif __x86_64__
-#define RZ_SYS_ARCH "x86"
-#define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+#define RZ_SYS_ARCH   "x86"
+#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
 #define RZ_SYS_ENDIAN 0
 #elif __POWERPC__
-# define RZ_SYS_ARCH "ppc"
-# ifdef __powerpc64__
-#  define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
-# else
-#  define RZ_SYS_BITS RZ_SYS_BITS_32
-# endif
-# if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#  define RZ_SYS_ENDIAN 0
-# else
-#  define RZ_SYS_ENDIAN 1
-# endif
-#elif __arm__
-#define RZ_SYS_ARCH "arm"
+#define RZ_SYS_ARCH "ppc"
+#ifdef __powerpc64__
+#define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+#else
 #define RZ_SYS_BITS RZ_SYS_BITS_32
+#endif
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define RZ_SYS_ENDIAN 0
+#else
+#define RZ_SYS_ENDIAN 1
+#endif
+#elif __arm__
+#define RZ_SYS_ARCH   "arm"
+#define RZ_SYS_BITS   RZ_SYS_BITS_32
 #define RZ_SYS_ENDIAN 0
 #elif __arm64__ || __aarch64__
-#define RZ_SYS_ARCH "arm"
-#define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+#define RZ_SYS_ARCH   "arm"
+#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
 #define RZ_SYS_ENDIAN 0
 #elif __arc__
-#define RZ_SYS_ARCH "arc"
-#define RZ_SYS_BITS RZ_SYS_BITS_32
+#define RZ_SYS_ARCH   "arc"
+#define RZ_SYS_BITS   RZ_SYS_BITS_32
 #define RZ_SYS_ENDIAN 0
 #elif __s390x__
-#define RZ_SYS_ARCH "sysz"
-#define RZ_SYS_BITS RZ_SYS_BITS_64
+#define RZ_SYS_ARCH   "sysz"
+#define RZ_SYS_BITS   RZ_SYS_BITS_64
 #define RZ_SYS_ENDIAN 1
 #elif __sparc__
-#define RZ_SYS_ARCH "sparc"
-#define RZ_SYS_BITS RZ_SYS_BITS_32
+#define RZ_SYS_ARCH   "sparc"
+#define RZ_SYS_BITS   RZ_SYS_BITS_32
 #define RZ_SYS_ENDIAN 1
 #elif __mips__
-#define RZ_SYS_ARCH "mips"
-#define RZ_SYS_BITS RZ_SYS_BITS_32
+#define RZ_SYS_ARCH   "mips"
+#define RZ_SYS_BITS   RZ_SYS_BITS_32
 #define RZ_SYS_ENDIAN 1
 #elif __EMSCRIPTEN__
 /* we should default to wasm when ready */
 #define RZ_SYS_ARCH "x86"
 #define RZ_SYS_BITS RZ_SYS_BITS_32
 #elif __riscv__ || __riscv
-# define RZ_SYS_ARCH "riscv"
-# define RZ_SYS_ENDIAN 0
-# if __riscv_xlen == 32
-#  define RZ_SYS_BITS RZ_SYS_BITS_32
-# else
-#  define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
-# endif
+#define RZ_SYS_ARCH   "riscv"
+#define RZ_SYS_ENDIAN 0
+#if __riscv_xlen == 32
+#define RZ_SYS_BITS RZ_SYS_BITS_32
+#else
+#define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+#endif
 #else
 #ifdef _MSC_VER
 #ifdef _WIN64
-#define RZ_SYS_ARCH "x86"
-#define RZ_SYS_BITS (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
+#define RZ_SYS_ARCH   "x86"
+#define RZ_SYS_BITS   (RZ_SYS_BITS_32 | RZ_SYS_BITS_64)
 #define RZ_SYS_ENDIAN 0
-#define __x86_64__ 1
+#define __x86_64__    1
 #else
-#define RZ_SYS_ARCH "x86"
-#define RZ_SYS_BITS (RZ_SYS_BITS_32)
-#define __i386__ 1
+#define RZ_SYS_ARCH   "x86"
+#define RZ_SYS_BITS   (RZ_SYS_BITS_32)
+#define __i386__      1
 #define RZ_SYS_ENDIAN 0
 #endif
 #else
-#define RZ_SYS_ARCH "unknown"
-#define RZ_SYS_BITS RZ_SYS_BITS_32
+#define RZ_SYS_ARCH   "unknown"
+#define RZ_SYS_BITS   RZ_SYS_BITS_32
 #define RZ_SYS_ENDIAN 0
 #endif
 #endif
 
-#define RZ_SYS_ENDIAN_NONE 0
+#define RZ_SYS_ENDIAN_NONE   0
 #define RZ_SYS_ENDIAN_LITTLE 1
-#define RZ_SYS_ENDIAN_BIG 2
-#define RZ_SYS_ENDIAN_BI 3
+#define RZ_SYS_ENDIAN_BIG    2
+#define RZ_SYS_ENDIAN_BI     3
 
 typedef enum {
 	RZ_SYS_ARCH_NONE = 0,
@@ -599,23 +609,23 @@ typedef enum {
 #endif
 
 /* os */
-#if defined (__QNX__)
+#if defined(__QNX__)
 #define RZ_SYS_OS "qnx"
 //#elif TARGET_OS_IPHONE
 //#define RZ_SYS_OS "ios"
-#elif defined (__APPLE__)
+#elif defined(__APPLE__)
 #define RZ_SYS_OS "darwin"
-#elif defined (__linux__)
+#elif defined(__linux__)
 #define RZ_SYS_OS "linux"
-#elif defined (__WINDOWS__)
+#elif defined(__WINDOWS__)
 #define RZ_SYS_OS "windows"
-#elif defined (__NetBSD__ )
+#elif defined(__NetBSD__)
 #define RZ_SYS_OS "netbsd"
-#elif defined (__OpenBSD__)
+#elif defined(__OpenBSD__)
 #define RZ_SYS_OS "openbsd"
-#elif defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
+#elif defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 #define RZ_SYS_OS "freebsd"
-#elif defined (__HAIKU__)
+#elif defined(__HAIKU__)
 #define RZ_SYS_OS "haiku"
 #else
 #define RZ_SYS_OS "unknown"
@@ -647,60 +657,61 @@ static inline void rz_run_call5(void *fcn, void *arg1, void *arg2, void *arg3, v
 
 static inline void rz_run_call6(void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
 	void *arg6) {
-	((void (*)(void *, void *, void *, void *, void *, void *))(fcn))
-		(arg1, arg2, arg3, arg4, arg5, arg6);
+	((void (*)(void *, void *, void *, void *, void *, void *))(fcn))(arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 static inline void rz_run_call7(void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
 	void *arg6, void *arg7) {
-	((void (*)(void *, void *, void *, void *, void *, void *, void *))(fcn))
-		(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+	((void (*)(void *, void *, void *, void *, void *, void *, void *))(fcn))(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
 
 static inline void rz_run_call8(void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
 	void *arg6, void *arg7, void *arg8) {
-	((void (*)(void *, void *, void *, void *, void *, void *, void *, void *))(fcn))
-		(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+	((void (*)(void *, void *, void *, void *, void *, void *, void *, void *))(fcn))(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 }
 
 static inline void rz_run_call9(void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
 	void *arg6, void *arg7, void *arg8, void *arg9) {
-	((void (*)(void *, void *, void *, void *, void *, void *, void *, void *, void *))(fcn))
-		(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+	((void (*)(void *, void *, void *, void *, void *, void *, void *, void *, void *))(fcn))(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
 }
 
 static inline void rz_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
 	void *arg6, void *arg7, void *arg8, void *arg9, void *arg10) {
-	((void (*)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *))(fcn))
-		(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+	((void (*)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *))(fcn))(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
 }
 
 #define RZ_V_NOT(op, fail_ret) \
 	if ((op) == (fail_ret)) \
-		RZ_LOG_WARN (#op" at %s:%d failed: %s\n", __FILE__, __LINE__, strerror (errno))
-#define rz_xwrite(fd, buf, count) RZ_V_NOT (write (fd, buf, count), -1)
-#define rz_xread(fd, buf, count) RZ_V_NOT (read (fd, buf, count), -1)
-#define rz_xfreopen(pathname, mode, stream) RZ_V_NOT (freopen (pathname, mode, stream), NULL)
+	RZ_LOG_WARN(#op " at %s:%d failed: %s\n", __FILE__, __LINE__, strerror(errno))
+#define rz_xwrite(fd, buf, count)           RZ_V_NOT(write(fd, buf, count), -1)
+#define rz_xread(fd, buf, count)            RZ_V_NOT(read(fd, buf, count), -1)
+#define rz_xfreopen(pathname, mode, stream) RZ_V_NOT(freopen(pathname, mode, stream), NULL)
 
 #ifndef container_of
-# ifdef _MSC_VER
-#  define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
-# else
-#  define container_of(ptr, type, member) ((type *)((char *)(__typeof__(((type *)0)->member) *){ptr} - offsetof(type, member)))
-# endif
+#ifdef _MSC_VER
+#define container_of(ptr, type, member) ((type *)((char *)(ptr)-offsetof(type, member)))
+#else
+#define container_of(ptr, type, member) ((type *)((char *)(__typeof__(((type *)0)->member) *){ ptr } - offsetof(type, member)))
+#endif
 #endif
 
 // reference counter
 typedef int RRef;
 
-#define RZ_REF_NAME refcount
-#define rz_ref(x) x->RZ_REF_NAME++;
+#define RZ_REF_NAME    refcount
+#define rz_ref(x)      x->RZ_REF_NAME++;
 #define rz_ref_init(x) x->RZ_REF_NAME = 1
-#define rz_unref(x,f) { assert (x->RZ_REF_NAME> 0); if (!--(x->RZ_REF_NAME)) { f(x); } }
+#define rz_unref(x, f) \
+	{ \
+		assert(x->RZ_REF_NAME > 0); \
+		if (!--(x->RZ_REF_NAME)) { \
+			f(x); \
+		} \
+	}
 
 #define RZ_REF_TYPE RRef RZ_REF_NAME
 #define RZ_REF_FUNCTIONS(s, n) \
-static inline void n##_ref(s *x) { x->RZ_REF_NAME++; } \
-static inline void n##_unref(s *x) { rz_unref (x, n##_free); }
+	static inline void n##_ref(s *x) { x->RZ_REF_NAME++; } \
+	static inline void n##_unref(s *x) { rz_unref(x, n##_free); }
 
 #endif // RZ_TYPES_H

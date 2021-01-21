@@ -26,24 +26,24 @@ static const ut8 Rcon[30] = {
 // key        - The 128/192/256-bit user-key to use.
 //expkey[2][Nr + 1][Nb]
 //void aes_expkey (const struct aes_state *st, ut32 ***expkey) { //expkey[2][st->rounds + 1][Nb]) {
-#if defined (__GNUC__)
-void aes_expkey (const struct aes_state *st, ut32 expkey[2][st->rounds + 1][Nb])
+#if defined(__GNUC__)
+void aes_expkey(const struct aes_state *st, ut32 expkey[2][st->rounds + 1][Nb])
 #else
 // XXX this is wrong, but at least it compiles
 #ifdef _MSC_VER
-#pragma message ("AES broken for non-gcc compilers")
+#pragma message("AES broken for non-gcc compilers")
 #else
 #warning AES broken for non-gcc compilers
 #endif
 #define Nr_AES256 (6 + ((256 / 8) / 4))
-void aes_expkey (const struct aes_state *st, ut32 expkey[2][Nr_AES256 + 1][Nb])
+void aes_expkey(const struct aes_state *st, ut32 expkey[2][Nr_AES256 + 1][Nb])
 #endif
 {
 	// ut32 expkey[2][st->rounds + 1][Nb];
 	// memcpy (&expkey, _expkey, 2 * (st->rounds + 1) * Nb);
 	int ROUND_KEY_COUNT = 4 * (1 + st->rounds);
 #ifdef _MSC_VER
-	ut32 *tk = (ut32*)malloc (sizeof (ut32) * st->columns);
+	ut32 *tk = (ut32 *)malloc(sizeof(ut32) * st->columns);
 #else
 	ut32 tk[st->columns];
 #endif
@@ -116,7 +116,7 @@ void aes_expkey (const struct aes_state *st, ut32 expkey[2][Nr_AES256 + 1][Nb])
 		}
 	}
 #ifdef _MSC_VER
-	free (tk);
+	free(tk);
 #endif
 }
 
@@ -124,7 +124,7 @@ void aes_expkey (const struct aes_state *st, ut32 expkey[2][Nr_AES256 + 1][Nb])
 // Rijndael's default block size (128-bit).
 // in         - The plaintext
 // result     - The ciphertext generated from a plaintext using the key
-void aes_encrypt (struct aes_state *st, ut8 *in, ut8 *result) {
+void aes_encrypt(struct aes_state *st, ut8 *in, ut8 *result) {
 #if defined(_MSC_VER) || defined(__TINYC__)
 	ut32 expkey[2][Nr_AES256 + 1][Nb];
 #else
@@ -162,13 +162,13 @@ void aes_encrypt (struct aes_state *st, ut8 *in, ut8 *result) {
 	// Apply Round Transforms
 	for (r = 1; r < st->rounds; r++) {
 		a0 = (FT0[(ut8)(t0 >> 24)] ^ FT1[(ut8)(t1 >> 16)] ^ FT2[(ut8)(t2 >> 8)] ^
-				FT3[(ut8)t3]);
+			FT3[(ut8)t3]);
 		a1 = (FT0[(ut8)(t1 >> 24)] ^ FT1[(ut8)(t2 >> 16)] ^ FT2[(ut8)(t3 >> 8)] ^
-				FT3[(ut8)t0]);
+			FT3[(ut8)t0]);
 		a2 = (FT0[(ut8)(t2 >> 24)] ^ FT1[(ut8)(t3 >> 16)] ^ FT2[(ut8)(t0 >> 8)] ^
-				FT3[(ut8)t1]);
+			FT3[(ut8)t1]);
 		a3 = (FT0[(ut8)(t3 >> 24)] ^ FT1[(ut8)(t0 >> 16)] ^ FT2[(ut8)(t1 >> 8)] ^
-				FT3[(ut8)t2]);
+			FT3[(ut8)t2]);
 		t0 = a0 ^ expkey[0][r][0];
 		t1 = a1 ^ expkey[0][r][1];
 		t2 = a2 ^ expkey[0][r][2];
@@ -206,7 +206,7 @@ void aes_encrypt (struct aes_state *st, ut8 *in, ut8 *result) {
 // Rijndael's default block size (128-bit).
 // in         - The ciphertext.
 // result     - The plaintext generated from a ciphertext using the session key.
-void aes_decrypt (struct aes_state *st, ut8 *in, ut8 *result) {
+void aes_decrypt(struct aes_state *st, ut8 *in, ut8 *result) {
 #if defined(_MSC_VER) || defined(__TINYC__)
 	ut32 expkey[2][Nr_AES256 + 1][Nb];
 #else

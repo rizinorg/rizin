@@ -4,10 +4,9 @@
 #include <sys/ptrace.h>
 #include <sys/user.h>
 
-#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE *)0)->MEMBER)
+#define offsetof(TYPE, MEMBER) ((unsigned long)&((TYPE *)0)->MEMBER)
 
-int main()
-{
+int main() {
 	struct user_regs_struct regs;
 	printf("gpr\teip .32 %d 0\n", offsetof(struct user_regs_struct, eip));
 	printf("gpr\toeax .32 %d 0\n", offsetof(struct user_regs_struct, orig_eax));

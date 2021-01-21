@@ -16,9 +16,8 @@ CMDDESCS_C_TEMPLATE = """// SPDX-License-Identifier: LGPL-3.0-only
 {helps_declarations}
 
 {helps}
-
 RZ_IPI void newshell_cmddescs_init(RzCore *core) {{
-\tRzCmdDesc *root_cd = rz_cmd_get_root (core->rcmd);
+\tRzCmdDesc *root_cd = rz_cmd_get_root(core->rcmd);
 {init_code}
 }}
 """
@@ -40,13 +39,13 @@ CMDDESCS_H_TEMPLATE = """// SPDX-License-Identifier: LGPL-3.0-only
 RZ_IPI void newshell_cmddescs_init(RzCore *core);
 """
 
-DESC_HELP_DETAIL_ENTRY_TEMPLATE = '\t{{ .text = {text}, .arg_str = {arg_str}, .comment = {comment} }}'
+DESC_HELP_DETAIL_ENTRY_TEMPLATE = '''\t{{ .text = {text}, .arg_str = {arg_str}, .comment = {comment} }}'''
 DESC_HELP_DETAIL_ENTRIES_TEMPLATE = '''static const RzCmdDescDetailEntry {cname}[] = {{
 {entry}
 }};
 '''
 
-DESC_HELP_DETAIL_TEMPLATE = '\t{{ .name = {name}, .entries = {entries} }}'
+DESC_HELP_DETAIL_TEMPLATE = '''\t{{ .name = {name}, .entries = {entries} }}'''
 DESC_HELP_DETAILS_TEMPLATE = '''static const RzCmdDescDetail {cname}[] = {{
 {details}
 }};
@@ -54,12 +53,16 @@ DESC_HELP_DETAILS_TEMPLATE = '''static const RzCmdDescDetail {cname}[] = {{
 DECL_DESC_HELP_DETAILS_TEMPLATE = 'static const RzCmdDescDetail {cname}[{size}];'
 
 DESC_HELP_ARG_CHOICES = 'static const char *{cname}[] = {{ {choices} }};\n'
-DESC_HELP_ARG_UNION_CHOICES = '.choices = {choices}, '
-DESC_HELP_ARG_TEMPLATE_FLAGS = '.flags = {flags}, '
-DESC_HELP_ARG_TEMPLATE_OPTIONAL = '.optional = {optional}, '
-DESC_HELP_ARG_TEMPLATE_NO_SPACE = '.no_space = {no_space}, '
-DESC_HELP_ARG_TEMPLATE_DEFAULT_VALUE = '.default_value = {default_value}, '
-DESC_HELP_ARG_TEMPLATE = '\t{{ .name = {name}, .type = {type}, {flags}{optional}{no_space}{default_value}{union}}}'
+DESC_HELP_ARG_UNION_CHOICES = '\t\t.choices = {choices},\n'
+DESC_HELP_ARG_TEMPLATE_FLAGS = '\t\t.flags = {flags},\n'
+DESC_HELP_ARG_TEMPLATE_OPTIONAL = '\t\t.optional = {optional},\n'
+DESC_HELP_ARG_TEMPLATE_NO_SPACE = '\t\t.no_space = {no_space},\n'
+DESC_HELP_ARG_TEMPLATE_DEFAULT_VALUE = '\t\t.default_value = {default_value},\n'
+DESC_HELP_ARG_TEMPLATE = '''\t{{
+\t\t.name = {name},
+\t\t.type = {type},
+{flags}{optional}{no_space}{default_value}{union}
+\t}}'''
 DESC_HELP_ARGS_TEMPLATE = '''static const RzCmdDescArg {cname}[] = {{
 {args}
 }};
@@ -77,20 +80,27 @@ DESC_HELP_TEMPLATE = '''static const RzCmdDescHelp {cname} = {{
 {description}{args_str}{usage}{options}{details}{args}}};
 '''
 
-DEFINE_OLDINPUT_TEMPLATE = '''\tRzCmdDesc *{cname}_cd = rz_cmd_desc_oldinput_new (core->rcmd, {parent_cname}_cd, {name}, {handler_cname}, &{help_cname});
-\trz_warn_if_fail ({cname}_cd);'''
-DEFINE_ARGV_TEMPLATE = '''\tRzCmdDesc *{cname}_cd = rz_cmd_desc_argv_new (core->rcmd, {parent_cname}_cd, {name}, {handler_cname}, &{help_cname});
-\trz_warn_if_fail ({cname}_cd);'''
-DEFINE_ARGV_MODES_TEMPLATE = '''\tRzCmdDesc *{cname}_cd = rz_cmd_desc_argv_modes_new (core->rcmd, {parent_cname}_cd, {name}, {modes}, {handler_cname}, &{help_cname});
-\trz_warn_if_fail ({cname}_cd);'''
-DEFINE_GROUP_TEMPLATE = '''\tRzCmdDesc *{cname}_cd = rz_cmd_desc_group_new (core->rcmd, {parent_cname}_cd, {name}, {handler_cname}, {help_cname_ref}, &{group_help_cname});
-\trz_warn_if_fail ({cname}_cd);'''
-DEFINE_GROUP_MODES_TEMPLATE = '''\tRzCmdDesc *{cname}_cd = rz_cmd_desc_group_modes_new (core->rcmd, {parent_cname}_cd, {name}, {modes}, {handler_cname}, {help_cname_ref}, &{group_help_cname});
-\trz_warn_if_fail ({cname}_cd);'''
-DEFINE_INNER_TEMPLATE = '''\tRzCmdDesc *{cname}_cd = rz_cmd_desc_inner_new (core->rcmd, {parent_cname}_cd, {name}, &{help_cname});
-\trz_warn_if_fail ({cname}_cd);'''
-DEFINE_FAKE_TEMPLATE = '''\tRzCmdDesc *{cname}_cd = rz_cmd_desc_fake_new (core->rcmd, {parent_cname}_cd, {name}, &{help_cname});
-\trz_warn_if_fail ({cname}_cd);'''
+DEFINE_OLDINPUT_TEMPLATE = '''
+\tRzCmdDesc *{cname}_cd = rz_cmd_desc_oldinput_new(core->rcmd, {parent_cname}_cd, {name}, {handler_cname}, &{help_cname});
+\trz_warn_if_fail({cname}_cd);'''
+DEFINE_ARGV_TEMPLATE = '''
+\tRzCmdDesc *{cname}_cd = rz_cmd_desc_argv_new(core->rcmd, {parent_cname}_cd, {name}, {handler_cname}, &{help_cname});
+\trz_warn_if_fail({cname}_cd);'''
+DEFINE_ARGV_MODES_TEMPLATE = '''
+\tRzCmdDesc *{cname}_cd = rz_cmd_desc_argv_modes_new(core->rcmd, {parent_cname}_cd, {name}, {modes}, {handler_cname}, &{help_cname});
+\trz_warn_if_fail({cname}_cd);'''
+DEFINE_GROUP_TEMPLATE = '''
+\tRzCmdDesc *{cname}_cd = rz_cmd_desc_group_new(core->rcmd, {parent_cname}_cd, {name}, {handler_cname}, {help_cname_ref}, &{group_help_cname});
+\trz_warn_if_fail({cname}_cd);'''
+DEFINE_GROUP_MODES_TEMPLATE = '''
+\tRzCmdDesc *{cname}_cd = rz_cmd_desc_group_modes_new(core->rcmd, {parent_cname}_cd, {name}, {modes}, {handler_cname}, {help_cname_ref}, &{group_help_cname});
+\trz_warn_if_fail({cname}_cd);'''
+DEFINE_INNER_TEMPLATE = '''
+\tRzCmdDesc *{cname}_cd = rz_cmd_desc_inner_new(core->rcmd, {parent_cname}_cd, {name}, &{help_cname});
+\trz_warn_if_fail({cname}_cd);'''
+DEFINE_FAKE_TEMPLATE = '''
+\tRzCmdDesc *{cname}_cd = rz_cmd_desc_fake_new(core->rcmd, {parent_cname}_cd, {name}, &{help_cname});
+\trz_warn_if_fail({cname}_cd);'''
 
 CD_TYPE_OLDINPUT = 'RZ_CMD_DESC_TYPE_OLDINPUT'
 CD_TYPE_GROUP = 'RZ_CMD_DESC_TYPE_GROUP'
@@ -205,12 +215,12 @@ class DetailEntry(object):
         if 'text' not in c or 'comment' not in c:
             print('No `text`/`comment` fields for DetailEntry %s' % (c,))
             sys.exit(1)
-        
+
         # RzCmdDescDetailEntry fields
         self.text = strip(c['text'])
         self.comment = strip(c['comment'])
         self.arg_str = strip(c.get('arg_str'))
-    
+
     def __str__(self):
         return DESC_HELP_DETAIL_ENTRY_TEMPLATE.format(
             text=strornull(self.text),
@@ -328,11 +338,11 @@ class CmdDesc(object):
         if self.type in [CD_TYPE_ARGV, CD_TYPE_ARGV_MODES, CD_TYPE_OLDINPUT] and not self.cname:
             print('Command %s does not have cname field' % (self.name,))
             sys.exit(1)
-        
+
         if self.parent and self.parent.name == self.name and self.pos != 0 and self.type not in [CD_TYPE_INNER, CD_TYPE_FAKE]:
             print('If a command has the same name as its parent, it can only be the first child. See parent of Command %s' % (self.cname,))
             sys.exit(1)
-        
+
         if self.parent and self.parent.type not in [CD_TYPE_GROUP, CD_TYPE_INNER, CD_TYPE_OLDINPUT]:
             print('The parent of %s is of the wrong type' % (self.cname,))
             sys.exit(1)
@@ -380,7 +390,7 @@ class CmdDesc(object):
             details_cname = self.details_alias + '_details'
 
         if self.args is not None:
-            out += '\n'.join([a.get_cstructure() for a in self.args])
+            out += '\n'.join([a.get_cstructure() for a in self.args if a.get_cstructure() != ''])
             out += DESC_HELP_ARGS_TEMPLATE.format(
                 cname=CmdDesc.get_arg_cname(self),
                 args=',\n'.join([str(a) for a in self.args] + ["\t{ 0 },"])
@@ -405,7 +415,7 @@ class CmdDesc(object):
             details=details,
             args=args,
         )
-        
+
         if self.subcommands:
             out += '\n'.join([str(child) for child in self.subcommands])
         return out

@@ -6,7 +6,7 @@
 #include <rz_lib.h>
 #include "../arch/mcs96/mcs96.h"
 
-static int mcs96_len (const ut8 *buf, int len, RzStrBuf *asm_buf) {
+static int mcs96_len(const ut8 *buf, int len, RzStrBuf *asm_buf) {
 	int ret = 1;
 	if (buf[0] == 0xfe) {
 		if (len < 2) {
@@ -45,7 +45,7 @@ static int mcs96_len (const ut8 *buf, int len, RzStrBuf *asm_buf) {
 			}
 			if (ret <= len) {
 				const ut32 fe_idx = ((buf[1] & 0x70) >> 4) ^ 0x4;
-				rz_strbuf_set (asm_buf, mcs96_fe_op[fe_idx]);
+				rz_strbuf_set(asm_buf, mcs96_fe_op[fe_idx]);
 				if ((mcs96_op[buf[1]].type & (MCS96_2OP | MCS96_REG_8)) == (MCS96_2OP | MCS96_REG_8) &&
 					buf[2] > 0x19 && buf[3] > 0x19) {
 					rz_strbuf_appendf(asm_buf, " rb%02x, rb%02x", buf[2] - 0x1a, buf[3] - 0x1a);
@@ -87,7 +87,7 @@ static int mcs96_len (const ut8 *buf, int len, RzStrBuf *asm_buf) {
 		ret = 2;
 	}
 	if (ret <= len) {
-		rz_strbuf_set (asm_buf, mcs96_op[buf[0]].ins);
+		rz_strbuf_set(asm_buf, mcs96_op[buf[0]].ins);
 		if ((mcs96_op[buf[0]].type & (MCS96_2OP | MCS96_REG_8)) == (MCS96_2OP | MCS96_REG_8) &&
 			buf[1] > 0x19 && buf[2] > 0x19) {
 			rz_strbuf_appendf(asm_buf, " rb%02x, rb%02x", buf[1] - 0x1a, buf[2] - 0x1a);
@@ -99,10 +99,10 @@ static int mcs96_len (const ut8 *buf, int len, RzStrBuf *asm_buf) {
 }
 
 static int disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
-	if (len > 1 && !memcmp (buf, "\xff\xff", 2)) {
+	if (len > 1 && !memcmp(buf, "\xff\xff", 2)) {
 		return -1;
 	}
-	op->size = mcs96_len (buf, len, &op->buf_asm);
+	op->size = mcs96_len(buf, len, &op->buf_asm);
 	return op->size;
 }
 

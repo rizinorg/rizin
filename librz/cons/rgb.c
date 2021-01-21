@@ -5,7 +5,7 @@
 #include <rz_cons.h>
 
 int color_table[256] = { 0 };
-int value_range[6] = { 0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff};
+int value_range[6] = { 0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff };
 
 static void init_color_table(void) {
 	int i, r, g, b;
@@ -75,17 +75,17 @@ static ut32 __approximate_rgb(int r, int g, int b) {
 	return (ut32)((G * M * M)  + (g * M) + b) + 16;
 #else
 	const int k = (256.0 / 6);
-	r = RZ_DIM (r / k, 0, 6);
-	g = RZ_DIM (g / k, 0, 6);
-	b = RZ_DIM (b / k, 0, 6);
+	r = RZ_DIM(r / k, 0, 6);
+	g = RZ_DIM(g / k, 0, 6);
+	b = RZ_DIM(b / k, 0, 6);
 	return 16 + (r * 36) + (g * 6) + b;
 #endif
 }
 
 static int rgb(int r, int g, int b) {
-	int c = __lookup_rgb (r, g, b);
+	int c = __lookup_rgb(r, g, b);
 	if (c == -1) {
-		return __approximate_rgb (r, g, b);
+		return __approximate_rgb(r, g, b);
 	}
 	return c;
 }
@@ -103,7 +103,7 @@ static void __unrgb(int color, int *r, int *g, int *b) {
 
 RZ_API void rz_cons_rgb_init(void) {
 	if (color_table[255] == 0) {
-		init_color_table ();
+		init_color_table();
 	}
 }
 
@@ -138,19 +138,25 @@ RZ_API int rz_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 	case '3': isbg = 0; break;
 	case '4': isbg = 1; break;
 	}
-#define SETRGB(x,y,z) if (r) *r = (x); if (g) *g = (y); if (b) *b = (z)
-	if (bold != 255 && strchr (p, ';')) {
+#define SETRGB(x, y, z) \
+	if (r) \
+		*r = (x); \
+	if (g) \
+		*g = (y); \
+	if (b) \
+	*b = (z)
+	if (bold != 255 && strchr(p, ';')) {
 		if (!p[0] || !p[1] || !p[2]) {
 			return 0;
 		}
-		if (p[3] == '5')  { // \x1b[%d;5;%dm is 256 colors
+		if (p[3] == '5') { // \x1b[%d;5;%dm is 256 colors
 			int x, y, z;
 			if (!p[3] || !p[4]) {
 				return 0;
 			}
-			int n = atoi (p + 5);
-			__unrgb (n, &x, &y, &z);
-			SETRGB (x, y, z);
+			int n = atoi(p + 5);
+			__unrgb(n, &x, &y, &z);
+			SETRGB(x, y, z);
 		} else { // 16M colors (truecolor)
 			/* complex rgb */
 			if (!p[3] || !p[4]) {
@@ -158,21 +164,21 @@ RZ_API int rz_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 			}
 			p += 5;
 			if (r) {
-				*r = atoi (p);
+				*r = atoi(p);
 			}
-			q = strchr (p, ';');
+			q = strchr(p, ';');
 			if (!q) {
 				return 0;
 			}
 			if (g) {
-				*g = atoi (q + 1);
+				*g = atoi(q + 1);
 			}
-			q = strchr (q + 1, ';');
+			q = strchr(q + 1, ';');
 			if (!q) {
 				return 0;
 			}
 			if (b) {
-				*b = atoi (q + 1);
+				*b = atoi(q + 1);
 			}
 		}
 		return 1;
@@ -185,14 +191,14 @@ RZ_API int rz_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 			return 0;
 		}
 		switch (p[1]) {
-		case '0': SETRGB (0, 0, 0); break;
-		case '1': SETRGB (bold, 0, 0); break;
-		case '2': SETRGB (0, bold, 0); break;
-		case '3': SETRGB (bold, bold, 0); break;
-		case '4': SETRGB (0, 0, bold); break;
-		case '5': SETRGB (bold, 0, bold); break;
-		case '6': SETRGB (0, bold, bold); break;
-		case '7': SETRGB (bold, bold, bold); break;
+		case '0': SETRGB(0, 0, 0); break;
+		case '1': SETRGB(bold, 0, 0); break;
+		case '2': SETRGB(0, bold, 0); break;
+		case '3': SETRGB(bold, bold, 0); break;
+		case '4': SETRGB(0, 0, bold); break;
+		case '5': SETRGB(bold, 0, bold); break;
+		case '6': SETRGB(0, bold, bold); break;
+		case '7': SETRGB(bold, bold, bold); break;
 		}
 	}
 	return 1;
@@ -204,13 +210,13 @@ RZ_API char *rz_cons_rgb_str_off(char *outstr, size_t sz, ut64 off) {
 	rc.r = (off >> 2) & 0xff;
 	rc.g = (off >> 6) & 0xff;
 	rc.b = (off >> 12) & 0xff;
-	return rz_cons_rgb_str (outstr, sz, &rc);
+	return rz_cons_rgb_str(outstr, sz, &rc);
 }
 
 /* Compute color string depending on cons->color */
 static void rz_cons_rgb_gen(RzConsColorMode mode, char *outstr, size_t sz, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b,
-                           st8 id16) {
-	ut8 fgbg = (a == ALPHA_BG)? 48: 38; // ANSI codes for Background/Foreground
+	st8 id16) {
+	ut8 fgbg = (a == ALPHA_BG) ? 48 : 38; // ANSI codes for Background/Foreground
 
 	if (sz < 4) { // must have at least room for "<esc>[m\0"
 		if (sz > 0) {
@@ -241,10 +247,10 @@ static void rz_cons_rgb_gen(RzConsColorMode mode, char *outstr, size_t sz, ut8 a
 	int written = -1;
 	switch (mode) {
 	case COLOR_MODE_256: // 256 color palette
-		written = snprintf (outstr + i, sz - i, "%d;5;%dm", fgbg, rgb (r, g, b));
+		written = snprintf(outstr + i, sz - i, "%d;5;%dm", fgbg, rgb(r, g, b));
 		break;
 	case COLOR_MODE_16M: // 16M (truecolor)
-		written = snprintf (outstr + i, sz - i, "%d;2;%d;%d;%dm", fgbg, r, g, b);
+		written = snprintf(outstr + i, sz - i, "%d;2;%d;%d;%dm", fgbg, r, g, b);
 		break;
 	case COLOR_MODE_16: { // ansi 16 colors
 		ut8 bright, c;
@@ -253,8 +259,9 @@ static void rz_cons_rgb_gen(RzConsColorMode mode, char *outstr, size_t sz, ut8 a
 			c = id16 % 8;
 			bright = id16 >= 8 ? 60 : 0;
 		} else {
-			bright = (r == 0x80 && g == 0x80 && b == 0x80) ? 53
-			         : (r == 0xff || g == 0xff || b == 0xff) ? 60 : 0;  // eco bright-specific
+			bright = (r == 0x80 && g == 0x80 && b == 0x80)  ? 53
+				: (r == 0xff || g == 0xff || b == 0xff) ? 60
+									: 0; // eco bright-specific
 			if (r == g && g == b) {
 				r = (r > 0x7f) ? 1 : 0;
 				g = (g > 0x7f) ? 1 : 0;
@@ -267,7 +274,7 @@ static void rz_cons_rgb_gen(RzConsColorMode mode, char *outstr, size_t sz, ut8 a
 			}
 			c = (r ? 1 : 0) + (g ? (b ? 6 : 2) : (b ? 4 : 0));
 		}
-		written = snprintf (outstr + i, sz - i, "%dm", fgbg + bright + c);
+		written = snprintf(outstr + i, sz - i, "%dm", fgbg + bright + c);
 		break;
 	}
 	default:
@@ -286,28 +293,28 @@ RZ_API char *rz_cons_rgb_str_mode(RzConsColorMode mode, char *outstr, size_t sz,
 	}
 	if (!outstr) {
 		sz = 64;
-		outstr = calloc (sz, 1);
+		outstr = calloc(sz, 1);
 	}
 	*outstr = 0;
 	if (rcolor->a == ALPHA_RESET) {
-		strcpy (outstr, Color_RESET);
+		strcpy(outstr, Color_RESET);
 		return outstr;
 	}
 	// If the color handles both foreground and background, also add background
 	if (rcolor->a == ALPHA_FGBG) {
-		rz_cons_rgb_gen (mode, outstr, sz, 0, ALPHA_BG, rcolor->r2, rcolor->g2, rcolor->b2, rcolor->id16);
+		rz_cons_rgb_gen(mode, outstr, sz, 0, ALPHA_BG, rcolor->r2, rcolor->g2, rcolor->b2, rcolor->id16);
 	}
 	// APPEND
-	size_t len = strlen (outstr);
-	rz_cons_rgb_gen (mode, outstr + len, sz - len, rcolor->attr, rcolor->a, rcolor->r, rcolor->g, rcolor->b,
-	                rcolor->id16);
+	size_t len = strlen(outstr);
+	rz_cons_rgb_gen(mode, outstr + len, sz - len, rcolor->attr, rcolor->a, rcolor->r, rcolor->g, rcolor->b,
+		rcolor->id16);
 
 	return outstr;
 }
 
 /* Return the computed color string for the specified color */
 RZ_API char *rz_cons_rgb_str(char *outstr, size_t sz, RzColor *rcolor) {
-	return rz_cons_rgb_str_mode (rz_cons_singleton ()->context->color_mode, outstr, sz, rcolor);
+	return rz_cons_rgb_str_mode(rz_cons_singleton()->context->color_mode, outstr, sz, rcolor);
 }
 
 RZ_API char *rz_cons_rgb_tostring(ut8 r, ut8 g, ut8 b) {
@@ -336,5 +343,5 @@ RZ_API char *rz_cons_rgb_tostring(ut8 r, ut8 g, ut8 b) {
 	if (r == 0xff && g == 0x00 && b == 0xff) {
 		str = "magenta";
 	}
-	return str? strdup (str) : rz_str_newf ("#%02x%02x%02x", r, g, b);
+	return str ? strdup(str) : rz_str_newf("#%02x%02x%02x", r, g, b);
 }

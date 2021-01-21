@@ -9,21 +9,21 @@
 #include "rz_socket.h"
 #include "rz_th.h"
 
-#define MSG_OK 0
+#define MSG_OK            0
 #define MSG_NOT_SUPPORTED -1
-#define MSG_ERROR_1 -2
+#define MSG_ERROR_1       -2
 
-#define GDB_REMOTE_TYPE_GDB 0
+#define GDB_REMOTE_TYPE_GDB  0
 #define GDB_REMOTE_TYPE_LLDB 1
-#define GDB_MAX_PKTSZ 4
+#define GDB_MAX_PKTSZ        4
 
 /*!
  * Structure that saves a gdb message
  */
 typedef struct libgdbr_message_t {
 	ssize_t len; /*! Len of the message */
-	char *msg;      /*! Pointer to the buffer that contains the message */
-	uint8_t chk;    /*! Cheksum of the current message read from the packet */
+	char *msg; /*! Pointer to the buffer that contains the message */
+	uint8_t chk; /*! Cheksum of the current message read from the packet */
 } libgdbr_message_t;
 
 /*!
@@ -103,21 +103,22 @@ typedef struct libgdbr_stub_features_t {
  * Structure for fstat data sent by gdb remote server
  */
 RZ_PACKED(
-typedef struct libgdbr_fstat_t {
-	unsigned dev;
-	unsigned ino;
-	unsigned mode;
-	unsigned numlinks;
-	unsigned uid;
-	unsigned gid;
-	unsigned rdev;
-	uint64_t size;
-	uint64_t blksize;
-	uint64_t blocks;
-	unsigned atime;
-	unsigned mtime;
-	unsigned ctime;
-}) libgdbr_fstat_t;
+	typedef struct libgdbr_fstat_t {
+		unsigned dev;
+		unsigned ino;
+		unsigned mode;
+		unsigned numlinks;
+		unsigned uid;
+		unsigned gid;
+		unsigned rdev;
+		uint64_t size;
+		uint64_t blksize;
+		uint64_t blocks;
+		unsigned atime;
+		unsigned mtime;
+		unsigned ctime;
+	})
+libgdbr_fstat_t;
 
 /*!
  * Stores information from the stop-reply packet (why target stopped)

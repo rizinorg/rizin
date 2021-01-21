@@ -43,7 +43,7 @@ typedef void (*RzGraphEdgeCallback)(const RzGraphEdge *e, RzGraphVisitor *vis);
 // Contrructs a new RzGraph, returns heap-allocated graph.
 RZ_API RzGraph *rz_graph_new(void);
 // Destroys the graph and all nodes.
-RZ_API void rz_graph_free(RzGraph* g);
+RZ_API void rz_graph_free(RzGraph *g);
 // Gets the data of a node by index.
 RZ_API RzGraphNode *rz_graph_get_node(const RzGraph *g, unsigned int idx);
 RZ_API RzListIter *rz_graph_node_iter(const RzGraph *g, unsigned int idx);

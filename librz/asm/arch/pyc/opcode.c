@@ -127,8 +127,8 @@ bool pyc_opcodes_equal(pyc_opcodes *op, const char *version) {
 	version_opcode *vop = version_op;
 
 	while (vop->version) {
-		if (!strcmp (vop->version, version)) {
-			if (vop->opcode_func == (pyc_opcodes * (*)()) (op->version_sig)) {
+		if (!strcmp(vop->version, version)) {
+			if (vop->opcode_func == (pyc_opcodes * (*)())(op->version_sig)) {
 				return true;
 			}
 		}
@@ -142,8 +142,8 @@ pyc_opcodes *get_opcode_by_version(char *version) {
 	version_opcode *vop = version_op;
 
 	while (vop->version) {
-		if (!strcmp (vop->version, version)) {
-			return vop->opcode_func ();
+		if (!strcmp(vop->version, version)) {
+			return vop->opcode_func();
 		}
 		vop++;
 	}
@@ -153,24 +153,24 @@ pyc_opcodes *get_opcode_by_version(char *version) {
 
 pyc_opcodes *new_pyc_opcodes() {
 	size_t i, j;
-	pyc_opcodes *ret = RZ_NEW0 (pyc_opcodes);
+	pyc_opcodes *ret = RZ_NEW0(pyc_opcodes);
 	if (!ret) {
 		return NULL;
 	}
 	ret->have_argument = 90;
-	ret->opcodes = malloc (sizeof (pyc_opcode_object) * 256);
+	ret->opcodes = malloc(sizeof(pyc_opcode_object) * 256);
 	if (!ret->opcodes) {
-		free (ret);
+		free(ret);
 		return NULL;
 	}
 	for (i = 0; i < 256; i++) {
-		ret->opcodes[i].op_name = rz_str_newf ("<%zu>", i);
+		ret->opcodes[i].op_name = rz_str_newf("<%zu>", i);
 		if (!ret->opcodes[i].op_name) {
 			for (j = 0; j < i; j++) {
-				free (ret->opcodes[j].op_name);
+				free(ret->opcodes[j].op_name);
 			}
-			free (ret->opcodes);
-			RZ_FREE (ret);
+			free(ret->opcodes);
+			RZ_FREE(ret);
 			return NULL;
 		}
 		ret->opcodes[i].type = 0;
@@ -179,33 +179,33 @@ pyc_opcodes *new_pyc_opcodes() {
 		ret->opcodes[i].op_pop = 0;
 	}
 
-	ret->opcode_arg_fmt = rz_list_newf ((RzListFree)free);
+	ret->opcode_arg_fmt = rz_list_newf((RzListFree)free);
 	return ret;
 }
 
 void free_opcode(pyc_opcodes *opcodes) {
 	size_t i;
 	for (i = 0; i < 256; i++) {
-		free (opcodes->opcodes[i].op_name);
+		free(opcodes->opcodes[i].op_name);
 	}
-	free (opcodes->opcodes);
-	rz_list_free (opcodes->opcode_arg_fmt);
-	free (opcodes);
+	free(opcodes->opcodes);
+	rz_list_free(opcodes->opcode_arg_fmt);
+	free(opcodes);
 }
 
-void add_arg_fmt(pyc_opcodes *ret, char *op_name, const char *(*formatter) (ut32 oparg)) {
-	pyc_arg_fmt *fmt = RZ_NEW0 (pyc_arg_fmt);
+void add_arg_fmt(pyc_opcodes *ret, char *op_name, const char *(*formatter)(ut32 oparg)) {
+	pyc_arg_fmt *fmt = RZ_NEW0(pyc_arg_fmt);
 	if (!fmt) {
 		return;
 	}
 	fmt->op_name = op_name;
 	fmt->formatter = formatter;
-	rz_list_append (ret->opcode_arg_fmt, fmt);
+	rz_list_append(ret->opcode_arg_fmt, fmt);
 }
 
-void (def_opN)(struct op_parameter par) {
-	free (par.op_obj[par.op_code].op_name);
-	par.op_obj[par.op_code].op_name = strdup (par.op_name);
+void(def_opN)(struct op_parameter par) {
+	free(par.op_obj[par.op_code].op_name);
+	par.op_obj[par.op_code].op_name = strdup(par.op_name);
 	par.op_obj[par.op_code].op_code = par.op_code;
 	par.op_obj[par.op_code].op_pop = par.pop;
 	par.op_obj[par.op_code].op_push = par.push;
@@ -214,85 +214,85 @@ void (def_opN)(struct op_parameter par) {
 	}
 }
 
-void (name_opN)(struct op_parameter par) {
-	def_op (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
+void(name_opN)(struct op_parameter par) {
+	def_op(.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
 	par.op_obj[par.op_code].type |= HASNAME;
 }
 
-void (local_opN)(struct op_parameter par) {
-	def_op (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
+void(local_opN)(struct op_parameter par) {
+	def_op(.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
 	par.op_obj[par.op_code].type |= HASLOCAL;
 }
 
-void (free_opN)(struct op_parameter par) {
-	def_op (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
+void(free_opN)(struct op_parameter par) {
+	def_op(.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
 	par.op_obj[par.op_code].type |= HASFREE;
 }
 
-void (store_opN)(struct op_parameter par) {
+void(store_opN)(struct op_parameter par) {
 	switch (par.func) {
 	case NAME_OP:
-		name_op (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
+		name_op(.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
 		break;
 	case LOCAL_OP:
-		local_op (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
+		local_op(.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
 		break;
 	case FREE_OP:
-		free_op (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
+		free_op(.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
 		break;
 	case DEF_OP:
-		def_op (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
+		def_op(.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
 		break;
 	default:
-		eprintf ("Error in store_op in opcode.c, call function %u.\n", par.func);
+		eprintf("Error in store_op in opcode.c, call function %u.\n", par.func);
 		return;
 	}
 	par.op_obj[par.op_code].type |= HASSTORE;
 }
 
-void (varargs_op)(struct op_parameter par) {
-	def_op (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
+void(varargs_op)(struct op_parameter par) {
+	def_op(.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
 	par.op_obj[par.op_code].type |= HASVARGS;
 }
 
-void (const_opN)(struct op_parameter par) {
-	def_op (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
+void(const_opN)(struct op_parameter par) {
+	def_op(.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
 	par.op_obj[par.op_code].type |= HASCONST;
 }
 
-void (compare_op)(struct op_parameter par) {
-	def_op (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
+void(compare_op)(struct op_parameter par) {
+	def_op(.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
 	par.op_obj[par.op_code].type |= HASCOMPARE;
 }
 
-void (jabs_opN)(struct op_parameter par) {
-	def_op00 (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push, .fallthrough = par.fallthrough);
+void(jabs_opN)(struct op_parameter par) {
+	def_op00(.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push, .fallthrough = par.fallthrough);
 	par.op_obj[par.op_code].type |= HASJABS;
 	if (par.conditional) {
 		par.op_obj[par.op_code].type |= HASCONDITION;
 	}
 }
 
-void (jrel_opN)(struct op_parameter par) {
-	def_op00 (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push, .fallthrough = par.fallthrough);
+void(jrel_opN)(struct op_parameter par) {
+	def_op00(.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push, .fallthrough = par.fallthrough);
 	par.op_obj[par.op_code].type |= HASJREL;
 	if (par.conditional) {
 		par.op_obj[par.op_code].type |= HASCONDITION;
 	}
 }
 
-void (nargs_op)(struct op_parameter par) {
-	def_op (.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
+void(nargs_op)(struct op_parameter par) {
+	def_op(.op_obj = par.op_obj, .op_name = par.op_name, .op_code = par.op_code, .pop = par.pop, .push = par.push);
 	par.op_obj[par.op_code].type |= HASNARGS;
 }
 
-void (rm_op)(struct op_parameter par) {
+void(rm_op)(struct op_parameter par) {
 	pyc_opcode_object *op_obj = &par.op_obj[par.op_code];
-	if (op_obj->op_code == par.op_code && !strcmp (op_obj->op_name, par.op_name)) {
-		free (op_obj->op_name);
-		op_obj->op_name = rz_str_newf ("<%u>", par.op_code);
+	if (op_obj->op_code == par.op_code && !strcmp(op_obj->op_name, par.op_name)) {
+		free(op_obj->op_name);
+		op_obj->op_name = rz_str_newf("<%u>", par.op_code);
 		op_obj->type = op_obj->op_pop = op_obj->op_push = 0;
 	} else {
-		eprintf ("Error in rm_op() while constructing opcodes for .pyc file: \n .op_code = %u, .op_name = %s", par.op_code, par.op_name);
+		eprintf("Error in rm_op() while constructing opcodes for .pyc file: \n .op_code = %u, .op_name = %s", par.op_code, par.op_name);
 	}
 }

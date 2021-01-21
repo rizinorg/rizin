@@ -1,6 +1,6 @@
 #define RZ_API
 #define RZ_ALLOC_USE_MMAP 1
-#define USE_MALLOC 0
+#define USE_MALLOC        0
 
 #include <stdio.h>
 #include <unistd.h>
@@ -13,12 +13,12 @@
 RZ_API void rz_initmem(char *p, size_t s) {
 }
 
-RZ_API void* rz_malloc(size_t s) {
-	return malloc (s);
+RZ_API void *rz_malloc(size_t s) {
+	return malloc(s);
 }
 
 RZ_API void rz_free(void *p) {
-	free (s);
+	free(s);
 }
 #else
 
@@ -33,8 +33,11 @@ static int allocated_mem; /* this is the memory in use. */
 static int mcb_count;
 static char *heap_end;
 
-enum {NEW_MCB=0,NO_MCB,REUSE_MCB};
-enum {FREE,IN_USE};
+enum { NEW_MCB = 0,
+	NO_MCB,
+	REUSE_MCB };
+enum { FREE,
+	IN_USE };
 
 void InitMem(char *ptr, int size_in_bytes) {
 	/* store the ptr and size_in_bytes in global variable */
@@ -43,7 +46,7 @@ void InitMem(char *ptr, int size_in_bytes) {
 	mcb_count = 0;
 	allocated_mem = 0;
 	heap_end = mem_start_p + size_in_bytes;
-	memset (mem_start_p, 0x00, max_mem);
+	memset(mem_start_p, 0x00, max_mem);
 	/* This function is complete :-) */
 }
 
@@ -56,32 +59,32 @@ RZ_API void *rz_malloc(int elem_size) {
 	p_mcb = (MCB_P)mem_start_p;
 	sz = sizeof(MCB);
 
-	if ( (elem_size + sz) > (max_mem - (allocated_mem + mcb_count * sz ) ) )
+	if ((elem_size + sz) > (max_mem - (allocated_mem + mcb_count * sz)))
 		return NULL;
-	while ( heap_end > ( (char *)p_mcb + elem_size + sz) ) {
+	while (heap_end > ((char *)p_mcb + elem_size + sz)) {
 		if (p_mcb->is_available == 0) {
 			if (p_mcb->size == 0) {
 				flag = NEW_MCB;
 				break;
 			}
-			if (p_mcb->size >= (elem_size + sz) ) {
+			if (p_mcb->size >= (elem_size + sz)) {
 				flag = REUSE_MCB;
 				break;
 			}
 		}
-		p_mcb = (MCB_P) ((char *)p_mcb + p_mcb->size);
+		p_mcb = (MCB_P)((char *)p_mcb + p_mcb->size);
 	}
 
 	if (flag != NO_MCB) {
 		p_mcb->is_available = 1;
 		if (flag == NEW_MCB) {
-			p_mcb->size = elem_size + sizeof (MCB);
+			p_mcb->size = elem_size + sizeof(MCB);
 		} else if (flag == REUSE_MCB) {
-			elem_size = p_mcb->size - sizeof (MCB);
+			elem_size = p_mcb->size - sizeof(MCB);
 		}
 		mcb_count++;
 		allocated_mem += elem_size;
-		return ((char *) p_mcb + sz);
+		return ((char *)p_mcb + sz);
 	}
 	return NULL;
 }
@@ -94,42 +97,41 @@ void rz_free(void *p) {
 	if (ptr->is_available != FREE) {
 		mcb_count--;
 		ptr->is_available = FREE;
-		allocated_mem -= (ptr->size - sizeof (MCB));
-	 }
+		allocated_mem -= (ptr->size - sizeof(MCB));
+	}
 }
 #endif
 
-
 #if __MAIN__
 int main() {
-#define MB 1024*1024
-#define RZ_MALLOC_MAX 2*MB
+#define MB            1024 * 1024
+#define RZ_MALLOC_MAX 2 * MB
 
 #if RZ_ALLOC_USE_STACK
 	char B[RZ_MALLOC_MAX];
 #endif
 #if RZ_ALLOC_USE_MMAP
-	int fd = open (".mem", O_CREAT|O_RDWR, 0600);
-	ftruncate (fd, RZ_MALLOC_MAX);
-	char *B = mmap (NULL, RZ_MALLOC_MAX, PROT_WRITE|PROT_READ,
-		MAP_FILE|MAP_PRIVATE, fd, 0);
-	unlink (".mem");
-	close (fd);
+	int fd = open(".mem", O_CREAT | O_RDWR, 0600);
+	ftruncate(fd, RZ_MALLOC_MAX);
+	char *B = mmap(NULL, RZ_MALLOC_MAX, PROT_WRITE | PROT_READ,
+		MAP_FILE | MAP_PRIVATE, fd, 0);
+	unlink(".mem");
+	close(fd);
 #endif
 
-	InitMem (B, RZ_MALLOC_MAX);
+	InitMem(B, RZ_MALLOC_MAX);
 
-	char *a = rz_malloc (10);
+	char *a = rz_malloc(10);
 	if (!a) {
-		printf ("can't malloc\n");
+		printf("can't malloc\n");
 		return 1;
 	}
-	strcpy (a, "hello");
-	char *b = rz_malloc (10);
-	strcpy (b, "world");
-	printf ("%p: %s\n%p: %s\n", a, a, b, b);
-	rz_free (b);
-	rz_free (a);
+	strcpy(a, "hello");
+	char *b = rz_malloc(10);
+	strcpy(b, "world");
+	printf("%p: %s\n%p: %s\n", a, a, b, b);
+	rz_free(b);
+	rz_free(a);
 	return 0;
 }
 #endif

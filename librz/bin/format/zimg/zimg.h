@@ -38,6 +38,6 @@ struct rz_bin_zimg_str_t {
 };
 
 struct rz_bin_zimg_obj_t *rz_bin_zimg_new_buf(RzBuffer *buf);
-struct rz_bin_zimg_str_t *rz_bin_zimg_get_strings (struct rz_bin_zimg_obj_t *bin);
+struct rz_bin_zimg_str_t *rz_bin_zimg_get_strings(struct rz_bin_zimg_obj_t *bin);
 
 #endif

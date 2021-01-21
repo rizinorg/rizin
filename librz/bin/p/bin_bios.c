@@ -7,14 +7,14 @@
 #include "../i/private.h"
 
 static bool check_buffer(RzBuffer *buf) {
-	rz_return_val_if_fail (buf, false);
+	rz_return_val_if_fail(buf, false);
 
-	ut64 sz = rz_buf_size (buf);
+	ut64 sz = rz_buf_size(buf);
 	if (sz <= 0xffff) {
 		return false;
 	}
 
-	ut8 b0 = rz_buf_read8_at (buf, 0);
+	ut8 b0 = rz_buf_read8_at(buf, 0);
 	if (b0 == 0xcf || b0 == 0x7f) {
 		return false;
 	}
@@ -23,26 +23,26 @@ static bool check_buffer(RzBuffer *buf) {
 	/* hacky check to avoid detecting multidex or MZ bins as bios */
 	/* need better fix for this */
 	ut8 tmp[3];
-	int r = rz_buf_read_at (buf, 0, tmp, sizeof (tmp));
-	if (r <= 0 || !memcmp (tmp, "dex", 3) || !memcmp (tmp, "MZ", 2)) {
+	int r = rz_buf_read_at(buf, 0, tmp, sizeof(tmp));
+	if (r <= 0 || !memcmp(tmp, "dex", 3) || !memcmp(tmp, "MZ", 2)) {
 		return false;
 	}
 
 	/* Check if this a 'jmp' opcode */
-	ut8 bep = rz_buf_read8_at (buf, ep);
+	ut8 bep = rz_buf_read8_at(buf, ep);
 	return bep == 0xea || bep == 0xe9;
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	if (!check_buffer (buf)) {
+	if (!check_buffer(buf)) {
 		return false;
 	}
-	*bin_obj = rz_buf_ref (buf);
+	*bin_obj = rz_buf_ref(buf);
 	return true;
 }
 
 static void destroy(RzBinFile *bf) {
-	rz_buf_free (bf->o->bin_obj);
+	rz_buf_free(bf->o->bin_obj);
 }
 
 static ut64 baddr(RzBinFile *bf) {
@@ -56,18 +56,18 @@ static RzList *strings(RzBinFile *bf) {
 
 static RzBinInfo *info(RzBinFile *bf) {
 	RzBinInfo *ret = NULL;
-	if (!(ret = RZ_NEW0 (RzBinInfo))) {
+	if (!(ret = RZ_NEW0(RzBinInfo))) {
 		return NULL;
 	}
 	ret->lang = NULL;
-	ret->file = bf->file? strdup (bf->file): NULL;
-	ret->type = strdup ("bios");
-	ret->bclass = strdup ("1.0");
-	ret->rclass = strdup ("bios");
-	ret->os = strdup ("any");
-	ret->subsystem = strdup ("unknown");
-	ret->machine = strdup ("pc");
-	ret->arch = strdup ("x86");
+	ret->file = bf->file ? strdup(bf->file) : NULL;
+	ret->type = strdup("bios");
+	ret->bclass = strdup("1.0");
+	ret->rclass = strdup("bios");
+	ret->os = strdup("any");
+	ret->subsystem = strdup("unknown");
+	ret->machine = strdup("pc");
+	ret->arch = strdup("x86");
 	ret->has_va = 1;
 	ret->bits = 16;
 	ret->big_endian = 0;
@@ -80,32 +80,32 @@ static RzList *sections(RzBinFile *bf) {
 	RzBinSection *ptr = NULL;
 	RzBuffer *obj = bf->o->bin_obj;
 
-	if (!(ret = rz_list_newf ((RzListFree) rz_bin_section_free))) {
+	if (!(ret = rz_list_newf((RzListFree)rz_bin_section_free))) {
 		return NULL;
 	}
 	// program headers is another section
-	if (!(ptr = RZ_NEW0 (RzBinSection))) {
+	if (!(ptr = RZ_NEW0(RzBinSection))) {
 		return ret;
 	}
-	ptr->name = strdup ("bootblk"); // Maps to 0xF000:0000 segment
+	ptr->name = strdup("bootblk"); // Maps to 0xF000:0000 segment
 	ptr->vsize = ptr->size = 0x10000;
-	ptr->paddr = rz_buf_size (bf->buf) - ptr->size;
+	ptr->paddr = rz_buf_size(bf->buf) - ptr->size;
 	ptr->vaddr = 0xf0000;
 	ptr->perm = RZ_PERM_RWX;
 	ptr->add = true;
-	rz_list_append (ret, ptr);
+	rz_list_append(ret, ptr);
 	// If image bigger than 128K - add one more section
 	if (bf->size >= 0x20000) {
-		if (!(ptr = RZ_NEW0 (RzBinSection))) {
+		if (!(ptr = RZ_NEW0(RzBinSection))) {
 			return ret;
 		}
-		ptr->name = strdup ("_e000"); // Maps to 0xE000:0000 segment
+		ptr->name = strdup("_e000"); // Maps to 0xE000:0000 segment
 		ptr->vsize = ptr->size = 0x10000;
-		ptr->paddr = rz_buf_size (obj) - 2 * ptr->size;
+		ptr->paddr = rz_buf_size(obj) - 2 * ptr->size;
 		ptr->vaddr = 0xe0000;
 		ptr->perm = RZ_PERM_RWX;
 		ptr->add = true;
-		rz_list_append (ret, ptr);
+		rz_list_append(ret, ptr);
 	}
 	return ret;
 }
@@ -113,16 +113,16 @@ static RzList *sections(RzBinFile *bf) {
 static RzList *entries(RzBinFile *bf) {
 	RzList *ret;
 	RzBinAddr *ptr = NULL;
-	if (!(ret = rz_list_new ())) {
+	if (!(ret = rz_list_new())) {
 		return NULL;
 	}
 	ret->free = free;
-	if (!(ptr = RZ_NEW0 (RzBinAddr))) {
+	if (!(ptr = RZ_NEW0(RzBinAddr))) {
 		return ret;
 	}
 	ptr->paddr = 0; // 0x70000;
 	ptr->vaddr = 0xffff0;
-	rz_list_append (ret, ptr);
+	rz_list_append(ret, ptr);
 	return ret;
 }
 

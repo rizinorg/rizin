@@ -52,20 +52,20 @@ enum {
 
 enum {
 	E_ActiveProcessLinks, // EPROCESS
-	E_UniqueProcessId,    // EPROCESS
-	E_Peb,                // EPROCESS
-	E_ImageFileName,      // EPROCESS
-	E_VadRoot,            // EPROCESS
-	E_ThreadListHead,     // EPROCESS
+	E_UniqueProcessId, // EPROCESS
+	E_Peb, // EPROCESS
+	E_ImageFileName, // EPROCESS
+	E_VadRoot, // EPROCESS
+	E_ThreadListHead, // EPROCESS
 	P_DirectoryTableBase, // PCB
-	P_ImageBaseAddress,   // PEB
-	P_ProcessParameters,  // PEB
-	RZ_ImagePathName,      // RTL_USER_PROCESS_PARAMETERS
-	ET_Tcb,               // ETHREAD
-	ET_ThreadListEntry,   // ETHREAD
+	P_ImageBaseAddress, // PEB
+	P_ProcessParameters, // PEB
+	RZ_ImagePathName, // RTL_USER_PROCESS_PARAMETERS
+	ET_Tcb, // ETHREAD
+	ET_ThreadListEntry, // ETHREAD
 	ET_Win32StartAddress, // ETHREAD
-	ET_Cid,               // ETHREAD
-	C_UniqueThread,       // CLIENT_ID
+	ET_Cid, // ETHREAD
+	C_UniqueThread, // CLIENT_ID
 	O_Max,
 };
 
@@ -88,7 +88,7 @@ RzList *winkd_list_modules(WindCtx *ctx);
 int winkd_get_cpus(WindCtx *ctx);
 bool winkd_set_cpu(WindCtx *ctx, int cpu);
 int winkd_get_cpu(WindCtx *ctx);
-WindCtx * winkd_ctx_new(io_desc_t *desc);
+WindCtx *winkd_ctx_new(io_desc_t *desc);
 void winkd_ctx_free(WindCtx **ctx);
 int winkd_wait_packet(WindCtx *ctx, const ut32 type, kd_packet_t **p);
 int winkd_sync(WindCtx *ctx);

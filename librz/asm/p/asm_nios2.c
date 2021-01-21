@@ -11,19 +11,18 @@
 
 #include "disas-asm.h"
 
-
-int print_insn_big_nios2 (bfd_vma address, disassemble_info *info);
-int print_insn_little_nios2 (bfd_vma address, disassemble_info *info);
+int print_insn_big_nios2(bfd_vma address, disassemble_info *info);
+int print_insn_little_nios2(bfd_vma address, disassemble_info *info);
 static unsigned long Offset = 0;
 static RzStrBuf *buf_global = NULL;
 static unsigned char bytes[4];
 
-static int nios2_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
-	memcpy (myaddr, bytes, length);
+static int nios2_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
+	memcpy(myaddr, bytes, length);
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 
@@ -41,10 +40,10 @@ static int disassemble(RzAsm *a, struct rz_asm_op_t *op, const ut8 *buf, int len
 	}
 	buf_global = &op->buf_asm;
 	Offset = a->pc;
-	memcpy (bytes, buf, 4); // TODO handle thumb
+	memcpy(bytes, buf, 4); // TODO handle thumb
 
 	/* prepare disassembler */
-	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
+	memset(&disasm_obj, '\0', sizeof(struct disassemble_info));
 	disasm_obj.disassembler_options = "";
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &nios2_buffer_read_memory;
@@ -56,12 +55,12 @@ static int disassemble(RzAsm *a, struct rz_asm_op_t *op, const ut8 *buf, int len
 	disasm_obj.stream = stdout;
 
 	if (disasm_obj.endian == BFD_ENDIAN_BIG) {
-		op->size = print_insn_big_nios2 ((bfd_vma)Offset, &disasm_obj);
+		op->size = print_insn_big_nios2((bfd_vma)Offset, &disasm_obj);
 	} else {
-		op->size = print_insn_little_nios2 ((bfd_vma)Offset, &disasm_obj);
+		op->size = print_insn_little_nios2((bfd_vma)Offset, &disasm_obj);
 	}
 	if (op->size == -1) {
-		rz_asm_op_set_asm (op, "(data)");
+		rz_asm_op_set_asm(op, "(data)");
 	}
 	return op->size;
 }

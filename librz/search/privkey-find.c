@@ -41,18 +41,18 @@ static int check_fields(const ut8 *start) {
 #define KEY_MAX_LEN 26000
 	ut32 field_len = 0;
 	// Sequence field
-	const ut8 *ptr = parse_next_field (start, &field_len);
+	const ut8 *ptr = parse_next_field(start, &field_len);
 	if (!field_len || field_len > KEY_MAX_LEN) {
 		return false;
 	}
 
 	// Version field
-	ptr = parse_next_field (ptr, &field_len);
+	ptr = parse_next_field(ptr, &field_len);
 	if (field_len != 1) {
 		return false;
 	}
 	ptr = ptr + field_len;
-	ptr = parse_next_field (ptr, &field_len);
+	ptr = parse_next_field(ptr, &field_len);
 
 	if (!field_len || field_len > KEY_MAX_LEN) {
 		return false;
@@ -62,7 +62,7 @@ static int check_fields(const ut8 *start) {
 }
 
 // Finds and return index of a private key:
-// As defined in RFC 3447 for RSA, as defined in RFC 5915 for 
+// As defined in RFC 3447 for RSA, as defined in RFC 5915 for
 // elliptic curves and as defined in 7 of RFC 8410 for SafeCurves
 RZ_API int rz_search_privkey_update(RzSearch *s, ut64 from, const ut8 *buf, int len) {
 	int i, k, max, index, t;
@@ -80,9 +80,9 @@ RZ_API int rz_search_privkey_update(RzSearch *s, ut64 from, const ut8 *buf, int 
 	rz_list_foreach (s->kws, iter, kw) {
 		// Iteration until the remaining length is too small to contain a key.
 		for (i = 2; i < len - PRIVKEY_SEARCH_MIN_LENGTH; i++) {
-			if (memcmp (buf + i, rsa_versionmarker, sizeof (rsa_versionmarker)) &&
-				memcmp (buf + i, ecc_versionmarker, sizeof (ecc_versionmarker)) &&
-				memcmp (buf + i, safecurves_versionmarker, sizeof (safecurves_versionmarker))) {
+			if (memcmp(buf + i, rsa_versionmarker, sizeof(rsa_versionmarker)) &&
+				memcmp(buf + i, ecc_versionmarker, sizeof(ecc_versionmarker)) &&
+				memcmp(buf + i, safecurves_versionmarker, sizeof(safecurves_versionmarker))) {
 				continue;
 			}
 
@@ -104,12 +104,11 @@ RZ_API int rz_search_privkey_update(RzSearch *s, ut64 from, const ut8 *buf, int 
 				continue;
 			}
 
-			if (check_fields (buf + index)) {
+			if (check_fields(buf + index)) {
 				parse_next_field(buf + index, &kw->keyword_length);
-				t = rz_search_hit_new (s, kw, from + index);
+				t = rz_search_hit_new(s, kw, from + index);
 				if (t > 1) {
-						return s->nhits - old_nhits;
-
+					return s->nhits - old_nhits;
 				}
 			}
 		}

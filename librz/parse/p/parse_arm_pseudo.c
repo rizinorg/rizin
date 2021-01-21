@@ -146,7 +146,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 				continue;
 			}
 		}
-		if (!strcmp (ops[i].op, argv[0])) {
+		if (!strcmp(ops[i].op, argv[0])) {
 			if (newstr) {
 				d = 0;
 				j = 0;
@@ -166,8 +166,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 						}
 						const char *w = argv[idx];
 						if (w) {
-							strcpy (newstr + k, w);
-							k += strlen (w) - 1;
+							strcpy(newstr + k, w);
+							k += strlen(w) - 1;
 						}
 					} else {
 						newstr[k] = ch;
@@ -176,8 +176,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 				newstr[k] = '\0';
 			}
 
-			rz_str_replace_char (newstr, '{', '(');
-			rz_str_replace_char (newstr, '}', ')');
+			rz_str_replace_char(newstr, '{', '(');
+			rz_str_replace_char(newstr, '}', ')');
 			return true;
 		}
 	}
@@ -185,73 +185,73 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	/* TODO: this is slow */
 	newstr[0] = '\0';
 	for (i = 0; i < argc; i++) {
-		strcat (newstr, argv[i]);
-		strcat (newstr, (!i || i == argc - 1)? " " : ",");
+		strcat(newstr, argv[i]);
+		strcat(newstr, (!i || i == argc - 1) ? " " : ",");
 	}
-	rz_str_replace_char (newstr, '{', '(');
-	rz_str_replace_char (newstr, '}', ')');
+	rz_str_replace_char(newstr, '{', '(');
+	rz_str_replace_char(newstr, '}', ')');
 	return false;
 }
 
 static int parse(RzParse *p, const char *data, char *str) {
 	char w0[256], w1[256], w2[256], w3[256];
-	int i, len = strlen (data);
+	int i, len = strlen(data);
 	char *buf, *ptr, *optr;
 
-	if (len >= sizeof (w0)) {
+	if (len >= sizeof(w0)) {
 		return false;
 	}
 	// malloc can be slow here :?
-	if (!(buf = malloc (len + 1))) {
+	if (!(buf = malloc(len + 1))) {
 		return false;
 	}
-	memcpy (buf, data, len + 1);
+	memcpy(buf, data, len + 1);
 	if (*buf) {
 		*w0 = *w1 = *w2 = *w3 = '\0';
-		ptr = strchr (buf, ' ');
+		ptr = strchr(buf, ' ');
 		if (!ptr) {
-			ptr = strchr (buf, '\t');
+			ptr = strchr(buf, '\t');
 		}
 		if (ptr) {
 			*ptr = '\0';
 			for (++ptr; *ptr == ' '; ptr++) {
 				;
 			}
-			strncpy (w0, buf, sizeof (w0) - 1);
-			strncpy (w1, ptr, sizeof (w1) - 1);
+			strncpy(w0, buf, sizeof(w0) - 1);
+			strncpy(w1, ptr, sizeof(w1) - 1);
 
 			optr = ptr;
 			if (*ptr == '(') {
-				ptr = strchr (ptr+1, ')');
+				ptr = strchr(ptr + 1, ')');
 			}
 			if (ptr && *ptr == '[') {
-				ptr = strchr (ptr+1, ']');
+				ptr = strchr(ptr + 1, ']');
 			}
 			if (ptr && *ptr == '{') {
-				ptr = strchr (ptr+1, '}');
+				ptr = strchr(ptr + 1, '}');
 			}
 			if (!ptr) {
-				eprintf ("Unbalanced bracket\n");
+				eprintf("Unbalanced bracket\n");
 				free(buf);
 				return false;
 			}
-			ptr = strchr (ptr, ',');
+			ptr = strchr(ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
 				for (++ptr; *ptr == ' '; ptr++) {
 					;
 				}
-				strncpy (w1, optr, sizeof (w1) - 1);
-				strncpy (w2, ptr, sizeof (w2) - 1);
+				strncpy(w1, optr, sizeof(w1) - 1);
+				strncpy(w2, ptr, sizeof(w2) - 1);
 				optr = ptr;
-				ptr = strchr (ptr, ',');
+				ptr = strchr(ptr, ',');
 				if (ptr) {
 					*ptr = '\0';
 					for (++ptr; *ptr == ' '; ptr++) {
 						;
 					}
-					strncpy (w2, optr, sizeof (w2) - 1);
-					strncpy (w3, ptr, sizeof (w3) - 1);
+					strncpy(w2, optr, sizeof(w2) - 1);
+					strncpy(w3, ptr, sizeof(w3) - 1);
 				}
 			}
 		}
@@ -263,38 +263,38 @@ static int parse(RzParse *p, const char *data, char *str) {
 					nw++;
 				}
 			}
-			replace (nw, wa, str);
+			replace(nw, wa, str);
 		}
 	}
 	{
-		char *s = strdup (str);
-		s = rz_str_replace (s, "+ -", "- ", 1);
-		s = rz_str_replace (s, "- -", "+ ", 1);
-		strcpy (str, s);
-		free (s);
+		char *s = strdup(str);
+		s = rz_str_replace(s, "+ -", "- ", 1);
+		s = rz_str_replace(s, "- -", "+ ", 1);
+		strcpy(str, s);
+		free(s);
 	}
-	free (buf);
+	free(buf);
 	return true;
 }
 
 static char *subs_var_string(RzParse *p, RzAnalysisVarField *var, char *tstr, const char *oldstr, const char *reg, int delta) {
 	char *newstr = p->localvar_only
-		? rz_str_newf ("%s", var->name)
-		: rz_str_newf ("%s %c %s", reg, delta > 0 ? '+' : '-', var->name);
-	if (IS_UPPER (*tstr)) {
-		char *space = strrchr (newstr, ' ');
+		? rz_str_newf("%s", var->name)
+		: rz_str_newf("%s %c %s", reg, delta > 0 ? '+' : '-', var->name);
+	if (IS_UPPER(*tstr)) {
+		char *space = strrchr(newstr, ' ');
 		if (space) {
 			*space = 0;
-			rz_str_case (newstr, true);
+			rz_str_case(newstr, true);
 			*space = ' ';
 		}
 	}
-	char *ret = rz_str_replace (tstr, oldstr, newstr, 1);
-	free (newstr);
+	char *ret = rz_str_replace(tstr, oldstr, newstr, 1);
+	free(newstr);
 	return ret;
 }
 
-static char *mount_oldstr(RzParse* p, const char *reg, st64 delta, bool ucase) {
+static char *mount_oldstr(RzParse *p, const char *reg, st64 delta, bool ucase) {
 	const char *tmplt;
 	char *oldstr;
 	if (delta > -10 && delta < 10) {
@@ -303,22 +303,22 @@ static char *mount_oldstr(RzParse* p, const char *reg, st64 delta, bool ucase) {
 			if (delta < 0) {
 				sign = '-';
 			}
-			oldstr = rz_str_newf ("%s %c %" PFMT64d, reg, sign, RZ_ABS (delta));
+			oldstr = rz_str_newf("%s %c %" PFMT64d, reg, sign, RZ_ABS(delta));
 		} else {
-			oldstr = rz_str_newf ("%s, %" PFMT64d, reg, delta);
+			oldstr = rz_str_newf("%s, %" PFMT64d, reg, delta);
 		}
 	} else if (delta > 0) {
 		tmplt = p->pseudo ? "%s + 0x%x" : (ucase ? "%s, 0x%X" : "%s, 0x%x");
-		oldstr = rz_str_newf (tmplt, reg, delta);
+		oldstr = rz_str_newf(tmplt, reg, delta);
 	} else {
 		tmplt = p->pseudo ? "%s - 0x%x" : (ucase ? "%s, -0x%X" : "%s, -0x%x");
-		oldstr = rz_str_newf (tmplt, reg, -delta);
+		oldstr = rz_str_newf(tmplt, reg, -delta);
 	}
 	if (ucase) {
-		char *comma = strchr (oldstr, ',');
+		char *comma = strchr(oldstr, ',');
 		if (comma) {
 			*comma = 0;
-			rz_str_case (oldstr, true);
+			rz_str_case(oldstr, true);
 			*comma = ',';
 		}
 	}
@@ -331,55 +331,55 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char
 	RzListIter *iter;
 	RzAnalysis *analysis = p->analb.analysis;
 	char *oldstr;
-	char *tstr = strdup (data);
+	char *tstr = strdup(data);
 	if (!tstr) {
 		return false;
 	}
 
 	if (!p->varlist) {
-		free (tstr);
+		free(tstr);
 		return false;
 	}
 	if (p->subrel) {
 		char *rip;
 		if (p->pseudo) {
-			rip = (char *)rz_str_casestr (tstr, "[pc +");
+			rip = (char *)rz_str_casestr(tstr, "[pc +");
 			if (!rip) {
-				rip = (char *)rz_str_casestr (tstr, "[pc -");
+				rip = (char *)rz_str_casestr(tstr, "[pc -");
 			}
 		} else {
-			rip = (char *)rz_str_casestr (tstr, "[pc, ");
+			rip = (char *)rz_str_casestr(tstr, "[pc, ");
 		}
 
-		if (rip && !strchr (rip + 4, ',')) {
+		if (rip && !strchr(rip + 4, ',')) {
 			rip += 4;
-			char *tstr_new, *ripend = strchr (rip, ']');
-			const char *neg = strchr (rip, '-');
-			ut64 off = (oplen == 2 || strstr (tstr, ".w") || strstr(tstr, ".W")) ? 4 : 8;
+			char *tstr_new, *ripend = strchr(rip, ']');
+			const char *neg = strchr(rip, '-');
+			ut64 off = (oplen == 2 || strstr(tstr, ".w") || strstr(tstr, ".W")) ? 4 : 8;
 			ut64 repl_num = (addr + off) & ~3;
 			if (!ripend) {
 				ripend = "]";
 			}
 			if (neg) {
-				repl_num -= rz_num_get (NULL, neg + 1);
+				repl_num -= rz_num_get(NULL, neg + 1);
 			} else {
-				repl_num += rz_num_get (NULL, rip);
+				repl_num += rz_num_get(NULL, rip);
 			}
 			rip -= 3;
 			*rip = 0;
-			tstr_new = rz_str_newf ("%s0x%08"PFMT64x"%s", tstr, repl_num, ripend);
-			free (tstr);
+			tstr_new = rz_str_newf("%s0x%08" PFMT64x "%s", tstr, repl_num, ripend);
+			free(tstr);
 			tstr = tstr_new;
 		}
 	}
 
-	bpargs = p->varlist (f, 'b');
-	spargs = p->varlist (f, 's');
-	bool ucase = IS_UPPER (*tstr);
+	bpargs = p->varlist(f, 'b');
+	spargs = p->varlist(f, 's');
+	bool ucase = IS_UPPER(*tstr);
 	RzAnalysisVarField *var;
 	rz_list_foreach (bpargs, iter, var) {
 		st64 delta = p->get_ptr_at
-			? p->get_ptr_at (f, var->delta, addr)
+			? p->get_ptr_at(f, var->delta, addr)
 			: ST64_MAX;
 		if (delta == ST64_MAX && var->field) {
 			delta = var->delta + f->bp_off;
@@ -388,22 +388,22 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char
 		}
 		const char *reg = NULL;
 		if (p->get_reg_at) {
-			reg = p->get_reg_at (f, var->delta, addr);
+			reg = p->get_reg_at(f, var->delta, addr);
 		}
 		if (!reg) {
 			reg = analysis->reg->name[RZ_REG_NAME_BP];
 		}
-		oldstr = mount_oldstr (p, reg, delta, ucase);
-		if (strstr (tstr, oldstr)) {
-			tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
-			free (oldstr);
+		oldstr = mount_oldstr(p, reg, delta, ucase);
+		if (strstr(tstr, oldstr)) {
+			tstr = subs_var_string(p, var, tstr, oldstr, reg, delta);
+			free(oldstr);
 			break;
 		}
-		free (oldstr);
+		free(oldstr);
 	}
 	rz_list_foreach (spargs, iter, var) {
 		st64 delta = p->get_ptr_at
-			? p->get_ptr_at (f, var->delta, addr)
+			? p->get_ptr_at(f, var->delta, addr)
 			: ST64_MAX;
 		if (delta == ST64_MAX && var->field) {
 			delta = var->delta;
@@ -412,29 +412,29 @@ static bool subvar(RzParse *p, RzAnalysisFunction *f, ut64 addr, int oplen, char
 		}
 		const char *reg = NULL;
 		if (p->get_reg_at) {
-			reg = p->get_reg_at (f, var->delta, addr);
+			reg = p->get_reg_at(f, var->delta, addr);
 		}
 		if (!reg) {
 			reg = analysis->reg->name[RZ_REG_NAME_SP];
 		}
-		oldstr = mount_oldstr (p, reg, delta, ucase);
-		if (strstr (tstr, oldstr)) {
-			tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
-			free (oldstr);
+		oldstr = mount_oldstr(p, reg, delta, ucase);
+		if (strstr(tstr, oldstr)) {
+			tstr = subs_var_string(p, var, tstr, oldstr, reg, delta);
+			free(oldstr);
 			break;
 		}
-		free (oldstr);
+		free(oldstr);
 	}
-	rz_list_free (bpargs);
-	rz_list_free (spargs);
-	if (len > strlen (tstr)) {
-		strcpy  (str, tstr);
+	rz_list_free(bpargs);
+	rz_list_free(spargs);
+	if (len > strlen(tstr)) {
+		strcpy(str, tstr);
 	} else {
 		// TOO BIG STRING CANNOT REPLACE HERE
-		free (tstr);
+		free(tstr);
 		return false;
 	}
-	free (tstr);
+	free(tstr);
 	return true;
 }
 

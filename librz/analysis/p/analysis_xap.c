@@ -12,14 +12,14 @@ static int label_off(struct directive *d) {
 	int lame = off & 0x80;
 
 	if (!d->d_prefix) {
-		off = (char) (off & 0xff);
+		off = (char)(off & 0xff);
 	} else if (d->d_prefix == 1) {
-		off = (short) (off & 0xffff);
+		off = (short)(off & 0xffff);
 		if (lame) {
 			off -= 0x100;
 		}
 	} else {
-		off = (int) (off & 0xffffff);
+		off = (int)(off & 0xffffff);
 		if (off & 0x800000) {
 			off |= 0xff000000;
 		}
@@ -34,37 +34,37 @@ static int label_off(struct directive *d) {
 }
 
 static inline ut16 i2ut16(struct instruction *in) {
-	return *((uint16_t*)in);
+	return *((uint16_t *)in);
 }
 
 static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *bytes, int len, RzAnalysisOpMask mask) {
 	struct instruction *in = (struct instruction *)bytes;
 	ut16 lol, ins;
-	struct directive d = {{0}};
-	struct state s = {0};
+	struct directive d = { { 0 } };
+	struct state s = { 0 };
 
 	if (!analysis || !op) {
 		return 2;
 	}
 
-	memcpy (&ins, bytes, sizeof (ins));
-	memcpy (&lol, bytes, sizeof (ins));
+	memcpy(&ins, bytes, sizeof(ins));
+	memcpy(&lol, bytes, sizeof(ins));
 	s.s_buf = (void *)bytes;
 	s.s_off = addr;
 	s.s_out = NULL;
 	s.s_prefix = 0;
-	memset (&d, '\0', sizeof (struct directive));
-	memcpy (&d.d_inst, s.s_buf, sizeof (d.d_inst));
+	memset(&d, '\0', sizeof(struct directive));
+	memcpy(&d.d_inst, s.s_buf, sizeof(d.d_inst));
 	s.s_off += 2;
 	d.d_off = s.s_off;
-	xap_decode (&s, &d);
-	d.d_operand = get_operand (&s, &d);
+	xap_decode(&s, &d);
+	d.d_operand = get_operand(&s, &d);
 
-	memset (op, 0, sizeof (RzAnalysisOp));
+	memset(op, 0, sizeof(RzAnalysisOp));
 	op->type = RZ_ANALYSIS_OP_TYPE_UNK;
 	op->size = 2;
 
-	switch (i2ut16 (in)) {
+	switch (i2ut16(in)) {
 	case INST_NOP:
 		op->type = RZ_ANALYSIS_OP_TYPE_NOP;
 		break;
@@ -80,7 +80,7 @@ static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 	default:
 		switch (in->in_opcode) {
 		case 0:
-			switch (lol&0xf) {
+			switch (lol & 0xf) {
 			case 1:
 			case 2:
 			case 3:
@@ -115,7 +115,7 @@ static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 			op->type = RZ_ANALYSIS_OP_TYPE_CMP;
 			break;
 		case 9:
-			switch(in->in_reg) {
+			switch (in->in_reg) {
 			case 0:
 				op->type = RZ_ANALYSIS_OP_TYPE_MUL;
 				break;
@@ -128,11 +128,11 @@ static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 			case 3:
 				// BSR
 				op->type = RZ_ANALYSIS_OP_TYPE_CALL;
-				op->jump = label_off (&d);
+				op->jump = label_off(&d);
 				if (op->jump & 1) {
 					op->jump += 3;
 				}
-				op->fail = addr+2;
+				op->fail = addr + 2;
 				op->eob = true;
 				break;
 			}
@@ -150,7 +150,7 @@ static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 			switch (in->in_reg) {
 			case 0: // BRA
 				op->type = RZ_ANALYSIS_OP_TYPE_JMP;
-				op->jump = label_off (&d)+4;
+				op->jump = label_off(&d) + 4;
 				if (op->jump & 1) {
 					op->jump += 3;
 				}
@@ -159,7 +159,7 @@ static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 			case 1:
 				// BLT
 				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-				op->jump = label_off (&d);
+				op->jump = label_off(&d);
 				if (op->jump & 1) {
 					op->jump += 3;
 				}
@@ -169,7 +169,7 @@ static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 			case 2:
 				// BPL
 				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-				op->jump = label_off (&d);
+				op->jump = label_off(&d);
 				if (op->jump & 1) {
 					op->jump += 3;
 				}
@@ -179,7 +179,7 @@ static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 			case 3:
 				// BMI
 				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-				op->jump = label_off (&d);
+				op->jump = label_off(&d);
 				if (op->jump & 1) {
 					op->jump += 3;
 				}
@@ -195,11 +195,11 @@ static int xap_op(RzAnalysis *analysis, RzAnalysisOp *op, ut64 addr, const ut8 *
 			case 2: // BCC
 			case 3: // BCS
 				op->type = RZ_ANALYSIS_OP_TYPE_CJMP;
-				op->jump = label_off (&d);
+				op->jump = label_off(&d);
 				if (op->jump & 1) {
 					op->jump += 3;
 				}
-				op->fail = addr+2;
+				op->fail = addr + 2;
 				break;
 			}
 			break;

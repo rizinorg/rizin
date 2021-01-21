@@ -66,60 +66,60 @@ typedef struct {
 static N64Header n64_header;
 
 static ut64 baddr(RzBinFile *bf) {
-	return (ut64) rz_read_be32(&n64_header.BootAddress);
+	return (ut64)rz_read_be32(&n64_header.BootAddress);
 }
 
 static bool check_buffer(RzBuffer *b) {
 	ut8 magic[4];
-	if (rz_buf_size (b) < N64_ROM_START) {
+	if (rz_buf_size(b) < N64_ROM_START) {
 		return false;
 	}
-	(void)rz_buf_read_at (b, 0, magic, sizeof (magic));
-	return !memcmp (magic, "\x80\x37\x12\x40", 4);
+	(void)rz_buf_read_at(b, 0, magic, sizeof(magic));
+	return !memcmp(magic, "\x80\x37\x12\x40", 4);
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *b, ut64 loadaddr, Sdb *sdb) {
-	if (check_buffer (b)) {
-		ut8 buf[sizeof (N64Header)] = {0};
-		rz_buf_read_at (b, 0, buf, sizeof (buf));
-		*bin_obj = memcpy (&n64_header, buf, sizeof (N64Header));
+	if (check_buffer(b)) {
+		ut8 buf[sizeof(N64Header)] = { 0 };
+		rz_buf_read_at(b, 0, buf, sizeof(buf));
+		*bin_obj = memcpy(&n64_header, buf, sizeof(N64Header));
 		return true;
 	}
 	return false;
 }
 
 static RzList *entries(RzBinFile *bf) {
-	RzList /*<RzBinAddr>*/ *ret = rz_list_newf (free);
+	RzList /*<RzBinAddr>*/ *ret = rz_list_newf(free);
 	if (!ret) {
 		return NULL;
 	}
-	RzBinAddr *ptr = RZ_NEW0 (RzBinAddr);
+	RzBinAddr *ptr = RZ_NEW0(RzBinAddr);
 	if (ptr) {
 		ptr->paddr = N64_ROM_START;
-		ptr->vaddr = baddr (bf);
-		rz_list_append (ret, ptr);
+		ptr->vaddr = baddr(bf);
+		rz_list_append(ret, ptr);
 	}
 	return ret;
 }
 
 static RzList *sections(RzBinFile *bf) {
-	RzList /*<RzBinSection>*/ *ret = rz_list_new ();
+	RzList /*<RzBinSection>*/ *ret = rz_list_new();
 	if (!ret) {
 		return NULL;
 	}
-	RzBinSection *text = RZ_NEW0 (RzBinSection);
+	RzBinSection *text = RZ_NEW0(RzBinSection);
 	if (!text) {
-		rz_list_free (ret);
+		rz_list_free(ret);
 		return NULL;
 	}
-	text->name = strdup ("text");
-	text->size = rz_buf_size (bf->buf) - N64_ROM_START;
+	text->name = strdup("text");
+	text->size = rz_buf_size(bf->buf) - N64_ROM_START;
 	text->vsize = text->size;
 	text->paddr = N64_ROM_START;
-	text->vaddr = baddr (bf);
+	text->vaddr = baddr(bf);
 	text->perm = RZ_PERM_RX;
 	text->add = true;
-	rz_list_append (ret, text);
+	rz_list_append(ret, text);
 	return ret;
 }
 
@@ -128,17 +128,17 @@ static ut64 boffset(RzBinFile *bf) {
 }
 
 static RzBinInfo *info(RzBinFile *bf) {
-	char GameName[21] = {0};
-	RzBinInfo *ret = RZ_NEW0 (RzBinInfo);
+	char GameName[21] = { 0 };
+	RzBinInfo *ret = RZ_NEW0(RzBinInfo);
 	if (!ret) {
 		return NULL;
 	}
-	memcpy (GameName, n64_header.Name, sizeof (n64_header.Name));
-	ret->file = rz_str_newf ("%s (%c)", GameName, n64_header.CountryCode);
-	ret->os = strdup ("n64");
-	ret->arch = strdup ("mips");
-	ret->machine = strdup ("Nintendo 64");
-	ret->type = strdup ("ROM");
+	memcpy(GameName, n64_header.Name, sizeof(n64_header.Name));
+	ret->file = rz_str_newf("%s (%c)", GameName, n64_header.CountryCode);
+	ret->os = strdup("n64");
+	ret->arch = strdup("mips");
+	ret->machine = strdup("Nintendo 64");
+	ret->type = strdup("ROM");
 	ret->bits = 64;
 	ret->has_va = true;
 	ret->big_endian = true;

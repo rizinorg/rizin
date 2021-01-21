@@ -36,28 +36,28 @@ extern "C" {
 #include <windows.h>
 #include <wincon.h>
 #include <winuser.h>
-# ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
-# define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
-# endif
-# ifndef ENABLE_VIRTUAL_TERMINAL_INPUT
-# define ENABLE_VIRTUAL_TERMINAL_INPUT 0x0200
-# endif
+#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+#endif
+#ifndef ENABLE_VIRTUAL_TERMINAL_INPUT
+#define ENABLE_VIRTUAL_TERMINAL_INPUT 0x0200
+#endif
 #else
 #include <unistd.h>
 #endif
 
 /* constants */
-#define CONS_MAX_USER 102400
-#define CONS_BUFSZ 0x4f00
+#define CONS_MAX_USER  102400
+#define CONS_BUFSZ     0x4f00
 #define STR_IS_NULL(x) (!x || !x[0])
 
 /* palette */
 #define CONS_PALETTE_SIZE 22
-#define CONS_COLORS_SIZE 21
+#define CONS_COLORS_SIZE  21
 
-#define RZ_CONS_GREP_WORDS 10
+#define RZ_CONS_GREP_WORDS     10
 #define RZ_CONS_GREP_WORD_SIZE 64
-#define RZ_CONS_GREP_TOKENS 64
+#define RZ_CONS_GREP_TOKENS    64
 
 RZ_LIB_VERSION_HEADER(rz_cons);
 
@@ -173,12 +173,15 @@ enum {
 };
 #endif
 
-enum { ALPHA_RESET = 0x00, ALPHA_FG = 0x01, ALPHA_BG = 0x02, ALPHA_FGBG = 0x03 };
+enum { ALPHA_RESET = 0x00,
+	ALPHA_FG = 0x01,
+	ALPHA_BG = 0x02,
+	ALPHA_FGBG = 0x03 };
 enum { RZ_CONS_ATTR_BOLD = 1u << 1,
-       RZ_CONS_ATTR_DIM = 1u << 2,
-       RZ_CONS_ATTR_ITALIC = 1u << 3,
-       RZ_CONS_ATTR_UNDERLINE = 1u << 4,
-       RZ_CONS_ATTR_BLINK = 1u << 5
+	RZ_CONS_ATTR_DIM = 1u << 2,
+	RZ_CONS_ATTR_ITALIC = 1u << 3,
+	RZ_CONS_ATTR_UNDERLINE = 1u << 4,
+	RZ_CONS_ATTR_BLINK = 1u << 5
 };
 
 typedef struct rcolor_t {
@@ -263,10 +266,10 @@ typedef struct rz_cons_palette_t {
 	RzColor graph_trufae;
 	RzColor graph_traced;
 	RzColor graph_current;
-        RzColor graph_diff_match;
-        RzColor graph_diff_unmatch;
-        RzColor graph_diff_unknown;
-        RzColor graph_diff_new;
+	RzColor graph_diff_match;
+	RzColor graph_diff_unmatch;
+	RzColor graph_diff_unknown;
+	RzColor graph_diff_new;
 } RzConsPalette;
 
 typedef struct rz_cons_printable_palette_t {
@@ -368,66 +371,66 @@ typedef struct rz_cons_canvas_t {
 	int linemode; // 0 = diagonal , 1 = square
 } RzConsCanvas;
 
-#define RUNECODE_MIN 0xc8 // 200
-#define RUNECODE_LINE_VERT 0xc8
-#define RUNECODE_LINE_CROSS 0xc9
-#define RUNECODE_CORNER_BR 0xca
-#define RUNECODE_CORNER_BL 0xcb
-#define RUNECODE_ARROW_RIGHT 0xcc
-#define RUNECODE_ARROW_LEFT 0xcd
-#define RUNECODE_LINE_HORIZ 0xce
-#define RUNECODE_CORNER_TL 0xcf
-#define RUNECODE_CORNER_TR 0xd0
-#define RUNECODE_LINE_UP 0xd1
+#define RUNECODE_MIN             0xc8 // 200
+#define RUNECODE_LINE_VERT       0xc8
+#define RUNECODE_LINE_CROSS      0xc9
+#define RUNECODE_CORNER_BR       0xca
+#define RUNECODE_CORNER_BL       0xcb
+#define RUNECODE_ARROW_RIGHT     0xcc
+#define RUNECODE_ARROW_LEFT      0xcd
+#define RUNECODE_LINE_HORIZ      0xce
+#define RUNECODE_CORNER_TL       0xcf
+#define RUNECODE_CORNER_TR       0xd0
+#define RUNECODE_LINE_UP         0xd1
 #define RUNECODE_CURVE_CORNER_TL 0xd2
 #define RUNECODE_CURVE_CORNER_TR 0xd3
 #define RUNECODE_CURVE_CORNER_BR 0xd4
 #define RUNECODE_CURVE_CORNER_BL 0xd5
-#define RUNECODE_MAX 0xd6
+#define RUNECODE_MAX             0xd6
 
-#define RUNECODESTR_MIN 0xc8 // 200
-#define RUNECODESTR_LINE_VERT "\xc8"
-#define RUNECODESTR_LINE_CROSS "\xc9"
-#define RUNECODESTR_CORNER_BR "\xca"
-#define RUNECODESTR_CORNER_BL "\xcb"
-#define RUNECODESTR_ARROW_RIGHT "\xcc"
-#define RUNECODESTR_ARROW_LEFT "\xcd"
-#define RUNECODESTR_LINE_HORIZ "\xce"
-#define RUNECODESTR_CORNER_TL "\xcf"
-#define RUNECODESTR_CORNER_TR "\xd0"
-#define RUNECODESTR_LINE_UP "\xd1"
+#define RUNECODESTR_MIN             0xc8 // 200
+#define RUNECODESTR_LINE_VERT       "\xc8"
+#define RUNECODESTR_LINE_CROSS      "\xc9"
+#define RUNECODESTR_CORNER_BR       "\xca"
+#define RUNECODESTR_CORNER_BL       "\xcb"
+#define RUNECODESTR_ARROW_RIGHT     "\xcc"
+#define RUNECODESTR_ARROW_LEFT      "\xcd"
+#define RUNECODESTR_LINE_HORIZ      "\xce"
+#define RUNECODESTR_CORNER_TL       "\xcf"
+#define RUNECODESTR_CORNER_TR       "\xd0"
+#define RUNECODESTR_LINE_UP         "\xd1"
 #define RUNECODESTR_CURVE_CORNER_TL "\xd2"
 #define RUNECODESTR_CURVE_CORNER_TR "\xd3"
 #define RUNECODESTR_CURVE_CORNER_BR "\xd4"
 #define RUNECODESTR_CURVE_CORNER_BL "\xd5"
-#define RUNECODESTR_MAX 0xd5
+#define RUNECODESTR_MAX             0xd5
 
-#define RUNE_LINE_VERT "│"
-#define RUNE_LINE_CROSS "┼" /* ├ */
-#define RUNE_LINE_HORIZ "─"
-#define RUNE_LINE_UP "↑"
-#define RUNE_CORNER_BR "┘"
-#define RUNE_CORNER_BL "└"
-#define RUNE_CORNER_TL "┌"
-#define RUNE_CORNER_TR "┐"
-#define RUNE_ARROW_RIGHT ">"
-#define RUNE_ARROW_LEFT "<"
+#define RUNE_LINE_VERT       "│"
+#define RUNE_LINE_CROSS      "┼" /* ├ */
+#define RUNE_LINE_HORIZ      "─"
+#define RUNE_LINE_UP         "↑"
+#define RUNE_CORNER_BR       "┘"
+#define RUNE_CORNER_BL       "└"
+#define RUNE_CORNER_TL       "┌"
+#define RUNE_CORNER_TR       "┐"
+#define RUNE_ARROW_RIGHT     ">"
+#define RUNE_ARROW_LEFT      "<"
 #define RUNE_CURVE_CORNER_TL "╭"
 #define RUNE_CURVE_CORNER_TR "╮"
 #define RUNE_CURVE_CORNER_BR "╯"
 #define RUNE_CURVE_CORNER_BL "╰"
 #define RUNE_LONG_LINE_HORIZ "―"
-#define UTF_CIRCLE "\u25EF"
-#define UTF_BLOCK "\u2588"
+#define UTF_CIRCLE           "\u25EF"
+#define UTF_BLOCK            "\u2588"
 
 // Emoji
-#define UTF8_POLICE_CARS_REVOLVING_LIGHT "🚨"
-#define UTF8_WHITE_HEAVY_CHECK_MARK "✅"
-#define UTF8_SEE_NO_EVIL_MONKEY "🙈"
-#define UTF8_SKULL_AND_CROSSBONES "☠"
-#define UTF8_KEYBOARD "⌨"
+#define UTF8_POLICE_CARS_REVOLVING_LIGHT    "🚨"
+#define UTF8_WHITE_HEAVY_CHECK_MARK         "✅"
+#define UTF8_SEE_NO_EVIL_MONKEY             "🙈"
+#define UTF8_SKULL_AND_CROSSBONES           "☠"
+#define UTF8_KEYBOARD                       "⌨"
 #define UTF8_LEFT_POINTING_MAGNIFYING_GLASS "🔍"
-#define UTF8_DOOR "🚪"
+#define UTF8_DOOR                           "🚪"
 
 // Variation Selectors
 #define UTF8_VS16 "\xef\xb8\x8f"
@@ -440,7 +443,10 @@ typedef void (*RzConsSleepEndCallback)(void *core, void *user);
 typedef void (*RzConsQueueTaskOneshot)(void *core, void *task, void *user);
 typedef void (*RzConsFunctionKey)(void *core, int fkey);
 
-typedef enum { COLOR_MODE_DISABLED = 0, COLOR_MODE_16, COLOR_MODE_256, COLOR_MODE_16M } RzConsColorMode;
+typedef enum { COLOR_MODE_DISABLED = 0,
+	COLOR_MODE_16,
+	COLOR_MODE_256,
+	COLOR_MODE_16M } RzConsColorMode;
 
 typedef struct rz_cons_context_t {
 	RzConsGrep grep;
@@ -540,11 +546,11 @@ typedef struct rz_cons_t {
 	bool grep_color;
 	bool grep_highlight;
 	bool filter;
-	char* (*rgbstr)(char *str, size_t sz, ut64 addr);
+	char *(*rgbstr)(char *str, size_t sz, ut64 addr);
 	bool click_set;
 	int click_x;
 	int click_y;
-	bool show_vals;		// show which section in Vv
+	bool show_vals; // show which section in Vv
 	// TODO: move into instance? + avoid unnecessary copies
 } RzCons;
 
@@ -559,46 +565,47 @@ typedef struct rz_cons_t {
 // not needed anymoar
 //extern int (*rz_cons_user_fgets)(char *buf, int len);
 
-#define RZ_CONS_KEY_F1 0xf1
-#define RZ_CONS_KEY_F2 0xf2
-#define RZ_CONS_KEY_F3 0xf3
-#define RZ_CONS_KEY_F4 0xf4
-#define RZ_CONS_KEY_F5 0xf5
-#define RZ_CONS_KEY_F6 0xf6
-#define RZ_CONS_KEY_F7 0xf7
-#define RZ_CONS_KEY_F8 0xf8
-#define RZ_CONS_KEY_F9 0xf9
+#define RZ_CONS_KEY_F1  0xf1
+#define RZ_CONS_KEY_F2  0xf2
+#define RZ_CONS_KEY_F3  0xf3
+#define RZ_CONS_KEY_F4  0xf4
+#define RZ_CONS_KEY_F5  0xf5
+#define RZ_CONS_KEY_F6  0xf6
+#define RZ_CONS_KEY_F7  0xf7
+#define RZ_CONS_KEY_F8  0xf8
+#define RZ_CONS_KEY_F9  0xf9
 #define RZ_CONS_KEY_F10 0xfa
 #define RZ_CONS_KEY_F11 0xfb
 #define RZ_CONS_KEY_F12 0xfc
 
 #define RZ_CONS_KEY_ESC 0x1b
 
-#define RZ_CONS_CLEAR_LINE "\x1b[2K\r"
-#define RZ_CONS_CLEAR_SCREEN "\x1b[2J\r"
+#define RZ_CONS_CLEAR_LINE               "\x1b[2K\r"
+#define RZ_CONS_CLEAR_SCREEN             "\x1b[2J\r"
 #define RZ_CONS_CLEAR_FROM_CURSOR_TO_END "\x1b[0J\r"
 
-#define RZ_CONS_CURSOR_SAVE "\x1b[s"
-#define RZ_CONS_CURSOR_RESTORE "\x1b[u"
+#define RZ_CONS_CURSOR_SAVE         "\x1b[s"
+#define RZ_CONS_CURSOR_RESTORE      "\x1b[u"
 #define RZ_CONS_GET_CURSOR_POSITION "\x1b[6n"
-#define RZ_CONS_CURSOR_UP "\x1b[A"
-#define RZ_CONS_CURSOR_DOWN "\x1b[B"
-#define RZ_CONS_CURSOR_RIGHT "\x1b[C"
-#define RZ_CONS_CURSOR_LEFT "\x1b[D"
+#define RZ_CONS_CURSOR_UP           "\x1b[A"
+#define RZ_CONS_CURSOR_DOWN         "\x1b[B"
+#define RZ_CONS_CURSOR_RIGHT        "\x1b[C"
+#define RZ_CONS_CURSOR_LEFT         "\x1b[D"
 
 #define Color_BLINK        "\x1b[5m"
 #define Color_INVERT       "\x1b[7m"
 #define Color_INVERT_RESET "\x1b[27m"
-     /* See 'man 4 console_codes' for details:
+/* See 'man 4 console_codes' for details:
       * "ESC c"        -- Reset
       * "ESC ( K"      -- Select user mapping
       * "ESC [ 0 m"    -- Reset all display attributes
       * "ESC [ J"      -- Erase to the end of screen
       * "ESC [ ? 25 h" -- Make cursor visible
       */
-#define Color_RESET_TERMINAL  "\x1b" "c\x1b(K\x1b[0m\x1b[J\x1b[?25h"
+#define Color_RESET_TERMINAL "\x1b" \
+			     "c\x1b(K\x1b[0m\x1b[J\x1b[?25h"
 #define Color_RESET      "\x1b[0m" /* reset all */
-#define Color_RESET_NOBG "\x1b[27;22;24;25;28;39m"  /* Reset everything except background (order is important) */
+#define Color_RESET_NOBG "\x1b[27;22;24;25;28;39m" /* Reset everything except background (order is important) */
 #define Color_RESET_BG   "\x1b[49m"
 #define Color_RESET_ALL  "\x1b[0m\x1b[49m"
 #define Color_BLACK      "\x1b[30m"
@@ -638,32 +645,34 @@ typedef struct rz_cons_t {
 #define Color_BBGBLUE    "\x1b[104m"
 
 #if defined(_MSC_VER) || (defined(__GNUC__) && __GNUC__ < 5)
-#define RZCOLOR(a, r, g, b, bgr, bgg, bgb, id16) {0, a, r, g, b, bgr, bgg, bgb, id16}
+#define RZCOLOR(a, r, g, b, bgr, bgg, bgb, id16) \
+	{ 0, a, r, g, b, bgr, bgg, bgb, id16 }
 #else
-#define RZCOLOR(a, r, g, b, bgr, bgg, bgb, id16) (RzColor) {0, a, r, g, b, bgr, bgg, bgb, id16}
+#define RZCOLOR(a, r, g, b, bgr, bgg, bgb, id16) \
+	(RzColor) { 0, a, r, g, b, bgr, bgg, bgb, id16 }
 #endif
-#define RzColor_NULL       RZCOLOR(0x00,     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, -1)
+#define RzColor_NULL RZCOLOR(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, -1)
 #if __WINDOWS__
-#define RzColor_BLACK      RZCOLOR(ALPHA_FG, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  0)
-#define RzColor_BGBLACK    RZCOLOR(ALPHA_BG, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  0)
-#define RzColor_RED        RZCOLOR(ALPHA_FG, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,  1)
-#define RzColor_BGRED      RZCOLOR(ALPHA_BG, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,  1)
-#define RzColor_WHITE      RZCOLOR(ALPHA_FG, 0xc0, 0xc0, 0xc0, 0x00, 0x00, 0x00,  7)
-#define RzColor_BGWHITE    RZCOLOR(ALPHA_BG, 0xc0, 0xc0, 0xc0, 0x00, 0x00, 0x00,  7)
-#define RzColor_GREEN      RZCOLOR(ALPHA_FG, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00,  2)
-#define RzColor_BGGREEN    RZCOLOR(ALPHA_BG, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00,  2)
-#define RzColor_MAGENTA    RZCOLOR(ALPHA_FG, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00,  5)
-#define RzColor_BGMAGENTA  RZCOLOR(ALPHA_BG, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00,  5)
-#define RzColor_YELLOW     RZCOLOR(ALPHA_FG, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00,  3)
-#define RzColor_BGYELLOW   RZCOLOR(ALPHA_BG, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00,  3)
-#define RzColor_CYAN       RZCOLOR(ALPHA_FG, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00,  6)
-#define RzColor_BGCYAN     RZCOLOR(ALPHA_BG, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00,  6)
-#define RzColor_BLUE       RZCOLOR(ALPHA_FG, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00,  4)
-#define RzColor_BGBLUE     RZCOLOR(ALPHA_BG, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00,  4)
-#define RzColor_BBLACK     RZCOLOR(ALPHA_FG, 0x80, 0x80, 0x80, 0x00, 0x00, 0x00,  8)
-#define RzColor_BBGBLACK   RZCOLOR(ALPHA_BG, 0x80, 0x80, 0x80, 0x00, 0x00, 0x00,  8)
-#define RzColor_BRED       RZCOLOR(ALPHA_FG, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00,  9)
-#define RzColor_BBGRED     RZCOLOR(ALPHA_BG, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00,  9)
+#define RzColor_BLACK      RZCOLOR(ALPHA_FG, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0)
+#define RzColor_BGBLACK    RZCOLOR(ALPHA_BG, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0)
+#define RzColor_RED        RZCOLOR(ALPHA_FG, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 1)
+#define RzColor_BGRED      RZCOLOR(ALPHA_BG, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 1)
+#define RzColor_WHITE      RZCOLOR(ALPHA_FG, 0xc0, 0xc0, 0xc0, 0x00, 0x00, 0x00, 7)
+#define RzColor_BGWHITE    RZCOLOR(ALPHA_BG, 0xc0, 0xc0, 0xc0, 0x00, 0x00, 0x00, 7)
+#define RzColor_GREEN      RZCOLOR(ALPHA_FG, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 2)
+#define RzColor_BGGREEN    RZCOLOR(ALPHA_BG, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 2)
+#define RzColor_MAGENTA    RZCOLOR(ALPHA_FG, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00, 5)
+#define RzColor_BGMAGENTA  RZCOLOR(ALPHA_BG, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00, 5)
+#define RzColor_YELLOW     RZCOLOR(ALPHA_FG, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 3)
+#define RzColor_BGYELLOW   RZCOLOR(ALPHA_BG, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 3)
+#define RzColor_CYAN       RZCOLOR(ALPHA_FG, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 6)
+#define RzColor_BGCYAN     RZCOLOR(ALPHA_BG, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 6)
+#define RzColor_BLUE       RZCOLOR(ALPHA_FG, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 4)
+#define RzColor_BGBLUE     RZCOLOR(ALPHA_BG, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 4)
+#define RzColor_BBLACK     RZCOLOR(ALPHA_FG, 0x80, 0x80, 0x80, 0x00, 0x00, 0x00, 8)
+#define RzColor_BBGBLACK   RZCOLOR(ALPHA_BG, 0x80, 0x80, 0x80, 0x00, 0x00, 0x00, 8)
+#define RzColor_BRED       RZCOLOR(ALPHA_FG, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 9)
+#define RzColor_BBGRED     RZCOLOR(ALPHA_BG, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 9)
 #define RzColor_BWHITE     RZCOLOR(ALPHA_FG, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 15)
 #define RzColor_BBGWHITE   RZCOLOR(ALPHA_BG, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 15)
 #define RzColor_BGREEN     RZCOLOR(ALPHA_FG, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 10)
@@ -680,46 +689,48 @@ typedef struct rz_cons_t {
 // Campbell (https://devblogs.microsoft.com/commandline/updating-the-windows-console-colors/).
 // Not used on Windows since cmd.exe doesn't support bold (needed for easier
 // differentiation between normal and bright color text for some colors).
-#define RzColor_BLACK      RZCOLOR(ALPHA_FG,  12,  12,  12, 0x00, 0x00, 0x00,  0)
-#define RzColor_BGBLACK    RZCOLOR(ALPHA_BG,  12,  12,  12, 0x00, 0x00, 0x00,  0)
-#define RzColor_RED        RZCOLOR(ALPHA_FG, 197,  15,  31, 0x00, 0x00, 0x00,  1)
-#define RzColor_BGRED      RZCOLOR(ALPHA_BG, 197,  15,  31, 0x00, 0x00, 0x00,  1)
-#define RzColor_WHITE      RZCOLOR(ALPHA_FG, 204, 204, 204, 0x00, 0x00, 0x00,  7)
-#define RzColor_BGWHITE    RZCOLOR(ALPHA_BG, 204, 204, 204, 0x00, 0x00, 0x00,  7)
-#define RzColor_GREEN      RZCOLOR(ALPHA_FG,  19, 161,  14, 0x00, 0x00, 0x00,  2)
-#define RzColor_BGGREEN    RZCOLOR(ALPHA_BG,  19, 161,  14, 0x00, 0x00, 0x00,  2)
-#define RzColor_MAGENTA    RZCOLOR(ALPHA_FG, 136,  23, 152, 0x00, 0x00, 0x00,  5)
-#define RzColor_BGMAGENTA  RZCOLOR(ALPHA_BG, 136,  23, 152, 0x00, 0x00, 0x00,  5)
-#define RzColor_YELLOW     RZCOLOR(ALPHA_FG, 193, 156,   0, 0x00, 0x00, 0x00,  3)
-#define RzColor_BGYELLOW   RZCOLOR(ALPHA_BG, 193, 156,   0, 0x00, 0x00, 0x00,  3)
-#define RzColor_CYAN       RZCOLOR(ALPHA_FG,  58, 150, 221, 0x00, 0x00, 0x00,  6)
-#define RzColor_BGCYAN     RZCOLOR(ALPHA_BG,  58, 150, 221, 0x00, 0x00, 0x00,  6)
-#define RzColor_BLUE       RZCOLOR(ALPHA_FG,   0,  55, 218, 0x00, 0x00, 0x00,  4)
-#define RzColor_BGBLUE     RZCOLOR(ALPHA_BG,   0,  55, 218, 0x00, 0x00, 0x00,  4)
-#define RzColor_BBLACK     RZCOLOR(ALPHA_FG, 118, 118, 118, 0x00, 0x00, 0x00,  8)
-#define RzColor_BBGBLACK   RZCOLOR(ALPHA_BG, 118, 118, 118, 0x00, 0x00, 0x00,  8)
-#define RzColor_BRED       RZCOLOR(ALPHA_FG, 231,  72,  86, 0x00, 0x00, 0x00,  9)
-#define RzColor_BBGRED     RZCOLOR(ALPHA_BG, 231,  72,  86, 0x00, 0x00, 0x00,  9)
+#define RzColor_BLACK      RZCOLOR(ALPHA_FG, 12, 12, 12, 0x00, 0x00, 0x00, 0)
+#define RzColor_BGBLACK    RZCOLOR(ALPHA_BG, 12, 12, 12, 0x00, 0x00, 0x00, 0)
+#define RzColor_RED        RZCOLOR(ALPHA_FG, 197, 15, 31, 0x00, 0x00, 0x00, 1)
+#define RzColor_BGRED      RZCOLOR(ALPHA_BG, 197, 15, 31, 0x00, 0x00, 0x00, 1)
+#define RzColor_WHITE      RZCOLOR(ALPHA_FG, 204, 204, 204, 0x00, 0x00, 0x00, 7)
+#define RzColor_BGWHITE    RZCOLOR(ALPHA_BG, 204, 204, 204, 0x00, 0x00, 0x00, 7)
+#define RzColor_GREEN      RZCOLOR(ALPHA_FG, 19, 161, 14, 0x00, 0x00, 0x00, 2)
+#define RzColor_BGGREEN    RZCOLOR(ALPHA_BG, 19, 161, 14, 0x00, 0x00, 0x00, 2)
+#define RzColor_MAGENTA    RZCOLOR(ALPHA_FG, 136, 23, 152, 0x00, 0x00, 0x00, 5)
+#define RzColor_BGMAGENTA  RZCOLOR(ALPHA_BG, 136, 23, 152, 0x00, 0x00, 0x00, 5)
+#define RzColor_YELLOW     RZCOLOR(ALPHA_FG, 193, 156, 0, 0x00, 0x00, 0x00, 3)
+#define RzColor_BGYELLOW   RZCOLOR(ALPHA_BG, 193, 156, 0, 0x00, 0x00, 0x00, 3)
+#define RzColor_CYAN       RZCOLOR(ALPHA_FG, 58, 150, 221, 0x00, 0x00, 0x00, 6)
+#define RzColor_BGCYAN     RZCOLOR(ALPHA_BG, 58, 150, 221, 0x00, 0x00, 0x00, 6)
+#define RzColor_BLUE       RZCOLOR(ALPHA_FG, 0, 55, 218, 0x00, 0x00, 0x00, 4)
+#define RzColor_BGBLUE     RZCOLOR(ALPHA_BG, 0, 55, 218, 0x00, 0x00, 0x00, 4)
+#define RzColor_BBLACK     RZCOLOR(ALPHA_FG, 118, 118, 118, 0x00, 0x00, 0x00, 8)
+#define RzColor_BBGBLACK   RZCOLOR(ALPHA_BG, 118, 118, 118, 0x00, 0x00, 0x00, 8)
+#define RzColor_BRED       RZCOLOR(ALPHA_FG, 231, 72, 86, 0x00, 0x00, 0x00, 9)
+#define RzColor_BBGRED     RZCOLOR(ALPHA_BG, 231, 72, 86, 0x00, 0x00, 0x00, 9)
 #define RzColor_BWHITE     RZCOLOR(ALPHA_FG, 242, 242, 242, 0x00, 0x00, 0x00, 15)
 #define RzColor_BBGWHITE   RZCOLOR(ALPHA_BG, 242, 242, 242, 0x00, 0x00, 0x00, 15)
-#define RzColor_BGREEN     RZCOLOR(ALPHA_FG,  22, 198,  12, 0x00, 0x00, 0x00, 10)
-#define RzColor_BBGGREEN   RZCOLOR(ALPHA_BG,  22, 198,  12, 0x00, 0x00, 0x00, 10)
-#define RzColor_BMAGENTA   RZCOLOR(ALPHA_FG, 180,   0, 158, 0x00, 0x00, 0x00, 13)
-#define RzColor_BBGMAGENTA RZCOLOR(ALPHA_BG, 180,   0, 158, 0x00, 0x00, 0x00, 13)
+#define RzColor_BGREEN     RZCOLOR(ALPHA_FG, 22, 198, 12, 0x00, 0x00, 0x00, 10)
+#define RzColor_BBGGREEN   RZCOLOR(ALPHA_BG, 22, 198, 12, 0x00, 0x00, 0x00, 10)
+#define RzColor_BMAGENTA   RZCOLOR(ALPHA_FG, 180, 0, 158, 0x00, 0x00, 0x00, 13)
+#define RzColor_BBGMAGENTA RZCOLOR(ALPHA_BG, 180, 0, 158, 0x00, 0x00, 0x00, 13)
 #define RzColor_BYELLOW    RZCOLOR(ALPHA_FG, 249, 241, 165, 0x00, 0x00, 0x00, 11)
 #define RzColor_BBGYELLOW  RZCOLOR(ALPHA_BG, 249, 241, 165, 0x00, 0x00, 0x00, 11)
-#define RzColor_BCYAN      RZCOLOR(ALPHA_FG,  97, 214, 214, 0x00, 0x00, 0x00, 14)
-#define RzColor_BBGCYAN    RZCOLOR(ALPHA_BG,  97, 214, 214, 0x00, 0x00, 0x00, 14)
-#define RzColor_BBLUE      RZCOLOR(ALPHA_FG,  59, 120, 255, 0x00, 0x00, 0x00, 12)
-#define RzColor_BBGBLUE    RZCOLOR(ALPHA_BG,  59, 120, 255, 0x00, 0x00, 0x00, 12)
+#define RzColor_BCYAN      RZCOLOR(ALPHA_FG, 97, 214, 214, 0x00, 0x00, 0x00, 14)
+#define RzColor_BBGCYAN    RZCOLOR(ALPHA_BG, 97, 214, 214, 0x00, 0x00, 0x00, 14)
+#define RzColor_BBLUE      RZCOLOR(ALPHA_FG, 59, 120, 255, 0x00, 0x00, 0x00, 12)
+#define RzColor_BBGBLUE    RZCOLOR(ALPHA_BG, 59, 120, 255, 0x00, 0x00, 0x00, 12)
 #endif
-#define RzColor_GRAY       RzColor_BBLACK
-#define RzColor_BGGRAY     RzColor_BBGBLACK
+#define RzColor_GRAY   RzColor_BBLACK
+#define RzColor_BGGRAY RzColor_BBGBLACK
 
-#define Colors_PLAIN { \
-	Color_BLACK, Color_RED, Color_WHITE, \
-	Color_GREEN, Color_MAGENTA, Color_YELLOW, \
-	Color_CYAN, Color_BLUE, Color_GRAY}
+#define Colors_PLAIN \
+	{ \
+		Color_BLACK, Color_RED, Color_WHITE, \
+			Color_GREEN, Color_MAGENTA, Color_YELLOW, \
+			Color_CYAN, Color_BLUE, Color_GRAY \
+	}
 
 enum {
 	PAL_PROMPT = 0,
@@ -759,9 +770,9 @@ typedef enum {
 	CONTROL_MODE = 'c'
 } RViMode;
 
-#define DOT_STYLE_NORMAL 0
+#define DOT_STYLE_NORMAL      0
 #define DOT_STYLE_CONDITIONAL 1
-#define DOT_STYLE_BACKEDGE 2
+#define DOT_STYLE_BACKEDGE    2
 
 typedef struct rz_cons_canvas_line_style_t {
 	int color;
@@ -772,41 +783,40 @@ typedef struct rz_cons_canvas_line_style_t {
 // UTF-8 symbols indexes
 // XXX. merge with RUNE/RUNECODE/RUNECODESTR
 #if 0
-#define LINE_VERT 0
-#define LINE_CROSS 1
-#define LINE_HORIZ 2
-#define LINE_UP 3
-#define CORNER_BR 4
-#define CORNER_BL 5
-#define CORNER_TL 6
-#define CORNER_TR 7
+#define LINE_VERT   0
+#define LINE_CROSS  1
+#define LINE_HORIZ  2
+#define LINE_UP     3
+#define CORNER_BR   4
+#define CORNER_BL   5
+#define CORNER_TL   6
+#define CORNER_TR   7
 #define ARROW_RIGHT 8
-#define ARROW_LEFT 9
+#define ARROW_LEFT  9
 #else
-#define LINE_VERT 0
-#define LINE_CROSS 1
-#define LINE_HORIZ 2
-#define LINE_UP 3
-#define CORNER_TL 6
-#define CORNER_BR 4
-#define CORNER_BL 5
-#define CORNER_TR 6
+#define LINE_VERT   0
+#define LINE_CROSS  1
+#define LINE_HORIZ  2
+#define LINE_UP     3
+#define CORNER_TL   6
+#define CORNER_BR   4
+#define CORNER_BL   5
+#define CORNER_TR   6
 #define ARROW_RIGHT 8
-#define ARROW_LEFT 9
+#define ARROW_LEFT  9
 #endif
 
-
 #ifdef RZ_API
-RZ_API RzConsCanvas* rz_cons_canvas_new(int w, int h);
+RZ_API RzConsCanvas *rz_cons_canvas_new(int w, int h);
 RZ_API void rz_cons_canvas_free(RzConsCanvas *c);
 RZ_API void rz_cons_canvas_clear(RzConsCanvas *c);
 RZ_API void rz_cons_canvas_print(RzConsCanvas *c);
 RZ_API void rz_cons_canvas_print_region(RzConsCanvas *c);
 RZ_API char *rz_cons_canvas_to_string(RzConsCanvas *c);
-RZ_API void rz_cons_canvas_attr(RzConsCanvas *c,const char * attr);
+RZ_API void rz_cons_canvas_attr(RzConsCanvas *c, const char *attr);
 RZ_API void rz_cons_canvas_write(RzConsCanvas *c, const char *_s);
 RZ_API bool rz_cons_canvas_gotoxy(RzConsCanvas *c, int x, int y);
-RZ_API void rz_cons_canvas_goto_write(RzConsCanvas *c,int x,int y, const char * s);
+RZ_API void rz_cons_canvas_goto_write(RzConsCanvas *c, int x, int y, const char *s);
 RZ_API void rz_cons_canvas_box(RzConsCanvas *c, int x, int y, int w, int h, const char *color);
 RZ_API void rz_cons_canvas_circle(RzConsCanvas *c, int x, int y, int w, int h, const char *color);
 RZ_API void rz_cons_canvas_line(RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style);
@@ -814,8 +824,8 @@ RZ_API void rz_cons_canvas_line_diagonal(RzConsCanvas *c, int x, int y, int x2, 
 RZ_API void rz_cons_canvas_line_square(RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style);
 RZ_API int rz_cons_canvas_resize(RzConsCanvas *c, int w, int h);
 RZ_API void rz_cons_canvas_fill(RzConsCanvas *c, int x, int y, int w, int h, char ch);
-RZ_API void rz_cons_canvas_line_square_defined (RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style, int bendpoint, int isvert);
-RZ_API void rz_cons_canvas_line_back_edge (RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2, int isvert);
+RZ_API void rz_cons_canvas_line_square_defined(RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style, int bendpoint, int isvert);
+RZ_API void rz_cons_canvas_line_back_edge(RzConsCanvas *c, int x, int y, int x2, int y2, RzCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2, int isvert);
 RZ_API RzCons *rz_cons_new(void);
 RZ_API RzCons *rz_cons_singleton(void);
 RZ_API RzCons *rz_cons_free(void);
@@ -878,7 +888,7 @@ RZ_API void rz_cons_clear00(void);
 RZ_API void rz_cons_clear_line(int err);
 RZ_API void rz_cons_fill_line(void);
 RZ_API void rz_cons_stdout_open(const char *file, int append);
-RZ_API int  rz_cons_stdout_set_fd(int fd);
+RZ_API int rz_cons_stdout_set_fd(int fd);
 RZ_API void rz_cons_gotoxy(int x, int y);
 RZ_API int rz_cons_get_cur_line(void);
 RZ_API void rz_cons_show_cursor(int cursor);
@@ -896,15 +906,15 @@ RZ_API int rz_cons_printf(const char *format, ...) RZ_PRINTF_CHECK(1, 2);
 RZ_API void rz_cons_printf_list(const char *format, va_list ap);
 RZ_API void rz_cons_strcat(const char *str);
 RZ_API void rz_cons_strcat_at(const char *str, int x, char y, int w, int h);
-#define rz_cons_print(x) rz_cons_strcat (x)
-RZ_API void rz_cons_println(const char* str);
+#define rz_cons_print(x) rz_cons_strcat(x)
+RZ_API void rz_cons_println(const char *str);
 
 RZ_API void rz_cons_strcat_justify(const char *str, int j, char c);
 RZ_API int rz_cons_memcat(const char *str, int len);
 RZ_API void rz_cons_newline(void);
 RZ_API void rz_cons_filter(void);
 RZ_API void rz_cons_flush(void);
-RZ_API void rz_cons_print_fps (int col);
+RZ_API void rz_cons_print_fps(int col);
 RZ_API void rz_cons_last(void);
 RZ_API int rz_cons_less_str(const char *str, const char *exitkeys);
 RZ_API void rz_cons_less(void);
@@ -912,10 +922,9 @@ RZ_API void rz_cons_memset(char ch, int len);
 RZ_API void rz_cons_visual_flush(void);
 RZ_API void rz_cons_visual_write(char *buffer);
 RZ_API bool rz_cons_is_utf8(void);
-RZ_API void rz_cons_cmd_help(const char * help[], bool use_color);
+RZ_API void rz_cons_cmd_help(const char *help[], bool use_color);
 RZ_API void rz_cons_log_stub(const char *output, const char *funcname, const char *filename,
- unsigned int lineno, unsigned int level, const char *tag, const char *fmtstr, ...) RZ_PRINTF_CHECK(7, 8);
-
+	unsigned int lineno, unsigned int level, const char *tag, const char *fmtstr, ...) RZ_PRINTF_CHECK(7, 8);
 
 /* input */
 RZ_API int rz_cons_controlz(int ch);
@@ -962,8 +971,8 @@ RZ_API const char *rz_cons_get_buffer(void);
 RZ_API int rz_cons_get_buffer_len(void);
 RZ_API void rz_cons_grep_help(void);
 RZ_API void rz_cons_grep_parsecmd(char *cmd, const char *quotestr);
-RZ_API char * rz_cons_grep_strip(char *cmd, const char *quotestr);
-RZ_API void rz_cons_grep_process(char * grep);
+RZ_API char *rz_cons_grep_strip(char *cmd, const char *quotestr);
+RZ_API void rz_cons_grep_process(char *grep);
 RZ_API int rz_cons_grep_line(char *buf, int len); // must be static
 RZ_API void rz_cons_grepbuf(void);
 
@@ -987,18 +996,18 @@ RZ_API void rz_cons_set_title(const char *str);
 RZ_API bool rz_cons_enable_mouse(const bool enable);
 RZ_API void rz_cons_enable_highlight(const bool enable);
 RZ_API void rz_cons_bind(RzConsBind *bind);
-RZ_API const char* rz_cons_get_rune(const ut8 ch);
+RZ_API const char *rz_cons_get_rune(const ut8 ch);
 #endif
 
 /* rz_line */
-#define RZ_LINE_BUFSIZE 4096
+#define RZ_LINE_BUFSIZE  4096
 #define RZ_LINE_HISTSIZE 256
 
 #define RZ_EDGES_X_INC 4
 
-#define RZ_SELWIDGET_MAXH 15
-#define RZ_SELWIDGET_MAXW 30
-#define RZ_SELWIDGET_DIR_UP 0
+#define RZ_SELWIDGET_MAXH     15
+#define RZ_SELWIDGET_MAXW     30
+#define RZ_SELWIDGET_DIR_UP   0
 #define RZ_SELWIDGET_DIR_DOWN 1
 
 typedef struct rz_selection_widget_t {
@@ -1035,7 +1044,9 @@ typedef struct rz_hud_t {
 typedef struct rz_line_t RzLine; // forward declaration
 typedef struct rz_line_comp_t RzLineCompletion;
 
-typedef enum { RZ_LINE_PROMPT_DEFAULT, RZ_LINE_PROMPT_OFFSET, RZ_LINE_PROMPT_FILE } RzLinePromptType;
+typedef enum { RZ_LINE_PROMPT_DEFAULT,
+	RZ_LINE_PROMPT_OFFSET,
+	RZ_LINE_PROMPT_FILE } RzLinePromptType;
 
 typedef int (*RzLineCompletionCb)(RzLineCompletion *completion, RzLineBuffer *buf, RzLinePromptType prompt_type, void *user);
 
@@ -1080,9 +1091,9 @@ struct rz_line_ns_completion_t {
 	void *run_user; ///< User data that can be passed to the callback
 };
 
-typedef char* (*RzLineEditorCb)(void *core, const char *str);
-typedef int (*RzLineHistoryUpCb)(RzLine* line);
-typedef int (*RzLineHistoryDownCb)(RzLine* line);
+typedef char *(*RzLineEditorCb)(void *core, const char *str);
+typedef int (*RzLineHistoryUpCb)(RzLine *line);
+typedef int (*RzLineHistoryDownCb)(RzLine *line);
 
 struct rz_line_t {
 	RzLineCompletion completion;
@@ -1100,7 +1111,7 @@ struct rz_line_t {
 	int echo;
 	int has_echo;
 	char *prompt;
-	RzList/*<str>*/ *kill_ring;
+	RzList /*<str>*/ *kill_ring;
 	int kill_ring_ptr;
 	char *clipboard;
 	int disable;
@@ -1129,18 +1140,18 @@ RZ_API void rz_line_free(void);
 RZ_API char *rz_line_get_prompt(void);
 RZ_API void rz_line_set_prompt(const char *prompt);
 RZ_API int rz_line_dietline_init(void);
-RZ_API void rz_line_clipboard_push (const char *str);
+RZ_API void rz_line_clipboard_push(const char *str);
 RZ_API void rz_line_hist_free(void);
 RZ_API void rz_line_autocomplete(void);
 
-typedef int (RzLineReadCallback)(void *user, const char *line);
+typedef int(RzLineReadCallback)(void *user, const char *line);
 RZ_API const char *rz_line_readline(void);
 RZ_API const char *rz_line_readline_cb(RzLineReadCallback cb, void *user);
 
 RZ_API int rz_line_hist_load(const char *file);
 RZ_API int rz_line_hist_add(const char *line);
 RZ_API int rz_line_hist_save(const char *file);
-RZ_API int rz_line_hist_label(const char *label, void (*cb)(const char*));
+RZ_API int rz_line_hist_label(const char *label, void (*cb)(const char *));
 RZ_API void rz_line_label_show(void);
 RZ_API int rz_line_hist_list(void);
 RZ_API const char *rz_line_hist_get(int n);
@@ -1159,7 +1170,7 @@ RZ_API RzLineNSCompletionResult *rz_line_ns_completion_result_new(size_t start, 
 RZ_API void rz_line_ns_completion_result_free(RzLineNSCompletionResult *res);
 RZ_API void rz_line_ns_completion_result_add(RzLineNSCompletionResult *res, const char *option);
 
-#define RZ_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
+#define RZ_CONS_INVERT(x, y) (y ? (x ? Color_INVERT : Color_INVERT_RESET) : (x ? "[" : "]"))
 
 #endif
 
@@ -1237,7 +1248,6 @@ typedef struct rz_panels_root_t {
 	RzPanels **panels;
 	RzPanelsRootState root_state;
 } RzPanelsRoot;
-
 
 #ifdef __sun
 static inline void cfmakeraw(struct termios *tm) {
