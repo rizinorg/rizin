@@ -9,7 +9,7 @@
 extern ut32 constant_extender;
 
 #if ASAN
-#define NO_OPT_IF_ASAN __attribute__ ((optimize(0)))
+#define NO_OPT_IF_ASAN __attribute__((optimize(0)))
 #else
 #define NO_OPT_IF_ASAN
 #endif
