@@ -446,6 +446,8 @@ jobs:
       run: brew install pkg-config
     - name: Install meson and ninja
       run: pip3 install meson ninja PyYAML
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
     - name: Create OSX package
       run: |
         ./dist/osx/build_osx_package.sh
