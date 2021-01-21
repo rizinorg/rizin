@@ -204,7 +204,11 @@ RZ_API void rz_table_add_rowf(RzTable *t, const char *fmt, ...) {
 		case 'X': {
 			ut64 n = va_arg(ap, ut64);
 			if (n == UT64_MAX) {
-				rz_list_append(list, strdup("-1"));
+				if (*f == 'X') {
+					rz_list_append(list, strdup("----------"));
+				} else {
+					rz_list_append(list, strdup("-1"));
+				}
 			} else {
 				if (*f == 'X') {
 					rz_list_append(list, rz_str_newf("0x%08" PFMT64x, n));
