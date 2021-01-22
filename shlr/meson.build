@@ -284,7 +284,7 @@ qnx_files = [
 qnx_inc = [platform_inc, include_directories('qnx/include')]
 
 librzqnx = static_library('rzqnx', qnx_files,
-  dependencies: [rz_socket_dep, rz_util_dep],
+  dependencies: [rz_util_dep, rz_socket_dep],
   include_directories: qnx_inc,
   implicit_include_directories: false
 )
@@ -458,7 +458,7 @@ winkd_files = [
 winkd_inc = [platform_inc, include_directories('winkd')]
 
 librzwinkd = static_library('rzwinkd', winkd_files,
-  dependencies: [rz_crypto_dep, rz_hash_dep, rz_socket_dep, rz_util_dep],
+  dependencies: [rz_util_dep, rz_socket_dep, rz_hash_dep, rz_crypto_dep],
   include_directories: winkd_inc,
   implicit_include_directories: false
 )

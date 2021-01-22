@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
-#include <rz_asm.h>
 #include <rz_debug.h>
 #undef RZ_API
 #define RZ_API static inline
