@@ -1,9 +1,0 @@
-OBJ_X86=bp_x86.o
-
-STATIC_OBJ+=${OBJ_X86}
-TARGET_X86=bp_x86.${EXT_SO}
-
-ALL_TARGETS+=${TARGET_X86}
-
-${TARGET_X86}: ${OBJ_X86}
-	${CC_LIB} $(call libname,bp_x86) ${CFLAGS} $(LDFLAGS) -o ${TARGET_X86} ${OBJ_X86}
