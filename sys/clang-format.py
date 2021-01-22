@@ -2,7 +2,17 @@
 
 import glob
 import os
+import shutil
+import subprocess
 import sys
+
+binary = "clang-format-11"
+if not shutil.which(binary):
+    binary = "clang-format"
+    verstr = subprocess.run([binary, "--version"], capture_output=True).stdout
+    if not b"version 11." in verstr:
+        sys.stderr.write("ERROR: clang-format 11 required\n")
+        sys.exit(1)
 
 dirlist = [
     "binrz",
@@ -51,7 +61,7 @@ try:
             print("Processing pattern: {0}".format(pat))
             for filename in glob.iglob(d + "/**/" + pat, recursive=True):
                 if not skip(filename):
-                    CMD = "clang-format -style=file -i {0}".format(filename)
+                    CMD = "{0} -style=file -i {1}".format(binary, filename)
                     print(CMD)
                     os.system(CMD)
 
