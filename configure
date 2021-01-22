@@ -129,12 +129,12 @@ done
 : ${INSTALL_PROGRAM_STRIP:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
 : ${INSTALL_LIB:=${INSTALL} -m 755 -c}
- PKGNAME='rizin' ; VERSION='0.1.0-git' ; VERSION_MAJOR=0; VERSION_MINOR=1; VERSION_PATCH=0; VERSION_NUMBER=00100; CONTACT_MAIL="team@rizin.re" ; CONTACT_NAME="Rizin Core Team" ; CONTACT="Rizin Core Team <team@rizin.re>" ;
+ PKGNAME='rizin' ; VERSION='0.1.0' ; VERSION_MAJOR=0; VERSION_MINOR=1; VERSION_PATCH=0; VERSION_NUMBER=00100; CONTACT_MAIL="team@rizin.re" ; CONTACT_NAME="Rizin Core Team" ; CONTACT="Rizin Core Team <team@rizin.re>" ;
 }
 
 show_usage() {
 cat <<EOF2
-'configure' configures rizin-0.1.0-git to adapt to many kinds of systems.
+'configure' configures rizin-0.1.0 to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -229,10 +229,10 @@ ocho() {
 
 show_version() {
 if [ "$QUIET" = 1 ]; then
-	echo "0.1.0-git"
+	echo "0.1.0"
 	exit 0
 fi
-echo "rizin-0.1.0-git configuration script done with acr v1.9.4.
+echo "rizin-0.1.0 configuration script done with acr v1.9.4.
 The 'Free Software Foundation' message is only for autodetection.
 Originally written by pancake <nopcode.org>."
 exit 0
@@ -261,7 +261,7 @@ case $flag in
 	show_version ; ;;
 -r|--r|--report)
 echo "PKGNAME:   rizin"
-echo "VERSION:   0.1.0-git"
+echo "VERSION:   0.1.0"
 echo "LANGS:     c"
 echo "REQUIRED:  libdl"
 echo "OPTIONAL:  libmagic libz libzip libxxhash libssl liblibuv>=1.0.0"
