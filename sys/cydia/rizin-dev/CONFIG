@@ -1,9 +1,0 @@
-PACKAGE?=rizin-dev
-ARCH=iphoneos-arm
-SECTION=user/shell
-DEPENDS=rizin
-PRIORITY=optional
-MAINTAINER=pancake <pancake@nopcode.org>
-
-# override VERSION
-include ../../../config-user.mk

@@ -705,7 +705,6 @@ install_data(
 if cli_enabled
   install_man(
     'man/rz-agent.1',
-    'man/rz-docker.1',
     'man/rz-pm.1',
     'man/rz-bin.1',
     'man/rizin.1',
