@@ -6,9 +6,7 @@ rz_syscall_sources = [
 rz_syscall = library('rz_syscall', rz_syscall_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
-  dependencies: [
-    rz_util_dep
-  ],
+  dependencies: [rz_util_dep],
   install: true,
   implicit_include_directories: false,
   install_rpath: rpath_lib,

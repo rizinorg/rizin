@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <rz_core.h>
-#include <rz_asm.h>
 #include <rz_debug.h>
 #include <libgdbr.h>
 #include <gdbclient/commands.h>
