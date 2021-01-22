@@ -510,7 +510,7 @@ static bool edf_bf(RzAnalysisEsil *esil) {
 }
 
 static bool _edf_consume_2_set_reg(RzAnalysisEsil *esil, const bool use_origin) {
-	const char *op_string = esil->current_opstr;
+	const char *op_string = rz_strbuf_get(&esil->current_opstr);
 	RzAnalysisEsilDFG *edf = (RzAnalysisEsilDFG *)esil->user;
 	char *dst = rz_analysis_esil_pop(esil);
 	char *src = rz_analysis_esil_pop(esil);
@@ -582,7 +582,7 @@ static bool edf_consume_2_set_reg(RzAnalysisEsil *esil) {
 }
 
 static bool edf_consume_2_push_1(RzAnalysisEsil *esil) {
-	const char *op_string = esil->current_opstr;
+	const char *op_string = rz_strbuf_get(&esil->current_opstr);
 	RzAnalysisEsilDFG *edf = (RzAnalysisEsilDFG *)esil->user;
 	char *src[2] = { rz_analysis_esil_pop(esil), rz_analysis_esil_pop(esil) };
 
@@ -628,7 +628,7 @@ static bool edf_consume_2_push_1(RzAnalysisEsil *esil) {
 }
 
 static bool edf_consume_1_push_1(RzAnalysisEsil *esil) {
-	const char *op_string = esil->current_opstr;
+	const char *op_string = rz_strbuf_get(&esil->current_opstr);
 	RzAnalysisEsilDFG *edf = (RzAnalysisEsilDFG *)esil->user;
 	char *src = rz_analysis_esil_pop(esil);
 	if (!src) {
@@ -668,7 +668,7 @@ static bool edf_consume_1_push_1(RzAnalysisEsil *esil) {
 }
 
 static bool edf_consume_2_set_mem(RzAnalysisEsil *esil) {
-	const char *op_string = esil->current_opstr;
+	const char *op_string = rz_strbuf_get(&esil->current_opstr);
 	RzAnalysisEsilDFG *edf = (RzAnalysisEsilDFG *)esil->user;
 	char *dst = rz_analysis_esil_pop(esil);
 	char *src = rz_analysis_esil_pop(esil);
