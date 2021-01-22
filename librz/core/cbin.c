@@ -2276,7 +2276,7 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 		}
 	}
 	if (IS_MODE_NORMAL(mode)) {
-		rz_table_set_columnsf(table, "dssssdss", "nth", "paddr", "vaddr", "bind", "type", "size", "lib", "name");
+		rz_table_set_columnsf(table, "dXXssdss", "nth", "paddr", "vaddr", "bind", "type", "size", "lib", "name");
 	}
 
 	size_t count = 0;
@@ -2450,10 +2450,10 @@ static int bin_symbols(RzCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 			const char *type = symbol->type ? symbol->type : "NONE";
 			const char *name = rz_str_get(sn.demname ? sn.demname : sn.name);
 			// const char *fwd = rz_str_get (symbol->forwarder);
-			rz_table_add_rowf(table, "dssssdss",
+			rz_table_add_rowf(table, "dXXssdss",
 				symbol->ordinal,
-				symbol->paddr == UT64_MAX ? " ----------" : sdb_fmt(" 0x%08" PFMT64x, symbol->paddr),
-				sdb_fmt("0x%08" PFMT64x, addr),
+				symbol->paddr,
+				addr,
 				bind,
 				type,
 				symbol->size,
