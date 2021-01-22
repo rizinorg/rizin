@@ -1,12 +1,10 @@
 #include <rz_analysis.h>
 #include <rz_util.h>
 #include <rz_lib.h>
-#include <sdb.h>
 
 static void interrupt_free(HtUPKv *kv) {
 	RzAnalysisEsilInterrupt *i = (RzAnalysisEsilInterrupt *)kv->value;
 	rz_analysis_esil_interrupt_free(i->esil, i);
-	free(kv);
 }
 
 RZ_API void rz_analysis_esil_interrupts_init(RzAnalysisEsil *esil) {
