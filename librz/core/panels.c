@@ -3518,7 +3518,7 @@ int __function_cb(void *user) {
 
 int __symbols_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_cmdf(core, "aa");
+	rz_core_analysis_all (core);
 	return 0;
 }
 
@@ -3530,13 +3530,13 @@ int __program_cb(void *user) {
 
 int __basic_blocks_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_cmdf(core, "aab");
+	rz_cmd_analysis_blocks (core, "\0");
 	return 0;
 }
 
 int __calls_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_cmdf(core, "aac");
+	rz_cmd_analysis_calls(core, "\0", false, false);
 	return 0;
 }
 
@@ -3571,7 +3571,7 @@ int __watch_points_cb(void *user) {
 
 int __references_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_cmdf(core, "aar");
+	rz_core_analysis_refs (core, "\0");
 	return 0;
 }
 
@@ -4827,7 +4827,7 @@ void __panel_breakpoint(RzCore *core) {
 }
 
 void __panel_continue(RzCore *core) {
-	rz_core_cmd(core, "dc", 0);
+	rz_debug_continue(core->dbg);
 }
 
 void __panels_check_stackbase(RzCore *core) {
@@ -6477,7 +6477,7 @@ repeat:
 		break;
 	case 'R':
 		if (rz_config_get_i(core->config, "scr.randpal")) {
-			rz_core_cmd0(core, "ecr");
+			rz_cons_pal_random();
 		} else {
 			rz_core_cmd0(core, "ecn");
 		}

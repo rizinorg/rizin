@@ -627,6 +627,8 @@ RZ_API int rz_core_analysis_ref_list(RzCore *core, int rad);
 RZ_API int rz_core_analysis_all(RzCore *core);
 RZ_API RzList *rz_core_analysis_cycles(RzCore *core, int ccl);
 RZ_API RzList *rz_core_analysis_fcn_get_calls(RzCore *core, RzAnalysisFunction *fcn); // get all calls from a function
+RZ_API void rz_cmd_analysis_blocks(RzCore *core, const char *input);
+RZ_API void rz_cmd_analysis_calls(RzCore *core, const char *input, bool printCommands, bool importsOnly);
 
 /*tp.c*/
 RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn);
