@@ -28,9 +28,7 @@ jobs:
       fail-fast: false
       matrix:
         name: [
-          linux-acr-gcc-tests,
-          linux-acr-clang-tests,
-          linux-acr-clang-build,
+          linux-meson-clang-tests,
           linux-meson-gcc-build,
           linux-meson-gcc-tests,
           macos-meson-clang-tests,
@@ -39,25 +37,12 @@ jobs:
           capstone-v5
         ]
         include:
-          - name: linux-acr-gcc-tests
+          - name: linux-meson-clang-tests
             os: ubuntu-20.04
-            build_system: acr
-            compiler: gcc
-            run_tests: true
-            enabled: true
-            timeout: 45
-          - name: linux-acr-clang-tests
-            os: ubuntu-20.04
-            build_system: acr
+            build_system: meson
             compiler: clang
             run_tests: true
             enabled: ${{ github.event_name != 'pull_request' }}
-            timeout: 45
-          - name: linux-acr-clang-build
-            os: ubuntu-20.04
-            build_system: acr
-            compiler: clang
-            enabled: ${{ github.event_name == 'pull_request' }}
             timeout: 45
           - name: linux-meson-gcc-build
             os: ubuntu-20.04
@@ -152,12 +137,6 @@ jobs:
       with:
           repository: rizinorg/rizin-fuzztargets
           path: test/fuzz/targets
-    - name: Configure with ACR and build
-      if: matrix.build_system == 'acr' && matrix.enabled
-      run: ./configure --prefix=${HOME} && make
-      env:
-        CC: ${{ matrix.compiler }}
-        CFLAGS: ${{ matrix.cflags }}
     - name: Build with Meson
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
@@ -170,14 +149,6 @@ jobs:
         ASAN: ${{ matrix.asan }}
         CC: ${{ matrix.compiler }}
         CFLAGS: ${{ matrix.cflags }}
-    - name: Install with make
-      if: matrix.build_system == 'acr' && matrix.enabled
-      run: |
-        # Install the rizin
-        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
-        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
-        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
-        make install
     - name: Install with meson
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
@@ -202,21 +173,6 @@ jobs:
           export ASAN=1
         fi
         ninja -C build test
-      env:
-        ASAN: ${{ matrix.asan }}
-        ASAN_OPTIONS: ${{ matrix.asan_options }}
-    - name: Run unit tests (make)
-      if: matrix.build_system == 'acr' && matrix.enabled
-      run: |
-        # Running the test suite
-        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
-        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
-        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
-        if [ "$ASAN" == "true" ]; then
-          export ASAN=1
-        fi
-        cd test
-        make unit_tests
       env:
         ASAN: ${{ matrix.asan }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
@@ -263,7 +219,9 @@ jobs:
     container: centos:7
     steps:
     - name: Install tools
-      run: yum install -y patch unzip git gcc make
+      run: yum install -y patch unzip git gcc make python3-pip
+    - name: Install meson and ninja
+      run: pip3 install meson ninja PyYAML
     - name: Checkout rizin
       run: |
         git clone https://github.com/${{ github.repository }}
@@ -272,20 +230,24 @@ jobs:
         git checkout -b local_branch FETCH_HEAD
         git submodule init
         git submodule update
-    - name: Configure with ACR and build
-      run: ./configure --prefix=/usr && make CS_RELEASE=1
+    - name: Fetch capstone manually
+      run: git clone -b v4 https://github.com/rizinorg/capstone shlr/capstone
       working-directory: rizin
-    - name: Install with make
-      run: make install
+    - name: Checkout our Testsuite Binaries
+      run: git clone https://github.com/rizinorg/rizin-testbins test/bins
+      working-directory: rizin
+    - name: Build
+      run: meson --prefix=/usr build && ninja -C build
+      working-directory: rizin
+    - name: Install
+      run: ninja -C build install
+      working-directory: rizin
+    - name: Run unit tests
+      run: ninja -C build test
       working-directory: rizin
     - name: Run tests
-      run: cd test/unit && make
-      working-directory: rizin
-      env:
-        # `make install` installs, for some unknown reasons, pkgconfig files in
-        # /usr/lib and not in /usr/lib64, thus pkg-config cannot find the right
-        # .pc files if the right path is not specified
-        PKG_CONFIG_PATH: /usr/lib/pkgconfig
+      run: rz-test -L -o results.json || true
+      working-directory: rizin/test
 
   build-debian:
     name: Build on old Debian ${{ matrix.container }}
