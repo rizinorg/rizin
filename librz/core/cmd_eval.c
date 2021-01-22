@@ -753,7 +753,8 @@ RZ_IPI RzCmdStatus rz_eval_readonly_handler(RzCore *core, int argc, const char *
 }
 
 RZ_IPI RzCmdStatus rz_eval_spaces_handler(RzCore *core, int argc, const char **argv) {
-	rz_config_list(core->config, argv[1], 's');
+	const char *arg = argc > 1 ? argv[1] : "";
+	rz_config_list(core->config, arg, 's');
 	return RZ_CMD_STATUS_OK;
 }
 
