@@ -160,8 +160,9 @@ rizin_libdir = get_option('libdir')
 rizin_incdir = get_option('includedir') / 'librz'
 rizin_datdir = get_option('datadir')
 if host_machine.system() == 'windows'
+  rizin_prefix = rizin_prefix / ''
   rizin_wwwroot = rizin_datdir / 'www'
-  rizin_sdb = rizin_datdir
+  rizin_sdb = rizin_datdir / ''
   rizin_zigns = rizin_datdir / 'zigns'
   rizin_themes = rizin_datdir / 'cons'
   rizin_fortunes = rizin_datdir / 'fortunes'
