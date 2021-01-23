@@ -29,12 +29,14 @@ RZ_API RzAnalysisEsilInterrupt *rz_analysis_esil_interrupt_new(RzAnalysisEsil *e
 }
 
 RZ_API void rz_analysis_esil_interrupt_free(RzAnalysisEsil *esil, RzAnalysisEsilInterrupt *intr) {
-	rz_return_if_fail(esil && intr);
-	if (intr->user) {
-		intr->handler->fini(intr->user);	//fini must exist when user is !NULL
+	rz_return_if_fail(esil);
+	if (intr) {
+		if (intr->user) {
+			intr->handler->fini(intr->user);	//fini must exist when user is !NULL
+		}
+		rz_analysis_esil_release_source(esil, intr->src_id);
+		free(intr);
 	}
-	rz_analysis_esil_release_source(esil, intr->src_id);
-	free(intr);
 }
 
 RZ_API bool rz_analysis_esil_set_interrupt(RzAnalysisEsil *esil, RzAnalysisEsilInterrupt *intr) {
