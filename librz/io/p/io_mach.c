@@ -396,7 +396,9 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 			break;
 		case EINVAL:
 			perror("ptrace: Cannot attach");
-			eprintf("Possibly unsigned rizin.\n");
+			eprintf("\n\nPlease ensure your rizin binary is signed and it has the right entitlements to make debugger work. ");
+			eprintf("Be aware that binaries signed by Apple cannot be debugged due to the Apple System Integrity Protection (SIP).\n");
+			eprintf("\nFor more info look at: https://book.rizin.re/debugger/apple.html#sign-rizin-binary\n\n");
 			eprintf("ERRNO: %d (EINVAL)\n", errno);
 			break;
 		default:

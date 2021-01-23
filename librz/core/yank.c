@@ -246,12 +246,23 @@ RZ_API bool rz_core_yank_dump(RzCore *core, ut64 pos, int format) {
 				rz_cons_newline();
 				break;
 			case 'j': {
-				rz_cons_printf("{\"addr\":%" PFMT64u ",\"bytes\":\"", core->yank_addr);
-				for (i = pos; i < rz_buf_size(core->yank_buf); i++) {
-					rz_cons_printf("%02x", rz_buf_read8_at(core->yank_buf, i));
+				PJ *pj = rz_core_pj_new(core);
+				if (!pj) {
+					break;
 				}
-				rz_cons_printf("\"}\n");
-			} break;
+				pj_o(pj);
+				pj_kn(pj, "addr", core->yank_addr);
+				RzStrBuf *buf = rz_strbuf_new("");
+				for (i = pos; i < rz_buf_size(core->yank_buf); i++) {
+					rz_strbuf_appendf(buf, "%02x", rz_buf_read8_at(core->yank_buf, i));
+				}
+				pj_ks(pj, "bytes", rz_strbuf_get(buf));
+				rz_strbuf_free(buf);
+				pj_end(pj);
+				rz_cons_println(pj_string(pj));
+				pj_free(pj);
+				break;
+			}
 			case '*':
 				//rz_cons_printf ("yfx ");
 				rz_cons_printf("wx ");

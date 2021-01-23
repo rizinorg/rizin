@@ -1101,7 +1101,7 @@ typedef struct rz_analysis_esil_t {
 	ut8 lastsz; //in bits //used for signature-flag
 	/* native ops and custom ops */
 	HtPP *ops;
-	char *current_opstr;
+	RzStrBuf current_opstr;
 	RzIDStorage *sources;
 	HtUP *interrupts;
 	/* deep esil parsing fills this */

@@ -688,24 +688,25 @@ RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **a
 }
 
 RZ_IPI RzCmdStatus rz_eval_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode) {
+	const char *arg = argc > 1 ? argv[1] : "";
 	switch (mode) {
 	case RZ_OUTPUT_MODE_STANDARD:
-		rz_config_list(core->config, argv[1], 2);
+		rz_config_list(core->config, arg, 2);
 		break;
 	case RZ_OUTPUT_MODE_JSON:
-		rz_config_list(core->config, argv[1], 'j');
+		rz_config_list(core->config, arg, 'j');
 		break;
 	case RZ_OUTPUT_MODE_RIZIN:
-		rz_config_list(core->config, argv[1], 1);
+		rz_config_list(core->config, arg, 1);
 		break;
 	case RZ_OUTPUT_MODE_QUIET:
-		rz_config_list(core->config, argv[1], 'q');
+		rz_config_list(core->config, arg, 'q');
 		break;
 	case RZ_OUTPUT_MODE_LONG:
-		rz_config_list(core->config, argv[1], 'v');
+		rz_config_list(core->config, arg, 'v');
 		break;
 	case RZ_OUTPUT_MODE_LONG_JSON: {
-		char *a = rz_str_newf("j%s", argc > 1 ? argv[1] : "");
+		char *a = rz_str_newf("j%s", arg);
 		rz_config_list(core->config, a, 'v');
 		free(a);
 		break;
@@ -752,7 +753,8 @@ RZ_IPI RzCmdStatus rz_eval_readonly_handler(RzCore *core, int argc, const char *
 }
 
 RZ_IPI RzCmdStatus rz_eval_spaces_handler(RzCore *core, int argc, const char **argv) {
-	rz_config_list(core->config, argv[1], 's');
+	const char *arg = argc > 1 ? argv[1] : "";
+	rz_config_list(core->config, arg, 's');
 	return RZ_CMD_STATUS_OK;
 }
 
