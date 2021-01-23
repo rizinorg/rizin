@@ -197,8 +197,7 @@ typedef struct
 		unsigned int __i; \
 		fd_set *__arr = (set); \
 		for (__i = 0; __i < sizeof(fd_set) / sizeof(fd_mask); ++__i) \
-			__FDS_BITS(__arr) \
-			[__i] = 0; \
+			(__FDS_BITS(__arr)[__i] = 0); \
 	} while (0)
 
 #define FD_SET(d, set)   (__FDS_BITS(set)[__FDELT(d)] |= FDMASK(d))
