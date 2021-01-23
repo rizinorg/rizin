@@ -99,7 +99,6 @@ RZ_API int rz_search_pattern(RzSearch *s, ut64 from, ut64 to) {
 			nr += (patlen - (nr % patlen)); // tamany de bloc llegit multiple superior de tamany busqueda
 			rb = s->iob.read_at(s->iob.io, bproc, block, nr);
 			if (rb < 1) {
-				bproc += nr;
 				break;
 			}
 			nr = rb;
