@@ -5705,10 +5705,10 @@ static void cmd_aespc(RzCore *core, ut64 addr, ut64 until_addr, int off) {
 }
 
 static const char _handler_no_name[] = "<no name>";
-static int _aeli_iter(dictkv *kv, void *ud) {
-	RzAnalysisEsilInterrupt *interrupt = kv->u;
-	rz_cons_printf("%3" PFMT64x ": %s\n", kv->k, interrupt->handler->name ? interrupt->handler->name : _handler_no_name);
-	return 0;
+static bool _aeli_iter(void *user, const ut64 key, const void *value) {
+	const RzAnalysisEsilInterrupt *interrupt = value;
+	rz_cons_printf("%3" PFMT64x ": %s\n", key, interrupt->handler->name ? interrupt->handler->name : _handler_no_name);
+	return true;
 }
 
 static void rz_analysis_aefa(RzCore *core, const char *arg) {
@@ -6203,13 +6203,12 @@ static void cmd_analysis_esil(RzCore *core, const char *input) {
 				break;
 			case 0: // "aeli" with no args
 				if (esil && esil->interrupts) {
-					dict_foreach(esil->interrupts, _aeli_iter, NULL);
+					ht_up_foreach(esil->interrupts, _aeli_iter, NULL);
 				}
 				break;
 			case 'r': // "aelir"
 				if (esil && esil->interrupts) {
-					RzAnalysisEsilInterrupt *interrupt = dict_getu(esil->interrupts, rz_num_math(core->num, input + 3));
-					rz_analysis_esil_interrupt_free(esil, interrupt);
+					ht_up_delete(esil->interrupts, rz_num_math(core->num, input + 3));
 				}
 				break;
 			}
