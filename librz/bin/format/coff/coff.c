@@ -205,7 +205,7 @@ static bool rz_bin_coff_init_scn_va(struct rz_bin_coff_obj *obj) {
 	ut64 va = 0;
 	for (i = 0; i < obj->hdr.f_nscns; i++) {
 		obj->scn_va[i] = va;
-		va += obj->scn_hdrs[i].s_size;
+		va += obj->scn_hdrs[i].s_size ? obj->scn_hdrs[i].s_size : 16;
 		va = RZ_ROUND(va, 16ULL);
 	}
 	return true;
