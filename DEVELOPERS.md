@@ -32,8 +32,17 @@ static int findMinMax(RzList *maps, ut64 *min, ut64 *max, int skip, int width);
 
 ### C
 
-In order to contribute with patches or plugins, we encourage you to
-use the same coding style as the rest of the code base.
+In order to contribute with patches or plugins, we encourage you to use the same
+coding style as the rest of the code base. You can use git-clang-format 11 for
+automated formatting as below (after making sure that `dev` is up-to-date and
+your branch is up-to-date with `dev`):
+
+```bash
+git-clang-format-11 --extensions c,cpp,h,hpp,inc --style file dev
+```
+
+Note that not all style recommendations here can be automated using
+clang-format.
 
 * Tabs are used for indentation. In a switch statement, the
   cases are indented at the switch level.
