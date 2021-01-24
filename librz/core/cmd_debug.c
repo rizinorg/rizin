@@ -4317,15 +4317,7 @@ static int cmd_debug_continue(RzCore *core, const char *input) {
 	// TODO: we must use this for step 'ds' too maybe...
 	switch (input[1]) {
 	case 0: // "dc"
-		rz_reg_arena_swap(core->dbg->reg, true);
-#if __linux__
-		core->dbg->continue_all_threads = true;
-#endif
-		if (rz_debug_is_dead(core->dbg)) {
-			eprintf("Cannot continue, run ood?\n");
-			break;
-		}
-		rz_debug_continue(core->dbg);
+		rz_debug_continue_oldhandler(core, input);
 		break;
 	case 'a': // "dca"
 		eprintf("TODO: dca\n");
@@ -4657,6 +4649,19 @@ static void consumeBuffer(RzBuffer *buf, const char *cmd, const char *errmsg) {
 		rz_cons_printf("%02x", rz_buf_read8(buf));
 	}
 	rz_cons_printf("\n");
+}
+
+RZ_IPI void rz_debug_continue_oldhandler (void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
+	rz_reg_arena_swap(core->dbg->reg, true);
+#if __linux__
+		core->dbg->continue_all_threads = true;
+#endif
+	if (rz_debug_is_dead(core->dbg)) {
+		eprintf("Cannot continue, run ood?\n");
+		return;
+	}
+	rz_debug_continue(core->dbg);
 }
 
 RZ_IPI int rz_cmd_debug(void *data, const char *input) {

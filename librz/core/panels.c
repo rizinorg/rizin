@@ -4827,7 +4827,7 @@ void __panel_breakpoint(RzCore *core) {
 }
 
 void __panel_continue(RzCore *core) {
-	rz_debug_continue(core->dbg);
+	rz_debug_continue_oldhandler (core, "");
 }
 
 void __panels_check_stackbase(RzCore *core) {

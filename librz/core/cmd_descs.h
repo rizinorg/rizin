@@ -55,6 +55,7 @@ RZ_IPI int rz_cmd_bsize(void *data, const char *input);
 RZ_IPI int rz_cmd_cmp(void *data, const char *input);
 RZ_IPI int rz_cmd_meta(void *data, const char *input);
 RZ_IPI int rz_cmd_debug(void *data, const char *input);
+RZ_IPI void rz_debug_continue_oldhandler(void *data, const char *input);
 RZ_IPI RzCmdStatus rz_eval_getset_handler(RzCore *core, int argc, const char **argv);
 RZ_IPI RzCmdStatus rz_eval_list_handler(RzCore *core, int argc, const char **argv, RzOutputMode mode);
 RZ_IPI RzCmdStatus rz_eval_reset_handler(RzCore *core, int argc, const char **argv);
