@@ -133,10 +133,6 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 
 * You can use `export RZ_DEBUG_ASSERT=1` to set a breakpoint when hitting an assert.
 
-* Do not use C99 variable declaration
-    - This way we reduce the number of local variables per function
-    and it's easier to find which variables are used, where and so on.
-
 * Function names should be explicit enough to not require a comment
   explaining what it does when seen elsewhere in code.
 
