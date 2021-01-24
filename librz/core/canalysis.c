@@ -5612,7 +5612,7 @@ beach:
 }
 
 typedef struct {
-	dict visited;
+	HtUU *visited;
 	RzList *path;
 	RzCore *core;
 	ut64 from;
@@ -5655,7 +5655,9 @@ static void analPathFollow(RzCoreAnalPaths *p, ut64 addr, PJ *pj) {
 	if (addr == UT64_MAX) {
 		return;
 	}
-	if (!dict_get(&p->visited, addr)) {
+	bool found;
+	ht_uu_find(p->visited, addr, &found);
+	if (!found) {
 		p->cur = rz_analysis_find_most_relevant_block_in(p->core->analysis, addr);
 		analPaths(p, pj);
 	}
@@ -5671,7 +5673,7 @@ static void analPaths(RzCoreAnalPaths *p, PJ *pj) {
 	if (rz_cons_is_breaked()) {
 		return;
 	}
-	dict_set(&p->visited, cur->addr, 1, NULL);
+	ht_uu_insert(p->visited, cur->addr, 1);
 	rz_list_append(p->path, cur);
 	if (p->followDepth && --p->followDepth == 0) {
 		return;
@@ -5701,7 +5703,7 @@ static void analPaths(RzCoreAnalPaths *p, PJ *pj) {
 		}
 	}
 	p->cur = rz_list_pop(p->path);
-	dict_del(&p->visited, cur->addr);
+	ht_uu_delete(p->visited, cur->addr);
 	if (p->followDepth) {
 		p->followDepth++;
 	}
@@ -5719,8 +5721,8 @@ RZ_API void rz_core_analysis_paths(RzCore *core, ut64 from, ut64 to, bool follow
 		eprintf("Cannot find basic block for 0x%08" PFMT64x "\n", to);
 		return;
 	}
-	RzCoreAnalPaths rcap = { { 0 } };
-	dict_init(&rcap.visited, 32, free);
+	RzCoreAnalPaths rcap = { 0 };
+	rcap.visited = ht_uu_new0();
 	rcap.path = rz_list_new();
 	rcap.core = core;
 	rcap.from = from;
@@ -5750,7 +5752,7 @@ RZ_API void rz_core_analysis_paths(RzCore *core, ut64 from, ut64 to, bool follow
 		pj_free(pj);
 	}
 
-	dict_fini(&rcap.visited);
+	ht_uu_free(rcap.visited);
 	rz_list_free(rcap.path);
 }
 
