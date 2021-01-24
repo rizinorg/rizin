@@ -294,7 +294,7 @@ aei
 aeim
 aer rsp=0x00108000
 .aer*
-aer rdi=0xFFFFFFFFFFFFFFFF
+aer rdi=0xDEADBEEFCAFEF00D
 ae rdi,rsp,=[8]
 .aer*
 ae rsp,[8],rax,=
@@ -302,7 +302,7 @@ ae rsp,[8],rax,=
 ?v rax
 EOF
 EXPECT=<<EOF
-0xffffffffffffffff
+0xdeadbeefcafef00d
 EOF
 RUN
 
