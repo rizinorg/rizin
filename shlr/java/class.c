@@ -2072,7 +2072,6 @@ RZ_API RzBinJavaAttrInfo *rz_bin_java_read_next_attr_from_buffer(RzBinJavaObj *b
 	name_idx = RZ_BIN_JAVA_USHORT(buffer, offset);
 	offset += 2;
 	nsz = RZ_BIN_JAVA_UINT(buffer, offset);
-	offset += 4;
 
 	char *name = rz_bin_java_get_utf8_from_bin_cp_list(RZ_BIN_JAVA_GLOBAL_BIN, name_idx);
 	if (!name) {
@@ -2082,7 +2081,6 @@ RZ_API RzBinJavaAttrInfo *rz_bin_java_read_next_attr_from_buffer(RzBinJavaObj *b
 	RzBinJavaAttrMetas *type_info = rz_bin_java_get_attr_type_by_name(name);
 	if (type_info) {
 		IFDBG eprintf("Typeinfo: %s, was %s\n", type_info->name, name);
-		// printf ("SZ %d %d %d\n", nsz, sz, buf_offset);
 		if (nsz > sz) {
 			free(name);
 			return NULL;
@@ -6486,9 +6484,6 @@ RZ_API RzBinJavaAttrInfo *rz_bin_java_annotation_default_attr_new(RzBinJavaObj *
 	if (attr && sz >= offset) {
 		attr->type = RZ_BIN_JAVA_ATTR_TYPE_ANNOTATION_DEFAULT_ATTR;
 		attr->info.annotation_default_attr.default_value = rz_bin_java_element_value_new(buffer + offset, sz - offset, buf_offset + offset);
-		if (attr->info.annotation_default_attr.default_value) {
-			offset += attr->info.annotation_default_attr.default_value->size;
-		}
 	}
 	rz_bin_java_print_annotation_default_attr_summary(attr);
 	return attr;
@@ -6762,7 +6757,6 @@ RZ_API RzBinJavaElementValue *rz_bin_java_element_value_new(ut8 *buffer, ut64 sz
 		// (ut16) read and set enum_const_value.const_name_idx
 		element_value->value.enum_const_value.const_name_idx = RZ_BIN_JAVA_USHORT(buffer, offset);
 		element_value->size += 2;
-		offset += 2;
 		// look up type_name_index in bin->cp_list
 		// look-up, deep copy, and set enum_const_value.const_name_cp_obj
 		element_value->value.enum_const_value.const_name_cp_obj = rz_bin_java_clone_cp_idx(RZ_BIN_JAVA_GLOBAL_BIN, element_value->value.enum_const_value.const_name_idx);
@@ -6773,7 +6767,6 @@ RZ_API RzBinJavaElementValue *rz_bin_java_element_value_new(ut8 *buffer, ut64 sz
 		// (ut16) read and set class_value.class_info_idx
 		element_value->value.class_value.class_info_idx = RZ_BIN_JAVA_USHORT(buffer, offset);
 		element_value->size += 2;
-		offset += 2;
 		// look up type_name_index in bin->cp_list
 		// look-up, deep copy, and set class_value.class_info_cp_obj
 		element_value->value.class_value.class_info_cp_obj = rz_bin_java_clone_cp_idx(RZ_BIN_JAVA_GLOBAL_BIN, element_value->value.class_value.class_info_idx);

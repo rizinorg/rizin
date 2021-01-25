@@ -33,64 +33,21 @@ static int findMinMax(RzList *maps, ut64 *min, ut64 *max, int skip, int width);
 ### C
 
 In order to contribute with patches or plugins, we encourage you to use the same
-coding style as the rest of the code base. You can use git-clang-format 11 for
-automated formatting as below (after making sure that `dev` is up-to-date and
-your branch is up-to-date with `dev`):
+coding style as the rest of the code base.
+
+* Use git-clang-format 11 to format your code. You should invoke it as below
+(after making sure that your local copy of `dev` is up-to-date and your branch
+is up-to-date with `dev`):
 
 ```bash
 git-clang-format-11 --extensions c,cpp,h,hpp,inc --style file dev
-```
-
-Note that not all style recommendations here can be automated using
-clang-format.
-
-* Tabs are used for indentation. In a switch statement, the
-  cases are indented at the switch level.
-
-```c
-switch(n) {
-case 1:
-	break;
-case 2:
-	break;
-default:
-}
 ```
 
 * Lines should be at most 100 chars. A tab is considered as 8 chars. If it makes
   things more readable, you can use more than 100 characters, but this should be
   the exception, not the rule.
 
-* Braces open on the same line as the for/while/if/else/function/etc. Closing
-  braces are put on a line of their own, except in the else of an if statement
-  or in a while of a do-while statement. Always use braces for if and while.
-
-```c
-if (a == b) {
-	...
-}
-
-if (a == b) {
-	...
-} else if (a > b) {
-	...
-}
-
-if (a == b) {
-	...
-} else {
-	do_something_else ();
-}
-
-do {
-	do_something ();
-} while (cond);
-
-if (a == b) {
-	b = 3;
-}
-
-```
+* Always use braces for if and while.
 
 * In general, don't use goto. The goto statement only comes in handy when a
   function exits from multiple locations and some common work such as cleanup
@@ -117,24 +74,6 @@ int check(RzCore *c, int a, int b) {
 	}
 	... /* do something else */
 }
-```
-
-* Use a space after most of the keyword and around operators.
-
-```c
-a = b + 3;
-a = (b << 3) * 5;
-```
-
-* Multiline ternary operator conditionals must be indented a-la JS way:
-
-```diff
-- ret = over ?
--         rz_debug_step_over (dbg, 1) :
--         rz_debug_step (dbg, 1);
-+ ret = over
-+         ? rz_debug_step_over (dbg, 1)
-+         : rz_debug_step (dbg, 1);
 ```
 
 * Split long conditional expressions into small `static inline` functions to make them more readable:
@@ -190,15 +129,9 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 3 warnings and 2 errors generated.
 ````
 
-* Do not leave trailing whitespaces at the end of line
-
 * Do not use `assert.h`, use `rz_util/rz_assert.h` instead.
 
 * You can use `export RZ_DEBUG_ASSERT=1` to set a breakpoint when hitting an assert.
-
-* Do not use C99 variable declaration
-    - This way we reduce the number of local variables per function
-    and it's easier to find which variables are used, where and so on.
 
 * Function names should be explicit enough to not require a comment
   explaining what it does when seen elsewhere in code.
@@ -212,8 +145,6 @@ rz_core_wrap.cxx:32103:61: error: assigning to 'RzDebugReasonType' from incompat
 * Do not write ultra-large functions: split them into multiple or simplify
   the algorithm, only external-copy-pasted-not-going-to-be-maintained code
   can be accepted in this way (gnu code, external disassemblers, etc..)
-
-* See `.clang-format` for automated indentation
 
 * Use the Rizin types instead of the ones in `<stdint.h>`, which are known to cause some
   portability issues. So, instead of `uint8_t`, use `ut8`, etc.. As a bonus point they
