@@ -108,17 +108,8 @@ static char *getFunctionName(RzCore *core, ut64 addr) {
 			return res;
 		}
 	}
-	RzListIter *iter;
-	RzFlagItem *flag;
-	const RzList *flags = rz_flag_get_list(core->flags, addr);
-	const char *name = NULL;
-	rz_list_foreach (flags, iter, flag) {
-		name = flag->name;
-		if (rz_str_startswith(name, "sym.")) {
-			break;
-		}
-	}
-	return name ? strdup(name) : NULL;
+	RzFlagItem *flag = rz_core_flag_get_by_spaces(core->flags, addr);
+	return (flag && flag->name) ? strdup(flag->name) : NULL;
 }
 
 static RzCore *mycore = NULL;
