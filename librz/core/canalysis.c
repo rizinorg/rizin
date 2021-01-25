@@ -3263,8 +3263,14 @@ RZ_API int rz_core_analysis_fcn_list(RzCore *core, const char *input, const char
 		return 0;
 	}
 	if (*rad == '.') {
-		RzAnalysisFunction *fcn = rz_analysis_get_function_at(core->analysis, core->offset);
-		__fcn_print_default(core, fcn, false);
+		RzList *fcns = rz_analysis_get_functions_in(core->analysis, core->offset);
+		if (!fcns || rz_list_empty (fcns)) {
+			eprintf("No functions at current address.\n");
+			rz_list_free (fcns);
+			return -1;
+		}
+		fcn_list_default(core, fcns, false);
+		rz_list_free(fcns);
 		return 0;
 	}
 
