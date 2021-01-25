@@ -4654,12 +4654,12 @@ static void consumeBuffer(RzBuffer *buf, const char *cmd, const char *errmsg) {
 RZ_IPI int rz_debug_continue_oldhandler(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	rz_reg_arena_swap(core->dbg->reg, true);
-#if __linux__
+	#if __linux__
 		core->dbg->continue_all_threads = true;
-#endif
+	#endif
 	if (rz_debug_is_dead(core->dbg)) {
 		eprintf("Cannot continue, run ood?\n");
-		return -1;
+		return 0;
 	}
 	rz_debug_continue(core->dbg);
 	return 0;
