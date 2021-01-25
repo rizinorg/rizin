@@ -649,6 +649,9 @@ static const RzCmdDescHelp cmd_meta_help = {
 static const RzCmdDescHelp cmd_debug_help = {
 	.summary = "Debugger commands",
 };
+static const RzCmdDescHelp debug_continue_oldhandler_help = {
+	.summary = "Continue execution",
+};
 
 static const RzCmdDescHelp e_help = {
 	.summary = "List/get/set config evaluable vars",
@@ -2392,6 +2395,8 @@ RZ_IPI void newshell_cmddescs_init(RzCore *core) {
 
 	RzCmdDesc *cmd_debug_cd = rz_cmd_desc_oldinput_new(core->rcmd, root_cd, "d", rz_cmd_debug, &cmd_debug_help);
 	rz_warn_if_fail(cmd_debug_cd);
+	RzCmdDesc *debug_continue_oldhandler_cd = rz_cmd_desc_oldinput_new(core->rcmd, cmd_debug_cd, "dc", rz_debug_continue_oldhandler, &debug_continue_oldhandler_help);
+	rz_warn_if_fail(debug_continue_oldhandler_cd);
 
 	RzCmdDesc *e_cd = rz_cmd_desc_group_new(core->rcmd, root_cd, "e", rz_eval_getset_handler, &eval_getset_help, &e_help);
 	rz_warn_if_fail(e_cd);
