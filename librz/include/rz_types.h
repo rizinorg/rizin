@@ -9,6 +9,7 @@
 #include <rz_util/rz_str_util.h>
 #include <stddef.h>
 #include <assert.h>
+#include <errno.h>
 
 // TODO: fix this to make it crosscompile-friendly: RZ_SYS_OSTYPE ?
 /* operating system */
