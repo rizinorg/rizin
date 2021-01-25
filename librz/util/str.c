@@ -841,8 +841,9 @@ RZ_API char *rz_str_ndup(const char *ptr, int len) {
 
 // TODO: deprecate?
 RZ_API char *rz_str_dup(char *ptr, const char *string) {
-	free(ptr);
-	return rz_str_new(string);
+	char *str = rz_str_new(string);
+	free(ptr); // in case ptr == string
+	return str;
 }
 
 RZ_API char *rz_str_prepend(char *ptr, const char *string) {

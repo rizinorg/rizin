@@ -556,7 +556,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	int rawstr = 0;
 	int fd = -1;
 	RzCore core = { 0 };
-	RzLib *l = NULL;
 	ut64 at = UT64_MAX;
 	int result = 0;
 
@@ -568,7 +567,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		char *plugindir = rz_str_rz_prefix(RZ_PLUGINS);
 		char *extrasdir = rz_str_rz_prefix(RZ_EXTRAS);
 		char *bindingsdir = rz_str_rz_prefix(RZ_BINDINGS);
-		l = rz_lib_new(NULL, NULL);
+		RzLib *l = rz_lib_new(NULL, NULL);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_BIN, "bin plugins",
 			&__lib_bin_cb, &__lib_bin_dt, bin);
 		rz_lib_add_handler(l, RZ_LIB_TYPE_BIN_XTR, "bin xtr plugins",
@@ -589,6 +588,7 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 		free(extrasdir);
 		free(bindingsdir);
 		free(path);
+		rz_lib_free(l);
 	}
 	free(tmp);
 
@@ -1200,7 +1200,6 @@ RZ_API int rz_main_rz_bin(int argc, const char **argv) {
 	rz_cons_flush();
 	rz_core_file_free(fh);
 	rz_core_fini(&core);
-	rz_lib_free(l);
 
 	return result;
 }
