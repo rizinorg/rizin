@@ -867,6 +867,7 @@ static bool cmd_analysis_aaft(RzCore *core) {
 		// XXX. we shouldnt need this, but it breaks 'rizin -c aaa -w ls'
 		rz_config_set_i(core->config, io_cache_key, true);
 	}
+	const bool delete_regs = !rz_flag_space_count(core->flags, RZ_FLAGS_FS_REGISTERS);
 	seek = core->offset;
 	rz_reg_arena_push(core->analysis->reg);
 	rz_reg_arena_zero(core->analysis->reg);
@@ -885,6 +886,9 @@ static bool cmd_analysis_aaft(RzCore *core) {
 			break;
 		}
 		__add_vars_sdb(core, fcn);
+	}
+	if (delete_regs) {
+		rz_core_debug_clear_register_flags(core);
 	}
 	rz_core_seek(core, seek, true);
 	rz_reg_arena_pop(core->analysis->reg);
