@@ -331,7 +331,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	}
 	rz_list_free(flags);
 	rz_list_free(regs);
-	free(g->target.regprofile);
+	RZ_FREE(g->target.regprofile);
 	if (profile) {
 		g->target.regprofile = strdup(profile);
 		free(profile);
