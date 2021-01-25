@@ -55,6 +55,7 @@ RZ_LIB_VERSION_HEADER(rz_core);
 #define RZ_FLAGS_FS_FUNCTIONS        "functions"
 #define RZ_FLAGS_FS_IMPORTS          "imports"
 #define RZ_FLAGS_FS_RELOCS           "relocs"
+#define RZ_FLAGS_FS_REGISTERS        "registers"
 #define RZ_FLAGS_FS_RESOURCES        "resources"
 #define RZ_FLAGS_FS_SECTIONS         "sections"
 #define RZ_FLAGS_FS_SEGMENTS         "segments"
