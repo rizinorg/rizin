@@ -65,8 +65,8 @@ git-clang-format-11 --extensions c,cpp,h,hpp,inc --style file dev
 
 ```c
 int check(RzCore *c, int a, int b) {
-	rz_return_val_if_fail (c, false);
-	rz_return_val_if_fail (a >= 0, b >= 1, false);
+	rz_return_val_if_fail(c, false);
+	rz_return_val_if_fail(a >= 0, b >= 1, false);
 
 	if (a == 0) {
 		/* do something */
@@ -93,7 +93,7 @@ int check(RzCore *c, int a, int b) {
         rz_list_foreach (bp->bps, iter, b) {
 -               if (addr >= b->addr && addr < (b->addr+b->size) && \
 -                       (!rwx || rwx&b->rwx))
-+               if (inRange (b, addr) && matchProt (b, rwx)) {
++               if (inRange(b, addr) && matchProt(b, rwx)) {
                         return b;
 +               }
         }
@@ -171,7 +171,7 @@ a single byte.
 
 It can seem very easy to write the following code:
 ```c
-ut8 opcode[4] = {0x10, 0x20, 0x30, 0x40};
+ut8 opcode[4] = { 0x10, 0x20, 0x30, 0x40 };
 ut32 value = *(ut32*)opcode;
 ```
 ... and then continue to use "value" in the code to represent the opcode.
@@ -190,7 +190,7 @@ value stored in "value" might be 0x40302010 instead of 0x10203040.
 Use bitshifts and OR instructions to interpret bytes in a known endian.
 Instead of casting streams of bytes to larger width integers, do the following:
 ```c
-ut8 opcode[4] = {0x10, 0x20, 0x30, 0x40};
+ut8 opcode[4] = { 0x10, 0x20, 0x30, 0x40 };
 ut32 value = opcode[0] | opcode[1] << 8 | opcode[2] << 16 | opcode[3] << 24;
 ```
 or if you prefer the other endian:
@@ -224,14 +224,14 @@ has a special helper macro - `RZ_PACKED()`. Instead of non-portable
 `#pragma pack` or `__attribute__((packed))` it is advised to use this macro
 instead. To wrap the code inside of it you just need to write:
 ```c
-RZ_PACKED (union mystruct {
+RZ_PACKED(union mystruct {
 	int a;
 	char b;
 })
 ```
 or in case of typedef:
 ```c
-RZ_PACKED (typedef structmystruct {
+RZ_PACKED(typedef structmystruct {
 	int a;
 	char b;
 })
