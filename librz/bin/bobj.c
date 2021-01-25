@@ -33,7 +33,7 @@ static void reloc_free(RBNode *rbn, void *user) {
 static void object_delete_items(RzBinObject *o) {
 	ut32 i = 0;
 	rz_return_if_fail(o);
-	sdb_free(o->addrzklassmethod);
+	ht_up_free(o->addrzklassmethod);
 	rz_list_free(o->entries);
 	rz_list_free(o->fields);
 	rz_list_free(o->imports);
@@ -397,12 +397,10 @@ RZ_API int rz_bin_object_set_items(RzBinFile *bf, RzBinObject *o) {
 			RzBinSymbol *method;
 			if (!o->addrzklassmethod) {
 				// this is slow. must be optimized, but at least its cached
-				o->addrzklassmethod = sdb_new0();
+				o->addrzklassmethod = ht_up_new0();
 				rz_list_foreach (klasses, iter, klass) {
 					rz_list_foreach (klass->methods, iter2, method) {
-						char *km = sdb_fmt("method.%s.%s", klass->name, method->name);
-						char *at = sdb_fmt("0x%08" PFMT64x, method->vaddr);
-						sdb_set(o->addrzklassmethod, at, km, 0);
+						ht_up_insert(o->addrzklassmethod, method->vaddr, method);
 					}
 				}
 			}
