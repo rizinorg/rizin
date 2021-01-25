@@ -1187,7 +1187,9 @@ typedef enum {
 
 typedef struct rz_analysis_esil_dfg_t {
 	ut32 idx;
-	Sdb *regs; //resolves regnames to intervals
+	HtPP *reg_items_ht;
+	HtPP *reg_nodes_ht;
+	HtPP *var_nodes_ht;
 	RContRBTree *reg_vars; //vars represented in regs
 	RQueue *todo; //todo-queue allocated in this struct for perf
 	void *insert; //needed for setting regs in dfg
