@@ -1355,11 +1355,6 @@ RZ_API int rz_main_rizin(int argc, const char **argv) {
 
 	// no flagspace selected by default the beginning
 	rz_flag_space_set(r->flags, NULL);
-	if (!debug && r->bin && r->bin->cur && r->bin->cur->o && r->bin->cur->o->info) {
-		if (r->bin->cur->o->info->arch) {
-			rz_core_cmd0(r, "aeip");
-		}
-	}
 	for (;;) {
 		rz_core_prompt_loop(r);
 		ret = r->num->value;
