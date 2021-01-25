@@ -6112,7 +6112,6 @@ RZ_API int rz_core_print_disasm_json(RzCore *core, ut64 addr, ut8 *buf, int nb_b
 			break;
 		}
 	}
-	// rz_cons_printf ("]");
 	core->offset = old_offset;
 	rz_analysis_op_fini(&ds->analop);
 	ds_free(ds);
@@ -6138,8 +6137,13 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 		buf = malloc(l + 1);
 		rz_io_read_at(core->io, addr, buf, l);
 	}
+	PJ *pj = NULL;
 	if (mode == 'j') {
-		rz_cons_print("[");
+		pj = rz_core_pj_new(core);
+		if (!pj) {
+			return 0;
+		}
+		pj_a(pj);
 	}
 	rz_cons_break_push(NULL, NULL);
 	for (i = 0; i < l; i++) {
@@ -6206,8 +6210,11 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 				break;
 			case 'j': {
 				char *op_hex = rz_asm_op_get_hex(&asmop);
-				rz_cons_printf("{\"addr\":%08" PFMT64d ",\"bytes\":\"%s\",\"inst\":\"%s\"}%s",
-					addr + i, op_hex, rz_asm_op_get_asm(&asmop), ",");
+				pj_o(pj);
+				pj_kn(pj, "addr", addr + i);
+				pj_ks(pj, "bytes", op_hex);
+				pj_ks(pj, "inst", rz_asm_op_get_asm(&asmop));
+				pj_end(pj);
 				free(op_hex);
 				break;
 			}
@@ -6226,7 +6233,9 @@ RZ_API int rz_core_print_disasm_all(RzCore *core, ut64 addr, int l, int len, int
 		free(buf);
 	}
 	if (mode == 'j') {
-		rz_cons_printf("{}]\n");
+		pj_end(pj);
+		rz_cons_println(pj_string(pj));
+		pj_free(pj);
 	}
 	ds_free(ds);
 	return count;

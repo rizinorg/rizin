@@ -161,8 +161,9 @@ rizin_libdir = get_option('libdir')
 rizin_incdir = get_option('includedir') / 'librz'
 rizin_datdir = get_option('datadir')
 if host_machine.system() == 'windows'
+  rizin_prefix = rizin_prefix / ''
   rizin_wwwroot = rizin_datdir / 'www'
-  rizin_sdb = rizin_datdir
+  rizin_sdb = rizin_datdir / ''
   rizin_zigns = rizin_datdir / 'zigns'
   rizin_themes = rizin_datdir / 'cons'
   rizin_fortunes = rizin_datdir / 'fortunes'
@@ -435,7 +436,6 @@ sdb_files = [
   'shlr/sdb/src/set.c',
   'shlr/sdb/src/cdb.c',
   'shlr/sdb/src/cdb_make.c',
-  'shlr/sdb/src/dict.c',
   'shlr/sdb/src/diff.c',
   'shlr/sdb/src/disk.c',
   'shlr/sdb/src/fmt.c',
@@ -473,7 +473,6 @@ sdb_inc_files = [
   'shlr/sdb/src/set.h',
   'shlr/sdb/src/cdb_make.h',
   'shlr/sdb/src/config.h',
-  'shlr/sdb/src/dict.h',
   'shlr/sdb/src/ht_inc.h',
   'shlr/sdb/src/ht_pp.h',
   'shlr/sdb/src/ht_up.h',

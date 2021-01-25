@@ -1022,10 +1022,12 @@ typedef struct rz_selection_widget_t {
 
 typedef struct rz_line_hist_t {
 	char **data;
+	char *match;
 	int size;
 	int index;
 	int top;
 	int autosave;
+	bool do_setup_match;
 } RzLineHistory;
 
 typedef struct rz_line_buffer_t {

@@ -66,7 +66,6 @@ static RzIODesc *__open(RzIO *io, const char *file, int rw, int mode) {
 		isdev = true;
 	}
 
-	rw |= RZ_PERM_W;
 	if (isdev) {
 		port = strchr(host, '@');
 		if (port) {

@@ -103,6 +103,7 @@ RZ_API RzAnalysisEsil *rz_analysis_esil_new(int stacksize, int iotrap, unsigned 
 	rz_analysis_esil_sources_init(esil);
 	rz_analysis_esil_interrupts_init(esil);
 	esil->addrmask = genmask(addrsize - 1);
+	rz_strbuf_init(&esil->current_opstr);
 	return esil;
 }
 
@@ -177,6 +178,7 @@ RZ_API void rz_analysis_esil_free(RzAnalysisEsil *esil) {
 	if (esil->analysis && esil->analysis->cur && esil->analysis->cur->esil_fini) {
 		esil->analysis->cur->esil_fini(esil);
 	}
+	rz_strbuf_fini(&esil->current_opstr);
 	rz_analysis_esil_trace_free(esil->trace);
 	esil->trace = NULL;
 	free(esil->cmd_intr);
@@ -558,12 +560,14 @@ RZ_API int rz_analysis_esil_signext(RzAnalysisEsil *esil, bool assign) {
 
 	char *p_dst = rz_analysis_esil_pop(esil);
 	if (!p_dst) {
+		free(p_src);
 		return false;
 	}
 
 	if (!rz_analysis_esil_get_parm(esil, p_dst, &dst)) {
 		ERR("esil_of: empty stack");
 		free(p_dst);
+		free(p_src);
 		return false;
 	} else {
 		free(p_dst);
@@ -780,6 +784,8 @@ static bool esil_eq(RzAnalysisEsil *esil) {
 		if (esil->verbose) {
 			eprintf("Missing elements in the esil stack for '=' at 0x%08" PFMT64x "\n", esil->address);
 		}
+		free(src);
+		free(dst);
 		return false;
 	}
 	if (ispackedreg(esil, dst)) {
@@ -1089,6 +1095,7 @@ static int esil_ifset(RzAnalysisEsil *esil) {
 #endif
 
 static bool esil_if(RzAnalysisEsil *esil) {
+	bool ret = false;
 	ut64 num = 0LL;
 	if (esil->skip) {
 		esil->skip++;
@@ -1100,10 +1107,10 @@ static bool esil_if(RzAnalysisEsil *esil) {
 		if (!num) {
 			esil->skip++;
 		}
-		free(src);
-		return true;
+		ret = true;
 	}
-	return false;
+	free(src);
+	return ret;
 }
 
 static bool esil_lsl(RzAnalysisEsil *esil) {
@@ -2076,6 +2083,8 @@ static bool esil_peek_some(RzAnalysisEsil *esil) {
 					char *foo = rz_analysis_esil_pop(esil);
 					if (!foo) {
 						ERR("Cannot pop in peek");
+						free(dst);
+						free(count);
 						return 0;
 					}
 					const ut32 read = rz_analysis_esil_mem_read(esil, ptr, a, 4);
@@ -2948,12 +2957,11 @@ static bool runword(RzAnalysisEsil *esil, const char *word) {
 					return 1; // XXX cannot return != 1
 				}
 			}
-			esil->current_opstr = strdup(word);
+			rz_strbuf_set(&esil->current_opstr, word);
 			//so this is basically just sharing what's the operation with the operation
 			//useful for wrappers
 			const bool ret = op->code(esil);
-			free(esil->current_opstr);
-			esil->current_opstr = NULL;
+			rz_strbuf_fini(&esil->current_opstr);
 			if (!ret) {
 				if (esil->verbose) {
 					eprintf("%s returned 0\n", word);

@@ -1363,7 +1363,7 @@ static void cmd_pDj(RzCore *core, const char *arg) {
 		eprintf("cannot allocate %d byte(s)\n", bsize);
 	}
 	pj_end(pj);
-	rz_cons_printf("%s", pj_string(pj));
+	rz_cons_println(pj_string(pj));
 	pj_free(pj);
 }
 
@@ -1376,7 +1376,7 @@ static void cmd_pdj(RzCore *core, const char *arg, ut8 *block) {
 	pj_a(pj);
 	rz_core_print_disasm_json(core, core->offset, block, core->blocksize, nblines, pj);
 	pj_end(pj);
-	rz_cons_printf("%s\n", pj_string(pj));
+	rz_cons_println(pj_string(pj));
 	pj_free(pj);
 }
 
@@ -5658,7 +5658,6 @@ RZ_IPI int rz_cmd_print(void *data, const char *input) {
 			} else {
 				cmd_pdj(core, input + 2, block);
 			}
-			rz_cons_newline();
 			pd_result = 0;
 			break;
 		case 'J': // pdJ
