@@ -38,30 +38,21 @@ static int perform_mapped_file_yank(RzCore *core, ut64 offset, ut64 len, const c
 	// grab the current file descriptor, so we can reset core and io state
 	// after our io op is done
 	RzIODesc *yankdesc = NULL;
-	ut64 fd = core->file ? core->file->fd : -1, yank_file_sz = 0,
-	     loadaddr = 0, addr = offset;
+	ut64 fd = core->file ? core->file->fd : -1, yank_file_sz = 0, addr = offset;
 	int res = false;
 
 	if (filename && *filename) {
 		ut64 load_align = rz_config_get_i(core->config, "file.loadalign");
-		RzIOMap *map = NULL;
 		yankdesc = rz_io_open_nomap(core->io, filename, RZ_PERM_R, 0644);
 		// map the file in for IO operations.
 		if (yankdesc && load_align) {
 			yank_file_sz = rz_io_size(core->io);
 			ut64 addr = rz_io_map_next_available(core->io, 0, yank_file_sz, load_align);
-			map = rz_io_map_new(core->io, yankdesc->fd, RZ_PERM_R, 0, addr, yank_file_sz);
-			loadaddr = map ? map->itv.addr : -1;
-			if (yankdesc && map && loadaddr != -1) {
-				// ***NOTE*** this is important, we need to
-				// address the file at its physical address!
-				addr += loadaddr;
-			} else if (yankdesc) {
+			RzIOMap *map = rz_io_map_new(core->io, yankdesc->fd, RZ_PERM_R, 0, addr, yank_file_sz);
+			if (!map || map->itv.addr == -1) {
 				eprintf("Unable to map the opened file: %s", filename);
 				rz_io_desc_close(yankdesc);
 				yankdesc = NULL;
-			} else {
-				eprintf("Unable to open the file: %s", filename);
 			}
 		}
 	}
