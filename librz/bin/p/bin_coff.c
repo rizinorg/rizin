@@ -58,6 +58,8 @@ static bool _fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int idx, 
 	if (!coffname) {
 		return false;
 	}
+	ptr->size = 4;
+	ptr->ordinal = 0;
 	ptr->name = coffname;
 	ptr->forwarder = "NONE";
 	ptr->bind = RZ_BIN_BIND_LOCAL_STR;
@@ -97,11 +99,10 @@ static bool _fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int idx, 
 		if (s->n_scnum == COFF_SYM_SCNUM_ABS) {
 			ptr->type = "ABS";
 			ptr->paddr = ptr->vaddr = UT64_MAX;
-			ptr->name = rz_str_newf("%s-0x%08x", coffname, s->n_value);
-			if (ptr->name) {
-				RZ_FREE(coffname);
-			} else {
-				ptr->name = coffname;
+			char *newname = rz_str_newf("%s-0x%08x", coffname, s->n_value);
+			if (newname) {
+				free(ptr->name);
+				ptr->name = newname;
 			}
 		} else if (sc_hdr && !memcmp(sc_hdr->s_name, s->n_name, 8)) {
 			ptr->type = RZ_BIN_TYPE_SECTION_STR;
@@ -111,12 +112,14 @@ static bool _fill_bin_symbol(RzBin *rbin, struct rz_bin_coff_obj *bin, int idx, 
 				: RZ_BIN_TYPE_UNKNOWN_STR;
 		}
 		break;
+	case COFF_SYM_CLASS_LABEL:
+		ptr->type = "LABEL";
+		ptr->size = 0;
+		break;
 	default:
 		ptr->type = rz_str_constpool_get(&rbin->constpool, sdb_fmt("%i", s->n_sclass));
 		break;
 	}
-	ptr->size = 4;
-	ptr->ordinal = 0;
 	return true;
 }
 
