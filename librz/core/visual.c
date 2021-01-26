@@ -366,7 +366,7 @@ static void rotateAsmBits(RzCore *core) {
 			: bits == 8                  ? 16
 						     : bits;
 		if ((core->rasm->cur->bits & nb) == nb) {
-			rz_core_cmdf(core, "ahb %d", nb);
+			rz_analysis_hint_set_bits(core->analysis, core->offset, nb);
 			break;
 		}
 		bits = nb;
@@ -763,11 +763,11 @@ static void visual_single_step_in(RzCore *core) {
 			rz_core_cmdf(core, "dcu 0x%08" PFMT64x, core->offset + core->print->cur);
 			core->print->cur_enabled = 0;
 		} else {
-			rz_core_cmd(core, "ds", 0);
+			rz_core_debug_step_one(core, 1);
 			rz_core_cmd(core, ".dr*", 0);
 		}
 	} else {
-		rz_core_cmd(core, "aes", 0);
+		rz_core_esil_step(core, UT64_MAX, NULL, NULL, false);
 		rz_core_cmd(core, ".ar*", 0);
 	}
 }
@@ -2727,9 +2727,9 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 		} break;
 		case 'R':
 			if (rz_config_get_i(core->config, "scr.randpal")) {
-				rz_core_cmd0(core, "ecr");
+				rz_cons_pal_random();
 			} else {
-				rz_core_cmd0(core, "ecn");
+				rz_core_theme_nextpal(core, 'n');
 			}
 			break;
 		case 'e':
@@ -2847,7 +2847,8 @@ RZ_API int rz_core_visual_cmd(RzCore *core, const char *arg) {
 						distance = 1;
 					}
 					for (i = 0; i < distance; i++) {
-						rz_core_cmd0(core, "sn");
+						const char *nkey = rz_config_get(core->config, "scr.nkey");
+						rz_core_seek_next(core, nkey, true);
 					}
 				} else {
 					int times = RZ_MAX(1, wheelspeed);

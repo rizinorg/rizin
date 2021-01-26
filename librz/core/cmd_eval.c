@@ -214,7 +214,7 @@ RZ_API RzList *rz_core_list_themes(RzCore *core) {
 	return list;
 }
 
-static void nextpal(RzCore *core, int mode) {
+RZ_IPI void rz_core_theme_nextpal(RzCore *core, int mode) {
 	// TODO: use rz_core_list_themes() here instead of rewalking all the time
 	RzList *files = NULL;
 	RzListIter *iter;
@@ -292,14 +292,14 @@ done:
 	free(path);
 	if (getNext) {
 		RZ_FREE(curtheme);
-		nextpal(core, mode);
+		rz_core_theme_nextpal(core, mode);
 		return;
 	}
 	if (mode == 'l' && !curtheme && !rz_list_empty(files)) {
-		//nextpal (core, mode);
+		//rz_core_theme_nextpal (core, mode);
 	} else if (mode == 'n' || mode == 'p') {
 		if (curtheme) {
-			rz_core_cmdf(core, "eco %s", curtheme);
+			cmd_load_theme(core, curtheme);
 		}
 	}
 	rz_list_free(files);
@@ -337,7 +337,7 @@ RZ_IPI int rz_eval_color(void *data, const char *input) {
 		break;
 	case 'o': // "eco"
 		if (input[1] == 'j') {
-			nextpal(core, 'j');
+			rz_core_theme_nextpal(core, 'j');
 		} else if (input[1] == ' ') {
 			cmd_load_theme(core, input + 2);
 		} else if (input[1] == 'o') {
@@ -388,10 +388,10 @@ RZ_IPI int rz_eval_color(void *data, const char *input) {
 		rz_cons_pal_random();
 		break;
 	case 'n': // "ecn"
-		nextpal(core, 'n');
+		rz_core_theme_nextpal(core, 'n');
 		break;
 	case 'p': // "ecp"
-		nextpal(core, 'p');
+		rz_core_theme_nextpal(core, 'p');
 		break;
 	case 'H': { // "ecH"
 		char *color_code = NULL;
