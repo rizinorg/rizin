@@ -4088,6 +4088,9 @@ static int bin_signature(RzCore *r, PJ *pj, int mode) {
 	RzBinPlugin *plg = rz_bin_file_cur_plugin(cur);
 	if (plg && plg->signature) {
 		const char *signature = plg->signature(cur, IS_MODE_JSON(mode));
+		if (!signature) {
+			return false;
+		}
 		if (IS_MODE_JSON(mode)) {
 			pj_o(pj);
 			pj_k(pj, "signature");
