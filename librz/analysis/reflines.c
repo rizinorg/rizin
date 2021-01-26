@@ -159,7 +159,7 @@ RZ_API RzList *rz_analysis_reflines_get(RzAnalysis *analysis, ut64 addr, const u
 
 		// This can segfault if opcode length and buffer check fails
 		rz_analysis_op_fini(&op);
-		sz = rz_analysis_op(analysis, &op, addr, ptr, (int)(end - ptr), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
+		rz_analysis_op(analysis, &op, addr, ptr, (int)(end - ptr), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
 		sz = op.size;
 		if (sz <= 0) {
 			sz = 1;
