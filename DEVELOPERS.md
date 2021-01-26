@@ -66,7 +66,7 @@ git-clang-format-11 --extensions c,cpp,h,hpp,inc --style file dev
 ```c
 int check(RzCore *c, int a, int b) {
 	rz_return_val_if_fail(c, false);
-	rz_return_val_if_fail(a >= 0, b >= 1, false);
+	rz_return_val_if_fail(a >= 0 && b >= 1, false);
 
 	if (a == 0) {
 		/* do something */
