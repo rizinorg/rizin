@@ -267,7 +267,7 @@ typedef struct rz_bin_object_t {
 	struct rz_bin_plugin_t *plugin;
 	int lang;
 	Sdb *kv;
-	Sdb *addrzklassmethod;
+	HtUP *addrzklassmethod;
 	void *bin_obj; // internal pointer used by formats
 } RzBinObject;
 

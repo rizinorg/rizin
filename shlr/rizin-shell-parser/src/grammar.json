@@ -3069,6 +3069,60 @@
       "type": "STRING",
       "value": "H>>"
     },
+    "_arg_with_paren": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "STRING",
+            "value": "("
+          },
+          "named": true,
+          "value": "arg_identifier"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "args"
+        },
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "STRING",
+            "value": ")"
+          },
+          "named": true,
+          "value": "arg_identifier"
+        }
+      ]
+    },
+    "_arg_brace_with_paren": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "STRING",
+            "value": "("
+          },
+          "named": true,
+          "value": "arg_identifier"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_arg_brace"
+        },
+        {
+          "type": "ALIAS",
+          "content": {
+            "type": "STRING",
+            "value": ")"
+          },
+          "named": true,
+          "value": "arg_identifier"
+        }
+      ]
+    },
     "_arg": {
       "type": "CHOICE",
       "members": [
@@ -3089,31 +3143,13 @@
           "name": "cmd_substitution_arg"
         },
         {
-          "type": "SEQ",
-          "members": [
-            {
-              "type": "ALIAS",
-              "content": {
-                "type": "STRING",
-                "value": "("
-              },
-              "named": true,
-              "value": "arg_identifier"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "args"
-            },
-            {
-              "type": "ALIAS",
-              "content": {
-                "type": "STRING",
-                "value": ")"
-              },
-              "named": true,
-              "value": "arg_identifier"
-            }
-          ]
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_arg_with_paren"
+          },
+          "named": true,
+          "value": "args"
         },
         {
           "type": "ALIAS",
@@ -3151,31 +3187,13 @@
           "name": "cmd_substitution_arg"
         },
         {
-          "type": "SEQ",
-          "members": [
-            {
-              "type": "ALIAS",
-              "content": {
-                "type": "STRING",
-                "value": "("
-              },
-              "named": true,
-              "value": "arg_identifier"
-            },
-            {
-              "type": "SYMBOL",
-              "name": "_arg_brace"
-            },
-            {
-              "type": "ALIAS",
-              "content": {
-                "type": "STRING",
-                "value": ")"
-              },
-              "named": true,
-              "value": "arg_identifier"
-            }
-          ]
+          "type": "ALIAS",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_arg_brace_with_paren"
+          },
+          "named": true,
+          "value": "args"
         },
         {
           "type": "ALIAS",
