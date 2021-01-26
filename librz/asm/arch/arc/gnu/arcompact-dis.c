@@ -3520,7 +3520,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
        instructions */
     fieldC = FIELDC_AC(state->words[0]);
     fieldB = FIELDB_AC(state->words[0]);
-    fieldCisReg = 0;
     fieldBisReg = 0;
     write_instr_name();
     strcat(formatString,"%d");
