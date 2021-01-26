@@ -46,7 +46,7 @@ endif
 version_commit = '0'
 
 gittap = ''
-gittip = 'unknown'
+gittip = ''
 
 git_dir_exists = run_command(py3_exe, '-c', '__import__("sys").exit(0 if __import__("os").path.isdir(".git") else 1)')
 if git_exe.found() and git_dir_exists.returncode() == 0
@@ -359,9 +359,11 @@ rz_userconf_h = configure_file(
   install_dir: rizin_incdir
 )
 
+packager = get_option('packager')
+packager_version = get_option('packager_version')
+
 versionconf = configuration_data()
 versionconf.set('MESON_VERSION', meson.version())
-versionconf.set('VERSIONCOMMIT', version_commit)
 versionconf.set('RZ_VERSION_MAJOR', rizin_version_major)
 versionconf.set('RZ_VERSION_MINOR', rizin_version_minor)
 versionconf.set('RZ_VERSION_PATCH', rizin_version_patch)
@@ -370,6 +372,12 @@ versionconf.set('RZ_VERSION', rizin_version)
 versionconf.set('RZ_GITTAP', gittap)
 versionconf.set('RZ_GITTIP', gittip)
 versionconf.set('RZ_BIRTH', rizinbirth)
+if packager_version != ''
+  versionconf.set_quoted('RZ_PACKAGER_VERSION', packager_version)
+  if packager != ''
+    versionconf.set_quoted('RZ_PACKAGER', packager)
+  endif
+endif
 rz_version_h = configure_file(
   input: 'librz/include/rz_version.h.in',
   output: 'rz_version.h',
