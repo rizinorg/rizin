@@ -36,7 +36,7 @@ jobs:
           macos-meson-clang-tests,
           linux-gcc-tests-asan,
           capstone-v3,
-          capstone-v5
+          capstone-v4
         ]
         include:
           - name: linux-acr-gcc-tests
@@ -104,11 +104,11 @@ jobs:
             enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
             timeout: 45
             cflags: '-Werror -Wno-cpp'
-          - name: capstone-v5
+          - name: capstone-v4
             os: ubuntu-20.04
             build_system: meson
             compiler: gcc
-            meson_options: -Duse_capstone_version=v5
+            meson_options: -Duse_capstone_version=v4
             run_tests: false
             enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
             timeout: 45
