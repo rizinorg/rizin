@@ -4311,13 +4311,22 @@ static bool cmd_dcu(RzCore *core, const char *input) {
 	return true;
 }
 
-static int cmd_debug_continue(RzCore *core, const char *input) {
+RZ_IPI int rz_debug_continue_oldhandler(void *data, const char *input) {
+	RzCore *core = (RzCore *)data;
 	int pid, old_pid, signum;
 	char *ptr;
 	// TODO: we must use this for step 'ds' too maybe...
-	switch (input[1]) {
+	switch (input[0]) {
 	case 0: // "dc"
-		rz_debug_continue_oldhandler(core, input);
+		rz_reg_arena_swap(core->dbg->reg, true);
+#if __linux__
+		core->dbg->continue_all_threads = true;
+#endif
+		if (rz_debug_is_dead(core->dbg)) {
+			eprintf("Cannot continue, run ood?\n");
+			break;
+		}
+		rz_debug_continue(core->dbg);
 		break;
 	case 'a': // "dca"
 		eprintf("TODO: dca\n");
@@ -4348,7 +4357,7 @@ static int cmd_debug_continue(RzCore *core, const char *input) {
 		break;
 	case 'c': // "dcc"
 		rz_reg_arena_swap(core->dbg->reg, true);
-		if (input[2] == 'u') {
+		if (input[1] == 'u') {
 			rz_debug_continue_until_optype(core->dbg, RZ_ANALYSIS_OP_TYPE_UCALL, 0);
 		} else {
 			rz_debug_continue_until_optype(core->dbg, RZ_ANALYSIS_OP_TYPE_CALL, 0);
@@ -4361,8 +4370,8 @@ static int cmd_debug_continue(RzCore *core, const char *input) {
 	case 'k':
 		// select pid and rz_debug_continue_kill (core->dbg,
 		rz_reg_arena_swap(core->dbg->reg, true);
-		signum = rz_num_math(core->num, input + 2);
-		ptr = strchr(input + 3, ' ');
+		signum = rz_num_math(core->num, input + 1);
+		ptr = strchr(input + 2, ' ');
 		if (ptr) {
 			int old_pid = core->dbg->pid;
 			int old_tid = core->dbg->tid;
@@ -4377,12 +4386,12 @@ static int cmd_debug_continue(RzCore *core, const char *input) {
 		}
 		break;
 	case 's': // "dcs"
-		switch (input[2]) {
+		switch (input[1]) {
 		case '*':
 			cmd_debug_cont_syscall(core, "-1");
 			break;
 		case ' ':
-			cmd_debug_cont_syscall(core, input + 3);
+			cmd_debug_cont_syscall(core, input + 2);
 			break;
 		case '\0':
 			cmd_debug_cont_syscall(core, NULL);
@@ -4417,24 +4426,26 @@ static int cmd_debug_continue(RzCore *core, const char *input) {
 		return 1;
 	}
 	case 'u': // "dcu"
-		if (input[2] == '?') {
+		if (input[1] == '?') {
 			rz_core_cmd_help(core, help_msg_dcu);
-		} else if (input[2] == '.') {
+		} else if (input[1] == '.') {
 			cmd_dcu(core, "cu $$");
 		} else {
-			cmd_dcu(core, input);
+			char *tmpinp = rz_str_newf("cu %s", input + 2);
+			cmd_dcu(core, tmpinp);
+			free(tmpinp);
 		}
 		break;
 	case ' ':
 		old_pid = core->dbg->pid;
-		pid = atoi(input + 2);
+		pid = atoi(input + 1);
 		rz_reg_arena_swap(core->dbg->reg, true);
 		rz_debug_select(core->dbg, pid, core->dbg->tid);
 		rz_debug_continue(core->dbg);
 		rz_debug_select(core->dbg, old_pid, core->dbg->tid);
 		break;
 	case 't':
-		cmd_debug_backtrace(core, input + 2);
+		cmd_debug_backtrace(core, input + 1);
 		break;
 	case '?': // "dc?"
 	default:
@@ -4649,20 +4660,6 @@ static void consumeBuffer(RzBuffer *buf, const char *cmd, const char *errmsg) {
 		rz_cons_printf("%02x", rz_buf_read8(buf));
 	}
 	rz_cons_printf("\n");
-}
-
-RZ_IPI int rz_debug_continue_oldhandler(void *data, const char *input) {
-	RzCore *core = (RzCore *)data;
-	rz_reg_arena_swap(core->dbg->reg, true);
-	#if __linux__
-		core->dbg->continue_all_threads = true;
-	#endif
-	if (rz_debug_is_dead(core->dbg)) {
-		eprintf("Cannot continue, run ood?\n");
-		return 0;
-	}
-	rz_debug_continue(core->dbg);
-	return 0;
 }
 
 RZ_IPI int rz_cmd_debug(void *data, const char *input) {
@@ -5031,7 +5028,7 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		break;
 	case 'c': // "dc"
 		rz_cons_break_push(static_debug_stop, core->dbg);
-		(void)cmd_debug_continue(core, input);
+		(void)rz_debug_continue_oldhandler(core, input + 1);
 		follow = rz_config_get_i(core->config, "dbg.follow");
 		rz_cons_break_pop();
 		break;
