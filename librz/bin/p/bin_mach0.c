@@ -35,7 +35,16 @@ static Sdb *get_sdb(RzBinFile *bf) {
 static char *entitlements(RzBinFile *bf, bool json) {
 	rz_return_val_if_fail(bf && bf->o && bf->o->bin_obj, NULL);
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
-	return rz_str_dup(NULL, (const char *)bin->signature);
+	if (!bin->signature) {
+		return NULL;
+	}
+	if (json) {
+		PJ *pj = pj_new();
+		pj_s(pj, (const char *)bin->signature);
+		return pj_drain(pj);
+	} else {
+		return rz_str_dup(NULL, (const char *)bin->signature);
+	}
 }
 
 static bool load_buffer(RzBinFile *bf, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
