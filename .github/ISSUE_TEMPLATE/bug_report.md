@@ -17,7 +17,7 @@ Make sure you are testing using the latest git version of rizin before submittin
 | OS/arch/bits (mandatory)                             | Debian arm 64, Ubuntu x86 32
 | File format of the file you reverse (mandatory)      | PE, ELF etc.
 | Architecture/bits of the file (mandatory)            | PPC, x86/32, x86/64 etc.
-| `rizin -v` full output, **not truncated** (mandatory)  | rizin 0.1.0-git 26866 @ linux-x86-64 git.4.5.1-869-g4d01f3c7f commit: 4d01f3c7f6c15c01e19a4e00ac706ffa5f3a3459 build: 2021-01-21__13:00:24
+| `rizin -v` full output, **not truncated** (mandatory)  | rizin 0.2.0-git @ linux-x86-64, package: 0.2.0.1 (ret2libc) commit: c875be9afde5a6eed037249854b8a8759517263c, build: 2021-01-26__18:17:13
 
 
 ### Expected behavior
