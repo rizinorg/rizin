@@ -857,12 +857,14 @@ static bool cmd_analysis_aaft(RzCore *core) {
 	RzListIter *it;
 	RzAnalysisFunction *fcn;
 	ut64 seek;
-	const char *io_cache_key = "io.pcache.write";
-	bool io_cache = rz_config_get_i(core->config, io_cache_key);
 	if (rz_config_get_i(core->config, "cfg.debug")) {
 		eprintf("TOFIX: aaft can't run in debugger mode.\n");
 		return false;
 	}
+	const char *io_cache_key = "io.pcache.write";
+	RzConfigHold *hold = rz_config_hold_new(core->config);
+	rz_config_hold_i(hold, "io.va", io_cache_key, NULL);
+	bool io_cache = rz_config_get_i(core->config, io_cache_key);
 	if (!io_cache) {
 		// XXX. we shouldnt need this, but it breaks 'rizin -c aaa -w ls'
 		rz_config_set_i(core->config, io_cache_key, true);
@@ -888,7 +890,7 @@ static bool cmd_analysis_aaft(RzCore *core) {
 	}
 	rz_core_seek(core, seek, true);
 	rz_reg_arena_pop(core->analysis->reg);
-	rz_config_set_i(core->config, io_cache_key, io_cache);
+	rz_config_hold_restore(hold);
 	free(saved_arena);
 	return true;
 }
