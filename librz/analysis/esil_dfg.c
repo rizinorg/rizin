@@ -14,7 +14,7 @@ typedef struct esil_dfg_reg_var_t {
 typedef struct rz_analysis_esil_dfg_filter_t {
 	RzAnalysisEsilDFG *dfg;
 	RContRBTree *tree;
-	Sdb *results;
+	HtPP *results;
 } RzAnalysisEsilDFGFilter;
 
 // TODO: simple const propagation - use node->type of srcs to propagate consts of pushed vars
@@ -179,24 +179,28 @@ static int _rv_ins_cmp(void *incoming, void *in, void *user) {
 	return rv_incoming->from - rv_in->from;
 }
 
-static bool _edf_reg_set(RzAnalysisEsilDFG *dfg, const char *reg, RzGraphNode *node) {
-	rz_return_val_if_fail(dfg && !dfg->malloc_failed && reg, false);
-	char *_reg = rz_str_newf("reg.%s", reg);
-	if (!sdb_num_exists(dfg->regs, _reg)) {
-		//no assert to prevent memleaks
-		free(_reg);
-		return false;
-	}
+static EsilDFGRegVar *newEsilDFGRegVar(const RzRegItem *ri, RzGraphNode *node) {
 	EsilDFGRegVar *rv = RZ_NEW0(EsilDFGRegVar);
 	if (!rv) {
-		free(_reg);
+		return NULL;
+	}
+	rv->from = ri->offset;
+	rv->to = rv->from + ri->size - 1;
+	rv->node = node;
+	return rv;
+}
+
+static bool _edf_reg_set(RzAnalysisEsilDFG *dfg, const char *reg, RzGraphNode *node) {
+	rz_return_val_if_fail(dfg && !dfg->malloc_failed && reg, false);
+	const RzRegItem *ri = ht_pp_find(dfg->reg_items_ht, reg, NULL);
+	if (!ri) {
+		//no assert to prevent memleaks
 		return false;
 	}
-
-	const ut64 v = sdb_num_get(dfg->regs, _reg, NULL);
-	free(_reg);
-	rv->from = (v & (UT64_MAX ^ UT32_MAX)) >> 32;
-	rv->to = v & UT32_MAX;
+	EsilDFGRegVar *rv = newEsilDFGRegVar(ri, NULL);
+	if (!rv) {
+		return false;
+	}
 	rz_queue_enqueue(dfg->todo, rv);
 	while (!rz_queue_is_empty(dfg->todo) && !dfg->malloc_failed) {
 		// rbtree api does sadly not allow deleting multiple items at once :(
@@ -214,10 +218,7 @@ static bool _edf_reg_set(RzAnalysisEsilDFG *dfg, const char *reg, RzGraphNode *n
 		}
 		return false;
 	}
-	rv = RZ_NEW0(EsilDFGRegVar);
-	rv->from = (v & (UT64_MAX ^ UT32_MAX)) >> 32;
-	rv->to = v & UT32_MAX;
-	rv->node = node;
+	rv = newEsilDFGRegVar(ri, node);
 	rz_rbtree_cont_insert(dfg->reg_vars, rv, _rv_ins_cmp, NULL);
 	return true;
 }
@@ -310,16 +311,11 @@ static int _rv_find_cmp(void *incoming, void *in, void *user) {
 
 static RzGraphNode *_edf_origin_reg_get(RzAnalysisEsilDFG *dfg, const char *reg) {
 	rz_return_val_if_fail(dfg && reg, NULL);
-	char *_reg = rz_str_newf("reg.%s", reg);
-	if (!sdb_num_exists(dfg->regs, _reg)) {
-		free(_reg);
+	if (!ht_pp_find(dfg->reg_items_ht, reg, NULL)) {
 		return NULL;
 	}
-	free(_reg);
-	char *origin_reg = rz_str_newf("ori.%s", reg);
-	RzGraphNode *origin_reg_node = sdb_ptr_get(dfg->regs, origin_reg, 0);
+	RzGraphNode *origin_reg_node = ht_pp_find(dfg->reg_nodes_ht, reg, NULL);
 	if (origin_reg_node) {
-		free(origin_reg);
 		return origin_reg_node;
 	}
 	RzGraphNode *reg_node = rz_graph_add_node(dfg->flow, rz_analysis_esil_dfg_node_new(dfg, reg));
@@ -328,27 +324,20 @@ static RzGraphNode *_edf_origin_reg_get(RzAnalysisEsilDFG *dfg, const char *reg)
 	_origin_reg_node->type = RZ_ANALYSIS_ESIL_DFG_BLOCK_VAR;
 	origin_reg_node = rz_graph_add_node(dfg->flow, _origin_reg_node);
 	rz_graph_add_edge(dfg->flow, reg_node, origin_reg_node);
-	sdb_ptr_set(dfg->regs, origin_reg, origin_reg_node, 0);
-	free(origin_reg);
+	ht_pp_insert(dfg->reg_nodes_ht, reg, origin_reg_node);
 	return origin_reg_node;
 }
 
 static RzGraphNode *_edf_reg_get(RzAnalysisEsilDFG *dfg, const char *reg) {
 	rz_return_val_if_fail(dfg && reg, NULL);
-	char *_reg = rz_str_newf("reg.%s", reg);
-	if (!sdb_num_exists(dfg->regs, _reg)) {
-		free(_reg);
+	RzRegItem *ri = ht_pp_find(dfg->reg_items_ht, reg, NULL);
+	if (!ri) {
 		return NULL;
 	}
-	EsilDFGRegVar *rv = RZ_NEW0(EsilDFGRegVar);
+	EsilDFGRegVar *rv = newEsilDFGRegVar(ri, NULL);
 	if (!rv) {
-		free(_reg);
 		return NULL;
 	}
-	const ut64 v = sdb_num_get(dfg->regs, _reg, NULL);
-	free(_reg);
-	rv->from = (v & (UT64_MAX ^ UT32_MAX)) >> 32;
-	rv->to = v & UT32_MAX;
 	RQueue *parts = rz_queue_new(8);
 	if (!parts) {
 		free(rv);
@@ -440,18 +429,12 @@ beach:
 
 static bool _edf_var_set(RzAnalysisEsilDFG *dfg, const char *var, RzGraphNode *node) {
 	rz_return_val_if_fail(dfg && var, false);
-	char *_var = rz_str_newf("var.%s", var);
-	const bool ret = !sdb_ptr_set(dfg->regs, _var, node, 0);
-	free(_var);
-	return ret;
+	return ht_pp_update(dfg->var_nodes_ht, var, node);
 }
 
 static RzGraphNode *_edf_var_get(RzAnalysisEsilDFG *dfg, const char *var) {
 	rz_return_val_if_fail(dfg && var, NULL);
-	char *_var = rz_str_newf("var.%s", var);
-	RzGraphNode *ret = sdb_ptr_get(dfg->regs, _var, NULL);
-	free(_var);
-	return ret;
+	return ht_pp_find(dfg->var_nodes_ht, var, NULL);
 }
 
 static bool edf_consume_2_set_reg(RzAnalysisEsil *esil);
@@ -811,53 +794,34 @@ static bool edf_consume_1_use_old_new_push_1(RzAnalysisEsil *esil, const char *o
 }
 
 RZ_API RzAnalysisEsilDFG *rz_analysis_esil_dfg_new(RzReg *regs) {
-	if (!regs) {
-		return NULL;
-	}
+	rz_return_val_if_fail(regs, NULL);
 	RzAnalysisEsilDFG *dfg = RZ_NEW0(RzAnalysisEsilDFG);
 	if (!dfg) {
 		return NULL;
 	}
 	dfg->flow = rz_graph_new();
-	if (!dfg->flow) {
-		free(dfg);
-		return NULL;
-	}
-	dfg->regs = sdb_new0();
-	if (!dfg->regs) {
-		rz_graph_free(dfg->flow);
-		free(dfg);
-		return NULL;
-	}
 	// rax, eax, ax, ah, al	=> 8 should be enough
 	dfg->todo = rz_queue_new(8);
-	if (!dfg->todo) {
-		sdb_free(dfg->regs);
-		rz_graph_free(dfg->flow);
-		free(dfg);
+	dfg->reg_vars = rz_rbtree_cont_newf(free);
+	if (!dfg->flow || !dfg->todo || !dfg->reg_vars) {
+		rz_analysis_esil_dfg_free(dfg);
 		return NULL;
 	}
-	dfg->reg_vars = rz_rbtree_cont_newf(free);
-	if (!dfg->reg_vars) {
-		rz_queue_free(dfg->todo);
-		sdb_free(dfg->regs);
-		rz_graph_free(dfg->flow);
-		free(dfg);
+	dfg->reg_items_ht = ht_pp_new0();
+	dfg->reg_nodes_ht = ht_pp_new0();
+	dfg->var_nodes_ht = ht_pp_new0();
+	if (!dfg->reg_items_ht || !dfg->reg_items_ht || !dfg->var_nodes_ht) {
+		rz_analysis_esil_dfg_free(dfg);
 		return NULL;
 	}
 
 	// this is not exactly necessary
 	// could use RzReg-API directly in the dfg gen,
-	// but sdb as transition table is probably faster
+	// but HT as transition table is probably faster
 	RzRegItem *ri;
 	RzListIter *ator;
 	rz_list_foreach (regs->allregs, ator, ri) {
-		const ut32 from = ri->offset;
-		const ut32 to = from + ri->size - 1;
-		const ut64 v = to | (((ut64)from) << 32);
-		char *reg = rz_str_newf("reg.%s", ri->name);
-		sdb_num_set(dfg->regs, reg, v, 0);
-		free(reg);
+		ht_pp_insert(dfg->reg_items_ht, ri->name, ri);
 	}
 	return dfg;
 }
@@ -872,7 +836,9 @@ RZ_API void rz_analysis_esil_dfg_free(RzAnalysisEsilDFG *dfg) {
 			}
 			rz_graph_free(dfg->flow);
 		}
-		sdb_free(dfg->regs);
+		ht_pp_free(dfg->reg_items_ht);
+		ht_pp_free(dfg->reg_nodes_ht);
+		ht_pp_free(dfg->var_nodes_ht);
 		rz_rbtree_cont_free(dfg->reg_vars);
 		rz_queue_free(dfg->todo);
 		free(dfg);
@@ -960,7 +926,7 @@ static void _dfg_rev_dfs_cb(RzGraphNode *n, RzGraphVisitor *vi) {
 	{
 		RzGraphNode *previous = (RzGraphNode *)rz_list_get_top(n->in_nodes);
 		if (previous) {
-			sdb_ptr_set(filter->results, rz_strbuf_get(node->content), previous, 0);
+			ht_pp_update(filter->results, rz_strbuf_get(node->content), previous);
 		}
 	} break;
 	}
@@ -990,7 +956,7 @@ static RzStrBuf *get_resolved_expr(RzAnalysisEsilDFGFilter *filter, RzAnalysisEs
 	char *p, *q;
 	// we can do this bc every generative node MUST end with an operator
 	for (p = expr; (q = internal_esil_strchrtok(p, ',')); p = q) {
-		RzGraphNode *gn = sdb_ptr_get(filter->results, p, 0);
+		RzGraphNode *gn = ht_pp_find(filter->results, p, NULL);
 		if (!gn) {
 			rz_strbuf_appendf(res, ",%s,", p);
 		} else {
@@ -1014,7 +980,7 @@ RZ_API RzStrBuf *rz_analysis_esil_dfg_filter(RzAnalysisEsilDFG *dfg, const char 
 	}
 
 	// allocate stuff
-	RzAnalysisEsilDFGFilter filter = { dfg, rz_rbtree_cont_new(), sdb_new0() };
+	RzAnalysisEsilDFGFilter filter = { dfg, rz_rbtree_cont_new(), ht_pp_new0() };
 	RzStrBuf *filtered = rz_strbuf_new("");
 	RzGraphVisitor vi = { _dfg_rev_dfs_cb, NULL, NULL, NULL, NULL, &filter };
 
@@ -1035,7 +1001,7 @@ RZ_API RzStrBuf *rz_analysis_esil_dfg_filter(RzAnalysisEsilDFG *dfg, const char 
 		free(sanitized);
 	}
 	rz_rbtree_cont_free(filter.tree);
-	sdb_free(filter.results);
+	ht_pp_free(filter.results);
 	return filtered;
 }
 

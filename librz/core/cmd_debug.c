@@ -4484,20 +4484,7 @@ static int cmd_debug_step(RzCore *core, const char *input) {
 	switch (input[1]) {
 	case 0: // "ds"
 	case ' ':
-		if (rz_config_get_i(core->config, "cfg.debug")) {
-			rz_reg_arena_swap(core->dbg->reg, true);
-			// sync registers for BSD PT_STEP/PT_CONT
-			// XXX(jjd): is this necessary?
-			rz_debug_reg_sync(core->dbg, RZ_REG_TYPE_GPR, false);
-			ut64 pc = rz_debug_reg_get(core->dbg, "PC");
-			rz_debug_trace_pc(core->dbg, pc);
-			if (!rz_debug_step(core->dbg, times)) {
-				eprintf("Step failed\n");
-				core->break_loop = true;
-			}
-		} else {
-			rz_core_cmdf(core, "%daes", RZ_MAX(1, times));
-		}
+		rz_core_debug_step_one(core, times);
 		break;
 	case 'i': // "dsi"
 		if (input[2] == ' ') {

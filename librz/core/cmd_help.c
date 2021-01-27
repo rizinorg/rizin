@@ -860,17 +860,12 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 		case '?': // "?V?"
 			rz_core_cmd_help(core, help_msg_question_V);
 			break;
-		case 0: // "?V"
-#if RZ_VERSION_COMMIT == 0
-			rz_cons_printf("%s release\n", RZ_VERSION);
-#else
-			if (!strcmp(RZ_VERSION, RZ_GITTAP)) {
-				rz_cons_printf("%s %d\n", RZ_VERSION, RZ_VERSION_COMMIT);
-			} else {
-				rz_cons_printf("%s aka %s commit %d\n", RZ_VERSION, RZ_GITTAP, RZ_VERSION_COMMIT);
-			}
-#endif
+		case 0: { // "?V"
+			char *v = rz_str_version(NULL);
+			rz_cons_printf("%s\n", v);
+			free (v);
 			break;
+		}
 		case 'c': // "?Vc"
 			rz_cons_printf("%d\n", vernum(RZ_VERSION));
 			break;
@@ -881,7 +876,6 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			pj_ks(pj, "arch", RZ_SYS_ARCH);
 			pj_ks(pj, "os", RZ_SYS_OS);
 			pj_ki(pj, "bits", RZ_SYS_BITS);
-			pj_ki(pj, "commit", RZ_VERSION_COMMIT);
 			pj_ks(pj, "tap", RZ_GITTAP);
 			pj_ki(pj, "major", RZ_VERSION_MAJOR);
 			pj_ki(pj, "minor", RZ_VERSION_MINOR);

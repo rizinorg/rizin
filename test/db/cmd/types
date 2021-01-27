@@ -1241,6 +1241,19 @@ var int64_t canary @ rbp-0x8
 EOF
 RUN
 
+NAME=aaft io.va side effect
+FILE=-
+ARGS=-eio.va=0 -a x86 -b 64
+CMDS=<<EOF
+af
+aaft
+e io.va
+EOF
+EXPECT=<<EOF
+false
+EOF
+RUN
+
 NAME=bashbot test (x86_64)
 FILE=bins/elf/bashbot.x86_64.O0.elf
 CMDS=<<EOF
