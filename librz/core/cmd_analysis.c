@@ -9300,7 +9300,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 		rz_core_cmd_help(core, help_msg_aa);
 		break;
 	case 'b': // "aab"
-		rz_cmd_analysis_blocks (core, input + 1);
+		rz_cmd_analysis_blocks(core, input + 1);
 		break;
 	case 'f': // "aaf"
 		if (input[1] == 'e') { // "aafe"
@@ -9340,16 +9340,16 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 	case 'c': // "aac"
 		switch (input[1]) {
 		case '*': // "aac*"
-			rz_cmd_analysis_calls (core, input + 1, true, false);
+			rz_cmd_analysis_calls(core, input + 1, true, false);
 			break;
 		case 'i': // "aaci"
-			rz_cmd_analysis_calls (core, input + 1, input[2] == '*', true);
+			rz_cmd_analysis_calls(core, input + 1, input[2] == '*', true);
 			break;
 		case '?': // "aac?"
 			eprintf("Usage: aac, aac* or aaci (imports xrefs only)\n");
 			break;
 		default: // "aac"
-			rz_cmd_analysis_calls (core, input + 1, false, false);
+			rz_cmd_analysis_calls(core, input + 1, false, false);
 			break;
 		}
 	case 'j': // "aaj"
@@ -9461,7 +9461,7 @@ static int cmd_analysis_all(RzCore *core, const char *input) {
 				}
 
 				oldstr = rz_print_rowlog(core->print, "Analyze function calls (aac)");
-				(void)rz_cmd_analysis_calls (core, "", false, false); // "aac"
+				(void)rz_cmd_analysis_calls(core, "", false, false); // "aac"
 				rz_core_seek(core, curseek, true);
 				// oldstr = rz_print_rowlog (core->print, "Analyze data refs as code (LEA)");
 				// (void) cmd_analysis_aad (core, NULL); // "aad"

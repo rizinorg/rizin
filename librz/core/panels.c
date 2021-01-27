@@ -3519,7 +3519,7 @@ int __function_cb(void *user) {
 
 int __symbols_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_analysis_all (core);
+	rz_core_analysis_all(core);
 	return 0;
 }
 
@@ -3531,7 +3531,7 @@ int __program_cb(void *user) {
 
 int __basic_blocks_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_cmd_analysis_blocks (core, "");
+	rz_cmd_analysis_blocks(core, "");
 	return 0;
 }
 
@@ -3572,7 +3572,7 @@ int __watch_points_cb(void *user) {
 
 int __references_cb(void *user) {
 	RzCore *core = (RzCore *)user;
-	rz_core_analysis_refs (core, "");
+	rz_core_analysis_refs(core, "");
 	return 0;
 }
 
@@ -4828,7 +4828,7 @@ void __panel_breakpoint(RzCore *core) {
 }
 
 void __panel_continue(RzCore *core) {
-	rz_debug_continue_oldhandler (core, "");
+	rz_debug_continue_oldhandler(core, "");
 }
 
 void __panels_check_stackbase(RzCore *core) {
