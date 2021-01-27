@@ -505,10 +505,12 @@ RZ_API void rz_core_analysis_type_match(RzCore *core, RzAnalysisFunction *fcn) {
 	char *ret_reg = NULL;
 	const char *pc = rz_reg_get_name(core->dbg->reg, RZ_REG_NAME_PC);
 	if (!pc) {
+		free(buf);
 		return;
 	}
 	RzRegItem *r = rz_reg_get(core->dbg->reg, pc, -1);
 	if (!r) {
+		free(buf);
 		return;
 	}
 	rz_cons_break_push(NULL, NULL);
