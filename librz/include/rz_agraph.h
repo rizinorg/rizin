@@ -84,7 +84,7 @@ typedef struct rz_ascii_graph_t {
 	RzList *back_edges;
 	RzList *long_edges;
 	struct layer_t *layers;
-	int n_layers;
+	unsigned int n_layers;
 	RzList *dists; /* RzList<struct dist_t> */
 	RzList *edges; /* RzList<AEdge> */
 	RzAGraphHits ghits;
