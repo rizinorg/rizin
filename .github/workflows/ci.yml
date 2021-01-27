@@ -400,7 +400,6 @@ jobs:
     - name: Create archive
       run: |
         export PATH=${HOME}/.local/bin:${PATH}
-        meson rewrite kwargs set project / version ${{ steps.extract_version.outputs.version }}
         meson build
         cd build
         meson dist --include-subprojects --no-tests
