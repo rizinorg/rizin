@@ -46,7 +46,6 @@ endif
 # by default, not version commit is used
 version_commit = '0'
 
-gittap = ''
 gittip = ''
 
 git_dir_exists = run_command(py3_exe, '-c', '__import__("sys").exit(0 if __import__("os").path.isdir(".git") else 1)')
@@ -54,18 +53,6 @@ if git_exe.found() and git_dir_exists.returncode() == 0
   sdb_src_exists = run_command(py3_exe, '-c', '__import__("sys").exit(0 if __import__("os").listdir("shlr/sdb/") else 1)')
   if sdb_src_exists.returncode() == 1
     error('Source code for SDB not found. Did you forget to run `git submodule update --init`?')
-  endif
-
-  # Get version_commit
-  git_rev_list = run_command(py3_exe, git_exe_repo_py, git_exe, repo, 'rev-list', '--all', '--count')
-  if git_rev_list.returncode() == 0
-    version_commit = git_rev_list.stdout().strip()
-  endif
-
-  # Get gittap
-  git_describe = run_command(py3_exe, git_exe_repo_py, git_exe, repo, 'describe', '--tags', '--match', '[0-9]*')
-  if git_describe.returncode() == 0
-    gittap = git_describe.stdout().strip()
   endif
 
   # Get gittip
@@ -77,15 +64,6 @@ endif
 
 if get_option('rizin_version_commit') != ''
   version_commit = get_option('rizin_version_commit')
-endif
-
-if get_option('rizin_gittap') != ''
-  gittap = get_option('rizin_gittap')
-endif
-# gittap is used for the version of each rz_ library
-# in case it has not been set (e.g. a release tarball) set it
-if gittap == ''
-  gittap = rizin_version
 endif
 
 if get_option('rizin_gittip') != ''
@@ -363,11 +341,10 @@ rz_userconf_h = configure_file(
 packager = get_option('packager')
 packager_version = get_option('packager_version')
 
-message('Version Major: ' + rizin_version_major)
-message('Version Minor: ' + rizin_version_minor)
-message('Version Patch: ' + rizin_version_patch)
-message('Version GitTap: ' + gittap)
-message('Version GitTip: ' + gittip)
+message('Version Major: @0@0'.format(rizin_version_major))
+message('Version Minor: @0@0'.format(rizin_version_minor))
+message('Version Patch: @0@0'.format(rizin_version_patch))
+message('Version GitTip: @0@0'.format(gittip))
 
 versionconf = configuration_data()
 versionconf.set('MESON_VERSION', meson.version())
@@ -376,7 +353,6 @@ versionconf.set('RZ_VERSION_MINOR', rizin_version_minor)
 versionconf.set('RZ_VERSION_PATCH', rizin_version_patch)
 versionconf.set('RZ_VERSION_NUMBER', rizin_version_number)
 versionconf.set('RZ_VERSION', rizin_version)
-versionconf.set('RZ_GITTAP', gittap)
 versionconf.set('RZ_GITTIP', gittip)
 versionconf.set('RZ_BIRTH', rizinbirth)
 if packager_version != ''
