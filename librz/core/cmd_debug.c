@@ -4315,6 +4315,7 @@ RZ_IPI int rz_debug_continue_oldhandler(void *data, const char *input) {
 	RzCore *core = (RzCore *)data;
 	int pid, old_pid, signum;
 	char *ptr;
+	rz_cons_break_push(static_debug_stop, core->dbg);
 	// TODO: we must use this for step 'ds' too maybe...
 	switch (input[0]) {
 	case 0: // "dc"
@@ -4451,6 +4452,14 @@ RZ_IPI int rz_debug_continue_oldhandler(void *data, const char *input) {
 	default:
 		rz_core_cmd_help(core, help_msg_dc);
 		return 0;
+	}
+	int follow = rz_config_get_i(core->config, "dbg.follow");
+	rz_cons_break_pop();
+	if (follow > 0) {
+		ut64 pc = rz_debug_reg_get(core->dbg, "PC");
+		if ((pc < core->offset) || (pc > (core->offset + follow))) {
+			rz_core_cmd0(core, "sr PC");
+		}
 	}
 	return 1;
 }
@@ -5027,10 +5036,8 @@ RZ_IPI int rz_cmd_debug(void *data, const char *input) {
 		eprintf("TODO: transplant process\n");
 		break;
 	case 'c': // "dc"
-		rz_cons_break_push(static_debug_stop, core->dbg);
 		(void)rz_debug_continue_oldhandler(core, input + 1);
-		follow = rz_config_get_i(core->config, "dbg.follow");
-		rz_cons_break_pop();
+		follow = 0;
 		break;
 	case 'm': // "dm"
 		cmd_debug_map(core, input + 1);
