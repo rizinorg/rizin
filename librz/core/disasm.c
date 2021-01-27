@@ -365,7 +365,7 @@ static const char *get_utf8_char(const char line, RDisasmState *ds) {
 	case '>': return ds->core->cons->vline[ARROW_RIGHT];
 	case ':': return ds->core->cons->vline[LINE_UP];
 	case '|': return ds->core->cons->vline[LINE_VERT];
-	case '=': return ds->core->cons->vline[LINE_HORIZ];
+	case '=':
 	case '-': return ds->core->cons->vline[LINE_HORIZ];
 	case ',': return ds->core->cons->vline[CORNER_TL];
 	case '.': return ds->core->cons->vline[CORNER_TR];
@@ -2416,7 +2416,6 @@ static void ds_update_ref_lines(RDisasmState *ds) {
 		free(ds->prev_line_col);
 		ds->refline = strdup("");
 		ds->refline2 = strdup("");
-		ds->prev_line_col = strdup("");
 		ds->line = NULL;
 		ds->line_col = NULL;
 		ds->prev_line_col = NULL;

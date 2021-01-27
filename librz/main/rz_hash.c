@@ -651,6 +651,10 @@ RZ_API int rz_main_rz_hash(int argc, const char **argv) {
 			if (rad == 'j') {
 				pj = pj_new();
 				if (!pj) {
+					if (str != hashstr) {
+						free(str);
+					}
+					free(iv);
 					return 1;
 				}
 				pj_a(pj);
