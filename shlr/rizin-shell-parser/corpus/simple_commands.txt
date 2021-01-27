@@ -245,10 +245,39 @@ Arg with (...)
     (args
       (arg
         (concatenation
-	  (arg_identifier)
-	  (arg_identifier)
-	  (args (arg (arg_identifier)))
-	  (arg_identifier))))))
+          (arg_identifier)
+          (args
+            (arg_identifier)
+            (args (arg (arg_identifier)))
+            (arg_identifier)))))))
+
+
+============================
+Expressions with (...)
+============================
+
+?v (100 + (2 - 3)) * 2
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args
+      (arg (args
+             (arg_identifier)
+             (args
+               (arg (arg_identifier))
+               (arg (arg_identifier))
+               (arg (args
+                      (arg_identifier)
+                      (args
+                        (arg (arg_identifier))
+                        (arg (arg_identifier))
+                        (arg (arg_identifier)))
+                      (arg_identifier))))
+             (arg_identifier)))
+      (arg (arg_identifier))
+      (arg (arg_identifier)))))
 
 
 ==========

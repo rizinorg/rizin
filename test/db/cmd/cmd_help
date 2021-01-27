@@ -233,3 +233,13 @@ EXPECT=<<EOF
 Usage: ?[?[?]] expression   
 EOF
 RUN
+
+NAME=expr with parentheses
+FILE=-
+CMDS=<<EOF
+?v (0x10000192c + 4294965314) & 0xffffffff
+EOF
+EXPECT=<<EOF
+0x116e
+EOF
+RUN

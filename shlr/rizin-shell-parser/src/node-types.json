@@ -4,7 +4,7 @@
     "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
         {
@@ -306,7 +306,27 @@
           "named": true
         },
         {
+          "type": "arg_identifier",
+          "named": true
+        },
+        {
+          "type": "args",
+          "named": true
+        },
+        {
+          "type": "cmd_substitution_arg",
+          "named": true
+        },
+        {
+          "type": "double_quoted_arg",
+          "named": true
+        },
+        {
           "type": "pf_args",
+          "named": true
+        },
+        {
+          "type": "single_quoted_arg",
           "named": true
         }
       ]

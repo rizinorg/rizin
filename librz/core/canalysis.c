@@ -101,11 +101,9 @@ static int cmpaddr(const void *_a, const void *_b) {
 static char *getFunctionName(RzCore *core, ut64 addr) {
 	RzBinFile *bf = rz_bin_cur(core->bin);
 	if (bf && bf->o) {
-		Sdb *kv = bf->o->addrzklassmethod;
-		char *at = sdb_fmt("0x%08" PFMT64x, addr);
-		char *res = sdb_get(kv, at, 0);
-		if (res) {
-			return res;
+		RzBinSymbol *sym = ht_up_find(bf->o->addrzklassmethod, addr, NULL);
+		if (sym && sym->classname && sym->name) {
+			return rz_str_newf("method.%s.%s", sym->classname, sym->name);
 		}
 	}
 	RzFlagItem *flag = rz_core_flag_get_by_spaces(core->flags, addr);

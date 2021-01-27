@@ -32,7 +32,7 @@ RZ_API void rz_analysis_esil_interrupt_free(RzAnalysisEsil *esil, RzAnalysisEsil
 	rz_return_if_fail(esil);
 	if (intr) {
 		if (intr->user) {
-			intr->handler->fini(intr->user);	//fini must exist when user is !NULL
+			intr->handler->fini(intr->user); //fini must exist when user is !NULL
 		}
 		rz_analysis_esil_release_source(esil, intr->src_id);
 		free(intr);
@@ -40,8 +40,8 @@ RZ_API void rz_analysis_esil_interrupt_free(RzAnalysisEsil *esil, RzAnalysisEsil
 }
 
 RZ_API bool rz_analysis_esil_set_interrupt(RzAnalysisEsil *esil, RzAnalysisEsilInterrupt *intr) {
-	rz_return_val_if_fail (esil && esil->interrupts && intr && intr->handler && intr->handler->cb, false);
-	return ht_up_update (esil->interrupts, intr->handler->num, intr);
+	rz_return_val_if_fail(esil && esil->interrupts && intr && intr->handler && intr->handler->cb, false);
+	return ht_up_update(esil->interrupts, intr->handler->num, intr);
 }
 
 RZ_API int rz_analysis_esil_fire_interrupt(RzAnalysisEsil *esil, ut32 intr_num) {
