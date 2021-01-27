@@ -592,7 +592,7 @@ RZ_API char *rz_egg_mkvar(RzEgg *egg, char *out, const char *_str, int delta) {
 					}
 					eprintf("Unknown arg for syscall '%s'\n", egg->lang.callname);
 				} else {
-					eprintf("NO CALLNAME '%s'\n", egg->lang.callname);
+					eprintf("NO CALLNAME\n");
 				}
 			}
 		} else if (!strncmp(str + 1, "reg", 3)) {
