@@ -1,4 +1,8 @@
-project('rizin', 'c', license: 'LGPL3', meson_version: '>=0.55.0')
+project('rizin', 'c',
+  version: '0.2.0-git',
+  license: 'LGPL3',
+  meson_version: '>=0.55.0',
+)
 
 py3_exe = import('python').find_installation()
 git_exe = find_program('git', required: false)
@@ -9,26 +13,18 @@ create_tags_rz_py = files('sys/create_tags_rz.py')
 syscall_preprocessing_py = files('sys/syscall_preprocessing.py')
 git_exe_repo_py = files('sys/meson_git_wrapper.py')
 
-# Get rizin version
-rizin_version = 'unknown-error'
-rizin_version_major = 0
-rizin_version_minor = 0
-rizin_version_patch = 0
-rizin_version_number = 0
-r = run_command(py3_exe, 'sys/version.py', '--full-version')
-if r.returncode() == 0
-  vers = r.stdout().strip().split('\n')
-  rizin_version = vers[0]
-  rizin_version_major = vers[1]
-  rizin_version_minor = vers[2]
-  rizin_version_patch = vers[3]
-  rizin_version_number = vers[4]
-  if host_machine.system() == 'darwin'
-    rizin_version = rizin_version.split('-')[0]
-  endif
-else
-  message('Cannot find project version with sys/version.py')
+# Get rizin version and compute various version parts
+rizin_version = meson.project_version()
+if host_machine.system() == 'darwin'
+  rizin_version = rizin_version.split('-')[0]
 endif
+
+rizin_version_split = rizin_version.split('.')
+rizin_version_major = rizin_version_split[0].to_int()
+rizin_version_minor = rizin_version_split[1].to_int()
+rizin_version_patch = rizin_version_split[2].split('-')[0].to_int()
+rizin_version_number = 1000000 * rizin_version_major + 1000 * rizin_version_minor + rizin_version_patch
+
 
 repo = '.'
 if meson.is_subproject()
@@ -347,7 +343,7 @@ message('Version Patch: @0@0'.format(rizin_version_patch))
 message('Version GitTip: @0@0'.format(gittip))
 
 versionconf = configuration_data()
-versionconf.set('MESON_VERSION', meson.version())
+versionconf.set_quoted('MESON_VERSION', meson.version())
 versionconf.set('RZ_VERSION_MAJOR', rizin_version_major)
 versionconf.set('RZ_VERSION_MINOR', rizin_version_minor)
 versionconf.set('RZ_VERSION_PATCH', rizin_version_patch)
