@@ -1817,7 +1817,7 @@ static void anop_esil(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf
 					(insn->id == X86_INS_BTS) ? '|' : '^', width);
 				break;
 			case X86_INS_BTR:
-				dst_w = getarg(&gop, 0, 1, "&", DST_R_AR, NULL);
+				getarg(&gop, 0, 1, "&", DST_R_AR, NULL);
 				rz_strbuf_appendf(&op->esil, ",%d,%s,%%,1,<<,-1,^,%d,%s,/,%s,+,&=[%d]",
 					width * 8, src, width * 8, src, dst_r, width);
 				break;

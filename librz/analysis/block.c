@@ -273,11 +273,13 @@ RZ_API RzAnalysisBlock *rz_analysis_block_split(RzAnalysisBlock *bbi, ut64 addr)
 	bb->jump = bbi->jump;
 	bb->fail = bbi->fail;
 	bb->parent_stackptr = bbi->stackptr;
+	bb->switch_op = bbi->switch_op;
 
 	// resize the first block
 	rz_analysis_block_set_size(bbi, addr - bbi->addr);
 	bbi->jump = addr;
 	bbi->fail = UT64_MAX;
+	bbi->switch_op = NULL;
 	rz_analysis_block_update_hash(bbi);
 
 	// insert the second block into the tree
@@ -346,6 +348,14 @@ RZ_API bool rz_analysis_block_merge(RzAnalysisBlock *a, RzAnalysisBlock *b) {
 	a->size += b->size;
 	a->jump = b->jump;
 	a->fail = b->fail;
+	if (a->switch_op) {
+		rz_analysis_switch_op_free(a->switch_op);
+		if (a->analysis->verbose) {
+			eprintf("Dropping switch table at 0x%" PFMT64x " of block at 0x%" PFMT64x "\n", a->switch_op->addr, a->addr);
+		}
+	}
+	a->switch_op = b->switch_op;
+	b->switch_op = NULL;
 	rz_analysis_block_update_hash(a);
 
 	// kill b completely

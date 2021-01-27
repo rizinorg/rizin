@@ -85,7 +85,7 @@ RZ_API RzList *rz_analysis_reflines_get(RzAnalysis *analysis, ut64 addr, const u
 	const ut8 *ptr = buf;
 	const ut8 *end = buf + len;
 	ut8 *free_levels;
-	int res, sz = 0, count = 0;
+	int sz = 0, count = 0;
 	ut64 opc = addr;
 
 	memset(&op, 0, sizeof(op));
@@ -159,7 +159,7 @@ RZ_API RzList *rz_analysis_reflines_get(RzAnalysis *analysis, ut64 addr, const u
 
 		// This can segfault if opcode length and buffer check fails
 		rz_analysis_op_fini(&op);
-		sz = rz_analysis_op(analysis, &op, addr, ptr, (int)(end - ptr), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
+		rz_analysis_op(analysis, &op, addr, ptr, (int)(end - ptr), RZ_ANALYSIS_OP_MASK_BASIC | RZ_ANALYSIS_OP_MASK_HINT);
 		sz = op.size;
 		if (sz <= 0) {
 			sz = 1;
@@ -177,13 +177,13 @@ RZ_API RzList *rz_analysis_reflines_get(RzAnalysis *analysis, ut64 addr, const u
 			if ((!linesout && (op.jump > opc + len || op.jump < opc)) || !op.jump) {
 				break;
 			}
-			if (!(res = add_refline(list, sten, addr, op.jump, &count))) {
+			if (!add_refline(list, sten, addr, op.jump, &count)) {
 				rz_analysis_op_fini(&op);
 				goto sten_err;
 			}
 			// add false branch in case its set and its not a call, useful for bf, maybe others
 			if (!op.delay && op.fail != UT64_MAX && op.fail != addr + op.size) {
-				if (!(res = add_refline(list, sten, addr, op.fail, &count))) {
+				if (!add_refline(list, sten, addr, op.fail, &count)) {
 					rz_analysis_op_fini(&op);
 					goto sten_err;
 				}
@@ -201,7 +201,7 @@ RZ_API RzList *rz_analysis_reflines_get(RzAnalysis *analysis, ut64 addr, const u
 				if (!linesout && (op.jump > opc + len || op.jump < opc)) {
 					goto __next;
 				}
-				if (!(res = add_refline(list, sten, op.switch_op->addr, caseop->jump, &count))) {
+				if (!add_refline(list, sten, op.switch_op->addr, caseop->jump, &count)) {
 					rz_analysis_op_fini(&op);
 					goto sten_err;
 				}

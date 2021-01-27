@@ -24,7 +24,13 @@ Building
 Rizin uses the `meson` build system. Command line flags passed to meson can
 change how Rizin is built.
 
-To define the base install location for Rizin use the `--prefix` flag when
+First, we suggest you use the options `-Dpackager_version=<package-version>`
+and `-Dpackager=<packager>` to help us track the version of Rizin users are
+using, because these options are used when you run `rizin -v`. In this way
+when a user reports a issue and he provides his `rizin -v` output, we know
+how Rizin was built.
+
+Then, to define the base install location for Rizin use the `--prefix` flag when
 invoking `meson`. For system installs it is common to use `/usr`. If in doubt
 check your distributions packaging guidelines.
 

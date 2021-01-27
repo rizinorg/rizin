@@ -2917,7 +2917,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       {
         CHECK_FIELD_B();
       }
-      fieldAisReg = fieldA = 0;
+      fieldAisReg = 0;
       fieldA = FIELDS9(state->words[0]);
       fieldA += (addr & ~0x3);
       CHECK_NULLIFY();
@@ -3371,7 +3371,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       fieldC = sign_extend (fieldC, 8);
 
       fieldC += (addr & ~0x3);
-      fieldA = fieldAisReg = fieldCisReg = 0;
+      fieldA = fieldAisReg = 0;
 
       write_instr_name();
       /* This address could be a label we know.  Convert it. */
@@ -3520,7 +3520,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
        instructions */
     fieldC = FIELDC_AC(state->words[0]);
     fieldB = FIELDB_AC(state->words[0]);
-    fieldCisReg = 0;
     fieldBisReg = 0;
     write_instr_name();
     strcat(formatString,"%d");
