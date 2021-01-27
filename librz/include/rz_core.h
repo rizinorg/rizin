@@ -538,6 +538,8 @@ RZ_API int rz_core_set_file_by_name(RzBin *bin, const char *name);
 RZ_API ut32 rz_core_file_cur_fd(RzCore *core);
 
 RZ_API void rz_core_debug_rr(RzCore *core, RzReg *reg, int mode);
+RZ_API void rz_core_debug_set_register_flags(RzCore *core);
+RZ_API void rz_core_debug_clear_register_flags(RzCore *core);
 
 /* fortune */
 RZ_API void rz_core_fortune_list_types(void);
