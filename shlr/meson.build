@@ -44,8 +44,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
       error('Cannot execute git clone command')
     endif
 
-    reset_cmd_str = '-C @0@ reset --hard @1@'.format(capstone_path, CS_TIP)
-    reset_cmd = run_command(git_exe, reset_cmd_str.split())
+    reset_cmd = run_command(py3_exe, git_exe_repo_py, git_exe, capstone_path, 'reset', '--hard', CS_TIP)
     if reset_cmd.returncode() != 0
       error('Cannot execute git reset command')
     endif
@@ -60,8 +59,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     message('Patching capstone with rizin\'s patches')
     foreach file : patches_files
       patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', file)
-      patch_cmd_str = '-C @0@ apply -p1 @1@'.format(capstone_path, patch_path)
-      patch_cmd = run_command(git_exe, patch_cmd_str.split())
+      patch_cmd = run_command(py3_exe, git_exe_repo_py, git_exe, capstone_path, 'apply', '-p1', patch_path)
       if patch_cmd.returncode() != 0
         warning('Cannot apply patch ' + file)
       endif
