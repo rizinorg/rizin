@@ -7,7 +7,7 @@ RZ_DEPS+=rz_debug rz_hash rz_bin rz_lang rz_io rz_analysis rz_parse rz_bp rz_egg
 RZ_DEPS+=rz_reg rz_search rz_syscall rz_socket rz_magic rz_crypto
 
 OBJS=core.o cmd.o cfile.o cconfig.o visual.o cio.o yank.o libs.o agraph.o
-OBJS+=fortune.o hack.o vasm.o cbin.o rtr.o cmd_api.o cmd_descs.o
+OBJS+=fortune.o hack.o vasm.o cbin.o rtr.o cmd_api.o cmd_descs.o cdebug.o
 OBJS+=carg.o canalysis.o cautocmpl.o project.o gdiff.o casm.o disasm.o cplugin.o
 OBJS+=vmenus.o vmenus_graph.o vmenus_zigns.o zdiff.o
 OBJS+=task.o panels.o vmarks.o analysis_tp.o analysis_objc.o blaze.o

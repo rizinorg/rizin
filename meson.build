@@ -8,6 +8,7 @@ pkgconfig_mod = import('pkgconfig')
 # Python scripts used during the build process
 create_tags_rz_py = files('sys/create_tags_rz.py')
 syscall_preprocessing_py = files('sys/syscall_preprocessing.py')
+git_exe_repo_py = files('sys/meson_git_wrapper.py')
 
 # Get rizin version
 rizin_version = 'unknown-error'
@@ -47,7 +48,7 @@ endif
 version_commit = '0'
 
 gittap = ''
-gittip = 'unknown'
+gittip = ''
 
 git_dir_exists = run_command(py3_exe, '-c', '__import__("sys").exit(0 if __import__("os").path.isdir(".git") else 1)')
 if git_exe.found() and git_dir_exists.returncode() == 0
@@ -57,19 +58,19 @@ if git_exe.found() and git_dir_exists.returncode() == 0
   endif
 
   # Get version_commit
-  git_rev_list = run_command(git_exe, '-C', repo, 'rev-list', '--all', '--count')
+  git_rev_list = run_command(py3_exe, git_exe_repo_py, git_exe, repo, 'rev-list', '--all', '--count')
   if git_rev_list.returncode() == 0
     version_commit = git_rev_list.stdout().strip()
   endif
 
   # Get gittap
-  git_describe = run_command(git_exe, '-C', repo, 'describe', '--tags', '--match', '[0-9]*')
+  git_describe = run_command(py3_exe, git_exe_repo_py, git_exe, repo, 'describe', '--tags', '--match', '[0-9]*')
   if git_describe.returncode() == 0
     gittap = git_describe.stdout().strip()
   endif
 
   # Get gittip
-  git_rev_parse = run_command(git_exe, '-C', repo, 'rev-parse', 'HEAD')
+  git_rev_parse = run_command(py3_exe, git_exe_repo_py, git_exe, repo, 'rev-parse', 'HEAD')
   if git_rev_parse.returncode() == 0
     gittip = git_rev_parse.stdout().strip()
   endif
@@ -360,9 +361,17 @@ rz_userconf_h = configure_file(
   install_dir: rizin_incdir
 )
 
+packager = get_option('packager')
+packager_version = get_option('packager_version')
+
+message('Version Major: ' + rizin_version_major)
+message('Version Minor: ' + rizin_version_minor)
+message('Version Patch: ' + rizin_version_patch)
+message('Version GitTap: ' + gittap)
+message('Version GitTip: ' + gittip)
+
 versionconf = configuration_data()
 versionconf.set('MESON_VERSION', meson.version())
-versionconf.set('VERSIONCOMMIT', version_commit)
 versionconf.set('RZ_VERSION_MAJOR', rizin_version_major)
 versionconf.set('RZ_VERSION_MINOR', rizin_version_minor)
 versionconf.set('RZ_VERSION_PATCH', rizin_version_patch)
@@ -371,6 +380,12 @@ versionconf.set('RZ_VERSION', rizin_version)
 versionconf.set('RZ_GITTAP', gittap)
 versionconf.set('RZ_GITTIP', gittip)
 versionconf.set('RZ_BIRTH', rizinbirth)
+if packager_version != ''
+  versionconf.set_quoted('RZ_PACKAGER_VERSION', packager_version)
+  if packager != ''
+    versionconf.set_quoted('RZ_PACKAGER', packager)
+  endif
+endif
 rz_version_h = configure_file(
   input: 'librz/include/rz_version.h.in',
   output: 'rz_version.h',
