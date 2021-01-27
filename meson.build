@@ -1,5 +1,5 @@
 project('rizin', 'c',
-  version: '0.2.0-git',
+  version: 'v0.2.0-git',
   license: 'LGPL3',
   meson_version: '>=0.55.0',
 )
@@ -14,7 +14,7 @@ syscall_preprocessing_py = files('sys/syscall_preprocessing.py')
 git_exe_repo_py = files('sys/meson_git_wrapper.py')
 
 # Get rizin version and compute various version parts
-rizin_version = meson.project_version()
+rizin_version = meson.project_version().split('v')[1]
 if host_machine.system() == 'darwin'
   rizin_version = rizin_version.split('-')[0]
 endif
