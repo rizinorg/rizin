@@ -650,7 +650,6 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 			}
 		}
 		if (skipAnalysis) {
-			ret = 0;
 			gotoBeach(RZ_ANALYSIS_RET_END);
 		}
 	}
@@ -1086,9 +1085,9 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 					default_case = op.fail; // is this really default case?
 					if (cmpval != UT64_MAX && default_case != UT64_MAX && (op.reg || op.ireg)) {
 						if (op.ireg) {
-							ret = try_walkthrough_jmptbl(analysis, fcn, bb, depth, op.addr, 0, op.ptr, op.ptr, analysis->bits >> 3, table_size, default_case, ret);
+							try_walkthrough_jmptbl(analysis, fcn, bb, depth, op.addr, 0, op.ptr, op.ptr, analysis->bits >> 3, table_size, default_case, ret);
 						} else { // op.reg
-							ret = walkthrough_arm_jmptbl_style(analysis, fcn, bb, depth, op.addr, op.ptr, analysis->bits >> 3, table_size, default_case, ret);
+							walkthrough_arm_jmptbl_style(analysis, fcn, bb, depth, op.addr, op.ptr, analysis->bits >> 3, table_size, default_case, ret);
 						}
 						// check if op.jump and op.fail contain jump table location
 						// clear jump address, because it's jump table location
@@ -1108,7 +1107,7 @@ static int fcn_recurse(RzAnalysis *analysis, RzAnalysisFunction *fcn, ut64 addr,
 				ret = rz_analysis_fcn_bb(analysis, fcn, op.fail, depth);
 				fcn->stack = saved_stack;
 			} else {
-				ret = rz_analysis_fcn_bb(analysis, fcn, op.jump, depth);
+				rz_analysis_fcn_bb(analysis, fcn, op.jump, depth);
 				fcn->stack = saved_stack;
 				ret = rz_analysis_fcn_bb(analysis, fcn, op.fail, depth);
 				fcn->stack = saved_stack;

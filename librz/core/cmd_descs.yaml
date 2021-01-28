@@ -384,6 +384,11 @@
   cname: cmd_debug
   summary: Debugger commands
   type: RZ_CMD_DESC_TYPE_OLDINPUT
+  subcommands:
+    - name: dc
+      cname: debug_continue_oldhandler
+      summary: Continue execution
+      type: RZ_CMD_DESC_TYPE_OLDINPUT
 - name: e
   summary: List/get/set config evaluable vars
   subcommands:
