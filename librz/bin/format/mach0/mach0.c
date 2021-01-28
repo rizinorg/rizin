@@ -1025,8 +1025,8 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			if (ptr_thread + sizeof(struct x86_thread_state32) > bin->size) {
 				return false;
 			}
-			if ((len = rz_buf_fread_at(bin->b, ptr_thread,
-				     (ut8 *)&bin->thread_state.x86_32, "16i", 1)) == -1) {
+			if (rz_buf_fread_at(bin->b, ptr_thread,
+				     (ut8 *)&bin->thread_state.x86_32, "16i", 1) == -1) {
 				bprintf("Error: read (thread state x86_32)\n");
 				return false;
 			}
@@ -1039,8 +1039,8 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			if (ptr_thread + sizeof(struct x86_thread_state64) > bin->size) {
 				return false;
 			}
-			if ((len = rz_buf_fread_at(bin->b, ptr_thread,
-				     (ut8 *)&bin->thread_state.x86_64, "32l", 1)) == -1) {
+			if (rz_buf_fread_at(bin->b, ptr_thread,
+				     (ut8 *)&bin->thread_state.x86_64, "32l", 1) == -1) {
 				bprintf("Error: read (thread state x86_64)\n");
 				return false;
 			}
@@ -1058,8 +1058,8 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			if (ptr_thread + sizeof(struct ppc_thread_state32) > bin->size) {
 				return false;
 			}
-			if ((len = rz_buf_fread_at(bin->b, ptr_thread,
-				     (ut8 *)&bin->thread_state.ppc_32, bin->big_endian ? "40I" : "40i", 1)) == -1) {
+			if (rz_buf_fread_at(bin->b, ptr_thread,
+				     (ut8 *)&bin->thread_state.ppc_32, bin->big_endian ? "40I" : "40i", 1) == -1) {
 				bprintf("Error: read (thread state ppc_32)\n");
 				return false;
 			}
@@ -1071,8 +1071,8 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 			if (ptr_thread + sizeof(struct ppc_thread_state64) > bin->size) {
 				return false;
 			}
-			if ((len = rz_buf_fread_at(bin->b, ptr_thread,
-				     (ut8 *)&bin->thread_state.ppc_64, bin->big_endian ? "34LI3LI" : "34li3li", 1)) == -1) {
+			if (rz_buf_fread_at(bin->b, ptr_thread,
+				     (ut8 *)&bin->thread_state.ppc_64, bin->big_endian ? "34LI3LI" : "34li3li", 1) == -1) {
 				bprintf("Error: read (thread state ppc_64)\n");
 				return false;
 			}
@@ -1086,8 +1086,8 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 		if (ptr_thread + sizeof(struct arm_thread_state32) > bin->size) {
 			return false;
 		}
-		if ((len = rz_buf_fread_at(bin->b, ptr_thread,
-			     (ut8 *)&bin->thread_state.arm_32, bin->big_endian ? "17I" : "17i", 1)) == -1) {
+		if (rz_buf_fread_at(bin->b, ptr_thread,
+			     (ut8 *)&bin->thread_state.arm_32, bin->big_endian ? "17I" : "17i", 1) == -1) {
 			bprintf("Error: read (thread state arm)\n");
 			return false;
 		}
@@ -1100,8 +1100,8 @@ static int parse_thread(struct MACH0_(obj_t) * bin, struct load_command *lc, ut6
 		if (ptr_thread + sizeof(struct arm_thread_state64) > bin->size) {
 			return false;
 		}
-		if ((len = rz_buf_fread_at(bin->b, ptr_thread,
-			     (ut8 *)&bin->thread_state.arm_64, bin->big_endian ? "34LI1I" : "34Li1i", 1)) == -1) {
+		if (rz_buf_fread_at(bin->b, ptr_thread,
+			     (ut8 *)&bin->thread_state.arm_64, bin->big_endian ? "34LI1I" : "34Li1i", 1) == -1) {
 			bprintf("Error: read (thread state arm)\n");
 			return false;
 		}
