@@ -19,6 +19,10 @@ jobs:
     name: ubuntu-tcc-test
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v2
+      with:
+          submodules: recursive
+
     - name: Checkout TinyCC repository
       run: |
           git clone https://repo.or.cz/tinycc.git
@@ -33,26 +37,36 @@ jobs:
           make
           sudo make install
 
-    - uses: actions/checkout@v2
-      with:
-          submodules: recursive
+    - name: Install dependencies
+      run: |
+          sudo apt-get --assume-yes install python3-wheel python3-setuptools
+          sudo python3 -m pip install ninja
+
+    - name: Checkout meson from ret2libc git
+      run: |
+          git clone https://github.com/ret2libc/meson.git
+          cd meson
+          git checkout tiny-cc
+          python3 setup.py build
+          sudo python3 setup.py install
+
     - name: Checkout our Testsuite Binaries
       uses: actions/checkout@v2
       with:
           repository: rizinorg/rizin-testbins
           path: test/bins
 
-    - name: Configure, build and install
+    - name: Meson setup
       env:
           CC: tcc
-      run: |
-          ./configure --prefix=/usr --with-compiler=tcc
-          make
-          sudo make install
+      run: meson --prefix=/usr build
+    - name: Meson compile and install
+      run: ninja -C build && sudo ninja -C build install
+    - name: Run unit tests
+      run: ninja -C build test
 
     - name: Install test dependencies
       run: |
-          sudo apt-get --assume-yes install python3-wheel python3-setuptools
           python3 -m pip install --user 'git+https://github.com/rizinorg/rz-pipe#egg=rzpipe&subdirectory=python'
 
     - name: Run tests

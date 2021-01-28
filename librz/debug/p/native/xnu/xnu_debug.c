@@ -11,7 +11,6 @@
 // ------------------------------------
 
 #include <rz_debug.h>
-#include <rz_asm.h>
 #include <rz_reg.h>
 #include <rz_lib.h>
 #include <rz_analysis.h>

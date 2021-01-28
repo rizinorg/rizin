@@ -23,7 +23,7 @@ rz_crypto_sources = [
 
 rz_crypto = library('rz_crypto', rz_crypto_sources,
   include_directories: [platform_inc],
-  dependencies: [rz_hash_dep, rz_util_dep],
+  dependencies: [rz_util_dep],
   c_args: library_cflags,
   install: true,
   implicit_include_directories: false,

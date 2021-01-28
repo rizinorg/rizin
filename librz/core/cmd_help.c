@@ -876,7 +876,6 @@ RZ_IPI int rz_cmd_help(void *data, const char *input) {
 			pj_ks(pj, "arch", RZ_SYS_ARCH);
 			pj_ks(pj, "os", RZ_SYS_OS);
 			pj_ki(pj, "bits", RZ_SYS_BITS);
-			pj_ks(pj, "tap", RZ_GITTAP);
 			pj_ki(pj, "major", RZ_VERSION_MAJOR);
 			pj_ki(pj, "minor", RZ_VERSION_MINOR);
 			pj_ki(pj, "patch", RZ_VERSION_PATCH);

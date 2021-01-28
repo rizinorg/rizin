@@ -28,7 +28,7 @@ static char *get_file_in_cur_dir(const char *filepath) {
 static int rz_main_version_verify(int show) {
 	int i, ret;
 	typedef const char *(*vc)();
-	const char *base = RZ_GITTAP;
+	const char *base = RZ_VERSION;
 	struct vcs_t {
 		const char *name;
 		vc callback;

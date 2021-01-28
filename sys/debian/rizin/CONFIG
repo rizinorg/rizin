@@ -1,6 +1,0 @@
-PACKAGE=rizin
-SECTION=user/editors
-PRIORITY=optional
-DEPENDS=libuv1 libssl-dev
-
-include ../CONFIG
