@@ -109,8 +109,6 @@ if get_option('static_runtime')
   if cc.has_argument('/MT')
     # Use -Db_vscrt=static_from_buildtype to avoid warnings due to multiple /M options
     add_project_arguments('/MT', language: 'c')
-  elif cc.has_link_argument('-static')
-    add_project_link_arguments('-static', language: 'c')
   endif
 endif
 
