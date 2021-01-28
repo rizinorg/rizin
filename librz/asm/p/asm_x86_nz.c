@@ -5034,7 +5034,6 @@ static int parseOperand(RzAsm *a, const char *str, Operand *op, bool isrepop) {
 		}
 	} else if (last_type == TT_WORD) { // register
 		nextpos = pos;
-		RzFlagItem *flag;
 
 		if (isrepop) {
 			op->is_good_flag = false;
@@ -5061,7 +5060,7 @@ static int parseOperand(RzAsm *a, const char *str, Operand *op, bool isrepop) {
 			}
 			op->type = OT_CONSTANT;
 			RzCore *core = a->num ? (RzCore *)(a->num->userptr) : NULL;
-			if (core && (flag = rz_flag_get(core->flags, str))) {
+			if (core && rz_flag_get(core->flags, str)) {
 				op->is_good_flag = true;
 			}
 
